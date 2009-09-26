@@ -69,6 +69,10 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "falcon/dsp.h"
 
+
+#define DACBUFFER_SIZE  (MIXBUFFER_SIZE*2*512)
+
+
 /* Crossbar internal functions */
 static double Crossbar_DetectSampleRate(void);
 
@@ -89,7 +93,7 @@ static void Crossbar_SendDataToDAC(Sint16 value);
 Uint16 nCbar_DmaSoundControl;
 
 /* internal datas */
-static Sint16 DacOutBuffer[MIXBUFFER_SIZE*2*512];
+static Sint16 DacOutBuffer[DACBUFFER_SIZE];
 static int nDacOutRdPos, nDacOutWrPos, nDacBufSamples;
 
 static Uint16 nDmaSoundMode;		/* Sound mode register ($ff8921.b) */
@@ -111,7 +115,7 @@ static const double DmaSndSampleRates[4] =
 static const double DmaSndFalcSampleRates[] =
 {
 	49170,
-	32780,
+	32780,	
 	24585,
 	19668,
 	16390,
@@ -807,7 +811,7 @@ void Crossbar_SendDataToDAC(Sint16 value)
 	/* Put sample into DAC buffer */
 	/* Todo : verify if data is in the monitored track */
 	DacOutBuffer[nDacOutWrPos] = value;
-	nDacOutWrPos = (nDacOutWrPos + 1) % (MIXBUFFER_SIZE*2*512);
+	nDacOutWrPos = (nDacOutWrPos + 1) % (DACBUFFER_SIZE);
 	nDacBufSamples += 1;
 }
 
@@ -830,7 +834,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	for (i = 0; (i < nSamplesToGenerate) && (fDacBufSamples >= 0.0); i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (MIXBUFFER_SIZE*2*512);
+		nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (DACBUFFER_SIZE);
 
 		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
 		                        + (int)(DacOutBuffer[nDacOutRdPos+0])) / 2;
@@ -841,12 +845,12 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		fDacBufSamples -= FreqRatio;
 	}
 
-	nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (MIXBUFFER_SIZE*2*512);
+	nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (DACBUFFER_SIZE);
 
 	if (fDacBufSamples > 0.0) {
 		nDacBufSamples = (int)fDacBufSamples;
 	}
-	else{
+	else {
 		nDacBufSamples = 0;
 	}
 }
