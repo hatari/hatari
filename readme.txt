@@ -43,8 +43,15 @@ and demos.
 
 For using Hatari, you need to have installed the following libraries:
 
+Required:
 - The SDL library (http://www.libsdl.org)
 - The zlib compression library (http://www.gzip.org/zlib/)
+
+Optional:
+- The PNG image library for PNG format screenshots (http://www.libpng.org/)
+- The GNU Readline library for Hatari debugger command line editing
+- The Xlib library to support Hatari Python UI window embedding on
+  systems with the X window system (Linux and other unixes) 
 
 Don't forget to also install the header files of these libraries for compiling
 Hatari (some Linux distributions use separate development packages for these
