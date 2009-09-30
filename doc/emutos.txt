@@ -229,7 +229,7 @@ Monochrome games:
 - Punssi
 - Pyro
 - Qix
-- Sbreak*
+- Sbreak* (by Mark Overmars)
 - Wallball
 - Mandala
 
@@ -358,7 +358,7 @@ Color games:
 - Stupid balloon game
 - Substation* (demo)
 - Tomtar
-- Wolfenstein3D v0.8a (a bit unstable)
+- Wolfenstein3D v0.8a* (a bit unstable)
 
 Music Applications:
 - Blipp Blopper
