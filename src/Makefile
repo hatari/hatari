@@ -26,18 +26,18 @@ SRCS = audio.c bios.c blitter.c cart.c cfgopts.c \
   main.c midi.c memorySnapShot.c mfp.c msa.c paths.c  psg.c printer.c \
   rs232.c reset.c rtc.c scandir.c st.c stMemory.c screen.c screenSnapShot.c \
   shortcut.c sound.c spec512.c statusbar.c str.c tos.c unzip.c utils.c \
-  vdi.c video.c wavFormat.c xbios.c ymFormat.c zip.c
+  vdi.c video.c wavFormat.c xbios.c ymFormat.c zip.c microphone.c
 
 OBJS = $(SRCS:.c=.o)
 
 SUBDIRLIBS = $(CPUDIR)/cpu68k.a debug/debug.a falcon/falcon.a gui-sdl/gui-sdl.a
 
 ifeq ($(SYS_WINDOWS),1)
-  SUBDIRLIBS += gui-win/gui-win.a
+  SUBDIRLIBS += gui-win/gui-win.a 
   OBJS += gui-win/hatari-winicon.o
 else
 ifneq ($(strip $(shell gcc -v 2>&1 |grep "cygwin")),)
-  SUBDIRLIBS += gui-win/gui-win.a
+  SUBDIRLIBS += gui-win/gui-win.a 
 endif 
 endif
 

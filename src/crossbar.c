@@ -66,12 +66,12 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 #include "sound.h"
 #include "crossbar.h"
+#include "microphone.h"
 #include "stMemory.h"
 #include "falcon/dsp.h"
 
 
 #define DACBUFFER_SIZE  (MIXBUFFER_SIZE*2*64)
-
 
 /* Crossbar internal functions */
 static double Crossbar_DetectSampleRate(void);
@@ -88,6 +88,8 @@ static void Crossbar_StartDspXmitHandler(void);
 /* DAC functions */
 static void Crossbar_SendDataToDAC(Sint16 value);
 
+/* ADC functions */
+static void Crossbar_StartAdcXmitHandler(void);
 
 /* external data used by the MFP */
 Uint16 nCbar_DmaSoundControl;
@@ -131,6 +133,8 @@ static const double DmaSndFalcSampleRates[] =
 	 6146,
 };
 
+Sint16 sample = 0;
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -150,6 +154,9 @@ void Crossbar_Reset(bool bCold)
 	/* Clear DAC buffer */
 	memset(DacOutBuffer, 0, sizeof(DacOutBuffer));
 	nDacOutRdPos = nDacOutWrPos = nDacBufSamples = 0;
+
+	/* ADC inits */
+	microphone_ADC_is_started = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -345,12 +352,9 @@ void Crossbar_SrcControler_WriteWord(void)
 	/* Start DSP External input Interrupt */
 	/* Todo : emulate the external port ? */
 
-	/* Start ADC input Interrupt */
-	/* Todo : emulate the ADC input interrupt */
-	
 	/* Start Dma Playback Interrupt */
 //	Crossbar_StartDmaXmitHandler();
-	
+
 	/* Start DSP out Playback Interrupt */
 	if (nCbSrc & 0x80) {
 		/* Dsp is not in tristate mode */
@@ -405,6 +409,14 @@ void Crossbar_DstControler_WriteWord(void)
 	Uint16 destCtrl = IoMem_ReadWord(0xff8932);
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 dst write: 0x%04x\n", destCtrl);
+
+	/* Detect if microphone is connected to dsp in */
+	if (!microphone_ADC_is_started) { 
+		microphone_ADC_is_started = 1;
+		Crossbar_StartAdcXmitHandler();
+		//Microphone_Start((int)Crossbar_DetectSampleRate());
+		//Microphone_Run();
+	}
 }
 
 /**
@@ -757,7 +769,7 @@ void Crossbar_InterruptHandler_DspXmit(void)
 
 	/* TODO: implementing of handshake mode and start frame */
 
-	/* Send sample to DMA sound */
+	/* Send sample to DAC sound */
 	Crossbar_SendDataToDAC(DSP_SsiReadTxValue());
 
 	/* Send the new frame start status to the DSP SSI */
@@ -796,6 +808,54 @@ void Crossbar_SendDataToDspReceive(Uint32 value)
 /*----------------------------------------------------------------------*/
 /*-------------------------- ADC processing ----------------------------*/
 /*----------------------------------------------------------------------*/
+
+/**
+ * start an ADC xmit "interrupt" at frequency parametered in the crossbar
+ */
+void Crossbar_StartAdcXmitHandler(void)
+{
+	int freq = 1;
+
+	/* Internal 25.175 MHz clock only for ADC (Jack) */
+	freq = 25175000 / Crossbar_DetectSampleRate();
+
+	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_ADCXMIT);
+}
+
+/**
+ * ADC xmit interrupt processing
+ */
+void Crossbar_InterruptHandler_ADCXmit(void)
+{
+	Uint16 nCbDst = IoMem_ReadWord(0xff8932);
+//	Sint16 sample = 0;
+	sample += 4;
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+
+	/* TODO: implementing of handshake mode and start frame */
+
+	/* Send sample to DSP receive */
+	if ( (nCbDst & 0x60) == 0x60) {
+		DSP_SsiWriteRxValue(sample);
+	}
+	
+	/* Send sample to DAC */
+	if ( (nCbDst & 0x6) == 0x6) {
+		/* Todo : send data to DMA record */
+	}
+
+	/* Send sample to DMA record */
+	if ( (nCbDst & 0x1800) == 0x1800) {
+		Crossbar_SendDataToDAC(sample);
+	}
+	
+	/* Nothing for external port for now */
+
+	/* Restart the Int event handler */
+	Crossbar_StartAdcXmitHandler();
+}
+
 
 /*----------------------------------------------------------------------*/
 /*-------------------------- DAC processing ----------------------------*/

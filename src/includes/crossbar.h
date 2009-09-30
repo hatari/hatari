@@ -57,7 +57,11 @@ extern void Crossbar_OutputReduct_WriteWord(void);
 extern void Crossbar_CodecStatus_ReadWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
 
+extern void Crossbar_InterruptHandler_ADCXmit(void);
 extern void Crossbar_InterruptHandler_DspXmit(void);
 extern void Crossbar_InterruptHandler_DmaSound(void);
+
+
+Uint16 microphone_ADC_is_started;
 
 #endif /* HATARI_CROSSBAR_H */

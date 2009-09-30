@@ -73,6 +73,14 @@ CFLAGS += $(X11_CFLAGS) -DHAVE_X11=1
 LIBS += $(X11_LIBS)
 endif
 
+# PORTAUDIO configuration (for PORTAUDIO)
+PORTAUDIO_LIBS := $(shell pkg-config --libs portaudio-2.0)
+ifneq ($(PORTAUDIO_LIBS),)
+PORTAUDIO_CFLAGS := $(shell pkg-config --cflags portaudio-2.0)
+CFLAGS += $(PORTAUDIO_CFLAGS) -DHAVE_PORTAUDIO=1
+LIBS += $(PORTAUDIO_LIBS)
+endif
+
 # Here you can define the default data directory for Hatari.
 # The emulator looks there for the default TOS image etc.
 # For example you can use the local directory with "." or if you want

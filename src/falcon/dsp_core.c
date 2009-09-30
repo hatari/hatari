@@ -316,7 +316,7 @@ void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
 	/* generate interrupt ? */
 	if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) {
 		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF)) {
-			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA_E);
+			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
 		} else {
 			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
 		}
@@ -344,9 +344,11 @@ void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value)
 		/* Detect Begin of a new frame */
 		if (dsp_core->ssi.slot_in_frame == 0) {
 			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_RFS);
 			dsp_core->ssi.waitFrame = 0;
 		}else{
 			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RFS);
 		}
 	}else{
 		/* SSI runs in normal mode */
