@@ -57,7 +57,7 @@ HOSTLDFLAGS =
 SDL_CFLAGS := $(shell sdl-config --cflags)
 SDL_LIBS := $(shell sdl-config --libs)
 
-# libpng configuration (for screenshots)
+# libpng configuration (for PNG format screenshots)
 LIBPNG_LIBS := $(shell pkg-config --libs libpng)
 ifneq ($(LIBPNG_LIBS),)
 LIBPNG_CFLAGS := $(shell pkg-config --cflags libpng)
@@ -73,7 +73,7 @@ CFLAGS += $(X11_CFLAGS) -DHAVE_X11=1
 LIBS += $(X11_LIBS)
 endif
 
-# PORTAUDIO configuration (for PORTAUDIO)
+# PORTAUDIO configuration (to support Falcon microphone)
 PORTAUDIO_LIBS := $(shell pkg-config --libs portaudio-2.0)
 ifneq ($(PORTAUDIO_LIBS),)
 PORTAUDIO_CFLAGS := $(shell pkg-config --cflags portaudio-2.0)
