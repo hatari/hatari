@@ -133,8 +133,6 @@ static const double DmaSndFalcSampleRates[] =
 	 6146,
 };
 
-Sint16 sample = 0;
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -413,9 +411,11 @@ void Crossbar_DstControler_WriteWord(void)
 	/* Detect if microphone is connected to dsp in */
 	if (!microphone_ADC_is_started) { 
 		microphone_ADC_is_started = 1;
+#if HAVE_PORTAUDIO
 		Crossbar_StartAdcXmitHandler();
 		//Microphone_Start((int)Crossbar_DetectSampleRate());
 		//Microphone_Run();
+#endif
 	}
 }
 
@@ -828,8 +828,7 @@ void Crossbar_StartAdcXmitHandler(void)
 void Crossbar_InterruptHandler_ADCXmit(void)
 {
 	Uint16 nCbDst = IoMem_ReadWord(0xff8932);
-//	Sint16 sample = 0;
-	sample += 4;
+	Sint16 sample = 0;
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 
