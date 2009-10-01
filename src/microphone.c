@@ -14,8 +14,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <microphone.h>
-#include "portaudio.h"
+#include <portaudio.h>
+#include "microphone.h"
 
 
 #define FRAMES_PER_BUFFER (1024)
