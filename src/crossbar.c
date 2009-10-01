@@ -98,12 +98,13 @@ Uint16 nCbar_DmaSoundControl;
 static Sint16 DacOutBuffer[DACBUFFER_SIZE];
 static int nDacOutRdPos, nDacOutWrPos, nDacBufSamples;
 
-static Uint16 nDmaSoundMode;		/* Sound mode register ($ff8921.b) */
 static Uint32 nFrameStartAddr;		/* Sound frame start */
 static Uint32 nFrameEndAddr;		/* Sound frame end */
 static Uint32 nFrameCounter;		/* Counter in current sound frame */
 static Uint32 nFrameLen;		/* Length of the frame */
 
+static Uint32 dspRx_wordCount;		/* count number of words sent to DSP receiver (for RX frame computing) */
+static Uint32 dspTx_wordCount;		/* count number of words received from DSP transmitter (for TX frame computing) */
 
 static const double DmaSndSampleRates[4] =
 {
@@ -155,6 +156,10 @@ void Crossbar_Reset(bool bCold)
 
 	/* ADC inits */
 	microphone_ADC_is_started = 0;
+
+	/* DSP inits */
+	dspRx_wordCount = 0;
+	dspTx_wordCount = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -165,7 +170,6 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&nCbar_DmaSoundControl, sizeof(nCbar_DmaSoundControl));
-	MemorySnapShot_Store(&nDmaSoundMode, sizeof(nDmaSoundMode));
 	MemorySnapShot_Store(&nFrameStartAddr, sizeof(nFrameStartAddr));
 	MemorySnapShot_Store(&nFrameEndAddr, sizeof(nFrameEndAddr));
 	MemorySnapShot_Store(&nFrameCounter, sizeof(nFrameCounter));
@@ -173,6 +177,8 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&DacOutBuffer, sizeof(DacOutBuffer));
 	MemorySnapShot_Store(&nDacOutRdPos, sizeof(nDacOutRdPos));
 	MemorySnapShot_Store(&nDacOutWrPos, sizeof(nDacOutWrPos));
+	MemorySnapShot_Store(&dspRx_wordCount, sizeof(dspRx_wordCount));
+	MemorySnapShot_Store(&dspTx_wordCount, sizeof(dspTx_wordCount));
 }
 
 
@@ -285,8 +291,7 @@ void Crossbar_DmaTrckCtrl_WriteByte(void)
  */
 void Crossbar_SoundModeCtrl_ReadByte(void)
 {
-	IoMem_WriteByte(0xff8921, nDmaSoundMode);
-//	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode read: 0x%02x\n", nDmaSoundMode);
+//	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode read: 0x%02x\n", IoMem[0xff8921]);
 }
 
 
@@ -296,8 +301,7 @@ void Crossbar_SoundModeCtrl_ReadByte(void)
  */
 void Crossbar_SoundModeCtrl_WriteByte(void)
 {
-	nDmaSoundMode = IoMem_ReadByte(0xff8921);
-	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode write: 0x%02x\n", nDmaSoundMode);
+	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode write: 0x%02x\n", IoMem[0xff8921]);
 }
 
 
@@ -668,6 +672,7 @@ void Crossbar_InterruptHandler_DmaSound(void)
 {
 	Sint16 value;
 	Sint8 *pFrameStart;
+	Uint32 nDmaSoundMode = IoMem[0xff8921];
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
@@ -764,20 +769,36 @@ static void Crossbar_StartDspXmitHandler(void)
  */
 void Crossbar_InterruptHandler_DspXmit(void)
 {
+	Uint16 frame=0;
+	Sint32 data;
+	Uint16 tracks;
+
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 
-	/* TODO: implementing of handshake mode and start frame */
+	/* TODO: implementing of handshake mode */
 
-	/* Send sample to DAC sound */
-	Crossbar_SendDataToDAC(DSP_SsiReadTxValue());
+	tracks = ((IoMem[0xff8920] & 3) + 1) * 2;
+//	tracks = ((IoMem[0xff8936] & 3) + 1) * 2;
+	if (dspTx_wordCount >= tracks) {
+		frame = 1;
+		dspTx_wordCount = 0;
+	}
 
-	/* Send the new frame start status to the DSP SSI */
-	DSP_SsiReceive_SC2(0);
+	dspTx_wordCount++;
 
-	/* Send the clock to the DSP SSI */
-	/* Todo : vérify that the DSP is connected to the DAC */
-	DSP_SsiReceive_SC0(0);
+	/* read data from DSP Xmit */
+	data = DSP_SsiReadTxValue();
+
+ 	/* Send DSP data to the DAC */
+	/* TODO : vérify that the DSP is connected to the DAC */
+	Crossbar_SendDataToDAC(data);
+
+	/* Send the frame status to the DSP SSI Xmit */
+	DSP_SsiReceive_SC2(frame);
+
+	/* Send the clock to the DSP SSI Xmit */
+	DSP_SsiReceive_SCK(0);
 
 	/* Restart the Int event handler */
 	Crossbar_StartDspXmitHandler();
@@ -792,6 +813,28 @@ void Crossbar_InterruptHandler_DspXmit(void)
  */
 static void Crossbar_SendDataToDspReceive(Uint32 value)
 {
+	Uint16 frame=0;
+	Uint16 tracks;
+
+	/* TODO: implementing of handshake mode */
+
+//	tracks = ((IoMem[0xff8920] & 3) + 1) * 2;
+	tracks = ((IoMem[0xff8936] & 3) + 1) * 2;
+	if (dspRx_wordCount >= tracks) {
+		frame = 1;
+		dspRx_wordCount = 0;
+	}
+
+	dspRx_wordCount++;
+
+	/* Send sample to DSP receive */
+	DSP_SsiWriteRxValue(value);
+
+	/* Send the frame status to the DSP SSI receive */
+	DSP_SsiReceive_SC1(frame);
+
+	/* Send the clock to the DSP SSI receive */
+	DSP_SsiReceive_SC0(0);
 }
 
 
@@ -836,7 +879,7 @@ void Crossbar_InterruptHandler_ADCXmit(void)
 
 	/* Send sample to DSP receive */
 	if ( (nCbDst & 0x60) == 0x60) {
-		DSP_SsiWriteRxValue(sample);
+		Crossbar_SendDataToDspReceive(sample);
 	}
 	
 	/* Send sample to DAC */

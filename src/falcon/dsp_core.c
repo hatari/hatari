@@ -183,10 +183,10 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 
 	/* SSI registers */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]=1<<DSP_SSI_SR_TDE;
-	dsp_core->ssi.waitFrame = 1;
+	dsp_core->ssi.waitFrameTX = 1;
+	dsp_core->ssi.waitFrameRX = 1;
 	dsp_core->ssi.TX = 0;
 	dsp_core->ssi.RX = 0;
-	dsp_core->ssi.slot_in_frame = 0;
 	
 	/* Other hardware registers */
 	dsp_core->periph[DSP_SPACE_X][DSP_IPR]=0;
@@ -250,8 +250,102 @@ void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
 }
 
 
-/* SSI receive serial clock */
+/**
+ * SSI receive serial clock : (this is a 16 bits clock)
+ *
+ */
 void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
+{
+	Uint32 value; // i, temp=0;
+
+	/* Receive data from crossbar to SSI */
+	value = dsp_core->ssi.received_value;
+
+	/* adjust value to receive size word */
+	value <<= (24 - dsp_core->ssi.cra_word_length);
+	value &= 0xffffff;
+
+	/* if bit SHFD in CRB is set, swap received data */
+/*	if (dsp_core->ssi.crb_shifter) {
+		temp=0;
+		for (i=0; i<dsp_core->ssi.cra_word_length; i++) {
+			temp += value & 1;
+			temp <<= 1;
+			value >>= 1;
+		}
+		value = temp;
+	}
+*/
+
+	if (dsp_core->ssi.crb_re && dsp_core->ssi.waitFrameRX == 0) {
+		/* Send value to DSP receive */
+		dsp_core->ssi.RX = value;
+
+		/* generate interrupt ? */
+		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) {
+			if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF)) {
+				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
+			} else {
+				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
+			}
+		}
+	}else{
+		dsp_core->ssi.RX = 0;
+	}
+
+	/* set RDF */
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= 1<<DSP_SSI_SR_RDF;
+}
+
+/**
+ * SSI receive SC1 bit : frame sync for receiver
+ *     value = 1 : beginning of a new frame
+ *     value = 0 : not beginning of a new frame
+ */
+void dsp_core_ssi_Receive_SC1(dsp_core_t *dsp_core, Uint32 value)
+{
+	/* SSI runs in network mode ? */
+	if (dsp_core->ssi.crb_mode) {
+		if (value) {
+			/* Beginning of a new frame */
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_RFS);
+			dsp_core->ssi.waitFrameRX = 0;
+		}else{
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RFS);
+		}
+	}else{
+		/* SSI runs in normal mode */
+		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_RFS);
+	}
+}
+
+/**
+ * SSI receive SC2 bit : frame sync for transmitter
+ *     value = 1 : beginning of a new frame
+ *     value = 0 : not beginning of a new frame
+ */
+void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value)
+{
+	/* SSI runs in network mode ? */
+	if (dsp_core->ssi.crb_mode) {
+		if (value) {
+			/* Beginning of a new frame */
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
+			dsp_core->ssi.waitFrameTX = 0;
+		}else{
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
+		}
+	}else{
+		/* SSI runs in normal mode */
+		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
+	}
+}
+
+/**
+ * SSI transmit serial clock : (this is a 16 bits clocks)
+ *
+ */
+void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 {
 	Uint32 value; // i, temp=0;
 
@@ -274,7 +368,7 @@ void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
 	}
 */
 	/* Transmit the data */
-	if (dsp_core->ssi.crb_te && dsp_core->ssi.waitFrame == 0) {
+	if (dsp_core->ssi.crb_te && dsp_core->ssi.waitFrameTX == 0) {
 		/* Send value to crossbar */
 		dsp_core->ssi.transmit_value = value;
 
@@ -292,70 +386,7 @@ void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
 
 	/* set TDE */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TDE);
-
-	/* Receive data from crossbar to SSI */
-
-	/* adjust value to receive size word */
-	value = dsp_core->ssi.received_value;
-	value <<= (24 - dsp_core->ssi.cra_word_length);
-	value &= 0xffffff;
-
-	/* if bit SHFD in CRB is set, swap received data */
-/*	if (dsp_core->ssi.crb_shifter) {
-		temp=0;
-		for (i=0; i<dsp_core->ssi.cra_word_length; i++) {
-			temp += value & 1;
-			temp <<= 1;
-			value >>= 1;
-		}
-		value = temp;
-	}
-*/
-	dsp_core->ssi.RX = value;
-
-	/* generate interrupt ? */
-	if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) {
-		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF)) {
-			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
-		} else {
-			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
-		}
-	}
-	/* Set SSI receive */
-	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= 1<<DSP_SSI_SR_RDF;
 }
-
-/* SSI receive SC1 bit : frame sync for receiver */
-void dsp_core_ssi_Receive_SC1(dsp_core_t *dsp_core, Uint32 value)
-{
-	/* Todo : */
-}
-
-/* SSI receive SC2 bit : frame sync for transmitter */
-void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value)
-{
-	dsp_core->ssi.slot_in_frame ++;
-	if (dsp_core->ssi.slot_in_frame >= dsp_core->ssi.cra_frame_rate_divider) {
-		dsp_core->ssi.slot_in_frame = 0;
-	}
-
-	/* SSI runs in network mode ? */
-	if (dsp_core->ssi.crb_mode) {
-		/* Detect Begin of a new frame */
-		if (dsp_core->ssi.slot_in_frame == 0) {
-			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
-			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_RFS);
-			dsp_core->ssi.waitFrame = 0;
-		}else{
-			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
-			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RFS);
-		}
-	}else{
-		/* SSI runs in normal mode */
-		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
-	}
-}
-
 
 void dsp_core_ssi_Transmit_SC0(dsp_core_t *dsp_core, Uint32 value)
 {
@@ -369,11 +400,14 @@ void dsp_core_ssi_Transmit_SC2(dsp_core_t *dsp_core, Uint32 value)
 {
 }
 
+void dsp_core_ssi_Transmit_SCK(dsp_core_t *dsp_core, Uint32 value)
+{
+}
 
 /* SSI SSI initialisations and state management */
 void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 {
-	Uint32 crb_te;
+	Uint32 crb_te, crb_re;
 
 	switch (adress) {
 		case DSP_SSI_CRA:
@@ -403,6 +437,7 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 			break;
 		case DSP_SSI_CRB:
 			crb_te = dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TE);
+			crb_re = dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RE);
 			dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] = value;
 	
 			dsp_core->ssi.crb_src_clock = (value>>DSP_SSI_CRB_SCKD) & 1;
@@ -415,7 +450,10 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 			dsp_core->ssi.crb_rie       = (value>>DSP_SSI_CRB_RIE) & 1;
 
 			if (crb_te == 0 && dsp_core->ssi.crb_te) {
-				dsp_core->ssi.waitFrame = 1;
+				dsp_core->ssi.waitFrameTX = 1;
+			}
+			if (crb_re == 0 && dsp_core->ssi.crb_re) {
+				dsp_core->ssi.waitFrameRX = 1;
 			}
 			break;
 	}

@@ -55,9 +55,11 @@ extern void DSP_SsiWriteRxValue(Uint32 value);
 extern void DSP_SsiReceive_SC0(Uint32 value);
 extern void DSP_SsiReceive_SC1(Uint32 value);
 extern void DSP_SsiReceive_SC2(Uint32 value);
+extern void DSP_SsiReceive_SCK(Uint32 value);
 extern void DSP_SsiTransmit_SC0(Uint32 value);
 extern void DSP_SsiTransmit_SC1(Uint32 value);
 extern void DSP_SsiTransmit_SC2(Uint32 value);
+extern void DSP_SsiTransmit_SCK(Uint32 value);
 
 
 /* Dsp Host interface commands */

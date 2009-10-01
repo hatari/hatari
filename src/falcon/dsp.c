@@ -597,8 +597,22 @@ void DSP_SsiTransmit_SC2(Uint32 FrameCounter)
 #endif
 }
 
+void DSP_SsiReceive_SCK(Uint32 FrameCounter)
+{
+#if ENABLE_DSP_EMU
+	dsp_core_ssi_Receive_SCK(&dsp_core, FrameCounter);
+#endif
+}
+
+void DSP_SsiTransmit_SCK(Uint32 FrameCounter)
+{
+#if ENABLE_DSP_EMU
+	dsp_core_ssi_Transmit_SCK(&dsp_core, FrameCounter);
+#endif
+}
+
 /**
- * Read access wrapper for ioMemTabFalcon
+ * Read access wrapper for ioMemTabFalcon (DSP Host port)
  */
 void DSP_HandleReadAccess(void)
 {
@@ -619,7 +633,7 @@ void DSP_HandleReadAccess(void)
 }
 
 /**
- * Write access wrapper for ioMemTabFalcon
+ * Write access wrapper for ioMemTabFalcon (DSP Host port)
  */
 void DSP_HandleWriteAccess(void)
 {

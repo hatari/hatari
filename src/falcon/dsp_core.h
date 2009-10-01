@@ -170,8 +170,8 @@ struct dsp_core_ssi_s {
 	Uint32  RX;
 	Uint32  transmit_value;		/* DSP Transmit --> SSI */
 	Uint32  received_value;		/* DSP Receive  --> SSI */
-	Uint16  waitFrame;
-	Uint16  slot_in_frame;
+	Uint16  waitFrameTX;
+	Uint16  waitFrameRX;
 };
 
 
@@ -255,9 +255,11 @@ extern void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core);
 extern void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 value);
 extern void dsp_core_ssi_Receive_SC1(dsp_core_t *dsp_core, Uint32 value);
 extern void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value);
+extern void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 value);
 extern void dsp_core_ssi_Transmit_SC0(dsp_core_t *dsp_core, Uint32 value);
 extern void dsp_core_ssi_Transmit_SC1(dsp_core_t *dsp_core, Uint32 value);
 extern void dsp_core_ssi_Transmit_SC2(dsp_core_t *dsp_core, Uint32 value);
+extern void dsp_core_ssi_Transmit_SCK(dsp_core_t *dsp_core, Uint32 value);
 
 /* Process peripheral code */
 extern void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */
