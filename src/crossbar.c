@@ -408,7 +408,7 @@ void Crossbar_DstControler_WriteWord(void)
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 dst write: 0x%04x\n", destCtrl);
 
-	/* Detect if microphone is connected to dsp in */
+	/* Start Microphone jack emulation */
 	if (!microphone_ADC_is_started) { 
 		microphone_ADC_is_started = 1;
 #if HAVE_PORTAUDIO
@@ -642,7 +642,7 @@ void Crossbar_setDmaSound_Settings()
 /**
  * start a DMA sound xmit or receive "interrupt" at frequency parametered in the crossbar
  */
-void Crossbar_StartDmaSound_Handler()
+static void Crossbar_StartDmaSound_Handler()
 {
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
 	int freq = 1;
@@ -790,7 +790,7 @@ void Crossbar_InterruptHandler_DspXmit(void)
 /**
  * Transmit data from crossbar to DSP receive.
  */
-void Crossbar_SendDataToDspReceive(Uint32 value)
+static void Crossbar_SendDataToDspReceive(Uint32 value)
 {
 }
 
@@ -812,7 +812,7 @@ void Crossbar_SendDataToDspReceive(Uint32 value)
 /**
  * start an ADC xmit "interrupt" at frequency parametered in the crossbar
  */
-void Crossbar_StartAdcXmitHandler(void)
+static void Crossbar_StartAdcXmitHandler(void)
 {
 	int freq = 1;
 
@@ -863,7 +863,7 @@ void Crossbar_InterruptHandler_ADCXmit(void)
 /**
  * Put sample from crossbar into the DAC buffer.
  */
-void Crossbar_SendDataToDAC(Sint16 value)
+static void Crossbar_SendDataToDAC(Sint16 value)
 {
 	/* Put sample into DAC buffer */
 	/* Todo : verify if data is in the monitored track */

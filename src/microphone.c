@@ -10,16 +10,14 @@
   Copyright (c) 1999-2000 Ross Bencina and Phil Burk
 */
 
+#if HAVE_PORTAUDIO
+
 #include <stdio.h>
 #include <stdlib.h>
-#include "microphone.h"
-
-#if HAVE_PORTAUDIO
+#include <microphone.h>
 #include "portaudio.h"
-#endif
 
 
-#if HAVE_PORTAUDIO
 #define FRAMES_PER_BUFFER (1024)
 #define NUM_SECONDS     (1)
 #define NUM_CHANNELS    (2)
@@ -28,7 +26,6 @@
 
 #define PA_SAMPLE_TYPE  paInt16
 #define SAMPLE_SILENCE  (0)
-#endif
 
 typedef short SAMPLE;
 
@@ -42,19 +39,16 @@ paTestData;
 
 static paTestData data;
 
-#if HAVE_PORTAUDIO
-PaStreamParameters micro_inputParameters;
-PaStream *micro_stream;
-PaError  micro_err;
-#endif
-int  micro_totalFrames;
-int  micro_numSamples;
-int  micro_numBytes;
-int  micro_sampleRate;
+static PaStreamParameters micro_inputParameters;
+static PaStream *micro_stream;
+static PaError  micro_err;
+static int  micro_totalFrames;
+static int  micro_numSamples;
+static int  micro_numBytes;
+static int  micro_sampleRate;
 
 
 
-#if HAVE_PORTAUDIO
 /* This routine will be called by the PortAudio engine when audio is needed.
 ** It may be called at interrupt level on some machines so don't do anything
 ** that could mess up the system like calling malloc() or free().
@@ -94,22 +88,22 @@ static int recordCallback( const void *inputBuffer, void *outputBuffer,
 		for( i=0; i<framesToCalc; i++ )
 		{
 			*wptr++ = SAMPLE_SILENCE;  /* left */
-			if( NUM_CHANNELS == 2 ) *wptr++ = SAMPLE_SILENCE;  /* right */
+			if( NUM_CHANNELS == 2 ) 
+				*wptr++ = SAMPLE_SILENCE;  /* right */
 		}
 	}
 	else
 	{
-	for( i=0; i<framesToCalc; i++ )
-	{
-		*wptr++ = *rptr++;  /* left */
-		if( NUM_CHANNELS == 2 )
-			*wptr++ = *rptr++;  /* right */
+		for( i=0; i<framesToCalc; i++ )
+		{
+			*wptr++ = *rptr++;  /* left */
+			if( NUM_CHANNELS == 2 )
+				*wptr++ = *rptr++;  /* right */
 		}
 	}
 	data->frameIndex += framesToCalc;
 	return finished;
 }
-#endif
 
 
 /*******************************************************************/
@@ -121,7 +115,6 @@ static int recordCallback( const void *inputBuffer, void *outputBuffer,
  */
 int Microphone_Start(int sampleRate)
 {
-#if HAVE_PORTAUDIO
 	int i;
 
 	micro_sampleRate = sampleRate;
@@ -185,7 +178,6 @@ int Microphone_Start(int sampleRate)
 		return -1;
 	}
 
-#endif
 	return 0;
 }
 
@@ -194,7 +186,6 @@ int Microphone_Start(int sampleRate)
  */
 int Microphone_Stop(void)
 {
-#if HAVE_PORTAUDIO
 	printf("Finished recording!!\n"); 
 	fflush(stdout);
 
@@ -210,16 +201,16 @@ int Microphone_Stop(void)
 	free(data.recordedSamples);
 
 	Pa_Terminate();
-#endif
+
 	return 0;
 }
 
 void Microphone_Run(void)
 {
-#if HAVE_PORTAUDIO
 	while (Pa_IsStreamActive(micro_stream))
 	{
 		Pa_Sleep(1000);
 	}
-#endif
 }
+
+#endif /* HAVE PORTAUDIO */

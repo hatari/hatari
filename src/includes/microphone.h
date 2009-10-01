@@ -9,11 +9,15 @@
 #define HATARI_MICROPHONE_H
 
 #if HAVE_PORTAUDIO
-#include "portaudio.h"
-#endif
-
 extern void Microphone_Run(void);
 extern int Microphone_Start(int sampleRate);
 extern int Microphone_Stop(void);
+#else
+/* replace function calls with NOPs (could also be empty static inlines) */
+# define Microphone_Run()
+#define Microphone_Start(rate) 0
+#define Microphone_Stop() 0
+#endif
+
 
 #endif /* HATARI_MICROPHONE_H */
