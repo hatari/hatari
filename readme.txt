@@ -30,11 +30,11 @@ this program; if not, write to the
  2) What is this?
  ----------------
 
-Hatari is an Atari ST emulator for Linux, FreeBSD, NetBSD, BeOS, Mac-OSX and
-other Systems which are supported by the SDL library.
+Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, NetBSD,
+BeOS, Mac-OSX and other Systems which are supported by the SDL library.
 Unlike most other open source ST emulators which try to give you a good
 environment for running GEM applications, Hatari tries to emulate the hardware
-of a ST as close as possible so that it is able to run most of the old ST games
+as close as possible so that it is able to run most of the old Atari games
 and demos.
 
 
