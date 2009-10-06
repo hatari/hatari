@@ -34,7 +34,7 @@ falcon.a: $(FALCOBJS)
 
 
 clean:
-	$(RM) *.o
+	$(RM) *.o falcon.a
 
 distclean: clean
 	$(RM) Makefile.dep *~ *.bak *.orig

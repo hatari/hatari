@@ -27,7 +27,7 @@ debug.a: $(OBJS)
 
 
 clean:
-	$(RM) *.o
+	$(RM) *.o debug.a
 
 distclean: clean
 	$(RM) Makefile.dep *~ *.bak *.orig

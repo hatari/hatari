@@ -33,7 +33,7 @@ font10x16.h: font10x16.bmp
 
 
 clean:
-	$(RM) *.o
+	$(RM) *.o gui-sdl.a
 
 distclean: clean
 	$(RM) Makefile.dep *~ *.bak *.orig
