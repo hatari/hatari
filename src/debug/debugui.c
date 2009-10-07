@@ -316,6 +316,12 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 	double result;
 	int offset;
 
+	if (nArgc < 2)
+	{
+		DebugUI_PrintCmdHelp(psArgs[0]);
+		return DEBUGGER_CMDDONE;
+	}
+
 	errstr = calculate(expression, &result, &offset);
 	if (errstr)
 		fprintf(stderr, "ERROR in the expression:\n'%s'\n%*c-%s\n",
@@ -672,10 +678,10 @@ static const dbgcommand_t uicommand[] =
 	  "<expression>\n"
 	  "\tEvaluate an expression and show result.  Doesn't take number\n"
 	  "\tbase into account so non-decimal numbers need to be always\n"
-	  "\tprefixed: $=Hexadecimal, :=Octal, '=Binary and \"=ascii.\n"
-	  "\tSupported operators in the decending order of precedence:\n"
-	  "\t\t(), +, -, ^, *, /, %, +, -, >, <, &, |\n"
-	  "\tFor example: 5 * ($20 + 0x200 + (-5)) | '111",
+	  "\tprefixed ($=hex, #=dec, %=bin). tSupported operators in\n"
+	  "\tthe decending order of precedence:\n"
+	  "\t\t(), +, -, *, /, +, -, >>, <<, &, |\n"
+	  "\tFor example: 5 * ($20 + 0x200 + (-5)) | %111",
 	  true },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
