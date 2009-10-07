@@ -108,32 +108,34 @@ static Uint32 dspTx_wordCount;		/* count number of words received from DSP trans
 
 static const double DmaSndSampleRates[4] =
 {
-	6258,
-	12517,
-	25033,
-	50066
+	6258.,
+	12517.,
+	25033.,
+	50066.
 };
 
 
 static const double DmaSndFalcSampleRates[] =
 {
-	49170,
-	32780,	
-	24585,
-	19668,
-	16390,
-	14049,
-	12292,
-	10927,
-	 9834,
-	 8940,
-	 8195,
-	 7565,
-	 7024,
-	 6556,
-	 6146,
+	49170.,
+	32780.,	
+	24585.,
+	19668.,
+	16390.,
+	14049.,
+	12292.,
+	10927.,
+	 9834.,
+	 8940.,
+	 8195.,
+	 7565.,
+	 7024.,
+	 6556.,
+	 6146.
 };
 
+static double tracks_play;
+static double tracks_record;
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -179,6 +181,8 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nDacOutWrPos, sizeof(nDacOutWrPos));
 	MemorySnapShot_Store(&dspRx_wordCount, sizeof(dspRx_wordCount));
 	MemorySnapShot_Store(&dspTx_wordCount, sizeof(dspTx_wordCount));
+	MemorySnapShot_Store(&tracks_play, sizeof(tracks_play));
+	MemorySnapShot_Store(&tracks_record, sizeof(tracks_record));
 }
 
 
@@ -283,7 +287,8 @@ void Crossbar_DmaTrckCtrl_ReadByte(void)
  */
 void Crossbar_DmaTrckCtrl_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8920));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register write: 0x%02x\n", IoMem[0xff8920]);
+	tracks_play = ((IoMem[0xff8920] & 3) + 1);
 }
 
 /**
@@ -477,6 +482,7 @@ void Crossbar_TrackRecSelect_ReadByte(void)
 void Crossbar_TrackRecSelect_WriteByte(void)
 {
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 record track select write: 0x%02x\n", IoMem_ReadByte(0xff8936));
+	tracks_record = ((IoMem[0xff8936] & 3) + 1);
 }
 
 /**
@@ -648,21 +654,32 @@ void Crossbar_setDmaSound_Settings()
  */
 static void Crossbar_StartDmaSound_Handler()
 {
-	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
-	int freq = 1;
+	Uint16 nCbSrc;
+	double cycles, stereo = 1;
+
+	nCbSrc = IoMem[0xff8930];
 
 	if ((nCbSrc & 0x6) == 0x00)
 	{
 		/* Internal 25.175 MHz clock */
-		freq = 25175000 / Crossbar_DetectSampleRate();
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate();
 	}
 	else if ((nCbSrc & 0x6) == 0x40)
 	{
 		/* Internal 32 MHz clock */
-		freq = 32000000 / Crossbar_DetectSampleRate();
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate() * (25175./32000.);
+	}
+	else {
+		return;
 	}
 
-	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DMASOUND_XMIT_RECEIVE);
+	/* if stereo mode */
+	if ((IoMem[0xff8921] & 0xc0) != 0x80) {
+		stereo = 2;
+	}
+
+	cycles = cycles / tracks_play / stereo;
+	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_DMASOUND_XMIT_RECEIVE);
 }
 
 /**
@@ -748,20 +765,24 @@ static double Crossbar_DetectSampleRate(void)
 static void Crossbar_StartDspXmitHandler(void)
 {
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
-	int freq = 1;
+	double cycles;
 
 	if ((nCbSrc & 0x60) == 0x00)
 	{
 		/* Internal 25.175 MHz clock */
-		freq = 25175000 / Crossbar_DetectSampleRate();
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate();
 	}
 	else if ((nCbSrc & 0x60) == 0x40)
 	{
 		/* Internal 32 MHz clock */
-		freq = 32000000 / Crossbar_DetectSampleRate();
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate() * (25175./32000.);
 	}
-
-	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+	else {
+		return;
+	}
+	
+	cycles = cycles / tracks_play / 4.;
+	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 }
 
 /**
@@ -857,12 +878,13 @@ static void Crossbar_SendDataToDspReceive(Uint32 value)
  */
 static void Crossbar_StartAdcXmitHandler(void)
 {
-	int freq = 1;
+	double cycles = 1.;
 
 	/* Internal 25.175 MHz clock only for ADC (Jack) */
-	freq = 25175000 / Crossbar_DetectSampleRate();
+	cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate();
+	cycles = cycles / (tracks_play * 2.);
 
-	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_ADCXMIT);
+	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_ADCXMIT);
 }
 
 /**
@@ -925,7 +947,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int i;
 	int nBufIdx;
 
-	FreqRatio = (double)Crossbar_DetectSampleRate() / (double)nAudioFrequency;
+	FreqRatio = Crossbar_DetectSampleRate() / (double)nAudioFrequency;
 	FreqRatio *= 2.0;  /* Stereo */
 
 	fDacBufSamples = (double)nDacBufSamples;
