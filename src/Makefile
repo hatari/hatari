@@ -18,7 +18,7 @@ ifeq ($(ENABLE_DSP_EMU),1)
 CPPFLAGS += -DENABLE_DSP_EMU=1
 endif
 
-SRCS = audio.c bios.c blitter.c cart.c cfgopts.c \
+SRCS = audio.c avi_record.c bios.c blitter.c cart.c cfgopts.c \
   configuration.c options.c  createBlankImage.c change.c control.c \
   crossbar.c cycles.c dialog.c dim.c dmaSnd.c fdc.c file.c floppy.c \
   gemdos.c hd6301_cpu.c hdc.c ide.c ikbd.c int.c ioMem.c ioMemTabST.c \
