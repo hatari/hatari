@@ -117,14 +117,35 @@ static inline void ScreenSnapShot_32to24Bits(Uint8 *dst, Uint8 *src, int w)
 }
 
 /**
- * Save given SDL surface as PNG. Return zero for success.
+ * Save given SDL surface as PNG. Return png file size > 0 for success.
  */
 static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 {
-	bool do_lock;
+	FILE *fp = NULL;
+	int ret;
+  
+	fp = fopen(filename, "wb");
+	if (!fp)
+		return -1;
+
+	ret = ScreenSnapShot_SavePNG_ToFile(surface, fp, -1, -1, 0, 0, 0, 0);	/* default compression/filter and no cropping */
+
+	fclose (fp);
+	return ret;					/* >0 if OK, -1 if error */
+}
+
+
+/**
+ * Save given SDL surface as PNG in an already opened FILE, eventually cropping some borders.
+ * Return png file size > 0 for success.
+ * This function is also used by avi_record.c to save individual frames as png images.
+ */
+int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compression_level, int png_filter ,
+		int CropLeft , int CropRight , int CropTop , int CropBottom )
+{
 	int y, ret = -1;
-	int w = surface->w;
-	int h = surface->h;
+	int w = surface->w - CropLeft - CropRight;
+	int h = surface->h - CropTop - CropBottom;
 	Uint8 *src_ptr, *row_ptr;
 	Uint8 rowbuf[3*surface->w];
 	SDL_PixelFormat *fmt = surface->format;
@@ -134,12 +155,14 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 	png_text pngtext;
 	char key[] = "Title";
 	char text[] = "Hatari screenshot";
-	FILE *fp = NULL;
+	long start;
 	
 	/* Create and initialize the png_struct with error handler functions. */
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!png_ptr) 
+	{
 		return ret;
+	}
 	
 	/* Allocate/initialize the image information data. */
 	info_ptr = png_create_info_struct(png_ptr);
@@ -152,9 +175,8 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 	if (setjmp(png_jmpbuf(png_ptr)))
 		goto png_cleanup;
 
-	fp = fopen(filename, "wb");
-	if (!fp)
-		goto png_cleanup;
+	/* store current pos in fp (could be != 0 for avi recording) */
+	start = ftell ( fp );
 
 	/* initialize the png structure */
 	png_init_io(png_ptr, fp);
@@ -163,7 +185,12 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 	png_set_IHDR(png_ptr, info_ptr, w, h, 8, PNG_COLOR_TYPE_RGB,
 		     PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
 		     PNG_FILTER_TYPE_DEFAULT);
-	
+
+	if ( png_compression_level >= 0 )
+		png_set_compression_level ( png_ptr , png_compression_level );
+	if ( png_filter >= 0 )
+		png_set_filter ( png_ptr , 0 , png_filter );
+		     
 	/* image info */
 	pngtext.key = key;
 	pngtext.text = text;
@@ -176,13 +203,9 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 	/* write the file header information */
 	png_write_info(png_ptr, info_ptr);
 
-	/* write surface data row at the time */
-	src_ptr = surface->pixels;
-	do_lock = SDL_MUSTLOCK(surface);
+	/* write surface data row one at a time (after cropping if necessary) */
+	src_ptr = surface->pixels + CropTop * surface->pitch + CropLeft * surface->format->BytesPerPixel;
 	for (y = 0; y < h; y++) {
-		/* need to lock the surface while accessing it directly */
-		if (do_lock)
-			SDL_LockSurface(surface);
 		switch (fmt->BytesPerPixel) {
 		case 1:
 			/* unpack 8-bit data with RGB palette */
@@ -204,20 +227,16 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 			ScreenSnapShot_32to24Bits(row_ptr, src_ptr, w);
 			break;
 		}
-		/* and unlock surface before syscalls */
-		if (do_lock)
-			SDL_UnlockSurface(surface);
 		src_ptr += surface->pitch;
+		SDL_UnlockSurface(surface);
 		png_write_row(png_ptr, rowbuf);
 	}
-	
+
 	/* write the additional chuncks to the PNG file */
 	png_write_end(png_ptr, info_ptr);
 
-	ret = 0;
+	ret = ftell ( fp ) - start;				/* size of the png image */
 png_cleanup:
-	if (fp)
-		fclose(fp);
 	if (palette_ptr)
 		free(palette_ptr);
 	if (png_ptr)
@@ -245,7 +264,7 @@ void ScreenSnapShot_SaveScreen(void)
 #if HAVE_LIBPNG
 	/* try first PNG */
 	sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetWorkingDir(), nScreenShots);
-	if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) == 0)
+	if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) > 0)
 	{
 		fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
 		free(szFileName);
