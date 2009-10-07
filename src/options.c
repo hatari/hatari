@@ -31,6 +31,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "joy.h"
 #include "log.h"
+#include "avi_record.h"
 
 #include "hatari-glue.h"
 
@@ -38,7 +39,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
 bool bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
 bool bBiosIntercept;       /* whether UAE should intercept Bios & XBios calls */
-
+bool AviRecordOnStartup = false;	/* Start avi recording at startup */
 
 /*  List of supported options. */
 enum {
@@ -60,6 +61,11 @@ enum {
 	OPT_DRIVE_LED,
 	OPT_SPEC512,
 	OPT_FORCEBPP,
+	OPT_AVIRECORD,          /* record options */
+	OPT_AVIRECORD_VCODEC,
+	OPT_AVIRECORD_FPS,
+	OPT_AVIRECORD_CROP,
+	OPT_AVIRECORD_FILE,
 	OPT_VDI,		/* VDI options */
 	OPT_VDI_PLANES,
 	OPT_VDI_WIDTH,
@@ -156,7 +162,18 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force internal bitdepth (x = 8/15/16/32, 0=disable)" },
-	
+
+	{ OPT_AVIRECORD, NULL, "--avirecord",
+	  NULL, "Start AVI recording" },
+	{ OPT_AVIRECORD_VCODEC, NULL, "--avirecord_vcodec",
+	  "<x>", "Select avi video codec (x = bmp/png)" },
+	{ OPT_AVIRECORD_FPS, NULL, "--avirecord_fps",
+	  "<x>", "Force avi frame rate (x = 50/60/71/...)" },
+	{ OPT_AVIRECORD_CROP, NULL, "--avirecord_crop",
+	  "<bool>", "Remove status bar from the recorded file" },
+	{ OPT_AVIRECORD_FILE, NULL, "--avirecord_file",
+	  "<file>", "Use <file> to record avi" },
+
 	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
 	{ OPT_VDI,	NULL, "--vdi",
 	  "<bool>", "Whether to use VDI screen mode" },
@@ -166,7 +183,7 @@ static const opt_t HatariOptions[] = {
 	  "<w>", "VDI mode width (320 < w <= 1024)" },
 	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
 	  "<h>", "VDI mode height (200 < h <= 768)" },
-	
+
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
 	  "<port>", "Emulate joystick with cursor keys in given port (0-5)" },
@@ -640,6 +657,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq;
 	const char *errstr;
 	int i, ok = true;
+	int val;
 
 	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = false;
@@ -807,6 +825,47 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
 
+			/* avi recording options */
+		case OPT_AVIRECORD:
+			AviRecordOnStartup = true;
+			break;
+
+		case OPT_AVIRECORD_VCODEC:
+			i += 1;
+			if (strcasecmp(argv[i], "bmp") == 0)
+			{
+				AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
+			}
+			else if (strcasecmp(argv[i], "png") == 0)
+			{
+				AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_AVIRECORD_VCODEC, argv[i], "Unknown video codec");
+			}
+			break;
+
+		case OPT_AVIRECORD_FPS:
+			val = atoi(argv[++i]);
+			if (val < 0 || val > 100)
+			{
+				return Opt_ShowError(OPT_AVIRECORD_FPS, argv[i],
+							"Invalid frame rate for avi recording");
+			}
+			AviRecordDefaultFps = val;
+			break;
+
+		case OPT_AVIRECORD_CROP:
+			ok = Opt_Bool(argv[++i], OPT_AVIRECORD_CROP, &AviRecordDefaultCrop);
+			break;
+
+		case OPT_AVIRECORD_FILE:
+			i += 1;
+			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, false, AviRecordFile,
+					argv[i], sizeof(AviRecordFile), NULL);
+			break;
+
 			/* VDI options */
 		case OPT_VDI:
 			ok = Opt_Bool(argv[++i], OPT_VDI, &ConfigureParams.Screen.bUseExtVdiResolutions);
@@ -847,7 +906,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ConfigureParams.Screen.bUseExtVdiResolutions = true;
 			bLoadAutoSave = false;
 			break;
-		
+
 			/* devices options */
 		case OPT_JOYSTICK:
 			i++;

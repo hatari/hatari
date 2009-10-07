@@ -84,6 +84,7 @@ const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "wavFormat.h"
 #include "ymFormat.h"
+#include "avi_record.h"
 
 
 
@@ -1078,6 +1079,19 @@ void Sound_Update(void)
 void Sound_Update_VBL(void)
 {
 	Sound_Update();
+
+	/* Record audio frame is necessary */
+	if ( AviRecording )
+	{
+		int SamplePerVbl = nAudioFrequency / nScreenRefreshRate;
+		int PrevIndex;
+
+		PrevIndex = ActiveSndBufIdx - SamplePerVbl;
+		if ( PrevIndex < 0 )
+			PrevIndex += MIXBUFFER_SIZE;
+
+		AviRecordAudioStream ( MixBuffer , PrevIndex , SamplePerVbl );
+	}
 
 	/* Clear write to register '13', used for YM file saving */
 	bEnvelopeFreqFlag = false;

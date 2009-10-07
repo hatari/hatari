@@ -14,6 +14,7 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c : " __DATE__ " " __TIME__;
 #include "screenSnapShot.h"
 #include "vdi.h"
 #include "video.h"
+#include "avi_record.h"
 
 
 #define DLGSCRN_FULLSCRN   3
@@ -205,7 +206,7 @@ void Dialog_ScreenDlg(void)
 	if (ScreenSnapShot_AreWeRecording())
 		screendlg[DLGSCRN_RECANIM].txt = "Stop recording";
 	else
-		screendlg[DLGSCRN_RECANIM].txt = "Record animation";
+		screendlg[DLGSCRN_RECANIM].txt = "Record AVI";
 
 	/* The screen dialog main loop */
 	do
@@ -255,14 +256,14 @@ void Dialog_ScreenDlg(void)
 		 case DLGSCRN_RECANIM:
 			if (ScreenSnapShot_AreWeRecording())
 			{
-				screendlg[DLGSCRN_RECANIM].txt = "Record animation";
-				ScreenSnapShot_EndRecording();
+				screendlg[DLGSCRN_RECANIM].txt = "Record AVI";
+				AviStopRecording();
 			}
 			else
 			{
 				screendlg[DLGSCRN_RECANIM].txt = "Stop recording";
 				ConfigureParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
-				ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange);
+				AviStartRecording ( AviRecordFile , AviRecordDefaultCrop , nScreenRefreshRate , AviRecordDefaultVcodec );
 			}
 			break;
 		}

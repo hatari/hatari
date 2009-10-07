@@ -43,6 +43,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "tos.h"
 #include "video.h"
+#include "avi_record.h"
 
 #include "hatari-glue.h"
 
@@ -707,9 +708,14 @@ int main(int argc, char *argv[])
 	/* Check if SDL_Delay is accurate */
 	Main_CheckForAccurateDelays();
 
+	if ( AviRecordOnStartup )	/* Immediatly starts avi recording ? */
+		AviStartRecording ( AviRecordFile , AviRecordDefaultCrop , AviRecordDefaultFps , AviRecordDefaultVcodec );
+
 	/* Run emulation */
 	Main_UnPauseEmulation();
 	M68000_Start();                 /* Start emulation */
+
+	AviStopRecording();		/* cleanly close the avi file if needed */
 
 	/* Un-init emulation system */
 	Main_UnInit();

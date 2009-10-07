@@ -268,6 +268,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "ymFormat.h"
 #include "falcon/videl.h"
 #include "falcon/hostscreen.h"
+#include "avi_record.h"
 
 
 /* The border's mask allows to keep track of all the border tricks		*/
@@ -2494,6 +2495,10 @@ void Video_InterruptHandler_VBL ( void )
 
 	/* Act on shortcut keys */
 	ShortCut_ActKey();
+
+	/* Record video frame is necessary */
+	if ( AviRecording )
+		AviRecordVideoStream ();
 
 	/* Store off PSG registers for YM file, is enabled */
 	YMFormat_UpdateRecording();
