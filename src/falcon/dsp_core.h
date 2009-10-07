@@ -144,13 +144,15 @@ extern "C" {
 #define DSP_INTER_HOST_COMMAND		0x5
 #define DSP_INTER_HOST_RCV_DATA		0x6
 #define DSP_INTER_HOST_TRX_DATA		0x7
-#define DSP_INTER_SSI_RCV_DATA_E	0x9
-#define DSP_INTER_SSI_RCV_DATA		0xa
-#define DSP_INTER_SSI_TRX_DATA_E	0xb
-#define DSP_INTER_SSI_TRX_DATA		0xc
+#define DSP_INTER_SSI_RCV_DATA_E	0x8
+#define DSP_INTER_SSI_RCV_DATA		0x9
+#define DSP_INTER_SSI_TRX_DATA_E	0xa
+#define DSP_INTER_SSI_TRX_DATA		0xb
 
 
 typedef struct dsp_core_ssi_s dsp_core_ssi_t;
+typedef struct dsp_core_s dsp_core_t;
+typedef struct dsp_interrupt_s dsp_interrupt_t;
 
 struct dsp_core_ssi_s {
 	Uint16  cra_word_length;
@@ -174,8 +176,13 @@ struct dsp_core_ssi_s {
 	Uint16  waitFrameRX;
 };
 
+struct dsp_interrupt_s {
+	const Uint16 inter;
+	const Uint16 vectorAddr;
+	const Uint16 periph;
+	const char *name;
+};
 
-typedef struct dsp_core_s dsp_core_t;
 
 struct dsp_core_s {
 
@@ -225,8 +232,9 @@ struct dsp_core_s {
 	Uint16	interrupt_state;
 	Uint32  interrupt_instr_fetch;
 	Uint32  interrupt_save_pc;
-	Uint16  interrupt_table[13];
 	Uint16  interrupt_counter;
+	Sint16  interrupt_ipl[12];
+	Uint16  interrupt_isPending[12];
 };
 
 
@@ -235,8 +243,9 @@ extern void dsp_core_init(dsp_core_t *dsp_core, void (*host_interrupt)(void));
 extern void dsp_core_shutdown(dsp_core_t *dsp_core);
 extern void dsp_core_reset(dsp_core_t *dsp_core);
 
-/* Post a new interrupt to the interrupt table */
-extern void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter);
+/* Interrupt relative functions */
+extern void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint16 inter);
+extern void dsp_core_setInterruptIPL(dsp_core_t *dsp_core, Uint32 value);
 
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
 extern Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);

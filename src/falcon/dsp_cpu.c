@@ -453,19 +453,21 @@ static int registers_mask[64]={
 	16, 16, 16, 16
 };
 
-static int interrupt_adress[13]={
-	0x0, 0x3e, 0x2, 0x4, 
-	0x6, 0xff, 0x20, 0x22, 0x0, 
-	0xe, 0xc, 0x12, 0x10
+static dsp_interrupt_t dsp_interrupt[12] = {
+	{DSP_INTER_RESET	,	0x00, 0, "Reset"},
+	{DSP_INTER_ILLEGAL	,	0x3e, 0, "Illegal"},
+	{DSP_INTER_STACK_ERROR	,	0x02, 0, "Stack Error"},
+	{DSP_INTER_TRACE	,	0x04, 0, "Trace"},
+	{DSP_INTER_SWI		,	0x06, 0, "Swi"},
+	{DSP_INTER_HOST_COMMAND	,	0xff, 1, "Host Command"},
+	{DSP_INTER_HOST_RCV_DATA,	0x20, 1, "Host receive"},
+	{DSP_INTER_HOST_TRX_DATA,	0x22, 1, "Host transmit"},
+	{DSP_INTER_SSI_RCV_DATA_E,	0x0e, 2, "SSI receive with exception"},
+	{DSP_INTER_SSI_RCV_DATA	,	0x0c, 2, "SSI receive"},
+	{DSP_INTER_SSI_TRX_DATA_E,	0x12, 2, "SSI transmit with exception"},
+	{DSP_INTER_SSI_TRX_DATA	,	0x10, 2, "SSI tramsmit"}
 };
 
-#if DSP_DISASM_INTER
-static const char *interrupt_label[13]={
-	"Reset", "Illegal", "Stack Error", "Trace", 
-	"Swi", "Host Command", "Host receive", "Host transmit", "",
-	"SSI receive with exception", "SSI receive", "SSI transmit with exception", "SSI tramsmit"
-};
-#endif
 
 /**********************************
  *	Emulator kernel
@@ -617,7 +619,8 @@ static void dsp_postexecute_update_pc(void)
 
 static void dsp_postexecute_interrupts(void)
 {
-	Uint32 ipl, ipl_to_raise, ipl_hi, ipl_ssi, instr1, instr2, i, count1, count2, ipl1, ipl2;
+	Uint32 index, instr1, instr2, i;
+	Sint32 ipl_to_raise, ipl_sr;
 
 	/* REP is not interruptible */
 	if (dsp_core->loop_rep) {
@@ -648,78 +651,53 @@ static void dsp_postexecute_interrupts(void)
 		return;
 	}
 
-	ipl_to_raise = 99;
+	/* search for an interrupt */
+	ipl_sr = (dsp_core->registers[DSP_REG_SR]>>DSP_SR_I0) & BITMASK(2);
+	index = 0xffff;
+	ipl_to_raise = -1;
 
-	/* level 3 interrupt ? */
-	for (i=0; i<5; i++) {
-		if (dsp_core->interrupt_table[i] != 0) {
-			ipl_to_raise = 3;
-			dsp_core->interrupt_instr_fetch = interrupt_adress[i];
-			dsp_core->interrupt_table[i] = 0;
-			dsp_core->interrupt_counter --;
-#if DSP_DISASM_INTER
-			fprintf(stderr, "Dsp: Interrupt: %s\n", interrupt_label[i]);
-#endif
-			break;
-		}
-	}
-			
-	/* Level 2 and above interrupt ? */
-	ipl = (dsp_core->registers[DSP_REG_SR]>>DSP_SR_I0) & BITMASK(2);
-	if ((ipl_to_raise==99) && (ipl<3)) {
-		ipl_hi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>10) & BITMASK(2);
-		ipl_ssi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>12) & BITMASK(2);
+	/* Arbitrate between all pending interrupts */
+	for (i=0; i<12; i++) {
+		if (dsp_core->interrupt_isPending[i] == 1) {
 
-		/* Determine the order of the peripheral interrupt to test . 
-		   If 2 or more peripharal have the same interrupt level,
-		   the order is (high priority) : HI, SSI, SCI (low priority) */
-		if (ipl_hi >= ipl_ssi) {
-			ipl1 = ipl_hi;
-			ipl2 = ipl_ssi;
-			count1 = 5;
-			count2 = 9;
-		} else {
-			ipl1 = ipl_ssi;
-			ipl2 = ipl_hi;
-			count1 = 9;
-			count2 = 5;
-		}
-
-		if (ipl1 >= ipl) {
-			for (i=count1; i<count1+4; i++) {
-				if (dsp_core->interrupt_table[i] != 0) {
-					ipl_to_raise = ipl1;
-					dsp_core->interrupt_instr_fetch = interrupt_adress[i];
-					dsp_core->interrupt_table[i] = 0;
-					dsp_core->interrupt_counter --;
-#if DSP_DISASM_INTER
-					fprintf(stderr, "Dsp: Interrupt: %s\n", interrupt_label[i]);
-#endif
-					break;
-				}
+			/* level 3 interrupt ? */
+			if (dsp_core->interrupt_ipl[i] == 3) {
+				index = i;
+				break;
 			}
-		}
-		if (ipl_to_raise == 99) {
-			if (ipl2>=ipl) {
-				for (i=count2; i<count2+4; i++) {
-					if (dsp_core->interrupt_table[i] != 0) {
-						ipl_to_raise = ipl2;
-						dsp_core->interrupt_instr_fetch = interrupt_adress[i];
-						dsp_core->interrupt_table[i] = 0;
-						dsp_core->interrupt_counter --;
-#if DSP_DISASM_INTER
-						fprintf(stderr, "Dsp: Interrupt: %s\n", interrupt_label[i]);
-#endif
-						break;
-					}
-				}
-			}
+
+			/* level 0, 1 ,2 interrupt ? */
+			/* if interrupt is masked in SR, don't process it */
+			if (dsp_core->interrupt_ipl[i] <= ipl_sr)
+				continue;
+
+			/* if interrupt is lower or equal than current arbitrated interrupt */
+			if (dsp_core->interrupt_ipl[i] <= ipl_to_raise)
+				continue;
+
+			/* save current arbitrated interrupt */
+			index = i;
+			ipl_to_raise = dsp_core->interrupt_ipl[i];
 		}
 	}
 
-	if (ipl_to_raise == 99) {
+	/* If there's no interrupt to process, return */
+	if (index == 0xffff) {
 		return;
 	}
+
+	/* process arbritrated interrupt */
+	ipl_to_raise = dsp_core->interrupt_ipl[index] + 1;
+	if (ipl_to_raise > 3)
+		ipl_to_raise = 3;
+
+	dsp_core->interrupt_instr_fetch = dsp_interrupt[index].vectorAddr;
+	dsp_core->interrupt_isPending[index] = 0;
+	dsp_core->interrupt_counter --;
+
+#if DSP_DISASM_INTER
+	fprintf(stderr, "Dsp: Interrupt: %s\n", dsp_interrupt[index].name);
+#endif
 
 	/* SSI receive data with exception */
 	if (dsp_core->interrupt_instr_fetch == 0xe) {
@@ -975,6 +953,7 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 					break;
 				case DSP_SSI_CRA:
 				case DSP_SSI_CRB:
+					dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
 					dsp_core_ssi_configure(dsp_core, address-0xffc0, value);
 					break;
 				case DSP_SSI_TSR:
@@ -982,6 +961,10 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 					break;
 				case DSP_SSI_TX:
 					dsp_core_ssi_writeTX(dsp_core, value);
+					break;
+				case DSP_IPR:
+					dsp_core->periph[DSP_SPACE_X][DSP_IPR] = value;
+					dsp_core_setInterruptIPL(dsp_core, value);
 					break;
 				default:
 					dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
@@ -1470,6 +1453,7 @@ static void dsp_undefined(void)
 {
 	cur_inst_len = 0;
 	fprintf(stderr, "Dsp: 0x%04x: 0x%06x unknown instruction\n",dsp_core->pc, cur_inst);
+	exit (-1);
 }
 
 static void dsp_andi(void)

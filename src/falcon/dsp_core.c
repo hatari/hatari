@@ -48,9 +48,7 @@
 static void dsp_core_dsp2host(dsp_core_t *dsp_core);
 static void dsp_core_host2dsp(dsp_core_t *dsp_core);
 
-
 static void (*dsp_host_interrupt)(void);   /* Function to trigger host interrupt */
-
 
 /* Init DSP emulation */
 void dsp_core_init(dsp_core_t *dsp_core,  void (*host_interrupt)(void))
@@ -151,10 +149,9 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp_core_shutdown(dsp_core);
 
 	/* Memory */
-	memset((void*)dsp_core->periph, 0,sizeof(dsp_core->periph));
-	memset(dsp_core->stack, 0,sizeof(dsp_core->stack));
-	memset(dsp_core->registers, 0,sizeof(dsp_core->registers));
-	memset(dsp_core->interrupt_table, 0,sizeof(dsp_core->interrupt_table));
+	memset((void*)dsp_core->periph, 0, sizeof(dsp_core->periph));
+	memset(dsp_core->stack, 0, sizeof(dsp_core->stack));
+	memset(dsp_core->registers, 0, sizeof(dsp_core->registers));
 	dsp_core->dsp_host_rtx = 0;
 	dsp_core->dsp_host_htx = 0;
 
@@ -168,10 +165,17 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	}
 
 	/* Interruptions */
+	memset((void*)dsp_core->interrupt_isPending, 0, sizeof(dsp_core->interrupt_isPending));
 	dsp_core->interrupt_state = DSP_INTERRUPT_NONE;
 	dsp_core->interrupt_instr_fetch = -1;
 	dsp_core->interrupt_save_pc = -1;
 	dsp_core->interrupt_counter = 0;
+	for (i=0;i<5;i++) {
+		dsp_core->interrupt_ipl[i] = 3;
+	}
+	for (i=5;i<12;i++) {
+		dsp_core->interrupt_ipl[i] = -1;
+	}
 
 	/* host port init, dsp side */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR]=(1<<DSP_HOST_HSR_HTDE);
@@ -201,14 +205,43 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp56k_init_cpu(dsp_core);
 }
 
+
+/* 
+	Interrupts management
+*/
+
 /* Post a new interrupt to the interrupt table */
-void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter)
+void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint16 inter)
 {
-	if (dsp_core->interrupt_table[inter] == 0) { 
-		dsp_core->interrupt_table[inter] = 1;
+	/* detect if this interrupt is used or not */
+	if (dsp_core->interrupt_ipl[inter] == -1)
+		return;
+
+	/* add this interrupt to the pending interrupts table */
+	if (dsp_core->interrupt_isPending[inter] == 0) { 
+		dsp_core->interrupt_isPending[inter] = 1;
 		dsp_core->interrupt_counter ++;
 	}
 }
+
+void dsp_core_setInterruptIPL(dsp_core_t *dsp_core, Uint32 value)
+{
+	Uint32 ipl_ssi, ipl_hi, i;
+
+	ipl_ssi = ((value >> 12) & 3) - 1;
+	ipl_hi  = ((value >> 10) & 3) - 1;
+
+	/* set IPL_HI */
+	for (i=5;i<8;i++) {
+		dsp_core->interrupt_ipl[i] = ipl_hi;
+	}
+
+	/* set IPL_SSI */
+	for (i=8;i<12;i++) {
+		dsp_core->interrupt_ipl[i] = ipl_ssi;
+	}
+}
+
 
 /* 
 	SSI INTERFACE processing

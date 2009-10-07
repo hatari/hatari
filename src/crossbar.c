@@ -227,13 +227,13 @@ void Crossbar_DmaCtrlReg_WriteWord(void)
 		/* Turning on DMA sound emulation */
 		nCbar_DmaSoundControl = nNewSndCtrl;
 		Crossbar_setDmaSound_Settings();
-		Crossbar_StartDmaSound_Handler();
+		//Crossbar_StartDmaSound_Handler();
 	}
 	else if (((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)   && !(nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY)) ||
 	         ((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD) && !(nNewSndCtrl & CROSSBAR_SNDCTRL_RECORD)))
 	{
 		nCbar_DmaSoundControl = nNewSndCtrl;
-		//fprintf(stderr, "Turning off DMA sound emulation.\n");
+		fprintf(stderr, "Turning off DMA sound emulation.\n");
 	}
 
 }
@@ -416,7 +416,7 @@ void Crossbar_DstControler_WriteWord(void)
 	if (!microphone_ADC_is_started) { 
 		microphone_ADC_is_started = 1;
 #if HAVE_PORTAUDIO
-		Crossbar_StartAdcXmitHandler();
+		//Crossbar_StartAdcXmitHandler();
 		//Microphone_Start((int)Crossbar_DetectSampleRate());
 		//Microphone_Run();
 #endif
