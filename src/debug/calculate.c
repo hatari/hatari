@@ -18,17 +18,11 @@ const char Clac_fileid[] = "Hatari clac.c : " __DATE__ " " __TIME__;
 #include <ctype.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdbool.h>
 #include "calculate.h"
 
-#ifndef TRUE
-#define FALSE  0
-#define TRUE  !FALSE
-#endif
-
 /* define which character indicates which type of number on expression  */
-/* ('%' would be nice for binary, but it's already used for modulo op)  */
-#define BIN_SYM '\''                            /* binary decimal       */
-#define OCT_SYM ':'                             /* octal decimal        */
+#define BIN_SYM '%'                            /* binary decimal       */
 #define DEC_SYM '#'                             /* normal decimal       */
 #define HEX_SYM '$'                             /* hexadecimal          */
 
@@ -50,7 +44,7 @@ const char Clac_fileid[] = "Hatari clac.c : " __DATE__ " " __TIME__;
 /* globals + function identifier stack(s)				*/
 static struct {
 	const char *error;		/* global error code		*/
-	int valid;			/* value validation		*/
+	bool valid;			/* value validation		*/
 } id = {0, 0};
 
 /* parenthesis and function stacks					*/
@@ -88,8 +82,6 @@ static struct value_stk {			/* value stack	*/
 /* -------------------------------------------------------------------- */
 /* declare subfunctions							*/
 
-/* parse ascii & convert it to a number */
-static double	get_ascii(const char *expr, int *offset);
 /* parse a decimal from an expr. */
 static double	get_decimal(const char *expr, int *offset);
 /* parse value */
@@ -132,18 +124,19 @@ const char* calculate (const char *in, double *out, int *erroff)
 	/* end	 : 'expression end' flag				*/
 	/* offset: character offset in expression			*/
 
-	int end = FALSE, offset = 0;
+	bool end = false;
+	int offset = 0;
 	double value;
 	char mark;
-
+	
 	/* Uses global variables:	*/
 
 	par.idx = 0;			/* parenthesis stack pointer	*/
 	par.opx[0] = par.vax[0] = 0;	/* additional stack pointers	*/
 	op.idx = val.idx = -1;
 
-	id.error = FALSE;
-	id.valid = FALSE;		/* value validation		*/
+	id.error = NULL;
+	id.valid = false;		/* value validation		*/
 	value = 0.0;
 
 	/* parsing loop, repeated until expression ends */
@@ -160,16 +153,25 @@ const char* calculate (const char *in, double *out, int *erroff)
 			break;
 		case '>':			/* operators  */
 		case '<':
+			offset ++;
+			/* check that it's '>>' or '<<' */
+			if (in[offset] != mark)
+			{
+				id.error = CLAC_GEN_ERR;
+				break;
+			}
+			operation (value, mark);
+			id.valid = false;
+			offset ++;
+			break;
 		case '|':
 		case '&':
 		case '+':
 		case '-':
 		case '*':
 		case '/':
-		case '%':
-		case '^':
 			operation (value, mark);
-			id.valid = FALSE;
+			id.valid = false;
 			offset ++;
 			break;
 		case '(':
@@ -200,36 +202,28 @@ const char* calculate (const char *in, double *out, int *erroff)
 		case '.':
 			value = get_decimal (in, &offset);
 			break;
-		case DEC_SYM:      /* normal decimal prefix  */
-			offset ++;
-			value = get_decimal(in, &offset);
-			break;
 		case BIN_SYM:      /* binary decimal  */
 			offset ++;
 			value = get_value(in, &offset, 1);
 			break;
-		case OCT_SYM:      /* octal decimal  */
+		case DEC_SYM:      /* normal decimal prefix  */
 			offset ++;
-			value = get_value(in, &offset, 3);
+			value = get_decimal(in, &offset);
 			break;
 		case HEX_SYM:      /* hexadecimal    */
 			offset ++;
 			value = get_value(in, &offset, 4);
 			break;
-		case '\"':
-			offset ++;
-			value = get_ascii(in, &offset);
-			break;
 		default:
 			/* end of expression or error... */
 			if(mark < ' ' || mark == ';')
-				end = TRUE;
+				end = true;
 			else
 				id.error = CLAC_GEN_ERR;
 		}
 
 	/* until exit or error message					*/
-	} while((end == FALSE) && (id.error == FALSE));
+	} while(!(end || id.error));
 
         /* result of evaluation 					*/
         if (val.idx >= 0)
@@ -267,39 +261,17 @@ const char* calculate (const char *in, double *out, int *erroff)
 /* ==================================================================== */
 
 /**
- * parse ascii
- */
-static double get_ascii(const char *expr, int *offset)
-{
-	double value = 0.0;
-	
-	if(id.valid == FALSE)
-	{
-		id.valid = TRUE;
-		while(expr[(*offset)] > ' ')
-		{
-			value = value * 256.0 + (double)expr[*offset];
-			(*offset)++;
-		}
-	}
-	else
-		id.error = CLAC_GEN_ERR;
-	
-	return(value);
-}
-
-/**
  * parse a decimal number
  */
 static double get_decimal(const char *expr, int *offset)
 {
 	char mark;
-	int mark_set = FALSE, expr_set = FALSE;
+	int mark_set = false, expr_set = false;
 	double value = 0.0;
 	
-	if(id.valid == FALSE)
+	if(id.valid == false)
 	{
-		id.valid = TRUE;
+		id.valid = true;
 		value = atof(&expr[*offset]);
 		/* jump over number */
 		do
@@ -311,7 +283,7 @@ static double get_decimal(const char *expr, int *offset)
 				if(mark_set)
 					id.error = CLAC_GEN_ERR;
 				else
-					mark_set = TRUE;
+					mark_set = true;
 			}
 			/* check for multiple exponents */
 			if(mark == 'e' || mark == 'E')
@@ -327,8 +299,8 @@ static double get_decimal(const char *expr, int *offset)
 					if(mark == '+' || mark == '-' ||
 					   (mark >= '0' && mark <= '9'))
 					{
-						mark_set = TRUE;
-						expr_set = TRUE;
+						mark_set = true;
+						expr_set = true;
 						mark = '.';
 					}
 					else
@@ -361,9 +333,9 @@ static double get_value(const char *expr, int *offset, int bits)
 	lenny = len_long / bits;               /* max. number lenght  */
 	
 	/* if start of expression or preceded by an operator */
-	if(id.valid == FALSE)
+	if(id.valid == false)
 	{
-		id.valid = TRUE;
+		id.valid = true;
 		i = 0;
 		digit = expr[*offset];
 		idx = chr_pos(digit, base, end);  /* digit value  */
@@ -443,9 +415,9 @@ static void operation (double value, char oper)
 	 * operation executed if the next one is on same or lower level
 	 */
 	/* something to calc? */
-	if(id.valid == TRUE) {
+	if(id.valid == true) {
 		/* next number */
-		id.valid = FALSE;
+		id.valid = false;
 		
 		/* add new items to stack */
 		PUSH(op, oper);
@@ -476,7 +448,7 @@ static void unary (char oper)
 	/* check pre-value operators
 	 * have to be parenthesised
 	 */
-	if(id.valid == FALSE && op.idx < par.opx[par.idx])
+	if(id.valid == false && op.idx < par.opx[par.idx])
 	{
 		switch(oper)
 		{
@@ -564,13 +536,9 @@ static int get_level (int offset)
 	case '-':
 		return(2);
 		
-	case '%':      /* modulo    */
 	case '*':
 	case '/':
 		return(3);
-		
-	case '^':      /* power */
-		return(4);
 		
 	default:
 		id.error = CLAC_PRG_ERR;
@@ -611,18 +579,6 @@ static double apply_op (char opcode, double value1, double value2)
 			value1 /= value2;
 		else
 			id.error = CLAC_DEF_ERR;
-		break;
-        case '%':
-		/* not 'divide by zero'	*/
-		if(value2 != 0.0) {
-			if(value1 < 0.0)
-				value1 -= value2 * ceil(value1 / value2);
-			else
-				value1 -= value2 * floor(value1 / value2);
-		}
-		break;
-        case '^':
-		value1 = pow(value1, value2);
 		break;
         default:
 		id.error = CLAC_PRG_ERR;
@@ -685,7 +641,7 @@ static double shiftops(int oper, double x, double y)
  */
 static void open_bracket (void)
 {
-	if (id.valid == FALSE) {		/* preceded by operator	*/
+	if (id.valid == false) {		/* preceded by operator	*/
 		if (par.idx < PARDEPTH_MAX) {	/* not nested too deep	*/
 			par.idx ++;
 			par.opx[par.idx] = op.idx + 1;
@@ -715,7 +671,7 @@ static double close_bracket (double value)
 			par.idx --;
 
 			/* next operator */
-			id.valid = TRUE;
+			id.valid = true;
 		} else
 			id.error = CLAC_PAR_ERR;
 	} else
