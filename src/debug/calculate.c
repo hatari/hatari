@@ -6,18 +6,16 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  calculate.c - slightly modified version of the Clac calculator MiNT
-  client-server code to calculate expressions for Hatari.
+  calculate.c - largely modified version of the Clac calculator
+  filter version code to calculate expressions for Hatari.
 */
 const char Clac_fileid[] = "Hatari clac.c : " __DATE__ " " __TIME__;
 /* ====================================================================	*/
 /*			*** Clac engine ***				*/
 /* ====================================================================	*/
 
-#include <math.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <stdbool.h>
 #include "calculate.h"
 
@@ -40,6 +38,9 @@ const char Clac_fileid[] = "Hatari clac.c : " __DATE__ " " __TIME__;
 #define PARDEPTH_MAX	64		/* max. parenth. nesting depth	*/
 #define OSTACK_MAX	128		/* size of the operator stack	*/
 #define VSTACK_MAX	128		/* size of the value stack	*/
+
+/* operation with lowest precedence, used to finish calculations */
+#define LOWEST_PREDECENCE '|'
 
 /* globals + function identifier stack(s)				*/
 static struct {
@@ -64,8 +65,8 @@ static struct {					/* operator stack	*/
 static struct value_stk {			/* value stack	*/
 	int idx;
 	int max;
-	double buf[VSTACK_MAX + 1];
-} val = {0, VSTACK_MAX, {0.0}};
+	long long buf[VSTACK_MAX + 1];
+} val = {0, VSTACK_MAX, {0}};
 
 /* -------------------------------------------------------------------- */
 /* macros								*/
@@ -83,38 +84,34 @@ static struct value_stk {			/* value stack	*/
 /* declare subfunctions							*/
 
 /* parse a decimal from an expr. */
-static double	get_decimal(const char *expr, int *offset);
+static long long get_decimal(const char *expr, int *offset);
 /* parse value */
-static double	get_value(const char *expr, int *offset, int bits);
+static long long get_value(const char *expr, int *offset, int bits);
 /* 'value' of a char */
-static int	chr_pos(char c, const char *base, int base_len);
+static int chr_pos(char c, const char *base, int base_len);
 /* parse in-between operations	*/
-static void	operation(double value, char op);
+static void operation(long long value, char op);
 /* parse unary operators	*/
-static void	unary (char op);
+static void unary (char op);
 /* apply a prefix to a value */
-static void	apply_prefix(void);
+static void apply_prefix(void);
 /* juggle stacks, if possible	*/
-static void	eval_stack(void);
+static void eval_stack(void);
 /* operator -> operator level	*/
-static int	get_level(int stk_offset);
+static int get_level(int stk_offset);
 /* evaluate operation		*/
-static double	apply_op(char op, double x, double y);
-/* &, | operations */
-static double	binops(int op, double x, double y);
-/* >>, << operations */
-static double	shiftops(int op, double x, double y);
+static long long apply_op(char op, long long x, long long y);
 
 /* increase parenthesis level	*/
-static void	open_bracket(void);
+static void open_bracket(void);
 /* decrease parenthesis level	*/
-static double	close_bracket(double x);
+static long long close_bracket(long long x);
 
 /**
  * Evaluate expression.
  * Set given value and parsing offset, return error string or NULL for success.
  */
-const char* calculate (const char *in, double *out, int *erroff)
+const char* calculate (const char *in, long long *out, int *erroff)
 {
 	/* in	 : expression to evaluate				*/
 	/* out	 : final parsed value					*/
@@ -126,7 +123,7 @@ const char* calculate (const char *in, double *out, int *erroff)
 
 	bool end = false;
 	int offset = 0;
-	double value;
+	long long value;
 	char mark;
 	
 	/* Uses global variables:	*/
@@ -137,7 +134,7 @@ const char* calculate (const char *in, double *out, int *erroff)
 
 	id.error = NULL;
 	id.valid = false;		/* value validation		*/
-	value = 0.0;
+	value = 0;
 
 	/* parsing loop, repeated until expression ends */
 	do {
@@ -166,6 +163,7 @@ const char* calculate (const char *in, double *out, int *erroff)
 			break;
 		case '|':
 		case '&':
+		case '^':
 		case '+':
 		case '-':
 		case '*':
@@ -234,7 +232,7 @@ const char* calculate (const char *in, double *out, int *erroff)
 		if (id.valid) {
 
 			/* evaluate rest of the expression		*/
-			operation (value, '|');
+			operation (value, LOWEST_PREDECENCE);
 			if (par.idx)			/* mismatched	*/
 				id.error = CLAC_PAR_ERR;
 			else				/* result out	*/
@@ -243,7 +241,7 @@ const char* calculate (const char *in, double *out, int *erroff)
 		} else {
 			if ((val.idx < 0) && (op.idx < 0)) {
 				id.error = CLAC_EXP_ERR;
-				*out = 0.0;
+				*out = 0;
 			} else			/* trailing operators	*/
 				id.error = CLAC_GEN_ERR;
 		}
@@ -263,11 +261,11 @@ const char* calculate (const char *in, double *out, int *erroff)
 /**
  * parse a decimal number
  */
-static double get_decimal(const char *expr, int *offset)
+static long long get_decimal(const char *expr, int *offset)
 {
 	char mark;
 	int mark_set = false, expr_set = false;
-	double value = 0.0;
+	long long value = 0;
 	
 	if(id.valid == false)
 	{
@@ -313,17 +311,17 @@ static double get_decimal(const char *expr, int *offset)
 	else
 		id.error = CLAC_GEN_ERR;
 	
-	return(value);
+	return value;
 }
 
 /**
  * parsing for 2^bits number base(up to hex, at the moment)
  */
-static double get_value(const char *expr, int *offset, int bits)
+static long long get_value(const char *expr, int *offset, int bits)
 {
 	/* returns parsed value, changes expression offset */
 
-	double value = 0.0;
+	long long value = 0;
 	int i, end, lenny, pos, idx, len_long = sizeof(long) * 8;
 	unsigned long num1 = 0, num2 = 0; /* int/decimal  parts  */
 	char digit;
@@ -375,13 +373,13 @@ static double get_value(const char *expr, int *offset, int bits)
 						(*offset) ++;
 			}
 			/* compose value of integral and decimal parts  */
-			value = num2 / (double) (1L << (len_long - bits)) + num1;
+			value = num2 / (long long) (1L << (len_long - bits)) + num1;
 		}
 	}
 	else
 		id.error = CLAC_GEN_ERR;
 	
-	return(value);
+	return value;
 }
 
 /* -------------------------------------------------------------------- */
@@ -400,16 +398,16 @@ static int chr_pos(char chr, const char *string, int len)
 	
 	/* if string end -> not found */
 	if(pos == len)
-		return(-1);
+		return -1;
 	else
-		return(pos);
+		return pos;
 }
 
 /* ==================================================================== */
 /*			expression evaluation				*/
 /* ==================================================================== */
 
-static void operation (double value, char oper)
+static void operation (long long value, char oper)
 {
 	/* uses globals par[], id.error[], op[], val[]
 	 * operation executed if the next one is on same or lower level
@@ -471,22 +469,21 @@ static void unary (char oper)
  */
 static void apply_prefix(void)
 {
-	double *value;
+	long long value = val.buf[val.idx];
 
-	value = &val.buf[val.idx];
 	op.idx--;
-
 	switch(op.buf[op.idx])
 	{
 	case '-':
-		*value = (-*value);
+		value = (-value);
 		break;
 	case '~':
-		*value = (-*value) - 1;	/* bitwise not */
+		value = (~value);
 		break;
 	default:
 		id.error = CLAC_PRG_ERR;
 	}
+	val.buf[val.idx] = value;
 	op.buf[op.idx] = op.buf[op.idx + 1];
 }
 
@@ -526,43 +523,50 @@ static int get_level (int offset)
 	switch(op.buf[op.idx + offset]) {
 	case '|':      /* binary operations  */
 	case '&':
-		return(0);
+	case '^':
+		return 0;
 		
 	case '>':      /* bit shifting    */
 	case '<':
-		return(1);
+		return 1;
 		
 	case '+':
 	case '-':
-		return(2);
+		return 2;
 		
 	case '*':
 	case '/':
-		return(3);
+		return 3;
 		
 	default:
 		id.error = CLAC_PRG_ERR;
 	}
-	return(6);
+	return 6;
 }
 
 /* -------------------------------------------------------------------- */
 /**
  * apply operator to given values, return the result
  */
-static double apply_op (char opcode, double value1, double value2)
+static long long apply_op (char opcode, long long value1, long long value2)
 {
 	/* uses global id.error[]		*/
 	/* returns the result of operation	*/
 
 	switch (opcode) {
         case '|':
+		value1 |= value2;
+		break;
         case '&':
-		value1 = binops(opcode, value1, value2);
+		value1 &= value2;
+		break;
+        case '^':
+		value1 ^= value2;
 		break;
         case '>':
+		value1 >>= value2;
         case '<':
-		value1 = shiftops(opcode, value1, value2);
+		value1 <<= value2;
 		break;
 	case '+':
 		value1 += value2;
@@ -574,8 +578,8 @@ static double apply_op (char opcode, double value1, double value2)
 		value1 *= value2;
 		break;
 	case '/':
-		/* not 'divide by zero'	*/
-		if (value2 != 0.0)
+		/* don't divide by zero */
+		if (value2)
 			value1 /= value2;
 		else
 			id.error = CLAC_DEF_ERR;
@@ -583,54 +587,9 @@ static double apply_op (char opcode, double value1, double value2)
         default:
 		id.error = CLAC_PRG_ERR;
 	}
-	return(value1);				/* return result	*/
+	return value1;				/* return result	*/
 }
 
-/**
- * binary AND (&) and OR (|) operations
- */
-static double binops(int oper, double x, double y)
-{
-	double z;
-	long xx, yy;
-	
-	xx = (long) x;
-	yy = (long) y;
-	
-	/* in limits */
-	if(xx > LONG_MAX || yy > LONG_MAX) {
-		id.error = CLAC_OVF_ERR;
-		return(y);
-	}
-
-	z = (double) (oper == '&' ? xx & yy : xx | yy);
-	
-	/* operate on 16 bits after the decimal point too */
-	xx = (long) ((x - (double) xx) * 65536.0);
-	yy = (long) ((y - (double) yy) * 65536.0);
-	
-	z += (double) (oper == '&' ? xx & yy : xx | yy) / 65536.0;
-	return(z);
-}
-
-/**
- * bit left (<) and right (>) shift operations
- */
-static double shiftops(int oper, double x, double y)
-{
-	long multiple = 1;
-
-	if(sizeof(long) * 8 >= (size_t) y) {
-		multiple <<= (int) y;
-		if(oper == '<')
-			return(x * (double)multiple);
-		else
-			return(x / (double)multiple);
-	} else {
-		id.error = CLAC_OVF_ERR;
-		return(y);
-	}
-}
 
 /* ==================================================================== */
 /*			parenthesis and help				*/
@@ -657,14 +616,14 @@ static void open_bracket (void)
  * close prenthesis, and evaluate / pop stacks
  */
 /* last parsed value, last param. flag, trigonometric mode	*/
-static double close_bracket (double value)
+static long long close_bracket (long long value)
 {
 	/* returns the value of the parenthesised expression	*/
 
 	if (id.valid) {			/* preceded by an operator	*/
 		if (par.idx > 0) {	/* prenthesis has a pair	*/
 			/* calculate the value of parenthesised exp.	*/
-			operation (value, '|');
+			operation (value, LOWEST_PREDECENCE);
 			value = val.buf[val.idx];
 			op.idx = par.opx[par.idx] - 1;	/* restore prev	*/
 			val.idx = par.vax[par.idx] - 1;
@@ -677,5 +636,5 @@ static double close_bracket (double value)
 	} else
 		id.error = CLAC_GEN_ERR;
 
-	return (value);
+	return value;
 }

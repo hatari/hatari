@@ -313,7 +313,7 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 {
 	const char *errstr, *expression = (const char *)psArgs[1];
-	double result;
+	long long result;
 	int offset;
 
 	if (nArgc < 2)
@@ -678,10 +678,10 @@ static const dbgcommand_t uicommand[] =
 	  "<expression>\n"
 	  "\tEvaluate an expression and show result.  Doesn't take number\n"
 	  "\tbase into account so non-decimal numbers need to be always\n"
-	  "\tprefixed ($=hex, #=dec, %=bin). tSupported operators in\n"
-	  "\tthe decending order of precedence:\n"
-	  "\t\t(), +, -, *, /, +, -, >>, <<, &, |\n"
-	  "\tFor example: 5 * ($20 + 0x200 + (-5)) | %111",
+	  "\tprefixed ($=hex, #=dec, %=bin).  Supported operators are,\n"
+	  "\tin the decending order of precedence:\n"
+	  "\t\t(), +, -, ~, *, /, +, -, >>, <<, ^, &, |\n"
+	  "\tFor example: +5 * ($20 + 0x200 + (-5)) | %111",
 	  true },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
