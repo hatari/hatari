@@ -6,29 +6,21 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  calculate.c - slightly modified version of the Clac calculator MiNT
-  client-server code to calculate expressions for Hatari.
+  calculate.c - largely modified version of the Clac calculator
+  filter version code to calculate expressions for Hatari.
 */
 const char Clac_fileid[] = "Hatari clac.c : " __DATE__ " " __TIME__;
 /* ====================================================================	*/
 /*			*** Clac engine ***				*/
 /* ====================================================================	*/
 
-#include <math.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <limits.h>
+#include <stdbool.h>
 #include "calculate.h"
 
-#ifndef TRUE
-#define FALSE  0
-#define TRUE  !FALSE
-#endif
-
 /* define which character indicates which type of number on expression  */
-/* ('%' would be nice for binary, but it's already used for modulo op)  */
-#define BIN_SYM '\''                            /* binary decimal       */
-#define OCT_SYM ':'                             /* octal decimal        */
+#define BIN_SYM '%'                            /* binary decimal       */
 #define DEC_SYM '#'                             /* normal decimal       */
 #define HEX_SYM '$'                             /* hexadecimal          */
 
@@ -47,10 +39,13 @@ const char Clac_fileid[] = "Hatari clac.c : " __DATE__ " " __TIME__;
 #define OSTACK_MAX	128		/* size of the operator stack	*/
 #define VSTACK_MAX	128		/* size of the value stack	*/
 
+/* operation with lowest precedence, used to finish calculations */
+#define LOWEST_PREDECENCE '|'
+
 /* globals + function identifier stack(s)				*/
 static struct {
 	const char *error;		/* global error code		*/
-	int valid;			/* value validation		*/
+	bool valid;			/* value validation		*/
 } id = {0, 0};
 
 /* parenthesis and function stacks					*/
@@ -70,8 +65,8 @@ static struct {					/* operator stack	*/
 static struct value_stk {			/* value stack	*/
 	int idx;
 	int max;
-	double buf[VSTACK_MAX + 1];
-} val = {0, VSTACK_MAX, {0.0}};
+	long long buf[VSTACK_MAX + 1];
+} val = {0, VSTACK_MAX, {0}};
 
 /* -------------------------------------------------------------------- */
 /* macros								*/
@@ -88,41 +83,35 @@ static struct value_stk {			/* value stack	*/
 /* -------------------------------------------------------------------- */
 /* declare subfunctions							*/
 
-/* parse ascii & convert it to a number */
-static double	get_ascii(const char *expr, int *offset);
 /* parse a decimal from an expr. */
-static double	get_decimal(const char *expr, int *offset);
+static long long get_decimal(const char *expr, int *offset);
 /* parse value */
-static double	get_value(const char *expr, int *offset, int bits);
+static long long get_value(const char *expr, int *offset, int bits);
 /* 'value' of a char */
-static int	chr_pos(char c, const char *base, int base_len);
+static int chr_pos(char c, const char *base, int base_len);
 /* parse in-between operations	*/
-static void	operation(double value, char op);
+static void operation(long long value, char op);
 /* parse unary operators	*/
-static void	unary (char op);
+static void unary (char op);
 /* apply a prefix to a value */
-static void	apply_prefix(void);
+static void apply_prefix(void);
 /* juggle stacks, if possible	*/
-static void	eval_stack(void);
+static void eval_stack(void);
 /* operator -> operator level	*/
-static int	get_level(int stk_offset);
+static int get_level(int stk_offset);
 /* evaluate operation		*/
-static double	apply_op(char op, double x, double y);
-/* &, | operations */
-static double	binops(int op, double x, double y);
-/* >>, << operations */
-static double	shiftops(int op, double x, double y);
+static long long apply_op(char op, long long x, long long y);
 
 /* increase parenthesis level	*/
-static void	open_bracket(void);
+static void open_bracket(void);
 /* decrease parenthesis level	*/
-static double	close_bracket(double x);
+static long long close_bracket(long long x);
 
 /**
  * Evaluate expression.
  * Set given value and parsing offset, return error string or NULL for success.
  */
-const char* calculate (const char *in, double *out, int *erroff)
+const char* calculate (const char *in, long long *out, int *erroff)
 {
 	/* in	 : expression to evaluate				*/
 	/* out	 : final parsed value					*/
@@ -132,19 +121,20 @@ const char* calculate (const char *in, double *out, int *erroff)
 	/* end	 : 'expression end' flag				*/
 	/* offset: character offset in expression			*/
 
-	int end = FALSE, offset = 0;
-	double value;
+	bool end = false;
+	int offset = 0;
+	long long value;
 	char mark;
-
+	
 	/* Uses global variables:	*/
 
 	par.idx = 0;			/* parenthesis stack pointer	*/
 	par.opx[0] = par.vax[0] = 0;	/* additional stack pointers	*/
 	op.idx = val.idx = -1;
 
-	id.error = FALSE;
-	id.valid = FALSE;		/* value validation		*/
-	value = 0.0;
+	id.error = NULL;
+	id.valid = false;		/* value validation		*/
+	value = 0;
 
 	/* parsing loop, repeated until expression ends */
 	do {
@@ -160,16 +150,26 @@ const char* calculate (const char *in, double *out, int *erroff)
 			break;
 		case '>':			/* operators  */
 		case '<':
+			offset ++;
+			/* check that it's '>>' or '<<' */
+			if (in[offset] != mark)
+			{
+				id.error = CLAC_GEN_ERR;
+				break;
+			}
+			operation (value, mark);
+			id.valid = false;
+			offset ++;
+			break;
 		case '|':
 		case '&':
+		case '^':
 		case '+':
 		case '-':
 		case '*':
 		case '/':
-		case '%':
-		case '^':
 			operation (value, mark);
-			id.valid = FALSE;
+			id.valid = false;
 			offset ++;
 			break;
 		case '(':
@@ -200,36 +200,28 @@ const char* calculate (const char *in, double *out, int *erroff)
 		case '.':
 			value = get_decimal (in, &offset);
 			break;
-		case DEC_SYM:      /* normal decimal prefix  */
-			offset ++;
-			value = get_decimal(in, &offset);
-			break;
 		case BIN_SYM:      /* binary decimal  */
 			offset ++;
 			value = get_value(in, &offset, 1);
 			break;
-		case OCT_SYM:      /* octal decimal  */
+		case DEC_SYM:      /* normal decimal prefix  */
 			offset ++;
-			value = get_value(in, &offset, 3);
+			value = get_decimal(in, &offset);
 			break;
 		case HEX_SYM:      /* hexadecimal    */
 			offset ++;
 			value = get_value(in, &offset, 4);
 			break;
-		case '\"':
-			offset ++;
-			value = get_ascii(in, &offset);
-			break;
 		default:
 			/* end of expression or error... */
 			if(mark < ' ' || mark == ';')
-				end = TRUE;
+				end = true;
 			else
 				id.error = CLAC_GEN_ERR;
 		}
 
 	/* until exit or error message					*/
-	} while((end == FALSE) && (id.error == FALSE));
+	} while(!(end || id.error));
 
         /* result of evaluation 					*/
         if (val.idx >= 0)
@@ -240,7 +232,7 @@ const char* calculate (const char *in, double *out, int *erroff)
 		if (id.valid) {
 
 			/* evaluate rest of the expression		*/
-			operation (value, '|');
+			operation (value, LOWEST_PREDECENCE);
 			if (par.idx)			/* mismatched	*/
 				id.error = CLAC_PAR_ERR;
 			else				/* result out	*/
@@ -249,7 +241,7 @@ const char* calculate (const char *in, double *out, int *erroff)
 		} else {
 			if ((val.idx < 0) && (op.idx < 0)) {
 				id.error = CLAC_EXP_ERR;
-				*out = 0.0;
+				*out = 0;
 			} else			/* trailing operators	*/
 				id.error = CLAC_GEN_ERR;
 		}
@@ -267,39 +259,17 @@ const char* calculate (const char *in, double *out, int *erroff)
 /* ==================================================================== */
 
 /**
- * parse ascii
- */
-static double get_ascii(const char *expr, int *offset)
-{
-	double value = 0.0;
-	
-	if(id.valid == FALSE)
-	{
-		id.valid = TRUE;
-		while(expr[(*offset)] > ' ')
-		{
-			value = value * 256.0 + (double)expr[*offset];
-			(*offset)++;
-		}
-	}
-	else
-		id.error = CLAC_GEN_ERR;
-	
-	return(value);
-}
-
-/**
  * parse a decimal number
  */
-static double get_decimal(const char *expr, int *offset)
+static long long get_decimal(const char *expr, int *offset)
 {
 	char mark;
-	int mark_set = FALSE, expr_set = FALSE;
-	double value = 0.0;
+	int mark_set = false, expr_set = false;
+	long long value = 0;
 	
-	if(id.valid == FALSE)
+	if(id.valid == false)
 	{
-		id.valid = TRUE;
+		id.valid = true;
 		value = atof(&expr[*offset]);
 		/* jump over number */
 		do
@@ -311,7 +281,7 @@ static double get_decimal(const char *expr, int *offset)
 				if(mark_set)
 					id.error = CLAC_GEN_ERR;
 				else
-					mark_set = TRUE;
+					mark_set = true;
 			}
 			/* check for multiple exponents */
 			if(mark == 'e' || mark == 'E')
@@ -327,8 +297,8 @@ static double get_decimal(const char *expr, int *offset)
 					if(mark == '+' || mark == '-' ||
 					   (mark >= '0' && mark <= '9'))
 					{
-						mark_set = TRUE;
-						expr_set = TRUE;
+						mark_set = true;
+						expr_set = true;
 						mark = '.';
 					}
 					else
@@ -341,17 +311,17 @@ static double get_decimal(const char *expr, int *offset)
 	else
 		id.error = CLAC_GEN_ERR;
 	
-	return(value);
+	return value;
 }
 
 /**
  * parsing for 2^bits number base(up to hex, at the moment)
  */
-static double get_value(const char *expr, int *offset, int bits)
+static long long get_value(const char *expr, int *offset, int bits)
 {
 	/* returns parsed value, changes expression offset */
 
-	double value = 0.0;
+	long long value = 0;
 	int i, end, lenny, pos, idx, len_long = sizeof(long) * 8;
 	unsigned long num1 = 0, num2 = 0; /* int/decimal  parts  */
 	char digit;
@@ -361,9 +331,9 @@ static double get_value(const char *expr, int *offset, int bits)
 	lenny = len_long / bits;               /* max. number lenght  */
 	
 	/* if start of expression or preceded by an operator */
-	if(id.valid == FALSE)
+	if(id.valid == false)
 	{
-		id.valid = TRUE;
+		id.valid = true;
 		i = 0;
 		digit = expr[*offset];
 		idx = chr_pos(digit, base, end);  /* digit value  */
@@ -403,13 +373,13 @@ static double get_value(const char *expr, int *offset, int bits)
 						(*offset) ++;
 			}
 			/* compose value of integral and decimal parts  */
-			value = num2 / (double) (1L << (len_long - bits)) + num1;
+			value = num2 / (long long) (1L << (len_long - bits)) + num1;
 		}
 	}
 	else
 		id.error = CLAC_GEN_ERR;
 	
-	return(value);
+	return value;
 }
 
 /* -------------------------------------------------------------------- */
@@ -428,24 +398,24 @@ static int chr_pos(char chr, const char *string, int len)
 	
 	/* if string end -> not found */
 	if(pos == len)
-		return(-1);
+		return -1;
 	else
-		return(pos);
+		return pos;
 }
 
 /* ==================================================================== */
 /*			expression evaluation				*/
 /* ==================================================================== */
 
-static void operation (double value, char oper)
+static void operation (long long value, char oper)
 {
 	/* uses globals par[], id.error[], op[], val[]
 	 * operation executed if the next one is on same or lower level
 	 */
 	/* something to calc? */
-	if(id.valid == TRUE) {
+	if(id.valid == true) {
 		/* next number */
-		id.valid = FALSE;
+		id.valid = false;
 		
 		/* add new items to stack */
 		PUSH(op, oper);
@@ -476,7 +446,7 @@ static void unary (char oper)
 	/* check pre-value operators
 	 * have to be parenthesised
 	 */
-	if(id.valid == FALSE && op.idx < par.opx[par.idx])
+	if(id.valid == false && op.idx < par.opx[par.idx])
 	{
 		switch(oper)
 		{
@@ -499,22 +469,21 @@ static void unary (char oper)
  */
 static void apply_prefix(void)
 {
-	double *value;
+	long long value = val.buf[val.idx];
 
-	value = &val.buf[val.idx];
 	op.idx--;
-
 	switch(op.buf[op.idx])
 	{
 	case '-':
-		*value = (-*value);
+		value = (-value);
 		break;
 	case '~':
-		*value = (-*value) - 1;	/* bitwise not */
+		value = (~value);
 		break;
 	default:
 		id.error = CLAC_PRG_ERR;
 	}
+	val.buf[val.idx] = value;
 	op.buf[op.idx] = op.buf[op.idx + 1];
 }
 
@@ -554,47 +523,50 @@ static int get_level (int offset)
 	switch(op.buf[op.idx + offset]) {
 	case '|':      /* binary operations  */
 	case '&':
-		return(0);
+	case '^':
+		return 0;
 		
 	case '>':      /* bit shifting    */
 	case '<':
-		return(1);
+		return 1;
 		
 	case '+':
 	case '-':
-		return(2);
+		return 2;
 		
-	case '%':      /* modulo    */
 	case '*':
 	case '/':
-		return(3);
-		
-	case '^':      /* power */
-		return(4);
+		return 3;
 		
 	default:
 		id.error = CLAC_PRG_ERR;
 	}
-	return(6);
+	return 6;
 }
 
 /* -------------------------------------------------------------------- */
 /**
  * apply operator to given values, return the result
  */
-static double apply_op (char opcode, double value1, double value2)
+static long long apply_op (char opcode, long long value1, long long value2)
 {
 	/* uses global id.error[]		*/
 	/* returns the result of operation	*/
 
 	switch (opcode) {
         case '|':
+		value1 |= value2;
+		break;
         case '&':
-		value1 = binops(opcode, value1, value2);
+		value1 &= value2;
+		break;
+        case '^':
+		value1 ^= value2;
 		break;
         case '>':
+		value1 >>= value2;
         case '<':
-		value1 = shiftops(opcode, value1, value2);
+		value1 <<= value2;
 		break;
 	case '+':
 		value1 += value2;
@@ -606,75 +578,18 @@ static double apply_op (char opcode, double value1, double value2)
 		value1 *= value2;
 		break;
 	case '/':
-		/* not 'divide by zero'	*/
-		if (value2 != 0.0)
+		/* don't divide by zero */
+		if (value2)
 			value1 /= value2;
 		else
 			id.error = CLAC_DEF_ERR;
 		break;
-        case '%':
-		/* not 'divide by zero'	*/
-		if(value2 != 0.0) {
-			if(value1 < 0.0)
-				value1 -= value2 * ceil(value1 / value2);
-			else
-				value1 -= value2 * floor(value1 / value2);
-		}
-		break;
-        case '^':
-		value1 = pow(value1, value2);
-		break;
         default:
 		id.error = CLAC_PRG_ERR;
 	}
-	return(value1);				/* return result	*/
+	return value1;				/* return result	*/
 }
 
-/**
- * binary AND (&) and OR (|) operations
- */
-static double binops(int oper, double x, double y)
-{
-	double z;
-	long xx, yy;
-	
-	xx = (long) x;
-	yy = (long) y;
-	
-	/* in limits */
-	if(xx > LONG_MAX || yy > LONG_MAX) {
-		id.error = CLAC_OVF_ERR;
-		return(y);
-	}
-
-	z = (double) (oper == '&' ? xx & yy : xx | yy);
-	
-	/* operate on 16 bits after the decimal point too */
-	xx = (long) ((x - (double) xx) * 65536.0);
-	yy = (long) ((y - (double) yy) * 65536.0);
-	
-	z += (double) (oper == '&' ? xx & yy : xx | yy) / 65536.0;
-	return(z);
-}
-
-/**
- * bit left (<) and right (>) shift operations
- */
-static double shiftops(int oper, double x, double y)
-{
-	long multiple = 1;
-
-	if(sizeof(long) * 8 >= (size_t) y) {
-		multiple <<= (int) y;
-		if(oper == '<')
-			return(x * (double)multiple);
-		else
-			return(x / (double)multiple);
-	} else {
-		id.error = CLAC_OVF_ERR;
-		return(y);
-	}
-}
 
 /* ==================================================================== */
 /*			parenthesis and help				*/
@@ -685,7 +600,7 @@ static double shiftops(int oper, double x, double y)
  */
 static void open_bracket (void)
 {
-	if (id.valid == FALSE) {		/* preceded by operator	*/
+	if (id.valid == false) {		/* preceded by operator	*/
 		if (par.idx < PARDEPTH_MAX) {	/* not nested too deep	*/
 			par.idx ++;
 			par.opx[par.idx] = op.idx + 1;
@@ -701,25 +616,25 @@ static void open_bracket (void)
  * close prenthesis, and evaluate / pop stacks
  */
 /* last parsed value, last param. flag, trigonometric mode	*/
-static double close_bracket (double value)
+static long long close_bracket (long long value)
 {
 	/* returns the value of the parenthesised expression	*/
 
 	if (id.valid) {			/* preceded by an operator	*/
 		if (par.idx > 0) {	/* prenthesis has a pair	*/
 			/* calculate the value of parenthesised exp.	*/
-			operation (value, '|');
+			operation (value, LOWEST_PREDECENCE);
 			value = val.buf[val.idx];
 			op.idx = par.opx[par.idx] - 1;	/* restore prev	*/
 			val.idx = par.vax[par.idx] - 1;
 			par.idx --;
 
 			/* next operator */
-			id.valid = TRUE;
+			id.valid = true;
 		} else
 			id.error = CLAC_PAR_ERR;
 	} else
 		id.error = CLAC_GEN_ERR;
 
-	return (value);
+	return value;
 }
