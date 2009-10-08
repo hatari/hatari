@@ -16,8 +16,7 @@ INCFLAGS = -I../.. -I../includes -I../debug -I../$(CPUDIR) $(CPPFLAGS)
 CFLAGS += $(INCFLAGS) $(SDL_CFLAGS)
 
 
-
-FALCSRCS = videl.c hostscreen.c nvram.c dsp.c
+FALCSRCS = videl.c hostscreen.c nvram.c dsp.c crossbar.c microphone.c
 ifeq ($(ENABLE_DSP_EMU),1)
 FALCSRCS += dsp_core.c dsp_cpu.c dsp_disasm.c
 CPPFLAGS += -DENABLE_DSP_EMU=1

@@ -68,7 +68,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "crossbar.h"
 #include "microphone.h"
 #include "stMemory.h"
-#include "falcon/dsp.h"
+#include "dsp.h"
 
 
 #define DACBUFFER_SIZE  (MIXBUFFER_SIZE*2*64)
@@ -108,30 +108,30 @@ static Uint32 dspTx_wordCount;		/* count number of words received from DSP trans
 
 static const double DmaSndSampleRates[4] =
 {
-	6258.,
-	12517.,
-	25033.,
-	50066.
+	6258.0,
+	12517.0,
+	25033.0,
+	50066.0
 };
 
 
 static const double DmaSndFalcSampleRates[] =
 {
-	49170.,
-	32780.,	
-	24585.,
-	19668.,
-	16390.,
-	14049.,
-	12292.,
-	10927.,
-	 9834.,
-	 8940.,
-	 8195.,
-	 7565.,
-	 7024.,
-	 6556.,
-	 6146.
+	49170.0,
+	32780.0,	
+	24585.0,
+	19668.0,
+	16390.0,
+	14049.0,
+	12292.0,
+	10927.0,
+	 9834.0,
+	 8940.0,
+	 8195.0,
+	 7565.0,
+	 7024.0,
+	 6556.0,
+	 6146.0
 };
 
 static double tracks_play;
@@ -667,7 +667,7 @@ static void Crossbar_StartDmaSound_Handler()
 	else if ((nCbSrc & 0x6) == 0x40)
 	{
 		/* Internal 32 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate() * (25175./32000.);
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate() * (25175.0/32000.0);
 	}
 	else {
 		return;
@@ -775,13 +775,13 @@ static void Crossbar_StartDspXmitHandler(void)
 	else if ((nCbSrc & 0x60) == 0x40)
 	{
 		/* Internal 32 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate() * (25175./32000.);
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate() * (25175.0/32000.0);
 	}
 	else {
 		return;
 	}
 	
-	cycles = cycles / tracks_play / 4.;
+	cycles = cycles / tracks_play / 4.0;
 	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 }
 
@@ -878,11 +878,11 @@ static void Crossbar_SendDataToDspReceive(Uint32 value)
  */
 static void Crossbar_StartAdcXmitHandler(void)
 {
-	double cycles = 1.;
+	double cycles = 1.0;
 
 	/* Internal 25.175 MHz clock only for ADC (Jack) */
 	cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate();
-	cycles = cycles / (tracks_play * 2.);
+	cycles = cycles / (tracks_play * 2.0);
 
 	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_ADCXMIT);
 }
