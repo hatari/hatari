@@ -119,6 +119,3 @@ Other potential Hatari functionality improvements
 	- By default the directory config values should be empty in
 	  which case the code will at run-time decide to use current
 	  directory, but not modify the path config setting.
-
-- Add support for directly recording audio/video output in some kind
-  of AVI file (instead of merging the png snapshots)

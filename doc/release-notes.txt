@@ -12,6 +12,8 @@ Emulator:
   - trace command
   - evaluate command for doing calculations
   - command and command argument completion support
+- AVI file recording : video can be stored as BMP or as PNG images,
+  audio is stored as 16 bits stereo PCM.
 
 
  Version 1.3.1 (2009-09-05):
