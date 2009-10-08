@@ -299,7 +299,7 @@ AVI_FILE_HEADER		AviFileHeader;
 
 static void	AviStoreU16 ( Uint8 *p , Uint16 val );
 static void	AviStoreU32 ( Uint8 *p , Uint32 val );
-static void	AviStore4cc ( Uint8 *p , char *text );
+static void	AviStore4cc ( Uint8 *p , const char *text );
 static Uint32	AviReadU32 ( Uint8 *p );
 
 static int	AviGetBmpSize ( int Width , int Height , int BitCount );
@@ -342,7 +342,7 @@ static void	AviStoreU32 ( Uint8 *p , Uint32 val )
 }
 
 
-static void	AviStore4cc ( Uint8 *p , char *text )
+static void	AviStore4cc ( Uint8 *p , const char *text )
 {
 	memcpy ( p , text , 4 );
 }
@@ -456,7 +456,7 @@ static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 	/* Points to the top left pixel after cropping borders */
 	/* For BMP format, frame is stored from bottom to top (origin is in bottom left corner) */
 	/* and bytes are in BGR order (not RGB) */
-	pBitmapIn = pAviParams->Surface->pixels
+	pBitmapIn = (Uint8 *)pAviParams->Surface->pixels
 			+ pAviParams->Surface->pitch * ( pAviParams->CropTop + pAviParams->Height )
 			+ pAviParams->CropLeft * pAviParams->Surface->format->BytesPerPixel;
 
@@ -480,7 +480,7 @@ static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 		if ( NeedLock )
 			SDL_UnlockSurface ( pAviParams->Surface );
 
-		if ( fwrite ( pBitmapOut , 1 , pAviParams->Width*3 , pAviParams->FileOut ) != pAviParams->Width*3 )
+		if ( (int)fwrite ( pBitmapOut , 1 , pAviParams->Width*3 , pAviParams->FileOut ) != pAviParams->Width*3 )
 		{
 			perror ( "AviRecordVideoStream_BMP" );
 			Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write bmp video frame" );

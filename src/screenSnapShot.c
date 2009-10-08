@@ -204,7 +204,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 	png_write_info(png_ptr, info_ptr);
 
 	/* write surface data row one at a time (after cropping if necessary) */
-	src_ptr = surface->pixels + CropTop * surface->pitch + CropLeft * surface->format->BytesPerPixel;
+	src_ptr = (Uint8 *)surface->pixels + CropTop * surface->pitch + CropLeft * surface->format->BytesPerPixel;
 	for (y = 0; y < h; y++) {
 		switch (fmt->BytesPerPixel) {
 		case 1:
