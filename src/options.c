@@ -165,13 +165,13 @@ static const opt_t HatariOptions[] = {
 
 	{ OPT_AVIRECORD, NULL, "--avirecord",
 	  NULL, "Start AVI recording" },
-	{ OPT_AVIRECORD_VCODEC, NULL, "--avirecord_vcodec",
+	{ OPT_AVIRECORD_VCODEC, NULL, "--avi-vcodec",
 	  "<x>", "Select avi video codec (x = bmp/png)" },
-	{ OPT_AVIRECORD_FPS, NULL, "--avirecord_fps",
+	{ OPT_AVIRECORD_FPS, NULL, "--avi-fps",
 	  "<x>", "Force avi frame rate (x = 50/60/71/...)" },
-	{ OPT_AVIRECORD_CROP, NULL, "--avirecord_crop",
+	{ OPT_AVIRECORD_CROP, NULL, "--avi-crop",
 	  "<bool>", "Remove status bar from the recorded file" },
-	{ OPT_AVIRECORD_FILE, NULL, "--avirecord_file",
+	{ OPT_AVIRECORD_FILE, NULL, "--avi-file",
 	  "<file>", "Use <file> to record avi" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
