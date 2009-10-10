@@ -11,8 +11,8 @@ CPUDIR = uae-cpu
 include ../Makefile.cnf
 
 # Additional include directories:
-CPPFLAGS += -I.. -I./includes -I$(CPUDIR) -I./debug -I./falcon
-CPPFLAGS += -DCONFDIR=\"$(CONFDIR)\" $(SDL_CFLAGS)
+CPPFLAGS += -I.. -I./includes -I$(CPUDIR) -I./debug -I./falcon \
+ -DCONFDIR=\"$(CONFDIR)\" $(SDL_CFLAGS) $(PNG_CFLAGS) $(X11_CFLAGS)
 
 ifeq ($(ENABLE_DSP_EMU),1)
 CPPFLAGS += -DENABLE_DSP_EMU=1
@@ -50,8 +50,10 @@ all: ../Makefile.cnf
 	$(MAKE) $(SUBDIRS)
 	$(MAKE) hatari
 
+LIBS := $(PORTAUDIO_LIBS) $(PNG_LIBS) $(SDL_LIBS) $(X11_LIBS) $(LIBS)
+
 hatari: $(ALLOBJS)
-	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
+	$(CC) $(LDFLAGS) $(ALLOBJS) $(LIBS) -o hatari
 
 # Sub-folder dependencies:
 .PHONY : $(SUBDIRS)
