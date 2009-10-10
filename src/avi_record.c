@@ -1027,6 +1027,17 @@ bool	AviStopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Are we recording an AVI ?
+ */
+bool	Avi_AreWeRecording ( void )
+{
+        return AviRecording;
+}
+
+
+
 
 void	AviStartRecording ( char *FileName , bool CropGui , int Fps , int VideoCodec )
 {

@@ -203,7 +203,7 @@ void Dialog_ScreenDlg(void)
 	else
 		screendlg[DLGSCRN_ONCHANGE].state &= ~SG_SELECTED;
 
-	if (ScreenSnapShot_AreWeRecording())
+	if (Avi_AreWeRecording())
 		screendlg[DLGSCRN_RECANIM].txt = "Stop recording";
 	else
 		screendlg[DLGSCRN_RECANIM].txt = "Record AVI";
@@ -254,7 +254,7 @@ void Dialog_ScreenDlg(void)
 			ScreenSnapShot_SaveScreen();
 			break;
 		 case DLGSCRN_RECANIM:
-			if (ScreenSnapShot_AreWeRecording())
+			if (Avi_AreWeRecording())
 			{
 				screendlg[DLGSCRN_RECANIM].txt = "Record AVI";
 				AviStopRecording();
