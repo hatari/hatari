@@ -53,13 +53,11 @@
       idx1
 */
 
-
 const char AVIRecord_fileid[] = "Hatari avi_record.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
 #include <SDL_endian.h>
 #include <zlib.h>
-#include <png.h>
 
 #include "main.h"
 #include "audio.h"
@@ -70,6 +68,10 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c : " __DATE__ " " __TIME__;
 #include "sound.h"
 #include "statusbar.h"
 #include "avi_record.h"
+
+#if HAVE_LIBPNG
+# include <png.h>
+#endif
 
 
 typedef struct
@@ -287,11 +289,15 @@ typedef struct {
 
 
 bool		AviRecording = false;
-int		AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
 bool		AviRecordDefaultCrop = true;
 int		AviRecordDefaultFps = 50;
 char		AviRecordFile[FILENAME_MAX] = "hatari.avi";
 
+#if HAVE_LIBPNG
+int		AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
+#else
+int		AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
+#endif
 
 RECORD_AVI_PARAMS	AviParams;
 AVI_FILE_HEADER		AviFileHeader;
@@ -498,6 +504,7 @@ static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 
 static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 {
+#if HAVE_LIBPNG
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
 	long		ChunkPos;
@@ -556,8 +563,10 @@ static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 		return false;
 	}
 
-
 	return true;
+#else
+	return false;
+#endif  /* HAVE_LIBPNG */
 }
 
 
