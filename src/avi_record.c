@@ -57,7 +57,6 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
 #include <SDL_endian.h>
-#include <zlib.h>
 
 #include "main.h"
 #include "audio.h"
@@ -69,8 +68,9 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c : " __DATE__ " " __TIME__;
 #include "statusbar.h"
 #include "avi_record.h"
 
+/* after above that brings in config.h */
 #if HAVE_LIBPNG
-# include <png.h>
+#include <png.h>
 #endif
 
 
@@ -289,15 +289,15 @@ typedef struct {
 
 
 bool		AviRecording = false;
-bool		AviRecordDefaultCrop = true;
-int		AviRecordDefaultFps = 50;
-char		AviRecordFile[FILENAME_MAX] = "hatari.avi";
-
 #if HAVE_LIBPNG
 int		AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
 #else
 int		AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
 #endif
+bool		AviRecordDefaultCrop = true;
+int		AviRecordDefaultFps = 50;
+char		AviRecordFile[FILENAME_MAX] = "hatari.avi";
+
 
 RECORD_AVI_PARAMS	AviParams;
 AVI_FILE_HEADER		AviFileHeader;
@@ -316,7 +316,9 @@ static inline void PixelConvert_24to24Bits_BGR(Uint8 *dst, Uint8 *src, int w);
 static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint8 *src, int w);
 
 static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams );
+#if HAVE_LIBPNG
 static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams );
+#endif
 static bool	AviRecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2], int SampleIndex, int SampleLength );
 
 static void	AviBuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader );
@@ -501,10 +503,9 @@ static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 
 
 
-
+#if HAVE_LIBPNG
 static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 {
-#if HAVE_LIBPNG
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
 	long		ChunkPos;
@@ -564,11 +565,8 @@ static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 	}
 
 	return true;
-#else
-	return false;
-#endif  /* HAVE_LIBPNG */
 }
-
+#endif  /* HAVE_LIBPNG */
 
 
 
@@ -582,6 +580,7 @@ bool	AviRecordVideoStream ( void )
 		}
 	}
 
+#if HAVE_LIBPNG
 	else if ( AviParams.VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
 	{
 		if ( AviRecordVideoStream_PNG ( &AviParams ) == false )
@@ -589,6 +588,7 @@ bool	AviRecordVideoStream ( void )
 			return false;
 		}
 	}
+#endif
 
 	AviParams.TotalVideoFrames++;
 	return true;
@@ -882,7 +882,15 @@ bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFil
 	pAviParams->Height = pAviParams->Surface->h - pAviParams->CropTop - pAviParams->CropBottom;
 	pAviParams->BitCount = 24;
 	
-	
+#if !HAVE_LIBPNG
+	if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
+	{
+		perror ( "AviStartRecording" );
+		Log_AlertDlg ( LOG_ERROR, "AVI recording : Hatari was not built with libpng support" );
+		return false;
+	}
+#endif
+
 	/* Open the file */
 	pAviParams->FileOut = fopen ( AviFileName , "wb+" );
 	if ( !pAviParams->FileOut )
