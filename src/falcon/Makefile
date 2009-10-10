@@ -6,21 +6,19 @@ CPUDIR ?= uae-cpu
 include ../../Makefile.cnf
 
 # Additional include directories:
-INCFLAGS = -I../.. -I../includes -I../debug -I../$(CPUDIR) $(CPPFLAGS)
-
-
-# Set flags passed to the compiler (e.g. optimization flags)
-#CFLAGS := -g -O2 -Wall
-
-
-CFLAGS += $(INCFLAGS) $(SDL_CFLAGS)
-
+INCFLAGS = -I../.. -I../includes -I../debug -I../$(CPUDIR) \
+  $(CPPFLAGS) $(PORTAUDIO_CFLAGS)
 
 FALCSRCS = videl.c hostscreen.c nvram.c dsp.c crossbar.c microphone.c
 ifeq ($(ENABLE_DSP_EMU),1)
 FALCSRCS += dsp_core.c dsp_cpu.c dsp_disasm.c
-CPPFLAGS += -DENABLE_DSP_EMU=1
+INCFLAGS += -DENABLE_DSP_EMU=1
 endif
+
+# Set flags passed to the compiler (e.g. optimization flags)
+#CFLAGS := -g -O2 -Wall
+
+CFLAGS += $(INCFLAGS) $(SDL_CFLAGS)
 
 FALCOBJS = $(FALCSRCS:.c=.o)
 
