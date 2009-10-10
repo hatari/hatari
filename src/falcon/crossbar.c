@@ -86,7 +86,7 @@ static void Crossbar_SendDataToDspReceive(Uint32 value);
 static void Crossbar_StartDspXmitHandler(void);
 
 /* DAC functions */
-static void Crossbar_SendDataToDAC(Sint16 value);
+static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos);
 
 /* ADC functions */
 static void Crossbar_StartAdcXmitHandler(void);
@@ -105,6 +105,10 @@ static Uint32 nFrameLen;		/* Length of the frame */
 
 static Uint32 dspRx_wordCount;		/* count number of words sent to DSP receiver (for RX frame computing) */
 static Uint32 dspTx_wordCount;		/* count number of words received from DSP transmitter (for TX frame computing) */
+
+static double tracks_play;
+static double tracks_record;
+static Uint16 track_monitored;
 
 static const double DmaSndSampleRates[4] =
 {
@@ -134,9 +138,6 @@ static const double DmaSndFalcSampleRates[] =
 	 6146.0
 };
 
-static double tracks_play;
-static double tracks_record;
-
 /*-----------------------------------------------------------------------*/
 /**
  * Reset Crossbar variables.
@@ -162,6 +163,7 @@ void Crossbar_Reset(bool bCold)
 	/* DSP inits */
 	dspRx_wordCount = 0;
 	dspTx_wordCount = 0;
+	track_monitored = 1;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -183,6 +185,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&dspTx_wordCount, sizeof(dspTx_wordCount));
 	MemorySnapShot_Store(&tracks_play, sizeof(tracks_play));
 	MemorySnapShot_Store(&tracks_record, sizeof(tracks_record));
+	MemorySnapShot_Store(&track_monitored, sizeof(track_monitored));
 }
 
 
@@ -289,6 +292,7 @@ void Crossbar_DmaTrckCtrl_WriteByte(void)
 {
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register write: 0x%02x\n", IoMem[0xff8920]);
 	tracks_play = ((IoMem[0xff8920] & 3) + 1);
+	track_monitored = ((IoMem[0xff8920] & 30) >> 4);
 }
 
 /**
@@ -714,12 +718,12 @@ void Crossbar_InterruptHandler_DmaSound(void)
 			value = (Sint16) pFrameStart[nFrameCounter];
 			nFrameCounter ++;
 			/* Send sample to DAC (in mono mode, data is sent twice (for left and right channel) */
-			Crossbar_SendDataToDAC(value*64);
+			Crossbar_SendDataToDAC(value*64, 0);
 		}
 		
 		/* Send sample to DAC */
 		/* Todo : It should be sent to DMA OUT in the crossbar */
-		Crossbar_SendDataToDAC(value*64);
+		Crossbar_SendDataToDAC(value*64, 0);
 
 	} 
 	else {
@@ -781,7 +785,7 @@ static void Crossbar_StartDspXmitHandler(void)
 		return;
 	}
 	
-	cycles = cycles / tracks_play / 4.0;
+	cycles = cycles / (tracks_play * 2.0) / 2.0;
 	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 }
 
@@ -792,28 +796,22 @@ void Crossbar_InterruptHandler_DspXmit(void)
 {
 	Uint16 frame=0;
 	Sint32 data;
-	Uint16 tracks;
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 
 	/* TODO: implementing of handshake mode */
 
-	tracks = ((IoMem[0xff8920] & 3) + 1) * 2;
-//	tracks = ((IoMem[0xff8936] & 3) + 1) * 2;
-	if (dspTx_wordCount >= tracks) {
+	if (dspTx_wordCount == 0) {
 		frame = 1;
-		dspTx_wordCount = 0;
 	}
-
-	dspTx_wordCount++;
 
 	/* read data from DSP Xmit */
 	data = DSP_SsiReadTxValue();
 
  	/* Send DSP data to the DAC */
 	/* TODO : vérify that the DSP is connected to the DAC */
-	Crossbar_SendDataToDAC(data);
+	Crossbar_SendDataToDAC(data, dspTx_wordCount);
 
 	/* Send the frame status to the DSP SSI Xmit */
 	DSP_SsiReceive_SC2(frame);
@@ -823,6 +821,12 @@ void Crossbar_InterruptHandler_DspXmit(void)
 
 	/* Restart the Int event handler */
 	Crossbar_StartDspXmitHandler();
+
+	/* increase dspTx_wordCount for next sample */
+	dspTx_wordCount++;
+	if (dspTx_wordCount >= tracks_play * 2) {
+		dspTx_wordCount = 0;
+	}
 }
 
 /*----------------------------------------------------------------------*/
@@ -835,18 +839,12 @@ void Crossbar_InterruptHandler_DspXmit(void)
 static void Crossbar_SendDataToDspReceive(Uint32 value)
 {
 	Uint16 frame=0;
-	Uint16 tracks;
 
 	/* TODO: implementing of handshake mode */
 
-//	tracks = ((IoMem[0xff8920] & 3) + 1) * 2;
-	tracks = ((IoMem[0xff8936] & 3) + 1) * 2;
-	if (dspRx_wordCount >= tracks) {
+	if (dspRx_wordCount == 0) {
 		frame = 1;
-		dspRx_wordCount = 0;
 	}
-
-	dspRx_wordCount++;
 
 	/* Send sample to DSP receive */
 	DSP_SsiWriteRxValue(value);
@@ -856,6 +854,13 @@ static void Crossbar_SendDataToDspReceive(Uint32 value)
 
 	/* Send the clock to the DSP SSI receive */
 	DSP_SsiReceive_SC0(0);
+
+	/* increase dspTx_wordCount for next sample */
+	dspRx_wordCount++;
+	if (dspRx_wordCount >= tracks_play * 2) {
+		dspRx_wordCount = 0;
+	}
+
 }
 
 
@@ -911,7 +916,7 @@ void Crossbar_InterruptHandler_ADCXmit(void)
 
 	/* Send sample to DMA record */
 	if ( (nCbDst & 0x1800) == 0x1800) {
-		Crossbar_SendDataToDAC(sample);
+		Crossbar_SendDataToDAC(sample, 0);
 	}
 	
 	/* Nothing for external port for now */
@@ -927,14 +932,18 @@ void Crossbar_InterruptHandler_ADCXmit(void)
 
 /**
  * Put sample from crossbar into the DAC buffer.
+ *    - value : sample value to play
+ *    - sample_pos : position of the sample in the track (used to play the monitored track)
  */
-static void Crossbar_SendDataToDAC(Sint16 value)
+static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
 {
-	/* Put sample into DAC buffer */
-	/* Todo : verify if data is in the monitored track */
-	DacOutBuffer[nDacOutWrPos] = value;
-	nDacOutWrPos = (nDacOutWrPos + 1) % (DACBUFFER_SIZE);
-	nDacBufSamples += 1;
+	Uint16 track = track_monitored * 2;
+		
+	if ((sample_pos == track) || (sample_pos == track+1)) {
+		DacOutBuffer[nDacOutWrPos] = value;
+		nDacOutWrPos = (nDacOutWrPos + 1) % (DACBUFFER_SIZE);
+		nDacBufSamples += 1;
+	}
 }
 
 /**
