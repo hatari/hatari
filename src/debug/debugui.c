@@ -21,8 +21,6 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #endif
 
 #include "main.h"
-#include "breakcond.h"
-#include "calculate.h"
 #include "change.h"
 #include "configuration.h"
 #include "dsp.h"
@@ -34,10 +32,12 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "video.h"
 
-#include "debugui.h"
 #include "debug_priv.h"
+#include "breakcond.h"
 #include "debugcpu.h"
 #include "debugdsp.h"
+#include "debugui.h"
+#include "evaluate.h"
 
 int bExceptionDebugging;
 

@@ -15,10 +15,10 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "breakcond.h"
-#include "calculate.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "debugcpu.h"
+#include "evaluate.h"
 #include "hatari-glue.h"
 #include "m68000.h"
 #include "memorySnapShot.h"

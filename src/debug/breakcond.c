@@ -20,12 +20,13 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "dsp.h"
-#include "debug_priv.h"
-#include "debugcpu.h"
 #include "stMemory.h"
 #include "video.h"	/* for Hatari video variable addresses */
+
+#include "debug_priv.h"
 #include "breakcond.h"
-#include "calculate.h"
+#include "debugcpu.h"
+#include "evaluate.h"
 
 
 /* set to 1 to enable parsing function tracing / debug output */

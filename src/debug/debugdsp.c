@@ -15,11 +15,11 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "breakcond.h"
-#include "calculate.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "debugdsp.h"
 #include "dsp.h"
+#include "evaluate.h"
 #include "memorySnapShot.h"
 
 
