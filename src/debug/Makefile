@@ -8,7 +8,7 @@ include ../../Makefile.cnf
 # Additional include directories:
 INCFLAGS = -I. -I../.. -I../includes -I../$(CPUDIR) -I../falcon $(CPPFLAGS)
 
-SRCS = log.c debugui.c breakcond.c debugcpu.c calculate.c
+SRCS = log.c debugui.c breakcond.c debugcpu.c evaluate.c
 ifeq ($(ENABLE_DSP_EMU),1)
 SRCS += debugdsp.c
 INCFLAGS += -DENABLE_DSP_EMU=1
