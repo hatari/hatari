@@ -15,6 +15,7 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "breakcond.h"
+#include "calculate.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "debugdsp.h"
@@ -75,7 +76,7 @@ static int DebugDsp_Register(int nArgc, char *psArgs[])
 		goto error_msg;
 
 	*assign++ = '\0';
-	if (!DebugUI_GetNumber(assign, &value))
+	if (!Eval_Number(assign, &value))
 		goto error_msg;
 
 	for (i = 0; i < 3 && arg[i]; i++)
@@ -110,7 +111,7 @@ static int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (DebugUI_ParseRange(psArgs[1], &lower, &upper))
+		switch (Eval_Range(psArgs[1], &lower, &upper))
 		{
 			case -1:
 				/* invalid value(s) */
@@ -193,7 +194,7 @@ static int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
 			return DEBUGGER_CMDDONE;
 		}
-		switch (DebugUI_ParseRange(psArgs[2], &lower, &upper))
+		switch (Eval_Range(psArgs[2], &lower, &upper))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -290,7 +291,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!DebugUI_GetNumber(psArgs[1], &BreakAddr) || BreakAddr > 0xFFFF)
+	if (!Eval_Number(psArgs[1], &BreakAddr) || BreakAddr > 0xFFFF)
 	{
 		fputs("Not a valid value for a DSP breakpoint!\n", stderr);
 		return DEBUGGER_CMDDONE;

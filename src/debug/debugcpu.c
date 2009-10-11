@@ -15,6 +15,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "breakcond.h"
+#include "calculate.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "debugcpu.h"
@@ -67,7 +68,7 @@ static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	if (!DebugUI_GetNumber(psArgs[2], &address))
+	if (!Eval_Number(psArgs[2], &address))
 	{
 		fprintf(stderr, "Invalid address!\n");
 		return DEBUGGER_CMDDONE;
@@ -110,14 +111,14 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	if (!DebugUI_GetNumber(psArgs[2], &address))
+	if (!Eval_Number(psArgs[2], &address))
 	{
 		fprintf(stderr, "  Invalid address!\n");
 		return DEBUGGER_CMDDONE;
 	}
 	address &= 0x00FFFFFF;
 
-	if (!DebugUI_GetNumber(psArgs[3], &bytes))
+	if (!Eval_Number(psArgs[3], &bytes))
 	{
 		fprintf(stderr, "  Invalid length!\n");
 		return DEBUGGER_CMDDONE;
@@ -152,7 +153,7 @@ static int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (DebugUI_ParseRange(psArgs[1], &disasm_addr, &disasm_upper))
+		switch (Eval_Range(psArgs[1], &disasm_addr, &disasm_upper))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -265,7 +266,7 @@ static int DebugCpu_Register(int nArgc, char *psArgs[])
 	}
 
 	*assign++ = '\0';
-	if (!DebugUI_GetNumber(assign, &value))
+	if (!Eval_Number(assign, &value))
 	{
 		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
 		return DEBUGGER_CMDDONE;
@@ -331,7 +332,7 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!DebugUI_GetNumber(psArgs[1], &BreakAddr)
+	if (!Eval_Number(psArgs[1], &BreakAddr)
 	    || (BreakAddr > STRamEnd && BreakAddr < 0xe00000)
 	    || BreakAddr > 0xff0000)
 	{
@@ -387,7 +388,7 @@ static int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (DebugUI_ParseRange(psArgs[1], &memdump_addr, &memdump_upper))
+		switch (Eval_Range(psArgs[1], &memdump_addr, &memdump_upper))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -461,7 +462,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 	}
 
 	/* Read address */
-	if (!DebugUI_GetNumber(psArgs[1], &write_addr))
+	if (!Eval_Number(psArgs[1], &write_addr))
 	{
 		fprintf(stderr, "Bad address!\n");
 		return DEBUGGER_CMDDONE;
@@ -473,7 +474,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 	/* get bytes data */
 	for (i = 2; i < nArgc; i++)
 	{
-		if (!DebugUI_GetNumber(psArgs[i], &d) || d > 255)
+		if (!Eval_Number(psArgs[i], &d) || d > 255)
 		{
 			fprintf(stderr, "Bad byte argument: '%s'!\n", psArgs[i]);
 			return DEBUGGER_CMDDONE;

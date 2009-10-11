@@ -6,23 +6,25 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  calculate.c - largely modified version of the Clac calculator
-  filter version code to calculate expressions for Hatari.
+  calculate.c - parse numbers, number ranges and expressions. Supports
+  most unary and binary operations, parenthesis and order of precedence.
+  Originally based on code from my Clac calculator MiNT filter version.
 */
-const char Clac_fileid[] = "Hatari clac.c : " __DATE__ " " __TIME__;
-/* ====================================================================	*/
-/*			*** Clac engine ***				*/
-/* ====================================================================	*/
+const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
+#include <limits.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <SDL_types.h>
 #include "calculate.h"
+#include "configuration.h"
 
 /* define which character indicates which type of number on expression  */
-#define BIN_SYM '%'                            /* binary decimal       */
-#define DEC_SYM '#'                             /* normal decimal       */
-#define HEX_SYM '$'                             /* hexadecimal          */
+#define PREFIX_BIN '%'                            /* binary decimal       */
+#define PREFIX_DEC '#'                             /* normal decimal       */
+#define PREFIX_HEX '$'                             /* hexadecimal          */
 
 /* define error codes                                                   */
 #define CLAC_EXP_ERR "No expression given"
@@ -83,12 +85,6 @@ static struct value_stk {			/* value stack	*/
 /* -------------------------------------------------------------------- */
 /* declare subfunctions							*/
 
-/* parse a decimal from an expr. */
-static long long get_decimal(const char *expr, int *offset);
-/* parse value */
-static long long get_value(const char *expr, int *offset, int bits);
-/* 'value' of a char */
-static int chr_pos(char c, const char *base, int base_len);
 /* parse in-between operations	*/
 static void operation(long long value, char op);
 /* parse unary operators	*/
@@ -107,11 +103,198 @@ static void open_bracket(void);
 /* decrease parenthesis level	*/
 static long long close_bracket(long long x);
 
+
+/**
+ * Parse & set an (unsigned) number, assuming it's in the configured
+ * default number base unless it has a prefix:
+ * - '$' / '0x' / '0h' => hexadecimal
+ * - '#' / '0d' => normal decimal
+ * - '%' / '0b' => binary decimal
+ * - '0o' => octal decimal
+ * Return how many characters were parsed or zero for error.
+ */
+static int getNumber(const char *str, long long *number, int *nbase)
+{
+	char *end;
+	const char const *start = str;
+	int base = ConfigureParams.Log.nNumberBase;
+	long long value;
+
+	/* determine correct number base */
+	if (str[0] == '0') {
+
+		/* 0x & 0h = hex, 0d = dec, 0o = oct, 0b = bin ? */
+		switch(str[1]) {
+		case 'b':
+			base = 2;
+			break;
+		case 'o':
+			base = 8;
+			break;
+		case 'd':
+			base = 10;
+			break;
+		case 'h':
+		case 'x':
+			base = 16;
+			break;
+		default:
+			str -= 2;
+		}
+		str += 2;
+	}
+	else if (!isxdigit(str[0])) {
+
+		/* doesn't start with (hex) number -> is it prefix? */
+		switch (*str++) {
+		case PREFIX_BIN:
+			base = 2;
+			break;
+		case PREFIX_DEC:
+			base = 10;
+			break;
+		case PREFIX_HEX:
+			base = 16;
+			break;
+		default:
+			fprintf(stderr, "Unrecognized number prefix in '%s'!\n", start);
+			return 0;
+		}
+	}
+	*nbase = base;
+
+	/* parse number */
+	errno = 0;
+	value = strtoll(str, &end, base);
+	if (errno == ERANGE && (value == LLONG_MAX || value == LLONG_MIN)) {
+		fprintf(stderr, "Under/overflow with value '%s'!\n", start);
+		return 0;
+	}
+	if ((errno != 0 && value == 0) || end == str) {
+		fprintf(stderr, "Value '%s' is empty!\n", start);
+		return 0;
+	}
+	*number = value;
+	return end - start;
+}
+
+
+/**
+ * Parse & set an (unsigned) number, assume it's in the configured
+ * default number base unless it has a suitable prefix.
+ * Return true for success and false for failure.
+ */
+bool Eval_Number(const char *str, Uint32 *number)
+{
+	int offset, base = 0;
+	long long value = 0;
+	
+	offset = getNumber(str, &value, &base);
+	if (!offset) {
+		return false;
+	}
+	if (str[offset]) {
+		const char *basestr;
+
+		switch (base) {
+		case 2:
+			basestr = "binary";
+			break;
+		case 8:
+			basestr = "octal";
+			break;
+		case 10:
+			basestr = "decimal";
+			break;
+		case 16:
+			basestr = "hexadecimal";
+			break;
+		default:
+			basestr = "unknown";
+	}
+		fprintf(stderr, "Extra characters in %s based number '%s'!\n",
+			basestr, str);
+		return false;
+	}
+	if (value < 0 || value > LONG_MAX) {
+		fprintf(stderr, "Number '%s' doesn't fit into Uint32!\n", str);
+		return false;
+	}
+	*number = value;
+	return true;
+}
+
+
+/**
+ * Get a an adress range, eg. "$fa0000-$fa0100"
+ * returns:
+ *  0 if OK,
+ * -1 if not syntaxically a range,
+ * -2 if values are invalid,
+ * -3 if syntaxically range, but not value-wise.
+ */
+static int getRange(char *str1, Uint32 *lower, Uint32 *upper)
+{
+	bool fDash = false;
+	char *str2 = str1;
+	int ret = 0;
+
+	while (*str2) {
+		if (*str2 == '-') {
+			*str2++ = '\0';
+			fDash = true;
+			break;
+		}
+		str2++;
+	}
+	if (!fDash)
+		return -1;
+
+	if (!Eval_Number(str1, lower))
+		ret = -2;
+	else if (!Eval_Number(str2, upper))
+		ret = -2;
+	else if (*lower > *upper)
+		ret = -3;
+	*--str2 = '-';
+	return ret;
+}
+
+
+/**
+ * Parse an adress range, eg. "$fa0000[-$fa0100]" + show appropriate warnings
+ * returns:
+ * -1 if invalid address or range,
+ *  0 if single address,
+ * +1 if a range.
+ */
+int Eval_Range(char *str, Uint32 *lower, Uint32 *upper)
+{
+	switch (getRange(str, lower, upper)) {
+	case 0:
+		return 1;
+	case -1:
+		/* single address, not a range */
+		if (!Eval_Number(str, lower))
+			return -1;
+		return 0;
+	case -2:
+		fprintf(stderr,"Invalid address values in '%s'!\n", str);
+		return -1;
+	case -3:
+		fprintf(stderr,"Invalid range ($%x > $%x)!\n", *lower, *upper);
+		return -1;
+	}
+	fprintf(stderr, "INTERNAL ERROR: Unknown getRange() return value.\n");
+	return -1;
+}
+
+
 /**
  * Evaluate expression.
  * Set given value and parsing offset, return error string or NULL for success.
  */
-const char* calculate (const char *in, long long *out, int *erroff)
+const char* Eval_Expression(const char *in, long long *out, int *erroff)
 {
 	/* in	 : expression to evaluate				*/
 	/* out	 : final parsed value					*/
@@ -121,8 +304,7 @@ const char* calculate (const char *in, long long *out, int *erroff)
 	/* end	 : 'expression end' flag				*/
 	/* offset: character offset in expression			*/
 
-	bool end = false;
-	int offset = 0;
+	int dummy, consumed, offset = 0;
 	long long value;
 	char mark;
 	
@@ -140,6 +322,8 @@ const char* calculate (const char *in, long long *out, int *erroff)
 	do {
 		mark = in[offset];
 		switch(mark) {
+		case '\0':
+			break;
 		case ' ':
 		case '\t':
 			offset ++;		/* jump over white space */
@@ -158,7 +342,6 @@ const char* calculate (const char *in, long long *out, int *erroff)
 				break;
 			}
 			operation (value, mark);
-			id.valid = false;
 			offset ++;
 			break;
 		case '|':
@@ -169,7 +352,6 @@ const char* calculate (const char *in, long long *out, int *erroff)
 		case '*':
 		case '/':
 			operation (value, mark);
-			id.valid = false;
 			offset ++;
 			break;
 		case '(':
@@ -180,48 +362,22 @@ const char* calculate (const char *in, long long *out, int *erroff)
 			value = close_bracket (value);
 			offset ++;
 			break;
-		case '0':
-			/* C notation for hex, or normal decimals? */
-			if(in[offset + 1] == 'x')
-			{
-				offset += 2;
-				value = get_value(in, &offset, 4);
-				break;
-			}
-		case '1':				/* decimal	*/
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		case '.':
-			value = get_decimal (in, &offset);
-			break;
-		case BIN_SYM:      /* binary decimal  */
-			offset ++;
-			value = get_value(in, &offset, 1);
-			break;
-		case DEC_SYM:      /* normal decimal prefix  */
-			offset ++;
-			value = get_decimal(in, &offset);
-			break;
-		case HEX_SYM:      /* hexadecimal    */
-			offset ++;
-			value = get_value(in, &offset, 4);
-			break;
 		default:
-			/* end of expression or error... */
-			if(mark < ' ' || mark == ';')
-				end = true;
-			else
-				id.error = CLAC_GEN_ERR;
+			/* number needed? */
+			if (id.valid == false) {
+				consumed = getNumber(&(in[offset]), &value, &dummy);
+				/* number parsed? */
+				if (consumed) {
+					offset += consumed;
+					id.valid = true;
+					break;
+				}
+			}
+			id.error = CLAC_GEN_ERR;
 		}
 
 	/* until exit or error message					*/
-	} while(!(end || id.error));
+	} while(mark && !id.error);
 
         /* result of evaluation 					*/
         if (val.idx >= 0)
@@ -254,154 +410,6 @@ const char* calculate (const char *in, long long *out, int *erroff)
 	return NULL;
 }
 
-/* ==================================================================== */
-/*			parse a value					*/
-/* ==================================================================== */
-
-/**
- * parse a decimal number
- */
-static long long get_decimal(const char *expr, int *offset)
-{
-	char mark;
-	int mark_set = false, expr_set = false;
-	long long value = 0;
-	
-	if(id.valid == false)
-	{
-		id.valid = true;
-		value = atof(&expr[*offset]);
-		/* jump over number */
-		do
-		{
-			mark = expr[++(*offset)];
-			/* check for multiple decimal points */
-			if(mark == '.')
-			{
-				if(mark_set)
-					id.error = CLAC_GEN_ERR;
-				else
-					mark_set = true;
-			}
-			/* check for multiple exponents */
-			if(mark == 'e' || mark == 'E')
-			{
-				if(expr_set)
-				{
-					id.error = CLAC_GEN_ERR;
-				}
-				else
-				{
-					/* check for exponent validity */
-					mark = expr[++(*offset)];
-					if(mark == '+' || mark == '-' ||
-					   (mark >= '0' && mark <= '9'))
-					{
-						mark_set = true;
-						expr_set = true;
-						mark = '.';
-					}
-					else
-						id.error = CLAC_GEN_ERR;
-				}
-			}
-		} while(!id.error &&
-			((mark >= '0' && mark <= '9') || mark == '.'));
-	}
-	else
-		id.error = CLAC_GEN_ERR;
-	
-	return value;
-}
-
-/**
- * parsing for 2^bits number base(up to hex, at the moment)
- */
-static long long get_value(const char *expr, int *offset, int bits)
-{
-	/* returns parsed value, changes expression offset */
-
-	long long value = 0;
-	int i, end, lenny, pos, idx, len_long = sizeof(long) * 8;
-	unsigned long num1 = 0, num2 = 0; /* int/decimal  parts  */
-	char digit;
-	const char *base = "0123456789ABCDEF"; /* number base(s)      */
-	end = 1 << bits;                       /* end of current base */
-	if(bits == 1) len_long --;             /* eliminate negate    */
-	lenny = len_long / bits;               /* max. number lenght  */
-	
-	/* if start of expression or preceded by an operator */
-	if(id.valid == false)
-	{
-		id.valid = true;
-		i = 0;
-		digit = expr[*offset];
-		idx = chr_pos(digit, base, end);  /* digit value  */
-		
-		/* increment i until the integer part of value ends */
-		while((i < lenny) && (idx >= 0))
-		{
-			num1 = (num1 << bits) | idx;
-			digit = expr[++(*offset)];
-			idx = chr_pos(digit, base, end);
-			i ++;
-		}
-		/* too long number or expands into the sign bit?  */
-		if(((i == lenny) && (idx >= 0)) ||
-		   (num1 & (1L << (len_long - 1))))
-			id.error = CLAC_OVR_ERR;
-		else
-		{
-			/* decimal part? */
-			if(digit == '.')
-			{
-				pos = len_long - bits;
-				digit = expr[++(*offset)];
-				idx = chr_pos(digit, base, end);
-				
-				/* calculate x / 0xFFFFFFFF */
-				while((pos >= bits) && (idx >= 0))
-				{
-					pos -= bits;
-					num2 |= (long)idx << pos;
-					digit = expr[++(*offset)];
-					idx = chr_pos(digit, base, end);
-				}
-				/* jump over any remaining decimals  */
-				if((pos < bits) && (idx >= 0))
-					while(chr_pos(expr[*offset], base, end) >= 0)
-						(*offset) ++;
-			}
-			/* compose value of integral and decimal parts  */
-			value = num2 / (long long) (1L << (len_long - bits)) + num1;
-		}
-	}
-	else
-		id.error = CLAC_GEN_ERR;
-	
-	return value;
-}
-
-/* -------------------------------------------------------------------- */
-/**
- * return the value of a given character in the current number base
- */
-static int chr_pos(char chr, const char *string, int len)
-{
-	/* returns a character position (0 - ) in a string or -1  */
-	int pos = 0;        /* character position */
-	chr = toupper(chr); /* uppercase a char   */
-	
-	/* till strings end or character found */
-	while(pos < len && *(string ++) != chr)
-		pos ++;
-	
-	/* if string end -> not found */
-	if(pos == len)
-		return -1;
-	else
-		return pos;
-}
 
 /* ==================================================================== */
 /*			expression evaluation				*/
@@ -414,8 +422,6 @@ static void operation (long long value, char oper)
 	 */
 	/* something to calc? */
 	if(id.valid == true) {
-		/* next number */
-		id.valid = false;
 		
 		/* add new items to stack */
 		PUSH(op, oper);
@@ -432,6 +438,8 @@ static void operation (long long value, char oper)
 				eval_stack();
 			}
 		}
+		/* next a number needed */
+		id.valid = false;
 	} else {
 		/* pre- or post-operators instead of in-betweens */
 		unary(oper);
@@ -448,8 +456,7 @@ static void unary (char oper)
 	 */
 	if(id.valid == false && op.idx < par.opx[par.idx])
 	{
-		switch(oper)
-		{
+		switch(oper) {
 		case '+':		/* not needed */
 			break;
 		case '-':
@@ -472,8 +479,7 @@ static void apply_prefix(void)
 	long long value = val.buf[val.idx];
 
 	op.idx--;
-	switch(op.buf[op.idx])
-	{
+	switch(op.buf[op.idx]) {
 	case '-':
 		value = (-value);
 		break;

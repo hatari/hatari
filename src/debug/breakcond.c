@@ -25,6 +25,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "video.h"	/* for Hatari video variable addresses */
 #include "breakcond.h"
+#include "calculate.h"
 
 
 /* set to 1 to enable parsing function tracing / debug output */
@@ -628,7 +629,7 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		fprintf(stderr, "WARNING: plain numbers shouldn't need masks.\n");
 	}
 	pstate->arg++;
-	if (!DebugUI_GetNumber(pstate->argv[pstate->arg], &(bc_value->mask))) {
+	if (!Eval_Number(pstate->argv[pstate->arg], &(bc_value->mask))) {
 		pstate->error = "invalid dec/hex/bin value";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
@@ -694,7 +695,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		}
 	} else {
 		/* a number */
-		if (!DebugUI_GetNumber(str, &(bc_value->value.number))) {
+		if (!Eval_Number(str, &(bc_value->value.number))) {
 			pstate->error = "invalid dec/hex/bin value";
 			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;

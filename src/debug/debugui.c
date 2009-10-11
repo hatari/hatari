@@ -96,146 +96,6 @@ static int DebugUI_SetLogFile(int nArgc, char *psArgs[])
 
 
 /**
- * Parse a number assuming it's in the configured default number base
- * unless prefixed. '$' prefix means hexadecimal, '#' decimal, and '%'
- * binary.  For range parsing and DebugUI, the value needs to be unsiged.
- * Return true for success and false for error.
- */
-bool DebugUI_GetNumber(const char *value, Uint32 *number)
-{
-	const char *str;
-	char prefix;
-	int i;
-
-	if (isxdigit(value[0]))
-	{
-		switch (ConfigureParams.Log.nNumberBase) {
-		case 16:
-			prefix = '$';
-			break;
-		case 2:
-			prefix = '%';
-			break;
-		case 10:
-		default:
-			prefix = '#';
-			break;
-		}
-	}
-	else
-		prefix = *value++;
-
-	switch (prefix) {
-	case '$':	/* hexadecimal */
-		if (sscanf(value, "%x", number) != 1)
-		{
-			fprintf(stderr, "Invalid hexadecimal value '%s'!\n", value);
-			return false;
-		}
-		break;
-	case '%':	/* binary */
-		*number = 0;
-		for (str = value, i = 0; *str && i < 32; str++, i++)
-		{
-			*number <<= 1;
-			switch (*str) {
-			case '0':
-				break;
-			case '1':
-				*number |= 1;
-				break;
-			default:
-				fprintf(stderr, "Invalid binary value '%s'!\n", value);
-				return false;
-			}
-		}
-		if (*str || !i)
-		{
-			fprintf(stderr, "Invalid number of binary digits in '%s'!\n", value);
-			return false;
-		}
-		break;
-	case '#':
-	default:	/* decimal */
-		if (sscanf(value, "%u", number) != 1)
-		{
-			fprintf(stderr, "Invalid decimal value '%s'!\n", value);
-			return false;
-		}
-	}
-	return true;
-}
-
-
-/**
- * Get a an adress range, eg. "$fa0000-$fa0100"
- * returns:
- *  0 if OK,
- * -1 if not syntaxically a range,
- * -2 if values are invalid,
- * -3 if syntaxically range, but not value-wise.
- */
-static int getRange(char *str1, Uint32 *lower, Uint32 *upper)
-{
-	bool fDash = false;
-	char *str2 = str1;
-	int ret = 0;
-
-	while (*str2)
-	{
-		if (*str2 == '-')
-		{
-			*str2++ = '\0';
-			fDash = true;
-			break;
-		}
-		str2++;
-	}
-	if (!fDash)
-		return -1;
-
-	if (!DebugUI_GetNumber(str1, lower))
-		ret = -2;
-	else if (!DebugUI_GetNumber(str2, upper))
-		ret = -2;
-	else if (*lower > *upper)
-		ret = -3;
-	*--str2 = '-';
-	return ret;
-}
-
-
-/**
- * Parse an adress range, eg. "$fa0000[-$fa0100]" + show appropriate warnings
- * returns:
- * -1 if invalid address or range,
- *  0 if single address,
- * +1 if a range.
- */
-int DebugUI_ParseRange(char *str, Uint32 *lower, Uint32 *upper)
-{
-	switch (getRange(str, lower, upper))
-	{
-	case 0:
-		return 1;
-	case -1:
-		/* single address, not a range */
-		if (!DebugUI_GetNumber(str, lower))
-			return -1;
-		return 0;
-	case -2:
-		fprintf(stderr,"Invalid address values in '%s'!\n", str);
-		return -1;
-	case -3:
-		fprintf(stderr,"Invalid range (%x > %x)!\n", *lower, *upper);
-		return -1;
-	}
-	fprintf(stderr, "INTERNAL ERROR: Unknown getRange() return value.\n");
-	return -1;
-}
-
-
-/**
  * Helper to print given value in all supported number bases
  */
 static void DebugUI_PrintValue(Uint32 value)
@@ -299,7 +159,7 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 		}
 	}
 	
-	if (!DebugUI_GetNumber(argv[1], &value))
+	if (!Eval_Number(argv[1], &value))
 		return DEBUGGER_CMDDONE;
 
 	DebugUI_PrintValue(value);
@@ -322,7 +182,7 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	errstr = calculate(expression, &result, &offset);
+	errstr = Eval_Expression(expression, &result, &offset);
 	if (errstr)
 		fprintf(stderr, "ERROR in the expression:\n'%s'\n%*c-%s\n",
 			expression, offset+2, '^', errstr);
@@ -438,7 +298,8 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 		"If value is prefixed with '$', it's a hexadecimal, if with '#', it's\n"
 		"a normal decimal, if with '%%', it's a binary decimal. Prefix can\n"
 		"be skipped for numbers in the default number base (currently %d).\n"
-		"Adresses may be given as a range like '$fc0000-$fc0100'.\n"
+		"Adresses may be given as a range like '$fc0000-$fc0100' (note\n"
+		"that there should be no spaces between the range numbers).\n"
 		"'h <command>' gives more help.\n", ConfigureParams.Log.nNumberBase);
 	return DEBUGGER_CMDDONE;
 }
@@ -676,12 +537,11 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_Evaluate, "evaluate", "e",
 	  "evaluate an expression",
 	  "<expression>\n"
-	  "\tEvaluate an expression and show result.  Doesn't take number\n"
-	  "\tbase into account so non-decimal numbers need to be always\n"
-	  "\tprefixed ($=hex, #=dec, %=bin).  Supported operators are,\n"
-	  "\tin the decending order of precedence:\n"
+	  "\tEvaluate an expression and the show result. Supported\n"
+	  "\toperators are, in the decending order of precedence:\n"
 	  "\t\t(), +, -, ~, *, /, +, -, >>, <<, ^, &, |\n"
-	  "\tFor example: +5 * ($20 + 0x200 + (-5)) | %111",
+	  "\tFor example:\n"
+	  "\t\t((0x21 * 0x200) + (-5)) ^ (~%111 & $f0f0f0)",
 	  true },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
