@@ -715,8 +715,13 @@ int main(int argc, char *argv[])
 	Main_UnPauseEmulation();
 	M68000_Start();                 /* Start emulation */
 
-	AviStopRecording();		/* cleanly close the avi file if needed */
-
+	if (AviRecording)
+	{
+		/* cleanly close the avi file */
+		Statusbar_AddMessage("Finishing AVI file...", 100);
+		Statusbar_Update(sdlscrn);
+		AviStopRecording();
+	}
 	/* Un-init emulation system */
 	Main_UnInit();
 
