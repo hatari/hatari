@@ -299,8 +299,8 @@ int		AviRecordDefaultFps = 50;
 char		AviRecordFile[FILENAME_MAX] = "hatari.avi";
 
 
-RECORD_AVI_PARAMS	AviParams;
-AVI_FILE_HEADER		AviFileHeader;
+static RECORD_AVI_PARAMS	AviParams;
+static AVI_FILE_HEADER		AviFileHeader;
 
 
 static void	AviStoreU16 ( Uint8 *p , Uint16 val );
@@ -579,7 +579,6 @@ bool	AviRecordVideoStream ( void )
 			return false;
 		}
 	}
-
 #if HAVE_LIBPNG
 	else if ( AviParams.VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
 	{
@@ -589,6 +588,10 @@ bool	AviRecordVideoStream ( void )
 		}
 	}
 #endif
+	else
+	{
+		return false;
+	}
 
 	AviParams.TotalVideoFrames++;
 	return true;
@@ -596,7 +599,7 @@ bool	AviRecordVideoStream ( void )
 
 
 
-bool	AviRecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
+static bool	AviRecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
 {
 	AVI_CHUNK	Chunk;
 	Sint16		sample[2];
@@ -641,6 +644,10 @@ bool	AviRecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleL
 			return false;
 		}
 	}
+	else
+	{
+		return false;
+	}
 
 	AviParams.TotalAudioSamples += SampleLength;
 	return true;
@@ -649,7 +656,7 @@ bool	AviRecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleL
 
 
 
-void	AviBuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
+static void	AviBuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
 {
 	int	Width , Height , BitCount , Fps , SizeImage;
 	int	AudioFreq;
@@ -866,7 +873,7 @@ static bool	AviBuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 }
 
 
-bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFileName )
+static bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFileName )
 {
 	AVI_STREAM_LIST_INFO	ListInfo;
 	char			InfoString[ 100 ];
@@ -956,8 +963,7 @@ bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFil
 
 
 
-
-bool	AviStopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
+static bool	AviStopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 {
 	long	FileSize;
 	Uint8	TempSize[4];
@@ -1035,7 +1041,6 @@ bool	Avi_AreWeRecording ( void )
 {
         return AviRecording;
 }
-
 
 
 
