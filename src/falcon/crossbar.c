@@ -74,7 +74,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #define DACBUFFER_SIZE  (MIXBUFFER_SIZE*2*64)
 
 /* Crossbar internal functions */
-static double Crossbar_DetectSampleRate(void);
+static double Crossbar_DetectSampleRate(Uint16 clock);
 
 /* Dma sound functions */
 static void Crossbar_setDmaSound_Settings(void);
@@ -110,7 +110,7 @@ static double tracks_play;
 static double tracks_record;
 static Uint16 track_monitored;
 
-static const double DmaSndSampleRates[4] =
+static const double Ste_SampleRates[4] =
 {
 	6258.0,
 	12517.0,
@@ -119,10 +119,10 @@ static const double DmaSndSampleRates[4] =
 };
 
 
-static const double DmaSndFalcSampleRates[] =
+static const double Falcon_SampleRates_25Mhz[15] =
 {
 	49170.0,
-	32780.0,	
+	32780.0,
 	24585.0,
 	19668.0,
 	16390.0,
@@ -136,6 +136,25 @@ static const double DmaSndFalcSampleRates[] =
 	 7024.0,
 	 6556.0,
 	 6146.0
+};
+
+static const double Falcon_SampleRates_32Mhz[15] =
+{
+	62500.0,
+	41666.0,
+	31250.0,
+	25000.0,
+	20833.0,
+	17857.0,
+	15624.0,
+	13889.0,
+	12500.0,
+	11363.0,
+	10416.0,
+	9615.0,
+	8928.0,
+	8333.0,
+	7812.0
 };
 
 /*-----------------------------------------------------------------------*/
@@ -163,7 +182,7 @@ void Crossbar_Reset(bool bCold)
 	/* DSP inits */
 	dspRx_wordCount = 0;
 	dspTx_wordCount = 0;
-	track_monitored = 1;
+	track_monitored = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -325,11 +344,9 @@ void Crossbar_SrcControler_ReadWord(void)
 /**
  * Write word to Falcon Crossbar source controller (0xff8930).
 	Source: A/D Convertor                 BIT 15 14 13 12
-	1 - Connect, 0 - disconnect ---------------'  |  |  |
-	00 - 25.175Mhz clock -------------------------+--+  |
-	01 - External clock --------------------------+--+  |
-	10 - 32Mhz clock (Don't use) -----------------+--'  |
-	0 - Handshake on, 1 - Handshake off ----------------'
+	00 - 25.175Mhz clock -------------------------+--+
+	01 - External clock --------------------------+--+
+	10 - 32Mhz clock (Don't use) -----------------+--'
 
 	Source: External Input                BIT 11 10  9  8
 	0 - DSP IN, 1 - All others ----------------'  |  |  |
@@ -426,7 +443,7 @@ void Crossbar_DstControler_WriteWord(void)
 		microphone_ADC_is_started = 1;
 #if HAVE_PORTAUDIO
 		//Crossbar_StartAdcXmitHandler();
-		//Microphone_Start((int)Crossbar_DetectSampleRate());
+		//Microphone_Start((int)Crossbar_DetectSampleRate(25));
 		//Microphone_Run();
 #endif
 	}
@@ -666,12 +683,12 @@ static void Crossbar_StartDmaSound_Handler()
 	if ((nCbSrc & 0x6) == 0x00)
 	{
 		/* Internal 25.175 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate();
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
 	}
 	else if ((nCbSrc & 0x6) == 0x40)
 	{
 		/* Internal 32 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate() * (25175.0/32000.0);
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(32);
 	}
 	else {
 		return;
@@ -744,17 +761,24 @@ void Crossbar_InterruptHandler_DmaSound(void)
 
 /**
  * Detect sample rate frequency
+ *    clock : value of the internal clock (25 or 32).
  */
-static double Crossbar_DetectSampleRate(void)
+static double Crossbar_DetectSampleRate(Uint16 clock)
 {
 	int nFalcClk = IoMem[0xff8935] & 0x0f;
 
-	if (nFalcClk != 0)
-	{
-		return DmaSndFalcSampleRates[nFalcClk-1];
+	/* Ste compatible sound */
+	if (nFalcClk == 0) {
+		return Ste_SampleRates[IoMem[0xff8921] & 3];
 	}
 
-	return DmaSndSampleRates[IoMem[0xff8921] & 3];
+	/* 25 Mhz internal clock */
+	if (clock == 25) {
+		return Falcon_SampleRates_25Mhz[nFalcClk-1];
+	}
+
+	/* 32 Mhz internal clock */
+	return Falcon_SampleRates_32Mhz[nFalcClk-1];
 }
 
 
@@ -774,12 +798,12 @@ static void Crossbar_StartDspXmitHandler(void)
 	if ((nCbSrc & 0x60) == 0x00)
 	{
 		/* Internal 25.175 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate();
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
 	}
 	else if ((nCbSrc & 0x60) == 0x40)
 	{
 		/* Internal 32 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate() * (25175.0/32000.0);
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(32);
 	}
 	else {
 		return;
@@ -809,18 +833,20 @@ void Crossbar_InterruptHandler_DspXmit(void)
 	/* read data from DSP Xmit */
 	data = DSP_SsiReadTxValue();
 
- 	/* Send DSP data to the DAC */
-	/* TODO : vérify that the DSP is connected to the DAC */
-	Crossbar_SendDataToDAC(data, dspTx_wordCount);
-
 	/* Send the frame status to the DSP SSI Xmit */
 	DSP_SsiReceive_SC2(frame);
 
 	/* Send the clock to the DSP SSI Xmit */
 	DSP_SsiReceive_SCK(0);
 
-	/* Restart the Int event handler */
-	Crossbar_StartDspXmitHandler();
+ 	/* Send DSP data to the DAC */
+	/* TODO : vérify that the DSP is connected to the DAC */
+	Crossbar_SendDataToDAC(data, dspTx_wordCount);
+
+	/* Restart the Int event handler if DSP is not in tristate mode */
+	if (IoMem_ReadWord(0xff8930) & 0x80) {
+		Crossbar_StartDspXmitHandler();
+	}
 
 	/* increase dspTx_wordCount for next sample */
 	dspTx_wordCount++;
@@ -857,7 +883,7 @@ static void Crossbar_SendDataToDspReceive(Uint32 value)
 
 	/* increase dspTx_wordCount for next sample */
 	dspRx_wordCount++;
-	if (dspRx_wordCount >= tracks_play * 2) {
+	if (dspRx_wordCount >= tracks_record * 2) {
 		dspRx_wordCount = 0;
 	}
 
@@ -886,7 +912,7 @@ static void Crossbar_StartAdcXmitHandler(void)
 	double cycles = 1.0;
 
 	/* Internal 25.175 MHz clock only for ADC (Jack) */
-	cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate();
+	cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
 	cycles = cycles / (tracks_play * 2.0);
 
 	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_ADCXMIT);
@@ -956,7 +982,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int i;
 	int nBufIdx;
 
-	FreqRatio = Crossbar_DetectSampleRate() / (double)nAudioFrequency;
+	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
 	FreqRatio *= 2.0;  /* Stereo */
 
 	fDacBufSamples = (double)nDacBufSamples;
