@@ -230,6 +230,12 @@ void Main_WaitOnVbl(void)
 	int nFrameDuration;
 	signed int nDelay;
 
+	if (nRunVBLs &&	++nVBLCount >= nRunVBLs)
+	{
+		/* show VBLs/s */
+		Main_PauseEmulation(true);
+		exit(0);
+	}
 	nCurrentMilliTicks = SDL_GetTicks();
 
 	nFrameDuration = 1000/nScreenRefreshRate;
@@ -241,15 +247,8 @@ void Main_WaitOnVbl(void)
 	{
 		if (ConfigureParams.System.bFastForward == true)
 		{
-			nVBLCount += 1;
 			if (!nFirstMilliTick)
 				nFirstMilliTick = Main_GetTicks();
-			else if (nRunVBLs && nVBLCount >= nRunVBLs)
-			{
-				/* show VBLs/s */
-				Main_PauseEmulation(true);
-				exit(0);
-			}
 		}
 		if (nFrameSkips < ConfigureParams.Screen.nFrameSkips)
 		{
