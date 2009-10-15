@@ -303,34 +303,34 @@ static RECORD_AVI_PARAMS	AviParams;
 static AVI_FILE_HEADER		AviFileHeader;
 
 
-static void	AviStoreU16 ( Uint8 *p , Uint16 val );
-static void	AviStoreU32 ( Uint8 *p , Uint32 val );
-static void	AviStore4cc ( Uint8 *p , const char *text );
-static Uint32	AviReadU32 ( Uint8 *p );
+static void	Avi_StoreU16 ( Uint8 *p , Uint16 val );
+static void	Avi_StoreU32 ( Uint8 *p , Uint32 val );
+static void	Avi_Store4cc ( Uint8 *p , const char *text );
+static Uint32	Avi_ReadU32 ( Uint8 *p );
 
-static int	AviGetBmpSize ( int Width , int Height , int BitCount );
+static int	Avi_GetBmpSize ( int Width , int Height , int BitCount );
 
 static inline void PixelConvert_8to24Bits_BGR(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors);
 static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt);
 static inline void PixelConvert_24to24Bits_BGR(Uint8 *dst, Uint8 *src, int w);
 static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint8 *src, int w);
 
-static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams );
+static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams );
 #if HAVE_LIBPNG
-static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams );
+static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams );
 #endif
-static bool	AviRecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2], int SampleIndex, int SampleLength );
+static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2], int SampleIndex, int SampleLength );
 
-static void	AviBuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader );
-static bool	AviBuildIndex ( RECORD_AVI_PARAMS *pAviParams );
+static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader );
+static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams );
 
-static bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFileName );
-static bool	AviStopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams );
-
-
+static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFileName );
+static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams );
 
 
-static void	AviStoreU16 ( Uint8 *p , Uint16 val )
+
+
+static void	Avi_StoreU16 ( Uint8 *p , Uint16 val )
 {
 	*p++ = val & 0xff;
 	val >>= 8;
@@ -338,7 +338,7 @@ static void	AviStoreU16 ( Uint8 *p , Uint16 val )
 }
 
 
-static void	AviStoreU32 ( Uint8 *p , Uint32 val )
+static void	Avi_StoreU32 ( Uint8 *p , Uint32 val )
 {
 	*p++ = val & 0xff;
 	val >>= 8;
@@ -350,19 +350,19 @@ static void	AviStoreU32 ( Uint8 *p , Uint32 val )
 }
 
 
-static void	AviStore4cc ( Uint8 *p , const char *text )
+static void	Avi_Store4cc ( Uint8 *p , const char *text )
 {
 	memcpy ( p , text , 4 );
 }
 
 
-static Uint32	AviReadU32 ( Uint8 *p )
+static Uint32	Avi_ReadU32 ( Uint8 *p )
 {
 	return (p[3]<<24) + (p[2]<<16) + (p[1]<<8) +p[0];
 }
 
 
-static int	AviGetBmpSize ( int Width , int Height , int BitCount )
+static int	Avi_GetBmpSize ( int Width , int Height , int BitCount )
 {
 	return ( Width * Height * BitCount / 8 );						/* bytes in one video frame */
 }
@@ -436,7 +436,7 @@ static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint8 *src, int w)
 
 
 
-static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
+static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 {
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
@@ -445,14 +445,14 @@ static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 	int		y;
 	int		NeedLock;
 	
-	SizeImage = AviGetBmpSize ( pAviParams->Width , pAviParams->Height , pAviParams->BitCount );
+	SizeImage = Avi_GetBmpSize ( pAviParams->Width , pAviParams->Height , pAviParams->BitCount );
 
 	/* Write the video frame header */
-	AviStore4cc ( Chunk.ChunkName , "00db" );				/* stream 0, uncompressed DIB bytes */
-	AviStoreU32 ( Chunk.ChunkSize , SizeImage );					/* max size of RGB image */
+	Avi_Store4cc ( Chunk.ChunkName , "00db" );				/* stream 0, uncompressed DIB bytes */
+	Avi_StoreU32 ( Chunk.ChunkSize , SizeImage );					/* max size of RGB image */
 	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
 	{
-		perror ( "AviRecordVideoStream_BMP" );
+		perror ( "Avi_RecordVideoStream_BMP" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write bmp frame header" );
 		return false;
 	}
@@ -490,7 +490,7 @@ static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 
 		if ( (int)fwrite ( pBitmapOut , 1 , pAviParams->Width*3 , pAviParams->FileOut ) != pAviParams->Width*3 )
 		{
-			perror ( "AviRecordVideoStream_BMP" );
+			perror ( "Avi_RecordVideoStream_BMP" );
 			Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write bmp video frame" );
 			return false;
 		}
@@ -504,7 +504,7 @@ static bool	AviRecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 
 
 #if HAVE_LIBPNG
-static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
+static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 {
 	AVI_CHUNK	Chunk;
 	int		SizeImage;
@@ -514,11 +514,11 @@ static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 
 	/* Write the video frame header */
 	ChunkPos = ftell ( pAviParams->FileOut );
-	AviStore4cc ( Chunk.ChunkName , "00dc" );				/* stream 0, compressed DIB bytes */
-	AviStoreU32 ( Chunk.ChunkSize , 0 );					/* size of PNG image (-> completed later) */
+	Avi_Store4cc ( Chunk.ChunkName , "00dc" );				/* stream 0, compressed DIB bytes */
+	Avi_StoreU32 ( Chunk.ChunkSize , 0 );					/* size of PNG image (-> completed later) */
 	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
 	{
-		perror ( "AviRecordVideoStream_PNG" );
+		perror ( "Avi_RecordVideoStream_PNG" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write png frame header" );
 		return false;
 	}
@@ -530,7 +530,7 @@ static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 		pAviParams->CropLeft , pAviParams->CropRight , pAviParams->CropTop , pAviParams->CropBottom );
 	if ( SizeImage <= 0 )
 	{
-		perror ( "AviRecordVideoStream_PNG" );
+		perror ( "Avi_RecordVideoStream_PNG" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write png video frame" );
 		return false;
 	}
@@ -541,16 +541,16 @@ static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 	}
 
 	/* Update the size of the video chunk */
-	AviStoreU32 ( TempSize , SizeImage );
+	Avi_StoreU32 ( TempSize , SizeImage );
 	if ( fseek ( pAviParams->FileOut , ChunkPos+4 , SEEK_SET ) != 0 )
 	{
-		perror ( "AviRecordVideoStream_PNG" );
+		perror ( "Avi_RecordVideoStream_PNG" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update png frame header" );
 		return false;
 	}
 	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
 	{
-		perror ( "AviRecordVideoStream_PNG" );
+		perror ( "Avi_RecordVideoStream_PNG" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update png frame header" );
 		return false;
 	}
@@ -559,7 +559,7 @@ static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 	/* Go to the end of the video frame data */
 	if ( fseek ( pAviParams->FileOut , 0 , SEEK_END ) != 0 )
 	{
-		perror ( "AviRecordVideoStream_PNG" );
+		perror ( "Avi_RecordVideoStream_PNG" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to seek png video frame" );
 		return false;
 	}
@@ -570,11 +570,11 @@ static bool	AviRecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 
 
 
-bool	AviRecordVideoStream ( void )
+bool	Avi_RecordVideoStream ( void )
 {
 	if ( AviParams.VideoCodec == AVI_RECORD_VIDEO_CODEC_BMP )
 	{
-		if ( AviRecordVideoStream_BMP ( &AviParams ) == false )
+		if ( Avi_RecordVideoStream_BMP ( &AviParams ) == false )
 		{
 			return false;
 		}
@@ -582,7 +582,7 @@ bool	AviRecordVideoStream ( void )
 #if HAVE_LIBPNG
 	else if ( AviParams.VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
 	{
-		if ( AviRecordVideoStream_PNG ( &AviParams ) == false )
+		if ( Avi_RecordVideoStream_PNG ( &AviParams ) == false )
 		{
 			return false;
 		}
@@ -599,18 +599,18 @@ bool	AviRecordVideoStream ( void )
 
 
 
-static bool	AviRecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
+static bool	Avi_RecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
 {
 	AVI_CHUNK	Chunk;
 	Sint16		sample[2];
 	int		i;
 
 	/* Write the audio frame header */
-	AviStore4cc ( Chunk.ChunkName , "01wb" );				/* stream 1, wave bytes */
-	AviStoreU32 ( Chunk.ChunkSize , SampleLength * 4 );			/* 16 bits, stereo -> 4 bytes */
+	Avi_Store4cc ( Chunk.ChunkName , "01wb" );				/* stream 1, wave bytes */
+	Avi_StoreU32 ( Chunk.ChunkSize , SampleLength * 4 );			/* 16 bits, stereo -> 4 bytes */
 	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
 	{
-		perror ( "AviRecordAudioStream_PCM" );
+		perror ( "Avi_RecordAudioStream_PCM" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write pcm frame header" );
 		return false;
 	}
@@ -624,7 +624,7 @@ static bool	AviRecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pS
 		/* And store */
 		if ( fwrite ( &sample , sizeof ( sample ) , 1 , pAviParams->FileOut ) != 1 )
 		{
-			perror ( "AviRecordAudioStream_PCM" );
+			perror ( "Avi_RecordAudioStream_PCM" );
 			Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write pcm frame" );
 			return false;
 		}
@@ -635,11 +635,11 @@ static bool	AviRecordAudioStream_PCM ( RECORD_AVI_PARAMS *pAviParams , Sint16 pS
 
 
 
-bool	AviRecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
+bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleLength )
 {
 	if ( AviParams.AudioCodec == AVI_RECORD_AUDIO_CODEC_PCM )
 	{
-		if ( AviRecordAudioStream_PCM ( &AviParams , pSamples , SampleIndex , SampleLength ) == false )
+		if ( Avi_RecordAudioStream_PCM ( &AviParams , pSamples , SampleIndex , SampleLength ) == false )
 		{
 			return false;
 		}
@@ -656,7 +656,7 @@ bool	AviRecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleL
 
 
 
-static void	AviBuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
+static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
 {
 	int	Width , Height , BitCount , Fps , SizeImage;
 	int	AudioFreq;
@@ -671,140 +671,140 @@ static void	AviBuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER
 
 	SizeImage = 0;
 	if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_BMP )
-		SizeImage = AviGetBmpSize ( Width , Height , BitCount );		/* size of a BMP image */
+		SizeImage = Avi_GetBmpSize ( Width , Height , BitCount );		/* size of a BMP image */
 	else if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
-		SizeImage = AviGetBmpSize ( Width , Height , BitCount );		/* max size of a PNG image */
+		SizeImage = Avi_GetBmpSize ( Width , Height , BitCount );		/* max size of a PNG image */
 
 
 	/* RIFF / AVI headers */
-	AviStore4cc ( pAviFileHeader->RiffHeader.signature , "RIFF" );
-	AviStoreU32 ( pAviFileHeader->RiffHeader.filesize , 0 );				/* total file size (-> completed later) */
-	AviStore4cc ( pAviFileHeader->RiffHeader.type , "AVI " );
+	Avi_Store4cc ( pAviFileHeader->RiffHeader.signature , "RIFF" );
+	Avi_StoreU32 ( pAviFileHeader->RiffHeader.filesize , 0 );				/* total file size (-> completed later) */
+	Avi_Store4cc ( pAviFileHeader->RiffHeader.type , "AVI " );
 
-	AviStore4cc ( pAviFileHeader->AviHeader.ChunkName , "LIST" );
-	AviStoreU32 ( pAviFileHeader->AviHeader.ChunkSize , sizeof ( AVI_STREAM_LIST_AVIH )
+	Avi_Store4cc ( pAviFileHeader->AviHeader.ChunkName , "LIST" );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.ChunkSize , sizeof ( AVI_STREAM_LIST_AVIH )
 		+ sizeof ( AVI_STREAM_LIST_VIDS ) + sizeof ( AVI_STREAM_LIST_AUDS ) - 8 );
-	AviStore4cc ( pAviFileHeader->AviHeader.Name , "hdrl" );
+	Avi_Store4cc ( pAviFileHeader->AviHeader.Name , "hdrl" );
 
-	AviStore4cc ( pAviFileHeader->AviHeader.Header.ChunkName , "avih" );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.ChunkSize , sizeof ( AVI_STREAM_AVIH ) - 8 );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.microsec_per_frame , 1000000 / Fps );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.max_bytes_per_second , SizeImage * Fps + AudioFreq * 4 );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.padding_granularity , 0 );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.flags , AVIF_HASINDEX | AVIF_ISINTERLEAVED | AVIF_TRUSTCKTYPE );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.total_frames , 0 );			/* number of video frames (-> completed later) */
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.init_frame , 0 );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.nb_streams , 2 );			/* 1 video and 1 audio */
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.buffer_size , SizeImage );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.width , Width );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.height , Height );
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.scale , 0 );				/* reserved */
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.rate , 0 );				/* reserved */
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.start , 0 );				/* reserved */
-	AviStoreU32 ( pAviFileHeader->AviHeader.Header.length , 0 );				/* reserved */
+	Avi_Store4cc ( pAviFileHeader->AviHeader.Header.ChunkName , "avih" );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.ChunkSize , sizeof ( AVI_STREAM_AVIH ) - 8 );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.microsec_per_frame , 1000000 / Fps );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.max_bytes_per_second , SizeImage * Fps + AudioFreq * 4 );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.padding_granularity , 0 );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.flags , AVIF_HASINDEX | AVIF_ISINTERLEAVED | AVIF_TRUSTCKTYPE );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.total_frames , 0 );			/* number of video frames (-> completed later) */
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.init_frame , 0 );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.nb_streams , 2 );			/* 1 video and 1 audio */
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.buffer_size , SizeImage );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.width , Width );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.height , Height );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.scale , 0 );				/* reserved */
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.rate , 0 );				/* reserved */
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.start , 0 );				/* reserved */
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.length , 0 );				/* reserved */
 
 
 	/* Video Stream */
-	AviStore4cc ( pAviFileHeader->VideoStream.ChunkName , "LIST" );
-	AviStoreU32 ( pAviFileHeader->VideoStream.ChunkSize , sizeof ( AVI_STREAM_LIST_VIDS ) - 8 );
-	AviStore4cc ( pAviFileHeader->VideoStream.Name , "strl" );
+	Avi_Store4cc ( pAviFileHeader->VideoStream.ChunkName , "LIST" );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.ChunkSize , sizeof ( AVI_STREAM_LIST_VIDS ) - 8 );
+	Avi_Store4cc ( pAviFileHeader->VideoStream.Name , "strl" );
 
-	AviStore4cc ( pAviFileHeader->VideoStream.Header.ChunkName , "strh" );
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.ChunkSize , sizeof ( AVI_STREAM_HEADER ) - 8 );
-	AviStore4cc ( pAviFileHeader->VideoStream.Header.stream_type , "vids" );
+	Avi_Store4cc ( pAviFileHeader->VideoStream.Header.ChunkName , "strh" );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.ChunkSize , sizeof ( AVI_STREAM_HEADER ) - 8 );
+	Avi_Store4cc ( pAviFileHeader->VideoStream.Header.stream_type , "vids" );
 	if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_BMP )
-		AviStoreU32 ( pAviFileHeader->VideoStream.Header.stream_handler , VIDEO_STREAM_RGB );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.stream_handler , VIDEO_STREAM_RGB );
 	else if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
-		AviStore4cc ( pAviFileHeader->VideoStream.Header.stream_handler , VIDEO_STREAM_PNG );
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.flags , 0 );
-	AviStoreU16 ( pAviFileHeader->VideoStream.Header.priority , 0 );
-	AviStoreU16 ( pAviFileHeader->VideoStream.Header.language , 0 );
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.initial_frames , 0 );
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.time_scale , 1 );
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.data_rate , Fps );
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.start_time , 0 );
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.data_length , 0 );			/* number of video frames (-> completed later) */
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.buffer_size , SizeImage );		/* size of an uncompressed frame */
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.quality , -1 );			/* use default quality */
-	AviStoreU32 ( pAviFileHeader->VideoStream.Header.sample_size , 0 );			/* 0 for video */
-	AviStoreU16 ( pAviFileHeader->VideoStream.Header.dest_left , 0 );
-	AviStoreU16 ( pAviFileHeader->VideoStream.Header.dest_top , 0 );
-	AviStoreU16 ( pAviFileHeader->VideoStream.Header.dest_right , Width );
-	AviStoreU16 ( pAviFileHeader->VideoStream.Header.dest_bottom , Height );
+		Avi_Store4cc ( pAviFileHeader->VideoStream.Header.stream_handler , VIDEO_STREAM_PNG );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.flags , 0 );
+	Avi_StoreU16 ( pAviFileHeader->VideoStream.Header.priority , 0 );
+	Avi_StoreU16 ( pAviFileHeader->VideoStream.Header.language , 0 );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.initial_frames , 0 );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.time_scale , 1 );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.data_rate , Fps );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.start_time , 0 );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.data_length , 0 );			/* number of video frames (-> completed later) */
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.buffer_size , SizeImage );		/* size of an uncompressed frame */
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.quality , -1 );			/* use default quality */
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.sample_size , 0 );			/* 0 for video */
+	Avi_StoreU16 ( pAviFileHeader->VideoStream.Header.dest_left , 0 );
+	Avi_StoreU16 ( pAviFileHeader->VideoStream.Header.dest_top , 0 );
+	Avi_StoreU16 ( pAviFileHeader->VideoStream.Header.dest_right , Width );
+	Avi_StoreU16 ( pAviFileHeader->VideoStream.Header.dest_bottom , Height );
 
-	AviStore4cc ( pAviFileHeader->VideoStream.Format.ChunkName , "strf" );
-	AviStoreU32 ( pAviFileHeader->VideoStream.Format.ChunkSize , sizeof ( AVI_STREAM_FORMAT_VIDS ) - 8 );
+	Avi_Store4cc ( pAviFileHeader->VideoStream.Format.ChunkName , "strf" );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.ChunkSize , sizeof ( AVI_STREAM_FORMAT_VIDS ) - 8 );
 	if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_BMP )
 	{
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.size , sizeof ( AVI_STREAM_FORMAT_VIDS ) - 8 );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.width , Width );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.height , Height );
-		AviStoreU16 ( pAviFileHeader->VideoStream.Format.planes , 1 );			/* always 1 */
-		AviStoreU16 ( pAviFileHeader->VideoStream.Format.bit_count , BitCount );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.compression , VIDEO_STREAM_RGB );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.size_image , SizeImage );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.xpels_meter , 0 );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.ypels_meter , 0 );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.clr_used , 0 );		/* no color map */
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.clr_important , 0 );		/* no color map */
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.size , sizeof ( AVI_STREAM_FORMAT_VIDS ) - 8 );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.width , Width );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.height , Height );
+		Avi_StoreU16 ( pAviFileHeader->VideoStream.Format.planes , 1 );			/* always 1 */
+		Avi_StoreU16 ( pAviFileHeader->VideoStream.Format.bit_count , BitCount );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.compression , VIDEO_STREAM_RGB );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.size_image , SizeImage );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.xpels_meter , 0 );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.ypels_meter , 0 );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.clr_used , 0 );		/* no color map */
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.clr_important , 0 );		/* no color map */
 	}
 	else if ( pAviParams->VideoCodec == AVI_RECORD_VIDEO_CODEC_PNG )
 	{
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.size , sizeof ( AVI_STREAM_FORMAT_VIDS ) - 8 );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.width , Width );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.height , Height );
-		AviStoreU16 ( pAviFileHeader->VideoStream.Format.planes , 1 );			/* always 1 */
-		AviStoreU16 ( pAviFileHeader->VideoStream.Format.bit_count , BitCount );
-		AviStore4cc ( pAviFileHeader->VideoStream.Format.compression , VIDEO_STREAM_PNG );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.size_image , SizeImage );	/* max size if uncompressed */
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.xpels_meter , 0 );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.ypels_meter , 0 );
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.clr_used , 0 );		/* no color map */
-		AviStoreU32 ( pAviFileHeader->VideoStream.Format.clr_important , 0 );		/* no color map */
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.size , sizeof ( AVI_STREAM_FORMAT_VIDS ) - 8 );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.width , Width );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.height , Height );
+		Avi_StoreU16 ( pAviFileHeader->VideoStream.Format.planes , 1 );			/* always 1 */
+		Avi_StoreU16 ( pAviFileHeader->VideoStream.Format.bit_count , BitCount );
+		Avi_Store4cc ( pAviFileHeader->VideoStream.Format.compression , VIDEO_STREAM_PNG );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.size_image , SizeImage );	/* max size if uncompressed */
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.xpels_meter , 0 );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.ypels_meter , 0 );
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.clr_used , 0 );		/* no color map */
+		Avi_StoreU32 ( pAviFileHeader->VideoStream.Format.clr_important , 0 );		/* no color map */
 	}
 
 
 	/* Audio Stream */
-	AviStore4cc ( pAviFileHeader->AudioStream.ChunkName , "LIST" );
-	AviStoreU32 ( pAviFileHeader->AudioStream.ChunkSize , sizeof ( AVI_STREAM_LIST_AUDS ) - 8 );
-	AviStore4cc ( pAviFileHeader->AudioStream.Name , "strl" );
+	Avi_Store4cc ( pAviFileHeader->AudioStream.ChunkName , "LIST" );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.ChunkSize , sizeof ( AVI_STREAM_LIST_AUDS ) - 8 );
+	Avi_Store4cc ( pAviFileHeader->AudioStream.Name , "strl" );
 
-	AviStore4cc ( pAviFileHeader->AudioStream.Header.ChunkName , "strh" );
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.ChunkSize , sizeof ( AVI_STREAM_HEADER ) - 8 );
-	AviStore4cc ( pAviFileHeader->AudioStream.Header.stream_type , "auds" );
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.stream_handler , 0 );			/* not used (or could be 1 for pcm ?) */
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.flags , 0 );
-	AviStoreU16 ( pAviFileHeader->AudioStream.Header.priority , 0 );
-	AviStoreU16 ( pAviFileHeader->AudioStream.Header.language , 0 );
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.initial_frames , 0 );			/* should be 1 in interleaved ? */
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.time_scale , 1 );
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.data_rate , AudioFreq );
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.start_time , 0 );
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.data_length , 0 );			/* number of audio samples (-> completed later) */
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.buffer_size , AudioFreq * 4 / 50 );	/* min VBL freq is 50 Hz */
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.quality , -1 );			/* use default quality */
-	AviStoreU32 ( pAviFileHeader->AudioStream.Header.sample_size , 4 );			/* 2 bytes, stereo */
-	AviStoreU16 ( pAviFileHeader->AudioStream.Header.dest_left , 0 );
-	AviStoreU16 ( pAviFileHeader->AudioStream.Header.dest_top , 0 );
-	AviStoreU16 ( pAviFileHeader->AudioStream.Header.dest_right , 0 );
-	AviStoreU16 ( pAviFileHeader->AudioStream.Header.dest_bottom , 0 );
+	Avi_Store4cc ( pAviFileHeader->AudioStream.Header.ChunkName , "strh" );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.ChunkSize , sizeof ( AVI_STREAM_HEADER ) - 8 );
+	Avi_Store4cc ( pAviFileHeader->AudioStream.Header.stream_type , "auds" );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.stream_handler , 0 );			/* not used (or could be 1 for pcm ?) */
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.flags , 0 );
+	Avi_StoreU16 ( pAviFileHeader->AudioStream.Header.priority , 0 );
+	Avi_StoreU16 ( pAviFileHeader->AudioStream.Header.language , 0 );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.initial_frames , 0 );			/* should be 1 in interleaved ? */
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.time_scale , 1 );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.data_rate , AudioFreq );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.start_time , 0 );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.data_length , 0 );			/* number of audio samples (-> completed later) */
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.buffer_size , AudioFreq * 4 / 50 );	/* min VBL freq is 50 Hz */
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.quality , -1 );			/* use default quality */
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Header.sample_size , 4 );			/* 2 bytes, stereo */
+	Avi_StoreU16 ( pAviFileHeader->AudioStream.Header.dest_left , 0 );
+	Avi_StoreU16 ( pAviFileHeader->AudioStream.Header.dest_top , 0 );
+	Avi_StoreU16 ( pAviFileHeader->AudioStream.Header.dest_right , 0 );
+	Avi_StoreU16 ( pAviFileHeader->AudioStream.Header.dest_bottom , 0 );
 
-	AviStore4cc ( pAviFileHeader->AudioStream.Format.ChunkName , "strf" );
-	AviStoreU32 ( pAviFileHeader->AudioStream.Format.ChunkSize , sizeof ( AVI_STREAM_FORMAT_AUDS ) - 8 );
+	Avi_Store4cc ( pAviFileHeader->AudioStream.Format.ChunkName , "strf" );
+	Avi_StoreU32 ( pAviFileHeader->AudioStream.Format.ChunkSize , sizeof ( AVI_STREAM_FORMAT_AUDS ) - 8 );
 	if ( pAviParams->AudioCodec == AVI_RECORD_AUDIO_CODEC_PCM )				/* 16 bits stereo pcm */
 	{
-		AviStoreU16 ( pAviFileHeader->AudioStream.Format.codec , AUDIO_STREAM_WAVE_FORMAT_PCM );	/* 0x0001 */
-		AviStoreU16 ( pAviFileHeader->AudioStream.Format.channels , 2 );
-		AviStoreU32 ( pAviFileHeader->AudioStream.Format.sample_rate , AudioFreq );
-		AviStoreU32 ( pAviFileHeader->AudioStream.Format.bit_rate , AudioFreq * 2 * 2 );	/* 2 channels * 2 bytes */
-		AviStoreU16 ( pAviFileHeader->AudioStream.Format.block_align , 4 );
-		AviStoreU16 ( pAviFileHeader->AudioStream.Format.bits_per_sample , 16 );
-		AviStoreU16 ( pAviFileHeader->AudioStream.Format.ext_size , 0 );
+		Avi_StoreU16 ( pAviFileHeader->AudioStream.Format.codec , AUDIO_STREAM_WAVE_FORMAT_PCM );	/* 0x0001 */
+		Avi_StoreU16 ( pAviFileHeader->AudioStream.Format.channels , 2 );
+		Avi_StoreU32 ( pAviFileHeader->AudioStream.Format.sample_rate , AudioFreq );
+		Avi_StoreU32 ( pAviFileHeader->AudioStream.Format.bit_rate , AudioFreq * 2 * 2 );	/* 2 channels * 2 bytes */
+		Avi_StoreU16 ( pAviFileHeader->AudioStream.Format.block_align , 4 );
+		Avi_StoreU16 ( pAviFileHeader->AudioStream.Format.bits_per_sample , 16 );
+		Avi_StoreU16 ( pAviFileHeader->AudioStream.Format.ext_size , 0 );
 	}
 }
 
 
-static bool	AviBuildIndex ( RECORD_AVI_PARAMS *pAviParams )
+static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 {
 	AVI_CHUNK	Chunk;
 	long		IndexChunkPosStart;
@@ -817,11 +817,11 @@ static bool	AviBuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 
 	/* Write the 'idx1' chunk header */
 	IndexChunkPosStart = ftell ( pAviParams->FileOut );
-	AviStore4cc ( Chunk.ChunkName , "idx1" );				/* stream 0, uncompressed DIB bytes */
-	AviStoreU32 ( Chunk.ChunkSize , 0 );					/* index size (-> completed later) */
+	Avi_Store4cc ( Chunk.ChunkName , "idx1" );				/* stream 0, uncompressed DIB bytes */
+	Avi_StoreU32 ( Chunk.ChunkSize , 0 );					/* index size (-> completed later) */
 	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
 	{
-		perror ( "AviBuildIndex" );
+		perror ( "Avi_BuildIndex" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write index header" );
 		return false;
 	}
@@ -838,14 +838,14 @@ static bool	AviBuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 	{
 		/* Read the header for this data chunk */
 		fread ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut );	/* ChunkName and ChunkSize */
-		Size = AviReadU32 ( Chunk.ChunkSize );
+		Size = Avi_ReadU32 ( Chunk.ChunkSize );
 
 		/* Write the index infos for this chunk */
 		fseek ( pAviParams->FileOut , PosWrite , SEEK_SET );
-		AviStore4cc ( ChunkIndex.identifier , (char *)Chunk.ChunkName );	/* 00dc, 00db, 01wb, ... */
-		AviStoreU32 ( ChunkIndex.flags , AVIIF_KEYFRAME );		/* AVIIF_KEYFRAME */
-		AviStoreU32 ( ChunkIndex.offset , Pos - pAviParams->MoviChunkPosStart - 8  );	/* pos relative to 'movi' */
-		AviStoreU32 ( ChunkIndex.length , Size );
+		Avi_Store4cc ( ChunkIndex.identifier , (char *)Chunk.ChunkName );	/* 00dc, 00db, 01wb, ... */
+		Avi_StoreU32 ( ChunkIndex.flags , AVIIF_KEYFRAME );		/* AVIIF_KEYFRAME */
+		Avi_StoreU32 ( ChunkIndex.offset , Pos - pAviParams->MoviChunkPosStart - 8  );	/* pos relative to 'movi' */
+		Avi_StoreU32 ( ChunkIndex.length , Size );
 		fwrite ( &ChunkIndex , sizeof ( ChunkIndex ) , 1 , pAviParams->FileOut );
 		PosWrite = ftell ( pAviParams->FileOut );			/* position for the next index */
 
@@ -855,16 +855,16 @@ static bool	AviBuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 	}
 
 	/* Update the size of the 'idx1' chunk */
-	AviStoreU32 ( TempSize , PosWrite - IndexChunkPosStart - 8 );
+	Avi_StoreU32 ( TempSize , PosWrite - IndexChunkPosStart - 8 );
 	if ( fseek ( pAviParams->FileOut , IndexChunkPosStart+4 , SEEK_SET ) != 0 )
 	{
-		perror ( "AviBuildIndex" );
+		perror ( "Avi_BuildIndex" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update idx1 header" );
 		return false;
 	}
 	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
 	{
-		perror ( "AviBuildIndex" );
+		perror ( "Avi_BuildIndex" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update idx1 header" );
 		return false;
 	}
@@ -873,7 +873,7 @@ static bool	AviBuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 }
 
 
-static bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFileName )
+static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char *AviFileName )
 {
 	AVI_STREAM_LIST_INFO	ListInfo;
 	char			InfoString[ 100 ];
@@ -908,7 +908,7 @@ static bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char 
 	}
 
 	/* Build the AVI header */
-	AviBuildFileHeader ( pAviParams , &AviFileHeader );
+	Avi_BuildFileHeader ( pAviParams , &AviFileHeader );
 	
 	/* Write the AVI header */
 	if ( fwrite ( &AviFileHeader , sizeof ( AviFileHeader ) , 1 , pAviParams->FileOut ) != 1 )
@@ -922,11 +922,11 @@ static bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char 
 	memset ( InfoString , 0 , sizeof ( InfoString ) );
 	Len = snprintf ( InfoString , sizeof ( InfoString ) , "%s - the Atari ST, STE, TT and Falcon emulator" , PROG_NAME ) + 1;
 	Len_rounded = Len + ( Len % 2 == 0 ? 0 : 1 );				/* round Len to the next multiple of 2 */
-	AviStore4cc ( ListInfo.ChunkName , "LIST" );
-	AviStoreU32 ( ListInfo.ChunkSize , sizeof ( AVI_STREAM_LIST_INFO ) - 8 + Len_rounded );
-	AviStore4cc ( ListInfo.Name , "INFO" );
-	AviStore4cc ( ListInfo.Info.ChunkName , "ISFT" );
-	AviStoreU32 ( ListInfo.Info.ChunkSize , Len );
+	Avi_Store4cc ( ListInfo.ChunkName , "LIST" );
+	Avi_StoreU32 ( ListInfo.ChunkSize , sizeof ( AVI_STREAM_LIST_INFO ) - 8 + Len_rounded );
+	Avi_Store4cc ( ListInfo.Name , "INFO" );
+	Avi_Store4cc ( ListInfo.Info.ChunkName , "ISFT" );
+	Avi_StoreU32 ( ListInfo.Info.ChunkSize , Len );
 	if ( fwrite ( &ListInfo , sizeof ( ListInfo ) , 1 , pAviParams->FileOut ) != 1 )
 	{
 		perror ( "AviStartRecording" );
@@ -942,9 +942,9 @@ static bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char 
 	}
 
 	/* Write the MOVI header */
-	AviStore4cc ( ListMovi.ChunkName , "LIST" );
-	AviStoreU32 ( ListMovi.ChunkSize , 0 );					/* completed when recording stops */
-	AviStore4cc ( ListMovi.Name , "movi" );
+	Avi_Store4cc ( ListMovi.ChunkName , "LIST" );
+	Avi_StoreU32 ( ListMovi.ChunkSize , 0 );					/* completed when recording stops */
+	Avi_Store4cc ( ListMovi.Name , "movi" );
 	pAviParams->MoviChunkPosStart = ftell ( pAviParams->FileOut );
 	if ( fwrite ( &ListMovi , sizeof ( ListMovi ) , 1 , pAviParams->FileOut ) != 1 )
 	{
@@ -963,7 +963,7 @@ static bool	AviStartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char 
 
 
 
-static bool	AviStopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
+static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 {
 	long	FileSize;
 	Uint8	TempSize[4];
@@ -975,7 +975,7 @@ static bool	AviStopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 	/* Update the size of the 'movi' chunk */
 	fseek ( pAviParams->FileOut , 0 , SEEK_END );				/* go to the end of the 'movi' chunk */
 	pAviParams->MoviChunkPosEnd = ftell ( pAviParams->FileOut );
-	AviStoreU32 ( TempSize , pAviParams->MoviChunkPosEnd - pAviParams->MoviChunkPosStart - 8 );
+	Avi_StoreU32 ( TempSize , pAviParams->MoviChunkPosEnd - pAviParams->MoviChunkPosStart - 8 );
 
 	if ( fseek ( pAviParams->FileOut , pAviParams->MoviChunkPosStart+4 , SEEK_SET ) != 0 )
 	{
@@ -991,7 +991,7 @@ static bool	AviStopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 	}
 
 	/* Build the index chunk */
-	if ( ! AviBuildIndex ( pAviParams ) )
+	if ( ! Avi_BuildIndex ( pAviParams ) )
 	{
 		perror ( "AviStopRecording" );
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to build index" );
@@ -1002,10 +1002,10 @@ static bool	AviStopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 	fseek ( pAviParams->FileOut , 0 , SEEK_END );				/* go to the end of the file */
 	FileSize = ftell ( pAviParams->FileOut );
 
-	AviStoreU32 ( AviFileHeader.RiffHeader.filesize , FileSize - 8 );	/* 32 bits, limited to 4GB */
-	AviStoreU32 ( AviFileHeader.AviHeader.Header.total_frames , pAviParams->TotalVideoFrames );	/* number of video frames */
-	AviStoreU32 ( AviFileHeader.VideoStream.Header.data_length , pAviParams->TotalVideoFrames );	/* number of video frames */
-	AviStoreU32 ( AviFileHeader.AudioStream.Header.data_length , pAviParams->TotalAudioSamples );	/* number of audio samples */
+	Avi_StoreU32 ( AviFileHeader.RiffHeader.filesize , FileSize - 8 );	/* 32 bits, limited to 4GB */
+	Avi_StoreU32 ( AviFileHeader.AviHeader.Header.total_frames , pAviParams->TotalVideoFrames );	/* number of video frames */
+	Avi_StoreU32 ( AviFileHeader.VideoStream.Header.data_length , pAviParams->TotalVideoFrames );	/* number of video frames */
+	Avi_StoreU32 ( AviFileHeader.AudioStream.Header.data_length , pAviParams->TotalAudioSamples );	/* number of audio samples */
 
 	if ( fseek ( pAviParams->FileOut , 0 , SEEK_SET ) != 0 )
 	{
@@ -1044,12 +1044,12 @@ bool	Avi_AreWeRecording ( void )
 
 
 
-void	AviStartRecording ( char *FileName , bool CropGui , int Fps , int VideoCodec )
+bool	Avi_StartRecording ( char *FileName , bool CropGui , int Fps , int VideoCodec )
 {
 	memset ( &AviParams , 0 , sizeof ( AviParams ) );
 
 	AviParams.VideoCodec = VideoCodec;
-	AviParams.VideoCodecCompressionLevel = 4;	/* png compression level */
+	AviParams.VideoCodecCompressionLevel = 9;	/* png compression level */
 	AviParams.AudioCodec = AVI_RECORD_AUDIO_CODEC_PCM;
 	AviParams.AudioFreq = ConfigureParams.Sound.nPlaybackFreq;
 	AviParams.Surface = sdlscrn;
@@ -1071,13 +1071,13 @@ void	AviStartRecording ( char *FileName , bool CropGui , int Fps , int VideoCode
 	}
 	
 	
-	AviStartRecording_WithParams ( &AviParams , FileName );
+	return Avi_StartRecording_WithParams ( &AviParams , FileName );
 }
 
 
-void	AviStopRecording ( void )
+bool	Avi_StopRecording ( void )
 {
-	AviStopRecording_WithParams ( &AviParams );
+	return Avi_StopRecording_WithParams ( &AviParams );
 }
 
 

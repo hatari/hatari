@@ -259,7 +259,7 @@ void Dialog_ScreenDlg(void)
 				/* AVI indexing can take a while for larger files */
 				Statusbar_AddMessage("Finishing AVI file...", 100);
 				Statusbar_Update(sdlscrn);
-				AviStopRecording();
+				Avi_StopRecording();
 				screendlg[DLGSCRN_RECANIM].txt = "Record AVI";
 				Statusbar_AddMessage("Emulation paused", 100);
 				Statusbar_Update(sdlscrn);
@@ -267,7 +267,7 @@ void Dialog_ScreenDlg(void)
 			else
 			{
 				ConfigureParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
-				AviStartRecording ( AviRecordFile , AviRecordDefaultCrop , nScreenRefreshRate , AviRecordDefaultVcodec );
+				Avi_StartRecording ( AviRecordFile , AviRecordDefaultCrop , nScreenRefreshRate , AviRecordDefaultVcodec );
 				screendlg[DLGSCRN_RECANIM].txt = "Stop recording";
 			}
 			break;

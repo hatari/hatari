@@ -2498,7 +2498,7 @@ void Video_InterruptHandler_VBL ( void )
 
 	/* Record video frame is necessary */
 	if ( AviRecording )
-		AviRecordVideoStream ();
+		Avi_RecordVideoStream ();
 
 	/* Store off PSG registers for YM file, is enabled */
 	YMFormat_UpdateRecording();

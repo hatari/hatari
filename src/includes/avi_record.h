@@ -21,12 +21,12 @@ extern bool	AviRecordDefaultCrop;
 extern int	AviRecordDefaultFps;
 extern char	AviRecordFile[FILENAME_MAX];
 
-extern bool	AviRecordVideoStream ( void );
-extern bool	AviRecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleLength );
+extern bool	Avi_RecordVideoStream ( void );
+extern bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleLength );
 
 extern bool	Avi_AreWeRecording ( void );
-extern void	AviStartRecording ( char *FileName , bool CropGui , int Fps , int VideoCodec );
-extern void	AviStopRecording ( void );
+extern bool	Avi_StartRecording ( char *FileName , bool CropGui , int Fps , int VideoCodec );
+extern bool	Avi_StopRecording ( void );
 
 
 #endif /* ifndef HATARI_AVI_RECORD_H */

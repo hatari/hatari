@@ -1090,7 +1090,7 @@ void Sound_Update_VBL(void)
 		if ( PrevIndex < 0 )
 			PrevIndex += MIXBUFFER_SIZE;
 
-		AviRecordAudioStream ( MixBuffer , PrevIndex , SamplePerVbl );
+		Avi_RecordAudioStream ( MixBuffer , PrevIndex , SamplePerVbl );
 	}
 
 	/* Clear write to register '13', used for YM file saving */

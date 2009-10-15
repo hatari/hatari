@@ -708,7 +708,7 @@ int main(int argc, char *argv[])
 	Main_CheckForAccurateDelays();
 
 	if ( AviRecordOnStartup )	/* Immediatly starts avi recording ? */
-		AviStartRecording ( AviRecordFile , AviRecordDefaultCrop , AviRecordDefaultFps , AviRecordDefaultVcodec );
+		Avi_StartRecording ( AviRecordFile , AviRecordDefaultCrop , AviRecordDefaultFps , AviRecordDefaultVcodec );
 
 	/* Run emulation */
 	Main_UnPauseEmulation();
@@ -719,7 +719,7 @@ int main(int argc, char *argv[])
 		/* cleanly close the avi file */
 		Statusbar_AddMessage("Finishing AVI file...", 100);
 		Statusbar_Update(sdlscrn);
-		AviStopRecording();
+		Avi_StopRecording();
 	}
 	/* Un-init emulation system */
 	Main_UnInit();
