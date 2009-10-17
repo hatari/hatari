@@ -42,6 +42,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "wavFormat.h"
 #include "ymFormat.h"
+#include "avi_record.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -540,7 +541,7 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 	int i;
 
 	assert(surf);
-	if (bRecordingYM || bRecordingWav || bRecordingAnimation) {
+	if (bRecordingYM || bRecordingWav || AviRecording) {
 		Statusbar_OverlayDrawLed(surf, RecColorOn);
 	}
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
@@ -628,7 +629,7 @@ void Statusbar_Update(SDL_Surface *surf)
 		nOldFrameSkips = nFrameSkips;
 	}
 
-	if ((bRecordingYM || bRecordingWav || bRecordingAnimation)
+	if ((bRecordingYM || bRecordingWav || AviRecording)
 	    != bOldRecording) {
 		bOldRecording = !bOldRecording;
 		if (bOldRecording) {
