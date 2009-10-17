@@ -21,6 +21,8 @@
 #include "screenSnapShot.h"
 #include "memorySnapShot.h"
 #include "sound.h"
+#include "video.h"
+#include "avi_record.h"
 
 static int    gArgc;
 static char  **gArgv;
@@ -135,11 +137,11 @@ static BOOL   gFinderLaunch;
 {
 	if (item == beginCaptureAnim)
 	{
-		return !ScreenSnapShot_AreWeRecording();
+		return !Avi_AreWeRecording();
 	}
 	if (item == endCaptureAnim)
 	{
-		return ScreenSnapShot_AreWeRecording();
+		return Avi_AreWeRecording();
 	}
 	if (item == beginCaptureSound)
 	{
@@ -163,14 +165,14 @@ static BOOL   gFinderLaunch;
 - (IBAction)captureAnimation:(id)sender
 {
 	GuiOsx_Pause();
-	ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange);
+	Avi_StartRecording ( AviRecordFile , AviRecordDefaultCrop , nScreenRefreshRate , AviRecordDefaultVcodec );
 	GuiOsx_Resume();
 }
 
 - (IBAction)endCaptureAnimation:(id)sender
 {
 	GuiOsx_Pause();
-	ScreenSnapShot_EndRecording();
+	Avi_StopRecording();
 	GuiOsx_Resume();
 }
 
