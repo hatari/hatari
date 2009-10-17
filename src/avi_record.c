@@ -73,6 +73,9 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c : " __DATE__ " " __TIME__;
 #include <png.h>
 #endif
 
+#include "pixel_convert.h"				/* inline functions */
+
+
 
 typedef struct
 {
@@ -310,11 +313,6 @@ static Uint32	Avi_ReadU32 ( Uint8 *p );
 
 static int	Avi_GetBmpSize ( int Width , int Height , int BitCount );
 
-static inline void PixelConvert_8to24Bits_BGR(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors);
-static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt);
-static inline void PixelConvert_24to24Bits_BGR(Uint8 *dst, Uint8 *src, int w);
-static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint8 *src, int w);
-
 static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams );
 #if HAVE_LIBPNG
 static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams );
@@ -365,73 +363,6 @@ static Uint32	Avi_ReadU32 ( Uint8 *p )
 static int	Avi_GetBmpSize ( int Width , int Height , int BitCount )
 {
 	return ( Width * Height * BitCount / 8 );						/* bytes in one video frame */
-}
-
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Unpack 8-bit data with RGB palette to 24-bit BGR pixels
- */
-static inline void PixelConvert_8to24Bits_BGR(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors)
-{
-	int x;
-	for (x = 0; x < w; x++, src++) {
-		*dst++ = colors[*src].b;
-		*dst++ = colors[*src].g;
-		*dst++ = colors[*src].r;
-	}
-}
-
-/**
- * Unpack 16-bit RGB pixels to 24-bit BGR pixels
- */
-static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt)
-{
-	int x;
-	for (x = 0; x < w; x++, src++) {
-		*dst++ = (((*src & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
-		*dst++ = (((*src & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
-		*dst++ = (((*src & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
-	}
-}
-
-/**
- *  unpack 24-bit RGB pixels to 24-bit BGR pixels
- */
-static inline void PixelConvert_24to24Bits_BGR(Uint8 *dst, Uint8 *src, int w)
-{
-	int x;
-	for (x = 0; x < w; x++, src += 3) {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		*dst++ = src[2];	/* B */
-		*dst++ = src[1];	/* G */
-		*dst++ = src[0];	/* R */
-#else
-		*dst++ = src[0];	/* B */
-		*dst++ = src[1];	/* G */
-		*dst++ = src[2];	/* R */
-#endif
-	}
-}
-
-/**
- *  unpack 32-bit RGBA pixels to 24-bit BGR pixels
- */
-static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint8 *src, int w)
-{
-	int x;
-	for (x = 0; x < w; x++, src += 4) {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		*dst++ = src[3];	/* B */
-		*dst++ = src[2];	/* G */
-		*dst++ = src[1];	/* R */
-#else
-		*dst++ = src[0];	/* B */
-		*dst++ = src[1];	/* G */
-		*dst++ = src[2];	/* R */
-#endif
-	}
 }
 
 

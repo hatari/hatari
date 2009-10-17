@@ -21,6 +21,7 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c : " __DATE__ " " _
 #if HAVE_LIBPNG
 # include <png.h>
 # include <assert.h>
+# include "pixel_convert.h"				/* inline functions */
 #endif
 
 
@@ -70,52 +71,6 @@ static void ScreenSnapShot_GetNum(void)
 
 
 #if HAVE_LIBPNG
-/*-----------------------------------------------------------------------*/
-/**
- * Unpack 8-bit data with RGB palette to 24-bit RGB pixels
- */
-static inline void ScreenSnapShot_8to24Bits(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors)
-{
-	int x;
-	for (x = 0; x < w; x++, src++) {
-		*dst++ = colors[*src].r;
-		*dst++ = colors[*src].g;
-		*dst++ = colors[*src].b;
-	}
-}
-
-/**
- * Unpack 16-bit RGB pixels to 24-bit RGB pixels
- */
-static inline void ScreenSnapShot_16to24Bits(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt)
-{
-	int x;
-	for (x = 0; x < w; x++, src++) {
-		*dst++ = (((*src & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
-		*dst++ = (((*src & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
-		*dst++ = (((*src & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
-	}
-}
-
-/**
- *  unpack 32-bit RGBA pixels to 24-bit RGB pixels
- */
-static inline void ScreenSnapShot_32to24Bits(Uint8 *dst, Uint8 *src, int w)
-{
-	int x;
-	for (x = 0; x < w; x++, src += 4) {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		*dst++ = src[1];
-		*dst++ = src[2];
-		*dst++ = src[3];
-#else
-		*dst++ = src[2];
-		*dst++ = src[1];
-		*dst++ = src[0];
-#endif
-	}
-}
-
 /**
  * Save given SDL surface as PNG. Return png file size > 0 for success.
  */
@@ -215,12 +170,12 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 		case 1:
 			/* unpack 8-bit data with RGB palette */
 			row_ptr = rowbuf;
-			ScreenSnapShot_8to24Bits(row_ptr, src_ptr, w, fmt->palette->colors);
+			PixelConvert_8to24Bits(row_ptr, src_ptr, w, fmt->palette->colors);
 			break;
 		case 2:
 			/* unpack 16-bit RGB pixels */
 			row_ptr = rowbuf;
-			ScreenSnapShot_16to24Bits(row_ptr, (Uint16*)src_ptr, w, fmt);
+			PixelConvert_16to24Bits(row_ptr, (Uint16*)src_ptr, w, fmt);
 			break;
 		case 3:
 			/* PNG can handle 24-bits */
@@ -229,7 +184,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 		case 4:
 			/* unpack 32-bit RGBA pixels */
 			row_ptr = rowbuf;
-			ScreenSnapShot_32to24Bits(row_ptr, src_ptr, w);
+			PixelConvert_32to24Bits(row_ptr, src_ptr, w);
 			break;
 		}
 		/* and unlock surface before syscalls */
