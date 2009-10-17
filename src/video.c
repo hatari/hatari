@@ -2376,10 +2376,6 @@ static void Video_DrawScreen(void)
 
 		bScreenChanged = Screen_Draw();
 	}
-
-	/* Grab any animation */
-	if (bRecordingAnimation)
-		ScreenSnapShot_RecordFrame(bScreenChanged);
 }
 
 
