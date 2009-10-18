@@ -71,7 +71,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 
 
-#define DACBUFFER_SIZE  (MIXBUFFER_SIZE*2*64)
+#define DACBUFFER_SIZE  (MIXBUFFER_SIZE*64)
 
 /* Crossbar internal functions */
 static double Crossbar_DetectSampleRate(Uint16 clock);
@@ -95,7 +95,8 @@ static void Crossbar_StartAdcXmitHandler(void);
 Uint16 nCbar_DmaSoundControl;
 
 /* internal datas */
-static Sint16 DacOutBuffer[DACBUFFER_SIZE];
+static Sint16 DacOutBuffer_left[DACBUFFER_SIZE];
+static Sint16 DacOutBuffer_right[DACBUFFER_SIZE];
 static int nDacOutRdPos, nDacOutWrPos, nDacBufSamples;
 
 static Uint32 nFrameStartAddr;		/* Sound frame start */
@@ -105,6 +106,9 @@ static Uint32 nFrameLen;		/* Length of the frame */
 
 static Uint32 dspRx_wordCount;		/* count number of words sent to DSP receiver (for RX frame computing) */
 static Uint32 dspTx_wordCount;		/* count number of words received from DSP transmitter (for TX frame computing) */
+
+static Uint32 dmaPlay_wordCount;	/* count number of played DMA samples */
+static Uint32 dmaRecord_wordCount;	/* count number of recorded DMA samples */
 
 static double tracks_play;
 static double tracks_record;
@@ -169,11 +173,15 @@ void Crossbar_Reset(bool bCold)
 	{
 	}
 	
+	/* DMA */
 	/* Stop DMA sound playing/record */
 	IoMem_WriteByte(0xff8901,0);
+	dmaPlay_wordCount = 0;
+	dmaRecord_wordCount = 0;
 
 	/* Clear DAC buffer */
-	memset(DacOutBuffer, 0, sizeof(DacOutBuffer));
+	memset(DacOutBuffer_left, 0, sizeof(DacOutBuffer_left));
+	memset(DacOutBuffer_right, 0, sizeof(DacOutBuffer_right));
 	nDacOutRdPos = nDacOutWrPos = nDacBufSamples = 0;
 
 	/* ADC inits */
@@ -197,9 +205,12 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nFrameEndAddr, sizeof(nFrameEndAddr));
 	MemorySnapShot_Store(&nFrameCounter, sizeof(nFrameCounter));
 	MemorySnapShot_Store(&nFrameLen, sizeof(nFrameLen));
-	MemorySnapShot_Store(&DacOutBuffer, sizeof(DacOutBuffer));
+	MemorySnapShot_Store(&DacOutBuffer_left, sizeof(DacOutBuffer_left));
+	MemorySnapShot_Store(&DacOutBuffer_right, sizeof(DacOutBuffer_right));
 	MemorySnapShot_Store(&nDacOutRdPos, sizeof(nDacOutRdPos));
 	MemorySnapShot_Store(&nDacOutWrPos, sizeof(nDacOutWrPos));
+	MemorySnapShot_Store(&dmaPlay_wordCount, sizeof(dmaPlay_wordCount));
+	MemorySnapShot_Store(&dmaRecord_wordCount, sizeof(dmaRecord_wordCount));
 	MemorySnapShot_Store(&dspRx_wordCount, sizeof(dspRx_wordCount));
 	MemorySnapShot_Store(&dspTx_wordCount, sizeof(dspTx_wordCount));
 	MemorySnapShot_Store(&tracks_play, sizeof(tracks_play));
@@ -639,14 +650,13 @@ Uint32 Crossbar_DmaSnd_CheckForEndOfFrame()
 		{
 			Crossbar_setDmaSound_Settings();
 			Crossbar_StartDmaSound_Handler();
-			return true;
 		}
 		else
 		{
 			nCbar_DmaSoundControl &= ~CROSSBAR_SNDCTRL_PLAY;
 			nCbar_DmaSoundControl &= ~CROSSBAR_SNDCTRL_RECORD;
-			return true;
 		}
+		return true;
 	}
 
 	return false;
@@ -676,7 +686,7 @@ void Crossbar_setDmaSound_Settings()
 static void Crossbar_StartDmaSound_Handler()
 {
 	Uint16 nCbSrc;
-	double cycles, stereo = 1;
+	double cycles, stereo = 1.0;
 
 	nCbSrc = IoMem[0xff8930];
 
@@ -696,7 +706,7 @@ static void Crossbar_StartDmaSound_Handler()
 
 	/* if stereo mode */
 	if ((IoMem[0xff8921] & 0xc0) != 0x80) {
-		stereo = 2;
+		stereo = 2.0;
 	}
 
 	cycles = cycles / tracks_play / stereo;
@@ -735,13 +745,24 @@ void Crossbar_InterruptHandler_DmaSound(void)
 			value = (Sint16) pFrameStart[nFrameCounter];
 			nFrameCounter ++;
 			/* Send sample to DAC (in mono mode, data is sent twice (for left and right channel) */
-			Crossbar_SendDataToDAC(value*64, 0);
+			Crossbar_SendDataToDAC(value*64, dmaPlay_wordCount);
+
+			/* increase dmaPlay_wordCount for next sample */
+			dmaPlay_wordCount ++;
+			if (dmaPlay_wordCount >= tracks_play * 2) {
+				dmaPlay_wordCount = 0;
+			}
 		}
 		
 		/* Send sample to DAC */
 		/* Todo : It should be sent to DMA OUT in the crossbar */
-		Crossbar_SendDataToDAC(value*64, 0);
+		Crossbar_SendDataToDAC(value*64, dmaPlay_wordCount);
 
+		/* increase dmaPlay_wordCount for next sample */
+		dmaPlay_wordCount ++;
+		if (dmaPlay_wordCount >= tracks_play * 2) {
+			dmaPlay_wordCount = 0;
+		}
 	} 
 	else {
 		/* DMA sound is in Record mode */
@@ -765,11 +786,11 @@ void Crossbar_InterruptHandler_DmaSound(void)
  */
 static double Crossbar_DetectSampleRate(Uint16 clock)
 {
-	int nFalcClk = IoMem[0xff8935] & 0x0f;
+	int nFalcClk = IoMem_ReadByte(0xff8935) & 0x0f;
 
 	/* Ste compatible sound */
 	if (nFalcClk == 0) {
-		return Ste_SampleRates[IoMem[0xff8921] & 3];
+		return Ste_SampleRates[IoMem_ReadByte(0xff8921) & 3];
 	}
 
 	/* 25 Mhz internal clock */
@@ -810,6 +831,7 @@ static void Crossbar_StartDspXmitHandler(void)
 	}
 	
 	cycles = cycles / (tracks_play * 2.0) / 2.0;
+//	cycles = cycles / tracks_play * 2.65); /*cycles = 61.0; */
 	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 }
 
@@ -820,6 +842,7 @@ void Crossbar_InterruptHandler_DspXmit(void)
 {
 	Uint16 frame=0;
 	Sint32 data;
+	Uint16 nCbDst = IoMem_ReadWord(0xff8932);
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
@@ -830,28 +853,39 @@ void Crossbar_InterruptHandler_DspXmit(void)
 		frame = 1;
 	}
 
-	/* read data from DSP Xmit */
-	data = DSP_SsiReadTxValue();
-
 	/* Send the frame status to the DSP SSI Xmit */
 	DSP_SsiReceive_SC2(frame);
 
 	/* Send the clock to the DSP SSI Xmit */
 	DSP_SsiReceive_SCK(0);
 
- 	/* Send DSP data to the DAC */
-	/* TODO : vérify that the DSP is connected to the DAC */
-	Crossbar_SendDataToDAC(data, dspTx_wordCount);
+	/* read data from DSP Xmit */
+	data = DSP_SsiReadTxValue();
 
-	/* Restart the Int event handler if DSP is not in tristate mode */
-	if (IoMem_ReadWord(0xff8930) & 0x80) {
-		Crossbar_StartDspXmitHandler();
+ 	/* Send DSP data to the DAC ? */
+	if ( (nCbDst & 0x6000) == 0x2000) {
+		Crossbar_SendDataToDAC(data, dspTx_wordCount);
+	}
+
+ 	/* Send DSP data to the DMA record ? */
+	if ( (nCbDst & 0x6) == 0x2) {
+		/* TODO : sent data to DMA record */
+	}
+
+ 	/* Send DSP data to the DSP in ? */
+	if ( (nCbDst & 0x60) == 0x20) {
+		Crossbar_SendDataToDspReceive(data);
 	}
 
 	/* increase dspTx_wordCount for next sample */
 	dspTx_wordCount++;
 	if (dspTx_wordCount >= tracks_play * 2) {
 		dspTx_wordCount = 0;
+	}
+
+	/* Restart the Int event handler if DSP is not in tristate mode */
+	if (IoMem_ReadWord(0xff8930) & 0x80) {
+		Crossbar_StartDspXmitHandler();
 	}
 }
 
@@ -930,18 +964,18 @@ void Crossbar_InterruptHandler_ADCXmit(void)
 
 	/* TODO: implementing of handshake mode and start frame */
 
-	/* Send sample to DSP receive */
+	/* Send sample to DSP receive ? */
 	if ( (nCbDst & 0x60) == 0x60) {
 		Crossbar_SendDataToDspReceive(sample);
 	}
 	
-	/* Send sample to DAC */
+	/* Send sample to DMA record ? */
 	if ( (nCbDst & 0x6) == 0x6) {
 		/* Todo : send data to DMA record */
 	}
 
-	/* Send sample to DMA record */
-	if ( (nCbDst & 0x1800) == 0x1800) {
+	/* Send sample to DAC ? */
+	if ( (nCbDst & 0x6000) == 0x6000) {
 		Crossbar_SendDataToDAC(sample, 0);
 	}
 	
@@ -965,8 +999,13 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
 {
 	Uint16 track = track_monitored * 2;
 		
-	if ((sample_pos == track) || (sample_pos == track+1)) {
-		DacOutBuffer[nDacOutWrPos] = value;
+	if (sample_pos == track) {
+		/* Left channel */
+		DacOutBuffer_left[nDacOutWrPos] = value;
+	}
+	else if (sample_pos == track+1) {
+		/* Right channel */
+		DacOutBuffer_right[nDacOutWrPos] = value;
 		nDacOutWrPos = (nDacOutWrPos + 1) % (DACBUFFER_SIZE);
 		nDacBufSamples += 1;
 	}
@@ -983,26 +1022,22 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int nBufIdx;
 
 	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
-	FreqRatio *= 2.0;  /* Stereo */
-
 	fDacBufSamples = (double)nDacBufSamples;
 	fDacBufRdPos = (double)nDacOutRdPos;
 
 	for (i = 0; (i < nSamplesToGenerate) && (fDacBufSamples >= 0.0); i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (DACBUFFER_SIZE);
+		nDacOutRdPos = ((int)fDacBufRdPos) % DACBUFFER_SIZE;
 
-		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-		                        + (int)(DacOutBuffer[nDacOutRdPos+0])) / 2;
-		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-		                        + (int)(DacOutBuffer[nDacOutRdPos+1])) / 2;
+		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)DacOutBuffer_left[nDacOutRdPos]) / 2;
+		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1] + (int)DacOutBuffer_right[nDacOutRdPos]) / 2;
 
 		fDacBufRdPos += FreqRatio;
 		fDacBufSamples -= FreqRatio;
 	}
 
-	nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (DACBUFFER_SIZE);
+	nDacOutRdPos = ((int)fDacBufRdPos) % DACBUFFER_SIZE;
 
 	if (fDacBufSamples > 0.0) {
 		nDacBufSamples = (int)fDacBufSamples;
