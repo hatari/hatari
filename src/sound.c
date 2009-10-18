@@ -1081,7 +1081,7 @@ void Sound_Update_VBL(void)
 	Sound_Update();
 
 	/* Record audio frame is necessary */
-	if ( AviRecording )
+	if ( bRecordingAvi )
 	{
 		int SamplePerVbl = nAudioFrequency / nScreenRefreshRate;
 		int PrevIndex;

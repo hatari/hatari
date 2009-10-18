@@ -714,7 +714,7 @@ int main(int argc, char *argv[])
 	Main_UnPauseEmulation();
 	M68000_Start();                 /* Start emulation */
 
-	if (AviRecording)
+	if (bRecordingAvi)
 	{
 		/* cleanly close the avi file */
 		Statusbar_AddMessage("Finishing AVI file...", 100);

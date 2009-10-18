@@ -15,7 +15,7 @@
 #define	AVI_RECORD_AUDIO_CODEC_PCM	1
 
 
-extern bool	AviRecording;
+extern bool	bRecordingAvi;
 extern int	AviRecordDefaultVcodec;
 extern bool	AviRecordDefaultCrop;
 extern int	AviRecordDefaultFps;

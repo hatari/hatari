@@ -541,7 +541,7 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 	int i;
 
 	assert(surf);
-	if (bRecordingYM || bRecordingWav || AviRecording) {
+	if (bRecordingYM || bRecordingWav || bRecordingAvi) {
 		Statusbar_OverlayDrawLed(surf, RecColorOn);
 	}
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
@@ -629,7 +629,7 @@ void Statusbar_Update(SDL_Surface *surf)
 		nOldFrameSkips = nFrameSkips;
 	}
 
-	if ((bRecordingYM || bRecordingWav || AviRecording)
+	if ((bRecordingYM || bRecordingWav || bRecordingAvi)
 	    != bOldRecording) {
 		bOldRecording = !bOldRecording;
 		if (bOldRecording) {

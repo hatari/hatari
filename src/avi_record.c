@@ -291,7 +291,7 @@ typedef struct {
 
 
 
-bool		AviRecording = false;
+bool		bRecordingAvi = false;
 #if HAVE_LIBPNG
 int		AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
 #else
@@ -812,7 +812,7 @@ static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char
 	AVI_STREAM_LIST_MOVI	ListMovi;
 
 
-	if ( AviRecording == true )						/* already recording ? */
+	if ( bRecordingAvi == true )						/* already recording ? */
 		return false;
 
 	/* Compute some video parameters */
@@ -887,7 +887,7 @@ static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char
 
 	/* We're ok to record */
 	Log_AlertDlg ( LOG_INFO, "AVI recording has been started");
-	AviRecording = true;
+	bRecordingAvi = true;
 
 	return true;
 }
@@ -900,7 +900,7 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 	Uint8	TempSize[4];
 
 
-	if ( AviRecording == false )						/* no recording ? */
+	if ( bRecordingAvi == false )						/* no recording ? */
 		return true;
 
 	/* Update the size of the 'movi' chunk */
@@ -956,7 +956,7 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 	fclose ( pAviParams->FileOut );
 
 	Log_AlertDlg ( LOG_INFO, "AVI recording has been stopped");
-	AviRecording = false;
+	bRecordingAvi = false;
 
 	return true;
 }
@@ -970,7 +970,7 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
  */
 bool	Avi_AreWeRecording ( void )
 {
-        return AviRecording;
+        return bRecordingAvi;
 }
 
 

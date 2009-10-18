@@ -2493,7 +2493,7 @@ void Video_InterruptHandler_VBL ( void )
 	ShortCut_ActKey();
 
 	/* Record video frame is necessary */
-	if ( AviRecording )
+	if ( bRecordingAvi )
 		Avi_RecordVideoStream ();
 
 	/* Store off PSG registers for YM file, is enabled */
