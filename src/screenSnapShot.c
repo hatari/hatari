@@ -27,7 +27,6 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c : " __DATE__ " " _
 
 bool bRecordingAnimation = false;           /* Recording animation? */
 static int nScreenShots = 0;                /* Number of screen shots saved */
-static bool bGrabWhenChange;
 
 
 /*-----------------------------------------------------------------------*/
