@@ -71,7 +71,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 
 
-#define DACBUFFER_SIZE  (MIXBUFFER_SIZE*64)
+#define DACBUFFER_SIZE  (MIXBUFFER_SIZE)
 
 /* Crossbar internal functions */
 static double Crossbar_DetectSampleRate(Uint16 clock);
