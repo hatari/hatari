@@ -15,6 +15,7 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include <ctype.h>
 #include <limits.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <SDL_types.h>
