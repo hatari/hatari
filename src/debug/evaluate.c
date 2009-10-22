@@ -398,7 +398,6 @@ const char* Eval_Expression(const char *in, long long *out, int *erroff)
 		} else {
 			if ((val.idx < 0) && (op.idx < 0)) {
 				id.error = CLAC_EXP_ERR;
-				*out = 0;
 			} else			/* trailing operators	*/
 				id.error = CLAC_GEN_ERR;
 		}
@@ -406,6 +405,7 @@ const char* Eval_Expression(const char *in, long long *out, int *erroff)
 
 	*erroff = offset;
 	if (id.error) {
+		*out = 0;
 		return id.error;
 	}
 	return NULL;
@@ -442,7 +442,7 @@ static void operation (long long value, char oper)
 		/* next a number needed */
 		id.valid = false;
 	} else {
-		/* pre- or post-operators instead of in-betweens */
+		/* pre- or post-operators instead of in-betweens? */
 		unary(oper);
 	}
 }
@@ -465,7 +465,7 @@ static void unary (char oper)
 			PUSH(op, oper);
 			break;
 		default:
-			id.error = CLAC_PRG_ERR;
+			id.error = CLAC_GEN_ERR;
 		}
 	}
 	else
