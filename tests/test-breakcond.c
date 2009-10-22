@@ -1,8 +1,5 @@
 /* 
  * Code to test Hatari conditional breakpoints in src/debug/breakcond.c
- * 
- * TODO: Move test stuff to a separate file and add Valgrinding
- * and --fstack-protector Make test targets for it
  */
 #include "main.h"
 #include "m68000.h"
@@ -15,7 +12,7 @@
 
 #define BITMASK(x)      ((1<<(x))-1)
 
-/* fake Hatari configuration variables for str.c */
+/* fake Hatari configuration variables for number parsing */
 #include "configuration.h"
 CNF_PARAMS ConfigureParams;
 
@@ -336,5 +333,5 @@ int main(int argc, const char *argv[])
 	} else {
 		fprintf(stderr, "\nFinished without any errors!\n\n");
 	}
-	return 0;
+	return errors;
 }
