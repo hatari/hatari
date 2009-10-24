@@ -184,13 +184,10 @@ void M68000_InitPairing(void)
  */
 void M68000_Reset(bool bCold)
 {
-	int i;
-
 	/* Clear registers */
 	if (bCold)
 	{
-		for (i=0; i<(16+1); i++)
-			Regs[i] = 0;
+		memset(&regs, 0, sizeof(regs));
 	}
 
 	/* Now directly reset the UAE CPU core: */
