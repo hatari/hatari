@@ -103,7 +103,7 @@ static void DebugUI_PrintValue(Uint32 value)
 	bool one, ones;
 	int bit;
 
-	fputs(" = %", stderr);
+	fputs("= %", stderr);
 	ones = false;
 	for (bit = 31; bit >= 0; bit--)
 	{
@@ -116,7 +116,10 @@ static void DebugUI_PrintValue(Uint32 value)
 	}
 	if (!ones)
 		fputc('0', stderr);
-	fprintf(stderr, " (bin), #%u (dec), $%x (hex)\n", value, value);
+	if (value & 0x80000000)
+		fprintf(stderr, " (bin), #%u/%d (dec), $%x (hex)\n", value, (int)value, value);
+	else
+		fprintf(stderr, " (bin), #%u (dec), $%x (hex)\n", value, value);
 }
 
 
@@ -173,7 +176,7 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 {
 	const char *errstr, *expression = (const char *)psArgs[1];
-	long long result;
+	Uint32 result;
 	int offset;
 
 	if (nArgc < 2)

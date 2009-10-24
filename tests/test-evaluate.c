@@ -24,7 +24,7 @@ int main(int argc, const char *argv[])
 	/* expected to succeed, with given result */
 	struct {
 		const char *expression;
-		long long result;
+		Uint32 result;
 	} success[] = {
 		{ "1+2*3", 7 },
 		{ "(1+2)*3", 9 },
@@ -32,7 +32,7 @@ int main(int argc, const char *argv[])
 	};
 	int i, offset, tests = 0, errors = 0;
 	const char *expression, *errstr;
-	long long result;
+	Uint32 result;
 
 	fprintf(stderr, "\nExpressions that should FAIL:\n");
 

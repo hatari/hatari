@@ -114,12 +114,12 @@ static long long close_bracket(long long x);
  * - '0o' => octal decimal
  * Return how many characters were parsed or zero for error.
  */
-static int getNumber(const char *str, long long *number, int *nbase)
+static int getNumber(const char *str, Uint32 *number, int *nbase)
 {
 	char *end;
 	const char const *start = str;
 	int base = ConfigureParams.Log.nNumberBase;
-	long long value;
+	unsigned long int value;
 
 	/* determine correct number base */
 	if (str[0] == '0') {
@@ -166,9 +166,9 @@ static int getNumber(const char *str, long long *number, int *nbase)
 
 	/* parse number */
 	errno = 0;
-	value = strtoll(str, &end, base);
-	if (errno == ERANGE && (value == LLONG_MAX || value == LLONG_MIN)) {
-		fprintf(stderr, "Under/overflow with value '%s'!\n", start);
+	value = strtoul(str, &end, base);
+	if (errno == ERANGE && value == LONG_MAX) {
+		fprintf(stderr, "Overflow with value '%s'!\n", start);
 		return 0;
 	}
 	if ((errno != 0 && value == 0) || end == str) {
@@ -188,9 +188,8 @@ static int getNumber(const char *str, long long *number, int *nbase)
 bool Eval_Number(const char *str, Uint32 *number)
 {
 	int offset, base = 0;
-	long long value = 0;
 	
-	offset = getNumber(str, &value, &base);
+	offset = getNumber(str, number, &base);
 	if (!offset) {
 		return false;
 	}
@@ -217,11 +216,6 @@ bool Eval_Number(const char *str, Uint32 *number)
 			basestr, str);
 		return false;
 	}
-	if (value < 0 || value > LONG_MAX) {
-		fprintf(stderr, "Number '%s' doesn't fit into Uint32!\n", str);
-		return false;
-	}
-	*number = value;
 	return true;
 }
 
@@ -295,7 +289,7 @@ int Eval_Range(char *str, Uint32 *lower, Uint32 *upper)
  * Evaluate expression.
  * Set given value and parsing offset, return error string or NULL for success.
  */
-const char* Eval_Expression(const char *in, long long *out, int *erroff)
+const char* Eval_Expression(const char *in, Uint32 *out, int *erroff)
 {
 	/* in	 : expression to evaluate				*/
 	/* out	 : final parsed value					*/
@@ -366,11 +360,13 @@ const char* Eval_Expression(const char *in, long long *out, int *erroff)
 		default:
 			/* number needed? */
 			if (id.valid == false) {
-				consumed = getNumber(&(in[offset]), &value, &dummy);
+				Uint32 tmp;
+				consumed = getNumber(&(in[offset]), &tmp, &dummy);
 				/* number parsed? */
 				if (consumed) {
 					offset += consumed;
 					id.valid = true;
+					value = tmp;
 					break;
 				}
 			}

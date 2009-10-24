@@ -10,6 +10,6 @@
 
 extern bool Eval_Number(const char *value, Uint32 *number);
 extern int Eval_Range(char *str, Uint32 *lower, Uint32 *upper);
-extern const char* Eval_Expression(const char *expression, long long *result, int *offset);
+extern const char* Eval_Expression(const char *expression, Uint32 *result, int *offset);
 
 #endif
