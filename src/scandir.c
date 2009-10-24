@@ -50,20 +50,21 @@ int alphasort(const void *d1, const void *d2)
 /*-----------------------------------------------------------------------*/
 /**
  * Scan a directory for all its entries
+ * Return -1 on error, number of entries on success
  */
 int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(struct dirent *), int (*dcomp)(const void *, const void *))
 {
-	struct dirent *d, *p, **names;
+	struct dirent *d, *p = NULL, **names = NULL;
 	struct stat stb;
-	size_t nitems;
+	size_t nitems = 0;
 	size_t arraysz;
 	DIR *dirp;
 
 	if ((dirp = opendir(dirname)) == NULL)
-		return(-1);
+		goto error_out;
 
 	if (fstat(dirfd(dirp), &stb) < 0)
-		return(-1);
+		goto error_out;
 
 	/*
 	 * estimate the array size by taking the size of the directory file
@@ -73,9 +74,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 
 	names = (struct dirent **)malloc(arraysz * sizeof(struct dirent *));
 	if (names == NULL)
-		return(-1);
-
-	nitems = 0;
+		goto error_out;
 
 	while ((d = readdir(dirp)) != NULL)
 	{
@@ -89,7 +88,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 
 		p = (struct dirent *)malloc(DIRSIZ(d));
 		if (p == NULL)
-			return(-1);
+			goto error_out;
 
 		p->d_ino = d->d_ino;
 		p->d_reclen = d->d_reclen;
@@ -101,20 +100,23 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 		 * realloc the maximum size.
 		 */
 
-		if (++nitems >= arraysz)
+		if ((nitems+1) >= arraysz)
 		{
-
+			struct dirent **tmp;
+			
 			if (fstat(dirfd(dirp), &stb) < 0)
-				return(-1);     /* just might have grown */
+				goto error_out;   /* just might have grown */
 
 			arraysz = stb.st_size / 12;
 
-			names = (struct dirent **)realloc((char *)names, arraysz * sizeof(struct dirent *));
-			if (names == NULL)
-				return(-1);
+			tmp = (struct dirent **)realloc((char *)names, arraysz * sizeof(struct dirent *));
+			if (tmp == NULL)
+				goto error_out;
+			names = tmp;
 		}
 
-		names[nitems-1] = p;
+		names[nitems++] = p;
+		p = NULL;
 	}
 
 	closedir(dirp);
@@ -125,6 +127,18 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 	*namelist = names;
 
 	return nitems;
+
+error_out:
+	if (names)
+	{
+		int i;
+		for (i = 0; i < nitems; i++)
+			free(names[i]);
+		free(names);
+	}
+	if (dirp)
+		closedir(dirp);
+	return -1;
 }
 
 
