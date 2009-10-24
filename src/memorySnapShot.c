@@ -46,7 +46,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "falcon/dsp.h"
 
 
-#define VERSION_STRING      "1.3.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "devel"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
@@ -229,7 +229,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		/* Capture each files details */
 		Configuration_MemorySnapShot_Capture(true);
 		TOS_MemorySnapShot_Capture(true);
-		Main_MemorySnapShot_Capture(true);
+		STMemory_MemorySnapShot_Capture(true);
 		FDC_MemorySnapShot_Capture(true);
 		Floppy_MemorySnapShot_Capture(true);
 		GemDOS_MemorySnapShot_Capture(true);
@@ -274,7 +274,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Reset_Cold();
 
 		/* Capture each files details */
-		Main_MemorySnapShot_Capture(false);
+		STMemory_MemorySnapShot_Capture(false);
 		FDC_MemorySnapShot_Capture(false);
 		Floppy_MemorySnapShot_Capture(false);
 		GemDOS_MemorySnapShot_Capture(false);

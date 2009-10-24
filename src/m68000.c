@@ -211,12 +211,10 @@ void M68000_Reset(bool bCold)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reset and start 680x0 emulation
+ * Start 680x0 emulation
  */
 void M68000_Start(void)
 {
-	m68k_reset();
-
 	/* Load initial memory snapshot */
 	if (bLoadMemorySave)
 	{
@@ -254,10 +252,6 @@ void M68000_CheckCpuLevel(void)
 void M68000_MemorySnapShot_Capture(bool bSave)
 {
 	Uint32 savepc;
-
-	/* Save/Restore details */
-	MemorySnapShot_Store(Regs,sizeof(Regs));
-	MemorySnapShot_Store(&STRamEnd,sizeof(STRamEnd));
 
 	/* For the UAE CPU core: */
 	MemorySnapShot_Store(&currprefs.address_space_24,
