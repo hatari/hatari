@@ -235,7 +235,7 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 }
 
 
-extern void M68000_InitPairing(void);
+extern void M68000_Init(void);
 extern void M68000_Reset(bool bCold);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuLevel(void);

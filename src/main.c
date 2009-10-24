@@ -527,7 +527,7 @@ static void Main_Init(void)
 	}
 #endif
 	Floppy_Init();
-	Init680x0();                  /* Init CPU emulation */
+	M68000_Init();                /* Init CPU emulation */
 	Audio_Init();
 	Keymap_Init();
 

@@ -128,12 +128,11 @@ static void M68000_InitPairing_BitShift ( int OpCode )
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Init the pairing matrix
  * Two instructions can pair if PairingArray[ LastOpcodeFamily ][ OpcodeFamily ] == 1
  */
-void M68000_InitPairing(void)
+static void M68000_InitPairing(void)
 {
 	/* First, clear the matrix (pairing is false) */
 	memset(PairingArray , 0 , MAX_OPCODE_FAMILY * MAX_OPCODE_FAMILY);
@@ -178,6 +177,19 @@ void M68000_InitPairing(void)
 }
 
 
+/**
+ * One-time CPU initialization.
+ */
+void M68000_Init(void)
+{
+	/* Init UAE CPU core */
+	Init680x0();
+
+	/* Init the pairing matrix */
+	M68000_InitPairing();
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Reset CPU 68000 variables
@@ -192,9 +204,6 @@ void M68000_Reset(bool bCold)
 
 	/* Now directly reset the UAE CPU core: */
 	m68k_reset();
-
-	/* Init the pairing matrix */
-	M68000_InitPairing();
 
 	BusMode = BUS_MODE_CPU;
 }
