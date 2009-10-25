@@ -10,8 +10,8 @@
 
 
 /* Name and version for window title: */
-//#define PROG_NAME "Hatari devel (" __DATE__ ")"
-#define PROG_NAME "Hatari v1.3.1"
+#define PROG_NAME "Hatari devel (" __DATE__ ")"
+//#define PROG_NAME "Hatari v1.3.1"
 
 #include "config.h"
 
@@ -53,7 +53,6 @@
 extern bool bQuitProgram;
 extern Uint32 nRunVBLs;
 
-extern void Main_MemorySnapShot_Capture(bool bSave);
 extern bool Main_PauseEmulation(bool visualize);
 extern bool Main_UnPauseEmulation(void);
 extern void Main_RequestQuit(void);

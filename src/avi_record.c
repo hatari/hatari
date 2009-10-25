@@ -767,8 +767,12 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 	/* end of the 'movi' chunk. */
 	while ( Pos < pAviParams->MoviChunkPosEnd )
 	{
-		/* Read the header for this data chunk */
-		fread ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut );	/* ChunkName and ChunkSize */
+		/* Read the header for this data chunk: ChunkName and ChunkSize */
+		if (fread(&Chunk, sizeof(Chunk), 1, pAviParams->FileOut) != 1)
+		{
+			perror("Avi_BuildIndex");
+			return false;
+		}
 		Size = Avi_ReadU32 ( Chunk.ChunkSize );
 
 		/* Write the index infos for this chunk */

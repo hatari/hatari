@@ -11,12 +11,13 @@ const char STMemory_fileid[] = "Hatari stMemory.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "configuration.h"
 #include "floppy.h"
-#include "ioMem.h"
 #include "gemdos.h"
-#include "tos.h"
+#include "ioMem.h"
 #include "log.h"
-#include "vdi.h"
 #include "memory.h"
+#include "memorySnapShot.h"
+#include "tos.h"
+#include "vdi.h"
 
 
 /* STRam points to our ST Ram. Unless the user enabled SMALL_MEM where we have
@@ -33,7 +34,6 @@ Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd;            /* End of ST Ram, above this address is no-mans-land and ROM/IO memory */
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Clear section of ST's memory space.
  */
@@ -43,7 +43,22 @@ void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Save/Restore snapshot of RAM / ROM variables
+ * ('MemorySnapShot_Store' handles type)
+ */
+void STMemory_MemorySnapShot_Capture(bool bSave)
+{
+	MemorySnapShot_Store(&STRamEnd, sizeof(STRamEnd));
+
+	/* Only save/restore area of memory machine is set to, eg 1Mb */
+	MemorySnapShot_Store(STRam, STRamEnd);
+
+	/* And Cart/TOS/Hardware area */
+	MemorySnapShot_Store(&RomMem[0xE00000], 0x200000);
+}
+
+
 /**
  * Set default memory configuration, connected floppies, memory size and
  * clear the ST-RAM area.

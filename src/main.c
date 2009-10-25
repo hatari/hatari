@@ -66,32 +66,6 @@ static bool bIgnoreNextMouseMotion = false;  /* Next mouse motion will be ignore
 
 /*-----------------------------------------------------------------------*/
 /**
- * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
- */
-void Main_MemorySnapShot_Capture(bool bSave)
-{
-	int nBytes;
-
-	/* Save/Restore details */
-	/* Only save/restore area of memory machine ie set to, eg 1Mb */
-	if (bSave)
-	{
-		nBytes = STRamEnd;
-		MemorySnapShot_Store(&nBytes, sizeof(nBytes));
-		MemorySnapShot_Store(STRam, nBytes);
-	}
-	else
-	{
-		MemorySnapShot_Store(&nBytes, sizeof(nBytes));
-		MemorySnapShot_Store(STRam, nBytes);
-	}
-	/* And Cart/TOS/Hardware area */
-	MemorySnapShot_Store(&RomMem[0xE00000], 0x200000);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Return current time as millisecond for performance measurements.
  * 
  * (On Unix only time spent by Hatari itself is counted, on other
@@ -527,7 +501,7 @@ static void Main_Init(void)
 	}
 #endif
 	Floppy_Init();
-	Init680x0();                  /* Init CPU emulation */
+	M68000_Init();                /* Init CPU emulation */
 	Audio_Init();
 	Keymap_Init();
 
