@@ -47,11 +47,11 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 
 /* HDC globals */
 HDCOMMAND HDCCommand;
-FILE *hd_image_file = NULL;
 int nPartitions = 0;
 short int HDCSectorCount;
 bool bAcsiEmuOn = false;
 
+static FILE *hd_image_file = NULL;
 static Uint32 nLastBlockAddr;
 static bool bSetLastBlockAddr;
 static Uint8 nLastError;
@@ -411,7 +411,7 @@ static void HDC_Cmd_ReadSector(void)
 /**
  * Emulation routine for HDC command packets.
  */
-void HDC_EmulateCommandPacket()
+static void HDC_EmulateCommandPacket(void)
 {
 
 	switch(HD_OPCODE(HDCCommand))
@@ -481,7 +481,7 @@ void HDC_EmulateCommandPacket()
  * Debug routine for HDC command packets.
  */
 #ifdef HDC_REALLY_VERBOSE
-void HDC_DebugCommandPacket(FILE *hdlogFile)
+static void HDC_DebugCommandPacket(FILE *hdlogFile)
 {
 	int opcode;
 	static const char *psComNames[] =

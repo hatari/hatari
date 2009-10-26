@@ -67,7 +67,6 @@ typedef struct {
   short int returnCode;  /* return code from the HDC operation */
 } HDCOMMAND;
 
-extern FILE *hd_image_file;
 extern HDCOMMAND HDCCommand;
 extern short int HDCSectorCount;
 extern int nPartitions;
@@ -76,7 +75,5 @@ extern bool bAcsiEmuOn;
 extern bool HDC_Init(char *filename);
 extern void HDC_UnInit(void);
 extern void HDC_WriteCommandPacket(void);
-extern void HDC_DebugCommandPacket(FILE *hdlogFile);
-extern void HDC_EmulateCommandPacket(void);
 
 #endif /* HATARI_HDC_H */
