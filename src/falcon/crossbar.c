@@ -711,7 +711,7 @@ static void Crossbar_StartDmaSound_Handler()
 /**
  * DMA sound xmit/receive interrupt processing
  */
-void Crossbar_InterruptHandler_DmaSound(void)
+void Crossbar_InterruptHandler_DmaPlay(void)
 {
 	Sint16 value, eightBits, mono = 0;
 	Sint8  *pFrameStart;

@@ -26,6 +26,8 @@
 #include "memorySnapShot.h"
 #include "ioMem.h"
 #include "dsp.h"
+#include "crossbar.h"
+
 #if ENABLE_DSP_EMU
 #include "m68000.h"
 #include "debugdsp.h"
@@ -562,10 +564,9 @@ void DSP_SsiReceive_SC0(Uint32 FrameCounter)
 #endif
 }
 
-void DSP_SsiTransmit_SC0(Uint32 FrameCounter)
+void DSP_SsiTransmit_SC0(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_Transmit_SC0(&dsp_core, FrameCounter);
 #endif
 }
 
@@ -576,10 +577,10 @@ void DSP_SsiReceive_SC1(Uint32 FrameCounter)
 #endif
 }
 
-void DSP_SsiTransmit_SC1(Uint32 FrameCounter)
+void DSP_SsiTransmit_SC1(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_Transmit_SC1(&dsp_core, FrameCounter);
+	Crossbar_InterruptHandler_DmaPlay();
 #endif
 }
 
@@ -590,10 +591,9 @@ void DSP_SsiReceive_SC2(Uint32 FrameCounter)
 #endif
 }
 
-void DSP_SsiTransmit_SC2(Uint32 FrameCounter)
+void DSP_SsiTransmit_SC2(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_Transmit_SC2(&dsp_core, FrameCounter);
 #endif
 }
 
@@ -604,10 +604,9 @@ void DSP_SsiReceive_SCK(Uint32 FrameCounter)
 #endif
 }
 
-void DSP_SsiTransmit_SCK(Uint32 FrameCounter)
+void DSP_SsiTransmit_SCK(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_Transmit_SCK(&dsp_core, FrameCounter);
 #endif
 }
 

@@ -966,6 +966,10 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 					dsp_core->periph[DSP_SPACE_X][DSP_IPR] = value;
 					dsp_core_setInterruptIPL(dsp_core, value);
 					break;
+				case DSP_PCD:
+					dsp_core->periph[DSP_SPACE_X][DSP_PCD] = value;
+					dsp_core_setPortCDataRegister(dsp_core, value);
+					break;
 				default:
 					dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
 					break;

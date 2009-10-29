@@ -28,6 +28,9 @@
 #include "math.h"
 #include "dsp_core.h"
 #include "dsp_cpu.h"
+#include "ioMem.h"
+#include "dsp.h"
+
 
 /*--- Defines ---*/
 
@@ -252,6 +255,16 @@ void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
 {
 }
 
+/* Set PortC data register : send a frame order to the DMA in handshake mode */
+void dsp_core_setPortCDataRegister(dsp_core_t *dsp_core, Uint32 value)
+{
+	/* if DSP SSI is in handshake mode with DMA */
+	if (((dsp_core->periph[DSP_SPACE_X][DSP_PCDDR] & 0x10) == 0x10) && ((value & 0x10) == 0x10)) {
+		dsp_core->ssi.waitFrameRX = 0;
+		DSP_SsiTransmit_SC1();
+	}
+}
+
 /* SSI set TX register */
 void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value)
 {
@@ -272,7 +285,6 @@ Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core)
 {
 	/* Clear SSI receive interrupt */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
-
 	return dsp_core->ssi.RX;
 }
 
@@ -421,21 +433,6 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TDE);
 }
 
-void dsp_core_ssi_Transmit_SC0(dsp_core_t *dsp_core, Uint32 value)
-{
-}
-
-void dsp_core_ssi_Transmit_SC1(dsp_core_t *dsp_core, Uint32 value)
-{
-}
-
-void dsp_core_ssi_Transmit_SC2(dsp_core_t *dsp_core, Uint32 value)
-{
-}
-
-void dsp_core_ssi_Transmit_SCK(dsp_core_t *dsp_core, Uint32 value)
-{
-}
 
 /* SSI SSI initialisations and state management */
 void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
