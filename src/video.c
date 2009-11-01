@@ -239,6 +239,9 @@
 /* 2009/07/16	[NP]	In Video_SetHBLPaletteMaskPointers, if LineCycle>460 we consider the	*/
 /*			color's change should be applied to next line (used when spec512 mode	*/
 /*			if off).								*/
+/* 2009/10/31	[NP]	Depending on the overscan mode, the displayed lines must be shifted	*/
+/*			left or right (fix Spec 512 images in the Overscan Demos, fix pixels	*/
+/*			alignment in screens mixing normal lines and overscan lines).		*/
 
 
 
@@ -828,6 +831,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 	{
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
@@ -1738,6 +1742,7 @@ static void Video_CopyScreenLineColor(void)
 
 
 	LineBorderMask = ShifterFrame.ShifterLines[ nHBL ].BorderMask;
+	STF_PixelScroll = ShifterFrame.ShifterLines[ nHBL ].DisplayPixelShift;
 
 	/* Get resolution for this line (in case of mixed low/med screen) */
 	LineRes = ( HBLPaletteMasks[nHBL-nFirstVisibleHbl] >> 16 ) & 1;		/* 0=low res  1=med res */
@@ -1756,14 +1761,13 @@ static void Video_CopyScreenLineColor(void)
 	/* Depending on the number of pixels, we need to compensate for some skipped words */
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_MED )
 	{
-		STF_PixelScroll = ShifterFrame.ShifterLines[ nHBL ].DisplayPixelShift;
-
-		if      ( STF_PixelScroll == 13 )	VideoOffset = 2+8;
-		else if ( STF_PixelScroll == 9 )	VideoOffset = 0+8;
-		else if ( STF_PixelScroll == 5 )	VideoOffset = -2+8;
-		else if ( STF_PixelScroll == 1 )	VideoOffset = -4+8;
+		if      ( STF_PixelScroll == 13 )	VideoOffset = 2;
+		else if ( STF_PixelScroll == 9 )	VideoOffset = 0;
+		else if ( STF_PixelScroll == 5 )	VideoOffset = -2;
+		else if ( STF_PixelScroll == 1 )	VideoOffset = -4;
 		else					VideoOffset = 0;	/* never used ? */
 
+		STF_PixelScroll -= 8;					/* removing left border in mid res also shifts display to the left */
 		// fprintf(stderr , "scr off %d %d\n" , STF_PixelScroll , VideoOffset);
 	}
 
@@ -1845,9 +1849,10 @@ static void Video_CopyScreenLineColor(void)
 
 
 		/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
-		/* Shift the line by STF_PixelScroll pixels to the right (we don't need to scroll */
-		/* the first 16 pixels / 8 bytes). */
-		if (STF_PixelScroll != 0)
+		/* as well as scrolling occuring when removing the left border. */
+		/* If >0, shift the line by STF_PixelScroll pixels to the right */
+		/* If <0, shift the line by -STF_PixelScroll pixels to the left */
+		if ( STF_PixelScroll > 0 )
 		{
 			Uint16 *pScreenLineEnd;
 			int count;
@@ -1855,6 +1860,26 @@ static void Video_CopyScreenLineColor(void)
 			pScreenLineEnd = (Uint16 *) ( pSTScreen + SCREENBYTES_LINE - 2 );
 			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineEnd-- )
 				do_put_mem_word ( pScreenLineEnd , ( ( do_get_mem_word ( pScreenLineEnd - 4 ) << 16 ) | ( do_get_mem_word ( pScreenLineEnd ) ) ) >> STF_PixelScroll );
+			/* Handle the first 16 pixels of the line (add color 0 pixels to the extreme left) */
+			do_put_mem_word ( pScreenLineEnd-0 , ( do_get_mem_word ( pScreenLineEnd-0 ) >> STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineEnd-1 , ( do_get_mem_word ( pScreenLineEnd-1 ) >> STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineEnd-2 , ( do_get_mem_word ( pScreenLineEnd-2 ) >> STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineEnd-3 , ( do_get_mem_word ( pScreenLineEnd-3 ) >> STF_PixelScroll ) );
+		}
+		else if ( STF_PixelScroll < 0 )
+		{
+			Uint16 *pScreenLineStart;
+			int count;
+
+			STF_PixelScroll = -STF_PixelScroll;
+			pScreenLineStart = (Uint16 *)pSTScreen;
+			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineStart++ )
+				do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll ) | ( do_get_mem_word ( pScreenLineStart + 4 ) >> (16-STF_PixelScroll) ) ) );
+			/* Handle the last 16 pixels of the line (add color 0 pixels to the extreme right) */
+			do_put_mem_word ( pScreenLineStart+0 , ( do_get_mem_word ( pScreenLineStart+0 ) << STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineStart+1 , ( do_get_mem_word ( pScreenLineStart+1 ) << STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineStart+2 , ( do_get_mem_word ( pScreenLineStart+2 ) << STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineStart+3 , ( do_get_mem_word ( pScreenLineStart+3 ) << STF_PixelScroll ) );
 		}
 
 
