@@ -12,7 +12,7 @@
 
   output device:- external DSP connector
 		- DSP receive (SSI)
-		- DAC (headphone, bipper, monitor sound)
+		- DAC (headphone, loudspeaker and monitor sound)
 		- DMA record
 
   There are 3 possible clocks :
@@ -48,10 +48,6 @@
     $FF893C (word) : Codec Status
     $FF8940 (word) : GPIO Data Direction
     $FF8942 (word) : GPIO Data
-
-    From Laurent :
-    For now, I'll code DMA, DSP and DAC.
-    ADC will be included later
 */
 
 const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
@@ -75,11 +71,12 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 
 /* Crossbar internal functions */
 static double Crossbar_DetectSampleRate(Uint16 clock);
+static void Crossbar_Recalculate_Cycles(void);
 
-/* Dma sound functions */
-static void Crossbar_setDmaSound_Settings(void);
-static void Crossbar_StartDmaSound_Handler(void);
-static Uint32 Crossbar_DmaSnd_CheckForEndOfFrame(void);
+/* Dma_Play sound functions */
+static void Crossbar_setDmaPlay_Settings(void);
+static void Crossbar_StartDmaPlay_Handler(void);
+static Uint32 Crossbar_DmaPlay_CheckForEndOfFrame(void);
 
 /* Dsp Xmit functions */
 static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame);
@@ -95,23 +92,6 @@ static void Crossbar_StartAdcXmitHandler(void);
 Uint16 nCbar_DmaSoundControl;
 
 /* internal datas */
-static Sint16 DacOutBuffer_left[DACBUFFER_SIZE];
-static Sint16 DacOutBuffer_right[DACBUFFER_SIZE];
-static int nDacOutRdPos, nDacOutWrPos, nDacBufSamples;
-
-static Uint32 nFrameStartAddr;		/* Sound frame start */
-static Uint32 nFrameEndAddr;		/* Sound frame end */
-static Uint32 nFrameCounter;		/* Counter in current sound frame */
-static Uint32 nFrameLen;		/* Length of the frame */
-
-static Uint32 dspTx_wordCount;		/* count number of words received from DSP transmitter (for TX frame computing) */
-
-static Uint32 dmaPlay_wordCount;	/* count number of played DMA samples */
-static Uint32 dmaRecord_wordCount;	/* count number of recorded DMA samples */
-
-static double tracks_play;
-static double tracks_record;
-static Uint16 track_monitored;
 
 static const double Ste_SampleRates[4] =
 {
@@ -120,7 +100,6 @@ static const double Ste_SampleRates[4] =
 	25033.0,
 	50066.0
 };
-
 
 static const double Falcon_SampleRates_25Mhz[15] =
 {
@@ -160,6 +139,54 @@ static const double Falcon_SampleRates_32Mhz[15] =
 	7812.0
 };
 
+struct dma_s {
+	Uint32 frameStartAddr;		/* Sound frame start */
+	Uint32 frameEndAddr;		/* Sound frame end */
+	Uint32 frameCounter;		/* Counter in current sound frame */
+	Uint32 frameLen;		/* Length of the frame */
+	Uint32 isRunning;		/* Is Playing / Recording ? */
+	Uint32 loopMode;		/* Loop mode enabled ? */
+	Uint32 currentFrame;		/* Current Frame Played / Recorded (in stereo, 2 frames = 1 track) */
+	Uint32 timerA_int;		/* Timer A interrupt at end of Play / Record ? */
+	Uint32 mfp15_int;		/* MFP-15 interrupt at end of Play / Record ? */
+};
+
+struct crossbar_s {
+	Uint32 dmaSelected;		/* 1 = DMA Record; 0 = DMA Play */
+	Uint32 playTracks;		/* number of tracks played */
+	Uint32 recordTracks;		/* number of tracks recorded */
+	Uint16 track_monitored;		/* track monitored by the DAC */
+	Uint32 is16Bits;		/* 0 = 8 bits; 1 = 16 bits */
+	Uint32 isStereo;		/* 0 = mono; 1 = stereo */
+	Uint32 steFreq;			/* from 0 (6258 Hz) to 3 (50066 Hz) */
+	Uint32 int_freq_divider;	/* internal frequency divider */
+	Uint32 isDacMuted;		/* 0 = DAC is running; 1 = DAC is muted */
+	double dspXmit_cycles;		/* cycles for dsp Xmit interrupt */ 
+	double dspXmit_cycles_counterD; /* cycles counter for dsp Xmit interrupt (double) */ 
+	Uint32 dspXmit_cycles_counterL; /* cycles counter for dsp Xmit interrupt (long) */ 
+	double dmaPlay_cycles;		/* cycles for dma play interrupt */
+	double dmaPlay_cycles_counterD;	/* cycles counter for dma play interrupt (double) */
+	Uint32 dmaPlay_cycles_counterL;	/* cycles counter for dma play interrupt (long) */
+	double adc_cycles;		/* cycles for ADC interrupt */
+	Uint32 adc_cycles_counter;	/* cycles counter for ADC interrupt */
+};
+
+struct dac_s {
+	Sint16 buffer_left[DACBUFFER_SIZE];
+	Sint16 buffer_right[DACBUFFER_SIZE];
+	Uint32 readPosition;
+	Uint32 writePosition;
+	Uint32 writeBufferSize;
+};
+
+static struct crossbar_s crossbar;
+static struct dma_s dmaPlay;
+static struct dma_s dmaRecord;
+static struct dac_s dac;
+
+static Uint32 dspTx_wordCount;		/* count number of words received from DSP transmitter (for TX frame computing) */
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Reset Crossbar variables.
@@ -172,23 +199,35 @@ void Crossbar_Reset(bool bCold)
 	{
 	}
 	
-	/* DMA */
-	/* Stop DMA sound playing/record */
+	/* Stop DMA sound playing / record */
 	IoMem_WriteByte(0xff8901,0);
-	dmaPlay_wordCount = 0;
-	dmaRecord_wordCount = 0;
+	dmaPlay.isRunning = 0;
+	dmaPlay.loopMode = 0;
+	dmaPlay.currentFrame = 0;
+	dmaRecord.isRunning = 0;
+	dmaRecord.loopMode = 0;
+	dmaRecord.currentFrame = 0;
+	crossbar.dmaSelected = 0;
 
 	/* Clear DAC buffer */
-	memset(DacOutBuffer_left, 0, sizeof(DacOutBuffer_left));
-	memset(DacOutBuffer_right, 0, sizeof(DacOutBuffer_right));
-	nDacOutRdPos = nDacOutWrPos = nDacBufSamples = 0;
+	memset(dac.buffer_left, 0, sizeof(dac.buffer_left));
+	memset(dac.buffer_right, 0, sizeof(dac.buffer_right));
+	dac.readPosition = 0;
+	dac.writePosition = 0;
+	dac.writeBufferSize = 0;
 
 	/* ADC inits */
 	microphone_ADC_is_started = 0;
 
 	/* DSP inits */
 	dspTx_wordCount = 0;
-	track_monitored = 0;
+
+	/* Crossbar inits */
+	crossbar.track_monitored = 0;
+	crossbar.dmaPlay_cycles_counterL = 0;
+	crossbar.dmaPlay_cycles_counterD = 0.0;
+	crossbar.dspXmit_cycles_counterL = 0;
+	crossbar.dspXmit_cycles_counterD = 0.0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -199,20 +238,11 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&nCbar_DmaSoundControl, sizeof(nCbar_DmaSoundControl));
-	MemorySnapShot_Store(&nFrameStartAddr, sizeof(nFrameStartAddr));
-	MemorySnapShot_Store(&nFrameEndAddr, sizeof(nFrameEndAddr));
-	MemorySnapShot_Store(&nFrameCounter, sizeof(nFrameCounter));
-	MemorySnapShot_Store(&nFrameLen, sizeof(nFrameLen));
-	MemorySnapShot_Store(&DacOutBuffer_left, sizeof(DacOutBuffer_left));
-	MemorySnapShot_Store(&DacOutBuffer_right, sizeof(DacOutBuffer_right));
-	MemorySnapShot_Store(&nDacOutRdPos, sizeof(nDacOutRdPos));
-	MemorySnapShot_Store(&nDacOutWrPos, sizeof(nDacOutWrPos));
-	MemorySnapShot_Store(&dmaPlay_wordCount, sizeof(dmaPlay_wordCount));
-	MemorySnapShot_Store(&dmaRecord_wordCount, sizeof(dmaRecord_wordCount));
+	MemorySnapShot_Store(&dmaPlay, sizeof(dmaPlay));
+	MemorySnapShot_Store(&dmaRecord, sizeof(dmaRecord));
+	MemorySnapShot_Store(&crossbar, sizeof(crossbar));
+	MemorySnapShot_Store(&dac, sizeof(dac));
 	MemorySnapShot_Store(&dspTx_wordCount, sizeof(dspTx_wordCount));
-	MemorySnapShot_Store(&tracks_play, sizeof(tracks_play));
-	MemorySnapShot_Store(&tracks_record, sizeof(tracks_record));
-	MemorySnapShot_Store(&track_monitored, sizeof(track_monitored));
 }
 
 
@@ -225,7 +255,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
  */
 void Crossbar_BufferInter_ReadWord(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8900));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 (Sound DMA control) read: 0x%02x\n", IoMem_ReadByte(0xff8900));
 }
 
 /**
@@ -233,7 +263,14 @@ void Crossbar_BufferInter_ReadWord(void)
  */
 void Crossbar_BufferInter_WriteWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8900));
+	Uint8 dmaCtrl = IoMem_ReadByte(0xff8900);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 (Sound DMA control) write: 0x%02x\n", dmaCtrl);
+
+	dmaPlay.timerA_int   = (dmaCtrl & 0x4) >> 2;
+	dmaPlay.mfp15_int    = (dmaCtrl & 0x1);
+	dmaRecord.timerA_int = (dmaCtrl & 0x8) >> 3;
+	dmaRecord.mfp15_int  = (dmaCtrl & 0x2) >> 1;
 }
 
 /**
@@ -241,7 +278,7 @@ void Crossbar_BufferInter_WriteWord(void)
  */
 void Crossbar_DmaCtrlReg_ReadWord(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 DMA control register read: 0x%02x\n", IoMem_ReadByte(0xff8901));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 (additional Sound DMA control) read: 0x%02x\n", IoMem_ReadByte(0xff8901));
 }
 
 /**
@@ -249,37 +286,66 @@ void Crossbar_DmaCtrlReg_ReadWord(void)
  */
 void Crossbar_DmaCtrlReg_WriteWord(void)
 {
-	Uint16 nNewSndCtrl;
+	Uint8 sndCtrl = IoMem_ReadByte(0xff8901);
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 DMA control register write: 0x%02x\n", IoMem_ReadByte(0xff8901));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 (additional Sound DMA control) write: 0x%02x\n", sndCtrl);
 
-	nNewSndCtrl = IoMem_ReadByte(0xff8901) & 3;
+	crossbar.dmaSelected = (sndCtrl & 0x80) >> 7;
 
-	if ((!(nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)   && (nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY)) ||
-	    (!(nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD) && (nNewSndCtrl & CROSSBAR_SNDCTRL_RECORD)))
-	{
-		/* Turning on DMA sound emulation */
-		nCbar_DmaSoundControl = nNewSndCtrl;
-		Crossbar_setDmaSound_Settings();
-		Crossbar_StartDmaSound_Handler();
+	/* DMA Play mode */
+	if (crossbar.dmaSelected == 0) {
+		if ((dmaPlay.isRunning == 0) && (sndCtrl & 1))
+		{
+			/* Turning on DMA Play sound emulation */
+			nCbar_DmaSoundControl = sndCtrl & 3;
+			dmaPlay.isRunning = 1;
+			dmaPlay.loopMode = (sndCtrl & 0x2) >> 1;
+			Crossbar_setDmaPlay_Settings();
+			Crossbar_StartDmaPlay_Handler();
+		}
+		else if (dmaPlay.isRunning && ((sndCtrl & 1) == 0))
+		{
+			/* Turning off DMA play sound emulation */
+			dmaPlay.isRunning = 0;
+			dmaPlay.loopMode = 0;
+			nCbar_DmaSoundControl = sndCtrl & 3;
+		}
 	}
-	else if (((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)   && !(nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY)) ||
-	         ((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD) && !(nNewSndCtrl & CROSSBAR_SNDCTRL_RECORD)))
-	{
-		nCbar_DmaSoundControl = nNewSndCtrl;
-		//fprintf(stderr, "Turning off DMA sound emulation.\n");
+	/* DMA Record mode */
+	else {
+		if ((dmaRecord.isRunning == 0) && (sndCtrl & 10))
+		{
+			/* Turning on DMA record sound emulation */
+			dmaRecord.isRunning = 1;
+			dmaRecord.loopMode = (sndCtrl & 0x20) >> 5;
+	//		TODO : add DMA record mode
+	//		Crossbar_setDmaPlay_Settings();
+	//		Crossbar_StartDmaPlay_Handler();
+		}
+		else if (dmaRecord.isRunning && ((sndCtrl & 10) == 0))
+		{
+			/* Turning off DMA record sound emulation */
+			dmaRecord.isRunning = 0;
+			dmaRecord.loopMode = 0;
+		}
 	}
-
 }
 
 
-/*-----------------------------------------------------------------------*/
+
 /**
  * Read word from sound frame count high register (0xff8909).
  */
 void Crossbar_FrameCountHigh_ReadByte(void)
 {
-	IoMem_WriteByte(0xff8909, (nFrameStartAddr + nFrameCounter) >> 16);
+	if (crossbar.dmaSelected == 0) {
+		/* DMA Play selected */
+		IoMem_WriteByte(0xff8909, (dmaPlay.frameStartAddr + dmaPlay.frameCounter) >> 16);
+	}
+	else {
+		/* DMA Record selected */
+		IoMem_WriteByte(0xff8909, (dmaRecord.frameStartAddr + dmaRecord.frameCounter) >> 16);
+	}
 }
 
 
@@ -289,7 +355,14 @@ void Crossbar_FrameCountHigh_ReadByte(void)
  */
 void Crossbar_FrameCountMed_ReadByte(void)
 {
-	IoMem_WriteByte(0xff890b, (nFrameStartAddr + nFrameCounter) >> 8);
+	if (crossbar.dmaSelected == 0) {
+		/* DMA Play selected */
+		IoMem_WriteByte(0xff890b, (dmaPlay.frameStartAddr + dmaPlay.frameCounter) >> 8);
+	}
+	else {
+		/* DMA Record selected */
+		IoMem_WriteByte(0xff890b, (dmaRecord.frameStartAddr + dmaRecord.frameCounter) >> 8);
+	}
 }
 
 
@@ -299,7 +372,14 @@ void Crossbar_FrameCountMed_ReadByte(void)
  */
 void Crossbar_FrameCountLow_ReadByte(void)
 {
-	IoMem_WriteByte(0xff890d, (nFrameStartAddr + nFrameCounter));
+	if (crossbar.dmaSelected == 0) {
+		/* DMA Play selected */
+		IoMem_WriteByte(0xff890d, (dmaPlay.frameStartAddr + dmaPlay.frameCounter));
+	}
+	else {
+		/* DMA Record selected */
+		IoMem_WriteByte(0xff890d, (dmaRecord.frameStartAddr + dmaRecord.frameCounter));
+	}
 }
 
 
@@ -309,7 +389,7 @@ void Crossbar_FrameCountLow_ReadByte(void)
  */
 void Crossbar_DmaTrckCtrl_ReadByte(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8920));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 (sound mode control) read: 0x%02x\n", IoMem_ReadByte(0xff8920));
 }
 
 /**
@@ -317,9 +397,12 @@ void Crossbar_DmaTrckCtrl_ReadByte(void)
  */
 void Crossbar_DmaTrckCtrl_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register write: 0x%02x\n", IoMem[0xff8920]);
-	tracks_play = ((IoMem[0xff8920] & 3) + 1);
-	track_monitored = ((IoMem[0xff8920] & 30) >> 4);
+	Uint8 sndCtrl = IoMem_ReadByte(0xff8920);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 (sound mode control) write: 0x%02x\n", sndCtrl);
+
+	crossbar.playTracks = (sndCtrl & 3) + 1;
+	crossbar.track_monitored = (sndCtrl & 30) >> 4;
 }
 
 /**
@@ -327,19 +410,24 @@ void Crossbar_DmaTrckCtrl_WriteByte(void)
  */
 void Crossbar_SoundModeCtrl_ReadByte(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode read: 0x%02x\n", IoMem[0xff8921]);
+//	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 (additional sound mode control) read: 0x%02x\n", IoMem[0xff8921]);
 }
 
-
-/*-----------------------------------------------------------------------*/
 /**
  * Write word to sound mode register (0xff8921).
  */
 void Crossbar_SoundModeCtrl_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode write: 0x%02x\n", IoMem[0xff8921]);
-}
+	Uint8 sndCtrl = IoMem_ReadByte(0xff8921);
 
+	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 (additional sound mode control) write: 0x%02x\n", sndCtrl);
+
+	crossbar.is16Bits = (sndCtrl & 0x40) >> 6;
+	crossbar.isStereo = 1 - ((sndCtrl & 0x80) >> 7);
+	crossbar.steFreq = sndCtrl & 0x3;
+
+	Crossbar_Recalculate_Cycles();
+}
 
 /**
  * Read word from Falcon Crossbar source controller (0xff8930).
@@ -385,14 +473,13 @@ void Crossbar_SrcControler_WriteWord(void)
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 src write: 0x%04x\n", nCbSrc);
 
+	Crossbar_Recalculate_Cycles();
+
 	/* Start DSP External input Interrupt */
 	/* Todo : emulate the external port ? */
 
 	/* Start DSP out Playback Interrupt */
-	if (nCbSrc & 0x80) {
-		/* Dsp is not in tristate mode */
-		Crossbar_StartDspXmitHandler();
-	}
+	Crossbar_StartDspXmitHandler();
 }
 
 
@@ -459,7 +546,7 @@ void Crossbar_DstControler_WriteWord(void)
  */
 void Crossbar_FreqDivExt_ReadByte(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 (ext. clock divider) read: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -467,7 +554,7 @@ void Crossbar_FreqDivExt_ReadByte(void)
  */
 void Crossbar_FreqDivExt_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 ext. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8934));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 (ext. clock divider) write: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -475,7 +562,7 @@ void Crossbar_FreqDivExt_WriteByte(void)
  */
 void Crossbar_FreqDivInt_ReadByte(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 (int. clock divider) read: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -483,7 +570,12 @@ void Crossbar_FreqDivInt_ReadByte(void)
  */
 void Crossbar_FreqDivInt_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 int. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8935));
+	Uint8 clkDiv = IoMem_ReadByte(0xff8935);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 (int. clock divider) write: 0x%02x\n", clkDiv);
+
+	crossbar.int_freq_divider = clkDiv & 0xf;
+	Crossbar_Recalculate_Cycles();
 }
 
 /**
@@ -495,7 +587,7 @@ void Crossbar_FreqDivInt_WriteByte(void)
  */
 void Crossbar_TrackRecSelect_ReadByte(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 record track select read: 0x%02x\n", IoMem_ReadByte(0xff8936));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 (record track select) read: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -507,8 +599,11 @@ void Crossbar_TrackRecSelect_ReadByte(void)
  */
 void Crossbar_TrackRecSelect_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 record track select write: 0x%02x\n", IoMem_ReadByte(0xff8936));
-	tracks_record = ((IoMem[0xff8936] & 3) + 1);
+	Uint8 recTrack = IoMem_ReadByte(0xff8936);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 (record track select) write: 0x%02x\n", recTrack);
+
+	crossbar.recordTracks = recTrack & 3;
 }
 
 /**
@@ -518,7 +613,7 @@ void Crossbar_TrackRecSelect_WriteByte(void)
  */
 void Crossbar_CodecInput_ReadByte(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 (CODEC input) read: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -528,7 +623,7 @@ void Crossbar_CodecInput_ReadByte(void)
  */
 void Crossbar_CodecInput_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 CODEC input write: 0x%02x\n", IoMem_ReadByte(0xff8937));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 (CODEC input) write: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -538,7 +633,7 @@ void Crossbar_CodecInput_WriteByte(void)
  */
 void Crossbar_AdcInput_ReadByte(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 (ADC input) read: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -548,7 +643,7 @@ void Crossbar_AdcInput_ReadByte(void)
  */
 void Crossbar_AdcInput_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 ADC input write: 0x%02x\n", IoMem_ReadByte(0xff8938));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 (ADC input) write: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -558,7 +653,7 @@ void Crossbar_AdcInput_WriteByte(void)
  */
 void Crossbar_InputAmp_ReadByte(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 CODEC channel amplification read: 0x%04x\n", IoMem_ReadWord(0xff8939));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 (CODEC channel amplification) read: 0x%04x\n", IoMem_ReadWord(0xff8939));
 }
 
 /**
@@ -568,7 +663,7 @@ void Crossbar_InputAmp_ReadByte(void)
  */
 void Crossbar_InputAmp_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 CODEC channel amplification write: 0x%04x\n", IoMem_ReadWord(0xff8939));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 (CODEC channel amplification) write: 0x%04x\n", IoMem_ReadWord(0xff8939));
 }
 
 /**
@@ -578,7 +673,7 @@ void Crossbar_InputAmp_WriteByte(void)
  */
 void Crossbar_OutputReduct_ReadWord(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a CODEC channel attenuation read: 0x%04x\n", IoMem_ReadWord(0xff893a));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) read: 0x%04x\n", IoMem_ReadWord(0xff893a));
 }
 
 /**
@@ -588,7 +683,7 @@ void Crossbar_OutputReduct_ReadWord(void)
  */
 void Crossbar_OutputReduct_WriteWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a CODEC channel attenuation write: 0x%04x\n", IoMem_ReadWord(0xff893a));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) write: 0x%04x\n", IoMem_ReadWord(0xff893a));
 }
 
 /**
@@ -598,7 +693,7 @@ void Crossbar_OutputReduct_WriteWord(void)
  */
 void Crossbar_CodecStatus_ReadWord(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c (CODEC status) read: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }
 
 /**
@@ -608,13 +703,13 @@ void Crossbar_CodecStatus_ReadWord(void)
  */
 void Crossbar_CodecStatus_WriteWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c (CODEC status) write: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }
 
 
 
 /*----------------------------------------------------------------------*/
-/*--------------------- DMA sound processing ---------------------------*/
+/*--------------------- DMA PLAY sound processing ----------------------*/
 /*----------------------------------------------------------------------*/
 
 /**
@@ -622,33 +717,30 @@ void Crossbar_CodecStatus_WriteWord(void)
  * Returns true if DMA sound processing should be stopped now and false
  * if it continues.
  */
-Uint32 Crossbar_DmaSnd_CheckForEndOfFrame()
+static Uint32 Crossbar_DmaPlay_CheckForEndOfFrame(void)
 {
-	if (nFrameCounter >= nFrameLen)
+	if (dmaPlay.frameCounter >= dmaPlay.frameLen)
 	{
-		/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
-
-		/* if MFP15_Int (I7) at end of replay/record buffer enabled */
-		if (IoMem[0xff8900] & 3) {
+		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
+		if (dmaPlay.mfp15_int) {
 			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
 		}
 
-		/* if TimerA_Int at end of replay/record buffer enabled */
-		if (IoMem[0xff8900] & 0xc) {
+		/* Send a TimerA_Int at end of replay buffer if enabled */
+		if (dmaPlay.timerA_int) {
 			if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
 				MFP_TimerA_EventCount_Interrupt();
 		}
 
-		if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAYLOOP)
-		   /* || (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORDLOOP)) */
+		if (dmaPlay.loopMode)
 		{
-			Crossbar_setDmaSound_Settings();
-			Crossbar_StartDmaSound_Handler();
+			Crossbar_setDmaPlay_Settings();
+			Crossbar_StartDmaPlay_Handler();
 		}
 		else
 		{
-			nCbar_DmaSoundControl &= ~CROSSBAR_SNDCTRL_PLAY;
-			nCbar_DmaSoundControl &= ~CROSSBAR_SNDCTRL_RECORD;
+			nCbar_DmaSoundControl &= 0xfffe;
+			dmaPlay.isRunning = 0;
 		}
 		return true;
 	}
@@ -659,138 +751,116 @@ Uint32 Crossbar_DmaSnd_CheckForEndOfFrame()
 /**
  * Set DMA sound start frame buffer, stop frame buffer, frame length
  */
-void Crossbar_setDmaSound_Settings()
+static void Crossbar_setDmaPlay_Settings(void)
 {
 	/* DMA setings */
-	nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
-	nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
-	nFrameLen = nFrameEndAddr - nFrameStartAddr;
-	nFrameCounter = 0;
+	dmaPlay.frameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
+	dmaPlay.frameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
+	dmaPlay.frameLen = dmaPlay.frameEndAddr - dmaPlay.frameStartAddr;
+	dmaPlay.frameCounter = 0;
 
-	if (nFrameLen <= 0)
+	if (dmaPlay.frameLen <= 0)
 	{
 		Log_Printf(LOG_WARN, "crossbar DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
-		          nFrameStartAddr, nFrameEndAddr);
+		          dmaPlay.frameStartAddr, dmaPlay.frameEndAddr);
 	}
 }
 
 /**
- * start a DMA sound xmit or receive "interrupt" at frequency parametered in the crossbar
+ * start a DMA PLAY "interrupt" at frequency parametered in the crossbar
  */
-static void Crossbar_StartDmaSound_Handler()
+static void Crossbar_StartDmaPlay_Handler(void)
 {
-	Uint16 nCbSrc;
-	double cycles, stereo = 1.0;
+	Uint32 dma_cycles;
 
-	nCbSrc = IoMem[0xff8930];
-
-	if ((nCbSrc & 0x6) == 0x00)
-	{
-		/* Internal 25.175 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
-	}
-	else if ((nCbSrc & 0x6) == 0x4)
-	{
-		/* Internal 32 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(32);
-	}
-	else {
-		return;
+	/* If DMA play is connected to the DSP_IN in handshake mode, */
+	/* there's no need to use a clock. The synchro is driven by the DSP. */
+	if ((IoMem_ReadWord(0xff8932) & 0xf0) != 0x00) {
+//		return;
 	}
 
-	/* if stereo mode */
-	if ((IoMem_ReadByte(0xff8921) & 0xc0) != 0x80) {
-		stereo = 2.0;
+	if (dmaPlay.isRunning) {
+		crossbar.dmaPlay_cycles_counterD += crossbar.dmaPlay_cycles;
+		dma_cycles = (Uint32) crossbar.dmaPlay_cycles_counterD - crossbar.dmaPlay_cycles_counterL;
+		crossbar.dmaPlay_cycles_counterL += dma_cycles;
+		Int_AddRelativeInterrupt((Uint32)dma_cycles, INT_CPU_CYCLE, INTERRUPT_DMASOUND_XMIT_RECEIVE);
 	}
-
-	cycles = cycles / tracks_play / stereo;
-
-	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_DMASOUND_XMIT_RECEIVE);
 }
 
 /**
- * DMA sound xmit/receive interrupt processing
+ * DMA sound xmit interrupt processing
  */
 void Crossbar_InterruptHandler_DmaPlay(void)
 {
 	Sint16 value, eightBits, mono = 0;
 	Sint8  *pFrameStart;
-	Uint8 nDmaSoundMode = IoMem_ReadByte(0xff8921);
 	Uint16 nCbDst = IoMem_ReadWord(0xff8932);
 
-	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	/* If DMA play is connected to the DSP_IN in handshake mode, */
+	/* there's no interrupt to acknoledge. */
+//	if ((IoMem_ReadWord(0xff8932) & 0xf0) == 0x00) {
+		/* Remove this interrupt from list and re-order */
+		Int_AcknowledgeInterrupt();
+//	}
 
-	/* process DMA sound replay or record */
-	if ((IoMem_ReadByte(0xff8901) & 0x80) == 0) {
-		/* DMA sound is in Replay mode */
-		pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
+	pFrameStart = (Sint8 *)&STRam[dmaPlay.frameStartAddr];
 
-		/* if 16 bits stereo mode */
-		if (nDmaSoundMode & 0x40) {
-			eightBits = 1;
-			value = (Sint16)do_get_mem_word(&pFrameStart[nFrameCounter]);
-			nFrameCounter += 2;
-		}
-		/* 8 bits stereo */
-		else if ((nDmaSoundMode & 0xc0) == 0) {
-			eightBits = 64;
-			value = (Sint16) pFrameStart[nFrameCounter];
-			nFrameCounter ++;
-		}
-		/* 8 bits mono */
-		else {
-			eightBits = 64;
-			mono = 1;
-			value = (Sint16) pFrameStart[nFrameCounter];
-			nFrameCounter ++;
-		}
-		
-		/* Send sample to the DMA record ? */
-		if ((nCbDst & 0x6) == 0x0) {
-			/* TODO : sent data to DMA record */
-		}
-
-		/* Send sample to the DAC ? */
-		if ((nCbDst & 0x6000) == 0x0000) {
-			Crossbar_SendDataToDAC(value * eightBits, dmaPlay_wordCount);
-			if (mono == 1) {
-				/* increase dmaPlay_wordCount for next sample */
-				dmaPlay_wordCount ++;
-				if (dmaPlay_wordCount >= tracks_play * 2) {
-					dmaPlay_wordCount = 0;
-				}
-				Crossbar_SendDataToDAC(value * eightBits, dmaPlay_wordCount);
-			}
-		}
-
-		/* Send sample to the DSP in ? */
-		if ((nCbDst & 0x60) == 0x00) {
-			/* New frame ? */
-			if (dmaPlay_wordCount == 0) {
-				Crossbar_SendDataToDspReceive(value, 1);
-			}
-			else {
-				Crossbar_SendDataToDspReceive(value, 0);
-			}
-		}
-
-		/* increase dmaPlay_wordCount for next sample */
-		dmaPlay_wordCount ++;
-		if (dmaPlay_wordCount >= tracks_play * 2) {
-			dmaPlay_wordCount = 0;
-		}
-	} 
+	/* 16 bits stereo mode ? */
+	if (crossbar.is16Bits) {
+		eightBits = 1;
+		value = (Sint16)do_get_mem_word(&pFrameStart[dmaPlay.frameCounter]);
+		dmaPlay.frameCounter += 2;
+	}
+	/* 8 bits stereo ? */
+	else if (crossbar.isStereo) {
+		eightBits = 64;
+		value = (Sint16) pFrameStart[dmaPlay.frameCounter];
+		dmaPlay.frameCounter ++;
+	}
+	/* 8 bits mono */
 	else {
-		fprintf(stderr, "             Record mode\n");
-		/* DMA sound is in Record mode */
-		/* Todo : get value from DMA IN in the crossbar and write it into memory */
+		eightBits = 64;
+		mono = 1;
+		value = (Sint16) pFrameStart[dmaPlay.frameCounter];
+		dmaPlay.frameCounter ++;
+	}
+	
+	/* Send sample to the DMA record ? */
+	if ((nCbDst & 0x6) == 0x0) {
+		/* TODO : sent data to DMA record */
+	}
+
+	/* Send sample to the DAC ? */
+	if ((nCbDst & 0x6000) == 0x0000) {
+		Crossbar_SendDataToDAC(value * eightBits, dmaPlay.currentFrame);
+		if (mono == 1) {
+			/* increase dmaPlay.currentFrame for next sample */
+			dmaPlay.currentFrame ++;
+			Crossbar_SendDataToDAC(value * eightBits, dmaPlay.currentFrame);
+		}
+	}
+
+	/* Send sample to the DSP in (non handshake mode) ? */
+	if ((nCbDst & 0x60) == 0x00) {
+		/* New frame ? */
+		if (dmaPlay.currentFrame == 0) {
+			Crossbar_SendDataToDspReceive(value, 1);
+		}
+		else {
+			Crossbar_SendDataToDspReceive(value, 0);
+		}
+	}
+
+	/* increase dmaPlay.currentFrame for next sample */
+	dmaPlay.currentFrame ++;
+	if (dmaPlay.currentFrame >= (crossbar.playTracks * 2)) {
+		dmaPlay.currentFrame = 0;
 	}
 
 	/* Restart the Int event handler */
-	value = Crossbar_DmaSnd_CheckForEndOfFrame();
+	value = Crossbar_DmaPlay_CheckForEndOfFrame();
 	if (value == false)
-		Crossbar_StartDmaSound_Handler();
+		Crossbar_StartDmaPlay_Handler();
 }
 
 
@@ -799,25 +869,85 @@ void Crossbar_InterruptHandler_DmaPlay(void)
 /*----------------------------------------------------------------------*/
 
 /**
+ * Recalculates DSP Xmit, ADC, external and DMA Play cycles (for interrupt handlers)
+ */
+static void Crossbar_Recalculate_Cycles(void)
+{
+	Uint16 outputs = IoMem[0xff8930];
+	double cycles = 1.0;
+
+	/* Calculate DSP Xmit cycles */
+	/* ------------------------- */
+
+	if ((outputs & 0x60) == 0x00)
+	{
+		/* Internal 25.175 MHz clock */
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
+	}
+	else if ((outputs & 0x60) == 0x40)
+	{
+		/* Internal 32 MHz clock */
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(32);
+	}
+	crossbar.dspXmit_cycles = cycles / (double)(crossbar.playTracks) / 2.0;
+
+	/* Calculate DMA Play cycles */
+	/* ------------------------- */
+
+	if ((outputs & 0x6) == 0x0)
+	{
+		/* Internal 25.175 MHz clock */
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
+	}
+	else if ((outputs & 0x6) == 0x4)
+	{
+		/* Internal 32 MHz clock */
+		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(32);
+	}
+
+	/* if stereo mode */
+	if (crossbar.isStereo) {
+		cycles = cycles / 2.0;
+	}
+	crossbar.dmaPlay_cycles = cycles / (double)(crossbar.playTracks);
+
+
+	/* Calculate ADC cycles (Internal 25.175 MHz clock only for ADC (Jack input)) */
+	/* -------------------------------------------------------------------------- */
+
+	cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
+	crossbar.adc_cycles = cycles / (double)(crossbar.playTracks) / 2.0;
+
+
+	/* Verify if the new frequency doesn't mute the DAC */
+	crossbar.isDacMuted = 0;
+	if ((crossbar.int_freq_divider == 0) && (crossbar.steFreq == 0))
+		crossbar.isDacMuted = 1;
+
+	if ((crossbar.int_freq_divider == 6) || (crossbar.int_freq_divider == 8) || 
+	    (crossbar.int_freq_divider == 10) || (crossbar.int_freq_divider >= 12)) {
+		crossbar.isDacMuted = 1;
+	}
+}
+
+/**
  * Detect sample rate frequency
  *    clock : value of the internal clock (25 or 32).
  */
 static double Crossbar_DetectSampleRate(Uint16 clock)
 {
-	Uint8 falcClk = IoMem_ReadByte(0xff8935) & 0x0f;
-
 	/* Ste compatible sound */
-	if (falcClk == 0) {
-		return Ste_SampleRates[IoMem_ReadByte(0xff8921) & 0x03];
+	if (crossbar.int_freq_divider == 0) {
+		return Ste_SampleRates[crossbar.steFreq];
 	}
 
 	/* 25 Mhz internal clock */
 	if (clock == 25) {
-		return Falcon_SampleRates_25Mhz[falcClk-1];
+		return Falcon_SampleRates_25Mhz[crossbar.int_freq_divider - 1];
 	}
 
 	/* 32 Mhz internal clock */
-	return Falcon_SampleRates_32Mhz[falcClk-1];
+	return Falcon_SampleRates_32Mhz[crossbar.int_freq_divider - 1];
 }
 
 
@@ -831,26 +961,15 @@ static double Crossbar_DetectSampleRate(Uint16 clock)
  */
 static void Crossbar_StartDspXmitHandler(void)
 {
-	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
-	double cycles;
+	Uint32 dsp_Cycles;
 
-	if ((nCbSrc & 0x60) == 0x00)
-	{
-		/* Internal 25.175 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
+	/* If DSP is not in tristate mode */
+	if (IoMem_ReadWord(0xff8930) & 0x80) {
+		crossbar.dspXmit_cycles_counterD += crossbar.dspXmit_cycles;
+		dsp_Cycles = (Uint32) crossbar.dspXmit_cycles_counterD - crossbar.dspXmit_cycles_counterL;
+		crossbar.dspXmit_cycles_counterL += dsp_Cycles;
+		Int_AddRelativeInterrupt((Uint32)dsp_Cycles, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 	}
-	else if ((nCbSrc & 0x60) == 0x40)
-	{
-		/* Internal 32 MHz clock */
-		cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(32);
-	}
-	else {
-		return;
-	}
-	
-	cycles = cycles / (tracks_play * 2.0) / 2.0;
-//	cycles = cycles / tracks_play * 2.65); /*cycles = 61.0; */
-	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 }
 
 /**
@@ -897,14 +1016,12 @@ void Crossbar_InterruptHandler_DspXmit(void)
 
 	/* increase dspTx_wordCount for next sample */
 	dspTx_wordCount++;
-	if (dspTx_wordCount >= tracks_play * 2) {
+	if (dspTx_wordCount >= (crossbar.playTracks * 2)) {
 		dspTx_wordCount = 0;
 	}
 
-	/* Restart the Int event handler if DSP is not in tristate mode */
-	if (IoMem_ReadWord(0xff8930) & 0x80) {
-		Crossbar_StartDspXmitHandler();
-	}
+	/* Restart the Int event handler */
+	Crossbar_StartDspXmitHandler();
 }
 
 /*----------------------------------------------------------------------*/
@@ -921,22 +1038,18 @@ static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame)
 		return;
 	}
 
-	/* TODO: implementing of handshake mode */
-
 	/* Send sample to DSP receive */
 	DSP_SsiWriteRxValue(value);
 
 	/* Send the frame status to the DSP SSI receive */
-	DSP_SsiReceive_SC1(frame);
+	/* only in non hanshake mode */
+//	if ((IoMem_ReadWord(0xff8932) & 0xf0) == 0x00) {
+		DSP_SsiReceive_SC1(frame);
+//	}
 
 	/* Send the clock to the DSP SSI receive */
 	DSP_SsiReceive_SC0(0);
 }
-
-
-/*----------------------------------------------------------------------*/
-/*--------------------- DMA IN processing ------------------------------*/
-/*----------------------------------------------------------------------*/
 
 
 /*----------------------------------------------------------------------*/
@@ -953,13 +1066,7 @@ static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame)
  */
 static void Crossbar_StartAdcXmitHandler(void)
 {
-	double cycles = 1.0;
-
-	/* Internal 25.175 MHz clock only for ADC (Jack) */
-	cycles = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
-	cycles = cycles / (tracks_play * 2.0);
-
-	Int_AddRelativeInterrupt((int) cycles, INT_CPU_CYCLE, INTERRUPT_ADCXMIT);
+	Int_AddRelativeInterrupt((int) crossbar.adc_cycles, INT_CPU_CYCLE, INTERRUPT_ADCXMIT);
 }
 
 /**
@@ -1007,17 +1114,21 @@ void Crossbar_InterruptHandler_ADCXmit(void)
  */
 static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
 {
-	Uint16 track = track_monitored * 2;
-		
+	Uint16 track = crossbar.track_monitored * 2;
+
+	if (crossbar.isDacMuted == 1) {
+		value = 0;
+	}
+
 	if (sample_pos == track) {
 		/* Left channel */
-		DacOutBuffer_left[nDacOutWrPos] = value;
+		dac.buffer_left[dac.writePosition] = value;
 	}
-	else if (sample_pos == track+1) {
+	else if (sample_pos == track + 1) {
 		/* Right channel */
-		DacOutBuffer_right[nDacOutWrPos] = value;
-		nDacOutWrPos = (nDacOutWrPos + 1) % (DACBUFFER_SIZE);
-		nDacBufSamples += 1;
+		dac.buffer_right[dac.writePosition] = value;
+		dac.writePosition = (dac.writePosition + 1) % (DACBUFFER_SIZE);
+		dac.writeBufferSize += 1;
 	}
 }
 
@@ -1032,27 +1143,27 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int nBufIdx;
 
 	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
-	fDacBufSamples = (double)nDacBufSamples;
-	fDacBufRdPos = (double)nDacOutRdPos;
+	fDacBufSamples = (double)dac.writeBufferSize;
+	fDacBufRdPos = (double)dac.readPosition;
 
 	for (i = 0; (i < nSamplesToGenerate) && (fDacBufSamples >= 0.0); i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		nDacOutRdPos = ((int)fDacBufRdPos) % DACBUFFER_SIZE;
+		dac.readPosition = ((int)fDacBufRdPos) % DACBUFFER_SIZE;
 
-		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)DacOutBuffer_left[nDacOutRdPos]) / 2;
-		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1] + (int)DacOutBuffer_right[nDacOutRdPos]) / 2;
+		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)dac.buffer_left[dac.readPosition]) / 2;
+		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1] + (int)dac.buffer_right[dac.readPosition]) / 2;
 
 		fDacBufRdPos += FreqRatio;
 		fDacBufSamples -= FreqRatio;
 	}
 
-	nDacOutRdPos = ((int)fDacBufRdPos) % DACBUFFER_SIZE;
+	dac.readPosition = ((int)fDacBufRdPos) % DACBUFFER_SIZE;
 
 	if (fDacBufSamples > 0.0) {
-		nDacBufSamples = (int)fDacBufSamples;
+		dac.writeBufferSize = (int)fDacBufSamples;
 	}
 	else {
-		nDacBufSamples = 0;
+		dac.writeBufferSize = 0;
 	}
 }

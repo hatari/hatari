@@ -24,10 +24,10 @@ extern void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
 extern void Crossbar_Reset(bool bCold);
 extern void Crossbar_MemorySnapShot_Capture(bool bSave);
 
+/* Called by ioMemTabFalcon.c */
 extern void Crossbar_FrameCountHigh_ReadByte(void);
 extern void Crossbar_FrameCountMed_ReadByte(void);
 extern void Crossbar_FrameCountLow_ReadByte(void);
-
 extern void Crossbar_BufferInter_ReadWord(void);
 extern void Crossbar_BufferInter_WriteWord(void);
 extern void Crossbar_DmaCtrlReg_ReadWord(void);
@@ -57,6 +57,7 @@ extern void Crossbar_OutputReduct_WriteWord(void);
 extern void Crossbar_CodecStatus_ReadWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
 
+/* Called by int.c */
 extern void Crossbar_InterruptHandler_ADCXmit(void);
 extern void Crossbar_InterruptHandler_DspXmit(void);
 extern void Crossbar_InterruptHandler_DmaPlay(void);
