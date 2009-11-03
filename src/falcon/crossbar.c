@@ -149,6 +149,9 @@ struct dma_s {
 	Uint32 currentFrame;		/* Current Frame Played / Recorded (in stereo, 2 frames = 1 track) */
 	Uint32 timerA_int;		/* Timer A interrupt at end of Play / Record ? */
 	Uint32 mfp15_int;		/* MFP-15 interrupt at end of Play / Record ? */
+	Uint32 isConnectedToCodec;
+	Uint32 isConnectedToDsp;
+	Uint32 isConnectedToDma;
 };
 
 struct crossbar_s {
@@ -171,20 +174,33 @@ struct crossbar_s {
 	Uint32 adc_cycles_counter;	/* cycles counter for ADC interrupt */
 };
 
-struct dac_s {
+struct codec_s {
 	Sint16 buffer_left[DACBUFFER_SIZE];
 	Sint16 buffer_right[DACBUFFER_SIZE];
 	Uint32 readPosition;
 	Uint32 writePosition;
 	Uint32 writeBufferSize;
+	Uint32 isConnectedToCodec;
+	Uint32 isConnectedToDsp;
+	Uint32 isConnectedToDma;
+};
+
+struct dsp_s {
+	Uint32 isTristated;		/* 0 = DSP is not tristated; 1 = DSP is tristated */
+	Uint32 isInHandshakeMode;	/* 0 = not in hanshake mode; 1 = in hanshake mode */
+	Uint32 isConnectedToCodec;
+	Uint32 isConnectedToDsp;
+	Uint32 isConnectedToDma;
+	Uint32 wordCount;		/* count number of words received from DSP transmitter (for TX frame computing) */
 };
 
 static struct crossbar_s crossbar;
 static struct dma_s dmaPlay;
 static struct dma_s dmaRecord;
-static struct dac_s dac;
-
-static Uint32 dspTx_wordCount;		/* count number of words received from DSP transmitter (for TX frame computing) */
+static struct codec_s dac;
+static struct codec_s adc;
+static struct dsp_s dspXmit;
+static struct dsp_s dspReceive;
 
 
 /*-----------------------------------------------------------------------*/
@@ -220,7 +236,7 @@ void Crossbar_Reset(bool bCold)
 	microphone_ADC_is_started = 0;
 
 	/* DSP inits */
-	dspTx_wordCount = 0;
+	dspXmit.wordCount = 0;
 
 	/* Crossbar inits */
 	crossbar.track_monitored = 0;
@@ -242,7 +258,8 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&dmaRecord, sizeof(dmaRecord));
 	MemorySnapShot_Store(&crossbar, sizeof(crossbar));
 	MemorySnapShot_Store(&dac, sizeof(dac));
-	MemorySnapShot_Store(&dspTx_wordCount, sizeof(dspTx_wordCount));
+	MemorySnapShot_Store(&dspXmit, sizeof(dspXmit));
+	MemorySnapShot_Store(&dspReceive, sizeof(dspReceive));
 }
 
 
@@ -434,7 +451,7 @@ void Crossbar_SoundModeCtrl_WriteByte(void)
  */
 void Crossbar_SrcControler_ReadWord(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 Crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 (source device) read: 0x%04x\n", IoMem_ReadWord(0xff8930));
 }
 
 /**
@@ -471,7 +488,11 @@ void Crossbar_SrcControler_ReadWord(void)
 void Crossbar_SrcControler_WriteWord(void)
 {
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 src write: 0x%04x\n", nCbSrc);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 (source device) write: 0x%04x\n", nCbSrc);
+
+	dspXmit.isTristated = 1 - ((nCbSrc & 0x80) >> 7);
+	dspXmit.isInHandshakeMode = 1 - ((nCbSrc & 0x10) >> 4);
 
 	Crossbar_Recalculate_Cycles();
 
@@ -488,47 +509,79 @@ void Crossbar_SrcControler_WriteWord(void)
  */
 void Crossbar_DstControler_ReadWord(void)
 {
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 (destination device) read: 0x%04x\n", IoMem_ReadWord(0xff8932));
 }
 
 /**
  * Write word to Falcon Crossbar destination controller (0xff8932).
-	Source: A/D Convertor                 BIT 15 14 13 12
-	1 - Connect, 0 - disconnect ---------------'  |  |  |
-	00 - 25.175Mhz clock -------------------------+--+  |
-	01 - External clock --------------------------+--+  |
-	10 - 32Mhz clock (Don't use) -----------------+--'  |
+	Source: D/A Convertor                 BIT 15 14 13 12
+	00 - DMA output ------------------------------+--+  |
+	01 - DSP output ------------------------------+--+  |
+	10 - External input --------------------------+--+  |
+	11 - ADC input -------------------------------+--'  |
 	0 - Handshake on, 1 - Handshake off ----------------'
 
-	Source: External Input                BIT 11 10  9  8
-	0 - DSP IN, 1 - All others ----------------'  |  |  |
-	00 - 25.175Mhz clock -------------------------+--+  |
-	01 - External clock --------------------------+--+  |
-	10 - 32Mhz clock -----------------------------+--'  |
+	Source: External OutPut               BIT 11 10  9  8
+	0 - DSP OUT, 1 - All others ---------------'  |  |  |
+	00 - DMA output ------------------------------+--+  |
+	01 - DSP output ------------------------------+--+  |
+	10 - External input --------------------------+--+  |
+	11 - ADC input -------------------------------+--'  |
 	0 - Handshake on, 1 - Handshake off ----------------'
 
-	Source: DSP-XMIT                      BIT  7  6  5  4
+	Source: DSP-RECEIVE                   BIT  7  6  5  4
 	0 - Tristate and disconnect DSP -----------+  |  |  |
 	    (Only for external SSI use)            |  |  |  |
 	1 - Connect DSP to multiplexer ------------'  |  |  |
-	00 - 25.175Mhz clock -------------------------+--+  |
-	01 - External clock --------------------------+--+  |
-	10 - 32Mhz clock -----------------------------+--'  |
+	00 - DMA output ------------------------------+--+  |
+	01 - DSP output ------------------------------+--+  |
+	10 - External input --------------------------+--+  |
+	11 - ADC input -------------------------------+--'  |
 	0 - Handshake on, 1 - Handshake off ----------------'
 
-	Source: DMA-PLAYBACK                  BIT  3  2  1  0
-	0 - Handshaking on, dest DSP-REC ----------+  |  |  |
-	1 - Destination is not DSP-REC ------------'  |  |  |
-	00 - 25.175Mhz clock -------------------------+--+  |
-	01 - External clock --------------------------+--+  |
-	10 - 32Mhz clock -----------------------------+--'  |
+	Source: DMA-RECORD                    BIT  3  2  1  0
+	0 - Handshaking on, dest DSP-XMIT ---------+  |  |  |
+	1 - All -----------------------------------'  |  |  |
+	00 - DMA output ------------------------------+--+  |
+	01 - DSP output ------------------------------+--+  |
+	10 - External input --------------------------+--+  |
+	11 - ADC input -------------------------------+--'  |
 	0 - Handshake on, 1 - Handshake off ----------------'
  */
 void Crossbar_DstControler_WriteWord(void)
 {
 	Uint16 destCtrl = IoMem_ReadWord(0xff8932);
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 dst write: 0x%04x\n", destCtrl);
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 (destination device) write: 0x%04x\n", destCtrl);
+
+	dspReceive.isTristated = 1 - ((destCtrl & 0x80) >> 7);
+	dspReceive.isInHandshakeMode = 1 - ((destCtrl & 0x10) >> 4);
+
+	/* destinations devices connexions */
+	dspReceive.isConnectedToCodec = (destCtrl & 0x60) == 0x60 ? 1 : 0;
+	dspReceive.isConnectedToDsp   = (destCtrl & 0x60) == 0x20 ? 1 : 0;
+	dspReceive.isConnectedToDma   = (destCtrl & 0x60) == 0x00 ? 1 : 0;
+
+	dmaRecord.isConnectedToCodec = (destCtrl & 0x6) == 0x6 ? 1 : 0;
+	dmaRecord.isConnectedToDsp   = (destCtrl & 0x6) == 0x2 ? 1 : 0;
+	dmaRecord.isConnectedToDma   = (destCtrl & 0x6) == 0x0 ? 1 : 0;
+
+	dac.isConnectedToCodec = (destCtrl & 0x6000) == 0x6000 ? 1 : 0;
+	dac.isConnectedToDsp   = (destCtrl & 0x6000) == 0x2000 ? 1 : 0;
+	dac.isConnectedToDma   = (destCtrl & 0x6000) == 0x0000 ? 1 : 0;
+
+	/* sources devices connexions */
+	dspXmit.isConnectedToCodec = (destCtrl & 0x6000) == 0x2000 ? 1 : 0;
+	dspXmit.isConnectedToDsp   = (destCtrl & 0x60) == 0x20 ? 1 : 0;
+	dspXmit.isConnectedToDma   = (destCtrl & 0x6) == 0x2 ? 1 : 0;
+
+	dmaPlay.isConnectedToCodec = (destCtrl & 0x6000) == 0x0000 ? 1 : 0;
+	dmaPlay.isConnectedToDsp   = (destCtrl & 0x60) == 0x00 ? 1 : 0;
+	dmaPlay.isConnectedToDma   = (destCtrl & 0x6) == 0x0 ? 1 : 0;
+
+	adc.isConnectedToCodec = (destCtrl & 0x6000) == 0x6000 ? 1 : 0;
+	adc.isConnectedToDsp   = (destCtrl & 0x60) == 0x60 ? 1 : 0;
+	adc.isConnectedToDma   = (destCtrl & 0x6) == 0x6 ? 1 : 0;
 
 	/* Start Microphone jack emulation */
 	if (!microphone_ADC_is_started) { 
@@ -775,8 +828,8 @@ static void Crossbar_StartDmaPlay_Handler(void)
 
 	/* If DMA play is connected to the DSP_IN in handshake mode, */
 	/* there's no need to use a clock. The synchro is driven by the DSP. */
-	if ((IoMem_ReadWord(0xff8932) & 0xf0) != 0x00) {
-//		return;
+	if (dmaPlay.isConnectedToDsp && (dspReceive.isTristated == 0) && dspReceive.isInHandshakeMode) {
+		return;
 	}
 
 	if (dmaPlay.isRunning) {
@@ -794,14 +847,16 @@ void Crossbar_InterruptHandler_DmaPlay(void)
 {
 	Sint16 value, eightBits, mono = 0;
 	Sint8  *pFrameStart;
-	Uint16 nCbDst = IoMem_ReadWord(0xff8932);
 
 	/* If DMA play is connected to the DSP_IN in handshake mode, */
 	/* there's no interrupt to acknoledge. */
-//	if ((IoMem_ReadWord(0xff8932) & 0xf0) == 0x00) {
+	if (dspReceive.isConnectedToDma && (dspReceive.isTristated == 0) && dspReceive.isInHandshakeMode) {
+		/* Do nothing */
+	}
+	else {
 		/* Remove this interrupt from list and re-order */
 		Int_AcknowledgeInterrupt();
-//	}
+	}
 
 	pFrameStart = (Sint8 *)&STRam[dmaPlay.frameStartAddr];
 
@@ -826,12 +881,12 @@ void Crossbar_InterruptHandler_DmaPlay(void)
 	}
 	
 	/* Send sample to the DMA record ? */
-	if ((nCbDst & 0x6) == 0x0) {
+	if (dmaPlay.isConnectedToDma) {
 		/* TODO : sent data to DMA record */
 	}
 
 	/* Send sample to the DAC ? */
-	if ((nCbDst & 0x6000) == 0x0000) {
+	if (dmaPlay.isConnectedToCodec) {
 		Crossbar_SendDataToDAC(value * eightBits, dmaPlay.currentFrame);
 		if (mono == 1) {
 			/* increase dmaPlay.currentFrame for next sample */
@@ -841,7 +896,7 @@ void Crossbar_InterruptHandler_DmaPlay(void)
 	}
 
 	/* Send sample to the DSP in (non handshake mode) ? */
-	if ((nCbDst & 0x60) == 0x00) {
+	if (dmaPlay.isConnectedToDsp) {
 		/* New frame ? */
 		if (dmaPlay.currentFrame == 0) {
 			Crossbar_SendDataToDspReceive(value, 1);
@@ -963,13 +1018,16 @@ static void Crossbar_StartDspXmitHandler(void)
 {
 	Uint32 dsp_Cycles;
 
-	/* If DSP is not in tristate mode */
-	if (IoMem_ReadWord(0xff8930) & 0x80) {
-		crossbar.dspXmit_cycles_counterD += crossbar.dspXmit_cycles;
-		dsp_Cycles = (Uint32) crossbar.dspXmit_cycles_counterD - crossbar.dspXmit_cycles_counterL;
-		crossbar.dspXmit_cycles_counterL += dsp_Cycles;
-		Int_AddRelativeInterrupt((Uint32)dsp_Cycles, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+	/* If DSP is in tristate mode */
+	if (dspXmit.isTristated) {
+		return;
 	}
+
+	/* Compute cycles needed by the interrupt */
+	crossbar.dspXmit_cycles_counterD += crossbar.dspXmit_cycles;
+	dsp_Cycles = (Uint32) crossbar.dspXmit_cycles_counterD - crossbar.dspXmit_cycles_counterL;
+	crossbar.dspXmit_cycles_counterL += dsp_Cycles;
+	Int_AddRelativeInterrupt((Uint32)dsp_Cycles, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 }
 
 /**
@@ -979,14 +1037,13 @@ void Crossbar_InterruptHandler_DspXmit(void)
 {
 	Uint16 frame=0;
 	Sint32 data;
-	Uint16 nCbDst = IoMem_ReadWord(0xff8932);
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 
 	/* TODO: implementing of handshake mode */
 
-	if (dspTx_wordCount == 0) {
+	if (dspXmit.wordCount == 0) {
 		frame = 1;
 	}
 
@@ -1000,24 +1057,24 @@ void Crossbar_InterruptHandler_DspXmit(void)
 	data = DSP_SsiReadTxValue();
 
  	/* Send DSP data to the DAC ? */
-	if ( (nCbDst & 0x6000) == 0x2000) {
-		Crossbar_SendDataToDAC(data, dspTx_wordCount);
+	if (dspXmit.isConnectedToCodec) {
+		Crossbar_SendDataToDAC(data, dspXmit.wordCount);
 	}
 
  	/* Send DSP data to the DMA record ? */
-	if ( (nCbDst & 0x6) == 0x2) {
+	if (dspXmit.isConnectedToDma) {
 		/* TODO : sent data to DMA record */
 	}
 
  	/* Send DSP data to the DSP in ? */
-	if ( (nCbDst & 0x60) == 0x20) {
+	if (dspXmit.isConnectedToDsp) {
 		Crossbar_SendDataToDspReceive(data, frame);
 	}
 
-	/* increase dspTx_wordCount for next sample */
-	dspTx_wordCount++;
-	if (dspTx_wordCount >= (crossbar.playTracks * 2)) {
-		dspTx_wordCount = 0;
+	/* increase dspXmit.wordCount for next sample */
+	dspXmit.wordCount++;
+	if (dspXmit.wordCount >= (crossbar.playTracks * 2)) {
+		dspXmit.wordCount = 0;
 	}
 
 	/* Restart the Int event handler */
@@ -1034,7 +1091,7 @@ void Crossbar_InterruptHandler_DspXmit(void)
 static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame)
 {
 	/* Verify that DSP IN is not tristated */
-	if ((IoMem_ReadWord(0xff8932) & 0x80) == 0) {
+	if (dspReceive.isTristated) {
 		return;
 	}
 
@@ -1043,9 +1100,9 @@ static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame)
 
 	/* Send the frame status to the DSP SSI receive */
 	/* only in non hanshake mode */
-//	if ((IoMem_ReadWord(0xff8932) & 0xf0) == 0x00) {
+	if (dspReceive.isInHandshakeMode == 0) {
 		DSP_SsiReceive_SC1(frame);
-//	}
+	}
 
 	/* Send the clock to the DSP SSI receive */
 	DSP_SsiReceive_SC0(0);
@@ -1074,25 +1131,25 @@ static void Crossbar_StartAdcXmitHandler(void)
  */
 void Crossbar_InterruptHandler_ADCXmit(void)
 {
-	Uint16 nCbDst = IoMem_ReadWord(0xff8932);
 	Sint16 sample = 0;
+
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 
 	/* TODO: implementing of handshake mode and start frame */
 
 	/* Send sample to DSP receive ? */
-	if ( (nCbDst & 0x60) == 0x60) {
+	if (adc.isConnectedToDsp) {
 		Crossbar_SendDataToDspReceive(sample, 0);
 	}
 	
 	/* Send sample to DMA record ? */
-	if ( (nCbDst & 0x6) == 0x6) {
+	if (adc.isConnectedToDma) {
 		/* Todo : send data to DMA record */
 	}
 
 	/* Send sample to DAC ? */
-	if ( (nCbDst & 0x6000) == 0x6000) {
+	if (adc.isConnectedToCodec) {
 		Crossbar_SendDataToDAC(sample, 0);
 	}
 	
