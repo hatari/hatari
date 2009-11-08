@@ -1,5 +1,6 @@
 
-include_directories(.. includes debug falcon uae-cpu ${SDL_INCLUDE_DIR}) 
+include_directories(.. includes debug falcon uae-cpu
+		    ${SDL_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
 link_directories(debug falcon gui-sdl uae-cpu) 
 
@@ -18,7 +19,7 @@ add_executable(hatari
 
 target_link_libraries(hatari
 	Debug Falcon GuiSdl UaeCpu
-	${SDL_LIBRARY}
+	${SDL_LIBRARY} ${PNG_LIBRARY} ${ZLIB_LIBRARY}
 	SDLmain # Sadly not included in SDL_LIBRARY variable
 	)
 
