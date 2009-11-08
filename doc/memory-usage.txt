@@ -69,10 +69,10 @@ When I profiled Hatari with Valgrind (valgrind.kde.org) Massif plugin,
 it tells that Hatari does about 3MB of memory worth of dynamic
 allocations. The allocations and ways to make them smaller are:
 
-* In includes/vdi.h set MAX_VDI_WIDTH and MAX_VDI_HEIGHT from 1024 and
-  768 to 640 and 400 respectively. This decreases memory usage from 1.5MB
-  to 0.5MB as Hatari allocates 2*2 framebuffers for page flipping in
-  Screen_Init().
+* In includes/vdi.h decrease MAX_VDI_WIDTH and MAX_VDI_HEIGHT
+  to 640 and 400. As Hatari allocates 2*2 framebuffers (of size
+  width*height/8) for page flipping in Screen_Init(), decreasing
+  their size can have have a large effect.
   - Change list of VDI modes in Hatari dialog accordingly!
 
 * Do not load bigfont in gui-sdl/sdlgui.c, especially if the device

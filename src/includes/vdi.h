@@ -8,11 +8,16 @@
 #ifndef HATARI_VDI_H
 #define HATARI_VDI_H
 
-#define MAX_VDI_WIDTH  1024
-#define MIN_VDI_WIDTH   384
-#define MAX_VDI_HEIGHT  768
-#define MIN_VDI_HEIGHT  240
 #define MAX_VDI_PLANES  4
+/* TOS needs width to be aligned to 128/planes and height to VDI text
+ * height (16 in 1-plane mode, 8 otherwise).   Use TT hi-res as max
+ * (max size affects memory usage).
+ */
+#define MAX_VDI_WIDTH  1280
+#define MAX_VDI_HEIGHT  960
+/* next in-all-bitdepths aligned size up from smallest ST res. */
+#define MIN_VDI_WIDTH   384
+#define MIN_VDI_HEIGHT  208
 
 
 enum
