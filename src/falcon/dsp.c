@@ -580,7 +580,7 @@ void DSP_SsiReceive_SC1(Uint32 FrameCounter)
 void DSP_SsiTransmit_SC1(void)
 {
 #if ENABLE_DSP_EMU
-	Crossbar_InterruptHandler_DmaPlay();
+	Crossbar_DmaPlayInHandShakeMode();
 #endif
 }
 

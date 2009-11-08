@@ -153,30 +153,30 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
 	{ 0xff8803, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8803_WriteByte },
 
-	{ 0xff8900, SIZE_BYTE, Crossbar_BufferInter_ReadWord, Crossbar_BufferInter_WriteWord }, /* Crossbar Buffer interrupts */
-	{ 0xff8901, SIZE_BYTE, Crossbar_DmaCtrlReg_ReadWord, Crossbar_DmaCtrlReg_WriteWord },   /* Crossbar control register */
-	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8903, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame start high */
-	{ 0xff8904, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8905, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame start med */
-	{ 0xff8906, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8907, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame start low */
-	{ 0xff8908, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8909, SIZE_BYTE, Crossbar_FrameCountHigh_ReadByte, IoMem_VoidWrite },             /* DMA sound frame count high */
-	{ 0xff890a, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff890b, SIZE_BYTE, Crossbar_FrameCountMed_ReadByte, IoMem_VoidWrite },              /* DMA sound frame count med */
-	{ 0xff890c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff890d, SIZE_BYTE, Crossbar_FrameCountLow_ReadByte, IoMem_VoidWrite },              /* DMA sound frame count low */
-	{ 0xff890e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff890f, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame end high */
-	{ 0xff8910, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8911, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame end med */
-	{ 0xff8912, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8913, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame end low */
-	{ 0xff8920, SIZE_BYTE, Crossbar_DmaTrckCtrl_ReadByte, Crossbar_DmaTrckCtrl_WriteByte }, /* Crossbar track control */
-	{ 0xff8921, SIZE_BYTE, Crossbar_SoundModeCtrl_ReadByte, Crossbar_SoundModeCtrl_WriteByte }, /* DMA sound mode control */
-	{ 0xff8922, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* Microwire data */
-	{ 0xff8924, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* Microwire mask */
+	{ 0xff8900, SIZE_BYTE, Crossbar_BufferInter_ReadWord, Crossbar_BufferInter_WriteWord },       /* Crossbar Buffer interrupts */
+	{ 0xff8901, SIZE_BYTE, Crossbar_DmaCtrlReg_ReadWord, Crossbar_DmaCtrlReg_WriteWord },         /* Crossbar control register */
+	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff8903, SIZE_BYTE, Crossbar_FrameStartHigh_ReadByte, Crossbar_FrameStartHigh_WriteByte }, /* DMA sound frame start high */
+	{ 0xff8904, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff8905, SIZE_BYTE, Crossbar_FrameStartMed_ReadByte, Crossbar_FrameStartMed_WriteByte },   /* DMA sound frame start med */
+	{ 0xff8906, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff8907, SIZE_BYTE, Crossbar_FrameStartLow_ReadByte, Crossbar_FrameStartLow_WriteByte },   /* DMA sound frame start low */
+	{ 0xff8908, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff8909, SIZE_BYTE, Crossbar_FrameCountHigh_ReadByte, Crossbar_FrameCountHigh_WriteByte }, /* DMA sound frame count high */
+	{ 0xff890a, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff890b, SIZE_BYTE, Crossbar_FrameCountMed_ReadByte, Crossbar_FrameCountMed_WriteByte },   /* DMA sound frame count med */
+	{ 0xff890c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff890d, SIZE_BYTE, Crossbar_FrameCountLow_ReadByte, Crossbar_FrameCountLow_WriteByte },   /* DMA sound frame count low */
+	{ 0xff890e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff890f, SIZE_BYTE, Crossbar_FrameEndHigh_ReadByte, Crossbar_FrameEndHigh_WriteByte },     /* DMA sound frame end high */
+	{ 0xff8910, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff8911, SIZE_BYTE, Crossbar_FrameEndMed_ReadByte, Crossbar_FrameEndMed_WriteByte },       /* DMA sound frame end med */
+	{ 0xff8912, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
+	{ 0xff8913, SIZE_BYTE, Crossbar_FrameEndLow_ReadByte, Crossbar_FrameEndLow_WriteByte },       /* DMA sound frame end low */
+	{ 0xff8920, SIZE_BYTE, Crossbar_DmaTrckCtrl_ReadByte, Crossbar_DmaTrckCtrl_WriteByte },       /* Crossbar track control */
+	{ 0xff8921, SIZE_BYTE, Crossbar_SoundModeCtrl_ReadByte, Crossbar_SoundModeCtrl_WriteByte },   /* DMA sound mode control */
+	{ 0xff8922, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                                     /* Microwire data */
+	{ 0xff8924, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                                     /* Microwire mask */
 
 	{ 0xff8930, SIZE_WORD, Crossbar_SrcControler_ReadWord, Crossbar_SrcControler_WriteWord }, /* Crossbar source controler */
 	{ 0xff8932, SIZE_WORD, Crossbar_DstControler_ReadWord, Crossbar_DstControler_WriteWord }, /* Crossbar destination controler */

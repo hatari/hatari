@@ -971,7 +971,7 @@ void MFP_GPIP_ReadByte(void)
 	
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
 		MFP_GPIP ^= 0x80;   /* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
-	if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)
+	if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
 		MFP_GPIP ^= 0x80;   /* Top bit is XORed with Falcon crossbar DMA sound control play bit (Falcon emulation mode) */
 
 	if (ConfigureParams.Printer.bEnablePrinting)

@@ -25,9 +25,24 @@ extern void Crossbar_Reset(bool bCold);
 extern void Crossbar_MemorySnapShot_Capture(bool bSave);
 
 /* Called by ioMemTabFalcon.c */
+extern void Crossbar_FrameStartHigh_ReadByte(void);
+extern void Crossbar_FrameStartHigh_WriteByte(void);
+extern void Crossbar_FrameStartMed_ReadByte(void);
+extern void Crossbar_FrameStartMed_WriteByte(void);
+extern void Crossbar_FrameStartLow_ReadByte(void);
+extern void Crossbar_FrameStartLow_WriteByte(void);
 extern void Crossbar_FrameCountHigh_ReadByte(void);
+extern void Crossbar_FrameCountHigh_WriteByte(void);
 extern void Crossbar_FrameCountMed_ReadByte(void);
+extern void Crossbar_FrameCountMed_WriteByte(void);
 extern void Crossbar_FrameCountLow_ReadByte(void);
+extern void Crossbar_FrameEndHigh_ReadByte(void);
+extern void Crossbar_FrameCountLow_WriteByte(void);
+extern void Crossbar_FrameEndHigh_WriteByte(void);
+extern void Crossbar_FrameEndMed_ReadByte(void);
+extern void Crossbar_FrameEndMed_WriteByte(void);
+extern void Crossbar_FrameEndLow_ReadByte(void);
+extern void Crossbar_FrameEndLow_WriteByte(void);
 extern void Crossbar_BufferInter_ReadWord(void);
 extern void Crossbar_BufferInter_WriteWord(void);
 extern void Crossbar_DmaCtrlReg_ReadWord(void);
@@ -61,6 +76,9 @@ extern void Crossbar_CodecStatus_WriteWord(void);
 extern void Crossbar_InterruptHandler_ADCXmit(void);
 extern void Crossbar_InterruptHandler_DspXmit(void);
 extern void Crossbar_InterruptHandler_DmaPlay(void);
+
+/* Called by dsp.c */
+void Crossbar_DmaPlayInHandShakeMode(void);
 
 
 Uint16 microphone_ADC_is_started;

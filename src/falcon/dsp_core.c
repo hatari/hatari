@@ -283,7 +283,7 @@ void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core)
 /* SSI get RX register */
 Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core)
 {
-	/* Clear SSI receive interrupt */
+	/* Clear SSI RDF bit */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
 	return dsp_core->ssi.RX;
 }
@@ -296,7 +296,7 @@ void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
 
 
 /**
- * SSI receive serial clock : (this is a 16 bits clock)
+ * SSI receive serial clock.
  *
  */
 void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
@@ -387,7 +387,7 @@ void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value)
 }
 
 /**
- * SSI transmit serial clock : (this is a 16 bits clocks)
+ * SSI transmit serial clock.
  *
  */
 void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
@@ -426,7 +426,7 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 			}
 		}
 	}else{
-		dsp_core->ssi.transmit_value = 0;
+		dsp_core->ssi.transmit_value = value;
 	}
 
 	/* set TDE */
