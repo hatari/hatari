@@ -413,6 +413,7 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 	}
 */
 	/* Transmit the data */
+	/* TODO : detect handshaking mode to bypass the waitFrameTx test */
 	if (dsp_core->ssi.crb_te && dsp_core->ssi.waitFrameTX == 0) {
 		/* Send value to crossbar */
 		dsp_core->ssi.transmit_value = value;
@@ -426,6 +427,7 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 			}
 		}
 	}else{
+		/* TODO : when handshaking mode detected, transmit_value = 0 here */
 		dsp_core->ssi.transmit_value = value;
 	}
 

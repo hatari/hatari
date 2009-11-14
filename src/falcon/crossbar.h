@@ -13,6 +13,10 @@
 #define CROSSBAR_SNDCTRL_RECORD       0x10
 #define CROSSBAR_SNDCTRL_RECORDLOOP   0x20
 
+#define CROSSBAR_FREQ_25MHZ           0x0
+#define CROSSBAR_FREQ_EXTERN          0x1
+#define CROSSBAR_FREQ_32MHZ           0x2
+
 #define CROSSBAR_SNDMODE_16BITSTEREO  0x40
 #define CROSSBAR_SNDMODE_MONO         0x80
 
@@ -73,9 +77,8 @@ extern void Crossbar_CodecStatus_ReadWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
 
 /* Called by int.c */
-extern void Crossbar_InterruptHandler_ADCXmit(void);
-extern void Crossbar_InterruptHandler_DspXmit(void);
-extern void Crossbar_InterruptHandler_DmaPlay(void);
+extern void Crossbar_InterruptHandler_25Mhz(void);
+extern void Crossbar_InterruptHandler_32Mhz(void);
 
 /* Called by dsp.c */
 void Crossbar_DmaPlayInHandShakeMode(void);
