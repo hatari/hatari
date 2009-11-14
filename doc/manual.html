@@ -115,7 +115,11 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#GEMDOS based hard disk emulation">GEMDOS based hard disk emulation</a></li>
     <li><a href="#ACSI hard disk emulation">ACSI hard disk emulation</a></li>
     <li><a href="#IDE hard disk emulation">IDE hard disk emulation</a></li>
-    <li><a href="#Accessing disk image partitions outside of Hatari">Accessing disk image partitions outside of Hatari</a></li>
+  </ul>
+  <li><a href="#Moving files to/from hard disk images">Moving files to/from hard disk images</a>
+  <ul>
+    <li><a href="#Using HD Driver with GEMDOS partitions">Using HD Driver with GEMDOS partitions</a></li>
+    <li><a href="#Accessing HDD image partitions outside of Hatari">Accessing HDD image partitions outside of Hatari</a></li>
   </ul>
   <li><a href="#The debugger">The debugger</a>
   <li><a href="#Performance">Performance</a>
@@ -2082,8 +2086,8 @@ possible to store that folder on a FAT filesystem since those
 filesystems are case-insensitive. </p>
 <p>GEMDOS drive emulation is an easy way to share files between the
 host system and the emulated Atari, but it is known to be incomplete and
-a little bit unstable, especially if you use it together with the ACSI
-hard disk emulation. So if your programs complain that they could not
+a little bit unstable, <em>especially if you use it together with the ACSI
+hard disk emulation</em>. So if your programs complain that they could not
 find/read/write files on the GEMDOS HD drive, you should try to copy
 them to a floppy disk image or a real hard disk image!</p>
 <p>
@@ -2149,27 +2153,69 @@ with the <span class="commandline">--ide</span> parameter.
 </p>
 
 
-<a name="Accessing disk image partitions outside of Hatari"></a><h3>Accessing disk image partitions outside of Hatari</h3>
-<p>
-If you want to access the partitions also outside the emulation,
-the disk image needs to have a DOS partition table.  The
-<span class="commandline">atari-hd-image</span> script included
+<a name="Moving files to/from hard disk images"></a><h2>Moving files
+to/from hard disk images</h2>
+
+<p>Moving files to and from Atari hard disk images can be done
+either through GEMDOS partitions (host directories mounted inside
+Hatari emulation) or accessing the images directly on the host
+(outside the emulation).  Both have their own limitations.</p>
+
+
+<a name="Using HD Driver with GEMDOS partitions"></a><h3>Using HD Driver
+with GEMDOS partitions</h3>
+
+<p>Uwe Seimet's <a href="http://www.seimet.de/atari/en/hddriver.html">HD
+Driver</a> works fine with both the Hatari GEMDOS partitions and normal
+hard disk images.  It doesn't work with EmuTOS, so you need real TOS
+(&gt;= v1.04).</p>
+
+<p>First copy the HDDRIVER.PRG binary into your GEMDOS directory AUTO folder.
+Then start the HDDRUTIL.APP configuration utility, locate HDDRIVER.PRG, open
+the <a href="http://www.seimet.de/atari/en/hddriverscreenshots.html">"Devices
+and Partitions" dialog</a> and select the "Preserve Existing Partitions"
+option.  Then you can just start Hatari with your hard disk image and
+this GEMDOS directory, for example like this:
+"<span class="commandline">hatari --ide hd-image.st --harddisk
+gemdos-hd/</span>".</p>
+
+<p>If you're using the <em>demo</em> version of HD Driver, you can
+write files only to the C: partition, i.e. in above case only copy
+files from the hard disk image partition to the GEMDOS partition (with
+some write slowndowns included into the demo version). If you want to
+copy files to the hard disk image with the <em>demo</em> version of
+the HD Driver, you need to set the hard disk image as drive C:.</p>
+
+<p>To accomplish this, set the GEMDOS partitions to be from D: forward,
+i.e. have a directory which contains only single letter subdirectories,
+starting from "D" like in "<span class="commandline">mkdir gemdos-hd;
+mkdir gemdos-hd/D</span>". Then give Hatari (as the last parameter)
+a boot floppy image containing the demo version of HDDRIVER.PRG in
+its AUTO folder, like this: "<span class="commandline">hatari --ide
+hd-image.st --harddisk gemdos-hd/ hd-driver-floppy.st</span>".</p>
+
+
+<a name="Accessing HDD image partitions outside of Hatari"></a><h3>Accessing
+HDD image partitions outside of Hatari</h3>
+
+If you want to access the harddisk image partitions also outside
+the emulation, the disk image needs to have a DOS partition table.
+The <span class="commandline">atari-hd-image</span> script included
 with Hatari can be used to create such an image.
 </p>
 <p>
 Inside the Hatari emulator, EmuTOS can access partition(s) on these
 kind of images directly without any driver software.  Of the Atari HD
-drivers, Centek's Cecile (mentioned above) and Uwe Seimet's
-<a href="http://www.seimet.de/atari/en/hddriver.html">HD Driver
-(demo)</a> work fine with them.  E.g. AHDI and CBHD don't.
+drivers mentioned above, Centek's Cecile and Uwe Seimet's HD Driver
+(demo) work fine with these partitions. E.g. AHDI and CBHD don't.
 </p>
 <p>
-Note also that plain EmuTOS supports only ACSI and the drivers support
-only IDE (emulation). Cecile needs TT or Falcon and HD driver doesn't
-work with EmuTOS or TOS4.  To summarise; if ASCI emulation and EmuTOS
-are enough, use those. Otherwise, if you want to use TT or Falcon
-emulation, use Cecile (or full HD Driver version if you have it),
-otherwise use HD driver (demo).
+Note that plain EmuTOS supports only ACSI and the listed HD drivers
+support only IDE (emulation). Cecile needs TT or Falcon and HD Driver
+doesn't work with EmuTOS or TOS4.  To summarise; if ASCI emulation and
+EmuTOS are enough, use those. Otherwise, if you want to use TT or
+Falcon emulation, use Cecile (or full HD Driver version if you have
+it), otherwise use HD Driver (demo).
 </p>
 <p>
 To access the content of the partitions on Linux host, there are two
