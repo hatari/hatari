@@ -25,7 +25,7 @@ install:
 	$(INSTALL) -d $(DESTDIR)$(DATAPATH)
 	$(INSTALL_SCRIPT) hatariui.py debugui.py $(DESTDIR)$(DATAPATH)/
 	$(INSTALL_DATA) config.py dialogs.py hatari.py uihelpers.py $(DESTDIR)$(DATAPATH)/
-	$(INSTALL_DATA) README TODO Changelog *.png $(DESTDIR)$(DATAPATH)/
+	$(INSTALL_DATA) README TODO release-notes.txt *.png $(DESTDIR)$(DATAPATH)/
 	$(INSTALL) -d $(DESTDIR)$(ICONPATH)
 	$(INSTALL_DATA) hatari-icon.png $(DESTDIR)$(ICONPATH)/
 	$(INSTALL) -d $(DESTDIR)$(DESKPATH)

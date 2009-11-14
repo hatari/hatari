@@ -15,7 +15,7 @@ Data files:
 - hatariui.desktop	- Hatari UI .desktop file for application launchers
 
 Documentation:
-- Changelog	- Code changes
-- FILES		- This file
-- README	- Hatari UI intro / description
-- TODO		- missing features etc
+- release-notes.txt	- UI & code changes
+- FILES			- This file
+- README		- Hatari UI intro / description
+- TODO			- missing features etc
