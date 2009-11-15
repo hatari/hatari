@@ -444,6 +444,9 @@ Games:
 - Vertical Mayhem (Columns clone)*
 - Willie's Adventure (preview)*
 
+Utilities:
+- Cecile hard disk (image) driver
+
 Mostly working applications:
 - AceMidi demo (softsynth sounds needs DSP)
 - FlaySID (sound needs DSP)
