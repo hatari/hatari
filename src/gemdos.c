@@ -641,9 +641,9 @@ void GemDOS_InitDrives(void)
 						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
 				nNumDrives = i + 3;
 			}
-			else	/* This letter has allready been allocated to the one supported physical disk image */
+			else	/* This letter has already been allocated to the one supported physical disk image */
 			{
-				Log_Printf(LOG_INFO, "Drive Letter %c is already mapped to HDD image (cannot map GEM DOS drive to %s).\n",
+				Log_Printf(LOG_WARN, "Drive Letter %c is already mapped to HDD image (cannot map GEM DOS drive to %s).\n",
 						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
 				free(emudrives[i]);
 				emudrives[i] = NULL;
@@ -991,7 +991,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 				if (!found)
 				{           /* really nothing ! */
 					*s = PATHSEP;
-					fprintf(stderr,"no path for %s\n",pszDestName);
+					Log_Printf(LOG_WARN, "no path for %s\n",pszDestName);
 				}
 			}
 		}
@@ -1568,11 +1568,12 @@ static bool GemDOS_Open(Uint32 Params)
 		/* Tag handle table entry as used and return handle */
 		FileHandles[Index].bUsed = true;
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
+		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d\n", Index);
 		return true;
 	}
 
 	if (Mode != 1 && errno == EACCES)
-		LOG_TRACE(TRACE_OS_GEMDOS, "Missing permission to read file '%s'\n", szActualFileName );
+		Log_Printf(LOG_WARN, "Missing permission to read file '%s'\n", szActualFileName );
 
 	Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
 	return true;
@@ -1868,7 +1869,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 
 	if (nAttrib == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
 	{
-		fprintf(stderr, "Warning: Hatari doesn't support GEMDOS volume label setting\n(for '%s')\n", sActualFileName);
+		Log_Printf(LOG_WARN, "Warning: Hatari doesn't support GEMDOS volume label setting\n(for '%s')\n", sActualFileName);
 		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
 		return true;
 	}
