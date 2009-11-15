@@ -162,13 +162,14 @@ typedef enum
 
 typedef struct
 {
-  bool bBootFromHardDisk;
   int nHardDiskDir;
   bool bUseHardDiskDirectories;
   bool bUseHardDiskImage;
+  bool bUseIdeHardDiskImage;
+  bool bDoGemdosChanges;
+  bool bBootFromHardDisk;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
   char szHardDiskImage[FILENAME_MAX];
-  bool bUseIdeHardDiskImage;
   char szIdeHardDiskImage[FILENAME_MAX];
 } CNF_HARDDISK;
 

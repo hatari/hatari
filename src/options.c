@@ -86,6 +86,7 @@ enum {
 	OPT_DISKB,
 	OPT_SLOWFLOPPY,
 	OPT_HARDDRIVE,
+	OPT_GEMDOSCHANGES,
 	OPT_ACSIHDIMAGE,
 	OPT_IDEHDIMAGE,
 	OPT_MEMSIZE,		/* memory options */
@@ -221,7 +222,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SLOWFLOPPY,   NULL, "--slowfdc",
 	  "<bool>", "Slow down floppy disk access emulation" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
-	  "<dir>", "Emulate harddrive (partitions) with <dir> contents" },
+	  "<dir>", "Emulate harddrive partition(s) with <dir> contents" },
+	{ OPT_GEMDOSCHANGES, NULL, "--do-changes",
+	  "<bool>", "Do/allow changes to mounted GEMDOS HD <dir> contents" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEHDIMAGE,   NULL, "--ide",
@@ -1010,6 +1013,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				ConfigureParams.HardDisk.bBootFromHardDisk = true;
 			}
 			bLoadAutoSave = false;
+			break;
+
+		case OPT_GEMDOSCHANGES:
+			ok = Opt_Bool(argv[++i], OPT_GEMDOSCHANGES, &ConfigureParams.HardDisk.bDoGemdosChanges);
 			break;
 
 		case OPT_ACSIHDIMAGE:

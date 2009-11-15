@@ -260,9 +260,7 @@ static const struct Config_Tag configs_HardDisk[] =
 	{ "bBootFromHardDisk", Bool_Tag, &ConfigureParams.HardDisk.bBootFromHardDisk },
 	{ "bUseHardDiskDirectory", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskDirectories },
 	{ "szHardDiskDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
-	/*{ "szHardDiskDirD", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_D] },*/
-	/*{ "szHardDiskDirE", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_E] },*/
-	/*{ "szHardDiskDirF", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_F] },*/
+	{ "bDoGemdosChanges", Bool_Tag, &ConfigureParams.HardDisk.bDoGemdosChanges },
 	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
 	{ "szHardDiskImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
 	{ "bUseIdeHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeHardDiskImage },
@@ -359,6 +357,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for hard disks */
 	ConfigureParams.HardDisk.bBootFromHardDisk = false;
+	ConfigureParams.HardDisk.bDoGemdosChanges = true;
 	ConfigureParams.HardDisk.nHardDiskDir = DRIVE_C;
 	ConfigureParams.HardDisk.bUseHardDiskDirectories = false;
 	for (i = 0; i < MAX_HARDDRIVES; i++)

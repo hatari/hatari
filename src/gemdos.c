@@ -53,7 +53,6 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include "hatari-glue.h"
 #include "maccess.h"
 
-#define ENABLE_SAVING             /* Turn on saving stuff */
 
 /* GLOB_ONLYDIR is a GNU extension for the glob() function and not defined
  * on some systems. We should probably use something different for this
@@ -1237,7 +1236,7 @@ static bool GemDOS_DFree(Uint32 Params)
  */
 static bool GemDOS_MkDir(Uint32 Params)
 {
-	char *pDirName;
+	char *pDirName, *psDirPath;
 	int Drive;
 
 	/* Find directory to make */
@@ -1247,30 +1246,39 @@ static bool GemDOS_MkDir(Uint32 Params)
 
 	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
 
-	if (ISHARDDRIVE(Drive))
+	if (!ISHARDDRIVE(Drive))
 	{
-		char *psDirPath;
-		psDirPath = malloc(FILENAME_MAX);
-		if (!psDirPath)
-		{
-			perror("GemDOS_MkDir");
-			Regs[REG_D0] = GEMDOS_ENSMEM;
-			return true;
-		}
+		/* redirect to TOS */
+		return false;
+	}
 
-		/* Copy old directory, as if calls fails keep this one */
-		GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath, FILENAME_MAX);
-
-		/* Attempt to make directory */
-		if (mkdir(psDirPath, 0755) == 0)
-			Regs[REG_D0] = GEMDOS_EOK;
-		else
-			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
-
-		free(psDirPath);
+	/* write protected device? */
+	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	{
+		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Dcreate(\"%s\")\n", pDirName);
+		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
-	return false;
+
+	psDirPath = malloc(FILENAME_MAX);
+	if (!psDirPath)
+	{
+		perror("GemDOS_MkDir");
+		Regs[REG_D0] = GEMDOS_ENSMEM;
+		return true;
+	}
+	
+	/* Copy old directory, as if calls fails keep this one */
+	GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath, FILENAME_MAX);
+	
+	/* Attempt to make directory */
+	if (mkdir(psDirPath, 0755) == 0)
+		Regs[REG_D0] = GEMDOS_EOK;
+	else
+		Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
+	
+	free(psDirPath);
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1280,7 +1288,7 @@ static bool GemDOS_MkDir(Uint32 Params)
  */
 static bool GemDOS_RmDir(Uint32 Params)
 {
-	char *pDirName;
+	char *pDirName, *psDirPath;
 	int Drive;
 
 	/* Find directory to make */
@@ -1290,30 +1298,39 @@ static bool GemDOS_RmDir(Uint32 Params)
 
 	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
 
-	if (ISHARDDRIVE(Drive))
+	if (!ISHARDDRIVE(Drive))
 	{
-		char *psDirPath;
-		psDirPath = malloc(FILENAME_MAX);
-		if (!psDirPath)
-		{
-			perror("GemDOS_RmDir");
-			Regs[REG_D0] = GEMDOS_ENSMEM;
-			return true;
-		}
+		/* redirect to TOS */
+		return false;
+	}
 
-		/* Copy old directory, as if calls fails keep this one */
-		GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath, FILENAME_MAX);
-
-		/* Attempt to make directory */
-		if (rmdir(psDirPath) == 0)
-			Regs[REG_D0] = GEMDOS_EOK;
-		else
-			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
-
-		free(psDirPath);
+	/* write protected device? */
+	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	{
+		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Ddelete(\"%s\")\n", pDirName);
+		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
-	return false;
+
+	psDirPath = malloc(FILENAME_MAX);
+	if (!psDirPath)
+	{
+		perror("GemDOS_RmDir");
+		Regs[REG_D0] = GEMDOS_ENSMEM;
+		return true;
+	}
+
+	/* Copy old directory, as if calls fails keep this one */
+	GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath, FILENAME_MAX);
+
+	/* Attempt to remove directory */
+	if (rmdir(psDirPath) == 0)
+		Regs[REG_D0] = GEMDOS_EOK;
+	else
+		Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
+	
+	free(psDirPath);
+	return true;
 }
 
 
@@ -1407,14 +1424,23 @@ static bool GemDOS_Create(Uint32 Params)
 
 	if (!ISHARDDRIVE(Drive))
 	{
+		/* redirect to TOS */
 		return false;
 	}
 
 	if (Mode == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
 	{
-		fprintf(stderr, "Warning: Hatari doesn't support GEMDOS volume"
-		        " label setting\n(for '%s')\n", pszFileName);
+		Log_Printf(LOG_WARN, "Warning: Hatari doesn't support GEMDOS volume"
+			   " label setting\n(for '%s')\n", pszFileName);
 		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
+		return true;
+	}
+
+	/* write protected device? */
+	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	{
+		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Fcreate(\"%s\")\n", pszFileName);
+		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
 
@@ -1430,7 +1456,7 @@ static bool GemDOS_Create(Uint32 Params)
 		Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
 		return true;
 	}
-#ifdef ENABLE_SAVING
+
 	/* FIXME: implement other Mode attributes
 	 * - GEMDOS_FILE_ATTRIB_HIDDEN       (FA_HIDDEN)
 	 * - GEMDOS_FILE_ATTRIB_SYSTEM_FILE  (FA_SYSTEM)
@@ -1466,7 +1492,6 @@ static bool GemDOS_Create(Uint32 Params)
 			return true;
 		}
 	}
-#endif
 	Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
 	return true;
 }
@@ -1649,25 +1674,33 @@ static bool GemDOS_Write(Uint32 Params)
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fwrite(%i, %li, 0x%x)\n", 
 	          Handle, Size, STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
 
-#ifdef ENABLE_SAVING
-	/* Check if handle was not invalid */
-	if (!GemDOS_IsInvalidFileHandle(Handle))
+	/* Check handle was valid */
+	if (GemDOS_IsInvalidFileHandle(Handle))
 	{
-		nBytesWritten = fwrite(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
-		if (ferror(FileHandles[Handle].FileHandle))
-		{
-			Regs[REG_D0] = GEMDOS_EACCDN;      /* Access denied(ie read-only) */
-		}
-		else
-		{
+		/* assume it was TOS one -> redirect */
+		return false;
+	}
 
-			Regs[REG_D0] = nBytesWritten;      /* OK */
-		}
+	/* write protected device? */
+	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	{
+		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Fwrite(%d,...)\n", Handle);
+		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
-#endif
 
-	return false;
+	nBytesWritten = fwrite(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
+	if (ferror(FileHandles[Handle].FileHandle))
+	{
+		Log_Printf(LOG_WARN, "Failed to write to '%s'\n",
+			   FileHandles[Handle].szActualName );
+		Regs[REG_D0] = GEMDOS_EACCDN;      /* Access denied (ie read-only) */
+	}
+	else
+	{
+		Regs[REG_D0] = nBytesWritten;      /* OK */
+	}
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1677,7 +1710,7 @@ static bool GemDOS_Write(Uint32 Params)
  */
 static bool GemDOS_FDelete(Uint32 Params)
 {
-	char *pszFileName;
+	char *pszFileName, *psActualFileName;
 	int Drive;
 
 	/* Find filename */
@@ -1687,33 +1720,39 @@ static bool GemDOS_FDelete(Uint32 Params)
 
 	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
 
-#ifdef ENABLE_SAVING
-	if (ISHARDDRIVE(Drive))
+	if (!ISHARDDRIVE(Drive))
 	{
-		char *psActualFileName;
-		psActualFileName = malloc(FILENAME_MAX);
-		if (!psActualFileName)
-		{
-			perror("GemDOS_FDelete");
-			Regs[REG_D0] = GEMDOS_ENSMEM;
-			return true;
-		}
+		/* redirect to TOS */
+		return false;
+	}
 
-		/* And convert to hard drive filename */
-		GemDOS_CreateHardDriveFileName(Drive, pszFileName, psActualFileName, FILENAME_MAX);
-
-		/* Now delete file?? */
-		if (unlink(psActualFileName) == 0)
-			Regs[REG_D0] = GEMDOS_EOK;          /* OK */
-		else
-			Regs[REG_D0] = GEMDOS_EFILNF;       /* File not found */
-
-		free(psActualFileName);
+	/* write protected device? */
+	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	{
+		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Fdelete(\"%s\")\n", pszFileName);
+		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
-#endif
 
-	return false;
+	psActualFileName = malloc(FILENAME_MAX);
+	if (!psActualFileName)
+	{
+		perror("GemDOS_FDelete");
+		Regs[REG_D0] = GEMDOS_ENSMEM;
+		return true;
+	}
+
+	/* And convert to hard drive filename */
+	GemDOS_CreateHardDriveFileName(Drive, pszFileName, psActualFileName, FILENAME_MAX);
+
+	/* Now delete file?? */
+	if (unlink(psActualFileName) == 0)
+		Regs[REG_D0] = GEMDOS_EOK;          /* OK */
+	else
+		Regs[REG_D0] = GEMDOS_EFILNF;       /* File not found */
+
+	free(psActualFileName);
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1782,7 +1821,7 @@ static bool GemDOS_LSeek(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /**
- * GEMDOS Fattrib() - get or set file attributes
+ * GEMDOS Fattrib() - get or set file and directory attributes
  * Call 0x43
  */
 static bool GemDOS_Fattrib(Uint32 Params)
@@ -1805,6 +1844,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 
 	if (!ISHARDDRIVE(nDrive))
 	{
+		/* redirect to TOS */
 		return false;
 	}
 
@@ -1829,15 +1869,53 @@ static bool GemDOS_Fattrib(Uint32 Params)
 		Regs[REG_D0] = GemDOS_ConvertAttribute(FileStat.st_mode);
 		return true;
 	}
+
+	/* write protected device? */
+	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	{
+		Log_Printf(LOG_WARN, "PREVENTED: Fattrib(\"%s\",...)\n", psFileName);
+		Regs[REG_D0] = GEMDOS_EWRPRO;
+		return true;
+	}
+
+	if (nAttrib & GEMDOS_FILE_ATTRIB_SUBDIRECTORY)
+	{
+		if (!S_ISDIR(FileStat.st_mode))
+		{
+			/* file, not dir -> path not found */
+			Regs[REG_D0] = GEMDOS_EPTHNF;
+			return true;
+		}
+	}
+	else
+	{
+		if (S_ISDIR(FileStat.st_mode))
+		{
+			/* dir, not file -> file not found */
+			Regs[REG_D0] = GEMDOS_EFILNF;
+			return true;
+		}
+	}
+	
 	if (nAttrib & GEMDOS_FILE_ATTRIB_READONLY)
 	{
 		/* set read-only (readable by all) */
 		if (chmod(sActualFileName, S_IRUSR|S_IRGRP|S_IROTH) == 0)
 		{
-			Regs[REG_D0] = GEMDOS_FILE_ATTRIB_READONLY;
+			Regs[REG_D0] = nAttrib;
 			return true;
 		}
 	}
+	else
+	{
+		/* set writable (by user, readable by all) */
+		if (chmod(sActualFileName, S_IWUSR|S_IRUSR|S_IRGRP|S_IROTH) == 0)
+		{
+			Regs[REG_D0] = nAttrib;
+			return true;
+		}
+	}
+
 	/* FIXME: support hidden/system/archive flags? */
 	Regs[REG_D0] = GEMDOS_EACCDN;         /* Acces denied */
 	return true;
@@ -2160,23 +2238,32 @@ static bool GemDOS_Rename(Uint32 Params)
 
 	NewDrive = GemDOS_IsFileNameAHardDrive(pszNewFileName);
 	OldDrive = GemDOS_IsFileNameAHardDrive(pszOldFileName);
-	if (ISHARDDRIVE(NewDrive) && ISHARDDRIVE(OldDrive))
+	if (!(ISHARDDRIVE(NewDrive) && ISHARDDRIVE(OldDrive)))
 	{
-		/* And convert to hard drive filenames */
-		GemDOS_CreateHardDriveFileName(NewDrive, pszNewFileName,
-		              szNewActualFileName, sizeof(szNewActualFileName));
-		GemDOS_CreateHardDriveFileName(OldDrive, pszOldFileName,
-		              szOldActualFileName, sizeof(szOldActualFileName));
+		/* redirect to TOS */
+		return false;
+	}
 
-		/* Rename files */
-		if ( rename(szOldActualFileName,szNewActualFileName)==0 )
-			Regs[REG_D0] = GEMDOS_EOK;
-		else
-			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
+	/* write protected device? */
+	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	{
+		Log_Printf(LOG_WARN, "PREVENTED: Frename(\"%s\", \"%s\")\n", pszOldFileName, pszNewFileName);
+		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
 
-	return false;
+	/* And convert to hard drive filenames */
+	GemDOS_CreateHardDriveFileName(NewDrive, pszNewFileName,
+		              szNewActualFileName, sizeof(szNewActualFileName));
+	GemDOS_CreateHardDriveFileName(OldDrive, pszOldFileName,
+		              szOldActualFileName, sizeof(szOldActualFileName));
+
+	/* Rename files */
+	if ( rename(szOldActualFileName,szNewActualFileName)==0 )
+		Regs[REG_D0] = GEMDOS_EOK;
+	else
+		Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
+	return true;
 }
 
 
@@ -2202,24 +2289,34 @@ static bool GemDOS_GSDToF(Uint32 Params)
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
 	{
-		/* No assume was TOS */
+		/* No, assume was TOS -> redirect */
 		return false;
 	}
 
-	/* Set time/date stamp? Do nothing. */
 	if (Flag == 1)
 	{
+		/* write protected device? */
+		if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+		{
+			Log_Printf(LOG_WARN, "PREVENTED: Fdatime(,%d,)\n", Handle);
+			Regs[REG_D0] = GEMDOS_EWRPRO;
+			return true;
+		}
+		/* TODO/FIXME: Set time/date stamp */
+		Log_Printf(LOG_TODO, "GEMDOS file time/date setting not yet supported\n");
 		Regs[REG_D0] = GEMDOS_EOK;
 		return true;
 	}
-
-	Regs[REG_D0] = GEMDOS_ERROR;  /* Invalid parameter */
 
 	if (GemDOS_GetFileInformation(FileHandles[Handle].szActualName, &DateTime) == true)
 	{
 		STMemory_WriteWord(pBuffer, DateTime.word1);
 		STMemory_WriteWord(pBuffer+2, DateTime.word2);
 		Regs[REG_D0] = GEMDOS_EOK;
+	}
+	else
+	{
+		Regs[REG_D0] = GEMDOS_ERROR; /* Generic error */
 	}
 	return true;
 }
