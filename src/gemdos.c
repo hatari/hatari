@@ -897,8 +897,17 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 	/* case referenced from current directory */
 	else
 	{
+		int offset = 0;
+		/* remove current dir prefixes */
+		while (pszFileName[offset] == '.' &&
+		       pszFileName[offset+1] == '\\')
+		{
+			offset += 2;
+			while (pszFileName[offset] == '\\')
+				offset++;
+		}
 		snprintf(pszDestName, nDestNameLen, "%s%s",
-		         emudrives[Drive-2]->fs_currpath, pszFileName);
+		         emudrives[Drive-2]->fs_currpath, &(pszFileName[offset]));
 		start = pszDestName + strlen(emudrives[Drive-2]->fs_currpath)-1;
 	}
 
@@ -994,13 +1003,19 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 
 	if (start)
 	{
+		bool found = true;
 		*start++ = PATHSEP;     /* in case there was only 1 anti slash */
-		if (*start && !strchr(start,'?') && !strchr(start,'*'))
+
+		if (strcmp(start, "..") == 0 || strcmp(start, "..\\") == 0)
+		{
+			found = File_DirExists(start);
+		}
+		else if (*start && !strchr(start,'?') && !strchr(start,'*'))
 		{
 			/* We have a complete name after the path, not a wildcard */
 			glob_t globbuf;
 			char old1,old2;
-			int len, found, base_len;
+			int len, base_len;
 			unsigned int j;
 
 			old1 = *start;
@@ -1012,7 +1027,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 			*start = old1;
 			len = strlen(pszDestName);
 			base_len = baselen(start);
-			found = 0;
+			found = false;
 			for (j=0; j<globbuf.gl_pathc; j++)
 			{
 				/* If we search for a file of at least 8 characters, then it might
@@ -1024,19 +1039,19 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 					/* we found a matching name... */
 					strncpy(pszDestName, globbuf.gl_pathv[j], nDestNameLen);
 					j = globbuf.gl_pathc;
-					found = 1;
+					found = true;
 				}
 			}
-#if ENABLE_TRACING
-			if (!found)
-			{
-				/* It's often normal, the gem uses this to test for existence */
-				/* of desktop.inf or newdesk.inf for example. */
-				LOG_TRACE(TRACE_OS_GEMDOS, "didn't find filename %s\n", pszDestName );
-			}
-#endif
 			globfree(&globbuf);
 		}
+#if ENABLE_TRACING
+		if (!found)
+		{
+			/* It's often normal, the gem uses this to test for existence */
+			/* of desktop.inf or newdesk.inf for example. */
+			LOG_TRACE(TRACE_OS_GEMDOS, "didn't find filename %s\n", pszDestName );
+		}
+#endif
 	}
 	LOG_TRACE(TRACE_OS_GEMDOS, "conv %s -> %s\n", pszFileName, pszDestName );
 }
