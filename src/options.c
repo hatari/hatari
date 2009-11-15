@@ -61,15 +61,15 @@ enum {
 	OPT_DRIVE_LED,
 	OPT_SPEC512,
 	OPT_FORCEBPP,
+	OPT_VDI,		/* VDI options */
+	OPT_VDI_PLANES,
+	OPT_VDI_WIDTH,
+	OPT_VDI_HEIGHT,
 	OPT_AVIRECORD,          /* record options */
 	OPT_AVIRECORD_VCODEC,
 	OPT_AVIRECORD_FPS,
 	OPT_AVIRECORD_CROP,
 	OPT_AVIRECORD_FILE,
-	OPT_VDI,		/* VDI options */
-	OPT_VDI_PLANES,
-	OPT_VDI_WIDTH,
-	OPT_VDI_HEIGHT,
 	OPT_JOYSTICK,		/* device options */
 	OPT_JOYSTICK0,
 	OPT_JOYSTICK1,
@@ -164,6 +164,17 @@ static const opt_t HatariOptions[] = {
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force internal bitdepth (x = 8/15/16/32, 0=disable)" },
 
+	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
+	{ OPT_VDI,	NULL, "--vdi",
+	  "<bool>", "Whether to use VDI screen mode" },
+	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
+	  "<x>", "VDI mode bit-depth (x = 1/2/4)" },
+	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
+	  "<w>", "VDI mode width (320 < w <= 1280)" },
+	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
+	  "<h>", "VDI mode height (200 < h <= 960)" },
+
+	{ OPT_HEADER, NULL, NULL, NULL, "Video recording" },
 	{ OPT_AVIRECORD, NULL, "--avirecord",
 	  NULL, "Start AVI recording" },
 	{ OPT_AVIRECORD_VCODEC, NULL, "--avi-vcodec",
@@ -174,16 +185,6 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Remove status bar from the recorded file" },
 	{ OPT_AVIRECORD_FILE, NULL, "--avi-file",
 	  "<file>", "Use <file> to record avi" },
-
-	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
-	{ OPT_VDI,	NULL, "--vdi",
-	  "<bool>", "Whether to use VDI screen mode" },
-	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
-	  "<x>", "VDI mode bit-depth (x = 1/2/4)" },
-	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
-	  "<w>", "VDI mode width (320 < w <= 1280)" },
-	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
-	  "<h>", "VDI mode height (200 < h <= 960)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",

@@ -95,6 +95,22 @@ Use extended VDI resolution with width <w> (320 < w <= 1280)
 .TP 
 .B \-\-vdi\-height <h>
 Use extended VDI resolution with height <h> (200 < h <= 960)
+.SH "Video recording options"
+.TP
+.B \-\-avirecord
+Start AVI recording
+.TP
+.B \-\-avi-vcodec <x>
+Select avi video codec (x = bmp/png)
+.TP
+.B \-\-avi-fps <x>
+Force avi frame rate (x = 50/60/71/...)
+.TP
+.B \-\-avi-crop <bool>
+Remove status bar from the recorded file
+.TP
+.B \-\-avi-file <file>
+Use <file> to record avi
 .SH "Devices options"
 .TP 
 .B \-j, \-\-joystick <port>
