@@ -242,9 +242,9 @@ static bool GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
 /**
  * Convert from FindFirstFile/FindNextFile attribute to GemDOS format
  */
-static unsigned char GemDOS_ConvertAttribute(mode_t mode)
+static Uint8 GemDOS_ConvertAttribute(mode_t mode)
 {
-	unsigned char Attrib = 0;
+	Uint8 Attrib = 0;
 
 	/* Directory attribute */
 	if (S_ISDIR(mode))
@@ -1050,7 +1050,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 #if 0
 static bool GemDOS_Cauxin(Uint32 Params)
 {
-	unsigned char c;
+	Uint8 c;
 
 	/* Wait here until a character is ready */
 	while(!RS232_GetStatus())
@@ -1074,7 +1074,7 @@ static bool GemDOS_Cauxin(Uint32 Params)
 #if 0
 static bool GemDOS_Cauxout(Uint32 Params)
 {
-	unsigned char c;
+	Uint8 c;
 
 	/* Get character from the stack */
 	c = STMemory_ReadWord(Params+SIZE_WORD);
@@ -1096,7 +1096,7 @@ static bool GemDOS_Cauxout(Uint32 Params)
 #if 0
 static bool GemDOS_Cprnout(Uint32 Params)
 {
-	unsigned char c;
+	Uint8 c;
 
 	/* Send character to printer(or file) */
 	c = STMemory_ReadWord(Params+SIZE_WORD);
@@ -2332,7 +2332,7 @@ static bool GemDOS_GSDToF(Uint32 Params)
  */
 void GemDOS_OpCode(void)
 {
-	unsigned short int GemDOSCall,CallingSReg;
+	Uint16 GemDOSCall, CallingSReg;
 	Uint32 Params;
 	short RunOld;
 	Uint16 SR;
