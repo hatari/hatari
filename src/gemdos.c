@@ -788,15 +788,14 @@ static int GemDOS_FindFreeFileHandle(void)
  */
 static bool GemDOS_IsInvalidFileHandle(int Handle)
 {
-	bool bInvalidHandle = false;
-
 	/* Check handle was valid with our handle table */
-	if ((Handle < 0) || (Handle >= MAX_FILE_HANDLES))
-		bInvalidHandle = true;
-	else if (!FileHandles[Handle].bUsed)
-		bInvalidHandle = true;
-
-	return bInvalidHandle;
+	if (Handle >= 0 && Handle < MAX_FILE_HANDLES
+	    && FileHandles[Handle].bUsed)
+	{
+		return false;
+	}
+	/* invalid handle */
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
