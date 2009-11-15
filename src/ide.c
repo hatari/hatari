@@ -507,7 +507,7 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	ret = fread(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
-		fprintf(stderr,"Error during read!\n");
+		fprintf(stderr,"Error during read (%d != %d length)!\n", ret, len);
 		return -EINVAL;
 	}
 	else
@@ -2064,6 +2064,17 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 			ide_cmd_lba48_transform(s, lba48);
 			s->status = READY_STAT;
 			ide_set_irq(s);
+			break;
+		case WIN_FORMAT:
+			ide_cmd_lba48_transform(s, lba48);
+			s->error = 0;
+			s->status = READY_STAT | SEEK_STAT;
+			s->req_nb_sectors = s->mult_sectors;
+			n = s->nsector;
+			if (n > s->req_nb_sectors)
+				n = s->req_nb_sectors;
+			ide_transfer_start(s, s->io_buffer, 512 * n, ide_sector_write);
+			s->media_changed = 1;
 			break;
 		case WIN_READ_EXT:
 			lba48 = 1;
