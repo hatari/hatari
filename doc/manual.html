@@ -2167,8 +2167,10 @@ with GEMDOS partitions</h3>
 
 <p>Uwe Seimet's <a href="http://www.seimet.de/atari/en/hddriver.html">HD
 Driver</a> works fine with both the Hatari GEMDOS partitions and normal
-hard disk images.  However, it doesn't work with EmuTOS (so you need
-real TOS, &gt;= v1.04) nor with TOS v4, at least in Hatari.</p>
+hard disk images.  However, it doesn't work with EmuTOS so you need
+real TOS (at least version v1.04).  When using TOS v4, you additionally
+need to set the CPU level to 040 to get HD Driver to work with Hatari.
+</p>
 
 <p>First copy the HDDRIVER.PRG binary into your GEMDOS directory AUTO folder.
 Then start the HDDRUTIL.APP configuration utility, locate HDDRIVER.PRG, open
@@ -2212,7 +2214,7 @@ drivers mentioned above, Centek's Cecile and Uwe Seimet's HD Driver
 <p>
 Note that plain EmuTOS supports only ACSI and the listed HD drivers
 support only IDE (emulation). Cecile needs TT or Falcon and HD Driver
-doesn't work with EmuTOS or TOS4.  To summarise; if ASCI emulation and
+doesn't work with EmuTOS.  To summarise; if ASCI emulation and
 EmuTOS are enough, use those. Otherwise, if you want to use TT or
 Falcon emulation, use Cecile (or full HD Driver version if you have
 it), otherwise use HD Driver (demo).
