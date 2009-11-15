@@ -194,6 +194,7 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp_core->ssi.waitFrameRX = 1;
 	dsp_core->ssi.TX = 0;
 	dsp_core->ssi.RX = 0;
+	dsp_core->ssi.dspPlay_handshakeMode_frame = 0;
 	
 	/* Other hardware registers */
 	dsp_core->periph[DSP_SPACE_X][DSP_IPR]=0;
@@ -258,10 +259,23 @@ void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
 /* Set PortC data register : send a frame order to the DMA in handshake mode */
 void dsp_core_setPortCDataRegister(dsp_core_t *dsp_core, Uint32 value)
 {
-	/* if DSP SSI is in handshake mode with DMA */
+	/* if DSP Record is in handshake mode with DMA Play */
 	if (((dsp_core->periph[DSP_SPACE_X][DSP_PCDDR] & 0x10) == 0x10) && ((value & 0x10) == 0x10)) {
 		dsp_core->ssi.waitFrameRX = 0;
 		DSP_SsiTransmit_SC1();
+	}
+
+	/* if DSP Play is in handshake mode with DMA Record, high or low frame sync */
+	/* to allow / disable transfer of the data */
+	if ((dsp_core->periph[DSP_SPACE_X][DSP_PCDDR] & 0x20) == 0x20) {
+		if ((value & 0x20) == 0x20) {
+			dsp_core->ssi.dspPlay_handshakeMode_frame = 1;
+			dsp_core->ssi.waitFrameTX = 0;
+		}
+		else {
+			dsp_core->ssi.dspPlay_handshakeMode_frame = 0;
+			DSP_SsiTransmit_SC2(0);
+		}
 	}
 }
 
@@ -271,6 +285,12 @@ void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value)
 	/* Clear SSI TDE bit */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
 	dsp_core->ssi.TX = value;
+
+	/* if DSP Play is in handshake mode with DMA Record, send frame sync */
+	/* to allow transfer of the data */
+	if (dsp_core->ssi.dspPlay_handshakeMode_frame) {
+		DSP_SsiTransmit_SC2(1);
+	}
 }
 
 /* SSI set TDE register (dummy write) */
@@ -301,7 +321,7 @@ void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
  */
 void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
 {
-	Uint32 value; // i, temp=0;
+	Uint32 value, i, temp=0;
 
 	/* Receive data from crossbar to SSI */
 	value = dsp_core->ssi.received_value;
@@ -311,7 +331,7 @@ void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
 	value &= 0xffffff;
 
 	/* if bit SHFD in CRB is set, swap received data */
-/*	if (dsp_core->ssi.crb_shifter) {
+	if (dsp_core->ssi.crb_shifter) {
 		temp=0;
 		for (i=0; i<dsp_core->ssi.cra_word_length; i++) {
 			temp += value & 1;
@@ -320,7 +340,6 @@ void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
 		}
 		value = temp;
 	}
-*/
 
 	if (dsp_core->ssi.crb_re && dsp_core->ssi.waitFrameRX == 0) {
 		/* Send value to DSP receive */
@@ -392,7 +411,7 @@ void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value)
  */
 void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 {
-	Uint32 value; // i, temp=0;
+	Uint32 value, i, temp=0;
 
 	value = dsp_core->ssi.TX;
 
@@ -403,7 +422,7 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 	value &= dsp_core->ssi.cra_word_mask;
 
 	/* if bit SHFD in CRB is set, swap data to transmit */
-/*	if (dsp_core->ssi.crb_shifter) {
+	if (dsp_core->ssi.crb_shifter) {
 		for (i=0; i<dsp_core->ssi.cra_word_length; i++) {
 			temp += value & 1;
 			temp <<= 1;
@@ -411,9 +430,8 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 		}
 		value = temp;
 	}
-*/
+
 	/* Transmit the data */
-	/* TODO : detect handshaking mode to bypass the waitFrameTx test */
 	if (dsp_core->ssi.crb_te && dsp_core->ssi.waitFrameTX == 0) {
 		/* Send value to crossbar */
 		dsp_core->ssi.transmit_value = value;
@@ -427,8 +445,7 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 			}
 		}
 	}else{
-		/* TODO : when handshaking mode detected, transmit_value = 0 here */
-		dsp_core->ssi.transmit_value = value;
+		dsp_core->ssi.transmit_value = 0;
 	}
 
 	/* set TDE */

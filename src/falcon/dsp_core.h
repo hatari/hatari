@@ -174,6 +174,7 @@ struct dsp_core_ssi_s {
 	Uint32  received_value;		/* DSP Receive  --> SSI */
 	Uint16  waitFrameTX;
 	Uint16  waitFrameRX;
+	Uint32  dspPlay_handshakeMode_frame;
 };
 
 struct dsp_interrupt_s {

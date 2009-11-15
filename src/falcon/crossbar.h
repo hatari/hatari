@@ -82,6 +82,7 @@ extern void Crossbar_InterruptHandler_32Mhz(void);
 
 /* Called by dsp.c */
 void Crossbar_DmaPlayInHandShakeMode(void);
+void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame);
 
 
 Uint16 microphone_ADC_is_started;

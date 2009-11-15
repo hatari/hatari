@@ -161,6 +161,7 @@ struct dma_s {
 	Uint32 isConnectedToDsp;
 	Uint32 isConnectedToDspInHandShakeMode;
 	Uint32 isConnectedToDma;
+	Uint32 handshakeMode_Frame;	/* state of the frame in handshake mode */
 };
 
 struct crossbar_s {
@@ -218,7 +219,6 @@ static struct codec_s adc;
 static struct dsp_s dspXmit;
 static struct dsp_s dspReceive;
 
-int toto = 0;
 
 /**
  * Reset Crossbar variables.
@@ -237,11 +237,12 @@ void Crossbar_Reset(bool bCold)
 	dmaPlay.loopMode = 0;
 	dmaPlay.currentFrame = 0;
 	dmaPlay.isConnectedToDspInHandShakeMode = 0;
+	dmaPlay.handshakeMode_Frame = 0;
 	dmaRecord.isRunning = 0;
 	dmaRecord.loopMode = 0;
 	dmaRecord.currentFrame = 0;
-	crossbar.dmaSelected = 0;
 	dmaRecord.isConnectedToDspInHandShakeMode = 0;
+	dmaRecord.handshakeMode_Frame = 0;
 
 	/* Clear DAC buffer */
 	memset(dac.buffer_left, 0, sizeof(dac.buffer_left));
@@ -257,6 +258,7 @@ void Crossbar_Reset(bool bCold)
 	dspXmit.wordCount = 0;
 
 	/* Crossbar inits */
+	crossbar.dmaSelected = 0;
 	crossbar.track_monitored = 0;
 	crossbar.clock25_cycles = 160.0;
 	crossbar.clock32_cycles = 160.0;
@@ -1520,28 +1522,32 @@ static void Crossbar_Process_DMARecord_HandshakeMode(void)
 {
 	Sint16 data;
 
+	/* If DMA record is activated and is running */
 	if (dmaRecord.isRunning == 0) {
 		return;
 	}
 
-	/* Send the frame status to the DSP SSI Xmit */
-//	DSP_SsiReceive_SC2(frame);
-
-	if (toto == 8) {
-		toto = 0;
-
-		/* Send the clock to the DSP SSI Xmit */
+	/* If DSP frame is activated (SC2 pin of the SSI port) */
+	if (dmaRecord.handshakeMode_Frame == 0) {
+		return;
+	}
+		
+	/* Send the clock to the DSP SSI Xmit */
 	DSP_SsiReceive_SCK(0);
 
 	/* read data from DSP Xmit */
 	data = DSP_SsiReadTxValue();
+	dmaRecord.handshakeMode_Frame = 0;
 	
 	Crossbar_SendDataToDmaRecord(data);
-	return;
-	
-	}
-	toto ++;
-	
+}
+
+/**
+ * Get the frame value from DSP SSI (handshake mode only)
+ */
+void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame)
+{
+	dmaRecord.handshakeMode_Frame = frame;
 }
 
 

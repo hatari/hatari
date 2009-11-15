@@ -591,9 +591,10 @@ void DSP_SsiReceive_SC2(Uint32 FrameCounter)
 #endif
 }
 
-void DSP_SsiTransmit_SC2(void)
+void DSP_SsiTransmit_SC2(Uint32 frame)
 {
 #if ENABLE_DSP_EMU
+	Crossbar_DmaRecordInHandShakeMode_Frame(frame);
 #endif
 }
 
