@@ -1239,8 +1239,8 @@ static bool GemDOS_DFree(Uint32 Params)
 		STMemory_WriteLong(Address+SIZE_LONG*3, 1 );     /* sectors per cluster */
 		return true;
 	}
-	else
-		return false; /* redirect to TOS */
+	/* redirect to TOS */
+	return false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1355,7 +1355,8 @@ static bool GemDOS_RmDir(Uint32 Params)
  */
 static bool GemDOS_ChDir(Uint32 Params)
 {
-	char *pDirName;
+	char *pDirName, *psTempDirPath;
+	struct stat buf;
 	int Drive;
 
 	/* Find new directory */
@@ -1365,54 +1366,53 @@ static bool GemDOS_ChDir(Uint32 Params)
 
 	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
 
-	if (ISHARDDRIVE(Drive))
+	if (!ISHARDDRIVE(Drive))
 	{
-		struct stat buf;
-		char *psTempDirPath;
+		/* redirect to TOS */
+		return false;
+	}
 
-		/* Allocate temporary memory for path name: */
-		psTempDirPath = malloc(FILENAME_MAX);
-		if (!psTempDirPath)
-		{
-			perror("GemDOS_ChDir");
-			Regs[REG_D0] = GEMDOS_ENSMEM;
-			return true;
-		}
-
-		GemDOS_CreateHardDriveFileName(Drive, pDirName, psTempDirPath, FILENAME_MAX);
-
-		// Remove trailing slashes (stat on Windows does not like that)
-		File_CleanFileName(psTempDirPath);
-
-		if (stat(psTempDirPath, &buf))
-		{
-			/* error */
-			free(psTempDirPath);
-			Regs[REG_D0] = GEMDOS_EPTHNF;
-			return true;
-		}
-
-		File_AddSlashToEndFileName(psTempDirPath);
-		File_MakeAbsoluteName(psTempDirPath);
-
-		 /* Prevent '..' commands moving BELOW the root HDD folder */
-		 /* by double checking if path is valid */
-		if (strncmp(psTempDirPath, emudrives[Drive-2]->hd_emulation_dir,
-		    strlen(emudrives[Drive-2]->hd_emulation_dir)) == 0)
-		{
-			strcpy(emudrives[Drive-2]->fs_currpath, psTempDirPath);
-			Regs[REG_D0] = GEMDOS_EOK;
-		}
-		else
-		{
-			Regs[REG_D0] = GEMDOS_EPTHNF;
-		}
-		free(psTempDirPath);
-
+	/* Allocate temporary memory for path name: */
+	psTempDirPath = malloc(FILENAME_MAX);
+	if (!psTempDirPath)
+	{
+		perror("GemDOS_ChDir");
+		Regs[REG_D0] = GEMDOS_ENSMEM;
 		return true;
 	}
 
-	return false;
+	GemDOS_CreateHardDriveFileName(Drive, pDirName, psTempDirPath, FILENAME_MAX);
+
+	// Remove trailing slashes (stat on Windows does not like that)
+	File_CleanFileName(psTempDirPath);
+
+	if (stat(psTempDirPath, &buf))
+	{
+		/* error */
+		free(psTempDirPath);
+		Regs[REG_D0] = GEMDOS_EPTHNF;
+		return true;
+	}
+
+	File_AddSlashToEndFileName(psTempDirPath);
+	File_MakeAbsoluteName(psTempDirPath);
+
+	/* Prevent '..' commands moving BELOW the root HDD folder */
+	/* by double checking if path is valid */
+	if (strncmp(psTempDirPath, emudrives[Drive-2]->hd_emulation_dir,
+		    strlen(emudrives[Drive-2]->hd_emulation_dir)) == 0)
+	{
+		strcpy(emudrives[Drive-2]->fs_currpath, psTempDirPath);
+		Regs[REG_D0] = GEMDOS_EOK;
+	}
+	else
+	{
+		Regs[REG_D0] = GEMDOS_EPTHNF;
+	}
+	free(psTempDirPath);
+
+	return true;
+
 }
 
 
@@ -1538,8 +1538,10 @@ static bool GemDOS_Open(Uint32 Params)
 
 	if (!ISHARDDRIVE(Drive))
 	{
+		/* redirect to TOS */
 		return false;
 	}
+
 	/* And convert to hard drive filename */
 	GemDOS_CreateHardDriveFileName(Drive, pszFileName,
 	                            szActualFileName, sizeof(szActualFileName));
@@ -1596,18 +1598,17 @@ static bool GemDOS_Close(Uint32 Params)
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
 	{
-		/* No assume was TOS */
+		/* no, assume it was TOS one -> redirect */
 		return false;
 	}
-	else
-	{
-		/* Close file and free up handle table */
-		fclose(FileHandles[Handle].FileHandle);
-		FileHandles[Handle].bUsed = false;
-		/* Return no error */
-		Regs[REG_D0] = GEMDOS_EOK;
-		return true;
-	}
+	
+	/* Close file and free up handle table */
+	fclose(FileHandles[Handle].FileHandle);
+	FileHandles[Handle].bUsed = false;
+
+	/* Return no error */
+	Regs[REG_D0] = GEMDOS_EOK;
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1633,41 +1634,36 @@ static bool GemDOS_Read(Uint32 Params)
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
 	{
-		/* No -  assume was TOS */
+		/* assume it was TOS one -> redirect */
 		return false;
 	}
-	else
+
+	/* To quick check to see where our file pointer is and how large the file is */
+	CurrentPos = ftell(FileHandles[Handle].FileHandle);
+	fseek(FileHandles[Handle].FileHandle, 0, SEEK_END);
+	FileSize = ftell(FileHandles[Handle].FileHandle);
+	fseek(FileHandles[Handle].FileHandle, CurrentPos, SEEK_SET);
+	
+	nBytesLeft = FileSize-CurrentPos;
+
+	/* Check for End Of File */
+	if (nBytesLeft == 0)
 	{
-
-		/* To quick check to see where our file pointer is and how large the file is */
-		CurrentPos = ftell(FileHandles[Handle].FileHandle);
-		fseek(FileHandles[Handle].FileHandle, 0, SEEK_END);
-		FileSize = ftell(FileHandles[Handle].FileHandle);
-		fseek(FileHandles[Handle].FileHandle, CurrentPos, SEEK_SET);
-
-		nBytesLeft = FileSize-CurrentPos;
-
-		/* Check for End Of File */
-		if (nBytesLeft == 0)
-		{
-			/* FIXME: should we return zero (bytes read) or an error? */
-			Regs[REG_D0] = 0;
-			return true;
-		}
-		else
-		{
-			/* Limit to size of file to prevent errors */
-			if (Size > FileSize)
-				Size = FileSize;
-			/* And read data in */
-			nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
-
-			/* Return number of bytes read */
-			Regs[REG_D0] = nBytesRead;
-
-			return true;
-		}
+		/* FIXME: should we return zero (bytes read) or an error? */
+		Regs[REG_D0] = 0;
+		return true;
 	}
+
+	/* Limit to size of file to prevent errors */
+	if (Size > FileSize)
+		Size = FileSize;
+	/* And read data in */
+	nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
+	
+	/* Return number of bytes read */
+	Regs[REG_D0] = nBytesRead;
+	
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1793,7 +1789,7 @@ static bool GemDOS_LSeek(Uint32 Params)
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
 	{
-		/* No assume was TOS */
+		/* assume it was TOS one -> redirect */
 		return false;
 	}
 
@@ -1985,7 +1981,8 @@ static int GemDOS_GetDir(Uint32 Params)
 
 		return true;
 	}
-	else return false;
+	/* redirect to TOS */
+	return false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -2001,12 +1998,11 @@ static int GemDOS_Pexec_LoadAndGo(Uint32 Params)
 	char *pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD));
 	int Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
 
-	if (ISHARDDRIVE(Drive))
-	{
-		/* If not using A: or B:, use my own routines to load */
-		return CALL_PEXEC_ROUTINE;
-	}
-	else return false;
+	if (!ISHARDDRIVE(Drive))
+		return false;
+
+	/* If not using A: or B:, use my own routines to load */
+	return CALL_PEXEC_ROUTINE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -2018,11 +2014,10 @@ static int GemDOS_Pexec_LoadDontGo(Uint32 Params)
 	/* Hard-drive? */
 	char *pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD));
 	int Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
-	if (ISHARDDRIVE(Drive))
-	{
-		return CALL_PEXEC_ROUTINE;
-	}
-	else return false;
+	if (!ISHARDDRIVE(Drive))
+		return false;
+
+	return CALL_PEXEC_ROUTINE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -2072,6 +2067,7 @@ static int GemDOS_Pexec(Uint32 Params)
  */
 static bool GemDOS_SNext(void)
 {
+	struct dirent **temp;
 	int Index;
 	int ret;
 
@@ -2081,44 +2077,43 @@ static bool GemDOS_SNext(void)
 	pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
 
 	/* Was DTA ours or TOS? */
-	if (do_get_mem_long(pDTA->magic) == DTA_MAGIC_NUMBER)
+	if (do_get_mem_long(pDTA->magic) != DTA_MAGIC_NUMBER)
 	{
-		struct dirent **temp;
+		/* redirect to TOS */
+		return false;
+	}
 
-		/* Find index into our list of structures */
-		Index = do_get_mem_word(pDTA->index) & (MAX_DTAS_FILES-1);
+	/* Find index into our list of structures */
+	Index = do_get_mem_word(pDTA->index) & (MAX_DTAS_FILES-1);
 
-		if (nAttrSFirst == 8)
+	if (nAttrSFirst == 8)
+	{
+		Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
+		return true;
+	}
+
+	temp = InternalDTAs[Index].found;
+	do
+	{
+		if (InternalDTAs[Index].centry >= InternalDTAs[Index].nentries)
 		{
 			Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
 			return true;
 		}
 
-		temp = InternalDTAs[Index].found;
-		do
-		{
-			if (InternalDTAs[Index].centry >= InternalDTAs[Index].nentries)
-			{
-				Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
-				return true;
-			}
+		ret = PopulateDTA(InternalDTAs[Index].path,
+				  temp[InternalDTAs[Index].centry++]);
+	} while (ret == 1);
 
-			ret = PopulateDTA(InternalDTAs[Index].path,
-					  temp[InternalDTAs[Index].centry++]);
-		} while (ret == 1);
-
-		if (ret < 0)
-		{
-			Log_Printf(LOG_WARN, "GemDOS_SNext: Error setting DTA.\n");
-			Regs[REG_D0] = GEMDOS_EINTRN;
-			return true;
-		}
-
-		Regs[REG_D0] = GEMDOS_EOK;
+	if (ret < 0)
+	{
+		Log_Printf(LOG_WARN, "GemDOS_SNext: Error setting DTA.\n");
+		Regs[REG_D0] = GEMDOS_EINTRN;
 		return true;
 	}
 
-	return false;
+	Regs[REG_D0] = GEMDOS_EOK;
+	return true;
 }
 
 
@@ -2147,90 +2142,91 @@ static bool GemDOS_SFirst(Uint32 Params)
 	pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
 
 	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
-	if (ISHARDDRIVE(Drive))
+	if (!ISHARDDRIVE(Drive))
 	{
+		/* redirect to TOS */
+		return false;
+	}
 
-		/* And convert to hard drive filename */
-		GemDOS_CreateHardDriveFileName(Drive, pszFileName,
+	/* And convert to hard drive filename */
+	GemDOS_CreateHardDriveFileName(Drive, pszFileName,
 		                    szActualFileName, sizeof(szActualFileName));
 
-		/* Populate DTA, set index for our use */
-		do_put_mem_word(pDTA->index, DTAIndex);
-		/* set our dta magic num */
-		do_put_mem_long(pDTA->magic, DTA_MAGIC_NUMBER);
+	/* Populate DTA, set index for our use */
+	do_put_mem_word(pDTA->index, DTAIndex);
+	/* set our dta magic num */
+	do_put_mem_long(pDTA->magic, DTA_MAGIC_NUMBER);
 
-		if (InternalDTAs[DTAIndex].bUsed == true)
-			ClearInternalDTA();
-		InternalDTAs[DTAIndex].bUsed = true;
+	if (InternalDTAs[DTAIndex].bUsed == true)
+		ClearInternalDTA();
+	InternalDTAs[DTAIndex].bUsed = true;
 
-		/* Were we looking for the volume label? */
-		if (nAttrSFirst == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
-		{
-			/* Volume name */
-			strcpy(pDTA->dta_name,"EMULATED.001");
-			Regs[REG_D0] = GEMDOS_EOK;          /* Got volume */
-			return true;
-		}
-
-		/* open directory */
-		fsfirst_dirname(szActualFileName, InternalDTAs[DTAIndex].path);
-		fsdir = opendir(InternalDTAs[DTAIndex].path);
-
-		if (fsdir == NULL)
-		{
-			Regs[REG_D0] = GEMDOS_EPTHNF;        /* Path not found */
-			return true;
-		}
-		/* close directory */
-		closedir(fsdir);
-
-		count = scandir(InternalDTAs[DTAIndex].path, &files, 0, alphasort);
-		/* File (directory actually) not found */
-		if (count < 0)
-		{
-			Regs[REG_D0] = GEMDOS_EFILNF;
-			return true;
-		}
-
-		InternalDTAs[DTAIndex].centry = 0;          /* current entry is 0 */
-		fsfirst_dirmask(szActualFileName, tempstr); /* get directory mask */
-		InternalDTAs[DTAIndex].found = files;       /* get files */
-
-		/* count & copy the entries that match our mask and discard the rest */
-		j = 0;
-		for (i=0; i < count; i++)
-		{
-			if (match(tempstr, files[i]->d_name))
-			{
-				InternalDTAs[DTAIndex].found[j] = files[i];
-				j++;
-			}
-			else
-			{
-				free(files[i]);
-				files[i] = NULL;
-			}
-		}
-		InternalDTAs[DTAIndex].nentries = j; /* set number of legal entries */
-
-		/* No files of that match, return error code */
-		if (j==0)
-		{
-			free(files);
-			InternalDTAs[DTAIndex].found = NULL;
-			Regs[REG_D0] = GEMDOS_EFILNF;        /* File not found */
-			return true;
-		}
-
-		/* Scan for first file (SNext uses no parameters) */
-		GemDOS_SNext();
-		/* increment DTA index */
-		DTAIndex++;
-		DTAIndex&=(MAX_DTAS_FILES-1);
-
+	/* Were we looking for the volume label? */
+	if (nAttrSFirst == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
+	{
+		/* Volume name */
+		strcpy(pDTA->dta_name,"EMULATED.001");
+		Regs[REG_D0] = GEMDOS_EOK;          /* Got volume */
 		return true;
 	}
-	return false;
+
+	/* open directory */
+	fsfirst_dirname(szActualFileName, InternalDTAs[DTAIndex].path);
+	fsdir = opendir(InternalDTAs[DTAIndex].path);
+
+	if (fsdir == NULL)
+	{
+		Regs[REG_D0] = GEMDOS_EPTHNF;        /* Path not found */
+		return true;
+	}
+	/* close directory */
+	closedir(fsdir);
+
+	count = scandir(InternalDTAs[DTAIndex].path, &files, 0, alphasort);
+	/* File (directory actually) not found */
+	if (count < 0)
+	{
+		Regs[REG_D0] = GEMDOS_EFILNF;
+		return true;
+	}
+
+	InternalDTAs[DTAIndex].centry = 0;          /* current entry is 0 */
+	fsfirst_dirmask(szActualFileName, tempstr); /* get directory mask */
+	InternalDTAs[DTAIndex].found = files;       /* get files */
+
+	/* count & copy the entries that match our mask and discard the rest */
+	j = 0;
+	for (i=0; i < count; i++)
+	{
+		if (match(tempstr, files[i]->d_name))
+		{
+			InternalDTAs[DTAIndex].found[j] = files[i];
+			j++;
+		}
+		else
+		{
+			free(files[i]);
+			files[i] = NULL;
+		}
+	}
+	InternalDTAs[DTAIndex].nentries = j; /* set number of legal entries */
+
+	/* No files of that match, return error code */
+	if (j==0)
+	{
+		free(files);
+		InternalDTAs[DTAIndex].found = NULL;
+		Regs[REG_D0] = GEMDOS_EFILNF;        /* File not found */
+		return true;
+	}
+
+	/* Scan for first file (SNext uses no parameters) */
+	GemDOS_SNext();
+	/* increment DTA index */
+	DTAIndex++;
+	DTAIndex&=(MAX_DTAS_FILES-1);
+	
+	return true;
 }
 
 
@@ -2550,25 +2546,25 @@ void GemDOS_Boot(void)
 	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot()\n" );
 
 	/* install our gemdos handler, if -e or --harddrive option used */
-	if (GEMDOS_EMU_ON)
-	{
-		/* Get the address of the p_run variable that points to the actual basepage */
-		if (TosVersion == 0x100)
-		{
-			/* We have to use fix addresses on TOS 1.00 :-( */
-			if ((STMemory_ReadWord(TosAddress+28)>>1) == 4)
-				act_pd = 0x873c;    /* Spanish TOS is different from others! */
-			else
-				act_pd = 0x602c;
-		}
-		else
-		{
-			act_pd = STMemory_ReadLong(TosAddress + 0x28);
-		}
+	if (!GEMDOS_EMU_ON)
+		return;
 
-		/* Save old GEMDOS handler adress */
-		STMemory_WriteLong(CART_OLDGEMDOS, STMemory_ReadLong(0x0084));
-		/* Setup new GEMDOS handler, see "cart_asm.s" */
-		STMemory_WriteLong(0x0084, CART_GEMDOS);
+	/* Get the address of the p_run variable that points to the actual basepage */
+	if (TosVersion == 0x100)
+	{
+		/* We have to use fix addresses on TOS 1.00 :-( */
+		if ((STMemory_ReadWord(TosAddress+28)>>1) == 4)
+			act_pd = 0x873c;    /* Spanish TOS is different from others! */
+		else
+			act_pd = 0x602c;
 	}
+	else
+	{
+		act_pd = STMemory_ReadLong(TosAddress + 0x28);
+	}
+
+	/* Save old GEMDOS handler adress */
+	STMemory_WriteLong(CART_OLDGEMDOS, STMemory_ReadLong(0x0084));
+	/* Setup new GEMDOS handler, see "cart_asm.s" */
+	STMemory_WriteLong(0x0084, CART_GEMDOS);
 }
