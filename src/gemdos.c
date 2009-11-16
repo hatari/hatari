@@ -1443,7 +1443,7 @@ static bool GemDOS_FilePathMissing(char *szActualFileName)
 static bool GemDOS_Create(Uint32 Params)
 {
 	char szActualFileName[MAX_GEMDOS_PATH];
-	char *pszFileName, *ptr;
+	char *pszFileName;
 	int Drive,Index,Mode;
 	const char *rwflags;
 	FILE *fp;
@@ -1632,7 +1632,7 @@ static bool GemDOS_Open(Uint32 Params)
 		Log_Printf(LOG_WARN, "Missing %s permission to file '%s'\n",
 			   Modes[Mode&0x03].desc, szActualFileName);
 		Regs[REG_D0] = GEMDOS_EACCDN;
-		return;
+		return true;
 	}
 	if (errno == ENOTDIR || errno == ENOENT ||
 	    GemDOS_FilePathMissing(szActualFileName))
