@@ -13,7 +13,7 @@ Emulation:
 Emulator:
 - GEMDOS HD emulation:
   - By default programs can change read-only files to be writable
-  - Option for disabling all file modifications (--do-changes no)
+  - Option for disabling all file modifications ("--mount-changes no")
 - Debugger improvements:
   - trace command
   - evaluate command for doing calculations
