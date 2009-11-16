@@ -1418,6 +1418,25 @@ static bool GemDOS_ChDir(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Helper to check whether given file's path is missing.
+ * Returns true if missing, false if found.
+ * Modifies the argument buffer.
+ */
+static bool GemDOS_FilePathMissing(char *szActualFileName)
+{
+	char *ptr = strrchr(szActualFileName, PATHSEP);
+	if (ptr)
+	{
+		*ptr = 0;   /* Strip filename from string */
+		if (!File_DirectoryExists(szActualFileName))
+			return true;
+	}
+	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * GEMDOS Create file
  * Call 0x3C
  */
@@ -1427,6 +1446,7 @@ static bool GemDOS_Create(Uint32 Params)
 	char *pszFileName, *ptr;
 	int Drive,Index,Mode;
 	const char *rwflags;
+	FILE *fp;
 
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -1471,6 +1491,13 @@ static bool GemDOS_Create(Uint32 Params)
 		return true;
 	}
 
+	/* first need to truncate the file and only then we can (re-)open it
+	 * with correct access rights. This is due to fopen() limitations.
+	 */
+	fp = fopen(szActualFileName, "w+");
+	if (!fp)
+		goto fopen_error;
+	
 	/* FIXME: implement other Mode attributes
 	 * - GEMDOS_FILE_ATTRIB_HIDDEN       (FA_HIDDEN)
 	 * - GEMDOS_FILE_ATTRIB_SYSTEM_FILE  (FA_SYSTEM)
@@ -1479,10 +1506,13 @@ static bool GemDOS_Create(Uint32 Params)
 	 *   (set automatically by GemDOS >= 0.15)
 	 */
 	if (Mode & GEMDOS_FILE_ATTRIB_READONLY)
-		rwflags = "wb";
+	{
+		chmod(szActualFileName, S_IRUSR|S_IRGRP|S_IROTH);
+		rwflags = "rb";
+	}
 	else
-		rwflags = "wb+";
-	FileHandles[Index].FileHandle = fopen(szActualFileName, rwflags);
+		rwflags = "rb+";
+	FileHandles[Index].FileHandle = freopen(szActualFileName, rwflags, fp);
 
 	if (FileHandles[Index].FileHandle != NULL)
 	{
@@ -1492,20 +1522,27 @@ static bool GemDOS_Create(Uint32 Params)
 		return true;
 	}
 
-	/* We failed to create the file... now we have to return the right
-	 * error code: Normally we return FILE-NOT-FOUND, but in case the
-	 * directory did not exist yet, we have to return PATH-NOT-FOUND
-	 * (ST-Zip 2.6 relies on that during extraction of ZIP files). */
-	ptr = strrchr(szActualFileName, PATHSEP);
-	if (ptr)
+fopen_error:
+	/* We failed to create the file, did we have required access rights? */
+	if (errno == EACCES || errno == EROFS ||
+	    errno == EPERM || errno == EISDIR)
 	{
-		*ptr = 0;   /* Strip filename from string */
-		if (!File_DirectoryExists(szActualFileName))
-		{
-			Regs[REG_D0] = GEMDOS_EPTHNF; /* Path not found */
-			return true;
-		}
+		Log_Printf(LOG_WARN, "Failed to create/truncate '%s'\n",
+			   szActualFileName);
+		Regs[REG_D0] = GEMDOS_EACCDN;
+		return true;
 	}
+
+	/* Or was path to file missing? (ST-Zip 2.6 relies on getting
+	 * correct error about that during extraction of ZIP files.)
+	 */
+	if (errno == ENOTDIR || errno == ENOENT ||
+	    GemDOS_FilePathMissing(szActualFileName))
+	{
+		Regs[REG_D0] = GEMDOS_EPTHNF; /* Path not found */
+		return true;
+	}
+
 	Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
 	return true;
 }
@@ -1519,14 +1556,19 @@ static bool GemDOS_Open(Uint32 Params)
 {
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
-	const char *open_modes[] =
-		{	/* convert atari modes to stdio modes */
-			"rb",	/* read only */
-			"rb+",	/* FIXME: should be write only, but "wb" truncates */
-			"rb+",	/* read/write */
-			"rb"	/* read only */
-		};
-	int Drive,Index,Mode;
+	const char *ModeStr;
+	/* convert atari modes to stdio modes */
+	struct {
+		const char *mode;
+		const char *desc;
+	} Modes[] = {
+		{ "rb",	 "read-only" },
+		/* FIXME: is actually read/write as "wb" would truncate */
+		{ "rb+", "write-only" },
+		{ "rb+", "read/write" },
+		{ "rb+", "read/write" }
+	};
+	int Drive, Index, Mode;
 
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -1555,12 +1597,23 @@ static bool GemDOS_Open(Uint32 Params)
 		return true;
 	}
 
+	if (ConfigureParams.HardDisk.bDoGemdosChanges)
+	{
+		/* GEMDOS mount can be written, so use requested mode */
+		ModeStr = Modes[Mode&0x03].mode;
+	}
+	else
+	{
+		/* force all accesses to be read-only */
+		ModeStr = Modes[0].mode;
+	}
+
 	/* FIXME: Open file
 	 * - fopen() modes don't allow write-only mode without truncating.
 	 *   Fixing this requires using open() and file descriptors instead
 	 *   of fopen() and FILE* pointers, but Windows doesn't support that
 	 */
-	FileHandles[Index].FileHandle =  fopen(szActualFileName, open_modes[Mode&0x03]);
+	FileHandles[Index].FileHandle =  fopen(szActualFileName, ModeStr);
 
 	snprintf(FileHandles[Index].szActualName, sizeof(FileHandles[Index].szActualName),
 		 "%s", szActualFileName);
@@ -1574,10 +1627,22 @@ static bool GemDOS_Open(Uint32 Params)
 		return true;
 	}
 
-	if (Mode != 1 && errno == EACCES)
-		Log_Printf(LOG_WARN, "Missing permission to read file '%s'\n", szActualFileName );
-
-	Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
+	if (errno == EACCES || errno == EROFS)
+	{
+		Log_Printf(LOG_WARN, "Missing %s permission to file '%s'\n",
+			   Modes[Mode&0x03].desc, szActualFileName);
+		Regs[REG_D0] = GEMDOS_EACCDN;
+		return;
+	}
+	if (errno == ENOTDIR || errno == ENOENT ||
+	    GemDOS_FilePathMissing(szActualFileName))
+	{
+		/* Path not found */
+		Regs[REG_D0] = GEMDOS_EPTHNF;
+		return true;
+	}
+	/* File not found / error opening */
+	Regs[REG_D0] = GEMDOS_EFILNF;
 	return true;
 }
 
