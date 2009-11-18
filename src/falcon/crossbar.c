@@ -177,7 +177,6 @@ struct crossbar_s {
 	Uint32 isDacMuted;		/* 0 = DAC is running; 1 = DAC is muted */
 	Uint32 dspXmit_freq;		/* 0 = 25 Mhz ; 1 = external clock ; 2 = 32 Mhz */
 	Uint32 dmaPlay_freq;		/* 0 = 25 Mhz ; 1 = external clock ; 2 = 32 Mhz */
-	Uint32 dmaPlay_waitInter;
 	
 	double clock25_cycles;		/* cycles for 25 Mzh interrupt */ 
 	double clock25_cycles_counterD; /* cycles counter for 25 Mzh interrupt (double) */ 
@@ -272,8 +271,6 @@ void Crossbar_Reset(bool bCold)
 	crossbar.playTracks = 1;
 	crossbar.is16Bits = 0;
 	crossbar.isStereo = 1;
-
-	crossbar.dmaPlay_waitInter = 0;
 
 	/* Start 25 Mhz and 32 Mhz Clocks */
 	Crossbar_Start_InterruptHandler_25Mhz();
@@ -807,8 +804,8 @@ void Crossbar_SrcControler_WriteWord(void)
 	
 	crossbar.dspXmit_freq = (nCbSrc >> 5) & 0x3;
 	crossbar.dmaPlay_freq = (nCbSrc >> 1) & 0x3;
-	
-	dmaPlay.isConnectedToDspInHandShakeMode = ((nCbSrc & 9) == 0 ? 1 : 0);
+
+	dmaPlay.isConnectedToDspInHandShakeMode = ((nCbSrc & 9) == 0 ? 1 : 0);                                
 }
 
 
@@ -891,13 +888,13 @@ void Crossbar_DstControler_WriteWord(void)
 	adc.isConnectedToDsp   = (destCtrl & 0x60) == 0x60 ? 1 : 0;
 	adc.isConnectedToDma   = (destCtrl & 0x6) == 0x6 ? 1 : 0;
 
+	dmaPlay.isConnectedToDspInHandShakeMode = ((destCtrl & 7) == 2 ? 1 : 0);
 	dmaRecord.isConnectedToDspInHandShakeMode = ((destCtrl & 0xf) == 2 ? 1 : 0);
 
 	/* Start Microphone jack emulation */
 	if (!microphone_ADC_is_started) { 
 		microphone_ADC_is_started = 1;
 #if HAVE_PORTAUDIO
-		//Crossbar_StartAdcXmitHandler();
 		//Microphone_Start((int)Crossbar_DetectSampleRate(25));
 		//Microphone_Run();
 #endif
@@ -1248,7 +1245,7 @@ static void Crossbar_Process_DSPXmit_Transfer(void)
 	DSP_SsiReceive_SC2(frame);
 
 	/* Send the clock to the DSP SSI Xmit */
-	DSP_SsiReceive_SCK(0);
+	DSP_SsiReceive_SCK();
 
 	/* read data from DSP Xmit */
 	data = DSP_SsiReadTxValue();
@@ -1291,17 +1288,17 @@ static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame)
 
 	/* Send sample to DSP receive */
 	DSP_SsiWriteRxValue(value);
-	crossbar.dmaPlay_waitInter = 0;
-
 
 	/* Send the frame status to the DSP SSI receive */
 	/* only in non hanshake mode */
-	if (dspReceive.isInHandshakeMode == 0) {
+	if (dmaPlay.handshakeMode_Frame == 0) {
 		DSP_SsiReceive_SC1(frame);
 	}
 
+	dmaPlay.handshakeMode_Frame = 0;
+	
 	/* Send the clock to the DSP SSI receive */
-	DSP_SsiReceive_SC0(0);
+	DSP_SsiReceive_SC0();
 }
 
 /*----------------------------------------------------------------------*/
@@ -1339,6 +1336,13 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	if (dmaPlay.isRunning == 0)
 		return;
 	
+	/* if handshake mode */
+	if (dmaPlay.isConnectedToDspInHandShakeMode) {
+		if (dmaPlay.handshakeMode_Frame == 0) {
+			return;
+		}
+	}
+
 	pFrameStart = (Sint8 *)&STRam[dmaPlay.frameStartAddr];
 
 	/* 16 bits stereo mode ? */
@@ -1390,12 +1394,6 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		dmaPlay.currentFrame = 0;
 	}
 
-	/* If DMA play is connected to the DSP_IN in handshake mode, */
-	/* there's no need to restart the timer clock. The synchro is driven by the DSP. */
-	if (dmaPlay.isConnectedToDsp && (dspReceive.isTristated == 0) && dspReceive.isInHandshakeMode) {
-//		return;
-	}
-
 	/* Check if end-of-frame has been reached and raise interrupts if needed. */
 	if (dmaPlay.frameCounter >= dmaPlay.frameLen)
 	{
@@ -1427,14 +1425,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
  * Function called when DmaPlay is in handshake mode */
 void Crossbar_DmaPlayInHandShakeMode(void)
 {
-	if (crossbar.dmaPlay_waitInter == 1) {
-		return;
-	}
-
-	if (dmaPlay.isRunning) {
-		/* il y avait le lancement du timer */
-		crossbar.dmaPlay_waitInter = 1;
-	}
+	dmaPlay.handshakeMode_Frame = 1;
 }
 
 /*----------------------------------------------------------------------*/
@@ -1469,7 +1460,7 @@ void Crossbar_SendDataToDmaRecord(Sint16 value)
 	if (dmaRecord.isRunning == 0) {
 		return;
 	}
-
+	
 	pFrameStart = (Sint8 *)&STRam[dmaRecord.frameStartAddr];
 
 	/* 16 bits stereo mode ? */
@@ -1531,14 +1522,14 @@ static void Crossbar_Process_DMARecord_HandshakeMode(void)
 	if (dmaRecord.handshakeMode_Frame == 0) {
 		return;
 	}
-		
+
 	/* Send the clock to the DSP SSI Xmit */
-	DSP_SsiReceive_SCK(0);
+	DSP_SsiReceive_SCK();
 
 	/* read data from DSP Xmit */
 	data = DSP_SsiReadTxValue();
 	dmaRecord.handshakeMode_Frame = 0;
-	
+		
 	Crossbar_SendDataToDmaRecord(data);
 }
 

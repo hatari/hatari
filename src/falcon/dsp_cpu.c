@@ -524,7 +524,6 @@ void dsp56k_execute_instruction(void)
 
 	/* process peripherals On Chip components */
 	dsp_core_process_host_interface(dsp_core);
-	dsp_core_process_ssi_interface(dsp_core);
 
 #if DSP_COUNT_IPS
 	++num_inst;
@@ -581,9 +580,7 @@ static void dsp_postexecute_update_pc(void)
 	}
 
 	/* Normal execution, go to next instruction */
-	if (cur_inst_len>0) {
-		dsp_core->pc += cur_inst_len;
-	}
+	dsp_core->pc += cur_inst_len;
 
 	/* When running a DO loop, we test the end of loop with the */
 	/* updated PC, pointing to last instruction of the loop */

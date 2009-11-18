@@ -261,16 +261,14 @@ extern void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 v
 extern void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value);
 extern void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core);
 extern Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core);
-extern void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core);
-extern void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 value);
+extern void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core);
 extern void dsp_core_ssi_Receive_SC1(dsp_core_t *dsp_core, Uint32 value);
 extern void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value);
-extern void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 value);
+extern void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core);
 extern void dsp_core_setPortCDataRegister(dsp_core_t *dsp_core, Uint32 value);
 
 /* Process peripheral code */
 extern void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */
-extern void dsp_core_process_ssi_interface(dsp_core_t *dsp_core);	/* SSI */
 
 #ifdef __cplusplus
 }

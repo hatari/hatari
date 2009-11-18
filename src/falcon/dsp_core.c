@@ -251,18 +251,16 @@ void dsp_core_setInterruptIPL(dsp_core_t *dsp_core, Uint32 value)
 	SSI INTERFACE processing
 */
 
-/* Process SSI peripheral code */
-void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
-{
-}
-
 /* Set PortC data register : send a frame order to the DMA in handshake mode */
 void dsp_core_setPortCDataRegister(dsp_core_t *dsp_core, Uint32 value)
 {
 	/* if DSP Record is in handshake mode with DMA Play */
-	if (((dsp_core->periph[DSP_SPACE_X][DSP_PCDDR] & 0x10) == 0x10) && ((value & 0x10) == 0x10)) {
-		dsp_core->ssi.waitFrameRX = 0;
-		DSP_SsiTransmit_SC1();
+	if ((dsp_core->periph[DSP_SPACE_X][DSP_PCDDR] & 0x10) == 0x10) {
+		if ((value & 0x10) == 0x10) {
+			dsp_core->ssi.waitFrameRX = 0;
+			DSP_SsiTransmit_SC1();
+
+		}
 	}
 
 	/* if DSP Play is in handshake mode with DMA Record, high or low frame sync */
@@ -308,18 +306,12 @@ Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core)
 	return dsp_core->ssi.RX;
 }
 
-/* SSI generate internal clock */
-void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
-{
-	/* TODO : write an internal timer */
-}
-
 
 /**
  * SSI receive serial clock.
  *
  */
-void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
+void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core)
 {
 	Uint32 value, i, temp=0;
 
@@ -409,7 +401,7 @@ void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value)
  * SSI transmit serial clock.
  *
  */
-void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
+void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core)
 {
 	Uint32 value, i, temp=0;
 
@@ -417,7 +409,7 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 
 	/* Transfer data from SSI to crossbar*/
 
-	/* adjust value to trasnmit size word */
+	/* adjust value to transnmit size word */
 	value >>= (24 - dsp_core->ssi.cra_word_length);
 	value &= dsp_core->ssi.cra_word_mask;
 
@@ -453,7 +445,7 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core, Uint32 sck_value)
 }
 
 
-/* SSI SSI initialisations and state management */
+/* SSI initialisations and state management */
 void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 {
 	Uint32 crb_te, crb_re;
@@ -507,6 +499,7 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 			break;
 	}
 }
+
 
 /* 
 	HOST INTERFACE processing
