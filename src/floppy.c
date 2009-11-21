@@ -406,6 +406,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 	/* Does our drive have a disk in? */
 	if (EmulationDrives[Drive].bDiskInserted)
 	{
+		bool bSaved = false;
 		char *psFileName = EmulationDrives[Drive].sFileName;
 
 		/* OK, has contents changed? If so, need to save */
@@ -414,17 +415,21 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			/* Is OK to save image (if boot-sector is bad, don't allow a save) */
 			if (EmulationDrives[Drive].bOKToSave && !Floppy_IsWriteProtected(Drive))
 			{
-				Log_Printf(LOG_INFO, "Flush contents to floppy image '%s'.", psFileName);
 				/* Save as .MSA or .ST image? */
 				if (MSA_FileNameIsMSA(psFileName, true))
-					MSA_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = MSA_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ST_FileNameIsST(psFileName, true))
-					ST_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = ST_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (DIM_FileNameIsDIM(psFileName, true))
-					DIM_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = DIM_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ZIP_FileNameIsZIP(psFileName))
-					ZIP_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
-			}
+					bSaved = ZIP_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				if (bSaved)
+					Log_Printf(LOG_INFO, "Updated the contents of floppy image '%s'.", psFileName);
+				else
+					Log_Printf(LOG_INFO, "Writing of this format failed or not supported, discarded the contents\n of floppy image '%s'.", psFileName);
+			} else
+				Log_Printf(LOG_INFO, "Writing not possible, discarded the contents of floppy image\n '%s'.", psFileName);
 		}
 
 		/* Inform user that disk has been ejected! */
