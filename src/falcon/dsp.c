@@ -123,7 +123,6 @@ void DSP_MemorySnapShot_Capture(bool bSave)
 #endif
 }
 
-
 /**
  * Run DSP for certain cycles
  */
@@ -135,13 +134,22 @@ void DSP_Run(int nHostCycles)
 	int i = nHostCycles * 2 + 2;
 	int dsp_cycle = 0;
 
-	while (dsp_core.running == 1 && i >= dsp_cycle)
-	{
-		if (unlikely(bDspDebugging))
+	if (dsp_core.running == 0)
+		return;
+	
+	if (unlikely(bDspDebugging)) {
+		while (i >= dsp_cycle)
+		{
 			DebugDsp_Check();
-
-		dsp56k_execute_instruction();
-		dsp_cycle += dsp_core.instr_cycle;
+			dsp56k_execute_instruction();
+			dsp_cycle += dsp_core.instr_cycle;
+		}
+	} else {
+		while (i >= dsp_cycle)
+		{
+			dsp56k_execute_instruction();
+			dsp_cycle += dsp_core.instr_cycle;
+		}
 	}
 #endif
 }
