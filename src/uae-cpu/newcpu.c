@@ -1096,7 +1096,17 @@ int m68k_move2c (int regno, uae_u32 *regp)
 	switch (regno) {
 	case 0: regs.sfc = *regp & 7; break;
 	case 1: regs.dfc = *regp & 7; break;
-	case 2: cacr = *regp & (currprefs.cpu_level < 4 ? 0x3 : 0x80008000); break;
+	case 2:
+	{
+	    uae_u32 cacr_mask = 0;
+	    if (currprefs.cpu_level == 2)	// 68020
+		cacr_mask = 0x0000000f;
+	    else if (currprefs.cpu_level == 3)	// Fake 68030
+		cacr_mask = 0x00003f1f;
+	    else if (currprefs.cpu_level == 4)	// 68040
+		cacr_mask = 0x80008000;
+	    cacr = *regp & cacr_mask;
+	}
 	case 3: tc = *regp & 0xc000; break;
 	  /* Mask out fields that should be zero.  */
 	case 4: itt0 = *regp & 0xffffe364; break;
