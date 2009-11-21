@@ -41,11 +41,11 @@ static SGOBJ systemdlg[] =
 
 	{ SGBOX, 0, 0, 2,3, 16,9, NULL },
 	{ SGTEXT, 0, 0, 3,4, 8,1, "CPU type:" },
-	{ SGRADIOBUT, 0, 0, 6,6, 7,1, "68000" },
-	{ SGRADIOBUT, 0, 0, 6,7, 7,1, "68010" },
-	{ SGRADIOBUT, 0, 0, 6,8, 7,1, "68020" },
-	{ SGRADIOBUT, 0, 0, 6,9, 11,1, "68020+FPU" },
-	{ SGRADIOBUT, 0, 0, 6,10, 7,1, "68040" },
+	{ SGRADIOBUT, 0, 0, 4,6, 7,1, "68000" },
+	{ SGRADIOBUT, 0, 0, 4,7, 7,1, "68010" },
+	{ SGRADIOBUT, 0, 0, 4,8, 7,1, "68020" },
+	{ SGRADIOBUT, 0, 0, 4,9, 13,1, "68EC030+FPU" },
+	{ SGRADIOBUT, 0, 0, 4,10, 7,1, "68040" },
 
 	{ SGBOX, 0, 0, 19,3, 15,9, NULL },
 	{ SGTEXT, 0, 0, 20,4, 13,1, "Machine type:" },
