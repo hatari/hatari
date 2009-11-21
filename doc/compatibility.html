@@ -1692,7 +1692,7 @@ otherwise "-".</p>
       <td>-</td>
       <td>ST low version has problems with scrolling (which doesn't
           happen with with STe emulation). In TC version parts of sprites
-	  get stuck to top of screen,</td>
+	  get stuck to top of screen</td>
     </tr> 
     <tr>
       <td>FalcTron</td>
@@ -1793,7 +1793,7 @@ otherwise "-".</p>
       <td>1.3</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Very slow, sound issues</td>
+      <td>Slow, minor issues</td>
     </tr>
     <tr>
       <td>Les Dinosaures (demo)</td>
@@ -2591,10 +2591,10 @@ otherwise "-".</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://pouet.net/prod.php?which=14856">Moai 96kB</a></td>
-      <td class="major">1.3</td>
-      <td>-</td>
+      <td class="major">1.3.1+</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>14MB RAM + FPU. Complains that it works only on 68030 or higher</td>
+      <td>14MB RAM + 030 + FPU. Doesn't work with 020 CPU</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -2667,7 +2667,7 @@ otherwise "-".</p>
       <td>1.3.1+</td>
       <td>yes</td>
       <td>emu</td>
-      <td>256 colors DSP/MOD music demo</td>
+      <td>256 colors DSP+DMA MOD music demo</td>
     </tr>
     <tr>
       <td>Psychosis:
@@ -2704,10 +2704,10 @@ otherwise "-".</p>
     <tr>
       <td>STAX:
       <a href="http://pouet.net/prod.php?which=21577">Doomino</a></td>
-      <td class="major">1.3</td>
+      <td>1.3.1+</td>
       <td>-</td>
-      <td>-</td>
-      <td>Says "Something wrong with Falcon"</td>
+      <td>emu</td>
+      <td>Doesn't work with 020 CPU</td>
     </tr>
     <tr>
       <td>The Respectables:
@@ -2826,17 +2826,17 @@ otherwise "-".</p>
     <tr>
       <td><a href="http://newbeat.atari.org/main.php?page=productions">AceMidi</a>
           (demo)</td>
-      <td class="minor">1.3</td>
+      <td class="minor">1.3.1+</td>
       <td>emu</td>
-      <td>Complains about CPU overload, DSP generated softsynth sounds
-          for MIDI keyboard presses don't sound right (at all)</td>
+      <td>DSP generated softsynth sounds for MIDI keyboard presses
+          don't sound very good</td>
     </tr>
     <tr>
       <td><a href="http://newbeat.atari.org/main.php?page=productions">AceTracker</a></td>
-      <td class="minor">1.3</td>
+      <td class="minor">1.3.1+</td>
       <td>emu</td>
-      <td>Complains about CPU overload, DSP generated softsynth sounds
-          for key presses don't sound right (at all)</td>
+      <td>DSP generated softsynth sounds for key presses don't sound
+          very good</td>
     </tr>
     <tr>
       <td>Apex (demo)</td>
@@ -2896,9 +2896,9 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/falcamp/">GemPLAY</a></td>
-      <td class="minor">1.3</td>
+      <td class="minor">1.3.1+</td>
       <td>emu</td>
-      <td>MOD/SND/XMS playing works fine, AON/GT2 don't have sound or freeze.
+      <td>MOD/SND/XMS formats sound fine, AM/AON/GT2 formats sound bad.
           Fileselector dir selection doesn't work for the latest 1.92 version</td>
     </tr>
     <tr>
@@ -2968,11 +2968,11 @@ support or work only on them.</p>
     </tr>
     <tr>
       <td><a href="http://www.seimet.de/atari/en/hddriver.html">HD Driver</a></td>
-      <td>1.3</td>
+      <td>1.3.1+</td>
       <td>Hard disk driver.  In Hatari works only with IDE emulation.
-      Doesn't work with EmuTOS.  CPU needs to be set for 040 for HD
-      Driver to work with TOS v4, otherwise HD Driver tries to use
-      MMU which Hatari UAE core doesn't support</td>
+      Doesn't work with EmuTOS.  With TOS v4, CPU needs to be set to
+      EC030 or better, with TOS v3 works also with 020 CPU (used by
+      earlier Hatari versions for TOS &gt;= v3)</td>
     </tr>
   </tbody>
 </table>
