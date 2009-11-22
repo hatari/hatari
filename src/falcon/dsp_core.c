@@ -505,13 +505,6 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 	HOST INTERFACE processing
 */
 
-/* Process Host Interface peripheral code */
-void dsp_core_process_host_interface(dsp_core_t *dsp_core)
-{
-	dsp_core_host2dsp(dsp_core);
-	dsp_core_dsp2host(dsp_core);
-}
-
 static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
 {
 	int trdy;
@@ -617,6 +610,7 @@ void dsp_core_hostport_dspread(dsp_core_t *dsp_core)
 	fprintf(stderr, "Dsp: (H->D): Dsp HRDF cleared\n");
 #endif
 	dsp_core_hostport_update_trdy(dsp_core);
+	dsp_core_host2dsp(dsp_core);
 }
 
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
@@ -626,6 +620,8 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
 #if DSP_DISASM_HOSTWRITE
 	fprintf(stderr, "Dsp: (D->H): Dsp HTDE cleared\n");
 #endif
+
+	dsp_core_dsp2host(dsp_core);
 }
 
 /* Read/writes on host port */
@@ -637,6 +633,7 @@ Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 	if (addr == CPU_HOST_TRXL) {
 		/* Clear RXDF bit to say that CPU has read */
 		dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
+		dsp_core_dsp2host(dsp_core);
 		dsp_core_hostport_update_hreq(dsp_core);
 #if DSP_DISASM_HOSTREAD
 		fprintf(stderr, "Dsp: (D->H): Host RXDF=0\n");
@@ -737,6 +734,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 #endif
 				}
 				dsp_core_hostport_update_trdy(dsp_core);
+				dsp_core_host2dsp(dsp_core);
 			}
 			break;
 	}

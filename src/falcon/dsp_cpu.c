@@ -522,9 +522,6 @@ void dsp56k_execute_instruction(void)
 	/* Process Interrupts */
 	dsp_postexecute_interrupts();
 
-	/* process peripherals On Chip components */
-	dsp_core_process_host_interface(dsp_core);
-
 #if DSP_COUNT_IPS
 	++num_inst;
 	if ((num_inst & 63) == 0) {
