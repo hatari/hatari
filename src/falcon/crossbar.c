@@ -1621,7 +1621,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	for (i = 0; (i < nSamplesToGenerate) && (fDacBufSamples >= 0.0); i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		dac.readPosition = ((int)fDacBufRdPos) % DACBUFFER_SIZE;
+		dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
 
 		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)dac.buffer_left[dac.readPosition]) / 2;
 		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1] + (int)dac.buffer_right[dac.readPosition]) / 2;
@@ -1630,7 +1630,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		fDacBufSamples -= FreqRatio;
 	}
 
-	dac.readPosition = ((int)fDacBufRdPos) % DACBUFFER_SIZE;
+	dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
 
 	if (fDacBufSamples > 0.0) {
 		dac.writeBufferSize = (int)fDacBufSamples;
