@@ -1845,7 +1845,7 @@ static bool GemDOS_LSeek(Uint32 Params)
 	FILE *fhndl;
 
 	/* Read details from stack */
-	Offset = (long)STMemory_ReadLong(Params+SIZE_WORD);
+	Offset = (Sint32)STMemory_ReadLong(Params+SIZE_WORD);
 	Handle = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG)-BASE_FILEHANDLE;
 	Mode = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 
@@ -1869,9 +1869,9 @@ static bool GemDOS_LSeek(Uint32 Params)
 
 	switch (Mode)
 	{
-	 case 0: nDestPos = Offset; break;
+	 case 0: nDestPos = Offset; break; /* positive offset */
 	 case 1: nDestPos = nOldPos + Offset; break;
-	 case 2: nDestPos = nFileSize - Offset; break;
+	 case 2: nDestPos = nFileSize + Offset; break; /* negative offset */
 	 default:
 		/* Restore old position and return error */
 		fseek(fhndl, nOldPos, SEEK_SET);
