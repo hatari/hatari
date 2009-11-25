@@ -14,23 +14,26 @@ const char DlgHardDisk_fileid[] = "Hatari dlgHardDisk.c : " __DATE__ " " __TIME_
 #include "file.h"
 
 
-#define DISKDLG_ACSIEJECT    3
-#define DISKDLG_ACSIBROWSE   4
-#define DISKDLG_ACSINAME     5
-#define DISKDLG_IDEEJECT     7
-#define DISKDLG_IDEBROWSE    8
-#define DISKDLG_IDENAME      9
-#define DISKDLG_GEMDOSEJECT  11
-#define DISKDLG_GEMDOSBROWSE 12
-#define DISKDLG_GEMDOSNAME   13
-#define DISKDLG_BOOTHD       14
-#define DISKDLG_EXIT         15
+#define DISKDLG_ACSIEJECT          3
+#define DISKDLG_ACSIBROWSE         4
+#define DISKDLG_ACSINAME           5
+#define DISKDLG_IDEMASTEREJECT     7
+#define DISKDLG_IDEMASTERBROWSE    8
+#define DISKDLG_IDEMASTERNAME      9
+#define DISKDLG_IDESLAVEEJECT     11
+#define DISKDLG_IDESLAVEBROWSE    12
+#define DISKDLG_IDESLAVENAME      13
+#define DISKDLG_GEMDOSEJECT       15
+#define DISKDLG_GEMDOSBROWSE      16
+#define DISKDLG_GEMDOSNAME        17
+#define DISKDLG_BOOTHD            18
+#define DISKDLG_EXIT              19
 
 
 /* The disks dialog: */
 static SGOBJ diskdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 64,16, NULL },
+	{ SGBOX, 0, 0, 0,0, 64,19, NULL },
 	{ SGTEXT, 0, 0, 27,1, 10,1, "Hard disks" },
 
 	{ SGTEXT, 0, 0, 2,3, 14,1, "ACSI HD image:" },
@@ -38,18 +41,23 @@ static SGOBJ diskdlg[] =
 	{ SGBUTTON, 0, 0, 54,3, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 3,4, 58,1, NULL },
 
-	{ SGTEXT, 0, 0, 2,6, 13,1, "IDE HD image:" },
+	{ SGTEXT, 0, 0, 2,6, 13,1, "IDE HD master image:" },
 	{ SGBUTTON, 0, 0, 46,6, 7,1, "Eject" },
 	{ SGBUTTON, 0, 0, 54,6, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 3,7, 58,1, NULL },
 
-	{ SGTEXT, 0, 0, 2,9, 13,1, "GEMDOS drive:" },
+	{ SGTEXT, 0, 0, 2,9, 13,1, "IDE HD slave image:" },
 	{ SGBUTTON, 0, 0, 46,9, 7,1, "Eject" },
 	{ SGBUTTON, 0, 0, 54,9, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 
-	{ SGCHECKBOX, 0, 0, 2,12, 14,1, "Boot from HD" },
-	{ SGBUTTON, SG_DEFAULT, 0, 22,14, 20,1, "Back to main menu" },
+	{ SGTEXT, 0, 0, 2,12, 13,1, "GEMDOS drive:" },
+	{ SGBUTTON, 0, 0, 46,12, 7,1, "Eject" },
+	{ SGBUTTON, 0, 0, 54,12, 8,1, "Browse" },
+	{ SGTEXT, 0, 0, 3,13, 58,1, NULL },
+
+	{ SGCHECKBOX, 0, 0, 2,15, 14,1, "Boot from HD" },
+	{ SGBUTTON, SG_DEFAULT, 0, 22,17, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -85,7 +93,8 @@ static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 void DlgHardDisk_Main(void)
 {
 	int but;
-	char dlgname_gdos[64], dlgname_acsi[64], dlgname_ide[64];
+	char dlgname_gdos[64], dlgname_acsi[64];
+	char dlgname_ide_master[64], dlgname_ide_slave[64];
 
 	SDLGui_CenterDlg(diskdlg);
 
@@ -105,13 +114,21 @@ void DlgHardDisk_Main(void)
 		dlgname_acsi[0] = '\0';
 	diskdlg[DISKDLG_ACSINAME].txt = dlgname_acsi;
 
-	/* IDE hard disk image: */
-	if (ConfigureParams.HardDisk.bUseIdeHardDiskImage)
-		File_ShrinkName(dlgname_ide, ConfigureParams.HardDisk.szIdeHardDiskImage,
-		                diskdlg[DISKDLG_IDENAME].w);
+	/* IDE master hard disk image: */
+	if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
+		File_ShrinkName(dlgname_ide_master, ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
+		                diskdlg[DISKDLG_IDEMASTERNAME].w);
 	else
-		dlgname_ide[0] = '\0';
-	diskdlg[DISKDLG_IDENAME].txt = dlgname_ide;
+		dlgname_ide_master[0] = '\0';
+	diskdlg[DISKDLG_IDEMASTERNAME].txt = dlgname_ide_master;
+
+	/* IDE slave hard disk image: */
+	if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
+		File_ShrinkName(dlgname_ide_slave, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage,
+		                diskdlg[DISKDLG_IDESLAVENAME].w);
+	else
+		dlgname_ide_slave[0] = '\0';
+	diskdlg[DISKDLG_IDESLAVENAME].txt = dlgname_ide_slave;
 
 	/* GEMDOS hard disk directory: */
 	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
@@ -137,15 +154,25 @@ void DlgHardDisk_Main(void)
 			                          diskdlg[DISKDLG_ACSINAME].w, false))
 				ConfigureParams.HardDisk.bUseHardDiskImage = true;
 			break;
-		 case DISKDLG_IDEEJECT:
-			ConfigureParams.HardDisk.bUseIdeHardDiskImage = false;
-			dlgname_ide[0] = '\0';
+		 case DISKDLG_IDEMASTEREJECT:
+			ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
+			dlgname_ide_master[0] = '\0';
 			break;
-		 case DISKDLG_IDEBROWSE:
-			if (SDLGui_FileConfSelect(dlgname_ide,
-			                          ConfigureParams.HardDisk.szIdeHardDiskImage,
-			                          diskdlg[DISKDLG_IDENAME].w, false))
-				ConfigureParams.HardDisk.bUseIdeHardDiskImage = true;
+		 case DISKDLG_IDEMASTERBROWSE:
+			if (SDLGui_FileConfSelect(dlgname_ide_master,
+			                          ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
+			                          diskdlg[DISKDLG_IDEMASTERNAME].w, false))
+				ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = true;
+			break;
+		 case DISKDLG_IDESLAVEEJECT:
+			ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = false;
+			dlgname_ide_slave[0] = '\0';
+			break;
+		 case DISKDLG_IDESLAVEBROWSE:
+			if (SDLGui_FileConfSelect(dlgname_ide_slave,
+			                          ConfigureParams.HardDisk.szIdeSlaveHardDiskImage,
+			                          diskdlg[DISKDLG_IDESLAVENAME].w, false))
+				ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = true;
 			break;
 		 case DISKDLG_GEMDOSEJECT:
 			ConfigureParams.HardDisk.bUseHardDiskDirectories = false;

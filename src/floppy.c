@@ -135,7 +135,7 @@ void Floppy_GetBootDrive(void)
 	if (!ConfigureParams.HardDisk.bBootFromHardDisk)
 		return;
 
-	if (ACSI_EMU_ON || ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (ACSI_EMU_ON || ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		nBootDrive = 2;  /* Drive C */
 	}

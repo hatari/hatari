@@ -165,12 +165,14 @@ typedef struct
   int nHardDiskDir;
   bool bUseHardDiskDirectories;
   bool bUseHardDiskImage;
-  bool bUseIdeHardDiskImage;
+  bool bUseIdeMasterHardDiskImage;
+  bool bUseIdeSlaveHardDiskImage;
   bool bDoGemdosChanges;
   bool bBootFromHardDisk;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
   char szHardDiskImage[FILENAME_MAX];
-  char szIdeHardDiskImage[FILENAME_MAX];
+  char szIdeMasterHardDiskImage[FILENAME_MAX];
+  char szIdeSlaveHardDiskImage[FILENAME_MAX];
 } CNF_HARDDISK;
 
 /* Falcon register $FFFF8006 bits 6 & 7 (mirrored in $FFFF82C0 bits 0 & 1):

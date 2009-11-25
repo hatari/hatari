@@ -263,8 +263,10 @@ static const struct Config_Tag configs_HardDisk[] =
 	{ "bDoGemdosChanges", Bool_Tag, &ConfigureParams.HardDisk.bDoGemdosChanges },
 	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
 	{ "szHardDiskImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
-	{ "bUseIdeHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeHardDiskImage },
-	{ "szIdeHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeHardDiskImage },
+	{ "bUseIdeMasterHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage },
+	{ "bUseIdeSlaveHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage },
+	{ "szIdeMasterHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeMasterHardDiskImage },
+	{ "szIdeSlaveHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -367,8 +369,10 @@ void Configuration_SetDefault(void)
 	}
 	ConfigureParams.HardDisk.bUseHardDiskImage = false;
 	strcpy(ConfigureParams.HardDisk.szHardDiskImage, psWorkingDir);
-	ConfigureParams.HardDisk.bUseIdeHardDiskImage = false;
-	strcpy(ConfigureParams.HardDisk.szIdeHardDiskImage, psWorkingDir);
+	ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
+	strcpy(ConfigureParams.HardDisk.szIdeMasterHardDiskImage, psWorkingDir);
+	ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = false;
+	strcpy(ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, psWorkingDir);
 
 	/* Set defaults for Joysticks */
 	for (i = 0; i < JOYSTICK_COUNT; i++)

@@ -78,9 +78,14 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	        && changed->HardDisk.bUseHardDiskImage))
 		return true;
 
-	/* Did change IDE hard disk image? */
-	if (changed->HardDisk.bUseIdeHardDiskImage != current->HardDisk.bUseIdeHardDiskImage
-	    || strcmp(changed->HardDisk.szIdeHardDiskImage, current->HardDisk.szIdeHardDiskImage))
+	/* Did change IDE master hard disk image? */
+	if (changed->HardDisk.bUseIdeMasterHardDiskImage != current->HardDisk.bUseIdeMasterHardDiskImage
+	    || strcmp(changed->HardDisk.szIdeMasterHardDiskImage, current->HardDisk.szIdeMasterHardDiskImage))
+		return true;
+
+	/* Did change IDE slave hard disk image? */
+	if (changed->HardDisk.bUseIdeSlaveHardDiskImage != current->HardDisk.bUseIdeSlaveHardDiskImage
+	    || strcmp(changed->HardDisk.szIdeSlaveHardDiskImage, current->HardDisk.szIdeSlaveHardDiskImage))
 		return true;
 
 	/* Did change GEMDOS drive? */
@@ -194,10 +199,19 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		bReInitAcsiEmu = true;
 	}
 	
-	/* Did change IDE HD image? */
-	if (changed->HardDisk.bUseIdeHardDiskImage != current->HardDisk.bUseIdeHardDiskImage
-	    || (strcmp(changed->HardDisk.szIdeHardDiskImage, current->HardDisk.szIdeHardDiskImage)
-	        && changed->HardDisk.bUseIdeHardDiskImage))
+	/* Did change IDE HD master image? */
+	if (changed->HardDisk.bUseIdeMasterHardDiskImage != current->HardDisk.bUseIdeMasterHardDiskImage
+	    || (strcmp(changed->HardDisk.szIdeMasterHardDiskImage, current->HardDisk.szIdeMasterHardDiskImage)
+	        && changed->HardDisk.bUseIdeMasterHardDiskImage))
+	{
+		Ide_UnInit();
+		bReInitIDEEmu = true;
+	}
+
+	/* Did change IDE HD slave image? */
+	if (changed->HardDisk.bUseIdeSlaveHardDiskImage != current->HardDisk.bUseIdeSlaveHardDiskImage
+	    || (strcmp(changed->HardDisk.szIdeSlaveHardDiskImage, current->HardDisk.szIdeSlaveHardDiskImage)
+	        && changed->HardDisk.bUseIdeSlaveHardDiskImage))
 	{
 		Ide_UnInit();
 		bReInitIDEEmu = true;
@@ -263,8 +277,8 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		HDC_Init(ConfigureParams.HardDisk.szHardDiskImage);
 	}
 
-	/* Mount a new IDE HD image: */
-	if (bReInitIDEEmu && ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	/* Mount a new IDE HD master or slave image: */
+	if (bReInitIDEEmu && (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage || ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage))
 	{
 		Ide_Init();
 	}

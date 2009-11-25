@@ -95,7 +95,7 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 1);
@@ -130,11 +130,11 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 1);
-		if (ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+		if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 			fprintf(stderr, "Illegal IDE IO memory access: IdeMem_wget($%x)\n", addr);
 		return -1;
 	}
@@ -164,11 +164,11 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 1);
-		if (ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+		if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 			fprintf(stderr, "Illegal IDE IO memory access: IdeMem_lget($%x)\n", addr);
 		return -1;
 	}
@@ -203,7 +203,7 @@ void Ide_Mem_bput(uaecptr addr, uae_u32 val)
 
 	Dprintf(("IdeMem_bput($%x, $%x)\n", addr, val));
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 0);
@@ -234,7 +234,7 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 
 	Dprintf(("IdeMem_wput($%x, $%x)\n", addr, val));
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 0);
@@ -258,7 +258,7 @@ void Ide_Mem_lput(uaecptr addr, uae_u32 val)
 
 	Dprintf(("IdeMem_lput($%x, $%x)\n", addr, val));
 
-	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 0);
@@ -982,7 +982,14 @@ static void ide_identify(IDEState *s)
 	put_le16(p + 21, 512); /* cache size in sectors */
 	put_le16(p + 22, 4); /* ecc bytes */
 	padstr((char *)(p + 23), FW_VERSION, 8); /* firmware version */
-	padstr((char *)(p + 27), "Hatari IDE disk", 40); /* model */
+	if(s == opaque_ide_if) /* model */
+	{
+		padstr((char *)(p + 27), "Hatari IDE master disk", 40);
+	}
+	else
+	{
+		padstr((char *)(p + 27), "Hatari IDE slave disk", 40);
+	}
 #if MAX_MULT_SECTORS > 1
 	put_le16(p + 47, 0x8000 | MAX_MULT_SECTORS);
 #endif
@@ -2671,7 +2678,7 @@ static BlockDriverState *hd_table[2];
  */
 void Ide_Init(void)
 {
-	if (!ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (!ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 		return;
 
 	opaque_ide_if = malloc(sizeof(IDEState) * 2);
@@ -2689,9 +2696,10 @@ void Ide_Init(void)
 	memset(hd_table[0], 0, sizeof(BlockDriverState));
 	memset(hd_table[1], 0, sizeof(BlockDriverState));
 
-	bdrv_open(hd_table[0], ConfigureParams.HardDisk.szIdeHardDiskImage, 0);
+	bdrv_open(hd_table[0], ConfigureParams.HardDisk.szIdeMasterHardDiskImage, 0);
+	bdrv_open(hd_table[1], ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, 0);
 
-	ide_init2(&opaque_ide_if[0], hd_table[0], NULL /*hd_table[1]*/);
+	ide_init2(&opaque_ide_if[0], hd_table[0], hd_table[1]);
 }
 
 

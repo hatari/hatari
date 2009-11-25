@@ -88,7 +88,8 @@ enum {
 	OPT_HARDDRIVE,
 	OPT_GEMDOSCHANGES,
 	OPT_ACSIHDIMAGE,
-	OPT_IDEHDIMAGE,
+	OPT_IDEMASTERHDIMAGE,
+	OPT_IDESLAVEHDIMAGE,
 	OPT_MEMSIZE,		/* memory options */
 	OPT_TOS,
 	OPT_CARTRIDGE,
@@ -228,8 +229,10 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Allow changes to mounted harddrive <dir> contents" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
-	{ OPT_IDEHDIMAGE,   NULL, "--ide",
-	  "<file>", "Emulate an IDE harddrive with an image <file>" },
+	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
+	  "<file>", "Emulate an IDE master harddrive with an image <file>" },
+	{ OPT_IDESLAVEHDIMAGE,   NULL, "--ide-slave",
+	  "<file>", "Emulate an IDE slave harddrive with an image <file>" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
@@ -1031,11 +1034,22 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			break;
 			
-		case OPT_IDEHDIMAGE:
+		case OPT_IDEMASTERHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_IDEHDIMAGE, true, ConfigureParams.HardDisk.szIdeHardDiskImage,
-					argv[i], sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage),
-					&ConfigureParams.HardDisk.bUseIdeHardDiskImage);
+			ok = Opt_StrCpy(OPT_IDEMASTERHDIMAGE, true, ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
+					argv[i], sizeof(ConfigureParams.HardDisk.szIdeMasterHardDiskImage),
+					&ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage);
+			if (ok)
+			{
+				bLoadAutoSave = false;
+			}
+			break;
+
+		case OPT_IDESLAVEHDIMAGE:
+			i += 1;
+			ok = Opt_StrCpy(OPT_IDESLAVEHDIMAGE, true, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage,
+					argv[i], sizeof(ConfigureParams.HardDisk.szIdeSlaveHardDiskImage),
+					&ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage);
 			if (ok)
 			{
 				bLoadAutoSave = false;
