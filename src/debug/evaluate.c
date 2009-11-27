@@ -121,6 +121,11 @@ static int getNumber(const char *str, Uint32 *number, int *nbase)
 	int base = ConfigureParams.Log.nNumberBase;
 	unsigned long int value;
 
+	if (!str[0]) {
+		fprintf(stderr, "Value missing!\n");
+		return 0;
+	}
+	
 	/* determine correct number base */
 	if (str[0] == '0') {
 
@@ -172,7 +177,7 @@ static int getNumber(const char *str, Uint32 *number, int *nbase)
 		return 0;
 	}
 	if ((errno != 0 && value == 0) || end == str) {
-		fprintf(stderr, "Value '%s' is empty!\n", start);
+		fprintf(stderr, "Invalid value '%s'!\n", start);
 		return 0;
 	}
 	*number = value;
