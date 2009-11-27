@@ -439,7 +439,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	};
 	/* left, right, middle, direction */
         int l, r, m, dir;
-	unsigned int i;
+	unsigned int i, len;
 	char reg[MAX_REGNAME_LEN];
 
 	for (i = 0; i < sizeof(reg) && regname[i]; i++) {
@@ -449,13 +449,14 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		/* too short or longer than any of the names */
 		return 0;
 	}
-
+	len = i;
+	
 	/* bisect */
 	l = 0;
 	r = sizeof (registers) / sizeof (*registers) - 1;
 	do {
 		m = (l+r) >> 1;
-		for (i = 0; i < sizeof(reg); i++) {
+		for (i = 0; i < len; i++) {
 			dir = (int)reg[i] - registers[m].name[i];
 			if (dir) {
 				break;
