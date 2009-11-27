@@ -23,6 +23,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
+#include "str.h"
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
 #define MEMDUMP_ROWS   4       /* memdump, number of rows */
@@ -240,7 +241,6 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
  */
 static int DebugCpu_Register(int nArgc, char *psArgs[])
 {
-	int i;
 	char reg[3], *assign;
 	Uint32 value;
 	char *arg;
@@ -255,27 +255,28 @@ static int DebugCpu_Register(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	arg =  psArgs[1];
+	arg = psArgs[1];
 
 	assign = strchr(arg, '=');
-	/* has '=' and reg name is max. 2 letters that fit to string */
-	if (!assign || assign - arg > 2+1)
+	if (!assign)
 	{
-		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
-		return DEBUGGER_CMDDONE;
+		goto error_msg;
 	}
 
 	*assign++ = '\0';
-	if (!Eval_Number(assign, &value))
+	if (!Eval_Number(Str_Trim(assign), &value))
 	{
-		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
-		return DEBUGGER_CMDDONE;
+		goto error_msg;
 	}
-	
-	for (i = 0; i < 2 && arg[i]; i++)
+
+	arg = Str_Trim(arg);
+	if (strlen(arg) != 2)
 	{
-		reg[i] = toupper(arg[i]);
+		goto error_msg;
 	}
+	reg[0] = toupper(arg[0]);
+	reg[1] = toupper(arg[1]);
+	reg[2] = '\0';
 	
 	/* set SR and update conditional flags for the UAE CPU core. */
 	if (reg[0] == 'S' && reg[1] == 'R')
@@ -296,9 +297,13 @@ static int DebugCpu_Register(int nArgc, char *psArgs[])
 		}
 		else
 		{
-			fprintf(stderr, "\t Bad register!\n");
+			goto error_msg;
 		}
 	}
+	return DEBUGGER_CMDDONE;
+
+error_msg:
+	fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR.\n");
 	return DEBUGGER_CMDDONE;
 }
 
@@ -598,7 +603,7 @@ static const dbgcommand_t cpucommands[] =
 	  "[REG=value]\n"
 	  "\tSet CPU register to value or dumps all register if no parameter\n"
 	  "\thas been specified.",
-	  false },
+	  true },
 	{ DebugCpu_MemDump, "memdump", "m",
 	  "dump memory",
 	  "[address]\n"

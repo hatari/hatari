@@ -480,9 +480,9 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 
 
 /**
- * Set given DSP register value
+ * Set given DSP register value, return false if unknown register given
  */
-void DSP_Disasm_SetRegister(char *arg, Uint32 value)
+bool DSP_Disasm_SetRegister(const char *arg, Uint32 value)
 {
 #if ENABLE_DSP_EMU
 	Uint32 *addr, mask, sp_value;
@@ -495,7 +495,7 @@ void DSP_Disasm_SetRegister(char *arg, Uint32 value)
 			value &= BITMASK(4); 
 			dsp_core.registers[DSP_REG_SSH] = dsp_core.stack[0][value];
 			dsp_core.registers[DSP_REG_SSL] = dsp_core.stack[1][value];
-			return;
+			return true;
 		}
 		if (arg[1]=='S' || arg[1]=='s') {
 			sp_value = dsp_core.registers[DSP_REG_SP] & BITMASK(4);
@@ -507,7 +507,7 @@ void DSP_Disasm_SetRegister(char *arg, Uint32 value)
 					dsp_core.registers[DSP_REG_SSH] = value & BITMASK(16);
 					dsp_core.stack[0][sp_value] = value & BITMASK(16);
 				}
-				return;
+				return true;
 			}
 			if (arg[2]=='L' || arg[2]=='l') {
 				if (sp_value == 0) {
@@ -517,7 +517,7 @@ void DSP_Disasm_SetRegister(char *arg, Uint32 value)
 					dsp_core.registers[DSP_REG_SSL] = value & BITMASK(16);
 					dsp_core.stack[1][sp_value] = value & BITMASK(16);
 				}
-				return;
+				return true;
 			}
 		}
 	}
@@ -527,17 +527,13 @@ void DSP_Disasm_SetRegister(char *arg, Uint32 value)
 	switch (bits) {
 	case 32:
 		*addr = value & mask;
-		return;
+		return true;
 	case 16:
 		*(Uint16*)addr = value & mask;
-		return;
+		return true;
 	}
-	fprintf(stderr,"\tError, usage:  reg=value  where: \n\t \
-			reg=A0-A2, B0-B2, X0, X1, Y0, Y1, \n\t \
-			R0-R7, N0-N7, M0-M7, LA, LC, PC \n\t \
-			SR, SP, OMR, SSH, SSL \n\t \
-			and value is a hex value.\n");
 #endif
+	return false;
 }
 
 /**

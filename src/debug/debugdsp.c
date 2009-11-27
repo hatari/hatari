@@ -21,7 +21,7 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "evaluate.h"
 #include "memorySnapShot.h"
-
+#include "str.h"
 
 static Uint16 dsp_disasm_addr;    /* DSP disasm address */
 static Uint16 dsp_memdump_addr;   /* DSP memdump address */
@@ -51,8 +51,7 @@ void DebugDsp_MemorySnapShot_Capture(bool bSave)
  */
 static int DebugDsp_Register(int nArgc, char *psArgs[])
 {
-	int i;
-	char reg[4], *assign;
+	char *assign;
 	Uint32 value;
 	char *arg;
 
@@ -68,28 +67,23 @@ static int DebugDsp_Register(int nArgc, char *psArgs[])
 		DSP_DisasmRegisters();
 		return DEBUGGER_CMDDONE;
 	}
-
 	arg = psArgs[1];
+
 	assign = strchr(arg, '=');
-	/* has '=' and reg name is max. 3 letters that fit to string */
-	if (!assign || assign - arg > 3+1)
+	if (!assign)
 		goto error_msg;
 
 	*assign++ = '\0';
-	if (!Eval_Number(assign, &value))
+	if (!Eval_Number(Str_Trim(assign), &value))
 		goto error_msg;
 
-	for (i = 0; i < 3 && arg[i]; i++)
-		reg[i] = toupper(arg[i]);
+	if (DSP_Disasm_SetRegister(Str_Trim(arg), value))
+	    return DEBUGGER_CMDDONE;
 
-	DSP_Disasm_SetRegister(reg, value);
-	return DEBUGGER_CMDDONE;
-
-	error_msg:
+error_msg:
 	fprintf(stderr,"\tError, usage: dr or dr xx=yyyy\n"
 		"\tWhere: xx=A0-A2, B0-B2, X0, X1, Y0, Y1, R0-R7,\n"
-		"\t       N0-N7, M0-M7, LA, LC, PC, SR, SP, OMR, SSH, SSL\n"
-		"\tand yyyy is a hex value.\n");
+		"\t       N0-N7, M0-M7, LA, LC, PC, SR, SP, OMR, SSH, SSL\n");
 
 	return DEBUGGER_CMDDONE;
 }
@@ -424,7 +418,7 @@ static const dbgcommand_t dspcommands[] =
 	  "read/write DSP registers",
 	  "[REG=value]"
 	  "\tSet or dump contents of DSP registers.",
-	  false },
+	  true },
 	{ DebugDsp_Continue, "dspcont", "dc",
 	  "continue emulation / DSP single-stepping",
 	  "[steps]\n"

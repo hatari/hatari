@@ -46,7 +46,7 @@ extern void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, 
 extern Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr);
 extern void DSP_DisasmRegisters(void);
 extern int DSP_GetRegisterAddress(const char *arg, Uint32 **addr, Uint32 *mask);
-extern void DSP_Disasm_SetRegister(char *arg, Uint32 value);
+extern bool DSP_Disasm_SetRegister(const char *arg, Uint32 value);
 extern Uint16 DSP_GetPC(void);
 
 /* Dsp SSI commands */
