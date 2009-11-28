@@ -2699,7 +2699,14 @@ void Ide_Init(void)
 	bdrv_open(hd_table[0], ConfigureParams.HardDisk.szIdeMasterHardDiskImage, 0);
 	bdrv_open(hd_table[1], ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, 0);
 
-	ide_init2(&opaque_ide_if[0], hd_table[0], hd_table[1]);
+	if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
+	{
+		ide_init2(&opaque_ide_if[0], hd_table[0], hd_table[1]);
+	}
+	else
+	{
+		ide_init2(&opaque_ide_if[0], hd_table[0], NULL);
+	}
 }
 
 
