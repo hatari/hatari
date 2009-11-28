@@ -1445,8 +1445,6 @@ static bool GemDOS_Create(Uint32 Params)
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	int Drive,Index,Mode;
-	const char *rwflags;
-	FILE *fp;
 
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -1490,44 +1488,37 @@ static bool GemDOS_Create(Uint32 Params)
 		Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
 		return true;
 	}
-
-	/* first need to truncate the file and only then we can (re-)open it
-	 * with correct access rights. This is due to fopen() limitations.
-	 */
-	fp = fopen(szActualFileName, "w+");
-	if (!fp)
-		goto fopen_error;
 	
-	/* FIXME: implement other Mode attributes
-	 * - GEMDOS_FILE_ATTRIB_HIDDEN       (FA_HIDDEN)
-	 * - GEMDOS_FILE_ATTRIB_SYSTEM_FILE  (FA_SYSTEM)
-	 * - GEMDOS_FILE_ATTRIB_SUBDIRECTORY (FA_DIR)
-	 * - GEMDOS_FILE_ATTRIB_WRITECLOSE   (FA_ARCHIVE)
-	 *   (set automatically by GemDOS >= 0.15)
-	 */
-	if (Mode & GEMDOS_FILE_ATTRIB_READONLY)
-	{
-		chmod(szActualFileName, S_IRUSR|S_IRGRP|S_IROTH);
-		rwflags = "rb";
-	}
-	else
-		rwflags = "rb+";
-	FileHandles[Index].FileHandle = freopen(szActualFileName, rwflags, fp);
+	/* truncate and open for reading & writing */
+	FileHandles[Index].FileHandle = fopen(szActualFileName, "wb+");
 
 	if (FileHandles[Index].FileHandle != NULL)
 	{
+		/* FIXME: implement other Mode attributes
+		 * - GEMDOS_FILE_ATTRIB_HIDDEN       (FA_HIDDEN)
+		 * - GEMDOS_FILE_ATTRIB_SYSTEM_FILE  (FA_SYSTEM)
+		 * - GEMDOS_FILE_ATTRIB_SUBDIRECTORY (FA_DIR)
+		 * - GEMDOS_FILE_ATTRIB_WRITECLOSE   (FA_ARCHIVE)
+		 *   (set automatically by GemDOS >= 0.15)
+		 */
+		if (Mode & GEMDOS_FILE_ATTRIB_READONLY)
+		{
+			/* after closing, file should be read-only */
+			chmod(szActualFileName, S_IRUSR|S_IRGRP|S_IROTH);
+		}
 		/* Tag handle table entry as used and return handle */
 		FileHandles[Index].bUsed = true;
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
+		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n", Index,
+			  Mode & GEMDOS_FILE_ATTRIB_READONLY ? "read-only":"read/write");
 		return true;
 	}
 
-fopen_error:
 	/* We failed to create the file, did we have required access rights? */
 	if (errno == EACCES || errno == EROFS ||
 	    errno == EPERM || errno == EISDIR)
 	{
-		Log_Printf(LOG_WARN, "Failed to create/truncate '%s'\n",
+		Log_Printf(LOG_WARN, "GEMDOS failed to create/truncate '%s'\n",
 			   szActualFileName);
 		Regs[REG_D0] = GEMDOS_EACCDN;
 		return true;
@@ -1623,13 +1614,14 @@ static bool GemDOS_Open(Uint32 Params)
 		/* Tag handle table entry as used and return handle */
 		FileHandles[Index].bUsed = true;
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
-		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d\n", Index);
+		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n",
+			  Index, Modes[Mode&0x03].desc);
 		return true;
 	}
 
 	if (errno == EACCES || errno == EROFS)
 	{
-		Log_Printf(LOG_WARN, "Missing %s permission to file '%s'\n",
+		Log_Printf(LOG_WARN, "GEMDOS missing %s permission to file '%s'\n",
 			   Modes[Mode&0x03].desc, szActualFileName);
 		Regs[REG_D0] = GEMDOS_EACCDN;
 		return true;
