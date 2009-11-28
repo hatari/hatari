@@ -26,7 +26,9 @@ valgrind: $(TESTS)
 test-evaluate: test-evaluate.c ../src/debug/evaluate.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-test-breakcond: test-breakcond.c ../src/debug/breakcond.c ../src/debug/evaluate.c
+test-breakcond: test-breakcond.c ../src/debug/breakcond.c \
+		../src/debug/debugcpu.c ../src/falcon/dsp.c \
+		../src/debug/evaluate.c ../src/str.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

@@ -2,11 +2,7 @@
  * Code to test Hatari conditional breakpoints in src/debug/breakcond.c
  */
 #include "main.h"
-#include "m68000.h"
 #include "dsp.h"
-#include "stMemory.h"
-#include "memorySnapShot.h"
-#include "video.h"
 #include "debugcpu.h"
 #include "breakcond.h"
 
@@ -17,10 +13,43 @@
 CNF_PARAMS ConfigureParams;
 
 /* fake ST RAM */
+#include "stMemory.h"
 Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd = 4*1024*1024;
 
-/* fake Hatari variables */
+/* fake memory banks */
+#include "memory.h"
+addrbank *mem_banks[65536];
+
+/* fake IO memory variables */
+#include "ioMem.h"
+int nIoMemAccessSize;
+Uint32 IoAccessBaseAddress;
+
+/* fake CPU wrapper stuff */
+#include "m68000.h"
+void MakeFromSR(void) { }
+
+/* fake AUE core registers */
+#include "newcpu.h"
+struct regstruct regs;
+void MakeSR(void) { }
+void m68k_dumpstate (FILE *f, uaecptr *nextpc) { }
+void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt) { }
+
+/* fake memory snapshot */
+#include "memorySnapShot.h"
+void MemorySnapShot_Store(void *pData, int Size) { }
+
+/* fake debugui.c stuff */
+#include "debug_priv.h"
+#include "debugui.h"
+FILE *debugOutput;
+void DebugUI(void) { }
+void DebugUI_PrintCmdHelp(const char *psCmd) { }
+
+/* fake Hatari video variables */
+#include "video.h"
 int nHBL = 20;
 int nVBLs = 71;
 
@@ -32,30 +61,6 @@ void Video_GetPosition(int *pFrameCycles, int *pHBL, int *pLineCycles)
 	*pFrameCycles = 508;
 }
 
-/* fake UAE core registers */
-struct regstruct regs;
-
-/* dummy UAE SR register tuning function */
-void MakeSR(void) { }
-
-/* fake AUE register accessors */
-int DebugCpu_GetRegisterAddress(const char *regname, Uint32 **addr)
-{
-	const char *regnames[] = {
-		/* must be in same order as in struct above! */
-		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
-		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"
-	};
-	static Uint32 registers[ARRAYSIZE(regnames)];
-	int i;
-	for (i = 0; i < ARRAYSIZE(regnames); i++) {
-		if (strcmp(regname, regnames[i]) == 0) {
-			*addr = &(registers[i]);
-			return 32;
-		}
-	}
-	return 0;
-}
 
 static bool SetCpuRegister(const char *regname, Uint32 value)
 {
@@ -76,47 +81,6 @@ static bool SetCpuRegister(const char *regname, Uint32 value)
 }
 
 
-/* fake DSP register accessors */
-int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
-{
-	const char *regnames[] = {
-		"a0", "a1", "a2", "b0", "b1", "b2", "la", "lc",
-		"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7",
-		"n0", "n1", "n2", "n3", "n4", "n5", "n6", "n7",
-		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-		"x0", "x1", "y0", "y1", "pc", "sr", "omr",
-		"sp", "ssh", "ssl"
-	};
-	static Uint32 registers[ARRAYSIZE(regnames)];
-	int i;
-	for (i = 0; i < ARRAYSIZE(regnames); i++) {
-		if (strcmp(regname, regnames[i]) == 0) {
-			*addr = &(registers[i]);
-			switch (regname[0]) {
-			case 'a':
-			case 'b':
-			case 'x':
-			case 'y':
-				*mask = BITMASK(24);
-				break;
-			default:
-				*mask = BITMASK(16);
-				break;
-			}
-			if (regname[0] == 'p') {
-				/* PC is 16-bit */
-				return 16;
-			}
-			return 32;
-		}
-	}
-	fprintf(stderr, "ERROR: unrecognized DSP register '%s', valid ones are:\n", regname);
-	for (i = 0; i < ARRAYSIZE(regnames); i++) {
-		fprintf(stderr, "- %s\n", regnames[i]);
-	}
-	return 0;
-}
-
 static bool SetDspRegister(const char *regname, Uint32 value)
 {
 	Uint32 *addr, mask;
@@ -132,17 +96,6 @@ static bool SetDspRegister(const char *regname, Uint32 value)
 		return false;
 	}
 	return true;
-}
-
-Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
-{
-	/* dummy */
-	return 0;
-}
-
-void MemorySnapShot_Store(void *pData, int Size)
-{
-	/* dummy */
 }
 
 
