@@ -991,7 +991,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 				if (!found)
 				{           /* really nothing ! */
 					*s = PATHSEP;
-					Log_Printf(LOG_WARN, "no path for %s\n",pszDestName);
+					Log_Printf(LOG_WARN, "No GEMDOS path for %s\n",pszDestName);
 				}
 			}
 		}
@@ -1049,7 +1049,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 		{
 			/* It's often normal, the gem uses this to test for existence */
 			/* of desktop.inf or newdesk.inf for example. */
-			LOG_TRACE(TRACE_OS_GEMDOS, "didn't find filename %s\n", pszDestName );
+			LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS didn't find filename %s\n", pszDestName );
 		}
 #endif
 	}
@@ -1277,7 +1277,7 @@ static bool GemDOS_MkDir(Uint32 Params)
 	/* write protected device? */
 	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
 	{
-		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Dcreate(\"%s\")\n", pDirName);
+		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Dcreate(\"%s\")\n", pDirName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
@@ -1329,7 +1329,7 @@ static bool GemDOS_RmDir(Uint32 Params)
 	/* write protected device? */
 	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
 	{
-		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Ddelete(\"%s\")\n", pDirName);
+		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Ddelete(\"%s\")\n", pDirName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
@@ -1479,7 +1479,7 @@ static bool GemDOS_Create(Uint32 Params)
 	/* write protected device? */
 	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
 	{
-		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Fcreate(\"%s\")\n", pszFileName);
+		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fcreate(\"%s\")\n", pszFileName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
@@ -1826,7 +1826,7 @@ static bool GemDOS_FDelete(Uint32 Params)
 	/* write protected device? */
 	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
 	{
-		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Fdelete(\"%s\")\n", pszFileName);
+		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fdelete(\"%s\")\n", pszFileName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
@@ -1970,7 +1970,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 	/* write protected device? */
 	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
 	{
-		Log_Printf(LOG_WARN, "PREVENTED: Fattrib(\"%s\",...)\n", psFileName);
+		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fattrib(\"%s\",...)\n", psFileName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
@@ -2347,7 +2347,7 @@ static bool GemDOS_Rename(Uint32 Params)
 	char szNewActualFileName[MAX_GEMDOS_PATH],szOldActualFileName[MAX_GEMDOS_PATH];
 	int NewDrive, OldDrive;
 
-	/* Read details from stack */
+	/* Read details from stack, skip first (dummy) arg */
 	pszOldFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD));
 	pszNewFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
 
@@ -2364,7 +2364,7 @@ static bool GemDOS_Rename(Uint32 Params)
 	/* write protected device? */
 	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
 	{
-		Log_Printf(LOG_WARN, "PREVENTED: Frename(\"%s\", \"%s\")\n", pszOldFileName, pszNewFileName);
+		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Frename(\"%s\", \"%s\")\n", pszOldFileName, pszNewFileName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
 		return true;
 	}
@@ -2415,7 +2415,7 @@ static bool GemDOS_GSDToF(Uint32 Params)
 		/* write protected device? */
 		if (!ConfigureParams.HardDisk.bDoGemdosChanges)
 		{
-			Log_Printf(LOG_WARN, "PREVENTED: Fdatime(,%d,)\n", Handle);
+			Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fdatime(,%d,)\n", Handle);
 			Regs[REG_D0] = GEMDOS_EWRPRO;
 			return true;
 		}
