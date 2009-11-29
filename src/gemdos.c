@@ -637,13 +637,13 @@ void GemDOS_InitDrives(void)
 			 /* If the GemDos Drive letter is free then */
 			if (i >= nPartitions)
 			{
-				Log_Printf(LOG_INFO, "Hard drive emulation, %c: <-> %s.\n",
+				Log_Printf(LOG_INFO, "GEMDOS HDD emulation, %c: <-> %s.\n",
 						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
 				nNumDrives = i + 3;
 			}
 			else	/* This letter has already been allocated to the one supported physical disk image */
 			{
-				Log_Printf(LOG_WARN, "Drive Letter %c is already mapped to HDD image (cannot map GEM DOS drive to %s).\n",
+				Log_Printf(LOG_WARN, "Drive Letter %c is already mapped to HDD image (cannot map GEMDOS drive to %s).\n",
 						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
 				free(emudrives[i]);
 				emudrives[i] = NULL;
@@ -2203,7 +2203,7 @@ static bool GemDOS_SNext(void)
 
 	if (ret < 0)
 	{
-		Log_Printf(LOG_WARN, "GemDOS_SNext: Error setting DTA.\n");
+		Log_Printf(LOG_WARN, "GEMDOS Fsnext(): Error setting DTA.\n");
 		Regs[REG_D0] = GEMDOS_EINTRN;
 		return true;
 	}
