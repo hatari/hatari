@@ -2071,40 +2071,6 @@ static int GemDOS_GetDir(Uint32 Params)
 	return false;
 }
 
-/*-----------------------------------------------------------------------*/
-/**
- * PExec Load And Go - Redirect to cart' routine at address 0xFA1000
- *
- * If loading from hard-drive(ie drive ID 2 or more) set condition codes to run own GEMDos routines
- */
-static int GemDOS_Pexec_LoadAndGo(Uint32 Params)
-{
-	/* add multiple disk support here too */
-	/* Hard-drive? */
-	char *pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD));
-	int Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
-
-	if (!ISHARDDRIVE(Drive))
-		return false;
-
-	/* If not using A: or B:, use my own routines to load */
-	return CALL_PEXEC_ROUTINE;
-}
-
-/*-----------------------------------------------------------------------*/
-/**
- * PExec Load But Don't Go - Redirect to cart' routine at address 0xFA1000
- */
-static int GemDOS_Pexec_LoadDontGo(Uint32 Params)
-{
-	/* Hard-drive? */
-	char *pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD));
-	int Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
-	if (!ISHARDDRIVE(Drive))
-		return false;
-
-	return CALL_PEXEC_ROUTINE;
-}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2113,16 +2079,12 @@ static int GemDOS_Pexec_LoadDontGo(Uint32 Params)
  */
 static int GemDOS_Pexec(Uint32 Params)
 {
+	int Drive;
 	Uint16 Mode;
-	/*char *psFileName, *psCmdLine;*/
+	char *pszFileName;
 
 	/* Find PExec mode */
 	Mode = STMemory_ReadWord(Params+SIZE_WORD);
-
-	/*
-	psFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD));
-	psCmdLine = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD+SIZE_LONG));
-	*/
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Pexec(%i, ...)\n", Mode);
 
@@ -2130,9 +2092,17 @@ static int GemDOS_Pexec(Uint32 Params)
 	switch(Mode)
 	{
 	 case 0:      /* Load and go */
-		return GemDOS_Pexec_LoadAndGo(Params);
 	 case 3:      /* Load, don't go */
-		return GemDOS_Pexec_LoadDontGo(Params);
+		pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD));
+		Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
+		
+		/* If not using A: or B:, use my own routines to load */
+		if (ISHARDDRIVE(Drive))
+		{
+			/* Redirect to cart' routine at address 0xFA1000 */
+			return CALL_PEXEC_ROUTINE;
+		}
+		return false;
 	 case 4:      /* Just go */
 		return false;
 	 case 5:      /* Create basepage */
