@@ -507,7 +507,7 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	ret = fread(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
-		fprintf(stderr,"Error during read (%d != %d length)!\n", ret, len);
+		fprintf(stderr,"IDE bdrv_read error: (%d != %d length) at sector %lld!\n", ret, len, sector_num);
 		return -EINVAL;
 	}
 	else
@@ -541,7 +541,7 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 	ret = fwrite(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
-		fprintf(stderr,"Error during bdrv_write\n");
+		fprintf(stderr,"IDE bdrv_write error: (%d != %d length) at sector %lld!\n", ret, len, sector_num);
 		return -EIO;
 	}
 	else
@@ -555,7 +555,7 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 
 static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 {
-	fprintf(stderr,"Opening %s\n", filename);
+	fprintf(stderr,"IDE: Opening %s\n", filename);
 
 	strncpy(bs->filename, filename, sizeof(bs->filename));
 
@@ -1221,7 +1221,7 @@ static void ide_sector_read(IDEState *s)
 	else
 	{
 #if defined(DEBUG_IDE)
-		printf("read sector=%Ld\n", sector_num);
+		printf("IDE read sector=%Ld\n", sector_num);
 #endif
 		if (n > s->req_nb_sectors)
 			n = s->req_nb_sectors;
@@ -1242,7 +1242,7 @@ static void ide_sector_write(IDEState *s)
 	s->status = READY_STAT | SEEK_STAT;
 	sector_num = ide_get_sector(s);
 #if defined(DEBUG_IDE)
-	printf("write sector=%Ld\n", sector_num);
+	printf("IDE write sector=%Ld\n", sector_num);
 #endif
 	n = s->nsector;
 	if (n > s->req_nb_sectors)
@@ -1278,7 +1278,7 @@ static void ide_atapi_cmd_ok(IDEState *s)
 static void ide_atapi_cmd_error(IDEState *s, int sense_key, int asc)
 {
 #ifdef DEBUG_IDE_ATAPI
-	printf("atapi_cmd_error: sense=0x%x asc=0x%x\n", sense_key, asc);
+	printf("IDE atapi_cmd_error: sense=0x%x asc=0x%x\n", sense_key, asc);
 #endif
 	s->error = sense_key << 4;
 	s->status = READY_STAT | ERR_STAT;
@@ -1380,7 +1380,7 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
 {
 	int byte_count_limit, size, ret;
 #ifdef DEBUG_IDE_ATAPI
-	printf("reply: tx_size=%d elem_tx_size=%d index=%d\n",
+	printf("IDE reply: tx_size=%d elem_tx_size=%d index=%d\n",
 	       s->packet_transfer_size,
 	       s->elementary_transfer_size,
 	       s->io_buffer_index);
@@ -1393,7 +1393,7 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
 		s->nsector = (s->nsector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
 		ide_set_irq(s);
 #ifdef DEBUG_IDE_ATAPI
-		printf("status=0x%x\n", s->status);
+		printf("IDE status=0x%x\n", s->status);
 #endif
 	}
 	else
@@ -1430,7 +1430,7 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
 			s->nsector = (s->nsector & ~7) | ATAPI_INT_REASON_IO;
 			byte_count_limit = s->lcyl | (s->hcyl << 8);
 #ifdef DEBUG_IDE_ATAPI
-			printf("byte_count_limit=%d\n", byte_count_limit);
+			printf("IDE byte_count_limit=%d\n", byte_count_limit);
 #endif
 			if (byte_count_limit == 0xffff)
 				byte_count_limit--;
@@ -1458,7 +1458,7 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
 			s->io_buffer_index += size;
 			ide_set_irq(s);
 #ifdef DEBUG_IDE_ATAPI
-			printf("status=0x%x\n", s->status);
+			printf("IDE status=0x%x\n", s->status);
 #endif
 		}
 	}
@@ -1484,7 +1484,7 @@ static void ide_atapi_cmd_read(IDEState *s, int lba, int nb_sectors,
                                int sector_size)
 {
 #ifdef DEBUG_IDE_ATAPI
-	printf("read pio: LBA=%d nb_sectors=%d\n", lba, nb_sectors);
+	printf("IDE read pio: LBA=%d nb_sectors=%d\n", lba, nb_sectors);
 #endif
 	s->lba = lba;
 	s->packet_transfer_size = nb_sectors * sector_size;
@@ -1508,7 +1508,7 @@ static void ide_atapi_cmd(IDEState *s)
 #ifdef DEBUG_IDE_ATAPI
 	{
 		int i;
-		printf("ATAPI limit=0x%x packet:", s->lcyl | (s->hcyl << 8));
+		printf("IDE ATAPI limit=0x%x packet:", s->lcyl | (s->hcyl << 8));
 		for (i = 0; i < ATAPI_PACKET_SIZE; i++)
 		{
 			printf(" %02x", packet[i]);
@@ -1757,7 +1757,7 @@ static void ide_atapi_cmd(IDEState *s)
 		switch (format)
 		{
 		case 0:
-			fprintf(stderr,"FIXME: cdrom_read_toc");
+			fprintf(stderr,"IDE FIXME: cdrom_read_toc");
 			len=-1;
 			//len = cdrom_read_toc(total_sectors, buf, msf, start_track);
 			if (len < 0)
@@ -1773,7 +1773,7 @@ static void ide_atapi_cmd(IDEState *s)
 			ide_atapi_cmd_reply(s, 12, max_len);
 			break;
 		case 2:
-			fprintf(stderr,"FIXME: cdrom_read_toc_raw");
+			fprintf(stderr,"IDE FIXME: cdrom_read_toc_raw");
 			len=-1;
 			//len = cdrom_read_toc_raw(total_sectors, buf, msf, start_track);
 			if (len < 0)
@@ -2014,13 +2014,13 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 	case 7:
 		/* command */
 #if defined(DEBUG_IDE)
-		printf("ide: CMD=%02x\n", val);
+		printf("IDE: CMD=%02x\n", val);
 #endif
 		s = ide_if->cur_drive;
 		/* ignore commands to non existant slave */
 		if (s != ide_if && !s->bs)
 		{
-			fprintf(stderr,"CMD to non-existant slave!\n");
+			fprintf(stderr,"IDE: CMD to non-existant slave!\n");
 			break;
 		}
 
@@ -2361,7 +2361,7 @@ static uint32_t ide_ioport_read(void *opaque, uint32_t addr1)
 		break;
 	}
 #ifdef DEBUG_IDE
-	printf("ide: read addr=0x%x val=%02x\n", addr1, ret);
+	printf("IDE: read addr=0x%x val=%02x\n", addr1, ret);
 #endif
 	return ret;
 }
@@ -2378,7 +2378,7 @@ static uint32_t ide_status_read(void *opaque, uint32_t addr)
 	else
 		ret = s->status;
 #ifdef DEBUG_IDE
-	printf("ide: read status addr=0x%x val=%02x\n", addr, ret);
+	printf("IDE: read status addr=0x%x val=%02x\n", addr, ret);
 #endif
 	return ret;
 }
@@ -2390,7 +2390,7 @@ static void ide_cmd_write(void *opaque, uint32_t addr, uint32_t val)
 	int i;
 
 #ifdef DEBUG_IDE
-	printf("ide: write control addr=0x%x val=%02x\n", addr, val);
+	printf("IDE: write control addr=0x%x val=%02x\n", addr, val);
 #endif
 	/* common for both drives */
 	if (!(ide_if[0].cmd & IDE_CMD_RESET) &&
@@ -2560,7 +2560,7 @@ static int guess_disk_lchs(IDEState *s,
 			*psectors = sectors;
 			*pcylinders = cylinders;
 #if 0
-			printf("guessed geometry: LCHS=%d %d %d\n",
+			printf("IDE guessed geometry: LCHS=%d %d %d\n",
 			       cylinders, heads, sectors);
 #endif
 			qemu_free(buf);
