@@ -2384,6 +2384,109 @@ static bool GemDOS_Rename(Uint32 Params)
 }
 
 
+#if ENABLE_TRACING
+/*-----------------------------------------------------------------------*/
+/**
+ * Map GEMDOS call opcodes to their names
+ */
+static const char* GemDOS_Opcode2Name(Uint16 opcode)
+{
+	static const char* names[] = {
+		"Pterm0",
+		"Cconin",
+		"Cconout",
+		"Cauxin",
+		"Cauxout",
+		"Cprnout",
+		"Crawio",
+		"Crawcin",
+		"Cnecin",
+		"Cconws",
+		"Cconrs",
+		"Cconis",
+		"", /* 0C */
+		"", /* 0D */
+		"Dsetdrv",
+		"", /* 0F */
+		"Cconos",
+		"Cprnos",
+		"Cauxis",
+		"Cauxos",
+		"", /* 14 */
+		"", /* 15 */
+		"", /* 16 */
+		"", /* 17 */
+		"", /* 18 */
+		"Dgetdrv",
+		"Fsetdta",
+		"", /* 1B */
+		"", /* 1C */
+		"", /* 1D */
+		"", /* 1E */
+		"", /* 1F */
+		"Super",
+		"", /* 21 */
+		"", /* 22 */
+		"", /* 23 */
+		"", /* 24 */
+		"", /* 25 */
+		"", /* 26 */
+		"", /* 27 */
+		"", /* 28 */
+		"", /* 29 */
+		"Tgetdate",
+		"Tsetdate",
+		"Tgettime",
+		"Tsettime",
+		"", /* 2E */
+		"Fgetdta",
+		"Sversion",
+		"Ptermres",
+		"", /* 32 */
+		"", /* 33 */
+		"", /* 34 */
+		"", /* 35 */
+		"Dfree",
+		"", /* 37 */
+		"", /* 38 */
+		"Dcreate",
+		"Ddelete",
+		"Dsetpath",
+		"Fcreate",
+		"Fopen",
+		"Fclose",
+		"Fread",
+		"Fwrite",
+		"Fdelete",
+		"Fseek",
+		"Fattrib",
+		"", /* 44 */
+		"Fdup",
+		"Fforce",
+		"Dgetpath",
+		"Malloc",
+		"Mfree",
+		"Mshrink",
+		"Pexec",
+		"Pterm",
+		"", /* 4D */
+		"Fsfirst",
+		"Fsnext",
+		"", /* 50 */
+		"", /* 51 */
+		"", /* 52 */
+		"", /* 53 */
+		"", /* 54 */
+		"", /* 55 */
+		"Frename",
+		"Fdatime"
+	};
+	if (opcode < sizeof(names))
+		return names[opcode];
+	return "unknown";
+}
+#endif
+
 /*-----------------------------------------------------------------------*/
 /**
  * GEMDOS GSDToF
@@ -2599,7 +2702,8 @@ void GemDOS_OpCode(void)
 			RunOld = false;
 		break;
 	 default:
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS call 0x%X\n", GemDOSCall);
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS call 0x%X (%s)\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
 	}
 
 	switch(RunOld)
