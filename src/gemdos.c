@@ -104,8 +104,8 @@ typedef struct {
    Changed to fix potential problem with alignment.
 */
 typedef struct {
-  Uint16 word1;
-  Uint16 word2;
+  Uint16 dateword;
+  Uint16 timeword;
 } DATETIME;
 
 typedef struct
@@ -176,34 +176,26 @@ static void globfree(glob_t *pglob)
 
 /*-------------------------------------------------------*/
 /**
- * Routines to convert time and date to MSDOS format.
+ * Routine to convert time and date to GEMDOS format.
  * Originally from the STonX emulator. (cheers!)
  */
-static Uint16 GemDOS_Time2dos(time_t t)
+static bool GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime)
 {
 	struct tm *x;
 
 	x = localtime(&t);
 
 	if (x == NULL)
-		return 0;
+		return false;
 
-	return (x->tm_sec>>1)|(x->tm_min<<5)|(x->tm_hour<<11);
+	/* Bits: 0-4 = secs/2, 5-10 = mins, 11-15 = hours (24-hour format) */
+	DateTime->timeword = (x->tm_sec>>1)|(x->tm_min<<5)|(x->tm_hour<<11);
+	
+	/* Bits: 0-4 = day (1-31), 5-8 = month (1-12), 9-15 = years (since 1980) */
+	DateTime->dateword = x->tm_mday | ((x->tm_mon+1)<<5)
+		| (((x->tm_year-80 > 0) ? x->tm_year-80 : 0) << 9);
+	return true;
 }
-
-static Uint16 GemDOS_Date2dos(time_t t)
-{
-	struct tm *x;
-
-	x = localtime(&t);
-
-	if (x == NULL)
-		return 0;
-
-	return x->tm_mday | ((x->tm_mon+1)<<5)
-	       | (((x->tm_year-80 > 0) ? x->tm_year-80 : 0) << 9);
-}
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -212,29 +204,11 @@ static Uint16 GemDOS_Date2dos(time_t t)
 static bool GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
 {
 	struct stat filestat;
-	int n;
-	struct tm *x;
 
-	n = stat(name, &filestat);
-	if (n != 0)
+	if (stat(name, &filestat) != 0)
 		return false;
 
-	x = localtime(&filestat.st_mtime);
-	if (x == NULL)
-		return false;
-
-	DateTime->word1 = 0;
-	DateTime->word2 = 0;
-
-	DateTime->word1 |= (x->tm_mday & 0x1F);         /* 5 bits */
-	DateTime->word1 |= (x->tm_mon & 0x0F)<<5;       /* 4 bits */
-	DateTime->word1 |= (((x->tm_year-80>0)?x->tm_year-80:0) & 0x7F)<<9;      /* 7 bits*/
-
-	DateTime->word2 |= (x->tm_sec & 0x1F);          /* 5 bits */
-	DateTime->word2 |= (x->tm_min & 0x3F)<<5;       /* 6 bits */
-	DateTime->word2 |= (x->tm_hour & 0x1F)<<11;     /* 5 bits */
-
-	return true;
+	return GemDOS_DateTime2Tos(filestat.st_mtime, DateTime);
 }
 
 
@@ -269,6 +243,7 @@ static int PopulateDTA(char *path, struct dirent *file)
 {
 	char tempstr[MAX_GEMDOS_PATH];
 	struct stat filestat;
+	DATETIME DateTime;
 	int n;
 	int nFileAttr;
 
@@ -288,11 +263,14 @@ static int PopulateDTA(char *path, struct dirent *file)
 	if (nFileAttr != 0 && !((nAttrSFirst|0x21) & nFileAttr))
 		return 1;
 
+	/* TODO: what to return if this fails? */
+	GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime);
+
 	Str_ToUpper(file->d_name);    /* convert to atari-style uppercase */
 	strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
 	do_put_mem_long(pDTA->dta_size, filestat.st_size);
-	do_put_mem_word(pDTA->dta_time, GemDOS_Time2dos(filestat.st_mtime));
-	do_put_mem_word(pDTA->dta_date, GemDOS_Date2dos(filestat.st_mtime));
+	do_put_mem_word(pDTA->dta_time, DateTime.timeword);
+	do_put_mem_word(pDTA->dta_date, DateTime.dateword);
 	pDTA->dta_attrib = nFileAttr;
 
 	return 0;
@@ -2500,8 +2478,8 @@ static bool GemDOS_GSDToF(Uint32 Params)
 
 	if (GemDOS_GetFileInformation(FileHandles[Handle].szActualName, &DateTime) == true)
 	{
-		STMemory_WriteWord(pBuffer, DateTime.word1);
-		STMemory_WriteWord(pBuffer+2, DateTime.word2);
+		STMemory_WriteWord(pBuffer, DateTime.dateword);
+		STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.timeword);
 		Regs[REG_D0] = GEMDOS_EOK;
 	}
 	else
