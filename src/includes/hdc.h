@@ -14,8 +14,8 @@
 
 /* HD Command packet macros */
 #define HD_OPCODE(a) (a.command[0] & 0x1F)             /* get opcode (bit 0-4) */
-#define HD_CONTROLLER(a) ((a.command[0] & 0xE0)>>5)    /* get HD controller # (5-7) */
-#define HD_DRIVENUM(a) ((a.command[1] & 0xE0) >>5)     /* get drive # (5-7) */
+#define HD_TARGET(a) ((a.command[0] & 0xE0)>>5)        /* get HD target # (5-7) */
+#define HD_DEVICE(a) ((a.command[1] & 0xE0) >>5)       /* get device # (5-7) */
 
 #define HD_LBA_MSB(a) ((unsigned) a.command[1] & 0x1F) /* Logical Block adress, MSB */
 #define HD_LBA_MID(a) ((unsigned) a.command[2])        /* Logical Block adress */

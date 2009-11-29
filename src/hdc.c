@@ -531,8 +531,8 @@ static void HDC_DebugCommandPacket(FILE *hdlogFile)
 		fprintf(hdlogFile, "Unknown HDC opcode!! Value = 0x%x\n", opcode);
 	}
 
-	fprintf(hdlogFile, "Controller: %i\n", HD_CONTROLLER(HDCCommand));
-	fprintf(hdlogFile, "Drive: %i\n", HD_DRIVENUM(HDCCommand));
+	fprintf(hdlogFile, "Target: %i\n", HD_TARGET(HDCCommand));
+	fprintf(hdlogFile, "Device: %i\n", HD_DEVICE(HDCCommand));
 	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetOffset());
 
 	fprintf(hdlogFile, "Sector count: 0x%x\n", HD_SECTORCOUNT(HDCCommand));
@@ -626,6 +626,7 @@ bool HDC_Init(char *filename)
 	nNumDrives += nPartitions;
 
 	bAcsiEmuOn = true;
+	HDCCommand.byteCount = 0;
 
 	return true;
 }
@@ -662,49 +663,41 @@ void HDC_WriteCommandPacket(void)
 		return;
 
 	/* command byte sent, store it. */
-	HDCCommand.command[HDCCommand.byteCount++] =  (DiskControllerWord_ff8604wr&0xFF);
+	HDCCommand.command[HDCCommand.byteCount] = (DiskControllerWord_ff8604wr&0xFF);
+
+	/* We only support one target with ID 0 */
+	if (HD_TARGET(HDCCommand) != 0)
+	{
+		//FDC_SetDMAStatus(true);
+		//FDC_AcknowledgeInterrupt();
+		//FDCSectorCountRegister = 0;
+		/* If there's no controller, the interrupt line stays high */
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+		MFP_GPIP |= 0x20;
+		return;
+	}
+
+	/* Successfully received one byte, so increase the byte-count */
+	++HDCCommand.byteCount;
 
 	/* have we received a complete 6-byte packet yet? */
 	if (HDCCommand.byteCount >= 6)
 	{
-
 #ifdef HDC_REALLY_VERBOSE
 		HDC_DebugCommandPacket(stderr);
 #endif
-
 		/* If it's aimed for our drive, emulate it! */
-		if ((HD_CONTROLLER(HDCCommand)) == 0)
-		{
-			if (HD_DRIVENUM(HDCCommand) == 0)
-				HDC_EmulateCommandPacket();
-			else
-				Log_Printf(LOG_WARN, "HDC: Program tries to access illegal drive.\n");
-		}
+		if (HD_DEVICE(HDCCommand) == 0)
+			HDC_EmulateCommandPacket();
 		else
-		{
-			/* No drive/controller */
-			FDC_SetDMAStatus(true);
-			//FDC_AcknowledgeInterrupt();
-			HDCCommand.returnCode = HD_STATUS_ERROR;
-			//FDCSectorCountRegister = 0;
-			MFP_GPIP |= 0x20;
-		}
+			Log_Printf(LOG_WARN, "HDC: Program tries to access illegal drive.\n");
 
 		HDCCommand.byteCount = 0;
 	}
 	else
 	{
-		if (HD_CONTROLLER(HDCCommand) == 0)
-		{
-			FDC_AcknowledgeInterrupt();
-			FDC_SetDMAStatus(false);
-			HDCCommand.returnCode = HD_STATUS_OK;
-		}
-		else
-		{
-			/* If there's no controller, the interrupt line stays high */
-			HDCCommand.returnCode = HD_STATUS_ERROR;
-			MFP_GPIP |= 0x20;
-		}
+		FDC_AcknowledgeInterrupt();
+		FDC_SetDMAStatus(false);
+		HDCCommand.returnCode = HD_STATUS_OK;
 	}
 }
