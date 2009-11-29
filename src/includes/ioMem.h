@@ -27,32 +27,31 @@ extern Uint32 IoAccessCurrentAddress;
 extern int nIoMemAccessSize;
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  Read 32-bit word from IO memory space without interception.
-  NOTE - value will be converted to PC endian.
-*/
+/**
+ * Read 32-bit word from IO memory space without interception.
+ * NOTE - value will be converted to PC endian.
+ */
 static inline Uint32 IoMem_ReadLong(Uint32 Address)
 {
 	Address &= 0x0ffffff;
 	return do_get_mem_long(&IoMem[Address]);
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Read 16-bit word from IO memory space without interception.
-  NOTE - value will be converted to PC endian.
-*/
+
+/**
+ * Read 16-bit word from IO memory space without interception.
+ * NOTE - value will be converted to PC endian.
+ */
 static inline Uint16 IoMem_ReadWord(Uint32 Address)
 {
 	Address &= 0x0ffffff;
 	return do_get_mem_word(&IoMem[Address]);
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Read 8-bit byte from IO memory space without interception.
-*/
+
+/**
+ * Read 8-bit byte from IO memory space without interception.
+ */
 static inline Uint8 IoMem_ReadByte(Uint32 Address)
 {
 	Address &= 0x0ffffff;
@@ -60,32 +59,31 @@ static inline Uint8 IoMem_ReadByte(Uint32 Address)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  Write 32-bit word into IO memory space without interception.
-  NOTE - value will be convert to 68000 endian
-*/
+/**
+ * Write 32-bit word into IO memory space without interception.
+ * NOTE - value will be convert to 68000 endian
+ */
 static inline void IoMem_WriteLong(Uint32 Address, Uint32 Var)
 {
 	Address &= 0x0ffffff;
 	do_put_mem_long(&IoMem[Address], Var);
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Write 16-bit word into IO memory space without interception.
-  NOTE - value will be convert to 68000 endian.
-*/
+
+/**
+ * Write 16-bit word into IO memory space without interception.
+ * NOTE - value will be convert to 68000 endian.
+ */
 static inline void IoMem_WriteWord(Uint32 Address, Uint16 Var)
 {
 	Address &= 0xffffff;
 	do_put_mem_word(&IoMem[Address], Var);
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Write 8-bit byte into IO memory space without interception.
-*/
+
+/**
+ * Write 8-bit byte into IO memory space without interception.
+ */
 static inline void IoMem_WriteByte(Uint32 Address, Uint8 Var)
 {
 	Address &= 0x0ffffff;

@@ -56,11 +56,11 @@ static inline bool STMemory_ValidArea(Uint32 addr, int size)
 	return false;
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Write 32-bit word into ST memory space.
-  NOTE - value will be convert to 68000 endian
-*/
+
+/**
+ * Write 32-bit word into ST memory space.
+ * NOTE - value will be convert to 68000 endian
+ */
 static inline void STMemory_WriteLong(Uint32 Address, Uint32 Var)
 {
 	Address &= 0xffffff;
@@ -74,11 +74,11 @@ static inline void STMemory_WriteLong(Uint32 Address, Uint32 Var)
 #endif
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Write 16-bit word into ST memory space.
-  NOTE - value will be convert to 68000 endian.
-*/
+
+/**
+ * Write 16-bit word into ST memory space.
+ * NOTE - value will be convert to 68000 endian.
+ */
 static inline void STMemory_WriteWord(Uint32 Address, Uint16 Var)
 {
 	Address &= 0xffffff;
@@ -92,10 +92,10 @@ static inline void STMemory_WriteWord(Uint32 Address, Uint16 Var)
 #endif
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Write 8-bit byte into ST memory space.
-*/
+
+/**
+ * Write 8-bit byte into ST memory space.
+ */
 static inline void STMemory_WriteByte(Uint32 Address, Uint8 Var)
 {
 	Address &= 0xffffff;
@@ -110,11 +110,10 @@ static inline void STMemory_WriteByte(Uint32 Address, Uint8 Var)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  Read 32-bit word from ST memory space.
-  NOTE - value will be converted to PC endian.
-*/
+/**
+ * Read 32-bit word from ST memory space.
+ * NOTE - value will be converted to PC endian.
+ */
 static inline Uint32 STMemory_ReadLong(Uint32 Address)
 {
 	Address &= 0xffffff;
@@ -128,11 +127,11 @@ static inline Uint32 STMemory_ReadLong(Uint32 Address)
 #endif
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Read 16-bit word from ST memory space.
-  NOTE - value will be converted to PC endian.
-*/
+
+/**
+ * Read 16-bit word from ST memory space.
+ * NOTE - value will be converted to PC endian.
+ */
 static inline Uint16 STMemory_ReadWord(Uint32 Address)
 {
 	Address &= 0xffffff;
@@ -146,10 +145,10 @@ static inline Uint16 STMemory_ReadWord(Uint32 Address)
 #endif
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Read 8-bit byte from ST memory space
-*/
+
+/**
+ * Read 8-bit byte from ST memory space
+ */
 static inline Uint8 STMemory_ReadByte(Uint32 Address)
 {
 	Address &= 0xffffff;
