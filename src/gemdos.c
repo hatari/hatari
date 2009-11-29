@@ -1676,17 +1676,19 @@ static bool GemDOS_Close(Uint32 Params)
 static bool GemDOS_Read(Uint32 Params)
 {
 	char *pBuffer;
-	unsigned long nBytesRead,Size,CurrentPos,FileSize;
-	long nBytesLeft;
+	long CurrentPos, FileSize, nBytesRead, nBytesLeft;
+	Uint32 Addr;
+	Sint32 Size;
 	int Handle;
 
 	/* Read details from stack */
 	Handle = STMemory_ReadWord(Params+SIZE_WORD)-BASE_FILEHANDLE;
 	Size = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
-	pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
+	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG);
+	pBuffer = (char *)STRAM_ADDR(Addr);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fread(%i, %li, 0x%x)\n", 
-	          Handle, Size, STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fread(%i, %i, 0x%x)\n", 
+	          Handle, Size, Addr);
 
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
@@ -1700,20 +1702,28 @@ static bool GemDOS_Read(Uint32 Params)
 	fseek(FileHandles[Handle].FileHandle, 0, SEEK_END);
 	FileSize = ftell(FileHandles[Handle].FileHandle);
 	fseek(FileHandles[Handle].FileHandle, CurrentPos, SEEK_SET);
-	
-	nBytesLeft = FileSize-CurrentPos;
 
-	/* Check for End Of File */
-	if (nBytesLeft == 0)
+	nBytesLeft = FileSize-CurrentPos;
+	
+	/* Check for bad size and End Of File */
+	if (Size <= 0 || nBytesLeft <= 0)
 	{
-		/* FIXME: should we return zero (bytes read) or an error? */
+		/* return zero (bytes read) as original GEMDOS/EmuTOS */
 		Regs[REG_D0] = 0;
 		return true;
 	}
 
 	/* Limit to size of file to prevent errors */
-	if (Size > FileSize)
-		Size = FileSize;
+	if (Size > nBytesLeft)
+		Size = nBytesLeft;
+
+	/* Check that read is to valid memory area */
+	if (!STMemory_ValidArea(Addr, Size))
+	{
+		Log_Printf(LOG_TODO, "GEMDOS Fread() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
+		Regs[REG_D0] = GEMDOS_ERANGE;
+		return true;
+	}
 	/* And read data in */
 	nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
 	
@@ -1731,16 +1741,19 @@ static bool GemDOS_Read(Uint32 Params)
 static bool GemDOS_Write(Uint32 Params)
 {
 	char *pBuffer;
-	unsigned long Size,nBytesWritten;
+	long nBytesWritten;
+	Uint32 Addr;
+	Sint32 Size;
 	int Handle;
 
 	/* Read details from stack */
 	Handle = STMemory_ReadWord(Params+SIZE_WORD)-BASE_FILEHANDLE;
 	Size = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
-	pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
+	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG);
+	pBuffer = (char *)STRAM_ADDR(Addr);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fwrite(%i, %li, 0x%x)\n", 
-	          Handle, Size, STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fwrite(%i, %i, 0x%x)\n", 
+	          Handle, Size, Addr);
 
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
@@ -1752,15 +1765,23 @@ static bool GemDOS_Write(Uint32 Params)
 	/* write protected device? */
 	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
 	{
-		Log_Printf(LOG_WARN, "PREVENTED: GemDOS Fwrite(%d,...)\n", Handle);
+		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fwrite(%d,...)\n", Handle);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
+		return true;
+	}
+
+	/* Check that write is from valid memory area */
+	if (!STMemory_ValidArea(Addr, Size))
+	{
+		Log_Printf(LOG_TODO, "GEMDOS Fwrite() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
+		Regs[REG_D0] = GEMDOS_ERANGE;
 		return true;
 	}
 
 	nBytesWritten = fwrite(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
 	if (ferror(FileHandles[Handle].FileHandle))
 	{
-		Log_Printf(LOG_WARN, "Failed to write to '%s'\n",
+		Log_Printf(LOG_WARN, "GEMDOS failed to write to '%s'\n",
 			   FileHandles[Handle].szActualName );
 		Regs[REG_D0] = GEMDOS_EACCDN;      /* Access denied (ie read-only) */
 	}
