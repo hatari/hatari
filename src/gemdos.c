@@ -1202,13 +1202,21 @@ static bool GemDOS_Cauxos(Uint32 Params)
  */
 static bool GemDOS_SetDTA(Uint32 Params)
 {
+	/*  Look up on stack to find where DTA is */
 	Uint32 nDTA = STMemory_ReadLong(Params+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fsetdta(0x%x)\n", nDTA);
 
-	/* Look up on stack to find where DTA is! Store as PC pointer */
-	pDTA = (DTA *)STRAM_ADDR(nDTA);
-
+	if (STMemory_ValidArea(nDTA, sizeof(DTA)))
+	{
+		/* Store as PC pointer */
+		pDTA = (DTA *)STRAM_ADDR(nDTA);
+	}
+	else
+	{
+		pDTA = NULL;
+		Log_Printf(LOG_WARN, "GEMDOS Fsetdta() failed due to invalid DTA address 0x%x\n", nDTA);
+	}
 	return false;
 }
 
@@ -2146,13 +2154,23 @@ static int GemDOS_Pexec(Uint32 Params)
 static bool GemDOS_SNext(void)
 {
 	struct dirent **temp;
+	Uint32 nDTA;
 	int Index;
 	int ret;
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fsnext()\n");
 
 	/* Refresh pDTA pointer (from the current basepage) */
-	pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
+	nDTA = STMemory_ReadLong(STMemory_ReadLong(act_pd)+32);
+
+	if (!STMemory_ValidArea(nDTA, sizeof(DTA)))
+	{
+		pDTA = NULL;
+		Log_Printf(LOG_WARN, "GEMDOS Fsnext() failed due to invalid DTA address 0x%x\n", nDTA);
+		Regs[REG_D0] = GEMDOS_EINTRN;    /* "internal error */
+		return true;
+	}
+	pDTA = (DTA *)STRAM_ADDR(nDTA);
 
 	/* Was DTA ours or TOS? */
 	if (do_get_mem_long(pDTA->magic) != DTA_MAGIC_NUMBER)
@@ -2206,6 +2224,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	char tempstr[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	struct dirent **files;
+	Uint32 nDTA;
 	int Drive;
 	DIR *fsdir;
 	int i,j,count;
@@ -2216,9 +2235,6 @@ static bool GemDOS_SFirst(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fsfirst(\"%s\", 0x%x)\n", pszFileName, nAttrSFirst);
 
-	/* Refresh pDTA pointer (from the current basepage) */
-	pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
-
 	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
 	if (!ISHARDDRIVE(Drive))
 	{
@@ -2226,9 +2242,21 @@ static bool GemDOS_SFirst(Uint32 Params)
 		return false;
 	}
 
-	/* And convert to hard drive filename */
+	/* Convert to hard drive filename */
 	GemDOS_CreateHardDriveFileName(Drive, pszFileName,
 		                    szActualFileName, sizeof(szActualFileName));
+
+	/* Refresh pDTA pointer (from the current basepage) */
+	nDTA = STMemory_ReadLong(STMemory_ReadLong(act_pd)+32);
+
+	if (!STMemory_ValidArea(nDTA, sizeof(DTA)))
+	{
+		pDTA = NULL;
+		Log_Printf(LOG_WARN, "GEMDOS Fsfirst() failed due to invalid DTA address 0x%x\n", nDTA);
+		Regs[REG_D0] = GEMDOS_EINTRN;    /* "internal error */
+		return true;
+	}
+	pDTA = (DTA *)STRAM_ADDR(nDTA);
 
 	/* Populate DTA, set index for our use */
 	do_put_mem_word(pDTA->index, DTAIndex);
