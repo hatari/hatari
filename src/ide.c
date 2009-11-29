@@ -507,7 +507,7 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	ret = fread(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
-		fprintf(stderr,"IDE bdrv_read error: (%d != %d length) at sector %lld!\n", ret, len, sector_num);
+		fprintf(stderr,"IDE bdrv_read error: (%d != %d length) at sector %lu!\n", ret, len, (unsigned long)sector_num);
 		return -EINVAL;
 	}
 	else
@@ -541,7 +541,7 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 	ret = fwrite(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
-		fprintf(stderr,"IDE bdrv_write error: (%d != %d length) at sector %lld!\n", ret, len, sector_num);
+		fprintf(stderr,"IDE bdrv_write error: (%d != %d length) at sector %lu!\n", ret, len,  (unsigned long)sector_num);
 		return -EIO;
 	}
 	else
