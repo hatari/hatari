@@ -33,6 +33,7 @@
 #define HD_WRITE_SECTOR    0x0A               /* Write sector */
 
 /* other codes */
+#define HD_TEST_UNIT_RDY   0x00               /* Test unit ready */
 #define HD_FORMAT_DRIVE    0x04               /* Format the whole drive */
 #define HD_SEEK            0x0B               /* Seek */
 #define HD_CORRECTION      0x0D               /* Correction */

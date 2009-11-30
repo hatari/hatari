@@ -362,6 +362,18 @@ static void HDC_Cmd_WriteSector(void)
 
 /*---------------------------------------------------------------------*/
 /**
+ * Test unit ready
+ */
+static void HDC_Cmd_TestUnitReady(void)
+{
+	FDC_SetDMAStatus(false);            /* no DMA error */
+	FDC_AcknowledgeInterrupt();
+	HDCCommand.returnCode = HD_STATUS_OK;
+}
+
+
+/*---------------------------------------------------------------------*/
+/**
  * Read a sector off our disk - (implied seek)
  */
 static void HDC_Cmd_ReadSector(void)
@@ -416,6 +428,10 @@ static void HDC_EmulateCommandPacket(void)
 
 	switch(HD_OPCODE(HDCCommand))
 	{
+
+	 case HD_TEST_UNIT_RDY:
+		HDC_Cmd_TestUnitReady();
+		break;
 
 	 case HD_READ_SECTOR:
 		HDC_Cmd_ReadSector();
@@ -688,9 +704,14 @@ void HDC_WriteCommandPacket(void)
 #endif
 		/* If it's aimed for our drive, emulate it! */
 		if (HD_DEVICE(HDCCommand) == 0)
+		{
 			HDC_EmulateCommandPacket();
+		}
 		else
-			Log_Printf(LOG_WARN, "HDC: Program tries to access illegal drive.\n");
+		{
+			Log_Printf(LOG_WARN, "HDC: Access to non-existing drive.\n");
+			HDCCommand.returnCode = HD_STATUS_ERROR;
+		}
 
 		HDCCommand.byteCount = 0;
 	}
