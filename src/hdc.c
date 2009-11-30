@@ -73,8 +73,8 @@ static unsigned char inquiry_bytes[] =
 	0,                /* reserved */
 	26,               /* length of the following data */
 	' ', ' ', ' ',                         /* Vendor specific data */
-	'H','a','t','a','r','i',' ','E',       /* Vendor */
-	'm','u','l','a','t','e','d',' ',       /* Model */
+	'H','a','t','a','r','i',' ',' ',       /* Vendor */
+	'E','m','u','l','a','t','e','d',       /* Model */
 	' ',' ',' ',' ',                       /* Revision */
 	0,0,0,0,0,0,0,0,0,0                    /* ?? */
 };
@@ -131,13 +131,23 @@ static void HDC_Cmd_Seek(void)
  */
 static void HDC_Cmd_Inquiry(void)
 {
+	Uint32 nDmaAddr;
+	int count;
+
+	nDmaAddr = FDC_ReadDMAAddress();
+	count = HD_SECTORCOUNT(HDCCommand);
+
 #ifdef HDC_VERBOSE
-		fprintf(stderr,"Inquiry made.\n");
+	fprintf(stderr,"HDC: Inquiry, %i bytes to 0x%x.\n", count, nDmaAddr);
 #endif
 
-	inquiry_bytes[4] = HD_SECTORCOUNT(HDCCommand) - 8;
-	memcpy(&STRam[FDC_ReadDMAAddress()], inquiry_bytes,
-	       HD_SECTORCOUNT(HDCCommand));
+	if (count > (int)sizeof(inquiry_bytes))
+		count = sizeof(inquiry_bytes);
+
+	inquiry_bytes[4] = count - 8;
+
+	memcpy(&STRam[nDmaAddr], inquiry_bytes, count);
+	FDC_WriteDMAAddress(nDmaAddr + count);
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
@@ -228,6 +238,7 @@ static void HDC_Cmd_RequestSense(void)
 	*/
 
 	memcpy(&STRam[nDmaAddr], retbuf, nRetLen);
+	FDC_WriteDMAAddress(nDmaAddr + nRetLen);
 
 	FDC_SetDMAStatus(false);            /* no DMA error */
 	FDC_AcknowledgeInterrupt();
@@ -276,6 +287,8 @@ static void HDC_Cmd_ModeSense(void)
 		STRam[nDmaAddr+13] = 0;
 		STRam[nDmaAddr+14] = 0;
 		STRam[nDmaAddr+15] = 0;
+
+		FDC_WriteDMAAddress(nDmaAddr + 16);
 
 		HDCCommand.returnCode = HD_STATUS_OK;
 		nLastError = HD_REQSENS_OK;
@@ -362,18 +375,6 @@ static void HDC_Cmd_WriteSector(void)
 
 /*---------------------------------------------------------------------*/
 /**
- * Test unit ready
- */
-static void HDC_Cmd_TestUnitReady(void)
-{
-	FDC_SetDMAStatus(false);            /* no DMA error */
-	FDC_AcknowledgeInterrupt();
-	HDCCommand.returnCode = HD_STATUS_OK;
-}
-
-
-/*---------------------------------------------------------------------*/
-/**
  * Read a sector off our disk - (implied seek)
  */
 static void HDC_Cmd_ReadSector(void)
@@ -416,6 +417,18 @@ static void HDC_Cmd_ReadSector(void)
 	FDC_AcknowledgeInterrupt();
 	bSetLastBlockAddr = true;
 	//FDCSectorCountRegister = 0;
+}
+
+
+/*---------------------------------------------------------------------*/
+/**
+ * Test unit ready
+ */
+static void HDC_Cmd_TestUnitReady(void)
+{
+	FDC_SetDMAStatus(false);            /* no DMA error */
+	FDC_AcknowledgeInterrupt();
+	HDCCommand.returnCode = HD_STATUS_OK;
 }
 
 
