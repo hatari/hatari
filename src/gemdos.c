@@ -23,6 +23,8 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include <config.h>
 
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <utime.h>
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -104,8 +106,8 @@ typedef struct {
    Changed to fix potential problem with alignment.
 */
 typedef struct {
-  Uint16 dateword;
   Uint16 timeword;
+  Uint16 dateword;
 } DATETIME;
 
 typedef struct
@@ -201,7 +203,7 @@ static bool GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime)
 /**
  * Populate a DATETIME structure with file info
  */
-static bool GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
+static bool GemDOS_GetFileInformation(const char *name, DATETIME *DateTime)
 {
 	struct stat filestat;
 
@@ -209,6 +211,39 @@ static bool GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
 		return false;
 
 	return GemDOS_DateTime2Tos(filestat.st_mtime, DateTime);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set given file date/time from given DATETIME
+ */
+static bool GemDOS_SetFileInformation(const char *name, DATETIME *DateTime)
+{
+	struct utimbuf timebuf;
+	struct stat filestat;
+	struct tm timespec;
+	
+	/* Bits: 0-4 = secs/2, 5-10 = mins, 11-15 = hours (24-hour format) */
+	timespec.tm_sec  = (DateTime->timeword & 0x1F) << 1;
+	timespec.tm_min  = (DateTime->timeword & 0x7E0) >> 5;
+	timespec.tm_hour = (DateTime->timeword & 0xF800) >> 11;
+	/* Bits: 0-4 = day (1-31), 5-8 = month (1-12), 9-15 = years (since 1980) */
+	timespec.tm_mday = (DateTime->dateword & 0x1F);
+	timespec.tm_mon  = (DateTime->dateword & 0x1E0) >> 5;
+	timespec.tm_year = ((DateTime->dateword & 0xFE00) >> 9) + 80;
+
+	/* set new modification time */
+	timebuf.modtime = mktime(&timespec);
+
+	/* but keep previous access time */
+	if (stat(name, &filestat) != 0)
+		return false;
+	timebuf.actime = filestat.st_atime;
+
+	if (utime(name, &timebuf) != 0)
+		return false;
+	// fprintf(stderr, "set date '%s' for %s\n", asctime(&timespec), name);
+	return true;
 }
 
 
@@ -2442,6 +2477,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
  */
 static bool GemDOS_GSDToF(Uint32 Params)
 {
+	const char *FileName;
 	DATETIME DateTime;
 	Uint32 pBuffer;
 	int Handle,Flag;
@@ -2461,6 +2497,8 @@ static bool GemDOS_GSDToF(Uint32 Params)
 		return false;
 	}
 
+	FileName = FileHandles[Handle].szActualName;
+
 	if (Flag == 1)
 	{
 		/* write protected device? */
@@ -2470,16 +2508,19 @@ static bool GemDOS_GSDToF(Uint32 Params)
 			Regs[REG_D0] = GEMDOS_EWRPRO;
 			return true;
 		}
-		/* TODO/FIXME: Set time/date stamp */
-		Log_Printf(LOG_TODO, "GEMDOS file time/date setting not yet supported\n");
-		Regs[REG_D0] = GEMDOS_EOK;
+		DateTime.timeword = STMemory_ReadWord(pBuffer);
+		DateTime.dateword = STMemory_ReadWord(pBuffer+SIZE_WORD);
+		if (GemDOS_SetFileInformation(FileName, &DateTime) == true)
+			Regs[REG_D0] = GEMDOS_EOK;
+		else
+			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
 		return true;
 	}
 
-	if (GemDOS_GetFileInformation(FileHandles[Handle].szActualName, &DateTime) == true)
+	if (GemDOS_GetFileInformation(FileName, &DateTime) == true)
 	{
-		STMemory_WriteWord(pBuffer, DateTime.dateword);
-		STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.timeword);
+		STMemory_WriteWord(pBuffer, DateTime.timeword);
+		STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.dateword);
 		Regs[REG_D0] = GEMDOS_EOK;
 	}
 	else
