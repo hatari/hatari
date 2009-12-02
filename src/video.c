@@ -242,6 +242,9 @@
 /* 2009/10/31	[NP]	Depending on the overscan mode, the displayed lines must be shifted	*/
 /*			left or right (fix Spec 512 images in the Overscan Demos, fix pixels	*/
 /*			alignment in screens mixing normal lines and overscan lines).		*/
+/* 2009/12/02	[NP]	If we switch hi/lo around position 464 (as in Enchanted Lands) and	*/
+/*			right border was not removed, then we get an empty line on the next	*/
+/*			HBL (fix Pax Plax Parralax in Beyond by Kruz).				*/
 
 
 
@@ -826,6 +829,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 	/* Remove left border : +26 bytes */
 	/* This can be done with a hi/lo res switch or a hi/med res switch */
 	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x00 )	/* switched from hi res to lo res */
+//	        && ( LineCycles >= 12 )				/* switch back to low res should be after cycle 8 */
 	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
 	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 30 ) )
 	{
@@ -876,15 +880,16 @@ static void Video_WriteToShifter ( Uint8 Res )
 	}
 
 	/* Empty line switching res on STF : switch to hi res just before the HBL then go back to lo/med res */
+	/* Next HBL will be an ampty line (used in 'No Buddies Land') */
 	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
 	          && ( ShifterFrame.ResPosHi.LineCycles == 500 )
 	          && ( LineCycles == 508 ) )
 	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 2 %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_EMPTY_LINE;
+		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = 0;
+		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = 0;
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 2 %d<->%d for nHBL=%d\n" ,
+			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle , nHBL+1 );
 	}
 
 	/* Start right border near middle of the line : -106 bytes */ 
@@ -903,17 +908,29 @@ static void Video_WriteToShifter ( Uint8 Res )
 	/* Remove right border a second time after removing it a first time. Display will */
 	/* stop at cycle 512 instead of 460. */
 	/* This removes left border on next line too (used in 'Enchanted Lands') */
-	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_RIGHT_OFF )
-	        && ( ShifterFrame.Res == 0x02 )				/* switched from hi res */
-	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 20 )
-	        && ( ShifterFrame.ResPosHi.LineCycles == LINE_END_CYCLE_50_2 ) )	/* switch at end of right border */
+	/* If right border was not removed, then we will get an empty line for the next HBL (used in Beyond by Kruz) */
+	if ( ( ShifterFrame.Res == 0x02 )				/* switched from hi res */
+	        && ( LineCycles > LINE_END_CYCLE_50_2 )			/* switch to low just after end of right border */
+	        && ( ShifterFrame.ResPosHi.LineCycles <= LINE_END_CYCLE_50_2 )	/* switch to hi just before end of right border */
+	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 20 ) )
 	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF_FULL;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_FULL;
-		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
-		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = LINE_START_CYCLE_71;
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right full %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+		if ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_RIGHT_OFF )		/* Enchanted Lands */
+		{
+			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF_FULL;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_FULL;
+			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
+			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = LINE_START_CYCLE_71;
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right full %d<->%d\n" ,
+				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+		}
+		else									/* Pax Plax Parralax in Beyond by Kruz */
+		{
+			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask = BORDERMASK_EMPTY_LINE;
+			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = 0;
+			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = 0;
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 3 %d<->%d for nHBL=%d\n" ,
+				ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle , nHBL+1 );
+		}
 	}
 
 	/* If left border is opened and we switch to medium resolution during the next cycles, */
@@ -1747,7 +1764,7 @@ static void Video_CopyScreenLineColor(void)
 	/* Get resolution for this line (in case of mixed low/med screen) */
 	LineRes = ( HBLPaletteMasks[nHBL-nFirstVisibleHbl] >> 16 ) & 1;		/* 0=low res  1=med res */
 
-	//fprintf(stderr , "copy line %d start %d end %d %d %x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
+	//fprintf(stderr , "copy line %d start %d end %d 0x%x 0x%x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
 
 	/* If left border is opened, we need to compensate one missing word in low res (1 plan) */
 	/* If overscan is in med res, the offset is variable */
