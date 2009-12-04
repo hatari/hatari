@@ -201,13 +201,14 @@ static bool GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Populate a DATETIME structure with file info
+ * Populate a DATETIME structure with file info.  Handle needs to be
+ * validated before calling.  Return true on success.
  */
-static bool GemDOS_GetFileInformation(const char *name, DATETIME *DateTime)
+static bool GemDOS_GetFileInformation(int Handle, DATETIME *DateTime)
 {
 	struct stat filestat;
 
-	if (stat(name, &filestat) != 0)
+	if (stat(FileHandles[Handle].szActualName, &filestat) != 0)
 		return false;
 
 	return GemDOS_DateTime2Tos(filestat.st_mtime, DateTime);
@@ -215,13 +216,21 @@ static bool GemDOS_GetFileInformation(const char *name, DATETIME *DateTime)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set given file date/time from given DATETIME
+ * Set given file date/time from given DATETIME.  Handle needs to be
+ * validated before calling.  Return true on success.
  */
-static bool GemDOS_SetFileInformation(const char *name, DATETIME *DateTime)
+static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 {
+	const char *filename;
 	struct utimbuf timebuf;
 	struct stat filestat;
 	struct tm timespec;
+
+	/* make sure Hatari itself doesn't need to write/modify
+	 * the file after it's modification time is changed.
+	 */
+	fflush(FileHandles[Handle].FileHandle);
+	filename = FileHandles[Handle].szActualName;
 	
 	/* Bits: 0-4 = secs/2, 5-10 = mins, 11-15 = hours (24-hour format) */
 	timespec.tm_sec  = (DateTime->timeword & 0x1F) << 1;
@@ -236,11 +245,11 @@ static bool GemDOS_SetFileInformation(const char *name, DATETIME *DateTime)
 	timebuf.modtime = mktime(&timespec);
 
 	/* but keep previous access time */
-	if (stat(name, &filestat) != 0)
+	if (stat(filename, &filestat) != 0)
 		return false;
 	timebuf.actime = filestat.st_atime;
 
-	if (utime(name, &timebuf) != 0)
+	if (utime(filename, &timebuf) != 0)
 		return false;
 	// fprintf(stderr, "set date '%s' for %s\n", asctime(&timespec), name);
 	return true;
@@ -2477,7 +2486,6 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
  */
 static bool GemDOS_GSDToF(Uint32 Params)
 {
-	const char *FileName;
 	DATETIME DateTime;
 	Uint32 pBuffer;
 	int Handle,Flag;
@@ -2497,8 +2505,6 @@ static bool GemDOS_GSDToF(Uint32 Params)
 		return false;
 	}
 
-	FileName = FileHandles[Handle].szActualName;
-
 	if (Flag == 1)
 	{
 		/* write protected device? */
@@ -2510,14 +2516,14 @@ static bool GemDOS_GSDToF(Uint32 Params)
 		}
 		DateTime.timeword = STMemory_ReadWord(pBuffer);
 		DateTime.dateword = STMemory_ReadWord(pBuffer+SIZE_WORD);
-		if (GemDOS_SetFileInformation(FileName, &DateTime) == true)
+		if (GemDOS_SetFileInformation(Handle, &DateTime) == true)
 			Regs[REG_D0] = GEMDOS_EOK;
 		else
 			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
 		return true;
 	}
 
-	if (GemDOS_GetFileInformation(FileName, &DateTime) == true)
+	if (GemDOS_GetFileInformation(Handle, &DateTime) == true)
 	{
 		STMemory_WriteWord(pBuffer, DateTime.timeword);
 		STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.dateword);
