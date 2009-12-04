@@ -32,8 +32,6 @@ Emulation improvements
 
 - ACSI emulation seems to be broken in TT mode.
 
-- Add configuration and GUI code for second IDE drive (IDE slave).
-
 - Add SCC serial port emulation for Falcon/TT mode.
 
 - Add support for spec512 mode in med res too

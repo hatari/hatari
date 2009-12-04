@@ -94,6 +94,9 @@ please remind me!):
 - Kenneth Kaufman: MS VC6 & C++ compiler and multiple GEMDOS HD partition
   support patches.
 
+- Uwe Seimet: HD Driver related IDE emulation improvements and
+  GEMDOS HD emulation improvement suggestions.
+
 
  Code from other projects
  ------------------------

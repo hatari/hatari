@@ -8,16 +8,23 @@
  -------------------
 
 Emulation:
-- IDE WIN_FORMAT command (allows HD Driver to format IDE drives)
+- IDE improvements:
+  - Support for second drive (IDE slave)
+  - WIN_FORMAT command (allows HD Driver to format IDE drives)
+- GEMDOS HDD emulation:
+  - Minor fixes to Fseek(), Fopen(), Fdatime() (e.g. Pure debugger works)
+  - Prevent DTA and read/write functions accessing invalid memory areas
+  - Programs can change read-only files to be writable (by default)
 
 Emulator:
-- GEMDOS HD emulation:
-  - By default programs can change read-only files to be writable
-  - Option for disabling all file modifications ("--mount-changes no")
+- Option for preventing GEMDOS HDD emulation file modifications
+  ("--mount-changes no")
 - Debugger improvements:
-  - trace command
-  - evaluate command for doing calculations
+  - "trace" command
+  - "evaluate" command for doing calculations
   - command and command argument completion support
+  - improved register name handling + fixed DSP reg name matching
+  - GEMDOS tracing gives slightly more information
 - AVI file recording:
   - video can be stored as BMP or as PNG images
   - audio is stored as 16 bits stereo PCM.
