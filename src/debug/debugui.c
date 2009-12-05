@@ -303,7 +303,7 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 		"be skipped for numbers in the default number base (currently %d).\n"
 		"Adresses may be given as a range like '$fc0000-$fc0100' (note\n"
 		"that there should be no spaces between the range numbers).\n"
-		"'h <command>' gives more help.\n", ConfigureParams.Log.nNumberBase);
+		"'help <command>' gives more help.\n", ConfigureParams.Log.nNumberBase);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -332,8 +332,8 @@ int DebugUI_ParseCommand(char *input)
 	/* Search the command ... */
 	for (i = 0; i < debugCommands; i++)
 	{
-		if (!strcmp(psArgs[0], debugCommand[i].sLongName)
-		    || !strcmp(psArgs[0], debugCommand[i].sShortName))
+		if (!strcmp(psArgs[0], debugCommand[i].sLongName) ||
+		    !strcmp(psArgs[0], debugCommand[i].sShortName))
 		{
 			cmd = i;
 			break;
@@ -584,13 +584,16 @@ static const dbgcommand_t uicommand[] =
 
 
 /**
- * Debugger user interface main function.
+ * Debugger user interface initialization.
  */
-void DebugUI(void)
+static void DebugUI_Init(void)
 {
 	const dbgcommand_t *cpucmd, *dspcmd;
 	int cpucmds, dspcmds;
-	int cmdret;
+
+	/* already intialized? */
+	if (debugCommands)
+		return;
 
 	/* if you want disassembly or memdumping to start/continue from
 	 * specific address, you can set them in these functions.
@@ -599,21 +602,29 @@ void DebugUI(void)
 	cpucmds = DebugCpu_Init(&cpucmd);
 
 	/* on first time copy the command structures to a single table */
-	if (!debugCommands)
-	{
-		debugCommands = ARRAYSIZE(uicommand);
-		debugCommand = malloc(sizeof(dbgcommand_t) * (dspcmds + cpucmds + debugCommands));
-		assert(debugCommand);
+	debugCommands = ARRAYSIZE(uicommand);
+	debugCommand = malloc(sizeof(dbgcommand_t) * (dspcmds + cpucmds + debugCommands));
+	assert(debugCommand);
+	
+	memcpy(debugCommand, uicommand, sizeof(dbgcommand_t) * debugCommands);
+	memcpy(&debugCommand[debugCommands], cpucmd, sizeof(dbgcommand_t) * cpucmds);
+	debugCommands += cpucmds;
+	memcpy(&debugCommand[debugCommands], dspcmd, sizeof(dbgcommand_t) * dspcmds);
+	debugCommands += dspcmds;
+}
 
-		memcpy(debugCommand, uicommand, sizeof(dbgcommand_t) * debugCommands);
-		memcpy(&debugCommand[debugCommands], cpucmd, sizeof(dbgcommand_t) * cpucmds);
-		debugCommands += cpucmds;
-		memcpy(&debugCommand[debugCommands], dspcmd, sizeof(dbgcommand_t) * dspcmds);
-		debugCommands += dspcmds;
-	}
+
+/**
+ * Debugger user interface main function.
+ */
+void DebugUI(void)
+{
+	int cmdret;
 	
 	if (bInFullScreen)
 		Screen_ReturnFromFullScreen();
+
+	DebugUI_Init();
 
 	DebugUI_WelcomeText();
 	
@@ -647,4 +658,22 @@ void DebugUI(void)
 
 	DebugCpu_SetDebugging();
 	DebugDsp_SetDebugging();
+}
+
+
+/**
+ * Remote/parallel debugger usage API
+ */
+int DebugUI_RemoteParse(char *input)
+{
+	int ret;
+
+	DebugUI_Init();
+	
+	ret = DebugUI_ParseCommand(input);
+
+	DebugCpu_SetDebugging();
+	DebugDsp_SetDebugging();
+
+	return ret;
 }

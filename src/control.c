@@ -290,7 +290,7 @@ void Control_ProcessBuffer(char *buffer)
 			if (strcmp(cmd, "hatari-option") == 0) {
 				ok = Change_ApplyCommandline(arg);
 			} else if (strcmp(cmd, "hatari-debug") == 0) {
-				ok = DebugUI_ParseCommand(arg);
+				ok = DebugUI_RemoteParse(arg);
 			} else if (strcmp(cmd, "hatari-shortcut") == 0) {
 				ok = Shortcut_Invoke(arg);
 			} else if (strcmp(cmd, "hatari-event") == 0) {

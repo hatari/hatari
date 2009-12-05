@@ -21,6 +21,7 @@ enum {
 extern int bExceptionDebugging;
 
 extern void DebugUI(void);
+extern int DebugUI_RemoteParse(char *input);
 extern int DebugUI_ParseCommand(char *input);
 extern void DebugUI_MemorySnapShot_Capture(bool bSave);
 
