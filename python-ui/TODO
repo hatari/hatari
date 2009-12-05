@@ -4,8 +4,8 @@ TODO
 This lists potential TODO items that aren't listed in the Hatari/UI
 sources.
 
-* Supporting ASCI / IDE hard disk image and whether to use these
-  or GEMDOS HD dir
+* Supporting ASCI / IDE (master&slave) hard disk images in addition
+  to GEMDOS HDD dir
 
 * Features for Help menu:
   - Create empty floppy images (+ convert directories to hard disks?)
@@ -13,7 +13,8 @@ sources.
 
 * Work on the debug UI:
   - DSP support
-  - breakpoint support
+  - breakpoint support (issue: how to stop emulation on breakpoint
+    but still allow Hatari to process remote commands?)
   - multiple views to memory
   - trace & debug log viewers
 
