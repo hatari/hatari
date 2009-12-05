@@ -2,6 +2,9 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2009-12:
+- Support new Hatari command line options in hatari-console
+
 2009-09:
 - Support for setting CPU level & clock and Falcon DSP type
 

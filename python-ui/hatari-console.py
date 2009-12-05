@@ -179,6 +179,11 @@ option_tokens = [
     "--vdi-planes",
     "--vdi-width",
     "--vdi-height",
+    "--avirecord",
+    "--avi-vcodec",
+    "--avi-fps",
+    "--avi-crop",
+    "--avi-file",
     "--joystick",
     "--printer",
     "--midi-in",
@@ -189,8 +194,10 @@ option_tokens = [
     "--disk-b",
     "--slowfdc",
     "--harddrive",
+    "--mount-changes",
     "--acsi",
-    "--ide",
+    "--ide-master",
+    "--ide-slave",
     "--memsize",
     "--tos",
     "--cartridge",
@@ -262,7 +269,8 @@ debugger_tokens = [
     "memdump",
     "memwrite",
     "savebin",
-    "setopt"
+    "setopt",
+    "trace"
 ]
 
 
@@ -302,9 +310,9 @@ def main():
         "quit": hatari.stop
     }
     
-    print "************************************************************"
-    print "* Use the TAB key to see all the available Hatari commands *"
-    print "************************************************************"
+    print "****************************************************************"
+    print "* To see available commands, use the TAB key or 'console-help' *"
+    print "****************************************************************"
     tokens = ["console-help"]
     for items in [option_tokens, shortcut_tokens, event_tokens,
             debugger_tokens, device_tokens, path_tokens,
