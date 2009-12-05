@@ -26,8 +26,9 @@ const char DlgHardDisk_fileid[] = "Hatari dlgHardDisk.c : " __DATE__ " " __TIME_
 #define DISKDLG_GEMDOSEJECT       15
 #define DISKDLG_GEMDOSBROWSE      16
 #define DISKDLG_GEMDOSNAME        17
-#define DISKDLG_BOOTHD            18
-#define DISKDLG_EXIT              19
+#define DISKDLG_GEMDOSCHANGES     18
+#define DISKDLG_BOOTHD            19
+#define DISKDLG_EXIT              20
 
 
 /* The disks dialog: */
@@ -41,23 +42,26 @@ static SGOBJ diskdlg[] =
 	{ SGBUTTON, 0, 0, 54,3, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 3,4, 58,1, NULL },
 
-	{ SGTEXT, 0, 0, 2,6, 13,1, "IDE HD master image:" },
-	{ SGBUTTON, 0, 0, 46,6, 7,1, "Eject" },
-	{ SGBUTTON, 0, 0, 54,6, 8,1, "Browse" },
-	{ SGTEXT, 0, 0, 3,7, 58,1, NULL },
+	{ SGTEXT, 0, 0, 2,5, 20,1, "IDE HD master image:" },
+	{ SGBUTTON, 0, 0, 46,5, 7,1, "Eject" },
+	{ SGBUTTON, 0, 0, 54,5, 8,1, "Browse" },
+	{ SGTEXT, 0, 0, 3,6, 58,1, NULL },
 
-	{ SGTEXT, 0, 0, 2,9, 13,1, "IDE HD slave image:" },
+	{ SGTEXT, 0, 0, 2,7, 19,1, "IDE HD slave image:" },
+	{ SGBUTTON, 0, 0, 46,7, 7,1, "Eject" },
+	{ SGBUTTON, 0, 0, 54,7, 8,1, "Browse" },
+	{ SGTEXT, 0, 0, 3,8, 58,1, NULL },
+
+	{ SGTEXT, 0, 0, 2,9, 13,1, "GEMDOS drive:" },
 	{ SGBUTTON, 0, 0, 46,9, 7,1, "Eject" },
 	{ SGBUTTON, 0, 0, 54,9, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 
-	{ SGTEXT, 0, 0, 2,12, 13,1, "GEMDOS drive:" },
-	{ SGBUTTON, 0, 0, 46,12, 7,1, "Eject" },
-	{ SGBUTTON, 0, 0, 54,12, 8,1, "Browse" },
-	{ SGTEXT, 0, 0, 3,13, 58,1, NULL },
+	{ SGCHECKBOX, 0, 0, 2,12, 32,1, "Allow GEMDOS drive modifications" },
 
-	{ SGCHECKBOX, 0, 0, 2,15, 14,1, "Boot from HD" },
-	{ SGBUTTON, SG_DEFAULT, 0, 22,17, 20,1, "Back to main menu" },
+	{ SGCHECKBOX, 0, 0, 2,14, 14,1, "Boot from HD" },
+
+	{ SGBUTTON, SG_DEFAULT, 0, 22,16, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -138,6 +142,12 @@ void DlgHardDisk_Main(void)
 		dlgname_gdos[0] = '\0';
 	diskdlg[DISKDLG_GEMDOSNAME].txt = dlgname_gdos;
 
+	/* Allow GEMDOS drive modifications? */
+	if (ConfigureParams.HardDisk.bDoGemdosChanges)
+		diskdlg[DISKDLG_GEMDOSCHANGES].state |= SG_SELECTED;
+	else
+		diskdlg[DISKDLG_GEMDOSCHANGES].state &= ~SG_SELECTED;
+
 	/* Draw and process the dialog */
 	do
 	{
@@ -191,4 +201,5 @@ void DlgHardDisk_Main(void)
 
 	/* Read values from dialog: */
 	ConfigureParams.HardDisk.bBootFromHardDisk = (diskdlg[DISKDLG_BOOTHD].state & SG_SELECTED);
+	ConfigureParams.HardDisk.bDoGemdosChanges = (diskdlg[DISKDLG_GEMDOSCHANGES].state & SG_SELECTED);
 }
