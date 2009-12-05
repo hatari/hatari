@@ -39,7 +39,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "ikbd.h"
-#include "int.h"
+#include "cycInt.h"
 #include "ioMem.h"
 #include "joy.h"
 #include "m68000.h"

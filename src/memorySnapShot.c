@@ -31,7 +31,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "floppy.h"
 #include "gemdos.h"
 #include "ikbd.h"
-#include "int.h"
+#include "cycInt.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"

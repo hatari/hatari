@@ -102,7 +102,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "fdc.h"
 #include "ikbd.h"
-#include "int.h"
+#include "cycInt.h"
 #include "ioMem.h"
 #include "joy.h"
 #include "m68000.h"

@@ -74,7 +74,7 @@ const char Int_fileid[] = "Hatari int.c : " __DATE__ " " __TIME__;
 #include "crossbar.h"
 #include "fdc.h"
 #include "ikbd.h"
-#include "int.h"
+#include "cycInt.h"
 #include "m68000.h"
 #include "mfp.h"
 #include "midi.h"

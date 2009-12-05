@@ -256,7 +256,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "cycles.h"
 #include "fdc.h"
-#include "int.h"
+#include "cycInt.h"
 #include "ioMem.h"
 #include "keymap.h"
 #include "m68000.h"

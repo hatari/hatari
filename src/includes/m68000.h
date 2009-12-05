@@ -17,7 +17,7 @@
 #include "sysdeps.h"
 #include "memory.h"
 #include "newcpu.h"     /* for regs */
-#include "int.h"
+#include "cycInt.h"
 #include "log.h"
 
 

@@ -55,7 +55,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "audio.h"
 #include "configuration.h"
-#include "int.h"
+#include "cycInt.h"
 #include "ioMem.h"
 #include "log.h"
 #include "memorySnapShot.h"

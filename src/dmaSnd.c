@@ -40,7 +40,7 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #include "audio.h"
 #include "configuration.h"
 #include "dmaSnd.h"
-#include "int.h"
+#include "cycInt.h"
 #include "ioMem.h"
 #include "log.h"
 #include "memorySnapShot.h"
