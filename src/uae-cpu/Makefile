@@ -69,9 +69,6 @@ cpuemu8.o: cpuemu.c
 	$(CC) -DPART_8 -c $(QUIETCFLAGS) $< -o $@
 
 
-newcpu.o: sysdeps.h hatari-glue.h maccess.h memory.h newcpu.h
-
-
 clean:
 	$(RM) *.o gencpu build68k cpu68k.a
 
@@ -81,7 +78,7 @@ distclean:	clean
 
 
 # Use "make depend" to generate file dependencies:
-Makefile.dep: Makefile
+Makefile.dep: Makefile ../Makefile
 	$(CC) -M $(CFLAGS) $(CPUCSRCS) > Makefile.dep
 
 depend: Makefile.dep

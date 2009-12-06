@@ -39,7 +39,7 @@ distclean: clean
 
 
 # Use "make depend" to generate file dependencies:
-Makefile.dep: Makefile
+Makefile.dep: Makefile ../Makefile
 	$(CC) -MM $(CFLAGS) $(DLGSRCS) > Makefile.dep
 
 depend: Makefile.dep
