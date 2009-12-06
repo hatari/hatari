@@ -245,6 +245,9 @@
 /* 2009/12/02	[NP]	If we switch hi/lo around position 464 (as in Enchanted Lands) and	*/
 /*			right border was not removed, then we get an empty line on the next	*/
 /*			HBL (fix Pax Plax Parralax in Beyond by Kruz).				*/
+/* 2009/12/06	[NP]	Add support for STE 224 bytes overscan without stabiliser by switching	*/
+/*			hi/lo at cycle 504/4 to remove left border (fix More Or Less Zero and	*/
+/*			Cernit Trandafir by DHS, as well as Save The Earth by Defence Force).	*/
 
 
 
@@ -296,6 +299,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #define BORDERMASK_OVERSCAN_MED_RES	0x40	/* some borders were removed and the line is in med res instead of low res */
 #define BORDERMASK_EMPTY_LINE		0x80	/* 60/50 Hz switch prevents the line to start, video counter is not incremented */
 #define BORDERMASK_LEFT_OFF_MED		0x100	/* removal of left border with hi/med res switch -> +26 bytes (for 4 pixels hardware scrolling) */
+#define BORDERMASK_LEFT_OFF_2_STE	0x200	/* shorter removal of left border with hi/lo res switch -> +20 bytes (STE only)*/
 
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
@@ -833,11 +837,24 @@ static void Video_WriteToShifter ( Uint8 Res )
 	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
 	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 30 ) )
 	{
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" ,
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+		if ( ( ConfigureParams.System.nMachineType == MACHINE_STE )	/* special case for 504/4 on STE -> add 20 bytes to left border */
+			&& ( ShifterFrame.ResPosHi.LineCycles == 504 ) && ( LineCycles == 4 ) )
+		{
+			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_2_STE;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71+16;	/* starts 16 pixels later */
+//			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;		/* screen is shifted 8 pixels to the left */
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" ,
+				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+		}
+		else								/* other case for STF/STE -> add 26 bytes */
+		{
+			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -4;		/* screen is shifted 4 pixels to the left */
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" ,
+				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+		}
 	}
 
 	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x01 )	/* switched from hi res to med res */
@@ -1774,6 +1791,9 @@ static void Video_CopyScreenLineColor(void)
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF )
 		VideoOffset = -2;						/* always 2 bytes in low res overscan */
 
+	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )
+		VideoOffset = -4;
+
 	/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
 	/* Depending on the number of pixels, we need to compensate for some skipped words */
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_MED )
@@ -1798,30 +1818,39 @@ static void Video_CopyScreenLineColor(void)
 	}
 	else
 	{
-		/* Does have left border? If not, clear to color '0' */
-		if ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MED ) )
+		/* Does have left bordder ? */
+		if ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MED ) )	/* bigger line by 26 bytes on the left */
 		{
-			/* The "-2" in the following line is needed so that the offset is a multiple of 8 */
 			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT+VideoOffset;
 			memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
 			pVideoRaster += SCREENBYTES_LEFT;
 		}
-		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)
+		else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )	/* bigger line by 20 bytes on the left (STE specific) */
 		{
-			/* bigger line by 2 bytes on the left */
+			if ( SCREENBYTES_LEFT > BORDERBYTES_LEFT_2_STE )
+			{
+				memset ( pSTScreen, 0, SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE );	/* clear unused pixels */
+				memcpy ( pSTScreen+SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE, pVideoRaster+VideoOffset, BORDERBYTES_LEFT_2_STE );
+			}
+			else
+				memcpy ( pSTScreen, pVideoRaster+BORDERBYTES_LEFT_2_STE-SCREENBYTES_LEFT+VideoOffset, SCREENBYTES_LEFT );
+
+			pVideoRaster += BORDERBYTES_LEFT_2_STE+VideoOffset;
+		}
+		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)	/* bigger line by 2 bytes on the left */
+		{
 			memset(pSTScreen,0,SCREENBYTES_LEFT-2);		/* clear unused pixels */
 			memcpy(pSTScreen+SCREENBYTES_LEFT-2, pVideoRaster, 2);
 			pVideoRaster += 2;
 		}
-		else if (bSteBorderFlag)				/* STE specific */
+		else if (bSteBorderFlag)				/* bigger line by 8 bytes on the left (STE specific) */
 		{
-			/* bigger line by 8 bytes on the left */
 			memset(pSTScreen,0,SCREENBYTES_LEFT-4*2);	/* clear unused pixels */
 			memcpy(pSTScreen+SCREENBYTES_LEFT-4*2, pVideoRaster, 4*2);
 			pVideoRaster += 4*2;
 		}
 		else
-			memset(pSTScreen,0,SCREENBYTES_LEFT);
+			memset(pSTScreen,0,SCREENBYTES_LEFT);		/* left border not removed, clear to color '0' */
 
 		/* Short line due to hires in the middle ? */
 		if (LineBorderMask & BORDERMASK_STOP_MIDDLE)
@@ -1842,8 +1871,7 @@ static void Video_CopyScreenLineColor(void)
 		if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 		{
 			memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
-			pVideoRaster += BORDERBYTES_RIGHT-SCREENBYTES_RIGHT;
-			pVideoRaster += SCREENBYTES_RIGHT;
+			pVideoRaster += BORDERBYTES_RIGHT;
 		}
 		else if (LineBorderMask & BORDERMASK_RIGHT_MINUS_2)
 		{
@@ -1908,7 +1936,7 @@ static void Video_CopyScreenLineColor(void)
 			Uint16 *pScrollEndAddr;	/* Pointer to end of the line */
 
 			nNegScrollCnt = 16 - HWScrollCount;
-			if (LineBorderMask & BORDERMASK_LEFT_OFF)
+			if (LineBorderMask & (BORDERMASK_LEFT_OFF|BORDERMASK_LEFT_OFF_2_STE))
 				pScrollAdj = (Uint16 *)pSTScreen;
 			else
 				pScrollAdj = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT);

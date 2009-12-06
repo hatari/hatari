@@ -89,6 +89,7 @@
 /* Bytes for opened left and right border: */
 #define BORDERBYTES_NORMAL	160	/* size of a "normal" line */
 #define BORDERBYTES_LEFT	26
+#define BORDERBYTES_LEFT_2_STE	20
 #define BORDERBYTES_RIGHT	44
 #define BORDERBYTES_RIGHT_FULL	22
 
