@@ -238,7 +238,7 @@ static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 	timespec.tm_hour = (DateTime->timeword & 0xF800) >> 11;
 	/* Bits: 0-4 = day (1-31), 5-8 = month (1-12), 9-15 = years (since 1980) */
 	timespec.tm_mday = (DateTime->dateword & 0x1F);
-	timespec.tm_mon  = (DateTime->dateword & 0x1E0) >> 5;
+	timespec.tm_mon  = ((DateTime->dateword & 0x1E0) >> 5) - 1;
 	timespec.tm_year = ((DateTime->dateword & 0xFE00) >> 9) + 80;
 
 	/* set new modification time */
