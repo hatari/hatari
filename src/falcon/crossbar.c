@@ -231,12 +231,10 @@ void Crossbar_Reset(bool bCold)
 	{
 	}
 	
-#if HAVE_PORTAUDIO
 	/* Stop Microphone jack emulation if already running */
 	if (microphone_ADC_is_started) { 
 		Microphone_Stop();
 	}
-#endif
 
 	/* Stop DMA sound playing / record */
 	IoMem_WriteByte(0xff8901,0);
@@ -292,9 +290,7 @@ void Crossbar_Reset(bool bCold)
 	/* Start Microphone jack emulation */
 	if (!microphone_ADC_is_started) { 
 		microphone_ADC_is_started = 1;
-#if HAVE_PORTAUDIO
 		Microphone_Start((int)nAudioFrequency);
-#endif
 	}
 }
 
@@ -1419,15 +1415,14 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
 		if (dmaPlay.mfp15_int) {
 			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
-			Log_Printf(LOG_WARN, "crossbar : MFP15 (IT7) interrupt from DMA play\n");
-
+			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA play\n");
 		}
 
 		/* Send a TimerA_Int at end of replay buffer if enabled */
 		if (dmaPlay.timerA_int) {
 			if (MFP_TACR == 0x08) {       /* Is timer A in Event Count mode? */
 				MFP_TimerA_EventCount_Interrupt();
-				Log_Printf(LOG_WARN, "crossbar : MFP Timer A interrupt from DMA play\n");
+				LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA play\n");
 			}
 		}
 
@@ -1507,14 +1502,14 @@ void Crossbar_SendDataToDmaRecord(Sint16 value)
 		/* Send a MFP15_Int (I7) at end of record buffer if enabled */
 		if (dmaRecord.mfp15_int) {
 			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
-			Log_Printf(LOG_WARN, "crossbar : MFP15 (IT7) interrupt from DMA record\n");
+			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA record\n");
 		}
 	
 		/* Send a TimerA_Int at end of record buffer if enabled */
 		if (dmaRecord.timerA_int) {
 			if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
 				MFP_TimerA_EventCount_Interrupt();
-				Log_Printf(LOG_WARN, "crossbar : MFP Timer A interrupt from DMA record\n");
+				LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP Timer A interrupt from DMA record\n");
 		}
 
 		if (dmaRecord.loopMode) {
