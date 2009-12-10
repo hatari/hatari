@@ -199,6 +199,7 @@ struct codec_s {
 	Uint32 isConnectedToCodec;
 	Uint32 isConnectedToDsp;
 	Uint32 isConnectedToDma;
+	Uint32 wordCount;
 };
 
 struct dsp_s {
@@ -230,6 +231,13 @@ void Crossbar_Reset(bool bCold)
 	{
 	}
 	
+#if HAVE_PORTAUDIO
+	/* Stop Microphone jack emulation if already running */
+	if (microphone_ADC_is_started) { 
+		Microphone_Stop();
+	}
+#endif
+
 	/* Stop DMA sound playing / record */
 	IoMem_WriteByte(0xff8901,0);
 	dmaPlay.isRunning = 0;
@@ -243,7 +251,7 @@ void Crossbar_Reset(bool bCold)
 	dmaRecord.isConnectedToDspInHandShakeMode = 0;
 	dmaRecord.handshakeMode_Frame = 0;
 
-	/* Clear DAC buffer */
+	/* DAC inits */
 	memset(dac.buffer_left, 0, sizeof(dac.buffer_left));
 	memset(dac.buffer_right, 0, sizeof(dac.buffer_right));
 	dac.readPosition = 0;
@@ -251,6 +259,11 @@ void Crossbar_Reset(bool bCold)
 	dac.writeBufferSize = 0;
 
 	/* ADC inits */
+	memset(adc.buffer_left, 0, sizeof(dac.buffer_left));
+	memset(adc.buffer_right, 0, sizeof(dac.buffer_right));
+	adc.readPosition = 0;
+	adc.writePosition = 0;
+	adc.writeBufferSize = 0;
 	microphone_ADC_is_started = 0;
 
 	/* DSP inits */
@@ -275,6 +288,14 @@ void Crossbar_Reset(bool bCold)
 	/* Start 25 Mhz and 32 Mhz Clocks */
 	Crossbar_Start_InterruptHandler_25Mhz();
 	Crossbar_Start_InterruptHandler_32Mhz();
+
+	/* Start Microphone jack emulation */
+	if (!microphone_ADC_is_started) { 
+		microphone_ADC_is_started = 1;
+#if HAVE_PORTAUDIO
+		Microphone_Start((int)nAudioFrequency);
+#endif
+	}
 }
 
 /**
@@ -587,7 +608,11 @@ void Crossbar_FrameCountLow_WriteByte(void)
 
 	/* Compute frameCounter current address */
 	addr = (IoMem_ReadByte(0xff8909) << 16) + (IoMem_ReadByte(0xff890b) << 8) + IoMem_ReadByte(0xff890d);
-return;
+
+	/* TODO: remove this return. Temporary bad hack to let Eko system demo run !!! */
+	/* I don't understand why they write to this address and what this is supposed to do ... */
+	return;
+	
 	if (crossbar.dmaSelected == 0) {
 		/* DMA Play selected */
 		dmaPlay.frameCounter = addr - crossbar.dmaPlay_CurrentFrameStart;
@@ -890,15 +915,6 @@ void Crossbar_DstControler_WriteWord(void)
 
 	dmaPlay.isConnectedToDspInHandShakeMode = ((destCtrl & 7) == 2 ? 1 : 0);
 	dmaRecord.isConnectedToDspInHandShakeMode = ((destCtrl & 0xf) == 2 ? 1 : 0);
-
-	/* Start Microphone jack emulation */
-	if (!microphone_ADC_is_started) { 
-		microphone_ADC_is_started = 1;
-#if HAVE_PORTAUDIO
-		//Microphone_Start((int)Crossbar_DetectSampleRate(25));
-		//Microphone_Run();
-#endif
-	}
 }
 
 /**
@@ -1403,12 +1419,16 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
 		if (dmaPlay.mfp15_int) {
 			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
+			Log_Printf(LOG_WARN, "crossbar : MFP15 (IT7) interrupt from DMA play\n");
+
 		}
 
 		/* Send a TimerA_Int at end of replay buffer if enabled */
 		if (dmaPlay.timerA_int) {
-			if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
+			if (MFP_TACR == 0x08) {       /* Is timer A in Event Count mode? */
 				MFP_TimerA_EventCount_Interrupt();
+				Log_Printf(LOG_WARN, "crossbar : MFP Timer A interrupt from DMA play\n");
+			}
 		}
 
 		if (dmaPlay.loopMode) {
@@ -1485,13 +1505,16 @@ void Crossbar_SendDataToDmaRecord(Sint16 value)
 	if (dmaRecord.frameCounter >= dmaRecord.frameLen)
 	{
 		/* Send a MFP15_Int (I7) at end of record buffer if enabled */
-		if (dmaRecord.mfp15_int)
+		if (dmaRecord.mfp15_int) {
 			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
-
+			Log_Printf(LOG_WARN, "crossbar : MFP15 (IT7) interrupt from DMA record\n");
+		}
+	
 		/* Send a TimerA_Int at end of record buffer if enabled */
 		if (dmaRecord.timerA_int) {
 			if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
 				MFP_TimerA_EventCount_Interrupt();
+				Log_Printf(LOG_WARN, "crossbar : MFP Timer A interrupt from DMA record\n");
 		}
 
 		if (dmaRecord.loopMode) {
@@ -1547,19 +1570,61 @@ void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame)
 /*----------------------------------------------------------------------*/
 
 /**
+ * Get datas recorded by the microphone and convert them into falcon internal frequency
+ *    - micro_bufferL : left track recorded by the microphone
+ *    - micro_bufferR : right track recorded by the microphone
+ *    - microBuffer_size : buffers size
+ */
+void Crossbar_GetMicrophoneDatas(short *micro_bufferL, short *micro_bufferR, int microBuffer_size)
+{
+	double FreqRatio, FreqRatio2, bufferWritePos;
+	int i, size;
+	int bufferIndex;
+
+	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
+	FreqRatio2 = (double)nAudioFrequency / Crossbar_DetectSampleRate(25);
+
+	size = (int)((double)microBuffer_size * FreqRatio);
+	bufferIndex = 0;
+	bufferWritePos = 0.0;
+	
+	for (i = 0; i < size; i++)
+	{
+		adc.writePosition = (adc.writePosition + 1) % DACBUFFER_SIZE;
+
+		adc.buffer_left[adc.writePosition] = micro_bufferL[bufferIndex];
+		adc.buffer_right[adc.writePosition] = micro_bufferR[bufferIndex]; 
+
+		bufferWritePos += FreqRatio2;
+		bufferIndex = (int)(bufferWritePos);
+	}
+}
+
+/**
  * Process ADC transfer to crossbar
  */
 static void Crossbar_Process_ADCXmit_Transfer(void)
 {
-	Sint16 sample = 0;
-
-	return;
+	Sint16 sample;
+	Uint16 frame;
 	
-	/* TODO: implementing of handshake mode and start frame */
-
+	/* swap from left to right channel or right to left channel */
+	adc.wordCount = 1 - adc.wordCount;
+		
+	/* Left Channel */
+	if (adc.wordCount == 0) {
+		sample = adc.buffer_left[adc.readPosition];
+		frame = 1;
+	}
+	else {
+		sample = adc.buffer_right[adc.readPosition];
+		adc.readPosition = (adc.readPosition + 1) % DACBUFFER_SIZE;
+		frame = 0;
+	}
+	
 	/* Send sample to DSP receive ? */
 	if (adc.isConnectedToDsp) {
-		Crossbar_SendDataToDspReceive(sample, 0);
+		Crossbar_SendDataToDspReceive(sample, frame);
 	}
 	
 	/* Send sample to DMA record ? */
@@ -1569,7 +1634,7 @@ static void Crossbar_Process_ADCXmit_Transfer(void)
 
 	/* Send sample to DAC ? */
 	if (adc.isConnectedToCodec) {
-		Crossbar_SendDataToDAC(sample, 0);
+		Crossbar_SendDataToDAC(sample, adc.wordCount);
 	}
 }
 
@@ -1613,7 +1678,6 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int i;
 	int nBufIdx;
 
-	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
 	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
 	fDacBufSamples = (double)dac.writeBufferSize;
 	fDacBufRdPos = (double)dac.readPosition;

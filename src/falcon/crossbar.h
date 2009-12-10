@@ -76,13 +76,16 @@ extern void Crossbar_OutputReduct_WriteWord(void);
 extern void Crossbar_CodecStatus_ReadWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
 
-/* Called by int.c */
+/* Called by cycint.c */
 extern void Crossbar_InterruptHandler_25Mhz(void);
 extern void Crossbar_InterruptHandler_32Mhz(void);
 
 /* Called by dsp.c */
 void Crossbar_DmaPlayInHandShakeMode(void);
 void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame);
+
+/* Called by microphone.c */
+void Crossbar_GetMicrophoneDatas(short *micro_bufferL, short *micro_bufferR, int microBuffer_size);
 
 
 Uint16 microphone_ADC_is_started;
