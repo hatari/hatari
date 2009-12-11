@@ -151,6 +151,7 @@ Demos:
 - Phaleon Gigademo
 - Posh (by Checkpoint)
 - Rebirth (by MMJ production)
+- Save The Earth (by Defence Force)
 - Soundtracker (by Equinox)
 - Sweety (by DHS)
 - Tut! (by Wildfire)
