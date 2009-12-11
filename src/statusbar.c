@@ -84,7 +84,7 @@ static Uint32 LedColorOn, LedColorOff, RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
 
-#define MAX_MESSAGE_LEN 23
+#define MAX_MESSAGE_LEN 33
 typedef struct msg_item {
 	struct msg_item *next;
 	char msg[MAX_MESSAGE_LEN+1];
@@ -97,8 +97,10 @@ static msg_item_t DefaultMessage;
 static msg_item_t *MessageList = &DefaultMessage;
 static SDL_Rect MessageRect;
 
+/* rect for both frame skip value and fast forward indicator */
 static SDL_Rect FrameSkipsRect;
 static int nOldFrameSkips;
+static int bOldFastForward;
 
 
 /* screen height above statusbar and height of statusbar below screen */
@@ -250,10 +252,10 @@ void Statusbar_Init(SDL_Surface *surf)
 	SDL_FillRect(surf, &sbarbox, GrayBg);
 
 	/* led size */
-	LedRect.w = 2*fonth;
+	LedRect.w = fonth/2;
 	LedRect.h = fonth - 4;
 	LedRect.y = ScreenHeight + StatusbarHeight/2 - LedRect.h/2;
-	
+
 	/* black box for the leds */
 	ledbox = LedRect;
 	ledbox.y -= 1;
@@ -275,7 +277,7 @@ void Statusbar_Init(SDL_Surface *surf)
 		SDL_FillRect(surf, &LedRect, LedColorOff);
 
 		Led[i].offset = offset;
-		offset += LedRect.w + 2*fontw;
+		offset += LedRect.w + fontw;
 	}
 
 	/* draw frameskip */
@@ -283,13 +285,19 @@ void Statusbar_Init(SDL_Surface *surf)
 	FrameSkipsRect.y = MessageRect.y;
 	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS:");
 	FrameSkipsRect.x += 3 * fontw + fontw/2;
-	FrameSkipsRect.w = fontw;
+	FrameSkipsRect.w = 4 * fontw;
 	FrameSkipsRect.h = fonth;
-	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "0");
+
+	if(ConfigureParams.System.bFastForward) {
+		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "0 >>");
+	} else {
+		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "0");
+	}
+
 	nOldFrameSkips = 0;
-	
+
 	/* intialize messages */
-	MessageRect.x = FrameSkipsRect.x + 2 * fontw;
+	MessageRect.x = FrameSkipsRect.x + FrameSkipsRect.w + fontw;
 	MessageRect.w = MAX_MESSAGE_LEN * fontw;
 	MessageRect.h = fonth;
 	for (item = MessageList; item; item = item->next) {
@@ -362,6 +370,21 @@ void Statusbar_UpdateInfo(void)
 {
 	char *end = DefaultMessage.msg;
 
+	/* CPU MHz */
+	if (ConfigureParams.System.nCpuFreq > 9) {
+		*end++ = '0' + ConfigureParams.System.nCpuFreq / 10;
+	}
+	*end++ = '0' + ConfigureParams.System.nCpuFreq % 10;
+	end = Statusbar_AddString(end, "MHz/");
+
+	/* CPU type */
+	if(ConfigureParams.System.nCpuLevel > 0) {
+		*end++ = '0';
+		*end++ = '0' + ConfigureParams.System.nCpuLevel % 10;
+		*end++ = '0';
+		*end++ = '/';
+	}
+
 	/* amount of memory */
 	if (ConfigureParams.Memory.nMemorySize > 9) {
 		*end++ = '1';
@@ -374,7 +397,7 @@ void Statusbar_UpdateInfo(void)
 		}
 	}
 	end = Statusbar_AddString(end, "MB ");
-	
+
 	/* machine type */
 	switch (ConfigureParams.System.nMachineType) {
 	case MACHINE_ST:
@@ -405,6 +428,7 @@ void Statusbar_UpdateInfo(void)
 		*end++ = '0' + (TosVersion & 0xf);
 	}
 	*end = '\0';
+
 	assert(end - DefaultMessage.msg < MAX_MESSAGE_LEN);
 	DEBUGPRINT(("Set default message: '%s'\n", DefaultMessage.msg));
 	DefaultMessage.shown = false;
@@ -614,19 +638,32 @@ void Statusbar_Update(SDL_Surface *surf)
 		SDL_UpdateRects(surf, 1, &rect);
 		DEBUGPRINT(("LED[%d] = %s\n", i, Led[i].state?"ON":"OFF"));
 	}
+
 	Statusbar_ShowMessage(surf, currentticks);
 
-	if (nFrameSkips != nOldFrameSkips) {
-		char fscount[2] = { '\0', '\0' };
+	if (nOldFrameSkips != nFrameSkips ||
+	    bOldFastForward != ConfigureParams.System.bFastForward) {
+		char fscount[5];
+		int end = 2;
+
 		if (nFrameSkips < 10)
 			fscount[0] = '0' + nFrameSkips;
 		else
 			fscount[0] = 'X';
+		fscount[1] = ' ';
+		if(ConfigureParams.System.bFastForward) {
+			fscount[2] = '>';
+			fscount[3] = '>';
+			end = 4;
+		}
+		fscount[end] = '\0';
+
 		SDL_FillRect(surf, &FrameSkipsRect, GrayBg);
 		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, fscount);
 		SDL_UpdateRects(surf, 1, &FrameSkipsRect);
 		DEBUGPRINT(("FS = %s\n", fscount));
 		nOldFrameSkips = nFrameSkips;
+		bOldFastForward = ConfigureParams.System.bFastForward;
 	}
 
 	if ((bRecordingYM || bRecordingWav || bRecordingAvi)
