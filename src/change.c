@@ -330,8 +330,6 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (NeedReset)
 	{
 		Reset_Cold();
-		/* reset needing changes may affect also info shown in statusbar */
-		Statusbar_UpdateInfo();
 	}
 
 	/* Go into/return from full screen if flagged */
@@ -339,6 +337,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		Screen_EnterFullScreen();
 	else if (bInFullScreen && !ConfigureParams.Screen.bFullScreen)
 		Screen_ReturnFromFullScreen();
+
+	/* update statusbar info (CPU, MHz, mem etc) */
+	Statusbar_UpdateInfo();
 }
 
 
