@@ -267,9 +267,6 @@ extern void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value);
 extern void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core);
 extern void dsp_core_setPortCDataRegister(dsp_core_t *dsp_core, Uint32 value);
 
-/* Process peripheral code */
-extern void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */
-
 #ifdef __cplusplus
 }
 #endif

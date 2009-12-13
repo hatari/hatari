@@ -662,7 +662,7 @@ static void dsp_postexecute_interrupts(void)
 
 			/* level 0, 1 ,2 interrupt ? */
 			/* if interrupt is masked in SR, don't process it */
-			if (dsp_core->interrupt_ipl[i] <= ipl_sr)
+			if (dsp_core->interrupt_ipl[i] < ipl_sr)
 				continue;
 
 			/* if interrupt is lower or equal than current arbitrated interrupt */
