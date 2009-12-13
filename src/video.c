@@ -248,6 +248,8 @@
 /* 2009/12/06	[NP]	Add support for STE 224 bytes overscan without stabiliser by switching	*/
 /*			hi/lo at cycle 504/4 to remove left border (fix More Or Less Zero and	*/
 /*			Cernit Trandafir by DHS, as well as Save The Earth by Defence Force).	*/
+/* 2009/12/13	[NP]	Improve STE 224 bytes lines : correctly set leftmost 16 pixels to color	*/
+/*			0 and correct small glitches when combined with hscroll ($ff8264).	*/
 
 
 
@@ -1792,7 +1794,7 @@ static void Video_CopyScreenLineColor(void)
 		VideoOffset = -2;						/* always 2 bytes in low res overscan */
 
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )
-		VideoOffset = -4;
+		VideoOffset = -4;						/* 4 first bytes of the line are not shown */
 
 	/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
 	/* Depending on the number of pixels, we need to compensate for some skipped words */
@@ -1826,11 +1828,11 @@ static void Video_CopyScreenLineColor(void)
 			pVideoRaster += SCREENBYTES_LEFT;
 		}
 		else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )	/* bigger line by 20 bytes on the left (STE specific) */
-		{
+		{							/* bytes 0-3 are not shown, only next 16 bytes (32 pixels, 4 bitplanes) */
 			if ( SCREENBYTES_LEFT > BORDERBYTES_LEFT_2_STE )
 			{
-				memset ( pSTScreen, 0, SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE );	/* clear unused pixels */
-				memcpy ( pSTScreen+SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE, pVideoRaster+VideoOffset, BORDERBYTES_LEFT_2_STE );
+				memset ( pSTScreen, 0, SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE+4 );	/* clear unused pixels + bytes 0-3 */
+				memcpy ( pSTScreen+SCREENBYTES_LEFT-BORDERBYTES_LEFT_2_STE+4, pVideoRaster+VideoOffset+4, BORDERBYTES_LEFT_2_STE-4 );
 			}
 			else
 				memcpy ( pSTScreen, pVideoRaster+BORDERBYTES_LEFT_2_STE-SCREENBYTES_LEFT+VideoOffset, SCREENBYTES_LEFT );
@@ -1936,10 +1938,18 @@ static void Video_CopyScreenLineColor(void)
 			Uint16 *pScrollEndAddr;	/* Pointer to end of the line */
 
 			nNegScrollCnt = 16 - HWScrollCount;
-			if (LineBorderMask & (BORDERMASK_LEFT_OFF|BORDERMASK_LEFT_OFF_2_STE))
+			if (LineBorderMask & BORDERMASK_LEFT_OFF)
 				pScrollAdj = (Uint16 *)pSTScreen;
+			else if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
+			{
+				if ( SCREENBYTES_LEFT > BORDERBYTES_LEFT_2_STE )
+					pScrollAdj = (Uint16 *)pSTScreen+4;	/* don't scroll the 4 first bytes (keep color 0)*/
+				else
+					pScrollAdj = (Uint16 *)pSTScreen;	/* we render less bytes on screen than a real ST, scroll the whole line */
+			}
 			else
 				pScrollAdj = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT);
+
 			if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 				pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LINE - 8);
 			else
