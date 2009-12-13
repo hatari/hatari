@@ -250,6 +250,11 @@
 /*			Cernit Trandafir by DHS, as well as Save The Earth by Defence Force).	*/
 /* 2009/12/13	[NP]	Improve STE 224 bytes lines : correctly set leftmost 16 pixels to color	*/
 /*			0 and correct small glitches when combined with hscroll ($ff8264).	*/
+/* 2009/12/13	[NP]	Line scrolling caused by hi/lo switch (STF_PixelScroll) should be	*/
+/*			applied after STE's hardware scrolling, else in overscan 4 color 0	*/
+/*			pixels will appear in the right border (because overscan shift the	*/
+/*			whole displayed area 4 pixels to the left) (fix possible regression on	*/
+/*			STE introduced on 2009/10/31).						*/
 
 
 
@@ -1895,41 +1900,6 @@ static void Video_CopyScreenLineColor(void)
 		pVideoRaster -= VideoOffset;		/* VideoOffset is 0 or -2 */
 
 
-		/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
-		/* as well as scrolling occuring when removing the left border. */
-		/* If >0, shift the line by STF_PixelScroll pixels to the right */
-		/* If <0, shift the line by -STF_PixelScroll pixels to the left */
-		if ( STF_PixelScroll > 0 )
-		{
-			Uint16 *pScreenLineEnd;
-			int count;
-
-			pScreenLineEnd = (Uint16 *) ( pSTScreen + SCREENBYTES_LINE - 2 );
-			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineEnd-- )
-				do_put_mem_word ( pScreenLineEnd , ( ( do_get_mem_word ( pScreenLineEnd - 4 ) << 16 ) | ( do_get_mem_word ( pScreenLineEnd ) ) ) >> STF_PixelScroll );
-			/* Handle the first 16 pixels of the line (add color 0 pixels to the extreme left) */
-			do_put_mem_word ( pScreenLineEnd-0 , ( do_get_mem_word ( pScreenLineEnd-0 ) >> STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineEnd-1 , ( do_get_mem_word ( pScreenLineEnd-1 ) >> STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineEnd-2 , ( do_get_mem_word ( pScreenLineEnd-2 ) >> STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineEnd-3 , ( do_get_mem_word ( pScreenLineEnd-3 ) >> STF_PixelScroll ) );
-		}
-		else if ( STF_PixelScroll < 0 )
-		{
-			Uint16 *pScreenLineStart;
-			int count;
-
-			STF_PixelScroll = -STF_PixelScroll;
-			pScreenLineStart = (Uint16 *)pSTScreen;
-			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineStart++ )
-				do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll ) | ( do_get_mem_word ( pScreenLineStart + 4 ) >> (16-STF_PixelScroll) ) ) );
-			/* Handle the last 16 pixels of the line (add color 0 pixels to the extreme right) */
-			do_put_mem_word ( pScreenLineStart+0 , ( do_get_mem_word ( pScreenLineStart+0 ) << STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineStart+1 , ( do_get_mem_word ( pScreenLineStart+1 ) << STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineStart+2 , ( do_get_mem_word ( pScreenLineStart+2 ) << STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineStart+3 , ( do_get_mem_word ( pScreenLineStart+3 ) << STF_PixelScroll ) );
-		}
-
-
 		/* STE specific */
 		if (!bSteBorderFlag && HWScrollCount)		/* Handle STE fine scrolling (HWScrollCount is zero on ST) */
 		{
@@ -2119,6 +2089,43 @@ static void Video_CopyScreenLineColor(void)
 		{
 			LineWidth = NewLineWidth;
 			NewLineWidth = -1;
+		}
+
+
+		/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
+		/* as well as scrolling occuring when removing the left border. */
+		/* If >0, shift the line by STF_PixelScroll pixels to the right */
+		/* If <0, shift the line by -STF_PixelScroll pixels to the left */
+		/* This should be handled after the STE's hardware scrolling as it will scroll */
+		/* the whole displayed area (while the STE scrolls pixels inside the displayed area) */
+		if ( STF_PixelScroll > 0 )
+		{
+			Uint16 *pScreenLineEnd;
+			int count;
+
+			pScreenLineEnd = (Uint16 *) ( pSTScreen + SCREENBYTES_LINE - 2 );
+			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineEnd-- )
+				do_put_mem_word ( pScreenLineEnd , ( ( do_get_mem_word ( pScreenLineEnd - 4 ) << 16 ) | ( do_get_mem_word ( pScreenLineEnd ) ) ) >> STF_PixelScroll );
+			/* Handle the first 16 pixels of the line (add color 0 pixels to the extreme left) */
+			do_put_mem_word ( pScreenLineEnd-0 , ( do_get_mem_word ( pScreenLineEnd-0 ) >> STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineEnd-1 , ( do_get_mem_word ( pScreenLineEnd-1 ) >> STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineEnd-2 , ( do_get_mem_word ( pScreenLineEnd-2 ) >> STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineEnd-3 , ( do_get_mem_word ( pScreenLineEnd-3 ) >> STF_PixelScroll ) );
+		}
+		else if ( STF_PixelScroll < 0 )
+		{
+			Uint16 *pScreenLineStart;
+			int count;
+
+			STF_PixelScroll = -STF_PixelScroll;
+			pScreenLineStart = (Uint16 *)pSTScreen;
+			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineStart++ )
+				do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll ) | ( do_get_mem_word ( pScreenLineStart + 4 ) >> (16-STF_PixelScroll) ) ) );
+			/* Handle the last 16 pixels of the line (add color 0 pixels to the extreme right) */
+			do_put_mem_word ( pScreenLineStart+0 , ( do_get_mem_word ( pScreenLineStart+0 ) << STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineStart+1 , ( do_get_mem_word ( pScreenLineStart+1 ) << STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineStart+2 , ( do_get_mem_word ( pScreenLineStart+2 ) << STF_PixelScroll ) );
+			do_put_mem_word ( pScreenLineStart+3 , ( do_get_mem_word ( pScreenLineStart+3 ) << STF_PixelScroll ) );
 		}
 	}
 
