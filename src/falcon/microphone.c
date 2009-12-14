@@ -15,7 +15,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <portaudio.h>
+#include "main.h"
 #include "microphone.h"
+#include "crossbar.h"
 
 
 #define FRAMES_PER_BUFFER (64)

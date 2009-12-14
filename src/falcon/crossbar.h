@@ -85,7 +85,7 @@ void Crossbar_DmaPlayInHandShakeMode(void);
 void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame);
 
 /* Called by microphone.c */
-void Crossbar_GetMicrophoneDatas(short *micro_bufferL, short *micro_bufferR, int microBuffer_size);
+void Crossbar_GetMicrophoneDatas(Uint32 *micro_bufferL, Uint32 *micro_bufferR, Uint32 microBuffer_size);
 
 
 Uint16 microphone_ADC_is_started;

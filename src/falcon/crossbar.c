@@ -1570,7 +1570,7 @@ void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame)
  *    - micro_bufferR : right track recorded by the microphone
  *    - microBuffer_size : buffers size
  */
-void Crossbar_GetMicrophoneDatas(short *micro_bufferL, short *micro_bufferR, int microBuffer_size)
+void Crossbar_GetMicrophoneDatas(Uint32 *micro_bufferL, Uint32 *micro_bufferR, Uint32 microBuffer_size)
 {
 	double FreqRatio, FreqRatio2, bufferWritePos;
 	int i, size;
