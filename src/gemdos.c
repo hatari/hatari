@@ -308,7 +308,8 @@ static int PopulateDTA(char *path, struct dirent *file)
 		return 1;
 
 	/* TODO: what to return if this fails? */
-	GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime);
+	if (!GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime))
+		return -3;
 
 	Str_ToUpper(file->d_name);    /* convert to atari-style uppercase */
 	strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
