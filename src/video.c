@@ -793,10 +793,11 @@ static Uint32 Video_CalculateAddress ( void )
 			VideoAddress += PrevSize + NbBytes;
 	}
 
-	LOG_TRACE(TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
-	               VideoBase, pVideoRaster - STRam, VideoAddress, Cycles_GetCounter(CYCLES_COUNTER_VIDEO),
-	               LineCycles, X,
-	               nHBL, HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles );
+	LOG_TRACE(TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d "
+	          "line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
+	          VideoBase, (int)(pVideoRaster - STRam), VideoAddress,
+	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), LineCycles, X, nHBL,
+	          HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles);
 
 	return VideoAddress;
 }
