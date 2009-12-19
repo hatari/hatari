@@ -177,6 +177,10 @@ struct crossbar_s {
 	Uint32 isDacMuted;		/* 0 = DAC is running; 1 = DAC is muted */
 	Uint32 dspXmit_freq;		/* 0 = 25 Mhz ; 1 = external clock ; 2 = 32 Mhz */
 	Uint32 dmaPlay_freq;		/* 0 = 25 Mhz ; 1 = external clock ; 2 = 32 Mhz */
+	Uint16 codecInputSource;	/* codec input source */
+	Uint16 codecAdcInput;		/* codec ADC input */
+	Uint16 gainSetting;
+	Uint16 attenuationSetting;
 	
 	double clock25_cycles;		/* cycles for 25 Mzh interrupt */ 
 	double clock25_cycles_counterD; /* cycles counter for 25 Mzh interrupt (double) */ 
@@ -282,6 +286,10 @@ void Crossbar_Reset(bool bCold)
 	crossbar.playTracks = 1;
 	crossbar.is16Bits = 0;
 	crossbar.isStereo = 1;
+	crossbar.codecInputSource = 3;
+	crossbar.codecAdcInput = 3;
+	crossbar.gainSetting = 0;
+	crossbar.attenuationSetting = 0;
 
 	/* Start 25 Mhz and 32 Mhz Clocks */
 	Crossbar_Start_InterruptHandler_25Mhz();
@@ -319,7 +327,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 /**
  * Read byte from buffer interrupts (0xff8900).
  */
-void Crossbar_BufferInter_ReadWord(void)
+void Crossbar_BufferInter_ReadByte(void)
 {
 //	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 (Sound DMA control) read: 0x%02x\n", IoMem_ReadByte(0xff8900));
 }
@@ -327,7 +335,7 @@ void Crossbar_BufferInter_ReadWord(void)
 /**
  * Write byte to buffer interrupts (0xff8900).
  */
-void Crossbar_BufferInter_WriteWord(void)
+void Crossbar_BufferInter_WriteByte(void)
 {
 	Uint8 dmaCtrl = IoMem_ReadByte(0xff8900);
 
@@ -342,7 +350,7 @@ void Crossbar_BufferInter_WriteWord(void)
 /**
  * Read byte from DMA control register (0xff8901).
  */
-void Crossbar_DmaCtrlReg_ReadWord(void)
+void Crossbar_DmaCtrlReg_ReadByte(void)
 {
 //	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 (additional Sound DMA control) read: 0x%02x\n", IoMem_ReadByte(0xff8901));
 }
@@ -350,7 +358,7 @@ void Crossbar_DmaCtrlReg_ReadWord(void)
 /**
  * Write byte from DMA control register (0xff8901).
  */
-void Crossbar_DmaCtrlReg_WriteWord(void)
+void Crossbar_DmaCtrlReg_WriteByte(void)
 {
 	Uint8 sndCtrl = IoMem_ReadByte(0xff8901);
 
@@ -995,7 +1003,11 @@ void Crossbar_CodecInput_ReadByte(void)
  */
 void Crossbar_CodecInput_WriteByte(void)
 {
+	Uint8 inputSource = IoMem_ReadByte(0xff8937);
+
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 (CODEC input) write: 0x%02x\n", IoMem_ReadByte(0xff8937));
+
+	crossbar.codecInputSource = inputSource & 3;
 }
 
 /**
@@ -1015,7 +1027,11 @@ void Crossbar_AdcInput_ReadByte(void)
  */
 void Crossbar_AdcInput_WriteByte(void)
 {
+	Uint8 input = IoMem_ReadByte(0xff8938);
+
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 (ADC input) write: 0x%02x\n", IoMem_ReadByte(0xff8938));
+
+	crossbar.codecAdcInput = input & 3;
 }
 
 /**
@@ -1035,27 +1051,35 @@ void Crossbar_InputAmp_ReadByte(void)
  */
 void Crossbar_InputAmp_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 (CODEC channel amplification) write: 0x%04x\n", IoMem_ReadWord(0xff8939));
+	Uint8 amplification = IoMem_ReadByte(0xff8939);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 (CODEC channel amplification) write: 0x%02x\n", IoMem_ReadByte(0xff8939));
+
+	crossbar.gainSetting = amplification;
 }
 
 /**
- * Read word from output reduction register (0xff893a).
+ * Read byte from output reduction register (0xff893a).
  * 	Bits LLLLRRRR
  * 	Reduction is in -1.5 dB steps
  */
-void Crossbar_OutputReduct_ReadWord(void)
+void Crossbar_OutputReduct_ReadByte(void)
 {
 //	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) read: 0x%04x\n", IoMem_ReadWord(0xff893a));
 }
 
 /**
- * Write word to channel reduction register (0xff893a).
+ * Write byte to channel reduction register (0xff893a).
  * 	Bits LLLLRRRR
  * 	Reduction is in -1.5 dB steps
  */
-void Crossbar_OutputReduct_WriteWord(void)
+void Crossbar_OutputReduct_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) write: 0x%04x\n", IoMem_ReadWord(0xff893a));
+	Uint8 reduction = IoMem_ReadByte(0xff893a);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) write: 0x%02x\n", IoMem_ReadByte(0xff893a));
+
+	crossbar.attenuationSetting = reduction;
 }
 
 /**
@@ -1148,7 +1172,7 @@ static void Crossbar_Start_InterruptHandler_25Mhz(void)
 	crossbar.clock25_cycles_counterD += crossbar.clock25_cycles;
 	cycles_25 = (Uint32)(crossbar.clock25_cycles_counterD) - crossbar.clock25_cycles_counterL;
 	crossbar.clock25_cycles_counterL += cycles_25;
-	Int_AddRelativeInterrupt((Uint32)crossbar.clock25_cycles /*cycles_25*/, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_25MHZ);
+	Int_AddRelativeInterrupt(cycles_25, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_25MHZ);
 
 }
 
@@ -1410,7 +1434,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	if (dmaPlay.frameCounter >= dmaPlay.frameLen)
 	{
 		/* Update sound */
-		Sound_Update();
+		//Sound_Update();
 		
 		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
 		if (dmaPlay.mfp15_int) {
@@ -1570,7 +1594,7 @@ void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame)
  *    - micro_bufferR : right track recorded by the microphone
  *    - microBuffer_size : buffers size
  */
-void Crossbar_GetMicrophoneDatas(Uint32 *micro_bufferL, Uint32 *micro_bufferR, Uint32 microBuffer_size)
+void Crossbar_GetMicrophoneDatas(Sint16 *micro_bufferL, Sint16 *micro_bufferR, Uint32 microBuffer_size)
 {
 	double FreqRatio, FreqRatio2, bufferWritePos;
 	int i, size;

@@ -153,8 +153,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
 	{ 0xff8803, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8803_WriteByte },
 
-	{ 0xff8900, SIZE_BYTE, Crossbar_BufferInter_ReadWord, Crossbar_BufferInter_WriteWord },       /* Crossbar Buffer interrupts */
-	{ 0xff8901, SIZE_BYTE, Crossbar_DmaCtrlReg_ReadWord, Crossbar_DmaCtrlReg_WriteWord },         /* Crossbar control register */
+	{ 0xff8900, SIZE_BYTE, Crossbar_BufferInter_ReadByte, Crossbar_BufferInter_WriteByte },       /* Crossbar Buffer interrupts */
+	{ 0xff8901, SIZE_BYTE, Crossbar_DmaCtrlReg_ReadByte, Crossbar_DmaCtrlReg_WriteByte },         /* Crossbar control register */
 	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
 	{ 0xff8903, SIZE_BYTE, Crossbar_FrameStartHigh_ReadByte, Crossbar_FrameStartHigh_WriteByte }, /* DMA sound frame start high */
 	{ 0xff8904, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
@@ -186,7 +186,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8937, SIZE_BYTE, Crossbar_CodecInput_ReadByte, Crossbar_CodecInput_WriteByte },   /* CODEC input source from 16 bits adder */
 	{ 0xff8938, SIZE_BYTE, Crossbar_AdcInput_ReadByte, Crossbar_AdcInput_WriteByte },       /* ADC converter input for L+R channel */
 	{ 0xff8939, SIZE_BYTE, Crossbar_InputAmp_ReadByte, Crossbar_InputAmp_WriteByte },       /* Input amplifier (+1.5 dB step) */
-	{ 0xff893a, SIZE_WORD, Crossbar_OutputReduct_ReadWord, Crossbar_OutputReduct_WriteWord },   /* Output reduction (-1.5 dB step) */
+	{ 0xff893a, SIZE_BYTE, Crossbar_OutputReduct_ReadByte, Crossbar_OutputReduct_WriteByte },   /* Output reduction (-1.5 dB step) */
+	{ 0xff893b, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* No bus error here */
 	{ 0xff893c, SIZE_WORD, Crossbar_CodecStatus_ReadWord, Crossbar_CodecStatus_WriteWord }, /* CODEC status */
 	{ 0xff893e, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* No bus error here */
 	{ 0xff8940, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* GPx direction */

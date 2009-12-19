@@ -47,10 +47,10 @@ extern void Crossbar_FrameEndMed_ReadByte(void);
 extern void Crossbar_FrameEndMed_WriteByte(void);
 extern void Crossbar_FrameEndLow_ReadByte(void);
 extern void Crossbar_FrameEndLow_WriteByte(void);
-extern void Crossbar_BufferInter_ReadWord(void);
-extern void Crossbar_BufferInter_WriteWord(void);
-extern void Crossbar_DmaCtrlReg_ReadWord(void);
-extern void Crossbar_DmaCtrlReg_WriteWord(void);
+extern void Crossbar_BufferInter_ReadByte(void);
+extern void Crossbar_BufferInter_WriteByte(void);
+extern void Crossbar_DmaCtrlReg_ReadByte(void);
+extern void Crossbar_DmaCtrlReg_WriteByte(void);
 extern void Crossbar_DmaTrckCtrl_ReadByte(void);
 extern void Crossbar_DmaTrckCtrl_WriteByte(void);
 extern void Crossbar_SoundModeCtrl_ReadByte(void);
@@ -71,8 +71,8 @@ extern void Crossbar_AdcInput_ReadByte(void);
 extern void Crossbar_AdcInput_WriteByte(void);
 extern void Crossbar_InputAmp_ReadByte(void);
 extern void Crossbar_InputAmp_WriteByte(void);
-extern void Crossbar_OutputReduct_ReadWord(void);
-extern void Crossbar_OutputReduct_WriteWord(void);
+extern void Crossbar_OutputReduct_ReadByte(void);
+extern void Crossbar_OutputReduct_WriteByte(void);
 extern void Crossbar_CodecStatus_ReadWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
 
@@ -85,7 +85,7 @@ void Crossbar_DmaPlayInHandShakeMode(void);
 void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame);
 
 /* Called by microphone.c */
-void Crossbar_GetMicrophoneDatas(Uint32 *micro_bufferL, Uint32 *micro_bufferR, Uint32 microBuffer_size);
+void Crossbar_GetMicrophoneDatas(Sint16 *micro_bufferL, Sint16 *micro_bufferR, Uint32 microBuffer_size);
 
 
 Uint16 microphone_ADC_is_started;

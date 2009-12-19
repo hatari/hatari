@@ -36,8 +36,8 @@ static PaStream *micro_stream;
 static PaError  micro_err;
 
 static int   micro_sampleRate;
-static short micro_buffer_L[FRAMES_PER_BUFFER];	/* left buffer */
-static short micro_buffer_R[FRAMES_PER_BUFFER];	/* right buffer */
+static Sint16 micro_buffer_L[FRAMES_PER_BUFFER];	/* left buffer */
+static Sint16 micro_buffer_R[FRAMES_PER_BUFFER];	/* right buffer */
 
 
 /* This routine will be called by the PortAudio engine when audio is needed.
@@ -51,16 +51,14 @@ static int Microphone_Callback (const void *inputBuffer, void *outputBuffer,
                            void *userData)
 {
 	unsigned int i;
-	const short *in = (const short*)inputBuffer;
+	const Sint16 *in = inputBuffer;
 	
-	short *out_L = (short*)micro_buffer_L;
-	short *out_R = (short*)micro_buffer_R;
+	Sint16 *out_L = (Sint16*)micro_buffer_L;
+	Sint16 *out_R = (Sint16*)micro_buffer_R;
 
 	if (inputBuffer == NULL) {
-		for (i=0; i<framesPerBuffer; i++) {
-			*out_L ++ = 0;	/* left - silent */
-			*out_R ++ = 0;	/* right - silent */
-		}
+		memset(micro_buffer_L, 0, sizeof(micro_buffer_L));
+		memset(micro_buffer_R, 0, sizeof(micro_buffer_R));
 	}
 	else {
 		for (i=0; i<framesPerBuffer; i++) {
@@ -70,7 +68,7 @@ static int Microphone_Callback (const void *inputBuffer, void *outputBuffer,
 	}
 
 	/* send buffer to crossbar */
-	Crossbar_GetMicrophoneDatas(&micro_buffer_L, &micro_buffer_R, framesPerBuffer);
+	Crossbar_GetMicrophoneDatas(micro_buffer_L, micro_buffer_R, framesPerBuffer);
 	
 	/* get Next Microphone datas */
 	return paContinue;
