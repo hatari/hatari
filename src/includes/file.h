@@ -16,7 +16,7 @@ extern bool File_DirExists(const char *path);
 extern bool File_DoesFileNameEndWithSlash(char *pszFileName);
 extern Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[]);
 extern bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool bQueryOverwrite);
-extern int File_Length(const char *pszFileName);
+extern long File_Length(const char *pszFileName);
 extern bool File_Exists(const char *pszFileName);
 extern bool File_DirectoryExists(const char *psDirName);
 extern bool File_QueryOverwrite(const char *pszFileName);

@@ -295,10 +295,10 @@ bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool
 /**
  * Return size of file, -1 if error
  */
-int File_Length(const char *pszFileName)
+long File_Length(const char *pszFileName)
 {
 	FILE *hDiskFile;
-	int FileSize;
+	long FileSize;
 
 	hDiskFile = fopen(pszFileName, "rb");
 	if (hDiskFile!=NULL)
