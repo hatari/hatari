@@ -562,7 +562,7 @@ static void HDC_DebugCommandPacket(FILE *hdlogFile)
 
 	fprintf(hdlogFile, "Target: %i\n", HD_TARGET(HDCCommand));
 	fprintf(hdlogFile, "Device: %i\n", HD_DEVICE(HDCCommand));
-	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetOffset());
+	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetOffset()/512);
 
 	fprintf(hdlogFile, "Sector count: 0x%x\n", HD_SECTORCOUNT(HDCCommand));
 	fprintf(hdlogFile, "HDC sector count: 0x%x\n", HDCSectorCount);
