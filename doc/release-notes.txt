@@ -15,6 +15,10 @@ Emulation:
   - Minor fixes to Fseek(), Fopen(), Fdatime() (e.g. Pure debugger works)
   - Prevent DTA and read/write functions accessing invalid memory areas
   - Programs can change read-only files to be writable (by default)
+- Microphone (jack) emulation (Falcon mode)
+- SSI direct sound entrance ("Audio Fun Machine" and winrec are working)
+- DMA sound recording
+- Crossbar handshake mode transfers
 
 Emulator:
 - Option for preventing GEMDOS HDD emulation file modifications
