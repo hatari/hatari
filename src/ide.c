@@ -2697,10 +2697,11 @@ void Ide_Init(void)
 	memset(hd_table[1], 0, sizeof(BlockDriverState));
 
 	bdrv_open(hd_table[0], ConfigureParams.HardDisk.szIdeMasterHardDiskImage, 0);
-	bdrv_open(hd_table[1], ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, 0);
 
 	if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
 	{
+		bdrv_open(hd_table[1], ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, 0);
+
 		ide_init2(&opaque_ide_if[0], hd_table[0], hd_table[1]);
 	}
 	else
