@@ -87,7 +87,4 @@ void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame);
 /* Called by microphone.c */
 void Crossbar_GetMicrophoneDatas(Sint16 *micro_bufferL, Sint16 *micro_bufferR, Uint32 microBuffer_size);
 
-
-Uint16 microphone_ADC_is_started;
-
 #endif /* HATARI_CROSSBAR_H */

@@ -24,6 +24,8 @@
 
 /* Static functions */
 static void Microphone_Error (void);
+static int Microphone_Terminate(void);
+
 static int Microphone_Callback (const void *inputBuffer, void *outputBuffer,
                            unsigned long framesPerBuffer,
                            const PaStreamCallbackTimeInfo* timeInfo,
@@ -89,11 +91,17 @@ int Microphone_Start(int sampleRate)
 	micro_err = Pa_Initialize();
 	if (micro_err != paNoError) {
 		Microphone_Error();
-		return -1;
+		return 0;
 	}
 
 	/* Initialize microphone parameters */
 	micro_inputParameters.device = Pa_GetDefaultInputDevice();	/* default input device */
+	if (micro_inputParameters.device == paNoDevice) {
+		fprintf (stderr, "Microphone: No input device found.\n");
+		Microphone_Terminate();
+		return 0;
+	}
+	
 	micro_inputParameters.channelCount = 2;				/* stereo input */
 	micro_inputParameters.sampleFormat = paInt16;			/* 16 bits sound */
 	micro_inputParameters.suggestedLatency = Pa_GetDeviceInfo (micro_inputParameters.device)->defaultLowInputLatency;
@@ -111,17 +119,17 @@ int Microphone_Start(int sampleRate)
 		NULL);
 	if (micro_err != paNoError) {
 		Microphone_Error();
-		return -1;
+		return 0;
 	}
 
 	/* Start microphone recording */
 	micro_err = Pa_StartStream( micro_stream );
 	if (micro_err != paNoError) {
 		Microphone_Error();
-		return -1;
+		return 0;
 	}
 	
-	return 0;
+	return 1;
 }
 
 /**
@@ -129,10 +137,24 @@ int Microphone_Start(int sampleRate)
  */
 static void Microphone_Error(void)
 {
-	Pa_Terminate();
 	fprintf (stderr, "An error occured while using the portaudio stream\n");
 	fprintf (stderr, "Error number: %d\n", micro_err);
 	fprintf (stderr, "Error message: %s\n", Pa_GetErrorText (micro_err));
+
+	Microphone_Terminate();
+}
+
+/**
+ * Microphone (jack) Terminate : terminate the microphone emulation
+ */
+static int Microphone_Terminate(void)
+{
+	micro_err = Pa_Terminate();
+	if (micro_err != paNoError) {
+		fprintf (stderr, "PortAudio error: %s\n", Pa_GetErrorText(micro_err));
+		return -1;
+	}
+	return 0;
 }
 
 /**
@@ -147,9 +169,7 @@ int Microphone_Stop(void)
 		return -1;
 	}
 
-	Pa_Terminate();
-
-	return 0;
+	return Microphone_Terminate();
 }
 
 #endif /* HAVE PORTAUDIO */

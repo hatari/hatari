@@ -181,6 +181,7 @@ struct crossbar_s {
 	Uint16 codecAdcInput;		/* codec ADC input */
 	Uint16 gainSetting;
 	Uint16 attenuationSetting;
+	Uint16 microphone_ADC_is_started;
 	
 	double clock25_cycles;		/* cycles for 25 Mzh interrupt */ 
 	double clock25_cycles_counterD; /* cycles counter for 25 Mzh interrupt (double) */ 
@@ -235,11 +236,6 @@ void Crossbar_Reset(bool bCold)
 	{
 	}
 	
-	/* Stop Microphone jack emulation if already running */
-	if (microphone_ADC_is_started) { 
-		Microphone_Stop();
-	}
-
 	/* Stop DMA sound playing / record */
 	IoMem_WriteByte(0xff8901,0);
 	dmaPlay.isRunning = 0;
@@ -266,7 +262,6 @@ void Crossbar_Reset(bool bCold)
 	adc.readPosition = 0;
 	adc.writePosition = 0;
 	adc.writeBufferSize = 0;
-	microphone_ADC_is_started = 0;
 
 	/* DSP inits */
 	dspXmit.wordCount = 0;
@@ -290,15 +285,15 @@ void Crossbar_Reset(bool bCold)
 	crossbar.codecAdcInput = 3;
 	crossbar.gainSetting = 0;
 	crossbar.attenuationSetting = 0;
+	crossbar.microphone_ADC_is_started = 0;
 
 	/* Start 25 Mhz and 32 Mhz Clocks */
 	Crossbar_Start_InterruptHandler_25Mhz();
 	Crossbar_Start_InterruptHandler_32Mhz();
 
 	/* Start Microphone jack emulation */
-	if (!microphone_ADC_is_started) { 
-		microphone_ADC_is_started = 1;
-		Microphone_Start((int)nAudioFrequency);
+	if (crossbar.microphone_ADC_is_started == 0) { 
+		crossbar.microphone_ADC_is_started = Microphone_Start((int)nAudioFrequency);
 	}
 }
 
@@ -316,7 +311,6 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&adc, sizeof(adc));
 	MemorySnapShot_Store(&dspXmit, sizeof(dspXmit));
 	MemorySnapShot_Store(&dspReceive, sizeof(dspReceive));
-	MemorySnapShot_Store(&microphone_ADC_is_started, sizeof(microphone_ADC_is_started));
 }
 
 
