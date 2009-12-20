@@ -11,10 +11,12 @@
 #include <SDL_endian.h>
 
 typedef double	fpu_register;
+
 typedef union {
 	fpu_register val;
 	uae_u32 parts[sizeof(fpu_register) / 4];
 } fpu_register_parts;
+
 enum {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 	FHI		= 0,
@@ -31,8 +33,7 @@ STATIC_INLINE double to_single(uae_u32 value)
 {
 	uae_u32 sign;
 	uae_u32 expon;
-	fpu_register result;
-	fpu_register_parts * p = (fpu_register_parts *)&result;
+	fpu_register_parts result;
 
 	if ((value & 0x7fffffff) == 0)
 		return (0.0);
@@ -40,10 +41,10 @@ STATIC_INLINE double to_single(uae_u32 value)
 	sign = (value & 0x80000000);
 	expon  = ((value & 0x7F800000) >> 23) + 1023 - 127;
 
-	p->parts[FLO] = value << 29;
-	p->parts[FHI] = sign | (expon << 20) | ((value & 0x007FFFFF) >> 3);
+	result.parts[FLO] = value << 29;
+	result.parts[FHI] = sign | (expon << 20) | ((value & 0x007FFFFF) >> 3);
 
-	return result;
+	return result.val;
 }
 #endif
 
@@ -123,16 +124,15 @@ STATIC_INLINE void from_exten(double src, uae_u32 * wrd1, uae_u32 * wrd2, uae_u3
 #ifndef HAVE_to_double
 STATIC_INLINE double to_double(uae_u32 wrd1, uae_u32 wrd2)
 {
-	fpu_register result;
-	fpu_register_parts *p = (fpu_register_parts *)&result;
+	fpu_register_parts result;
 
 	if ((wrd1 & 0x7fffffff) == 0 && wrd2 == 0)
 		return 0.0;
 
-	p->parts[FLO] = wrd2;
-	p->parts[FHI] = wrd1;
+	result.parts[FLO] = wrd2;
+	result.parts[FHI] = wrd1;
 
-	return result;
+	return result.val;
 }
 #endif
 
