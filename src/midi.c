@@ -95,7 +95,7 @@ void Midi_UnInit(void)
 	pMidiFhIn = File_Close(pMidiFhIn);
 	pMidiFhOut = File_Close(pMidiFhOut);
 
-	Int_RemovePendingInterrupt(INTERRUPT_MIDI);
+	CycInt_RemovePendingInterrupt(INTERRUPT_MIDI);
 }
 
 
@@ -110,7 +110,7 @@ void Midi_Reset(void)
 
 	if (ConfigureParams.Midi.bEnableMidi)
 	{
-		Int_AddRelativeInterrupt(2050, INT_CPU_CYCLE, INTERRUPT_MIDI);
+		CycInt_AddRelativeInterrupt(2050, INT_CPU_CYCLE, INTERRUPT_MIDI);
 	}
 }
 
@@ -220,7 +220,7 @@ void Midi_InterruptHandler_Update(void)
 	int nInChar;
 
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Flush outgoing data */
 	if (!(MidiStatusRegister & ACIA_SR_TX_EMPTY))
@@ -269,5 +269,5 @@ void Midi_InterruptHandler_Update(void)
 		}
 	}
 
-	Int_AddRelativeInterrupt(2050, INT_CPU_CYCLE, INTERRUPT_MIDI);
+	CycInt_AddRelativeInterrupt(2050, INT_CPU_CYCLE, INTERRUPT_MIDI);
 }

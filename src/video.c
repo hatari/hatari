@@ -1320,7 +1320,7 @@ void Video_InterruptHandler_HBL ( void )
 	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Increment the hbl jitter index */
 	HblJitterIndex++;
@@ -1571,7 +1571,7 @@ void Video_InterruptHandler_EndLine(void)
 	               nHBL , FrameCycles , LineCycles , PendingCycles );
 
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Ignore HBLs in VDI mode */
 	if (bUseVDIRes)
@@ -1600,7 +1600,7 @@ void Video_InterruptHandler_EndLine(void)
 		}
 
 //fprintf ( stderr , "new tb %d %d %d\n" , LineTimerBCycle , nCyclesPerLine , LineTimerBCycle - LineCycles + nCyclesPerLine );
-		Int_AddRelativeInterrupt ( LineTimerBCycle - LineCycles + nCyclesPerLine,
+		CycInt_AddRelativeInterrupt ( LineTimerBCycle - LineCycles + nCyclesPerLine,
 					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
 	}
 
@@ -2488,9 +2488,9 @@ static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	if ( LineCycles < Pos )			/* changed before reaching the new Pos on the current line */
-		Int_AddRelativeInterrupt ( Pos - LineCycles , INT_CPU_CYCLE, Handler );
+		CycInt_AddRelativeInterrupt ( Pos - LineCycles , INT_CPU_CYCLE, Handler );
 	else					/* Pos will be applied on next line */
-		Int_AddRelativeInterrupt ( Pos - LineCycles + nCyclesPerLine , INT_CPU_CYCLE, Handler );
+		CycInt_AddRelativeInterrupt ( Pos - LineCycles + nCyclesPerLine , INT_CPU_CYCLE, Handler );
 }
 
 
@@ -2528,7 +2528,7 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 	}
 
 	/* TODO replace CYCLES_PER_FRAME */
-	Int_AddRelativeInterrupt ( CYCLES_PER_FRAME - PendingCyclesOver , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL );
+	CycInt_AddRelativeInterrupt(CYCLES_PER_FRAME - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 }
 
 
@@ -2545,7 +2545,7 @@ void Video_InterruptHandler_VBL ( void )
 	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );    /* +ve */
 
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Increment the vbl jitter index */
 	VblJitterIndex++;

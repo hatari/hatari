@@ -559,7 +559,7 @@ static void Blitter_Start(void)
 	else
 	{
 		/* Continue blitting later */
-		Int_AddRelativeInterrupt(NONHOG_CYCLES, INT_CPU_CYCLE, INTERRUPT_BLITTER);
+		CycInt_AddRelativeInterrupt(NONHOG_CYCLES, INT_CPU_CYCLE, INTERRUPT_BLITTER);
 	}
 }
 
@@ -922,7 +922,7 @@ void Blitter_Control_WriteByte(void)
 	BlitterVars.line = BlitterRegs.ctrl & 0xF;
 
 	/* Remove old pending update interrupt */
-	Int_RemovePendingInterrupt(INTERRUPT_BLITTER);
+	CycInt_RemovePendingInterrupt(INTERRUPT_BLITTER);
 
 	/* Busy bit set? */
 	if (BlitterRegs.ctrl & 0x80)
@@ -935,8 +935,8 @@ void Blitter_Control_WriteByte(void)
 		else
 		{
 			/* Start blitting after some CPU cycles */
-			Int_AddRelativeInterrupt((CurrentInstrCycles+nWaitStateCycles)>>nCpuFreqShift,
-									 INT_CPU_CYCLE, INTERRUPT_BLITTER);
+			CycInt_AddRelativeInterrupt((CurrentInstrCycles+nWaitStateCycles)>>nCpuFreqShift,
+							 INT_CPU_CYCLE, INTERRUPT_BLITTER);
 		}
 	}
 }
@@ -960,7 +960,7 @@ void Blitter_Skew_WriteByte(void)
  */
 void Blitter_InterruptHandler(void)
 {
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	if (BlitterRegs.ctrl & 0x80)
 	{

@@ -521,12 +521,12 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 
 		/* And add to our internal interrupt list, if timer cycles is zero
 		 * then timer is stopped */
-		Int_RemovePendingInterrupt(Handler);
+		CycInt_RemovePendingInterrupt(Handler);
 		if (TimerClockCycles)
 		{
 			if ((*pTimerCanResume == true) && (bFirstTimer == true))	/* we can't resume if the timer is auto restarting after an interrupt */
 			{
-				Int_ResumeStoppedInterrupt ( Handler );
+				CycInt_ResumeStoppedInterrupt ( Handler );
 			}
 			else
 			{
@@ -534,7 +534,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
-					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
+					CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
 				else
 				{
 					int	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE );
@@ -543,7 +543,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 					if ( PendingCyclesOver > TimerClockCyclesInternal )
 						PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
-					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
+					CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
 				}
 
 				*pTimerCanResume = true;		/* timer was set, resume is possible if stop/start it later */
@@ -568,7 +568,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 	else	/* timer control > 7 */
 	{
 		/* Make sure no outstanding interrupts in list if channel is disabled */
-		Int_RemovePendingInterrupt(Handler);
+		CycInt_RemovePendingInterrupt(Handler);
 	}
 
 	if (TimerControl == 8 )				/* event count mode */
@@ -627,12 +627,12 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 
 		/* And add to our internal interrupt list, if timer cycles is zero
 		 * then timer is stopped */
-		Int_RemovePendingInterrupt(Handler);
+		CycInt_RemovePendingInterrupt(Handler);
 		if (TimerClockCycles)
 		{
 			if ((*pTimerCanResume == true) && (bFirstTimer == true))	/* we can't resume if the timer is auto restarting after an interrupt */
 			{
-				Int_ResumeStoppedInterrupt ( Handler );
+				CycInt_ResumeStoppedInterrupt ( Handler );
 			}
 			else
 			{
@@ -640,7 +640,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
-					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
+					CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
 				else
 				{
 					int	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE );
@@ -649,7 +649,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 					if ( PendingCyclesOver > TimerClockCyclesInternal )
 						PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
 
-					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
+					CycInt_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
 				}
 
 				*pTimerCanResume = true;		/* timer was set, resume is possible if stop/start it later */
@@ -670,7 +670,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 		}
 
 		/* Make sure no outstanding interrupts in list if channel is disabled */
-		Int_RemovePendingInterrupt(Handler);
+		CycInt_RemovePendingInterrupt(Handler);
 	}
 
 	return TimerClockCycles;
@@ -687,11 +687,11 @@ static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCy
 
 	/* Find TimerAB count, if no interrupt or not in delay mode assume
 	 * in Event Count mode so already up-to-date as kept by HBL */
-	if (Int_InterruptActive(Handler) && (TimerControl > 0) && (TimerControl <= 7))
+	if (CycInt_InterruptActive(Handler) && (TimerControl > 0) && (TimerControl <= 7))
 	{
 		/* Find cycles passed since last interrupt */
-		//TimerCyclesPassed = TimerCycles - Int_FindCyclesPassed ( Handler, INT_MFP_CYCLE );
-		MainCounter = MFP_CYCLE_TO_REG ( Int_FindCyclesPassed ( Handler, INT_MFP_CYCLE ), TimerControl );
+		//TimerCyclesPassed = TimerCycles - CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE );
+		MainCounter = MFP_CYCLE_TO_REG ( CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ), TimerControl );
 		//fprintf ( stderr , "mfp read AB passed %d count %d\n" , TimerCyclesPassed, MainCounter );
 	}
 
@@ -700,7 +700,7 @@ static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCy
 	/* if no write is made to the data reg before */
 	if ( TimerIsStopping )
 	{
-		if ( Int_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
+		if ( CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
 		{
 			MainCounter = 0;			/* internal mfp counter becomes 0 (=256) */
 			LOG_TRACE(TRACE_MFP_READ , "mfp read AB handler=%d stopping timer while data reg between 1 and 0 : forcing data to 256\n" ,
@@ -731,11 +731,11 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
 
 	/* Find TimerCD count. If timer is off, MainCounter already contains
 	 * the latest value */
-	if (Int_InterruptActive(Handler))
+	if (CycInt_InterruptActive(Handler))
 	{
 		/* Find cycles passed since last interrupt */
-		//TimerCyclesPassed = TimerCycles - Int_FindCyclesPassed ( Handler, INT_MFP_CYCLE );
-		MainCounter = MFP_CYCLE_TO_REG ( Int_FindCyclesPassed ( Handler, INT_MFP_CYCLE ), TimerControl);
+		//TimerCyclesPassed = TimerCycles - CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE );
+		MainCounter = MFP_CYCLE_TO_REG ( CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ), TimerControl);
 		//fprintf ( stderr , "mfp read CD passed %d count %d\n" , TimerCyclesPassed, MainCounter );
 	}
 
@@ -744,7 +744,7 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
 	/* if no write is made to the data reg before */
 	if ( TimerIsStopping )
 	{
-		if ( Int_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
+		if ( CycInt_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
 		{
 			MainCounter = 0;			/* internal mfp counter becomes 0 (=256) */
 			LOG_TRACE(TRACE_MFP_READ , "mfp read CD handler=%d stopping timer while data reg between 1 and 0 : forcing data to 256\n" ,
@@ -866,7 +866,7 @@ void MFP_InterruptHandler_TimerA(void)
 	PendingCyclesOver = -PendingInterruptCount;		/* >= 0 */
 
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Acknowledge in MFP circuit, pass bit,enable,pending */
 	if ((MFP_TACR&0xf) != 0)            /* Is timer OK? */
@@ -888,7 +888,7 @@ void MFP_InterruptHandler_TimerB(void)
 	PendingCyclesOver = -PendingInterruptCount;		/* >= 0 */
 
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TBCR&0xf) != 0)            /* Is timer OK? */
@@ -910,7 +910,7 @@ void MFP_InterruptHandler_TimerC(void)
 	PendingCyclesOver = -PendingInterruptCount;		/* >= 0 */
 
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x70) != 0)          /* Is timer OK? */
@@ -932,7 +932,7 @@ void MFP_InterruptHandler_TimerD(void)
 	PendingCyclesOver = -PendingInterruptCount;		/* >= 0 */
 
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x07) != 0)          /* Is timer OK? */

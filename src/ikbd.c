@@ -376,8 +376,8 @@ void IKBD_Reset(bool bCold)
 	if (bCold)
 	{
 		KeyboardProcessor.bReset = false;
-		if (Int_InterruptActive(INTERRUPT_IKBD_RESETTIMER))
-			Int_RemovePendingInterrupt(INTERRUPT_IKBD_RESETTIMER);
+		if (CycInt_InterruptActive(INTERRUPT_IKBD_RESETTIMER))
+			CycInt_RemovePendingInterrupt(INTERRUPT_IKBD_RESETTIMER);
 	}
 
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
@@ -423,7 +423,7 @@ void IKBD_Reset(bool bCold)
 	IKBD_Reset_ExeMode ();
 
 	/* Add auto-update function to the queue */
-	Int_AddRelativeInterrupt(150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
+	CycInt_AddRelativeInterrupt(150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
 }
 
 
@@ -943,7 +943,7 @@ static void IKBD_SendAutoKeyboardCommands(void)
 void IKBD_InterruptHandler_AutoSend(void)
 {
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Handle user events and other messages, (like quit message) */
 	Main_EventHandler();
@@ -952,14 +952,14 @@ void IKBD_InterruptHandler_AutoSend(void)
 	if (bQuitProgram)
 	{
 		/* Pass NULL interrupt function to quit cleanly */
-		Int_AddAbsoluteInterrupt(4, INT_CPU_CYCLE, INTERRUPT_NULL);
+		CycInt_AddAbsoluteInterrupt(4, INT_CPU_CYCLE, INTERRUPT_NULL);
 		/* Assure that CPU core shuts down */
 		M68000_SetSpecial(SPCFLAG_BRK);
 		return;
 	}
 
 	/* Trigger this auto-update function again after a while */
-	Int_AddRelativeInterrupt(150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
+	CycInt_AddRelativeInterrupt(150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
 
 	/* We don't send keyboard data automatically within the first few
 	 * VBLs to avoid that TOS gets confused during its boot time */
@@ -1005,7 +1005,7 @@ static void IKBD_CheckResetDisableBug(void)
 void IKBD_InterruptHandler_ResetTimer(void)
 {
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Turn processor on; can now process commands */
 	KeyboardProcessor.bReset = true;
@@ -1064,7 +1064,7 @@ static void IKBD_Cmd_Reset(void)
 		IKBD_AddKeyToKeyboardBufferWithDelay(0xf1, 50000);
 
 		/* Start timer - some commands are send during this time they may be ignored (see real ST!) */
-		Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
+		CycInt_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
 
 		/* Set this 'critical' flag, gets reset when timer expires */
 		bDuringResetCriticalTime = true;
@@ -1917,7 +1917,7 @@ Uint16 IKBD_GetByteFromACIA(void)
 void IKBD_InterruptHandler_ACIA(void)
 {
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Copy keyboard byte, ready for read from $fffc02 */
 	ACIAByte = Keyboard.Buffer[Keyboard.BufferHead++];
@@ -1941,7 +1941,7 @@ void IKBD_InterruptHandler_ACIA(void)
 	 * interrupt is triggered - for example the "V8 music system" demo
 	 * depends on this behaviour. To emulate this, we simply start another
 	 * Int which triggers the MFP interrupt later: */
-	Int_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP);
+	CycInt_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP);
 }
 
 
@@ -1951,7 +1951,7 @@ void IKBD_InterruptHandler_ACIA(void)
 void IKBD_InterruptHandler_MFP(void)
 {
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Acknowledge in MFP circuit, pass bit,enable,pending */
 	MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
@@ -1978,7 +1978,7 @@ static void IKBD_SendByteToACIA(int nAciaCycles)
 	if (!bByteInTransitToACIA)
 	{
 		/* Send byte to ACIA */
-		Int_AddRelativeInterrupt(nAciaCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+		CycInt_AddRelativeInterrupt(nAciaCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
 		/* Set flag so only transmit one byte at a time */
 		bByteInTransitToACIA = true;
 	}

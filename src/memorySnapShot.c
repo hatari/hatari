@@ -234,7 +234,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		Floppy_MemorySnapShot_Capture(true);
 		GemDOS_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
-		Int_MemorySnapShot_Capture(true);
+		CycInt_MemorySnapShot_Capture(true);
 		M68000_MemorySnapShot_Capture(true);
 		MFP_MemorySnapShot_Capture(true);
 		PSG_MemorySnapShot_Capture(true);
@@ -279,7 +279,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Floppy_MemorySnapShot_Capture(false);
 		GemDOS_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);
-		Int_MemorySnapShot_Capture(false);
+		CycInt_MemorySnapShot_Capture(false);
 		M68000_MemorySnapShot_Capture(false);
 		MFP_MemorySnapShot_Capture(false);
 		PSG_MemorySnapShot_Capture(false);

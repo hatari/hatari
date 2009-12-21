@@ -13,31 +13,17 @@
   the ST RAM area by simulating the DMA.
 */
 
-/* 2007/11/06   [NP]    Add calls to HATARI_TRACE and set FDC_DELAY_HBL=180		*/
-/* 2008/05/03	[NP]	Add more traces to all commandes.				*/
-/*			FIXME : after a type II read sector with multi bit 'm' on, we	*/
-/*			should update FDCSectorRegister to be 'max sector for current	*/
-/*			track'+1 and set command status	to 'Record Not Found'.		*/
-/*			Also,  if multi bit is set and sector count is less than number	*/
-/*			of sectors in the track, then the FDC reads the whole track	*/
-/*			anyway, setting RNF at the end, but the DMA stops transferring	*/
-/*			data once DMA sector count $ff8604 reaches 0.			*/
-/*			Timings for read sector with multi bit are not good and prevent	*/
-/*			some programs from working (eg Super Monaco GP on Superior 65)	*/
-/*			because intrq bit 5 in $fffa01 seems to be cleared too late,	*/
-/*			the command takes more time than a real ST to complete.		*/
-/* 2008/10/02	[NP]	FDCTrackRegister, FDCSectorRegister and FDCDataRegister are	*/
-/*			stored on 8 bits in the WD 1772. When writing to $ff8604 to	*/
-/*			access these registers, we must keep only the lower 8 bits.	*/
-/*			(fix High Fidelity Dreams by Aura, writes $fb07 in sector reg).	*/
-/*			TODO : FDCxxxxRegister should use Uint8, not Sint16/Uint16.	*/
-/* 2008/12/15	[NP]	Although the Read Address command is not supported yet, add a	*/
-/*			function FDC_UpdateReadAddressCmd that does nothing, but	*/
-/*			completes with no DMA error and clear bit 6 of $fffa01 (fixes	*/
-/*			loader routine used in various Pompey Pirates compilations (23,	*/
-/*			27, ...) that uses the read address command only to update the	*/
-/*			status register and get the state of the write protection).	*/
-
+/* FIXME : after a type II read sector with multi bit 'm' on, we	*/
+/* should update FDCSectorRegister to be 'max sector for current	*/
+/* track'+1 and set command status to 'Record Not Found'.		*/
+/* Also,  if multi bit is set and sector count is less than number	*/
+/* of sectors in the track, then the FDC reads the whole track		*/
+/* anyway, setting RNF at the end, but the DMA stops transferring	*/
+/* data once DMA sector count $ff8604 reaches 0.			*/
+/* Timings for read sector with multi bit are not good and prevent	*/
+/* some programs from working (eg Super Monaco GP on Superior 65)	*/
+/* because intrq bit 5 in $fffa01 seems to be cleared too late, 	*/
+/* the command takes more time than a real ST to complete.		*/
 
 const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
 
@@ -449,8 +435,8 @@ void FDC_GpipRead(void)
 		if (!ConfigureParams.DiskImage.bSlowFloppy)
 		{
 			/* Restart FDC update interrupt to occur right after a few cycles */
-			Int_RemovePendingInterrupt(INTERRUPT_FDC);
-			Int_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_FDC);
+			CycInt_RemovePendingInterrupt(INTERRUPT_FDC);
+			CycInt_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_FDC);
 		}
 	}
 	else
@@ -470,7 +456,7 @@ void FDC_GpipRead(void)
  */
 void FDC_InterruptHandler_Update(void)
 {
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Do we have a DMA ready to copy? */
 	if (bDMAWaiting)
@@ -526,7 +512,7 @@ void FDC_InterruptHandler_Update(void)
 
 	if (FDCEmulationCommand != FDCEMU_CMD_NULL || bMotorOn)
 	{
-		Int_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
+		CycInt_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
 	}
 }
 
@@ -1237,7 +1223,7 @@ static void FDC_ExecuteCommand(void)
 	else                                          /* Type IV - Force Interrupt */
 		FDC_ExecuteTypeIVCommands();
 
-	Int_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
+	CycInt_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
 }
 
 

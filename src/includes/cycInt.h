@@ -1,12 +1,12 @@
 /*
-  Hatari - int.h
+  Hatari - cycInt.h
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
 
-#ifndef HATARI_INT_H
-#define HATARI_INT_H
+#ifndef HATARI_CYCINT_H
+#define HATARI_CYCINT_H
 
 /* Interrupt handlers in system */
 typedef enum
@@ -59,16 +59,16 @@ typedef enum
 extern void (*PendingInterruptFunction)(void);
 extern int PendingInterruptCount;
 
-extern void Int_Reset(void);
-extern void Int_MemorySnapShot_Capture(bool bSave);
-extern void Int_AcknowledgeInterrupt(void);
-extern void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
-extern void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
-extern void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler);
-extern void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset);
-extern void Int_RemovePendingInterrupt(interrupt_id Handler);
-extern void Int_ResumeStoppedInterrupt(interrupt_id Handler);
-extern bool Int_InterruptActive(interrupt_id Handler);
-extern int Int_FindCyclesPassed(interrupt_id Handler, int CycleType);
+extern void CycInt_Reset(void);
+extern void CycInt_MemorySnapShot_Capture(bool bSave);
+extern void CycInt_AcknowledgeInterrupt(void);
+extern void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
+extern void CycInt_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
+extern void CycInt_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler);
+extern void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset);
+extern void CycInt_RemovePendingInterrupt(interrupt_id Handler);
+extern void CycInt_ResumeStoppedInterrupt(interrupt_id Handler);
+extern bool CycInt_InterruptActive(interrupt_id Handler);
+extern int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType);
 
-#endif /* ifndef HATARI_INT_H */
+#endif /* ifndef HATARI_CYCINT_H */

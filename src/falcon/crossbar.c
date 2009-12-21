@@ -1166,7 +1166,7 @@ static void Crossbar_Start_InterruptHandler_25Mhz(void)
 	crossbar.clock25_cycles_counterD += crossbar.clock25_cycles;
 	cycles_25 = (Uint32)(crossbar.clock25_cycles_counterD) - crossbar.clock25_cycles_counterL;
 	crossbar.clock25_cycles_counterL += cycles_25;
-	Int_AddRelativeInterrupt(cycles_25, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_25MHZ);
+	CycInt_AddRelativeInterrupt(cycles_25, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_25MHZ);
 
 }
 
@@ -1180,7 +1180,7 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
 	crossbar.clock32_cycles_counterD += crossbar.clock32_cycles;
 	cycles_32 = (Uint32) crossbar.clock32_cycles_counterD - crossbar.clock32_cycles_counterL;
 	crossbar.clock32_cycles_counterL += cycles_32;
-	Int_AddRelativeInterrupt(cycles_32, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_32MHZ);
+	CycInt_AddRelativeInterrupt(cycles_32, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_32MHZ);
 }
 
 
@@ -1190,7 +1190,7 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
 void Crossbar_InterruptHandler_25Mhz(void)
 {
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* If transfer mode is in Ste mode, use only this clock for all the transfers */
 	if (crossbar.isInSteFreqMode) {
@@ -1225,7 +1225,7 @@ void Crossbar_InterruptHandler_25Mhz(void)
 void Crossbar_InterruptHandler_32Mhz(void)
 {
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* If transfer mode is in Ste mode, don't use this clock for all the transfers */
 	if (crossbar.isInSteFreqMode) {

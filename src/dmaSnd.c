@@ -8,11 +8,12 @@
   but since the DMA sound has to be mixed together with the PSG sound and
   the output frequency of the host computer differs from the DMA sound
   frequency, the copy function is a little bit complicated.
-  For reducing copy latency, we set a "interrupt" with Int_AddRelativeInterrupt
-  to occur just after a sound frame should be finished. There we update the
-  sound. The update function also triggers the ST interrupts (Timer A and
-  MFP-i7) which are often used in ST programs for setting a new sound frame
-  after the old one has finished.
+  For reducing copy latency, we set a cycle-interrupt event with
+  CycInt_AddRelativeInterrupt to occur just after a sound frame should be
+  finished. There we update the sound.
+  The update function also triggers the ST interrupts (Timer A and MFP-i7)
+  which are often used in ST programs for setting a new sound frame after
+  the old one has finished.
 
   Falcon sound emulation is all taken into account in crossbar.c
 
@@ -139,7 +140,7 @@ static void DmaSnd_StartNewFrame(void)
 	nCyclesForFrame = nFrameLen * (((double)CPU_FREQ) / DmaSnd_DetectSampleRate());
 	if (!(nDmaSoundMode & DMASNDMODE_MONO))  /* Is it stereo? */
 		nCyclesForFrame = nCyclesForFrame / 2;
-	Int_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);
+	CycInt_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);
 }
 
 
@@ -237,7 +238,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 void DmaSnd_InterruptHandler(void)
 {
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	/* Update sound */
 	Sound_Update();
@@ -344,7 +345,7 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
 void DmaSnd_InterruptHandler_Microwire(void)
 {
 	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
+	CycInt_AcknowledgeInterrupt();
 
 	--nMwTransferSteps;
 
@@ -368,7 +369,7 @@ void DmaSnd_InterruptHandler_Microwire(void)
 
 	if (nMwTransferSteps > 0)
 	{
-		Int_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
+		CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 }
 
@@ -394,7 +395,7 @@ void DmaSnd_MicrowireData_WriteWord(void)
 		nMicrowireData = IoMem_ReadWord(0xff8922);
 		/* Start shifting events to simulate a microwire transfer */
 		nMwTransferSteps = 16;
-		Int_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
+		CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 
 	LOG_TRACE(TRACE_DMASND, "Microwire data write: 0x%x\n", IoMem_ReadWord(0xff8922));

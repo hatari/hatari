@@ -1,11 +1,12 @@
 /*
-  Hatari - int.c
+  Hatari - cycInt.c
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  This code handles our interrupt table. So we do not need to test for every
-  possible interrupt we add any pending interrupts into a table. We then scan
+  This code handles our table with callbacks for cycle accurate program
+  interruption. We add any pending callback handler into a table so that we do
+  not need to test for every possible interrupt event. We then scan
   the list if used entries in the table and copy the one with the least cycle
   count into the global 'PendingInterruptCount' variable. This is then
   decremented by the execution loop - rather than decrement each and every
@@ -17,20 +18,21 @@
   cycles time but the current instruction takes 20 cycles we will be 16 cycles
   late - this is handled in the adjust functions.
 
-
-  In order to handle both CPU and MFP interrupts, we don't convert MFP cyles to CPU cycles,
-  because it requires some floating points approximation and accumulates some errors that
-  could lead to bad results.
-  Instead, CPU and MFP cycles are converted to 'internal' cycles with the following rule :
+  In order to handle both CPU and MFP interrupt events, we don't convert MFP
+  cyles to CPU cycles, because it requires some floating points approximation
+  and accumulates some errors that could lead to bad results.
+  Instead, CPU and MFP cycles are converted to 'internal' cycles with the
+  following rule :
 	- 1 CPU cycle gives  9600 internal cycles
 	- 1 MFP cycle gives 31333 internal cycle
 
-  All interrupts are then handled in the 'internal' units and are converted back to cpu or mfp
-  units when needed. This allows very good synchronisation between CPU and MFP, without the
-  rounding errors of floating points math.
+  All interrupt events are then handled in the 'internal' units and are
+  converted back to cpu or mfp units when needed. This allows very good
+  synchronisation between CPU and MFP, without the rounding errors of floating
+  points math.
 
-  Thanks to Arnaud Carre (Leonard / Oxygene) for sharing this method used in Saint (and also
-  used in sc68).
+  Thanks to Arnaud Carre (Leonard / Oxygene) for sharing this method used in
+  Saint (and also used in sc68).
 
   Conversions are based on these values :
 	real MFP frequency is 2457600 Hz
@@ -41,30 +43,9 @@
 	2457600 = ( 2^15 * 3 * 5^2 )
 
   So, the ratio 8021248 / 2457600 can be expressed as 31333 / 9600
-
 */
 
-
-/* 2007/05/08	[NP]	Call Int_UpdateInterrupt in Int_AddRelativeInterrupt, because		*/
-/*			Int_SetNewInterrupt can change the active int / PendingInterruptCount	*/
-/* 2007/09/29   [NP]    New method to handle interrupt. Instead of using cpu cycles to store	*/
-/*			video int and MFP int (which looses precision because MFP cycles need	*/
-/*			to be rounded to cpu cycles), we're using an 'internal' unit to store	*/
-/*			both cpu cycles and mfp cycles. This removes floating point operations	*/
-/*			and greatly improve the precision for MFP int with a very small divisor	*/
-/*			(thanks to Leonard / Oxygene for the idea, also used in 'sc68').	*/
-/* 2007/10/21	[NP]	Function 'Int_AddRelativeInterruptWithOffset' to restart an MFP timer	*/
-/*			just after it expired (ULM DSOTS and Overscan Demos).			*/
-/* 2007/10/28	[NP]	Function 'Int_ResumeStoppedInterrupt' to continue an interrupt from	*/
-/*			where it was stopped, without updating 'cycles'.			*/
-/* 2007/12/27	[NP]	Parameter 'AddInternalCycle' in Int_AddRelativeInterrupt, used in mfp.c	*/
-/*			to precisely start a timer after the current inst.			*/
-/* 2008/03/30	[NP]	ActiveInterrupt was not saved in the memory snapshot, which could cause	*/
-/*			errors when restoring it. We call Int_SetNewInterrupt() after restoring	*/
-/*			the snapshot to set ActiveInterrupt to the correct value.		*/
-
-
-const char Int_fileid[] = "Hatari int.c : " __DATE__ " " __TIME__;
+const char CycInt_fileid[] = "Hatari cycInt.c : " __DATE__ " " __TIME__;
 
 #include <stdint.h>
 #include <assert.h>
@@ -125,13 +106,13 @@ typedef struct
 static INTERRUPTHANDLER InterruptHandlers[MAX_INTERRUPTS];
 static int ActiveInterrupt=0;
 
-static void Int_SetNewInterrupt(void);
+static void CycInt_SetNewInterrupt(void);
 
 /*-----------------------------------------------------------------------*/
 /**
  * Reset interrupts, handlers
  */
-void Int_Reset(void)
+void CycInt_Reset(void)
 {
 	int i;
 
@@ -154,7 +135,7 @@ void Int_Reset(void)
 /**
  * Convert interrupt handler function pointer to ID, used for saving
  */
-static int Int_HandlerFunctionToID(void (*pHandlerFunction)(void))
+static int CycInt_HandlerFunctionToID(void (*pHandlerFunction)(void))
 {
 	int i;
 
@@ -176,7 +157,7 @@ static int Int_HandlerFunctionToID(void (*pHandlerFunction)(void))
 /**
  * Convert ID back into interrupt handler function, used for restoring
  */
-static void *Int_IDToHandlerFunction(int ID)
+static void *CycInt_IDToHandlerFunction(int ID)
 {
 	/* Get function pointer */
 	return pIntHandlerFunctions[ID];
@@ -187,7 +168,7 @@ static void *Int_IDToHandlerFunction(int ID)
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void Int_MemorySnapShot_Capture(bool bSave)
+void CycInt_MemorySnapShot_Capture(bool bSave)
 {
 	int i,ID;
 
@@ -199,14 +180,14 @@ void Int_MemorySnapShot_Capture(bool bSave)
 		if (bSave)
 		{
 			/* Convert function to ID */
-			ID = Int_HandlerFunctionToID(InterruptHandlers[i].pFunction);
+			ID = CycInt_HandlerFunctionToID(InterruptHandlers[i].pFunction);
 			MemorySnapShot_Store(&ID, sizeof(int));
 		}
 		else
 		{
 			/* Convert ID to function */
 			MemorySnapShot_Store(&ID, sizeof(int));
-			InterruptHandlers[i].pFunction = Int_IDToHandlerFunction(ID);
+			InterruptHandlers[i].pFunction = CycInt_IDToHandlerFunction(ID);
 		}
 	}
 	MemorySnapShot_Store(&nCyclesOver, sizeof(nCyclesOver));
@@ -214,19 +195,19 @@ void Int_MemorySnapShot_Capture(bool bSave)
 	if (bSave)
 	{
 		/* Convert function to ID */
-		ID = Int_HandlerFunctionToID(PendingInterruptFunction);
+		ID = CycInt_HandlerFunctionToID(PendingInterruptFunction);
 		MemorySnapShot_Store(&ID, sizeof(int));
 	}
 	else
 	{
 		/* Convert ID to function */
 		MemorySnapShot_Store(&ID, sizeof(int));
-		PendingInterruptFunction = Int_IDToHandlerFunction(ID);
+		PendingInterruptFunction = CycInt_IDToHandlerFunction(ID);
 	}
 
 
 	if (!bSave)
-		Int_SetNewInterrupt();			/* when restoring snapshot, compute current state after */
+		CycInt_SetNewInterrupt();	/* when restoring snapshot, compute current state after */
 }
 
 
@@ -242,7 +223,7 @@ void Int_MemorySnapShot_Capture(bool bSave)
  * Since there is always a VBL or HBL counter pending which fits fine into the
  * 32 bit variable, we can be sure that we don't run into problems here.
  */
-static void Int_SetNewInterrupt(void)
+static void CycInt_SetNewInterrupt(void)
 {
 	Sint64 LowestCycleCount = INT_MAX;
 	interrupt_id LowestInterrupt = INTERRUPT_NULL, i;
@@ -276,9 +257,9 @@ static void Int_SetNewInterrupt(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Adjust all interrupt timings, MUST call Int_SetNewInterrupt after this.
+ * Adjust all interrupt timings, MUST call CycInt_SetNewInterrupt after this.
  */
-static void Int_UpdateInterrupt(void)
+static void CycInt_UpdateInterrupt(void)
 {
 	Sint64 CycleSubtract;
 	int i;
@@ -306,16 +287,16 @@ static void Int_UpdateInterrupt(void)
  * Adjust all interrupt timings as 'ActiveInterrupt' has occured, and
  * remove from active list.
  */
-void Int_AcknowledgeInterrupt(void)
+void CycInt_AcknowledgeInterrupt(void)
 {
 	/* Update list cycle counts */
-	Int_UpdateInterrupt();
+	CycInt_UpdateInterrupt();
 
 	/* Disable interrupt entry which has just occured */
 	InterruptHandlers[ActiveInterrupt].bUsed = false;
 
 	/* Set new */
-	Int_SetNewInterrupt();
+	CycInt_SetNewInterrupt();
 
 	LOG_TRACE(TRACE_INT, "int ack video_cyc=%d active_int=%d active_cyc=%d pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, (int)InterruptHandlers[ActiveInterrupt].Cycles, PendingInterruptCount );
@@ -326,20 +307,20 @@ void Int_AcknowledgeInterrupt(void)
 /**
  * Add interrupt from time last one occurred.
  */
-void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
+void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
 	assert(CycleTime >= 0);
 
 	/* Update list cycle counts before adding a new one, */
-	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
+	/* since CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
-		Int_UpdateInterrupt();
+		CycInt_UpdateInterrupt();
 
 	InterruptHandlers[Handler].bUsed = true;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + nCyclesOver;
 
 	/* Set new */
-	Int_SetNewInterrupt();
+	CycInt_SetNewInterrupt();
 
 	LOG_TRACE(TRACE_INT, "int add abs video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
@@ -351,9 +332,9 @@ void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 /**
  * Add interrupt to occur from now.
  */
-void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
+void CycInt_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
-	Int_AddRelativeInterruptWithOffset(CycleTime, CycleType, Handler, 0);
+	CycInt_AddRelativeInterruptWithOffset(CycleTime, CycleType, Handler, 0);
 }
 
 
@@ -362,19 +343,19 @@ void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler
  * Add interrupt to occur from now without offset
  */
 #if 0
-void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler)
+void CycInt_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler)
 {
 	/* Update list cycle counts before adding a new one, */
-	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
+	/* since CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
-		Int_UpdateInterrupt();
+		CycInt_UpdateInterrupt();
 
 //  nCyclesOver = 0;
 	InterruptHandlers[Handler].bUsed = true;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + PendingInterruptCount;
 
 	/* Set new */
-	Int_SetNewInterrupt();
+	CycInt_SetNewInterrupt();
 
 	LOG_TRACE(TRACE_INT, "int add rel no_off video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
@@ -391,20 +372,20 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
  * cycles of the current instruction).
  * This allows to restart an MFP timer just after it expired.
  */
-void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
+void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
 {
 	assert(CycleTime >= 0);
 
 	/* Update list cycle counts before adding a new one, */
-	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
+	/* since CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
-		Int_UpdateInterrupt();
+		CycInt_UpdateInterrupt();
 
 	InterruptHandlers[Handler].bUsed = true;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycleOffset;
 
 	/* Set new */
-	Int_SetNewInterrupt();
+	CycInt_SetNewInterrupt();
 
 	LOG_TRACE(TRACE_INT, "int add rel offset video_cyc=%d handler=%d handler_cyc=%lld offset_cyc=%d pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
@@ -416,17 +397,17 @@ void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_
 /**
  * Remove a pending interrupt from our table
  */
-void Int_RemovePendingInterrupt(interrupt_id Handler)
+void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 {
 	/* Update list cycle counts, including the handler we want to remove */
 	/* to be able to resume it later (for MFP timers) */
-	Int_UpdateInterrupt();
+	CycInt_UpdateInterrupt();
 
-	/* Stop interrupt after Int_UpdateInterrupt, for Int_ResumeStoppedInterrupt */
+	/* Stop interrupt after CycInt_UpdateInterrupt, for CycInt_ResumeStoppedInterrupt */
 	InterruptHandlers[Handler].bUsed = false;
 
 	/* Set new */
-	Int_SetNewInterrupt();
+	CycInt_SetNewInterrupt();
 
 	LOG_TRACE(TRACE_INT, "int remove pending video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
@@ -438,15 +419,15 @@ void Int_RemovePendingInterrupt(interrupt_id Handler)
 /**
  * Resume a stopped interrupt from its current cycle count (for MFP timers)
  */
-void Int_ResumeStoppedInterrupt(interrupt_id Handler)
+void CycInt_ResumeStoppedInterrupt(interrupt_id Handler)
 {
 	/* Restart interrupt */
 	InterruptHandlers[Handler].bUsed = true;
 
 	/* Update list cycle counts */
-	Int_UpdateInterrupt();
+	CycInt_UpdateInterrupt();
 	/* Set new */
-	Int_SetNewInterrupt();
+	CycInt_SetNewInterrupt();
 
 	LOG_TRACE(TRACE_INT, "int resume stopped video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
@@ -458,7 +439,7 @@ void Int_ResumeStoppedInterrupt(interrupt_id Handler)
 /**
  * Return true if interrupt is active in list
  */
-bool Int_InterruptActive(interrupt_id Handler)
+bool CycInt_InterruptActive(interrupt_id Handler)
 {
 	/* Is timer active? */
 	if (InterruptHandlers[Handler].bUsed)
@@ -472,7 +453,7 @@ bool Int_InterruptActive(interrupt_id Handler)
 /**
  * Return cycles passed for an interrupt handler
  */
-int Int_FindCyclesPassed(interrupt_id Handler, int CycleType)
+int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)
 {
 	Sint64 CyclesPassed, CyclesFromLastInterrupt;
 
