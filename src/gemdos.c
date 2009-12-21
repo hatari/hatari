@@ -566,9 +566,9 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 		/* Check all files in the directory */
 		for (i = 0; i < count; i++)
 		{
-			if (strcmp(files[i]->d_name, ".") == 0 || strcmp(files[i]->d_name, "..") == 0)
+			if (files[i]->d_name[0] == '.')
 			{
-				/* Ignore "." and ".." */
+				/* Ignore hidden files like "." and ".." */
 				continue;
 			}
 			if (strlen(files[i]->d_name) != 1 || !isalpha(files[i]->d_name[0]))
