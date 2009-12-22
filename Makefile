@@ -18,6 +18,8 @@ Makefile.cnf: Makefile-default.cnf
 		echo "ERROR: Makefile.cnf exists already, but is older than the default"; \
 		echo "(just remove it if you haven't changed it)."; \
 		exit 1; \
+	elif [ x$(findstring indows,$(OS)) = x"indows" ]; then \
+		cp -v Makefile-MinGW.cnf Makefile.cnf; \
 	else \
 		cp -v Makefile-default.cnf Makefile.cnf; \
 	fi
