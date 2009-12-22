@@ -16,7 +16,7 @@
 #include <SDL_types.h>
 
 #include "opencon.h"
-#include "debugui.h"
+#include "../debug/debugui.h"
 
 
 void Win_OpenCon(void)

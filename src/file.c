@@ -28,6 +28,9 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "zip.h"
 
+#if defined(WIN32)
+#define ftello ftell
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -87,7 +90,7 @@ bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtensi
 /*-----------------------------------------------------------------------*/
 /**
  * Check if filename is from root
- * 
+ *
  * Return TRUE if filename is '/', else give FALSE
  */
 static bool File_IsRootFileName(const char *pszFileName)
@@ -132,7 +135,7 @@ const char *File_RemoveFileNameDrive(const char *pszFileName)
 /*-----------------------------------------------------------------------*/
 /**
  * Check if given filename is an existing directory
- * 
+ *
  * Return TRUE if directory, else give FALSE
  */
 bool File_DirExists(const char *path)
@@ -140,23 +143,23 @@ bool File_DirExists(const char *path)
 	struct stat filestat;
 	return (stat(path, &filestat) == 0 && S_ISDIR(filestat.st_mode));
 }
-	
+
 
 /*-----------------------------------------------------------------------*/
 /**
  * Check if filename end with a '/'
- * 
+ *
  * Return TRUE if filename ends with '/'
  */
 bool File_DoesFileNameEndWithSlash(char *pszFileName)
 {
 	if (pszFileName[0] == '\0')    /* If NULL string return! */
 		return false;
-	
+
 	/* Does string end in a '/'? */
 	if (pszFileName[strlen(pszFileName)-1] == PATHSEP)
 		return true;
-	
+
 	return false;
 }
 
@@ -317,7 +320,7 @@ off_t File_Length(const char *pszFileName)
 /*-----------------------------------------------------------------------*/
 /**
  * Return TRUE if file exists, is readable or writable at least and is not
- * a directory. 
+ * a directory.
  */
 bool File_Exists(const char *filename)
 {
@@ -334,7 +337,7 @@ bool File_Exists(const char *filename)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return TRUE if directory exists. 
+ * Return TRUE if directory exists.
  */
 bool File_DirectoryExists(const char *psDirName)
 {
@@ -382,7 +385,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 {
 	char *szSrcDir, *szSrcName, *szSrcExt;
 	int i;
-	
+
 	/* Allocate temporary memory for strings: */
 	szSrcDir = malloc(3 * FILENAME_MAX);
 	if (!szSrcDir)
@@ -392,7 +395,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 	}
 	szSrcName = szSrcDir + FILENAME_MAX;
 	szSrcExt = szSrcName + FILENAME_MAX;
-	
+
 	/* Split filename into parts */
 	File_SplitPath(pszFileName, szSrcDir, szSrcName, szSrcExt);
 
@@ -541,7 +544,7 @@ FILE *File_Open(const char *path, const char *mode)
 	/* empty name signifies file that shouldn't be opened/enabled */
 	if (!*path)
 		return NULL;
-	
+
 	/* special "stdout" and "stderr" files can be used
 	 * for files which are written or appended
 	 */
