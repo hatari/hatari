@@ -306,7 +306,7 @@ But following STE specific demos, games and apps work (mostly) fine
 with EmuTOS.
 
 Demos:
-- 1st Step (by Tobe/Mjjprod)
+- 1st Step (by Tobe/MJJ Prod)
 - 20 years megademo (by DHS), display issues in some screens
 - Again (by Paradox)
 - Armada is dead (by Aggression)
@@ -335,6 +335,7 @@ Demos:
 - Paracon 6 & 7 remindtros (by Paradox)
 - Powerrise (by Light)
 - Reanimation (by Syntax)
+- Realtime (by MJJ Prod)
 - Sinfull Sinuses (by Chronicle)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
