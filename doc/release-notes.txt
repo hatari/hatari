@@ -29,6 +29,7 @@ Emulator:
   - command and command argument completion support
   - improved register name handling + fixed DSP reg name matching
   - GEMDOS tracing gives slightly more information
+  - Display DSP instructions cycle timings in disasm mode (in cycles)
 - AVI file recording:
   - video can be stored as BMP or as PNG images
   - audio is stored as 16 bits stereo PCM.

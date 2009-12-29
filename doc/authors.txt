@@ -16,7 +16,7 @@
   emulation.
 
 - Laurent Sallafranque: Many fixes and speedups to DSP emulation,
-  DSP debugging support.
+  DSP debugging support, crossbar emulation, falcon microphone emulation.
 
 
  Contributors:
