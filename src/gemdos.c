@@ -272,8 +272,11 @@ static Uint8 GemDOS_ConvertAttribute(mode_t mode)
 	if (!(mode & S_IWUSR))
 		Attrib |= GEMDOS_FILE_ATTRIB_READONLY;
 
-	/* TODO: Other attributes like GEMDOS_FILE_ATTRIB_HIDDEN ? */
-
+	/* TODO, Other attributes:
+	 * - GEMDOS_FILE_ATTRIB_HIDDEN (file not visible on desktop/fsel)
+	 * - GEMDOS_FILE_ATTRIB_ARCHIVE (file written after being backed up)
+	 * ?
+	 */
 	return Attrib;
 }
 
@@ -302,12 +305,11 @@ static int PopulateDTA(char *path, struct dirent *file)
 	if (!pDTA)
 		return -2;   /* no DTA pointer set */
 
-	/* Check file attributes (check is done according to the Profibuch */
+	/* Check file attributes (check is done according to the Profibuch) */
 	nFileAttr = GemDOS_ConvertAttribute(filestat.st_mode);
 	if (nFileAttr != 0 && !((nAttrSFirst|0x21) & nFileAttr))
 		return 1;
 
-	/* TODO: what to return if this fails? */
 	if (!GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime))
 		return -3;
 
@@ -1558,8 +1560,7 @@ static bool GemDOS_Create(Uint32 Params)
 	/* Or was path to file missing? (ST-Zip 2.6 relies on getting
 	 * correct error about that during extraction of ZIP files.)
 	 */
-	if (errno == ENOTDIR || errno == ENOENT ||
-	    GemDOS_FilePathMissing(szActualFileName))
+	if (errno == ENOTDIR || GemDOS_FilePathMissing(szActualFileName))
 	{
 		Regs[REG_D0] = GEMDOS_EPTHNF; /* Path not found */
 		return true;
@@ -1631,9 +1632,10 @@ static bool GemDOS_Open(Uint32 Params)
 	}
 
 	/* FIXME: Open file
-	 * - fopen() modes don't allow write-only mode without truncating.
+	 * - fopen() modes don't allow write-only mode without truncating
+	 *   wich would be needed to implement mode 1 (write-only) correctly.
 	 *   Fixing this requires using open() and file descriptors instead
-	 *   of fopen() and FILE* pointers, but Windows doesn't support that
+	 *   of fopen() and FILE* pointers, but Windows doesn't support that.
 	 */
 	FileHandles[Index].FileHandle =  fopen(szActualFileName, ModeStr);
 
@@ -1650,15 +1652,15 @@ static bool GemDOS_Open(Uint32 Params)
 		return true;
 	}
 
-	if (errno == EACCES || errno == EROFS)
+	if (errno == EACCES || errno == EROFS ||
+	    errno == EPERM || errno == EISDIR)
 	{
 		Log_Printf(LOG_WARN, "GEMDOS missing %s permission to file '%s'\n",
 			   Modes[Mode&0x03].desc, szActualFileName);
 		Regs[REG_D0] = GEMDOS_EACCDN;
 		return true;
 	}
-	if (errno == ENOTDIR || errno == ENOENT ||
-	    GemDOS_FilePathMissing(szActualFileName))
+	if (errno == ENOTDIR || GemDOS_FilePathMissing(szActualFileName))
 	{
 		/* Path not found */
 		Regs[REG_D0] = GEMDOS_EPTHNF;
@@ -2036,7 +2038,11 @@ static bool GemDOS_Fattrib(Uint32 Params)
 		}
 	}
 
-	/* FIXME: support hidden/system/archive flags? */
+	/* FIXME: support hidden/system/archive flags?
+	 * System flag is from DOS, not used by TOS.
+	 * Archive bit is cleared by backup programs
+	 * and set whenever file is written to.
+	 */
 	Regs[REG_D0] = GEMDOS_EACCDN;         /* Acces denied */
 	return true;
 }
