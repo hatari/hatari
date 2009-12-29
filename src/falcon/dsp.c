@@ -48,6 +48,7 @@
 
 #if ENABLE_DSP_EMU
 static dsp_core_t dsp_core;
+static dsp_core_t dsp_core_save;
 #endif
 static bool bDspDebugging;
 
@@ -182,15 +183,25 @@ Uint16 DSP_GetPC(void)
 Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 {
 #if ENABLE_DSP_EMU
-	Uint32 dsp_pc, save_curPC;
+	Uint32 dsp_pc;
+	dsp_core_t *ptr1, *ptr2;
 	
-	save_curPC = dsp_core.pc;
-
+	ptr1 = &dsp_core;
+	ptr2 = &dsp_core_save;
+	
 	for (dsp_pc=lowerAdr; dsp_pc<=UpperAdr; dsp_pc++) {
+		/* Save DSP context before executing instruction */
+		memcpy(ptr2, ptr1, sizeof(dsp_core));
+
+		/* execute and disasm instruction */
 		dsp_core.pc = dsp_pc;
 		dsp_pc += dsp56k_disasm() - 1;
+		dsp56k_execute_instruction();
+		fprintf(stderr, "%s", dsp56k_getInstructionText());
+
+		/* Restore DSP context after executing instruction */
+		memcpy(ptr1, ptr2, sizeof(dsp_core));
 	}
-	dsp_core.pc = save_curPC;
 	return dsp_pc;
 #else
 	return 0;

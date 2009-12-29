@@ -29,8 +29,8 @@
 
 
 /* More disasm infos, if wanted */
-#define DSP_DISASM 0		/* Main DSP disassembler switch */
-#define DSP_DISASM_INST 0	/* Instructions */
+#define DSP_DISASM 1		/* Main DSP disassembler switch */
+#define DSP_DISASM_INST 1	/* Instructions */
 #define DSP_DISASM_REG 0	/* Registers changes */
 #define DSP_DISASM_MEM 0	/* Memory changes */
 #define DSP_DISASM_INTER 0	/* Interrupts */
@@ -536,6 +536,9 @@ void dsp56k_execute_instruction(void)
 #endif
 
 #ifdef DSP_DISASM
+#if DSP_DISASM_INST
+	fprintf(stderr, "%s", dsp56k_getInstructionText());
+#endif
 #if DSP_DISASM_REG
 	dsp56k_disasm_reg_compare();
 #endif
@@ -1451,7 +1454,6 @@ static void dsp_undefined(void)
 {
 	cur_inst_len = 0;
 	fprintf(stderr, "Dsp: 0x%04x: 0x%06x unknown instruction\n",dsp_core->pc, cur_inst);
-	exit (-1);
 }
 
 static void dsp_andi(void)

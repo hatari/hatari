@@ -46,11 +46,13 @@
 
 /* Current instruction */
 static char str_instr[50];
+static char str_instr2[100];
 static Uint32 cur_inst;
 static Uint32 disasm_cur_inst_len;
 
 /* Previous instruction */
 static Uint32 prev_inst_pc = 0x10000;	/* Init to an invalid value */
+static Uint16 isLooping = 0;
 
 static dsp_core_t *dsp_core;
 
@@ -538,9 +540,11 @@ Uint16 dsp56k_disasm(void)
 	Uint32 value;
 
 	if (prev_inst_pc == dsp_core->pc){
+		isLooping = 1;
 		return 0;
 	}
 	prev_inst_pc = dsp_core->pc;
+	isLooping = 0;
 
 	cur_inst = read_memory(dsp_core->pc);
 	disasm_cur_inst_len = 1;
@@ -556,14 +560,26 @@ Uint16 dsp56k_disasm(void)
 		value = cur_inst & BITMASK(8);
 		opcodes_alu[value]();
 	}
-
-	if (disasm_cur_inst_len == 1) {
-		fprintf(stderr, "%04x: %06x        %s\n", dsp_core->pc, cur_inst, str_instr);
-	} else {
-		fprintf(stderr, "%04x: %06x %06x %s\n", dsp_core->pc, cur_inst, read_memory(dsp_core->pc + 1), str_instr);
-	}
 	return disasm_cur_inst_len;
 }
+
+/**
+ * dsp56k_getInstrText : return the disasembled instructions
+ */
+char* dsp56k_getInstructionText(void)
+{
+	if (isLooping) {
+		sprintf(str_instr2, "");
+	}
+	else if (disasm_cur_inst_len == 1) {
+		sprintf(str_instr2, "%04x:  %06x         (%02d cyc)  %s\n", prev_inst_pc, cur_inst, dsp_core->instr_cycle, str_instr);
+	} 
+	else {
+		sprintf(str_instr2, "%04x:  %06x %06x  (%02d cyc)  %s\n", prev_inst_pc, cur_inst, read_memory(prev_inst_pc + 1), dsp_core->instr_cycle, str_instr);
+	}
+
+	return str_instr2;
+} 
 
 static void dsp_pm_class2(void) {
 	Uint32 value;
