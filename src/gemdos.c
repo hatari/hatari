@@ -1541,7 +1541,8 @@ static bool GemDOS_Create(Uint32 Params)
 		}
 		/* Tag handle table entry as used and return handle */
 		FileHandles[Index].bUsed = true;
-		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
+		/* Return valid ST file handle from our range (from BASE_FILEHANDLE upwards) */
+		Regs[REG_D0] = Index+BASE_FILEHANDLE;
 		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n", Index,
 			  Mode & GEMDOS_FILE_ATTRIB_READONLY ? "read-only":"read/write");
 		return true;
@@ -1646,7 +1647,8 @@ static bool GemDOS_Open(Uint32 Params)
 	{
 		/* Tag handle table entry as used and return handle */
 		FileHandles[Index].bUsed = true;
-		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
+		/* Return valid ST file handle from our range (BASE_FILEHANDLE upwards) */
+		Regs[REG_D0] = Index+BASE_FILEHANDLE;
 		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n",
 			  Index, Modes[Mode&0x03].desc);
 		return true;
@@ -1681,9 +1683,11 @@ static bool GemDOS_Close(Uint32 Params)
 	int Handle;
 
 	/* Find our handle - may belong to TOS */
-	Handle = STMemory_ReadWord(Params)-BASE_FILEHANDLE;
+	Handle = STMemory_ReadWord(Params);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fclose(%i)\n", Handle);
+
+	Handle -= BASE_FILEHANDLE;
 
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
@@ -1715,13 +1719,15 @@ static bool GemDOS_Read(Uint32 Params)
 	int Handle;
 
 	/* Read details from stack */
-	Handle = STMemory_ReadWord(Params)-BASE_FILEHANDLE;
+	Handle = STMemory_ReadWord(Params);
 	Size = STMemory_ReadLong(Params+SIZE_WORD);
 	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
 	pBuffer = (char *)STRAM_ADDR(Addr);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fread(%i, %i, 0x%x)\n", 
 	          Handle, Size, Addr);
+
+	Handle -= BASE_FILEHANDLE;
 
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
@@ -1780,13 +1786,15 @@ static bool GemDOS_Write(Uint32 Params)
 	int Handle;
 
 	/* Read details from stack */
-	Handle = STMemory_ReadWord(Params)-BASE_FILEHANDLE;
+	Handle = STMemory_ReadWord(Params);
 	Size = STMemory_ReadLong(Params+SIZE_WORD);
 	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
 	pBuffer = (char *)STRAM_ADDR(Addr);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fwrite(%i, %i, 0x%x)\n", 
 	          Handle, Size, Addr);
+
+	Handle -= BASE_FILEHANDLE;
 
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
@@ -1892,10 +1900,12 @@ static bool GemDOS_LSeek(Uint32 Params)
 
 	/* Read details from stack */
 	Offset = (Sint32)STMemory_ReadLong(Params);
-	Handle = STMemory_ReadWord(Params+SIZE_LONG)-BASE_FILEHANDLE;
+	Handle = STMemory_ReadWord(Params+SIZE_LONG);
 	Mode = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fseek(%li, %i, %i)\n", Offset, Handle, Mode);
+
+	Handle -= BASE_FILEHANDLE;
 
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
@@ -2499,11 +2509,13 @@ static bool GemDOS_GSDToF(Uint32 Params)
 
 	/* Read details from stack */
 	pBuffer = STMemory_ReadLong(Params);
-	Handle = STMemory_ReadWord(Params+SIZE_LONG)-BASE_FILEHANDLE;
+	Handle = STMemory_ReadWord(Params+SIZE_LONG);
 	Flag = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fdatime(0x%x, %i, %i)\n", pBuffer,
 	          Handle, Flag);
+
+	Handle -= BASE_FILEHANDLE;
 
 	/* Check handle was valid */
 	if (GemDOS_IsInvalidFileHandle(Handle))
