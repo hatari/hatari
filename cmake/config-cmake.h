@@ -1,13 +1,10 @@
 /* CMake config.h for Hatari */
 
-/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'. */
-#cmakedefine HAVE_DIRENT_H 1
+/* Define if you have a PNG compatible library */
+#cmakedefine HAVE_LIBPNG 1
 
 /* Define if you have a readline compatible library */
 #cmakedefine HAVE_LIBREADLINE 1
-
-/* Define if you have a PNG compatible library */
-#cmakedefine HAVE_LIBPNG 1
 
 /* Define if you have a X11 environment */
 #cmakedefine HAVE_X11 1
@@ -27,11 +24,11 @@
 /* Define to 1 if you have the <strings.h> header file. */
 #cmakedefine HAVE_STRINGS_H 1
 
-/* Define to 1 if you have the `strcasecmp' function. */
-#cmakedefine HAVE_STRCASECMP 1
+/* Define to 1 if you have the <SDL/SDL_config.h> header file. */
+#cmakedefine HAVE_SDL_SDL_CONFIG_H 1
 
-/* Define to 1 if you have the `strncasecmp' function. */
-#cmakedefine HAVE_STRNCASECMP 1
+/* Define to 1 if you have the <sys/times.h> header file. */
+#cmakedefine HAVE_SYS_TIMES_H 1
 
 /* Define to 1 if you have the `cfmakeraw' function. */
 #cmakedefine HAVE_CFMAKERAW 1

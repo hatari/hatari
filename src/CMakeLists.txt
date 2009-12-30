@@ -19,7 +19,7 @@ add_executable(hatari
 
 target_link_libraries(hatari
 	Debug Falcon GuiSdl UaeCpu
-	${SDL_LIBRARY} ${PNG_LIBRARY} ${ZLIB_LIBRARY}
+	${SDL_LIBRARY} ${PNG_LIBRARY} ${ZLIB_LIBRARY} ${READLINE_LIBRARY}
 	SDLmain # Sadly not included in SDL_LIBRARY variable
 	)
 

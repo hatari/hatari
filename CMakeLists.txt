@@ -3,7 +3,21 @@ cmake_minimum_required(VERSION 2.6)
 
 project(Hatari)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+# ####################
+# Check for libraries:
+# ####################
+
 find_package(SDL REQUIRED)
+if(NOT SDL_FOUND)
+	message(FATAL_ERROR "SDL library not found!")
+endif(NOT SDL_FOUND)
+
+find_package(Readline)
+if(READLINE_FOUND)
+	set(HAVE_LIBREADLINE 1)
+endif(READLINE_FOUND)
 
 find_package(ZLIB)
 if(ZLIB_FOUND)
@@ -21,8 +35,35 @@ if(X11_FOUND)
 	set(HAVE_X11 1)
 endif(X11_FOUND)
 
+# ###########################
+# Check for optional headers:
+# ###########################
+
+check_include_files(termios.h HAVE_TERMIOS_H)
+check_include_files(glob.h HAVE_GLOB_H)
+check_include_files(strings.h HAVE_STRINGS_H)
+check_include_files(malloc.h HAVE_MALLOC_H)
+check_include_files(SDL/SDL_config.h HAVE_SDL_SDL_CONFIG_H)
+check_include_files(sys/times.h HAVE_SYS_TIMES_H)
+check_include_files("sys/socket.h;sys/un.h" HAVE_UNIX_DOMAIN_SOCKETS)
+
+# #############################
+# Check for optional functions:
+# #############################
+
+check_function_exists(cfmakeraw HAVE_CFMAKERAW)
+check_function_exists(setenv HAVE_SETENV)
+check_function_exists(select HAVE_SELECT)
+
+# ################
+# CPP Definitions:
+# ################
+
 add_definitions(-DCONFDIR=\"/etc\")
+
+
 
 add_subdirectory(src)
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config-cmake.h ${CMAKE_BINARY_DIR}/config.h)
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/config-cmake.h
+		${CMAKE_BINARY_DIR}/config.h)
