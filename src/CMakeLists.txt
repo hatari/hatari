@@ -1,5 +1,5 @@
 
-include_directories(.. includes debug falcon uae-cpu
+include_directories(${CMAKE_BINARY_DIR} includes debug falcon uae-cpu
 		    ${SDL_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
 link_directories(debug falcon gui-sdl uae-cpu) 
