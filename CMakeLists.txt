@@ -61,9 +61,32 @@ check_function_exists(select HAVE_SELECT)
 
 add_definitions(-DCONFDIR=\"/etc\")
 
+# ####################
+# Paths configuration:
+# ####################
 
+if(NOT BINDIR)
+	set(BINDIR bin)
+endif()
 
-add_subdirectory(src)
+if(NOT DATADIR)
+	set(DATADIR share/hatari)
+endif()
+
+if(NOT MANDIR)
+	set(MANDIR share/man/man1)
+endif()
+
+if(NOT DOCDIR)
+	set(DOCDIR share/doc/hatari)
+endif()
+
+# #########################################
+# Create config.h and recurse into subdirs:
+# #########################################
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/config-cmake.h
 		${CMAKE_BINARY_DIR}/config.h)
+
+add_subdirectory(src)
+add_subdirectory(doc)

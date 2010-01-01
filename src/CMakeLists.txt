@@ -4,6 +4,11 @@ include_directories(${CMAKE_BINARY_DIR} includes debug falcon uae-cpu
 
 link_directories(debug falcon gui-sdl uae-cpu) 
 
+add_subdirectory(debug)
+add_subdirectory(falcon)
+add_subdirectory(gui-sdl)
+add_subdirectory(uae-cpu)
+
 add_executable(hatari
 	audio.c avi_record.c bios.c blitter.c cart.c cfgopts.c
 	configuration.c options.c  createBlankImage.c change.c
@@ -19,11 +24,9 @@ add_executable(hatari
 
 target_link_libraries(hatari
 	Debug Falcon GuiSdl UaeCpu
-	${SDL_LIBRARY} ${PNG_LIBRARY} ${ZLIB_LIBRARY} ${READLINE_LIBRARY}
+	${SDL_LIBRARY} ${PNG_LIBRARY} ${ZLIB_LIBRARY}
+	${READLINE_LIBRARY} ${X11_X11_LIB}
 	SDLmain # Sadly not included in SDL_LIBRARY variable
 	)
 
-add_subdirectory(debug)
-add_subdirectory(falcon)
-add_subdirectory(gui-sdl)
-add_subdirectory(uae-cpu)
+install(TARGETS hatari RUNTIME DESTINATION ${BINDIR})
