@@ -6,6 +6,9 @@
 /* Define if you have a readline compatible library */
 #cmakedefine HAVE_LIBREADLINE 1
 
+/* Define if you have the PortAudio library */
+#cmakedefine HAVE_PORTAUDIO 1
+
 /* Define if you have a X11 environment */
 #cmakedefine HAVE_X11 1
 

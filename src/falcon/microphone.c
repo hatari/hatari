@@ -10,12 +10,11 @@
   Copyright (c) 1999-2000 Ross Bencina and Phil Burk
 */
 
+#include "main.h"
+
 #if HAVE_PORTAUDIO
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <portaudio.h>
-#include "main.h"
 #include "microphone.h"
 #include "crossbar.h"
 

@@ -35,6 +35,11 @@ if(X11_FOUND)
 	set(HAVE_X11 1)
 endif(X11_FOUND)
 
+find_package(PortAudio)
+if(PORTAUDIO_FOUND)
+	set(HAVE_PORTAUDIO 1)
+endif(PORTAUDIO_FOUND)
+
 # ###########################
 # Check for optional headers:
 # ###########################
