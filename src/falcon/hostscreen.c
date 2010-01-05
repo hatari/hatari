@@ -286,6 +286,8 @@ void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 			surf->format->Rmask, surf->format->Gmask, surf->format->Bmask,
 			surf->format->Rshift, surf->format->Gshift, surf->format->Bshift,
 			surf->format->Rloss, surf->format->Gloss, surf->format->Bloss));
+
+	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2);
 }
 
 
