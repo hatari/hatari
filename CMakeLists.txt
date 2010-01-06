@@ -5,6 +5,12 @@ project(Hatari)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+# Set build type to "Release" if user did not specify any build type yet
+# Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif(NOT CMAKE_BUILD_TYPE)
+
 # ####################
 # Check for libraries:
 # ####################
@@ -65,6 +71,30 @@ check_function_exists(select HAVE_SELECT)
 # ################
 
 add_definitions(-DCONFDIR=\"/etc\")
+
+# Test for large file support
+execute_process(COMMAND getconf LFS_CFLAGS
+                OUTPUT_VARIABLE DETECTED_LFS_CFLAGS)
+if(DETECTED_LFS_CFLAGS)
+	add_definitions(${DETECTED_LFS_CFLAGS})
+endif(DETECTED_LFS_CFLAGS)
+
+# #############
+# Other CFLAGS:
+# #############
+
+# Warning flags:
+if(CMAKE_COMPILER_IS_GNUCC)
+	set(CMAKE_C_FLAGS "-Wcast-qual -Wbad-function-cast -Wpointer-arith ${CMAKE_C_FLAGS}")
+	set(CMAKE_C_FLAGS "-Wmissing-prototypes -Wstrict-prototypes ${CMAKE_C_FLAGS}")
+	set(CMAKE_C_FLAGS "-Wall -Wwrite-strings -Wsign-compare ${CMAKE_C_FLAGS}")
+	# set(CMAKE_C_FLAGS "-Wshadow -Werror ${CMAKE_C_FLAGS}")
+endif(CMAKE_COMPILER_IS_GNUCC)
+
+# Building Hatari w/o optimization is no fun...
+IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set(CMAKE_C_FLAGS "-O ${CMAKE_C_FLAGS}")
+ENDIF (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # ####################
 # Paths configuration:
