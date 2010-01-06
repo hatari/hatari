@@ -263,7 +263,8 @@ static void sync_m68k_pc (void)
 /* getv == 1: fetch data; getv != 0: check for odd address. If movem != 0,
  * the calling routine handles Apdi and Aipi modes.
  * gb-- movem == 2 means the same thing but for a MOVE16 instruction */
-static void genamode (amodes mode, char *reg, wordsizes size, char *name, int getv, int movem)
+static void genamode (amodes mode, const char *reg, wordsizes size,
+                      const char *name, int getv, int movem)
 {
     start_brace ();
     switch (mode) {
@@ -472,7 +473,8 @@ static void genamode (amodes mode, char *reg, wordsizes size, char *name, int ge
 	}
 }
 
-static void genastore (char *from, amodes mode, char *reg, wordsizes size, char *to)
+static void genastore (const char *from, amodes mode, const char *reg,
+                       wordsizes size, const char *to)
 {
     switch (mode) {
      case Dreg:
@@ -654,7 +656,8 @@ typedef enum
 }
 flagtypes;
 
-static void genflags_normal (flagtypes type, wordsizes size, char *value, char *src, char *dst)
+static void genflags_normal (flagtypes type, wordsizes size, const char *value,
+                             const char *src, const char *dst)
 {
     char vstr[100], sstr[100], dstr[100];
     char usstr[100], udstr[100];
@@ -795,7 +798,8 @@ static void genflags_normal (flagtypes type, wordsizes size, char *value, char *
     }
 }
 
-static void genflags (flagtypes type, wordsizes size, char *value, char *src, char *dst)
+static void genflags (flagtypes type, wordsizes size, const char *value,
+                      const char *src, const char *dst)
 {
     /* Temporarily deleted 68k/ARM flag optimizations.  I'd prefer to have
        them in the appropriate m68k.h files and use just one copy of this
