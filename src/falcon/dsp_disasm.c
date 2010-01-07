@@ -569,7 +569,7 @@ Uint16 dsp56k_disasm(void)
 char* dsp56k_getInstructionText(void)
 {
 	if (isLooping) {
-		sprintf(str_instr2, "");
+		*str_instr2 = 0;
 	}
 	else if (disasm_cur_inst_len == 1) {
 		sprintf(str_instr2, "%04x:  %06x         (%02d cyc)  %s\n", prev_inst_pc, cur_inst, dsp_core->instr_cycle, str_instr);
