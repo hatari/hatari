@@ -347,18 +347,18 @@ static void ClearInternalDTA(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Match a file to a dir mask.
+ * Match a TOS file name to a dir mask.
  */
-static int match (char *pat, char *name)
+static int fsfirst_match(const char *pat, const char *name)
 {
-	char *p=pat, *n=name;
+	const char *p=pat, *n=name;
 
 	if (name[0] == '.')
-		return false;                   /* no .* files */
+		return false;           /* skip .* files */
 	if (strcmp(pat,"*.*")==0)
-		return true;
+		return true;            /* match everything */
 	if (strcasecmp(pat,name)==0)
-		return true;
+		return true;            /* exact case insensitive match */
 
 	for (;*n;)
 	{
@@ -392,7 +392,7 @@ static int match (char *pat, char *name)
  * Parse directory from sfirst mask
  * - e.g.: input:  "hdemudir/auto/mask*.*" outputs: "hdemudir/auto"
  */
-static void fsfirst_dirname(char *string, char *newstr)
+static void fsfirst_dirname(const char *string, char *newstr)
 {
 	int i=0;
 
@@ -416,7 +416,7 @@ static void fsfirst_dirname(char *string, char *newstr)
 /**
  * Parse directory mask, e.g. "*.*"
  */
-static void fsfirst_dirmask(char *string, char *newstr)
+static void fsfirst_dirmask(const char *string, char *newstr)
 {
 	int i=0;
 
@@ -2313,7 +2313,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	j = 0;
 	for (i=0; i < count; i++)
 	{
-		if (match(tempstr, files[i]->d_name))
+		if (fsfirst_match(tempstr, files[i]->d_name))
 		{
 			InternalDTAs[DTAIndex].found[j] = files[i];
 			j++;
