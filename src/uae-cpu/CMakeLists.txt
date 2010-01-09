@@ -22,6 +22,9 @@ else()
 	add_executable(build68k build68k.c)
 endif(CMAKE_CROSSCOMPILING)
 
+# Generated cpuemu.c contains a lot of warnings we don't really care about...
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused -Wno-sign-compare -Wno-shadow")
+
 add_library(UaeCpu
 	cpuemu.c cpudefs.c cpustbl.c
 	hatari-glue.c memory.c newcpu.c readcpu.c fpp.c
