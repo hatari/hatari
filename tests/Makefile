@@ -32,7 +32,7 @@ test-breakcond: test-breakcond.c ../src/debug/breakcond.c \
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	$(RM) *.o
+	$(RM) *.o $(TESTS)
 
 distclean: clean
 	$(RM) *~ *.bak *.orig
