@@ -11,6 +11,17 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
+# ##########################
+# Conditional build features
+# ##########################
+
+set(ENABLE_DSP_EMU 1
+    CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
+set(ENABLE_TRACING 1
+    CACHE BOOL "Enable tracing messages for debugging")
+set(ENABLE_SMALL_MEM 0
+    CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
+
 # ####################
 # Check for libraries:
 # ####################

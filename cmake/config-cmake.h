@@ -48,8 +48,11 @@
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "."
 
+/* Define to 1 to enable DSP 56k emulation for Falcon mode */
+#cmakedefine ENABLE_DSP_EMU 1
+
 /* Define to 1 to use less memory - at the expense of emulation speed */
-#cmakedefine ENABLE_SMALL_MEM
+#cmakedefine ENABLE_SMALL_MEM 1
 
 /* Define to 1 to enable trace logs - undefine to slightly increase speed */
 #cmakedefine ENABLE_TRACING 1
