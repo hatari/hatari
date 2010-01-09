@@ -255,6 +255,8 @@
 /*			pixels will appear in the right border (because overscan shift the	*/
 /*			whole displayed area 4 pixels to the left) (fix possible regression on	*/
 /*			STE introduced on 2009/10/31).						*/
+/* 2010/01/10	[NP]	In Video_CalculateAddress, take bSteBorderFlag into account (+16 pixels	*/
+/*			in left border on STE).							*/
 
 
 
@@ -754,6 +756,8 @@ static Uint32 Video_CalculateAddress ( void )
 			CurSize += BORDERBYTES_LEFT;
 		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)
 			CurSize += 2;
+		else if (bSteBorderFlag)			/* bigger line by 8 bytes on the left (STE specific) */
+			CurSize += 8;
 
 		if (LineBorderMask & BORDERMASK_STOP_MIDDLE)
 			CurSize -= 106;
@@ -768,6 +772,8 @@ static Uint32 Video_CalculateAddress ( void )
 			LineStartCycle = LINE_START_CYCLE_60;
 		else if ( LineBorderMask & BORDERMASK_LEFT_OFF )
 			LineStartCycle = LINE_START_CYCLE_71;
+		else if ( bSteBorderFlag )
+			LineStartCycle -= 16;			/* display starts 16 pixels earlier */
 
 		LineEndCycle = LineStartCycle + CurSize*2;
 
