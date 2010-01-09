@@ -2,15 +2,16 @@
  Active Hatari developers:
  -------------------------
 
-- Thomas Huth <huth at users.berlios.de> : Project initiator and main developer.
+- Nicolas Pomarede <npomarede at corp.free.fr> : Project admin, improving
+  CPU, video, sound, IKBD and floppy emulation.
+
+- Thomas Huth <huth at users.berlios.de> : Project initiator and admin,
+  currently more or less in hibernation mode.
 
 - Eero Tamminen <eerot at users.berlios.de> : Speed improvements & code
   cleanup, parts of the STE emulation, Hatari embedding & remote control,
   pause & auto frameskip support, statusbar & overlay led, conditional
   breakpoints, PNG saving and other patches.
-
-- Nicolas Pomarede <npomarede at corp.free.fr> : Many improvements to CPU and video
-  emulation, new sound engine, fake IKBD emulation.
 
 - Jean-Baptiste Berlioz <tobe at freemind-tobe.com> : Cycle accurate Blitter
   emulation.
