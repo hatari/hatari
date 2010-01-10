@@ -349,7 +349,7 @@ static void ClearInternalDTA(void)
 /**
  * Match a TOS file name to a dir mask.
  */
-static int fsfirst_match(const char *pat, const char *name)
+static bool fsfirst_match(const char *pat, const char *name)
 {
 	const char *p=pat, *n=name;
 
@@ -360,7 +360,7 @@ static int fsfirst_match(const char *pat, const char *name)
 	if (strcasecmp(pat,name)==0)
 		return true;            /* exact case insensitive match */
 
-	for (;*n;)
+	while (*n)
 	{
 		if (*p=='*')
 		{
@@ -383,7 +383,8 @@ static int fsfirst_match(const char *pat, const char *name)
 		}
 	}
 
-	return (*p == 0);     /* The name matches the pattern if it ends here, too */
+	/* The name matches the pattern if it ends here, too */
+	return (*p == 0 || (*p == '*' && *(p+1) == 0));
 }
 
 
