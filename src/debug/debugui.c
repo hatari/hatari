@@ -255,20 +255,33 @@ static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
  */
 void DebugUI_PrintCmdHelp(const char *psCmd)
 {
+	dbgcommand_t *cmd;
 	int i;
 
 	/* Search the command ... */
-	for (i = 0; i < debugCommands; i++)
+	for (cmd = debugCommand, i = 0; i < debugCommands; i++, cmd++)
 	{
-		if (!strcmp(psCmd, debugCommand[i].sLongName)
-		    || !strcmp(psCmd, debugCommand[i].sShortName))
+		if (!strcmp(psCmd, cmd->sLongName)
+		    || (cmd->sShortName && *(cmd->sShortName)
+			&& !strcmp(psCmd, cmd->sShortName)))
 		{
 			/* ... and print help text */
-			fprintf(stderr, "'%s' or '%s' - %s\n",
-				debugCommand[i].sLongName, debugCommand[i].sShortName,
-				debugCommand[i].sShortDesc);
-			fprintf(stderr, "Usage:  %s %s\n", debugCommand[i].sShortName,
-				debugCommand[i].sUsage);
+			if (cmd->sShortName && *(cmd->sShortName))
+			{
+				fprintf(stderr, "'%s' or '%s' - %s\n",
+					cmd->sLongName,
+					cmd->sShortName,
+					cmd->sShortDesc);
+			}
+			else
+			{
+				fprintf(stderr, "'%s' - %s\n",
+					cmd->sLongName,
+					cmd->sShortDesc);
+			}
+			fprintf(stderr, "Usage:  %s %s\n",
+				cmd->sShortName,
+				cmd->sUsage);
 			return;
 		}
 	}
