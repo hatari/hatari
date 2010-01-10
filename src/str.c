@@ -70,7 +70,7 @@ char *Str_ToUpper(char *pString)
 
 
 /**
- * Convert string to lowercase
+ * Convert string to lowercase in place.
  */
 char *Str_ToLower(char *pString)
 {
@@ -85,7 +85,7 @@ char *Str_ToLower(char *pString)
 
 
 /**
- * truncate string at first unprintable char (e.g. newline)
+ * truncate string at first unprintable char (e.g. newline).
  */
 char *Str_Trunc(char *pString)
 {
