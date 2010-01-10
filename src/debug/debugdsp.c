@@ -117,7 +117,7 @@ static int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 				/* range */
 				if (upper > 0xFFFF)
 				{
-					fprintf(stderr,"Invalid address '%x'!\n", upper);
+					fprintf(stderr,"Invalid address 0x%x!\n", upper);
 					return DEBUGGER_CMDDONE;
 				}
 				dsp_disasm_upper = upper;
@@ -126,7 +126,7 @@ static int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 
 		if (lower > 0xFFFF)
 		{
-			fprintf(stderr,"Invalid address '%x'!\n", lower);
+			fprintf(stderr,"Invalid address 0x%x!\n", lower);
 			return DEBUGGER_CMDDONE;
 		}
 		dsp_disasm_addr = lower;
@@ -200,7 +200,7 @@ static int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			/* range */
 			if (upper > 0xFFFF)
 			{
-				fprintf(stderr,"Invalid address '%x'!\n", upper);
+				fprintf(stderr,"Invalid address 0x%x!\n", upper);
 				return DEBUGGER_CMDDONE;
 			}
 			dsp_memdump_upper = upper;
@@ -208,7 +208,7 @@ static int DebugDsp_MemDump(int nArgc, char *psArgs[])
 		}
 		if (lower > 0xFFFF)
 		{
-			fprintf(stderr,"Invalid address '%x'!\n", lower);
+			fprintf(stderr,"Invalid address 0x%x!\n", lower);
 			return DEBUGGER_CMDDONE;
 		}
 		dsp_memdump_addr = lower;
@@ -298,7 +298,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 		{
 			DspBreakPoint[i] = DspBreakPoint[nDspActiveBPs-1];
 			nDspActiveBPs -= 1;
-			fprintf(stderr, "DSP breakpoint at %x deleted.\n", BreakAddr);
+			fprintf(stderr, "DSP breakpoint at 0x%x deleted.\n", BreakAddr);
 			return DEBUGGER_CMDDONE;
 		}
 	}
@@ -313,7 +313,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 	/* Add new breakpoint */
 	DspBreakPoint[nDspActiveBPs] = BreakAddr;
 	nDspActiveBPs += 1;
-	fprintf(stderr, "DSP breakpoint added at %x.\n", BreakAddr);
+	fprintf(stderr, "DSP breakpoint added at 0x%x.\n", BreakAddr);
 
 	return DEBUGGER_CMDDONE;
 }
@@ -342,7 +342,7 @@ static void DebugDsp_CheckBreakpoints(void)
 	{
 		if (pc == DspBreakPoint[i])
 		{
-			fprintf(stderr, "\nDSP breakpoint at %x ...", pc);
+			fprintf(stderr, "\nDSP breakpoint at 0x%x ...", pc);
 			DebugUI();
 			break;
 		}

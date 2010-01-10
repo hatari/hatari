@@ -352,7 +352,7 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 		{
 			CpuBreakPoint[i] = CpuBreakPoint[nCpuActiveBPs-1];
 			nCpuActiveBPs -= 1;
-			fprintf(stderr, "CPU breakpoint at %x deleted.\n", BreakAddr);
+			fprintf(stderr, "CPU breakpoint at 0x%x deleted.\n", BreakAddr);
 			return DEBUGGER_CMDDONE;
 		}
 	}
@@ -367,13 +367,14 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 	/* Add new breakpoint */
 	CpuBreakPoint[nCpuActiveBPs] = BreakAddr;
 	nCpuActiveBPs += 1;
-	fprintf(stderr, "CPU breakpoint added at %x.\n", BreakAddr);
+	fprintf(stderr, "CPU breakpoint added at 0x%x.\n", BreakAddr);
 
 	return DEBUGGER_CMDDONE;
 }
 
+
 /**
- * CPU wrapper for BreakCond_Command/BreakPointCount, returns DEBUGGER_END
+ * CPU wrapper for BreakCond_Command/BreakPointCount.
  */
 static int DebugCpu_BreakCond(int nArgc, char *psArgs[])
 {
@@ -532,7 +533,7 @@ static void DebugCpu_CheckCpuBreakpoints(void)
 	{
 		if (pc == CpuBreakPoint[i])
 		{
-			fprintf(stderr, "\nCPU breakpoint at %x ...", pc);
+			fprintf(stderr, "\nCPU breakpoint at 0x%x ...", pc);
 			DebugUI();
 			break;
 		}
