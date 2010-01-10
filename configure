@@ -1,0 +1,82 @@
+#!/bin/sh
+
+# NOTE: this is a simple script wrapper around the cmake command line tools,
+# for those used to the autotools configure script conventions
+
+if ! which cmake > /dev/null; then
+  echo "ERROR: You need the 'cmake' program to configure the Hatari build process."
+  echo "Please install 'cmake' first, then try again."
+  exit 1
+fi
+
+print_help()
+{
+  echo "This is a simple configure script wrapper around cmake build system."
+  echo "Parameters are:"
+  echo "  --prefix=<path>         Set the install prefix to path"
+  echo "  --enable-debug          Enable debug (non-optimized) build"
+  echo "  --disable-dsp           Disable DSP emulation for Falcon mode."
+  echo "  --disable-tracing       Disable tracing messages for debugging"
+  echo "  --enable-small-mem      Use less memory - at the expense of emulation speed"
+  echo
+  echo "Please run cmake directly for full control over the build."
+  echo
+}
+
+cmake_args=""
+build_type="Release"
+
+while [ $# -gt 0 ]
+do
+  preq=${1%=*}			# get part before =
+  case $preq
+  in
+    --help)
+      print_help
+      exit 0
+    ;;
+    --prefix)
+      prefix=${1##*=}		# get part after =
+      cmake_args="$cmake_cmd -DCMAKE_INSTALL_PREFIX:PATH=$prefix"
+    ;;
+    --enable-debug)
+      build_type="Debug"
+      cmake_args="$cmake_args -DCMAKE_BUILD_TYPE:STRING=Debug"
+    ;;
+    --disable-debug)
+      build_type="Release"
+      cmake_args="$cmake_args -DCMAKE_BUILD_TYPE:STRING=Release"
+    ;;
+    --enable-dsp)
+      cmake_args="$cmake_args -DENABLE_DSP_EMU:BOOL=1"
+    ;;
+    --disable-dsp)
+      cmake_args="$cmake_args -DENABLE_DSP_EMU:BOOL=0"
+    ;;
+    --enable-tracing)
+      cmake_args="$cmake_args -DENABLE_TRACING:BOOL=1"
+    ;;
+    --disable-tracing)
+      cmake_args="$cmake_args -DENABLE_TRACING:BOOL=0"
+    ;;
+    --enable-small-mem)
+      cmake_args="$cmake_args -DENABLE_SMALL_MEM:BOOL=1"
+    ;;
+    --disable-small-mem)
+      cmake_args="$cmake_args -DENABLE_SMALL_MEM:BOOL=0"
+    ;;
+    *)
+      echo "Invalid argument: $preq"
+      echo "Run $0 --help for a list of valid parameters."
+      exit 2
+    ;;
+  esac
+  shift 1
+done
+
+cmake `dirname $0` $cmake_args
+
+echo
+echo "Now you must type: make; make install"
+echo "to actually build and install the software"
+echo
