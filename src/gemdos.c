@@ -414,21 +414,17 @@ static void fsfirst_dirname(const char *string, char *newstr)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse directory mask, e.g. "*.*"
+ * Return directory mask part from the given string
  */
-static void fsfirst_dirmask(const char *string, char *newstr)
+static const char* fsfirst_dirmask(const char *string)
 {
-	int i=0;
+	const char *lastsep;
 
-	while (string[i] != '\0')
-		i++;   /* go to end of string */
-	while (i && string[i] != PATHSEP)
-		i--;   /* find last slash */
-	if (string[i] == PATHSEP)
-		i++;
-	while (string[i] != '\0')
-		*newstr++ = string[i++]; /* go to end of string */
-	*newstr = '\0';
+	lastsep = strrchr(string, PATHSEP);
+	if (lastsep)
+		return lastsep + 1;
+	else
+		return string;
 }
 
 
@@ -2230,8 +2226,8 @@ static bool GemDOS_SNext(void)
 static bool GemDOS_SFirst(Uint32 Params)
 {
 	char szActualFileName[MAX_GEMDOS_PATH];
-	char tempstr[MAX_GEMDOS_PATH];
 	char *pszFileName;
+	const char *dirmask;
 	struct dirent **files;
 	Uint32 nDTA;
 	int Drive;
@@ -2306,14 +2302,14 @@ static bool GemDOS_SFirst(Uint32 Params)
 	}
 
 	InternalDTAs[DTAIndex].centry = 0;          /* current entry is 0 */
-	fsfirst_dirmask(szActualFileName, tempstr); /* get directory mask */
+	dirmask = fsfirst_dirmask(szActualFileName);/* directory mask part */
 	InternalDTAs[DTAIndex].found = files;       /* get files */
 
 	/* count & copy the entries that match our mask and discard the rest */
 	j = 0;
 	for (i=0; i < count; i++)
 	{
-		if (fsfirst_match(tempstr, files[i]->d_name))
+		if (fsfirst_match(dirmask, files[i]->d_name))
 		{
 			InternalDTAs[DTAIndex].found[j] = files[i];
 			j++;
