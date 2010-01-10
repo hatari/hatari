@@ -257,6 +257,8 @@
 /*			STE introduced on 2009/10/31).						*/
 /* 2010/01/10	[NP]	In Video_CalculateAddress, take bSteBorderFlag into account (+16 pixels	*/
 /*			in left border on STE).							*/
+/* 2010/01/10	[NP]	In Video_CalculateAddress, take HWScrollPrefetch into account (shifter	*/
+/*			starts 16 pixels earlier) (fix EPSS demo by Unit 17).			*/
 
 
 
@@ -758,6 +760,8 @@ static Uint32 Video_CalculateAddress ( void )
 			CurSize += 2;
 		else if (bSteBorderFlag)			/* bigger line by 8 bytes on the left (STE specific) */
 			CurSize += 8;
+		else if ( ( HWScrollCount > 0 ) && ( HWScrollPrefetch == 1 ) )
+			CurSize += 8;				/* 8 more bytes are loaded when scrolling with prefetching */
 
 		if (LineBorderMask & BORDERMASK_STOP_MIDDLE)
 			CurSize -= 106;
@@ -774,14 +778,16 @@ static Uint32 Video_CalculateAddress ( void )
 			LineStartCycle = LINE_START_CYCLE_71;
 		else if ( bSteBorderFlag )
 			LineStartCycle -= 16;			/* display starts 16 pixels earlier */
+		else if ( ( HWScrollCount > 0 ) && ( HWScrollPrefetch == 1 ) )
+			LineStartCycle -= 16;			/* shifter starts reading 16 pixels earlier when scrolling with prefetching */
 
 		LineEndCycle = LineStartCycle + CurSize*2;
 
 
 		if ( X < LineStartCycle )
-			X = LineStartCycle;				/* display is disabled in the left border */
+			X = LineStartCycle;			/* display is disabled in the left border */
 		else if ( X > LineEndCycle )
-			X = LineEndCycle;				/* display is disabled in the right border */
+			X = LineEndCycle;			/* display is disabled in the right border */
 
 		NbBytes = ( (X-LineStartCycle)>>1 ) & (~1);	/* 2 cycles per byte */
 
