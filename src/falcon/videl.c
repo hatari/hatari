@@ -1011,3 +1011,42 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 		}
 	}
 }
+
+/**
+ * VIDEL_disasmRegisters : display the Videl registers values.
+ */
+void VIDEL_disasmRegisters(void)
+{
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		fprintf(stderr, "$FF8006 : monitor type                     : %02x\n", IoMem_ReadByte(0xff8006));
+		fprintf(stderr, "$FF820E : offset to next line              : %04x\n", IoMem_ReadWord(0xff820e));
+		fprintf(stderr, "$FF8210 : VWRAP - line width               : %04x\n", IoMem_ReadWord(0xff8210));
+		fprintf(stderr, "$FF8260 : ST shift mode                    : %02x\n", IoMem_ReadByte(0xff8260));
+		fprintf(stderr, "$FF8266 : Falcon shift mode                : %04x\n", IoMem_ReadWord(0xff8266));
+		fprintf(stderr, "\n");
+		fprintf(stderr, "$FF8280 : HHC - Horizontal Hold Counter    : %04x\n", IoMem_ReadWord(0xff8280));
+		fprintf(stderr, "$FF8282 : HHT - Horizontal Hold Timer      : %04x\n", IoMem_ReadWord(0xff8282));
+		fprintf(stderr, "$FF8284 : HBB - Horizontal Border Begin    : %04x\n", IoMem_ReadWord(0xff8284));
+		fprintf(stderr, "$FF8286 : HBE - Horizontal Border End      : %04x\n", IoMem_ReadWord(0xff8286));
+		fprintf(stderr, "$FF8288 : HDB - Horizontal Display Begin   : %04x\n", IoMem_ReadWord(0xff8288));
+		fprintf(stderr, "$FF828A : HDE - Horizontal Display End     : %04x\n", IoMem_ReadWord(0xff828a));
+		fprintf(stderr, "$FF828C : HSS - Horizontal SS              : %04x\n", IoMem_ReadWord(0xff828c));
+		fprintf(stderr, "$FF828E : HFS - Horizontal FS              : %04x\n", IoMem_ReadWord(0xff828e));
+		fprintf(stderr, "$FF8290 : HEE - Horizontal EE              : %04x\n", IoMem_ReadWord(0xff8290));
+		fprintf(stderr, "\n");
+		fprintf(stderr, "$FF82A0 : VFC - Vertical Frequency Counter : %04x\n", IoMem_ReadWord(0xff82a0));
+		fprintf(stderr, "$FF82A2 : VFT - Vertical Frequency Timer   : %04x\n", IoMem_ReadWord(0xff82a2));
+		fprintf(stderr, "$FF82A4 : VBB - Vertical Border Begin      : %04x\n", IoMem_ReadWord(0xff82a4));
+		fprintf(stderr, "$FF82A6 : VBE - Vertical Border End        : %04x\n", IoMem_ReadWord(0xff82a6));
+		fprintf(stderr, "$FF82A8 : VDB - Vertical Display Begin     : %04x\n", IoMem_ReadWord(0xff82a8));
+		fprintf(stderr, "$FF82AA : VDE - Vertical Display End       : %04x\n", IoMem_ReadWord(0xff82aa));
+		fprintf(stderr, "$FF82AC : VSS - Vertical SS                : %04x\n", IoMem_ReadWord(0xff82ac));
+		fprintf(stderr, "\n");
+		fprintf(stderr, "$FF82C0 : VCO - Video control              : %04x\n", IoMem_ReadWord(0xff82c0));
+		fprintf(stderr, "$FF82C2 : VMD - Video mode                 : %04x\n", IoMem_ReadWord(0xff82c2));
+		fprintf(stderr, "\n");
+	}
+	else {
+		fprintf(stderr, "No Videl\n");
+	}
+}

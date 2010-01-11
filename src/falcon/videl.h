@@ -16,4 +16,7 @@ extern void VIDEL_ZoomModeChanged(void);
 extern void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline);
 extern void VIDEL_ConvertScreenZoom(int vw, int vh, int bpp, int nextline);
 
+/* For debugging */
+extern void VIDEL_disasmRegisters(void);
+
 #endif /* _VIDEL_H */
