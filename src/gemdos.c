@@ -2487,9 +2487,9 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 		"Frename",
 		"Fdatime"
 	};
-	if (opcode < sizeof(names))
+	if (opcode < ARRAYSIZE(names))
 		return names[opcode];
-	return "unknown";
+	return "MiNT call?";
 }
 #endif
 
