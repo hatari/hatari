@@ -5,12 +5,14 @@
   your option any later version. Read the file gpl.txt for details.
 
   Falcon Crossbar (Matrice) emulation.
-  input device:	- DSP transmit (SSI)
+  input device:	
+		- DSP transmit (SSI)
 		- external DSP connector
 		- ADC (micro + PSG chip)
 		- DMA playback
 
-  output device:- external DSP connector
+  output device:
+		- external DSP connector
 		- DSP receive (SSI)
 		- DAC (headphone, loudspeaker and monitor sound)
 		- DMA record
@@ -84,7 +86,6 @@ static void Crossbar_Process_DMAPlay_Transfer(void);
 static void Crossbar_setDmaRecord_Settings(void);
 void Crossbar_SendDataToDmaRecord(Sint16 value);
 static void Crossbar_Process_DMARecord_HandshakeMode(void);
-
 
 /* Dsp Xmit functions */
 static void Crossbar_SendDataToDspReceive(Uint32 value, Uint16 frame);
@@ -1714,44 +1715,5 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	}
 	else {
 		dac.writeBufferSize = 0;
-	}
-}
-
-/**
- * Crossbar_disasmRegisters : display the Crossbar registers values.
- */
-void Crossbar_disasmRegisters(void)
-{
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
-		fprintf(stderr, "$FF8900 : Sound DMA control                     : %02x\n", IoMem_ReadByte(0xff8900));
-		fprintf(stderr, "$FF8901 : Sound DMA control                     : %02x\n", IoMem_ReadByte(0xff8901));
-		fprintf(stderr, "$FF8903 : Frame Start High                      : %02x\n", IoMem_ReadByte(0xff8903));
-		fprintf(stderr, "$FF8905 : Frame Start middle                    : %02x\n", IoMem_ReadByte(0xff8905));
-		fprintf(stderr, "$FF8907 : Frame Start low                       : %02x\n", IoMem_ReadByte(0xff8907));
-		fprintf(stderr, "$FF8909 : Frame Count High                      : %02x\n", IoMem_ReadByte(0xff8909));
-		fprintf(stderr, "$FF890B : Frame Count middle                    : %02x\n", IoMem_ReadByte(0xff890b));
-		fprintf(stderr, "$FF890D : Frame Count low                       : %02x\n", IoMem_ReadByte(0xff890d));
-		fprintf(stderr, "$FF890f : Frame End High                        : %02x\n", IoMem_ReadByte(0xff890f));
-		fprintf(stderr, "$FF8911 : Frame End middle                      : %02x\n", IoMem_ReadByte(0xff8911));
-		fprintf(stderr, "$FF8913 : Frame End low                         : %02x\n", IoMem_ReadByte(0xff8913));
-		fprintf(stderr, "\n");
-		fprintf(stderr, "$FF8920 : Sound Mode Control                    : %02x\n", IoMem_ReadByte(0xff8920));
-		fprintf(stderr, "$FF8921 : Sound Mode Control                    : %02x\n", IoMem_ReadByte(0xff8921));
-		fprintf(stderr, "$FF8930 : DMA Crossbar Input Select Controller  : %04x\n", IoMem_ReadWord(0xff8930));
-		fprintf(stderr, "$FF8932 : DMA Crossbar Output Select Controller : %04x\n", IoMem_ReadWord(0xff8932));
-		fprintf(stderr, "\n");
-		fprintf(stderr, "$FF8934 : External Sync Frequency Divider       : %02x\n", IoMem_ReadByte(0xff8934));
-		fprintf(stderr, "$FF8935 : Internal Sync Frequency Divider       : %02x\n", IoMem_ReadByte(0xff8935));
-		fprintf(stderr, "$FF8936 : Record Track select                   : %02x\n", IoMem_ReadByte(0xff8936));
-		fprintf(stderr, "$FF8937 : Codec Input Source                    : %02x\n", IoMem_ReadByte(0xff8937));
-		fprintf(stderr, "$FF8938 : Codec ADC Input                       : %02x\n", IoMem_ReadByte(0xff8938));
-		fprintf(stderr, "$FF8939 : Gain Settings Per Channel             : %02x\n", IoMem_ReadByte(0xff8939));
-		fprintf(stderr, "$FF893A : Attenuation Settings Per Channel      : %02x\n", IoMem_ReadByte(0xff893a));
-		fprintf(stderr, "$FF893C : Codec Status                          : %04x\n", IoMem_ReadWord(0xff893c));
-		fprintf(stderr, "$FF8940 : GPIO Data Direction                   : %04x\n", IoMem_ReadWord(0xff8940));
-		fprintf(stderr, "$FF8942 : GPIO Data                             : %04x\n", IoMem_ReadWord(0xff8942));
-	}
-	else {
-		fprintf(stderr, "No Crossbar\n");
 	}
 }
