@@ -427,6 +427,8 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		const char *name;
 		char* (*match)(const char *, int);
 	} cmd[] = {
+		{ "a", DebugCpu_MatchAddress },
+		{ "address", DebugCpu_MatchAddress },
 		{ "b", BreakCond_MatchVariable },
 		{ "breakpoint", BreakCond_MatchVariable },
 		{ "f", rl_filename_completion_function },
@@ -435,6 +437,7 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "loadbin", rl_filename_completion_function },
 		{ "s", rl_filename_completion_function },
 		{ "savebin", rl_filename_completion_function },
+		{ "symbols", rl_filename_completion_function },
 		{ "o", Opt_MatchOption },
 		{ "setopt", Opt_MatchOption },
 		{ "t", Log_MatchTrace },

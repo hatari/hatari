@@ -24,6 +24,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "stMemory.h"
 #include "str.h"
+#include "symbols.h"
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
 #define MEMDUMP_ROWS   4       /* memdump, number of rows */
@@ -32,6 +33,9 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 
 static Uint32 disasm_addr;        /* disasm address */
 static Uint32 memdump_addr;       /* memdump address */
+
+/* TODO: add symbol name/address file name to configuration? */
+static symbol_list_t *CpuSymbolsList;
 
 static Uint32 CpuBreakPoint[16];  /* 68k breakpoints */
 static int nCpuActiveBPs = 0;     /* Amount of active breakpoints */
@@ -309,6 +313,86 @@ error_msg:
 
 
 /**
+ * Load text/code symbols and their addresses from given file.
+ */
+static int DebugCpu_LoadSymbols(int nArgc, char *psArgs[])
+{
+	Uint32 offset;
+	char *file;
+
+	if (nArgc < 2)
+	{
+		DebugUI_PrintCmdHelp(psArgs[0]);
+		return DEBUGGER_CMDDONE;
+	}
+	file = psArgs[1];
+
+	/* handle special cases */
+	if (strcmp(file, "name") == 0)
+	{
+		Symbols_ShowByName(CpuSymbolsList);
+		return DEBUGGER_CMDDONE;			
+	}
+	if (strcmp(file, "addr") == 0)
+	{
+		Symbols_ShowByAddress(CpuSymbolsList);
+		return DEBUGGER_CMDDONE;			
+	}
+
+	if (CpuSymbolsList)
+		Symbols_Free(CpuSymbolsList);
+
+	if (nArgc >= 3)
+		offset = atoi(psArgs[2]);
+	else
+		offset = 0;
+
+	CpuSymbolsList = Symbols_Load(file, offset, SYMTYPE_TEXT);
+	return DEBUGGER_CMDDONE;
+}
+
+
+/**
+ * Readline match callback for symbol name completion.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char* DebugCpu_MatchAddress(const char *text, int state)
+{
+	const symbol_t *entry;
+	
+	if (CpuSymbolsList)
+	{
+		entry = Symbols_MatchByName(CpuSymbolsList, SYMTYPE_TEXT, text, state);
+		if (entry)
+			return strdup(entry->name);
+	}
+	/* TODO: add breakpoint address completion? */
+	return NULL;
+}
+
+
+/**
+ * Get given symbol address and return TRUE if one was found.
+ */
+static bool DebugCpu_GetSymbolAddress(const char *name, Uint32 *addr)
+{
+	const symbol_t *entry;
+	
+	if (CpuSymbolsList)
+	{
+		entry = Symbols_MatchByName(CpuSymbolsList, SYMTYPE_TEXT, name, 0);
+		if (entry)
+		{
+			*addr = entry->address;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+/**
  * Toggle or list CPU breakpoints.
  */
 static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
@@ -337,11 +421,16 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!Eval_Number(psArgs[1], &BreakAddr)
-	    || (BreakAddr > STRamEnd && BreakAddr < 0xe00000)
-	    || BreakAddr > 0xff0000)
+	if (!DebugCpu_GetSymbolAddress(psArgs[1], &BreakAddr))
 	{
-		fputs("Not a valid value for a CPU breakpoint!\n", stderr);
+		if (!Eval_Number(psArgs[1], &BreakAddr))
+			fprintf(stderr, "Invalid value '%s' for a CPU breakpoint!\n", psArgs[1]);
+	}
+	
+	if (BreakAddr > 0xff0000 ||
+	    (BreakAddr > STRamEnd && BreakAddr < 0xe00000))
+	{
+		fprintf(stderr, "Invalid address 0x%x for a CPU breakpoint!\n", BreakAddr);
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -626,6 +715,14 @@ static const dbgcommand_t cpucommands[] =
 	  "filename address length\n"
 	  "\tSave the memory block at <address> with given <length> to\n"
 	  "\tthe file <filename>.",
+	  false },
+	{ DebugCpu_LoadSymbols, "symbols", "",
+	  "load  symbols & their addresses",
+	  "filename [offset]\n"
+	  "\tLoads symbol names and their addresses (with optional offset)\n"
+	  "\tfrom given <filename>.  If there were previously loaded symbols,\n"
+	  "\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
+	  "\ta file name, will list the currently loaded symbols.",
 	  false },
 	{ DebugCpu_Continue, "cont", "c",
 	  "continue emulation / CPU single-stepping",

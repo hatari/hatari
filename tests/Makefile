@@ -16,19 +16,23 @@ DEBUGFLAGS = -fstack-protector
 # Set extra flags passed to the compiler
 CFLAGS += $(DEBUGFLAGS) $(INCFLAGS) $(SDL_CFLAGS)
 
-TESTS = test-evaluate test-breakcond
+TESTS = test-symbols test-evaluate test-breakcond
 
 all: $(TESTS)
 
 valgrind: $(TESTS)
 	for test in $^; do valgrind $(VALGRIND_OPTS) ./$$test; done
 
+test-symbols: test-symbols.c ../src/debug/symbols.c
+	$(CC) $(CFLAGS) -o $@ $^
+
 test-evaluate: test-evaluate.c ../src/debug/evaluate.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 test-breakcond: test-breakcond.c ../src/debug/breakcond.c \
 		../src/debug/debugcpu.c ../src/falcon/dsp.c \
-		../src/debug/evaluate.c ../src/str.c
+		../src/debug/symbols.c ../src/debug/evaluate.c \
+		../src/str.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
