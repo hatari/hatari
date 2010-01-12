@@ -42,9 +42,9 @@ void File_CleanFileName(char *pszFileName)
 
 	len = strlen(pszFileName);
 
-	/* Remove end slash from filename! But / remains! Doh! */
-	if (len > 2 && pszFileName[len-1] == PATHSEP)
-		pszFileName[len-1] = '\0';
+	/* Remove end slashes from filename! But / remains! Doh! */
+	while (len > 2 && pszFileName[--len] == PATHSEP)
+		pszFileName[len] = '\0';
 }
 
 
