@@ -10,7 +10,7 @@
 #ifndef HATARI_DEBUGINFO_H
 #define HATARI_DEBUGINFO_H
 
-extern void debugInfo_Videl(void);
-extern void debugInfo_Crossbar(void);
+extern char *DebugInfo_MatchCommand(const char *text, int state);
+extern int DebugInfo_Command(int nArgc, char *psArgs[]);
 
 #endif /* HATARI_DEBUGINFO_H */

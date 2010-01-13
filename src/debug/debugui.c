@@ -36,6 +36,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "breakcond.h"
 #include "debugcpu.h"
 #include "debugdsp.h"
+#include "debugInfo.h"
 #include "debugui.h"
 #include "evaluate.h"
 
@@ -432,6 +433,9 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "b", BreakCond_MatchVariable },
 		{ "breakpoint", BreakCond_MatchVariable },
 		{ "f", rl_filename_completion_function },
+		{ "h", DebugUI_MatchCommand },
+		{ "help", DebugUI_MatchCommand },
+		{ "info", DebugInfo_MatchCommand },
 		{ "logfile", rl_filename_completion_function },
 		{ "l", rl_filename_completion_function },
 		{ "loadbin", rl_filename_completion_function },
@@ -441,9 +445,7 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "o", Opt_MatchOption },
 		{ "setopt", Opt_MatchOption },
 		{ "t", Log_MatchTrace },
-		{ "trace", Log_MatchTrace },
-		{ "h", DebugUI_MatchCommand },
-		{ "help", DebugUI_MatchCommand }
+		{ "trace", Log_MatchTrace }
 	};
 	int i, end, start = 0;
 	char buf[32];
@@ -566,6 +568,11 @@ static const dbgcommand_t uicommand[] =
 	  "print help",
 	  "[command]"
 	  "\tPrint help text for available commands.",
+	  false },
+	{ DebugInfo_Command, "info", "",
+	  "show machine/OS information",
+	  "[subject]"
+	  "\tPrint information on requested subject or list subjects.",
 	  false },
 	{ DebugUI_SetLogFile, "logfile", "f",
 	  "open or close log file",

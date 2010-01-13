@@ -12,14 +12,15 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include <stdio.h>
 #include "main.h"
 #include "debugInfo.h"
+#include "debugui.h"
 #include "ioMem.h"
 #include "configuration.h"
 
 
 /**
- * debugInfo_Videl : display the Videl registers values.
+ * DebugInfo_Videl : display the Videl registers values.
  */
-void debugInfo_Videl(void)
+static void DebugInfo_Videl(void)
 {
 	if (ConfigureParams.System.nMachineType != MACHINE_FALCON) {
 		fprintf(stderr, "No Videl\n");
@@ -56,9 +57,9 @@ void debugInfo_Videl(void)
 }
 
 /**
- * debugInfo_Crossbar : display the Crossbar registers values.
+ * DebugInfo_Crossbar : display the Crossbar registers values.
  */
-void debugInfo_Crossbar(void)
+static void DebugInfo_Crossbar(void)
 {
 	if (ConfigureParams.System.nMachineType != MACHINE_FALCON) {
 		fprintf(stderr, "No Crossbar\n");
@@ -92,4 +93,63 @@ void debugInfo_Crossbar(void)
 	fprintf(stderr, "$FF893C : Codec Status                          : %04x\n", IoMem_ReadWord(0xff893c));
 	fprintf(stderr, "$FF8940 : GPIO Data Direction                   : %04x\n", IoMem_ReadWord(0xff8940));
 	fprintf(stderr, "$FF8942 : GPIO Data                             : %04x\n", IoMem_ReadWord(0xff8942));
+}
+
+
+static const struct {
+	const char *name;
+	void (*func)(void);
+} infotable[] = {
+	{ "crossbar", DebugInfo_Crossbar },
+	{ "videl",    DebugInfo_Videl }
+};
+
+
+/**
+ * Readline match callback for info subcommand name completion.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *DebugInfo_MatchCommand(const char *text, int state)
+{
+	static int i, len;
+	const char *name;
+	
+	if (!state) {
+		/* first match */
+		len = strlen(text);
+		i = 0;
+	}
+	/* next match */
+	while (i < ARRAYSIZE(infotable)) {
+		name = infotable[i++].name;
+		if (strncmp(name, text, len) == 0)
+			return (strdup(name));
+	}
+	return NULL;
+}
+
+
+/**
+ * Show requested command information.
+ */
+int DebugInfo_Command(int nArgc, char *psArgs[])
+{
+	const char *cmd;
+	int i;
+
+	if (nArgc > 1) {
+		cmd = psArgs[1];
+		for (i = 0; i < ARRAYSIZE(infotable); i++) {
+			if (strcmp(cmd, infotable[i].name) == 0) {
+				infotable[i].func();
+				return DEBUGGER_CMDDONE;
+			}
+		}
+	}
+	fprintf(stderr, "Info subcommands are:\n");
+	for (i = 0; i < ARRAYSIZE(infotable); i++) {
+		fprintf(stderr, "- %s\n", infotable[i].name);
+	}
+	return DEBUGGER_CMDDONE;
 }
