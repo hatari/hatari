@@ -58,13 +58,49 @@ static Uint32 DebugInfo_GetSysbase(Uint16 *osversion)
 }
 
 /**
+ * DebugInfo_CurrentBasepage: get currently running TOS program basepage
+ */
+static Uint32 DebugInfo_CurrentBasepage(void)
+{
+	Uint32 basepage, sysbase;
+	Uint16 osversion, osconf;
+
+	sysbase = DebugInfo_GetSysbase(&osversion);
+	if (!sysbase) {
+		return 0;
+	}
+	if (osversion >= 0x0102) {
+		basepage = STMemory_ReadLong(sysbase+0x28);
+	} else {
+		osconf = STMemory_ReadWord(sysbase+0x1C);
+		if((osconf>>1) == COUNTRY_SPAIN) {
+			basepage = 0x873C;
+		} else {
+			basepage = 0x602C;
+		}
+	}
+	if (STMemory_ValidArea(basepage, 4)) {
+		return STMemory_ReadLong(basepage);
+	}
+	fprintf(stderr, "Pointer 0x%06x to basepage address is invalid!\n", basepage);
+	return 0;
+}
+
+/**
  * DebugInfo_Basepage: show TOS process basepage information
  * at given address.
  */
 static void DebugInfo_Basepage(Uint32 basepage)
 {
 	Uint32 env, cmd;
-	
+
+	if (!basepage) {
+		/* default to current process basepage */
+		basepage = DebugInfo_CurrentBasepage();
+		if (!basepage) {
+			return;
+		}
+	}
 	fprintf(stderr, "Process basepage information:\n");
 	if (!STMemory_ValidArea(basepage, BASEPAGE_SIZE) ||
 	    STMemory_ReadLong(basepage) != basepage) {
@@ -103,50 +139,43 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 	if (!sysbase) {
 		return;
 	}
-	fprintf(stderr, "OS base address: 0x%06x\n", sysbase);
-	fprintf(stderr, "OS RAM end+1   : 0x%06x\n", STMemory_ReadLong(sysbase+0x0C));
-	fprintf(stderr, "TOS version    : 0x%x\n", osversion);
+	fprintf(stderr, "OS base addr : 0x%06x\n", sysbase);
+	fprintf(stderr, "OS RAM end+1 : 0x%06x\n", STMemory_ReadLong(sysbase+0x0C));
+	fprintf(stderr, "TOS version  : 0x%x\n", osversion);
 
-	fprintf(stderr, "Reset handler  : 0x%06x\n", STMemory_ReadLong(sysbase+0x04));
-	fprintf(stderr, "Reset vector   : 0x%06x\n", STMemory_ReadLong(RESET_VECTOR));
-	fprintf(stderr, "Reset valid    : 0x%x (valid=0x%x)\n", STMemory_ReadLong(RESET_VALID), RESET_MAGIC);
+	fprintf(stderr, "Reset handler: 0x%06x\n", STMemory_ReadLong(sysbase+0x04));
+	fprintf(stderr, "Reset vector : 0x%06x\n", STMemory_ReadLong(RESET_VECTOR));
+	fprintf(stderr, "Reset valid  : 0x%x (valid=0x%x)\n", STMemory_ReadLong(RESET_VALID), RESET_MAGIC);
 
 	gemblock = STMemory_ReadLong(sysbase+0x14);
 	fprintf(stderr, "GEM Memory Usage Parameter Block:\n");
 	if (STMemory_ValidArea(gemblock, GEM_MUPB_SIZE)) {
-		fprintf(stderr, "- Block addr: 0x%06x\n", gemblock);
-		fprintf(stderr, "- GEM magic : 0x%x (valid=0x%x)\n", STMemory_ReadLong(gemblock), GEM_MAGIC);
-		fprintf(stderr, "- GEM entry : 0x%06x\n", STMemory_ReadLong(gemblock+4));
-		fprintf(stderr, "- GEM end   : 0x%06x\n", STMemory_ReadLong(gemblock+8));
+		fprintf(stderr, "- Block addr : 0x%06x\n", gemblock);
+		fprintf(stderr, "- GEM magic  : 0x%x (valid=0x%x)\n", STMemory_ReadLong(gemblock), GEM_MAGIC);
+		fprintf(stderr, "- GEM entry  : 0x%06x\n", STMemory_ReadLong(gemblock+4));
+		fprintf(stderr, "- GEM end    : 0x%06x\n", STMemory_ReadLong(gemblock+8));
 	} else {
 		fprintf(stderr, "- is at INVALID 0x%06x address.\n", gemblock);
 	}
 
-	fprintf(stderr, "OS date        : 0x%x\n", STMemory_ReadLong(sysbase+0x14));
-	fprintf(stderr, "OS DOS date    : 0x%x\n", STMemory_ReadLong(sysbase+0x1E));
+	fprintf(stderr, "OS date      : 0x%x\n", STMemory_ReadLong(sysbase+0x14));
+	fprintf(stderr, "OS DOS date  : 0x%x\n", STMemory_ReadLong(sysbase+0x1E));
 
 	osconf = STMemory_ReadWord(sysbase+0x1C);
-	fprintf(stderr, "OS Conf bits   : lang=%d, %s\n", osconf>>1, osconf&1 ? "PAL":"NTSC");
-	fprintf(stderr, "Cookie Jar     : 0x%06x\n", STMemory_ReadLong(COOKIE_JAR));
+	fprintf(stderr, "OS Conf bits : lang=%d, %s\n", osconf>>1, osconf&1 ? "PAL":"NTSC");
+	fprintf(stderr, "Cookie Jar   : 0x%06x\n", STMemory_ReadLong(COOKIE_JAR));
 
 	/* last 3 OS header fields are only available as of TOS 1.02 */
 	if (osversion >= 0x0102) {
-		fprintf(stderr, "Memory pool    : 0x%06x\n", STMemory_ReadLong(sysbase+0x20));
-		fprintf(stderr, "Kbshift addr   : 0x%06x\n", STMemory_ReadLong(sysbase+0x24));
-		basepage = STMemory_ReadLong(sysbase+0x28);
+		fprintf(stderr, "Memory pool  : 0x%06x\n", STMemory_ReadLong(sysbase+0x20));
+		fprintf(stderr, "Kbshift addr : 0x%06x\n", STMemory_ReadLong(sysbase+0x24));
 	} else {
 		/* TODO: GEMDOS memory pool address for TOS 1.0? */
 		fprintf(stderr, "Kbshift addr : 0x000E1B\n");
-		if((osconf>>1) == COUNTRY_SPAIN) {
-			basepage = 0x873C;
-		} else {
-			basepage = 0x602C;
-		}
 	}
-	if (STMemory_ValidArea(basepage, 4)) {
-		fprintf(stderr, "Running program: 0x%06x -> basepage: 0x%06x\n", basepage, STMemory_ReadLong(basepage));
-	} else {
-		fprintf(stderr, "Invalid basepage pointer address 0x%06x!\n", basepage);
+	basepage = DebugInfo_CurrentBasepage();
+	if (basepage) {
+		fprintf(stderr, "Basepage     : 0x%06x\n", basepage);
 	}
 }
 
@@ -241,13 +270,12 @@ static void DebugInfo_Crossbar(Uint32 dummy)
 static const struct {
 	const char *name;
 	void (*func)(Uint32 arg);
-	bool novalue;
 	const char *info;
 } infotable[] = {
-	{ "basepage", DebugInfo_Basepage, false, "program basepage info at <given address>" },
-	{ "crossbar", DebugInfo_Crossbar, true,  "Falcon crossbar HW register values" },
-	{ "osheader", DebugInfo_OSHeader, true,  "TOS OS header information" },
-	{ "videl",    DebugInfo_Videl,    true,  "Falcon Videl HW register values" }
+	{ "basepage", DebugInfo_Basepage, "program basepage info at <given address>" },
+	{ "crossbar", DebugInfo_Crossbar, "Falcon crossbar HW register values" },
+	{ "osheader", DebugInfo_OSHeader, "TOS OS header information" },
+	{ "videl",    DebugInfo_Videl,    "Falcon Videl HW register values" }
 };
 
 
@@ -292,8 +320,7 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 	if (ok && nArgc > 1) {
 		cmd = psArgs[1];		
 		for (i = 0; i < ARRAYSIZE(infotable); i++) {
-			if (strcmp(cmd, infotable[i].name) == 0 &&
-			    infotable[i].novalue != !(!value)) {
+			if (strcmp(cmd, infotable[i].name) == 0) {
 				infotable[i].func(value);
 				return DEBUGGER_CMDDONE;
 			}
@@ -301,9 +328,8 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 	}
 	fprintf(stderr, "Info subcommands are:\n");
 	for (i = 0; i < ARRAYSIZE(infotable); i++) {
-		fprintf(stderr, "- %s: show %s%s\n",
-			infotable[i].name, infotable[i].info,
-			infotable[i].novalue ? "":" (needs argument)");
+		fprintf(stderr, "- %s: show %s\n",
+			infotable[i].name, infotable[i].info);
 	}
 	return DEBUGGER_CMDDONE;
 }
