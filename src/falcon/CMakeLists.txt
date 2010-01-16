@@ -1,6 +1,7 @@
 
-include_directories(. ../.. ../includes ../uae-cpu ../debug
-		    ${SDL_INCLUDE_DIR}) 
+if(PORTAUDIO_FOUND)
+	include_directories(${PORTAUDIO_INCLUDE_DIR})
+endif(PORTAUDIO_FOUND)
 
 if(ENABLE_DSP_EMU)
 	set(DSP_SOURCES dsp_core.c dsp_cpu.c dsp_disasm.c)

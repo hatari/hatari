@@ -1,6 +1,19 @@
 
 include_directories(${CMAKE_BINARY_DIR} includes debug falcon uae-cpu
-		    ${SDL_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
+		    ${SDL_INCLUDE_DIR})
+
+if(ZLIB_FOUND)
+	include_directories(${ZLIB_INCLUDE_DIR})
+endif(ZLIB_FOUND)
+
+if(PNG_FOUND)
+	include_directories(${PNG_INCLUDE_DIR})
+endif(PNG_FOUND)
+
+if(X11_FOUND)
+	include_directories(${X11_INCLUDE_DIR})
+endif(X11_FOUND)
+
 
 link_directories(debug falcon gui-sdl uae-cpu) 
 
@@ -24,9 +37,29 @@ add_executable(hatari
 
 target_link_libraries(hatari
 	Debug Falcon GuiSdl UaeCpu
-	${SDL_LIBRARY} ${PNG_LIBRARY} ${ZLIB_LIBRARY}
-	${READLINE_LIBRARY} ${X11_X11_LIB} ${PORTAUDIO_LIBRARY}
+	${SDL_LIBRARY}
 	SDLmain # Sadly not included in SDL_LIBRARY variable
 	)
+
+if(READLINE_FOUND)
+	target_link_libraries(hatari ${READLINE_LIBRARY})
+endif(READLINE_FOUND)
+
+if(ZLIB_FOUND)
+	target_link_libraries(hatari ${ZLIB_LIBRARY})
+endif(ZLIB_FOUND)
+
+if(PNG_FOUND)
+	target_link_libraries(hatari ${PNG_LIBRARY})
+endif(PNG_FOUND)
+
+if(X11_FOUND)
+	target_link_libraries(hatari ${X11_X11_LIB})
+endif(X11_FOUND)
+
+if(PORTAUDIO_FOUND)
+	target_link_libraries(hatari ${PORTAUDIO_LIBRARY})
+endif(PORTAUDIO_FOUND)
+
 
 install(TARGETS hatari RUNTIME DESTINATION ${BINDIR})

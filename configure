@@ -74,7 +74,7 @@ do
   shift 1
 done
 
-cmake `dirname $0` $cmake_args
+cmake `dirname $0` $cmake_args || exit 1
 
 echo
 echo "Now you must type: make; make install"

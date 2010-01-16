@@ -1,6 +1,7 @@
 
-include_directories(. ../.. ../includes ../uae-cpu ../falcon
-		    ${SDL_INCLUDE_DIR}) 
+if(READLINE_FOUND)
+	include_directories(${READLINE_INCLUDE_DIR})
+endif(READLINE_FOUND)
 
 if(ENABLE_DSP_EMU)
 	set(DSPDBG_C debugdsp.c)
