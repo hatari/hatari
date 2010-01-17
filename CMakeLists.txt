@@ -61,6 +61,8 @@ endif(PORTAUDIO_FOUND)
 # Check for optional headers:
 # ###########################
 
+include(CheckIncludeFiles)
+
 check_include_files(termios.h HAVE_TERMIOS_H)
 check_include_files(glob.h HAVE_GLOB_H)
 check_include_files(strings.h HAVE_STRINGS_H)
