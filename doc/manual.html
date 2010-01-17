@@ -987,14 +987,29 @@ Emulate an ACSI hard disk with an image &lt;file&gt;
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>&minus;&minus;ide &lt;file&gt;</b></td>
+<b>&minus;&minus;ide&minus;master &lt;file&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Emulate an IDE hard disk with an image &lt;file&gt;
+Emulate an IDE master hard disk with an image &lt;file&gt;
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;ide&minus;slave &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Emulate an IDE slave hard disk with an image &lt;file&gt;
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -2288,8 +2303,9 @@ i.e. have a directory which contains only single letter subdirectories,
 starting from "D" like in "<span class="commandline">mkdir gemdos-hd;
 mkdir gemdos-hd/D</span>". Then give Hatari (as the last parameter)
 a boot floppy image containing the demo version of HDDRIVER.PRG in
-its AUTO folder, like this: "<span class="commandline">hatari --ide
-hd-image.st --harddisk gemdos-hd/ hd-driver-floppy.st</span>".</p>
+its AUTO folder, like this: "<span class="commandline">hatari
+--ide-master hd-image.st --harddisk gemdos-hd/ hd-driver-floppy.st</span>".
+</p>
 
 
 <a name="Accessing HDD image partitions outside of Hatari"></a><h3>Accessing
@@ -2412,18 +2428,21 @@ Available commands:
     dspdisasm (dd) : disassemble DSP code
    dspmemdump (dm) : dump DSP memory
        dspreg (dr) : read/write DSP registers
+   dspsymbols (  ) : load and list CPU code symbols/addresses
       dspcont (dc) : continue emulation / DSP single-stepping
       address ( a) : toggle or list (traditional) CPU address breakpoints
    breakpoint ( b) : set/remove/list register/RAM condition breakpoints
+       cpureg ( r) : dump register values or set register to value
        disasm ( d) : disassemble from PC, or given address
      evaluate ( e) : evaluate an expression
-       cpureg ( r) : dump register values or set register to value
+         info (  ) : show Atari HW and OS information
       memdump ( m) : dump memory
      memwrite ( w) : write bytes to memory
       logfile ( f) : open or close log file
       loadbin ( l) : load a file into memory
       savebin ( s) : save memory to a file
        setopt ( o) : set Hatari command line options
+      symbols (  ) : load and list CPU code symbols/addresses
         trace ( t) : select Hatari tracing settings
         value ( v) : set number base / show value in other number bases
          cont ( c) : continue emulation / CPU single-stepping
@@ -2505,6 +2524,14 @@ relative to the current VBL/HBL in cycles), set breakpoints to specific
 &quot;HBL&quot; and &quot;LineCycles&quot; variable values.  The
 &quot;e&quot; command can be used to calculate suitable register
 and variable values.
+</p>
+
+<p>
+You can also load code symbol name/address information to the debugger
+with the &quot;symbols&quot; command (and with &quot;dspsymbols&quot;
+for DSP).  They help in setting address breakpoints and show up in
+the &quot;disasm&quot; command output.
+<p>
 
 <p>
 After analyzing and/or setting new breakpoints, you can continue the emulation
