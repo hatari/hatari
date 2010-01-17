@@ -138,3 +138,8 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/config-cmake.h
 
 add_subdirectory(src)
 add_subdirectory(doc)
+
+include(FindPythonInterp)
+if(PYTHONINTERP_FOUND)
+	add_subdirectory(python-ui)
+endif(PYTHONINTERP_FOUND)
