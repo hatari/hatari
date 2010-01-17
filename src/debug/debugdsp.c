@@ -280,7 +280,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 		for (i = 0; i < nDspActiveBPs; i++)
 		{
 			addr = DspBreakPoint[i];
-			symbol = Symbols_GetByCpuAddress(addr);
+			symbol = Symbols_GetByDspAddress(addr);
 			if (symbol)
 				fprintf(stderr, "%d. '%s'\n   ", i+1, symbol);
 			else
