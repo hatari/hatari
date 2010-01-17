@@ -151,7 +151,9 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 static int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 {
 	Uint32 disasm_upper = 0;
+	const char *symbol;
 	uaecptr nextpc;
+	int i;
 
 	if (nArgc > 1)
 	{
@@ -180,8 +182,14 @@ static int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	/* output a single block. */
 	if (!disasm_upper)
 	{
-		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, DISASM_INSTS);
-		disasm_addr = nextpc;
+		for (i = 0; i < DISASM_INSTS; i++)
+		{
+			symbol = Symbols_GetByCpuAddress(disasm_addr);
+			if (symbol)
+				fprintf(stderr, "%s:\n", symbol);
+			m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
+			disasm_addr = nextpc;
+		}
 		fflush(debugOutput);
 		return DEBUGGER_CMDCONT;
 	}
@@ -189,6 +197,9 @@ static int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	/* output a range */
 	while (disasm_addr < disasm_upper)
 	{
+		symbol = Symbols_GetByCpuAddress(disasm_addr);
+		if (symbol)
+			fprintf(stderr, "%s:\n", symbol);
 		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 		disasm_addr = nextpc;
 	}
