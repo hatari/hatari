@@ -75,6 +75,8 @@ check_include_files("sys/socket.h;sys/un.h" HAVE_UNIX_DOMAIN_SOCKETS)
 # Check for optional functions:
 # #############################
 
+include(CheckFunctionExists)
+
 check_function_exists(cfmakeraw HAVE_CFMAKERAW)
 check_function_exists(setenv HAVE_SETENV)
 check_function_exists(select HAVE_SELECT)
