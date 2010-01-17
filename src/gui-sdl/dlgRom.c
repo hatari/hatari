@@ -43,9 +43,9 @@ static SGOBJ romdlg[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process the ROM dialog.
-*/
+/**
+ * Show and process the ROM dialog.
+ */
 void DlgRom_Main(void)
 {
 	char szDlgTosName[47];

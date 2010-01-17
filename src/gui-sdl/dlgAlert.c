@@ -54,11 +54,11 @@ static SGOBJ alertdlg[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-   Breaks long string to several strings of max_width, divided by '\0',
-   sets text_width to the longest line width and returns the number of lines
-   you need to display the strings.
-*/
+/**
+ * Breaks long string to several strings of max_width, divided by '\0',
+ * sets text_width to the longest line width and returns the number of lines
+ * you need to display the strings.
+ */
 static int DlgAlert_FormatTextToBox(char *text, int max_width, int *text_width)
 {
 	int columns = 0;
@@ -119,9 +119,9 @@ static int DlgAlert_FormatTextToBox(char *text, int max_width, int *text_width)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show the "alert" dialog. Return true if user pressed "OK".
-*/
+/**
+ * Show the "alert" dialog. Return true if user pressed "OK".
+ */
 static int DlgAlert_ShowDlg(const char *text)
 {
 	static int maxlen = sizeof(dlglines[0])-1;
@@ -171,9 +171,9 @@ static int DlgAlert_ShowDlg(const char *text)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show a "notice" dialog: (only one button)
-*/
+/**
+ * Show a "notice" dialog: (only one button)
+ */
 int DlgAlert_Notice(const char *text)
 {
 #ifdef ALERT_HOOKS 
@@ -193,9 +193,9 @@ int DlgAlert_Notice(const char *text)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show a "query" dialog: (two buttons), return true for OK
-*/
+/**
+ * Show a "query" dialog: (two buttons), return true for OK
+ */
 int DlgAlert_Query(const char *text)
 {
 #ifdef ALERT_HOOKS

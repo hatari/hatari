@@ -52,9 +52,9 @@ static SGOBJ newdiskdlg[] =
 #define DEFAULT_DISK_NAME "new_disk.st"
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process the "new blank disk image" dialog.
-*/
+/**
+ * Show and process the "new blank disk image" dialog.
+ */
 void DlgNewDisk_Main(void)
 {
 	int but;

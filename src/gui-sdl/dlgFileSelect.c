@@ -89,10 +89,10 @@ static int entries;                     /* How many files are in the actual dire
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Update the file name strings in the dialog.
-  Returns false if it failed, true on success.
-*/
+/**
+ * Update the file name strings in the dialog.
+ * Returns false if it failed, true on success.
+ */
 static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool browsingzip)
 {
 	int i;
@@ -141,10 +141,10 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool 
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Remove all hidden files (files with file names that begin with a dot) from
-  the list.
-*/
+/**
+ * Remove all hidden files (files with file names that begin with a dot) from
+ * the list.
+ */
 static void DlgFileSelect_RemoveHiddenFiles(struct dirent **files)
 {
 	int i;
@@ -186,9 +186,9 @@ static void DlgFileSelect_RemoveHiddenFiles(struct dirent **files)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Prepare to scroll up one entry.
-*/
+/**
+ * Prepare to scroll up one entry.
+ */
 static void DlgFileSelect_ScrollUp(void)
 {
 	if (ypos > 0)
@@ -200,9 +200,9 @@ static void DlgFileSelect_ScrollUp(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Prepare to scroll down one entry.
-*/
+/**
+ * Prepare to scroll down one entry.
+ */
 static void DlgFileSelect_ScrollDown(void)
 {
 	if (ypos+SGFS_NUMENTRIES < entries)
@@ -214,9 +214,9 @@ static void DlgFileSelect_ScrollDown(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle SDL events.
-*/
+/**
+ * Handle SDL events.
+ */
 static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 {
 	int oldypos = ypos;
@@ -257,9 +257,9 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Free file entries
-*/
+/**
+ * Free file entries
+ */
 static struct dirent **files_free(struct dirent **files)
 {
 	int i;
@@ -276,10 +276,10 @@ static struct dirent **files_free(struct dirent **files)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy to dst src+add if they are below maxlen and return true,
-  otherwise return false
-*/
+/**
+ * Copy to dst src+add if they are below maxlen and return true,
+ * otherwise return false
+ */
 static int strcat_maxlen(char *dst, int maxlen, const char *src, const char *add)
 {
 	int slen, alen;
@@ -295,9 +295,9 @@ static int strcat_maxlen(char *dst, int maxlen, const char *src, const char *add
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create and return suitable path into zip file
-*/
+/**
+ * Create and return suitable path into zip file
+ */
 static char* zip_get_path(const char *zipdir, const char *zipfilename, int browsingzip)
 {
 	if (browsingzip)
@@ -311,7 +311,9 @@ static char* zip_get_path(const char *zipdir, const char *zipfilename, int brows
 	return strdup("");
 }
 
-/* string for zip root needs to be empty, check and correct if needed */
+/**
+ * string for zip root needs to be empty, check and correct if needed
+ */
 static void correct_zip_root(char *zippath)
 {
 	if (zippath[0] == PATHSEP && !zippath[1])
@@ -321,13 +323,13 @@ static void correct_zip_root(char *zippath)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process a file selection dialog.
-  Returns path/name user selected or NULL if user canceled
-  input: zip_path = pointer's pointer to buffer to contain file path
-  within a selected zip file, or NULL if browsing zip files is disallowed.
-  bAllowNew: true if the user is allowed to insert new file names.
-*/
+/**
+ * Show and process a file selection dialog.
+ * Returns path/name user selected or NULL if user canceled
+ * input: zip_path = pointer's pointer to buffer to contain file path
+ * within a selected zip file, or NULL if browsing zip files is disallowed.
+ * bAllowNew: true if the user is allowed to insert new file names.
+ */
 char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowNew)
 {
 	struct dirent **files = NULL;
@@ -686,7 +688,8 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 
 
 /*-----------------------------------------------------------------------*/
-/* Let user browse for a file, confname is used as default.
+/**
+ * Let user browse for a file, confname is used as default.
  * If bAllowNew is true, user can select new files also.
  * 
  * If no file is selected, or there's some problem with the file,

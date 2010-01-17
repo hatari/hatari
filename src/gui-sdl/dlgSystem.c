@@ -76,9 +76,9 @@ static SGOBJ systemdlg[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process the "System" dialog.
-*/
+/**
+ * Show and process the "System" dialog.
+ */
 void Dialog_SystemDlg(void)
 {
 	int i;

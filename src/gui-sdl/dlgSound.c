@@ -78,9 +78,9 @@ static const int nSoundFreqs[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process the sound dialog.
-*/
+/**
+ * Show and process the sound dialog.
+ */
 void Dialog_SoundDlg(void)
 {
 	int but, i;

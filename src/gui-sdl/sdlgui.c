@@ -28,9 +28,9 @@ static int fontwidth, fontheight;           /* Width & height of the actual font
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load an 1 plane XBM into a 8 planes SDL_Surface.
-*/
+/**
+ * Load an 1 plane XBM into a 8 planes SDL_Surface.
+ */
 static SDL_Surface *SDLGui_LoadXBM(int w, int h, const Uint8 *pXbmBits)
 {
 	SDL_Surface *bitmap;
@@ -72,9 +72,9 @@ static SDL_Surface *SDLGui_LoadXBM(int w, int h, const Uint8 *pXbmBits)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialize the GUI.
-*/
+/**
+ * Initialize the GUI.
+ */
 int SDLGui_Init(void)
 {
 	SDL_Color blackWhiteColors[2] = {{255, 255, 255, 0}, {0, 0, 0, 0}};
@@ -107,9 +107,9 @@ int SDLGui_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Uninitialize the GUI.
-*/
+/**
+ * Uninitialize the GUI.
+ */
 int SDLGui_UnInit(void)
 {
 	if (pSmallFontGfx)
@@ -129,10 +129,10 @@ int SDLGui_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Inform the SDL-GUI about the actual SDL_Surface screen pointer and
-  prepare the font to suit the actual resolution.
-*/
+/**
+ * Inform the SDL-GUI about the actual SDL_Surface screen pointer and
+ * prepare the font to suit the actual resolution.
+ */
 int SDLGui_SetScreen(SDL_Surface *pScrn)
 {
 	pSdlGuiScrn = pScrn;
@@ -161,9 +161,9 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return character size for current font in given arguments.
-*/
+/**
+ * Return character size for current font in given arguments.
+ */
 void SDLGui_GetFontSize(int *width, int *height)
 {
 	*width = fontwidth;
@@ -171,11 +171,11 @@ void SDLGui_GetFontSize(int *width, int *height)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Center a dialog so that it appears in the middle of the screen.
-  Note: We only store the coordinates in the root box of the dialog,
-  all other objects in the dialog are positioned relatively to this one.
-*/
+/**
+ * Center a dialog so that it appears in the middle of the screen.
+ * Note: We only store the coordinates in the root box of the dialog,
+ * all other objects in the dialog are positioned relatively to this one.
+ */
 void SDLGui_CenterDlg(SGOBJ *dlg)
 {
 	dlg[0].x = (pSdlGuiScrn->w/fontwidth-dlg[0].w)/2;
@@ -184,9 +184,9 @@ void SDLGui_CenterDlg(SGOBJ *dlg)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a text string.
-*/
+/**
+ * Draw a text string.
+ */
 void SDLGui_Text(int x, int y, const char *txt)
 {
 	int i;
@@ -210,9 +210,9 @@ void SDLGui_Text(int x, int y, const char *txt)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a dialog text object.
-*/
+/**
+ * Draw a dialog text object.
+ */
 static void SDLGui_DrawText(const SGOBJ *tdlg, int objnum)
 {
 	int x, y;
@@ -223,9 +223,9 @@ static void SDLGui_DrawText(const SGOBJ *tdlg, int objnum)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a edit field object.
-*/
+/**
+ * Draw a edit field object.
+ */
 static void SDLGui_DrawEditField(const SGOBJ *edlg, int objnum)
 {
 	int x, y;
@@ -244,9 +244,9 @@ static void SDLGui_DrawEditField(const SGOBJ *edlg, int objnum)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a dialog box object.
-*/
+/**
+ * Draw a dialog box object.
+ */
 static void SDLGui_DrawBox(const SGOBJ *bdlg, int objnum)
 {
 	SDL_Rect rect;
@@ -320,9 +320,9 @@ static void SDLGui_DrawBox(const SGOBJ *bdlg, int objnum)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a normal button.
-*/
+/**
+ * Draw a normal button.
+ */
 static void SDLGui_DrawButton(const SGOBJ *bdlg, int objnum)
 {
 	int x,y;
@@ -342,9 +342,9 @@ static void SDLGui_DrawButton(const SGOBJ *bdlg, int objnum)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a dialog radio button object.
-*/
+/**
+ * Draw a dialog radio button object.
+ */
 static void SDLGui_DrawRadioButton(const SGOBJ *rdlg, int objnum)
 {
 	char str[80];
@@ -365,9 +365,9 @@ static void SDLGui_DrawRadioButton(const SGOBJ *rdlg, int objnum)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a dialog check box object.
-*/
+/**
+ * Draw a dialog check box object.
+ */
 static void SDLGui_DrawCheckBox(const SGOBJ *cdlg, int objnum)
 {
 	char str[80];
@@ -388,9 +388,9 @@ static void SDLGui_DrawCheckBox(const SGOBJ *cdlg, int objnum)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a dialog popup button object.
-*/
+/**
+ *  Draw a dialog popup button object.
+ */
 static void SDLGui_DrawPopupButton(const SGOBJ *pdlg, int objnum)
 {
 	int x, y, w, h;
@@ -409,11 +409,11 @@ static void SDLGui_DrawPopupButton(const SGOBJ *pdlg, int objnum)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Let the user insert text into an edit field object.
-  NOTE: The dlg[objnum].txt must point to an an array that is big enough
-  for dlg[objnum].w characters!
-*/
+/**
+ * Let the user insert text into an edit field object.
+ * NOTE: The dlg[objnum].txt must point to an an array that is big enough
+ * for dlg[objnum].w characters!
+ */
 static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 {
 	size_t cursorPos;                   /* Position of the cursor in the edit field */
@@ -532,9 +532,9 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw a whole dialog.
-*/
+/**
+ * Draw a whole dialog.
+ */
 void SDLGui_DrawDialog(const SGOBJ *dlg)
 {
 	int i;
@@ -570,9 +570,9 @@ void SDLGui_DrawDialog(const SGOBJ *dlg)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Search an object at a certain position.
-*/
+/**
+ * Search an object at a certain position.
+ */
 static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 {
 	int len, i;
@@ -600,9 +600,9 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Search a button with a special flag (e.g. SG_DEFAULT or SG_CANCEL).
-*/
+/**
+ * Search a button with a special flag (e.g. SG_DEFAULT or SG_CANCEL).
+ */
 static int SDLGui_SearchFlaggedButton(const SGOBJ *dlg, int flag)
 {
 	int i = 0;
@@ -619,11 +619,11 @@ static int SDLGui_SearchFlaggedButton(const SGOBJ *dlg, int flag)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process a dialog. Returns the button number that has been
-  pressed or SDLGUI_UNKNOWNEVENT if an unsupported event occured (will be
-  stored in parameter pEventOut).
-*/
+/**
+ * Show and process a dialog. Returns the button number that has been
+ * pressed or SDLGUI_UNKNOWNEVENT if an unsupported event occured (will be
+ * stored in parameter pEventOut).
+ */
 int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 {
 	int obj=0;

@@ -39,9 +39,9 @@ static SGOBJ aboutdlg[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show the "about" dialog:
-*/
+/**
+ * Show the "about" dialog:
+ */
 void Dialog_AboutDlg(void)
 {
 	/* Center PROG_NAME title string */

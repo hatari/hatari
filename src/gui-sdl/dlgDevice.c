@@ -75,9 +75,9 @@ static SGOBJ devicedlg[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process the "Device" dialog.
-*/
+/**
+ * Show and process the "Device" dialog.
+ */
 void Dialog_DeviceDlg(void)
 {
 	int but;

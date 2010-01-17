@@ -84,9 +84,9 @@ static char *sJoystickNames[JOYSTICK_COUNT] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show dialogs for defining joystick keys and wait for a key press.
-*/
+/**
+ * Show dialogs for defining joystick keys and wait for a key press.
+ */
 static void DlgJoystick_DefineOneKey(char *pType, int *pKey)
 {
 	SDL_Event sdlEvent;
@@ -119,9 +119,9 @@ static void DlgJoystick_DefineOneKey(char *pType, int *pKey)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Let the user define joystick keys.
-*/
+/**
+ * Let the user define joystick keys.
+ */
 static void DlgJoystick_DefineKeys(int nActJoy)
 {
 
@@ -135,9 +135,9 @@ static void DlgJoystick_DefineKeys(int nActJoy)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Adapt dialog using the values from the configration structure.
-*/
+/**
+ * Adapt dialog using the values from the configration structure.
+ */
 static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 {
 	int i;
@@ -172,9 +172,9 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read values from dialog and write them to the configuration structure.
-*/
+/**
+ * Read values from dialog and write them to the configuration structure.
+ */
 static void DlgJoystick_WriteValuesToConf(int nActJoy)
 {
 	JOYSTICKMODE jmi;
@@ -193,9 +193,9 @@ static void DlgJoystick_WriteValuesToConf(int nActJoy)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process the joystick dialog.
-*/
+/**
+ * Show and process the joystick dialog.
+ */
 void Dialog_JoyDlg(void)
 {
 	int but;
