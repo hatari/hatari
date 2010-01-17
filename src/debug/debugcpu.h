@@ -11,7 +11,6 @@
 #define HATARI_DEBUGCPU_H
 
 extern void DebugCpu_Check(void);
-extern char* DebugCpu_MatchAddress(const char *text, int state);
 extern int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr);
 
 #endif /* HATARI_DEBUGCPU_H */

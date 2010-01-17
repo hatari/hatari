@@ -22,6 +22,7 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 #include "evaluate.h"
 #include "memorySnapShot.h"
 #include "str.h"
+#include "symbols.h"
 
 static Uint16 dsp_disasm_addr;    /* DSP disasm address */
 static Uint16 dsp_memdump_addr;   /* DSP memdump address */
@@ -263,6 +264,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 	int i;
 	Uint16 addr;
 	Uint32 BreakAddr;
+	const char *symbol;
 
 	/* List breakpoints? */
 	if (nArgc == 1)
@@ -278,6 +280,11 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 		for (i = 0; i < nDspActiveBPs; i++)
 		{
 			addr = DspBreakPoint[i];
+			symbol = Symbols_GetByCpuAddress(addr);
+			if (symbol)
+				fprintf(stderr, "%d. '%s'\n   ", i+1, symbol);
+			else
+				fprintf(stderr, "%d. ", i+1);
 			DSP_DisasmAddress(addr, addr);
 		}
 
@@ -285,9 +292,17 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!Eval_Number(psArgs[1], &BreakAddr) || BreakAddr > 0xFFFF)
+	if (!Symbols_GetDspAddress(psArgs[1], &BreakAddr))
 	{
-		fputs("Not a valid value for a DSP breakpoint!\n", stderr);
+		if (!Eval_Number(psArgs[1], &BreakAddr))
+		{
+			fprintf(stderr, "Invalid value '%s' for a DSP breakpoint!\n", psArgs[1]);
+			return DEBUGGER_CMDDONE;
+		}
+	}
+	if (BreakAddr > 0xFFFF)
+	{
+		fprintf(stderr, "Invalid address 0x%x for a DSP breakpoint!\n", BreakAddr);
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -298,7 +313,11 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 		{
 			DspBreakPoint[i] = DspBreakPoint[nDspActiveBPs-1];
 			nDspActiveBPs -= 1;
-			fprintf(stderr, "DSP breakpoint at 0x%x deleted.\n", BreakAddr);
+			symbol = Symbols_GetByDspAddress(BreakAddr);
+			if (symbol)
+				fprintf(stderr, "DSP breakpoint at 0x%x (%s) deleted.\n", BreakAddr, symbol);
+			else
+				fprintf(stderr, "DSP breakpoint at 0x%x deleted.\n", BreakAddr);
 			return DEBUGGER_CMDDONE;
 		}
 	}
@@ -342,7 +361,12 @@ static void DebugDsp_CheckBreakpoints(void)
 	{
 		if (pc == DspBreakPoint[i])
 		{
-			fprintf(stderr, "\nDSP breakpoint at 0x%x ...", pc);
+			const char *symbol;
+			symbol = Symbols_GetByDspAddress(pc);
+			if (symbol)
+				fprintf(stderr, "\nDSP breakpoint at 0x%x (%s) ...", pc, symbol);
+			else
+				fprintf(stderr, "\nDSP breakpoint at 0x%x ...", pc);
 			DebugUI();
 			break;
 		}
@@ -393,7 +417,7 @@ static const dbgcommand_t dspcommands[] =
 	  "toggle or list (traditional) DSP address breakpoints",
 	  "[address]\n"
 	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
-	  "\tno address is given.",
+	  "\tno address is given. Address can also be a loaded symbol name.",
 	  false },
 	{ DebugDsp_BreakCond, "dspbreak", "db",
 	  "set/remove/list DSP register/RAM condition breakpoints",
@@ -413,6 +437,14 @@ static const dbgcommand_t dspcommands[] =
 	  "<x|y|p> [address]\n"
 	  "\tdump DSP memory at address, or continue from previous address if not\n"
 	  "\tspecified.",
+	  false },
+	{ Symbols_Command, "dspsymbols", "",
+	  "load DSP symbols & their addresses",
+	  "<filename|addr|name> [offset]\n"
+	  "\tLoads symbol names and their addresses (with optional offset)\n"
+	  "\tfrom given <filename>.  If there were previously loaded symbols,\n"
+	  "\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
+	  "\ta file name, will list the currently loaded symbols.",
 	  false },
 	{ DebugDsp_Register, "dspreg", "dr",
 	  "read/write DSP registers",

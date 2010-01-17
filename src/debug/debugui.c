@@ -39,6 +39,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "debugInfo.h"
 #include "debugui.h"
 #include "evaluate.h"
+#include "symbols.h"
 
 int bExceptionDebugging;
 
@@ -428,10 +429,13 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		const char *name;
 		char* (*match)(const char *, int);
 	} cmd[] = {
-		{ "a", DebugCpu_MatchAddress },
-		{ "address", DebugCpu_MatchAddress },
+		{ "a", Symbols_MatchCpuAddress },
+		{ "address", Symbols_MatchCpuAddress },
 		{ "b", BreakCond_MatchVariable },
 		{ "breakpoint", BreakCond_MatchVariable },
+		{ "da", Symbols_MatchDspAddress },
+		{ "dspaddress", Symbols_MatchDspAddress },
+		{ "dspsymbols", rl_filename_completion_function },
 		{ "f", rl_filename_completion_function },
 		{ "h", DebugUI_MatchCommand },
 		{ "help", DebugUI_MatchCommand },

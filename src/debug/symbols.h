@@ -8,30 +8,16 @@
 #ifndef HATARI_SYMBOLS_H
 #define HATARI_SYMBOLS_H
 
-typedef enum {
-	SYMTYPE_ANY=0,
-	SYMTYPE_TEXT,
-	SYMTYPE_DATA,
-	SYMTYPE_BSS
-} symtype_t;
-
-typedef struct {
-	char *name;
-	Uint32 address;
-	symtype_t type;
-} symbol_t;
-
-typedef struct {
-	int count;
-	symbol_t *addresses;	/* items sorted by address */
-	symbol_t *names;	/* items sorted by symbol name */
-} symbol_list_t;
-
-extern symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, symtype_t symtype);
-extern const symbol_t* Symbols_MatchByName(symbol_list_t* list, symtype_t symtype, const char *text, int state);
-extern const char* Symbols_FindByAddress(symbol_list_t* list, Uint32 addr);
-extern void Symbols_ShowByAddress(symbol_list_t* list);
-extern void Symbols_ShowByName(symbol_list_t* list);
-extern void Symbols_Free(symbol_list_t* list);
+/* readline support functions */
+extern char* Symbols_MatchCpuAddress(const char *text, int state);
+extern char* Symbols_MatchDspAddress(const char *text, int state);
+/* symbol name -> address search */
+extern bool Symbols_GetCpuAddress(const char *name, Uint32 *addr);
+extern bool Symbols_GetDspAddress(const char *name, Uint32 *addr);
+/* symbol address -> name search */
+extern const char* Symbols_GetByCpuAddress(Uint32 addr);
+extern const char* Symbols_GetByDspAddress(Uint32 addr);
+/* symbols/dspsymbols command parsing */
+extern int Symbols_Command(int nArgc, char *psArgs[]);
 
 #endif

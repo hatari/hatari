@@ -34,9 +34,6 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 static Uint32 disasm_addr;        /* disasm address */
 static Uint32 memdump_addr;       /* memdump address */
 
-/* TODO: add symbol name/address file name to configuration? */
-static symbol_list_t *CpuSymbolsList;
-
 static Uint32 CpuBreakPoint[16];  /* 68k breakpoints */
 static int nCpuActiveBPs = 0;     /* Amount of active breakpoints */
 static int nCpuActiveCBs = 0;     /* Amount of active conditional breakpoints */
@@ -313,86 +310,6 @@ error_msg:
 
 
 /**
- * Load text/code symbols and their addresses from given file.
- */
-static int DebugCpu_LoadSymbols(int nArgc, char *psArgs[])
-{
-	Uint32 offset;
-	char *file;
-
-	if (nArgc < 2)
-	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
-	}
-	file = psArgs[1];
-
-	/* handle special cases */
-	if (strcmp(file, "name") == 0)
-	{
-		Symbols_ShowByName(CpuSymbolsList);
-		return DEBUGGER_CMDDONE;			
-	}
-	if (strcmp(file, "addr") == 0)
-	{
-		Symbols_ShowByAddress(CpuSymbolsList);
-		return DEBUGGER_CMDDONE;			
-	}
-
-	if (CpuSymbolsList)
-		Symbols_Free(CpuSymbolsList);
-
-	if (nArgc >= 3)
-		offset = atoi(psArgs[2]);
-	else
-		offset = 0;
-
-	CpuSymbolsList = Symbols_Load(file, offset, SYMTYPE_TEXT);
-	return DEBUGGER_CMDDONE;
-}
-
-
-/**
- * Readline match callback for symbol name completion.
- * STATE = 0 -> different text from previous one.
- * Return next match or NULL if no matches.
- */
-char* DebugCpu_MatchAddress(const char *text, int state)
-{
-	const symbol_t *entry;
-	
-	if (CpuSymbolsList)
-	{
-		entry = Symbols_MatchByName(CpuSymbolsList, SYMTYPE_TEXT, text, state);
-		if (entry)
-			return strdup(entry->name);
-	}
-	/* TODO: add breakpoint address completion? */
-	return NULL;
-}
-
-
-/**
- * Get given symbol address and return TRUE if one was found.
- */
-static bool DebugCpu_GetSymbolAddress(const char *name, Uint32 *addr)
-{
-	const symbol_t *entry;
-	
-	if (CpuSymbolsList)
-	{
-		entry = Symbols_MatchByName(CpuSymbolsList, SYMTYPE_TEXT, name, 0);
-		if (entry)
-		{
-			*addr = entry->address;
-			return true;
-		}
-	}
-	return false;
-}
-
-
-/**
  * Toggle or list CPU breakpoints.
  */
 static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
@@ -400,6 +317,7 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 	int i;
 	uaecptr nextpc;
 	Uint32 BreakAddr;
+	const char *symbol;
 
 	/* List breakpoints? */
 	if (nArgc == 1)
@@ -414,6 +332,11 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 		fputs("Currently active CPU breakpoints:\n", stderr);
 		for (i = 0; i < nCpuActiveBPs; i++)
 		{
+			symbol = Symbols_GetByCpuAddress(CpuBreakPoint[i]);
+			if (symbol)
+				fprintf(stderr, "%d. '%s'\n   ", i+1, symbol);
+			else
+				fprintf(stderr, "%d. ", i+1);
 			m68k_disasm(stderr, (uaecptr)CpuBreakPoint[i], &nextpc, 1);
 		}
 
@@ -421,10 +344,13 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!DebugCpu_GetSymbolAddress(psArgs[1], &BreakAddr))
+	if (!Symbols_GetCpuAddress(psArgs[1], &BreakAddr))
 	{
 		if (!Eval_Number(psArgs[1], &BreakAddr))
+		{
 			fprintf(stderr, "Invalid value '%s' for a CPU breakpoint!\n", psArgs[1]);
+			return DEBUGGER_CMDDONE;
+		}
 	}
 	
 	if (BreakAddr > 0xff0000 ||
@@ -441,7 +367,11 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 		{
 			CpuBreakPoint[i] = CpuBreakPoint[nCpuActiveBPs-1];
 			nCpuActiveBPs -= 1;
-			fprintf(stderr, "CPU breakpoint at 0x%x deleted.\n", BreakAddr);
+			symbol = Symbols_GetByCpuAddress(BreakAddr);
+			if (symbol)
+				fprintf(stderr, "CPU breakpoint at 0x%x (%s) deleted.\n", BreakAddr, symbol);
+			else
+				fprintf(stderr, "CPU breakpoint at 0x%x deleted.\n", BreakAddr);
 			return DEBUGGER_CMDDONE;
 		}
 	}
@@ -622,7 +552,12 @@ static void DebugCpu_CheckCpuBreakpoints(void)
 	{
 		if (pc == CpuBreakPoint[i])
 		{
-			fprintf(stderr, "\nCPU breakpoint at 0x%x ...", pc);
+			const char *symbol;
+			symbol = Symbols_GetByCpuAddress(pc);
+			if (symbol)
+				fprintf(stderr, "\nCPU breakpoint at 0x%x (%s) ...", pc, symbol);
+			else
+				fprintf(stderr, "\nCPU breakpoint at 0x%x ...", pc);
 			DebugUI();
 			break;
 		}
@@ -672,7 +607,7 @@ static const dbgcommand_t cpucommands[] =
 	  "toggle or list (traditional) CPU address breakpoints",
 	  "[address]\n"
 	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
-	  "\tno address is given.",
+	  "\tno address is given. Address can also be a loaded symbol name.",
 	  false	},
 	{ DebugCpu_BreakCond, "breakpoint", "b",
 	  "set/remove/list register/RAM condition breakpoints",
@@ -716,9 +651,9 @@ static const dbgcommand_t cpucommands[] =
 	  "\tSave the memory block at <address> with given <length> to\n"
 	  "\tthe file <filename>.",
 	  false },
-	{ DebugCpu_LoadSymbols, "symbols", "",
-	  "load  symbols & their addresses",
-	  "filename [offset]\n"
+	{ Symbols_Command, "symbols", "",
+	  "load CPU symbols & their addresses",
+	  "<filename|addr|name> [offset]\n"
 	  "\tLoads symbol names and their addresses (with optional offset)\n"
 	  "\tfrom given <filename>.  If there were previously loaded symbols,\n"
 	  "\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
