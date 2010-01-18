@@ -1,0 +1,12 @@
+Bus Error testing results (word access):
+(1040 STf)
+
+$FF8002 - $FF8200
+$FF8210 - $FF8240
+$FF8280 - $FF8604
+$FF8610 - $FF8800
+$FF8900 - $FFFA00
+$FFFA40 - $FFFC00
+$FFFE00 - $FFFFFE
+
+EOF!
