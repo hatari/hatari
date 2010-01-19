@@ -133,7 +133,7 @@ extern "C" {
 #define DSP_SSI_SR_RDF		0x7
 
 #define DSP_INTERRUPT_NONE      0x0
-#define DSP_INTERRUPT_FAST      0x1
+#define DSP_INTERRUPT_DISABLED  0x1
 #define DSP_INTERRUPT_LONG      0x2
 
 #define DSP_INTER_RESET			0x0
@@ -230,12 +230,14 @@ struct dsp_core_s {
 	Uint16	bootstrap_pos;
 
 	/* Interruptions */
-	Uint16	interrupt_state;
-	Uint32  interrupt_instr_fetch;
-	Uint32  interrupt_save_pc;
-	Uint16  interrupt_counter;
-	Sint16  interrupt_ipl[12];
-	Uint16  interrupt_isPending[12];
+	Uint16	interrupt_state;		/* NONE, FAST or LONG interrupt */
+	Uint16  interrupt_instr_fetch;		/* vector of the current interrupt */
+	Uint16  interrupt_save_pc;		/* save next pc value before interrupt */
+	Uint16  interrupt_counter;		/* count number of pending interrupts */
+	Uint16  interrupt_IplToRaise;		/* save the IPL level to save in the SR register */
+	Uint16  interrupt_pipeline_count;	/* used to prefetch correctly the 2 inter instructions */
+	Sint16  interrupt_ipl[12];		/* store the current IPL for each interrupt */
+	Uint16  interrupt_isPending[12];	/* store if interrupt is pending for each interrupt */
 };
 
 

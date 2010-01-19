@@ -173,6 +173,7 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp_core->interrupt_instr_fetch = -1;
 	dsp_core->interrupt_save_pc = -1;
 	dsp_core->interrupt_counter = 0;
+	dsp_core->interrupt_pipeline_count = 0;
 	for (i=0;i<5;i++) {
 		dsp_core->interrupt_ipl[i] = 3;
 	}

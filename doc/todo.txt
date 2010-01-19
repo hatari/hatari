@@ -61,7 +61,6 @@ DSP emulation / Falcon sound matrix
 - Improve DSP instructions cycle count, especially with external RAM
 
 - Optimize DSP interrupts
-	- Take into account the instruction pipeline in interrupt mode
 	- Avoid interrupt of a LONG_INTERRUPT if not 6 (or 7)
 	  instructions were executed
 	- Take into account the precise cycles for an interrupt
