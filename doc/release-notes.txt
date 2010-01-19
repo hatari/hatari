@@ -14,25 +14,38 @@ Emulation:
 - GEMDOS HDD emulation:
   - Minor fixes to Fseek(), Fopen(), Fdatime() (e.g. Pure debugger works)
   - Prevent DTA and read/write functions accessing invalid memory areas
-  - Programs can change read-only files to be writable (by default)
-- Microphone (jack) emulation (Falcon mode)
+  - Programs can now change read-only files to be writable
+- Microphone (jack) emulation in Falcon mode (requires portaudio library)
 - SSI direct sound entrance ("Audio Fun Machine" and winrec are working)
 - DMA sound recording
 - Crossbar handshake mode transfers
+- Max VDI rez increased to TT-hi size (1280x960)
+- 68020+FPU changed to 68EC030+FPU (no MMU 030) for Falcon and TT modes
+  (Some Falcon programs didn't work with 020)
 
 Emulator:
+- Host mouse is centered to Hatari window on Falcon resolution changes
+  (helps in synchronizing host and emulated mouse positions)
 - Option for preventing GEMDOS HDD emulation file modifications
   ("--mount-changes no")
-- Debugger improvements:
-  - "trace" command
-  - "evaluate" command for doing calculations
-  - command and command argument completion support
-  - improved register name handling + fixed DSP reg name matching
-  - GEMDOS tracing gives slightly more information
-  - Display DSP instructions cycle timings in disasm mode (in cycles)
 - AVI file recording:
   - video can be stored as BMP or as PNG images
   - audio is stored as 16 bits stereo PCM.
+- Statusbar shows CPU type & speed
+- Debugger improvements:
+  - "trace" command for tracing what the emulated code does
+  - GEMDOS tracing gives slightly more information
+  - "evaluate" command for doing calculations
+  - "info" command for showing Atari HW and OS information
+  - "symbols" command for loading and listing CPU & DSP code
+    symbols/addresses
+  - debugger command and command argument TAB-completion support
+    (requires readline library)
+  - improved register name handling + fixed DSP reg name matching
+  - Display DSP instructions cycle timings in disasm mode (in cycles)
+
+Other changes:
+- Preliminary CMake build support
 
 
  Version 1.3.1 (2009-09-05):

@@ -185,14 +185,15 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
   <li>FDC emulation using floppy disk images in standard formats (*.ST,
     *.MSA and *.DIM)</li>
   <li>support for packed disk images (PkZip and Gzip)</li>
-  <li>optional write-protection for disk images</li>
+  <li>optional write-protection for floppy disk images</li>
   <li>partial ACSI emulation for harddisk support</li>
-  <li>GEMDOS interface driver to mount directories as harddrives</li>
+  <li>GEMDOS interface driver to mount directories as harddrives
+    with optional write-protection</li>
   <li>support for memory snapshots (save whole system state)</li>
   <li>driver for extended VDI resolutions</li>
   <li>recording of sound as .WAV and .YM files</li>
   <li>screenshots in PNG or BMP format</li>
-  <li>animation capturing</li>
+  <li>AVI animation capturing</li>
   <li>TOS versions 1.00, 1.02, 1.04 and 2.06 (and EmuTOS) can be used in ST mode.</li>
 </ul>
 
@@ -224,9 +225,10 @@ There is support for following additional TT features:
 <h4>Very experimental Falcon hardware emulation</h4>
 There is support for following additional Falcon features:
 <ul>
-  <li>Videl emulation for all Falcon screen modes</li>
+  <li>Partial Videl emulation for all Falcon screen modes</li>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
+  <li>Experimental DSP co-processor emulation</li>
   <li>Experimental IDE emulation for harddisk support</li>
   <li>Some few parts of the Falcon sound system are emulated
       (e.g. the additional sample rates of the DMA sound)</li>
@@ -234,7 +236,7 @@ There is support for following additional Falcon features:
 </ul>
 
 <p>
-DSP emulation is still very experimental, but many games and demos
+Falcon DSP emulation is still very experimental, but many games and demos
 already work with it.  If it takes too much CPU, there's a dummy mode
 too, which helps to get some demos and games running.
 </p>
@@ -267,7 +269,7 @@ the following systems:
   <li>OpenBSD 3.5 </li>
   <li>Solaris 8 on a SUN UltraSparc 1</li>
   <li>Linux/ARM (oabi) on Sharp Zaurus SL-C760 PDA</li>
-  <li>Linux/ARM (eabi) on Nokia 770, N800 and N810 Internet Tablets</li>
+  <li>Linux/ARM (eabi) on Nokia Maemo Internet Tablets and N900 phone</li>
 </ul>
 
 <a name="Compiling and running"></a><h2>Compiling and running</h2>
@@ -289,6 +291,7 @@ for it installed as well.
 <p>
 For optional features like PNG format screenshots and Hatari window
 embedding, you need to have the header files for libpng and libX11.
+For Falcon microphone recording support portaudio library is needed.
 </p>
 <p>
 Of course, you need the GNU C compiler and (GNU) Make, too!
@@ -1604,6 +1607,11 @@ ends with a 'b'.
  directory via the command line.
 </p>
 <p>
+ Removing the check from the "Allow GEMDOS drive modification" option
+ will prevent Atari programs from modifying the files in GEMDOS HDD
+ emulation directory or creating new files under it.
+</p>
+<p>
  Note that for IDE hard disk emulation you also need a TOS version &gt;= 2.05.
  And ACSI hard disk emulation does not work with TOS 4.0x in Falcon mode.
 </p>
@@ -2184,56 +2192,90 @@ bigger images is not tested very well yet.
 
 
 <a name="GEMDOS based hard disk emulation"></a><h3>GEMDOS based hard disk emulation</h3>
-<p>With the GEMDOS based drive emulation, you can easily "mount" a
+<p>
+With the GEMDOS based drive emulation, you can easily "mount" a
 folder from the host file system to a drive of the emulated Atari. To
 use the GEMDOS based drive emulation, you should use a folder on your
 hard disk that only contains files and folders with valid TOS
-filenames.
-That means that all files/folders should be written in capital letters
-and their length mustn't exceed the 8+3 file name length limit. If you
-don't want to rename all files to get capital letters, it is also
-possible to store that folder on a FAT filesystem since those
-filesystems are case-insensitive. </p>
-<p>GEMDOS drive emulation is an easy way to share files between the
-host system and the emulated Atari, but it is known to be incomplete and
-a little bit unstable, <em>especially if you use it together with the ACSI
-hard disk emulation</em>. So if your programs complain that they could not
-find/read/write files on the GEMDOS HD drive, you should try to copy
-them to a floppy disk image or a real hard disk image!</p>
-<p>
-There are also some known limitations which are due to the way the GEMDOS
-drive emulation is implemented: First, it is not possible to use a cartridge
-image together with GEMDOS drive emulation at the same time.
-Second, <em>the GEMDOS HD emulation does not work very well with TOS
-1.00 and 1.02</em>.  So you should use at least TOS 1.04 if you want
-to use the GEMDOS HD emulation.
+filenames i.e. file and folders names shouldn't contain invalid GEMDOS
+filename characters and their length shouldn't exceed the 8+3 file name
+length limit.
 </p>
-
+<p>
+If you provide <span class="commandline">--harddisk</span> option
+a directory which contains only single letter subdirectories, each of
+these subdirectories will be treated as separate partition, otherwise
+the given directory itself will be assigned to drive "C:". In the
+multiple partition case, the letters used as the subdirectory names
+will determine to which drives/partitions they're assigned.
+</p>
+<p>
+GEMDOS drive emulation is an easy way to share files between the
+host system and the emulated Atari, but there are also some known
+limitations which are due to the way the GEMDOS drive emulation is
+implemented:
+</p>
+<ul>
+<li>It is not possible to use a cartridge image together with GEMDOS
+drive emulation at the same time (Hatari has it's own cartridge code
+that is used for GEMDOS emulation).</li>
+<li>MiNT installs its own GEMDOS handler, so it doesn't work with
+the GEMDOS drive emulation, it needs to be booted from a real hard
+disk image.</li>
+<li>GEMDOS drive emulation conflicts with ACSI and IDE harddisk images.
+When you want to use GEMDOS HD emulation and ACSI/IDE disk images together,
+use a multiple partition GEMDOS emulation setup and select the partition
+subdirectories (letters) so that they don't conflict with the ACSI/IDE
+drive partitions (letters).  With HD Driver you have also another option,
+see <a href="#Using HD Driver with GEMDOS partitions">Using HD Driver
+with GEMDOS partitions</a>.</li>
+<li><em>The GEMDOS drive emulation does not work (very well) with TOS
+1.00 and 1.02</em>.  So you should use at least TOS 1.04 if you want
+to use the GEMDOS drive emulation.</li>
+</ul>
+<p>
+So, if your programs complain that they could not find/read/write
+files on the GEMDOS emulated drive, you should try to copy them to a
+floppy disk image or a real hard disk image!
+</p>
 
 <a name="ACSI hard disk emulation"></a><h3>ACSI hard disk emulation</h3>
 <p>
 To use the ACSI hard disk emulation, you need a hard disk image file
-with a pre-installed HD driver in it. So either try to image your old
-ST hard disk or grab one from the internet (e.g. from the Hatari website).
-Please note that AHDI 5.0 is currently the <em>only</em> hard disk driver
-that is officially supported. Other hard disk drivers might not work.
+with a pre-installed HD driver in it. You can try to get an image of
+your old ST hard disk or grab one from the internet (e.g. from the
+Hatari website).
 </p>
 <p>
-To create a new ACSI hard disk image, you can start with an empty image that
-you have for example created with the following command:
-<span class="commandline">dd if=/dev/zero of=hd.img bs=512 count=xxx</span>.
-Then copy the complete AHDI 5.0 package to a floppy disk image, and enable
-this floppy disk image and the fresh hard disk image in the emulator.
-Start HDX.PRG from the floppy disk and format and partition the hard disk
-with this tool. When you're finished, you have to restart the emulated system,
-run AHDI.PRG from the floppy disk and HINSTALL.PRG afterwards.
-With HINSTALL.PRG you can install the hard disk driver to the fresh HD image,
-so you can directly boot from the hard disk image in the future.
+To create a <em>new</em> ACSI hard disk image, you can start with an empty
+image that you have created for example with the following command:
+<span class="commandline">dd if=/dev/zero of=hd.img bs=512 count=xxx</span>
+(where 'xxx' is size in 512 byte blocks).  Copy the complete AHDI 5.0
+package to a floppy disk image, then boot Hatari with this floppy disk
+image and the fresh hard disk image like this:
+<span class="commandline">--acsi hd.img ahdi.st</span>.
+Then start HDX.PRG from the floppy disk and format + partition the hard
+disk image with it.
+</p>
+<p>
+Formatting and partitioning works currently only with AHDI 5, but you
+can install the AHDI 6 driver to the hard disk after it's formatted.
+Restart the emulated system, run AHDI.PRG from the floppy disk to access
+the hard disk image from the emulated Atari and then run HINSTALL.PRG.
+With HINSTALL.PRG you can install the hard disk driver to the fresh
+HD image, so that you can directly boot from the hard disk image in
+the future.
 </p>
 
 <a name="IDE hard disk emulation"></a><h3>IDE hard disk emulation</h3>
 <p>
-Create an empty image file with the size of your choice with:
+<p>
+As IDE disk format (little endian) differs from ACSI (big endian), you
+need separate disk images for them.  Hatari doesn't currently support
+formatting IDE disks with AHDI, but you can do it with <em>Cecile</em>.
+</p>
+<p>
+First create an empty image file with the size of your choice with:
 <span class="commandline">dd if=/dev/zero of=hd.img bs=1k count=xxx</span>.
 Then get the Cecile hard disk driver from
 <a href="http://centek.free.fr/atari/softs/s_cecile.htm">http://centek.free.fr/atari/softs/s_cecile.htm</a>
@@ -2242,11 +2284,13 @@ and put it on a floppy disk image (named "cecile.st") e.g. with:
 </p>
 <p>
 Run Hatari with
-<span class="commandline">hatari --machine falcon --tos tos404.rom --ide hd.img cecile.st</span>,
-warm up your French language skills, start the Cecile hard disk driver
-CECILE.PRG, then use the tool CC_TOOLS.APP to partition your hard disk
-image: click to "Partition", select "Hatari IDE disk" and set suitable
-partition size. Then click "Valider".
+<span class="commandline">hatari --machine falcon --tos tos404.rom
+--ide-master hd.img cecile.st</span>, switch to larger color resolution
+and warm up your French language skills. Then start the Cecile hard
+disk driver CECILE.PRG and run CC_TOOLS.APP to partition your hard
+disk image: click to "Partition", select "Hatari IDE disk" and set
+suitable partition size with the arrows (below type field). Then click
+"Valider".
 </p>
 <p>
 If you only want to use your HD image in Falcon mode, you can install
@@ -2259,7 +2303,7 @@ instructions).
 </p>
 <p>
 Then you can boot from your hard disk image by simply specifying it
-with the <span class="commandline">--ide</span> parameter.
+with the <span class="commandline">--ide-master</span> parameter.
 </p>
 
 
@@ -2271,6 +2315,11 @@ either through GEMDOS partitions (host directories mounted inside
 Hatari emulation) or accessing the images directly on the host
 (outside the emulation).  Both have their own limitations.</p>
 
+<p>If it's fine for the IDE/ACSI partitions to be first, you can use
+hard disk images with AHDI or Cecile driver and a multipartition
+GEMDOS setup as described in above sections. If you want to boot from
+GEMDOS partition(s) i.e. them to be before hard disk image partitions,
+you need to use HD Driver. </p>
 
 <a name="Using HD Driver with GEMDOS partitions"></a><h3>Using HD Driver
 with GEMDOS partitions</h3>
@@ -2288,7 +2337,7 @@ the <a href="http://www.seimet.de/atari/en/hddriverscreenshots.html">"Devices
 and Partitions" dialog</a> and select the "Preserve Existing Partitions"
 option.  Then you can just start Hatari with your hard disk image and
 this GEMDOS directory, for example like this:
-"<span class="commandline">hatari --ide hd-image.st --harddisk
+"<span class="commandline">hatari --ide-master hd-image.st --harddisk
 gemdos-hd/</span>".</p>
 
 <p>If you're using the <em>demo</em> version of HD Driver, you can
