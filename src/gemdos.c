@@ -2418,7 +2418,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 		"Cprnos",
 		"Cauxis",
 		"Cauxos",
-		"", /* 14 */
+		"Maddalt",
 		"", /* 15 */
 		"", /* 16 */
 		"", /* 17 */
@@ -2466,7 +2466,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 		"Fdelete",
 		"Fseek",
 		"Fattrib",
-		"", /* 44 */
+		"Mxalloc",
 		"Fdup",
 		"Fforce",
 		"Dgetpath",
