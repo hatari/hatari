@@ -651,14 +651,16 @@ static void dsp_postexecute_interrupts(void)
 				return;
 			case 3:
 				/* Prefetch interrupt instruction 2 */
-				instr = read_memory_p(dsp_core->interrupt_instr_fetch+1);
-				if ( ((instr & 0xfff000) == 0x0d0000) || ((instr & 0xffc0ff) == 0x0bc080) ) {
-					dsp_core->interrupt_state = DSP_INTERRUPT_LONG;
-					dsp_stack_push(dsp_core->interrupt_save_pc, dsp_core->registers[DSP_REG_SR], 0); 
-					dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_LF)|(1<<DSP_SR_T)  |
-											(1<<DSP_SR_S1)|(1<<DSP_SR_S0) |
-											(1<<DSP_SR_I0)|(1<<DSP_SR_I1));
-					dsp_core->registers[DSP_REG_SR] |= dsp_core->interrupt_IplToRaise<<DSP_SR_I0;
+				if (dsp_core->pc == dsp_core->interrupt_instr_fetch+1) {
+					instr = read_memory_p(dsp_core->pc);
+					if ( ((instr & 0xfff000) == 0x0d0000) || ((instr & 0xffc0ff) == 0x0bc080) ) {
+						dsp_core->interrupt_state = DSP_INTERRUPT_LONG;
+						dsp_stack_push(dsp_core->interrupt_save_pc, dsp_core->registers[DSP_REG_SR], 0); 
+						dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_LF)|(1<<DSP_SR_T)  |
+												(1<<DSP_SR_S1)|(1<<DSP_SR_S0) |
+												(1<<DSP_SR_I0)|(1<<DSP_SR_I1));
+						dsp_core->registers[DSP_REG_SR] |= dsp_core->interrupt_IplToRaise<<DSP_SR_I0;
+					}
 				}
 				dsp_core->interrupt_pipeline_count --;
 				return;
