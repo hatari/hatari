@@ -133,11 +133,13 @@ static bool RS232_SetRawMode(FILE *fhndl)
  * - Parity
  * - Start/stop bits
  */
-static bool RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, bool bUseParity, bool bEvenParity)
+static bool RS232_SetBitsConfig(FILE *fhndl, int nCharSize, int nStopBits, bool bUseParity, bool bEvenParity)
 {
 	struct termios termmode;
+	int fd;
 
 	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
+	fd = fileno(fhndl);
 
 	if (isatty(fd))
 	{
@@ -200,8 +202,8 @@ static bool RS232_OpenCOMPort(void)
 	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb");
 	if (hComOut == NULL)
 	{
-		Dprintf(("RS232: Failed to open output file %s\n",
-		         ConfigureParams.RS232.szOutFileName));
+		Log_Printf(LOG_WARN, "RS232: Failed to open output file %s\n",
+		         ConfigureParams.RS232.szOutFileName);
 		return false;
 	}
 	setvbuf(hComOut, NULL, _IONBF, 0);
@@ -210,8 +212,8 @@ static bool RS232_OpenCOMPort(void)
 	hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb");
 	if (hComIn == NULL)
 	{
-		Dprintf(("RS232: Failed to open input file %s\n",
-		         ConfigureParams.RS232.szInFileName));
+		Log_Printf(LOG_WARN, "RS232: Failed to open input file %s\n",
+		         ConfigureParams.RS232.szInFileName);
 		fclose(hComOut); hComOut = NULL;
 		return false;
 	}
@@ -221,14 +223,14 @@ static bool RS232_OpenCOMPort(void)
 	/* First set the output parameters to "raw" mode */
 	if (!RS232_SetRawMode(hComOut))
 	{
-		fprintf(stderr, "Can't set raw mode for %s\n",
+		Log_Printf(LOG_WARN, "Can't set raw mode for %s\n",
 		        ConfigureParams.RS232.szOutFileName);
 	}
 
 	/* Now set the input parameters to "raw" mode */
 	if (!RS232_SetRawMode(hComIn))
 	{
-		fprintf(stderr, "Can't set raw mode for %s\n",
+		Log_Printf(LOG_WARN, "Can't set raw mode for %s\n",
 		        ConfigureParams.RS232.szInFileName);
 	}
 #endif
@@ -348,7 +350,7 @@ void RS232_Init(void)
 			pSemFreeBuf = SDL_CreateSemaphore(MAX_RS232INPUT_BUFFER);
 		if (pSemFreeBuf == NULL)
 		{
-			fprintf(stderr, "RS232_Init: Can't create semaphore!\n");
+			Log_Printf(LOG_WARN, "RS232_Init: Can't create semaphore!\n");
 			return;
 		}
 
@@ -424,14 +426,14 @@ void RS232_HandleUCR(short int ucr)
 
 	if (hComOut != NULL)
 	{
-		if (!RS232_SetBitsConfig(fileno(hComOut), nCharSize, nStopBits, ucr&4, ucr&2))
-			fprintf(stderr, "Failed to set bits configuration for hComOut!\n");
+		if (!RS232_SetBitsConfig(hComOut, nCharSize, nStopBits, ucr&4, ucr&2))
+			Log_Printf(LOG_WARN, "RS232_HandleUCR: failed to set bits configuration for %s\n", ConfigureParams.RS232.szOutFileName);
 	}
 
 	if (hComIn != NULL)
 	{
-		if (!RS232_SetBitsConfig(fileno(hComIn), nCharSize, nStopBits, ucr&4, ucr&2))
-			fprintf(stderr, "Failed to set bits configuration for hComIn!\n");
+		if (!RS232_SetBitsConfig(hComIn, nCharSize, nStopBits, ucr&4, ucr&2))
+			Log_Printf(LOG_WARN, "RS232_HandleUCR: failed to set bits configuration for %s\n", ConfigureParams.RS232.szInFileName);
 	}
 #endif /* HAVE_TERMIOS_H */
 }
