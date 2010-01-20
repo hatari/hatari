@@ -118,7 +118,7 @@ static bool XBios_Rsconf(Uint32 Params)
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
 	if (ConfigureParams.RS232.bEnableRS232)
 	{
-		if (Baud >= 0 && Baud <= ARRAYSIZE(BaudRates))
+		if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
 		{
 			/* Convert ST baud rate index to value */
 			int BaudRate = BaudRates[Baud];
