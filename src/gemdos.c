@@ -439,7 +439,7 @@ void GemDOS_Init(void)
 	bInitGemDOS = false;
 
 	/* Clear handles structure */
-	memset(FileHandles, 0, sizeof(FILE_HANDLE)*MAX_FILE_HANDLES);
+	memset(FileHandles, 0, sizeof(FileHandles));
 	/* Clear DTAs */
 	for(i=0; i<MAX_DTAS_FILES; i++)
 	{
@@ -540,6 +540,7 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 {
 	struct dirent **files;
 	int count, i;
+	char letter;
 	bool bMultiPartitions;
 
 	*pnMaxDrives = 0;
@@ -565,20 +566,23 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 		/* Check all files in the directory */
 		for (i = 0; i < count; i++)
 		{
-			if (files[i]->d_name[0] == '.')
+			letter = toupper(files[i]->d_name[0]);
+			if (!letter || letter == '.')
 			{
 				/* Ignore hidden files like "." and ".." */
 				continue;
 			}
-			if (strlen(files[i]->d_name) != 1 || !isalpha(files[i]->d_name[0]))
+			
+			if (letter < 'C' || letter > 'Z' || files[i]->d_name[1])
 			{
-				/* There is a folder with more than one letter...
+				/* folder with name other than C-Z...
+				 * (until Z under MultiTOS, to P otherwise)
 				 * ... so use single partition mode! */
 				*pnMaxDrives = 1;
 				bMultiPartitions = false;
 				break;
 			}
-			*pnMaxDrives = toupper(files[i]->d_name[0]) - 'C' + 1;
+			*pnMaxDrives = letter - 'C' + 1;
 		}
 	}
 
