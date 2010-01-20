@@ -16,6 +16,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "ioMem.h"
 #include "configuration.h"
 #include "evaluate.h"
+#include "tos.h"
 
 
 /* ------------------------------------------------------------------
@@ -49,7 +50,7 @@ static Uint32 DebugInfo_GetSysbase(Uint16 *osversion)
 		fprintf(stderr, "Invalid TOS base address!\n");
 		return 0;
 	}
-	if (STMemory_ReadLong(sysbase+0x08) != sysbase) {
+	if (sysbase != TosAddress || sysbase != STMemory_ReadLong(sysbase+0x08)) {
 		fprintf(stderr, "Sysbase and os_beg address in OS header mismatch!\n");
 		return 0;
 	}
