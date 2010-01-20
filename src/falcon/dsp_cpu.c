@@ -29,10 +29,10 @@
 
 
 /* More disasm infos, if wanted */
-#define DSP_DISASM 1		/* Main DSP disassembler switch */
-#define DSP_DISASM_INST 1	/* Instructions */
-#define DSP_DISASM_REG 1	/* Registers changes */
-#define DSP_DISASM_MEM 1	/* Memory changes */
+#define DSP_DISASM 0		/* Main DSP disassembler switch */
+#define DSP_DISASM_INST 0	/* Instructions */
+#define DSP_DISASM_REG 0	/* Registers changes */
+#define DSP_DISASM_MEM 0	/* Memory changes */
 #define DSP_DISASM_INTER 0	/* Interrupts */
 #define DSP_DISASM_STATE 0	/* State change */
 
@@ -627,7 +627,6 @@ static void dsp_postexecute_interrupts(void)
 	/* A fast interrupt can not be interrupted. */
 	if (dsp_core->interrupt_state == DSP_INTERRUPT_DISABLED) {
 
-		fprintf(stderr, "%d\n", dsp_core->interrupt_pipeline_count);
 		switch (dsp_core->interrupt_pipeline_count) {
 			case 5:
 				dsp_core->interrupt_pipeline_count --;
