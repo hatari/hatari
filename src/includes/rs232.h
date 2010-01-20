@@ -15,12 +15,12 @@ extern bool bConnectedRS232;
 
 extern void RS232_Init(void);
 extern void RS232_UnInit(void);
-extern void RS232_HandleUCR(short int ucr);
+extern void RS232_HandleUCR(Sint16 ucr);
 extern bool RS232_SetBaudRate(int nBaud);
 extern void RS232_SetBaudRateFromTimerD(void);
-extern void RS232_SetFlowControl(int ctrl);
-extern bool RS232_TransferBytesTo(unsigned char *pBytes, int nBytes);
-extern bool RS232_ReadBytes(unsigned char *pBytes, int nBytes);
+extern void RS232_SetFlowControl(Sint16 ctrl);
+extern bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes);
+extern bool RS232_ReadBytes(Uint8 *pBytes, int nBytes);
 extern bool RS232_GetStatus(void);
 extern void RS232_SCR_ReadByte(void);
 extern void RS232_SCR_WriteByte(void);

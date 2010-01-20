@@ -106,7 +106,7 @@ static bool XBios_Flopwr(Uint32 Params)
  */
 static bool XBios_Rsconf(Uint32 Params)
 {
-	short int Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
+	Sint16 Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
 
 	Baud = STMemory_ReadWord(Params+SIZE_WORD);
 	Ctrl = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
@@ -118,7 +118,7 @@ static bool XBios_Rsconf(Uint32 Params)
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
 	if (ConfigureParams.RS232.bEnableRS232)
 	{
-		if (Baud>=0 && Baud<=15)
+		if (Baud >= 0 && Baud <= ARRAYSIZE(BaudRates))
 		{
 			/* Convert ST baud rate index to value */
 			int BaudRate = BaudRates[Baud];

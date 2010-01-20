@@ -412,7 +412,7 @@ void RS232_UnInit(void)
  *     1 1 : 5 Bits
  *   Bit 7: Frequency from TC and RC
  */
-void RS232_HandleUCR(short int ucr)
+void RS232_HandleUCR(Sint16 ucr)
 {
 #if HAVE_TERMIOS_H
 	int nCharSize;                   /* Bits per character: 5, 6, 7 or 8 */
@@ -586,7 +586,7 @@ void RS232_SetBaudRateFromTimerD(void)
 /**
  * Set flow control configuration of RS-232.
  */
-void RS232_SetFlowControl(int ctrl)
+void RS232_SetFlowControl(Sint16 ctrl)
 {
 	Dprintf(("RS232_SetFlowControl(%i)\n", ctrl));
 
@@ -598,7 +598,7 @@ void RS232_SetFlowControl(int ctrl)
 /**
  * Pass bytes from emulator to RS-232
  */
-bool RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
+bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
 {
 	/* Do need to open a connection to RS232? */
 	if (!bConnectedRS232)
@@ -629,7 +629,7 @@ bool RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 /**
  * Read characters from our internal input buffer (bytes from other machine)
  */
-bool RS232_ReadBytes(unsigned char *pBytes, int nBytes)
+bool RS232_ReadBytes(Uint8 *pBytes, int nBytes)
 {
 	int i;
 
@@ -780,7 +780,7 @@ void RS232_TSR_WriteByte(void)
  */
 void RS232_UDR_ReadByte(void)
 {
-	unsigned char InByte = 0;
+	Uint8 InByte = 0;
 
 	M68000_WaitState(4);
 
@@ -801,7 +801,7 @@ void RS232_UDR_ReadByte(void)
  */
 void RS232_UDR_WriteByte(void)
 {
-	unsigned char OutByte;
+	Uint8 OutByte;
 
 	M68000_WaitState(4);
 
