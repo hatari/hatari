@@ -631,9 +631,14 @@ static void HDC_GetInfo(void)
 /**
  * Open the disk image file, set partitions.
  */
-bool HDC_Init(char *filename)
+bool HDC_Init(void)
 {
+	char *filename;
 	bAcsiEmuOn = false;
+
+	if (!ConfigureParams.HardDisk.bUseHardDiskImage)
+		return false;
+	filename = ConfigureParams.HardDisk.szHardDiskImage;
 
 	/* Sanity check - is file length a multiple of 512? */
 	if (File_Length(filename) & 0x1ff)
@@ -641,7 +646,6 @@ bool HDC_Init(char *filename)
 		Log_Printf(LOG_ERROR, "HD file '%s' has strange size!\n", filename);
 		return false;
 	}
-
 
 	if ((hd_image_file = fopen(filename, "rb+")) == NULL)
 	{
@@ -657,6 +661,7 @@ bool HDC_Init(char *filename)
 	bAcsiEmuOn = true;
 	HDCCommand.byteCount = 0;
 
+	printf("Hard drive image %s mounted.\n", filename);
 	return true;
 }
 

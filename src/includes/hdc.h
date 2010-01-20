@@ -73,7 +73,7 @@ extern short int HDCSectorCount;
 extern int nPartitions;
 extern bool bAcsiEmuOn;
 
-extern bool HDC_Init(char *filename);
+extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
 extern void HDC_WriteCommandPacket(void);
 

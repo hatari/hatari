@@ -48,9 +48,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "hatari-glue.h"
 
 #include "falcon/hostscreen.h"
-#if ENABLE_DSP_EMU
 #include "falcon/dsp.h"
-#endif
 
 
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
@@ -494,30 +492,19 @@ static void Main_Init(void)
 	Midi_Init();
 	Screen_Init();
 	HostScreen_Init();
-#if ENABLE_DSP_EMU
-	if (ConfigureParams.System.nDSPType == DSP_TYPE_EMU)
-	{
-		DSP_Init();
-	}
-#endif
+	DSP_Init();
 	Floppy_Init();
 	M68000_Init();                /* Init CPU emulation */
 	Audio_Init();
 	Keymap_Init();
 
 	/* Init HD emulation */
-	if (ConfigureParams.HardDisk.bUseHardDiskImage)
-	{
-		char *szHardDiskImage = ConfigureParams.HardDisk.szHardDiskImage;
-		if (HDC_Init(szHardDiskImage))
-			printf("Hard drive image %s mounted.\n", szHardDiskImage);
-		else
-			printf("Couldn't open HD file: %s, or no partitions\n", szHardDiskImage);
-	}
+	HDC_Init();
 	Ide_Init();
 	GemDOS_Init();
 	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
+		/* uses variables set by HDC_Init()! */
 		GemDOS_InitDrives();
 	}
 
@@ -562,12 +549,7 @@ static void Main_UnInit(void)
 		Sound_EndRecording();
 	Audio_UnInit();
 	SDLGui_UnInit();
-#if ENABLE_DSP_EMU
-	if (ConfigureParams.System.nDSPType == DSP_TYPE_EMU)
-	{
-		DSP_UnInit();
-	}
-#endif
+	DSP_UnInit();
 	HostScreen_UnInit();
 	Screen_UnInit();
 	Exit680x0();

@@ -274,7 +274,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	/* Mount a new HD image: */
 	if (bReInitAcsiEmu && ConfigureParams.HardDisk.bUseHardDiskImage)
 	{
-		HDC_Init(ConfigureParams.HardDisk.szHardDiskImage);
+		HDC_Init();
 	}
 
 	/* Mount a new IDE HD master or slave image: */

@@ -27,6 +27,7 @@
 #include "ioMem.h"
 #include "dsp.h"
 #include "crossbar.h"
+#include "configuration.h"
 
 #if ENABLE_DSP_EMU
 #include "m68000.h"
@@ -79,6 +80,8 @@ static void DSP_TriggerHostInterrupt(void)
 void DSP_Init(void)
 {
 #if ENABLE_DSP_EMU
+	if (ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
+		return;
 	dsp_core_init(&dsp_core, DSP_TriggerHostInterrupt);
 	dsp56k_init_cpu(&dsp_core);
 	bDspEnabled = true;
@@ -92,6 +95,8 @@ void DSP_Init(void)
 void DSP_UnInit(void)
 {
 #if ENABLE_DSP_EMU
+	if (ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
+		return;
 	dsp_core_shutdown(&dsp_core);
 	bDspEnabled = false;
 #endif
