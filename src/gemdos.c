@@ -602,6 +602,7 @@ void GemDOS_InitDrives(void)
 {
 	int i;
 	int nMaxDrives;
+	int DriveNumber;
 	bool bMultiPartitions;
 
 	/* intialize data for harddrive emulation: */
@@ -636,9 +637,6 @@ void GemDOS_InitDrives(void)
 			continue;
 		}
 
-		/* set drive number (C: = 2, D: = 3, etc.) */
-		emudrives[i]->hd_letter = 2 + i;
-
 		/* set emulation directory string */
 		strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 
@@ -649,9 +647,12 @@ void GemDOS_InitDrives(void)
 		if (bMultiPartitions)
 			strcat(emudrives[i]->hd_emulation_dir, sDriveLetter);
 
+		/* drive number (C: = 2, D: = 3, etc.) */
+		DriveNumber = 2 + i;
+
 		// Check host file system to see if the drive folder for THIS
 		// drive letter/number exists...
-		if (GEMDOS_DoesHostDriveFolderExist(emudrives[i]->hd_emulation_dir,emudrives[i]->hd_letter))
+		if (GEMDOS_DoesHostDriveFolderExist(emudrives[i]->hd_emulation_dir, DriveNumber))
 		{
 			/* initialize current directory string, too (initially the same as hd_emulation_dir) */
 			strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
@@ -660,13 +661,14 @@ void GemDOS_InitDrives(void)
 			if (i >= nPartitions)
 			{
 				Log_Printf(LOG_INFO, "GEMDOS HDD emulation, %c: <-> %s.\n",
-						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
+					   'A'+DriveNumber, emudrives[i]->hd_emulation_dir);
+				emudrives[i]->drive_number = DriveNumber;
 				nNumDrives = i + 3;
 			}
 			else	/* This letter has already been allocated to the one supported physical disk image */
 			{
 				Log_Printf(LOG_WARN, "Drive Letter %c is already mapped to HDD image (cannot map GEMDOS drive to %s).\n",
-						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
+					   'A'+DriveNumber, emudrives[i]->hd_emulation_dir);
 				free(emudrives[i]);
 				emudrives[i] = NULL;
 			}
@@ -746,8 +748,8 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 			                     sizeof(emudrives[i]->hd_emulation_dir));
 			MemorySnapShot_Store(emudrives[i]->fs_currpath,
 			                     sizeof(emudrives[i]->fs_currpath));
-			MemorySnapShot_Store(&emudrives[i]->hd_letter,
-			                     sizeof(emudrives[i]->hd_letter));
+			MemorySnapShot_Store(&emudrives[i]->drive_number,
+			                     sizeof(emudrives[i]->drive_number));
 			if (bDummyDrive)
 			{
 				free(emudrives[i]);
@@ -845,23 +847,23 @@ static int GemDOS_FindDriveNumber(char *pszFileName)
  */
 static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 {
-	int DriveLetter;
+	int DriveNumber;
 	int n;
 
 	/* Do we even have a hard-drive? */
 	if (GEMDOS_EMU_ON)
 	{
 		/* Find drive letter (as number) */
-		DriveLetter = GemDOS_FindDriveNumber(pszFileName);
+		DriveNumber = GemDOS_FindDriveNumber(pszFileName);
 
 		/* We've got support for multiple drives here... */
-		if (DriveLetter > 1)	// If it is not a Floppy Drive
+		if (DriveNumber > 1)	// If it is not a Floppy Drive
 		{
 			for (n=0; n<MAX_HARDDRIVES; n++)
 			{
 				/* Check if drive letter matches */
-				if (emudrives[n] &&  DriveLetter == emudrives[n]->hd_letter)
-					return DriveLetter;
+				if (emudrives[n] &&  DriveNumber == emudrives[n]->drive_number)
+					return DriveNumber;
 			}
 		}
 	}

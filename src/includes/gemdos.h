@@ -11,7 +11,7 @@
 typedef struct {
   char hd_emulation_dir[FILENAME_MAX];     /* hd emulation directory (Host OS) */
   char fs_currpath[FILENAME_MAX];          /* current path (Host OS) */
-  int hd_letter;                           /* drive letter (Atari) */
+  int drive_number;                        /* drive number (C: = 2, D: = 3...) */
 } EMULATEDDRIVE;
 
 extern EMULATEDDRIVE **emudrives;

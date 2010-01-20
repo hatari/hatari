@@ -146,7 +146,7 @@ void Floppy_GetBootDrive(void)
 		{
 			if (emudrives[i])
 			{
-				nBootDrive = emudrives[i]->hd_letter;
+				nBootDrive = emudrives[i]->drive_number;
 				break;
 			}
 		}
