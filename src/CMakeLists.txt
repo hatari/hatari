@@ -55,6 +55,10 @@ endif(ENABLE_OSX_BUNDLE)
 
 target_link_libraries(hatari Debug Falcon GuiSdl UaeCpu ${SDL_LIBRARY})
 
+if(SDLMAIN_LIBRARY)
+	target_link_libraries(hatari ${SDLMAIN_LIBRARY})
+endif(SDLMAIN_LIBRARY)
+
 if(READLINE_FOUND)
 	target_link_libraries(hatari ${READLINE_LIBRARY})
 endif(READLINE_FOUND)
@@ -74,6 +78,12 @@ endif(X11_FOUND)
 if(PORTAUDIO_FOUND)
 	target_link_libraries(hatari ${PORTAUDIO_LIBRARY})
 endif(PORTAUDIO_FOUND)
+
+if(WIN32)
+	# Needed for socket() on Windows
+	target_link_libraries(hatari ws2_32)
+endif(WIN32)
+
 
 if(ENABLE_OSX_BUNDLE)
 	install(TARGETS hatari BUNDLE DESTINATION /Applications)
