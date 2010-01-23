@@ -25,6 +25,14 @@ set(ENABLE_TRACING 1
 set(ENABLE_SMALL_MEM 0
     CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
 
+if(APPLE)
+	set(ENABLE_OSX_BUNDLE 1
+        CACHE BOOL "Built Hatari as Mac OS X application bundle")
+else()
+	set(ENABLE_OSX_BUNDLE 0
+        CACHE BOOL "Built Hatari as Mac OS X application bundle")
+endif(APPLE)
+
 # ####################
 # Check for libraries:
 # ####################
