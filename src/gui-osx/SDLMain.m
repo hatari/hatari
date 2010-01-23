@@ -2,8 +2,8 @@
        Initial Version: Darrell Walisser <dwaliss1@purdue.edu>
        Non-NIB-Code & other changes: Max Horn <max@quendi.de>
 
-       Feb-Mar 2006, SŽbastien Molines - Added prefs & create floppy
-       June 2006, SŽbastien Molines - Added capture and memory snapshot
+       Feb-Mar 2006, SÃ©bastien Molines - Added prefs & create floppy
+       June 2006, SÃ©bastien Molines - Added capture and memory snapshot
 
     Feel free to customize this file to suit your needs
 */
@@ -329,7 +329,7 @@ static BOOL   gFinderLaunch;
 
 - (IBAction)help:(id)sender
 {
-	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://hatari.berlios.de/"]];
+	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://hatari.berlios.de/docs.html"]];
 }
 
 
@@ -425,10 +425,8 @@ static BOOL   gFinderLaunch;
 /* Main entry point to executable - should *not* be SDL_main! */
 int main (int argc, char **argv)
 {
-
-    /* Copy the arguments into a global variable */
     int i;
-    
+
     /* This is passed if we are launched by double-clicking */
     if ( argc >= 2 && strncmp (argv[1], "-psn", 4) == 0 ) {
         gArgc = 1;
@@ -437,6 +435,8 @@ int main (int argc, char **argv)
         gArgc = argc;
 	gFinderLaunch = NO;
     }
+
+    /* Copy the arguments into a global variable */
     gArgv = (char**) malloc (sizeof(*gArgv) * (gArgc+1));
     assert (gArgv != NULL);
     for (i = 0; i < gArgc; i++)

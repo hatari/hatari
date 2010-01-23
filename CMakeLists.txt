@@ -89,7 +89,8 @@ add_definitions(-DCONFDIR=\"/etc\")
 
 # Test for large file support
 execute_process(COMMAND getconf LFS_CFLAGS
-                OUTPUT_VARIABLE DETECTED_LFS_CFLAGS)
+                OUTPUT_VARIABLE DETECTED_LFS_CFLAGS
+                ERROR_QUIET)
 if(DETECTED_LFS_CFLAGS)
 	add_definitions(${DETECTED_LFS_CFLAGS})
 endif(DETECTED_LFS_CFLAGS)
