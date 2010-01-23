@@ -70,7 +70,7 @@ void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 /*
   Pauses emulation
 */
-void GuiOsx_Pause()
+void GuiOsx_Pause(void)
 {
 	// Pause emulation
 	Main_PauseEmulation(false);
@@ -80,7 +80,7 @@ void GuiOsx_Pause()
 /*
   Switches back to emulation mode
 */
-void GuiOsx_Resume()
+void GuiOsx_Resume(void)
 {
 	// Resume emulation
 	Main_UnPauseEmulation();
