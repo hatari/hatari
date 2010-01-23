@@ -5,6 +5,9 @@ project(Hatari)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+include(CheckIncludeFiles)
+include(CheckFunctionExists)
+
 # Set build type to "Release" if user did not specify any build type yet
 # Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
 if(NOT CMAKE_BUILD_TYPE)
@@ -33,7 +36,10 @@ endif(NOT SDL_FOUND)
 
 find_package(Readline)
 if(READLINE_FOUND)
-	set(HAVE_LIBREADLINE 1)
+	check_function_exists(rl_filename_completion_function HAVE_RL_COMPLETION_FUNCTION)
+	if(HAVE_RL_COMPLETION_FUNCTION)
+		set(HAVE_LIBREADLINE 1)
+	endif(HAVE_RL_COMPLETION_FUNCTION)
 endif(READLINE_FOUND)
 
 find_package(ZLIB)
@@ -61,8 +67,6 @@ endif(PORTAUDIO_FOUND)
 # Check for optional headers:
 # ###########################
 
-include(CheckIncludeFiles)
-
 check_include_files(termios.h HAVE_TERMIOS_H)
 check_include_files(glob.h HAVE_GLOB_H)
 check_include_files(strings.h HAVE_STRINGS_H)
@@ -74,8 +78,6 @@ check_include_files("sys/socket.h;sys/un.h" HAVE_UNIX_DOMAIN_SOCKETS)
 # #############################
 # Check for optional functions:
 # #############################
-
-include(CheckFunctionExists)
 
 check_function_exists(cfmakeraw HAVE_CFMAKERAW)
 check_function_exists(setenv HAVE_SETENV)
