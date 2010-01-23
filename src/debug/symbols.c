@@ -460,6 +460,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		maxaddr = 0xFFFFFF;
 	} else {
 		listtype = TYPE_NONE;
+		maxaddr = 0;
 	}
 	if (nArgc < 2 || listtype == TYPE_NONE) {
 		DebugUI_PrintCmdHelp(psArgs[0]);
