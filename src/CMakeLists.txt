@@ -11,6 +11,15 @@ set(SOURCES
 	spec512.c statusbar.c str.c tos.c unzip.c utils.c vdi.c
 	video.c wavFormat.c xbios.c ymFormat.c zip.c)
 
+if(ENABLE_OSX_BUNDLE)
+	set(GUIOSX_SOURCES
+	    gui-osx/AlertHooks.m gui-osx/PrefsController.m gui-osx/Shared.m
+	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m)
+	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
+	set(GUIOSX_RSRCS
+	    gui-osx/SDLMain.nib gui-osx/Hatari.icns gui-osx/English.lproj)
+endif(ENABLE_OSX_BUNDLE)
+
 include_directories(${CMAKE_BINARY_DIR} includes debug falcon uae-cpu
 		    ${SDL_INCLUDE_DIR})
 
@@ -35,10 +44,9 @@ add_subdirectory(gui-sdl)
 add_subdirectory(uae-cpu)
 
 if(ENABLE_OSX_BUNDLE)
-	add_subdirectory(gui-osx)
-	SET_SOURCE_FILES_PROPERTIES(gui-osx/SDLMain.nib PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-	add_executable(hatari MACOSX_BUNDLE gui-osx/SDLMain.nib ${SOURCES})
-	target_link_libraries(hatari GuiOsx)
+	set_source_files_properties(${GUIOSX_RSRCS}
+			PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+	add_executable(hatari MACOSX_BUNDLE ${GUIOSX_RSRCS} ${SOURCES} ${GUIOSX_SOURCES})
 	# set_target_properties(hatari PROPERTIES MACOSX_BUNDLE true)
 	set_target_properties(hatari PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/../Info-Hatari.plist)
 else()
