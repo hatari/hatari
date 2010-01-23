@@ -635,9 +635,9 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	}
 	
 	// If the IDE HD flag is set, load the IDE HD path, otherwise make it blank
-	if (ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
-		IMPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeHardDiskImage);	
+		IMPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);	
 	}
 	else
 	{
@@ -831,12 +831,12 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	// Define the IDE HD flag, and export the IDE HD path if one is selected
 	if ([[ideHdImage stringValue] length] > 0)
 	{
-		EXPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeHardDiskImage);
-		ConfigureParams.HardDisk.bUseIdeHardDiskImage = true;
+		EXPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);
+		ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = true;
 	}
 	else
 	{
-		ConfigureParams.HardDisk.bUseIdeHardDiskImage = false;
+		ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
 	}
 	
 	// Define the Gemdos flag, and export the Gemdos path if one is selected
