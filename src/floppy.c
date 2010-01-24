@@ -291,6 +291,7 @@ const char* Floppy_SetDiskFileNameNone(int Drive)
 const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const char *pszZipPath)
 {
 	char *filename;
+	int i;
 
 	/* setting to empty or "none" ejects */
 	if (!*pszFileName || strcasecmp(pszFileName, "none") == 0)
@@ -321,8 +322,21 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 		}
 	}
 
-	/* do the changes */
+	/* validity checks */
 	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
+	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
+	{
+		if (i == Drive)
+			continue;
+		/* prevent inserting same image to multiple drives */
+		if (strcmp(filename, ConfigureParams.DiskImage.szDiskFileName[i]) == 0)
+		{
+			Log_AlertDlg(LOG_ERROR, "ERROR: Cannot insert same floppy to multiple drives!");
+			return NULL;
+		}
+	}
+
+	/* do the changes */
 	if (pszZipPath)
 		strcpy(ConfigureParams.DiskImage.szDiskZipPath[Drive], pszZipPath);
 	else

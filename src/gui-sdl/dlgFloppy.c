@@ -62,12 +62,11 @@ static SGOBJ floppydlg[] =
 
 /**
  * Let user browse given disk, insert disk if one selected.
- * return false if no disk selected, otherwise return true.
  */
-static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
+static void DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 {
 	char *selname, *zip_path;
-	const char *tmpname;
+	const char *tmpname, *realname;
 
 	assert(drive >= 0 && drive < MAX_FLOPPYDRIVES);
 	if (ConfigureParams.DiskImage.szDiskFileName[drive][0])
@@ -76,54 +75,45 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
 	selname = SDLGui_FileSelect(tmpname, &zip_path, false);
-	if (selname)
+	if (!selname)
+		return;
+
+	if (File_Exists(selname))
 	{
-		if (File_Exists(selname))
-		{
-			const char *realname;
-			realname = Floppy_SetDiskFileName(drive, selname, zip_path);
-			/* TODO: error dialog when this fails */
-			if (realname)
-			{
-				File_ShrinkName(dlgname, realname, floppydlg[diskid].w);
-			}
-		}
-		else
-		{
-			Floppy_SetDiskFileNameNone(drive);
-			dlgname[0] = '\0';
-		}
-		if (zip_path)
-			free(zip_path);
-		free(selname);
-		return true;
+		realname = Floppy_SetDiskFileName(drive, selname, zip_path);
+		if (realname)
+			File_ShrinkName(dlgname, realname, floppydlg[diskid].w);
 	}
-	return false;
+	else
+	{
+		Floppy_SetDiskFileNameNone(drive);
+		dlgname[0] = '\0';
+	}
+	if (zip_path)
+		free(zip_path);
+	free(selname);
 }
 
 
 /**
  * Let user browse given directory, set directory if one selected.
- * return false if none selected, otherwise return true.
  */
-static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
+static void DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
 	char *str, *selname;
 
 	selname = SDLGui_FileSelect(confname, NULL, false);
-	if (selname)
-	{
-		strcpy(confname, selname);
-		free(selname);
+	if (!selname)
+		return;
 
-		str = strrchr(confname, PATHSEP);
-		if (str != NULL)
-			str[1] = 0;
-		File_CleanFileName(confname);
-		File_ShrinkName(dlgname, confname, maxlen);
-		return true;
-	}
-	return false;
+	strcpy(confname, selname);
+	free(selname);
+
+	str = strrchr(confname, PATHSEP);
+	if (str != NULL)
+		str[1] = 0;
+	File_CleanFileName(confname);
+	File_ShrinkName(dlgname, confname, maxlen);
 }
 
 

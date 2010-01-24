@@ -41,9 +41,6 @@ Emulation improvements
 - Some Falcon games/demos only work with 32 MHz CPU emulation (might be due to
   the fact that we don't emulate the 68030 cache yet?)
 
-- It's possible to insert the same disk image into both drives A: and B:
-  ==> should be rejected or at least one of them should be mounted read-only.
-
 - Fix STE DMA sound emulation - there might be some problems with proper
   interrupt timings left (e.g. 50kHz replay in ProTracker)
 
