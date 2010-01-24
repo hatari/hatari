@@ -67,10 +67,37 @@ Other potential Hatari functionality improvements
 -------------------------------------------------
 
 - Debugger improvements:
-	- Support negative values and signed comparisons in conditional
-	  breakpoints
-	- Allow use of variable/register names instead of addresses
-	  everywhere in the debugger
+	- Showing specified information when entering debugger
+	  (register locking in Monst).  Main issue is how user
+	  would specify what to show (regs, memdump, disassembly,
+	  for CPU and/or DSP, addresses pointed by registers etc)
+	- Shortcut command for telling to run until given
+	  (temporary) conditional breakpoint is hit
+	- Running until code returns from ROM (exiting from super mode?)
+	- Single stepping that skips Traps, Line-A, Line-F. And one that
+	  skips also BSRs and JSRs
+	- Shorcut to set breakpoint to next instruction and run
+	  (to skip loops, can use address breakpoints that are
+	  removed after hitting)
+	- Set breakpoint on specific OS call
+	- Showing symbol and breakpoint positions also in the DSP
+	  disassembly output, counted breakpoints for DSP
+	- Support symbol names and counts also in conditional breakpoints
+	- Command to run slowly
+	- Register command showing contents of memory pointed
+	  by the registers
+	- Saving machine status to history buffer each time debugger is
+	  entered (exception or breakpoint is hit) and being able to view
+	  this history
+	- SP & SSP as CPU register names (active & supervisor stack),
+	  allow use of variable/register names in addition to
+	  addresses everywhere in the debugger
+	- Fill and copy memory command
+	- Search.  For bytes or strings (Monst supports also searching
+	  instruction (subsets) but that's too complicated)
+	- A built in window system (ncurses based would constrict
+	  output area, maybe implement it externally to Hatari?)
+ Most of these are Monst features that Hatari debugger doesn't implement.
 
 - Improved screen handling:
 	- Direct 16-bit & 32-bit support for monochrome and VDI modes

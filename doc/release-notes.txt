@@ -38,10 +38,14 @@ Emulator:
   - "evaluate" command for doing calculations
   - "info" command for showing Atari HW and OS information
   - "symbols" command for loading and listing CPU & DSP code
-    symbols/addresses
+    symbols/addresses and breaking on them.  Symbols are shown
+    on CPU disassembly
   - debugger command and command argument TAB-completion support
     (requires readline library)
   - improved register name handling + fixed DSP reg name matching
+  - CPU breakpoints can be given an optional count of how many hits
+    there needs to be before they break into debugger.  If count
+    of one is given, breakpoint is removed after hit
   - Display DSP instructions cycle timings in disasm mode (in cycles)
 
 Other changes:
