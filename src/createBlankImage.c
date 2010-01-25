@@ -75,6 +75,10 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 	unsigned short int SPC, nDir, MediaByte, SPF;
 	bool bRet = false;
 
+	/* HD/ED disks are all double sided */
+	if (nSectors >= 18)
+		nSides = 2;
+
 	/* Calculate size of disk image */
 	nDiskSize = CreateBlankImage_GetDiskImageCapacity(nTracks, nSectors, nSides);
 
@@ -107,21 +111,30 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 
 	if (SPC==1)
 		nDir = 64;
-	else
+	else if (nSectors < 18)
 		nDir = 112;
+	else
+		nDir = 224;
 	WriteShortLE(pDiskFile+17, nDir);                     /* 17-18 DIR */
 
 	WriteShortLE(pDiskFile+19, nTracks*nSectors*nSides);  /* 19-20 SEC */
 
-	if (nTracks <= 42)
-		MediaByte = 0xFC;
+	if (nSectors >= 18)
+		MediaByte = 0xF0;
 	else
-		MediaByte = 0xF8;
-	if (nSides == 2)
-		MediaByte |= 0x01;
+	{
+		if (nTracks <= 42)
+			MediaByte = 0xFC;
+		else
+			MediaByte = 0xF8;
+		if (nSides == 2)
+			MediaByte |= 0x01;
+	}
 	pDiskFile[21] = MediaByte;                            /* 21 MEDIA */
 
-	if (nTracks >= 80)
+	if (nSectors >= 18)
+		SPF = 9;
+	else if (nTracks >= 80)
 		SPF = 5;
 	else
 		SPF = 2;
