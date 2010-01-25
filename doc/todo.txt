@@ -66,6 +66,10 @@ DSP emulation / Falcon sound matrix
 Other potential Hatari functionality improvements
 -------------------------------------------------
 
+- Eero: add portaudio support to configure.ac or Makefile.cnf.in and
+  test configure in general (or remove configure.ac and *.in files
+  altogether) before next release.
+
 - Debugger improvements:
 	- Showing specified information when entering debugger
 	  (register locking in Monst).  Main issue is how user
