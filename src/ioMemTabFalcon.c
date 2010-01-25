@@ -106,7 +106,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
 	{ 0xff8006, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon configuration */
-	{ 0xff800A, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff800A, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* Fix Illusion demo */
 	{ 0xff800C, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8060, SIZE_LONG, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
@@ -234,18 +234,19 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 
 	{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },                        /* TODO: SCC */
 
-	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_ReadWord, IoMem_WriteWithoutInterception },    /* Joypad fire buttons */
+	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_ReadWord, IoMem_WriteWithoutInterception }, /* Joypad fire buttons */
 	{ 0xff9202, SIZE_WORD, Joy_StePadMulti_ReadWord, Joy_StePadMulti_WriteWord },     /* Joypad directions/buttons/selection */
-	{ 0xff9210, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff9206, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here ; fix Wotanoid game */
+	{ 0xff9210, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */
 	{ 0xff9211, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Joypad 0 X position (?) */
-	{ 0xff9212, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff9212, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */
 	{ 0xff9213, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Joypad 0 Y position (?) */
-	{ 0xff9214, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff9214, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */
 	{ 0xff9215, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Joypad 1 X position (?) */
-	{ 0xff9216, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff9216, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                         /* No bus error here */
 	{ 0xff9217, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Joypad 1 Y position (?) */
-	{ 0xff9220, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },              /* Lightpen X position */
-	{ 0xff9222, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },              /* Lightpen Y position */
+	{ 0xff9220, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Lightpen X position */
+	{ 0xff9222, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Lightpen Y position */
 
 	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },            /* Falcon Videl palette */
 

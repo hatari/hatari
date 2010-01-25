@@ -1718,7 +1718,7 @@ static bool GemDOS_Read(Uint32 Params)
 	char *pBuffer;
 	long CurrentPos, FileSize, nBytesRead, nBytesLeft;
 	Uint32 Addr;
-	Sint32 Size;
+	Uint32 Size;
 	int Handle;
 
 	/* Read details from stack */
@@ -1739,6 +1739,14 @@ static bool GemDOS_Read(Uint32 Params)
 		return false;
 	}
 
+	/* Old TOS versions treat the Size parameter as signed */
+	if (TosVersion < 0x400 && (Size & 0x80000000))
+	{
+		/* return -1 as original GEMDOS */
+		Regs[REG_D0] = -1;
+		return true;
+	}
+	
 	/* To quick check to see where our file pointer is and how large the file is */
 	CurrentPos = ftell(FileHandles[Handle].FileHandle);
 	fseek(FileHandles[Handle].FileHandle, 0, SEEK_END);
