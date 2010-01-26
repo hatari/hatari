@@ -2595,6 +2595,7 @@ static void ide_init2(IDEState *ide_state, BlockDriverState *hd0,
 	{
 		s = ide_state + i;
 		s->io_buffer = qemu_memalign(512, MAX_MULT_SECTORS*512 + 4);
+		assert(s->io_buffer);
 		if (i == 0)
 			s->bs = hd0;
 		else
@@ -2697,11 +2698,7 @@ void Ide_Init(void)
 	hd_table[0] = malloc(sizeof(BlockDriverState));
 	hd_table[1] = malloc(sizeof(BlockDriverState));
 
-	if (!opaque_ide_if || !hd_table[0] || !hd_table[1])
-	{
-		perror("Ide_Init");
-		return;
-	}
+	assert(opaque_ide_if && hd_table[0] && hd_table[1]);
 
 	memset(opaque_ide_if, 0, sizeof(IDEState) * 2);
 
@@ -2744,6 +2741,16 @@ void Ide_UnInit(void)
 	}
 
 	if (opaque_ide_if)
+	{
+		for (i = 0; i < 2; i++)
+		{
+			if (opaque_ide_if[i].io_buffer)
+			{
+				free(opaque_ide_if[i].io_buffer);
+				opaque_ide_if[i].io_buffer = NULL;
+			}
+		}
 		free(opaque_ide_if);
-	opaque_ide_if = NULL;
+		opaque_ide_if = NULL;
+	}
 }
