@@ -152,14 +152,23 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 
 
 /**
- * Check whether given address matches any breakpoint, if yes, show
- * the breakpoint information.  Otherwise, if alwaysSymbols is set,
- * check whether any symbol are at given address and show them.
+ * Check whether given address matches any CPU symbol, if yes,
+ * show the symbol information.
+ */
+static void DebugCpu_ShowMatchedSymbol(Uint32 addr)
+{
+	const char *symbol = Symbols_GetByCpuAddress(addr);
+	if (symbol)
+		fprintf(debugOutput, "%s:\n", symbol);
+}
+
+/**
+ * Check whether given address matches any CPU breakpoint, if yes,
+ * show the breakpoint information.
  * Return breakpoint index+1 if one was matched, zero otherwise.
  */
-static int DebugCpu_ShowBreakSymbol(Uint32 addr, bool alwaysSymbols)
+static int DebugCpu_ShowMatchedBreakpoint(Uint32 addr)
 {
-	const char *symbol;
 	int i, cpubreak;
 	
 	cpubreak = 0;
@@ -171,39 +180,26 @@ static int DebugCpu_ShowBreakSymbol(Uint32 addr, bool alwaysSymbols)
 			break;
 		}
 	}
-
-	if (!(cpubreak || alwaysSymbols))
+	if (!cpubreak)
 		return 0;
 
-	symbol = Symbols_GetByCpuAddress(addr);
-	if (symbol)
-		fputs(symbol, debugOutput);
-
-	if (cpubreak)
-	{
-		if (symbol)
-			fputs(", ", debugOutput);
-
-		fprintf(debugOutput, "breakpoint %d", cpubreak);
-		switch (CpuBreakPoint[i].count)	{
-		case 0:
-			/* not counted, breaks on every hit */
-			break;
-		case 1:
-			/* breaks once, then removed */
-			fprintf(stderr, " (once)");
-			break;
-		default:
-			/* breaks on every 'count' hit */
-			fprintf(stderr, " (%d/%d)",
-				CpuBreakPoint[i].hits,
-				CpuBreakPoint[i].count);
-			break;
-		}
+	fprintf(debugOutput, "breakpoint %d", cpubreak);
+	switch (CpuBreakPoint[i].count)	{
+	case 0:
+		/* not counted, breaks on every hit */
+		break;
+	case 1:
+		/* breaks once, then removed */
+		fputs(" (once)", debugOutput);
+		break;
+	default:
+		/* breaks on every 'count' hit */
+		fprintf(stderr, " (%d/%d)",
+			CpuBreakPoint[i].hits,
+			CpuBreakPoint[i].count);
+		break;
 	}
-
-	if (cpubreak || symbol)
-		fputs(":\n", debugOutput);
+	fputs(":\n", debugOutput);
 	return cpubreak;
 }
 
@@ -245,7 +241,8 @@ static int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	{
 		for (i = 0; i < DISASM_INSTS; i++)
 		{
-			DebugCpu_ShowBreakSymbol(disasm_addr, true);
+			DebugCpu_ShowMatchedSymbol(disasm_addr);
+			DebugCpu_ShowMatchedBreakpoint(disasm_addr);
 			m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 			disasm_addr = nextpc;
 		}
@@ -256,7 +253,8 @@ static int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	/* output a range */
 	while (disasm_addr < disasm_upper)
 	{
-		DebugCpu_ShowBreakSymbol(disasm_addr, true);
+		DebugCpu_ShowMatchedSymbol(disasm_addr);
+		DebugCpu_ShowMatchedBreakpoint(disasm_addr);
 		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 		disasm_addr = nextpc;
 	}
@@ -651,32 +649,32 @@ static int DebugCpu_Continue(int nArgc, char *psArgv[])
 
 
 /**
- * Check if we hit a CPU breakpoint.  Additionally, show symbols
- * when CPU disassembly is set (but note that this is called only
- * when there are active CPU breakpoints).
+ * Check if we hit a CPU breakpoint.  If yes, show its state
+ * and act according to the breakpoint count&hits.
  */
 static void DebugCpu_CheckCpuBreakpoints(void)
 {
 	Uint32 pc = M68000_GetPC();
-	int i;
+	int i = DebugCpu_ShowMatchedBreakpoint(pc);
 
-	i = DebugCpu_ShowBreakSymbol(pc, LOG_TRACE_LEVEL(TRACE_CPU_DISASM));
-	if (i--)
-	{
-		fprintf(stderr, "\nCPU breakpoint at 0x%x ...", pc);
-		switch (CpuBreakPoint[i].count) {
-		case 0:
-			break;
-		case 1:
-			DebugCpu_RemoveBreakPoint(i, pc);
-			break;
-		default:
-			if (++(CpuBreakPoint[i].hits) < CpuBreakPoint[i].count)
-				return;
-			CpuBreakPoint[i].hits = 0;
-		}
-		DebugUI();
+	if (!i)
+		return;
+	
+	fprintf(stderr, "\nCPU breakpoint at 0x%x ...", pc);
+
+	i--;
+	switch (CpuBreakPoint[i].count) {
+	case 0:
+		break;
+	case 1:
+		DebugCpu_RemoveBreakPoint(i, pc);
+		break;
+	default:
+		if (++(CpuBreakPoint[i].hits) < CpuBreakPoint[i].count)
+			return;
+		CpuBreakPoint[i].hits = 0;
 	}
+	DebugUI();
 }
 
 
@@ -685,6 +683,10 @@ static void DebugCpu_CheckCpuBreakpoints(void)
  */
 void DebugCpu_Check(void)
 {
+	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+	{
+		DebugCpu_ShowMatchedSymbol(M68000_GetPC());
+	}
 	if (nCpuActiveBPs)
 	{
 		DebugCpu_CheckCpuBreakpoints();
