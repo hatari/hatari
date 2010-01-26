@@ -1723,6 +1723,10 @@ static bool GemDOS_Create(Uint32 Params)
 		}
 		/* Tag handle table entry as used and return handle */
 		FileHandles[Index].bUsed = true;
+		snprintf(FileHandles[Index].szActualName,
+			 sizeof(FileHandles[Index].szActualName),
+			 "%s", szActualFileName);
+
 		/* Return valid ST file handle from our range (from BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
 		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n", Index,
@@ -1823,13 +1827,14 @@ static bool GemDOS_Open(Uint32 Params)
 	 */
 	FileHandles[Index].FileHandle =  fopen(szActualFileName, ModeStr);
 
-	snprintf(FileHandles[Index].szActualName, sizeof(FileHandles[Index].szActualName),
-		 "%s", szActualFileName);
-
 	if (FileHandles[Index].FileHandle != NULL)
 	{
 		/* Tag handle table entry as used and return handle */
 		FileHandles[Index].bUsed = true;
+		snprintf(FileHandles[Index].szActualName,
+			 sizeof(FileHandles[Index].szActualName),
+			 "%s", szActualFileName);
+
 		/* Return valid ST file handle from our range (BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
 		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n",
