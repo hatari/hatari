@@ -7,14 +7,17 @@
   GEMDOS intercept routines.
   These are used mainly for hard drive redirection of high level file routines.
 
-  Now case is handled by using glob. See the function
-  GemDOS_CreateHardDriveFileName for that. It also knows about symlinks.
-  A filename is recognized on its eight first characters, do not try to
-  push this too far, or you'll get weirdness ! (But I can even run programs
-  directly from a mounted cd in lower cases, so I guess it's working well !).
+  Host file names are handled case insensitively, so files on GEMDOS
+  drive emulation directories may be either in lower or upper case.
+
+  Too long file and directory names and names with invalid characters
+  are converted to TOS compatible 8+3 names, but matching them back to
+  host names is slower and may match several such filenames (of which
+  first one will be returned), so using them should be avoided.
 
   Bugs/things to fix:
-  * RS232
+  * Host filenames are in many places limited to 255 chars (same as
+    on TOS), FILENAME_MAX should be used if that's a problem.
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
@@ -29,10 +32,6 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
-
-#if HAVE_GLOB_H
-#include <glob.h>
-#endif
 
 #include "main.h"
 #include "cart.h"
@@ -56,16 +55,13 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include "maccess.h"
 
 
-/* GLOB_ONLYDIR is a GNU extension for the glob() function and not defined
- * on some systems. We should probably use something different for this
- * case, but at the moment it we simply define it as 0... */
-#ifndef GLOB_ONLYDIR
-# define GLOB_ONLYDIR 0
-#endif
-
 /* Maximum supported length of a GEMDOS path: */
 #define MAX_GEMDOS_PATH 256
 
+/* Invalid characters in paths & filenames are replaced by this
+ * (valid but very uncommon GEMDOS file name character)
+ */
+#define INVALID_CHAR '@'
 
 /* Have we re-directed GemDOS vector to our own routines yet? */
 bool bInitGemDOS;
@@ -133,36 +129,6 @@ static DTA *pDTA;           /* Our GEMDOS hard drive Disk Transfer Address struc
 static Uint16 CurrentDrive; /* Current drive (0=A,1=B,2=C etc...) */
 static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
 static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
-
-
-
-/* Poor Windows (and maybe other systems) do not have a glob() function... */
-#if !HAVE_GLOB_H
-
-typedef struct
-{
-    size_t gl_pathc;    /* Count of paths matched so far  */
-    char **gl_pathv;    /* List of matched pathnames.  */
-    size_t gl_offs;     /* Slots to reserve in `gl_pathv'.  */
-} glob_t;
-
-static int glob(const char *pattern, int flags,
-                int errfunc(const char *epath, int eerrno),
-                glob_t *pglob)
-{
-	/* Just a quick hack to keep Hatari happy... */
-	pglob->gl_pathv = malloc(1 * sizeof(void *));
-	pglob->gl_pathv[0] = NULL;
-	pglob->gl_pathc = 0;
-	return 0;
-}
-
-static void globfree(glob_t *pglob)
-{
-	free(pglob->gl_pathv);
-}
-
-#endif  /* HAVE_GLOB_H */
 
 
 #if defined(WIN32) && !defined(mkdir)
@@ -256,6 +222,76 @@ static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 }
 
 
+/**
+ * Convert potentially too long host filenames to 8.3 TOS filenames
+ * by truncating extension and part before it, replacing invalid
+ * GEMDOS file name characters with INVALID_CHAR + upcasing the result.
+ * 
+ * Matching them from the host file system should first try exact
+ * case-insensitive match, and then with a pattern that takes into
+ * account the conversion done in here.
+ */
+static void Convert2TOSName(char *source, char *dst)
+{
+	char *dot, *tmp, *src;
+	int len;
+
+	src = strdup(source); /* dup so that it can be modified */
+	len = strlen(src);
+
+	/* does filename have an extension? */
+	dot = strrchr(src, '.');
+	if (dot)
+	{
+		/* limit extension to 3 chars */
+		if (src + len - dot > 3)
+			dot[4] = '\0';
+
+		/* if there are extra dots, convert them */
+		for (tmp = src; tmp < dot; tmp++)
+			if (*tmp == '.')
+				*tmp = INVALID_CHAR;
+	}
+
+	/* does name now fit to 8 (+3) chars? */
+	if (len <= 8 || (dot && len <= 12))
+		strcpy(dst, src);
+	else
+	{
+		/* name (still) too long, cut part before extension */
+		strncpy(dst, src, 8);
+		if (dot)
+			strcpy(dst+8, dot);
+		else
+			dst[8] = '\0';
+	}
+	free(src);
+
+	/* replace other invalid chars than '.' in filename */
+	for (tmp = dst; *tmp; tmp++)
+	{
+		if (*tmp < 33 || *tmp > 126)
+			*tmp = INVALID_CHAR;
+		else
+		{
+			switch (*tmp)
+			{
+				case '*':
+				case '/':
+				case ':':
+				case '?':
+				case '\\':
+				case '{':
+				case '}':
+					*tmp = INVALID_CHAR;
+			}
+		}
+	}
+	Str_ToUpper(dst);
+	LOG_TRACE(TRACE_OS_GEMDOS, "host: %s -> GEMDOS: %s\n", source, dst);
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Convert from FindFirstFile/FindNextFile attribute to GemDOS format
@@ -288,6 +324,7 @@ static Uint8 GemDOS_ConvertAttribute(mode_t mode)
  */
 static int PopulateDTA(char *path, struct dirent *file)
 {
+	/* TODO: host file path can be longer than MAX_GEMDOS_PATH */
 	char tempstr[MAX_GEMDOS_PATH];
 	struct stat filestat;
 	DATETIME DateTime;
@@ -313,8 +350,9 @@ static int PopulateDTA(char *path, struct dirent *file)
 	if (!GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime))
 		return -3;
 
-	Str_ToUpper(file->d_name);    /* convert to atari-style uppercase */
-	strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
+	/* convert to atari-style uppercase */
+	Convert2TOSName(file->d_name, pDTA->dta_name);
+
 	do_put_mem_long(pDTA->dta_size, filestat.st_size);
 	do_put_mem_word(pDTA->dta_time, DateTime.timeword);
 	do_put_mem_word(pDTA->dta_date, DateTime.dateword);
@@ -879,209 +917,321 @@ static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Returns the length of the basename of the file passed in parameter
- *  (ie the file without extension)
+ * Check whether a file in given path matches given case-insensitive pattern.
+ * Return first matched name which caller needs to free, or NULL for no match.
  */
-static int baselen(char *s)
+static char* match_host_dir_entry(const char *path, const char *name, bool pattern)
 {
-	char *ext = strchr(s,'.');
-	if (ext)
-		return ext-s;
-	return strlen(s);
+	struct dirent *entry;
+	char *match = NULL;
+	DIR *dir;
+	
+	dir = opendir(path);
+	if (!dir)
+		return NULL;
+
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS match '%s'%s in '%s'", name, pattern?" (pattern)":"", path);
+
+	if (pattern)
+	{
+		while ((entry = readdir(dir)))
+		{
+			if (fsfirst_match(name, entry->d_name))
+			{
+				match = strdup(entry->d_name);
+				break;
+			}
+		}
+	}
+	else
+	{
+		while ((entry = readdir(dir)))
+		{
+			if (strcasecmp(name, entry->d_name) == 0)
+			{
+				match = strdup(entry->d_name);
+				break;
+			}
+		}
+	}
+	closedir(dir);
+	LOG_TRACE(TRACE_OS_GEMDOS, " -> '%s'\n", match);
+	return match;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
- * Use hard-drive directory, current ST directory and filename to create full path
+ * Check whether given TOS file/dir exists in given host path.
+ * If it does, add the matched host filename to the given path,
+ * otherwise add the given filename as is to it.  Guarantees
+ * that the resulting string doesn't exceed maxlen+1.
+ * 
+ * Return true if match found, false otherwise.
+ */
+static bool add_path_component(char *path, int maxlen, const char *origname, bool is_dir)
+{
+	char *tmp, *match, name[strlen(origname) + 3];
+	int dot, namelen, pathlen;
+	bool modified;
+
+	strcpy(name, origname);
+	namelen = strlen(name);
+	pathlen = strlen(path);
+
+	/* append separator */
+	if (pathlen >= maxlen)
+		return false;
+	path[pathlen++] = PATHSEP;
+	path[pathlen] = '\0';
+	
+	/* first try exact (case insensitive) match */
+	match = match_host_dir_entry(path, name, false);
+	if (match)
+	{
+		/* use strncat so that string is always nul terminated */
+		strncat(path+pathlen, match, maxlen-pathlen);
+		free(match);
+		return true;
+	}
+
+	/* Here comes a work-around for a bug in the file selector
+	 * of TOS 1.02: When a folder name has exactly 8 characters,
+	 * it appends a '.' at the end of the name...
+	 */
+	if (is_dir && namelen == 9 && name[8] == '.')
+	{
+		name[8] = '\0';
+		match = match_host_dir_entry(path, name, false);
+		if (match)
+		{
+			strncat(path+pathlen, match, maxlen-pathlen);
+			free(match);
+			return true;
+		}
+	}
+
+	/* Assume there were invalid characters or that the host file
+	 * was too long to fit into GEMDOS 8+3 filename limits.
+	 * Change name to a pattern that will match such host files
+	 * and try again.
+	 */
+
+	/* catch potentially invalid characters */
+	for (tmp = name; *tmp; tmp++)
+	{
+		if (*tmp == INVALID_CHAR)
+		{
+			*tmp = '?';
+			modified = true;
+		}
+	}
+
+	/* catch potentially too long extension */
+	for (dot = 0; name[dot] && name[dot] != '.'; dot++);
+	if (namelen - dot > 3)
+	{
+		/* "emulated.too" -> "emulated.too*" */
+		name[namelen++] = '*';
+		name[namelen] = '\0';
+		modified = true;
+	}
+	/* catch potentially too long part before extension */
+	if (namelen > 8 && name[8] == '.')
+	{
+		/* "emulated.too*" -> "emulated*.too*" */
+		memmove(name+9, name+8, namelen-7);
+		namelen++;
+		name[8] = '*';
+		modified = true;
+	}
+	else if (namelen == 8)
+	{
+		/* "emulated" -> "emulated*" */
+		name[8] = '*';
+		name[9] = '\0';
+		namelen++;
+		modified = true;
+	}
+
+	if (modified)
+	{
+		match = match_host_dir_entry(path, name, true);
+		if (match)
+		{
+			strncat(path+pathlen, match, maxlen-pathlen);
+			free(match);
+			return true;
+		}
+	}
+
+	/* not found, copy file/dirname as is */
+	strncat(path+pathlen, origname, maxlen-pathlen);
+	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Use hard-drive directory, current ST directory and filename
+ * to create correct path to host file system.  If given filename
+ * isn't found on host file system, just append GEMDOS filename
+ * to the path as is.
+ * 
+ * TODO: currently there are many callers which give this dest buffer of
+ * MAX_GEMDOS_PATH size i.e. don't take into account that host filenames
+ * can be upto FILENAME_MAX long.  Plain GEMDOS paths themselves may be
+ * MAX_GEMDOS_PATH long even before host dir is prepended to it!
+ * Way forward: allocate the host path here as FILENAME_MAX so that
+ * it's always long enough and let callers free it. Assert if alloc
+ * fails so that callers' don't need to.
  */
 void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
                                     char *pszDestName, int nDestNameLen)
 {
-	char *s,*start;
-
-	/* Check for valid string */
-	if (pszFileName[0] == '\0')
-		return;
+	const char *s, *filename = pszFileName;
+	int minlen;
 
 	/* Is it a valid hard drive? */
 	if (Drive < 2)
 		return;
+	
+	/* Check for valid string */
+	if (filename[0] == '\0')
+		return;
 
-	/* case full filename "C:\foo\bar" */
-	s = pszDestName;
-	start = NULL;
-
-	if (pszFileName[1] == ':')
+	/* make sure that more convenient strncat() can be used
+	 * on the destination string (it always null terminates
+	 * unlike strncpy()).
+	 */
+	*pszDestName = 0;
+	/* strcat writes n+1 chars, se decrease len */
+	nDestNameLen--;
+	
+	/* full filename with drive "C:\foo\bar" */
+	if (filename[1] == ':')
 	{
-		snprintf(pszDestName, nDestNameLen, "%s%s",
-		         emudrives[Drive-2]->hd_emulation_dir, File_RemoveFileNameDrive(pszFileName));
+		strncat(pszDestName, emudrives[Drive-2]->hd_emulation_dir, nDestNameLen);
+		filename += 2;
 	}
-	/* case referenced from root:  "\foo\bar" */
-	else if (pszFileName[0] == '\\')
+	/* filename referenced from root: "\foo\bar" */
+	else if (filename[0] == '\\')
 	{
-		snprintf(pszDestName, nDestNameLen, "%s%s",
-		         emudrives[Drive-2]->hd_emulation_dir, pszFileName);
+		strncat(pszDestName, emudrives[Drive-2]->hd_emulation_dir, nDestNameLen);
 	}
-	/* case referenced from current directory */
+	/* filename relative to current directory */
 	else
 	{
-		int offset = 0;
-		/* remove current dir prefixes */
-		while (pszFileName[offset] == '.' &&
-		       pszFileName[offset+1] == '\\')
-		{
-			offset += 2;
-			while (pszFileName[offset] == '\\')
-				offset++;
-		}
-		snprintf(pszDestName, nDestNameLen, "%s%s",
-		         emudrives[Drive-2]->fs_currpath, &(pszFileName[offset]));
-		start = pszDestName + strlen(emudrives[Drive-2]->fs_currpath)-1;
+		strncat(pszDestName, emudrives[Drive-2]->fs_currpath, nDestNameLen);
 	}
 
-#ifndef _WIN32
-	/* convert to front slashes. */
-	while((s = strchr(s+1,'\\')))
+	minlen = strlen(emudrives[Drive-2]->hd_emulation_dir);
+	/* this doesn't take into account possible long host filenames
+	 * that will make dest name longer than pszFileName 8.3 paths,
+	 * or GEMDOS paths using "../" which make it smaller.  Both
+	 * should(?) be rare in paths, so this info to user should be
+	 * good enough.
+	 */
+	if (nDestNameLen < minlen + (int)strlen(pszFileName) + 2)
 	{
-		if (!start)
+		Log_AlertDlg(LOG_ERROR, "Appending GEMDOS path '%s' to HDD emu host root dir doesn't fit to %d chars (current Hatari limit)!",
+			     pszFileName, nDestNameLen);
+		/* make the path invalid for host so that checks in callers fail */
+		strncat(pszDestName, pszFileName, nDestNameLen);
+		return;
+	}
+
+	/* "../" handling breaks if there are extra slashes */
+	File_CleanFileName(pszDestName);
+	
+	/* go through path directory components, advacing 'filename'
+	 * pointer while parsing them.
+	 */
+	for (;;)
+	{
+		/* skip extra path separators */
+		while (*filename == '\\')
+			filename++;
+
+		// fprintf(stderr, "filename: '%s', path: '%s'\n", filename, pszDestName);
+
+		/* skip "." references to current directory */
+		if (filename[0] == '.' &&
+		    (filename[1] == '\\' || !filename[1]))
 		{
-			start = s;
+			filename++;
 			continue;
 		}
+
+		/* ".." path component -> strip last dir from dest path */
+		if (filename[0] == '.' &&
+		    filename[1] == '.' &&
+		    (filename[2] == '\\' || !filename[2]))
 		{
-			glob_t globbuf;
-			char old1, old2;
-			int len, found, base_len;
-			unsigned int j;
-
-			*start++ = PATHSEP;
-			old1 = *start;
-			*start++ = '*';
-			old2 = *start;
-			*start = 0;
-			glob(pszDestName,GLOB_ONLYDIR,NULL,&globbuf);
-			*start-- = old2;
-			*start = old1;
-			*s = 0;
-			len = strlen(pszDestName);
-			base_len = baselen(start);
-			found = 0;
-			// Handle long file names
-			for (j=0; j<globbuf.gl_pathc; j++)
+			char *sep = strrchr(pszDestName, PATHSEP);
+			if (sep)
 			{
-				/* If we search for a file of at least 8 characters, then it might
-				   be a longer filename since the ST can access only the first 8
-				   characters. If not, then it's a precise match (with case). */
-				if (!(base_len < 8 ? strcasecmp(globbuf.gl_pathv[j],pszDestName) :
-						strncasecmp(globbuf.gl_pathv[j],pszDestName,len)))
-				{
-					/* we found a matching name... */
-					snprintf(pszDestName, nDestNameLen, "%s%c%s",
-					         globbuf.gl_pathv[j], PATHSEP, s+1);
-					j = globbuf.gl_pathc;
-					found = 1;
-				}
-				/* Here comes a work-around for a bug in the file selector
-				 * of TOS 1.02: When a folder name has exactly 8 characters,
-				 * it appends a '.' at the end of the name... */
-				else if (base_len == 8 && pszDestName[len-1] == '.' &&
-						 !strncasecmp(globbuf.gl_pathv[j],pszDestName,len-1))
-				{
-					/* we found a matching name... */
-					snprintf(pszDestName, nDestNameLen, "%s%c%s",
-					         globbuf.gl_pathv[j], PATHSEP, s+1);
-					s -= 1;
-					j = globbuf.gl_pathc;  /* break */
-					found = 1;
-				}
+				if (sep - pszDestName < minlen)
+					Log_Printf(LOG_WARN, "GEMDOS path '%s' tried to back out of GEMDOS drive!\n", pszFileName);
+				else
+					*sep = '\0';
 			}
-			globfree(&globbuf);
-			if (!found)
-			{
-				/* didn't find it. Let's try normal files (it might be a symlink) */
-				*start++ = '*';
-				*start = 0;
-				glob(pszDestName,0,NULL,&globbuf);
-				*start-- = old2;
-				*start = old1;
-				for (j=0; j<globbuf.gl_pathc; j++)
-				{
-					if (!strncasecmp(globbuf.gl_pathv[j],pszDestName,len))
-					{
-						/* we found a matching name... */
-						snprintf(pszDestName, nDestNameLen, "%s%c%s",
-						         globbuf.gl_pathv[j], PATHSEP, s+1);
-						j = globbuf.gl_pathc;
-						found = 1;
-					}
-				}
-				globfree(&globbuf);
-				if (!found)
-				{           /* really nothing ! */
-					*s = PATHSEP;
-					Log_Printf(LOG_WARN, "No GEMDOS path for %s\n",pszDestName);
-				}
-			}
+			filename += 2;
+			continue;
 		}
-		start = s;
-	}
-#endif
-	if (!start)
-		start = strrchr(pszDestName, PATHSEP); // path already converted ?
 
-	if (start)
+		/* handle directory component */
+		if ((s = strchr(filename, '\\')))
+		{
+			int dirlen = s - filename;
+			char dirname[dirlen+1];
+			/* copy dirname */
+			strncpy(dirname, filename, dirlen);
+			dirname[dirlen] = '\0';
+			/* and advance filename */
+			filename = s;
+
+			if (strchr(dirname, '?') || strchr(dirname, '*'))
+				Log_Printf(LOG_WARN, "GEMDOS dir name '%s' with wildcards in %s!\n", dirname, pszFileName);
+
+			/* convert and append dirname to host path */
+			if (!add_path_component(pszDestName, nDestNameLen, dirname, true))
+			{
+				Log_Printf(LOG_WARN, "No GEMDOS dir '%s' \n", pszDestName);
+				strncat(pszDestName, filename, nDestNameLen);
+				return;
+			}
+			continue;
+		}
+
+		/* path directory components done */
+		break;
+	}
+
+	if (*filename)
 	{
-		bool found = true;
-		*start++ = PATHSEP;     /* in case there was only 1 anti slash */
-
-		if (strcmp(start, "..") == 0 || strcmp(start, "..\\") == 0)
+		/* a complete file name after the path, not a wildcard? */
+		if (strchr(filename,'?') || strchr(filename,'*'))
 		{
-			found = File_DirExists(start);
-		}
-		else if (*start && !strchr(start,'?') && !strchr(start,'*'))
-		{
-			/* We have a complete name after the path, not a wildcard */
-			glob_t globbuf;
-			char old1,old2;
-			int len, base_len;
-			unsigned int j;
-
-			old1 = *start;
-			*start++ = '*';
-			old2 = *start;
-			*start = 0;
-			glob(pszDestName,0,NULL,&globbuf);
-			*start-- = old2;
-			*start = old1;
-			len = strlen(pszDestName);
-			base_len = baselen(start);
-			found = false;
-			for (j=0; j<globbuf.gl_pathc; j++)
+			int len = strlen(pszDestName);
+			if (len < nDestNameLen)
 			{
-				/* If we search for a file of at least 8 characters, then it might
-				   be a longer filename since the ST can access only the first 8
-				   characters. If not, then it's a precise match (with case). */
-				if (!(base_len < 8 ? strcasecmp(globbuf.gl_pathv[j],pszDestName) :
-						strncasecmp(globbuf.gl_pathv[j],pszDestName,len)))
-				{
-					/* we found a matching name... */
-					strncpy(pszDestName, globbuf.gl_pathv[j], nDestNameLen);
-					j = globbuf.gl_pathc;
-					found = true;
-				}
+				pszDestName[len++] = PATHSEP;
+				pszDestName[len] = '\0';
 			}
-			globfree(&globbuf);
+			/* use strncat so that string is always nul terminated */
+			strncat(pszDestName+len, filename, nDestNameLen-len);
 		}
-#if ENABLE_TRACING
-		if (!found)
+		else if (!add_path_component(pszDestName, nDestNameLen, filename, false))
 		{
-			/* It's often normal, the gem uses this to test for existence */
-			/* of desktop.inf or newdesk.inf for example. */
-			LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS didn't find filename %s\n", pszDestName );
+			/* It's often normal, that GEM uses this to test for
+			 * existence of desktop.inf or newdesk.inf for example.
+			 */
+			LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS didn't find filename %s\n", pszDestName);
+			return;
 		}
-#endif
 	}
-	LOG_TRACE(TRACE_OS_GEMDOS, "conv %s -> %s\n", pszFileName, pszDestName );
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS: %s -> host: %s\n", pszFileName, pszDestName);
 }
 
 
@@ -1478,6 +1628,7 @@ static bool GemDOS_FilePathMissing(char *szActualFileName)
  */
 static bool GemDOS_Create(Uint32 Params)
 {
+	/* TODO: host filenames might not fit into this */
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	int Drive,Index,Mode;
@@ -1581,6 +1732,7 @@ static bool GemDOS_Create(Uint32 Params)
  */
 static bool GemDOS_Open(Uint32 Params)
 {
+	/* TODO: host filenames might not fit into this */
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	const char *ModeStr;
@@ -1969,6 +2121,7 @@ static bool GemDOS_LSeek(Uint32 Params)
  */
 static bool GemDOS_Fattrib(Uint32 Params)
 {
+	/* TODO: host filenames might not fit into this */
 	char sActualFileName[MAX_GEMDOS_PATH];
 	char *psFileName;
 	int nDrive;
@@ -2240,6 +2393,7 @@ static bool GemDOS_SNext(void)
  */
 static bool GemDOS_SFirst(Uint32 Params)
 {
+	/* TODO: host filenames might not fit into this */
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	const char *dirmask;
@@ -2296,7 +2450,9 @@ static bool GemDOS_SFirst(Uint32 Params)
 		return true;
 	}
 
-	/* open directory */
+	/* open directory
+	 * TODO: host path may not fit into InternalDTA
+	 */
 	fsfirst_dirname(szActualFileName, InternalDTAs[DTAIndex].path);
 	fsdir = opendir(InternalDTAs[DTAIndex].path);
 
@@ -2364,7 +2520,9 @@ static bool GemDOS_SFirst(Uint32 Params)
 static bool GemDOS_Rename(Uint32 Params)
 {
 	char *pszNewFileName,*pszOldFileName;
-	char szNewActualFileName[MAX_GEMDOS_PATH],szOldActualFileName[MAX_GEMDOS_PATH];
+	/* TODO: host filenames might not fit into this */
+	char szNewActualFileName[MAX_GEMDOS_PATH];
+	char szOldActualFileName[MAX_GEMDOS_PATH];
 	int NewDrive, OldDrive;
 
 	/* Read details from stack, skip first (dummy) arg */

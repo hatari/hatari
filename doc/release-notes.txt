@@ -13,6 +13,8 @@ Emulation:
   - WIN_FORMAT command (allows HD Driver to format IDE drives)
 - GEMDOS HDD emulation:
   - Minor fixes to Fseek(), Fopen(), Fdatime() (e.g. Pure debugger works)
+  - On TOS v4 Fread() size arg is unsigned, on earlier TOS its signed
+    (bad code can use -1L to read whole file instead getting fail on TOS4)
   - Prevent DTA and read/write functions accessing invalid memory areas
   - Programs can now change read-only files to be writable
 - Microphone (jack) emulation in Falcon mode (requires portaudio library)
@@ -26,8 +28,12 @@ Emulation:
 Emulator:
 - Host mouse is centered to Hatari window on Falcon resolution changes
   (helps in synchronizing host and emulated mouse positions)
-- Option for preventing GEMDOS HDD emulation file modifications
-  ("--mount-changes no")
+- GEMDOS drive emulation:
+  - support long host directory names and much improved long filename support
+  - convert host filename chars invalid in TOS to valid ones ('@')
+  - use TOS filename matching instead of glob() (can match names with [])
+  - Option for preventing emulated drive directory modifications
+    ("--mount-changes no")
 - AVI file recording:
   - video can be stored as BMP or as PNG images
   - audio is stored as 16 bits stereo PCM.
