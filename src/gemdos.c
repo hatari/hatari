@@ -329,12 +329,11 @@ static int PopulateDTA(char *path, struct dirent *file)
 	char tempstr[MAX_GEMDOS_PATH];
 	struct stat filestat;
 	DATETIME DateTime;
-	int n;
-	int nFileAttr;
+	int nFileAttr, nAttrMask;
 
 	snprintf(tempstr, sizeof(tempstr), "%s%c%s", path, PATHSEP, file->d_name);
-	n = stat(tempstr, &filestat);
-	if (n != 0)
+
+	if (stat(tempstr, &filestat) != 0)
 	{
 		perror(tempstr);
 		return -1;   /* return on error */
@@ -345,7 +344,8 @@ static int PopulateDTA(char *path, struct dirent *file)
 
 	/* Check file attributes (check is done according to the Profibuch) */
 	nFileAttr = GemDOS_ConvertAttribute(filestat.st_mode);
-	if (nFileAttr != 0 && !((nAttrSFirst|0x21) & nFileAttr))
+	nAttrMask = nAttrSFirst|GEMDOS_FILE_ATTRIB_WRITECLOSE|GEMDOS_FILE_ATTRIB_READONLY;
+	if (nFileAttr != 0 && !(nAttrMask & nFileAttr))
 		return 1;
 
 	if (!GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime))
@@ -2389,9 +2389,10 @@ static bool GemDOS_SNext(void)
 	/* Find index into our list of structures */
 	Index = do_get_mem_word(pDTA->index) & (MAX_DTAS_FILES-1);
 
-	if (nAttrSFirst == 8)
+	if (nAttrSFirst == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
 	{
-		Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
+		/* Volume label was given already in Sfirst() */
+		Regs[REG_D0] = GEMDOS_ENMFIL;
 		return true;
 	}
 
