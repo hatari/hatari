@@ -110,6 +110,7 @@ typedef struct
 {
 	bool bUsed;
 	FILE *FileHandle;
+	/* TODO: host path might not fit into this */
 	char szActualName[MAX_GEMDOS_PATH];        /* used by F_DATIME (0x57) */
 } FILE_HANDLE;
 
@@ -2281,11 +2282,12 @@ static int GemDOS_GetDir(Uint32 Params)
 			return false;
 		}
 
-		strcpy(path,&emudrives[Drive-2]->fs_currpath[strlen(emudrives[Drive-2]->hd_emulation_dir)]);
+		*path = '\0';
+		strncat(path,&emudrives[Drive-2]->fs_currpath[strlen(emudrives[Drive-2]->hd_emulation_dir)], sizeof(path)-1);
 
 		// convert it to ST path (DOS)
-		len = strlen(path)-1;
-		path[len] = 0;
+		File_CleanFileName(path);
+		len = strlen(path);
 		for (i = 0; i <= len; i++)
 		{
 			c = path[i];
