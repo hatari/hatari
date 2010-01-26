@@ -1071,6 +1071,34 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 }
 
 
+/**
+ * Join remaining path without matching. This helper is used after host
+ * file name matching fails, to append the failing part of the TOS path
+ * to the host path, so that it won't be a valid host path.
+ *
+ * Specifically, the path separators need to be converted, otherwise things
+ * like Fcreate() could create files that have TOS directory names as part
+ * of file names on Unix (as \ is valid filename char on Unix).  Fcreate()
+ * needs to create them only when just the file name isn't found, but all
+ * the directory components have.
+ */
+static void add_remaining_path(const char *src, char *dstpath, int dstlen)
+{
+	char *dst;
+	int i;
+
+	dstlen--;
+	i = strlen(dstpath);
+	for (dst = dstpath + i; *src && i < dstlen; dst++, src++, i++)
+	{
+		if (*src == '\\')
+			*dst = PATHSEP;
+		else
+			*dst = *src;
+	}
+	*dst = '\0';
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Use hard-drive directory, current ST directory and filename
@@ -1095,7 +1123,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 	/* Is it a valid hard drive? */
 	if (Drive < 2)
 		return;
-	
+
 	/* Check for valid string */
 	if (filename[0] == '\0')
 		return;
@@ -1136,8 +1164,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 	{
 		Log_AlertDlg(LOG_ERROR, "Appending GEMDOS path '%s' to HDD emu host root dir doesn't fit to %d chars (current Hatari limit)!",
 			     pszFileName, nDestNameLen);
-		/* make the path invalid for host so that checks in callers fail */
-		strncat(pszDestName, pszFileName, nDestNameLen);
+		add_remaining_path(filename, pszDestName, nDestNameLen);
 		return;
 	}
 
@@ -1197,8 +1224,8 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 			/* convert and append dirname to host path */
 			if (!add_path_component(pszDestName, nDestNameLen, dirname, true))
 			{
-				Log_Printf(LOG_WARN, "No GEMDOS dir '%s' \n", pszDestName);
-				strncat(pszDestName, filename, nDestNameLen);
+				Log_Printf(LOG_WARN, "No GEMDOS dir '%s'\n", pszDestName);
+				add_remaining_path(filename, pszDestName, nDestNameLen);
 				return;
 			}
 			continue;
@@ -1210,7 +1237,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 
 	if (*filename)
 	{
-		/* a complete file name after the path, not a wildcard? */
+		/* a wildcard instead of a complete file name? */
 		if (strchr(filename,'?') || strchr(filename,'*'))
 		{
 			int len = strlen(pszDestName);
