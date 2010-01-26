@@ -2203,8 +2203,8 @@ length limit.
 </p>
 <p>
 If you provide <span class="commandline">--harddisk</span> option
-a directory which contains only single letter subdirectories, each of
-these subdirectories will be treated as separate partition, otherwise
+a directory containing only single letter subdirectories, each of
+these subdirectories will be treated as a separate partition, otherwise
 the given directory itself will be assigned to drive "C:". In the
 multiple partition case, the letters used as the subdirectory names
 will determine to which drives/partitions they're assigned.
@@ -2216,22 +2216,22 @@ limitations which are due to the way the GEMDOS drive emulation is
 implemented:
 </p>
 <ul>
-<li>It is not possible to use a cartridge image together with GEMDOS
-drive emulation at the same time (Hatari has it's own cartridge code
+<li>It is not possible to use a cartridge image at the same time
+with the GEMDOS drive emulation (Hatari has it's own cartridge code
 that is used for GEMDOS emulation).</li>
-<li>MiNT installs its own GEMDOS handler, so it doesn't work with
-the GEMDOS drive emulation, it needs to be booted from a real hard
+<li>As MiNT installs its own GEMDOS handler, it doesn't work with
+the GEMDOS drive emulation.  MiNT needs to be booted from a real hard
 disk image.</li>
-<li>GEMDOS drive emulation conflicts with ACSI and IDE harddisk images.
-When you want to use GEMDOS HD emulation and ACSI/IDE disk images together,
+<li>GEMDOS drive emulation conflicts with the ACSI and IDE harddisk images.
+If you want to use GEMDOS HD emulation and ACSI/IDE disk images together,
 use a multiple partition GEMDOS emulation setup and select the partition
 subdirectories (letters) so that they don't conflict with the ACSI/IDE
 drive partitions (letters).  With HD Driver you have also another option,
 see <a href="#Using HD Driver with GEMDOS partitions">Using HD Driver
 with GEMDOS partitions</a>.</li>
 <li><em>The GEMDOS drive emulation does not work (very well) with TOS
-1.00 and 1.02</em>.  So you should use at least TOS 1.04 if you want
-to use the GEMDOS drive emulation.</li>
+1.00 and 1.02</em>.  Use at least TOS 1.04 if you want the GEMDOS drive
+emulation to work properly.</li>
 </ul>
 <p>
 So, if your programs complain that they could not find/read/write
@@ -2262,25 +2262,25 @@ Formatting and partitioning works currently only with AHDI 5, but you
 can install the AHDI 6 driver to the hard disk after it's formatted.
 Restart the emulated system, run AHDI.PRG from the floppy disk to access
 the hard disk image from the emulated Atari and then run HINSTALL.PRG.
-With HINSTALL.PRG you can install the hard disk driver to the fresh
-HD image, so that you can directly boot from the hard disk image in
-the future.
+After installing the hard disk driver to the fresh HD image with
+HINSTALL.PRG, you can boot directly from the hard disk image.
 </p>
 
 <a name="IDE hard disk emulation"></a><h3>IDE hard disk emulation</h3>
 <p>
 <p>
-As IDE disk format (little endian) differs from ACSI (big endian), you
-need separate disk images for them.  Hatari doesn't currently support
-formatting IDE disks with AHDI, but you can do it with <em>Cecile</em>.
+As the IDE disk format (little endian) differs from the ACSI disk format
+(big endian), you need separate disk images for them.  Hatari doesn't
+currently support formatting IDE disks with AHDI, but you can do it with
+<em>Cecile</em>.
 </p>
 <p>
 First create an empty image file with the size of your choice with:
 <span class="commandline">dd if=/dev/zero of=hd.img bs=1k count=xxx</span>.
 Then get the Cecile hard disk driver from
 <a href="http://centek.free.fr/atari/softs/s_cecile.htm">http://centek.free.fr/atari/softs/s_cecile.htm</a>
-and put it on a floppy disk image (named "cecile.st") e.g. with:
-<span class="commandline">zip2st.sh cecile.zip</span>.
+and put it on a floppy disk image (e.g. to one named "cecile.st" using:
+<span class="commandline">zip2st.sh cecile.zip</span>).
 </p>
 <p>
 Run Hatari with
@@ -2288,18 +2288,18 @@ Run Hatari with
 --ide-master hd.img cecile.st</span>, switch to larger color resolution
 and warm up your French language skills. Then start the Cecile hard
 disk driver CECILE.PRG and run CC_TOOLS.APP to partition your hard
-disk image: click to "Partition", select "Hatari IDE disk" and set
+disk image. Click the "Partition" button, select "Hatari IDE disk" and set
 suitable partition size with the arrows (below type field). Then click
 "Valider".
 </p>
 <p>
 If you only want to use your HD image in Falcon mode, you can install
 the Cecile hard disk driver to the image from the Cecile CC_TOOLS.APP:
-select "Installer" from main menu and save the Cecile driver to the
+Click the "Installer" button and save the Cecile driver to the
 1st partition on "Hatari IDE disk". If you want to also use your HD
 image in ST/STE mode, you need to get and install AHDI 6 driver on it
-instead (see "ASCI hard disk emulation" section for AHDI usage
-instructions).
+instead (see <a href="ACSI hard disk emulation">ASCI hard disk
+emulation</a> section).
 </p>
 <p>
 Then you can boot from your hard disk image by simply specifying it
@@ -2318,8 +2318,9 @@ Hatari emulation) or accessing the images directly on the host
 <p>If it's fine for the IDE/ACSI partitions to be first, you can use
 hard disk images with AHDI or Cecile driver and a multipartition
 GEMDOS setup as described in above sections. If you want to boot from
-GEMDOS partition(s) i.e. them to be before hard disk image partitions,
-you need to use HD Driver. </p>
+a GEMDOS partition i.e. such to be before hard disk image partitions,
+and still to be able to access all the IDE/ACSI partitions, you need to
+use HD Driver.</p>
 
 <a name="Using HD Driver with GEMDOS partitions"></a><h3>Using HD Driver
 with GEMDOS partitions</h3>
@@ -2327,18 +2328,18 @@ with GEMDOS partitions</h3>
 <p>Uwe Seimet's <a href="http://www.seimet.de/atari/en/hddriver.html">HD
 Driver</a> works fine with both the Hatari GEMDOS partitions and normal
 hard disk images.  However, it doesn't work with EmuTOS so you need
-real TOS (at least version v1.04).  When using TOS v4, you additionally
-need to set the CPU level to 040 to get HD Driver to work with Hatari.
+real TOS (at least version v1.04).
 </p>
 
-<p>First copy the HDDRIVER.PRG binary into your GEMDOS directory AUTO folder.
-Then start the HDDRUTIL.APP configuration utility, locate HDDRIVER.PRG, open
-the <a href="http://www.seimet.de/atari/en/hddriverscreenshots.html">"Devices
+<p>First copy the HDDRIVER.PRG binary into your GEMDOS drive emulation
+directory AUTO folder. Then start the HDDRUTIL.APP configuration utility,
+locate HDDRIVER.PRG, open the
+<a href="http://www.seimet.de/atari/en/hddriverscreenshots.html">"Devices
 and Partitions" dialog</a> and select the "Preserve Existing Partitions"
 option.  Then you can just start Hatari with your hard disk image and
 this GEMDOS directory, for example like this:
-"<span class="commandline">hatari --ide-master hd-image.st --harddisk
-gemdos-hd/</span>".</p>
+"<span class="commandline">hatari --harddisk gemdos-hd/ --ide-master
+ide-hd.image</span>".</p>
 
 <p>If you're using the <em>demo</em> version of HD Driver, you can
 write files only to the C: partition, i.e. in above case only copy
@@ -2353,7 +2354,7 @@ starting from "D" like in "<span class="commandline">mkdir gemdos-hd;
 mkdir gemdos-hd/D</span>". Then give Hatari (as the last parameter)
 a boot floppy image containing the demo version of HDDRIVER.PRG in
 its AUTO folder, like this: "<span class="commandline">hatari
---ide-master hd-image.st --harddisk gemdos-hd/ hd-driver-floppy.st</span>".
+--ide-master ide-hd.image --harddisk gemdos-hd/ hd-driver-floppy.st</span>".
 </p>
 
 
@@ -2399,10 +2400,11 @@ drive c: file="/home/user/hatari/hd.img" partition=1
 Note that Mtools is instructed to use FAT compatibility mode because
 EmuTOS cannot deal properly with VFAT file information.  If you don't
 want this setting for all your Mtools drives, you can set it also via
-the environment like this:
+the environment like this ("::" refers to the drive image given with
+the "-i" option):
 </p>
 <pre>
-MTOOLS_NO_VFAT=1 mcopy foobar.txt c:
+MTOOLS_NO_VFAT=1 mcopy -spmv -i hd.img files/* ::
 </pre>
 
 <h4>Using a loopback device</h4>
@@ -2566,8 +2568,8 @@ b (r0).x = 1 &amp;&amp; (r0).y = 2
 </pre>			      
 
 <p>
-The debugger supports also setting breakpoints on values of some
-internal Hatari variables (listed by &quot;b help&quot;). For example
+The debugger supports also setting conditional breakpoints on values of
+some internal Hatari variables (listed by &quot;b help&quot;). For example
 if you want to stop at a specific cycle within a frame (that is, PC
 relative to the current VBL/HBL in cycles), set breakpoints to specific
 &quot;HBL&quot; and &quot;LineCycles&quot; variable values.  The
