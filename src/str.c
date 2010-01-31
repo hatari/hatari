@@ -105,6 +105,27 @@ char *Str_Trunc(char *pString)
 
 
 /**
+ * Check whether first string ends to given second string.
+ * Return pointer to the place where second string starts in first, or NULL.
+ */
+char *Str_EndsWith(char *str1, const char *str2)
+{
+	int len1, len2;
+	
+	len1 = strlen(str1);
+	len2 = strlen(str2);
+	if (len1 < len2)
+		return NULL;
+	
+	str1 = str1 + len1 - len2;
+	if (strcmp(str1, str2) == 0)
+		return str1;
+
+	return NULL;
+}
+
+
+/**
  * check if string is valid hex number.
  */
 bool Str_IsHex(const char *str)
