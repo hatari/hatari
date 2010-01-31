@@ -70,7 +70,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 
 
 
-#define DACBUFFER_SIZE  (MIXBUFFER_SIZE)
+#define DACBUFFER_SIZE  2048
 
 /* Crossbar internal functions */
 static double Crossbar_DetectSampleRate(Uint16 clock);
@@ -296,6 +296,19 @@ void Crossbar_Reset(bool bCold)
 	if (crossbar.microphone_ADC_is_started == 0) { 
 		crossbar.microphone_ADC_is_started = Microphone_Start((int)nAudioFrequency);
 	}
+
+	/* Initialize Crossbar values after reboot */
+	IoMem_WriteByte(0xff8900,0x05);
+	IoMem_WriteByte(0xff8903,0xff);
+	IoMem_WriteByte(0xff8905,0xff);
+	IoMem_WriteByte(0xff8907,0xfe);
+	IoMem_WriteByte(0xff8909,0xff);
+	IoMem_WriteByte(0xff890b,0xff);
+	IoMem_WriteByte(0xff890d,0xfe);
+	IoMem_WriteByte(0xff890f,0xff);
+	IoMem_WriteByte(0xff8911,0xff);
+	IoMem_WriteByte(0xff8913,0xfe);
+	IoMem_WriteWord(0xff893c,0x2401);
 }
 
 /**
@@ -608,10 +621,6 @@ void Crossbar_FrameCountLow_WriteByte(void)
 	/* Compute frameCounter current address */
 	addr = (IoMem_ReadByte(0xff8909) << 16) + (IoMem_ReadByte(0xff890b) << 8) + IoMem_ReadByte(0xff890d);
 
-	/* TODO: remove this return. Temporary bad hack to let Eko system demo run !!! */
-	/* I don't understand why they write to this address and what this is supposed to do ... */
-	return;
-	
 	if (crossbar.dmaSelected == 0) {
 		/* DMA Play selected */
 		dmaPlay.frameCounter = addr - crossbar.dmaPlay_CurrentFrameStart;
