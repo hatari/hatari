@@ -1,7 +1,7 @@
 /*
   Hatari - breakcond.c
 
-  Copyright (c) 2009 by Eero Tamminen
+  Copyright (c) 2009-2010 by Eero Tamminen
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
@@ -21,6 +21,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "dsp.h"
 #include "stMemory.h"
+#include "str.h"
 #include "video.h"	/* for Hatari video variable addresses */
 
 #include "debug_priv.h"
@@ -79,12 +80,16 @@ typedef struct {
 	bc_value_t lvalue;
 	bc_value_t rvalue;
 	char comparison;
+	bool track;	/* track value changes */
 } bc_condition_t;
 
 typedef struct {
 	char *expression;
 	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
 	int ccount;
+	int hits;	/* how many times breakpoint hit */
+	bool once;      /* remove after hit */
+	bool trace;	/* trace mode, don't break */
 } bc_breakpoint_t;
 
 static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
@@ -281,17 +286,57 @@ static bool BreakCond_MatchConditions(const bc_condition_t *condition, int count
 
 
 /**
+ * Show values for the tracked breakpoint conditions
+ */
+static void BreakCond_ShowTracked(bc_condition_t *condition, int count)
+{
+	Uint32 addr, value;
+	char sep;
+	int i;
+	
+	sep = ' ';
+	for (i = 0; i < count; condition++, i++) {
+		if (!condition->track) {
+			continue;
+		}
+
+		/* get the new value in address */
+		value = BreakCond_GetValue(&(condition->lvalue));
+		/* next monitor changes to this new value */
+		condition->rvalue.value.number = value;
+		
+		if (condition->lvalue.is_indirect &&
+		    condition->lvalue.valuetype == VALUE_TYPE_NUMBER) {
+			/* simple memory address */
+			addr = condition->lvalue.value.number;
+			fprintf(stderr, "%c $%x = $%x", sep, addr, value);
+		} else {
+			/* register tms. */
+			fprintf(stderr, "%c $%x", sep, value);
+		}
+		sep = ',';
+	}
+	fprintf(stderr, "\n");
+}
+
+
+/**
  * Return which of the given condition breakpoints match
  * or zero if none matched
  */
-static int BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
+static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count)
 {
 	int i;
 	
 	for (i = 0; i < count; bp++, i++) {
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
-			fprintf(stderr, "%d. breakpoint '%s' conditions matched.\n",
-				i+1, bp->expression);
+			BreakCond_ShowTracked(bp->conditions, bp->ccount);
+			fprintf(stderr, "%d. breakpoint conditions matched %d times.\n",
+				i+1, ++(bp->hits));
+			if (bp->trace) {
+				return 0;
+			}
+			fprintf(stderr, "  %s\n", bp->expression);
 			/* indexes for BreakCond_Remove() start from 1 */
 			return i + 1;
 		}
@@ -302,19 +347,29 @@ static int BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
 /* ------------- breakpoint condition checking, public API ------------- */
 
 /**
- * Return true if any of the CPU breakpoint/conditions match
+ * Return matched CPU breakpoint index or zero for an error.
  */
 int BreakCond_MatchCpu(void)
 {
-	return BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount);
+	int i;
+	i = BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount);
+	if (i && BreakPointsCpu[i-1].once) {
+		BreakCond_Remove(i, false);
+	}
+	return i;
 }
 
 /**
- * Return true if any of the DSP breakpoint/conditions match
+ * Return matched DSP breakpoint index or zero for an error.
  */
 int BreakCond_MatchDsp(void)
 {
-	return BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount);
+	int i;
+	i = BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount);
+	if (i && BreakPointsDsp[i-1].once) {
+		BreakCond_Remove(i, true);
+	}
+	return i;
 }
 
 /**
@@ -1056,10 +1111,44 @@ static int* BreakCond_GetListInfo(bc_breakpoint_t **bp,
 
 
 /**
+ * Check whether any of the breakpoint conditions is such
+ * that it's intended for tracking given value changes: 
+ *    inequality check for values that are the same
+ * If yes, mark & change it for tracing.
+ */
+static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
+{
+	bc_condition_t *condition;
+	bool track = false;
+	Uint32 value;
+	int i;
+
+	condition = bp->conditions;
+	for (i = 0; i < bp->ccount; condition++, i++) {
+		
+		if (condition->comparison == '!' &&
+		    memcmp(&(condition->lvalue), &(condition->rvalue), sizeof(bc_value_t)) == 0) {
+			/* set current value to right side */
+			value = BreakCond_GetValue(&(condition->rvalue));
+			condition->rvalue.value.number = value;
+			condition->rvalue.valuetype = VALUE_TYPE_NUMBER;
+			condition->rvalue.is_indirect = false;
+			/* and note that this is traced */
+			condition->track = true;
+			track = true;
+		}
+	}
+	if (track) {
+		fprintf(stderr, "-> Track condition(s), show value(s) when matched.\n");
+	}
+}
+
+
+/**
  * Parse given breakpoint expression and store it.
  * Return true for success and false for failure.
  */
-static bool BreakCond_Parse(const char *expression, bool bForDsp)
+static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bool once)
 {
 	parser_state_t pstate;
 	bc_breakpoint_t *bp;
@@ -1074,7 +1163,8 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp)
 		return false;
 	}
 	bp += *bcount;
-	
+	memset(bp, 0, sizeof(bc_breakpoint_t));
+
 	normalized = BreakCond_TokenizeExpression(expression, &pstate);
 	if (normalized) {
 		bp->expression = normalized;
@@ -1091,6 +1181,15 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp)
 		(*bcount)++;
 		fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added.\n",
 			name, *bcount, ccount);
+		BreakCond_CheckTracking(bp);
+		if (trace) {
+			fprintf(stderr, "-> Trace, show hits, but don't break.\n");
+			bp->trace = trace;
+		}
+		if (once) {
+			fprintf(stderr, "-> Once, delete after hit.\n");
+			bp->once = once;
+		}
 	} else {
 		if (normalized) {
 			int offset, i = 0;
@@ -1137,7 +1236,8 @@ void BreakCond_List(bool bForDsp)
 
 	fprintf(stderr, "%d conditional %s breakpoints:\n", bcount, name);
 	for (i = 1; i <= bcount; bp++, i++) {
-		fprintf(stderr, "%3d: %s\n", i, bp->expression);
+		fprintf(stderr, "%3d: %s%s%s\n", i, bp->expression,
+			bp->trace?", traced":"", bp->once?", once":"");
 	}
 }
 
@@ -1208,18 +1308,24 @@ static void BreakCond_Help(void)
 	Uint32 value;
 	int i;
 	fputs(
-"  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]\n"
-"  expression = <value>[.mode] [& <number>] <condition> <value>[.mode]\n"
+"  breakpoint = <condition> [ && <condition> ... ] [option]\n"
+"  condition = <value>[.mode] [& <number>] <comparison> <value>[.mode]\n"
 "\n"
 "  where:\n"
 "  	value = [(] <register-name | hatari-variable | number> [)]\n"
 "  	number = [#|$|%]<digits>\n"
-"  	condition = '<' | '>' | '=' | '!'\n"
+"  	comparison = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
+"  	option = trace | once\n"
 "\n"
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
+"\n"
+"  If the value expressions on both sides of the '!' inequality comparison\n"
+"  are exactly the same, then the breakpoint tracks changes to the given\n"
+"  (address/register) value.  'trace' option to continue without breaking\n"
+"  can be useful with this. 'once' option removes breakpoint after hit.\n"
 "\n"
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
@@ -1250,6 +1356,7 @@ static void BreakCond_Help(void)
 "\n"
 "  Examples:\n"
 "  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0 = %1100\n"
+"       ($ffff9202).w ! ($ffff9202).w trace\n"
 "  	(r0).x = 1 && (r0).y = 2\n", stderr);
 }
 
@@ -1259,18 +1366,19 @@ static void BreakCond_Help(void)
 /**
  * Parse given DebugUI command for Dsp and act accordingly
  */
-bool BreakCond_Command(const char *expression, bool bForDsp)
+bool BreakCond_Command(char *expression, bool bForDsp)
 {
 	unsigned int position;
+	bool trace, once;
 	const char *end;
+	char *cut;
 	
 	if (!expression) {
 		BreakCond_List(bForDsp);
 		return true;
 	}
-	while (*expression == ' ') {
-		expression++;
-	}
+	expression = Str_Trim(expression);
+	/* subcommands */
 	if (strncmp(expression, "help", 4) == 0) {
 		BreakCond_Help();
 		return true;
@@ -1279,6 +1387,19 @@ bool BreakCond_Command(const char *expression, bool bForDsp)
 		BreakCond_RemoveAll(bForDsp);
 		return true;
 	}
+	/* postfix options */
+	once = false;
+	trace = false;
+	if ((cut = Str_EndsWith(expression, "trace"))) {
+		*cut = '\0';
+		trace = true;
+	} else {
+		if ((cut = Str_EndsWith(expression, "once"))) {
+			*cut = '\0';
+			once = true;
+		}
+	}
+	/* index (for removal) */
 	end = expression;
 	while (isdigit(*end)) {
 		end++;
@@ -1287,5 +1408,6 @@ bool BreakCond_Command(const char *expression, bool bForDsp)
 	    sscanf(expression, "%u", &position) == 1) {
 		return BreakCond_Remove(position, bForDsp);
 	}
-	return BreakCond_Parse(expression, bForDsp);
+	/* add breakpoint */
+	return BreakCond_Parse(expression, bForDsp, trace, once);
 }

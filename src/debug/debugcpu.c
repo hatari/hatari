@@ -505,7 +505,7 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
  */
 static int DebugCpu_BreakCond(int nArgc, char *psArgs[])
 {
-	BreakCond_Command((const char*)psArgs[1], false);
+	BreakCond_Command(psArgs[1], false);
 	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 	return DEBUGGER_CMDDONE;
 }
@@ -729,12 +729,14 @@ static const dbgcommand_t cpucommands[] =
 	  "\tIf count is one, breakpoint is removed after hit.",
 	  false	},
 	{ DebugCpu_BreakCond, "breakpoint", "b",
-	  "set/remove/list register/RAM condition breakpoints",
-	  "[help | all | <breakpoint index> | <breakpoint condition>]\n"
+	  "set/remove/list CPU register/RAM condition breakpoints",
+	  "[ help | all | <index> | <condition> [trace|once] ]\n"
 	  "\tSet breakpoint with given condition, remove breakpoint with\n"
 	  "\tgiven index or list all breakpoints when no args are given.\n"
-	  "\t'help' outputs breakpoint condition syntax help, 'all' removes\n"
-	  "\tall conditional breakpoints",
+	  "\tAdding 'trace' to end of condition causes breakpoint match\n"
+	  "\tjust to be printed, not break.  Adding 'once' will delete\n"
+	  "\tthe breakpoint after it's hit.  'help' outputs breakpoint\n"
+	  "\tcondition syntax help, 'all' removes all conditional breakpoints.",
 	  true },
 	{ DebugCpu_DisAsm, "disasm", "d",
 	  "disassemble from PC, or given address",
