@@ -1139,7 +1139,7 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 		}
 	}
 	if (track) {
-		fprintf(stderr, "-> Track condition(s), show value(s) when matched.\n");
+		fprintf(stderr, "-> Track value changes, show value(s) when matched.\n");
 	}
 }
 
