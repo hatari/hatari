@@ -438,8 +438,8 @@ void File_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
 	if (ptr1)
 	{
 		strcpy(pName, ptr1+1);
-		memmove(pDir, pSrcFileName, ptr1-pSrcFileName+1);
-		pDir[ptr1-pSrcFileName+1] = 0;
+		memmove(pDir, pSrcFileName, ptr1-pSrcFileName);
+		pDir[ptr1-pSrcFileName] = 0;
 	}
 	else
 	{
