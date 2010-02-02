@@ -16,6 +16,7 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c : " __DATE__ " " __T
 #include "scandir.h"
 #include "sdlgui.h"
 #include "file.h"
+#include "paths.h"
 #include "zip.h"
 
 
@@ -335,7 +336,8 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	struct dirent **files = NULL;
 	char *pStringMem;
 	char *retpath;
-	char *home, *path, *fname;          /* The actual file and path names */
+	const char *home;
+	char *path, *fname;                 /* The actual file and path names */
 	bool reloaddir = true;              /* Do we have to reload the directory file list? */
 	int retbut;
 	int oldcursorstate;
@@ -599,8 +601,8 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 				break;
 
 			case SGFSDLG_HOMEDIR:               /* Change to home directory */
-				home = getenv("HOME");
-				if (home == NULL)
+				home = Paths_GetUserHome();
+				if (home == NULL || !*home)
 					break;
 				if (browsingzip)
 				{
