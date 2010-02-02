@@ -161,6 +161,8 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 			bRet = ST_WriteDisk(pszFileName, pDiskFile, nDiskSize);
 		else if (DIM_FileNameIsDIM(pszFileName, true))
 			bRet = DIM_WriteDisk(pszFileName, pDiskFile, nDiskSize);
+		else
+			Log_AlertDlg(LOG_ERROR, "Unknown floppy image filename extension!");
 
 		/* Did create successfully? */
 		if (bRet)
@@ -171,7 +173,7 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 		else
 		{
 			/* Warn user we were unable to create image */
-			Log_AlertDlg(LOG_ERROR, "Unable to create disk image!");
+			Log_AlertDlg(LOG_ERROR, "Unable to create disk image '%s'!", pszFileName);
 		}
 	}
 
