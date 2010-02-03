@@ -730,13 +730,7 @@ static const dbgcommand_t cpucommands[] =
 	  false	},
 	{ DebugCpu_BreakCond, "breakpoint", "b",
 	  "set/remove/list CPU register/RAM condition breakpoints",
-	  "[ help | all | <index> | <condition> [trace|once] ]\n"
-	  "\tSet breakpoint with given condition, remove breakpoint with\n"
-	  "\tgiven index or list all breakpoints when no args are given.\n"
-	  "\tAdding 'trace' to end of condition causes breakpoint match\n"
-	  "\tjust to be printed, not break.  Adding 'once' will delete\n"
-	  "\tthe breakpoint after it's hit.  'help' outputs breakpoint\n"
-	  "\tcondition syntax help, 'all' removes all conditional breakpoints.",
+	  BreakCond_Description,
 	  true },
 	{ DebugCpu_DisAsm, "disasm", "d",
 	  "disassemble from PC, or given address",

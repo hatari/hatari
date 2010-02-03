@@ -8,6 +8,8 @@
 #ifndef HATARI_BREAKCOND_H
 #define HATARI_BREAKCOND_H
 
+extern const char BreakCond_Description[];
+
 /* for debugui.c */
 extern void BreakCond_MemorySnapShot_Capture(bool bSave);
 extern int BreakCond_MatchCpu(void);

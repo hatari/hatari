@@ -421,13 +421,7 @@ static const dbgcommand_t dspcommands[] =
 	  false },
 	{ DebugDsp_BreakCond, "dspbreak", "db",
 	  "set/remove/list DSP register/RAM condition breakpoints",
-	  "[ help | all | <index> | <condition> [trace|once] ]\n"
-	  "\tSet breakpoint with given condition, remove breakpoint with\n"
-	  "\tgiven index or list all breakpoints when no args are given.\n"
-	  "\tAdding 'trace' to end of condition causes breakpoint match\n"
-	  "\tjust to be printed, not break.  Adding 'once' will delete\n"
-	  "\tthe breakpoint after it's hit.  'help' outputs breakpoint\n"
-	  "\tcondition syntax help, 'all' removes all conditional breakpoints.",
+	  BreakCond_Description,
 	  true },
 	{ DebugDsp_DisAsm, "dspdisasm", "dd",
 	  "disassemble DSP code",
