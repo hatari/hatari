@@ -8,6 +8,13 @@
 #ifndef HATARI_SYMBOLS_H
 #define HATARI_SYMBOLS_H
 
+typedef enum {
+	SYMTYPE_TEXT = 1,
+	SYMTYPE_DATA = 2,
+	SYMTYPE_BSS  = 4,
+	SYMTYPE_ALL  = SYMTYPE_TEXT|SYMTYPE_DATA|SYMTYPE_BSS
+} symtype_t;
+
 /* readline support functions */
 extern char* Symbols_MatchCpuAddress(const char *text, int state);
 extern char* Symbols_MatchDspAddress(const char *text, int state);

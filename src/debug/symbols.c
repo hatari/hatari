@@ -26,13 +26,6 @@ const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "debug_priv.h"
 
-typedef enum {
-	SYMTYPE_ANY=0,
-	SYMTYPE_TEXT,
-	SYMTYPE_DATA,
-	SYMTYPE_BSS
-} symtype_t;
-
 typedef struct {
 	char *name;
 	Uint32 address;
@@ -171,7 +164,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 m
 			fprintf(stderr, "WARNING: unrecognized symbol type '%c' on line %d in '%s', skipping.\n", symchar, line, filename);
 			continue;
 		}
-		if (gettype != SYMTYPE_ANY && gettype != symtype) {
+		if (!(gettype & symtype)) {
 			continue;
 		}
 		list->names[count].address = address;
@@ -256,7 +249,7 @@ static char* Symbols_MatchByName(symbol_list_t* list, symtype_t symtype, const c
 	/* next match */
 	entry = list->names;
 	while (i < list->count) {
-		if ((symtype == SYMTYPE_ANY || entry[i].type == symtype) &&
+		if ((entry[i].type & symtype) &&
 		    strncmp(entry[i].name, text, len) == 0) {
 			return strdup(entry[i++].name);
 		} else {
@@ -310,9 +303,7 @@ static const symbol_t* Symbols_SearchByName(symbol_list_t* list, symtype_t symty
 	do {
 		m = (l+r) >> 1;
 		dir = strcmp(entries[m].name, name);
-		if (dir == 0 &&
-		    (symtype == SYMTYPE_ANY ||
-		    entries[m].type == symtype)) {
+		if (dir == 0 && (entries[m].type & symtype)) {
 			return &(entries[m]);
 		}
 		if (dir > 0) {
@@ -417,11 +408,14 @@ const char* Symbols_GetByDspAddress(Uint32 addr)
 static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 {
 	symbol_t *entry, *entries;
+	char symchar;
 	int i;
+	
 	if (!list) {
 		fprintf(stderr, "No symbols!\n");
 		return;
 	}
+
 	if (strcmp("addr", sorttype) == 0) {
 		entries = list->addresses;
 	} else {
@@ -431,7 +425,21 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 		(list == CpuSymbolsList ? "CPU" : "DSP"), sorttype);
 
 	for (entry = entries, i = 0; i < list->count; i++, entry++) {
-		fprintf(stderr, "  0x%08x: %s\n", entry->address, entry->name);
+		switch (entry->type) {
+		case SYMTYPE_TEXT:
+			symchar = 'T';
+			break;
+		case SYMTYPE_DATA:
+			symchar = 'D';
+			break;
+		case SYMTYPE_BSS:
+			symchar = 'B';
+			break;
+		default:
+			symchar = '?';
+		}
+		fprintf(stderr, "%c 0x%08x: %s\n",
+			symchar, entry->address, entry->name);
 		if (i && i % 20 == 0) {
 			fprintf(stderr, "--- q to exit listing, just enter to continue --- ");
 			if (toupper(getchar()) == 'Q') {
@@ -450,7 +458,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	enum { TYPE_NONE, TYPE_CPU, TYPE_DSP } listtype;
 	Uint32 offset, maxaddr;
 	symbol_list_t *list;
-	char *file;
+	const char *file;
 
 	if (strcmp("dspsymbols", psArgs[0]) == 0) {
 		listtype = TYPE_DSP;
@@ -480,8 +488,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		offset = 0;
 	}
 
-	/* TODO: symbols support for other than address (TEXT) breakpoints */
-	list = Symbols_Load(file, offset, maxaddr, SYMTYPE_TEXT);
+	list = Symbols_Load(file, offset, maxaddr, SYMTYPE_ALL);
 	if (list) {
 		if (listtype == TYPE_CPU) {
 			Symbols_Free(CpuSymbolsList);
