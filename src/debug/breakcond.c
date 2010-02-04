@@ -1376,26 +1376,29 @@ const char BreakCond_Description[] =
 /**
  * Parse given DebugUI command for Dsp and act accordingly
  */
-bool BreakCond_Command(char *expression, bool bForDsp)
+bool BreakCond_Command(const char *args, bool bForDsp)
 {
+	bool trace, once, ret = true;
+	char *cut, *expression;
 	unsigned int position;
-	bool trace, once;
 	const char *end;
-	char *cut;
 	
-	if (!expression) {
+	if (!args) {
 		BreakCond_List(bForDsp);
 		return true;
 	}
+	expression = strdup(args);
+	assert(expression);
+	
 	expression = Str_Trim(expression);
 	/* subcommands */
 	if (strncmp(expression, "help", 4) == 0) {
 		BreakCond_Help();
-		return true;
+		goto cleanup;
 	}
 	if (strcmp(expression, "all") == 0) {
 		BreakCond_RemoveAll(bForDsp);
-		return true;
+		goto cleanup;
 	}
 	/* postfix options */
 	once = false;
@@ -1416,8 +1419,12 @@ bool BreakCond_Command(char *expression, bool bForDsp)
 	}
 	if (end > expression && *end == '\0' &&
 	    sscanf(expression, "%u", &position) == 1) {
-		return BreakCond_Remove(position, bForDsp);
+		ret = BreakCond_Remove(position, bForDsp);
+	} else {
+		/* add breakpoint? */
+		ret = BreakCond_Parse(expression, bForDsp, trace, once);
 	}
-	/* add breakpoint */
-	return BreakCond_Parse(expression, bForDsp, trace, once);
+cleanup:
+	free(expression);
+	return ret;
 }
