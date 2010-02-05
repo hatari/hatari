@@ -138,6 +138,7 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 		{ "dec", 10 },
 		{ "hex", 16 }
 	};
+	const char *arg;
 	Uint32 value;
 	int i;
 	
@@ -146,10 +147,11 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 		DebugUI_PrintCmdHelp(argv[0]);
 		return DEBUGGER_CMDDONE;
 	}
+	arg = argv[1];
 	
 	for (i = 0; i < ARRAYSIZE(bases); i++)
 	{
-		if (strcasecmp(bases[i].name, argv[1]) == 0)
+		if (strcasecmp(bases[i].name, arg) == 0)
 		{
 			if (ConfigureParams.Log.nNumberBase != bases[i].base)
 			{
@@ -163,8 +165,10 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 			return DEBUGGER_CMDDONE;
 		}
 	}
-	
-	if (!Eval_Number(argv[1], &value))
+
+	if (!Symbols_GetCpuAddress(SYMTYPE_ALL, arg, &value) &&
+	    !Symbols_GetDspAddress(SYMTYPE_ALL, arg, &value) &&
+	    !Eval_Number(argv[1], &value))
 		return DEBUGGER_CMDDONE;
 
 	DebugUI_PrintValue(value);
@@ -395,6 +399,22 @@ int DebugUI_ParseCommand(char *input)
 /* See "info:readline" e.g. in Konqueror for readline usage. */
 
 /**
+ * Readline match callback to match all symbols for value
+ */
+static char *DebugUI_MatchValue(const char *text, int state)
+{
+	char *name;
+	name = Symbols_MatchCpuAddress(text, state);
+	if (name)
+		return name;
+	name = Symbols_MatchDspAddress(text, state);
+	if (name)
+		return name;
+	return NULL;
+}
+
+
+/**
  * Readline match callback for long command name completion.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
@@ -451,7 +471,9 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "o", Opt_MatchOption },
 		{ "setopt", Opt_MatchOption },
 		{ "t", Log_MatchTrace },
-		{ "trace", Log_MatchTrace }
+		{ "trace", Log_MatchTrace },
+		{ "v", DebugUI_MatchValue },
+		{ "value", DebugUI_MatchValue }
 	};
 	int i, end, start = 0;
 	char buf[32];
