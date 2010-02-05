@@ -452,7 +452,7 @@ static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!Symbols_GetCpuAddress(psArgs[1], &BreakAddr))
+	if (!Symbols_GetCpuAddress(SYMTYPE_TEXT, psArgs[1], &BreakAddr))
 	{
 		if (!Eval_Number(psArgs[1], &BreakAddr))
 		{

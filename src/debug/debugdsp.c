@@ -292,7 +292,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!Symbols_GetDspAddress(psArgs[1], &BreakAddr))
+	if (!Symbols_GetDspAddress(SYMTYPE_TEXT, psArgs[1], &BreakAddr))
 	{
 		if (!Eval_Number(psArgs[1], &BreakAddr))
 		{

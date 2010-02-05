@@ -266,7 +266,15 @@ static char* Symbols_MatchByName(symbol_list_t* list, symtype_t symtype, const c
  */
 char* Symbols_MatchCpuAddress(const char *text, int state)
 {
+	return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_ALL, text, state);
+}
+char* Symbols_MatchCpuCodeAddress(const char *text, int state)
+{
 	return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_TEXT, text, state);
+}
+char* Symbols_MatchCpuDataAddress(const char *text, int state)
+{
+	return Symbols_MatchByName(CpuSymbolsList, SYMTYPE_DATA|SYMTYPE_BSS, text, state);
 }
 
 /**
@@ -276,7 +284,15 @@ char* Symbols_MatchCpuAddress(const char *text, int state)
  */
 char* Symbols_MatchDspAddress(const char *text, int state)
 {
+	return Symbols_MatchByName(DspSymbolsList, SYMTYPE_ALL, text, state);
+}
+char* Symbols_MatchDspCodeAddress(const char *text, int state)
+{
 	return Symbols_MatchByName(DspSymbolsList, SYMTYPE_TEXT, text, state);
+}
+char* Symbols_MatchDspDataAddress(const char *text, int state)
+{
+	return Symbols_MatchByName(DspSymbolsList, SYMTYPE_DATA|SYMTYPE_BSS, text, state);
 }
 
 
@@ -318,10 +334,10 @@ static const symbol_t* Symbols_SearchByName(symbol_list_t* list, symtype_t symty
 /**
  * Set given CPU symbol's address to variable and return TRUE if one was found.
  */
-bool Symbols_GetCpuAddress(const char *name, Uint32 *addr)
+bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, Uint32 *addr)
 {
 	const symbol_t *entry;
-	entry = Symbols_SearchByName(CpuSymbolsList, SYMTYPE_TEXT, name);
+	entry = Symbols_SearchByName(CpuSymbolsList, symtype, name);
 	if (entry) {
 		*addr = entry->address;
 		return true;
@@ -332,10 +348,10 @@ bool Symbols_GetCpuAddress(const char *name, Uint32 *addr)
 /**
  * Set given DSP symbol's address to variable and return TRUE if one was found.
  */
-bool Symbols_GetDspAddress(const char *name, Uint32 *addr)
+bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr)
 {
 	const symbol_t *entry;
-	entry = Symbols_SearchByName(DspSymbolsList, SYMTYPE_TEXT, name);
+	entry = Symbols_SearchByName(DspSymbolsList, symtype, name);
 	if (entry) {
 		*addr = entry->address;
 		return true;
