@@ -28,6 +28,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "breakcond.h"
 #include "debugcpu.h"
 #include "evaluate.h"
+#include "symbols.h"
 
 
 /* set to 1 to enable parsing function tracing / debug output */
@@ -422,11 +423,11 @@ static const var_addr_t hatari_vars[] = {
 
 
 /**
- * Readline match callback for variable name completion.
+ * Readline match callback for CPU variable/symbol name completion.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
  */
-char *BreakCond_MatchVariable(const char *text, int state)
+char *BreakCond_MatchCpuVariable(const char *text, int state)
 {
 	static int i, len;
 	const char *name;
@@ -442,7 +443,19 @@ char *BreakCond_MatchVariable(const char *text, int state)
 		if (strncasecmp(name, text, len) == 0)
 			return (strdup(name));
 	}
-	return NULL;
+	/* no variable match, check all CPU symbols */
+	return Symbols_MatchCpuAddress(text, state);
+}
+
+/**
+ * Readline match callback for DSP variable/symbol name completion.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *BreakCond_MatchDspVariable(const char *text, int state)
+{
+	/* currently no DSP variables, check all DSP symbols */
+	return Symbols_MatchDspAddress(text, state);
 }
 
 
@@ -482,6 +495,56 @@ static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 
 
 /**
+ * If given string matches a suitable symbol, set bc_value
+ * fields accordingly and return true, otherwise return false.
+ */
+static bool BreakCond_ParseSymbol(const char *name, bc_value_t *bc_value)
+{
+	symtype_t symtype;
+	Uint32 addr;
+
+	ENTERFUNC(("BreakCond_ParseCodeSymbol('%s', %d)\n", name));
+	if (bc_value->is_indirect) {
+		/* indirect addressing makes sense only for data addresses */
+		symtype = SYMTYPE_DATA|SYMTYPE_BSS;
+	} else {
+		/* and direct addressing makes sense only for code
+		 * (unless it's self-modifying?)
+		 */
+		symtype = SYMTYPE_TEXT;
+	}
+	
+	if (bc_value->dsp_space) {
+		if (!Symbols_GetDspAddress(symtype, name, &addr)) {
+			EXITFUNC(("-> false (DSP)\n"));
+			return false;
+		}
+		/* all DSP memory values are 24-bits */
+		bc_value->bits = 24;
+		bc_value->value.number = addr;
+		bc_value->valuetype = VALUE_TYPE_NUMBER;
+		EXITFUNC(("-> true (DSP)\n"));
+		return true;
+	}
+	
+	if (!Symbols_GetCpuAddress(symtype, name, &addr)) {
+		EXITFUNC(("-> false (CPU)\n"));
+		return false;
+	}
+	if (addr & 1) {
+		/* only bytes can be at odd addresses */
+		bc_value->bits = 8;
+	} else {
+		bc_value->bits = 32;
+	}
+	bc_value->value.number = addr;
+	bc_value->valuetype = VALUE_TYPE_NUMBER;
+	EXITFUNC(("-> true (CPU)\n"));
+	return true;
+}
+
+
+/**
  * Helper function to get CPU PC register value with static inline as Uint32
  */
 static Uint32 GetCpuPC(void)
@@ -500,7 +563,7 @@ static Uint32 GetCpuSR(void)
  * If given string is register name (for DSP or CPU), set bc_value
  * fields accordingly and return true, otherwise return false.
  */
-static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, parser_state_t *pstate)
+static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 {
 	int regsize;
 	ENTERFUNC(("BreakCond_ParseRegister('%s')\n", regname));
@@ -510,7 +573,7 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 					      &(bc_value->mask));
 		if (regsize) {
 			if (bc_value->is_indirect && toupper(regname[0]) != 'R') {
-				pstate->error = "only R0-R7 registers can be used for indirect addressing";
+				fprintf(stderr, "ERROR: only R0-R7 DSP registers can be used for indirect addressing!\n");
 				EXITFUNC(("-> false (DSP)\n"));
 				return false;
 			}
@@ -520,13 +583,13 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 			EXITFUNC(("-> true (DSP)\n"));
 			return true;
 		}
-		pstate->error = "invalid DSP register name";
 		EXITFUNC(("-> false (DSP)\n"));
 		return false;
 	}
 	regsize = DebugCpu_GetRegisterAddress(regname, &(bc_value->value.reg32));
 	if (regsize) {
 		bc_value->bits = regsize;
+		/* valuetypes for registers are 16 & 32 */
 		bc_value->valuetype = regsize;
 		EXITFUNC(("-> true (CPU)\n"));
 		return true;
@@ -548,7 +611,6 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 		EXITFUNC(("-> true (CPU)\n"));
 		return true;
 	}
-	pstate->error = "invalid CPU register name";
 	EXITFUNC(("-> false (CPU)\n"));
 	return false;
 }
@@ -723,11 +785,13 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	}
 	
 	str = pstate->argv[pstate->arg];
-	/* parse direct or indirect value */
-	if (isalpha(str[0])) {
+	if (isalpha(*str) || *str == '_') {
+		/* parse direct or indirect variable/register/symbol name */
 		if (bc_value->is_indirect) {
-			/* a valid register name? */
-			if (!BreakCond_ParseRegister(str, bc_value, pstate)) {
+			/* a valid register or data symbol name? */
+			if (!BreakCond_ParseRegister(str, bc_value) &&
+			    !BreakCond_ParseSymbol(str, bc_value)) {
+				pstate->error = "invalid register/symbol name for indirection";
 				EXITFUNC(("arg:%d -> false\n", pstate->arg));
 				return false;
 			}
@@ -736,8 +800,9 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 			 * variables cannot be used for ST memory indirection.
 			 */
 			if (!BreakCond_ParseVariable(str, bc_value) &&
-			    !BreakCond_ParseRegister(str, bc_value, pstate)) {
-				pstate->error = "invalid variable/register name";
+			    !BreakCond_ParseRegister(str, bc_value) &&
+			    !BreakCond_ParseSymbol(str, bc_value)) {
+				pstate->error = "invalid variable/register/symbol name";
 				EXITFUNC(("arg:%d -> false\n", pstate->arg));
 				return false;
 			}
@@ -749,14 +814,14 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
 		}
-		/* suitable as emulated memory address (indirect)? */
-		if (bc_value->is_indirect &&
-		    bc_value->valuetype == VALUE_TYPE_NUMBER &&
-		    !BreakCond_CheckAddress(bc_value)) {
-			pstate->error = "invalid address";
-			EXITFUNC(("arg:%d -> false\n", pstate->arg));
-			return false;
-		}
+	}
+	/* memory address (indirect value) -> OK as address? */
+	if (bc_value->is_indirect &&
+	    bc_value->valuetype == VALUE_TYPE_NUMBER &&
+	    !BreakCond_CheckAddress(bc_value)) {
+		pstate->error = "invalid address";
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
+		return false;
 	}
 	pstate->arg += skip;
 
@@ -1026,14 +1091,15 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		}
 		/* validate & copy other characters */
 		if (!sep) {
-			if (!(isalnum(*src) || isblank(*src) ||
-			      *src == '$' || *src == '%')) {
+			/* variable/register/symbol or number prefix? */
+			if (!(isalnum(*src) || isblank(*src) || *src == '_' ||
+			      *src == '$' || *src == '#' || *src == '%')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
 				free(normalized);
 				return NULL;
 			}
-			*dst++ = tolower(*src);
+			*dst++ = *src;
 			is_separated = false;
 		}
 	}

@@ -15,7 +15,8 @@ extern void BreakCond_MemorySnapShot_Capture(bool bSave);
 extern int BreakCond_MatchCpu(void);
 extern int BreakCond_MatchDsp(void);
 extern int BreakCond_BreakPointCount(bool bForDsp);
-extern char *BreakCond_MatchVariable(const char *text, int state);
+extern char *BreakCond_MatchCpuVariable(const char *text, int state);
+extern char *BreakCond_MatchDspVariable(const char *text, int state);
 extern bool BreakCond_Command(const char *expression, bool bForDsp);
 
 /* extra functions exported for the test code */
