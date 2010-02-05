@@ -1,0 +1,7 @@
+TODO
+
+* include symbol matching testing into test-breacond.c by
+  using BreakCond_Command() and textual commands.  Besides
+  allowing removal of test-symbols.c, this allows also hiding
+  some of the functions in breakcond.c as static that are
+  currently exported for the tests.
