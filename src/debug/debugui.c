@@ -429,12 +429,14 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		const char *name;
 		char* (*match)(const char *, int);
 	} cmd[] = {
-		{ "a", Symbols_MatchCpuAddress },
-		{ "address", Symbols_MatchCpuAddress },
-		{ "b", BreakCond_MatchVariable },
-		{ "breakpoint", BreakCond_MatchVariable },
-		{ "da", Symbols_MatchDspAddress },
-		{ "dspaddress", Symbols_MatchDspAddress },
+		{ "a", Symbols_MatchCpuCodeAddress },
+		{ "address", Symbols_MatchCpuCodeAddress },
+		{ "b", BreakCond_MatchCpuVariable },
+		{ "breakpoint", BreakCond_MatchCpuVariable },
+		{ "da", Symbols_MatchDspCodeAddress },
+		{ "dspaddress", Symbols_MatchDspCodeAddress },
+		{ "db", BreakCond_MatchDspVariable },
+		{ "dspbreak", BreakCond_MatchDspVariable },
 		{ "dspsymbols", rl_filename_completion_function },
 		{ "f", rl_filename_completion_function },
 		{ "h", DebugUI_MatchCommand },
