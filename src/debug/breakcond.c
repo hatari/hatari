@@ -324,19 +324,22 @@ static void BreakCond_ShowTracked(bc_condition_t *condition, int count)
  * Return which of the given condition breakpoints match
  * or zero if none matched
  */
-static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count)
+static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char *name)
 {
 	int i;
 	
 	for (i = 0; i < count; bp++, i++) {
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
 			BreakCond_ShowTracked(bp->conditions, bp->ccount);
-			fprintf(stderr, "%d. breakpoint conditions matched %d times.\n",
-				i+1, ++(bp->hits));
+			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
+				i+1, name, ++(bp->hits));
 			if (bp->trace) {
 				return 0;
 			}
 			fprintf(stderr, "  %s\n", bp->expression);
+			if (bp->once) {
+				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
+			}
 			/* indexes for BreakCond_Remove() start from 1 */
 			return i + 1;
 		}
@@ -351,12 +354,7 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count)
  */
 int BreakCond_MatchCpu(void)
 {
-	int i;
-	i = BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount);
-	if (i && BreakPointsCpu[i-1].once) {
-		BreakCond_Remove(i, false);
-	}
-	return i;
+	return BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount, "CPU");
 }
 
 /**
@@ -364,12 +362,7 @@ int BreakCond_MatchCpu(void)
  */
 int BreakCond_MatchDsp(void)
 {
-	int i;
-	i = BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount);
-	if (i && BreakPointsDsp[i-1].once) {
-		BreakCond_Remove(i, true);
-	}
-	return i;
+	return BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount, "DSP");
 }
 
 /**
