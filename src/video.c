@@ -261,6 +261,8 @@
 /*			starts 16 pixels earlier) (fix EPSS demo by Unit 17).			*/
 /* 2010/02/05	[NP]	In Video_CalculateAddress, take STE's LineWidth into account when	*/
 /*			display is disabled in the right border (fix flickering in Utopos).	*/
+/* 2010/02/07	[NP]	Better support for modifying $ff8205/07/09 while display is on		*/
+/*			(fix EPSS demo by Unit 17).						*/
 
 
 
@@ -344,6 +346,8 @@ static Uint8 HWScrollPrefetch;			/* 0 when scrolling with $ff8264, 1 when scroll
 static int NewHWScrollPrefetch = -1;		/* Used in STE mode when writing to the scrolling registers $ff8264/65 */
 static Uint8 LineWidth;				/* Scan line width add, STe only (words, minus 1) */
 static int NewLineWidth = -1;			/* Used in STE mode when writing to the line width register $ff820f */
+static int VideoCounterDelayedOffset = 0;	/* Used in STE mode when changing video counter while display is on */
+static Uint8 *pVideoRasterDelayed = NULL;	/* Used in STE mode when changing video counter while display is off in the right border */
 static Uint8 *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static Uint8 VideoShifterByte;			/* VideoShifter (0xff8260) value store in video chip */
 static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
@@ -354,10 +358,6 @@ int	LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess last time 
 int	LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
 
 int	LastCycleHblException;			/* value of Cycles_GetCounter last time a level 2 interrupt was executed by the CPU */
-
-int	NewVideoHi = -1;			/* new value for $ff8205 on STE */
-int	NewVideoMed = -1;			/* new value for $ff8207 on STE */
-int	NewVideoLo = -1;			/* new value for $ff8209 on STE */
 
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
@@ -538,6 +538,9 @@ void Video_Reset(void)
 
 	NewLineWidth = -1;			/* cancel pending modifications set before the reset */
 	NewHWScrollCount = -1;
+
+	VideoCounterDelayedOffset = 0;
+	pVideoRasterDelayed = NULL;
 
 	/* Reset jitter indexes */
 	HblJitterIndex = 0;
@@ -807,7 +810,7 @@ static Uint32 Video_CalculateAddress ( void )
 		if ( LineBorderMask & BORDERMASK_EMPTY_LINE )
 			NbBytes = 0;
 
-		/* Add line cycles if we have not reached end of screen yet: */
+		/* Add line cycles if we have not reached end of screen yet */
 		if ( HblCounterVideo < nEndHBL )
 			VideoAddress += PrevSize + NbBytes;
 	}
@@ -1711,8 +1714,6 @@ static void Video_StoreResolution(int y)
  */
 static void Video_CopyScreenLineMono(void)
 {
-	Uint32 addr;
-
 	/* Copy one line - 80 bytes in ST high resolution */
 	memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
 	pVideoRaster += SCREENBYTES_MONOLINE;
@@ -1748,23 +1749,16 @@ static void Video_CopyScreenLineMono(void)
 
 	/* On STE, handle modifications of the video counter address $ff8205/07/09 */
 	/* that occurred while the display was already ON */
-	if ( NewVideoHi >= 0 )
+	if ( VideoCounterDelayedOffset != 0 )
 	{
-		addr = ( ( pVideoRaster - STRam ) & 0x00ffff ) | ( NewVideoHi << 16 );
-		pVideoRaster = &STRam[addr & ~1];
-		NewVideoHi = -1;
+		pVideoRaster += ( VideoCounterDelayedOffset & ~1 );
+		VideoCounterDelayedOffset = 0;
 	}
-	if ( NewVideoMed >= 0 )
+
+	if ( pVideoRasterDelayed != NULL )
 	{
-		addr = ( ( pVideoRaster - STRam ) & 0xff00ff ) | ( NewVideoMed << 8 );
-		pVideoRaster = &STRam[addr & ~1];
-		NewVideoMed = -1;
-	}
-	if ( NewVideoLo >= 0 )
-	{
-		addr = ( ( pVideoRaster - STRam ) & 0xffff00 ) | ( NewVideoLo );
-		pVideoRaster = &STRam[addr & ~1];
-		NewVideoLo = -1;
+		pVideoRaster = pVideoRasterDelayed;
+		pVideoRasterDelayed = NULL;
 	}
 
 	/* On STE, if we wrote to the hwscroll register, we set the */
@@ -1798,7 +1792,6 @@ static void Video_CopyScreenLineColor(void)
 	int LineBorderMask;
 	int VideoOffset = 0;
 	int STF_PixelScroll = 0;
-	Uint32 addr;
 	int LineRes;
 
 
@@ -2063,23 +2056,18 @@ static void Video_CopyScreenLineColor(void)
 
 		/* On STE, handle modifications of the video counter address $ff8205/07/09 */
 		/* that occurred while the display was already ON */
-		if ( NewVideoHi >= 0 )
+		if ( VideoCounterDelayedOffset != 0 )
 		{
-			addr = ( ( pVideoRaster - STRam ) & 0x00ffff ) | ( NewVideoHi << 16 );
-			pVideoRaster = &STRam[addr & ~1];
-			NewVideoHi = -1;
+			pVideoRaster += ( VideoCounterDelayedOffset & ~1 );
+//		  fprintf ( stderr , "adjust video counter offset=%d new video=%x\n" , VideoCounterDelayedOffset , pVideoRaster-STRam );
+			VideoCounterDelayedOffset = 0;
 		}
-		if ( NewVideoMed >= 0 )
+
+		if ( pVideoRasterDelayed != NULL )
 		{
-			addr = ( ( pVideoRaster - STRam ) & 0xff00ff ) | ( NewVideoMed << 8 );
-			pVideoRaster = &STRam[addr & ~1];
-			NewVideoMed = -1;
-		}
-		if ( NewVideoLo >= 0 )
-		{
-			addr = ( ( pVideoRaster - STRam ) & 0xffff00 ) | ( NewVideoLo );
-			pVideoRaster = &STRam[addr & ~1];
-			NewVideoLo = -1;
+			pVideoRaster = pVideoRasterDelayed;
+//		  fprintf ( stderr , "adjust video counter const new video=%x\n" , pVideoRaster-STRam );
+			pVideoRasterDelayed = NULL;
 		}
 
 		/* On STE, if we wrote to the hwscroll register, we set the */
@@ -2658,15 +2646,23 @@ void Video_ScreenCounter_ReadByte(void)
 /**
  * Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
  * Called on STE only and like with base address, you cannot set lowest bit.
- * If display has not started yet for this line, we can change pVideoRaster now.
- * Else we store the new value of the Hi/Med/Lo address to change it at the end
- * of the current line when Video_CopyScreenLineColor is called.
- * We must change only the byte that was modified and keep the two others ones.
+ *
+ * As Hatari processes/converts one complete video line at a time, we have 3 cases :
+ * - If display has not started yet for this line (left border), we can change pVideoRaster now.
+ * - If display has stopped for this line (right border), we will change pVideoRaster
+ *   in Video_CopyScreenLineColor using pVideoRasterDelayed once the line has been processed.
+ * - If the write is made while display is on, then we must compute an offset of what
+ *   the new address should have been, to correctly emulate the video address at the
+ *   end of the line while taking into account the fact that the video pointer is incrementing
+ *   during the active part of the line (this is the most "tricky" case)
+ *
+ * To compute the new address, we must change only the byte that was modified and keep the two others ones.
  */
 void Video_ScreenCounter_WriteByte(void)
 {
 	Uint8 AddrByte;
-	Uint32 addr;
+	Uint32 addr_cur;
+	Uint32 addr_new = 0;
 	int FrameCycles, HblCounterVideo, LineCycles;
 	int Delayed;
 
@@ -2674,37 +2670,56 @@ void Video_ScreenCounter_WriteByte(void)
 
 	AddrByte = IoMem[ IoAccessCurrentAddress ];
 
+	/* Get current video address from the shifter */
+	addr_cur = Video_CalculateAddress();
+	/* Correct the address in case a modification of ff8205/07/09 was already delayed */
+	addr_new = addr_cur + VideoCounterDelayedOffset;
+	/* Correct the address in case video counter was already modified in the right border */
+	if ( pVideoRasterDelayed != NULL )
+		addr_new = pVideoRasterDelayed - STRam;
+	
+	/* addr_new should now be the same as on a real STE */
+	/* Compute the new video address with one modified byte */
+	if ( IoAccessCurrentAddress == 0xff8205 )
+		addr_new = ( addr_new & 0x00ffff ) | ( AddrByte << 16 );
+	else if ( IoAccessCurrentAddress == 0xff8207 )
+		addr_new = ( addr_new & 0xff00ff ) | ( AddrByte << 8 );
+	else if ( IoAccessCurrentAddress == 0xff8209 )
+		addr_new = ( addr_new & 0xffff00 ) | ( AddrByte );
+
 	/* If display has not started, we can still modify pVideoRaster */
-	/* We must also check the write does not overlap the end of the line */
-	if ( ( ( LineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
+	/* We must also check the write does not overlap the end of the line (to be sure Video_EndHBL is called first) */
+	if ( ( ( LineCycles <= ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle ) && ( nHBL == HblCounterVideo ) )
 		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
 	{
-		addr = Video_CalculateAddress();		/* get current video address */
-		if ( IoAccessCurrentAddress == 0xff8205 )
-			addr = ( addr & 0x00ffff ) | ( AddrByte << 16 );
-		else if ( IoAccessCurrentAddress == 0xff8207 )
-			addr = ( addr & 0xff00ff ) | ( AddrByte << 8 );
-		else if ( IoAccessCurrentAddress == 0xff8209 )
-			addr = ( addr & 0xffff00 ) | ( AddrByte );
-
-		pVideoRaster = &STRam[addr & ~1];		/* set new video address */
+		pVideoRaster = &STRam[addr_new & ~1];		/* set new video address */
+		VideoCounterDelayedOffset = 0;
+		pVideoRasterDelayed = NULL;
 		Delayed = false;
 	}
 
-	/* Can't change pVideoRaster now, store the modified byte for Video_CopyScreenLineColor */
-	else
+	/* Display is OFF (right border) but we can't change pVideoRaster now, we must process Video_CopyScreenLineColor first */
+	else if ( ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL )	/* line should be active */
+		&& ( ( LineCycles > ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle )		/* we're in the right border */
+		  || ( HblCounterVideo == nHBL+1 ) ) )		/* or the write overlaps the next line and Video_EndHBL was not called yet */
 	{
-		if ( IoAccessCurrentAddress == 0xff8205 )
-			NewVideoHi = AddrByte;
-		else if ( IoAccessCurrentAddress == 0xff8207 )
-			NewVideoMed = AddrByte;
-		else if ( IoAccessCurrentAddress == 0xff8209 )
-			NewVideoLo = AddrByte;
+		VideoCounterDelayedOffset = 0;
+		pVideoRasterDelayed = &STRam[addr_new & ~1];	/* new value for pVideoRaster at the end of Video_CopyScreenLineColor */
 		Delayed = true;
 	}
 
-	LOG_TRACE(TRACE_VIDEO_STE , "write ste video %x val=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
-				IoAccessCurrentAddress, AddrByte, Delayed ? "yes" : "no" ,
+	/* Counter is modified while display is ON, store the bytes offset for Video_CopyScreenLineColor */
+	/* Even on a real STE, modifying video address in this case will cause artefacts */
+	else
+	{
+		VideoCounterDelayedOffset = addr_new - addr_cur;
+		pVideoRasterDelayed = NULL;
+		Delayed = true;
+	}
+
+	LOG_TRACE(TRACE_VIDEO_STE , "write ste video %x val=0x%x video_old=%x video_new=%x offset=%x delayed=%s"
+				" video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+				IoAccessCurrentAddress, AddrByte, addr_cur , addr_new , VideoCounterDelayedOffset , Delayed ? "yes" : "no" ,
 				FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
 
