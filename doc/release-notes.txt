@@ -17,13 +17,21 @@ Emulation:
     (bad code can use -1L to read whole file instead getting fail on TOS4)
   - Prevent DTA and read/write functions accessing invalid memory areas
   - Programs can now change read-only files to be writable
-- Microphone (jack) emulation in Falcon mode (requires portaudio library)
-- SSI direct sound entrance ("Audio Fun Machine" and winrec are working)
-- DMA sound recording
-- Crossbar handshake mode transfers
+- Falcon sound emulation :
+  - Microphone (jack) emulation in Falcon mode (requires portaudio library)
+  - SSI direct sound entrance ("Audio Fun Machine" and winrec are working)
+  - DMA sound recording
+  - Crossbar handshake mode transfers
 - Max VDI rez increased to TT-hi size (1280x960)
 - 68020+FPU changed to 68EC030+FPU (no MMU 030) for Falcon and TT modes
   (Some Falcon programs didn't work with 020)
+- Video emulation on STF/STE :
+  - correctly shift the screen 4 pixels to the left when left border is removed
+  - add support for STE's 224 bytes overscan line without stabilizer
+  - when reading $ff8205/07/09 on STE, take into account the value
+    of horizontal scrolling/prefetch and linewidth.
+  - when writing to $ff8205/07/09 on STE, correctly handle the case
+    where the write is made while display in ON.
 
 Emulator:
 - Host mouse is centered to Hatari window on Falcon resolution changes
