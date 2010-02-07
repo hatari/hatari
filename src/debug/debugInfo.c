@@ -199,6 +199,7 @@ static void DebugInfo_Videl(Uint32 dummy)
 	fprintf(stderr, "$FF820E : offset to next line              : %04x\n", IoMem_ReadWord(0xff820e));
 	fprintf(stderr, "$FF8210 : VWRAP - line width               : %04x\n", IoMem_ReadWord(0xff8210));
 	fprintf(stderr, "$FF8260 : ST shift mode                    : %02x\n", IoMem_ReadByte(0xff8260));
+	fprintf(stderr, "$FF8265 : Horizontal scroll register       : %02x\n", IoMem_ReadByte(0xff8265));
 	fprintf(stderr, "$FF8266 : Falcon shift mode                : %04x\n", IoMem_ReadWord(0xff8266));
 	fprintf(stderr, "\n");
 	fprintf(stderr, "$FF8280 : HHC - Horizontal Hold Counter    : %04x\n", IoMem_ReadWord(0xff8280));

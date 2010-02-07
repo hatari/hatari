@@ -292,7 +292,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!Symbols_GetDspAddress(psArgs[1], &BreakAddr))
+	if (!Symbols_GetDspAddress(SYMTYPE_TEXT, psArgs[1], &BreakAddr))
 	{
 		if (!Eval_Number(psArgs[1], &BreakAddr))
 		{
@@ -343,7 +343,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
  */
 static int DebugDsp_BreakCond(int nArgc, char *psArgs[])
 {
-	BreakCond_Command((const char *)psArgs[1], true);
+	BreakCond_Command(psArgs[1], true);
 	nDspActiveCBs = BreakCond_BreakPointCount(true);
 	return DEBUGGER_CMDDONE;
 }
@@ -421,11 +421,7 @@ static const dbgcommand_t dspcommands[] =
 	  false },
 	{ DebugDsp_BreakCond, "dspbreak", "db",
 	  "set/remove/list DSP register/RAM condition breakpoints",
-	  "[help | all | <breakpoint index> | <breakpoint condition>]\n"
-	  "\tSet breakpoint with given condition, remove breakpoint with\n"
-	  "\tgiven index or list all breakpoints when no args are given.\n"
-	  "\t'help' outputs breakpoint condition syntax help, 'all' removes\n"
-	  "\tall conditional breakpoints",
+	  BreakCond_Description,
 	  true },
 	{ DebugDsp_DisAsm, "dspdisasm", "dd",
 	  "disassemble DSP code",

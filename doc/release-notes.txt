@@ -51,6 +51,10 @@ Emulator:
   - debugger command and command argument TAB-completion support
     (requires readline library)
   - improved register name handling + fixed DSP reg name matching
+  - tracing and memory change tracking modes added to conditional
+    breakpoints
+  - conditional breakpoints count hits and can be optionally removed
+    after first hit
   - CPU breakpoints can be given an optional count of how many hits
     there needs to be before they break into debugger.  If count
     of one is given, breakpoint is removed after hit

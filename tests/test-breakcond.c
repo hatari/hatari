@@ -8,6 +8,9 @@
 
 #define BITMASK(x)      ((1<<(x))-1)
 
+/* fake tracing flags */
+Uint32 LogTraceFlags = 0;
+
 /* fake Hatari configuration variables for number parsing */
 #include "configuration.h"
 CNF_PARAMS ConfigureParams;

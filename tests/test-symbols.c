@@ -4,10 +4,19 @@
 #include <stdio.h>
 #include <SDL_types.h>
 #include <stdbool.h>
+#include "debug_priv.h"
 #include "symbols.h"
 #include "main.h"
+#include "log.h"
 
-#define TEST_SYM_FILE "etos512.sym"
+/* dummy variable for debugcpu.c */
+Uint32 LogTraceFlags = TRACE_CPU_DISASM;
+
+/* dummy symbols.c dep function */
+void DebugUI_PrintCmdHelp(const char *cmd)
+{
+	fprintf(stderr, "Help!\n");
+}
 
 int main(int argc, const char *argv[])
 {
@@ -31,24 +40,30 @@ int main(int argc, const char *argv[])
 		0xe324d2,
 	};
 
+#define DO_CMD(cmd) Symbols_Command(ARRAYSIZE(cmd), cmd)
+	char symbols[] = "symbols";
+	char fname[] = "etos512.sym";
+	char sname[] = "name";
+	char saddr[] = "addr";
+	char *cmd_load[] = { symbols, fname };
+	char *cmd_show_byname[] = { symbols, sname };
+	char *cmd_show_byaddr[] = { symbols, saddr };
+
 	int i, tests = 0, errors = 0;
-	symbol_list_t *list = NULL;
 	const char *name;
 	Uint32 addr;
 
-	list = Symbols_Load(TEST_SYM_FILE, 0, SYMTYPE_ANY);
-	Symbols_ShowByAddress(list);
+	DO_CMD(cmd_load);
+	DO_CMD(cmd_show_byaddr);
 	fprintf(stderr, "\n");
-	Symbols_ShowByName(list);
-	Symbols_Free(list);
-
-	list = Symbols_Load(TEST_SYM_FILE, 0, SYMTYPE_ANY);
+	DO_CMD(cmd_show_byname);
+	DO_CMD(cmd_load);	/* free + reload */
 
 	fprintf(stderr, "\nStuff that should FAIL:\n");
 	for (i = 0; i < ARRAYSIZE(fail_name); i++) {
 		name = fail_name[i];
-		if (Symbols_MatchByName(list, SYMTYPE_ANY, name, 0)) {
-			fprintf(stderr, "*** Unexpected SUCCESS from '%s' ***\n", name);
+		if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, &addr)) {
+			fprintf(stderr, "*** Unexpected SUCCESS from '%s' (0x%08x) ***\n", name, addr);
 			errors++;
 		} else {
 			fprintf(stderr, "- '%s'\n", name);
@@ -57,7 +72,7 @@ int main(int argc, const char *argv[])
 	tests += i;
 	for (i = 0; i < ARRAYSIZE(fail_addr); i++) {
 		addr = fail_addr[i];
-		name = Symbols_FindByAddress(list, addr);
+		name = Symbols_GetByCpuAddress(addr);
 		if (name) {
 			fprintf(stderr, "*** Unexpected SUCCESS from 0x%08x (%s) ***\n", addr, name);
 			errors++;
@@ -70,7 +85,7 @@ int main(int argc, const char *argv[])
 	fprintf(stderr, "\nStuff that should SUCCEED:\n");
 	for (i = 0; i < ARRAYSIZE(success_name); i++) {
 		name = success_name[i];
-		if (Symbols_MatchByName(list, SYMTYPE_ANY, name, 0)) {
+		if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, &addr)) {
 			fprintf(stderr, "- '%s'\n", name);
 		} else {
 			fprintf(stderr, "*** Unexpected FAIL from '%s' ***\n", name);
@@ -80,7 +95,7 @@ int main(int argc, const char *argv[])
 	tests += i;
 	for (i = 0; i < ARRAYSIZE(success_addr); i++) {
 		addr = success_addr[i];
-		name = Symbols_FindByAddress(list, addr);
+		name = Symbols_GetByCpuAddress(addr);
 		if (name) {
 			fprintf(stderr, "- 0x%08x: %s\n", addr, name);
 		} else {

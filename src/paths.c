@@ -185,6 +185,11 @@ static void Paths_InitHomeDirs(void)
 	psHome = getenv("HOME");
 	if (!psHome)
 	{
+		/* Windows home path? */
+		psHome = getenv("HOMEPATH");
+	}
+	if (!psHome)
+	{
 		/* $HOME not set, so let's use current working dir as home */
 		strcpy(sUserHomeDir, sWorkingDir);
 		strcpy(sHatariHomeDir, sWorkingDir);

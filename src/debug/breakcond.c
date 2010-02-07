@@ -1,7 +1,7 @@
 /*
   Hatari - breakcond.c
 
-  Copyright (c) 2009 by Eero Tamminen
+  Copyright (c) 2009-2010 by Eero Tamminen
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
@@ -21,12 +21,14 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "dsp.h"
 #include "stMemory.h"
+#include "str.h"
 #include "video.h"	/* for Hatari video variable addresses */
 
 #include "debug_priv.h"
 #include "breakcond.h"
 #include "debugcpu.h"
 #include "evaluate.h"
+#include "symbols.h"
 
 
 /* set to 1 to enable parsing function tracing / debug output */
@@ -79,12 +81,16 @@ typedef struct {
 	bc_value_t lvalue;
 	bc_value_t rvalue;
 	char comparison;
+	bool track;	/* track value changes */
 } bc_condition_t;
 
 typedef struct {
 	char *expression;
 	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
 	int ccount;
+	int hits;	/* how many times breakpoint hit */
+	bool once;      /* remove after hit */
+	bool trace;	/* trace mode, don't break */
 } bc_breakpoint_t;
 
 static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
@@ -281,17 +287,60 @@ static bool BreakCond_MatchConditions(const bc_condition_t *condition, int count
 
 
 /**
+ * Show values for the tracked breakpoint conditions
+ */
+static void BreakCond_ShowTracked(bc_condition_t *condition, int count)
+{
+	Uint32 addr, value;
+	char sep;
+	int i;
+	
+	sep = ' ';
+	for (i = 0; i < count; condition++, i++) {
+		if (!condition->track) {
+			continue;
+		}
+
+		/* get the new value in address */
+		value = BreakCond_GetValue(&(condition->lvalue));
+		/* next monitor changes to this new value */
+		condition->rvalue.value.number = value;
+		
+		if (condition->lvalue.is_indirect &&
+		    condition->lvalue.valuetype == VALUE_TYPE_NUMBER) {
+			/* simple memory address */
+			addr = condition->lvalue.value.number;
+			fprintf(stderr, "%c $%x = $%x", sep, addr, value);
+		} else {
+			/* register tms. */
+			fprintf(stderr, "%c $%x", sep, value);
+		}
+		sep = ',';
+	}
+	fprintf(stderr, "\n");
+}
+
+
+/**
  * Return which of the given condition breakpoints match
  * or zero if none matched
  */
-static int BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
+static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char *name)
 {
 	int i;
 	
 	for (i = 0; i < count; bp++, i++) {
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
-			fprintf(stderr, "%d. breakpoint '%s' conditions matched.\n",
-				i+1, bp->expression);
+			BreakCond_ShowTracked(bp->conditions, bp->ccount);
+			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
+				i+1, name, ++(bp->hits));
+			if (bp->trace) {
+				return 0;
+			}
+			fprintf(stderr, "  %s\n", bp->expression);
+			if (bp->once) {
+				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
+			}
 			/* indexes for BreakCond_Remove() start from 1 */
 			return i + 1;
 		}
@@ -302,19 +351,19 @@ static int BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
 /* ------------- breakpoint condition checking, public API ------------- */
 
 /**
- * Return true if any of the CPU breakpoint/conditions match
+ * Return matched CPU breakpoint index or zero for an error.
  */
 int BreakCond_MatchCpu(void)
 {
-	return BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount);
+	return BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount, "CPU");
 }
 
 /**
- * Return true if any of the DSP breakpoint/conditions match
+ * Return matched DSP breakpoint index or zero for an error.
  */
 int BreakCond_MatchDsp(void)
 {
-	return BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount);
+	return BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount, "DSP");
 }
 
 /**
@@ -374,11 +423,11 @@ static const var_addr_t hatari_vars[] = {
 
 
 /**
- * Readline match callback for variable name completion.
+ * Readline match callback for CPU variable/symbol name completion.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
  */
-char *BreakCond_MatchVariable(const char *text, int state)
+char *BreakCond_MatchCpuVariable(const char *text, int state)
 {
 	static int i, len;
 	const char *name;
@@ -394,7 +443,19 @@ char *BreakCond_MatchVariable(const char *text, int state)
 		if (strncasecmp(name, text, len) == 0)
 			return (strdup(name));
 	}
-	return NULL;
+	/* no variable match, check all CPU symbols */
+	return Symbols_MatchCpuAddress(text, state);
+}
+
+/**
+ * Readline match callback for DSP variable/symbol name completion.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *BreakCond_MatchDspVariable(const char *text, int state)
+{
+	/* currently no DSP variables, check all DSP symbols */
+	return Symbols_MatchDspAddress(text, state);
 }
 
 
@@ -434,6 +495,56 @@ static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 
 
 /**
+ * If given string matches a suitable symbol, set bc_value
+ * fields accordingly and return true, otherwise return false.
+ */
+static bool BreakCond_ParseSymbol(const char *name, bc_value_t *bc_value)
+{
+	symtype_t symtype;
+	Uint32 addr;
+
+	ENTERFUNC(("BreakCond_ParseCodeSymbol('%s', %d)\n", name));
+	if (bc_value->is_indirect) {
+		/* indirect addressing makes sense only for data addresses */
+		symtype = SYMTYPE_DATA|SYMTYPE_BSS;
+	} else {
+		/* and direct addressing makes sense only for code
+		 * (unless it's self-modifying?)
+		 */
+		symtype = SYMTYPE_TEXT;
+	}
+	
+	if (bc_value->dsp_space) {
+		if (!Symbols_GetDspAddress(symtype, name, &addr)) {
+			EXITFUNC(("-> false (DSP)\n"));
+			return false;
+		}
+		/* all DSP memory values are 24-bits */
+		bc_value->bits = 24;
+		bc_value->value.number = addr;
+		bc_value->valuetype = VALUE_TYPE_NUMBER;
+		EXITFUNC(("-> true (DSP)\n"));
+		return true;
+	}
+	
+	if (!Symbols_GetCpuAddress(symtype, name, &addr)) {
+		EXITFUNC(("-> false (CPU)\n"));
+		return false;
+	}
+	if (addr & 1) {
+		/* only bytes can be at odd addresses */
+		bc_value->bits = 8;
+	} else {
+		bc_value->bits = 32;
+	}
+	bc_value->value.number = addr;
+	bc_value->valuetype = VALUE_TYPE_NUMBER;
+	EXITFUNC(("-> true (CPU)\n"));
+	return true;
+}
+
+
+/**
  * Helper function to get CPU PC register value with static inline as Uint32
  */
 static Uint32 GetCpuPC(void)
@@ -452,7 +563,7 @@ static Uint32 GetCpuSR(void)
  * If given string is register name (for DSP or CPU), set bc_value
  * fields accordingly and return true, otherwise return false.
  */
-static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, parser_state_t *pstate)
+static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 {
 	int regsize;
 	ENTERFUNC(("BreakCond_ParseRegister('%s')\n", regname));
@@ -462,7 +573,7 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 					      &(bc_value->mask));
 		if (regsize) {
 			if (bc_value->is_indirect && toupper(regname[0]) != 'R') {
-				pstate->error = "only R0-R7 registers can be used for indirect addressing";
+				fprintf(stderr, "ERROR: only R0-R7 DSP registers can be used for indirect addressing!\n");
 				EXITFUNC(("-> false (DSP)\n"));
 				return false;
 			}
@@ -472,13 +583,13 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 			EXITFUNC(("-> true (DSP)\n"));
 			return true;
 		}
-		pstate->error = "invalid DSP register name";
 		EXITFUNC(("-> false (DSP)\n"));
 		return false;
 	}
 	regsize = DebugCpu_GetRegisterAddress(regname, &(bc_value->value.reg32));
 	if (regsize) {
 		bc_value->bits = regsize;
+		/* valuetypes for registers are 16 & 32 */
 		bc_value->valuetype = regsize;
 		EXITFUNC(("-> true (CPU)\n"));
 		return true;
@@ -500,7 +611,6 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 		EXITFUNC(("-> true (CPU)\n"));
 		return true;
 	}
-	pstate->error = "invalid CPU register name";
 	EXITFUNC(("-> false (CPU)\n"));
 	return false;
 }
@@ -675,11 +785,13 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	}
 	
 	str = pstate->argv[pstate->arg];
-	/* parse direct or indirect value */
-	if (isalpha(str[0])) {
+	if (isalpha(*str) || *str == '_') {
+		/* parse direct or indirect variable/register/symbol name */
 		if (bc_value->is_indirect) {
-			/* a valid register name? */
-			if (!BreakCond_ParseRegister(str, bc_value, pstate)) {
+			/* a valid register or data symbol name? */
+			if (!BreakCond_ParseRegister(str, bc_value) &&
+			    !BreakCond_ParseSymbol(str, bc_value)) {
+				pstate->error = "invalid register/symbol name for indirection";
 				EXITFUNC(("arg:%d -> false\n", pstate->arg));
 				return false;
 			}
@@ -688,8 +800,9 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 			 * variables cannot be used for ST memory indirection.
 			 */
 			if (!BreakCond_ParseVariable(str, bc_value) &&
-			    !BreakCond_ParseRegister(str, bc_value, pstate)) {
-				pstate->error = "invalid variable/register name";
+			    !BreakCond_ParseRegister(str, bc_value) &&
+			    !BreakCond_ParseSymbol(str, bc_value)) {
+				pstate->error = "invalid variable/register/symbol name";
 				EXITFUNC(("arg:%d -> false\n", pstate->arg));
 				return false;
 			}
@@ -701,14 +814,14 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
 		}
-		/* suitable as emulated memory address (indirect)? */
-		if (bc_value->is_indirect &&
-		    bc_value->valuetype == VALUE_TYPE_NUMBER &&
-		    !BreakCond_CheckAddress(bc_value)) {
-			pstate->error = "invalid address";
-			EXITFUNC(("arg:%d -> false\n", pstate->arg));
-			return false;
-		}
+	}
+	/* memory address (indirect value) -> OK as address? */
+	if (bc_value->is_indirect &&
+	    bc_value->valuetype == VALUE_TYPE_NUMBER &&
+	    !BreakCond_CheckAddress(bc_value)) {
+		pstate->error = "invalid address";
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
+		return false;
 	}
 	pstate->arg += skip;
 
@@ -978,14 +1091,15 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		}
 		/* validate & copy other characters */
 		if (!sep) {
-			if (!(isalnum(*src) || isblank(*src) ||
-			      *src == '$' || *src == '%')) {
+			/* variable/register/symbol or number prefix? */
+			if (!(isalnum(*src) || isblank(*src) || *src == '_' ||
+			      *src == '$' || *src == '#' || *src == '%')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
 				free(normalized);
 				return NULL;
 			}
-			*dst++ = tolower(*src);
+			*dst++ = *src;
 			is_separated = false;
 		}
 	}
@@ -1056,10 +1170,44 @@ static int* BreakCond_GetListInfo(bc_breakpoint_t **bp,
 
 
 /**
+ * Check whether any of the breakpoint conditions is such
+ * that it's intended for tracking given value changes: 
+ *    inequality check for values that are the same
+ * If yes, mark & change it for tracing.
+ */
+static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
+{
+	bc_condition_t *condition;
+	bool track = false;
+	Uint32 value;
+	int i;
+
+	condition = bp->conditions;
+	for (i = 0; i < bp->ccount; condition++, i++) {
+		
+		if (condition->comparison == '!' &&
+		    memcmp(&(condition->lvalue), &(condition->rvalue), sizeof(bc_value_t)) == 0) {
+			/* set current value to right side */
+			value = BreakCond_GetValue(&(condition->rvalue));
+			condition->rvalue.value.number = value;
+			condition->rvalue.valuetype = VALUE_TYPE_NUMBER;
+			condition->rvalue.is_indirect = false;
+			/* and note that this is traced */
+			condition->track = true;
+			track = true;
+		}
+	}
+	if (track) {
+		fprintf(stderr, "-> Track value changes, show value(s) when matched.\n");
+	}
+}
+
+
+/**
  * Parse given breakpoint expression and store it.
  * Return true for success and false for failure.
  */
-static bool BreakCond_Parse(const char *expression, bool bForDsp)
+static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bool once)
 {
 	parser_state_t pstate;
 	bc_breakpoint_t *bp;
@@ -1074,7 +1222,8 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp)
 		return false;
 	}
 	bp += *bcount;
-	
+	memset(bp, 0, sizeof(bc_breakpoint_t));
+
 	normalized = BreakCond_TokenizeExpression(expression, &pstate);
 	if (normalized) {
 		bp->expression = normalized;
@@ -1091,6 +1240,15 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp)
 		(*bcount)++;
 		fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added.\n",
 			name, *bcount, ccount);
+		BreakCond_CheckTracking(bp);
+		if (trace) {
+			fprintf(stderr, "-> Trace, show hits, but don't break.\n");
+			bp->trace = trace;
+		}
+		if (once) {
+			fprintf(stderr, "-> Once, delete after hit.\n");
+			bp->once = once;
+		}
 	} else {
 		if (normalized) {
 			int offset, i = 0;
@@ -1137,7 +1295,8 @@ void BreakCond_List(bool bForDsp)
 
 	fprintf(stderr, "%d conditional %s breakpoints:\n", bcount, name);
 	for (i = 1; i <= bcount; bp++, i++) {
-		fprintf(stderr, "%3d: %s\n", i, bp->expression);
+		fprintf(stderr, "%3d: %s%s%s\n", i, bp->expression,
+			bp->trace?", traced":"", bp->once?", once":"");
 	}
 }
 
@@ -1208,18 +1367,24 @@ static void BreakCond_Help(void)
 	Uint32 value;
 	int i;
 	fputs(
-"  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]\n"
-"  expression = <value>[.mode] [& <number>] <condition> <value>[.mode]\n"
+"  breakpoint = <condition> [ && <condition> ... ] [option]\n"
+"  condition = <value>[.mode] [& <number>] <comparison> <value>[.mode]\n"
 "\n"
 "  where:\n"
 "  	value = [(] <register-name | hatari-variable | number> [)]\n"
 "  	number = [#|$|%]<digits>\n"
-"  	condition = '<' | '>' | '=' | '!'\n"
+"  	comparison = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
+"  	option = trace | once\n"
 "\n"
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
+"\n"
+"  If the value expressions on both sides of the '!' inequality comparison\n"
+"  are exactly the same, then the breakpoint tracks changes to the given\n"
+"  (address/register) value.  'trace' option to continue without breaking\n"
+"  can be useful with this. 'once' option removes breakpoint after hit.\n"
 "\n"
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
@@ -1250,8 +1415,19 @@ static void BreakCond_Help(void)
 "\n"
 "  Examples:\n"
 "  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0 = %1100\n"
+"       ($ffff9202).w ! ($ffff9202).w trace\n"
 "  	(r0).x = 1 && (r0).y = 2\n", stderr);
 }
+
+
+const char BreakCond_Description[] =
+	"[ help | all | <index> | <condition> [trace|once] ]\n"
+	"\tSet breakpoint with given condition, remove breakpoint with\n"
+	"\tgiven index or list all breakpoints when no args are given.\n"
+	"\tAdding 'trace' to end of condition causes breakpoint match\n"
+	"\tjust to be printed, not break.  Adding 'once' will delete\n"
+	"\tthe breakpoint after it's hit.  'help' outputs breakpoint\n"
+	"\tcondition syntax help, 'all' removes all conditional breakpoints.";
 
 
 /* ------------- breakpoint condition parsing, public API ------------ */
@@ -1259,33 +1435,55 @@ static void BreakCond_Help(void)
 /**
  * Parse given DebugUI command for Dsp and act accordingly
  */
-bool BreakCond_Command(const char *expression, bool bForDsp)
+bool BreakCond_Command(const char *args, bool bForDsp)
 {
+	bool trace, once, ret = true;
+	char *cut, *expression;
 	unsigned int position;
 	const char *end;
 	
-	if (!expression) {
+	if (!args) {
 		BreakCond_List(bForDsp);
 		return true;
 	}
-	while (*expression == ' ') {
-		expression++;
-	}
+	expression = strdup(args);
+	assert(expression);
+	
+	expression = Str_Trim(expression);
+	/* subcommands */
 	if (strncmp(expression, "help", 4) == 0) {
 		BreakCond_Help();
-		return true;
+		goto cleanup;
 	}
 	if (strcmp(expression, "all") == 0) {
 		BreakCond_RemoveAll(bForDsp);
-		return true;
+		goto cleanup;
 	}
+	/* postfix options */
+	once = false;
+	trace = false;
+	if ((cut = Str_EndsWith(expression, "trace"))) {
+		*cut = '\0';
+		trace = true;
+	} else {
+		if ((cut = Str_EndsWith(expression, "once"))) {
+			*cut = '\0';
+			once = true;
+		}
+	}
+	/* index (for removal) */
 	end = expression;
 	while (isdigit(*end)) {
 		end++;
 	}
 	if (end > expression && *end == '\0' &&
 	    sscanf(expression, "%u", &position) == 1) {
-		return BreakCond_Remove(position, bForDsp);
+		ret = BreakCond_Remove(position, bForDsp);
+	} else {
+		/* add breakpoint? */
+		ret = BreakCond_Parse(expression, bForDsp, trace, once);
 	}
-	return BreakCond_Parse(expression, bForDsp);
+cleanup:
+	free(expression);
+	return ret;
 }
