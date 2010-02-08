@@ -515,7 +515,7 @@ static int DebugCpu_BreakCond(int nArgc, char *psArgs[])
  */
 static int DebugCpu_MemDump(int nArgc, char *psArgs[])
 {
-	int i,j;
+	int i;
 	char c;
 	Uint32 memdump_upper = 0;
 
@@ -531,7 +531,6 @@ static int DebugCpu_MemDump(int nArgc, char *psArgs[])
 			break;
 		case 1:
 			/* range */
-			memdump_upper &= 0x00FFFFFF;
 			break;
 		}
 	} /* continue */
@@ -539,24 +538,9 @@ static int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	if (!memdump_upper)
 	{
-		for (j=0;j<MEMDUMP_ROWS;j++)
-		{
-			fprintf(debugOutput, "%6.6X: ", memdump_addr); /* print address */
-			for (i = 0; i < MEMDUMP_COLS; i++)               /* print hex data */
-				fprintf(debugOutput, "%2.2x ", STMemory_ReadByte(memdump_addr++));
-			fprintf(debugOutput, "  ");                     /* print ASCII data */
-			for (i = 0; i < MEMDUMP_COLS; i++)
-			{
-				c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
-				if (!isprint((unsigned)c))
-					c = NON_PRINT_CHAR;         /* non-printable as dots */
-				fprintf(debugOutput,"%c", c);
-			}
-			fprintf(debugOutput, "\n");        /* newline */
-		}
-		fflush(debugOutput);
-		return DEBUGGER_CMDCONT;
-	} /* not a range */
+		memdump_upper = memdump_addr + MEMDUMP_ROWS*MEMDUMP_COLS;
+	}
+	memdump_upper &= 0x00FFFFFF;
 
 	while (memdump_addr < memdump_upper)
 	{
