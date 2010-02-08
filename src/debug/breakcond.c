@@ -1170,10 +1170,13 @@ static int* BreakCond_GetListInfo(bc_breakpoint_t **bp,
 
 
 /**
- * Check whether any of the breakpoint conditions is such
- * that it's intended for tracking given value changes: 
- *    inequality check for values that are the same
- * If yes, mark & change it for tracing.
+ * Check whether any of the breakpoint conditions is such that it's
+ * intended for tracking given value changes (inequality comparison
+ * on identical values) or for retrieving the current value to break
+ * on next value change (other comparisons on identical values).
+ *
+ * On former case, mark it for tracking, on other cases, just
+ * retrieve the value.
  */
 static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 {
@@ -1185,16 +1188,18 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 	condition = bp->conditions;
 	for (i = 0; i < bp->ccount; condition++, i++) {
 		
-		if (condition->comparison == '!' &&
-		    memcmp(&(condition->lvalue), &(condition->rvalue), sizeof(bc_value_t)) == 0) {
+		if (memcmp(&(condition->lvalue), &(condition->rvalue), sizeof(bc_value_t)) == 0) {
 			/* set current value to right side */
 			value = BreakCond_GetValue(&(condition->rvalue));
+			fprintf(stderr, "- current value: $%x\n", value);
 			condition->rvalue.value.number = value;
 			condition->rvalue.valuetype = VALUE_TYPE_NUMBER;
 			condition->rvalue.is_indirect = false;
-			/* and note that this is traced */
-			condition->track = true;
-			track = true;
+			if (condition->comparison == '!') {
+				/* and note that this is traced */
+				condition->track = true;
+				track = true;
+			}
 		}
 	}
 	if (track) {
