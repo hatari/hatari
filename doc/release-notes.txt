@@ -49,8 +49,9 @@ Emulator:
 - Can create blank 2.88MB (ED) and 1.44MB (HD) floppy images
   from the GUI in addition to DD & SD images
 - Debugger improvements:
-  - "trace" command for tracing what the emulated code does
   - GEMDOS tracing gives slightly more information
+  - "stateload" and "statesave" commands for memory snapshots
+  - "trace" command for tracing what the emulated code does
   - "evaluate" command for doing calculations
   - "info" command for showing Atari HW and OS information
   - "symbols" command for loading and listing CPU & DSP code
@@ -59,8 +60,12 @@ Emulator:
   - debugger command and command argument TAB-completion support
     (requires readline library)
   - improved register name handling + fixed DSP reg name matching
-  - tracing and memory change tracking modes added to conditional
-    breakpoints
+  - if conditional breakpoint condition both sides are identical, replace
+    right side with current value of given expression (e.g. if it's "d0",
+    use current D0 value).  If the comparison is for inequality ("!"),
+    output the value & break only when the value changes from the previous
+    value (not original like with other comparisons)
+  - option to trace/output conditional breakpoint hits without breaking
   - conditional breakpoints count hits and can be optionally removed
     after first hit
   - CPU breakpoints can be given an optional count of how many hits

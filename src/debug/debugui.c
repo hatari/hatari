@@ -26,6 +26,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "file.h"
 #include "m68000.h"
+#include "memorySnapShot.h"
 #include "options.h"
 #include "screen.h"
 #include "statusbar.h"
@@ -197,6 +198,27 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 			expression, offset+2, '^', errstr);
 	else
 		DebugUI_PrintValue(result);
+	return DEBUGGER_CMDDONE;
+}
+
+
+/**
+ * Command: Store and restore emulation state
+ */
+static int DebugUI_DoMemorySnap(int argc, char *argv[])
+{
+	const char *file;
+
+	if (argc > 1)
+		file = argv[1];
+	else
+		file = ConfigureParams.Memory.szMemoryCaptureFileName;
+
+	if (strcmp(argv[0], "stateload") == 0)
+		MemorySnapShot_Restore(file, true);
+	else
+		MemorySnapShot_Capture(file, true);
+
 	return DEBUGGER_CMDDONE;
 }
 
@@ -467,6 +489,8 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "loadbin", rl_filename_completion_function },
 		{ "s", rl_filename_completion_function },
 		{ "savebin", rl_filename_completion_function },
+		{ "stateload", rl_filename_completion_function },
+		{ "statesave", rl_filename_completion_function },
 		{ "symbols", rl_filename_completion_function },
 		{ "o", Opt_MatchOption },
 		{ "setopt", Opt_MatchOption },
@@ -597,7 +621,7 @@ static const dbgcommand_t uicommand[] =
 	  "[command]"
 	  "\tPrint help text for available commands.",
 	  false },
-	{ DebugInfo_Command, "info", "",
+	{ DebugInfo_Command, "info", "i",
 	  "show machine/OS information",
 	  "[subject]"
 	  "\tPrint information on requested subject or list subjects.",
@@ -613,6 +637,16 @@ static const dbgcommand_t uicommand[] =
 	  "[command line parameters]\n"
 	  "\tSet Hatari command like options. For example to enable\n"
 	  "\texception catching, use:  setopt --debug",
+	  false },
+	{ DebugUI_DoMemorySnap, "stateload", "",
+	  "restore emulation state",
+	  "[filename]\n"
+	  "\tRestore emulation snapshot from default or given file",
+	  false },
+	{ DebugUI_DoMemorySnap, "statesave", "",
+	  "save emulation state",
+	  "[filename]\n"
+	  "\tSave emulation snapshot to default or given file",
 	  false },
 	{ DebugUI_SetTracing, "trace", "t",
 	  "select Hatari tracing settings",
