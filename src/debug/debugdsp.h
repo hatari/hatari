@@ -11,5 +11,8 @@
 #define HATARI_DEBUGDSP_H
 
 extern void DebugDsp_Check(void);
+extern int DebugDsp_DisAsm(int nArgc, char *psArgs[]);
+extern int DebugDsp_MemDump(int nArgc, char *psArgs[]);
+extern int DebugDsp_Register(int nArgc, char *psArgs[]);
 
 #endif /* HATARI_DEBUGDSP_H */

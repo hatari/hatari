@@ -10,6 +10,7 @@
 const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
+#include <assert.h>
 #include "main.h"
 #include "configuration.h"
 #include "debugInfo.h"
@@ -271,18 +272,19 @@ static void DebugInfo_Crossbar(Uint32 dummy)
 
 
 /* ------------------------------------------------------------------
- * CPU information wrappers
+ * CPU and DSP information wrappers
  */
 
 /**
- * Helper to call debugcpu.c debugger commands
+ * Helper to call debugcpu.c and debugdsp.c debugger commands
  */
 static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *command, Uint32 arg)
 {
-	char cmdbuffer[12], argbuffer[32];
+	char cmdbuffer[16], argbuffer[12];
 	char *argv[] = { argbuffer, NULL };
 	int argc = 1;
 
+	assert(strlen(command) < sizeof(cmdbuffer));
 	strcpy(cmdbuffer, command);
 	if (arg) {
 		sprintf(argbuffer, "$%x", arg);
@@ -291,20 +293,32 @@ static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *comman
 	func(argc, argv);
 }
 
-static void DebugInfo_DisAsm(Uint32 arg)
+static void DebugInfo_CpuDisAsm(Uint32 arg)
 {
 	if (!arg) {
 		arg = M68000_GetPC();
 	}
 	DebugInfo_CallCommand(DebugCpu_DisAsm, "disasm", arg);
 }
-static void DebugInfo_MemDump(Uint32 arg)
+static void DebugInfo_CpuMemDump(Uint32 arg)
 {
 	DebugInfo_CallCommand(DebugCpu_MemDump, "memdump", arg);
 }
-static void DebugInfo_Register(Uint32 arg)
+static void DebugInfo_CpuRegister(Uint32 arg)
 {
 	DebugInfo_CallCommand(DebugCpu_Register, "register", arg);
+}
+
+static void DebugInfo_DspDisAsm(Uint32 arg)
+{
+	if (!arg) {
+		arg = DSP_GetPC();
+	}
+	DebugInfo_CallCommand(DebugDsp_DisAsm, "dspdisasm", arg);
+}
+static void DebugInfo_DspRegister(Uint32 arg)
+{
+	DebugInfo_CallCommand(DebugDsp_Register, "dspreg", arg);
 }
 
 
@@ -335,14 +349,16 @@ static const struct {
 	void (*func)(Uint32 arg);
 	const char *info;
 } infotable[] = {
-	{ "basepage", DebugInfo_Basepage, "program basepage info at <given address>" },
-	{ "crossbar", DebugInfo_Crossbar, "Falcon crossbar HW register values" },
-	{ "default",  DebugInfo_Default,  "Default debugger entry information" },
-	{ "disasm",   DebugInfo_DisAsm,   "Disasm from PC or <given address>" },
-	{ "memdump",  DebugInfo_MemDump,  "Dump memory from PC or <given address>" },
-	{ "osheader", DebugInfo_OSHeader, "TOS OS header information" },
-	{ "register", DebugInfo_Register, "Show register values" },
-	{ "videl",    DebugInfo_Videl,    "Falcon Videl HW register values" }
+	{ "basepage", DebugInfo_Basepage, "Show program basepage info at <given address>" },
+	{ "crossbar", DebugInfo_Crossbar, "Show Falcon crossbar HW register values" },
+	{ "default",  DebugInfo_Default,  "Show default debugger entry information" },
+	{ "disasm",   DebugInfo_CpuDisAsm,   "Disasm CPU from PC or <given address>" },
+	{ "dspdisasm",DebugInfo_DspDisAsm,   "Disasm DSP from PC or <given address>" },
+	{ "dspreg",   DebugInfo_DspRegister, "Show DSP register values" },
+	{ "memdump",  DebugInfo_CpuMemDump,  "Dump CPU memory from 0 or <given address>" },
+	{ "osheader", DebugInfo_OSHeader, "Show TOS OS header information" },
+	{ "register", DebugInfo_CpuRegister, "Show CPU register values" },
+	{ "videl",    DebugInfo_Videl,    "Show Falcon Videl HW register values" }
 };
 
 /**
@@ -414,7 +430,7 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 	}
 	fprintf(stderr, "Info subcommands are:\n");
 	for (i = 0; i < ARRAYSIZE(infotable); i++) {
-		fprintf(stderr, "- %s: show %s\n",
+		fprintf(stderr, "- %s: %s\n",
 			infotable[i].name, infotable[i].info);
 	}
 	return DEBUGGER_CMDDONE;

@@ -50,7 +50,7 @@ void DebugDsp_MemorySnapShot_Capture(bool bSave)
 /**
  * Command: Dump or set a DSP register
  */
-static int DebugDsp_Register(int nArgc, char *psArgs[])
+int DebugDsp_Register(int nArgc, char *psArgs[])
 {
 	char *assign;
 	Uint32 value;
@@ -93,7 +93,7 @@ error_msg:
 /**
  * DSP dissassemble - arg = starting address/range, or PC.
  */
-static int DebugDsp_DisAsm(int nArgc, char *psArgs[])
+int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 {
 	Uint32 lower, upper;
 	Uint16 dsp_disasm_upper = 0;
@@ -159,7 +159,7 @@ static int DebugDsp_DisAsm(int nArgc, char *psArgs[])
  * <x|y|p> <address>: dump from X, Y or P, starting from given address,
  * e.g. "x 200" or "p 200-300"
  */
-static int DebugDsp_MemDump(int nArgc, char *psArgs[])
+int DebugDsp_MemDump(int nArgc, char *psArgs[])
 {
 	Uint32 lower, upper;
 	Uint16 dsp_memdump_upper = 0;
