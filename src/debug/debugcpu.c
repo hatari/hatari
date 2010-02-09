@@ -704,6 +704,7 @@ void DebugCpu_SetDebugging(void)
 
 static const dbgcommand_t cpucommands[] =
 {
+	{ NULL, "CPU commands", NULL, NULL, NULL, false },
 	{ DebugCpu_BreakPoint, "address", "a",
 	  "toggle or list (traditional) CPU address breakpoints",
 	  "[address] [count]\n"

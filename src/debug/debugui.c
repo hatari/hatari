@@ -288,6 +288,8 @@ void DebugUI_PrintCmdHelp(const char *psCmd)
 	/* Search the command ... */
 	for (cmd = debugCommand, i = 0; i < debugCommands; i++, cmd++)
 	{
+		if (!debugCommand[i].pFunction)
+			continue;
 		if (!strcmp(psCmd, cmd->sLongName)
 		    || (cmd->sShortName && *(cmd->sShortName)
 			&& !strcmp(psCmd, cmd->sShortName)))
@@ -330,19 +332,25 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	fputs("Available commands:\n", stderr);
 	for (i = 0; i < debugCommands; i++)
 	{
+		if (!debugCommand[i].pFunction)
+		{
+			fprintf(stderr, "\n%s:\n", debugCommand[i].sLongName);
+			continue;
+		}
 		fprintf(stderr, " %12s (%2s) : %s\n", debugCommand[i].sLongName,
 			debugCommand[i].sShortName, debugCommand[i].sShortDesc);
 	}
 
 	fprintf(stderr,
+		"\n"
 		"If value is prefixed with '$', it's a hexadecimal, if with '#', it's\n"
 		"a normal decimal, if with '%%', it's a binary decimal. Prefix can\n"
 		"be skipped for numbers in the default number base (currently %d).\n"
 		"Adresses may be given as a range like '$fc0000-$fc0100' (note\n"
 		"that there should be no spaces between the range numbers).\n"
+		"\n"
 		"'help <command>' gives more help.\n", ConfigureParams.Log.nNumberBase);
 	return DEBUGGER_CMDDONE;
 }
@@ -372,6 +380,8 @@ int DebugUI_ParseCommand(char *input)
 	/* Search the command ... */
 	for (i = 0; i < debugCommands; i++)
 	{
+		if (!debugCommand[i].pFunction)
+			continue;
 		if (!strcmp(psArgs[0], debugCommand[i].sLongName) ||
 		    !strcmp(psArgs[0], debugCommand[i].sShortName))
 		{
@@ -454,8 +464,9 @@ static char *DebugUI_MatchCommand(const char *text, int state)
 	/* next match */
 	while (i < debugCommands)
 	{
-		name = debugCommand[i++].sLongName;
-		if (strncmp(name, text, len) == 0)
+		name = debugCommand[i].sLongName;
+		if (debugCommand[i++].pFunction &&
+		    strncmp(name, text, len) == 0)
 			return (strdup(name));
 	}
 	return NULL;
@@ -583,6 +594,7 @@ static char *DebugUI_GetCommand(void)
 
 static const dbgcommand_t uicommand[] =
 {
+	{ NULL, "Generic commands", NULL, NULL, NULL, false },
 	{ DebugUI_Evaluate, "evaluate", "e",
 	  "evaluate an expression",
 	  "<expression>\n"

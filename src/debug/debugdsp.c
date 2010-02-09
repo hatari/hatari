@@ -413,6 +413,7 @@ void DebugDsp_SetDebugging(void)
 
 static const dbgcommand_t dspcommands[] =
 {
+	{ NULL, "DSP commands", NULL, NULL, NULL, false },
 	{ DebugDsp_BreakPoint, "dspaddress", "da",
 	  "toggle or list (traditional) DSP address breakpoints",
 	  "[address]\n"
