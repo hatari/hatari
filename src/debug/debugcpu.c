@@ -206,7 +206,7 @@ static int DebugCpu_ShowMatchedBreakpoint(Uint32 addr)
 /**
  * Dissassemble - arg = starting address, or PC.
  */
-static int DebugCpu_DisAsm(int nArgc, char *psArgs[])
+int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 {
 	Uint32 disasm_upper = 0;
 	uaecptr nextpc;
@@ -306,7 +306,7 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
 /**
  * Dump or set CPU registers
  */
-static int DebugCpu_Register(int nArgc, char *psArgs[])
+int DebugCpu_Register(int nArgc, char *psArgs[])
 {
 	char reg[3], *assign;
 	Uint32 value;
@@ -513,7 +513,7 @@ static int DebugCpu_BreakCond(int nArgc, char *psArgs[])
 /**
  * Do a memory dump, args = starting address.
  */
-static int DebugCpu_MemDump(int nArgc, char *psArgs[])
+int DebugCpu_MemDump(int nArgc, char *psArgs[])
 {
 	int i;
 	char c;

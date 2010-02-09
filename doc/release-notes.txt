@@ -53,7 +53,9 @@ Emulator:
   - "stateload" and "statesave" commands for memory snapshots
   - "trace" command for tracing what the emulated code does
   - "evaluate" command for doing calculations
-  - "info" command for showing Atari HW and OS information
+  - "info" command for showing Atari HW and OS information. With "lock"
+    option this information (e.g. disassembly from PC or memdump from
+    given address) can be shown each time the debugger is entered
   - "symbols" command for loading and listing CPU & DSP code
     symbols/addresses and breaking on them.  Symbols are shown
     on CPU disassembly

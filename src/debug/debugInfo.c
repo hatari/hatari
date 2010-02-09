@@ -11,12 +11,17 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include "main.h"
-#include "debugInfo.h"
-#include "debugui.h"
-#include "ioMem.h"
 #include "configuration.h"
+#include "debugInfo.h"
+#include "debugcpu.h"
+#include "debugdsp.h"
+#include "debugui.h"
+#include "dsp.h"
 #include "evaluate.h"
+#include "ioMem.h"
+#include "m68000.h"
 #include "tos.h"
+#include "video.h"
 
 
 /* ------------------------------------------------------------------
@@ -266,8 +271,64 @@ static void DebugInfo_Crossbar(Uint32 dummy)
 
 
 /* ------------------------------------------------------------------
+ * CPU information wrappers
+ */
+
+/**
+ * Helper to call debugcpu.c debugger commands
+ */
+static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *command, Uint32 arg)
+{
+	char cmdbuffer[12], argbuffer[32];
+	char *argv[] = { argbuffer, NULL };
+	int argc = 1;
+
+	strcpy(cmdbuffer, command);
+	if (arg) {
+		sprintf(argbuffer, "$%x", arg);
+		argv[argc++] = argbuffer;
+	}
+	func(argc, argv);
+}
+
+static void DebugInfo_DisAsm(Uint32 arg)
+{
+	if (!arg) {
+		arg = M68000_GetPC();
+	}
+	DebugInfo_CallCommand(DebugCpu_DisAsm, "disasm", arg);
+}
+static void DebugInfo_MemDump(Uint32 arg)
+{
+	DebugInfo_CallCommand(DebugCpu_MemDump, "memdump", arg);
+}
+static void DebugInfo_Register(Uint32 arg)
+{
+	DebugInfo_CallCommand(DebugCpu_Register, "register", arg);
+}
+
+
+/* ------------------------------------------------------------------
  * Debugger & readline TAB completion integration
  */
+
+/**
+ * Default information on entering the debugger
+ */
+static void DebugInfo_Default(Uint32 dummy)
+{
+	int hbl, fcycles, lcycles;
+	Video_GetPosition(&fcycles, &hbl, &lcycles);
+	fprintf(stderr, "\nCPU=$%x, VBL=%d, FrameCycles=%d, HBL=%d, LineCycles=%d, DSP=",
+		M68000_GetPC(), nVBLs, fcycles, hbl, lcycles);
+	if (bDspEnabled)
+		fprintf(stderr, "$%x\n", DSP_GetPC());
+	else
+		fprintf(stderr, "N/A\n");
+}
+
+static void (*LockedFunction)(Uint32 arg) = DebugInfo_Default;
+static Uint32 LockedArgument;
 
 static const struct {
 	const char *name;
@@ -276,9 +337,21 @@ static const struct {
 } infotable[] = {
 	{ "basepage", DebugInfo_Basepage, "program basepage info at <given address>" },
 	{ "crossbar", DebugInfo_Crossbar, "Falcon crossbar HW register values" },
+	{ "default",  DebugInfo_Default,  "Default debugger entry information" },
+	{ "disasm",   DebugInfo_DisAsm,   "Disasm from PC or <given address>" },
+	{ "memdump",  DebugInfo_MemDump,  "Dump memory from PC or <given address>" },
 	{ "osheader", DebugInfo_OSHeader, "TOS OS header information" },
+	{ "register", DebugInfo_Register, "Show register values" },
 	{ "videl",    DebugInfo_Videl,    "Falcon Videl HW register values" }
 };
+
+/**
+ * Show selected information
+ */
+void DebugInfo_ShowInfo(void)
+{
+	LockedFunction(LockedArgument);
+}
 
 
 /**
@@ -313,9 +386,14 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 {
 	const char *cmd;
 	Uint32 value = 0;
+	bool lock = false;
 	bool ok = true;
 	int i;
 
+	if (strcmp(psArgs[nArgc-1], "lock") == 0) {
+		lock = true;
+		nArgc--;
+	}
 	if (nArgc > 2) {
 		ok = Eval_Number(psArgs[2], &value);
 	}
@@ -323,7 +401,13 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 		cmd = psArgs[1];		
 		for (i = 0; i < ARRAYSIZE(infotable); i++) {
 			if (strcmp(cmd, infotable[i].name) == 0) {
-				infotable[i].func(value);
+				if (lock) {
+					LockedFunction = infotable[i].func;
+					LockedArgument = value;
+					fprintf(stderr, "Locked %s info.\n", cmd);
+				} else {
+					infotable[i].func(value);
+				}
 				return DEBUGGER_CMDDONE;
 			}
 		}

@@ -11,6 +11,9 @@
 #define HATARI_DEBUGCPU_H
 
 extern void DebugCpu_Check(void);
+extern int DebugCpu_DisAsm(int nArgc, char *psArgs[]);
+extern int DebugCpu_MemDump(int nArgc, char *psArgs[]);
+extern int DebugCpu_Register(int nArgc, char *psArgs[]);
 extern int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr);
 
 #endif /* HATARI_DEBUGCPU_H */

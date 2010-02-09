@@ -23,15 +23,14 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "change.h"
 #include "configuration.h"
-#include "dsp.h"
 #include "file.h"
+#include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "options.h"
 #include "screen.h"
 #include "statusbar.h"
 #include "str.h"
-#include "video.h"
 
 #include "debug_priv.h"
 #include "breakcond.h"
@@ -483,6 +482,7 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "f", rl_filename_completion_function },
 		{ "h", DebugUI_MatchCommand },
 		{ "help", DebugUI_MatchCommand },
+		{ "i", DebugInfo_MatchCommand },
 		{ "info", DebugInfo_MatchCommand },
 		{ "logfile", rl_filename_completion_function },
 		{ "l", rl_filename_completion_function },
@@ -581,30 +581,6 @@ static char *DebugUI_GetCommand(void)
 #endif /* !HAVE_LIBREADLINE */
 
 
-/**
- * Texts shown when entering the debugger on first and successive times
- */
-static void DebugUI_WelcomeText(void)
-{
-	int hbl, fcycles, lcycles;
-	static const char *welcome =
-		"\n----------------------------------------------------------------------"
-		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
-	if (welcome)
-	{
-		fputs(welcome, stderr);
-		welcome = NULL;
-	}
-	Video_GetPosition(&fcycles, &hbl, &lcycles);
-	fprintf(stderr, "\nCPU=$%x, VBL=%d, FrameCycles=%d, HBL=%d, LineCycles=%d, DSP=",
-		M68000_GetPC(), nVBLs, fcycles, hbl, lcycles);
-	if (bDspEnabled)
-		fprintf(stderr, "$%x\n", DSP_GetPC());
-	else
-		fprintf(stderr, "N/A\n");
-}
-
-
 static const dbgcommand_t uicommand[] =
 {
 	{ DebugUI_Evaluate, "evaluate", "e",
@@ -618,13 +594,15 @@ static const dbgcommand_t uicommand[] =
 	  true },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
-	  "[command]"
+	  "[command]\n"
 	  "\tPrint help text for available commands.",
 	  false },
 	{ DebugInfo_Command, "info", "i",
 	  "show machine/OS information",
-	  "[subject]"
-	  "\tPrint information on requested subject or list subjects.",
+	  "[subject [arg] [lock]]\n"
+	  "\tPrint information on requested subject or list them if\n"
+	  "\tno subject given. 'lock' optoin will set the information\n"
+	  "\tto be shown every time debugger is entered.",
 	  false },
 	{ DebugUI_SetLogFile, "logfile", "f",
 	  "open or close log file",
@@ -705,14 +683,22 @@ static void DebugUI_Init(void)
 void DebugUI(void)
 {
 	int cmdret;
+	static const char *welcome =
+		"\n----------------------------------------------------------------------"
+		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
 	
 	if (bInFullScreen)
 		Screen_ReturnFromFullScreen();
 
 	DebugUI_Init();
 
-	DebugUI_WelcomeText();
-	
+	if (welcome)
+	{
+		fputs(welcome, stderr);
+		welcome = NULL;
+	}
+	DebugInfo_ShowInfo();
+
 	/* override paused message so that user knows to look into console
 	 * on how to continue in case he invoked the debugger by accident.
 	 */
