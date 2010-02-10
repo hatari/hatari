@@ -50,6 +50,43 @@
     $FF893C (word) : Codec Status
     $FF8940 (word) : GPIO Data Direction
     $FF8942 (word) : GPIO Data
+
+
+    Crossbar schematics:
+    
+       - one receiving device can be connected to only one source device
+       - one source device can be connected to multiple receiving device
+
+                           Source devices
+                                               CROSSBAR
+                             EXT INPUT ---O------O------O-----O
+                              CHANNEL     |      |      |     |
+                                          |      |      |     |
+                                 DSP   ---O------O------O-----O
+                              TRANSMIT    |      |      |     |
+                                          |      |      |     |
+   Mic L -----|                  DMA   ---O------O------O-----O
+          /---|XOR ----|\     PLAYBACK    |      |      |     |      
+   PSG --|             | \                |      |      |     |
+          \---|        | /-------X--------O------O------O-----O
+   Mic R -----|XOR ----|/        |        |      |      |     |
+                       ADC       |        |      DMA    DSP   EXT OUTPUT      Receiving Devices
+                                 |        |    RECEIVE CHANNEL
+                                 |        |
+                              -----------------
+                               \      +      /
+                                \-----------/
+                                      |
+                                      |
+                                    -----
+                                    \   / DAC
+                                     \ /
+                                      |
+                                      |
+                                Output to:
+                                   - header, 
+                                   - internal speaker, 
+                                   - monitor speaker   
 */
 
 const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
