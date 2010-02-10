@@ -1191,14 +1191,15 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 		if (memcmp(&(condition->lvalue), &(condition->rvalue), sizeof(bc_value_t)) == 0) {
 			/* set current value to right side */
 			value = BreakCond_GetValue(&(condition->rvalue));
-			fprintf(stderr, "- current value: $%x\n", value);
 			condition->rvalue.value.number = value;
 			condition->rvalue.valuetype = VALUE_TYPE_NUMBER;
 			condition->rvalue.is_indirect = false;
 			if (condition->comparison == '!') {
-				/* and note that this is traced */
+				/* which changes will be traced */
 				condition->track = true;
 				track = true;
+			} else {
+				fprintf(stderr, "  %c $%x\n", condition->comparison, value);
 			}
 		}
 	}
