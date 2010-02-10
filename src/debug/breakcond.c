@@ -1067,6 +1067,33 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		if (isspace(*src)) {
 			continue;
 		}
+		if (*src == '"') {
+			int offset;
+			Uint32 value;
+			const char *err;
+			char *tmp = dst;
+			src += 1;
+			while (*src && *src != '"') {
+				*tmp++ = *src++;
+			}
+			if (!*src) {
+				pstate->error = "unterminated quoted expression";
+				pstate->arg = src-expression;
+				free(normalized);
+				return NULL;
+			}
+			*tmp = '\0';
+			err = Eval_Expression(dst, &value, &offset);
+			if (err) {
+				pstate->error = err;
+				pstate->arg = (src-expression) - (tmp-dst) + offset;
+				free(normalized);
+				return NULL;
+			}
+			dst += sprintf(dst, "$%x", value);
+			is_separated = false;
+			continue;
+		}
 		/* separate tokens with single space in destination */
 		for (i = 0; (sep = separator[i]); i++) {
 			if (*src == sep) {
@@ -1244,8 +1271,8 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bo
 	}
 	if (ccount > 0) {
 		(*bcount)++;
-		fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added.\n",
-			name, *bcount, ccount);
+		fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added:\n\t%s\n",
+			name, *bcount, ccount, bp->expression);
 		BreakCond_CheckTracking(bp);
 		if (trace) {
 			fprintf(stderr, "-> Trace, show hits, but don't break.\n");
