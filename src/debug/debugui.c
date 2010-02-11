@@ -493,8 +493,9 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "f", rl_filename_completion_function },
 		{ "h", DebugUI_MatchCommand },
 		{ "help", DebugUI_MatchCommand },
-		{ "i", DebugInfo_MatchCommand },
-		{ "info", DebugInfo_MatchCommand },
+		{ "i", DebugInfo_MatchInfo },
+		{ "info", DebugInfo_MatchInfo },
+		{ "lock", DebugInfo_MatchLock },
 		{ "logfile", rl_filename_completion_function },
 		{ "l", rl_filename_completion_function },
 		{ "loadbin", rl_filename_completion_function },
@@ -611,10 +612,15 @@ static const dbgcommand_t uicommand[] =
 	  false },
 	{ DebugInfo_Command, "info", "i",
 	  "show machine/OS information",
-	  "[subject [arg] [lock]]\n"
+	  "[subject [arg]]\n"
 	  "\tPrint information on requested subject or list them if\n"
-	  "\tno subject given. 'lock' optoin will set the information\n"
-	  "\tto be shown every time debugger is entered.",
+	  "\tno subject given.",
+	  false },
+	{ DebugInfo_Command, "lock", "",
+	  "lock info to show on entering debugger",
+	  "[subject [args]]\n"
+	  "\tLock requested information to be shown every time debugger\n"
+	  "\tis entered or list available options if no subject's given.",
 	  false },
 	{ DebugUI_SetLogFile, "logfile", "f",
 	  "open or close log file",

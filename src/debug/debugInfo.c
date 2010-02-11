@@ -281,7 +281,7 @@ static void DebugInfo_Crossbar(Uint32 dummy)
 static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *command, Uint32 arg)
 {
 	char cmdbuffer[16], argbuffer[12];
-	char *argv[] = { argbuffer, NULL };
+	char *argv[] = { cmdbuffer, NULL };
 	int argc = 1;
 
 	assert(strlen(command) < sizeof(cmdbuffer));
@@ -293,6 +293,10 @@ static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *comman
 	func(argc, argv);
 }
 
+static void DebugInfo_CpuRegister(Uint32 arg)
+{
+	DebugInfo_CallCommand(DebugCpu_Register, "register", arg);
+}
 static void DebugInfo_CpuDisAsm(Uint32 arg)
 {
 	if (!arg) {
@@ -304,11 +308,11 @@ static void DebugInfo_CpuMemDump(Uint32 arg)
 {
 	DebugInfo_CallCommand(DebugCpu_MemDump, "memdump", arg);
 }
-static void DebugInfo_CpuRegister(Uint32 arg)
-{
-	DebugInfo_CallCommand(DebugCpu_Register, "register", arg);
-}
 
+static void DebugInfo_DspRegister(Uint32 arg)
+{
+	DebugInfo_CallCommand(DebugDsp_Register, "dspreg", arg);
+}
 static void DebugInfo_DspDisAsm(Uint32 arg)
 {
 	if (!arg) {
@@ -316,9 +320,36 @@ static void DebugInfo_DspDisAsm(Uint32 arg)
 	}
 	DebugInfo_CallCommand(DebugDsp_DisAsm, "dspdisasm", arg);
 }
-static void DebugInfo_DspRegister(Uint32 arg)
+
+static void DebugInfo_DspMemDump(Uint32 arg)
 {
-	DebugInfo_CallCommand(DebugDsp_Register, "dspreg", arg);
+	char cmdbuf[] = "dspmemdump";
+	char addrbuf[6], spacebuf[2] = "X";
+	char *argv[] = { cmdbuf, spacebuf, addrbuf };
+	spacebuf[0] = (arg>>16)&0xff;
+       	sprintf(addrbuf, "$%x", (Uint16)(arg&0xffff));
+	DebugDsp_MemDump(3, argv);
+}
+/**
+ * Convert arguments to Uint32 arg suitable for DSP memdump callback
+ */
+static Uint32 DebugInfo_DspMemArgs(int argc, char *argv[])
+{
+	Uint32 value;
+	char space;
+	if (argc != 2) {
+		return 0;
+	}
+	space = toupper(argv[0][0]);
+	if ((space != 'X' && space != 'Y' && space != 'P') || argv[0][1]) {
+		fprintf(stderr, "ERROR: invalid DSP address space '%s'!\n", argv[0]);
+		return 0;
+	}
+	if (!Eval_Number(argv[1], &value) || value > 0xffff) {
+		fprintf(stderr, "ERROR: invalid DSP address '%s'!\n", argv[1]);
+		return 0;
+	}
+	return ((Uint32)space<<16) | value;
 }
 
 
@@ -341,32 +372,37 @@ static void DebugInfo_Default(Uint32 dummy)
 		fprintf(stderr, "N/A\n");
 }
 
-static void (*LockedFunction)(Uint32 arg) = DebugInfo_Default;
-static Uint32 LockedArgument;
-
 static const struct {
+	/* whether callback is used only for locking */
+	bool lock;
 	const char *name;
 	void (*func)(Uint32 arg);
+	/* convert args in argv into single Uint32 for func */
+	Uint32 (*args)(int argc, char *argv[]);
 	const char *info;
 } infotable[] = {
-	{ "basepage", DebugInfo_Basepage, "Show program basepage info at <given address>" },
-	{ "crossbar", DebugInfo_Crossbar, "Show Falcon crossbar HW register values" },
-	{ "default",  DebugInfo_Default,  "Show default debugger entry information" },
-	{ "disasm",   DebugInfo_CpuDisAsm,   "Disasm CPU from PC or <given address>" },
-	{ "dspdisasm",DebugInfo_DspDisAsm,   "Disasm DSP from PC or <given address>" },
-	{ "dspreg",   DebugInfo_DspRegister, "Show DSP register values" },
-	{ "memdump",  DebugInfo_CpuMemDump,  "Dump CPU memory from 0 or <given address>" },
-	{ "osheader", DebugInfo_OSHeader, "Show TOS OS header information" },
-	{ "register", DebugInfo_CpuRegister, "Show CPU register values" },
-	{ "videl",    DebugInfo_Videl,    "Show Falcon Videl HW register values" }
+	{ false,"basepage",  DebugInfo_Basepage,   NULL, "Show program basepage info at given <address>" },
+	{ false,"crossbar",  DebugInfo_Crossbar,   NULL, "Show Falcon crossbar HW register values" },
+	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
+	{ true, "disasm",    DebugInfo_CpuDisAsm,  NULL, "Disasm CPU from PC or given <address>" },
+	{ true, "dspdisasm", DebugInfo_DspDisAsm,  NULL, "Disasm DSP from given given <address>" },
+	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
+	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP register values" },
+	{ true, "memdump",   DebugInfo_CpuMemDump, NULL, "Dump CPU memory from given <address>" },
+	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header information" },
+	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU register values" },
+	{ false,"videl",     DebugInfo_Videl,      NULL, "Show Falcon Videl HW register values" }
 };
+
+static int LockedFunction = 2; /* index for the "default" function */
+static Uint32 LockedArgument;
 
 /**
  * Show selected information
  */
 void DebugInfo_ShowInfo(void)
 {
-	LockedFunction(LockedArgument);
+	infotable[LockedFunction].func(LockedArgument);
 }
 
 
@@ -375,7 +411,7 @@ void DebugInfo_ShowInfo(void)
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
  */
-char *DebugInfo_MatchCommand(const char *text, int state)
+static char *DebugInfo_Match(const char *text, int state, bool lock)
 {
 	static int i, len;
 	const char *name;
@@ -386,12 +422,23 @@ char *DebugInfo_MatchCommand(const char *text, int state)
 		i = 0;
 	}
 	/* next match */
-	while (i < ARRAYSIZE(infotable)) {
-		name = infotable[i++].name;
+	while (i++ < ARRAYSIZE(infotable)) {
+		if (!lock && infotable[i-1].lock) {
+			continue;
+		}
+		name = infotable[i-1].name;
 		if (strncmp(name, text, len) == 0)
 			return (strdup(name));
 	}
 	return NULL;
+}
+char *DebugInfo_MatchLock(const char *text, int state)
+{
+	return DebugInfo_Match(text, state, true);
+}
+char *DebugInfo_MatchInfo(const char *text, int state)
+{
+	return DebugInfo_Match(text, state, false);
 }
 
 
@@ -400,38 +447,60 @@ char *DebugInfo_MatchCommand(const char *text, int state)
  */
 int DebugInfo_Command(int nArgc, char *psArgs[])
 {
+	Uint32 value;
 	const char *cmd;
-	Uint32 value = 0;
-	bool lock = false;
-	bool ok = true;
-	int i;
+	bool ok, lock;
+	int i, sub;
 
-	if (strcmp(psArgs[nArgc-1], "lock") == 0) {
-		lock = true;
-		nArgc--;
-	}
-	if (nArgc > 2) {
-		ok = Eval_Number(psArgs[2], &value);
-	}
-	if (ok && nArgc > 1) {
+	sub = -1;
+	if (nArgc > 1) {
 		cmd = psArgs[1];		
+		/* which subcommand? */
 		for (i = 0; i < ARRAYSIZE(infotable); i++) {
 			if (strcmp(cmd, infotable[i].name) == 0) {
-				if (lock) {
-					LockedFunction = infotable[i].func;
-					LockedArgument = value;
-					fprintf(stderr, "Locked %s info.\n", cmd);
-				} else {
-					infotable[i].func(value);
-				}
-				return DEBUGGER_CMDDONE;
+				sub = i;
+				break;
 			}
 		}
 	}
-	fprintf(stderr, "Info subcommands are:\n");
-	for (i = 0; i < ARRAYSIZE(infotable); i++) {
-		fprintf(stderr, "- %s: %s\n",
-			infotable[i].name, infotable[i].info);
+
+	if (infotable[sub].args) {
+		/* value needs callback specific conversion */
+		value = infotable[sub].args(nArgc-2, psArgs+2);
+		ok = !!value;
+	} else {
+		if (nArgc > 2) {
+			/* value is normal number */
+			ok = Eval_Number(psArgs[2], &value);
+		} else {
+			value = 0;
+			ok = true;
+		}
+	}
+
+	lock = (strcmp(psArgs[0], "lock") == 0);
+	
+	if (sub < 0 || !ok) {
+		/* no subcommand or something wrong with value, show info */
+		fprintf(stderr, "%s subcommands are:\n", psArgs[0]);
+		for (i = 0; i < ARRAYSIZE(infotable); i++) {
+			if (!lock && infotable[i].lock) {
+				continue;
+			}
+			fprintf(stderr, "- %s: %s\n",
+				infotable[i].name, infotable[i].info);
+		}
+		return DEBUGGER_CMDDONE;
+	}
+
+	if (lock) {
+		/* lock given subcommand and value */
+		LockedFunction = sub;
+		LockedArgument = value;
+		fprintf(stderr, "Locked %s output.\n", psArgs[1]);
+	} else {
+		/* do actual work */
+		infotable[sub].func(value);
 	}
 	return DEBUGGER_CMDDONE;
 }
