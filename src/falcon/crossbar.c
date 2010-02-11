@@ -261,7 +261,7 @@ static struct codec_s dac;
 static struct codec_s adc;
 static struct dsp_s dspXmit;
 static struct dsp_s dspReceive;
-
+static Uint16 adc_dac_readBufferPosition;
 
 /**
  * Reset Crossbar variables.
@@ -273,6 +273,9 @@ void Crossbar_Reset(bool bCold)
 	if (bCold)
 	{
 	}
+	
+	/* Direct ADC --> DMA read buffer position initialisation */
+	adc_dac_readBufferPosition = 0;
 	
 	/* Stop DMA sound playing / record */
 	IoMem_WriteByte(0xff8901,0);
@@ -326,6 +329,7 @@ void Crossbar_Reset(bool bCold)
 	crossbar.microphone_ADC_is_started = 0;
 
 	/* Start 25 Mhz and 32 Mhz Clocks */
+	Crossbar_Recalculate_Clocks_Cycles();
 	Crossbar_Start_InterruptHandler_25Mhz();
 	Crossbar_Start_InterruptHandler_32Mhz();
 
@@ -362,6 +366,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&adc, sizeof(adc));
 	MemorySnapShot_Store(&dspXmit, sizeof(dspXmit));
 	MemorySnapShot_Store(&dspReceive, sizeof(dspReceive));
+	MemorySnapShot_Store(&adc_dac_readBufferPosition, sizeof(adc_dac_readBufferPosition));
 }
 
 
@@ -979,7 +984,7 @@ void Crossbar_FreqDivExt_WriteByte(void)
 }
 
 /**
- * Write byte to internal clock divider register (0xff8935).
+ * Read byte to internal clock divider register (0xff8935).
  */
 void Crossbar_FreqDivInt_ReadByte(void)
 {
@@ -1734,27 +1739,82 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
  */
 void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
-	double FreqRatio, fDacBufSamples, fDacBufRdPos;
+	double FreqRatio, fDacBufSamples, fDacBufRdPos, fAdcDacRdpos;
 	int i;
 	int nBufIdx;
+	Sint16 adc_leftData, adc_rightData, dac_LeftData, dac_RightData;
 
 	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
 	fDacBufSamples = (double)dac.writeBufferSize;
 	fDacBufRdPos = (double)dac.readPosition;
-
-	for (i = 0; (i < nSamplesToGenerate) && (fDacBufSamples >= 0.0); i++)
+	fAdcDacRdpos = (double)adc_dac_readBufferPosition;
+	
+	for (i = 0; i < nSamplesToGenerate; i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 		dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
 
-		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)dac.buffer_left[dac.readPosition]) / 2;
-		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1] + (int)dac.buffer_right[dac.readPosition]) / 2;
+		adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
+
+		/* ADC left channel mixing */
+		if (crossbar.codecAdcInput & 0x1)
+			adc_leftData = MixBuffer[nBufIdx][0];
+		else
+			adc_leftData = adc.buffer_left[adc_dac_readBufferPosition];
+		
+		/* ADC right channel mixing */
+		if (crossbar.codecAdcInput & 0x2)
+			adc_rightData = MixBuffer[nBufIdx][1];
+		else
+			adc_rightData = adc.buffer_right[adc_dac_readBufferPosition];
+
+
+		/* DAC mixing */
+		switch (crossbar.codecInputSource & 3) {
+			case 0:
+				/* No sound */
+				dac_LeftData  = 0;
+				dac_RightData = 0;
+				break;
+			case 1:
+				/* direct ADC->DAC sound only */
+				dac_LeftData = adc_leftData;
+				dac_RightData = adc_rightData;
+				break;
+			case 2:
+				/* Crossbar->DAC sound only */
+				if (fDacBufSamples >= 0.0) {
+					dac_LeftData = dac.buffer_left[dac.readPosition];
+					dac_RightData = dac.buffer_right[dac.readPosition];
+				}
+				else {
+					dac_LeftData = 0;
+					dac_RightData = 0;
+				}
+				break;
+			case 3:
+				/* Mixing Direct ADC sound with Crossbar->DMA sound */
+				if (fDacBufSamples >= 0.0) {
+					dac_LeftData = (adc_leftData + dac.buffer_left[dac.readPosition]) / 2;
+					dac_RightData = (adc_rightData + dac.buffer_right[dac.readPosition]) / 2;
+				}
+				else {
+					dac_LeftData = adc_leftData;
+					dac_RightData = adc_rightData;
+				}
+				break;
+		}
+			
+		MixBuffer[nBufIdx][0] = dac_LeftData;
+		MixBuffer[nBufIdx][1] = dac_RightData;
 
 		fDacBufRdPos += FreqRatio;
+		fAdcDacRdpos += FreqRatio;
 		fDacBufSamples -= FreqRatio;
 	}
 
 	dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
+	adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
 
 	if (fDacBufSamples > 0.0) {
 		dac.writeBufferSize = (int)fDacBufSamples;
