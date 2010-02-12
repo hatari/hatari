@@ -375,14 +375,6 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 /*----------------------------------------------------------------------*/
 
 /**
- * Read byte from buffer interrupts (0xff8900).
- */
-void Crossbar_BufferInter_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 (Sound DMA control) read: 0x%02x\n", IoMem_ReadByte(0xff8900));
-}
-
-/**
  * Write byte to buffer interrupts (0xff8900).
  */
 void Crossbar_BufferInter_WriteByte(void)
@@ -395,14 +387,6 @@ void Crossbar_BufferInter_WriteByte(void)
 	dmaPlay.mfp15_int    = (dmaCtrl & 0x1);
 	dmaRecord.timerA_int = (dmaCtrl & 0x8) >> 3;
 	dmaRecord.mfp15_int  = (dmaCtrl & 0x2) >> 1;
-}
-
-/**
- * Read byte from DMA control register (0xff8901).
- */
-void Crossbar_DmaCtrlReg_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 (additional Sound DMA control) read: 0x%02x\n", IoMem_ReadByte(0xff8901));
 }
 
 /**
@@ -785,14 +769,6 @@ void Crossbar_FrameEndLow_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read byte from DMA track control (0xff8920).
- */
-void Crossbar_DmaTrckCtrl_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 (sound mode control) read: 0x%02x\n", IoMem_ReadByte(0xff8920));
-}
-
-/**
  * Write byte to DMA track control (0xff8920).
  */
 void Crossbar_DmaTrckCtrl_WriteByte(void)
@@ -803,14 +779,6 @@ void Crossbar_DmaTrckCtrl_WriteByte(void)
 
 	crossbar.playTracks = (sndCtrl & 3) + 1;
 	crossbar.track_monitored = (sndCtrl & 30) >> 4;
-}
-
-/**
- * Read word from sound mode register (0xff8921).
- */
-void Crossbar_SoundModeCtrl_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 (additional sound mode control) read: 0x%02x\n", IoMem[0xff8921]);
 }
 
 /**
@@ -827,14 +795,6 @@ void Crossbar_SoundModeCtrl_WriteByte(void)
 	crossbar.steFreq = sndCtrl & 0x3;
 
 	Crossbar_Recalculate_Clocks_Cycles();
-}
-
-/**
- * Read word from Falcon Crossbar source controller (0xff8930).
- */
-void Crossbar_SrcControler_ReadWord(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 (source device) read: 0x%04x\n", IoMem_ReadWord(0xff8930));
 }
 
 /**
@@ -881,15 +841,6 @@ void Crossbar_SrcControler_WriteWord(void)
 	crossbar.dmaPlay_freq = (nCbSrc >> 1) & 0x3;
 
 	dmaPlay.isConnectedToDspInHandShakeMode = ((nCbSrc & 9) == 0 ? 1 : 0);                                
-}
-
-
-/**
- * Read word from Falcon Crossbar destination controller (0xff8932).
- */
-void Crossbar_DstControler_ReadWord(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 (destination device) read: 0x%04x\n", IoMem_ReadWord(0xff8932));
 }
 
 /**
@@ -968,27 +919,11 @@ void Crossbar_DstControler_WriteWord(void)
 }
 
 /**
- * Read byte from external clock divider register (0xff8934).
- */
-void Crossbar_FreqDivExt_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 (ext. clock divider) read: 0x%02x\n", IoMem_ReadByte(0xff8934));
-}
-
-/**
  * Write byte to external clock divider register (0xff8934).
  */
 void Crossbar_FreqDivExt_WriteByte(void)
 {
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 (ext. clock divider) write: 0x%02x\n", IoMem_ReadByte(0xff8934));
-}
-
-/**
- * Read byte to internal clock divider register (0xff8935).
- */
-void Crossbar_FreqDivInt_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 (int. clock divider) read: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -1002,18 +937,6 @@ void Crossbar_FreqDivInt_WriteByte(void)
 
 	crossbar.int_freq_divider = clkDiv & 0xf;
 	Crossbar_Recalculate_Clocks_Cycles();
-}
-
-/**
- * Read byte from record track select register (0xff8936).
- *	0 = Record 1 track
- *	1 = Record 2 tracks
- *	2 = Record 3 tracks
- *	3 = Record 4 tracks
- */
-void Crossbar_TrackRecSelect_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 (record track select) read: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -1033,16 +956,6 @@ void Crossbar_TrackRecSelect_WriteByte(void)
 }
 
 /**
- * Read byte from CODEC input source from 16 bit adder (0xff8937).
- *	Bit 1 : source = multiplexer
- *	Bit 0 : source = A/D convertor 
- */
-void Crossbar_CodecInput_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 (CODEC input) read: 0x%02x\n", IoMem_ReadByte(0xff8937));
-}
-
-/**
  * Write byte to CODEC input source from 16 bit adder (0xff8937).
  *	Bit 1 : source = multiplexer
  *	Bit 0 : source = A/D convertor 
@@ -1054,16 +967,6 @@ void Crossbar_CodecInput_WriteByte(void)
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 (CODEC input) write: 0x%02x\n", IoMem_ReadByte(0xff8937));
 
 	crossbar.codecInputSource = inputSource & 3;
-}
-
-/**
- * Read byte from A/D converter input for L+R channel (0xff8938).
- *	Bit 1 :  Left (0 = Microphone ; 1 = PSG soundchip)
- *	Bit 0 : Right (0 = Microphone ; 1 = PSG soundchip)
- */
-void Crossbar_AdcInput_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 (ADC input) read: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -1081,16 +984,6 @@ void Crossbar_AdcInput_WriteByte(void)
 }
 
 /**
- * Read byte from input amplifier register (0xff8939).
- * 	Bits LLLLRRRR
- * 	Amplification is in +1.5 dB steps
- */
-void Crossbar_InputAmp_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 (CODEC channel amplification) read: 0x%04x\n", IoMem_ReadWord(0xff8939));
-}
-
-/**
  * Write byte to input amplifier register (0xff8939).
  * 	Bits LLLLRRRR
  * 	Amplification is in +1.5 dB steps
@@ -1105,16 +998,6 @@ void Crossbar_InputAmp_WriteByte(void)
 }
 
 /**
- * Read byte from output reduction register (0xff893a).
- * 	Bits LLLLRRRR
- * 	Reduction is in -1.5 dB steps
- */
-void Crossbar_OutputReduct_ReadByte(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) read: 0x%04x\n", IoMem_ReadWord(0xff893a));
-}
-
-/**
  * Write byte to channel reduction register (0xff893a).
  * 	Bits LLLLRRRR
  * 	Reduction is in -1.5 dB steps
@@ -1126,16 +1009,6 @@ void Crossbar_OutputReduct_WriteByte(void)
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) write: 0x%02x\n", IoMem_ReadByte(0xff893a));
 
 	crossbar.attenuationSetting = reduction;
-}
-
-/**
- * Read word from CODEC status register (0xff893c).
- * 	Bit 1 :  Left Channel Overflow (0/1)
- * 	Bit 0 : Right Channel Overflow (0/1)
- */
-void Crossbar_CodecStatus_ReadWord(void)
-{
-//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c (CODEC status) read: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }
 
 /**
@@ -1770,7 +1643,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 
 		/* DAC mixing */
-		switch (crossbar.codecInputSource & 3) {
+		switch (crossbar.codecInputSource) {
 			case 0:
 				/* No sound */
 				dac_LeftData  = 0;

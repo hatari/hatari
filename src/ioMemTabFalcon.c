@@ -154,8 +154,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
 	{ 0xff8803, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8803_WriteByte },
 
-	{ 0xff8900, SIZE_BYTE, Crossbar_BufferInter_ReadByte, Crossbar_BufferInter_WriteByte },       /* Crossbar Buffer interrupts */
-	{ 0xff8901, SIZE_BYTE, Crossbar_DmaCtrlReg_ReadByte, Crossbar_DmaCtrlReg_WriteByte },         /* Crossbar control register */
+	{ 0xff8900, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_BufferInter_WriteByte },       /* Crossbar Buffer interrupts */
+	{ 0xff8901, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_DmaCtrlReg_WriteByte },        /* Crossbar control register */
 	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
 	{ 0xff8903, SIZE_BYTE, Crossbar_FrameStartHigh_ReadByte, Crossbar_FrameStartHigh_WriteByte }, /* DMA sound frame start high */
 	{ 0xff8904, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
@@ -174,22 +174,22 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8911, SIZE_BYTE, Crossbar_FrameEndMed_ReadByte, Crossbar_FrameEndMed_WriteByte },       /* DMA sound frame end med */
 	{ 0xff8912, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                                     /* No bus error here */
 	{ 0xff8913, SIZE_BYTE, Crossbar_FrameEndLow_ReadByte, Crossbar_FrameEndLow_WriteByte },       /* DMA sound frame end low */
-	{ 0xff8920, SIZE_BYTE, Crossbar_DmaTrckCtrl_ReadByte, Crossbar_DmaTrckCtrl_WriteByte },       /* Crossbar track control */
-	{ 0xff8921, SIZE_BYTE, Crossbar_SoundModeCtrl_ReadByte, Crossbar_SoundModeCtrl_WriteByte },   /* DMA sound mode control */
+	{ 0xff8920, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_DmaTrckCtrl_WriteByte },       /* Crossbar track control */
+	{ 0xff8921, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_SoundModeCtrl_WriteByte },     /* DMA sound mode control */
 	{ 0xff8922, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                                     /* Microwire data */
 	{ 0xff8924, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                                     /* Microwire mask */
 
-	{ 0xff8930, SIZE_WORD, Crossbar_SrcControler_ReadWord, Crossbar_SrcControler_WriteWord }, /* Crossbar source controler */
-	{ 0xff8932, SIZE_WORD, Crossbar_DstControler_ReadWord, Crossbar_DstControler_WriteWord }, /* Crossbar destination controler */
-	{ 0xff8934, SIZE_BYTE, Crossbar_FreqDivExt_ReadByte, Crossbar_FreqDivExt_WriteByte },   /* External clock divider */
-	{ 0xff8935, SIZE_BYTE, Crossbar_FreqDivInt_ReadByte, Crossbar_FreqDivInt_WriteByte },   /* Internal clock divider */
-	{ 0xff8936, SIZE_BYTE, Crossbar_TrackRecSelect_ReadByte, Crossbar_TrackRecSelect_WriteByte },   /* Track record select */
-	{ 0xff8937, SIZE_BYTE, Crossbar_CodecInput_ReadByte, Crossbar_CodecInput_WriteByte },   /* CODEC input source from 16 bits adder */
-	{ 0xff8938, SIZE_BYTE, Crossbar_AdcInput_ReadByte, Crossbar_AdcInput_WriteByte },       /* ADC converter input for L+R channel */
-	{ 0xff8939, SIZE_BYTE, Crossbar_InputAmp_ReadByte, Crossbar_InputAmp_WriteByte },       /* Input amplifier (+1.5 dB step) */
-	{ 0xff893a, SIZE_BYTE, Crossbar_OutputReduct_ReadByte, Crossbar_OutputReduct_WriteByte },   /* Output reduction (-1.5 dB step) */
+	{ 0xff8930, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_SrcControler_WriteWord }, /* Crossbar source controler */
+	{ 0xff8932, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_DstControler_WriteWord }, /* Crossbar destination controler */
+	{ 0xff8934, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_FreqDivExt_WriteByte },   /* External clock divider */
+	{ 0xff8935, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_FreqDivInt_WriteByte },   /* Internal clock divider */
+	{ 0xff8936, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_TrackRecSelect_WriteByte },   /* Track record select */
+	{ 0xff8937, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_CodecInput_WriteByte },   /* CODEC input source from 16 bits adder */
+	{ 0xff8938, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_AdcInput_WriteByte },       /* ADC converter input for L+R channel */
+	{ 0xff8939, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_InputAmp_WriteByte },       /* Input amplifier (+1.5 dB step) */
+	{ 0xff893a, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_OutputReduct_WriteByte },   /* Output reduction (-1.5 dB step) */
 	{ 0xff893b, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* No bus error here */
-	{ 0xff893c, SIZE_WORD, Crossbar_CodecStatus_ReadWord, Crossbar_CodecStatus_WriteWord }, /* CODEC status */
+	{ 0xff893c, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_CodecStatus_WriteWord }, /* CODEC status */
 	{ 0xff893e, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* No bus error here */
 	{ 0xff8940, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* GPx direction */
 	{ 0xff8942, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* GPx port */
