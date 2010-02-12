@@ -4,8 +4,8 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  debuginfo.c - functions needed to give some infos about the atari components 
-                in debug mode.
+  debuginfo.c - functions needed to show info about the atari HW & OS
+   components and "lock" that info to be shown on entering the debugger.
 */
 const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 
@@ -330,6 +330,7 @@ static void DebugInfo_DspMemDump(Uint32 arg)
        	sprintf(addrbuf, "$%x", (Uint16)(arg&0xffff));
 	DebugDsp_MemDump(3, argv);
 }
+
 /**
  * Convert arguments to Uint32 arg suitable for DSP memdump callback
  */
@@ -350,6 +351,81 @@ static Uint32 DebugInfo_DspMemArgs(int argc, char *argv[])
 		return 0;
 	}
 	return ((Uint32)space<<16) | value;
+}
+
+
+static void DebugInfo_RegAddr(Uint32 arg)
+{
+	bool forDsp;
+	char regname[3];
+	Uint32 *regvalue, mask;
+	char cmdbuf[12], addrbuf[6];
+	char *argv[] = { cmdbuf, addrbuf };
+	
+	regname[0] = (arg>>24)&0xff;
+	regname[1] = (arg>>16)&0xff;
+	regname[2] = '\0';
+
+	if (DebugCpu_GetRegisterAddress(regname, &regvalue)) {
+		mask = 0xffffffff;
+		forDsp = false;
+	} else {
+		if (!DSP_GetRegisterAddress(regname, &regvalue, &mask)) {
+			fprintf(stderr, "ERROR: invalid address/data register '%s'!\n", regname);
+			return;
+		}
+		forDsp = true;
+	}
+       	sprintf(addrbuf, "$%x", *regvalue & mask);
+
+	if ((arg & 0xff) == 'D') {
+		strcpy(cmdbuf, "disasm");
+		if (forDsp) {
+			DebugDsp_DisAsm(2, argv);
+		} else {
+			DebugCpu_DisAsm(2, argv);
+		}
+	} else {
+		strcpy(cmdbuf, "memdump");
+		if (forDsp) {
+			DebugCpu_MemDump(2, argv);
+		} else {
+			DebugCpu_MemDump(2, argv);
+		}
+	}
+}
+
+/**
+ * Convert arguments to Uint32 arg suitable for RegAddr callback
+ */
+static Uint32 DebugInfo_RegAddrArgs(int argc, char *argv[])
+{
+	Uint32 value, *regaddr;
+	if (argc != 2) {
+		return 0;
+	}
+
+	if (strcmp(argv[0], "disasm") == 0) {
+		value = 'D';
+	} else if (strcmp(argv[0], "memdump") == 0) {
+		value = 'M';
+	} else {
+		fprintf(stderr, "ERROR: regaddr operation can be only 'disasm' or 'memdump', not '%s'!\n", argv[0]);
+		return 0;
+	}
+
+	if (strlen(argv[1]) != 2 ||
+	    (!DebugCpu_GetRegisterAddress(argv[1], &regaddr) &&
+	     (toupper(argv[1][0]) != 'R' || !isdigit(argv[1][1]) || argv[1][2]))) {
+		/* not CPU register or Rx DSP register */
+		fprintf(stderr, "ERROR: invalid address/data register '%s'!\n", argv[1]);
+		return 0;
+	}
+	
+	value |= argv[1][0] << 24;
+	value |= argv[1][1] << 16;
+	value &= 0xffff00ff;
+	return value;
 }
 
 
@@ -385,11 +461,12 @@ static const struct {
 	{ false,"crossbar",  DebugInfo_Crossbar,   NULL, "Show Falcon crossbar HW register values" },
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
 	{ true, "disasm",    DebugInfo_CpuDisAsm,  NULL, "Disasm CPU from PC or given <address>" },
-	{ true, "dspdisasm", DebugInfo_DspDisAsm,  NULL, "Disasm DSP from given given <address>" },
+	{ true, "dspdisasm", DebugInfo_DspDisAsm,  NULL, "Disasm DSP from given <address>" },
 	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
 	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP register values" },
 	{ true, "memdump",   DebugInfo_CpuMemDump, NULL, "Dump CPU memory from given <address>" },
 	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header information" },
+	{ true, "regaddr",   DebugInfo_RegAddr, DebugInfo_RegAddrArgs, "Show <disasm|memdump> from CPU/DSP address pointed by <register>" },
 	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU register values" },
 	{ false,"videl",     DebugInfo_Videl,      NULL, "Show Falcon Videl HW register values" }
 };
