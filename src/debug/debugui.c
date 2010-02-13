@@ -202,6 +202,89 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 
 
 /**
+ * Evaluate everything include within "" and replace them with the result.
+ * String given as an argument may be re-allocated if it needs to be
+ * expanded. Caller needs to free the returned string if it's not NULL.
+ * 
+ * Return string with expressions expanded or NULL for an error.
+ */
+static char *DebugUI_EvaluateExpressions(char *input)
+{
+	int offset, count, diff, inputlen;
+	char *end, *start;
+	const char *errstr;
+	char valuestr[12];
+	Uint32 value;
+
+	/* input is split later on, need to save len here */
+	inputlen = strlen(input);
+	start = input;
+	
+	while ((start = strchr(start, '"')))
+	{
+		end = strchr(start+1, '"');
+		if (!end)
+		{
+			fprintf(stderr, "ERROR: matching '\"' missing from '%s'!\n", start);
+			free(input);
+			return NULL;
+		}
+		
+		if (end == start+1)
+		{
+			/* empty expression */
+			memmove(start, start+2, strlen(start+2)+1);
+			continue;
+		}
+
+		*end = '\0';
+		errstr = Eval_Expression(start+1, &value, &offset);
+		if (errstr) {
+			*end = '"';
+			fprintf(stderr, "Expression ERROR:\n'%s'\n%*c-%s\n",
+				input, start-input+offset+2, '^', errstr);
+			free(input);
+			return NULL;
+		}
+		end++;
+		
+		count = sprintf(valuestr, "$%x", value);
+		fprintf(stderr, "- \"%s\" -> %s\n", start+1, valuestr);
+
+		diff = end-start;
+		if (count < diff)
+		{
+			memcpy(start, valuestr, count);
+			start += count;
+			memmove(start, end, strlen(end) + 1);
+		} else {
+			/* value won't fit to expression, expand string */
+			char *tmp;
+			inputlen += count-diff+1;
+			tmp = malloc(inputlen+1);
+			if (!tmp)
+			{
+				perror("ERROR: Input string alloc failed\n");
+				free(input);
+				return NULL;
+			}
+
+			memcpy(tmp, input, start-input);
+			start = tmp+(start-input);
+			memcpy(start, valuestr, count);
+			start += count;
+			memcpy(start, end, strlen(end) + 1);
+
+			free(input);
+			input = tmp;
+		}
+	}
+	/* no (more) expressions to evaluate */
+	return input;
+}
+
+
+/**
  * Command: Store and restore emulation state
  */
 static int DebugUI_DoMemorySnap(int argc, char *argv[])
@@ -701,6 +784,7 @@ static void DebugUI_Init(void)
 void DebugUI(void)
 {
 	int cmdret;
+	char *psCmd;
 	static const char *welcome =
 		"\n----------------------------------------------------------------------"
 		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
@@ -723,23 +807,21 @@ void DebugUI(void)
 	Statusbar_AddMessage("Console Debugger", 100);
 	Statusbar_Update(sdlscrn);
 
+	cmdret = DEBUGGER_CMDDONE;
 	do
 	{
-		char *psCmd;
-
 		/* Read command from the keyboard */
 		psCmd = DebugUI_GetCommand();
+		if (!psCmd)
+			break;
 
-		if (psCmd)
-		{
-			/* Parse and execute the command string */
-			cmdret = DebugUI_ParseCommand(psCmd);
-			free(psCmd);
-		}
-		else
-		{
-			cmdret = DEBUGGER_END;
-		}
+		/* expand all quoted expressions */
+		if (!(psCmd = DebugUI_EvaluateExpressions(psCmd)))
+			continue;
+
+		/* Parse and execute the command string */
+		cmdret = DebugUI_ParseCommand(psCmd);
+		free(psCmd);
 	}
 	while (cmdret != DEBUGGER_END);
 
