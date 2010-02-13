@@ -20,7 +20,11 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include <stdbool.h>
 #include <SDL_types.h>
 #include "configuration.h"
+#include "dsp.h"
+#include "debugcpu.h"
 #include "evaluate.h"
+#include "m68000.h"
+#include "symbols.h"
 
 /* define which character indicates which type of number on expression  */
 #define PREFIX_BIN '%'                            /* binary decimal       */
@@ -186,6 +190,60 @@ static int getNumber(const char *str, Uint32 *number, int *nbase)
 
 
 /**
+ * Parse unsigned register/symbol/number value and set it to "number".
+ * Return how many characters were parsed or zero for error.
+ */
+static int getValue(const char *str, Uint32 *number)
+{
+	char name[64];
+	const char *end;
+	Uint32 mask, *addr;
+	int len, dummy;
+
+	for (end = str; *end == '_' || isalnum(*end); end++);
+	
+	len = end-str;
+	if (len >= (int)sizeof(name)) {
+		fprintf(stderr, "ERROR: symbol name at '%s' too long (%d chars)\n", str, len);
+		return 0;
+	}
+	memcpy(name, str, len);
+	name[len] = '\0';
+
+	/* is it a special case CPU register? */
+	if (strcasecmp(name, "PC") == 0) {
+		*number = M68000_GetPC();
+		return len;
+	}
+	if (strcasecmp(name, "SR") == 0) {
+		*number = M68000_GetSR();
+		return len;
+	}
+	
+	/* is it a normal CPU or DSP register? */
+	if (DebugCpu_GetRegisterAddress(name, &addr)) {
+		*number = *addr;
+		return len;
+	}
+	if (DSP_GetRegisterAddress(name, &addr, &mask)) {
+		*number = (*addr & mask);
+		return len;
+	}
+
+	/* is it a symbol? */
+	if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, number)) {
+		return len;
+	}
+	if (Symbols_GetDspAddress(SYMTYPE_ALL, name, number)) {
+		return len;
+	}
+
+	/* none of above, assume it's a number */
+	return getNumber(str, number, &dummy);
+}
+
+
+/**
  * Parse & set an (unsigned) number, assume it's in the configured
  * default number base unless it has a suitable prefix.
  * Return true for success and false for failure.
@@ -304,8 +362,8 @@ const char* Eval_Expression(const char *in, Uint32 *out, int *erroff)
 	/* end	 : 'expression end' flag				*/
 	/* offset: character offset in expression			*/
 
-	int dummy, consumed, offset = 0;
 	long long value;
+	int offset = 0;
 	char mark;
 	
 	/* Uses global variables:	*/
@@ -363,10 +421,11 @@ const char* Eval_Expression(const char *in, Uint32 *out, int *erroff)
 			offset ++;
 			break;
 		default:
-			/* number needed? */
+			/* register/symbol/number value needed? */
 			if (id.valid == false) {
 				Uint32 tmp;
-				consumed = getNumber(&(in[offset]), &tmp, &dummy);
+				int consumed;
+				consumed = getValue(&(in[offset]), &tmp);
 				/* number parsed? */
 				if (consumed) {
 					offset += consumed;
