@@ -458,6 +458,10 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	unsigned int i, len;
 	char reg[MAX_REGNAME_LEN];
 
+	if (!bDspEnabled) {
+		return 0;
+	}
+
 	for (i = 0; i < sizeof(reg) && regname[i]; i++) {
 		reg[i] = toupper(regname[i]);
 	}
