@@ -48,6 +48,9 @@ FILE *debugOutput;
 static dbgcommand_t *debugCommand;
 static int debugCommands;
 
+/* stores last value shown on screen, used for TAB-completion */
+static char lastResult[10];
+
 
 /**
  * Save/Restore snapshot of debugging session variables
@@ -122,6 +125,8 @@ static void DebugUI_PrintValue(Uint32 value)
 		fprintf(stderr, " (bin), #%u/%d (dec), $%x (hex)\n", value, (int)value, value);
 	else
 		fprintf(stderr, " (bin), #%u (dec), $%x (hex)\n", value, value);
+
+	sprintf(lastResult, "%x", value);
 }
 
 
@@ -555,6 +560,17 @@ static char *DebugUI_MatchCommand(const char *text, int state)
 	return NULL;
 }
 
+
+/**
+ * Readline match callback returning last result.
+ */
+static char *DebugUI_MatchLast(const char *text, int state)
+{
+	if (state)
+		return NULL;
+	return strdup(lastResult);
+}
+
 /**
  * Readline completion callback. Returns matches.
  */
@@ -598,7 +614,7 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 	char buf[32];
 	size_t len;
 
-	/* ignore white space and check whether this is first word */
+	/* check where's the first word (ignore white space) */
 	while (start < rl_point && isspace(rl_line_buffer[start]))
 		start++;
 	end = start;
@@ -608,7 +624,12 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 	if (end >= rl_point)
 		/* first word on line */
 		return rl_completion_matches(text, DebugUI_MatchCommand);
+	
+	/* complete '$' with last result? */
+	if (lastResult[0] && rl_line_buffer[rl_point-1] == '$')
+		return rl_completion_matches(text, DebugUI_MatchLast);
 
+	/* check which command args are to be completed */
 	len = end - start;
 	if (len >= sizeof(buf))
 		len = sizeof(buf)-1;
