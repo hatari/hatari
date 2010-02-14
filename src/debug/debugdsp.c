@@ -28,8 +28,6 @@ static Uint16 dsp_disasm_addr;    /* DSP disasm address */
 static Uint16 dsp_memdump_addr;   /* DSP memdump address */
 static char dsp_mem_space = 'P';  /* X, Y, P */
 
-static Uint16 DspBreakPoint[16];  /* DSP breakpoints */
-static int nDspActiveBPs = 0;     /* Amount of active breakpoints */
 static int nDspActiveCBs = 0;     /* Amount of active conditional breakpoints */
 static int nDspSteps = 0;         /* Amount of steps for DSP single-stepping */
 
@@ -43,7 +41,6 @@ void DebugDsp_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&dsp_memdump_addr, sizeof(dsp_memdump_addr));
 	MemorySnapShot_Store(&dsp_mem_space, sizeof(dsp_mem_space));
 	
-	MemorySnapShot_Store(&nDspActiveBPs, sizeof(nDspActiveBPs));
 	MemorySnapShot_Store(&nDspActiveCBs, sizeof(nDspActiveCBs));
 }
 
@@ -257,86 +254,14 @@ static int DebugDsp_Continue(int nArgc, char *psArgv[])
 
 
 /**
- * Toggle or list DSP breakpoints.
+ * DSP wrapper for BreakAddr_Command/BreakPointCount, returns DEBUGGER_END
  */
-static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
+static int DebugDsp_BreakAddr(int nArgc, char *psArgs[])
 {
-	int i;
-	Uint16 addr;
-	Uint32 BreakAddr;
-	const char *symbol;
-
-	/* List breakpoints? */
-	if (nArgc == 1)
-	{
-		/* No arguments - so list available breakpoints */
-		if (!nDspActiveBPs)
-		{
-			fputs("No DSP breakpoints set.\n", stderr);
-			return DEBUGGER_CMDDONE;
-		}
-
-		fputs("Currently active DSP breakpoints:\n", stderr);
-		for (i = 0; i < nDspActiveBPs; i++)
-		{
-			addr = DspBreakPoint[i];
-			symbol = Symbols_GetByDspAddress(addr);
-			if (symbol)
-				fprintf(stderr, "%d. '%s'\n   ", i+1, symbol);
-			else
-				fprintf(stderr, "%d. ", i+1);
-			DSP_DisasmAddress(addr, addr);
-		}
-
-		return DEBUGGER_CMDDONE;
-	}
-
-	/* Parse parameter as breakpoint value */
-	if (!Symbols_GetDspAddress(SYMTYPE_TEXT, psArgs[1], &BreakAddr))
-	{
-		if (!Eval_Number(psArgs[1], &BreakAddr))
-		{
-			fprintf(stderr, "Invalid value '%s' for a DSP breakpoint!\n", psArgs[1]);
-			return DEBUGGER_CMDDONE;
-		}
-	}
-	if (BreakAddr > 0xFFFF)
-	{
-		fprintf(stderr, "Invalid address 0x%x for a DSP breakpoint!\n", BreakAddr);
-		return DEBUGGER_CMDDONE;
-	}
-
-	/* Is the breakpoint already in the list? Then disable it! */
-	for (i = 0; i < nDspActiveBPs; i++)
-	{
-		if (BreakAddr == DspBreakPoint[i])
-		{
-			DspBreakPoint[i] = DspBreakPoint[nDspActiveBPs-1];
-			nDspActiveBPs -= 1;
-			symbol = Symbols_GetByDspAddress(BreakAddr);
-			if (symbol)
-				fprintf(stderr, "DSP breakpoint at 0x%x (%s) deleted.\n", BreakAddr, symbol);
-			else
-				fprintf(stderr, "DSP breakpoint at 0x%x deleted.\n", BreakAddr);
-			return DEBUGGER_CMDDONE;
-		}
-	}
-
-	/* Is there at least one free slot available? */
-	if (nDspActiveBPs == ARRAYSIZE(DspBreakPoint))
-	{
-		fputs("No more available free DSP breakpoints!\n", stderr);
-		return DEBUGGER_CMDDONE;
-	}
-
-	/* Add new breakpoint */
-	DspBreakPoint[nDspActiveBPs] = BreakAddr;
-	nDspActiveBPs += 1;
-	fprintf(stderr, "DSP breakpoint added at 0x%x.\n", BreakAddr);
-
+	BreakAddr_Command(psArgs[1], true);
+	nDspActiveCBs = BreakCond_BreakPointCount(true);
 	return DEBUGGER_CMDDONE;
 }
-
 
 /**
  * DSP wrapper for BreakCond_Command/BreakPointCount, returns DEBUGGER_END
@@ -350,39 +275,11 @@ static int DebugDsp_BreakCond(int nArgc, char *psArgs[])
 
 
 /**
- * Check if we hit a DSP breakpoint
- */
-static void DebugDsp_CheckBreakpoints(void)
-{
-	Uint16 pc = DSP_GetPC();
-	int i;
-
-	for (i = 0; i < nDspActiveBPs; i++)
-	{
-		if (pc == DspBreakPoint[i])
-		{
-			const char *symbol;
-			symbol = Symbols_GetByDspAddress(pc);
-			if (symbol)
-				fprintf(stderr, "\nDSP breakpoint at 0x%x (%s) ...", pc, symbol);
-			else
-				fprintf(stderr, "\nDSP breakpoint at 0x%x ...", pc);
-			DebugUI();
-			break;
-		}
-	}
-}
-
-
-/**
  * This function is called after each DSP instruction when debugging is enabled.
  */
 void DebugDsp_Check(void)
 {
-	if (nDspActiveBPs)
-	{
-		DebugDsp_CheckBreakpoints();
-	}
+	/* TODO: show symbols while disassembling DSP instructions */
 	if (nDspActiveCBs)
 	{
 		if (BreakCond_MatchDsp())
@@ -404,7 +301,7 @@ void DebugDsp_Check(void)
  */
 void DebugDsp_SetDebugging(void)
 {
-	if (nDspActiveBPs || nDspActiveCBs || nDspSteps)
+	if (nDspActiveCBs || nDspSteps)
 		DSP_SetDebugging(true);
 	else
 		DSP_SetDebugging(false);
@@ -414,12 +311,10 @@ void DebugDsp_SetDebugging(void)
 static const dbgcommand_t dspcommands[] =
 {
 	{ NULL, "DSP commands", NULL, NULL, NULL, false },
-	{ DebugDsp_BreakPoint, "dspaddress", "da",
-	  "toggle or list (traditional) DSP address breakpoints",
-	  "[address]\n"
-	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
-	  "\tno address is given. Address can also be a loaded symbol name.",
-	  false },
+	{ DebugDsp_BreakAddr, "dspaddress", "da",
+	  "set DSP PC address breakpoints",
+	  BreakAddr_Description,
+	  true },
 	{ DebugDsp_BreakCond, "dspbreak", "db",
 	  "set/remove/list DSP register/RAM condition breakpoints",
 	  BreakCond_Description,

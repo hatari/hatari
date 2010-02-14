@@ -1515,3 +1515,58 @@ cleanup:
 	free(expression);
 	return ret;
 }
+
+
+const char BreakAddr_Description[] =
+	"<address> [:<count>|once|trace]\n"
+	"\tCreate conditional breakpoint for given PC <address>.\n"
+	"\tAdding ':trace' causes breakpoint match just to be printed,\n"
+	"\tnot break. Adding ':once' will delete the breakpoint after\n"
+	"\tit's hit.  Adding ':<count>' will break only on every <count>\n"
+	"\thit.  Use conditional breakpoint commands to manage the created\n"
+	"\tbreakpoints.";
+
+/**
+ * Set CPU & DSP program counter address breakpoints by converting
+ * them to conditional breakpoints.
+ * Return true for success and false for failure.
+ */
+bool BreakAddr_Command(char *args, bool bForDsp)
+{
+	const char *errstr, *expression = (const char *)args;
+	char *cut, command[32];
+	Uint32 addr;
+	int offset;
+
+	/* split options */
+	if ((cut = strchr(args, ':'))) {
+		*cut = '\0';
+		cut = Str_Trim(cut+1);
+		if (strlen(cut) > 8) {
+			cut[8] = '\0';
+		}
+	}
+
+	/* evaluate address expression */
+	errstr = Eval_Expression(expression, &addr, &offset);
+	if (errstr) {
+		fprintf(stderr, "ERROR in the address expression:\n'%s'\n%*c-%s\n",
+			expression, offset+2, '^', errstr);
+		return false;
+	}
+	
+	/* add the address breakpoint with optional option */
+	sprintf(command, "pc=$%x %c%s", addr, cut?':':' ', cut?cut:"");
+	if (!BreakCond_Command(command, bForDsp)) {
+		return false;
+	}
+	
+	/* on success, show on what instruction it was added */
+	if (bForDsp) {
+		DSP_DisasmAddress(addr, addr);
+	} else {
+		uaecptr dummy;
+		m68k_disasm(stderr, (uaecptr)addr, &dummy, 1);
+	}
+	return true;
+}
