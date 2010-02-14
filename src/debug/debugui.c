@@ -131,57 +131,6 @@ static void DebugUI_PrintValue(Uint32 value)
 
 
 /**
- * Command: Show given value in bin/dec/hex number bases or change number base
- */
-static int DebugUI_ShowValue(int argc, char *argv[])
-{
-	static const struct {
-		const char name[4];
-		int base;
-	} bases[] = {
-		{ "bin", 2 },
-		{ "dec", 10 },
-		{ "hex", 16 }
-	};
-	const char *arg;
-	Uint32 value;
-	int i;
-	
-	if (argc < 2)
-	{
-		DebugUI_PrintCmdHelp(argv[0]);
-		return DEBUGGER_CMDDONE;
-	}
-	arg = argv[1];
-	
-	for (i = 0; i < ARRAYSIZE(bases); i++)
-	{
-		if (strcasecmp(bases[i].name, arg) == 0)
-		{
-			if (ConfigureParams.Log.nNumberBase != bases[i].base)
-			{
-				fprintf(stderr, "Switched default number base from %d to %d-based (%s) values\n",
-					ConfigureParams.Log.nNumberBase,
-					bases[i].base, bases[i].name);
-				ConfigureParams.Log.nNumberBase = bases[i].base;
-			} else {
-				fprintf(stderr, "Already in '%s' mode\n", bases[i].name);
-			}
-			return DEBUGGER_CMDDONE;
-		}
-	}
-
-	if (!Symbols_GetCpuAddress(SYMTYPE_ALL, arg, &value) &&
-	    !Symbols_GetDspAddress(SYMTYPE_ALL, arg, &value) &&
-	    !Eval_Number(argv[1], &value))
-		return DEBUGGER_CMDDONE;
-
-	DebugUI_PrintValue(value);
-	return DEBUGGER_CMDDONE;
-}
-
-
-/**
  * Commmand: Evaluate an expression
  */
 static int DebugUI_Evaluate(int nArgc, char *psArgs[])
@@ -311,11 +260,45 @@ static int DebugUI_DoMemorySnap(int argc, char *argv[])
 
 
 /**
- * Command: Set options
+ * Command: Set command line and debugger options
  */
 static int DebugUI_SetOptions(int argc, char *argv[])
 {
 	CNF_PARAMS current;
+	static const struct {
+		const char name[4];
+		int base;
+	} bases[] = {
+		{ "bin", 2 },
+		{ "dec", 10 },
+		{ "hex", 16 }
+	};
+	const char *arg;
+	int i;
+	
+	if (argc < 2)
+	{
+		DebugUI_PrintCmdHelp(argv[0]);
+		return DEBUGGER_CMDDONE;
+	}
+	arg = argv[1];
+	
+	for (i = 0; i < ARRAYSIZE(bases); i++)
+	{
+		if (strcasecmp(bases[i].name, arg) == 0)
+		{
+			if (ConfigureParams.Log.nNumberBase != bases[i].base)
+			{
+				fprintf(stderr, "Switched default number base from %d to %d-based (%s) values.\n",
+					ConfigureParams.Log.nNumberBase,
+					bases[i].base, bases[i].name);
+				ConfigureParams.Log.nNumberBase = bases[i].base;
+			} else {
+				fprintf(stderr, "Already in '%s' mode.\n", bases[i].name);
+			}
+			return DEBUGGER_CMDDONE;
+		}
+	}
 
 	/* get configuration changes */
 	current = ConfigureParams;
@@ -516,22 +499,6 @@ int DebugUI_ParseCommand(char *input)
 
 #if HAVE_LIBREADLINE
 /* See "info:readline" e.g. in Konqueror for readline usage. */
-
-/**
- * Readline match callback to match all symbols for value
- */
-static char *DebugUI_MatchValue(const char *text, int state)
-{
-	char *name;
-	name = Symbols_MatchCpuAddress(text, state);
-	if (name)
-		return name;
-	name = Symbols_MatchDspAddress(text, state);
-	if (name)
-		return name;
-	return NULL;
-}
-
 
 /**
  * Readline match callback for long command name completion.
@@ -753,10 +720,12 @@ static const dbgcommand_t uicommand[] =
 	  "\tregister & memory dumps and disassembly will be written to it.",
 	  false },
 	{ DebugUI_SetOptions, "setopt", "o",
-	  "set Hatari command line options",
-	  "[command line parameters]\n"
-	  "\tSet Hatari command like options. For example to enable\n"
-	  "\texception catching, use:  setopt --debug",
+	  "set Hatari command line and debugger options",
+	  "[<bin|dec|hex>|<command line options>]\n"
+	  "\tSet Hatari options. For example to enable exception catching,\n"
+	  "\tuse following command line option: 'setopt --debug'. Special\n"
+	  "\t'bin', 'dec' and 'hex' arguments change the default number base\n"
+	  "\tused in debugger.",
 	  false },
 	{ DebugUI_DoMemorySnap, "stateload", "",
 	  "restore emulation state",
@@ -778,12 +747,6 @@ static const dbgcommand_t uicommand[] =
 	  "quit emulator",
 	  "\n"
 	  "\tLeave debugger and quit emulator.",
-	  false },
-	{ DebugUI_ShowValue, "value", "v",
-	  "set number base / show value in other number bases",
-	  "<bin|dec|hex|value>\n"
-	  "\tHelper to change the default number base and to see given values\n"
-	  "\tin all the supported bin/dec/hex number bases.",
 	  false }
 };
 
