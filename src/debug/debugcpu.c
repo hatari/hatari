@@ -208,9 +208,9 @@ static int DebugCpu_ShowMatchedBreakpoint(Uint32 addr)
  */
 int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 {
+	int i, insts, max_insts;
 	Uint32 disasm_upper = 0;
 	uaecptr nextpc;
-	int i;
 
 	if (nArgc > 1)
 	{
@@ -236,25 +236,21 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	}
 	disasm_addr &= 0x00FFFFFF;
 
-	/* output a single block. */
-	if (!disasm_upper)
+	/* limit is topmost address or instruction count */
+	if (disasm_upper)
 	{
-		for (i = 0; i < DISASM_INSTS; i++)
-		{
-			DebugCpu_ShowMatchedSymbol(disasm_addr);
-			DebugCpu_ShowMatchedBreakpoint(disasm_addr);
-			m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
-			disasm_addr = nextpc;
-		}
-		fflush(debugOutput);
-		return DEBUGGER_CMDCONT;
+		max_insts = INT_MAX;
+	}
+	else
+	{
+		disasm_upper = 0x00FFFFFF;
+		max_insts = DISASM_INSTS;
 	}
 
 	/* output a range */
-	while (disasm_addr < disasm_upper)
+	for (insts = 0; insts < max_insts && disasm_addr < disasm_upper; insts++)
 	{
 		DebugCpu_ShowMatchedSymbol(disasm_addr);
-		DebugCpu_ShowMatchedBreakpoint(disasm_addr);
 		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 		disasm_addr = nextpc;
 	}
