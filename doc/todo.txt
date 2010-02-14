@@ -81,7 +81,7 @@ Other potential Hatari functionality improvements
 	  removed after hitting)
 	- Set breakpoint on specific OS call
 	- Showing symbol and breakpoint positions also in the DSP
-	  disassembly output, counted breakpoints for DSP
+	  disassembly output
 	- Command to run slowly
 	- Saving machine status to history buffer each time debugger is
 	  entered (exception or breakpoint is hit) and being able to view

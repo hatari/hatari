@@ -35,13 +35,6 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 static Uint32 disasm_addr;     /* disasm address */
 static Uint32 memdump_addr;    /* memdump address */
 
-static struct {
-	Uint32 addr;           /* breakpoint address */
-	int count;             /* how many hits needed to trigger */
-	int hits;              /* how many times hit since last trigger */
-} CpuBreakPoint[16];           /* 68k breakpoints */
-
-static int nCpuActiveBPs = 0;  /* Amount of active breakpoints */
 static int nCpuActiveCBs = 0;  /* Amount of active conditional breakpoints */
 static int nCpuSteps = 0;      /* Amount of steps for CPU single-stepping */
 
@@ -54,8 +47,6 @@ void DebugCpu_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&disasm_addr, sizeof(disasm_addr));
 	MemorySnapShot_Store(&memdump_addr, sizeof(memdump_addr));
 	
-	MemorySnapShot_Store(&CpuBreakPoint, sizeof(CpuBreakPoint));
-	MemorySnapShot_Store(&nCpuActiveBPs, sizeof(nCpuActiveBPs));
 	MemorySnapShot_Store(&nCpuActiveCBs, sizeof(nCpuActiveCBs));
 }
 
@@ -163,53 +154,12 @@ static void DebugCpu_ShowMatchedSymbol(Uint32 addr)
 }
 
 /**
- * Check whether given address matches any CPU breakpoint, if yes,
- * show the breakpoint information.
- * Return breakpoint index+1 if one was matched, zero otherwise.
- */
-static int DebugCpu_ShowMatchedBreakpoint(Uint32 addr)
-{
-	int i, cpubreak;
-	
-	cpubreak = 0;
-	for (i = 0; i < nCpuActiveBPs; i++)
-	{
-		if (addr == CpuBreakPoint[i].addr)
-		{
-			cpubreak = i+1;
-			break;
-		}
-	}
-	if (!cpubreak)
-		return 0;
-
-	fprintf(debugOutput, "breakpoint %d", cpubreak);
-	switch (CpuBreakPoint[i].count)	{
-	case 0:
-		/* not counted, breaks on every hit */
-		break;
-	case 1:
-		/* breaks once, then removed */
-		fputs(" (once)", debugOutput);
-		break;
-	default:
-		/* breaks on every 'count' hit */
-		fprintf(stderr, " (%d/%d)",
-			CpuBreakPoint[i].hits,
-			CpuBreakPoint[i].count);
-		break;
-	}
-	fputs(":\n", debugOutput);
-	return cpubreak;
-}
-
-/**
  * Dissassemble - arg = starting address, or PC.
  */
 int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 {
-	int i, insts, max_insts;
 	Uint32 disasm_upper = 0;
+	int insts, max_insts;
 	uaecptr nextpc;
 
 	if (nArgc > 1)
@@ -372,129 +322,14 @@ error_msg:
 
 
 /**
- * Check whether given breakpoint matches given address and if it does,
- * remove it and return true.  Otherwise return false.
+ * CPU wrapper for BreakAddr_Command/BreakPointCount.
  */
-static bool DebugCpu_RemoveBreakPoint(int i, Uint32 addr)
+static int DebugCpu_BreakAddr(int nArgc, char *psArgs[])
 {
-	const char *symbol;
-
-	assert(i >= 0 && i < nCpuActiveBPs);
-	
-	if (CpuBreakPoint[i].addr != addr)
-		return false;
-	
-	symbol = Symbols_GetByCpuAddress(addr);
-	if (symbol)
-		fprintf(stderr, "CPU breakpoint at 0x%x (%s) deleted.\n", addr, symbol);
-	else
-		fprintf(stderr, "CPU breakpoint at 0x%x deleted.\n", addr);
-
-	CpuBreakPoint[i] = CpuBreakPoint[nCpuActiveBPs-1];
-	nCpuActiveBPs -= 1;
-	return true;
-}
-
-
-/**
- * Toggle or list CPU breakpoints.
- */
-static int DebugCpu_BreakPoint(int nArgc, char *psArgs[])
-{
-	int i, count;
-	uaecptr nextpc;
-	Uint32 BreakAddr;
-	const char *symbol;
-
-	/* List breakpoints? */
-	if (nArgc == 1)
-	{
-		/* No arguments - so list available breakpoints */
-		if (!nCpuActiveBPs)
-		{
-			fputs("No CPU breakpoints set.\n", stderr);
-			return DEBUGGER_CMDDONE;
-		}
-
-		fputs("Currently active CPU breakpoints:\n", stderr);
-		for (i = 0; i < nCpuActiveBPs; i++)
-		{
-			symbol = Symbols_GetByCpuAddress(CpuBreakPoint[i].addr);
-			if (symbol)
-				fprintf(stderr, "%2d. '%s' ", i+1, symbol);
-			else
-				fprintf(stderr, "%2d. ", i+1);
-			switch (CpuBreakPoint[i].count)	{
-			case 0:
-				/* not counted, breaks on every hit */
-				fprintf(stderr, "(always)");
-				break;
-			case 1:
-				/* breaks once, then removed */
-				fprintf(stderr, "(once)");
-				break;
-			default:
-				/* breaks on every 'count' hit */
-				fprintf(stderr, "(%d/%d)",
-					CpuBreakPoint[i].hits,
-					CpuBreakPoint[i].count);
-				break;
-			}
-			fputs("\n    ", stderr);
-			m68k_disasm(stderr, (uaecptr)CpuBreakPoint[i].addr, &nextpc, 1);
-		}
-
-		return DEBUGGER_CMDDONE;
-	}
-
-	/* Parse parameter as breakpoint value */
-	if (!Symbols_GetCpuAddress(SYMTYPE_TEXT, psArgs[1], &BreakAddr))
-	{
-		if (!Eval_Number(psArgs[1], &BreakAddr))
-		{
-			fprintf(stderr, "Invalid value '%s' for a CPU breakpoint!\n", psArgs[1]);
-			return DEBUGGER_CMDDONE;
-		}
-	}
-	
-	if (BreakAddr > 0xff0000 ||
-	    (BreakAddr > STRamEnd && BreakAddr < 0xe00000))
-	{
-		fprintf(stderr, "Invalid address 0x%x for a CPU breakpoint!\n", BreakAddr);
-		return DEBUGGER_CMDDONE;
-	}
-
-	/* Is the breakpoint already in the list? Then disable it! */
-	for (i = 0; i < nCpuActiveBPs; i++)
-	{
-		if (DebugCpu_RemoveBreakPoint(i, BreakAddr))
-			return DEBUGGER_CMDDONE;
-	}
-
-	/* Is there at least one free slot available? */
-	if (nCpuActiveBPs == ARRAYSIZE(CpuBreakPoint))
-	{
-		fputs("No more available free CPU breakpoints!\n", stderr);
-		return DEBUGGER_CMDDONE;
-	}
-
-	count = 0;
-	if (nArgc >= 3)
-	{
-		count = atoi(psArgs[2]);
-		if (count < 1)
-			count = 0;
-	}
-	/* Add new breakpoint */
-	CpuBreakPoint[nCpuActiveBPs].addr = BreakAddr;
-	CpuBreakPoint[nCpuActiveBPs].count = count;
-	CpuBreakPoint[nCpuActiveBPs].hits = 0;
-	nCpuActiveBPs += 1;
-	fprintf(stderr, "CPU breakpoint added at 0x%x.\n", BreakAddr);
-
+	BreakAddr_Command(psArgs[1], false);
+	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 	return DEBUGGER_CMDDONE;
 }
-
 
 /**
  * CPU wrapper for BreakCond_Command/BreakPointCount.
@@ -505,6 +340,7 @@ static int DebugCpu_BreakCond(int nArgc, char *psArgs[])
 	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 	return DEBUGGER_CMDDONE;
 }
+
 
 /**
  * Do a memory dump, args = starting address.
@@ -629,36 +465,6 @@ static int DebugCpu_Continue(int nArgc, char *psArgv[])
 
 
 /**
- * Check if we hit a CPU breakpoint.  If yes, show its state
- * and act according to the breakpoint count&hits.
- */
-static void DebugCpu_CheckCpuBreakpoints(void)
-{
-	Uint32 pc = M68000_GetPC();
-	int i = DebugCpu_ShowMatchedBreakpoint(pc);
-
-	if (!i)
-		return;
-	
-	fprintf(stderr, "\nCPU breakpoint at 0x%x ...", pc);
-
-	i--;
-	switch (CpuBreakPoint[i].count) {
-	case 0:
-		break;
-	case 1:
-		DebugCpu_RemoveBreakPoint(i, pc);
-		break;
-	default:
-		if (++(CpuBreakPoint[i].hits) < CpuBreakPoint[i].count)
-			return;
-		CpuBreakPoint[i].hits = 0;
-	}
-	DebugUI();
-}
-
-
-/**
  * This function is called after each CPU instruction when debugging is enabled.
  */
 void DebugCpu_Check(void)
@@ -666,10 +472,6 @@ void DebugCpu_Check(void)
 	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 	{
 		DebugCpu_ShowMatchedSymbol(M68000_GetPC());
-	}
-	if (nCpuActiveBPs)
-	{
-		DebugCpu_CheckCpuBreakpoints();
 	}
 	if (nCpuActiveCBs)
 	{
@@ -691,7 +493,7 @@ void DebugCpu_Check(void)
  */
 void DebugCpu_SetDebugging(void)
 {
-	if (nCpuActiveBPs || nCpuActiveCBs || nCpuSteps)
+	if (nCpuActiveCBs || nCpuSteps)
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
@@ -701,21 +503,17 @@ void DebugCpu_SetDebugging(void)
 static const dbgcommand_t cpucommands[] =
 {
 	{ NULL, "CPU commands", NULL, NULL, NULL, false },
-	{ DebugCpu_BreakPoint, "address", "a",
-	  "toggle or list (traditional) CPU address breakpoints",
-	  "[address] [count]\n"
-	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
-	  "\tno address is given. Address can also be a loaded symbol name.\n"
-	  "\tIf count given, breaks only after given number of hits.\n"
-	  "\tIf count is one, breakpoint is removed after hit.",
-	  false	},
+	{ DebugCpu_BreakAddr, "address", "a",
+	  "set CPU PC address breakpoints",
+	  BreakAddr_Description,
+	  true	},
 	{ DebugCpu_BreakCond, "breakpoint", "b",
-	  "set/remove/list CPU register/RAM condition breakpoints",
+	  "set/remove/list conditional CPU breakpoints",
 	  BreakCond_Description,
 	  true },
 	{ DebugCpu_DisAsm, "disasm", "d",
 	  "disassemble from PC, or given address",
-	  "[address]\n"
+	  "[start address[-end address]]\n"
 	  "\tIf no address is given, this command disassembles from the last\n"
 	  "\tposition or from current PC if no last postition is available.",
 	  false },
@@ -727,7 +525,7 @@ static const dbgcommand_t cpucommands[] =
 	  true },
 	{ DebugCpu_MemDump, "memdump", "m",
 	  "dump memory",
-	  "[address]\n"
+	  "[start address[-end address]]\n"
 	  "\tdump memory at address or continue dump from previous address.",
 	  false },
 	{ DebugCpu_MemWrite, "memwrite", "w",
@@ -749,11 +547,7 @@ static const dbgcommand_t cpucommands[] =
 	  false },
 	{ Symbols_Command, "symbols", "",
 	  "load CPU symbols & their addresses",
-	  "<filename|addr|name> [offset]\n"
-	  "\tLoads symbol names and their addresses (with optional offset)\n"
-	  "\tfrom given <filename>.  If there were previously loaded symbols,\n"
-	  "\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
-	  "\ta file name, will list the currently loaded symbols.",
+	  Symbols_Description,
 	  false },
 	{ DebugCpu_Continue, "cont", "c",
 	  "continue emulation / CPU single-stepping",

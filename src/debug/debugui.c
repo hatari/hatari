@@ -419,8 +419,13 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 		"If value is prefixed with '$', it's a hexadecimal, if with '#', it's\n"
 		"a normal decimal, if with '%%', it's a binary decimal. Prefix can\n"
 		"be skipped for numbers in the default number base (currently %d).\n"
-		"Adresses may be given as a range like '$fc0000-$fc0100' (note\n"
-		"that there should be no spaces between the range numbers).\n"
+		"\n"
+		"Any expression given in quotes (within \"\"), will be evaluated\n"
+		"before given to the debugger command.  Any register and symbol\n"
+		"names in the expression are replaced by their values.\n"
+		"\n"
+		"Note that address ranges like '$fc0000-$fc0100' should have no\n"
+		"spaces between the range numbers.\n"
 		"\n"
 		"'help <command>' gives more help.\n", ConfigureParams.Log.nNumberBase);
 	return DEBUGGER_CMDDONE;

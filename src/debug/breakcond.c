@@ -87,9 +87,10 @@ typedef struct {
 typedef struct {
 	char *expression;
 	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
-	int ccount;
+	int ccount;	/* condition count */
 	int hits;	/* how many times breakpoint hit */
-	bool once;      /* remove after hit */
+	int skip;	/* how many times to hit before breaking */
+	bool once;	/* remove after hit&break */
 	bool trace;	/* trace mode, don't break */
 } bc_breakpoint_t;
 
@@ -332,8 +333,12 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 	for (i = 0; i < count; bp++, i++) {
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
 			BreakCond_ShowTracked(bp->conditions, bp->ccount);
+			bp->hits++;
+			if (bp->skip && (bp->hits % bp->skip) == 0) {
+				return 0;
+			}
 			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
-				i+1, name, ++(bp->hits));
+				i+1, name, bp->hits);
 			if (bp->trace) {
 				return 0;
 			}
@@ -1213,7 +1218,7 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
  * Parse given breakpoint expression and store it.
  * Return true for success and false for failure.
  */
-static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bool once)
+static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bool once, int skip)
 {
 	parser_state_t pstate;
 	bc_breakpoint_t *bp;
@@ -1247,13 +1252,17 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bo
 		fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added:\n\t%s\n",
 			name, *bcount, ccount, bp->expression);
 		BreakCond_CheckTracking(bp);
-		if (trace) {
-			fprintf(stderr, "-> Trace, show hits, but don't break.\n");
-			bp->trace = trace;
+		if (skip) {
+			fprintf(stderr, "-> Break only on every %d hit.\n", skip);
+			bp->skip = skip;
 		}
 		if (once) {
-			fprintf(stderr, "-> Once, delete after hit.\n");
+			fprintf(stderr, "-> Once, delete after breaking.\n");
 			bp->once = once;
+		}
+		if (trace) {
+			fprintf(stderr, "-> Trace instead of breaking, but show still hits.\n");
+			bp->trace = trace;
 		}
 	} else {
 		if (normalized) {
@@ -1377,20 +1386,22 @@ static void BreakCond_Help(void)
 "  condition = <value>[.mode] [& <number>] <comparison> <value>[.mode]\n"
 "\n"
 "  where:\n"
-"  	value = [(] <register-name | hatari-variable | number> [)]\n"
+"  	value = [(] <register/symbol/variable name | number> [)]\n"
 "  	number = [#|$|%]<digits>\n"
 "  	comparison = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
-"  	option = trace | once\n"
+"  	option = : <count> | 'once' | 'trace'\n"
 "\n"
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
 "\n"
-"  If the value expressions on both sides of the '!' inequality comparison\n"
-"  are exactly the same, then the breakpoint tracks changes to the given\n"
-"  (address/register) value.  'trace' option to continue without breaking\n"
-"  can be useful with this. 'once' option removes breakpoint after hit.\n"
+"  If the value expressions on both sides of the comparison are exactly\n"
+"  the same, right side is replaced with its current value and for\n"
+"  inequality ('!') comparison, the breakpoint tracks all further changes\n"
+"  for the given address/register expression.  'trace' option for continuing\n"
+"  without breaking can be useful with this. 'once' option removes breakpoint\n"
+"  after hit and giving count as option will break only on every <count> hit.\n"
 "\n"
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
@@ -1421,25 +1432,27 @@ static void BreakCond_Help(void)
 "\n"
 "  Examples:\n"
 "  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0 = %1100\n"
-"       ($ffff9202).w ! ($ffff9202).w trace\n"
+"       ($ffff9202).w ! ($ffff9202).w :trace\n"
 "  	(r0).x = 1 && (r0).y = 2\n", stderr);
 }
 
 
-const char BreakCond_Description[] =
-	"[ help | all | <index> | <condition> [trace|once] ]\n"
-	"\tSet breakpoint with given condition, remove breakpoint with\n"
-	"\tgiven index or list all breakpoints when no args are given.\n"
-	"\tAdding 'trace' to end of condition causes breakpoint match\n"
-	"\tjust to be printed, not break.  Adding 'once' will delete\n"
-	"\tthe breakpoint after it's hit.  'help' outputs breakpoint\n"
-	"\tcondition syntax help, 'all' removes all conditional breakpoints.";
-
-
 /* ------------- breakpoint condition parsing, public API ------------ */
 
+const char BreakCond_Description[] =
+	"[ <condition> [:<count>|once|trace] | <index> | help | all ]\n"
+	"\tSet breakpoint with given <condition>, remove breakpoint with\n"
+	"\tgiven <index> or list all breakpoints when no args are given.\n"
+	"\tAdding ':trace' to end of condition causes breakpoint match\n"
+	"\tjust to be printed, not break.  Adding ':once' will delete\n"
+	"\tthe breakpoint after it's hit.  Adding ':<count>' will break\n"
+	"\tonly on every <count> hit.  'help' outputs breakpoint condition\n"
+	"\tsyntax help, 'all' removes all breakpoints.";
+
 /**
- * Parse given DebugUI command for Dsp and act accordingly
+ * Parse given command expression to set/remove/list
+ * conditional breakpoints for CPU or DSP.
+ * Return true for success and false for failure.
  */
 bool BreakCond_Command(const char *args, bool bForDsp)
 {
@@ -1447,6 +1460,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	char *cut, *expression;
 	unsigned int position;
 	const char *end;
+	int skip;
 	
 	if (!args) {
 		BreakCond_List(bForDsp);
@@ -1456,6 +1470,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	assert(expression);
 	
 	expression = Str_Trim(expression);
+	
 	/* subcommands */
 	if (strncmp(expression, "help", 4) == 0) {
 		BreakCond_Help();
@@ -1465,18 +1480,27 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		BreakCond_RemoveAll(bForDsp);
 		goto cleanup;
 	}
+
 	/* postfix options */
+	skip = 0;
 	once = false;
 	trace = false;
-	if ((cut = Str_EndsWith(expression, "trace"))) {
+	if ((cut = strchr(expression, ':'))) {
 		*cut = '\0';
-		trace = true;
-	} else {
-		if ((cut = Str_EndsWith(expression, "once"))) {
-			*cut = '\0';
+		cut = Str_Trim(cut+1);
+		if (strcmp(cut, "trace") == 0) {
+			trace = true;
+		} else if (strcmp(cut, "once") == 0) {
 			once = true;
+		} else {
+			skip = atoi(cut);
+			if (skip < 2) {
+				fprintf(stderr, "ERROR: invalid breakpoint skip count '%s'!\n", cut);
+				goto cleanup;
+			}
 		}
 	}
+
 	/* index (for removal) */
 	end = expression;
 	while (isdigit(*end)) {
@@ -1487,9 +1511,64 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		ret = BreakCond_Remove(position, bForDsp);
 	} else {
 		/* add breakpoint? */
-		ret = BreakCond_Parse(expression, bForDsp, trace, once);
+		ret = BreakCond_Parse(expression, bForDsp, trace, once, skip);
 	}
 cleanup:
 	free(expression);
 	return ret;
+}
+
+
+const char BreakAddr_Description[] =
+	"<address> [:<count>|once|trace]\n"
+	"\tCreate conditional breakpoint for given PC <address>.\n"
+	"\tAdding ':trace' causes breakpoint match just to be printed,\n"
+	"\tnot break. Adding ':once' will delete the breakpoint after\n"
+	"\tit's hit.  Adding ':<count>' will break only on every <count>\n"
+	"\thit.  Use conditional breakpoint commands to manage the created\n"
+	"\tbreakpoints.";
+
+/**
+ * Set CPU & DSP program counter address breakpoints by converting
+ * them to conditional breakpoints.
+ * Return true for success and false for failure.
+ */
+bool BreakAddr_Command(char *args, bool bForDsp)
+{
+	const char *errstr, *expression = (const char *)args;
+	char *cut, command[32];
+	Uint32 addr;
+	int offset;
+
+	/* split options */
+	if ((cut = strchr(args, ':'))) {
+		*cut = '\0';
+		cut = Str_Trim(cut+1);
+		if (strlen(cut) > 8) {
+			cut[8] = '\0';
+		}
+	}
+
+	/* evaluate address expression */
+	errstr = Eval_Expression(expression, &addr, &offset);
+	if (errstr) {
+		fprintf(stderr, "ERROR in the address expression:\n'%s'\n%*c-%s\n",
+			expression, offset+2, '^', errstr);
+		return false;
+	}
+	
+	/* add the address breakpoint with optional option */
+	sprintf(command, "pc=$%x %c%s", addr, cut?':':' ', cut?cut:"");
+	if (!BreakCond_Command(command, bForDsp)) {
+		return false;
+	}
+	
+	/* on success, show on what instruction it was added */
+	if (bForDsp) {
+		DSP_DisasmAddress(addr, addr);
+	} else {
+		uaecptr dummy;
+		m68k_disasm(stderr, (uaecptr)addr, &dummy, 1);
+	}
+	return true;
 }

@@ -8,16 +8,20 @@
 #ifndef HATARI_BREAKCOND_H
 #define HATARI_BREAKCOND_H
 
-extern const char BreakCond_Description[];
-
 /* for debugui.c */
 extern void BreakCond_MemorySnapShot_Capture(bool bSave);
+extern char *BreakCond_MatchCpuVariable(const char *text, int state);
+extern char *BreakCond_MatchDspVariable(const char *text, int state);
+
+/* for debugcpu.c & debugdsp.c */
+extern const char BreakCond_Description[];
+extern const char BreakAddr_Description[];
+
 extern int BreakCond_MatchCpu(void);
 extern int BreakCond_MatchDsp(void);
 extern int BreakCond_BreakPointCount(bool bForDsp);
-extern char *BreakCond_MatchCpuVariable(const char *text, int state);
-extern char *BreakCond_MatchDspVariable(const char *text, int state);
 extern bool BreakCond_Command(const char *expression, bool bForDsp);
+extern bool BreakAddr_Command(char *expression, bool bforDsp);
 
 /* extra functions exported for the test code */
 extern void BreakCond_List(bool bForDsp);
