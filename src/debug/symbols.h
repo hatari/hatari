@@ -15,6 +15,8 @@ typedef enum {
 	SYMTYPE_ALL  = SYMTYPE_TEXT|SYMTYPE_DATA|SYMTYPE_BSS
 } symtype_t;
 
+extern const char Symbols_Description[];
+
 /* readline completion support functions for CPU */
 extern char* Symbols_MatchCpuAddress(const char *text, int state);
 extern char* Symbols_MatchCpuCodeAddress(const char *text, int state);

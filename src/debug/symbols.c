@@ -465,6 +465,12 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 	}
 }
 
+const char Symbols_Description[] =
+	"<filename|addr|name> [offset]\n"
+	"\tLoads symbol names and their addresses (with optional offset)\n"
+	"\tfrom given <filename>.  If there were previously loaded symbols,\n"
+	"\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
+	"\ta file name, will list the currently loaded symbols.";
 
 /**
  * Handle debugger 'symbols' command and its arguments

@@ -508,12 +508,12 @@ static const dbgcommand_t cpucommands[] =
 	  BreakAddr_Description,
 	  true	},
 	{ DebugCpu_BreakCond, "breakpoint", "b",
-	  "set/remove/list CPU register/RAM condition breakpoints",
+	  "set/remove/list conditional CPU breakpoints",
 	  BreakCond_Description,
 	  true },
 	{ DebugCpu_DisAsm, "disasm", "d",
 	  "disassemble from PC, or given address",
-	  "[address]\n"
+	  "[start address[-end address]]\n"
 	  "\tIf no address is given, this command disassembles from the last\n"
 	  "\tposition or from current PC if no last postition is available.",
 	  false },
@@ -525,7 +525,7 @@ static const dbgcommand_t cpucommands[] =
 	  true },
 	{ DebugCpu_MemDump, "memdump", "m",
 	  "dump memory",
-	  "[address]\n"
+	  "[start address[-end address]]\n"
 	  "\tdump memory at address or continue dump from previous address.",
 	  false },
 	{ DebugCpu_MemWrite, "memwrite", "w",
@@ -547,11 +547,7 @@ static const dbgcommand_t cpucommands[] =
 	  false },
 	{ Symbols_Command, "symbols", "",
 	  "load CPU symbols & their addresses",
-	  "<filename|addr|name> [offset]\n"
-	  "\tLoads symbol names and their addresses (with optional offset)\n"
-	  "\tfrom given <filename>.  If there were previously loaded symbols,\n"
-	  "\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
-	  "\ta file name, will list the currently loaded symbols.",
+	  Symbols_Description,
 	  false },
 	{ DebugCpu_Continue, "cont", "c",
 	  "continue emulation / CPU single-stepping",

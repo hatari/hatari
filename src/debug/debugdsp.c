@@ -316,27 +316,23 @@ static const dbgcommand_t dspcommands[] =
 	  BreakAddr_Description,
 	  true },
 	{ DebugDsp_BreakCond, "dspbreak", "db",
-	  "set/remove/list DSP register/RAM condition breakpoints",
+	  "set/remove/list conditional DSP breakpoints",
 	  BreakCond_Description,
 	  true },
 	{ DebugDsp_DisAsm, "dspdisasm", "dd",
 	  "disassemble DSP code",
-	  "[address]\n"
+	  "[start address[-end address]]\n"
 	  "\tDisassemble from DSP-PC, otherwise at given address.",
 	  false },
 	{ DebugDsp_MemDump, "dspmemdump", "dm",
 	  "dump DSP memory",
-	  "<x|y|p> [address]\n"
-	  "\tdump DSP memory at address, or continue from previous address if not\n"
-	  "\tspecified.",
+	  "<x|y|p> [start address[-end address]]\n"
+	  "\tdump DSP memory at address, or continue from previous address\n"
+	  "\tif not specified.",
 	  false },
 	{ Symbols_Command, "dspsymbols", "",
 	  "load DSP symbols & their addresses",
-	  "<filename|addr|name> [offset]\n"
-	  "\tLoads symbol names and their addresses (with optional offset)\n"
-	  "\tfrom given <filename>.  If there were previously loaded symbols,\n"
-	  "\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
-	  "\ta file name, will list the currently loaded symbols.",
+	  Symbols_Description,
 	  false },
 	{ DebugDsp_Register, "dspreg", "dr",
 	  "read/write DSP registers",
