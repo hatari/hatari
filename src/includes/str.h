@@ -18,7 +18,6 @@ extern char *Str_Trim(char *buffer);
 extern char *Str_ToUpper(char *pString);
 extern char *Str_ToLower(char *pString);
 extern char *Str_Trunc(char *str);
-extern char *Str_EndsWith(char *str1, const char *str2);
 extern bool Str_IsHex(const char *str);
 
 #endif  /* HATARI_STR_H */
