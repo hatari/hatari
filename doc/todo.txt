@@ -71,10 +71,6 @@ Other potential Hatari functionality improvements
   altogether) before next release.
 
 - Debugger improvements:
-	- Showing specified information when entering debugger
-	  (register locking in Monst).  Main issue is how user
-	  would specify what to show (regs, memdump, disassembly,
-	  for CPU and/or DSP, addresses pointed by registers etc)
 	- Shortcut command for telling to run until given
 	  (temporary) conditional breakpoint is hit
 	- Running until code returns from ROM (exiting from super mode?)
@@ -86,10 +82,7 @@ Other potential Hatari functionality improvements
 	- Set breakpoint on specific OS call
 	- Showing symbol and breakpoint positions also in the DSP
 	  disassembly output, counted breakpoints for DSP
-	- Support symbol names and counts also in conditional breakpoints
 	- Command to run slowly
-	- Register command showing contents of memory pointed
-	  by the registers
 	- Saving machine status to history buffer each time debugger is
 	  entered (exception or breakpoint is hit) and being able to view
 	  this history

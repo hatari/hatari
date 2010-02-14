@@ -48,25 +48,27 @@ Emulator:
 - Statusbar shows CPU type & speed
 - Can create blank 2.88MB (ED) and 1.44MB (HD) floppy images
   from the GUI in addition to DD & SD images
-- Debugger improvements:
-  - GEMDOS tracing gives slightly more information
+- Major debugger improvements:
+  - debugger command, command argument and symbol name TAB-completion
+    support. Requires readline library
   - "stateload" and "statesave" commands for memory snapshots
   - "trace" command for tracing what the emulated code does
-  - "evaluate" command for doing calculations
+    - GEMDOS tracing gives slightly more information
+  - "symbols" command for loading and listing CPU & DSP code
+    symbols/addresses.  Symbols are shown on CPU disassembly
+  - "evaluate" command for doing calculations. Register and symbol
+    names in expressions are replaced by their values. '$' will be
+    TAB-completed to last 'evaluate' command result
   - "info" command for showing Atari HW and OS information
   - "lock" command for setting what information is shown every time on
-    entering the debugger (e.g. disassembly or memdump from given address)
-  - "symbols" command for loading and listing CPU & DSP code
-    symbols/addresses and breaking on them.  Symbols are shown
-    on CPU disassembly
-  - debugger command and command argument TAB-completion support
-    (requires readline library)
+    entering the debugge, e.g. disassembly or memdump from given address.
+    "regaddr" argument does that from address pointed by given register
   - improved register name handling + fixed DSP reg name matching
   - if conditional breakpoint condition both sides are identical, replace
     right side with current value of given expression (e.g. if it's "d0",
     use current D0 value).  If the comparison is for inequality ("!"),
     output the value & break only when the value changes from the previous
-    value (not original like with other comparisons)
+    value (not original like with other comparisons).  Symbols support
   - option to trace/output conditional breakpoint hits without breaking
   - conditional breakpoints count hits and can be optionally removed
     after first hit
