@@ -35,6 +35,7 @@ typedef enum
 #endif
 
 extern int Log_Init(void);
+extern int Log_SetAlertLevel(int level);
 extern void Log_UnInit(void);
 extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 	__attribute__ ((format (printf, 2, 3)));

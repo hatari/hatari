@@ -804,7 +804,7 @@ static void DebugUI_Init(void)
  */
 void DebugUI(void)
 {
-	int cmdret;
+	int cmdret, alertLevel;
 	char *psCmd;
 	static const char *welcome =
 		"\n----------------------------------------------------------------------"
@@ -828,6 +828,9 @@ void DebugUI(void)
 	Statusbar_AddMessage("Console Debugger", 100);
 	Statusbar_Update(sdlscrn);
 
+	/* disable normal GUI alerts while on console */
+	alertLevel = Log_SetAlertLevel(LOG_FATAL);
+
 	cmdret = DEBUGGER_CMDDONE;
 	do
 	{
@@ -846,6 +849,7 @@ void DebugUI(void)
 	}
 	while (cmdret != DEBUGGER_END);
 
+	Log_SetAlertLevel(alertLevel);
 	DebugUI_SetLogDefault();
 
 	DebugCpu_SetDebugging();

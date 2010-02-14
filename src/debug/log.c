@@ -29,7 +29,7 @@ const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 #include "file.h"
 
 
-struct {
+static struct {
 	Uint32 Level;
 	const char *Name;
 }
@@ -113,6 +113,18 @@ int Log_Init(void)
 	TraceFile = File_Open(ConfigureParams.Log.sTraceFileName, "w");
    
 	return (hLogFile && TraceFile);
+}
+
+/**
+ * Set Alert log level temporarily without config change.
+ * 
+ * Return old level for restoring the original level with this.
+ */
+int Log_SetAlertLevel(int level)
+{
+	int old = AlertDlgLogLevel;
+	AlertDlgLogLevel = level;
+	return old;
 }
 
 
