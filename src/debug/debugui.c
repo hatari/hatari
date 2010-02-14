@@ -589,6 +589,8 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "db", BreakCond_MatchDspVariable },
 		{ "dspbreak", BreakCond_MatchDspVariable },
 		{ "dspsymbols", rl_filename_completion_function },
+		{ "e", Symbols_MatchCpuAddress },
+		{ "evaluate", Symbols_MatchCpuAddress },
 		{ "f", rl_filename_completion_function },
 		{ "h", DebugUI_MatchCommand },
 		{ "help", DebugUI_MatchCommand },
@@ -606,12 +608,10 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "o", Opt_MatchOption },
 		{ "setopt", Opt_MatchOption },
 		{ "t", Log_MatchTrace },
-		{ "trace", Log_MatchTrace },
-		{ "v", DebugUI_MatchValue },
-		{ "value", DebugUI_MatchValue }
+		{ "trace", Log_MatchTrace }
 	};
-	int i, end, start = 0;
-	char buf[32];
+	int i, quotes, end, start = 0;
+	char *str, buf[32];
 	size_t len;
 
 	/* check where's the first word (ignore white space) */
@@ -636,6 +636,22 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 	memcpy(buf, &(rl_line_buffer[start]), len);
 	buf[len] = '\0';
 
+	/* expression completion needed (= open quote)? */
+	str = strchr(&(rl_line_buffer[end]), '"');
+	quotes = 0;
+	while (str)
+	{
+		quotes++;
+		str = strchr(str+1, '"');
+	}
+	if (quotes & 1)
+	{
+		if ((len == 2 && buf[0] == 'd') || strncmp(buf, "dsp", 3) == 0)
+			return rl_completion_matches(text, Symbols_MatchDspAddress);
+		return rl_completion_matches(text, Symbols_MatchCpuAddress);
+	}
+
+	/* do command argument completion */
 	for (i = 0; i < ARRAYSIZE(cmd); i++)
 	{
 		if (strcmp(buf, cmd[i].name) == 0)
@@ -703,11 +719,15 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_Evaluate, "evaluate", "e",
 	  "evaluate an expression",
 	  "<expression>\n"
-	  "\tEvaluate an expression and the show result. Supported\n"
-	  "\toperators are, in the decending order of precedence:\n"
+	  "\tEvaluate an expression and show the result.  Expression can\n"
+	  "\tinclude register and symbol names, those are replaced by their\n"
+	  "\tvalues. Supported operators in expressions, in the decending\n"
+	  "\torder of precedence, are:\n"
 	  "\t\t(), +, -, ~, *, /, +, -, >>, <<, ^, &, |\n"
 	  "\tFor example:\n"
-	  "\t\t((0x21 * 0x200) + (-5)) ^ (~%111 & $f0f0f0)",
+	  "\t\t((0x21 * 0x200) + (-5)) ^ (~%111 & $f0f0f0)\n"
+	  "\tResult value is shown as binary, decimal and hexadecimal.\n"
+	  "\t'$' will TAB-complete to last result value.",
 	  true },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
