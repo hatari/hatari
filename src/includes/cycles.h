@@ -8,6 +8,8 @@
 #ifndef HATARI_CYCLES_H
 #define HATARI_CYCLES_H
 
+#include <stdbool.h>
+
 enum
 {
 	CYCLES_COUNTER_SOUND,
@@ -22,6 +24,7 @@ extern int nCyclesMainCounter;
 extern int CurrentInstrCycles;
 
 
+extern void Cycles_MemorySnapShot_Capture(bool bSave);
 extern void Cycles_SetCounter(int nId, int nValue);
 extern int Cycles_GetCounter(int nId);
 extern int Cycles_GetCounterOnReadAccess(int nId);

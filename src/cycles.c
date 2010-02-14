@@ -26,14 +26,29 @@ const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "m68000.h"
+#include "memorySnapShot.h"
 #include "cycles.h"
 
 
-int nCyclesMainCounter;                         /* Main cycles counter */
+int nCyclesMainCounter;				/* Main cycles counter */
 
-static int nCyclesCounter[CYCLES_COUNTER_MAX];  /* Array with all counters */
+static int nCyclesCounter[CYCLES_COUNTER_MAX];	/* Array with all counters */
 
 int CurrentInstrCycles;
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
+ */
+void Cycles_MemorySnapShot_Capture(bool bSave)
+{
+	/* Save/Restore details */
+	MemorySnapShot_Store(&nCyclesMainCounter, sizeof(nCyclesMainCounter));
+	MemorySnapShot_Store(nCyclesCounter, sizeof(nCyclesCounter));
+	MemorySnapShot_Store(&CurrentInstrCycles, sizeof(CurrentInstrCycles));
+}
 
 
 /*-----------------------------------------------------------------------*/
