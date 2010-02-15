@@ -26,13 +26,16 @@ valgrind: $(TESTS)
 test-symbols: test-symbols.c ../src/debug/symbols.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-test-evaluate: test-evaluate.c ../src/debug/evaluate.c
+test-evaluate: test-evaluate.c ../src/debug/evaluate.c \
+		../src/debug/debugcpu.c ../src/falcon/dsp.c \
+		../src/debug/symbols.c ../src/str.c \
+		../src/debug/breakcond.c test-dummies.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 test-breakcond: test-breakcond.c ../src/debug/breakcond.c \
 		../src/debug/debugcpu.c ../src/falcon/dsp.c \
-		../src/debug/symbols.c ../src/debug/evaluate.c \
-		../src/str.c
+		../src/debug/symbols.c ../src/str.c \
+		../src/debug/evaluate.c test-dummies.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

@@ -7,11 +7,6 @@
 #include "evaluate.h"
 #include "main.h"
 
-/* fake Hatari configuration variables for unused Eval_Number() function */
-#include "configuration.h"
-CNF_PARAMS ConfigureParams;
-
-
 int main(int argc, const char *argv[])
 {
 	/* expected to fail */
@@ -38,7 +33,7 @@ int main(int argc, const char *argv[])
 
 	for (i = 0; i < ARRAYSIZE(failure); i++) {
 		expression = failure[i];
-		errstr = Eval_Expression(expression, &result, &offset);
+		errstr = Eval_Expression(expression, &result, &offset, false);
 		if (errstr) {
 			fprintf(stderr, "- '%s'\n%*c-%s\n",
 				expression, 3+offset, '^', errstr);
@@ -54,7 +49,7 @@ int main(int argc, const char *argv[])
 	
 	for (i = 0; i < ARRAYSIZE(success); i++) {
 		expression = success[i].expression;
-		errstr = Eval_Expression(expression, &result, &offset);
+		errstr = Eval_Expression(expression, &result, &offset, false);
 		if (errstr) {
 			fprintf(stderr, "***Unexpected ERROR in expression***\n- '%s'\n%*c-%s\n",
 				expression, 3+offset, '^', errstr);
