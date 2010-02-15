@@ -1550,7 +1550,7 @@ bool BreakAddr_Command(char *args, bool bForDsp)
 	}
 
 	/* evaluate address expression */
-	errstr = Eval_Expression(expression, &addr, &offset);
+	errstr = Eval_Expression(expression, &addr, &offset, bForDsp);
 	if (errstr) {
 		fprintf(stderr, "ERROR in the address expression:\n'%s'\n%*c-%s\n",
 			expression, offset+2, '^', errstr);

@@ -193,7 +193,7 @@ static int getNumber(const char *str, Uint32 *number, int *nbase)
  * Parse unsigned register/symbol/number value and set it to "number".
  * Return how many characters were parsed or zero for error.
  */
-static int getValue(const char *str, Uint32 *number)
+static int getValue(const char *str, Uint32 *number, bool bForDsp)
 {
 	char name[64];
 	const char *end;
@@ -210,32 +210,33 @@ static int getValue(const char *str, Uint32 *number)
 	memcpy(name, str, len);
 	name[len] = '\0';
 
-	/* is it a special case CPU register? */
-	if (strcasecmp(name, "PC") == 0) {
-		*number = M68000_GetPC();
-		return len;
-	}
-	if (strcasecmp(name, "SR") == 0) {
-		*number = M68000_GetSR();
-		return len;
-	}
-	
-	/* is it a normal CPU or DSP register? */
-	if (DebugCpu_GetRegisterAddress(name, &addr)) {
-		*number = *addr;
-		return len;
-	}
-	if (DSP_GetRegisterAddress(name, &addr, &mask)) {
-		*number = (*addr & mask);
-		return len;
-	}
-
-	/* is it a symbol? */
-	if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, number)) {
-		return len;
-	}
-	if (Symbols_GetDspAddress(SYMTYPE_ALL, name, number)) {
-		return len;
+	if (bForDsp) {
+		/* DSP register or symbol? */
+		if (DSP_GetRegisterAddress(name, &addr, &mask)) {
+			*number = (*addr & mask);
+			return len;
+		}
+		if (Symbols_GetDspAddress(SYMTYPE_ALL, name, number)) {
+			return len;
+		}
+	} else {
+		/* a special case CPU register? */
+		if (strcasecmp(name, "PC") == 0) {
+			*number = M68000_GetPC();
+			return len;
+		}
+		if (strcasecmp(name, "SR") == 0) {
+			*number = M68000_GetSR();
+			return len;
+		}
+		/* a normal CPU  register or symbol? */
+		if (DebugCpu_GetRegisterAddress(name, &addr)) {
+			*number = *addr;
+			return len;
+		}
+		if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, number)) {
+			return len;
+		}
 	}
 
 	/* none of above, assume it's a number */
@@ -349,10 +350,11 @@ int Eval_Range(char *str, Uint32 *lower, Uint32 *upper)
 
 
 /**
- * Evaluate expression.
- * Set given value and parsing offset, return error string or NULL for success.
+ * Evaluate expression. bForDsp determines which registers and symbols
+ * are interpreted. Sets given value and parsing offset.
+ * Return error string or NULL for success.
  */
-const char* Eval_Expression(const char *in, Uint32 *out, int *erroff)
+const char* Eval_Expression(const char *in, Uint32 *out, int *erroff, bool bForDsp)
 {
 	/* in	 : expression to evaluate				*/
 	/* out	 : final parsed value					*/
@@ -425,7 +427,7 @@ const char* Eval_Expression(const char *in, Uint32 *out, int *erroff)
 			if (id.valid == false) {
 				Uint32 tmp;
 				int consumed;
-				consumed = getValue(&(in[offset]), &tmp);
+				consumed = getValue(&(in[offset]), &tmp, bForDsp);
 				/* number parsed? */
 				if (consumed) {
 					offset += consumed;

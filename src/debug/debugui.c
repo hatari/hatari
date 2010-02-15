@@ -131,7 +131,7 @@ static void DebugUI_PrintValue(Uint32 value)
 
 
 /**
- * Commmand: Evaluate an expression
+ * Commmand: Evaluate an expression with CPU reg and symbol parsing.
  */
 static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 {
@@ -145,15 +145,26 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	errstr = Eval_Expression(expression, &result, &offset);
+	errstr = Eval_Expression(expression, &result, &offset, false);
 	if (errstr)
 		fprintf(stderr, "ERROR in the expression:\n'%s'\n%*c-%s\n",
-			expression, offset+2, '^', errstr);
+			expression, offset+3, '^', errstr);
 	else
 		DebugUI_PrintValue(result);
 	return DEBUGGER_CMDDONE;
 }
 
+
+/**
+ * Check whether given string is a two letter command starting with 'd'
+ * or a long command starting with "dsp". String should be trimmed.
+ * Return true if given string is command for DSP, false otherwise.
+ */
+static bool DebugUI_IsForDsp(const char *cmd)
+{
+	return ((cmd[0] == 'd' && cmd[1] && !cmd[2])
+		|| strncmp(cmd, "dsp", 3) == 0);
+}
 
 /**
  * Evaluate everything include within "" and replace them with the result.
@@ -169,8 +180,10 @@ static char *DebugUI_EvaluateExpressions(char *input)
 	const char *errstr;
 	char valuestr[12];
 	Uint32 value;
+	bool fordsp;
 
 	/* input is split later on, need to save len here */
+	fordsp = DebugUI_IsForDsp(input);
 	inputlen = strlen(input);
 	start = input;
 	
@@ -192,11 +205,11 @@ static char *DebugUI_EvaluateExpressions(char *input)
 		}
 
 		*end = '\0';
-		errstr = Eval_Expression(start+1, &value, &offset);
+		errstr = Eval_Expression(start+1, &value, &offset, fordsp);
 		if (errstr) {
 			*end = '"';
 			fprintf(stderr, "Expression ERROR:\n'%s'\n%*c-%s\n",
-				input, start-input+offset+2, '^', errstr);
+				input, start-input+offset+3, '^', errstr);
 			free(input);
 			return NULL;
 		}
@@ -618,7 +631,7 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 	}
 	if (quotes & 1)
 	{
-		if ((len == 2 && buf[0] == 'd') || strncmp(buf, "dsp", 3) == 0)
+		if (DebugUI_IsForDsp(buf))
 			return rl_completion_matches(text, Symbols_MatchDspAddress);
 		return rl_completion_matches(text, Symbols_MatchCpuAddress);
 	}
@@ -692,14 +705,14 @@ static const dbgcommand_t uicommand[] =
 	  "evaluate an expression",
 	  "<expression>\n"
 	  "\tEvaluate an expression and show the result.  Expression can\n"
-	  "\tinclude register and symbol names, those are replaced by their\n"
-	  "\tvalues. Supported operators in expressions, in the decending\n"
-	  "\torder of precedence, are:\n"
+	  "\tinclude CPU register and symbol names, those are replaced\n"
+	  "\tby their values. Supported operators in expressions are,\n"
+	  "\tin the decending order of precedence:\n"
 	  "\t\t(), +, -, ~, *, /, +, -, >>, <<, ^, &, |\n"
 	  "\tFor example:\n"
 	  "\t\t((0x21 * 0x200) + (-5)) ^ (~%111 & $f0f0f0)\n"
 	  "\tResult value is shown as binary, decimal and hexadecimal.\n"
-	  "\t'$' will TAB-complete to last result value.",
+	  "\tAfter this, '$' will TAB-complete to last result value.",
 	  true },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
