@@ -67,6 +67,7 @@ int main(int argc, const char *argv[])
 		".w&3=2",
 		"d0 = %200",
 		"d0 = \"ICE!BAR",
+		"pc > $200 :foobar",
 		"foo().w=bar()",
 		"(a0.w=d0.l)",
 		"(a0&3)=20",
@@ -82,23 +83,30 @@ int main(int argc, const char *argv[])
 		NULL
 	};
 	const char *parser_pass[] = {
+		/* comparisons with normal numbers + indrect addressing */
 		" ($200).w > 200 ",
 		" ($200).w < 200 ",
 		" (200).w = $200 ",
 		" (200).w ! $200 ",
-		"a0>d0",
-		"a0<d0",
-		"d0=d1",
-		"d0!d1",
+		/* indirect addressing with registers */
 		"(a0)=(d0)",
 		"(d0).w=(a0).b",
+		/* sizes + multiple conditions + spacing */
 		"(a0).w&3=(d0)&&d0=1",
 		" ( a 0 ) . w  &  1 = ( d 0 ) & 1 &&  d 0 = 3 ",
 		"a0=1 && (d0)&2=(a0).w && ($00ff00).w&1=1",
 		" ($ff820a).b = 2",
+		/* variables */
 		"hbl > 0 && vbl < 2000 && linecycles = 508",
+		/* options */
+		"($200).w ! ($200).w :trace",
+		"($200).w > ($200).w :4",
+		"pc>pc :once",
 		NULL
 	};
+	/* address breakpoint + expression evalution with register */
+	char addr_pass[] = "pc + ($200*16/2 & 0xffff)";
+
 	const char *match_tests[] = {
 		"a0 = d0",
 		"( $200 ) . b > 200", /* byte access to avoid endianess */
@@ -140,6 +148,13 @@ int main(int argc, const char *argv[])
 		}
 	}
 	tests += i;
+	fprintf(stderr, "\nAddress PASS test for CPU:\n");
+	if (!BreakAddr_Command(addr_pass, use_dsp)) {
+		fprintf(stderr, "***ERROR***: should have passed\n");
+		errors++;
+	}
+	tests += 1;
+
 	fprintf(stderr, "-----------------\n\n");
 	BreakCond_Command(CMD_LIST, use_dsp);
 	fprintf(stderr, "\n");
