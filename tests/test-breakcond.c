@@ -10,6 +10,10 @@
 
 #define BITMASK(x)      ((1<<(x))-1)
 
+/* BreakCond_Command() command strings */
+#define CMD_LIST NULL
+#define CMD_REMOVE_ALL "all"
+
 
 static bool SetCpuRegister(const char *regname, Uint32 value)
 {
@@ -108,6 +112,7 @@ int main(int argc, const char *argv[])
 		NULL
 	};
 	const char *test;
+	char testidx[2] = "1";
 	int i, j, tests = 0, errors = 0;
 	int remaining_matches;
 	bool use_dsp;
@@ -124,7 +129,7 @@ int main(int argc, const char *argv[])
 	}
 	tests += i;
 	fprintf(stderr, "-----------------\n\n");
-	BreakCond_List(use_dsp);
+	BreakCond_Command(CMD_LIST, use_dsp);
 	
 	fprintf(stderr, "\nShould PASS for CPU:\n");
 	for (i = 0; (test = parser_pass[i]); i++) {
@@ -136,10 +141,10 @@ int main(int argc, const char *argv[])
 	}
 	tests += i;
 	fprintf(stderr, "-----------------\n\n");
-	BreakCond_List(use_dsp);
+	BreakCond_Command(CMD_LIST, use_dsp);
 	fprintf(stderr, "\n");
-	BreakCond_RemoveAll(use_dsp);
-	BreakCond_List(use_dsp);
+	BreakCond_Command(CMD_REMOVE_ALL, use_dsp);
+	BreakCond_Command(CMD_LIST, use_dsp);
 	fprintf(stderr, "-----------------\n");
 
 	/* add conditions */
@@ -152,7 +157,7 @@ int main(int argc, const char *argv[])
 		}
 	}
 	tests += i;
-	BreakCond_List(use_dsp);
+	BreakCond_Command(CMD_LIST, use_dsp);
 	fprintf(stderr, "\n");
 	
 	/* set up registers etc */
@@ -195,7 +200,8 @@ int main(int argc, const char *argv[])
 			fprintf(stderr, "WARNING: canonized breakpoint form didn't match\n");
 			errors++;
 		}
-		BreakCond_Remove(i, use_dsp);
+		testidx[0] = '0' + i;
+		BreakCond_Command(testidx, use_dsp); /* remove given */
 	}
 	remaining_matches = BreakCond_BreakPointCount(use_dsp);
 	if (remaining_matches != FAILING_BC_TEST_MATCHES) {
@@ -205,8 +211,8 @@ int main(int argc, const char *argv[])
 	}
 
 	fprintf(stderr, "\nOther breakpoints didn't match, removing the rest...\n");
-	BreakCond_RemoveAll(use_dsp);
-	BreakCond_List(use_dsp);
+	BreakCond_Command(CMD_REMOVE_ALL, use_dsp);
+	BreakCond_Command(CMD_LIST, use_dsp);
 	fprintf(stderr, "-----------------\n");
 
 	/* ...last parse cmd line args as DSP breakpoints */
@@ -218,15 +224,16 @@ int main(int argc, const char *argv[])
 			BreakCond_Command(*argv, use_dsp);
 		}
 		fprintf(stderr, "-----------------\n\n");
-		BreakCond_List(use_dsp);
+		BreakCond_Command("", use_dsp); /* list */
 
 		while ((i = BreakCond_MatchDsp())) {
 			fprintf(stderr, "Removing matching DSP breakpoint.\n");
-			BreakCond_Remove(i, use_dsp);
+			testidx[0] = '0' + i;
+			BreakCond_Command(testidx, use_dsp); /* remove given */
 		}
 
-		BreakCond_RemoveAll(use_dsp);
-		BreakCond_List(use_dsp);
+		BreakCond_Command(CMD_REMOVE_ALL, use_dsp);
+		BreakCond_Command(CMD_LIST, use_dsp);
 		fprintf(stderr, "-----------------\n");
 	}
 	if (errors) {

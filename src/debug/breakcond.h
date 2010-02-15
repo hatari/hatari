@@ -24,9 +24,6 @@ extern bool BreakCond_Command(const char *expression, bool bForDsp);
 extern bool BreakAddr_Command(char *expression, bool bforDsp);
 
 /* extra functions exported for the test code */
-extern void BreakCond_List(bool bForDsp);
-extern void BreakCond_RemoveAll(bool bForDsp);
-extern bool BreakCond_Remove(int position, bool bForDsp);
 extern int BreakCond_MatchCpuExpression(int position, const char *expression);
 
 #endif

@@ -99,6 +99,11 @@ static bc_breakpoint_t BreakPointsDsp[BC_MAX_CONDITION_BREAKPOINTS];
 static int BreakPointCpuCount;
 static int BreakPointDspCount;
 
+
+/* forward declarations */
+static bool BreakCond_Remove(int position, bool bForDsp);
+
+
 /* --------------------- memory snapshot ------------------- */
 
 /**
@@ -1296,7 +1301,7 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bo
 /**
  * List condition breakpoints
  */
-void BreakCond_List(bool bForDsp)
+static void BreakCond_List(bool bForDsp)
 {
 	const char *name;
 	bc_breakpoint_t *bp;
@@ -1319,7 +1324,7 @@ void BreakCond_List(bool bForDsp)
 /**
  * Remove condition breakpoint at given position
  */
-bool BreakCond_Remove(int position, bool bForDsp)
+static bool BreakCond_Remove(int position, bool bForDsp)
 {
 	const char *name;
 	bc_breakpoint_t *bp;
@@ -1351,7 +1356,7 @@ bool BreakCond_Remove(int position, bool bForDsp)
 /**
  * Remove all condition breakpoints
  */
-void BreakCond_RemoveAll(bool bForDsp)
+static void BreakCond_RemoveAll(bool bForDsp)
 {
 	while (BreakCond_Remove(1, bForDsp))
 		;
