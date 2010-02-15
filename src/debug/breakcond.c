@@ -102,6 +102,7 @@ static int BreakPointDspCount;
 
 /* forward declarations */
 static bool BreakCond_Remove(int position, bool bForDsp);
+static void BreakCond_Print(bc_breakpoint_t *bp);
 
 
 /* --------------------- memory snapshot ------------------- */
@@ -347,7 +348,7 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			if (bp->trace) {
 				return 0;
 			}
-			fprintf(stderr, "  %s\n", bp->expression);
+			BreakCond_Print(bp);
 			if (bp->once) {
 				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
 			}
@@ -1209,7 +1210,8 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 				condition->track = true;
 				track = true;
 			} else {
-				fprintf(stderr, "  %c $%x\n", condition->comparison, value);
+				fprintf(stderr, "\t%d. condition: %c $%x\n",
+					i+1, condition->comparison, value);
 			}
 		}
 	}
@@ -1299,6 +1301,24 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bo
 
 
 /**
+ * print single breakpoint
+ */
+static void BreakCond_Print(bc_breakpoint_t *bp)
+{
+		fprintf(stderr, "\t%s", bp->expression);
+		if (bp->skip) {
+			fprintf(stderr, " :%d", bp->skip);
+		}
+		if (bp->once) {
+			fprintf(stderr, " :once");
+		}
+		if (bp->trace) {
+			fprintf(stderr, " :trace");
+		}
+		fprintf(stderr, "\n");
+}
+
+/**
  * List condition breakpoints
  */
 static void BreakCond_List(bool bForDsp)
@@ -1315,8 +1335,8 @@ static void BreakCond_List(bool bForDsp)
 
 	fprintf(stderr, "%d conditional %s breakpoints:\n", bcount, name);
 	for (i = 1; i <= bcount; bp++, i++) {
-		fprintf(stderr, "%3d: %s%s%s\n", i, bp->expression,
-			bp->trace?", traced":"", bp->once?", once":"");
+		fprintf(stderr, "%4d:", i);
+		BreakCond_Print(bp);
 	}
 }
 
@@ -1340,10 +1360,11 @@ static bool BreakCond_Remove(int position, bool bForDsp)
 		return false;
 	}
 	offset = position - 1;
-	fprintf(stderr, "Removed %s breakpoint %d:\n  %s\n",
-		name, position, bp[offset].expression);
+	fprintf(stderr, "Removed %s breakpoint %d:\n", name, position);
+	BreakCond_Print(&(bp[offset]));
 	free(bp[offset].expression);
 	bp[offset].expression = NULL;
+
 	if (position < *bcount) {
 		memmove(bp+offset, bp+position,
 			(*bcount-position)*sizeof(bc_breakpoint_t));
@@ -1500,6 +1521,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		} else {
 			skip = atoi(cut);
 			if (skip < 2) {
+				ret = false;
 				fprintf(stderr, "ERROR: invalid breakpoint skip count '%s'!\n", cut);
 				goto cleanup;
 			}
