@@ -56,6 +56,7 @@ Emulator:
     - GEMDOS tracing gives slightly more information
   - "symbols" command for loading and listing CPU & DSP code
     symbols/addresses.  Symbols are shown on CPU disassembly
+    and can be used in breakpoints
   - "evaluate" command for doing calculations. Register and symbol
     names in expressions are replaced by their values. '$' will be
     TAB-completed to last 'evaluate' command result
@@ -69,12 +70,11 @@ Emulator:
     use current D0 value).  If the comparison is for inequality ("!"),
     output the value & break only when the value changes from the previous
     value (not original like with other comparisons).  Symbols support
-  - option to trace/output conditional breakpoint hits without breaking
-  - conditional breakpoints count hits and can be optionally removed
-    after first hit
-  - CPU breakpoints can be given an optional count of how many hits
-    there needs to be before they break into debugger.  If count
-    of one is given, breakpoint is removed after hit
+  - ":trace" option to trace/output breakpoint hits without breaking
+  - breakpoints count hits and can be optionally removed after first hit
+    (":once" option) or triggered only on every Nth hit (":<count>" option)
+  - dsp/address command is a shortcut for conditional breakpoints and its
+    argument can be an expression (see "evaluate" above)
   - Display DSP instructions cycle timings in disasm mode (in cycles)
 
 Other changes:
