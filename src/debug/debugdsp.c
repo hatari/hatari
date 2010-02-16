@@ -88,6 +88,18 @@ error_msg:
 
 
 /**
+ * Check whether given address matches any DSP symbol, if yes,
+ * show the matching symbol information.
+ */
+static void DebugDsp_ShowMatchedSymbol(Uint32 addr)
+{
+	const char *symbol = Symbols_GetByDspAddress(addr);
+	if (symbol)
+		fprintf(debugOutput, "%s:\n", symbol);
+}
+
+
+/**
  * DSP dissassemble - arg = starting address/range, or PC.
  */
 int DebugDsp_DisAsm(int nArgc, char *psArgs[])
@@ -145,7 +157,10 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 			dsp_disasm_upper = 0xFFFF;
 	}
 	printf("DSP disasm %hx-%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
-	dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_upper);
+	while (dsp_disasm_addr < dsp_disasm_upper) {
+		DebugDsp_ShowMatchedSymbol(dsp_disasm_addr);
+		dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_addr+1);
+	}
 
 	return DEBUGGER_CMDCONT;
 }
