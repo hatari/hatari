@@ -71,14 +71,12 @@ Other potential Hatari functionality improvements
   altogether) before next release.
 
 - Debugger improvements:
+	- Options for how many lines to disasm & memdump
 	- Shortcut command for telling to run until given
 	  (temporary) conditional breakpoint is hit
 	- Running until code returns from ROM (exiting from super mode?)
 	- Single stepping that skips Traps, Line-A, Line-F. And one that
 	  skips also BSRs and JSRs
-	- Shorcut to set breakpoint to next instruction and run
-	  (to skip loops, can use address breakpoints that are
-	  removed after hitting)
 	- Set breakpoint on specific OS call
 	- Showing symbol and breakpoint positions also in the DSP
 	  disassembly output
