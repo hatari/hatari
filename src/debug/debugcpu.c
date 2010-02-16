@@ -515,7 +515,7 @@ static const dbgcommand_t cpucommands[] =
 	  "disassemble from PC, or given address",
 	  "[start address[-end address]]\n"
 	  "\tIf no address is given, this command disassembles from the last\n"
-	  "\tposition or from current PC if no last postition is available.",
+	  "\tposition or from current PC if no last position is available.",
 	  false },
 	{ DebugCpu_Register, "cpureg", "r",
 	  "dump register values or set register to value",

@@ -1417,7 +1417,7 @@ static void BreakCond_Help(void)
 "  	comparison = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
-"  	option = : <count> | 'once' | 'trace'\n"
+"  	option = : <count> | 'once' | 'trace'\n"
 "\n"
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
