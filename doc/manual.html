@@ -122,6 +122,12 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#Accessing HDD image partitions outside of Hatari">Accessing HDD image partitions outside of Hatari</a></li>
   </ul>
   <li><a href="#The debugger">The debugger</a>
+  <ul>
+    <li><a href="#General debugger use">General debugger use</a>
+    <li><a href="#Inspecting emulation state">Inspecting emulation state</a>
+    <li><a href="#Breakpoints, symbols and tracing">Breakpoints, symbols and tracing</a>
+    <li><a href="#Build notes">Build notes</a>
+  </ul>
   <li><a href="#Performance">Performance</a>
   <ul>
     <li><a href="#Improving Hatari performance">Improving Hatari performance</a>
@@ -2442,80 +2448,128 @@ the disk image from Hatari:
 
 <p>
 Hatari has a built-in debugging interface which can be used for
-analyzing the program that runs in the emulated system. The debugger
-uses Hatari's parent console window, so make sure you run Hatari from
-the command line when you want to use the debugger.  To invoke
-the debugger, press the <span class="key">AltGr + Pause</span> key
-combination.
-<p>
+analyzing code that runs in the emulated system. To invoke the
+debugger, press the <span class="key">AltGr + Pause</span>
+key combination.
+</p>
 
 <p>
 If you start Hatari with the "-D" command line option, m68k
-exceptions will automatically invoke the debugger. You can toggle
-this also later from the debugger with the "setopt -D"
+exceptions will automatically invoke the debugger. You can
+toggle this also later from the debugger with the "setopt -D"
 command.
 </p>
 
 <p>
-When entering values to the debugger in other number bases than the
-default/selected one, they need to be prefixed with a character
-indicating this.  For decimals it's "#" (#15), for
-hexadecimals "$" ($F), and for binary values it's
-"%" (%1111).  By default the debugger expects all values
-without a prefix to be decimals, but you can change the default number
-base with the "value" command.
+The debugger uses Hatari's parent console window, so make sure you run
+Hatari from the command line when you want to use the debugger. On
+Linux you can add for example an icon to your desktop that runs: <span
+class="commandline">xterm -T "Hatari debug window" -e hatari</span>.
 </p>
+
+
+<a name="General debugger use"></a><h3>General debugger use</h3>
 
 <p>
 At the debugger prompt, type "help" to get a list of all
 the available commands and their shortcuts:
 </p>
 <pre>
-Available commands:
-   dspaddress (da) : toggle or list (traditional) DSP address breakpoints
-     dspbreak (db) : set/remove/list DSP register/RAM condition breakpoints
-    dspdisasm (dd) : disassemble DSP code
-   dspmemdump (dm) : dump DSP memory
-       dspreg (dr) : read/write DSP registers
-   dspsymbols (  ) : load and list CPU code symbols/addresses
-      dspcont (dc) : continue emulation / DSP single-stepping
-      address ( a) : toggle or list (traditional) CPU address breakpoints
-   breakpoint ( b) : set/remove/list register/RAM condition breakpoints
-       cpureg ( r) : dump register values or set register to value
-       disasm ( d) : disassemble from PC, or given address
+Generic commands:
      evaluate ( e) : evaluate an expression
-         info (  ) : show Atari HW and OS information
+         help ( h) : print help
+         info ( i) : show machine/OS information
+         lock (  ) : lock info to show on entering debugger
+      logfile ( f) : open or close log file
+       setopt ( o) : set Hatari command line and debugger options
+    stateload (  ) : restore emulation state
+    statesave (  ) : save emulation state
+        trace ( t) : select Hatari tracing settings
+         quit ( q) : quit emulator
+
+CPU commands:
+      address ( a) : set CPU PC address breakpoints
+   breakpoint ( b) : set/remove/list conditional CPU breakpoints
+       disasm ( d) : disassemble from PC, or given address
+       cpureg ( r) : dump register values or set register to value
       memdump ( m) : dump memory
      memwrite ( w) : write bytes to memory
-      logfile ( f) : open or close log file
       loadbin ( l) : load a file into memory
       savebin ( s) : save memory to a file
-       setopt ( o) : set Hatari command line options
-      symbols (  ) : load and list CPU code symbols/addresses
-        trace ( t) : select Hatari tracing settings
-        value ( v) : set number base / show value in other number bases
+      symbols (  ) : load CPU symbols & their addresses
          cont ( c) : continue emulation / CPU single-stepping
-         quit ( q) : quit emulator
-         help ( h) : print help
+
+DSP commands:
+   dspaddress (da) : set DSP PC address breakpoints
+     dspbreak (db) : set/remove/list conditional DSP breakpoints
+    dspdisasm (dd) : disassemble DSP code
+   dspmemdump (dm) : dump DSP memory
+   dspsymbols (  ) : load DSP symbols & their addresses
+       dspreg (dr) : read/write DSP registers
+      dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
 
 <p>
-In the beginning, probably the most interesting commands are
-"m" and "d" for dumping and disassembling memory
-regions.
+When entering numbers to the debugger commands in other number bases
+than the default/selected one, they need to be prefixed with a
+character indicating this.  For decimals this prefix is "#" (#15),
+for hexadecimals "$" ($F), and for binary values it's "%" (%1111).
+By default the debugger expects all numbers without a prefix to be
+decimals, but you can change the default number base with the "setopt"
+command, just give it the desired default number base (bin/dec/hex).
+</p>
+
+<p>
+Instead of a number, you can also use an expression, by surrounding
+it with quotes ("").  An expression can contain calculations with
+register and symbol values in addition to numbers.  For example to
+give a sum of A0 and D0 register values to a command, use "a0+d0".
+</p>
+
+<p>
+<em>Note that within expressions parenthesis are used to change
+the order of precendence, they <strong>cannot</strong> be used for
+indicating indirect addressing like with conditional breakpoints
+(explained below). Even when using expressions within conditional
+breakpoints.</em>
+And when using the hexadecimal number base, remember still to prefix
+with '$' hexadesimal numbers that can be confused with register names
+(a0-7, d0-7), otherwise results from expressions and conditional
+breakpoints can be quite surprising.
+</p>
+
+<p>
+Expressions are always evaluated before being given to a command.
+Expressions don't need to be quoted for the "evaluate" or "address"
+commands as those always interpret their results as expressions.
+</p>
+
+<p>
+With command argument completion (see <a href="#Build notes">build
+notes</a>), result from last "evaluate" command can inserted by
+typing '$' and pressing TAB.
+</p>
+
+
+<a name="Inspecting emulation state"></a><h3>Inspecting emulation state</h3>
+
+<p>
+In the beginning, probably the most interesting commands are "m" and "d"
+for dumping and disassembling memory regions.  You can use "dm" and "dd"
+commands to do the same for the DSP.
 </p>
 <pre>
 &gt; help memdump
 'memdump' or 'm' - dump memory
-Usage:  m [address]
+Usage:  m [start address-[end address]]
         dump memory at address or continue dump from previous address.
 </pre>
 <pre>
 &gt; help disasm
 'disasm' or 'd' - disassemble from PC, or given address
-Usage:  d [address]
+Usage:  d [start address-[end address]]
         If no address is given, this command disassembles from the last
-        position or from current PC if no last postition is available.
+        position or from current PC if no last position is available.
 </pre>
 <pre>
 &gt; disasm
@@ -2527,87 +2581,182 @@ Usage:  d [address]
 </pre>
 
 <p>
-Hatari has two kinds of breakpoints. First, there are the fast and
-simple address breakpoints which trigger when the CPU (or DSP) program counter
-hits a given address. Use "a" (or "da" for the DSP) to
-manage them. Then there are the conditional breakpoints which are a little bit
-slower but can handle more complex break conditions. Use "b" (or
-"db" for the DSP) to manage them. "b help" explains
-the syntax:
+You can use "info" command to see state of specific sets of HW
+registers ("info videl") or Atari OS structures.  E.g. "info basepage"
+can be useful with the "symbols" command described below.
+</p>
+
+<p>
+By using the "lock" command, you can ask Hatari to show above kind of
+information whenever you enter the debugger ("lock disasm").  With the
+"regaddr" subcommand, it can show also disassembly or memory dump of
+an address pointed by a given register ("lock regaddr disasm a0").  Of
+the DSP registers, only Rx ones are valid for this subcommand.  To
+disable showing of this extra information, use "lock default".
+</p>
+
+<a name="Breakpoints, symbols and tracing"></a><h3>Breakpoints, symbols and tracing</h3>
+
+<p>
+There are two ways to specify breakpoints for Hatari. First, there are
+the simple address breakpoints which trigger when the CPU (or DSP)
+program counter hits a given address. Use "a" (or "da" for the DSP)
+to create them, for example:
+</p>
+<pre>
+&gt; a $e01034
+&gt; a some_symbol
+</pre>
+
+<p>
+(Address breakpoints are just wrappers for conditional breakpoints so
+you need to use "b" command to remove or list them.)
+</p>
+
+<p>
+Then there are the conditional breakpoints which can handle much more
+complex break conditions; they can track changes to register and
+memory values with bitmasks, include multiple conditions for
+triggering a breakpoint and so on.  Use "b" (or "db" for the DSP) 
+to manage them. "b help" explains the syntax:
 </p>
 
 <pre>
-breakpoint = &lt;expression&gt; [ &amp;&amp; &lt;expression&gt; [ &amp;&amp; &lt;expression&gt; ] ... ]
-expression = &lt;value&gt;[.mode] [&amp; &lt;number&gt;] &lt;condition&gt; &lt;value&gt;[.mode]
+breakpoint = &lt;condition&gt; [ &amp;&amp; &lt;condition&gt; ... ] [option]
+condition = &lt;value&gt;[.mode] [&amp; &lt;number&gt;] &lt;comparison&gt; &lt;value&gt;[.mode]
 
 where:
-      value = [(] &lt;register-name | hatari-variable | number&gt; [)]
-      number = [#|$|%]&lt;digits&gt;
-      condition = '&lt;' | '&gt;' | '=' | '!'
-      addressing mode (width) = 'b' | 'w' | 'l'
-      addressing mode (space) = 'p' | 'x' | 'y'
+        value = [(] &lt;register/symbol/variable name | number&gt; [)]
+        number = [#|$|%]&lt;digits&gt;
+        comparison = '&lt;' | '&gt;' | '=' | '!'
+        addressing mode (width) = 'b' | 'w' | 'l'
+        addressing mode (space) = 'p' | 'x' | 'y'
+        option = : &lt;count&gt; | 'once' | 'trace'
 </pre>
 
 <p>
 If the value is in parenthesis like in '($ff820)' or '(a0)', then the
-used value will be read from the memory address pointed by it.
+used value will be read from the memory address pointed by it.  Note
+that this value is checked at run-time whereas quoted expressions
+(mentioned above, please read!) are evaluated already when adding a
+breakpoint.  For example, to break when value in adress pointed by A0
+matches the value currently in D0, one would use:
 </p>
+<pre>
+&gt; b (a0) = "d0"
+</pre>
+
 <p>
-M68k addresses can have byte ("b"), word ("w") or
-long ("l", default) width. DSP addresses belong to different
-address spaces: "P", "X" or "Y". Note
-that on DSP only R0-R7 registers can be used for memory addressing.
+M68k addresses can have byte ("b"), word ("w") or long ("l", default)
+width. DSP addresses belong to different address spaces: "P", "X" or
+"Y". Note that on DSP only R0-R7 registers can be used for memory
+addressing.
 </p>
 
 <p>Examples:</p>
 <pre>
-b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
 b (r0).x = 1 &amp;&amp; (r0).y = 2
-</pre>			      
+b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
+</pre>
 
 <p>
-The debugger supports also setting conditional breakpoints on values of
-some internal Hatari variables (listed by "b help"). For example
+The debugger supports also setting conditional breakpoints on values
+of some internal Hatari variables (listed by "b help"). For example
 if you want to stop at a specific cycle within a frame (that is, PC
-relative to the current VBL/HBL in cycles), set breakpoints to specific
-"HBL" and "LineCycles" variable values.  The
-"e" command can be used to calculate suitable register
-and variable values.
+relative to the current VBL/HBL in cycles), set breakpoints to
+specific "HBL" and "LineCycles" variable values.  The "e" command
+can be used to calculate suitable register and variable values.
 </p>
 
 <p>
-You can also load code symbol name/address information to the debugger
-with the "symbols" command (and with "dspsymbols"
-for DSP).  They help in setting address breakpoints and show up in
-the "disasm" command output.
-<p>
+As a convenience, if the value expressions on both sides of the
+comparison are exactly the same, right side is replaced with its
+current value. For inequality ('!') comparison, conditional breakpoint
+tracks all further changes for the given address/register expression,
+this can be used for example to find out all value changes in a given
+memory address (see examples below).
+</p>
 
 <p>
-After analyzing and/or setting new breakpoints, you can continue the emulation
-with the "c" command. You can continue for a given number of
-CPU instructions (or DSP instructions when "dc" is used), or
-you can continue forever (until a breakpoint triggers) if you omit the
+There are also several options that you can use with both breakpoint
+types. ":trace" option will make breakpoint to print out the tracked
+value instead of breaking.  This can be useful e.g. when tracking
+changes to some register like in:
+</p>
+<pre>
+&gt; b ($ffff9202).w ! ($ffff9202).w :trace
+</pre>
+
+<p>
+":once" option that removes breakpoint after hit can be useful when one
+wants to get out of a loop (when at the instruction that branches back
+to loop start) or just to get to a specific point in code:
+</p>
+<pre>
+&gt; b pc &gt; pc :once
+&gt; a some_symbol :once
+</pre>
+
+<p>
+Whereas giving count (like ":2") as option will break only on every
+&lt;count&gt; hit.
+</p>
+
+<p>
+You can load code symbol name/address information to the debugger
+with the "symbols" command (and with "dspsymbols" for DSP).  These
+symbolic names can be used in expressions and all breakpoints.  They
+also show up in the "disasm" command output.  If you're reverse
+engineering some code, you could create your own symbols file to help
+in debugging it later.  The symbols file format is following:
+<p>
+<pre>
+e01034 T random
+e01076 T kbdvbase
+e0107e T supexec
+</pre>
+<p>
+Where 'T' means text (code), 'D' means data and 'B' BSS section type
+of address.  The symbol hexadecimal address, type letter and name are
+separated by white space.  Empty lines and lines starting with '#'
+(comments) are ignored.
+</p>
+
+<p>
+After analyzing and/or setting new breakpoints, you can continue the
+emulation with the "c" command. You can continue for a given number of
+CPU instructions (or DSP instructions when "dc" is used), or you can
+continue forever (until a breakpoint triggers) if you omit the
 instruction count.
 </p>
 
 <p>
 By the way, if you want to continue with real-time disassembling, you
-can enable it with "trace cpu_disasm" at the debugger prompt.
-Disable it with "trace none" when you enter the debugger again.
-"trace help" (or TAB) can be used to list all the supported
-trace points.
-(Tracing options can be set even from a program within the emulation if
-you enable Hatari "--bios-intercept" option and call XBios 255
-from the program with a suitable command line string.)
+can enable it with "trace cpu_disasm" at the debugger prompt. Disable
+it with "trace none" when you enter the debugger again. "trace help"
+(or TAB) can be used to list all the supported trace points.
+
+(Tracing options can be set even from a program within the emulation
+if you enable Hatari "--bios-intercept" option and call XBios 255 from
+the program with a suitable Hatari command line string.)
+</p>
+
+
+<a name="Build notes"></a><h3>Build notes</h3>
+
+<p>
+Lastly, the debugger is much nicer to use with the command line
+history, editing and especially with the command, command argument and
+symbol name completion support. If you're building Hatari yourself,
+please make sure that you have the GNU readline development files
+installed (on Debian / Ubuntu these come from the libreadline5-dev
+package). Otherwise this doesn't get enabled when you configure
+Hatari.
 </p>
 
 <p>
-Lastly, the debugger is much nicer to use with the command line history,
-editing and command completion support. If you're building Hatari yourself,
-please make sure that you have the GNU readline development files
-installed (on Debian / Ubuntu these come from the libreadline5-dev
-package).  Otherwise this doesn't get enabled when you configure
-Hatari.
+ENABLE_TRACING needs to be set for CPU instruction and other tracing
+to work.   By default it should be enabled.
 </p>
 
 
