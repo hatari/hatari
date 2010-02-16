@@ -260,7 +260,7 @@ static char* Symbols_MatchByName(symbol_list_t* list, symtype_t symtype, const c
 }
 
 /**
- * Readline match callback for CPU symbol name completion.
+ * Readline match callbacks for CPU symbol name completion.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
  */
