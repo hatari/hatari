@@ -236,10 +236,8 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			dsp_memdump_upper = 0xFFFF;
 	}
 
-
 	printf("DSP memdump from %hx in '%c' address space\n", dsp_memdump_addr, dsp_mem_space);
-	DSP_DisasmMemory(dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
-	dsp_memdump_addr = dsp_memdump_upper + 1;
+	dsp_memdump_addr = DSP_DisasmMemory(dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
 
 	return DEBUGGER_CMDCONT;
 }

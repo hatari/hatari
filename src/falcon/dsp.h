@@ -42,7 +42,7 @@ extern void DSP_MemorySnapShot_Capture(bool bSave);
 /* Dsp Debugger commands */
 extern void DSP_SetDebugging(bool enabled);
 extern Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str);
-extern void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space);
+extern Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space);
 extern Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr);
 extern void DSP_DisasmRegisters(void);
 extern int DSP_GetRegisterAddress(const char *arg, Uint32 **addr, Uint32 *mask);

@@ -183,7 +183,7 @@ Uint16 DSP_GetPC(void)
 
 
 /**
- * Disassemble DSP code between given addresses
+ * Disassemble DSP code between given addresses, return next PC address
  */
 Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 {
@@ -302,8 +302,9 @@ Uint32 DSP_ReadMemory(Uint16 address, char space_id, const char **mem_str)
 
 /**
  * Output memory values between given addresses in given DSP address space.
+ * Return next DSP address value.
  */
-void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space)
+Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space)
 {
 #if ENABLE_DSP_EMU
 	Uint32 mem, mem2, value;
@@ -337,6 +338,7 @@ void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char sp
 		fprintf(stderr,"%s:%04x  %06x\n", mem_str, mem, value);
 	}
 #endif
+	return dsp_memdump_upper+1;
 }
 
 
