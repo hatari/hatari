@@ -17,7 +17,7 @@ Emulation:
     (bad code can use -1L to read whole file instead getting fail on TOS4)
   - Prevent DTA and read/write functions accessing invalid memory areas
   - Programs can now change read-only files to be writable
-- Falcon sound emulation :
+- Falcon sound emulation:
   - Microphone (jack) emulation in Falcon mode (requires portaudio library)
   - SSI direct sound entrance ("Audio Fun Machine" and winrec are working)
   - DMA sound recording
@@ -25,7 +25,7 @@ Emulation:
 - Max VDI rez increased to TT-hi size (1280x960)
 - 68020+FPU changed to 68EC030+FPU (no MMU 030) for Falcon and TT modes
   (Some Falcon programs didn't work with 020)
-- Video emulation on STF/STE :
+- Video emulation on STF/STE:
   - correctly shift the screen 4 pixels to the left when left border is removed
   - add support for STE's 224 bytes overscan line without stabilizer
   - when reading $ff8205/07/09 on STE, take into account the value
@@ -62,7 +62,7 @@ Emulator:
     TAB-completed to last 'evaluate' command result
   - "info" command for showing Atari HW and OS information
   - "lock" command for setting what information is shown every time on
-    entering the debugge, e.g. disassembly or memdump from given address.
+    entering the debugger, e.g. disassembly or memdump from given address.
     "regaddr" argument does that from address pointed by given register
   - improved register name handling + fixed DSP reg name matching
   - if conditional breakpoint condition both sides are identical, replace
