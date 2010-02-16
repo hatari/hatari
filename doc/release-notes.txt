@@ -55,7 +55,7 @@ Emulator:
   - "trace" command for tracing what the emulated code does
     - GEMDOS tracing gives slightly more information
   - "symbols" command for loading and listing CPU & DSP code
-    symbols/addresses.  Symbols are shown on CPU disassembly
+    symbols/addresses.  Symbols are shown on CPU & DSP disassembly
     and can be used in breakpoints
   - "evaluate" command for doing calculations. Register and symbol
     names in expressions are replaced by their values. '$' will be
