@@ -55,7 +55,7 @@ int DebugDsp_Register(int nArgc, char *psArgs[])
 
 	if (!bDspEnabled)
 	{
-		printf("DSP isn't present or initialized.\n");
+		fprintf(stderr, "DSP isn't present or initialized.\n");
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -97,7 +97,7 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 
 	if (!bDspEnabled)
 	{
-		printf("DSP isn't present or initialized.\n");
+		fprintf(stderr, "DSP isn't present or initialized.\n");
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -164,7 +164,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 
 	if (!bDspEnabled)
 	{
-		printf("DSP isn't present or initialized.\n");
+		fprintf(stderr, "DSP isn't present or initialized.\n");
 		return DEBUGGER_CMDDONE;
 	}
 	if (nArgc == 2)
