@@ -106,8 +106,9 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 
 
+#define DACBUFFER_SIZE    2048
+#define DECIMAL_PRECISION 65536
 
-#define DACBUFFER_SIZE  2048
 
 /* Crossbar internal functions */
 static double Crossbar_DetectSampleRate(Uint16 clock);
@@ -216,21 +217,28 @@ struct crossbar_s {
 	Uint32 dspXmit_freq;		/* 0 = 25 Mhz ; 1 = external clock ; 2 = 32 Mhz */
 	Uint32 dmaPlay_freq;		/* 0 = 25 Mhz ; 1 = external clock ; 2 = 32 Mhz */
 	Uint16 codecInputSource;	/* codec input source */
-	Uint16 codecAdcInput;		/* codec ADC input */
-	Uint16 gainSetting;
-	Uint16 attenuationSetting;
+	Uint16 codecAdcInputLeft;	/* codec ADC input (Left channel) */
+	Uint16 codecAdcInputRight;	/* codec ADC input (Right channel) */
+	Uint16 gainSettingLeft;		/* Left channel gain for ADC */
+	Uint16 gainSettingRight;	/* Right channel gain for ADC */
+	Uint16 attenuationSettingLeft;	/* Left channel attenuation for DAC */
+	Uint16 attenuationSettingRight;	/* Right channel attenuation for DAC */
 	Uint16 microphone_ADC_is_started;
 	
-	double clock25_cycles;		/* cycles for 25 Mzh interrupt */ 
-	double clock25_cycles_counterD; /* cycles counter for 25 Mzh interrupt (double) */ 
-	Uint32 clock25_cycles_counterL; /* cycles counter for 25 Mzh interrupt (long) */ 
-	double clock32_cycles;		/* cycles for 32 Mzh interrupt */ 
-	double clock32_cycles_counterD; /* cycles counter for 32 Mzh interrupt (double) */ 
-	Uint32 clock32_cycles_counterL; /* cycles counter for 32 Mzh interrupt (long) */ 
+	Uint32 clock25_cycles;		/* cycles for 25 Mzh interrupt */
+	Uint32 clock25_cycles_decimal;  /* decimal part of cycles counter for 25 Mzh interrupt (*DECIMAL_PRECISION) */
+	Uint32 clock25_cycles_counter;  /* Cycle counter for 25 Mhz interrupts */
+	Uint32 clock32_cycles;		/* cycles for 32 Mzh interrupt */
+	Uint32 clock32_cycles_decimal;  /* decimal part of cycles counter for 32 Mzh interrupt (*DECIMAL_PRECISION) */
+	Uint32 clock32_cycles_counter;  /* Cycle counter for 32 Mhz interrupts */
+	Uint32 frequence_ratio;		/* Ratio between host computer's sound frequency and hatari's sound frequency */
+	Uint32 frequence_ratio2;	/* Ratio between hatari's sound frequency and host computer's sound frequency */
+	
 	Uint32 dmaPlay_CurrentFrameStart;   /* current DmaPlay Frame start ($ff8903 $ff8905 $ff8907) */
 	Uint32 dmaPlay_CurrentFrameEnd;     /* current DmaRecord Frame start ($ff8903 $ff8905 $ff8907) */
 	Uint32 dmaRecord_CurrentFrameStart; /* current DmaPlay Frame end ($ff890f $ff8911 $ff8913) */
 	Uint32 dmaRecord_CurrentFrameEnd;   /* current DmaRecord Frame end ($ff890f $ff8911 $ff8913) */
+	Uint16 adc_dac_readBufferPosition;  /* read position for direct adc->dac transfer */
 };
 
 struct codec_s {
@@ -261,7 +269,6 @@ static struct codec_s dac;
 static struct codec_s adc;
 static struct dsp_s dspXmit;
 static struct dsp_s dspReceive;
-static Uint16 adc_dac_readBufferPosition;
 
 /**
  * Reset Crossbar variables.
@@ -273,9 +280,6 @@ void Crossbar_Reset(bool bCold)
 	if (bCold)
 	{
 	}
-	
-	/* Direct ADC --> DMA read buffer position initialisation */
-	adc_dac_readBufferPosition = 0;
 	
 	/* Stop DMA sound playing / record */
 	IoMem_WriteByte(0xff8901,0);
@@ -308,14 +312,17 @@ void Crossbar_Reset(bool bCold)
 	dspXmit.wordCount = 0;
 
 	/* Crossbar inits */
+	crossbar.clock25_cycles = 160;
+	crossbar.clock25_cycles_decimal = 0;
+	crossbar.clock25_cycles_counter = 0;
+	crossbar.clock32_cycles = 160;
+	crossbar.clock32_cycles_decimal = 0;
+	crossbar.clock32_cycles_counter = 0;
+	crossbar.frequence_ratio = 0;
+	crossbar.frequence_ratio2 = 0;
+
 	crossbar.dmaSelected = 0;
 	crossbar.track_monitored = 0;
-	crossbar.clock25_cycles = 160.0;
-	crossbar.clock32_cycles = 160.0;
-	crossbar.clock25_cycles_counterL = 0;
-	crossbar.clock25_cycles_counterD = 0.0;
-	crossbar.clock32_cycles_counterL = 0;
-	crossbar.clock32_cycles_counterD = 0.0;
 	crossbar.isInSteFreqMode = 1;
 	crossbar.int_freq_divider = 0;
 	crossbar.steFreq = 3;
@@ -323,10 +330,14 @@ void Crossbar_Reset(bool bCold)
 	crossbar.is16Bits = 0;
 	crossbar.isStereo = 1;
 	crossbar.codecInputSource = 3;
-	crossbar.codecAdcInput = 3;
-	crossbar.gainSetting = 0;
-	crossbar.attenuationSetting = 0;
+	crossbar.codecAdcInputLeft = 1;
+	crossbar.codecAdcInputRight = 1;
+	crossbar.gainSettingLeft = 0;
+	crossbar.gainSettingRight = 0;
+	crossbar.attenuationSettingLeft = 0;
+	crossbar.attenuationSettingRight = 0;
 	crossbar.microphone_ADC_is_started = 0;
+	crossbar.adc_dac_readBufferPosition = 0;
 
 	/* Start 25 Mhz and 32 Mhz Clocks */
 	Crossbar_Recalculate_Clocks_Cycles();
@@ -366,7 +377,6 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&adc, sizeof(adc));
 	MemorySnapShot_Store(&dspXmit, sizeof(dspXmit));
 	MemorySnapShot_Store(&dspReceive, sizeof(dspReceive));
-	MemorySnapShot_Store(&adc_dac_readBufferPosition, sizeof(adc_dac_readBufferPosition));
 }
 
 
@@ -980,11 +990,12 @@ void Crossbar_AdcInput_WriteByte(void)
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 (ADC input) write: 0x%02x\n", IoMem_ReadByte(0xff8938));
 
-	crossbar.codecAdcInput = input & 3;
+	crossbar.codecAdcInputLeft  = (input & 2) >> 1;
+	crossbar.codecAdcInputRight = input & 1;
 }
 
 /**
- * Write byte to input amplifier register (0xff8939).
+ * Write byte to input amplifier register (amplification for ADC device) (0xff8939).
  * 	Bits LLLLRRRR
  * 	Amplification is in +1.5 dB steps
  */
@@ -994,11 +1005,12 @@ void Crossbar_InputAmp_WriteByte(void)
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 (CODEC channel amplification) write: 0x%02x\n", IoMem_ReadByte(0xff8939));
 
-	crossbar.gainSetting = amplification;
+	crossbar.gainSettingLeft = amplification >> 4;
+	crossbar.gainSettingRight = amplification & 0xf;
 }
 
 /**
- * Write byte to channel reduction register (0xff893a).
+ * Write byte to channel reduction register (attenuation for DAC device) (0xff893a).
  * 	Bits LLLLRRRR
  * 	Reduction is in -1.5 dB steps
  */
@@ -1008,7 +1020,8 @@ void Crossbar_OutputReduct_WriteByte(void)
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) write: 0x%02x\n", IoMem_ReadByte(0xff893a));
 
-	crossbar.attenuationSetting = reduction;
+	crossbar.attenuationSettingLeft = reduction >> 4;
+	crossbar.attenuationSettingRight = reduction & 0xf;
 }
 
 /**
@@ -1034,20 +1047,25 @@ static void Crossbar_Recalculate_Clocks_Cycles(void)
 {
 	double cyclesClk;
 
-	/* Reinitialize cycles counters */
-	crossbar.clock25_cycles_counterD = 0.0;
-	crossbar.clock25_cycles_counterL = 0;
-	crossbar.clock32_cycles_counterD = 0.0;
-	crossbar.clock32_cycles_counterL = 0;
-	
+	crossbar.clock25_cycles_counter = 0;
+	crossbar.clock32_cycles_counter = 0;
+
 	/* Calculate 25 Mhz clock cycles */
-	cyclesClk = (double)CPU_FREQ / Crossbar_DetectSampleRate(25);
-	crossbar.clock25_cycles = cyclesClk / (double)(crossbar.playTracks) / 2.0;
+	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(25)) / (double)(crossbar.playTracks) / 2.0;
+	crossbar.clock25_cycles = (int)(cyclesClk);
+	crossbar.clock25_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock25_cycles)) * (double)DECIMAL_PRECISION);
 
 	/* Calculate 32 Mhz clock cycles */
-	cyclesClk = (double)CPU_FREQ / Crossbar_DetectSampleRate(32);
-	crossbar.clock32_cycles = cyclesClk / (double)(crossbar.playTracks) / 2.0;
+	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
+	crossbar.clock32_cycles = (int)(cyclesClk);
+	crossbar.clock32_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock32_cycles)) * (double)DECIMAL_PRECISION);
 
+	/* Recalculate ratio between host's sound frequency and hatari's sound frequency */
+	crossbar.frequence_ratio = (Uint32)((Crossbar_DetectSampleRate(25) / (double)nAudioFrequency) * (double)DECIMAL_PRECISION);
+
+	/* Recalculate ratio between hatari's sound frequency and host's sound frequency */
+	crossbar.frequence_ratio2 = (Uint32)(((double)nAudioFrequency / Crossbar_DetectSampleRate(25)) * (double)DECIMAL_PRECISION);
+	
 	/* Verify if the new frequency doesn't mute the DAC */
 	crossbar.isDacMuted = 0;
 	if ((crossbar.int_freq_divider == 0) && (crossbar.steFreq == 0))
@@ -1088,11 +1106,14 @@ static void Crossbar_Start_InterruptHandler_25Mhz(void)
 {
 	Uint32 cycles_25;
 	
-	crossbar.clock25_cycles_counterD += crossbar.clock25_cycles;
-	cycles_25 = (Uint32)(crossbar.clock25_cycles_counterD) - crossbar.clock25_cycles_counterL;
-	crossbar.clock25_cycles_counterL += cycles_25;
+	cycles_25 = crossbar.clock25_cycles;
+	crossbar.clock25_cycles_counter += crossbar.clock25_cycles_decimal;
+	
+	if (crossbar.clock25_cycles_counter >= DECIMAL_PRECISION) {
+		crossbar.clock25_cycles_counter -= DECIMAL_PRECISION;
+		cycles_25 ++;
+	}
 	CycInt_AddRelativeInterrupt(cycles_25, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_25MHZ);
-
 }
 
 /**
@@ -1102,10 +1123,14 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
 {
 	Uint32 cycles_32;
 	
-	crossbar.clock32_cycles_counterD += crossbar.clock32_cycles;
-	cycles_32 = (Uint32) crossbar.clock32_cycles_counterD - crossbar.clock32_cycles_counterL;
-	crossbar.clock32_cycles_counterL += cycles_32;
-	CycInt_AddRelativeInterrupt(cycles_32, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_32MHZ);
+	cycles_32 = crossbar.clock32_cycles;
+	crossbar.clock32_cycles_counter += crossbar.clock32_cycles_decimal;
+
+	if (crossbar.clock32_cycles_counter >= DECIMAL_PRECISION) {
+		crossbar.clock32_cycles_counter -= DECIMAL_PRECISION;
+		cycles_32 ++;
+	}
+	CycInt_AddRelativeInterrupt(cycles_32, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_25MHZ);
 }
 
 
@@ -1515,27 +1540,24 @@ void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame)
  */
 void Crossbar_GetMicrophoneDatas(Sint16 *micro_bufferL, Sint16 *micro_bufferR, Uint32 microBuffer_size)
 {
-	double FreqRatio, FreqRatio2, bufferWritePos;
-	int i, size;
-	int bufferIndex;
+	Uint32 i, size, bufferIndex, indexPos;
 
-	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
-	FreqRatio2 = (double)nAudioFrequency / Crossbar_DetectSampleRate(25);
-
-	size = (int)((double)microBuffer_size * FreqRatio);
+	size = (microBuffer_size * crossbar.frequence_ratio) >> 16;
 	bufferIndex = 0;
-	bufferWritePos = 0.0;
+	indexPos = 0;
 	
-	for (i = 0; i < size; i++)
-	{
+	for (i = 0; i < size; i++) {
 		adc.writePosition = (adc.writePosition + 1) % DACBUFFER_SIZE;
 
 		adc.buffer_left[adc.writePosition] = micro_bufferL[bufferIndex];
 		adc.buffer_right[adc.writePosition] = micro_bufferR[bufferIndex]; 
 
-		bufferWritePos += FreqRatio2;
-		bufferIndex = (int)(bufferWritePos);
-	}
+		indexPos += crossbar.frequence_ratio2;
+		if (indexPos >= DECIMAL_PRECISION) {
+			indexPos -= DECIMAL_PRECISION;
+			bufferIndex ++;	
+		}
+	}	
 }
 
 /**
@@ -1590,10 +1612,6 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
 {
 	Uint16 track = crossbar.track_monitored * 2;
 
-	if (crossbar.isDacMuted == 1) {
-		value = 0;
-	}
-
 	if (sample_pos == track) {
 		/* Left channel */
 		dac.buffer_left[dac.writePosition] = value;
@@ -1607,7 +1625,8 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
 }
 
 /**
- * Mix DAC sound sample with the normal PSG sound samples.
+ * Mix PSG sound with microphone sound in ADC. 
+ * Also mix ADC sound sample with the crossbar DAC samples.
  * (Called by sound.c)
  */
 void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
@@ -1617,30 +1636,50 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int nBufIdx;
 	Sint16 adc_leftData, adc_rightData, dac_LeftData, dac_RightData;
 
+	if (crossbar.isDacMuted) {
+		/* Output sound = 0 */
+		for (i = 0; i < nSamplesToGenerate; i++) {
+			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+			MixBuffer[nBufIdx][1] = 0;
+			MixBuffer[nBufIdx][1] = 0;
+		}
+
+		/* Counters are refreshed for when DAC becomes unmuted */
+		dac.readPosition = dac.writePosition;
+		dac.writeBufferSize = 0;
+		crossbar.adc_dac_readBufferPosition = adc.writePosition;
+		return;
+	}
+
 	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
 	fDacBufSamples = (double)dac.writeBufferSize;
 	fDacBufRdPos = (double)dac.readPosition;
-	fAdcDacRdpos = (double)adc_dac_readBufferPosition;
+	fAdcDacRdpos = (double)crossbar.adc_dac_readBufferPosition;
 	
 	for (i = 0; i < nSamplesToGenerate; i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 		dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
 
-		adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
+		crossbar.adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
 
 		/* ADC left channel mixing */
-		if (crossbar.codecAdcInput & 0x1)
+		if (crossbar.codecAdcInputLeft) {
+			/* PSG sound for left channel */
 			adc_leftData = MixBuffer[nBufIdx][0];
-		else
-			adc_leftData = adc.buffer_left[adc_dac_readBufferPosition];
+		} else {
+			/* Microphone sound for left channel */
+			adc_leftData = adc.buffer_left[crossbar.adc_dac_readBufferPosition];
+		}
 		
 		/* ADC right channel mixing */
-		if (crossbar.codecAdcInput & 0x2)
+		if (crossbar.codecAdcInputRight) {
+			/* PSG sound for right channel */
 			adc_rightData = MixBuffer[nBufIdx][1];
-		else
-			adc_rightData = adc.buffer_right[adc_dac_readBufferPosition];
-
+		} else {
+			/* Microphone sound for right channel */
+			adc_rightData = adc.buffer_right[crossbar.adc_dac_readBufferPosition];
+		}
 
 		/* DAC mixing */
 		switch (crossbar.codecInputSource) {
@@ -1687,7 +1726,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	}
 
 	dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
-	adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
+	crossbar.adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
 
 	if (fDacBufSamples > 0.0) {
 		dac.writeBufferSize = (int)fDacBufSamples;
