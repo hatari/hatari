@@ -362,7 +362,7 @@ static const dbgcommand_t dspcommands[] =
 
 
 /**
- * Should be called when debugger is entered to initialize
+ * Should be called when debugger is first entered to initialize
  * DSP debugging variables.
  * 
  * if you want disassembly or memdumping to start/continue from
@@ -379,4 +379,13 @@ int DebugDsp_Init(const dbgcommand_t **table)
 
 	*table = dspcommands;
 	return ARRAYSIZE(dspcommands);
+}
+
+/**
+ * Should be called when debugger is re-entered to reset
+ * relevant DSP debugging variables.
+ */
+void DebugDsp_InitSession(void)
+{
+	dsp_disasm_addr = DSP_GetPC();
 }

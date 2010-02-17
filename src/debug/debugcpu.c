@@ -559,7 +559,7 @@ static const dbgcommand_t cpucommands[] =
 
 
 /**
- * Should be called when debugger is entered to initialize
+ * Should be called when debugger is first entered to initialize
  * CPU debugging variables.
  * 
  * if you want disassembly or memdumping to start/continue from
@@ -575,4 +575,13 @@ int DebugCpu_Init(const dbgcommand_t **table)
 	
 	*table = cpucommands;
 	return ARRAYSIZE(cpucommands);
+}
+
+/**
+ * Should be called when debugger is re-entered to reset
+ * relevant CPU debugging variables.
+ */
+void DebugCpu_InitSession(void)
+{
+	disasm_addr = M68000_GetPC();
 }

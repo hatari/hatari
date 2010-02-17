@@ -299,9 +299,6 @@ static void DebugInfo_CpuRegister(Uint32 arg)
 }
 static void DebugInfo_CpuDisAsm(Uint32 arg)
 {
-	if (!arg) {
-		arg = M68000_GetPC();
-	}
 	DebugInfo_CallCommand(DebugCpu_DisAsm, "disasm", arg);
 }
 static void DebugInfo_CpuMemDump(Uint32 arg)
@@ -315,9 +312,6 @@ static void DebugInfo_DspRegister(Uint32 arg)
 }
 static void DebugInfo_DspDisAsm(Uint32 arg)
 {
-	if (!arg) {
-		arg = DSP_GetPC();
-	}
 	DebugInfo_CallCommand(DebugDsp_DisAsm, "dspdisasm", arg);
 }
 
@@ -475,9 +469,10 @@ static int LockedFunction = 2; /* index for the "default" function */
 static Uint32 LockedArgument;
 
 /**
- * Show selected information
+ * Show selected debugger session information
+ * (when debugger is (again) entered)
  */
-void DebugInfo_ShowInfo(void)
+void DebugInfo_ShowSessionInfo(void)
 {
 	infotable[LockedFunction].func(LockedArgument);
 }

@@ -28,15 +28,18 @@ extern void DebugUI_PrintCmdHelp(const char *psCmd);
 extern void DebugCpu_SetDebugging(void);
 extern void DebugCpu_MemorySnapShot_Capture(bool bSave);
 extern int DebugCpu_Init(const dbgcommand_t **table);
+extern void DebugCpu_InitSession(void);
 
 #ifdef ENABLE_DSP_EMU
 extern void DebugDsp_SetDebugging(void);
 extern void DebugDsp_MemorySnapShot_Capture(bool bSave);
 extern int DebugDsp_Init(const dbgcommand_t **table);
+extern void DebugDsp_InitSession(void);
 #else /* !ENABLE_DSP_EMU */
 #define DebugDsp_SetDebugging()
 #define DebugDsp_MemorySnapShot_Capture(x)
 static inline int DebugDsp_Init(const dbgcommand_t **t) { t = NULL; return 0; }
+#define DebugDsp_InitSession()
 #endif /* !ENABLE_DSP_EMU */
 
 #endif /* HATARI_DEBUG_PRIV_H */

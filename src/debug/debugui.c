@@ -821,7 +821,9 @@ void DebugUI(void)
 		fputs(welcome, stderr);
 		welcome = NULL;
 	}
-	DebugInfo_ShowInfo();
+	DebugCpu_InitSession();
+	DebugDsp_InitSession();
+	DebugInfo_ShowSessionInfo();
 
 	/* override paused message so that user knows to look into console
 	 * on how to continue in case he invoked the debugger by accident.
