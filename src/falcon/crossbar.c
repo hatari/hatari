@@ -140,6 +140,17 @@ Uint16 nCbar_DmaSoundControl;
 
 /* internal datas */
 
+/* Values for Falcon volume control */
+static const Uint32 volume_table[16] =
+{
+	0, 4369, 8738, 13107, 17476, 21845, 26214, 30583,
+	34953, 39322, 43691, 48060, 52429, 56798, 61167, 65536
+
+/*	0, 4096, 8192, 12288, 16384, 20480, 24576, 28672,
+	32768, 36864, 40960, 45056, 49152, 53248, 57344, 61440
+*/
+};
+
 static const double Ste_SampleRates[4] =
 {
 	6258.0,
@@ -217,8 +228,7 @@ struct crossbar_s {
 	Uint32 dspXmit_freq;		/* 0 = 25 Mhz ; 1 = external clock ; 2 = 32 Mhz */
 	Uint32 dmaPlay_freq;		/* 0 = 25 Mhz ; 1 = external clock ; 2 = 32 Mhz */
 	Uint16 codecInputSource;	/* codec input source */
-	Uint16 codecAdcInputLeft;	/* codec ADC input (Left channel) */
-	Uint16 codecAdcInputRight;	/* codec ADC input (Right channel) */
+	Uint16 codecAdcInput;		/* codec ADC input */
 	Uint16 gainSettingLeft;		/* Left channel gain for ADC */
 	Uint16 gainSettingRight;	/* Right channel gain for ADC */
 	Uint16 attenuationSettingLeft;	/* Left channel attenuation for DAC */
@@ -330,8 +340,7 @@ void Crossbar_Reset(bool bCold)
 	crossbar.is16Bits = 0;
 	crossbar.isStereo = 1;
 	crossbar.codecInputSource = 3;
-	crossbar.codecAdcInputLeft = 1;
-	crossbar.codecAdcInputRight = 1;
+	crossbar.codecAdcInput = 3;
 	crossbar.gainSettingLeft = 0;
 	crossbar.gainSettingRight = 0;
 	crossbar.attenuationSettingLeft = 0;
@@ -990,8 +999,7 @@ void Crossbar_AdcInput_WriteByte(void)
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 (ADC input) write: 0x%02x\n", IoMem_ReadByte(0xff8938));
 
-	crossbar.codecAdcInputLeft  = (input & 2) >> 1;
-	crossbar.codecAdcInputRight = input & 1;
+	crossbar.codecAdcInput = input & 3;
 }
 
 /**
@@ -1659,30 +1667,43 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	for (i = 0; i < nSamplesToGenerate; i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
 
+		dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
 		crossbar.adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
 
-		/* ADC left channel mixing */
-		if (crossbar.codecAdcInputLeft) {
-			/* PSG sound for left channel */
-			adc_leftData = MixBuffer[nBufIdx][0];
-		} else {
-			/* Microphone sound for left channel */
-			adc_leftData = adc.buffer_left[crossbar.adc_dac_readBufferPosition];
-		}
-		
-		/* ADC right channel mixing */
-		if (crossbar.codecAdcInputRight) {
-			/* PSG sound for right channel */
-			adc_rightData = MixBuffer[nBufIdx][1];
-		} else {
-			/* Microphone sound for right channel */
-			adc_rightData = adc.buffer_right[crossbar.adc_dac_readBufferPosition];
+		/* ADC mixing (PSG sound or microphone sound for left and right channels) */
+		switch (crossbar.codecAdcInput) {
+			case 0:
+			default: /* Just here to remove compiler's warnings */
+				/* Microphone sound for left and right channels */
+				adc_leftData = adc.buffer_left[crossbar.adc_dac_readBufferPosition];
+				adc_rightData = adc.buffer_right[crossbar.adc_dac_readBufferPosition];
+				break;
+			case 1:
+				/* Microphone sound for left channel, PSG sound for right channel */
+				adc_leftData = adc.buffer_left[crossbar.adc_dac_readBufferPosition];
+				adc_rightData = MixBuffer[nBufIdx][1];
+				break;
+			case 2:
+				/* PSG sound for left channel, microphone sound for right channel */
+				adc_leftData = MixBuffer[nBufIdx][0];
+				adc_rightData = adc.buffer_right[crossbar.adc_dac_readBufferPosition];
+				break;
+			case 3:
+				/* PSG sound for left and right channels */
+				adc_leftData = MixBuffer[nBufIdx][0];
+				adc_rightData = MixBuffer[nBufIdx][1];
+				break;
 		}
 
-		/* DAC mixing */
+		/* DAC mixing (direct ADC + crossbar) */
 		switch (crossbar.codecInputSource) {
+			case 0:
+			default: /* Just here to remove compiler's warnings */
+				/* No sound */
+				dac_LeftData  = 0;
+				dac_RightData = 0;
+				break;
 			case 1:
 				/* direct ADC->DAC sound only */
 				dac_LeftData = adc_leftData;
@@ -1709,11 +1730,6 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					dac_LeftData = adc_leftData;
 					dac_RightData = adc_rightData;
 				}
-				break;
-			default:
-				/* No sound */
-				dac_LeftData  = 0;
-				dac_RightData = 0;
 				break;
 		}
 			
