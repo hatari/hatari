@@ -1683,11 +1683,6 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 		/* DAC mixing */
 		switch (crossbar.codecInputSource) {
-			case 0:
-				/* No sound */
-				dac_LeftData  = 0;
-				dac_RightData = 0;
-				break;
 			case 1:
 				/* direct ADC->DAC sound only */
 				dac_LeftData = adc_leftData;
@@ -1714,6 +1709,11 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					dac_LeftData = adc_leftData;
 					dac_RightData = adc_rightData;
 				}
+				break;
+			default:
+				/* No sound */
+				dac_LeftData  = 0;
+				dac_RightData = 0;
 				break;
 		}
 			
