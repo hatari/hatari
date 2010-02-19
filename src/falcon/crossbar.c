@@ -140,15 +140,18 @@ Uint16 nCbar_DmaSoundControl;
 
 /* internal datas */
 
-/* Values for Falcon volume control */
-static const Uint32 volume_table[16] =
+/* Values for Codec's ADC volume control ((x/15)* DECIMAL_PRECISION) */
+static const Uint16 Crossbar_ADC_volume_table[16] =
 {
 	0, 4369, 8738, 13107, 17476, 21845, 26214, 30583,
-	34953, 39322, 43691, 48060, 52429, 56798, 61167, 65536
+	34953, 39322, 43691, 48060, 52429, 56798, 61167, 65535
+};
 
-/*	0, 4096, 8192, 12288, 16384, 20480, 24576, 28672,
-	32768, 36864, 40960, 45056, 49152, 53248, 57344, 61440
-*/
+/* Values for Codex's DAC volume control ((x/15)* DECIMAL_PRECISION) */
+static const Uint16 Crossbar_DAC_volume_table[16] =
+{
+	65535, 61167, 56798, 52429, 48060, 43691, 39322, 34953,
+	30583, 26214, 21845, 17476, 13107, 8738, 4369, 0
 };
 
 static const double Ste_SampleRates[4] =
@@ -248,13 +251,15 @@ struct crossbar_s {
 	Uint32 dmaPlay_CurrentFrameEnd;     /* current DmaRecord Frame start ($ff8903 $ff8905 $ff8907) */
 	Uint32 dmaRecord_CurrentFrameStart; /* current DmaPlay Frame end ($ff890f $ff8911 $ff8913) */
 	Uint32 dmaRecord_CurrentFrameEnd;   /* current DmaRecord Frame end ($ff890f $ff8911 $ff8913) */
-	Uint16 adc_dac_readBufferPosition;  /* read position for direct adc->dac transfer */
+	Uint32 adc_dac_readBufferPosition;  /* read position for direct adc->dac transfer */
+	Uint32 adc_dac_readBufferPosition_decimal; /* decimal part of read position for direct adc->dac transfer */
 };
 
 struct codec_s {
 	Sint16 buffer_left[DACBUFFER_SIZE];
 	Sint16 buffer_right[DACBUFFER_SIZE];
 	Uint32 readPosition;
+	Uint32 readPosition_decimal;
 	Uint32 writePosition;
 	Uint32 writeBufferSize;
 	Uint32 isConnectedToCodec;
@@ -308,6 +313,7 @@ void Crossbar_Reset(bool bCold)
 	memset(dac.buffer_left, 0, sizeof(dac.buffer_left));
 	memset(dac.buffer_right, 0, sizeof(dac.buffer_right));
 	dac.readPosition = 0;
+	dac.readPosition_decimal = 0;
 	dac.writePosition = 0;
 	dac.writeBufferSize = 0;
 
@@ -315,6 +321,7 @@ void Crossbar_Reset(bool bCold)
 	memset(adc.buffer_left, 0, sizeof(dac.buffer_left));
 	memset(adc.buffer_right, 0, sizeof(dac.buffer_right));
 	adc.readPosition = 0;
+	adc.readPosition_decimal = 0;
 	adc.writePosition = 0;
 	adc.writeBufferSize = 0;
 
@@ -341,12 +348,13 @@ void Crossbar_Reset(bool bCold)
 	crossbar.isStereo = 1;
 	crossbar.codecInputSource = 3;
 	crossbar.codecAdcInput = 3;
-	crossbar.gainSettingLeft = 0;
-	crossbar.gainSettingRight = 0;
-	crossbar.attenuationSettingLeft = 0;
-	crossbar.attenuationSettingRight = 0;
+	crossbar.gainSettingLeft = 34953;
+	crossbar.gainSettingRight = 34953;
+	crossbar.attenuationSettingLeft = 65535;
+	crossbar.attenuationSettingRight = 65535;
 	crossbar.microphone_ADC_is_started = 0;
 	crossbar.adc_dac_readBufferPosition = 0;
+	crossbar.adc_dac_readBufferPosition_decimal = 0;
 
 	/* Start 25 Mhz and 32 Mhz Clocks */
 	Crossbar_Recalculate_Clocks_Cycles();
@@ -1013,8 +1021,8 @@ void Crossbar_InputAmp_WriteByte(void)
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 (CODEC channel amplification) write: 0x%02x\n", IoMem_ReadByte(0xff8939));
 
-	crossbar.gainSettingLeft = amplification >> 4;
-	crossbar.gainSettingRight = amplification & 0xf;
+	crossbar.gainSettingLeft = Crossbar_ADC_volume_table[amplification >> 4];
+	crossbar.gainSettingRight = Crossbar_ADC_volume_table[amplification & 0xf];
 }
 
 /**
@@ -1028,8 +1036,8 @@ void Crossbar_OutputReduct_WriteByte(void)
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) write: 0x%02x\n", IoMem_ReadByte(0xff893a));
 
-	crossbar.attenuationSettingLeft = reduction >> 4;
-	crossbar.attenuationSettingRight = reduction & 0xf;
+	crossbar.attenuationSettingLeft = Crossbar_DAC_volume_table[reduction >> 4];
+	crossbar.attenuationSettingRight = Crossbar_DAC_volume_table[reduction & 0xf];
 }
 
 /**
@@ -1548,7 +1556,7 @@ void Crossbar_DmaRecordInHandShakeMode_Frame(Uint32 frame)
  */
 void Crossbar_GetMicrophoneDatas(Sint16 *micro_bufferL, Sint16 *micro_bufferR, Uint32 microBuffer_size)
 {
-	Uint32 i, size, bufferIndex, indexPos;
+	Uint32 i, size, bufferIndex, indexPos, intPart;
 
 	size = (microBuffer_size * crossbar.frequence_ratio) >> 16;
 	bufferIndex = 0;
@@ -1562,10 +1570,11 @@ void Crossbar_GetMicrophoneDatas(Sint16 *micro_bufferL, Sint16 *micro_bufferR, U
 
 		indexPos += crossbar.frequence_ratio2;
 		if (indexPos >= DECIMAL_PRECISION) {
-			indexPos -= DECIMAL_PRECISION;
-			bufferIndex ++;	
+			intPart = indexPos >> 16;
+			bufferIndex += intPart;	
+			indexPos -= intPart * DECIMAL_PRECISION;
 		}
-	}	
+	}
 }
 
 /**
@@ -1639,11 +1648,11 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
  */
 void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
-	double FreqRatio, fDacBufSamples, fDacBufRdPos, fAdcDacRdpos;
-	int i;
-	int nBufIdx;
+	double FreqRatio, fDacBufSamples;
+	int i, nBufIdx;
+	Uint32 intPart;
 	Sint16 adc_leftData, adc_rightData, dac_LeftData, dac_RightData;
-
+	
 	if (crossbar.isDacMuted) {
 		/* Output sound = 0 */
 		for (i = 0; i < nSamplesToGenerate; i++) {
@@ -1654,6 +1663,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 		/* Counters are refreshed for when DAC becomes unmuted */
 		dac.readPosition = dac.writePosition;
+		dac.readPosition_decimal = 0;
 		dac.writeBufferSize = 0;
 		crossbar.adc_dac_readBufferPosition = adc.writePosition;
 		return;
@@ -1661,15 +1671,10 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
 	fDacBufSamples = (double)dac.writeBufferSize;
-	fDacBufRdPos = (double)dac.readPosition;
-	fAdcDacRdpos = (double)crossbar.adc_dac_readBufferPosition;
 	
 	for (i = 0; i < nSamplesToGenerate; i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-
-		dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
-		crossbar.adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
 
 		/* ADC mixing (PSG sound or microphone sound for left and right channels) */
 		switch (crossbar.codecAdcInput) {
@@ -1706,8 +1711,8 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				break;
 			case 1:
 				/* direct ADC->DAC sound only */
-				dac_LeftData = adc_leftData;
-				dac_RightData = adc_rightData;
+				dac_LeftData = (adc_leftData * crossbar.gainSettingLeft) >> 16;
+				dac_RightData = (adc_rightData * crossbar.gainSettingRight) >> 16;
 				break;
 			case 2:
 				/* Crossbar->DAC sound only */
@@ -1723,26 +1728,37 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			case 3:
 				/* Mixing Direct ADC sound with Crossbar->DMA sound */
 				if (fDacBufSamples >= 0.0) {
-					dac_LeftData = (adc_leftData + dac.buffer_left[dac.readPosition]) / 2;
-					dac_RightData = (adc_rightData + dac.buffer_right[dac.readPosition]) / 2;
+					dac_LeftData = (((adc_leftData * crossbar.gainSettingLeft) >> 16) + dac.buffer_left[dac.readPosition]) / 2;
+					dac_RightData = (((adc_rightData  * crossbar.gainSettingRight) >> 16) + dac.buffer_right[dac.readPosition]) / 2;
 				}
 				else {
-					dac_LeftData = adc_leftData;
-					dac_RightData = adc_rightData;
+					dac_LeftData = (adc_leftData * crossbar.gainSettingLeft) >> 16;
+					dac_RightData = (adc_rightData * crossbar.gainSettingRight) >> 16;
 				}
 				break;
 		}
 			
-		MixBuffer[nBufIdx][0] = dac_LeftData;
-		MixBuffer[nBufIdx][1] = dac_RightData;
+		MixBuffer[nBufIdx][0] = (dac_LeftData * crossbar.attenuationSettingLeft) >> 16;
+		MixBuffer[nBufIdx][1] = (dac_RightData * crossbar.attenuationSettingRight) >> 16;
 
-		fDacBufRdPos += FreqRatio;
-		fAdcDacRdpos += FreqRatio;
+		/* Upgrade dac's buffer read pointer */ 
+		dac.readPosition_decimal += crossbar.frequence_ratio;
+		if (dac.readPosition_decimal >= DECIMAL_PRECISION) {
+			intPart = (dac.readPosition_decimal >> 16);
+			dac.readPosition = (dac.readPosition + intPart) % DACBUFFER_SIZE;
+			dac.readPosition_decimal -= intPart * DECIMAL_PRECISION;
+		}
+		
+		/* Upgrade adc->dac's buffer read pointer */ 
+		crossbar.adc_dac_readBufferPosition_decimal += crossbar.frequence_ratio;
+		if (crossbar.adc_dac_readBufferPosition_decimal >= DECIMAL_PRECISION) {
+			intPart = (crossbar.adc_dac_readBufferPosition_decimal >> 16);
+			crossbar.adc_dac_readBufferPosition = (crossbar.adc_dac_readBufferPosition + intPart) % DACBUFFER_SIZE;
+			crossbar.adc_dac_readBufferPosition_decimal -= intPart * DECIMAL_PRECISION;
+		}
+		
 		fDacBufSamples -= FreqRatio;
 	}
-
-	dac.readPosition = ((int)(fDacBufRdPos + 0.5)) % DACBUFFER_SIZE;
-	crossbar.adc_dac_readBufferPosition = ((int)(fAdcDacRdpos + 0.5)) % DACBUFFER_SIZE;
 
 	if (fDacBufSamples > 0.0) {
 		dac.writeBufferSize = (int)fDacBufSamples;
