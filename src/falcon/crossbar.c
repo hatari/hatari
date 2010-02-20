@@ -261,7 +261,6 @@ struct codec_s {
 	Uint32 readPosition;
 	Uint32 readPosition_decimal;
 	Uint32 writePosition;
-	Uint32 writeBufferSize;
 	Uint32 isConnectedToCodec;
 	Uint32 isConnectedToDsp;
 	Uint32 isConnectedToDma;
@@ -315,7 +314,6 @@ void Crossbar_Reset(bool bCold)
 	dac.readPosition = 0;
 	dac.readPosition_decimal = 0;
 	dac.writePosition = 0;
-	dac.writeBufferSize = 0;
 
 	/* ADC inits */
 	memset(adc.buffer_left, 0, sizeof(dac.buffer_left));
@@ -323,7 +321,6 @@ void Crossbar_Reset(bool bCold)
 	adc.readPosition = 0;
 	adc.readPosition_decimal = 0;
 	adc.writePosition = 0;
-	adc.writeBufferSize = 0;
 
 	/* DSP inits */
 	dspXmit.wordCount = 0;
@@ -1637,7 +1634,6 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
 		/* Right channel */
 		dac.buffer_right[dac.writePosition] = value;
 		dac.writePosition = (dac.writePosition + 1) % (DACBUFFER_SIZE);
-		dac.writeBufferSize += 1;
 	}
 }
 
@@ -1648,7 +1644,6 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
  */
 void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
-	double FreqRatio, fDacBufSamples;
 	int i, nBufIdx;
 	Uint32 intPart;
 	Sint16 adc_leftData, adc_rightData, dac_LeftData, dac_RightData;
@@ -1664,14 +1659,10 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Counters are refreshed for when DAC becomes unmuted */
 		dac.readPosition = dac.writePosition;
 		dac.readPosition_decimal = 0;
-		dac.writeBufferSize = 0;
 		crossbar.adc_dac_readBufferPosition = adc.writePosition;
 		return;
 	}
 
-	FreqRatio = Crossbar_DetectSampleRate(25) / (double)nAudioFrequency;
-	fDacBufSamples = (double)dac.writeBufferSize;
-	
 	for (i = 0; i < nSamplesToGenerate; i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
@@ -1716,25 +1707,13 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				break;
 			case 2:
 				/* Crossbar->DAC sound only */
-				if (fDacBufSamples >= 0.0) {
-					dac_LeftData = dac.buffer_left[dac.readPosition];
-					dac_RightData = dac.buffer_right[dac.readPosition];
-				}
-				else {
-					dac_LeftData = 0;
-					dac_RightData = 0;
-				}
+				dac_LeftData = dac.buffer_left[dac.readPosition];
+				dac_RightData = dac.buffer_right[dac.readPosition];
 				break;
 			case 3:
 				/* Mixing Direct ADC sound with Crossbar->DMA sound */
-				if (fDacBufSamples >= 0.0) {
-					dac_LeftData = (((adc_leftData * crossbar.gainSettingLeft) >> 16) + dac.buffer_left[dac.readPosition]) / 2;
-					dac_RightData = (((adc_rightData  * crossbar.gainSettingRight) >> 16) + dac.buffer_right[dac.readPosition]) / 2;
-				}
-				else {
-					dac_LeftData = (adc_leftData * crossbar.gainSettingLeft) >> 16;
-					dac_RightData = (adc_rightData * crossbar.gainSettingRight) >> 16;
-				}
+				dac_LeftData = (((adc_leftData * crossbar.gainSettingLeft) >> 16) + dac.buffer_left[dac.readPosition]) / 2;
+				dac_RightData = (((adc_rightData  * crossbar.gainSettingRight) >> 16) + dac.buffer_right[dac.readPosition]) / 2;
 				break;
 		}
 			
@@ -1756,14 +1735,5 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			crossbar.adc_dac_readBufferPosition = (crossbar.adc_dac_readBufferPosition + intPart) % DACBUFFER_SIZE;
 			crossbar.adc_dac_readBufferPosition_decimal -= intPart * DECIMAL_PRECISION;
 		}
-		
-		fDacBufSamples -= FreqRatio;
-	}
-
-	if (fDacBufSamples > 0.0) {
-		dac.writeBufferSize = (int)fDacBufSamples;
-	}
-	else {
-		dac.writeBufferSize = 0;
 	}
 }
