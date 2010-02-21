@@ -54,6 +54,15 @@
 # define HAVE_CFMAKERAW 1
 #endif
 
+/* define to 1 if you the 'posix_memalign' function (for ide.c). */
+#if defined(__GLIBC__)
+# define HAVE_MALLOC_H 1
+# define HAVE_POSIX_MEMALIGN 1
+#else
+# undef  HAVE_MALLOC_H
+# undef  HAVE_POSIX_MEMALIGN
+#endif
+
 /* Define to 1 if you have the 'setenv' function. */
 #if defined(WIN32) || (defined(__sun) && defined(__SVR4)) || defined(GEKKO)
 # undef HAVE_SETENV
