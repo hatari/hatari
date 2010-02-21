@@ -2,18 +2,8 @@
 syntax: glob
 
 Makefile.cnf
-aclocal.m4
-autom4te.cache
-config.cache
-config.guess
-config.log
-config.status
-config.sub
-config.h.in
 config.h
-install-sh
 hatari.1.gz
-missing
 CMakeCache.txt
 install_manifest.txt
 
