@@ -57,18 +57,27 @@ Don't forget to also install the header files of these libraries for compiling
 Hatari (some Linux distributions use separate development packages for these
 header files)!
 
-For compiling Hatari, you currently need GNU-C and GNU-Make. Please note that
-GNU-Make is often called "gmake" instead of "make" on non-Linux systems.
-To configure the build process, you currently have two options: You can either
-use the supplied configure script (type "./configure --help" to see the
-options) or you can edit the file Makefile.cnf manually. Don't forget to use
-some good CFLAGS for the compiler optimizations, e.g. run "configure" in the
-following way:
+For compiling Hatari, you need a C compiler (preferably GNU C), and a working
+CMake installation (see http://www.cmake.org/ for details).
 
- CFLAGS="-O3 -fomit-frame-pointer" ./configure
+CMake can generate makefiles for various flavours of "Make" (like GNU-Make) and
+various IDEs like Xcode on Mac OS X. To run CMake, you've got to pass the
+path to the sources of Hatari as parameter, for example run the following if
+you are in the topmost directory of the Hatari source tree:
 
-Then you can compile Hatari by typing "make" (or "gmake"). If all works fine,
-you'll get the executable "hatari" in the src/ subdirectory.
+ cmake .
+
+Have a look at the manual of CMake for other options. Alternatively, you can
+use the "cmake-gui" program to configure the sources with a graphical
+application.
+For your convenience we also ship an old-fashioned configure script which can
+be used as a wrapper for running cmake. Type "./configure --help" to see the
+options of this script.
+
+Assuming that you've used the Makefile generator of CMake, and cmake finished
+the configuration successfully, you can compile Hatari by typing "make". If all
+works fine, you'll get the executable "hatari" in the src/ subdirectory of the
+build tree. You can then install the emulator by typing "make install".
 
 
  4) Running Hatari
