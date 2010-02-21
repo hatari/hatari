@@ -46,6 +46,7 @@ endif(NOT SDL_FOUND)
 
 find_package(Readline)
 if(READLINE_FOUND)
+	set(CMAKE_REQUIRED_LIBRARIES "readline")
 	check_function_exists(rl_filename_completion_function HAVE_RL_COMPLETION_FUNCTION)
 	if(HAVE_RL_COMPLETION_FUNCTION)
 		set(HAVE_LIBREADLINE 1)
