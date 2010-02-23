@@ -1729,6 +1729,9 @@ static void m68k_run_1 (void)
 	}
 #endif
 
+	if (bDspEnabled)
+	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
+
 	M68000_AddCyclesWithPairing(cycles);
 	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 	  /* Add some extra cycles to simulate a wait state */
@@ -1766,7 +1769,7 @@ static void m68k_run_1 (void)
 
 	/* Run DSP 56k code if necessary */
 	if (bDspEnabled) {
-	    DSP_Run(cycles);
+	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) );
 	}
     }
 }
@@ -1801,6 +1804,9 @@ static void m68k_run_2 (void)
 
 	cycles = (*cpufunctbl[opcode])(opcode);
 
+	if (bDspEnabled)
+	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
+
 	M68000_AddCycles(cycles);
 	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 	  /* Add some extra cycles to simulate a wait state */
@@ -1819,7 +1825,7 @@ static void m68k_run_2 (void)
 
 	/* Run DSP 56k code if necessary */
 	if (bDspEnabled) {
-	    DSP_Run(cycles);
+	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) );
 	}
     }
 }
