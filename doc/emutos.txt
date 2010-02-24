@@ -307,7 +307,8 @@ with EmuTOS.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
-- 20 years megademo (by DHS), display issues in some screens
+- 20 years megademo (by Atari scene collective), issues in some screens
+- 20 years Atari STE megademo (by Paradox), some screen don't work
 - Again (by Paradox)
 - Armada is dead (by Aggression)
 - Azed/Jungle demo (by Atari)
