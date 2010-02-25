@@ -12,6 +12,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "config.h"
 
@@ -351,6 +352,22 @@ static int DebugUI_SetTracing(int argc, char *argv[])
 
 
 /**
+ * Command: Change Hatari work directory
+ */
+static int DebugUI_ChangeDir(int argc, char *argv[])
+{
+	if (argc == 2)
+	{
+		if (chdir(argv[1]) == 0)
+			return DEBUGGER_CMDDONE;
+		perror("ERROR");
+	}
+	DebugUI_PrintCmdHelp(argv[0]);
+	return DEBUGGER_CMDDONE;
+}
+
+
+/**
  * Command: Quit emulator
  */
 static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
@@ -569,6 +586,7 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "address", Symbols_MatchCpuCodeAddress },
 		{ "b", BreakCond_MatchCpuVariable },
 		{ "breakpoint", BreakCond_MatchCpuVariable },
+		{ "cd", rl_filename_completion_function },
 		{ "da", Symbols_MatchDspCodeAddress },
 		{ "dspaddress", Symbols_MatchDspCodeAddress },
 		{ "db", BreakCond_MatchDspVariable },
@@ -701,6 +719,11 @@ static char *DebugUI_GetCommand(void)
 static const dbgcommand_t uicommand[] =
 {
 	{ NULL, "Generic commands", NULL, NULL, NULL, false },
+	{ DebugUI_ChangeDir, "cd", "",
+	  "change directory",
+	  "<directory>\n"
+	  "\tChange Hatari work directory.",
+	  false },
 	{ DebugUI_Evaluate, "evaluate", "e",
 	  "evaluate an expression",
 	  "<expression>\n"
