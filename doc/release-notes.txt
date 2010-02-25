@@ -60,6 +60,8 @@ Emulator:
   - "evaluate" command for doing calculations. Register and symbol
     names in expressions are replaced by their values. '$' will be
     TAB-completed to last 'evaluate' command result
+  - "cd" command to change Hatari work directory
+  " "exec" command to execute shell commands
   - "info" command for showing Atari HW and OS information
   - "lock" command for setting what information is shown every time on
     entering the debugger, e.g. disassembly or memdump from given address.
