@@ -1949,7 +1949,7 @@ static bool GemDOS_Read(Uint32 Params)
 	}
 
 	/* Limit to size of file to prevent errors */
-	if (Size > nBytesLeft)
+	if (Size > (Uint32)nBytesLeft)
 		Size = nBytesLeft;
 
 	/* Check that read is to valid memory area */
