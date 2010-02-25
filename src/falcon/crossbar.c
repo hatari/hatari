@@ -439,6 +439,8 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 		dmaPlay.isRunning = 0;
 		dmaPlay.loopMode = 0;
 		nCbar_DmaSoundControl = sndCtrl;
+		memset(dac.buffer_left, 0, sizeof(dac.buffer_left));
+		memset(dac.buffer_right, 0, sizeof(dac.buffer_right));
 	}
 
 	/* DMA Record mode */
