@@ -156,10 +156,10 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 		else
 			dsp_disasm_upper = 0xFFFF;
 	}
-	printf("DSP disasm %hx-%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
+	printf("DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	while (dsp_disasm_addr < dsp_disasm_upper) {
 		DebugDsp_ShowMatchedSymbol(dsp_disasm_addr);
-		dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_addr+1);
+		dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_addr);
 	}
 
 	return DEBUGGER_CMDCONT;
@@ -182,9 +182,9 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 		fprintf(stderr, "DSP isn't present or initialized.\n");
 		return DEBUGGER_CMDDONE;
 	}
-	if (nArgc == 2)
+	if (nArgc < 2 || nArgc > 3)
 	{
-		fprintf(stderr,"Memory space or address/range missing\n");
+		DebugUI_PrintCmdHelp(psArgs[0]);
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -236,7 +236,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			dsp_memdump_upper = 0xFFFF;
 	}
 
-	printf("DSP memdump from %hx in '%c' address space\n", dsp_memdump_addr, dsp_mem_space);
+	printf("DSP memdump from 0x%hx in '%c' address space:\n", dsp_memdump_addr, dsp_mem_space);
 	dsp_memdump_addr = DSP_DisasmMemory(dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
 
 	return DEBUGGER_CMDCONT;
