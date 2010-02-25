@@ -217,7 +217,7 @@ static Uint16 dsp_asl56(Uint32 *dest);
 static Uint16 dsp_asr56(Uint32 *dest);
 static Uint16 dsp_add56(Uint32 *source, Uint32 *dest);
 static Uint16 dsp_sub56(Uint32 *source, Uint32 *dest);
-static void dsp_mul56(Uint32 source1, Uint32 source2, Uint32 *dest);
+static void dsp_mul56(Uint32 source1, Uint32 source2, Uint32 *dest, Uint8 signe);
 static void dsp_rnd56(Uint32 *dest);
 
 /* Instructions with parallel moves */
@@ -4004,19 +4004,17 @@ static Uint16 dsp_sub56(Uint32 *source, Uint32 *dest)
 	return (overflow<<DSP_SR_L)|(overflow<<DSP_SR_V)|(carry<<DSP_SR_C);
 }
 
-static void dsp_mul56(Uint32 source1, Uint32 source2, Uint32 *dest)
+static void dsp_mul56(Uint32 source1, Uint32 source2, Uint32 *dest, Uint8 signe)
 {
-	Uint32 negresult;	/* Negate the result ? */
 	Uint32 part[4], zerodest[3], value;
 
 	/* Multiply: D = S1*S2 */
-	negresult = 0;
 	if (source1 & (1<<23)) {
-		negresult ^= 1;
+		signe ^= 1;
 		source1 = (1<<24) - (source1 & BITMASK(24));
 	}
 	if (source2 & (1<<23)) {
-		negresult ^= 1;
+		signe ^= 1;
 		source2 = (1<<24) - (source2 & BITMASK(24));
 	}
 
@@ -4057,7 +4055,7 @@ static void dsp_mul56(Uint32 source1, Uint32 source2, Uint32 *dest)
 	/* Get rid of extra sign bit */
 	dsp_asl56(dest);
 
-	if (negresult) {
+	if (signe) {
 		zerodest[0] = zerodest[1] = zerodest[2] = 0;
 
 		dsp_sub56(dest, zerodest);
@@ -4608,17 +4606,7 @@ static void dsp_mac(void)
 	srcreg1 = registers_mpy[value][0];
 	srcreg2 = registers_mpy[value][1];
 
-	dsp_mul56(dsp_core->registers[srcreg1], dsp_core->registers[srcreg2], source);
-
-	if (cur_inst & (1<<2)) {
-		dest[0] = dest[1] = dest[2] = 0;
-
-		dsp_sub56(source, dest);
-
-		source[0] = dest[0];
-		source[1] = dest[1];
-		source[2] = dest[2];
-	}
+	dsp_mul56(dsp_core->registers[srcreg1], dsp_core->registers[srcreg2], source, (cur_inst >> 2) & 1);
 
 	destreg = (cur_inst>>3) & 1;
 	dest[0] = dsp_core->registers[DSP_REG_A2+destreg];
@@ -4645,17 +4633,7 @@ static void dsp_macr(void)
 	srcreg1 = registers_mpy[value][0];
 	srcreg2 = registers_mpy[value][1];
 
-	dsp_mul56(dsp_core->registers[srcreg1], dsp_core->registers[srcreg2], source);
-
-	if (cur_inst & (1<<2)) {
-		dest[0] = dest[1] = dest[2] = 0;
-
-		dsp_sub56(source, dest);
-
-		source[0] = dest[0];
-		source[1] = dest[1];
-		source[2] = dest[2];
-	}
+	dsp_mul56(dsp_core->registers[srcreg1], dsp_core->registers[srcreg2], source, (cur_inst >> 2) & 1);
 
 	destreg = (cur_inst>>3) & 1;
 	dest[0] = dsp_core->registers[DSP_REG_A2+destreg];
@@ -4683,28 +4661,19 @@ static void dsp_move(void)
 
 static void dsp_mpy(void)
 {
-	Uint32 srcreg1, srcreg2, destreg, value, dest[3], source[3];
+	Uint32 srcreg1, srcreg2, destreg, value, source[3];
 
 	value = (cur_inst>>4) & BITMASK(3);
 	srcreg1 = registers_mpy[value][0];
 	srcreg2 = registers_mpy[value][1];
 
-	dsp_mul56(dsp_core->registers[srcreg1], dsp_core->registers[srcreg2], source);
+	dsp_mul56(dsp_core->registers[srcreg1], dsp_core->registers[srcreg2], source, (cur_inst >> 2) & 1);
 
 	destreg = (cur_inst>>3) & 1;
-	if (cur_inst & (1<<2)) {
-		dest[0] = dest[1] = dest[2] = 0;
 
-		dsp_sub56(source, dest);
-
-		dsp_core->registers[DSP_REG_A2+destreg] = dest[0];
-		dsp_core->registers[DSP_REG_A1+destreg] = dest[1];
-		dsp_core->registers[DSP_REG_A0+destreg] = dest[2];
-	} else {
-		dsp_core->registers[DSP_REG_A2+destreg] = source[0];
-		dsp_core->registers[DSP_REG_A1+destreg] = source[1];
-		dsp_core->registers[DSP_REG_A0+destreg] = source[2];
-	}
+	dsp_core->registers[DSP_REG_A2+destreg] = source[0];
+	dsp_core->registers[DSP_REG_A1+destreg] = source[1];
+	dsp_core->registers[DSP_REG_A0+destreg] = source[2];
 
 	dsp_ccr_update_e_u_n_z(	&dsp_core->registers[DSP_REG_A2+destreg],
 				&dsp_core->registers[DSP_REG_A1+destreg],
@@ -4721,18 +4690,13 @@ static void dsp_mpyr(void)
 	srcreg1 = registers_mpy[value][0];
 	srcreg2 = registers_mpy[value][1];
 
-	dsp_mul56(dsp_core->registers[srcreg1], dsp_core->registers[srcreg2], source);
+	dsp_mul56(dsp_core->registers[srcreg1], dsp_core->registers[srcreg2], source, (cur_inst >> 2) & 1);
 
 	destreg = (cur_inst>>3) & 1;
-	if (cur_inst & (1<<2)) {
-		dest[0] = dest[1] = dest[2] = 0;
 
-		dsp_sub56(source, dest);
-	} else {
-		dest[0] = source[0];
-		dest[1] = source[1];
-		dest[2] = source[2];
-	}
+	dest[0] = source[0];
+	dest[1] = source[1];
+	dest[2] = source[2];
 
 	dsp_rnd56(dest);
 
