@@ -454,8 +454,8 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 		default:
 			symchar = '?';
 		}
-		fprintf(stderr, "%c 0x%08x: %s\n",
-			symchar, entry->address, entry->name);
+		fprintf(stderr, "0x%08x %c %s\n",
+			entry->address, symchar, entry->name);
 		if (i && i % 20 == 0) {
 			fprintf(stderr, "--- q to exit listing, just enter to continue --- ");
 			if (toupper(getchar()) == 'Q') {
