@@ -408,8 +408,9 @@ void DebugUI_PrintCmdHelp(const char *psCmd)
 		    || (cmd->sShortName && *(cmd->sShortName)
 			&& !strcmp(psCmd, cmd->sShortName)))
 		{
+			bool bShort = cmd->sShortName && *(cmd->sShortName);
 			/* ... and print help text */
-			if (cmd->sShortName && *(cmd->sShortName))
+			if (bShort)
 			{
 				fprintf(stderr, "'%s' or '%s' - %s\n",
 					cmd->sLongName,
@@ -423,7 +424,7 @@ void DebugUI_PrintCmdHelp(const char *psCmd)
 					cmd->sShortDesc);
 			}
 			fprintf(stderr, "Usage:  %s %s\n",
-				cmd->sShortName,
+				bShort ? cmd->sShortName : cmd->sLongName,
 				cmd->sUsage);
 			return;
 		}
