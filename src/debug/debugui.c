@@ -368,6 +368,19 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
 
 
 /**
+ * Command: Execute a system command
+ */
+static int DebugUI_Exec(int argc, char *argv[])
+{
+	if (argc == 2)
+		system(argv[1]);
+	else
+		DebugUI_PrintCmdHelp(argv[0]);
+	return DEBUGGER_CMDDONE;
+}
+
+
+/**
  * Command: Quit emulator
  */
 static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
@@ -594,6 +607,7 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "dspsymbols", rl_filename_completion_function },
 		{ "e", Symbols_MatchCpuAddress },
 		{ "evaluate", Symbols_MatchCpuAddress },
+		{ "exec", rl_filename_completion_function },
 		{ "f", rl_filename_completion_function },
 		{ "h", DebugUI_MatchCommand },
 		{ "help", DebugUI_MatchCommand },
@@ -736,6 +750,11 @@ static const dbgcommand_t uicommand[] =
 	  "\t\t((0x21 * 0x200) + (-5)) ^ (~%111 & $f0f0f0)\n"
 	  "\tResult value is shown as binary, decimal and hexadecimal.\n"
 	  "\tAfter this, '$' will TAB-complete to last result value.",
+	  true },
+	{ DebugUI_Exec, "exec", "",
+	  "execute a shell command",
+	  "<command line>\n"
+	  "\tRun the given command with the system shell.",
 	  true },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
