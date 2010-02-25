@@ -50,6 +50,7 @@
 #if ENABLE_DSP_EMU
 static dsp_core_t dsp_core;
 static dsp_core_t dsp_core_save;
+static Sint32 save_cycles;
 #endif
 static bool bDspDebugging;
 
@@ -85,6 +86,7 @@ void DSP_Init(void)
 	dsp_core_init(&dsp_core, DSP_TriggerHostInterrupt);
 	dsp56k_init_cpu(&dsp_core);
 	bDspEnabled = true;
+	save_cycles = 0;
 #endif
 }
 
@@ -111,6 +113,7 @@ void DSP_Reset(void)
 #if ENABLE_DSP_EMU
 	dsp_core_reset(&dsp_core);
 	bDspHostInterruptPending = false;
+	save_cycles = 0;
 #endif
 }
 
@@ -126,6 +129,7 @@ void DSP_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&bDspEnabled, sizeof(bDspEnabled));
 	MemorySnapShot_Store(&dsp_core, sizeof(dsp_core));
+	MemorySnapShot_Store(&save_cycles, sizeof(save_cycles));
 #endif
 }
 
@@ -135,28 +139,30 @@ void DSP_MemorySnapShot_Capture(bool bSave)
 void DSP_Run(int nHostCycles)
 {
 #if ENABLE_DSP_EMU
-	/* Cycles emulation is just a rough approximation by now.
-	 * (to be tuned ...) */
-	int i = nHostCycles * 2 + 2;
-	int dsp_cycle = 0;
+	/* Cycles emulation should be correctly tuned now */
+	Sint32 i = nHostCycles * 4 - save_cycles + 1;
+	Sint32 dsp_cycle = 0;
 
 	if (dsp_core.running == 0)
 		return;
-	
+
 	if (unlikely(bDspDebugging)) {
-		while (i >= dsp_cycle)
+		while (i > dsp_cycle)
 		{
 			DebugDsp_Check();
 			dsp56k_execute_instruction();
 			dsp_cycle += dsp_core.instr_cycle;
 		}
 	} else {
-		while (i >= dsp_cycle)
+		while (i > dsp_cycle)
 		{
 			dsp56k_execute_instruction();
 			dsp_cycle += dsp_core.instr_cycle;
 		}
 	}
+
+	/* Adjust cycles for next run */ 
+	save_cycles = i - dsp_cycle;
 #endif
 }
 
