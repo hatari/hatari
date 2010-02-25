@@ -47,6 +47,7 @@
 
 #define DSP_HW_OFFSET  0xFFA200
 
+
 #if ENABLE_DSP_EMU
 static dsp_core_t dsp_core;
 static dsp_core_t dsp_core_save;
@@ -140,7 +141,7 @@ void DSP_Run(int nHostCycles)
 {
 #if ENABLE_DSP_EMU
 	/* Cycles emulation should be correctly tuned now */
-	Sint32 i = nHostCycles * 4 - save_cycles + 1;
+	Sint32 i = nHostCycles * ( DSP_FREQ / CPU_FREQ ) - save_cycles + 1;
 	Sint32 dsp_cycle = 0;
 
 	if (dsp_core.running == 0)

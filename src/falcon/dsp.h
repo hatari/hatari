@@ -27,6 +27,8 @@
 # include "dsp_core.h"
 #endif
 
+#define DSP_FREQ	(CPU_FREQ*4)
+
 extern bool bDspEnabled;
 extern bool bDspHostInterruptPending;
 
