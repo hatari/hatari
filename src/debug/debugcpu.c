@@ -513,7 +513,7 @@ static const dbgcommand_t cpucommands[] =
 	  true },
 	{ DebugCpu_DisAsm, "disasm", "d",
 	  "disassemble from PC, or given address",
-	  "[start address[-end address]]\n"
+	  "[<start address>[-<end address>]]\n"
 	  "\tIf no address is given, this command disassembles from the last\n"
 	  "\tposition or from current PC if no last position is available.",
 	  false },
@@ -525,7 +525,7 @@ static const dbgcommand_t cpucommands[] =
 	  true },
 	{ DebugCpu_MemDump, "memdump", "m",
 	  "dump memory",
-	  "[start address[-end address]]\n"
+	  "[<start address>[-<end address>]]\n"
 	  "\tdump memory at address or continue dump from previous address.",
 	  false },
 	{ DebugCpu_MemWrite, "memwrite", "w",

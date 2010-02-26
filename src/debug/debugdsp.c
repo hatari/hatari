@@ -182,7 +182,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 		fprintf(stderr, "DSP isn't present or initialized.\n");
 		return DEBUGGER_CMDDONE;
 	}
-	if (nArgc < 2 || nArgc > 3)
+	if (nArgc != 1 && nArgc != 3)
 	{
 		DebugUI_PrintCmdHelp(psArgs[0]);
 		return DEBUGGER_CMDDONE;
@@ -334,14 +334,14 @@ static const dbgcommand_t dspcommands[] =
 	  true },
 	{ DebugDsp_DisAsm, "dspdisasm", "dd",
 	  "disassemble DSP code",
-	  "[start address[-end address]]\n"
+	  "[<start address>[-<end address>]]\n"
 	  "\tDisassemble from DSP-PC, otherwise at given address.",
 	  false },
 	{ DebugDsp_MemDump, "dspmemdump", "dm",
 	  "dump DSP memory",
-	  "<x|y|p> [start address[-end address]]\n"
-	  "\tdump DSP memory at address, or continue from previous address\n"
-	  "\tif not specified.",
+	  "[<x|y|p> <start address>[-<end address>]]\n"
+	  "\tdump DSP memory from given memory space and address, or\n"
+	  "\tcontinue from previous address if not specified.",
 	  false },
 	{ Symbols_Command, "dspsymbols", "",
 	  "load DSP symbols & their addresses",
