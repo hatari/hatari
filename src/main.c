@@ -202,7 +202,8 @@ void Main_WaitOnVbl(void)
 	int nFrameDuration;
 	signed int nDelay;
 
-	if (nRunVBLs &&	++nVBLCount >= nRunVBLs)
+	nVBLCount++;
+	if (nRunVBLs &&	nVBLCount >= nRunVBLs)
 	{
 		/* show VBLs/s */
 		Main_PauseEmulation(true);
