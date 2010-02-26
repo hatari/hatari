@@ -89,7 +89,8 @@ static Uint32 Main_GetTicks(void)
 	return ticks_to_msec * fields.tms_utime;
 }
 #else
-#define Main_GetTicks SDL_GetTicks
+# warning "times() function missing, using inaccurate SDL_GetTicks() instead."
+# define Main_GetTicks SDL_GetTicks
 #endif
 
 

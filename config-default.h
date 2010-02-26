@@ -25,11 +25,11 @@
 # define HAVE_TERMIOS_H 1
 #endif
 
-/* Define to 1 if you have the <glob.h> header file. */
+/* Define to 1 if you have the <sys/times.h> header file. */
 #if defined(WIN32) || defined(GEKKO)
-# undef  HAVE_GLOB_H
+# undef  HAVE_SYS_TIMES_H
 #else
-# define HAVE_GLOB_H 1
+# define HAVE_SYS_TIMES_H 1
 #endif
 
 /* Define to 1 if you have the <strings.h> header file. */
