@@ -21,8 +21,8 @@ enum {
 extern int bExceptionDebugging;
 
 extern void DebugUI(void);
-extern int DebugUI_RemoteParse(char *input);
-extern int DebugUI_ParseCommand(char *input);
+extern bool DebugUI_RemoteParse(char *input);
+extern bool DebugUI_ParseFile(const char *input);
 extern void DebugUI_MemorySnapShot_Capture(bool bSave);
 
 #endif /* HATARI_DEBUGUI_H */

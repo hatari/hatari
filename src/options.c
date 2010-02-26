@@ -107,6 +107,7 @@ enum {
 	OPT_BIOSINTERCEPT,
 	OPT_TRACE,
 	OPT_TRACEFILE,
+	OPT_PARSE,
 	OPT_CONTROLSOCKET,
 	OPT_LOGFILE,
 	OPT_LOGLEVEL,
@@ -275,6 +276,8 @@ static const opt_t HatariOptions[] = {
 	  "<trace1,...>", "Activate emulation tracing, see '--trace help'" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
 	  "<file>", "Save trace output to <file> (default=stderr)" },
+	{ OPT_PARSE, NULL, "--parse",
+	  "<file>", "Parse/do debugger commands from <file>" },
 #if HAVE_UNIX_DOMAIN_SOCKETS
 	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
 	  "<file>", "Hatari reads options from given socket at run-time" },
@@ -1287,6 +1290,11 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ok = Opt_StrCpy(OPT_LOGFILE, false, ConfigureParams.Log.sLogFileName,
 					argv[i], sizeof(ConfigureParams.Log.sLogFileName),
 					NULL);
+			break;
+
+		case OPT_PARSE:
+			i += 1;
+			ok = DebugUI_ParseFile(argv[i]);
 			break;
 
 		case OPT_LOGLEVEL:

@@ -49,7 +49,7 @@ FILE *debugOutput;
 static dbgcommand_t *debugCommand;
 static int debugCommands;
 
-/* stores last value shown on screen, used for TAB-completion */
+/* stores last 'e' command result as hex, used for TAB-completion */
 static char lastResult[10];
 
 
@@ -368,6 +368,19 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
 
 
 /**
+ * Command: Read debugger commands from a file
+ */
+static int DebugUI_CommandsFromFile(int argc, char *argv[])
+{
+	if (argc == 2)
+		DebugUI_ParseFile(argv[1]);
+	else
+		DebugUI_PrintCmdHelp(argv[0]);
+	return DEBUGGER_CMDDONE;
+}
+
+
+/**
  * Command: Execute a system command
  */
 static int DebugUI_Exec(int argc, char *argv[])
@@ -479,7 +492,7 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 /**
  * Parse debug command and execute it.
  */
-int DebugUI_ParseCommand(char *input)
+static int DebugUI_ParseCommand(char *input)
 {
 	char *psArgs[64];
 	const char *delim;
@@ -618,6 +631,7 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		{ "logfile", rl_filename_completion_function },
 		{ "l", rl_filename_completion_function },
 		{ "loadbin", rl_filename_completion_function },
+		{ "parse", rl_filename_completion_function },
 		{ "s", rl_filename_completion_function },
 		{ "savebin", rl_filename_completion_function },
 		{ "stateload", rl_filename_completion_function },
@@ -780,6 +794,11 @@ static const dbgcommand_t uicommand[] =
 	  "\tOpen log file, no argument closes the log file. Output of\n"
 	  "\tregister & memory dumps and disassembly will be written to it.",
 	  false },
+	{ DebugUI_CommandsFromFile, "parse", "p",
+	  "get debugger commands from file",
+	  "[filename]\n"
+	  "\tRead debugger commands from given file and do them.",
+	  false },
 	{ DebugUI_SetOptions, "setopt", "o",
 	  "set Hatari command line and debugger options",
 	  "[<bin|dec|hex>|<command line options>]\n"
@@ -904,9 +923,47 @@ void DebugUI(void)
 
 
 /**
- * Remote/parallel debugger usage API
+ * Read debugger commands from a file.
+ * return false for error, true for success.
  */
-int DebugUI_RemoteParse(char *input)
+bool DebugUI_ParseFile(const char *path)
+{
+	char *dir, *input;
+	FILE *fp;
+
+	DebugUI_Init();
+
+	fprintf(stderr, "Reading debugger commands from '%s'...\n", path);
+	if (!(fp = fopen(path, "r")))
+	{
+		perror("ERROR");
+		return false;
+	}
+
+	/* change to directory where the debugger file resides */
+	dir = strdup(path);
+	File_MakeValidPathName(dir);
+	chdir(dir);
+
+	input = malloc(256);
+	assert(input);
+
+	while (fgets(input, 256, fp))
+	{
+		fprintf(stderr, "> %s", input);
+		DebugUI_ParseCommand(Str_Trim(input));
+	}
+
+	free(input);
+	return true;
+}
+
+
+/**
+ * Remote/parallel debugger usage API.
+ * Return false for failed command, true for success.
+ */
+bool DebugUI_RemoteParse(char *input)
 {
 	int ret;
 
@@ -917,5 +974,5 @@ int DebugUI_RemoteParse(char *input)
 	DebugCpu_SetDebugging();
 	DebugDsp_SetDebugging();
 
-	return ret;
+	return (ret == DEBUGGER_CMDDONE);
 }
