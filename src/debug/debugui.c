@@ -963,14 +963,28 @@ static bool DebugUI_ParseFile(const char *path)
 	dir = strdup(path);
 	File_MakeValidPathName(dir);
 	chdir(dir);
+	free(dir);
 
 	input = malloc(256);
 	assert(input);
 
 	while (fgets(input, 256, fp))
 	{
-		fprintf(stderr, "> %s", input);
-		DebugUI_ParseCommand(Str_Trim(input));
+		cmd = DebugUI_EvaluateExpressions(input);
+		if (!cmd)
+			continue;
+		input = cmd;
+
+		cmd = Str_Trim(cmd);
+
+		/* TODO: use '#' for comments in here although
+		 * that's used also to mark decimal numbers...
+		 */
+		if (*cmd && *cmd != '#')
+		{
+			fprintf(stderr, "> %s\n", cmd);
+			DebugUI_ParseCommand(cmd);
+		}
 	}
 
 	free(input);
