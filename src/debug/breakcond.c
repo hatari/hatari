@@ -514,15 +514,13 @@ static bool BreakCond_ParseSymbol(const char *name, bc_value_t *bc_value)
 	symtype_t symtype;
 	Uint32 addr;
 
-	ENTERFUNC(("BreakCond_ParseCodeSymbol('%s', %d)\n", name));
+	ENTERFUNC(("BreakCond_ParseSymbol('%s')\n", name));
 	if (bc_value->is_indirect) {
-		/* indirect addressing makes sense only for data addresses */
+		/* indirect use of address makes sense only for data */
 		symtype = SYMTYPE_DATA|SYMTYPE_BSS;
 	} else {
-		/* and direct addressing makes sense only for code
-		 * (unless it's self-modifying?)
-		 */
-		symtype = SYMTYPE_TEXT;
+		/* direct value can be compared for anything */
+		symtype = SYMTYPE_ALL;
 	}
 	
 	if (bc_value->dsp_space) {
@@ -1487,6 +1485,11 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	unsigned int position;
 	const char *end;
 	int skip;
+
+	if (bForDsp && !bDspEnabled) {
+		fprintf(stderr, "ERROR: DSP not enabled!\n");
+		return false;
+	}
 	
 	if (!args) {
 		BreakCond_List(bForDsp);
@@ -1583,13 +1586,13 @@ bool BreakAddr_Command(char *args, bool bForDsp)
 			expression, offset+2, '^', errstr);
 		return false;
 	}
-	
+
 	/* add the address breakpoint with optional option */
 	sprintf(command, "pc=$%x %c%s", addr, cut?':':' ', cut?cut:"");
 	if (!BreakCond_Command(command, bForDsp)) {
 		return false;
 	}
-	
+
 	/* on success, show on what instruction it was added */
 	if (bForDsp) {
 		DSP_DisasmAddress(addr, addr);
