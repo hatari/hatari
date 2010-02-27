@@ -1,24 +1,34 @@
 #
-# Find the native PORTAUDIO includes and library
+# Find the native PORTAUDIO (version 2) includes and library
 #
 #  PORTAUDIO_INCLUDE_DIR  - where to find portaudio.h, etc.
 #  PORTAUDIO_LIBRARY      - List of libraries when using portaudio.
 #  PORTAUDIO_FOUND        - True if portaudio found.
-#
 
-IF (PORTAUDIO_INCLUDE_DIR)
+include(FindPackageHandleStandardArgs)
+include(CheckFunctionExists)
+
+if(PORTAUDIO_INCLUDE_DIR)
   # Already in cache, be silent
-  SET(PORTAUDIO_FIND_QUIETLY TRUE)
-ENDIF (PORTAUDIO_INCLUDE_DIR)
+  set(PORTAUDIO_FIND_QUIETLY TRUE)
+endif(PORTAUDIO_INCLUDE_DIR)
 
-FIND_PATH(PORTAUDIO_INCLUDE_DIR portaudio.h)
+find_path(PORTAUDIO_INCLUDE_DIR portaudio.h)
 
-FIND_LIBRARY(PORTAUDIO_LIBRARY NAMES portaudio)
+find_library(PORTAUDIO_LIBRARY NAMES portaudio)
 
 # handle the QUIETLY and REQUIRED arguments and set PORTAUDIO_FOUND to TRUE if 
 # all listed variables are TRUE
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(PORTAUDIO DEFAULT_MSG
+find_package_handle_standard_args(PORTAUDIO DEFAULT_MSG
                                   PORTAUDIO_LIBRARY PORTAUDIO_INCLUDE_DIR)
 
-MARK_AS_ADVANCED(PORTAUDIO_LIBRARY PORTAUDIO_INCLUDE_DIR)
+# Check if it's really a portaudio2 installation...
+if(PORTAUDIO_FOUND)
+	set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES} ${PORTAUDIO_LIBRARY}")
+	check_function_exists(Pa_GetDefaultInputDevice HAVE_PA_GETDEFAULTINPUTDEVICE)
+	if (NOT HAVE_PA_GETDEFAULTINPUTDEVICE)
+		unset (PORTAUDIO_FOUND)
+	endif()
+endif(PORTAUDIO_FOUND)
+
+mark_as_advanced(PORTAUDIO_LIBRARY PORTAUDIO_INCLUDE_DIR)
