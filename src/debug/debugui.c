@@ -52,6 +52,9 @@ static int debugCommands;
 /* stores last 'e' command result as hex, used for TAB-completion */
 static char lastResult[10];
 
+static const char *parseFileName;
+static bool DebugUI_ParseFile(const char *path);
+
 
 /**
  * Save/Restore snapshot of debugging session variables
@@ -834,7 +837,7 @@ static const dbgcommand_t uicommand[] =
 /**
  * Debugger user interface initialization.
  */
-static void DebugUI_Init(void)
+void DebugUI_Init(void)
 {
 	const dbgcommand_t *cpucmd, *dspcmd;
 	int cpucmds, dspcmds;
@@ -859,6 +862,24 @@ static void DebugUI_Init(void)
 	debugCommands += cpucmds;
 	memcpy(&debugCommand[debugCommands], dspcmd, sizeof(dbgcommand_t) * dspcmds);
 	debugCommands += dspcmds;
+
+	if (parseFileName)
+		DebugUI_ParseFile(parseFileName);
+}
+
+
+/**
+ * Set debugger commands file.
+ * Return true if file exists, false otherwise.
+ */
+bool DebugUI_SetParseFile(const char *path)
+{
+	if (File_Exists(path))
+	{
+		parseFileName = path;
+		return true;
+	}
+	return false;
 }
 
 
@@ -926,12 +947,10 @@ void DebugUI(void)
  * Read debugger commands from a file.
  * return false for error, true for success.
  */
-bool DebugUI_ParseFile(const char *path)
+static bool DebugUI_ParseFile(const char *path)
 {
-	char *dir, *input;
+	char *dir, *cmd, *input;
 	FILE *fp;
-
-	DebugUI_Init();
 
 	fprintf(stderr, "Reading debugger commands from '%s'...\n", path);
 	if (!(fp = fopen(path, "r")))

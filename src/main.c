@@ -44,6 +44,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "video.h"
 #include "avi_record.h"
+#include "debugui.h"
 
 #include "hatari-glue.h"
 
@@ -527,6 +528,9 @@ static void Main_Init(void)
 	NvRam_Init();
 	Joy_Init();
 	Sound_Init();
+	
+	/* done as last, needs CPU & DSP running... */
+	DebugUI_Init();
 }
 
 
