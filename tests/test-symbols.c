@@ -31,18 +31,17 @@ int main(int argc, const char *argv[])
 	};
 	/* expected to succeed */
 	const char *success_name[] = {
-		"_supexec",
-		"_dos_mkdir",
-		"_shel_find"
+		"os_magic",
+		"p_root"
 	};
 	Uint32 success_addr[] = {
-		0xe00dc6,
-		0xe324d2,
+		0x14,
+		0x28,
 	};
 
 #define DO_CMD(cmd) Symbols_Command(ARRAYSIZE(cmd), cmd)
 	char symbols[] = "symbols";
-	char fname[] = "etos512.sym";
+	char fname[] = "os-header.sym";
 	char sname[] = "name";
 	char saddr[] = "addr";
 	char *cmd_load[] = { symbols, fname };
