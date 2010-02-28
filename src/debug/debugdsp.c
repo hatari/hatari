@@ -44,6 +44,40 @@ void DebugDsp_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nDspActiveCBs, sizeof(nDspActiveCBs));
 }
 
+
+/**
+ * Readline match callback to list register names usable within debugger.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+static char *DebugDsp_MatchRegister(const char *text, int state)
+{
+	static const char regs[][4] = {
+		"a0", "a1", "a2", "b0", "b1", "b2", "la", "lc",
+		"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7",
+		"n0", "n1", "n2", "n3", "n4", "n5", "n6", "n7",
+		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+		"omr", "pc", "sp", "sr", "ssh", "ssl",
+		"x0", "x1", "y0", "y1",
+	};
+	static int i, len;
+	
+	if (!state)
+	{
+		/* first match */
+		i = 0;
+		len = strlen(text);
+		if (len > 2)
+			return NULL;
+	}
+	/* next match */
+	while (i < ARRAYSIZE(regs)) {
+		if (strncasecmp(regs[i++], text, len) == 0)
+			return (strdup(regs[i-1]));
+	}
+	return NULL;
+}
+
 /**
  * Command: Dump or set a DSP register
  */
@@ -323,36 +357,43 @@ void DebugDsp_SetDebugging(void)
 
 static const dbgcommand_t dspcommands[] =
 {
-	{ NULL, "DSP commands", NULL, NULL, NULL, false },
-	{ DebugDsp_BreakAddr, "dspaddress", "da",
+	{ NULL, NULL, "DSP commands", NULL, NULL, NULL, false },
+	{ DebugDsp_BreakAddr, Symbols_MatchDspCodeAddress,
+	  "dspaddress", "da",
 	  "set DSP PC address breakpoints",
 	  BreakAddr_Description,
 	  true },
-	{ DebugDsp_BreakCond, "dspbreak", "db",
+	{ DebugDsp_BreakCond, BreakCond_MatchDspVariable,
+	  "dspbreak", "db",
 	  "set/remove/list conditional DSP breakpoints",
 	  BreakCond_Description,
 	  true },
-	{ DebugDsp_DisAsm, "dspdisasm", "dd",
+	{ DebugDsp_DisAsm, Symbols_MatchDspCodeAddress,
+	  "dspdisasm", "dd",
 	  "disassemble DSP code",
 	  "[<start address>[-<end address>]]\n"
 	  "\tDisassemble from DSP-PC, otherwise at given address.",
 	  false },
-	{ DebugDsp_MemDump, "dspmemdump", "dm",
+	{ DebugDsp_MemDump, Symbols_MatchDspDataAddress,
+	  "dspmemdump", "dm",
 	  "dump DSP memory",
 	  "[<x|y|p> <start address>[-<end address>]]\n"
 	  "\tdump DSP memory from given memory space and address, or\n"
 	  "\tcontinue from previous address if not specified.",
 	  false },
-	{ Symbols_Command, "dspsymbols", "",
+	{ Symbols_Command, NULL,
+	  "dspsymbols", "",
 	  "load DSP symbols & their addresses",
 	  Symbols_Description,
 	  false },
-	{ DebugDsp_Register, "dspreg", "dr",
+	{ DebugDsp_Register, DebugDsp_MatchRegister,
+	  "dspreg", "dr",
 	  "read/write DSP registers",
 	  "[REG=value]"
 	  "\tSet or dump contents of DSP registers.",
 	  true },
-	{ DebugDsp_Continue, "dspcont", "dc",
+	{ DebugDsp_Continue, NULL,
+	  "dspcont", "dc",
 	  "continue emulation / DSP single-stepping",
 	  "[steps]\n"
 	  "\tLeave debugger and continue emulation for <steps> DSP instructions\n"

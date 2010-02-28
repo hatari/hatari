@@ -211,6 +211,37 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 
 
 /**
+ * Readline match callback to list register names usable within debugger.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+static char *DebugCpu_MatchRegister(const char *text, int state)
+{
+	static const char regs[][3] = {
+		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
+		"pc", "sr"
+	};
+	static int i, len;
+	
+	if (!state)
+	{
+		/* first match */
+		i = 0;
+		len = strlen(text);
+		if (len > 2)
+			return NULL;
+	}
+	/* next match */
+	while (i < ARRAYSIZE(regs)) {
+		if (strncasecmp(regs[i++], text, len) == 0)
+			return (strdup(regs[i-1]));
+	}
+	return NULL;
+}
+
+
+/**
  * Set address of the named register to given argument.
  * Return register size in bits or zero for uknown register name.
  * Handles D0-7 data and A0-7 address registers, but not PC & SR
@@ -502,54 +533,65 @@ void DebugCpu_SetDebugging(void)
 
 static const dbgcommand_t cpucommands[] =
 {
-	{ NULL, "CPU commands", NULL, NULL, NULL, false },
-	{ DebugCpu_BreakAddr, "address", "a",
+	{ NULL, NULL, "CPU commands", NULL, NULL, NULL, false },
+	/* NULL as match function will complete file names */
+	{ DebugCpu_BreakAddr, Symbols_MatchCpuCodeAddress,
+	  "address", "a",
 	  "set CPU PC address breakpoints",
 	  BreakAddr_Description,
 	  true	},
-	{ DebugCpu_BreakCond, "breakpoint", "b",
+	{ DebugCpu_BreakCond, BreakCond_MatchCpuVariable,
+	  "breakpoint", "b",
 	  "set/remove/list conditional CPU breakpoints",
 	  BreakCond_Description,
 	  true },
-	{ DebugCpu_DisAsm, "disasm", "d",
+	{ DebugCpu_DisAsm, Symbols_MatchCpuCodeAddress,
+	  "disasm", "d",
 	  "disassemble from PC, or given address",
 	  "[<start address>[-<end address>]]\n"
 	  "\tIf no address is given, this command disassembles from the last\n"
 	  "\tposition or from current PC if no last position is available.",
 	  false },
-	{ DebugCpu_Register, "cpureg", "r",
+	{ DebugCpu_Register, DebugCpu_MatchRegister,
+	  "cpureg", "r",
 	  "dump register values or set register to value",
 	  "[REG=value]\n"
 	  "\tSet CPU register to value or dumps all register if no parameter\n"
 	  "\thas been specified.",
 	  true },
-	{ DebugCpu_MemDump, "memdump", "m",
+	{ DebugCpu_MemDump, Symbols_MatchCpuDataAddress,
+	  "memdump", "m",
 	  "dump memory",
 	  "[<start address>[-<end address>]]\n"
 	  "\tdump memory at address or continue dump from previous address.",
 	  false },
-	{ DebugCpu_MemWrite, "memwrite", "w",
+	{ DebugCpu_MemWrite, Symbols_MatchCpuAddress,
+	  "memwrite", "w",
 	  "write bytes to memory",
 	  "address byte1 [byte2 ...]\n"
 	  "\tWrite bytes to a memory address, bytes are space separated\n"
 	  "\thexadecimals.",
 	  false },
-	{ DebugCpu_LoadBin, "loadbin", "l",
+	{ DebugCpu_LoadBin, NULL,
+	  "loadbin", "l",
 	  "load a file into memory",
 	  "filename address\n"
 	  "\tLoad the file <filename> into memory starting at <address>.",
 	  false },
-	{ DebugCpu_SaveBin, "savebin", "s",
+	{ DebugCpu_SaveBin, NULL,
+	  "savebin", "s",
 	  "save memory to a file",
 	  "filename address length\n"
 	  "\tSave the memory block at <address> with given <length> to\n"
 	  "\tthe file <filename>.",
 	  false },
-	{ Symbols_Command, "symbols", "",
+	{ Symbols_Command, NULL,
+	  "symbols", "",
 	  "load CPU symbols & their addresses",
 	  Symbols_Description,
 	  false },
-	{ DebugCpu_Continue, "cont", "c",
+	{ DebugCpu_Continue, NULL,
+	  "cont", "c",
 	  "continue emulation / CPU single-stepping",
 	  "[steps]\n"
 	  "\tLeave debugger and continue emulation for <steps> CPU instructions\n"

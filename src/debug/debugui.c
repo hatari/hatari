@@ -420,11 +420,10 @@ void DebugUI_PrintCmdHelp(const char *psCmd)
 	{
 		if (!debugCommand[i].pFunction)
 			continue;
-		if (!strcmp(psCmd, cmd->sLongName)
-		    || (cmd->sShortName && *(cmd->sShortName)
-			&& !strcmp(psCmd, cmd->sShortName)))
+		if ((*(cmd->sShortName) && !strcmp(psCmd, cmd->sShortName))
+		    || !strcmp(psCmd, cmd->sLongName))
 		{
-			bool bShort = cmd->sShortName && *(cmd->sShortName);
+			bool bShort = *(cmd->sShortName);
 			/* ... and print help text */
 			if (bShort)
 			{
@@ -518,8 +517,8 @@ static int DebugUI_ParseCommand(char *input)
 	{
 		if (!debugCommand[i].pFunction)
 			continue;
-		if (!strcmp(psArgs[0], debugCommand[i].sLongName) ||
-		    !strcmp(psArgs[0], debugCommand[i].sShortName))
+		if (!strcmp(psArgs[0], debugCommand[i].sShortName) ||
+		    !strcmp(psArgs[0], debugCommand[i].sLongName))
 		{
 			cmd = i;
 			break;
@@ -562,7 +561,6 @@ static int DebugUI_ParseCommand(char *input)
 }
 
 
-#if HAVE_LIBREADLINE
 /* See "info:readline" e.g. in Konqueror for readline usage. */
 
 /**
@@ -593,6 +591,7 @@ static char *DebugUI_MatchCommand(const char *text, int state)
 }
 
 
+#if HAVE_LIBREADLINE
 /**
  * Readline match callback returning last result.
  */
@@ -608,44 +607,7 @@ static char *DebugUI_MatchLast(const char *text, int state)
  */
 static char **DebugUI_Completion(const char *text, int a, int b)
 {
-	struct {
-		const char *name;
-		char* (*match)(const char *, int);
-	} cmd[] = {
-		{ "a", Symbols_MatchCpuCodeAddress },
-		{ "address", Symbols_MatchCpuCodeAddress },
-		{ "b", BreakCond_MatchCpuVariable },
-		{ "breakpoint", BreakCond_MatchCpuVariable },
-		{ "cd", rl_filename_completion_function },
-		{ "da", Symbols_MatchDspCodeAddress },
-		{ "dspaddress", Symbols_MatchDspCodeAddress },
-		{ "db", BreakCond_MatchDspVariable },
-		{ "dspbreak", BreakCond_MatchDspVariable },
-		{ "dspsymbols", rl_filename_completion_function },
-		{ "e", Symbols_MatchCpuAddress },
-		{ "evaluate", Symbols_MatchCpuAddress },
-		{ "exec", rl_filename_completion_function },
-		{ "f", rl_filename_completion_function },
-		{ "h", DebugUI_MatchCommand },
-		{ "help", DebugUI_MatchCommand },
-		{ "i", DebugInfo_MatchInfo },
-		{ "info", DebugInfo_MatchInfo },
-		{ "lock", DebugInfo_MatchLock },
-		{ "logfile", rl_filename_completion_function },
-		{ "l", rl_filename_completion_function },
-		{ "loadbin", rl_filename_completion_function },
-		{ "parse", rl_filename_completion_function },
-		{ "s", rl_filename_completion_function },
-		{ "savebin", rl_filename_completion_function },
-		{ "stateload", rl_filename_completion_function },
-		{ "statesave", rl_filename_completion_function },
-		{ "symbols", rl_filename_completion_function },
-		{ "o", Opt_MatchOption },
-		{ "setopt", Opt_MatchOption },
-		{ "t", Log_MatchTrace },
-		{ "trace", Log_MatchTrace }
-	};
-	int i, quotes, end, start = 0;
+	int i, cmd, quotes, end, start = 0;
 	char *str, buf[32];
 	size_t len;
 
@@ -687,14 +649,29 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 	}
 
 	/* do command argument completion */
-	for (i = 0; i < ARRAYSIZE(cmd); i++)
+	cmd = -1;
+	for (i = 0; i < debugCommands; i++)
 	{
-		if (strcmp(buf, cmd[i].name) == 0)
-			return rl_completion_matches(text, cmd[i].match);
+		if (!debugCommand[i].pFunction)
+			continue;
+		if (!strcmp(buf, debugCommand[i].sShortName) ||
+		    !strcmp(buf, debugCommand[i].sLongName))
+		{
+			cmd = i;
+			break;
+		}
 	}
-	rl_attempted_completion_over = true;
-	return NULL;
+	if (cmd < 0)
+	{
+		rl_attempted_completion_over = true;
+		return NULL;
+	}
+	if (debugCommand[cmd].pMatch)
+		return rl_completion_matches(text, debugCommand[cmd].pMatch);
+	else
+		return rl_completion_matches(text, rl_filename_completion_function);
 }
+
 
 /**
  * Read a command line from the keyboard and return a pointer to the string.
@@ -750,13 +727,16 @@ static char *DebugUI_GetCommand(void)
 
 static const dbgcommand_t uicommand[] =
 {
-	{ NULL, "Generic commands", NULL, NULL, NULL, false },
-	{ DebugUI_ChangeDir, "cd", "",
+	{ NULL, NULL, "Generic commands", NULL, NULL, NULL, false },
+	/* NULL as match function will complete file names */
+	{ DebugUI_ChangeDir, NULL,
+	  "cd", "",
 	  "change directory",
 	  "<directory>\n"
 	  "\tChange Hatari work directory.",
 	  false },
-	{ DebugUI_Evaluate, "evaluate", "e",
+	{ DebugUI_Evaluate, Symbols_MatchCpuAddress,
+	  "evaluate", "e",
 	  "evaluate an expression",
 	  "<expression>\n"
 	  "\tEvaluate an expression and show the result.  Expression can\n"
@@ -769,40 +749,47 @@ static const dbgcommand_t uicommand[] =
 	  "\tResult value is shown as binary, decimal and hexadecimal.\n"
 	  "\tAfter this, '$' will TAB-complete to last result value.",
 	  true },
-	{ DebugUI_Exec, "exec", "",
+	{ DebugUI_Exec, NULL,
+	  "exec", "",
 	  "execute a shell command",
 	  "<command line>\n"
 	  "\tRun the given command with the system shell.",
 	  true },
-	{ DebugUI_Help, "help", "h",
+	{ DebugUI_Help, DebugUI_MatchCommand,
+	  "help", "h",
 	  "print help",
 	  "[command]\n"
 	  "\tPrint help text for available commands.",
 	  false },
-	{ DebugInfo_Command, "info", "i",
+	{ DebugInfo_Command, DebugInfo_MatchInfo,
+	  "info", "i",
 	  "show machine/OS information",
 	  "[subject [arg]]\n"
 	  "\tPrint information on requested subject or list them if\n"
 	  "\tno subject given.",
 	  false },
-	{ DebugInfo_Command, "lock", "",
+	{ DebugInfo_Command, DebugInfo_MatchLock,
+	  "lock", "",
 	  "lock info to show on entering debugger",
 	  "[subject [args]]\n"
 	  "\tLock requested information to be shown every time debugger\n"
 	  "\tis entered or list available options if no subject's given.",
 	  false },
-	{ DebugUI_SetLogFile, "logfile", "f",
+	{ DebugUI_SetLogFile, NULL,
+	  "logfile", "f",
 	  "open or close log file",
 	  "[filename]\n"
 	  "\tOpen log file, no argument closes the log file. Output of\n"
 	  "\tregister & memory dumps and disassembly will be written to it.",
 	  false },
-	{ DebugUI_CommandsFromFile, "parse", "p",
+	{ DebugUI_CommandsFromFile, NULL,
+	  "parse", "p",
 	  "get debugger commands from file",
 	  "[filename]\n"
 	  "\tRead debugger commands from given file and do them.",
 	  false },
-	{ DebugUI_SetOptions, "setopt", "o",
+	{ DebugUI_SetOptions, Opt_MatchOption,
+	  "setopt", "o",
 	  "set Hatari command line and debugger options",
 	  "[<bin|dec|hex>|<command line options>]\n"
 	  "\tSet Hatari options. For example to enable exception catching,\n"
@@ -810,23 +797,27 @@ static const dbgcommand_t uicommand[] =
 	  "\t'bin', 'dec' and 'hex' arguments change the default number base\n"
 	  "\tused in debugger.",
 	  false },
-	{ DebugUI_DoMemorySnap, "stateload", "",
+	{ DebugUI_DoMemorySnap, NULL,
+	  "stateload", "",
 	  "restore emulation state",
 	  "[filename]\n"
 	  "\tRestore emulation snapshot from default or given file",
 	  false },
-	{ DebugUI_DoMemorySnap, "statesave", "",
+	{ DebugUI_DoMemorySnap, NULL,
+	  "statesave", "",
 	  "save emulation state",
 	  "[filename]\n"
 	  "\tSave emulation snapshot to default or given file",
 	  false },
-	{ DebugUI_SetTracing, "trace", "t",
+	{ DebugUI_SetTracing, Log_MatchTrace,
+	  "trace", "t",
 	  "select Hatari tracing settings",
 	  "[set1,set2...]\n"
 	  "\tSelect Hatari tracing settings. For example to enable CPU\n"
 	  "\tdisassembly and VBL tracing, use:  trace cpu_disasm,video_hbl",
 	  false },
-	{ DebugUI_QuitEmu, "quit", "q",
+	{ DebugUI_QuitEmu, NULL,
+	  "quit", "q",
 	  "quit emulator",
 	  "\n"
 	  "\tLeave debugger and quit emulator.",

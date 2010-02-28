@@ -13,6 +13,7 @@
 typedef struct
 {
 	int (*pFunction)(int argc, char *argv[]);
+	char* (*pMatch)(const char *, int);
 	const char *sLongName;
 	const char *sShortName;
 	const char *sShortDesc;
