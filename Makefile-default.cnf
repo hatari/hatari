@@ -34,7 +34,7 @@ CFLAGS := -g $(WARNFLAGS) $(OPTFLAGS)
 CPPFLAGS ?=
 
 # Additional libraries and linker flags:
-LIBS = -lz  # -lreadline
+LIBS = -lz -lm # -lreadline
 LDFLAGS ?=
 
 # Ranlib - for generating an index of an archive
