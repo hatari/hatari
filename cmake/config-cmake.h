@@ -63,13 +63,3 @@
 
 /* Define to 1 to enable trace logs - undefine to slightly increase speed */
 #cmakedefine ENABLE_TRACING 1
-
-
-/* Define to the full name of this package. */
-#define PACKAGE_NAME "hatari"
-
-/* Define to the full name and version of this package. */
-#define PACKAGE_STRING "hatari devel"
-
-/* Define to the version of this package. */
-#define PACKAGE_VERSION "devel"
