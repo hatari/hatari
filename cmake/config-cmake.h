@@ -53,7 +53,7 @@
 
 
 /* Relative path from bindir to datadir */
-#define BIN2DATADIR "."
+#define BIN2DATADIR "@BIN2DATADIR@"
 
 /* Define to 1 to enable DSP 56k emulation for Falcon mode */
 #cmakedefine ENABLE_DSP_EMU 1

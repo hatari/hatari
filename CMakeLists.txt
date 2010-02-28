@@ -29,10 +29,10 @@ set(ENABLE_SMALL_MEM 0
 
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
-        CACHE BOOL "Built Hatari as Mac OS X application bundle")
+	    CACHE BOOL "Built Hatari as Mac OS X application bundle")
 else()
 	set(ENABLE_OSX_BUNDLE 0
-        CACHE BOOL "Built Hatari as Mac OS X application bundle")
+	    CACHE BOOL "Built Hatari as Mac OS X application bundle")
 endif(APPLE)
 
 # ####################
@@ -141,6 +141,20 @@ if(NOT DATADIR)
 	set(DATADIR share/hatari)
 endif()
 
+if(NOT BIN2DATADIR)
+	if(WIN32)
+		set(BIN2DATADIR "."
+		    CACHE STRING "Relative path from bindir to datadir")
+	elseif(ENABLE_OSX_BUNDLE)
+		set(BIN2DATADIR "../Resources"
+		    CACHE STRING "Relative path from bindir to datadir")
+	else()
+		set(BIN2DATADIR "../share/hatari"
+		    CACHE STRING "Relative path from bindir to datadir")
+	endif(WIN32)
+	mark_as_advanced(BIN2DATADIR)
+endif()
+
 if(NOT MANDIR)
 	set(MANDIR share/man/man1)
 endif()
@@ -153,7 +167,7 @@ endif()
 # Create config.h and recurse into subdirs:
 # #########################################
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/config-cmake.h
+configure_file(${CMAKE_SOURCE_DIR}/cmake/config-cmake.h
 		${CMAKE_BINARY_DIR}/config.h)
 
 add_subdirectory(src)
