@@ -389,7 +389,14 @@ static int DebugUI_CommandsFromFile(int argc, char *argv[])
 static int DebugUI_Exec(int argc, char *argv[])
 {
 	if (argc == 2)
-		system(argv[1]);
+	{
+		int ret = system(argv[1]);
+		if (ret)
+		{
+			/* error -> show return code */
+			fprintf(stderr, "Error code = %d\n", ret);
+		}
+	}
 	else
 		DebugUI_PrintCmdHelp(argv[0]);
 	return DEBUGGER_CMDDONE;
@@ -953,7 +960,12 @@ static bool DebugUI_ParseFile(const char *path)
 	/* change to directory where the debugger file resides */
 	dir = strdup(path);
 	File_MakeValidPathName(dir);
-	chdir(dir);
+	if (chdir(dir))
+	{
+		perror("ERROR");
+		free(dir);
+		return false;
+	}
 	free(dir);
 
 	input = malloc(256);
