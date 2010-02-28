@@ -172,6 +172,7 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/config-cmake.h
 
 add_subdirectory(src)
 add_subdirectory(doc)
+add_subdirectory(tools)
 
 include(FindPythonInterp)
 if(PYTHONINTERP_FOUND)
