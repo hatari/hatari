@@ -1,11 +1,30 @@
 # Makefile configuration for Hatari.
-# This is a sample configuriation for MinGW.
+# This is a sample configuration for MinGW used as a native compiler
+# under windows or as a cross compiler under linux.
 # Rename this file to Makefile.cnf before you start compiling.
+#
+# You can change BUILD_HOST to :
+#  windows : use mingw as a native compiler under windows
+#  linux : use mingw as a cross compiler for windows under linux
+#
+# If you choose BUILD_HOST=linux, you should adapt MINGW_PREFIX to match
+# the naming used by your distribution.
+
+
+# Change this to windows or linux, depending on the OS used to build Hatari
+BUILD_HOST = linux
+
+ifeq ($(BUILD_HOST),linux)
+	MINGW_PREFIX = i586-pc-mingw32-
+else
+	MINGW_PREFIX =
+endif
+
 
 SYS_WINDOWS = 1
 
 # Set the C compiler (e.g. gcc)
-CC = gcc
+CC = $(MINGW_PREFIX)gcc
 
 # What warnings to use
 WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
@@ -23,7 +42,7 @@ LIBS = -lz -lws2_32
 LDFLAGS = -mwindows
 
 # Ranlib - for generating an index of an archive
-RANLIB = ranlib
+RANLIB = $(MINGW_PREFIX)ranlib
 
 
 # The native C compiler.
@@ -36,10 +55,19 @@ HOSTCFLAGS = -g -O -Wall
 # Native linker flags:
 HOSTLDFLAGS =
 
+# The windres binary
+WINDRES = $(MINGW_PREFIX)windres
+
 
 # SDL-Library configuration (compiler flags and linker options) - you normally
 # don't have to change this if you have correctly installed the SDL library!
-SDL_CFLAGS ?= -I/mingw/include/SDL
+#
+ifeq ($(BUILD_HOST),linux)
+	# Look for include in sys-root
+	SDL_CFLAGS ?= -I=/mingw/include/SDL
+else
+	SDL_CFLAGS ?= -I/mingw/include/SDL
+endif
 SDL_LIBS ?= -lmingw32 -lSDLmain -lSDL
 
 

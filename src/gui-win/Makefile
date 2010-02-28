@@ -12,7 +12,7 @@ gui-win.a: $(GUIWINOBJS)
 	$(RANLIB) $@
 
 hatari-winicon.o:
-	windres -o hatari-winicon.o hatari-winicon.rc
+	$(WINDRES) -o hatari-winicon.o hatari-winicon.rc
 
 clean distclean:
 	$(RM) *.o
