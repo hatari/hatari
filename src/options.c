@@ -277,7 +277,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_TRACEFILE, NULL, "--trace-file",
 	  "<file>", "Save trace output to <file> (default=stderr)" },
 	{ OPT_PARSE, NULL, "--parse",
-	  "<file>", "Parse/do debugger commands from <file>" },
+	  "<file>", "Parse/execute debugger commands from <file>" },
 #if HAVE_UNIX_DOMAIN_SOCKETS
 	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
 	  "<file>", "Hatari reads options from given socket at run-time" },

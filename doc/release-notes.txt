@@ -51,6 +51,8 @@ Emulator:
 - Major debugger improvements:
   - debugger command, command argument and symbol name TAB-completion
     support. Requires readline library
+  - "parse" command and --parse Hatari command line option to
+    execute debugger commands from a file
   - "stateload" and "statesave" commands for memory snapshots
   - "trace" command for tracing what the emulated code does
     - GEMDOS tracing gives slightly more information
@@ -61,7 +63,7 @@ Emulator:
     names in expressions are replaced by their values. '$' will be
     TAB-completed to last 'evaluate' command result
   - "cd" command to change Hatari work directory
-  " "exec" command to execute shell commands
+  - "exec" command to execute shell commands
   - "info" command for showing Atari HW and OS information
   - "lock" command for setting what information is shown every time on
     entering the debugger, e.g. disassembly or memdump from given address.

@@ -1300,6 +1300,36 @@ Activate debug traces, see <b>--trace help</b> for available tracing options
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
+<b>--trace-file &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Save trace output to &lt;file&gt; (default=stderr)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--parse &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Parse/execute debugger commands from &lt;file&gt;
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
 <b>--control-socket &lt;file&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -2483,6 +2513,7 @@ Generic commands:
          info ( i) : show machine/OS information
          lock (  ) : lock info to show on entering debugger
       logfile ( f) : open or close log file
+        parse ( p) : get debugger commands from file
        setopt ( o) : set Hatari command line and debugger options
     stateload (  ) : restore emulation state
     statesave (  ) : save emulation state
