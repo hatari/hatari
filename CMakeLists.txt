@@ -44,6 +44,8 @@ if(NOT SDL_FOUND)
 	message(FATAL_ERROR "SDL library not found!")
 endif(NOT SDL_FOUND)
 
+find_package(Math)
+
 find_package(Readline)
 if(READLINE_FOUND)
 	set(CMAKE_REQUIRED_LIBRARIES "readline")

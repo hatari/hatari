@@ -56,6 +56,10 @@ endif(ENABLE_OSX_BUNDLE)
 
 target_link_libraries(hatari Debug Falcon GuiSdl UaeCpu ${SDL_LIBRARY})
 
+if(MATH_FOUND)
+	target_link_libraries(hatari ${MATH_LIBRARY})
+endif(MATH_FOUND)
+
 if(SDLMAIN_LIBRARY)
 	target_link_libraries(hatari ${SDLMAIN_LIBRARY})
 endif(SDLMAIN_LIBRARY)
