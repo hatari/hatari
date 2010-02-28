@@ -12,7 +12,7 @@
 
 
 # Change this to windows or linux, depending on the OS used to build Hatari
-BUILD_HOST = linux
+BUILD_HOST = windows
 
 ifeq ($(BUILD_HOST),linux)
 	MINGW_PREFIX = i586-pc-mingw32-
