@@ -1460,24 +1460,19 @@ const char BreakCond_Description[] =
 bool BreakCond_Command(const char *args, bool bForDsp)
 {
 	bool trace, once, ret = true;
-	char *cut, *expression;
+	char *cut, *expression, *argscopy;
 	unsigned int position;
 	const char *end;
 	int skip;
-
-	if (bForDsp && !bDspEnabled) {
-		fprintf(stderr, "ERROR: DSP not enabled!\n");
-		return false;
-	}
 	
 	if (!args) {
 		BreakCond_List(bForDsp);
 		return true;
 	}
-	expression = strdup(args);
-	assert(expression);
+	argscopy = strdup(args);
+	assert(argscopy);
 	
-	expression = Str_Trim(expression);
+	expression = Str_Trim(argscopy);
 	
 	/* subcommands */
 	if (strncmp(expression, "help", 4) == 0) {
@@ -1486,6 +1481,11 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	}
 	if (strcmp(expression, "all") == 0) {
 		BreakCond_RemoveAll(bForDsp);
+		goto cleanup;
+	}
+
+	if (bForDsp && !bDspEnabled) {
+		fprintf(stderr, "ERROR: DSP not enabled!\n");
 		goto cleanup;
 	}
 
@@ -1523,7 +1523,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		ret = BreakCond_Parse(expression, bForDsp, trace, once, skip);
 	}
 cleanup:
-	free(expression);
+	free(argscopy);
 	return ret;
 }
 
