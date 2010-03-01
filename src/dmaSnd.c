@@ -17,8 +17,6 @@
 
   Falcon sound emulation is all taken into account in crossbar.c
 
-  The microwire interface is not emulated (yet).
-
   Hardware I/O registers:
 
     $FF8900 (word) : DMA sound control register
@@ -34,7 +32,48 @@
     $FF8920 (word) : Sound Mode Control (frequency, mono/stereo)
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
+
+  
+  The Microwire and LMC 1992 commands :
+    
+    a command looks like: 10 CCC DDD DDD
+    
+    chipset address : 10
+    command : 
+	000 XXX XDD Mixing
+		00 : -12 dB
+		01 : Sample and YM2149 mixing
+		02 : Sample only
+		03 : Reserved
+
+	001 XXD DDD Bass
+		0 000 : -12 dB
+		0 110 :   0 dB
+		1 100 : +12 dB
+      
+	002 XXD DDD Treble
+		0 000 : -12 dB
+		0 110 :   0 dB
+		1 100 : +12 dB
+
+	003 DDD DDD Master
+		000 000 : -80 dB
+		010 100 : -40 dB
+		101 XXX :   0 dB
+	
+	004 XDD DDD Right channel volume
+		00 000 : -40 dB
+		01 010 : -20 dB
+		10 1XX :   0 dB
+
+	005 XDD DDD  Left channel volume
+		00 000 : -40 dB
+		01 010 : -20 dB
+		10 1XX :   0 dB
+	      
+	Other : undefined
 */
+
 const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
@@ -51,22 +90,37 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 
 Uint16 nDmaSoundControl;                /* Sound control register */
 
-static Uint16 nDmaSoundMode;            /* Sound mode register */
-static Uint16 nMicrowireData;           /* Microwire Data register */
-static Uint16 nMicrowireMask;           /* Microwire Mask register */
-static int nMwTransferSteps;
 
-static Uint32 nFrameStartAddr;          /* Sound frame start */
-static Uint32 nFrameEndAddr;            /* Sound frame end */
-static double FrameCounter;             /* Counter in current sound frame */
-static int nFrameLen;                   /* Length of the frame */
+struct dma_s {
+	Uint16 soundMode;		/* Sound mode register */
+	Uint32 frameStartAddr;		/* Sound frame start */
+	Uint32 frameEndAddr;		/* Sound frame end */
+	double frameCounter;		/* Counter in current sound frame */
+	int frameLen;			/* Length of the frame */
+};
+
+struct microwire_s {
+	Uint16 data;			/* Microwire Data register */
+	Uint16 mask;			/* Microwire Mask register */
+	int mwTransferSteps;		/* Microwire shifting counter */
+	Uint16 mixing;			/* Mixing command */
+	Uint16 bass;			/* Bass command */
+	Uint16 treble;			/* Treble command */
+	Uint16 master;			/* Master command */
+	Uint16 leftVolume;		/* Left channel volume command */
+	Uint16 rightVolume;		/* Right channel volume command */
+};
+
+static struct dma_s dma;
+static struct microwire_s microwire;
+
 
 static const double DmaSndSampleRates[4] =
 {
-	6258,
-	12517,
-	25033,
-	50066
+	6258.0,
+	12517.0,
+	25033.0,
+	50066.0
 };
 
 
@@ -80,10 +134,10 @@ void DmaSnd_Reset(bool bCold)
 
 	if (bCold)
 	{
-		nDmaSoundMode = 0;
+		dma.soundMode = 0;
 	}
 
-	nMwTransferSteps = 0;
+	microwire.mwTransferSteps = 0;
 }
 
 
@@ -95,20 +149,14 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&nDmaSoundControl, sizeof(nDmaSoundControl));
-	MemorySnapShot_Store(&nDmaSoundMode, sizeof(nDmaSoundMode));
-	MemorySnapShot_Store(&nFrameStartAddr, sizeof(nFrameStartAddr));
-	MemorySnapShot_Store(&nFrameEndAddr, sizeof(nFrameEndAddr));
-	MemorySnapShot_Store(&FrameCounter, sizeof(FrameCounter));
-	MemorySnapShot_Store(&nFrameLen, sizeof(nFrameLen));
-	MemorySnapShot_Store(&nMicrowireData, sizeof(nMicrowireData));
-	MemorySnapShot_Store(&nMicrowireMask, sizeof(nMicrowireMask));
-	MemorySnapShot_Store(&nMwTransferSteps, sizeof(nMwTransferSteps));
+	MemorySnapShot_Store(&dma, sizeof(dma));
+	MemorySnapShot_Store(&microwire, sizeof(microwire));
 }
 
 
 static double DmaSnd_DetectSampleRate(void)
 {
-	return DmaSndSampleRates[nDmaSoundMode & 3];
+	return DmaSndSampleRates[dma.soundMode & 3];
 }
 
 
@@ -122,23 +170,23 @@ static void DmaSnd_StartNewFrame(void)
 {
 	int nCyclesForFrame;
 
-	nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
-	nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
+	dma.frameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
+	dma.frameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
 
-	FrameCounter = 0;
-	nFrameLen = nFrameEndAddr - nFrameStartAddr;
+	dma.frameCounter = 0;
+	dma.frameLen = dma.frameEndAddr - dma.frameStartAddr;
 
-	if (nFrameLen <= 0)
+	if (dma.frameLen <= 0)
 	{
 		Log_Printf(LOG_WARN, "DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
-		          nFrameStartAddr, nFrameEndAddr);
+		          dma.frameStartAddr, dma.frameEndAddr);
 		return;
 	}
 
 	/* To get smooth sound, set an "interrupt" for the end of the frame that
 	 * updates the sound mix buffer. */
-	nCyclesForFrame = nFrameLen * (((double)CPU_FREQ) / DmaSnd_DetectSampleRate());
-	if (!(nDmaSoundMode & DMASNDMODE_MONO))  /* Is it stereo? */
+	nCyclesForFrame = dma.frameLen * (((double)CPU_FREQ) / DmaSnd_DetectSampleRate());
+	if (!(dma.soundMode & DMASNDMODE_MONO))  /* Is it stereo? */
 		nCyclesForFrame = nCyclesForFrame / 2;
 	CycInt_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);
 }
@@ -150,9 +198,9 @@ static void DmaSnd_StartNewFrame(void)
  * Returns true if DMA sound processing should be stopped now and false
  * if it continues.
  */
-static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
+static inline int DmaSnd_CheckForEndOfFrame(int nframeCounter)
 {
-	if (nFrameCounter >= nFrameLen)
+	if (nframeCounter >= dma.frameLen)
 	{
 		/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
 		MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
@@ -193,10 +241,10 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY))
 		return;
 
-	pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
+	pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
 	FreqRatio = DmaSnd_DetectSampleRate() / (double)nAudioFrequency;
 
-	if (nDmaSoundMode & DMASNDMODE_MONO)  /* 8-bit stereo or mono? */
+	if (dma.soundMode & DMASNDMODE_MONO)  /* 8-bit stereo or mono? */
 	{
 		/* Mono 8-bit */
 		for (i = 0; i < nSamplesToGenerate; i++)
@@ -204,9 +252,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][1] =
 				(int)MixBuffer[nBufIdx][0]
-				+ 64 * (int)pFrameStart[(int)FrameCounter];
-			FrameCounter += FreqRatio;
-			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
+				+ 64 * (int)pFrameStart[(int)dma.frameCounter];
+			dma.frameCounter += FreqRatio;
+			if (DmaSnd_CheckForEndOfFrame(dma.frameCounter))
 				break;
 		}
 	}
@@ -217,13 +265,13 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			nFramePos = ((int)FrameCounter) & ~1;
+			nFramePos = ((int)dma.frameCounter) & ~1;
 			MixBuffer[nBufIdx][0] = (int)MixBuffer[nBufIdx][0]
 			                        + 64 * (int)pFrameStart[nFramePos];
 			MixBuffer[nBufIdx][1] = (int)MixBuffer[nBufIdx][1]
 			                        + 64 * (int)pFrameStart[nFramePos+1];
-			FrameCounter += FreqRatio;
-			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
+			dma.frameCounter += FreqRatio;
+			if (DmaSnd_CheckForEndOfFrame(dma.frameCounter))
 				break;
 		}
 	}
@@ -254,7 +302,7 @@ static Uint32 DmaSnd_GetFrameCount(void)
 	Uint32 nActCount;
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-		nActCount = nFrameStartAddr + (int)FrameCounter;
+		nActCount = dma.frameStartAddr + (int)dma.frameCounter;
 	else
 		nActCount = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | IoMem[0xff8907];
 
@@ -312,9 +360,9 @@ void DmaSnd_FrameCountLow_ReadByte(void)
  */
 void DmaSnd_SoundModeCtrl_ReadByte(void)
 {
-	IoMem_WriteByte(0xff8921, nDmaSoundMode);
+	IoMem_WriteByte(0xff8921, dma.soundMode);
 
-	LOG_TRACE(TRACE_DMASND, "DMA snd mode read: 0x%02x\n", nDmaSoundMode);
+	LOG_TRACE(TRACE_DMASND, "DMA snd mode read: 0x%02x\n", dma.soundMode);
 }
 
 
@@ -329,9 +377,9 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
 	/* STE or TT - hopefully STFM emulation never gets here :)
 	 * We maskout to only hit bits that exist on a real STE
 	 */
-	nDmaSoundMode = (IoMem_ReadByte(0xff8921)&0x8F);
+	dma.soundMode = (IoMem_ReadByte(0xff8921) & 0x8F);
 	/* we also write the masked value back into the emulated hw registers so we have a correct value there */
-	IoMem_WriteByte(0xff8921,nDmaSoundMode);
+	IoMem_WriteByte(0xff8921, dma.soundMode);
 }
 
 
@@ -347,12 +395,12 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
-	--nMwTransferSteps;
+	--microwire.mwTransferSteps;
 
 	/* Shift data register until it becomes zero. */
-	if (nMwTransferSteps > 1)
+	if (microwire.mwTransferSteps > 1)
 	{
-		IoMem_WriteWord(0xff8922, nMicrowireData<<(16-nMwTransferSteps));
+		IoMem_WriteWord(0xff8922, microwire.data<<(16-microwire.mwTransferSteps));
 	}
 	else
 	{
@@ -364,15 +412,50 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	}
 
 	/* Rotate mask register */
-	IoMem_WriteWord(0xff8924, (nMicrowireMask<<(16-nMwTransferSteps))
-	                          |(nMicrowireMask>>nMwTransferSteps));
+	IoMem_WriteWord(0xff8924, (microwire.mask<<(16-microwire.mwTransferSteps))
+	                          |(microwire.mask>>microwire.mwTransferSteps));
 
-	if (nMwTransferSteps > 0)
+	if (microwire.mwTransferSteps > 0)
 	{
 		CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
+	else {
+		/* The LMC 1992 address should be 10x xxx xxx */
+		if ((microwire.data & 0x600) != 0x400)
+			return;
+		
+		/* Update the LMC 1992 commands */
+		switch ((microwire.data >> 6) && 7) {
+			case 0:
+				/* Mixing command */
+				microwire.mixing = microwire.data & 0x3;
+				break;
+			case 1:
+				/* Bass command */
+				microwire.bass = microwire.data & 0xf;
+				break;
+			case 2: 
+				/* Treble command */
+				microwire.treble = microwire.data & 0xf;
+				break;
+			case 3:
+				/* Master command */
+				microwire.master = microwire.data & 0x3f;
+				break;
+			case 4:
+				/* Right channel volume */
+				microwire.rightVolume = microwire.data & 0x1f;
+				break;
+			case 5:
+				/* Left channel volume */
+				microwire.leftVolume = microwire.data & 0x1f;
+				break;
+			default:
+				/* Do nothing */
+				break;
+		}
+	}
 }
-
 
 /**
  * Read word from microwire data register (0xff8922).
@@ -390,11 +473,11 @@ void DmaSnd_MicrowireData_ReadWord(void)
 void DmaSnd_MicrowireData_WriteWord(void)
 {
 	/* Only update, if no shift is in progress */
-	if (!nMwTransferSteps)
+	if (!microwire.mwTransferSteps)
 	{
-		nMicrowireData = IoMem_ReadWord(0xff8922);
+		microwire.data = IoMem_ReadWord(0xff8922);
 		/* Start shifting events to simulate a microwire transfer */
-		nMwTransferSteps = 16;
+		microwire.mwTransferSteps = 16;
 		CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 
@@ -418,9 +501,9 @@ void DmaSnd_MicrowireMask_ReadWord(void)
 void DmaSnd_MicrowireMask_WriteWord(void)
 {
 	/* Only update, if no shift is in progress */
-	if (!nMwTransferSteps)
+	if (!microwire.mwTransferSteps)
 	{
-		nMicrowireMask = IoMem_ReadWord(0xff8924);
+		microwire.mask = IoMem_ReadWord(0xff8924);
 	}
 
 	LOG_TRACE(TRACE_DMASND, "Microwire mask write: 0x%x\n", IoMem_ReadWord(0xff8924));
