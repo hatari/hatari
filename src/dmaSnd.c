@@ -425,7 +425,7 @@ void DmaSnd_InterruptHandler_Microwire(void)
 			return;
 		
 		/* Update the LMC 1992 commands */
-		switch ((microwire.data >> 6) && 7) {
+		switch ((microwire.data >> 6) & 7) {
 			case 0:
 				/* Mixing command */
 				microwire.mixing = microwire.data & 0x3;
