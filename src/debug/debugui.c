@@ -59,11 +59,36 @@ static bool DebugUI_ParseFile(const char *path);
 /**
  * Save/Restore snapshot of debugging session variables
  */
-void DebugUI_MemorySnapShot_Capture(bool bSave)
+void DebugUI_MemorySnapShot_Capture(const char *path, bool bSave)
 {
+	char *filename;
+	
 	DebugCpu_MemorySnapShot_Capture(bSave);
 	DebugDsp_MemorySnapShot_Capture(bSave);
-	BreakCond_MemorySnapShot_Capture(bSave);
+
+	filename = malloc(strlen(path) + strlen(".break") + 1);
+	assert(filename);
+	strcpy(filename, path);
+	strcat(filename, ".break");
+	
+	if (bSave)
+	{
+		/* save breakpoints as debugger input file */
+		BreakCond_Save(filename);
+	}
+	else
+	{
+		/* remove current CPU and DSP breakpoints */
+		BreakCond_Command("all", false);
+		BreakCond_Command("all", true);
+
+		if (File_Exists(filename))
+		{
+			/* and parse back the saved breakpoints */
+			DebugUI_ParseFile(filename);
+		}
+	}
+	free(filename);
 }
 
 
@@ -991,6 +1016,9 @@ static bool DebugUI_ParseFile(const char *path)
 	}
 
 	free(input);
+
+	DebugCpu_SetDebugging();
+	DebugDsp_SetDebugging();
 	return true;
 }
 

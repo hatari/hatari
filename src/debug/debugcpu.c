@@ -46,8 +46,6 @@ void DebugCpu_MemorySnapShot_Capture(bool bSave)
 {
 	MemorySnapShot_Store(&disasm_addr, sizeof(disasm_addr));
 	MemorySnapShot_Store(&memdump_addr, sizeof(memdump_addr));
-	
-	MemorySnapShot_Store(&nCpuActiveCBs, sizeof(nCpuActiveCBs));
 }
 
 
@@ -358,7 +356,6 @@ error_msg:
 static int DebugCpu_BreakAddr(int nArgc, char *psArgs[])
 {
 	BreakAddr_Command(psArgs[1], false);
-	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -368,7 +365,6 @@ static int DebugCpu_BreakAddr(int nArgc, char *psArgs[])
 static int DebugCpu_BreakCond(int nArgc, char *psArgs[])
 {
 	BreakCond_Command(psArgs[1], false);
-	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -524,6 +520,7 @@ void DebugCpu_Check(void)
  */
 void DebugCpu_SetDebugging(void)
 {
+	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 	if (nCpuActiveCBs || nCpuSteps)
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	else

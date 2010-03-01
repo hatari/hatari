@@ -40,8 +40,6 @@ void DebugDsp_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&dsp_disasm_addr, sizeof(dsp_disasm_addr));
 	MemorySnapShot_Store(&dsp_memdump_addr, sizeof(dsp_memdump_addr));
 	MemorySnapShot_Store(&dsp_mem_space, sizeof(dsp_mem_space));
-	
-	MemorySnapShot_Store(&nDspActiveCBs, sizeof(nDspActiveCBs));
 }
 
 
@@ -306,7 +304,6 @@ static int DebugDsp_Continue(int nArgc, char *psArgv[])
 static int DebugDsp_BreakAddr(int nArgc, char *psArgs[])
 {
 	BreakAddr_Command(psArgs[1], true);
-	nDspActiveCBs = BreakCond_BreakPointCount(true);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -316,7 +313,6 @@ static int DebugDsp_BreakAddr(int nArgc, char *psArgs[])
 static int DebugDsp_BreakCond(int nArgc, char *psArgs[])
 {
 	BreakCond_Command(psArgs[1], true);
-	nDspActiveCBs = BreakCond_BreakPointCount(true);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -348,6 +344,7 @@ void DebugDsp_Check(void)
  */
 void DebugDsp_SetDebugging(void)
 {
+	nDspActiveCBs = BreakCond_BreakPointCount(true);
 	if (nDspActiveCBs || nDspSteps)
 		DSP_SetDebugging(true);
 	else

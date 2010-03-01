@@ -105,61 +105,40 @@ static bool BreakCond_Remove(int position, bool bForDsp);
 static void BreakCond_Print(bc_breakpoint_t *bp);
 
 
-/* --------------------- memory snapshot ------------------- */
-
 /**
- * Save/Restore snapshot of local breakpoint variables
+ * Save breakpoints as debugger input file
+ * return true for success, false for failure
  */
-void BreakCond_MemorySnapShot_Capture(bool bSave)
+bool BreakCond_Save(const char *filename)
 {
-	char tmp[256], **str;
-	int i, idx, count;
+	FILE *fp;
+	int i;
 
-	if (!bSave) {
-		/* free current data before restore */
-		for (i = 0; i < BreakPointCpuCount; i++) {
-			free(BreakPointsCpu[i].expression);
+	if (!(BreakPointCpuCount || BreakPointDspCount)) {
+		if (remove(filename)) {
+			perror("ERROR");
+			return false;
 		}
-		for (i = 0; i < BreakPointDspCount; i++) {
-			free(BreakPointsDsp[i].expression);
-		}
+		return true;
 	}
-	
-	/* save/restore arrays & counts */
-	MemorySnapShot_Store(&BreakPointCpuCount, sizeof(BreakPointCpuCount));
-	MemorySnapShot_Store(&BreakPointDspCount, sizeof(BreakPointDspCount));
-	MemorySnapShot_Store(&BreakPointsCpu, sizeof(BreakPointsCpu));
-	MemorySnapShot_Store(&BreakPointsDsp, sizeof(BreakPointsDsp));
 
-	/* save/restore dynamically allocated strings */
-	for (i = 0; i < 2*BC_MAX_CONDITION_BREAKPOINTS; i++) {
-		if (i >= BC_MAX_CONDITION_BREAKPOINTS) {
-			idx = i-BC_MAX_CONDITION_BREAKPOINTS;
-			str = &(BreakPointsDsp[idx].expression);
-			count = BreakPointDspCount;
-		} else {
-			idx = i;
-			str = &(BreakPointsCpu[idx].expression);
-			count = BreakPointCpuCount;
-		}
-		if (bSave) {
-			/* clean + zero-terminate, copy & save */
-			memset(tmp, 0, sizeof(tmp));
-			if (idx < count) {
-				strncpy(tmp, *str, sizeof(tmp)-1);
-			}
-			MemorySnapShot_Store(&tmp, sizeof(tmp));
-		} else {
-			MemorySnapShot_Store(&tmp, sizeof(tmp));
-			if (idx < count) {
-				*str = strdup(tmp);
-				assert(*str);
-			} else {
-				*str = NULL;
-			}
-		}
+	fprintf(stderr, "Saving breakpoints to '%s'...\n", filename);
+	fp = fopen(filename, "w");
+	if (!fp) {
+		perror("ERROR");
+		return false;
 	}
+	/* save conditional breakpoints as debugger input file */
+	for (i = 0; i < BreakPointCpuCount; i++) {
+		fprintf(fp, "b %s\n", BreakPointsCpu[i].expression);
+	}
+	for (i = 0; i < BreakPointDspCount; i++) {
+		fprintf(fp, "db %s\n", BreakPointsDsp[i].expression);
+	}
+	fclose(fp);
+	return true;
 }
+
 
 /* --------------------- debugging code ------------------- */
 

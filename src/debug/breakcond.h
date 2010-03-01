@@ -9,7 +9,7 @@
 #define HATARI_BREAKCOND_H
 
 /* for debugui.c */
-extern void BreakCond_MemorySnapShot_Capture(bool bSave);
+extern bool BreakCond_Save(const char *filename);
 extern char *BreakCond_MatchCpuVariable(const char *text, int state);
 extern char *BreakCond_MatchDspVariable(const char *text, int state);
 
