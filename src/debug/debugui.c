@@ -62,14 +62,11 @@ static bool DebugUI_ParseFile(const char *path);
 void DebugUI_MemorySnapShot_Capture(const char *path, bool bSave)
 {
 	char *filename;
-	
-	DebugCpu_MemorySnapShot_Capture(bSave);
-	DebugDsp_MemorySnapShot_Capture(bSave);
 
-	filename = malloc(strlen(path) + strlen(".break") + 1);
+	filename = malloc(strlen(path) + strlen(".debug") + 1);
 	assert(filename);
 	strcpy(filename, path);
-	strcat(filename, ".break");
+	strcat(filename, ".debug");
 	
 	if (bSave)
 	{

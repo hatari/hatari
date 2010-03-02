@@ -34,17 +34,6 @@ static int nDspSteps = 0;         /* Amount of steps for DSP single-stepping */
 
 
 /**
- * Save/Restore snapshot of debugging session variables
- */
-void DebugDsp_MemorySnapShot_Capture(bool bSave)
-{
-	MemorySnapShot_Store(&dsp_disasm_addr, sizeof(dsp_disasm_addr));
-	MemorySnapShot_Store(&dsp_memdump_addr, sizeof(dsp_memdump_addr));
-	MemorySnapShot_Store(&dsp_mem_space, sizeof(dsp_mem_space));
-}
-
-
-/**
  * Readline match callback to list register names usable within debugger.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.

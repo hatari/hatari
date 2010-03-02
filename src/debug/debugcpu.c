@@ -39,16 +39,6 @@ static int nCpuSteps = 0;      /* Amount of steps for CPU single-stepping */
 
 
 /**
- * Save/Restore snapshot of CPU debugging session variables
- */
-void DebugCpu_MemorySnapShot_Capture(bool bSave)
-{
-	MemorySnapShot_Store(&disasm_addr, sizeof(disasm_addr));
-	MemorySnapShot_Store(&memdump_addr, sizeof(memdump_addr));
-}
-
-
-/**
  * Load a binary file to a memory address.
  */
 static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
