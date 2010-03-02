@@ -5,7 +5,7 @@
 # devices and changing Hatari command line options (even for things you
 # cannot change from the UI) from the console while Hatari is running.
 #
-# Copyright (C) 2008-2009 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -184,6 +184,12 @@ option_tokens = [
     "--avi-fps",
     "--avi-crop",
     "--avi-file",
+    "--joy0",
+    "--joy1",
+    "--joy2",
+    "--joy3",
+    "--joy4",
+    "--joy5",
     "--joystick",
     "--printer",
     "--midi-in",
@@ -207,6 +213,7 @@ option_tokens = [
     "--compatible",
     "--machine",
     "--blitter",
+    "--timer-d",
     "--dsp",
     "--sound",
     "--keymap",
@@ -214,6 +221,7 @@ option_tokens = [
     "--bios-intercept",
     "--trace",
     "--trace-file",
+    "--parse",
     "--log-file",
     "--log-level",
     "--alert-level",
@@ -254,6 +262,7 @@ path_tokens = [
 debugger_tokens = [
     "address",
     "breakpoint",
+    "cd",
     "cont",
     "cpureg",
     "disasm",
@@ -263,13 +272,22 @@ debugger_tokens = [
     "dspdisasm",
     "dspmemdump",
     "dspreg",
+    "dspsymbols",
+    "evaluate",
+    "exec",
     "help",
+    "info",
     "loadbin",
+    "lock",
     "logfile",
     "memdump",
     "memwrite",
+    "parse",
     "savebin",
     "setopt",
+    "stateload",
+    "statesave",
+    "symbols",
     "trace"
 ]
 
@@ -284,9 +302,11 @@ def show_help():
 Hatari-console help
 -------------------
 
-Hatari-console allows you to invoke Hatari remote configuration facilities
-from console while Hatari is running and use TAB completion on their names.
-The supported facilities are:"""
+Hatari-console allows you to control Hatari through its control socket
+from the provided console prompt, while Hatari is running.  All control
+commands support TAB completion on their names and options.
+
+The supported control facilities are:"""
     list_items("Command line options", option_tokens)
     list_items("Keyboard shortcuts", shortcut_tokens)
     list_items("Event invocation", event_tokens)
@@ -297,8 +317,8 @@ The supported facilities are:"""
 and commands to "pause", "unpause" and "quit" Hatari.
 
 For command line options you can see further help with "--help"
-and for debugger with "h".  Some other facilities may give help
-if you give them invalid input.
+and for debugger with "help".  Some other facilities may give
+help if you give them invalid input.
 """
 
 
