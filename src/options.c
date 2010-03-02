@@ -193,6 +193,8 @@ static const opt_t HatariOptions[] = {
 	  "<port>", "Emulate joystick with cursor keys in given port (0-5)" },
 	/* these have to be exactly the same as I'm relying compiler giving
 	 * them the same same string pointer when strings are identical
+	 * (Opt_ShowHelpSection() skips successive options with same help
+	 * pointer).
 	 */
 	{ OPT_JOYSTICK0, NULL, "--joy<port>",
 	  "<type>", "Set joystick type (none/keys/real) for given port" },
@@ -545,7 +547,7 @@ static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
 		return OPT_CONTINUE;
 	}
 	offset = bracket - opt->str;
-	if (strlen(str) != offset + 1)
+	if (strncmp(opt->str, str, offset) != 0)
 	{
 		return OPT_CONTINUE;
 	}
@@ -585,9 +587,11 @@ static int Opt_WhichOption(int argc, const char *argv[], int idx)
 
 	for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
 	{	
+		/* exact option name matches? */
 		if (!((opt->str && !strcmp(str, opt->str)) ||
 		      (opt->chr && !strcmp(str, opt->chr))))
 		{
+			/* no, maybe name<digit> matches? */
 			id = Opt_CheckBracketValue(opt, str);
 			if (id == OPT_CONTINUE)
 			{
@@ -597,8 +601,8 @@ static int Opt_WhichOption(int argc, const char *argv[], int idx)
 			{
 				break;
 			}
-			opt = &(HatariOptions[id]);
 		}
+		/* matched, check args */
 		if (opt->arg)
 		{
 			if (idx+1 >= argc)
