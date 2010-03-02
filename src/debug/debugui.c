@@ -329,12 +329,12 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 	{
 		if (strcasecmp(bases[i].name, arg) == 0)
 		{
-			if (ConfigureParams.Log.nNumberBase != bases[i].base)
+			if (ConfigureParams.Debugger.nNumberBase != bases[i].base)
 			{
 				fprintf(stderr, "Switched default number base from %d to %d-based (%s) values.\n",
-					ConfigureParams.Log.nNumberBase,
+					ConfigureParams.Debugger.nNumberBase,
 					bases[i].base, bases[i].name);
-				ConfigureParams.Log.nNumberBase = bases[i].base;
+				ConfigureParams.Debugger.nNumberBase = bases[i].base;
 			} else {
 				fprintf(stderr, "Already in '%s' mode.\n", bases[i].name);
 			}
@@ -518,7 +518,7 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 		"Note that address ranges like '$fc0000-$fc0100' should have no\n"
 		"spaces between the range numbers.\n"
 		"\n"
-		"'help <command>' gives more help.\n", ConfigureParams.Log.nNumberBase);
+		"'help <command>' gives more help.\n", ConfigureParams.Debugger.nNumberBase);
 	return DEBUGGER_CMDDONE;
 }
 

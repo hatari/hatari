@@ -8,16 +8,24 @@
 #ifndef HATARI_CONFIGURATION_H
 #define HATARI_CONFIGURATION_H
 
-/* Logging and debugging */
+/* Logging and tracing */
 typedef struct
 {
   char sLogFileName[FILENAME_MAX];
   char sTraceFileName[FILENAME_MAX];
   int nTextLogLevel;
   int nAlertDlgLogLevel;
-  int nNumberBase;
   bool bConfirmQuit;
 } CNF_LOG;
+
+
+/* debugger */
+typedef struct
+{
+  int nNumberBase;
+  int nDisasmLines;
+  int nMemdumpLines;
+} CNF_DEBUGGER;
 
 
 /* ROM (TOS + cartridge) configuration */
@@ -278,6 +286,7 @@ typedef struct
 {
   /* Configure */
   CNF_LOG Log;
+  CNF_DEBUGGER Debugger;
   CNF_SCREEN Screen;
   CNF_JOYSTICKS Joysticks;
   CNF_KEYBOARD Keyboard;

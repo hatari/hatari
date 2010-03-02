@@ -38,11 +38,18 @@ static const struct Config_Tag configs_Log[] =
 	{ "sTraceFileName", String_Tag, ConfigureParams.Log.sTraceFileName },
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
-	{ "nNumberBase", Int_Tag, &ConfigureParams.Log.nNumberBase },
 	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
 	{ NULL , Error_Tag, NULL }
 };
 
+/* Used to load/save debugger options */
+static const struct Config_Tag configs_Debugger[] =
+{
+	{ "nNumberBase", Int_Tag, &ConfigureParams.Debugger.nNumberBase },
+	{ "nDisasmLines", Int_Tag, &ConfigureParams.Debugger.nDisasmLines },
+	{ "nMemdumpLines", Int_Tag, &ConfigureParams.Debugger.nMemdumpLines },
+	{ NULL , Error_Tag, NULL }
+};
 
 /* Used to load/save screen options */
 static const struct Config_Tag configs_Screen[] =
@@ -337,13 +344,17 @@ void Configuration_SetDefault(void)
 	/* Clear parameters */
 	memset(&ConfigureParams, 0, sizeof(CNF_PARAMS));
 
-	/* Set defaults for logging and debugging */
+	/* Set defaults for logging and tracing */
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
 	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
 	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
-	ConfigureParams.Log.nNumberBase = 10;
 	ConfigureParams.Log.bConfirmQuit = true;
+
+	/* Set defaults for debugger */
+	ConfigureParams.Debugger.nNumberBase = 10;
+	ConfigureParams.Debugger.nDisasmLines = 8;
+	ConfigureParams.Debugger.nMemdumpLines = 8;
 
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
@@ -612,6 +623,7 @@ void Configuration_Load(const char *psFileName)
 	}
 
 	Configuration_LoadSection(psFileName, configs_Log, "[Log]");
+	Configuration_LoadSection(psFileName, configs_Debugger, "[Debugger]");
 	Configuration_LoadSection(psFileName, configs_Screen, "[Screen]");
 	Configuration_LoadSection(psFileName, configs_Joystick0, "[Joystick0]");
 	Configuration_LoadSection(psFileName, configs_Joystick1, "[Joystick1]");
@@ -662,6 +674,7 @@ void Configuration_Save(void)
 		Log_AlertDlg(LOG_ERROR, "Error saving config file.");
 		return;
 	}
+	Configuration_SaveSection(sConfigFileName, configs_Debugger, "[Debugger]");
 	Configuration_SaveSection(sConfigFileName, configs_Screen, "[Screen]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick0, "[Joystick0]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick1, "[Joystick1]");

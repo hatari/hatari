@@ -15,6 +15,7 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "breakcond.h"
+#include "configuration.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "debugdsp.h"
@@ -183,8 +184,9 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 	}
 	if (!dsp_disasm_upper)
 	{
-		if ( dsp_disasm_addr < (0xFFFF - 8))
-			dsp_disasm_upper = dsp_disasm_addr + 8;
+		int lines = ConfigureParams.Debugger.nDisasmLines;
+		if ( dsp_disasm_addr < (0xFFFF - lines))
+			dsp_disasm_upper = dsp_disasm_addr + lines;
 		else
 			dsp_disasm_upper = 0xFFFF;
 	}
@@ -262,8 +264,9 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 
 	if (!dsp_memdump_upper)
 	{
-		if ( dsp_memdump_addr < (0xFFFF - 7))
-			dsp_memdump_upper = dsp_memdump_addr + 7;
+		int lines = ConfigureParams.Debugger.nMemdumpLines;
+		if ( dsp_memdump_addr < (0xFFFF - lines))
+			dsp_memdump_upper = dsp_memdump_addr + lines;
 		else
 			dsp_memdump_upper = 0xFFFF;
 	}

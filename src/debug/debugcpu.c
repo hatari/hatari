@@ -15,6 +15,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "breakcond.h"
+#include "configuration.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "debugcpu.h"
@@ -28,9 +29,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 #include "symbols.h"
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
-#define MEMDUMP_ROWS   4       /* memdump, number of rows */
 #define NON_PRINT_CHAR '.'     /* character to display for non-printables */
-#define DISASM_INSTS   5       /* disasm - number of instructions */
 
 static Uint32 disasm_addr;     /* disasm address */
 static Uint32 memdump_addr;    /* memdump address */
@@ -192,7 +191,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	else
 	{
 		disasm_upper = 0x00FFFFFF;
-		max_insts = DISASM_INSTS;
+		max_insts = ConfigureParams.Debugger.nDisasmLines;
 	}
 
 	/* output a range */
@@ -397,7 +396,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	if (!memdump_upper)
 	{
-		memdump_upper = memdump_addr + MEMDUMP_ROWS*MEMDUMP_COLS;
+		memdump_upper = memdump_addr + MEMDUMP_COLS * ConfigureParams.Debugger.nMemdumpLines;
 	}
 	memdump_upper &= 0x00FFFFFF;
 

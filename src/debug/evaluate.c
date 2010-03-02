@@ -122,7 +122,7 @@ static int getNumber(const char *str, Uint32 *number, int *nbase)
 {
 	char *end;
 	const char const *start = str;
-	int base = ConfigureParams.Log.nNumberBase;
+	int base = ConfigureParams.Debugger.nNumberBase;
 	unsigned long int value;
 
 	if (!str[0]) {
