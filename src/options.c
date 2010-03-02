@@ -585,37 +585,37 @@ static int Opt_WhichOption(int argc, const char *argv[], int idx)
 
 	for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
 	{	
-		if ((opt->str && !strcmp(str, opt->str)) ||
-		    (opt->chr && !strcmp(str, opt->chr)))
+		if (!((opt->str && !strcmp(str, opt->str)) ||
+		      (opt->chr && !strcmp(str, opt->chr))))
 		{
-			
-			if (opt->arg)
+			id = Opt_CheckBracketValue(opt, str);
+			if (id == OPT_CONTINUE)
 			{
-				if (idx+1 >= argc)
+				continue;
+			}
+			if (id == OPT_ERROR)
+			{
+				break;
+			}
+			opt = &(HatariOptions[id]);
+		}
+		if (opt->arg)
+		{
+			if (idx+1 >= argc)
+			{
+				Opt_ShowError(opt->id, NULL, "Missing argument");
+				return OPT_ERROR;
+			}
+			/* early check for bools */
+			if (strcmp(opt->arg, "<bool>") == 0)
+			{
+				if (!Opt_Bool(argv[idx+1], opt->id, NULL))
 				{
-					Opt_ShowError(opt->id, NULL, "Missing argument");
 					return OPT_ERROR;
 				}
-				/* early check for bools */
-				if (strcmp(opt->arg, "<bool>") == 0)
-				{
-					if (!Opt_Bool(argv[idx+1], opt->id, NULL))
-					{
-						return OPT_ERROR;
-					}
-				}
 			}
-			return opt->id;
 		}
-		id = Opt_CheckBracketValue(opt, str);
-		if (id == OPT_ERROR)
-		{
-			break;
-		}
-		if (id != OPT_CONTINUE)
-		{
-			return id;
-		}
+		return opt->id;
 	}
 	Opt_ShowError(OPT_ERROR, argv[idx], "Unrecognized option");
 	return OPT_ERROR;
