@@ -389,7 +389,7 @@ static void Screen_SetResolution(void)
 
 	/* Check if we really have to change the video mode: */
 	if (!sdlscrn || sdlscrn->w != Width || sdlscrn->h != Height
-	    || sdlscrn->format->BitsPerPixel != BitCount
+	    || (BitCount && sdlscrn->format->BitsPerPixel != BitCount)
 	    || (sdlscrn->flags&SDL_FULLSCREEN) != (sdlVideoFlags&SDL_FULLSCREEN))
 	{
 		if (bInFullScreen)
@@ -670,9 +670,9 @@ void Screen_ModeChanged(void)
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
 	{
-		int width, height, bpp;
-		Video_GetTTRes(&width, &height, &bpp);
-		HostScreen_setWindowSize(width, height, 8);
+		int width, height, scalex, scaley, bpp;
+		Video_GetTTRes(&width, &height, &scalex, &scaley, &bpp);
+		HostScreen_setWindowSize(width, height, scalex, scaley, 8);
 	}
 	else
 	{

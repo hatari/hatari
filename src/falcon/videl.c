@@ -40,8 +40,10 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #define HW	0xff8200
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
 
-
-static int width, height, bpp, since_last_change;
+/* TODO: put these to some struct so that it's easier to see
+ * they're VIDEL global
+ */
+static int width, height, scalex, scaley, bpp, since_last_change;
 static bool hostColorsSync;
 
 /* Autozoom */
@@ -70,7 +72,9 @@ void VIDEL_reset(void)
 	/* Default resolution to boot with */
 	width = 640;
 	height = 480;
-	HostScreen_setWindowSize(width, height, ConfigureParams.Screen.nForceBpp);
+	scalex = scaley = 1;
+	HostScreen_setWindowSize(width, height, scalex, scaley,
+				 ConfigureParams.Screen.nForceBpp);
 
 	/* Reset IO register (some are not initialized by TOS) */
 	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
@@ -152,6 +156,55 @@ static int VIDEL_getScreenHeight(void)
 	return yres;
 }
 
+static void VIDEL_getMonitorScale(int *sx, int *sy)
+{
+	/* Videl video mode register bits and resulting desktop resolution:
+	 * 
+	 * quarter, half, interlace, double:   pixels: -> zoom:
+	 * rgb:
+	 *    0       0       0         0      320x200 -> 2 x 2
+	 *    0       0       1         0      320x400 -> 2 x 1
+	 *    0       1       0         0      640x200 -> 1 x 2 !
+	 *    0       1       1         0      640x400 -> 1 x 1
+	 * vga:
+	 *    0       0       0         1      (just double ?)
+	 *    0       0       1         1      (double & interlace ???)
+	 *    0       1       0         0      320x480 -> 2 x 1 !
+	 *    0       1       0         1      320x240 -> 2 x 2
+	 *    0       1       1         1      (double + interlace ???)
+	 *    1       0       0         0      640x480 -> 1 x 1
+	 *    1       0       0         1      640x240 -> 1 x 2
+	 */
+	int vmode = handleReadW(HW + 0xc2);
+
+	/* half pixel seems to have opposite meaning on
+	 * VGA and RGB monitor, so they need to handled separately
+	 */
+	if (handleRead(0xFF8006) & FALCON_MONITOR_VGA) {
+		if (vmode & 0x08) {  // quarter pixel
+			*sx = 1;
+		} else {
+			*sx = 2;
+		}
+		if (vmode & 0x01) {  // double line
+			*sy = 2;
+		} else {
+			*sy = 1;
+		}
+	} else {
+		if (vmode & 0x04) {  // half pixel
+			*sx = 1;
+		} else {
+			*sx = 2;
+		}
+		if (vmode & 0x02) {  // interlace used only on RGB?
+			*sy = 1;
+		} else {
+			*sy = 2;
+		}
+	}
+}
+
 
 /** map the correct colortable into the correct pixel format
  */
@@ -200,7 +253,8 @@ static void VIDEL_updateColors(void)
 void VIDEL_ZoomModeChanged(void)
 {
 	/* User selected another zoom mode, so set a new screen resolution now */
-	HostScreen_setWindowSize(width, height, bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
+	HostScreen_setWindowSize(width, height, scalex, scaley,
+				 bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
 }
 
 
@@ -209,6 +263,9 @@ bool VIDEL_renderScreen(void)
 	int vw	 = VIDEL_getScreenWidth();
 	int vh	 = VIDEL_getScreenHeight();
 	int vbpp = VIDEL_getScreenBpp();
+	int vsx = 1, vsy = 1;
+	
+	VIDEL_getMonitorScale(&vsx, &vsy);
 
 	if (since_last_change > 2) {
 		if (vw > 0 && vw != width) {
@@ -226,9 +283,20 @@ bool VIDEL_renderScreen(void)
 			bpp = vbpp;
 			since_last_change = 0;
 		}
+		if (vsx != scalex) {
+			Dprintf(("CH scalex %d\n", vsx));
+			scalex = vsx;
+			since_last_change = 0;
+		}
+		if (vsy != scaley) {
+			Dprintf(("CH scaley %d\n", vsy));
+			scaley = vsy;
+			since_last_change = 0;
+		}
 	}
 	if (since_last_change == 3) {
-		HostScreen_setWindowSize(width, height, bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
+		HostScreen_setWindowSize(width, height, scalex, scaley,
+					 bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
 	}
 	if (since_last_change < 4) {
 		since_last_change++;
@@ -238,7 +306,7 @@ bool VIDEL_renderScreen(void)
 	if (!HostScreen_renderBegin())
 		return false;
 
-	if (ConfigureParams.Screen.bZoomLowRes) {
+	if (ConfigureParams.Screen.bZoomLowRes || scalex*scaley > 1) {
 		VIDEL_renderScreenZoom();
 	} else {
 		VIDEL_renderScreenNoZoom();
