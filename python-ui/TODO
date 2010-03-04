@@ -7,6 +7,10 @@ sources.
 * Supporting ASCI / IDE (master&slave) hard disk images in addition
   to GEMDOS HDD dir
 
+* Separate "Atari monitor" and "Hatari window" settings dialogs
+  (move options from "Display" and monitor setting from "Machine"
+  dialogs to here)
+
 * Features for Help menu:
   - Create empty floppy images (+ convert directories to hard disks?)
   - MSA converter
@@ -36,7 +40,7 @@ sources.
     - needs support also to Hatari src/screenSnapShot.c
 
 * Supporting other, less important Hatari configuration options:
-  - toggling disk-b autoinsertion, write protection and slow FDC
+  - toggling disk-b autoinsertion, write protection
   - separate A/B disk paths for images that are within ZIP archives
   - joystick autofire toggling, defining the keys for joyemu
   - keyboard repeat, key mapping type and file
@@ -48,5 +52,5 @@ sources.
   - cartridge image (where? it has many limitations)
   - log file and levels, bios intercept, run-VBLs
 (Several of these aren't supported by the internal Hatari UI either
-or do have command line options so they will require support on
-the Hatari control.c side too.)
+or are missing corresponding command line options so they will require
+support on the Hatari control.c side too.)

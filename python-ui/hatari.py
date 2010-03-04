@@ -329,7 +329,7 @@ class HatariConfigMapping(ConfigStore):
 
     # ------------ CPU level ---------------
     def get_cpulevel_types(self):
-        return ("68000", "68010", "68020", "68020+FPU", "68040") 
+        return ("68000", "68010", "68020", "68EC030+FPU", "68040")
 
     def get_cpulevel(self):
         return self.get("[System]", "nCpuLevel")
@@ -460,6 +460,14 @@ class HatariConfigMapping(ConfigStore):
     def set_floppy(self, drive, filename):
         self.set("[Floppy]", "szDisk%cFileName" %  ("A", "B")[drive], filename)
         self._change_option("--disk-%c %s" % (("a", "b")[drive], filename))
+
+    # ------------ slow FDC access ---------------
+    def get_slowfdc(self):
+        return self.get("[Floppy]", "bSlowFloppy")
+
+    def set_slowfdc(self, value):
+        self.set("[Floppy]", "bSlowFloppy", value)
+        self._change_option("--slowfdc %s" % str(value))
 
     # ------------ use harddisk ---------------
     def get_use_harddisk(self):

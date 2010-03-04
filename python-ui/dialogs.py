@@ -293,7 +293,15 @@ class DiskDialog(HatariUIDialog):
             table_add_widget_row(table, row, label, box)
             row += 1
 
+        tips = gtk.Tooltips()
+        slowfdc = gtk.CheckButton("Slow floppy access")
+        slowfdc.set_active(config.get_slowfdc())
+        tips.set_tip(slowfdc, "May be required by some rare game/demo")
+
+        table_add_widget_row(table, row, None, slowfdc)
         table.show_all()
+
+        self.slowfdc = slowfdc
 
     def _eject(self, widget, fsel):
         fsel.unselect_all()
@@ -309,6 +317,7 @@ class DiskDialog(HatariUIDialog):
             config.lock_updates()
             for drive in range(2):
                 config.set_floppy(drive, self.floppy[drive].get_filename())
+            config.set_slowfdc(self.slowfdc.get_active())
             config.flush_updates()
 
     
