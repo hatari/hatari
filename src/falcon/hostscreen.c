@@ -52,7 +52,7 @@ static SDL_Surface *surf;               // pointer to actual surface
 
 
 static Uint32 sdl_videoparams;
-static Uint32 hs_width, hs_height, hs_bpp;
+static Uint32 hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 static struct { // TOS palette (bpp < 16) to SDL color mapping
@@ -98,29 +98,21 @@ void HostScreen_toggleFullScreen(void)
 		Control_ReparentWindow(hs_width, hs_height, true);
 	}
 	if(SDL_WM_ToggleFullScreen(mainSurface) == 0) {
-		// SDL_WM_ToggleFullScreen() did not work.
-		// We have to change video mode "by hand".
-		SDL_Surface *temp = SDL_ConvertSurface(mainSurface, mainSurface->format,
-		                                       mainSurface->flags);
 		Dprintf(("toggleFullScreen: SDL_WM_ToggleFullScreen() not supported"
 		         " -> using SDL_SetVideoMode()"));
-		if (temp == NULL)
-			Dprintf(("toggleFullScreen: Unable to save screen content."));
+		SDL_Surface *temp = SDL_ConvertSurface(mainSurface, mainSurface->format,
+		                                       mainSurface->flags);
+		if (temp == NULL) {
+			fprintf(stderr, "ERROR: Unable to save/restore screen content on fullscreen toggle!\n");
+		}
+		HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
 
-#if 1
-		HostScreen_setWindowSize(hs_width, hs_height, hs_bpp);
-#else
-		mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
-		if (mainSurface == NULL)
-			Dprintf(("toggleFullScreen: Unable to set new video mode."));
-		if (mainSurface->format->BitsPerPixel <= 8)
-			SDL_SetColors(mainSurface, temp->format->palette->colors, 0,
-			              temp->format->palette->ncolors);
-#endif
-
-		if (SDL_BlitSurface(temp, NULL, mainSurface, NULL) != 0)
-			Dprintf(("toggleFullScreen: Unable to restore screen content."));
-		SDL_FreeSurface(temp);
+		if (temp) {
+			if (SDL_BlitSurface(temp, NULL, mainSurface, NULL) != 0) {
+				fprintf(stderr, "ERROR: Unable to restore screen content on fullscreen toggle!\n");
+			}
+			SDL_FreeSurface(temp);
+		}
 
 		/* refresh the screen */
 		HostScreen_update1(true);
@@ -216,6 +208,9 @@ void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 	if (bpp == 24)
 		bpp = 32;
 
+	hs_width_req = width;
+	hs_height_req = height;
+
 	nScreenZoomX = 1;
 	nScreenZoomY = 1;
 	if (ConfigureParams.Screen.bZoomLowRes)
@@ -238,9 +233,9 @@ void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 	// Select a correct video mode
 	HostScreen_searchVideoMode(&width, &screenheight, &bpp);
 
+	hs_bpp = bpp;
 	hs_width = width;
 	hs_height = height;
-	hs_bpp = bpp;
 
 	// SelectVideoMode();
 	if (bInFullScreen) {
