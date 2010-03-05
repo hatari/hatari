@@ -229,12 +229,12 @@ static void Screen_Handle8BitPalettes(void)
 /**
  * Set screen draw functions.
  */
-static void Screen_SetDrawFunctions(int nBitCount)
+static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 {
 	if (nBitCount == 8)
 	{
 		/* Low color */
-		if (ConfigureParams.Screen.bZoomLowRes)
+		if (bDoubleLowRes)
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x8Bit;
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
@@ -244,7 +244,7 @@ static void Screen_SetDrawFunctions(int nBitCount)
 	else if (nBitCount <= 16)
 	{
 		/* High color */
-		if (ConfigureParams.Screen.bZoomLowRes)
+		if (bDoubleLowRes)
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x16Bit;
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
@@ -254,7 +254,7 @@ static void Screen_SetDrawFunctions(int nBitCount)
 	else /* Assume 32 bit drawing functions */
 	{
 		/* True color */
-		if (ConfigureParams.Screen.bZoomLowRes)
+		if (bDoubleLowRes)
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x32Bit;
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x32Bit;
@@ -313,10 +313,14 @@ static void Screen_SetSTScreenOffsets(void)
  */
 static void Screen_SetResolution(void)
 {
-	int Width, Height, BitCount;
+	int Width, Height, BitCount, nZoom, WBorders, HBorders, SBarHeight;
 	unsigned int sdlVideoFlags;
+	bool bDoubleLowRes = false;
 
 	Screen_SetSTScreenOffsets();  
+
+	nScreenZoomX = 1;
+	nScreenZoomY = 1;
 
 	/* Determine which resolution to use */
 	if (bUseVDIRes)
@@ -326,25 +330,63 @@ static void Screen_SetResolution(void)
 	}
 	else
 	{
-		if (STRes == ST_LOW_RES && !ConfigureParams.Screen.bZoomLowRes)
-		{
-			Width = 320;
-			Height = 200;
-		}
-		else    /* else use 640x400 */
-		{
-			Width = 640;
-			Height = 400;
-		}
+		if (STRes == ST_LOW_RES)
+ 		{
+ 			Width = 320;
+ 			Height = 200;
+			nZoom = 1;
+ 		}
+		else    /* else use 640x400, also for med-rez */
+ 		{
+ 			Width = 640;
+ 			Height = 400;
+			nZoom = 2;
+ 		}
 
 		/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
 		if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
 		{
-			int nZoom = ((Width == 640) ? 2 : 1);
-			/* Add in overscan borders (if 640x200 bitmap is double on Y) */
-			Width += (nBorderPixelsLeft+nBorderPixelsRight) * nZoom;
-			Height += (nBorderPixelsTop+nBorderPixelsBottom) * nZoom;
+			WBorders = (nBorderPixelsLeft+nBorderPixelsRight) * nZoom;
+			HBorders = (nBorderPixelsTop+nBorderPixelsBottom) * nZoom;
+			
+			if (Width+WBorders <= ConfigureParams.Screen.nMaxWidth &&
+			    Height+HBorders <= ConfigureParams.Screen.nMaxHeight)
+			{
+				Width += WBorders;
+				Height += HBorders;
+			}
+			else
+			{
+				Log_AlertDlg(LOG_ERROR, "Max allowed window size smaller than %dx%d, turning borders off!",
+					     Width+WBorders, Height+HBorders);
+				ConfigureParams.Screen.bAllowOverscan = false;
+			}
 		}
+
+		/* Statusbar height for doubled screen size */
+		SBarHeight = Statusbar_GetHeightForSize(Width*2, Height*2);
+
+		/* Zoom if necessary, factors used for scaling mouse motions */
+		if (STRes == ST_LOW_RES &&
+		    Width*2 <= ConfigureParams.Screen.nMaxWidth && 
+		    Height*2-SBarHeight <= ConfigureParams.Screen.nMaxHeight)
+		{
+			Width *= 2;
+			Height *= 2;
+			nScreenZoomX = 2;
+			nScreenZoomY = 2;
+			bDoubleLowRes = true;
+		}
+		else if (STRes == ST_MEDIUM_RES)
+		{
+			/* med-rez conversion functions want always
+			 * to double vertically, they don't support
+			 * skipping that (only leaving doubled lines
+			 * black for the TV mode).
+			 */
+			nScreenZoomX = 1;
+			nScreenZoomY = 2;
+ 		}
 	}
 
 	/* Bits per pixel */
@@ -355,23 +397,6 @@ static void Screen_SetResolution(void)
 	else
 	{
 		BitCount = ConfigureParams.Screen.nForceBpp;
-	}
-
-	/* Set zoom factors, used for scaling mouse motions */
-	if (STRes == ST_LOW_RES && ConfigureParams.Screen.bZoomLowRes && !bUseVDIRes)
-	{
-		nScreenZoomX = 2;
-		nScreenZoomY = 2;
-	}
-	else if (STRes == ST_MEDIUM_RES && !bUseVDIRes)
-	{
-		nScreenZoomX = 1;
-		nScreenZoomY = 2;
-	}
-	else
-	{
-		nScreenZoomX = 1;
-		nScreenZoomY = 1;
 	}
 
 	/* SDL Video attributes: */
@@ -444,7 +469,7 @@ static void Screen_SetResolution(void)
 	}
 
 	/* Set drawing functions */
-	Screen_SetDrawFunctions(sdlscrn->format->BitsPerPixel);
+	Screen_SetDrawFunctions(sdlscrn->format->BitsPerPixel, bDoubleLowRes);
 
 	Screen_SetFullUpdate();           /* Cause full update of screen */
 }

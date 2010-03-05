@@ -21,18 +21,19 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c : " __DATE__ " " __TIME__;
 #define MAINDLG_MEMORY   5
 #define MAINDLG_FLOPPYS  6
 #define MAINDLG_HARDDISK 7
-#define MAINDLG_SCREEN   8
-#define MAINDLG_SOUND    9
+#define MAINDLG_MONITOR  8
+#define MAINDLG_WINDOW   9
 #define MAINDLG_JOY      10
 #define MAINDLG_KEYBD    11
 #define MAINDLG_DEVICES  12
-#define MAINDLG_LOADCFG  13
-#define MAINDLG_SAVECFG  14
-#define MAINDLG_NORESET  15
-#define MAINDLG_RESET    16
-#define MAINDLG_OK       17
-#define MAINDLG_QUIT     18
-#define MAINDLG_CANCEL   19
+#define MAINDLG_SOUND    13
+#define MAINDLG_LOADCFG  14
+#define MAINDLG_SAVECFG  15
+#define MAINDLG_NORESET  16
+#define MAINDLG_RESET    17
+#define MAINDLG_OK       18
+#define MAINDLG_QUIT     19
+#define MAINDLG_CANCEL   20
 
 
 /* The main dialog: */
@@ -46,11 +47,12 @@ static SGOBJ maindlg[] =
 	{ SGBUTTON, 0, 0, 2,10, 14,1, "Memory" },
 	{ SGBUTTON, 0, 0, 18,4, 14,1, "Floppy disks" },
 	{ SGBUTTON, 0, 0, 18,6, 14,1, "Hard disks" },
-	{ SGBUTTON, 0, 0, 18,8, 14,1, "Screen" },
-	{ SGBUTTON, 0, 0, 18,10, 14,1, "Sound" },
+	{ SGBUTTON, 0, 0, 18,8, 14,1, "Monitor" },
+	{ SGBUTTON, 0, 0, 18,10, 14,1, "Window" },
 	{ SGBUTTON, 0, 0, 34,4, 14,1, "Joysticks" },
 	{ SGBUTTON, 0, 0, 34,6, 14,1, "Keyboard" },
 	{ SGBUTTON, 0, 0, 34,8, 14,1, "Devices" },
+	{ SGBUTTON, 0, 0, 34,10, 14,1, "Sound" },
 	{ SGBUTTON, 0, 0, 7,13, 16,1, "Load config." },
 	{ SGBUTTON, 0, 0, 27,13, 16,1, "Save config." },
 	{ SGRADIOBUT, 0, 0, 3,15, 15,1, "No Reset" },
@@ -103,11 +105,11 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 		 case MAINDLG_ROM:
 			DlgRom_Main();
 			break;
-		 case MAINDLG_SCREEN:
-			Dialog_ScreenDlg();
+		 case MAINDLG_MONITOR:
+			Dialog_MonitorDlg();
 			break;
-		 case MAINDLG_SOUND:
-			Dialog_SoundDlg();
+		 case MAINDLG_WINDOW:
+			Dialog_WindowDlg();
 			break;
 		 case MAINDLG_SYSTEM:
 			Dialog_SystemDlg();
@@ -128,6 +130,9 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			break;
 		 case MAINDLG_DEVICES:
 			Dialog_DeviceDlg();
+			break;
+		 case MAINDLG_SOUND:
+			Dialog_SoundDlg();
 			break;
 		 case MAINDLG_LOADCFG:
 			Configuration_Load(NULL);

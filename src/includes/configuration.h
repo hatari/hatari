@@ -210,7 +210,7 @@ typedef struct
   int nFrameSkips;
   bool bFullScreen;
   bool bAllowOverscan;
-  bool bZoomLowRes;
+  bool bAspectCorrect;
   bool bUseExtVdiResolutions;
   int nSpec512Threshold;
   int nForceBpp;
@@ -220,6 +220,8 @@ typedef struct
   bool bShowStatusbar;
   bool bShowDriveLed;
   bool bCaptureChange;
+  int nMaxWidth;
+  int nMaxHeight;
   int nWindowBorderPixelsTop;
   int nWindowBorderPixelsLeft;
   int nWindowBorderPixelsRight;

@@ -2423,7 +2423,7 @@ static bool Video_RenderTTScreen(void)
 	/* Yes, we are abusing the Videl routines for rendering the TT modes! */
 	if (!HostScreen_renderBegin())
 		return false;
-	if (ConfigureParams.Screen.bZoomLowRes)
+	if (nScreenZoomX * nScreenZoomY != 1)
 		VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
 	else
 		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);

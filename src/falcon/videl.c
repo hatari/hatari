@@ -294,7 +294,7 @@ bool VIDEL_renderScreen(void)
 	if (!HostScreen_renderBegin())
 		return false;
 
-	if (ConfigureParams.Screen.bZoomLowRes) {
+	if (nScreenZoomX * nScreenZoomY != 1) {
 		VIDEL_renderScreenZoom();
 	} else {
 		VIDEL_renderScreenNoZoom();

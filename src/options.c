@@ -152,7 +152,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_GRAB, NULL, "--grab",
 	  NULL, "Grab mouse (also) in window mode" },
 	{ OPT_ZOOM, "-z", "--zoom",
-	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
+	  "<x>", "Double small resolutions (1=no, 2=yes)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
 	{ OPT_BORDERS, NULL, "--borders",
@@ -776,12 +776,13 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			if (zoom > 1)
 			{
-				/* TODO: only doubling supported for now */
-				ConfigureParams.Screen.bZoomLowRes = true;
+				ConfigureParams.Screen.nMaxWidth = 800;
+				ConfigureParams.Screen.nMaxHeight = 600+24;
 			}
 			else
 			{
-				ConfigureParams.Screen.bZoomLowRes = false;
+				ConfigureParams.Screen.nMaxWidth = 320;
+				ConfigureParams.Screen.nMaxHeight = 200;
 			}
 			break;
 			

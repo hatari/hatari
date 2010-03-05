@@ -60,7 +60,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "nSpec512Threshold", Int_Tag, &ConfigureParams.Screen.nSpec512Threshold },
 	{ "nForceBpp", Int_Tag, &ConfigureParams.Screen.nForceBpp },
-	{ "bZoomLowRes", Bool_Tag, &ConfigureParams.Screen.bZoomLowRes },
+	{ "bAspectCorrect", Bool_Tag, &ConfigureParams.Screen.bAspectCorrect },
 	{ "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
 	{ "nVdiWidth", Int_Tag, &ConfigureParams.Screen.nVdiWidth },
 	{ "nVdiHeight", Int_Tag, &ConfigureParams.Screen.nVdiHeight },
@@ -68,6 +68,8 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bShowStatusbar", Bool_Tag, &ConfigureParams.Screen.bShowStatusbar },
 	{ "bShowDriveLed", Bool_Tag, &ConfigureParams.Screen.bShowDriveLed },
 	{ "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
+	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
+	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
 	{ "nWindowBorderPixelsTop", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsTop },
 	{ "nWindowBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsLeft },
 	{ "nWindowBorderPixelsRight", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsRight },
@@ -460,7 +462,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bAllowOverscan = true;
 	ConfigureParams.Screen.nSpec512Threshold = 16;
 	ConfigureParams.Screen.nForceBpp = 0;
-	ConfigureParams.Screen.bZoomLowRes = false;
+	ConfigureParams.Screen.bAspectCorrect = true;
 	ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
 	ConfigureParams.Screen.bUseExtVdiResolutions = false;
 	ConfigureParams.Screen.nVdiWidth = 640;
@@ -469,6 +471,9 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowStatusbar = true;
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCaptureChange = false;
+	/* target 800x600 screen with statusbar out of screen */
+	ConfigureParams.Screen.nMaxWidth = 800;
+	ConfigureParams.Screen.nMaxHeight = 600+24;
 	ConfigureParams.Screen.nWindowBorderPixelsTop = OVERSCAN_TOP;
 	ConfigureParams.Screen.nWindowBorderPixelsLeft = 48;
 	ConfigureParams.Screen.nWindowBorderPixelsRight = 48;
