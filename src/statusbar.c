@@ -110,6 +110,25 @@ static int StatusbarHeight;
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return statusbar height for given width and height
+ */
+int Statusbar_GetHeightForSize(int width, int height)
+{
+	if (ConfigureParams.Screen.bShowStatusbar) {
+		/* Should check the same thing as SDLGui_SetScreen()
+		 * does to decide the font size.
+		 */
+		if (width >= 640 && height >= (400-24)) {
+			return 24;
+		} else {
+			return 12;
+		}
+	}
+	return 0;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Set screen height used for statusbar height calculation.
  *
  * Return height of statusbar that should be added to the screen
@@ -119,18 +138,7 @@ static int StatusbarHeight;
 int Statusbar_SetHeight(int width, int height)
 {
 	ScreenHeight = height;
-	if (ConfigureParams.Screen.bShowStatusbar) {
-		/* Should check the same thing as SDLGui_SetScreen()
-		 * does to decide the font size.
-		 */
-		if (width >= 640 && height >= (400-24)) {
-			StatusbarHeight = 24;
-		} else {
-			StatusbarHeight = 12;
-		}
-	} else {
-		StatusbarHeight = 0;
-	}
+	StatusbarHeight = Statusbar_GetHeightForSize(width, height);
 	return StatusbarHeight;
 }
 
