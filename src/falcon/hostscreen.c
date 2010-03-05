@@ -206,38 +206,52 @@ void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 	Uint32 screenheight;
 	int scalex, scaley;
 
-	if (bpp == 24)
-		bpp = 32;
+	nScreenZoomX = nScreenZoomY = 1;
+	
+	if (ConfigureParams.Screen.bAspectCorrect) {
+		/* Falcon (and TT) pixel scaling factors seem to 2^x
+		 * (quarter/half pixel, interlace/double line), so
+		 * do aspect correction as 2's exponent.
+		 */
+		while (nScreenZoomX*width < height &&
+		       2*nScreenZoomX*width < (unsigned)ConfigureParams.Screen.nMaxWidth) {
+			nScreenZoomX *= 2;
+		}
+		while (2*nScreenZoomY*height < width &&
+		       2*nScreenZoomY*height < (unsigned)ConfigureParams.Screen.nMaxHeight) {
+			nScreenZoomY *= 2;
+		}
+		if (nScreenZoomX*nScreenZoomY > 2) {
+			fprintf(stderr, "WARNING: strange screen size %dx%d -> aspect corrected by %dx%d!\n",
+				width, height, nScreenZoomX, nScreenZoomY);
+		}
+	}
+
+	/* then select scale as close to target size as possible
+	 * without having larger size than it
+	 */
+	scalex = ConfigureParams.Screen.nMaxWidth/(nScreenZoomX*width);
+	scaley = ConfigureParams.Screen.nMaxHeight/(nScreenZoomY*height);
+	if (scalex > 1 && scaley > 1) {
+		/* keep aspect ratio */
+		if (scalex < scaley) {
+			nScreenZoomX *= scalex;
+			nScreenZoomY *= scalex;
+		} else {
+			nScreenZoomX *= scaley;
+			nScreenZoomY *= scaley;
+		}
+	}
 
 	hs_width_req = width;
 	hs_height_req = height;
-
-	/* Falcon (and TT) pixel scaling factors seem to 2^x
-	 * (quarter/half pixel, interlace/double line), so
-	 * do aspect correction as 2's exponent.
-	 */
-	scalex = scaley = 1;
-	while (scalex*width < height) {
-		scalex <<= 1;
-	}
-	while (2*scaley*height < width) {
-		scaley <<= 1;
-	}
-	if (scalex*scaley > 2) {
-		fprintf(stderr, "WARNING: strange screen size %dx%d -> aspect corrected by %dx%d!\n",
-			width, height, scalex, scaley);
-	}
-
-	/* TODO: add "Keep aspect ratio" Monitor option
-	 * which controls whether requested scaling is
-	 * applied.
-	 */
-	nScreenZoomX = scalex;
-	nScreenZoomY = scaley;
-	width *= scalex;
-	height *= scaley;
+	width *= nScreenZoomX;
+	height *= nScreenZoomY;
 
 	screenheight = height + Statusbar_SetHeight(width, height);
+
+	if (bpp == 24)
+		bpp = 32;
 
 	// Select a correct video mode
 	HostScreen_searchVideoMode(&width, &screenheight, &bpp);
