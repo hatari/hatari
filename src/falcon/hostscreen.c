@@ -52,8 +52,7 @@ static SDL_Surface *surf;               // pointer to actual surface
 
 /* TODO: put these hostscreen globals to some struct */
 static Uint32 sdl_videoparams;
-static Uint32 hs_width, hs_height, hs_width_req, hs_height_req,
-	hs_scalex, hs_scaley, hs_bpp;
+static Uint32 hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 static struct { // TOS palette (bpp < 16) to SDL color mapping
@@ -106,7 +105,7 @@ void HostScreen_toggleFullScreen(void)
 		if (temp == NULL) {
 			fprintf(stderr, "ERROR: Unable to save/restore screen content on fullscreen toggle!\n");
 		}
-		HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_scalex, hs_scaley, hs_bpp);
+		HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
 
 		if (temp) {
 			if (SDL_BlitSurface(temp, NULL, mainSurface, NULL) != 0) {
@@ -202,9 +201,10 @@ static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *b
 	Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
 }
 
-void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 scalex, Uint32 scaley, Uint32 bpp )
+void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 {
 	Uint32 screenheight;
+	int scalex, scaley;
 
 	if (bpp == 24)
 		bpp = 32;
@@ -212,42 +212,31 @@ void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 scalex, Uint3
 	hs_width_req = width;
 	hs_height_req = height;
 
+	/* Falcon (and TT) pixel scaling factors seem to 2^x
+	 * (quarter/half pixel, interlace/double line), so
+	 * do aspect correction as 2's exponent.
+	 */
+	scalex = scaley = 1;
+	while (scalex*width < height) {
+		scalex <<= 1;
+	}
+	while (2*scaley*height < width) {
+		scaley <<= 1;
+	}
+	if (scalex*scaley > 2) {
+		fprintf(stderr, "WARNING: strange screen size %dx%d -> aspect corrected by %dx%d!\n",
+			width, height, scalex, scaley);
+	}
+
 	/* TODO: add "Keep aspect ratio" Monitor option
 	 * which controls whether requested scaling is
 	 * applied.
 	 */
-	hs_scalex = scalex;
-	hs_scaley = scaley;
 	nScreenZoomX = scalex;
 	nScreenZoomY = scaley;
 	width *= scalex;
 	height *= scaley;
 
-	/* TODO: disable this ugly zooming until there's better
-	 * one (on top of the aspect ratio scaling) so that that
-	 * people find issues with aspect scaling easier/faster.
-	 */
-#if 0
-	if (ConfigureParams.Screen.bZoomLowRes)	{
-		nScreenZoomX = 1;
-		nScreenZoomY = 1;
-
-		/* Ugly: 400x300 threshold is currently hard-coded. */
-		/* Should rather be selectable by the user! */	
-		if (width && width <= 400)
-		{
-			nScreenZoomX = (800/width);
-			width *= nScreenZoomX; 
-		}
-		if (height && height <= 300)
-		{
-			nScreenZoomY = (550/height);
-			height *= nScreenZoomY;
-		}
-		nScreenZoomX *= scalex;
-		nScreenZoomY *= scaley;
-	}
-#endif
 	screenheight = height + Statusbar_SetHeight(width, height);
 
 	// Select a correct video mode

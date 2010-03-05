@@ -25,6 +25,6 @@ extern void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint
 extern Uint32 HostScreen_getPaletteColor(Uint8 idx);
 extern void HostScreen_updatePalette(Uint16 colorCount);
 extern Uint32 HostScreen_getColor(Uint32 red, Uint32 green, Uint32 blue);
-extern void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 scalex, Uint32 scaley, Uint32 bpp);
+extern void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp);
 
 #endif

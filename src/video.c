@@ -2317,10 +2317,9 @@ static void Video_ClearOnVBL(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Get width, height, appropriate scaling for them and bpp
- * according to TT-Resolution
+ * Get width, height and bpp according to TT-Resolution
  */
-void Video_GetTTRes(int *width, int *height, int *scalex, int *scaley, int *bpp)
+void Video_GetTTRes(int *width, int *height, int *bpp)
 {
 	switch (TTRes)
 	{
@@ -2335,8 +2334,6 @@ void Video_GetTTRes(int *width, int *height, int *scalex, int *scaley, int *bpp)
 		*width = 320; *height = 200; *bpp = 4;
 		break;
 	}
-	if (*width  < 600) *scalex = 2; else *scalex = 1;
-	if (*height < 400) *scaley = 2; else *scaley = 1;
 }
 
 
@@ -2406,12 +2403,12 @@ static void Video_UpdateTTPalette(int bpp)
 static bool Video_RenderTTScreen(void)
 {
 	static int nPrevTTRes = -1;
-	int width, height, scalex, scaley, bpp;
+	int width, height, bpp;
 
-	Video_GetTTRes(&width, &height, &scalex, &scaley, &bpp);
+	Video_GetTTRes(&width, &height, &bpp);
 	if (TTRes != nPrevTTRes)
 	{
-		HostScreen_setWindowSize(width, height, scalex, scaley, 8);
+		HostScreen_setWindowSize(width, height, 8);
 		nPrevTTRes = TTRes;
 		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
 			bTTColorsSync = false;
