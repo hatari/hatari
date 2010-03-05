@@ -204,7 +204,7 @@ static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *b
 void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 {
 	Uint32 screenheight;
-	int scalex, scaley;
+	int scalex, scaley, sbarheight;
 
 	nScreenZoomX = nScreenZoomY = 1;
 	
@@ -248,13 +248,15 @@ void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 	width *= nScreenZoomX;
 	height *= nScreenZoomY;
 
-	screenheight = height + Statusbar_SetHeight(width, height);
-
 	if (bpp == 24)
 		bpp = 32;
 
+	sbarheight = Statusbar_GetHeightForSize(width, height);
+	screenheight = height + sbarheight;
+
 	// Select a correct video mode
 	HostScreen_searchVideoMode(&width, &screenheight, &bpp);
+	Statusbar_SetHeight(width, screenheight-sbarheight);
 
 	hs_bpp = bpp;
 	hs_width = width;
