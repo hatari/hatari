@@ -3,6 +3,11 @@
 path=${0%/*}
 name=${0##*/}
 
+if [ ! -e $path/$name.py ]; then
+	# Assume package has been relocated, try relative data directory:
+	path=${0%/*}/../share/hatari/hatariui
+fi
+
 # example setup for Hatari UI
 $path/$name.py --right "about,|,run,pause,forward,|,reset,|,quit" --embed $*
 exit 0
