@@ -41,10 +41,10 @@
     chipset address : 10
     command : 
 	000 XXX XDD Mixing
-		00 : -12 dB
-		01 : Sample and YM2149 mixing
-		02 : Sample only
-		03 : Reserved
+		00 : DMA and (YM2149 - 12dB) mixing
+		01 : DMA and YM2149 mixing
+		10 : DMA only
+		11 : Reserved
 
 	001 XXD DDD Bass
 		0 000 : -12 dB
@@ -56,7 +56,7 @@
 		0 110 :   0 dB
 		1 100 : +12 dB
 
-	003 DDD DDD Master
+	003 DDD DDD Master volume
 		000 000 : -80 dB
 		010 100 : -40 dB
 		101 XXX :   0 dB
@@ -95,8 +95,9 @@ struct dma_s {
 	Uint16 soundMode;		/* Sound mode register */
 	Uint32 frameStartAddr;		/* Sound frame start */
 	Uint32 frameEndAddr;		/* Sound frame end */
-	double frameCounter;		/* Counter in current sound frame */
-	int frameLen;			/* Length of the frame */
+	Uint32 frameCounter_int;	/* Counter in current sound frame, integer part */
+	Uint32 frameCounter_dec;	/* Counter in current sound frame, decimal part */
+	Uint32 frameLen;		/* Length of the frame */
 };
 
 struct microwire_s {
@@ -106,7 +107,7 @@ struct microwire_s {
 	Uint16 mixing;			/* Mixing command */
 	Uint16 bass;			/* Bass command */
 	Uint16 treble;			/* Treble command */
-	Uint16 master;			/* Master command */
+	Uint16 masterVolume;		/* Master volume command */
 	Uint16 leftVolume;		/* Left channel volume command */
 	Uint16 rightVolume;		/* Right channel volume command */
 };
@@ -114,6 +115,18 @@ struct microwire_s {
 static struct dma_s dma;
 static struct microwire_s microwire;
 
+/* Values for LMC1992 volume control ((x*65535) / 40) */
+static const Uint16 LMC1992_Volume_Table[64] =
+{
+	    0,  1638,  3277,  4915,  6554,  8192,  9830, 11469, /* -80dB -> -66dB */ 
+	13107, 14745, 16384, 18022, 19661, 21299, 22937, 24576, /* -64dB -> -50dB */
+	26214, 27852, 29491, 31129, 32768, 34406, 36044, 37683, /* -48dB -> -34dB */
+	39321, 40959, 42598, 44236, 45875, 47513, 49151, 50790, /* -32dB -> -18dB */
+	52428, 54066, 55705, 57343, 58982, 60620, 62258, 63897, /* -16dB -> -2dB  */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, /* 0dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, /* 0dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535  /* 0dB */
+};
 
 static const double DmaSndSampleRates[4] =
 {
@@ -135,11 +148,14 @@ void DmaSnd_Reset(bool bCold)
 	if (bCold)
 	{
 		dma.soundMode = 0;
+		microwire.masterVolume = 65535;
+		microwire.leftVolume = 65535;
+		microwire.rightVolume = 65535;
+		microwire.mixing = 0;
 	}
 
 	microwire.mwTransferSteps = 0;
 }
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -173,7 +189,9 @@ static void DmaSnd_StartNewFrame(void)
 	dma.frameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
 	dma.frameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
 
-	dma.frameCounter = 0;
+	dma.frameCounter_int = 0;
+	dma.frameCounter_dec = 0;
+	
 	dma.frameLen = dma.frameEndAddr - dma.frameStartAddr;
 
 	if (dma.frameLen <= 0)
@@ -194,28 +212,25 @@ static void DmaSnd_StartNewFrame(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check if end-of-frame has been reached and raise interrupts if needed.
+ * End-of-frame has been reached. Raise interrupts if needed.
  * Returns true if DMA sound processing should be stopped now and false
- * if it continues.
+ * if it continues (DMA PLAYLOOP mode).
  */
-static inline int DmaSnd_CheckForEndOfFrame(int nframeCounter)
+static inline int DmaSnd_EndOfFrameReached()
 {
-	if (nframeCounter >= dma.frameLen)
-	{
-		/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
-		MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
-		if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
-			MFP_TimerA_EventCount_Interrupt();
+	/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
+	MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
+	if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
+		MFP_TimerA_EventCount_Interrupt();
 
-		if (nDmaSoundControl & DMASNDCTRL_PLAYLOOP)
-		{
-			DmaSnd_StartNewFrame();
-		}
-		else
-		{
-			nDmaSoundControl &= ~DMASNDCTRL_PLAY;
-			return true;
-		}
+	if (nDmaSoundControl & DMASNDCTRL_PLAYLOOP)
+	{
+		DmaSnd_StartNewFrame();
+	}
+	else
+	{
+		nDmaSoundControl &= ~DMASNDCTRL_PLAY;
+		return true;
 	}
 
 	return false;
@@ -233,8 +248,8 @@ static inline int DmaSnd_CheckForEndOfFrame(int nframeCounter)
  */
 void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
-	double FreqRatio;
-	int i;
+	Uint32 FreqRatio;
+	int i, intPart;
 	int nBufIdx, nFramePos;
 	Sint8 *pFrameStart;
 
@@ -242,40 +257,112 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		return;
 
 	pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
-	FreqRatio = DmaSnd_DetectSampleRate() / (double)nAudioFrequency;
 
-	if (dma.soundMode & DMASNDMODE_MONO)  /* 8-bit stereo or mono? */
+	/* Compute ratio between hatari's sound frequency and host computer's sound frequency */
+	FreqRatio = (Uint32)(DmaSnd_DetectSampleRate() / (double)nAudioFrequency * 65536.0);
+				
+	if (dma.soundMode & DMASNDMODE_MONO)
 	{
 		/* Mono 8-bit */
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][1] =
-				(int)MixBuffer[nBufIdx][0]
-				+ 64 * (int)pFrameStart[(int)dma.frameCounter];
-			dma.frameCounter += FreqRatio;
-			if (DmaSnd_CheckForEndOfFrame(dma.frameCounter))
-				break;
+			switch (microwire.mixing) {
+				case 0:
+					/* DMA and (YM2149 - 12dB) mixing */
+					MixBuffer[nBufIdx][0] = ((int)pFrameStart[dma.frameCounter_int] * 128) + 
+								(((int)MixBuffer[nBufIdx][0] * 55705) / 512);
+					break;
+				case 1:
+					/* DMA and YM2149 mixing */
+					MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)pFrameStart[dma.frameCounter_int]) * 128;	
+					break;
+				case 2:
+					/* DMA sound only */
+					MixBuffer[nBufIdx][0] = ((int)pFrameStart[dma.frameCounter_int]) * 256;
+					break;
+				case 3:
+				default:
+					/* Reserved, do nothing */
+					return;
+					break;
+			}
+			MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][0];	
+
+			/* Increase ratio pointer to next DMA sample */
+			dma.frameCounter_dec += FreqRatio;
+			if (dma.frameCounter_dec >= 65536) {
+				intPart = dma.frameCounter_dec >> 16;
+				dma.frameCounter_int += intPart;
+				dma.frameCounter_dec -= intPart* 65536;
+			}
+
+			/* Is end of DMA buffer reached ? */
+			if (dma.frameCounter_int >= dma.frameLen) {
+				if (DmaSnd_EndOfFrameReached())
+					break;
+			}
 		}
 	}
 	else
 	{
 		/* Stereo 8-bit */
-		FreqRatio *= 2.0;
+		FreqRatio *= 2;
+
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			nFramePos = ((int)dma.frameCounter) & ~1;
-			MixBuffer[nBufIdx][0] = (int)MixBuffer[nBufIdx][0]
-			                        + 64 * (int)pFrameStart[nFramePos];
-			MixBuffer[nBufIdx][1] = (int)MixBuffer[nBufIdx][1]
-			                        + 64 * (int)pFrameStart[nFramePos+1];
-			dma.frameCounter += FreqRatio;
-			if (DmaSnd_CheckForEndOfFrame(dma.frameCounter))
-				break;
+			nFramePos = (dma.frameCounter_int) & ~1;
+			
+			switch (microwire.mixing) {
+				case 0:
+					/* DMA and (YM2149 - 12dB) mixing */
+					MixBuffer[nBufIdx][0] = ((int)pFrameStart[nFramePos] * 128) + 
+								(((int)MixBuffer[nBufIdx][0] * 55705) / 512);
+					MixBuffer[nBufIdx][1] = ((int)pFrameStart[nFramePos+1] * 128) + 
+								(((int)MixBuffer[nBufIdx][1] * 55705) / 512);
+					break;
+				case 1:
+					/* DMA and YM2149 mixing */
+					MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)pFrameStart[nFramePos]) * 128;	
+					MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1] + (int)pFrameStart[nFramePos+1]) * 128;	
+					break;
+				case 2:
+					/* DMA sound only */
+					MixBuffer[nBufIdx][0] = ((int)pFrameStart[nFramePos]) * 256;
+					MixBuffer[nBufIdx][1] = ((int)pFrameStart[nFramePos+1]) * 256;
+					break;
+				case 3:
+				default:
+					/* Reserved, do nothing */
+					return;
+					break;
+			}
+
+			/* Increase ratio pointer to next DMA sample */
+			dma.frameCounter_dec += FreqRatio;
+			if (dma.frameCounter_dec >= 65536) {
+				intPart = dma.frameCounter_dec >> 16;
+				dma.frameCounter_int += intPart;
+				dma.frameCounter_dec -= intPart* 65536;
+			}
+
+			/* Is end of DMA buffer reached ? */
+			if (dma.frameCounter_int >= dma.frameLen) {
+				if (DmaSnd_EndOfFrameReached())
+					break;
+			}
 		}
 	}
-}
+	
+	/* Apply LMC1992 sound modifications (Left, Right and Master Volume */
+	/* Todo: Bass and treble */
+	for (i = 0; i < nSamplesToGenerate; i++) {
+		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+		MixBuffer[nBufIdx][0] = (((MixBuffer[nBufIdx][0] * microwire.leftVolume) >> 16) * microwire.masterVolume) >> 16;
+		MixBuffer[nBufIdx][1] = (((MixBuffer[nBufIdx][1] * microwire.rightVolume) >> 16) * microwire.masterVolume) >> 16;
+	}
+ }
 
 
 /*-----------------------------------------------------------------------*/
@@ -302,7 +389,7 @@ static Uint32 DmaSnd_GetFrameCount(void)
 	Uint32 nActCount;
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-		nActCount = dma.frameStartAddr + (int)dma.frameCounter;
+		nActCount = dma.frameStartAddr + (int)dma.frameCounter_int;
 	else
 		nActCount = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | IoMem[0xff8907];
 
@@ -392,6 +479,9 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
  */
 void DmaSnd_InterruptHandler_Microwire(void)
 {
+	Uint8 i, bit;
+	Uint16 saveData;
+	
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
@@ -420,12 +510,23 @@ void DmaSnd_InterruptHandler_Microwire(void)
 		CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 	else {
-		/* The LMC 1992 address should be 10x xxx xxx */
+		/* Decode the address + command word according to the binary mask */
+		bit = 0;
+		saveData = microwire.data;
+		microwire.data = 0;
+		for (i=0; i<16; i++) {
+			if ((microwire.mask >> i) & 1) {
+				microwire.data += ((saveData >> i) & 1) << bit;
+				bit ++;
+			}
+		}
+
+		/* The LMC 1992 address should be 10 xxx xxx xxx */
 		if ((microwire.data & 0x600) != 0x400)
 			return;
-		
+
 		/* Update the LMC 1992 commands */
-		switch ((microwire.data >> 6) & 7) {
+		switch ((microwire.data >> 6) & 0x7) {
 			case 0:
 				/* Mixing command */
 				microwire.mixing = microwire.data & 0x3;
@@ -439,16 +540,16 @@ void DmaSnd_InterruptHandler_Microwire(void)
 				microwire.treble = microwire.data & 0xf;
 				break;
 			case 3:
-				/* Master command */
-				microwire.master = microwire.data & 0x3f;
+				/* Master volume command */
+				microwire.masterVolume = LMC1992_Volume_Table[microwire.data & 0x3f];
 				break;
 			case 4:
 				/* Right channel volume */
-				microwire.rightVolume = microwire.data & 0x1f;
+				microwire.rightVolume = LMC1992_Volume_Table[(microwire.data & 0x1f) + 20];
 				break;
 			case 5:
 				/* Left channel volume */
-				microwire.leftVolume = microwire.data & 0x1f;
+				microwire.leftVolume = LMC1992_Volume_Table[(microwire.data & 0x1f) + 20];
 				break;
 			default:
 				/* Do nothing */
