@@ -216,7 +216,7 @@ static void DmaSnd_StartNewFrame(void)
  * Returns true if DMA sound processing should be stopped now and false
  * if it continues (DMA PLAYLOOP mode).
  */
-static inline int DmaSnd_EndOfFrameReached()
+static inline int DmaSnd_EndOfFrameReached(void)
 {
 	/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
 	MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
