@@ -140,18 +140,18 @@ Uint16 nCbar_DmaSoundControl;
 
 /* internal datas */
 
-/* Values for Codec's ADC volume control ((x/15)* DECIMAL_PRECISION) */
+/* Values for Codec's ADC volume control (step -3db) (* DECIMAL_PRECISION) */
 static const Uint16 Crossbar_ADC_volume_table[16] =
 {
-	0, 4369, 8738, 13107, 17476, 21845, 26214, 30583,
-	34953, 39322, 43691, 48060, 52429, 56798, 61167, 65535
+	   0,   391,   735,  1039,  1467,  2072,  2927,  4135,
+	 5841, 8250, 11654, 16462, 23253, 32845, 46395, 63535
 };
 
-/* Values for Codex's DAC volume control ((x/15)* DECIMAL_PRECISION) */
+/* Values for Codex's DAC volume control (step -3db) (* DECIMAL_PRECISION) */
 static const Uint16 Crossbar_DAC_volume_table[16] =
 {
-	65535, 61167, 56798, 52429, 48060, 43691, 39322, 34953,
-	30583, 26214, 21845, 17476, 13107, 8738, 4369, 0
+	63535, 46395, 32845, 23253, 16462, 11654, 8250, 5841,
+	 4135,  2927,  2072,  1467,  1039,   735,  391,    0
 };
 
 static const double Ste_SampleRates[4] =

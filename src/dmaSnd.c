@@ -115,17 +115,26 @@ struct microwire_s {
 static struct dma_s dma;
 static struct microwire_s microwire;
 
-/* Values for LMC1992 volume control ((x*65535) / 40) */
-static const Uint16 LMC1992_Volume_Table[64] =
+/* Values for LMC1992 Master volume control (*65536) */
+static const Uint16 LMC1992_Master_Volume_Table[64] =
 {
-	    0,  1638,  3277,  4915,  6554,  8192,  9830, 11469, /* -80dB -> -66dB */ 
-	13107, 14745, 16384, 18022, 19661, 21299, 22937, 24576, /* -64dB -> -50dB */
-	26214, 27852, 29491, 31129, 32768, 34406, 36044, 37683, /* -48dB -> -34dB */
-	39321, 40959, 42598, 44236, 45875, 47513, 49151, 50790, /* -32dB -> -18dB */
-	52428, 54066, 55705, 57343, 58982, 60620, 62258, 63897, /* -16dB -> -2dB  */
-	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, /* 0dB */
-	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, /* 0dB */
-	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535  /* 0dB */
+	    0,   330,   370,   430,   500,   560,   630,   740, /* -80dB -> -66dB */ 
+	  850,  1000,  1140,  1300,  1500,  1700,  1950,  2200, /* -64dB -> -50dB */
+	 2500,  2900,  3300,  3800,  4300,  4950,  5600,  6300, /* -48dB -> -34dB */
+	 7300,  8280,  9600, 11100, 12800, 14500, 16500, 19450, /* -32dB -> -18dB */
+	22500, 25500, 29100, 32900, 38000, 43950, 50000, 57600, /* -16dB ->  -2dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, /*   0dB ->   0dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, /*   0dB ->   0dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535  /*   0dB ->   0dB */
+};
+
+/* Values for LMC1992 Left and right volume control (*65536) */
+static const Uint16 LMC1992_LeftRight_Volume_Table[32] =
+{
+	    0,   370,   500,   630,   850,  1140,  1500,  1950, /* -40dB -> -26dB */
+	 2500,  3300,  4300,  5600,  7300,  9600, 12800, 16500, /* -24dB -> -10dB */
+	22500, 29100, 38000, 50000, 65535, 65535, 65535, 65535, /*  -8dB ->   0dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535  /*   0dB ->   0dB */
 };
 
 static const double DmaSndSampleRates[4] =
@@ -541,15 +550,15 @@ void DmaSnd_InterruptHandler_Microwire(void)
 				break;
 			case 3:
 				/* Master volume command */
-				microwire.masterVolume = LMC1992_Volume_Table[microwire.data & 0x3f];
+				microwire.masterVolume = LMC1992_Master_Volume_Table[microwire.data & 0x3f];
 				break;
 			case 4:
 				/* Right channel volume */
-				microwire.rightVolume = LMC1992_Volume_Table[(microwire.data & 0x1f) + 20];
+				microwire.rightVolume = LMC1992_LeftRight_Volume_Table[microwire.data & 0x1f];
 				break;
 			case 5:
 				/* Left channel volume */
-				microwire.leftVolume = LMC1992_Volume_Table[(microwire.data & 0x1f) + 20];
+				microwire.leftVolume = LMC1992_LeftRight_Volume_Table[microwire.data & 0x1f];
 				break;
 			default:
 				/* Do nothing */
