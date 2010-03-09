@@ -47,7 +47,7 @@ RANLIB = $(MINGW_PREFIX)ranlib
 
 # The native C compiler.
 # This is normaly the same as $(CC) unless you are using a cross compiler.
-HOSTCC = gcc
+HOSTCC ?= gcc
 
 # Native C compiler flags:
 HOSTCFLAGS = -g -O -Wall
