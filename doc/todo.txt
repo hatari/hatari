@@ -98,8 +98,6 @@ Other potential Hatari functionality improvements
 	- Include some fancy zooming routines like 2xSaI or Super-Eagle
 	- Add support for hardware accelerated zooming with
 	  SDL YUV overlays or OpenGL
-	- Better handling of screen resolutions.  If first attempt fails,
-	  try e.g. without zooming, no borders or smaller borders etc.
 
 - Check/clean RS232 code:
 	- polls at 2/20ms intervals and reads data byte at the time.

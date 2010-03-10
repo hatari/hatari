@@ -36,6 +36,12 @@ Emulation:
 Emulator:
 - Host mouse is centered to Hatari window on Falcon resolution changes
   (helps in synchronizing host and emulated mouse positions)
+- Falcon/TT resolution zooming is now controlled by separate options for
+  monitor aspect ratio correction and maximum zoomed Hatari window size.
+  This can reduce Hatari window resolution size changes significantly and
+  makes e.g. FUN's Alive demo viewable in fullscreen mode.  Limits for
+  window size are also checked to see whether ST/STE low rez should
+  be zoomed or whether borders option can be kept enabled
 - GEMDOS drive emulation:
   - support long host directory names and much improved long filename support
   - convert host filename chars invalid in TOS to valid ones ('@')

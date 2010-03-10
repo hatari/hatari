@@ -62,12 +62,21 @@ Grab mouse (also) in window mode
 .B \-z, \-\-zoom <x>
 Zoom low resolution (1=no, 2=yes)
 .TP 
+.B \-\-max-width <x>
+Maximum window width for zooming (Falcon/TT only)
+.TP 
+.B \-\-max-height <x>
+Maximum window height for zooming (Falcon/TT only)
+.TP 
+.B \-\-aspect <bool>
+Whether to do monitor aspect ratio correction (Falcon/TT only)
+.TP 
+.B \-\-borders <bool>
+Show ST/STE screen borders (for low/med resolution overscan demos)
+.TP 
 .B \-\-frameskips <x>
 Skip <x> frames after each displayed frame to accelerate emulation
 (0=disabled, >4 uses automatic frameskip with given value as maximum)
-.TP 
-.B \-\-borders <bool>
-Show screen borders (for overscan demos, ST(e) color mode specific etc)
 .TP 
 .B \-\-statusbar <bool>
 Show statusbar (with floppy leds etc etc)

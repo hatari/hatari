@@ -55,8 +55,11 @@ enum {
 	OPT_WINDOW,
 	OPT_GRAB,
 	OPT_ZOOM,
-	OPT_FRAMESKIPS,
+	OPT_MAXWIDTH,
+	OPT_MAXHEIGHT,
+	OPT_ASPECT,
 	OPT_BORDERS,
+	OPT_FRAMESKIPS,
 	OPT_STATUSBAR,
 	OPT_DRIVE_LED,
 	OPT_SPEC512,
@@ -153,10 +156,16 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Grab mouse (also) in window mode" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double small resolutions (1=no, 2=yes)" },
+	{ OPT_MAXWIDTH, NULL, "--max-width",
+	  "<x>", "Maximum window width for zooming (Falcon/TT only)" },
+	{ OPT_MAXHEIGHT, NULL, "--max-height",
+	  "<x>", "Maximum window height for zooming (Falcon/TT only)" },
+	{ OPT_ASPECT, NULL, "--aspect",
+	  "<bool>", "Monitor aspect ratio correction (Falcon/TT only)" },
+	{ OPT_BORDERS, NULL, "--borders",
+	  "<bool>", "Show ST/STE screen borders (for overscan demos etc)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
-	{ OPT_BORDERS, NULL, "--borders",
-	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
@@ -767,7 +776,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 		case OPT_GRAB:
 			bGrabMouse = true;
 			break;
-			
+
 		case OPT_ZOOM:
 			zoom = atoi(argv[++i]);
 			if (zoom < 1)
@@ -784,6 +793,18 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				ConfigureParams.Screen.nMaxWidth = 320;
 				ConfigureParams.Screen.nMaxHeight = 200;
 			}
+			break;
+			
+		case OPT_MAXWIDTH:
+			ConfigureParams.Screen.nMaxWidth = atoi(argv[++i]);
+			break;
+
+		case OPT_MAXHEIGHT:
+			ConfigureParams.Screen.nMaxHeight = atoi(argv[++i]);
+			break;
+			
+		case OPT_ASPECT:
+			ok = Opt_Bool(argv[++i], OPT_ASPECT, &ConfigureParams.Screen.bAspectCorrect);
 			break;
 			
 		case OPT_FRAMESKIPS:
