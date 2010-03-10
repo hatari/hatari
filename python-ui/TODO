@@ -9,7 +9,7 @@ sources.
 
 * Separate "Atari monitor" and "Hatari window" settings dialogs
   (move options from "Display" and monitor setting from "Machine"
-  dialogs to here)
+  dialogs to here) and add proper support for window max size
 
 * Features for Help menu:
   - Create empty floppy images (+ convert directories to hard disks?)

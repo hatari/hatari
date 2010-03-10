@@ -584,17 +584,25 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Screen]", "bShowDriveLed", value)
         self._change_option("--drive-led %s" % str(value))
 
-    # ------------ use zoom ---------------
-    def get_zoom(self):
-        return self.get("[Screen]", "bZoomLowRes")
+    # ------------ monitor aspect ratio ---------------
+    def get_aspectcorrection(self):
+        return self.get("[Screen]", "bAspectCorrect")
     
-    def set_zoom(self, value):
-        self.set("[Screen]", "bZoomLowRes", value)
-        if value:
-            zoom = 2
-        else:
-            zoom = 1
-        self._change_option("--zoom %d" % zoom)
+    def set_aspectcorrection(self, value):
+        self.set("[Screen]", "bAspectCorrect", value)
+        self._change_option("--aspect %s" % str(value))
+
+    # ------------ max window size ---------------
+    def get_max_size(self):
+        w = self.get("[Screen]", "nMaxWidth")
+        h = self.get("[Screen]", "nMaxHeight")
+        return (w, h)
+
+    def set_zoom(self, w, h):
+        self.get("[Screen]", "nMaxWidth", w)
+        self.get("[Screen]", "nMaxHeight", h)
+        self._change_option("--max-width %d" % w)
+        self._change_option("--max-height %d" % h)
 
     # ------------ configured Hatari window size ---------------
     def get_window_size(self):
@@ -612,23 +620,25 @@ class HatariConfigMapping(ConfigStore):
             print "WARNING: neither ST nor STE machine, window size inaccurate!"
 
         # mono monitor?
-        if self.get("[Screen]", "nMonitorType") == 0:
+        if self.get_monitor() == 0:
             return (640, 400)
 
         # no, color
         width = 320
         height = 200
         # add overscan borders?
-        if self.get("[Screen]", "bAllowOverscan"):
+        if self.get_borders():
             # max size with overscan borders
             width += self.get("[Screen]", "nWindowBorderPixelsLeft")
             width += self.get("[Screen]", "nWindowBorderPixelsRight")
-            height = 29 + 200 + self.get("[Screen]", "nWindowBorderPixelsBottom")
+            height += self.get("[Screen]", "nWindowBorderPixelsTop")
+            height += self.get("[Screen]", "nWindowBorderPixelsBottom")
         # statusbar?
-        if self.get("[Screen]", "bShowStatusbar"):
-            height += 10
+        if self.get_statusbar():
+            height += 12
         # zoomed?
-        if self.get("[Screen]", "bZoomLowRes"):
+        maxw, maxh = self.get_max_size()
+        if 2*width < maxw and 2*height < maxh:
             width *= 2
             height *= 2
 
