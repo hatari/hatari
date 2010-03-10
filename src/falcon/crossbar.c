@@ -1081,6 +1081,10 @@ static void Crossbar_Recalculate_Clocks_Cycles(void)
 	/* Recalculate ratio between hatari's sound frequency and host's sound frequency */
 	crossbar.frequence_ratio2 = (Uint32)(((double)nAudioFrequency / Crossbar_DetectSampleRate(25)) * (double)DECIMAL_PRECISION);
 	
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : Recalculate_clock_Cycles\n");
+	LOG_TRACE(TRACE_CROSSBAR, "           clock25 : %d\n", crossbar.clock25_cycles);
+	LOG_TRACE(TRACE_CROSSBAR, "           clock32 : %d\n", crossbar.clock32_cycles);
+
 	/* Verify if the new frequency doesn't mute the DAC */
 	crossbar.isDacMuted = 0;
 	if ((crossbar.int_freq_divider == 0) && (crossbar.steFreq == 0))
@@ -1145,7 +1149,7 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
 		crossbar.clock32_cycles_counter -= DECIMAL_PRECISION;
 		cycles_32 ++;
 	}
-	CycInt_AddRelativeInterrupt(cycles_32, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_25MHZ);
+	CycInt_AddRelativeInterrupt(cycles_32, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_32MHZ);
 }
 
 
@@ -1372,7 +1376,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		Crossbar_SendDataToDAC(value * eightBits, dmaPlay.currentFrame);
 	}
 
-	/* Send sample to the DSP in (non handshake mode) ? */
+	/* Send sample to the DSP in ? */
 	if (dmaPlay.isConnectedToDsp) {
 		/* New frame ? */
 		if (dmaPlay.currentFrame == 0) {
