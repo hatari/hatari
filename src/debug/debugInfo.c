@@ -236,6 +236,10 @@ static void DebugInfo_Videl(Uint32 dummy)
  */
 static void DebugInfo_Crossbar(Uint32 dummy)
 {
+	char matrixDMA[5], matrixDAC[5], matrixDSP[5], matrixEXT[5];
+	char frqDMA[11], frqDAC[11], frqDSP[11], frqEXT[11];
+	char dataSize[15];
+	
 	if (ConfigureParams.System.nMachineType != MACHINE_FALCON) {
 		fprintf(stderr, "Not Falcon - no Crossbar!\n");
 		return;
@@ -268,6 +272,117 @@ static void DebugInfo_Crossbar(Uint32 dummy)
 	fprintf(stderr, "$FF893C : Codec Status                          : %04x\n", IoMem_ReadWord(0xff893c));
 	fprintf(stderr, "$FF8940 : GPIO Data Direction                   : %04x\n", IoMem_ReadWord(0xff8940));
 	fprintf(stderr, "$FF8942 : GPIO Data                             : %04x\n", IoMem_ReadWord(0xff8942));
+	fprintf(stderr, "\n");
+	
+	/* DAC connexion */
+	switch ((IoMem_ReadWord(0xff8932) >> 13) & 3) {
+		case 0 : strcpy(matrixDAC, "OOXO"); break;
+		case 1 : strcpy(matrixDAC, "OXOO"); break;
+		case 2 : strcpy(matrixDAC, "XOOO"); break;
+		case 3 : strcpy(matrixDAC, "OOOX"); break;
+	}
+		
+	/* DMA connexion */
+	switch ((IoMem_ReadWord(0xff8932) >> 1) & 3) {
+		case 0 : strcpy(matrixDMA, "OOXO"); break;
+		case 1 : strcpy(matrixDMA, "OXOO"); break;
+		case 2 : strcpy(matrixDMA, "XOOO"); break;
+		case 3 : strcpy(matrixDMA, "OOOX"); break;
+	}
+
+	/* DSP connexion */
+	switch ((IoMem_ReadWord(0xff8932) >> 5) & 3) {
+		case 0 : strcpy(matrixDSP, "OOXO"); break;
+		case 1 : strcpy(matrixDSP, "OXOO"); break;
+		case 2 : strcpy(matrixDSP, "XOOO"); break;
+		case 3 : strcpy(matrixDSP, "OOOX"); break;
+	}
+
+	/* External input connexion */
+	switch ((IoMem_ReadWord(0xff8932) >> 9) & 3) {
+		case 0 : strcpy(matrixEXT, "OOXO"); break;
+		case 1 : strcpy(matrixEXT, "OXOO"); break;
+		case 2 : strcpy(matrixEXT, "XOOO"); break;
+		case 3 : strcpy(matrixEXT, "OOOX"); break;
+	}
+
+	/* HandShake mode test */
+	if ((IoMem_ReadWord(0xff8932) & 7) == 2) {
+		matrixDMA[1] = 'H';
+	}
+
+	/* HandShake mode test */
+	if ((IoMem_ReadWord(0xff8932) & 0xf) == 2) {
+		matrixDSP[2] = 'H';
+	}
+
+	/* DSP Frequency */
+	if ((IoMem_ReadByte(0xff8935) & 0xf) == 0) {
+		strcpy(frqDSP, "(STe Freq)");
+	}else {
+		switch ((IoMem_ReadWord(0xff8930) >> 5) & 0x3) {
+			case 0: strcpy(frqDSP, " (25 Mhz) "); break;
+			case 1: strcpy(frqDSP, "(External)"); break;
+			case 2: strcpy(frqDSP, " (32 Mhz) "); break;
+			default:  strcpy(frqDSP, "undefined "); break;break;
+		}
+	}
+
+	/* DMA Frequency */
+	if ((IoMem_ReadByte(0xff8935) & 0xf) == 0) {
+		strcpy(frqDMA, "(STe Freq)");
+	}else {
+		switch ((IoMem_ReadWord(0xff8930) >> 1) & 0x3) {
+			case 0: strcpy(frqDMA, " (25 Mhz) "); break;
+			case 1: strcpy(frqDMA, "(External)"); break;
+			case 2: strcpy(frqDMA, " (32 Mhz) "); break;
+			default:  strcpy(frqDMA, "undefined "); break;break;
+		}
+	}
+
+	/* External Frequency */
+	if ((IoMem_ReadByte(0xff8935) & 0xf) == 0) {
+		strcpy(frqEXT, "(STe Freq)");
+	}else {
+		switch ((IoMem_ReadWord(0xff8930) >> 9) & 0x3) {
+			case 0: strcpy(frqEXT, " (25 Mhz) "); break;
+			case 1: strcpy(frqEXT, "(External)"); break;
+			case 2: strcpy(frqEXT, " (32 Mhz) "); break;
+			default:  strcpy(frqEXT, "undefined "); break;break;
+		}
+	}
+
+	/* DAC Frequency */
+	if ((IoMem_ReadByte(0xff8935) & 0xf) == 0) {
+		strcpy(frqDAC, "(STe Freq)");
+	}else {
+		strcpy(frqDAC, " (25 Mhz) ");
+	}
+
+	/* data size */
+	switch ((IoMem_ReadByte(0xff8921) >> 6) & 0x3) {
+		case 0: strcpy (dataSize, "8 bits stereo"); break;
+		case 1: strcpy (dataSize, "16 bits stereo"); break;
+		case 2: strcpy (dataSize, "8 bits mono"); break;
+		default: strcpy (dataSize, "undefined"); break;
+	}
+
+	/* Display the crossbar Matrix */
+	fprintf(stderr, "           INPUT\n");
+	fprintf(stderr, "External Imp  ---%c------%c------%c------%c\n", matrixDAC[0], matrixDMA[0], matrixDSP[0], matrixEXT[0]);
+	fprintf(stderr, "%s       |      |      |      |    O = no connexion\n", frqEXT);
+	fprintf(stderr, "                 |      |      |      |    X = connexion\n");
+	fprintf(stderr, "Dsp Transmit  ---%c------%c------%c------%c    H = Handshake connexion\n", matrixDAC[1], matrixDMA[1], matrixDSP[1], matrixEXT[1]);
+	fprintf(stderr, "%s       |      |      |      |\n", frqDSP);
+	fprintf(stderr, "                 |      |      |      |    %s\n", dataSize);
+	fprintf(stderr, "DMA PlayBack  ---%c------%c------%c------%c\n", matrixDAC[2], matrixDMA[2], matrixDSP[2], matrixEXT[2]);
+	fprintf(stderr, "%s       |      |      |      |\n", frqDMA);
+	fprintf(stderr, "                 |      |      |      |\n");
+	fprintf(stderr, "ADC           ---%c------%c------%c------%c\n", matrixDAC[3], matrixDMA[3], matrixDSP[3], matrixEXT[3]);
+	fprintf(stderr, "%s       |      |      |      |\n", frqDAC);
+	fprintf(stderr, "                DAC    DMA    DSP   External     OUTPUT\n");
+	fprintf(stderr, "                     Record  Record   Out\n");
+	fprintf(stderr, "\n");
 }
 
 
