@@ -1,10 +1,17 @@
 # Makefile configuration for Hatari.
 #
 # Use of '?=' for assignment allows overriding the given value with
-# an environment variable, e.g. like this "make CC=my-gcc"
+# an environment variable, like this:
+# 	HOSTCC=my-hostcc make
+# or:
+#	export HOSTCC=my-hostcc
+#	make
 #
-# Following variables can be overridden:
-#   CC, CPPFLAGS, LDFLAGS, HOSTCC, DATADIR, CONFDIR, BINDIR
+# Following variables can be overridden like that:
+#   CPPFLAGS, LDFLAGS, LIBS, HOSTCC, DATADIR, CONFDIR, BINDIR, MANDIR, DOCDIR
+#
+# GNU make itself supports overriding CC like this:
+#	make CC=my-cc
 
 # Set the C compiler (e.g. gcc)
 CC = gcc
@@ -34,7 +41,7 @@ CFLAGS := -g $(WARNFLAGS) $(OPTFLAGS)
 CPPFLAGS ?=
 
 # Additional libraries and linker flags:
-LIBS = -lz -lm # -lreadline
+LIBS ?= -lz -lm # -lreadline
 LDFLAGS ?=
 
 # Ranlib - for generating an index of an archive
