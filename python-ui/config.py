@@ -86,7 +86,9 @@ class ConfigStore:
                 print "ERROR: configuration file '%' loading failed" % path
                 return
         else:
-            print "WARNING: configuration file missing, using defaults"
+            print "WARNING: configuration file missing"
+            if self.defaults:
+                print "-> using defaults"
             self.sections = self.defaults
         self.path = path
         self.original = self.get_checkpoint()

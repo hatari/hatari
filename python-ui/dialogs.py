@@ -47,13 +47,14 @@ subclasses overriding run() require also an argument."""
 # Note/Todo/Error/Ask dialogs
 
 class NoteDialog(HatariUIDialog):
+    button = gtk.BUTTONS_OK
     icontype = gtk.MESSAGE_INFO
     textpattern = "\n%s"
     def run(self, text):
         "run(text), show message dialog with given text"
         dialog = gtk.MessageDialog(self.parent,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-        self.icontype, gtk.BUTTONS_CLOSE, self.textpattern % text)
+        self.icontype, self.button, self.textpattern % text)
         dialog.run()
         dialog.destroy()
 
@@ -61,6 +62,7 @@ class TodoDialog(NoteDialog):
     textpattern = "\nTODO: %s"
 
 class ErrorDialog(NoteDialog):
+    button = gtk.BUTTONS_CLOSE
     icontype = gtk.MESSAGE_ERROR
     textpattern = "\nERROR: %s"
 
