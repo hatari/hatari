@@ -111,6 +111,7 @@ enum {
 	OPT_TRACE,
 	OPT_TRACEFILE,
 	OPT_PARSE,
+	OPT_SAVECONFIG,
 	OPT_CONTROLSOCKET,
 	OPT_LOGFILE,
 	OPT_LOGLEVEL,
@@ -289,6 +290,8 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Save trace output to <file> (default=stderr)" },
 	{ OPT_PARSE, NULL, "--parse",
 	  "<file>", "Parse/execute debugger commands from <file>" },
+	{ OPT_SAVECONFIG, NULL, "--saveconfig",
+	  NULL, "Save current Hatari configuration and exit" },
 #if HAVE_UNIX_DOMAIN_SOCKETS
 	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
 	  "<file>", "Hatari reads options from given socket at run-time" },
@@ -1321,6 +1324,12 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 		case OPT_PARSE:
 			i += 1;
 			ok = DebugUI_SetParseFile(argv[i]);
+			break;
+
+		case OPT_SAVECONFIG:
+			/* Hatari-UI needs Hatari config to start */
+			Configuration_Save();
+			exit(0);
 			break;
 
 		case OPT_LOGLEVEL:

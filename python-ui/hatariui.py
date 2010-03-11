@@ -4,7 +4,7 @@
 #
 # Requires PyGtk (python-gtk2) package and its dependencies to be present.
 #
-# Copyright (C) 2008-2009 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,10 +30,10 @@ from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
 from uihelpers import UInfo, UIHelp, create_button, create_toolbutton, \
      create_toggle, HatariTextInsert, get_open_filename, get_save_filename
-from dialogs import AboutDialog, TodoDialog, ErrorDialog, InputDialog, \
-     KillDialog, QuitSaveDialog, ResetDialog, TraceDialog, DiskDialog, \
-     DisplayDialog, JoystickDialog, MachineDialog, PeripheralDialog, \
-     PathDialog, SoundDialog
+from dialogs import AboutDialog, TodoDialog, NoteDialog, ErrorDialog, \
+     InputDialog, KillDialog, QuitSaveDialog, ResetDialog, TraceDialog, \
+     DiskDialog, DisplayDialog, JoystickDialog, MachineDialog, \
+     PeripheralDialog, PathDialog, SoundDialog
 
 
 # helper functions to match callback args
@@ -51,10 +51,19 @@ class UICallbacks:
     def __init__(self):
         # Hatari and configuration
         self.hatari = Hatari()
+        error = self.hatari.is_compatible()
+        if error:
+            ErrorDialog(None).run(error)
+            sys.exit(-1)
+            
         self.config = HatariConfigMapping(self.hatari)
-        if not self.config.is_loaded():
-            ErrorDialog(None).run("Loading Hatari configuration failed.\nMake sure you've saved one!")
-            sys.exit(1)
+        try:
+            self.config.validate()
+        except:
+            NoteDialog(None).run("Loading Hatari configuration failed!\nRetrying after saving Hatari configuration.")
+            self.hatari.save_config()
+            self.config = HatariConfigMapping(self.hatari)
+            self.config.validate()
         
         # windows are created when needed
         self.mainwin = None

@@ -41,18 +41,20 @@ class Hatari:
             self.hataribin = hataribin
         else:
             self.hataribin = "hatari"
-        self._assert_hatari_compatibility()
         self._create_server()
         self.control = None
         self.paused = False
         self.pid = 0
 
-    def _assert_hatari_compatibility(self):
+    def is_compatible(self):
+        "check Hatari compatibility and return error string if it's not"
         for line in os.popen(self.hataribin + " -h").readlines():
             if line.find("--control-socket") >= 0:
-                return
-        print "ERROR: Hatari not found or it doesn't support the required --control-socket option!"
-        sys.exit(-1)
+                return None
+        return "Hatari not found or it doesn't support the required --control-socket option!"
+
+    def save_config(self):
+        os.popen(self.hataribin + " --saveconfig")
 
     def _create_server(self):
         if self.server:
@@ -261,6 +263,25 @@ class HatariConfigMapping(ConfigStore):
         self._hatari = hatari
         self._lock_updates = False
         self._options = []
+
+    def validate(self):
+        "exception is thrown if the loaded configuration isn't compatible"
+        for method in dir(self):
+            if '_' not in method:
+                continue
+            # check class getters
+            starts = method[:method.find("_")]
+            if starts != "get":
+                continue
+            # but ignore getters for other things than config
+            ends = method[method.rfind("_")+1:]
+            if ends in ("types", "names", "values", "changes", "checkpoint"):
+                continue
+            if ends in ("floppy", "joystick"):
+                # use port '0' for checks
+                getattr(self, method)(0)
+            else:
+                getattr(self, method)()
 
     def _change_option(self, option):
         if self._lock_updates:
