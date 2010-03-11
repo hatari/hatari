@@ -3,7 +3,7 @@
 # Classes for Hatari emulator instance and mapping its congfiguration
 # variables with its command line option.
 #
-# Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
+# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -598,11 +598,20 @@ class HatariConfigMapping(ConfigStore):
         h = self.get("[Screen]", "nMaxHeight")
         return (w, h)
 
-    def set_zoom(self, w, h):
+    def set_max_size(self, w, h):
         self.get("[Screen]", "nMaxWidth", w)
         self.get("[Screen]", "nMaxHeight", h)
         self._change_option("--max-width %d" % w)
         self._change_option("--max-height %d" % h)
+
+    # TODO: remove once UI doesn't need this anymore
+    def set_zoom(self, value):
+        print "Just setting Zoom, configuration doesn't anymore have setting for this."
+        if value:
+            zoom = 2
+        else:
+            zoom = 1
+        self._change_option("--zoom %d" % zoom)
 
     # ------------ configured Hatari window size ---------------
     def get_window_size(self):

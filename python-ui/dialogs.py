@@ -2,7 +2,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
+# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -335,10 +335,12 @@ class DisplayDialog(HatariUIDialog):
         skip.set_active(config.get_frameskip())
         tips.set_tip(skip, "Set how many frames are skipped")
 
+        # TODO: do proper support for max window size
         zoom = gtk.CheckButton("Zoom small resolutions")
         maxw, maxh = config.get_max_size()
-        if maxh >= 640 and maxh >= 400:
-            zoom.set_active(true)
+        print "MAX:", maxw, maxh
+        if maxw >= 640 and maxh >= 400:
+            zoom.set_active(True)
         tips.set_tip(zoom, "Whether to zoom small resolutions")
 
         aspect = gtk.CheckButton("Falcon/TT aspect ratio correction")
@@ -394,8 +396,7 @@ class DisplayDialog(HatariUIDialog):
         if response == gtk.RESPONSE_APPLY:
             config.lock_updates()
             config.set_frameskip(self.skip.get_active())
-            print "TODO: do proper support for max window size"
-            # config.set_max_size(w, h)
+            config.set_zoom(self.zoom.get_active())
             config.set_aspectcorrection(self.aspect.get_active())
             config.set_borders(self.borders.get_active())
             config.set_spec512threshold(self.spec512.get_active())
