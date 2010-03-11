@@ -1,6 +1,14 @@
 
-User visible changes in Hatari (Python Gtk) UI
-----------------------------------------------
+User visible changes in Hatari (Python Gtk) UI and console
+----------------------------------------------------------
+
+2010-03:
+- With the new Hatari --saveconfig option Hatari UI can ask Hatari
+  to save its configuration (required by the UI) before the UI itself
+  starts, user doesn't need to do it manually anymore
+- UI support for --slowfdc and new --aspect Hatari options, preliminary
+  support for --max-width and --max-height options
+- New debugger and command line options commands support to hatari-console
 
 2009-12:
 - Support new Hatari command line options in hatari-console
