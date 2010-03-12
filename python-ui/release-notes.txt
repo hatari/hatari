@@ -9,6 +9,7 @@ User visible changes in Hatari (Python Gtk) UI and console
 - UI support for --slowfdc and new --aspect Hatari options, preliminary
   support for --max-width and --max-height options
 - New debugger and command line options commands support to hatari-console
+- hatari-console commands can be scripted (see its help)
 
 2009-12:
 - Support new Hatari command line options in hatari-console

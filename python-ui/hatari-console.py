@@ -156,8 +156,9 @@ class CommandInput:
             return ""
 
 
-# update with: hatari -h|grep -- --|sed 's/^ *\(--[^ ]*\).*$/    "\1",/'
-option_tokens = [
+class Tokens:
+    # update with: hatari -h|grep -- --|sed 's/^ *\(--[^ ]*\).*$/    "\1",/'
+    option_tokens = [
     "--help",
     "--version",
     "--confirm-quit",
@@ -230,9 +231,9 @@ option_tokens = [
     "--log-level",
     "--alert-level",
     "--run-vbls"
-]
-shortcut_tokens = [
-    "mousemode",
+    ]
+    shortcut_tokens = [
+    "mousegrab",
     "coldreset",
     "warmreset",
     "screenshot",
@@ -240,20 +241,20 @@ shortcut_tokens = [
     "recanim",
     "recsound",
     "savemem"
-]
-event_tokens = [
+    ]
+    event_tokens = [
     "doubleclick",
     "rightpress",
     "rightrelease",
     "keypress",
     "keyrelease"
-]
-device_tokens = [
+    ]
+    device_tokens = [
     "printer",
     "rs232",
     "midi",
-]
-path_tokens = [
+    ]
+    path_tokens = [
     "memauto",
     "memsave",
     "midiout",
@@ -261,9 +262,9 @@ path_tokens = [
     "soundout",
     "rs232in",
     "rs232out"
-]
-# use the long variants of the commands for clarity
-debugger_tokens = [
+    ]
+    # use the long variants of the commands for clarity
+    debugger_tokens = [
     "address",
     "breakpoint",
     "cd",
@@ -293,16 +294,31 @@ debugger_tokens = [
     "statesave",
     "symbols",
     "trace"
-]
+    ]
 
+    def __init__(self, hatari):
+        self.process_tokens = {
+            "console-help": self.show_help,
+            "pause": hatari.pause,
+            "unpause": hatari.unpause,
+            "quit": hatari.stop
+        }
+        self.hatari = hatari
 
-def list_items(title, items):
-    print "\n%s:" % title
-    for item in items:
-        print "*", item
+    def get_tokens(self):
+        tokens = []
+        for items in [self.option_tokens, self.shortcut_tokens,
+            self.event_tokens, self.debugger_tokens, self.device_tokens,
+            self.path_tokens, self.process_tokens.keys()]:
+            for token in items:
+                if token in tokens:
+                    print "ERROR: token '%s' already in tokens" % token
+                    sys.exit(1)
+            tokens += items
+        return tokens
 
-def show_help():
-    print """
+    def show_help(self):
+        print """
 Hatari-console help
 -------------------
 
@@ -311,13 +327,13 @@ from the provided console prompt, while Hatari is running.  All control
 commands support TAB completion on their names and options.
 
 The supported control facilities are:"""
-    list_items("Command line options", option_tokens)
-    list_items("Keyboard shortcuts", shortcut_tokens)
-    list_items("Event invocation", event_tokens)
-    list_items("Device toggling", device_tokens)
-    list_items("Path setting", path_tokens)
-    list_items("Debugger commands", debugger_tokens)
-    print """
+        self.list_items("Command line options", self.option_tokens)
+        self.list_items("Keyboard shortcuts", self.shortcut_tokens)
+        self.list_items("Event invocation", self.event_tokens)
+        self.list_items("Device toggling", self.device_tokens)
+        self.list_items("Path setting", self.path_tokens)
+        self.list_items("Debugger commands", self.debugger_tokens)
+        print """
 and commands to "pause", "unpause" and "quit" Hatari.
 
 For command line options you can see further help with "--help"
@@ -325,58 +341,111 @@ and for debugger with "help".  Some other facilities may give
 help if you give them invalid input.
 """
 
+    def list_items(self, title, items):
+        print "\n%s:" % title
+        for item in items:
+            print "*", item
 
-def main():
-    hatari = Hatari(sys.argv[1:])
-    process_tokens = {
-        "pause": hatari.pause,
-        "unpause": hatari.unpause,
-        "quit": hatari.stop
-    }
-    
-    print "****************************************************************"
-    print "* To see available commands, use the TAB key or 'console-help' *"
-    print "****************************************************************"
-    tokens = ["console-help"]
-    for items in [option_tokens, shortcut_tokens, event_tokens,
-            debugger_tokens, device_tokens, path_tokens,
-            process_tokens.keys()]:
-        for token in items:
-            if token in tokens:
-                print "ERROR: token '%s' already in tokens" % token
-                sys.exit(1)
-        tokens += items
-    command = CommandInput(tokens)
-    
-    while 1:
-        line = command.loop().strip()
-        if not hatari.is_running():
+    def process_command(self, line):
+        if not self.hatari.is_running():
             print "Exiting as there's no Hatari (anymore)..."
             sys.exit(0)
         if not line:
-            continue
+            return
+
         first = line.split(" ")[0]
         # multiple items
-        if first in event_tokens:
-            hatari.insert_event(line)
-        elif first in debugger_tokens:
-            hatari.debug_command(line)
-        elif first in option_tokens:
-            hatari.change_option(line)
-        elif first in path_tokens:
-            hatari.change_path(line)
+        if first in self.event_tokens:
+            self.hatari.insert_event(line)
+        elif first in self.debugger_tokens:
+            self.hatari.debug_command(line)
+        elif first in self.option_tokens:
+            self.hatari.change_option(line)
+        elif first in self.path_tokens:
+            self.hatari.change_path(line)
         # single item
-        elif line in device_tokens:
-            hatari.toggle_device(line)
-        elif line in shortcut_tokens:
-            hatari.trigger_shortcut(line)
-        elif line in process_tokens:
-            process_tokens[line]()
-        elif line == "console-help":
-            show_help()
+        elif line in self.device_tokens:
+            self.hatari.toggle_device(line)
+        elif line in self.shortcut_tokens:
+            self.hatari.trigger_shortcut(line)
+        elif line in self.process_tokens:
+            self.process_tokens[line]()
         else:
             print "ERROR: unknown hatari-console command:", line
 
 
+class Main:
+    def __init__(self):
+        args, self.file, self.exit = self.parse_args(sys.argv)
+        hatari = Hatari(args)
+        self.tokens = Tokens(hatari)
+        self.command = CommandInput(self.tokens.get_tokens())
+
+    def parse_args(self, args):
+        if "-h" in args or "--help" in args:
+            self.usage()
+
+        file = []
+        exit = False
+        if "--" not in args:
+            return (args, file, exit)
+        
+        for arg in args:
+            if arg == "--":
+                return (args[args.index("--")+1:], file, exit)
+            if arg == "--exit":
+                exit = True
+                continue
+            if os.path.exists(arg):
+                file = arg
+            else:
+                self.usage("file '%s' not found" % arg)
+
+    def usage(self, msg=None):
+        name = os.path.basename(sys.argv[0])
+        print "\n%s" % name
+        print "=" * len(name)
+        print """
+Usage: %s [<console options/args> --] [<hatari options>]
+
+Hatari console options/args:
+\t<file>\t\tread commands from given file
+\t--exit\t\texit after executing the commands in the file
+\t-h, --help\t\tthis help
+
+Except for help, console options/args will be interpreted
+only if '--' is given as one of the arguments.  Otherwise
+all arguments are given to Hatari.
+
+For example:
+    %s --monitor mono
+    %s commands.txt -- --monitor mono
+    %s commands.txt --exit --
+""" % (name, name, name, name)
+        if msg:
+            print "ERROR: %s!\n" % msg
+        sys.exit(1)
+
+    def run(self):
+        print """
+****************************************************************
+* To see available commands, use the TAB key or 'console-help' *
+****************************************************************
+"""
+        if self.file:
+            for line in open(self.file).readlines():
+                line = line.strip()
+                if not line or line[0] == '#':
+                    continue
+                print ">", line
+                self.tokens.process_command(line)
+            if self.exit:
+                sys.exit(0)
+
+        while 1:
+            line = self.command.loop().strip()
+            self.tokens.process_command(line)
+
+
 if __name__ == "__main__":
-    main()
+    Main().run()
