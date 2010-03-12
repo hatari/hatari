@@ -1485,6 +1485,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	}
 
 	if (bForDsp && !bDspEnabled) {
+		ret = false;
 		fprintf(stderr, "ERROR: DSP not enabled!\n");
 		goto cleanup;
 	}
