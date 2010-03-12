@@ -751,7 +751,9 @@ void File_MakeAbsoluteName(char *pFileName)
 /*-----------------------------------------------------------------------*/
 /**
  * Create a valid path name from a possibly invalid name by erasing invalid
- * path parts at the end of the string.
+ * path parts at the end of the string.  If string doesn't contain any path
+ * component, it will be pointed to the root directory.  Empty string will
+ * be left as-is to prevent overwriting past allocated area.
  */
 void File_MakeValidPathName(char *pPathName)
 {
@@ -772,12 +774,15 @@ void File_MakeValidPathName(char *pPathName)
 			/* Erase the (probably invalid) part after the last slash */
 			*pLastSlash = 0;
 		}
-		/* make sure we only shorten path... */
-		else if (pPathName[0])
+		else
 		{
-			/* Path name seems to be completely invalid -> set to root directory */
-			pPathName[0] = PATHSEP;
-			pPathName[1] = 0;
+			if (pPathName[0])
+			{
+				/* point to root */
+				pPathName[0] = PATHSEP;
+				pPathName[1] = 0;
+			}
+			return;
 		}
 	}
 	while (pLastSlash);

@@ -969,7 +969,7 @@ void DebugUI(void)
  */
 static bool DebugUI_ParseFile(const char *path)
 {
-	char *dir, *cmd, *input;
+	char *dir, *cmd, *input, *slash;
 	FILE *fp;
 
 	fprintf(stderr, "Reading debugger commands from '%s'...\n", path);
@@ -981,12 +981,16 @@ static bool DebugUI_ParseFile(const char *path)
 
 	/* change to directory where the debugger file resides */
 	dir = strdup(path);
-	File_MakeValidPathName(dir);
-	if (chdir(dir))
+	slash = strrchr(dir, PATHSEP);
+	if (slash)
 	{
-		perror("ERROR");
-		free(dir);
-		return false;
+		*slash = '\0';
+		if (chdir(dir))
+		{
+			perror("ERROR");
+			free(dir);
+			return false;
+		}
 	}
 	free(dir);
 
