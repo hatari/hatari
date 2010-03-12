@@ -900,6 +900,7 @@ bool DebugUI_SetParseFile(const char *path)
 		parseFileName = path;
 		return true;
 	}
+	fprintf(stderr, "ERROR: debugger input file '%s' missing.\n", path);
 	return false;
 }
 
