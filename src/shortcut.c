@@ -51,9 +51,9 @@ static void ShortCut_FullScreen(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Shortcut to toggle mouse mode
+ * Shortcut to toggle mouse grabbing mode
  */
-static void ShortCut_MouseMode(void)
+static void ShortCut_MouseGrab(void)
 {
 	bGrabMouse = !bGrabMouse;        /* Toggle flag */
 
@@ -261,8 +261,8 @@ void ShortCut_ActKey(void)
 	 case SHORTCUT_FULLSCREEN:
 		ShortCut_FullScreen();         /* Switch between fullscreen/windowed mode */
 		break;
-	 case SHORTCUT_MOUSEMODE:
-		ShortCut_MouseMode();          /* Toggle mouse mode */
+	 case SHORTCUT_MOUSEGRAB:
+		ShortCut_MouseGrab();          /* Toggle mouse grab */
 		break;
 	 case SHORTCUT_COLDRESET:
 		Main_UnPauseEmulation();
@@ -332,7 +332,7 @@ bool Shortcut_Invoke(const char *shortcut)
 		SHORTCUTKEYIDX id;
 		const char *name;
 	} shortcuts[] = {
-		{ SHORTCUT_MOUSEMODE, "mousemode" },
+		{ SHORTCUT_MOUSEGRAB, "mousegrab" },
 		{ SHORTCUT_COLDRESET, "coldreset" },
 		{ SHORTCUT_WARMRESET, "warmreset" },
 		{ SHORTCUT_SCREENSHOT, "screenshot" },
