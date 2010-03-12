@@ -194,8 +194,9 @@ static bool DebugUI_IsForDsp(const char *cmd)
 
 /**
  * Evaluate everything include within "" and replace them with the result.
- * String given as an argument may be re-allocated if it needs to be
- * expanded. Caller needs to free the returned string if it's not NULL.
+ * String given as an argument needs to be allocated, it may be freed and
+ * re-allocated if it needs to be expanded. Caller needs to free the returned
+ * string if it's not NULL.
  * 
  * Return string with expressions expanded or NULL for an error.
  */
@@ -994,21 +995,22 @@ static bool DebugUI_ParseFile(const char *path)
 	}
 	free(dir);
 
-	input = malloc(256);
-	assert(input);
-
-	while (fgets(input, 256, fp))
+	input = NULL;
+	for (;;)
 	{
-		cmd = DebugUI_EvaluateExpressions(input);
-		if (!cmd)
+		if (!input)
+		{
+			input = malloc(256);
+			assert(input);
+		}
+		if (!fgets(input, 256, fp))
+			break;
+
+		input = DebugUI_EvaluateExpressions(input);
+		if (!input)
 			continue;
-		input = cmd;
 
-		cmd = Str_Trim(cmd);
-
-		/* TODO: use '#' for comments in here although
-		 * that's used also to mark decimal numbers...
-		 */
+		cmd = Str_Trim(input);
 		if (*cmd && *cmd != '#')
 		{
 			fprintf(stderr, "> %s\n", cmd);
