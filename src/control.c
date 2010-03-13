@@ -435,7 +435,7 @@ const char *Control_SetSocket(const char *socketpath)
 	strncpy(address.sun_path, socketpath, sizeof(address.sun_path));
 	address.sun_path[sizeof(address.sun_path)-1] = '\0';
 	Log_Printf(LOG_INFO, "Connecting to control socket '%s'...\n", address.sun_path);
-	if (connect(newsock, &address, sizeof(address)) < 0)
+	if (connect(newsock, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
 		perror("socket connect");
 		close(newsock);
