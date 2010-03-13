@@ -14,6 +14,7 @@ set(SOURCES
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy  dim.c msa.c st.c zip.c)
 
+# When building for OSX, define specific sources for gui and ressources
 if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_SOURCES
 	    gui-osx/AlertHooks.m gui-osx/PrefsController.m gui-osx/Shared.m
@@ -22,6 +23,12 @@ if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_RSRCS
 	    gui-osx/SDLMain.nib gui-osx/Hatari.icns gui-osx/English.lproj)
 endif(ENABLE_OSX_BUNDLE)
+
+# When building for Windows, define specific sources for gui and ressources
+if(WIN32)
+	set(GUIWIN_SOURCES gui-win/opencon.c)
+	set(GUIWIN_RES gui-win/hatari-winicon.rc)
+endif(WIN32)
 
 include_directories(${CMAKE_BINARY_DIR} includes debug falcon uae-cpu
 		    ${SDL_INCLUDE_DIR})
@@ -46,6 +53,7 @@ add_subdirectory(falcon)
 add_subdirectory(gui-sdl)
 add_subdirectory(uae-cpu)
 
+# When building for OSX, add specific sources
 if(ENABLE_OSX_BUNDLE)
 	set_source_files_properties(${GUIOSX_RSRCS}
 			PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
@@ -53,6 +61,15 @@ if(ENABLE_OSX_BUNDLE)
 	# set_target_properties(hatari PROPERTIES MACOSX_BUNDLE true)
 	set_target_properties(hatari PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
+
+# When building for Windows, add specific sources + method to compile .rc files
+elseif(WIN32)
+	ENABLE_LANGUAGE(RC)
+	set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> -Ocoff -o <OBJECT> <SOURCE>")
+	set_source_files_properties(${GUIWIN_RES} PROPERTIES LANGUAGE RC)
+	add_executable(hatari ${GUIWIN_RES} ${SOURCES} ${GUIWIN_SOURCES})
+
+# Other targets, use default sources
 else()
 	add_executable(hatari ${SOURCES})
 endif(ENABLE_OSX_BUNDLE)
