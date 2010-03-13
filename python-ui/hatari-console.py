@@ -336,7 +336,9 @@ The supported control facilities are:"""
         print """
 and commands to "pause", "unpause" and "quit" Hatari.
 
-For command line options you can see further help with "--help"
+Scripts can use also "sleep" command.
+
+For command line options you can get further help with "--help"
 and for debugger with "help".  Some other facilities may give
 help if you give them invalid input.
 """
@@ -346,6 +348,18 @@ help if you give them invalid input.
         for item in items:
             print "*", item
 
+    def sleep(self, line):
+        items = line.split()[1:]
+        try:
+            secs = int(items[0])
+        except:
+            secs = 0
+        if secs > 0:
+            print "Sleeping for %d secs..." % secs
+            time.sleep(secs)
+        else:
+            print "usage: sleep <seconds>"
+
     def process_command(self, line):
         if not self.hatari.is_running():
             print "Exiting as there's no Hatari (anymore)..."
@@ -353,7 +367,7 @@ help if you give them invalid input.
         if not line:
             return
 
-        first = line.split(" ")[0]
+        first = line.split()[0]
         # multiple items
         if first in self.event_tokens:
             self.hatari.insert_event(line)
@@ -363,6 +377,8 @@ help if you give them invalid input.
             self.hatari.change_option(line)
         elif first in self.path_tokens:
             self.hatari.change_path(line)
+        elif first == "sleep":
+            self.sleep(line)
         # single item
         elif line in self.device_tokens:
             self.hatari.toggle_device(line)
