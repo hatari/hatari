@@ -788,8 +788,8 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			if (zoom > 1)
 			{
-				ConfigureParams.Screen.nMaxWidth = 800;
-				ConfigureParams.Screen.nMaxHeight = 600+24;
+				ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
+				ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
 			}
 			else
 			{

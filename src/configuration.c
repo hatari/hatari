@@ -472,8 +472,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCaptureChange = false;
 	/* target 800x600 screen with statusbar out of screen */
-	ConfigureParams.Screen.nMaxWidth = 800;
-	ConfigureParams.Screen.nMaxHeight = 600+24;
+	ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
+	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
 	ConfigureParams.Screen.nWindowBorderPixelsTop = OVERSCAN_TOP;
 	ConfigureParams.Screen.nWindowBorderPixelsLeft = 48;
 	ConfigureParams.Screen.nWindowBorderPixelsRight = 48;
