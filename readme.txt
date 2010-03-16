@@ -48,10 +48,12 @@ Required:
 - The zlib compression library (http://www.gzip.org/zlib/)
 
 Optional:
-- The PNG image library for PNG format screenshots (http://www.libpng.org/)
+- The PNG image library for PNG format screenshots and to decrease
+  AVI video recording file sizes (http://www.libpng.org/)
 - The GNU Readline library for Hatari debugger command line editing
 - The Xlib library to support Hatari Python UI window embedding on
   systems with the X window system (Linux and other unixes) 
+- The portaudio library for Falcon microphone handling
 
 Don't forget to also install the header files of these libraries for compiling
 Hatari (some Linux distributions use separate development packages for these
@@ -60,16 +62,23 @@ header files)!
 For compiling Hatari, you need a C compiler (preferably GNU C), and a working
 CMake installation (see http://www.cmake.org/ for details).
 
-CMake can generate makefiles for various flavours of "Make" (like GNU-Make) and
-various IDEs like Xcode on Mac OS X. To run CMake, you've got to pass the
+CMake can generate makefiles for various flavours of "Make" (like GNU-Make)
+and various IDEs like Xcode on Mac OS X. To run CMake, you've got to pass the
 path to the sources of Hatari as parameter, for example run the following if
 you are in the topmost directory of the Hatari source tree:
+	cmake .
 
- cmake .
+If you're tracking Hatari version control, it's preferable to do
+the build in a separate build directory as above would overwrite
+the (non-CMake) Makefiles coming with Hatari:
+	mkdir -p build
+	cd build
+	cmake ..
 
 Have a look at the manual of CMake for other options. Alternatively, you can
 use the "cmake-gui" program to configure the sources with a graphical
 application.
+
 For your convenience we also ship an old-fashioned configure script which can
 be used as a wrapper for running cmake. Type "./configure --help" to see the
 options of this script.
@@ -88,6 +97,7 @@ doc/manual.html. Here are just some hints for the impatient people:
 Before you can run the emulator, you need a TOS ROM image that should be
 stored as "tos.img" in the data directory of the emulator (see the variable
 DATADIR in Makefile.cnf).
+
 While the emulator is running, you can open the configuration menu by
 pressing F12, the F11 key will toggle fullscreen/windowed mode.
 Pressing ALTGR-q will quit the emulator.
