@@ -19,6 +19,7 @@ print_help()
   echo "  --disable-dsp           Disable DSP emulation for Falcon mode."
   echo "  --disable-tracing       Disable tracing messages for debugging"
   echo "  --disable-osx-bundle    Disable application bundling on Mac OS X"
+  echo "  --cross-compile-win32   Build the Windows version under linux"
   echo
   echo "Please run cmake directly for full control over the build."
   echo
@@ -71,6 +72,9 @@ do
     ;;
     --disable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=0"
+    ;;
+    --cross-compile-win32)
+      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32.cmake"
     ;;
     *)
       echo "Invalid argument: $preq"
