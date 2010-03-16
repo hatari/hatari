@@ -112,10 +112,10 @@ static SGOBJ windowdlg[] =
 	{ SGBOX, 0, 0, 0,0, 35,21, NULL },
 
 	{ SGBOX, 0, 0, 1,1, 33,9, NULL },
-	{ SGTEXT, 0, 0, 11,1, 14,1, "Window options" },
+	{ SGTEXT, 0, 0, 7,1, 20,1, "Hatari screen options" },
 	{ SGCHECKBOX, 0, 0, 4,3, 12,1, "Fullscreen" },
 	{ SGCHECKBOX, 0, 0, 4,4, 12,1, "Statusbar" },
-	{ SGTEXT, 0, 0, 4,6, 30,1, "Max doubled:" },
+	{ SGTEXT, 0, 0, 4,6, 12,1, "Max zoomed:" },
 	{ SGBUTTON, 0, 0, 6,7, 1,1, "\x04" },     /* Arrow left */
 	{ SGTEXT, 0, 0, 8,7, 4,1, sMaxWidth },
 	{ SGBUTTON, 0, 0, 13,7, 1,1, "\x03" },     /* Arrow right */
