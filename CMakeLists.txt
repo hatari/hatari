@@ -81,7 +81,6 @@ endif(PORTAUDIO_FOUND)
 # ###########################
 
 check_include_files(termios.h HAVE_TERMIOS_H)
-check_include_files(glob.h HAVE_GLOB_H)
 check_include_files(strings.h HAVE_STRINGS_H)
 check_include_files(malloc.h HAVE_MALLOC_H)
 check_include_files(SDL/SDL_config.h HAVE_SDL_SDL_CONFIG_H)
