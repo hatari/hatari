@@ -64,6 +64,10 @@ if(ENABLE_OSX_BUNDLE)
 
 # When building for Windows, add specific sources + method to compile .rc files
 elseif(WIN32)
+	# Set a default rc compiler if it was not defined yet
+	if(NOT CMAKE_RC_COMPILER)
+		set(CMAKE_RC_COMPILER windres)
+	endif(NOT CMAKE_RC_COMPILER)
 	ENABLE_LANGUAGE(RC)
 	set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> -Ocoff -o <OBJECT> <SOURCE>")
 	set_source_files_properties(${GUIWIN_RES} PROPERTIES LANGUAGE RC)
