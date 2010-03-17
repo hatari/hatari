@@ -129,11 +129,12 @@ void HostScreen_toggleFullScreen(void)
 
 static int HostScreen_selectVideoMode(SDL_Rect **modes, Uint32 *width, Uint32 *height)
 {
+#define TOO_LARGE 0x7fff
 	int i, bestw, besth;
 
 	/* Search the smallest nearest mode */
-	bestw = modes[0]->w;
-	besth = modes[0]->h;
+	bestw = TOO_LARGE;
+	besth = TOO_LARGE;
 	for (i=0;modes[i]; ++i) {
 		if ((modes[i]->w >= *width) && (modes[i]->h >= *height)) {
 			if ((modes[i]->w < bestw) || (modes[i]->h < besth)) {
@@ -142,12 +143,14 @@ static int HostScreen_selectVideoMode(SDL_Rect **modes, Uint32 *width, Uint32 *h
 			}			
 		}
 	}
-
+	if (bestw == TOO_LARGE || besth == TOO_LARGE) {
+		return 0;
+	}
 	*width = bestw;
 	*height = besth;
 	Dprintf(("hostscreen: video mode found: %dx%d\n",*width,*height));
-
 	return 1;
+#undef TOO_LARGE
 }
 
 static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *bpp )
@@ -198,7 +201,7 @@ static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *b
 
 	if (modes == (SDL_Rect **) -1) {
 		/* Any mode available */
-		Dprintf(("hostscreen: Any modes available\n"));
+		Dprintf(("hostscreen: All resolutions available.\n"));
 	}
 
 	Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
