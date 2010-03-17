@@ -282,7 +282,16 @@ void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 	    sdlscrn->w == (signed)screenwidth && sdlscrn->h == (signed)screenheight &&
 	    (sdlscrn->flags&SDL_FULLSCREEN) == (sdl_videoparams&SDL_FULLSCREEN))
 	{
-		/* skip redundant video mode change */
+		/* no time consuming host video mode change needed */
+		if (sizeChanged) {
+			/* Atari screen size changed -> clear screen */
+			SDL_Rect rect;
+			rect.x = 0;
+			rect.y = 0;
+			rect.w = sdlscrn->w;
+			rect.h = sdlscrn->h-sbarheight;
+			SDL_FillRect(sdlscrn, &rect, SDL_MapRGB(sdlscrn->format, 0, 0, 0));
+		}
 		return;
 	}
 
