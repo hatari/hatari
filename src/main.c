@@ -38,6 +38,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "sdlgui.h"
 #include "shortcut.h"
 #include "sound.h"
+#include "dmaSnd.h"
 #include "statusbar.h"
 #include "stMemory.h"
 #include "str.h"
@@ -499,6 +500,7 @@ static void Main_Init(void)
 	Floppy_Init();
 	M68000_Init();                /* Init CPU emulation */
 	Audio_Init();
+	DmaSnd_Init();
 	Keymap_Init();
 
 	/* Init HD emulation */
