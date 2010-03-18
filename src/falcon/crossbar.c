@@ -349,7 +349,6 @@ void Crossbar_Reset(bool bCold)
 	crossbar.gainSettingRight = 34953;
 	crossbar.attenuationSettingLeft = 65535;
 	crossbar.attenuationSettingRight = 65535;
-	crossbar.microphone_ADC_is_started = 0;
 	crossbar.adc_dac_readBufferPosition = 0;
 	crossbar.adc_dac_readBufferPosition_decimal = 0;
 
