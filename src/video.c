@@ -1859,14 +1859,28 @@ static void Video_CopyScreenLineColor(void)
 		}
 		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)	/* bigger line by 2 bytes on the left */
 		{
-			memset(pSTScreen,0,SCREENBYTES_LEFT-2);		/* clear unused pixels */
-			memcpy(pSTScreen+SCREENBYTES_LEFT-2, pVideoRaster, 2);
+			if ( SCREENBYTES_LEFT > 2 )
+			{
+				memset(pSTScreen,0,SCREENBYTES_LEFT-2);		/* clear unused pixels */
+				memcpy(pSTScreen+SCREENBYTES_LEFT-2, pVideoRaster, 2);
+			}
+			else
+			{						/* nothing to copy, left border is not large enough */
+			}
+
 			pVideoRaster += 2;
 		}
 		else if (bSteBorderFlag)				/* bigger line by 8 bytes on the left (STE specific) */
 		{
-			memset(pSTScreen,0,SCREENBYTES_LEFT-4*2);	/* clear unused pixels */
-			memcpy(pSTScreen+SCREENBYTES_LEFT-4*2, pVideoRaster, 4*2);
+			if ( SCREENBYTES_LEFT > 4*2 )
+			{
+				memset(pSTScreen,0,SCREENBYTES_LEFT-4*2);	/* clear unused pixels */
+				memcpy(pSTScreen+SCREENBYTES_LEFT-4*2, pVideoRaster, 4*2);
+			}
+			else
+			{						/* nothing to copy, left border is not large enough */
+			}
+
 			pVideoRaster += 4*2;
 		}
 		else
