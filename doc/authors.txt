@@ -85,7 +85,7 @@ please remind me!):
 
 - Volker Seebode: Fix to ASCI emulation to get other than AHDI drivers working.
 
-- David Savinkoff: More accurate printer emulation.
+- David Savinkoff: More accurate printer emulation, IIR filter (LMC1992 emulation).
 
 - Cyprian Konador: Found some bugs in the blitter cycles emulation
 

@@ -74,9 +74,9 @@
 	      
 	Other : undefined
 
-	LMC1992 FIR code Copyright by David Savinkoff 2010
+	LMC1992 IIR code Copyright by David Savinkoff 2010
 
-	The FIR combines a first order bass filter
+	The IIR combines a first order bass filter
 	with a first order treble filter to make a single
 	second order IIR shelving filter. An extra
 	multiply is used to control the final volume.
@@ -85,7 +85,7 @@
 	the Bass and Treble by +/-12dB in 2dB steps.
 
 	This filter sounds exactly as the Atari TT or STE.
-	Sampling frequency = 44100Hz (*You have change it)
+	Sampling frequency = 50066 or 25033 Hz
 	Bass turnover = 118.276Hz    (8.2nF on LM1992 bass)
 	Treble turnover = 8438.756Hz (8.2nF on LM1992 treble)
 */
@@ -145,41 +145,43 @@ struct microwire_s {
 struct lmc1992_s {
 	struct first_order_s bass_table[2][TONE_STEPS];
 	struct first_order_s treb_table[2][TONE_STEPS];
-	float coef[5];			/* FIR coefs */
-	float gain;			/* FIR gain*/
+	float coef[5];			/* IIR coefs */
+	/*float gain;*/			/* IIR gain*/
 };
 
 static struct dma_s dma;
 static struct microwire_s microwire;
 static struct lmc1992_s lmc1992;
 
+/* dB = 20log(gain)  :  gain = antilog(dB/20)                                */
+/* Table gain values = (int)(powf(10.0, dB/20.0)*65536.0 + 0.5)  2dB steps   */
+
 
 /* Values for LMC1992 Master volume control (*65536) */
 static const Uint16 LMC1992_Master_Volume_Table[64] =
 {
-	    0,   330,   370,   430,   500,   560,   630,   740, /* -80dB -> -66dB */ 
-	  850,  1000,  1140,  1300,  1500,  1700,  1950,  2200, /* -64dB -> -50dB */
-	 2500,  2900,  3300,  3800,  4300,  4950,  5600,  6300, /* -48dB -> -34dB */
-	 7300,  8280,  9600, 11100, 12800, 14500, 16500, 19450, /* -32dB -> -18dB */
-	22500, 25500, 29100, 32900, 38000, 43950, 50000, 57600, /* -16dB ->  -2dB */
-	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, /*   0dB ->   0dB */
-	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, /*   0dB ->   0dB */
-	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535  /*   0dB ->   0dB */
+	    7,     8,    10,    13,    16,    21,    26,    33,    41,    52,  /* -80dB */
+	   66,    83,   104,   131,   165,   207,   261,   328,   414,   521,  /* -60dB */
+	  655,   825,  1039,  1308,  1646,  2072,  2609,  3285,  4135,  5206,  /* -40dB */
+	 6554,  8250, 10387, 13076, 16462, 20724, 26090, 32846, 41350, 52057,  /* -20dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,  /*   0dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,  /*   0dB */
+	65535, 65535, 65535, 65535                                             /*   0dB */
 };
 
 /* Values for LMC1992 Left and right volume control (*65536) */
 static const Uint16 LMC1992_LeftRight_Volume_Table[32] =
 {
-	    0,   370,   500,   630,   850,  1140,  1500,  1950, /* -40dB -> -26dB */
-	 2500,  3300,  4300,  5600,  7300,  9600, 12800, 16500, /* -24dB -> -10dB */
-	22500, 29100, 38000, 50000, 65535, 65535, 65535, 65535, /*  -8dB ->   0dB */
-	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535  /*   0dB ->   0dB */
+	  655,   825,  1039,  1308,  1646,  2072,  2609,  3285,  4135,  5206,  /* -40dB */
+	 6554,  8250, 10387, 13076, 16462, 20724, 26090, 32846, 41350, 52057,  /* -20dB */
+	65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,  /*   0dB */
+	65535, 65535                                                           /*   0dB */
 };
 
 /* Values for LMC1992 BASS and TREBLE */
 static const Sint16 LMC1992_Bass_Treble_Table[16] =
 {
-	-12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 12, 12, 12
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12
 };
 
 static const double DmaSndSampleRates[4] =
@@ -199,11 +201,12 @@ void DmaSnd_Init(void)
 {
 	enum table_select  t;
 
-	/* Initialise LMC1992 FIR filter parameters */
-	lmc1992.gain = 1.0;
+	/* Initialise LMC1992 IIR filter parameters */
+/*	lmc1992.gain = 1.0;*/
 	init_bass_and_treble_tables();
 	t=Table_50KHz;
 	set_tone_level(0, 0, t);
+	DmaSnd_Reset(1);
 }
 
 /**
@@ -220,6 +223,8 @@ void DmaSnd_Reset(bool bCold)
 		microwire.leftVolume = 65535;
 		microwire.rightVolume = 65535;
 		microwire.mixing = 0;
+		microwire.bass = 7;
+		microwire.treble = 7;
 	}
 
 	microwire.mwTransferSteps = 0;
@@ -730,7 +735,7 @@ static float IIRfilterL(float xn)
 
 	/* Input coefficients */
 	/* biquad1  Note: 'a' coefficients are subtracted */
-	a  = lmc1992.gain * xn;			/* a=g*xn;               */
+	a  = /*lmc1992.gain * */ xn;		/* a=g*xn;               */
 	a -= lmc1992.coef[0] * data[0];		/* a1;  wn-1             */
 	a -= lmc1992.coef[1] * data[1];		/* a2;  wn-2             */
 						/* If coefficient scale  */
@@ -757,7 +762,7 @@ static float IIRfilterR(float xn)
 
 	/* Input coefficients */
 	/* biquad1  Note: 'a' coefficients are subtracted */
-	a  = lmc1992.gain * xn;			/* a=g*xn;               */
+	a  = /*lmc1992.gain * */ xn;		/* a=g*xn;               */
 	a -= lmc1992.coef[0]*data[0];		/* a1;  wn-1             */
 	a -= lmc1992.coef[1]*data[1];		/* a2;  wn-2             */
 						/* If coefficient scale  */
@@ -849,7 +854,7 @@ static void init_bass_and_treble_tables(void)
 		g = powf(10.0, dB / 20.0);	/* 12dB to -12dB */
 		fc_bt = 118.2763;
 		fc_tt = 8438.756;
-		Fs = 44100;			/* Set to CPU_FREQ/160 on Atari */
+		Fs = CPU_FREQ / 160;		/* CPU_FREQ/160 = 50066 Hz */
 
 		bass = bass_shelf(g, fc_bt, Fs);
 
@@ -870,7 +875,7 @@ static void init_bass_and_treble_tables(void)
 		g = powf(10.0, dB / 20.0);	/* 12dB to -12dB */
 		fc_bt = 118.2763;
 		fc_tt = 8438.756;
-		Fs = 22050;			/* Set to CPU_FREQ/320 on Atari */
+		Fs = CPU_FREQ / 320;		/* CPU_FREQ/320 = 25033 Hz */
 
 		bass = bass_shelf(g, fc_bt, Fs);
 
