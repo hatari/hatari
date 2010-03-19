@@ -108,10 +108,12 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #define TONE_STEPS 13
 
 
-static void init_bass_and_treble_tables(void);
-static void set_tone_level(int set_bass, int set_treb, int t);
-static float IIRfilterL(float xn);
-static float IIRfilterR(float xn);
+static void DmaSnd_Init_Bass_and_Treble_Tables(void);
+static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb, int t);
+static float DmaSnd_IIRfilterL(float xn);
+static float DmaSnd_IIRfilterR(float xn);
+static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs);
+static struct first_order_s *DmaSnd_Bass_Shelf(float g, float fc, float Fs);
 
 
 Uint16 nDmaSoundControl;                /* Sound control register */
@@ -203,9 +205,9 @@ void DmaSnd_Init(void)
 
 	/* Initialise LMC1992 IIR filter parameters */
 /*	lmc1992.gain = 1.0;*/
-	init_bass_and_treble_tables();
+	DmaSnd_Init_Bass_and_Treble_Tables();
 	t=Table_50KHz;
-	set_tone_level(0, 0, t);
+	DmaSnd_Set_Tone_Level(0, 0, t);
 	DmaSnd_Reset(1);
 }
 
@@ -432,8 +434,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	/* Apply LMC1992 sound modifications (Bass and Treble) */
 	for (i = 0; i < nSamplesToGenerate; i++) {
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		MixBuffer[nBufIdx][0] = IIRfilterL(MixBuffer[nBufIdx][0]);
-		MixBuffer[nBufIdx][1] = IIRfilterR(MixBuffer[nBufIdx][1]);
+		MixBuffer[nBufIdx][0] = DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
+		MixBuffer[nBufIdx][1] = DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
 	}
 
 	/* Apply LMC1992 sound modifications (Left, Right and Master Volume) */
@@ -614,16 +616,16 @@ void DmaSnd_InterruptHandler_Microwire(void)
 			case 1:
 				/* Bass command */
 				microwire.bass = microwire.data & 0xf;
-				set_tone_level(LMC1992_Bass_Treble_Table[microwire.bass], 
-					       LMC1992_Bass_Treble_Table[microwire.treble], 
-					       0);
+				DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
+						      LMC1992_Bass_Treble_Table[microwire.treble], 
+					              0);
 				break;
 			case 2: 
 				/* Treble command */
 				microwire.treble = microwire.data & 0xf;
-				set_tone_level(LMC1992_Bass_Treble_Table[microwire.bass], 
-					       LMC1992_Bass_Treble_Table[microwire.treble], 
-					       0);
+				DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
+						      LMC1992_Bass_Treble_Table[microwire.treble], 
+					              0);
 				break;
 			case 3:
 				/* Master volume command */
@@ -728,7 +730,7 @@ void DmaSnd_SoundControl_WriteWord(void)
 /**
  * Left voice Filter for Bass/Treble.
  */
-static float IIRfilterL(float xn)
+static float DmaSnd_IIRfilterL(float xn)
 {
 	static float data[] = { 0.0, 0.0 };
 	float a, yn;
@@ -755,7 +757,7 @@ static float IIRfilterL(float xn)
 /**
  * Right voice Filter for Bass/Treble.
  */
-static float IIRfilterR(float xn)
+static float DmaSnd_IIRfilterR(float xn)
 {
 	static float data[] = { 0.0, 0.0 };
 	float a, yn;
@@ -782,7 +784,7 @@ static float IIRfilterR(float xn)
 /**
  * Set Bass and Treble tone level
  */
-static void set_tone_level(int set_bass, int set_treb, int t)
+static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb, int t)
 { 
 	/* 13 levels; 0 through 12 correspond with -12dB to 12dB in 2dB steps */
 	lmc1992.coef[0] = lmc1992.treb_table[t][set_treb].a1 + lmc1992.bass_table[t][set_bass].a1;
@@ -797,7 +799,7 @@ static void set_tone_level(int set_bass, int set_treb, int t)
 /**
  * Compute the first order bass shelf
  */
-static struct first_order_s *bass_shelf(float g, float fc, float Fs)
+static struct first_order_s *DmaSnd_Bass_Shelf(float g, float fc, float Fs)
 {
 	static struct first_order_s bass;
 	float  a1;
@@ -818,7 +820,7 @@ static struct first_order_s *bass_shelf(float g, float fc, float Fs)
 /**
  * Compute the first order treble shelf
  */
-static struct first_order_s *treble_shelf(float g, float fc, float Fs)
+static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs)
 {
 	static struct first_order_s treb;
 	float  a1;
@@ -839,7 +841,7 @@ static struct first_order_s *treble_shelf(float g, float fc, float Fs)
 /**
  * Compute the bass and treble tables (25Khz and 50 Khz)
  */
-static void init_bass_and_treble_tables(void)
+static void DmaSnd_Init_Bass_and_Treble_Tables(void)
 {
 	struct first_order_s *bass;
 	struct first_order_s *treb;
@@ -856,13 +858,13 @@ static void init_bass_and_treble_tables(void)
 		fc_tt = 8438.756;
 		Fs = CPU_FREQ / 160;		/* CPU_FREQ/160 = 50066 Hz */
 
-		bass = bass_shelf(g, fc_bt, Fs);
+		bass = DmaSnd_Bass_Shelf(g, fc_bt, Fs);
 
 		lmc1992.bass_table[t][n].a1 = bass->a1;
 		lmc1992.bass_table[t][n].b0 = bass->b0;
 		lmc1992.bass_table[t][n].b1 = bass->b1;
 
-		treb = treble_shelf(g, fc_tt, Fs);
+		treb = DmaSnd_Treble_Shelf(g, fc_tt, Fs);
 
 		lmc1992.treb_table[t][n].a1 = treb->a1;
 		lmc1992.treb_table[t][n].b0 = treb->b0;
@@ -877,13 +879,13 @@ static void init_bass_and_treble_tables(void)
 		fc_tt = 8438.756;
 		Fs = CPU_FREQ / 320;		/* CPU_FREQ/320 = 25033 Hz */
 
-		bass = bass_shelf(g, fc_bt, Fs);
+		bass = DmaSnd_Bass_Shelf(g, fc_bt, Fs);
 
 		lmc1992.bass_table[t][n].a1 = bass->a1;
 		lmc1992.bass_table[t][n].b0 = bass->b0;
 		lmc1992.bass_table[t][n].b1 = bass->b1;
 
-		treb = treble_shelf(g, fc_tt, Fs);
+		treb = DmaSnd_Treble_Shelf(g, fc_tt, Fs);
 
 		lmc1992.treb_table[t][n].a1 = treb->a1;
 		lmc1992.treb_table[t][n].b0 = treb->b0;
