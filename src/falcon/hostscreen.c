@@ -53,7 +53,6 @@ static SDL_Surface *surf;               // pointer to actual surface
 /* TODO: put these hostscreen globals to some struct */
 static Uint32 sdl_videoparams;
 static Uint32 hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
-static bool   sizeDiffers; // available SDL resolutions didn't match request exactly
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 static struct { // TOS palette (bpp < 16) to SDL color mapping
@@ -94,37 +93,10 @@ void HostScreen_UnInit(void)
 void HostScreen_toggleFullScreen(void)
 {
 	sdl_videoparams ^= SDL_FULLSCREEN;
-	if (sdl_videoparams & SDL_FULLSCREEN) {
-		/* un-embed the Hatari WM window for fullscreen */
-		Control_ReparentWindow(hs_width, hs_height, true);
-	}
-	if(sizeDiffers || SDL_WM_ToggleFullScreen(mainSurface) == 0) {
-		Dprintf(("toggleFullScreen: SDL_WM_ToggleFullScreen() not supported"
-		         " -> using SDL_SetVideoMode()"));
-		SDL_Surface *temp = SDL_ConvertSurface(mainSurface, mainSurface->format,
-		                                       mainSurface->flags);
-		if (temp == NULL) {
-			fprintf(stderr, "ERROR: Unable to save/restore screen content on fullscreen toggle!\n");
-		}
-		HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
 
-		if (temp) {
-			if (SDL_BlitSurface(temp, NULL, mainSurface, NULL) != 0) {
-				fprintf(stderr, "ERROR: Unable to restore screen content on fullscreen toggle!\n");
-			}
-			SDL_FreeSurface(temp);
-			/* redraw statusbar */
-			Statusbar_Init(mainSurface);
-		}
-
-		/* refresh the screen */
-		HostScreen_update1(true);
-	} else {
-		if (!(sdl_videoparams & SDL_FULLSCREEN)) {
-			/* re-embed the new Hatari SDL window */
-			Control_ReparentWindow(hs_width, hs_height, false);
-		}
-	}
+	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
+	/* refresh the screen */
+	HostScreen_update1(true);
 }
 
 static int HostScreen_selectVideoMode(SDL_Rect **modes, Uint32 *width, Uint32 *height)
@@ -264,12 +236,7 @@ void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 	// Select a correct video mode
 	HostScreen_searchVideoMode(&screenwidth, &screenheight, &bpp);
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
-	if (screenwidth != width || screenheight != height+sbarheight) {
-		// fullscreen -> window mode: need to correct size
-		sizeDiffers = true;
-	} else {
-		sizeDiffers = false;
-	}
+
 	hs_bpp = bpp;
 	/* videl.c might scale things differently in fullscreen than
 	 * in windowed mode because this uses screensize instead of using
@@ -283,8 +250,8 @@ void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 	    (sdlscrn->flags&SDL_FULLSCREEN) == (sdl_videoparams&SDL_FULLSCREEN))
 	{
 		/* no time consuming host video mode change needed */
-		if (sizeDiffers) {
-			/* Atari screen differs from host -> clear screen */
+		if (screenwidth > width || screenheight > height+sbarheight) {
+			/* Atari screen smaller than host -> clear screen */
 			SDL_Rect rect;
 			rect.x = 0;
 			rect.y = 0;
