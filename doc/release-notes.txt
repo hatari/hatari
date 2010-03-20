@@ -86,6 +86,7 @@ Emulator:
   - dsp/address command is a shortcut for conditional breakpoints and its
     argument can be an expression (see "evaluate" above)
   - Display DSP instructions cycle timings in disasm mode (in cycles)
+  - Configuration options for how many lines to disasm & memdump
 - Fix VBLs/s counting to work also when --run-vbls isn't used.
 
 Other changes:

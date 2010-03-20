@@ -67,7 +67,6 @@ Other potential Hatari functionality improvements
 -------------------------------------------------
 
 - Debugger improvements:
-	- Options for how many lines to disasm & memdump
 	- Shortcut command for telling to run until given
 	  (temporary) conditional breakpoint is hit
 	- Running until code returns from ROM (exiting from super mode?)
