@@ -266,40 +266,50 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set amount of border pixels for windowed and full-screen mode and
+ * Set amount of border pixels
+ */
+static void Screen_SetBorderPixels(int leftX, int leftY)
+{
+	/* All screen widths need to be aligned to 16-bits.
+	 * 
+	 * TODO: Change VDI_Limit() to generic function and check
+	 * the limits when config values are set or changed
+	 */
+	nBorderPixelsLeft = VDI_Limit(leftX/2, 16, 0, 48);
+	nBorderPixelsRight = nBorderPixelsLeft;
+
+	/* assertain assumption of code below */
+	assert(OVERSCAN_TOP < MAX_OVERSCAN_BOTTOM);
+	
+	if (leftY > 2*OVERSCAN_TOP)
+	{
+		nBorderPixelsTop = OVERSCAN_TOP;
+		if (leftY >= OVERSCAN_TOP + MAX_OVERSCAN_BOTTOM)
+			nBorderPixelsBottom = MAX_OVERSCAN_BOTTOM;
+		else
+			nBorderPixelsBottom = leftY - OVERSCAN_TOP;
+	}
+	else
+	{
+		if (leftY > 0)
+			nBorderPixelsTop = nBorderPixelsBottom = leftY/2;
+		else
+			nBorderPixelsTop = nBorderPixelsBottom = 0;
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * store Y offset for each horizontal line in our source ST screen for
- * reference in tje convert functions.
+ * reference in the convert functions.
  */
 static void Screen_SetSTScreenOffsets(void)
 {
 	int i;
 
-	/* Determine border pixels */
-	if (bInFullScreen)
-	{
-		nBorderPixelsTop = ConfigureParams.Screen.nFullScreenBorderPixelsTop;
-		nBorderPixelsLeft = ConfigureParams.Screen.nFullScreenBorderPixelsLeft;
-		nBorderPixelsRight = ConfigureParams.Screen.nFullScreenBorderPixelsRight;
-		nBorderPixelsBottom = ConfigureParams.Screen.nFullScreenBorderPixelsBottom;
-	}
-	else
-	{
-		nBorderPixelsTop = ConfigureParams.Screen.nWindowBorderPixelsTop;
-		nBorderPixelsLeft = ConfigureParams.Screen.nWindowBorderPixelsLeft;
-		nBorderPixelsRight = ConfigureParams.Screen.nWindowBorderPixelsRight;
-		nBorderPixelsBottom = ConfigureParams.Screen.nWindowBorderPixelsBottom;
-	}
-	/* All screen widths need to be aligned to 16-bits.
-	 * 
-	 * TODO: Change VDI_Limit() to generic function and check
-	 * the limits when config values are set or changed (after 1.1).
+	/* Store offset to each horizontal line, uses
+	 * nBorderPixels* variables.
 	 */
-	nBorderPixelsTop = VDI_Limit(nBorderPixelsTop, 1, 0, OVERSCAN_TOP);
-	nBorderPixelsLeft = VDI_Limit(nBorderPixelsLeft, 16, 0, 48);
-	nBorderPixelsRight = VDI_Limit(nBorderPixelsRight, 16, 0, 48);
-	nBorderPixelsBottom = VDI_Limit(nBorderPixelsBottom, 1, 0, MAX_OVERSCAN_BOTTOM);
-
-	/* Store offset to each horizontal line */
 	for (i = 0; i < NUM_VISIBLE_LINES; i++)
 	{
 		STScreenLineOffset[i] = i * SCREENBYTES_LINE;
@@ -313,11 +323,12 @@ static void Screen_SetSTScreenOffsets(void)
  */
 static void Screen_SetResolution(void)
 {
-	int Width, Height, BitCount, nZoom, WBorders, HBorders, SBarHeight;
+	int Width, Height, BitCount, nZoom, SBarHeight;
 	unsigned int sdlVideoFlags;
 	bool bDoubleLowRes = false;
 
-	Screen_SetSTScreenOffsets();  
+	nBorderPixelsTop = nBorderPixelsBottom = 0;
+	nBorderPixelsLeft = nBorderPixelsRight = 0;
 
 	nScreenZoomX = 1;
 	nScreenZoomY = 1;
@@ -343,34 +354,15 @@ static void Screen_SetResolution(void)
 			nZoom = 2;
  		}
 
-		/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
-		if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
-		{
-			WBorders = (nBorderPixelsLeft+nBorderPixelsRight) * nZoom;
-			HBorders = (nBorderPixelsTop+nBorderPixelsBottom) * nZoom;
-			
-			if (Width+WBorders <= ConfigureParams.Screen.nMaxWidth &&
-			    Height+HBorders <= ConfigureParams.Screen.nMaxHeight)
-			{
-				Width += WBorders;
-				Height += HBorders;
-			}
-			else
-			{
-				Log_AlertDlg(LOG_ERROR, "Max allowed window size smaller than %dx%d, turning borders off!",
-					     Width+WBorders, Height+HBorders);
-				ConfigureParams.Screen.bAllowOverscan = false;
-			}
-		}
-
 		/* Statusbar height for doubled screen size */
 		SBarHeight = Statusbar_GetHeightForSize(Width*2, Height*2);
 
 		/* Zoom if necessary, factors used for scaling mouse motions */
 		if (STRes == ST_LOW_RES &&
-		    Width*2 <= ConfigureParams.Screen.nMaxWidth && 
-		    Height*2-SBarHeight <= ConfigureParams.Screen.nMaxHeight)
+		    2*Width <= ConfigureParams.Screen.nMaxWidth && 
+		    2*Height+SBarHeight <= ConfigureParams.Screen.nMaxHeight)
 		{
+			nZoom = 2;
 			Width *= 2;
 			Height *= 2;
 			nScreenZoomX = 2;
@@ -387,7 +379,20 @@ static void Screen_SetResolution(void)
 			nScreenZoomX = 1;
 			nScreenZoomY = 2;
  		}
+
+		/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
+		if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
+		{
+			int leftX = ConfigureParams.Screen.nMaxWidth - Width;
+			int leftY = ConfigureParams.Screen.nMaxHeight - (Height + Statusbar_GetHeightForSize(Width, Height));
+
+			Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
+			Width += (nBorderPixelsRight + nBorderPixelsLeft)*nZoom;
+			Height += (nBorderPixelsTop + nBorderPixelsBottom)*nZoom;
+		}
 	}
+	
+	Screen_SetSTScreenOffsets();  
 
 	/* Bits per pixel */
 	if (STRes == ST_HIGH_RES || bUseVDIRes)

@@ -70,14 +70,6 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
-	{ "nWindowBorderPixelsTop", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsTop },
-	{ "nWindowBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsLeft },
-	{ "nWindowBorderPixelsRight", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsRight },
-	{ "nWindowBorderPixelsBottom", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsBottom },
-	{ "nFullScreenBorderPixelsTop", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsTop },
-	{ "nFullScreenBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsLeft },
-	{ "nFullScreenBorderPixelsRight", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsRight },
-	{ "nFullScreenBorderPixelsBottom", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsBottom },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -474,14 +466,6 @@ void Configuration_SetDefault(void)
 	/* target 800x600 screen with statusbar out of screen */
 	ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
 	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
-	ConfigureParams.Screen.nWindowBorderPixelsTop = OVERSCAN_TOP;
-	ConfigureParams.Screen.nWindowBorderPixelsLeft = 48;
-	ConfigureParams.Screen.nWindowBorderPixelsRight = 48;
-	ConfigureParams.Screen.nWindowBorderPixelsBottom = MAX_OVERSCAN_BOTTOM-2;
-	ConfigureParams.Screen.nFullScreenBorderPixelsTop = OVERSCAN_TOP;
-	ConfigureParams.Screen.nFullScreenBorderPixelsLeft = 32;
-	ConfigureParams.Screen.nFullScreenBorderPixelsRight = 32;
-	ConfigureParams.Screen.nFullScreenBorderPixelsBottom = MAX_OVERSCAN_BOTTOM-2;
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableSound = true;

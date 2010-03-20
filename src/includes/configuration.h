@@ -222,14 +222,6 @@ typedef struct
   bool bCaptureChange;
   int nMaxWidth;
   int nMaxHeight;
-  int nWindowBorderPixelsTop;
-  int nWindowBorderPixelsLeft;
-  int nWindowBorderPixelsRight;
-  int nWindowBorderPixelsBottom;
-  int nFullScreenBorderPixelsTop;
-  int nFullScreenBorderPixelsLeft;
-  int nFullScreenBorderPixelsRight;
-  int nFullScreenBorderPixelsBottom;
 } CNF_SCREEN;
 
 
