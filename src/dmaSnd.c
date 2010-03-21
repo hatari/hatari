@@ -348,16 +348,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				case 0:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = ((int)pFrameStart[dma.frameCounter_int] * 128) + 
-								(((int)MixBuffer[nBufIdx][0] * 16384) / 512);
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int] * 128) + 
+								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)pFrameStart[dma.frameCounter_int]) * 128;	
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[dma.frameCounter_int] * 128;	
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = ((int)pFrameStart[dma.frameCounter_int]) * 128;
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int]) * 128;
 					break;
 				case 3:
 				default:
@@ -396,20 +396,20 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				case 0:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = ((int)pFrameStart[nFramePos] * 128) + 
-								(((int)MixBuffer[nBufIdx][0] * 16384) / 512);
-					MixBuffer[nBufIdx][1] = ((int)pFrameStart[nFramePos+1] * 128) + 
-								(((int)MixBuffer[nBufIdx][1] * 16384) / 512);
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos] * 128) + 
+								(((Sint32)MixBuffer[nBufIdx][0] * 16384) / 65536);
+					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1] * 128) + 
+								(((Sint32)MixBuffer[nBufIdx][1] * 16384) / 65536);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0] + (int)pFrameStart[nFramePos]) * 128;	
-					MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1] + (int)pFrameStart[nFramePos+1]) * 128;	
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[nFramePos] * 128;	
+					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + (Sint16)pFrameStart[nFramePos+1] * 128;	
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = ((int)pFrameStart[nFramePos]) * 128;
-					MixBuffer[nBufIdx][1] = ((int)pFrameStart[nFramePos+1]) * 128;
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos]) * 128;
+					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1]) * 128;
 					break;
 				case 3:
 				default:
@@ -581,7 +581,7 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
 	/* STE or TT - hopefully STFM emulation never gets here :)
 	 * We maskout to only hit bits that exist on a real STE
 	 */
-	dma.soundMode = (IoMem_ReadByte(0xff8921) & 0x8F);
+	dma.soundMode = (IoMem_ReadByte(0xff8921) & 0x8f);
 	/* we also write the masked value back into the emulated hw registers so we have a correct value there */
 	IoMem_WriteByte(0xff8921, dma.soundMode);
 	
