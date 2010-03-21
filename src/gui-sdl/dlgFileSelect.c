@@ -386,6 +386,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 		if (!(File_DirExists(path) || getcwd(path, FILENAME_MAX)))
 		{
 			perror("SDLGui_FileSelect: non-existing path and CWD failed");
+			free(pStringMem);
 			return NULL;
 		}
 	}
@@ -409,6 +410,12 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			if (browsingzip)
 			{
 				files = ZIP_GetFilesDir(zipfiles, zipdir, &entries);
+				if(!files)
+				{
+					fprintf(stderr, "SDLGui_FileSelect: ZIP_GetFilesDir error!\n");
+					free(pStringMem);
+					return NULL;
+				}
 			}
 			else
 			{

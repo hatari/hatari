@@ -189,6 +189,21 @@ void ZIP_FreeZipDir(zip_dir *f_zd)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Free the memory that has been allocated for fentries.
+ */
+static void ZIP_FreeFentries(struct dirent **fentries, int entries)
+{
+	while (entries > 0)
+	{
+		entries--;
+		free(fentries[entries]);
+	}
+	free((struct dirent **)entries);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  *   Returns a list of files from the directory (dir) in a zip file list (zip)
  *   sets entries to the number of entries and returns a dirent structure, or
  *   NULL on failure. NOTE: only f_name is set in the dirent structures. 
@@ -221,7 +236,10 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 	files->nfiles = 1;
 	temp = (char *)malloc(4);
 	if (!temp)
+	{
+		ZIP_FreeZipDir(files);
 		return NULL;
+	}
 	temp[0] = temp[1] = '.';
 	temp[2] = '/';
 	temp[3] = '\0';
@@ -252,6 +270,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 							if (!files->names[files->nfiles])
 							{
 								perror("ZIP_GetFilesDir");
+								ZIP_FreeZipDir(files);
 								return NULL;
 							}
 							strncpy(files->names[files->nfiles], temp, slash+1);
@@ -266,6 +285,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 						if (!files->names[files->nfiles])
 						{
 							perror("ZIP_GetFilesDir");
+							ZIP_FreeZipDir(files);
 							return NULL;
 						}
 						strncpy(files->names[files->nfiles], temp, strlen(temp));
@@ -292,6 +312,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 		if (!fentries[i])
 		{
 			perror("ZIP_GetFilesDir");
+			ZIP_FreeFentries(fentries, i+1);
 			return NULL;
 		}
 		strcpy(fentries[i]->d_name, files->names[i]);
@@ -440,6 +461,7 @@ static void *ZIP_ExtractFile(unzFile uf, const char *filename, uLong size)
 	if (err != UNZ_OK)
 	{
 		Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not open file\n");
+		free(buf);
 		return NULL;
 	}
 

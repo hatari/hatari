@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
 		if (!diskBuffer || nImageBytes < 512*8)
 		{
 			fprintf(stderr,"Could not read MSA disk!\n");
+			free(targetFileName);
 			return -1;
 		}
 
@@ -113,6 +114,7 @@ int main(int argc, char *argv[])
 		if (!diskBuffer || nImageBytes < 512*8)
 		{
 			fprintf(stderr,"Could not read ST disk!\n");
+			free(targetFileName);
 			return -1;
 		}
 
