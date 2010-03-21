@@ -210,16 +210,6 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	// is the SDL_update needed?
 	doUpdate = ( surf->flags & SDL_HWSURFACE ) == 0;
 
-	HostScreen_renderBegin();
-
-//	VideoRAMBaseHost = (uint8 *) surf->pixels;
-//	InitVMEMBaseDiff(VideoRAMBaseHost, VideoRAMBase);
-//	Dprintf(("VideoRAM starts at %p (%08x)\n", VideoRAMBaseHost, VideoRAMBase));
-	Dprintf(("surf->pixels = %p, getVideoSurface() = %p\n",
-			surf->pixels, SDL_GetVideoSurface()->pixels));
-
-	HostScreen_renderEnd();
-
 	Dprintf(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
 			", tshifts r=%d g=%d b=%d"
 			", tlosses r=%d g=%d b=%d\n",
