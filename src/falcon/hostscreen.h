@@ -8,8 +8,6 @@
 #ifndef HATARI_HOSTSCREEN_H
 #define HATARI_HOSTSCREEN_H
 
-#include <SDL.h>
-
 extern void HostScreen_Init(void);
 extern void HostScreen_UnInit(void);
 extern void HostScreen_toggleFullScreen(void);
@@ -25,6 +23,6 @@ extern void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint
 extern Uint32 HostScreen_getPaletteColor(Uint8 idx);
 extern void HostScreen_updatePalette(Uint16 colorCount);
 extern Uint32 HostScreen_getColor(Uint32 red, Uint32 green, Uint32 blue);
-extern void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp);
+extern void HostScreen_setWindowSize(int width, int height, int bpp);
 
 #endif

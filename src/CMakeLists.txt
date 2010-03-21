@@ -6,8 +6,8 @@ set(SOURCES
 	floppy.c gemdos.c hd6301_cpu.c hdc.c ide.c ikbd.c ioMem.c
 	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
 	keymap.c m68000.c main.c midi.c memorySnapShot.c mfp.c
-	paths.c  psg.c printer.c rs232.c reset.c rtc.c scandir.c
-	stMemory.c screen.c screenSnapShot.c shortcut.c sound.c
+	paths.c  psg.c printer.c resolution.c rs232.c reset.c rtc.c
+	scandir.c stMemory.c screen.c screenSnapShot.c shortcut.c sound.c
 	spec512.c statusbar.c str.c tos.c unzip.c utils.c vdi.c
 	video.c wavFormat.c xbios.c ymFormat.c)
 

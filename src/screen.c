@@ -38,6 +38,7 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "control.h"
 #include "convert/routines.h"
+#include "resolution.h"
 #include "sound.h"
 #include "spec512.h"
 #include "statusbar.h"
@@ -323,9 +324,19 @@ static void Screen_SetSTScreenOffsets(void)
  */
 static void Screen_SetResolution(void)
 {
-	int Width, Height, BitCount, nZoom, SBarHeight;
-	unsigned int sdlVideoFlags;
+	int Width, Height, nZoom, SBarHeight, BitCount, maxW, maxH;
+	Uint32 sdlVideoFlags;
 	bool bDoubleLowRes = false;
+
+	/* Bits per pixel */
+	if (STRes == ST_HIGH_RES || bUseVDIRes)
+	{
+		BitCount = 8;
+	}
+	else
+	{
+		BitCount = ConfigureParams.Screen.nForceBpp;
+	}
 
 	nBorderPixelsTop = nBorderPixelsBottom = 0;
 	nBorderPixelsLeft = nBorderPixelsRight = 0;
@@ -357,10 +368,11 @@ static void Screen_SetResolution(void)
 		/* Statusbar height for doubled screen size */
 		SBarHeight = Statusbar_GetHeightForSize(Width*2, Height*2);
 
+		Resolution_GetLimits(&maxW, &maxH, &BitCount);
+		
 		/* Zoom if necessary, factors used for scaling mouse motions */
 		if (STRes == ST_LOW_RES &&
-		    2*Width <= ConfigureParams.Screen.nMaxWidth && 
-		    2*Height+SBarHeight <= ConfigureParams.Screen.nMaxHeight)
+		    2*Width <= maxW && 2*Height+SBarHeight <= maxH)
 		{
 			nZoom = 2;
 			Width *= 2;
@@ -383,8 +395,8 @@ static void Screen_SetResolution(void)
 		/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
 		if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
 		{
-			int leftX = ConfigureParams.Screen.nMaxWidth - Width;
-			int leftY = ConfigureParams.Screen.nMaxHeight - (Height + Statusbar_GetHeightForSize(Width, Height));
+			int leftX = maxW - Width;
+			int leftY = maxH - (Height + Statusbar_GetHeightForSize(Width, Height));
 
 			Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
 			Width += (nBorderPixelsRight + nBorderPixelsLeft)*nZoom;
@@ -393,16 +405,7 @@ static void Screen_SetResolution(void)
 	}
 	
 	Screen_SetSTScreenOffsets();  
-
-	/* Bits per pixel */
-	if (STRes == ST_HIGH_RES || bUseVDIRes)
-	{
-		BitCount = 8;
-	}
-	else
-	{
-		BitCount = ConfigureParams.Screen.nForceBpp;
-	}
+	Height += Statusbar_SetHeight(Width, Height);
 
 	/* SDL Video attributes: */
 	if (bInFullScreen)
@@ -415,7 +418,6 @@ static void Screen_SetResolution(void)
 	{
 		sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
 	}
-	Height += Statusbar_SetHeight(Width, Height);
 
 	/* Check if we really have to change the video mode: */
 	if (!sdlscrn || sdlscrn->w != Width || sdlscrn->h != Height

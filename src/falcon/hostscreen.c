@@ -17,6 +17,7 @@ const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "ioMem.h"
 #include "hostscreen.h"
+#include "resolution.h"
 #include "screen.h"
 #include "statusbar.h"
 
@@ -52,7 +53,7 @@ static SDL_Surface *surf;               // pointer to actual surface
 
 /* TODO: put these hostscreen globals to some struct */
 static Uint32 sdl_videoparams;
-static Uint32 hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
+static int hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 static struct { // TOS palette (bpp < 16) to SDL color mapping
@@ -67,9 +68,6 @@ static const unsigned long default_palette[] = {
     RGB_GRAY, RGB_LTRED, RGB_LTGREEN, RGB_LTYELLOW,
     RGB_LTBLUE, RGB_LTMAGENTA, RGB_LTCYAN, RGB_BLACK
 };
-
-static int HostScreen_selectVideoMode(SDL_Rect **modes, Uint32 *width, Uint32 *height);
-static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *bpp );
 
 
 void HostScreen_Init(void)
@@ -99,90 +97,16 @@ void HostScreen_toggleFullScreen(void)
 	HostScreen_update1(true);
 }
 
-static int HostScreen_selectVideoMode(SDL_Rect **modes, Uint32 *width, Uint32 *height)
+
+void HostScreen_setWindowSize(int width, int height, int bpp)
 {
-#define TOO_LARGE 0x7fff
-	int i, bestw, besth;
-
-	/* Search the smallest nearest mode */
-	bestw = TOO_LARGE;
-	besth = TOO_LARGE;
-	for (i=0;modes[i]; ++i) {
-		if ((modes[i]->w >= *width) && (modes[i]->h >= *height)) {
-			if ((modes[i]->w < bestw) || (modes[i]->h < besth)) {
-				bestw = modes[i]->w;
-				besth = modes[i]->h;
-			}			
-		}
-	}
-	if (bestw == TOO_LARGE || besth == TOO_LARGE) {
-		return 0;
-	}
-	*width = bestw;
-	*height = besth;
-	Dprintf(("hostscreen: video mode found: %dx%d\n",*width,*height));
-	return 1;
-#undef TOO_LARGE
-}
-
-static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *bpp )
-{
-	SDL_Rect **modes;
-	SDL_PixelFormat pixelformat;
-	int modeflags;
-
-	/* Search in available modes the best suited */
-	Dprintf(("hostscreen: video mode asked: %dx%dx%d\n",*width,*height,*bpp));
-
-	if ((*width == 0) || (*height == 0)) {
-		*width = 640;
-		*height = 480;
-	}
-
-	/* Read available video modes */
-	modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-	if (bInFullScreen)
-		modeflags |= SDL_FULLSCREEN;
-
-	/*--- Search a video mode with asked bpp ---*/
-	if (*bpp != 0) {
-		pixelformat.BitsPerPixel = *bpp;
-		modes = SDL_ListModes(&pixelformat, modeflags);
-		if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-			Dprintf(("hostscreen: searching a good video mode (any bpp)\n"));
-			if (HostScreen_selectVideoMode(modes,width,height)) {
-				Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
-				return;
-			}
-		}
-	}
-
-	/*--- Search a video mode with any bpp ---*/
-	modes = SDL_ListModes(NULL, modeflags);
-	if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-		Dprintf(("hostscreen: searching a good video mode\n"));
-		if (HostScreen_selectVideoMode(modes,width,height)) {
-			Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
-			return;
-		}
-	}
-
-	if (modes == (SDL_Rect **) 0) {
-		fprintf(stderr, "WARNING: No suitable video modes available!\n");
-	}
-
-	if (modes == (SDL_Rect **) -1) {
-		/* Any mode available */
-		Dprintf(("hostscreen: All resolutions available.\n"));
-	}
-
-	Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
-}
-
-void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
-{
-	Uint32 screenwidth, screenheight;
+	int screenwidth, screenheight, maxw, maxh;
 	int scalex, scaley, sbarheight;
+
+	if (bpp == 24)
+		bpp = 32;
+
+	Resolution_GetLimits(&maxw, &maxh, &bpp);
 
 	nScreenZoomX = nScreenZoomY = 1;
 	
@@ -192,11 +116,11 @@ void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 		 * do aspect correction as 2's exponent.
 		 */
 		while (nScreenZoomX*width < height &&
-		       2*nScreenZoomX*width < (unsigned)ConfigureParams.Screen.nMaxWidth) {
+		       2*nScreenZoomX*width < maxw) {
 			nScreenZoomX *= 2;
 		}
 		while (2*nScreenZoomY*height < width &&
-		       2*nScreenZoomY*height < (unsigned)ConfigureParams.Screen.nMaxHeight) {
+		       2*nScreenZoomY*height < maxh) {
 			nScreenZoomY *= 2;
 		}
 		if (nScreenZoomX*nScreenZoomY > 2) {
@@ -208,8 +132,8 @@ void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 	/* then select scale as close to target size as possible
 	 * without having larger size than it
 	 */
-	scalex = ConfigureParams.Screen.nMaxWidth/(nScreenZoomX*width);
-	scaley = ConfigureParams.Screen.nMaxHeight/(nScreenZoomY*height);
+	scalex = maxw/(nScreenZoomX*width);
+	scaley = maxh/(nScreenZoomY*height);
 	if (scalex > 1 && scaley > 1) {
 		/* keep aspect ratio */
 		if (scalex < scaley) {
@@ -226,15 +150,12 @@ void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp)
 	width *= nScreenZoomX;
 	height *= nScreenZoomY;
 
-	if (bpp == 24)
-		bpp = 32;
-
 	sbarheight = Statusbar_GetHeightForSize(width, height);
 	screenheight = height + sbarheight;
 	screenwidth = width;
 
 	// Select a correct video mode
-	HostScreen_searchVideoMode(&screenwidth, &screenheight, &bpp);
+	Resolution_Search(&screenwidth, &screenheight, &bpp);
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 
 	hs_bpp = bpp;
