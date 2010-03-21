@@ -35,7 +35,6 @@ static FILE *pPrinterHandle;
 
 
 /* internal functions */
-static void Printer_EmptyFile(void);
 static void Printer_ResetInternalBuffer(void);
 static bool Printer_EmptyInternalBuffer(void);
 static void Printer_AddByteToInternalBuffer(Uint8 Byte);
@@ -121,27 +120,6 @@ static void Printer_ResetInternalBuffer(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Empty to file on disk.
- */
-static void Printer_EmptyFile(void)
-{
-	/* Do have file open? */
-	if (pPrinterHandle)
-	{
-		/* Write bytes out */
-		if (fwrite((Uint8 *)PrinterBuffer,sizeof(Uint8),nPrinterBufferChars,pPrinterHandle) < nPrinterBufferChars)
-		{
-			/* we wrote less then all chars in the buffer --> ERROR */
-			fprintf(stderr,"Printer_EmptyFile(): ERROR not all chars were written\n");
-		}
-		/* Reset */
-		Printer_ResetInternalBuffer();
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Empty Printer Buffer
  */
 static bool Printer_EmptyInternalBuffer(void)
@@ -150,7 +128,21 @@ static bool Printer_EmptyInternalBuffer(void)
 	if (nPrinterBufferChars > 0)
 	{
 		if (pPrinterHandle)
-			Printer_EmptyFile();
+		{
+			size_t n;
+			/* Write bytes out */
+			n = fwrite((Uint8 *)PrinterBuffer, sizeof(Uint8),
+			           nPrinterBufferChars, pPrinterHandle);
+			if (n < nPrinterBufferChars)
+			{
+				/* we wrote less then expected! */
+				fprintf(stderr, "Printer_EmptyInternalBuffer():"
+					"ERROR not all chars were written\n");
+			}
+		}
+
+		/* Reset */
+		Printer_ResetInternalBuffer();
 
 		return true;
 	}
