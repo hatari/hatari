@@ -166,6 +166,7 @@ extern void	Video_InterruptHandler_EndLine(void);
 
 extern void	Video_SetScreenRasters(void);
 extern void	Video_GetTTRes(int *width, int *height, int *bpp);
+extern bool	Video_RenderTTScreen(void);
 
 extern void	Video_AddInterruptTimerB ( int Pos );
 

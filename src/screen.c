@@ -92,6 +92,9 @@ static bool bScrDoubleY;                /* true if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 
+static bool Screen_DrawFrame(bool bForceFlip);
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Create ST 0x777 / STe 0xfff color format to 16 or 32 bits per pixel
@@ -604,19 +607,59 @@ static void Screen_ClearScreen(void)
 	SDL_FillRect(sdlscrn, &STScreenRect, SDL_MapRGB(sdlscrn->format, 0, 0, 0));
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return true if (falcon/tt) hostscreen functions need to be used
+ * instead of the (st/ste) functions here.
+ */
+static bool Screen_UseHostScreen(void)
+{
+	return ((ConfigureParams.System.nMachineType == MACHINE_FALCON
+		 || ConfigureParams.System.nMachineType == MACHINE_TT)
+		&& !bUseVDIRes);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Force screen redraw.  Does the right thing regardless of whether
+ * we're in ST/STe, Falcon or TT mode.  Needed when switching modes
+ * while emulation is paused.
+ */
+static void Screen_Refresh(void)
+{
+	if (!bUseVDIRes)
+	{
+		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		{
+			VIDEL_renderScreen();
+			return;
+		}
+		else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+		{
+			Video_RenderTTScreen();
+			return;
+		}
+	}
+	Screen_DrawFrame(true);
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Enter Full screen mode
  */
 void Screen_EnterFullScreen(void)
 {
+	bool bWasRunning;
+
 	if (!bInFullScreen)
 	{
-		Main_PauseEmulation(false);         /* Hold things... */
+		/* Hold things... */
+		bWasRunning = Main_PauseEmulation(false);
 		bInFullScreen = true;
 
-		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
-		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
+		if (Screen_UseHostScreen())
 		{
 			HostScreen_toggleFullScreen();
 		}
@@ -627,8 +670,16 @@ void Screen_EnterFullScreen(void)
 		}
 
 		SDL_Delay(20);                  /* To give monitor time to change to new resolution */
-		Main_UnPauseEmulation();        /* And off we go... */
-
+		
+		if (bWasRunning)
+		{
+			/* And off we go... */
+			Main_UnPauseEmulation();
+		}
+		else
+		{
+			Screen_Refresh();
+		}
 		SDL_WM_GrabInput(SDL_GRAB_ON);  /* Grab mouse pointer in fullscreen */
 	}
 }
@@ -640,13 +691,15 @@ void Screen_EnterFullScreen(void)
  */
 void Screen_ReturnFromFullScreen(void)
 {
+	bool bWasRunning;
+
 	if (bInFullScreen)
 	{
-		Main_PauseEmulation(false);        /* Hold things... */
+		/* Hold things... */
+		bWasRunning = Main_PauseEmulation(false);
 		bInFullScreen = false;
 
-		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
-		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
+		if (Screen_UseHostScreen())
 		{
 			HostScreen_toggleFullScreen();
 		}
@@ -655,11 +708,22 @@ void Screen_ReturnFromFullScreen(void)
 			Screen_SetResolution();
 		}
 		SDL_Delay(20);                /* To give monitor time to switch resolution */
-		Main_UnPauseEmulation();      /* And off we go... */
+
+		if (bWasRunning)
+		{
+			/* And off we go... */
+			Main_UnPauseEmulation();
+		}
+		else
+		{
+			Screen_Refresh();
+		}
 
 		if (!bGrabMouse)
+		{
 			/* Un-grab mouse pointer in windowed mode */
 			SDL_WM_GrabInput(SDL_GRAB_OFF);
+		}
 	}
 }
 

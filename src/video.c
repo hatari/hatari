@@ -449,7 +449,6 @@ static void	Video_CopyVDIScreen(void);
 static void	Video_SetHBLPaletteMaskPointers(void);
 
 static void	Video_UpdateTTPalette(int bpp);
-static bool	Video_RenderTTScreen(void);
 static void	Video_DrawScreen(void);
 
 static void	Video_ResetShifterTimings(void);
@@ -2414,7 +2413,7 @@ static void Video_UpdateTTPalette(int bpp)
  * Update TT palette and blit TT screen using VIDEL code.
  * @return  true if the screen contents changed
  */
-static bool Video_RenderTTScreen(void)
+bool Video_RenderTTScreen(void)
 {
 	static int nPrevTTRes = -1;
 	int width, height, bpp;
