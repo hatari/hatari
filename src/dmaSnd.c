@@ -187,12 +187,12 @@ static const Sint16 LMC1992_Bass_Treble_Table[16] =
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12
 };
 
-static const double DmaSndSampleRates[4] =
+static const int DmaSndSampleRates[4] =
 {
-	6258.0,
-	12517.0,
-	25033.0,
-	50066.0
+	CPU_FREQ / 1280,	/* 6258  Hz */
+	CPU_FREQ / 640,		/* 12517 Hz */
+	CPU_FREQ / 320,		/* 25033 Hz */
+	CPU_FREQ / 160		/* 50066 Hz */
 };
 
 
@@ -247,7 +247,7 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
 }
 
 
-static double DmaSnd_DetectSampleRate(void)
+static int DmaSnd_DetectSampleRate(void)
 {
 	return DmaSndSampleRates[dma.soundMode & 3];
 }
@@ -280,7 +280,7 @@ static void DmaSnd_StartNewFrame(void)
 
 	/* To get smooth sound, set an "interrupt" for the end of the frame that
 	 * updates the sound mix buffer. */
-	nCyclesForFrame = dma.frameLen * (((double)CPU_FREQ) / DmaSnd_DetectSampleRate());
+	nCyclesForFrame = dma.frameLen * (CPU_FREQ / DmaSnd_DetectSampleRate());
 	if (!(dma.soundMode & DMASNDMODE_MONO))  /* Is it stereo? */
 		nCyclesForFrame = nCyclesForFrame / 2;
 	CycInt_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);
@@ -347,8 +347,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			switch (microwire.mixing) {
 				case 0:
 					/* DMA and (YM2149 - 12dB) mixing */
+					/* instead of 16462 (-12dB), we approximate by 16384 */
 					MixBuffer[nBufIdx][0] = ((int)pFrameStart[dma.frameCounter_int] * 128) + 
-								(((int)MixBuffer[nBufIdx][0] * 16462) / 512);
+								(((int)MixBuffer[nBufIdx][0] * 16384) / 512);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
@@ -356,7 +357,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = ((int)pFrameStart[dma.frameCounter_int]) * 256;
+					MixBuffer[nBufIdx][0] = ((int)pFrameStart[dma.frameCounter_int]) * 128;
 					break;
 				case 3:
 				default:
@@ -394,10 +395,11 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			switch (microwire.mixing) {
 				case 0:
 					/* DMA and (YM2149 - 12dB) mixing */
+					/* instead of 16462 (-12dB), we approximate by 16384 */
 					MixBuffer[nBufIdx][0] = ((int)pFrameStart[nFramePos] * 128) + 
-								(((int)MixBuffer[nBufIdx][0] * 16462) / 512);
+								(((int)MixBuffer[nBufIdx][0] * 16384) / 512);
 					MixBuffer[nBufIdx][1] = ((int)pFrameStart[nFramePos+1] * 128) + 
-								(((int)MixBuffer[nBufIdx][1] * 16462) / 512);
+								(((int)MixBuffer[nBufIdx][1] * 16384) / 512);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
@@ -406,8 +408,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = ((int)pFrameStart[nFramePos]) * 256;
-					MixBuffer[nBufIdx][1] = ((int)pFrameStart[nFramePos+1]) * 256;
+					MixBuffer[nBufIdx][0] = ((int)pFrameStart[nFramePos]) * 128;
+					MixBuffer[nBufIdx][1] = ((int)pFrameStart[nFramePos+1]) * 128;
 					break;
 				case 3:
 				default:
