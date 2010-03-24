@@ -109,16 +109,17 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 
 
 static void DmaSnd_Init_Bass_and_Treble_Tables(void);
-static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb, int t);
+static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb);
 static float DmaSnd_IIRfilterL(float xn);
 static float DmaSnd_IIRfilterR(float xn);
 static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs);
 static struct first_order_s *DmaSnd_Bass_Shelf(float g, float fc, float Fs);
+static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in);
+static Sint16 DmaSnd_LowPassFilterMono(Sint16 in);
+static Sint16 DmaSnd_LowPassFilterRight(Sint16 in);
 
 
 Uint16 nDmaSoundControl;                /* Sound control register */
-
-enum table_select {Table_50KHz, Table_25KHz};
 
 struct first_order_s  { float a1, b0, b1; };
 struct second_order_s { float a1, a2, b0, b1, b2; };
@@ -145,9 +146,8 @@ struct microwire_s {
 };
 
 struct lmc1992_s {
-	struct first_order_s bass_table[2][TONE_STEPS];
-	struct first_order_s treb_table[2][TONE_STEPS];
-	enum table_select freq;
+	struct first_order_s bass_table[TONE_STEPS];
+	struct first_order_s treb_table[TONE_STEPS];
 	float coef[5];			/* IIR coefs */
 	/*float gain;*/			/* IIR gain*/
 };
@@ -202,9 +202,6 @@ static const int DmaSndSampleRates[4] =
  */
 void DmaSnd_Init(void)
 {
-	/* Initialise LMC1992 IIR filter parameters */
-/*	lmc1992.gain = 1.0;*/
-	DmaSnd_Init_Bass_and_Treble_Tables();
 	DmaSnd_Reset(1);
 }
 
@@ -215,6 +212,10 @@ void DmaSnd_Reset(bool bCold)
 {
 	nDmaSoundControl = 0;
 
+	/* Initialise LMC1992 IIR filter parameters */
+/*	lmc1992.gain = 1.0;*/
+	DmaSnd_Init_Bass_and_Treble_Tables();
+
 	if (bCold)
 	{
 		dma.soundMode = 3;
@@ -224,10 +225,8 @@ void DmaSnd_Reset(bool bCold)
 		microwire.mixing = 0;
 		microwire.bass = 7;
 		microwire.treble = 7;
-		lmc1992.freq = Table_50KHz;
 		DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
-				      LMC1992_Bass_Treble_Table[microwire.treble], 
-			              lmc1992.freq);
+				      LMC1992_Bass_Treble_Table[microwire.treble]);
 	}
 
 	microwire.mwTransferSteps = 0;
@@ -325,7 +324,7 @@ static inline int DmaSnd_EndOfFrameReached(void)
  */
 void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
-	Uint32 FreqRatio;
+	Uint32 FreqRatio, n;
 	int i, intPart;
 	int nBufIdx, nFramePos;
 	Sint8 *pFrameStart;
@@ -341,6 +340,15 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	if (dma.soundMode & DMASNDMODE_MONO)
 	{
 		/* Mono 8-bit */
+
+		/* Apply anti-aliasing low pass filter ? (mono) */
+		if ( /* UseLowPassFilter && */ (dma.soundMode == 3))
+		{
+			for (n = dma.frameStartAddr; n <= dma.frameEndAddr; n++) {
+				pFrameStart[n] = DmaSnd_LowPassFilterMono(pFrameStart[n]);
+			}
+		}
+
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
@@ -385,6 +393,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	else
 	{
 		/* Stereo 8-bit */
+
+		/* Apply anti-aliasing low pass filter ? (stereo) */
+		if ( /* UseLowPassFilter && */ (dma.soundMode == 3))
+		{
+			for (n = dma.frameStartAddr; n <= dma.frameEndAddr; n += 2 ) {
+				pFrameStart[n]   = DmaSnd_LowPassFilterLeft(pFrameStart[n]);
+				pFrameStart[n+1] = DmaSnd_LowPassFilterRight(pFrameStart[n+1]);
+			}
+		}
+
 		FreqRatio *= 2;
 
 		for (i = 0; i < nSamplesToGenerate; i++)
@@ -435,43 +453,19 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	}
 
 	/* Apply LMC1992 sound modifications (Bass and Treble) 
+	   The Bass and Treble get samples at nAudioFrequency rate and that is all that matters.
+	           So the following is true but is not what is happening here:
+
 	   The tone control's sampling frequency must be a least 25033 Hz to sound good. 
 	   Thus the 12517Hz DAC samples should be doubled before being sent to the tone controls. 
 	   IIRfilter() is called twice with the same data at 12517Hz DAC. 
 	   IIRfilter() is called four times with the same data at 6258Hz DAC. 
 	*/
-	if ( ((dma.soundMode & 3) == 3) || ((dma.soundMode & 3) == 2) ) {
-		/* 50 or 25 Khz DAC frequency */
-		for (i = 0; i < nSamplesToGenerate; i++) {
-			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx][0] = DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-			MixBuffer[nBufIdx][1] = DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
-		}
-	}
-	else if ((dma.soundMode & 3) == 1) {
-		/* 12 Khz DAC frequency */
-		for (i = 0; i < nSamplesToGenerate; i++) {
-			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-			MixBuffer[nBufIdx][0] = DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-			DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
-			MixBuffer[nBufIdx][1] = DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
-		}
-	}
-	else if ((dma.soundMode & 3) == 1) {
-		/* 6 Khz DAC frequency */
-		for (i = 0; i < nSamplesToGenerate; i++) {
-			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-			DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-			DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-			MixBuffer[nBufIdx][0] = DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-			DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
-			DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
-			DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
-			MixBuffer[nBufIdx][1] = DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
-		}
-	}
+	for (i = 0; i < nSamplesToGenerate; i++) {
+		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+		MixBuffer[nBufIdx][0] = DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
+		MixBuffer[nBufIdx][1] = DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
+ 	}
 
 	/* Apply LMC1992 sound modifications (Left, Right and Master Volume) */
 	for (i = 0; i < nSamplesToGenerate; i++) {
@@ -584,19 +578,6 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
 	dma.soundMode = (IoMem_ReadByte(0xff8921) & 0x8f);
 	/* we also write the masked value back into the emulated hw registers so we have a correct value there */
 	IoMem_WriteByte(0xff8921, dma.soundMode);
-	
-	/* Set correctly the LMC1992 IIR filter frequency */ 	
-	if ((dma.soundMode & 3) == 3) {
-		/* 50066 Hz */
-		lmc1992.freq = Table_50KHz;
-	} else {
-		/* Other frequencies */
-		lmc1992.freq = Table_25KHz;
-	}
-	DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
-			      LMC1992_Bass_Treble_Table[microwire.treble], 
-		              lmc1992.freq);
-
 }
 
 /* ---------------------- Microwire / LMC 1992  ---------------------- */
@@ -664,15 +645,13 @@ void DmaSnd_InterruptHandler_Microwire(void)
 				/* Bass command */
 				microwire.bass = microwire.data & 0xf;
 				DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
-						      LMC1992_Bass_Treble_Table[microwire.treble], 
-					              lmc1992.freq);
+						      LMC1992_Bass_Treble_Table[microwire.treble]);
 				break;
 			case 2: 
 				/* Treble command */
 				microwire.treble = microwire.data & 0xf;
 				DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
-						      LMC1992_Bass_Treble_Table[microwire.treble], 
-					              lmc1992.freq);
+						      LMC1992_Bass_Treble_Table[microwire.treble]);
 				break;
 			case 3:
 				/* Master volume command */
@@ -827,19 +806,61 @@ static float DmaSnd_IIRfilterR(float xn)
 	return yn;
 }
 
+/**
+ * LowPass Filter Mono
+ */
+static Sint16 DmaSnd_LowPassFilterMono(Sint16 in)
+{
+	static int lowPassFilter[2];
+	Sint16	out;
+ 
+	out = (lowPassFilter[0]>>2) + (lowPassFilter[1]>>1) + (in>>2);
+	lowPassFilter[0] = lowPassFilter[1];
+	lowPassFilter[1] = in;
+	return out;
+}
+
+/**
+ * LowPass Filter Left
+ */
+static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in)
+{
+	static int lowPassFilter[2];
+	Sint16	out;
+ 
+	out = (lowPassFilter[0]>>2) + (lowPassFilter[1]>>1) + (in>>2);
+	lowPassFilter[0] = lowPassFilter[1];
+	lowPassFilter[1] = in;
+	return out;
+}
+
+/**
+ * LowPass Filter Right
+ */
+static Sint16 DmaSnd_LowPassFilterRight(Sint16 in)
+{
+	static int lowPassFilter[2];
+	Sint16	out;
+ 
+	out = (lowPassFilter[0]>>2) + (lowPassFilter[1]>>1) + (in>>2);
+	lowPassFilter[0] = lowPassFilter[1];
+	lowPassFilter[1] = in;
+	return out;
+}
+
 
 /**
  * Set Bass and Treble tone level
  */
-static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb, int t)
+static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb)
 { 
 	/* 13 levels; 0 through 12 correspond with -12dB to 12dB in 2dB steps */
-	lmc1992.coef[0] = lmc1992.treb_table[t][set_treb].a1 + lmc1992.bass_table[t][set_bass].a1;
-	lmc1992.coef[1] = lmc1992.treb_table[t][set_treb].a1 * lmc1992.bass_table[t][set_bass].a1;
-	lmc1992.coef[2] = lmc1992.treb_table[t][set_treb].b0 * lmc1992.bass_table[t][set_bass].b0;
-	lmc1992.coef[3] = lmc1992.treb_table[t][set_treb].b0 * lmc1992.bass_table[t][set_bass].b1 +
-			  lmc1992.treb_table[t][set_treb].b1 * lmc1992.bass_table[t][set_bass].b0;
-	lmc1992.coef[4] = lmc1992.treb_table[t][set_treb].b1 * lmc1992.bass_table[t][set_bass].b1;
+	lmc1992.coef[0] = lmc1992.treb_table[set_treb].a1 + lmc1992.bass_table[set_bass].a1;
+	lmc1992.coef[1] = lmc1992.treb_table[set_treb].a1 * lmc1992.bass_table[set_bass].a1;
+	lmc1992.coef[2] = lmc1992.treb_table[set_treb].b0 * lmc1992.bass_table[set_bass].b0;
+	lmc1992.coef[3] = lmc1992.treb_table[set_treb].b0 * lmc1992.bass_table[set_bass].b1 +
+			  lmc1992.treb_table[set_treb].b1 * lmc1992.bass_table[set_bass].b0;
+	lmc1992.coef[4] = lmc1992.treb_table[set_treb].b1 * lmc1992.bass_table[set_bass].b1;
 }
 
 
@@ -886,7 +907,7 @@ static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs)
 
 
 /**
- * Compute the bass and treble tables (25Khz and 50 Khz)
+ * Compute the bass and treble tables (nAudioFrequency)
  */
 static void DmaSnd_Init_Bass_and_Treble_Tables(void)
 {
@@ -895,47 +916,24 @@ static void DmaSnd_Init_Bass_and_Treble_Tables(void)
 
 	float  dB, g, fc_bt, fc_tt, Fs;
 	int    n;
-	enum table_select  t;
 
-	t = Table_50KHz;
 	for (dB = 12.0, n = TONE_STEPS; n--; dB -= 2.0)
 	{
 		g = powf(10.0, dB / 20.0);	/* 12dB to -12dB */
 		fc_bt = 118.2763;
 		fc_tt = 8438.756;
-		Fs = CPU_FREQ / 160;		/* CPU_FREQ/160 = 50066 Hz */
+		Fs = (float)nAudioFrequency;
 
 		bass = DmaSnd_Bass_Shelf(g, fc_bt, Fs);
 
-		lmc1992.bass_table[t][n].a1 = bass->a1;
-		lmc1992.bass_table[t][n].b0 = bass->b0;
-		lmc1992.bass_table[t][n].b1 = bass->b1;
+		lmc1992.bass_table[n].a1 = bass->a1;
+		lmc1992.bass_table[n].b0 = bass->b0;
+		lmc1992.bass_table[n].b1 = bass->b1;
 
 		treb = DmaSnd_Treble_Shelf(g, fc_tt, Fs);
 
-		lmc1992.treb_table[t][n].a1 = treb->a1;
-		lmc1992.treb_table[t][n].b0 = treb->b0;
-		lmc1992.treb_table[t][n].b1 = treb->b1;
-	}
-
-	t = Table_25KHz;
-	for (dB = 12.0, n = TONE_STEPS; n--; dB -= 2.0)
-	{
-		g = powf(10.0, dB / 20.0);	/* 12dB to -12dB */
-		fc_bt = 118.2763;
-		fc_tt = 8438.756;
-		Fs = CPU_FREQ / 320;		/* CPU_FREQ/320 = 25033 Hz */
-
-		bass = DmaSnd_Bass_Shelf(g, fc_bt, Fs);
-
-		lmc1992.bass_table[t][n].a1 = bass->a1;
-		lmc1992.bass_table[t][n].b0 = bass->b0;
-		lmc1992.bass_table[t][n].b1 = bass->b1;
-
-		treb = DmaSnd_Treble_Shelf(g, fc_tt, Fs);
-
-		lmc1992.treb_table[t][n].a1 = treb->a1;
-		lmc1992.treb_table[t][n].b0 = treb->b0;
-		lmc1992.treb_table[t][n].b1 = treb->b1;
+		lmc1992.treb_table[n].a1 = treb->a1;
+		lmc1992.treb_table[n].b0 = treb->b0;
+		lmc1992.treb_table[n].b1 = treb->b1;
 	}
 }
