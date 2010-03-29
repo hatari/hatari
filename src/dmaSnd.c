@@ -362,7 +362,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
 					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int] * 128) + 
-								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/512);
+								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
