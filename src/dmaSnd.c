@@ -78,8 +78,7 @@
 
 	The IIR combines a first order bass filter
 	with a first order treble filter to make a single
-	second order IIR shelving filter. An extra
-	multiply is used to control the final volume.
+	second order IIR shelving filter.
 
 	Sound is stereo filtered by Boosting or Cutting
 	the Bass and Treble by +/-12dB in 2dB steps.
@@ -108,15 +107,18 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #define TONE_STEPS 13
 
 
-static void DmaSnd_Init_Bass_and_Treble_Tables(void);
+/* Global variables that can be changed/read from other parts of Hatari */
+bool UseAntiAliasFilter = false;
+void DmaSnd_Init_Bass_and_Treble_Tables(void);
+
 static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb);
 static float DmaSnd_IIRfilterL(float xn);
 static float DmaSnd_IIRfilterR(float xn);
 static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs);
 static struct first_order_s *DmaSnd_Bass_Shelf(float g, float fc, float Fs);
-static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in);
-static Sint16 DmaSnd_LowPassFilterMono(Sint16 in);
-static Sint16 DmaSnd_LowPassFilterRight(Sint16 in);
+static Sint8 DmaSnd_LowPassFilterLeft(Sint8 in);
+static Sint8 DmaSnd_LowPassFilterMono(Sint8 in);
+static Sint8 DmaSnd_LowPassFilterRight(Sint8 in);
 
 
 Uint16 nDmaSoundControl;                /* Sound control register */
@@ -212,10 +214,6 @@ void DmaSnd_Reset(bool bCold)
 {
 	nDmaSoundControl = 0;
 
-	/* Initialise LMC1992 IIR filter parameters */
-/*	lmc1992.gain = 1.0;*/
-	DmaSnd_Init_Bass_and_Treble_Tables();
-
 	if (bCold)
 	{
 		dma.soundMode = 3;
@@ -223,11 +221,14 @@ void DmaSnd_Reset(bool bCold)
 		microwire.leftVolume = 65535;
 		microwire.rightVolume = 65535;
 		microwire.mixing = 0;
-		microwire.bass = 7;
-		microwire.treble = 7;
+		microwire.bass = 6;
+		microwire.treble = 6;
 		DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
 				      LMC1992_Bass_Treble_Table[microwire.treble]);
 	}
+
+	/* Initialise microwire LMC1992 IIR filter parameters */
+	DmaSnd_Init_Bass_and_Treble_Tables();
 
 	microwire.mwTransferSteps = 0;
 }
@@ -324,13 +325,17 @@ static inline int DmaSnd_EndOfFrameReached(void)
  */
 void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
-	Uint32 FreqRatio, n;
+	Uint32 FreqRatio;
 	int i, intPart;
 	int nBufIdx, nFramePos;
 	Sint8 *pFrameStart;
+	unsigned n;
 
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY))
 		return;
+
+//	UseLowPassFilter = true;
+	UseAntiAliasFilter = true;
 
 	pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
 
@@ -342,9 +347,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Mono 8-bit */
 
 		/* Apply anti-aliasing low pass filter ? (mono) */
-		if ( /* UseLowPassFilter && */ (dma.soundMode == 3))
+		if (UseAntiAliasFilter)
 		{
-			for (n = dma.frameStartAddr; n <= dma.frameEndAddr; n++) {
+			for (n = 0; n < (dma.frameLen & ~1); n++) {
 				pFrameStart[n] = DmaSnd_LowPassFilterMono(pFrameStart[n]);
 			}
 		}
@@ -357,7 +362,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
 					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int] * 128) + 
-								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
+								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/512);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
@@ -395,9 +400,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Stereo 8-bit */
 
 		/* Apply anti-aliasing low pass filter ? (stereo) */
-		if ( /* UseLowPassFilter && */ (dma.soundMode == 3))
+		if (UseAntiAliasFilter)
 		{
-			for (n = dma.frameStartAddr; n <= dma.frameEndAddr; n += 2 ) {
+			for (n = 0; n < dma.frameLen; n += 2 ) {
 				pFrameStart[n]   = DmaSnd_LowPassFilterLeft(pFrameStart[n]);
 				pFrameStart[n+1] = DmaSnd_LowPassFilterRight(pFrameStart[n+1]);
 			}
@@ -415,9 +420,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
 					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos] * 128) + 
-								(((Sint32)MixBuffer[nBufIdx][0] * 16384) / 65536);
+								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1] * 128) + 
-								(((Sint32)MixBuffer[nBufIdx][1] * 16384) / 65536);
+								(((Sint32)MixBuffer[nBufIdx][1] * 16384)/65536);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
@@ -453,13 +458,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	}
 
 	/* Apply LMC1992 sound modifications (Bass and Treble) 
-	   The Bass and Treble get samples at nAudioFrequency rate and that is all that matters.
-	           So the following is true but is not what is happening here:
-
-	   The tone control's sampling frequency must be a least 25033 Hz to sound good. 
-	   Thus the 12517Hz DAC samples should be doubled before being sent to the tone controls. 
-	   IIRfilter() is called twice with the same data at 12517Hz DAC. 
-	   IIRfilter() is called four times with the same data at 6258Hz DAC. 
+	   The Bass and Treble get samples at nAudioFrequency rate.
+	   The tone control's sampling frequency must be at least 22050 Hz to sound good. 
 	*/
 	for (i = 0; i < nSamplesToGenerate; i++) {
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
@@ -809,42 +809,45 @@ static float DmaSnd_IIRfilterR(float xn)
 /**
  * LowPass Filter Mono
  */
-static Sint16 DmaSnd_LowPassFilterMono(Sint16 in)
+static Sint8 DmaSnd_LowPassFilterMono(Sint8 in)
 {
 	static int lowPassFilter[2];
-	Sint16	out;
- 
-	out = (lowPassFilter[0]>>2) + (lowPassFilter[1]>>1) + (in>>2);
+	Sint8 out;
+
+	out = ((lowPassFilter[0]>>1) + (lowPassFilter[1]) + (in>>1)) >> 1;
 	lowPassFilter[0] = lowPassFilter[1];
 	lowPassFilter[1] = in;
+
 	return out;
 }
 
 /**
  * LowPass Filter Left
  */
-static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in)
+static Sint8 DmaSnd_LowPassFilterLeft(Sint8 in)
 {
 	static int lowPassFilter[2];
-	Sint16	out;
- 
-	out = (lowPassFilter[0]>>2) + (lowPassFilter[1]>>1) + (in>>2);
+	Sint8 out;
+
+	out = ((lowPassFilter[0]>>1) + (lowPassFilter[1]) + (in>>1)) >> 1;
 	lowPassFilter[0] = lowPassFilter[1];
 	lowPassFilter[1] = in;
+
 	return out;
 }
 
 /**
  * LowPass Filter Right
  */
-static Sint16 DmaSnd_LowPassFilterRight(Sint16 in)
+static Sint8 DmaSnd_LowPassFilterRight(Sint8 in)
 {
 	static int lowPassFilter[2];
-	Sint16	out;
- 
-	out = (lowPassFilter[0]>>2) + (lowPassFilter[1]>>1) + (in>>2);
+	Sint8 out;
+
+	out = ((lowPassFilter[0]>>1) + (lowPassFilter[1]) + (in>>1)) >> 1;
 	lowPassFilter[0] = lowPassFilter[1];
 	lowPassFilter[1] = in;
+
 	return out;
 }
 
@@ -909,7 +912,7 @@ static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs)
 /**
  * Compute the bass and treble tables (nAudioFrequency)
  */
-static void DmaSnd_Init_Bass_and_Treble_Tables(void)
+void DmaSnd_Init_Bass_and_Treble_Tables(void)
 {
 	struct first_order_s *bass;
 	struct first_order_s *treb;
@@ -917,12 +920,16 @@ static void DmaSnd_Init_Bass_and_Treble_Tables(void)
 	float  dB, g, fc_bt, fc_tt, Fs;
 	int    n;
 
+	fc_bt = 118.2763;
+	fc_tt = 8438.756;
+	Fs = (float)nAudioFrequency;
+
+	if ((Fs < 8000.0) || (Fs > 96000.0))
+		Fs = 44100.0;
+
 	for (dB = 12.0, n = TONE_STEPS; n--; dB -= 2.0)
 	{
-		g = powf(10.0, dB / 20.0);	/* 12dB to -12dB */
-		fc_bt = 118.2763;
-		fc_tt = 8438.756;
-		Fs = (float)nAudioFrequency;
+		g = powf(10.0, dB/20.0);	/* 12dB to -12dB */
 
 		bass = DmaSnd_Bass_Shelf(g, fc_bt, Fs);
 
@@ -936,4 +943,7 @@ static void DmaSnd_Init_Bass_and_Treble_Tables(void)
 		lmc1992.treb_table[n].b0 = treb->b0;
 		lmc1992.treb_table[n].b1 = treb->b1;
 	}
+
+	DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass & 0xf], 
+			      LMC1992_Bass_Treble_Table[microwire.treble & 0xf]);
 }

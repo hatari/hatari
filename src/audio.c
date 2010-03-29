@@ -16,6 +16,8 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "sound.h"
 
+extern void DmaSnd_Init_Bass_and_Treble_Tables(void);
+
 
 int nAudioFrequency = 44100;              /* Sound playback frequency */
 bool bSoundWorking = false;               /* Is sound OK */
@@ -187,6 +189,7 @@ void Audio_SetOutputAudioFreq(int nNewFrequency)
 		{
 			Audio_UnInit();
 			Audio_Init();
+			DmaSnd_Init_Bass_and_Treble_Tables();
 		}
 	}
 }
