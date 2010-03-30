@@ -76,15 +76,15 @@
 
 	LMC1992 IIR code Copyright by David Savinkoff 2010
 
-	The IIR combines a first order bass filter
-	with a first order treble filter to make a single
-	second order IIR shelving filter.
+	A first order bass filter is multiplied with a
+	first order treble filter to make a single
+	second order IIR shelf filter.
 
 	Sound is stereo filtered by Boosting or Cutting
 	the Bass and Treble by +/-12dB in 2dB steps.
 
 	This filter sounds exactly as the Atari TT or STE.
-	Sampling frequency = 50066 or 25033 Hz
+	Sampling frequency = selectable
 	Bass turnover = 118.276Hz    (8.2nF on LM1992 bass)
 	Treble turnover = 8438.756Hz (8.2nF on LM1992 treble)
 */
@@ -223,8 +223,6 @@ void DmaSnd_Reset(bool bCold)
 		microwire.mixing = 0;
 		microwire.bass = 6;
 		microwire.treble = 6;
-		DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
-				      LMC1992_Bass_Treble_Table[microwire.treble]);
 	}
 
 	/* Initialise microwire LMC1992 IIR filter parameters */
@@ -341,21 +339,20 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 	/* Compute ratio between hatari's sound frequency and host computer's sound frequency */
 	FreqRatio = (Uint32)(DmaSnd_DetectSampleRate() / (double)nAudioFrequency * 65536.0);
-				
+
+	n = dma.frameCounter_int;
 	if (dma.soundMode & DMASNDMODE_MONO)
 	{
 		/* Mono 8-bit */
-
-		/* Apply anti-aliasing low pass filter ? (mono) */
-		if (UseAntiAliasFilter)
-		{
-			for (n = 0; n < (dma.frameLen & ~1); n++) {
-				pFrameStart[n] = DmaSnd_LowPassFilterMono(pFrameStart[n]);
-			}
-		}
-
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
+			/* Apply anti-aliasing low pass filter ? (mono) */
+			if (UseAntiAliasFilter) {
+				for ( ; n <= dma.frameCounter_int; n++) {
+					pFrameStart[n] = DmaSnd_LowPassFilterMono(pFrameStart[n]);
+				}
+			}
+
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			switch (microwire.mixing) {
 				case 0:
@@ -399,19 +396,18 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	{
 		/* Stereo 8-bit */
 
-		/* Apply anti-aliasing low pass filter ? (stereo) */
-		if (UseAntiAliasFilter)
-		{
-			for (n = 0; n < dma.frameLen; n += 2 ) {
-				pFrameStart[n]   = DmaSnd_LowPassFilterLeft(pFrameStart[n]);
-				pFrameStart[n+1] = DmaSnd_LowPassFilterRight(pFrameStart[n+1]);
-			}
-		}
-
 		FreqRatio *= 2;
 
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
+			/* Apply anti-aliasing low pass filter ? (stereo) */
+			if (UseAntiAliasFilter) {
+				for ( ; n <= (dma.frameCounter_int & ~1); n += 2) {
+					pFrameStart[n]   = DmaSnd_LowPassFilterLeft(pFrameStart[n]);
+					pFrameStart[n+1] = DmaSnd_LowPassFilterRight(pFrameStart[n+1]);
+				}
+			}
+
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			nFramePos = (dma.frameCounter_int) & ~1;
 			
@@ -811,7 +807,7 @@ static float DmaSnd_IIRfilterR(float xn)
  */
 static Sint8 DmaSnd_LowPassFilterMono(Sint8 in)
 {
-	static int lowPassFilter[2];
+	static int lowPassFilter[2] = { 0, 0 };
 	Sint8 out;
 
 	out = ((lowPassFilter[0]>>1) + (lowPassFilter[1]) + (in>>1)) >> 1;
@@ -826,7 +822,7 @@ static Sint8 DmaSnd_LowPassFilterMono(Sint8 in)
  */
 static Sint8 DmaSnd_LowPassFilterLeft(Sint8 in)
 {
-	static int lowPassFilter[2];
+	static int lowPassFilter[2] = { 0, 0 };
 	Sint8 out;
 
 	out = ((lowPassFilter[0]>>1) + (lowPassFilter[1]) + (in>>1)) >> 1;
@@ -841,7 +837,7 @@ static Sint8 DmaSnd_LowPassFilterLeft(Sint8 in)
  */
 static Sint8 DmaSnd_LowPassFilterRight(Sint8 in)
 {
-	static int lowPassFilter[2];
+	static int lowPassFilter[2] = { 0, 0 };
 	Sint8 out;
 
 	out = ((lowPassFilter[0]>>1) + (lowPassFilter[1]) + (in>>1)) >> 1;
