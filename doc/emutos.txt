@@ -146,6 +146,7 @@ Demos:
 - Flashback (by Carebears)
 - Frenchies (by Frenchies, 96KB intro)
 - Hallucinations (by Reservoir Gods)
+- Outline 2008 invite (by DHS)
 - Overdose (by Aggression)
 - Paradise (by Dune Design)
 - Phaleon Gigademo
@@ -157,13 +158,14 @@ Demos:
 - Tut! (by Wildfire)
 - Two in One (by DHS)
 - YmRockerz musicdisks such as Popstars etc.
+- Xmas2000 (by Paranoid)
 
 Color games:
 - Archon 4KB
 - Alien Blockade
 - Bellum*
 - Bombs Away
-- ChuChu Rocket*
+- ChuChu Rocket* (Lite version for STFM)
 - Clogged Up
 - Crapman*
 - Dave Munsie games (shareware)
@@ -346,6 +348,7 @@ Demos:
 Color games:
 - Alien Blast (demo)
 - Battletris+
+- ChuChu Rocket* (full version)
 - Dynaplus*
 - Frantick
 - No Limit II (shareware pinball)
