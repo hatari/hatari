@@ -1080,7 +1080,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		/* validate & copy other characters */
 		if (!sep) {
 			/* variable/register/symbol or number prefix? */
-			if (!(isalnum(*src) || isblank(*src) || *src == '_' ||
+			if (!(isalnum(*src) || *src == '_' ||
 			      *src == '$' || *src == '#' || *src == '%')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
