@@ -338,14 +338,21 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
 
 	/* Compute ratio between hatari's sound frequency and host computer's sound frequency */
-	FreqRatio = (Uint32)(DmaSnd_DetectSampleRate() / (double)nAudioFrequency * 65536.0);
+	FreqRatio = (Uint32)(DmaSnd_DetectSampleRate() / (double)nAudioFrequency * 65536.0 + 0.5);
 
-	n = dma.frameCounter_int;
 	if (dma.soundMode & DMASNDMODE_MONO)
 	{
 		/* Mono 8-bit */
+
+		n = dma.frameCounter_int;
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
+			/* Is end of DMA buffer reached ? */
+			if (dma.frameCounter_int >= dma.frameLen) {
+				if (DmaSnd_EndOfFrameReached())
+					break;
+			}
+			
 			/* Apply anti-aliasing low pass filter ? (mono) */
 			if (UseAntiAliasFilter) {
 				for ( ; n <= dma.frameCounter_int; n++) {
@@ -354,20 +361,21 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			}
 
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+
 			switch (microwire.mixing) {
 				case 0:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int] * 128) + 
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int] * 256) + 
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[dma.frameCounter_int] * 128;	
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[dma.frameCounter_int] * 256;	
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int]) * 128;
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int]) * 256;
 					break;
 				case 3:
 				default:
@@ -384,12 +392,6 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				dma.frameCounter_int += intPart;
 				dma.frameCounter_dec -= intPart* 65536;
 			}
-
-			/* Is end of DMA buffer reached ? */
-			if (dma.frameCounter_int >= dma.frameLen) {
-				if (DmaSnd_EndOfFrameReached())
-					break;
-			}
 		}
 	}
 	else
@@ -397,6 +399,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Stereo 8-bit */
 
 		FreqRatio *= 2;
+		n = dma.frameCounter_int & ~1;
 
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
@@ -408,6 +411,12 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				}
 			}
 
+			/* Is end of DMA buffer reached ? */
+			if ((dma.frameCounter_int | 1) >= dma.frameLen) {
+				if (DmaSnd_EndOfFrameReached())
+					break;
+			}
+
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			nFramePos = (dma.frameCounter_int) & ~1;
 			
@@ -415,20 +424,20 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				case 0:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos] * 128) + 
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos] * 256) + 
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
-					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1] * 128) + 
+					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1] * 256) + 
 								(((Sint32)MixBuffer[nBufIdx][1] * 16384)/65536);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[nFramePos] * 128;	
-					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + (Sint16)pFrameStart[nFramePos+1] * 128;	
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[nFramePos] * 256;	
+					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + (Sint16)pFrameStart[nFramePos+1] * 256;	
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos]) * 128;
-					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1]) * 128;
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos]) * 256;
+					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1]) * 256;
 					break;
 				case 3:
 				default:
@@ -443,12 +452,6 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				intPart = dma.frameCounter_dec >> 16;
 				dma.frameCounter_int += intPart;
 				dma.frameCounter_dec -= intPart* 65536;
-			}
-
-			/* Is end of DMA buffer reached ? */
-			if (dma.frameCounter_int >= dma.frameLen) {
-				if (DmaSnd_EndOfFrameReached())
-					break;
 			}
 		}
 	}
