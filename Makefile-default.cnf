@@ -34,15 +34,38 @@ WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
   -Wbad-function-cast -Wcast-qual  -Wpointer-arith \
   -Wall -Wwrite-strings # -Wshadow -Wcast-align -Werror
 
+
+ifneq ($(MUDFLAP),)
+# Run-time checks with GCC "mudflap" etc:
+# - stack protection
+# - checking of pointer accesses (AFAIK works only on x86)
+#
+# Before build, install "libmudflap<version>-<gcc-version>-dev"
+# package (libmudflap0-4.3-dev in Debian Lenny).
+#
+# To build, use:
+#	make clean; make MUDFLAP=1
+#
+# To run, use something like (disable sound as it can break things):
+#   MUDFLAP_OPTIONS="-viol-gdb" ./hatari --sound off
+#
+# For more info, see (for now, works properly only for x86 gcc):
+#   http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
+#
+RUNCHECKS = -fstack-protector-all -fmudflapth #-fmudflapir
+LDRUNCHECKS = -fmudflapth -lmudflap
+endif
+
+
 # Set flags passed to the compiler (e.g. optimization flags)
-CFLAGS := -g $(WARNFLAGS) $(OPTFLAGS)
+CFLAGS := -g $(WARNFLAGS) $(OPTFLAGS) $(RUNCHECKS)
 
 # Set flags passed to the preprocessor (e.g. -I<include dir>)
 CPPFLAGS ?=
 
 # Additional libraries and linker flags:
 LIBS ?= -lz -lm # -lreadline
-LDFLAGS ?=
+LDFLAGS ?= $(LDRUNCHECKS)
 
 # Ranlib - for generating an index of an archive
 RANLIB = ranlib

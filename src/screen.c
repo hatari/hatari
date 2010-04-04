@@ -429,6 +429,11 @@ static void Screen_SetResolution(void)
 	    || (BitCount && sdlscrn->format->BitsPerPixel != BitCount)
 	    || (sdlscrn->flags&SDL_FULLSCREEN) != (sdlVideoFlags&SDL_FULLSCREEN))
 	{
+#ifdef _MUDFLAP
+		if (sdlscrn) {
+			__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
+		}
+#endif
 		if (bInFullScreen)
 		{
 			/* unhide the Hatari WM window for fullscreen */
@@ -458,6 +463,9 @@ static void Screen_SetResolution(void)
 			SDL_Quit();
 			exit(-2);
 		}
+#ifdef _MUDFLAP
+		__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
+#endif
 
 		if (!bInFullScreen)
 		{

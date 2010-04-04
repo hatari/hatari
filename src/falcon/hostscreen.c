@@ -191,12 +191,20 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	} else {
 		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE;
 	}
+#ifdef _MUDFLAP
+	if (sdlscrn) {
+		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
+	}
+#endif
 	mainSurface = SDL_SetVideoMode(screenwidth, screenheight, bpp, sdl_videoparams);
+	sdlscrn = surf = mainSurface;
+#ifdef _MUDFLAP
+	__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
+#endif
 	if (!bInFullScreen) {
 		/* re-embed the new Hatari SDL window */
 		Control_ReparentWindow(screenwidth, screenheight, bInFullScreen);
 	}
-	sdlscrn = surf = mainSurface;
 
 	// update the surface's palette
 	HostScreen_updatePalette( 256 );

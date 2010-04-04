@@ -31,9 +31,15 @@ if [ \! -x $console ]; then
 	exit 1
 fi
 
+# Enable extra GCC mudflap options in case Hatari's compiled with it:
+#   http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
+export MUDFLAP_OPTIONS="-viol-gdb -internal-checking -wipe-stack -wipe-heap"
+
 echo "TESTING: debugger input file"
 echo "============================"
-$hatari --machine falcon --tos $etos --dsp emu --parse debugui/debugger.ini
+cmd="$hatari --sound off --machine falcon --tos $etos --dsp emu --parse debugui/debugger.ini"
+echo $cmd
+$cmd
 
 echo
 echo "TESTING: console input file"
