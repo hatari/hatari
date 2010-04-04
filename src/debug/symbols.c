@@ -466,11 +466,12 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 }
 
 const char Symbols_Description[] =
-	"<filename|addr|name> [offset]\n"
+	"<filename|addr|name|free> [offset]\n"
 	"\tLoads symbol names and their addresses (with optional offset)\n"
 	"\tfrom given <filename>.  If there were previously loaded symbols,\n"
 	"\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
-	"\ta file name, will list the currently loaded symbols.";
+	"\ta file name, will list the currently loaded symbols. Giving\n"
+	"\t'free' will remove the loaded symbols.";
 
 /**
  * Handle debugger 'symbols' command and its arguments
@@ -502,6 +503,11 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	if (strcmp(file, "name") == 0 || strcmp(file, "addr") == 0) {
 		list = (listtype == TYPE_DSP ? DspSymbolsList : CpuSymbolsList);
 		Symbols_Show(list, file);
+		return DEBUGGER_CMDDONE;
+	}
+	if (strcmp(file, "free") == 0) {
+		list = (listtype == TYPE_DSP ? DspSymbolsList : CpuSymbolsList);
+		Symbols_Free(list);
 		return DEBUGGER_CMDDONE;
 	}
 	if (nArgc >= 3) {

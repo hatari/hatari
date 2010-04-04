@@ -44,7 +44,9 @@ int main(int argc, const char *argv[])
 	char fname[] = "os-header.sym";
 	char sname[] = "name";
 	char saddr[] = "addr";
+	char sfree[] = "free";
 	char *cmd_load[] = { symbols, fname };
+	char *cmd_free[] = { symbols, sfree };
 	char *cmd_show_byname[] = { symbols, sname };
 	char *cmd_show_byaddr[] = { symbols, saddr };
 
@@ -103,7 +105,8 @@ int main(int argc, const char *argv[])
 		}
 	}
 	tests += i;
-	
+
+	DO_CMD(cmd_free);
 	if (errors) {
 		fprintf(stderr, "\n***Detected %d ERRORs in %d automated tests!***\n\n",
 			errors, tests);
