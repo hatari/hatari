@@ -414,8 +414,10 @@ static void Screen_SetResolution(void)
 	if (bInFullScreen)
 	{
 		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
-		/* SDL_DOUBLEBUF is a good idea, but the GUI doesn't work with double buffered
-		 * screens yet, so double buffering is currently disabled. */
+		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
+		 * but it doesn't work with partial screen updates done by the ST screen
+		 * update code or the Hatari GUI, so double buffering is disabled.
+		 */
 	}
 	else
 	{
@@ -1030,38 +1032,26 @@ static void Screen_UnLock(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Swap ST Buffers, used for full-screen where have double-buffering
- */
-static void Screen_SwapSTBuffers(void)
-{
-#if NUM_FRAMEBUFFERS > 1
-	if (sdlscrn->flags & SDL_DOUBLEBUF)
-	{
-		if (pFrameBuffer==&FrameBuffers[0])
-			pFrameBuffer = &FrameBuffers[1];
-		else
-			pFrameBuffer = &FrameBuffers[0];
-	}
-#endif
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Blit our converted ST screen to window/full-screen
  */
 static void Screen_Blit(void)
 {
 	unsigned char *pTmpScreen;
 
-	/* Blit to full screen or window? */
-	if (bInFullScreen)
+#if 0	/* double buffering cannot be used with partial screen updates */
+# if NUM_FRAMEBUFFERS > 1
+	if (bInFullScreen && (sdlscrn->flags & SDL_DOUBLEBUF))
 	{
-		Screen_SwapSTBuffers();
 		/* Swap screen */
+		if (pFrameBuffer==&FrameBuffers[0])
+			pFrameBuffer = &FrameBuffers[1];
+		else
+			pFrameBuffer = &FrameBuffers[0];
 		SDL_Flip(sdlscrn);
 	}
 	else
+# endif
+#endif
 	{
 		SDL_UpdateRects(sdlscrn, 1, &STScreenRect);
 	}
