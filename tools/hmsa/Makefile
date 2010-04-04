@@ -13,7 +13,7 @@ CPPFLAGS += $(SDL_CFLAGS) -I../.. -I../../src/includes -I../../src/debug -I../..
 all: hmsa
 
 hmsa: $(OBJS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) $(LIBS) -o hmsa
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) $(LDFLAGS) $(LIBS) -o hmsa
 
 clean:
 	$(RM) *.o hmsa
