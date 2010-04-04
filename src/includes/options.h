@@ -12,12 +12,8 @@ extern bool bLoadMemorySave;
 extern bool bBiosIntercept;
 extern bool AviRecordOnStartup;
 
-/* Parses all Hatari command line options and sets Hatari state.
- * Returns TRUE if everything was OK, FALSE otherwise.
- */
+extern Uint32 Opt_GetNoParachuteFlag(void);
 extern bool Opt_ParseParameters(int argc, const char *argv[]);
-
-/* readline callback function for the debugger setopt command */
 extern char *Opt_MatchOption(const char *text, int state);
 
 #endif /* HATARI_OPTIONS_H */

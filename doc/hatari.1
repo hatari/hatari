@@ -239,6 +239,11 @@ Parse/execute debugger commands from <file>
 Save Hatari configuration and exit. Hatari UI needs Hatari configuration
 file to start, this can be used to create it automatically.
 .TP
+.B \-\-no-parachute
+Disable SDL parachute to get Hatari core dumps. SDL parachute is enabled
+by default to restore video mode in case Hatari terminates abnormally
+while using non-standard screen resolution.
+.TP
 .B \-\-control-socket <file>
 Hatari reads options from given socket at run-time
 .TP

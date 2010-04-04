@@ -18,6 +18,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <SDL.h>
 
 #include "main.h"
 #include "options.h"
@@ -39,7 +40,9 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
 bool bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
 bool bBiosIntercept;       /* whether UAE should intercept Bios & XBios calls */
-bool AviRecordOnStartup = false;	/* Start avi recording at startup */
+bool AviRecordOnStartup;   /* Start avi recording at startup */
+
+static bool bNoSDLParachute;
 
 /*  List of supported options. */
 enum {
@@ -112,6 +115,7 @@ enum {
 	OPT_TRACEFILE,
 	OPT_PARSE,
 	OPT_SAVECONFIG,
+	OPT_PARACHUTE,
 	OPT_CONTROLSOCKET,
 	OPT_LOGFILE,
 	OPT_LOGLEVEL,
@@ -292,6 +296,8 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Parse/execute debugger commands from <file>" },
 	{ OPT_SAVECONFIG, NULL, "--saveconfig",
 	  NULL, "Save current Hatari configuration and exit" },
+	{ OPT_PARACHUTE, NULL, "--no-parachute",
+	  NULL, "Disable SDL parachute to get Hatari core dumps" },
 #if HAVE_UNIX_DOMAIN_SOCKETS
 	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
 	  "<file>", "Hatari reads options from given socket at run-time" },
@@ -671,6 +677,21 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 	}
 	strcpy(dst, src);
 	return true;
+}
+
+
+/**
+ * Return SDL_INIT_NOPARACHUTE flag if user requested SDL parachute
+ * to be disabled to get proper Hatari core dumps.  By default returns
+ * zero so that SDL parachute will be used to restore video mode on
+ * unclean Hatari termination.
+ */
+Uint32 Opt_GetNoParachuteFlag(void)
+{
+	if (bNoSDLParachute) {
+		return SDL_INIT_NOPARACHUTE;
+	}
+	return 0;
 }
 
 
@@ -1279,6 +1300,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				fprintf(stderr, "Exception debugging enabled.\n");
 				bExceptionDebugging = true;
 			}
+			break;
+
+		case OPT_PARACHUTE:
+			bNoSDLParachute = true;
 			break;
 
 		case OPT_BIOSINTERCEPT:
