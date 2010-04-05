@@ -1515,9 +1515,8 @@ this section lists only TT-specific games and demos.</p>
 
 <a name="Falcon"></a><h2>Falcon software compatibility list</h2>
 
-<p>The main things preventing Falcon programs from working properly
-are incomplete VIDEL and DSP emulation.  You can select between three
-different DSP emulation modes with the Hatari "--dsp" option:
+<p>You can select between three different DSP emulation modes with
+the Hatari "--dsp" option:
 <ul>
   <li><b>none</b>: No emulation.
       If program doesn't need/use DSP, this is the best option.
@@ -1537,6 +1536,11 @@ doesn't matter, the column contains "-".</p>
 <p>The column for whether the program works and whether
 it has (working) sound have "yes" when this is true and
 otherwise "-".</p>
+
+<p>Due to missing MMU emulation, incomplete VIDEL emulation and
+only partially cycle accurate CPU/DSP emulation (and other emulation
+bugs), some Falcon programs don't work.</p>
+
 
 <a name="Falcon games"></a><h4>Falcon games</h4>
 
