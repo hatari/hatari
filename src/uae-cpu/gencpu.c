@@ -59,6 +59,10 @@
 /*			can pair with a lsr) (Anomaly Demo Intro).					*/
 /* 2008/04/26	[NP]	Handle sz_byte for Areg in genamode, as 'move.b a1,(a0)' ($1089) is possible	*/
 /*			on ST (fix Blood Money on Superior 65)						*/
+/* 2010/04/05	[NP]	On ST, d8(An,Xn) takes 2 cycles more (which can generate pairing).		*/
+/*			Use BusCyclePenalty to properly handle the 2/4 cycles added in that case when	*/
+/*			addressing mode	is Ad8r or PC8r	(ULM Demo Menu, Anomaly Demo Intro, DHS		*/
+/*			Sommarhack 2010) (see m68000.h)							*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -345,6 +349,7 @@ static void genamode (amodes mode, const char *reg, wordsizes size,
 	} else {
 	    printf ("\tuaecptr %sa = get_disp_ea_000(m68k_areg(regs, %s), %s);\n", name, reg, gen_nextiword ());
 	}
+	printf ("\tBusCyclePenalty += 2;\n");
 
 	break;
     case PC16:
@@ -366,6 +371,7 @@ static void genamode (amodes mode, const char *reg, wordsizes size,
 	    printf ("\tuaecptr tmppc = m68k_getpc() + %d;\n", m68k_pc_offset);
 	    printf ("\tuaecptr %sa = get_disp_ea_000(tmppc, %s);\n", name, gen_nextiword ());
 	}
+	printf ("\tBusCyclePenalty += 2;\n");
 
 	break;
     case absw:
@@ -1022,8 +1028,6 @@ static void gen_opcode (unsigned long int opcode)
           insn_n_cycles += 2;
          else
           insn_n_cycles += 4;
-        if( (curi->smode==Ad8r) || (curi->smode==PC8r) )	/* [NP] on 68000 ST, d8(An,Xn) takes 2 cycles more */
-          insn_n_cycles += 2;
 	break;
     case i_SUBX:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
@@ -1086,8 +1090,6 @@ static void gen_opcode (unsigned long int opcode)
           insn_n_cycles += 2;
          else
           insn_n_cycles += 4;
-        if( (curi->smode==Ad8r) || (curi->smode==PC8r) )	/* [NP] on 68000 ST, d8(An,Xn) takes 2 cycles more */
-          insn_n_cycles += 2;
 	break;
     case i_ADDX:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);

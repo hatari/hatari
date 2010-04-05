@@ -159,6 +159,7 @@ int fpp_movem_next[256];
 cpuop_func *cpufunctbl[65536];
 
 int OpcodeFamily;
+int BusCyclePenalty = 0;
 
 #define COUNT_INSTRS 0
 
