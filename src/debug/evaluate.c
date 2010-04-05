@@ -23,6 +23,7 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "debugcpu.h"
 #include "evaluate.h"
+#include "main.h"
 #include "m68000.h"
 #include "symbols.h"
 
