@@ -235,7 +235,7 @@ There is support for following additional Falcon features:
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>Experimental DSP co-processor emulation</li>
-  <li>Experimental IDE emulation for harddisk support</li>
+  <li>Experimental IDE master and slave emulation for harddisk support</li>
   <li>Some few parts of the Falcon sound system are emulated
       (e.g. the additional sample rates of the DMA sound)</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon mode.</li>
@@ -1466,24 +1466,33 @@ The GUI is rather self explanatory.</p>
 <img src="images/main.png" width="500" height="304" alt="Hatari's GUI - the main menu">
 </div>
 
-<p>From the main menu, you can reach the other setup dialogs by clicking on
-the appropriate buttons.</p>
-
-<p>You can load the current settings from a configuration file by clicking
-on the <span class="button">Load&nbsp;config</span> button and you can save the
-current settings to a configuration file with the
-<span class="button">Save&nbsp;config</span> button.</p>
-
-<p>Click <span class="button">OK</span> to go back to the emulated
-ST. All changed options will be applied.</p>
-<p>Check the <span class="button">Reset&nbsp;machine</span> button if you want
-the emulated machine to perform a cold reset. This is equal to
-switching the power off and on again on a real ST.
+<p>
+You can reach the other setup dialogs from the main menu by clicking on
+the appropriate buttons.
 </p>
-<p>Click <span class="button">Quit</span> to terminate Hatari and
-return to the host OS.</p>
-<p>Click <span class="button">Cancel</span> to abandon any changes
-that you have made.</p>
+<p>
+You can load the current settings from a configuration file by clicking
+on <span class="button">Load&nbsp;config.</span> and you can save
+the current settings to a configuration file by clicking on
+<span class="button">Save&nbsp;config.</span>.
+</p>
+<p>
+Click <span class="button">OK</span> to go back and continue the emulation.
+All changed options will be applied.
+</p>
+<p>
+Select the <span class="button">Reset&nbsp;machine</span> option if you
+want the emulated machine to perform a cold reset. This is equal to
+switching the power off and on again on a real Atari machine.
+</p>
+<p>
+Click <span class="button">Quit</span> to terminate Hatari
+and return to the host OS.
+</p>
+<p>
+Click <span class="button">Cancel</span> to abandon any
+changes that you have made.
+</p>
 
 
 <a name="The File Selector Dialog"></a><h4 class="gui">The File Selector Dialog</h4>
@@ -1527,8 +1536,8 @@ that you have made.</p>
  </li>
  <li>
   Atari TT and Falcon computers were using the 68030 CPU, so you should switch
-  either to 68020 or 68020+FPU when you want to use TT or Falcon mode.
-  (The 68020 and 68030 were pretty much the same apart from some minor details).
+  use 68EC030+FPU (Hatari doesn't support 030 with MMU and some programs don't
+  work with 68020 so this is the best choice).
  </li>
  <li>
   TOS 1.0x only works with 68000, while TOS 3.0x and 4.0x work only with a CPU
@@ -1553,7 +1562,7 @@ that you have made.</p>
  types anymore. There were only very few programs that were made for the TT
  exclusively, while there were some interesting games and demos specially made
  for the Falcon.
- <em>Note:</em> TT and Falcon emulation are very incomplete. They may not work
+ <em>Note:</em> TT and Falcon emulation are incomplete. They may not work
  very well.
 </p>
 <p>
@@ -1591,9 +1600,11 @@ that you have made.</p>
  value slows down the emulation. The patch gives you a better performance.
  It is normally safe to enable the patch, but if you encounter a program that
  does not work, you can try to disable the patch to see if it works then.</p>
-<p><em>NOTE:</em> These parameters are very sensitive to the emulated
-ST and it is strongly recommended to
-reset the emulated ST after changing these options.</p>
+<p><em>NOTE:</em> The emulated Atari is very very sensitive to these options
+ and it is strongly recommended to reset the emulation after changing
+ them (for most things that's done automatically).   The correct
+ CPU type and clock are automatically selected when one uses the
+ <span class="commandline">--machine</span> command line option.</p>
 
 
 <a name="The Floppy Disks Dialog"></a><h4 class="gui">The Floppy Disks Dialog</h4>
@@ -1642,13 +1653,15 @@ ends with a 'b'.
 </p>
 
 <div class="floatimage">
-<img src="images/newfloppy.png" width="280" height="192" alt="Hatari's GUI - the new floppy dialog">
+<img src="images/newfloppy.png" width="290" height="224" alt="Hatari's GUI - the new floppy dialog">
 </div>
 
 <p>
  If you need to create a new blank disk image, click on
  <span class="button">Create&nbsp;blank&nbsp;image</span>.
  Parameters for the new image can be set in the following dialog.
+ HD and ED disk sector counts are for non-Atari disk sizes, but such
+ disks are useful for programs that don't work with GEMDOS emulation.
  Click on <span class="button">Create</span> to save the new image or on
  <span class="button">Back</span> to return to the disk dialog.
 </p>
@@ -1666,22 +1679,22 @@ ends with a 'b'.
 <a name="The Hard Disks Dialog"></a><h4 class="gui">The Hard Disks Dialog</h4>
 
 <div class="floatimage">
-<img src="images/harddisks.png" width="640" height="256" alt="Hatari's GUI - the hard disks dialog">
+<img src="images/harddisks.png" width="640" height="304" alt="Hatari's GUI - the hard disks dialog">
 </div>
 
 <p>
  This dialog can be used to change the harddisk settings.
 </p>
 <p>
- You can select a harddrive image for ACSI or IDE hard drive emulation via
- image file here or you may select a directory of your local filesystem to be
- emulated as the harddrive of the emulated system.
+ You can select a harddrive image for ACSI, IDE master or slave hard drive
+ emulation via image file here or you may select a directory of your local
+ filesystem to be emulated as the harddrive of the emulated system.
 </p>
 <p>
  Check "Boot from HD" if you want Hatari to execute the AUTO folder
  on the harddrive.
- This option is checked by default if you specify a harddrive image or a
- directory via the command line.
+ This option is checked by default if you specify a harddrive image or
+ a directory via the command line.
 </p>
 <p>
  Removing the check from the "Allow GEMDOS drive modification" option
