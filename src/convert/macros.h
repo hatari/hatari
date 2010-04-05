@@ -455,6 +455,9 @@ static const Uint32 Remap_1_Plane[16] = {
 /* Get Spec512 pixels which are offset by 1 pixel */
 #if defined(__i386__)    // Unaligned direct access is only supported on i86 platforms
 
+/* on AMD XP, first one is 1/3 faster than aligned access, and
+ * final pixels access ~15% faster than aligned operation below
+ */
 # define GET_SPEC512_OFFSET_PIXELS(pixels, x)  \
             (*(Uint32 *)(((Uint8 *)pixels) + x))
 # define GET_SPEC512_OFFSET_FINAL_PIXELS(pixels) \

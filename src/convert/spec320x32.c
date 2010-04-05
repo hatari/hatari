@@ -12,8 +12,13 @@ static void ConvertSpec512_320x32Bit(void)
 	Uint32 *edi, *ebp;
 	Uint32 *esi;
 	Uint32 eax, ebx, ecx, edx;
-	Uint32 pixelspace[4]; /* Workspace to store pixels to so can print in right order for Spec512 */
+	Uint32 pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
 	int y, x;
+
+	/* on x86, unaligned access macro touches also
+	 * next byte, zero it for code checkers
+	 */
+	pixelspace[4] = 0;
 
 	Spec512_StartFrame();            /* Start frame, track palettes */
 
