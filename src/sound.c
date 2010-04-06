@@ -1028,19 +1028,30 @@ static void Sound_GenerateSamples(void)
 	if (nSamplesToGenerate <= 0)
 		return;
 
-	for (i = 0; i < nSamplesToGenerate; i++)
-	{
-		idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
-		MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
-	}
-
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
-		/* If Falcon emulation, crossbar does the job */
-		Crossbar_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
-	} else {
-		/* If Ste or TT emulation, DmaSnd does the job */
-		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
-	}
+		for (i = 0; i < nSamplesToGenerate; i++) {
+			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
+			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
+		}
+ 		/* If Falcon emulation, crossbar does the job */
+ 		Crossbar_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+	} else
+	if (ConfigureParams.System.nMachineType != MACHINE_ST) {
+		for (i = 0; i < nSamplesToGenerate; i++) {
+			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
+			MixBuffer[idx][0] = MixBuffer[idx][1] = (YM2149_NextSample() >> 1);
+		}
+ 		/* If Ste or TT emulation, DmaSnd does the job */
+ 		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+	} else
+	if (ConfigureParams.System.nMachineType == MACHINE_ST) {
+		for (i = 0; i < nSamplesToGenerate; i++) {
+			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
+			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
+		}
+		/* If ST emulation, DmaSnd doesn't do the job
+		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate); */
+ 	}
 
 	ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
 	nGeneratedSamples += nSamplesToGenerate;

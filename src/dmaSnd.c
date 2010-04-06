@@ -332,7 +332,6 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY))
 		return;
 
-//	UseLowPassFilter = true;
 	UseAntiAliasFilter = true;
 
 	pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
@@ -366,16 +365,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				case 0:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int] * 256) + 
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int] * -(256*3/4)/4) + 
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[dma.frameCounter_int] * 256;	
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[dma.frameCounter_int] * -(256*3/4)/4;	
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int]) * 256;
+					MixBuffer[nBufIdx][0] = (Sint16)pFrameStart[dma.frameCounter_int] * -(256*3/4)/4;
 					break;
 				case 3:
 				default:
@@ -403,18 +402,18 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
+			/* Is end of DMA buffer reached ? */
+			if ((dma.frameCounter_int | 1) >= dma.frameLen) {
+				if (DmaSnd_EndOfFrameReached())
+					break;
+			}
+
 			/* Apply anti-aliasing low pass filter ? (stereo) */
 			if (UseAntiAliasFilter) {
 				for ( ; n <= (dma.frameCounter_int & ~1); n += 2) {
 					pFrameStart[n]   = DmaSnd_LowPassFilterLeft(pFrameStart[n]);
 					pFrameStart[n+1] = DmaSnd_LowPassFilterRight(pFrameStart[n+1]);
 				}
-			}
-
-			/* Is end of DMA buffer reached ? */
-			if ((dma.frameCounter_int | 1) >= dma.frameLen) {
-				if (DmaSnd_EndOfFrameReached())
-					break;
 			}
 
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
@@ -424,20 +423,20 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				case 0:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos] * 256) + 
+					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos] * -(256*3/4)/4) + 
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
-					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1] * 256) + 
+					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1] * -(256*3/4)/4) + 
 								(((Sint32)MixBuffer[nBufIdx][1] * 16384)/65536);
 					break;
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[nFramePos] * 256;	
-					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + (Sint16)pFrameStart[nFramePos+1] * 256;	
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[nFramePos] * -(256*3/4)/4;	
+					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + (Sint16)pFrameStart[nFramePos+1] * -(256*3/4)/4;	
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos]) * 256;
-					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1]) * 256;
+					MixBuffer[nBufIdx][0] = (Sint16)pFrameStart[nFramePos] * -(256*3/4)/4;
+					MixBuffer[nBufIdx][1] = (Sint16)pFrameStart[nFramePos+1] * -(256*3/4)/4;
 					break;
 				case 3:
 				default:
@@ -462,8 +461,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	*/
 	for (i = 0; i < nSamplesToGenerate; i++) {
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		MixBuffer[nBufIdx][0] = DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-		MixBuffer[nBufIdx][1] = DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
+		MixBuffer[nBufIdx][0] = 0.5 + DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
+		MixBuffer[nBufIdx][1] = 0.5 + DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
  	}
 
 	/* Apply LMC1992 sound modifications (Left, Right and Master Volume) */
@@ -472,7 +471,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		MixBuffer[nBufIdx][0] = (((MixBuffer[nBufIdx][0] * microwire.leftVolume) >> 16) * microwire.masterVolume) >> 16;
 		MixBuffer[nBufIdx][1] = (((MixBuffer[nBufIdx][1] * microwire.rightVolume) >> 16) * microwire.masterVolume) >> 16;
 	}
- }
+}
 
 
 /*-----------------------------------------------------------------------*/
