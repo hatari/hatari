@@ -40,8 +40,10 @@ Emulator:
   monitor aspect ratio correction and maximum zoomed Hatari window size.
   This can reduce Hatari window resolution size changes significantly and
   makes e.g. FUN's Alive demo viewable in fullscreen mode.  Limits for
-  window size are also checked to see whether ST/STE low rez should
-  be zoomed or whether borders option can be kept enabled
+  window size are also checked to see whether ST/STE low rez should be
+  zoomed and how much of borders can be shown (when borders enabled)
+- Split the Screen dialog into two separate dialogs, one for Atari
+  monitor emulation setup and one for Hatari window setup
 - GEMDOS drive emulation:
   - support long host directory names and much improved long filename support
   - convert host filename chars invalid in TOS to valid ones ('@')
@@ -55,27 +57,27 @@ Emulator:
 - Can create blank 2.88MB (ED) and 1.44MB (HD) floppy images
   from the GUI in addition to DD & SD images
 - Major debugger improvements:
-  - debugger command, command argument and symbol name TAB-completion
-    support. Requires readline library
+  - TAB-completion for debugger commands, command arguments and
+    symbol names. Requires readline library
   - "parse" command and --parse Hatari command line option to
     execute debugger commands from a file
   - "stateload" and "statesave" commands for memory snapshots
   - "trace" command for tracing what the emulated code does
     - GEMDOS tracing gives slightly more information
-  - "symbols" command for loading and listing CPU & DSP code
-    symbols/addresses.  Symbols are shown on CPU & DSP disassembly
-    and can be used in breakpoints
+  - "symbols" command for loading and listing CPU & DSP code & data
+    symbols/addresses.  Code symbols are shown on CPU & DSP disassembly
+    and code & data symbols can be used in breakpoints
   - "evaluate" command for doing calculations. Register and symbol
     names in expressions are replaced by their values. '$' will be
     TAB-completed to last 'evaluate' command result
   - "cd" command to change Hatari work directory
-  - "exec" command to execute shell commands
+  - "exec" command to execute shell commands (ENABLE_SYSTEM_DEBUG_CALL)
   - "info" command for showing Atari HW and OS information
   - "lock" command for setting what information is shown every time on
     entering the debugger, e.g. disassembly or memdump from given address.
     "regaddr" argument does that from address pointed by given register
   - improved register name handling + fixed DSP reg name matching
-  - if conditional breakpoint condition both sides are identical, replace
+  - if both sides of conditional breakpoint condition are identical, replace
     right side with current value of given expression (e.g. if it's "d0",
     use current D0 value).  If the comparison is for inequality ("!"),
     output the value & break only when the value changes from the previous
@@ -90,9 +92,12 @@ Emulator:
 - Fix VBLs/s counting to work also when --run-vbls isn't used.
 
 Other changes:
+- Considerably expanded debugging and hard disk sections in manual
 - CMake build support, this fixes OSX building and adds support
   for building Hatari in different directory from the sources
 - Removed autotools usage/support, added CMake "configure" script
+- Hatari remote control programs updates (see their own release notes
+  for details)
 
 
  Version 1.3.1 (2009-09-05):

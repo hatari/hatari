@@ -23,6 +23,7 @@ Emulation improvements
   (Current special casing is enough for all known demos using 6301)
 
 - Upgrade the CPU core of Hatari to the latest WinUAE or E-UAE CPU core.
+  (MMU emulation and better cycle accuracy is needed by some programs)
 
 - Get the games/demos working that are marked as non-working in the manual.
 
@@ -73,9 +74,7 @@ Other potential Hatari functionality improvements
 	- Saving machine status to history buffer each time debugger is
 	  entered (exception or breakpoint is hit) and being able to view
 	  this history
-	- SP & SSP as CPU register names (active & supervisor stack),
-	  allow use of variable/register names in addition to
-	  addresses everywhere in the debugger
+	- SP & SSP as CPU register names (active & supervisor stack)
 	- Fill and copy memory command
 	- Search.  For bytes or strings (Monst supports also searching
 	  instruction (subsets) but that's too complicated)

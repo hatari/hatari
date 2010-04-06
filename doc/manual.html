@@ -72,8 +72,8 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#General description">General description</a>
     <li><a href="#Features">Features</a>
     <li><a href="#STE hardware emulation">STE hardware emulation</a>
-    <li><a href="#Very experimental TT hardware emulation">Very experimental TT hardware emulation</a>
-    <li><a href="#Very experimental Falcon hardware emulation">Very experimental Falcon hardware emulation</a>
+    <li><a href="#TT hardware emulation">Very experimental TT hardware emulation</a>
+    <li><a href="#Falcon hardware emulation">Experimental Falcon hardware emulation</a>
     <li><a href="#System requirements">System requirements</a>
   </ul>
   <li><a href="#Compiling and running">Compiling and running</a>
@@ -205,8 +205,7 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
 
 <a name="STE hardware emulation"></a>
 <h4>STE hardware emulation</h4>
-STE emulation is still a little bit experimental, but basically
-there is support for most of the enhanced/additional STE features:
+There is support for following additional STE features:
 <ul>
   <li>horizontal and vertical hardware fine scrolling</li>
   <li>split screen techniques / in-screen video address manipulations</li>
@@ -217,7 +216,7 @@ there is support for most of the enhanced/additional STE features:
   <li>TOS versions 1.06, 1.62, 2.05 and 2.06 (and EmuTOS) can be used in STE mode.</li>
 </ul>
 
-<a name="Very experimental TT hardware emulation"></a>
+<a name="TT hardware emulation"></a>
 <h4>Very experimental TT hardware emulation</h4>
 There is support for following additional TT features:
 <ul>
@@ -227,22 +226,24 @@ There is support for following additional TT features:
   <li>Only TOS version 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
 
-<a name="Very experimental Falcon hardware emulation"></a>
-<h4>Very experimental Falcon hardware emulation</h4>
+<a name="Falcon hardware emulation"></a>
+<h4>Experimental Falcon hardware emulation</h4>
 There is support for following additional Falcon features:
 <ul>
   <li>Partial Videl emulation for all Falcon screen modes</li>
+  <li>Aspect correction and scaling of small resolutions by an integer factor</li>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>Experimental DSP co-processor emulation</li>
   <li>Experimental IDE master and slave emulation for harddisk support</li>
+  <li>Experimental microphone (jack) emulation</li>
   <li>Some few parts of the Falcon sound system are emulated
       (e.g. the additional sample rates of the DMA sound)</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon mode.</li>
 </ul>
 
 <p>
-Falcon DSP emulation is still very experimental, but many games and demos
+Falcon DSP emulation is still experimental, but many games and demos
 already work with it.  If it takes too much CPU, there's a dummy mode
 too, which helps to get some demos and games running.
 </p>
@@ -252,12 +253,13 @@ too, which helps to get some demos and games running.
 
 <p> Hatari currently has the following system requirements: </p>
 <ul>
-  <li>a fast PC (&gt;500MHz, for Falcon and TT emulation even faster) </li>
+  <li>a fast PC (&gt;500MHz, for Falcon and TT emulation
+      <a href="#Performance">even faster</a>)</li>
   <li>some sort of Unix (preferable <a href="http://www.linux.org/">GNU/Linux</a>)
   </li>
   <li>the SDL library (<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>)</li>
   <li>the zLib (<a href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>)
-for support of ZIP-packed disk images (*.zip and *.gz)</li>
+      for support of ZIP-packed disk images (*.zip and *.gz)</li>
 </ul>
 
 <p>
@@ -1673,6 +1675,8 @@ ends with a 'b'.
 </p>
 <p>
  Hatari can currently create plain .ST and .MSA disk images exclusively.
+ <span class="commandline">hmsa</span> command line utility can be used
+ to convert disk images between .ST and .MSA formats.
 </p>
 
 
@@ -1957,9 +1961,9 @@ device files for serial input and output.  On Linux a good choice is
 Click on <span class="button">Browse</span> to select a suitable
 MIDI device files for MIDI input and output.</p>
 <p><span class="file">midi-linux.txt</span> file explains how to
-select the correct MIDI device file, how to set up softare sound
-synthetizing on Linux (using Alsa), if your sound card/driver doesn't
-support MIDI, and how to set up MIDI networking between multiple
+select the correct MIDI device file, how to set up software sound
+synthetizing on Linux (using Alsa) if your sound card/driver doesn't
+support MIDI, and how to set up MIDI networking e.g. between multiple
 Hatari instances.
 </p>
 
@@ -2100,6 +2104,11 @@ key on the ST. The following keys have special meanings: </p>
 are used for the directions and <span class="key">right CTRL</span> key
 as the fire button. Otherwise they act as corresponding keys of the emulated
 Atari ST.</p>
+
+<p>NOTE: Problems with simultenous keypresses most likely aren't an
+issue in Hatari as many modern keyboards report/support only three
+simultenous key presses (or even just two depending on which keys
+are in question).  Expensive gaming keyboards support more.</p>
 
 
 <a name="Emulated mouse"></a><h3>Emulated mouse</h3>
