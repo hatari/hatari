@@ -41,26 +41,22 @@ Emulation improvements
 - Some Falcon games/demos only work with 32 MHz CPU emulation (might be due to
   the fact that we don't emulate the 68030 cache yet?)
 
-- Fix STE DMA sound emulation - there might be some problems with proper
-  interrupt timings left (e.g. 50kHz replay in ProTracker)
-
 - Fix falcon sound quality (sound is sometimes noisy)
 
-- Add full STE Microwire/LMC1992 emulation.
+- Improve STE Microwire/LMC1992 emulation.
+
+- improve STE DMA sound emulation - some demos still render wrong.
 
 
 DSP emulation / Falcon sound matrix
 -----------------------------------
 
-- Finish the Port C (SSI) emulation
+- Improve the Port C (SSI) emulation (mixing of handshake and non handshake transfers)
 	- Dsp SSI internal clock (is it used on falcon ?)
 
-- Improve DSP instructions cycle count, especially with external RAM
+- Improve the crossbar and SSI transfers in handshake mode
 
-- Optimize DSP interrupts
-	- Avoid interrupt of a LONG_INTERRUPT if not 6 (or 7)
-	  instructions were executed
-	- Take into account the precise cycles for an interrupt
+- Verify DSP instructions cycle count, especially with external RAM
 
 
 Other potential Hatari functionality improvements
