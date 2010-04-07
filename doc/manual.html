@@ -72,8 +72,8 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#General description">General description</a>
     <li><a href="#Features">Features</a>
     <li><a href="#STE hardware emulation">STE hardware emulation</a>
-    <li><a href="#TT hardware emulation">Very experimental TT hardware emulation</a>
-    <li><a href="#Falcon hardware emulation">Experimental Falcon hardware emulation</a>
+    <li><a href="#TT hardware emulation">Experimental TT hardware emulation</a>
+    <li><a href="#Falcon hardware emulation">Falcon hardware emulation</a>
     <li><a href="#System requirements">System requirements</a>
   </ul>
   <li><a href="#Compiling and running">Compiling and running</a>
@@ -199,7 +199,7 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
   <li>driver for extended VDI resolutions</li>
   <li>recording of sound as .WAV and .YM files</li>
   <li>screenshots in PNG or BMP format</li>
-  <li>AVI animation capturing</li>
+  <li>AVI animation capturing with sound</li>
   <li>TOS versions 1.00, 1.02, 1.04 and 2.06 (and EmuTOS) can be used in ST mode.</li>
 </ul>
 
@@ -211,13 +211,14 @@ There is support for following additional STE features:
   <li>split screen techniques / in-screen video address manipulations</li>
   <li>(STE specific) left border opening</li>
   <li>4096 colors STE palette</li>
-  <li>Stereo DMA sample sound ("microwire" audio balance support missing)</li>
+  <li>Stereo DMA sample sound</li>
+  <li>Experimental Microwire/LMC1992 emulation</li>
   <li>STE joypads</li>
   <li>TOS versions 1.06, 1.62, 2.05 and 2.06 (and EmuTOS) can be used in STE mode.</li>
 </ul>
 
 <a name="TT hardware emulation"></a>
-<h4>Very experimental TT hardware emulation</h4>
+<h4>Experimental TT hardware emulation</h4>
 There is support for following additional TT features:
 <ul>
   <li>TT low/med/high resolution support</li>
@@ -227,26 +228,27 @@ There is support for following additional TT features:
 </ul>
 
 <a name="Falcon hardware emulation"></a>
-<h4>Experimental Falcon hardware emulation</h4>
+<h4>Falcon hardware emulation</h4>
 There is support for following additional Falcon features:
 <ul>
   <li>Partial Videl emulation for all Falcon screen modes</li>
   <li>Aspect correction and scaling of small resolutions by an integer factor</li>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
-  <li>Experimental DSP co-processor emulation</li>
-  <li>Experimental IDE master and slave emulation for harddisk support</li>
+  <li>DSP co-processor emulation</li>
   <li>Experimental microphone (jack) emulation</li>
-  <li>Some few parts of the Falcon sound system are emulated
-      (e.g. the additional sample rates of the DMA sound)</li>
+  <li>Experimental Crossbar sound matrix (ADC (mic & PSG), DAC, DMA, DSP)
+      interconnect emulation + support for the additional DMA sound
+      sample rates</li>
+  <li>Experimental IDE master and slave emulation for harddisk support</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon mode.</li>
 </ul>
 
-<p>
-Falcon DSP emulation is still experimental, but many games and demos
-already work with it.  If it takes too much CPU, there's a dummy mode
-too, which helps to get some demos and games running.
-</p>
+<p>See the developers' <span class="file">doc/todo.txt</span> file
+(included with Hatari sources) for the details on the few remaining
+emulation gaps and the <a href="compatibility.html">Hatari Atari
+Software Compatibility List</a> for which Atari programs are known
+to be affected by them.</p>
 
 
 <a name="System requirements"></a><h3>System requirements</h3>
