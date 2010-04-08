@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Don't modify the 'path' or 'conf' variable names or initial values,
+# those will be replaced by Makefile when this script is installed.
+
 path=${0%/*}
 name=${0##*/}
 
@@ -7,6 +10,14 @@ if [ ! -e $path/$name.py ]; then
 	# Assume package has been relocated, try relative data directory:
 	path=${0%/*}/../share/hatari/hatariui
 fi
+
+# Assume hatari system configuration file dir is relative to hatariui dir
+# (usually system config file isn't installed, but if defaults need to be
+# configured differently from Hatari source code defaults, they're better
+# done with system config file than patching sources).
+conf=${path%/*}/../etc
+# checked by hatari UI
+export HATARI_CONFDIR=$conf
 
 # example setup for Hatari UI
 $path/$name.py --right "about,|,run,pause,forward,|,reset,|,quit" --embed $*

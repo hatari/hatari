@@ -4,7 +4,7 @@
 # configuration files: loading, saving, setting/getting variables,
 # mapping them to sections, listing changes
 #
-# Copyright (C) 2008-2009 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,31 +64,26 @@ def text_to_value(text):
 # Handle INI style configuration files as used by Hatari
 
 class ConfigStore:
-    defaultpath = "%s%c.hatari" % (os.path.expanduser("~"), os.path.sep)
-
-    def __init__(self, cfgfile, defaults = {}, miss_is_error = True):
+    def __init__(self, userpath, defaults = {}, miss_is_error = True):
         "ConfigStore(cfgfile[,defaults,miss_is_error])"
         self.defaults = defaults
+        self.userpath = userpath
         self.miss_is_error = miss_is_error
-        path = self._get_fullpath(cfgfile)
-        self.cfgfile = cfgfile
-        self.load(path)
     
     def load(self, path):
-        "load(path), load given configuration file"
+        "load(path) -> load given configuration file"
         if path:
             sections = self._read(path)
             if sections:
-                print "Loaded configuration file:", path
                 self.cfgfile = os.path.basename(path)
                 self.sections = sections
             else:
-                print "ERROR: configuration file '%' loading failed" % path
+                print "ERROR: configuration file loading failed!"
                 return
         else:
-            print "WARNING: configuration file missing"
+            print "WARNING: configuration file missing!"
             if self.defaults:
-                print "-> using defaults"
+                print "-> using dummy 'defaults'."
             self.sections = self.defaults
         self.path = path
         self.original = self.get_checkpoint()
@@ -104,31 +99,9 @@ class ConfigStore:
         "get_path() -> configuration file path"
         return self.path
     
-    def _get_fullpath(self, cfgfile):
-        "get_fullpath(cfgfile) -> path or None, check first CWD & then HOME for cfgfile"
-        # hatari.cfg can be in home or current work dir
-        for path in (os.getcwd(), os.path.expanduser("~")):
-            if path:
-                path = self._check_path(path, cfgfile)
-                if path:
-                    return path
-        return None
-
-    def _check_path(self, path, cfgfile):
-        """check_path(path,cfgfile) -> path
-        
-        return full path if cfg in path/.hatari/ or in path prefixed with '.'"""
-        sep = os.path.sep
-        testpath = "%s%c.hatari%c%s" % (path, sep, sep, cfgfile)
-        if os.path.exists(testpath):
-            return testpath
-        testpath = "%s%c.%s" % (path, sep, cfgfile)
-        if os.path.exists(testpath):
-            return testpath
-        return None
-    
     def _read(self, path):
         "_read(path) -> (all keys, section2key mappings)"
+        print "Reading configuration file '%s'..." % path
         config = open(path, "r")
         if not config:
             return ({}, {})
@@ -228,19 +201,25 @@ class ConfigStore:
         if not self.changed:
             print "No configuration changes to save, skipping"
             return None
-        if not self.path:
-            print "WARNING: no existing configuration file, trying to create one"
-            if not os.path.exists(self.defaultpath):
-                os.mkdir(self.defaultpath)
-            self.path = "%s%c%s" % (self.defaultpath, os.path.sep, self.cfgfile)
-        fileobj = open(self.path, "w")
+        fileobj = None
+        if self.path:
+            try:
+                fileobj = open(self.path, "w")
+            except:
+                pass
+        if not fileobj:
+            print "WARNING: non-existing/writable configuration file, creating a new one..."
+            if not os.path.exists(self.userpath):
+                os.makedirs(self.userpath)
+            self.path = "%s%c%s" % (self.userpath, os.path.sep, self.cfgfile)
+            fileobj = open(self.path, "w")
         if not fileobj:
             print "ERROR: opening '%s' for saving failed" % self.path
             return None
         self.write(fileobj)
         print "Saved configuration file:", self.path
         self.changed = False
-        return path
+        return self.path
     
     def save_as(self, path):
         "save_as(path) -> path, save configuration to given file and select it"
@@ -249,8 +228,7 @@ class ConfigStore:
             os.makedirs(os.path.dirname(path))
         self.path = path
         self.changed = True
-        self.save()
-        return path
+        return self.save()
 
     def save_tmp(self, path):
         "save_tmp(path) -> path, save configuration to given file without selecting it"

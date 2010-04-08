@@ -240,8 +240,8 @@ class Hatari:
 # By default this doesn't allow setting any other configuration
 # variables than the ones that were read from the configuration
 # file i.e. you get an exception if configuration variables
-# don't match to current Hatari.  So before using this you should
-# have saved Hatari configuration at least once.
+# don't match to current Hatari.  So before using this the current
+# Hatari configuration should have been saved at least once.
 #
 # Because of some inconsistencies in the values (see e.g. sound),
 # this cannot just do these according to some mapping table, but
@@ -259,10 +259,36 @@ class HatariConfigMapping(ConfigStore):
     }
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
-        ConfigStore.__init__(self, "hatari.cfg")
+        userpath = self._get_userpath()
+        ConfigStore.__init__(self, userpath)
+        filepath = self._get_filepath(userpath)
+        self.load(filepath)
+
         self._hatari = hatari
         self._lock_updates = False
         self._options = []
+    
+    def _get_userpath(self):
+        "get_userpath() -> config file default save path like Hatari does"
+        # user's hatari.cfg can be in home or current work dir,
+        # current dir is used only if $HOME fails
+        for path in (os.getenv("HOME"), os.getenv("HOMEPATH"), os.getcwd()):
+            if path and os.path.exists(path) and os.path.isdir(path):
+                hpath = "%s%c.hatari" % (path, os.path.sep)
+                if os.path.exists(hpath) and os.path.isdir(hpath):
+                    return hpath
+                return path
+        return None
+
+    def _get_filepath(self, userpath):
+        "get_filepath(userpath) -> return correct hatari config file name"
+        # user config has preference over system one
+        for path in (userpath, os.getenv("HATARI_CONFDIR")):
+            if path:
+                file = "%s%chatari.cfg" % (path, os.path.sep)
+                if os.path.exists(file) and os.path.isfile(file):
+                    return file
+        return None
 
     def validate(self):
         "exception is thrown if the loaded configuration isn't compatible"

@@ -20,7 +20,7 @@ all:
 install:
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL_SCRIPT) hatari-console.py $(DESTDIR)$(BINDIR)/
-	sed "s%^path=.*$$%path=$(DATAPATH)%" hatariui > $(DESTDIR)$(SCRIPT)
+	sed -e "s%^path=.*$$%path=$(DATAPATH)%" -e "s%^conf=.*$$%conf=$(CONFDIR)%" hatariui > $(DESTDIR)$(SCRIPT)
 	chmod 755 $(DESTDIR)$(SCRIPT)
 	$(INSTALL) -d $(DESTDIR)$(DATAPATH)
 	$(INSTALL_SCRIPT) hatariui.py debugui.py $(DESTDIR)$(DATAPATH)/
