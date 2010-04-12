@@ -263,6 +263,8 @@
 /*			display is disabled in the right border (fix flickering in Utopos).	*/
 /* 2010/02/07	[NP]	Better support for modifying $ff8205/07/09 while display is on		*/
 /*			(fix EPSS demo by Unit 17).						*/
+/* 2010/04/12	[NP]	Improve timings when writing to $ff8205/07/09 when hscroll is used,	*/
+/*			using Video_GetMMUStartCycle (fix Pacemaker's Bump Part by Paradox).	*/
 
 
 
@@ -434,6 +436,7 @@ SHIFTER_FRAME	ShifterFrame;
 static void	Video_SetSystemTimings ( void );
 
 static Uint32	Video_CalculateAddress ( void );
+static int	Video_GetMMUStartCycle ( int DisplayStartCycle );
 static void	Video_WriteToShifter ( Uint8 Res );
 static void 	Video_Sync_SetDefaultStartEnd ( Uint8 Freq , int HblCounterVideo , int LineCycles );
 
@@ -821,6 +824,28 @@ static Uint32 Video_CalculateAddress ( void )
 	          HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles);
 
 	return VideoAddress;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Calculate the cycle where the STF/STE's MMU starts reading
+ * data to send them to the shifter.
+ * On STE, if hscroll is used, prefetch will cause this position to
+ * happen 16 cycles earlier.
+ * This function should use the same logic as in Video_CalculateAddress.
+ * NOTE : this function is not completly accurate, as even when there's
+ * no hscroll (on STF) the mmu starts reading 16 cycles before display starts.
+ * But it's good enough to emulate writing to ff8205/07/09 on STE.
+ */
+static int Video_GetMMUStartCycle ( int DisplayStartCycle )
+{
+	if ( bSteBorderFlag )
+		DisplayStartCycle -= 16;			/* display starts 16 pixels earlier */
+	else if ( ( HWScrollCount > 0 ) && ( HWScrollPrefetch == 1 ) )
+		DisplayStartCycle -= 16;			/* shifter starts reading 16 pixels earlier when scrolling with prefetching */
+
+	return DisplayStartCycle;
 }
 
 
@@ -2662,6 +2687,7 @@ void Video_ScreenCounter_ReadByte(void)
  *
  * As Hatari processes/converts one complete video line at a time, we have 3 cases :
  * - If display has not started yet for this line (left border), we can change pVideoRaster now.
+*    We must take into account that the MMU starts 16 cycles earlier when hscroll is used.
  * - If display has stopped for this line (right border), we will change pVideoRaster
  *   in Video_CopyScreenLineColor using pVideoRasterDelayed once the line has been processed.
  * - If the write is made while display is on, then we must compute an offset of what
@@ -2678,6 +2704,7 @@ void Video_ScreenCounter_WriteByte(void)
 	Uint32 addr_new = 0;
 	int FrameCycles, HblCounterVideo, LineCycles;
 	int Delayed;
+	int MMUStartCycle;
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2700,9 +2727,11 @@ void Video_ScreenCounter_WriteByte(void)
 	else if ( IoAccessCurrentAddress == 0xff8209 )
 		addr_new = ( addr_new & 0xffff00 ) | ( AddrByte );
 
+	MMUStartCycle = Video_GetMMUStartCycle ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle );
+
 	/* If display has not started, we can still modify pVideoRaster */
 	/* We must also check the write does not overlap the end of the line (to be sure Video_EndHBL is called first) */
-	if ( ( ( LineCycles <= ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle ) && ( nHBL == HblCounterVideo ) )
+	if ( ( ( LineCycles <= MMUStartCycle ) && ( nHBL == HblCounterVideo ) )
 		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
 	{
 		pVideoRaster = &STRam[addr_new & ~1];		/* set new video address */
