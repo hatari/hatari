@@ -147,6 +147,7 @@ Demos:
 - Frenchies (by Frenchies, 96KB intro)
 - Hallucinations (by Reservoir Gods)
 - Outline 2008 invite (by DHS)
+- Outline 2010 invite (by Checkpoint)
 - Overdose (by Aggression)
 - Paradise (by Dune Design)
 - Phaleon Gigademo
