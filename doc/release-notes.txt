@@ -36,6 +36,7 @@ Emulation:
 Emulator:
 - Host mouse is centered to Hatari window on Falcon resolution changes
   (helps in synchronizing host and emulated mouse positions)
+- Toggling fullscreen doesn't unpause paused emulation
 - Falcon/TT resolution zooming is now controlled by separate options for
   monitor aspect ratio correction and maximum zoomed Hatari window size.
   This can reduce Hatari window resolution size changes significantly and
