@@ -28,18 +28,17 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c : " __DATE__ " " __TIME__;
 #define DLGSCRN_VGA          5
 #define DLGSCRN_TV           6
 #define DLGSCRN_OVERSCAN     7
-#define DLGSCRN_ASPECTRATIO  8
-#define DLGSCRN_USEVDIRES    10
-#define DLGSCRN_VDI_WLESS    12
-#define DLGSCRN_VDI_WTEXT    13
-#define DLGSCRN_VDI_WMORE    14
-#define DLGSCRN_VDI_HLESS    16
-#define DLGSCRN_VDI_HTEXT    17
-#define DLGSCRN_VDI_HMORE    18
-#define DLGSCRN_BPP1         19
-#define DLGSCRN_BPP2         20
-#define DLGSCRN_BPP4         21
-#define DLGSCRN_EXIT_MONITOR 22
+#define DLGSCRN_USEVDIRES    9
+#define DLGSCRN_VDI_WLESS    11
+#define DLGSCRN_VDI_WTEXT    12
+#define DLGSCRN_VDI_WMORE    13
+#define DLGSCRN_VDI_HLESS    15
+#define DLGSCRN_VDI_HTEXT    16
+#define DLGSCRN_VDI_HMORE    17
+#define DLGSCRN_BPP1         18
+#define DLGSCRN_BPP2         19
+#define DLGSCRN_BPP4         20
+#define DLGSCRN_EXIT_MONITOR 21
 
 /* Strings for VDI resolution width and height */
 static char sVdiWidth[5];
@@ -47,33 +46,32 @@ static char sVdiHeight[5];
 
 static SGOBJ monitordlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 34,20, NULL },
+	{ SGBOX, 0, 0, 0,0, 34,19, NULL },
 
-	{ SGBOX, 0, 0, 1,1, 32,7, NULL },
+	{ SGBOX, 0, 0, 1,1, 32,6, NULL },
 	{ SGTEXT, 0, 0, 10,1, 14,1, "Atari monitor" },
 	{ SGRADIOBUT, 0, 0, 4,3, 6,1, "Mono" },
 	{ SGRADIOBUT, 0, 0, 12,3, 6,1, "RGB" },
 	{ SGRADIOBUT, 0, 0, 19,3, 6,1, "VGA" },
 	{ SGRADIOBUT, 0, 0, 26,3, 6,1, "TV" },
-	{ SGCHECKBOX, 0, 0, 6,6, 22,1, "Show ST/STE borders" },
-	{ SGCHECKBOX, 0, 0, 6,5, 22,1, "Falcon/TT aspect ratio" },
+	{ SGCHECKBOX, 0, 0, 6,5, 22,1, "Show ST/STE borders" },
 
-	{ SGBOX, 0, 0, 1,9, 32,7, NULL },
-	{ SGCHECKBOX, 0, 0, 4,10, 33,1, "Use extended VDI screen" },
-	{ SGTEXT, 0, 0, 4,12, 5,1, "Size:" },
+	{ SGBOX, 0, 0, 1,8, 32,7, NULL },
+	{ SGCHECKBOX, 0, 0, 4,9, 33,1, "Use extended VDI screen" },
+	{ SGTEXT, 0, 0, 4,11, 5,1, "Size:" },
+	{ SGBUTTON, 0, 0, 6,12, 1,1, "\x04" },     /* Arrow left */
+	{ SGTEXT, 0, 0, 8,12, 4,1, sVdiWidth },
+	{ SGBUTTON, 0, 0, 13,12, 1,1, "\x03" },     /* Arrow right */
+	{ SGTEXT, 0, 0, 4,13, 1,1, "x" },
 	{ SGBUTTON, 0, 0, 6,13, 1,1, "\x04" },     /* Arrow left */
-	{ SGTEXT, 0, 0, 8,13, 4,1, sVdiWidth },
+	{ SGTEXT, 0, 0, 8,13, 4,1, sVdiHeight },
 	{ SGBUTTON, 0, 0, 13,13, 1,1, "\x03" },     /* Arrow right */
-	{ SGTEXT, 0, 0, 4,14, 1,1, "x" },
-	{ SGBUTTON, 0, 0, 6,14, 1,1, "\x04" },     /* Arrow left */
-	{ SGTEXT, 0, 0, 8,14, 4,1, sVdiHeight },
-	{ SGBUTTON, 0, 0, 13,14, 1,1, "\x03" },     /* Arrow right */
 
-	{ SGRADIOBUT, SG_EXIT, 0, 18,12, 11,1, " 2 colors" },
-	{ SGRADIOBUT, SG_EXIT, 0, 18,13, 11,1, " 4 colors" },
-	{ SGRADIOBUT, SG_EXIT, 0, 18,14, 11,1, "16 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,11, 11,1, " 2 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,12, 11,1, " 4 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,13, 11,1, "16 colors" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 7,18, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 7,17, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -189,11 +187,6 @@ void Dialog_MonitorDlg(void)
 
 	/* Set up general monitor options in the dialog from actual values: */
 
-	if (ConfigureParams.Screen.bAspectCorrect)
-		monitordlg[DLGSCRN_ASPECTRATIO].state |= SG_SELECTED;
-	else
-		monitordlg[DLGSCRN_ASPECTRATIO].state &= ~SG_SELECTED;
-
 	if (ConfigureParams.Screen.bAllowOverscan)
 		monitordlg[DLGSCRN_OVERSCAN].state |= SG_SELECTED;
 	else
@@ -263,7 +256,6 @@ void Dialog_MonitorDlg(void)
 
 	/* Read new values from dialog: */
 
-	ConfigureParams.Screen.bAspectCorrect = (monitordlg[DLGSCRN_ASPECTRATIO].state & SG_SELECTED);
 	ConfigureParams.Screen.bAllowOverscan = (monitordlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
 
 	for (mti = MONITOR_TYPE_MONO; mti <= MONITOR_TYPE_TV; mti++)
