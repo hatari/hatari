@@ -96,7 +96,8 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
       <li><a href="#The Memory Dialog">The Memory Dialog</a>
       <li><a href="#The ROM Dialog">The ROM Dialog</a>
       <li><a href="#The Joystick Dialog">The Joystick Dialog</a>
-      <li><a href="#The Screen Dialog">The Screen Dialog</a>
+      <li><a href="#The Atari Monitor Dialog">The Atari Monitor Dialog</a>
+      <li><a href="#The Hatari Screen Dialog">The Hatari Screen Dialog</a>
       <li><a href="#The Keyboard Dialog">The Keyboard Dialog</a>
       <li><a href="#The Sound Dialog">The Sound Dialog</a>
       <li><a href="#The Devices Dialog">The Devices Dialog</a>
@@ -1802,54 +1803,21 @@ certain games. In some other games, it gets worse if you enable this option.</p>
 <p>See also the chapter "Emulated Joystick" for details.</p>
 
 
-<a name="The Screen Dialog"></a><h4 class="gui">The Screen Dialog</h4>
+<a name="The Atari Monitor Dialog"></a><h4 class="gui">The Atari Monitor Dialog</h4>
 
 <div class="floatimage">
-<img src="images/screen.png" width="498" height="399" alt="Hatari's GUI - the screen dialog">
+<img src="images/monitor.png" width="340" height="304" alt="Hatari's
+GUI - the Atari monitor dialog">
 </div>
 
 <p>
  Here you control the video output of the emulated Atari.
 </p>
 <p>
- Check "Fullscreen" to run Hatari fullscreen, default is windowed.
-</p>
-<p>
- "Use Borders" toggles the displaying of the borders around the ST
- screen. Some few demos/games use the borders for displaying additional
- graphics. However, when you enable this option, it increases CPU computing
- time, so you should not enable it if you have a slow computer.
- Please note that this option also only affects the ST and STE mode, TT and
- Falcon modes are always displayed without borders.
-</p>
-<p>
- "Zoom ST-Low res." controls whether Hatari doubles the low
- resolutions. For example Hatari then zooms the ST low resolution 320x200 to
- 640x400 and it doubles 384x267 (ST low with borders) to 768x534.
- Note that zooming also takes a lot of CPU computing time and should not be
- enabled on slow computers.
-</p>
-<p>
- "Statusbar" toggles the statusbar at the bottom of the screen.
- The statusbar shows the floppy drive LEDs, the current frameskip value,
- the machine type including TOS version and memory size, and whether
- recording is currently active.
-</p>
-<p>
- The "Frame Skip" option can be set to speed up the emulator
- if it is running too slow on your system. Disable frame-skip if you have
- a fast computer. When selecting 1, 2 or 4, drawing of corresponding number
- of frames will be skipped after each frame actually shown by Hatari.
- Select "Auto" to let the emulator to decide whether, and
- how many frames will be skipped.<br>
- <em>Note:</em> The frameskip option also affects the frame rate of the
- screen animation recording!
-</p>
-<p>
- You can select which sort of monitor to use. This option depends on the
- machine type which you have selected in the "System options"
- dialog. In ST and STE mode, you can choose between monochrome mode (select
- "Mono") and color mode (select one of the other monitor types).
+ You can select which sort of monitor to use. This option depends on
+ the machine type which you have selected in the "System options"
+ dialog. In ST and STE mode, you can choose between monochrome mode
+ (select "Mono") and color mode (select one of the other monitor types).
  Note that when you select "TV" and use zoomed low resolution or
  switch to ST medium resolution, you will get a TV-like screen rendering
  which is a little bit faster but darker compared to the normal "RGB"
@@ -1861,20 +1829,94 @@ certain games. In some other games, it gets worse if you enable this option.</p>
  Falcon demos/games require a RGB or TV mode and do not work with VGA.
 </p>
 <p>
-Extended GEM resolutions will emulate some sort of extended graphics
-card in the emulated ST giving you larger resolutions and a higher
-colordepth in GEM. Select a resolution and color depth. Check to
+ "Show ST/STE borders" toggles the displaying of the borders around the ST /
+ STE screen. Some demos and games use the screen borders for displaying
+ additional graphics. As enabling this option increases CPU computing time,
+ don't enable it if you have a very slow computer.
+ This option affects only the ST and STE modes, TT and Falcon modes are
+ always displayed without borders.
+</p>
+<p>
+Extended VDI resolutions will emulate a sort of extended graphics
+card in the emulated ST which give you larger resolutions with a higher
+colordepth for GEM. Select a resolution and color depth. Check to
 activate. It will disable all other video options mentioned above.
 Uncheck to get back to a normal ST behaviour.<br>
 <em>Note:</em> Using an extended resolution will only work with GEM
 conformant applications. 99% of all games and demos will not run if you
 activate any extended resolution here.
 </p>
-<p>Click <span class="button">Capture&nbsp;Screen</span> to create a
-screenshot in PNG (or BMP) format to the current working directory or click
-<span class="button">Record&nbsp;Animation</span> to record a sequence of single
-screenshots. You can opt to only record new movie frames when the
-screen content really changed.
+
+
+<a name="The Hatari Screen Dialog"></a><h4 class="gui">The Hatari
+Screen Dialog</h4>
+
+<div class="floatimage">
+<img src="images/screen.png" width="350" height="336" alt="Hatari's
+GUI - the Hatari screen dialog">
+</div>
+
+<p>
+Here you control how the video output of the emulated Atari appears
+on your screen.
+</p>
+
+<p>
+ Check "Fullscreen" to run Hatari in fullscreen.  By default Hatari
+ runs in windowed mode.
+</p>
+<p>
+ The "Frame Skip" option can be used to speed up the emulator
+ if it is running too slow on your system. Disable frame-skip if you have
+ a fast computer. When selecting 1, 2 or 4, drawing of corresponding number
+ of frames will be skipped after each frame actually shown by Hatari.
+ Select "Auto" to let the emulator to decide whether, and
+ how many frames will be skipped.<br>
+ <em>Note:</em> The frameskip option also affects the frame rate of the
+ screen animation recording!
+</p>
+<p>
+ "Statusbar" toggles the statusbar at the bottom of the screen.
+ The statusbar shows the floppy drive LEDs, the current frameskip value,
+ the machine type including TOS version and memory size, and whether
+ recording is currently active.
+</p>
+<p>
+"Max zoomed" option controls up to which size Hatari tries to scale
+the Atari resolutions and how much of the borders (enabled in Atari
+Monitor dialog) will be shown.  There are several limitations in
+this:
+</p>
+<ul>
+<li>VDI resolutions (selectable in Atari Monitor dialog) aren't scaled.</li>
+<li>ST and STE video emulation supports only doubling of the ST-low
+    resolution.</li>
+<li>Hatari doesn't support downscaling. If the original Atari resolution
+    is larger (for example TT-high), the Hatari screen size will also be
+    larger than requested.</li>
+<li>TT and Falcon resolutions support only <em>integer</em> scaling ratios.
+    If the scaling ratio cannot match the requested size exactly, Hatari
+    will use a ratio that will produce smaller size closest to the
+    requested one.</li>
+</ul>
+<p>
+You should set these values to a size that suits best your monitor
+resolution. It's intended to help in getting Hatari to best use your
+monitor space on a windowed mode and in fullscreen avoiding "fuzzy"
+scaling either by Hatari or your LCD monitor.
+</p>
+<p>
+Giving "-z 2" option on command line will reset max zoomed size to
+default values and "-z 1" will disable all zooming.
+Note that zooming takes additional CPU computing time and should
+not be enabled on very slow computers.
+</p>
+<p>Click the <span class="button">Screenshot</span> button to create
+a screenshot in PNG (or BMP) format to the current working directory
+or click the <span class="button">Record&nbsp;AVI</span> button to
+record an AVI format video of Hatari screen (and audio) output.  You
+can opt to record new movie frames only when the screen content really
+changed.
 </p>
 
 
