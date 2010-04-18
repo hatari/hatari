@@ -108,7 +108,6 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 
 
 /* Global variables that can be changed/read from other parts of Hatari */
-bool UseAntiAliasFilter = false;
 void DmaSnd_Init_Bass_and_Treble_Tables(void);
 
 static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb);
@@ -316,23 +315,18 @@ static inline int DmaSnd_EndOfFrameReached(void)
 /**
  * Mix DMA sound sample with the normal PSG sound samples.
  * Note: We adjust the volume level of the 8-bit DMA samples to factor
- * 0.5 compared to the PSG sound samples, this seems to be quite similar
- * to a real STE (and since we got to divide it by 2 again for adding them
- * to the YM samples and multiply by 256 to get to 16-bit, we simply multiply
- * them by 64 in total).
+ * 0.75 compared to the PSG sound samples.
  */
 void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
 	Uint32 FreqRatio;
 	int i, intPart;
-	int nBufIdx, nFramePos;
-	Sint8 *pFrameStart;
+	int nBufIdx;
+	Sint8 *pFrameStart, FrameMono = 0, FrameLeft = 0, FrameRight = 0;
 	unsigned n;
 
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY))
 		return;
-
-	UseAntiAliasFilter = true;
 
 	pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
 
@@ -344,42 +338,40 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Mono 8-bit */
 
 		n = dma.frameCounter_int;
+
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			/* Is end of DMA buffer reached ? */
 			if (dma.frameCounter_int >= dma.frameLen) {
 				if (DmaSnd_EndOfFrameReached())
 					break;
-			}
-			
-			/* Apply anti-aliasing low pass filter ? (mono) */
-			if (UseAntiAliasFilter) {
-				for ( ; n <= dma.frameCounter_int; n++) {
-					pFrameStart[n] = DmaSnd_LowPassFilterMono(pFrameStart[n]);
+				else
+				{	n = dma.frameCounter_int;
+					pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
 				}
+			}
+
+			/* Apply anti-aliasing low pass filter ? (mono) */
+			for ( ; n <= dma.frameCounter_int; n++) {
+				FrameMono = DmaSnd_LowPassFilterMono(pFrameStart[n]);
 			}
 
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 
 			switch (microwire.mixing) {
-				case 0:
-					/* DMA and (YM2149 - 12dB) mixing */
-					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[dma.frameCounter_int] * -(256*3/4)/4) + 
-								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
-					break;
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[dma.frameCounter_int] * -(256*3/4)/4;	
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)FrameMono * -(256*3/4)/4;	
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = (Sint16)pFrameStart[dma.frameCounter_int] * -(256*3/4)/4;
+					MixBuffer[nBufIdx][0] = (Sint16)FrameMono * -(256*3/4)/4;
 					break;
-				case 3:
 				default:
-					/* Reserved, do nothing */
-					return;
+					/* DMA and (YM2149 - 12dB) mixing */
+					/* instead of 16462 (-12dB), we approximate by 16384 */
+					MixBuffer[nBufIdx][0] = ((Sint16)FrameMono * -(256*3/4)/4) +
+								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					break;
 			}
 			MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][0];	
@@ -406,42 +398,38 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			if ((dma.frameCounter_int | 1) >= dma.frameLen) {
 				if (DmaSnd_EndOfFrameReached())
 					break;
-			}
-
-			/* Apply anti-aliasing low pass filter ? (stereo) */
-			if (UseAntiAliasFilter) {
-				for ( ; n <= (dma.frameCounter_int & ~1); n += 2) {
-					pFrameStart[n]   = DmaSnd_LowPassFilterLeft(pFrameStart[n]);
-					pFrameStart[n+1] = DmaSnd_LowPassFilterRight(pFrameStart[n+1]);
+				else
+				{	n = dma.frameCounter_int & ~1;
+					pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
 				}
 			}
 
+			/* Apply anti-aliasing low pass filter ? (stereo) */
+			for ( ; n <= (dma.frameCounter_int & ~1); n += 2) {
+				FrameLeft  = DmaSnd_LowPassFilterLeft(pFrameStart[n]);
+				FrameRight = DmaSnd_LowPassFilterRight(pFrameStart[n+1]);
+			}
+
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			nFramePos = (dma.frameCounter_int) & ~1;
 			
 			switch (microwire.mixing) {
-				case 0:
-					/* DMA and (YM2149 - 12dB) mixing */
-					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = ((Sint16)pFrameStart[nFramePos] * -(256*3/4)/4) + 
-								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
-					MixBuffer[nBufIdx][1] = ((Sint16)pFrameStart[nFramePos+1] * -(256*3/4)/4) + 
-								(((Sint32)MixBuffer[nBufIdx][1] * 16384)/65536);
-					break;
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)pFrameStart[nFramePos] * -(256*3/4)/4;	
-					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + (Sint16)pFrameStart[nFramePos+1] * -(256*3/4)/4;	
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + (Sint16)FrameLeft * -(256*3/4)/4;	
+					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + (Sint16)FrameRight * -(256*3/4)/4;	
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = (Sint16)pFrameStart[nFramePos] * -(256*3/4)/4;
-					MixBuffer[nBufIdx][1] = (Sint16)pFrameStart[nFramePos+1] * -(256*3/4)/4;
+					MixBuffer[nBufIdx][0] = (Sint16)FrameLeft * -(256*3/4)/4;
+					MixBuffer[nBufIdx][1] = (Sint16)FrameRight * -(256*3/4)/4;
 					break;
-				case 3:
 				default:
-					/* Reserved, do nothing */
-					return;
+					/* DMA and (YM2149 - 12dB) mixing */
+					/* instead of 16462 (-12dB), we approximate by 16384 */
+					MixBuffer[nBufIdx][0] = ((Sint16)FrameLeft * -(256*3/4)/4) +
+								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
+					MixBuffer[nBufIdx][1] = ((Sint16)FrameRight * -(256*3/4)/4) +
+								(((Sint32)MixBuffer[nBufIdx][1] * 16384)/65536);
 					break;
 			}
 
@@ -756,7 +744,7 @@ void DmaSnd_SoundControl_WriteWord(void)
  */
 static float DmaSnd_IIRfilterL(float xn)
 {
-	static float data[] = { 0.0, 0.0 };
+	static float data[2] = { 0.0, 0.0 };
 	float a, yn;
 
 	/* Input coefficients */
@@ -783,7 +771,7 @@ static float DmaSnd_IIRfilterL(float xn)
  */
 static float DmaSnd_IIRfilterR(float xn)
 {
-	static float data[] = { 0.0, 0.0 };
+	static float data[2] = { 0.0, 0.0 };
 	float a, yn;
 
 	/* Input coefficients */
