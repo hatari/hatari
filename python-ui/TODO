@@ -4,12 +4,9 @@ TODO
 This lists potential TODO items that aren't listed in the Hatari/UI
 sources.
 
-* Supporting ASCI / IDE (master&slave) hard disk images in addition
-  to GEMDOS HDD dir
-
 * Separate "Atari monitor" and "Hatari window" settings dialogs
   (move options from "Display" and monitor setting from "Machine"
-  dialogs to here) and add proper support for window max size
+  dialogs to here and add VDI options to Atari Monitor dialog)
 
 * Features for Help menu:
   - Create empty floppy images (+ convert directories to hard disks?)
@@ -40,17 +37,17 @@ sources.
     - needs support also to Hatari src/screenSnapShot.c
 
 * Supporting other, less important Hatari configuration options:
-  - toggling disk-b autoinsertion, write protection
+  - GEMDOS drive write protection, HD booting
+  - something for multiple GEMDOS partition directories
+  - floppy write protection, toggling disk-b autoinsertion
   - separate A/B disk paths for images that are within ZIP archives
   - joystick autofire toggling, defining the keys for joyemu
-  - keyboard repeat, key mapping type and file
-  - multiple GEMDOS partition directories
+  - keyboard repeat, key mapping type and file, mouse grabbing
   - toggling ST blitter, RTC support
   - vdi planes and size, SDL bpp forcing, spec512 threshold, frames-per-sec
-  - border sizes in windowed and fullscreen mode, mouse grabbing
   - screen recording type (every frame vs. when changed)
   - cartridge image (where? it has many limitations)
   - log file and levels, bios intercept, run-VBLs
-(Several of these aren't supported by the internal Hatari UI either
-or are missing corresponding command line options so they will require
+(Many of these aren't supported by the internal Hatari UI either, or
+are missing corresponding command line options so they will require
 support on the Hatari control.c side too.)

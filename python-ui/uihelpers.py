@@ -276,7 +276,7 @@ def table_add_widget_row(table, row, label, widget, fullspan = False):
     return widget
 
 def table_add_radio_rows(table, row, label, texts, cb = None):
-    "table_add_widget_row(table,row,label,texts[,cb]) -> [radios]"
+    "table_add_radio_rows(table,row,label,texts[,cb]) -> [radios]"
     # - add given label right aligned to given row in given table
     # - create/add radio buttons with given texts to next row, set
     #   the one given as "active" as active and set 'cb' as their
