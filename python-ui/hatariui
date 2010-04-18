@@ -17,7 +17,7 @@ fi
 # done with system config file than patching sources).
 conf=${path%/*}/../etc
 # checked by hatari UI
-export HATARI_CONFDIR=$conf
+export HATARI_SYSTEM_CONFDIR=$conf
 
 # example setup for Hatari UI
 $path/$name.py --right "about,|,run,pause,forward,|,reset,|,quit" --embed $*

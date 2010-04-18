@@ -259,36 +259,14 @@ class HatariConfigMapping(ConfigStore):
     }
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
-        userpath = self._get_userpath()
-        ConfigStore.__init__(self, userpath)
-        filepath = self._get_filepath(userpath)
-        self.load(filepath)
+        userconfdir = ".hatari"
+        ConfigStore.__init__(self, userconfdir)
+        conffilename = "hatari.cfg"
+        self.load(self.get_filepath(conffilename))
 
         self._hatari = hatari
         self._lock_updates = False
         self._options = []
-    
-    def _get_userpath(self):
-        "get_userpath() -> config file default save path like Hatari does"
-        # user's hatari.cfg can be in home or current work dir,
-        # current dir is used only if $HOME fails
-        for path in (os.getenv("HOME"), os.getenv("HOMEPATH"), os.getcwd()):
-            if path and os.path.exists(path) and os.path.isdir(path):
-                hpath = "%s%c.hatari" % (path, os.path.sep)
-                if os.path.exists(hpath) and os.path.isdir(hpath):
-                    return hpath
-                return path
-        return None
-
-    def _get_filepath(self, userpath):
-        "get_filepath(userpath) -> return correct hatari config file name"
-        # user config has preference over system one
-        for path in (userpath, os.getenv("HATARI_CONFDIR")):
-            if path:
-                file = "%s%chatari.cfg" % (path, os.path.sep)
-                if os.path.exists(file) and os.path.isfile(file):
-                    return file
-        return None
 
     def validate(self):
         "exception is thrown if the loaded configuration isn't compatible"
@@ -301,7 +279,7 @@ class HatariConfigMapping(ConfigStore):
                 continue
             # but ignore getters for other things than config
             ends = method[method.rfind("_")+1:]
-            if ends in ("types", "names", "values", "changes", "checkpoint"):
+            if ends in ("types", "names", "values", "changes", "checkpoint", "filepath"):
                 continue
             if ends in ("floppy", "joystick"):
                 # use port '0' for checks

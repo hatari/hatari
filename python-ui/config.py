@@ -64,11 +64,34 @@ def text_to_value(text):
 # Handle INI style configuration files as used by Hatari
 
 class ConfigStore:
-    def __init__(self, userpath, defaults = {}, miss_is_error = True):
+    def __init__(self, userconfdir, defaults = {}, miss_is_error = True):
         "ConfigStore(cfgfile[,defaults,miss_is_error])"
         self.defaults = defaults
-        self.userpath = userpath
+        self.userpath = self._get_full_userpath(userconfdir)
         self.miss_is_error = miss_is_error
+    
+    def _get_full_userpath(self, leafdir):
+        "get_userpath(leafdir) -> config file default save path from HOME, CWD or their subdir"
+        # user's hatari.cfg can be in home or current work dir,
+        # current dir is used only if $HOME fails
+        for path in (os.getenv("HOME"), os.getenv("HOMEPATH"), os.getcwd()):
+            if path and os.path.exists(path) and os.path.isdir(path):
+                if leafdir:
+                    hpath = "%s%c%s" % (path, os.path.sep, leafdir)
+                    if os.path.exists(hpath) and os.path.isdir(hpath):
+                        return hpath
+                return path
+        return None
+
+    def get_filepath(self, filename):
+        "get_filepath(filename) -> return correct full path to config file"
+        # user config has preference over system one
+        for path in (self.userpath, os.getenv("HATARI_SYSTEM_CONFDIR")):
+            if path:
+                file = "%s%c%s" % (path, os.path.sep, filename)
+                if os.path.exists(file) and os.path.isfile(file):
+                    return file
+        return None
     
     def load(self, path):
         "load(path) -> load given configuration file"

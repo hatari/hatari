@@ -485,8 +485,11 @@ class HatariDebugUI:
         lines = self.address.get_lines()
         miss_is_error = False # needed for adding windows
         defaults = { "[General]": {"nLines": lines} }
-        self.config = ConfigStore("debugui.cfg", defaults, miss_is_error)
-        self.address.set_lines(self.config.get("[General]", "nLines"))
+        userconfdir = ".hatari"
+        config = ConfigStore(userconfdir, defaults, miss_is_error)
+        config.load(config.get_filepath("debugui.cfg")) # set defaults
+        self.address.set_lines(config.get("[General]", "nLines"))
+        self.config = config
     
     def save_options(self):
         self.config.save()
