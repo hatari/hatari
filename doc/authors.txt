@@ -11,13 +11,14 @@
 - Eero Tamminen <eerot at users.berlios.de> : Speed improvements & code
   cleanup, parts of the STE emulation, Hatari embedding & remote control,
   pause & auto frameskip support, statusbar & overlay led, conditional
-  breakpoints, PNG saving and other patches.
+  breakpoints and other debugger improvements, PNG saving and other patches.
 
 - Jean-Baptiste Berlioz <tobe at freemind-tobe.com> : Cycle accurate Blitter
   emulation.
 
 - Laurent Sallafranque: Many fixes and speedups to DSP emulation,
-  DSP debugging support, crossbar emulation, falcon microphone emulation.
+  DSP debugging support, crossbar emulation, falcon microphone emulation,
+  STE LMC1992/microwire emulation.
 
 
  Contributors:
@@ -27,14 +28,15 @@ Following people contributed code or patches to this projects and/or helped to
 find bugs in Hatari (listed in random order - and if someone is missing here,
 please remind me!):
 
-- Matthias Arndt <marndt at asmsoftware.de> : Wrote the original version of the
-  Hatari user manual, fixed the printer emulation functions.
+- Matthias Arndt <marndt at asmsoftware.de> : Wrote the original version of
+  the Hatari user manual, fixed the printer emulation functions.
 
-- Sébastien Molines <clafou at gmail.com> : Wrote the main part of the Mac OS X
-  GUI of Hatari.
+- Sébastien Molines <clafou at gmail.com> : Wrote the main part of the Mac
+  OS X GUI of Hatari.
 
-- Marco Herrn <marco at mherrn.de> : Wrote the initial version of the "man" page
-  of Hatari and maintained the Hatari Debian packages.
+- Marco Herrn <marco at mherrn.de> : Wrote the initial version of the "man"
+  page of Hatari and maintained the Hatari Debian packages until Hatari was
+  included into Debian.
 
 - Sven de Marothy : Wrote the screenshot functions, the built-in debugger,
   the ACSI emulation and added support for ZIPed and GZIPed disk images.
@@ -56,8 +58,8 @@ please remind me!):
 
 - Pieter van der Meer : Traced a bug in the VIDEL emulation.
 
-- Patrice Mandin : Some improvements of the autoconf build system files; author
-  of the DSP emulation core.
+- Patrice Mandin : Some improvements of the autoconf build system files;
+  original author of the DSP emulation core.
 
 - Martin Doering : Code for compiling the font data into the executable and
   some other ideas for cleaning up the source code.
@@ -85,7 +87,8 @@ please remind me!):
 
 - Volker Seebode: Fix to ASCI emulation to get other than AHDI drivers working.
 
-- David Savinkoff: More accurate printer emulation, IIR filter (LMC1992 emulation).
+- David Savinkoff: More accurate printer emulation, LMC1992 emulation
+  patches and IIR filter.
 
 - Cyprian Konador: Found some bugs in the blitter cycles emulation
 
