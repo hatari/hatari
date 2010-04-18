@@ -624,8 +624,10 @@ class HatariConfigMapping(ConfigStore):
         return (w, h)
 
     def set_max_size(self, w, h):
-        self.get("[Screen]", "nMaxWidth", w)
-        self.get("[Screen]", "nMaxHeight", h)
+        # guarantee correct type (Gtk float -> config int)
+        w = int(w); h = int(h)
+        self.set("[Screen]", "nMaxWidth", w)
+        self.set("[Screen]", "nMaxHeight", h)
         self._change_option("--max-width %d" % w)
         self._change_option("--max-height %d" % h)
 

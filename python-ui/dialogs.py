@@ -337,25 +337,19 @@ class DisplayDialog(HatariUIDialog):
         skip.set_active(config.get_frameskip())
         tips.set_tip(skip, "Set how many frames are skipped")
 
-        # TODO: do proper support for max window size
-        zoom = gtk.CheckButton("Zoom small resolutions")
         maxw, maxh = config.get_max_size()
-        print "MAX:", maxw, maxh
-        if maxw >= 640 and maxh >= 400:
-            zoom.set_active(True)
-        tips.set_tip(zoom, "Whether to zoom small resolutions")
-
-        aspect = gtk.CheckButton("Falcon/TT aspect ratio correction")
-        aspect.set_active(config.get_aspectcorrection())
-        tips.set_tip(zoom, "Whether do Falcon/TT monitor aspect correction")
+        maxadjw = gtk.Adjustment(maxw, 320, 1280, 8, 40)
+        maxadjh = gtk.Adjustment(maxh, 200,  960, 8, 40)
+        scalew = gtk.HScale(maxadjw)
+        scaleh = gtk.HScale(maxadjh)
+        scalew.set_digits(0)
+        scaleh.set_digits(0)
+        tips.set_tip(scalew, "Preferred/maximum zoomed width")
+        tips.set_tip(scaleh, "Preferred/maximum zoomed height")
 
         borders = gtk.CheckButton("ST/STE overscan borders")
         borders.set_active(config.get_borders())
-        tips.set_tip(borders, "Whether to show ST/STE overscan borders in low/mid-rez")
-
-        spec512 = gtk.CheckButton("Spec512 support")
-        spec512.set_active(config.get_spec512threshold())
-        tips.set_tip(spec512, "Whether to support Spec512 (>16 colors at the same time)")
+        tips.set_tip(borders, "Whether to show ST/STE overscan borders in low/mid-rez. Visible border area is affected by max. zoom size")
 
         statusbar = gtk.CheckButton("Show statusbar")
         statusbar.set_active(config.get_statusbar())
@@ -372,20 +366,19 @@ class DisplayDialog(HatariUIDialog):
 
         dialog.vbox.add(gtk.Label("Frameskip:"))
         dialog.vbox.add(skip)
-        dialog.vbox.add(zoom)
-        dialog.vbox.add(aspect)
+        dialog.vbox.add(gtk.Label("Max zoomed size:"))
+        dialog.vbox.add(scalew)
+        dialog.vbox.add(scaleh)
         dialog.vbox.add(borders)
-        dialog.vbox.add(spec512)
         dialog.vbox.add(statusbar)
         dialog.vbox.add(led)
         dialog.vbox.show_all()
 
         self.dialog = dialog
         self.skip = skip
-        self.zoom = zoom
-        self.aspect = aspect
+        self.maxw = maxadjw
+        self.maxh = maxadjh
         self.borders = borders
-        self.spec512 = spec512
         self.statusbar = statusbar
         self.led = led
  
@@ -398,10 +391,8 @@ class DisplayDialog(HatariUIDialog):
         if response == gtk.RESPONSE_APPLY:
             config.lock_updates()
             config.set_frameskip(self.skip.get_active())
-            config.set_zoom(self.zoom.get_active())
-            config.set_aspectcorrection(self.aspect.get_active())
+            config.set_max_size(self.maxw.get_value(), self.maxh.get_value())
             config.set_borders(self.borders.get_active())
-            config.set_spec512threshold(self.spec512.get_active())
             config.set_statusbar(self.statusbar.get_active())
             config.set_led(self.led.get_active())
             config.flush_updates()
