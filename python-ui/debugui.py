@@ -2,7 +2,7 @@
 #
 # A Debug UI for the Hatari, part of PyGtk Hatari UI
 #
-# Copyright (C) 2008-2009 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -119,32 +119,34 @@ class LoadDialog:
 
 class OptionsDialog:
     def __init__(self, parent):
-        table, self.dialog = create_table_dialog(parent, "Debugger UI options", 1, 2)
-        self.lines = table_add_entry_row(table, 0, "Memdump/disasm lines:", 2)
-        self.lines.connect("activate", dialog_apply_cb, self.dialog)
-    
-    def run(self, lines):
-        "run(lines) -> lines, as integers"
-        self.lines.set_text(str(lines))
+        self.dialog = gtk.Dialog("Debugger UI options", parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+             gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE))
+
+        self.lines = gtk.Adjustment(0, 5, 50)
+        scale = gtk.HScale(self.lines)
+        scale.set_digits(0)
+        
+        self.follow_pc = gtk.CheckButton("On stop, set address to PC")
+
+        vbox = self.dialog.vbox
+        vbox.add(gtk.Label("Memdump/disasm lines:"))
+        vbox.add(scale)
+        vbox.add(self.follow_pc)
+        vbox.show_all()
+
+    def run(self, lines, follow_pc):
+        "run(lines,follow_pc) -> (lines,follow_pc)"
+        self.follow_pc.set_active(follow_pc)
+        self.lines.set_value(lines)
         self.dialog.show_all()
-        while 1:
-            lines = None
-            response = self.dialog.run()
-            if response == gtk.RESPONSE_APPLY:
-                text = self.lines.get_text()
-                if text:
-                    try:
-                        lines = int(text)
-                    except ValueError:
-                        ErrorDialog(self.dialog).run("lines needs an integer number")
-                        continue
-                    break
-                else:
-                    ErrorDialog(self.dialog).run("please fill the field(s)")
-            else:
-                break
+        response = self.dialog.run()
+        if response == gtk.RESPONSE_APPLY:
+            lines = int(self.lines.get_value())
+            follow_pc = self.follow_pc.get_active()
         self.dialog.hide()
-        return lines
+        return (lines, follow_pc)
 
 
 # ----------------------------------------------------
@@ -176,6 +178,7 @@ class MemoryAddress:
         self.entry, self.memory = self.create_widgets()
         # settings
         self.dumpmode = Constants.REGISTERS
+        self.follow_pc = True
         self.lines = 12
         # addresses
         self.first = None
@@ -183,7 +186,9 @@ class MemoryAddress:
         self.last = None
         
     def clear(self):
-        self.first = None
+        if self.follow_pc:
+            # get first address from PC when next stopped
+            self.first = None
         self.second = None
         self.last  = None
 
@@ -217,6 +222,12 @@ class MemoryAddress:
     def get_address_entry(self):
         return self.entry
 
+    def get_follow_pc(self):
+        return self.follow_pc
+    
+    def set_follow_pc(self, follow_pc):
+        self.follow_pc = follow_pc
+
     def get_lines(self):
         return self.lines
     
@@ -228,14 +239,16 @@ class MemoryAddress:
         self.dump()
         
     def dump(self, address = None, move_idx = 0):
-        if not address:
-            address = self.first
-        
         if self.dumpmode == Constants.REGISTERS:
             output = self._get_registers()
             self.memory.set_label("".join(output))
             return
-        
+
+        if not address:
+            if not self.first:
+                self._get_registers()
+            address = self.first
+
         if not address:
             print "ERROR: address needed"
             return
@@ -474,21 +487,37 @@ class HatariDebugUI:
     def options_cb(self, widget):
         if not self.dialog_options:
             self.dialog_options = OptionsDialog(self.window)
-        lines = self.dialog_options.run(self.config.get("[General]", "nLines"))
-        if lines:
+        old_lines = self.config.get("[General]", "nLines")
+        old_follow_pc = self.config.get("[General]", "bFollowPC")
+        lines, follow_pc = self.dialog_options.run(old_lines, old_follow_pc)
+        if lines != old_lines:
             self.config.set("[General]", "nLines", lines)
             self.address.set_lines(lines)
+        if follow_pc != old_follow_pc:
+            self.config.set("[General]", "bFollowPC", follow_pc)
+            self.address.set_follow_pc(follow_pc)
 
     def load_options(self):
         # TODO: move config to MemoryAddress class?
         # (depends on how monitoring of addresses should work)
         lines = self.address.get_lines()
+        follow_pc = self.address.get_follow_pc()
         miss_is_error = False # needed for adding windows
-        defaults = { "[General]": {"nLines": lines} }
+        defaults = {
+            "[General]": {
+            	"nLines": lines,
+                "bFollowPC": follow_pc
+            }
+        }
         userconfdir = ".hatari"
         config = ConfigStore(userconfdir, defaults, miss_is_error)
-        config.load(config.get_filepath("debugui.cfg")) # set defaults
-        self.address.set_lines(config.get("[General]", "nLines"))
+        configpath = config.get_filepath("debugui.cfg")
+        config.load(configpath) # set defaults
+        try:
+            self.address.set_lines(config.get("[General]", "nLines"))
+            self.address.set_follow_pc(config.get("[General]", "bFollowPC"))
+        except (KeyError, AttributeError):
+            ErrorDialog(None).run("Debug UI configuration mismatch!\nTry again after removing: '%s'." % configpath)
         self.config = config
     
     def save_options(self):

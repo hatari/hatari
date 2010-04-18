@@ -7,6 +7,8 @@ User visible changes in Hatari (Python Gtk) UI and console
 - New settings dialog for HD dir and image configuration
 - Maximum/preferred zoom support to display settings dialog
 - Removed --spec512 support
+- Option for whether debugger will change to new PC address
+  whenever emulation is stopped again
 
 2010-03:
 - With the new Hatari --saveconfig option Hatari UI can ask Hatari
