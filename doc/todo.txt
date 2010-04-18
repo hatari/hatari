@@ -63,6 +63,10 @@ DSP emulation / Falcon sound matrix
 Other potential Hatari functionality improvements
 -------------------------------------------------
 
+- Improved boot drive & partition handling code:
+  - count partitions the same way in ACSI, IDE & GEMDOS
+  - move BootDrive stuff from floppy.c e.g. to tos.c where NumDrives is
+
 - Debugger improvements:
 	- Shortcut command for telling to run until given
 	  (temporary) conditional breakpoint is hit
