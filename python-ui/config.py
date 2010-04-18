@@ -65,7 +65,7 @@ def text_to_value(text):
 
 class ConfigStore:
     def __init__(self, userconfdir, defaults = {}, miss_is_error = True):
-        "ConfigStore(cfgfile[,defaults,miss_is_error])"
+        "ConfigStore(userconfdir, fgfile[,defaults,miss_is_error])"
         self.defaults = defaults
         self.userpath = self._get_full_userpath(userconfdir)
         self.miss_is_error = miss_is_error
@@ -89,16 +89,16 @@ class ConfigStore:
         for path in (self.userpath, os.getenv("HATARI_SYSTEM_CONFDIR")):
             if path:
                 file = "%s%c%s" % (path, os.path.sep, filename)
-                if os.path.exists(file) and os.path.isfile(file):
+                if os.path.isfile(file):
                     return file
-        return None
+        # writing needs path name although it's missing for reading
+        return "%s%c%s" % (self.userpath, os.path.sep, filename)
     
     def load(self, path):
         "load(path) -> load given configuration file"
-        if path:
+        if os.path.isfile(path):
             sections = self._read(path)
             if sections:
-                self.cfgfile = os.path.basename(path)
                 self.sections = sections
             else:
                 print "ERROR: configuration file loading failed!"
@@ -109,6 +109,7 @@ class ConfigStore:
                 print "-> using dummy 'defaults'."
             self.sections = self.defaults
         self.path = path
+        self.cfgfile = os.path.basename(path)
         self.original = self.get_checkpoint()
         self.changed = False
 

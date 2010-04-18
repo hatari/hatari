@@ -59,7 +59,7 @@ class UICallbacks:
         self.config = HatariConfigMapping(self.hatari)
         try:
             self.config.validate()
-        except:
+        except (KeyError, AttributeError):
             NoteDialog(None).run("Loading Hatari configuration failed!\nRetrying after saving Hatari configuration.")
             self.hatari.save_config()
             self.config = HatariConfigMapping(self.hatari)
