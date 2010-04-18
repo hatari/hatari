@@ -655,6 +655,14 @@ static int Opt_WhichOption(int argc, const char *argv[], int idx)
  */
 static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, size_t dstlen, bool *option)
 {
+	if (option)
+	{
+		*option = false;
+		if(strcasecmp(src, "none") == 0)
+		{
+			return true;
+		}
+	}
 	if (strlen(src) >= dstlen)
 	{
 		return Opt_ShowError(optid, src, "File name too long!");
@@ -665,15 +673,7 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 	}
 	if (option)
 	{
-		if(strcmp(src, "none") == 0)
-		{
-			*option = false;
-			return true;
-		}
-		else
-		{
-			*option = true;
-		}
+		*option = true;
 	}
 	strcpy(dst, src);
 	return true;
@@ -749,6 +749,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_CONFIGFILE:
 			i += 1;
+			/* true -> file needs to exist */
 			ok = Opt_StrCpy(OPT_CONFIGFILE, true, sConfigFileName,
 					argv[i], sizeof(sConfigFileName), NULL);
 			if (ok)
@@ -922,6 +923,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 
 		case OPT_AVIRECORD_FILE:
 			i += 1;
+			/* false -> file is created if it doesn't exist */
 			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, false, AviRecordFile,
 					argv[i], sizeof(AviRecordFile), NULL);
 			break;
@@ -1006,6 +1008,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_PRINTER:
 			i += 1;
+			/* "none" can be used to disable printer */
 			ok = Opt_StrCpy(OPT_PRINTER, false, ConfigureParams.Printer.szPrintToFileName,
 					argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
 					&ConfigureParams.Printer.bEnablePrinting);
@@ -1013,15 +1016,14 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_MIDI_IN:
 			i += 1;
-			/* false: "" can be used to disable midi input */
-			ok = Opt_StrCpy(OPT_MIDI_IN, false, ConfigureParams.Midi.sMidiInFileName,
+			ok = Opt_StrCpy(OPT_MIDI_IN, true, ConfigureParams.Midi.sMidiInFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiInFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
 			
 		case OPT_MIDI_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_MIDI_OUT, true, ConfigureParams.Midi.sMidiOutFileName,
+			ok = Opt_StrCpy(OPT_MIDI_OUT, false, ConfigureParams.Midi.sMidiOutFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiOutFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
@@ -1035,7 +1037,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
       
 		case OPT_RS232_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_RS232_OUT, true, ConfigureParams.RS232.szOutFileName,
+			ok = Opt_StrCpy(OPT_RS232_OUT, false, ConfigureParams.RS232.szOutFileName,
 					argv[i], sizeof(ConfigureParams.RS232.szOutFileName),
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
