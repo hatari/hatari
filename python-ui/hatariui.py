@@ -32,8 +32,8 @@ from uihelpers import UInfo, UIHelp, create_button, create_toolbutton, \
      create_toggle, HatariTextInsert, get_open_filename, get_save_filename
 from dialogs import AboutDialog, TodoDialog, NoteDialog, ErrorDialog, \
      InputDialog, KillDialog, QuitSaveDialog, ResetDialog, TraceDialog, \
-     DiskDialog, DisplayDialog, JoystickDialog, MachineDialog, \
-     PeripheralDialog, PathDialog, SoundDialog
+     FloppyDialog, HardDiskDialog, DisplayDialog, JoystickDialog, \
+     MachineDialog, PeripheralDialog, PathDialog, SoundDialog
 
 
 # helper functions to match callback args
@@ -79,7 +79,8 @@ class UICallbacks:
         self.quitdialog = None
         self.killdialog = None
 
-        self.diskdialog = None
+        self.floppydialog = None
+        self.harddiskdialog = None
         self.displaydialog = None
         self.joystickdialog = None
         self.machinedialog = None
@@ -96,7 +97,8 @@ class UICallbacks:
         self.tracepoints = None
 
     def _reset_config_dialogs(self):
-        self.diskdialog = None
+        self.floppydialog = None
+        self.harddiskdialog = None
         self.displaydialog = None
         self.joystickdialog = None
         self.machinedialog = None
@@ -182,6 +184,7 @@ class UICallbacks:
             args += [self.config.get_path()]
         if self.memstate:
             args += self.memstate
+        # only way to change boot order is to specify disk on command line
         if self.floppy:
             args += self.floppy
         if self.hatariwin:
@@ -244,11 +247,17 @@ class UICallbacks:
             self.inputdialog = InputDialog(self.mainwin)
         self.inputdialog.run(self.hatari)
 
-    # ------- disk callback -----------
-    def disk(self, widget):
-        if not self.diskdialog:
-            self.diskdialog = DiskDialog(self.mainwin)
-        self.diskdialog.run(self.config)
+    # ------- floppydisk callback -----------
+    def floppydisk(self, widget):
+        if not self.floppydialog:
+            self.floppydialog = FloppyDialog(self.mainwin)
+        self.floppydialog.run(self.config)
+
+    # ------- harddisk callback -----------
+    def harddisk(self, widget):
+        if not self.harddiskdialog:
+            self.harddiskdialog = HardDiskDialog(self.mainwin)
+        self.harddiskdialog.run(self.config)
 
     # ------- display callback -----------
     def display(self, widget):
@@ -413,7 +422,8 @@ class UIActions:
         ("reset", gtk.STOCK_REFRESH, "Reset...", "<Ctrl>E", "Warm or cold reset Hatari", cb.reset),
         
         ("display", gtk.STOCK_PREFERENCES, "Display...", "<Ctrl>Y", "Display settings", cb.display),
-        ("floppy", gtk.STOCK_FLOPPY, "Floppies...", "<Ctrl>D", "Floppy images", cb.disk),
+        ("floppy", gtk.STOCK_FLOPPY, "Floppies...", "<Ctrl>D", "Floppy images", cb.floppydisk),
+        ("harddisk", gtk.STOCK_HARDDISK, "Hard disks...", "<Ctrl>H", "Hard disk images and directories", cb.harddisk),
         ("joystick", gtk.STOCK_CONNECT, "Joysticks...", "<Ctrl>J", "Joystick settings", cb.joystick),
         ("machine", gtk.STOCK_HARDDISK, "Machine...", "<Ctrl>M", "Hatari st/e/tt/falcon configuration", cb.machine),
         ("device", gtk.STOCK_PRINT, "Peripherals...", "<Ctrl>V", "Toggle Midi, Printer, RS232 peripherals", cb.peripheral),
@@ -604,7 +614,7 @@ class UIActions:
         allmenus = (
         ("File", ("load", "save", None, "shot", "recanim", "recsound", None, "quit")),
         ("Emulation", ("run", "pause", "forward", None, "full", None, "input", None, "reset")),
-        ("Devices", ("display", "floppy", "joystick", "machine", "device", "sound")),
+        ("Devices", ("display", "floppy", "harddisk", "joystick", "machine", "device", "sound")),
         ("Configuration", ("path", None, "lconfig", "sconfig")),
         ("Debug", ("debug", "trace")),
         ("Help", ("manual", "compatibility", "release", "todo", None, "bugs", "mails", "changes", None, "authors", "hatari", "hatariui", "about",))

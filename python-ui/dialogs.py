@@ -268,7 +268,7 @@ class ResetDialog(HatariUIDialog):
 # ----------------------------------
 # Floppy image dialog
 
-class DiskDialog(HatariUIDialog):
+class FloppyDialog(HatariUIDialog):
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Floppy images", 9, 2)
         
@@ -322,7 +322,99 @@ class DiskDialog(HatariUIDialog):
             config.set_slowfdc(self.slowfdc.get_active())
             config.flush_updates()
 
+
+# ----------------------------------
+# Hard disk dialog
+
+class HardDiskDialog(HatariUIDialog):
+    def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Hard disks", 4, 4, "Set and reboot")
+        row = 0
+
+        label = "ASCI HD image:"
+        path = config.get_acsi_image()
+        fsel, box = self._fsel_box(label, path, gtk.FILE_CHOOSER_ACTION_OPEN)
+        table_add_widget_row(table, row, label, box, True)
+        self.acsi = fsel
+        row += 1
+
+        label = "IDE HD master image:"
+        path = config.get_idemaster_image()
+        fsel, box = self._fsel_box(label, path, gtk.FILE_CHOOSER_ACTION_OPEN)
+        table_add_widget_row(table, row, label, box, True)
+        self.idemaster = fsel
+        row += 1
+
+        label = "IDE HD slave image:"
+        path = config.get_ideslave_image()
+        fsel, box = self._fsel_box(label, path, gtk.FILE_CHOOSER_ACTION_OPEN)
+        table_add_widget_row(table, row, label, box, True)
+        self.ideslave = fsel
+        row += 1
+        
+        label = "GEMDOS drive directory:"
+        path = config.get_gemdos_dir()
+        fsel, box = self._fsel_box(label, path, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+        table_add_widget_row(table, row, label, box, True)
+        self.gemdos = fsel
+        row += 1
+
+        table.show_all()
+
+    def _eject(self, widget, fsel):
+        fsel.unselect_all()
+
+    def _fsel_box(self, label, path, action):
+        fsel = gtk.FileChooserButton(label)
+        # Hatari cannot access URIs
+        fsel.set_local_only(True)
+        fsel.set_width_chars(12)
+        fsel.set_action(action)
+        if path:
+            fsel.set_filename(path)
+        eject = create_button("Eject", self._eject, fsel)
+
+        box = gtk.HBox()
+        box.pack_start(fsel)
+        box.pack_start(eject, False, False)
+        return (fsel, box)
     
+    def _get_config(self, config):
+        path = config.get_gemdos_dir()
+        if path:
+            self.gemdos.set_filename(path)
+        path = config.get_acsi_image()
+        if path:
+            self.acsi.set_filename(path)
+        path = config.get_idemaster_image()
+        if path:
+            self.idemaster.set_filename(path)
+        path = config.get_ideslave_image()
+        if path:
+            self.ideslave.set_filename(path)
+        
+    def _set_config(self, config):
+        config.lock_updates()
+        config.set_gemdos_dir(self.gemdos.get_filename())
+        config.set_acsi_image(self.acsi.get_filename())
+        config.set_idemaster_image(self.idemaster.get_filename())
+        config.set_ideslave_image(self.ideslave.get_filename())
+        config.flush_updates()
+
+    def run(self, config):
+        "run(config) -> bool, whether to reboot"
+        if not self.dialog:
+            self._create_dialog(config)
+
+        self._get_config(config)
+        response = self.dialog.run()
+        self.dialog.hide()
+        if response == gtk.RESPONSE_APPLY:
+            self._set_config(config)
+            return True
+        return False
+
+
 # ---------------------------
 # Display dialog
 
@@ -734,17 +826,10 @@ class MachineDialog(HatariUIDialog):
         fsel = self._fsel(label, gtk.FILE_CHOOSER_ACTION_OPEN)
         self.tos = table_add_widget_row(table, row, label, fsel, fullspan)
         row += 1
-        
-        label = "Harddisk:"
-        fsel = self._fsel(label, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
-        self.harddisk = table_add_widget_row(table, row, label, fsel, fullspan)
-        row += 1
 
         vbox = gtk.VBox()
         self.compatible = gtk.CheckButton("Compatible CPU")
         self.timerd = gtk.CheckButton("Patch Timer-D")
-        self.usehd = gtk.CheckButton("Use harddisk")
-        vbox.add(self.usehd)
         vbox.add(self.compatible)
         vbox.add(self.timerd)
         table_add_widget_row(table, row, "Misc.:", vbox, fullspan)
@@ -768,14 +853,8 @@ class MachineDialog(HatariUIDialog):
         self.cpulevel.set_active(config.get_cpulevel())
         self.memory.set_active(config.get_memory())
         tos = config.get_tos()
-        hd = config.get_harddisk()
-        usehd = config.get_use_harddisk()
         if tos:
             self.tos.set_filename(tos)
-        if hd:
-            self.harddisk.set_filename(hd)
-        if usehd:
-            self.usehd.set_active(usehd)
         self.compatible.set_active(config.get_compatible())
         self.timerd.set_active(config.get_timerd())
 
@@ -795,9 +874,6 @@ class MachineDialog(HatariUIDialog):
         config.set_cpulevel(self.cpulevel.get_active())
         config.set_memory(self.memory.get_active())
         config.set_tos(self.tos.get_filename())
-        # usehd has to be set before setting harddisk
-        config.set_use_harddisk(self.usehd.get_active())
-        config.set_harddisk(self.harddisk.get_filename())
         config.set_compatible(self.compatible.get_active())
         config.set_timerd(self.timerd.get_active())
         config.flush_updates()

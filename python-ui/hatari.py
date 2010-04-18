@@ -494,22 +494,49 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Floppy]", "bSlowFloppy", value)
         self._change_option("--slowfdc %s" % str(value))
 
-    # ------------ use harddisk ---------------
-    def get_use_harddisk(self):
-        return self.get("[HardDisk]", "bUseHardDiskDirectory")
-    
-    def set_use_harddisk(self, value):
-        self.set("[HardDisk]", "bUseHardDiskDirectory", value)
-        # TODO: add to hatari option for this
-
-    # ------------ harddisk (dir) ---------------
-    def get_harddisk(self):
+    # ------------ GEMDOS HD (dir) ---------------
+    def get_gemdos_dir(self):
+        self.get("[HardDisk]", "bUseHardDiskDirectory") # for validation
         return self.get("[HardDisk]", "szHardDiskDirectory")
-    
-    def set_harddisk(self, dirname):
+
+    def set_gemdos_dir(self, dirname):
+        if dirname and os.path.isdir(dirname):
+            self.set("[HardDisk]", "bUseHardDiskDirectory", True)
         self.set("[HardDisk]", "szHardDiskDirectory", dirname)
-        if self.get_use_harddisk():
-            self._change_option("--harddrive %s" % dirname)
+        self._change_option("--harddrive %s" % dirname)
+
+    # ------------ ACSI HD (file) ---------------
+    def get_acsi_image(self):
+        self.get("[HardDisk]", "bUseHardDiskImage") # for validation
+        return self.get("[HardDisk]", "szHardDiskImage")
+
+    def set_acsi_image(self, filename):
+        if filename and os.path.isfile(filename):
+            self.set("[HardDisk]", "bUseHardDiskImage", True)
+        self.set("[HardDisk]", "szHardDiskImage", filename)
+        self._change_option("--acsi %s" % filename)
+
+    # ------------ IDE master (file) ---------------
+    def get_idemaster_image(self):
+        self.get("[HardDisk]", "bUseIdeMasterHardDiskImage") # for validation
+        return self.get("[HardDisk]", "szIdeMasterHardDiskImage")
+
+    def set_idemaster_image(self, filename):
+        if filename and os.path.isfile(filename):
+            self.set("[HardDisk]", "bUseIdeMasterHardDiskImage", True)
+        self.set("[HardDisk]", "szIdeMasterHardDiskImage", filename)
+        self._change_option("--ide-master %s" % filename)
+
+    # ------------ IDE slave (file) ---------------
+    def get_ideslave_image(self):
+        self.get("[HardDisk]", "bUseIdeSlaveHardDiskImage") # for validation
+        return self.get("[HardDisk]", "szIdeSlaveHardDiskImage")
+
+    def set_ideslave_image(self, filename):
+        if filename and os.path.isfile(filename):
+            self.set("[HardDisk]", "bUseIdeSlaveHardDiskImage", True)
+        self.set("[HardDisk]", "szIdeSlaveHardDiskImage", filename)
+        self._change_option("--ide-slave %s" % filename)
 
     # ------------ TOS ROM ---------------
     def get_tos(self):
