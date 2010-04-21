@@ -12,12 +12,16 @@ sources.
   - Create empty floppy images (+ convert directories to hard disks?)
   - MSA converter
 
-* Work on the debug UI:
+* Add more Hatari debugger features to the debug UI:
   - DSP support
+  - DSP and CPU symbols loading
+  - Support for stepping the emulation
+  - multiple views to memory (refreshed whenever emulation is stopped)
+    - supporting also register relative views (register values
+      parsing should move to common functionality first)
   - breakpoint support (issue: how to stop emulation on breakpoint
     but still allow Hatari to process remote commands?)
-  - multiple views to memory
-  - trace & debug log viewers
+  - trace & debug log viewers?
 
 * Put all configuration stuff into single notebook dialog?
 
@@ -50,4 +54,4 @@ sources.
   - log file and levels, bios intercept, run-VBLs
 (Many of these aren't supported by the internal Hatari UI either, or
 are missing corresponding command line options so they will require
-support on the Hatari control.c side too.)
+additional support on the Hatari control.c side too.)
