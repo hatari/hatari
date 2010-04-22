@@ -140,18 +140,18 @@ Uint16 nCbar_DmaSoundControl;
 
 /* internal datas */
 
-/* Values for Codec's ADC volume control (step -3db) (* DECIMAL_PRECISION) */
+/* Values for Codec's ADC volume control (step -1.5db) (* DECIMAL_PRECISION) */
 static const Uint16 Crossbar_ADC_volume_table[16] =
 {
-	   0,   391,   735,  1039,  1467,  2072,  2927,  4135,
-	 5841, 8250, 11654, 16462, 23253, 32845, 46395, 63535
+	4915,   5841,   6942,   8250,   9806,   11654,  13851,  16462,
+	19565,  23253,  27636,  32846,  39037,  46396,  55142,  65535
 };
 
-/* Values for Codex's DAC volume control (step -3db) (* DECIMAL_PRECISION) */
+/* Values for Codec's DAC volume control (step -1.5db) (* DECIMAL_PRECISION) */
 static const Uint16 Crossbar_DAC_volume_table[16] =
 {
-	63535, 46395, 32845, 23253, 16462, 11654, 8250, 5841,
-	 4135,  2927,  2072,  1467,  1039,   735,  391,    0
+	65535,  55142,  46396,  39037,  32846,  27636,  23253,  19565,
+	16462,  13851,  11654,  9806,   8250,   6942,   5841,   4915
 };
 
 static const double Ste_SampleRates[4] =
@@ -345,8 +345,8 @@ void Crossbar_Reset(bool bCold)
 	crossbar.isStereo = 1;
 	crossbar.codecInputSource = 3;
 	crossbar.codecAdcInput = 3;
-	crossbar.gainSettingLeft = 34953;
-	crossbar.gainSettingRight = 34953;
+	crossbar.gainSettingLeft = 4915;
+	crossbar.gainSettingRight = 4915;
 	crossbar.attenuationSettingLeft = 65535;
 	crossbar.attenuationSettingRight = 65535;
 	crossbar.adc_dac_readBufferPosition = 0;
@@ -1657,7 +1657,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Output sound = 0 */
 		for (i = 0; i < nSamplesToGenerate; i++) {
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx][1] = 0;
+			MixBuffer[nBufIdx][0] = 0;
 			MixBuffer[nBufIdx][1] = 0;
 		}
 
@@ -1707,8 +1707,8 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				break;
 			case 1:
 				/* direct ADC->DAC sound only */
-				dac_LeftData = (adc_leftData * crossbar.gainSettingLeft) >> 16;
-				dac_RightData = (adc_rightData * crossbar.gainSettingRight) >> 16;
+				dac_LeftData = (adc_leftData * crossbar.gainSettingLeft * (int)(3)) >> 16;
+				dac_RightData = (adc_rightData * crossbar.gainSettingRight * (int)(3)) >> 16;
 				break;
 			case 2:
 				/* Crossbar->DAC sound only */
@@ -1717,8 +1717,10 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				break;
 			case 3:
 				/* Mixing Direct ADC sound with Crossbar->DMA sound */
-				dac_LeftData = (((adc_leftData * crossbar.gainSettingLeft) >> 16) + dac.buffer_left[dac.readPosition]) / 2;
-				dac_RightData = (((adc_rightData  * crossbar.gainSettingRight) >> 16) + dac.buffer_right[dac.readPosition]) / 2;
+				dac_LeftData = ((adc_leftData * crossbar.gainSettingLeft * (int)(3)) >> 16) + 
+						dac.buffer_left[dac.readPosition];
+				dac_RightData = ((adc_rightData  * crossbar.gainSettingRight * (int)(3)) >> 16) + 
+						dac.buffer_right[dac.readPosition];
 				break;
 		}
 			
