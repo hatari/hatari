@@ -214,7 +214,7 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 bool VDI(void)
 {
 	Uint32 TablePtr = Regs[REG_D1];
-	/*unsigned short int OpCode;*/
+	/* Uint16 OpCode;*/
 
 	/* Read off table pointers */
 	Control = STMemory_ReadLong(TablePtr);
@@ -262,6 +262,174 @@ void VDI_LineA(Uint32 linea, Uint32 fontbase)
 }
 
 
+#if ENABLE_TRACING
+/*-----------------------------------------------------------------------*/
+/**
+ * Map VDI call opcode/sub-opcode to a VDI function name
+ */
+static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
+{
+	static const char* names_0[] = {
+		"???",
+		"v_opnwk",
+		"v_clswk",
+		"v_clrwk",
+		"v_updwk",
+		"",		/* 5: lots of sub opcodes */
+		"v_pline",
+		"v_pmarker",
+		"v_gtext",
+		"v_fillarea",	/* sub-opcode 13: v_bez_fill with GDOS */
+		"v_cellarray",
+		"",		/* 11: lots of sub opcodes */
+		"vst_height",
+		"vst_rotation",
+		"vs_color",
+		"vsl_type",
+		"vsl_width",
+		"vsl_color",
+		"vsm_type",
+		"vsm_height",
+		"vsm_color",
+		"vst_font",
+		"vst_color",
+		"vsf_interior",
+		"vsf_style",
+		"vsf_color",
+		"vq_color",
+		"vq_cellarray",
+		"vrq/sm_locator",
+		"vrq/sm_valuator",
+		"vrq/sm_choice",
+		"vrq/sm_string",
+		"vswr_mode",
+		"vsin_mode",
+		"???", /* 34 */
+		"vql_attributes",
+		"vqm_attributes",
+		"vqf_attributes",
+		"vqt_attributes",
+		"vst_alignment"
+	};
+	static const char* names_100[] = {
+		"v_opnvwk",
+		"v_clsvwk",
+		"vq_extnd",
+		"v_contourfill",
+		"vsf_perimeter",
+		"v_get_pixel",
+		"vst_effects",
+		"vst_point",
+		"vsl_ends",
+		"vro_cpyfm",
+		"vr_trnfm",
+		"vsc_form",
+		"vsf_udpat",
+		"vsl_udsty",
+		"vr_recfl",
+		"vqin_mode",
+		"vqt_extent",
+		"vqt_width",
+		"vex_timv",
+		"vst_load_fonts",
+		"vst_unload_fonts",
+		"vrt_cpyfm",
+		"v_show_c",
+		"v_hide_c",
+		"vq_mouse",
+		"vex_butv",
+		"vex_motv",
+		"vex_curv",
+		"vq_key_s",
+		"vs_clip",
+		"vqt_name",
+		"vqt_fontinfo"
+		/* 131-233: no known opcodes
+		 * 234-255: (Speedo) GDOS opcodes
+		 */
+	};
+	static const char* names_opcode5[] = {
+		"???",
+		"vq_chcells",
+		"v_exit_cur",
+		"v_enter_cur",
+		"v_curup",
+		"v_curdown",
+		"v_curright",
+		"v_curleft",
+		"v_curhome",
+		"v_eeos",
+		"v_eeol",
+		"vs_curaddress",
+		"v_curtext",
+		"v_rvon",
+		"v_rvoff",
+		"vq_curaddress",
+		"vq_tabstatus",
+		"v_hardcopy",
+		"v_dspcur",
+		"v_rmcur",
+		"v_form_adv",
+		"v_output_window",
+		"v_clear_disp_list",
+		"v_bit_image",
+		"vq_scan",
+		"v_alpha_text"
+	};
+	static const char* names_opcode5_98[] = {
+		"v_meta_extents",
+		"v_write_meta",
+		"vm_filename",
+		"???",
+		"v_fontinit"
+	};
+	static const char* names_opcode11[] = {
+		"???",
+		"v_bar",
+		"v_arc",
+		"v_pieslice",
+		"v_circle",
+		"v_ellipse",
+		"v_ellarc",
+		"v_ellpie",
+		"v_rbox",
+		"v_rfbox",
+		"v_justified"
+	};
+
+	if (opcode == 5)
+	{
+		if (subcode < ARRAYSIZE(names_opcode5)) {
+			return names_opcode5[subcode];
+		}
+		subcode -= 98;
+		if (subcode >= 0 && subcode < ARRAYSIZE(names_opcode5_98)) {
+			return names_opcode5_98[subcode];
+		}
+	}
+	else if (opcode == 11)
+	{
+		if (subcode < ARRAYSIZE(names_opcode11)) {
+			return names_opcode11[subcode];
+		}
+	}
+	else if (opcode < ARRAYSIZE(names_0))
+	{
+		return names_0[opcode];
+	}
+	else
+	{
+		opcode -= 100;
+		if (opcode >= 0 && opcode < ARRAYSIZE(names_100))
+		{
+			return names_100[opcode];
+		}
+	}
+	return "GDOS call?";
+}
+#endif
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * This is called on completion of a VDI Trap, used to modify return structure for
@@ -285,7 +453,13 @@ void VDI_Complete(void)
 		VDI_LineA(LineABase, FontBase);  /* And modify Line-A structure accordingly */
 	}
 
-	LOG_TRACE(TRACE_OS_VDI, "VDI opcode %hd completed\n", OpCode);
+#if ENABLE_TRACING
+	{
+		Uint16 SubCode = STMemory_ReadWord(Control+2*5);
+		LOG_TRACE(TRACE_OS_VDI, "VDI call %3hd/%3hd (%s)\n",
+			  OpCode, SubCode, VDI_Opcode2Name(OpCode, SubCode));
+	}
+#endif
 }
 
 
