@@ -76,6 +76,30 @@ if(PORTAUDIO_FOUND)
 	set(HAVE_PORTAUDIO 1)
 endif(PORTAUDIO_FOUND)
 
+# ################
+# CPP Definitions:
+# ################
+
+add_definitions(-DCONFDIR=\"/etc\")
+
+# Test for large file support:
+execute_process(COMMAND getconf LFS_CFLAGS
+                OUTPUT_VARIABLE DETECTED_LFS_CFLAGS
+                ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(DETECTED_LFS_CFLAGS)
+	add_definitions(${DETECTED_LFS_CFLAGS})
+	# message(STATUS "Large filesystem flags: ${DETECTED_LFS_CFLAGS}")
+endif(DETECTED_LFS_CFLAGS)
+
+# Additional CFLAGS suggested by the SDL library:
+execute_process(COMMAND pkg-config --cflags-only-other sdl
+                OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
+                ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(DETECTED_SDL_CFLAGS)
+	add_definitions(${DETECTED_SDL_CFLAGS})
+	# message(STATUS "Additional CFLAGS of SDL: ${DETECTED_SDL_CFLAGS}")
+endif(DETECTED_SDL_CFLAGS)
+
 # ###########################
 # Check for optional headers:
 # ###########################
@@ -96,20 +120,6 @@ check_function_exists(setenv HAVE_SETENV)
 check_function_exists(select HAVE_SELECT)
 check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
 check_function_exists(memalign HAVE_MEMALIGN)
-
-# ################
-# CPP Definitions:
-# ################
-
-add_definitions(-DCONFDIR=\"/etc\")
-
-# Test for large file support
-execute_process(COMMAND getconf LFS_CFLAGS
-                OUTPUT_VARIABLE DETECTED_LFS_CFLAGS
-                ERROR_QUIET)
-if(DETECTED_LFS_CFLAGS)
-	add_definitions(${DETECTED_LFS_CFLAGS})
-endif(DETECTED_LFS_CFLAGS)
 
 # #############
 # Other CFLAGS:
