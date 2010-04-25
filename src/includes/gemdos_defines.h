@@ -22,7 +22,7 @@
 #define GEMDOS_EPAPER  -9    // Out of paper
 #define GEMDOS_EWRITF  -10   // Write fault
 #define GEMDOS_EREADF  -11   // Read fault
-#define GEMDOS_EWRPRO  -12   // Device is write protected
+#define GEMDOS_EWRPRO  -13   // Device is write protected
 #define GEMDOS_E_CHNG  -14   // Media change detected
 #define GEMDOS_EUNDEV  -15   // Unknown device
 #define GEMDOS_EINVFN  -32   // Invalid function
