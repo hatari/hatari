@@ -173,6 +173,191 @@ static bool XBios_HatariControl(Uint32 Params)
 }
 
 
+#if ENABLE_TRACING
+/**
+ * Map XBIOS call opcode to XBIOS function name
+ */
+static const char* XBios_Call2Name(Uint16 call)
+{
+	static const char* names[] = {
+		"Initmous",
+		"Ssbrk",
+		"Physbase",
+		"Logbase",
+		"Getrez",
+		"Setscreen",
+		"Setpalette",
+		"Setcolor",
+		"Floprd",
+		"Flopwr",
+		"Flopfmt",
+		"Dbmsg",
+		"Midiws",
+		"Mfpint",
+		"Iorec",
+		"Rsconf",
+		"Keytbl",
+		"Random",
+		"Protobt",
+		"Flopver",
+		"Scrdmp",
+		"Cursconf",
+		"Settime",
+		"Gettime",
+		"Bioskeys",
+		"Ikbdws",
+		"Jdisint",
+		"Jenabint",
+		"Giaccess",
+		"Offgibit",
+		"Ongibit",
+		"Xbtimer",
+		"Dosound",
+		"Setprt",
+		"Kbdvbase",
+		"Kbrate",
+		"Prtblk",
+		"Vsync",
+		"Supexec",
+		"Puntaes",
+		NULL,	/* 40 */
+		"Floprate",
+		"DMAread",
+		"DMAwrite",
+		"Bconmap",
+		NULL,	/* 45 */
+		"NVMaccess",
+		NULL,	/* 47 */
+		"Metainit",
+		NULL,	/* 49 */
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,	/* 63 */
+		"Blitmode",
+		NULL,	/* 65 */
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,	/* 79 */
+		"EsetShift",
+		"EgetShift",
+		"EsetBank",
+		"EsetColor",
+		"EsetPalette",
+		"EgetPalette",
+		"EsetGray",
+		"EsetSmear",
+		"VsetMode",
+		"VgetMonitor",
+		"VsetSync",
+		"VgetSize",
+		NULL,	/* 92 */
+		"VsetRGB",
+		"VgetRGB",
+		NULL,	/* 95 */
+		"Dsp_DoBlock",
+		"Dsp_BlkHandShake",
+		"Dsp_BlkUnpacked",
+		"Dsp_InStream",
+		"Dsp_OutStream",
+		"Dsp_IOStream",
+		"Dsp_RemoveInterrupts",
+		"Dsp_GetWordSize",
+		"Dsp_Lock",
+		"Dsp_Unlock",
+		"Dsp_Available",
+		"Dsp_Reserve",
+		"Dsp_LoadProg",
+		"Dsp_ExecProg",
+		"Dsp_ExecBoot",
+		"Dsp_LodToBinary",
+		"Dsp_TriggerHC",
+		"Dsp_RequestUniqueAbility",
+		"Dsp_GetProgAbility",
+		"Dsp_FlushSubroutines",
+		"Dsp_LoadSubroutine",
+		"Dsp_InqSubrAbility",
+		"Dsp_RunSubroutine",
+		"Dsp_Hf0",
+		"Dsp_Hf1",
+		"Dsp_Hf2",
+		"Dsp_Hf3",
+		"Dsp_BlkWords",
+		"Dsp_BlkBytes",
+		"Dsp_HStat",
+		"Dsp_SetVectors",
+		"Dsp_MultBlocks",
+		"Locksnd",
+		"Unlocksnd",
+		"Soundcmd",
+		"Setbuffer",
+		"Setmode",
+		"Settracks",
+		"Setmontracks",
+		"Setinterrupt",
+		"Buffoper",
+		"Dsptristate",
+		"Gpio",
+		"Devconnect",
+		"Sndstatus",
+		"Buffptr",
+		NULL,	/* 142 */
+		NULL,
+		NULL,
+		NULL,
+		"VsetMask",
+		NULL,	/* 147 */
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,	/* 164 */
+		"WavePlay"
+	};
+	if (call >= 0 && call < ARRAYSIZE(names) && names[call]) {
+		return names[call];
+	}
+	if (call == 255) {
+		return "HatariControl";
+	}
+	return "???";
+}
+#endif
+
+
 /**
  * Check if we need to re-direct XBios call to our own routines
  */
@@ -185,26 +370,23 @@ bool XBios(void)
 	Params = Regs[REG_A7];
 	XBiosCall = STMemory_ReadWord(Params);
 
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %hd (%s)\n",
+		  XBiosCall, XBios_Call2Name(XBiosCall));
+
 	switch (XBiosCall)
 	{
 	 case 8:
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Floprd()\n");
 		return XBios_Floprd(Params);
 	 case 9:
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Flopwr()\n");
 		return XBios_Flopwr(Params);
 	 case 15:
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Rsconf()\n");
 		return XBios_Rsconf(Params);
 	 case 20:
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Scrdmp()\n");
 		return XBios_Scrdmp(Params);
 	 case 255:
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS HatariControl()\n");
 		return XBios_HatariControl(Params);
 
 	 default:  /* Call as normal! */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %d\n", XBiosCall);
 		return false;
 	}
 }
