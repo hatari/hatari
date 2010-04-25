@@ -91,7 +91,7 @@ static bool Bios_RWabs(Uint32 Params)
 	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS RWabs %i,%d,0x%lX,%d,%d\n",
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS Rwabs %i,%d,0x%lX,%d,%d\n",
 	          Dev, RWFlag, STRAM_ADDR(pBuffer), RecNo, Number);
 
 	return false;
@@ -117,8 +117,36 @@ static bool Bios_Bcostat(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check Bios call and see if we need to re-direct to our own routines
- * Return true if we've handled the exception, else return false to let TOS attempt it
+ * Print BIOS call name when BIOS tracing enabled.
+ */
+static bool Bios_Trace(Uint16 BiosCall)
+{
+#if ENABLE_TRACING
+	/* GCC uses substrings from above trace statements
+	 * where they match, so having them again here
+	 * wastes only a pointer & simplifies things
+	 */
+	static const char* names[] = {
+		"Getmpb", "Bconstat","Bconin", "Bconout",
+		"Rwabs",  "Setexc",  "Tickcal","Getbpb",
+		"Bcostat","Mediach", "Drvmap", "Kbshift"
+	};
+	if (BiosCall >= 0 && BiosCall < ARRAYSIZE(names)) {
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS %s()\n", names[BiosCall]);
+	} else {
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS %d?\n", BiosCall);
+	}
+#endif
+	/* let TOS handle it */
+	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check Bios call and see if we need to re-direct to our own routines.
+ * Return true if we've handled the exception, else return false to let
+ * TOS attempt it
  */
 bool Bios(void)
 {
@@ -142,8 +170,7 @@ bool Bios(void)
 		return Bios_RWabs(Params);
 	 case 0x8:
 		return Bios_Bcostat(Params);
-	 default:           /* Call as normal! */
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS %d\n", BiosCall);
-		return false;
+	 default:
+		return Bios_Trace(BiosCall);
 	}
 }
