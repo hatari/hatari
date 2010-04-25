@@ -226,6 +226,7 @@ GEM games:
 Monochrome games:
 - Balloons
 - Delta patrol
+- Emperor (v1.5)
 - HASCS
 - MiniGolf (GFA basic)*
 - Monkey Business
