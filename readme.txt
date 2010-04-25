@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 1.3.1
+                                 Version 1.4
 
                           http://hatari.berlios.de/
 
@@ -35,7 +35,8 @@ BeOS, Mac-OSX and other Systems which are supported by the SDL library.
 Unlike most other open source ST emulators which try to give you a good
 environment for running GEM applications, Hatari tries to emulate the hardware
 as close as possible so that it is able to run most of the old Atari games
-and demos.
+and demos.  Because of this, it may be somewhat slower than less accurate
+emulators.
 
 
  3) Compiling and installing
@@ -87,6 +88,16 @@ Assuming that you've used the Makefile generator of CMake, and cmake finished
 the configuration successfully, you can compile Hatari by typing "make". If all
 works fine, you'll get the executable "hatari" in the src/ subdirectory of the
 build tree. You can then install the emulator by typing "make install".
+
+
+ 3.1) Known problems
+
+RHEL 5 and the derived CentOS v5.x Linux distributions ship with
+a broken readline library:
+	https://bugzilla.redhat.com/show_bug.cgi?id=499837
+
+To get readline linking working on them, you need to append ";-lncurses"
+to the CMake READLINE_LIBRARY variable.
 
 
  4) Running Hatari
