@@ -126,7 +126,8 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
   <ul>
     <li><a href="#General debugger use">General debugger use</a>
     <li><a href="#Inspecting emulation state">Inspecting emulation state</a>
-    <li><a href="#Breakpoints, symbols and tracing">Breakpoints, symbols and tracing</a>
+    <li><a href="#Breakpoints and symbols">Breakpoints and symbols</a>
+    <li><a href="#Tracing">Tracing</a>
     <li><a href="#Build notes">Build notes</a>
   </ul>
   <li><a href="#Performance">Performance</a>
@@ -2738,7 +2739,7 @@ the DSP registers, only Rx ones are valid for this subcommand.  To
 disable showing of this extra information, use "lock default".
 </p>
 
-<a name="Breakpoints, symbols and tracing"></a><h3>Breakpoints, symbols and tracing</h3>
+<a name="Breakpoints and symbols"></a><h3>Breakpoints and symbols</h3>
 
 <p>
 There are two ways to specify breakpoints for Hatari. First, there are
@@ -2873,17 +2874,34 @@ continue forever (until a breakpoint triggers) if you omit the
 instruction count.
 </p>
 
+<a name="Tracing"></a><h3>Tracing</h3>
+
 <p>
-By the way, if you want to continue with real-time disassembling, you
-can enable it with "trace cpu_disasm" at the debugger prompt. Disable
-it with "trace none" when you enter the debugger again. "trace help"
-(or TAB) can be used to list all the supported trace points.
-
-(Tracing options can be set even from a program within the emulation
-if you enable Hatari "--bios-intercept" option and call XBios 255 from
-the program with a suitable Hatari command line string.)
+If you want to continue with real-time disassembling, you can enable it
+with "trace cpu_disasm" at the debugger prompt before continuing.
 </p>
-
+</p>
+Disable tracing with "trace none" when you enter the debugger again.
+"trace help" (or TAB) can be used to list all the supported trace points.
+</p>
+<p>
+Because Hatari normally emulates things at the hardware level, tracing
+Atari OS functions requires setting additional Hatari options which
+tell it to intercept higher level functionality:
+<ul>
+<li>BIOS and XBIOS tracing require enabling bios intercepting</li>
+<li>GEMDOS tracing use of the GEMDOS harddisk emulation</li>
+<li>VDI tracing use of a VDI graphics mode</li>
+</ul>
+<p>
+Tracing options can be set even from a program within the emulation
+if you enable Hatari "--bios-intercept" option and call XBios 255 from
+the program with a suitable Hatari command line string.
+</p>
+<p>
+Note that the trace output file can be set only when Hatari starts,
+it cannot be changed from within the debugger (or emulation).
+</p>
 
 <a name="Build notes"></a><h3>Build notes</h3>
 
@@ -2898,8 +2916,8 @@ Hatari.
 </p>
 
 <p>
-ENABLE_TRACING needs to be set for CPU instruction and other tracing
-to work.   By default it should be enabled.
+ENABLE_TRACING define needs to be set for tracing to work.
+By default it should be enabled.
 </p>
 
 
