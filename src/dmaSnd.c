@@ -505,7 +505,7 @@ void DmaSnd_SoundControl_ReadWord(void)
 {
 	IoMem_WriteWord(0xff8900, nDmaSoundControl);
 
-	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", nDmaSoundControl);
+	LOG_TRACE(TRACE_DMASND, "DMA snd control read: 0x%04x\n", nDmaSoundControl);
 }
 
 
