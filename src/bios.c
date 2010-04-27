@@ -131,7 +131,7 @@ static bool Bios_Trace(Uint16 BiosCall)
 		"Rwabs",  "Setexc",  "Tickcal","Getbpb",
 		"Bcostat","Mediach", "Drvmap", "Kbshift"
 	};
-	if (BiosCall >= 0 && BiosCall < ARRAYSIZE(names)) {
+	if (BiosCall < ARRAYSIZE(names)) {
 		LOG_TRACE(TRACE_OS_BIOS, "BIOS %s()\n", names[BiosCall]);
 	} else {
 		LOG_TRACE(TRACE_OS_BIOS, "BIOS %d?\n", BiosCall);
