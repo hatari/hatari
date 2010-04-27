@@ -7,6 +7,15 @@
                           http://hatari.berlios.de/
 
 
+Contents:
+---------
+1. License
+2. What is Hatari?
+3. Compiling and installing
+   3.1 Known problems
+4. Running Hatari
+5. Contact
+
 
  1) License
  ----------
@@ -27,8 +36,8 @@ this program; if not, write to the
  MA  02110-1301, USA
 
 
- 2) What is this?
- ----------------
+ 2) What is Hatari?
+ ------------------
 
 Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, NetBSD,
 BeOS, Mac-OSX and other Systems which are supported by the SDL library.
@@ -92,12 +101,13 @@ build tree. You can then install the emulator by typing "make install".
 
  3.1) Known problems
 
-RHEL 5 and the derived CentOS v5.x Linux distributions ship with
-a broken readline library:
+RHEL 5 and the derived CentOS v5.x Linux distributions ship
+with a broken readline library:
 	https://bugzilla.redhat.com/show_bug.cgi?id=499837
 
-To get readline linking working on them, you need to append ";-lncurses"
-to the CMake READLINE_LIBRARY variable.
+To get CMake readline detection and linking working on them,
+you need to give these as arguments to the "cmake" command above:
+   -DCMAKE_C_FLAGS=-lncurses -DCMAKE_EXE_LINKER_FLAGS=-lncurses
 
 
  4) Running Hatari
