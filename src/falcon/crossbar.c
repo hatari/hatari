@@ -1314,7 +1314,7 @@ static void Crossbar_setDmaPlay_Settings(void)
 	dmaPlay.frameLen = dmaPlay.frameEndAddr - dmaPlay.frameStartAddr;
 	dmaPlay.frameCounter = 0;
 
-	if (dmaPlay.frameLen <= 0)
+	if (dmaPlay.frameEndAddr <= dmaPlay.frameStartAddr)
 	{
 		Log_Printf(LOG_WARN, "crossbar DMA Play: Illegal buffer size (from 0x%06x to 0x%06x)\n",
 		          dmaPlay.frameStartAddr, dmaPlay.frameEndAddr);
@@ -1444,7 +1444,7 @@ static void Crossbar_setDmaRecord_Settings(void)
 	dmaRecord.frameLen = dmaRecord.frameEndAddr - dmaRecord.frameStartAddr;
 	dmaRecord.frameCounter = 0;
 
-	if (dmaRecord.frameLen <= 0) {
+	if (dmaRecord.frameEndAddr <= dmaRecord.frameStartAddr) {
 		Log_Printf(LOG_WARN, "crossbar DMA Record: Illegal buffer size (from 0x%06x to 0x%06x)\n",
 		          dmaRecord.frameStartAddr, dmaRecord.frameEndAddr);
 	}
