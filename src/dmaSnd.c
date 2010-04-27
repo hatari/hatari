@@ -732,6 +732,9 @@ void DmaSnd_SoundControl_WriteWord(void)
 	else if ((nDmaSoundControl & DMASNDCTRL_PLAY) && !(nNewSndCtrl & DMASNDCTRL_PLAY))
 	{
 		//fprintf(stderr, "Turning off DMA sound emulation.\n");
+		/* Create samples up until this point with current values */
+		Sound_Update();
+
 	}
 
 	nDmaSoundControl = nNewSndCtrl;
