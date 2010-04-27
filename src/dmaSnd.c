@@ -268,10 +268,11 @@ static void DmaSnd_StartNewFrame(void)
 	
 	dma.frameLen = dma.frameEndAddr - dma.frameStartAddr;
 
-	if (dma.frameLen <= 0)
+	if (dma.frameEndAddr <= dma.frameStartAddr)
 	{
 		Log_Printf(LOG_WARN, "DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
 		          dma.frameStartAddr, dma.frameEndAddr);
+		dma.frameLen = 0;
 		return;
 	}
 
