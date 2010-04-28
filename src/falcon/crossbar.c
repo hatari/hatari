@@ -434,6 +434,9 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 	}
 	else if (dmaPlay.isRunning && ((sndCtrl & CROSSBAR_SNDCTRL_PLAY) == 0))
 	{
+		/* Create samples up until this point with current values */
+		Sound_Update();
+
 		/* Turning off DMA play sound emulation */
 		dmaPlay.isRunning = 0;
 		dmaPlay.loopMode = 0;
