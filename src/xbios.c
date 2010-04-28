@@ -177,7 +177,7 @@ static bool XBios_HatariControl(Uint32 Params)
 /**
  * Map XBIOS call opcode to XBIOS function name
  */
-static const char* XBios_Call2Name(Uint16 call)
+static const char* XBios_Call2Name(Uint16 opcode)
 {
 	static const char* names[] = {
 		"Initmous",
@@ -347,10 +347,10 @@ static const char* XBios_Call2Name(Uint16 call)
 		NULL,	/* 164 */
 		"WavePlay"
 	};
-	if (call >= 0 && call < ARRAYSIZE(names) && names[call]) {
-		return names[call];
+	if (opcode < ARRAYSIZE(names) && names[opcode]) {
+		return names[opcode];
 	}
-	if (call == 255) {
+	if (opcode == 255) {
 		return "HatariControl";
 	}
 	return "???";
