@@ -402,9 +402,11 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
 		if (subcode < ARRAYSIZE(names_opcode5)) {
 			return names_opcode5[subcode];
 		}
-		subcode -= 98;
-		if (subcode >= 0 && subcode < ARRAYSIZE(names_opcode5_98)) {
-			return names_opcode5_98[subcode];
+		if (subcode >= 98) {
+			subcode -= 98;
+			if (subcode < ARRAYSIZE(names_opcode5_98)) {
+				return names_opcode5_98[subcode];
+			}
 		}
 	}
 	else if (opcode == 11)
@@ -417,10 +419,10 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
 	{
 		return names_0[opcode];
 	}
-	else
+	else if (opcode >= 100)
 	{
 		opcode -= 100;
-		if (opcode >= 0 && opcode < ARRAYSIZE(names_100))
+		if (opcode < ARRAYSIZE(names_100))
 		{
 			return names_100[opcode];
 		}
