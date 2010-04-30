@@ -99,7 +99,8 @@ static Uint32 DebugInfo_CurrentBasepage(void)
  */
 static void DebugInfo_Basepage(Uint32 basepage)
 {
-	Uint32 env, cmd;
+	Uint8 cmdlen;
+	Uint32 env;
 
 	if (!basepage) {
 		/* default to current process basepage */
@@ -128,10 +129,22 @@ static void DebugInfo_Basepage(Uint32 basepage)
 	env = STMemory_ReadLong(basepage+0x2C);
 	fprintf(stderr, "- Environment    : 0x%06x\n", env);
 	if (STMemory_ValidArea(env, 4096)) {
-		fprintf(stderr, "'%s'\n", STRam+env);
+		Uint32 end = env + 4096;
+		while (env < end && *(STRam+env)) {
+			fprintf(stderr, "'%s'\n", STRam+env);
+			env += strlen((const char *)(STRam+env)) + 1;
+		}
 	}
-	cmd = STMemory_ReadLong(basepage+0x2C);
-	fprintf(stderr, "- Command line   :\n'%s'\n", STRam+basepage+0x80);
+	cmdlen = STMemory_ReadByte(basepage+0x80);
+	fprintf(stderr, "- Command argslen: %d\n", cmdlen);
+	if (cmdlen) {
+		int offset = 0;
+		while (offset < cmdlen) {
+			fprintf(stderr, " '%s'", STRam+basepage+0x81+offset);
+			offset += strlen((const char *)(STRam+basepage+0x81+offset)) + 1;
+		}
+		fprintf(stderr, "\n");
+	}
 }
 
 /**
