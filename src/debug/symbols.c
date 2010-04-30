@@ -25,6 +25,7 @@ const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 #include "symbols.h"
 #include "debugui.h"
 #include "debug_priv.h"
+#include "evaluate.h"
 
 typedef struct {
 	char *name;
@@ -152,6 +153,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 m
 			fprintf(stderr, "WARNING: syntax error in '%s' on line %d, skipping.\n", filename, line);
 			continue;
 		}
+		address += offset;
 		if (address > maxaddr) {
 			fprintf(stderr, "WARNING: invalid address 0x%x in '%s' on line %d, skipping.\n", address, filename, line);
 			continue;
@@ -506,12 +508,18 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 	if (strcmp(file, "free") == 0) {
-		list = (listtype == TYPE_DSP ? DspSymbolsList : CpuSymbolsList);
-		Symbols_Free(list);
+		if (listtype == TYPE_DSP) {
+			Symbols_Free(DspSymbolsList);
+			DspSymbolsList = NULL;
+		} else {
+			Symbols_Free(CpuSymbolsList);
+			CpuSymbolsList = NULL;
+		}
 		return DEBUGGER_CMDDONE;
 	}
 	if (nArgc >= 3) {
-		offset = atoi(psArgs[2]);
+		int dummy;
+		Eval_Expression(psArgs[2], &offset, &dummy, listtype==TYPE_DSP);
 	} else {
 		offset = 0;
 	}
