@@ -23,14 +23,12 @@ n810.cfg
 Configuration file for the Nokia 770/N800/N810 TI Omap2 based devices:
 - Shortcut keys adapted for the device keys:
   - Menu, Increase, Decrease, Fullscreen, Joystick keyemu fire
-- Smaller border values to prevent Hatari aborting when enabling
-  borders in fullscreen (note: enabling borders slows down things)
+- Max Hatari screen size set to device screen size
 - Options that are more suitable for the device performance:
-  - Non-compatible CPU mode (works fine with most things)
+  - Non-compatible, but faster CPU mode (works fine with most things)
   - No Falcon DSP emulation
+  - High spec512 threshold
   - Automatic frameskip
-  - No spec512 support
-  - 11kHz sound
 - Sensible default paths even for things that don't yet exist (to minimize
   typing when they're enabled as N770 & N800 don't have a keyboard and N810
   keyboard is very small so typing is quite awkward)
