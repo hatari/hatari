@@ -1531,27 +1531,23 @@ this section lists only TT-specific games and demos.</p>
 the Hatari "--dsp" option:
 <ul>
   <li><b>none</b>: No emulation.
-      If program doesn't need/use DSP, this is the best option.
-      There may also still be some rare program that doesn't
-      work with the Hatari DSP emulation.</li>
+      If program doesn't need/use DSP, this is the best option.</li>
   <li><b>emu</b>: Experimental DSP emulation.
       Needed if program requires DSP. Slow.</li>
   <li><b>dummy</b>: Faked DSP response to DSP commands.
-      Some rare programs that need DSP only a little may work
-      with faked DSP.  This is much faster than the real DSP emulation.</li>
+      Some rare programs that need DSP may also work with faked DSP.
+      This is much faster than the real DSP emulation.</li>
 </ul>
 
-<p>The "dsp" column in tables below tells which DSP emulation
-mode needs to be used for the given program to work.  If it
-doesn't matter, the column contains "-".</p>
-
-<p>The column for whether the program works and whether
-it has (working) sound have "yes" when this is true and
+<p>The "dsp" column in tables below tells which DSP emulation mode
+needs to be used for the given program to work.  If it doesn't matter,
+the column contains "-". The column for whether the program works and
+for whether it has (working) sound have "yes" when this is true and
 otherwise "-".</p>
 
-<p>Due to missing MMU emulation, incomplete VIDEL emulation and
-only partially cycle accurate CPU/DSP emulation (and other emulation
-bugs), some Falcon programs don't work.</p>
+<p>Due to missing MMU emulation, incomplete VIDEL emulation and only
+partially cycle accurate CPU/DSP interaction (and other possible
+emulation bugs), some Falcon programs don't work yet.</p>
 
 
 <a name="Falcon games"></a><h4>Falcon games</h4>
