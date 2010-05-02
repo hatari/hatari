@@ -494,6 +494,24 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Floppy]", "bSlowFloppy", value)
         self._change_option("--slowfdc %s" % str(value))
 
+    # ------------- disk protection -------------
+    def get_protection_types(self):
+        return ("Off", "On", "Auto")
+
+    def get_floppy_protection(self):
+        return self.get("[Floppy]", "nWriteProtection")
+
+    def get_hd_protection(self):
+        return self.get("[HardDisk]", "nWriteProtection")
+
+    def set_floppy_protection(self, value):
+        self.set("[Floppy]", "nWriteProtection", value)
+        self._change_option("--protect-floppy %s" % self.get_protection_types()[value])
+
+    def set_hd_protection(self, value):
+        self.set("[HardDisk]", "nWriteProtection", value)
+        self._change_option("--protect-hd %s" % self.get_protection_types()[value])
+
     # ------------ GEMDOS HD (dir) ---------------
     def get_gemdos_dir(self):
         self.get("[HardDisk]", "bUseHardDiskDirectory") # for validation

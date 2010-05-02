@@ -41,9 +41,8 @@ sources.
     - needs support also to Hatari src/screenSnapShot.c
 
 * Supporting other, less important Hatari configuration options:
-  - GEMDOS drive write protection, HD booting
+  - HD booting, toggling disk-b autoinsertion
   - something for multiple GEMDOS partition directories
-  - floppy write protection, toggling disk-b autoinsertion
   - separate A/B disk paths for images that are within ZIP archives
   - joystick autofire toggling, defining the keys for joyemu
   - keyboard repeat, key mapping type and file, mouse grabbing

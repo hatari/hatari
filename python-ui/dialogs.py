@@ -270,8 +270,8 @@ class ResetDialog(HatariUIDialog):
 
 class FloppyDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Floppy images", 9, 2)
-        
+        table, self.dialog = create_table_dialog(self.parent, "Floppy images", 4, 2)
+
         row = 0
         self.floppy = []
         path = config.get_floppydir()
@@ -296,13 +296,23 @@ class FloppyDialog(HatariUIDialog):
             row += 1
 
         tips = gtk.Tooltips()
+
+        protect = gtk.combo_box_new_text()
+        for text in config.get_protection_types():
+            protect.append_text(text)
+        protect.set_active(config.get_floppy_protection())
+        tips.set_tip(protect, "Write protect floppy image contents")
+        table_add_widget_row(table, row, "Write protection:", protect)
+
+        row += 1
         slowfdc = gtk.CheckButton("Slow floppy access")
         slowfdc.set_active(config.get_slowfdc())
         tips.set_tip(slowfdc, "May be required by some rare game/demo")
-
         table_add_widget_row(table, row, None, slowfdc)
+
         table.show_all()
 
+        self.protect = protect
         self.slowfdc = slowfdc
 
     def _eject(self, widget, fsel):
@@ -319,6 +329,7 @@ class FloppyDialog(HatariUIDialog):
             config.lock_updates()
             for drive in range(2):
                 config.set_floppy(drive, self.floppy[drive].get_filename())
+            config.set_hd_protection(self.protect.get_active())
             config.set_slowfdc(self.slowfdc.get_active())
             config.flush_updates()
 
@@ -359,6 +370,15 @@ class HardDiskDialog(HatariUIDialog):
         self.gemdos = fsel
         row += 1
 
+        tips = gtk.Tooltips()
+
+        protect = gtk.combo_box_new_text()
+        for text in config.get_protection_types():
+            protect.append_text(text)
+        tips.set_tip(protect, "Write protect GEMDOS drive contents")
+        table_add_widget_row(table, row, "Write protection:", protect)
+        self.protect = protect
+
         table.show_all()
 
     def _eject(self, widget, fsel):
@@ -392,6 +412,7 @@ class HardDiskDialog(HatariUIDialog):
         path = config.get_ideslave_image()
         if path:
             self.ideslave.set_filename(path)
+        self.protect.set_active(config.get_hd_protection())
         
     def _set_config(self, config):
         config.lock_updates()
@@ -399,6 +420,7 @@ class HardDiskDialog(HatariUIDialog):
         config.set_acsi_image(self.acsi.get_filename())
         config.set_idemaster_image(self.idemaster.get_filename())
         config.set_ideslave_image(self.ideslave.get_filename())
+        config.set_hd_protection(self.protect.get_active())
         config.flush_updates()
 
     def run(self, config):
