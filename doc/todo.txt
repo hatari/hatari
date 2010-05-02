@@ -67,6 +67,8 @@ Other potential Hatari functionality improvements
   - count partitions the same way in ACSI, IDE & GEMDOS
   - move BootDrive stuff from floppy.c e.g. to tos.c where NumDrives is
 
+- Support harddisk write protection also for IDE & ACSI drives?
+
 - Debugger improvements:
 	- Shortcut command for telling to run until given
 	  (temporary) conditional breakpoint is hit
