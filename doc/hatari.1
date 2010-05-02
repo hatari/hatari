@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2008-09-28" "Hatari" ""
+.TH "HATARI" "1" "2010-05-02" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -16,7 +16,7 @@ Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, BeOS and
 other Systems which are supported by the SDL library.
 .PP
 With hatari one can run games, demos or applications written for Atari
-ST or Atari STE.  TT and Falcon support is experimental.  Hatari supports
+ST, STE or Falcon.  Atari TT support is experimental.  Hatari supports
 the commonly used *.st and *.msa disk images and hard disk emulation.
 .PP
 To run the emulator a TOS ROM image is needed. EmuTOS, a free
@@ -149,12 +149,19 @@ Set disk image for floppy drive A
 .TP
 .B \-\-disk-b <file>
 Set disk image for floppy drive B
+.TP
+.B \-\-protect-floppy <x>
+Write protect floppy image contents (on/off/auto). With "auto" option
+write protection is according to the disk image file attributes.
+.TP
+.B \-\-protect-hd <x>
+Write protect harddrive <dir> contents (on/off/auto). With "auto" option
+the protection can be controlled by setting individual files attributes
+as it disables the file attribute modifications for the GEMDOS hard disk
+emulation.
 .TP 
 .B \-d, \-\-harddrive <dir>
 Emulate harddrive partition(s) with <dir> contents
-.TP 
-.B \-\-mount-changes <bool>
-Allow changes to mounted harddrive <dir> contents
 .TP 
 .B \-\-acsi <file>
 Emulate an ACSI hard disk with an image <file>

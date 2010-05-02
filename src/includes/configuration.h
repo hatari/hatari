@@ -175,7 +175,7 @@ typedef struct
   bool bUseHardDiskImage;
   bool bUseIdeMasterHardDiskImage;
   bool bUseIdeSlaveHardDiskImage;
-  bool bDoGemdosChanges;
+  WRITEPROTECTION nWriteProtection;
   bool bBootFromHardDisk;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
   char szHardDiskImage[FILENAME_MAX];

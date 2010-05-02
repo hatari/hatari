@@ -91,8 +91,9 @@ enum {
 	OPT_DISKA,		/* disk options */
 	OPT_DISKB,
 	OPT_SLOWFLOPPY,
+	OPT_WRITEPROT_FLOPPY,
+	OPT_WRITEPROT_HD,
 	OPT_HARDDRIVE,
-	OPT_GEMDOSCHANGES,
 	OPT_ACSIHDIMAGE,
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
@@ -240,10 +241,12 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Set disk image for floppy drive B" },
 	{ OPT_SLOWFLOPPY,   NULL, "--slowfdc",
 	  "<bool>", "Slow down floppy disk access emulation" },
+	{ OPT_WRITEPROT_FLOPPY, NULL, "--protect-floppy",
+	  "<x>", "Write protect floppy image contents (on/off/auto)" },
+	{ OPT_WRITEPROT_HD, NULL, "--protect-hd",
+	  "<x>", "Write protect harddrive <dir> contents (on/off/auto)" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate harddrive partition(s) with <dir> contents" },
-	{ OPT_GEMDOSCHANGES, NULL, "--mount-changes",
-	  "<bool>", "Allow changes to mounted harddrive <dir> contents" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
@@ -1062,6 +1065,34 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				return Opt_ShowError(OPT_ERROR, argv[i], "Not a disk image");
 			break;
 
+		case OPT_SLOWFLOPPY:
+			ok = Opt_Bool(argv[++i], OPT_SLOWFLOPPY, &ConfigureParams.DiskImage.bSlowFloppy);
+			break;
+
+		case OPT_WRITEPROT_FLOPPY:
+			i += 1;
+			if (strcasecmp(argv[i], "off") == 0)
+				ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
+			else if (strcasecmp(argv[i], "on") == 0)
+				ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_ON;
+			else if (strcasecmp(argv[i], "auto") == 0)
+				ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_AUTO;
+			else
+				return Opt_ShowError(OPT_WRITEPROT_FLOPPY, argv[i], "Unknown option value");
+			break;
+
+		case OPT_WRITEPROT_HD:
+			i += 1;
+			if (strcasecmp(argv[i], "off") == 0)
+				ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_OFF;
+			else if (strcasecmp(argv[i], "on") == 0)
+				ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_ON;
+			else if (strcasecmp(argv[i], "auto") == 0)
+				ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_AUTO;
+			else
+				return Opt_ShowError(OPT_WRITEPROT_HD, argv[i], "Unknown option value");
+			break;
+
 		case OPT_HARDDRIVE:
 			i += 1;
 			ok = Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
@@ -1072,10 +1103,6 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				ConfigureParams.HardDisk.bBootFromHardDisk = true;
 			}
 			bLoadAutoSave = false;
-			break;
-
-		case OPT_GEMDOSCHANGES:
-			ok = Opt_Bool(argv[++i], OPT_GEMDOSCHANGES, &ConfigureParams.HardDisk.bDoGemdosChanges);
 			break;
 
 		case OPT_ACSIHDIMAGE:
@@ -1109,10 +1136,6 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				bLoadAutoSave = false;
 			}
-			break;
-
-		case OPT_SLOWFLOPPY:
-			ok = Opt_Bool(argv[++i], OPT_SLOWFLOPPY, &ConfigureParams.DiskImage.bSlowFloppy);
 			break;
 			
 			/* Memory options */

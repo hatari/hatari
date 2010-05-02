@@ -49,8 +49,8 @@ Emulator:
   - support long host directory names and much improved long filename support
   - convert host filename chars invalid in TOS to valid ones ('@')
   - use TOS filename matching instead of glob() (can match names with [])
-  - Option for preventing emulated drive directory modifications
-    ("--mount-changes no")
+- Options for preventing floppy image (--protect-floppy) and GEMDOS
+  emulated drive directory (--protect-hd) modifications.
 - AVI file recording:
   - video can be stored as BMP or as PNG images
   - audio is stored as 16 bits stereo PCM.

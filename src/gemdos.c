@@ -1481,7 +1481,7 @@ static bool GemDOS_MkDir(Uint32 Params)
 	}
 
 	/* write protected device? */
-	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
 	{
 		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Dcreate(\"%s\")\n", pDirName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
@@ -1533,7 +1533,7 @@ static bool GemDOS_RmDir(Uint32 Params)
 	}
 
 	/* write protected device? */
-	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
 	{
 		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Ddelete(\"%s\")\n", pDirName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
@@ -1684,7 +1684,7 @@ static bool GemDOS_Create(Uint32 Params)
 	}
 
 	/* write protected device? */
-	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
 	{
 		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fcreate(\"%s\")\n", pszFileName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
@@ -1808,20 +1808,20 @@ static bool GemDOS_Open(Uint32 Params)
 		return true;
 	}
 
-	if (ConfigureParams.HardDisk.bDoGemdosChanges)
-	{
-		/* GEMDOS mount can be written, so use requested mode */
-		ModeStr = Modes[Mode&0x03].mode;
-	}
-	else
+	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
 	{
 		/* force all accesses to be read-only */
 		ModeStr = Modes[0].mode;
 	}
+	else
+	{
+		/* GEMDOS mount can be written, try open in requested mode */
+		ModeStr = Modes[Mode&0x03].mode;
+	}
 
 	/* FIXME: Open file
 	 * - fopen() modes don't allow write-only mode without truncating
-	 *   wich would be needed to implement mode 1 (write-only) correctly.
+	 *   which would be needed to implement mode 1 (write-only) correctly.
 	 *   Fixing this requires using open() and file descriptors instead
 	 *   of fopen() and FILE* pointers, but Windows doesn't support that.
 	 */
@@ -2000,7 +2000,7 @@ static bool GemDOS_Write(Uint32 Params)
 	}
 
 	/* write protected device? */
-	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
 	{
 		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fwrite(%d,...)\n", Handle);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
@@ -2053,7 +2053,7 @@ static bool GemDOS_FDelete(Uint32 Params)
 	}
 
 	/* write protected device? */
-	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
 	{
 		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fdelete(\"%s\")\n", pszFileName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
@@ -2199,8 +2199,8 @@ static bool GemDOS_Fattrib(Uint32 Params)
 		return true;
 	}
 
-	/* write protected device? */
-	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	/* write or auto protected device? */
+	if (ConfigureParams.HardDisk.nWriteProtection != WRITEPROT_OFF)
 	{
 		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fattrib(\"%s\",...)\n", psFileName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
@@ -2575,7 +2575,7 @@ static bool GemDOS_Rename(Uint32 Params)
 	}
 
 	/* write protected device? */
-	if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
 	{
 		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Frename(\"%s\", \"%s\")\n", pszOldFileName, pszNewFileName);
 		Regs[REG_D0] = GEMDOS_EWRPRO;
@@ -2731,7 +2731,7 @@ static bool GemDOS_GSDToF(Uint32 Params)
 	if (Flag == 1)
 	{
 		/* write protected device? */
-		if (!ConfigureParams.HardDisk.bDoGemdosChanges)
+		if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
 		{
 			Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fdatime(,%d,)\n", Handle);
 			Regs[REG_D0] = GEMDOS_EWRPRO;

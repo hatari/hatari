@@ -999,6 +999,40 @@ Set disk image for floppy drive B
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
+<b>--protect-floppy &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Write protect floppy image contents (on/off/auto). With "auto" option
+write protection is according to the disk image file attributes.
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--protect-hd &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Write protect harddrive &lt;dir&gt; contents (on/off/auto). With "auto"
+option the protection can be controlled by setting individual files
+attributes as it disables the file attribute modifications for
+the GEMDOS hard disk emulation.
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
 <b>-d, --harddrive &lt;dir&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1007,21 +1041,6 @@ Set disk image for floppy drive B
 <td width="21%"></td>
 <td width="77%">
 Emulate harddrive partition(s) with &lt;dir&gt; contents
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--mount-changes &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Allow changes to mounted harddrive &lt;dir&gt; contents
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"

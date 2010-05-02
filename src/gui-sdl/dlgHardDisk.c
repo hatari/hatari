@@ -26,9 +26,11 @@ const char DlgHardDisk_fileid[] = "Hatari dlgHardDisk.c : " __DATE__ " " __TIME_
 #define DISKDLG_GEMDOSEJECT       15
 #define DISKDLG_GEMDOSBROWSE      16
 #define DISKDLG_GEMDOSNAME        17
-#define DISKDLG_GEMDOSCHANGES     18
-#define DISKDLG_BOOTHD            19
-#define DISKDLG_EXIT              20
+#define DISKDLG_PROTOFF           19
+#define DISKDLG_PROTON            20
+#define DISKDLG_PROTAUTO          21
+#define DISKDLG_BOOTHD            22
+#define DISKDLG_EXIT              23
 
 
 /* The disks dialog: */
@@ -57,7 +59,10 @@ static SGOBJ diskdlg[] =
 	{ SGBUTTON, 0, 0, 54,9, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 
-	{ SGCHECKBOX, 0, 0, 2,12, 32,1, "Allow GEMDOS drive modifications" },
+	{ SGTEXT, 0, 0, 2,12, 31,1, "GEMDOS drive write protection:" },
+	{ SGRADIOBUT, 0, 0, 33,12, 5,1, "Off" },
+	{ SGRADIOBUT, 0, 0, 40,12, 5,1, "On" },
+	{ SGRADIOBUT, 0, 0, 46,12, 6,1, "Auto" },
 
 	{ SGCHECKBOX, 0, 0, 2,14, 14,1, "Boot from HD" },
 
@@ -96,7 +101,7 @@ static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
  */
 void DlgHardDisk_Main(void)
 {
-	int but;
+	int but, i;
 	char dlgname_gdos[64], dlgname_acsi[64];
 	char dlgname_ide_master[64], dlgname_ide_slave[64];
 
@@ -142,11 +147,12 @@ void DlgHardDisk_Main(void)
 		dlgname_gdos[0] = '\0';
 	diskdlg[DISKDLG_GEMDOSNAME].txt = dlgname_gdos;
 
-	/* Allow GEMDOS drive modifications? */
-	if (ConfigureParams.HardDisk.bDoGemdosChanges)
-		diskdlg[DISKDLG_GEMDOSCHANGES].state |= SG_SELECTED;
-	else
-		diskdlg[DISKDLG_GEMDOSCHANGES].state &= ~SG_SELECTED;
+	/* Write protection */
+	for (i = DISKDLG_PROTOFF; i <= DISKDLG_PROTAUTO; i++)
+	{
+		diskdlg[i].state &= ~SG_SELECTED;
+	}
+	diskdlg[DISKDLG_PROTOFF+ConfigureParams.HardDisk.nWriteProtection].state |= SG_SELECTED;
 
 	/* Draw and process the dialog */
 	do
@@ -200,6 +206,13 @@ void DlgHardDisk_Main(void)
 	        && but != SDLGUI_ERROR && !bQuitProgram);
 
 	/* Read values from dialog: */
+	for (i = DISKDLG_PROTOFF; i <= DISKDLG_PROTAUTO; i++)
+	{
+		if (diskdlg[i].state & SG_SELECTED)
+		{
+			ConfigureParams.HardDisk.nWriteProtection = i-DISKDLG_PROTOFF;
+			break;
+		}
+	}
 	ConfigureParams.HardDisk.bBootFromHardDisk = (diskdlg[DISKDLG_BOOTHD].state & SG_SELECTED);
-	ConfigureParams.HardDisk.bDoGemdosChanges = (diskdlg[DISKDLG_GEMDOSCHANGES].state & SG_SELECTED);
 }
