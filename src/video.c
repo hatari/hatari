@@ -265,6 +265,10 @@
 /*			(fix EPSS demo by Unit 17).						*/
 /* 2010/04/12	[NP]	Improve timings when writing to $ff8205/07/09 when hscroll is used,	*/
 /*			using Video_GetMMUStartCycle (fix Pacemaker's Bump Part by Paradox).	*/
+/* 2010/05/02	[NP]	In Video_ConvertPosition, handle the case where we read the position	*/
+/*			between the last HBL and the start of the next VBL. During 64 cycles	*/
+/*			FrameCycles can be >= CYCLES_PER_FRAME (harmless fix, only useful when	*/
+/*			using --trace to get correct positions in the logs).			*/
 
 
 
@@ -610,21 +614,29 @@ static void	Video_SetSystemTimings(void)
 
 void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 {
-	*pHBL = nHBL;
-	*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL ].StartCycle;
-
-	if ( *pLineCycles < 0 )					/* reading from the previous video line */
+	if ( FrameCycles >= CYCLES_PER_FRAME )				/* rare case between end of last hbl and start of next VBL (during 64 cycles) */
 	{
-		*pHBL = nHBL-1;
-		*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle;
+		*pHBL = ( FrameCycles - CYCLES_PER_FRAME ) / nCyclesPerLine;
+		*pLineCycles = ( FrameCycles - CYCLES_PER_FRAME ) % nCyclesPerLine;
 	}
+
+	else								/* most common case */
+	{
+		*pHBL = nHBL;
+		*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL ].StartCycle;
+
+		if ( *pLineCycles < 0 )					/* reading from the previous video line */
+		{
+			*pHBL = nHBL-1;
+			*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle;
+		}
 	
-	else if ( *pLineCycles >= nCyclesPerLine )		/* reading on the next line, but HBL int was delayed */
-	{
-		*pHBL = nHBL+1;
-		*pLineCycles -= nCyclesPerLine;
+		else if ( *pLineCycles >= nCyclesPerLine )		/* reading on the next line, but HBL int was delayed */
+		{
+			*pHBL = nHBL+1;
+			*pLineCycles -= nCyclesPerLine;
+		}
 	}
-
 
 if ( *pLineCycles < 0 )
 	fprintf ( stderr , "bug nHBL=%d %d %d\n" , nHBL , *pHBL , *pLineCycles );
