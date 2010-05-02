@@ -29,7 +29,7 @@ Hatari UI is included with the Hatari sources:
 	http://hg.berlios.de/repos/hatari/file/tip/
 
 Hatari UI has been tested only on Linux (Ubuntu v7.04) and Debian
-Etch). I would assume it works also on other unix systems such as
+(Etch). I would assume it works also on other unix systems such as
 Apple OSX. It won't work on Windows as the required Windows socket
 support is missing from the Hatari emulator.
 
@@ -41,12 +41,6 @@ would need to be added both to Hatari and Hatari UI).
 
 Running
 -------
-
-Hatari UI needs a Hatari configuration file to know what are
-the current Hatari version options and their default values.
-If you have never saved the options from the internal Hatari
-UI (invoked normally by F12), do it before using this
-external Hatari UI.
 
 Being a Python program, Hatari UI doesn't need to be built.
 You can just run it from where you extracted it (or checked
