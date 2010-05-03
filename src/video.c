@@ -269,6 +269,9 @@
 /*			between the last HBL and the start of the next VBL. During 64 cycles	*/
 /*			FrameCycles can be >= CYCLES_PER_FRAME (harmless fix, only useful when	*/
 /*			using --trace to get correct positions in the logs).			*/
+/* 2010/05/04	[NP]	Improve Video_ConvertPosition, use CyclesPerVBL instead of evaluating	*/
+/*			CYCLES_PER_FRAME (whose value could have changed this the start of the	*/
+/*			VBL).									*/
 
 
 
@@ -345,6 +348,7 @@ int nScanlinesPerFrame = 313;                   /* Number of scan lines per fram
 int nCyclesPerLine = 512;                       /* Cycles per horizontal line scan */
 static int nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;			/* The first line of the ST screen that is copied to the PC screen buffer */
 static int nLastVisibleHbl = FIRST_VISIBLE_HBL_50HZ+NUM_VISIBLE_LINES;	/* The last line of the ST screen that is copied to the PC screen buffer */
+static int CyclesPerVBL = 313*512;		/* Number of cycles per VBL */
 
 static Uint8 HWScrollCount;			/* HW scroll pixel offset, STE only (0...15) */
 static int NewHWScrollCount = -1;		/* Used in STE mode when writing to the scrolling registers $ff8264/65 */
@@ -614,10 +618,11 @@ static void	Video_SetSystemTimings(void)
 
 void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 {
-	if ( FrameCycles >= CYCLES_PER_FRAME )				/* rare case between end of last hbl and start of next VBL (during 64 cycles) */
+	if ( FrameCycles >= CyclesPerVBL )				/* rare case between end of last hbl and start of next VBL (during 64 cycles) */
 	{
-		*pHBL = ( FrameCycles - CYCLES_PER_FRAME ) / nCyclesPerLine;
-		*pLineCycles = ( FrameCycles - CYCLES_PER_FRAME ) % nCyclesPerLine;
+		*pHBL = ( FrameCycles - CyclesPerVBL ) / nCyclesPerLine;
+		*pLineCycles = ( FrameCycles - CyclesPerVBL ) % nCyclesPerLine;
+	//fprintf ( stderr , "out of vbl FrameCycles %d CyclesPerVBL %d nHBL=%d %d %d\n" , FrameCycles , CyclesPerVBL, nHBL , *pHBL , *pLineCycles );
 	}
 
 	else								/* most common case */
@@ -2585,7 +2590,8 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 	}
 
 	/* TODO replace CYCLES_PER_FRAME */
-	CycInt_AddRelativeInterrupt(CYCLES_PER_FRAME - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
+	CyclesPerVBL = CYCLES_PER_FRAME;
+	CycInt_AddRelativeInterrupt(CyclesPerVBL - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 }
 
 
