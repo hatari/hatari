@@ -45,10 +45,11 @@
  **********************************/
 
 /* Current instruction */
-static char str_instr[50];
-static char str_instr2[100];
 static Uint32 cur_inst;
 static Uint32 disasm_cur_inst_len;
+static char str_instr[50];
+static char str_instr2[100];
+static char parallelmove_name[64];
 
 /* Previous instruction */
 static Uint32 prev_inst_pc = 0x10000;	/* Init to an invalid value */
@@ -66,7 +67,6 @@ void dsp56k_disasm_init(dsp_core_t *my_dsp_core)
  **********************************/
 
 static Uint32 registers_save[64];
-static Uint32 registers_changed[64];
 #if DSP_DISASM_REG_PC
 static Uint32 pc_save;
 #endif
@@ -92,95 +92,6 @@ static const char *registers_name[64]={
 	"","sr","omr","sp",
 	"ssh","ssl","la","lc"
 };
-
-void dsp56k_disasm_reg_read(void)
-{
-	memcpy(registers_save, dsp_core->registers , sizeof(registers_save));
-	memset(registers_changed, 0, sizeof(registers_changed));
-#if DSP_DISASM_REG_PC
-	pc_save = dsp_core->pc;
-#endif
-}
-
-void dsp56k_disasm_reg_compare(void)
-{
-	int i;
-	
-	for (i=0;i<64;i++) {
-		if (!registers_changed[i]) {
-			continue;
-		}
-
-		switch(i) {
-			case DSP_REG_X0:
-			case DSP_REG_X1:
-			case DSP_REG_Y0:
-			case DSP_REG_Y1:
-			case DSP_REG_A0:
-			case DSP_REG_A1:
-			case DSP_REG_B0:
-			case DSP_REG_B1:
-				fprintf(stderr," Reg: %s: 0x%06x -> 0x%06x\n", registers_name[i], registers_save[i] & BITMASK(24), dsp_core->registers[i]  & BITMASK(24));
-				break;
-			case DSP_REG_R0:
-			case DSP_REG_R1:
-			case DSP_REG_R2:
-			case DSP_REG_R3:
-			case DSP_REG_R4:
-			case DSP_REG_R5:
-			case DSP_REG_R6:
-			case DSP_REG_R7:
-			case DSP_REG_M0:
-			case DSP_REG_M1:
-			case DSP_REG_M2:
-			case DSP_REG_M3:
-			case DSP_REG_M4:
-			case DSP_REG_M5:
-			case DSP_REG_M6:
-			case DSP_REG_M7:
-			case DSP_REG_N0:
-			case DSP_REG_N1:
-			case DSP_REG_N2:
-			case DSP_REG_N3:
-			case DSP_REG_N4:
-			case DSP_REG_N5:
-			case DSP_REG_N6:
-			case DSP_REG_N7:
-			case DSP_REG_SR:
-			case DSP_REG_LA:
-			case DSP_REG_LC:
-				fprintf(stderr," Reg: %s: 0x%04x -> 0x%04x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
-				break;
-			case DSP_REG_A2:
-			case DSP_REG_B2:
-			case DSP_REG_OMR:
-			case DSP_REG_SP:
-			case DSP_REG_SSH:
-			case DSP_REG_SSL:
-				fprintf(stderr," Reg: %s: 0x%02x -> 0x%02x\n", registers_name[i], registers_save[i] & BITMASK(8), dsp_core->registers[i]  & BITMASK(8));
-				break;
-			case DSP_REG_A:
-			case DSP_REG_B:
-				{
-					fprintf(stderr," Reg: %s: 0x%02x:%06x:%06x -> 0x%02x:%06x:%06x\n",
-						registers_name[i],
-						registers_save[DSP_REG_A2+(i & 1)] & BITMASK(8),
-						registers_save[DSP_REG_A1+(i & 1)] & BITMASK(24),
-						registers_save[DSP_REG_A0+(i & 1)] & BITMASK(24),
-						dsp_core->registers[DSP_REG_A2+(i & 1)]  & BITMASK(8),
-						dsp_core->registers[DSP_REG_A1+(i & 1)]  & BITMASK(24),
-						dsp_core->registers[DSP_REG_A0+(i & 1)]  & BITMASK(24)
-					);
-				}
-				break;
-		}
-	}
-#if DSP_DISASM_REG_PC
-	if (pc_save != dsp_core->pc) {
-		fprintf(stderr," Reg: pc: 0x%04x -> 0x%04x\n", pc_save, dsp_core->pc);
-	}
-#endif
-}
 
 /**********************************
  *	Opcode disassembler
@@ -490,17 +401,6 @@ static const char *registers_lmove[8]={
 	"ba"
 };
 
-static int disasm_registers_lmove[8][2]={
-	{DSP_REG_A1,DSP_REG_A0},	/* A10 */
-	{DSP_REG_B1,DSP_REG_B0},	/* B10 */
-	{DSP_REG_X1,DSP_REG_X0},	/* X */
-	{DSP_REG_Y1,DSP_REG_Y0},	/* Y */
-	{DSP_REG_A,DSP_REG_A},		/* A */
-	{DSP_REG_B,DSP_REG_B},		/* B */
-	{DSP_REG_A,DSP_REG_B},		/* AB */
-	{DSP_REG_B,DSP_REG_A}		/* BA */
-};
-
 static const char *ea_names[9]={
 	"(r%d)-n%d",	/* 000xxx */
 	"(r%d)+n%d",	/* 001xxx */
@@ -533,7 +433,94 @@ static const char *cc_name[16]={
 	"le"
 };
 
-static char parallelmove_name[64];
+void dsp56k_disasm_reg_save(void)
+{
+	memcpy(registers_save, dsp_core->registers , sizeof(registers_save));
+#if DSP_DISASM_REG_PC
+	pc_save = dsp_core->pc;
+#endif
+}
+
+void dsp56k_disasm_reg_compare(void)
+{
+	int i;
+	
+	for (i=0; i<64; i++) {
+		if (registers_save[i] == dsp_core->registers[i]) {
+			continue;
+		}
+
+		switch(i) {
+			case DSP_REG_X0:
+			case DSP_REG_X1:
+			case DSP_REG_Y0:
+			case DSP_REG_Y1:
+			case DSP_REG_A0:
+			case DSP_REG_A1:
+			case DSP_REG_B0:
+			case DSP_REG_B1:
+				fprintf(stderr,"\tReg: %s  0x%06x -> 0x%06x\n", registers_name[i], registers_save[i] & BITMASK(24), dsp_core->registers[i]  & BITMASK(24));
+				break;
+			case DSP_REG_R0:
+			case DSP_REG_R1:
+			case DSP_REG_R2:
+			case DSP_REG_R3:
+			case DSP_REG_R4:
+			case DSP_REG_R5:
+			case DSP_REG_R6:
+			case DSP_REG_R7:
+			case DSP_REG_M0:
+			case DSP_REG_M1:
+			case DSP_REG_M2:
+			case DSP_REG_M3:
+			case DSP_REG_M4:
+			case DSP_REG_M5:
+			case DSP_REG_M6:
+			case DSP_REG_M7:
+			case DSP_REG_N0:
+			case DSP_REG_N1:
+			case DSP_REG_N2:
+			case DSP_REG_N3:
+			case DSP_REG_N4:
+			case DSP_REG_N5:
+			case DSP_REG_N6:
+			case DSP_REG_N7:
+			case DSP_REG_SR:
+			case DSP_REG_LA:
+			case DSP_REG_LC:
+				fprintf(stderr,"\tReg: %s  0x%04x -> 0x%04x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
+				break;
+			case DSP_REG_A2:
+			case DSP_REG_B2:
+			case DSP_REG_OMR:
+			case DSP_REG_SP:
+			case DSP_REG_SSH:
+			case DSP_REG_SSL:
+				fprintf(stderr,"\tReg: %s  0x%02x -> 0x%02x\n", registers_name[i], registers_save[i] & BITMASK(8), dsp_core->registers[i]  & BITMASK(8));
+				break;
+			case DSP_REG_A:
+			case DSP_REG_B:
+				{
+					fprintf(stderr,"\tReg: %s  0x%02x:%06x:%06x -> 0x%02x:%06x:%06x\n",
+						registers_name[i],
+						registers_save[DSP_REG_A2+(i & 1)] & BITMASK(8),
+						registers_save[DSP_REG_A1+(i & 1)] & BITMASK(24),
+						registers_save[DSP_REG_A0+(i & 1)] & BITMASK(24),
+						dsp_core->registers[DSP_REG_A2+(i & 1)]  & BITMASK(8),
+						dsp_core->registers[DSP_REG_A1+(i & 1)]  & BITMASK(24),
+						dsp_core->registers[DSP_REG_A0+(i & 1)]  & BITMASK(24)
+					);
+				}
+				break;
+		}
+	}
+
+#if DSP_DISASM_REG_PC
+	if (pc_save != dsp_core->pc) {
+		fprintf(stderr,"\tReg: pc  0x%04x -> 0x%04x\n", pc_save, dsp_core->pc);
+	}
+#endif
+}
 
 Uint16 dsp56k_disasm(void)
 {
@@ -589,11 +576,6 @@ static void dsp_pm_class2(void) {
 	opcodes_alu[value]();
 } 
 
-void dsp56k_disasm_force_reg_changed(int num_dsp_reg)
-{
-	registers_changed[num_dsp_reg]=1;
-}
-
 static Uint32 read_memory(Uint32 currPc)
 {
 	Uint32 value;
@@ -631,12 +613,10 @@ static int dsp_calc_ea(Uint32 ea_mode, char *dest)
 		case 0:
 			/* (Rx)-Nx */
 			sprintf(dest, ea_names[value], numreg, numreg);
-			registers_changed[DSP_REG_R0+numreg]=1;
 			break;
 		case 1:
 			/* (Rx)+Nx */
 			sprintf(dest, ea_names[value], numreg, numreg);
-			registers_changed[DSP_REG_R0+numreg]=1;
 			break;
 		case 5:
 			/* (Rx+Nx) */
@@ -645,12 +625,10 @@ static int dsp_calc_ea(Uint32 ea_mode, char *dest)
 		case 2:
 			/* (Rx)- */
 			sprintf(dest, ea_names[value], numreg);
-			registers_changed[DSP_REG_R0+numreg]=1;
 			break;
 		case 3:
 			/* (Rx)+ */
 			sprintf(dest, ea_names[value], numreg);
-			registers_changed[DSP_REG_R0+numreg]=1;
 			break;
 		case 4:
 			/* (Rx) */
@@ -659,7 +637,6 @@ static int dsp_calc_ea(Uint32 ea_mode, char *dest)
 		case 7:
 			/* -(Rx) */
 			sprintf(dest, ea_names[value], numreg);
-			registers_changed[DSP_REG_R0+numreg]=1;
 			break;
 		case 6:
 			disasm_cur_inst_len++;
@@ -718,37 +695,24 @@ static void opcode8h_0(void)
 
 static void dsp_undefined(void)
 {
-	sprintf(str_instr," 0x%06x unknown instruction", cur_inst);
+	sprintf(str_instr,"0x%06x unknown instruction", cur_inst);
 }
 
 static void dsp_andi(void)
 {
-	const char *regname;
-
 	switch(cur_inst & BITMASK(2)) {
 		case 0:
-			regname="mr";
-			registers_changed[DSP_REG_SR]=1;
+			sprintf(str_instr, "andi #0x%02x,mr", (cur_inst>>8) & BITMASK(8));
 			break;
 		case 1:
-			regname="ccr";
-			registers_changed[DSP_REG_SR]=1;
+			sprintf(str_instr, "andi #0x%02x,ccr", (cur_inst>>8) & BITMASK(8));
 			break;
 		case 2:
-			regname="omr";
-			registers_changed[DSP_REG_OMR]=1;
+			sprintf(str_instr, "andi #0x%02x,omr", (cur_inst>>8) & BITMASK(8));
 			break;
 		default:
-			regname="";
 			break;
 	}
-
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," andi #0x%02x,%s",
-		(cur_inst>>8) & BITMASK(8),
-		regname
-	);
 }
 
 static void dsp_bchg_aa(void)
@@ -767,9 +731,8 @@ static void dsp_bchg_aa(void)
 	} else {
 		sprintf(name,"x:0x%04x",value);
 	}
-	registers_changed[DSP_REG_SR]=1;
 
-	sprintf(str_instr," bchg #%d,%s", numbit, name);
+	sprintf(str_instr,"bchg #%d,%s", numbit, name);
 }
 
 static void dsp_bchg_ea(void)
@@ -789,9 +752,8 @@ static void dsp_bchg_ea(void)
 	} else {
 		sprintf(name,"x:%s",addr_name);
 	}
-	registers_changed[DSP_REG_SR]=1;
 
-	sprintf(str_instr," bchg #%d,%s", numbit, name);
+	sprintf(str_instr,"bchg #%d,%s", numbit, name);
 }
 
 static void dsp_bchg_pp(void)
@@ -810,26 +772,19 @@ static void dsp_bchg_pp(void)
 	} else {
 		sprintf(name,"x:0x%04x",value+0xffc0);
 	}
-	registers_changed[DSP_REG_SR]=1;
 
-	sprintf(str_instr," bchg #%d,%s", numbit, name);
+	sprintf(str_instr,"bchg #%d,%s", numbit, name);
 }
 
 static void dsp_bchg_reg(void)
 {
 	/* bchg #n,R */
-	char name[16];
-	Uint32 memspace, value, numbit;
+	Uint32 value, numbit;
 	
-	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	sprintf(name,"%s",registers_name[value]);
-	registers_changed[value]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bchg #%d,%s", numbit, name);
+	sprintf(str_instr,"bchg #%d,%s", numbit, registers_name[value]);
 }
 
 static void dsp_bclr_aa(void)
@@ -849,9 +804,7 @@ static void dsp_bclr_aa(void)
 		sprintf(name,"x:0x%04x",value);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bclr #%d,%s", numbit, name);
+	sprintf(str_instr,"bclr #%d,%s", numbit, name);
 }
 
 static void dsp_bclr_ea(void)
@@ -872,9 +825,7 @@ static void dsp_bclr_ea(void)
 		sprintf(name,"x:%s",addr_name);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bclr #%d,%s", numbit, name);
+	sprintf(str_instr,"bclr #%d,%s", numbit, name);
 }
 
 static void dsp_bclr_pp(void)
@@ -894,27 +845,18 @@ static void dsp_bclr_pp(void)
 		sprintf(name,"x:0x%04x",value+0xffc0);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bclr #%d,%s", numbit, name);
+	sprintf(str_instr,"bclr #%d,%s", numbit, name);
 }
 
 static void dsp_bclr_reg(void)
 {
 	/* bclr #n,R */
-	char name[16];
-	Uint32 memspace, value, numbit;
+	Uint32 value, numbit;
 	
-	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	sprintf(name,"%s",registers_name[value]);
-	registers_changed[value]=1;
-
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bclr #%d,%s", numbit, name);
+	sprintf(str_instr,"bclr #%d,%s", numbit, registers_name[value]);
 }
 
 static void dsp_bset_aa(void)
@@ -934,9 +876,7 @@ static void dsp_bset_aa(void)
 		sprintf(name,"x:0x%04x",value);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bset #%d,%s", numbit, name);
+	sprintf(str_instr,"bset #%d,%s", numbit, name);
 }
 
 static void dsp_bset_ea(void)
@@ -957,9 +897,7 @@ static void dsp_bset_ea(void)
 		sprintf(name,"x:%s",addr_name);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bset #%d,%s", numbit, name);
+	sprintf(str_instr,"bset #%d,%s", numbit, name);
 }
 
 static void dsp_bset_pp(void)
@@ -979,27 +917,18 @@ static void dsp_bset_pp(void)
 		sprintf(name,"x:0x%04x",value+0xffc0);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bset #%d,%s", numbit, name);
+	sprintf(str_instr,"bset #%d,%s", numbit, name);
 }
 
 static void dsp_bset_reg(void)
 {
 	/* bset #n,R */
-	char name[16];
-	Uint32 memspace, value, numbit;
+	Uint32 value, numbit;
 	
-	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	sprintf(name,"%s",registers_name[value]);
-	registers_changed[value]=1;
-
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," bset #%d,%s", numbit, name);
+	sprintf(str_instr,"bset #%d,%s", numbit, registers_name[value]);
 }
 
 static void dsp_btst_aa(void)
@@ -1019,9 +948,7 @@ static void dsp_btst_aa(void)
 		sprintf(name,"x:0x%04x",value);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," btst #%d,%s", numbit, name);
+	sprintf(str_instr,"btst #%d,%s", numbit, name);
 }
 
 static void dsp_btst_ea(void)
@@ -1042,9 +969,7 @@ static void dsp_btst_ea(void)
 		sprintf(name,"x:%s",addr_name);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," btst #%d,%s", numbit, name);
+	sprintf(str_instr,"btst #%d,%s", numbit, name);
 }
 
 static void dsp_btst_pp(void)
@@ -1064,27 +989,18 @@ static void dsp_btst_pp(void)
 		sprintf(name,"x:0x%04x",value+0xffc0);
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," btst #%d,%s", numbit, name);
+	sprintf(str_instr,"btst #%d,%s", numbit, name);
 }
 
 static void dsp_btst_reg(void)
 {
 	/* btst #n,R */
-	char name[16];
-	Uint32 memspace, value, numbit;
+	Uint32 value, numbit;
 	
-	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	sprintf(name,"%s",registers_name[value]);
-	registers_changed[value]=1;
-
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," btst #%d,%s", numbit, name);
+	sprintf(str_instr,"btst #%d,%s", numbit, registers_name[value]);
 }
 
 static void dsp_div(void)
@@ -1106,10 +1022,8 @@ static void dsp_div(void)
 				break;
 	}
 	destreg = DSP_REG_A+((cur_inst>>3) & 1);
-	registers_changed[destreg]=1;
-	registers_changed[DSP_REG_SR]=1;
 
-	sprintf(str_instr," div %s,%s", registers_name[srcreg],registers_name[destreg]);
+	sprintf(str_instr,"div %s,%s", registers_name[srcreg],registers_name[destreg]);
 }
 
 static void dsp_do_aa(void)
@@ -1124,25 +1038,21 @@ static void dsp_do_aa(void)
 		sprintf(name, "x:0x%04x", (cur_inst>>8) & BITMASK(6));
 	}
 
-	sprintf(str_instr," do %s,p:0x%04x",
+	sprintf(str_instr,"do %s,p:0x%04x",
 		name,
 		read_memory(dsp_core->pc+1)
 	);
-	registers_changed[DSP_REG_LA]=1;
-	registers_changed[DSP_REG_LC]=1;
-	registers_changed[DSP_REG_SR]=1;}
+}
 
 static void dsp_do_imm(void)
 {
 	disasm_cur_inst_len++;
 
-	sprintf(str_instr," do #0x%04x,p:0x%04x",
+	sprintf(str_instr,"do #0x%04x,p:0x%04x",
 		((cur_inst>>8) & BITMASK(8))|((cur_inst & BITMASK(4))<<8),
 		read_memory(dsp_core->pc+1)
 	);
-	registers_changed[DSP_REG_LA]=1;
-	registers_changed[DSP_REG_LC]=1;
-	registers_changed[DSP_REG_SR]=1;}
+}
 
 static void dsp_do_ea(void)
 {
@@ -1160,34 +1070,30 @@ static void dsp_do_ea(void)
 		sprintf(name, "x:%s", addr_name);
 	}
 
-	sprintf(str_instr," do %s,p:0x%04x", 
+	sprintf(str_instr,"do %s,p:0x%04x", 
 		name,
 		read_memory(dsp_core->pc+1)
 	);
-	registers_changed[DSP_REG_LA]=1;
-	registers_changed[DSP_REG_LC]=1;
-	registers_changed[DSP_REG_SR]=1;}
+}
 
 static void dsp_do_reg(void)
 {
 	disasm_cur_inst_len++;
 
-	sprintf(str_instr," do %s,p:0x%04x",
+	sprintf(str_instr,"do %s,p:0x%04x",
 		registers_name[(cur_inst>>8) & BITMASK(6)],
 		read_memory(dsp_core->pc+1)
 	);
-	registers_changed[DSP_REG_LA]=1;
-	registers_changed[DSP_REG_LC]=1;
-	registers_changed[DSP_REG_SR]=1;}
+}
 
 static void dsp_enddo(void)
 {
-	sprintf(str_instr," enddo");
+	sprintf(str_instr,"enddo");
 }
 
 static void dsp_illegal(void)
 {
-	sprintf(str_instr," illegal");
+	sprintf(str_instr,"illegal");
 }
 
 static void dsp_jcc_ea(void)
@@ -1199,7 +1105,7 @@ static void dsp_jcc_ea(void)
 	cc_code=cur_inst & BITMASK(4);
 	dsp_calc_cc(cc_code, cond_name);	
 
-	sprintf(str_instr," j%s p:%s", cond_name, addr_name);
+	sprintf(str_instr,"j%s p:%s", cond_name, addr_name);
 }
 
 static void dsp_jcc_imm(void)
@@ -1211,7 +1117,7 @@ static void dsp_jcc_imm(void)
 	cc_code=(cur_inst>>12) & BITMASK(4);
 	dsp_calc_cc(cc_code, cond_name);	
 
-	sprintf(str_instr," j%s p:%s", cond_name, addr_name);
+	sprintf(str_instr,"j%s p:%s", cond_name, addr_name);
 }
 
 static void dsp_jclr_aa(void)
@@ -1233,7 +1139,7 @@ static void dsp_jclr_aa(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	sprintf(str_instr," jclr #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1260,7 +1166,7 @@ static void dsp_jclr_ea(void)
 		sprintf(srcname, "x:%s", addr_name);
 	}
 
-	sprintf(str_instr," jclr #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1287,7 +1193,7 @@ static void dsp_jclr_pp(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	sprintf(str_instr," jclr #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1297,31 +1203,23 @@ static void dsp_jclr_pp(void)
 static void dsp_jclr_reg(void)
 {
 	/* jclr #n,R,p:xx */
-	char srcname[16];
-	Uint32 memspace, value, numbit;
+	Uint32 value, numbit;
 	
 	disasm_cur_inst_len++;
 
-	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	strcpy(srcname, registers_name[value]);
-
-	sprintf(str_instr," jclr #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jclr #%d,%s,p:0x%04x",
 		numbit,
-		srcname,
+		registers_name[value],
 		read_memory(dsp_core->pc+1)
 	);
 }
 
 static void dsp_jmp_imm(void)
 {
-	char dstname[16];
-
-	sprintf(dstname, "0x%04x", cur_inst & BITMASK(12));
-
-	sprintf(str_instr," jmp p:%s", dstname);
+	sprintf(str_instr,"jmp p:0x%04x", cur_inst & BITMASK(12));
 }
 
 static void dsp_jmp_ea(void)
@@ -1330,7 +1228,7 @@ static void dsp_jmp_ea(void)
 
 	dsp_calc_ea((cur_inst >>8) & BITMASK(6), dstname);
 
-	sprintf(str_instr," jmp p:%s", dstname);
+	sprintf(str_instr,"jmp p:%s", dstname);
 }
 
 static void dsp_jscc_ea(void)
@@ -1342,7 +1240,7 @@ static void dsp_jscc_ea(void)
 	cc_code=cur_inst & BITMASK(4);
 	dsp_calc_cc(cc_code, cond_name);	
 
-	sprintf(str_instr," js%s p:%s", cond_name, addr_name);
+	sprintf(str_instr,"js%s p:%s", cond_name, addr_name);
 }
 	
 static void dsp_jscc_imm(void)
@@ -1354,7 +1252,7 @@ static void dsp_jscc_imm(void)
 	cc_code=(cur_inst>>12) & BITMASK(4);
 	dsp_calc_cc(cc_code, cond_name);	
 
-	sprintf(str_instr," js%s p:%s", cond_name, addr_name);
+	sprintf(str_instr,"js%s p:%s", cond_name, addr_name);
 }
 
 static void dsp_jsclr_aa(void)
@@ -1376,7 +1274,7 @@ static void dsp_jsclr_aa(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	sprintf(str_instr," jsclr #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jsclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1403,7 +1301,7 @@ static void dsp_jsclr_ea(void)
 		sprintf(srcname, "x:%s", addr_name);
 	}
 
-	sprintf(str_instr," jsclr #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jsclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1430,7 +1328,7 @@ static void dsp_jsclr_pp(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	sprintf(str_instr," jsclr #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jsclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1440,20 +1338,16 @@ static void dsp_jsclr_pp(void)
 static void dsp_jsclr_reg(void)
 {
 	/* jsclr #n,R,p:xx */
-	char srcname[16];
-	Uint32 memspace, value, numbit;
+	Uint32 value, numbit;
 	
 	disasm_cur_inst_len++;
 
-	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	strcpy(srcname, registers_name[value]);
-
-	sprintf(str_instr," jsclr #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jsclr #%d,%s,p:0x%04x",
 		numbit,
-		srcname,
+		registers_name[value],
 		read_memory(dsp_core->pc+1)
 	);
 }
@@ -1477,7 +1371,7 @@ static void dsp_jset_aa(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	sprintf(str_instr," jset #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1504,7 +1398,7 @@ static void dsp_jset_ea(void)
 		sprintf(srcname, "x:%s", addr_name);
 	}
 
-	sprintf(str_instr," jset #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1531,7 +1425,7 @@ static void dsp_jset_pp(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	sprintf(str_instr," jset #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1541,31 +1435,23 @@ static void dsp_jset_pp(void)
 static void dsp_jset_reg(void)
 {
 	/* jset #n,R,p:xx */
-	char srcname[16];
-	Uint32 memspace, value, numbit;
+	Uint32 value, numbit;
 	
 	disasm_cur_inst_len++;
 
-	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	strcpy(srcname, registers_name[value]);
-
-	sprintf(str_instr," jset #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jset #%d,%s,p:0x%04x",
 		numbit,
-		srcname,
+		registers_name[value],
 		read_memory(dsp_core->pc+1)
 	);
 }
 
 static void dsp_jsr_imm(void)
 {
-	char dstname[16];
-
-	sprintf(dstname, "0x%04x", cur_inst & BITMASK(12));
-
-	sprintf(str_instr," jsr p:%s", dstname);
+	sprintf(str_instr,"jsr p:0x%04x", cur_inst & BITMASK(12));
 }
 
 static void dsp_jsr_ea(void)
@@ -1574,7 +1460,7 @@ static void dsp_jsr_ea(void)
 
 	dsp_calc_ea((cur_inst>>8) & BITMASK(6),dstname);
 
-	sprintf(str_instr," jsr p:%s", dstname);
+	sprintf(str_instr,"jsr p:%s", dstname);
 }
 
 static void dsp_jsset_aa(void)
@@ -1596,7 +1482,7 @@ static void dsp_jsset_aa(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	sprintf(str_instr," jsset #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jsset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1623,7 +1509,7 @@ static void dsp_jsset_ea(void)
 		sprintf(srcname, "x:%s", addr_name);
 	}
 
-	sprintf(str_instr," jsset #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jsset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1650,7 +1536,7 @@ static void dsp_jsset_pp(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	sprintf(str_instr," jsset #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jsset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
 		read_memory(dsp_core->pc+1)
@@ -1660,20 +1546,16 @@ static void dsp_jsset_pp(void)
 static void dsp_jsset_reg(void)
 {
 	/* jsset #n,r,p:xx */
-	char srcname[16];
-	Uint32 memspace, value, numbit;
+	Uint32 value, numbit;
 	
 	disasm_cur_inst_len++;
 
-	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	strcpy(srcname, registers_name[value]);
-
-	sprintf(str_instr," jsset #%d,%s,p:0x%04x",
+	sprintf(str_instr,"jsset #%d,%s,p:0x%04x",
 		numbit,
-		srcname,
+		registers_name[value],
 		read_memory(dsp_core->pc+1)
 	);
 }
@@ -1684,9 +1566,8 @@ static void dsp_lua(void)
 
 	dsp_calc_ea((cur_inst>>8) & BITMASK(5), addr_name);
 	numreg = cur_inst & BITMASK(3);
-	registers_changed[DSP_REG_R0+numreg]=1;
 	
-	sprintf(str_instr," lua %s,r%d", addr_name, numreg);
+	sprintf(str_instr,"lua %s,r%d", addr_name, numreg);
 }
 
 static void dsp_movec_reg(void)
@@ -1701,14 +1582,11 @@ static void dsp_movec_reg(void)
 
 	if (cur_inst & (1<<15)) {
 		/* Write D1 */
-		sprintf(str_instr," movec %s,%s", registers_name[numreg2], registers_name[numreg1]);
-		registers_changed[numreg1]=1;
+		sprintf(str_instr,"movec %s,%s", registers_name[numreg2], registers_name[numreg1]);
 	} else {
 		/* Read S1 */
-		sprintf(str_instr," movec %s,%s", registers_name[numreg1], registers_name[numreg2]);
-		registers_changed[numreg2]=1;
+		sprintf(str_instr,"movec %s,%s", registers_name[numreg1], registers_name[numreg2]);
 	}
-	registers_changed[DSP_REG_SR]=1;
 }
 
 static void dsp_movec_aa(void)
@@ -1741,8 +1619,7 @@ static void dsp_movec_aa(void)
 		sprintf(dstname, "%s:0x%04x", spacename, addr);
 	}
 
-	sprintf(str_instr," movec %s,%s", srcname, dstname);
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"movec %s,%s", srcname, dstname);
 }
 
 static void dsp_movec_imm(void)
@@ -1753,9 +1630,7 @@ static void dsp_movec_imm(void)
 
 	numreg = cur_inst & BITMASK(6);
 
-	registers_changed[numreg]=1;
-	sprintf(str_instr," movec #0x%02x,%s", (cur_inst>>8) & BITMASK(8), registers_name[numreg]);
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"movec #0x%02x,%s", (cur_inst>>8) & BITMASK(8), registers_name[numreg]);
 }
 
 static void dsp_movec_ea(void)
@@ -1788,7 +1663,6 @@ static void dsp_movec_ea(void)
 		} else {
 			sprintf(srcname, "%s:%s", spacename, addr_name);
 		}
-		registers_changed[numreg]=1;
 		strcpy(dstname, registers_name[numreg]);
 	} else {
 		/* Read S1 */
@@ -1796,8 +1670,7 @@ static void dsp_movec_ea(void)
 		sprintf(dstname, "%s:%s", spacename, addr_name);
 	}
 
-	sprintf(str_instr," movec %s,%s", srcname, dstname);
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"movec %s,%s", srcname, dstname);
 }
 
 static void dsp_movem_aa(void)
@@ -1811,7 +1684,6 @@ static void dsp_movem_aa(void)
 	numreg = cur_inst & BITMASK(6);
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
-		registers_changed[numreg]=1;
 		sprintf(srcname, "p:%s", addr_name);
 		strcpy(dstname, registers_name[numreg]);
 	} else {
@@ -1819,9 +1691,8 @@ static void dsp_movem_aa(void)
 		strcpy(srcname, registers_name[numreg]);
 		sprintf(dstname, "p:%s", addr_name);
 	}
-	registers_changed[DSP_REG_SR]=1;
 
-	sprintf(str_instr," movem %s,%s", srcname, dstname);
+	sprintf(str_instr,"movem %s,%s", srcname, dstname);
 }
 
 static void dsp_movem_ea(void)
@@ -1836,7 +1707,6 @@ static void dsp_movem_ea(void)
 	numreg = cur_inst & BITMASK(6);
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
-		registers_changed[numreg]=1;
 		sprintf(srcname, "p:%s", addr_name);
 		strcpy(dstname, registers_name[numreg]);
 	} else {
@@ -1844,9 +1714,8 @@ static void dsp_movem_ea(void)
 		strcpy(srcname, registers_name[numreg]);
 		sprintf(dstname, "p:%s", addr_name);
 	}
-	registers_changed[DSP_REG_SR]=1;
 
-	sprintf(str_instr," movem %s,%s", srcname, dstname);
+	sprintf(str_instr,"movem %s,%s", srcname, dstname);
 }
 
 static void dsp_movep_0(void)
@@ -1882,12 +1751,10 @@ static void dsp_movep_0(void)
 			sprintf(srcname, "x:0x%04x", addr);
 		}
 
-		registers_changed[numreg]=1;
 		strcpy(dstname, registers_name[numreg]);
 	}
 
-	sprintf(str_instr," movep %s,%s", srcname, dstname);
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"movep %s,%s", srcname, dstname);
 }
 
 static void dsp_movep_1(void)
@@ -1926,8 +1793,7 @@ static void dsp_movep_1(void)
 		sprintf(dstname, "p:%s", name);
 	}
 
-	sprintf(str_instr," movep %s,%s", srcname, dstname);
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"movep %s,%s", srcname, dstname);
 }
 
 static void dsp_movep_23(void)
@@ -1986,13 +1852,12 @@ static void dsp_movep_23(void)
 		}
 	}
 
-	sprintf(str_instr," movep %s,%s", srcname, dstname);
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"movep %s,%s", srcname, dstname);
 }
 
 static void dsp_nop(void)
 {
-	sprintf(str_instr," nop");
+	sprintf(str_instr,"nop");
 }
 
 static void dsp_norm(void)
@@ -2002,38 +1867,25 @@ static void dsp_norm(void)
 	srcreg = DSP_REG_R0+((cur_inst>>8) & BITMASK(3));
 	destreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[srcreg]=1;
-	registers_changed[destreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," norm %s,%s", registers_name[srcreg], registers_name[destreg]);
+	sprintf(str_instr,"norm %s,%s", registers_name[srcreg], registers_name[destreg]);
 }
 
 static void dsp_ori(void)
 {
-	const char *regname;
-
 	switch(cur_inst & BITMASK(2)) {
 		case 0:
-			regname="mr";
-			registers_changed[DSP_REG_SR]=1;
+			sprintf(str_instr,"ori #0x%02x,mr", (cur_inst>>8) & BITMASK(8));
 			break;
 		case 1:
-			regname="ccr";
-			registers_changed[DSP_REG_SR]=1;
+			sprintf(str_instr,"ori #0x%02x,ccr", (cur_inst>>8) & BITMASK(8));
 			break;
 		case 2:
-			regname="omr";
-			registers_changed[DSP_REG_OMR]=1;
+			sprintf(str_instr,"ori #0x%02x,omr", (cur_inst>>8) & BITMASK(8));
 			break;
 		default:
-			regname="";
 			break;
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," ori #0x%02x,%s", (cur_inst>>8) & BITMASK(8), regname);
 }
 
 static void dsp_rep_aa(void)
@@ -2049,18 +1901,14 @@ static void dsp_rep_aa(void)
 		sprintf(name, "x:0x%04x",(cur_inst>>8) & BITMASK(6));
 	}
 
-	sprintf(str_instr," rep %s", name);
-	registers_changed[DSP_REG_LC]=1;
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"rep %s", name);
 }
 
 static void dsp_rep_imm(void)
 {
 	/* #xxx */
-	sprintf(str_instr," rep #0x%02x", ((cur_inst>>8) & BITMASK(8))
+	sprintf(str_instr,"rep #0x%02x", ((cur_inst>>8) & BITMASK(8))
 		+ ((cur_inst & BITMASK(4))<<8));
-	registers_changed[DSP_REG_LC]=1;
-	registers_changed[DSP_REG_SR]=1;
 }
 
 static void dsp_rep_ea(void)
@@ -2077,45 +1925,39 @@ static void dsp_rep_ea(void)
 		sprintf(name, "x:%s",addr_name);
 	}
 
-	sprintf(str_instr," rep %s", name);
-	registers_changed[DSP_REG_LC]=1;
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"rep %s", name);
 }
 
 static void dsp_rep_reg(void)
 {
 	/* R */
 
-	sprintf(str_instr," rep %s", registers_name[(cur_inst>>8) & BITMASK(6)]);
-	registers_changed[DSP_REG_LC]=1;
-	registers_changed[DSP_REG_SR]=1;
+	sprintf(str_instr,"rep %s", registers_name[(cur_inst>>8) & BITMASK(6)]);
 }
 
 static void dsp_reset(void)
 {
-	sprintf(str_instr," reset");
+	sprintf(str_instr,"reset");
 }
 
 static void dsp_rti(void)
 {
-	registers_changed[DSP_REG_SR]=1;
-	sprintf(str_instr," rti");
+	sprintf(str_instr,"rti");
 }
 
 static void dsp_rts(void)
 {
-	registers_changed[DSP_REG_SR]=1;
-	sprintf(str_instr," rts");
+	sprintf(str_instr,"rts");
 }
 
 static void dsp_stop(void)
 {
-	sprintf(str_instr," stop");
+	sprintf(str_instr,"stop");
 }
 	
 static void dsp_swi(void)
 {
-	sprintf(str_instr," swi");
+	sprintf(str_instr,"swi");
 }
 
 static void dsp_tcc(void)
@@ -2127,13 +1969,11 @@ static void dsp_tcc(void)
 	src1reg = registers_tcc[(cur_inst>>3) & BITMASK(4)][0];
 	dst1reg = registers_tcc[(cur_inst>>3) & BITMASK(4)][1];
 
-	registers_changed[dst1reg]=1;
 	if (cur_inst & (1<<16)) {
 		src2reg = DSP_REG_R0+(cur_inst & BITMASK(3));
 		dst2reg = DSP_REG_R0+((cur_inst>>8) & BITMASK(3));
 
-		registers_changed[dst2reg]=1;
-		sprintf(str_instr," t%s %s,%s %s,%s",
+		sprintf(str_instr,"t%s %s,%s %s,%s",
 			ccname,
 			registers_name[src1reg],
 			registers_name[dst1reg],
@@ -2141,7 +1981,7 @@ static void dsp_tcc(void)
 			registers_name[dst2reg]
 		);
 	} else {
-		sprintf(str_instr," t%s %s,%s",
+		sprintf(str_instr,"t%s %s,%s",
 			ccname,
 			registers_name[src1reg],
 			registers_name[dst1reg]
@@ -2151,7 +1991,7 @@ static void dsp_tcc(void)
 
 static void dsp_wait(void)
 {
-	sprintf(str_instr," wait");
+	sprintf(str_instr,"wait");
 }
 
 /**********************************
@@ -2163,7 +2003,6 @@ static void dsp_pm(void)
 	Uint32 value;
 
 	value = (cur_inst >> 20) & BITMASK(4);
-
 	opcodes_parmove[value]();
 }
 
@@ -2186,8 +2025,6 @@ static void dsp_pm_0(void)
 		strcpy(space_name,"x");
 		numreg2 = DSP_REG_X0;
 	}
-
-	registers_changed[numreg1]=1;
 
 	sprintf(parallelmove_name,
 		"%s,%s:%s %s,%s",
@@ -2229,12 +2066,8 @@ static void dsp_pm_1(void)
 		s1reg = DSP_REG_A+((cur_inst>>19) & 1);
 		d1reg = DSP_REG_X0+((cur_inst>>18) & 1);
 
-		registers_changed[d1reg]=1;
-
 		if (write_flag) {
 			/* Write D2 */
-
-			registers_changed[d2reg]=1;
 
 			if (retour) {
 				sprintf(parallelmove_name,"%s,%s #%s,%s",
@@ -2273,12 +2106,8 @@ static void dsp_pm_1(void)
 		s2reg = DSP_REG_A+((cur_inst>>17) & 1);
 		d2reg = DSP_REG_Y0+((cur_inst>>16) & 1);
 
-		registers_changed[d2reg]=1;
-
 		if (write_flag) {
 			/* Write D1 */
-
-			registers_changed[d1reg]=1;
 
 			if (retour) {
 				sprintf(parallelmove_name,"#%s,%s %s,%s",
@@ -2324,7 +2153,6 @@ static void dsp_pm_2(void)
 
 	if (((cur_inst >> 8) & 0xffe0) == 0x2040) {
 		dsp_calc_ea((cur_inst>>8) & BITMASK(5), addr_name);
-		registers_changed[DSP_REG_R0+((cur_inst>>8) & BITMASK(3))]=1;
 		sprintf(parallelmove_name, "%s,r%d",addr_name, (cur_inst>>8) & BITMASK(3));
 		return;
 	}
@@ -2332,13 +2160,11 @@ static void dsp_pm_2(void)
 	if (((cur_inst >> 8) & 0xfc00) == 0x2000) {
 		numreg1 = (cur_inst>>13) & BITMASK(5);
 		numreg2 = (cur_inst>>8) & BITMASK(5);
-		registers_changed[numreg2]=1;
 		sprintf(parallelmove_name, "%s,%s", registers_name[numreg1], registers_name[numreg2]); 
 		return;
 	}
 
 	numreg1 = (cur_inst>>16) & BITMASK(5);
-	registers_changed[numreg1]=1;
 	sprintf(parallelmove_name, "#0x%02x,%s", (cur_inst >> 8) & BITMASK(8), registers_name[numreg1]);
 }
 
@@ -2382,8 +2208,6 @@ static void dsp_pm_4(void)
 		if (cur_inst & (1<<15)) {
 			/* Write D */
 
-			registers_changed[disasm_registers_lmove[value][0]]=1;
-			registers_changed[disasm_registers_lmove[value][1]]=1;
 			if (retour) {
 				sprintf(parallelmove_name, "#%s,%s", addr_name, registers_lmove[value]);
 			} else {
@@ -2411,7 +2235,6 @@ static void dsp_pm_4(void)
 		if (cur_inst & (1<<15)) {
 			/* Write D */
 
-			registers_changed[value]=1;
 			if (retour) {
 				sprintf(parallelmove_name, "#%s,%s", addr_name, registers_name[value]);
 			} else {
@@ -2427,8 +2250,6 @@ static void dsp_pm_4(void)
 
 		if (cur_inst & (1<<15)) {
 			/* Write D */
-
-			registers_changed[value]=1;
 
 			if (retour) {
 				sprintf(parallelmove_name, "#%s,%s", addr_name, registers_name[value]);
@@ -2485,9 +2306,7 @@ static void dsp_pm_8(void)
 	dsp_calc_ea(ea_mode2, addr2_name);
 	
 	if (cur_inst & (1<<15)) {
-		registers_changed[numreg1]=1;
 		if (cur_inst & (1<<22)) {
-			registers_changed[numreg2]=1;
 			sprintf(parallelmove_name, "x:%s,%s y:%s,%s",
 				addr1_name,
 				registers_name[numreg1],
@@ -2504,7 +2323,6 @@ static void dsp_pm_8(void)
 		}
 	} else {
 		if (cur_inst & (1<<22)) {
-			registers_changed[numreg2]=1;
 			sprintf(parallelmove_name, "%s,x:%s y:%s,%s",
 				registers_name[numreg1],
 				addr1_name,
@@ -2533,10 +2351,7 @@ static void dsp_abs(void)
 	
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," abs %s %s", registers_name[numreg], parallelmove_name);
+	sprintf(str_instr,"abs %s %s", registers_name[numreg], parallelmove_name);
 }
 
 static void dsp_adc(void)
@@ -2551,10 +2366,8 @@ static void dsp_adc(void)
 	}
 
 	numreg=DSP_REG_A+((cur_inst>>3) & 1);
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
 
-	sprintf(str_instr," adc %s,%s %s",
+	sprintf(str_instr,"adc %s,%s %s",
 		srcname,
 		registers_name[numreg],
 		parallelmove_name
@@ -2597,10 +2410,7 @@ static void dsp_add(void)
 			break;
 	}
 
-	registers_changed[DSP_REG_A+dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," add %s,%s %s",
+	sprintf(str_instr,"add %s,%s %s",
 		srcname,
 		registers_name[DSP_REG_A+dstreg],
 		parallelmove_name
@@ -2613,10 +2423,7 @@ static void dsp_addl(void)
 
 	numreg = (cur_inst>>3) & 1;
 
-	registers_changed[DSP_REG_A+numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," addl %s,%s %s",
+	sprintf(str_instr,"addl %s,%s %s",
 		registers_name[DSP_REG_A+(numreg ^ 1)],
 		registers_name[DSP_REG_A+numreg],
 		parallelmove_name
@@ -2629,10 +2436,7 @@ static void dsp_addr(void)
 
 	numreg = (cur_inst>>3) & 1;
 
-	registers_changed[DSP_REG_A+numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," addr %s,%s %s",
+	sprintf(str_instr,"addr %s,%s %s",
 		registers_name[DSP_REG_A+(numreg ^ 1)],
 		registers_name[DSP_REG_A+numreg],
 		parallelmove_name
@@ -2659,10 +2463,7 @@ static void dsp_and(void)
 	}
 	dstreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," and %s,%s %s",
+	sprintf(str_instr,"and %s,%s %s",
 		registers_name[srcreg],
 		registers_name[dstreg],
 		parallelmove_name
@@ -2675,10 +2476,7 @@ static void dsp_asl(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," asl %s %s",
+	sprintf(str_instr,"asl %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -2690,10 +2488,7 @@ static void dsp_asr(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," asr %s %s",
+	sprintf(str_instr,"asr %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -2705,10 +2500,7 @@ static void dsp_clr(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," clr %s %s",
+	sprintf(str_instr,"clr %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -2739,9 +2531,7 @@ static void dsp_cmp(void)
 			break;
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," cmp %s,%s %s",
+	sprintf(str_instr,"cmp %s,%s %s",
 		registers_name[srcreg],
 		registers_name[DSP_REG_A+dstreg],
 		parallelmove_name
@@ -2773,9 +2563,7 @@ static void dsp_cmpm(void)
 			break;
 	}
 
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," cmpm %s,%s %s",
+	sprintf(str_instr,"cmpm %s,%s %s",
 		registers_name[srcreg],
 		registers_name[DSP_REG_A+dstreg],
 		parallelmove_name
@@ -2802,10 +2590,7 @@ static void dsp_eor(void)
 	}
 	dstreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," eor %s,%s %s",
+	sprintf(str_instr,"eor %s,%s %s",
 		registers_name[srcreg],
 		registers_name[dstreg],
 		parallelmove_name
@@ -2818,10 +2603,7 @@ static void dsp_lsl(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," lsl %s %s",
+	sprintf(str_instr,"lsl %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -2833,10 +2615,7 @@ static void dsp_lsr(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," lsr %s %s",
+	sprintf(str_instr,"lsr %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -2889,10 +2668,7 @@ static void dsp_mac(void)
 	}
 	dstreg = (cur_inst>>3) & 1;
 
-	registers_changed[DSP_REG_A+dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," mac %s%s,%s,%s %s",
+	sprintf(str_instr,"mac %s%s,%s,%s %s",
 		sign_name,
 		registers_name[src1reg],
 		registers_name[src2reg],
@@ -2948,10 +2724,7 @@ static void dsp_macr(void)
 	}
 	dstreg = (cur_inst>>3) & 1;
 
-	registers_changed[DSP_REG_A+dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," macr %s%s,%s,%s %s",
+	sprintf(str_instr,"macr %s%s,%s,%s %s",
 		sign_name,
 		registers_name[src1reg],
 		registers_name[src2reg],
@@ -2962,7 +2735,7 @@ static void dsp_macr(void)
 
 static void dsp_move(void)
 {
-	sprintf(str_instr," move %s", parallelmove_name);
+	sprintf(str_instr,"move %s", parallelmove_name);
 }
 
 static void dsp_mpy(void)
@@ -3012,10 +2785,7 @@ static void dsp_mpy(void)
 	}
 	dstreg = (cur_inst>>3) & 1;
 
-	registers_changed[DSP_REG_A+dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," mpy %s%s,%s,%s %s",
+	sprintf(str_instr,"mpy %s%s,%s,%s %s",
 		sign_name,
 		registers_name[src1reg],
 		registers_name[src2reg],
@@ -3071,10 +2841,7 @@ static void dsp_mpyr(void)
 	}
 	dstreg = (cur_inst>>3) & 1;
 
-	registers_changed[DSP_REG_A+dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," mpyr %s%s,%s,%s %s",
+	sprintf(str_instr,"mpyr %s%s,%s,%s %s",
 		sign_name,
 		registers_name[src1reg],
 		registers_name[src2reg],
@@ -3089,10 +2856,7 @@ static void dsp_neg(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," neg %s %s",
+	sprintf(str_instr,"neg %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -3104,10 +2868,7 @@ static void dsp_not(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," not %s %s",
+	sprintf(str_instr,"not %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -3133,10 +2894,7 @@ static void dsp_or(void)
 	}
 	dstreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," or %s,%s %s",
+	sprintf(str_instr,"or %s,%s %s",
 		registers_name[srcreg],
 		registers_name[dstreg],
 		parallelmove_name
@@ -3149,10 +2907,7 @@ static void dsp_rnd(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," rnd %s %s",
+	sprintf(str_instr,"rnd %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -3164,10 +2919,7 @@ static void dsp_rol(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," rol %s %s",
+	sprintf(str_instr,"rol %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -3179,10 +2931,7 @@ static void dsp_ror(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," ror %s %s",
+	sprintf(str_instr,"ror %s %s",
 		registers_name[numreg],
 		parallelmove_name
 	);
@@ -3201,10 +2950,7 @@ static void dsp_sbc(void)
 
 	numreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," sbc %s,%s %s",
+	sprintf(str_instr,"sbc %s,%s %s",
 		srcname,
 		registers_name[numreg],
 		parallelmove_name
@@ -3247,10 +2993,7 @@ static void dsp_sub(void)
 			break;
 	}
 
-	registers_changed[DSP_REG_A+dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," sub %s,%s %s",
+	sprintf(str_instr,"sub %s,%s %s",
 		srcname,
 		registers_name[DSP_REG_A+dstreg],
 		parallelmove_name
@@ -3263,10 +3006,7 @@ static void dsp_subl(void)
 
 	numreg = (cur_inst>>3) & 1;
 
-	registers_changed[DSP_REG_A+numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," subl %s,%s %s",
+	sprintf(str_instr,"subl %s,%s %s",
 		registers_name[DSP_REG_A+(numreg ^ 1)],
 		registers_name[DSP_REG_A+numreg],
 		parallelmove_name
@@ -3279,10 +3019,7 @@ static void dsp_subr(void)
 
 	numreg = (cur_inst>>3) & 1;
 
-	registers_changed[DSP_REG_A+numreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," subr %s,%s %s",
+	sprintf(str_instr,"subr %s,%s %s",
 		registers_name[DSP_REG_A+(numreg ^ 1)],
 		registers_name[DSP_REG_A+numreg],
 		parallelmove_name
@@ -3315,10 +3052,7 @@ static void dsp_tfr(void)
 			break;
 	}
 
-	registers_changed[DSP_REG_A+dstreg]=1;
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," tfr %s,%s %s",
+	sprintf(str_instr,"tfr %s,%s %s",
 		registers_name[srcreg],
 		registers_name[DSP_REG_A+dstreg],
 		parallelmove_name
@@ -3327,9 +3061,7 @@ static void dsp_tfr(void)
 
 static void dsp_tst(void)
 {
-	registers_changed[DSP_REG_SR]=1;
-
-	sprintf(str_instr," tst %s %s",
+	sprintf(str_instr,"tst %s %s",
 		registers_name[DSP_REG_A+((cur_inst>>3) & 1)],
 		parallelmove_name
 	);

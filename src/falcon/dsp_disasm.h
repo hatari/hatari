@@ -32,11 +32,8 @@ extern Uint16 dsp56k_disasm(void);
 extern char* dsp56k_getInstructionText(void);
 
 /* Registers change */
-extern void dsp56k_disasm_reg_read(void);
+extern void dsp56k_disasm_reg_save(void);
 extern void dsp56k_disasm_reg_compare(void);
-
-/* Function to mark register as changed */
-extern void dsp56k_disasm_force_reg_changed(int num_dsp_reg);
 
 #ifdef __cplusplus
 }

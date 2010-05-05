@@ -29,10 +29,10 @@
 
 
 /* More disasm infos, if wanted */
-#define DSP_DISASM 0		/* Main DSP disassembler switch */
-#define DSP_DISASM_INST 0	/* Instructions */
-#define DSP_DISASM_REG 0	/* Registers changes */
-#define DSP_DISASM_MEM 0	/* Memory changes */
+#define DSP_DISASM 1		/* Main DSP disassembler switch */
+#define DSP_DISASM_INST 1	/* Instructions */
+#define DSP_DISASM_REG 1	/* Registers changes */
+#define DSP_DISASM_MEM 1	/* Memory changes */
 #define DSP_DISASM_INTER 0	/* Interrupts */
 #define DSP_DISASM_STATE 0	/* State change */
 
@@ -83,6 +83,10 @@ static Uint32 tmp_parmove_len[2];		/* How many to read/write */
 static Uint32 tmp_parmove_type[2];		/* 0=register, 1=memory */
 static Uint32 tmp_parmove_space[2];		/* Memory space to write to */
 
+#if defined(DSP_DISASM) && (DSP_DISASM_MEM==1)
+static char   str_disasm_memory[2][50]; /* Buffer for memory change text in disasm mode */
+static Uint16 disasm_memory_ptr;		/* Pointer for memory change in disasm mode */
+#endif
 
 /**********************************
  *	Functions
@@ -492,12 +496,16 @@ void dsp56k_execute_instruction(void)
 
 #ifdef DSP_DISASM
 #if DSP_DISASM_REG
-	dsp56k_disasm_reg_read();
+	dsp56k_disasm_reg_save();
 #endif
 #if DSP_DISASM_INST
 	dsp56k_disasm();
 #endif
+#if DSP_DISASM_MEM
+	disasm_memory_ptr = 0;
 #endif
+#endif
+
 	/* Decode and execute current instruction */
 	cur_inst = read_memory_p(dsp_core->pc);
 	cur_inst_len = 1;
@@ -542,6 +550,16 @@ void dsp56k_execute_instruction(void)
 #if DSP_DISASM_REG
 	dsp56k_disasm_reg_compare();
 #endif
+#if DSP_DISASM_MEM
+	/* 1 memory change to display ? */
+	if (disasm_memory_ptr == 1)
+		fprintf(stderr, "\t%s\n", str_disasm_memory[0]);
+	/* 2 memory changes to display ? */
+	else if (disasm_memory_ptr == 2) {
+		fprintf(stderr, "\t%s\n", str_disasm_memory[0]);
+		fprintf(stderr, "\t%s\n", str_disasm_memory[1]);
+	}
+#endif
 #endif
 }
 
@@ -564,16 +582,10 @@ static void dsp_postexecute_update_pc(void)
 				dsp_core->loop_rep = 0;
 				dsp_core->registers[DSP_REG_LC] = dsp_core->registers[DSP_REG_LCSAVE];
 			}
-#ifdef DSP_DISASM
-			dsp56k_disasm_force_reg_changed(DSP_REG_LC);
-#endif
 		} else {
 			/* Init LC at right value */
 			if (dsp_core->registers[DSP_REG_LC] == 0) {
 				dsp_core->registers[DSP_REG_LC] = 0x010000;
-#ifdef DSP_DISASM
-				dsp56k_disasm_force_reg_changed(DSP_REG_LC);
-#endif
 			}
 			dsp_core->pc_on_rep = 0;
 		}
@@ -603,9 +615,6 @@ static void dsp_postexecute_update_pc(void)
 				/* Loop one more time */
 				dsp_core->pc = dsp_core->registers[DSP_REG_SSH];
 			}
-#ifdef DSP_DISASM
-			dsp56k_disasm_force_reg_changed(DSP_REG_LC);
-#endif
 		}
 	}
 }
@@ -1069,8 +1078,8 @@ static void write_memory_disasm(int space, Uint16 address, Uint32 value)
 	} else {
 		curvalue = read_memory_disasm(space, address);
 	}
-
-	fprintf(stderr,"Dsp: Mem: %c:0x%04x:0x%06x -> 0x%06x\n", space_c, address, oldvalue, curvalue);
+	sprintf(str_disasm_memory[disasm_memory_ptr],"Mem: %c:0x%04x  0x%06x -> 0x%06x", space_c, address, oldvalue, curvalue);
+	disasm_memory_ptr ++;
 }
 #endif
 
