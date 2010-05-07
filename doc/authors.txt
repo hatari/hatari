@@ -101,6 +101,9 @@ please remind me!):
 - Uwe Seimet: HD Driver related IDE emulation improvements and
   GEMDOS HD emulation improvement suggestions.
 
+- Anders Eriksson (Evil/DHS): Helped improving STE's emulation by running
+  many tests programs and providing the source code for some non working demos.
+
 
  Code from other projects
  ------------------------
