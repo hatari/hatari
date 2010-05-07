@@ -11,6 +11,10 @@
 /*			combinations (in m68000.c)			*/
 /* 2010/04/05	[NP]	Rework the pairing code to take BusCyclePenalty	*/
 /*			into account when using d8(an,ix).		*/
+/* 2010/05/07	[NP]	Add BusCyclePenalty to LastInstrCycles to detect*/
+/*			a possible pairing between add.l (a5,d1.w),d0	*/
+/*			and move.b 7(a5,d1.w),d5.			*/
+
 
 #ifndef HATARI_M68000_H
 #define HATARI_M68000_H
@@ -200,6 +204,7 @@ static inline void M68000_AddCycles(int cycles)
  *  - lsl.w #4,d1 + move.w 0(a4,d2.w),d1		motorola=14+14=28  stf=28
  *  - lsl.w #4,d1 + move.w 0(a4,d2.w),(a4)		motorola=14+18=32  stf=32
  *  - lsl.w #4,d1 + move.w 0(a4,d2.w),0(a4,d2.w)	motorola=14+24=38  stf=40
+ *  - add.l (a5,d1.w),d0 + move.b 7(a5,d1.w),d5)	motorola=20+14=34  stf=36
  *
  * d8(an,ix) timings without pairing (2 cycles penalty) :
  *  - add.l   0(a4,d2.w),a1				motorola=20  stf=24
@@ -241,7 +246,7 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 #endif
 
 	/* Store current instr (not rounded) to check next time */
-	LastInstrCycles = cycles;
+	LastInstrCycles = cycles + BusCyclePenalty;
 	LastOpcodeFamily = OpcodeFamily;
 
 	/* If pairing is true, we need to substract 2 cycles for the	*/

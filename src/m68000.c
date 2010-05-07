@@ -51,6 +51,9 @@
 /* 2008/07/08	[NP]	Add pairing between bit shift instr and ADDX/SUBX/ABCD/SBCD (fixes lsl.l #1,d0	*/
 /*			+ abcd d1,d1 used in Dragonnels - Rainbow Wall).				*/
 /* 2008/10/05	[NP]	Pass the 'ExceptionSource' parameter to Exception() in uae-cpu/newcpu.c		*/
+/* 2010/05/07	[NP]	Add pairing for ADD/MOVE ; such pairing should only be possible when combined	*/
+/*			with d8(an,ix) address mode (eg: add.l (a5,d1.w),d0 + move.b 7(a5,d1.w),d5)	*/
+/*			(fixes Sommarhack 2010 Invitation by DHS).					*/
 
 
 const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
@@ -174,6 +177,9 @@ static void M68000_InitPairing(void)
 	M68000_InitPairing_BitShift ( i_SUBX );
 	M68000_InitPairing_BitShift ( i_ABCD );
 	M68000_InitPairing_BitShift ( i_SBCD );
+
+	PairingArray[ i_ADD ][ i_MOVE ] = 1;		/* when using xx(an,dn) addr mode */
+	PairingArray[ i_SUB ][ i_MOVE ] = 1;
 }
 
 
