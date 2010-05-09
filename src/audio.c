@@ -18,11 +18,11 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 #include "dmaSnd.h"
 
 
-int nAudioFrequency = 44100;              /* Sound playback frequency */
-bool bSoundWorking = false;               /* Is sound OK */
-volatile bool bPlayingBuffer = false;     /* Is playing buffer? */
-int SoundBufferSize = 1024 / 4;			/* Size of sound buffer */
-int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
+int nAudioFrequency = 44100;			/* Sound playback frequency */
+bool bSoundWorking = false;			/* Is sound OK */
+volatile bool bPlayingBuffer = false;		/* Is playing buffer? */
+int SoundBufferSize = 1024 / 4;			/* Size of sound buffer (in samples) */
+int CompleteSndBufIdx;				/* Replay-index into MixBuffer */
 
 
 
@@ -105,13 +105,13 @@ void Audio_Init(void)
 
 	/* Set up SDL audio: */
 	desiredAudioSpec.freq = nAudioFrequency;
-	desiredAudioSpec.format = AUDIO_S16SYS;       /* 16-Bit signed */
-	desiredAudioSpec.channels = 2;                /* stereo */
-	desiredAudioSpec.samples = 1024;              /* Buffer size */
+	desiredAudioSpec.format = AUDIO_S16SYS;		/* 16-Bit signed */
+	desiredAudioSpec.channels = 2;			/* stereo */
+	desiredAudioSpec.samples = 1024;		/* Buffer size in samples */
 	desiredAudioSpec.callback = Audio_CallBack;
 	desiredAudioSpec.userdata = NULL;
 
-	if (SDL_OpenAudio(&desiredAudioSpec, NULL))   /* Open audio device */
+	if (SDL_OpenAudio(&desiredAudioSpec, NULL))	/* Open audio device */
 	{
 		fprintf(stderr, "Can't use audio: %s\n", SDL_GetError());
 		bSoundWorking = false;
@@ -120,7 +120,7 @@ void Audio_Init(void)
 		return;
 	}
 
-	SoundBufferSize = desiredAudioSpec.size;      /* May be different than the requested one! */
+	SoundBufferSize = desiredAudioSpec.size;	/* May be different than the requested one! */
 	SoundBufferSize /= 4;				/* bytes -> samples (16 bit signed stereo -> 4 bytes per sample) */
 	if (SoundBufferSize > MIXBUFFER_SIZE/2)
 	{
