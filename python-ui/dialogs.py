@@ -93,7 +93,7 @@ class AboutDialog(HatariUIDialog):
         dialog.set_artists(["The logo is from Hatari"])
         dialog.set_logo(gtk.gdk.pixbuf_new_from_file(UInfo.logo))
         dialog.set_translator_credits("translator-credits")
-        dialog.set_copyright("UI copyright (C) 2008-2009 by Eero Tamminen")
+        dialog.set_copyright(UInfo.copyright)
         dialog.set_license("""
 This software is licenced under GPL v2 or later.
 

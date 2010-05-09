@@ -34,11 +34,12 @@ import gobject
 class UInfo:
     """singleton constants for the UI windows,
     one instance is needed to initialize these properly"""
-    version = "v0.9.2"
+    version = "v1.0"
     name = "Hatari UI"
     logo = "hatari.png"
     icon = "hatari-icon.png"
-    
+    copyright = "UI copyright (C) 2008-2010 by Eero Tamminen"
+
     # path to the directory where the called script resides
     path = os.path.dirname(sys.argv[0])
     
