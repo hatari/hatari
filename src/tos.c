@@ -265,6 +265,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
+		ConfigureParams.System.nCpuFreq = 8;
 		IoMem_Init();
 		ConfigureParams.System.nCpuLevel = 0;
 		M68000_CheckCpuLevel();
@@ -275,6 +276,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to TT mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_TT;
+		ConfigureParams.System.nCpuFreq = 32;
 		IoMem_Init();
 		ConfigureParams.System.nCpuLevel = 3;
 		M68000_CheckCpuLevel();
@@ -285,6 +287,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to Falcon mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
+		ConfigureParams.System.nCpuFreq = 16;
 		IoMem_Init();
 		ConfigureParams.System.nCpuLevel = 3;
 		M68000_CheckCpuLevel();
@@ -292,9 +295,10 @@ static void TOS_CheckSysConfig(void)
 	else if (TosVersion <= 0x0104 && ConfigureParams.System.nCpuLevel > 0)
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions <= 1.4 work only with a 68000 CPU.\n"
-		             " ==> Switching to ST/68000 mode now.\n");
+		             " ==> Switching to ST mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_ST;
+		ConfigureParams.System.nCpuFreq = 8;
 		IoMem_Init();
 		ConfigureParams.System.nCpuLevel = 0;
 		M68000_CheckCpuLevel();
@@ -306,7 +310,10 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
+		ConfigureParams.System.nCpuFreq = 8;
 		IoMem_Init();
+		ConfigureParams.System.nCpuLevel = 0;
+		M68000_CheckCpuLevel();
 	}
 	else if (TosVersion >= 0x0300 && ConfigureParams.System.nCpuLevel < 2)
 	{
