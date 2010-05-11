@@ -66,9 +66,11 @@ static inline void WriteShortLE(void *addr, Uint16 val)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Create .ST/.MSA disk image according to 'Tracks,Sector,Sides' and save as filename
+ * Create .ST/.MSA disk image according to 'Tracks,Sector,Sides' and save
+ * it under given filename.
+ * Return true if saving succeeded, false otherwise.
  */
-void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, int nSides)
+bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSectors, int nSides)
 {
 	Uint8 *pDiskFile;
 	unsigned long nDiskSize;
@@ -87,7 +89,7 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 	if (pDiskFile == NULL)
 	{
 		perror("Error while creating blank disk image");
-		return;
+		return false;
 	}
 	memset(pDiskFile, 0, nDiskSize);                      /* Clear buffer */
 
@@ -179,4 +181,5 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 
 	/* Free image */
 	free(pDiskFile);
+	return bRet;
 }
