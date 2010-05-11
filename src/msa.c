@@ -106,7 +106,7 @@ typedef struct
 /**
  * Does filename end with a .MSA extension? If so, return true
  */
-bool MSA_FileNameIsMSA(char *pszFileName, bool bAllowGZ)
+bool MSA_FileNameIsMSA(const char *pszFileName, bool bAllowGZ)
 {
 	return(File_DoesFileExtensionMatch(pszFileName,".msa")
 	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".msa.gz")));
@@ -215,7 +215,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
  * Uncompress .MSA file into memory, set number bytes of the disk image and
  * return a pointer to the buffer.
  */
-Uint8 *MSA_ReadDisk(char *pszFileName, long *pImageSize)
+Uint8 *MSA_ReadDisk(const char *pszFileName, long *pImageSize)
 {
 	Uint8 *pMsaFile;
 	Uint8 *pDiskBuffer = NULL;
@@ -286,7 +286,7 @@ static int MSA_FindRunOfBytes(Uint8 *pBuffer, int nBytesInBuffer)
 /**
  * Save compressed .MSA file from memory buffer. Returns true is all OK
  */
-bool MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool MSA_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_MSA_IMAGES
 

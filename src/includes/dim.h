@@ -5,6 +5,6 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
-extern bool DIM_FileNameIsDIM(char *pszFileName, bool bAllowGZ);
-extern Uint8 *DIM_ReadDisk(char *pszFileName, long *pImageSize);
-extern bool DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize);
+extern bool DIM_FileNameIsDIM(const char *pszFileName, bool bAllowGZ);
+extern Uint8 *DIM_ReadDisk(const char *pszFileName, long *pImageSize);
+extern bool DIM_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize);

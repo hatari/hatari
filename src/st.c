@@ -42,7 +42,7 @@ int __feature_imagefs_is_file = 1;
 /**
  * Does filename end with a .ST extension? If so, return true.
  */
-bool ST_FileNameIsST(char *pszFileName, bool bAllowGZ)
+bool ST_FileNameIsST(const char *pszFileName, bool bAllowGZ)
 {
 	return(File_DoesFileExtensionMatch(pszFileName,".st")
 	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".st.gz")));
@@ -54,7 +54,7 @@ bool ST_FileNameIsST(char *pszFileName, bool bAllowGZ)
  * Load .ST file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-Uint8 *ST_ReadDisk(char *pszFileName, long *pImageSize)
+Uint8 *ST_ReadDisk(const char *pszFileName, long *pImageSize)
 {
 	Uint8 *pStFile;
 
@@ -73,7 +73,7 @@ Uint8 *ST_ReadDisk(char *pszFileName, long *pImageSize)
 /**
  * Save .ST file from memory buffer. Returns true is all OK.
  */
-bool ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool ST_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_ST_IMAGES
 

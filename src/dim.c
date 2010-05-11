@@ -48,7 +48,7 @@ const char DIM_fileid[] = "Hatari dim.c : " __DATE__ " " __TIME__;
 /**
  * Does filename end with a .DIM extension? If so, return TRUE
  */
-bool DIM_FileNameIsDIM(char *pszFileName, bool bAllowGZ)
+bool DIM_FileNameIsDIM(const char *pszFileName, bool bAllowGZ)
 {
 	return(File_DoesFileExtensionMatch(pszFileName,".dim")
 	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".dim.gz")));
@@ -60,7 +60,7 @@ bool DIM_FileNameIsDIM(char *pszFileName, bool bAllowGZ)
  * Load .DIM file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-Uint8 *DIM_ReadDisk(char *pszFileName, long *pImageSize)
+Uint8 *DIM_ReadDisk(const char *pszFileName, long *pImageSize)
 {
 	Uint8 *pDimFile;
 	Uint8 *pDiskBuffer = NULL;
@@ -104,7 +104,7 @@ Uint8 *DIM_ReadDisk(char *pszFileName, long *pImageSize)
 /**
  * Save .DIM file from memory buffer. Returns TRUE is all OK
  */
-bool DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool DIM_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_DIM_IMAGES
 
