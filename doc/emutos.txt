@@ -32,11 +32,11 @@ What is EmuTOS
 
 EmuTOS is a single-user single-tasking operating system for the 32-bit
 Atari computers and emulators.  It can be used as a replacement for
-the TOS images typically needed today for using emulators and it is
-also running on some real hardware, like the Atari Mega STE.  All the
-source code is open and free, licensed under the GNU General Public
-License (GPL).  A copy of the GNU GPL can be found in the gpl.txt
-file.
+the TOS images typically needed today for using the emulators and it is
+also running on some real hardware, like the Atari Mega STE and Atari
+ColdFire.  All the source code is open and free, licensed under the
+GNU General Public License (GPL).  A copy of the GNU GPL can be found
+in the gpl.txt file.
 
 EmuTOS has its home at SourceForge:
        http://sourceforge.net/projects/emutos
@@ -45,21 +45,25 @@ EmuTOS has its home at SourceForge:
 EmuTOS usage
 ============
 
-There are various reasons for using EmuTOS instead of a real TOS ROM
-image:
+There are various reasons for using EmuTOS instead of the original
+TOS ROM images:
 
 * Users who don't have Atari HW or other legal means to obtain the
   original Atari TOS ROMs (for all of the Hatari supported Atari
   versions: ST/STE/TT/Falcon), but would like to try out Hatari and
-  see what kind of software Atari ST had.  EmuTOS gives them a way to
-  test Hatari with free demos, games etc.
+  see what kind of software the Atari machines had.  EmuTOS gives
+  them a legal way to test Hatari with free demos, games etc.
 
 * Users who want to continue using Atari compatible operating systems
   and need a open source replacement of TOS for modifications. Beside
   EmuTOS they typically alse use FreeMiNT, XaAES and fVDI as operating
   system replacements/improvements.
 
-* EmuTOS allows also using ACSI disk images with Hatari TT/Falcon
+* This includes users of new "Atari" machines like Atari ColdFire project,
+  which isn't 100% compatible at HW level to the original Atari machines:
+	http://acp.atari.org/
+
+* EmuTOS also allows using ACSI disk images with Hatari TT/Falcon
   emulation, whereas TOS 3 & 4 support only IDE and SCSI disks.
   Hard disk images are needed mainly for running MiNT.
 
@@ -67,17 +71,19 @@ image:
 EmuTOS compatibility
 ====================
 
+These comments apply to EmuTOS v0.8.5.
+
 Many commercial games and applications work fine with EmuTOS. This is
 because games (like Bombjack, Nebulus, Oids, Super Hang-On, Turrican,
 Xenon...) use directly the hardware which Hatari emulates just fine
 and applications use the correct higher level APIs (AES/VDI) for which
 EmuTOS has implementations.
 
-EmuTOS AES support is somewhat buggy (mouse dragging and window &
-dialog background drawing in larger 4-bit modes) and VDI support
-is slowish. Anybody wanting proper AES/VDI support should install
-replacement for these, either the free XaAES + fVDI, or the earlier
-commercial solutions like NVDI.
+EmuTOS AES support is somewhat buggy (mouse clicks and dragging
+doesn't always work properly) and VDI support is slowish. Anybody
+wanting proper AES/VDI support should install replacement for these,
+either the free XaAES + fVDI, or the earlier commercial solutions like
+NVDI.
 
 Free games have the issue that they often use the Line-A functionality
 which is not supported by EmuTOS[1] unlike AES/VDI.  This is partly a
@@ -98,15 +104,29 @@ which location depends on the TOS version.
 Debugging issues with EmuTOS
 ============================
 
-To debug problems with EmuTOS, you have to download its source code and
-recompile it. Enable the MIDI debug output in the config.h header file,
-then you can start Hatari with the "--midi-out /dev/stderr" option. You
-will then see the EmuTOS debug output like calls to missing Line-A
-functions.
+To debug problems with EmuTOS, you have to recompile it from source
+after enabling the MIDI debug output in its config.h header file. Then
+start Hatari with the "--midi-out /dev/stderr" optio and you will see
+the EmuTOS debug output such as calls to missing Line-A functions.
 
-To debug EmuTOS panics, you need to compile EmuTOS and create a disassembly
-of the ROM image.  You can then look up the program counter value given in
-panic message from the disassembly to see where the crash happens.
+To inspect EmuTOS issues with the Hatari debugger, you'll need symbols
+for the EmuTOS image you're using.  If you've compiled EmuTOS with
+AHCC[2], you can get suitable symbols with its "-n" linker flag, or
+you can use a script coming with Hatari (ahcc-symbols-convert.sh) to
+convert AHCC *.map file to "nm" format supported by the Hatari
+debugger.
+
+After loading the symbols to the debugger, disassembling the problematic
+address should provide more clues for the problem.  Or you can just look
+up the program counter value given in panic message from the AHCC
+emutos.map file.
+
+Hatari profiling support (see patches on hatari-devel) can be used to
+debug OS freezes.  If EmuTOS gets stuck, just profile it for a while
+and then ask debugger for a profile that tells where it's looping and
+then disasm that part with symbols directly in Hatari.
+
+[2] AHCC: http://members.chello.nl/h.robbers/
 
 
 EmuTOS compatibility lists
@@ -194,43 +214,53 @@ Color games:
 - Yak (4KB gridrunner)
 
 GEM games:
-- 4 Gewinnt (Connect four)*
+- 4 Gewinnt* (Connect four)
 - Abalone
-- Ballerburg*
+- Ballerburg* (bug: mouse-over acts like click)
 - Biglife*
+- Chess* (works only from floppy)
 - Clicks*
 - Daleks*
 - Dame
 - DBWH
 - Drachen
 - Gem_mind
+- Gnuchess
 - Isola
 - Kensington
 - Mars (corewars)
-- Megaroid*
 - Mathmaze
+- Megaroid*
 - Mines*
 - Nethack*
 - Orb
 - Pacman
 - Shanghai
 - Snake
+- Stello*
 - ST Concentration*
+- Solitair*
 - Sudoku*
 - Tartan* (chess)
 - Thrust
+- Tricky yahoo
 - Worm farm
 - Wator (slow)
 - zSudoku
 
 Monochrome games:
 - Balloons
+- Bounce
 - Delta patrol
-- Emperor (v1.5)
+- Emperor (v1.0 & v1.5)
+- Fun Face (playable demo)
+- Go UP
 - HASCS
-- MiniGolf (GFA basic)*
+- Lasermon (bug: some lines are not drawn)
+- MiniGolf* (GFA basic)
 - Monkey Business
 - Mr Dash
+- Poolmono*
 - Punssi
 - Pyro
 - Qix
@@ -256,42 +286,33 @@ the issues in them are assumed to be Line-A related (graphics don't
 show because they use Line-A drawing functions etc).
 
 GEM games:
-- Awele
-- Backgam
+- Awele (menus close immediately after opening)
 - Checkers
 - Dte (mouse gets stuck)
-- Emperor
-- Fishes
-- Fs
-- Gemamigo*
-- Gnuchess
-- Invaders*
-- Mines
+- Fs (panic)
+- Gemamigo* (panic or double bus error)
+- Invaders* (shots go through buildings/shields)
 - Othello
-- Patience (dragging doesn't work)
-- Risk (dragging doesn't work)*
+- Patience* (dragging doesn't work, arrowheads drawn wrong)
+- Risk* (dragging doesn't work)
+- Verrueck (?)
+- Yukon* (dragging doesn't work)
+
+Games that mix GEM UI and non-VDI drawing:
+- Backgam
+- Fishes
 - Robugs*
-- Solitair
-- Stello*
-- Tricky yahoo
-- Verrueck
-- Yokon*
 
 Mono games:
-- Bounce
-- Columns*
+- Columns* (keyboard input issues)
 - Crystal Caves*
 - Domino
-- Fun Face
-- Go UP (stops at hi-score)
-- Lasermon
 - Lokomotive
 - MacPan*
-- Midimaze (joystick doesn't work)*
+- Midimaze* (joystick doesn't work)
 - MineFeld
 - Pipeline*
 - Pling II
-- Poolmono (mouse gets stuck)*
 - Roll X
 - Sherlock*
 - Space war*
