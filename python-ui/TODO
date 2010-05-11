@@ -33,10 +33,12 @@ sources.
     need to be localized too & shown...
 
 * Hatari UI specific configuration which stores:
+  - list of last used configuration files which would be shown
+    either in their own menu or dialog
+  - list of last used memory snapshots (10?)
   - disk image dir (uses Hatari config value as default)
   - trace settings
     - remove dialog specific load/save stuff
-  - list of memory snapshots (10?)
   - screenshot name
     - needs support also to Hatari src/screenSnapShot.c
 
