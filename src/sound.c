@@ -922,7 +922,7 @@ void Sound_Reset(void)
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
 	ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
 //fprintf ( stderr , "Sound_Reset SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , ActiveSndBufIdx %d\n" ,
-	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
+//	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
 
 	Ym2149_Reset();
 
@@ -940,7 +940,7 @@ void Sound_ResetBufferIndex(void)
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
 	ActiveSndBufIdx =  (CompleteSndBufIdx + nGeneratedSamples) % MIXBUFFER_SIZE;
 //fprintf ( stderr , "Sound_ResetBufferIndex SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , ActiveSndBufIdx %d\n" ,
-	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
+//	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
 	Audio_Unlock();
 }
 
