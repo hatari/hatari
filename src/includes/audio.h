@@ -12,6 +12,8 @@ extern int nAudioFrequency;
 extern bool bSoundWorking;
 extern int SoundBufferSize;
 extern int CompleteSndBufIdx;
+extern int SdlAudioBufferSize;
+
 
 extern void Audio_Init(void);
 extern void Audio_UnInit(void);

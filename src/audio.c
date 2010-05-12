@@ -23,7 +23,7 @@ bool bSoundWorking = false;			/* Is sound OK */
 volatile bool bPlayingBuffer = false;		/* Is playing buffer? */
 int SoundBufferSize = 1024 / 4;			/* Size of sound buffer (in samples) */
 int CompleteSndBufIdx;				/* Replay-index into MixBuffer */
-
+int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */
 
 
 /*-----------------------------------------------------------------------*/
@@ -107,9 +107,28 @@ void Audio_Init(void)
 	desiredAudioSpec.freq = nAudioFrequency;
 	desiredAudioSpec.format = AUDIO_S16SYS;		/* 16-Bit signed */
 	desiredAudioSpec.channels = 2;			/* stereo */
-	desiredAudioSpec.samples = 1024;		/* Buffer size in samples */
 	desiredAudioSpec.callback = Audio_CallBack;
 	desiredAudioSpec.userdata = NULL;
+
+	/* In most case, setting samples to 1024 will give an equivalent */
+	/* sdl sound buffer of ~20-30 ms (depending on freq). */
+	/* But setting samples to 1024 for all the freq can cause some faulty */
+	/* OS sound drivers to add an important delay when playing sound at lower freq. */
+	/* In that case we use SdlAudioBufferSize (in ms) to compute a value */
+	/* of samples that matches the corresponding freq and buffer size. */
+	if ( SdlAudioBufferSize == 0 )			/* don't compute "samples", use default value */
+		desiredAudioSpec.samples = 1024;	/* buffer size in samples */
+	else
+	{
+		int samples = (desiredAudioSpec.freq / 1000) * SdlAudioBufferSize;
+		int power2 = 1;
+		while ( power2 < samples )		/* compute the power of 2 just above samples */
+                        power2 *= 2;
+
+//fprintf ( stderr , "samples %d power %d\n" , samples , power2 );
+		desiredAudioSpec.samples = power2;	/* number of samples corresponding to the requested SdlAudioBufferSize */
+	}
+
 
 	if (SDL_OpenAudio(&desiredAudioSpec, NULL))	/* Open audio device */
 	{
