@@ -109,6 +109,7 @@ enum {
 	OPT_TIMERD,
 	OPT_DSP,
 	OPT_SOUND,
+	OPT_SOUNDBUFFERSIZE,
 	OPT_KEYMAPFILE,
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
@@ -283,6 +284,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
+	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
+	  "<x>", "Sound buffer size for SDL in ms (x=0/10-100, 0=use default buffer size)" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	
@@ -704,7 +707,7 @@ Uint32 Opt_GetNoParachuteFlag(void)
  */
 bool Opt_ParseParameters(int argc, const char *argv[])
 {
-	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq;
+	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq, temp;
 	const char *errstr;
 	int i, ok = true;
 	int val;
@@ -1300,6 +1303,18 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				ConfigureParams.Sound.nPlaybackFreq = freq;
 				ConfigureParams.Sound.bEnableSound = true;
 			}
+			break;
+
+		case OPT_SOUNDBUFFERSIZE:
+			i += 1;
+			temp = atoi(argv[i]);
+			if ( temp == 0 )			/* use default setting for SDL */
+				;
+			else if (temp < 10 || temp > 100)
+				{
+					return Opt_ShowError(OPT_SOUNDBUFFERSIZE, argv[i], "Unsupported sound buffer size");
+				}
+			ConfigureParams.Sound.SdlAudioBufferSize = temp;
 			break;
 
 		case OPT_KEYMAPFILE:
