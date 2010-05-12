@@ -227,6 +227,7 @@ static const struct Config_Tag configs_Sound[] =
 	{ "bEnableSound", Bool_Tag, &ConfigureParams.Sound.bEnableSound },
 	{ "nPlaybackFreq", Int_Tag, &ConfigureParams.Sound.nPlaybackFreq },
 	{ "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
+	{ "SdlAudioBufferSize", Int_Tag, &ConfigureParams.Sound.SdlAudioBufferSize },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -472,6 +473,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Sound.nPlaybackFreq = 44100;
 	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",
 	        psWorkingDir, PATHSEP);
+	ConfigureParams.Sound.SdlAudioBufferSize = 0;
 
 	/* Set defaults for Rom */
 	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img",
@@ -531,6 +533,16 @@ void Configuration_Apply(bool bReset)
 	{
 		nFrameSkips = ConfigureParams.Screen.nFrameSkips;
 	}
+
+	/* Sound settings */
+	/* SDL sound buffer in ms */
+	SdlAudioBufferSize = ConfigureParams.Sound.SdlAudioBufferSize;
+	if ( SdlAudioBufferSize == 0 )			/* use default setting for SDL */
+		;
+	else if ( SdlAudioBufferSize < 10 )		/* min of 10 ms */
+		SdlAudioBufferSize = 10;
+	else if ( SdlAudioBufferSize > 100 )		/* max of 100 ms */
+		SdlAudioBufferSize = 100;
 
 	/* Set playback frequency */
 	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);

@@ -42,6 +42,7 @@ typedef struct
   bool bEnableSound;
   int nPlaybackFreq;
   char szYMCaptureFileName[FILENAME_MAX];
+  int SdlAudioBufferSize;
 } CNF_SOUND;
 
 
