@@ -28,7 +28,7 @@
 	[savePanel setAllowedFileTypes:allowedFileTypes];
 	
 	// Get the default images directory
-	NSString* defaultDir = [NSString stringWithCString:ConfigureParams.DiskImage.szDiskImageDirectory];
+	NSString* defaultDir = [NSString stringWithCString:ConfigureParams.DiskImage.szDiskImageDirectory encoding:NSASCIIStringEncoding];
 
 	// Run the SavePanel, then check if the user clicked OK
     if ( NSOKButton == [savePanel runModalForDirectory:defaultDir file:nil] )
@@ -37,7 +37,7 @@
 		NSString *path = [savePanel filename];
 	
 		// Make a non-const C string out of it
-		const char* constSzPath = [path cString];
+		const char* constSzPath = [path cStringUsingEncoding:NSASCIIStringEncoding];
 		size_t cbPath = strlen(constSzPath) + 1;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);

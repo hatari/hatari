@@ -28,12 +28,14 @@
 
 // Macros to transfer data between Cocoa controls and Hatari data structures
 #define EXPORT_TEXTFIELD(nstextfield, target) GuiOsx_ExportPathString([nstextfield stringValue], target, sizeof((target)))
+#define EXPORT_NTEXTFIELD(nstextfield, target) target = [nstextfield intValue]
 #define EXPORT_SWITCH(nsbutton, target) target = ([(nsbutton) state] == NSOnState)
 #define EXPORT_RADIO(nsmatrix, target) target = [[(nsmatrix) selectedCell] tag]
 #define EXPORT_DROPDOWN(nspopupbutton, target) target = [[(nspopupbutton) selectedItem] tag]
 #define EXPORT_SLIDER(nsslider, target) target = [(nsslider) intValue]
 
-#define IMPORT_TEXTFIELD(nstextfield, source) [(nstextfield) setStringValue:[[NSString stringWithCString:(source)] stringByAbbreviatingWithTildeInPath]]
+#define IMPORT_TEXTFIELD(nstextfield, source) [(nstextfield) setStringValue:[[NSString stringWithCString:(source) encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath]]
+#define IMPORT_NTEXTFIELD(nstextfield, source) [(nstextfield) setIntValue:(source)]
 #define IMPORT_SWITCH(nsbutton, source) [(nsbutton) setState:((source))? NSOnState : NSOffState]
 #define IMPORT_RADIO(nsmatrix, source) [(nsmatrix) selectCellWithTag:(source)]
 #define IMPORT_DROPDOWN(nspopupbutton, source) [(nspopupbutton) selectItemAtIndex:[(nspopupbutton) indexOfItemWithTag:(source)]]
@@ -186,6 +188,28 @@ SDLKey Preferences_KeysForJoysticks[] =
 
 size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / sizeof(Preferences_KeysForJoysticks[0]);
 
+#define DLGSOUND_11KHZ      0
+#define DLGSOUND_12KHZ      1
+#define DLGSOUND_16KHZ      2
+#define DLGSOUND_22KHZ      3
+#define DLGSOUND_25KHZ      4
+#define DLGSOUND_32KHZ      5
+#define DLGSOUND_44KHZ      6
+#define DLGSOUND_48KHZ      7
+#define DLGSOUND_50KHZ      8
+
+static const int nSoundFreqs[] =
+{
+	11025,
+	12517,
+	16000,
+	22050,
+	25033,
+	32000,
+	44100,
+	48000,
+	50066
+};
 
 @implementation PrefsController
 
@@ -250,7 +274,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 		NSString *path = [[floppyTextField stringValue] stringByExpandingTildeInPath];
 		
 		// Make a non-const C string out of it
-		const char* constSzPath = [path cString];
+		const char* constSzPath = [path cStringUsingEncoding:NSASCIIStringEncoding];
 		size_t cbPath = strlen(constSzPath) + 1;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);
@@ -295,9 +319,14 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	[self choosePathForControl: hdImage chooseDirectories:FALSE defaultInitialDir:@"~"];
 }
 
-- (IBAction)chooseIdeHdImage:(id)sender
+- (IBAction)chooseIdeMasterHdImage:(id)sender
 {
-	[self choosePathForControl: ideHdImage chooseDirectories:FALSE defaultInitialDir:@"~"];
+	[self choosePathForControl: ideMasterHdImage chooseDirectories:FALSE defaultInitialDir:@"~"];
+}
+
+- (IBAction)chooseIdeSlaveHdImage:(id)sender
+{
+	[self choosePathForControl: ideSlaveHdImage chooseDirectories:FALSE defaultInitialDir:@"~"];
 }
 
 - (IBAction)chooseKeyboardMappingFile:(id)sender
@@ -363,12 +392,17 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	[hdImage setStringValue:@""];
 }
 
-- (IBAction)ejectIdeHdImage:(id)sender
+- (IBAction)ejectIdeMasterHdImage:(id)sender
 {
 	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
-	[ideHdImage setStringValue:@""];
+	[ideMasterHdImage setStringValue:@""];
 }
 
+- (IBAction)ejectIdeSlaveHdImage:(id)sender
+{
+	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
+	[ideSlaveHdImage setStringValue:@""];
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -377,7 +411,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 
 - (IBAction)loadConfigFrom:(id)sender
 {
-    NSString *ConfigFile = [NSString stringWithCString:(sConfigFileName)];
+    NSString *ConfigFile = [NSString stringWithCString:(sConfigFileName) encoding:NSASCIIStringEncoding];
     NSOpenPanel *openPanel = [ NSOpenPanel openPanel ];
     
     if ( [ openPanel runModalForDirectory:nil file:ConfigFile types:nil ] )
@@ -392,7 +426,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	if (ConfigFile != nil)
 	{
 		// Make a non-const C string out of it
-		const char* constSzPath = [ConfigFile cString];
+		const char* constSzPath = [ConfigFile cStringUsingEncoding:NSASCIIStringEncoding];
 		size_t cbPath = strlen(constSzPath) + 1;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);	
@@ -419,8 +453,8 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 
     NSSavePanel *savePanel = [ NSSavePanel savePanel ];
 
-	NSString* defaultDir = [NSString stringWithCString:splitpath];
-    NSString *ConfigFile = [NSString stringWithCString:splitname];
+	NSString* defaultDir = [NSString stringWithCString:splitpath encoding:NSASCIIStringEncoding];
+    NSString *ConfigFile = [NSString stringWithCString:splitname encoding:NSASCIIStringEncoding];
     
     if ( ![ savePanel runModalForDirectory:defaultDir file:ConfigFile ] )
 	{
@@ -432,7 +466,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	if (ConfigFile != nil)
 	{
 		// Make a non-const C string out of it
-		const char* constSzPath = [ConfigFile cString];
+		const char* constSzPath = [ConfigFile cStringUsingEncoding:NSASCIIStringEncoding];
 		size_t cbPath = strlen(constSzPath) + 1;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);	
@@ -485,7 +519,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	{
 		SDLKey key = Preferences_KeysForJoysticks[i];
 		const char* szKeyName = SDL_GetKeyName(key);
-		[dropDown addItemWithTitle:[[NSString stringWithCString:szKeyName] capitalizedString]];	
+		[dropDown addItemWithTitle:[[NSString stringWithCString:szKeyName encoding:NSASCIIStringEncoding] capitalizedString]];	
 		[[dropDown lastItem] setTag:key];
 	}
 }
@@ -519,7 +553,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 			for (i = 0; i < cRealJoysticks; i++)
 			{
 				const char* szJoystickName = SDL_JoystickName(i);
-				[realJoystick addItemWithTitle:[[NSString stringWithCString:szJoystickName] capitalizedString]];	
+				[realJoystick addItemWithTitle:[[NSString stringWithCString:szJoystickName encoding:NSASCIIStringEncoding] capitalizedString]];	
 				[[realJoystick lastItem] setTag:i];	
 			}
 		}
@@ -603,20 +637,42 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     IMPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.sMidiOutFileName);
 	IMPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
     IMPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
-    IMPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
+    // IMPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
 	IMPORT_SWITCH(showStatusBar, ConfigureParams.Screen.bShowStatusbar);
 	IMPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
 	IMPORT_TEXTFIELD(configFile, sConfigFileName);
 
+	// 12/04/2010
+	IMPORT_SWITCH(falconTTRatio, ConfigureParams.Screen.bAspectCorrect);
+	IMPORT_SWITCH(fullScreen, ConfigureParams.Screen.bFullScreen);
+	IMPORT_SWITCH(ledDisks, ConfigureParams.Screen.bShowDriveLed);
+	
+	//deal with the Max Zoomed Stepper
+	IMPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
+	IMPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
+	
+	[widthStepper setIntValue:[maxZoomedWidth intValue]];
+	[heightStepper setIntValue:[maxZoomedHeight intValue]];
+	
+	
+	
+	
 	[(force8bpp) setState:((ConfigureParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
 
-	if (ConfigureParams.Sound.nPlaybackFreq >= 44100)
-		[playbackQuality selectCellWithTag:(2)];
-	else if (ConfigureParams.Sound.nPlaybackFreq >= 22050)
-		[playbackQuality selectCellWithTag:(1)];
-	else
-		[playbackQuality selectCellWithTag:(0)];
-
+	
+	int i;
+	
+	for (i = 0; i <= DLGSOUND_50KHZ-DLGSOUND_11KHZ; i++)
+	{
+		if (ConfigureParams.Sound.nPlaybackFreq > nSoundFreqs[i]-500
+		    && ConfigureParams.Sound.nPlaybackFreq < nSoundFreqs[i]+500)
+		{
+			[playbackQuality selectCellWithTag:(i)];
+			break;
+		}
+	}
+	
+	
 	if (ConfigureParams.Screen.nVdiWidth >= 1024)
 		[resolution selectCellWithTag:(2)];
 	else if (ConfigureParams.Screen.nVdiWidth >= 768)
@@ -635,13 +691,23 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	}
 	
 	// If the IDE HD flag is set, load the IDE HD path, otherwise make it blank
+	//Master
 	if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
-		IMPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);	
+		IMPORT_TEXTFIELD(ideMasterHdImage, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);	
 	}
 	else
 	{
-		[ideHdImage setStringValue:@""];
+		[ideMasterHdImage setStringValue:@""];
+	}
+	//Slave
+	if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
+	{
+		IMPORT_TEXTFIELD(ideSlaveHdImage, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage);	
+	}
+	else
+	{
+		[ideSlaveHdImage setStringValue:@""];
 	}
 	
 	// If the Gemdos flag is set, load the Gemdos path, otherwise make it blank
@@ -782,25 +848,21 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.sMidiOutFileName);
 	EXPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
     EXPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
-    EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
+    // EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
 	EXPORT_SWITCH(showStatusBar,ConfigureParams.Screen.bShowStatusbar);
 	EXPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
+	
+	EXPORT_SWITCH(falconTTRatio, ConfigureParams.Screen.bAspectCorrect);
+	EXPORT_SWITCH(fullScreen, ConfigureParams.Screen.bFullScreen);
+	IMPORT_SWITCH(ledDisks, ConfigureParams.Screen.bShowDriveLed);
+	
+	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
+	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
 
 	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 16;
 
-	switch ([[playbackQuality selectedCell] tag])
-	{
-	 case 0:
-		ConfigureParams.Sound.nPlaybackFreq = 11025;
-		break;
-	 case 1:
-		ConfigureParams.Sound.nPlaybackFreq = 22050;
-		break;
-	 case 2:
-		ConfigureParams.Sound.nPlaybackFreq = 44100;
-		break;
-	}
-
+	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
+			
 	switch ([[resolution selectedCell] tag])
 	{
 	 case 0:
@@ -829,14 +891,25 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	}
 	
 	// Define the IDE HD flag, and export the IDE HD path if one is selected
-	if ([[ideHdImage stringValue] length] > 0)
+	if ([[ideMasterHdImage stringValue] length] > 0)
 	{
-		EXPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);
+		EXPORT_TEXTFIELD(ideMasterHdImage, ConfigureParams.HardDisk.szIdeMasterHardDiskImage);
 		ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = true;
 	}
 	else
 	{
 		ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
+	}
+	
+	// IDE Slave
+	if ([[ideSlaveHdImage stringValue] length] > 0)
+	{
+		EXPORT_TEXTFIELD(ideSlaveHdImage, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage);
+		ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = true;
+	}
+	else
+	{
+		ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = false;
 	}
 	
 	// Define the Gemdos flag, and export the Gemdos path if one is selected
@@ -853,5 +926,20 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	// Save the per-joystick controls		
 	[self saveJoystickControls];	
 }
+
+// Max Zoomed Adjust
+
+- (IBAction) setWidth:(id)sender;
+{
+	NSLog(@"Change Max Zoom width: %ld", [sender intValue]);
+    [maxZoomedWidth setIntValue: [sender intValue]];
+}
+
+- (IBAction) setHeight:(id)sender;
+{
+	NSLog(@"Change Max Zoom height: %ld", [sender intValue]);
+    [maxZoomedHeight setIntValue: [sender intValue]];
+}
+
 
 @end

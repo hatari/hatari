@@ -33,7 +33,8 @@
     IBOutlet NSPopUpButton *frameSkip;
     IBOutlet NSTextField *gemdosImage;
     IBOutlet NSTextField *hdImage;
-    IBOutlet NSTextField *ideHdImage;
+    IBOutlet NSTextField *ideMasterHdImage;
+	IBOutlet NSTextField *ideSlaveHdImage;
     IBOutlet NSButton *interleaved;
     IBOutlet NSPopUpButton *joystickDown;
     IBOutlet NSPopUpButton *joystickFire;
@@ -63,6 +64,17 @@
     IBOutlet NSTextField *writeRS232ToFile;
     IBOutlet NSButton *zoomSTLowRes;
     IBOutlet NSSlider *nSpec512Treshold;
+	
+	IBOutlet NSButton *falconTTRatio;
+	IBOutlet NSButton *fullScreen;
+	IBOutlet NSButton *ledDisks;
+	
+	IBOutlet NSTextField *maxZoomedWidth;
+	IBOutlet NSTextField *maxZoomedHeight;
+	IBOutlet NSStepper *widthStepper;
+	IBOutlet NSStepper *heightStepper;
+	
+	
 
     IBOutlet NSTextField *configFile;
 
@@ -77,7 +89,8 @@
 - (IBAction)chooseFloppyImageB:(id)sender;
 - (IBAction)chooseGemdosImage:(id)sender;
 - (IBAction)chooseHdImage:(id)sender;
-- (IBAction)chooseIdeHdImage:(id)sender;
+- (IBAction)chooseIdeMasterHdImage:(id)sender;
+- (IBAction)chooseIdeSlaveHdImage:(id)sender;
 - (IBAction)chooseKeyboardMappingFile:(id)sender;
 - (IBAction)chooseMidiOutputFile:(id)sender;
 - (IBAction)choosePrintToFile:(id)sender;
@@ -89,7 +102,8 @@
 - (IBAction)ejectFloppyB:(id)sender;
 - (IBAction)ejectGemdosImage:(id)sender;
 - (IBAction)ejectHdImage:(id)sender;
-- (IBAction)ejectIdeHdImage:(id)sender;
+- (IBAction)ejectIdeMasterHdImage:(id)sender;
+- (IBAction)ejectIdeSlaveHdImage:(id)sender;
 - (IBAction)loadPrefs:(id)sender;
 - (IBAction)saveConfigAs:(id)sender;
 - (IBAction)loadConfigFrom:(id)sender;
@@ -101,5 +115,9 @@
 - (void)setJoystickControls;
 - (void)saveJoystickControls;
 - (IBAction)updateEnabledStates:(id)sender;
+- (IBAction)setWidth:(id)sender;
+- (IBAction)setHeight:(id)sender;
+
+
 
 @end

@@ -57,6 +57,11 @@ static BOOL   gFinderLaunch;
 	--in_propdialog;
 }
 
+- (IBAction)debugUI:(id)sender
+{
+	DebugUI();
+}
+
 - (IBAction)warmReset:(id)sender
 {
 	int b;
@@ -95,7 +100,7 @@ static BOOL   gFinderLaunch;
 	if (path != nil)
 	{
 		// Make a non-const C string out of it
-		const char* constSzPath = [path cString];
+		const char* constSzPath = [path cStringUsingEncoding:NSASCIIStringEncoding];
 		size_t cbPath = strlen(constSzPath) + 1;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);	
@@ -119,7 +124,7 @@ static BOOL   gFinderLaunch;
 	if (path != nil)
 	{
 		// Make a non-const C string out of it
-		const char* constSzPath = [path cString];
+		const char* constSzPath = [path cStringUsingEncoding:NSASCIIStringEncoding];
 		size_t cbPath = strlen(constSzPath) + 1;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);	
@@ -181,7 +186,7 @@ static BOOL   gFinderLaunch;
 	GuiOsx_Pause();
 
 	// Get the path from the user settings
-	NSString *preferredPath = [[NSString stringWithCString:(ConfigureParams.Sound.szYMCaptureFileName)] stringByAbbreviatingWithTildeInPath];
+	NSString *preferredPath = [[NSString stringWithCString:(ConfigureParams.Sound.szYMCaptureFileName) encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath];
 
 	// Determine the directory and filename
 	NSString *directoryToOpen;
@@ -233,7 +238,7 @@ static BOOL   gFinderLaunch;
 	GuiOsx_Pause();
 
 	// Get the path from the user settings
-	NSString *preferredPath = [[NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName)] stringByAbbreviatingWithTildeInPath];
+	NSString *preferredPath = [[NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName) encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath];
 
 	// Determine the directory and filename
 	NSString *directoryToOpen;
@@ -279,7 +284,7 @@ static BOOL   gFinderLaunch;
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 
 	// Get the path from the user settings
-	NSString *oldPath = [NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName)];
+	NSString *oldPath = [NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName) encoding:NSASCIIStringEncoding];
 
 	// Determine the directory and filename
 	NSString *directoryToOpen;
@@ -305,7 +310,7 @@ static BOOL   gFinderLaunch;
 		NSString *path = [[openPanel filenames] objectAtIndex:0];
 		
 		// Perform the memory snapshot load
-		MemorySnapShot_Restore([path cString], TRUE);
+		MemorySnapShot_Restore([path cStringUsingEncoding:NSASCIIStringEncoding], TRUE);
     }
 	
 	GuiOsx_Resume();
@@ -373,6 +378,17 @@ static BOOL   gFinderLaunch;
     exit(status);
 }
 
+
+- (BOOL)application:(NSApplication *)app openFile:(NSString *)filename {
+    return YES;
+}
+
+- (IBAction)openConfig:(id)sender {
+}
+
+- (IBAction)saveConfig:(id)sender {
+}
+
 @end
 
 
@@ -412,6 +428,8 @@ static BOOL   gFinderLaunch;
     
     return result;
 }
+
+
 
 @end
 
