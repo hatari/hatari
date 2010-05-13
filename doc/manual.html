@@ -1302,6 +1302,33 @@ DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
 supports.
 </td>
 </table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--sound-buffer-size &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+SDL's sound buffer size : 10-100, or 0 to use default buffer size.
+By default Hatari uses an SDL buffer size of 1024 samples, which
+gives approximatively 20-30 ms of sound depending on the chosen sound
+frequency. Under some OS or with not fully supported sound card, this
+default setting can cause a bigger delay at lower frequency (nearly 0.5 sec).
+In that case, you can use this option to force the size of the sound
+buffer to a fixed number of milliseconds of sound (using 20 is often
+a good choice if you have such problems). Most users will not need this option.
+</td>
+</table>
+
+
+
+
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
