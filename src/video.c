@@ -272,6 +272,12 @@
 /* 2010/05/04	[NP]	Improve Video_ConvertPosition, use CyclesPerVBL instead of evaluating	*/
 /*			CYCLES_PER_FRAME (whose value could have changed this the start of the	*/
 /*			VBL).									*/
+/* 2010/05/15	[NP]	In Video_StartInterrupts() when running in monochrome (224 cycles per	*/
+/*			line), the VBL could sometimes be delayed by 160 cycles (divs) and	*/
+/*			hbl/timer B interrupts for line 0 were not called, which could cause an	*/
+/*			assert/crash in Hatari when setting timer B on line 2.			*/
+/*			If we detect VBL was delayed too much, we add hbl/timer b in the next	*/
+/*			4 cycles.								*/
 
 
 
@@ -2548,6 +2554,7 @@ static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
 	  return;				/* don't set a new hbl/timer B if we're on the last line, as the vbl will happen first */
 	
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+//fprintf ( stderr , "add int pos=%d handler=%d LineCycles=%d nCyclesPerLine=%d \n" , Pos , Handler , LineCycles , nCyclesPerLine );
 
 	if ( LineCycles < Pos )			/* changed before reaching the new Pos on the current line */
 		CycInt_AddRelativeInterrupt ( Pos - LineCycles , INT_CPU_CYCLE, Handler );
@@ -2558,7 +2565,7 @@ static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
 
 static void Video_AddInterruptHBL ( int Pos )
 {
-//fprintf ( stderr , "add hbl %d\n" , Pos );
+//fprintf ( stderr , "add hbl pos=%d\n" , Pos );
 	if ( !bUseVDIRes )
 		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_HBL );
 }
@@ -2566,6 +2573,7 @@ static void Video_AddInterruptHBL ( int Pos )
 
 void Video_AddInterruptTimerB ( int Pos )
 {
+//fprintf ( stderr , "add timerb pos=%d\n" , Pos );
 	if ( !bUseVDIRes )
 		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_ENDLINE );
 }
@@ -2576,17 +2584,42 @@ void Video_AddInterruptTimerB ( int Pos )
  * in a new VBL. Also add an interrupt to trigger the next VBL.
  * This function is called from the VBL, so we use PendingCycleOver to take into account
  * the possible delay occurring when the VBL was executed.
+ * In monochrome mode (71 Hz) a line is 224 cycles, which means if VBL is delayed
+ * by a DIVS, FrameCycles can already be > 224 and we need to add an immediate
+ * interrupt for hbl/timer in the next 4/8 cycles (else crash might happen as
+ * line 0 processing would be skipped).
  */
 void Video_StartInterrupts ( int PendingCyclesOver )
 {
+	int FrameCycles , HblCounterVideo , LineCycles;
+	int Pos;
+
 	/* HBL/Timer B are not emulated in VDI mode */
 	if (!bUseVDIRes)
 	{
-		/* Set Timer B interrupt for line 0 */
-		Video_AddInterruptTimerB ( Video_TimerB_GetPos ( 0 ) );
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-		/* Set HBL interrupt */
-		Video_AddInterruptHBL ( Video_HBL_GetPos() );
+		/* Set Timer B interrupt for line 0 */
+		Pos = Video_TimerB_GetPos ( 0 );
+		if ( Pos > FrameCycles )		/* check Pos for line 0 was not already reached */
+			Video_AddInterruptTimerB ( Pos );
+		else					/* the VBL was delayed by more than 1 HBL, add an immediate timer B */
+		{
+			LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d delayed too much video_cyc=%d >= pos=%d for first timer B, add immediate timer B\n" ,
+				nVBLs , FrameCycles , Pos );
+			CycInt_AddRelativeInterrupt ( 4 , INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
+		}
+
+		/* Set HBL interrupt for line 0 */
+		Pos = Video_HBL_GetPos();
+		if ( Pos > FrameCycles )		/* check Pos for line 0 was not already reached */
+			Video_AddInterruptHBL ( Pos );
+		else					/* the VBL was delayed by more than 1 HBL, add an immediate HBL */
+		{
+			LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d delayed too much video_cyc=%d >= pos=%d for first HBL, add immediate HBL\n" ,
+				nVBLs , FrameCycles , Pos );
+			CycInt_AddRelativeInterrupt ( 8 , INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL );		/* use 8 instead of 4 to happen after immediate timer b */
+		}
 	}
 
 	/* TODO replace CYCLES_PER_FRAME */
