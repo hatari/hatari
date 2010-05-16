@@ -29,9 +29,10 @@ Emulation:
   - correctly shift the screen 4 pixels to the left when left border is removed
   - add support for STE's 224 bytes overscan line without stabilizer
   - when reading $ff8205/07/09 on STE, take into account the value
-    of horizontal scrolling/prefetch and linewidth.
+    of horizontal scrolling/prefetch and linewidth
   - when writing to $ff8205/07/09 on STE, correctly handle the case
-    where the write is made while display in ON.
+    where the write is made while display in ON
+- LMC1992 emulation / STE sound filtering
 
 Emulator:
 - Host mouse is centered to Hatari window on Falcon resolution changes
@@ -50,10 +51,10 @@ Emulator:
   - convert host filename chars invalid in TOS to valid ones ('@')
   - use TOS filename matching instead of glob() (can match names with [])
 - Options for preventing floppy image (--protect-floppy) and GEMDOS
-  emulated drive directory (--protect-hd) modifications.
+  emulated drive directory (--protect-hd) modifications
 - AVI file recording:
   - video can be stored as BMP or as PNG images
-  - audio is stored as 16 bits stereo PCM.
+  - audio is stored as 16 bits stereo PCM
 - Statusbar shows CPU type & speed
 - Can create blank 2.88MB (ED) and 1.44MB (HD) floppy images
   from the GUI in addition to DD & SD images
@@ -91,7 +92,7 @@ Emulator:
     argument can be an expression (see "evaluate" above)
   - Display DSP instructions cycle timings in disasm mode (in cycles)
   - Configuration options for how many lines to disasm & memdump
-- Fix VBLs/s counting to work also when --run-vbls isn't used.
+- Fix VBLs/s counting to work also when --run-vbls isn't used
 
 Other changes:
 - Considerably expanded debugging and hard disk sections in manual
