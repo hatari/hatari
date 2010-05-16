@@ -227,7 +227,7 @@ static const struct Config_Tag configs_Sound[] =
 	{ "bEnableSound", Bool_Tag, &ConfigureParams.Sound.bEnableSound },
 	{ "nPlaybackFreq", Int_Tag, &ConfigureParams.Sound.nPlaybackFreq },
 	{ "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
-	{ "SdlAudioBufferSize", Int_Tag, &ConfigureParams.Sound.SdlAudioBufferSize },
+	{ "nSdlAudioBufferSize", Int_Tag, &ConfigureParams.Sound.SdlAudioBufferSize },
 	{ NULL , Error_Tag, NULL }
 };
 
