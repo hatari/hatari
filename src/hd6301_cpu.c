@@ -592,6 +592,24 @@ static struct hd6301_opcode_t hd6301_opcode_table[256] = {
 };
 
 
+/* Variables */
+static Uint8	hd6301_cycles;
+static Uint8	hd6301_cur_inst;
+
+static Sint8	hd6301_reg_A; 
+static Sint8	hd6301_reg_B;
+static Sint16	hd6301_reg_X;
+static Uint16	hd6301_reg_SP;
+static Uint16	hd6301_reg_PC;
+static Uint8	hd6301_reg_CCR;
+
+//Uint8	hd6301_reg_RMCR;
+
+static Uint8	hd6301_intREG[32];
+static Uint8	hd6301_intRAM[128];
+static Uint8	hd6301_intROM[4096];
+
+
 /**********************************
  *	Emulator kernel
  **********************************/
@@ -1660,7 +1678,7 @@ static void hd6301_deca(void)
 {
 	Uint8 overflow;
 
-	overflow = (hd6301_reg_A == 0x80) << hd6301_REG_CCR_V;
+	overflow = (hd6301_reg_A == (Sint8)0x80) << hd6301_REG_CCR_V;
 	-- hd6301_reg_A;
 
 	HD6301_CLR_NZV;
@@ -1816,7 +1834,7 @@ static void hd6301_aslb(void)
 {
 	Uint8  carry, bitN;
 
-	carry = (hd6301_reg_B & 0X80) >> 7;
+	carry = (hd6301_reg_B & 0x80) >> 7;
 	hd6301_reg_B <<= 1;
 
 	HD6301_CLR_NZVC;
@@ -1858,7 +1876,7 @@ static void hd6301_decb(void)
 {
 	Uint8 overflow;
 
-	overflow = (hd6301_reg_B == 0x80) << hd6301_REG_CCR_V;
+	overflow = (hd6301_reg_B == (Sint8)0x80) << hd6301_REG_CCR_V;
 	-- hd6301_reg_B;
 
 	HD6301_CLR_NZV;

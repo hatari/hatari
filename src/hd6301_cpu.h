@@ -23,23 +23,6 @@ extern "C" {
 #define hd6301_REG_CCR_I	0x04
 #define hd6301_REG_CCR_H	0x05
 
-/* Variables */
-static Uint8	hd6301_cycles;
-static Uint8	hd6301_cur_inst;
-
-static Sint8	hd6301_reg_A; 
-static Sint8	hd6301_reg_B;
-static Sint16	hd6301_reg_X;
-static Uint16	hd6301_reg_SP;
-static Uint16	hd6301_reg_PC;
-static Uint8	hd6301_reg_CCR;
-
-//Uint8	hd6301_reg_RMCR;
-
-static Uint8	hd6301_intREG[32];
-static Uint8	hd6301_intRAM[128];
-static Uint8	hd6301_intROM[4096];
-
 struct hd6301_opcode_t {
 	Uint8	op_value;		/* Opcode value */
 	Uint8	op_bytes;		/* Total opcode bytes */
