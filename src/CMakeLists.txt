@@ -21,7 +21,8 @@ if(ENABLE_OSX_BUNDLE)
 	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m)
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
-	    gui-osx/SDLMain.nib gui-osx/Hatari.icns gui-osx/English.lproj)
+	    gui-osx/SDLMain.nib gui-osx/Hatari.icns
+	    gui-osx/English.lproj gui-osx/French.lproj)
 endif(ENABLE_OSX_BUNDLE)
 
 # When building for Windows, define specific sources for gui and ressources
@@ -80,9 +81,9 @@ endif(ENABLE_OSX_BUNDLE)
 
 target_link_libraries(hatari Floppy Debug Falcon GuiSdl UaeCpu ${SDL_LIBRARY})
 
-if(MATH_FOUND)
+if(MATH_FOUND AND NOT APPLE)
 	target_link_libraries(hatari ${MATH_LIBRARY})
-endif(MATH_FOUND)
+endif()
 
 if(SDLMAIN_LIBRARY)
 	target_link_libraries(hatari ${SDLMAIN_LIBRARY})
