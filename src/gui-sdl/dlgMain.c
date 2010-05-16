@@ -72,6 +72,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 	int retbut;
 	bool bOldMouseVisibility;
 	int nOldMouseX, nOldMouseY;
+	char *psNewCfg;
 
 	*bReset = false;
 	*bLoadedSnapshot = false;
@@ -135,10 +136,19 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			Dialog_SoundDlg();
 			break;
 		 case MAINDLG_LOADCFG:
-			Configuration_Load(NULL);
+			psNewCfg = SDLGui_FileSelect(sConfigFileName, NULL, false);
+			if (psNewCfg)
+			{
+				Configuration_Load(psNewCfg);
+			}
 			break;
 		 case MAINDLG_SAVECFG:
-			Configuration_Save();
+			psNewCfg = SDLGui_FileSelect(sConfigFileName, NULL, true);
+			if (psNewCfg)
+			{
+				strcpy(sConfigFileName, psNewCfg);
+				Configuration_Save();
+			}
 			break;
 		 case MAINDLG_QUIT:
 			bQuitProgram = true;
