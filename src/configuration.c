@@ -601,7 +601,7 @@ static int Configuration_LoadSection(const char *pFilename, const struct Config_
 
 	if (ret < 0)
 		fprintf(stderr, "Can not load configuration file %s (section %s).\n",
-		        sConfigFileName, pSection);
+		        pFilename, pSection);
 
 	return ret;
 }
@@ -610,7 +610,7 @@ static int Configuration_LoadSection(const char *pFilename, const struct Config_
 /*-----------------------------------------------------------------------*/
 /**
  * Load program setting from configuration file. If psFileName is NULL, use
- * the default (i.e. the users) configuration file.
+ * the configuration file given in configuration / last selected by user.
  */
 void Configuration_Load(const char *psFileName)
 {
@@ -658,7 +658,7 @@ static int Configuration_SaveSection(const char *pFilename, const struct Config_
 	ret = update_config(pFilename, configs, pSection);
 
 	if (ret < 0)
-		fprintf(stderr, "Error while updating section %s\n", pSection);
+		fprintf(stderr, "Error while updating section %s in %s\n", pSection, pFilename);
 
 	return ret;
 }

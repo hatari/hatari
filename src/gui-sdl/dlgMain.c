@@ -139,7 +139,9 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			psNewCfg = SDLGui_FileSelect(sConfigFileName, NULL, false);
 			if (psNewCfg)
 			{
-				Configuration_Load(psNewCfg);
+				strcpy(sConfigFileName, psNewCfg);
+				Configuration_Load(NULL);
+				free(psNewCfg);
 			}
 			break;
 		 case MAINDLG_SAVECFG:
@@ -148,6 +150,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			{
 				strcpy(sConfigFileName, psNewCfg);
 				Configuration_Save();
+				free(psNewCfg);
 			}
 			break;
 		 case MAINDLG_QUIT:
