@@ -699,6 +699,9 @@ class HatariConfigMapping(ConfigStore):
         # window sizes for other than ST & STE can differ
         if self.get("[System]", "nMachineType") not in (0, 1):
             print "WARNING: neither ST nor STE machine, window size inaccurate!"
+            videl = True
+        else:
+            videl = False
 
         # mono monitor?
         if self.get_monitor() == 0:
@@ -707,20 +710,28 @@ class HatariConfigMapping(ConfigStore):
         # no, color
         width = 320
         height = 200
-        # add overscan borders?
-        if self.get_borders():
-            # max size with overscan borders
-            width += self.get("[Screen]", "nWindowBorderPixelsLeft")
-            width += self.get("[Screen]", "nWindowBorderPixelsRight")
-            height += self.get("[Screen]", "nWindowBorderPixelsTop")
-            height += self.get("[Screen]", "nWindowBorderPixelsBottom")
         # statusbar?
         if self.get_statusbar():
-            height += 12
-        # zoomed?
+            sbar = 12
+            height += sbar
+        else:
+            sbar = 0
+        # zoom?
         maxw, maxh = self.get_max_size()
-        if 2*width < maxw and 2*height < maxh:
+        if 2*width <= maxw and 2*height <= maxh:
             width *= 2
             height *= 2
+            zoom = 2
+        else:
+            zoom = 1
+        # overscan borders?
+        if self.get_borders() and not videl:
+            # properly aligned borders on top of zooming
+            leftx = (maxw-width)/zoom
+            borderx = 2*(min(48,leftx/2)/16)*16
+            lefty = (maxh-height)/zoom
+            bordery = min(29+47, lefty)
+            width += zoom*borderx
+            height += zoom*bordery
 
         return (width, height)
