@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
 project(Hatari)
 
+SET(APP_NAME "Hatari")
+
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(CheckIncludeFiles)
@@ -15,6 +17,8 @@ include(DistClean)
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
+
+# set(CMAKE_VERBOSE_MAKEFILE 1)
 
 # ##########################
 # Conditional build features
@@ -30,6 +34,11 @@ set(ENABLE_SMALL_MEM 0
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
 	    CACHE BOOL "Built Hatari as Mac OS X application bundle")
+	set(CMAKE_OSX_ARCHITECTURES "i386;ppc" CACHE STRING "Target architectures" FORCE)
+	# set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk" CACHE STRING "10.6 SDK" FORCE)
+	# set(CMAKE_OSX_DEPLOYMENT_TARGET "10.5" CACHE STRING "Target Min 10.5" FORCE)
+	set(ADDITIONAL_INCLUDES ${FRAMEWORKS})
+	set_source_files_properties(${FRAMEWORKS} PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
 else()
 	set(ENABLE_OSX_BUNDLE 0
 	    CACHE BOOL "Built Hatari as Mac OS X application bundle")

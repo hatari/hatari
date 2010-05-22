@@ -21,8 +21,7 @@ if(ENABLE_OSX_BUNDLE)
 	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m)
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
-	    gui-osx/SDLMain.nib gui-osx/Hatari.icns
-	    gui-osx/English.lproj gui-osx/French.lproj)
+	    gui-osx/Hatari.icns gui-osx/English.lproj gui-osx/French.lproj)
 endif(ENABLE_OSX_BUNDLE)
 
 # When building for Windows, define specific sources for gui and ressources
@@ -56,12 +55,22 @@ add_subdirectory(uae-cpu)
 
 # When building for OSX, add specific sources
 if(ENABLE_OSX_BUNDLE)
-	set_source_files_properties(${GUIOSX_RSRCS}
-			PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 	add_executable(hatari MACOSX_BUNDLE ${GUIOSX_RSRCS} ${SOURCES} ${GUIOSX_SOURCES})
-	# set_target_properties(hatari PROPERTIES MACOSX_BUNDLE true)
 	set_target_properties(hatari PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
+	set(MACOSX_BUNDLE_ICON_FILE Hatari.icns)
+	# Create Hatari.app bundle
+	add_custom_target(osx_bundle_dirs
+			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources
+			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/MacOS
+			COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${MACOSX_BUNDLE_ICON_FILE}
+				   ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/${MACOSX_BUNDLE_ICON_FILE}
+			# Copy Localized .nib to Bundle
+			COMMAND cp -R ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/*.lproj ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/
+	)	
+	add_dependencies(hatari osx_bundle_dirs)
+	set_source_files_properties(${GUIOSX_RSRCS}
+			PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
 # When building for Windows, add specific sources + method to compile .rc files
 elseif(WIN32)
