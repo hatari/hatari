@@ -340,6 +340,7 @@ Demos:
 - Beat Demo (by Frontline)
 - Birdie (by Zeal)
 - CD-player (by Light)
+- Cernit Trandafir (by DHS)
 - Core Flakes (by New Core)
 - Dynamite (by Unit 17)
 - E605 (by Light)
@@ -365,6 +366,7 @@ Demos:
 - Sinfull Sinuses (by Chronicle)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
+- Sommarhack (by DHS)
 - Vision (by POV)
 - XiTEC Presentation (by Omega)
 
