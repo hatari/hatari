@@ -11,7 +11,7 @@
 			<string key="NS.object.0">762</string>
 		</object>
 		<array class="NSMutableArray" key="IBDocument.EditedObjectIDs">
-			<integer value="332"/>
+			<integer value="856"/>
 		</array>
 		<array key="IBDocument.PluginDependencies">
 			<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -316,6 +316,7 @@
 								</object>
 								<object class="NSMenuItem" id="1006026118">
 									<reference key="NSMenu" ref="108661174"/>
+									<bool key="NSIsDisabled">YES</bool>
 									<string key="NSTitle">Fast Forward</string>
 									<string key="NSKeyEquiv">x</string>
 									<int key="NSKeyEquivModMask">1048576</int>
@@ -345,6 +346,7 @@
 								</object>
 								<object class="NSMenuItem" id="735709409">
 									<reference key="NSMenu" ref="108661174"/>
+									<bool key="NSIsDisabled">YES</bool>
 									<string key="NSTitle">Debugger UI</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -353,6 +355,7 @@
 								</object>
 								<object class="NSMenuItem" id="462727064">
 									<reference key="NSMenu" ref="108661174"/>
+									<bool key="NSIsDisabled">YES</bool>
 									<string key="NSTitle">Enable Bios/XBios interception </string>
 									<string key="NSKeyEquiv">B</string>
 									<int key="NSKeyEquivModMask">1048576</int>
@@ -446,7 +449,7 @@
 				</object>
 				<string key="NSWindowContentMaxSize">{1.79769e+308, 1.79769e+308}</string>
 				<object class="NSView" key="NSWindowView" id="28116358">
-					<reference key="NSNextResponder"/>
+					<nil key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
 					<array class="NSMutableArray" key="NSSubviews">
 						<object class="NSButton" id="922196917">
@@ -5541,7 +5544,6 @@ AAA</bytes>
 						</object>
 					</array>
 					<string key="NSFrameSize">{689, 479}</string>
-					<reference key="NSSuperview"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1280, 778}}</string>
 				<string key="NSMaxSize">{1.79769e+308, 1.79769e+308}</string>
@@ -6822,59 +6824,11 @@ AAA</bytes>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
-						<string key="label">enableBIOSInterceptionMenu</string>
-						<reference key="source" ref="892321347"/>
-						<reference key="destination" ref="462727064"/>
-					</object>
-					<int key="connectionID">3216</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBOutletConnection" key="connection">
-						<string key="label">enableBIOSMenu</string>
-						<reference key="source" ref="892321347"/>
-						<reference key="destination" ref="462727064"/>
-					</object>
-					<int key="connectionID">3344</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">enableBIOSInterception:</string>
-						<reference key="source" ref="892321347"/>
-						<reference key="destination" ref="462727064"/>
-					</object>
-					<int key="connectionID">3345</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBOutletConnection" key="connection">
 						<string key="label">useIDEHD</string>
 						<reference key="source" ref="932832352"/>
 						<reference key="destination" ref="949143037"/>
 					</object>
 					<int key="connectionID">3475</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">debuggerGUI:</string>
-						<reference key="source" ref="892321347"/>
-						<reference key="destination" ref="735709409"/>
-					</object>
-					<int key="connectionID">3606</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">fastForward:</string>
-						<reference key="source" ref="892321347"/>
-						<reference key="destination" ref="1006026118"/>
-					</object>
-					<int key="connectionID">3607</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBOutletConnection" key="connection">
-						<string key="label">fastForward</string>
-						<reference key="source" ref="892321347"/>
-						<reference key="destination" ref="1006026118"/>
-					</object>
-					<int key="connectionID">3608</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
@@ -10245,7 +10199,7 @@ AAA</bytes>
 				<boolean value="YES" key="284.ImportedFromIB2"/>
 				<string key="285.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="285.ImportedFromIB2"/>
-				<string key="29.IBEditorWindowLastContentRect">{{0, 725}, {327, 20}}</string>
+				<string key="29.IBEditorWindowLastContentRect">{{70, 687}, {327, 20}}</string>
 				<string key="29.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="29.ImportedFromIB2"/>
 				<string key="2921.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10284,6 +10238,7 @@ AAA</bytes>
 				<boolean value="YES" key="309.ImportedFromIB2"/>
 				<string key="311.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="311.ImportedFromIB2"/>
+				<string key="312.IBEditorWindowLastContentRect">{{74, 602}, {214, 123}}</string>
 				<string key="312.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="312.ImportedFromIB2"/>
 				<string key="3215.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10923,7 +10878,7 @@ AAA</bytes>
 				<boolean value="YES" key="846.ImportedFromIB2"/>
 				<string key="855.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="855.ImportedFromIB2"/>
-				<string key="856.IBEditorWindowLastContentRect">{{116, 592}, {303, 133}}</string>
+				<string key="856.IBEditorWindowLastContentRect">{{186, 554}, {303, 133}}</string>
 				<string key="856.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="856.ImportedFromIB2"/>
 				<string key="857.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10969,7 +10924,7 @@ AAA</bytes>
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">4098</int>
+			<int key="maxID">4100</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -11133,14 +11088,11 @@ AAA</bytes>
 					<string key="superclassName">NSObject</string>
 					<dictionary class="NSMutableDictionary" key="actions">
 						<string key="captureAnimation:">id</string>
-						<string key="captureAnimation_AVI:">id</string>
 						<string key="captureScreen:">id</string>
 						<string key="captureSound:">id</string>
 						<string key="coldReset:">id</string>
 						<string key="debugUI:">id</string>
 						<string key="doFullScreen:">id</string>
-						<string key="endCaptureAnimation:">id</string>
-						<string key="endCaptureAnimation_AVI:">id</string>
 						<string key="endCaptureSound:">id</string>
 						<string key="help:">id</string>
 						<string key="insertDiskA:">id</string>
