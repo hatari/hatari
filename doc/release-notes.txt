@@ -57,7 +57,8 @@ Emulator:
   - audio is stored as 16 bits stereo PCM
 - Statusbar shows CPU type & speed
 - Can create blank 2.88MB (ED) and 1.44MB (HD) floppy images
-  from the GUI in addition to DD & SD images
+  from the GUI in addition to DD & SD images.  After creating
+  new floppy image, one can directly insert it to A: or B:.
 - Tracing for BIOS, XBIOS, GEMDOS and VDI traps gives in addition
   to the opcode, also the name of the corresponding OS function
 - Major debugger improvements:

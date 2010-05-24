@@ -60,6 +60,22 @@ static SGOBJ floppydlg[] =
 };
 
 
+#define DLGMOUNT_A       2
+#define DLGMOUNT_B       3
+#define DLGMOUNT_CANCEL  4
+
+/* The "Alert"-dialog: */
+static SGOBJ alertdlg[] =
+{
+	{ SGBOX, 0, 0, 0,0, 40,6, NULL },
+	{ SGTEXT, 0, 0, 3,1, 30,1, "Insert last created disk to?" },
+	{ SGBUTTON, 0, 0, 3,4, 10,1, "Drive A:" },
+	{ SGBUTTON, 0, 0, 15,4, 10,1, "Drive B:" },
+	{ SGBUTTON, SG_CANCEL, 0, 27,4, 10,1, "Cancel" },
+	{ -1, 0, 0, 0,0, 0,0, NULL }
+};
+
+
 /**
  * Let user browse given disk, insert disk if one selected.
  */
@@ -118,11 +134,44 @@ static void DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 
 
 /**
+ * Ask whether new disk should be inserted to A: or B: and if yes, insert.
+ */
+static void DlgFloppy_QueryInsert(char *namea, int ida, char *nameb, int idb, const char *path)
+{
+	const char *realname;
+	int diskid, dlgid;
+	char *dlgname;
+
+	SDLGui_CenterDlg(alertdlg);
+	switch (SDLGui_DoDialog(alertdlg, NULL))
+	{
+		case DLGMOUNT_A:
+			dlgname = namea;
+			dlgid = ida;
+			diskid = 0;
+			break;
+		case DLGMOUNT_B:
+			dlgname = nameb;
+			dlgid = idb;
+			diskid = 1;
+			break;
+		default:
+			return;
+	}
+
+	realname = Floppy_SetDiskFileName(diskid, path, NULL);
+	if (realname)
+		File_ShrinkName(dlgname, realname, floppydlg[dlgid].w);
+}
+
+
+/**
  * Show and process the floppy disk image dialog.
  */
 void DlgFloppy_Main(void)
 {
 	int but, i;
+	char *newdisk;
 	char dlgname[MAX_FLOPPYDRIVES][64], dlgdiskdir[64];
 
 	SDLGui_CenterDlg(floppydlg);
@@ -195,7 +244,14 @@ void DlgFloppy_Main(void)
 			                 floppydlg[FLOPPYDLG_IMGDIR].w);
 			break;
 		 case FLOPPYDLG_CREATEIMG:
-			DlgNewDisk_Main();
+			newdisk = DlgNewDisk_Main();
+			if (newdisk)
+			{
+				DlgFloppy_QueryInsert(dlgname[0], FLOPPYDLG_DISKA,
+						      dlgname[1], FLOPPYDLG_DISKB,
+						      newdisk);
+				free(newdisk);
+			}
 			break;
 		}
 	}

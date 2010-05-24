@@ -169,8 +169,8 @@ bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSect
 		/* Did create successfully? */
 		if (bRet)
 		{
-			/* Say OK, */
-			Log_AlertDlg(LOG_INFO, "Disk image has been created successfully.");
+			/* Say OK */
+			Log_AlertDlg(LOG_INFO, "Disk image '%s' created.", pszFileName);
 		}
 		else
 		{

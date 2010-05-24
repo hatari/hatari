@@ -21,7 +21,7 @@ extern void DlgHardDisk_Main(void);
 extern void Dialog_JoyDlg(void);
 extern void Dialog_KeyboardDlg(void);
 extern bool Dialog_MemDlg(void);
-extern void DlgNewDisk_Main(void);
+extern char* DlgNewDisk_Main(void);
 extern void Dialog_MonitorDlg(void);
 extern void Dialog_WindowDlg(void);
 extern void Dialog_SoundDlg(void);

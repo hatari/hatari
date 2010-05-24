@@ -4,7 +4,7 @@
 include ../../Makefile.cnf
 
 # Additional include directories:
-INCFLAGS = -I../.. -I../includes $(CPPFLAGS)
+INCFLAGS = -I../.. -I../debug -I../includes $(CPPFLAGS)
 
 CFLAGS += $(INCFLAGS) $(SDL_CFLAGS) -Wno-write-strings
 

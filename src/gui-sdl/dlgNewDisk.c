@@ -12,7 +12,7 @@ const char DlgNewDisk_fileid[] = "Hatari dlgNewDisk.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "sdlgui.h"
 #include "file.h"
-
+#include "log.h"
 
 #define DLGNEWDISK_DECTRACK   3
 #define DLGNEWDISK_TRACKSTR   4
@@ -55,14 +55,55 @@ static SGOBJ newdiskdlg[] =
 
 #define DEFAULT_DISK_NAME "new_disk.st"
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle creation of a the "new blank disk image".
+ * return true if disk created, false otherwise.
+ */
+static bool DlgNewDisk_CreateDisk(const char *path)
+{
+	int nSectors, nSides;
+
+	/* (potentially non-existing) filename? */
+	if (File_DirExists(path))
+	{
+		Log_AlertDlg(LOG_ERROR, "ERROR: '%s' isn't a file!", path);
+		return false;
+	}
+
+	/* Get number of sectors */
+	if (newdiskdlg[DLGNEWDISK_SECTORS36].state & SG_SELECTED)
+		nSectors = 36;
+	else if (newdiskdlg[DLGNEWDISK_SECTORS18].state & SG_SELECTED)
+		nSectors = 18;
+	else if (newdiskdlg[DLGNEWDISK_SECTORS11].state & SG_SELECTED)
+		nSectors = 11;
+	else if (newdiskdlg[DLGNEWDISK_SECTORS10].state & SG_SELECTED)
+		nSectors = 10;
+	else
+		nSectors = 9;
+
+	/* Get number of sides */
+	if (newdiskdlg[DLGNEWDISK_SIDES1].state & SG_SELECTED)
+		nSides = 1;
+	else
+		nSides = 2;
+	
+	return CreateBlankImage_CreateFile(path, nTracks, nSectors, nSides);
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Show and process the "new blank disk image" dialog.
+ * Return file name of last created diskimage or NULL if none created.
+ * Caller needs to free the name.
  */
-void DlgNewDisk_Main(void)
+char *DlgNewDisk_Main(void)
 {
 	int but;
-	char *szNewDiskName, *tmpname;
+	char *szNewDiskName, *tmpname, *retname = NULL;
 	sprintf(szTracks, "%i", nTracks);
 
  	SDLGui_CenterDlg(newdiskdlg);
@@ -70,7 +111,7 @@ void DlgNewDisk_Main(void)
 	/* Initialize disk image name: */
 	szNewDiskName = File_MakePath(ConfigureParams.DiskImage.szDiskImageDirectory, "new_disk.st", NULL);
 	if (!szNewDiskName)
-		return;
+		return NULL;
 
 	/* Draw and process the dialog */
 	do
@@ -89,35 +130,15 @@ void DlgNewDisk_Main(void)
 			sprintf(szTracks, "%i", nTracks);
 			break;
 		 case DLGNEWDISK_SAVE:
+			if (retname)
+				free(retname);
 			tmpname = SDLGui_FileSelect(szNewDiskName, NULL, true);
 			if (tmpname)
 			{
-				/* (potentially non-existing) filename? */
-				if (!File_DirExists(tmpname))
-				{
-					int nSectors, nSides;
-
-					/* Get number of sectors */
-					if (newdiskdlg[DLGNEWDISK_SECTORS36].state & SG_SELECTED)
-						nSectors = 36;
-					else if (newdiskdlg[DLGNEWDISK_SECTORS18].state & SG_SELECTED)
-						nSectors = 18;
-					else if (newdiskdlg[DLGNEWDISK_SECTORS11].state & SG_SELECTED)
-						nSectors = 11;
-					else if (newdiskdlg[DLGNEWDISK_SECTORS10].state & SG_SELECTED)
-						nSectors = 10;
-					else
-						nSectors = 9;
-
-					/* Get number of sides */
-					if (newdiskdlg[DLGNEWDISK_SIDES1].state & SG_SELECTED)
-						nSides = 1;
-					else
-						nSides = 2;
-
-					CreateBlankImage_CreateFile(tmpname, nTracks, nSectors, nSides);
-				}
-				free(tmpname);
+				if (DlgNewDisk_CreateDisk(tmpname))
+					retname = tmpname;
+				else
+					free(tmpname);
 			}
 			break;
 		}
@@ -126,4 +147,5 @@ void DlgNewDisk_Main(void)
 	       && but != SDLGUI_ERROR && !bQuitProgram);
 
 	free(szNewDiskName);
+	return retname;
 }
