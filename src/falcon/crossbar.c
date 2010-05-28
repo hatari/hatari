@@ -247,9 +247,11 @@ struct crossbar_s {
 	Uint32 clock25_cycles;		/* cycles for 25 Mzh interrupt */
 	Uint32 clock25_cycles_decimal;  /* decimal part of cycles counter for 25 Mzh interrupt (*DECIMAL_PRECISION) */
 	Uint32 clock25_cycles_counter;  /* Cycle counter for 25 Mhz interrupts */
+	Uint32 pendingCyclesOver25;	/* Number of delayed cycles for the interrupt */
 	Uint32 clock32_cycles;		/* cycles for 32 Mzh interrupt */
 	Uint32 clock32_cycles_decimal;  /* decimal part of cycles counter for 32 Mzh interrupt (*DECIMAL_PRECISION) */
 	Uint32 clock32_cycles_counter;  /* Cycle counter for 32 Mhz interrupts */
+	Uint32 pendingCyclesOver32;	/* Number of delayed cycles for the interrupt */
 	Uint32 frequence_ratio;		/* Ratio between host computer's sound frequency and hatari's sound frequency */
 	Uint32 frequence_ratio2;	/* Ratio between hatari's sound frequency and host computer's sound frequency */
 	
@@ -335,9 +337,11 @@ void Crossbar_Reset(bool bCold)
 	crossbar.clock25_cycles = 160;
 	crossbar.clock25_cycles_decimal = 0;
 	crossbar.clock25_cycles_counter = 0;
+	crossbar.pendingCyclesOver25 = 0;
 	crossbar.clock32_cycles = 160;
 	crossbar.clock32_cycles_decimal = 0;
 	crossbar.clock32_cycles_counter = 0;
+	crossbar.pendingCyclesOver32 = 0;
 	crossbar.frequence_ratio = 0;
 	crossbar.frequence_ratio2 = 0;
 
@@ -683,7 +687,7 @@ void Crossbar_FrameCountLow_WriteByte(void)
 
 	if (crossbar.dmaSelected == 0) {
 		/* DMA Play selected */
-		dmaPlay.frameCounter = addr - crossbar.dmaPlay_CurrentFrameStart;
+		dmaPlay.frameCounter = addr;
 	}
 	else {
 		/* DMA Record selected */
@@ -1140,6 +1144,17 @@ static void Crossbar_Start_InterruptHandler_25Mhz(void)
 		crossbar.clock25_cycles_counter -= DECIMAL_PRECISION;
 		cycles_25 ++;
 	}
+
+	if (crossbar.pendingCyclesOver25 >= cycles_25) {
+		fprintf(stderr, "cyc25: %d    pending 25 : %d\n", cycles_25, crossbar.pendingCyclesOver25);
+		crossbar.pendingCyclesOver25 -= cycles_25;
+		cycles_25 = 0;
+	}
+	else {
+		cycles_25 -= crossbar.pendingCyclesOver25;
+		crossbar.pendingCyclesOver25 = 0;
+	}
+
 	CycInt_AddRelativeInterrupt(cycles_25, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_25MHZ);
 }
 
@@ -1157,6 +1172,17 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
 		crossbar.clock32_cycles_counter -= DECIMAL_PRECISION;
 		cycles_32 ++;
 	}
+
+	if (crossbar.pendingCyclesOver32 >= cycles_32){
+		fprintf(stderr, "cyc32: %d    pending 32 : %d\n", cycles_32, crossbar.pendingCyclesOver32);
+		crossbar.pendingCyclesOver32 -= cycles_32;
+		cycles_32 = 0;
+	}
+	else {
+		cycles_32 -= crossbar.pendingCyclesOver32;
+		crossbar.pendingCyclesOver32 = 0;
+	}
+
 	CycInt_AddRelativeInterrupt(cycles_32, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_32MHZ);
 }
 
@@ -1166,6 +1192,9 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
  */
 void Crossbar_InterruptHandler_25Mhz(void)
 {
+	/* How many cycle was this sound interrupt delayed (>= 0) */
+	crossbar.pendingCyclesOver25 += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
+
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
@@ -1201,6 +1230,9 @@ void Crossbar_InterruptHandler_25Mhz(void)
  */
 void Crossbar_InterruptHandler_32Mhz(void)
 {
+	/* How many cycle was this sound interrupt delayed (>= 0) */
+	crossbar.pendingCyclesOver32 += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
+
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
