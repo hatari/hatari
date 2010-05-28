@@ -1146,7 +1146,6 @@ static void Crossbar_Start_InterruptHandler_25Mhz(void)
 	}
 
 	if (crossbar.pendingCyclesOver25 >= cycles_25) {
-		fprintf(stderr, "cyc25: %d    pending 25 : %d\n", cycles_25, crossbar.pendingCyclesOver25);
 		crossbar.pendingCyclesOver25 -= cycles_25;
 		cycles_25 = 0;
 	}
@@ -1174,7 +1173,6 @@ static void Crossbar_Start_InterruptHandler_32Mhz(void)
 	}
 
 	if (crossbar.pendingCyclesOver32 >= cycles_32){
-		fprintf(stderr, "cyc32: %d    pending 32 : %d\n", cycles_32, crossbar.pendingCyclesOver32);
 		crossbar.pendingCyclesOver32 -= cycles_32;
 		cycles_32 = 0;
 	}
