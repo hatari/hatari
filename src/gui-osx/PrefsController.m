@@ -859,7 +859,7 @@ static const int nSoundFreqs[] =
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
 
-	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 16;
+	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 0;
 
 	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
 			
