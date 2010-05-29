@@ -15,11 +15,14 @@
 #include "main.h"
 #include "configuration.h"
 #include "createBlankImage.h"
+#include "floppy.h"
 
 @implementation CreateFloppyController
 
 - (IBAction)createFloppyImage:(id)sender
 {
+	BOOL cRet;
+	
 	// Create a SavePanel
 	NSSavePanel *savePanel = [NSSavePanel savePanel];
 
@@ -48,7 +51,20 @@
 		int cSides = [[sides selectedCell] tag];
 					
 		// Create the image
-		CreateBlankImage_CreateFile(szPath, cTracks, cSectors, cSides);
+		cRet=CreateBlankImage_CreateFile(szPath, cTracks, cSectors, cSides);
+		if(cRet==TRUE)
+		{
+			NSInteger ret = NSRunAlertPanel(@"Hatari", @"Insert newly created disk in", @"Ignore", @"A:", @"B:");
+			if(ret!=NSAlertDefaultReturn)
+			{
+				printf("%d\n",ret);
+				if(ret==-1) ret=1; //0=>Drive 0, -1=>Drive 1
+				
+				Floppy_SetDiskFileName(ret, szPath, NULL);
+				Floppy_InsertDiskIntoDrive(ret);
+			}
+		}
+			
 	}
 }
 

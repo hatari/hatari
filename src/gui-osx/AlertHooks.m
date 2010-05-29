@@ -20,7 +20,7 @@
 */
 int HookedAlertNotice(const char* szMessage)
 {
-	return (NSAlertDefaultReturn == NSRunInformationalAlertPanel(@"Hatari", [NSString stringWithCString:szMessage], nil, nil, nil));
+	return (NSAlertDefaultReturn == NSRunInformationalAlertPanel(@"Hatari", [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding], nil, nil, nil));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -29,7 +29,7 @@ int HookedAlertNotice(const char* szMessage)
 */
 int HookedAlertQuery(const char* szMessage)
 {
-	return (NSAlertDefaultReturn == NSRunAlertPanel(@"Hatari", [NSString stringWithCString:szMessage], @"OK", @"Cancel", nil));
+	return (NSAlertDefaultReturn == NSRunAlertPanel(@"Hatari", [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding], @"OK", @"Cancel", nil));
 }
 
 #endif

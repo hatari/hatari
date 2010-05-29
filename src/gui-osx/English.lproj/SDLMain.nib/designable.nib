@@ -6672,14 +6672,6 @@ AAA</bytes>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBActionConnection" key="connection">
-						<string key="label">endCaptureAnimation:</string>
-						<reference key="source" ref="892321347"/>
-						<reference key="destination" ref="690859247"/>
-					</object>
-					<int key="connectionID">840</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
 						<string key="label">endCaptureSound:</string>
 						<reference key="source" ref="892321347"/>
 						<reference key="destination" ref="1018637295"/>
@@ -11674,7 +11666,7 @@ AAA</bytes>
 		</object>
 		<object class="NSMutableDictionary" key="IBDocument.PluginDeclaredDependencyDefaults">
 			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin.macosx</string>
-			<integer value="1050" key="NS.object.0"/>
+			<integer value="1060" key="NS.object.0"/>
 		</object>
 		<bool key="IBDocument.PluginDeclaredDependenciesTrackSystemTargetVersion">YES</bool>
 		<string key="IBDocument.LastKnownRelativeProjectPath">../../../Hatari.xcodeproj</string>
