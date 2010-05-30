@@ -492,9 +492,11 @@ static const int nSoundFreqs[] =
 	// If a reset is required, ask the user first
 	if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
 	{
-		applyChanges = ( 0 == NSRunAlertPanel (@"Reset the emulator?", 
-		@"The emulator must be reset in order to apply your changes.\nAll current work will be lost.",
-		@"Don't reset", @"Reset", nil) );
+		applyChanges = ( 0 == NSRunAlertPanel (
+											   NSLocalizedStringFromTable(@"Reset the emulator",@"Localizable",@"comment"), 
+											   NSLocalizedStringFromTable(@"Must be reset",@"Localizable",@"comment"),
+											   NSLocalizedStringFromTable(@"Don't reset",@"Localizable",@"comment"), 
+											   NSLocalizedStringFromTable(@"Reset",@"Localizable",@"comment"), nil) );
 	}
 	
 	// Commit the new configuration

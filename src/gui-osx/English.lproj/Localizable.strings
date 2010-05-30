@@ -1,0 +1,13 @@
+/* English					*/
+
+"Insert newly created disk in"="Insert newly created disk in drive";
+"Ignore"="Ignore";
+"Reset the emulator"="Reset the Emulator ?";
+"Must be reset"="The emulator must be reset in order to apply your changes.\nAll current work will be lost.";
+"Don't reset"="Don't reset";
+"Reset"="Reset";
+"Warm reset!"="Warn reset!";
+"Really reset the emulator?"="Really reset the emulator? All current work will be lost. Click Cancel to continue without reset.";
+"OK"="Ok";
+"Cancel"="Cancel";
+"Cold reset!"="Cold reset!";

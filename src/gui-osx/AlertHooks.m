@@ -29,7 +29,9 @@ int HookedAlertNotice(const char* szMessage)
 */
 int HookedAlertQuery(const char* szMessage)
 {
-	return (NSAlertDefaultReturn == NSRunAlertPanel(@"Hatari", [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding], @"OK", @"Cancel", nil));
+	return (NSAlertDefaultReturn == NSRunAlertPanel(@"Hatari", [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding],
+													NSLocalizedStringFromTable(@"Ok",@"Localizable",@"comment"), 
+													NSLocalizedStringFromTable(@"Cancel",@"Localizable",@"comment"), nil));
 }
 
 #endif

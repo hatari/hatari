@@ -14,7 +14,7 @@
 			<key>CFBundleTypeName</key>
 			<string>ST disk image</string>
 			<key>CFBundleTypeRole</key>
-			<string></string>
+			<string>Editor</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.sourceforge.hatari.st</string>
@@ -28,7 +28,7 @@
 			<key>CFBundleTypeName</key>
 			<string>MSA disk image</string>
 			<key>CFBundleTypeRole</key>
-			<string></string>
+			<string>Editor</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.sourceforge.hatari.msa</string>
@@ -72,6 +72,6 @@
 	<key>NSMainNibFile</key>
 	<string>SDLMain.nib</string>
 	<key>NSPrincipalClass</key>
-	<string>SDLApplication</string>
+	<string>NSApplication</string>
 </dict>
 </plist>

@@ -11,7 +11,7 @@
 			<string key="NS.object.0">762</string>
 		</object>
 		<array class="NSMutableArray" key="IBDocument.EditedObjectIDs">
-			<integer value="856"/>
+			<integer value="312"/>
 		</array>
 		<array key="IBDocument.PluginDependencies">
 			<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10191,7 +10191,7 @@ AAA</bytes>
 				<boolean value="YES" key="284.ImportedFromIB2"/>
 				<string key="285.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="285.ImportedFromIB2"/>
-				<string key="29.IBEditorWindowLastContentRect">{{70, 687}, {327, 20}}</string>
+				<string key="29.IBEditorWindowLastContentRect">{{133, 688}, {327, 20}}</string>
 				<string key="29.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="29.ImportedFromIB2"/>
 				<string key="2921.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10230,7 +10230,7 @@ AAA</bytes>
 				<boolean value="YES" key="309.ImportedFromIB2"/>
 				<string key="311.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="311.ImportedFromIB2"/>
-				<string key="312.IBEditorWindowLastContentRect">{{74, 602}, {214, 123}}</string>
+				<string key="312.IBEditorWindowLastContentRect">{{207, 565}, {214, 123}}</string>
 				<string key="312.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="312.ImportedFromIB2"/>
 				<string key="3215.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10870,7 +10870,7 @@ AAA</bytes>
 				<boolean value="YES" key="846.ImportedFromIB2"/>
 				<string key="855.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="855.ImportedFromIB2"/>
-				<string key="856.IBEditorWindowLastContentRect">{{186, 554}, {303, 133}}</string>
+				<string key="856.IBEditorWindowLastContentRect">{{249, 555}, {303, 133}}</string>
 				<string key="856.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="856.ImportedFromIB2"/>
 				<string key="857.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
