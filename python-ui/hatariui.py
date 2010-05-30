@@ -522,7 +522,10 @@ class UIActions:
         yield (">", "Next toolbar in panel windows")
         # generate the list from action information
         for act in self.actions.list_actions():
-            yield(act.get_name(), act.get_property("tooltip"))
+            note = act.get_property("tooltip")
+            if not note:
+                note = act.get_property("label")
+            yield(act.get_name(), note)
         yield ("<panel name>", "Button for the specified panel window")
         yield ("<name>=<string/code>", "Synthetize string or single key <code>")
 
@@ -680,7 +683,7 @@ def usage(actions, msg=None):
     print "\t-b, --bottom <controls>\ttoolbar at bottom"
     print "\t-p, --panel <name>,<controls>"
     print "\t\t\t\tseparate window with given name and controls"
-    print "\nAvailable (toolbar) controls:"
+    print "\nAvailable (panel/toolbar) controls:"
     for action, description in actions.list_actions():
         size = len(action)
         if size < 8:
