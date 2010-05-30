@@ -2,6 +2,9 @@
 User visible changes in Hatari (Python Gtk) UI and console
 ----------------------------------------------------------
 
+2010-05:
+- Manual page for Hatari UI
+
 2010-04:
 - UI handles Hatari system configuration properly
 - New settings dialog for HD dir and image configuration

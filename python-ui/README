@@ -28,8 +28,8 @@ My guess at the required versions for the dependencies are:
 Hatari UI is included with the Hatari sources:
 	http://hg.berlios.de/repos/hatari/file/tip/
 
-Hatari UI has been tested only on Linux (Ubuntu v7.04) and Debian
-(Etch). I would assume it works also on other unix systems such as
+Hatari UI has been tested only on Linux (Ubuntu v7.04 and Debian Etch
+& Lenny). I would assume it works also on other unix systems such as
 Apple OSX. It won't work on Windows as the required Windows socket
 support is missing from the Hatari emulator.
 
@@ -52,6 +52,9 @@ Or you can run just the debugger:
 
 But you can also install it to system along with Hatari:
 	make install
+
+There's also a command line interface for Hatari's remote API
+called hatari-console.py.
 
 
 Notes
