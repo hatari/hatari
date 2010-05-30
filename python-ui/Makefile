@@ -17,11 +17,16 @@ DESKPATH = $(prefix)/share/applications
 all:
 	@echo "Nothing to build, just do 'make install'"
 
-install:
+hatariui.1.gz: hatariui.1
+	gzip -9 -c $<  >  $@
+
+install: hatariui.1.gz
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL_SCRIPT) hatari-console.py $(DESTDIR)$(BINDIR)/
 	sed -e "s%^path=.*$$%path=$(DATAPATH)%" -e "s%^conf=.*$$%conf=$(CONFDIR)%" hatariui > $(DESTDIR)$(SCRIPT)
 	chmod 755 $(DESTDIR)$(SCRIPT)
+	$(INSTALL) -d $(DESTDIR)$(MANDIR)
+	$(INSTALL_DATA) hatariui.1.gz $(DESTDIR)$(MANDIR)/
 	$(INSTALL) -d $(DESTDIR)$(DATAPATH)
 	$(INSTALL_SCRIPT) hatariui.py debugui.py $(DESTDIR)$(DATAPATH)/
 	$(INSTALL_DATA) config.py dialogs.py hatari.py uihelpers.py $(DESTDIR)$(DATAPATH)/

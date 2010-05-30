@@ -1,0 +1,225 @@
+.\" Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH "hatariui" "1" "2010-05-30" "Hatari" "Hatari UI"
+.SH "NAME"
+hatariui \- Python/Gtk UI for Hatari
+.SH "SYNOPSIS"
+.B hatariui | hatariui.py
+.RI [options]
+.RI [diskimage]
+.SH "DESCRIPTION"
+.I hatariui
+is a Python/Gtk UI for Hatari which can either embed the Hatari window
+(on X11 systems) or run in a separate window.  By default it provides
+a normal application menu and some extra button for faster access to
+fast-forward etc. functionality, but these are fully configurable
+with the command line options. While it lacks support for some of
+the Hatari configuration options that Hatari's SDL GUI has, it also
+supports some options that the Hatari's built-in SDL UI doesn't.
+.PP
+Besides the UI configurability, some of the other advantages it has
+over the SDL interface included with Hatari itself are use of a normal
+Gtk file selector with all of its features (directory shortcuts etc),
+support for UTF-8 (in file names) and in general blending better to
+the user's desktop environment.
+.PP
+Additionally, Hatari can run while one uses UI configuration dialogs,
+and it can stop Hatari completely to better save the battery on mobile
+computers.  For devices without a keyboard, it offers a a text input
+dialog and one can configure (from command line) buttons for often used
+strings.
+.SH "HATARIUI / HATARIUI.PY"
+.I hatariui
+is actually a shell script wrapper for the hatariui.py Python script.
+It's used to run the Python script with suitable options for default
+usage and to set up the correct installation directory for the rest
+of the Hatari UI Python scripts and data files.
+.PP
+Options below are actually for hatariui.py script.  If you want to
+change options given for it, modify the hatariui shell script or
+make your own based on the installed one.
+.\" following command line helps in updating the options:
+.\" hatariui.py --help|sed -e 's/^\t\+/.TP\n.B /' -e 's/\t\+/\n/g' >> hatariui.1
+.SH "OPTIONS"
+.TP
+.B -h, --help
+Hatari UI command line help
+.TP
+.B -n, --nomenu
+Omit menubar from the window
+.TP
+.B -e, --embed
+Embed Hatari window (to middle of controls)
+.TP
+.B -f, --fullscreen
+Start in fullscreen
+.TP
+.B -l, --left <controls>
+Add a toolbar at left
+.TP
+.B -r, --right <controls>
+Add a toolbar at right
+.TP
+.B -t, --top <controls>
+Add a toolbar at top
+.TP
+.B -b, --bottom <controls>
+Add a toolbar at bottom
+.TP
+.B -p, --panel <name>,<controls>
+Add a separate window with given name and controls
+.PP
+You can have only one toolbar on each side of the Hatari window.
+Panels are separate windows and you can has as many of them as you wish.
+For each panel you need to add a control with the name of the panel
+(see "MyPanel" in examples).
+.PP
+Following controls can are available for toolbars and panels:
+.TP
+.B |
+Separator between controls
+.TP
+.B >
+Next toolbar in panel windows
+.TP
+.B compatibility
+Hatari compatibility list
+.TP
+.B harddisk
+Hard disk images and directories
+.TP
+.B reset
+Warm or cold reset Hatari
+.TP
+.B sconfig
+Save configuration
+.TP
+.B bugs
+Report a bug
+.TP
+.B display
+Display settings
+.TP
+.B authors
+Hatari authors
+.TP
+.B forward
+Whether to fast forward Hatari (needs fast machine)
+.TP
+.B debug
+Activate Hatari debugger
+.TP
+.B quit
+Quit Hatari UI
+.TP
+.B hatari
+Hatari home page
+.TP
+.B recanim
+Record animation
+.TP
+.B recsound
+Record YM/Wav
+.TP
+.B mails
+Hatari mailing lists
+.TP
+.B floppy
+Floppy images
+.TP
+.B device
+Toggle Midi, Printer, RS232 peripherals
+.TP
+.B load
+Load emulation snapshot
+.TP
+.B lconfig
+Load configuration
+.TP
+.B path
+Device & save file paths
+.TP
+.B machine
+Hatari st/e/tt/falcon configuration
+.TP
+.B todo
+Hatari TODO
+.TP
+.B hatariui
+Hatari UI home page
+.TP
+.B save
+Save emulation snapshot
+.TP
+.B joystick
+Joystick settings
+.TP
+.B trace
+Hatari tracing setup
+.TP
+.B pause
+Pause Hatari to save battery
+.TP
+.B about
+Hatari UI information
+.TP
+.B release
+Hatari release notes
+.TP
+.B full
+Toggle whether Hatari is fullscreen
+.TP
+.B manual
+Hatari manual
+.TP
+.B input
+Simulate text input and mouse clicks
+.TP
+.B sound
+Sound settings
+.TP
+.B changes
+Latest Hatari changes
+.TP
+.B run
+(Re-)run Hatari
+.TP
+.B shot
+Grab a screenshot
+.TP
+.B <panel name>
+Button for the specified panel window
+.TP
+.B <name>=<string/code>
+Synthetize string or single key <code>
+.PP
+If no options are given, the UI uses basic controls.
+.SH "EXAMPLES"
+Example on how to add top, right and bottom toolbars and a separate
+"MyPanel" panel window:
+.nf
+	hatariui.py --embed \\
+	-t "about,run,pause,quit" \\
+	-p "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,>,close" \\
+	-r "paste,debug,trace,machine,MyPanel" \\
+	-b "sound,|,fastforward,|,fullscreen"
+.fi
+.PP
+For more examples on Hatari UI options usage, see the hatariui shell
+script.
+.SH "SEE ALSO"
+.IR hatari
+.SH "COPYRIGHT"
+Hatari UI is written by Eero Tamminen <eerot@berlios.de>.
+.PP
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.PP
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
