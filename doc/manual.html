@@ -127,7 +127,8 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
   <ul>
     <li><a href="#General debugger use">General debugger use</a>
     <li><a href="#Inspecting emulation state">Inspecting emulation state</a>
-    <li><a href="#Breakpoints and symbols">Breakpoints and symbols</a>
+    <li><a href="#Debug symbols">Debug symbols</a>
+    <li><a href="#Breakpoints">Breakpoints</a>
     <li><a href="#Tracing">Tracing</a>
     <li><a href="#Build notes">Build notes</a>
   </ul>
@@ -2785,7 +2786,63 @@ the DSP registers, only Rx ones are valid for this subcommand.  To
 disable showing of this extra information, use "lock default".
 </p>
 
-<a name="Breakpoints and symbols"></a><h3>Breakpoints and symbols</h3>
+<a name="Debug symbols"></a><h3>Debug symbols</h3>
+
+<p>
+You can load symbol name/address information from a file to the
+debugger with the "symbols" command (and with "dspsymbols" for DSP).
+These symbolic names can be used in expressions and all breakpoints.
+They also show up in the "disasm" command output.
+</p>
+
+<p>The symbols file format is following:</p>
+<pre>
+e01034 T random
+e01076 T kbdvbase
+e0107e T supexec
+</pre>
+<p>
+Where 'T' means text (code), 'D' means data and 'B' BSS section type
+of address.  The symbol hexadecimal address, type letter and name are
+separated by white space.  Empty lines and lines starting with '#'
+(comments) are ignored.
+</p>
+
+<p>
+AHCC C-compiler can provide a symbol file suitable for this with its
+"-n 'nm' list" option (not enabled by default). If you're reverse
+engineering some code, you could just create your own symbols file to
+help in debugging it later.
+</p>
+
+<p>
+If you're debugging normal TOS/GEM programs instead of code loaded
+into fixed address (like EmuTOS), you can use the "info basepage"
+command to find out the text segment address to which the program code
+has been loaded into, and then load symbols so that their addresses
+are offset by the text segment address:
+</p>
+<pre>
+&gt; info basepage
+Process basepage information:
+- TPA start      : 0x01a1bc
+- TPA end +1     : 0x7da700
+- Text segment   : 0x01a2bc
+- Text size      : 0xe1e0
+- Data segment   : 0x02849c
+- Data size      : 0x1b76
+- BSS segment    : 0x02a012
+- BSS size       : 0x3750
+- Process DTA    : 0x01a23c
+- Parent basepage: 0x00e91c
+- Environment    : 0x01a1ae
+'PATH='
+'C:\'
+- Command argslen: 0
+&gt; symbols calc.sym 0x01a2bc
+</pre>
+
+<a name="Breakpoints"></a><h3>Breakpoints</h3>
 
 <p>
 There are two ways to specify breakpoints for Hatari. First, there are
@@ -2890,57 +2947,6 @@ to loop start) or just to get to a specific point in code:
 <p>
 Whereas giving count (like ":2") as option will break only on every
 &lt;count&gt; hit.
-</p>
-
-<p>
-You can load code symbol name/address information to the debugger
-with the "symbols" command (and with "dspsymbols" for DSP).  These
-symbolic names can be used in expressions and all breakpoints.  They
-also show up in the "disasm" command output.  If you're reverse
-engineering some code, you could create your own symbols file to help
-in debugging it later.  The symbols file format is following:
-</p>
-<pre>
-e01034 T random
-e01076 T kbdvbase
-e0107e T supexec
-</pre>
-<p>
-Where 'T' means text (code), 'D' means data and 'B' BSS section type
-of address.  The symbol hexadecimal address, type letter and name are
-separated by white space.  Empty lines and lines starting with '#'
-(comments) are ignored.
-</p>
-
-<p>
-If you're debugging normal TOS/GEM programs instead of code loaded
-into fixed address (like EmuTOS), you can use the "info basepage"
-command to find out the text segment address to which the program code
-has been loaded into, and then load symbols so that their addresses
-are offset by the text segment address:
-</p>
-<pre>
-&gt; info basepage
-Process basepage information:
-- TPA start      : 0x01a1bc
-- TPA end +1     : 0x7da700
-- Text segment   : 0x01a2bc
-- Text size      : 0xe1e0
-- Data segment   : 0x02849c
-- Data size      : 0x1b76
-- BSS segment    : 0x02a012
-- BSS size       : 0x3750
-- Process DTA    : 0x01a23c
-- Parent basepage: 0x00e91c
-- Environment    : 0x01a1ae
-'PATH='
-'C:\'
-- Command argslen: 0
-&gt; symbols calc.sym 0x01a2bc
-</pre>
-<p>
-AHCC C-compiler can provide a symbol file suitable for this with its
-"-n 'nm' list" option (not enabled by default).
 </p>
 
 <p>
