@@ -256,8 +256,10 @@ struct crossbar_s {
 	Uint32 frequence_ratio2;	/* Ratio between hatari's sound frequency and host computer's sound frequency */
 	
 	Uint32 dmaPlay_CurrentFrameStart;   /* current DmaPlay Frame start ($ff8903 $ff8905 $ff8907) */
+	Uint32 dmaPlay_CurrentFrameCount;   /* current DmaRecord Frame start ($ff8903 $ff8905 $ff8907) */
 	Uint32 dmaPlay_CurrentFrameEnd;     /* current DmaRecord Frame start ($ff8903 $ff8905 $ff8907) */
 	Uint32 dmaRecord_CurrentFrameStart; /* current DmaPlay Frame end ($ff890f $ff8911 $ff8913) */
+	Uint32 dmaRecord_CurrentFrameCount; /* current DmaRecord Frame start ($ff8903 $ff8905 $ff8907) */
 	Uint32 dmaRecord_CurrentFrameEnd;   /* current DmaRecord Frame end ($ff890f $ff8911 $ff8913) */
 	Uint32 adc_dac_readBufferPosition;  /* read position for direct adc->dac transfer */
 	Uint32 adc_dac_readBufferPosition_decimal; /* decimal part of read position for direct adc->dac transfer */
@@ -613,11 +615,11 @@ void Crossbar_FrameCountHigh_WriteByte(void)
 
 	if (crossbar.dmaSelected == 0) {
 		/* DMA Play selected */
-		dmaPlay.frameCounter = addr - crossbar.dmaPlay_CurrentFrameStart;
+		crossbar.dmaPlay_CurrentFrameCount = addr;
 	}
 	else {
 		/* DMA Record selected */
-		dmaRecord.frameCounter = addr - crossbar.dmaRecord_CurrentFrameStart;
+		crossbar.dmaRecord_CurrentFrameCount = addr;
 	}
 }
 
@@ -650,11 +652,11 @@ void Crossbar_FrameCountMed_WriteByte(void)
 
 	if (crossbar.dmaSelected == 0) {
 		/* DMA Play selected */
-		dmaPlay.frameCounter = addr - crossbar.dmaPlay_CurrentFrameStart;
+		crossbar.dmaPlay_CurrentFrameCount = addr;
 	}
 	else {
 		/* DMA Record selected */
-		dmaRecord.frameCounter = addr - crossbar.dmaRecord_CurrentFrameStart;
+		crossbar.dmaRecord_CurrentFrameCount = addr;
 	}
 }
 
@@ -687,11 +689,11 @@ void Crossbar_FrameCountLow_WriteByte(void)
 
 	if (crossbar.dmaSelected == 0) {
 		/* DMA Play selected */
-		dmaPlay.frameCounter = addr;
+		crossbar.dmaPlay_CurrentFrameCount = addr;
 	}
 	else {
 		/* DMA Record selected */
-		dmaRecord.frameCounter = addr - crossbar.dmaRecord_CurrentFrameStart;
+		crossbar.dmaRecord_CurrentFrameCount = addr;
 	}
 }
 
@@ -1274,6 +1276,12 @@ static void Crossbar_Process_DSPXmit_Transfer(void)
 		return;
 	}
 
+	/* Is DSP Xmit connected to something ? */
+	if (!dspXmit.isConnectedToCodec && !dspXmit.isConnectedToDma && !dspXmit.isConnectedToDsp)
+		return;
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : DSP --> Crossbar transfer\n");
+
 	if (dspXmit.wordCount == 0) {
 		frame = 1;
 	}
@@ -1351,6 +1359,7 @@ static void Crossbar_setDmaPlay_Settings(void)
 	dmaPlay.frameStartAddr = crossbar.dmaPlay_CurrentFrameStart;
 	dmaPlay.frameEndAddr = crossbar.dmaPlay_CurrentFrameEnd;
 	dmaPlay.frameLen = dmaPlay.frameEndAddr - dmaPlay.frameStartAddr;
+//	dmaPlay.frameCounter = crossbar.dmaPlay_CurrentFrameCount - crossbar.dmaPlay_CurrentFrameStart;
 	dmaPlay.frameCounter = 0;
 
 	if (dmaPlay.frameEndAddr <= dmaPlay.frameStartAddr)
@@ -1406,16 +1415,19 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	
 	/* Send sample to the DMA record ? */
 	if (dmaPlay.isConnectedToDma) {
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : DMA Play --> DMA record\n");
 		Crossbar_SendDataToDmaRecord(value);
 	}
 
 	/* Send sample to the DAC ? */
 	if (dmaPlay.isConnectedToCodec) {
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : DMA Play --> DAC\n");
 		Crossbar_SendDataToDAC(value * eightBits, dmaPlay.currentFrame);
 	}
 
 	/* Send sample to the DSP in ? */
 	if (dmaPlay.isConnectedToDsp) {
+		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : DMA Play --> DSP record\n");
 		/* New frame ? */
 		if (dmaPlay.currentFrame == 0) {
 			Crossbar_SendDataToDspReceive(value, 1);
@@ -1481,6 +1493,7 @@ static void Crossbar_setDmaRecord_Settings(void)
 	dmaRecord.frameStartAddr = crossbar.dmaRecord_CurrentFrameStart;
 	dmaRecord.frameEndAddr = crossbar.dmaRecord_CurrentFrameEnd;
 	dmaRecord.frameLen = dmaRecord.frameEndAddr - dmaRecord.frameStartAddr;
+//	dmaRecord.frameCounter = crossbar.dmaRecord_CurrentFrameCount - crossbar.dmaRecord_CurrentFrameStart;
 	dmaRecord.frameCounter = 0;
 
 	if (dmaRecord.frameEndAddr <= dmaRecord.frameStartAddr) {

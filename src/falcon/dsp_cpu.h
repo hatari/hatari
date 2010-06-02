@@ -112,6 +112,9 @@ extern "C" {
 extern void dsp56k_init_cpu(void *th_dsp_core);	/* Set dsp_core to use */
 extern void dsp56k_execute_instruction(void);	/* Execute 1 instruction */
 
+/* Interrupt relative functions */
+void dsp_add_interrupt(Uint16 inter);
+
 #ifdef __cplusplus
 }
 #endif

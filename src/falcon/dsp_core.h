@@ -246,10 +246,6 @@ extern void dsp_core_init(dsp_core_t *dsp_core, void (*host_interrupt)(void));
 extern void dsp_core_shutdown(dsp_core_t *dsp_core);
 extern void dsp_core_reset(dsp_core_t *dsp_core);
 
-/* Interrupt relative functions */
-extern void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint16 inter);
-extern void dsp_core_setInterruptIPL(dsp_core_t *dsp_core, Uint32 value);
-
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
 extern Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);
 extern void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value);

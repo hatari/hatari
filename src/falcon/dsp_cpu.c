@@ -97,6 +97,8 @@ typedef void (*dsp_emul_t)(void);
 static void dsp_postexecute_update_pc(void);
 static void dsp_postexecute_interrupts(void);
 
+static void dsp_setInterruptIPL(Uint32 value);
+
 static void dsp_ccr_update_e_u_n_z(Uint32 *reg0, Uint32 *reg1, Uint32 *reg2);
 
 static inline Uint32 read_memory_p(Uint16 address);
@@ -623,6 +625,38 @@ static void dsp_postexecute_update_pc(void)
  *	Interrupts
 **********************************/
 
+/* Post a new interrupt to the interrupt table */
+void dsp_add_interrupt(Uint16 inter)
+{
+	/* detect if this interrupt is used or not */
+	if (dsp_core->interrupt_ipl[inter] == -1)
+		return;
+
+	/* add this interrupt to the pending interrupts table */
+	if (dsp_core->interrupt_isPending[inter] == 0) { 
+		dsp_core->interrupt_isPending[inter] = 1;
+		dsp_core->interrupt_counter ++;
+	}
+}
+
+static void dsp_setInterruptIPL(Uint32 value)
+{
+	Uint32 ipl_ssi, ipl_hi, i;
+
+	ipl_ssi = ((value >> 12) & 3) - 1;
+	ipl_hi  = ((value >> 10) & 3) - 1;
+
+	/* set IPL_HI */
+	for (i=5;i<8;i++) {
+		dsp_core->interrupt_ipl[i] = ipl_hi;
+	}
+
+	/* set IPL_SSI */
+	for (i=8;i<12;i++) {
+		dsp_core->interrupt_ipl[i] = ipl_ssi;
+	}
+}
+
 static void dsp_postexecute_interrupts(void)
 {
 	Uint32 index, instr, i;
@@ -697,7 +731,7 @@ static void dsp_postexecute_interrupts(void)
 
 	/* Trace Interrupt ? */
 	if (dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_T)) {
-		dsp_core_add_interrupt(dsp_core, DSP_INTER_TRACE);
+		dsp_add_interrupt(DSP_INTER_TRACE);
 	}
 
 	/* No interrupt to execute */
@@ -989,7 +1023,7 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 					break;
 				case DSP_IPR:
 					dsp_core->periph[DSP_SPACE_X][DSP_IPR] = value;
-					dsp_core_setInterruptIPL(dsp_core, value);
+					dsp_setInterruptIPL(value);
 					break;
 				case DSP_PCD:
 					dsp_core->periph[DSP_SPACE_X][DSP_PCD] = value;
@@ -1107,7 +1141,7 @@ static void dsp_write_reg(Uint32 numreg, Uint32 value)
 				stack_error = dsp_core->registers[DSP_REG_SP] & (1<<DSP_SP_SE);
 				if ((stack_error==0) && (value & (1<<DSP_SP_SE))) {
 					/* Stack full, raise interrupt */
-					dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
+					dsp_add_interrupt(DSP_INTER_STACK_ERROR);
 					fprintf(stderr,"Dsp: Stack Overflow\n");
 				}
 				dsp_core->registers[DSP_REG_SP] = value & BITMASK(6); 
@@ -1147,7 +1181,7 @@ static void dsp_stack_push(Uint32 curpc, Uint32 cursr, Uint16 sshOnly)
 
 	if ((stack_error==0) && (stack & (1<<DSP_SP_SE))) {
 		/* Stack full, raise interrupt */
-		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
+		dsp_add_interrupt(DSP_INTER_STACK_ERROR);
 		fprintf(stderr,"Dsp: Stack Overflow\n");
 	}
 	
@@ -1181,7 +1215,7 @@ static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 
 	if ((stack_error==0) && (stack & (1<<DSP_SP_SE))) {
 		/* Stack empty*/
-		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
+		dsp_add_interrupt(DSP_INTER_STACK_ERROR);
 		fprintf(stderr,"Dsp: Stack underflow\n");
 	}
 
@@ -2052,7 +2086,7 @@ static void dsp_enddo(void)
 static void dsp_illegal(void)
 {
 	/* Raise interrupt p:0x003e */
-	dsp_core_add_interrupt(dsp_core, DSP_INTER_ILLEGAL);
+	dsp_add_interrupt(DSP_INTER_ILLEGAL);
 }
 
 static void dsp_jcc_imm(void)
@@ -3105,8 +3139,6 @@ static void dsp_stop(void)
 static void dsp_swi(void)
 {
 	/* Raise interrupt p:0x0006 */
-	dsp_core_add_interrupt(dsp_core, DSP_INTER_SWI);
-
 	dsp_core->instr_cycle += 6;
 }
 

@@ -210,44 +210,6 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp56k_init_cpu(dsp_core);
 }
 
-
-/* 
-	Interrupts management
-*/
-
-/* Post a new interrupt to the interrupt table */
-void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint16 inter)
-{
-	/* detect if this interrupt is used or not */
-	if (dsp_core->interrupt_ipl[inter] == -1)
-		return;
-
-	/* add this interrupt to the pending interrupts table */
-	if (dsp_core->interrupt_isPending[inter] == 0) { 
-		dsp_core->interrupt_isPending[inter] = 1;
-		dsp_core->interrupt_counter ++;
-	}
-}
-
-void dsp_core_setInterruptIPL(dsp_core_t *dsp_core, Uint32 value)
-{
-	Uint32 ipl_ssi, ipl_hi, i;
-
-	ipl_ssi = ((value >> 12) & 3) - 1;
-	ipl_hi  = ((value >> 10) & 3) - 1;
-
-	/* set IPL_HI */
-	for (i=5;i<8;i++) {
-		dsp_core->interrupt_ipl[i] = ipl_hi;
-	}
-
-	/* set IPL_SSI */
-	for (i=8;i<12;i++) {
-		dsp_core->interrupt_ipl[i] = ipl_ssi;
-	}
-}
-
-
 /* 
 	SSI INTERFACE processing
 */
@@ -341,9 +303,9 @@ void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core)
 		/* generate interrupt ? */
 		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) {
 			if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF)) {
-				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
+				dsp_add_interrupt(DSP_INTER_SSI_RCV_DATA);
 			} else {
-				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
+				dsp_add_interrupt(DSP_INTER_SSI_RCV_DATA);
 			}
 		}
 	}else{
@@ -432,9 +394,9 @@ void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core)
 		/* generate interrupt ? */
 		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) {
 			if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_TDE)) {
-				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_TRX_DATA);
+				dsp_add_interrupt(DSP_INTER_SSI_TRX_DATA);
 			} else {
-				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_TRX_DATA);
+				dsp_add_interrupt(DSP_INTER_SSI_TRX_DATA);
 			}
 		}
 	}else{
@@ -555,7 +517,7 @@ static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 
 	/* Is there an interrupt to send ? */
 	if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HTIE)) {
-		dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_TRX_DATA);
+		dsp_add_interrupt(DSP_INTER_HOST_TRX_DATA);
 	}
 
 	/* Set RXDF bit to say that host can read */
@@ -589,7 +551,7 @@ static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 
 	/* Is there an interrupt to send ? */
 	if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
-		dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_RCV_DATA);
+		dsp_add_interrupt(DSP_INTER_HOST_RCV_DATA);
 	}
 
 	/* Set TXDE bit to say that host can write */
@@ -662,7 +624,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 				dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= (1<<DSP_HOST_HSR_HCP);
 				/* Is there an interrupt to send ? */
 				if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HCIE)) {
-					dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_COMMAND);
+					dsp_add_interrupt(DSP_INTER_HOST_COMMAND);
 				}
 			}
 			else{
@@ -720,7 +682,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 
 					/* Is there an interrupt to send ? */
 					if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
-						dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_RCV_DATA);
+						dsp_add_interrupt(DSP_INTER_HOST_RCV_DATA);
 					}
 #if DSP_DISASM_HOSTWRITE
 					fprintf(stderr, "Dsp: (H->D): Dsp HRDF set\n");
