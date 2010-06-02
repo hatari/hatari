@@ -198,7 +198,7 @@ static void ZIP_FreeFentries(struct dirent **fentries, int entries)
 		entries--;
 		free(fentries[entries]);
 	}
-	free((struct dirent **)entries);
+	free(fentries);
 }
 
 
