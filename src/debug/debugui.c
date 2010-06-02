@@ -236,7 +236,7 @@ static char *DebugUI_EvaluateExpressions(char *input)
 		if (errstr) {
 			*end = '"';
 			fprintf(stderr, "Expression ERROR:\n'%s'\n%*c-%s\n",
-				input, start-input+offset+3, '^', errstr);
+				input, (int)(start-input)+offset+3, '^', errstr);
 			free(input);
 			return NULL;
 		}
