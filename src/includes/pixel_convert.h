@@ -9,16 +9,6 @@
 */
 
 
-static inline void PixelConvert_8to24Bits(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors);
-static inline void PixelConvert_16to24Bits(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt);
-static inline void PixelConvert_32to24Bits(Uint8 *dst, Uint8 *src, int w);
-
-static inline void PixelConvert_8to24Bits_BGR(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors);
-static inline void PixelConvert_16to24Bits_BGR(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt);
-static inline void PixelConvert_24to24Bits_BGR(Uint8 *dst, Uint8 *src, int w);
-static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint8 *src, int w);
-
-
 /*----------------------------------------------------------------------*/
 /* Convert pixels to 24-bit RGB (3 bytes per pixel)			*/
 /*----------------------------------------------------------------------*/
@@ -52,19 +42,14 @@ static inline void PixelConvert_16to24Bits(Uint8 *dst, Uint16 *src, int w, SDL_P
 /**
  *  unpack 32-bit RGBA pixels to 24-bit RGB pixels
  */
-static inline void PixelConvert_32to24Bits(Uint8 *dst, Uint8 *src, int w)
+static inline void PixelConvert_32to24Bits(Uint8 *dst, Uint32 *src, int w, SDL_PixelFormat *fmt)
 {
 	int x;
-	for (x = 0; x < w; x++, src += 4) {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		*dst++ = src[1];
-		*dst++ = src[2];
-		*dst++ = src[3];
-#else
-		*dst++ = src[2];
-		*dst++ = src[1];
-		*dst++ = src[0];
-#endif
+	for (x = 0; x < w; x++, src++)
+	{
+		*dst++ = (((*src & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
+		*dst++ = (((*src & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
+		*dst++ = (((*src & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
 	}
 }
 
@@ -122,18 +107,13 @@ static inline void PixelConvert_24to24Bits_BGR(Uint8 *dst, Uint8 *src, int w)
 /**
  *  unpack 32-bit RGBA pixels to 24-bit BGR pixels
  */
-static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint8 *src, int w)
+static inline void PixelConvert_32to24Bits_BGR(Uint8 *dst, Uint32 *src, int w, SDL_PixelFormat *fmt)
 {
 	int x;
-	for (x = 0; x < w; x++, src += 4) {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		*dst++ = src[3];	/* B */
-		*dst++ = src[2];	/* G */
-		*dst++ = src[1];	/* R */
-#else
-		*dst++ = src[0];	/* B */
-		*dst++ = src[1];	/* G */
-		*dst++ = src[2];	/* R */
-#endif
+	for (x = 0; x < w; x++, src++)
+	{
+		*dst++ = (((*src & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
+		*dst++ = (((*src & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
+		*dst++ = (((*src & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
 	}
 }

@@ -183,7 +183,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 		case 4:
 			/* unpack 32-bit RGBA pixels */
 			row_ptr = rowbuf;
-			PixelConvert_32to24Bits(row_ptr, src_ptr, w);
+			PixelConvert_32to24Bits(row_ptr, (Uint32*)src_ptr, w, fmt);
 			break;
 		}
 		/* and unlock surface before syscalls */

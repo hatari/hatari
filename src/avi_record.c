@@ -412,7 +412,7 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 					break;
 			case 3 :	PixelConvert_24to24Bits_BGR(LineBuf, pBitmapIn, pAviParams->Width);
 					break;
-			case 4 :	PixelConvert_32to24Bits_BGR(LineBuf, pBitmapIn, pAviParams->Width);
+			case 4 :	PixelConvert_32to24Bits_BGR(LineBuf, (Uint32 *)pBitmapIn, pAviParams->Width, pAviParams->Surface->format);
 					break;
 		}
 
