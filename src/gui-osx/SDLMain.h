@@ -26,8 +26,8 @@
 - (IBAction)help:(id)sender;
 - (IBAction)captureScreen:(id)sender;
 - (IBAction)captureAnimation:(id)sender;
-// - (IBAction)endCaptureAnimation:(id)sender;
-// - (IBAction)captureAnimation_AVI:(id)sender;
+- (IBAction)endCaptureAnimation:(id)sender;
+//- (IBAction)captureAnimation_AVI:(id)sender;
 //- (IBAction)endCaptureAnimation_AVI:(id)sender;
 - (IBAction)captureSound:(id)sender;
 - (IBAction)endCaptureSound:(id)sender;
