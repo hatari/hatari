@@ -4,8 +4,8 @@
                                 Release Notes
 
 
- Development version
- -------------------
+ Version 1.4.0 (2010-06-12):
+ ---------------------------
 
 Emulation:
 - IDE improvements:
