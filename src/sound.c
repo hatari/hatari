@@ -81,6 +81,7 @@ const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "psg.h"
 #include "sound.h"
+#include "screen.h"
 #include "video.h"
 #include "wavFormat.h"
 #include "ymFormat.h"

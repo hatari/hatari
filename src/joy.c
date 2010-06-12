@@ -17,6 +17,7 @@ const char Joy_fileid[] = "Hatari joy.c : " __DATE__ " " __TIME__;
 #include "ioMem.h"
 #include "joy.h"
 #include "log.h"
+#include "screen.h"
 #include "video.h"
 
 #define JOY_BUTTON1  1

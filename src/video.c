@@ -339,9 +339,9 @@ int nFrameSkips;                                /* speed up by skipping video fr
 bool bUseSTShifter;                             /* Falcon: whether to use ST palette */
 bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
-Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
+Uint16 HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
-Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];    /* Bit mask of palette colours changes, top bit set is resolution change */
+Uint32 HBLPaletteMasks[HBL_PALETTE_MASKS];      /* Bit mask of palette colours changes, top bit set is resolution change */
 Uint32 *pHBLPaletteMasks;
 int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 71 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */

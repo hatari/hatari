@@ -127,6 +127,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "bios.h"
 #include "xbios.h"
+#include "screen.h"
 #include "video.h"
 #include "options.h"
 #include "dsp.h"

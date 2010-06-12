@@ -61,6 +61,7 @@ const char CycInt_fileid[] = "Hatari cycInt.c : " __DATE__ " " __TIME__;
 #include "midi.h"
 #include "memorySnapShot.h"
 #include "sound.h"
+#include "screen.h"
 #include "video.h"
 
 

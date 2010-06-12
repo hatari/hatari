@@ -33,12 +33,17 @@
 /* Number of visible screen lines including top/bottom borders */
 #define NUM_VISIBLE_LINES  (OVERSCAN_TOP+200+MAX_OVERSCAN_BOTTOM)
 
+/* 1x16 colour palette per screen line, +1 line as may write after line 200 */
+#define HBL_PALETTE_LINES ((NUM_VISIBLE_LINES+1)*16)
+/* Bit mask of palette colours changes, top bit set is resolution change */
+#define HBL_PALETTE_MASKS (NUM_VISIBLE_LINES+1)
+
 
 /* Frame buffer, used to store details in screen conversion */
 typedef struct
 {
-  Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per screen line, +1 line as may write after line 200 */
-  Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];    /* Bit mask of palette colours changes, top bit set is resolution change */
+  Uint16 HBLPalettes[HBL_PALETTE_LINES];
+  Uint32 HBLPaletteMasks[HBL_PALETTE_MASKS];
   Uint8 *pSTScreen;             /* Copy of screen built up during frame (copy each line on HBL to simulate monitor raster) */
   Uint8 *pSTScreenCopy;         /* Previous frames copy of above  */
   int OverscanModeCopy;         /* Previous screen overscan mode */
@@ -62,14 +67,6 @@ enum
 #define ST_MEDIUM_RES_BIT 0x1
 #define ST_RES_MASK 0x3
 
-/* Update Palette defines */
-enum
-{
-  UPDATE_PALETTE_NONE,
-  UPDATE_PALETTE_UPDATE,
-  UPDATE_PALETTE_FULLUPDATE
-};
-
 /* Palette mask values for 'HBLPaletteMask[]' */
 #define PALETTEMASK_RESOLUTION  0x00040000
 #define PALETTEMASK_PALETTE     0x0000ffff
@@ -85,19 +82,6 @@ enum
   OVERSCANMODE_TOP,      /* 0x01 */
   OVERSCANMODE_BOTTOM    /* 0x02 (Top+Bottom) 0x03 */
 };
-
-/* Available fullscreen modes */
-#define NUM_DISPLAYMODEOPTIONS	6
-enum
-{
-  DISPLAYMODE_LOWCOL_LOWRES,     /* low color, low resolution (fastest) */
-  DISPLAYMODE_LOWCOL_HIGHRES,    /* low color, zoomed resolution */
-  DISPLAYMODE_LOWCOL_DUMMY,      /* unused */
-  DISPLAYMODE_HICOL_LOWRES,      /* high color, low resolution */
-  DISPLAYMODE_HICOL_HIGHRES,     /* high color, zoomed resolution (slowest) */
-  DISPLAYMODE_HICOL_DUMMY        /* unused */
-};
-
 
 extern bool bGrabMouse;
 extern bool bInFullScreen;

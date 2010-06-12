@@ -39,6 +39,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 #include "sdlgui.h"
 #include "statusbar.h"
 #include "tos.h"
+#include "screen.h"
 #include "video.h"
 #include "wavFormat.h"
 #include "ymFormat.h"

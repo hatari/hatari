@@ -29,6 +29,7 @@ const char IoMemTabST_fileid[] = "Hatari ioMemTabST.c : " __DATE__ " " __TIME__;
 #include "psg.h"
 #include "rs232.h"
 #include "rtc.h"
+#include "screen.h"
 #include "video.h"
 #include "blitter.h"
 

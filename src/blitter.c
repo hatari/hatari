@@ -39,6 +39,7 @@ const char Blitter_fileid[] = "Hatari blitter.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
+#include "screen.h"
 #include "video.h"
 
 /* Cycles to run for in non-hog mode */

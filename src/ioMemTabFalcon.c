@@ -20,6 +20,7 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __T
 #include "psg.h"
 #include "rs232.h"
 #include "rtc.h"
+#include "screen.h"
 #include "video.h"
 #include "blitter.h"
 #include "crossbar.h"
