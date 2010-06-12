@@ -24,6 +24,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
+#include "profile.h"
 #include "stMemory.h"
 #include "str.h"
 #include "symbols.h"
@@ -34,6 +35,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 static Uint32 disasm_addr;     /* disasm address */
 static Uint32 memdump_addr;    /* memdump address */
 
+static bool bCpuProfiling;     /* Whether CPU profiling is activated */
 static int nCpuActiveCBs = 0;  /* Amount of active conditional breakpoints */
 static int nCpuSteps = 0;      /* Amount of steps for CPU single-stepping */
 
@@ -340,7 +342,7 @@ error_msg:
 
 
 /**
- * CPU wrapper for BreakAddr_Command/BreakPointCount.
+ * CPU wrapper for BreakAddr_Command().
  */
 static int DebugCpu_BreakAddr(int nArgc, char *psArgs[])
 {
@@ -349,11 +351,20 @@ static int DebugCpu_BreakAddr(int nArgc, char *psArgs[])
 }
 
 /**
- * CPU wrapper for BreakCond_Command/BreakPointCount.
+ * CPU wrapper for BreakCond_Command().
  */
 static int DebugCpu_BreakCond(int nArgc, char *psArgs[])
 {
 	BreakCond_Command(psArgs[1], false);
+	return DEBUGGER_CMDDONE;
+}
+
+/**
+ * CPU wrapper for Profile_Command().
+ */
+static int DebugCpu_Profile(int nArgc, char *psArgs[])
+{
+	Profile_Command(nArgc, psArgs, false);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -485,6 +496,10 @@ static int DebugCpu_Continue(int nArgc, char *psArgv[])
  */
 void DebugCpu_Check(void)
 {
+	if (bCpuProfiling)
+	{
+		Profile_CpuUpdate();
+	}
 	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 	{
 		DebugCpu_ShowMatchedSymbol(M68000_GetPC());
@@ -509,8 +524,10 @@ void DebugCpu_Check(void)
  */
 void DebugCpu_SetDebugging(void)
 {
+	bCpuProfiling = Profile_CpuStart();
 	nCpuActiveCBs = BreakCond_BreakPointCount(false);
-	if (nCpuActiveCBs || nCpuSteps)
+
+	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling)
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
@@ -537,6 +554,11 @@ static const dbgcommand_t cpucommands[] =
 	  "[<start address>[-<end address>]]\n"
 	  "\tIf no address is given, this command disassembles from the last\n"
 	  "\tposition or from current PC if no last position is available.",
+	  false },
+	{ DebugCpu_Profile, Profile_Match,
+	  "profile", "",
+	  "profile CPU code",
+	  Profile_Description,
 	  false },
 	{ DebugCpu_Register, DebugCpu_MatchRegister,
 	  "cpureg", "r",
@@ -612,4 +634,5 @@ int DebugCpu_Init(const dbgcommand_t **table)
 void DebugCpu_InitSession(void)
 {
 	disasm_addr = M68000_GetPC();
+	Profile_CpuStop();
 }

@@ -22,6 +22,7 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "evaluate.h"
 #include "memorySnapShot.h"
+#include "profile.h"
 #include "str.h"
 #include "symbols.h"
 
@@ -29,6 +30,7 @@ static Uint16 dsp_disasm_addr;    /* DSP disasm address */
 static Uint16 dsp_memdump_addr;   /* DSP memdump address */
 static char dsp_mem_space = 'P';  /* X, Y, P */
 
+static bool bDspProfiling;        /* Whether profiling is enabled */
 static int nDspActiveCBs = 0;     /* Amount of active conditional breakpoints */
 static int nDspSteps = 0;         /* Amount of steps for DSP single-stepping */
 
@@ -291,7 +293,7 @@ static int DebugDsp_Continue(int nArgc, char *psArgv[])
 
 
 /**
- * DSP wrapper for BreakAddr_Command/BreakPointCount, returns DEBUGGER_END
+ * DSP wrapper for BreakAddr_Command().
  */
 static int DebugDsp_BreakAddr(int nArgc, char *psArgs[])
 {
@@ -300,11 +302,20 @@ static int DebugDsp_BreakAddr(int nArgc, char *psArgs[])
 }
 
 /**
- * DSP wrapper for BreakCond_Command/BreakPointCount, returns DEBUGGER_END
+ * DSP wrapper for BreakCond_Command().
  */
 static int DebugDsp_BreakCond(int nArgc, char *psArgs[])
 {
 	BreakCond_Command(psArgs[1], true);
+	return DEBUGGER_CMDDONE;
+}
+
+/**
+ * DSP wrapper for Profile_Command().
+ */
+static int DebugDsp_Profile(int nArgc, char *psArgs[])
+{
+	Profile_Command(nArgc, psArgs, true);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -314,6 +325,10 @@ static int DebugDsp_BreakCond(int nArgc, char *psArgs[])
  */
 void DebugDsp_Check(void)
 {
+	if (bDspProfiling)
+	{
+		Profile_DspUpdate();
+	}
 	/* TODO: show symbols while disassembling DSP instructions */
 	if (nDspActiveCBs)
 	{
@@ -336,8 +351,10 @@ void DebugDsp_Check(void)
  */
 void DebugDsp_SetDebugging(void)
 {
+	bDspProfiling = Profile_DspStart();
 	nDspActiveCBs = BreakCond_BreakPointCount(true);
-	if (nDspActiveCBs || nDspSteps)
+
+	if (nDspActiveCBs || nDspSteps || bDspProfiling)
 		DSP_SetDebugging(true);
 	else
 		DSP_SetDebugging(false);
@@ -374,6 +391,11 @@ static const dbgcommand_t dspcommands[] =
 	  "dspsymbols", "",
 	  "load DSP symbols & their addresses",
 	  Symbols_Description,
+	  false },
+	{ DebugDsp_Profile, Profile_Match,
+	  "dspprofile", "dp",
+	  "profile DSP code",
+	  Profile_Description,
 	  false },
 	{ DebugDsp_Register, DebugDsp_MatchRegister,
 	  "dspreg", "dr",
@@ -418,4 +440,5 @@ int DebugDsp_Init(const dbgcommand_t **table)
 void DebugDsp_InitSession(void)
 {
 	dsp_disasm_addr = DSP_GetPC();
+	Profile_DspStop();
 }
