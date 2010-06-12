@@ -11,10 +11,10 @@
 /* Hardware address details */
 typedef struct
 {
-	Uint32 Address;              /* ST hardware address */
-	int SpanInBytes;             /* E.g. SIZE_BYTE, SIZE_WORD or SIZE_LONG */
-	void (*ReadFunc)(void);      /* Read function */
-	void (*WriteFunc)(void);     /* Write function */
+	const Uint32 Address;     /* ST hardware address */
+	const int SpanInBytes;    /* E.g. SIZE_BYTE, SIZE_WORD or SIZE_LONG */
+	void (*ReadFunc)(void);   /* Read function */
+	void (*WriteFunc)(void);  /* Write function */
 } INTERCEPT_ACCESS_FUNC;
 
 extern const INTERCEPT_ACCESS_FUNC IoMemTable_ST[];
