@@ -21,6 +21,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "evaluate.h"
 #include "ioMem.h"
 #include "m68000.h"
+#include "stMemory.h"
 #include "tos.h"
 #include "video.h"
 
@@ -434,6 +435,8 @@ static void DebugInfo_CpuMemDump(Uint32 arg)
 	DebugInfo_CallCommand(DebugCpu_MemDump, "memdump", arg);
 }
 
+#if ENABLE_DSP_EMU
+
 static void DebugInfo_DspRegister(Uint32 arg)
 {
 	DebugInfo_CallCommand(DebugDsp_Register, "dspreg", arg);
@@ -449,7 +452,7 @@ static void DebugInfo_DspMemDump(Uint32 arg)
 	char addrbuf[6], spacebuf[2] = "X";
 	char *argv[] = { cmdbuf, spacebuf, addrbuf };
 	spacebuf[0] = (arg>>16)&0xff;
-       	sprintf(addrbuf, "$%x", (Uint16)(arg&0xffff));
+	sprintf(addrbuf, "$%x", (Uint16)(arg&0xffff));
 	DebugDsp_MemDump(3, argv);
 }
 
@@ -474,6 +477,8 @@ static Uint32 DebugInfo_DspMemArgs(int argc, char *argv[])
 	}
 	return ((Uint32)space<<16) | value;
 }
+
+#endif  /* ENABLE_DSP_EMU */
 
 
 static void DebugInfo_RegAddr(Uint32 arg)
@@ -503,14 +508,18 @@ static void DebugInfo_RegAddr(Uint32 arg)
 	if ((arg & 0xff) == 'D') {
 		strcpy(cmdbuf, "disasm");
 		if (forDsp) {
+#if ENABLE_DSP_EMU
 			DebugDsp_DisAsm(2, argv);
+#endif
 		} else {
 			DebugCpu_DisAsm(2, argv);
 		}
 	} else {
 		strcpy(cmdbuf, "memdump");
 		if (forDsp) {
-			DebugCpu_MemDump(2, argv);
+#if ENABLE_DSP_EMU
+			DebugDsp_MemDump(2, argv);
+#endif
 		} else {
 			DebugCpu_MemDump(2, argv);
 		}
@@ -583,9 +592,11 @@ static const struct {
 	{ false,"crossbar",  DebugInfo_Crossbar,   NULL, "Show Falcon crossbar HW register values" },
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
 	{ true, "disasm",    DebugInfo_CpuDisAsm,  NULL, "Disasm CPU from PC or given <address>" },
+#if ENABLE_DSP_EMU
 	{ true, "dspdisasm", DebugInfo_DspDisAsm,  NULL, "Disasm DSP from given <address>" },
 	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
 	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP register values" },
+#endif
 	{ true, "memdump",   DebugInfo_CpuMemDump, NULL, "Dump CPU memory from given <address>" },
 	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header information" },
 	{ true, "regaddr",   DebugInfo_RegAddr, DebugInfo_RegAddrArgs, "Show <disasm|memdump> from CPU/DSP address pointed by <register>" },
