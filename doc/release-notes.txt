@@ -3,6 +3,17 @@
                                    --------
                                 Release Notes
 
+ Development version
+ -------------------
+
+Emulation:
+
+Emulator:
+
+Other changes:
+- hmsa tool can create empty disk images in addition to converting
+  disks between ST & MSA formats
+
 
  Version 1.4.0 (2010-06-12):
  ---------------------------

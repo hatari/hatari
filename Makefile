@@ -36,7 +36,10 @@ config.h: config-default.h
 	fi
 
 hatari.1.gz: doc/hatari.1
-	gzip -9 -c doc/hatari.1 > $@
+	gzip -9 -c $<  >  $@
+
+hmsa.1.gz: tools/hmsa/hmsa.1
+	gzip -9 -c $<  >  $@
 
 
 clean:
@@ -47,14 +50,14 @@ distclean:
 	$(MAKE) -C src/ distclean
 	$(MAKE) -C tools/hmsa/ distclean
 	$(RM) config.cache config.log Makefile.cnf config.h
-	$(RM) hatari.1.gz
+	$(RM) hatari.1.gz hmsa.1.gz
 
 
 # Use "make depend" to generate file dependencies:
 depend:
 	$(MAKE) -C src/ depend
 
-install: all hatari.1.gz
+install: all hatari.1.gz hmsa.1.gz
 	@if [ "x$(INSTALL)" = "x" ]; then \
 		echo; \
 		echo "ERROR: Hatari isn't yet configured for installation."; \
@@ -73,6 +76,7 @@ install: all hatari.1.gz
 	  $(INSTALL_DATA) src/tos.img $(DESTDIR)$(DATADIR)/tos.img ; \
 	fi
 	$(INSTALL_DATA) hatari.1.gz $(DESTDIR)$(MANDIR)/
+	$(INSTALL_DATA) hmsa.1.gz $(DESTDIR)$(MANDIR)/
 	$(INSTALL_DATA) doc/*.txt doc/*.html $(DESTDIR)$(DOCDIR)/
 	$(INSTALL_DATA) doc/images/*.png $(DESTDIR)$(DOCDIR)/images/
 	$(MAKE) -C python-ui/ install

@@ -12,7 +12,7 @@ set(SOURCES
 	video.c wavFormat.c xbios.c ymFormat.c)
 
 # Disk image code is shared with the hmsa tool, so we put it into a library:
-add_library(Floppy  dim.c msa.c st.c zip.c)
+add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)
 
 # When building for OSX, define specific sources for gui and ressources
 if(ENABLE_OSX_BUNDLE)

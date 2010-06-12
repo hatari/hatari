@@ -1,0 +1,66 @@
+.\" Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH "HMSA" "1" "2010-05-30" "Hatari" "Hatari utilities"
+.SH "NAME"
+hmsa \- Atari MSA / ST disk image creator and converter
+.SH "SYNOPSIS"
+.B hmsa
+.RI  diskimage
+.RI  [disksize]
+.SH "DESCRIPTION"
+.I Hmsa
+is little program to create compressed Atari MSA (Magic Shadow
+Archiver) and uncompressed ST disk images and to convert disk
+images between these two formats.
+.PP
+MSA and ST image format saving code is same as in Hatari itself.
+.SH "USAGE"
+If you give only one parameter, the file name of an existing MSA or
+ST disk image, this image will be converted to the other disk image
+format under a suitable new file name.
+.PP
+If the file does not exist and you give also a disk size:
+.TP
+.B SS
+Single Sided (360KB)
+.TP
+.B DS
+Double Sided (720KB)
+.TP
+.B HD
+High Density (1.44MB)
+.TP
+.B ED
+Extended Density (2.88MB)
+.PP
+An empty disk of the given size will be created.
+.PP
+Disk image format is recognized based on the file name extension
+(either .msa or .st).
+.SH "EXAMPLES"
+Create a normal double sided empty ST disk image:
+.br
+	hmsa blank.st DS
+.PP
+Convert an MSA format disk image to an ST format one:
+.br
+	hmsa disk.msa
+.SH "SEE ALSO"
+.I Hmsa
+is part of
+.IR hatari.
+.SH "AUTHOR"
+Written by Thomas Huth <huth@users.berlios.de>.
+This manual page and empty disk creation was added by Eero Tamminen.
+.SH "LICENSE"
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.SH "NO WARRANTY"
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.

@@ -1,5 +1,5 @@
 /*
-  Hatari tool: Magic Shadow Archiver - hmsa.c
+  Hatari tool: MSA and ST disk image creator and converter - hmsa.c
  
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
@@ -12,6 +12,7 @@
 
 #include "hmsa.h"
 #include "main.h"	/* bool etc. */
+#include "createBlankImage.h"
 #include "file.h"
 #include "msa.h"
 
@@ -20,23 +21,53 @@
 #include "log.h"
 
 /**
- * Output string to log file
+ * Print suitable output prefix based on log level
+ */
+static void print_prefix(LOGTYPE nType)
+{
+	const char *sType;
+	switch (nType) {
+	case LOG_FATAL:
+	case LOG_ERROR:
+		sType = "ERROR: ";
+		break;
+	case LOG_WARN:
+		sType = "WARNING: ";
+	default:
+		return;
+	}
+	fputs(sType, stdout);
+}
+
+/**
+ * Output Hatari log string.
  */
 extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
-
-	if (nType <= 4)
-	{
-		va_start(argptr, psFormat);
-		vfprintf(stdout, psFormat, argptr);
-		va_end(argptr);
-	}
+	print_prefix(nType);
+	va_start(argptr, psFormat);
+	vfprintf(stdout, psFormat, argptr);
+	va_end(argptr);
 }
 
+/**
+ * Output Hatari Alert dialog string.
+ */
+extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
+{
+	va_list argptr;
+	print_prefix(nType);
+	va_start(argptr, psFormat);
+	vfprintf(stdout, psFormat, argptr);
+	va_end(argptr);
+	/* Add a new-line if necessary: */
+	if (psFormat[strlen(psFormat)-1] != '\n')
+		fputs("\n", stdout);
+}
 
 /**
- * Query user
+ * Output Hatari Query dialog string.
  */
 int DlgAlert_Query(const char *text)
 {
@@ -44,92 +75,160 @@ int DlgAlert_Query(const char *text)
 	return TRUE;
 }
 
+/**
+ * Create MSA or ST image of requested size.
+ * return error string or NULL for success.
+ */
+static const char* create_image(const char *filename, const char *sizeid)
+{
+	int tracks, sectors, sides;
+	tracks = 80;
+	
+	if (strcasecmp(sizeid, "ss") == 0) {
+		sides = 1;
+		sectors = 9;
+	} else if (strcasecmp(sizeid, "ds") == 0) {
+		sides = 2;
+		sectors = 9;
+	} else if (strcasecmp(sizeid, "hd") == 0) {
+		sides = 2;
+		sectors = 18;
+	} else if (strcasecmp(sizeid, "ed") == 0) {
+		sides = 2;
+		sectors = 36;
+	} else {
+		return "ERROR: given disk size isn't one of supported ones!\n";
+	}
+	if (CreateBlankImage_CreateFile(filename, tracks, sectors, sides)) {
+		return NULL;
+	}
+	return "ERROR: Disk creation failed.\n";
+}
 
 /**
- * Output string to log file
+ * Print program usage
+ */
+static void usage(const char *name)
+{
+		printf("\n\
+Hatari MSA (Magic Shadow Archiver) / ST disk image creator & converter v0.3.\n\
+\n\
+Usage:  %s FILENAME [DISK SIZE]\n\
+\n\
+If you give only one parameter - the file name of an existing MSA\n\
+or ST disk image, this image will be converted to the other disk image\n\
+format under a suitable new file name.  Disk image format is recognized\n\
+based on the file name extension (.msa or .st).\n\
+\n\
+If the given file doesn't exist and you give also a disk size\n\
+(SS, DS, HD, ED), an empty disk of the given size will be created.\n\
+\n\
+This software is distributed under the GNU Public License, version 2 or\n\
+at your option any later version. Please read the file gpl.txt for details.\n\
+\n",
+		       name);
+}
+
+/**
+ * Command line argument parsing and new disk creation
  */
 int main(int argc, char *argv[])
 {
-	long nImageBytes;
+	bool isMsa;
 	int retval;
-	unsigned char *diskBuffer;
-	char *sourceFileName;
-	char *targetFileName;
+	long disksize;
+	unsigned char *diskbuf;
+	const char *srcfile, *srcdot;
+	char *dstfile, *dstdot;
 
-	if(argc!=2 || argv[1][0]=='-')
-	{
-		printf("\rHatari Magic Shadow (Un-)Archiver version 0.2.1.\n\n"
-		       "Usage:  %s FILENAME\n\n"
-		       "This program converts a MSA disk image into a ST disk image and vice versa.\n\n"
-		       "This software is distributed under the GNU Public License, version 2 or at your\n"
-		       "option any later version. Please read the file gpl.txt for details.\n",
-		       argv[0]);
+	if(argc < 2 || argv[1][0] == '-') {
+		usage(argv[0]);
 		return 0;
 	}
 
-	if(strlen(argv[1]) < 4)
-	{
-		fprintf(stderr,"Invalid file name %s\n", argv[1]);
+	srcfile = argv[1];
+	srcdot = strchr(srcfile, '.');
+	if(srcdot == NULL) {
+		usage(argv[0]);
+		fprintf(stderr, "ERROR: extension missing for file name %s!\n", argv[1]);
 		return -1;
 	}
 
-	sourceFileName = argv[1];
-	targetFileName = malloc(strlen(sourceFileName) + 6);
-
-	if (targetFileName == NULL)
-	{
-		fprintf(stderr,"Not enough memory\n");
+	if (strcasecmp(srcdot, ".msa") == 0) {
+		isMsa = true;
+	} else if (strcasecmp(srcdot, ".st") == 0) {
+		isMsa = false;
+	} else {
+		usage(argv[0]);
+		fprintf(stderr, "ERROR: unrecognized file name extension %s (not .msa or .st)!\n", srcdot);
 		return -1;
 	}
 
-	if (strcasecmp(&sourceFileName[strlen(sourceFileName)-3], "msa") == 0)
-	{
+	if (!File_Exists(srcfile)) {
+		const char *errstr;
+		if (argc != 3) {
+			usage(argv[0]);
+			fprintf(stderr, "ERROR: disk size for the new disk image not given!\n");
+			return -1;
+		}
+		errstr = create_image(srcfile, argv[2]);
+		if (errstr) {
+			usage(argv[0]);
+			fprintf(stderr, errstr);
+			return -1;
+		}
+		return 0;
+	}
+
+	dstfile = malloc(strlen(srcfile) + 6);
+	if (dstfile == NULL) {
+		fprintf(stderr, "ERROR: No memory for new disk name!\n");
+		return -1;
+	}
+
+	strcpy(dstfile, srcfile);
+	dstdot = strchr(dstfile, '.');
+	if (isMsa) {
 		/* Convert MSA to ST disk image */
-
-		/* Read the source disk image */
-		diskBuffer = MSA_ReadDisk(sourceFileName, &nImageBytes);
-		if (!diskBuffer || nImageBytes < 512*8)
-		{
-			fprintf(stderr,"Could not read MSA disk!\n");
-			free(targetFileName);
-			return -1;
-		}
-
-		strcpy(targetFileName, sourceFileName);
-		if (targetFileName[strlen(targetFileName)-4] == '.')
-			targetFileName[strlen(targetFileName)-4] = 0;  /* Strip MSA extension */
-		strcat(targetFileName, ".st");
-
-		printf("Converting %s to %s (%li Bytes)\n", sourceFileName, targetFileName, nImageBytes);
-
-		retval = File_Save(targetFileName, diskBuffer, nImageBytes, FALSE);
-	}
-	else
-	{
+		strcpy(dstdot, ".st");
+	} else {
 		/* Convert ST to MSA disk image */
-		nImageBytes = 0;
-
-		/* Read the source disk image: Just load directly into buffer */
-		diskBuffer = File_Read(sourceFileName, &nImageBytes, NULL);
-		if (!diskBuffer || nImageBytes < 512*8)
-		{
-			fprintf(stderr,"Could not read ST disk!\n");
-			free(targetFileName);
-			return -1;
-		}
-
-		strcpy(targetFileName, sourceFileName);
-		if (targetFileName[strlen(targetFileName)-3] == '.')
-			targetFileName[strlen(targetFileName)-3] = 0;  /* Strip ST extension */
-		strcat(targetFileName, ".msa");
-
-		printf("Converting %s to %s (%li Bytes)\n", sourceFileName, targetFileName, nImageBytes);
-
-		retval = MSA_WriteDisk(targetFileName, diskBuffer, nImageBytes);
+		strcpy(dstdot, ".msa");
 	}
 
-	free(targetFileName);
-	free(diskBuffer);
+	if (File_Exists(dstfile)) {
+		fprintf(stderr, "ERROR: Destination disk image %s exists already!\n", dstfile);
+		free(dstfile);
+		return -1;
+	}
+	
+	if (isMsa) {
+		/* Read the source disk image */
+		diskbuf = MSA_ReadDisk(srcfile, &disksize);
+		if (!diskbuf || disksize < 512*8) {
+			fprintf(stderr, "ERROR: could not read MSA disk %s!\n", srcfile);
+			retval = -1;
+		} else {
+			printf("Converting %s to %s (%li Bytes).\n", srcfile, dstfile, disksize);
+			retval = File_Save(dstfile, diskbuf, disksize, FALSE);
+		}
+	} else {
+		/* Just read disk image directly into buffer */
+		disksize = 0;
+		diskbuf = File_Read(srcfile, &disksize, NULL);
+		if (!diskbuf || disksize < 512*8) {
+			fprintf(stderr, "ERROR: could not read ST disk %s!\n", srcfile);
+			retval = -1;
+		} else {
+			printf("Converting %s to %s (%li Bytes).\n", srcfile, dstfile, disksize);
+			retval = MSA_WriteDisk(dstfile, diskbuf, disksize);
+		}
+	}
+
+	if (diskbuf) {
+		free(diskbuf);
+	}
+	free(dstfile);
 
 	return retval;
 }
