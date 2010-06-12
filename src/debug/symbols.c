@@ -34,7 +34,7 @@ typedef struct {
 } symbol_t;
 
 typedef struct {
-	int count;
+	unsigned int count;
 	symbol_t *addresses;	/* items sorted by address */
 	symbol_t *names;	/* items sorted by symbol name */
 } symbol_list_t;
@@ -210,7 +210,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 m
  */
 static void Symbols_Free(symbol_list_t* list)
 {
-	int i;
+	unsigned int i;
 
 	if (!list) {
 		return;
@@ -235,8 +235,8 @@ static void Symbols_Free(symbol_list_t* list)
  */
 static char* Symbols_MatchByName(symbol_list_t* list, symtype_t symtype, const char *text, int state)
 {
+	static unsigned int i, len;
 	const symbol_t *entry;
-	static int i, len;
 	
 	if (!list) {
 		return NULL;
@@ -426,8 +426,8 @@ const char* Symbols_GetByDspAddress(Uint32 addr)
 static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 {
 	symbol_t *entry, *entries;
+	unsigned int i;
 	char symchar;
-	int i;
 	
 	if (!list) {
 		fprintf(stderr, "No symbols!\n");
@@ -537,4 +537,16 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 	return DEBUGGER_CMDDONE;
+}
+
+/**
+ * Return how many symbols are loaded/available
+ */
+unsigned int Symbols_CpuCount(void)
+{
+	return (CpuSymbolsList ? CpuSymbolsList->count : 0);
+}
+unsigned int Symbols_DspCount(void)
+{
+	return (DspSymbolsList ? DspSymbolsList->count : 0);
 }
