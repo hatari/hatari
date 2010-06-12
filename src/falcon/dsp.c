@@ -176,13 +176,26 @@ void DSP_SetDebugging(bool enabled)
 }
 
 /**
- * Get DSP program counter (for disassembler)
+ * Get DSP program counter (for debugging)
  */
 Uint16 DSP_GetPC(void)
 {
 #if ENABLE_DSP_EMU
 	if (bDspEnabled)
 		return dsp_core.pc;
+	else
+#endif
+	return 0;
+}
+
+/**
+ * Get current DSP instruction cycles (for profiling)
+ */
+Uint16 DSP_GetInstrCycles(void)
+{
+#if ENABLE_DSP_EMU
+	if (bDspEnabled)
+		return dsp_core.instr_cycle;
 	else
 #endif
 	return 0;
