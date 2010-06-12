@@ -42,6 +42,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "reset.h"
 #include "sound.h"
 #include "str.h"
+#include "stMemory.h"
 #include "tos.h"
 #include "video.h"
 #include "falcon/dsp.h"
