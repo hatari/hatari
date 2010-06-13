@@ -1,20 +1,17 @@
 # use glob syntax.
 syntax: glob
 
-Makefile.cnf
 config.h
-hatari.1.gz
 CMakeCache.txt
 install_manifest.txt
 
 src/*.o
-src/Makefile.dep
+src/*.a
 src/hatari
 src/tos.img
 
 src/*/*.o
 src/*/*.a
-src/*/Makefile.dep
 
 src/uae-cpu/build68k
 src/uae-cpu/cpudefs.c
@@ -25,11 +22,14 @@ src/uae-cpu/gencpu
 
 tools/hmsa/hmsa
 tools/hmsa/*.o
+tools/hmsa/hmsa.1.gz
 
 python-ui/*.pyc
+python-ui/hatariui.1.gz
 
 website/screens
 
+doc/hatari.1.gz
 doc/doxygen/html
 
 # switch to regexp syntax.
@@ -39,3 +39,4 @@ syntax: regexp
 (^|/)\.hgtags($|/)
 CMakeFiles
 cmake_install.cmake
+Makefile
