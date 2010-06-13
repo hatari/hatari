@@ -378,7 +378,16 @@ int TOS_LoadImage(void)
 	TosAddress = SDL_SwapBE32(*(Uint32 *)&pTosFile[8]);
 
 	/* Check for reasonable TOS version: */
-	if (TosVersion<0x100 || TosVersion>=0x500 || TosSize>1024*1024L
+	if (TosVersion == 0x000 && TosSize == 16384)
+	{
+		/* TOS 0.00 was a very early boot loader ROM which could only
+		 * execute a boot sector from floppy disk, which was used in
+		 * the very early STs before a full TOS was available in ROM.
+		 * It's not very useful nowadays, but we support it here, too,
+		 * just for fun. */
+		TosAddress = 0xfc0000;
+	}
+	else if (TosVersion<0x100 || TosVersion>=0x500 || TosSize>1024*1024L
 	    || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
 	{
 		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
