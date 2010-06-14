@@ -726,8 +726,12 @@ static char *DebugUI_GetCommand(void)
 
 	input = Str_Trim(input);
 	if (input[0])
-		add_history(input);
-
+	{
+		HIST_ENTRY *prev = current_history();
+		/* don't store successive duplicate entries */
+		if (!prev || !prev->line || strcmp(prev->line, input) != 0)
+			add_history(input);
+	}
 	return input;
 }
 
