@@ -26,10 +26,12 @@ Uint32 IoAccessBaseAddress;
 
 /* fake CPU wrapper stuff */
 #include "m68000.h"
+int nWaitStateCycles;
 void MakeFromSR(void) { }
 
 /* fake AUE core registers */
 #include "newcpu.h"
+cpuop_func *cpufunctbl[65536];
 struct regstruct regs;
 void MakeSR(void) { }
 void m68k_dumpstate (FILE *f, uaecptr *nextpc) { }
@@ -39,6 +41,10 @@ void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt) { }
 #include "memorySnapShot.h"
 void MemorySnapShot_Store(void *pData, int Size) { }
 
+/* fake TOS variables */
+#include "tos.h"
+Uint32 TosAddress, TosSize;
+
 /* fake debugui.c stuff */
 #include "debug_priv.h"
 #include "debugui.h"
@@ -47,6 +53,7 @@ void DebugUI(void) { }
 void DebugUI_PrintCmdHelp(const char *psCmd) { }
 
 /* fake Hatari video variables */
+#include "screen.h"
 #include "video.h"
 int nHBL = 20;
 int nVBLs = 71;

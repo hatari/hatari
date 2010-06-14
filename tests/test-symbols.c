@@ -9,15 +9,6 @@
 #include "main.h"
 #include "log.h"
 
-/* dummy variable for debugcpu.c */
-Uint32 LogTraceFlags = TRACE_CPU_DISASM;
-
-/* dummy symbols.c dep function */
-void DebugUI_PrintCmdHelp(const char *cmd)
-{
-	fprintf(stderr, "Help!\n");
-}
-
 int main(int argc, const char *argv[])
 {
 	/* expected to fail */
