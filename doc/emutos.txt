@@ -256,7 +256,8 @@ Monochrome games:
 - Fun Face (playable demo)
 - Go UP
 - HASCS
-- Lasermon (bug: some lines are not drawn)
+- Lasermon
+- Mandala
 - MiniGolf* (GFA basic)
 - Monkey Business
 - Mr Dash
@@ -266,7 +267,7 @@ Monochrome games:
 - Qix
 - Sbreak* (by Mark Overmars)
 - Wallball
-- Mandala
+- Space war (bug: score missing)
 
 Text games:
 - Advent (Colossal Cave)
@@ -286,36 +287,35 @@ the issues in them are assumed to be Line-A related (graphics don't
 show because they use Line-A drawing functions etc).
 
 GEM games:
-- Awele (menus close immediately after opening)
+- Awele     (menus close immediately after opening)
 - Checkers
-- Dte (mouse gets stuck)
-- Fs (panic)
+- Dte       (mouse gets stuck)
+- Fs        (panic)
 - Gemamigo* (panic or double bus error)
-- Invaders* (shots go through buildings/shields)
+- Invaders* (shots go through buildings/shields???)
 - Othello
 - Patience* (dragging doesn't work, arrowheads drawn wrong)
-- Risk* (dragging doesn't work)
-- Verrueck (?)
-- Yukon* (dragging doesn't work)
+- Risk*     (dragging doesn't work)
+- Verrueck  (?)
+- Yukon*    (dragging doesn't work)
 
 Games that mix GEM UI and non-VDI drawing:
-- Backgam
-- Fishes
-- Robugs*
+- Backgam (line-A bitblit)
+- Fishes  (line-A line and filled rectangle)
+- Robugs* (line-A filled rectangle and draw sprite)
 
 Mono games:
-- Columns* (keyboard input issues)
-- Crystal Caves*
-- Domino
-- Lokomotive
-- MacPan*
-- Midimaze* (joystick doesn't work)
-- MineFeld
-- Pipeline*
-- Pling II
-- Roll X
-- Sherlock*
-- Space war*
+- Columns*	(keyboard input issues)
+- Crystal Caves* (Line-A bitblit and draw/clear sprite)
+- Domino	(line-A bitblit)
+- Lokomotive	(line-A bitblit)
+- MacPan*	(Line-A draw/clear sprite)
+- Midimaze*	(joystick doesn't work)
+- MineFeld	(Line-A draw/clear sprite)
+- Pipeline*	(line-A line and filled rectangle)
+- Pling II	(Line-A bitblit and draw/clear sprite)
+- Roll X	(line-A bitblit and get pixel)
+- Sherlock*	(many of the texts missing, not line-A issue)
 
 
 Working free/shareware Atari STE programs
@@ -371,6 +371,8 @@ Demos:
 - XiTEC Presentation (by Omega)
 
 Color games:
+- 4K Pacman (bug: background not cleared to black)
+- Aerial Combat 3
 - Alien Blast (demo)
 - Battletris+
 - ChuChu Rocket* (full version)
@@ -408,8 +410,7 @@ work also with EmuTOS too (not just STe ones).
 
 There are some STE games that would appear otherwise to work perfectly,
 but some part of the graphics just don't show.  They are listed in case
-someone, someday, starts to fix the EmuTOS line-A things (which I
-think are preventing these from working properly).
+someone, someday, starts to fix the EmuTOS line-A things (mainly bitblt).
 
 - Atari Scene Card Battle (card images don't show)
 - Blat (main graphics don't show)
@@ -449,6 +450,7 @@ Demos:
 - Snowstorm (by Reservoir Gods)
 - Terrorize Your Soul (by tSSc)
   - fonts and colors aren't right on all screens
+- Virtual City (needs DSP)
 - ZZ 9 Plural Z Alpha (by tSSc)
 
 Games:
@@ -493,7 +495,6 @@ Almost working demos & games:
   - only writer screens work
 - Nibe:
   - screen is messed, I suspect EmuTOS is missing resolution change function
-- Virtual City (needs DSP): city is invisible with EmuTOS
 
 
 	- Eero
