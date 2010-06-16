@@ -9,7 +9,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
-
+include(CheckCCompilerFlag)
 include(DistClean)
 
 # Set build type to "Release" if user did not specify any build type yet
@@ -30,6 +30,33 @@ set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
 set(ENABLE_SMALL_MEM 0
     CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
+
+# Run-time checks with GCC "mudflap" etc features:
+# - stack protection
+# - checking of pointer accesses
+#
+# Before running CMake, install "libmudflap<version>-<gcc-version>-dev"
+# package (libmudflap0-4.3-dev in Debian Lenny).
+#
+# After this you can configure Hatari with Mudflap:
+#   cd build; make clean; cmake -D ENABLE_MUDFLAP:BOOL=1 -D ..
+# If everything's fine, CMake output should include:
+#   Performing Test MUDFLAP_AVAILABLE - Success"
+#
+# After (re-)building Hatari, run it with something like this:
+#   MUDFLAP_OPTIONS="-viol-gdb" src/hatari --sound off
+# (sound is disabled because threading doesn't work well with Mudflap)
+#
+# For more info:
+#   http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
+#
+set(CMAKE_REQUIRED_LIBRARIES "mudflap")
+CHECK_C_COMPILER_FLAG("-fmudflapth" MUDFLAP_AVAILABLE)
+set(CMAKE_REQUIRED_LIBRARIES "")
+if(MUDFLAP_AVAILABLE)
+	set(ENABLE_MUDFLAP 0
+	    CACHE BOOL "Enable GCC run-time stack/pointer debugging - with huge slowdown")
+endif(MUDFLAP_AVAILABLE)
 
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
@@ -136,6 +163,13 @@ check_function_exists(memalign HAVE_MEMALIGN)
 # #############
 # Other CFLAGS:
 # #############
+
+# GCC pointer debugging, huge run-time slowdown
+if(ENABLE_MUDFLAP)
+	# SDL mixer threads so have to use threaded mudflap version
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fstack-protector-all -fmudflapth")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fmudflapth -lmudflap")
+endif(ENABLE_MUDFLAP)
 
 # Warning flags:
 if(CMAKE_COMPILER_IS_GNUCC)
