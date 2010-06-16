@@ -404,12 +404,100 @@ static Uint32 GetFrameCycles(void)
 	return fcycles;
 }
 
+/* helpers for TOS OS call opcode accessor functions */
+#define INVALID_OPCODE 0xFFFFu
+
+static inline Uint16 getLineOpcode(Uint8 line)
+{
+	Uint32 pc;
+	Uint16 instr;
+	pc = M68000_GetPC();
+	instr = STMemory_ReadWord(pc);
+	/* for opcode X, Line-A = 0xA00X, Line-F = 0xF00X */
+	if ((instr >> 8) == line) {
+		return instr & 0xFF;
+	}
+	return INVALID_OPCODE;
+}
+static inline bool isTrap(Uint8 trap)
+{
+	Uint32 pc;
+	Uint16 instr;
+	pc = M68000_GetPC();
+	instr = STMemory_ReadWord(pc);
+	return (instr == (Uint16)0x4e40u + trap);
+}
+static inline Uint16 getControlOpcode(void)
+{
+	/* Control[] address from D1, opcode in Control[0] */
+	return STMemory_ReadWord(STMemory_ReadLong(Regs[REG_D1]));
+}
+static inline Uint16 getStackOpcode(void)
+{
+	return STMemory_ReadWord(Regs[REG_A7]);
+}
+
+/* Actual TOS OS call opcode accessor functions */
+static Uint32 GetLineAOpcode(void)
+{
+	return getLineOpcode(0xA0);
+}
+static Uint32 GetLineFOpcode(void)
+{
+	return getLineOpcode(0xF0);
+}
+static Uint32 GetGemdosOpcode(void)
+{
+	if (isTrap(1)) {
+		return getStackOpcode();
+	}
+	return INVALID_OPCODE;
+}
+static Uint32 GetBiosOpcode(void)
+{
+	if (isTrap(14)) {
+		return getStackOpcode();
+	}
+	return INVALID_OPCODE;
+}
+static Uint32 GetXbiosOpcode(void)
+{
+	if (isTrap(13)) {
+		return getStackOpcode();
+	}
+	return INVALID_OPCODE;
+}
+static Uint32 GetAesOpcode(void)
+{
+	Uint8 d0 = Regs[REG_D0];
+	/* 0xC8 is the normal signature, 0xC9 is some AES "nop" operation */
+	if (isTrap(2) && (d0 == 0xC8 || d0 == 0xC9)) {
+		return getControlOpcode();
+	}
+	return INVALID_OPCODE;
+}
+static Uint32 GetVdiOpcode(void)
+{
+	Uint8 d0 = Regs[REG_D0];
+	if (isTrap(2) && d0 == 0x73) {
+		return getControlOpcode();
+	}
+	return INVALID_OPCODE;
+}
+
 /* sorted by variable name so that this can be bisected */
 static const var_addr_t hatari_vars[] = {
+	{ "AesOpcode", (Uint32*)GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
+	{ "BiosOpcode", (Uint32*)GetBiosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "FrameCycles", (Uint32*)GetFrameCycles, VALUE_TYPE_FUNCTION32, 0, NULL },
+	{ "GemdosOpcode", (Uint32*)GetGemdosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "HBL", (Uint32*)&nHBL, VALUE_TYPE_VAR32, sizeof(nHBL)*8, NULL },
+	{ "LineAOpcode", (Uint32*)GetLineAOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "LineCycles", (Uint32*)GetLineCycles, VALUE_TYPE_FUNCTION32, 0, "is always divisable by 4" },
-	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, NULL }
+	{ "LineFOpcode", (Uint32*)GetLineFOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
+	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, NULL },
+	{ "VdiOpcode", (Uint32*)GetVdiOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
+	{ "XbiosOpcode", (Uint32*)GetXbiosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" }
 };
 
 
