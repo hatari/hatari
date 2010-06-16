@@ -75,7 +75,6 @@ Other potential Hatari functionality improvements
 	- Running until code returns from ROM (exiting from super mode?)
 	- Single stepping that skips Traps, Line-A, Line-F. And one that
 	  skips also BSRs and JSRs
-	- Set breakpoint on specific OS call
 	- Command to run slowly
 	- Saving machine status to history buffer each time debugger is
 	  entered (exception or breakpoint is hit) and being able to view

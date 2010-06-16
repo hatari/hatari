@@ -9,14 +9,18 @@
 Emulation:
 
 Emulator:
-- Debugger DSP and CPU code profiling functionality.  Provides statistics
-  about profiled code (executed code address ranges, max and total counts
-  and cycles), lists addresses/instructions taking most cyles and if symbols
-  are loaded, what were the most used symbol addresses.
+- Debugger:
+  - BIOS/XBIOS/GEMDOS/VDI/AES/Line-A/Line-F opcode breakpoint support
+  - DSP and CPU code profiling functionality.  Provides statistics about
+    profiled code (executed code address ranges, max and total counts
+    and cycles), lists addresses/instructions taking most cyles and if
+    symbols are loaded, what were the most used symbol addresses
 
 Other changes:
 - hmsa tool can create empty disk images in addition to converting
   disks between ST & MSA formats
+- Support for plain Makefiles removed, (except for internal tests)
+  only CMake is used for configuring and building Hatari
 
 
  Version 1.4.0 (2010-06-12):
