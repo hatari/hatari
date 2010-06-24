@@ -22,8 +22,8 @@
 #define FRAMES_PER_BUFFER (64)
 
 /* Static functions */
-static void Microphone_Error (void);
-static int Microphone_Terminate(void);
+static bool Microphone_Error (void);
+static bool Microphone_Terminate(void);
 
 static int Microphone_Callback (const void *inputBuffer, void *outputBuffer,
                            unsigned long framesPerBuffer,
@@ -81,16 +81,16 @@ static int Microphone_Callback (const void *inputBuffer, void *outputBuffer,
 /**
  * Microphone (jack) inits : init portaudio microphone emulation
  *   - sampleRate : system sound frequency
+ * return true on success, false on error or if mic disabled
  */
-int Microphone_Start(int sampleRate)
+bool Microphone_Start(int sampleRate)
 {
 	micro_sampleRate = sampleRate;
 
 	/* Initialize portaudio */
 	micro_err = Pa_Initialize();
 	if (micro_err != paNoError) {
-		Microphone_Error();
-		return 0;
+		return Microphone_Error();
 	}
 
 	/* Initialize microphone parameters */
@@ -98,7 +98,7 @@ int Microphone_Start(int sampleRate)
 	if (micro_inputParameters.device == paNoDevice) {
 		fprintf (stderr, "Microphone: No input device found.\n");
 		Microphone_Terminate();
-		return 0;
+		return false;
 	}
 	
 	micro_inputParameters.channelCount = 2;				/* stereo input */
@@ -117,55 +117,58 @@ int Microphone_Start(int sampleRate)
 		Microphone_Callback,
 		NULL);
 	if (micro_err != paNoError) {
-		Microphone_Error();
-		return 0;
+		return Microphone_Error();
 	}
 
 	/* Start microphone recording */
 	micro_err = Pa_StartStream( micro_stream );
 	if (micro_err != paNoError) {
-		Microphone_Error();
-		return 0;
+		return Microphone_Error();
 	}
-	
-	return 1;
+
+	return true;
 }
 
 /**
  * Microphone (jack) Error : display current portaudio error
  */
-static void Microphone_Error(void)
+static bool Microphone_Error(void)
 {
 	fprintf (stderr, "An error occured while using the portaudio stream\n");
 	fprintf (stderr, "Error number: %d\n", micro_err);
 	fprintf (stderr, "Error message: %s\n", Pa_GetErrorText (micro_err));
 
 	Microphone_Terminate();
+	return false;
 }
 
 /**
  * Microphone (jack) Terminate : terminate the microphone emulation
+ * return true for success
  */
-static int Microphone_Terminate(void)
+static bool Microphone_Terminate(void)
 {
+	micro_stream = NULL; /* catch erronous use */
+
 	micro_err = Pa_Terminate();
 	if (micro_err != paNoError) {
 		fprintf (stderr, "PortAudio error: %s\n", Pa_GetErrorText(micro_err));
-		return -1;
+		return false;
 	}
-	return 0;
+
+	return true;
 }
 
 /**
  * Microphone (jack) stop : stops the current recording
+ * return true for success, false for error
  */
-int Microphone_Stop(void)
+bool Microphone_Stop(void)
 {
 	/* Close Microphone stream */
 	micro_err = Pa_CloseStream(micro_stream);
 	if (micro_err != paNoError) {
-		Microphone_Error();
-		return -1;
+		return Microphone_Error();
 	}
 
 	return Microphone_Terminate();
