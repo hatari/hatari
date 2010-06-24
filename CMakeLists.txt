@@ -44,8 +44,8 @@ set(ENABLE_SMALL_MEM 0
 #   Performing Test MUDFLAP_AVAILABLE - Success"
 #
 # After (re-)building Hatari, run it with something like this:
-#   MUDFLAP_OPTIONS="-viol-gdb" src/hatari --sound off
-# (sound is disabled because threading doesn't work well with Mudflap)
+#   MUDFLAP_OPTIONS="-viol-gdb" src/hatari --sound off --mic off
+# (sound&mic are disabled because threading doesn't work well with Mudflap)
 #
 # For more info:
 #   http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
