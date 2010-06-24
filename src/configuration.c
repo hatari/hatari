@@ -224,10 +224,11 @@ static const struct Config_Tag configs_ShortCutWithoutMod[] =
 /* Used to load/save sound options */
 static const struct Config_Tag configs_Sound[] =
 {
+	{ "bEnableMicrophone", Bool_Tag, &ConfigureParams.Sound.bEnableMicrophone },
 	{ "bEnableSound", Bool_Tag, &ConfigureParams.Sound.bEnableSound },
 	{ "nPlaybackFreq", Int_Tag, &ConfigureParams.Sound.nPlaybackFreq },
-	{ "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
 	{ "nSdlAudioBufferSize", Int_Tag, &ConfigureParams.Sound.SdlAudioBufferSize },
+	{ "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -469,6 +470,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
 
 	/* Set defaults for Sound */
+	ConfigureParams.Sound.bEnableMicrophone = true;
 	ConfigureParams.Sound.bEnableSound = true;
 	ConfigureParams.Sound.nPlaybackFreq = 44100;
 	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",

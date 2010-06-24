@@ -39,10 +39,11 @@ typedef struct
 /* Sound configuration */
 typedef struct
 {
+  bool bEnableMicrophone;
   bool bEnableSound;
   int nPlaybackFreq;
-  char szYMCaptureFileName[FILENAME_MAX];
   int SdlAudioBufferSize;
+  char szYMCaptureFileName[FILENAME_MAX];
 } CNF_SOUND;
 
 

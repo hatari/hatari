@@ -110,6 +110,7 @@ enum {
 	OPT_DSP,
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
+	OPT_MICROPHONE,
 	OPT_KEYMAPFILE,
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
@@ -286,6 +287,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
 	  "<x>", "Sound buffer size for SDL in ms (x=0/10-100, 0=use default buffer size)" },
+	{ OPT_MICROPHONE,   NULL, "--mic",
+	  "<bool>", "Enable/disable (Falcon only) microphone" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	
@@ -1316,6 +1319,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				}
 			ConfigureParams.Sound.SdlAudioBufferSize = temp;
 			break;
+			
+		case OPT_MICROPHONE:
+			ok = Opt_Bool(argv[++i], OPT_MICROPHONE, &ConfigureParams.Sound.bEnableMicrophone);
+			break;			
 
 		case OPT_KEYMAPFILE:
 			i += 1;

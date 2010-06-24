@@ -16,8 +16,9 @@
 
 #include <portaudio.h>
 #include "microphone.h"
+#include "configuration.h"
 #include "crossbar.h"
-
+#include "log.h"
 
 #define FRAMES_PER_BUFFER (64)
 
@@ -85,6 +86,11 @@ static int Microphone_Callback (const void *inputBuffer, void *outputBuffer,
  */
 bool Microphone_Start(int sampleRate)
 {
+	if (!ConfigureParams.Sound.bEnableMicrophone) {
+		Log_Printf(LOG_DEBUG, "Microphone: Disabled\n");
+		return false;
+	}
+
 	micro_sampleRate = sampleRate;
 
 	/* Initialize portaudio */
@@ -96,7 +102,7 @@ bool Microphone_Start(int sampleRate)
 	/* Initialize microphone parameters */
 	micro_inputParameters.device = Pa_GetDefaultInputDevice();	/* default input device */
 	if (micro_inputParameters.device == paNoDevice) {
-		fprintf (stderr, "Microphone: No input device found.\n");
+		Log_Printf(LOG_WARN, "Microphone: No input device found.\n");
 		Microphone_Terminate();
 		return false;
 	}
