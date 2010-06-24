@@ -1,7 +1,7 @@
 
 set(SOURCES
 	audio.c avi_record.c bios.c blitter.c cart.c cfgopts.c
-	configuration.c options.c  createBlankImage.c change.c
+	configuration.c options.c change.c
 	control.c cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c
 	floppy.c gemdos.c hd6301_cpu.c hdc.c ide.c ikbd.c ioMem.c
 	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
@@ -88,7 +88,7 @@ else()
 	add_executable(hatari ${SOURCES})
 endif(ENABLE_OSX_BUNDLE)
 
-target_link_libraries(hatari Floppy Debug Falcon GuiSdl UaeCpu ${SDL_LIBRARY})
+target_link_libraries(hatari Debug Falcon GuiSdl Floppy UaeCpu ${SDL_LIBRARY})
 
 if(MATH_FOUND AND NOT APPLE)
 	target_link_libraries(hatari ${MATH_LIBRARY})
