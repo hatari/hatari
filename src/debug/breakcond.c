@@ -414,7 +414,7 @@ static inline Uint16 getLineOpcode(Uint8 line)
 	pc = M68000_GetPC();
 	instr = STMemory_ReadWord(pc);
 	/* for opcode X, Line-A = 0xA00X, Line-F = 0xF00X */
-	if ((instr >> 8) == line) {
+	if ((instr >> 12) == line) {
 		return instr & 0xFF;
 	}
 	return INVALID_OPCODE;
@@ -440,11 +440,11 @@ static inline Uint16 getStackOpcode(void)
 /* Actual TOS OS call opcode accessor functions */
 static Uint32 GetLineAOpcode(void)
 {
-	return getLineOpcode(0xA0);
+	return getLineOpcode(0xA);
 }
 static Uint32 GetLineFOpcode(void)
 {
-	return getLineOpcode(0xF0);
+	return getLineOpcode(0xF);
 }
 static Uint32 GetGemdosOpcode(void)
 {
@@ -469,18 +469,27 @@ static Uint32 GetXbiosOpcode(void)
 }
 static Uint32 GetAesOpcode(void)
 {
-	Uint8 d0 = Regs[REG_D0];
-	/* 0xC8 is the normal signature, 0xC9 is some AES "nop" operation */
-	if (isTrap(2) && (d0 == 0xC8 || d0 == 0xC9)) {
-		return getControlOpcode();
+	if (isTrap(2)) {
+		Uint16 d0 = Regs[REG_D0];
+		if (d0 == 0xC8) {
+			return getControlOpcode();
+		} else if (d0 == 0xC9) {
+			/* same as appl_yield() */
+			return 0x11;
+		}
 	}
 	return INVALID_OPCODE;
 }
 static Uint32 GetVdiOpcode(void)
 {
-	Uint8 d0 = Regs[REG_D0];
-	if (isTrap(2) && d0 == 0x73) {
-		return getControlOpcode();
+	if (isTrap(2)) {
+		Uint16 d0 = Regs[REG_D0];
+		if (d0 == 0x73) {
+			return getControlOpcode();
+		} else if (d0 == 0xFFFD) {
+			/* vq_[v]gdos() */
+			return 0xFFFD;
+		}
 	}
 	return INVALID_OPCODE;
 }
