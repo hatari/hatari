@@ -9,12 +9,15 @@
 Emulation:
 
 Emulator:
+- Option to disable Falcon mic
+  ("--mic off" is needed for Mudflap debugging)
 - Debugger:
   - BIOS/XBIOS/GEMDOS/VDI/AES/Line-A/Line-F opcode breakpoint support
   - DSP and CPU code profiling functionality.  Provides statistics about
     profiled code (executed code address ranges, max and total counts
     and cycles), lists addresses/instructions taking most cyles and if
-    symbols are loaded, what were the most used symbol addresses
+    symbols are loaded, what were the most used symbol addresses.
+  - Profiling information is also shown in disassembly output
 
 Other changes:
 - hmsa tool can create empty disk images in addition to converting
