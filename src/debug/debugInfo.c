@@ -187,12 +187,13 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 	fprintf(stderr, "OS Conf bits : lang=%d, %s\n", osconf>>1, osconf&1 ? "PAL":"NTSC");
 	fprintf(stderr, "Cookie Jar   : 0x%06x\n", STMemory_ReadLong(COOKIE_JAR));
 
-	/* last 3 OS header fields are only available as of TOS 1.02 */
 	if (osversion >= 0x0102) {
+		/* last 3 OS header fields are only available as of TOS 1.02 */
 		fprintf(stderr, "Memory pool  : 0x%06x\n", STMemory_ReadLong(sysbase+0x20));
 		fprintf(stderr, "Kbshift addr : 0x%06x\n", STMemory_ReadLong(sysbase+0x24));
 	} else {
-		/* TODO: GEMDOS memory pool address for TOS 1.0? */
+		/* TOS 1.0 */
+		fprintf(stderr, "Memory pool  : 0x0056FA\n");
 		fprintf(stderr, "Kbshift addr : 0x000E1B\n");
 	}
 	basepage = DebugInfo_CurrentBasepage();
