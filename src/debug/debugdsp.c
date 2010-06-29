@@ -112,14 +112,29 @@ error_msg:
 
 
 /**
- * Check whether given address matches any DSP symbol, if yes,
- * show the matching symbol information.
+ * Check whether given address matches any DSP symbol and whether
+ * there's profiling information available for it.  If yes, show it.
  */
-static void DebugDsp_ShowMatchedSymbol(Uint32 addr)
+static void DebugDsp_ShowAddressInfo(Uint16 addr)
 {
-	const char *symbol = Symbols_GetByDspAddress(addr);
+	Uint32 count, cycles;
+	const char *symbol;
+	bool shown = false;
+
+	symbol = Symbols_GetByDspAddress(addr);
 	if (symbol)
-		fprintf(debugOutput, "%s:\n", symbol);
+	{
+		fprintf(debugOutput, "%s", symbol);
+		shown = true;
+	}
+	if (Profile_DspAddressData(addr, &count, &cycles))
+	{
+		fprintf(debugOutput, "%s%d/%d times/cycles",
+			(shown ? ", " : ""), count, cycles);
+		shown = true;
+	}
+	if (shown)
+		fprintf(debugOutput, ":\n");
 }
 
 
@@ -183,7 +198,7 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 	}
 	printf("DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	while (dsp_disasm_addr < dsp_disasm_upper) {
-		DebugDsp_ShowMatchedSymbol(dsp_disasm_addr);
+		DebugDsp_ShowAddressInfo(dsp_disasm_addr);
 		dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_addr);
 	}
 

@@ -90,6 +90,23 @@ static inline Uint32 address2index(Uint32 pc)
 
 
 /**
+ * Get CPU cycles & count for given address.
+ * Return true if data was available and non-zero, false otherwise.
+ */
+bool Profile_CpuAddressData(Uint32 addr, Uint32 *count, Uint32 *cycles)
+{
+	Uint32 idx;
+	if (!cpu_profile.data) {
+		return false;
+	}
+	idx = address2index(addr);
+	*cycles = cpu_profile.data[idx].cycles;
+	*count = cpu_profile.data[idx].count;
+	return (*count > 0);
+}
+
+
+/**
  * convert sorting array profile data index to Atari memory address.
  */
 static Uint32 index2address(Uint32 idx)
@@ -484,7 +501,21 @@ void Profile_CpuStop(void)
 }
 
 
-/* ------------------ DSP profile control ----------------- */
+/* ------------------ DSP profile results ----------------- */
+
+/**
+ * Get DSP cycles & count for given address.
+ * Return true if data was available and non-zero, false otherwise.
+ */
+bool Profile_DspAddressData(Uint16 addr, Uint32 *count, Uint32 *cycles)
+{
+	if (!dsp_profile.data) {
+		return false;
+	}
+	*cycles = dsp_profile.data[addr].cycles;
+	*count = dsp_profile.data[addr].count;
+	return (*count > 0);
+}
 
 /**
  * show DSP specific profile statistics.
