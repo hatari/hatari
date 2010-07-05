@@ -278,6 +278,8 @@
 /*			assert/crash in Hatari when setting timer B on line 2.			*/
 /*			If we detect VBL was delayed too much, we add hbl/timer b in the next	*/
 /*			4 cycles.								*/
+/* 2010/07/05	[NP]	When removing left border, allow up to 32 cycles between hi and low	*/
+/*			res switching (fix Megabeer by Invizibles).				*/
 
 
 
@@ -912,7 +914,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x00 )	/* switched from hi res to lo res */
 //	        && ( LineCycles >= 12 )				/* switch back to low res should be after cycle 8 */
 	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
-	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 30 ) )
+	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 32 ) )
 	{
 		if ( ( ConfigureParams.System.nMachineType == MACHINE_STE )	/* special case for 504/4 on STE -> add 20 bytes to left border */
 			&& ( ShifterFrame.ResPosHi.LineCycles == 504 ) && ( LineCycles == 4 ) )
