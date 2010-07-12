@@ -2652,10 +2652,18 @@ command.
 </p>
 
 <p>
+To run debugger commands at Hatari startup, one can use the "--parse
+&lt;file&gt;" command line option.  This is useful e.g. for debugging
+TOS or some demo startup code, or if you always want to use some
+specific debugger setup (breakpoints etc).
+</p>
+
+<p>
 The debugger uses Hatari's parent console window, so make sure you run
 Hatari from the command line when you want to use the debugger. On
-Linux you can add for example an icon to your desktop that runs: <span
-class="commandline">xterm -T "Hatari debug window" -e hatari</span>.
+Linux you can add for example an icon to your desktop that does it
+with something like this:
+<span class="commandline">xterm -T "Hatari debug window" -e hatari</span>.
 </p>
 
 
