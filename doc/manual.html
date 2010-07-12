@@ -135,6 +135,8 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
   <li><a href="#Performance">Performance</a>
   <ul>
     <li><a href="#Improving Hatari performance">Improving Hatari performance</a>
+    <li><a href="#Emulation options">Emulation options</a>
+    <li><a href="#Emulator options">Emulator options</a>
     <li><a href="#Measuring the performance">Measuring the performance</a>
   </ul>
   <li><a href="#Appendix">Appendix</a>
@@ -3011,8 +3013,25 @@ features Hatari needs to emulate for them.  Less accurate Atari
 emulators may be faster as emulation accuracy has a performance
 overhead.</p>
 
+<p>The operating system and libraries below Hatari can also sometimes
+have a noticeable effect on performance.</p>
+
 
 <a name="Improving Hatari performance"></a><h3>Improving Hatari performance</h3>
+
+<p>
+Hatari currently runs best in 16 or 32 bits per pixel color depth
+mode, so try to avoid 24 bits per pixel display modes if possible.
+16-bit mode is fastest.
+</p>
+
+<p>
+<em>On OSX, frame skipping, zooming and drive LED options (listed below)
+seem to have a large effect on performance in the windowed mode</em>.
+This is apparently due to issues in the SDL OSX backend and how OSX
+itself composites non-fullscreen window contents. OSX uses always
+32-bit mode.
+</p>
 
 <p>
 Unless you've disabled compiler optimizations (like GCC's -O2 or -O3
@@ -3022,14 +3041,21 @@ performance.  Using GCC -O3 option instead of -O2 can give minor
 (5-10%) performance improvements for things (demos) that use very
 heavily interrupts.
 </p>
+
 <p>
 However, Hatari can be sped up considerably by giving up some
-emulation or emulator accuracy.  Most of these options should
-be needed only on slow devices like handhelds.
+emulation or emulator accuracy.  Except for DSP, these options
+should be needed only on very slow devices like handhelds. See below.
+</p>
+
+<p>
+If nothing else helps, try an earlier Hatari version.  More accurate
+emulation or emulator output in newer Hatari versions means that they
+can be slower despite optimizations.
 </p>
 
 
-<h4>Emulation options</h4>
+<a name="Emulation options"></a><h3>Emulation options</h3>
 
 <p>
 Emulation options have the largest impact on performance.
@@ -3085,10 +3111,10 @@ a last resort.
 </p>
 
 
-<h4>Emulator options</h4>
+<a name="Emulator options"></a><h3>Emulator options</h3>
 
 <p>
-Emulator options don't have as large effect on performance as
+Emulator options don't usually have as large effect on performance as
 emulation options, but they don't affect the emulated programs at all,
 just the quality of the emulation "output". These options can also
 be toggled at run-time without rebooting the emulation.
@@ -3110,14 +3136,16 @@ interrupts.
 Screen rendering can take noticeable amount of CPU time. The default
 Hatari "auto" frame skipping should be used unless there's a good
 reason not to.  It will skip converting and showing some of the frames
-if there's not enough time for them. If your monitor refresh frequency
-is lower than the selected Hatari monitor frequency (e.g. LCD monitors
-usually use 60Hz whereas Atari monochrome monitor uses 71Hz), you
-should use frameskip of one. The reason is that if your SDL library
-uses VSync to synchronize the output to screen (like OSX one?), with
-zero frame skip that forces the emulation to run slower than a real
-Atari.  If SDL doesn't use VSync, Hatari does redundant work to
-convert frames you can't see.
+if there's not enough time for them.
+</p>
+<p>
+Also, if your monitor refresh frequency is lower than the selected
+Hatari monitor frequency (e.g. LCD monitors usually use 60Hz whereas
+Atari monochrome monitor uses 71Hz), you should use frameskip of one.
+The reason is that if your SDL library uses VSync to synchronize the
+output to screen (like OSX one?), with zero frame skip that forces the
+emulation to run slower than a real Atari.  If SDL doesn't use VSync,
+Hatari does redundant work to convert frames you can't see.
 </p>
 
 <h5>Zooming</h5>
@@ -3147,16 +3175,10 @@ output, drawing of the statusbar or the drive LED (when statusbar is
 disabled) may have some minor impact on performance too.  Normally
 they shouldn't.
 </p>
-
 <p>
-Btw. Hatari currently runs best in 16 or 32 bits per pixel color depth
-mode, so try to avoid 24 bits per pixel display modes if possible.
-16-bit mode is fastest.
-</p>
-<p>
-If nothing else helps, try an earlier Hatari version.  More accurate
-emulation or emulator output in newer Hatari versions means that they
-can be slower despite optimizations.
+To also the drive LED shown when statusbar is disabled, you need to
+start Hatari with <span class="commandline">--drive-led off</span>.
+Then just save the Hatari configuration to make that option permanent.
 </p>
 
 
