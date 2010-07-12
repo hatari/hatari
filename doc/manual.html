@@ -2917,15 +2917,6 @@ b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
 </pre>
 
 <p>
-The debugger supports also setting conditional breakpoints on values
-of some internal Hatari variables (listed by "b help"). For example
-if you want to stop at a specific cycle within a frame (that is, PC
-relative to the current VBL/HBL in cycles), set breakpoints to
-specific "HBL" and "LineCycles" variable values.  The "e" command
-can be used to calculate suitable register and variable values.
-</p>
-
-<p>
 As a convenience, if the value expressions on both sides of the
 comparison are exactly the same, right side is replaced with its
 current value. For inequality ('!') comparison, conditional breakpoint
@@ -2959,6 +2950,32 @@ Whereas giving count (like ":2") as option will break only on every
 &lt;count&gt; hit.
 </p>
 
+
+<h4>Breakpoint helper variables</h4>
+
+<p>
+In addition to loaded symbols, the debugger supports also setting
+conditional breakpoints on values of some "virtual" variables listed
+by "b help". For example:
+</p>
+<ul>
+<li>If you want to stop at a specific cycle within a frame (that is,
+PC relative to the current VBL/HBL in cycles), set breakpoints to
+specific "HBL" and "LineCycles" variable values.  The "e" command
+can be used to calculate suitable register and variable values.</li>
+<li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
+to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
+By default they contain the 0xffff value, so to trace e.g. AES calls,
+one needs to use something like this:
+<pre>
+b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
+</pre>
+</li>
+</ul>
+
+
+<a name="Tracing"></a><h3>Tracing</h3>
+
 <p>
 After analyzing and/or setting new breakpoints, you can continue the
 emulation with the "c" command. You can continue for a given number of
@@ -2966,8 +2983,6 @@ CPU instructions (or DSP instructions when "dc" is used), or you can
 continue forever (until a breakpoint triggers) if you omit the
 instruction count.
 </p>
-
-<a name="Tracing"></a><h3>Tracing</h3>
 
 <p>
 If you want to continue with real-time disassembling, you can enable it
@@ -2986,6 +3001,10 @@ tell it to intercept higher level functionality:
 <li>GEMDOS tracing use of the GEMDOS harddisk emulation</li>
 <li>VDI tracing use of a VDI graphics mode</li>
 </ul>
+<p>
+If use of above isn't possible for the things you'd like to track, you can
+use the OS call opcode breakpoints explained above with the ":trace" option.
+</p>
 <p>
 Tracing options can be set even from a program within the emulation
 if you enable Hatari "--bios-intercept" option and call XBios 255 from
