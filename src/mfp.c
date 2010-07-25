@@ -91,6 +91,10 @@
 /*			of void, depending on whether at least one MFP interrupt was	*/
 /*			allowed or not.							*/
 /* 2009/03/28	[NP]	Handle bit 3 of AER for timer B (fix Seven Gates Of Jambala).	*/
+/* 2010/07/26	[NP]	In MFP_StartTimer_AB, when ctrl reg is in pulse width mode,	*/
+/*			clear bit 3 to emulate it as in delay mode. This is not		*/
+/*			completly correct as we should also emulate GPIO 3/4, but it	*/
+/*			helps running some programs (fix the game Erik).		*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
@@ -499,6 +503,24 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 {
 	int TimerClockCycles = 0;
 
+
+	/* When in pulse width mode, handle as in delay mode */
+	/* (this is not completly correct, as we should also handle GPIO 3/4 in pulse mode) */
+	if ( TimerControl > 8 )
+	{
+		if (LOG_TRACE_LEVEL(TRACE_MFP_START))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LOG_TRACE_PRINT("mfp start AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d pulse mode->delay mode\n",
+			                Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
+			                FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+		}
+
+		TimerControl &= 0x07;			/* clear bit 3, pulse width mode -> delay mode */
+	}
+
+
 	/* Is timer in delay mode (ctrl = 0-7) ? */
 	/* If we are in event-count mode (ctrl = 8) ignore this (done on HBL) */
 	if (TimerControl <= 7)
@@ -566,14 +588,12 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 		}
 	}
 
-	else	/* timer control > 7 */
+
+	else if (TimerControl == 8 )				/* event count mode */
 	{
 		/* Make sure no outstanding interrupts in list if channel is disabled */
 		CycInt_RemovePendingInterrupt(Handler);
-	}
 
-	if (TimerControl == 8 )				/* event count mode */
-	{
 		if ( Handler == INTERRUPT_MFP_TIMERB )		/* we're starting timer B event count mode */
 		{
 			/* Store start cycle for handling interrupt in video.c */
@@ -589,8 +609,6 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			                FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles,
 			                bFirstTimer?"true":"false", *pTimerCanResume?"true":"false");
 		}
-
-
 	}
 
 	return TimerClockCycles;
