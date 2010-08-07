@@ -19,7 +19,7 @@
   late - this is handled in the adjust functions.
 
   In order to handle both CPU and MFP interrupt events, we don't convert MFP
-  cyles to CPU cycles, because it requires some floating points approximation
+  cycles to CPU cycles, because it requires some floating points approximations
   and accumulates some errors that could lead to bad results.
   Instead, CPU and MFP cycles are converted to 'internal' cycles with the
   following rule :
@@ -312,15 +312,15 @@ void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Hand
 {
 	assert(CycleTime >= 0);
 
-	/* Update list cycle counts before adding a new one, */
-	/* since CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
-	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
+	/* Update list cycle counts with current PendingInterruptCount before adding a new int, */
+	/* because CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
+	if ( ActiveInterrupt > 0 )
 		CycInt_UpdateInterrupt();
 
 	InterruptHandlers[Handler].bUsed = true;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + nCyclesOver;
 
-	/* Set new */
+	/* Set new active int and compute a new value for PendingInterruptCount*/
 	CycInt_SetNewInterrupt();
 
 	LOG_TRACE(TRACE_INT, "int add abs video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
@@ -377,15 +377,15 @@ void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interru
 {
 	assert(CycleTime >= 0);
 
-	/* Update list cycle counts before adding a new one, */
-	/* since CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
-	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
+	/* Update list cycle counts with current PendingInterruptCount before adding a new int, */
+	/* because CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
+	if ( ActiveInterrupt > 0 )
 		CycInt_UpdateInterrupt();
 
 	InterruptHandlers[Handler].bUsed = true;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycleOffset;
 
-	/* Set new */
+	/* Set new active int and compute a new value for PendingInterruptCount*/
 	CycInt_SetNewInterrupt();
 
 	LOG_TRACE(TRACE_INT, "int add rel offset video_cyc=%d handler=%d handler_cyc=%lld offset_cyc=%d pending_count=%d\n",
