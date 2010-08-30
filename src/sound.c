@@ -23,6 +23,10 @@
     - 5 bits volume table and 16*16*16 combinations of all volume are from Sc68 by Benjamin Gerard
     - 4 bits to 5 bits volume interpolation from 16*16*16 to 32*32*32 from YM blep synthesis by Antti Lankila
 
+  Special case for per==0 : as measured on a real STF, when tone/noise/env's per==0, we get
+  the same sound output as when per==1.
+
+
 */
 
 /* 2008/05/05	[NP]	Fix case where period is 0 for noise, sound or envelope.	*/
@@ -674,10 +678,11 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 
 	step = YM_ATARI_CLOCK;
 	step <<= 24;
-	if ( per > 0 )
-		step /= (8 * per * YM_REPLAY_FREQ);	/* 0x5ab < step < 0x5ab3f46 at 44.1 kHz */
-	else
-		step /= (8 * 1/2 * YM_REPLAY_FREQ);	/* result for Per=0 is half the result for Per=1 */
+
+	if ( per == 0 )
+		per = 1;				/* result for Per=0 is the same as for Per=1 */	
+
+	step /= (8 * per * YM_REPLAY_FREQ);		/* 0x5ab < step < 0x5ab3f46 at 44.1 kHz */
 
 	return step;
 }
