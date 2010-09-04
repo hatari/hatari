@@ -569,7 +569,7 @@ static void	Ym2149_Init(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reset all ym registers as well as the internal varaibles
+ * Reset all ym registers as well as the internal variables
  */
 
 static void	Ym2149_Reset(void)
@@ -580,6 +580,10 @@ static void	Ym2149_Reset(void)
 		Sound_WriteReg ( i , 0 );
 
 	Sound_WriteReg ( 7 , 0xff );
+
+	posA = 0;
+	posB = 0;
+	posC = 0;
 
 	currentNoise = 0xffff;
 
@@ -612,10 +616,19 @@ static ymu32	YM2149_RndCompute(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Compute steps for tone, noise and env, based on the input
- * period.
+ * Compute tone's step based on the input period.
+ * Although for tone we should have the same result when per==0 and per==1,
+ * this gives some very sharp and unpleasant sounds in the emulation.
+ * To get a better sound, we consider all per<=5 to give step=0, which will
+ * produce a constant output at value '1'. This should be handled with some
+ * proper filters to remove high frequencies as on a real ST (where per<=9
+ * gives nearly no audible sound).
+ * A common replay freq of 44.1 kHz will also not be high enough to correctly
+ * render possible tone's freq of 125 or 62.5 kHz (when per==1 or per==2)
  */
 
+#define NEWSTEP
+#ifndef NEWSTEP
 static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 {
 	int	per;
@@ -632,8 +645,46 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 
 	return step;
 }
+#else
+static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
+{
+	int	per;
+	yms64	step;
 
+	per = rHigh&15;
+	per = (per<<8)+rLow;
 
+#if 0							/* need some high freq filters for this to work correctly */
+	if ( per == 0 )
+		per = 1;				/* result for Per=0 is the same as for Per=1 */	
+#else
+	if ( per <= 5 )
+		return 0;				/* discard too high frequencies, they give a very bad sound */	
+#endif
+
+	step = YM_ATARI_CLOCK;
+	step <<= 24;
+
+	step /= (per * 8 * YM_REPLAY_FREQ);		/* 0x5ab9 < step < 0x5ab3f46 at 44.1 kHz */
+
+	return step;
+}
+#endif
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute noise's step based on the input period.
+ * On a real STF, we get the same result when per==0 and per==1.
+ * A common replay freq of 44.1 kHz will not be high enough to correctly
+ * render possible noise's freq of 125 or 62.5 kHz (when per==1 or per==2).
+ * With a random wave such as noise, this means that with a replay freq
+ * of 44.1 kHz, per==1 and per==2 (as well as per==3) will sound the same :
+ * 	per==1   step=0x2d59fa3   freq=125 kHz
+ * 	per==2   step=0x16acfd1   freq=62.5 kHz
+ * 	per==3   step=0x0f1dfe1   freq=41.7 kHz
+ */
+
+#ifndef NEWSTEP
 static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 {
 	int	per;
@@ -649,7 +700,25 @@ static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 
 	return step;
 }
+#else
+static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
+{
+	int	per;
+	yms64	step;
 
+	per = (rNoise&0x1f);
+
+	if ( per == 0 )
+		per = 1;				/* result for Per=0 is the same as for Per=1 */	
+
+	step = YM_ATARI_CLOCK;
+	step <<= 24;
+
+	step /= (per * 16 * YM_REPLAY_FREQ);		/* 0x17683f < step < 0x2d59fa3 at 44.1 kHz */
+
+	return step;
+}
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -666,6 +735,7 @@ static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
  * the equivalent of 24 bits for the fractional part.
  * Since we're using large numbers, we temporarily use 64 bits integer
  * to avoid overflow and keep largest precision possible.
+ * On a real STF, we get the same result when per==0 and per==1.
  */
 
 static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
@@ -694,8 +764,16 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
  * Main function : compute the value of the next sample.
  * Mixes all 3 voices with tone+noise+env and apply low pass
  * filter if needed.
+ * All operations are done with integer math, using <<24 to simulate
+ * floating point precision : upper 8 bits are the integer part, lower 24
+ * are the fractional part.
+ * Tone is a square wave with 2 states 0 or 1. If integer part of posX is
+ * even (bit24=0) we consider output is 0, else (bit24=1) we consider
+ * output is 1. This gives the value of bt for one voice after extending it
+ * to all 0 bits or all 1 bits using a '-'
  */
 
+#ifndef NEWSTEP
 static ymsample	YM2149_NextSample(void)
 {
 	ymsample	sample;
@@ -756,7 +834,71 @@ static ymsample	YM2149_NextSample(void)
 
 	return sample;
 }
+#else
+static ymsample	YM2149_NextSample(void)
+{
+	ymsample	sample;
+	ymu32		bt;
+	ymu32		bn;
+	ymu16		Env3Voices;			/* 0x00CCBBAA */
+	ymu16		Tone3Voices;			/* 0x00CCBBAA */
 
+
+	/* Noise value : 0 or 0xffff */
+	if ( noisePos&0xff000000 )			/* integer part > 0 */
+	{
+		currentNoise ^= YM2149_RndCompute();
+		noisePos &= 0xffffff;			/* keep fractional part of noisePos */
+	}
+	bn = currentNoise;				/* 0 or 0xffff */
+
+	/* Get the 5 bits volume corresponding to the current envelope's position */
+	Env3Voices = YmEnvWaves[ envShape ][ envPos>>24 ];	/* integer part of envPos is in bits 24-31 */
+	Env3Voices &= EnvMask3Voices;			/* only keep volumes for voices using envelope */
+
+//fprintf ( stderr , "env %x %x %x\n" , Env3Voices , envStep , envPos );
+
+	/* Tone3Voices will contain the output state of each voice : 0 or 0x1f */
+	bt = -( (posA>>24) & 1);			/* 0 if bit24=0 or 0xffffffff if bit24=1 */
+	bt = (bt | mixerTA) & (bn | mixerNA);		/* 0 or 0xffff */
+	Tone3Voices = bt & YM_MASK_1VOICE;		/* 0 or 0x1f */
+	bt = -( (posB>>24) & 1);
+	bt = (bt | mixerTB) & (bn | mixerNB);
+	Tone3Voices |= ( bt & YM_MASK_1VOICE ) << 5;
+	bt = -( (posC>>24) & 1);
+	bt = (bt | mixerTC) & (bn | mixerNC);
+	Tone3Voices |= ( bt & YM_MASK_1VOICE ) << 10;
+
+	/* Combine fixed volumes and envelope volumes and keep the resulting */
+	/* volumes depending on the output state of each voice (0 or 0x1f) */
+	Tone3Voices &= ( Env3Voices | Vol3Voices );
+
+	/* D/A conversion of the 3 volumes into a sample using a precomputed conversion table */
+	sample = ymout5[ Tone3Voices ];			/* 16 bits signed value */
+
+
+	/* Increment positions */
+	posA += stepA;
+	posB += stepB;
+	posC += stepC;
+	noisePos += noiseStep;
+
+	envPos += envStep;
+	if ( envPos >= (3*32) << 24 )			/* blocks 0, 1 and 2 were used (envPos 0 to 95) */
+		envPos -= (2*32) << 24;			/* replay/loop blocks 1 and 2 (envPos 32 to 95) */
+
+	DcAdjuster_AddSample(sample);			/* Calculate DC level */
+	sample = sample - DcAdjuster_GetDcLevel();	/* normalize sound level */
+
+	/* Apply low pass filter ? */
+	if ( UseLowPassFilter )
+	{
+		sample = LowPassFilter(sample);
+	}
+
+	return sample;
+}
+#endif
 
 
 /*-----------------------------------------------------------------------*/
