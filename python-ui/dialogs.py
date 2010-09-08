@@ -329,7 +329,7 @@ class FloppyDialog(HatariUIDialog):
             config.lock_updates()
             for drive in range(2):
                 config.set_floppy(drive, self.floppy[drive].get_filename())
-            config.set_hd_protection(self.protect.get_active())
+            config.set_floppy_protection(self.protect.get_active())
             config.set_slowfdc(self.slowfdc.get_active())
             config.flush_updates()
 
