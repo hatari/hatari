@@ -83,12 +83,10 @@ class UIHelp:
         # could also try running the binary with "--version" arg
         # and check the exec return value
         if os.sys.platform == "win32":
-            for i in os.environ['PATH'].split(';'):
-                fname = os.path.join(i, name)
-                if os.access(fname, os.X_OK) and not os.path.isdir(fname):
-                    return fname
+            splitter = ';'
         else:
-            for i in os.environ['PATH'].split(':'):
+            splitter = ':'
+        for i in os.environ['PATH'].split(splitter):
                 fname = os.path.join(i, name)
                 if os.access(fname, os.X_OK) and not os.path.isdir(fname):
                     return fname
