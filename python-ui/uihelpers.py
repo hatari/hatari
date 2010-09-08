@@ -341,6 +341,34 @@ def get_save_filename(title, parent, path = None):
     fsel.destroy()
     return filename
 
+
+# File selection button with eject button
+class FselAndEjectFactory():
+    def __init__(self):
+        pass
+
+    def get(self, label, path, filename, action):
+        "returns file selection button and box having that + eject button"
+        fsel = gtk.FileChooserButton(label)
+        # Hatari cannot access URIs
+        fsel.set_local_only(True)
+        fsel.set_width_chars(12)
+        fsel.set_action(action)
+        if filename:
+            fsel.set_filename(filename)
+        elif path:
+            fsel.set_current_folder(path)
+        eject = create_button("Eject", self._eject, fsel)
+
+        box = gtk.HBox()
+        box.pack_start(fsel)
+        box.pack_start(eject, False, False)
+        return (fsel, box)
+
+    def _eject(self, widget, fsel):
+        fsel.unselect_all()
+
+
 # Gtk is braindead, there's no way to set a default filename
 # for file chooser button unless it already exists
 # - set_filename() works only for files that already exist

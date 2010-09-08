@@ -23,7 +23,8 @@ import pango
 
 from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
      table_add_entry_row, table_add_widget_row, table_add_separator, \
-     table_add_radio_rows, table_set_col_offset, create_button, FselEntry
+     table_add_radio_rows, table_set_col_offset, create_button, FselEntry, \
+     FselAndEjectFactory
 
 
 # -----------------
@@ -271,28 +272,17 @@ class ResetDialog(HatariUIDialog):
 class FloppyDialog(HatariUIDialog):
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Floppy images", 4, 2)
+        factory = FselAndEjectFactory()
 
         row = 0
         self.floppy = []
         path = config.get_floppydir()
         for drive in ("A", "B"):
             label = "Disk %c:" % drive
-            fsel = gtk.FileChooserButton(label)
-            # Hatari cannot access URIs
-            fsel.set_local_only(True)
-            fsel.set_width_chars(12)
-            filename = config.get_floppy(row)
-            if filename:
-                fsel.set_filename(filename)
-            elif path:
-                fsel.set_current_folder(path)
-            self.floppy.append(fsel)
-            
-            eject = create_button("Eject", self._eject, fsel)
-            box = gtk.HBox()
-            box.pack_start(fsel)
-            box.pack_start(eject, False, False)
+            fname = config.get_floppy(row)
+            fsel, box = factory.get(label, path, fname, gtk.FILE_CHOOSER_ACTION_OPEN)
             table_add_widget_row(table, row, label, box)
+            self.floppy.append(fsel)
             row += 1
 
         tips = gtk.Tooltips()
@@ -314,9 +304,6 @@ class FloppyDialog(HatariUIDialog):
 
         self.protect = protect
         self.slowfdc = slowfdc
-
-    def _eject(self, widget, fsel):
-        fsel.unselect_all()
     
     def run(self, config):
         "run(config), show disk image dialog"
@@ -340,32 +327,33 @@ class FloppyDialog(HatariUIDialog):
 class HardDiskDialog(HatariUIDialog):
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Hard disks", 4, 4, "Set and reboot")
-        row = 0
+        factory = FselAndEjectFactory()
 
+        row = 0
         label = "ASCI HD image:"
         path = config.get_acsi_image()
-        fsel, box = self._fsel_box(label, path, gtk.FILE_CHOOSER_ACTION_OPEN)
+        fsel, box = factory.get(label, None, path, gtk.FILE_CHOOSER_ACTION_OPEN)
         table_add_widget_row(table, row, label, box, True)
         self.acsi = fsel
         row += 1
 
         label = "IDE HD master image:"
         path = config.get_idemaster_image()
-        fsel, box = self._fsel_box(label, path, gtk.FILE_CHOOSER_ACTION_OPEN)
+        fsel, box = factory.get(label, None, path, gtk.FILE_CHOOSER_ACTION_OPEN)
         table_add_widget_row(table, row, label, box, True)
         self.idemaster = fsel
         row += 1
 
         label = "IDE HD slave image:"
         path = config.get_ideslave_image()
-        fsel, box = self._fsel_box(label, path, gtk.FILE_CHOOSER_ACTION_OPEN)
+        fsel, box = factory.get(label, None, path, gtk.FILE_CHOOSER_ACTION_OPEN)
         table_add_widget_row(table, row, label, box, True)
         self.ideslave = fsel
         row += 1
         
         label = "GEMDOS drive directory:"
         path = config.get_gemdos_dir()
-        fsel, box = self._fsel_box(label, path, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+        fsel, box = factory.get(label, None, path, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
         table_add_widget_row(table, row, label, box, True)
         self.gemdos = fsel
         row += 1
@@ -380,24 +368,6 @@ class HardDiskDialog(HatariUIDialog):
         self.protect = protect
 
         table.show_all()
-
-    def _eject(self, widget, fsel):
-        fsel.unselect_all()
-
-    def _fsel_box(self, label, path, action):
-        fsel = gtk.FileChooserButton(label)
-        # Hatari cannot access URIs
-        fsel.set_local_only(True)
-        fsel.set_width_chars(12)
-        fsel.set_action(action)
-        if path:
-            fsel.set_filename(path)
-        eject = create_button("Eject", self._eject, fsel)
-
-        box = gtk.HBox()
-        box.pack_start(fsel)
-        box.pack_start(eject, False, False)
-        return (fsel, box)
     
     def _get_config(self, config):
         path = config.get_gemdos_dir()
