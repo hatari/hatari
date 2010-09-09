@@ -20,7 +20,9 @@ enum
   SGBUTTON,
   SGRADIOBUT,
   SGCHECKBOX,
-  SGPOPUP
+  SGPOPUP,
+  SGSCROLLBAR,
+  SGATARIUW
 };
 
 
@@ -36,11 +38,11 @@ enum
 /* Special characters: */
 #define SGRADIOBUTTON_NORMAL    12
 #define SGRADIOBUTTON_SELECTED  13
-#define SGCHECKBOX_NORMAL    14
-#define SGCHECKBOX_SELECTED  15
-#define SGARROWUP    1
-#define SGARROWDOWN  2
-#define SGFOLDER     5
+#define SGCHECKBOX_NORMAL       14
+#define SGCHECKBOX_SELECTED     15
+#define SGARROWUP                1
+#define SGARROWDOWN              2
+#define SGFOLDER                 5
 
 /* Return codes: */
 #define SDLGUI_ERROR         -1
@@ -54,7 +56,7 @@ typedef struct
   int flags;            /* Object flags */
   int state;            /* Object state */
   int x, y;             /* The offset to the upper left corner */
-  int w, h;             /* Width and height */
+  float w, h;             /* Width and height */
   char *txt;            /* Text string */
 }  SGOBJ;
 

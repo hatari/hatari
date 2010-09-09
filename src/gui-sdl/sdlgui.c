@@ -386,6 +386,145 @@ static void SDLGui_DrawCheckBox(const SGOBJ *cdlg, int objnum)
 	SDLGui_Text(x, y, str);
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Draw a Atari File System upper window object.
+ */
+static void SDLGui_DrawAtariUpperWindow(const SGOBJ *cdlg, int objnum)
+{
+	char str[80];
+	SDL_Rect rect;
+	int i, j, k, x, y, w, h, stringLength, width, center;
+
+	Uint32 white = SDL_MapRGB(pSdlGuiScrn->format,255,255,255);
+	Uint32 black = SDL_MapRGB(pSdlGuiScrn->format,  0,  0,  0);
+
+	x = (cdlg[0].x + cdlg[objnum].x) * fontwidth;
+	y = (cdlg[0].y + cdlg[objnum].y) * fontheight;
+	w = cdlg[objnum].w * fontwidth;
+	h = cdlg[objnum].h * fontwidth;
+
+	/* Draw background: */
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = h+4;
+	SDL_FillRect(pSdlGuiScrn, &rect, white);
+
+	/* Draw upper border: */
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = 1;
+	SDL_FillRect(pSdlGuiScrn, &rect, black);
+
+	/* Draw left border: */
+	rect.x = x;
+	rect.y = y;
+	rect.w = 1;
+	rect.h = h+5;
+	SDL_FillRect(pSdlGuiScrn, &rect, black);
+
+	/* Draw bottom border: */
+	rect.x = x;
+	rect.y = y + h+5;
+	rect.w = w;
+	rect.h = 1;
+	SDL_FillRect(pSdlGuiScrn, &rect, black);
+
+	/* Draw right border: */
+	rect.x = x + w;
+	rect.y = y;
+	rect.w = 1;
+	rect.h = h+5;
+	SDL_FillRect(pSdlGuiScrn, &rect, black);
+		
+	/* Display path folder information */
+	width = cdlg[objnum].w - 1;
+	stringLength = strnlen(cdlg[objnum].txt, width);
+
+	center = (width - stringLength)/2;
+   	 
+	/* Display graphical bar */
+	for (i=0; i<center; i++) {
+		for (j=1; j<fontwidth; j+=2) {
+			rect.x = x + i*fontwidth + j;
+			for (k=2; k<fontheight; k+=2) {
+				rect.y = y + k;
+				rect.w = 1;
+				rect.h = 1;
+				SDL_FillRect(pSdlGuiScrn, &rect, black);
+			}
+		}
+		
+		str[i] = ' ';
+	}
+	
+	strncpy(&str[center], cdlg[objnum].txt, stringLength);
+
+	for (i=stringLength + center; i<=width; i++) {
+		for (j=1; j<fontwidth; j+=2) {
+			rect.x = x + i*fontwidth + j;
+			for (k=2; k<fontheight; k+=2) {
+				rect.y = y + k;
+				rect.w = 1;
+				rect.h = 1;
+				SDL_FillRect(pSdlGuiScrn, &rect, black);
+			}
+		}
+		str[i] = ' ';
+	}
+
+	/* Display upper right corner icon */
+	str[width] = '\x07';
+	str[width+1] = '\0';
+
+	SDLGui_Text(x, y, str);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Draw a scrollbar button.
+ */
+static void SDLGui_DrawScrollbar(const SGOBJ *bdlg, int objnum)
+{
+	SDL_Rect rect;
+	int x, y, w, h;
+	Uint32 grey0 = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
+	Uint32 grey1 = SDL_MapRGB(pSdlGuiScrn->format,196,196,196);
+	Uint32 grey2 = SDL_MapRGB(pSdlGuiScrn->format, 64, 64, 64);
+
+	x = bdlg[objnum].x * fontwidth;
+	y = (int)((bdlg[objnum].y * fontheight) + (bdlg[objnum].h * fontheight));
+
+	x += bdlg[0].x*fontwidth;   /* add mainbox absolute coordinates */
+	y += bdlg[0].y*fontheight;  /* add mainbox absolute coordinates */
+	
+	w = 1 * fontwidth;
+	h = (int)(bdlg[objnum].w * (float)fontheight);
+
+	/* Draw background: */
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = h;
+	SDL_FillRect(pSdlGuiScrn, &rect, grey0);
+
+	/* Draw upper border: */
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = 1;
+	SDL_FillRect(pSdlGuiScrn, &rect, grey1);
+
+	/* Draw bottom border: */
+	rect.x = x;
+	rect.y = y + h - 1;
+	rect.w = w;
+	rect.h = 1;
+	SDL_FillRect(pSdlGuiScrn, &rect, grey2);
+	
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -563,6 +702,12 @@ void SDLGui_DrawDialog(const SGOBJ *dlg)
 		 case SGPOPUP:
 			SDLGui_DrawPopupButton(dlg, i);
 			break;
+		 case SGSCROLLBAR:
+			SDLGui_DrawScrollbar(dlg, i);
+			break;
+		 case SGATARIUW:
+			SDLGui_DrawAtariUpperWindow(dlg, i);
+			break;
 		}
 	}
 	SDL_UpdateRect(pSdlGuiScrn, 0,0,0,0);
@@ -587,7 +732,17 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 	/* Now search for the object: */
 	for (i = len; i >= 0; i--)
 	{
-		if (xpos >= dlg[0].x+dlg[i].x && ypos >= dlg[0].y+dlg[i].y
+		if (dlg[i].type == SGSCROLLBAR) {
+			if (xpos >= dlg[0].x+dlg[i].x && xpos < dlg[0].x+dlg[i].x+1) {
+				/* clicked above the scrollbar ? */
+				ypos = (int)((dlg[i].y * fontheight) + (dlg[i].h * fontheight)) + (dlg[0].y * fontheight);
+				if (fy >= ypos && fy < ypos+(int)((int)(dlg[i].w * (float)fontheight))) {
+					ob = i;
+					break;
+				}
+			}
+		}
+		else if (xpos >= dlg[0].x+dlg[i].x && ypos >= dlg[0].y+dlg[i].y
 		    && xpos < dlg[0].x+dlg[i].x+dlg[i].w && ypos < dlg[0].y+dlg[i].y+dlg[i].h)
 		{
 			ob = i;
@@ -717,6 +872,11 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 						               dlg[obj].w*fontwidth+4, dlg[obj].h*fontheight+4);
 						oldbutton=obj;
 					}
+					if (dlg[obj].type==SGSCROLLBAR)
+					{
+						dlg[obj].state |= SG_SELECTED;
+						oldbutton=obj;
+					}
 					if ( dlg[obj].flags&SG_TOUCHEXIT )
 					{
 						dlg[obj].state |= SG_SELECTED;
@@ -743,7 +903,11 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 						if (oldbutton==obj)
 							retbutton=obj;
 						break;
-					 case SGEDITFIELD:
+					 case SGSCROLLBAR:
+						if (oldbutton==obj)
+							retbutton=obj;
+						break;
+					case SGEDITFIELD:
 						SDLGui_EditField(dlg, obj);
 						break;
 					 case SGRADIOBUT:
@@ -797,7 +961,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 						break;
 					}
 				}
-				if (oldbutton > 0)
+				if (oldbutton > 0 && dlg[oldbutton].type == SGBUTTON)
 				{
 					dlg[oldbutton].state &= ~SG_SELECTED;
 					SDLGui_DrawButton(dlg, oldbutton);
