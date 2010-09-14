@@ -739,12 +739,17 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	if (dlg[current_object].type == SGSCROLLBAR) {
 		if (b & SDL_BUTTON(1)) {
 			obj = current_object;
-			dlg[obj].state |= SG_SELECTED;
+			dlg[obj].state |= SG_MOUSEDOWN;
 			oldbutton = obj;
 			retbutton = obj;
 		}
-		else
+		else {
+			obj = current_object;
 			current_object = 0;
+			dlg[obj].state &= SG_MOUSEUP;
+			retbutton = obj;
+			oldbutton = obj;
+		}
 	}
 	else {
 		obj = SDLGui_FindObj(dlg, i, j);

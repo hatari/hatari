@@ -36,6 +36,8 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c : " __DATE__ " " __T
 #define SGFSDLG_OKAY      31
 #define SGFSDLG_CANCEL    32
 
+#define SCROLLOUT_ABOVE  1
+#define SCROLLOUT_UNDER  2
 
 #define DLGPATH_SIZE 62
 static char dlgpath[DLGPATH_SIZE+1];    /* Path name in the dialog */
@@ -91,6 +93,7 @@ static bool refreshentries;             /* Do we have to update the file names i
 static int entries;                     /* How many files are in the actual directory? */
 static int oldMouseY = 0;				/* Keep the latest Y mouse position for scrollbar move computing */
 static int mouseClicked = 0;			/* used to know if mouse if down for the first time or not */
+static int mouseIsOut = 0;				/* used to keep info that mouse if above or under the scrollbar when mousebutton is down */
 
 static void DlgFileSelect_Convert_ypos_to_yscrollbar(void);
 
@@ -204,6 +207,8 @@ static void DlgFileSelect_ScrollUp(void)
 		--ypos;
 		DlgFileSelect_Convert_ypos_to_yscrollbar();
 		refreshentries = true;
+		mouseClicked = 0;
+		mouseIsOut = 0;
 	}
 }
 
@@ -219,6 +224,8 @@ static void DlgFileSelect_ScrollDown(void)
 		++ypos;
 		DlgFileSelect_Convert_ypos_to_yscrollbar();
 		refreshentries = true;
+		mouseClicked = 0;
+		mouseIsOut = 0;
 	}
 }
 
@@ -229,6 +236,8 @@ static void DlgFileSelect_ScrollDown(void)
 static void DlgFileSelect_ManageScrollbar(void)
 {
 	int b, x, y;
+	int scrollY, scrollYmin, scrollYmax, scrollH_half;
+	float scrollMove;
 	
 	b = SDL_GetMouseState(&x, &y);
 
@@ -236,6 +245,7 @@ static void DlgFileSelect_ManageScrollbar(void)
 	if (fsdlg[SGFSDLG_SCROLLBAR].state & SG_MOUSEDOWN) {
 		if (mouseClicked == 0) {
 			mouseClicked = 1;
+			mouseIsOut = 0;
 			oldMouseY = y;
 		}
 	}
@@ -243,13 +253,48 @@ static void DlgFileSelect_ManageScrollbar(void)
 	else {
 		mouseClicked = 0;
 		oldMouseY = y;
+		mouseIsOut = 0;
 	}
  	
 	/* If mouse Y position didn't change */ 
 	if (oldMouseY == y)
 		return;
 
-	fsdlg[SGFSDLG_SCROLLBAR].h += ((float)y-(float)oldMouseY)/(float)sdlgui_fontheight;
+	/* Compute scrollbar ymin and ymax values */ 
+
+	scrollYmin = (fsdlg[SGFSDLG_SCROLLBAR].y + fsdlg[0].y) * sdlgui_fontheight;
+	scrollYmax = (fsdlg[SGFSDLG_DOWN].y + fsdlg[0].y) * sdlgui_fontheight;
+	
+	scrollY = (int)(((float)fsdlg[SGFSDLG_SCROLLBAR].y + fsdlg[SGFSDLG_SCROLLBAR].h) * (float)sdlgui_fontheight) +
+	           (fsdlg[0].y * sdlgui_fontheight);
+	scrollH_half = scrollY + (int)(fsdlg[SGFSDLG_SCROLLBAR].w * (float)sdlgui_fontheight) / 2;
+	scrollMove = ((float)y-(float)oldMouseY)/(float)sdlgui_fontheight;
+	
+	/* Verify if mouse is not above the scrollbar area */
+	if (y < scrollYmin) {
+		mouseIsOut = SCROLLOUT_ABOVE;
+		oldMouseY = y;
+		return;
+	}
+	if (mouseIsOut == SCROLLOUT_ABOVE && y < scrollH_half) {
+		oldMouseY = y;
+		return;
+	}
+
+	/* Verify if mouse is not under the scrollbar area */
+	if (y > scrollYmax) {
+		mouseIsOut = SCROLLOUT_UNDER;
+		oldMouseY = y;
+		return;
+	}
+	if (mouseIsOut == SCROLLOUT_UNDER && y > scrollH_half) {
+		oldMouseY = y;
+		return;
+	}
+
+	mouseIsOut = 0;
+
+	fsdlg[SGFSDLG_SCROLLBAR].h += scrollMove;
 	oldMouseY = y;
 
 	/* Verifiy if scrollbar is in correct inferior boundary */
@@ -287,18 +332,26 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 		 case SDLK_UP:       DlgFileSelect_ScrollUp(); break;
 		 case SDLK_DOWN:     DlgFileSelect_ScrollDown(); break;
 		 case SDLK_HOME:
+			mouseClicked = 0;
+			mouseIsOut = 0;
 			ypos = 0; 
 			DlgFileSelect_Convert_ypos_to_yscrollbar();
 			break;
 		 case SDLK_END:
+			mouseClicked = 0;
+			mouseIsOut = 0;
 		    ypos = entries-SGFS_NUMENTRIES; 
 			DlgFileSelect_Convert_ypos_to_yscrollbar();
 		    break;
 		 case SDLK_PAGEUP:
+			mouseClicked = 0;
+			mouseIsOut = 0;
 		    ypos -= SGFS_NUMENTRIES;
 			DlgFileSelect_Convert_ypos_to_yscrollbar();
 		    break;
 		 case SDLK_PAGEDOWN:
+			mouseClicked = 0;
+			mouseIsOut = 0;
 			if (ypos+2*SGFS_NUMENTRIES < entries)
 				ypos += SGFS_NUMENTRIES;
 			else
@@ -428,6 +481,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	float yScrolbar_size;				/* Size of the vertical scrollbar */
 
 	ypos = 0;
+	DlgFileSelect_Convert_ypos_to_yscrollbar();
 	refreshentries = true;
 	entries = 0;
 
