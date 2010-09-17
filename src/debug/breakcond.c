@@ -43,7 +43,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 
 #define BC_DEFAULT_DSP_SPACE 'P'
 
-enum {	
+typedef enum {	
 	/* plain number */
 	VALUE_TYPE_NUMBER     = 0,
 
@@ -56,7 +56,7 @@ enum {
 	/* size must match register size used in BreakCond_ParseRegister() */
 	VALUE_TYPE_REG16      = 16,
 	VALUE_TYPE_REG32      = 32
-} typedef value_t;
+} value_t;
 
 static inline bool is_register_type(value_t vtype) {
 	/* type used for CPU/DSP registers */
@@ -1647,6 +1647,15 @@ bool BreakAddr_Command(char *args, bool bForDsp)
 	char *cut, command[32];
 	Uint32 addr;
 	int offset;
+
+	if (!args) {
+		if (bForDsp) {
+			DebugUI_PrintCmdHelp("dspaddress");
+		} else {
+			DebugUI_PrintCmdHelp("address");
+		}
+		return true;
+	}
 
 	/* split options */
 	if ((cut = strchr(args, ':'))) {
