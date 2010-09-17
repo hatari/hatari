@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 		errstr = create_image(srcfile, argv[2]);
 		if (errstr) {
 			usage(argv[0]);
-			fprintf(stderr, errstr);
+			fputs(errstr, stderr);
 			return -1;
 		}
 		return 0;
