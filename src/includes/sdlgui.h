@@ -57,7 +57,7 @@ typedef struct
   int flags;            /* Object flags */
   int state;            /* Object state */
   int x, y;             /* The offset to the upper left corner */
-  float w, h;           /* Width and height (for scrollbar : height and position) */
+  int w, h;             /* Width and height (for scrollbar : height and position) */
   char *txt;            /* Text string */
 }  SGOBJ;
 

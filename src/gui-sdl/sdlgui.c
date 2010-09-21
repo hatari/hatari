@@ -398,13 +398,13 @@ static void SDLGui_DrawScrollbar(const SGOBJ *bdlg, int objnum)
 	Uint32 grey2 = SDL_MapRGB(pSdlGuiScrn->format, 64, 64, 64);
 
 	x = bdlg[objnum].x * sdlgui_fontwidth;
-	y = (int)((bdlg[objnum].y * sdlgui_fontheight) + (bdlg[objnum].h * sdlgui_fontheight));
+	y = bdlg[objnum].y * sdlgui_fontheight + bdlg[objnum].h;
 
 	x += bdlg[0].x*sdlgui_fontwidth;   /* add mainbox absolute coordinates */
 	y += bdlg[0].y*sdlgui_fontheight;  /* add mainbox absolute coordinates */
 	
 	w = 1 * sdlgui_fontwidth;
-	h = (int)(bdlg[objnum].w * (float)sdlgui_fontheight);
+	h = bdlg[objnum].w;
 
 	/* Draw background: */
 	rect.x = x;
@@ -636,8 +636,8 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 		/* clicked on a scrollbar ? */
 		if (dlg[i].type == SGSCROLLBAR) {
 			if (xpos >= dlg[0].x+dlg[i].x && xpos < dlg[0].x+dlg[i].x+1) {
-				ypos = (int)((dlg[i].y * sdlgui_fontheight) + (dlg[i].h * sdlgui_fontheight)) + (dlg[0].y * sdlgui_fontheight);
-				if (fy >= ypos && fy < ypos+(int)((int)(dlg[i].w * (float)sdlgui_fontheight))) {
+				ypos = dlg[i].y * sdlgui_fontheight + dlg[i].h + dlg[0].y * sdlgui_fontheight;
+				if (fy >= ypos && fy < ypos + dlg[i].w) {
 					ob = i;
 					break;
 				}

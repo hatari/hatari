@@ -94,8 +94,10 @@ static int entries;                     /* How many files are in the actual dire
 static int oldMouseY = 0;				/* Keep the latest Y mouse position for scrollbar move computing */
 static int mouseClicked = 0;			/* used to know if mouse if down for the first time or not */
 static int mouseIsOut = 0;				/* used to keep info that mouse if above or under the scrollbar when mousebutton is down */
+static float scrollbar_Ypos = 0.0;	    /* scrollbar heigth */
 
-static void DlgFileSelect_Convert_ypos_to_yscrollbar(void);
+/* Convert file position (in file list) to scrollbar y position */
+static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void);
 
 
 
@@ -205,10 +207,8 @@ static void DlgFileSelect_ScrollUp(void)
 	if (ypos > 0)
 	{
 		--ypos;
-		DlgFileSelect_Convert_ypos_to_yscrollbar();
+		DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 		refreshentries = true;
-		mouseClicked = 0;
-		mouseIsOut = 0;
 	}
 }
 
@@ -222,10 +222,8 @@ static void DlgFileSelect_ScrollDown(void)
 	if (ypos+SGFS_NUMENTRIES < entries)
 	{
 		++ypos;
-		DlgFileSelect_Convert_ypos_to_yscrollbar();
+		DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 		refreshentries = true;
-		mouseClicked = 0;
-		mouseIsOut = 0;
 	}
 }
 
@@ -265,10 +263,9 @@ static void DlgFileSelect_ManageScrollbar(void)
 	scrollYmin = (fsdlg[SGFSDLG_SCROLLBAR].y + fsdlg[0].y) * sdlgui_fontheight;
 	scrollYmax = (fsdlg[SGFSDLG_DOWN].y + fsdlg[0].y) * sdlgui_fontheight;
 	
-	scrollY = (int)(((float)fsdlg[SGFSDLG_SCROLLBAR].y + fsdlg[SGFSDLG_SCROLLBAR].h) * (float)sdlgui_fontheight) +
-	           (fsdlg[0].y * sdlgui_fontheight);
-	scrollH_half = scrollY + (int)(fsdlg[SGFSDLG_SCROLLBAR].w * (float)sdlgui_fontheight) / 2;
-	scrollMove = ((float)y-(float)oldMouseY)/(float)sdlgui_fontheight;
+	scrollY = fsdlg[SGFSDLG_SCROLLBAR].y * sdlgui_fontheight + fsdlg[SGFSDLG_SCROLLBAR].h + fsdlg[0].y * sdlgui_fontheight;
+	scrollH_half = scrollY + fsdlg[SGFSDLG_SCROLLBAR].w / 2;
+	scrollMove = (float)(y-oldMouseY)/sdlgui_fontheight;
 	
 	/* Verify if mouse is not above the scrollbar area */
 	if (y < scrollYmin) {
@@ -294,18 +291,18 @@ static void DlgFileSelect_ManageScrollbar(void)
 
 	mouseIsOut = 0;
 
-	fsdlg[SGFSDLG_SCROLLBAR].h += scrollMove;
+	scrollbar_Ypos += scrollMove;
 	oldMouseY = y;
 
 	/* Verifiy if scrollbar is in correct inferior boundary */
-	if (fsdlg[SGFSDLG_SCROLLBAR].h < 0.0)
-		fsdlg[SGFSDLG_SCROLLBAR].h = 0.0;
+	if (scrollbar_Ypos < 0)
+		scrollbar_Ypos = 0.0;
 
 	/* Verifiy if scrollbar is in correct superior boundary */
-	b = (int) (fsdlg[SGFSDLG_SCROLLBAR].h * ((float)entries/(float)(SGFS_NUMENTRIES-2)) + 0.5);
+	b = (int) (scrollbar_Ypos * ((float)entries/(float)(SGFS_NUMENTRIES-2)) + 0.5);
 	if (b+SGFS_NUMENTRIES >= entries) {
 		ypos = entries - SGFS_NUMENTRIES;
-		DlgFileSelect_Convert_ypos_to_yscrollbar();
+		DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 	}
 
 	refreshentries = true;			
@@ -329,34 +326,30 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 	 case SDL_KEYDOWN:		
 		switch (pEvent->key.keysym.sym)
 		{
-		 case SDLK_UP:       DlgFileSelect_ScrollUp(); break;
-		 case SDLK_DOWN:     DlgFileSelect_ScrollDown(); break;
+		 case SDLK_UP:
+			DlgFileSelect_ScrollUp();
+			break;
+		 case SDLK_DOWN:
+			DlgFileSelect_ScrollDown();
+			break;
 		 case SDLK_HOME:
-			mouseClicked = 0;
-			mouseIsOut = 0;
 			ypos = 0; 
-			DlgFileSelect_Convert_ypos_to_yscrollbar();
+			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 			break;
 		 case SDLK_END:
-			mouseClicked = 0;
-			mouseIsOut = 0;
 		    ypos = entries-SGFS_NUMENTRIES; 
-			DlgFileSelect_Convert_ypos_to_yscrollbar();
+			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 		    break;
 		 case SDLK_PAGEUP:
-			mouseClicked = 0;
-			mouseIsOut = 0;
 		    ypos -= SGFS_NUMENTRIES;
-			DlgFileSelect_Convert_ypos_to_yscrollbar();
+			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 		    break;
 		 case SDLK_PAGEDOWN:
-			mouseClicked = 0;
-			mouseIsOut = 0;
 			if (ypos+2*SGFS_NUMENTRIES < entries)
 				ypos += SGFS_NUMENTRIES;
 			else
 				ypos = entries-SGFS_NUMENTRIES;
-			DlgFileSelect_Convert_ypos_to_yscrollbar();
+			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 			break;
 		 default:
 			break;
@@ -368,7 +361,7 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 	
 	if (ypos < 0) {
 		ypos = 0;
-		DlgFileSelect_Convert_ypos_to_yscrollbar();
+		scrollbar_Ypos = 0.0;
 	}
 	
 	if (ypos != oldypos)
@@ -445,12 +438,12 @@ static void correct_zip_root(char *zippath)
 /**
  * Convert Ypos to Y scrollbar position
  */
-static void DlgFileSelect_Convert_ypos_to_yscrollbar(void)
+static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void)
 {
 	if (entries <= SGFS_NUMENTRIES)
-		fsdlg[SGFSDLG_SCROLLBAR].h = 0.0;
+		scrollbar_Ypos = 0.0;
 	else
-		fsdlg[SGFSDLG_SCROLLBAR].h = (float)ypos / ((float)entries/(float)(SGFS_NUMENTRIES-2));
+		scrollbar_Ypos = (float)ypos / ((float)entries/(float)(SGFS_NUMENTRIES-2));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -478,10 +471,10 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	zip_dir *zipfiles = NULL;
 	SDL_Event sdlEvent;
 	float yScrolbar_pos;				/* Vertical position of the scrollbar */
-	float yScrolbar_size;				/* Size of the vertical scrollbar */
+	int yScrolbar_size;				/* Size of the vertical scrollbar */
 
 	ypos = 0;
-	DlgFileSelect_Convert_ypos_to_yscrollbar();
+	scrollbar_Ypos = 0.0;
 	refreshentries = true;
 	entries = 0;
 
@@ -577,15 +570,16 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			refreshentries = true;
 		}/* reloaddir */
 
-		/* Refresh scrolbar size */
+		/* Refresh scrollbar size */
  		if (entries <= SGFS_NUMENTRIES)
-			yScrolbar_size = (float)(SGFS_NUMENTRIES-2);
+			yScrolbar_size = (SGFS_NUMENTRIES-2) * sdlgui_fontheight;
 		else
-			yScrolbar_size = (float)(SGFS_NUMENTRIES-2) / ((float)entries/(float)SGFS_NUMENTRIES);
+			yScrolbar_size = (int)((SGFS_NUMENTRIES-2) / ((float)entries/(float)SGFS_NUMENTRIES) * sdlgui_fontheight);
 		fsdlg[SGFSDLG_SCROLLBAR].w = yScrolbar_size;
 		
 		/* Refresh scrolbar pos */
-		ypos = (int) (fsdlg[SGFSDLG_SCROLLBAR].h * ((float)entries/(float)(SGFS_NUMENTRIES-2)) + 0.5);
+		fsdlg[SGFSDLG_SCROLLBAR].h = (int) (scrollbar_Ypos * sdlgui_fontheight);
+		ypos = (int) (scrollbar_Ypos * ((float)entries/(float)(SGFS_NUMENTRIES-2)) + 0.5);
 		
 		/* Update the file name strings in the dialog? */
 		if (refreshentries)
@@ -659,7 +653,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 					zipfilename[0] = '\0';
 					dlgfname[0] = 0;
 					ypos = 0;
-					DlgFileSelect_Convert_ypos_to_yscrollbar();
+					scrollbar_Ypos = 0.0;
 				}
 				else
 				{
@@ -690,7 +684,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 					selection = -1;                /* Remove old selection */
 					dlgfname[0] = 0;
 					ypos = 0;
-					DlgFileSelect_Convert_ypos_to_yscrollbar();
+					scrollbar_Ypos = 0.0;
 				}
 				else if (ZIP_FileNameIsZIP(tempstr) && zip_path != NULL)
 				{
@@ -706,7 +700,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 						File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
 						reloaddir = true;
 						ypos = 0;
-						DlgFileSelect_Convert_ypos_to_yscrollbar();
+						scrollbar_Ypos = 0.0;
 					}
 
 				}
@@ -802,7 +796,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			case SGFSDLG_SHOWHIDDEN:            /* Show/hide hidden files */
 				reloaddir = true;
 				ypos = 0;
-				DlgFileSelect_Convert_ypos_to_yscrollbar();
+				scrollbar_Ypos = 0.0;
 				break;
 			case SDLGUI_UNKNOWNEVENT:
 				DlgFileSelect_HandleSdlEvents(&sdlEvent);
@@ -816,7 +810,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 				fname[0] = 0;
 				dlgfname[0] = 0;
 				ypos = 0;
-				DlgFileSelect_Convert_ypos_to_yscrollbar();
+				scrollbar_Ypos = 0.0;
 			}
 		} /* other button code */
 
