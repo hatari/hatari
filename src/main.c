@@ -121,7 +121,7 @@ bool Main_PauseEmulation(bool visualize)
 			current = (1000.0 * nVBLCount) / interval;
 			printf("SPEED: %.1f VBL/s (%d/%.1fs), diff=%.1f%%\n",
 			       current, nVBLCount, interval/1000.0,
-			       previous ? 100*(current-previous)/previous : 0.0);
+			       previous>0.0 ? 100*(current-previous)/previous : 0.0);
 			nVBLCount = nFirstMilliTick = 0;
 			previous = current;
 		}
