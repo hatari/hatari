@@ -47,7 +47,10 @@ endif(CMAKE_CROSSCOMPILING)
 
 
 # Generated cpuemu.c contains a lot of warnings we don't really care about...
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused -Wno-sign-compare -Wno-shadow")
+if(CMAKE_COMPILER_IS_GNUCC)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare -Wno-shadow")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-unused-label")
+endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_library(UaeCpu
 	cpudefs.c cpuemu.c cpustbl.c
