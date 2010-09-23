@@ -130,13 +130,15 @@ char *DlgNewDisk_Main(void)
 			sprintf(szTracks, "%i", nTracks);
 			break;
 		 case DLGNEWDISK_SAVE:
-			if (retname)
-				free(retname);
 			tmpname = SDLGui_FileSelect(szNewDiskName, NULL, true);
 			if (tmpname)
 			{
 				if (DlgNewDisk_CreateDisk(tmpname))
+				{
+					if (retname)
+						free(retname);
 					retname = tmpname;
+				}
 				else
 					free(tmpname);
 			}
