@@ -1,0 +1,42 @@
+
+	Hatari coding guidelines
+	========================
+
+Before writing new code or changing existing files, please read through these
+coding guidelines to make sure that your changes are in harmony with the
+existing source code.
+
+- all source text files have to use Unix Line ending convention (line-feed only)
+  (exception: Code like cart_asm.s which has to be compiled from the Atari TOS
+  side should have DOS line endings (CR-LF) instead).
+
+- Avoid non-ASCII characters in source code. Use UTF-8 encoding for non-english
+  documentation files if necessary.
+
+- Use TABs for indentation at the beginning of a line. Default TAB width is 8,
+  but your source code should also look fine with other TAB width (e.g. 4).
+
+- Use doxygen-style comments to document what each function is doing.
+
+- In C source code, put opening curly brackets on new lines, e.g.:
+
+	while (!train_arrived())
+	{
+		wait_for_godot();
+		if (thirsty == true)
+		{
+			by_a_soda();
+		}
+	}
+
+- Note that Hatari uses also some code from other projects, e.g. the UAE CPU
+  files, which use another coding style than the main source code. We keep the
+  original coding style there for compatibility with the origin. So always try
+  to adapt to the coding style of the file that you're currently editing.
+
+- Try to avoid including a header file from within another header file.
+  Include all necessary header files in the right order in the *.c files
+  instead. Including a header file from within another header file easily leads
+  to a dependency hell which can become very painfull when one of the header
+  files clashes with a system header for example and must only be included
+  in certain .c files only.
