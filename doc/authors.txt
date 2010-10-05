@@ -138,3 +138,5 @@ Beside these two main sources, Hatari also uses some code from other projects:
     by Benjamin Gerard.
   * 4 bits to 5 bits volume interpolation from 16*16*16 to 32*32*32 are from
     YM blep synthesis by Antti Lankila.
+
+- The IDE hard disk emulation is based on code from Qemu (http://www.qemu.org/).
