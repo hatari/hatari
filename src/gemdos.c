@@ -1444,13 +1444,19 @@ static bool GemDOS_DFree(Uint32 Params)
 	/* is it our drive? */
 	if ((Drive == 0 && CurrentDrive >= 2) || Drive >= 3)
 	{
+		/* Check that write is requested to valid memory area */
+		if (!STMemory_ValidArea(Address, 16))
+		{
+			Log_Printf(LOG_WARN, "GEMDOS Dfree() failed due to invalid RAM range 0x%x+%i\n", Address, 16);
+			Regs[REG_D0] = GEMDOS_ERANGE;
+			return true;
+		}
 		/* FIXME: Report actual free drive space */
-
-		STMemory_WriteLong(Address,  10*2048);           /* free clusters (mock 10 Mb) */
-		STMemory_WriteLong(Address+SIZE_LONG, 50*2048 ); /* total clusters (mock 50 Mb) */
+		STMemory_WriteLong(Address,  16*1024);           /* free clusters (mock 16 Mb) */
+		STMemory_WriteLong(Address+SIZE_LONG, 32*1024 ); /* total clusters (mock 32 Mb) */
 
 		STMemory_WriteLong(Address+SIZE_LONG*2, 512 );   /* bytes per sector */
-		STMemory_WriteLong(Address+SIZE_LONG*3, 1 );     /* sectors per cluster */
+		STMemory_WriteLong(Address+SIZE_LONG*3, 2 );     /* sectors per cluster */
 		return true;
 	}
 	/* redirect to TOS */
@@ -1955,7 +1961,7 @@ static bool GemDOS_Read(Uint32 Params)
 	/* Check that read is to valid memory area */
 	if (!STMemory_ValidArea(Addr, Size))
 	{
-		Log_Printf(LOG_TODO, "GEMDOS Fread() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
+		Log_Printf(LOG_WARN, "GEMDOS Fread() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
 		Regs[REG_D0] = GEMDOS_ERANGE;
 		return true;
 	}
@@ -2010,7 +2016,7 @@ static bool GemDOS_Write(Uint32 Params)
 	/* Check that write is from valid memory area */
 	if (!STMemory_ValidArea(Addr, Size))
 	{
-		Log_Printf(LOG_TODO, "GEMDOS Fwrite() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
+		Log_Printf(LOG_WARN, "GEMDOS Fwrite() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
 		Regs[REG_D0] = GEMDOS_ERANGE;
 		return true;
 	}
@@ -2293,6 +2299,13 @@ static int GemDOS_GetDir(Uint32 Params)
 		// convert it to ST path (DOS)
 		File_CleanFileName(path);
 		len = strlen(path);
+		/* Check that write is requested to valid memory area */
+		if (!STMemory_ValidArea(Address, len))
+		{
+			Log_Printf(LOG_WARN, "GEMDOS Dgetpath() failed due to invalid RAM range 0x%x+%i\n", Address, len);
+			Regs[REG_D0] = GEMDOS_ERANGE;
+			return true;
+		}
 		for (i = 0; i <= len; i++)
 		{
 			c = path[i];
@@ -2748,9 +2761,18 @@ static bool GemDOS_GSDToF(Uint32 Params)
 
 	if (GemDOS_GetFileInformation(Handle, &DateTime) == true)
 	{
-		STMemory_WriteWord(pBuffer, DateTime.timeword);
-		STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.dateword);
-		Regs[REG_D0] = GEMDOS_EOK;
+		/* Check that write is requested to valid memory area */
+		if (STMemory_ValidArea(pBuffer, 4))
+		{
+			STMemory_WriteWord(pBuffer, DateTime.timeword);
+			STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.dateword);
+			Regs[REG_D0] = GEMDOS_EOK;
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "GEMDOS Fdatime() failed due to invalid RAM range 0x%x+%i\n", pBuffer, 4);
+			Regs[REG_D0] = GEMDOS_ERANGE;
+		}
 	}
 	else
 	{
