@@ -1377,7 +1377,10 @@ Toggle whether CPU exceptions invoke the debugger
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Enable Bios/XBios interception
+Enable Bios/XBios call interception and redirect BIOS
+CON: output (e.g. EmuTOS console) to host terminal.
+Needed for Bios/XBios call tracing. Allows Atari programs
+to modify Hatari state through XBios 255 calls.
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"

@@ -11,6 +11,8 @@ Emulation:
 Emulator:
 - Option to disable Falcon mic
   ("--mic off" is needed for Mudflap debugging)
+- BIOS CON: output is converted to ASCII and redirected to host console
+  with the --bios-intercept option
 - Debugger:
   - BIOS/XBIOS/GEMDOS/VDI/AES/Line-A/Line-F opcode breakpoint support
   - DSP and CPU code profiling functionality.  Provides statistics about
