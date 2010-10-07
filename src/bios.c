@@ -57,19 +57,103 @@ static bool Bios_Bconin(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Converts given BIOS CON: device character output to ASCII.
+ * Accepts one character at the time, ignores VT52 escape codes
+ * and maps Atari characters to their closest ASCII equivalents.
+ *
+ * TODO: Keep track of current position on line & white space usage and
+ * convert 1,1 position to \r + forward position movements to spaces?
+ */
+static void Bios_VT52(Uint8 value)
+{
+	
+	static const Uint8 map_0_31[32] = {
+		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0x00 */
+		/* white space */
+		'.','\t','\n','\v','\f','\r', '.', '.',	/* 0x08 */
+		/* LED numbers */
+		'0', '1', '2', '3', '4', '5', '6', '7',	/* 0x10 */
+		'8', '9', '.', '.', '.', '.', '.', '.' 	/* 0x18 */
+	};
+	static const Uint8 map_128_255[128] = {
+		/* accented characters */
+		'C', 'U', 'e', 'a', 'a', 'a', 'a', 'c',	/* 0x80 */
+		'e', 'e', 'e', 'i', 'i', 'i', 'A', 'A',	/* 0x88 */
+		'E', 'a', 'A', 'o', 'o', 'o', 'u', 'u',	/* 0x90 */
+		'y', 'o', 'u', 'c', '.', 'Y', 'B', 'f',	/* 0x98 */
+		'a', 'i', 'o', 'u', 'n', 'N', 'a', 'o',	/* 0xA0 */
+		'?', '.', '.', '.', '.', 'i', '<', '>',	/* 0xA8 */
+		'a', 'o', 'O', 'o', 'o', 'O', 'A', 'A',	/* 0xB0 */
+		'O', '"','\'', '.', '.', 'C', 'R', '.',	/* 0xB8 */
+		'j', 'J', '.', '.', '.', '.', '.', '.',	/* 0xC0 */
+		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xC8 */
+		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xD0 */
+		'.', '.', '.', '.', '.', '.', '^', '.',	/* 0xD8 */
+		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xE0 */
+		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xE8 */
+		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0xF0 */
+		'.', '.', '.', '.', '.', '.', '.', '.'	/* 0xF8 */
+	};
+
+	/* state machine to ignore VT52 escape sequence */
+	static int escape_index;
+	static int escape_target;
+	
+	if (escape_target) {
+		if (++escape_index == 1) {
+			/* VT52 escape sequences with arguments? */
+			switch(value) {
+			case 'b':	/* foreground color */
+			case 'c':	/* background color */
+				escape_target = 2;
+				return;
+			case 'Y':	/* cursor position */
+				escape_target = 3;
+				return;
+			}
+		} else if (escape_index < escape_target) {
+			return;
+		}
+		/* escape sequence end */
+		escape_target = 0;
+		return;
+	}
+	if (value == 27) {
+		/* escape sequence start */
+		escape_target = 1;
+		escape_index = 0;
+		return;
+	}
+
+	/* map normal characters */
+	if (value < 32) {
+		fputc(map_0_31[value], stderr);
+	} else if (value > 127) {
+		fputc(map_128_255[value-128], stderr);
+	} else {
+		fputc(value, stderr);
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * BIOS Write character to device
  * Call 3
  */
 static bool Bios_Bconout(Uint32 Params)
 {
 	Uint16 Dev;
-	unsigned char Char;
+	Uint8 Char;
 
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 	Char = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconout(%i, 0x%02x)\n", Dev, Char);
 
+	if (Dev == 2) {
+		Bios_VT52(Char);
+	}
 	return false;
 }
 
