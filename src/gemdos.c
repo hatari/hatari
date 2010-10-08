@@ -1423,6 +1423,7 @@ static bool GemDOS_SetDTA(Uint32 Params)
 		pDTA = NULL;
 		Log_Printf(LOG_WARN, "GEMDOS Fsetdta() failed due to invalid DTA address 0x%x\n", nDTA);
 	}
+	/* redirect to TOS */
 	return false;
 }
 
@@ -2266,7 +2267,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
  * GEMDOS Get Directory
  * Call 0x47
  */
-static int GemDOS_GetDir(Uint32 Params)
+static bool GemDOS_GetDir(Uint32 Params)
 {
 	Uint32 Address;
 	Uint16 Drive;
@@ -2796,7 +2797,7 @@ void GemDOS_OpCode(void)
 {
 	Uint16 GemDOSCall, CallingSReg;
 	Uint32 Params;
-	short RunOld;
+	int Finished;
 	Uint16 SR;
 
 	SR = M68000_GetSR();
@@ -2813,7 +2814,7 @@ void GemDOS_OpCode(void)
 	}
 
 	/* Default to run TOS GemDos (SR_NEG run Gemdos, SR_ZERO already done, SR_OVERFLOW run own 'Pexec' */
-	RunOld = true;
+	Finished = false;
 	SR &= SR_CLEAR_OVERFLOW;
 	SR &= SR_CLEAR_ZERO;
 	SR |= SR_NEG;
@@ -2827,130 +2828,105 @@ void GemDOS_OpCode(void)
 	{
 	 /*
 	 case 0x3:
-		if (GemDOS_Cauxin(Params))
-			RunOld = false;
+		Finished = GemDOS_Cauxin(Params);
 		break;
 	 */
 	 /*
 	 case 0x4:
-		if (GemDOS_Cauxout(Params))
-			RunOld = false;
+		Finished = GemDOS_Cauxout(Params);
 		break;
 	 */
 	 /* direct printing via GEMDOS */
 	 /*
 	 case 0x5:
-		if (GemDOS_Cprnout(Params))
-			RunOld = false;
+		Finished = GemDOS_Cprnout(Params);
 		break;
 	 */
 	 case 0xe:
-		if (GemDOS_SetDrv(Params))
-			RunOld = false;
+		Finished = GemDOS_SetDrv(Params);
 		break;
 	 /* Printer status  */
 	 /*
 	 case 0x11:
-		if (GemDOS_Cprnos(Params))
-			RunOld = false;
+		Finished = GemDOS_Cprnos(Params);
 		break;
 	 */
 	 /*
 	 case 0x12:
-		if (GemDOS_Cauxis(Params))
-			RunOld = false;
+		Finished = GemDOS_Cauxis(Params);
 		break;
 	 */
 	 /*
 	 case 0x13:
-		if (GemDOS_Cauxos(Params))
-			RunOld = false;
+		Finished = GemDOS_Cauxos(Params);
 		break;
 	 */
 	 case 0x1a:
-		if (GemDOS_SetDTA(Params))
-			RunOld = false;
+		Finished = GemDOS_SetDTA(Params);
 		break;
 	 case 0x36:
-		if (GemDOS_DFree(Params))
-			RunOld = false;
+		Finished = GemDOS_DFree(Params);
 		break;
 	 case 0x39:
-		if (GemDOS_MkDir(Params))
-			RunOld = false;
+		Finished = GemDOS_MkDir(Params);
 		break;
 	 case 0x3a:
-		if (GemDOS_RmDir(Params))
-			RunOld = false;
+		Finished = GemDOS_RmDir(Params);
 		break;
 	 case 0x3b:
-		if (GemDOS_ChDir(Params))
-			RunOld = false;
+		Finished = GemDOS_ChDir(Params);
 		break;
 	 case 0x3c:
-		if (GemDOS_Create(Params))
-			RunOld = false;
+		Finished = GemDOS_Create(Params);
 		break;
 	 case 0x3d:
-		if (GemDOS_Open(Params))
-			RunOld = false;
+		Finished = GemDOS_Open(Params);
 		break;
 	 case 0x3e:
-		if (GemDOS_Close(Params))
-			RunOld = false;
+		Finished = GemDOS_Close(Params);
 		break;
 	 case 0x3f:
-		if (GemDOS_Read(Params))
-			RunOld = false;
+		Finished = GemDOS_Read(Params);
 		break;
 	 case 0x40:
-		if (GemDOS_Write(Params))
-			RunOld = false;
+		Finished = GemDOS_Write(Params);
 		break;
 	 case 0x41:
-		if (GemDOS_FDelete(Params))
-			RunOld = false;
+		Finished = GemDOS_FDelete(Params);
 		break;
 	 case 0x42:
-		if (GemDOS_LSeek(Params))
-			RunOld = false;
+		Finished = GemDOS_LSeek(Params);
 		break;
 	 case 0x43:
-		if (GemDOS_Fattrib(Params))
-			RunOld = false;
+		Finished = GemDOS_Fattrib(Params);
 		break;
 	 case 0x47:
-		if (GemDOS_GetDir(Params))
-			RunOld = false;
+		Finished = GemDOS_GetDir(Params);
 		break;
 	 case 0x4b:
-		if (GemDOS_Pexec(Params) == CALL_PEXEC_ROUTINE)
-			RunOld = CALL_PEXEC_ROUTINE;
+		/* Either false or CALL_PEXEC_ROUTINE */
+		Finished = GemDOS_Pexec(Params);
 		break;
 	 case 0x4e:
-		if (GemDOS_SFirst(Params))
-			RunOld = false;
+		Finished = GemDOS_SFirst(Params);
 		break;
 	 case 0x4f:
-		if (GemDOS_SNext())
-			RunOld = false;
+		Finished = GemDOS_SNext();
 		break;
 	 case 0x56:
-		if (GemDOS_Rename(Params))
-			RunOld = false;
+		Finished = GemDOS_Rename(Params);
 		break;
 	 case 0x57:
-		if (GemDOS_GSDToF(Params))
-			RunOld = false;
+		Finished = GemDOS_GSDToF(Params);
 		break;
 	 default:
 		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS call 0x%X (%s)\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
 	}
 
-	switch(RunOld)
+	switch(Finished)
 	{
-	 case false:
+	 case true:
 		/* skip over branch to pexec to RTE */
 		SR |= SR_ZERO;
 		/* visualize GemDOS emu HD access? */
