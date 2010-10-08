@@ -173,10 +173,10 @@ endif(ENABLE_MUDFLAP)
 
 # Warning flags:
 if(CMAKE_COMPILER_IS_GNUCC)
-	set(CMAKE_C_FLAGS "-Wcast-qual -Wbad-function-cast -Wpointer-arith ${CMAKE_C_FLAGS}")
-	set(CMAKE_C_FLAGS "-Wmissing-prototypes -Wstrict-prototypes ${CMAKE_C_FLAGS}")
-	set(CMAKE_C_FLAGS "-Wall -Wwrite-strings -Wsign-compare ${CMAKE_C_FLAGS}")
-	# set(CMAKE_C_FLAGS "-Wshadow -Werror ${CMAKE_C_FLAGS}")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wcast-qual -Wbad-function-cast -Wpointer-arith")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-prototypes -Wstrict-prototypes")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wwrite-strings -Wsign-compare")
+	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow -DFORTIFY_SOURCE=2 -Werror")
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 # Building Hatari w/o optimization is no fun...
