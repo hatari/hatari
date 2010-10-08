@@ -165,6 +165,7 @@ Demos:
 - Dimensio (by Condemned)
 - Flashback (by Carebears)
 - Frenchies (by Frenchies, 96KB intro)
+- Grafik -und Sounddemo (by Eckhard Kruse, font issues)
 - Hallucinations (by Reservoir Gods)
 - Outline 2008 invite (by DHS)
 - Outline 2010 invite (by Checkpoint)
