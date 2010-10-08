@@ -2610,6 +2610,75 @@ static bool GemDOS_Rename(Uint32 Params)
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * GEMDOS GSDToF
+ * Call 0x57
+ */
+static bool GemDOS_GSDToF(Uint32 Params)
+{
+	DATETIME DateTime;
+	Uint32 pBuffer;
+	int Handle,Flag;
+
+	/* Read details from stack */
+	pBuffer = STMemory_ReadLong(Params);
+	Handle = STMemory_ReadWord(Params+SIZE_LONG);
+	Flag = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
+
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fdatime(0x%x, %i, %i)\n", pBuffer,
+	          Handle, Flag);
+
+	Handle -= BASE_FILEHANDLE;
+
+	/* Check handle was valid */
+	if (GemDOS_IsInvalidFileHandle(Handle))
+	{
+		/* No, assume was TOS -> redirect */
+		return false;
+	}
+
+	if (Flag == 1)
+	{
+		/* write protected device? */
+		if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
+		{
+			Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fdatime(,%d,)\n", Handle);
+			Regs[REG_D0] = GEMDOS_EWRPRO;
+			return true;
+		}
+		DateTime.timeword = STMemory_ReadWord(pBuffer);
+		DateTime.dateword = STMemory_ReadWord(pBuffer+SIZE_WORD);
+		if (GemDOS_SetFileInformation(Handle, &DateTime) == true)
+			Regs[REG_D0] = GEMDOS_EOK;
+		else
+			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
+		return true;
+	}
+
+	if (GemDOS_GetFileInformation(Handle, &DateTime) == true)
+	{
+		/* Check that write is requested to valid memory area */
+		if (STMemory_ValidArea(pBuffer, 4))
+		{
+			STMemory_WriteWord(pBuffer, DateTime.timeword);
+			STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.dateword);
+			Regs[REG_D0] = GEMDOS_EOK;
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "GEMDOS Fdatime() failed due to invalid RAM range 0x%x+%i\n", pBuffer, 4);
+			Regs[REG_D0] = GEMDOS_ERANGE;
+		}
+	}
+	else
+	{
+		Regs[REG_D0] = GEMDOS_ERROR; /* Generic error */
+	}
+	return true;
+}
+
+
 #if ENABLE_TRACING
 /*-----------------------------------------------------------------------*/
 /**
@@ -2712,74 +2781,6 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 	return "MiNT call?";
 }
 #endif
-
-/*-----------------------------------------------------------------------*/
-/**
- * GEMDOS GSDToF
- * Call 0x57
- */
-static bool GemDOS_GSDToF(Uint32 Params)
-{
-	DATETIME DateTime;
-	Uint32 pBuffer;
-	int Handle,Flag;
-
-	/* Read details from stack */
-	pBuffer = STMemory_ReadLong(Params);
-	Handle = STMemory_ReadWord(Params+SIZE_LONG);
-	Flag = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
-
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fdatime(0x%x, %i, %i)\n", pBuffer,
-	          Handle, Flag);
-
-	Handle -= BASE_FILEHANDLE;
-
-	/* Check handle was valid */
-	if (GemDOS_IsInvalidFileHandle(Handle))
-	{
-		/* No, assume was TOS -> redirect */
-		return false;
-	}
-
-	if (Flag == 1)
-	{
-		/* write protected device? */
-		if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
-		{
-			Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fdatime(,%d,)\n", Handle);
-			Regs[REG_D0] = GEMDOS_EWRPRO;
-			return true;
-		}
-		DateTime.timeword = STMemory_ReadWord(pBuffer);
-		DateTime.dateword = STMemory_ReadWord(pBuffer+SIZE_WORD);
-		if (GemDOS_SetFileInformation(Handle, &DateTime) == true)
-			Regs[REG_D0] = GEMDOS_EOK;
-		else
-			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
-		return true;
-	}
-
-	if (GemDOS_GetFileInformation(Handle, &DateTime) == true)
-	{
-		/* Check that write is requested to valid memory area */
-		if (STMemory_ValidArea(pBuffer, 4))
-		{
-			STMemory_WriteWord(pBuffer, DateTime.timeword);
-			STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.dateword);
-			Regs[REG_D0] = GEMDOS_EOK;
-		}
-		else
-		{
-			Log_Printf(LOG_WARN, "GEMDOS Fdatime() failed due to invalid RAM range 0x%x+%i\n", pBuffer, 4);
-			Regs[REG_D0] = GEMDOS_ERANGE;
-		}
-	}
-	else
-	{
-		Regs[REG_D0] = GEMDOS_ERROR; /* Generic error */
-	}
-	return true;
-}
 
 
 /*-----------------------------------------------------------------------*/
