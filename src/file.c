@@ -134,19 +134,6 @@ const char *File_RemoveFileNameDrive(const char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check if given filename is an existing directory
- *
- * Return TRUE if directory, else give FALSE
- */
-bool File_DirExists(const char *path)
-{
-	struct stat filestat;
-	return (stat(path, &filestat) == 0 && S_ISDIR(filestat.st_mode));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Check if filename end with a '/'
  *
  * Return TRUE if filename ends with '/'
@@ -339,14 +326,10 @@ bool File_Exists(const char *filename)
 /**
  * Return TRUE if directory exists.
  */
-bool File_DirectoryExists(const char *psDirName)
+bool File_DirExists(const char *path)
 {
 	struct stat buf;
-	if (stat(psDirName, &buf) == 0 && (buf.st_mode & S_IFDIR))
-	{
-		return true;
-	}
-	return false;
+	return (stat(path, &buf) == 0 && S_ISDIR(buf.st_mode));
 }
 
 

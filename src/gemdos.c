@@ -1649,7 +1649,7 @@ static bool GemDOS_FilePathMissing(char *szActualFileName)
 	if (ptr)
 	{
 		*ptr = 0;   /* Strip filename from string */
-		if (!File_DirectoryExists(szActualFileName))
+		if (!File_DirExists(szActualFileName))
 			return true;
 	}
 	return false;
