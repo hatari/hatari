@@ -57,12 +57,14 @@ static bool Bios_Bconin(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Converts given BIOS CON: device character output to ASCII.
- * Accepts one character at the time, ignores VT52 escape codes
+ * Convert given BIOS CON: device character output to ASCII.
+ * Accepts one character at the time, parses VT52 escape codes
  * and maps Atari characters to their closest ASCII equivalents.
- *
- * TODO: Keep track of current position on line & white space usage and
- * convert 1,1 position to \r + forward position movements to spaces?
+ * 
+ * On host, TOS cursor forwards movement is done with spaces,
+ * backwards movement is delayed until next non-white character
+ * at which point output switches to next line.  Other VT52
+ * escape sequences than cursor movement are ignored.
  */
 static void Bios_VT52(Uint8 value)
 {
@@ -70,7 +72,7 @@ static void Bios_VT52(Uint8 value)
 	static const Uint8 map_0_31[32] = {
 		'.', '.', '.', '.', '.', '.', '.', '.',	/* 0x00 */
 		/* white space */
-		'.','\t','\n','\v','\f','\r', '.', '.',	/* 0x08 */
+		'\b','\t','\n','.','.','\r', '.', '.',	/* 0x08 */
 		/* LED numbers */
 		'0', '1', '2', '3', '4', '5', '6', '7',	/* 0x10 */
 		'8', '9', '.', '.', '.', '.', '.', '.' 	/* 0x18 */
@@ -95,10 +97,15 @@ static void Bios_VT52(Uint8 value)
 		'.', '.', '.', '.', '.', '.', '.', '.'	/* 0xF8 */
 	};
 
-	/* state machine to ignore VT52 escape sequence */
+	/* state machine to handle/ignore VT52 escape sequence */
 	static int escape_index;
 	static int escape_target;
-	
+	static int hpos_host, hpos_tos;
+	static bool need_nl;
+	static enum {
+		ESCAPE_NONE, ESCAPE_POSITION
+	} escape_type;
+
 	if (escape_target) {
 		if (++escape_index == 1) {
 			/* VT52 escape sequences with arguments? */
@@ -108,11 +115,27 @@ static void Bios_VT52(Uint8 value)
 				escape_target = 2;
 				return;
 			case 'Y':	/* cursor position */
+				escape_type = ESCAPE_POSITION;
 				escape_target = 3;
 				return;
 			}
 		} else if (escape_index < escape_target) {
 			return;
+		}
+		if (escape_type == ESCAPE_POSITION) {
+			/* last item gives horizontal position */
+			hpos_tos = value - ' ';
+			if (hpos_tos > 79) {
+				hpos_tos = 79;
+			} else if (hpos_tos < 0) {
+				hpos_tos = 0;
+			}
+			if (hpos_tos > hpos_host) {
+				fprintf(stderr, "%*s", hpos_tos - hpos_host, "");
+				hpos_host = hpos_tos;
+			} else if (hpos_tos < hpos_host) {
+				need_nl = true;
+			}
 		}
 		/* escape sequence end */
 		escape_target = 0;
@@ -120,12 +143,58 @@ static void Bios_VT52(Uint8 value)
 	}
 	if (value == 27) {
 		/* escape sequence start */
+		escape_type = ESCAPE_NONE;
 		escape_target = 1;
 		escape_index = 0;
 		return;
 	}
 
-	/* map normal characters */
+	/* do newline & indent for backwards movement only when necessary */
+	if (need_nl) {
+		/* TOS cursor horizontal movement until host output */
+		switch (value) {
+		case ' ':
+			hpos_tos++;
+			return;
+		case '\b':
+			hpos_tos--;
+			return;
+		case '\t':
+			hpos_tos = (hpos_tos + 8) & 0xfff0;
+			return;
+		case '\r':
+		case '\n':
+			hpos_tos = 0;
+			break;
+		}
+		fputs("\n", stderr);
+		if (hpos_tos > 0 && hpos_tos < 80) {
+			fprintf(stderr, "%*s", hpos_tos, "");
+			hpos_host = hpos_tos;
+		} else {
+			hpos_host = 0;
+		}
+		need_nl = false;
+	}
+
+	/* host cursor horizontal movement */
+	switch (value) {
+	case '\b':
+		hpos_host--;
+		break;
+	case '\t':
+		hpos_host = (hpos_host + 8) & 0xfff0;
+		break;
+	case '\r':
+	case '\n':
+		hpos_host = 0;
+		break;
+	default:
+		hpos_host++;
+		break;
+	}
+
+	/* map normal characters to host console */
 	if (value < 32) {
 		fputc(map_0_31[value], stderr);
 	} else if (value > 127) {
