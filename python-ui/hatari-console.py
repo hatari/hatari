@@ -44,6 +44,7 @@ class Hatari:
         if not self.run(args):
             print "ERROR: failed to run Hatari"
             sys.exit(1)
+        self.verbose = False
 
     def _assert_hatari_compatibility(self):
         for line in os.popen(self.hataribin + " -h").readlines():
@@ -86,7 +87,8 @@ class Hatari:
 
     def send_message(self, msg):
         if self.control:
-            print "->", msg
+            if self.verbose:
+                print "-> '%s'" % msg
             self.control.sendall(msg + "\n")
             # KLUDGE: wait so that Hatari output comes before next prompt
             time.sleep(0.2)
@@ -101,7 +103,21 @@ class Hatari:
     def trigger_shortcut(self, shortcut):
         return self.send_message("hatari-shortcut %s" % shortcut)
 
+    def send_string(self, text):
+        print "string:", text
+        for item in text:
+            if item == ' ':
+                # white space gets stripped, use scancode instead
+                item = "57"
+            if not self.send_message("hatari-event keypress %s" % item):
+                return False
+        return True
+
     def insert_event(self, event):
+        if event.startswith("text "):
+            cmd, value = event.split(None, 1)
+            if value:
+                return self.send_string(value)
         return self.send_message("hatari-event %s" % event)
 
     def debug_command(self, cmd):
@@ -113,13 +129,17 @@ class Hatari:
     def toggle_device(self, device):
         return self.send_message("hatari-toggle %s" % device)
 
-    def pause(self):
+    def set_pause(self):
         return self.send_message("hatari-stop")
 
-    def unpause(self):
+    def set_unpause(self):
         return self.send_message("hatari-cont")
+
+    def set_verbose(self):
+        self.verbose = not self.verbose
+        print "debug output", self.verbose
         
-    def stop(self):
+    def set_stop(self):
         if self.pid:
             os.kill(self.pid, signal.SIGKILL)
             print "killed hatari with PID %d" % self.pid
@@ -245,10 +265,12 @@ class Tokens:
     ]
     event_tokens = [
     "doubleclick",
-    "rightpress",
-    "rightrelease",
+    "rightdown",
+    "rightup",
     "keypress",
-    "keyrelease"
+    "keydown",
+    "keyup",
+    "text"	# simulated with keypresses
     ]
     device_tokens = [
     "printer",
@@ -300,9 +322,10 @@ class Tokens:
     def __init__(self, hatari):
         self.process_tokens = {
             "console-help": self.show_help,
-            "pause": hatari.pause,
-            "unpause": hatari.unpause,
-            "quit": hatari.stop
+            "pause": hatari.set_pause,
+            "unpause": hatari.set_unpause,
+            "verbose": hatari.set_verbose,
+            "quit": hatari.set_stop
         }
         self.hatari = hatari
 
@@ -336,6 +359,7 @@ The supported control facilities are:"""
         self.list_items("Debugger commands", self.debugger_tokens)
         print """
 and commands to "pause", "unpause" and "quit" Hatari.
+"verbose" command toggles commands debug output on/off.
 
 Scripts can use also "sleep" command.
 
@@ -394,7 +418,7 @@ help if you give them invalid input.
 class Main:
     def __init__(self):
         args, self.file, self.exit = self.parse_args(sys.argv)
-        hatari = Hatari(args)
+        hatari = Hatari(args[1:])
         self.tokens = Tokens(hatari)
         self.command = CommandInput(self.tokens.get_tokens())
 
@@ -435,7 +459,7 @@ only if '--' is given as one of the arguments.  Otherwise
 all arguments are given to Hatari.
 
 For example:
-    %s --monitor mono
+    %s --monitor mono test.prg
     %s commands.txt -- --monitor mono
     %s commands.txt --exit --
 """ % (name, name, name, name)
