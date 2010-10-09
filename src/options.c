@@ -298,7 +298,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
-	  NULL, "Enable Bios/XBios interception & CON: redirection" },
+	  NULL, "Toggle X/Bios interception & CON: redirection" },
 	{ OPT_TRACE,   NULL, "--trace",
 	  "<trace1,...>", "Activate emulation tracing, see '--trace help'" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
@@ -1416,12 +1416,21 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			break;
 
-		case OPT_PARACHUTE:
-			bNoSDLParachute = true;
+		case OPT_BIOSINTERCEPT:
+			if (bBiosIntercept)
+			{
+				fprintf(stderr, "X/Bios interception disabled.\n");
+				bBiosIntercept = false;
+			}
+			else
+			{
+				fprintf(stderr, "X/Bios interception enabled.\n");
+				bBiosIntercept = true;
+			}
 			break;
 
-		case OPT_BIOSINTERCEPT:
-			bBiosIntercept = true;
+		case OPT_PARACHUTE:
+			bNoSDLParachute = true;
 			break;
 			
 		case OPT_TRACE:
