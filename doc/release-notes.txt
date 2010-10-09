@@ -11,6 +11,9 @@ Emulation:
 Emulator:
 - Option to disable Falcon mic
   ("--mic off" is needed for Mudflap debugging)
+- Atari program given as argument to Hatari will be automatically
+  started after TOS boots. GEMDOS hard disk directory can now be
+  give also as an argument, not just an option
 - BIOS CON: output is converted to ASCII and redirected to host console
   with the --bios-intercept option
 - Debugger:
@@ -24,6 +27,8 @@ Emulator:
 Other changes:
 - hmsa tool can create empty disk images in addition to converting
   disks between ST & MSA formats
+- Minimal hatari-tos-register.sh Linux init script (example)
+  to register Hatari as binfmt_misc handler/runner for TOS programs
 - Support for plain Makefiles removed, (except for internal tests)
   only CMake is used for configuring and building Hatari
 

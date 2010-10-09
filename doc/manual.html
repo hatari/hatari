@@ -84,7 +84,7 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#Installation of the binary">Installation of the binary</a>
     <li><a href="#Running Hatari for the first time">Running Hatari for the first time</a>
   </ul>
-  <li><a href="#Command line options">Command line options</a>
+  <li><a href="#Command line options">Command line options and arguments</a>
   <li><a href="#Using the emulated system">Using the emulated system</a>
   <ul>
     <li><a href="#The GUI">The GUI</a>
@@ -386,12 +386,26 @@ to turn on the GUI to
 configure Hatari to suit your needs, press <span class="key">F11</span>
 to toggle windowed and fullscreen mode. </p>
 
-<a name="Command line options"></a><h2>Command line options</h2>
+<a name="Command line options"></a><h2>Command line options
+and arguments</h2>
 
 <p>Usage:</p>
 <pre>
- hatari [options] [disk image name]
+ hatari [options] [disk image | directory | Atari program ]
 </pre>
+
+<p>As an argument one can give either a name of:</p>
+<ul>
+<li>A floppy disk image,
+<li>A directory that should be emulated as a virtual GEMDOS hard disk, or</li>
+<li>An Atari program that should be autostarted.  In this case
+    the program's directory will be used as the C: drive from
+    where this program will be started.</li>
+</ul>
+
+<p>Booting will be done from the disk image or directory that's given
+last on the command line as an option or the argument (and which
+corresponds to A: or C:).</p>
 
 <p>Hatari command line options are split into several categories:</p>
 

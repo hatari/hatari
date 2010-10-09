@@ -10,7 +10,7 @@ hatari \- Atari ST/STE/TT/Falcon emulator
 .SH "SYNOPSIS"
 .B hatari
 .RI  [options]
-.RI  [diskimage]
+.RI  [directory|diskimage|program]
 .SH "DESCRIPTION"
 Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, BeOS and
 other Systems which are supported by the SDL library.
@@ -21,9 +21,19 @@ the commonly used *.st and *.msa disk images and hard disk emulation.
 .PP
 To run the emulator a TOS ROM image is needed. EmuTOS, a free
 implementation of TOS is shipped with hatari. Since it is not yet
-fully compatible with the original TOS some programs won't run
-correctly with this. Because of this it is recommended to use a TOS
+fully compatible with the original TOS, some programs won't run
+correctly with it. Because of this it is recommended to use a TOS
 ROM from a real Atari.
+.PP
+As an argument one can give either a name of a directory that should
+be emulated as a virtual GEMDOS hard disk, a floppy disk image or an
+Atari program that should be autostarted.  In the last case the
+program's directory will be used as the C: drive from where this
+program will be started.
+.PP
+Booting will be done from the disk image or directory that's given
+last on the command line as an option or the argument (and which
+corresponds to A: or C:).
 .SH "OPTIONS"
 Hatari options are split into several categories:
 .SH "General options"
