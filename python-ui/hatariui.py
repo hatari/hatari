@@ -671,7 +671,7 @@ def usage(actions, msg=None):
     uiname = "%s %s" % (UInfo.name, UInfo.version)
     print "\n%s" % uiname
     print "=" * len(uiname)
-    print "\nUsage: %s [options] [floppy image]" % name
+    print "\nUsage: %s [options] [directory|disk image|Atari program]" % name
     print "\nOptions:"
     print "\t-h, --help\t\tthis help"
     print "\t-n, --nomenu\t\tomit menus"
