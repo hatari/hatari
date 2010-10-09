@@ -418,7 +418,7 @@ help if you give them invalid input.
 class Main:
     def __init__(self):
         args, self.file, self.exit = self.parse_args(sys.argv)
-        hatari = Hatari(args[1:])
+        hatari = Hatari(args)
         self.tokens = Tokens(hatari)
         self.command = CommandInput(self.tokens.get_tokens())
 
@@ -429,7 +429,7 @@ class Main:
         file = []
         exit = False
         if "--" not in args:
-            return (args, file, exit)
+            return (args[1:], file, exit)
         
         for arg in args:
             if arg == "--":
@@ -467,7 +467,7 @@ For example:
             print "ERROR: %s!\n" % msg
         sys.exit(1)
 
-    def run(self):
+    def loop(self):
         print """
 ****************************************************************
 * To see available commands, use the TAB key or 'console-help' *
@@ -487,6 +487,10 @@ For example:
             line = self.command.loop().strip()
             self.tokens.process_command(line)
 
+    def run(self, line):
+        "helper method for scripts using hatari-console"
+        self.tokens.process_command(line)
+
 
 if __name__ == "__main__":
-    Main().run()
+    Main().loop()
