@@ -1391,8 +1391,8 @@ Toggle whether CPU exceptions invoke the debugger
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Enable Bios/XBios call interception and redirect BIOS
-CON: output (e.g. EmuTOS console) to host terminal.
+Toggle Bios/XBios call interception and BIOS CON: output
+(e.g. EmuTOS console) redidirection to host terminal.
 Needed for Bios/XBios call tracing. Allows Atari programs
 to modify Hatari state through XBios 255 calls.
 </td>
@@ -2679,9 +2679,12 @@ specific debugger setup (breakpoints etc).
 The debugger uses Hatari's parent console window, so make sure you run
 Hatari from the command line when you want to use the debugger. On
 Linux you can add for example an icon to your desktop that does it
-with something like this:
-<span class="commandline">xterm -T "Hatari debug window" -e hatari</span>.
+with something like this (replace "xterm" with your favorite terminal
+program):
 </p>
+<pre>
+xterm -T "Hatari debug window" -e hatari
+</pre>
 
 
 <a name="General debugger use"></a><h3>General debugger use</h3>
@@ -3014,7 +3017,7 @@ Because Hatari normally emulates things at the hardware level, tracing
 Atari OS functions requires setting additional Hatari options which
 tell it to intercept higher level functionality:
 <ul>
-<li>BIOS and XBIOS tracing require enabling bios intercepting</li>
+<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting</li>
 <li>GEMDOS tracing use of the GEMDOS harddisk emulation</li>
 <li>VDI tracing use of a VDI graphics mode</li>
 </ul>
@@ -3024,8 +3027,10 @@ use the OS call opcode breakpoints explained above with the ":trace" option.
 </p>
 <p>
 Tracing options can be set even from a program within the emulation
-if you enable Hatari "--bios-intercept" option and call XBios 255 from
-the program with a suitable Hatari command line string.
+if you enable the Hatari "--bios-intercept" option and call XBios 255
+from the program with a suitable Hatari command line string.  Bios
+interception will also show the (Bios level) CON: output on the host
+console.
 </p>
 <p>
 Note that the trace output file can be set only when Hatari starts,

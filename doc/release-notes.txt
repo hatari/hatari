@@ -17,6 +17,7 @@ Emulator:
 - BIOS CON: output is converted to ASCII and redirected to host console
   with the --bios-intercept option
 - Debugger:
+  - --bios-intercept can toggled from debugger (not just enabled)
   - BIOS/XBIOS/GEMDOS/VDI/AES/Line-A/Line-F opcode breakpoint support
   - DSP and CPU code profiling functionality.  Provides statistics about
     profiled code (executed code address ranges, max and total counts
