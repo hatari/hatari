@@ -116,24 +116,27 @@ class InputDialog(HatariUIDialog):
         entry = gtk.Entry()
         entry.connect("activate", self._entry_cb)
         insert = create_button("Insert", self._entry_cb)
-        tips.set_tip(insert, "Insert text to Hatari window")
+        tips.set_tip(insert, "Insert given text to Hatari window")
+        enter = create_button("Enter key", self._enter_cb)
+        tips.set_tip(enter, "Simulate Enter key press")
 
         hbox1 = gtk.HBox()
         hbox1.add(gtk.Label("Text:"))
         hbox1.add(entry)
         hbox1.add(insert)
+        hbox1.add(enter)
         dialog.vbox.add(hbox1)
 
-        rclick = gtk.Button("Rightclick")
-        tips.set_tip(rclick, "Simulate Atari left button double-click")
+        rclick = gtk.Button("Right click")
         rclick.connect("pressed", self._rightpress_cb)
         rclick.connect("released", self._rightrelease_cb)
-        dclick = create_button("Doubleclick", self._doubleclick_cb)
-        tips.set_tip(dclick, "Simulate Atari rigth button click")
+        tips.set_tip(rclick, "Simulate Atari right button press & release")
+        dclick = create_button("Double click", self._doubleclick_cb)
+        tips.set_tip(dclick, "Simulate Atari left button double-click")
 
         hbox2 = gtk.HBox()
-        hbox2.add(rclick)
         hbox2.add(dclick)
+        hbox2.add(rclick)
         dialog.vbox.add(hbox2)
 
         dialog.show_all()
@@ -146,14 +149,17 @@ class InputDialog(HatariUIDialog):
             HatariTextInsert(self.hatari, text)
             self.entry.set_text("")
 
+    def _enter_cb(self, widget):
+        self.hatari.insert_event("keypress 28") # Enter key scancode
+
     def _doubleclick_cb(self, widget):
         self.hatari.insert_event("doubleclick")
 
     def _rightpress_cb(self, widget):
-        self.hatari.insert_event("rightpress")
+        self.hatari.insert_event("rightdown")
 
     def _rightrelease_cb(self, widget):
-        self.hatari.insert_event("rightrelease")
+        self.hatari.insert_event("rightup")
 
     def run(self, hatari):
         "run(hatari), do text/mouse click input"

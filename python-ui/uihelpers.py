@@ -165,19 +165,24 @@ class HatariTextInsert:
         print "OUTPUT '%s'" % text
         gobject.timeout_add(100, _text_insert_cb, self)
 
-# callback to insert text object to Hatari character at the time, at given interval
+# callback to insert text object to Hatari character at the time
+# (first key down, on next call up), at given interval
 def _text_insert_cb(textobj):
     char = textobj.text[textobj.index]
+    if char == ' ':
+        # white space gets stripped, use scancode instead
+        char = "57"
     if textobj.pressed:
         textobj.pressed = False
-        textobj.hatari.insert_event("keyrelease %c" % char)
+        textobj.hatari.insert_event("keyup %s" % char)
         textobj.index += 1
         if textobj.index >= len(textobj.text):
             del(textobj)
             return False
     else:
         textobj.pressed = True
-        textobj.hatari.insert_event("keypress %c" % char)
+        textobj.hatari.insert_event("keydown %s" % char)
+    # call again
     return True
 
 

@@ -366,7 +366,6 @@ class UICallbacks:
     # ------- insert key special callback -----------
     def keypress(self, widget, code):
         self.hatari.insert_event("keypress %s" % code)
-        self.hatari.insert_event("keyrelease %s" % code)
 
     def textinsert(self, widget, text):
         HatariTextInsert(self.hatari, text)
