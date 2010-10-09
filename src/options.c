@@ -32,6 +32,8 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "joy.h"
 #include "log.h"
+#include "tos.h"
+#include "paths.h"
 #include "avi_record.h"
 
 #include "hatari-glue.h"
@@ -437,7 +439,7 @@ static void Opt_ShowHelp(void)
 	const opt_t *opt = HatariOptions;
 
 	Opt_ShowVersion();
-	printf("Usage:\n hatari [options] [disk image name]\n");
+	printf("Usage:\n hatari [options] [directory|disk image|Atari program]\n");
 
 	while(opt->id != OPT_ERROR)
 	{
@@ -705,6 +707,79 @@ Uint32 Opt_GetNoParachuteFlag(void)
 
 
 /**
+ * Handle last (non-option) argument.  It can be a path or filename.
+ * Filename can be a disk image or Atari program.
+ * Return false if it's none of these.
+ */
+static bool Opt_HandleArgument(const char *path)
+{
+	char *dir = NULL;
+	Uint8 test[2];
+	FILE *fp;
+
+	/* Atari program? */
+	if (File_Exists(path) && (fp = fopen(path, "rb"))) {
+
+		/* file starts with GEMDOS magic? */
+		if (fread(test, 1, 2, fp) == 2 &&
+		    test[0] == 0x60 && test[1] == 0x1A) {
+
+			const char *prgname = strrchr(path, PATHSEP);
+			if (prgname) {
+				dir = strdup(path);
+				dir[prgname-path] = '\0';
+				prgname++;
+			} else {
+				dir = strdup(Paths_GetWorkingDir());
+				prgname = path;
+			}
+			/* after above, dir should point to valid dir,
+			 * then make sure that given program from that
+			 * dir will be started.
+			 */
+			TOS_AutoStart(prgname);
+		}
+		fclose(fp);
+	}
+	if (dir) {
+		path = dir;
+	}
+
+	/* GEMDOS HDD directory (as argument, or for the Atari program)? */
+	if (File_DirExists(path)) {
+		if (Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+			       path, sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
+			       &ConfigureParams.HardDisk.bUseHardDiskDirectories)
+		    && ConfigureParams.HardDisk.bUseHardDiskDirectories)
+		{
+			ConfigureParams.HardDisk.bBootFromHardDisk = true;
+		}
+		bLoadAutoSave = false;
+		if (dir) {
+			free(dir);
+		}
+		return true;
+	} else {
+		if (dir) {
+			/* if dir is set, it should be valid... */
+			Log_Printf(LOG_ERROR, "Given atari program path '%s' doesn't exist (anymore?)!\n", dir);
+			free(dir);
+			exit(1);
+		}
+	}
+
+	/* disk image? */
+	if (Floppy_SetDiskFileName(0, path, NULL))
+	{
+		ConfigureParams.HardDisk.bBootFromHardDisk = false;
+		bLoadAutoSave = false;
+		return true;
+	}
+
+	return Opt_ShowError(OPT_ERROR, path, "Not a disk image, Atari program or directory");
+}
+
+/**
  * parse all Hatari command line options and set Hatari state accordingly.
  * Returns true if everything was OK, false otherwise.
  */
@@ -721,17 +796,9 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 
 	for(i = 1; i < argc; i++)
 	{
-		if (argv[i][0] != '-')
-		{
-			if (Floppy_SetDiskFileName(0, argv[i], NULL))
-			{
-				ConfigureParams.HardDisk.bBootFromHardDisk = false;
-				bLoadAutoSave = false;
-			}
-			else
-				return Opt_ShowError(OPT_ERROR, argv[i], "Not an option nor disk image");
-			continue;
-		}
+		/* last argument can be a non-option */
+		if (argv[i][0] != '-' && i+1 == argc)
+			return Opt_HandleArgument(argv[i]);
     
 		/* WhichOption() checks also that there is an argument,
 		 * so we don't need to check that below

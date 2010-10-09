@@ -29,6 +29,7 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
+#include "str.h"
 #include "tos.h"
 #include "vdi.h"
 
@@ -41,7 +42,6 @@ bool bRamTosImage;                      /* true if we loaded a RAM TOS image */
 unsigned int ConnectedDriveMask = 0x03; /* Bit mask of connected drives, eg 0x7 is A,B,C */
 int nNumDrives = 2;                     /* Number of drives, default is 2 for A: and B: - Strictly, this is the highest mapped drive letter, in-between drives may not be allocated */
 
-
 /* Possible TOS file extensions to scan for */
 static const char * const pszTosNameExts[] =
 {
@@ -51,6 +51,55 @@ static const char * const pszTosNameExts[] =
 	NULL
 };
 
+static struct {
+	FILE *file;          /* file pointer to contents of INF file */
+	char prgname[16];    /* TOS name of the program to auto start */
+	const char *infname; /* name of the INF file TOS will try to match */
+	int match_count;     /* how many times INF was matched after boot */
+	int match_max;       /* how many times TOS needs it to be matched */
+} TosAutoStart;
+
+/* autostarted program name will be added after first '\' character */
+static const char emudesk_inf[] =
+"#E 9A 07\r\n"
+"#Z 01 C:\\@\r\n"
+"#W 00 00 02 06 26 0C 08 C:\\*.*@\r\n"
+"#W 00 00 02 08 26 0C 00 @\r\n"
+"#W 00 00 02 0A 26 0C 00 @\r\n"
+"#W 00 00 02 0D 26 0C 00 @\r\n"
+"#M 00 00 01 FF A DISK A@ @\r\n"
+"#M 01 00 01 FF B DISK B@ @\r\n"
+"#M 02 00 01 FF C DISK C@ @\r\n"
+"#F FF 28 @ *.*@\r\n"
+"#D FF 02 @ *.*@\r\n"
+"#G 08 FF *.APP@ @\r\n"
+"#G 08 FF *.PRG@ @\r\n"
+"#P 08 FF *.TTP@ @\r\n"
+"#F 08 FF *.TOS@ @\r\n"
+"#T 00 03 03 FF   TRASH@ @\r\n";
+
+static const char desktop_inf[] =
+"#a000000\r\n"
+"#b001000\r\n"
+"#c7770007000600070055200505552220770557075055507703111302\r\n"
+"#d\r\n"
+"#Z 01 C:\\@\r\n"
+"#E D8 11\r\n"
+"#W 00 00 10 01 17 17 13 C:\\*.*@\r\n"
+"#W 00 00 08 0B 1D 0D 00 @\r\n"
+"#W 00 00 0A 0F 1A 09 00 @\r\n"
+"#W 00 00 0E 01 1A 09 00 @\r\n"
+"#M 00 00 05 FF A DISK A@ @\r\n"
+"#M 00 01 05 FF B DISK B@ @\r\n"
+"#M 00 02 05 FF C DISK C@ @\r\n"
+"#T 00 03 02 FF   TRASH@ @\r\n"
+"#F FF 04   @ *.*@\r\n"
+"#D FF 01   @ *.*@\r\n"
+"#P 03 04   @ *.*@\r\n"
+"#G 03 FF   *.APP@ @\r\n"
+"#G 03 FF   *.PRG@ @\r\n"
+"#P 03 FF   *.TTP@ @\r\n"
+"#F 03 04   *.TOS@ @\r\n";
 
 /* Flags that define if a TOS patch should be applied */
 enum
@@ -249,6 +298,135 @@ static void TOS_FixRom(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set name of program that will be auto started after TOS boots.
+ * Supported only from TOS 1.04 forward.
+ */
+void TOS_AutoStart(const char *prgname)
+{
+	Str_Filename2TOSname(prgname, TosAutoStart.prgname);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Create a temporary desktop.inf file which will start autostart program.
+ * This needs to be re-created on each boot in case user changed TOS version.
+ */
+static void TOS_CreateAutoInf(void)
+{
+	const char *contents, *infname, *prgname;
+	int offset, size, max;
+	FILE *fp;
+
+	/* in case TOS didn't for some reason close it on previous boot */
+	TOS_AutoStartClose(TosAutoStart.file);
+
+	prgname = TosAutoStart.prgname;
+	/* autostart not enabled? */
+	if (!*prgname)
+		return;
+
+	/* autostart not supported? */
+	if (TosVersion < 0x0104)
+	{
+		Log_Printf(LOG_WARN, "Only TOS versions >= 1.04 support autostarting!\n");
+		return;
+	}
+
+	if (bIsEmuTOS)
+	{
+		infname = "C:\\EMUDESK.INF";
+		size = sizeof(emudesk_inf);
+		contents = emudesk_inf;
+		max = 1;
+	} else {
+		infname = "DESKTOP.INF";
+		size = sizeof(desktop_inf);
+		contents = desktop_inf;
+		max = 1;
+	}
+	/* infname needs to be exactly the same string that given
+	 * TOS version gives for GEMDOS to find.
+	 */
+	TosAutoStart.infname = infname;
+	TosAutoStart.match_max = max;
+	TosAutoStart.match_count = 0;
+
+	/* find where to insert the program name */
+	for (offset = 0; offset < size; )
+	{
+		if (contents[offset++] == '\\')
+			break;
+	}
+	assert(offset < size);
+
+	fp = tmpfile();
+	if (!fp)
+	{
+		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s'!\n", TosAutoStart.prgname);
+		return;
+	}
+
+	/* create the autostart file */
+	fwrite(contents, offset, 1, fp);
+	fwrite(prgname, strlen(prgname), 1, fp);
+	fwrite(contents+offset, size-offset-1, 1, fp);
+	fseek(fp, 0, SEEK_SET);
+
+	TosAutoStart.file = fp;
+	Log_Printf(LOG_WARN, "Virtual autostart file '%s' created for '%s'.\n", infname, prgname);
+
+#if 0
+	/* write debug version to CWD */
+	fp = fopen("autostart.inf", "wb");
+	fwrite(contents, offset, 1, fp);
+	fwrite(prgname, strlen(prgname), 1, fp);
+	fwrite(contents+offset, size-offset-1, 1, fp);
+	fclose(fp);
+#endif
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * If given name matches autostart file, return its handle, NULL otherwise
+ */
+FILE *TOS_AutoStartOpen(const char *filename)
+{
+	if (TosAutoStart.file && strcmp(filename, TosAutoStart.infname) == 0)
+	{
+		Log_Printf(LOG_WARN, "Autostart file '%s' for '%s' matched.\n", filename, TosAutoStart.prgname);
+		return TosAutoStart.file;
+	}
+	return NULL;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * If given handle matches autostart file, close it and return true,
+ * false otherwise.
+ */
+bool TOS_AutoStartClose(FILE *fp)
+{
+	if (fp && fp == TosAutoStart.file)
+	{
+		if (++TosAutoStart.match_count >= TosAutoStart.match_max)
+		{
+			/* Remove autostart INF file after TOS has
+			 * read it enough times to do autostarting.
+			 * Otherwise user may try change desktop settings
+			 * and save them, but they would be lost.
+			 */
+			fclose(TosAutoStart.file);
+			TosAutoStart.file = NULL;
+			Log_Printf(LOG_WARN, "Autostart file removed.\n");
+		}
+		return true;
+	}
+	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Assert that TOS version matches the machine type and change the system
  * configuration if necessary.
  * For example TOSes 1.06 and 1.62 are for the STE ONLY and so don't run
@@ -442,6 +620,7 @@ int TOS_LoadImage(void)
 	free(pTosFile);
 
 	bTosImageLoaded = true;
+	TOS_CreateAutoInf();
 
 	return 0;
 }

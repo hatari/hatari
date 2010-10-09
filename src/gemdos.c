@@ -58,11 +58,6 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 /* Maximum supported length of a GEMDOS path: */
 #define MAX_GEMDOS_PATH 256
 
-/* Invalid characters in paths & filenames are replaced by this
- * (valid but very uncommon GEMDOS file name character)
- */
-#define INVALID_CHAR '@'
-
 /* Have we re-directed GemDOS vector to our own routines yet? */
 bool bInitGemDOS;
 
@@ -223,76 +218,6 @@ static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 }
 
 
-/**
- * Convert potentially too long host filenames to 8.3 TOS filenames
- * by truncating extension and part before it, replacing invalid
- * GEMDOS file name characters with INVALID_CHAR + upcasing the result.
- * 
- * Matching them from the host file system should first try exact
- * case-insensitive match, and then with a pattern that takes into
- * account the conversion done in here.
- */
-static void Convert2TOSName(char *source, char *dst)
-{
-	char *dot, *tmp, *src;
-	int len;
-
-	src = strdup(source); /* dup so that it can be modified */
-	len = strlen(src);
-
-	/* does filename have an extension? */
-	dot = strrchr(src, '.');
-	if (dot)
-	{
-		/* limit extension to 3 chars */
-		if (src + len - dot > 3)
-			dot[4] = '\0';
-
-		/* if there are extra dots, convert them */
-		for (tmp = src; tmp < dot; tmp++)
-			if (*tmp == '.')
-				*tmp = INVALID_CHAR;
-	}
-
-	/* does name now fit to 8 (+3) chars? */
-	if (len <= 8 || (dot && len <= 12))
-		strcpy(dst, src);
-	else
-	{
-		/* name (still) too long, cut part before extension */
-		strncpy(dst, src, 8);
-		if (dot)
-			strcpy(dst+8, dot);
-		else
-			dst[8] = '\0';
-	}
-	free(src);
-
-	/* replace other invalid chars than '.' in filename */
-	for (tmp = dst; *tmp; tmp++)
-	{
-		if (*tmp < 33 || *tmp > 126)
-			*tmp = INVALID_CHAR;
-		else
-		{
-			switch (*tmp)
-			{
-				case '*':
-				case '/':
-				case ':':
-				case '?':
-				case '\\':
-				case '{':
-				case '}':
-					*tmp = INVALID_CHAR;
-			}
-		}
-	}
-	Str_ToUpper(dst);
-	LOG_TRACE(TRACE_OS_GEMDOS, "host: %s -> GEMDOS: %s\n", source, dst);
-}
-
-
 /*-----------------------------------------------------------------------*/
 /**
  * Convert from FindFirstFile/FindNextFile attribute to GemDOS format
@@ -352,7 +277,9 @@ static int PopulateDTA(char *path, struct dirent *file)
 		return -3;
 
 	/* convert to atari-style uppercase */
-	Convert2TOSName(file->d_name, pDTA->dta_name);
+	Str_Filename2TOSname(file->d_name, pDTA->dta_name);
+	LOG_TRACE(TRACE_OS_GEMDOS, "host: %s -> GEMDOS: %s\n",
+		  file->d_name, pDTA->dta_name);
 
 	do_put_mem_long(pDTA->dta_size, filestat.st_size);
 	do_put_mem_word(pDTA->dta_time, DateTime.timeword);
@@ -1787,6 +1714,7 @@ static bool GemDOS_Open(Uint32 Params)
 		{ "rb+", "read/write" }
 	};
 	int Drive, Index, Mode;
+	FILE *AutostartHandle;
 
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
@@ -1826,13 +1754,21 @@ static bool GemDOS_Open(Uint32 Params)
 		ModeStr = Modes[Mode&0x03].mode;
 	}
 
-	/* FIXME: Open file
-	 * - fopen() modes don't allow write-only mode without truncating
-	 *   which would be needed to implement mode 1 (write-only) correctly.
-	 *   Fixing this requires using open() and file descriptors instead
-	 *   of fopen() and FILE* pointers, but Windows doesn't support that.
-	 */
-	FileHandles[Index].FileHandle =  fopen(szActualFileName, ModeStr);
+	
+	if ((AutostartHandle = TOS_AutoStartOpen(pszFileName)))
+	{
+		FileHandles[Index].FileHandle = AutostartHandle;
+	}
+	else
+	{
+		/* FIXME: Open file
+		 * - fopen() modes don't allow write-only mode without truncating
+		 *   which would be needed to implement mode 1 (write-only) correctly.
+		 *   Fixing this requires using open() and file descriptors instead
+		 *   of fopen() and FILE* pointers, but Windows doesn't support that.
+		 */
+		FileHandles[Index].FileHandle =  fopen(szActualFileName, ModeStr);
+	}
 
 	if (FileHandles[Index].FileHandle != NULL)
 	{
@@ -1892,7 +1828,10 @@ static bool GemDOS_Close(Uint32 Params)
 	}
 	
 	/* Close file and free up handle table */
-	fclose(FileHandles[Handle].FileHandle);
+	if (!TOS_AutoStartClose(FileHandles[Handle].FileHandle))
+	{
+		fclose(FileHandles[Handle].FileHandle);
+	}
 	FileHandles[Handle].bUsed = false;
 
 	/* Return no error */

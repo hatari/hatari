@@ -118,3 +118,72 @@ bool Str_IsHex(const char *str)
 	}
 	return true;
 }
+
+
+/**
+ * Convert potentially too long host filenames to 8.3 TOS filenames
+ * by truncating extension and part before it, replacing invalid
+ * GEMDOS file name characters with INVALID_CHAR + upcasing the result.
+ * 
+ * Matching them from the host file system should first try exact
+ * case-insensitive match, and then with a pattern that takes into
+ * account the conversion done in here.
+ */
+void Str_Filename2TOSname(const char *source, char *dst)
+{
+	char *dot, *tmp, *src;
+	int len;
+
+	src = strdup(source); /* dup so that it can be modified */
+	len = strlen(src);
+
+	/* does filename have an extension? */
+	dot = strrchr(src, '.');
+	if (dot)
+	{
+		/* limit extension to 3 chars */
+		if (src + len - dot > 3)
+			dot[4] = '\0';
+
+		/* if there are extra dots, convert them */
+		for (tmp = src; tmp < dot; tmp++)
+			if (*tmp == '.')
+				*tmp = INVALID_CHAR;
+	}
+
+	/* does name now fit to 8 (+3) chars? */
+	if (len <= 8 || (dot && len <= 12))
+		strcpy(dst, src);
+	else
+	{
+		/* name (still) too long, cut part before extension */
+		strncpy(dst, src, 8);
+		if (dot)
+			strcpy(dst+8, dot);
+		else
+			dst[8] = '\0';
+	}
+	free(src);
+
+	/* replace other invalid chars than '.' in filename */
+	for (tmp = dst; *tmp; tmp++)
+	{
+		if (*tmp < 33 || *tmp > 126)
+			*tmp = INVALID_CHAR;
+		else
+		{
+			switch (*tmp)
+			{
+				case '*':
+				case '/':
+				case ':':
+				case '?':
+				case '\\':
+				case '{':
+				case '}':
+					*tmp = INVALID_CHAR;
+			}
+		}
+	}
+	Str_ToUpper(dst);
+}

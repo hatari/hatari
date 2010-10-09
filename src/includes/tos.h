@@ -17,6 +17,9 @@ extern unsigned int ConnectedDriveMask;
 extern int nNumDrives;
 
 extern void TOS_MemorySnapShot_Capture(bool bSave);
+extern void TOS_AutoStart(const char *prgname);
+extern FILE *TOS_AutoStartOpen(const char *filename);
+extern bool TOS_AutoStartClose(FILE *fp);
 extern int TOS_LoadImage(void);
 
 #endif
