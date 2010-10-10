@@ -183,7 +183,8 @@ int DlgAlert_Notice(const char *text)
 	/* Hide "cancel" button: */
 	alertdlg[DLGALERT_CANCEL].type = SGTEXT;
 	alertdlg[DLGALERT_CANCEL].txt = "";
-	alertdlg[DLGALERT_CANCEL].w = alertdlg[DLGALERT_CANCEL].w = 0;
+	alertdlg[DLGALERT_CANCEL].w = 0;
+	alertdlg[DLGALERT_CANCEL].h = 0;
 
 	/* Adjust button position: */
 	alertdlg[DLGALERT_OK].x = (alertdlg[0].w - alertdlg[DLGALERT_OK].w) / 2;
