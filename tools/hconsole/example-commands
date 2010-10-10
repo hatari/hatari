@@ -1,0 +1,26 @@
+# This is an example hconsole input file
+#
+# You can try it with something like this:
+#   hconsole.py example-commands --exit -- --tos etos512k.img
+#
+# I.e. specify TOS image for Hatari and exit after the the input file.
+#
+# For more fun, use also Hatari's --bios-intercept option. :-)
+
+# wait for TOS to boot
+sleep 3
+
+# ^Z: Control down, press Z, Control up
+# (Control key scancode = 29)
+keydown 29
+keypress Z
+keyup 29
+
+# press Enter
+keypress 28
+# and output some text to EmuTOS console
+text Welcome to 'hatariconsole' example
+
+# quit hatari after showing the text for a while
+sleep 3
+quit
