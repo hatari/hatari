@@ -2251,7 +2251,7 @@ static bool GemDOS_GetDir(Uint32 Params)
 			c = path[i];
 			STMemory_WriteByte(Address+i, (c==PATHSEP ? '\\' : c) );
 		}
-		LOG_TRACE(TRACE_OS_GEMDOS, "GemDOS_GetDir (%d) = %s\n", Drive, path );
+		LOG_TRACE(TRACE_OS_GEMDOS, "-> '%s'\n", (char *)STRAM_ADDR(Address));
 
 		Regs[REG_D0] = GEMDOS_EOK;          /* OK */
 
