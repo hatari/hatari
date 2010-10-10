@@ -7,7 +7,6 @@ Code:
 - hatariui.py	- Hatari UI main: option handling, main window etc
 - Makefile	- Rules for installing
 - uihelpers.py	- Misc helpers for Hatari UI
-- hatari-console.py	- Standalone out-of-process console UI for Hatari
 
 Data files:
 - hatari-icon.png	- Window icon

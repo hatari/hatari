@@ -1,0 +1,65 @@
+.\" Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH "HCONSOLE" "1" "2010-10-10" "Hatari" "Hatari utilities"
+.SH "NAME"
+hconsole \- Interactive Python console for using Hatari's remote API
+.SH "SYNOPSIS"
+.B hconsole.py
+.IR [[console options]
+.IR [command file]
+.B --]
+.IR [hatari options]
+.SH "DESCRIPTION"
+.I Hconsole
+is a Python script that invokes Hatari and then provides an interactive
+shell (with full readline editing capabilities) for executing Hatari
+remote API commands.
+.PP
+It can be useful for first exploring Hatari's remote API usage
+interactively and then writing scripts that somehow automate your
+Hatari usage.  They can invoke hconsole functionality simply by doing
+"import hconsole" and calling appropriate methods (see example.py
+coming with hconsole).
+.SH "USAGE"
+Normally hconsole forwards  all of its arguments to Hatari instance
+it invoked.  If you want to give arguments for hconsole itself,
+you need to add '--' argument after the hconsole arguments
+and before the arguments going to Hatari.
+.PP
+If you give a file name as hconsole argument, commands in it will
+be read and executed through Hatari's remote API before you get
+into hconsole interactive shell.
+.PP
+Hconsole accepts following options:
+.TP
+.B --exit
+Exit after starting Hatari and parsing arguments.
+.TP
+.B --help, -h
+Show command line help.
+.SH "EXAMPLES"
+Start Hatari with all of the given arguments:
+.br
+	hconsole.py --monitor mono -d test/
+.PP
+Start Hatari without extra arguments, execute commands from
+the given commands.txt file, exit after the file ends:
+.br
+	hconsole.py commands.txt --exit --
+.SH "SEE ALSO"
+.IR hatari
+.IR hatariui
+.SH "AUTHOR"
+Written by Eero Tamminen <eerot@users.berlios.de>.
+.SH "LICENSE"
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.SH "NO WARRANTY"
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.

@@ -1,6 +1,10 @@
 
-User visible changes in Hatari (Python Gtk) UI and console
-----------------------------------------------------------
+User visible changes in Hatari (Python Gtk) UI
+----------------------------------------------
+
+2010-10:
+- Improvements to text & key inserting
+- Move hatari-console.py elsewhere
 
 2010-05:
 - Manual page for Hatari UI
@@ -19,11 +23,6 @@ User visible changes in Hatari (Python Gtk) UI and console
   starts, user doesn't need to do it manually anymore
   (if user config is missing or out of date)
 - Added --slowfdc support to Floppy settings dialog
-- New debugger and command line options commands support to hatari-console
-- hatari-console commands can be scripted (see its help)
-
-2009-12:
-- Support new Hatari command line options in hatari-console
 
 2009-09:
 - Support for setting CPU level & clock and Falcon DSP type

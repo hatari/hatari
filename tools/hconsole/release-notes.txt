@@ -1,0 +1,15 @@
+User visible changes in Hatari (Python) console
+-----------------------------------------------
+
+2010-10:
+- Added "text" and "verbose" commands
+- Split hatari-console.py from hatari UI and renamed it hconsole.py
+  (no '-') so that it can be included from other Python scripts
+- Added manual page
+
+2010-03:
+- New debugger and command line options commands support to hatari-console
+- hatari-console commands can be scripted (see its help)
+
+2009-12:
+- Support new Hatari command line options in hatari-console
