@@ -177,7 +177,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-prototypes -Wstrict-prototypes")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wwrite-strings -Wsign-compare")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wno-unused-parameter -Wno-empty-body")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wfloat-equal -Wformat-security")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wformat-security")
 	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow -DFORTIFY_SOURCE=2 -Werror")
 endif(CMAKE_COMPILER_IS_GNUCC)
 
