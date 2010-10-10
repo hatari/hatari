@@ -1,5 +1,5 @@
 
-INSTALL(PROGRAMS hatari-console.py hatariui
+INSTALL(PROGRAMS hatariui
 	DESTINATION ${BINDIR})
 
 INSTALL(PROGRAMS config.py dialogs.py hatari.py uihelpers.py
