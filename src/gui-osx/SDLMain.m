@@ -18,6 +18,9 @@
 #include "screenSnapShot.h"
 #include "memorySnapShot.h"
 #include "sound.h"
+#include "screen.h"
+#include "PrefsController.h"
+#include "Shared.h"
 #include "video.h"
 #include "avi_record.h"
 
