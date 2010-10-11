@@ -28,6 +28,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "debug_priv.h"
 #include "breakcond.h"
 #include "debugcpu.h"
+#include "debugInfo.h"
 #include "evaluate.h"
 #include "symbols.h"
 
@@ -93,6 +94,7 @@ typedef struct {
 	int skip;	/* how many times to hit before breaking */
 	bool once;	/* remove after hit&break */
 	bool trace;	/* trace mode, don't break */
+	bool info;	/* tracing + show locked info */
 } bc_breakpoint_t;
 
 static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
@@ -326,6 +328,11 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
 				i+1, name, bp->hits);
 			if (bp->trace) {
+				if (bp->info) {
+					DebugCpu_InitSession();
+					DebugDsp_InitSession();
+					DebugInfo_ShowSessionInfo();
+				}
 				return 0;
 			}
 			BreakCond_Print(bp);
@@ -1300,7 +1307,7 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
  * Parse given breakpoint expression and store it.
  * Return true for success and false for failure.
  */
-static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bool once, int skip)
+static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bool info, bool once, int skip)
 {
 	parser_state_t pstate;
 	bc_breakpoint_t *bp;
@@ -1340,11 +1347,15 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bo
 		}
 		if (once) {
 			fprintf(stderr, "-> Once, delete after breaking.\n");
-			bp->once = once;
+			bp->once = true;
 		}
 		if (trace) {
 			fprintf(stderr, "-> Trace instead of breaking, but show still hits.\n");
-			bp->trace = trace;
+			if (info) {
+				fprintf(stderr, "-> Show also info selected with lock command.\n");
+				bp->info = true;
+			}
+			bp->trace = true;
 		}
 	} else {
 		if (normalized) {
@@ -1388,7 +1399,11 @@ static void BreakCond_Print(bc_breakpoint_t *bp)
 			fprintf(stderr, " :once");
 		}
 		if (bp->trace) {
-			fprintf(stderr, " :trace");
+			if (bp->info) {
+				fprintf(stderr, " :info");
+			} else {
+				fprintf(stderr, " :trace");
+			}
 		}
 		fprintf(stderr, "\n");
 }
@@ -1492,7 +1507,7 @@ static void BreakCond_Help(void)
 "  	comparison = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
-"  	option = : <count> | 'once' | 'trace'\n"
+"  	option = : <count> | 'once' | 'trace' | 'info'\n"
 "\n"
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
@@ -1501,8 +1516,10 @@ static void BreakCond_Help(void)
 "  the same, right side is replaced with its current value and for\n"
 "  inequality ('!') comparison, the breakpoint tracks all further changes\n"
 "  for the given address/register expression.  'trace' option for continuing\n"
-"  without breaking can be useful with this. 'once' option removes breakpoint\n"
-"  after hit and giving count as option will break only on every <count> hit.\n"
+"  without breaking can be useful with this. 'info' option one will show\n"
+"  additionally the configured info/lock output. 'once' option removes\n"
+"  breakpoint after hit and giving count as option will break only on\n"
+"  every <count> hit.\n"
 "\n"
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
@@ -1541,14 +1558,15 @@ static void BreakCond_Help(void)
 /* ------------- breakpoint condition parsing, public API ------------ */
 
 const char BreakCond_Description[] =
-	"[ <condition> [:<count>|once|trace] | <index> | help | all ]\n"
+	"[ <condition> [:<count>|once|trace|info] | <index> | help | all ]\n"
 	"\tSet breakpoint with given <condition>, remove breakpoint with\n"
 	"\tgiven <index> or list all breakpoints when no args are given.\n"
 	"\tAdding ':trace' to end of condition causes breakpoint match\n"
-	"\tjust to be printed, not break.  Adding ':once' will delete\n"
-	"\tthe breakpoint after it's hit.  Adding ':<count>' will break\n"
-	"\tonly on every <count> hit.  'help' outputs breakpoint condition\n"
-	"\tsyntax help, 'all' removes all breakpoints.";
+	"\tjust to be printed, not break, ':info' will print also selected\n"
+	"\tinformation. Adding ':once' will delete the breakpoint after\n"
+	"\tit's hit.  Adding ':<count>' will break only on every <count>\n"
+	"\thit. 'help' outputs breakpoint condition syntax help,\n"
+	"\t'all' removes all breakpoints.";
 
 /**
  * Parse given command expression to set/remove/list
@@ -1557,7 +1575,7 @@ const char BreakCond_Description[] =
  */
 bool BreakCond_Command(const char *args, bool bForDsp)
 {
-	bool trace, once, ret = true;
+	bool trace, info, once, ret = true;
 	char *cut, *expression, *argscopy;
 	unsigned int position;
 	const char *end;
@@ -1591,12 +1609,16 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	/* postfix options */
 	skip = 0;
 	once = false;
+	info = false;
 	trace = false;
 	if ((cut = strchr(expression, ':'))) {
 		*cut = '\0';
 		cut = Str_Trim(cut+1);
 		if (strcmp(cut, "trace") == 0) {
 			trace = true;
+		} else if (strcmp(cut, "info") == 0) {
+			trace = true;
+			info = true;
 		} else if (strcmp(cut, "once") == 0) {
 			once = true;
 		} else {
@@ -1619,7 +1641,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		ret = BreakCond_Remove(position, bForDsp);
 	} else {
 		/* add breakpoint? */
-		ret = BreakCond_Parse(expression, bForDsp, trace, once, skip);
+		ret = BreakCond_Parse(expression, bForDsp, trace, info, once, skip);
 	}
 cleanup:
 	free(argscopy);
@@ -1628,12 +1650,13 @@ cleanup:
 
 
 const char BreakAddr_Description[] =
-	"<address> [:<count>|once|trace]\n"
+	"<address> [:<count>|once|trace|info]\n"
 	"\tCreate conditional breakpoint for given PC <address>.\n"
 	"\tAdding ':trace' causes breakpoint match just to be printed,\n"
-	"\tnot break. Adding ':once' will delete the breakpoint after\n"
-	"\tit's hit.  Adding ':<count>' will break only on every <count>\n"
-	"\thit.  Use conditional breakpoint commands to manage the created\n"
+	"\tnot break, ':info' will print also selected information.\n"
+	"\tAdding ':once' will delete the breakpoint after it's hit.\n"
+	"\tAdding ':<count>' will break only on every <count> hit.\n"
+	"\tUse conditional breakpoint commands to manage the created\n"
 	"\tbreakpoints.";
 
 /**
