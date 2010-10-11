@@ -51,7 +51,12 @@ link_directories(debug falcon gui-sdl uae-cpu)
 add_subdirectory(debug)
 add_subdirectory(falcon)
 add_subdirectory(gui-sdl)
-add_subdirectory(uae-cpu)
+
+if(ENABLE_WINUAE_CPU)
+	add_subdirectory(cpu)
+else()
+	add_subdirectory(uae-cpu)
+endif(ENABLE_WINUAE_CPU)
 
 # When building for OSX, add specific sources
 if(ENABLE_OSX_BUNDLE)

@@ -18,6 +18,7 @@ print_help()
   echo "  --enable-small-mem      Use less memory - at the expense of emulation speed"
   echo "  --disable-dsp           Disable DSP emulation for Falcon mode."
   echo "  --disable-tracing       Disable tracing messages for debugging"
+  echo "  --enable-winuae-cpu     Enable WinUAE CPU core (experimental!)"
   echo "  --disable-osx-bundle    Disable application bundling on Mac OS X"
   echo "  --cross-compile-win32   Build the Windows version under linux"
   echo
@@ -66,6 +67,12 @@ do
     ;;
     --disable-small-mem)
       cmake_args="$cmake_args -DENABLE_SMALL_MEM:BOOL=0"
+    ;;
+    --enable-winuae-cpu)
+      cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=1"
+    ;;
+    --disable-winuae-cpu)
+      cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=0"
     ;;
     --enable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=1"
