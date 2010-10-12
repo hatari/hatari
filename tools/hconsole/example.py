@@ -2,9 +2,9 @@
 #
 # This is an example of scripting hatari using hconsole
 #
-# Run with:
-#   ./example.py --tos etos512k.img
-# Or if hconsole is installed to the system:
+# Run with (using correct EmuTOS path):
+#   PATH=../../build/src/:$PATH ./example.py --tos etos512k.img
+# Or if Hatari and hconsole are installed to the system:
 #   /usr/share/hatari/hconsole/example.py --tos etos512k.img
 
 import hconsole, os, sys
@@ -28,12 +28,12 @@ def enter():
     main.run("keypress %s" % code.Return)
 
 # loop removing some of previously script output
-for i in range(20):
+for i in range(25):
     backspace()
 enter()
 
 # output some text to EmuTOS console in a loop
-for i in range(5):
+for i in range(3):
     main.run("text echo Welcome to 'hconsole'")
     enter()
 
