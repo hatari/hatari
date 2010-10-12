@@ -1001,6 +1001,7 @@ static bool DebugUI_ParseFile(const char *path)
 			free(dir);
 			return false;
 		}
+		fprintf(stderr, "Changed to file's directory '%s'.\n", dir);
 	}
 	free(dir);
 
@@ -1015,16 +1016,19 @@ static bool DebugUI_ParseFile(const char *path)
 		if (!fgets(input, 256, fp))
 			break;
 
+		/* ignore empty and comment lines */
+		cmd = Str_Trim(input);
+		if (!*cmd || *cmd == '#')
+			continue;
+
+		/* re-allocs input string if it needs expanding! */
 		input = DebugUI_EvaluateExpressions(input);
 		if (!input)
 			continue;
 
 		cmd = Str_Trim(input);
-		if (*cmd && *cmd != '#')
-		{
-			fprintf(stderr, "> %s\n", cmd);
-			DebugUI_ParseCommand(cmd);
-		}
+		fprintf(stderr, "> %s\n", cmd);
+		DebugUI_ParseCommand(cmd);
 	}
 
 	free(input);
