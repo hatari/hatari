@@ -1,12 +1,9 @@
 
-INSTALL(PROGRAMS hconsole.py
-	DESTINATION ${BINDIR})
-
-INSTALL(PROGRAMS example.py
+INSTALL(PROGRAMS hconsole.py example.py
 	DESTINATION ${DATADIR}/hconsole/)
 
 # files related to example.py
-INSTALL(FILES example-commands
+INSTALL(FILES example-commands example-debugger
 	DESTINATION ${DATADIR}/hconsole/)
 
 # documentation
