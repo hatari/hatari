@@ -30,8 +30,14 @@ if(WIN32)
 	set(GUIWIN_RES gui-win/hatari-winicon.rc)
 endif(WIN32)
 
-include_directories(${CMAKE_BINARY_DIR} includes debug falcon uae-cpu
-		    ${SDL_INCLUDE_DIR})
+if(ENABLE_WINUAE_CPU)
+	set(CPUDIR cpu)
+else()
+	set(CPUDIR uae-cpu)
+endif(ENABLE_WINUAE_CPU)
+
+include_directories(${CMAKE_BINARY_DIR} ${SDL_INCLUDE_DIR} ${CPUDIR}
+		    includes debug falcon)
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
@@ -46,17 +52,12 @@ if(X11_FOUND)
 endif(X11_FOUND)
 
 
-link_directories(debug falcon gui-sdl uae-cpu) 
+link_directories(debug falcon gui-sdl ${CPUDIR})
 
 add_subdirectory(debug)
 add_subdirectory(falcon)
 add_subdirectory(gui-sdl)
-
-if(ENABLE_WINUAE_CPU)
-	add_subdirectory(cpu)
-else()
-	add_subdirectory(uae-cpu)
-endif(ENABLE_WINUAE_CPU)
+add_subdirectory(${CPUDIR})
 
 # When building for OSX, add specific sources
 if(ENABLE_OSX_BUNDLE)
