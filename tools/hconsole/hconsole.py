@@ -24,6 +24,32 @@ import signal
 import socket
 import readline
 
+# Atari scancodes for special keys, needed when wanting to
+# output something else than alphanumberic keys to Hatari
+# (when using keypress/down/up commands)
+class Scancode:
+    Tab = "15"
+    Return = "28"
+    Enter = "114"
+    Space = "57"
+    Delete = "83"
+    Backspace = "14"
+    Escape = "0x1"
+    Control = "29"
+    Alternate = "56"
+    LeftShift = "42"
+    RightShift = "54"
+    CapsLock = "53"
+    Insert = "82"
+    Home = "71"
+    Help = "98"
+    Undo = "97"
+    CursorUp = "72"
+    CursorDown = "80"
+    CursorLeft = "75"
+    CursorRight = "77"
+
+
 # running Hatari instance
 class Hatari:
     controlpath = "/tmp/hatari-console-" + str(os.getpid()) + ".socket"
@@ -40,8 +66,9 @@ class Hatari:
         self.server.listen(1)
         self.control = None
         self.paused = False
+        self.interval = 0.2
         self.pid = 0
-        if not self.run(args):
+        if not self.run_hatari(args):
             print "ERROR: failed to run Hatari"
             sys.exit(1)
         self.verbose = False
@@ -64,7 +91,7 @@ class Hatari:
             return False
         return True
     
-    def run(self, args):
+    def run_hatari(self, args):
         if self.control:
             print "ERROR: Hatari is already running, stop it first"
             return
@@ -85,13 +112,17 @@ class Hatari:
             print "RUN:", allargs
             os.execvp(self.hataribin, allargs)
 
-    def send_message(self, msg):
+    def send_message(self, msg, fast = False):
         if self.control:
             if self.verbose:
                 print "-> '%s'" % msg
             self.control.sendall(msg + "\n")
             # KLUDGE: wait so that Hatari output comes before next prompt
-            time.sleep(0.2)
+            if fast:
+                interval = self.interval/2
+            else:
+                interval = self.interval
+            time.sleep(interval)
             return True
         else:
             print "ERROR: no Hatari (control socket)"
@@ -109,7 +140,7 @@ class Hatari:
             if item == ' ':
                 # white space gets stripped, use scancode instead
                 item = "57"
-            if not self.send_message("hatari-event keypress %s" % item):
+            if not self.send_message("hatari-event keypress %s" % item, True):
                 return False
         return True
 
@@ -118,7 +149,7 @@ class Hatari:
             cmd, value = event.split(None, 1)
             if value:
                 return self.send_string(value)
-        return self.send_message("hatari-event %s" % event)
+        return self.send_message("hatari-event %s" % event, True)
 
     def debug_command(self, cmd):
         return self.send_message("hatari-debug %s" % cmd)
@@ -129,17 +160,18 @@ class Hatari:
     def toggle_device(self, device):
         return self.send_message("hatari-toggle %s" % device)
 
-    def set_pause(self):
-        return self.send_message("hatari-stop")
+    def toggle_pause(self):
+        self.paused = not self.paused
+        if self.paused:
+            return self.send_message("hatari-stop")
+        else:
+            return self.send_message("hatari-cont")
 
-    def set_unpause(self):
-        return self.send_message("hatari-cont")
-
-    def set_verbose(self):
+    def toggle_verbose(self):
         self.verbose = not self.verbose
         print "debug output", self.verbose
-        
-    def set_stop(self):
+
+    def kill_hatari(self):
         if self.pid:
             os.kill(self.pid, signal.SIGKILL)
             print "killed hatari with PID %d" % self.pid
@@ -321,11 +353,16 @@ class Tokens:
 
     def __init__(self, hatari):
         self.process_tokens = {
-            "console-help": self.show_help,
-            "pause": hatari.set_pause,
-            "unpause": hatari.set_unpause,
-            "verbose": hatari.set_verbose,
-            "quit": hatari.set_stop
+            "kill": hatari.kill_hatari,
+            "pause": hatari.toggle_pause
+        }
+        self.script_tokens = {
+            "script": self.do_script,
+            "sleep": self.do_sleep
+        }
+        self.help_tokens = {
+            "usage": self.show_help,
+            "verbose": hatari.toggle_verbose
         }
         self.hatari = hatari
 
@@ -358,14 +395,16 @@ The supported control facilities are:"""
         self.list_items("Path setting", self.path_tokens)
         self.list_items("Debugger commands", self.debugger_tokens)
         print """
-and commands to "pause", "unpause" and "quit" Hatari.
+"pause" toggles Hatari paused state on/off.
+"kill" will terminate Hatari.
+
+"script" command reads commands from the given file.
+"sleep" command can be used in script to wait given number of seconds.
 "verbose" command toggles commands debug output on/off.
 
-Scripts can use also "sleep" command.
-
 For command line options you can get further help with "--help"
-and for debugger with "help".  Some other facilities may give
-help if you give them invalid input.
+and for debugger commands with "help".  Some of the other facilities
+give help when you give them invalid input.
 """
 
     def list_items(self, title, items):
@@ -373,7 +412,7 @@ help if you give them invalid input.
         for item in items:
             print "*", item
 
-    def sleep(self, line):
+    def do_sleep(self, line):
         items = line.split()[1:]
         try:
             secs = int(items[0])
@@ -384,6 +423,21 @@ help if you give them invalid input.
             time.sleep(secs)
         else:
             print "usage: sleep <seconds>"
+
+    def do_script(self, line):
+        try:
+            filename = line.split()[1]
+            f = open(filename)
+        except:
+            print "usage: script <filename>"
+            return
+
+        for line in f.readlines():
+            line = line.strip()
+            if not line or line[0] == '#':
+                continue
+            print ">", line
+            self.process_command(line)
 
     def process_command(self, line):
         if not self.hatari.is_running():
@@ -402,8 +456,8 @@ help if you give them invalid input.
             self.hatari.change_option(line)
         elif first in self.path_tokens:
             self.hatari.change_path(line)
-        elif first == "sleep":
-            self.sleep(line)
+        elif first in self.script_tokens:
+            self.script_tokens[first](line)
         # single item
         elif line in self.device_tokens:
             self.hatari.toggle_device(line)
@@ -411,6 +465,8 @@ help if you give them invalid input.
             self.hatari.trigger_shortcut(line)
         elif line in self.process_tokens:
             self.process_tokens[line]()
+        elif line in self.help_tokens:
+            self.help_tokens[line]()
         else:
             print "ERROR: unknown hatari-console command:", line
 
@@ -469,23 +525,21 @@ For example:
 
     def loop(self):
         print """
-****************************************************************
-* To see available commands, use the TAB key or 'console-help' *
-****************************************************************
+*********************************************************
+* To see available commands, use the TAB key or 'usage' *
+*********************************************************
 """
         if self.file:
-            for line in open(self.file).readlines():
-                line = line.strip()
-                if not line or line[0] == '#':
-                    continue
-                print ">", line
-                self.tokens.process_command(line)
+            self.script(self.file)
             if self.exit:
                 sys.exit(0)
 
         while 1:
             line = self.command.loop().strip()
             self.tokens.process_command(line)
+
+    def script(self, filename):
+        self.tokens.do_script("script " + filename)
 
     def run(self, line):
         "helper method for scripts using hatari-console"
