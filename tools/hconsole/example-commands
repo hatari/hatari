@@ -10,17 +10,39 @@
 # wait for TOS to boot
 sleep 3
 
-# ^Z: Control down, press Z, Control up
-# (Control key scancode = 29)
+# Note: keypress/down/up commands take either one character or
+# a multidigit key scancode.  Scancodes need to be used for keys
+# that produce non-alphanumeric characters (white space would
+# even get stripped by command processing).
+#
+# Scancodes for special keys:
+# - Tab: 15
+# - Return: 28
+# - Enter: 114
+# - Space: 57
+# - Delete: 83
+# - Backspace: 14
+# - Escape: 0x1
+# - Control: 29
+# - Alternate: 56
+# - Left Shift: 42
+# - Right Shift: 54
+# - Caps Lock: 53
+# - Insert: 82
+# - Home: 71
+# - Help: 98
+# - Undo: 97
+# - Cursor Up: 72
+# - Cursor Down: 80
+# - Cursor Left: 75
+# - Cursor Right: 77
+
+# Invoke EmuCON with ^Z: Control down, press Z, Control up
 keydown 29
 keypress Z
 keyup 29
 
-# press Enter
+# press Return
 keypress 28
 # and output some text to EmuTOS console
-text Welcome to 'hatariconsole' example
-
-# quit hatari after showing the text for a while
-sleep 3
-quit
+text Welcome to 'hconsole' example
