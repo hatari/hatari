@@ -1,0 +1,16 @@
+# Show disassembly from address in A0 when debugger is entered:
+lock regaddr disasm a0
+
+# Track when GEMODS is called with the Dgetdrv() opcode
+# (happens e.g. when EmuTOS console prints the prompt):
+breakpoint  GemdosOpcode < 0xffff  &&  GemdosOpcode = 0x19  :info
+
+# NOTE: "info" flag above will cause this to be just traced and
+# information specified by "lock" command above to be printed,
+# debugger won't interrupt the emulation.
+#
+# This is important when using hconsole because entering the Hatari
+# debugger (and its line editing) will mess up the terminal from
+# which hconsole is run from.  At least until user has blindly
+# typed "cont" to the Hatari debugger so that Hatari emulation
+# continues.
