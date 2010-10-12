@@ -1730,10 +1730,6 @@ static bool GemDOS_Open(Uint32 Params)
 		return false;
 	}
 
-	/* And convert to hard drive filename */
-	GemDOS_CreateHardDriveFileName(Drive, pszFileName,
-	                            szActualFileName, sizeof(szActualFileName));
-
 	/* Find slot to store file handle, as need to return WORD handle for ST  */
 	Index = GemDOS_FindFreeFileHandle();
 	if (Index == -1)
@@ -1757,10 +1753,15 @@ static bool GemDOS_Open(Uint32 Params)
 	
 	if ((AutostartHandle = TOS_AutoStartOpen(pszFileName)))
 	{
+		strcpy(szActualFileName, pszFileName);
 		FileHandles[Index].FileHandle = AutostartHandle;
 	}
 	else
 	{
+		/* Convert to hard drive filename */
+		GemDOS_CreateHardDriveFileName(Drive, pszFileName,
+			szActualFileName, sizeof(szActualFileName));
+
 		/* FIXME: Open file
 		 * - fopen() modes don't allow write-only mode without truncating
 		 *   which would be needed to implement mode 1 (write-only) correctly.

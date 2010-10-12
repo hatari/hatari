@@ -339,7 +339,11 @@ static void TOS_CreateAutoInf(void)
 		contents = emudesk_inf;
 		max = 1;
 	} else {
-		infname = "DESKTOP.INF";
+		/* need to match file TOS searches first */
+		if (TosVersion >= 0x0200)
+			infname = "NEWDESK.INF";
+		else
+			infname = "DESKTOP.INF";
 		size = sizeof(desktop_inf);
 		contents = desktop_inf;
 		max = 1;
