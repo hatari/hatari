@@ -493,9 +493,9 @@ static Uint32 GetVdiOpcode(void)
 		Uint16 d0 = Regs[REG_D0];
 		if (d0 == 0x73) {
 			return getControlOpcode();
-		} else if (d0 == 0xFFFD) {
-			/* vq_[v]gdos() */
-			return 0xFFFD;
+		} else if (d0 == 0xFFFE) {
+			/* -2 = vq_[v]gdos() */
+			return 0xFFFE;
 		}
 	}
 	return INVALID_OPCODE;
