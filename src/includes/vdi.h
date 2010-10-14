@@ -28,14 +28,15 @@ enum
 };
 
 extern Uint32 VDI_OldPC;
-extern bool bUseVDIRes;
+extern bool bUseVDIRes, bVdiAesIntercept;
 extern int VDIWidth,VDIHeight;
 extern int VDIRes,VDIPlanes;
 
 extern int VDI_Limit(int value, int align, int min, int max);
 extern void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest);
-extern bool VDI(void);
-extern void VDI_FixDesktopInf(void);
+extern void AES_Info(Uint32 bShowOpcodes);
+extern void VDI_Info(Uint32 bShowOpcodes);
+extern bool VDI_AES_Entry(void);
 extern void VDI_LineA(Uint32 LineABase, Uint32 FontBase);
 extern void VDI_Complete(void);
 

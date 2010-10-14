@@ -27,10 +27,11 @@ const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "screen.h"
 #include "file.h"
+#include "vdi.h"
 
 
 static struct {
-	Uint32 Level;
+	Uint64 Level;
 	const char *Name;
 }
 TraceOptions[] = {
@@ -77,6 +78,7 @@ TraceOptions[] = {
 	{ TRACE_OS_XBIOS	 , "xbios" },
 	{ TRACE_OS_GEMDOS	 , "gemdos" },
 	{ TRACE_OS_VDI  	 , "vdi" },
+	{ TRACE_OS_AES  	 , "aes" },
 	{ TRACE_OS_ALL  	 , "os_all" } ,
 
 	{ TRACE_IOMEM_RD	 , "io_read" } ,
@@ -91,7 +93,7 @@ TraceOptions[] = {
 };
 
 
-Uint32	LogTraceFlags = TRACE_NONE;
+Uint64	LogTraceFlags = TRACE_NONE;
 FILE *TraceFile = NULL;
 
 static FILE *hLogFile = NULL;
@@ -312,7 +314,15 @@ const char* Log_SetTraceOptions (const char *OptionsStr)
 		
 		cur = sep;
 	}
-	
+
+	/* Enable Hatari flags needed for tracing selected items.
+	 * 
+	 * Doesn't enable bBiosInterception for X/Bios because
+	 * that implies other things in addition to tracing.
+	 */
+	if (LogTraceFlags & (TRACE_OS_AES|TRACE_OS_VDI))
+		bVdiAesIntercept = true;
+
 	//fprintf(stderr, "trace parse <%x>\n", LogTraceFlags);
 	
 	free (OptionsCopy);

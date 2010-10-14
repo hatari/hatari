@@ -843,16 +843,17 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
-    /* Intercept VDI exception (Trap #2 with D0 = 0x73) */
     if (ExceptionSource == M68000_EXC_SRC_CPU)
       {
-        if(bUseVDIRes && nr == 0x22 && regs.regs[0] == 0x73)
+        if (bVdiAesIntercept && nr == 0x22)
         {
-          if(!VDI())
+          /* Intercept VDI & AES exceptions (Trap #2) */
+          if(VDI_AES_Entry())
           {
-            /* Set 'PC' as address of 'VDI_OPCODE' illegal instruction
-             * This will call OpCode_VDI after completion of Trap call!
-             * Use to modify return structure from VDI */
+            /* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
+             * This will call OpCode_VDI() after completion of Trap call!
+             * This is used to modify specific VDI return vectors contents.
+	     */
             VDI_OldPC = currpc;
             currpc = CART_VDI_OPCODE_ADDR;
           }

@@ -608,7 +608,7 @@ int TOS_LoadImage(void)
 	if (TosVersion == 0x0100 && bUseVDIRes)
 	{
 		/* Warn user */
-		Log_AlertDlg(LOG_ERROR, "To use GEM extended resolutions, you must select a TOS >= 1.02.");
+		Log_AlertDlg(LOG_ERROR, "To use extended VDI resolutions, you must select a TOS >= 1.02.");
 		/* And select non VDI */
 		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = false;
 	}

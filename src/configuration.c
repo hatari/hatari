@@ -529,6 +529,7 @@ void Configuration_Apply(bool bReset)
 			VDI_SetResolution(ConfigureParams.Screen.nVdiColors,
 			                  ConfigureParams.Screen.nVdiWidth,
 			                  ConfigureParams.Screen.nVdiHeight);
+			bVdiAesIntercept = true;
 		}
 	}
 	if (ConfigureParams.Screen.nFrameSkips < AUTO_FRAMESKIP_LIMIT)

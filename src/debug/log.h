@@ -63,7 +63,7 @@ extern char *Log_MatchTrace(const char *text, int state);
  */
 #include "config.h"
 
-/* Up to 32 levels when using Uint32 for HatariTraceFlags */
+/* Up to 64 levels when using Uint64 for HatariTraceFlags */
 #define	TRACE_VIDEO_SYNC	 (1<<0)
 #define	TRACE_VIDEO_RES 	 (1<<1)
 #define	TRACE_VIDEO_COLOR	 (1<<2)
@@ -100,13 +100,14 @@ extern char *Log_MatchTrace(const char *text, int state);
 #define TRACE_OS_XBIOS  	 (1<<25)
 #define TRACE_OS_GEMDOS 	 (1<<26)
 #define TRACE_OS_VDI		 (1<<27)
+#define TRACE_OS_AES		 (1<<28)
 
-#define TRACE_IOMEM_RD  	 (1<<28)
-#define TRACE_IOMEM_WR  	 (1<<29)
+#define TRACE_IOMEM_RD  	 (1<<29)
+#define TRACE_IOMEM_WR  	 (1<<30)
 
-#define TRACE_DMASND		 (1<<30)
+#define TRACE_DMASND		 (1<<31)
 
-#define TRACE_CROSSBAR		 (1<<31)
+#define TRACE_CROSSBAR		 (1ll<<32)
 
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
@@ -124,13 +125,13 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define	TRACE_IKBD_ALL		( TRACE_IKBD_CMDS | TRACE_IKBD_ACIA | TRACE_IKBD_EXEC | TRACE_OS_VDI )
 
-#define	TRACE_OS_ALL		( TRACE_OS_BIOS | TRACE_OS_XBIOS | TRACE_OS_GEMDOS | TRACE_OS_VDI )
+#define	TRACE_OS_ALL		( TRACE_OS_BIOS | TRACE_OS_XBIOS | TRACE_OS_GEMDOS | TRACE_OS_AES | TRACE_OS_VDI )
 
 #define	TRACE_IOMEM_ALL		( TRACE_IOMEM_RD | TRACE_IOMEM_WR )
 
 
 extern FILE *TraceFile;
-extern Uint32 LogTraceFlags;
+extern Uint64 LogTraceFlags;
 
 #if ENABLE_TRACING
 
