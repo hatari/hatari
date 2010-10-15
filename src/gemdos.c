@@ -136,6 +136,8 @@ static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
 #define S_IROTH 0
 #endif
 
+/* set to 1 if you want to see debug output from pattern matching */
+#define DEBUG_PATTERN_MATCH 0
 
 
 /*-------------------------------------------------------*/
@@ -278,9 +280,10 @@ static int PopulateDTA(char *path, struct dirent *file)
 
 	/* convert to atari-style uppercase */
 	Str_Filename2TOSname(file->d_name, pDTA->dta_name);
-	LOG_TRACE(TRACE_OS_GEMDOS, "host: %s -> GEMDOS: %s\n",
-		  file->d_name, pDTA->dta_name);
-
+#if DEBUG_PATTERN_MATCH
+	fprintf(stderr, "GEMDOS: host: %s -> GEMDOS: %s\n",
+		file->d_name, pDTA->dta_name);
+#endif
 	do_put_mem_long(pDTA->dta_size, filestat.st_size);
 	do_put_mem_word(pDTA->dta_time, DateTime.timeword);
 	do_put_mem_word(pDTA->dta_date, DateTime.dateword);
@@ -858,8 +861,9 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 	if (!dir)
 		return NULL;
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS match '%s'%s in '%s'", name, pattern?" (pattern)":"", path);
-
+#if DEBUG_PATTERN_MATCH
+	fprintf(stderr, "GEMDOS match '%s'%s in '%s'", name, pattern?" (pattern)":"", path);
+#endif
 	if (pattern)
 	{
 		while ((entry = readdir(dir)))
@@ -883,7 +887,9 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 		}
 	}
 	closedir(dir);
-	LOG_TRACE(TRACE_OS_GEMDOS, " -> '%s'\n", match);
+#if DEBUG_PATTERN_MATCH
+	fprintf(stderr, "-> '%s'\n", match);
+#endif
 	return match;
 }
 
