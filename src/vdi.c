@@ -395,16 +395,16 @@ void AES_Info(Uint32 bShowOpcodes)
 	fprintf(stderr, "- Opcode: %3hd (%s)\n",
 		opcode, AES_Opcode2Name(opcode));
 
-	fprintf(stderr, "- Control: 0x%8x\n", AESControl);
-	fprintf(stderr, "- Global:  0x%8x, %d bytes\n",
+	fprintf(stderr, "- Control: %#8x\n", AESControl);
+	fprintf(stderr, "- Global:  %#8x, %d bytes\n",
 		AESGlobal, 2+2+2+4+4+4+4+4+4);
-	fprintf(stderr, "- Intin:   0x%8x, %d bytes\n",
+	fprintf(stderr, "- Intin:   %#8x, %d bytes\n",
 		AESIntin, STMemory_ReadWord(AESControl+2*1));
-	fprintf(stderr, "- Intout:  0x%8x, %d bytes\n",
+	fprintf(stderr, "- Intout:  %#8x, %d bytes\n",
 		AESIntout, STMemory_ReadWord(AESControl+2*2));
-	fprintf(stderr, "- Addrin:  0x%8x, %d longs\n",
+	fprintf(stderr, "- Addrin:  %#8x, %d longs\n",
 		AESAddrin, STMemory_ReadWord(AESControl+2*3));
-	fprintf(stderr, "- Addrout: 0x%8x, %d longs\n",
+	fprintf(stderr, "- Addrout: %#8x, %d longs\n",
 		AESAddrout, STMemory_ReadWord(AESControl+2*4));
 }
 
@@ -622,16 +622,16 @@ void VDI_Info(Uint32 bShowOpcodes)
 	subcode = STMemory_ReadWord(VDIControl+2*5);
 	fprintf(stderr, "- Opcode/Subcode: %hd/%hd (%s)\n",
 		opcode, subcode, VDI_Opcode2Name(opcode, subcode));
-	fprintf(stderr, "- Device handle: 0x%x\n",
+	fprintf(stderr, "- Device handle: %d\n",
 		STMemory_ReadWord(VDIControl+2*6));
-	fprintf(stderr, "- Control: 0x%8x\n", VDIControl);
-	fprintf(stderr, "- Ptsin:   0x%8x, %d co-ordinate word pairs\n",
+	fprintf(stderr, "- Control: %#8x\n", VDIControl);
+	fprintf(stderr, "- Ptsin:   %#8x, %d co-ordinate word pairs\n",
 		VDIPtsin, STMemory_ReadWord(VDIControl+2*1));
-	fprintf(stderr, "- Ptsout:  0x%8x, %d co-ordinate word pairs\n",
+	fprintf(stderr, "- Ptsout:  %#8x, %d co-ordinate word pairs\n",
 		VDIPtsout, STMemory_ReadWord(VDIControl+2*2));
-	fprintf(stderr, "- Intin:   0x%8x, %d words\n",
+	fprintf(stderr, "- Intin:   %#8x, %d words\n",
 		VDIIntin, STMemory_ReadWord(VDIControl+2*3));
-	fprintf(stderr, "- Intout:  0x%8x, %d words\n",
+	fprintf(stderr, "- Intout:  %#8x, %d words\n",
 		VDIIntout, STMemory_ReadWord(VDIControl+2*4));
 }
 
