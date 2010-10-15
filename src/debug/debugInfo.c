@@ -19,11 +19,13 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "dsp.h"
 #include "evaluate.h"
+#include "gemdos.h"
 #include "ioMem.h"
 #include "m68000.h"
 #include "stMemory.h"
 #include "tos.h"
 #include "screen.h"
+#include "vdi.h"
 #include "video.h"
 
 
@@ -582,7 +584,7 @@ static void DebugInfo_Default(Uint32 dummy)
 }
 
 static const struct {
-	/* whether callback is used only for locking */
+	/* if overlaps with other functionality, list only for lock command */
 	bool lock;
 	const char *name;
 	void (*func)(Uint32 arg);
@@ -590,6 +592,7 @@ static const struct {
 	Uint32 (*args)(int argc, char *argv[]);
 	const char *info;
 } infotable[] = {
+	{ false,"aes",       AES_Info,             NULL, "Show AES vector contents (with arg, opcodes)" },
 	{ false,"basepage",  DebugInfo_Basepage,   NULL, "Show program basepage info at given <address>" },
 	{ false,"crossbar",  DebugInfo_Crossbar,   NULL, "Show Falcon crossbar HW register values" },
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
@@ -599,14 +602,16 @@ static const struct {
 	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
 	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP register values" },
 #endif
+	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu info (with arg, opcodes)" },
 	{ true, "memdump",   DebugInfo_CpuMemDump, NULL, "Dump CPU memory from given <address>" },
 	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header information" },
 	{ true, "regaddr",   DebugInfo_RegAddr, DebugInfo_RegAddrArgs, "Show <disasm|memdump> from CPU/DSP address pointed by <register>" },
 	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU register values" },
+	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with arg, opcodes)" },
 	{ false,"videl",     DebugInfo_Videl,      NULL, "Show Falcon Videl HW register values" }
 };
 
-static int LockedFunction = 2; /* index for the "default" function */
+static int LockedFunction = 3; /* index for the "default" function */
 static Uint32 LockedArgument;
 
 /**
