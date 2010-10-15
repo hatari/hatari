@@ -2640,51 +2640,51 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 		"Cconws",
 		"Cconrs",
 		"Cconis",
-		"", /* 0C */
-		"", /* 0D */
+		"-", /* 0C */
+		"-", /* 0D */
 		"Dsetdrv",
-		"", /* 0F */
+		"-", /* 0F */
 		"Cconos",
 		"Cprnos",
 		"Cauxis",
 		"Cauxos",
 		"Maddalt",
-		"", /* 15 */
-		"", /* 16 */
-		"", /* 17 */
-		"", /* 18 */
+		"-", /* 15 */
+		"-", /* 16 */
+		"-", /* 17 */
+		"-", /* 18 */
 		"Dgetdrv",
 		"Fsetdta",
-		"", /* 1B */
-		"", /* 1C */
-		"", /* 1D */
-		"", /* 1E */
-		"", /* 1F */
+		"-", /* 1B */
+		"-", /* 1C */
+		"-", /* 1D */
+		"-", /* 1E */
+		"-", /* 1F */
 		"Super",
-		"", /* 21 */
-		"", /* 22 */
-		"", /* 23 */
-		"", /* 24 */
-		"", /* 25 */
-		"", /* 26 */
-		"", /* 27 */
-		"", /* 28 */
-		"", /* 29 */
+		"-", /* 21 */
+		"-", /* 22 */
+		"-", /* 23 */
+		"-", /* 24 */
+		"-", /* 25 */
+		"-", /* 26 */
+		"-", /* 27 */
+		"-", /* 28 */
+		"-", /* 29 */
 		"Tgetdate",
 		"Tsetdate",
 		"Tgettime",
 		"Tsettime",
-		"", /* 2E */
+		"-", /* 2E */
 		"Fgetdta",
 		"Sversion",
 		"Ptermres",
-		"", /* 32 */
-		"", /* 33 */
-		"", /* 34 */
-		"", /* 35 */
+		"-", /* 32 */
+		"-", /* 33 */
+		"-", /* 34 */
+		"-", /* 35 */
 		"Dfree",
-		"", /* 37 */
-		"", /* 38 */
+		"-", /* 37 */
+		"-", /* 38 */
 		"Dcreate",
 		"Ddelete",
 		"Dsetpath",
@@ -2705,23 +2705,102 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 		"Mshrink",
 		"Pexec",
 		"Pterm",
-		"", /* 4D */
+		"-", /* 4D */
 		"Fsfirst",
 		"Fsnext",
-		"", /* 50 */
-		"", /* 51 */
-		"", /* 52 */
-		"", /* 53 */
-		"", /* 54 */
-		"", /* 55 */
+		"-", /* 50 */
+		"-", /* 51 */
+		"-", /* 52 */
+		"-", /* 53 */
+		"-", /* 54 */
+		"-", /* 55 */
 		"Frename",
 		"Fdatime"
 	};
 	if (opcode < ARRAYSIZE(names))
 		return names[opcode];
-	return "MiNT call?";
+	return "MiNT?";
 }
-#endif
+
+/**
+ * If bShowOpcodes is true, show GEMDOS call opcode/function name table,
+ * otherwise GEMDOS HDD emulation information.
+ */
+void GemDOS_Info(Uint32 bShowOpcodes)
+{
+	int i, used;
+
+	if (bShowOpcodes)
+	{
+		Uint16 opcode;
+		for (opcode = 0; opcode < 0x5A; )
+		{
+			fprintf(stderr, "%02x %-9s",
+				opcode, GemDOS_Opcode2Name(opcode));
+			if (++opcode % 6 == 0)
+				fputs("\n", stderr);
+		}
+		return;
+	}
+
+	if (!GEMDOS_EMU_ON)
+	{
+		fputs("GEMDOS HDD emulation isn't enabled!\n", stderr);
+		return;
+	}
+
+	fputs("GEMDOS HDD emulation drives:\n", stderr);
+	for(i = 0; i<MAX_HARDDRIVES; i++)
+	{
+		if (!emudrives[i])
+			continue;
+		fprintf(stderr, "- %c: %s\n",
+			'A' + emudrives[i]->drive_number,
+			emudrives[i]->hd_emulation_dir);
+	}
+
+	fputs("\nInternal Fsfirst() DTAs:\n", stderr);
+	for(used = i = 0; i < MAX_DTAS_FILES; i++)
+	{
+		int j, centry, entries;
+
+		if (!InternalDTAs[i].bUsed)
+			continue;
+
+		fprintf(stderr, "+ %d: %s\n", i, InternalDTAs[i].path);
+		
+		centry = InternalDTAs[i].centry;
+		entries = InternalDTAs[i].nentries;
+		for (j = 0; j < entries; j++)
+		{
+			fprintf(stderr, "  - %d: %s%s\n",
+				j, InternalDTAs[i].found[j]->d_name,
+				j == centry ? " *" : "");
+		}
+		fprintf(stderr, "  Fsnext entry = %d.\n", centry);
+		used++;
+	}
+	if (!used)
+		fputs("- None in use.\n", stderr);
+
+	fputs("\nOpen GEMDOS HDD file handles:\n", stderr);
+	for (used = i = 0; i < MAX_FILE_HANDLES; i++)
+	{
+		if (!FileHandles[i].bUsed)
+			continue;
+		fprintf(stderr, "- %d: %s\n", i, FileHandles[i].szActualName);
+		used++;
+	}
+	if (!used)
+		fputs("- None.\n", stderr);
+}
+
+#else /* !ENABLE_TRACING */
+void GemDOS_Info(Uint32 bShowOpcodes)
+{
+	fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+}
+#endif /* !ENABLE_TRACING */
 
 
 /*-----------------------------------------------------------------------*/
