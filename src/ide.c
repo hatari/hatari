@@ -98,7 +98,7 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, 1);
+		M68000_BusError(addr, BUS_ERROR_READ);
 		return -1;
 	}
 
@@ -133,7 +133,7 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, 1);
+		M68000_BusError(addr, BUS_ERROR_READ);
 		if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 			fprintf(stderr, "Illegal IDE IO memory access: IdeMem_wget($%x)\n", addr);
 		return -1;
@@ -167,7 +167,7 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, 1);
+		M68000_BusError(addr, BUS_ERROR_READ);
 		if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 			fprintf(stderr, "Illegal IDE IO memory access: IdeMem_lget($%x)\n", addr);
 		return -1;
@@ -206,7 +206,7 @@ void Ide_Mem_bput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, 0);
+		M68000_BusError(addr, BUS_ERROR_WRITE);
 		//fprintf(stderr, "Illegal IDE IO memory access: IdeMem_bput($%x)\n", addr);
 		return;
 	}
@@ -237,7 +237,7 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, 0);
+		M68000_BusError(addr, BUS_ERROR_WRITE);
 		//fprintf(stderr, "Illegal IDE IO memory access: IdeMem_wput($%x)\n", addr);
 		return;
 	}
@@ -261,7 +261,7 @@ void Ide_Mem_lput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, 0);
+		M68000_BusError(addr, BUS_ERROR_WRITE);
 		//fprintf(stderr, "Illegal IDE IO memory access: IdeMem_lput($%x)\n", addr);
 		return;
 	}

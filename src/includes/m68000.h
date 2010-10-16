@@ -151,7 +151,7 @@ static inline void M68000_SetSR(Uint16 v)
 #define BUS_ERROR_READ 1
 
 
-/* bus acces mode */
+/* bus access mode */
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
 
@@ -284,7 +284,7 @@ extern void M68000_Reset(bool bCold);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuLevel(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
-extern void M68000_BusError(Uint32 addr, bool bReadWrite);
+extern void M68000_BusError(Uint32 addr, bool bRead);
 extern void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource);
 extern void M68000_WaitState(int nCycles);
 
