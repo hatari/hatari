@@ -130,6 +130,7 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#Debug symbols">Debug symbols</a>
     <li><a href="#Breakpoints">Breakpoints</a>
     <li><a href="#Tracing">Tracing</a>
+    <li><a href="#Profiling">Profiling</a>
     <li><a href="#Build notes">Build notes</a>
   </ul>
   <li><a href="#Performance">Performance</a>
@@ -3024,7 +3025,8 @@ with "trace cpu_disasm" at the debugger prompt before continuing.
 </p>
 <p>
 Disable tracing with "trace none" when you enter the debugger again.
-"trace help" (or TAB) can be used to list all the supported trace points.
+"trace help" (or TAB) can be used to list all the (over 30) supported
+traceable things, from HW events to OS functions.
 </p>
 <p>
 Because Hatari normally emulates things at the hardware level, tracing
@@ -3049,6 +3051,99 @@ console.
 Note that the trace output file can be set only when Hatari starts,
 it cannot be changed from within the debugger (or emulation).
 </p>
+
+
+<a name="Profiling"></a><h3>Profiling</h3>
+
+<p>
+Profiling tells where the emulated code spends most of its (emulated)
+time.  It can be used to find out where a program is (apparently)
+stuck or what are the largest performance bottlenecks for a program.
+</p>
+
+<p>
+Profiling is used by first enabling the profiler (use "dp" for DSP):
+</p>
+<pre>
+&gt; profile on
+Profiling enabled.
+</pre>
+<p>
+And profiling will start once you continue the emulation:
+</p>
+<pre>
+&gt; c
+Returning to emulation...
+Allocated CPU profile buffer (18 MB).
+</pre>
+
+<p>
+When you get back to the debugger, the collected profiling information
+is processed and a summary of in which parts of the RAM the execution
+happened is shown:
+</p>
+<pre>
+Allocated CPU profile address buffer (4 KB).
+Normal RAM (0-0x400000):
+- no activity
+Cartridge ROM (0xFA0000-0xFC0000):
+- no activity
+ROM TOS (0xE00000-0xE80000):
+- active address range:
+  0xe0014c-0xe23f02
+- active instruction addresses:
+  707 (100.00% of all)
+- executed instructions:
+  629144 (100.00% of all)
+- used cycles:
+  9408503 (100.00% of all)
+- address with most cycles:
+  0xe0dcca, 402628 cycles (4.28% of all in area)
+- address with most hits:
+  0xe004a4, 4900 hits (0.78% of all in area)
+</pre>
+<p>
+(DSP RAM will be shown only as single area in profile information.)
+</p>
+
+<p>
+After this you can request more detailed profiling information:
+</p>
+<pre>
+&gt; profile
+'profile' - profile CPU code
+Usage:  profile <on|off|counts|cycles|symbols|stats> [show count]
+	on & off enable and disable profiling.  Data is collected
+	until debugger is entered again after which you can view
+	statistics about the data or view PC addresses that took
+	most cycles or functions/symbols called most often.
+	You can specify how many items are shown at most.
+</pre>
+
+<p>For example:</p>
+<pre>
+&gt; profile counts 8
+addr:           count:
+0xe004a4        0.78%   4900
+0xe004b6        0.78%   4896
+0xe0dcbc        0.55%   3448
+0xe0dcc6        0.55%   3448
+0xe0f59e        0.55%   3446
+0xe0dcce        0.55%   3445
+0xe0dcd6        0.55%   3445
+8 CPU addresses listed.
+</pre>
+<p>
+If you have symbol information for code addresses loaded, you can ask
+also for profiling counts on how many times the code execution passed
+through them with "profile symbols".
+</p>
+
+<p>
+After the profiling information has been post-processed, it will
+also be shown in the disassemby output.
+</p>
+
 
 <a name="Build notes"></a><h3>Build notes</h3>
 
