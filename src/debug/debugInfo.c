@@ -19,6 +19,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "dsp.h"
 #include "evaluate.h"
+#include "file.h"
 #include "gemdos.h"
 #include "ioMem.h"
 #include "m68000.h"
@@ -565,6 +566,49 @@ static Uint32 DebugInfo_RegAddrArgs(int argc, char *argv[])
 
 
 /* ------------------------------------------------------------------
+ * wrappers for command to parse debugger input file
+ */
+
+/* file name to be given before calling the Parse function,
+ * needs to be set separately as it's a host pointer which
+ * can be 64-bit i.e. may not fit into Uint32.
+ */
+static char *parse_filename;
+
+/**
+ * Parse and exec commands in the previously given debugger input file
+ */
+static void DebugInfo_FileParse(Uint32 dummy)
+{
+	if (parse_filename) {
+		DebugUI_ParseFile(parse_filename);
+	} else {
+		fputs("ERROR: debugger input file name to parse isn't set!\n", stderr);
+	}
+}
+
+/**
+ * Set which input file to parse.
+ * Return true if file exists, false on error
+ */
+static Uint32 DebugInfo_FileArgs(int argc, char *argv[])
+{
+	if (argc != 1) {
+		return false;
+	}
+	if (!File_Exists(argv[0])) {
+		fprintf(stderr, "ERROR: given file '%s' doesn't exist!\n", argv[0]);
+		return false;
+	}
+	if (parse_filename) {
+		free(parse_filename);
+	}
+	parse_filename = strdup(argv[0]);
+	return true;
+}
+
+
+/* ------------------------------------------------------------------
  * Debugger & readline TAB completion integration
  */
 
@@ -592,7 +636,7 @@ static const struct {
 	Uint32 (*args)(int argc, char *argv[]);
 	const char *info;
 } infotable[] = {
-	{ false,"aes",       AES_Info,             NULL, "Show AES vector contents (with arg, opcodes)" },
+	{ false,"aes",       AES_Info,             NULL, "Show AES vector contents (with <value>, show opcodes)" },
 	{ false,"basepage",  DebugInfo_Basepage,   NULL, "Show program basepage info at given <address>" },
 	{ false,"crossbar",  DebugInfo_Crossbar,   NULL, "Show Falcon crossbar HW register values" },
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
@@ -600,15 +644,16 @@ static const struct {
 #if ENABLE_DSP_EMU
 	{ true, "dspdisasm", DebugInfo_DspDisAsm,  NULL, "Disasm DSP from given <address>" },
 	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
-	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP register values" },
+	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP registers values" },
 #endif
-	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu info (with arg, opcodes)" },
+	{ true, "file",      DebugInfo_FileParse, DebugInfo_FileArgs, "Parse commands from given debugger input <file>" },
+	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu info (with <value>, show opcodes)" },
 	{ true, "memdump",   DebugInfo_CpuMemDump, NULL, "Dump CPU memory from given <address>" },
 	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header information" },
 	{ true, "regaddr",   DebugInfo_RegAddr, DebugInfo_RegAddrArgs, "Show <disasm|memdump> from CPU/DSP address pointed by <register>" },
-	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU register values" },
-	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with arg, opcodes)" },
-	{ false,"videl",     DebugInfo_Videl,      NULL, "Show Falcon Videl HW register values" }
+	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU registers values" },
+	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with <value>, show opcodes)" },
+	{ false,"videl",     DebugInfo_Videl,      NULL, "Show Falcon Videl HW registers values" }
 };
 
 static int LockedFunction = 3; /* index for the "default" function */
