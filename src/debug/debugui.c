@@ -406,28 +406,6 @@ static int DebugUI_CommandsFromFile(int argc, char *argv[])
 
 
 /**
- * Command: Execute a system command
- */
-#if ENABLE_SYSTEM_DEBUG_CALL   /* Disabled by default - could be a security risk? */
-static int DebugUI_Exec(int argc, char *argv[])
-{
-	if (argc == 2)
-	{
-		int ret = system(argv[1]);
-		if (ret)
-		{
-			/* error -> show return code */
-			fprintf(stderr, "Error code = %d\n", ret);
-		}
-	}
-	else
-		DebugUI_PrintCmdHelp(argv[0]);
-	return DEBUGGER_CMDDONE;
-}
-#endif
-
-
-/**
  * Command: Quit emulator
  */
 static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
@@ -784,14 +762,6 @@ static const dbgcommand_t uicommand[] =
 	  "\tResult value is shown as binary, decimal and hexadecimal.\n"
 	  "\tAfter this, '$' will TAB-complete to last result value.",
 	  true },
-#if ENABLE_SYSTEM_DEBUG_CALL
-	{ DebugUI_Exec, NULL,
-	  "exec", "",
-	  "execute a shell command",
-	  "<command line>\n"
-	  "\tRun the given command with the system shell.",
-	  true },
-#endif
 	{ DebugUI_Help, DebugUI_MatchCommand,
 	  "help", "h",
 	  "print help",
