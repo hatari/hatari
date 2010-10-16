@@ -23,6 +23,7 @@ extern int bExceptionDebugging;
 extern void DebugUI(void);
 extern void DebugUI_Init(void);
 extern bool DebugUI_RemoteParse(char *input);
+extern bool DebugUI_ParseFile(const char *path);
 extern bool DebugUI_SetParseFile(const char *input);
 extern void DebugUI_MemorySnapShot_Capture(const char *path, bool bSave);
 

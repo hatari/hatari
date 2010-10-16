@@ -53,7 +53,6 @@ static int debugCommands;
 static char lastResult[10];
 
 static const char *parseFileName;
-static bool DebugUI_ParseFile(const char *path);
 
 
 /**
@@ -898,7 +897,9 @@ void DebugUI_Init(void)
 
 
 /**
- * Set debugger commands file.
+ * Set debugger commands file during Hatari startup before things
+ * needed by the debugger are initialized so that it can be parsed
+ * when debugger itself gets initialized.
  * Return true if file exists, false otherwise.
  */
 bool DebugUI_SetParseFile(const char *path)
@@ -977,9 +978,9 @@ void DebugUI(void)
  * Read debugger commands from a file.
  * return false for error, true for success.
  */
-static bool DebugUI_ParseFile(const char *path)
+bool DebugUI_ParseFile(const char *path)
 {
-	char *dir, *cmd, *input, *slash;
+	char *olddir, *dir, *cmd, *input, *slash;
 	FILE *fp;
 
 	fprintf(stderr, "Reading debugger commands from '%s'...\n", path);
@@ -990,18 +991,27 @@ static bool DebugUI_ParseFile(const char *path)
 	}
 
 	/* change to directory where the debugger file resides */
+	olddir = NULL;
 	dir = strdup(path);
 	slash = strrchr(dir, PATHSEP);
 	if (slash)
 	{
+		olddir = malloc(FILENAME_MAX);
+		if (olddir)
+		{
+			if (!getcwd(olddir, FILENAME_MAX))
+				strcpy(olddir, ".");
+		}
 		*slash = '\0';
 		if (chdir(dir))
 		{
 			perror("ERROR");
+			if (olddir)
+				free(olddir);
 			free(dir);
 			return false;
 		}
-		fprintf(stderr, "Changed to file's directory '%s'.\n", dir);
+		fprintf(stderr, "Changed to input file dir '%s'.\n", dir);
 	}
 	free(dir);
 
@@ -1032,6 +1042,12 @@ static bool DebugUI_ParseFile(const char *path)
 	}
 
 	free(input);
+	if (olddir)
+	{
+		chdir(olddir);
+		fprintf(stderr, "Changed back to '%s' dir.\n", olddir);
+		free(olddir);
+	}
 
 	DebugCpu_SetDebugging();
 	DebugDsp_SetDebugging();
