@@ -2697,7 +2697,6 @@ the available commands and their shortcuts:
 Generic commands:
            cd (  ) : change directory
      evaluate ( e) : evaluate an expression
-         exec (  ) : execute a shell command
          help ( h) : print help
          info ( i) : show machine/OS information
          lock (  ) : lock info to show on entering debugger
@@ -2713,6 +2712,7 @@ CPU commands:
       address ( a) : set CPU PC address breakpoints
    breakpoint ( b) : set/remove/list conditional CPU breakpoints
        disasm ( d) : disassemble from PC, or given address
+      profile (  ) : profile CPU code
        cpureg ( r) : dump register values or set register to value
       memdump ( m) : dump memory
      memwrite ( w) : write bytes to memory
@@ -2727,6 +2727,7 @@ DSP commands:
     dspdisasm (dd) : disassemble DSP code
    dspmemdump (dm) : dump DSP memory
    dspsymbols (  ) : load DSP symbols & their addresses
+   dspprofile (dp) : profile DSP code
        dspreg (dr) : read/write DSP registers
       dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
@@ -2755,9 +2756,9 @@ indicating indirect addressing like with conditional breakpoints
 (explained below). Even when using expressions within conditional
 breakpoints.</em>
 And when using the hexadecimal number base, remember still to prefix
-with '$' hexadesimal numbers that can be confused with register names
-(a0-7, d0-7), otherwise results from expressions and conditional
-breakpoints can be quite surprising.
+hexadecimal numbers with '$', at least if they could otherwise be
+confused with register names (a0-7, d0-7).  Otherwise results from
+expressions and conditional breakpoints can be quite surprising.
 </p>
 
 <p>
@@ -2768,8 +2769,8 @@ commands as those always interpret their results as expressions.
 
 <p>
 With command argument completion (see <a href="#Build notes">build
-notes</a>), result from last "evaluate" command can inserted by
-typing '$' and pressing TAB.
+notes</a>), result from the last "evaluate" command can be inserted
+by typing '$' and pressing TAB.
 </p>
 
 
@@ -2804,16 +2805,22 @@ Usage:  d [start address-[end address]]
 
 <p>
 You can use the "info" command to see state of specific sets of HW
-registers ("info videl") or Atari OS structures ("info basepage").
+registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 </p>
 
 <p>
 By using the "lock" command, you can ask Hatari to show above kind of
 information whenever you enter the debugger ("lock disasm").  With the
 "regaddr" subcommand, it can show also disassembly or memory dump of
-an address pointed by a given register ("lock regaddr disasm a0").  Of
-the DSP registers, only Rx ones are valid for this subcommand.  To
-disable showing of this extra information, use "lock default".
+an address pointed by a given register ("lock regaddr disasm a0").
+Of the DSP registers, only Rx ones are valid for this subcommand.
+"file" subcommand can be used to get (arbitrary number of) commands
+for showing the information parsed from a given debugger input file.
+</p>
+
+<p>
+To disable showing of this extra information, use "lock default".
+TAB will show all the available "info" and "lock" subcommands.
 </p>
 
 <a name="Debug symbols"></a><h3>Debug symbols</h3>
@@ -2949,11 +2956,18 @@ memory address (see examples below).
 There are also several options that you can use with both breakpoint
 types. ":trace" option will make breakpoint to print out the tracked
 value instead of breaking.  This can be useful e.g. when tracking
-changes to some register like in:
+changes to some register, like this:
 </p>
 <pre>
 &gt; b ($ffff9202).w ! ($ffff9202).w :trace
 </pre>
+
+<p>
+If you want to see more information than just the changed value,
+use ":info" option instead of ":trace".  This will show the output
+selected with the "lock" command (see <a href="#Inspecting emulation
+state">Inspecting emulation state</a> above).
+</p>
 
 <p>
 ":once" option that removes breakpoint after hit can be useful when one
@@ -3000,8 +3014,8 @@ b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
 After analyzing and/or setting new breakpoints, you can continue the
 emulation with the "c" command. You can continue for a given number of
 CPU instructions (or DSP instructions when "dc" is used), or you can
-continue forever (until a breakpoint triggers) if you omit the
-instruction count.
+continue forever (until a non-tracing breakpoint triggers) if you omit
+the instruction count.
 </p>
 
 <p>
@@ -3014,12 +3028,11 @@ Disable tracing with "trace none" when you enter the debugger again.
 </p>
 <p>
 Because Hatari normally emulates things at the hardware level, tracing
-Atari OS functions requires setting additional Hatari options which
-tell it to intercept higher level functionality:
+certain Atari OS Traps requires setting additional Hatari options which
+tell it to intercept this higher level functionality:
 <ul>
 <li>BIOS and XBIOS tracing require enabling of the BIOS intercepting</li>
 <li>GEMDOS tracing use of the GEMDOS harddisk emulation</li>
-<li>VDI tracing use of a VDI graphics mode</li>
 </ul>
 <p>
 If use of above isn't possible for the things you'd like to track, you can
@@ -3349,7 +3362,7 @@ parts of the emulated system is much trickier.
  src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
  border="0" height="31" width="88"></a></td>
       <td align="right">
-      June 2010
+      October 2010
       </td>
     </tr>
   </tbody>
