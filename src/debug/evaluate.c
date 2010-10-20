@@ -1,13 +1,15 @@
 /*
   Hatari - calculate.c
 
-  Copyright (C) 1994, 2009 by Eero Tamminen
+  Copyright (C) 1994, 2009-2010 by Eero Tamminen
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
   calculate.c - parse numbers, number ranges and expressions. Supports
-  most unary and binary operations, parenthesis and order of precedence.
+  most unary and binary operations. Parenthesis are used for indirect
+  ST RAM value addressing.
+
   Originally based on code from my Clac calculator MiNT filter version.
 */
 const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
@@ -25,6 +27,7 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include "evaluate.h"
 #include "main.h"
 #include "m68000.h"
+#include "stMemory.h"
 #include "symbols.h"
 
 /* define which character indicates which type of number on expression  */
@@ -43,9 +46,9 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #define CLAC_PRG_ERR "Internal program error"
 
 /* define internal allocation sizes (should be enough ;-)		*/
-#define PARDEPTH_MAX	64		/* max. parenth. nesting depth	*/
-#define OSTACK_MAX	128		/* size of the operator stack	*/
-#define VSTACK_MAX	128		/* size of the value stack	*/
+#define PARDEPTH_MAX	16		/* max. parenth. nesting depth	*/
+#define OSTACK_MAX	64		/* size of the operator stack	*/
+#define VSTACK_MAX	64		/* size of the value stack	*/
 
 /* operation with lowest precedence, used to finish calculations */
 #define LOWEST_PREDECENCE '|'
@@ -692,10 +695,16 @@ static long long close_bracket (long long value)
 
 	if (id.valid) {			/* preceded by an operator	*/
 		if (par.idx > 0) {	/* prenthesis has a pair	*/
+			Uint32 addr;
+
 			/* calculate the value of parenthesised exp.	*/
 			operation (value, LOWEST_PREDECENCE);
-			value = val.buf[val.idx];
-			op.idx = par.opx[par.idx] - 1;	/* restore prev	*/
+			/* fetch the indirect ST RAM value */
+			addr = val.buf[val.idx];
+			value = STMemory_ReadLong(addr);
+			fprintf(stderr, "- value at addr $%x = $%llx\n", addr, value);
+			/* restore state before parenthesis */
+			op.idx = par.opx[par.idx] - 1;
 			val.idx = par.vax[par.idx] - 1;
 			par.idx --;
 
