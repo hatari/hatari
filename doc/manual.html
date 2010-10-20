@@ -2733,14 +2733,28 @@ DSP commands:
       dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
 
+<h4>Entering arguments to debugger commands</h4>
+
 <p>
-When entering numbers to the debugger commands in other number bases
+After writing (with TAB completion) one of the above command names,
+pressing TAB will show all the available subcommands for that command.
+</p>
+
+<p>
+If you want to give numbers in other number bases
 than the default/selected one, they need to be prefixed with a
 character indicating this.  For decimals this prefix is "#" (#15),
 for hexadecimals "$" ($F), and for binary values it's "%" (%1111).
-By default the debugger expects all numbers without a prefix to be
+</p>
+
+<p>
+By default debugger expects all numbers without a prefix to be
 decimals, but you can change the default number base with the "setopt"
 command, just give it the desired default number base (bin/dec/hex).
+<em>When using the hexadecimal number base, remember still to prefix
+hexadecimal numbers with '$' if they could be confused with register
+names (a0-7, d0-7)!</em>  Otherwise results from expressions and
+conditional breakpoints can be unexpected.
 </p>
 
 <p>
@@ -2751,15 +2765,12 @@ give a sum of A0 and D0 register values to a command, use "a0+d0".
 </p>
 
 <p>
-<em>Note that within expressions parenthesis are used to change
-the order of precendence, they <strong>cannot</strong> be used for
-indicating indirect addressing like with conditional breakpoints
-(explained below). Even when using expressions within conditional
-breakpoints.</em>
-And when using the hexadecimal number base, remember still to prefix
-hexadecimal numbers with '$', at least if they could otherwise be
-confused with register names (a0-7, d0-7).  Otherwise results from
-expressions and conditional breakpoints can be quite surprising.
+Within expressions parenthesis are used both to change the order
+of precendence <em>and</em> to indicate indirect addressing.
+Unlike with conditional breakpoints (explained below), you cannot
+give size for the indirect addressing, a long value is always read
+from the RAM address given within parenthesis.  For example to get
+long pointed by stack pointer + 2, use "(a7+2)".
 </p>
 
 <p>
@@ -2805,23 +2816,39 @@ Usage:  d [start address-[end address]]
 </pre>
 
 <p>
+Each time you enter the debugger, "disasm" command will disassemble
+from the current PC address unless you give it another address (range)
+and on further invocations it continues showing successive addresses.
+</p>
+
+<p>
 You can use the "info" command to see state of specific sets of HW
 registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 </p>
 
+<h4>Selecting what information is shown on entering the debugger</h4>
+
 <p>
-By using the "lock" command, you can ask Hatari to show above kind of
-information whenever you enter the debugger ("lock disasm").  With the
-"regaddr" subcommand, it can show also disassembly or memory dump of
-an address pointed by a given register ("lock regaddr disasm a0").
-Of the DSP registers, only Rx ones are valid for this subcommand.
-"file" subcommand can be used to get (arbitrary number of) commands
-for showing the information parsed from a given debugger input file.
+By using the "lock" command, you can ask Hatari to show specific
+information whenever you enter the debugger. For example to see
+disassembly from current PC address, use "lock disasm". To disable
+showing of this extra information, use "lock default".
 </p>
 
 <p>
-To disable showing of this extra information, use "lock default".
-TAB will show all the available "info" and "lock" subcommands.
+With the "regaddr" subcommand, you see disassembly or memory
+dump of an address pointed by a given register ("lock regaddr disasm
+a0"). Of the DSP registers, only Rx ones are valid for this
+subcommand.
+</p>
+
+<p>
+"file" subcommand can be used to get (arbitrary number of) commands
+parsed and executed from a given debugger input file.  With breakpoints
+this can be used to almost anything (see below).
+</p>
+
+<p>
 </p>
 
 <a name="Debug symbols"></a><h3>Debug symbols</h3>
@@ -2965,9 +2992,11 @@ changes to some register, like this:
 
 <p>
 If you want to see more information than just the changed value,
-use ":info" option instead of ":trace".  This will show the output
+use ":info" option instead of ":trace".  This will do the command
 selected with the "lock" command (see <a href="#Inspecting emulation
-state">Inspecting emulation state</a> above).
+state">Inspecting emulation state</a> above).  That can be used
+to chain/toggle additional breakpoints and to show any information
+supported by the debugger.
 </p>
 
 <p>
