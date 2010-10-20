@@ -462,14 +462,14 @@ static Uint32 GetGemdosOpcode(void)
 }
 static Uint32 GetBiosOpcode(void)
 {
-	if (isTrap(14)) {
+	if (isTrap(13)) {
 		return getStackOpcode();
 	}
 	return INVALID_OPCODE;
 }
 static Uint32 GetXbiosOpcode(void)
 {
-	if (isTrap(13)) {
+	if (isTrap(14)) {
 		return getStackOpcode();
 	}
 	return INVALID_OPCODE;
