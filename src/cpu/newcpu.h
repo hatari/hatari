@@ -6,9 +6,39 @@
 * Copyright 1995 Bernd Schmidt
 */
 
+#ifndef NEWCPU_H
+#define NEWCPU_H
+
 #include "readcpu.h"
-#include "machdep/m68k.h"
+//#include "machdep/m68k.h"
+#include "m68k.h"
+#include "compat.h"
+#include "maccess.h"
 #include "events.h"
+#include "memory.h"
+#include "custom.h"
+
+/* Possible exceptions sources for M68000_Exception() and Exception() */
+#define M68000_EXC_SRC_CPU	    1  /* Direct CPU exception */
+#define M68000_EXC_SRC_AUTOVEC  2  /* Auto-vector exception (e.g. VBL) */
+#define M68000_EXC_SRC_INT_MFP	3  /* MFP interrupt exception */
+#define M68000_EXC_SRC_INT_DSP  4  /* DSP interrupt exception */
+
+
+/* Special flags */
+#define SPCFLAG_DEBUGGER 1
+#define SPCFLAG_STOP 2
+#define SPCFLAG_BUSERROR 4
+#define SPCFLAG_INT 8
+#define SPCFLAG_BRK 0x10
+#define SPCFLAG_EXTRA_CYCLES 0x20
+#define SPCFLAG_TRACE 0x40
+#define SPCFLAG_DOTRACE 0x80
+#define SPCFLAG_DOINT 0x100
+#define SPCFLAG_MFP 0x200
+#define SPCFLAG_EXEC 0x400
+#define SPCFLAG_MODE_CHANGE 0x800
+
 
 #ifndef SET_CFLG
 
@@ -335,8 +365,10 @@ extern void m68k_disasm (void *f, uaecptr addr, uaecptr *nextpc, int cnt);
 extern void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, int safemode);
 extern int get_cpu_model (void);
 
-extern void REGPARAM3 MakeSR (void) REGPARAM;
-extern void REGPARAM3 MakeFromSR (void) REGPARAM;
+//extern void REGPARAM3 MakeSR (void) REGPARAM;
+//extern void REGPARAM3 MakeFromSR (void) REGPARAM;
+extern void MakeSR (void);
+extern void MakeFromSR (void);
 extern void REGPARAM3 Exception (int, uaecptr) REGPARAM;
 extern void NMI (void);
 extern void NMI_delayed (void);
@@ -424,3 +456,12 @@ struct cpum2c {
 	TCHAR *regname;
 };
 extern struct cpum2c m2cregs[];
+
+/* Family of the latest instruction executed (to check for pairing) */
+extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
+
+/* How many cycles to add to the current instruction in case a "misaligned" bus acces is made */
+/* (used when addressing mode is d8(an,ix)) */
+extern int BusCyclePenalty;
+
+#endif

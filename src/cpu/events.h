@@ -14,7 +14,8 @@
 
 #undef EVENT_DEBUG
 
-#include "machdep/rpt.h"
+//#include "machdep/rpt.h"
+#include "rpt.h"
 
 extern volatile frame_time_t vsynctime, vsyncmintime;
 extern void reset_frame_rate_hack (void);
@@ -77,7 +78,7 @@ extern void event2_remevent (int);
 #include "events_jit.h"
 #endif
 
-STATIC_INLINE int current_hpos (void)
+static inline int current_hpos (void)
 {
     return (get_cycles () - eventtab[ev_hsync].oldcycles) / CYCLE_UNIT;
 }

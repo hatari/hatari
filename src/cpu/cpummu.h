@@ -26,6 +26,8 @@
 #ifndef CPUMMU_H
 #define CPUMMU_H
 
+#include "compat.h"
+
 #ifndef FULLMMU
 #define FULLMMU
 #endif
@@ -38,17 +40,20 @@
 #define bug
 #endif
 
-struct m68k_exception {
+/*struct m68k_exception {
 	int prb;
 	m68k_exception (int exc) : prb (exc) {}
 	operator int() { return prb; }
-};
+};*/
+typedef int m68k_exception;
+
 #define SAVE_EXCEPTION
 #define RESTORE_EXCEPTION
-#define TRY(var) try
-#define CATCH(var) catch(m68k_exception var)
-#define THROW(n) throw m68k_exception(n)
-#define THROW_AGAIN(var) throw
+//#define TRY(var) try
+//#define CATCH(var) catch(m68k_exception var)
+#define CATCH(var) if (except != 0)
+//#define THROW(n) except=n
+//#define THROW_AGAIN(var) except=var
 #define VOLATILE
 #define ALWAYS_INLINE __inline
 
@@ -56,7 +61,9 @@ struct m68k_exception {
 #define unlikely(x) x
 static __inline void flush_internals (void) { }
 
-typedef uae_u8 flagtype;
+//typedef uae_u8 flagtype;
+
+static m68k_exception except;
 
 struct xttrx {
     uae_u32 log_addr_base : 8;

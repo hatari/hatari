@@ -13,25 +13,25 @@
 #include "sysconfig.h"
 #include "sysdeps.h"
 
-#include "options.h"
+#include "options_cpu.h"
 #include "events.h"
-#include "uae.h"
+//#include "uae.h"
 #include "memory.h"
 #include "custom.h"
 #include "newcpu.h"
 #include "cpummu.h"
 #include "cpu_prefetch.h"
-#include "autoconf.h"
-#include "traps.h"
-#include "ersatz.h"
-#include "debug.h"
-#include "gui.h"
+//#include "autoconf.h"
+//#include "traps.h"
+//#include "ersatz.h"
+//#include "debug.h"
+//#include "gui.h"
 #include "savestate.h"
 #include "blitter.h"
 #include "ar.h"
-#include "gayle.h"
-#include "cia.h"
-#include "inputdevice.h"
+//#include "gayle.h"
+//#include "cia.h"
+//#include "inputdevice.h"
 #ifdef JIT
 #include "jit/compemu.h"
 #include <signal.h>
@@ -4362,10 +4362,11 @@ STATIC_INLINE void fill_icache020 (uae_u32 addr, int idx)
 
 uae_u32 get_word_ce020_prefetch (int o)
 {
+	int i;
 	uae_u32 pc = m68k_getpc () + o;
 
 	for (;;) {
-		for (int i = 0; i < 2; i++) {
+		for (i = 0; i < 2; i++) {
 			if (pc == regs.prefetch020addr[0]) {
 				uae_u32 v = regs.prefetch020data[0] >> 16;
 				fill_icache020 (regs.prefetch020addr[0] + 4, 1);
@@ -4597,10 +4598,11 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 
 uae_u32 get_word_ce030_prefetch (int o)
 {
+	int i;
 	uae_u32 pc = m68k_getpc () + o;
 
 	for (;;) {
-		for (int i = 0; i < 2; i++) {
+		for (i = 0; i < 2; i++) {
 			if (pc == regs.prefetch020addr[0]) {
 				uae_u32 v = regs.prefetch020data[0] >> 16;
 				fill_icache030 (regs.prefetch020addr[0] + 4, 1);
@@ -4629,10 +4631,11 @@ uae_u32 get_word_ce030_prefetch (int o)
 
 void flush_dcache (uaecptr addr, int size)
 {
+	int i;
 	if (!currprefs.cpu_cycle_exact)
 		return;
 	if (currprefs.cpu_model >= 68030) {
-		for (int i = 0; i < CACHELINES030; i++) {
+		for (i = 0; i < CACHELINES030; i++) {
 			dcaches030[i].valid[0] = 0;
 			dcaches030[i].valid[1] = 0;
 			dcaches030[i].valid[2] = 0;

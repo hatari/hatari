@@ -53,6 +53,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-unused-label")
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_library(UaeCpu
-	cpudefs.c cpuemu.c cpustbl.c
+	cpudefs.c cpuemu.c cpummu.c cpustbl.c
 	hatari-glue.c memory.c newcpu.c readcpu.c fpp.c
 	)

@@ -1,76 +1,109 @@
-#ifndef __MACCESS_H__
-#define __MACCESS_H__
  /*
-  * UAE - The Un*x Amiga Emulator
+  * UAE - The Un*x Amiga Emulator - CPU core
   *
-  * Memory access functions
+  * Big endian memory access functions.
   *
   * Copyright 1996 Bernd Schmidt
+  *
+  * Adaptation to Hatari by Thomas Huth, Eero Tamminen
+  *
+  * This file is distributed under the GNU Public License, version 2 or at
+  * your option any later version. Read the file gpl.txt for details.
   */
 
-#define ALIGN_POINTER_TO32(p) ((~(unsigned long)(p)) & 3)
+#ifndef UAE_MACCESS_H
+#define UAE_MACCESS_H
 
-STATIC_INLINE uae_u32 do_get_mem_long(uae_u32 *a)
-{
-#if !defined(X86_MSVC_ASSEMBLY_MEMACCESS)
-    uae_u8 *b = (uae_u8 *)a;
-    return (*b << 24) | (*(b+1) << 16) | (*(b+2) << 8) | (*(b+3));
-#else
-    uae_u32 retval;
-    __asm
-    {
-	mov	eax, a
-	mov	ebx, [eax]
-	bswap	ebx
-	mov	retval, ebx
-    }
-    return retval;
+
+/* Can the actual CPU access unaligned memory? */
+#ifndef CPU_CAN_ACCESS_UNALIGNED
+# if defined(__i386__) || defined(powerpc) || defined(__mc68020__)
+#  define CPU_CAN_ACCESS_UNALIGNED 1
+# else
+#  define CPU_CAN_ACCESS_UNALIGNED 0
+# endif
 #endif
-}
 
-STATIC_INLINE uae_u16 do_get_mem_word(uae_u16 *a)
+
+/* If the CPU can access unaligned memory, use these accelerated functions: */
+#if CPU_CAN_ACCESS_UNALIGNED
+
+#include <SDL_endian.h>
+
+
+static inline uae_u32 do_get_mem_long(void *a)
 {
-    uae_u8 *b = (uae_u8 *)a;
-
-    return (*b << 8) | (*(b+1));
+	return SDL_SwapBE32(*(uae_u32 *)a);
 }
 
-#define do_get_mem_byte(a) ((uae_u32)*(uae_u8 *)(a))
-
-STATIC_INLINE void do_put_mem_long(uae_u32 *a, uae_u32 v)
+static inline uae_u16 do_get_mem_word(void *a)
 {
-#if !defined(X86_MSVC_ASSEMBLY_MEMACCESS)
-    uae_u8 *b = (uae_u8 *)a;
-
-    *b = v >> 24;
-    *(b+1) = v >> 16;
-    *(b+2) = v >> 8;
-    *(b+3) = v;
-#else
-    __asm
-    {
-	mov	eax, a
-	mov	ebx, v
-	bswap	ebx
-	mov	[eax], ebx
-    }
-#endif
+	return SDL_SwapBE16(*(uae_u16 *)a);
 }
 
-STATIC_INLINE void do_put_mem_word(uae_u16 *a, uae_u16 v)
+
+static inline void do_put_mem_long(void *a, uae_u32 v)
 {
-    uae_u8 *b = (uae_u8 *)a;
-
-    *b = v >> 8;
-    *(b+1) = (uae_u8)v;
+	*(uae_u32 *)a = SDL_SwapBE32(v);
 }
 
-STATIC_INLINE void do_put_mem_byte(uae_u8 *a, uae_u8 v)
+static inline void do_put_mem_word(void *a, uae_u16 v)
 {
-    *a = v;
+	*(uae_u16 *)a = SDL_SwapBE16(v);
 }
 
-#define call_mem_get_func(func, addr) ((*func)(addr))
-#define call_mem_put_func(func, addr, v) ((*func)(addr, v))
 
-#endif
+#else  /* Cpu can not access unaligned memory: */
+
+
+static inline uae_u32 do_get_mem_long(void *a)
+{
+	uae_u8 *b = (uae_u8 *)a;
+
+	return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
+}
+
+static inline uae_u16 do_get_mem_word(void *a)
+{
+	uae_u8 *b = (uae_u8 *)a;
+
+	return (b[0] << 8) | b[1];
+}
+
+
+static inline void do_put_mem_long(void *a, uae_u32 v)
+{
+	uae_u8 *b = (uae_u8 *)a;
+
+	b[0] = v >> 24;
+	b[1] = v >> 16;    
+	b[2] = v >> 8;
+	b[3] = v;
+}
+
+static inline void do_put_mem_word(void *a, uae_u16 v)
+{
+	uae_u8 *b = (uae_u8 *)a;
+
+	b[0] = v >> 8;
+	b[1] = v;
+}
+
+
+#endif  /* CPU_CAN_ACCESS_UNALIGNED */
+
+
+/* These are same for all architectures: */
+
+static inline uae_u8 do_get_mem_byte(uae_u8 *a)
+{
+	return *a;
+}
+
+static inline void do_put_mem_byte(uae_u8 *a, uae_u8 v)
+{
+	*a = v;
+}
+
+
+#endif /* UAE_MACCESS_H */

@@ -1,0 +1,250 @@
+/*
+  Hatari - sysconfig.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  This file contains needed auto generated includes and defines needed by WinUae CPU core. 
+  The aim is to have minimum changes in WinUae CPU core for next updates
+*/
+
+#ifndef HATARI_SYSCONFIG_H
+#define HATARI_SYSCONFIG_H
+
+#define SUPPORT_THREADS
+#define MAX_DPATH 1000
+
+#define X86_MSVC_ASSEMBLY
+//#define X86_MSVC_ASSEMBLY_MEMACCESS
+#define OPTIMIZED_FLAGS
+//#define __i386__
+
+#ifndef UAE_MINI
+
+#define DEBUGGER
+#define FILESYS /* filesys emulation */
+#define UAE_FILESYS_THREADS
+#define AUTOCONFIG /* autoconfig support, fast ram, harddrives etc.. */
+//#define JIT /* JIT compiler support */
+#define NATMEM_OFFSET natmem_offset
+#define USE_NORMAL_CALLING_CONVENTION 0
+#define USE_X86_FPUCW 1
+#define WINDDK /* Windows DDK available, keyboard leds and harddrive support */
+#define CATWEASEL /* Catweasel MK2/3 support */
+#define AHI /* AHI sound emulation */
+#define ENFORCER /* UAE Enforcer */
+#define ECS_DENISE /* ECS DENISE new features */
+#define AGA /* AGA chipset emulation (ECS_DENISE must be enabled) */
+#define CD32 /* CD32 emulation */
+#define CDTV /* CDTV emulation */
+#define D3D /* D3D display filter support */
+//#define OPENGL /* OpenGL display filter support */
+#define PARALLEL_PORT /* parallel port emulation */
+#define PARALLEL_DIRECT /* direct parallel port emulation */
+#define SERIAL_PORT /* serial port emulation */
+#define SERIAL_ENET /* serial port UDP transport */
+#define SCSIEMU /* uaescsi.device emulation */
+#define UAESERIAL /* uaeserial.device emulation */
+#define FPUEMU /* FPU emulation */
+#define FPU_UAE
+#define MMUEMU /* Aranym 68040 MMU */
+#define FULLMMU /* Aranym 68040 MMU */
+#define CPUEMU_0 /* generic 680x0 emulation */
+#define CPUEMU_11 /* 68000+prefetch emulation */
+#define CPUEMU_12 /* 68000 cycle-exact cpu&blitter */
+#define CPUEMU_20 /* 68020 "cycle-exact" + blitter */
+#define CPUEMU_21 /* 68030 (040/060) "cycle-exact" + blitter */
+#define CPUEMU_31 /* 68040 Aranym MMU */
+#define ACTION_REPLAY /* Action Replay 1/2/3 support */
+#define PICASSO96 /* Picasso96 display card emulation */
+#define UAEGFX_INTERNAL /* built-in libs:picasso96/uaegfx.card */
+#define BSDSOCKET /* bsdsocket.library emulation */
+#define CAPS /* CAPS-image support */
+#define FDI2RAW /* FDI 1.0 and 2.x image support */
+#define AVIOUTPUT /* Avioutput support */
+#define PROWIZARD /* Pro-Wizard module ripper */
+#define ARCADIA /* Arcadia arcade system */
+#define ARCHIVEACCESS /* ArchiveAccess decompression library */
+#define LOGITECHLCD /* Logitech G15 LCD */
+#define SAVESTATE /* State file support */
+#define A2091 /* A590/A2091 SCSI */
+#define A2065 /* A2065 Ethernet card */
+#define NCR /* A4000T/A4091 SCSI */
+#define SANA2 /* SANA2 network driver */
+#define AMAX /* A-Max ROM adapater emulation */
+#define RETROPLATFORM /* Cloanto RetroPlayer support */
+
+#else
+
+/* #define SINGLEFILE */
+
+#define CUSTOM_SIMPLE /* simplified custom chipset emulation */
+#define CPUEMU_0
+#define CPUEMU_68000_ONLY /* drop 68010+ commands from CPUEMU_0 */
+#define ADDRESS_SPACE_24BIT
+#ifndef UAE_NOGUI
+#define D3D
+#define OPENGL
+#endif
+#define CAPS
+#define CPUEMU_12
+#define CPUEMU_11
+
+
+#endif
+
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
+#ifdef WIN64
+#undef X86_MSVC_ASSEMBLY
+#undef JIT
+#define X64_MSVC_ASSEMBLY
+#define CPU_64_BIT
+#define SIZEOF_VOID_P 8
+#else
+#define SIZEOF_VOID_P 4
+#endif
+
+#if !defined(AHI)
+#undef ENFORCER
+#endif
+
+
+/* Define if utime(file, NULL) sets file's timestamp to the present.  */
+#define HAVE_UTIME_NULL 1
+
+/* Define as __inline if that's what the C compiler calls it.  */
+/* #undef inline */
+#define __inline__ __inline
+#define __volatile__ volatile
+
+/* Define as the return type of signal handlers (int or void).  */
+#define RETSIGTYPE void
+
+/* Define if you have the ANSI C header files.  */
+#define STDC_HEADERS 1
+
+/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+#ifdef __GNUC__
+#define TIME_WITH_SYS_TIME 1
+#endif
+
+#ifdef _WIN32_WCE
+#define NO_TIME_H 1
+#endif
+
+/* Define if the X Window System is missing or not being used.  */
+#define X_DISPLAY_MISSING 1
+
+/* The number of bytes in a __int64.  */
+#define SIZEOF___INT64 8
+
+/* The number of bytes in a char.  */
+#define SIZEOF_CHAR 1
+
+/* The number of bytes in a int.  */
+#define SIZEOF_INT 4
+
+/* The number of bytes in a long.  */
+#define SIZEOF_LONG 4
+
+/* The number of bytes in a long long.  */
+#define SIZEOF_LONG_LONG 8
+
+/* The number of bytes in a short.  */
+#define SIZEOF_SHORT 2
+
+#define SIZEOF_FLOAT 4
+#define SIZEOF_DOUBLE 8
+
+#define HAVE_ISNAN
+#define HAVE_ISINF
+//#define isnan _isnan
+
+/* Define if you have the getcwd function.  */
+#define HAVE_GETCWD 1
+
+/* Define if you have the gettimeofday function.  */
+#ifndef _WIN32_WCE
+#define HAVE_GETTIMEOFDAY
+#endif
+
+/* Define if you have the mkdir function.  */
+#define HAVE_MKDIR 1
+
+/* Define if you have the rmdir function.  */
+#define HAVE_RMDIR 1
+
+/* Define if you have the strdup function.  */
+#define HAVE_STRDUP 1
+
+/* Define if you have the strerror function.  */
+#define HAVE_STRERROR 1
+
+/* Define if you have the strstr function.  */
+#define HAVE_STRSTR 1
+
+/* Define if you have the vfprintf function.  */
+#define HAVE_VFPRINTF 1
+
+/* Define if you have the vprintf function.  */
+#define HAVE_VPRINTF 1
+
+/* Define if you have the vsprintf function.  */
+#define HAVE_VSPRINTF 1
+
+/* Define if you have the <ddraw.h> header file.  */
+#ifndef _WIN32_WCE
+#define HAVE_DDRAW_H 1
+#endif
+
+/* Define if you have the <fcntl.h> header file.  */
+#ifndef _WIN32_WCE
+#define HAVE_FCNTL_H 1
+#endif
+
+#ifndef _WIN32_WCE
+/* Define if you have the <string.h> header file.  */
+#define HAVE_STRING_H 1
+#endif
+
+/* Define if you have the <sys/stat.h> header file.  */
+#ifndef _WIN32_WCE
+#define HAVE_SYS_STAT_H 1
+#endif
+
+/* Define if you have the <sys/time.h> header file.  */
+#ifdef __GNUC__
+#define HAVE_SYS_TIME_H 1
+#endif
+
+/* Define if you have the <sys/types.h> header file.  */
+#ifndef _WIN32_WCE
+#define HAVE_SYS_TYPES_H 1
+#endif
+
+/* Define if you have the <sys/utime.h> header file.  */
+#ifndef _WIN32_WCE
+//#define HAVE_SYS_UTIME_H 1
+#endif
+
+/* Define if you have the <unistd.h> header file.  */
+#ifdef __GNUC__
+#define HAVE_UNISTD_H 1
+#endif
+
+/* Define if you have the <values.h> header file.  */
+#ifdef __GNUC__
+#define HAVE_VALUES_H 1
+#endif
+
+/* Define if you have the <windows.h> header file.  */
+#define HAVE_WINDOWS_H 1
+
+#define FSDB_DIR_SEPARATOR '\\'
+
+#endif

@@ -7,7 +7,7 @@
  */
 
 #include <stdlib.h>
-#include <tchar.h>
+//#include <tchar.h>
 #include <assert.h>
 #include <ctype.h>
 
@@ -212,7 +212,10 @@ int main(int argc, char **argv)
 	if (nextch != ':')
 	    abort();
 
-	fgets(opcstr, 250, tablef);
+	if (fgets(opcstr, 250, tablef) == NULL) {
+	    perror("fgets");
+	    return -1;
+	}
 	getnextch();
 	{
 	    int j;
@@ -251,7 +254,7 @@ int main(int argc, char **argv)
 	    for(i = 0; i < 5; i++) {
 		printf("{%d,%d}%s", flaguse[i], flagset[i], i == 4 ? "" : ",");
 	    }
-	    printf("},%2d,L\"%s\"}", sduse, opstrp);
+	    printf("},%2d,\"%s\"}", sduse, opstrp);
 	}
     }
     printf("};\nint n_defs68k = %d;\n", no_insns);

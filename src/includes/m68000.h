@@ -105,7 +105,6 @@ enum {
 
 #define Regs regs.regs
 
-#if defined(UAE_NEWCPU_H)
 
 # define M68000_GetPC()     m68k_getpc()
 # define M68000_SetPC(val)  m68k_setpc(val)
@@ -124,34 +123,13 @@ static inline void M68000_SetSR(Uint16 v)
 # define M68000_SetSpecial(flags)   set_special(flags)
 # define M68000_UnsetSpecial(flags) unset_special(flags)
 
-#else  /* following code is for WinUAE CPU: */
-
-# define M68000_GetPC()     m68k_getpc(&regs)
-# define M68000_SetPC(val)  m68k_setpc(&regs,val)
-
-static inline Uint16 M68000_GetSR(void)
-{
-	MakeSR(&regs);
-	return regs.sr;
-}
-static inline void M68000_SetSR(Uint16 v)
-{
-	regs.sr = v;
-	MakeFromSR(&regs);
-}
-
-# define M68000_SetSpecial(flags)   set_special(&regs,flags)
-# define M68000_UnsetSpecial(flags) unset_special(&regs,flags)
-
-#endif /* defined(UAE_NEWCPU_H) */
-
 
 /* bus error mode */
 #define BUS_ERROR_WRITE 0
 #define BUS_ERROR_READ 1
 
 
-/* bus access mode */
+/* bus acces mode */
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
 
@@ -284,7 +262,7 @@ extern void M68000_Reset(bool bCold);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuLevel(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
-extern void M68000_BusError(Uint32 addr, bool bRead);
+extern void M68000_BusError(Uint32 addr, bool bReadWrite);
 extern void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource);
 extern void M68000_WaitState(int nCycles);
 

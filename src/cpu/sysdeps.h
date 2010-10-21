@@ -14,14 +14,16 @@
   *
   * Copyright 1996, 1997 Bernd Schmidt
   */
-#include <string>
-using namespace std;
+//#include <string>
+//using namespace std;
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
 #include <limits.h>
-#include <tchar.h>
+//#include <tchar.h>
+#include "compat.h"
 
 #ifndef __STDC__
 #ifndef _MSC_VER
@@ -253,12 +255,12 @@ extern void to_upper (TCHAR *s, int len);
 #define ENUMNAME(name) name
 
 /* While we're here, make abort more useful.  */
-#define abort() \
+/*#define abort() \
   do { \
     write_log ("Internal error; file %s, line %d\n", __FILE__, __LINE__); \
     (abort) (); \
 } while (0)
-#else
+*/#else
 #define ENUMDECL enum
 #define ENUMNAME(name) ; typedef int name
 #endif
@@ -454,7 +456,7 @@ extern void mallocemu_free (void *ptr);
 #define ASM_SYM_FOR_FUNC(a)
 #endif
 
-#include "target.h"
+//#include "target.h"
 
 #ifdef UAE_CONSOLE
 #undef write_log
