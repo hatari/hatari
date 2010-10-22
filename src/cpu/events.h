@@ -78,7 +78,7 @@ extern void event2_remevent (int);
 #include "events_jit.h"
 #endif
 
-static inline int current_hpos (void)
+STATIC_INLINE int current_hpos (void)
 {
     return (get_cycles () - eventtab[ev_hsync].oldcycles) / CYCLE_UNIT;
 }
