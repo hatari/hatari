@@ -129,7 +129,7 @@ static inline void M68000_SetSR(Uint16 v)
 #define BUS_ERROR_READ 1
 
 
-/* bus acces mode */
+/* bus access mode */
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
 
