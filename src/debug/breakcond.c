@@ -1539,7 +1539,7 @@ static void BreakCond_Help(void)
 				hatari_vars[i].name, hatari_vars[i].vtype);
 			continue;
 		}
-		fprintf(stderr, "  - %s (%d)", hatari_vars[i].name, value);
+		fprintf(stderr, "  - %s ($%x)", hatari_vars[i].name, value);
 		if (hatari_vars[i].constraints) {
 			fprintf(stderr, ", %s\n", hatari_vars[i].constraints);
 		} else {
