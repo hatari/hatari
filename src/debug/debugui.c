@@ -193,16 +193,16 @@ static bool DebugUI_IsForDsp(const char *cmd)
 
 /**
  * Evaluate everything include within "" and replace them with the result.
- * String given as an argument needs to be allocated, it may be freed and
- * re-allocated if it needs to be expanded. Caller needs to free the returned
- * string if it's not NULL.
+ * Caller needs to free the returned string separately if its address
+ * doesn't match the given input string.
  * 
- * Return string with expressions expanded or NULL for an error.
+ * Return string with expressions (potentially) expanded, or
+ * NULL when there's an error in the expression.
  */
 static char *DebugUI_EvaluateExpressions(char *input)
 {
 	int offset, count, diff, inputlen;
-	char *end, *start;
+	char *end, *start, *initial;
 	const char *errstr;
 	char valuestr[12];
 	Uint32 value;
@@ -211,7 +211,7 @@ static char *DebugUI_EvaluateExpressions(char *input)
 	/* input is split later on, need to save len here */
 	fordsp = DebugUI_IsForDsp(input);
 	inputlen = strlen(input);
-	start = input;
+	initial = start = input;
 	
 	while ((start = strchr(start, '"')))
 	{
@@ -219,7 +219,6 @@ static char *DebugUI_EvaluateExpressions(char *input)
 		if (!end)
 		{
 			fprintf(stderr, "ERROR: matching '\"' missing from '%s'!\n", start);
-			free(input);
 			return NULL;
 		}
 		
@@ -236,7 +235,6 @@ static char *DebugUI_EvaluateExpressions(char *input)
 			*end = '"';
 			fprintf(stderr, "Expression ERROR:\n'%s'\n%*c-%s\n",
 				input, (int)(start-input)+offset+3, '^', errstr);
-			free(input);
 			return NULL;
 		}
 		end++;
@@ -258,7 +256,6 @@ static char *DebugUI_EvaluateExpressions(char *input)
 			if (!tmp)
 			{
 				perror("ERROR: Input string alloc failed\n");
-				free(input);
 				return NULL;
 			}
 
@@ -268,7 +265,8 @@ static char *DebugUI_EvaluateExpressions(char *input)
 			start += count;
 			memcpy(start, end, strlen(end) + 1);
 
-			free(input);
+			if (input != initial)
+				free(input);
 			input = tmp;
 		}
 	}
@@ -684,48 +682,49 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 
 /**
  * Read a command line from the keyboard and return a pointer to the string.
- * @return	Pointer to the string which should be deallocated free()
- *              after use. Returns NULL when error occured.
+ * Only string returned by this function can be given for it as argument!
+ * The string will be stored into command history buffer.
+ * @return	Pointer to the string which should be deallocated after
+ *              use or given back to this function for re-use/history.
+ *              Returns NULL when error occured.
  */
-static char *DebugUI_GetCommand(void)
+static char *DebugUI_GetCommand(char *input)
 {
-	char *input;
-
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "Hatari";
 	
 	/* Tell the completer that we want a crack first. */
 	rl_attempted_completion_function = DebugUI_Completion;
 
-	input = readline("> ");
-	if (!input)
-		return NULL;
-
-	input = Str_Trim(input);
-	if (input[0])
+	if (input && *input)
 	{
-		HIST_ENTRY *prev = current_history();
+		HIST_ENTRY *hist = previous_history();
 		/* don't store successive duplicate entries */
-		if (!prev || !prev->line || strcmp(prev->line, input) != 0)
+		if (!hist || !hist->line || strcmp(hist->line, input) != 0)
 			add_history(input);
+		free(input);
 	}
-	return input;
+
+	return Str_Trim(readline("> "));
 }
 
 #else /* !HAVE_LIBREADLINE */
 
 /**
  * Read a command line from the keyboard and return a pointer to the string.
- * @return	Pointer to the string which should be deallocated free()
- *              after use. Returns NULL when error occured.
+ * Only string returned by this function can be given for it as argument!
+ * @return	Pointer to the string which should be deallocated after
+ *              use or given back to this function for re-use.
+ *              Returns NULL when error occured.
  */
-static char *DebugUI_GetCommand(void)
+static char *DebugUI_GetCommand(char *input)
 {
-	char *input;
 	fprintf(stderr, "> ");
-	input = malloc(256);
 	if (!input)
-		return NULL;
+	{
+		input = malloc(256);
+		assert(input);
+	}
 	input[0] = '\0';
 	if (fgets(input, 256, stdin) == NULL)
 	{
@@ -890,7 +889,7 @@ bool DebugUI_SetParseFile(const char *path)
 void DebugUI(void)
 {
 	int cmdret, alertLevel;
-	char *psCmd;
+	char *expCmd, *psCmd = NULL;
 	static const char *welcome =
 		"\n----------------------------------------------------------------------"
 		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
@@ -921,20 +920,27 @@ void DebugUI(void)
 	cmdret = DEBUGGER_CMDDONE;
 	do
 	{
-		/* Read command from the keyboard */
-		psCmd = DebugUI_GetCommand();
+		/* Read command from the keyboard and give previous
+		 * command for freeing / adding to history
+		 */
+		psCmd = DebugUI_GetCommand(psCmd);
 		if (!psCmd)
 			break;
 
-		/* expand all quoted expressions */
-		if (!(psCmd = DebugUI_EvaluateExpressions(psCmd)))
+		/* returns new string if expressions needed expanding! */
+		if (!(expCmd = DebugUI_EvaluateExpressions(psCmd)))
 			continue;
 
 		/* Parse and execute the command string */
-		cmdret = DebugUI_ParseCommand(psCmd);
-		free(psCmd);
+		cmdret = DebugUI_ParseCommand(expCmd);
+		if (expCmd != psCmd)
+			free(expCmd);
 	}
 	while (cmdret != DEBUGGER_END);
+
+	/* free (and ignore) exit command */
+	if (psCmd)
+		free(psCmd);
 
 	Log_SetAlertLevel(alertLevel);
 	DebugUI_SetLogDefault();
@@ -950,7 +956,7 @@ void DebugUI(void)
  */
 bool DebugUI_ParseFile(const char *path)
 {
-	char *olddir, *dir, *cmd, *input, *slash;
+	char *olddir, *dir, *cmd, *input, *expanded, *slash;
 	FILE *fp;
 
 	fprintf(stderr, "Reading debugger commands from '%s'...\n", path);
@@ -1001,14 +1007,16 @@ bool DebugUI_ParseFile(const char *path)
 		if (!*cmd || *cmd == '#')
 			continue;
 
-		/* re-allocs input string if it needs expanding! */
-		input = DebugUI_EvaluateExpressions(input);
-		if (!input)
+		/* returns new string if input needed expanding! */
+		expanded = DebugUI_EvaluateExpressions(input);
+		if (!expanded)
 			continue;
 
-		cmd = Str_Trim(input);
+		cmd = Str_Trim(expanded);
 		fprintf(stderr, "> %s\n", cmd);
 		DebugUI_ParseCommand(cmd);
+		if (expanded != input)
+			free(expanded);
 	}
 
 	free(input);
