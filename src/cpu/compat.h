@@ -14,6 +14,36 @@
 
 #include "sysconfig.h"
 
+/* This define is here to remove some Amiga specific code when compiling */
+/* It results in ' #if 0 ' code in newcpu.c code */
+#define AMIGA_ONLY 0
+
+/* this defione is here for newcpu.c compatibility.
+ * In WinUae, it's defined in debug.h" */
+#ifndef MAX_LINEWIDTH
+#define MAX_LINEWIDTH 100
+#endif
+
+/* Laurent */
+/* here only to allow newcpu.c to compile */
+/* Should be removed when newcpu.c 'll be relooked for hatari only*/
+
+// Laurent : I don't know what to do with these variables, so, for now, I've put them here !!!
+int kickstart_rom, cloanto_rom;
+int config_changed;
+int vpos;
+int quit_program;  // declared as "int quit_program = 0;" in main.c 
+//WinUae ChangeLog: Improve quitting/resetting behaviour: Move quit_program from GUI
+//WinUae ChangeLog: quit_program is now handled in vsync_handler() and m68k_go().
+
+
+/* The 3 next defines comes from custom.h 
+   They're here to let newcpu.c compiles.*/
+#define SPCFLAG_BLTNASTY 512
+#define DMA_BLITTER   0x0040
+#define SPCFLAG_TRAP 4096 /* enforcer-hack */
+
+
 #ifndef REGPARAM
 #define REGPARAM
 #endif
@@ -41,16 +71,15 @@
 #define bool int
 #endif
 
-/*
-#ifndef SPCFLAG_MODE_CHANGE
-#define SPCFLAG_MODE_CHANGE 8192
-#endif
-*/
-
 #define _vsnprintf vsnprintf
 #define _tcsncmp strncmp
 #define _istspace isspace
 #define _tcscmp strcmp
 #define _tcslen strlen
+#define _tcsstr strstr
+#define _tcscpy strcpy
+#define _tcsncpy strncpy
+#define _tcscat strcat
+#define _stprintf sprintf
 
 #endif

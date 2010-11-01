@@ -38,6 +38,7 @@ extern void cache_free (uae_u8*);
 #define SAVE_MEMORY_BANKS
 #endif
 
+extern void memory_hardreset (void);
 
 typedef uae_u32 (*mem_get_func)(uaecptr) REGPARAM;
 typedef void (*mem_put_func)(uaecptr, uae_u32) REGPARAM;

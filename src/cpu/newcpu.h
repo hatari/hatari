@@ -365,8 +365,8 @@ extern void m68k_disasm (void *f, uaecptr addr, uaecptr *nextpc, int cnt);
 extern void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, int safemode);
 extern int get_cpu_model (void);
 
-//extern void REGPARAM3 MakeSR (void) REGPARAM;
-//extern void REGPARAM3 MakeFromSR (void) REGPARAM;
+extern void REGPARAM3 MakeSR (void) REGPARAM;
+extern void REGPARAM3 MakeFromSR (void) REGPARAM;
 extern void MakeSR (void);
 extern void MakeFromSR (void);
 extern void REGPARAM3 Exception (int, uaecptr) REGPARAM;

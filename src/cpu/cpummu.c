@@ -362,6 +362,7 @@ static uaecptr mmu_fill_atc_l2(uaecptr addr, bool super, bool data, bool write, 
 	}
 
 	SAVE_EXCEPTION;
+//	TRY(prb) {
 	except = 0;
 	desc = mmu_lookup_pagetable(addr, super, write);
 #if DEBUG > 2
@@ -538,6 +539,7 @@ uae_u16 REGPARAM2 mmu_get_word_unaligned(uaecptr addr, bool data)
 	res = (uae_u16)mmu_get_byte(addr, data, sz_word) << 8;
 	SAVE_EXCEPTION;
 
+//	TRY(prb) {
 	except = 0;
 	res |= mmu_get_byte(addr + 1, data, sz_word);
 	RESTORE_EXCEPTION;
@@ -558,7 +560,8 @@ uae_u32 REGPARAM2 mmu_get_long_unaligned(uaecptr addr, bool data)
 	if (likely(!(addr & 1))) {
 		res = (uae_u32)mmu_get_word(addr, data, sz_long) << 16;
 		SAVE_EXCEPTION;
-		except = 0;
+//		TRY(prb) {
+			except = 0;
 		res |= mmu_get_word(addr + 2, data, sz_long);
 		RESTORE_EXCEPTION;
 		CATCH(prb) {
@@ -570,6 +573,7 @@ uae_u32 REGPARAM2 mmu_get_long_unaligned(uaecptr addr, bool data)
 	} else {
 		res = (uae_u32)mmu_get_byte(addr, data, sz_long) << 8;
 		SAVE_EXCEPTION;
+//		TRY(prb) {
 		except = 0;
 		res = (res | mmu_get_byte(addr + 1, data, sz_long)) << 8;
 		res = (res | mmu_get_byte(addr + 2, data, sz_long)) << 8;
@@ -646,6 +650,7 @@ uae_u32 REGPARAM2 mmu_get_long_slow(uaecptr addr, bool super, bool data,
 void REGPARAM2 mmu_put_long_unaligned(uaecptr addr, uae_u32 val, bool data)
 {
 	SAVE_EXCEPTION;
+//	TRY(prb) {
 	except = 0;
 	if (likely(!(addr & 1))) {
 		mmu_put_word(addr, val >> 16, data, sz_long);
@@ -672,6 +677,7 @@ void REGPARAM2 mmu_put_long_unaligned(uaecptr addr, uae_u32 val, bool data)
 void REGPARAM2 mmu_put_word_unaligned(uaecptr addr, uae_u16 val, bool data)
 {
 	SAVE_EXCEPTION;
+//	TRY(prb) {
 	except = 0;
 	mmu_put_byte(addr, val >> 8, data, sz_word);
 	mmu_put_byte(addr + 1, val, data, sz_word);
@@ -766,6 +772,7 @@ uae_u32 REGPARAM2 sfc_get_long(uaecptr addr)
 	if (likely(!(addr & 1))) {
 		res = (uae_u32)mmu_get_user_word(addr, super, data, sz_long) << 16;
 		SAVE_EXCEPTION;
+//		TRY(prb) {
 		except = 0;
 		res |= mmu_get_user_word(addr + 2, super, data, sz_long);
 		RESTORE_EXCEPTION;
@@ -779,6 +786,7 @@ uae_u32 REGPARAM2 sfc_get_long(uaecptr addr)
 	} else {
 		res = (uae_u32)mmu_get_user_byte(addr, super, data, sz_long) << 8;
 		SAVE_EXCEPTION;
+//		TRY(prb) {
 		except = 0;
 		res = (res | mmu_get_user_byte(addr + 1, super, data, sz_long)) << 8;
 		res = (res | mmu_get_user_byte(addr + 2, super, data, sz_long)) << 8;
@@ -806,6 +814,7 @@ uae_u16 REGPARAM2 sfc_get_word(uaecptr addr)
 
 	res = (uae_u16)mmu_get_user_byte(addr, super, data, sz_word) << 8;
 	SAVE_EXCEPTION;
+//	TRY(prb) {
 	except = 0;
 	res |= mmu_get_user_byte(addr + 1, super, data, sz_word);
 	RESTORE_EXCEPTION;
@@ -833,6 +842,7 @@ void REGPARAM2 dfc_put_long(uaecptr addr, uae_u32 val)
 	bool data = (regs.dfc & 3) != 2;
 
 	SAVE_EXCEPTION;
+//	TRY(prb) {
 	except = 0;
 	if (likely(!is_unaligned(addr, 4)))
 		mmu_put_user_long(addr, val, super, data, sz_long);
@@ -864,6 +874,7 @@ void REGPARAM2 dfc_put_word(uaecptr addr, uae_u16 val)
 	bool data = (regs.dfc & 3) != 2;
 
 	SAVE_EXCEPTION;
+//	TRY(prb) {
 	except = 0;
 	if (likely(!is_unaligned(addr, 2)))
 		mmu_put_user_word(addr, val, super, data, sz_word);
@@ -890,6 +901,7 @@ void REGPARAM2 dfc_put_byte(uaecptr addr, uae_u8 val)
 	bool data = (regs.dfc & 3) != 2;
 
 	SAVE_EXCEPTION;
+//	TRY(prb) {
 	except = 0;
 	mmu_put_user_byte(addr, val, super, data, sz_byte);
 	RESTORE_EXCEPTION;
@@ -937,6 +949,7 @@ void REGPARAM2 mmu_op_real(uae_u32 opcode, uae_u16 extra)
 		//D(bug(L"PTEST%c (A%d) %08x DFC=%d\n", write ? 'W' : 'R', regno, addr, regs.dfc));
 		mmu_flush_atc(addr, super, true);
 		SAVE_EXCEPTION;
+//			TRY(prb) {
 			except = 0;
 			struct mmu_atc_line *l;
 			uae_u32 desc;

@@ -9,7 +9,8 @@
 #define OPTIONS_CPU_H
 
 struct uae_prefs {
-    int cpu_level;  // lolo : not in current amiga emulator
+	/* Laurent */
+    int cpu_level;  // CAUTION : not in current amiga emulator, should probably be replaced by cpu_model in all hatari code
     int cpu_compatible;
     int address_space_24;
    	int cpu_idle;
@@ -24,9 +25,23 @@ struct uae_prefs {
 	int fpu_model;
 	int fpu_revision;
 	int cachesize;
+	int compfpu;
+	
+	/* Laurent */
+	/* Next variables are probably not useful for hatari, but they're useful to let newcpu.c compile*/
+	/* Let's see later if they should be kept or removed */
+	TCHAR inprecfile[MAX_DPATH];
+	int inprecmode;
+	int ntscmode;
+	uae_u32 chipmem_size;	
+	int cs_mbdmac;
+	uae_u32 mbresmem_low_size;
+	int produce_sound;
+
 };
 
 extern struct uae_prefs currprefs, changed_prefs;
+extern void fixup_cpu (struct uae_prefs *prefs);
 
 
 extern void check_prefs_changed_cpu (void);

@@ -21,7 +21,7 @@
 
 #ifndef UAE_MINI
 
-#define DEBUGGER
+//#define DEBUGGER
 #define FILESYS /* filesys emulation */
 #define UAE_FILESYS_THREADS
 #define AUTOCONFIG /* autoconfig support, fast ram, harddrives etc.. */
@@ -55,7 +55,7 @@
 #define CPUEMU_20 /* 68020 "cycle-exact" + blitter */
 #define CPUEMU_21 /* 68030 (040/060) "cycle-exact" + blitter */
 #define CPUEMU_31 /* 68040 Aranym MMU */
-#define ACTION_REPLAY /* Action Replay 1/2/3 support */
+//#define ACTION_REPLAY /* Action Replay 1/2/3 support */
 #define PICASSO96 /* Picasso96 display card emulation */
 #define UAEGFX_INTERNAL /* built-in libs:picasso96/uaegfx.card */
 #define BSDSOCKET /* bsdsocket.library emulation */
@@ -66,7 +66,7 @@
 #define ARCADIA /* Arcadia arcade system */
 #define ARCHIVEACCESS /* ArchiveAccess decompression library */
 #define LOGITECHLCD /* Logitech G15 LCD */
-#define SAVESTATE /* State file support */
+//#define SAVESTATE /* State file support */
 #define A2091 /* A590/A2091 SCSI */
 #define A2065 /* A2065 Ethernet card */
 #define NCR /* A4000T/A4091 SCSI */
