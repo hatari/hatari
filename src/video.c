@@ -280,6 +280,10 @@
 /*			4 cycles.								*/
 /* 2010/07/05	[NP]	When removing left border, allow up to 32 cycles between hi and low	*/
 /*			res switching (fix Megabeer by Invizibles).				*/
+/* 2010/11/01	[NP]	On STE, the 224 bytes overscan will shift the screen 8 pixels to the	*/
+/*			left.									*/
+/*			For 230 bytes overscan, handle scrolling prefetching when computing	*/
+/*			pVideoRaster for the next line.						*/
 
 
 
@@ -921,8 +925,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_2_STE;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71+16;	/* starts 16 pixels later */
-//			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 0;		/* screen is shifted 8 pixels to the left */
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
 			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 		}
@@ -2106,9 +2109,15 @@ static void Video_CopyScreenLineColor(void)
 				}
 
 				/* On STE, when we have a 230 bytes overscan line and HWScrollCount > 0 */
-				/* we must read 6 bytes less than expected */
+				/* we must read 6 bytes less than expected if scrolling is using prefetching ($ff8265) */
+				/* (this is not the case for the 224 bytes overscan which is a multiple of 8) */
 				if ( (LineBorderMask & BORDERMASK_LEFT_OFF) && (LineBorderMask & BORDERMASK_RIGHT_OFF) )
-					pVideoRaster -= 6;		/* we don't add 8 bytes, but 2 */
+				  {
+				    if ( HWScrollPrefetch == 1 )
+					pVideoRaster -= 6;		/* we don't add 8 bytes (see above), but 2 */
+				    else
+					pVideoRaster -= 0;
+				  }
 
 			}
 		}
