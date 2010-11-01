@@ -7,6 +7,9 @@
  -------------------
 
 Emulation:
+- Remove old ST Sound's code used for tone and noise step compute
+- On STE, correctly shift display 8 pixels to the left when using
+  224 bytes overscan
 
 Emulator:
 - Option to disable Falcon mic
