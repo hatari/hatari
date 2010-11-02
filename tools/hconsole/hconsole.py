@@ -370,7 +370,8 @@ class Tokens:
         tokens = []
         for items in [self.option_tokens, self.shortcut_tokens,
             self.event_tokens, self.debugger_tokens, self.device_tokens,
-            self.path_tokens, self.process_tokens.keys()]:
+            self.path_tokens, self.process_tokens.keys(),
+            self.script_tokens.keys(), self.help_tokens.keys()]:
             for token in items:
                 if token in tokens:
                     print "ERROR: token '%s' already in tokens" % token
