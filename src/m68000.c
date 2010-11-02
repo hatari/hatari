@@ -209,8 +209,12 @@ void M68000_Reset(bool bCold)
 	}
 
 	/* Now directly reset the UAE CPU core: */
+	/* Laurent : for now, using parameter 0, but some other parameters can be used here (see newcpu.c) */
+#if ENABLE_WINUAE_CPU
+	m68k_reset(0);
+#else
 	m68k_reset();
-
+#endif
 	BusMode = BUS_MODE_CPU;
 }
 
@@ -258,6 +262,8 @@ void M68000_CheckCpuLevel(void)
 void M68000_MemorySnapShot_Capture(bool bSave)
 {
 	Uint32 savepc;
+	int len;
+	uae_u8 *chunk;
 
 	/* For the UAE CPU core: */
 	MemorySnapShot_Store(&currprefs.address_space_24,
@@ -287,11 +293,7 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 
 	if (bSave)
 	{
-#ifdef UAE_NEWCPU_H
 		MakeSR();
-#else
-		MakeSR(&regs);
-#endif
 		if (regs.s)
 		{
 			MemorySnapShot_Store(&regs.usp, sizeof(regs.usp));    /* USP */
@@ -314,8 +316,13 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&regs.dfc, sizeof(regs.dfc));            /* DFC */
 	MemorySnapShot_Store(&regs.sfc, sizeof(regs.sfc));            /* SFC */
 	MemorySnapShot_Store(&regs.vbr, sizeof(regs.vbr));            /* VBR */
+#if ENABLE_WINUAE_CPU
+	MemorySnapShot_Store(&regs.caar, sizeof(regs.caar));          /* CAAR */
+	MemorySnapShot_Store(&regs.cacr, sizeof(regs.cacr));          /* CACR */
+#else
 	MemorySnapShot_Store(&caar, sizeof(caar));                    /* CAAR */
 	MemorySnapShot_Store(&cacr, sizeof(cacr));                    /* CACR */
+#endif
 	MemorySnapShot_Store(&regs.msp, sizeof(regs.msp));            /* MSP */
 
 	if (!bSave)
@@ -323,27 +330,25 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 		M68000_SetPC(regs.pc);
 		/* MakeFromSR() must not swap stack pointer */
 		regs.s = (regs.sr >> 13) & 1;
-#ifdef UAE_NEWCPU_H
 		MakeFromSR();
 		/* set stack pointer */
 		if (regs.s)
 			m68k_areg(regs, 7) = regs.isp;
 		else
 			m68k_areg(regs, 7) = regs.usp;
-#else
-		MakeFromSR(&regs);
-		/* set stack pointer */
-		if (regs.s)
-			m68k_areg(&regs, 7) = regs.isp;
-		else
-			m68k_areg(&regs, 7) = regs.usp;
-#endif
 	}
 
+#if ENABLE_WINUAE_CPU
+	if (bSave)
+		save_fpu(&len,0);
+	else
+		restore_fpu(chunk);
+#else
 	if (bSave)
 		save_fpu();
 	else
 		restore_fpu();
+#endif
 }
 
 
@@ -407,12 +412,15 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 		}
 
 		/* 68k exceptions are handled by Exception() of the UAE CPU core */
+#if ENABLE_WINUAE_CPU
+		Exception(exceptionNr, m68k_getpc());
+#else
 #ifdef UAE_NEWCPU_H
 		Exception(exceptionNr, m68k_getpc(), ExceptionSource);
 #else
 		Exception(exceptionNr, &regs, m68k_getpc(&regs));
 #endif
-
+#endif
 		SR = M68000_GetSR();
 
 		/* Set Status Register so interrupt can ONLY be stopped by another interrupt

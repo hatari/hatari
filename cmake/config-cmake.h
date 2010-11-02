@@ -58,6 +58,9 @@
 /* Define to 1 to enable DSP 56k emulation for Falcon mode */
 #cmakedefine ENABLE_DSP_EMU 1
 
+/* Define to 1 to enable WINUAE cpu  */
+#cmakedefine ENABLE_WINUAE_CPU 1
+
 /* Define to 1 to use less memory - at the expense of emulation speed */
 #cmakedefine ENABLE_SMALL_MEM 1
 
