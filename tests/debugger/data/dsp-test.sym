@@ -1,0 +1,9 @@
+# some DSP test symbols
+0000 T _start
+0050 T test
+0051 T DSP_start_address
+0100 T code_100
+0200 T code_200
+0300 D data_300
+0400 B BSS_400
+0500 T othersym

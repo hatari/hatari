@@ -1,0 +1,39 @@
+# example symbol/address file for OS Header
+#
+# The file contents are composed of a hexadecimal addresses followed
+# by space, address type, space and the corresponding symbol name.
+# Empty lines and lines which first char is '#' are ignored.
+
+# All TOS versions:
+# os_entry: BRA to reset hander (shadowed at $0).
+# os_version: TOS version number. The high byte is the major revision
+#	number, and the low byte is the minor revision number.
+# reseth: Pointer to the system reset handler.
+# os_beg: Base address of the OS (same as _sysbase).
+# os_end: Address of the first byte of RAM not used by the operating system.
+# os_magic: Pointer to the GEM Memory Usage Parameter Block (MUPB).
+# os_date: Date of system build ($YYYYMMDD).
+# os_conf: OS Configuration Bits.
+# os_dosdate: GEMDOS format date of system build.
+#
+# TOS 1.2 or newer:
+# p_root: Pointer to a system variable containing the address
+#	of the GEMDOS memory pool structure.
+# p_kbshift: Pointer to a system variable which contains the address
+#	of the system keyboard shift state variable.
+# p_run: Pointer to a system variable which contains the address
+#	of the currently executing GEMDOS process.
+
+# address, type & name of symbol
+00 T os_entry
+02 D os_version
+04 D reseth
+08 D os_beg
+0C D os_end
+14 D os_magic
+18 D os_date
+1C D os_conf
+1E D os_dosdate
+20 D p_root
+24 D p_kbshift
+28 D p_run
