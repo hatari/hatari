@@ -262,8 +262,10 @@ void M68000_CheckCpuLevel(void)
 void M68000_MemorySnapShot_Capture(bool bSave)
 {
 	Uint32 savepc;
+#if ENABLE_WINUAE_CPU
 	int len;
 	uae_u8 *chunk;
+#endif
 
 	/* For the UAE CPU core: */
 	MemorySnapShot_Store(&currprefs.address_space_24,
