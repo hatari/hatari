@@ -1,4 +1,16 @@
 # Makefile for testing Hatari (debugger) features
+#
+# "make":
+# - compile tests
+#
+# "make test":
+# - run tests
+#
+# "make valgrind":
+# - run tests under valgrind
+#
+# "make clean; make MUDFLAP=1 mudflap":
+# - run tests with GCC mudflap checks
 
 # Set the C compiler (e.g. gcc)
 CC = gcc
@@ -70,6 +82,9 @@ mudflap: $(TESTS)
 valgrind: $(TESTS)
 	for test in $^; do valgrind $(VALGRIND_OPTS) ./$$test; done
 
+# just run the tests
+test: $(TESTS)
+	for test in $^; do ./$$test; echo "Press <Enter>"; read; done
 
 # all the real & dummy deps
 SOURCEDEPS = test-dummies.c ../src/debug/breakcond.c \
