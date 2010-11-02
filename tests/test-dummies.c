@@ -4,7 +4,7 @@
 
 /* fake tracing flags */
 #include "log.h"
-Uint32 LogTraceFlags = 0;
+Uint64 LogTraceFlags = 0;
 
 /* fake Hatari configuration variables for number parsing */
 #include "configuration.h"
@@ -51,6 +51,10 @@ Uint32 TosAddress, TosSize;
 FILE *debugOutput;
 void DebugUI(void) { }
 void DebugUI_PrintCmdHelp(const char *psCmd) { }
+
+/* fake debugInfo.c stuff */
+#include "debugInfo.h"
+void DebugInfo_ShowSessionInfo(void) {}
 
 /* fake Hatari video variables */
 #include "screen.h"
