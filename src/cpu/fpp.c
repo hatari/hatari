@@ -15,12 +15,12 @@
 #include "sysconfig.h"
 #include "sysdeps.h"
 
-#include "options.h"
+#include "options_cpu.h"
 #include "memory.h"
 #include "custom.h"
 #include "events.h"
 #include "newcpu.h"
-#include "ersatz.h"
+//#include "ersatz.h"
 #include "md-fpp.h"
 #include "savestate.h"
 #include "cpu_prefetch.h"
@@ -166,7 +166,7 @@ static void fpu_op_illg (uae_u32 opcode, int pcoffset)
 			x_put_long (m68k_areg (regs, 7), newpc);
 			m68k_areg (regs, 7) -= 2;
 			x_put_word (m68k_areg (regs, 7), regs.sr);
-			write_log (L"68040/060 FPU disabled exception PC=%x\n", newpc);
+			write_log ("68040/060 FPU disabled exception PC=%x\n", newpc);
 			newpc = x_get_long (regs.vbr + 11 * 4);
 			m68k_setpc (newpc);
 #ifdef JIT
@@ -254,7 +254,7 @@ STATIC_INLINE tointtype toint (fptype src, fptype minval, fptype maxval)
 #endif
 }
 
-extern int isinf (double x);
+/*extern int isinf (double x);  //Not used */
 
 uae_u32 get_fpsr (void)
 {
@@ -524,7 +524,7 @@ STATIC_INLINE int put_fp_value (fptype value, uae_u32 opcode, uae_u16 extra)
 
 #if DEBUG_FPP
 	if (!isinrom ())
-		write_log (L"PUTFP: %f %04X %04X\n", value, opcode, extra);
+		write_log ("PUTFP: %f %04X %04X\n", value, opcode, extra);
 #endif
 	if (!(extra & 0x4000)) {
 		regs.fp[(extra >> 10) & 7] = value;
@@ -790,7 +790,7 @@ void fpuop_dbcc (uae_u32 opcode, uae_u16 extra)
 
 #if DEBUG_FPP
 	if (!isinrom ())
-		write_log (L"fdbcc_opp at %08lx\n", m68k_getpc ());
+		write_log ("fdbcc_opp at %08lx\n", m68k_getpc ());
 #endif
 	if (fault_if_no_fpu (opcode, 4))
 		return;
@@ -816,7 +816,7 @@ void fpuop_scc (uae_u32 opcode, uae_u16 extra)
 
 #if DEBUG_FPP
 	if (!isinrom ())
-		write_log (L"fscc_opp at %08lx\n", m68k_getpc ());
+		write_log ("fscc_opp at %08lx\n", m68k_getpc ());
 #endif
 	if (fault_if_no_fpu (opcode, 4))
 		return;
@@ -841,7 +841,7 @@ void fpuop_trapcc (uae_u32 opcode, uaecptr oldpc, uae_u16 extra)
 
 #if DEBUG_FPP
 	if (!isinrom ())
-		write_log (L"ftrapcc_opp at %08lx\n", m68k_getpc ());
+		write_log ("ftrapcc_opp at %08lx\n", m68k_getpc ());
 #endif
 	if (fault_if_no_fpu (opcode, m68k_getpc() - oldpc))
 		return;
@@ -860,7 +860,7 @@ void fpuop_bcc (uae_u32 opcode, uaecptr pc, uae_u32 extra)
 
 #if DEBUG_FPP
 	if (!isinrom ())
-		write_log (L"fbcc_opp at %08lx\n", m68k_getpc ());
+		write_log ("fbcc_opp at %08lx\n", m68k_getpc ());
 #endif
 	if (fault_if_no_fpu (opcode, m68k_getpc () - pc))
 		return;
@@ -884,7 +884,7 @@ void fpuop_save (uae_u32 opcode)
 
 #if DEBUG_FPP
 	if (!isinrom ())
-		write_log (L"fsave_opp at %08lx\n", m68k_getpc ());
+		write_log ("fsave_opp at %08lx\n", m68k_getpc ());
 #endif
 	if (fault_if_no_fpu (opcode, 2))
 		return;
@@ -956,7 +956,7 @@ void fpuop_restore (uae_u32 opcode)
 
 #if DEBUG_FPP
 	if (!isinrom ())
-		write_log (L"frestore_opp at %08lx\n", m68k_getpc ());
+		write_log ("frestore_opp at %08lx\n", m68k_getpc ());
 #endif
 	if (fault_if_no_fpu (opcode, 2))
 		return;
@@ -1047,7 +1047,7 @@ void fpuop_arithmetic (uae_u32 opcode, uae_u16 extra)
 
 #if DEBUG_FPP
 	if (!isinrom ())
-		write_log (L"FPP %04lx %04x at %08lx\n", opcode & 0xffff, extra, m68k_getpc () - 4);
+		write_log ("FPP %04lx %04x at %08lx\n", opcode & 0xffff, extra, m68k_getpc () - 4);
 #endif
 	if (fault_if_no_fpu (opcode, 4))
 		return;
@@ -1660,7 +1660,7 @@ uae_u8 *restore_fpu (uae_u8 *src)
 		restore_u32();
 		restore_u32();
 	}
-	write_log (L"FPU: %d\n", currprefs.fpu_model);
+	write_log ("FPU: %d\n", currprefs.fpu_model);
 	return src;
 }
 

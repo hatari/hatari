@@ -14,7 +14,7 @@
 #define SUPPORT_THREADS
 #define MAX_DPATH 1000
 
-#define X86_MSVC_ASSEMBLY
+//#define X86_MSVC_ASSEMBLY
 //#define X86_MSVC_ASSEMBLY_MEMACCESS
 #define OPTIMIZED_FLAGS
 //#define __i386__
