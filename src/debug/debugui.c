@@ -756,8 +756,11 @@ static const dbgcommand_t uicommand[] =
 	  "\tby their values. Supported operators in expressions are,\n"
 	  "\tin the decending order of precedence:\n"
 	  "\t\t(), +, -, ~, *, /, +, -, >>, <<, ^, &, |\n"
+	  "\tParenthesis will fetch a _long_ value from the address\n"
+	  "\tto what the value inside it evaluates to. Prefixes can be\n"
+	  "\tused only in start of line or parenthesis.\n"
 	  "\tFor example:\n"
-	  "\t\t((0x21 * 0x200) + (-5)) ^ (~%111 & $f0f0f0)\n"
+	  "\t\t~%101 & $f0f0f ^ (d0 + 0x21)\n"
 	  "\tResult value is shown as binary, decimal and hexadecimal.\n"
 	  "\tAfter this, '$' will TAB-complete to last result value.",
 	  true },

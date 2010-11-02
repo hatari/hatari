@@ -702,7 +702,7 @@ static long long close_bracket (long long value)
 			/* fetch the indirect ST RAM value */
 			addr = val.buf[val.idx];
 			value = STMemory_ReadLong(addr);
-			fprintf(stderr, "- value at addr $%x = $%llx\n", addr, value);
+			fprintf(stderr, "  value in RAM at ($%x).l = $%llx\n", addr, value);
 			/* restore state before parenthesis */
 			op.idx = par.opx[par.idx] - 1;
 			val.idx = par.vax[par.idx] - 1;
