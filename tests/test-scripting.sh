@@ -13,7 +13,7 @@ if [ \! -f $etos ]; then
 	exit 1
 fi
 
-hpath=../src
+hpath=../build/src
 if [ \! -d $hpath ]; then
 	echo "ERROR: Hatari source directory '$path' missing!"
 	exit 1
@@ -25,7 +25,7 @@ if [ \! -x $hatari ]; then
 	exit 1
 fi
 
-console=../python-ui/hatari-console.py
+console=../tools/hconsole/hconsole.py
 if [ \! -x $console ]; then
 	echo "ERROR: Hatari console script '$console' missing!"
 	exit 1
