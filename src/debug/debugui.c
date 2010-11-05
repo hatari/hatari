@@ -501,14 +501,15 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 /**
  * Parse debug command and execute it.
  */
-static int DebugUI_ParseCommand(char *input)
+static int DebugUI_ParseCommand(const char *input_orig)
 {
-	char *psArgs[64];
+	char *psArgs[64], *input;
 	const char *delim;
 	static char sLastCmd[80] = { '\0' };
 	int nArgc, cmd = -1;
 	int i, retval;
 
+	input = strdup(input_orig);
 	psArgs[0] = strtok(input, " \t");
 
 	if (psArgs[0] == NULL)
@@ -516,7 +517,10 @@ static int DebugUI_ParseCommand(char *input)
 		if (strlen(sLastCmd) > 0)
 			psArgs[0] = sLastCmd;
 		else
+		{
+			free(input);
 			return DEBUGGER_CMDDONE;
+		}
 	}
 
 	/* Search the command ... */
@@ -536,6 +540,7 @@ static int DebugUI_ParseCommand(char *input)
 		fprintf(stderr, "Command '%s' not found.\n"
 			"Use 'help' to view a list of available commands.\n",
 			psArgs[0]);
+		free(input);
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -564,6 +569,7 @@ static int DebugUI_ParseCommand(char *input)
 		strncpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
 	else
 		sLastCmd[0] = '\0';
+	free(input);
 	return retval;
 }
 
@@ -982,7 +988,7 @@ bool DebugUI_ParseFile(const char *path)
 				strcpy(olddir, ".");
 		}
 		*slash = '\0';
-		if (chdir(dir))
+		if (chdir(dir) != 0)
 		{
 			perror("ERROR");
 			if (olddir)
@@ -1025,8 +1031,10 @@ bool DebugUI_ParseFile(const char *path)
 	free(input);
 	if (olddir)
 	{
-		chdir(olddir);
-		fprintf(stderr, "Changed back to '%s' dir.\n", olddir);
+		if (chdir(olddir) != 0)
+			perror("ERROR");
+		else
+			fprintf(stderr, "Changed back to '%s' dir.\n", olddir);
 		free(olddir);
 	}
 
