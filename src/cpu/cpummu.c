@@ -37,6 +37,7 @@
 
 #define DBG_MMU_VERBOSE	1
 #define DBG_MMU_SANITY	1
+#define write_log printf
 
 #ifdef FULLMMU
 

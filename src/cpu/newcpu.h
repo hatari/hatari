@@ -242,6 +242,12 @@ STATIC_INLINE uaecptr m68k_getpc_p (uae_u8 *p)
 	return (uaecptr)(regs.pc + ((uae_u8*)p - (uae_u8*)regs.pc_oldp));
 }
 
+STATIC_INLINE void fill_prefetch_0 (void)
+{
+}
+
+#define fill_prefetch_2 fill_prefetch_0
+
 STATIC_INLINE void m68k_incpc (int o)
 {
 	regs.pc_p += o;

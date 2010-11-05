@@ -269,6 +269,19 @@ void fixup_cpu (struct uae_prefs *p)
 		p->mmu_model = 0;
 }
 
+/* Code taken from main.cpp*/
+void uae_reset (int hardreset)
+{
+	currprefs.quitstatefile[0] = changed_prefs.quitstatefile[0] = 0;
+
+	if (quit_program == 0) {
+		quit_program = -2;
+		if (hardreset)
+			quit_program = -3;
+	}
+
+}
+
 int current_hpos (void)
 {
     return (get_cycles () - eventtab[ev_hsync].oldcycles) / CYCLE_UNIT;

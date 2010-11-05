@@ -27,6 +27,7 @@
 #include "cpummu.h"
 
 #define DEBUG_FPP 0
+#define write_log printf
 
 STATIC_INLINE int isinrom (void)
 {
