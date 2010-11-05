@@ -55,7 +55,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
 
-Uint32 nRunVBLs;                          /* Whether and how many VBLS to run before exit */
+static Uint32 nRunVBLs;                   /* Whether and how many VBLS to run before exit */
 static Uint32 nFirstMilliTick;            /* Ticks when VBL counting started */
 static Uint32 nVBLCount;                  /* Frame count */
 
@@ -187,6 +187,18 @@ void Main_RequestQuit(void)
 		/* Assure that CPU core shuts down */
 		M68000_SetSpecial(SPCFLAG_BRK);
 	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set how many VBLs Hatari should run, from the moment this function
+ * is called.
+ */
+void Main_SetRunVBLs(Uint32 vbls)
+{
+	fprintf(stderr, "Exit after %d VBLs.\n", vbls);
+	nRunVBLs = vbls;
+	nVBLCount = 0;
 }
 
 /*-----------------------------------------------------------------------*/

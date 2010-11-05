@@ -51,11 +51,11 @@
 #define CPU_FREQ   8012800
 
 extern bool bQuitProgram;
-extern Uint32 nRunVBLs;
 
 extern bool Main_PauseEmulation(bool visualize);
 extern bool Main_UnPauseEmulation(void);
 extern void Main_RequestQuit(void);
+extern void Main_SetRunVBLs(Uint32 vbls);
 extern void Main_WaitOnVbl(void);
 extern void Main_WarpMouse(int x, int y);
 extern void Main_EventHandler(void);

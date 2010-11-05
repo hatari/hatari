@@ -1499,7 +1499,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			break;
 
 		case OPT_RUNVBLS:
-			nRunVBLs = atol(argv[++i]);
+			Main_SetRunVBLs(atol(argv[++i]));
 			break;
 		       
 		case OPT_ERROR:
