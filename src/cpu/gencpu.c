@@ -21,6 +21,7 @@
 #include "sysconfig.h"
 #include "sysdeps.h"
 #include <ctype.h>
+#include <string.h>
 
 #include "readcpu.h"
 

@@ -85,10 +85,6 @@ extern void event2_remevent (int);
 #endif
 */
 
-int current_hpos (void)
-{
-    return (get_cycles () - eventtab[ev_hsync].oldcycles) / CYCLE_UNIT;
-}
 
 STATIC_INLINE bool cycles_in_range (unsigned long endcycles)
 {

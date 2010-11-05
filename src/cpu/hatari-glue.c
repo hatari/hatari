@@ -109,6 +109,7 @@ void Exit680x0(void)
 /**
  * Check if the CPU type has been changed
  */
+#ifndef ENABLE_WINUAE_CPU
 void check_prefs_changed_cpu(void)
 {
 	if (currprefs.cpu_level != changed_prefs.cpu_level
@@ -120,7 +121,7 @@ void check_prefs_changed_cpu(void)
 		build_cpufunctbl ();
 	}
 }
-
+#endif
 
 /**
  * This function will be called at system init by the cartridge routine

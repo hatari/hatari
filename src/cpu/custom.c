@@ -268,3 +268,8 @@ void fixup_cpu (struct uae_prefs *p)
 	if (p->cpu_model != 68040)
 		p->mmu_model = 0;
 }
+
+int current_hpos (void)
+{
+    return (get_cycles () - eventtab[ev_hsync].oldcycles) / CYCLE_UNIT;
+}

@@ -1048,7 +1048,7 @@ void REGPARAM2 mmu_set_tc(uae_u16 tc)
 	regs.mmu_pagesize_8k = tc & 0x4000 ? 1 : 0;
 	mmu_flush_atc_all(true);
 
-	write_log(L"MMU: enabled=%d page8k=%d\n", regs.mmu_enabled, regs.mmu_pagesize_8k);
+	write_log("MMU: enabled=%d page8k=%d\n", regs.mmu_enabled, regs.mmu_pagesize_8k);
 }
 
 void REGPARAM2 mmu_set_super(bool super)
