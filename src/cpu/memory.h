@@ -25,7 +25,6 @@ extern uae_u8 *cache_alloc (int);
 extern void cache_free (uae_u8*);
 #endif
 
-
 #define call_mem_get_func(func, addr) ((*func)(addr))
 #define call_mem_put_func(func, addr, v) ((*func)(addr, v))
 

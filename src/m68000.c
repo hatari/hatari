@@ -264,7 +264,7 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 	Uint32 savepc;
 #if ENABLE_WINUAE_CPU
 	int len;
-	uae_u8 *chunk;
+	uae_u8 *chunk = 0;
 #endif
 
 	/* For the UAE CPU core: */

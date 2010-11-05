@@ -2515,7 +2515,9 @@ static void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr ex
 #endif
 	if (currprefs.cs_mbdmac == 1 && currprefs.mbresmem_low_size > 0) {
 		if (otc != tc_030) {
+#if AMIGA_ONLY
 			a3000_fakekick (tc_030 & 0x80000000);
+#endif
 		}
 	}
 }

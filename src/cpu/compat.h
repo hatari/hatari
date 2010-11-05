@@ -24,6 +24,8 @@
 #define MAX_LINEWIDTH 100
 #endif
 
+#define cpu_level cpu_model
+
 /* Laurent */
 /* here only to allow newcpu.c to compile */
 /* Should be removed when newcpu.c 'll be relooked for hatari only*/
@@ -35,14 +37,6 @@ int vpos;
 int quit_program;  // declared as "int quit_program = 0;" in main.c 
 //WinUae ChangeLog: Improve quitting/resetting behaviour: Move quit_program from GUI
 //WinUae ChangeLog: quit_program is now handled in vsync_handler() and m68k_go().
-
-
-/* The 3 next defines comes from custom.h 
-   They're here to let newcpu.c compiles.*/
-#define SPCFLAG_BLTNASTY 512
-#define DMA_BLITTER   0x0040
-#define SPCFLAG_TRAP 4096 /* enforcer-hack */
-
 
 #ifndef REGPARAM
 #define REGPARAM

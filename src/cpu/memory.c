@@ -91,6 +91,9 @@ extern void SDL_Quit(void);
 static int STmem_check (uaecptr addr, uae_u32 size) REGPARAM;
 static uae_u8 *STmem_xlate (uaecptr addr) REGPARAM;
 
+uae_u8 ce_banktype[65536];
+uae_u8 ce_cachable[65536];
+
 
 /* A dummy bank that only contains zeros */
 
