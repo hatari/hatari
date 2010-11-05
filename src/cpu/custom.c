@@ -232,3 +232,39 @@ void f_out (void *f, const TCHAR *format, ...)
 */
 }
 
+/* Code taken from main.cpp */
+void fixup_cpu (struct uae_prefs *p)
+{
+	if (p->cpu_frequency == 1000000)
+		p->cpu_frequency = 0;
+	switch (p->cpu_model)
+	{
+	case 68000:
+		p->address_space_24 = 1;
+		if (p->cpu_compatible || p->cpu_cycle_exact)
+			p->fpu_model = 0;
+		break;
+	case 68010:
+		p->address_space_24 = 1;
+		if (p->cpu_compatible || p->cpu_cycle_exact)
+			p->fpu_model = 0;
+		break;
+	case 68020:
+		break;
+	case 68030:
+		p->address_space_24 = 0;
+		break;
+	case 68040:
+		p->address_space_24 = 0;
+		if (p->fpu_model)
+			p->fpu_model = 68040;
+		break;
+	case 68060:
+		p->address_space_24 = 0;
+		if (p->fpu_model)
+			p->fpu_model = 68060;
+		break;
+	}
+	if (p->cpu_model != 68040)
+		p->mmu_model = 0;
+}

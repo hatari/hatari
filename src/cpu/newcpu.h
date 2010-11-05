@@ -438,6 +438,9 @@ extern const struct cputbl op_smalltbl_12_ff[];
 
 extern cpuop_func *cpufunctbl[65536] ASM_SYM_FOR_FUNC ("cpufunctbl");
 
+/* Added for hatari_glue.c */
+extern void build_cpufunctbl(void);
+
 #ifdef JIT
 extern void flush_icache (uaecptr, int);
 extern void compemu_reset (void);

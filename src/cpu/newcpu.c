@@ -318,7 +318,7 @@ static unsigned long REGPARAM2 op_illg_1 (uae_u32 opcode)
 	return 4;
 }
 
-static void build_cpufunctbl (void)
+void build_cpufunctbl (void)
 {
 	int i, opcnt;
 	unsigned long opcode;
