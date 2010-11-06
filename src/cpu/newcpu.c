@@ -2283,8 +2283,6 @@ void m68k_reset (int hardreset)
 		return;
 	}
 #endif
-	m68k_areg (regs, 7) = get_long (0);
-	m68k_setpc (get_long (4));
 	regs.s = 1;
 	regs.m = 0;
 	regs.stopped = 0;
@@ -2298,6 +2296,10 @@ void m68k_reset (int hardreset)
 	regs.intmask = 7;
 	regs.vbr = regs.sfc = regs.dfc = 0;
 	regs.irc = 0xffff;
+
+	m68k_areg (regs, 7) = get_long (0);
+	m68k_setpc (get_long (4));
+
 #ifdef FPUEMU
 	fpu_reset ();
 #endif
