@@ -32,7 +32,6 @@ extern void do_cycles_ce020_mem (int clocks);
 extern void do_cycles_ce000 (int clocks);
 extern int is_cycle_ce (void);
 extern int current_hpos (void);
-static int get_cycles (void);
 
 static void events_schedule (void);
 
@@ -85,59 +84,13 @@ extern void event2_remevent (int);
 #endif
 */
 
+#include "events_normal.h"
+
 
 STATIC_INLINE bool cycles_in_range (unsigned long endcycles)
 {
 	signed long c = get_cycles ();
 	return (signed long)endcycles - c > 0;
-}
-
-STATIC_INLINE void cycles_do_special (void)
-{
-}
-STATIC_INLINE void set_cycles (int c)
-{
-}
-
-static int get_cycles (void)
-{
-	return currcycle;
-}
-
-STATIC_INLINE void do_cycles_slow (unsigned long cycles_to_add)
-{
-	if (is_lastline && eventtab[ev_hsync].evtime - currcycle <= cycles_to_add
-		&& (long int)(read_processor_time () - vsyncmintime) < 0)
-		return;
-
-	while ((nextevent - currcycle) <= cycles_to_add) {
-		int i;
-		cycles_to_add -= (nextevent - currcycle);
-		currcycle = nextevent;
-
-		for (i = 0; i < ev_max; i++) {
-			if (eventtab[i].active && eventtab[i].evtime == currcycle) {
-				(*eventtab[i].handler)();
-			}
-		}
-		events_schedule();
-	}
-	currcycle += cycles_to_add;
-}
-
-static void events_schedule (void)
-{
-	int i;
-
-	unsigned long int mintime = ~0L;
-	for (i = 0; i < ev_max; i++) {
-		if (eventtab[i].active) {
-			unsigned long int eventtime = eventtab[i].evtime - currcycle;
-			if (eventtime < mintime)
-				mintime = eventtime;
-		}
-	}
-	nextevent = currcycle + mintime;
 }
 
 #endif //HATARI_EVENT_H

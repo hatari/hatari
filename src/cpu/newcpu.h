@@ -77,6 +77,8 @@ extern int fpp_movem_index2[256];
 extern int fpp_movem_next[256];
 #endif
 
+extern int OpcodeFamily;
+
 typedef unsigned long REGPARAM3 cpuop_func (uae_u32) REGPARAM;
 typedef void REGPARAM3 cpuop_func_ce (uae_u32) REGPARAM;
 
@@ -472,5 +474,25 @@ extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
 /* How many cycles to add to the current instruction in case a "misaligned" bus acces is made */
 /* (used when addressing mode is d8(an,ix)) */
 extern int BusCyclePenalty;
+
+STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
+{
+/* Laurent : let's see this later
+    uae_u32 currpc = m68k_getpc ();
+    uae_u32 addr = currpc + o;
+    uae_u32 offs = addr - prefetch_pc;
+    uae_u32 v;
+    if (offs > 3) {
+	refill_prefetch (currpc, o);
+	offs = addr - prefetch_pc;
+    }
+    v = do_get_mem_word (((uae_u8 *)&prefetch) + offs);
+    if (offs >= 2)
+	refill_prefetch (currpc, 2);
+    */
+    /* printf ("get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */
+    //return v;
+    return 0;
+}
 
 #endif

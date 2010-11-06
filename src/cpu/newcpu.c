@@ -116,6 +116,8 @@ static uae_u64 srp_030, crp_030;
 static uae_u32 tt0_030, tt1_030, tc_030;
 static uae_u16 mmusr_030;
 
+int OpcodeFamily;
+
 static struct cache020 caches020[CACHELINES020];
 static struct cache030 icaches030[CACHELINES030];
 static struct cache030 dcaches030[CACHELINES030];
@@ -1199,12 +1201,12 @@ STATIC_INLINE int in_rom (uaecptr pc)
 	return (munge24 (pc) & 0xFFF80000) == 0xF80000;
 }
 
-#if AMIGA_ONLY
 STATIC_INLINE int in_rtarea (uaecptr pc)
 {
+#if AMIGA_ONLY
 	return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom;
-}
 #endif
+}
 
 void REGPARAM2 MakeSR (void)
 {

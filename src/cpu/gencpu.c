@@ -1490,6 +1490,10 @@ static void gen_opcode (unsigned long int opcode)
 
 	insn_n_cycles = using_prefetch ? 0 : 4;
 
+    /* Store the family of the instruction (used to check for pairing on ST)
+     * and leave some space for patching in the current cycles later */
+    printf ("\tOpcodeFamily = %d;\n", curi->mnemo);
+
 	if (using_ce020) {
 		if (using_ce020 == 2) {
 			ce020_prefetch_long = "get_long_ce030_prefetch";
