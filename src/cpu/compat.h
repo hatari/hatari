@@ -76,4 +76,6 @@ int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define _tcscat strcat
 #define _stprintf sprintf
 
+#define _vsntprintf printf
+
 #endif

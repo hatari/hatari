@@ -812,3 +812,7 @@ void map_banks (addrbank *bank, int start, int size)
 	for (bnr = start; bnr < start+size; bnr++)
 	    put_mem_bank ((bnr + hioffs) << 16, bank);
 }
+
+void memory_hardreset (void)
+{
+}

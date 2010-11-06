@@ -2715,6 +2715,8 @@ STATIC_INLINE int do_specialties (int cycles)
 #endif
 
 	while ((regs.spcflags & SPCFLAG_BLTNASTY) && dmaen (DMA_BLITTER) && cycles > 0 && !currprefs.blitter_cycle_exact) {
+#if AMIGA_ONLY
+		/* Laurent : I don't know if our blitter code should be called here ! */
 		int c = blitnasty ();
 		if (c > 0) {
 			cycles -= c * CYCLE_UNIT * 2;
@@ -2723,6 +2725,8 @@ STATIC_INLINE int do_specialties (int cycles)
 		} else
 			c = 4;
 		do_cycles (c * CYCLE_UNIT);
+#endif
+
 #if AMIGA_ONLY
 		if (regs.spcflags & SPCFLAG_COPPER)
 			do_copper ();

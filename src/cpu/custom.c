@@ -31,6 +31,7 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
 uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode);
 TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...);
 
+uae_u16 dmacon;
 
 struct ev eventtab[ev_max];
 
@@ -197,6 +198,24 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 		put_byte (addr, v);
 	do_cycles_ce (CYCLE_UNIT);
 
+}
+
+void reset_frame_rate_hack (void)
+{
+/*	Laurent : should it be adapted or removed ?
+	if (currprefs.m68k_speed != -1)
+		return;
+
+	if (! rpt_available) {
+		currprefs.m68k_speed = 0;
+		return;
+	}
+
+	rpt_did_reset = 1;
+	is_lastline = 0;
+	vsyncmintime = read_processor_time () + vsynctime;
+	write_log ("Resetting frame rate hack\n");
+*/
 }
 
 /* Taken from writelog.cpp */

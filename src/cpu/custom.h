@@ -24,6 +24,7 @@ extern int custom_init (void);
 extern void customreset (void);
 extern int intlev (void);
 extern void dumpcustom (void);
+extern void uae_reset (int hardreset);
 
 extern void do_disk (void);
 extern void do_copper (void);
