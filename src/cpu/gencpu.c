@@ -3834,8 +3834,8 @@ int main (int argc, char **argv)
 				fprintf (stblfile, "#ifdef CPUEMU_%d\n", postfix);
 			postfix2 = postfix;
 			sprintf (fname, "cpuemu_%d.c", postfix);
-			if (freopen ("cpuemu.c", "wb", stdout) == NULL) {
-				perror("cpuemu.c");
+			if (freopen (fname, "wb", stdout) == NULL) {
+				perror(fname);
 				return -1;
 			}
 			generate_includes (stdout);
