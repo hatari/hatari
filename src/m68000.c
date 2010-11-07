@@ -54,6 +54,8 @@
 /* 2010/05/07	[NP]	Add pairing for ADD/MOVE ; such pairing should only be possible when combined	*/
 /*			with d8(an,ix) address mode (eg: add.l (a5,d1.w),d0 + move.b 7(a5,d1.w),d5)	*/
 /*			(fixes Sommarhack 2010 Invitation by DHS).					*/
+/* 2010/11/07	[NP]	Add pairing between bit shift instr and JMP (fixes lsl.w #2,d0 + jmp 2(pc,d0)	*/
+/*			used in Fullparts by Hemoroids).						*/
 
 
 const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
@@ -152,6 +154,7 @@ static void M68000_InitPairing(void)
 	M68000_InitPairing_BitShift ( i_MOVE );
 	M68000_InitPairing_BitShift ( i_MOVEA );
 	M68000_InitPairing_BitShift ( i_LEA );
+	M68000_InitPairing_BitShift ( i_JMP );
 
 	PairingArray[ i_MULU ][ i_MOVEA] = 1; 
 	PairingArray[ i_MULS ][ i_MOVEA] = 1; 
