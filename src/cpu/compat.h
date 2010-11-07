@@ -26,6 +26,8 @@
 
 #define cpu_level cpu_model
 
+#define RTAREA_DEFAULT 0xf00000
+
 /* Laurent */
 /* here only to allow newcpu.c to compile */
 /* Should be removed when newcpu.c 'll be relooked for hatari only*/

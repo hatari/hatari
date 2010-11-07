@@ -78,6 +78,8 @@ bool check_prefs_changed_comp (void) { return false; }
 /* For faster JIT cycles handling */
 signed long pissoff = 0;
 
+uaecptr rtarea_base = RTAREA_DEFAULT;
+
 /* Opcode of faulting instruction */
 static uae_u16 last_op_for_exception_3;
 /* PC at fault time */
@@ -1203,9 +1205,7 @@ STATIC_INLINE int in_rom (uaecptr pc)
 
 STATIC_INLINE int in_rtarea (uaecptr pc)
 {
-#if AMIGA_ONLY
-	return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom;
-#endif
+	/*return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom;*/
 }
 
 void REGPARAM2 MakeSR (void)
@@ -2296,7 +2296,7 @@ void m68k_reset (int hardreset)
 	regs.intmask = 7;
 	regs.vbr = regs.sfc = regs.dfc = 0;
 	regs.irc = 0xffff;
-
+	
 	m68k_areg (regs, 7) = get_long (0);
 	m68k_setpc (get_long (4));
 
@@ -2672,48 +2672,81 @@ void doint (void)
 
 #define IDLETIME (currprefs.cpu_idle * sleep_resolution / 700)
 
+/*
+ * Compute the number of jitter cycles to add when a video interrupt occurs
+ * (this is specific to the Atari ST)
+ */
+static void InterruptAddJitter (int Level , int Pending)
+{
+    int cycles = 0;
+
+    if ( Level == 2 )				/* HBL */
+      {
+        if ( Pending )
+	  cycles = HblJitterArrayPending[ HblJitterIndex ];
+	else
+	  cycles = HblJitterArray[ HblJitterIndex ];
+      }
+    
+    else if ( Level == 4 )			/* VBL */
+      {
+        if ( Pending )
+	  cycles = VblJitterArrayPending[ VblJitterIndex ];
+	else
+	  cycles = VblJitterArray[ VblJitterIndex ];
+      }
+
+//fprintf ( stderr , "jitter %d\n" , cycles );
+//cycles=0;
+    if ( cycles > 0 )				/* no need to call M68000_AddCycles if cycles == 0 */
+      M68000_AddCycles ( cycles );
+}
+
+static void Interrupt(int nr , int Pending)
+{
+    assert(nr < 8 && nr >= 0);
+    /*lastint_regs = regs;*/
+    /*lastint_no = nr;*/
+
+    /* On Hatari, only video ints are using SPCFLAG_INT (see m68000.c) */
+    Exception(nr+24, 0);
+
+    regs.intmask = nr;
+    set_special (SPCFLAG_INT);
+
+    /* Handle Atari ST's specific jitter for hbl/vbl */
+    InterruptAddJitter ( nr , Pending );
+}
+
+/*
+ * Handle special flags
+ */
+
+static bool do_specialties_interrupt (int Pending)
+{
+    /* Check for MFP ints first (level 6) */
+    if (regs.spcflags & SPCFLAG_MFP) {
+       if (MFP_CheckPendingInterrupts() == true)
+         return true;					/* MFP exception was generated, no higher interrupt can happen */
+    }
+
+    /* No MFP int, check for VBL/HBL ints (levels 4/2) */
+    if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+	int intr = intlev ();
+	/* SPCFLAG_DOINT will be enabled again in MakeFromSR to handle pending interrupts! */
+//	unset_special (SPCFLAG_DOINT);
+	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+	if (intr != -1 && intr > regs.intmask) {
+	    Interrupt (intr , Pending);			/* process the interrupt and add pending jitter if necessary */
+	    return true;
+	}
+    }
+
+    return false;					/* no interrupt was found */
+}
+
 STATIC_INLINE int do_specialties (int cycles)
 {
-#ifdef ACTION_REPLAY
-#ifdef ACTION_REPLAY_HRTMON
-	if ((regs.spcflags & SPCFLAG_ACTION_REPLAY) && hrtmon_flag != ACTION_REPLAY_INACTIVE) {
-		int isinhrt = (m68k_getpc () >= hrtmem_start && m68k_getpc () < hrtmem_start + hrtmem_size);
-		/* exit from HRTMon? */
-		if (hrtmon_flag == ACTION_REPLAY_ACTIVE && !isinhrt)
-			hrtmon_hide ();
-		/* HRTMon breakpoint? (not via IRQ7) */
-		if (hrtmon_flag == ACTION_REPLAY_IDLE && isinhrt)
-			hrtmon_breakenter ();
-		if (hrtmon_flag == ACTION_REPLAY_ACTIVATE)
-			hrtmon_enter ();
-		if (!(regs.spcflags & ~SPCFLAG_ACTION_REPLAY))
-			return 0;
-	}
-#endif
-	if ((regs.spcflags & SPCFLAG_ACTION_REPLAY) && action_replay_flag != ACTION_REPLAY_INACTIVE) {
-		/*if (action_replay_flag == ACTION_REPLAY_ACTIVE && !is_ar_pc_in_rom ())*/
-		/*	write_log ("PC:%p\n", m68k_getpc ());*/
-
-		if (action_replay_flag == ACTION_REPLAY_ACTIVATE || action_replay_flag == ACTION_REPLAY_DORESET)
-			action_replay_enter ();
-		if (action_replay_flag == ACTION_REPLAY_HIDE && !is_ar_pc_in_rom ()) {
-			action_replay_hide ();
-			unset_special (SPCFLAG_ACTION_REPLAY);
-		}
-		if (action_replay_flag == ACTION_REPLAY_WAIT_PC) {
-			/*write_log ("Waiting for PC: %p, current PC= %p\n", wait_for_pc, m68k_getpc ());*/
-			if (m68k_getpc () == wait_for_pc) {
-				action_replay_flag = ACTION_REPLAY_ACTIVATE; /* Activate after next instruction. */
-			}
-		}
-	}
-#endif
-
-#if AMIGA_ONLY
-	if (regs.spcflags & SPCFLAG_COPPER)
-		do_copper ();
-#endif
-
 #ifdef JIT
 	unset_special (SPCFLAG_END_COMPILE);   /* has done its job */
 #endif
@@ -2737,6 +2770,21 @@ STATIC_INLINE int do_specialties (int cycles)
 #endif
 	}
 
+	if (regs.spcflags & SPCFLAG_BUSERROR) {
+		/* We can not execute bus errors directly in the memory handler
+		* functions since the PC should point to the address of the next
+		* instruction, so we're executing the bus errors here: */
+		unset_special(SPCFLAG_BUSERROR);
+		Exception(2,0);
+	}
+
+	if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+		/* Add some extra cycles to simulate a wait state */
+		unset_special(SPCFLAG_EXTRA_CYCLES);
+		M68000_AddCycles(nWaitStateCycles);
+		nWaitStateCycles = 0;
+	}
+
 	if (regs.spcflags & SPCFLAG_DOTRACE)
 		Exception (9, last_trace_ad);
 
@@ -2745,53 +2793,99 @@ STATIC_INLINE int do_specialties (int cycles)
 		Exception (3, 0);
 	}
 
+    /* Handle the STOP instruction */
+    if ( regs.spcflags & SPCFLAG_STOP ) {
+        /* We first test if there's a pending interrupt that would */
+        /* allow to immediatly leave the STOP state */
+        if ( do_specialties_interrupt(true) ) {		/* test if there's an interrupt and add pending jitter */
+            regs.stopped = 0;
+            unset_special (SPCFLAG_STOP);
+        }
+#if 0
+	if (regs.spcflags & SPCFLAG_MFP)			/* MFP int */
+	    MFP_CheckPendingInterrupts();
+	
+	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {	/* VBL/HBL ints */
+	    int intr = intlev ();
+	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+	    if (intr != -1 && intr > regs.intmask) {
+	        Interrupt (intr , true);		/* process the interrupt and add pending jitter */
+		regs.stopped = 0;
+		unset_special (SPCFLAG_STOP);
+	    }
+	}
+#endif
+
 	while (regs.spcflags & SPCFLAG_STOP) {
-		do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
-#if AMIGA_ONLY
-		if (regs.spcflags & SPCFLAG_COPPER)
-			do_copper ();
-#endif
-		if (currprefs.cpu_cycle_exact) {
-			ipl_fetch ();
-			if (time_for_interrupt ()) {
-				do_interrupt (regs.ipl);
-			}
-		} else {
-			if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-				int intr = intlev ();
-				unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-				if (intr > 0 && intr > regs.intmask)
-					do_interrupt (intr);
-			}
-		}
 
-		if ((regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE))) {
-			unset_special (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
-			// SPCFLAG_BRK breaks STOP condition, need to prefetch
-			m68k_resumestopped ();
+	    /* Take care of quit event if needed */
+	    if (regs.spcflags & SPCFLAG_BRK)
 			return 1;
-		}
+	
+		do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
 
-		if (currprefs.cpu_idle && currprefs.m68k_speed != 0 && ((regs.spcflags & SPCFLAG_STOP)) == SPCFLAG_STOP) {
-			/* sleep 1ms if STOP-instruction is executed */
-			if (1) {
-				static int sleepcnt, lvpos, zerocnt;
-				if (vpos != lvpos) {
-					sleepcnt--;
-#ifdef JIT
-					if (pissoff == 0 && currprefs.cachesize && --zerocnt < 0) {
-						sleepcnt = -1;
-						zerocnt = IDLETIME / 4;
-					}
+	    /* It is possible one or more ints happen at the same time */
+	    /* We must process them during the same cpu cycle until the special INT flag is set */
+		while (PendingInterruptCount<=0 && PendingInterruptFunction) {
+			/* 1st, we call the interrupt handler */
+			CALL_VAR(PendingInterruptFunction);
+		
+			/* Then we check if this handler triggered an interrupt to process */
+	        if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
+				regs.stopped = 0;
+				unset_special (SPCFLAG_STOP);
+				break;
+			}
+		
+#if AMIGA_ONLY
+			if (regs.spcflags & SPCFLAG_COPPER)
+				do_copper ();
 #endif
-					lvpos = vpos;
-					if (sleepcnt < 0) {
-/*						sleepcnt = IDLETIME / 2; */  /* Laurent : badly removed for now */
-						sleep_millis (1);
+
+			if (currprefs.cpu_cycle_exact) {
+				ipl_fetch ();
+				if (time_for_interrupt ()) {
+					do_interrupt (regs.ipl);
+				}
+			} else {
+#if 0
+				if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+					int intr = intlev ();
+					unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+					if (intr > 0 && intr > regs.intmask)
+						do_interrupt (intr);
+				}
+#endif
+			}
+			if ((regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE))) {
+				unset_special (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
+				// SPCFLAG_BRK breaks STOP condition, need to prefetch
+				m68k_resumestopped ();
+				return 1;
+			}
+
+			if (currprefs.cpu_idle && currprefs.m68k_speed != 0 && ((regs.spcflags & SPCFLAG_STOP)) == SPCFLAG_STOP) {
+				/* sleep 1ms if STOP-instruction is executed */
+				if (1) {
+					static int sleepcnt, lvpos, zerocnt;
+						if (vpos != lvpos) {
+							sleepcnt--;
+#ifdef JIT
+						if (pissoff == 0 && currprefs.cachesize && --zerocnt < 0) {
+							sleepcnt = -1;
+							zerocnt = IDLETIME / 4;
+						}
+#endif
+						lvpos = vpos;
+						if (sleepcnt < 0) {
+/*							sleepcnt = IDLETIME / 2; */  /* Laurent : badly removed for now */
+							sleep_millis (1);
+						}
 					}
 				}
 			}
 		}
+	}
 	}
 
 	if (regs.spcflags & SPCFLAG_TRACE)
@@ -2814,6 +2908,9 @@ STATIC_INLINE int do_specialties (int cycles)
 		unset_special (SPCFLAG_DOINT);
 		set_special (SPCFLAG_INT);
 	}
+
+    if (regs.spcflags & SPCFLAG_DEBUGGER)
+		DebugCpu_Check();
 
 	if ((regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE))) {
 		unset_special (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
@@ -2916,6 +3013,17 @@ static void m68k_run_1 (void)
 
 		count_instr (opcode);
 
+	/*m68k_dumpstate(stderr, NULL);*/
+	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+	{
+	    int FrameCycles, HblCounterVideo, LineCycles;
+
+	    Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+	}
+
 #if DEBUG_CD32CDTVIO
 		out_cd32io (m68k_getpc ());
 #endif
@@ -2963,6 +3071,16 @@ static void m68k_run_1_ce (void)
 	ipl_fetch ();
 	for (;;) {
 		uae_u32 opcode = r->ir;
+
+		/*m68k_dumpstate(stderr, NULL);*/
+		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+		}
+
 #if DEBUG_CD32CDTVIO
 		out_cd32io (m68k_getpc ());
 #endif
@@ -3051,6 +3169,16 @@ typedef void compiled_handler (void);
 static void m68k_run_jit (void)
 {
 	for (;;) {
+
+		/*m68k_dumpstate(stderr, NULL);*/
+		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+		}
+
 		((compiled_handler*)(pushall_call_handler))();
 		/* Whenever we return from that, we should check spcflags */
 		if (uae_int_requested) {
@@ -3110,6 +3238,14 @@ static void m68k_run_mmu040 (void)
 	uaecptr pc;
 	m68k_exception save_except;
 
+		/*m68k_dumpstate(stderr, NULL);*/
+		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+		}
 	
 retry:
 //	TRY (prb) {
@@ -3205,6 +3341,15 @@ static void m68k_run_2ce (void)
 
 	ipl_fetch ();
 	for (;;) {
+		/*m68k_dumpstate(stderr, NULL);*/
+		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+		}
+
 		uae_u32 opcode = x_prefetch (0);
 		(*cpufunctbl[opcode])(opcode);
 		if (r->ce020memcycles > 0) {
@@ -3236,6 +3381,15 @@ static void m68k_run_2p (void)
 	for (;;) {
 		uae_u32 opcode;
 		uae_u32 pc = m68k_getpc ();
+
+		/*m68k_dumpstate(stderr, NULL);*/
+		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+		}
 
 #if DEBUG_CD32CDTVIO
 		out_cd32io (m68k_getpc ());
@@ -3274,6 +3428,16 @@ static void m68k_run_2 (void)
 	for (;;) {
 		uae_u32 opcode = get_iword (0);
 		count_instr (opcode);
+
+		/*m68k_dumpstate(stderr, NULL);*/
+		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+		}
+
 #if 0
 		if (!used[opcode]) {
 			write_log ("%04X ", opcode);
@@ -3295,6 +3459,16 @@ static void m68k_run_2 (void)
 static void m68k_run_mmu (void)
 {
 	for (;;) {
+
+		/*m68k_dumpstate(stderr, NULL);*/
+		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+		}
+
 		uae_u32 opcode = get_iword (0);
 		do_cycles (cpu_cycles);
 		mmu_backup_regs = regs;
