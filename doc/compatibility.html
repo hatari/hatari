@@ -417,8 +417,10 @@ for border removal).</p>
     <tr>
       <td>Delta Force:
       <a href="http://pouet.net/prod.php?which=11806">Punish Your Machine</a></td>
-      <td>1.0</td>
-      <td>Sync-scroll, overscan... ST Connexion's screen features 4 pixels hardware scrolling on STF</td>
+      <td class="minor">1.0</td>
+      <td>Sync-scroll, overscan... ST Connexion's screen features 4 pixels hardware scrolling on STF.
+          "Best Part Of The Creation" doesn't look correct due to missing spec512
+          mode in med res</td>
     </tr>
     <tr>
       <td>Delta Force:
@@ -432,6 +434,13 @@ for border removal).</p>
       <a href="http://pouet.net/prod.php?which=1029">Sweety</a></td>
       <td>before 1.0</td>
       <td>Does not work with HD emulation</td>
+    </tr>
+    <tr>
+      <td>Diamond Design:
+      <a href="http://pouet.net/prod.php?which=3241">Brace</a></td>
+      <td class=minor>1.4</td>
+      <td>Flickering raster line in the mixed low/med res horizontal scrolltext, due
+          to missing spec512 mode in med res</td>
     </tr>
     <tr>
       <td>Dune:
@@ -450,7 +459,9 @@ for border removal).</p>
       <td>Dune/Sector One:
       <a href="http://pouet.net/prod.php?which=1960">Odd Stuff</a></td>
       <td>before 1.0</td>
-      <td>Flickers with ST (not with STe) emulation</td>
+      <td>In STF mode, some screens tries to simulate more colors by changing the
+          palette on each VBL, which creates an unpleasant flickering effect
+          (this is not a bug in Hatari). Use STE mode for better results</td>
     </tr>
     <tr>
       <td>Equinox:
@@ -500,6 +511,13 @@ for border removal).</p>
       <a href="http://pouet.net/prod.php?which=110">Flip-o-demo</a></td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Oxygene:
+      <a href="http://pouet.net/prod.php?which=1251">STNICCC2000 Demo</a></td>
+      <td class="major">1.1</td>
+      <td>Due to wrong FDC timings, the demo will stop after a few seconds
+      in the main 3D part (but music continues)</td>
     </tr>
     <tr>
       <td>Paulo Simoes (ljkb):
@@ -1233,6 +1251,19 @@ are just STE enhanced.  These are marked with '*'.</p>
       <a href="http://www.pouet.net/prod.php?which=31450">Intruding</a></td>
       <td class="minor">1.1</td>
       <td>Planes are shifted</td>
+    </tr>
+    <tr>
+      <td>ICE:
+      <a href="http://www.pouet.net/prod.php?which=31453">Space Tale</a></td>
+      <td class="minor">1.4</td>
+      <td>In the part with 3 horizontal scrolltexts, bottom border is not removed
+          due to bad blitter timing</td>
+    </tr>
+    <tr>
+      <td>ICE:
+      <a href="http://www.pouet.net/prod.php?which=31451">The Wave Of The Future</a></td>
+      <td class="minor">1.4</td>
+      <td>Top border is not correctly removing (maybe a wrong 4 cycles timing for VBL on STE)</td>
     </tr>
     <tr>
       <td>Imagina:
