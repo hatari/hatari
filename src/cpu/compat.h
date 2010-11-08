@@ -12,6 +12,8 @@
 #ifndef HATARI_COMPAT_H
 #define HATARI_COMPAT_H
 
+#include <stdbool.h>
+
 #include "sysconfig.h"
 
 /* This define is here to remove some Amiga specific code when compiling */
@@ -58,13 +60,6 @@ int quit_program;  // declared as "int quit_program = 0;" in main.c
 
 #ifndef STATIC_INLINE
 #define STATIC_INLINE static inline
-#endif
-
-#define false 0
-#define true 1
-
-#ifndef bool
-#define bool int
 #endif
 
 #define _vsnprintf vsnprintf
