@@ -41,7 +41,6 @@ uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode);
 void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v);
 void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
 uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode);
-TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...);
 frame_time_t read_processor_time_qpf (void);
 frame_time_t read_processor_time_rdtsc (void);
 void sleep_millis (int ms);
@@ -253,20 +252,6 @@ void reset_frame_rate_hack (void)
 */
 }
 
-/* Taken from writelog.cpp */
-TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...)
-{
-	int count;
-	va_list parms;
-	va_start (parms, format);
-
-	if (buffer == NULL)
-		return 0;
-	count = _vsntprintf (buffer, (*bufsize) - 1, format, parms);
-	va_end (parms);
-	*bufsize -= _tcslen (buffer);
-	return buffer + _tcslen (buffer);
-}
 
 /* Taken from writelog.cpp */
 void f_out (void *f, const TCHAR *format, ...)

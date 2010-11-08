@@ -1469,7 +1469,7 @@ kludge_me_do:
 	newpc |= get_word_ce (4 * nr + 2); // read low address
 	if (newpc & 1) {
 		if (nr == 2 || nr == 3)
-			uae_reset (1); /* there is nothing else we can do.. */
+			Reset_Cold(); /* there is nothing else we can do.. */
 		else
 			exception3 (regs.ir, m68k_getpc (), newpc);
 		return;
@@ -1597,7 +1597,7 @@ kludge_me_do:
 	newpc = get_long_mmu (regs.vbr + 4 * nr);
 	if (newpc & 1) {
 		if (nr == 2 || nr == 3)
-			uae_reset (1); /* there is nothing else we can do.. */
+			Reset_Cold();  /* there is nothing else we can do.. */
 		else
 			exception3 (regs.ir, m68k_getpc (), newpc);
 		return;
@@ -2349,6 +2349,8 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 {
 	uaecptr pc = m68k_getpc ();
 	static int warned;
+
+#if AMIGA_ONLY
 	int inrom = in_rom (pc);
 	int inrt = in_rtarea (pc);
 
@@ -2359,7 +2361,6 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 		return 4;
 	}
 
-#if AMIGA_ONLY
 	if (opcode == 0x4E7B && inrom && get_long (0x10) == 0) {
 		notify_user (NUMSG_KS68020);
 		uae_restart (-1, NULL);
@@ -2751,8 +2752,8 @@ STATIC_INLINE int do_specialties (int cycles)
 	unset_special (SPCFLAG_END_COMPILE);   /* has done its job */
 #endif
 
-	while ((regs.spcflags & SPCFLAG_BLTNASTY) && dmaen (DMA_BLITTER) && cycles > 0 && !currprefs.blitter_cycle_exact) {
 #if AMIGA_ONLY
+	while ((regs.spcflags & SPCFLAG_BLTNASTY) && dmaen (DMA_BLITTER) && cycles > 0 && !currprefs.blitter_cycle_exact) {
 		/* Laurent : I don't know if our blitter code should be called here ! */
 		int c = blitnasty ();
 		if (c > 0) {
@@ -2762,13 +2763,10 @@ STATIC_INLINE int do_specialties (int cycles)
 		} else
 			c = 4;
 		do_cycles (c * CYCLE_UNIT);
-#endif
-
-#if AMIGA_ONLY
 		if (regs.spcflags & SPCFLAG_COPPER)
 			do_copper ();
-#endif
 	}
+#endif
 
 	if (regs.spcflags & SPCFLAG_BUSERROR) {
 		/* We can not execute bus errors directly in the memory handler
@@ -2864,6 +2862,7 @@ STATIC_INLINE int do_specialties (int cycles)
 				return 1;
 			}
 
+#if AMIGA_ONLY
 			if (currprefs.cpu_idle && currprefs.m68k_speed != 0 && ((regs.spcflags & SPCFLAG_STOP)) == SPCFLAG_STOP) {
 				/* sleep 1ms if STOP-instruction is executed */
 				if (1) {
@@ -2884,6 +2883,7 @@ STATIC_INLINE int do_specialties (int cycles)
 					}
 				}
 			}
+#endif /* AMIGA_ONLY */
 		}
 	}
 	}
@@ -2902,6 +2902,10 @@ STATIC_INLINE int do_specialties (int cycles)
 			if (intr > 0 && (intr > regs.intmask || intr == 7))
 				do_interrupt (intr);
 		}
+	}
+
+	if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
+		MFP_CheckPendingInterrupts();
 	}
 
 	if (regs.spcflags & SPCFLAG_DOINT) {
@@ -2991,7 +2995,7 @@ static void out_cd32io (uae_u32 pc)
 		;//activate_debugger ();
 }
 
-#endif
+#endif /* DEBUG_CD32CDTVIO */
 
 #ifndef CPUEMU_11
 
@@ -3752,11 +3756,11 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int 
 		for (lookup = lookuptab;lookup->mnemo != dp->mnemo; lookup++)
 			;
 
-		buf = buf_out (buf, &bufsize, "%08lX ", m68k_getpc () + m68kpc_offset);
-
+		//buf = buf_out (buf, &bufsize, "%08lX ", m68k_getpc () + m68kpc_offset);
+		fprintf(stderr, "%08lX ", m68k_getpc () + m68kpc_offset);
 		m68kpc_offset += 2;
 
-		if (lookup->friendlyname)
+		if (strcmp(lookup->friendlyname, ""))
 			_tcscpy (instrname, lookup->friendlyname);
 		else
 			_tcscpy (instrname, lookup->name);
@@ -3815,26 +3819,34 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int 
 		}
 
 		for (i = 0; i < (m68kpc_offset - oldpc) / 2; i++) {
-			buf = buf_out (buf, &bufsize, "%04x ", get_iword_1 (oldpc + i * 2));
+//			buf = buf_out (buf, &bufsize, "%04x ", get_iword_1 (oldpc + i * 2));
+			fprintf(stderr, "%04x ", get_iword_1 (oldpc + i * 2));
 		}
-		while (i++ < 5)
-			buf = buf_out (buf, &bufsize, "     ");
 
-		buf = buf_out (buf, &bufsize, instrname);
+		while (i++ < 5)
+//			buf = buf_out (buf, &bufsize, "     ");
+			fprintf(stderr, "%s", "     ");
+
+//		buf = buf_out (buf, &bufsize, instrname);
+		fprintf(stderr, "%s", instrname);
 
 		if (ccpt != 0) {
 			if (deaddr)
 				*deaddr = newpc;
 			if (cctrue (dp->cc))
-				buf = buf_out (buf, &bufsize, " == $%08lX (T)", newpc);
+//				buf = buf_out (buf, &bufsize, " == $%08lX (T)", newpc);
+				fprintf(stderr, " == $%08lX (T)", newpc);
 			else
-				buf = buf_out (buf, &bufsize, " == $%08lX (F)", newpc);
+//				buf = buf_out (buf, &bufsize, " == $%08lX (F)", newpc);
+				fprintf(stderr, " == $%08lX (F)", newpc);
 		} else if ((opcode & 0xff00) == 0x6100) { /* BSR */
 			if (deaddr)
 				*deaddr = newpc;
-			buf = buf_out (buf, &bufsize, " == $%08lX", newpc);
+//			buf = buf_out (buf, &bufsize, " == $%08lX", newpc);
+			fprintf(stderr, " == $%08lX", newpc);
 		}
-		buf = buf_out (buf, &bufsize, "\n");
+//		buf = buf_out (buf, &bufsize, "\n");
+		fprintf(stderr, "%s", "\n");
 	}
 	if (nextpc)
 		*nextpc = m68k_getpc () + m68kpc_offset;

@@ -39,8 +39,6 @@ extern bool picasso_requested_on;
 extern bool picasso_on;
 extern void set_picasso_hack_rate (int hz);
 
-extern TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...);
-
 /* Set to 1 to leave out the current frame in average frame time calculation.
  * Useful if the debugger was active.  */
 extern int bogusframe;
