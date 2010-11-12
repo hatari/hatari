@@ -418,7 +418,7 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 
 		/* 68k exceptions are handled by Exception() of the UAE CPU core */
 #if ENABLE_WINUAE_CPU
-		Exception(exceptionNr, m68k_getpc());
+		Exception(exceptionNr, m68k_getpc(), ExceptionSource);
 #else
 #ifdef UAE_NEWCPU_H
 		Exception(exceptionNr, m68k_getpc(), ExceptionSource);

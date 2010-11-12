@@ -106,6 +106,7 @@ int movem_next[256];
 
 cpuop_func *cpufunctbl[65536];
 
+int OpcodeFamily;
 struct mmufixup mmufixup[2];
 
 extern uae_u32 get_fpsr (void);
@@ -118,12 +119,12 @@ static uae_u64 srp_030, crp_030;
 static uae_u32 tt0_030, tt1_030, tc_030;
 static uae_u16 mmusr_030;
 
-int OpcodeFamily;
-
 static struct cache020 caches020[CACHELINES020];
 static struct cache030 icaches030[CACHELINES030];
 static struct cache030 dcaches030[CACHELINES030];
 static struct cache040 caches040[CACHESETS040];
+static void InterruptAddJitter (int Level , int Pending);
+
 
 #if COUNT_INSTRS
 static unsigned long int instrcount[65536];
@@ -1610,10 +1611,39 @@ kludge_me_do:
 	exception_trace (nr);
 }
 
-static void Exception_normal (int nr, uaecptr oldpc)
+/* Handle exceptions. We need a special case to handle MFP exceptions */
+/* on Atari ST, because it's possible to change the MFP's vector base */
+/* and get a conflict with 'normal' cpu exceptions. */
+static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 {
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int sv = regs.s;
+
+	if (ExceptionSource == M68000_EXC_SRC_CPU) {
+		if (bVdiAesIntercept && nr == 0x22) {
+			/* Intercept VDI & AES exceptions (Trap #2) */
+			if (VDI_AES_Entry()) {
+				/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
+				 * This will call OpCode_VDI() after completion of Trap call!
+				 * This is used to modify specific VDI return vectors contents.
+				*/
+				VDI_OldPC = currpc;
+				currpc = CART_VDI_OPCODE_ADDR;
+			}
+		}
+
+		if (bBiosIntercept) {
+			/* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
+			if (nr == 0x2d) {
+				/* Intercept BIOS calls */
+				if (Bios())  return;
+			}
+			else if (nr == 0x2e) {
+				/* Intercept XBIOS calls */
+				if (XBios())  return;
+			}
+		}
+	}
 
 	if (nr >= 24 && nr < 24 + 8 && currprefs.cpu_model <= 68010)
 		nr = x_get_byte (0x00fffff1 | (nr << 1));
@@ -1621,6 +1651,7 @@ static void Exception_normal (int nr, uaecptr oldpc)
 	exception_debug (nr);
 	MakeSR ();
 
+	/* Change to supervisor mode if necessary */
 	if (!regs.s) {
 		regs.usp = m68k_areg (regs, 7);
 		if (currprefs.cpu_model >= 68020)
@@ -1632,7 +1663,13 @@ static void Exception_normal (int nr, uaecptr oldpc)
 			mmu_set_super (regs.s != 0);
 	}
 	if (currprefs.cpu_model > 68000) {
-		if (nr == 2 || nr == 3) {
+		/* Build additional exception stack frame for 68010 and higher */
+		/* (special case for MFP) */
+		if (ExceptionSource == M68000_EXC_SRC_INT_MFP || ExceptionSource == M68000_EXC_SRC_INT_DSP) {
+			m68k_areg(regs, 7) -= 2;
+			put_word (m68k_areg(regs, 7), nr * 4);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+		}
+		else if (nr == 2 || nr == 3) {
 			int i;
 			if (currprefs.cpu_model >= 68040) {
 				if (nr == 2) {
@@ -1773,9 +1810,12 @@ static void Exception_normal (int nr, uaecptr oldpc)
 		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, x_get_long (regs.vbr + 4*nr));
 		goto kludge_me_do;
 	}
+
+	/* Push PC on stack: */
 	m68k_areg (regs, 7) -= 4;
 	x_put_long (m68k_areg (regs, 7), currpc);
-	m68k_areg (regs, 7) -= 2;
+	/* Push SR on stack: */
+ 	m68k_areg (regs, 7) -= 2;
 	x_put_word (m68k_areg (regs, 7), regs.sr);
 kludge_me_do:
 	newpc = x_get_long (regs.vbr + 4 * nr);
@@ -1792,9 +1832,56 @@ kludge_me_do:
 #endif
 	fill_prefetch_slow ();
 	exception_trace (nr);
+	
+    /* Handle exception cycles (special case for MFP) */
+    if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
+    {
+      M68000_AddCycles(44+12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+    }
+    else if (nr >= 24 && nr <= 31)
+    {
+      if ( nr == 26 )				/* HBL */
+      {
+        /* store current cycle pos when then interrupt was received (see video.c) */
+        LastCycleHblException = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+        M68000_AddCycles(44+12);		/* Video Interrupt */
+      }
+      else if ( nr == 28 ) 			/* VBL */
+        M68000_AddCycles(44+12);		/* Video Interrupt */
+      else
+        M68000_AddCycles(44+4);			/* Other Interrupts */
+    }
+    else if(nr >= 32 && nr <= 47)
+    {
+      M68000_AddCycles(34-4);			/* Trap (total is 34, but cpuemu.c already adds 4) */
+    }
+    else switch(nr)
+    {
+      case 2: M68000_AddCycles(50); break;	/* Bus error */
+      case 3: M68000_AddCycles(50); break;	/* Address error */
+      case 4: M68000_AddCycles(34); break;	/* Illegal instruction */
+      case 5: M68000_AddCycles(38); break;	/* Div by zero */
+      case 6: M68000_AddCycles(40); break;	/* CHK */
+      case 7: M68000_AddCycles(34); break;	/* TRAPV */
+      case 8: M68000_AddCycles(34); break;	/* Privilege violation */
+      case 9: M68000_AddCycles(34); break;	/* Trace */
+      case 10: M68000_AddCycles(34); break;	/* Line-A - probably wrong */
+      case 11: M68000_AddCycles(34); break;	/* Line-F - probably wrong */
+      default:
+        /* FIXME: Add right cycles value for MFP interrupts and copro exceptions ... */
+        if(nr < 64)
+          M68000_AddCycles(4);			/* Coprocessor and unassigned exceptions (???) */
+        else
+          M68000_AddCycles(44+12);		/* Must be a MFP or DSP interrupt */
+        break;
+    }
+
 }
 
-void REGPARAM2 Exception (int nr, uaecptr oldpc)
+/* Handle exceptions. We need a special case to handle MFP exceptions */
+/* on Atari ST, because it's possible to change the MFP's vector base */
+/* and get a conflict with 'normal' cpu exceptions. */
+void REGPARAM2 Exception (int nr, uaecptr oldpc, int ExceptionSource)
 {
 #ifdef CPUEMU_12
 	if (currprefs.cpu_cycle_exact && currprefs.cpu_model == 68000)
@@ -1802,9 +1889,9 @@ void REGPARAM2 Exception (int nr, uaecptr oldpc)
 	else
 #endif
 		if (currprefs.mmu_model)
-			Exception_mmu (nr, oldpc);
+			Exception_mmu (nr, oldpc); // Todo: add ExceptionSource
 		else
-			Exception_normal (nr, oldpc);
+			Exception_normal (nr, oldpc, ExceptionSource);
 
 #if AMIGA_ONLY
 	if (debug_illegal && !in_rom (M68K_GETPC)) {
@@ -1817,7 +1904,7 @@ void REGPARAM2 Exception (int nr, uaecptr oldpc)
 #endif
 }
 
-STATIC_INLINE void do_interrupt (int nr)
+STATIC_INLINE void do_interrupt (int nr, int Pending)
 {
 #if AMIGA_ONLY
 	if (debug_dma)
@@ -1828,15 +1915,21 @@ STATIC_INLINE void do_interrupt (int nr)
 	unset_special (SPCFLAG_STOP);
 	assert (nr < 8 && nr >= 0);
 
-	Exception (nr + 24, 0);
+	/* On Hatari, only video ints are using SPCFLAG_INT (see m68000.c) */
+	Exception (nr + 24, 0, M68000_EXC_SRC_AUTOVEC);
 
 	regs.intmask = nr;
 	doint ();
+
+	set_special (SPCFLAG_INT);
+	/* Handle Atari ST's specific jitter for hbl/vbl */
+	InterruptAddJitter (nr , Pending);
 }
+
 
 void NMI (void)
 {
-	do_interrupt (7);
+	do_interrupt (7, false);
 }
 
 #ifndef CPUEMU_68000_ONLY
@@ -2034,7 +2127,7 @@ void m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
 {
 #if defined (uae_s64)
 	if (src == 0) {
-		Exception (5, oldpc);
+		Exception (5, oldpc, M68000_EXC_SRC_CPU);
 		return;
 	}
 	if (extra & 0x800) {
@@ -2089,7 +2182,7 @@ void m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
 	}
 #else
 	if (src == 0) {
-		Exception (5, oldpc);
+		Exception (5, oldpc, M68000_EXC_SRC_CPU);
 		return;
 	}
 	if (extra & 0x800) {
@@ -2397,7 +2490,7 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 			write_log ("B-Trap %x at %x (%p)\n", opcode, pc, regs.pc_p);
 			warned++;
 		}
-		Exception (0xB, 0);
+		Exception (0xB, 0, M68000_EXC_SRC_CPU);
 		//activate_debugger ();
 		return 4;
 	}
@@ -2406,7 +2499,7 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 			write_log ("A-Trap %x at %x (%p)\n", opcode, pc, regs.pc_p);
 			warned++;
 		}
-		Exception (0xA, 0);
+		Exception (0xA, 0, M68000_EXC_SRC_CPU);
 		//activate_debugger();
 		return 4;
 	}
@@ -2416,7 +2509,7 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 		//activate_debugger();
 	}
 
-	Exception (4, 0);
+	Exception (4, 0, M68000_EXC_SRC_CPU);
 	return 4;
 }
 
@@ -2677,47 +2770,31 @@ void doint (void)
  * Compute the number of jitter cycles to add when a video interrupt occurs
  * (this is specific to the Atari ST)
  */
-static void InterruptAddJitter (int Level , int Pending)
+STATIC_INLINE void InterruptAddJitter (int Level , int Pending)
 {
-    int cycles = 0;
+	int cycles = 0;
 
-    if ( Level == 2 )				/* HBL */
-      {
-        if ( Pending )
-	  cycles = HblJitterArrayPending[ HblJitterIndex ];
-	else
-	  cycles = HblJitterArray[ HblJitterIndex ];
-      }
-    
-    else if ( Level == 4 )			/* VBL */
-      {
-        if ( Pending )
-	  cycles = VblJitterArrayPending[ VblJitterIndex ];
-	else
-	  cycles = VblJitterArray[ VblJitterIndex ];
-      }
+	if ( Level == 2 )				/* HBL */
+	{
+		if ( Pending )
+			cycles = HblJitterArrayPending[ HblJitterIndex ];
+		else
+			cycles = HblJitterArray[ HblJitterIndex ];
+	}
+	else if ( Level == 4 )			/* VBL */
+	{
+		if ( Pending )
+			cycles = VblJitterArrayPending[ VblJitterIndex ];
+		else
+			cycles = VblJitterArray[ VblJitterIndex ];
+	}
 
-//fprintf ( stderr , "jitter %d\n" , cycles );
-//cycles=0;
-    if ( cycles > 0 )				/* no need to call M68000_AddCycles if cycles == 0 */
-      M68000_AddCycles ( cycles );
+	//fprintf ( stderr , "jitter %d\n" , cycles );
+	//cycles=0;
+	if ( cycles > 0 )				/* no need to call M68000_AddCycles if cycles == 0 */
+		M68000_AddCycles ( cycles );
 }
 
-static void Interrupt(int nr , int Pending)
-{
-    assert(nr < 8 && nr >= 0);
-    /*lastint_regs = regs;*/
-    /*lastint_no = nr;*/
-
-    /* On Hatari, only video ints are using SPCFLAG_INT (see m68000.c) */
-    Exception(nr+24, 0);
-
-    regs.intmask = nr;
-    set_special (SPCFLAG_INT);
-
-    /* Handle Atari ST's specific jitter for hbl/vbl */
-    InterruptAddJitter ( nr , Pending );
-}
 
 /*
  * Handle special flags
@@ -2738,7 +2815,7 @@ static bool do_specialties_interrupt (int Pending)
 //	unset_special (SPCFLAG_DOINT);
 	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 	if (intr != -1 && intr > regs.intmask) {
-	    Interrupt (intr , Pending);			/* process the interrupt and add pending jitter if necessary */
+	    do_interrupt (intr , Pending);			/* process the interrupt and add pending jitter if necessary */
 	    return true;
 	}
     }
@@ -2773,7 +2850,7 @@ STATIC_INLINE int do_specialties (int cycles)
 		* functions since the PC should point to the address of the next
 		* instruction, so we're executing the bus errors here: */
 		unset_special(SPCFLAG_BUSERROR);
-		Exception(2,0);
+		Exception(2, 0, M68000_EXC_SRC_CPU);
 	}
 
 	if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
@@ -2784,11 +2861,11 @@ STATIC_INLINE int do_specialties (int cycles)
 	}
 
 	if (regs.spcflags & SPCFLAG_DOTRACE)
-		Exception (9, last_trace_ad);
+		Exception (9, last_trace_ad, M68000_EXC_SRC_CPU);
 
 	if (regs.spcflags & SPCFLAG_TRAP) {
 		unset_special (SPCFLAG_TRAP);
-		Exception (3, 0);
+		Exception (3, 0, M68000_EXC_SRC_CPU);
 	}
 
     /* Handle the STOP instruction */
@@ -2829,10 +2906,15 @@ STATIC_INLINE int do_specialties (int cycles)
 			CALL_VAR(PendingInterruptFunction);
 		
 			/* Then we check if this handler triggered an interrupt to process */
-	        if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
+			if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
 				regs.stopped = 0;
 				unset_special (SPCFLAG_STOP);
 				break;
+			}
+
+			/* Then we check if this handler triggered an MFP int to process */
+			if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
+				MFP_CheckPendingInterrupts();
 			}
 		
 #if AMIGA_ONLY
@@ -2843,7 +2925,7 @@ STATIC_INLINE int do_specialties (int cycles)
 			if (currprefs.cpu_cycle_exact) {
 				ipl_fetch ();
 				if (time_for_interrupt ()) {
-					do_interrupt (regs.ipl);
+					do_interrupt (regs.ipl, true);
 				}
 			} else {
 #if 0
@@ -2851,7 +2933,7 @@ STATIC_INLINE int do_specialties (int cycles)
 					int intr = intlev ();
 					unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 					if (intr > 0 && intr > regs.intmask)
-						do_interrupt (intr);
+						do_interrupt (intr, true);
 				}
 #endif
 			}
@@ -2862,7 +2944,6 @@ STATIC_INLINE int do_specialties (int cycles)
 				return 1;
 			}
 
-#if AMIGA_ONLY
 			if (currprefs.cpu_idle && currprefs.m68k_speed != 0 && ((regs.spcflags & SPCFLAG_STOP)) == SPCFLAG_STOP) {
 				/* sleep 1ms if STOP-instruction is executed */
 				if (1) {
@@ -2877,13 +2958,12 @@ STATIC_INLINE int do_specialties (int cycles)
 #endif
 						lvpos = vpos;
 						if (sleepcnt < 0) {
-/*							sleepcnt = IDLETIME / 2; */  /* Laurent : badly removed for now */
+							/*sleepcnt = IDLETIME / 2; */  /* Laurent : badly removed for now */
 							sleep_millis (1);
 						}
 					}
 				}
 			}
-#endif /* AMIGA_ONLY */
 		}
 	}
 	}
@@ -2893,19 +2973,15 @@ STATIC_INLINE int do_specialties (int cycles)
 
 	if (currprefs.cpu_cycle_exact) {
 		if (time_for_interrupt ()) {
-			do_interrupt (regs.ipl);
+			do_interrupt (regs.ipl, true);
 		}
 	} else {
 		if (regs.spcflags & SPCFLAG_INT) {
 			int intr = intlev ();
 			unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 			if (intr > 0 && (intr > regs.intmask || intr == 7))
-				do_interrupt (intr);
+				do_interrupt (intr, false);		/* call do_interrupt() with Pending=false, not necessarily true but harmless */
 		}
-	}
-
-	if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
-		MFP_CheckPendingInterrupts();
 	}
 
 	if (regs.spcflags & SPCFLAG_DOINT) {
@@ -3046,6 +3122,17 @@ static void m68k_run_1 (void)
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
+		
+		/* We can have several interrupts at the same time before the next CPU instruction */
+		/* We must check for pending interrupt and call do_specialties_interrupt() only */
+		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+		/* and prevent exiting the STOP state when calling do_specialties() after. */
+		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
+			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+		}
+		
 		if (r->spcflags) {
 			if (do_specialties (cpu_cycles))
 				return;
@@ -3320,7 +3407,7 @@ retry:
 		//activate_debugger ();
 //		TRY (prb2) {
 			except = 0;
-			Exception (save_except, regs.fault_pc);
+			Exception (save_except, regs.fault_pc, true);
 //		} CATCH (prb2) {
 		if (except != 0) {
 			write_log ("MMU: double bus error, rebooting..\n");
@@ -3452,6 +3539,18 @@ static void m68k_run_2 (void)
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
+		
+	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+	  /* Add some extra cycles to simulate a wait state */
+	  unset_special(SPCFLAG_EXTRA_CYCLES);
+	  M68000_AddCycles(nWaitStateCycles);
+	  nWaitStateCycles = 0;
+	}
+
+	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+	  CALL_VAR(PendingInterruptFunction);
+		
+		
 		if (r->spcflags) {
 			if (do_specialties (cpu_cycles))
 				return;
@@ -3498,7 +3597,7 @@ static void exception2_handle (uaecptr addr, uaecptr fault)
 	last_fault_for_exception_3 = fault;
 	last_writeaccess_for_exception_3 = 0;
 	last_instructionaccess_for_exception_3 = 0;
-	Exception (2, m68k_getpc ());
+	Exception (2, m68k_getpc (), true);
 }
 
 void m68k_go (int may_quit)
@@ -4325,7 +4424,7 @@ static void exception3f (uae_u32 opcode, uaecptr addr, uaecptr fault, int writea
 	last_op_for_exception_3 = opcode;
 	last_writeaccess_for_exception_3 = writeaccess;
 	last_instructionaccess_for_exception_3 = instructionaccess;
-	Exception (3, fault);
+	Exception (3, fault, true);
 }
 
 void exception3 (uae_u32 opcode, uaecptr addr, uaecptr fault)

@@ -377,7 +377,7 @@ extern void REGPARAM3 MakeSR (void) REGPARAM;
 extern void REGPARAM3 MakeFromSR (void) REGPARAM;
 extern void MakeSR (void);
 extern void MakeFromSR (void);
-extern void REGPARAM3 Exception (int, uaecptr) REGPARAM;
+extern void REGPARAM3 Exception (int, uaecptr, int) REGPARAM;
 extern void NMI (void);
 extern void NMI_delayed (void);
 extern void prepare_interrupt (uae_u32);
