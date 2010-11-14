@@ -100,9 +100,9 @@ void Joy_UnInit(void)
  */
 static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 {
-	/* Joystick is OK, read position */
-	pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], 0);
-	pJoyReading->YPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], 1);
+	/* Joystick is OK, read position from the configured joystick axis */
+	pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], pJoyReading->XAxisID);
+	pJoyReading->YPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], pJoyReading->YAxisID);
 	/* Sets bit #0 if button #1 is pressed: */
 	pJoyReading->Buttons = SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 0);
 	/* Sets bit #1 if button #2 is pressed: */
@@ -125,8 +125,10 @@ Uint8 Joy_GetStickData(int nStJoyId)
 	Uint8 nData = 0;
 	JOYREADING JoyReading;
 	int nSdlJoyId;
+	int nAxes; /* how many joystick axes are on the current selected SDL joystick? */
 
 	nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
+	nAxes = SDL_JoystickNumAxes(sdlJoystick[nSdlJoyId]);
 
 	/* Are we emulating the joystick via the keyboard? */
 	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
@@ -140,10 +142,25 @@ Uint8 Joy_GetStickData(int nStJoyId)
 	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK
 	         && bJoystickWorking[nSdlJoyId])
 	{
-		/* Use real joystick for emulation */
+		/* get joystick axis from configuration settings and make them plausible */
+		JoyReading.XAxisID = 0;
+		JoyReading.YAxisID = 1;
+		
+		/* make selected axis IDs plausible */
+		if(  (JoyReading.XAxisID == JoyReading.YAxisID) /* same joystick axis for two directions? */
+		   ||(JoyReading.XAxisID > nAxes)               /* ID for x axis beyond nr of existing axes? */
+		   ||(JoyReading.YAxisID > nAxes)               /* ID for y axis beyond nr of existing axes? */
+		  )
+		{
+			/* define sane SDL joystick axis defaults and prepare them for saving back to the config file: */
+			JoyReading.XAxisID = 0;
+			JoyReading.YAxisID = 1;
+		}
+		
+		/* Read real joystick and map to emulated ST joystick for emulation */
 		if (!Joy_ReadJoystick(nSdlJoyId, &JoyReading))
 		{
-			/* Something is wrong, we cannot read the joystick */
+			/* Something is wrong, we cannot read the joystick from SDL */
 			bJoystickWorking[nSdlJoyId] = false;
 			return 0;
 		}

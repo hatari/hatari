@@ -10,7 +10,8 @@
 
 typedef struct
 {
-	int XPos,YPos;                /* -32768...0...32767 */
+	int XPos,YPos;                /* the actually read axis values in range of -32768...0...32767 */
+	int XAxisID,YAxisID;          /* the IDs of the physical PC jyostick's axis to be used to gain ST joystick axis input */
 	int Buttons;                  /* JOY_BUTTON1 */
 } JOYREADING;
 
