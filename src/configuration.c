@@ -25,6 +25,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "screen.h"
 #include "vdi.h"
 #include "video.h"
+#include "avi_record.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -323,6 +324,16 @@ static const struct Config_Tag configs_System[] =
 	{ NULL , Error_Tag, NULL }
 };
 
+/* Used to load/save video options */
+static const struct Config_Tag configs_Video[] =
+{
+	{ "AviRecordVcodec", Int_Tag, &ConfigureParams.Video.AviRecordVcodec },
+	{ "AviRecordCrop", Bool_Tag, &ConfigureParams.Video.AviRecordCrop },
+	{ "AviRecordFps", Int_Tag, &ConfigureParams.Video.AviRecordFps },
+	{ "AviRecordFile", String_Tag, ConfigureParams.Video.AviRecordFile },
+	{ NULL , Error_Tag, NULL }
+};
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -494,6 +505,16 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bRealTimeClock = true;
 	ConfigureParams.System.bFastForward = false;
 
+	/* Set defaults for Video */
+#if HAVE_LIBPNG
+	ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
+#else
+	ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
+#endif
+	ConfigureParams.Video.AviRecordCrop = true;
+	ConfigureParams.Video.AviRecordFps = 0;			/* automatic FPS */
+	sprintf(ConfigureParams.Video.AviRecordFile, "%s%chatari.avi", psWorkingDir, PATHSEP);
+
 	/* Initialize the configuration file name */
 	if (strlen(psHomeDir) < sizeof(sConfigFileName)-13)
 		sprintf(sConfigFileName, "%s%chatari.cfg", psHomeDir, PATHSEP);
@@ -580,6 +601,7 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteName(ConfigureParams.Sound.szYMCaptureFileName);
 	if (strlen(ConfigureParams.Keyboard.szMappingFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Keyboard.szMappingFileName);
+	File_MakeAbsoluteName(ConfigureParams.Video.AviRecordFile);
 	
 	/* make path names absolute, but handle special file names */
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
@@ -647,6 +669,7 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
 	Configuration_LoadSection(psFileName, configs_Midi, "[Midi]");
 	Configuration_LoadSection(psFileName, configs_System, "[System]");
+	Configuration_LoadSection(psFileName, configs_Video, "[Video]");
 }
 
 
@@ -698,6 +721,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
 	Configuration_SaveSection(sConfigFileName, configs_Midi, "[Midi]");
 	Configuration_SaveSection(sConfigFileName, configs_System, "[System]");
+	Configuration_SaveSection(sConfigFileName, configs_Video, "[Video]");
 }
 
 
@@ -732,6 +756,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.nDSPType, sizeof(ConfigureParams.System.nDSPType));
 	MemorySnapShot_Store(&ConfigureParams.System.bRealTimeClock, sizeof(ConfigureParams.System.bRealTimeClock));
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
+
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.bSlowFloppy, sizeof(ConfigureParams.DiskImage.bSlowFloppy));
 
 	if (!bSave)

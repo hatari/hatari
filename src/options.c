@@ -971,11 +971,11 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			i += 1;
 			if (strcasecmp(argv[i], "bmp") == 0)
 			{
-				AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
+				ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
 			}
 			else if (strcasecmp(argv[i], "png") == 0)
 			{
-				AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
+				ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
 			}
 			else
 			{
@@ -990,18 +990,18 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				return Opt_ShowError(OPT_AVIRECORD_FPS, argv[i],
 							"Invalid frame rate for avi recording");
 			}
-			AviRecordDefaultFps = val;
+			ConfigureParams.Video.AviRecordFps = val;
 			break;
 
 		case OPT_AVIRECORD_CROP:
-			ok = Opt_Bool(argv[++i], OPT_AVIRECORD_CROP, &AviRecordDefaultCrop);
+			ok = Opt_Bool(argv[++i], OPT_AVIRECORD_CROP, &ConfigureParams.Video.AviRecordCrop);
 			break;
 
 		case OPT_AVIRECORD_FILE:
 			i += 1;
 			/* false -> file is created if it doesn't exist */
-			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, false, AviRecordFile,
-					argv[i], sizeof(AviRecordFile), NULL);
+			ok = Opt_StrCpy(OPT_AVIRECORD_FILE, false, ConfigureParams.Video.AviRecordFile,
+					argv[i], sizeof(ConfigureParams.Video.AviRecordFile), NULL);
 			break;
 
 			/* VDI options */

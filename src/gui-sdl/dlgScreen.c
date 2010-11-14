@@ -369,7 +369,9 @@ void Dialog_WindowDlg(void)
 			else
 			{
 				ConfigureParams.Screen.bCaptureChange = (windowdlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
-				Avi_StartRecording ( AviRecordFile , AviRecordDefaultCrop , nScreenRefreshRate , AviRecordDefaultVcodec );
+				Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Video.AviRecordCrop ,
+					( ConfigureParams.Video.AviRecordFps == 0 ? nScreenRefreshRate : ConfigureParams.Video.AviRecordFps ) ,
+					ConfigureParams.Video.AviRecordVcodec );
 				windowdlg[DLGSCRN_RECANIM].txt = "Stop record";
 			}
 			break;

@@ -17,7 +17,7 @@
    - PNG : compressed RBG images. Depending on the compression level, this
      can require more cpu and could slow down Hatari. As compressed images
      are much smaller than BMP images, this will require less space on disk
-     and much less disk bandwidth. Compression levels 3 or 4 give could
+     and much less disk bandwidth. Compression levels 3 or 4 give good
      tradeoff between cpu usage and file size and should not slow down Hatari
      with recent computers.
 
@@ -29,7 +29,7 @@
   video frequency ; this means 44.1 kHz is the best choice for 50/60 Hz video.
 
   The AVI file is divided into multiple chunks. Hatari will save one video stream
-  and one audio stream, so the overall strucutre of the file is the following :
+  and one audio stream, so the overall structure of the file is the following :
 
   RIFF avi
       LIST
@@ -292,14 +292,6 @@ typedef struct {
 
 
 bool		bRecordingAvi = false;
-#if HAVE_LIBPNG
-int		AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
-#else
-int		AviRecordDefaultVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
-#endif
-bool		AviRecordDefaultCrop = true;
-int		AviRecordDefaultFps = 50;
-char		AviRecordFile[FILENAME_MAX] = "hatari.avi";
 
 
 static RECORD_AVI_PARAMS	AviParams;

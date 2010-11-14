@@ -687,7 +687,9 @@ int main(int argc, char *argv[])
 	Main_CheckForAccurateDelays();
 
 	if ( AviRecordOnStartup )	/* Immediatly starts avi recording ? */
-		Avi_StartRecording ( AviRecordFile , AviRecordDefaultCrop , AviRecordDefaultFps , AviRecordDefaultVcodec );
+		Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Video.AviRecordCrop ,
+			( ConfigureParams.Video.AviRecordFps == 0 ? nScreenRefreshRate : ConfigureParams.Video.AviRecordFps ) ,
+			ConfigureParams.Video.AviRecordVcodec );
 
 	/* Run emulation */
 	Main_UnPauseEmulation();

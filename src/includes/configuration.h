@@ -275,6 +275,13 @@ typedef struct
   bool bFastForward;
 } CNF_SYSTEM;
 
+typedef struct
+{
+  int AviRecordVcodec;
+  bool AviRecordCrop;
+  int AviRecordFps;
+  char AviRecordFile[FILENAME_MAX];
+} CNF_VIDEO;
 
 /* State of system is stored in this structure */
 /* On reset, variables are copied into system globals and used. */
@@ -296,6 +303,7 @@ typedef struct
   CNF_PRINTER Printer;
   CNF_MIDI Midi;
   CNF_SYSTEM System;
+  CNF_VIDEO Video;
 } CNF_PARAMS;
 
 

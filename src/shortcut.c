@@ -111,7 +111,9 @@ static void ShortCut_RecordAnimation(void)
 	else
 	{
 		/* Start animation */
-		Avi_StartRecording ( AviRecordFile , AviRecordDefaultCrop , nScreenRefreshRate , AviRecordDefaultVcodec );
+		Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Video.AviRecordCrop ,
+			( ConfigureParams.Video.AviRecordFps == 0 ? nScreenRefreshRate : ConfigureParams.Video.AviRecordFps ) ,
+			ConfigureParams.Video.AviRecordVcodec );
 	}
 }
 
