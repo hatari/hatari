@@ -73,8 +73,8 @@
 #include <signal.h>
 #else
 /* Need to have these somewhere */
-static void build_comp (void) {}
-bool check_prefs_changed_comp (void) { return false; }
+// static void build_comp (void) {}
+// bool check_prefs_changed_comp (void) { return false; }
 #endif
 /* For faster JIT cycles handling */
 signed long pissoff = 0;
@@ -1648,8 +1648,10 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 		}
 	}
 
+#if AMIGA_ONLY
 	if (nr >= 24 && nr < 24 + 8 && currprefs.cpu_model <= 68010)
 		nr = x_get_byte (0x00fffff1 | (nr << 1));
+#endif
 
 	exception_debug (nr);
 	MakeSR ();
@@ -2992,6 +2994,11 @@ STATIC_INLINE int do_specialties (int cycles)
 		set_special (SPCFLAG_INT);
 	}
 
+	if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
+		/* TODO: Always do do_specialties_interrupt() in m68k_run_x instead? */
+		regs.stopped = 0;
+	}
+
     if (regs.spcflags & SPCFLAG_DEBUGGER)
 		DebugCpu_Check();
 
@@ -3544,7 +3551,9 @@ static void m68k_run_2 (void)
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
-		
+
+		M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+
 	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 	  /* Add some extra cycles to simulate a wait state */
 	  unset_special(SPCFLAG_EXTRA_CYCLES);
