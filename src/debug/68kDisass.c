@@ -122,6 +122,8 @@ unsigned short	Disass68kGetWord(long addr)
 // Load a text file into memory, count the lines and replace the LF with 0-bytes.
 static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 {
+	long	index;
+
 	if(filebuf)
 		*filebuf = NULL;
 	FILE	*f = fopen(filename, "r");
@@ -137,7 +139,7 @@ static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 	if(fileLength != fread(fbuf, sizeof(char), fileLength, f))
 		return 0;
 	int	lineCount = 0;
-	for(long index=0; index<fileLength; ++index)
+	for(index=0; index<fileLength; ++index)
 	{
 		if(fbuf[index] == '\r')	// convert potential CR into a space (which we ignore at the end of the line anyway)
 			fbuf[index] = ' ';
@@ -162,7 +164,9 @@ static void			Disass68kLoadStructInfo(const char *filename)
 	if(!disStructEntries) { free(fbuf); return; }
 	char	*line = fbuf;
 	char	*nextLine;
-	for(int i=0; i<lineCount; line = nextLine, ++i)
+	int	i,j;
+
+	for(i=0; i<lineCount; line = nextLine, ++i)
 	{
 		// strip spaces at the end of the line, remember the ptr to the next line
 		char	*sp = line;
@@ -182,8 +186,8 @@ static void			Disass68kLoadStructInfo(const char *filename)
 			if(se)
 			{
 				se->size = 0;
-				for(int i=0; i<se->count; ++i)
-					se->size += se->elements[i].size;
+				for(j=0; j<se->count; ++j)
+					se->size += se->elements[j].size;
 //				printf("%s : %d bytes\n", se->name, se->size);
 				++disStructCounts;
 				se = NULL;
@@ -232,7 +236,9 @@ static void			Disass68kLoadSymbols(const char *filename)
 	if(!disSymbolEntries) { free(fbuf); return; }
 	char	*line = fbuf;
 	char	*nextLine;
-	for(int i=0; i<lineCount; line = nextLine, ++i)
+	int	i,j;
+
+	for(i=0; i<lineCount; line = nextLine, ++i)
 	{
 		// strip spaces at the end of the line, remember the ptr to the next line
 		char	*sp = line;
@@ -287,15 +293,15 @@ static void			Disass68kLoadSymbols(const char *filename)
 			default:	printf("ERROR: $%lx : %s\n", addr, parameterPtr[0]); continue;
 			}
 		} else {
-			for(int i=0; i<disStructCounts; ++i)
+			for(j=0; j<disStructCounts; ++j)
 			{
-				disStructEntry	*se = &disStructEntries[i];
+				disStructEntry	*se = &disStructEntries[j];
 				if(se->name == NULL)
 					break;
 				if(strcmp(parameterPtr[0], se->name))
 					continue;
 				size = se->size;
-				disSymbolEntries[disSymbolCounts].structIndex = i;
+				disSymbolEntries[disSymbolCounts].structIndex = j;
 			}
 		}
 		if(!size)
@@ -334,9 +340,11 @@ static void			Disass68kInit(const char *baseDirectory)
 
 static Disass68kDataType	Disass68kType(long addr, char *addressLabel, char *commentBuffer, int *count)
 {
+	int	i,j;
+
 	addressLabel[0] = 0;
 	commentBuffer[0] = 0;
-	for(int i=0; i<disSymbolCounts; ++i)
+	for(i=0; i<disSymbolCounts; ++i)
 	{
 		const disSymbolEntry	*dse = &disSymbolEntries[i];
 		int		offset = addr - dse->addr;
@@ -359,7 +367,7 @@ static Disass68kDataType	Disass68kType(long addr, char *addressLabel, char *comm
 
 		*count = 1;
 		const disStructEntry	*se = &disStructEntries[dse->structIndex];
-		for(int j=0; j<se->count; ++j)
+		for(j=0; j<se->count; ++j)
 		{
 			const disStructElement	*e = &se->elements[j];
 			if(offset < e->size)
@@ -386,7 +394,9 @@ static Disass68kDataType	Disass68kType(long addr, char *addressLabel, char *comm
  ***/
 static const char	*Disass68kSymbolName(long addr, int size)
 {
-	for(int i=0; i<disSymbolCounts; ++i)
+	int	i;
+
+	for(i=0; i<disSymbolCounts; ++i)
 	{
 		const disSymbolEntry	*dse = &disSymbolEntries[i];
 		int		offset = addr - dse->addr;
@@ -1126,7 +1136,9 @@ static char	*Disass68kReglist(char *buf, unsigned short reglist)
 static unsigned short	Disass68kFlipBits(unsigned short mask)
 {
 	unsigned short	retMask = 0;
-	for(int i=0; i<=15; ++i)
+	int	i;
+
+	for(i=0; i<=15; ++i)
 		if(mask & (1 << i))
 			retMask |= (1 << (15-i));
 	return retMask;
@@ -1678,6 +1690,7 @@ int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBu
 	opcodeBuffer[0] = 0;
 	operandBuffer[0] = 0;
 	commentBuffer[0] = 0;
+	int		i;
 
 	int		count = 0;
 	char	addressLabel[256];
@@ -1691,7 +1704,7 @@ int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBu
 	case dtByte:if(count > 8)
 					count = 8;
 				strcpy(opcodeBuffer,"DC.B");
-				for(int i=0; i<count; ++i)
+				for(i=0; i<count; ++i)
 				{
 					if((i & 7) > 0)
 						strcat(operandBuffer, ",");
@@ -1709,7 +1722,7 @@ int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBu
 	case dtWord:if(count > 4)
 					count = 4;
 				strcpy(opcodeBuffer,"DC.W");
-				for(int i=0; i<count; ++i)
+				for(i=0; i<count; ++i)
 				{
 					if((i & 3) > 0)
 						strcat(operandBuffer, ",");
@@ -1722,7 +1735,7 @@ int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBu
 	case dtLong:if(count > 2)
 					count = 2;
 				strcpy(opcodeBuffer,"DC.L");
-				for(int i=0; i<count; ++i)
+				for(i=0; i<count; ++i)
 				{
 					if((i & 1) > 0)
 						strcat(operandBuffer, ",");
@@ -1737,7 +1750,7 @@ int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBu
 				strcpy(opcodeBuffer,"DC.B");
 				strcat(operandBuffer, "'");
 				char	*sp = operandBuffer + strlen(operandBuffer);
-				for(int i=0; i < count; ++i)
+				for(i=0; i < count; ++i)
 				{
 					unsigned short	val = Disass68kGetWord(addr+(i & ~1));
 					if(i & 1)
@@ -1772,7 +1785,7 @@ int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBu
 				} else {
 					strcat(operandBuffer, "'");
 					char	*sp = operandBuffer + strlen(operandBuffer);
-					for(int i=0; ; ++i)
+					for(i=0; ; ++i)
 					{
 						unsigned short	val = Disass68kGetWord(addr+(i & ~1));
 						if(i & 1)
