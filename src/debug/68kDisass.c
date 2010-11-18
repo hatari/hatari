@@ -114,6 +114,17 @@ typedef struct {
 static int				disSymbolCounts;
 static disSymbolEntry	*disSymbolEntries;
 
+
+/*
+ * Functions prototypes
+ */
+
+unsigned short	Disass68kGetWord(long addr);
+int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBuffer, char *commentBuffer);
+
+
+
+
 unsigned short	Disass68kGetWord(long addr)
 {
 	return get_word(addr);
