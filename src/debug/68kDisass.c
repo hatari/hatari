@@ -56,7 +56,7 @@ static int				optionPosComment = 82;	// comment, if defined
 #define MC68060			0x004000	// Fourth-Generation 32-Bit Microprocessor
 	#define MC68LC060	0x008000	// Fourth-Generation 32-Bit Microprocessor (no FPU)
 	#define MC68EC060	0x010000	// Fourth-Generation 32-Bit Microprocessor (no FPU, no PMMU)
-#define MC_CPU32		(0x001000|0x002000)
+#define MC_CPU32		(MC68330|MC68340)
 
 #define MC_020			(MC68020|MC68EC020|MC68030|MC68EC030|MC68040|MC68LC040|MC68EC040|MC_CPU32|MC68060|MC68LC060|MC68EC060)
 #define MC_ALL			(MC68000|MC68EC000|MC68HC000|MC68008|MC68010|MC_020)
@@ -69,7 +69,7 @@ static int				optionPosComment = 82;	// comment, if defined
 #define MC_PMMU			(MC68881|MC68882)
 #define MC_FPU			(MC68881|MC68882)
 
-static int				optionCPUTypeMask = MC_ALL & ~MC68040 & ~MC_CPU32 & ~MC68060 | MC_PMMU | MC_FPU;
+static int				optionCPUTypeMask = ( MC_ALL & ~MC68040 & ~MC_CPU32 & ~MC68060 ) | MC_PMMU | MC_FPU;
 
 
 typedef enum {
@@ -510,7 +510,7 @@ static const char	*Disass68kNumber(int val)
 static const char *Disass68kSpecialRegister(int reg)
 {
 	static char	buf[8];
-	char	*sp = NULL;
+	const char	*sp = NULL;
 	switch (reg)
 	{
 	case 0x000:		sp = "SFC"; break;
@@ -2376,7 +2376,7 @@ static void		Disass68kComposeStr(char *dbuf, const char *str, int position, int 
 	int		i;
 	int		len = strlen(dbuf);
 	while(len < position) {
-		dbuf[len++] = ' ';
+		dbuf[len++] = ' ';		/* Will give harmless warning from GCC */
 	}
 	for(i=0; str[i] && (!maxPos || len+i<maxPos); ++i)
 		dbuf[len+i] = str[i];
