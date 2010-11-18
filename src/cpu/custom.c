@@ -34,7 +34,6 @@ int qpcdivisor = 0;
 volatile frame_time_t vsyncmintime;
 
 void do_cycles_ce (long cycles);
-void mmu_do_hit (void);
 
 unsigned long int event_cycles, nextevent, is_lastline, currcycle;
 uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode);
@@ -43,7 +42,7 @@ void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
 uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode);
 frame_time_t read_processor_time_qpf (void);
 frame_time_t read_processor_time_rdtsc (void);
-void sleep_millis (int ms);
+
 
 typedef struct _LARGE_INTEGER
 {

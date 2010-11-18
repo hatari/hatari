@@ -50,6 +50,7 @@
 #include "cpu_prefetch.h"
 #include "main.h"
 #include "m68000.h"
+#include "reset.h"
 #include "cycInt.h"
 #include "mfp.h"
 #include "tos.h"
@@ -684,7 +685,7 @@ static uae_s32 ShowEA (void *f, uae_u16 opcode, int reg, amodes mode, wordsizes 
 			if (dp & 4) base += dispreg;
 
 			addr = base + outer;
-			_stprintf (buffer, "(%s%c%d.%c*%d+%ld)+%ld == $%08lx", name,
+			_stprintf (buffer, "(%s%c%d.%c*%d+%d)+%d == $%08lx", name,
 				dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 				1 << ((dp >> 9) & 3),
 				disp, outer,
@@ -731,7 +732,7 @@ static uae_s32 ShowEA (void *f, uae_u16 opcode, int reg, amodes mode, wordsizes 
 			if (dp & 4) base += dispreg;
 
 			addr = base + outer;
-			_stprintf (buffer, "(%s%c%d.%c*%d+%ld)+%ld == $%08lx", name,
+			_stprintf (buffer, "(%s%c%d.%c*%d+%d)+%d == $%08lx", name,
 				dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 				1 << ((dp >> 9) & 3),
 				disp, outer,
@@ -1204,10 +1205,12 @@ STATIC_INLINE int in_rom (uaecptr pc)
 	return (munge24 (pc) & 0xFFF80000) == 0xF80000;
 }
 
+#if AMIGA_ONLY
 STATIC_INLINE int in_rtarea (uaecptr pc)
 {
-	/*return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom;*/
+	return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom;
 }
+#endif
 
 void REGPARAM2 MakeSR (void)
 {
@@ -2515,14 +2518,14 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 
 #ifdef CPUEMU_0
 
-static TCHAR *mmu30regs[] = { "TCR", "", "SRP", "CRP", "", "", "", "" };
+static const TCHAR *mmu30regs[] = { "TCR", "", "SRP", "CRP", "", "", "", "" };
 
 static void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 {
 	int preg = (next >> 10) & 31;
 	int rw = (next >> 9) & 1;
 	int fd = (next >> 8) & 1;
-	TCHAR *reg = NULL;
+	const TCHAR *reg = NULL;
 	uae_u32 otc = tc_030;
 	int siz;
 
@@ -3293,6 +3296,7 @@ static void m68k_run_2 (void)
 
 #else
 
+#if 0
 static void opcodedebug (uae_u32 pc, uae_u16 opcode)
 {
 	struct mnemolookup *lookup;
@@ -3321,6 +3325,7 @@ static void opcodedebug (uae_u32 pc, uae_u16 opcode)
 		m68k_dumpstate (stdout, NULL);
 	}
 }
+#endif
 
 /* Aranym MMU 68040  */
 static void m68k_run_mmu040 (void)
@@ -3873,7 +3878,8 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int 
 			uae_u16 imm = get_iword_1 (m68kpc_offset);
 			uae_u16 creg = imm & 0x0fff;
 			uae_u16 r = imm >> 12;
-			TCHAR regs[16], *cname = "?";
+			TCHAR regs[16];
+			const TCHAR *cname = "?";
 			int i;
 			for (i = 0; m2cregs[i].regname; i++) {
 				if (m2cregs[i].regno == creg)
@@ -3934,15 +3940,15 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int 
 				*deaddr = newpc;
 			if (cctrue (dp->cc))
 //				buf = buf_out (buf, &bufsize, " == $%08lX (T)", newpc);
-				fprintf(stderr, " == $%08lX (T)", newpc);
+				fprintf(stderr, " == $%08X (T)", newpc);
 			else
 //				buf = buf_out (buf, &bufsize, " == $%08lX (F)", newpc);
-				fprintf(stderr, " == $%08lX (F)", newpc);
+				fprintf(stderr, " == $%08X (F)", newpc);
 		} else if ((opcode & 0xff00) == 0x6100) { /* BSR */
 			if (deaddr)
 				*deaddr = newpc;
 //			buf = buf_out (buf, &bufsize, " == $%08lX", newpc);
-			fprintf(stderr, " == $%08lX", newpc);
+			fprintf(stderr, " == $%08X", newpc);
 		}
 //		buf = buf_out (buf, &bufsize, "\n");
 		fprintf(stderr, "%s", "\n");
@@ -4038,25 +4044,25 @@ void sm68k_disasm (TCHAR *instrname, TCHAR *instrcode, uaecptr addr, uaecptr *ne
 }
 
 struct cpum2c m2cregs[] = {
-	0, "SFC",
-	1, "DFC",
-	2, "CACR",
-	3, "TC",
-	4, "ITT0",
-	5, "ITT1",
-	6, "DTT0",
-	7, "DTT1",
-	8, "BUSC",
-	0x800, "USP",
-	0x801, "VBR",
-	0x802, "CAAR",
-	0x803, "MSP",
-	0x804, "ISP",
-	0x805, "MMUS",
-	0x806, "URP",
-	0x807, "SRP",
-	0x808, "PCR",
-	-1, NULL
+	{ 0, "SFC" },
+	{ 1, "DFC" },
+	{ 2, "CACR" },
+	{ 3, "TC" },
+	{ 4, "ITT0" },
+	{ 5, "ITT1" },
+	{ 6, "DTT0" },
+	{ 7, "DTT1" },
+	{ 8, "BUSC" },
+	{ 0x800, "USP" },
+	{ 0x801, "VBR" },
+	{ 0x802, "CAAR" },
+	{ 0x803, "MSP" },
+	{ 0x804, "ISP" },
+	{ 0x805, "MMUS" },
+	{ 0x806, "URP" },
+	{ 0x807, "SRP" },
+	{ 0x808, "PCR" },
+	{ -1, NULL }
 };
 
 void val_move2c2 (int regno, uae_u32 val)
