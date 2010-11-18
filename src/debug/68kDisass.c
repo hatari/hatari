@@ -147,7 +147,7 @@ static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 		return 0;
 	char	*fbuf = malloc(fileLength);
 	if(!fbuf) return 0;
-	if(fileLength != fread(fbuf, sizeof(char), fileLength, f))
+	if((size_t)fileLength != fread(fbuf, sizeof(char), fileLength, f))
 		return 0;
 	int	lineCount = 0;
 	for(index=0; index<fileLength; ++index)
@@ -1970,7 +1970,7 @@ more:
 		// Parse the EAs for all operands
 		int	ea = opcode[0] & 0x3F;
 		dbuf = operandBuffer;
-		for(i=0; i<sizeof(ots->op)/sizeof(ots->op[0]); ++i)
+		for(i=0; i<(int)(sizeof(ots->op)/sizeof(ots->op[0])); ++i)
 		{
 			switch(ots->op[i])
 			{
