@@ -5,16 +5,18 @@
  *	your option any later version. Read the file gpl.txt for details.
  ***/
 
+#include <stdio.h>
+#include <ctype.h>
+#include <strings.h>
+#include <stdlib.h>
+
 #include "config.h"
 #include "sysdeps.h"
 #include "main.h"
 #include "newcpu.h"
 #include "paths.h"
 #include "tos.h"
-#include <stdio.h>
-#include <ctype.h>
-#include <strings.h>
-#include <stdlib.h>
+#include "68kDisass.h"
 
 #define ADDRESS_ON_PC		1
 #define USE_SYMBOLS			1
@@ -2385,7 +2387,7 @@ static void		Disass68kComposeStr(char *dbuf, const char *str, int position, int 
 	dbuf[len+i] = 0;
 }
 
-void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
+static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
 	static bool	isInit = false;
 	if(!isInit)
@@ -2460,3 +2462,18 @@ void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
     if (nextpc)
 		*nextpc = addr;
 }
+
+
+/*
+ * Disasm should be called from Hatari's sources to use either uae's built in
+ * disassembler (DISASM_ENGINE_UAE) or the stand alone disassembler above (DISASM_ENGINE_EXT)
+ */
+
+void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine)
+{
+  if ( DisasmEngine == DISASM_ENGINE_UAE )
+	return m68k_disasm (f, addr, nextpc, cnt);
+  else if ( DisasmEngine == DISASM_ENGINE_EXT )
+	return Disass68k_loop (f, addr, nextpc, cnt);
+}
+

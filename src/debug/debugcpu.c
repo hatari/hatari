@@ -28,6 +28,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "str.h"
 #include "symbols.h"
+#include "68kDisass.h"
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
 #define NON_PRINT_CHAR '.'     /* character to display for non-printables */
@@ -205,7 +206,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	for (insts = 0; insts < max_insts && disasm_addr < disasm_upper; insts++)
 	{
 		DebugCpu_ShowAddressInfo(disasm_addr);
-		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
+		Disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1, DISASM_ENGINE_EXT);
 		disasm_addr = nextpc;
 	}
 	fflush(debugOutput);

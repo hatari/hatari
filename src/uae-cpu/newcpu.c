@@ -134,6 +134,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "debugui.h"
 #include "debugcpu.h"
+#include "68kDisass.h"
 
 //#define DEBUG_PREFETCH
 
@@ -1706,7 +1707,7 @@ static void m68k_run_1 (void)
 	    Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+	    Disasm(stderr, m68k_getpc (), NULL, 1, DISASM_ENGINE_EXT);
 	}
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
@@ -1793,7 +1794,7 @@ static void m68k_run_2 (void)
 	    Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+	    Disasm(stderr, m68k_getpc (), NULL, 1, DISASM_ENGINE_EXT);
 	}
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
