@@ -601,63 +601,73 @@ static addrbank dummy_bank =
 {
     dummy_lget, dummy_wget, dummy_bget,
     dummy_lput, dummy_wput, dummy_bput,
-    dummy_xlate, dummy_check
+    dummy_xlate, dummy_check, NULL, NULL,
+    dummy_lget, dummy_wget, ABFLAG_NONE
+//	dummy_lgeti, dummy_wgeti, ABFLAG_NONE
 };
 
 static addrbank BusErrMem_bank =
 {
     BusErrMem_lget, BusErrMem_wget, BusErrMem_bget,
     BusErrMem_lput, BusErrMem_wput, BusErrMem_bput,
-    BusErrMem_xlate, BusErrMem_check
+    BusErrMem_xlate, BusErrMem_check, NULL, "BusError memory",
+    BusErrMem_lget, BusErrMem_wget, ABFLAG_NONE
 };
 
 static addrbank STmem_bank =
 {
     STmem_lget, STmem_wget, STmem_bget,
     STmem_lput, STmem_wput, STmem_bput,
-    STmem_xlate, STmem_check
+    STmem_xlate, STmem_check, NULL, "ST memory",
+    STmem_lget, STmem_wget, ABFLAG_RAM
 };
 
 static addrbank SysMem_bank =
 {
     SysMem_lget, SysMem_wget, SysMem_bget,
     SysMem_lput, SysMem_wput, SysMem_bput,
-    STmem_xlate, STmem_check
+    STmem_xlate, STmem_check, NULL, "Sys memory",
+    SysMem_lget, SysMem_wget, ABFLAG_ROM
 };
 
 static addrbank VoidMem_bank =
 {
     VoidMem_lget, VoidMem_wget, VoidMem_bget,
     VoidMem_lput, VoidMem_wput, VoidMem_bput,
-    VoidMem_xlate, VoidMem_check
+    VoidMem_xlate, VoidMem_check, NULL, "Void memory",
+    VoidMem_lget, VoidMem_wget, ABFLAG_NONE
 };
 
 static addrbank TTmem_bank =
 {
     TTmem_lget, TTmem_wget, TTmem_bget,
     TTmem_lput, TTmem_wput, TTmem_bput,
-    TTmem_xlate, TTmem_check
+    TTmem_xlate, TTmem_check, NULL, "TT memory",
+    TTmem_lget, TTmem_wget, ABFLAG_RAM
 };
 
 static addrbank ROMmem_bank =
 {
     ROMmem_lget, ROMmem_wget, ROMmem_bget,
     ROMmem_lput, ROMmem_wput, ROMmem_bput,
-    ROMmem_xlate, ROMmem_check
+    ROMmem_xlate, ROMmem_check, NULL, "ROM memory",
+    ROMmem_lget, ROMmem_wget, ABFLAG_ROM
 };
 
 static addrbank IdeMem_bank =
 {
     Ide_Mem_lget, Ide_Mem_wget, Ide_Mem_bget,
     Ide_Mem_lput, Ide_Mem_wput, Ide_Mem_bput,
-    IdeMem_xlate, IdeMem_check
+    IdeMem_xlate, IdeMem_check, NULL, "IDE memory",
+    Ide_Mem_lget, Ide_Mem_wget, ABFLAG_RAM
 };
 
 static addrbank IOmem_bank =
 {
     IoMem_lget, IoMem_wget, IoMem_bget,
     IoMem_lput, IoMem_wput, IoMem_bput,
-    IOmem_xlate, IOmem_check
+    IOmem_xlate, IOmem_check, NULL, "IO memory",
+    IoMem_lget, IoMem_wget, ABFLAG_RAM
 };
 
 
