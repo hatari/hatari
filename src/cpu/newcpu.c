@@ -3003,7 +3003,7 @@ STATIC_INLINE int do_specialties (int cycles)
 		DebugCpu_Check();
 
 	if ((regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE))) {
-		unset_special (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
+		unset_special(SPCFLAG_MODE_CHANGE);
 		return 1;
 	}
 	return 0;
@@ -3629,57 +3629,14 @@ void m68k_go (int may_quit)
 	in_m68k_go++;
 	for (;;) {
 		void (*run_func)(void);
-		if (quit_program > 0) {
-			int hardreset = (quit_program == 3 ? 1 : 0) | hardboot;
-			if (quit_program == 1)
-				break;
-
-			quit_program = 0;
-			hardboot = 0;
-
-			if (currprefs.inprecfile[0] && currprefs.inprecmode < 0) {
-				inprec_open (currprefs.inprecfile, currprefs.inprecmode);
-				changed_prefs.inprecmode = currprefs.inprecmode = 0;
-				changed_prefs.inprecfile[0] = currprefs.inprecfile[0] = 0;
-			}
-
-#ifdef SAVESTATE
-			if (savestate_state == STATE_RESTORE)
-				restore_state (savestate_fname);
-			else if (savestate_state == STATE_REWIND)
-				savestate_rewind ();
-#endif
-//			customreset (hardreset);
-			customreset ();
-			m68k_reset (hardreset);
-			if (hardreset) {
-				memory_hardreset ();
-				write_log ("hardreset, memory cleared\n");
-			}
-
-#ifdef SAVESTATE
-			/* We may have been restoring state, but we're done now.  */
-			if (savestate_state == STATE_RESTORE || savestate_state == STATE_REWIND) {
-				map_overlay (1);
-				fill_prefetch_slow (); /* compatibility with old state saves */
-				memory_map_dump ();
-			}
-			savestate_restore_finish ();
-#endif
-			if (currprefs.inprecfile[0] && currprefs.inprecmode > 0) {
-				inprec_open (currprefs.inprecfile, currprefs.inprecmode);
-				changed_prefs.inprecmode = currprefs.inprecmode = 0;
-				changed_prefs.inprecfile[0] = currprefs.inprecfile[0] = 0;
-			}
-
-			fill_prefetch_slow ();
-			if (currprefs.produce_sound == 0)
-				eventtab[ev_audio].active = 0;
-			handle_active_events ();
-			if (regs.spcflags)
-				do_specialties (0);
-			m68k_setpc (regs.pc);
+		
+		if (regs.spcflags & SPCFLAG_BRK) {
+			unset_special(SPCFLAG_BRK);
+			break;
 		}
+
+		quit_program = 0;
+		hardboot = 0;
 
 #ifdef DEBUGGER
 		if (debugging)
@@ -3709,8 +3666,8 @@ void m68k_go (int may_quit)
 			regs.spcflags |= of & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
 		}
 #endif
-	set_x_funcs ();
-	if (mmu_enabled && !currprefs.cachesize) {
+		set_x_funcs ();
+		if (mmu_enabled && !currprefs.cachesize) {
 			run_func = m68k_run_mmu;
 		} else {
 			run_func = currprefs.cpu_cycle_exact && currprefs.cpu_model == 68000 ? m68k_run_1_ce :
