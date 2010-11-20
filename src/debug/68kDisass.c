@@ -117,17 +117,7 @@ static int				disSymbolCounts;
 static disSymbolEntry	*disSymbolEntries;
 
 
-/*
- * Functions prototypes
- */
-
-unsigned short	Disass68kGetWord(long addr);
-int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBuffer, char *commentBuffer);
-
-
-
-
-unsigned short	Disass68kGetWord(long addr)
+static inline unsigned short	Disass68kGetWord(long addr)
 {
 	return get_word(addr);
 }
@@ -207,7 +197,6 @@ static void			Disass68kLoadStructInfo(const char *filename)
 			}
 		} else if(line[0] == '#') {
 			disStructElement	dse;
-			dse.name = NULL;
 			int	val = 0;
 			int index = 2;
 			if(line[1] == 'A' || line[1] == 'B')
@@ -219,6 +208,7 @@ static void			Disass68kLoadStructInfo(const char *filename)
 				}
 			}
 			if(val == 0) val = 1;
+			dse.name = NULL;
 			switch(line[1])
 			{
 			case 'A':	dse.type = dtStringArray; dse.size = val; dse.name = strdup(line + index + 1); break;
@@ -228,7 +218,8 @@ static void			Disass68kLoadStructInfo(const char *filename)
 			case 'C':	dse.type = dtOpcode; dse.size = 2; break;
 			case 'f':	dse.type = dtFunctionPointer; dse.size = 4; break;
 			case 'p':	dse.type = dtPointer; dse.size = 4; break;
-			default:	printf("Unknown type in \"%s\"\n", line); break;
+			default:	dse.type = dtNone; dse.size = 0;
+					printf("Unknown type in \"%s\"\n", line); break;
 			}
 			if(!dse.name)
 				dse.name = strdup(line+3); 
@@ -819,6 +810,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 				prefixComma = true;
 			}
 			if(bdSize == 1 && ((bs && is && iis > 0) || (bs && iis >= 5)))
+			{
 				if(ea == 0x3B)
 				{
 					sp = Disass68kSpecialRegister(REG_ZPC);
@@ -827,7 +819,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 				} else {
 					strcat(disassbuf, "0");
 				}
-
+			}
 			if(!bs)
 			{
 				if(prefixComma)
@@ -1694,7 +1686,7 @@ static const OpcodeTableStruct	OpcodeTable[] = {
 	{ }
 };
 
-int		Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBuffer, char *commentBuffer)
+static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBuffer, char *commentBuffer)
 {
 	long	baseAddr = addr;
 	int		val;
@@ -1860,7 +1852,7 @@ more:
 
 		// search for the opcode plus up to 2 extension words
 		unsigned short	opcode[5] = {};
-		int		i;
+		unsigned int	i;
 		for(i=0; i<5; ++i)
 		{
 			if(!ots->opcodeMask[i*2])
@@ -1972,7 +1964,7 @@ more:
 		// Parse the EAs for all operands
 		int	ea = opcode[0] & 0x3F;
 		dbuf = operandBuffer;
-		for(i=0; i<(int)(sizeof(ots->op)/sizeof(ots->op[0])); ++i)
+		for(i=0; i<(sizeof(ots->op)/sizeof(ots->op[0])); ++i)
 		{
 			switch(ots->op[i])
 			{
