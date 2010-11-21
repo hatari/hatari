@@ -337,7 +337,7 @@ bool Profile_CpuStart(void)
 	cpu_profile.data = calloc(cpu_profile.size+1, sizeof(*cpu_profile.data));
 	if (cpu_profile.data) {
 		printf("Allocated CPU profile buffer (%d MB).\n",
-		       sizeof(*cpu_profile.data)*cpu_profile.size/1024/1024);
+		       (int)sizeof(*cpu_profile.data)*cpu_profile.size/1024/1024);
 	} else {
 		perror("ERROR, new CPU profile buffer alloc failed");
 		cpu_profile.enabled = false;
@@ -461,7 +461,7 @@ void Profile_CpuStop(void)
 		return;
 	}
 	printf("Allocated CPU profile address buffer (%d KB).\n",
-	       sizeof(*sort_arr)*(active+512)/1024);
+	       (int)sizeof(*sort_arr)*(active+512)/1024);
 	cpu_profile.sort_arr = sort_arr;
 	cpu_profile.active = active;
 
@@ -707,7 +707,7 @@ bool Profile_DspStart(void)
 	dsp_profile.data = calloc(DSP_PROFILE_ARR_SIZE, sizeof(*dsp_profile.data));
 	if (dsp_profile.data) {
 		printf("Allocated DSP profile buffer (%d KB).\n",
-		       sizeof(*dsp_profile.data)*DSP_PROFILE_ARR_SIZE/1024);
+		       (int)sizeof(*dsp_profile.data)*DSP_PROFILE_ARR_SIZE/1024);
 	} else {
 		perror("ERROR, new DSP profile buffer alloc failed");
 		dsp_profile.enabled = false;
@@ -768,7 +768,7 @@ void Profile_DspStop(void)
 		return;
 	}
 	printf("Allocated DSP profile address buffer (%d KB).\n",
-	       sizeof(*sort_arr)*(dsp_profile.ram.active+512)/1024);
+	       (int)sizeof(*sort_arr)*(dsp_profile.ram.active+512)/1024);
 	dsp_profile.sort_arr = sort_arr;
 
 	/* ...and fill addresses for used instructions... */
