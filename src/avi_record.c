@@ -440,23 +440,14 @@ static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 	Avi_Store4cc ( Chunk.ChunkName , "00dc" );				/* stream 0, compressed DIB bytes */
 	Avi_StoreU32 ( Chunk.ChunkSize , 0 );					/* size of PNG image (-> completed later) */
 	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
-	{
-		perror ( "Avi_RecordVideoStream_PNG" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write png frame header" );
-		return false;
-	}
-
+		goto png_error;
 
 	/* Write the video frame data */
 	SizeImage = ScreenSnapShot_SavePNG_ToFile ( pAviParams->Surface , pAviParams->FileOut ,
 		pAviParams->VideoCodecCompressionLevel , PNG_FILTER_NONE ,
 		pAviParams->CropLeft , pAviParams->CropRight , pAviParams->CropTop , pAviParams->CropBottom );
 	if ( SizeImage <= 0 )
-	{
-		perror ( "Avi_RecordVideoStream_PNG" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write png video frame" );
-		return false;
-	}
+		goto png_error;
 	if ( SizeImage & 1 )
 	{
 		SizeImage++;							/* add an extra '\0' byte to get an even size */
@@ -466,28 +457,19 @@ static bool	Avi_RecordVideoStream_PNG ( RECORD_AVI_PARAMS *pAviParams )
 	/* Update the size of the video chunk */
 	Avi_StoreU32 ( TempSize , SizeImage );
 	if ( fseek ( pAviParams->FileOut , ChunkPos+4 , SEEK_SET ) != 0 )
-	{
-		perror ( "Avi_RecordVideoStream_PNG" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update png frame header" );
-		return false;
-	}
+		goto png_error;
 	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
-	{
-		perror ( "Avi_RecordVideoStream_PNG" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update png frame header" );
-		return false;
-	}
-
+		goto png_error;
 
 	/* Go to the end of the video frame data */
 	if ( fseek ( pAviParams->FileOut , 0 , SEEK_END ) != 0 )
-	{
-		perror ( "Avi_RecordVideoStream_PNG" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to seek png video frame" );
-		return false;
-	}
-
+		goto png_error;
 	return true;
+
+png_error:
+	perror ( "Avi_RecordVideoStream_PNG" );
+	Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write png frame" );
+	return false;
 }
 #endif  /* HAVE_LIBPNG */
 
@@ -743,11 +725,7 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 	Avi_Store4cc ( Chunk.ChunkName , "idx1" );				/* stream 0, uncompressed DIB bytes */
 	Avi_StoreU32 ( Chunk.ChunkSize , 0 );					/* index size (-> completed later) */
 	if ( fwrite ( &Chunk , sizeof ( Chunk ) , 1 , pAviParams->FileOut ) != 1 )
-	{
-		perror ( "Avi_BuildIndex" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write index header" );
-		return false;
-	}
+		goto index_error;
 	PosWrite = ftell ( pAviParams->FileOut );				/* position to start writing indexes */
 
 	/* Go to the first data chunk in the 'movi' chunk */
@@ -761,10 +739,7 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 	{
 		/* Read the header for this data chunk: ChunkName and ChunkSize */
 		if (fread(&Chunk, sizeof(Chunk), 1, pAviParams->FileOut) != 1)
-		{
-			perror("Avi_BuildIndex");
-			return false;
-		}
+			goto index_error;
 		Size = Avi_ReadU32 ( Chunk.ChunkSize );
 
 		/* Write the index infos for this chunk */
@@ -773,7 +748,8 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 		Avi_StoreU32 ( ChunkIndex.flags , AVIIF_KEYFRAME );		/* AVIIF_KEYFRAME */
 		Avi_StoreU32 ( ChunkIndex.offset , Pos - pAviParams->MoviChunkPosStart - 8  );	/* pos relative to 'movi' */
 		Avi_StoreU32 ( ChunkIndex.length , Size );
-		fwrite ( &ChunkIndex , sizeof ( ChunkIndex ) , 1 , pAviParams->FileOut );
+		if (fwrite ( &ChunkIndex , sizeof ( ChunkIndex ) , 1 , pAviParams->FileOut ) != 1)
+			goto index_error;
 		PosWrite = ftell ( pAviParams->FileOut );			/* position for the next index */
 
 		/* Go to the next data chunk in the 'movi' chunk */
@@ -784,19 +760,15 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 	/* Update the size of the 'idx1' chunk */
 	Avi_StoreU32 ( TempSize , PosWrite - IndexChunkPosStart - 8 );
 	if ( fseek ( pAviParams->FileOut , IndexChunkPosStart+4 , SEEK_SET ) != 0 )
-	{
-		perror ( "Avi_BuildIndex" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update idx1 header" );
-		return false;
-	}
+		goto index_error;
 	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
-	{
-		perror ( "Avi_BuildIndex" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update idx1 header" );
-		return false;
-	}
-
+		goto index_error;
 	return true;
+
+index_error:
+	perror ( "Avi_BuildIndex" );
+	Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to create index header" );
+	return false;
 }
 
 
