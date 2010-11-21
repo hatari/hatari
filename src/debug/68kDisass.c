@@ -28,7 +28,7 @@ typedef enum {
 	doptStackSP = 8,		// stack pointer is named "SP" instead of "A7" (except for MOVEM)
 } Diss68kOptions;
 
-static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptStackSP;
+static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoBrackets;
 
 // values <0 will hide the group
 static int				optionPosAddress = 0;	// current address
