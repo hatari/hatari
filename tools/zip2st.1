@@ -1,0 +1,43 @@
+.TH "ZIP2ST" "1" "2010-11-21" "Hatari" "Hatari utilities"
+.SH NAME
+zip2st \- a program for converting .zip archives to Atari .st disk images
+.SH SYNOPSIS
+.B zip2st
+.RI srcname.zip
+.RI [dstname.st]
+.SH DESCRIPTION
+zip2st can be used to convert a .zip file to a .st disk image.
+.PP
+If the destination filename is not given, use the name of the .zip
+file, without the extension, and save it in the current working
+directory.
+.PP
+The .st disk image is a raw disk image, and can be written to a floppy
+using dd(1).
+.PP
+The contents of the uncompressed zip file need to be smaller than
+2.88MB (the largest floppy image size supported by Hatari).
+.PP
+.SH SEE ALSO
+.IR hmsa (1),
+.IR atari\-hd\-image (1),
+.IR hatari (1),
+.IR unzip (1),
+.IR mtools (1),
+.IR dd (1).
+.SH "AUTHOR"
+Written by Thomas Huth <huth@users.berlios.de>.
+.PP
+This manual page was written by Teemu Hukkanen <tjhukkan@iki.fi>
+for the Debian project and later modified by Eero Tamminen to
+suit the latest version of Hatari.
+.SH "LICENSE"
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.SH "NO WARRANTY"
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.

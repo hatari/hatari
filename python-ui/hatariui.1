@@ -14,15 +14,15 @@ hatariui \- Python/Gtk UI for Hatari
 is a Python/Gtk UI for Hatari which can either embed the Hatari window
 (on X11 systems) or run in a separate window.  By default it provides
 a normal application menu and some extra button for faster access to
-fast-forward etc. functionality, but these are fully configurable
+fast\-forward etc. functionality, but these are fully configurable
 with the command line options. While it lacks support for some of
 the Hatari configuration options that Hatari's SDL GUI has, it also
-supports some options that the Hatari's built-in SDL UI doesn't.
+supports some options that the Hatari's built\-in SDL UI doesn't.
 .PP
 Besides the UI configurability, some of the other advantages hatariui has
 over the SDL interface included with Hatari itself are use of a normal
 Gtk file selector with all of its features (directory shortcuts etc),
-support for UTF-8 (in file names) and in general blending better to
+support for UTF\-8 (in file names) and in general blending better to
 the user's desktop environment.
 .PP
 Additionally, Hatari can run while one uses UI configuration dialogs,
@@ -41,34 +41,34 @@ Options below are actually for hatariui.py script.  If you want to
 change options given for it, modify the hatariui shell script or
 make your own based on the installed one.
 .\" following command line helps in updating the options:
-.\" hatariui.py --help|sed -e 's/^\t\+/.TP\n.B /' -e 's/\t\+/\n/g' >> hatariui.1
+.\" hatariui.py --help|sed -e 's/^\t\+/.TP\n.B /' -e 's/\t\+/\n/g' -e 's/-/\\-/g' >> hatariui.1
 .SH "OPTIONS"
 .TP
-.B -h, --help
+.B \-h, \-\-help
 Hatari UI command line help
 .TP
-.B -n, --nomenu
+.B \-n, \-\-nomenu
 Omit menubar from the window
 .TP
-.B -e, --embed
+.B \-e, \-\-embed
 Embed Hatari window (to middle of controls)
 .TP
-.B -f, --fullscreen
+.B \-f, \-\-fullscreen
 Start in fullscreen
 .TP
-.B -l, --left <controls>
+.B \-l, \-\-left <controls>
 Add a toolbar at left
 .TP
-.B -r, --right <controls>
+.B \-r, \-\-right <controls>
 Add a toolbar at right
 .TP
-.B -t, --top <controls>
+.B \-t, \-\-top <controls>
 Add a toolbar at top
 .TP
-.B -b, --bottom <controls>
+.B \-b, \-\-bottom <controls>
 Add a toolbar at bottom
 .TP
-.B -p, --panel <name>,<controls>
+.B \-p, \-\-panel <name>,<controls>
 Add a separate window with given name and controls
 .PP
 You can have only one toolbar on each side of the Hatari window.
@@ -184,7 +184,7 @@ Sound settings
 Latest Hatari changes
 .TP
 .B run
-(Re-)run Hatari
+(Re\-)run Hatari
 .TP
 .B shot
 Grab a screenshot
@@ -200,18 +200,19 @@ If no options are given, the UI uses basic controls.
 Example on how to add top, right and bottom toolbars and a separate
 "MyPanel" panel window:
 .nf
-	hatariui.py --embed \\
-	-t "about,run,pause,quit" \\
-	-p "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,>,close" \\
-	-r "paste,debug,trace,machine,MyPanel" \\
-	-b "sound,|,fastforward,|,fullscreen"
+	hatariui.py \-\-embed \\
+	\-t "about,run,pause,quit" \\
+	\-p "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,>,close" \\
+	\-r "paste,debug,trace,machine,MyPanel" \\
+	\-b "sound,|,fastforward,|,fullscreen"
 .fi
 .PP
 For more examples on Hatari UI options usage, see the hatariui shell
 script.
 .SH "SEE ALSO"
-.IR hatari
-.IR hconsole
+.IR hmsa (1),
+.IR hatariui (1),
+.IR hconsole (1)
 .SH "COPYRIGHT"
 Hatari UI is written by Eero Tamminen <eerot@berlios.de>.
 .PP

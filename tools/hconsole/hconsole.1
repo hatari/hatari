@@ -9,7 +9,7 @@ hconsole \- Interactive Python console for using Hatari's remote API
 .B hconsole.py
 .IR [[console options]
 .IR [command file]
-.B --]
+.B \-\-]
 .IR [hatari options]
 .SH "DESCRIPTION"
 .I Hconsole
@@ -25,7 +25,7 @@ coming with hconsole).
 .SH "USAGE"
 Normally hconsole forwards  all of its arguments to Hatari instance
 it invoked.  If you want to give arguments for hconsole itself,
-you need to add '--' argument after the hconsole arguments
+you need to add '\-\-' argument after the hconsole arguments
 and before the arguments going to Hatari.
 .PP
 If you give a file name as hconsole argument, commands in it will
@@ -34,26 +34,26 @@ into hconsole interactive shell.
 .PP
 Hconsole accepts following options:
 .TP
-.B --exit
+.B \-\-exit
 Exit after starting Hatari and parsing arguments.
 .TP
-.B --help, -h
+.B \-\-help, \-h
 Show command line help.
 .SH "EXAMPLES"
 Start Hatari with all of the given arguments:
 .br
-	hconsole.py --monitor mono -d test/
+	hconsole.py \-\-monitor mono \-d test/
 .PP
 Start Hatari without extra arguments, execute commands from
 the given commands.txt file, exit after the file ends:
 .br
-	hconsole.py commands.txt --exit --
+	hconsole.py commands.txt \-\-exit \-\-
 .SH FILES
 By default hconsole and its examples are installed under
 the /usr/share/hatari/hconsole/ directory.
 .SH "SEE ALSO"
-.IR hatari
-.IR hatariui
+.IR hatari (1),
+.IR hatariui (1)
 .SH "AUTHOR"
 Written by Eero Tamminen <eerot@users.berlios.de>.
 .SH "LICENSE"
