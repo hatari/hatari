@@ -6,15 +6,16 @@
 
   Load TOS image file into ST memory, fix/setup for emulator.
 
-  The Atari ST TOS needs to be patched to help with emulation. Eg, it references
-  the MMU chip to set memory size. This is patched to the sizes we need without
-  the complicated emulation of hardware which is not needed (as yet). We also
-  patch DMA devices and Hard Drives.
-  NOTE: TOS versions 1.06 and 1.62 were not designed for use on a real STfm.
-  These were for the STe machine ONLY. They access the DMA/Microwire addresses
-  on boot-up which (correctly) cause a bus-error on Hatari as they would in a
-  real STfm. If a user tries to select any of these images we bring up an error.
-*/
+  The Atari ST TOS needs to be patched to help with emulation. Eg, it
+  references the MMU chip to set memory size. This is patched to the
+  sizes we need without the complicated emulation of hardware which
+  is not needed (as yet). We also patch DMA devices and Hard Drives.
+
+  NOTE: TOS versions 1.06 and 1.62 were not designed for use on a
+  real STfm. These were for the STe machine ONLY. They access the
+  DMA/Microwire addresses on boot-up which (correctly) cause a
+  bus-error on Hatari as they would in a real STfm. If a user tries
+  to select any of these images we bring up an error. */
 const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 
 #include <SDL_endian.h>
@@ -363,30 +364,21 @@ static void TOS_CreateAutoInf(void)
 	}
 	assert(offset < size);
 
+	/* create the autostart file */
 	fp = tmpfile();
-	if (!fp)
+	if (!(fp
+	      && fwrite(contents, offset, 1, fp) == 1
+	      && fwrite(prgname, strlen(prgname), 1, fp) == 1
+	      && fwrite(contents+offset, size-offset-1, 1, fp) == 1
+	      && fseek(fp, 0, SEEK_SET) == 0))
 	{
+		if (fp)
+			fclose(fp);
 		Log_Printf(LOG_ERROR, "Failed to create autostart file for '%s'!\n", TosAutoStart.prgname);
 		return;
 	}
-
-	/* create the autostart file */
-	fwrite(contents, offset, 1, fp);
-	fwrite(prgname, strlen(prgname), 1, fp);
-	fwrite(contents+offset, size-offset-1, 1, fp);
-	fseek(fp, 0, SEEK_SET);
-
 	TosAutoStart.file = fp;
 	Log_Printf(LOG_WARN, "Virtual autostart file '%s' created for '%s'.\n", infname, prgname);
-
-#if 0
-	/* write debug version to CWD */
-	fp = fopen("autostart.inf", "wb");
-	fwrite(contents, offset, 1, fp);
-	fwrite(prgname, strlen(prgname), 1, fp);
-	fwrite(contents+offset, size-offset-1, 1, fp);
-	fclose(fp);
-#endif
 }
 
 /*-----------------------------------------------------------------------*/
