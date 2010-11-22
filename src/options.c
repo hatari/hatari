@@ -106,10 +106,19 @@ enum {
 	OPT_CPULEVEL,		/* CPU options */
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
+#if ENABLE_WINUAE_CPU
+	OPT_CPU_CYCLE_EXACT,
+#endif
 	OPT_MACHINE,		/* system options */
 	OPT_BLITTER,
 	OPT_TIMERD,
 	OPT_DSP,
+#if ENABLE_WINUAE_CPU
+	OPT_CPU_ADDR24,
+	OPT_FPU_TYPE,
+	OPT_FPU_COMPATIBLE,
+	OPT_MMU,
+#endif
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
 	OPT_MICROPHONE,
@@ -275,6 +284,10 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
+#if ENABLE_WINUAE_CPU
+	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
+	  "<bool>", "Cpu cycle exact emulation (0 = no ; 1 = yes)" },
+#endif
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
 	{ OPT_MACHINE,   NULL, "--machine",
@@ -285,6 +298,17 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Patch Timer-D (about doubles Hatari speed)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
+#if ENABLE_WINUAE_CPU
+	{ OPT_CPU_ADDR24, NULL, "--addr24",
+	  "<bool>", "Addressing mode (0 = 32 bits ; 1 = 24 bits)" },
+	{ OPT_FPU_TYPE, NULL, "--fpu-type",
+	  "<x>", "FPU type (x=none/68881/68882/internal)" },
+	{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
+	  "bool", "FPU compatible mode (0=faster, but less compatible; 1=slower but more compatible)" },
+	{ OPT_MMU, NULL, "--mmu",
+	  "bool", "MMU emulation (0=no; 1=yes)" },
+#endif
+
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
@@ -1356,7 +1380,49 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			bLoadAutoSave = false;
 			break;
-			
+
+#if ENABLE_WINUAE_CPU
+		case OPT_CPU_ADDR24:
+			ok = Opt_Bool(argv[++i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
+			break;			
+
+		case OPT_CPU_CYCLE_EXACT:
+			ok = Opt_Bool(argv[++i], OPT_CPU_CYCLE_EXACT, &ConfigureParams.System.bCycleExactCpu);
+			break;			
+
+		case OPT_FPU_TYPE:
+			i += 1;
+			if (strcasecmp(argv[i], "none") == 0)
+			{
+				ConfigureParams.System.n_FPUType = FPU_NONE;
+			}
+			else if (strcasecmp(argv[i], "68881") == 0)
+			{
+				ConfigureParams.System.n_FPUType = FPU_68881;
+			}
+			else if (strcasecmp(argv[i], "68882") == 0)
+			{
+				ConfigureParams.System.n_FPUType = FPU_68882;
+			}
+			else if (strcasecmp(argv[i], "internal") == 0)
+			{
+				ConfigureParams.System.n_FPUType = FPU_CPU;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_DSP, argv[i], "Unknown FPU type");
+			}
+			bLoadAutoSave = false;
+			break;
+
+		case OPT_FPU_COMPATIBLE:
+			ok = Opt_Bool(argv[++i], OPT_FPU_COMPATIBLE, &ConfigureParams.System.bCompatibleFPU);
+			break;			
+
+		case OPT_MMU:
+			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
+			break;			
+#endif
 		case OPT_SOUND:
 			i += 1;
 			if (strcasecmp(argv[i], "off") == 0)

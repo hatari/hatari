@@ -250,8 +250,13 @@ void M68000_CheckCpuLevel(void)
 {
 	changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
-#ifndef UAE_NEWCPU_H
-	changed_prefs.cpu_cycle_exact = 0;  // TODO
+
+#if ENABLE_WINUAE_CPU
+	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
+	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
+	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
+	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
+	changed_prefs.mmu_model = ConfigureParams.System.bMMU;
 #endif
 	if (table68k)
 		check_prefs_changed_cpu();

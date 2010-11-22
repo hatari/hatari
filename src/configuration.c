@@ -321,6 +321,14 @@ static const struct Config_Tag configs_System[] =
 	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
+
+#if ENABLE_WINUAE_CPU
+	{ "bAddressSpace24", Bool_Tag, &ConfigureParams.System.bAddressSpace24 },
+	{ "bCycleExactCpu", Bool_Tag, &ConfigureParams.System.bCycleExactCpu },
+	{ "n_FPUType", Int_Tag, &ConfigureParams.System.n_FPUType },
+	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU },
+	{ "bMMU", Bool_Tag, &ConfigureParams.System.bMMU },
+#endif
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -497,13 +505,19 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.nCpuLevel = 0;
 	ConfigureParams.System.nCpuFreq = 8;
 	ConfigureParams.System.bCompatibleCpu = true;
-	/*ConfigureParams.System.bAddressSpace24 = true;*/
 	ConfigureParams.System.nMachineType = MACHINE_ST;
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.bPatchTimerD = true;
 	ConfigureParams.System.bRealTimeClock = true;
 	ConfigureParams.System.bFastForward = false;
+#if ENABLE_WINUAE_CPU
+	ConfigureParams.System.bAddressSpace24 = true;
+	ConfigureParams.System.bCycleExactCpu = false;
+	ConfigureParams.System.n_FPUType = FPU_NONE;
+	ConfigureParams.System.bCompatibleFPU = false;
+	ConfigureParams.System.bMMU = false;
+#endif
 
 	/* Set defaults for Video */
 #if HAVE_LIBPNG
@@ -757,9 +771,16 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.bRealTimeClock, sizeof(ConfigureParams.System.bRealTimeClock));
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
 
+#if ENABLE_WINUAE_CPU
+	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
+	MemorySnapShot_Store(&ConfigureParams.System.bCycleExactCpu, sizeof(ConfigureParams.System.bCycleExactCpu));
+	MemorySnapShot_Store(&ConfigureParams.System.n_FPUType, sizeof(ConfigureParams.System.n_FPUType));
+	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleFPU, sizeof(ConfigureParams.System.bCompatibleFPU));
+	MemorySnapShot_Store(&ConfigureParams.System.bMMU, sizeof(ConfigureParams.System.bMMU));
+#endif
+
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.bSlowFloppy, sizeof(ConfigureParams.DiskImage.bSlowFloppy));
 
 	if (!bSave)
 		Configuration_Apply(true);
 }
-

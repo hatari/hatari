@@ -86,7 +86,11 @@ int Init680x0(void)
 {
 	currprefs.cpu_level = changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
 	currprefs.cpu_compatible = changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
-	currprefs.address_space_24 = changed_prefs.address_space_24 = true;
+	currprefs.address_space_24 = changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
+	currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
+	currprefs.fpu_model = changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
+	currprefs.fpu_strict = changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
+	currprefs.mmu_model = changed_prefs.mmu_model = ConfigureParams.System.bMMU;
 
 	init_m68k();
 
@@ -114,9 +118,19 @@ void check_prefs_changed_cpu(void)
 {
 	if (currprefs.cpu_level != changed_prefs.cpu_level
 	                || currprefs.cpu_compatible != changed_prefs.cpu_compatible)
+	                || currprefs.address_space_24 != changed_prefs.address_space_24)
+	                || currprefs.cpu_cycle_exact != changed_prefs.cpu_cycle_exact)
+	                || currprefs.fpu_model != changed_prefs.fpu_model)
+	                || currprefs.fpu_strict != changed_prefs.fpu_strict)
+	                || currprefs.mmu_model != changed_prefs.mmu_model)
 	{
 		currprefs.cpu_level = changed_prefs.cpu_level;
 		currprefs.cpu_compatible = changed_prefs.cpu_compatible;
+		currprefs.address_space_24 = changed_prefs.address_space_24;
+		currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact;
+		currprefs.fpu_model = changed_prefs.fpu_model;
+		currprefs.fpu_strict = changed_prefs.fpu_strict;
+		currprefs.mmu_model = changed_prefs.mmu_model;
 		set_special(SPCFLAG_MODE_CHANGE);
 		build_cpufunctbl ();
 	}

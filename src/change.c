@@ -98,7 +98,15 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	if (changed->System.nMachineType != current->System.nMachineType)
 		return true;
 
-	/* Did change size of memory? */
+	/* Did change CPU cycle exact? */
+	if (changed->System.bCycleExactCpu != current->System.bCycleExactCpu)
+		return true;
+
+	/* Did change MMU? */
+	if (changed->System.bMMU != current->System.bMMU)
+		return true;
+
+		/* Did change size of memory? */
 	if (current->Memory.nMemorySize != changed->Memory.nMemorySize)
 		return true;
 

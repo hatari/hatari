@@ -261,18 +261,35 @@ typedef enum
   DSP_TYPE_EMU
 } DSPTYPE;
 
+#if ENABLE_WINUAE_CPU
+typedef enum
+{
+  FPU_NONE,
+  FPU_68881,
+  FPU_68882,
+  FPU_CPU
+} FPUTYPE;
+#endif
+
 typedef struct
 {
   int nCpuLevel;
   int nCpuFreq;
-  bool bCompatibleCpu;
-  /*bool bAddressSpace24;*/
+  bool bCompatibleCpu;            /* Prefetch mode */
   MACHINETYPE nMachineType;
   bool bBlitter;                  /* TRUE if Blitter is enabled */
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
   bool bRealTimeClock;
   bool bPatchTimerD;
   bool bFastForward;
+  
+#if ENABLE_WINUAE_CPU
+  bool bAddressSpace24;
+  bool bCycleExactCpu;
+  FPUTYPE n_FPUType;
+  bool bCompatibleFPU;            /* More compatible FPU */
+  bool bMMU;                      /* TRUE if MMU is enabled */
+#endif
 } CNF_SYSTEM;
 
 typedef struct
