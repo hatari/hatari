@@ -1384,10 +1384,12 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 #if ENABLE_WINUAE_CPU
 		case OPT_CPU_ADDR24:
 			ok = Opt_Bool(argv[++i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
+			bLoadAutoSave = false;
 			break;			
 
 		case OPT_CPU_CYCLE_EXACT:
 			ok = Opt_Bool(argv[++i], OPT_CPU_CYCLE_EXACT, &ConfigureParams.System.bCycleExactCpu);
+			bLoadAutoSave = false;
 			break;			
 
 		case OPT_FPU_TYPE:
@@ -1421,6 +1423,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 
 		case OPT_MMU:
 			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
+			bLoadAutoSave = false;
 			break;			
 #endif
 		case OPT_SOUND:
