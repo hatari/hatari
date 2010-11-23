@@ -113,11 +113,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			Dialog_WindowDlg();
 			break;
 		 case MAINDLG_SYSTEM:
-#if ENABLE_WINUAE_CPU
-			Dialog_SystemDlg_winuae();
-#else
 			Dialog_SystemDlg();
-#endif
 			break;
 		 case MAINDLG_MEMORY:
 			if (Dialog_MemDlg())
