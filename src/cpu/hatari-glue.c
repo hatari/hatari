@@ -78,13 +78,23 @@ int intlev(void)
 	return -1;
 }
 
-
 /**
  * Initialize 680x0 emulation
  */
 int Init680x0(void)
 {
 	currprefs.cpu_level = changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
+
+	switch (currprefs.cpu_level) {
+		case 0 : currprefs.cpu_model = 68000; break;
+		case 1 : currprefs.cpu_model = 68010; break;
+		case 2 : currprefs.cpu_model = 68020; break;
+		case 3 : currprefs.cpu_model = 68030; break;
+		case 4 : currprefs.cpu_model = 68040; break;
+		case 5 : currprefs.cpu_model = 68060; break;
+		default: fprintf (stderr, "Init680x0() : Error, cpu_level unknown\n");
+	}
+	
 	currprefs.cpu_compatible = changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 	currprefs.address_space_24 = changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
@@ -108,34 +118,6 @@ void Exit680x0(void)
 	free(table68k);
 	table68k = NULL;
 }
-
-
-/**
- * Check if the CPU type has been changed
- */
-#ifndef ENABLE_WINUAE_CPU
-void check_prefs_changed_cpu(void)
-{
-	if (currprefs.cpu_level != changed_prefs.cpu_level
-	                || currprefs.cpu_compatible != changed_prefs.cpu_compatible)
-	                || currprefs.address_space_24 != changed_prefs.address_space_24)
-	                || currprefs.cpu_cycle_exact != changed_prefs.cpu_cycle_exact)
-	                || currprefs.fpu_model != changed_prefs.fpu_model)
-	                || currprefs.fpu_strict != changed_prefs.fpu_strict)
-	                || currprefs.mmu_model != changed_prefs.mmu_model)
-	{
-		currprefs.cpu_level = changed_prefs.cpu_level;
-		currprefs.cpu_compatible = changed_prefs.cpu_compatible;
-		currprefs.address_space_24 = changed_prefs.address_space_24;
-		currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact;
-		currprefs.fpu_model = changed_prefs.fpu_model;
-		currprefs.fpu_strict = changed_prefs.fpu_strict;
-		currprefs.mmu_model = changed_prefs.mmu_model;
-		set_special(SPCFLAG_MODE_CHANGE);
-		build_cpufunctbl ();
-	}
-}
-#endif
 
 /**
  * This function will be called at system init by the cartridge routine

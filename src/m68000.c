@@ -252,6 +252,16 @@ void M68000_CheckCpuLevel(void)
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 
 #if ENABLE_WINUAE_CPU
+	switch (changed_prefs.cpu_level) {
+		case 0 : changed_prefs.cpu_model = 68000; break;
+		case 1 : changed_prefs.cpu_model = 68010; break;
+		case 2 : changed_prefs.cpu_model = 68020; break;
+		case 3 : changed_prefs.cpu_model = 68030; break;
+		case 4 : changed_prefs.cpu_model = 68040; break;
+		case 5 : changed_prefs.cpu_model = 68060; break;
+		default: fprintf (stderr, "Init680x0() : Error, cpu_level unknown\n");
+	}
+
 	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;

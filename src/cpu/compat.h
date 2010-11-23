@@ -26,8 +26,6 @@
 #define MAX_LINEWIDTH 100
 #endif
 
-#define cpu_level cpu_model
-
 #define RTAREA_DEFAULT 0xf00000
 
 /* Laurent */
