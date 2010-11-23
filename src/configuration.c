@@ -68,7 +68,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
 	{ "bShowStatusbar", Bool_Tag, &ConfigureParams.Screen.bShowStatusbar },
 	{ "bShowDriveLed", Bool_Tag, &ConfigureParams.Screen.bShowDriveLed },
-	{ "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
+	{ "bCrop", Bool_Tag, &ConfigureParams.Screen.bCrop },
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
 	{ NULL , Error_Tag, NULL }
@@ -336,7 +336,6 @@ static const struct Config_Tag configs_System[] =
 static const struct Config_Tag configs_Video[] =
 {
 	{ "AviRecordVcodec", Int_Tag, &ConfigureParams.Video.AviRecordVcodec },
-	{ "AviRecordCrop", Bool_Tag, &ConfigureParams.Video.AviRecordCrop },
 	{ "AviRecordFps", Int_Tag, &ConfigureParams.Video.AviRecordFps },
 	{ "AviRecordFile", String_Tag, ConfigureParams.Video.AviRecordFile },
 	{ NULL , Error_Tag, NULL }
@@ -483,7 +482,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
 	ConfigureParams.Screen.bShowStatusbar = true;
 	ConfigureParams.Screen.bShowDriveLed = true;
-	ConfigureParams.Screen.bCaptureChange = false;
+	ConfigureParams.Screen.bCrop = false;
 	/* target 800x600 screen with statusbar out of screen */
 	ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
 	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
@@ -525,7 +524,6 @@ void Configuration_SetDefault(void)
 #else
 	ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
 #endif
-	ConfigureParams.Video.AviRecordCrop = true;
 	ConfigureParams.Video.AviRecordFps = 0;			/* automatic FPS */
 	sprintf(ConfigureParams.Video.AviRecordFile, "%s%chatari.avi", psWorkingDir, PATHSEP);
 

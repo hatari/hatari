@@ -90,7 +90,7 @@ static SGOBJ monitordlg[] =
 #define DLGSCRN_SKIP2       16
 #define DLGSCRN_SKIP3       17
 #define DLGSCRN_SKIP4       18
-#define DLGSCRN_ONCHANGE    21
+#define DLGSCRN_CROP        21
 #define DLGSCRN_CAPTURE     22
 #define DLGSCRN_RECANIM     23
 #define DLGSCRN_EXIT_WINDOW 24
@@ -130,7 +130,7 @@ static SGOBJ windowdlg[] =
 
 	{ SGBOX, 0, 0, 1,11, 33,6, NULL },
 	{ SGTEXT, 0, 0, 10,11, 14,1, "Screen capture" },
-	{ SGCHECKBOX, 0, 0, 4,13, 39,1, "Capture only when changed" },
+	{ SGCHECKBOX, 0, 0, 10,13, 15,1, "Crop statusbar" },
 	{ SGBUTTON, 0, 0, 4,15, 12,1, "Screenshot" },
 	{ SGBUTTON, 0, 0, 19,15, 12,1, "Record AVI" },
 
@@ -312,10 +312,10 @@ void Dialog_WindowDlg(void)
 
 	/* Initialize window capture options: */
 
-	if (ConfigureParams.Screen.bCaptureChange)
-		windowdlg[DLGSCRN_ONCHANGE].state |= SG_SELECTED;
+	if (ConfigureParams.Screen.bCrop)
+		windowdlg[DLGSCRN_CROP].state |= SG_SELECTED;
 	else
-		windowdlg[DLGSCRN_ONCHANGE].state &= ~SG_SELECTED;
+		windowdlg[DLGSCRN_CROP].state &= ~SG_SELECTED;
 
 	if (Avi_AreWeRecording())
 		windowdlg[DLGSCRN_RECANIM].txt = "Stop record";
@@ -352,6 +352,7 @@ void Dialog_WindowDlg(void)
 
 		 case DLGSCRN_CAPTURE:
 			SDL_UpdateRect(sdlscrn, 0,0,0,0);
+			ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 			ScreenSnapShot_SaveScreen();
 			break;
 
@@ -368,8 +369,8 @@ void Dialog_WindowDlg(void)
 			}
 			else
 			{
-				ConfigureParams.Screen.bCaptureChange = (windowdlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
-				Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Video.AviRecordCrop ,
+				ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
+				Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
 					( ConfigureParams.Video.AviRecordFps == 0 ? nScreenRefreshRate : ConfigureParams.Video.AviRecordFps ) ,
 					ConfigureParams.Video.AviRecordVcodec );
 				windowdlg[DLGSCRN_RECANIM].txt = "Stop record";
@@ -398,5 +399,5 @@ void Dialog_WindowDlg(void)
 		}
 	}
 
-	ConfigureParams.Screen.bCaptureChange = (windowdlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
+	ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 }

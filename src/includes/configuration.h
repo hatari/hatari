@@ -221,7 +221,7 @@ typedef struct
   int nVdiHeight;
   bool bShowStatusbar;
   bool bShowDriveLed;
-  bool bCaptureChange;
+  bool bCrop;
   int nMaxWidth;
   int nMaxHeight;
 } CNF_SCREEN;
@@ -295,7 +295,6 @@ typedef struct
 typedef struct
 {
   int AviRecordVcodec;
-  bool AviRecordCrop;
   int AviRecordFps;
   char AviRecordFile[FILENAME_MAX];
 } CNF_VIDEO;

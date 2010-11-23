@@ -114,7 +114,10 @@ Use extended VDI resolution with width <w> (320 < w <= 1280)
 .TP 
 .B \-\-vdi\-height <h>
 Use extended VDI resolution with height <h> (200 < h <= 960)
-.SH "Video recording options"
+.SH "Screen capture options"
+.TP
+.B \-\-crop <bool>
+Remove statusbar from the screen captures
 .TP
 .B \-\-avirecord
 Start AVI recording
@@ -124,9 +127,6 @@ Select avi video codec (x = bmp/png)
 .TP
 .B \-\-avi-fps <x>
 Force avi frame rate (x = 50/60/71/...)
-.TP
-.B \-\-avi-crop <bool>
-Remove status bar from the recorded file
 .TP
 .B \-\-avi-file <file>
 Use <file> to record avi

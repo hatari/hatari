@@ -794,8 +794,23 @@ Use extended VDI resolution with width &lt;w&gt; (320 &lt; w &lt;= 1280)
 Use extended VDI resolution with height &lt;h&gt; (200 &lt; h &lt;= 960)
 </td>
 </table>
-<a name="Video recording options"></a>
-<h3>Video recording options</h3>
+<a name="Screen capture options"></a>
+<h3>Screen capture options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--crop &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Remove statusbar from the screen captures
+</td>
+</table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
@@ -839,21 +854,6 @@ Select avi video codec (x = bmp/png)
 <td width="21%"></td>
 <td width="77%">
 Force avi frame rate (x = 50/60/71/...)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--avi-crop &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Remove status bar from the recorded file
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -3035,6 +3035,12 @@ one needs to use something like this:
 b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
 </pre>
 </li>
+<li>"OSExitPC" variable can be used to catch exit from an OS call.
+<pre>
+b pc = OSExitPC :once
+</pre>
+It's valid after OS call breakpoint is triggered and before
+that call has finished.</li>
 </ul>
 
 

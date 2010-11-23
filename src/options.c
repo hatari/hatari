@@ -73,10 +73,10 @@ enum {
 	OPT_VDI_PLANES,
 	OPT_VDI_WIDTH,
 	OPT_VDI_HEIGHT,
-	OPT_AVIRECORD,          /* record options */
+	OPT_SCREEN_CROP,        /* screen capture options */
+	OPT_AVIRECORD,
 	OPT_AVIRECORD_VCODEC,
 	OPT_AVIRECORD_FPS,
-	OPT_AVIRECORD_CROP,
 	OPT_AVIRECORD_FILE,
 	OPT_JOYSTICK,		/* device options */
 	OPT_JOYSTICK0,
@@ -204,15 +204,15 @@ static const opt_t HatariOptions[] = {
 	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
 	  "<h>", "VDI mode height (200 < h <= 960)" },
 
-	{ OPT_HEADER, NULL, NULL, NULL, "Video recording" },
+	{ OPT_HEADER, NULL, NULL, NULL, "Screen capture" },
+	{ OPT_SCREEN_CROP, NULL, "--crop",
+	  "<bool>", "Remove statusbar from screen capture" },
 	{ OPT_AVIRECORD, NULL, "--avirecord",
 	  NULL, "Start AVI recording" },
 	{ OPT_AVIRECORD_VCODEC, NULL, "--avi-vcodec",
 	  "<x>", "Select avi video codec (x = bmp/png)" },
 	{ OPT_AVIRECORD_FPS, NULL, "--avi-fps",
 	  "<x>", "Force avi frame rate (x = 50/60/71/...)" },
-	{ OPT_AVIRECORD_CROP, NULL, "--avi-crop",
-	  "<bool>", "Remove status bar from the recorded file" },
 	{ OPT_AVIRECORD_FILE, NULL, "--avi-file",
 	  "<file>", "Use <file> to record avi" },
 
@@ -986,7 +986,11 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
 
-			/* avi recording options */
+			/* screen capture options */
+		case OPT_SCREEN_CROP:
+			ok = Opt_Bool(argv[++i], OPT_SCREEN_CROP, &ConfigureParams.Screen.bCrop);
+			break;
+
 		case OPT_AVIRECORD:
 			AviRecordOnStartup = true;
 			break;
@@ -1015,10 +1019,6 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 							"Invalid frame rate for avi recording");
 			}
 			ConfigureParams.Video.AviRecordFps = val;
-			break;
-
-		case OPT_AVIRECORD_CROP:
-			ok = Opt_Bool(argv[++i], OPT_AVIRECORD_CROP, &ConfigureParams.Video.AviRecordCrop);
 			break;
 
 		case OPT_AVIRECORD_FILE:

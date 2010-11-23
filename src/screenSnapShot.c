@@ -12,10 +12,12 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c : " __DATE__ " " _
 #include <dirent.h>
 #include <string.h>
 #include "main.h"
+#include "configuration.h"
 #include "log.h"
 #include "paths.h"
 #include "screen.h"
 #include "screenSnapShot.h"
+#include "statusbar.h"
 #include "video.h"
 /* after above that bring in config.h */
 #if HAVE_LIBPNG
@@ -25,7 +27,6 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c : " __DATE__ " " _
 #endif
 
 
-bool bRecordingAnimation = false;           /* Recording animation? */
 static int nScreenShots = 0;                /* Number of screen shots saved */
 
 
@@ -76,13 +77,19 @@ static void ScreenSnapShot_GetNum(void)
 static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 {
 	FILE *fp = NULL;
-	int ret;
+	int ret, bottom;
   
 	fp = fopen(filename, "wb");
 	if (!fp)
 		return -1;
 
-	ret = ScreenSnapShot_SavePNG_ToFile(surface, fp, -1, -1, 0, 0, 0, 0);	/* default compression/filter and no cropping */
+	if (ConfigureParams.Screen.bCrop)
+		bottom = Statusbar_GetHeight();
+	else
+		bottom = 0;
+
+	/* default compression/filter and configured cropping */
+	ret = ScreenSnapShot_SavePNG_ToFile(surface, fp, -1, -1, 0, 0, 0, bottom);
 
 	fclose (fp);
 	return ret;					/* >0 if OK, -1 if error */
