@@ -240,7 +240,7 @@ static const Uint32 Remap_1_Plane[16] = {
 }
 
 /* Plot Spectrum512 Resolution (320xH) 32-Bit pixels */
-#define PLOT_SPEC512_MID_320_32BIT PLOT_MED_640_32BIT
+#define PLOT_SPEC512_MID_320_32BIT PLOT_LOW_320_32BIT
 
 /* Plot Spectrum512 Resolution(320xH) 32-Bit pixels */
 #define PLOT_SPEC512_END_LOW_320_32BIT(offset) \
