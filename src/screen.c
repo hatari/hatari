@@ -1131,6 +1131,8 @@ static bool Screen_DrawFrame(bool bForceFlip)
 					pDrawFunction = ConvertSpec512_320x32Bit;
 				else if (pDrawFunction==ConvertLowRes_640x32Bit)
 					pDrawFunction = ConvertSpec512_640x32Bit;
+				else if (pDrawFunction==ConvertMediumRes_640x32Bit)
+					pDrawFunction = ConvertMediumRes_640x32Bit_Spec;
 			}
 			else if (bPrevFrameWasSpec512)
 			{
@@ -1266,6 +1268,7 @@ static void Convert_StartFrame(void)
 #include "convert/med640x32.c"    /* MediumRes To 640xH x 32-bit color */
 #include "convert/spec320x32.c"   /* Spectrum 512 To 320xH x 32-bit color */
 #include "convert/spec640x32.c"   /* Spectrum 512 To 640xH x 32-bit color */
+#include "convert/med640x32_spec.c" /* MediumRes Spectrum 512 To 640xH x 32-bit color */
 
 #include "convert/vdi16.c"        /* VDI x 16 color */
 #include "convert/vdi4.c"         /* VDI x 4 color */

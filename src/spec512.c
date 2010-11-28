@@ -104,13 +104,13 @@ static const int STRGBPalEndianTable[16] =
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return true if this frame is a Spectrum 512 style image (MUST be low
- * res/non-mix).
+ * Return true if this frame is a Spectrum 512 style image (can be low/med
+ * res mix).
  */
 bool Spec512_IsImage(void)
 {
-	/* Normal Low res screen? */
-	if (STRes == ST_LOW_RES && bIsSpec512Display)
+	/* Spec512 mode was triggered in low or med res ? */
+	if (bIsSpec512Display)
 		return true;
 
 	return false;
