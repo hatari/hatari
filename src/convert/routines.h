@@ -28,6 +28,7 @@ static void ConvertLowRes_640x32Bit(void);
 static void Line_ConvertMediumRes_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax);
 static void ConvertMediumRes_640x32Bit(void);
 static void ConvertSpec512_320x32Bit(void);
+static void Line_ConvertSpec512_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax);
 static void ConvertSpec512_640x32Bit(void);
 static void Line_ConvertMediumRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax);
 static void ConvertMediumRes_640x32Bit_Spec(void);

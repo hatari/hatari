@@ -24,9 +24,9 @@ static void ConvertMediumRes_640x32Bit_Spec(void)
 		esi = (Uint32 *)pPCScreenDest;                     /* PC format screen */
 
 		if (AdjustLinePaletteRemap(y) & 0x00030000)        /* Change palette table */
-			Line_ConvertMediumRes_640x32Bit_Spec(edi, ebp, esi, eax);
+			Line_ConvertMediumRes_640x32Bit_Spec(edi, ebp, esi, eax);	/* med res line */
 		else
-			Line_ConvertLowRes_640x32Bit(edi, ebp, esi, eax);	// FIXME
+			Line_ConvertSpec512_640x32Bit(edi, ebp, esi, eax);		/* low res line (double on X) */
 
 		/* Offset to next line (double on Y) */
 		pPCScreenDest = (((Uint8 *)pPCScreenDest) + PCScreenBytesPerLine * 2);
@@ -55,7 +55,6 @@ static void Line_ConvertMediumRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint3
 
 	do  /* x-loop */
 	{
-
 		/* Do 16 pixels at one time */
 		ebx = *edi;
 
