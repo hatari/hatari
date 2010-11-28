@@ -7,6 +7,34 @@
   Screen Conversion, Medium Res to 640x32Bit
 */
 
+static void ConvertMediumRes_640x32Bit(void)
+{
+	Uint32 *edi, *ebp;
+	Uint32 *esi;
+	Uint32 eax;
+	int y;
+
+	Convert_StartFrame();            /* Start frame, track palettes */
+
+	for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++)
+	{
+
+		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
+		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colors */
+		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
+		esi = (Uint32 *)pPCScreenDest;                     /* PC format screen */
+
+		if (AdjustLinePaletteRemap(y) & 0x00030000)        /* Change palette table */
+			Line_ConvertMediumRes_640x32Bit(edi, ebp, esi, eax);
+		else
+			Line_ConvertLowRes_640x32Bit(edi, ebp, esi, eax);
+
+		/* Offset to next line */
+		pPCScreenDest = (((Uint8 *)pPCScreenDest) + PCScreenBytesPerLine * 2);
+	}
+}
+
+
 static void Line_ConvertMediumRes_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
 {
 	Uint32 ebx, ecx;
@@ -85,32 +113,4 @@ static void Line_ConvertMediumRes_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *es
 	}
 	while (--x);                        /* Loop on X */
 
-}
-
-
-static void ConvertMediumRes_640x32Bit(void)
-{
-	Uint32 *edi, *ebp;
-	Uint32 *esi;
-	Uint32 eax;
-	int y;
-
-	Convert_StartFrame();            /* Start frame, track palettes */
-
-	for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++)
-	{
-
-		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
-		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colors */
-		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
-		esi = (Uint32 *)pPCScreenDest;                     /* PC format screen */
-
-		if (AdjustLinePaletteRemap(y) & 0x00030000)        /* Change palette table */
-			Line_ConvertMediumRes_640x32Bit(edi, ebp, esi, eax);
-		else
-			Line_ConvertLowRes_640x32Bit(edi, ebp, esi, eax);
-
-		/* Offset to next line */
-		pPCScreenDest = (((Uint8 *)pPCScreenDest) + PCScreenBytesPerLine * 2);
-	}
 }
