@@ -275,10 +275,10 @@ static const Uint32 Remap_1_Plane[16] = {
 	esi[offset] = esi[offset+1] = STRGBPalette[ecx & 0x000000ff]; \
 }
 
-/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
+/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels (Double on Y) */
 #define PLOT_SPEC512_MID_640_32BIT_DOUBLE_Y PLOT_LOW_640_32BIT_DOUBLE_Y
 
-/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
+/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels (Double on Y) */
 #define PLOT_SPEC512_END_LOW_640_32BIT_DOUBLE_Y(offset)	\
 { \
 	ebx = STRGBPalette[ecx & 0x000000ff]; \
@@ -403,7 +403,7 @@ static const Uint32 Remap_1_Plane[16] = {
 }
 
 /* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
-#define PLOT_SPEC512_MID_320_16BIT PLOT_MED_640_16BIT
+#define PLOT_SPEC512_MID_320_16BIT PLOT_LOW_640_16BIT
 
 /* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
 #define PLOT_SPEC512_END_LOW_320_16BIT(offset) \
