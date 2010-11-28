@@ -65,7 +65,7 @@ static void ConvertSpec512_640x16Bit(void)
 			pixelspace[2] = ecx;
 #endif
 			/* And plot, the Spec512 is offset by 1 pixel and works on 'chunks' of 4 pixels */
-			/* So, we plot 1_4_4_3 to give 16 pixels, changing palette between */
+			/* So, we plot 1_4_4_4_3 to give 16 pixels, changing palette between */
 			/* (last one is used for first of next 16-pixels) */
 			if (!bScrDoubleY)           /* Double on Y? */
 			{
