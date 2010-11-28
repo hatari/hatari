@@ -34,25 +34,25 @@ static void Line_ConvertLowRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, 
 			if (!bScrDoubleY)                     /* Double on Y? */
 			{
 				/* Plot pixels */
-				LOW_BUILD_PIXELS_0 ;              /* Generate 'ecx' as pixels [4,5,6,7] */
+				LOW_BUILD_PIXELS_0 ;              /* Generate 'ecx' as pixels [12,13,14,15] */
 				PLOT_LOW_640_16BIT(12) ;
-				LOW_BUILD_PIXELS_1 ;              /* Generate 'ecx' as pixels [12,13,14,15] */
+				LOW_BUILD_PIXELS_1 ;              /* Generate 'ecx' as pixels [4,5,6,7] */
 				PLOT_LOW_640_16BIT(4) ;
-				LOW_BUILD_PIXELS_2 ;              /* Generate 'ecx' as pixels [0,1,2,3] */
+				LOW_BUILD_PIXELS_2 ;              /* Generate 'ecx' as pixels [8,9,10,11] */
 				PLOT_LOW_640_16BIT(8) ;
-				LOW_BUILD_PIXELS_3 ;              /* Generate 'ecx' as pixels [8,9,10,11] */
+				LOW_BUILD_PIXELS_3 ;              /* Generate 'ecx' as pixels [0,1,2,3] */
 				PLOT_LOW_640_16BIT(0) ;
 			}
 			else
 			{
 				/* Plot pixels */
-				LOW_BUILD_PIXELS_0 ;              /* Generate 'ecx' as pixels [4,5,6,7] */
+				LOW_BUILD_PIXELS_0 ;              /* Generate 'ecx' as pixels [12,13,14,15] */
 				PLOT_LOW_640_16BIT_DOUBLE_Y(12) ;
-				LOW_BUILD_PIXELS_1 ;              /* Generate 'ecx' as pixels [12,13,14,15] */
+				LOW_BUILD_PIXELS_1 ;              /* Generate 'ecx' as pixels [4,5,6,7] */
 				PLOT_LOW_640_16BIT_DOUBLE_Y(4) ;
-				LOW_BUILD_PIXELS_2 ;              /* Generate 'ecx' as pixels [0,1,2,3] */
+				LOW_BUILD_PIXELS_2 ;              /* Generate 'ecx' as pixels [8,9,10,11] */
 				PLOT_LOW_640_16BIT_DOUBLE_Y(8) ;
-				LOW_BUILD_PIXELS_3 ;              /* Generate 'ecx' as pixels [8,9,10,11] */
+				LOW_BUILD_PIXELS_3 ;              /* Generate 'ecx' as pixels [0,1,2,3] */
 				PLOT_LOW_640_16BIT_DOUBLE_Y(0)
 			}
 #else

@@ -37,13 +37,13 @@ static void ConvertHighRes_640x8Bit(void)
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 				/* Plot in 'right-order' on big endian systems */
-				HIGH_BUILD_PIXELS_0 ;               /* Generate pixels [4,5,6,7] */
+				HIGH_BUILD_PIXELS_0 ;               /* Generate pixels [12,13,14,15] */
 				PLOT_HIGH_640_8BIT(3) ;
-				HIGH_BUILD_PIXELS_1 ;               /* Generate pixels [0,1,2,3] */
+				HIGH_BUILD_PIXELS_1 ;               /* Generate pixels [8,9,10,11] */
 				PLOT_HIGH_640_8BIT(2) ;
-				HIGH_BUILD_PIXELS_2 ;               /* Generate pixels [12,13,14,15] */
+				HIGH_BUILD_PIXELS_2 ;               /* Generate pixels [4,5,6,7] */
 				PLOT_HIGH_640_8BIT(1) ;
-				HIGH_BUILD_PIXELS_3 ;               /* Generate pixels [8,9,10,11] */
+				HIGH_BUILD_PIXELS_3 ;               /* Generate pixels [0,1,2,3] */
 				PLOT_HIGH_640_8BIT(0) ;
 #else
 				/* Plot in 'wrong-order', as ebx is 68000 endian */

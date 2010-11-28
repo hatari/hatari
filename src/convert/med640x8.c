@@ -59,24 +59,24 @@ static void Line_ConvertMediumRes_640x8Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi
 			/* Plot in 'right-order' on big endian systems */
 			if (!bScrDoubleY)                   /* Double on Y? */
 			{
-				MED_BUILD_PIXELS_0 ;            /* Generate 'ecx' as pixels [4,5,6,7] */
+				MED_BUILD_PIXELS_0 ;            /* Generate 'ecx' as pixels [12,13,14,15] */
 				PLOT_MED_640_8BIT(3) ;
-				MED_BUILD_PIXELS_1 ;            /* Generate 'ecx' as pixels [12,13,14,15] */
+				MED_BUILD_PIXELS_1 ;            /* Generate 'ecx' as pixels [4,5,6,7] */
 				PLOT_MED_640_8BIT(1) ;
-				MED_BUILD_PIXELS_2 ;            /* Generate 'ecx' as pixels [0,1,2,3] */
+				MED_BUILD_PIXELS_2 ;            /* Generate 'ecx' as pixels [8,9,10,11] */
 				PLOT_MED_640_8BIT(2) ;
-				MED_BUILD_PIXELS_3 ;            /* Generate 'ecx' as pixels [8,9,10,11] */
+				MED_BUILD_PIXELS_3 ;            /* Generate 'ecx' as pixels [0,1,2,3] */
 				PLOT_MED_640_8BIT(0) ;
 			}
 			else
 			{
-				MED_BUILD_PIXELS_0 ;            /* Generate 'ecx' as pixels [4,5,6,7] */
+				MED_BUILD_PIXELS_0 ;            /* Generate 'ecx' as pixels [12,13,14,15] */
 				PLOT_MED_640_8BIT_DOUBLE_Y(3) ;
-				MED_BUILD_PIXELS_1 ;            /* Generate 'ecx' as pixels [12,13,14,15] */
+				MED_BUILD_PIXELS_1 ;            /* Generate 'ecx' as pixels [4,5,6,7] */
 				PLOT_MED_640_8BIT_DOUBLE_Y(1) ;
-				MED_BUILD_PIXELS_2 ;            /* Generate 'ecx' as pixels [0,1,2,3] */
+				MED_BUILD_PIXELS_2 ;            /* Generate 'ecx' as pixels [8,9,10,11] */
 				PLOT_MED_640_8BIT_DOUBLE_Y(2) ;
-				MED_BUILD_PIXELS_3 ;            /* Generate 'ecx' as pixels [8,9,10,11] */
+				MED_BUILD_PIXELS_3 ;            /* Generate 'ecx' as pixels [0,1,2,3] */
 				PLOT_MED_640_8BIT_DOUBLE_Y(0) ;
 			}
 #else

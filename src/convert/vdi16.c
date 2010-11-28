@@ -44,13 +44,13 @@ static void ConvertVDIRes_16Colour(void)
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 				/* Plot pixels */
-				LOW_BUILD_PIXELS_0 ;    /* Generate 'ecx' as pixels [4,5,6,7] */
+				LOW_BUILD_PIXELS_0 ;    /* Generate 'ecx' as pixels [12,13,14,15] */
 				PLOT_LOW_320_8BIT(3) ;
-				LOW_BUILD_PIXELS_1 ;    /* Generate 'ecx' as pixels [12,13,14,15] */
+				LOW_BUILD_PIXELS_1 ;    /* Generate 'ecx' as pixels [4,5,6,7] */
 				PLOT_LOW_320_8BIT(1) ;
-				LOW_BUILD_PIXELS_2 ;    /* Generate 'ecx' as pixels [0,1,2,3] */
+				LOW_BUILD_PIXELS_2 ;    /* Generate 'ecx' as pixels [8,9,10,11] */
 				PLOT_LOW_320_8BIT(2) ;
-				LOW_BUILD_PIXELS_3 ;    /* Generate 'ecx' as pixels [8,9,10,11] */
+				LOW_BUILD_PIXELS_3 ;    /* Generate 'ecx' as pixels [0,1,2,3] */
 				PLOT_LOW_320_8BIT(0) ;
 #else
 				/* Plot pixels */
