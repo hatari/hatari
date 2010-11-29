@@ -1568,10 +1568,7 @@ static void dsp_bchg_aa(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 
-	dsp_core->instr_cycle += 2;
-	if (addr>=0x200) {
-		dsp_core->instr_cycle += XY_WAITSTATE;
-	}
+	dsp_core->instr_cycle += 2 + 2*XY_WAITSTATE;
 }
 
 static void dsp_bchg_ea(void)
@@ -1678,10 +1675,7 @@ static void dsp_bclr_aa(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 
-	dsp_core->instr_cycle += 2;
-	if (addr>=0x200) {
-		dsp_core->instr_cycle += XY_WAITSTATE;
-	}
+	dsp_core->instr_cycle += 2 + 2*XY_WAITSTATE;
 }
 
 static void dsp_bclr_ea(void)
@@ -1777,10 +1771,7 @@ static void dsp_bset_aa(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 
-	dsp_core->instr_cycle += 2;
-	if (addr>=0x200) {
-		dsp_core->instr_cycle += XY_WAITSTATE;
-	}
+	dsp_core->instr_cycle += 2 + 2*XY_WAITSTATE;
 }
 
 static void dsp_bset_ea(void)
