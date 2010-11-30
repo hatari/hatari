@@ -23,7 +23,7 @@ static void ConvertMediumRes_640x32Bit_Spec(void)
 		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
 		esi = (Uint32 *)pPCScreenDest;                     /* PC format screen */
 
-		if (AdjustLinePaletteRemap(y) & 0x00030000)        /* Change palette table */
+		if (HBLPaletteMasks[y] & 0x00030000)               /* Test resolution */
 			Line_ConvertMediumRes_640x32Bit_Spec(edi, ebp, esi, eax);	/* med res line */
 		else
 			Line_ConvertSpec512_640x32Bit(edi, ebp, esi, eax);		/* low res line (double on X) */
