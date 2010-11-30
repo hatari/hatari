@@ -360,6 +360,7 @@ void Spec512_UpdatePaletteSpan(void)
 		STRGBPalette[STRGBPalEndianTable[pCyclePalette->Index]] = ST2RGB[pCyclePalette->Colour];
 #else
 		STRGBPalette[pCyclePalette->Index] = ST2RGB[pCyclePalette->Colour];
+//fprintf ( stderr , "upd spec cyc %d %x %x\n" , ScanLineCycleCount , pCyclePalette->Index , pCyclePalette->Colour );
 #endif
 		pCyclePalette += 1;
 	}
