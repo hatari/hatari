@@ -51,10 +51,10 @@
 #define BITMASK(x)	((1<<(x))-1)
 
 /* cycle counter wait state time when access to external memory  */
-#define XY_WAITSTATE 2
-#define P_WAITSTATE 2
-#define XP_WAITSTATE 2   /* X Peripheral WaitState */
-#define YP_WAITSTATE 2   /* Y Peripheral WaitState */
+#define XY_WAITSTATE 1
+#define P_WAITSTATE 1
+#define XP_WAITSTATE 1   /* X Peripheral WaitState */
+#define YP_WAITSTATE 1   /* Y Peripheral WaitState */
 
 /**********************************
  *	Variables
