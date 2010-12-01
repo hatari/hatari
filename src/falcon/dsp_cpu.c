@@ -51,10 +51,10 @@
 #define BITMASK(x)	((1<<(x))-1)
 
 /* cycle counter wait state time when access to external memory  */
-#define XY_WAITSTATE 1
-#define P_WAITSTATE 1
-#define XP_WAITSTATE 1   /* X Peripheral WaitState */
-#define YP_WAITSTATE 1   /* Y Peripheral WaitState */
+#define XY_WAITSTATE 2
+#define P_WAITSTATE 2
+#define XP_WAITSTATE 2   /* X Peripheral WaitState */
+#define YP_WAITSTATE 2   /* Y Peripheral WaitState */
 
 /**********************************
  *	Variables
@@ -1568,7 +1568,7 @@ static void dsp_bchg_aa(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 
-	dsp_core->instr_cycle += 2 + 2*XY_WAITSTATE;
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_bchg_ea(void)
@@ -1675,7 +1675,7 @@ static void dsp_bclr_aa(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 
-	dsp_core->instr_cycle += 2 + 2*XY_WAITSTATE;
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_bclr_ea(void)
@@ -1771,7 +1771,7 @@ static void dsp_bset_aa(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 
-	dsp_core->instr_cycle += 2 + 2*XY_WAITSTATE;
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_bset_ea(void)
