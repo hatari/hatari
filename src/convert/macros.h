@@ -507,6 +507,22 @@ static const Uint32 Remap_1_Plane[16] = {
 }
 
 
+/* Plot Spectrum512 Medium Resolution (640xH) 16-Bit pixels */
+#define PLOT_SPEC512_LEFT_MED_640_16BIT	PLOT_SPEC512_LEFT_LOW_320_16BIT
+
+#define PLOT_SPEC512_MID_MED_640_16BIT PLOT_SPEC512_MID_320_16BIT
+
+#define PLOT_SPEC512_END_MED_640_16BIT PLOT_SPEC512_END_LOW_320_16BIT
+
+
+/* Plot Spectrum512 Medium Resolution (640xH) 16-Bit pixels (Double on Y) */
+#define PLOT_SPEC512_LEFT_MED_640_16BIT_DOUBLE_Y PLOT_SPEC512_LEFT_MED_640_32BIT_DOUBLE_Y
+
+#define PLOT_SPEC512_MID_MED_640_16BIT_DOUBLE_Y PLOT_SPEC512_MID_MED_640_32BIT_DOUBLE_Y
+
+#define PLOT_SPEC512_END_MED_640_16BIT_DOUBLE_Y PLOT_SPEC512_END_MED_640_32BIT_DOUBLE_Y
+
+
 
 /* Get Spec512 pixels which are offset by 1 pixel */
 #if defined(__i386__)    // Unaligned direct access is only supported on i86 platforms
