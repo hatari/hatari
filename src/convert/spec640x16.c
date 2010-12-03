@@ -1,13 +1,13 @@
 /*
-  Hatari - spec640x16.c
+  Hatari - low640x16_spec.c
 
   This file is distributed under the GNU Public License, version 2 or at your
   option any later version. Read the file gpl.txt for details.
 
-  Screen conversion, Spec512 to 640xH 16-Bit
+  Screen conversion, Low Res Spec512 to 640x16Bit
 */
 
-static void ConvertSpec512_640x16Bit(void)
+static void ConvertLowRes_640x16Bit_Spec(void)
 {
 	Uint32 *edi, *ebp;
 	Uint32 *esi;
@@ -23,7 +23,7 @@ static void ConvertSpec512_640x16Bit(void)
 		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
 		esi = (Uint32 *)pPCScreenDest;                     /* PC format screen */
 
-		Line_ConvertSpec512_640x16Bit(edi, ebp, esi, eax);
+		Line_ConvertLowRes_640x16Bit_Spec(edi, ebp, esi, eax);
 
 		/* Offset to next line (double on Y) */
 		pPCScreenDest = (((Uint8 *)pPCScreenDest) + PCScreenBytesPerLine * 2);
@@ -33,7 +33,7 @@ static void ConvertSpec512_640x16Bit(void)
 }
 
 
-static void Line_ConvertSpec512_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
+static void Line_ConvertLowRes_640x16Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
 {
 	Uint32 ebx, ecx, edx;
 	int x, Screen4BytesPerLine;

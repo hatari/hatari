@@ -1,13 +1,13 @@
 /*
-  Hatari - spec320x16.c
+  Hatari - low320x16_spec.c
 
   This file is distributed under the GNU Public License, version 2 or at your
   option any later version. Read the file gpl.txt for details.
 
-  Screen Conversion, Spec512 to 320x16Bit
+  Screen Conversion, Low Res Spec512 to 320x16Bit
 */
 
-static void ConvertSpec512_320x16Bit(void)
+static void ConvertLowRes_320x16Bit_Spec(void)
 {
 	Uint32 *edi, *ebp;
 	Uint16 *esi;

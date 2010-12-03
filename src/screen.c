@@ -1124,13 +1124,13 @@ static bool Screen_DrawFrame(bool bForceFlip)
 				bPrevFrameWasSpec512 = true;
 				/* What mode were we in? Keep to 320xH or 640xH */
 				if (pDrawFunction==ConvertLowRes_320x16Bit)
-					pDrawFunction = ConvertSpec512_320x16Bit;
+					pDrawFunction = ConvertLowRes_320x16Bit_Spec;
 				else if (pDrawFunction==ConvertLowRes_640x16Bit)
-					pDrawFunction = ConvertSpec512_640x16Bit;
+					pDrawFunction = ConvertLowRes_640x16Bit_Spec;
 				else if (pDrawFunction==ConvertLowRes_320x32Bit)
-					pDrawFunction = ConvertSpec512_320x32Bit;
+					pDrawFunction = ConvertLowRes_320x32Bit_Spec;
 				else if (pDrawFunction==ConvertLowRes_640x32Bit)
-					pDrawFunction = ConvertSpec512_640x32Bit;
+					pDrawFunction = ConvertLowRes_640x32Bit_Spec;
 				else if (pDrawFunction==ConvertMediumRes_640x32Bit)
 					pDrawFunction = ConvertMediumRes_640x32Bit_Spec;
 				else if (pDrawFunction==ConvertMediumRes_640x16Bit)

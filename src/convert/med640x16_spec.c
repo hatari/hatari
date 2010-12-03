@@ -26,7 +26,7 @@ static void ConvertMediumRes_640x16Bit_Spec(void)
 		if (HBLPaletteMasks[y] & 0x00030000)               /* Test resolution */
 			Line_ConvertMediumRes_640x16Bit_Spec(edi, ebp, esi, eax);	/* med res line */
 		else
-			Line_ConvertSpec512_640x16Bit(edi, ebp, (Uint32 *)esi, eax);	/* low res line (double on X) */
+			Line_ConvertLowRes_640x16Bit_Spec(edi, ebp, (Uint32 *)esi, eax);	/* low res line (double on X) */
 
 		/* Offset to next line (double on Y) */
 		pPCScreenDest = (((Uint8 *)pPCScreenDest) + PCScreenBytesPerLine * 2);
