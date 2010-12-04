@@ -2184,13 +2184,24 @@ static void Video_CopyScreenLineColor(void)
 			int count;
 
 			pScreenLineEnd = (Uint16 *) ( pSTScreen + SCREENBYTES_LINE - 2 );
-			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineEnd-- )
-				do_put_mem_word ( pScreenLineEnd , ( ( do_get_mem_word ( pScreenLineEnd - 4 ) << 16 ) | ( do_get_mem_word ( pScreenLineEnd ) ) ) >> STF_PixelScroll );
-			/* Handle the first 16 pixels of the line (add color 0 pixels to the extreme left) */
-			do_put_mem_word ( pScreenLineEnd-0 , ( do_get_mem_word ( pScreenLineEnd-0 ) >> STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineEnd-1 , ( do_get_mem_word ( pScreenLineEnd-1 ) >> STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineEnd-2 , ( do_get_mem_word ( pScreenLineEnd-2 ) >> STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineEnd-3 , ( do_get_mem_word ( pScreenLineEnd-3 ) >> STF_PixelScroll ) );
+			if ( LineRes == 0 )			/* low res */
+			{
+				for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineEnd-- )
+					do_put_mem_word ( pScreenLineEnd , ( ( do_get_mem_word ( pScreenLineEnd - 4 ) << 16 ) | ( do_get_mem_word ( pScreenLineEnd ) ) ) >> STF_PixelScroll );
+				/* Handle the first 16 pixels of the line (add color 0 pixels to the extreme left) */
+				do_put_mem_word ( pScreenLineEnd-0 , ( do_get_mem_word ( pScreenLineEnd-0 ) >> STF_PixelScroll ) );
+				do_put_mem_word ( pScreenLineEnd-1 , ( do_get_mem_word ( pScreenLineEnd-1 ) >> STF_PixelScroll ) );
+				do_put_mem_word ( pScreenLineEnd-2 , ( do_get_mem_word ( pScreenLineEnd-2 ) >> STF_PixelScroll ) );
+				do_put_mem_word ( pScreenLineEnd-3 , ( do_get_mem_word ( pScreenLineEnd-3 ) >> STF_PixelScroll ) );
+			}
+			else					/* med res */
+			{
+				for ( count = 0 ; count < ( SCREENBYTES_LINE - 4 ) / 2 ; count++ , pScreenLineEnd-- )
+					do_put_mem_word ( pScreenLineEnd , ( ( do_get_mem_word ( pScreenLineEnd - 2 ) << 16 ) | ( do_get_mem_word ( pScreenLineEnd ) ) ) >> STF_PixelScroll );
+				/* Handle the first 16 pixels of the line (add color 0 pixels to the extreme left) */
+				do_put_mem_word ( pScreenLineEnd-0 , ( do_get_mem_word ( pScreenLineEnd-0 ) >> STF_PixelScroll ) );
+				do_put_mem_word ( pScreenLineEnd-1 , ( do_get_mem_word ( pScreenLineEnd-1 ) >> STF_PixelScroll ) );
+			}
 		}
 		else if ( STF_PixelScroll < 0 )
 		{
@@ -2199,13 +2210,24 @@ static void Video_CopyScreenLineColor(void)
 
 			STF_PixelScroll = -STF_PixelScroll;
 			pScreenLineStart = (Uint16 *)pSTScreen;
-			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineStart++ )
-				do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll ) | ( do_get_mem_word ( pScreenLineStart + 4 ) >> (16-STF_PixelScroll) ) ) );
-			/* Handle the last 16 pixels of the line (add color 0 pixels to the extreme right) */
-			do_put_mem_word ( pScreenLineStart+0 , ( do_get_mem_word ( pScreenLineStart+0 ) << STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineStart+1 , ( do_get_mem_word ( pScreenLineStart+1 ) << STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineStart+2 , ( do_get_mem_word ( pScreenLineStart+2 ) << STF_PixelScroll ) );
-			do_put_mem_word ( pScreenLineStart+3 , ( do_get_mem_word ( pScreenLineStart+3 ) << STF_PixelScroll ) );
+			if ( LineRes == 0 )			/* low res */
+			{
+				for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineStart++ )
+					do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll ) | ( do_get_mem_word ( pScreenLineStart + 4 ) >> (16-STF_PixelScroll) ) ) );
+				/* Handle the last 16 pixels of the line (add color 0 pixels to the extreme right) */
+				do_put_mem_word ( pScreenLineStart+0 , ( do_get_mem_word ( pScreenLineStart+0 ) << STF_PixelScroll ) );
+				do_put_mem_word ( pScreenLineStart+1 , ( do_get_mem_word ( pScreenLineStart+1 ) << STF_PixelScroll ) );
+				do_put_mem_word ( pScreenLineStart+2 , ( do_get_mem_word ( pScreenLineStart+2 ) << STF_PixelScroll ) );
+				do_put_mem_word ( pScreenLineStart+3 , ( do_get_mem_word ( pScreenLineStart+3 ) << STF_PixelScroll ) );
+			}
+			else					/* med res */
+			{
+				for ( count = 0 ; count < ( SCREENBYTES_LINE - 4 ) / 2 ; count++ , pScreenLineStart++ )
+					do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll ) | ( do_get_mem_word ( pScreenLineStart + 2 ) >> (16-STF_PixelScroll) ) ) );
+				/* Handle the last 16 pixels of the line (add color 0 pixels to the extreme right) */
+				do_put_mem_word ( pScreenLineStart+0 , ( do_get_mem_word ( pScreenLineStart+0 ) << STF_PixelScroll ) );
+				do_put_mem_word ( pScreenLineStart+1 , ( do_get_mem_word ( pScreenLineStart+1 ) << STF_PixelScroll ) );
+			}
 		}
 	}
 
