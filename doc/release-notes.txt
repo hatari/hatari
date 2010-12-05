@@ -8,8 +8,15 @@
 
 Emulation:
 - Remove old ST Sound's code used for tone and noise step compute
-- On STE, correctly shift display 8 pixels to the left when using
-  224 bytes overscan
+  (some low period values were not correctly emulated)
+- Video emulation on STF/STE:
+  - On STE, correctly shift display 8 pixels to the left when using
+    224 bytes overscan
+  - Add support for spec512 mode in med res (fixes 'Best Part Of The
+    Creation' in 'Punish Your Machine', 'HighRes Mode' demo by Paradox)
+  - Correctly shift the screen 4 pixels to the left when left border is removed
+    in med res overscan (Hatari 1.4 handled only low res, fixes 'No Cooper'
+    by 1984, 'Best Part Of The Creation' by Delta Force)
 
 Emulator:
 - Option to disable Falcon mic
