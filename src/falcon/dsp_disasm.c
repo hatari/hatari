@@ -1567,7 +1567,10 @@ static void dsp_lua(void)
 	dsp_calc_ea((cur_inst>>8) & BITMASK(5), addr_name);
 	numreg = cur_inst & BITMASK(3);
 	
-	sprintf(str_instr,"lua %s,r%d", addr_name, numreg);
+	if (cur_inst & (1<<3))
+		sprintf(str_instr,"lua %s,n%d", addr_name, numreg);
+	else
+		sprintf(str_instr,"lua %s,r%d", addr_name, numreg);
 }
 
 static void dsp_movec_reg(void)
@@ -1970,8 +1973,8 @@ static void dsp_tcc(void)
 	dst1reg = registers_tcc[(cur_inst>>3) & BITMASK(4)][1];
 
 	if (cur_inst & (1<<16)) {
-		src2reg = DSP_REG_R0+(cur_inst & BITMASK(3));
-		dst2reg = DSP_REG_R0+((cur_inst>>8) & BITMASK(3));
+		src2reg = DSP_REG_R0+((cur_inst>>8) & BITMASK(3));
+		dst2reg = DSP_REG_R0+(cur_inst & BITMASK(3));
 
 		sprintf(str_instr,"t%s %s,%s %s,%s",
 			ccname,
