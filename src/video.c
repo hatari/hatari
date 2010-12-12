@@ -284,6 +284,10 @@
 /*			left.									*/
 /*			For 230 bytes overscan, handle scrolling prefetching when computing	*/
 /*			pVideoRaster for the next line.						*/
+/* 2010/12/12	[NP]	In Video_CopyScreenLineColor, use pVideoRasterEndLine to improve	*/
+/*			STE's horizontal scrolling for any line's length (160, 224, 230, ...).	*/
+/*			Fix the last 16 pixels for 224 bytes overscan (More Or Less Zero and	*/
+/*			Cernit Trandafir by DHS, Save The Earth by Defence Force).		*/
 
 
 
@@ -1845,7 +1849,8 @@ static void Video_CopyScreenLineColor(void)
 	int VideoOffset = 0;
 	int STF_PixelScroll = 0;
 	int LineRes;
-
+	Uint8 *pVideoRasterEndLine;			/* addr of the last byte copied from pVideoRaster to pSTScreen (for HWScrollCount) */
+	int i;
 
 	LineBorderMask = ShifterFrame.ShifterLines[ nHBL ].BorderMask;
 	STF_PixelScroll = ShifterFrame.ShifterLines[ nHBL ].DisplayPixelShift;
@@ -1957,6 +1962,7 @@ static void Video_CopyScreenLineColor(void)
 		if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 		{
 			memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
+			pVideoRasterEndLine = pVideoRaster + SCREENBYTES_RIGHT;
 			pVideoRaster += BORDERBYTES_RIGHT;
 		}
 		else if (LineBorderMask & BORDERMASK_RIGHT_MINUS_2)
@@ -1964,16 +1970,19 @@ static void Video_CopyScreenLineColor(void)
 			/* Shortened line by 2 bytes */
 			memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE-2, 0, SCREENBYTES_RIGHT+2);
 			pVideoRaster -= 2;
+			pVideoRasterEndLine = pVideoRaster;
 		}
 		else
 		{
 			/* Simply clear right border to '0' */
 			memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
+			pVideoRasterEndLine = pVideoRaster;
 		}
 
 		/* Full right border removal up to the end of the line (cycle 512) */
 		if (LineBorderMask & BORDERMASK_RIGHT_OFF_FULL)
 			pVideoRaster += BORDERBYTES_RIGHT_FULL;
+
 
 		/* Correct the offset for pVideoRaster from BORDERMASK_LEFT_OFF above if needed */
 		pVideoRaster -= VideoOffset;		/* VideoOffset is 0 or -2 */
@@ -1992,46 +2001,43 @@ static void Video_CopyScreenLineColor(void)
 			else if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
 			{
 				if ( SCREENBYTES_LEFT > BORDERBYTES_LEFT_2_STE )
-					pScrollAdj = (Uint16 *)pSTScreen+4;	/* don't scroll the 4 first bytes (keep color 0)*/
+					pScrollAdj = (Uint16 *)(pSTScreen+8);	/* don't scroll the 8 first bytes (keep color 0)*/
 				else
 					pScrollAdj = (Uint16 *)pSTScreen;	/* we render less bytes on screen than a real ST, scroll the whole line */
 			}
 			else
 				pScrollAdj = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT);
 
+			/* When shifting the line to the left, we will have 'HWScrollCount' missing pixels at	*/
+			/* the end of the line. We must complete these last 16 pixels with pixels from the	*/
+			/* video counter last accessed value in pVideoRasterEndLine.				*/
+			/* There're 2 passes :									*/
+			/*  - shift whole line except the last 16 pixels					*/
+			/*  - shift/complete the last 16 pixels							*/
+
+			/* Addr of the last byte to shift in the 1st pass (excluding the last 16 pixels of the line) */
 			if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 				pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LINE - 8);
 			else
 				pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 8);
 
-			if ( LineRes == 1 )			/* med res */
+
+			if ( LineRes == 1 )				/* med res */
 			{
 				/* in med res, 16 pixels are 4 bytes, not 8 as in low res, so only the last 4 bytes need a special case */
-				pScrollEndAddr += 2;				/* 2 Uint16 -> 4 bytes */
+				pScrollEndAddr += 2;			/* 2 Uint16 = 4 bytes = 16 pixels */
 
-				/* Shift the whole line to the left by the given scroll count */
+				/* Shift the whole line to the left by the given scroll count (except the last 16 pixels) */
 				while (pScrollAdj < pScrollEndAddr)
 				{
 					do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
 					                | (do_get_mem_word(pScrollAdj+2) >> nNegScrollCnt));
 					++pScrollAdj;
 				}
-				/* Handle the last 16 pixels of the line */
-				if (LineBorderMask & BORDERMASK_RIGHT_OFF)	/* FIXME : med + right off should be tested on a real STE */
-				{
-					Uint16 *pVideoLineEnd = (Uint16 *)(pVideoRaster - (46 - SCREENBYTES_RIGHT));
-					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
-					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
-					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
-					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
-				}
-				else
-				{
-					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster+0) >> nNegScrollCnt));
-					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster+2) >> nNegScrollCnt));
-				}
+				/* Handle the last 16 pixels of the line (complete the line with pixels from pVideoRasterEndLine) */
+				for ( i=0 ; i<2 ; i++ )
+					do_put_mem_word(pScrollAdj+i, (do_get_mem_word(pScrollAdj+i) << HWScrollCount)
+				                | (do_get_mem_word(pVideoRasterEndLine+i*2) >> nNegScrollCnt));
 
 				/* Depending on whether $ff8264 or $ff8265 was used to scroll, */
 				/* we prefetched 16 pixel (4 bytes) */
@@ -2053,41 +2059,19 @@ static void Video_CopyScreenLineColor(void)
 				}
 			}
 
-			else					/* low res */
+			else						/* low res */
 			{
-				/* Shift the whole line to the left by the given scroll count */
+				/* Shift the whole line to the left by the given scroll count (except the last 16 pixels) */
 				while (pScrollAdj < pScrollEndAddr)
 				{
 					do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
 					                | (do_get_mem_word(pScrollAdj+4) >> nNegScrollCnt));
 					++pScrollAdj;
 				}
-				/* Handle the last 16 pixels of the line */
-				if (LineBorderMask & BORDERMASK_RIGHT_OFF)
-				{
-					/* When right border is open, we have to deal with this ugly offset
-					 * of 46-SCREENBYTES_RIGHT - The demo "Mind rewind" is a good example */
-					Uint16 *pVideoLineEnd = (Uint16 *)(pVideoRaster - (46 - SCREENBYTES_RIGHT));
-					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
-					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
-					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
-					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
-					do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
-					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
-					do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
-					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
-				}
-				else
-				{
-					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster+0) >> nNegScrollCnt));
-					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster+2) >> nNegScrollCnt));
-					do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster+4) >> nNegScrollCnt));
-					do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster+6) >> nNegScrollCnt));
-				}
+				/* Handle the last 16 pixels of the line (complete the line with pixels from pVideoRasterEndLine) */
+				for ( i=0 ; i<4 ; i++ )
+					do_put_mem_word(pScrollAdj+i, (do_get_mem_word(pScrollAdj+i) << HWScrollCount)
+				                | (do_get_mem_word(pVideoRasterEndLine+i*2) >> nNegScrollCnt));
 
 				/* Depending on whether $ff8264 or $ff8265 was used to scroll, */
 				/* we prefetched 16 pixel (8 bytes) */
