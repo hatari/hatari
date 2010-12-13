@@ -52,7 +52,10 @@ if(X11_FOUND)
 endif(X11_FOUND)
 
 
-link_directories(debug falcon gui-sdl ${CPUDIR})
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
+		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
+		 ${CMAKE_CURRENT_BINARY_DIR}/gui-sdl
+		 ${CMAKE_CURRENT_BINARY_DIR}/${CPUDIR})
 
 add_subdirectory(debug)
 add_subdirectory(falcon)
