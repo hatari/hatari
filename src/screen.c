@@ -542,7 +542,6 @@ void Screen_Init(void)
 	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 
 	/* Configure some SDL stuff: */
-	SDL_WM_SetCaption(PROG_NAME, "Hatari");
 	SDL_ShowCursor(SDL_DISABLE);
 }
 

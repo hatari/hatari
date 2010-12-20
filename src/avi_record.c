@@ -498,7 +498,16 @@ bool	Avi_RecordVideoStream ( void )
 		return false;
 	}
 
-	AviParams.TotalVideoFrames++;
+	if (++AviParams.TotalVideoFrames % AviParams.Fps == 0)
+	{
+		int secs = AviParams.TotalVideoFrames / AviParams.Fps;
+		char str[6] = "00:00";
+		str[0] = '0' + (secs / 60) / 10;
+		str[1] = '0' + (secs / 60) % 10;
+		str[3] = '0' + (secs % 60) / 10;
+		str[4] = '0' + (secs % 60) % 10;
+		Main_SetTitle(str);
+	}
 	return true;
 }
 
@@ -970,13 +979,23 @@ bool	Avi_StartRecording ( char *FileName , bool CropGui , int Fps , int VideoCod
 	}
 	
 	
-	return Avi_StartRecording_WithParams ( &AviParams , FileName );
+	if (Avi_StartRecording_WithParams ( &AviParams , FileName ))
+	{
+		Main_SetTitle("00:00");
+		return true;
+	}
+	return false;
 }
 
 
 bool	Avi_StopRecording ( void )
 {
-	return Avi_StopRecording_WithParams ( &AviParams );
+	if (Avi_StopRecording_WithParams ( &AviParams ))
+	{
+		Main_SetTitle(NULL);
+		return true;
+	}
+	return false;
 }
 
 

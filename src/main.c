@@ -482,6 +482,18 @@ void Main_EventHandler(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set Hatari window title. Use NULL for default
+ */
+void Main_SetTitle(const char *title)
+{
+	if (title)
+		SDL_WM_SetCaption(title, "Hatari");
+	else
+		SDL_WM_SetCaption(PROG_NAME, "Hatari");
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Initialise emulation
  */
 static void Main_Init(void)
@@ -507,6 +519,7 @@ static void Main_Init(void)
 	RS232_Init();
 	Midi_Init();
 	Screen_Init();
+	Main_SetTitle(NULL);
 	HostScreen_Init();
 	DSP_Init();
 	Floppy_Init();
