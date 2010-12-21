@@ -275,14 +275,14 @@ static dsp_emul_t opcodes8h[512]={
 
 const static char* opcodes_alu[256]={
 	/* 0x00 - 0x3f */
-	"move"     , "tfr b,a", "addr b,a", "tst a", "undefined", "cmp b,a"  , "subr a", "cmpm b,a",
-	"undefined", "tfr a,b", "addr a,b", "tst b", "undefined", "cmp a,b"  , "subr b", "cmpm a,b",
-	"add b,a"  , "rnd a"  , "addl b,a", "clr a", "sub b,a"  , "undefined", "subl a", "not a",
-	"add a,b"  , "rnd b"  , "addl a,b", "clr b", "sub a,b"  , "undefined", "subl b", "not b",
-	"add x,a"  , "adc x,a", "asr b,a" , "lsr a", "sub x,a"  , "sbc x,a"  , "abs a" , "ror a",
-	"add x,b"  , "adc x,b", "asr a,b" , "lsr b", "sub x,b"  , "sbc x,b"  , "abs b" , "ror b",
-	"add y,a"  , "adc y,a", "asl b,a" , "lsl a", "sub y,a"  , "sbc y,a"  , "neg a" , "rol a",
-	"add y,b"  , "adc y,b", "asl a,b" , "lsl b", "sub y,b"  , "sbc y,b"  , "neg b" , "rol b",
+	"move"     , "tfr b,a", "addr b,a", "tst a", "undefined", "cmp b,a"  , "subr b,a", "cmpm b,a",
+	"undefined", "tfr a,b", "addr a,b", "tst b", "undefined", "cmp a,b"  , "subr a,b", "cmpm a,b",
+	"add b,a"  , "rnd a"  , "addl b,a", "clr a", "sub b,a"  , "undefined", "subl b,a", "not a",
+	"add a,b"  , "rnd b"  , "addl a,b", "clr b", "sub a,b"  , "undefined", "subl a,b", "not b",
+	"add x,a"  , "adc x,a", "asr a" , "lsr a", "sub x,a"  , "sbc x,a"  , "abs a" , "ror a",
+	"add x,b"  , "adc x,b", "asr b" , "lsr b", "sub x,b"  , "sbc x,b"  , "abs b" , "ror b",
+	"add y,a"  , "adc y,a", "asl a" , "lsl a", "sub y,a"  , "sbc y,a"  , "neg a" , "rol a",
+	"add y,b"  , "adc y,b", "asl b" , "lsl b", "sub y,b"  , "sbc y,b"  , "neg b" , "rol b",
 	
 	/* 0x40 - 0x7f */
 	"add x0,a", "tfr x0,a", "or x0,a", "eor x0,a", "sub x0,a", "cmp x0,a", "and x0,a", "cmpm x0,a",
@@ -414,7 +414,7 @@ void dsp56k_disasm_reg_compare(void)
 {
 	int i;
 	
-	for (i=0; i<64; i++) {
+	for (i=4; i<64; i++) {
 		if (registers_save[i] == dsp_core->registers[i]) {
 			continue;
 		}
@@ -428,7 +428,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_A1:
 			case DSP_REG_B0:
 			case DSP_REG_B1:
-				fprintf(stderr,"\tReg: %s  0x%06x -> 0x%06x\n", registers_name[i], registers_save[i] & BITMASK(24), dsp_core->registers[i]  & BITMASK(24));
+				fprintf(stderr,"\tReg: %s  0x%06x -> 0x%06x\n", registers_name[i], registers_save[i], dsp_core->registers[i]);
 				break;
 			case DSP_REG_R0:
 			case DSP_REG_R1:
@@ -457,7 +457,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SR:
 			case DSP_REG_LA:
 			case DSP_REG_LC:
-				fprintf(stderr,"\tReg: %s  0x%04x -> 0x%04x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
+				fprintf(stderr,"\tReg: %s  0x%04x -> 0x%04x\n", registers_name[i], registers_save[i], dsp_core->registers[i]);
 				break;
 			case DSP_REG_A2:
 			case DSP_REG_B2:
@@ -465,19 +465,19 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SP:
 			case DSP_REG_SSH:
 			case DSP_REG_SSL:
-				fprintf(stderr,"\tReg: %s  0x%02x -> 0x%02x\n", registers_name[i], registers_save[i] & BITMASK(8), dsp_core->registers[i]  & BITMASK(8));
+				fprintf(stderr,"\tReg: %s  0x%02x -> 0x%02x\n", registers_name[i], registers_save[i], dsp_core->registers[i]);
 				break;
 			case DSP_REG_A:
 			case DSP_REG_B:
 				{
 					fprintf(stderr,"\tReg: %s  0x%02x:%06x:%06x -> 0x%02x:%06x:%06x\n",
 						registers_name[i],
-						registers_save[DSP_REG_A2+(i & 1)] & BITMASK(8),
-						registers_save[DSP_REG_A1+(i & 1)] & BITMASK(24),
-						registers_save[DSP_REG_A0+(i & 1)] & BITMASK(24),
-						dsp_core->registers[DSP_REG_A2+(i & 1)]  & BITMASK(8),
-						dsp_core->registers[DSP_REG_A1+(i & 1)]  & BITMASK(24),
-						dsp_core->registers[DSP_REG_A0+(i & 1)]  & BITMASK(24)
+						registers_save[DSP_REG_A2+(i & 1)],
+						registers_save[DSP_REG_A1+(i & 1)],
+						registers_save[DSP_REG_A0+(i & 1)],
+						dsp_core->registers[DSP_REG_A2+(i & 1)],
+						dsp_core->registers[DSP_REG_A1+(i & 1)],
+						dsp_core->registers[DSP_REG_A0+(i & 1)]
 					);
 				}
 				break;
