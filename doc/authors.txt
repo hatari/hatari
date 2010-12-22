@@ -104,6 +104,9 @@ please remind me!):
 - Anders Eriksson (Evil/DHS): Helped improving STE's emulation by running
   many tests programs and providing the source code for some non working demos.
 
+- Markus Fritze: New m68k disassembler with more Motorola like syntax
+  and options for controlling how the output looks.
+
 
  Code from other projects
  ------------------------

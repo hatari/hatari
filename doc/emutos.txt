@@ -175,6 +175,7 @@ Demos:
 - Posh (by Checkpoint)
 - Rebirth (by MMJ production)
 - Save The Earth (by Defence Force)
+- SillyVenture 2k10 (invitro by Mystic Bytes)
 - Soundtracker (by Equinox)
 - Sweety (by DHS)
 - Tut! (by Wildfire)
@@ -434,7 +435,7 @@ Working free/shareware Falcon demos, games and applications
 -----------------------------------------------------------
 
 Missing Videl and DSP support in EmuTOS is probably the reason why
-many of the demos and games get wrong video made and their graphics
+many of the demos and games get wrong video mode and their graphics
 look completely broken under EmuTOS.  Following Falcon only
 demos, games and apps work (mostly) fine though.
 

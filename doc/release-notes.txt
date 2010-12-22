@@ -7,6 +7,8 @@
  -------------------
 
 Emulation:
+- Alternative CPU core based on WinUAE
+  (for more accurate future HW interaction emulation)
 - Remove old ST Sound's code used for tone and noise step compute
   (some low period values were not correctly emulated)
 - Video emulation on STF/STE:
@@ -19,18 +21,24 @@ Emulation:
     by 1984, 'Best Part Of The Creation' by Delta Force)
 
 Emulator:
-- Option to disable Falcon mic
-  ("--mic off" is needed for Mudflap debugging)
-- SDL GUI fileselector scrollbar can be used with mouse
 - Atari program given as argument to Hatari will be automatically
   started after TOS boots. GEMDOS hard disk directory can now be
   give also as an argument, not just as a (-d) option
-- Support for tracing AES calls.  VDI calls can now be traced
-  also without using an extended VDI resolution
-- BIOS CON: output is converted to ASCII and redirected to host console
-  with the --bios-intercept option
-- Debugger:
-  - --bios-intercept can be toggled from debugger (not just enabled)
+- AVI recording options can be set in the new [Video] config file section
+- SDL GUI improvements:
+  - AVI video length (mins:secs) is shown in titlebar during recording
+  - Option for cropping statusbar from videos & screenshots
+  - Fileselector scrollbar can be used with mouse
+- Debugging:
+  - New disassembler with more Motorola like syntax
+  - Option to disable Falcon mic
+    ("--mic off" is needed for Mudflap debugging)
+  - "--run-vbls" can be set also at run-time
+  - "--bios-intercept" can be toggled from debugger (not just enabled)
+  - BIOS CON: output is converted to ASCII and redirected to host console
+    with the --bios-intercept option
+  - Support for tracing AES calls.  VDI calls can now be traced
+    also without using an extended VDI resolution
   - BIOS/XBIOS/GEMDOS/VDI/AES/Line-A/Line-F opcode breakpoint support
   - "aes", "vdi" and "gemdos" subcommands for "info".  Without arguments
     they will output information about corresponding OS part state,
@@ -39,6 +47,8 @@ Emulator:
     subcommand without entering the debugger / stopping emulation
   - "file" subcommand to "lock" that execs debugger commands from given
     file when debugger is entered (or ":info" breakpoint is hit)
+  - parenthesis in "evaluate" command are used to indicate memory
+    accesses (instead of operator precedence like earlier)
   - DSP and CPU code profiling functionality.  Provides statistics about
     profiled code (executed code address ranges, max and total counts
     and cycles), lists addresses/instructions taking most cyles and if
