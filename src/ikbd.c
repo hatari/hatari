@@ -2049,6 +2049,10 @@ static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data, int nAciaCycles)
 		/* We have character ready to transmit from the ACIA - see if can send it now */
 		IKBD_SendByteToACIA(nAciaCycles);
 	}
+	else
+	{
+		Log_Printf(LOG_ERROR, "IKBD buffer is full!\n");
+	}
 }
 
 
