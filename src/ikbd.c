@@ -1399,11 +1399,23 @@ static void IKBD_Cmd_StopJoystick(void)
  */
 static void IKBD_Cmd_ReturnJoystick(void)
 {
+	/* The game "Downfall" continually issues this command during the
+	 * title screen - faster than processing the 3 bytes from the ACIA,
+	 * so it floods our Keyboard.Buffer ... in the end, we can not put the
+	 * whole packet into the buffer anymore, and the game hangs due to
+	 * these incomplete answers. To avoid this situation, only execute
+	 * this command if there is enough space left in our Keyboard.Buffer! */
+	if (((Keyboard.BufferHead-1-Keyboard.BufferTail)&KEYBOARD_BUFFER_MASK) < 3)
+	{
+		LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick ignored - buffer is full!\n");
+		return;
+	}
+
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick\n");
+
 	IKBD_AddKeyToKeyboardBufferWithDelay(0xFD, 35000);
 	IKBD_AddKeyToKeyboardBuffer(Joy_GetStickData(0));
 	IKBD_AddKeyToKeyboardBuffer(Joy_GetStickData(1));
-
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick\n");
 }
 
 
