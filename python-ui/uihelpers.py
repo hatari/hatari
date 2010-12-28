@@ -2,7 +2,7 @@
 #
 # Misc common helper classes and functions for the Hatari UI
 #
-# Copyright (C) 2008-2009 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -348,7 +348,7 @@ def get_save_filename(title, parent, path = None):
 
 
 # File selection button with eject button
-class FselAndEjectFactory():
+class FselAndEjectFactory:
     def __init__(self):
         pass
 
@@ -380,7 +380,7 @@ class FselAndEjectFactory():
 # - set_current_name() works only for SAVE action,
 #   but file chooser button doesn't support that
 # i.e. I had to do my own (less nice) container widget...
-class FselEntry():
+class FselEntry:
     def __init__(self, parent, validate = None, data = None):
         self._parent = parent
         self._validate = validate
