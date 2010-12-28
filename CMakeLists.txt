@@ -1,7 +1,7 @@
 
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
-project(Hatari)
+project(Hatari C)
 
 SET(APP_NAME "Hatari")
 
