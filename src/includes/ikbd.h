@@ -11,13 +11,6 @@
 #include <SDL_keysym.h>           /* Needed for SDLK_LAST */
 
 
-/* Keyboard Command */
-typedef struct {
-  Uint8 Command;
-  Uint8 NumParameters;
-  void (*pCallFunction)(void);
-} IKBD_COMMAND_PARAMS;
-
 /* Keyboard processor details */
 
 typedef struct {

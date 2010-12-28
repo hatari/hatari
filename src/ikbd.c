@@ -70,7 +70,7 @@ KEYBOARD Keyboard;
 KEYBOARD_PROCESSOR KeyboardProcessor;   /* Keyboard processor details */
 
 /* Pattern of mouse button up/down in ST frames (run off a double-click message) */
-static const uint8_t DoubleClickPattern[] =
+static const Uint8 DoubleClickPattern[] =
 {
 	BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,
 	0,0,0,0,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE
@@ -203,7 +203,12 @@ static void IKBD_Cmd_ReportMouseAvailability(void);
 static void IKBD_Cmd_ReportJoystickMode(void);
 static void IKBD_Cmd_ReportJoystickAvailability(void);
 
-static const IKBD_COMMAND_PARAMS KeyboardCommands[] =
+/* Keyboard Command */
+static const struct {
+  Uint8 Command;
+  Uint8 NumParameters;
+  void (*pCallFunction)(void);
+} KeyboardCommands[] =
 {
 	/* Known messages, counts include command byte */
 	{ 0x80,2,  IKBD_Cmd_Reset },
@@ -275,19 +280,19 @@ static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void );
 static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte );
 
 
-int	MemoryLoadNbBytesTotal = 0;			/* total number of bytes to send with the command 0x20 */
-int	MemoryLoadNbBytesLeft = 0;			/* number of bytes that remain to be sent  */
-Uint32	MemoryLoadCrc = 0xffffffff;			/* CRC of the bytes sent to the ikbd */
-int	MemoryExeNbBytes = 0;				/* current number of bytes sent to the ikbd when IKBD_ExeMode is true */
+static int	MemoryLoadNbBytesTotal = 0;		/* total number of bytes to send with the command 0x20 */
+static int	MemoryLoadNbBytesLeft = 0;		/* number of bytes that remain to be sent  */
+static Uint32	MemoryLoadCrc = 0xffffffff;		/* CRC of the bytes sent to the ikbd */
+static int	MemoryExeNbBytes = 0;			/* current number of bytes sent to the ikbd when IKBD_ExeMode is true */
 
-void	(*pIKBD_CustomCodeHandler_Read) ( void );
-void	(*pIKBD_CustomCodeHandler_Write) ( Uint8 );
-bool	IKBD_ExeMode = false;
+static void	(*pIKBD_CustomCodeHandler_Read) ( void );
+static void	(*pIKBD_CustomCodeHandler_Write) ( Uint8 );
+static bool	IKBD_ExeMode = false;
 
-Uint8	ScanCodeState[ 128 ];				/* state of each key : 0=released 1=pressed */
+static Uint8	ScanCodeState[ 128 ];			/* state of each key : 0=released 1=pressed */
 
 /* This array contains all known custom 6301 programs, with their CRC */
-struct
+static const struct
 {
 	Uint32		LoadMemCrc;			/* CRC of the bytes sent using the command 0x20 */
 	void		(*ExeBootHandler) ( Uint8 );	/* function handling write to $fffc02 during the 'boot' mode */
