@@ -196,7 +196,8 @@ static bool RS232_SetBitsConfig(FILE *fhndl, int nCharSize, int nStopBits, bool 
  */
 static bool RS232_OpenCOMPort(void)
 {
-	bConnectedRS232 = false;
+	if (bConnectedRS232)
+		return true;
 
 	/* Create our COM file for output */
 	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb");
@@ -314,21 +315,21 @@ static int RS232_ThreadFunc(void *pData)
 				/* FIXME: Use semaphores to lock MFP variables? */
 				MFP_InputOnChannel(MFP_RCVBUFFULL_BIT, MFP_IERA, &MFP_IPRA);
 				Dprintf(("RS232: Read character $%x\n", iInChar));
+				/* Sleep for a while */
+				SDL_Delay(2);
 			}
 			else
 			{
 				/*Dprintf(("RS232: Reached end of input file!\n"));*/
+				/* potential data race on hComIn modification */
 				clearerr(hComIn);
 				SDL_Delay(20);
 			}
-
-			/* Sleep for a while */
-			SDL_Delay(2);
 		}
 		else
 		{
-			/* No RS-232 connection, sleep for 20ms */
-			SDL_Delay(20);
+			/* No RS-232 connection, sleep for 0.2s */
+			SDL_Delay(200);
 		}
 	}
 
@@ -339,7 +340,8 @@ static int RS232_ThreadFunc(void *pData)
 /*-----------------------------------------------------------------------*/
 /**
  * Initialize RS-232, start thread to wait for incoming data
- * (we will open a connection when first bytes are sent).
+ * (we will open a connection when first bytes are sent even
+ *  if RS-232 isn't initialized for reading).
  */
 void RS232_Init(void)
 {
@@ -354,8 +356,7 @@ void RS232_Init(void)
 			return;
 		}
 
-		if (!bConnectedRS232)
-			RS232_OpenCOMPort();
+		RS232_OpenCOMPort();
 
 		/* Create thread to wait for incoming bytes over RS-232 */
 		if (!RS232Thread)
@@ -376,8 +377,12 @@ void RS232_UnInit(void)
 	/* Close, kill thread and free resource */
 	if (RS232Thread)
 	{
-		/* Instead of killing the thread directly, we should probably better
-		   inform it via IPC so that it can terminate gracefully... */
+		/* Instead of killing the thread directly, we should
+		 * probably better inform it via IPC so that it can
+		 * terminate gracefully... but then we would need to
+		 * wait until it exits, otherwise there's a data race
+		 * on accessing/modifying hComIn.
+		 */
 		Dprintf(("Killing RS232 thread...\n"));
 		SDL_KillThread(RS232Thread);
 		RS232Thread = NULL;
@@ -600,13 +605,9 @@ void RS232_SetFlowControl(Sint16 ctrl)
  */
 bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
 {
-	/* Do need to open a connection to RS232? */
-	if (!bConnectedRS232)
-	{
-		/* Do have RS-232 enabled? */
-		if (ConfigureParams.RS232.bEnableRS232)
-			bConnectedRS232 = RS232_OpenCOMPort();
-	}
+	/* Make sure there's a RS-232 connection if it's enabled */
+	if (ConfigureParams.RS232.bEnableRS232)
+		RS232_OpenCOMPort();
 
 	/* Have we connected to the RS232? */
 	if (bConnectedRS232)
