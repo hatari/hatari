@@ -159,6 +159,7 @@ Demos:
 - 4kker (by Checkpoint, 4KB intro)
 - Anomaly (by MMJ-Prod)
 - Breath (by Mystic Bytes)
+- Coast II Coast (by Sector One, 4kB intro)
 - Darktrip (by Legend, doesn't work with >2MB of RAM)
 - Dark Side of the Spoon (by ULM)
 - Death of the Clock Cycles (by Aggression)
@@ -180,6 +181,7 @@ Demos:
 - Sweety (by DHS)
 - Tut! (by Wildfire)
 - Two in One (by DHS)
+- Visualize (by Checkpoint)
 - YmRockerz musicdisks such as Popstars etc.
 - Xmas2000 (by Paranoid)
 
@@ -366,9 +368,10 @@ Demos:
 - Reanimation (by Syntax)
 - Realtime (by MJJ Prod)
 - Sinfull Sinuses (by Chronicle)
+- Sommarhack (by DHS)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
-- Sommarhack (by DHS)
+- Sventure intro (by Paradox)
 - Vision (by POV)
 - XiTEC Presentation (by Omega)
 
@@ -410,14 +413,16 @@ work also with EmuTOS too (not just STe ones).
 "Almost" working color STE games
 --------------------------------
 
-There are some STE games that would appear otherwise to work perfectly,
-but some part of the graphics just don't show.  They are listed in case
-someone, someday, starts to fix the EmuTOS line-A things (mainly bitblt).
+There are some STE (enhanced( games that would appear otherwise to
+work perfectly, but some part of the graphics just don't show.  They
+are listed in case someone, someday, starts to fix the EmuTOS line-A
+things (mainly bitblt).
 
 - Atari Scene Card Battle (card images don't show)
 - Blat (main graphics don't show)
 - Breakdance (another scene game, game freezes when playing)
 - Mr Boomer (all graphics don't show)
+- Kolmik (tiles don't show)
 - Pooz (all graphics don't show)
 
 
@@ -472,7 +477,7 @@ Games:
 - Rave (needs "dummy" DSP mode in Hatari)
 - SBM v0.8 (Bomberman clone)*
 - Spice (Defender clone)*
-- Static
+- Static (Patience by Reservoir Gods)
 - Steinbruch
 - Tank Blaster
 - Toy Man
@@ -490,13 +495,16 @@ Mostly working applications:
 - Whip! (virtual light machine)
 
 Almost working demos & games:
-- Bugger, Bunion, SkyFall, Switch, Sworm games* by Resorvoir Gods:
-  - have issues with keyboard input in the main menus, doesn't get input
-    or input freezes the game
+- Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
+  - have issues with keyboard input in the main menus, EmuTOS freezes
+    on address $e00c1e when a key is pressed.
+  - none of them requires DSP
+    (but will on normal TOS play music if it's enabled, with EmuTOS
+     enabling DSP freezes the games right at startup)
+- Double Bobble 2000 & Tautology II by Reservoir Gods, Nibe:
+  - screen is messed, I suspect EmuTOS is missing resolution change function
 - Motion (unfinished demo by Aggression)
   - only writer screens work
-- Nibe:
-  - screen is messed, I suspect EmuTOS is missing resolution change function
 
 
 	- Eero
