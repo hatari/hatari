@@ -413,7 +413,7 @@ work also with EmuTOS too (not just STe ones).
 "Almost" working color STE games
 --------------------------------
 
-There are some STE (enhanced( games that would appear otherwise to
+There are some STE (enhanced) games that would appear otherwise to
 work perfectly, but some part of the graphics just don't show.  They
 are listed in case someone, someday, starts to fix the EmuTOS line-A
 things (mainly bitblt).
