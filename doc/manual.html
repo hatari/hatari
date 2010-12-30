@@ -401,7 +401,11 @@ and arguments</h2>
 <li>A directory that should be emulated as a virtual GEMDOS hard disk, or</li>
 <li>An Atari program that should be autostarted.  In this case
     the program's directory will be used as the C: drive from
-    where this program will be started.</li>
+    where this program will be started.
+    (Note that autostarting a program might not work if you've also
+    specified a floppy image for drive A: on command line or in config
+    file which contains a desktop.inf/newdesk.inf/emutos.inf file on
+    it.)</li>
 </ul>
 
 <p>Booting will be done from the disk image or directory that's given

@@ -31,6 +31,11 @@ Atari program that should be autostarted.  In the last case the
 program's directory will be used as the C: drive from where this
 program will be started.
 .PP
+Note that autostarting a program might not work if you've also
+specified a floppy image for drive A: (on command line or in config
+file) which contains a desktop.inf/newdesk.inf/emutos.inf file on
+it.
+.PP
 Booting will be done from the disk image or directory that's given
 last on the command line as an option or the argument (and which
 corresponds to A: or C:).
