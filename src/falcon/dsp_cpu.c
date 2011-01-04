@@ -998,59 +998,56 @@ static void dsp_postexecute_interrupts(void)
 /* reg1 has bits 47..24 */
 /* reg2 has bits 23..0 */
 
-static void dsp_ccr_update_e_u_n_z(Uint32 reg0, Uint32 reg1, Uint32 reg2) {
-	Uint32 scaling, value_e, value_u, numbits;
+static void dsp_ccr_update_e_u_n_z(Uint32 reg0, Uint32 reg1, Uint32 reg2) 
+{
+	Uint32 scaling, value_e, value_u;
 
-	int sr_extension = 1 << DSP_SR_E;
-	int sr_unnormalized;
-	int sr_negative = ((reg0>>7) & 1) << DSP_SR_N;
-	int sr_zero = 1 << DSP_SR_Z;
+	/* Initialize SR register */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_E) | (1<<DSP_SR_U) | (1<<DSP_SR_N) | (1<<DSP_SR_Z));
 
 	scaling = (dsp_core->registers[DSP_REG_SR]>>DSP_SR_S0) & BITMASK(2);
-	value_e = reg0 & 0xff;
-	numbits = 8;
-
 	switch(scaling) {
 		case 0:
-			value_e <<=1;
-			value_e |= (reg1>>23) & 1;
-			numbits=9;
-			value_u = (reg1>>22) & 3;
+			/* Extension Bit (E) */
+			value_e = (reg0<<1) + (reg1>>23);
+			if ((value_e != 0) && (value_e != BITMASK(9)))
+				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_E;
+
+			/* Unnormalized bit (U) */
+			if ((reg1 & 0xc00) != 0 && (reg1 & 0xc00) != 0xc00) 
+				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_U;
 			break;
 		case 1:
-			value_u = (reg0<<1) & 2;
-			value_u |= (reg1>>23) & 1;
+			/* Extension Bit (E) */
+			if ((reg0 != 0) && (reg0 != BITMASK(8)))
+				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_E;
+
+			/* Unnormalized bit (U) */
+			value_u = ((reg0<<1) + (reg1>>23)) & 3;
+			if (value_u != 0 && value_u != 3) 
+				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_U;
 			break;
 		case 2:
-			value_e <<=2;
-			value_e |= (reg1>>22) & 3;
-			numbits=10;
-			value_u = (reg1>>21) & 3;
+			/* Extension Bit (E) */
+			value_e = (reg0<<2) + (reg1>>22);
+			if ((value_e != 0) && (value_e != BITMASK(10)))
+				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_E;
+
+			/* Unnormalized bit (U) */
+			if ((reg1 & 0x600) != 0 && (reg1 & 0x600) != 0x600) 
+				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_U;
 			break;
 		default:
 			return;
 			break;
 	}
 
-	if ((value_e==0) || (value_e==(Uint32)BITMASK(numbits))) {
-		sr_extension = 0;
-	}
+	/* Zero Flag (Z) */
+	if ((reg1 == 0) && (reg2 == 0) && (reg0 == 0))
+		dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_Z;
 
-	sr_unnormalized = ((value_u==0) || (value_u==BITMASK(2))) << DSP_SR_U;
-	if ((reg2 & BITMASK(24))!=0) {
-		sr_zero = 0;
-	} else if ((reg1 & BITMASK(24))!=0) {
-		sr_zero = 0;
-	} else if ((reg0 & BITMASK(8))!=0) {
-		sr_zero = 0;
-	}
-
-	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_E) | (1<<DSP_SR_U) | (1<<DSP_SR_N) | (1<<DSP_SR_Z));
-
-	dsp_core->registers[DSP_REG_SR] |= sr_extension;
-	dsp_core->registers[DSP_REG_SR] |= sr_unnormalized;
-	dsp_core->registers[DSP_REG_SR] |= sr_negative;
-	dsp_core->registers[DSP_REG_SR] |= sr_zero;
+	/* Negative Flag (N) */
+	dsp_core->registers[DSP_REG_SR] |= (reg0>>4) & 0x8;
 }
 
 /**********************************
@@ -4070,15 +4067,12 @@ static Uint16 dsp_asr56(Uint32 *dest)
 	carry = dest[2] & 1;
 
 	dest[2] >>= 1;
-	dest[2] &= BITMASK(23);
 	dest[2] |= (dest[1] & 1)<<23;
 
 	dest[1] >>= 1;
-	dest[1] &= BITMASK(23);
 	dest[1] |= (dest[0] & 1)<<23;
 
 	dest[0] >>= 1;
-	dest[0] &= BITMASK(7);
 	dest[0] |= (dest[0] & (1<<6))<<1;
 
 	return (carry<<DSP_SR_C);
@@ -4144,11 +4138,11 @@ static void dsp_mul56(Uint32 source1, Uint32 source2, Uint32 *dest, Uint8 signe)
 	/* Multiply: D = S1*S2 */
 	if (source1 & (1<<23)) {
 		signe ^= 1;
-		source1 = (1<<24) - (source1 & BITMASK(24));
+		source1 = (1<<24) - source1;
 	}
 	if (source2 & (1<<23)) {
 		signe ^= 1;
-		source2 = (1<<24) - (source2 & BITMASK(24));
+		source2 = (1<<24) - source2;
 	}
 
 	/* bits 0-11 * bits 0-11 */
