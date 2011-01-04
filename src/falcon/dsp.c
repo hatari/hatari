@@ -141,29 +141,28 @@ void DSP_Run(int nHostCycles)
 {
 #if ENABLE_DSP_EMU
 	/* Cycles emulation should be correctly tuned now */
-	Sint32 i = nHostCycles * ( DSP_FREQ / CPU_FREQ ) - save_cycles + 1;
-	Sint32 dsp_cycle = 0;
+	Sint32 cycles = nHostCycles * ( DSP_FREQ / CPU_FREQ ) - save_cycles + 1;
 
 	if (dsp_core.running == 0)
 		return;
 
 	if (unlikely(bDspDebugging)) {
-		while (i > dsp_cycle)
+		while (cycles > 0)
 		{
 			DebugDsp_Check();
 			dsp56k_execute_instruction();
-			dsp_cycle += dsp_core.instr_cycle;
+			cycles -= dsp_core.instr_cycle;
 		}
 	} else {
-		while (i > dsp_cycle)
+		while (cycles > 0)
 		{
 			dsp56k_execute_instruction();
-			dsp_cycle += dsp_core.instr_cycle;
+			cycles -= dsp_core.instr_cycle;
 		}
 	}
 
 	/* Adjust cycles for next run */ 
-	save_cycles = i - dsp_cycle;
+	save_cycles = cycles;
 #endif
 }
 
