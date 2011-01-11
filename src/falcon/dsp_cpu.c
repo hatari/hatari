@@ -51,10 +51,10 @@
 #define BITMASK(x)	((1<<(x))-1)
 
 /* cycle counter wait state time when access to external memory  */
-#define XY_WAITSTATE 1
-#define P_WAITSTATE 1
-#define XP_WAITSTATE 1   /* X Peripheral WaitState */
-#define YP_WAITSTATE 1   /* Y Peripheral WaitState */
+#define XY_WAITSTATE 0
+#define P_WAITSTATE 0
+#define XP_WAITSTATE 0   /* X Peripheral WaitState */
+#define YP_WAITSTATE 0   /* Y Peripheral WaitState */
 
 #define SIGN_PLUS  0
 #define SIGN_MINUS 1
@@ -3119,7 +3119,7 @@ static void dsp_movep_23(void)
 		write_memory(easpace, addr, read_memory(perspace, peraddr));
 	}
 
-	dsp_core->instr_cycle += 4;
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_norm(void)
