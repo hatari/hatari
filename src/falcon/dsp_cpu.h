@@ -27,6 +27,8 @@ extern "C" {
 #endif
 
 /* Defines */
+#define BITMASK(x)	((1<<(x))-1)
+
 #define DSP_OMR_MA	0x00
 #define DSP_OMR_MB	0x01
 #define DSP_OMR_DE	0x02
