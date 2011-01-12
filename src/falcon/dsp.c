@@ -43,8 +43,6 @@
 #define Dprintf(a)
 #endif
 
-#define BITMASK(x)	((1<<(x))-1)
-
 #define DSP_HW_OFFSET  0xFFA200
 
 

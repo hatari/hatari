@@ -48,8 +48,6 @@
  *	Defines
  **********************************/
 
-#define BITMASK(x)	((1<<(x))-1)
-
 /* cycle counter wait state time when access to external memory  */
 #define XY_WAITSTATE 0
 #define P_WAITSTATE 0
