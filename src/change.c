@@ -98,6 +98,15 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	if (changed->System.nMachineType != current->System.nMachineType)
 		return true;
 
+#if ENABLE_DSP_EMU
+	/* enabling DSP needs reset (disabling it not) */
+	if (current->System.nDSPType != DSP_TYPE_EMU &&
+	    changed->System.nDSPType == DSP_TYPE_EMU)
+	{
+		return true;
+	}
+#endif
+
 #if ENABLE_WINUAE_CPU
 	/* Did change CPU cycle exact? */
 	if (changed->System.bCycleExactCpu != current->System.bCycleExactCpu)
@@ -374,7 +383,7 @@ static bool Change_Options(int argc, const char *argv[])
 
 	/* Check if reset is required and ask user if he really wants to continue */
 	if (bOK && Change_DoNeedReset(&current, &ConfigureParams)
-	    && current.Log.nAlertDlgLogLevel >= LOG_WARN) {
+	    && current.Log.nAlertDlgLogLevel > LOG_FATAL) {
 		bOK = DlgAlert_Query("The emulated system must be "
 				     "reset to apply these changes. "
 				     "Apply changes now and reset "
