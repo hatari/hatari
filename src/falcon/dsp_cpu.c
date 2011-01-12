@@ -464,7 +464,7 @@ static void dsp_tfr_y1_b(void);
 static void dsp_tst_a(void);
 static void dsp_tst_b(void);
 
-static dsp_emul_t opcodes8h[512]={
+static const dsp_emul_t opcodes8h[512] = {
 	/* 0x00 - 0x3f */
 	opcode8h_0, dsp_undefined, dsp_undefined, dsp_undefined, opcode8h_0, dsp_andi, dsp_undefined, dsp_ori,
 	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_andi, dsp_undefined, dsp_ori,
@@ -546,12 +546,12 @@ static dsp_emul_t opcodes8h[512]={
 	dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, 
 };
 
-static dsp_emul_t opcodes_parmove[16]={
+static const dsp_emul_t opcodes_parmove[16] = {
 	dsp_pm_0, dsp_pm_1, dsp_pm_2, dsp_pm_3, dsp_pm_4, dsp_pm_5, dsp_pm_5, dsp_pm_5,
 	dsp_pm_8, dsp_pm_8, dsp_pm_8, dsp_pm_8, dsp_pm_8, dsp_pm_8, dsp_pm_8, dsp_pm_8
 };
 
-static dsp_emul_t opcodes_alu[256]={
+static const dsp_emul_t opcodes_alu[256] = {
 	/* 0x00 - 0x3f */
 	dsp_move     , dsp_tfr_b_a, dsp_addr_b_a, dsp_tst_a, dsp_undefined, dsp_cmp_b_a, dsp_subr_a, dsp_cmpm_b_a,
 	dsp_undefined, dsp_tfr_a_b, dsp_addr_a_b, dsp_tst_b, dsp_undefined, dsp_cmp_a_b, dsp_subr_b, dsp_cmpm_a_b,
@@ -593,7 +593,7 @@ static dsp_emul_t opcodes_alu[256]={
 	dsp_mpy_p_y1_x1_b, dsp_mpyr_p_y1_x1_b, dsp_mac_p_y1_x1_b, dsp_macr_p_y1_x1_b, dsp_mpy_m_y1_x1_b, dsp_mpyr_m_y1_x1_b, dsp_mac_m_y1_x1_b, dsp_macr_m_y1_x1_b
 };
 
-static int registers_tcc[16][2]={
+static const int registers_tcc[16][2] = {
 	{DSP_REG_B,DSP_REG_A},
 	{DSP_REG_A,DSP_REG_B},
 	{DSP_REG_NULL,DSP_REG_NULL},
@@ -615,7 +615,7 @@ static int registers_tcc[16][2]={
 	{DSP_REG_Y1,DSP_REG_B}
 };
 
-static int registers_mask[64]={
+static const int registers_mask[64] = {
 	0, 0, 0, 0,
 	24, 24, 24, 24,
 	24, 24, 8, 8,
@@ -637,7 +637,7 @@ static int registers_mask[64]={
 	16, 16, 16, 16
 };
 
-static dsp_interrupt_t dsp_interrupt[12] = {
+static const dsp_interrupt_t dsp_interrupt[12] = {
 	{DSP_INTER_RESET	,	0x00, 0, "Reset"},
 	{DSP_INTER_ILLEGAL	,	0x3e, 0, "Illegal"},
 	{DSP_INTER_STACK_ERROR	,	0x02, 0, "Stack Error"},
