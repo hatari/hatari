@@ -82,7 +82,7 @@ static void DSP_TriggerHostInterrupt(void)
 void DSP_Init(void)
 {
 #if ENABLE_DSP_EMU
-	if (ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
+	if (bDspEnabled || ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
 		return;
 	dsp_core_init(&dsp_core, DSP_TriggerHostInterrupt);
 	dsp56k_init_cpu(&dsp_core);
@@ -98,7 +98,7 @@ void DSP_Init(void)
 void DSP_UnInit(void)
 {
 #if ENABLE_DSP_EMU
-	if (ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
+	if (!bDspEnabled)
 		return;
 	dsp_core_shutdown(&dsp_core);
 	bDspEnabled = false;
