@@ -155,6 +155,7 @@ those only the ones found working with EmuTOS are listed. Often the
 non-working ones "Panic" EmuTOS.
 
 Demos:
+- 2011 (by Positivity & Sector One, 4kB intro)
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
 - Anomaly (by MMJ-Prod)
@@ -484,6 +485,15 @@ Games:
 - Vertical Mayhem (Columns clone)*
 - Willie's Adventure (preview)*
 
+Games working with extra hacks:
+- Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
+  - use an undocumented TOS4 vector for keyboard input instead of accessing
+    kbdvec correctly which use causes EmuTOS to panic.  This can be worked
+    around with the following hack.prg:
+    http://sourceforge.net/mailarchive/message.php?msg_id=26841274
+  - with EmuTOS enabling DSP freezes the games right at startup
+    (with normal TOS4, DSP is used for background music)
+
 Utilities:
 - Cecile hard disk (image) driver
 
@@ -495,13 +505,7 @@ Mostly working applications:
 - Whip! (virtual light machine)
 
 Almost working demos & games:
-- Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
-  - have issues with keyboard input in the main menus, EmuTOS freezes
-    on address $e00c1e when a key is pressed.
-  - none of them requires DSP
-    (but will on normal TOS play music if it's enabled, with EmuTOS
-     enabling DSP freezes the games right at startup)
-- Double Bobble 2000 & Tautology II by Reservoir Gods, Nibe:
+- Double Bobble 2000, Tautlogy & Tautology II by Reservoir Gods, Nibe:
   - screen is messed, I suspect EmuTOS is missing resolution change function
 - Motion (unfinished demo by Aggression)
   - only writer screens work
