@@ -1012,7 +1012,7 @@ static void dsp_ccr_update_e_u_n_z(Uint32 reg0, Uint32 reg1, Uint32 reg2)
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_E;
 
 			/* Unnormalized bit (U) */
-			if ((reg1 & 0xc00) != 0 && (reg1 & 0xc00) != 0xc00) 
+			if ((reg1 & 0xc00) == 0 || (reg1 & 0xc00) == 0xc00) 
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_U;
 			break;
 		case 1:
@@ -1022,7 +1022,7 @@ static void dsp_ccr_update_e_u_n_z(Uint32 reg0, Uint32 reg1, Uint32 reg2)
 
 			/* Unnormalized bit (U) */
 			value_u = ((reg0<<1) + (reg1>>23)) & 3;
-			if (value_u != 0 && value_u != 3) 
+			if (value_u == 0 || value_u == 3) 
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_U;
 			break;
 		case 2:
@@ -1032,7 +1032,7 @@ static void dsp_ccr_update_e_u_n_z(Uint32 reg0, Uint32 reg1, Uint32 reg2)
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_E;
 
 			/* Unnormalized bit (U) */
-			if ((reg1 & 0x600) != 0 && (reg1 & 0x600) != 0x600) 
+			if ((reg1 & 0x600) == 0 || (reg1 & 0x600) == 0x600) 
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_U;
 			break;
 		default:
