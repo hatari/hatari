@@ -32,7 +32,7 @@
 #define DSP_DISASM 0		/* Main DSP disassembler switch */
 #define DSP_DISASM_INST 0	/* Instructions */
 #define DSP_DISASM_REG 0	/* Registers changes */
-#define DSP_DISASM_MEM 0	/* Memory changes */
+#define DSP_DISASM_MEM 0 	/* Memory changes */
 #define DSP_DISASM_INTER 0	/* Interrupts */
 #define DSP_DISASM_STATE 0	/* State change */
 
@@ -1013,7 +1013,7 @@ static void dsp_ccr_update_e_u_n_z(Uint32 reg0, Uint32 reg1, Uint32 reg2)
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_E;
 
 			/* Unnormalized bit (U) */
-			if ((reg1 & 0xc00) == 0 || (reg1 & 0xc00) == 0xc00) 
+			if ((reg1 & 0xc00000) == 0 || (reg1 & 0xc00000) == 0xc00000) 
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_U;
 			break;
 		case 1:
@@ -1033,7 +1033,7 @@ static void dsp_ccr_update_e_u_n_z(Uint32 reg0, Uint32 reg1, Uint32 reg2)
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_E;
 
 			/* Unnormalized bit (U) */
-			if ((reg1 & 0x600) == 0 || (reg1 & 0x600) == 0x600) 
+			if ((reg1 & 0x600000) == 0 || (reg1 & 0x600000) == 0x600000) 
 				dsp_core->registers[DSP_REG_SR] |= 1 << DSP_SR_U;
 			break;
 		default:
