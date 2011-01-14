@@ -896,10 +896,11 @@ static void dsp_postexecute_interrupts(void)
 				return;
 			case 0:
 				/* Re enable interrupts */
+				/* All 6 instruction are done, Interrupts can be enabled again */
 				dsp_core->interrupt_save_pc = -1;
 				dsp_core->interrupt_instr_fetch = -1;
 				dsp_core->interrupt_state = DSP_INTERRUPT_NONE;
-				return;
+				break;
 		}
 	}
 
