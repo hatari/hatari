@@ -189,7 +189,7 @@ static void dsp_pm_4(void);
 static void dsp_pm_8(void);
 
 
-static dsp_emul_t opcodes8h[512]={
+static const dsp_emul_t opcodes8h[512] = {
 	/* 0x00 - 0x3f */
 	opcode8h_0, dsp_undefined, dsp_undefined, dsp_undefined, opcode8h_0, dsp_andi, dsp_undefined, dsp_ori,
 	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_andi, dsp_undefined, dsp_ori,
@@ -271,7 +271,7 @@ static dsp_emul_t opcodes8h[512]={
 	dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, 
 };
 
-const static char* opcodes_alu[256]={
+static const char* opcodes_alu[256] = {
 	/* 0x00 - 0x3f */
 	"move"     , "tfr b,a", "addr b,a", "tst a", "undefined", "cmp b,a"  , "subr b,a", "cmpm b,a",
 	"undefined", "tfr a,b", "addr a,b", "tst b", "undefined", "cmp a,b"  , "subr a,b", "cmpm a,b",
@@ -315,7 +315,7 @@ const static char* opcodes_alu[256]={
 
 
 
-static dsp_emul_t opcodes_parmove[16]={
+static const dsp_emul_t opcodes_parmove[16] = {
 	dsp_pm_0,
 	dsp_pm_1,
 	dsp_pm_2,
@@ -335,7 +335,7 @@ static dsp_emul_t opcodes_parmove[16]={
 	dsp_pm_8
 };
 
-static int registers_tcc[16][2]={
+static const int registers_tcc[16][2] = {
 	{DSP_REG_B,DSP_REG_A},
 	{DSP_REG_A,DSP_REG_B},
 	{DSP_REG_NULL,DSP_REG_NULL},
@@ -357,7 +357,7 @@ static int registers_tcc[16][2]={
 	{DSP_REG_Y1,DSP_REG_B}
 };
 
-static const char *registers_lmove[8]={
+static const char *registers_lmove[8] = {
 	"a10",
 	"b10",
 	"x",
@@ -368,7 +368,7 @@ static const char *registers_lmove[8]={
 	"ba"
 };
 
-static const char *ea_names[9]={
+static const char *ea_names[9] = {
 	"(r%d)-n%d",	/* 000xxx */
 	"(r%d)+n%d",	/* 001xxx */
 	"(r%d)-",		/* 010xxx */
@@ -380,7 +380,7 @@ static const char *ea_names[9]={
 	"0x%06x"		/* 110100 */
 };
 
-static const char *cc_name[16]={
+static const char *cc_name[16] = {
 	"cc",
 	"ge",
 	"ne",
