@@ -43,7 +43,7 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 /* TODO: put these to some struct so that it's easier to see
  * they're VIDEL global
  */
-static int width, height, bpp, since_last_change;
+static int width, height, bpp;
 static bool hostColorsSync;
 
 /* Autozoom */
@@ -59,8 +59,6 @@ static void VIDEL_renderScreenZoom(void);
 // Called upon startup and when CPU encounters a RESET instruction.
 void VIDEL_reset(void)
 {
-	since_last_change = 0;
-
 	hostColorsSync = false;
 
 	/* Autozoom */
@@ -265,30 +263,25 @@ bool VIDEL_renderScreen(void)
 	int vw	 = VIDEL_getScreenWidth();
 	int vh	 = VIDEL_getScreenHeight();
 	int vbpp = VIDEL_getScreenBpp();
+	bool change = false;
 
-	if (since_last_change > 2) {
-		if (vw > 0 && vw != width) {
-			Dprintf(("CH width %d\n", width));
-			width = vw;
-			since_last_change = 0;
-		}
-		if (vh > 0 && vh != height) {
-			Dprintf(("CH height %d\n", width));
-			height = vh;
-			since_last_change = 0;
-		}
-		if (vbpp != bpp) {
-			Dprintf(("CH bpp %d\n", vbpp));
-			bpp = vbpp;
-			since_last_change = 0;
-		}
+	if (vw > 0 && vw != width) {
+		Dprintf(("CH width %d\n", width));
+		width = vw;
+		change = true;
 	}
-	if (since_last_change == 3) {
+	if (vh > 0 && vh != height) {
+		Dprintf(("CH height %d\n", width));
+		height = vh;
+		change = true;
+	}
+	if (vbpp != bpp) {
+		Dprintf(("CH bpp %d\n", vbpp));
+		bpp = vbpp;
+		change = true;
+	}
+	if (change) {
 		HostScreen_setWindowSize(width, height, bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
-	}
-	if (since_last_change < 4) {
-		since_last_change++;
-		return false;
 	}
 
 	if (!HostScreen_renderBegin())
