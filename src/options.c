@@ -1412,7 +1412,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			else
 			{
-				return Opt_ShowError(OPT_DSP, argv[i], "Unknown FPU type");
+				return Opt_ShowError(OPT_FPU_TYPE, argv[i], "Unknown FPU type");
 			}
 			bLoadAutoSave = false;
 			break;
