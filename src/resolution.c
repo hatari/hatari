@@ -22,6 +22,45 @@ const char Resolution_fileid[] = "Hatari resolution.c : " __DATE__ " " __TIME__;
 #define Dprintf(a)
 #endif
 
+static int DesktopWidth, DesktopHeight;
+
+/**
+ * Initilizes resolution settings (gets current desktop
+ * resolution, sets max Falcon/TT Videl zooming resolution).
+ */
+void Resolution_Init(void)
+{
+	/* Needs to be called after SDL video and configuration
+	 * initialization, but before Hatari Screen init is called
+	 * for the first time!
+	 */
+	const SDL_VideoInfo* info = SDL_GetVideoInfo();
+	if (info->current_w >= 640 && info->current_h >= 400) {
+		DesktopWidth = info->current_w;
+		DesktopHeight = info->current_h;
+	} else {
+		/* target 800x600 screen with statusbar out of screen */
+		DesktopWidth = 2*(48+320+48);
+		DesktopHeight = 2*NUM_VISIBLE_LINES+24;
+		fprintf(stderr, "WARNING: invalid desktop size %dx%d, defaulting to %dx%d!\n",
+			info->current_w, info->current_h, DesktopWidth, DesktopHeight);
+	}
+	/* if user hasn't set own max zoom size, use desktop size */
+	if (!(ConfigureParams.Screen.nMaxWidth &&
+	      ConfigureParams.Screen.nMaxHeight)) {
+		ConfigureParams.Screen.nMaxWidth = DesktopWidth;
+		ConfigureParams.Screen.nMaxHeight = DesktopHeight;
+	}
+}
+
+/**
+ * Get current desktop resolution
+ */
+void Resolution_GetDesktopSize(int *width, int *height)
+{
+	*width = DesktopWidth;
+	*height = DesktopHeight;
+}
 
 /**
  * Select best resolution from given SDL video modes.
@@ -43,7 +82,7 @@ static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 				*height = modes[i]->h;
 			}
 		}
-		Dprintf(("hostscreen: largest found video mode: %dx%d\n",*width,*height));
+		Dprintf(("resolution: largest found video mode: %dx%d\n",*width,*height));
 		return true;
 	}
 
@@ -63,7 +102,7 @@ static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 	}
 	*width = bestw;
 	*height = besth;
-	Dprintf(("hostscreen: video mode found: %dx%d\n",*width,*height));
+	Dprintf(("resolution: video mode found: %dx%d\n",*width,*height));
 	return true;
 #undef TOO_LARGE
 }
@@ -81,7 +120,7 @@ void Resolution_Search(int *width, int *height, int *bpp)
 	Uint32 modeflags;
 
 	/* Search in available modes the best suited */
-	Dprintf(("hostscreen: video mode asked: %dx%dx%d\n",
+	Dprintf(("resolution: video mode asked: %dx%dx%d\n",
 		 *width, *height, *bpp));
 
 	/* Read available video modes */
@@ -94,9 +133,9 @@ void Resolution_Search(int *width, int *height, int *bpp)
 		pixelformat.BitsPerPixel = *bpp;
 		modes = SDL_ListModes(&pixelformat, modeflags);
 		if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-			Dprintf(("hostscreen: searching a good video mode (any bpp)\n"));
+			Dprintf(("resolution: searching a good video mode (any bpp)\n"));
 			if (Resolution_Select(modes, width, height)) {
-				Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",
+				Dprintf(("resolution: video mode selected: %dx%dx%d\n",
 					 *width, *height, *bpp));
 				return;
 			}
@@ -106,9 +145,9 @@ void Resolution_Search(int *width, int *height, int *bpp)
 	/*--- Search a video mode with any bpp ---*/
 	modes = SDL_ListModes(NULL, modeflags);
 	if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-		Dprintf(("hostscreen: searching a good video mode\n"));
+		Dprintf(("resolution: searching a good video mode\n"));
 		if (Resolution_Select(modes, width, height)) {
-			Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",
+			Dprintf(("resolution: video mode selected: %dx%dx%d\n",
 				 *width, *height, *bpp));
 			return;
 		}
@@ -120,18 +159,18 @@ void Resolution_Search(int *width, int *height, int *bpp)
 
 	if (modes == (SDL_Rect **) -1) {
 		/* Any mode available */
-		Dprintf(("hostscreen: All resolutions available.\n"));
+		Dprintf(("resolution: All resolutions available.\n"));
 	}
 
-	Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",
+	Dprintf(("resolution: video mode selected: %dx%dx%d\n",
 		 *width, *height, *bpp));
 }
 
 
 /**
- * Set given width & height arguments to maximum size in the configuration,
- * or if that's too large for the requested bit depth, to the largest
- * available video mode size.
+ * Set given width & height arguments to maximum size allowed in the
+ * configuration, or if that's too large for the requested bit depth,
+ * to the largest available video mode size.
  */
 void Resolution_GetLimits(int *width, int *height, int *bpp)
 {

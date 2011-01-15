@@ -54,7 +54,7 @@ emulators.
 For using Hatari, you need to have installed the following libraries:
 
 Required:
-- The SDL library (http://www.libsdl.org)
+- The SDL library v1.2.10 or newer (http://www.libsdl.org)
 - The zlib compression library (http://www.gzip.org/zlib/)
 
 Optional:

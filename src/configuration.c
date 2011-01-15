@@ -483,9 +483,9 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowStatusbar = true;
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCrop = false;
-	/* target 800x600 screen with statusbar out of screen */
-	ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
-	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
+	/* default to desktop size */
+	ConfigureParams.Screen.nMaxWidth = 0;
+	ConfigureParams.Screen.nMaxHeight = 0;
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;

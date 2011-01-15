@@ -8,6 +8,8 @@
 #ifndef HATARI_RESOLUTION_H
 #define HATARI_RESOLUTION_H
 
+extern void Resolution_Init(void);
+extern void Resolution_GetDesktopSize(int *width, int *height);
 extern void Resolution_GetLimits(int *width, int *height, int *bpp);
 extern void Resolution_Search(int *width, int *height, int *bpp);
 

@@ -14,6 +14,7 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c : " __DATE__ " " __TIME__;
 #include "sdlgui.h"
 #include "screen.h"
 #include "screenSnapShot.h"
+#include "resolution.h"
 #include "vdi.h"
 #include "video.h"
 #include "avi_record.h"
@@ -282,7 +283,7 @@ void Dialog_MonitorDlg(void)
  */
 void Dialog_WindowDlg(void)
 {
-	int but, skip = 0;
+	int deskw, deskh, but, skip = 0;
 	unsigned int i;
 
 	SDLGui_CenterDlg(windowdlg);
@@ -307,6 +308,7 @@ void Dialog_WindowDlg(void)
 	}
 	windowdlg[DLGSCRN_SKIP0+skip].state |= SG_SELECTED;
 
+	Resolution_GetDesktopSize(&deskw, &deskh);
 	sprintf(sMaxWidth, "%4i", ConfigureParams.Screen.nMaxWidth);
 	sprintf(sMaxHeight, "%4i", ConfigureParams.Screen.nMaxHeight);
 
@@ -330,23 +332,23 @@ void Dialog_WindowDlg(void)
 		{
 		 case DLGSCRN_MAX_WLESS:
 			ConfigureParams.Screen.nMaxWidth = VDI_Limit(ConfigureParams.Screen.nMaxWidth - MAX_SIZE_STEP,
-			                                MAX_SIZE_STEP, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+			                                MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
 			sprintf(sMaxWidth, "%4i", ConfigureParams.Screen.nMaxWidth);
 			break;
 		 case DLGSCRN_MAX_WMORE:
 			ConfigureParams.Screen.nMaxWidth = VDI_Limit(ConfigureParams.Screen.nMaxWidth + MAX_SIZE_STEP,
-			                                MAX_SIZE_STEP, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+			                                MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
 			sprintf(sMaxWidth, "%4i", ConfigureParams.Screen.nMaxWidth);
 			break;
 
 		 case DLGSCRN_MAX_HLESS:
 			ConfigureParams.Screen.nMaxHeight = VDI_Limit(ConfigureParams.Screen.nMaxHeight - MAX_SIZE_STEP,
-			                                 MAX_SIZE_STEP, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+			                                 MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
 			sprintf(sMaxHeight, "%4i", ConfigureParams.Screen.nMaxHeight);
 			break;
 		 case DLGSCRN_MAX_HMORE:
 			ConfigureParams.Screen.nMaxHeight = VDI_Limit(ConfigureParams.Screen.nMaxHeight + MAX_SIZE_STEP,
-			                                 MAX_SIZE_STEP, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+			                                 MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
 			sprintf(sMaxHeight, "%4i", ConfigureParams.Screen.nMaxHeight);
 			break;
 

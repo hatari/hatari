@@ -106,8 +106,23 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	if (bpp == 24)
 		bpp = 32;
 
-	Resolution_GetLimits(&maxw, &maxh, &bpp);
+	/* constrain size request to user's desktop size */
+	Resolution_GetDesktopSize(&maxw, &maxh);
+	scalex = scaley = 1;
+	while (width > maxw*scalex) {
+		scalex *= 2;
+	}
+	while (height > maxh*scalex) {
+		scalex *= 2;
+	}
+	if (scalex * scaley > 1) {
+		fprintf(stderr, "WARNING: too large screen size %dx%d -> divided by %dx%d!\n",
+			width, height, scalex, scaley);
+		width /= scalex;
+		height /= scaley;
+	}
 
+	Resolution_GetLimits(&maxw, &maxh, &bpp);
 	nScreenZoomX = nScreenZoomY = 1;
 	
 	if (ConfigureParams.Screen.bAspectCorrect) {
@@ -170,7 +185,9 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	    sdlscrn->w == (signed)screenwidth && sdlscrn->h == (signed)screenheight &&
 	    (sdlscrn->flags&SDL_FULLSCREEN) == (sdl_videoparams&SDL_FULLSCREEN))
 	{
-		/* no time consuming host video mode change needed */
+		/* same host screen size despite Atari resolution change,
+		 * -> no time consuming host video mode change needed
+		 */
 		if (screenwidth > width || screenheight > height+sbarheight) {
 			/* Atari screen smaller than host -> clear screen */
 			SDL_Rect rect;
