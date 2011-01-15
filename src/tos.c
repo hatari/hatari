@@ -460,6 +460,9 @@ static void TOS_CheckSysConfig(void)
 		Log_AlertDlg(LOG_ERROR, "TOS versions 4.x are for Atari Falcon only.\n"
 		             " ==> Switching to Falcon mode now.\n");
 		IoMem_UnInit();
+#if ENABLE_DSP_EMU
+		ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
+#endif
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		ConfigureParams.System.nCpuFreq = 16;
 		IoMem_Init();
