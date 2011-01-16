@@ -53,11 +53,9 @@ static char parallelmove_name[64];
 static Uint32 prev_inst_pc = 0x10000;	/* Init to an invalid value */
 static Uint16 isLooping = 0;
 
-static dsp_core_t *dsp_core;
-
-void dsp56k_disasm_init(dsp_core_t *my_dsp_core)
+void dsp56k_disasm_init(void)
 {
-	dsp_core = my_dsp_core;
+	/* nop */
 }
 
 /**********************************
@@ -402,9 +400,9 @@ static const char *cc_name[16] = {
 
 void dsp56k_disasm_reg_save(void)
 {
-	memcpy(registers_save, dsp_core->registers , sizeof(registers_save));
+	memcpy(registers_save, dsp_core.registers , sizeof(registers_save));
 #if DSP_DISASM_REG_PC
-	pc_save = dsp_core->pc;
+	pc_save = dsp_core.pc;
 #endif
 }
 
@@ -413,7 +411,7 @@ void dsp56k_disasm_reg_compare(void)
 	int i;
 	
 	for (i=4; i<64; i++) {
-		if (registers_save[i] == dsp_core->registers[i]) {
+		if (registers_save[i] == dsp_core.registers[i]) {
 			continue;
 		}
 
@@ -426,7 +424,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_A1:
 			case DSP_REG_B0:
 			case DSP_REG_B1:
-				fprintf(stderr,"\tReg: %s  0x%06x -> 0x%06x\n", registers_name[i], registers_save[i], dsp_core->registers[i]);
+				fprintf(stderr,"\tReg: %s  0x%06x -> 0x%06x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
 			case DSP_REG_R0:
 			case DSP_REG_R1:
@@ -455,7 +453,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SR:
 			case DSP_REG_LA:
 			case DSP_REG_LC:
-				fprintf(stderr,"\tReg: %s  0x%04x -> 0x%04x\n", registers_name[i], registers_save[i], dsp_core->registers[i]);
+				fprintf(stderr,"\tReg: %s  0x%04x -> 0x%04x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
 			case DSP_REG_A2:
 			case DSP_REG_B2:
@@ -463,7 +461,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SP:
 			case DSP_REG_SSH:
 			case DSP_REG_SSL:
-				fprintf(stderr,"\tReg: %s  0x%02x -> 0x%02x\n", registers_name[i], registers_save[i], dsp_core->registers[i]);
+				fprintf(stderr,"\tReg: %s  0x%02x -> 0x%02x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
 			case DSP_REG_A:
 			case DSP_REG_B:
@@ -473,9 +471,9 @@ void dsp56k_disasm_reg_compare(void)
 						registers_save[DSP_REG_A2+(i & 1)],
 						registers_save[DSP_REG_A1+(i & 1)],
 						registers_save[DSP_REG_A0+(i & 1)],
-						dsp_core->registers[DSP_REG_A2+(i & 1)],
-						dsp_core->registers[DSP_REG_A1+(i & 1)],
-						dsp_core->registers[DSP_REG_A0+(i & 1)]
+						dsp_core.registers[DSP_REG_A2+(i & 1)],
+						dsp_core.registers[DSP_REG_A1+(i & 1)],
+						dsp_core.registers[DSP_REG_A0+(i & 1)]
 					);
 				}
 				break;
@@ -483,8 +481,8 @@ void dsp56k_disasm_reg_compare(void)
 	}
 
 #if DSP_DISASM_REG_PC
-	if (pc_save != dsp_core->pc) {
-		fprintf(stderr,"\tReg: pc  0x%04x -> 0x%04x\n", pc_save, dsp_core->pc);
+	if (pc_save != dsp_core.pc) {
+		fprintf(stderr,"\tReg: pc  0x%04x -> 0x%04x\n", pc_save, dsp_core.pc);
 	}
 #endif
 }
@@ -493,14 +491,14 @@ Uint16 dsp56k_disasm(void)
 {
 	Uint32 value;
 
-	if (prev_inst_pc == dsp_core->pc){
+	if (prev_inst_pc == dsp_core.pc){
 		isLooping = 1;
 		return 0;
 	}
-	prev_inst_pc = dsp_core->pc;
+	prev_inst_pc = dsp_core.pc;
 	isLooping = 0;
 
-	cur_inst = read_memory(dsp_core->pc);
+	cur_inst = read_memory(dsp_core.pc);
 	disasm_cur_inst_len = 1;
 
 	strcpy(parallelmove_name, "");
@@ -525,10 +523,10 @@ char* dsp56k_getInstructionText(void)
 		*str_instr2 = 0;
 	}
 	else if (disasm_cur_inst_len == 1) {
-		sprintf(str_instr2, "%04x:  %06x         (%02d cyc)  %s\n", prev_inst_pc, cur_inst, dsp_core->instr_cycle, str_instr);
+		sprintf(str_instr2, "%04x:  %06x         (%02d cyc)  %s\n", prev_inst_pc, cur_inst, dsp_core.instr_cycle, str_instr);
 	} 
 	else {
-		sprintf(str_instr2, "%04x:  %06x %06x  (%02d cyc)  %s\n", prev_inst_pc, cur_inst, read_memory(prev_inst_pc + 1), dsp_core->instr_cycle, str_instr);
+		sprintf(str_instr2, "%04x:  %06x %06x  (%02d cyc)  %s\n", prev_inst_pc, cur_inst, read_memory(prev_inst_pc + 1), dsp_core.instr_cycle, str_instr);
 	}
 
 	return str_instr2;
@@ -544,9 +542,9 @@ static Uint32 read_memory(Uint32 currPc)
 	Uint32 value;
 
 	if (currPc<0x200) {
-		value = dsp_core->ramint[DSP_SPACE_P][currPc];
+		value = dsp_core.ramint[DSP_SPACE_P][currPc];
 	} else {
-		value = dsp_core->ramext[currPc & (DSP_RAMSIZE-1)];
+		value = dsp_core.ramext[currPc & (DSP_RAMSIZE-1)];
 	}
 
 	return value & BITMASK(24);
@@ -606,11 +604,11 @@ static int dsp_calc_ea(Uint32 ea_mode, char *dest)
 			switch ((ea_mode >> 2) & 1) {
 				case 0:
 					/* Absolute address */
-					sprintf(dest, ea_names[value], read_memory(dsp_core->pc+1));
+					sprintf(dest, ea_names[value], read_memory(dsp_core.pc+1));
 					break;
 				case 1:
 					/* Immediate value */
-					sprintf(dest, ea_names[8], read_memory(dsp_core->pc+1));
+					sprintf(dest, ea_names[8], read_memory(dsp_core.pc+1));
 					retour = 1;
 					break;
 			}
@@ -1003,7 +1001,7 @@ static void dsp_do_aa(void)
 
 	sprintf(str_instr,"do %s,p:0x%04x",
 		name,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1013,7 +1011,7 @@ static void dsp_do_imm(void)
 
 	sprintf(str_instr,"do #0x%04x,p:0x%04x",
 		((cur_inst>>8) & BITMASK(8))|((cur_inst & BITMASK(4))<<8),
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1035,7 +1033,7 @@ static void dsp_do_ea(void)
 
 	sprintf(str_instr,"do %s,p:0x%04x", 
 		name,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1045,7 +1043,7 @@ static void dsp_do_reg(void)
 
 	sprintf(str_instr,"do %s,p:0x%04x",
 		registers_name[(cur_inst>>8) & BITMASK(6)],
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1105,7 +1103,7 @@ static void dsp_jclr_aa(void)
 	sprintf(str_instr,"jclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1132,7 +1130,7 @@ static void dsp_jclr_ea(void)
 	sprintf(str_instr,"jclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1159,7 +1157,7 @@ static void dsp_jclr_pp(void)
 	sprintf(str_instr,"jclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1176,7 +1174,7 @@ static void dsp_jclr_reg(void)
 	sprintf(str_instr,"jclr #%d,%s,p:0x%04x",
 		numbit,
 		registers_name[value],
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1240,7 +1238,7 @@ static void dsp_jsclr_aa(void)
 	sprintf(str_instr,"jsclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1267,7 +1265,7 @@ static void dsp_jsclr_ea(void)
 	sprintf(str_instr,"jsclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1294,7 +1292,7 @@ static void dsp_jsclr_pp(void)
 	sprintf(str_instr,"jsclr #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1311,7 +1309,7 @@ static void dsp_jsclr_reg(void)
 	sprintf(str_instr,"jsclr #%d,%s,p:0x%04x",
 		numbit,
 		registers_name[value],
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1337,7 +1335,7 @@ static void dsp_jset_aa(void)
 	sprintf(str_instr,"jset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1364,7 +1362,7 @@ static void dsp_jset_ea(void)
 	sprintf(str_instr,"jset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1391,7 +1389,7 @@ static void dsp_jset_pp(void)
 	sprintf(str_instr,"jset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1408,7 +1406,7 @@ static void dsp_jset_reg(void)
 	sprintf(str_instr,"jset #%d,%s,p:0x%04x",
 		numbit,
 		registers_name[value],
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1448,7 +1446,7 @@ static void dsp_jsset_aa(void)
 	sprintf(str_instr,"jsset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1475,7 +1473,7 @@ static void dsp_jsset_ea(void)
 	sprintf(str_instr,"jsset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1502,7 +1500,7 @@ static void dsp_jsset_pp(void)
 	sprintf(str_instr,"jsset #%d,%s,p:0x%04x",
 		numbit,
 		srcname,
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 
@@ -1519,7 +1517,7 @@ static void dsp_jsset_reg(void)
 	sprintf(str_instr,"jsset #%d,%s,p:0x%04x",
 		numbit,
 		registers_name[value],
-		read_memory(dsp_core->pc+1)
+		read_memory(dsp_core.pc+1)
 	);
 }
 

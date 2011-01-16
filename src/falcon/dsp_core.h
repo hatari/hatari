@@ -241,29 +241,32 @@ struct dsp_core_s {
 };
 
 
+/* DSP */
+extern dsp_core_t dsp_core;
+
 /* Emulator call these to init/stop/reset DSP emulation */
-extern void dsp_core_init(dsp_core_t *dsp_core, void (*host_interrupt)(void));
-extern void dsp_core_shutdown(dsp_core_t *dsp_core);
-extern void dsp_core_reset(dsp_core_t *dsp_core);
+extern void dsp_core_init(void (*host_interrupt)(void));
+extern void dsp_core_shutdown(void);
+extern void dsp_core_reset(void);
 
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
-extern Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);
-extern void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value);
+extern Uint8 dsp_core_read_host(int addr);
+extern void dsp_core_write_host(int addr, Uint8 value);
 
 /* dsp_cpu call these to read/write host port */
-extern void dsp_core_hostport_dspread(dsp_core_t *dsp_core);
-extern void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
+extern void dsp_core_hostport_dspread(void);
+extern void dsp_core_hostport_dspwrite(void);
 
 /* dsp_cpu call these to read/write/configure SSI port */
-extern void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value);
-extern void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value);
-extern void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core);
-extern Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core);
-extern void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core);
-extern void dsp_core_ssi_Receive_SC1(dsp_core_t *dsp_core, Uint32 value);
-extern void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value);
-extern void dsp_core_ssi_Receive_SCK(dsp_core_t *dsp_core);
-extern void dsp_core_setPortCDataRegister(dsp_core_t *dsp_core, Uint32 value);
+extern void dsp_core_ssi_configure(Uint32 adress, Uint32 value);
+extern void dsp_core_ssi_writeTX(Uint32 value);
+extern void dsp_core_ssi_writeTSR(void);
+extern Uint32 dsp_core_ssi_readRX(void);
+extern void dsp_core_ssi_Receive_SC0(void);
+extern void dsp_core_ssi_Receive_SC1(Uint32 value);
+extern void dsp_core_ssi_Receive_SC2(Uint32 value);
+extern void dsp_core_ssi_Receive_SCK(void);
+extern void dsp_core_setPortCDataRegister(Uint32 value);
 
 #ifdef __cplusplus
 }

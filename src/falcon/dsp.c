@@ -47,8 +47,6 @@
 
 
 #if ENABLE_DSP_EMU
-static dsp_core_t dsp_core;
-static dsp_core_t dsp_core_save;
 static Sint32 save_cycles;
 #endif
 static bool bDspDebugging;
@@ -82,8 +80,8 @@ void DSP_Init(void)
 #if ENABLE_DSP_EMU
 	if (bDspEnabled || ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
 		return;
-	dsp_core_init(&dsp_core, DSP_TriggerHostInterrupt);
-	dsp56k_init_cpu(&dsp_core);
+	dsp_core_init(DSP_TriggerHostInterrupt);
+	dsp56k_init_cpu();
 	bDspEnabled = true;
 	save_cycles = 0;
 #endif
@@ -98,7 +96,7 @@ void DSP_UnInit(void)
 #if ENABLE_DSP_EMU
 	if (!bDspEnabled)
 		return;
-	dsp_core_shutdown(&dsp_core);
+	dsp_core_shutdown();
 	bDspEnabled = false;
 #endif
 }
@@ -110,7 +108,7 @@ void DSP_UnInit(void)
 void DSP_Reset(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_reset(&dsp_core);
+	dsp_core_reset();
 	bDspHostInterruptPending = false;
 	save_cycles = 0;
 #endif
@@ -207,6 +205,7 @@ Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 #if ENABLE_DSP_EMU
 	Uint32 dsp_pc;
 	dsp_core_t *ptr1, *ptr2;
+	static dsp_core_t dsp_core_save;
 	
 	ptr1 = &dsp_core;
 	ptr2 = &dsp_core_save;
@@ -604,7 +603,7 @@ void DSP_SsiWriteRxValue(Uint32 value)
 void DSP_SsiReceive_SC0(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_Receive_SC0(&dsp_core);
+	dsp_core_ssi_Receive_SC0();
 #endif
 }
 
@@ -617,7 +616,7 @@ void DSP_SsiTransmit_SC0(void)
 void DSP_SsiReceive_SC1(Uint32 FrameCounter)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_Receive_SC1(&dsp_core, FrameCounter);
+	dsp_core_ssi_Receive_SC1(FrameCounter);
 #endif
 }
 
@@ -631,7 +630,7 @@ void DSP_SsiTransmit_SC1(void)
 void DSP_SsiReceive_SC2(Uint32 FrameCounter)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_Receive_SC2(&dsp_core, FrameCounter);
+	dsp_core_ssi_Receive_SC2(FrameCounter);
 #endif
 }
 
@@ -645,7 +644,7 @@ void DSP_SsiTransmit_SC2(Uint32 frame)
 void DSP_SsiReceive_SCK(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_Receive_SCK(&dsp_core);
+	dsp_core_ssi_Receive_SCK();
 #endif
 }
 
@@ -665,7 +664,7 @@ void DSP_HandleReadAccess(void)
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
 #if ENABLE_DSP_EMU
-		value = dsp_core_read_host(&dsp_core, addr-DSP_HW_OFFSET);
+		value = dsp_core_read_host(addr-DSP_HW_OFFSET);
 #else
 		/* this value prevents TOS from hanging in the DSP init code */
 		value = 0xff;
@@ -688,7 +687,7 @@ void DSP_HandleWriteAccess(void)
 		value = IoMem_ReadByte(addr);
 		Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
 #if ENABLE_DSP_EMU
-		dsp_core_write_host(&dsp_core, addr-DSP_HW_OFFSET, value);
+		dsp_core_write_host(addr-DSP_HW_OFFSET, value);
 #endif
 	}
 }
