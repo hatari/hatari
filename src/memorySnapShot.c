@@ -47,6 +47,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "screen.h"
 #include "video.h"
 #include "falcon/dsp.h"
+#include "statusbar.h"
 
 
 #define VERSION_STRING      "1.4.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
@@ -297,6 +298,9 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 
 		/* And close */
 		MemorySnapShot_CloseFile();
+
+		/* changes may affect also info shown in statusbar */
+		Statusbar_UpdateInfo();
 	}
 
 	/* Did error? */

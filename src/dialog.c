@@ -15,7 +15,6 @@ const char Dialog_fileid[] = "Hatari dialog.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "sdlgui.h"
 #include "screen.h"
-#include "statusbar.h"
 
 
 /*-----------------------------------------------------------------------*/
@@ -47,8 +46,6 @@ bool Dialog_DoProperty(void)
 	/* If a memory snapshot has been loaded, no further changes are required */
 	if (bLoadedSnapshot)
 	{
-		/* changes from new memory snapshot may affect also info shown in statusbar */
-		Statusbar_UpdateInfo();
 		Main_UnPauseEmulation();
 		return true;
 	}
