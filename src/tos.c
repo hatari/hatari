@@ -33,7 +33,7 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "tos.h"
 #include "vdi.h"
-
+#include "falcon/dsp.h"
 
 bool bIsEmuTOS;
 Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
@@ -465,6 +465,7 @@ static void TOS_CheckSysConfig(void)
 #endif
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		ConfigureParams.System.nCpuFreq = 16;
+		DSP_Init();
 		IoMem_Init();
 		ConfigureParams.System.nCpuLevel = 3;
 		M68000_CheckCpuLevel();
