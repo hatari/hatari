@@ -3514,12 +3514,30 @@ static void m68k_run_2p (void)
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
+		
+		/* We can have several interrupts at the same time before the next CPU instruction */
+		/* We must check for pending interrupt and call do_specialties_interrupt() only */
+		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+		/* and prevent exiting the STOP state when calling do_specialties() after. */
+		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
+			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+		}
+		
 		if (r->spcflags) {
 			if (do_specialties (cpu_cycles))
 				return;
 		}
+		
+		/* Run DSP 56k code if necessary */
+		if (bDspEnabled) {
+			DSP_Run(cpu_cycles);
+			
+		}
 	}
 }
+
 
 //static int used[65536];
 
@@ -3554,23 +3572,37 @@ static void m68k_run_2 (void)
 
 		M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
-	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
-	  /* Add some extra cycles to simulate a wait state */
-	  unset_special(SPCFLAG_EXTRA_CYCLES);
-	  M68000_AddCycles(nWaitStateCycles);
-	  nWaitStateCycles = 0;
-	}
+		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+			/* Add some extra cycles to simulate a wait state */
+			unset_special(SPCFLAG_EXTRA_CYCLES);
+			M68000_AddCycles(nWaitStateCycles);
+			nWaitStateCycles = 0;
+		}
 
-	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-	  CALL_VAR(PendingInterruptFunction);
+		/* We can have several interrupts at the same time before the next CPU instruction */
+		/* We must check for pending interrupt and call do_specialties_interrupt() only */
+		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+		/* and prevent exiting the STOP state when calling do_specialties() after. */
+		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
+			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+		}
 		
 		
 		if (r->spcflags) {
-			if (do_specialties (cpu_cycles))
-				return;
+			if (do_specialties (cpu_cycles* 2 / CYCLE_UNIT))
+				return;   
+		}
+		
+		/* Run DSP 56k code if necessary */
+		if (bDspEnabled) {
+		//fprintf(stderr, "%d\n", cpu_cycles);
+			DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);	
 		}
 	}
 }
+
 
 /* fake MMU 68k  */
 static void m68k_run_mmu (void)
