@@ -326,8 +326,8 @@ void Crossbar_Reset(bool bCold)
 	dac.writePosition = 0;
 
 	/* ADC inits */
-	memset(adc.buffer_left, 0, sizeof(dac.buffer_left));
-	memset(adc.buffer_right, 0, sizeof(dac.buffer_right));
+	memset(adc.buffer_left, 0, sizeof(adc.buffer_left));
+	memset(adc.buffer_right, 0, sizeof(adc.buffer_right));
 	adc.readPosition = 0;
 	adc.readPosition_decimal = 0;
 	adc.writePosition = 0;
