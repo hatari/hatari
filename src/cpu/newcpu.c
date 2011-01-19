@@ -572,10 +572,10 @@ void init_m68k (void)
 #endif
 	write_log ("Building CPU table for configuration: %d", currprefs.cpu_model);
 	regs.address_space_mask = 0xffffffff;
-	if (currprefs.cpu_compatible) {
-		if (currprefs.address_space_24 && currprefs.cpu_model >= 68030)
-			currprefs.address_space_24 = false;
-	}
+//	if (currprefs.cpu_compatible) {
+//		if (currprefs.address_space_24 && currprefs.cpu_model >= 68030)
+//			currprefs.address_space_24 = false;
+//	}
 	if (currprefs.fpu_model > 0)
 		write_log ("/%d", currprefs.fpu_model);
 	if (currprefs.cpu_cycle_exact) {
@@ -3514,6 +3514,15 @@ static void m68k_run_2p (void)
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
+
+		M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+
+		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+			/* Add some extra cycles to simulate a wait state */
+			unset_special(SPCFLAG_EXTRA_CYCLES);
+			M68000_AddCycles(nWaitStateCycles);
+			nWaitStateCycles = 0;
+		}
 		
 		/* We can have several interrupts at the same time before the next CPU instruction */
 		/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -3526,14 +3535,13 @@ static void m68k_run_2p (void)
 		}
 		
 		if (r->spcflags) {
-			if (do_specialties (cpu_cycles))
+			if (do_specialties (cpu_cycles* 2 / CYCLE_UNIT))
 				return;
 		}
-		
+	
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
-			DSP_Run(cpu_cycles);
-			
+			DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);
 		}
 	}
 }
@@ -3597,7 +3605,6 @@ static void m68k_run_2 (void)
 		
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
-		//fprintf(stderr, "%d\n", cpu_cycles);
 			DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);	
 		}
 	}
