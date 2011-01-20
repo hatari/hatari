@@ -948,11 +948,15 @@ static void IKBD_SendAutoKeyboardCommands(void)
  */
 void IKBD_InterruptHandler_AutoSend(void)
 {
-	/* Remove this interrupt from list and re-order */
-	CycInt_AcknowledgeInterrupt();
-
 	/* Handle user events and other messages, (like quit message) */
 	Main_EventHandler();
+
+	/* Remove this interrupt from list and re-order.
+	 * (needs to be done after UI event handling so
+	 * that snapshots saved from UI and restored from
+	 * command line don't miss the AUTOSEND interrupt)
+	 */
+	CycInt_AcknowledgeInterrupt();
 
 	/* Did user try to quit? */
 	if (bQuitProgram)
