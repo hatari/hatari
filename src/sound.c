@@ -1244,7 +1244,7 @@ void Sound_Update(bool FillFrame)
 	/* Find how many to generate */
 	Sound_SetSamplesPassed();
 
-	/* If we're called from the VBL interrupt (FillFramm==TRUE), we must ensure we have */
+	/* If we're called from the VBL interrupt (FillFrame==TRUE), we must ensure we have */
 	/* an exact total of SamplesPerFrame samples during a full VBL (we take into account */
 	/* the samples that were already generated during this VBL) */
 	if ( FillFrame )
