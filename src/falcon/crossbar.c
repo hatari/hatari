@@ -447,7 +447,7 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 	else if (dmaPlay.isRunning && ((sndCtrl & CROSSBAR_SNDCTRL_PLAY) == 0))
 	{
 		/* Create samples up until this point with current values */
-		Sound_Update();
+		Sound_Update(false);
 
 		/* Turning off DMA play sound emulation */
 		dmaPlay.isRunning = 0;
@@ -1447,7 +1447,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	if (dmaPlay.frameCounter >= dmaPlay.frameLen)
 	{
 		/* Update sound */
-		//Sound_Update();
+		//Sound_Update(false);
 		
 		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
 		if (dmaPlay.mfp15_int) {

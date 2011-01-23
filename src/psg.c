@@ -240,7 +240,7 @@ void PSG_Set_DataRegister(Uint8 val)
 		return;					/* not valid, ignore write and do nothing */
 
 	/* Create samples up until this point with current values */
-	Sound_Update();
+	Sound_Update(false);
 
 	/* Copy value to PSGRegisters[] */
 	PSGRegisters[PSGRegisterSelect] = val;

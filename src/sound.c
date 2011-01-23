@@ -166,7 +166,7 @@ static yms16 *ymout5 = (yms16 *)ymout5_u16;
 /*--------------------------------------------------------------*/
 
 /* Number of generated samples per frame (eg. 44Khz=882) */
-#define SAMPLES_PER_FRAME  ((nAudioFrequency+35)/nScreenRefreshRate)
+#define SAMPLES_PER_FRAME  (nAudioFrequency/nScreenRefreshRate)
 
 /* Current sound replay freq (usually 44100 Hz) */
 #define YM_REPLAY_FREQ   nAudioFrequency
@@ -239,6 +239,9 @@ int		nSamplesToGenerate;			/* How many samples are needed for this time-frame */
 static int	ActiveSndBufIdx;			/* Current working index into above mix buffer */
 static int	ActiveSndBufIdxAvi;			/* Current working index to save an AVI audio frame */
 
+static yms64	SamplesPerFrame_unrounded = 0;		/* Number of samples for the current VBL, with simulated fractional part */
+static int 	SamplesPerFrame;			/* Number of samples to generate for the current VBL */
+static int	CurrentSamplesNb = 0;			/* Number of samples already generated for the current VBL */
 
 
 /*--------------------------------------------------------------*/
@@ -1070,6 +1073,8 @@ void Sound_Reset(void)
 	/* We do not start with 0 here to fake some initial samples: */
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
 	ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
+	SamplesPerFrame = SAMPLES_PER_FRAME;
+	CurrentSamplesNb = 0;
 	ActiveSndBufIdxAvi = ActiveSndBufIdx;
 //fprintf ( stderr , "Sound_Reset SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , ActiveSndBufIdx %d\n" ,
 //	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
@@ -1089,6 +1094,8 @@ void Sound_ResetBufferIndex(void)
 	Audio_Lock();
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
 	ActiveSndBufIdx =  (CompleteSndBufIdx + nGeneratedSamples) % MIXBUFFER_SIZE;
+	SamplesPerFrame = SAMPLES_PER_FRAME;
+	CurrentSamplesNb = 0;
 	ActiveSndBufIdxAvi = ActiveSndBufIdx;
 //fprintf ( stderr , "Sound_ResetBufferIndex SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , ActiveSndBufIdx %d\n" ,
 //	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
@@ -1145,20 +1152,18 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 static void Sound_SetSamplesPassed(void)
 {
 	int nSampleCycles;
-	int nSamplesPerFrame;
 	int nSoundCycles;
 
 	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_SOUND);
 
 	/* 160256 cycles per VBL, 44Khz = 882 samples per VBL */
 	/* 882/160256 samples per clock cycle */
-	nSamplesPerFrame = SAMPLES_PER_FRAME;
 
-	nSamplesToGenerate = nSoundCycles * nSamplesPerFrame / CYCLES_PER_FRAME;
-	if (nSamplesToGenerate > nSamplesPerFrame)
-		nSamplesToGenerate = nSamplesPerFrame;
+	nSamplesToGenerate = nSoundCycles * SamplesPerFrame / CYCLES_PER_FRAME;
+	if (nSamplesToGenerate > SamplesPerFrame)
+		nSamplesToGenerate = SamplesPerFrame;
 
-	nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / nSamplesPerFrame;
+	nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / SamplesPerFrame;
 	nSoundCycles -= nSampleCycles;
 	Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
 
@@ -1168,6 +1173,8 @@ static void Sound_SetSamplesPassed(void)
 		if (nSamplesToGenerate < 0)
 			nSamplesToGenerate = 0;
 	}
+
+fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , nSamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
 }
 
 
@@ -1216,14 +1223,18 @@ static void Sound_GenerateSamples(void)
 
 	ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
 	nGeneratedSamples += nSamplesToGenerate;
+	CurrentSamplesNb += nSamplesToGenerate;				/* number of samples generated for current VBL */
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
  * This is called to built samples up until this clock cycle
+ * Sound_Update can be called several times during a VBL ; we must ensure
+ * that we generated exactly SamplesPerFrame samples between 2 calls
+ * to Sound_Update_VBL.
  */
-void Sound_Update(void)
+void Sound_Update(bool FillFrame)
 {
 	int OldSndBufIdx = ActiveSndBufIdx;
 
@@ -1232,6 +1243,15 @@ void Sound_Update(void)
 
 	/* Find how many to generate */
 	Sound_SetSamplesPassed();
+
+	/* If we're called from the VBL interrupt (FillFramm==TRUE), we must ensure we have */
+	/* an exact total of SamplesPerFrame samples during a full VBL (we take into account */
+	/* the samples that were already generated during this VBL) */
+	if ( FillFrame )
+	{
+		nSamplesToGenerate = SamplesPerFrame - CurrentSamplesNb;	/* how many samples are missing to reach SamplesPerFrame */
+	}
+
 	/* And generate */
 	Sound_GenerateSamples();
 
@@ -1250,8 +1270,16 @@ void Sound_Update(void)
  */
 void Sound_Update_VBL(void)
 {
-	Sound_Update();
+	/*Compute a fractional equivalent of SamplesPerFrame, to avoid rounding propagation */
+	SamplesPerFrame_unrounded += ( ((yms64)nAudioFrequency) << 32 ) / nScreenRefreshRate;
+	SamplesPerFrame = SamplesPerFrame_unrounded >> 32;		/* use integer part */
+	SamplesPerFrame_unrounded &= 0xffffffff;			/* keep fractional part */
 
+	Sound_Update(true);					/* generate as many samples as needed to fill this VBL */
+
+	CurrentSamplesNb = 0;					/* VBL is complete, reset counter */
+
+	
 	/* Record AVI audio frame is necessary */
 	if ( bRecordingAvi )
 	{

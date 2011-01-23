@@ -50,7 +50,7 @@ extern void Sound_Init(void);
 extern void Sound_Reset(void);
 extern void Sound_ResetBufferIndex(void);
 extern void Sound_MemorySnapShot_Capture(bool bSave);
-extern void Sound_Update(void);
+extern void Sound_Update(bool FillFrame);
 extern void Sound_Update_VBL(void);
 extern void Sound_WriteReg( int reg , Uint8 data );
 extern bool Sound_BeginRecording(char *pszCaptureFileName);

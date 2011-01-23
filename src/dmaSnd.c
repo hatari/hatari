@@ -474,7 +474,7 @@ void DmaSnd_InterruptHandler(void)
 	CycInt_AcknowledgeInterrupt();
 
 	/* Update sound */
-	Sound_Update();
+	Sound_Update(false);
 }
 
 
@@ -733,7 +733,7 @@ void DmaSnd_SoundControl_WriteWord(void)
 	{
 		//fprintf(stderr, "Turning off DMA sound emulation.\n");
 		/* Create samples up until this point with current values */
-		Sound_Update();
+		Sound_Update(false);
 
 	}
 
