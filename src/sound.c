@@ -1174,7 +1174,7 @@ static void Sound_SetSamplesPassed(void)
 			nSamplesToGenerate = 0;
 	}
 
-fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , nSamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
+//fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , nSamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
 }
 
 
