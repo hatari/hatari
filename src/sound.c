@@ -237,6 +237,7 @@ Sint16		MixBuffer[MIXBUFFER_SIZE][2];
 int		nGeneratedSamples;			/* Generated samples since audio buffer update */
 int		nSamplesToGenerate;			/* How many samples are needed for this time-frame */
 static int	ActiveSndBufIdx;			/* Current working index into above mix buffer */
+static int	ActiveSndBufIdxAvi;			/* Current working index to save an AVI audio frame */
 
 
 
@@ -1069,6 +1070,7 @@ void Sound_Reset(void)
 	/* We do not start with 0 here to fake some initial samples: */
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
 	ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
+	ActiveSndBufIdxAvi = ActiveSndBufIdx;
 //fprintf ( stderr , "Sound_Reset SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , ActiveSndBufIdx %d\n" ,
 //	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
 
@@ -1087,6 +1089,7 @@ void Sound_ResetBufferIndex(void)
 	Audio_Lock();
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
 	ActiveSndBufIdx =  (CompleteSndBufIdx + nGeneratedSamples) % MIXBUFFER_SIZE;
+	ActiveSndBufIdxAvi = ActiveSndBufIdx;
 //fprintf ( stderr , "Sound_ResetBufferIndex SoundBufferSize %d SAMPLES_PER_FRAME %d nGeneratedSamples %d , ActiveSndBufIdx %d\n" ,
 //	SoundBufferSize , SAMPLES_PER_FRAME, nGeneratedSamples , ActiveSndBufIdx );
 	Audio_Unlock();
@@ -1243,24 +1246,25 @@ void Sound_Update(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * On each VBL (50fps) complete samples.
+ * On each VBL, complete samples
  */
 void Sound_Update_VBL(void)
 {
 	Sound_Update();
 
-	/* Record audio frame is necessary */
+	/* Record AVI audio frame is necessary */
 	if ( bRecordingAvi )
 	{
-		int SamplePerVbl = nAudioFrequency / nScreenRefreshRate;
-		int PrevIndex;
+		int Len;
 
-		PrevIndex = ActiveSndBufIdx - SamplePerVbl;
-		if ( PrevIndex < 0 )
-			PrevIndex += MIXBUFFER_SIZE;
+		Len = ActiveSndBufIdx - ActiveSndBufIdxAvi;	/* number of generated samples for this frame */
+		if ( Len < 0 )
+			Len += MIXBUFFER_SIZE;			/* end of ring buffer was reached */
 
-		Avi_RecordAudioStream ( MixBuffer , PrevIndex , SamplePerVbl );
+		Avi_RecordAudioStream ( MixBuffer , ActiveSndBufIdxAvi , Len );
 	}
+
+	ActiveSndBufIdxAvi = ActiveSndBufIdx;			/* save new position for next AVI audio frame */
 
 	/* Clear write to register '13', used for YM file saving */
 	bEnvelopeFreqFlag = false;
