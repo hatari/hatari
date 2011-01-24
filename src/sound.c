@@ -910,7 +910,11 @@ static ymsample	YM2149_NextSample(void)
  * Update internal variables (steps, volume masks, ...) each
  * time an YM register is changed.
  */
-
+#ifndef NEWSTEP
+#define BIT_SHIFT 31
+#else
+#define BIT_SHIFT 24
+#endif
 void	Sound_WriteReg( int reg , Uint8 data )
 {
 	switch (reg)
@@ -918,37 +922,37 @@ void	Sound_WriteReg( int reg , Uint8 data )
 		case 0:
 			SoundRegs[0] = data;
 			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
-			if (!stepA) posA = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample)
+			if (!stepA) posA = 1u<<BIT_SHIFT;		// Assume output always 1 if 0 period (for Digi-sample)
 			break;
 
 		case 1:
 			SoundRegs[1] = data & 0x0f;
 			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
-			if (!stepA) posA = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample)
+			if (!stepA) posA = 1u<<BIT_SHIFT;		// Assume output always 1 if 0 period (for Digi-sample)
 			break;
 
 		case 2:
 			SoundRegs[2] = data;
 			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
-			if (!stepB) posB = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample)
+			if (!stepB) posB = 1u<<BIT_SHIFT;		// Assume output always 1 if 0 period (for Digi-sample)
 			break;
 
 		case 3:
 			SoundRegs[3] = data & 0x0f;
 			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
-			if (!stepB) posB = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample)
+			if (!stepB) posB = 1u<<BIT_SHIFT;		// Assume output always 1 if 0 period (for Digi-sample)
 			break;
 
 		case 4:
 			SoundRegs[4] = data;
 			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
-			if (!stepC) posC = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample)
+			if (!stepC) posC = 1u<<BIT_SHIFT;		// Assume output always 1 if 0 period (for Digi-sample)
 			break;
 
 		case 5:
 			SoundRegs[5] = data & 0x0f;
 			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
-			if (!stepC) posC = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample)
+			if (!stepC) posC = 1u<<BIT_SHIFT;		// Assume output always 1 if 0 period (for Digi-sample)
 			break;
 
 		case 6:
