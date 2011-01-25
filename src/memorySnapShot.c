@@ -47,6 +47,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "screen.h"
 #include "video.h"
 #include "falcon/dsp.h"
+#include "falcon/crossbar.h"
 #include "statusbar.h"
 
 
@@ -247,9 +248,9 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		Video_MemorySnapShot_Capture(true);
 		Blitter_MemorySnapShot_Capture(true);
 		DmaSnd_MemorySnapShot_Capture(true);
+		Crossbar_MemorySnapShot_Capture(true);
 		DSP_MemorySnapShot_Capture(true);
 		DebugUI_MemorySnapShot_Capture(pszFileName, true);
-
 		/* And close */
 		MemorySnapShot_CloseFile();
 	}
@@ -293,6 +294,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Video_MemorySnapShot_Capture(false);
 		Blitter_MemorySnapShot_Capture(false);
 		DmaSnd_MemorySnapShot_Capture(false);
+		Crossbar_MemorySnapShot_Capture(false);
 		DSP_MemorySnapShot_Capture(false);
 		DebugUI_MemorySnapShot_Capture(pszFileName, false);
 
