@@ -263,6 +263,8 @@ struct crossbar_s {
 	Uint32 dmaRecord_CurrentFrameEnd;   /* current DmaRecord Frame end ($ff890f $ff8911 $ff8913) */
 	Uint32 adc_dac_readBufferPosition;  /* read position for direct adc->dac transfer */
 	Uint32 adc_dac_readBufferPosition_decimal; /* decimal part of read position for direct adc->dac transfer */
+	
+	Uint32 save_special_transfer;		/* Used in a special undocumented transfer mode (dsp sent is not in handshake mode and dsp receive is in handshake mode) */
 };
 
 struct codec_s {
@@ -374,6 +376,9 @@ void Crossbar_Reset(bool bCold)
 		crossbar.microphone_ADC_is_started = Microphone_Start((int)nAudioFrequency);
 	}
 
+	/* Initialize special transfer mode */
+	crossbar.save_special_transfer = 0;
+	
 	/* Initialize Crossbar values after reboot */
 	IoMem_WriteByte(0xff8900,0x05);
 	IoMem_WriteByte(0xff8903,0xff);
@@ -879,18 +884,15 @@ void Crossbar_SrcControler_WriteWord(void)
 	
 	crossbar.dspXmit_freq = (nCbSrc >> 5) & 0x3;
 	crossbar.dmaPlay_freq = (nCbSrc >> 1) & 0x3;
-
-	dmaPlay.isConnectedToDspInHandShakeMode = ((nCbSrc & 9) == 0 ? 1 : 0);                                
 }
 
 /**
  * Write word to Falcon Crossbar destination controller (0xff8932).
 	Source: D/A Convertor                 BIT 15 14 13 12
-	00 - DMA output ------------------------------+--+  |
-	01 - DSP output ------------------------------+--+  |
-	10 - External input --------------------------+--+  |
-	11 - ADC input -------------------------------+--'  |
-	0 - Handshake on, 1 - Handshake off ----------------'
+	00 - DMA output ------------------------------+--+
+	01 - DSP output ------------------------------+--+
+	10 - External input --------------------------+--+
+	11 - ADC input -------------------------------+--'
 
 	Source: External OutPut               BIT 11 10  9  8
 	0 - DSP OUT, 1 - All others ---------------'  |  |  |
@@ -954,7 +956,7 @@ void Crossbar_DstControler_WriteWord(void)
 	adc.isConnectedToDsp   = (destCtrl & 0x60) == 0x60 ? 1 : 0;
 	adc.isConnectedToDma   = (destCtrl & 0x6) == 0x6 ? 1 : 0;
 
-	dmaPlay.isConnectedToDspInHandShakeMode = ((destCtrl & 7) == 2 ? 1 : 0);
+	dmaPlay.isConnectedToDspInHandShakeMode = (((destCtrl >> 4) & 7) == 0 ? 1 : 0);
 	dmaRecord.isConnectedToDspInHandShakeMode = ((destCtrl & 0xf) == 2 ? 1 : 0);
 }
 
@@ -1374,6 +1376,7 @@ static void Crossbar_setDmaPlay_Settings(void)
  */
 static void Crossbar_Process_DMAPlay_Transfer(void)
 {
+	Uint16 temp;
 	Sint16 value, eightBits;
 	Sint8  *pFrameStart;
 	Uint8  dmaCtrlReg;
@@ -1381,13 +1384,6 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	/* if DMA play is not running, return */
 	if (dmaPlay.isRunning == 0)
 		return;
-	
-	/* if handshake mode */
-	if (dmaPlay.isConnectedToDspInHandShakeMode) {
-		if (dmaPlay.handshakeMode_Frame == 0) {
-			return;
-		}
-	}
 
 	pFrameStart = (Sint8 *)&STRam[dmaPlay.frameStartAddr];
 
@@ -1412,7 +1408,21 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 
 		}
 	}
-	
+
+	/* if handshake mode */
+	if (dmaPlay.isConnectedToDspInHandShakeMode) {
+
+		/* Special undocumented transfer mode : 
+		   when DMA Play --> DSP Receive is in HandShake mode
+		   and  DSP Send --> DAC is not in handshake mode
+		   datas are shifted 2 bits on the left after the transfer.
+		   This occurs with all demos using the Mpeg2 player from nocrew (amanita, ...)) 
+		*/
+		temp = (crossbar.save_special_transfer<<2) + ((value & 0xc000)>>14);
+		crossbar.save_special_transfer = value;
+		value = temp;
+	}
+
 	/* Send sample to the DMA record ? */
 	if (dmaPlay.isConnectedToDma) {
 		LOG_TRACE(TRACE_CROSSBAR, "Crossbar : DMA Play --> DMA record\n");
