@@ -136,31 +136,32 @@ void DSP_MemorySnapShot_Capture(bool bSave)
 void DSP_Run(int nHostCycles)
 {
 #if ENABLE_DSP_EMU
-	/* Cycles emulation should be correctly tuned now */
-	Sint32 cycles = nHostCycles * ( DSP_FREQ / CPU_FREQ ) - save_cycles + 1;
+        save_cycles += nHostCycles * 2;
 
-	if (dsp_core.running == 0)
-		return;
+        if (dsp_core.running == 0)
+                return;
 
-	if (unlikely(bDspDebugging)) {
-		while (cycles > 0)
-		{
-			DebugDsp_Check();
-			dsp56k_execute_instruction();
-			cycles -= dsp_core.instr_cycle;
-		}
-	} else {
-		while (cycles > 0)
-		{
-			dsp56k_execute_instruction();
-			cycles -= dsp_core.instr_cycle;
-		}
-	}
+        if (save_cycles <= 0)
+                return;
 
-	/* Adjust cycles for next run */ 
-	save_cycles = cycles;
+        if (unlikely(bDspDebugging)) {
+                while (save_cycles > 0)
+                {
+                        DebugDsp_Check();
+                        dsp56k_execute_instruction();
+                        save_cycles -= dsp_core.instr_cycle;
+                }
+        } else {
+		//	fprintf(stderr, "--> %d\n", save_cycles);
+                while (save_cycles > 0)
+                {
+                        dsp56k_execute_instruction();
+                        save_cycles -= dsp_core.instr_cycle;
+                }
+        }
+
 #endif
-}
+} 
 
 /**
  * Enable/disable DSP debugging mode
