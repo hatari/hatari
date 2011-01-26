@@ -17,6 +17,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include "config.h"
 #include "main.h"
+#include "file.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "dsp.h"
@@ -119,9 +120,11 @@ bool BreakCond_Save(const char *filename)
 	int i;
 
 	if (!(BreakPointCpuCount || BreakPointDspCount)) {
-		if (remove(filename)) {
-			perror("ERROR");
-			return false;
+		if (File_Exists(filename)) {
+			if (remove(filename)) {
+				perror("ERROR");
+				return false;
+			}
 		}
 		return true;
 	}
@@ -1440,10 +1443,10 @@ static bool BreakCond_Remove(int position, bool bForDsp)
 	const char *name;
 	bc_breakpoint_t *bp;
 	int *bcount, offset;
-	
+
 	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
 	if (!*bcount) {
-		fprintf(stderr, "No (more) breakpoints to remove.\n");
+		fprintf(stderr, "No (more) %s breakpoints to remove.\n", name);
 		return false;
 	}
 	if (position < 1 || position > *bcount) {
