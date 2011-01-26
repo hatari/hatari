@@ -51,9 +51,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "statusbar.h"
 
 
-#define VERSION_STRING      "1.4.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
-#define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
-
+#define VERSION_STRING      "1.4.1"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
 
@@ -136,14 +134,19 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
  */
 static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 {
-	char VersionString[VERSION_STRING_SIZE];
+	char VersionString[] = VERSION_STRING;
 
 	/* Set error */
 	bCaptureError = false;
 
-	/* Open file, set flag so 'MemorySnapShot_Store' can load to/save from file */
+	/* after opening file, set bCaptureSave to indicate whether
+	 * 'MemorySnapShot_Store' should load from or save to a file
+	 */
 	if (bSave)
 	{
+		if (!File_QueryOverwrite(pszFileName))
+			return false;
+
 		/* Save */
 		CaptureFile = MemorySnapShot_fopen(pszFileName, "wb");
 		if (!CaptureFile)
@@ -155,8 +158,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		}
 		bCaptureSave = true;
 		/* Store version string */
-		strcpy(VersionString, VERSION_STRING);
-		MemorySnapShot_Store(VersionString, VERSION_STRING_SIZE);
+		MemorySnapShot_Store(VersionString, sizeof(VersionString));
 	}
 	else
 	{
@@ -171,13 +173,14 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		}
 		bCaptureSave = false;
 		/* Restore version string */
-		MemorySnapShot_Store(VersionString, VERSION_STRING_SIZE);
+		MemorySnapShot_Store(VersionString, sizeof(VersionString));
 		/* Does match current version? */
 		if (strcasecmp(VersionString, VERSION_STRING))
 		{
 			/* No, inform user and error */
-			Log_AlertDlg(LOG_ERROR, "Unable to Restore Memory State.\nFile is "
-			                       "only compatible with Hatari v%s", VersionString);
+			Log_AlertDlg(LOG_ERROR, "Unable to restore Hatari memory state. File\n"
+			                       "is compatible only with Hatari version %s.",
+				     VersionString);
 			bCaptureError = true;
 			return false;
 		}
@@ -253,6 +256,10 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		DebugUI_MemorySnapShot_Capture(pszFileName, true);
 		/* And close */
 		MemorySnapShot_CloseFile();
+	} else {
+		/* just canceled? */
+		if (!bCaptureError)
+			return;
 	}
 
 	/* Did error */
