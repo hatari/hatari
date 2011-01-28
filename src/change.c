@@ -42,6 +42,12 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 # include "falcon/dsp.h"
 #endif
 
+#define DEBUG 0
+#if DEBUG
+#define Dprintf(a) printf(a)
+#else
+#define Dprintf(a)
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -145,6 +151,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	bool bFloppyInsert[MAX_FLOPPYDRIVES];
 	int i;
 
+	Dprintf("Changes for:\n");
 	/* Do we need to warn user that changes will only take effect after reset? */
 	if (bForceReset)
 		NeedReset = bForceReset;
@@ -162,6 +169,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan
 	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar))
 	{
+		Dprintf("- screenmode>\n");
 		bScreenModeChange = true;
 	}
 
@@ -170,6 +178,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || changed->Printer.bPrintToFile != current->Printer.bPrintToFile
 	    || strcmp(changed->Printer.szPrintToFileName,current->Printer.szPrintToFileName))
 	{
+		Dprintf("- printer>\n");
 		Printer_CloseAllConnections();
 	}
 
@@ -178,12 +187,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || strcmp(changed->RS232.szOutFileName, current->RS232.szOutFileName)
 	    || strcmp(changed->RS232.szInFileName, current->RS232.szInFileName))
 	{
+		Dprintf("- RS-232>\n");
 		RS232_UnInit();
 	}
 
 	/* Did stop sound? Or change playback Hz. If so, also stop sound recording */
 	if (!changed->Sound.bEnableSound || changed->Sound.nPlaybackFreq != current->Sound.nPlaybackFreq)
 	{
+		Dprintf("- sound>\n");
 		if (Sound_AreWeRecording())
 			Sound_EndRecording();
 		Audio_UnInit();
@@ -211,6 +222,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], current->HardDisk.szHardDiskDirectories[0])
 	        && changed->HardDisk.bUseHardDiskDirectories))
 	{
+		Dprintf("- gemdos HD>\n");
 		GemDOS_UnInitDrives();
 		bReInitGemdosDrive = true;
 	}
@@ -220,6 +232,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
 	        && changed->HardDisk.bUseHardDiskImage))
 	{
+		Dprintf("- HD image>\n");
 		HDC_UnInit();
 		bReInitAcsiEmu = true;
 	}
@@ -229,6 +242,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || (strcmp(changed->HardDisk.szIdeMasterHardDiskImage, current->HardDisk.szIdeMasterHardDiskImage)
 	        && changed->HardDisk.bUseIdeMasterHardDiskImage))
 	{
+		Dprintf("- IDE master>\n");
 		Ide_UnInit();
 		bReInitIDEEmu = true;
 	}
@@ -238,6 +252,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || (strcmp(changed->HardDisk.szIdeSlaveHardDiskImage, current->HardDisk.szIdeSlaveHardDiskImage)
 	        && changed->HardDisk.bUseIdeSlaveHardDiskImage))
 	{
+		Dprintf("- IDE slave>\n");
 		Ide_UnInit();
 		bReInitIDEEmu = true;
 	}
@@ -250,6 +265,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || changed->System.bRealTimeClock != current->System.bRealTimeClock
 	    || changed->System.nMachineType != current->System.nMachineType)
 	{
+		Dprintf("- blitter/rtc/dsp/machine>\n");
 		IoMem_UnInit();
 		bReInitIoMem = true;
 	}
@@ -259,6 +275,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (current->System.nDSPType == DSP_TYPE_EMU &&
 	    changed->System.nDSPType != DSP_TYPE_EMU)
 	{
+		Dprintf("- DSP>\n");
 		DSP_UnInit();
 	}
 #endif
@@ -269,6 +286,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	         || strcmp(changed->Midi.sMidiInFileName, current->Midi.sMidiInFileName))
 	        && changed->Midi.bEnableMidi))
 	{
+		Dprintf("- midi>\n");
 		Midi_UnInit();
 		bReInitMidi = true;
 	}
@@ -288,23 +306,29 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (current->System.nDSPType != DSP_TYPE_EMU &&
 	    changed->System.nDSPType == DSP_TYPE_EMU)
 	{
+		Dprintf("- DSP<\n");
 		DSP_Init();
 	}
 #endif
 
 	/* Set keyboard remap file */
 	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_LOADED)
+	{
+		Dprintf("- keymap<\n");
 		Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
+	}
 
 	/* Mount a new HD image: */
 	if (bReInitAcsiEmu && ConfigureParams.HardDisk.bUseHardDiskImage)
 	{
+		Dprintf("- HD<\n");
 		HDC_Init();
 	}
 
 	/* Mount a new IDE HD master or slave image: */
 	if (bReInitIDEEmu && (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage || ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage))
 	{
+		Dprintf("- IDE<\n");
 		Ide_Init();
 	}
 
@@ -312,48 +336,58 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
 		if (bFloppyInsert[i])
+		{
+			Dprintf("- floppy<\n");
 			Floppy_InsertDiskIntoDrive(i);
+		}
 	}
 
 	/* Mount a new GEMDOS drive? */
 	if (bReInitGemdosDrive && ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
+		Dprintf("- gemdos HD<\n");
 		GemDOS_InitDrives();
 	}
 
 	/* Restart audio sub system if necessary: */
 	if (ConfigureParams.Sound.bEnableSound && !bSoundWorking)
 	{
+		Dprintf("- audio<\n");
 		Audio_Init();
 	}
 
 	/* Re-initialize the RS232 emulation: */
 	if (ConfigureParams.RS232.bEnableRS232 && !bConnectedRS232)
 	{
+		Dprintf("- RS-232<\n");
 		RS232_Init();
 	}
 
 	/* Re-init IO memory map? */
 	if (bReInitIoMem)
 	{
+		Dprintf("- IO mem<\n");
 		IoMem_Init();
 	}
 
 	/* Re-init MIDI emulation? */
 	if (bReInitMidi)
 	{
+		Dprintf("- midi<\n");
 		Midi_Init();
 	}
 
 	/* Force things associated with screen change */
 	if (bScreenModeChange)
 	{
+		Dprintf("- screenmode<\n");
 		Screen_ModeChanged();
 	}
 
 	/* Do we need to perform reset? */
 	if (NeedReset)
 	{
+		Dprintf("- reset\n");
 		Reset_Cold();
 	}
 
@@ -365,6 +399,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 
 	/* update statusbar info (CPU, MHz, mem etc) */
 	Statusbar_UpdateInfo();
+	Dprintf("done.\n");
 }
 
 
