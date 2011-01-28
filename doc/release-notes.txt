@@ -24,8 +24,15 @@ Emulator:
 - Atari program given as argument to Hatari will be automatically
   started after TOS boots. GEMDOS hard disk directory can now be
   give also as an argument, not just as a (-d) option
+- TOS4 or --machine falcon option use enables DSP emulation now
+  (follow them with --dsp none to disable DSP emulation)
+- Memory state saving and restoring fixes, especially for Falcon
+  - Crossbar state is included -> state file ABI break
+- User's desktop size is used as max limit for Videl zooming
+- Videl resolution change is done immediately, not 3 VBLs late
 - AVI recording options can be set in the new [Video] config file section
 - SDL GUI improvements:
+  - DSP can be disabled from the GUI without needing to restart Hatari
   - AVI video length (mins:secs) is shown in titlebar during recording
   - Option for cropping statusbar from videos & screenshots
   - Fileselector scrollbar can be used with mouse
@@ -64,6 +71,7 @@ Other changes:
   (hconsole is command line Python interface for Hatari remote API)
 - Support for plain Makefiles removed (except for internal tests),
   only CMake is used for configuring and building Hatari
+- CMake doesn't require anymore working C++, C-compiler is enough
 
 
  Version 1.4.0 (2010-06-12):
