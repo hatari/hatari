@@ -1333,6 +1333,9 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			else if (strcasecmp(argv[i], "falcon") == 0)
 			{
+#if ENABLE_DSP_EMU
+		ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
+#endif
 				ConfigureParams.System.nMachineType = MACHINE_FALCON;
 				ConfigureParams.System.nCpuLevel = 3;
 				ConfigureParams.System.nCpuFreq = 16;
