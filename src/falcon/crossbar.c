@@ -1417,8 +1417,8 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		dmaPlay.frameCounter += increment_frame;
 
 		/* Special undocumented transfer mode : 
-		   when DMA Play --> DSP Receive is in HandShake mode
-		   and  DSP Send --> DAC is not in handshake mode
+		   when DMA Play --> DSP Receive is in HandShake mode (32 Mhz)
+		   and  DSP Send --> DAC is not in handshake mode (25 Mhz)
 		   datas are shifted 2 bits on the left after the transfer.
 		   This occurs with all demos using the Mpeg2 player from nocrew (amanita, ...)) 
 		*/
