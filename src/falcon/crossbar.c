@@ -1376,7 +1376,7 @@ static void Crossbar_setDmaPlay_Settings(void)
  */
 static void Crossbar_Process_DMAPlay_Transfer(void)
 {
-	Uint16 temp;
+	Uint16 temp, increment_frame;
 	Sint16 value, eightBits;
 	Sint8  *pFrameStart;
 	Uint8  dmaCtrlReg;
@@ -1386,31 +1386,35 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		return;
 
 	pFrameStart = (Sint8 *)&STRam[dmaPlay.frameStartAddr];
-
+	increment_frame = 0;
+	
 	/* 16 bits stereo mode ? */
 	if (crossbar.is16Bits) {
 		eightBits = 1;
 		value = (Sint16)do_get_mem_word(&pFrameStart[dmaPlay.frameCounter]);
-		dmaPlay.frameCounter += 2;
+		increment_frame = 2;
 	}
 	/* 8 bits stereo ? */
 	else if (crossbar.isStereo) {
 		eightBits = 64;
 		value = (Sint16) pFrameStart[dmaPlay.frameCounter];
-		dmaPlay.frameCounter ++;
+		increment_frame = 1;
 	}
 	/* 8 bits mono */
 	else {
 		eightBits = 64;
 		value = (Sint16) pFrameStart[dmaPlay.frameCounter];
 		if ((dmaPlay.currentFrame & 1) == 0) {
-			dmaPlay.frameCounter ++;
-
+			increment_frame = 1;
 		}
 	}
 
 	/* if handshake mode */
-	if (dmaPlay.isConnectedToDspInHandShakeMode) {
+	if (dmaPlay.isConnectedToDspInHandShakeMode && crossbar.dmaPlay_freq == CROSSBAR_FREQ_32MHZ) {
+		if (dmaPlay.handshakeMode_Frame == 0)
+			return;
+
+		dmaPlay.frameCounter += increment_frame;
 
 		/* Special undocumented transfer mode : 
 		   when DMA Play --> DSP Receive is in HandShake mode
@@ -1421,6 +1425,9 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		temp = (crossbar.save_special_transfer<<2) + ((value & 0xc000)>>14);
 		crossbar.save_special_transfer = value;
 		value = temp;
+	}
+	else {
+		dmaPlay.frameCounter += increment_frame;
 	}
 
 	/* Send sample to the DMA record ? */
