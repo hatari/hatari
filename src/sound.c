@@ -235,7 +235,6 @@ bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
 
 Sint16		MixBuffer[MIXBUFFER_SIZE][2];
 int		nGeneratedSamples;			/* Generated samples since audio buffer update */
-int		nSamplesToGenerate;			/* How many samples are needed for this time-frame */
 static int	ActiveSndBufIdx;			/* Current working index into above mix buffer */
 static int	ActiveSndBufIdxAvi;			/* Current working index to save an AVI audio frame */
 
@@ -272,8 +271,8 @@ static ymu32	Ym2149_NoiseStepCompute	(ymu8 rNoise);
 static ymu32	Ym2149_EnvStepCompute	(ymu8 rHigh , ymu8 rLow);
 static ymsample	YM2149_NextSample	(void);
 
-static void	Sound_SetSamplesPassed	(void);
-static void	Sound_GenerateSamples	(void);
+static int	Sound_SetSamplesPassed(bool FillFrame);
+static void	Sound_GenerateSamples(int SamplesToGenerate);
 
 
 
@@ -1152,33 +1151,52 @@ void Sound_MemorySnapShot_Capture(bool bSave)
  * Find how many samples to generate and store in 'nSamplesToGenerate'
  * Also update sound cycles counter to store how many we actually did
  * so generates set amount each frame.
+ * If FillFrame is true, this means we reach the end of the VBL and me must
+ * add as many samples as necessary to get a total of SamplesPerFrame
+ * for this VBL.
  */
-static void Sound_SetSamplesPassed(void)
+static int Sound_SetSamplesPassed(bool FillFrame)
 {
 	int nSampleCycles;
 	int nSoundCycles;
+	int SamplesToGenerate;				/* How many samples are needed for this time-frame */
 
 	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_SOUND);
 
-	/* 160256 cycles per VBL, 44Khz = 882 samples per VBL */
-	/* 882/160256 samples per clock cycle */
+	/* example : 160256 cycles per VBL, 44Khz = 882 samples per VBL at 50 Hz */
+	/* 882/160256 samples per cpu clock cycle */
 
-	nSamplesToGenerate = nSoundCycles * SamplesPerFrame / CYCLES_PER_FRAME;
-	if (nSamplesToGenerate > SamplesPerFrame)
-		nSamplesToGenerate = SamplesPerFrame;
+	SamplesToGenerate = nSoundCycles * SamplesPerFrame / CYCLES_PER_FRAME;
+	if (SamplesToGenerate > SamplesPerFrame)
+		SamplesToGenerate = SamplesPerFrame;
 
-	nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / SamplesPerFrame;
+	nSampleCycles = SamplesToGenerate * CYCLES_PER_FRAME / SamplesPerFrame;
 	nSoundCycles -= nSampleCycles;
 	Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
 
-	if (nSamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples)
+	/* If we're called from the VBL interrupt (FillFrame==true), we must ensure we have */
+	/* an exact total of SamplesPerFrame samples during a full VBL (we take into account */
+	/* the samples that were already generated during this VBL) */
+	if ( FillFrame )
 	{
-		nSamplesToGenerate = MIXBUFFER_SIZE - nGeneratedSamples;
-		if (nSamplesToGenerate < 0)
-			nSamplesToGenerate = 0;
+		SamplesToGenerate = SamplesPerFrame - CurrentSamplesNb;	/* how many samples are missing to reach SamplesPerFrame */
+		if ( SamplesToGenerate < 0 )
+			SamplesToGenerate = 0;
+	}
+
+	/* Check we don't fill the sound's ring buffer before it's played by Audio_Callback */
+	/* (this should never happen, except if the system suffers major slowdown due to */
+	/* other processes or if we run in fast forward mode) */
+	if ( SamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples )
+	{
+		SamplesToGenerate = MIXBUFFER_SIZE - nGeneratedSamples;
+		if ( SamplesToGenerate < 0 )
+			SamplesToGenerate = 0;
 	}
 
 //fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , nSamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
+
+	return SamplesToGenerate;
 }
 
 
@@ -1186,37 +1204,37 @@ static void Sound_SetSamplesPassed(void)
 /**
  * Generate samples for all channels during this time-frame
  */
-static void Sound_GenerateSamples(void)
+static void Sound_GenerateSamples(int SamplesToGenerate)
 {
 	int	i;
 	int	idx;
 
-	if (nSamplesToGenerate <= 0)
+	if (SamplesToGenerate <= 0)
 		return;
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
-		for (i = 0; i < nSamplesToGenerate; i++)
+		for (i = 0; i < SamplesToGenerate; i++)
 		{
 			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
 			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
 		}
  		/* If Falcon emulation, crossbar does the job */
- 		Crossbar_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+ 		Crossbar_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
 	}
 	else if (ConfigureParams.System.nMachineType != MACHINE_ST)
 	{
-		for (i = 0; i < nSamplesToGenerate; i++)
+		for (i = 0; i < SamplesToGenerate; i++)
 		{
 			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
 			MixBuffer[idx][0] = MixBuffer[idx][1] = (YM2149_NextSample() >> 1);
 		}
  		/* If Ste or TT emulation, DmaSnd does the job */
- 		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+ 		DmaSnd_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_ST)
 	{
-		for (i = 0; i < nSamplesToGenerate; i++)
+		for (i = 0; i < SamplesToGenerate; i++)
 		{
 			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
 			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
@@ -1225,9 +1243,9 @@ static void Sound_GenerateSamples(void)
 		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate); */
  	}
 
-	ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
-	nGeneratedSamples += nSamplesToGenerate;
-	CurrentSamplesNb += nSamplesToGenerate;				/* number of samples generated for current VBL */
+	ActiveSndBufIdx = (ActiveSndBufIdx + SamplesToGenerate) % MIXBUFFER_SIZE;
+	nGeneratedSamples += SamplesToGenerate;
+	CurrentSamplesNb += SamplesToGenerate;				/* number of samples generated for current VBL */
 }
 
 
@@ -1235,36 +1253,29 @@ static void Sound_GenerateSamples(void)
 /**
  * This is called to built samples up until this clock cycle
  * Sound_Update can be called several times during a VBL ; we must ensure
- * that we generated exactly SamplesPerFrame samples between 2 calls
+ * that we generate exactly SamplesPerFrame samples between 2 calls
  * to Sound_Update_VBL.
  */
 void Sound_Update(bool FillFrame)
 {
 	int OldSndBufIdx = ActiveSndBufIdx;
+	int SamplesToGenerate;
 
 	/* Make sure that we don't interfere with the audio callback function */
 	Audio_Lock();
 
-	/* Find how many to generate */
-	Sound_SetSamplesPassed();
-
-	/* If we're called from the VBL interrupt (FillFrame==TRUE), we must ensure we have */
-	/* an exact total of SamplesPerFrame samples during a full VBL (we take into account */
-	/* the samples that were already generated during this VBL) */
-	if ( FillFrame )
-	{
-		nSamplesToGenerate = SamplesPerFrame - CurrentSamplesNb;	/* how many samples are missing to reach SamplesPerFrame */
-	}
+	/* Find how many samples to generate */
+	SamplesToGenerate = Sound_SetSamplesPassed( FillFrame );
 
 	/* And generate */
-	Sound_GenerateSamples();
+	Sound_GenerateSamples( SamplesToGenerate );
 
 	/* Allow audio callback function to occur again */
 	Audio_Unlock();
 
 	/* Save to WAV file, if open */
 	if (bRecordingWav)
-		WAVFormat_Update(MixBuffer, OldSndBufIdx, nSamplesToGenerate);
+		WAVFormat_Update(MixBuffer, OldSndBufIdx, SamplesToGenerate);
 }
 
 
