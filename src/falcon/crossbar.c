@@ -1783,6 +1783,8 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				/* Crossbar->DAC sound only */
 				dac_LeftData = dac.buffer_left[dac.readPosition];
 				dac_RightData = dac.buffer_right[dac.readPosition];
+				dac.buffer_left[dac.readPosition] = 0;
+				dac.buffer_right[dac.readPosition] = 0;
 				break;
 			case 3:
 				/* Mixing Direct ADC sound with Crossbar->DMA sound */
@@ -1790,6 +1792,8 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 						dac.buffer_left[dac.readPosition];
 				dac_RightData = ((adc_rightData  * crossbar.gainSettingRight) >> 14) +
 						dac.buffer_right[dac.readPosition];
+				dac.buffer_left[dac.readPosition] = 0;
+				dac.buffer_right[dac.readPosition] = 0;
 				break;
 		}
 			
