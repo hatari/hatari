@@ -48,9 +48,6 @@ const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 #define RGB_WHITE     0xffff00ff
 
 
-static SDL_Surface *mainSurface;        // The main window surface
-static SDL_Surface *surf;               // pointer to actual surface
-
 /* TODO: put these hostscreen globals to some struct */
 static Uint32 sdl_videoparams;
 static int hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
@@ -79,8 +76,6 @@ void HostScreen_Init(void)
 		palette.standard[i].g = (color >> 16) & 0xff;
 		palette.standard[i].b = color & 0xff;
 	}
-
-	mainSurface=NULL;
 }
 
 void HostScreen_UnInit(void)
@@ -93,7 +88,7 @@ void HostScreen_toggleFullScreen(void)
 	sdl_videoparams ^= SDL_FULLSCREEN;
 
 	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
-	/* refresh the screen */
+	/* force screen redraw */
 	HostScreen_update1(true);
 }
 
@@ -197,6 +192,8 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 			rect.h = sdlscrn->h - sbarheight;
 			SDL_FillRect(sdlscrn, &rect, SDL_MapRGB(sdlscrn->format, 0, 0, 0));
 		}
+		// check in case switched from VDI to Hostscreen
+		doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
 		return;
 	}
 
@@ -213,8 +210,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
 	}
 #endif
-	mainSurface = SDL_SetVideoMode(screenwidth, screenheight, bpp, sdl_videoparams);
-	sdlscrn = surf = mainSurface;
+	sdlscrn = SDL_SetVideoMode(screenwidth, screenheight, bpp, sdl_videoparams);
 #ifdef _MUDFLAP
 	__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
 #endif
@@ -227,48 +223,43 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	HostScreen_updatePalette( 256 );
 
 	// redraw statusbar
-	Statusbar_Init(mainSurface);
+	Statusbar_Init(sdlscrn);
 
-	Dprintf(("Surface Pitch = %d, width = %d, height = %d\n", surf->pitch, surf->w, surf->h));
+	Dprintf(("Surface Pitch = %d, width = %d, height = %d\n", sdlscrn->pitch, sdlscrn->w, sdlscrn->h));
 	Dprintf(("Must Lock? %s\n", SDL_MUSTLOCK(surf) ? "YES" : "NO"));
 
 	// is the SDL_update needed?
-	doUpdate = ( surf->flags & SDL_HWSURFACE ) == 0;
+	doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
 
 	Dprintf(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
 			", tshifts r=%d g=%d b=%d"
 			", tlosses r=%d g=%d b=%d\n",
-			surf->format->BitsPerPixel,
-			surf->format->Rmask, surf->format->Gmask, surf->format->Bmask,
-			surf->format->Rshift, surf->format->Gshift, surf->format->Bshift,
-			surf->format->Rloss, surf->format->Gloss, surf->format->Bloss));
+			sdlscrn->format->BitsPerPixel,
+			sdlscrn->format->Rmask, sdlscrn->format->Gmask, sdlscrn->format->Bmask,
+			sdlscrn->format->Rshift, sdlscrn->format->Gshift, sdlscrn->format->Bshift,
+			sdlscrn->format->Rloss, sdlscrn->format->Gloss, sdlscrn->format->Bloss));
 
 	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2);
 }
 
 
-static void HostScreen_update5(Sint32 x, Sint32 y, Sint32 w, Sint32 h, bool forced)
+void HostScreen_update1(bool forced)
 {
 	if ( !forced && !doUpdate ) // the HW surface is available
 		return;
 
-	SDL_UpdateRect(mainSurface, x, y, w, h);
-}
-
-void HostScreen_update1(bool forced)
-{
-	HostScreen_update5( 0, 0, hs_width, hs_height, forced );
+	SDL_UpdateRect( sdlscrn, 0, 0, hs_width, hs_height );
 }
 
 
 Uint32 HostScreen_getBpp(void)
 {
-	return surf->format->BytesPerPixel;
+	return sdlscrn->format->BytesPerPixel;
 }
 
 Uint32 HostScreen_getPitch(void)
 {
-	return surf->pitch;
+	return sdlscrn->pitch;
 }
 
 Uint32 HostScreen_getWidth(void)
@@ -283,7 +274,7 @@ Uint32 HostScreen_getHeight(void)
 
 Uint8 *HostScreen_getVideoramAddress(void)
 {
-	return surf->pixels;	/* FIXME maybe this should be mainSurface? */
+	return sdlscrn->pixels;
 }
 
 void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint32 blue)
@@ -293,7 +284,7 @@ void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint32 blue
 	palette.standard[idx].g = green;
 	palette.standard[idx].b = blue;
 	// convert the color to native
-	palette.native[idx] = SDL_MapRGB( surf->format, red, green, blue );
+	palette.native[idx] = SDL_MapRGB( sdlscrn->format, red, green, blue );
 }
 
 Uint32 HostScreen_getPaletteColor(Uint8 idx)
@@ -303,19 +294,19 @@ Uint32 HostScreen_getPaletteColor(Uint8 idx)
 
 void HostScreen_updatePalette(Uint16 colorCount)
 {
-	SDL_SetColors( surf, palette.standard, 0, colorCount );
+	SDL_SetColors( sdlscrn, palette.standard, 0, colorCount );
 }
 
 Uint32 HostScreen_getColor(Uint32 red, Uint32 green, Uint32 blue)
 {
-	return SDL_MapRGB( surf->format, red, green, blue );
+	return SDL_MapRGB( sdlscrn->format, red, green, blue );
 }
 
 
 bool HostScreen_renderBegin(void)
 {
-	if (SDL_MUSTLOCK(surf))
-		if (SDL_LockSurface(surf) < 0) {
+	if (SDL_MUSTLOCK(sdlscrn))
+		if (SDL_LockSurface(sdlscrn) < 0) {
 			printf("Couldn't lock surface to refresh!\n");
 			return false;
 		}
@@ -325,7 +316,7 @@ bool HostScreen_renderBegin(void)
 
 void HostScreen_renderEnd(void)
 {
-	if (SDL_MUSTLOCK(surf))
-		SDL_UnlockSurface(surf);
-	Statusbar_Update(surf);
+	if (SDL_MUSTLOCK(sdlscrn))
+		SDL_UnlockSurface(sdlscrn);
+	Statusbar_Update(sdlscrn);
 }
