@@ -536,7 +536,7 @@ class UIActions:
     def _create_key_control(self, name, textcode):
         "Simulate Atari key press/release and string inserting"
         if not textcode:
-            return (None, None)
+            return None
         widget = gtk.ToolButton(gtk.STOCK_PASTE)
         widget.set_label(name)
         try:
@@ -548,7 +548,8 @@ class UIActions:
             # no, assume a string macro is wanted instead
             widget.connect("clicked", self.callbacks.textinsert, textcode)
             tip = "string '%s'" % textcode
-        return (widget, tip)
+        widget.set_tooltip_text("Insert " + tip)
+        return widget
 
     def _get_container(self, actions, horiz = True):
         "return Gtk container with the specified actions or None for no actions"
@@ -575,8 +576,7 @@ class UIActions:
                 # handle "<name>=<keycode>" action specification
                 name = action[:offset]
                 text = action[offset+1:]
-                (widget, tip) = self._create_key_control(name, text)
-                widget.set_tooltip_text("Insert " + tip)
+                widget = self._create_key_control(name, text)
             elif action == "|":
                 widget = gtk.SeparatorToolItem()
             elif action == "close":
