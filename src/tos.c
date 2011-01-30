@@ -439,10 +439,10 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
-		ConfigureParams.System.nCpuFreq = 8;
 		IoMem_Init();
+		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
-		M68000_CheckCpuLevel();
+		M68000_CheckCpuSettings();
 	}
 	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nMachineType != MACHINE_TT)
 	{
@@ -450,25 +450,25 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to TT mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_TT;
-		ConfigureParams.System.nCpuFreq = 32;
 		IoMem_Init();
+		ConfigureParams.System.nCpuFreq = 32;
 		ConfigureParams.System.nCpuLevel = 3;
-		M68000_CheckCpuLevel();
+		M68000_CheckCpuSettings();
 	}
 	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nMachineType != MACHINE_FALCON)
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 4.x are for Atari Falcon only.\n"
 		             " ==> Switching to Falcon mode now.\n");
 		IoMem_UnInit();
+		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 #if ENABLE_DSP_EMU
 		ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
-#endif
-		ConfigureParams.System.nMachineType = MACHINE_FALCON;
-		ConfigureParams.System.nCpuFreq = 16;
 		DSP_Init();
+#endif
 		IoMem_Init();
+		ConfigureParams.System.nCpuFreq = 16;
 		ConfigureParams.System.nCpuLevel = 3;
-		M68000_CheckCpuLevel();
+		M68000_CheckCpuSettings();
 	}
 	else if (TosVersion <= 0x0104 && ConfigureParams.System.nCpuLevel > 0)
 	{
@@ -476,10 +476,10 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to ST mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_ST;
-		ConfigureParams.System.nCpuFreq = 8;
 		IoMem_Init();
+		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
-		M68000_CheckCpuLevel();
+		M68000_CheckCpuSettings();
 	}
 	else if ((TosVersion < 0x0300 && ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	         || (TosVersion < 0x0200 && ConfigureParams.System.nMachineType == MACHINE_TT))
@@ -488,17 +488,17 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
-		ConfigureParams.System.nCpuFreq = 8;
 		IoMem_Init();
+		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
-		M68000_CheckCpuLevel();
+		M68000_CheckCpuSettings();
 	}
 	else if (TosVersion >= 0x0300 && ConfigureParams.System.nCpuLevel < 2)
 	{
 		Log_AlertDlg(LOG_ERROR, "This TOS versions requires a CPU >= 68020.\n"
 		             " ==> Switching to 68020 mode now.\n");
 		ConfigureParams.System.nCpuLevel = 2;
-		M68000_CheckCpuLevel();
+		M68000_CheckCpuSettings();
 	}
 }
 

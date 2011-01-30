@@ -583,24 +583,10 @@ void Configuration_Apply(bool bReset)
 	/* Set playback frequency */
 	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
 
-	/* CPU settings */
-	if (ConfigureParams.System.nCpuFreq < 12)
-	{
-		ConfigureParams.System.nCpuFreq = 8;
-		nCpuFreqShift = 0;
-	}
-	else if (ConfigureParams.System.nCpuFreq > 26)
-	{
-		ConfigureParams.System.nCpuFreq = 32;
-		nCpuFreqShift = 2;
-	}
-	else
-	{
-		ConfigureParams.System.nCpuFreq = 16;
-		nCpuFreqShift = 1;
-	}
-	/* Change UAE cpu_level and cpu_compatible accordingly */
-	M68000_CheckCpuLevel();
+	/* Check/constrain CPU settings and change corresponding
+	 * UAE cpu_level & cpu_compatible variables
+	 */
+	M68000_CheckCpuSettings();
 
 	/* Clean file and directory names */
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);

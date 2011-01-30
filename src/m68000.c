@@ -244,10 +244,25 @@ void M68000_Start(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check wether the CPU mode has been changed.
+ * Check whether CPU settings have been changed.
  */
-void M68000_CheckCpuLevel(void)
+void M68000_CheckCpuSettings(void)
 {
+	if (ConfigureParams.System.nCpuFreq < 12)
+	{
+		ConfigureParams.System.nCpuFreq = 8;
+		nCpuFreqShift = 0;
+	}
+	else if (ConfigureParams.System.nCpuFreq > 26)
+	{
+		ConfigureParams.System.nCpuFreq = 32;
+		nCpuFreqShift = 2;
+	}
+	else
+	{
+		ConfigureParams.System.nCpuFreq = 16;
+		nCpuFreqShift = 1;
+	}
 	changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 
