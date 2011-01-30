@@ -11,7 +11,36 @@
   This file originally came from the Aranym project and has been heavily
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
+
+  Videl can run at 2 frequencies : 25 Mhz or 32 MHz
+  
+  Hardware I/O registers:
+	$FF8006 (byte) : monitor type
+	$FF820E (word) : offset to next line
+	$FF8210 (word) : VWRAP - line width
+	$FF8260 (byte) : ST shift mode
+	$FF8265 (byte) : Horizontal scroll register
+	$FF8266 (word) : Falcon shift mode
+	$FF8280 (word) : HHC - Horizontal Hold Counter
+	$FF8282 (word) : HHT - Horizontal Hold Timer
+	$FF8284 (word) : HBB - Horizontal Border Begin
+	$FF8286 (word) : HBE - Horizontal Border End
+	$FF8288 (word) : HDB - Horizontal Display Begin
+	$FF828A (word) : HDE - Horizontal Display End
+	$FF828C (word) : HSS - Horizontal SS
+	$FF828E (word) : HFS - Horizontal FS
+	$FF8290 (word) : HEE - Horizontal EE
+	$FF82A0 (word) : VFC - Vertical Frequency Counter
+	$FF82A2 (word) : VFT - Vertical Frequency Timer
+	$FF82A4 (word) : VBB - Vertical Border Begin
+	$FF82A6 (word) : VBE - Vertical Border End
+	$FF82A8 (word) : VDB - Vertical Display Begin
+	$FF82AA (word) : VDE - Vertical Display End
+	$FF82AC (word) : VSS - Vertical SS
+	$FF82C0 (word) : VCO - Video control
+	$FF82C2 (word) : VMD - Video mode
 */
+
 const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
