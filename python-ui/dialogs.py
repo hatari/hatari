@@ -433,7 +433,7 @@ class DisplayDialog(HatariUIDialog):
 
         borders = gtk.CheckButton("ST/STE overscan borders")
         borders.set_active(config.get_borders())
-        borders.set_tooltip_text("Whether to show ST/STE overscan borders in low/mid-rez. Visible border area is affected by max. zoom size")
+        borders.set_tooltip_text("Whether to show overscan borders in ST/STE low/mid-rez. Visible border area is affected by max. zoom size")
 
         statusbar = gtk.CheckButton("Show statusbar")
         statusbar.set_active(config.get_statusbar())
@@ -442,6 +442,10 @@ class DisplayDialog(HatariUIDialog):
         led = gtk.CheckButton("Show overlay led")
         led.set_active(config.get_led())
         led.set_tooltip_text("Whether to show overlay drive led when statusbar isn't visible")
+
+        crop = gtk.CheckButton("Remove statusbar from screen capture")
+        crop.set_active(config.get_crop())
+        crop.set_tooltip_text("Whether to crop statusbar from screenshots and video recordings")
 
         dialog = gtk.Dialog("Display settings", self.parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -456,6 +460,7 @@ class DisplayDialog(HatariUIDialog):
         dialog.vbox.add(borders)
         dialog.vbox.add(statusbar)
         dialog.vbox.add(led)
+        dialog.vbox.add(crop)
         dialog.vbox.show_all()
 
         self.dialog = dialog
@@ -465,6 +470,7 @@ class DisplayDialog(HatariUIDialog):
         self.borders = borders
         self.statusbar = statusbar
         self.led = led
+        self.crop = crop
  
     def run(self, config):
         "run(config), show display dialog"
@@ -479,6 +485,7 @@ class DisplayDialog(HatariUIDialog):
             config.set_borders(self.borders.get_active())
             config.set_statusbar(self.statusbar.get_active())
             config.set_led(self.led.get_active())
+            config.set_crop(self.crop.get_active())
             config.flush_updates()
 
 
@@ -767,16 +774,11 @@ class MachineDialog(HatariUIDialog):
             self.cpulevel.set_active(0)
         elif machine == "falcon":
             self.clocks[1].set_active(True)
+            self.dsps[2].set_active(True)
             self.cpulevel.set_active(3)
         elif machine == "tt":
             self.clocks[2].set_active(True)
             self.cpulevel.set_active(3)
-
-    def _dsp_cb(self, widget, data):
-        if not widget.get_active():
-            return
-        if not self.machines[3].get_active():
-            NoteDialog(self.dialog).run("Only Falcon has DSP.")
 
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 4, "Set and reboot")
@@ -786,8 +788,7 @@ class MachineDialog(HatariUIDialog):
                         config.get_machine_types(), self._machine_cb)
         row += 1
 
-        self.dsps = table_add_radio_rows(table, row, "DSP type:",
-                    config.get_dsp_types(), self._dsp_cb)
+        self.dsps = table_add_radio_rows(table, row, "DSP type:", config.get_dsp_types())
         row += 1
 
         # start next table column

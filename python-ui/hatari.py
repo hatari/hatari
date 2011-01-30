@@ -646,6 +646,14 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Screen]", "bShowStatusbar", value)
         self._change_option("--statusbar %s" % str(value))
 
+    # ------------ crop statusbar ---------------
+    def get_crop(self):
+        return self.get("[Screen]", "bCrop")
+    
+    def set_crop(self, value):
+        self.set("[Screen]", "bCrop", value)
+        self._change_option("--crop %s" % str(value))
+
     # ------------ show led ---------------
     def get_led(self):
         return self.get("[Screen]", "bShowDriveLed")
