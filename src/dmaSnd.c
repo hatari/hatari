@@ -116,7 +116,6 @@ static float DmaSnd_IIRfilterR(float xn);
 static struct first_order_s *DmaSnd_Treble_Shelf(float g, float fc, float Fs);
 static struct first_order_s *DmaSnd_Bass_Shelf(float g, float fc, float Fs);
 static Sint8 DmaSnd_LowPassFilterLeft(Sint8 in);
-static Sint8 DmaSnd_LowPassFilterMono(Sint8 in);
 static Sint8 DmaSnd_LowPassFilterRight(Sint8 in);
 
 
@@ -216,9 +215,9 @@ void DmaSnd_Reset(bool bCold)
 	if (bCold)
 	{
 		dma.soundMode = 3;
-		microwire.masterVolume = 65535;
-		microwire.leftVolume = 65535;
-		microwire.rightVolume = 65535;
+		microwire.masterVolume = 7;
+		microwire.leftVolume = 655;
+		microwire.rightVolume = 655;
 		microwire.mixing = 0;
 		microwire.bass = 6;
 		microwire.treble = 6;
@@ -327,7 +326,41 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	unsigned n;
 
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY))
+	{
+		for (i = 0; i < nSamplesToGenerate; i++)
+		{
+			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+				switch (microwire.mixing) {
+				case 1:
+					/* YM2149 */
+					break;
+				default:
+					/* YM2149 - 12dB */
+					MixBuffer[nBufIdx][0] /= 4;
+					break;
+			}
+			MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][0];	
+		}
+		
+		/* Apply LMC1992 sound modifications (Bass and Treble) 
+		   The Bass and Treble get samples at nAudioFrequency rate.
+	       The tone control's sampling frequency must be at least 22050 Hz to sound good. 
+		*/
+		for (i = 0; i < nSamplesToGenerate; i++) {
+			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+			MixBuffer[nBufIdx][0] = 0.5 + DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
+			MixBuffer[nBufIdx][1] = 0.5 + DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
+		}
+
+		/* Apply LMC1992 sound modifications (Left, Right and Master Volume) */
+		for (i = 0; i < nSamplesToGenerate; i++) {
+			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+			MixBuffer[nBufIdx][0] = (((MixBuffer[nBufIdx][0] * microwire.leftVolume) >> 16) * microwire.masterVolume) >> 16;
+			MixBuffer[nBufIdx][1] = (((MixBuffer[nBufIdx][1] * microwire.rightVolume) >> 16) * microwire.masterVolume) >> 16;
+		}
+		
 		return;
+	}
 
 	pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
 
@@ -354,7 +387,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 			/* Apply anti-aliasing low pass filter ? (mono) */
 			for ( ; n <= dma.frameCounter_int; n++) {
-				FrameMono = DmaSnd_LowPassFilterMono(pFrameStart[n]);
+				FrameMono   =  DmaSnd_LowPassFilterLeft(pFrameStart[n]);
+				/* No-Click */ DmaSnd_LowPassFilterRight(pFrameStart[n]);
 			}
 
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
@@ -794,21 +828,6 @@ static float DmaSnd_IIRfilterR(float xn)
 	data[1] = data[0];			/* wn-1 -> wn-2;         */
 	data[0] = a;				/* wn -> wn-1            */
 	return yn;
-}
-
-/**
- * LowPass Filter Mono
- */
-static Sint8 DmaSnd_LowPassFilterMono(Sint8 in)
-{
-	static int lowPassFilter[2] = { 0, 0 };
-	Sint8 out;
-
-	out = ((lowPassFilter[0]>>1) + (lowPassFilter[1]) + (in>>1)) >> 1;
-	lowPassFilter[0] = lowPassFilter[1];
-	lowPassFilter[1] = in;
-
-	return out;
 }
 
 /**
