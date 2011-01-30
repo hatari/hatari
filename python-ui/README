@@ -22,8 +22,8 @@ Requirements
 ------------
 
 My guess at the required versions for the dependencies are:
-- Python >=2.4
-- PyGtk >= 2.8   (on Ubuntu PyGtk is in python-gtk2 package)
+- Python >= 2.4
+- PyGtk >= 2.12   (on Ubuntu PyGtk is in python-gtk2 package)
 
 Hatari UI is included with the Hatari sources:
 	http://hg.berlios.de/repos/hatari/file/tip/

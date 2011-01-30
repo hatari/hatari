@@ -112,13 +112,12 @@ class InputDialog(HatariUIDialog):
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             ("Close", gtk.RESPONSE_CLOSE))
         
-        tips = gtk.Tooltips()
         entry = gtk.Entry()
         entry.connect("activate", self._entry_cb)
         insert = create_button("Insert", self._entry_cb)
-        tips.set_tip(insert, "Insert given text to Hatari window")
+        insert.set_tooltip_text("Insert given text to Hatari window")
         enter = create_button("Enter key", self._enter_cb)
-        tips.set_tip(enter, "Simulate Enter key press")
+        enter.set_tooltip_text("Simulate Enter key press")
 
         hbox1 = gtk.HBox()
         hbox1.add(gtk.Label("Text:"))
@@ -130,9 +129,9 @@ class InputDialog(HatariUIDialog):
         rclick = gtk.Button("Right click")
         rclick.connect("pressed", self._rightpress_cb)
         rclick.connect("released", self._rightrelease_cb)
-        tips.set_tip(rclick, "Simulate Atari right button press & release")
+        rclick.set_tooltip_text("Simulate Atari right button press & release")
         dclick = create_button("Double click", self._doubleclick_cb)
-        tips.set_tip(dclick, "Simulate Atari left button double-click")
+        dclick.set_tooltip_text("Simulate Atari left button double-click")
 
         hbox2 = gtk.HBox()
         hbox2.add(dclick)
@@ -291,19 +290,17 @@ class FloppyDialog(HatariUIDialog):
             self.floppy.append(fsel)
             row += 1
 
-        tips = gtk.Tooltips()
-
         protect = gtk.combo_box_new_text()
         for text in config.get_protection_types():
             protect.append_text(text)
         protect.set_active(config.get_floppy_protection())
-        tips.set_tip(protect, "Write protect floppy image contents")
+        protect.set_tooltip_text("Write protect floppy image contents")
         table_add_widget_row(table, row, "Write protection:", protect)
 
         row += 1
         slowfdc = gtk.CheckButton("Slow floppy access")
         slowfdc.set_active(config.get_slowfdc())
-        tips.set_tip(slowfdc, "May be required by some rare game/demo")
+        slowfdc.set_tooltip_text("May be required by some rare game/demo")
         table_add_widget_row(table, row, None, slowfdc)
 
         table.show_all()
@@ -364,12 +361,10 @@ class HardDiskDialog(HatariUIDialog):
         self.gemdos = fsel
         row += 1
 
-        tips = gtk.Tooltips()
-
         protect = gtk.combo_box_new_text()
         for text in config.get_protection_types():
             protect.append_text(text)
-        tips.set_tip(protect, "Write protect GEMDOS drive contents")
+        protect.set_tooltip_text("Write protect GEMDOS drive contents")
         table_add_widget_row(table, row, "Write protection:", protect)
         self.protect = protect
 
@@ -419,13 +414,12 @@ class HardDiskDialog(HatariUIDialog):
 class DisplayDialog(HatariUIDialog):
 
     def _create_dialog(self, config):
-        tips = gtk.Tooltips()
 
         skip = gtk.combo_box_new_text()
         for text in config.get_frameskip_names():
             skip.append_text(text)
         skip.set_active(config.get_frameskip())
-        tips.set_tip(skip, "Set how many frames are skipped")
+        skip.set_tooltip_text("Set how many frames are skipped")
 
         maxw, maxh = config.get_max_size()
         maxadjw = gtk.Adjustment(maxw, 320, 1280, 8, 40)
@@ -434,20 +428,20 @@ class DisplayDialog(HatariUIDialog):
         scaleh = gtk.HScale(maxadjh)
         scalew.set_digits(0)
         scaleh.set_digits(0)
-        tips.set_tip(scalew, "Preferred/maximum zoomed width")
-        tips.set_tip(scaleh, "Preferred/maximum zoomed height")
+        scalew.set_tooltip_text("Preferred/maximum zoomed width")
+        scaleh.set_tooltip_text("Preferred/maximum zoomed height")
 
         borders = gtk.CheckButton("ST/STE overscan borders")
         borders.set_active(config.get_borders())
-        tips.set_tip(borders, "Whether to show ST/STE overscan borders in low/mid-rez. Visible border area is affected by max. zoom size")
+        borders.set_tooltip_text("Whether to show ST/STE overscan borders in low/mid-rez. Visible border area is affected by max. zoom size")
 
         statusbar = gtk.CheckButton("Show statusbar")
         statusbar.set_active(config.get_statusbar())
-        tips.set_tip(statusbar, "Whether to show statusbar with floppy leds etc")
+        statusbar.set_tooltip_text("Whether to show statusbar with floppy leds etc")
 
         led = gtk.CheckButton("Show overlay led")
         led.set_active(config.get_led())
-        tips.set_tip(led, "Whether to show overlay drive led when statusbar isn't visible")
+        led.set_tooltip_text("Whether to show overlay drive led when statusbar isn't visible")
 
         dialog = gtk.Dialog("Display settings", self.parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,

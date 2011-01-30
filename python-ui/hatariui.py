@@ -565,11 +565,9 @@ class UIActions:
             bar.set_style(gtk.TOOLBAR_BOTH)
             # disable overflow menu to get toolbar sized correctly for panels
             bar.set_show_arrow(False)
-            bar.set_tooltips(True)
         else:
             bar = None
         
-        tooltips = gtk.Tooltips()
         for action in actions:
             #print action
             offset = action.find("=")
@@ -578,7 +576,7 @@ class UIActions:
                 name = action[:offset]
                 text = action[offset+1:]
                 (widget, tip) = self._create_key_control(name, text)
-                widget.set_tooltip(tooltips, "Insert " + tip)
+                widget.set_tooltip_text("Insert " + tip)
             elif action == "|":
                 widget = gtk.SeparatorToolItem()
             elif action == "close":
