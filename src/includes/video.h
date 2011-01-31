@@ -113,7 +113,6 @@
 extern int STRes;
 extern int TTRes;
 extern int nFrameSkips;
-extern bool bUseSTShifter;
 extern bool bUseHighRes;
 extern int nVBLs;
 extern int nHBL;

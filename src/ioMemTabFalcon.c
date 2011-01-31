@@ -130,11 +130,11 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon line width */
 	{ 0xff8212, 46, IoMem_VoidRead, IoMem_VoidWrite },                                      /* No bus error here */
 	{ 0xff8240, 32, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },                  /* ST color regs */
-	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
+	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, VIDEL_ST_ShiftModeWriteByte },
 	{ 0xff8261, 3,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon horizontal fine scrolling high ? */
 	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read, Video_HorScroll_Write },                   /* horizontal fine scrolling */
-	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_ShiftModeWriteWord },       /* Falcon shift mode */
+	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_FALC_ShiftModeWriteWord },  /* Falcon shift mode */
 	{ 0xff8268, 24,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
 	{ 0xff8280, 68, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon video */

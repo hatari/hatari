@@ -11,9 +11,13 @@
 extern bool VIDEL_renderScreen(void);
 extern void VIDEL_reset(void);
 extern void VIDEL_ColorRegsWrite(void);
-extern void VIDEL_ShiftModeWriteWord(void);
+extern void VIDEL_ST_ShiftModeWriteByte(void);
+extern void VIDEL_FALC_ShiftModeWriteWord(void);
 extern void VIDEL_ZoomModeChanged(void);
 extern void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline);
 extern void VIDEL_ConvertScreenZoom(int vw, int vh, int bpp, int nextline);
+
+/* Called from memorySnapShot.c */
+extern void Videl_MemorySnapShot_Capture(bool bSave);
 
 #endif /* _VIDEL_H */

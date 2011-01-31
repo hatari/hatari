@@ -45,6 +45,7 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
+#include "memorySnapShot.h"
 #include "ioMem.h"
 #include "hostscreen.h"
 #include "screen.h"
@@ -69,17 +70,26 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #define HW	0xff8200
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
 
+struct videl_s {
+	bool bUseSTShifter;				/* whether to use ST or Falcon palette */
+};
+
+static struct videl_s videl;
+
 /* TODO: put these to some struct so that it's easier to see
  * they're VIDEL global
  */
 static int width, height, bpp;
 static bool hostColorsSync;
 
+
 /* Autozoom */
 static int zoomwidth, prev_scrwidth;
 static int zoomheight, prev_scrheight;
 static int *zoomxtable;
 static int *zoomytable;
+
+
 
 static void VIDEL_renderScreenNoZoom(void);
 static void VIDEL_renderScreenZoom(void);
@@ -88,7 +98,8 @@ static void VIDEL_renderScreenZoom(void);
 // Called upon startup and when CPU encounters a RESET instruction.
 void VIDEL_reset(void)
 {
-	hostColorsSync = false;
+	videl.bUseSTShifter = false;	/* Use Falcon color palette by default */
+	hostColorsSync = false; 
 
 	/* Autozoom */
 	zoomwidth=prev_scrwidth=0;
@@ -106,16 +117,76 @@ void VIDEL_reset(void)
 	IoMem_WriteWord(0xff8264, 0);    /* Horizontal scroll */
 }
 
+/**
+ * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
+ */
+void Videl_MemorySnapShot_Capture(bool bSave)
+{
+	/* Save/Restore details */
+	MemorySnapShot_Store(&videl, sizeof(videl));
+}
+
 // monitor write access to Falcon and ST/E color palette registers
 void VIDEL_ColorRegsWrite(void)
 {
 	hostColorsSync = false;
 }
 
-void VIDEL_ShiftModeWriteWord(void)
+/**
+    VIDEL_ST_ShiftModeWriteByte : 
+	$FFFF8260 [R/W] B         ______10  ST Shift Mode
+									||
+									||                           others   vga
+									||                  $FF8210 $FF82C2 $FF82C2
+									00--4BP/320 Pixels=> $0050   $0000   $0005
+									01--2BP/640 Pixels=> $0050   $0004   $0009
+									10--1BP/640 Pixels=> $0028   $0006   $0008
+									11--???/320 Pixels=> $0050   $0000   $0000
+
+	Writing to this register does the following things:
+		- activate STE palette
+		- sets line width ($8210)
+		- sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
+ */
+void VIDEL_ST_ShiftModeWriteByte(void)
+{
+
+		/* - activate STE palette
+		 * - TODO: set line width ($8210)
+		 * - TODO: sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
+		 */
+		videl.bUseSTShifter = true;
+}
+
+/**
+	$FFFF8266 [R/W] W  _____A98_6543210  Falcon Shift Mode (SPSHIFT)
+							||| |||||||
+							||| |||++++- 0..15: Colourbank setting in 8BP
+							||| ||+----- 0: 8 Bitplanes (256 Colors) off
+							||| ||+----- 1: 8 Bitplanes (256 Colors) on
+							||| |+------ 0: internal Vertical Sync
+							||| |        1: external Vertical Sync
+							||| +------- 0: internal Horizontal Sync
+							|||          1: external Horizontal Sync
+							||+--------- 0: True-Color-Mode off
+							||           1: True-Color-Mode on
+							|+---------- 0: Overlay-Mode off
+							|            1: Overlay-Mode on
+							+----------- 0: 2-Color-Mode off
+										 1: 2-Color-Mode on
+
+	Writing to this register does the following things:
+		- activate Falcon palette
+		- if you set Bits A/8/4 == 0, it selects 16-Color-Falcon-Mode (NOT the
+		  same as ST LOW since Falcon palette is used!)
+		- $8260 register is ignored, you don't need to write here anything
+
+	Note: 4-Color-Mode isn't realisable with Falcon palette.
+ */
+void VIDEL_FALC_ShiftModeWriteWord(void)
 {
 	Dprintf(("VIDEL f_shift: %06x = 0x%x\n", IoAccessBaseAddress, handleReadW(HW+0x66)));
-	bUseSTShifter = false;
+	videl.bUseSTShifter = false;
 }
 
 static long VIDEL_getVideoramAddress(void)
@@ -142,7 +213,7 @@ static int VIDEL_getScreenBpp(void)
 		bits_per_pixel = 16;
 	else if (f_shift & 0x010)	/* Falcon: 8 bitplanes */
 		bits_per_pixel = 8;
-	else if (!bUseSTShifter)	/* Falcon: 4 bitplanes */
+	else if (!videl.bUseSTShifter)	/* Falcon: 4 bitplanes */
 		bits_per_pixel = 4;
 	else if (st_shift == 0)
 		bits_per_pixel = 4;
@@ -247,7 +318,7 @@ static void VIDEL_updateColors(void)
 #define F_COLORS(i) handleRead(VIDEL_COLOR_REGS_BEGIN + (i))
 #define STE_COLORS(i)	handleRead(0xff8240 + (i))
 
-	if (!bUseSTShifter) {
+	if (!videl.bUseSTShifter) {
 		for (i = 0; i < colors; i++) {
 			int offset = i << 2;
 			r = F_COLORS(offset) & 0xfc;

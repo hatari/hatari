@@ -346,7 +346,6 @@ int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
 int nFrameSkips;                                /* speed up by skipping video frames */
 
-bool bUseSTShifter;                             /* Falcon: whether to use ST palette */
 bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
 Uint16 HBLPalettes[HBL_PALETTE_LINES];          /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
@@ -497,7 +496,6 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	MemorySnapShot_Store(&VideoShifterByte, sizeof(VideoShifterByte));
 	MemorySnapShot_Store(&TTRes, sizeof(TTRes));
-	MemorySnapShot_Store(&bUseSTShifter, sizeof(bUseSTShifter));
 	MemorySnapShot_Store(&bUseHighRes, sizeof(bUseHighRes));
 	MemorySnapShot_Store(&nVBLs, sizeof(nVBLs));
 	MemorySnapShot_Store(&nHBL, sizeof(nHBL));
@@ -3071,14 +3069,6 @@ void Video_ShifterMode_WriteByte(void)
 	{
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
 		IoMem_WriteByte(0xff8262, TTRes);           /* Copy to TT shifter mode register */
-	}
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-	{
-		/* - activate STE palette
-		 * - TODO: set line width ($8210)
-		 * - TODO: sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
-		 */
-		bUseSTShifter = true;
 	}
 
 	if (/*!bUseHighRes &&*/ !bUseVDIRes)                /* Don't store if hi-res and don't store if VDI resolution */
