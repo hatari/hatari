@@ -29,6 +29,8 @@ Emulation improvements
 
 - Improve TT and/or Falcon emulation, especially VIDEL
 
+- TT/FastRAM support as some demos need >14MB
+
 - Add SCSI hard disk emulation for Falcon/TT mode.
 
 - ACSI emulation seems to be broken in TT mode.
@@ -59,6 +61,8 @@ DSP emulation / Falcon sound matrix
 
 - Verify DSP instructions cycle count, especially with external RAM
 
+- Run-time toggling of DSP tracing
+
 
 Other potential Hatari functionality improvements
 -------------------------------------------------
@@ -70,15 +74,17 @@ Other potential Hatari functionality improvements
 - Support harddisk write protection also for IDE & ACSI drives?
 
 - Debugger improvements:
+	- configuration options for controlling disassembly output format
 	- Shortcut command for telling to run until given
 	  (temporary) conditional breakpoint is hit
 	- Running until code returns from ROM (exiting from super mode?)
 	- Single stepping that skips Traps, Line-A, Line-F. And one that
-	  skips also BSRs and JSRs
+	  skips also BSRs and JSRs.  Run until RTS/RTE command
 	- Command to run slowly
-	- Saving machine status to history buffer each time debugger is
-	  entered (exception or breakpoint is hit) and being able to view
-	  this history
+	- Saving machine status (at least registers) to history buffer each
+	  time debugger is entered (exception or breakpoint is hit), or at
+	  every instruction, and being able both to view this history and
+	  set it as the new machine state
 	- SP & SSP as CPU register names (active & supervisor stack)
 	- Fill and copy memory command
 	- Search.  For bytes or strings (Monst supports also searching
