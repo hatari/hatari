@@ -89,6 +89,8 @@ TraceOptions[] = {
 
 	{ TRACE_CROSSBAR  	 , "crossbar" } ,
 
+	{ TRACE_VIDEL  	         , "videl" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 

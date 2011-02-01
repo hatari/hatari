@@ -137,7 +137,16 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_FALC_ShiftModeWriteWord },  /* Falcon shift mode */
 	{ 0xff8268, 24,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
-	{ 0xff8280, 68, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon video */
+	{ 0xff8280, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HHC_WriteWord },            /* HHC : Horizontal Hold Counter */
+	{ 0xff8282, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HHT_WriteWord },            /* HHT : Horizontal Hold Timer */
+	{ 0xff8284, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HBB_WriteWord },            /* HBB : Horizontal Border Begin */
+	{ 0xff8286, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HBE_WriteWord },            /* HBE : Horizontal Border End */
+	{ 0xff8288, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HDB_WriteWord },            /* HDB : Horizontal Display Begin */
+	{ 0xff828a, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HDE_WriteWord },            /* HDE : Horizontal Display End */
+	{ 0xff828c, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HSS_WriteWord },            /* HSS : Horizontal SS */
+	{ 0xff828e, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HFS_WriteWord },            /* HFS : Horizontal FS */
+	{ 0xff8290, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HEE_WriteWord },            /* HEE : Horizontal EE */
+	{ 0xff8292, 50, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon video */
 
 	{ 0xff8604, SIZE_WORD, FDC_DiskControllerStatus_ReadWord, FDC_DiskController_WriteWord },
 	{ 0xff8606, SIZE_WORD, FDC_DmaStatus_ReadWord, FDC_DmaModeControl_WriteWord },

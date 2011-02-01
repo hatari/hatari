@@ -72,6 +72,8 @@ void STMemory_SetDefaultConfig(void)
 	int screensize;
 	int memtop;
 	Uint8 nMemControllerByte;
+	Uint8 nFalcSysCntrl, nFalcSysCntrl2 = 0;
+
 	static const int MemControllerTable[] =
 	{
 		0x01,   /* 512 KiB */
@@ -126,38 +128,62 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteByte(0x424, nMemControllerByte);
 	IoMem_WriteByte(0xff8001, nMemControllerByte);
 
-	/* Set the Falcon memory (and monitor) configuration register: */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
-		Uint8 nFalcSysCntrl;
-		/* TODO: How does the 0xff8006 register work exactly on the Falcon?
-		 * The following values are just guessed... */
+		/* Set the Falcon memory and monitor configuration register:
+			$FFFF8006: Monitor Type BIT 7 6  (These 2 bits are duplicated in $FFFF82C0 (BIT 1 0))
+				00 - Monochrome (SM124)
+				01 - Color (SC1224)
+				10 - VGA Color
+				11 - Television
+			
+			$FFFF8006: Memory configuration BIT 5 4
+				00 -  1Mb
+				01 -  4Mb
+				10 - 14Mb
+				11 - no boot !
+		*/
 		if (ConfigureParams.Memory.nMemorySize == 14)
-			nFalcSysCntrl=  0x26;
+			nFalcSysCntrl = 0x20;
 		else if (ConfigureParams.Memory.nMemorySize >= 4)
-			nFalcSysCntrl = 0x16;
-		else if (ConfigureParams.Memory.nMemorySize >= 2)
-			nFalcSysCntrl = 0x14;
-		else if (ConfigureParams.Memory.nMemorySize == 1)
-			nFalcSysCntrl = 0x06;
+			nFalcSysCntrl = 0x10;
 		else
-			nFalcSysCntrl = 0x04;
-		nFalcSysCntrl &= FALCON_MONITOR_MASK;
+			nFalcSysCntrl = 0x00;
+
 		switch(ConfigureParams.Screen.nMonitorType) {
-		case MONITOR_TYPE_TV:
-			nFalcSysCntrl |= FALCON_MONITOR_TV;
-			break;
-		case MONITOR_TYPE_VGA:
-			nFalcSysCntrl |= FALCON_MONITOR_VGA;
-			break;
-		case MONITOR_TYPE_RGB:
-			nFalcSysCntrl |= FALCON_MONITOR_RGB;
-			break;
-		case MONITOR_TYPE_MONO:
-			nFalcSysCntrl |= FALCON_MONITOR_MONO;
-			break;
+			case MONITOR_TYPE_TV:
+				nFalcSysCntrl |= FALCON_MONITOR_TV;
+				nFalcSysCntrl2 = 0x3;
+				break;
+			case MONITOR_TYPE_VGA:
+				nFalcSysCntrl |= FALCON_MONITOR_VGA;
+				nFalcSysCntrl2 = 0x2;
+				break;
+			case MONITOR_TYPE_RGB:
+				nFalcSysCntrl |= FALCON_MONITOR_RGB;
+				nFalcSysCntrl2 = 0x1;
+				break;
+			case MONITOR_TYPE_MONO:
+				nFalcSysCntrl |= FALCON_MONITOR_MONO;
+				nFalcSysCntrl2 = 0x0;
+				break;
 		}
 		STMemory_WriteByte(0xff8006, nFalcSysCntrl);
+		nFalcSysCntrl = STMemory_ReadByte(0xff82c0) & 0xfc;
+		nFalcSysCntrl |= nFalcSysCntrl2;
+		STMemory_WriteByte(0xff82c0, nFalcSysCntrl);
+
+		/* Set the Falcon Bus Control:
+			$FFFF8007 Falcon Bus Control
+				BIT 6 : F30 Start (0=Cold, 1=Warm) 
+				BIT 5 : STe Bus Emulation (0=on)
+				BIT 3 : Blitter Flag (0=on, 1=off)
+				BIT 2 : Blitter (0=8mhz, 1=16mhz)
+				BIT 0 : 68030 (0=8mhz, 1=16mhz)
+		
+			Todo: these values should be verified (docs are too poor on this register)
+			Todo: set $FFFF8007 with correct values
+		*/
 	}
 
 	/* Set TOS floppies */

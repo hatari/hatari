@@ -15,44 +15,46 @@
   Videl can run at 2 frequencies : 25 Mhz or 32 MHz
   
   Hardware I/O registers:
-	$FF8006 (byte) : monitor type
-	$FF820E (word) : offset to next line
-	$FF8210 (word) : VWRAP - line width
-	$FF8260 (byte) : ST shift mode
-	$FF8265 (byte) : Horizontal scroll register
-	$FF8266 (word) : Falcon shift mode
-	$FF8280 (word) : HHC - Horizontal Hold Counter
-	$FF8282 (word) : HHT - Horizontal Hold Timer
-	$FF8284 (word) : HBB - Horizontal Border Begin
-	$FF8286 (word) : HBE - Horizontal Border End
-	$FF8288 (word) : HDB - Horizontal Display Begin
-	$FF828A (word) : HDE - Horizontal Display End
-	$FF828C (word) : HSS - Horizontal SS
-	$FF828E (word) : HFS - Horizontal FS
-	$FF8290 (word) : HEE - Horizontal EE
-	$FF82A0 (word) : VFC - Vertical Frequency Counter
-	$FF82A2 (word) : VFT - Vertical Frequency Timer
-	$FF82A4 (word) : VBB - Vertical Border Begin
-	$FF82A6 (word) : VBE - Vertical Border End
-	$FF82A8 (word) : VDB - Vertical Display Begin
-	$FF82AA (word) : VDE - Vertical Display End
-	$FF82AC (word) : VSS - Vertical SS
-	$FF82C0 (word) : VCO - Video control
-	$FF82C2 (word) : VMD - Video mode
+	$FFFF8006 (byte) : monitor type
+	$FFFF820E (word) : offset to next line
+	$FFFF8210 (word) : VWRAP - line width
+	$FFFF8260 (byte) : ST shift mode
+	$FFFF8265 (byte) : Horizontal scroll register
+	$FFFF8266 (word) : Falcon shift mode
+	$FFFF8280 (word) : HHC - Horizontal Hold Counter
+	$FFFF8282 (word) : HHT - Horizontal Hold Timer
+	$FFFF8284 (word) : HBB - Horizontal Border Begin
+	$FFFF8286 (word) : HBE - Horizontal Border End
+	$FFFF8288 (word) : HDB - Horizontal Display Begin
+	$FFFF828A (word) : HDE - Horizontal Display End
+	$FFFF828C (word) : HSS - Horizontal SS
+	$FFFF828E (word) : HFS - Horizontal FS
+	$FFFF8290 (word) : HEE - Horizontal EE
+	$FFFF82A0 (word) : VFC - Vertical Frequency Counter
+	$FFFF82A2 (word) : VFT - Vertical Frequency Timer
+	$FFFF82A4 (word) : VBB - Vertical Border Begin
+	$FFFF82A6 (word) : VBE - Vertical Border End
+	$FFFF82A8 (word) : VDB - Vertical Display Begin
+	$FFFF82AA (word) : VDE - Vertical Display End
+	$FFFF82AC (word) : VSS - Vertical SS
+	$FFFF82C0 (word) : VCO - Video control
+	$FFFF82C2 (word) : VMD - Video mode
 */
 
 const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
+
+#include <SDL_endian.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "memorySnapShot.h"
 #include "ioMem.h"
+#include "log.h"
 #include "hostscreen.h"
 #include "screen.h"
 #include "stMemory.h"
 #include "video.h"
 #include "videl.h"
-#include <SDL_endian.h>
 
 
 #define handleRead(a) IoMem_ReadByte(a)
@@ -71,7 +73,8 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
 
 struct videl_s {
-	bool bUseSTShifter;				/* whether to use ST or Falcon palette */
+	bool  bUseSTShifter;			/* whether to use ST or Falcon palette */
+	Uint8 monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
 };
 
 static struct videl_s videl;
@@ -94,11 +97,13 @@ static int *zoomytable;
 static void VIDEL_renderScreenNoZoom(void);
 static void VIDEL_renderScreenZoom(void);
 
-
+       
 // Called upon startup and when CPU encounters a RESET instruction.
 void VIDEL_reset(void)
 {
-	videl.bUseSTShifter = false;	/* Use Falcon color palette by default */
+	videl.bUseSTShifter = false;				/* Use Falcon color palette by default */
+	videl.monitor_type  = IoMem_ReadByte(0xff8006) & 0xc0;
+	
 	hostColorsSync = false; 
 
 	/* Autozoom */
@@ -120,13 +125,15 @@ void VIDEL_reset(void)
 /**
  * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
  */
-void Videl_MemorySnapShot_Capture(bool bSave)
+void VIDEL_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&videl, sizeof(videl));
 }
 
-// monitor write access to Falcon and ST/E color palette registers
+/**
+ * Monitor write access to ST/E color palette registers
+ */
 void VIDEL_ColorRegsWrite(void)
 {
 	hostColorsSync = false;
@@ -134,46 +141,74 @@ void VIDEL_ColorRegsWrite(void)
 
 /**
     VIDEL_ST_ShiftModeWriteByte : 
-	$FFFF8260 [R/W] B         ______10  ST Shift Mode
-									||
-									||                           others   vga
-									||                  $FF8210 $FF82C2 $FF82C2
-									00--4BP/320 Pixels=> $0050   $0000   $0005
-									01--2BP/640 Pixels=> $0050   $0004   $0009
-									10--1BP/640 Pixels=> $0028   $0006   $0008
-									11--???/320 Pixels=> $0050   $0000   $0000
+	$FFFF8260 [R/W] B  ______10  ST Shift Mode
+	                         ||
+	                         ||                           others   vga
+	                         ||                  $FF8210 $FF82C2 $FF82C2
+	                         00--4BP/320 Pixels=> $0050   $0000   $0005
+	                         01--2BP/640 Pixels=> $0050   $0004   $0009
+	                         10--1BP/640 Pixels=> $0028   $0006   $0008
+	                         11--???/320 Pixels=> $0050   $0000   $0000
 
 	Writing to this register does the following things:
 		- activate STE palette
-		- sets line width ($8210)
-		- sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
+		- sets line width ($ffff8210)
+		- sets video mode in $ffff82c2 (double lines/interlace & cycles/pixel)
  */
 void VIDEL_ST_ShiftModeWriteByte(void)
 {
+	Uint16 st_shiftMode, line_width, video_mode;
 
-		/* - activate STE palette
-		 * - TODO: set line width ($8210)
-		 * - TODO: sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
-		 */
-		videl.bUseSTShifter = true;
+	st_shiftMode = IoMem_ReadWord(0xff8260);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8260 ST Shift Mode (STSHIFT) write: 0x%02x\n", st_shiftMode);
+
+	/* Activate STE palette */
+	videl.bUseSTShifter = true;
+
+	/*  Compute line width and video mode */
+	switch (st_shiftMode & 0x3) {
+		case 0:	/* 4BP/320 Pixels */
+			line_width = 0x50;
+			video_mode = videl.monitor_type == FALCON_MONITOR_VGA ? 0x5 : 0x0;
+			break;
+		case 1:	/* 2BP/640 Pixels */
+			line_width = 0x50;
+			video_mode = videl.monitor_type == FALCON_MONITOR_VGA ? 0x9 : 0x4;
+			break;
+		case 2:	/* 1BP/640 Pixels */
+			line_width = 0x28;
+			video_mode = videl.monitor_type == FALCON_MONITOR_VGA ? 0x8 : 0x6;
+			break;
+		case 3:	/* ???/320 Pixels */
+			line_width = 0x50;
+			video_mode = 0x0;
+			break;
+	}
+
+	/* Set line width ($FFFF8210) */
+	IoMem_WriteWord(0xff8210, line_width); 
+	
+	/* Set video mode ($FFFF82C2) */
+	IoMem_WriteWord(0xff82c2, video_mode); 
 }
 
 /**
+    VIDEL_FALCON_ShiftModeWriteByte :
 	$FFFF8266 [R/W] W  _____A98_6543210  Falcon Shift Mode (SPSHIFT)
-							||| |||||||
-							||| |||++++- 0..15: Colourbank setting in 8BP
-							||| ||+----- 0: 8 Bitplanes (256 Colors) off
-							||| ||+----- 1: 8 Bitplanes (256 Colors) on
-							||| |+------ 0: internal Vertical Sync
-							||| |        1: external Vertical Sync
-							||| +------- 0: internal Horizontal Sync
-							|||          1: external Horizontal Sync
-							||+--------- 0: True-Color-Mode off
-							||           1: True-Color-Mode on
-							|+---------- 0: Overlay-Mode off
-							|            1: Overlay-Mode on
-							+----------- 0: 2-Color-Mode off
-										 1: 2-Color-Mode on
+	                        ||| |||||||
+	                        ||| |||++++- 0..15: Colourbank setting in 8BP
+	                        ||| ||+----- 0: 8 Bitplanes (256 Colors) off
+	                        ||| ||+----- 1: 8 Bitplanes (256 Colors) on
+	                        ||| |+------ 0: internal Vertical Sync
+	                        ||| |        1: external Vertical Sync
+	                        ||| +------- 0: internal Horizontal Sync
+	                        |||          1: external Horizontal Sync
+	                        ||+--------- 0: True-Color-Mode off
+	                        ||           1: True-Color-Mode on
+	                        |+---------- 0: Overlay-Mode off
+	                        |            1: Overlay-Mode on
+	                        +----------- 0: 2-Color-Mode off
+	                                     1: 2-Color-Mode on
 
 	Writing to this register does the following things:
 		- activate Falcon palette
@@ -185,9 +220,103 @@ void VIDEL_ST_ShiftModeWriteByte(void)
  */
 void VIDEL_FALC_ShiftModeWriteWord(void)
 {
-	Dprintf(("VIDEL f_shift: %06x = 0x%x\n", IoAccessBaseAddress, handleReadW(HW+0x66)));
+	Uint16 falc_shiftMode = IoMem_ReadWord(0xff8266);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8266 Falcon Shift Mode (SPSHIFT) write: 0x%02x\n", falc_shiftMode);
+
 	videl.bUseSTShifter = false;
 }
+
+/**
+ *  Write Horizontal Hold Counter (HHC)
+ */
+void VIDEL_HHC_WriteWord(void)
+{
+	Uint16 hhc = IoMem_ReadWord(0xff8280);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8280 Horizontal Hold Counter (HHC) write: 0x%02x\n", hhc);
+}
+
+/**
+ *  Write Horizontal Hold Timer (HHT)
+ */
+void VIDEL_HHT_WriteWord(void)
+{
+	Uint16 hht = IoMem_ReadWord(0xff8282);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8282 Horizontal Hold Timer (HHT) write: 0x%02x\n", hht);
+}
+
+/**
+ *  Write Horizontal Border Begin (HBB)
+ */
+void VIDEL_HBB_WriteWord(void)
+{
+	Uint16 hbb = IoMem_ReadWord(0xff8284);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8284 Horizontal Border Begin (HBB) write: 0x%02x\n", hbb);
+}
+
+/**
+ *  Write Horizontal Border End (HBE)
+ */
+void VIDEL_HBE_WriteWord(void)
+{
+	Uint16 hbe = IoMem_ReadWord(0xff8286);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8286 Horizontal Border End (HBE) write: 0x%02x\n", hbe);
+}
+
+/**
+ *  Write Horizontal Display Begin (HDB)
+ */
+void VIDEL_HDB_WriteWord(void)
+{
+	Uint16 hdb = IoMem_ReadWord(0xff8288);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8288 Horizontal Display Begin (HDB) write: 0x%02x\n", hdb);
+}
+
+/**
+ *  Write Horizontal Display End (HDE)
+ */
+void VIDEL_HDE_WriteWord(void)
+{
+	Uint16 hde = IoMem_ReadWord(0xff828a);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff828a Horizontal Display End (HDE) write: 0x%02x\n", hde);
+}
+
+/**
+ *  Write Horizontal SS (HSS)
+ */
+void VIDEL_HSS_WriteWord(void)
+{
+	Uint16 hss = IoMem_ReadWord(0xff828c);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff828c Horizontal SS (HSS) write: 0x%02x\n", hss);
+}
+
+/**
+ *  Write Horizontal FS (HFS)
+ */
+void VIDEL_HFS_WriteWord(void)
+{
+	Uint16 hfs = IoMem_ReadWord(0xff828e);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff828e Horizontal FS (HFS) write: 0x%02x\n", hfs);
+}
+
+/**
+ *  Write Horizontal EE (HEE)
+ */
+void VIDEL_HEE_WriteWord(void)
+{
+	Uint16 hee = IoMem_ReadWord(0xff8290);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8290 Horizontal EE (HEE) write: 0x%02x\n", hee);
+}
+
 
 static long VIDEL_getVideoramAddress(void)
 {
@@ -280,7 +409,7 @@ static void VIDEL_getMonitorScale(int *sx, int *sy)
 	/* half pixel seems to have opposite meaning on
 	 * VGA and RGB monitor, so they need to handled separately
 	 */
-	if (handleRead(0xFF8006) & FALCON_MONITOR_VGA) {
+	if (videl.monitor_type) == FALCON_MONITOR_VGA) {
 		if (vmode & 0x08) {  // quarter pixel
 			*sx = 1;
 		} else {

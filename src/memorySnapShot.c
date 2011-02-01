@@ -253,7 +253,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		Blitter_MemorySnapShot_Capture(true);
 		DmaSnd_MemorySnapShot_Capture(true);
 		Crossbar_MemorySnapShot_Capture(true);
-		Videl_MemorySnapShot_Capture(true);
+		VIDEL_MemorySnapShot_Capture(true);
 		DSP_MemorySnapShot_Capture(true);
 		DebugUI_MemorySnapShot_Capture(pszFileName, true);
 		/* And close */
@@ -304,7 +304,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Blitter_MemorySnapShot_Capture(false);
 		DmaSnd_MemorySnapShot_Capture(false);
 		Crossbar_MemorySnapShot_Capture(false);
-		Videl_MemorySnapShot_Capture(false);
+		VIDEL_MemorySnapShot_Capture(false);
 		DSP_MemorySnapShot_Capture(false);
 		DebugUI_MemorySnapShot_Capture(pszFileName, false);
 

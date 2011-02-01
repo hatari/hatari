@@ -9,15 +9,28 @@
 #define HATARI_VIDEL_H
 
 extern bool VIDEL_renderScreen(void);
+
 extern void VIDEL_reset(void);
-extern void VIDEL_ColorRegsWrite(void);
-extern void VIDEL_ST_ShiftModeWriteByte(void);
-extern void VIDEL_FALC_ShiftModeWriteWord(void);
+
 extern void VIDEL_ZoomModeChanged(void);
 extern void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline);
 extern void VIDEL_ConvertScreenZoom(int vw, int vh, int bpp, int nextline);
 
+/* Called from ioMemTabFalcon.c */
+extern void VIDEL_ColorRegsWrite(void);
+extern void VIDEL_ST_ShiftModeWriteByte(void);
+extern void VIDEL_FALC_ShiftModeWriteWord(void);
+extern void VIDEL_HHC_WriteWord(void);
+extern void VIDEL_HHT_WriteWord(void);
+extern void VIDEL_HBB_WriteWord(void);
+extern void VIDEL_HBE_WriteWord(void);
+extern void VIDEL_HDB_WriteWord(void);
+extern void VIDEL_HDE_WriteWord(void);
+extern void VIDEL_HSS_WriteWord(void);
+extern void VIDEL_HFS_WriteWord(void);
+extern void VIDEL_HEE_WriteWord(void);
+
 /* Called from memorySnapShot.c */
-extern void Videl_MemorySnapShot_Capture(bool bSave);
+extern void VIDEL_MemorySnapShot_Capture(bool bSave);
 
 #endif /* _VIDEL_H */

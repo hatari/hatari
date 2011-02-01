@@ -191,7 +191,6 @@ typedef struct
  * 10 VGA - Colormonitor
  * 11 TV
  */
-#define FALCON_MONITOR_MASK 0x3F
 #define FALCON_MONITOR_MONO 0x00  /* SM124 */
 #define FALCON_MONITOR_RGB  0x40
 #define FALCON_MONITOR_VGA  0x80
