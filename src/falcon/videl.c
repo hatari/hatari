@@ -317,6 +317,96 @@ void VIDEL_HEE_WriteWord(void)
 	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8290 Horizontal EE (HEE) write: 0x%02x\n", hee);
 }
 
+/**
+ *  Write Vertical Frequency Counter (VFC)
+ */
+void VIDEL_VFC_WriteWord(void)
+{
+	Uint16 vfc = IoMem_ReadWord(0xff82a0);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82a0 Vertical Frequency Counter (VFC) write: 0x%02x\n", vfc);
+}
+
+/**
+ *  Write Vertical Frequency Timer (VFT)
+ */
+void VIDEL_VFT_WriteWord(void)
+{
+	Uint16 vft = IoMem_ReadWord(0xff82a2);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82a2 Vertical Frequency Timer (VFT) write: 0x%02x\n", vft);
+}
+
+/**
+ *  Write Vertical Border Begin (VBB)
+ */
+void VIDEL_VBB_WriteWord(void)
+{
+	Uint16 vbb = IoMem_ReadWord(0xff82a4);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82a4 Vertical Border Begin (VBB) write: 0x%02x\n", vbb);
+}
+
+/**
+ *  Write Vertical Border End (VBE)
+ */
+void VIDEL_VBE_WriteWord(void)
+{
+	Uint16 vbe = IoMem_ReadWord(0xff82a6);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82a6 Vertical Border End (VBE) write: 0x%02x\n", vbe);
+}
+
+/**
+ *  Write Vertical Display Begin (VDB)
+ */
+void VIDEL_VDB_WriteWord(void)
+{
+	Uint16 vdb = IoMem_ReadWord(0xff82a8);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82a8 Vertical Display Begin (VDB) write: 0x%02x\n", vdb);
+}
+
+/**
+ *  Write Vertical Display End (VDE)
+ */
+void VIDEL_VDE_WriteWord(void)
+{
+	Uint16 vde = IoMem_ReadWord(0xff82aa);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82aa Vertical Display End (VDE) write: 0x%02x\n", vde);
+}
+
+/**
+ *  Write Vertical SS (VSS)
+ */
+void VIDEL_VSS_WriteWord(void)
+{
+	Uint16 vss = IoMem_ReadWord(0xff82ac);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82ac Vertical SS (VSS) write: 0x%02x\n", vss);
+}
+
+/**
+ *  Write Video Control (VCO)
+ */
+void VIDEL_VCO_WriteWord(void)
+{
+	Uint16 vco = IoMem_ReadWord(0xff82c0);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82c0 Video control (VCO) write: 0x%02x\n", vco);
+}
+
+/**
+ *  Write Video Mode (VDM)
+ */
+void VIDEL_VMD_WriteWord(void)
+{
+	Uint16 vdm = IoMem_ReadWord(0xff82c2);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82c2 Video Mode (VDM) write: 0x%02x\n", vdm);
+}
+
 
 static long VIDEL_getVideoramAddress(void)
 {

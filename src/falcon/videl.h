@@ -29,6 +29,16 @@ extern void VIDEL_HDE_WriteWord(void);
 extern void VIDEL_HSS_WriteWord(void);
 extern void VIDEL_HFS_WriteWord(void);
 extern void VIDEL_HEE_WriteWord(void);
+extern void VIDEL_VFC_WriteWord(void);
+extern void VIDEL_VFT_WriteWord(void);
+extern void VIDEL_VBB_WriteWord(void);
+extern void VIDEL_VBE_WriteWord(void);
+extern void VIDEL_VDB_WriteWord(void);
+extern void VIDEL_VDE_WriteWord(void);
+extern void VIDEL_VSS_WriteWord(void);
+extern void VIDEL_VCO_WriteWord(void);
+extern void VIDEL_VMD_WriteWord(void);
+
 
 /* Called from memorySnapShot.c */
 extern void VIDEL_MemorySnapShot_Capture(bool bSave);
