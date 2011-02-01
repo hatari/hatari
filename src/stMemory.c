@@ -72,7 +72,7 @@ void STMemory_SetDefaultConfig(void)
 	int screensize;
 	int memtop;
 	Uint8 nMemControllerByte;
-	Uint8 nFalcSysCntrl, nFalcSysCntrl2 = 0;
+	Uint8 nFalcSysCntrl;
 
 	static const int MemControllerTable[] =
 	{
@@ -131,7 +131,7 @@ void STMemory_SetDefaultConfig(void)
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
 		/* Set the Falcon memory and monitor configuration register:
-			$FFFF8006: Monitor Type BIT 7 6  (These 2 bits are duplicated in $FFFF82C0 (BIT 1 0))
+			$FFFF8006: Monitor Type BIT 7 6  (These 2 bits are duplicated in $FFFF82C0 (BIT 1 0) by the TOS on startup)
 				00 - Monochrome (SM124)
 				01 - Color (SC1224)
 				10 - VGA Color
@@ -153,25 +153,18 @@ void STMemory_SetDefaultConfig(void)
 		switch(ConfigureParams.Screen.nMonitorType) {
 			case MONITOR_TYPE_TV:
 				nFalcSysCntrl |= FALCON_MONITOR_TV;
-				nFalcSysCntrl2 = 0x3;
 				break;
 			case MONITOR_TYPE_VGA:
 				nFalcSysCntrl |= FALCON_MONITOR_VGA;
-				nFalcSysCntrl2 = 0x2;
 				break;
 			case MONITOR_TYPE_RGB:
 				nFalcSysCntrl |= FALCON_MONITOR_RGB;
-				nFalcSysCntrl2 = 0x1;
 				break;
 			case MONITOR_TYPE_MONO:
 				nFalcSysCntrl |= FALCON_MONITOR_MONO;
-				nFalcSysCntrl2 = 0x0;
 				break;
 		}
 		STMemory_WriteByte(0xff8006, nFalcSysCntrl);
-		nFalcSysCntrl = STMemory_ReadByte(0xff82c0) & 0xfc;
-		nFalcSysCntrl |= nFalcSysCntrl2;
-		STMemory_WriteByte(0xff82c0, nFalcSysCntrl);
 
 		/* Set the Falcon Bus Control:
 			$FFFF8007 Falcon Bus Control
