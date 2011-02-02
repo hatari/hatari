@@ -15,12 +15,27 @@
   Videl can run at 2 frequencies : 25 Mhz or 32 MHz
   
   Hardware I/O registers:
+
 	$FFFF8006 (byte) : monitor type
-	$FFFF820E (word) : offset to next line
-	$FFFF8210 (word) : VWRAP - line width
+
+	$FFFF8201 (byte) : VDL_VBH - Video Base Hi
+	$FFFF8203 (byte) : VDL_VBM - Video Base Mi
+	$FFFF8205 (byte) : VDL_VCH - Video Count Hi
+	$FFFF8207 (byte) : VDL_VCM - Video Count Mi
+	$FFFF8209 (byte) : VDL_VCL - Video Count Lo
+	$FFFF820A (byte) : VDL_SYM - Sync mode
+	$FFFF820D (byte) : VDL_VBL - Video Base Lo
+	$FFFF820E (word) : VDL_LOF - Offset to next line
+	$FFFF8210 (word) : VDL_LWD - Line Wide in Words
+	
+	$FFFF8240 (word) : VDL_STC - ST Pallete Register 00
+	.........
+	$FFFF825E (word) : VDL_STC - ST Pallete Register 15
+
 	$FFFF8260 (byte) : ST shift mode
 	$FFFF8265 (byte) : Horizontal scroll register
 	$FFFF8266 (word) : Falcon shift mode
+	
 	$FFFF8280 (word) : HHC - Horizontal Hold Counter
 	$FFFF8282 (word) : HHT - Horizontal Hold Timer
 	$FFFF8284 (word) : HBB - Horizontal Border Begin
@@ -30,6 +45,7 @@
 	$FFFF828C (word) : HSS - Horizontal SS
 	$FFFF828E (word) : HFS - Horizontal FS
 	$FFFF8290 (word) : HEE - Horizontal EE
+	
 	$FFFF82A0 (word) : VFC - Vertical Frequency Counter
 	$FFFF82A2 (word) : VFT - Vertical Frequency Timer
 	$FFFF82A4 (word) : VBB - Vertical Border Begin
@@ -37,8 +53,13 @@
 	$FFFF82A8 (word) : VDB - Vertical Display Begin
 	$FFFF82AA (word) : VDE - Vertical Display End
 	$FFFF82AC (word) : VSS - Vertical SS
+	
 	$FFFF82C0 (word) : VCO - Video control
 	$FFFF82C2 (word) : VMD - Video mode
+
+	$FFFF9800 (long) : VDL_PAL - Videl Pallete Register 000
+	...........
+	$FFFF98FC (long) : VDL_PAL - Videl Pallete Register 255
 */
 
 const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
@@ -74,6 +95,7 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 struct videl_s {
 	bool  bUseSTShifter;			/* whether to use ST or Falcon palette */
+	Uint8 reg_ffff8006_save;		/* save reg_ffff8006 as it's a read only register */
 	Uint8 monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
 };
 
@@ -102,7 +124,8 @@ static void VIDEL_renderScreenZoom(void);
 void VIDEL_reset(void)
 {
 	videl.bUseSTShifter = false;				/* Use Falcon color palette by default */
-	videl.monitor_type  = IoMem_ReadByte(0xff8006) & 0xc0;
+	videl.reg_ffff8006_save = IoMem_ReadByte(0xff8006);
+	videl.monitor_type  = videl.reg_ffff8006_save & 0xc0;
 	
 	hostColorsSync = false; 
 
@@ -137,6 +160,17 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 void VIDEL_ColorRegsWrite(void)
 {
 	hostColorsSync = false;
+}
+
+/**
+ * VIDEL_Monitor_WriteByte : Contains memory and monitor configuration. 
+ *                           This register is  read only.
+ */
+void VIDEL_Monitor_WriteByte(void)
+{
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8006 Monitor and memory conf write (Read only)\n");
+	/* Restore hardware value */
+	IoMem_WriteByte(0xff8006, videl.reg_ffff8006_save);
 }
 
 /**

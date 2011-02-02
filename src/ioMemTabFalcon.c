@@ -106,7 +106,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 {
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
-	{ 0xff8006, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon configuration */
+	{ 0xff8006, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_Monitor_WriteByte },        /* Falcon monitor and memory configuration */
+	{ 0xff8007, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon bus configuration */
 	{ 0xff800A, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* Fix Illusion demo */
 	{ 0xff800C, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8060, SIZE_LONG, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
