@@ -977,7 +977,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	      if (bExceptionDebugging)
 	        DebugUI();
 	      else
-		DlgAlert_Notice("Detected double bus error => CPU halted!\nEmulation needs to be reseted.\n");
+		DlgAlert_Notice("Detected double bus error => CPU halted!\nEmulation needs to be reset.\n");
 	      regs.intmask = 7;
 	      m68k_setstopped(true);
 	      return;
