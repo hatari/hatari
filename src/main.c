@@ -9,6 +9,7 @@
 const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 
 #include <time.h>
+#include <errno.h>
 #include <SDL.h>
 
 #include "main.h"
@@ -53,6 +54,10 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "falcon/hostscreen.h"
 #include "falcon/dsp.h"
 
+#if HAVE_GETTIMEOFDAY
+#include <sys/time.h>
+#endif
+
 
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
 
@@ -95,6 +100,57 @@ static Uint32 Main_GetTicks(void)
 # warning "times() function missing, using inaccurate SDL_GetTicks() instead."
 # define Main_GetTicks SDL_GetTicks
 #endif
+
+#undef HAVE_GETTIMEOFDAY
+#undef HAVE_NANOSLEEP
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return a clock counter in micro seconds.
+ * If gettimeofday is available, we use it directly, else we convert the
+ * return of SDL_GetTicks in micro sec.
+ */
+
+static Sint64	Clock_GetTicks ( void )
+{
+        Sint64		ticks_micro;
+
+#if HAVE_GETTIMEOFDAY
+        struct timeval	now;
+        gettimeofday ( &now , NULL );
+        ticks_micro = now.tv_sec * 1000000UL + now.tv_usec;
+#else
+	ticks_micro = SDL_GetTicks() * 1000UL;		/* milli sec -> micro sec */
+#endif
+
+	return ticks_micro;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Sleep for a given number of micro seconds.
+ * If nanosleep is available, we use it directly, else we use SDL_Delay
+ * (which is portable, but less accurate as is uses milli-seconds)
+ */
+
+static void	Clock_Delay ( Sint64 ticks_micro )
+{
+#if HAVE_NANOSLEEP
+	struct timespec	ts;
+	int		ret;
+	ts.tv_sec = ticks_micro / 1000000;
+	ts.tv_nsec = (ticks_micro % 1000000) * 1000;	/* micro sec -> nano sec */
+	/* wait until all the delay is elapsed, including possible interruptions by signals */
+	do
+	{
+                errno = 0;
+                ret = nanosleep(&ts, &ts);
+	} while ( ret && ( errno == EINTR ) );		/* keep on sleeping if we were interrupted */
+#else
+	SDL_Delay ( (Uint32)(ticks_micro / 1000) ) ;	/* micro sec -> milli sec */
+#endif
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -213,10 +269,10 @@ void Main_SetRunVBLs(Uint32 vbls)
  */
 void Main_WaitOnVbl(void)
 {
-	int nCurrentMilliTicks;
-	static int nDestMilliTicks = 0;
-	int nFrameDuration;
-	signed int nDelay;
+	Sint64 CurrentTicks;
+	static Sint64 DestTicks = 0;
+	Sint64 FrameDuration_micro;
+	int nDelay;
 
 	nVBLCount++;
 	if (nRunVBLs &&	nVBLCount >= nRunVBLs)
@@ -225,14 +281,14 @@ void Main_WaitOnVbl(void)
 		Main_PauseEmulation(true);
 		exit(0);
 	}
-	nCurrentMilliTicks = SDL_GetTicks();
+	CurrentTicks = Clock_GetTicks();
 
-	nFrameDuration = 1000/nScreenRefreshRate;
-	nDelay = nDestMilliTicks - nCurrentMilliTicks;
+	FrameDuration_micro = (1000*1000)/nScreenRefreshRate;
+	nDelay = DestTicks - CurrentTicks;
 
 	/* Do not wait if we are in fast forward mode or if we are totally out of sync */
 	if (ConfigureParams.System.bFastForward == true
-	        || nDelay < -4*nFrameDuration)
+	        || nDelay < -4*FrameDuration_micro)
 	{
 		if (ConfigureParams.System.bFastForward == true)
 		{
@@ -244,8 +300,8 @@ void Main_WaitOnVbl(void)
 			nFrameSkips += 1;
 			// Log_Printf(LOG_DEBUG, "Increased frameskip to %d\n", nFrameSkips);
 		}
-		/* Only update nDestMilliTicks for next VBL */
-		nDestMilliTicks = nCurrentMilliTicks + nFrameDuration;
+		/* Only update DestTicks for next VBL */
+		DestTicks = CurrentTicks + FrameDuration_micro;
 		return;
 	}
 	/* If automatic frameskip is enabled and delay's more than twice
@@ -253,7 +309,7 @@ void Main_WaitOnVbl(void)
 	 */
 	if (nFrameSkips > 0
 	    && ConfigureParams.Screen.nFrameSkips >= AUTO_FRAMESKIP_LIMIT
-	    && 2*nDelay > nFrameDuration/nFrameSkips)
+	    && 2*nDelay > FrameDuration_micro/nFrameSkips)
 	{
 		nFrameSkips -= 1;
 		// Log_Printf(LOG_DEBUG, "Decreased frameskip to %d\n", nFrameSkips);
@@ -262,25 +318,26 @@ void Main_WaitOnVbl(void)
 	if (bAccurateDelays)
 	{
 		/* Accurate sleeping is possible -> use SDL_Delay to free the CPU */
-		if (nDelay > 1)
-			SDL_Delay(nDelay - 1);
+		if (nDelay > 1000)
+			Clock_Delay(nDelay - 1000);
 	}
 	else
 	{
 		/* No accurate SDL_Delay -> only wait if more than 5ms to go... */
-		if (nDelay > 5)
-			SDL_Delay(nDelay<10 ? nDelay-1 : 9);
+		if (nDelay > 5000)
+			Clock_Delay(nDelay<10000 ? nDelay-1000 : 9000);
 	}
 
 	/* Now busy-wait for the right tick: */
 	while (nDelay > 0)
 	{
-		nCurrentMilliTicks = SDL_GetTicks();
-		nDelay = nDestMilliTicks - nCurrentMilliTicks;
+		CurrentTicks = Clock_GetTicks();
+		nDelay = DestTicks - CurrentTicks;
 	}
 
-	/* Update nDestMilliTicks for next VBL */
-	nDestMilliTicks += nFrameDuration;
+//printf ( "tick %d\n" , CurrentTicks );
+	/* Update DestTicks for next VBL */
+	DestTicks += FrameDuration_micro;
 }
 
 
