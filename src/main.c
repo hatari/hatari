@@ -101,8 +101,9 @@ static Uint32 Main_GetTicks(void)
 # define Main_GetTicks SDL_GetTicks
 #endif
 
-#undef HAVE_GETTIMEOFDAY
-#undef HAVE_NANOSLEEP
+
+//#undef HAVE_GETTIMEOFDAY
+//#undef HAVE_NANOSLEEP
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -266,6 +267,7 @@ void Main_SetRunVBLs(Uint32 vbls)
  * are very inaccurate on some systems like Linux 2.4 or Mac OS X (they can only
  * wait for a multiple of 10ms due to the scheduler on these systems), so we have
  * to "busy wait" there to get an accurate timing.
+ * All times are expressed as micro seconds, to avoid too much rounding error.
  */
 void Main_WaitOnVbl(void)
 {
@@ -281,9 +283,13 @@ void Main_WaitOnVbl(void)
 		Main_PauseEmulation(true);
 		exit(0);
 	}
+
+	FrameDuration_micro = (Sint64) ( 1000000.0 / nScreenRefreshRate + 0.5 );	/* round to closest integer */
 	CurrentTicks = Clock_GetTicks();
 
-	FrameDuration_micro = (1000*1000)/nScreenRefreshRate;
+	if ( DestTicks == 0 )					/* first call, init DestTicks */
+		DestTicks = CurrentTicks + FrameDuration_micro;
+
 	nDelay = DestTicks - CurrentTicks;
 
 	/* Do not wait if we are in fast forward mode or if we are totally out of sync */
@@ -335,7 +341,7 @@ void Main_WaitOnVbl(void)
 		nDelay = DestTicks - CurrentTicks;
 	}
 
-//printf ( "tick %d\n" , CurrentTicks );
+//printf ( "tick %lld\n" , CurrentTicks );
 	/* Update DestTicks for next VBL */
 	DestTicks += FrameDuration_micro;
 }

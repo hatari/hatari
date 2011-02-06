@@ -161,6 +161,8 @@ check_function_exists(setenv HAVE_SETENV)
 check_function_exists(select HAVE_SELECT)
 check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
 check_function_exists(memalign HAVE_MEMALIGN)
+check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)
+check_function_exists(nanosleep HAVE_NANOSLEEP)
 
 # #############
 # Other CFLAGS:

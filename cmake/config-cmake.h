@@ -51,6 +51,12 @@
 /* Define to 1 if you have the 'memalign' function. */
 #cmakedefine HAVE_MEMALIGN 1
 
+/* Define to 1 if you have the 'gettimeofday' function. */
+#cmakedefine HAVE_GETTIMEOFDAY 1
+
+/* Define to 1 if you have the 'nanosleep' function. */
+#cmakedefine HAVE_NANOSLEEP 1
+
 
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "@BIN2DATADIR@"
