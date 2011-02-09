@@ -18,6 +18,7 @@ extern void VIDEL_ConvertScreenZoom(int vw, int vh, int bpp, int nextline);
 
 /* Called from ioMemTabFalcon.c */
 extern void VIDEL_Monitor_WriteByte(void);
+extern void VIDEL_ScreenBase_WriteByte(void);
 extern void VIDEL_ColorRegsWrite(void);
 extern void VIDEL_ST_ShiftModeWriteByte(void);
 extern void VIDEL_FALC_ShiftModeWriteWord(void);

@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 
-  Videl can run at 2 frequencies : 25 Mhz or 32 MHz
+  Videl can run at 2 frequencies : 25.175 Mhz or 32 MHz
   
   Hardware I/O registers:
 
@@ -171,6 +171,26 @@ void VIDEL_Monitor_WriteByte(void)
 	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8006 Monitor and memory conf write (Read only)\n");
 	/* Restore hardware value */
 	IoMem_WriteByte(0xff8006, videl.reg_ffff8006_save);
+}
+
+/**
+ * Write to video address base high, med and low register (0xff8201/03/0d).
+ * On Falcon, when a program writes to high or med registers, base low register
+ * is reset to zero.
+ */
+void VIDEL_ScreenBase_WriteByte(void)
+{
+	Uint32 screenBase;
+	
+	if ((IoAccessCurrentAddress == 0xff8201) || (IoAccessCurrentAddress == 0xff8203)) {
+		/* Reset screen base low register */
+		IoMem[0xff820d] = 0;
+	}
+	
+	screenBase = (IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8)+IoMem[0xff820d];
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $%04x Screen base write: 0x%01x\t (screen: 0x%04x)\n", 
+						IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress], screenBase);
 }
 
 /**
