@@ -262,6 +262,8 @@ static void DmaSnd_StartNewFrame(void)
 	dma.frameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
 	dma.frameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
 
+	LOG_TRACE(TRACE_DMASND, "DMA snd new frame start=%x end=%x\n", dma.frameStartAddr, dma.frameEndAddr);
+
 	dma.frameCounter_int = 0;
 	dma.frameCounter_dec = 0;
 	
@@ -292,6 +294,8 @@ static void DmaSnd_StartNewFrame(void)
  */
 static inline int DmaSnd_EndOfFrameReached(void)
 {
+	LOG_TRACE(TRACE_DMASND, "DMA snd enf of frame\n");
+
 	/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
 	MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
 	if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
@@ -570,6 +574,56 @@ void DmaSnd_FrameCountMed_ReadByte(void)
 void DmaSnd_FrameCountLow_ReadByte(void)
 {
 	IoMem_WriteByte(0xff890d, DmaSnd_GetFrameCount());
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write bytes to various registers with no action.
+ */
+void DmaSnd_FrameStartHigh_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame start high: 0x%02x\n", IoMem_ReadByte(0xff8903));
+}
+
+void DmaSnd_FrameStartMed_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame start med: 0x%02x\n", IoMem_ReadByte(0xff8905));
+}
+
+void DmaSnd_FrameStartLow_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame start low: 0x%02x\n", IoMem_ReadByte(0xff8907));
+}
+
+void DmaSnd_FrameCountHigh_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame count high: 0x%02x\n", IoMem_ReadByte(0xff8909));
+}
+
+void DmaSnd_FrameCountMed_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame count med: 0x%02x\n", IoMem_ReadByte(0xff890b));
+}
+
+void DmaSnd_FrameCountLow_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame count low: 0x%02x\n", IoMem_ReadByte(0xff890d));
+}
+
+void DmaSnd_FrameEndHigh_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame end high: 0x%02x\n", IoMem_ReadByte(0xff890f));
+}
+
+void DmaSnd_FrameEndMed_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame end med: 0x%02x\n", IoMem_ReadByte(0xff8911));
+}
+
+void DmaSnd_FrameEndLow_WriteByte(void)
+{
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame end low: 0x%02x\n", IoMem_ReadByte(0xff8913));
 }
 
 
