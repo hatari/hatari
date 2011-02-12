@@ -1404,11 +1404,9 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	else {
 		eightBits = 64;
 		value = (Sint16) pFrameStart[dmaPlay.frameCounter];
-/*
 		if ((dmaPlay.currentFrame & 1) == 0) {
 			increment_frame = 1;
 		}
-*/
 	}
 
 	/* if handshake mode */
