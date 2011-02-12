@@ -294,7 +294,7 @@ static void DmaSnd_StartNewFrame(void)
  */
 static inline int DmaSnd_EndOfFrameReached(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd enf of frame\n");
+	LOG_TRACE(TRACE_DMASND, "DMA snd end of frame\n");
 
 	/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
 	MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
