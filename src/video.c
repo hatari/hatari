@@ -3070,6 +3070,9 @@ void Video_ShifterMode_WriteByte(void)
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
 		IoMem_WriteByte(0xff8262, TTRes);           /* Copy to TT shifter mode register */
 	}
+	
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		VIDEL_ST_ShiftModeWriteByte();
 
 	if (/*!bUseHighRes &&*/ !bUseVDIRes)                /* Don't store if hi-res and don't store if VDI resolution */
 	{
