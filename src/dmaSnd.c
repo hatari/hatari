@@ -334,16 +334,17 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-				switch (microwire.mixing) {
+
+			switch (microwire.mixing) {
 				case 1:
 					/* YM2149 */
 					break;
 				default:
 					/* YM2149 - 12dB */
 					MixBuffer[nBufIdx][0] /= 4;
+					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][0];	
 					break;
 			}
-			MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][0];	
 		}
 		
 		/* Apply LMC1992 sound modifications (Bass and Treble) 
@@ -987,7 +988,7 @@ void DmaSnd_Init_Bass_and_Treble_Tables(void)
 	fc_tt = 8438.756;
 	Fs = (float)nAudioFrequency;
 
-	if ((Fs < 8000.0) || (Fs > 96000.0))
+	if ((Fs < (fc_bt+fc_tt)*2) || (Fs > 96000.0))
 		Fs = 44100.0;
 
 	for (dB = 12.0, n = TONE_STEPS; n--; dB -= 2.0)
