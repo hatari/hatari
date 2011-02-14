@@ -1271,6 +1271,10 @@ static void Crossbar_Process_DSPXmit_Transfer(void)
 {
 	Uint16 frame=0;
 	Sint32 data;
+	
+	/* If DSP Xmit is tristated, do nothing */
+	if (dspXmit.isTristated)
+		return;
 
 	/* Is DSP Xmit connected to DMA Record in handshake mode ? */
 	if (dmaRecord.isConnectedToDspInHandShakeMode) {
