@@ -131,24 +131,38 @@ void STMemory_SetDefaultConfig(void)
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
 		/* Set the Falcon memory and monitor configuration register:
-			$FFFF8006: Monitor Type BIT 7 6  (These 2 bits are duplicated in $FFFF82C0 (BIT 1 0) by the TOS on startup)
-				00 - Monochrome (SM124)
-				01 - Color (SC1224)
-				10 - VGA Color
-				11 - Television
-			
-			$FFFF8006: Memory configuration BIT 5 4
-				00 -  1Mb
-				01 -  4Mb
-				10 - 14Mb
-				11 - no boot !
+
+         $ffff8006.b [R]  76543210  Monitor-memory
+                          ||||||||
+                          |||||||+- RAM Wait Status
+                          |||||||   0 =  1 Wait (default)
+                          |||||||   1 =  0 Wait
+                          ||||||+-- Video Bus size
+                          ||||||    0 = 16 Bit
+                          ||||||    1 = 32 Bit (default)
+                          ||||++--- ROM Wait Status
+                          ||||      00 = Reserved
+                          ||||      01 =  2 Wait (default)
+                          ||||      10 =  1 Wait
+                          ||||      11 =  0 Wait
+                          ||++----- Falcon Memory
+                          ||        00 =  1 MB
+                          ||        01 =  4 MB
+                          ||        10 = 14 MB
+                          ||        11 = no boot !
+                          ++------- Monitor-Typ
+                                    00 - Monochrome (SM124)
+                                    01 - Color (SC1224)
+                                    10 - VGA Color
+                                    11 - Television
 		*/
+
 		if (ConfigureParams.Memory.nMemorySize == 14)
-			nFalcSysCntrl = 0x20;
+			nFalcSysCntrl = 0x26;
 		else if (ConfigureParams.Memory.nMemorySize >= 4)
-			nFalcSysCntrl = 0x10;
+			nFalcSysCntrl = 0x16;
 		else
-			nFalcSysCntrl = 0x00;
+			nFalcSysCntrl = 0x6;
 
 		switch(ConfigureParams.Screen.nMonitorType) {
 			case MONITOR_TYPE_TV:
