@@ -203,12 +203,14 @@ void Audio_SetOutputAudioFreq(int nNewFrequency)
 		/* Set new frequency */
 		nAudioFrequency = nNewFrequency;
 
+		/* Adapt LMC filters to this new frequency */
+		DmaSnd_Init_Bass_and_Treble_Tables();
+
 		/* Re-open SDL audio interface if necessary: */
 		if (bSoundWorking)
 		{
 			Audio_UnInit();
 			Audio_Init();
-			DmaSnd_Init_Bass_and_Treble_Tables();
 		}
 	}
 }
