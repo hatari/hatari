@@ -478,7 +478,7 @@ extern void console_out_f (const TCHAR *, ...);
 extern void console_flush (void);
 extern int console_get (TCHAR *, int);
 extern TCHAR console_getch (void);
-extern void f_out (void *, const TCHAR *, ...);
+/*extern void f_out (void *, const TCHAR *, ...);*/
 extern TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...);
 extern void gui_message (const TCHAR *,...);
 extern int gui_message_multibutton (int flags, const TCHAR *format,...);

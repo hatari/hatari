@@ -251,25 +251,6 @@ void reset_frame_rate_hack (void)
 */
 }
 
-
-/* Taken from writelog.cpp */
-void f_out (void *f, const TCHAR *format, ...)
-{
-/*
-	int count;
-	TCHAR buffer[WRITE_LOG_BUF_SIZE];
-	va_list parms;
-	va_start (parms, format);
-
-	if (f == NULL)
-		return;
-	count = _vsntprintf (buffer, WRITE_LOG_BUF_SIZE - 1, format, parms);
-	openconsole ();
-	writeconsole (buffer);
-	va_end (parms);
-*/
-}
-
 /* Code taken from main.cpp */
 void fixup_cpu (struct uae_prefs *p)
 {

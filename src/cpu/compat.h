@@ -73,4 +73,6 @@ int quit_program;  // declared as "int quit_program = 0;" in main.c
 
 #define _vsntprintf printf
 
+#define f_out fprintf
+
 #endif

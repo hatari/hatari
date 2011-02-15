@@ -616,7 +616,7 @@ static long int m68kpc_offset;
 #define get_iword_1(o) get_word (regs.pc + (regs.pc_p - regs.pc_oldp) + (o))
 #define get_ilong_1(o) get_long (regs.pc + (regs.pc_p - regs.pc_oldp) + (o))
 
-static uae_s32 ShowEA (void *f, uae_u16 opcode, int reg, amodes mode, wordsizes size, TCHAR *buf, uae_u32 *eaddr, int safemode)
+static uae_s32 ShowEA (FILE *f, uae_u16 opcode, int reg, amodes mode, wordsizes size, TCHAR *buf, uae_u32 *eaddr, int safemode)
 {
 	uae_u16 dp;
 	uae_s8 disp8;
@@ -3962,7 +3962,7 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int 
 		*nextpc = m68k_getpc () + m68kpc_offset;
 }
 
-void m68k_disasm_ea (void *f, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr)
+void m68k_disasm_ea (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr)
 {
 	TCHAR *buf;
 
@@ -3973,7 +3973,7 @@ void m68k_disasm_ea (void *f, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *s
 	f_out (f, "%s", buf);
 	xfree (buf);
 }
-void m68k_disasm (void *f, uaecptr addr, uaecptr *nextpc, int cnt)
+void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
 	TCHAR *buf;
 
@@ -4119,7 +4119,7 @@ uae_u32 val_move2c (int regno)
 	}
 }
 
-void m68k_dumpstate (void *f, uaecptr *nextpc)
+void m68k_dumpstate (FILE *f, uaecptr *nextpc)
 {
 	int i, j;
 
@@ -4289,6 +4289,7 @@ uae_u8 *restore_cpu_extra (uae_u8 *src)
 {
 	restore_u32 ();
 	uae_u32 flags = restore_u32 ();
+
 
 	currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact = (flags & 1) ? true : false;
 	currprefs.blitter_cycle_exact = changed_prefs.blitter_cycle_exact = currprefs.cpu_cycle_exact;
