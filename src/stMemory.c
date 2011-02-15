@@ -137,7 +137,7 @@ void STMemory_SetDefaultConfig(void)
                           |||||||+- RAM Wait Status
                           |||||||   0 =  1 Wait (default)
                           |||||||   1 =  0 Wait
-                          ||||||+-- Video Bus size
+                          ||||||+-- Video Bus size ???
                           ||||||    0 = 16 Bit
                           ||||||    1 = 32 Bit (default)
                           ||||++--- ROM Wait Status
@@ -155,14 +155,31 @@ void STMemory_SetDefaultConfig(void)
                                     01 - Color (SC1224)
                                     10 - VGA Color
                                     11 - Television
+
+		Bit 1 seems not to be well documented. It's used by TOS at bootup to compute the memory size.
+		After some tests, I get the following RAM values (Bits 5, 4, 1 are involved) :
+
+		00 =  512 Ko	20 = 8192 Ko
+		02 = 1024 Ko	22 = 14366 Ko
+		10 = 2048 Ko	30 = Illegal
+		12 = 4096 Ko	32 = Illegal
+
+		I use these values for Hatari's emulation.
+		I also set the bit 3 and 2 at value 01 are mentioned in the register description.
 		*/
 
-		if (ConfigureParams.Memory.nMemorySize == 14)
+		if (ConfigureParams.Memory.nMemorySize == 14)     /* 14 Meg */
 			nFalcSysCntrl = 0x26;
-		else if (ConfigureParams.Memory.nMemorySize >= 4)
+		else if (ConfigureParams.Memory.nMemorySize == 8) /* 8 Meg */
+			nFalcSysCntrl = 0x24;
+		else if (ConfigureParams.Memory.nMemorySize == 4) /* 4 Meg */
 			nFalcSysCntrl = 0x16;
+		else if (ConfigureParams.Memory.nMemorySize == 2) /* 2 Meg */
+			nFalcSysCntrl = 0x14;
+		else if (ConfigureParams.Memory.nMemorySize == 1) /* 1 Meg */
+			nFalcSysCntrl = 0x06;
 		else
-			nFalcSysCntrl = 0x6;
+			nFalcSysCntrl = 0x04;                     /* 512 Ko */
 
 		switch(ConfigureParams.Screen.nMonitorType) {
 			case MONITOR_TYPE_TV:
