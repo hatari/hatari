@@ -981,15 +981,35 @@ void DmaSnd_Init_Bass_and_Treble_Tables(void)
 	struct first_order_s *bass;
 	struct first_order_s *treb;
 
-	float  dB, g, fc_bt, fc_tt, Fs;
+	float  dB_adjusted, dB, g, fc_bt, fc_tt, Fs;
 	int    n;
 
 	fc_bt = 118.2763;
 	fc_tt = 8438.756;
 	Fs = (float)nAudioFrequency;
 
-	if ((Fs < (fc_bt+fc_tt)*2) || (Fs > 96000.0))
+	if ((Fs < 8000.0) || (Fs > 96000.0))
 		Fs = 44100.0;
+
+	if (fc_tt > 0.5*0.8*Fs)
+	{
+		fc_tt = 0.5*0.8*Fs;
+		dB_adjusted = 2.0 * 0.5*0.8*Fs/fc_tt;
+	}else
+	{
+		dB_adjusted = 2.0;
+	}
+
+	for (dB = dB_adjusted*(TONE_STEPS-1)/2, n = TONE_STEPS; n--; dB -= dB_adjusted)
+	{
+		g = powf(10.0, dB/20.0);	/* 12dB to -12dB */
+
+		treb = DmaSnd_Treble_Shelf(g, fc_tt, Fs);
+
+		lmc1992.treb_table[n].a1 = treb->a1;
+		lmc1992.treb_table[n].b0 = treb->b0;
+		lmc1992.treb_table[n].b1 = treb->b1;
+	}
 
 	for (dB = 12.0, n = TONE_STEPS; n--; dB -= 2.0)
 	{
@@ -1000,12 +1020,6 @@ void DmaSnd_Init_Bass_and_Treble_Tables(void)
 		lmc1992.bass_table[n].a1 = bass->a1;
 		lmc1992.bass_table[n].b0 = bass->b0;
 		lmc1992.bass_table[n].b1 = bass->b1;
-
-		treb = DmaSnd_Treble_Shelf(g, fc_tt, Fs);
-
-		lmc1992.treb_table[n].a1 = treb->a1;
-		lmc1992.treb_table[n].b0 = treb->b0;
-		lmc1992.treb_table[n].b1 = treb->b1;
 	}
 
 	DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass & 0xf], 
