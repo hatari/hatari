@@ -1090,12 +1090,6 @@ static void Crossbar_Recalculate_Clocks_Cycles(void)
 	cyclesClk = ((double)CPU_FREQ / Crossbar_DetectSampleRate(32)) / (double)(crossbar.playTracks) / 2.0;
 	crossbar.clock32_cycles = (int)(cyclesClk);
 	crossbar.clock32_cycles_decimal = (int)((cyclesClk - (double)(crossbar.clock32_cycles)) * (double)DECIMAL_PRECISION);
-
-	/* Recalculate ratio between host's sound frequency and hatari's sound frequency */
-	crossbar.frequence_ratio = (Uint32)((Crossbar_DetectSampleRate(25) / (double)nAudioFrequency) * (double)DECIMAL_PRECISION);
-
-	/* Recalculate ratio between hatari's sound frequency and host's sound frequency */
-	crossbar.frequence_ratio2 = (Uint32)(((double)nAudioFrequency / Crossbar_DetectSampleRate(25)) * (double)DECIMAL_PRECISION);
 	
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : Recalculate_clock_Cycles\n");
 	LOG_TRACE(TRACE_CROSSBAR, "           clock25 : %d\n", crossbar.clock25_cycles);
@@ -1110,6 +1104,22 @@ static void Crossbar_Recalculate_Clocks_Cycles(void)
 	    (crossbar.int_freq_divider == 10) || (crossbar.int_freq_divider >= 12)) {
 		crossbar.isDacMuted = 1;
 	}
+
+	// Compute Ratio between host computer sound frequency and Hatari's sound frequency.
+	Crossbar_Compute_Ratio();
+}
+
+/**
+ * 	Compute Ratio between host computer sound frequency and Hatari's sound frequency and 
+ * 	ratio between hatari's sound frequency and host's sound frequency.
+ *	Can be called by audio.c if a sound frequency value is changed in the parameter GUI.
+ */
+void Crossbar_Compute_Ratio(void)
+{
+	crossbar.frequence_ratio = (Uint32)((Crossbar_DetectSampleRate(25) / (double)nAudioFrequency) * (double)DECIMAL_PRECISION);
+
+	/* Recompute ratio between hatari's sound frequency and host's sound frequency */
+	crossbar.frequence_ratio2 = (Uint32)(((double)nAudioFrequency / Crossbar_DetectSampleRate(25)) * (double)DECIMAL_PRECISION);
 }
 
 /**

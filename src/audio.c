@@ -16,6 +16,7 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "sound.h"
 #include "dmaSnd.h"
+#include "falcon/crossbar.h"
 
 
 int nAudioFrequency = 44100;			/* Sound playback frequency */
@@ -203,8 +204,14 @@ void Audio_SetOutputAudioFreq(int nNewFrequency)
 		/* Set new frequency */
 		nAudioFrequency = nNewFrequency;
 
-		/* Adapt LMC filters to this new frequency */
-		DmaSnd_Init_Bass_and_Treble_Tables();
+		if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+			/* Compute Ratio between host computer sound frequency and Hatari's sound frequency. */
+			Crossbar_Compute_Ratio();
+		}
+		else if (ConfigureParams.System.nMachineType != MACHINE_ST) {
+			/* Adapt LMC filters to this new frequency */			
+			DmaSnd_Init_Bass_and_Treble_Tables();
+		}
 
 		/* Re-open SDL audio interface if necessary: */
 		if (bSoundWorking)
