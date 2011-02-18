@@ -26,6 +26,8 @@
 #include "dsp_core.h"
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
+#include "log.h"
+# include "main.h"
 
 
 /* More disasm infos, if wanted */
@@ -33,8 +35,6 @@
 #define DSP_DISASM_INST 0	/* Instructions */
 #define DSP_DISASM_REG 0	/* Registers changes */
 #define DSP_DISASM_MEM 0 	/* Memory changes */
-#define DSP_DISASM_INTER 0	/* Interrupts */
-#define DSP_DISASM_STATE 0	/* State change */
 
 #define DSP_COUNT_IPS 0		/* Count instruction per seconds */
 
@@ -959,10 +959,8 @@ static void dsp_postexecute_interrupts(void)
 	dsp_core.interrupt_pipeline_count = 5;
 	dsp_core.interrupt_state = DSP_INTERRUPT_DISABLED;
 	dsp_core.interrupt_IplToRaise = ipl_to_raise;
-	
-#if DSP_DISASM_INTER
-	fprintf(stderr, "Dsp: Interrupt: %s\n", dsp_interrupt[index].name);
-#endif
+
+	LOG_TRACE(TRACE_DSP_INTERRUPT, "Dsp interrupt: %s\n", dsp_interrupt[index].name);
 
 	/* SSI receive data with exception ? */
 	if (dsp_core.interrupt_instr_fetch == 0xe) {
@@ -3290,9 +3288,7 @@ static void dsp_rts(void)
 
 static void dsp_stop(void)
 {
-#if DSP_DISASM_STATE
-	fprintf(stderr, "Dsp: STOP instruction\n");
-#endif
+	LOG_TRACE(TRACE_DSP_STATE, "Dsp: STOP instruction\n");
 }
 
 static void dsp_swi(void)
@@ -3344,9 +3340,7 @@ static void dsp_tcc(void)
 
 static void dsp_wait(void)
 {
-#if DSP_DISASM_STATE
-	fprintf(stderr, "Dsp: WAIT instruction\n");
-#endif
+	LOG_TRACE(TRACE_DSP_STATE, "Dsp: WAIT instruction\n");
 }
 
 static int dsp_pm_read_accu24(int numreg, Uint32 *dest)

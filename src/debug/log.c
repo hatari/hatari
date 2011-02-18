@@ -91,6 +91,14 @@ TraceOptions[] = {
 
 	{ TRACE_VIDEL  	         , "videl" } ,
 
+	{ TRACE_DSP_HOST_INTERFACE, "dsp_host_interface" },
+	{ TRACE_DSP_HOST_COMMAND , "dsp_host_command" },
+	{ TRACE_DSP_HOST_SSI	 , "dsp_host_ssi" },
+	{ TRACE_DSP_INTERRUPT	 , "dsp_interrupt" },
+	{ TRACE_DSP_DISASM	 , "dsp_disasm" },
+	{ TRACE_DSP_STATE	 , "dsp_state" },
+	{ TRACE_DSP_ALL		 , "dsp_all" },
+
 	{ TRACE_ALL		 , "all" }
 };
 
