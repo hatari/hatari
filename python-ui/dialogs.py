@@ -668,8 +668,8 @@ class TraceDialog(HatariUIDialog):
         "mfp_start",
         "mfp_read",
         "mfp_write",
-        "psg_write_reg",
-        "psg_write_data",
+        "psg_read",
+        "psg_write",
         "cpu_pairing",
         "cpu_disasm",
         "cpu_exception",
@@ -683,9 +683,18 @@ class TraceDialog(HatariUIDialog):
         "xbios",
         "gemdos",
         "vdi",
+        "aes",
         "io_read",
         "io_write",
-        "dmasound"
+        "dmasound",
+        "crossbar",
+        "videl",
+        "dsp_host_interface",
+        "dsp_host_command",
+        "dsp_host_ssi",
+        "dsp_interrupt",
+        "dsp_disasm",
+        "dsp_state"
     ]
     def __init__(self, parent):
         self.savedpoints = "none"
@@ -695,12 +704,12 @@ class TraceDialog(HatariUIDialog):
         hbox1.add(create_button("Save", self._save_traces))
         hbox2 = gtk.HBox()
         vboxes = []
-        for idx in (0,1,2):
+        for idx in (0,1,2,3):
             vboxes.append(gtk.VBox())
             hbox2.add(vboxes[idx])
 
         count = 0
-        per_side = (len(self.tracepoints)+2)/3
+        per_side = (len(self.tracepoints)+3)/4
         self.tracewidgets = {}
         for trace in self.tracepoints:
             name = trace.replace("_", "-")
