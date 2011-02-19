@@ -325,9 +325,9 @@ class MemoryAddress:
             else:
                 output = output[:self.lines]
         # with disasm need to re-get the addresses from the output
-        self.first  = int(output[0][:output[0].find(":")], 16)
-        self.second = int(output[1][:output[1].find(":")], 16)
-        self.last   = int(output[-1][:output[-1].find(":")], 16)
+        self.first  = int(output[0][1:output[0].find(":")], 16)
+        self.second = int(output[1][1:output[1].find(":")], 16)
+        self.last   = int(output[-1][1:output[-1].find(":")], 16)
         return output
 
     def _set_clamped(self, first, last):
