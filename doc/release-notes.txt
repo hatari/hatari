@@ -11,6 +11,9 @@ Emulation:
   (for more accurate future HW interaction emulation)
 - Remove old ST Sound's code used for tone and noise step compute
   (some low period values were not correctly emulated)
+- Sound improvements:
+  - STE DMA sound problem on low frequencies fixed
+  - Sound latency on US TOS fixed (with more accurate timings)
 - Video emulation on STF/STE:
   - On STE, correctly shift display 8 pixels to the left when using
     224 bytes overscan
@@ -31,6 +34,7 @@ Emulator:
 - User's desktop size is used as max limit for Videl zooming
 - Videl resolution change is done immediately, not 3 VBLs late
 - AVI recording options can be set in the new [Video] config file section
+- Fix issues in switching between same sized VDI & TT resolutions
 - SDL GUI improvements:
   - DSP can be disabled from the GUI without needing to restart Hatari
   - AVI video length (mins:secs) is shown in titlebar during recording
@@ -44,6 +48,7 @@ Emulator:
   - "--bios-intercept" can be toggled from debugger (not just enabled)
   - BIOS CON: output is converted to ASCII and redirected to host console
     with the --bios-intercept option
+  - Support for tracing DSP, Videl and Crossbar
   - Support for tracing AES calls.  VDI calls can now be traced
     also without using an extended VDI resolution
   - BIOS/XBIOS/GEMDOS/VDI/AES/Line-A/Line-F opcode breakpoint support

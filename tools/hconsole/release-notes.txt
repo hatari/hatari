@@ -1,6 +1,9 @@
 User visible changes in Hatari (Python) console
 -----------------------------------------------
 
+2011-02:
+- Support both Python v2 & v3
+
 2010-10:
 - Split hatari-console.py from hatari UI and renamed it hconsole.py
   (no '-') so that it can be included from other Python scripts
