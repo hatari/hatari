@@ -117,11 +117,15 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 	else
 		IoMem_Init();
 
-	/* 68030 Frequency ? */
-	if ((busCtrl & 0x1) == 1)
+	/* 68030 Frequency changed ? */
+	if ((busCtrl & 0x1) == 1) {
+		/* 16 Mhz bus for 68030 */
 		nCpuFreqShift = 1;
-	else
-		nCpuFreqShift = 1;
+	}
+	else {
+		/* 8 Mhz bus for 68030 */
+		nCpuFreqShift = 0;
+	}
 }
 
 
