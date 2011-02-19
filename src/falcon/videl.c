@@ -654,6 +654,7 @@ bool VIDEL_renderScreen(void)
 		change = true;
 	}
 	if (change) {
+		LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n", width, height, bpp);
 		HostScreen_setWindowSize(width, height, bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
 	}
 
