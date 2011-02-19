@@ -13,6 +13,7 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __T
 #include "ikbd.h"
 #include "ioMem.h"
 #include "ioMemTables.h"
+#include "m68000.h"
 #include "joy.h"
 #include "mfp.h"
 #include "midi.h"
@@ -110,13 +111,17 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 {
 	Uint8 busCtrl = IoMem_ReadByte(0xff8007);
 	
-	fprintf(stderr, "$ff8007.b 0x%04x\n", busCtrl);
-
 	/* STE bus emulation ? */
 	if ((busCtrl & 0x20) == 0)
 		IoMem_Init_FalconInSTEcompatibilityMode();
 	else
 		IoMem_Init();
+
+	/* 68030 Frequency ? */
+	if ((busCtrl & 0x1) == 1)
+		nCpuFreqShift = 1;
+	else
+		nCpuFreqShift = 1;
 }
 
 
