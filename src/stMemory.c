@@ -196,18 +196,6 @@ void STMemory_SetDefaultConfig(void)
 				break;
 		}
 		STMemory_WriteByte(0xff8006, nFalcSysCntrl);
-
-		/* Set the Falcon Bus Control:
-			$FFFF8007 Falcon Bus Control
-				BIT 6 : F30 Start (0=Cold, 1=Warm) 
-				BIT 5 : STe Bus Emulation (0=on)
-				BIT 3 : Blitter Flag (0=on, 1=off)
-				BIT 2 : Blitter (0=8mhz, 1=16mhz)
-				BIT 0 : 68030 (0=8mhz, 1=16mhz)
-		
-			Todo: these values should be verified (docs are too poor on this register)
-			Todo: set $FFFF8007 with correct values
-		*/
 	}
 
 	/* Set TOS floppies */

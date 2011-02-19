@@ -97,6 +97,29 @@ void IoMemTabFalcon_DSPemulation(void (**readtab)(void), void (**writetab)(void)
 #endif
 
 
+/**
+ * Take into account the Falcon Bus Control register $ff8007.b
+	$FFFF8007 Falcon Bus Control
+		BIT 6 : F30 Start (0=Cold, 1=Warm) 
+		BIT 5 : STe Bus Emulation (0=on)
+		BIT 3 : Blitter Flag (0=on, 1=off)
+		BIT 2 : Blitter (0=8mhz, 1=16mhz)
+		BIT 0 : 68030 (0=8mhz, 1=16mhz)
+*/
+static void IoMemTabFalcon_BusCtrl_WriteByte(void)
+{
+	Uint8 busCtrl = IoMem_ReadByte(0xff8007);
+	
+	fprintf(stderr, "$ff8007.b 0x%04x\n", busCtrl);
+
+	/* STE bus emulation ? */
+	if ((busCtrl & 0x20) == 0)
+		IoMem_Init_FalconInSTEcompatibilityMode();
+	else
+		IoMem_Init();
+}
+
+
 /*-----------------------------------------------------------------------*/
 /*
   List of functions to handle read/write hardware interceptions for a Falcon.
@@ -107,8 +130,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
 	{ 0xff8006, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_Monitor_WriteByte },        /* Falcon monitor and memory configuration */
-	{ 0xff8007, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon bus configuration */
-	{ 0xff800A, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* Fix Illusion demo */
+	{ 0xff8007, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMemTabFalcon_BusCtrl_WriteByte }, /* Falcon bus configuration */
 	{ 0xff800C, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8060, SIZE_LONG, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
