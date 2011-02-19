@@ -111,11 +111,11 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 {
 	Uint8 busCtrl = IoMem_ReadByte(0xff8007);
 	
-	/* STE bus emulation ? */
+	/* Set Falcon bus or STE compatible bus emulation */
 	if ((busCtrl & 0x20) == 0)
-		IoMem_Init_FalconInSTEcompatibilityMode();
+		IoMem_Init_FalconInSTEcompatibilityMode(0);
 	else
-		IoMem_Init();
+		IoMem_Init_FalconInSTEcompatibilityMode(1);
 
 	/* 68030 Frequency changed ? */
 	if ((busCtrl & 0x1) == 1) {

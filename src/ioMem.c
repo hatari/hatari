@@ -45,7 +45,7 @@ int nIoMemAccessSize;                                 /* Set to 1, 2 or 4 accord
 Uint32 IoAccessBaseAddress;                           /* Stores the base address of the IO mem access */
 Uint32 IoAccessCurrentAddress;                        /* Current byte address while handling WORD and LONG accesses */
 static int nBusErrorAccesses;                         /* Needed to count bus error accesses */
-
+static Uint8 isFalconInSteMode;                       /* Falcon bus is in Ste mode (0=STe bus; 1= Falcon bus) */
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -85,6 +85,43 @@ void IoMem_Init(void)
 
 	/* Set default IO access handler (-> bus error) */
 	IoMem_SetBusErrorRegion(0xff8000, 0xffffff);
+
+
+	/* Initialize STe bus specific registers for Falcon in FALCON STe compatible bus mode */
+	if ((ConfigureParams.System.nMachineType == MACHINE_FALCON) && (isFalconInSteMode == 0)) {
+		for (addr = 0xff8000; addr < 0xffd426; addr++)
+		{
+			if ( ((addr >= 0xff8002) && (addr < 0xff8006)) ||
+				 ((addr >= 0xff8008) && (addr < 0xff800c)) ||
+				 ((addr >= 0xff800e) && (addr < 0xff8060)) ||
+				 ((addr >= 0xff8064) && (addr < 0xff8200)) ||
+				 ((addr >= 0xff82c4) && (addr < 0xff8400)) ||
+				  (addr == 0xff8560)                       ||
+				  (addr == 0xff8564)                       ||
+				 ((addr >= 0xff8804) && (addr < 0xff8900)) ||
+				 ((addr >= 0xff8964) && (addr < 0xff8970)) ||
+				 ((addr >= 0xff8c00) && (addr < 0xff8c80)) ||
+				 ((addr >= 0xff8c88) && (addr < 0xff8d00)) ||
+				 ((addr >= 0xff9000) && (addr < 0xff9200)) ||
+				 ((addr >= 0xff9204) && (addr < 0xff9206)) ||
+				 ((addr >= 0xff9207) && (addr < 0xff9210)) ||
+				 ((addr >= 0xff9218) && (addr < 0xff9220)) ||
+				 ((addr >= 0xff9224) && (addr < 0xff9800)) ||
+				 ((addr >= 0xff9c00) && (addr < 0xffa000)) ||
+				 ((addr >= 0xffa200) && (addr < 0xffa208)) ||
+				  (addr == 0xffc020)                       ||
+				  (addr == 0xffc021)                       ||
+				  (addr == 0xffd020)                       ||
+				  (addr == 0xffd021)                       ||
+				  (addr == 0xffd420)                       ||
+				  (addr == 0xffd421)                       ||
+				  (addr == 0xffd425)
+			  ) {
+					pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;      /* For 'read' */
+					pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;    /* and 'write' */
+ 			    }
+		}
+	}
 
 	switch (ConfigureParams.System.nMachineType)
 	{
@@ -154,7 +191,7 @@ void IoMem_Init(void)
 		}
 	}
 
-	/* Initialize PSG shadow registers */
+	/* Initialize PSG shadow registers for ST, STe, TT machines */
 	if (ConfigureParams.System.nMachineType != MACHINE_FALCON)
 	{
 		for (addr = 0xff8804; addr < 0xff8900; addr++)
@@ -162,124 +199,28 @@ void IoMem_Init(void)
 			pInterceptReadTable[addr - 0xff8000] = pInterceptReadTable[(addr & 0xfff803) - 0xff8000];
 			pInterceptWriteTable[addr - 0xff8000] = pInterceptWriteTable[(addr & 0xfff803) - 0xff8000];
 		}
-	
+	}
+	else {
+		/* Initialize PSG shadow registers for Falcon machine when in STe bus compatibility mode */
+		if (isFalconInSteMode == 0) {
+			for (addr = 0xff8804; addr < 0xff8900; addr++)
+			{
+				pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;     /* For 'read' */
+				pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;   /* and 'write' */
+			}
+
+		}
 	}
 }
 
 /*-----------------------------------------------------------------------*/
 /**
- * This function is called when Falcon is configured in STe compatibility mode. 
- *
- * Create 'intercept' tables for hardware address access. Each 'intercept
- * table is a list of 0x8000 pointers to a list of functions to call when
- * that location in the Falcon's memory is accessed.
+ * This function is called to fix isFalconInSteMode (0 = Falcon STe bus compatibility, 1 = Falcon only bus compatibility)
  */
-void IoMem_Init_FalconInSTEcompatibilityMode(void)
+void IoMem_Init_FalconInSTEcompatibilityMode(Uint8 value)
 {
-	Uint32 addr;
-	int i;
-	const INTERCEPT_ACCESS_FUNC *pInterceptAccessFuncs = NULL;
-
-	/* Set default IO access handler (-> bus error) */
-	IoMem_SetBusErrorRegion(0xff8000, 0xffffff);
-
-	/* Initialize STe bus specific registers for Falcon */
-	for (addr = 0xff8000; addr < 0xffd426; addr++)
-	{
-		if ( ((addr >= 0xff8002) && (addr < 0xff8006)) ||
-		     ((addr >= 0xff8008) && (addr < 0xff800c)) ||
-		     ((addr >= 0xff800e) && (addr < 0xff8060)) ||
-		     ((addr >= 0xff8064) && (addr < 0xff8200)) ||
-		     ((addr >= 0xff82c4) && (addr < 0xff8400)) ||
-		      (addr == 0xff8560)                       ||
-		      (addr == 0xff8564)                       ||
-		     ((addr >= 0xff8804) && (addr < 0xff8900)) ||
-		     ((addr >= 0xff8964) && (addr < 0xff8970)) ||
-		     ((addr >= 0xff8c00) && (addr < 0xff8c80)) ||
-		     ((addr >= 0xff8c88) && (addr < 0xff8d00)) ||
-		     ((addr >= 0xff9000) && (addr < 0xff9200)) ||
-		     ((addr >= 0xff9204) && (addr < 0xff9206)) ||
-		     ((addr >= 0xff9207) && (addr < 0xff9210)) ||
-		     ((addr >= 0xff9218) && (addr < 0xff9220)) ||
-		     ((addr >= 0xff9224) && (addr < 0xff9800)) ||
-		     ((addr >= 0xff9c00) && (addr < 0xffa000)) ||
-		     ((addr >= 0xffa200) && (addr < 0xffa208)) ||
-		      (addr == 0xffc020)                       ||
-		      (addr == 0xffc021)                       ||
-		      (addr == 0xffd020)                       ||
-		      (addr == 0xffd021)                       ||
-		      (addr == 0xffd420)                       ||
-		      (addr == 0xffd421)                       ||
-		      (addr == 0xffd425)
-		   ) {
-		
-				pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;      /* For 'read' */
-				pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;    /* and 'write' */
-			 }
-	}
-
-	pInterceptAccessFuncs = IoMemTable_Falcon;
-
-	/* Now set the correct handlers */
-	for (addr=0xff8000; addr <= 0xffffff; addr++)
-	{
-		/* Does this hardware location/span appear in our list of possible intercepted functions? */
-		for (i=0; pInterceptAccessFuncs[i].Address != 0; i++)
-		{
-			if (addr >= pInterceptAccessFuncs[i].Address
-			    && addr < pInterceptAccessFuncs[i].Address+pInterceptAccessFuncs[i].SpanInBytes)
-			{
-				/* Security checks... */
-				if (pInterceptReadTable[addr-0xff8000] != IoMem_BusErrorEvenReadAccess && pInterceptReadTable[addr-0xff8000] != IoMem_BusErrorOddReadAccess)
-					fprintf(stderr, "IoMem_Init: Warning: $%x (R) already defined\n", addr);
-				if (pInterceptWriteTable[addr-0xff8000] != IoMem_BusErrorEvenWriteAccess && pInterceptWriteTable[addr-0xff8000] != IoMem_BusErrorOddWriteAccess)
-					fprintf(stderr, "IoMem_Init: Warning: $%x (W) already defined\n", addr);
-
-				/* This location needs to be intercepted, so add entry to list */
-				pInterceptReadTable[addr-0xff8000] = pInterceptAccessFuncs[i].ReadFunc;
-				pInterceptWriteTable[addr-0xff8000] = pInterceptAccessFuncs[i].WriteFunc;
-			}
-		}
-	}
-
-	/* Set registers for Falcon DSP emulation */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-	{
-		switch (ConfigureParams.System.nDSPType)
-		{
-#if ENABLE_DSP_EMU
-		case DSP_TYPE_EMU:
-			IoMemTabFalcon_DSPemulation(pInterceptReadTable,
-						    pInterceptWriteTable);
-			break;
-#endif
-		case DSP_TYPE_DUMMY:
-			IoMemTabFalcon_DSPdummy(pInterceptReadTable,
-						pInterceptWriteTable);
-			break;
-		default:
-			/* none */
-			IoMemTabFalcon_DSPnone(pInterceptReadTable,
-					       pInterceptWriteTable);
-		}
-	}
-
-	/* Disable real time clock? */
-	if (!ConfigureParams.System.bRealTimeClock)
-	{
-		for (addr = 0xfffc21; addr <= 0xfffc3f; addr++)
-		{
-			pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;     /* For 'read' */
-			pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;   /* and 'write' */
-		}
-	}	
-	 
-	/* Initialize PSG shadow registers */
-	for (addr = 0xff8804; addr < 0xff8900; addr++)
-	{
-		pInterceptReadTable[addr - 0xff8000] = pInterceptReadTable[(addr & 0xfff803) - 0xff8000];
-		pInterceptWriteTable[addr - 0xff8000] = pInterceptWriteTable[(addr & 0xfff803) - 0xff8000];
-	}
+	isFalconInSteMode = value;
+	IoMem_Init();
 }
 
 /*-----------------------------------------------------------------------*/

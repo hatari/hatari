@@ -93,7 +93,7 @@ static inline void IoMem_WriteByte(Uint32 Address, Uint8 Var)
 
 extern void IoMem_Init(void);
 extern void IoMem_UnInit(void);
-extern void IoMem_Init_FalconInSTEcompatibilityMode(void);
+extern void IoMem_Init_FalconInSTEcompatibilityMode(Uint8 value);
 
 
 extern uae_u32 IoMem_bget(uaecptr addr);
