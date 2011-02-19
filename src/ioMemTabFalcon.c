@@ -132,7 +132,6 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 /*-----------------------------------------------------------------------*/
 /*
   List of functions to handle read/write hardware interceptions for a Falcon.
-  Note: This is not working at all yet!
 */
 const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 {
