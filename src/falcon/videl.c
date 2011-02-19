@@ -28,9 +28,9 @@
 	$FFFF820E (word) : VDL_LOF - Offset to next line
 	$FFFF8210 (word) : VDL_LWD - Line Wide in Words
 	
-	$FFFF8240 (word) : VDL_STC - ST Pallete Register 00
+	$FFFF8240 (word) : VDL_STC - ST Palette Register 00
 	.........
-	$FFFF825E (word) : VDL_STC - ST Pallete Register 15
+	$FFFF825E (word) : VDL_STC - ST Palette Register 15
 
 	$FFFF8260 (byte) : ST shift mode
 	$FFFF8265 (byte) : Horizontal scroll register
@@ -57,9 +57,9 @@
 	$FFFF82C0 (word) : VCO - Video control
 	$FFFF82C2 (word) : VMD - Video mode
 
-	$FFFF9800 (long) : VDL_PAL - Videl Pallete Register 000
+	$FFFF9800 (long) : VDL_PAL - Videl palette Register 000
 	...........
-	$FFFF98FC (long) : VDL_PAL - Videl Pallete Register 255
+	$FFFF98FC (long) : VDL_PAL - Videl palette Register 255
 */
 
 const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
@@ -211,10 +211,11 @@ void VIDEL_ScreenBase_WriteByte(void)
  */
 void VIDEL_ST_ShiftModeWriteByte(void)
 {
-	Uint16 st_shiftMode, line_width, video_mode;
+	Uint16 line_width, video_mode;
+	Uint8 st_shiftMode;
 
-	st_shiftMode = IoMem_ReadWord(0xff8260);
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8260 ST Shift Mode (STSHIFT) write: 0x%02x\n", st_shiftMode);
+	st_shiftMode = IoMem_ReadByte(0xff8260);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8260 ST Shift Mode (STSHIFT) write: 0x%x\n", st_shiftMode);
 
 	/* Activate STE palette */
 	videl.bUseSTShifter = true;
@@ -247,7 +248,7 @@ void VIDEL_ST_ShiftModeWriteByte(void)
 }
 
 /**
-    VIDEL_FALCON_ShiftModeWriteByte :
+    VIDEL_FALCON_ShiftModeWriteWord :
 	$FFFF8266 [R/W] W  _____A98_6543210  Falcon Shift Mode (SPSHIFT)
 	                        ||| |||||||
 	                        ||| |||++++- 0..15: Colourbank setting in 8BP
