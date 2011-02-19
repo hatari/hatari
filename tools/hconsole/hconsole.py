@@ -5,7 +5,7 @@
 # devices and changing Hatari command line options (even for things you
 # cannot change from the UI) from the console while Hatari is running.
 #
-# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2011 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,11 @@ import time
 import signal
 import socket
 import readline
+
+# Python v2 lacks Python v3 encoding arg for bytes()
+if str is bytes:
+    def bytes(s, encoding):
+        return s
 
 # Atari scancodes for special keys, needed when wanting to
 # output something else than alphanumberic keys to Hatari
@@ -69,7 +74,7 @@ class Hatari:
         self.interval = 0.2
         self.pid = 0
         if not self.run_hatari(args):
-            print "ERROR: failed to run Hatari"
+            print("ERROR: failed to run Hatari")
             sys.exit(1)
         self.verbose = False
 
@@ -77,7 +82,7 @@ class Hatari:
         for line in os.popen(self.hataribin + " -h").readlines():
             if line.find("--control-socket") >= 0:
                 return
-        print "ERROR: Hatari not found or it doesn't support the required --control-socket option!"
+        print("ERROR: Hatari not found or it doesn't support the required --control-socket option!")
         sys.exit(-1)
         
     def is_running(self):
@@ -85,38 +90,38 @@ class Hatari:
             return False
         try:
             os.waitpid(self.pid, os.WNOHANG)
-        except OSError, value:
-            print "Hatari PID %d had exited in the meanwhile:\n\t%s" % (self.pid, value)
+        except OSError as value:
+            print("Hatari PID %d had exited in the meanwhile:\n\t%s" % (self.pid, value))
             self.pid = 0
             return False
         return True
     
     def run_hatari(self, args):
         if self.control:
-            print "ERROR: Hatari is already running, stop it first"
+            print("ERROR: Hatari is already running, stop it first")
             return
         pid = os.fork()
         if pid < 0:
-            print "ERROR: fork()ing Hatari failed!"
+            print("ERROR: fork()ing Hatari failed!")
             return
         if pid:
             # in parent
             self.pid = pid
-            print "WAIT hatari to connect to control socket...",
+            print("WAIT hatari to connect to control socket...")
             (self.control, addr) = self.server.accept()
-            print "connected!"
+            print("connected!")
             return self.control
         else:
             # child runs Hatari
             allargs = [self.hataribin, "--control-socket", self.controlpath] + args
-            print "RUN:", allargs
+            print("RUN:", allargs)
             os.execvp(self.hataribin, allargs)
 
     def send_message(self, msg, fast = False):
         if self.control:
             if self.verbose:
-                print "-> '%s'" % msg
-            self.control.sendall(msg + "\n")
+                print("-> '%s'" % msg)
+            self.control.sendall(bytes(msg + "\n", "ASCII"))
             # KLUDGE: wait so that Hatari output comes before next prompt
             if fast:
                 interval = self.interval/2
@@ -125,7 +130,7 @@ class Hatari:
             time.sleep(interval)
             return True
         else:
-            print "ERROR: no Hatari (control socket)"
+            print("ERROR: no Hatari (control socket)")
             return False
         
     def change_option(self, option):
@@ -135,7 +140,7 @@ class Hatari:
         return self.send_message("hatari-shortcut %s" % shortcut)
 
     def send_string(self, text):
-        print "string:", text
+        print("string:", text)
         for item in text:
             if item == ' ':
                 # white space gets stripped, use scancode instead
@@ -169,12 +174,12 @@ class Hatari:
 
     def toggle_verbose(self):
         self.verbose = not self.verbose
-        print "debug output", self.verbose
+        print("debug output", self.verbose)
 
     def kill_hatari(self):
         if self.pid:
             os.kill(self.pid, signal.SIGKILL)
-            print "killed hatari with PID %d" % self.pid
+            print("killed hatari with PID %d" % self.pid)
             self.control = None
             self.pid = 0
 
@@ -202,7 +207,7 @@ class CommandInput:
     
     def loop(self):
         try:
-            rawline = raw_input(self.prompt)
+            rawline = input(self.prompt)
             return rawline
         except EOFError:
             return ""
@@ -370,17 +375,17 @@ class Tokens:
         tokens = []
         for items in [self.option_tokens, self.shortcut_tokens,
             self.event_tokens, self.debugger_tokens, self.device_tokens,
-            self.path_tokens, self.process_tokens.keys(),
-            self.script_tokens.keys(), self.help_tokens.keys()]:
+            self.path_tokens, list(self.process_tokens.keys()),
+            list(self.script_tokens.keys()), list(self.help_tokens.keys())]:
             for token in items:
                 if token in tokens:
-                    print "ERROR: token '%s' already in tokens" % token
+                    print("ERROR: token '%s' already in tokens" % token)
                     sys.exit(1)
             tokens += items
         return tokens
 
     def show_help(self):
-        print """
+        print("""
 Hatari-console help
 -------------------
 
@@ -388,14 +393,14 @@ Hatari-console allows you to control Hatari through its control socket
 from the provided console prompt, while Hatari is running.  All control
 commands support TAB completion on their names and options.
 
-The supported control facilities are:"""
+The supported control facilities are:""")
         self.list_items("Command line options", self.option_tokens)
         self.list_items("Keyboard shortcuts", self.shortcut_tokens)
         self.list_items("Event invocation", self.event_tokens)
         self.list_items("Device toggling", self.device_tokens)
         self.list_items("Path setting", self.path_tokens)
         self.list_items("Debugger commands", self.debugger_tokens)
-        print """
+        print("""
 "pause" toggles Hatari paused state on/off.
 "kill" will terminate Hatari.
 
@@ -406,12 +411,12 @@ The supported control facilities are:"""
 For command line options you can get further help with "--help"
 and for debugger commands with "help".  Some of the other facilities
 give help when you give them invalid input.
-"""
+""")
 
     def list_items(self, title, items):
-        print "\n%s:" % title
+        print("\n%s:" % title)
         for item in items:
-            print "*", item
+            print("*", item)
 
     def do_sleep(self, line):
         items = line.split()[1:]
@@ -420,29 +425,29 @@ give help when you give them invalid input.
         except:
             secs = 0
         if secs > 0:
-            print "Sleeping for %d secs..." % secs
+            print("Sleeping for %d secs..." % secs)
             time.sleep(secs)
         else:
-            print "usage: sleep <seconds>"
+            print("usage: sleep <seconds>")
 
     def do_script(self, line):
         try:
             filename = line.split()[1]
             f = open(filename)
         except:
-            print "usage: script <filename>"
+            print("usage: script <filename>")
             return
 
         for line in f.readlines():
             line = line.strip()
             if not line or line[0] == '#':
                 continue
-            print ">", line
+            print(">", line)
             self.process_command(line)
 
     def process_command(self, line):
         if not self.hatari.is_running():
-            print "Exiting as there's no Hatari (anymore)..."
+            print("Exiting as there's no Hatari (anymore)...")
             sys.exit(0)
         if not line:
             return
@@ -469,7 +474,7 @@ give help when you give them invalid input.
         elif line in self.help_tokens:
             self.help_tokens[line]()
         else:
-            print "ERROR: unknown hatari-console command:", line
+            print("ERROR: unknown hatari-console command:", line)
 
 
 class Main:
@@ -501,9 +506,9 @@ class Main:
 
     def usage(self, msg=None):
         name = os.path.basename(sys.argv[0])
-        print "\n%s" % name
-        print "=" * len(name)
-        print """
+        print("\n%s" % name)
+        print("=" * len(name))
+        print("""
 Usage: %s [<console options/args> --] [<hatari options>]
 
 Hatari console options/args:
@@ -519,17 +524,17 @@ For example:
     %s --monitor mono test.prg
     %s commands.txt -- --monitor mono
     %s commands.txt --exit --
-""" % (name, name, name, name)
+""" % (name, name, name, name))
         if msg:
-            print "ERROR: %s!\n" % msg
+            print("ERROR: %s!\n" % msg)
         sys.exit(1)
 
     def loop(self):
-        print """
+        print("""
 *********************************************************
 * To see available commands, use the TAB key or 'usage' *
 *********************************************************
-"""
+""")
         if self.file:
             self.script(self.file)
             if self.exit:
