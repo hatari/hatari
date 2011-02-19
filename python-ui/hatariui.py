@@ -163,7 +163,7 @@ class UICallbacks:
             self.hatari.kill()
             return False
         width, height = self.hatari.get_embed_info()
-        print "New size = %d x %d" % (width, height)
+        print("New size = %d x %d" % (width, height))
         oldwidth, oldheight = self.hatariwin.get_size_request()
         self.hatariwin.set_size_request(width, height)
         if width < oldwidth or height < oldheight:
@@ -456,7 +456,7 @@ class UIActions:
     def config_load(self, widget):
         # user loads a new configuration?
         if self.callbacks.config_load(widget):
-            print "TODO: reset toggle actions"
+            print("TODO: reset toggle actions")
 
     # ----- toolbar / panel additions ---------
     def set_actions(self, action_str, place):
@@ -556,7 +556,7 @@ class UIActions:
         if not actions:
             return None
 
-        #print "ACTIONS:", actions
+        #print("ACTIONS:", actions)
         if len(actions) > 1:
             bar = gtk.Toolbar()
             if horiz:
@@ -570,7 +570,7 @@ class UIActions:
             bar = None
         
         for action in actions:
-            #print action
+            #print(action)
             offset = action.find("=")
             if offset >= 0:
                 # handle "<name>=<keycode>" action specification
@@ -666,21 +666,21 @@ class UIActions:
 def usage(actions, msg=None):
     name = os.path.basename(sys.argv[0])
     uiname = "%s %s" % (UInfo.name, UInfo.version)
-    print "\n%s" % uiname
-    print "=" * len(uiname)
-    print "\nUsage: %s [options] [directory|disk image|Atari program]" % name
-    print "\nOptions:"
-    print "\t-h, --help\t\tthis help"
-    print "\t-n, --nomenu\t\tomit menus"
-    print "\t-e, --embed\t\tembed Hatari window in middle of controls"
-    print "\t-f, --fullscreen\tstart in fullscreen"
-    print "\t-l, --left <controls>\ttoolbar at left"
-    print "\t-r, --right <controls>\ttoolbar at right"
-    print "\t-t, --top <controls>\ttoolbar at top"
-    print "\t-b, --bottom <controls>\ttoolbar at bottom"
-    print "\t-p, --panel <name>,<controls>"
-    print "\t\t\t\tseparate window with given name and controls"
-    print "\nAvailable (panel/toolbar) controls:"
+    print("\n%s" % uiname)
+    print("=" * len(uiname))
+    print("\nUsage: %s [options] [directory|disk image|Atari program]" % name)
+    print("\nOptions:")
+    print("\t-h, --help\t\tthis help")
+    print("\t-n, --nomenu\t\tomit menus")
+    print("\t-e, --embed\t\tembed Hatari window in middle of controls")
+    print("\t-f, --fullscreen\tstart in fullscreen")
+    print("\t-l, --left <controls>\ttoolbar at left")
+    print("\t-r, --right <controls>\ttoolbar at right")
+    print("\t-t, --top <controls>\ttoolbar at top")
+    print("\t-b, --bottom <controls>\ttoolbar at bottom")
+    print("\t-p, --panel <name>,<controls>")
+    print("\t\t\t\tseparate window with given name and controls")
+    print("\nAvailable (panel/toolbar) controls:")
     for action, description in actions.list_actions():
         size = len(action)
         if size < 8:
@@ -689,8 +689,8 @@ def usage(actions, msg=None):
             tabs = "\t"
         else:
             tabs = "\n\t\t\t"
-        print "\t%s%s%s" % (action, tabs, description)
-    print """
+        print("\t%s%s%s" % (action, tabs, description))
+    print("""
 You can have as many panels as you wish.  For each panel you need to add
 a control with the name of the panel (see "MyPanel" below).
 
@@ -702,9 +702,9 @@ For example:
 \t-b "sound,|,fastforward,|,fullscreen"
 
 if no options are given, the UI uses basic controls.
-""" % name
+""" % name)
     if msg:
-        print "ERROR: %s\n" % msg
+        print("ERROR: %s\n" % msg)
     sys.exit(1)
 
 
@@ -716,7 +716,7 @@ def main():
             "left=", "right=", "top=", "bottom=", "panel="]
         opts, floppies = getopt.getopt(sys.argv[1:], "efnhl:r:t:b:p:", longopts)
         del longopts
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         usage(actions, err)
 
     menu = True
@@ -725,7 +725,7 @@ def main():
 
     error = None
     for opt, arg in opts:
-        print opt, arg
+        print(opt, arg)
         if opt in ("-e", "--embed"):
             embed = True
         elif opt in ("-f", "--fullscreen"):

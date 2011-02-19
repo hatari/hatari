@@ -101,12 +101,12 @@ class ConfigStore:
             if sections:
                 self.sections = sections
             else:
-                print "ERROR: configuration file loading failed!"
+                print("ERROR: configuration file loading failed!")
                 return
         else:
-            print "WARNING: configuration file missing!"
+            print("WARNING: configuration file missing!")
             if self.defaults:
-                print "-> using dummy 'defaults'."
+                print("-> using dummy 'defaults'.")
             self.sections = self.defaults
         self.path = path
         self.cfgfile = os.path.basename(path)
@@ -125,7 +125,7 @@ class ConfigStore:
     
     def _read(self, path):
         "_read(path) -> (all keys, section2key mappings)"
-        print "Reading configuration file '%s'..." % path
+        print("Reading configuration file '%s'..." % path)
         config = open(path, "r")
         if not config:
             return ({}, {})
@@ -138,14 +138,14 @@ class ConfigStore:
                 continue
             if line[0] == '[':
                 if line in sections:
-                    print "WARNING: section '%s' twice in configuration" % line
+                    print("WARNING: section '%s' twice in configuration" % line)
                 if seckeys:
                     sections[name] = seckeys
                     seckeys = {}
                 name = line
                 continue
             if line.find('=') < 0:
-                print "WARNING: line without key=value pair:\n%s" % line
+                print("WARNING: line without key=value pair:\n%s" % line)
                 continue
             key, text = [string.strip() for string in line.split('=')]
             seckeys[key] = text_to_value(text)
@@ -188,11 +188,11 @@ class ConfigStore:
         "set(section,key,value), set given key to given section"
         if section not in self.sections:
             if self.miss_is_error:
-                raise AttributeError, "no section '%s'" % section
+                raise AttributeError("no section '%s'" % section)
             self.sections[section] = {}
         if key not in self.sections[section]:
             if self.miss_is_error:
-                raise AttributeError, "key '%s' not in section '%s'" % (key, section)
+                raise AttributeError("key '%s' not in section '%s'" % (key, section))
             self.sections[section][key] = value
             self.changed = True
         elif self.sections[section][key] != value:
@@ -209,11 +209,11 @@ class ConfigStore:
     
     def write(self, fileobj):
         "write(fileobj), write current configuration to given file object"
-        sections = self.sections.keys()
+        sections = list(self.sections.keys())
         sections.sort()
         for name in sections:
             fileobj.write("%s\n" % name)
-            keys = self.sections[name].keys()
+            keys = list(self.sections[name].keys())
             keys.sort()
             for key in keys:
                 value = value_to_text(key, self.sections[name][key])
@@ -223,7 +223,7 @@ class ConfigStore:
     def save(self):
         "save() -> path, if configuration changed, save it"
         if not self.changed:
-            print "No configuration changes to save, skipping"
+            print("No configuration changes to save, skipping")
             return None
         fileobj = None
         if self.path:
@@ -232,16 +232,16 @@ class ConfigStore:
             except:
                 pass
         if not fileobj:
-            print "WARNING: non-existing/writable configuration file, creating a new one..."
+            print("WARNING: non-existing/writable configuration file, creating a new one...")
             if not os.path.exists(self.userpath):
                 os.makedirs(self.userpath)
             self.path = "%s%c%s" % (self.userpath, os.path.sep, self.cfgfile)
             fileobj = open(self.path, "w")
         if not fileobj:
-            print "ERROR: opening '%s' for saving failed" % self.path
+            print("ERROR: opening '%s' for saving failed" % self.path)
             return None
         self.write(fileobj)
-        print "Saved configuration file:", self.path
+        print("Saved configuration file:", self.path)
         self.changed = False
         return self.path
     
@@ -260,8 +260,8 @@ class ConfigStore:
             os.makedirs(os.path.dirname(path))
         fileobj = open(path, "w")
         if not fileobj:
-            print "ERROR: opening '%s' for saving failed" % path
+            print("ERROR: opening '%s' for saving failed" % path)
             return None
         self.write(fileobj)
-        print "Saved temporary configuration file:", path
+        print("Saved temporary configuration file:", path)
         return path

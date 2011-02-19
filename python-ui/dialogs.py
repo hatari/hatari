@@ -734,7 +734,7 @@ class TraceDialog(HatariUIDialog):
             if trace in self.tracewidgets:
                 self.tracewidgets[trace].set_active(True)
             else:
-                print "ERROR: unknown trace setting '%s'" % trace
+                print("ERROR: unknown trace setting '%s'" % trace)
 
     def _clear_traces(self, widget = None):
         for trace in self.tracepoints:

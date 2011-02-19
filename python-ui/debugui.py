@@ -250,7 +250,7 @@ class MemoryAddress:
             address = self.first
 
         if not address:
-            print "ERROR: address needed"
+            print("ERROR: address needed")
             return
         
         if self.dumpmode == Constants.MEMDUMP:
@@ -258,7 +258,7 @@ class MemoryAddress:
         elif self.dumpmode == Constants.DISASM:
             output = self._get_disasm(address, move_idx)
         else:
-            print "ERROR: unknown dumpmode:", self.dumpmode
+            print("ERROR: unknown dumpmode:", self.dumpmode)
             return
         self.memory.set_label("".join(output))
         if move_idx:
@@ -545,7 +545,7 @@ def main():
     hatariobj = Hatari()
     if len(sys.argv) > 1:
         if sys.argv[1] in ("-h", "--help"):
-            print "usage: %s [hatari options]" % os.path.basename(sys.argv[0])
+            print("usage: %s [hatari options]" % os.path.basename(sys.argv[0]))
             return
         args = sys.argv[1:]
     else:

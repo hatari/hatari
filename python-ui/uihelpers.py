@@ -103,7 +103,7 @@ class UIHelp:
         if os.path.exists(path + "manual.html"):
             return path
         # if not, point to latest Hatari HG version docs
-        print "WARNING: Hatari manual not found at:", path + "manual.html"
+        print("WARNING: Hatari manual not found at:", path + "manual.html")
         return "http://hg.berlios.de/repos/hatari/raw-file/tip/doc/"
 
     def set_mainwin(self, widget):
@@ -112,7 +112,7 @@ class UIHelp:
     def view_url(self, url, name):
         """view given URL or file path, or error use 'name' as its name"""
         if self._view and "://" in url or os.path.exists(url):
-            print "RUN: '%s' '%s'" % (self._view, url)
+            print("RUN: '%s' '%s'" % (self._view, url))
             os.spawnlp(os.P_NOWAIT, self._view, self._view, url)
             return
         if not self._view:
@@ -162,7 +162,7 @@ class HatariTextInsert:
         self.text = text
         self.pressed = False
         self.hatari = hatari
-        print "OUTPUT '%s'" % text
+        print("OUTPUT '%s'" % text)
         gobject.timeout_add(100, _text_insert_cb, self)
 
 # callback to insert text object to Hatari character at the time
