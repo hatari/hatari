@@ -370,7 +370,6 @@ extern void REGPARAM3 put_bitfield (uae_u32 dst, uae_u32 bdata[2], uae_u32 val, 
 
 extern void m68k_disasm_ea (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr);
 extern void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt);
-extern void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, int safemode);
 extern int get_cpu_model (void);
 
 extern void REGPARAM3 MakeSR (void) REGPARAM;

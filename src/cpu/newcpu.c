@@ -126,6 +126,8 @@ static struct cache030 dcaches030[CACHELINES030];
 static struct cache040 caches040[CACHESETS040];
 static void InterruptAddJitter (int Level , int Pending);
 
+static void m68k_disasm_2 (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, int safemode);
+
 
 #if COUNT_INSTRS
 static unsigned long int instrcount[65536];
@@ -3325,9 +3327,8 @@ static void opcodedebug (uae_u32 pc, uae_u16 opcode)
 		fault = 1;
 	}
 	if (!fault) {
-		TCHAR buf[100];
 		write_log ("mmufixup=%d %04x %04x\n", mmufixup[0].reg, regs.wb3_status, regs.mmu_ssw);
-		m68k_disasm_2 (buf, sizeof buf / sizeof (TCHAR), addr, NULL, 1, NULL, NULL, 0);
+		m68k_disasm_2 (stdout, addr, NULL, 1, NULL, NULL, 0);
 		write_log ("%s\n", buf);
 		m68k_dumpstate (stdout, NULL);
 	}
@@ -3839,13 +3840,11 @@ static void disasm_size (TCHAR *instrname, struct instr *dp)
 	}
 }
 
-void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, int safemode)
+static void m68k_disasm_2 (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr, int safemode)
 {
 	uaecptr newpc = 0;
 	m68kpc_offset = addr - m68k_getpc ();
 
-	if (buf)
-		memset (buf, 0, bufsize * sizeof (TCHAR));
 	if (!table68k)
 		return;
 	while (cnt-- > 0) {
@@ -3865,8 +3864,7 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int 
 		for (lookup = lookuptab;lookup->mnemo != dp->mnemo; lookup++)
 			;
 
-		//buf = buf_out (buf, &bufsize, "%08lX ", m68k_getpc () + m68kpc_offset);
-		fprintf(stderr, "%08lX ", m68k_getpc () + m68kpc_offset);
+		fprintf(f, "%08lX ", m68k_getpc () + m68kpc_offset);
 		m68kpc_offset += 2;
 
 		if (strcmp(lookup->friendlyname, ""))
@@ -3929,34 +3927,27 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int 
 		}
 
 		for (i = 0; i < (m68kpc_offset - oldpc) / 2; i++) {
-//			buf = buf_out (buf, &bufsize, "%04x ", get_iword_1 (oldpc + i * 2));
-			fprintf(stderr, "%04x ", get_iword_1 (oldpc + i * 2));
+			fprintf(f, "%04x ", get_iword_1 (oldpc + i * 2));
 		}
 
 		while (i++ < 5)
-//			buf = buf_out (buf, &bufsize, "     ");
-			fprintf(stderr, "%s", "     ");
+			fprintf(f, "%s", "     ");
 
-//		buf = buf_out (buf, &bufsize, instrname);
-		fprintf(stderr, "%s", instrname);
+		fprintf(f, "%s", instrname);
 
 		if (ccpt != 0) {
 			if (deaddr)
 				*deaddr = newpc;
 			if (cctrue (dp->cc))
-//				buf = buf_out (buf, &bufsize, " == $%08lX (T)", newpc);
-				fprintf(stderr, " == $%08X (T)", newpc);
+				fprintf(f, " == $%08X (T)", newpc);
 			else
-//				buf = buf_out (buf, &bufsize, " == $%08lX (F)", newpc);
-				fprintf(stderr, " == $%08X (F)", newpc);
+				fprintf(f, " == $%08X (F)", newpc);
 		} else if ((opcode & 0xff00) == 0x6100) { /* BSR */
 			if (deaddr)
 				*deaddr = newpc;
-//			buf = buf_out (buf, &bufsize, " == $%08lX", newpc);
-			fprintf(stderr, " == $%08X", newpc);
+			fprintf(f, " == $%08X", newpc);
 		}
-//		buf = buf_out (buf, &bufsize, "\n");
-		fprintf(stderr, "%s", "\n");
+		fprintf(f, "%s", "\n");
 	}
 	if (nextpc)
 		*nextpc = m68k_getpc () + m68kpc_offset;
@@ -3964,25 +3955,11 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr addr, uaecptr *nextpc, int 
 
 void m68k_disasm_ea (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt, uae_u32 *seaddr, uae_u32 *deaddr)
 {
-	TCHAR *buf;
-
-	buf = xmalloc (TCHAR, (MAX_LINEWIDTH + 1) * cnt);
-	if (!buf)
-		return;
-	m68k_disasm_2 (buf, (MAX_LINEWIDTH + 1) * cnt, addr, nextpc, cnt, seaddr, deaddr, 1);
-	f_out (f, "%s", buf);
-	xfree (buf);
+	m68k_disasm_2 (f, addr, nextpc, cnt, seaddr, deaddr, 1);
 }
 void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
-	TCHAR *buf;
-
-	buf = xmalloc (TCHAR, (MAX_LINEWIDTH + 1) * cnt);
-	if (!buf)
-		return;
-	m68k_disasm_2 (buf, (MAX_LINEWIDTH + 1) * cnt, addr, nextpc, cnt, NULL, NULL, 0);
-	f_out (f, "%s", buf);
-	xfree (buf);
+	m68k_disasm_2 (f, addr, nextpc, cnt, NULL, NULL, 0);
 }
 
 /*************************************************************
