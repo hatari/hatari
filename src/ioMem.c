@@ -46,7 +46,7 @@ int nIoMemAccessSize;                                 /* Set to 1, 2 or 4 accord
 Uint32 IoAccessBaseAddress;                           /* Stores the base address of the IO mem access */
 Uint32 IoAccessCurrentAddress;                        /* Current byte address while handling WORD and LONG accesses */
 static int nBusErrorAccesses;                         /* Needed to count bus error accesses */
-static Uint8 isFalconInSteBusMode;                    /* Falcon bus is in Ste mode (0=STe bus; 1= Falcon bus) */
+static Uint8 falconBusMode;                           /* Falcon bus mode (0=STe compatible bus; 1= Falcon bus) */
 
 
 /*-----------------------------------------------------------------------*/
@@ -56,7 +56,7 @@ static Uint8 isFalconInSteBusMode;                    /* Falcon bus is in Ste mo
 void IoMem_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
-	MemorySnapShot_Store(&isFalconInSteBusMode, sizeof(isFalconInSteBusMode));
+	MemorySnapShot_Store(&falconBusMode, sizeof(falconBusMode));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -100,7 +100,7 @@ void IoMem_Init(void)
 
 
 	/* Initialize STe bus specific registers for Falcon in FALCON STe compatible bus mode */
-	if ((ConfigureParams.System.nMachineType == MACHINE_FALCON) && (isFalconInSteBusMode == 0)) {
+	if ((ConfigureParams.System.nMachineType == MACHINE_FALCON) && (falconBusMode == 0)) {
 		for (addr = 0xff8000; addr < 0xffd426; addr++)
 		{
 			if ( ((addr >= 0xff8002) && (addr < 0xff8006)) ||
@@ -214,7 +214,7 @@ void IoMem_Init(void)
 	}
 	else {
 		/* Initialize PSG shadow registers for Falcon machine when in STe bus compatibility mode */
-		if (isFalconInSteBusMode == 0) {
+		if (falconBusMode == 0) {
 			for (addr = 0xff8804; addr < 0xff8900; addr++)
 			{
 				pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;     /* For 'read' */
@@ -227,11 +227,11 @@ void IoMem_Init(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * This function is called to fix isFalconInSteBusMode (0 = Falcon STe bus compatibility, 1 = Falcon only bus compatibility)
+ * This function is called to fix falconBusMode (0 = Falcon STe bus compatibility, 1 = Falcon only bus compatibility)
  */
 void IoMem_Init_FalconInSTeBuscompatibilityMode(Uint8 value)
 {
-	isFalconInSteBusMode = value;
+	falconBusMode = value;
 	IoMem_Init();
 }
 
