@@ -228,6 +228,7 @@ void IoMem_Init(void)
 /*-----------------------------------------------------------------------*/
 /**
  * This function is called to fix falconBusMode (0 = Falcon STe bus compatibility, 1 = Falcon only bus compatibility)
+ * This value comes from register $ff8007.b (Bit 5) and is called by ioMemTabFalcon
  */
 void IoMem_Init_FalconInSTeBuscompatibilityMode(Uint8 value)
 {
