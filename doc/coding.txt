@@ -18,25 +18,20 @@ existing source code.
 
 - Use doxygen-style comments to document what each function is doing.
 
-- In C source code, put opening curly brackets on new lines, e.g.:
+- No "magic" variable values.  Use either defines or enums to name the
+  values and document what they mean if it's not obvious.
 
-	while (!train_arrived())
-	{
-		wait_for_godot();
-		if (thirsty == true)
-		{
-			by_a_soda();
-		}
-	}
+- Hatari uses code from many projects, e.g. the UAE CPU files, which
+  use another coding style than the main source code. We keep the
+  original coding style there for compatibility with the origin. So
+  always try to adapt to the coding style of the file that you're
+  currently editing.
 
-- Note that Hatari uses also some code from other projects, e.g. the UAE CPU
-  files, which use another coding style than the main source code. We keep the
-  original coding style there for compatibility with the origin. So always try
-  to adapt to the coding style of the file that you're currently editing.
+- For new files, pick one of the existing coding styles, don't add a new one.
 
 - Try to avoid including a header file from within another header file.
   Include all necessary header files in the right order in the *.c files
   instead. Including a header file from within another header file easily leads
-  to a dependency hell which can become very painfull when one of the header
+  to a dependency hell which can become very painful when one of the header
   files clashes with a system header for example and must only be included
   in certain .c files only.
