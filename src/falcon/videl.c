@@ -224,14 +224,21 @@ void VIDEL_ST_ShiftModeWriteByte(void)
 	switch (st_shiftMode & 0x3) {
 		case 0:	/* 4BP/320 Pixels */
 			line_width = 0x50;
+			/* half pixels + double lines vs. no scaling */
 			video_mode = videl.monitor_type == FALCON_MONITOR_VGA ? 0x5 : 0x0;
 			break;
 		case 1:	/* 2BP/640 Pixels */
 			line_width = 0x50;
+			/* quarter pixels + double lines vs. half pixels */
 			video_mode = videl.monitor_type == FALCON_MONITOR_VGA ? 0x9 : 0x4;
 			break;
 		case 2:	/* 1BP/640 Pixels */
 			line_width = 0x28;
+			if (videl.monitor_type == FALCON_MONITOR_MONO) {
+				video_mode = 0x0;
+				break;
+			}
+			/* quarter pixels vs. half pixels + interlace */
 			video_mode = videl.monitor_type == FALCON_MONITOR_VGA ? 0x8 : 0x6;
 			break;
 		case 3:	/* ???/320 Pixels */
