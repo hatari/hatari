@@ -33,6 +33,7 @@
 #include "memory.h"
 #include "newcpu.h"
 //#include "debug.h"
+#include "main.h"
 #include "cpummu.h"
 
 #define DBG_MMU_VERBOSE	1

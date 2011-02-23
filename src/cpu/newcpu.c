@@ -46,6 +46,7 @@
 #include "maccess.h"
 #include "memory.h"
 #include "newcpu.h"
+#include "main.h"
 #include "cpummu.h"
 #include "cpu_prefetch.h"
 #include "main.h"

@@ -3504,6 +3504,7 @@ static void generate_includes (FILE * f)
 	fprintf (f, "#include \"newcpu.h\"\n");
 	fprintf (f, "#include \"cpu_prefetch.h\"\n");
 	fprintf (f, "#include \"cputbl.h\"\n");
+	fprintf (f, "#include \"main.h\"\n");
 	fprintf (f, "#include \"cpummu.h\"\n");
 
 

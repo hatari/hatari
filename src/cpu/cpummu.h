@@ -57,8 +57,6 @@ typedef int m68k_exception;
 #define VOLATILE
 #define ALWAYS_INLINE __inline
 
-#define likely(x) x
-#define unlikely(x) x
 static __inline void flush_internals (void) { }
 
 //typedef uae_u8 flagtype;
