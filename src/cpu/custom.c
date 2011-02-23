@@ -15,6 +15,7 @@
 #include "options_cpu.h"
 #include "custom.h"
 #include "newcpu.h"
+#include "main.h"
 #include "cpummu.h"
 #include "cpu_prefetch.h"
 #include "m68000.h"

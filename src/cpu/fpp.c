@@ -24,6 +24,7 @@
 #include "md-fpp.h"
 #include "savestate.h"
 #include "cpu_prefetch.h"
+#include "main.h"
 #include "cpummu.h"
 
 #define DEBUG_FPP 0
