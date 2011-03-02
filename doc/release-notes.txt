@@ -31,16 +31,19 @@ Emulator:
   (follow them with --dsp none to disable DSP emulation)
 - Memory state saving and restoring fixes, especially for Falcon
   - Crossbar state is included -> state file ABI break
-- User's desktop size is used as max limit for Videl zooming
-- Videl resolution change is done immediately, not 3 VBLs late
 - AVI recording options can be set in the new [Video] config file section
-- Fix issues in switching between same sized VDI & TT resolutions
+- Falcon/TT Videl/hostscreen improvements:
+  - New --desktop option for using Desktop resolution & scaling
+    in fullscreen instead of changing the resolution
+  - User's desktop size is used as max limit for Videl zooming
+  - Videl resolution change is done immediately, not 3 VBLs late
+  - Fix issues in switching between same sized VDI & TT resolutions
 - SDL GUI improvements:
   - DSP can be disabled from the GUI without needing to restart Hatari
   - AVI video length (mins:secs) is shown in titlebar during recording
   - Option for cropping statusbar from videos & screenshots
   - Fileselector scrollbar can be used with mouse
-- Debugging:
+- Debugging improvements:
   - New disassembler with more Motorola like syntax
   - Option to disable Falcon mic
     ("--mic off" is needed for Mudflap debugging)
@@ -57,8 +60,8 @@ Emulator:
     with (a non-zero) argument, opcode/call name table is shown
   - ":info" flag to breakpoints that will call the locked "info/lock"
     subcommand without entering the debugger / stopping emulation
-  - "file" subcommand to "lock" that execs debugger commands from given
-    file when debugger is entered (or ":info" breakpoint is hit)
+  - "file" subcommand to "lock" that executes debugger commands from
+    given file when debugger is entered (or ":info" breakpoint is hit)
   - parenthesis in "evaluate" command are used to indicate memory
     accesses (instead of operator precedence like earlier)
   - DSP and CPU code profiling functionality.  Provides statistics about

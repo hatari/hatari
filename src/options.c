@@ -54,21 +54,22 @@ enum {
 	OPT_CONFIRMQUIT,
 	OPT_CONFIGFILE,
 	OPT_FASTFORWARD,
-	OPT_MONO,		/* display options */
+	OPT_MONO,		/* common display options */
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
 	OPT_GRAB,
-	OPT_ZOOM,
-	OPT_MAXWIDTH,
-	OPT_MAXHEIGHT,
-	OPT_ASPECT,
-	OPT_BORDERS,
 	OPT_FRAMESKIPS,
 	OPT_STATUSBAR,
 	OPT_DRIVE_LED,
-	OPT_SPEC512,
 	OPT_FORCEBPP,
+	OPT_BORDERS,		/* ST/STE display options */
+	OPT_SPEC512,
+	OPT_ZOOM,
+	OPT_RESOLUTION,		/* Falcon/TT display options */
+	OPT_MAXWIDTH,
+	OPT_MAXHEIGHT,
+	OPT_ASPECT,
 	OPT_VDI,		/* VDI options */
 	OPT_VDI_PLANES,
 	OPT_VDI_WIDTH,
@@ -162,7 +163,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_FASTFORWARD, NULL, "--fast-forward",
 	  "<bool>", "Help skipping stuff on fast machine" },
 
-	{ OPT_HEADER, NULL, NULL, NULL, "Display" },
+	{ OPT_HEADER, NULL, NULL, NULL, "Common display" },
 	{ OPT_MONO,      "-m", "--mono",
 	  NULL, "Start in monochrome mode instead of color" },
 	{ OPT_MONITOR,      NULL, "--monitor",
@@ -173,26 +174,32 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Start emulator in window mode" },
 	{ OPT_GRAB, NULL, "--grab",
 	  NULL, "Grab mouse (also) in window mode" },
-	{ OPT_ZOOM, "-z", "--zoom",
-	  "<x>", "Double small resolutions (1=no, 2=yes)" },
-	{ OPT_MAXWIDTH, NULL, "--max-width",
-	  "<x>", "Maximum window width for zooming (Falcon/TT only)" },
-	{ OPT_MAXHEIGHT, NULL, "--max-height",
-	  "<x>", "Maximum window height for zooming (Falcon/TT only)" },
-	{ OPT_ASPECT, NULL, "--aspect",
-	  "<bool>", "Monitor aspect ratio correction (Falcon/TT only)" },
-	{ OPT_BORDERS, NULL, "--borders",
-	  "<bool>", "Show ST/STE screen borders (for overscan demos etc)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
 	  "<bool>", "Show overlay drive led when statusbar isn't shown" },
-	{ OPT_SPEC512, NULL, "--spec512",
-	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force internal bitdepth (x = 8/15/16/32, 0=disable)" },
+
+	{ OPT_HEADER, NULL, NULL, NULL, "ST/STE specific display" },
+	{ OPT_BORDERS, NULL, "--borders",
+	  "<bool>", "Show screen borders (for overscan demos etc)" },
+	{ OPT_SPEC512, NULL, "--spec512",
+	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
+	{ OPT_ZOOM, "-z", "--zoom",
+	  "<x>", "Double small resolutions (1=no, 2=yes)" },
+
+	{ OPT_HEADER, NULL, NULL, NULL, "Falcon/TT specific display" },
+	{ OPT_RESOLUTION, NULL, "--desktop",
+	  NULL, "Keep desktop resolution on fullscreen" },
+	{ OPT_MAXWIDTH, NULL, "--max-width",
+	  "<x>", "Maximum window width for zooming" },
+	{ OPT_MAXHEIGHT, NULL, "--max-height",
+	  "<x>", "Maximum window height for zooming" },
+	{ OPT_ASPECT, NULL, "--aspect",
+	  "<bool>", "Monitor aspect ratio correction" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
 	{ OPT_VDI,	NULL, "--vdi",
@@ -859,7 +866,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			break;
 		
-			/* display options */
+			/* common display options */
 		case OPT_MONO:
 			ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
 			bLoadAutoSave = false;
@@ -901,36 +908,6 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 		case OPT_GRAB:
 			bGrabMouse = true;
 			break;
-
-		case OPT_ZOOM:
-			zoom = atoi(argv[++i]);
-			if (zoom < 1)
-			{
-				return Opt_ShowError(OPT_ZOOM, argv[i], "Invalid zoom value");
-			}
-			if (zoom > 1)
-			{
-				ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
-				ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
-			}
-			else
-			{
-				ConfigureParams.Screen.nMaxWidth = 320;
-				ConfigureParams.Screen.nMaxHeight = 200;
-			}
-			break;
-			
-		case OPT_MAXWIDTH:
-			ConfigureParams.Screen.nMaxWidth = atoi(argv[++i]);
-			break;
-
-		case OPT_MAXHEIGHT:
-			ConfigureParams.Screen.nMaxHeight = atoi(argv[++i]);
-			break;
-			
-		case OPT_ASPECT:
-			ok = Opt_Bool(argv[++i], OPT_ASPECT, &ConfigureParams.Screen.bAspectCorrect);
-			break;
 			
 		case OPT_FRAMESKIPS:
 			skips = atoi(argv[++i]);
@@ -946,26 +923,12 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ConfigureParams.Screen.nFrameSkips = skips;
 			break;
 			
-		case OPT_BORDERS:
-			ok = Opt_Bool(argv[++i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
-			break;
-			
 		case OPT_STATUSBAR:
 			ok = Opt_Bool(argv[++i], OPT_STATUSBAR, &ConfigureParams.Screen.bShowStatusbar);
 			break;
 			
 		case OPT_DRIVE_LED:
 			ok = Opt_Bool(argv[++i], OPT_DRIVE_LED, &ConfigureParams.Screen.bShowDriveLed);
-			break;
-			
-		case OPT_SPEC512:
-			threshold = atoi(argv[++i]);
-			if (threshold < 0 || threshold > 512)
-			{
-				return Opt_ShowError(OPT_SPEC512, argv[i],
-						     "Invalid palette writes per line threshold for Spec512");
-			}
-			ConfigureParams.Screen.nSpec512Threshold = threshold;
 			break;
 			
 		case OPT_FORCEBPP:
@@ -984,6 +947,56 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				return Opt_ShowError(OPT_FORCEBPP, argv[i], "Invalid bit depth");
 			}
 			ConfigureParams.Screen.nForceBpp = planes;
+			break;
+			
+			/* ST/STE display options */
+		case OPT_BORDERS:
+			ok = Opt_Bool(argv[++i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
+			break;
+			
+		case OPT_SPEC512:
+			threshold = atoi(argv[++i]);
+			if (threshold < 0 || threshold > 512)
+			{
+				return Opt_ShowError(OPT_SPEC512, argv[i],
+						     "Invalid palette writes per line threshold for Spec512");
+			}
+			ConfigureParams.Screen.nSpec512Threshold = threshold;
+			break;
+
+		case OPT_ZOOM:
+			zoom = atoi(argv[++i]);
+			if (zoom < 1)
+			{
+				return Opt_ShowError(OPT_ZOOM, argv[i], "Invalid zoom value");
+			}
+			if (zoom > 1)
+			{
+				ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
+				ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
+			}
+			else
+			{
+				ConfigureParams.Screen.nMaxWidth = 320;
+				ConfigureParams.Screen.nMaxHeight = 200;
+			}
+			break;
+
+			/* Falcon/TT display options */
+		case OPT_RESOLUTION:
+			ConfigureParams.Screen.bChangeResolution = false;
+			break;
+			
+		case OPT_MAXWIDTH:
+			ConfigureParams.Screen.nMaxWidth = atoi(argv[++i]);
+			break;
+
+		case OPT_MAXHEIGHT:
+			ConfigureParams.Screen.nMaxHeight = atoi(argv[++i]);
+			break;
+			
+		case OPT_ASPECT:
+			ok = Opt_Bool(argv[++i], OPT_ASPECT, &ConfigureParams.Screen.bAspectCorrect);
 			break;
 
 			/* screen capture options */

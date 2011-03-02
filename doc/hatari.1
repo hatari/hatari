@@ -57,7 +57,7 @@ use the given file as configuration file instead of ~/.hatari/hatari.cfg
 .TP 
 .B \-\-fast-forward <bool>
 On fast machine helps skipping (fast forwarding) Hatari output
-.SH "Display options"
+.SH "Common display options"
 .TP 
 .B \-m, \-\-mono
 Start in monochrome mode instead of color
@@ -74,21 +74,6 @@ Start the emulator in window mode
 .B \-\-grab
 Grab mouse (also) in window mode
 .TP 
-.B \-z, \-\-zoom <x>
-Zoom low resolution (1=no, 2=yes)
-.TP 
-.B \-\-max-width <x>
-Maximum window width for zooming (Falcon/TT only)
-.TP 
-.B \-\-max-height <x>
-Maximum window height for zooming (Falcon/TT only)
-.TP 
-.B \-\-aspect <bool>
-Whether to do monitor aspect ratio correction (Falcon/TT only)
-.TP 
-.B \-\-borders <bool>
-Show ST/STE screen borders (for low/med resolution overscan demos)
-.TP 
 .B \-\-frameskips <x>
 Skip <x> frames after each displayed frame to accelerate emulation
 (0=disabled, >4 uses automatic frameskip with given value as maximum)
@@ -99,13 +84,34 @@ Show statusbar (with floppy leds etc etc)
 .B \-\-drive-led <bool>
 Show overlay drive led when statusbar isn't shown
 .TP
+.B \-\-bpp <bool>
+Force internal bitdepth (x = 8/15/16/32, 0=disable)
+.SH "ST/STE specific display options"
+.TP 
+.B \-\-borders <bool>
+Show ST/STE screen borders (for low/med resolution overscan demos)
+.TP
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with
 the slower but more accurate Spectrum512 screen conversion functions
 (0 <= x <= 512, 0=disable)
-.TP
-.B \-\-bpp <bool>
-Force internal bitdepth (x = 8/15/16/32, 0=disable)
+.TP 
+.B \-z, \-\-zoom <x>
+Zoom low resolution (1=no, 2=yes)
+.SH "Falcon/TT specific display options"
+.TP 
+.B \-\-desktop
+Keep desktop resolution on fullscreen and instead scale the screen
+contents to avoid issues related to (frequent) resolution switching
+.TP 
+.B \-\-max-width <x>
+Maximum window width for zooming
+.TP 
+.B \-\-max-height <x>
+Maximum window height for zooming
+.TP 
+.B \-\-aspect <bool>
+Whether to do monitor aspect ratio correction
 .SH "VDI options"
 .TP 
 .B \-\-vdi <bool>
