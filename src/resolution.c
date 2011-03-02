@@ -122,18 +122,25 @@ void Resolution_Search(int *width, int *height, int *bpp)
 	/* Search in available modes the best suited */
 	Dprintf(("resolution: video mode asked: %dx%dx%d\n",
 		 *width, *height, *bpp));
-
+	
 	/* Read available video modes */
 	modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-	if (bInFullScreen)
+	if (bInFullScreen) {
+		/* resolution change allowed? */
+		if (!ConfigureParams.Screen.bChangeResolution) {
+			Resolution_GetDesktopSize(width, height);
+			*bpp = 0;
+			return;
+		}
 		modeflags |= SDL_FULLSCREEN;
+	}
 
 	/*--- Search a video mode with asked bpp ---*/
 	if (*bpp != 0) {
 		pixelformat.BitsPerPixel = *bpp;
 		modes = SDL_ListModes(&pixelformat, modeflags);
 		if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-			Dprintf(("resolution: searching a good video mode (any bpp)\n"));
+			Dprintf(("resolution: searching a good video mode (given bpp)\n"));
 			if (Resolution_Select(modes, width, height)) {
 				Dprintf(("resolution: video mode selected: %dx%dx%d\n",
 					 *width, *height, *bpp));
@@ -145,7 +152,7 @@ void Resolution_Search(int *width, int *height, int *bpp)
 	/*--- Search a video mode with any bpp ---*/
 	modes = SDL_ListModes(NULL, modeflags);
 	if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-		Dprintf(("resolution: searching a good video mode\n"));
+		Dprintf(("resolution: searching a good video mode (any bpp)\n"));
 		if (Resolution_Select(modes, width, height)) {
 			Dprintf(("resolution: video mode selected: %dx%dx%d\n",
 				 *width, *height, *bpp));

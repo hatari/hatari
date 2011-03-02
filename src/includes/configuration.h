@@ -210,6 +210,7 @@ typedef struct
   MONITORTYPE nMonitorType;
   int nFrameSkips;
   bool bFullScreen;
+  bool bChangeResolution;
   bool bAllowOverscan;
   bool bAspectCorrect;
   bool bUseExtVdiResolutions;

@@ -160,12 +160,14 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	width *= nScreenZoomX;
 	height *= nScreenZoomY;
 
+	/* get statusbar size for this screen size */
 	sbarheight = Statusbar_GetHeightForSize(width, height);
 	screenheight = height + sbarheight;
 	screenwidth = width;
 
-	// Select a correct video mode
+	/* get resolution corresponding to these */
 	Resolution_Search(&screenwidth, &screenheight, &bpp);
+	/* re-calculate statusbar height for this resolution */
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 
 	hs_bpp = bpp;
@@ -191,6 +193,11 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 			rect.w = sdlscrn->w;
 			rect.h = sdlscrn->h - sbarheight;
 			SDL_FillRect(sdlscrn, &rect, SDL_MapRGB(sdlscrn->format, 0, 0, 0));
+			/* re-calculate variables in case height + statusbar height
+			 * don't anymore match SDL surface size (there's an assert
+			 * for that)
+			 */
+			Statusbar_Init(sdlscrn);
 		}
 		// check in case switched from VDI to Hostscreen
 		doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
