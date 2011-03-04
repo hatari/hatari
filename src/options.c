@@ -53,6 +53,7 @@ enum {
 	OPT_VERSION,
 	OPT_CONFIRMQUIT,
 	OPT_CONFIGFILE,
+	OPT_KEYMAPFILE,
 	OPT_FASTFORWARD,
 	OPT_MONO,		/* common display options */
 	OPT_MONITOR,
@@ -108,22 +109,19 @@ enum {
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
 #if ENABLE_WINUAE_CPU
-	OPT_CPU_CYCLE_EXACT,
-#endif
-	OPT_MACHINE,		/* system options */
-	OPT_BLITTER,
-	OPT_TIMERD,
-	OPT_DSP,
-#if ENABLE_WINUAE_CPU
+	OPT_CPU_CYCLE_EXACT,	/* WinAUE CPU/bus options */
 	OPT_CPU_ADDR24,
 	OPT_FPU_TYPE,
 	OPT_FPU_COMPATIBLE,
 	OPT_MMU,
 #endif
+	OPT_MACHINE,		/* system options */
+	OPT_BLITTER,
+	OPT_DSP,
+	OPT_MICROPHONE,
+	OPT_TIMERD,
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
-	OPT_MICROPHONE,
-	OPT_KEYMAPFILE,
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
 	OPT_TRACE,
@@ -160,6 +158,8 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Whether Hatari confirms quit" },
 	{ OPT_CONFIGFILE, "-c", "--configfile",
 	  "<file>", "Use <file> instead of the default hatari config file" },
+	{ OPT_KEYMAPFILE, "-k", "--keymap",
+	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	{ OPT_FASTFORWARD, NULL, "--fast-forward",
 	  "<bool>", "Help skipping stuff on fast machine" },
 
@@ -291,39 +291,36 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
+
 #if ENABLE_WINUAE_CPU
+	{ OPT_HEADER, NULL, NULL, NULL, "WinAUE CPU/FPU/bus" },
 	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
-	  "<bool>", "Cpu cycle exact emulation (0 = no ; 1 = yes)" },
+	  "<bool>", "Use cycle exact CPU emulation" },
+	{ OPT_CPU_ADDR24, NULL, "--addr24",
+	  "<bool>", "Use 24-bit instead of 32-bit addressing mode" },
+	{ OPT_FPU_TYPE, NULL, "--fpu-type",
+	  "<x>", "FPU type (x=none/68881/68882/internal)" },
+	{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
+	  "<bool>", "Use more compatible, but slower FPU emulation" },
+	{ OPT_MMU, NULL, "--mmu",
+	  "<bool>", "Use MMU emulation" },
 #endif
-	
+
 	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  "<bool>", "Use blitter emulation (ST only)" },
-	{ OPT_TIMERD,    NULL, "--timer-d",
-	  "<bool>", "Patch Timer-D (about doubles Hatari speed)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
-#if ENABLE_WINUAE_CPU
-	{ OPT_CPU_ADDR24, NULL, "--addr24",
-	  "<bool>", "Addressing mode (0 = 32 bits ; 1 = 24 bits)" },
-	{ OPT_FPU_TYPE, NULL, "--fpu-type",
-	  "<x>", "FPU type (x=none/68881/68882/internal)" },
-	{ OPT_FPU_COMPATIBLE, NULL, "--fpu-compatible",
-	  "bool", "FPU compatible mode (0=faster, but less compatible; 1=slower but more compatible)" },
-	{ OPT_MMU, NULL, "--mmu",
-	  "bool", "MMU emulation (0=no; 1=yes)" },
-#endif
-
+	{ OPT_MICROPHONE,   NULL, "--mic",
+	  "<bool>", "Enable/disable (Falcon only) microphone" },
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
-	  "<x>", "Sound buffer size for SDL in ms (x=0/10-100, 0=use default buffer size)" },
-	{ OPT_MICROPHONE,   NULL, "--mic",
-	  "<bool>", "Enable/disable (Falcon only) microphone" },
-	{ OPT_KEYMAPFILE, "-k", "--keymap",
-	  "<file>", "Read (additional) keyboard mappings from <file>" },
+	  "<x>", "Sound buffer size for SDL in ms (x=0/10-100, 0=default)" },
+	{ OPT_TIMERD,    NULL, "--timer-d",
+	  "<bool>", "Patch Timer-D (about doubles Hatari speed)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
