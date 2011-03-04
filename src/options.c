@@ -109,7 +109,7 @@ enum {
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
 #if ENABLE_WINUAE_CPU
-	OPT_CPU_CYCLE_EXACT,	/* WinAUE CPU/bus options */
+	OPT_CPU_CYCLE_EXACT,	/* WinUAE CPU/FPU/bus options */
 	OPT_CPU_ADDR24,
 	OPT_FPU_TYPE,
 	OPT_FPU_COMPATIBLE,
@@ -293,7 +293,7 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
 
 #if ENABLE_WINUAE_CPU
-	{ OPT_HEADER, NULL, NULL, NULL, "WinAUE CPU/FPU/bus" },
+	{ OPT_HEADER, NULL, NULL, NULL, "WinUAE CPU/FPU/bus" },
 	{ OPT_CPU_CYCLE_EXACT, NULL, "--cpu-exact",
 	  "<bool>", "Use cycle exact CPU emulation" },
 	{ OPT_CPU_ADDR24, NULL, "--addr24",
