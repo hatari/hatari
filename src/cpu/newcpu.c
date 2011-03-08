@@ -3342,20 +3342,19 @@ static void m68k_run_mmu040 (void)
 	uae_u32 opcode;
 	uaecptr pc;
 	m68k_exception save_except;
-
-		/*m68k_dumpstate(stderr, NULL);*/
-		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
-		{
-			int FrameCycles, HblCounterVideo, LineCycles;
-			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
-		}
 	
 retry:
 //	TRY (prb) {
 		except = 0;
 		for (;;) {
+			if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+			{
+				int FrameCycles, HblCounterVideo, LineCycles;
+				Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+				LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+				m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+			}
+
 			pc = regs.fault_pc = m68k_getpc ();
 #if 0
 			static int done;
@@ -3388,11 +3387,38 @@ retry:
 			cpu_cycles = (*cpufunctbl[opcode])(opcode);
 			cpu_cycles &= cycles_mask;
 			cpu_cycles |= cycles_val;
+
+
+			M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+
+			if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+				/* Add some extra cycles to simulate a wait state */
+				unset_special(SPCFLAG_EXTRA_CYCLES);
+				M68000_AddCycles(nWaitStateCycles);
+				nWaitStateCycles = 0;
+			}
+
+			/* We can have several interrupts at the same time before the next CPU instruction */
+			/* We must check for pending interrupt and call do_specialties_interrupt() only */
+			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+			/* and prevent exiting the STOP state when calling do_specialties() after. */
+			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+			}
+		
 			if (regs.spcflags) {
-				if (do_specialties (cpu_cycles))
+				if (do_specialties (cpu_cycles* 2 / CYCLE_UNIT))
 					return;
 			}
+	
+			/* Run DSP 56k code if necessary */
+			if (bDspEnabled) {
+				DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);
+			}
 		}
+	
 //	} CATCH (prb) {
 	if (except != 0) {
 		save_except = except;
@@ -3707,6 +3733,7 @@ void m68k_go (int may_quit)
 			regs.spcflags |= of & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
 		}
 #endif
+
 		set_x_funcs ();
 		if (mmu_enabled && !currprefs.cachesize) {
 			run_func = m68k_run_mmu;
