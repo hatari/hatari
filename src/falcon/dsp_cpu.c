@@ -1687,7 +1687,9 @@ static void opcode8h_0(void)
 static void dsp_undefined(void)
 {
 	cur_inst_len = 0;
-	fprintf(stderr, "Dsp: 0x%04x: 0x%06x unknown instruction\n",dsp_core.pc, cur_inst);
+	fprintf(stderr, "Dsp: 0x%04x: 0x%06x Illegal instruction\n",dsp_core.pc, cur_inst);
+	/* Add some CPU cycles to avoid being stuck in an infinite loop */
+	dsp_core.instr_cycle += 100;
 }
 
 static void dsp_andi(void)
