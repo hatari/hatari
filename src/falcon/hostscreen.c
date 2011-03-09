@@ -284,7 +284,7 @@ Uint8 *HostScreen_getVideoramAddress(void)
 	return sdlscrn->pixels;
 }
 
-void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint32 blue)
+void HostScreen_setPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue)
 {
 	// set the SDL standard RGB palette settings
 	palette.standard[idx].r = red;
@@ -304,7 +304,7 @@ void HostScreen_updatePalette(Uint16 colorCount)
 	SDL_SetColors( sdlscrn, palette.standard, 0, colorCount );
 }
 
-Uint32 HostScreen_getColor(Uint32 red, Uint32 green, Uint32 blue)
+Uint32 HostScreen_getColor(Uint8 red, Uint8 green, Uint8 blue)
 {
 	return SDL_MapRGB( sdlscrn->format, red, green, blue );
 }
