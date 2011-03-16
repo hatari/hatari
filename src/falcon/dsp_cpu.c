@@ -32,7 +32,6 @@
 
 /* More disasm infos, if wanted */
 #define DSP_DISASM 0		/* Main DSP disassembler switch */
-#define DSP_DISASM_INST 0	/* Instructions */
 #define DSP_DISASM_REG 0	/* Registers changes */
 #define DSP_DISASM_MEM 0 	/* Memory changes */
 
@@ -657,9 +656,8 @@ static const dsp_interrupt_t dsp_interrupt[12] = {
 
 void dsp56k_init_cpu(void)
 {
-#ifdef DSP_DISASM
 	dsp56k_disasm_init();
-#endif
+	
 	start_time = SDL_GetTicks();
 	num_inst = 0;
 }
@@ -671,9 +669,6 @@ void dsp56k_execute_instruction(void)
 #ifdef DSP_DISASM
 #if DSP_DISASM_REG
 	dsp56k_disasm_reg_save();
-#endif
-#if DSP_DISASM_INST
-	dsp56k_disasm();
 #endif
 #if DSP_DISASM_MEM
 	disasm_memory_ptr = 0;
@@ -696,6 +691,12 @@ void dsp56k_execute_instruction(void)
 		opcodes_parmove[(cur_inst>>20) & BITMASK(4)]();
 	}
 
+	/* Disasm current instruction */
+	if (LogTraceFlags & (TRACE_DSP_DISASM)) {
+		if (dsp56k_disasm() != 0)
+			fprintf(stderr, "%s", dsp56k_getInstructionText());
+	}
+
 	/* Process the PC */
 	dsp_postexecute_update_pc();
 
@@ -714,11 +715,8 @@ void dsp56k_execute_instruction(void)
 		}
 	}
 #endif
-
+	
 #ifdef DSP_DISASM
-#if DSP_DISASM_INST
-	fprintf(stderr, "%s", dsp56k_getInstructionText());
-#endif
 #if DSP_DISASM_REG
 	dsp56k_disasm_reg_compare();
 #endif
