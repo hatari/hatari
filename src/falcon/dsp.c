@@ -207,7 +207,7 @@ Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 	Uint32 dsp_pc;
 
 	for (dsp_pc=lowerAdr; dsp_pc<=UpperAdr; dsp_pc++) {
-		dsp_pc += dsp56k_execute_trace_instruction(dsp_pc);
+		dsp_pc += dsp56k_execute_one_disasm_instruction(dsp_pc);
 	}
 	return dsp_pc;
 #else
