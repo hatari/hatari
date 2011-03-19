@@ -113,6 +113,7 @@ extern "C" {
 /* Functions */
 extern void dsp56k_init_cpu(void);		/* Set dsp_core to use */
 extern void dsp56k_execute_instruction(void);	/* Execute 1 instruction */
+extern Uint32 dsp56k_execute_trace_instruction(Uint32 pc);	/* Execute 1 instruction in disasm mode */
 
 /* Interrupt relative functions */
 void dsp_add_interrupt(Uint16 inter);

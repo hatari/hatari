@@ -23,6 +23,8 @@
 #include "config.h"
 #endif
 
+#include <stdbool.h>
+
 #include "dsp_core.h"
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
@@ -69,6 +71,10 @@ static Uint32 cur_inst_len;	/* =0:jump, >0:increment */
 
 /* Current instruction */
 static Uint32 cur_inst;
+
+/* DSP is in disasm mode ? */
+/* If yes, stack overflow, underflow and illegal instructions messages are not displayed */
+static bool isDsp_in_disasm_mode;
 
 #if defined(DSP_DISASM) && (DSP_DISASM_MEM==1)
 static char   str_disasm_memory[2][50]; /* Buffer for memory change text in disasm mode */
@@ -657,9 +663,47 @@ static const dsp_interrupt_t dsp_interrupt[12] = {
 void dsp56k_init_cpu(void)
 {
 	dsp56k_disasm_init();
-	
+	isDsp_in_disasm_mode = false;
 	start_time = SDL_GetTicks();
 	num_inst = 0;
+}
+
+/**
+ * Execute one instruction in trace mode at a given PC address.
+ * */
+Uint32 dsp56k_execute_trace_instruction(Uint32 pc)
+{
+	dsp_core_t *ptr1, *ptr2;
+	static dsp_core_t dsp_core_save;
+	Uint32 instruction_length;
+
+	ptr1 = &dsp_core;
+	ptr2 = &dsp_core_save;
+
+	/* Set DSP in disasm mode */
+	isDsp_in_disasm_mode = true;
+
+	/* Save DSP context before executing instruction */
+	memcpy(ptr2, ptr1, sizeof(dsp_core));
+
+	/* execute and disasm instruction */
+	dsp_core.pc = pc;
+
+	/* Disasm instruction */
+	instruction_length = dsp56k_disasm(DSP_DISASM_MODE) - 1;
+
+	/* Execute instruction at address given in parameter to get the number of cycles it takes */
+	dsp56k_execute_instruction();
+
+	fprintf(stderr, "%s", dsp56k_getInstructionText());
+
+	/* Restore DSP context after executing instruction */
+	memcpy(ptr1, ptr2, sizeof(dsp_core));
+	
+	/* Unset DSP in disasm mode */
+	isDsp_in_disasm_mode = false;
+
+	return instruction_length;
 }
 
 void dsp56k_execute_instruction(void)
@@ -691,10 +735,13 @@ void dsp56k_execute_instruction(void)
 		opcodes_parmove[(cur_inst>>20) & BITMASK(4)]();
 	}
 
-	/* Disasm current instruction */
+	/* Disasm current instruction ? (trace mode only) */
 	if (LogTraceFlags & (TRACE_DSP_DISASM)) {
-		if (dsp56k_disasm() != 0)
-			fprintf(stderr, "%s", dsp56k_getInstructionText());
+		/* Display only when DSP is called in trace mode */
+		if (isDsp_in_disasm_mode == false) {
+			if (dsp56k_disasm(DSP_TRACE_MODE) != 0)
+				fprintf(stderr, "%s", dsp56k_getInstructionText());
+		}
 	}
 
 	/* Process the PC */
@@ -1306,7 +1353,8 @@ static void dsp_write_reg(Uint32 numreg, Uint32 value)
 				if ((stack_error==0) && (value & (1<<DSP_SP_SE))) {
 					/* Stack full, raise interrupt */
 					dsp_add_interrupt(DSP_INTER_STACK_ERROR);
-					fprintf(stderr,"Dsp: Stack Overflow\n");
+					if (!isDsp_in_disasm_mode)
+						fprintf(stderr,"Dsp: Stack Overflow\n");
 				}
 				dsp_core.registers[DSP_REG_SP] = value & BITMASK(6); 
 				dsp_compute_ssh_ssl();
@@ -1346,7 +1394,8 @@ static void dsp_stack_push(Uint32 curpc, Uint32 cursr, Uint16 sshOnly)
 	if ((stack_error==0) && (stack & (1<<DSP_SP_SE))) {
 		/* Stack full, raise interrupt */
 		dsp_add_interrupt(DSP_INTER_STACK_ERROR);
-		fprintf(stderr,"Dsp: Stack Overflow\n");
+		if (!isDsp_in_disasm_mode)
+			fprintf(stderr,"Dsp: Stack Overflow\n");
 	}
 	
 	dsp_core.registers[DSP_REG_SP] = (underflow | stack_error | stack) & BITMASK(6);
@@ -1380,7 +1429,8 @@ static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 	if ((stack_error==0) && (stack & (1<<DSP_SP_SE))) {
 		/* Stack empty*/
 		dsp_add_interrupt(DSP_INTER_STACK_ERROR);
-		fprintf(stderr,"Dsp: Stack underflow\n");
+		if (!isDsp_in_disasm_mode)
+			fprintf(stderr,"Dsp: Stack underflow\n");
 	}
 
 	dsp_core.registers[DSP_REG_SP] = (underflow | stack_error | stack) & BITMASK(6);
@@ -1684,10 +1734,16 @@ static void opcode8h_0(void)
 
 static void dsp_undefined(void)
 {
-	cur_inst_len = 0;
-	fprintf(stderr, "Dsp: 0x%04x: 0x%06x Illegal instruction\n",dsp_core.pc, cur_inst);
-	/* Add some CPU cycles to avoid being stuck in an infinite loop */
-	dsp_core.instr_cycle += 100;
+	if (isDsp_in_disasm_mode == false) {
+		cur_inst_len = 0;
+		fprintf(stderr, "Dsp: 0x%04x: 0x%06x Illegal instruction\n",dsp_core.pc, cur_inst);
+		/* Add some CPU cycles to avoid being stuck in an infinite loop */
+		dsp_core.instr_cycle += 100;
+	}
+	else {
+		cur_inst_len = 1;
+		dsp_core.instr_cycle = 0;
+	}
 }
 
 static void dsp_andi(void)

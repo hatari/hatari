@@ -26,10 +26,15 @@
 extern "C" {
 #endif
 
+typedef enum {
+	DSP_TRACE_MODE,
+	DSP_DISASM_MODE
+} dsp_trace_disasm_t;
+
 /* Functions */
 extern void dsp56k_disasm_init(void);
-extern Uint16 dsp56k_disasm(void);
-extern char* dsp56k_getInstructionText(void);
+extern Uint16 dsp56k_disasm(dsp_trace_disasm_t value);
+extern const char* dsp56k_getInstructionText(void);
 
 /* Registers change */
 extern void dsp56k_disasm_reg_save(void);

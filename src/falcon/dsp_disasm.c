@@ -24,6 +24,7 @@
 #endif
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "dsp_core.h"
 #include "dsp_cpu.h"
@@ -50,12 +51,17 @@ static char str_instr2[100];
 static char parallelmove_name[64];
 
 /* Previous instruction */
-static Uint32 prev_inst_pc = 0x10000;	/* Init to an invalid value */
-static Uint16 isLooping = 0;
+static Uint32 prev_inst_pc;
+static bool isLooping;
+
+/* Used to display dc instead of unknown instruction for illegal opcodes */
+static bool isInDisasmMode;
 
 void dsp56k_disasm_init(void)
 {
-	/* nop */
+	prev_inst_pc = 0x10000;		/* Init to an invalid value */
+	isLooping = false;
+	isInDisasmMode = false;
 }
 
 /**********************************
@@ -487,16 +493,26 @@ void dsp56k_disasm_reg_compare(void)
 #endif
 }
 
-Uint16 dsp56k_disasm(void)
+Uint16 dsp56k_disasm(dsp_trace_disasm_t mode)
 {
 	Uint32 value;
 
-	if (prev_inst_pc == dsp_core.pc){
-		isLooping = 1;
-		return 0;
+	if (mode == DSP_TRACE_MODE) {
+		isInDisasmMode = false;
+		if (prev_inst_pc == dsp_core.pc) {
+			if (!isLooping) {
+				fprintf(stderr, "Looping on DSP instruction at PC = $%04x\n", prev_inst_pc);
+				isLooping = true;
+			}
+			return 0;
+		}
 	}
+	else {
+		isInDisasmMode = true;
+	}
+
 	prev_inst_pc = dsp_core.pc;
-	isLooping = 0;
+	isLooping = false;
 
 	cur_inst = read_memory(dsp_core.pc);
 	disasm_cur_inst_len = 1;
@@ -517,7 +533,7 @@ Uint16 dsp56k_disasm(void)
 /**
  * dsp56k_getInstrText : return the disasembled instructions
  */
-char* dsp56k_getInstructionText(void)
+const char* dsp56k_getInstructionText(void)
 {
 	if (isLooping) {
 		*str_instr2 = 0;
@@ -656,7 +672,12 @@ static void opcode8h_0(void)
 
 static void dsp_undefined(void)
 {
-	sprintf(str_instr,"0x%06x unknown instruction", cur_inst);
+	/* In Disasm mode, display dc instruction_opcode */
+	if (isInDisasmMode)
+		sprintf(str_instr, "dc 0x%06x", cur_inst);
+	/* In trace mode, display unknown instruction */
+	else
+		sprintf(str_instr, "0x%06x unknown instruction", cur_inst);
 }
 
 static void dsp_andi(void)

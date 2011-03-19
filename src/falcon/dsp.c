@@ -205,24 +205,9 @@ Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 {
 #if ENABLE_DSP_EMU
 	Uint32 dsp_pc;
-	dsp_core_t *ptr1, *ptr2;
-	static dsp_core_t dsp_core_save;
-	
-	ptr1 = &dsp_core;
-	ptr2 = &dsp_core_save;
-	
+
 	for (dsp_pc=lowerAdr; dsp_pc<=UpperAdr; dsp_pc++) {
-		/* Save DSP context before executing instruction */
-		memcpy(ptr2, ptr1, sizeof(dsp_core));
-
-		/* execute and disasm instruction */
-		dsp_core.pc = dsp_pc;
-		dsp_pc += dsp56k_disasm() - 1;
-		dsp56k_execute_instruction();
-		fprintf(stderr, "%s", dsp56k_getInstructionText());
-
-		/* Restore DSP context after executing instruction */
-		memcpy(ptr1, ptr2, sizeof(dsp_core));
+		dsp_pc += dsp56k_execute_trace_instruction(dsp_pc);
 	}
 	return dsp_pc;
 #else
