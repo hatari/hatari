@@ -709,6 +709,7 @@ Uint32 dsp56k_execute_one_disasm_instruction(Uint32 pc)
 void dsp56k_execute_instruction(void)
 {
 	Uint32 value;
+	Uint32 disasm_return = 0;
 
 #ifdef DSP_DISASM
 #if DSP_DISASM_REG
@@ -726,6 +727,13 @@ void dsp56k_execute_instruction(void)
 	/* Initialize instruction cycle counter */
 	dsp_core.instr_cycle = 2;
 
+	/* Disasm current instruction ? (trace mode only) */
+	if (LogTraceFlags & (TRACE_DSP_DISASM)) {
+		/* Call dsp56k_disasm only when DSP is called in trace mode */
+		if (isDsp_in_disasm_mode == false)
+			disasm_return = dsp56k_disasm(DSP_TRACE_MODE);
+	}
+			
 	if (cur_inst < 0x100000) {
 		value = (cur_inst >> 11) & (BITMASK(6) << 3);
 		value += (cur_inst >> 5) & BITMASK(3);
@@ -739,7 +747,7 @@ void dsp56k_execute_instruction(void)
 	if (LogTraceFlags & (TRACE_DSP_DISASM)) {
 		/* Display only when DSP is called in trace mode */
 		if (isDsp_in_disasm_mode == false) {
-			if (dsp56k_disasm(DSP_TRACE_MODE) != 0)
+			if (disasm_return != 0)
 				fprintf(stderr, "%s", dsp56k_getInstructionText());
 		}
 	}
