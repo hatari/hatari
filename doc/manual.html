@@ -2704,7 +2704,7 @@ Generic commands:
      evaluate ( e) : evaluate an expression
          help ( h) : print help
          info ( i) : show machine/OS information
-         lock (  ) : lock info to show on entering debugger
+         lock (  ) : specify information to show on entering the debugger
       logfile ( f) : open or close log file
         parse ( p) : get debugger commands from file
        setopt ( o) : set Hatari command line and debugger options
@@ -2834,9 +2834,8 @@ registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 
 <p>
 By using the "lock" command, you can ask Hatari to show specific
-information whenever you enter the debugger. For example to see
-disassembly from current PC address, use "lock disasm". To disable
-showing of this extra information, use "lock default".
+information whenever you enter the debugger / hit a breakpoint. For
+example to see disassembly from current PC address, use "lock disasm".
 </p>
 
 <p>
@@ -2849,10 +2848,14 @@ subcommand.
 <p>
 "file" subcommand can be used to get (arbitrary number of) commands
 parsed and executed from a given debugger input file.  With breakpoints
-this can be used to almost anything (see below).
+this can be used to almost anything (see below).  Continue (e.g. for
+given number of instructions) command cannot be used in this though.
 </p>
 
 <p>
+To disable showing of this extra information, use "lock default".
+Without arguments "lock" command will show the available options
+(like the "info" command does).
 </p>
 
 <a name="Debug symbols"></a><h3>Debug symbols</h3>
@@ -2871,9 +2874,9 @@ e01076 T kbdvbase
 e0107e T supexec
 </pre>
 <p>
-Where 'T' means text (code), 'D' means data and 'B' BSS section type
-of address.  The symbol hexadecimal address, type letter and name are
-separated by white space.  Empty lines and lines starting with '#'
+Where 'T' means text (code), 'D' means data and 'B' means BSS section
+type of address.  The symbol hexadecimal address, type letter and name
+are separated by white space.  Empty lines and lines starting with '#'
 (comments) are ignored.
 </p>
 
@@ -2886,7 +2889,7 @@ help in debugging it later.
 
 <p>
 If you're debugging normal TOS/GEM programs instead of code loaded
-into fixed address (like EmuTOS), you can use the "info basepage"
+into a fixed address (like EmuTOS is), you can use the "info basepage"
 command to find out the text segment address to which the program code
 has been loaded into, and then load symbols so that their addresses
 are offset by the text segment address:
@@ -2955,8 +2958,8 @@ If the value is in parenthesis like in '($ff820)' or '(a0)', then the
 used value will be read from the memory address pointed by it.  Note
 that this value is checked at run-time whereas quoted expressions
 (mentioned above, please read!) are evaluated already when adding a
-breakpoint.  For example, to break when value in adress pointed by A0
-matches the value currently in D0, one would use:
+breakpoint.  For example, to break when a value in an address (later)
+pointed by A0 matches the value <em>currently</em> in D0, one would use:
 </p>
 <pre>
 &gt; b (a0) = "d0"
@@ -2979,8 +2982,8 @@ b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
 As a convenience, if the value expressions on both sides of the
 comparison are exactly the same, right side is replaced with its
 current value. For inequality ('!') comparison, conditional breakpoint
-tracks all further changes for the given address/register expression,
-this can be used for example to find out all value changes in a given
+tracks all further changes for the given address/register expression.
+This can be used for example to find out all value changes in a given
 memory address (see examples below).
 </p>
 
@@ -2988,25 +2991,24 @@ memory address (see examples below).
 There are also several options that you can use with both breakpoint
 types. ":trace" option will make breakpoint to print out the tracked
 value instead of breaking.  This can be useful e.g. when tracking
-changes to some register, like this:
+changes to some HW register, like this:
 </p>
 <pre>
 &gt; b ($ffff9202).w ! ($ffff9202).w :trace
 </pre>
 
 <p>
-If you want to see more information than just the changed value,
-use ":info" option instead of ":trace".  This will do the command
-selected with the "lock" command (see <a href="#Inspecting emulation
-state">Inspecting emulation state</a> above).  That can be used
-to chain/toggle additional breakpoints and to show any information
-supported by the debugger.
+If you want to see the same information as you see when entering the
+debugger, use the ":lock" option instead of ":trace" (see the "lock"
+command in <a href="#Inspecting emulation state">Inspecting emulation
+state</a> above).
 </p>
 
 <p>
-":once" option that removes breakpoint after hit can be useful when one
-wants to get out of a loop (when at the instruction that branches back
-to loop start) or just to get to a specific point in code:
+":once" option that removes the breakpoint after it's hit can be
+useful when one wants to get out of a loop (when PC is at instruction
+that branches back to loop start) or just to get to a specific point
+in code:
 </p>
 <pre>
 &gt; b pc &gt; pc :once
@@ -3015,7 +3017,7 @@ to loop start) or just to get to a specific point in code:
 
 <p>
 Whereas giving count (like ":2") as option will break only on every
-&lt;count&gt; hit.
+&lt;count&gt; time the breakpoint is hit.
 </p>
 
 
@@ -3059,8 +3061,9 @@ the instruction count.
 </p>
 
 <p>
-If you want to continue with real-time disassembling, you can enable it
-with "trace cpu_disasm" at the debugger prompt before continuing.
+If you want to continue with real-time disassembling, you can enable
+it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at the
+debugger prompt before continuing.
 </p>
 <p>
 Disable tracing with "trace none" when you enter the debugger again.
@@ -3069,15 +3072,19 @@ traceable things, from HW events to OS functions.
 </p>
 <p>
 Because Hatari normally emulates things at the hardware level, tracing
-certain Atari OS Traps requires setting additional Hatari options which
-tell it to intercept this higher level functionality:
+certain Atari OS Traps requires setting additional Hatari options
+which tell it to intercept this higher level functionality:
 <ul>
-<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting</li>
-<li>GEMDOS tracing use of the GEMDOS harddisk emulation</li>
+<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting
+    (which has also some other side-effects)
+</li>
+<li>GEMDOS tracing requires enabling the GEMDOS harddisk emulation
+    (which doesn't work under MiNT because it re-implements GEMDOS)</li>
 </ul>
 <p>
-If use of above isn't possible for the things you'd like to track, you can
-use the OS call opcode breakpoints explained above with the ":trace" option.
+If use of above isn't possible for the things you'd like to track,
+you can use the OS call opcode breakpoints explained above with the
+":trace" option.
 </p>
 <p>
 Tracing options can be set even from a program within the emulation
@@ -3173,14 +3180,14 @@ addr:           count:
 8 CPU addresses listed.
 </pre>
 <p>
-If you have symbol information for code addresses loaded, you can ask
-also for profiling counts on how many times the code execution passed
-through them with "profile symbols".
+If you have loaded symbol information for code addresses, with the
+"profile symbols" command you get a list of how many times the code
+execution passed through the defined symbol addresses.
 </p>
 
 <p>
 After the profiling information has been post-processed, it will
-also be shown in the disassemby output.
+also be shown in the disassembly output.
 </p>
 
 
