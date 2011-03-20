@@ -100,21 +100,25 @@ the slower but more accurate Spectrum512 screen conversion functions
 (0 <= x <= 512, 0=disable)
 .TP 
 .B \-z, \-\-zoom <x>
-Zoom low resolution (1=no, 2=yes)
+Zoom (double) low resolution (1=no, 2=yes)
 .SH "Falcon/TT specific display options"
+Zooming to sizes specified below is internally done using integer scaling
+factors. This means that different Atari resolutions may show up with
+different sizes, but they are never blurry.
 .TP 
 .B \-\-desktop
-Keep desktop resolution on fullscreen and instead scale the screen
-contents to avoid issues related to (frequent) resolution switching
+Use desktop resolution on fullscreen to avoid issues related to resolution
+switching. Otherwise fullscreen will use a resolution that is closest to
+the Hatari window size
 .TP 
 .B \-\-max-width <x>
-Maximum window width for zooming
+Preferred / maximum window width
 .TP 
 .B \-\-max-height <x>
-Maximum window height for zooming
+Preferred / maximum window height
 .TP 
 .B \-\-aspect <bool>
-Whether to do monitor aspect ratio correction
+Whether to do monitor aspect ratio correction (enabled by default)
 .SH "VDI options"
 .TP 
 .B \-\-vdi <bool>
