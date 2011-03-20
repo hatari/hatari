@@ -785,10 +785,10 @@ static const dbgcommand_t uicommand[] =
 	  false },
 	{ DebugInfo_Command, DebugInfo_MatchLock,
 	  "lock", "",
-	  "lock info to show on entering debugger",
+	  "specify information to show on entering the debugger",
 	  "[subject [args]]\n"
-	  "\tLock requested information to be shown every time debugger\n"
-	  "\tis entered or list available options if no subject's given.",
+	  "\tLock what information should be shown every time debugger\n"
+	  "\tis entered, or list available options if no subject's given.",
 	  false },
 	{ DebugUI_SetLogFile, NULL,
 	  "logfile", "f",
