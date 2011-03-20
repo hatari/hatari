@@ -828,8 +828,9 @@ static const dbgcommand_t uicommand[] =
 	  "trace", "t",
 	  "select Hatari tracing settings",
 	  "[set1,set2...]\n"
-	  "\tSelect Hatari tracing settings. For example to enable CPU\n"
-	  "\tdisassembly and VBL tracing, use:  trace cpu_disasm,video_hbl",
+	  "\tSelect Hatari tracing settings. 'help' shows all the available\n"
+	  "\tsettings.  For example, to enable CPU disassembly and VBL\n"
+	  "\ttracing, use:\n\t\ttrace cpu_disasm,video_hbl",
 	  false },
 	{ DebugUI_QuitEmu, NULL,
 	  "quit", "q",
