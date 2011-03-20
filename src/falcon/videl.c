@@ -65,7 +65,7 @@
 const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 #include <SDL_endian.h>
-
+#include <SDL.h>
 #include "main.h"
 #include "configuration.h"
 #include "memorySnapShot.h"
@@ -856,6 +856,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 
 	Uint16 *fvram = (Uint16 *) Atari2HostAddr(atariVideoRAM);
 	Uint8 *hvram = HostScreen_getVideoramAddress();
+	SDL_PixelFormat *scrfmt = HostScreen_getFormat();
 
 	int hscrolloffset = (handleRead(HW + 0x65) & 0x0f);
 
@@ -1070,14 +1071,14 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 						int w;
 
 						for (w = 0; w < vw_clip; w++) {
-							int data = *fvram_column++;
+							Uint16 srcword = *fvram_column++;
 
 							*hvram_column++ =
-								HostScreen_getColor(
-									(Uint8) (data & 0xf8),
-									(Uint8) ( ((data & 0x07) << 5) |
-											  ((data >> 11) & 0x3c)),
-									(Uint8) ((data >> 5) & 0xf8));
+								SDL_MapRGB(scrfmt,
+									   (srcword & 0xf8),
+									   (((srcword & 0x07) << 5) |
+										   ((srcword >> 11) & 0x3c)),
+									   ((srcword >> 5) & 0xf8));
 						}
 
 						hvram_line += scrpitch>>2;
@@ -1122,6 +1123,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 	int scrwidth = HostScreen_getWidth();
 	int scrheight = HostScreen_getHeight();
 	int scrbpp = HostScreen_getBpp();
+	SDL_PixelFormat *scrfmt = HostScreen_getFormat();
 	Uint8 *hvram = (Uint8 *) HostScreen_getVideoramAddress();
 
 	int hscrolloffset = (handleRead(HW + 0x65) & 0x0f);
@@ -1426,11 +1428,11 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 								srcword = fvram_column[zoomxtable[w]];
 
 								*hvram_column++ =
-									HostScreen_getColor(
-										(Uint8) (srcword & 0xf8),
-										(Uint8) ( ((srcword & 0x07) << 5) |
-											  ((srcword >> 11) & 0x3c)),
-										(Uint8) ((srcword >> 5) & 0xf8));
+									SDL_MapRGB(scrfmt,
+										   (srcword & 0xf8),
+										   (((srcword & 0x07) << 5) |
+											   ((srcword >> 11) & 0x3c)),
+										   ((srcword >> 5) & 0xf8));
 							}
 						}
 

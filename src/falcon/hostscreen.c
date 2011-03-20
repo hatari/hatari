@@ -10,6 +10,7 @@
 */
 const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 
+#include <SDL.h>
 #include "main.h"
 #include "configuration.h"
 #include "control.h"
@@ -53,13 +54,15 @@ static Uint32 sdl_videoparams;
 static int hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
+static void HostScreen_remapPalette(void);
+
 static struct { // TOS palette (bpp < 16) to SDL color mapping
 	SDL_Color	standard[256];
 	Uint32		native[256];
 } palette;
 
 
-static const unsigned long default_palette[] = {
+static const Uint32 default_palette[] = {
     RGB_WHITE, RGB_RED, RGB_GREEN, RGB_YELLOW,
     RGB_BLUE, RGB_MAGENTA, RGB_CYAN, RGB_LTGRAY,
     RGB_GRAY, RGB_LTRED, RGB_LTGREEN, RGB_LTYELLOW,
@@ -70,8 +73,8 @@ static const unsigned long default_palette[] = {
 void HostScreen_Init(void)
 {
 	int i;
-	for(i=0; i<256; i++) {
-		unsigned long color = default_palette[i%16];
+	for(i = 0; i < 256; i++) {
+		Uint32 color = default_palette[i%16];
 		palette.standard[i].r = color >> 24;
 		palette.standard[i].g = (color >> 16) & 0xff;
 		palette.standard[i].b = color & 0xff;
@@ -226,8 +229,9 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 		Control_ReparentWindow(screenwidth, screenheight, bInFullScreen);
 	}
 
-	// update the surface's palette
-	HostScreen_updatePalette( 256 );
+	// In case surface format changed, update SDL palette & remap the native palette
+	HostScreen_updatePalette(256);
+	HostScreen_remapPalette();
 
 	// redraw statusbar
 	Statusbar_Init(sdlscrn);
@@ -284,6 +288,11 @@ Uint8 *HostScreen_getVideoramAddress(void)
 	return sdlscrn->pixels;
 }
 
+SDL_PixelFormat *HostScreen_getFormat(void)
+{
+	return sdlscrn->format;
+}
+
 void HostScreen_setPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue)
 {
 	// set the SDL standard RGB palette settings
@@ -299,16 +308,22 @@ Uint32 HostScreen_getPaletteColor(Uint8 idx)
 	return palette.native[idx];
 }
 
-void HostScreen_updatePalette(Uint16 colorCount)
+void HostScreen_updatePalette(int colorCount)
 {
 	SDL_SetColors( sdlscrn, palette.standard, 0, colorCount );
 }
 
-Uint32 HostScreen_getColor(Uint8 red, Uint8 green, Uint8 blue)
+static void HostScreen_remapPalette(void)
 {
-	return SDL_MapRGB( sdlscrn->format, red, green, blue );
-}
+	int i;
+	Uint32 *native = palette.native;
+	SDL_Color *standard = palette.standard;
+	SDL_PixelFormat *fmt = sdlscrn->format;
 
+	for(i = 0; i < 256; i++, native++, standard++) {
+		*native = SDL_MapRGB(fmt, standard->r, standard->g, standard->b);
+	}
+}
 
 bool HostScreen_renderBegin(void)
 {
