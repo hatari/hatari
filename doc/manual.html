@@ -2987,9 +2987,17 @@ This can be used for example to find out all value changes in a given
 memory address (see examples below).
 </p>
 
+
+<h4>Breakpoint action options</h4>
+
 <p>
-There are also several options that you can use with both breakpoint
-types. ":trace" option will make breakpoint to print out the tracked
+There are several options on actions that will happen when a specified
+breakpoint is hit.  You can give any of them for conditional
+breakpoints, the address breakpoints accept only one per breakpoint
+and they don't support the ":file" option.
+</p>
+
+":trace" option will make breakpoint to print out the tracked
 value instead of breaking.  This can be useful e.g. when tracking
 changes to some HW register, like this:
 </p>
@@ -2999,10 +3007,21 @@ changes to some HW register, like this:
 
 <p>
 If you want to see the same information as you see when entering the
-debugger, use the ":lock" option instead of ":trace" (see the "lock"
-command in <a href="#Inspecting emulation state">Inspecting emulation
-state</a> above).
+debugger, use the ":lock" option instead of the ":trace" option (see
+the "lock" command in <a href="#Inspecting emulation state">Inspecting
+emulation state</a> above).
 </p>
+
+<p>
+If you want to specify yourself the information you see on breakpoint
+hits, use the ":file" option and give it the file specifying the
+debugger commands that should be executed when that breakpoint is hit.
+It can also be used e.g. to do automatic breakpoint "chaining" where
+after one breakpoint is hit, another is set.  For example:
+</p>
+<pre>
+&gt; b ($ffff9202).w & 3 = 3 :file my-commands.ini
+</pre>
 
 <p>
 ":once" option that removes the breakpoint after it's hit can be
@@ -3041,12 +3060,14 @@ one needs to use something like this:
 b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
 </pre>
 </li>
+<!--
 <li>"OSExitPC" variable can be used to catch exit from an OS call.
 <pre>
 b pc = OSExitPC :once
 </pre>
 It's valid after OS call breakpoint is triggered and before
 that call has finished.</li>
+-->
 </ul>
 
 
