@@ -30,6 +30,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "breakcond.h"
 #include "debugcpu.h"
 #include "debugInfo.h"
+#include "debugui.h"
 #include "evaluate.h"
 #include "symbols.h"
 #include "68kDisass.h"
@@ -89,14 +90,19 @@ typedef struct {
 } bc_condition_t;
 
 typedef struct {
-	char *expression;
-	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
-	int ccount;	/* condition count */
-	int hits;	/* how many times breakpoint hit */
+	char *filename;	/* file where to read commands to do on hit */
 	int skip;	/* how many times to hit before breaking */
 	bool once;	/* remove after hit&break */
 	bool trace;	/* trace mode, don't break */
-	bool info;	/* tracing + show locked info */
+	bool lock;	/* tracing + show locked info */
+} bc_options_t;
+
+typedef struct {
+	char *expression;
+	bc_options_t options;
+	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
+	int ccount;	/* condition count */
+	int hits;	/* how many times breakpoint hit */
 } bc_breakpoint_t;
 
 static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
@@ -323,28 +329,37 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 	int i;
 	
 	for (i = 0; i < count; bp++, i++) {
+
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
+
 			BreakCond_ShowTracked(bp->conditions, bp->ccount);
+
 			bp->hits++;
-			if (bp->skip && (bp->hits % bp->skip) == 0) {
+			if (bp->options.skip &&
+			    (bp->hits % bp->options.skip) == 0) {
 				return 0;
 			}
 			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
 				i+1, name, bp->hits);
-			if (bp->trace) {
-				if (bp->info) {
-					DebugCpu_InitSession();
-					DebugDsp_InitSession();
-					DebugInfo_ShowSessionInfo();
-				}
-				return 0;
+
+			if (bp->options.lock) {
+				DebugCpu_InitSession();
+				DebugDsp_InitSession();
+				DebugInfo_ShowSessionInfo();
+			}
+			if (bp->options.filename) {
+				DebugUI_ParseFile(bp->options.filename);
 			}
 			BreakCond_Print(bp);
-			if (bp->once) {
+			if (bp->options.once) {
 				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
 			}
-			/* indexes for BreakCond_Remove() start from 1 */
-			return i + 1;
+			if (bp->options.trace) {
+				return 0;
+			} else {
+				/* indexes for BreakCond_Remove() start from 1 */
+				return i + 1;
+			}
 		}
 	}
 	return 0;
@@ -1311,7 +1326,7 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
  * Parse given breakpoint expression and store it.
  * Return true for success and false for failure.
  */
-static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bool info, bool once, int skip)
+static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool bForDsp)
 {
 	parser_state_t pstate;
 	bc_breakpoint_t *bp;
@@ -1345,21 +1360,25 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bo
 		fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added:\n\t%s\n",
 			name, *bcount, ccount, bp->expression);
 		BreakCond_CheckTracking(bp);
-		if (skip) {
-			fprintf(stderr, "-> Break only on every %d hit.\n", skip);
-			bp->skip = skip;
+		if (options->skip) {
+			fprintf(stderr, "-> Break only on every %d hit.\n", options->skip);
+			bp->options.skip = options->skip;
 		}
-		if (once) {
+		if (options->once) {
 			fprintf(stderr, "-> Once, delete after breaking.\n");
-			bp->once = true;
+			bp->options.once = true;
 		}
-		if (trace) {
+		if (options->trace) {
 			fprintf(stderr, "-> Trace instead of breaking, but show still hits.\n");
-			if (info) {
+			if (options->lock) {
 				fprintf(stderr, "-> Show also info selected with lock command.\n");
-				bp->info = true;
+				bp->options.lock = true;
 			}
-			bp->trace = true;
+			bp->options.trace = true;
+		}
+		if (options->filename) {
+			fprintf(stderr, "-> Execute debugger commands from '%s' file on hit.\n", options->filename);
+			bp->options.filename = strdup(options->filename);
 		}
 	} else {
 		if (normalized) {
@@ -1396,18 +1415,21 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp, bool trace, bo
 static void BreakCond_Print(bc_breakpoint_t *bp)
 {
 		fprintf(stderr, "\t%s", bp->expression);
-		if (bp->skip) {
-			fprintf(stderr, " :%d", bp->skip);
+		if (bp->options.skip) {
+			fprintf(stderr, " :%d", bp->options.skip);
 		}
-		if (bp->once) {
+		if (bp->options.once) {
 			fprintf(stderr, " :once");
 		}
-		if (bp->trace) {
-			if (bp->info) {
-				fprintf(stderr, " :info");
+		if (bp->options.trace) {
+			if (bp->options.lock) {
+				fprintf(stderr, " :lock");
 			} else {
 				fprintf(stderr, " :trace");
 			}
+		}
+		if (bp->options.filename) {
+			fprintf(stderr, " :file %s", bp->options.filename);
 		}
 		fprintf(stderr, "\n");
 }
@@ -1457,6 +1479,9 @@ static bool BreakCond_Remove(int position, bool bForDsp)
 	fprintf(stderr, "Removed %s breakpoint %d:\n", name, position);
 	BreakCond_Print(&(bp[offset]));
 	free(bp[offset].expression);
+	if (bp[offset].options.filename) {
+		free(bp[offset].options.filename);
+	}
 	bp[offset].expression = NULL;
 
 	if (position < *bcount) {
@@ -1511,7 +1536,7 @@ static void BreakCond_Help(void)
 "  	comparison = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
-"  	option = : <count> | 'once' | 'trace' | 'info'\n"
+"  	option = : <count> | 'once' | 'trace' | 'lock' | 'file' <file>\n"
 "\n"
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
@@ -1520,10 +1545,11 @@ static void BreakCond_Help(void)
 "  the same, right side is replaced with its current value and for\n"
 "  inequality ('!') comparison, the breakpoint tracks all further changes\n"
 "  for the given address/register expression.  'trace' option for continuing\n"
-"  without breaking can be useful with this. 'info' option one will show\n"
-"  additionally the configured info/lock output. 'once' option removes\n"
-"  breakpoint after hit and giving count as option will break only on\n"
-"  every <count> hit.\n"
+"  without breaking can be useful with this. 'lock' option will show the\n"
+"  same information that's seen on entering debugger. 'file' option will\n"
+"  execute debugger commands from the given file when a breakpoint is hit.\n"
+"  'once' option removes breakpoint after hit and giving count as option\n"
+"  will break only on every <count> hit.\n"
 "\n"
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
@@ -1562,15 +1588,73 @@ static void BreakCond_Help(void)
 /* ------------- breakpoint condition parsing, public API ------------ */
 
 const char BreakCond_Description[] =
-	"[ <condition> [:<count>|once|trace|info] | <index> | help | all ]\n"
+	"[ <condition> [:<count>|once|trace|lock] | <index> | help | all ]\n"
 	"\tSet breakpoint with given <condition>, remove breakpoint with\n"
-	"\tgiven <index> or list all breakpoints when no args are given.\n"
-	"\tAdding ':trace' to end of condition causes breakpoint match\n"
-	"\tjust to be printed, not break, ':info' will print also selected\n"
-	"\tinformation. Adding ':once' will delete the breakpoint after\n"
-	"\tit's hit.  Adding ':<count>' will break only on every <count>\n"
-	"\thit. 'help' outputs breakpoint condition syntax help,\n"
-	"\t'all' removes all breakpoints.";
+	"\tgiven <index>, or list all breakpoints when no args are given.\n"
+	"\t'help' outputs breakpoint condition syntax help, 'all' removes\n"
+	"\tall breakpoints.  Multiple breakpoint action options can be\n"
+	"\tspecified after the breakpoint condition(s):\n"
+	"\t- ':trace', prints the breakpoint match without stopping\n"
+	"\t- ':lock', prints the debugger entry info without stopping\n"
+	"\t- ':file <file>', executes debugger commands from given file\n"
+	"\t- ':once', deletes the breakpoint after it's hit\n"
+	"\t- ':<count>', breaks only on every <count> hit";
+
+/**
+ * Parse options for the given breakpoint command.
+ * Return true for success and false for failure.
+ */
+static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
+{
+	char *option, *next, *filename;
+	int skip;
+	
+	memset(options, 0, sizeof(*options));
+
+	option = strchr(str, marker);
+	if (option) {
+		/* end breakcond command at options */
+		*option = 0;
+	}
+	for (next = option; option; option = next) {
+
+		/* skip marker + end & trim this option */
+		option = next + 1;
+		next = strchr(option, marker);
+		if (next) {
+			*next = 0;
+		}
+		option = Str_Trim(option);
+
+		if (strcmp(option, "once") == 0) {
+			options->once = true;
+		} else if (strcmp(option, "trace") == 0) {
+			options->trace = true;
+		} else if (strcmp(option, "lock") == 0) {
+			options->trace = true;
+			options->lock = true;
+		} else if (strncmp(option, "file ", 5) == 0) {
+			filename = Str_Trim(option+4);
+			if (!File_Exists(filename)) {
+				fprintf(stderr, "ERROR: given file '%s' doesn't exist!\n", filename);
+				return false;
+			}
+			options->filename = filename;
+		} else if (isdigit(*option)) {
+			/* :<value> */
+			skip = atoi(option);
+			if (skip < 2) {
+				fprintf(stderr, "ERROR: invalid breakpoint skip count '%s'!\n", option);
+				return false;
+			}
+			options->skip = skip;
+		} else {
+			fprintf(stderr, "ERROR: unrecognized breakpoint option '%s'!\n", option);
+			return false;
+		}
+	}
+	return true;
+}
 
 /**
  * Parse given command expression to set/remove/list
@@ -1579,11 +1663,11 @@ const char BreakCond_Description[] =
  */
 bool BreakCond_Command(const char *args, bool bForDsp)
 {
-	bool trace, info, once, ret = true;
-	char *cut, *expression, *argscopy;
+	char *expression, *argscopy;
 	unsigned int position;
+	bc_options_t options;
 	const char *end;
-	int skip;
+	bool ret = true;
 	
 	if (!args) {
 		BreakCond_List(bForDsp);
@@ -1594,7 +1678,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 	
 	expression = Str_Trim(argscopy);
 	
-	/* subcommands */
+	/* subcommands? */
 	if (strncmp(expression, "help", 4) == 0) {
 		BreakCond_Help();
 		goto cleanup;
@@ -1610,32 +1694,13 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		goto cleanup;
 	}
 
-	/* postfix options */
-	skip = 0;
-	once = false;
-	info = false;
-	trace = false;
-	if ((cut = strchr(expression, ':'))) {
-		*cut = '\0';
-		cut = Str_Trim(cut+1);
-		if (strcmp(cut, "trace") == 0) {
-			trace = true;
-		} else if (strcmp(cut, "info") == 0) {
-			trace = true;
-			info = true;
-		} else if (strcmp(cut, "once") == 0) {
-			once = true;
-		} else {
-			skip = atoi(cut);
-			if (skip < 2) {
-				ret = false;
-				fprintf(stderr, "ERROR: invalid breakpoint skip count '%s'!\n", cut);
-				goto cleanup;
-			}
-		}
+	/* postfix options? */
+	if (!BreakCond_Options(expression, &options, ':')) {
+		ret = false;
+		goto cleanup;
 	}
 
-	/* index (for removal) */
+	/* index (for breakcond removal)? */
 	end = expression;
 	while (isdigit(*end)) {
 		end++;
@@ -1645,7 +1710,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		ret = BreakCond_Remove(position, bForDsp);
 	} else {
 		/* add breakpoint? */
-		ret = BreakCond_Parse(expression, bForDsp, trace, info, once, skip);
+		ret = BreakCond_Parse(expression, &options, bForDsp);
 	}
 cleanup:
 	free(argscopy);
@@ -1654,12 +1719,13 @@ cleanup:
 
 
 const char BreakAddr_Description[] =
-	"<address> [:<count>|once|trace|info]\n"
+	"<address> [:<count>|once|trace|lock]\n"
 	"\tCreate conditional breakpoint for given PC <address>.\n"
-	"\tAdding ':trace' causes breakpoint match just to be printed,\n"
-	"\tnot break, ':info' will print also selected information.\n"
-	"\tAdding ':once' will delete the breakpoint after it's hit.\n"
-	"\tAdding ':<count>' will break only on every <count> hit.\n"
+	"\tBreakpoint action option alternatives:\n"
+	"\t- ':trace', prints the breakpoint match without stopping\n"
+	"\t- ':lock', prints the debugger entry info without stopping\n"
+	"\t- ':once', deletes the breakpoint after it's hit\n"
+	"\t- ':<count>', breaks only on every <count> hit\n"
 	"\tUse conditional breakpoint commands to manage the created\n"
 	"\tbreakpoints.";
 
@@ -1688,8 +1754,8 @@ bool BreakAddr_Command(char *args, bool bForDsp)
 	if ((cut = strchr(args, ':'))) {
 		*cut = '\0';
 		cut = Str_Trim(cut+1);
-		if (strlen(cut) > 8) {
-			cut[8] = '\0';
+		if (strlen(cut) > 5) {
+			cut[5] = '\0';
 		}
 	}
 
