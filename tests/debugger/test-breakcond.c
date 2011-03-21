@@ -75,6 +75,8 @@ int main(int argc, const char *argv[])
 		"()&=d0",
 		"d0=().w",
 		"255 & 3 = (d0) & && 2 = 2",
+		/* missing options file */
+		"pc>pc :file no-such-file",		
 		/* size and mask mismatches with numbers */
 		"d0.w = $ffff0",
 		"(a0).b & 3 < 100",
@@ -100,8 +102,8 @@ int main(int argc, const char *argv[])
 		"hbl > 0 && vbl < 2000 && linecycles = 508",
 		/* options */
 		"($200).w ! ($200).w :trace",
-		"($200).w > ($200).w :4",
-		"pc>pc :once",
+		"($200).w > ($200).w :4 :lock",
+		"pc>pc :file data/test.ini :once",
 		NULL
 	};
 	/* address breakpoint + expression evalution with register */

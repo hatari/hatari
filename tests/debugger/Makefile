@@ -76,15 +76,18 @@ all: $(TESTS)
 # and X locale stuff).
 mudflap: $(TESTS)
 	export MUDFLAP_OPTIONS="-viol-gdb -collect-stats -internal-checking -print-leaks -backtrace=8 -check-initialization -wipe-stack -wipe-heap"; \
-	for test in $^; do ./$$test; echo "Press <Enter>"; read; done
+	for test in $^; do ./$$test; echo "Press <Enter>"; read proceed; done
 
 # Valgrind tests run faster if you compile without Mudflap
 valgrind: $(TESTS)
-	for test in $^; do valgrind $(VALGRIND_OPTS) ./$$test; done
+	for test in $^; do \
+	valgrind $(VALGRIND_OPTS) ./$$test; \
+	echo "Press <Enter>"; read proceed; \
+	done
 
 # just run the tests
 test: $(TESTS)
-	for test in $^; do ./$$test; echo "Press <Enter>"; read; done
+	for test in $^; do ./$$test; echo "Press <Enter>"; read proceed; done
 
 # all the real & dummy deps
 SOURCEDEPS = test-dummies.c ../../src/debug/breakcond.c \

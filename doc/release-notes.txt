@@ -58,10 +58,13 @@ Emulator:
   - "aes", "vdi" and "gemdos" subcommands for "info".  Without arguments
     they will output information about corresponding OS part state,
     with (a non-zero) argument, opcode/call name table is shown
-  - ":info" flag to breakpoints that will call the locked "info/lock"
-    subcommand without entering the debugger / stopping emulation
   - "file" subcommand to "lock" that executes debugger commands from
-    given file when debugger is entered (or ":info" breakpoint is hit)
+    given file when debugger is entered (or ":lock" breakpoint is hit)
+  - ":lock" option to breakpoints that will show without stopping the
+    emulation the same output as what's shown on entering the debugger
+  - ":file" option to breakpoints that executes the commands from
+    given file when the breakpoint is hit
+  - multiple breakpoints options can be specified per breakpoint
   - parenthesis in "evaluate" command are used to indicate memory
     accesses (instead of operator precedence like earlier)
   - DSP and CPU code profiling functionality.  Provides statistics about

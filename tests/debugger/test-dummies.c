@@ -69,3 +69,30 @@ void Video_GetPosition(int *pFrameCycles, int *pHBL, int *pLineCycles)
 	*pHBL = nHBL;
 	*pFrameCycles = 508;
 }
+
+/* only function needed from file.c */
+#include <sys/stat.h>
+#include <sys/time.h>
+#include "file.h"
+bool File_Exists(const char *filename)
+{
+	struct stat buf;
+	if (stat(filename, &buf) == 0 &&
+	    (buf.st_mode & (S_IRUSR|S_IWUSR)) && !(buf.st_mode & S_IFDIR))
+	{
+		/* file points to user readable regular file */
+		return true;
+	}
+	return false;
+}
+
+/* fake debugger file parsing */
+#include "debugui.h"
+bool DebugUI_ParseFile(const char *path)
+{
+	return File_Exists(path);
+}
+
+/* fake disassembly output */
+#include "68kDisass.h"
+void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine) {}
