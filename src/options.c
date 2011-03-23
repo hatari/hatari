@@ -193,7 +193,7 @@ static const opt_t HatariOptions[] = {
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Falcon/TT specific display" },
 	{ OPT_RESOLUTION, NULL, "--desktop",
-	  NULL, "Keep desktop resolution on fullscreen" },
+	  "<bool>", "Keep desktop resolution on fullscreen" },
 	{ OPT_MAXWIDTH, NULL, "--max-width",
 	  "<x>", "Maximum window width for zooming" },
 	{ OPT_MAXHEIGHT, NULL, "--max-height",
@@ -981,7 +981,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 
 			/* Falcon/TT display options */
 		case OPT_RESOLUTION:
-			ConfigureParams.Screen.bChangeResolution = false;
+			ok = Opt_Bool(argv[++i], OPT_RESOLUTION, &ConfigureParams.Screen.bKeepResolution);
 			break;
 			
 		case OPT_MAXWIDTH:

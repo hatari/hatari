@@ -126,8 +126,8 @@ void Resolution_Search(int *width, int *height, int *bpp)
 	/* Read available video modes */
 	modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
 	if (bInFullScreen) {
-		/* resolution change allowed? */
-		if (!ConfigureParams.Screen.bChangeResolution) {
+		/* resolution change not allowed? */
+		if (ConfigureParams.Screen.bKeepResolution) {
 			Resolution_GetDesktopSize(width, height);
 			*bpp = 0;
 			return;

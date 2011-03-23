@@ -33,8 +33,8 @@ Emulator:
   - Crossbar state is included -> state file ABI break
 - AVI recording options can be set in the new [Video] config file section
 - Falcon/TT Videl/hostscreen improvements:
-  - New --desktop option for using Desktop resolution & scaling
-    in fullscreen instead of changing the resolution
+  - New setting/option for using Desktop resolution & scaling
+    in fullscreen instead of changing the resolution. On by default
   - User's desktop size is used as max limit for Videl zooming
   - Videl resolution change is done immediately, not 3 VBLs late
   - Fix issues in switching between same sized VDI & TT resolutions
