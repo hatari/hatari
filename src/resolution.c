@@ -184,7 +184,7 @@ void Resolution_GetLimits(int *width, int *height, int *bpp)
 	*width = *height = 0;
 	/* constrain max size to what HW/SDL offers */
 	Resolution_Search(width, height, bpp);
-	if (!(*width && *width) ||
+	if (!(*width && *height) ||
 	    (ConfigureParams.Screen.nMaxWidth < *width &&
 	     ConfigureParams.Screen.nMaxHeight < *height)) {
 		/* already within it, use user provided value */
