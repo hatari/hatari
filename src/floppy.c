@@ -490,41 +490,55 @@ static bool Floppy_EjectBothDrives(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Double-check information read from boot-sector as this is sometimes found to
- * be incorrect. The .ST image file should be divisible by the sector size and
- * sectors per track.
+ * be incorrect. The .ST image file should be divisible by the sector size,
+ * the sectors per track. the number of tracks and the number of sides.
  * NOTE - Pass information from boot-sector to this function (if we can't
  * decide we leave it alone).
  */
-static void Floppy_DoubleCheckFormat(long nDiskSize, Uint16 *pnSides, Uint16 *pnSectorsPerTrack)
+static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, Uint16 *pnSides, Uint16 *pnSectorsPerTrack)
 {
-	int nSectorsPerTrack;
-	long TotalSectors;
+	long	TotalSectors;
+	int	Sides_fixed;
+	int	SectorsPerTrack_fixed;
+	int	TracksPerDisk_fixed;
 
 	/* Now guess at number of sides */
-	if (nDiskSize < (500*1024))                    /* Is size is >500k assume 2 sides to disk! */
-		*pnSides = 1;
+	if ( nDiskSize < (500*1024) )				/* If size >500k assume 2 sides */
+		Sides_fixed = 1;
 	else
-		*pnSides = 2;
+		Sides_fixed = 2;
 
-	/* And Sectors Per Track(always 512 bytes per sector) */
-	TotalSectors = nDiskSize/512;                 /* # Sectors on disk image */
-	/* Does this match up with what we've read from boot-sector? */
-	nSectorsPerTrack = *pnSectorsPerTrack;
-	if (nSectorsPerTrack==0)                      /* Check valid, default to 9 */
-		nSectorsPerTrack = 9;
-	if ((TotalSectors%nSectorsPerTrack)!=0)
+	/* Number of 512 bytes sectors for this disk image */
+	TotalSectors = nDiskSize / 512;
+
+	/* Check some common values */
+	if      ( TotalSectors == 80*9*Sides_fixed )	{ SectorsPerTrack_fixed = 9; }
+	else if ( TotalSectors == 81*9*Sides_fixed )	{ SectorsPerTrack_fixed = 9; }
+	else if ( TotalSectors == 82*9*Sides_fixed )	{ SectorsPerTrack_fixed = 9; }
+	else if ( TotalSectors == 80*10*Sides_fixed )	{ SectorsPerTrack_fixed = 10; }
+	else if ( TotalSectors == 81*10*Sides_fixed )	{ SectorsPerTrack_fixed = 10; }
+	else if ( TotalSectors == 82*10*Sides_fixed )	{ SectorsPerTrack_fixed = 10; }
+	else if ( TotalSectors == 80*11*Sides_fixed )	{ SectorsPerTrack_fixed = 11; }
+	else if ( TotalSectors == 81*11*Sides_fixed )	{ SectorsPerTrack_fixed = 11; }
+	else if ( TotalSectors == 82*11*Sides_fixed )	{ SectorsPerTrack_fixed = 11; }
+	else if ( TotalSectors == 80*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
+	else if ( TotalSectors == 81*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
+	else if ( TotalSectors == 82*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
+
+	/* unknown combination, assume boot sector is correct */
+	else						{ SectorsPerTrack_fixed = *pnSectorsPerTrack; }
+
+	TracksPerDisk_fixed = TotalSectors / ( SectorsPerTrack_fixed * Sides_fixed );
+
+	/* Valid new values if necessary */
+	if ( ( *pnSides != Sides_fixed ) || ( *pnSectorsPerTrack != SectorsPerTrack_fixed ) )
 	{
-		/* No, we have an invalid boot-sector - re-calculate from disk size */
-		if ((TotalSectors%9)==0)                    /* Work in this order.... */
-			*pnSectorsPerTrack = 9;
-		else if ((TotalSectors%10)==0)
-			*pnSectorsPerTrack = 10;
-		else if ((TotalSectors%11)==0)
-			*pnSectorsPerTrack = 11;
-		else if ((TotalSectors%12)==0)
-			*pnSectorsPerTrack = 12;
+//		Log_Printf(LOG_WARN, "Floppy_DoubleCheckFormat: boot sector doesn't match disk image's size :"
+//			" total sectors %ld->%ld sides %d->%d sectors %d->%d tracks %d\n",
+//			nSectorsPerDisk , TotalSectors , *pnSides , Sides_fixed , *pnSectorsPerTrack , SectorsPerTrack_fixed , TracksPerDisk_fixed );
+		*pnSides = Sides_fixed;
+		*pnSectorsPerTrack = SectorsPerTrack_fixed;
 	}
-	/* else unknown, assume boot-sector is correct!!! */
 }
 
 
@@ -537,18 +551,18 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, Uint16 *pnSides, Uint16 *pn
 void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
                             Uint16 *pnSectorsPerTrack, Uint16 *pnSides)
 {
-	Uint16 nSectorsPerTrack, nSides, nSectors;
+	Uint16 nSectorsPerTrack, nSides, nSectorsPerDisk;
 
 	/* First do check to find number of sectors and bytes per sector */
 	nSectorsPerTrack = SDL_SwapLE16(*(const Uint16 *)(pBuffer+24));   /* SPT */
 	nSides = SDL_SwapLE16(*(const Uint16 *)(pBuffer+26));             /* SIDE */
-	nSectors = pBuffer[19] | (pBuffer[20] << 8);                      /* total sectors */
+	nSectorsPerDisk = pBuffer[19] | (pBuffer[20] << 8);               /* total sectors */
 
 	/* If the number of sectors announced is incorrect, the boot-sector may
 	 * contain incorrect information, eg the 'Eat.st' demo, or wrongly imaged
 	 * single/double sided floppies... */
-	if (nSectors != nImageBytes/512)
-		Floppy_DoubleCheckFormat(nImageBytes, &nSides, &nSectorsPerTrack);
+	if (nSectorsPerDisk != nImageBytes/512)
+		Floppy_DoubleCheckFormat(nImageBytes, nSectorsPerDisk, &nSides, &nSectorsPerTrack);
 
 	/* And set values */
 	if (pnSectorsPerTrack)
