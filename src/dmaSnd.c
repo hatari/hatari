@@ -525,6 +525,9 @@ static Uint32 DmaSnd_GetFrameCount(void)
 {
 	Uint32 nActCount;
 
+	/* Update sound to get the current DMA frame address */
+	Sound_Update(false);
+
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
 		nActCount = dma.frameStartAddr + (int)dma.frameCounter_int;
 	else
