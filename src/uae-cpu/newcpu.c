@@ -1806,6 +1806,10 @@ static void m68k_run_2 (void)
 	instrcount[opcode]++;
 #endif
 
+	/* In case of a Bus Error, we need the PC of the instruction that caused */
+	/* the error to build the exception stack frame */
+	BusErrorPC = m68k_getpc();
+
 	cycles = (*cpufunctbl[opcode])(opcode);
 
 	if (bDspEnabled)

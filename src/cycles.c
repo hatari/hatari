@@ -20,6 +20,9 @@
 /* 2008/12/21	[NP]	Use BusMode to adjust Cycles_GetCounterOnReadAccess and		*/
 /*			Cycles_GetCounterOnWriteAccess depending on who is owning the	*/
 /*			bus (cpu, blitter).						*/
+/* 2011/03/26	[NP]	In Cycles_GetCounterOnReadAccess, add a special case for opcode	*/
+/*			$11f8 'move.b xxx.w,xxx.w' (fix MOVE.B $ffff8209.w,$26.w in	*/
+/*			'Bird Mad Girl Show' demo's loader/protection)			*/
 
 
 const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
@@ -103,6 +106,7 @@ int Cycles_GetCounter(int nId)
 int Cycles_GetCounterOnReadAccess(int nId)
 {
 	int nAddCycles;
+	int Opcode;
 
 	/* Update counters first so we read an up-to-date value */
 	Cycles_UpdateCounters();
@@ -115,7 +119,14 @@ int Cycles_GetCounterOnReadAccess(int nId)
 	{
 		/* TODO: Find proper cycles count depending on the type of the current instruction */
 		/* (e.g. movem is not correctly handled) */
-		nAddCycles = CurrentInstrCycles + nWaitStateCycles;	/* read is effective at the end of the instr ? */
+		Opcode = get_word(BusErrorPC);
+		//fprintf ( stderr , "opcode=%x\n" , Opcode );
+
+		/* Assume we use 'move src,dst' : access cycle depends on dst mode */
+		if ( Opcode == 0x11f8 )				/* move.b xxx.w,xxx.w (eg MOVE.B $ffff8209.w,$26.w in Bird Mad Girl Show) */
+			nAddCycles = CurrentInstrCycles + nWaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
+		else
+			nAddCycles = CurrentInstrCycles + nWaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
 	}
 
 	return nCyclesCounter[nId] + nAddCycles;
