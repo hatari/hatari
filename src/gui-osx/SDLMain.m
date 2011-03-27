@@ -98,6 +98,7 @@ static NSString *getApplicationName(void)
 /* The main class of the application, the application's delegate */
 @implementation SDLMain
 
+
 /* Set the working directory to the .app's parent directory */
 - (void) setupWorkingDirectory:(BOOL)shouldChdir
 {
@@ -439,34 +440,12 @@ static void CustomApplicationMain (int argc, char **argv)
 	return YES;
 }
 
-- (IBAction)captureScreen:(id)sender
+- (NSString*)displayFileSelection:(const char*)pathInParams preferredFileName:(NSString*)preferredFileName allowedExtensions:(NSArray*)allowedExtensions
 {
-	GuiOsx_Pause();
-	ScreenSnapShot_SaveScreen();
-	GuiOsx_Resume();
-}
-
-- (IBAction)captureAnimation:(id)sender
-{
-	GuiOsx_Pause();
-	Avi_StartRecording ( AviRecordFile , AviRecordDefaultCrop , nScreenRefreshRate , AviRecordDefaultVcodec );
-	GuiOsx_Resume();
-}
-
-- (IBAction)endCaptureAnimation:(id)sender
-{
-	GuiOsx_Pause();
-	Avi_StopRecording();
-	GuiOsx_Resume();
-}
-
-- (IBAction)captureSound:(id)sender
-{
-	GuiOsx_Pause();
-
+	
 	// Get the path from the user settings
-	NSString *preferredPath = [[NSString stringWithCString:(ConfigureParams.Sound.szYMCaptureFileName) encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath];
-
+	NSString *preferredPath = [[NSString stringWithCString:(pathInParams) encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath];
+	
 	// Determine the directory and filename
 	NSString *directoryToOpen;
 	NSString *fileToPreselect;
@@ -480,28 +459,63 @@ static void CustomApplicationMain (int argc, char **argv)
 	{
 		// Currently no path: we will open the user's directory with no file selected.
 		directoryToOpen = [@"~" stringByExpandingTildeInPath];
-		fileToPreselect = @"hatari.wav";
+		fileToPreselect = preferredFileName;
 	}	
-
+	
 	// Create and configure a SavePanel for choosing what file to write
 	NSSavePanel *savePanel = [NSSavePanel savePanel];
-	[savePanel setAllowedFileTypes:[NSArray arrayWithObjects:@"ym", @"wav", nil]];
+	[savePanel setAllowedFileTypes:allowedExtensions];
 	[savePanel setExtensionHidden:NO];
-	[savePanel setMessage:@"Please specify an .ym or a .wav file."];	// TODO: Move to localizable resources
+	NSString* extensionList = [allowedExtensions componentsJoinedByString:@" or a ."];
 	
+	[savePanel setMessage:[NSString stringWithFormat:@"Please specify a .%@ file",extensionList]];	// TODO: Move to localizable resources	
 	// Run the SavePanel, then check if the user clicked OK and selected at least one file
 	if (NSFileHandlingPanelOKButton == [savePanel runModalForDirectory:directoryToOpen file:fileToPreselect] )
-	{
-		// Get the path to the selected file
-		NSString *path = [savePanel filename];
+		return [[savePanel URL] path];
+	return nil;
+}
+
+- (IBAction)captureScreen:(id)sender
+{
+	GuiOsx_Pause();
+	ScreenSnapShot_SaveScreen();
+	GuiOsx_Resume();
+}
+
+- (IBAction)captureAnimation:(id)sender
+{
+	GuiOsx_Pause();
+	if(!Avi_AreWeRecording()) {
+		NSString* path = [self displayFileSelection:ConfigureParams.Video.AviRecordFile preferredFileName:@"hatari.avi" 
+									 allowedExtensions:[NSArray arrayWithObjects:@"avi", nil]];
 		
-		// Store the path in the user settings
+		if(path) {
+			GuiOsx_ExportPathString(path, ConfigureParams.Video.AviRecordFile, sizeof(ConfigureParams.Video.AviRecordFile));
+			Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
+								( ConfigureParams.Video.AviRecordFps == 0 ? nScreenRefreshRate : ConfigureParams.Video.AviRecordFps ) ,
+								ConfigureParams.Video.AviRecordVcodec );
+		}
+		
+	} else {
+		Avi_StopRecording();
+	}
+	GuiOsx_Resume();
+}
+
+- (IBAction)endCaptureAnimation:(id)sender
+{
+	//?
+}
+
+- (IBAction)captureSound:(id)sender
+{
+	GuiOsx_Pause();
+	NSString* path = [self displayFileSelection:ConfigureParams.Sound.szYMCaptureFileName preferredFileName:@"hatari.wav" 
+								 allowedExtensions:[NSArray arrayWithObjects:@"ym", @"wav", nil]];
+	if(path) {
 		GuiOsx_ExportPathString(path, ConfigureParams.Sound.szYMCaptureFileName, sizeof(ConfigureParams.Sound.szYMCaptureFileName));
-		
-		// Begin capture
 		Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
 	}
-
 	GuiOsx_Resume();
 }
 
@@ -516,42 +530,13 @@ static void CustomApplicationMain (int argc, char **argv)
 {
 	GuiOsx_Pause();
 
-	// Get the path from the user settings
-	NSString *preferredPath = [[NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName) encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath];
-
-	// Determine the directory and filename
-	NSString *directoryToOpen;
-	NSString *fileToPreselect;
-	if ((preferredPath != nil) && ([preferredPath length] > 0))
-	{
-		// There is existing path: we will open its directory with its file pre-selected.
-		directoryToOpen = [preferredPath stringByDeletingLastPathComponent];
-		fileToPreselect = [preferredPath lastPathComponent];
-	}
-	else
-	{
-		// Currently no path: we will open the user's directory with the default filename.
-		directoryToOpen = [@"~" stringByExpandingTildeInPath];
-		fileToPreselect = @"hatari.sav";
-	}
-
-	// Create and configure a SavePanel for choosing what file to write
-	NSSavePanel *savePanel = [NSSavePanel savePanel];
-	[savePanel setExtensionHidden:NO];
-
-	// Run the SavePanel, then check if the user clicked OK and selected at least one file
-	if (NSFileHandlingPanelOKButton == [savePanel runModalForDirectory:directoryToOpen file:fileToPreselect] )
-	{
-		// Get the path to the selected file
-		NSString *path = [savePanel filename];
-
-		// Store the path in the user settings
+	NSString* path = [self displayFileSelection:ConfigureParams.Memory.szMemoryCaptureFileName preferredFileName:@"hatari.sav" 
+								 allowedExtensions:[NSArray arrayWithObjects:@"sav",nil]];
+	if(path) {
 		GuiOsx_ExportPathString(path, ConfigureParams.Memory.szMemoryCaptureFileName, sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
-		
-		// Perform the memory snapshot save
 		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
 	}
-
+	
 	GuiOsx_Resume();
 }
 

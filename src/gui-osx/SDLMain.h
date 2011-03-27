@@ -37,7 +37,6 @@
 - (IBAction)debugUI:(id)sender;
 - (BOOL)validateMenuItem:(NSMenuItem*)item;
 
-
 @end
 
 #endif /* _SDLMain_h_ */

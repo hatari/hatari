@@ -2,21 +2,25 @@
 <archive type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="8.00">
 	<data>
 		<int key="IBDocument.SystemTarget">1030</int>
-		<string key="IBDocument.SystemVersion">10D573</string>
-		<string key="IBDocument.InterfaceBuilderVersion">762</string>
-		<string key="IBDocument.AppKitVersion">1038.29</string>
-		<string key="IBDocument.HIToolboxVersion">460.00</string>
+		<string key="IBDocument.SystemVersion">10H574</string>
+		<string key="IBDocument.InterfaceBuilderVersion">804</string>
+		<string key="IBDocument.AppKitVersion">1038.35</string>
+		<string key="IBDocument.HIToolboxVersion">461.00</string>
 		<object class="NSMutableDictionary" key="IBDocument.PluginVersions">
 			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin</string>
-			<string key="NS.object.0">762</string>
+			<string key="NS.object.0">804</string>
 		</object>
 		<array class="NSMutableArray" key="IBDocument.EditedObjectIDs">
-			<integer value="312"/>
+			<integer value="608"/>
+			<integer value="326"/>
 		</array>
 		<array key="IBDocument.PluginDependencies">
 			<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 		</array>
-		<dictionary class="NSMutableDictionary" key="IBDocument.Metadata"/>
+		<object class="NSMutableDictionary" key="IBDocument.Metadata">
+			<string key="NS.key.0">PluginDependencyRecalculationVersion</string>
+			<integer value="1" key="NS.object.0"/>
+		</object>
 		<array class="NSMutableArray" key="IBDocument.RootObjects" id="509680257">
 			<object class="NSCustomObject" id="232951848">
 				<object class="NSMutableString" key="NSClassName">
@@ -200,7 +204,7 @@
 											</object>
 											<object class="NSMenuItem" id="782282099">
 												<reference key="NSMenu" ref="269684157"/>
-												<string key="NSTitle">Begin Animation Capture</string>
+												<string key="NSTitle">Record AVI</string>
 												<string key="NSKeyEquiv"/>
 												<int key="NSKeyEquivModMask">1048576</int>
 												<int key="NSMnemonicLoc">2147483647</int>
@@ -209,7 +213,7 @@
 											</object>
 											<object class="NSMenuItem" id="690859247">
 												<reference key="NSMenu" ref="269684157"/>
-												<string key="NSTitle">End Animation Capture</string>
+												<string key="NSTitle">Stop record</string>
 												<string key="NSKeyEquiv"/>
 												<int key="NSKeyEquivModMask">1048576</int>
 												<int key="NSMnemonicLoc">2147483647</int>
@@ -449,7 +453,7 @@
 				</object>
 				<string key="NSWindowContentMaxSize">{1.79769e+308, 1.79769e+308}</string>
 				<object class="NSView" key="NSWindowView" id="28116358">
-					<nil key="NSNextResponder"/>
+					<reference key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
 					<array class="NSMutableArray" key="NSSubviews">
 						<object class="NSButton" id="922196917">
@@ -2090,7 +2094,7 @@ AGIAZQBzAGsAcgBpAHYAZQBsAHMAZQBzAFIARwBCAC0AcAByAG8AZgBpAGUAbABzAFIARwBCACDVBLhc
 								<object class="NSTabViewItem" id="363881128">
 									<string key="NSIdentifier">Item 9</string>
 									<object class="NSView" key="NSView" id="612855931">
-										<nil key="NSNextResponder"/>
+										<reference key="NSNextResponder" ref="266885025"/>
 										<int key="NSvFlags">256</int>
 										<array class="NSMutableArray" key="NSSubviews">
 											<object class="NSBox" id="263218072">
@@ -2380,7 +2384,7 @@ AGIAZQBzAGsAcgBpAHYAZQBsAHMAZQBzAFIARwBCAC0AcAByAG8AZgBpAGUAbABzAFIARwBCACDVBLhc
 												<object class="NSButtonCell" key="NSCell" id="365046554">
 													<int key="NSCellFlags">67239424</int>
 													<int key="NSCellFlags2">0</int>
-													<string key="NSContents">Capture only when display changes</string>
+													<string key="NSContents">Crop statusbar</string>
 													<reference key="NSSupport" ref="980492233"/>
 													<reference key="NSControlView" ref="167254766"/>
 													<int key="NSButtonFlags">1211912703</int>
@@ -2459,6 +2463,7 @@ AGIAZQBzAGsAcgBpAHYAZQBsAHMAZQBzAFIARwBCAC0AcAByAG8AZgBpAGUAbABzAFIARwBCACDVBLhc
 											</object>
 										</array>
 										<string key="NSFrame">{{10, 25}, {643, 374}}</string>
+										<reference key="NSSuperview" ref="266885025"/>
 									</object>
 									<string key="NSLabel">Display</string>
 									<reference key="NSColor" ref="369425148"/>
@@ -2875,7 +2880,7 @@ AAA</bytes>
 								</object>
 								<object class="NSTabViewItem" id="538997684">
 									<object class="NSView" key="NSView" id="410751155">
-										<reference key="NSNextResponder" ref="266885025"/>
+										<nil key="NSNextResponder"/>
 										<int key="NSvFlags">256</int>
 										<array class="NSMutableArray" key="NSSubviews">
 											<object class="NSBox" id="796685598">
@@ -3705,7 +3710,6 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 											</object>
 										</array>
 										<string key="NSFrame">{{10, 25}, {643, 374}}</string>
-										<reference key="NSSuperview" ref="266885025"/>
 									</object>
 									<string key="NSLabel">System</string>
 									<reference key="NSColor" ref="369425148"/>
@@ -5464,13 +5468,13 @@ AAA</bytes>
 									<reference key="NSTabView" ref="266885025"/>
 								</object>
 							</array>
-							<reference key="NSSelectedTabViewItem" ref="538997684"/>
+							<reference key="NSSelectedTabViewItem" ref="363881128"/>
 							<reference key="NSFont" ref="26"/>
 							<int key="NSTvFlags">134217728</int>
 							<bool key="NSAllowTruncatedLabels">YES</bool>
 							<bool key="NSDrawsBackground">YES</bool>
 							<array class="NSMutableArray" key="NSSubviews">
-								<reference ref="410751155"/>
+								<reference ref="612855931"/>
 							</array>
 						</object>
 						<object class="NSButton" id="661386615">
@@ -5544,6 +5548,7 @@ AAA</bytes>
 						</object>
 					</array>
 					<string key="NSFrameSize">{689, 479}</string>
+					<reference key="NSSuperview"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1280, 778}}</string>
 				<string key="NSMaxSize">{1.79769e+308, 1.79769e+308}</string>
@@ -6200,14 +6205,6 @@ AAA</bytes>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
-						<string key="label">captureOnChange</string>
-						<reference key="source" ref="932832352"/>
-						<reference key="destination" ref="167254766"/>
-					</object>
-					<int key="connectionID">563</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBOutletConnection" key="connection">
 						<string key="label">enableSound</string>
 						<reference key="source" ref="932832352"/>
 						<reference key="destination" ref="937445552"/>
@@ -6624,14 +6621,6 @@ AAA</bytes>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBActionConnection" key="connection">
-						<string key="label">captureAnimation:</string>
-						<reference key="source" ref="892321347"/>
-						<reference key="destination" ref="782282099"/>
-					</object>
-					<int key="connectionID">829</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
 						<string key="label">captureSound:</string>
 						<reference key="source" ref="892321347"/>
 						<reference key="destination" ref="469745721"/>
@@ -6973,6 +6962,30 @@ AAA</bytes>
 						<reference key="destination" ref="374296489"/>
 					</object>
 					<int key="connectionID">4096</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">captureAnimation:</string>
+						<reference key="source" ref="892321347"/>
+						<reference key="destination" ref="782282099"/>
+					</object>
+					<int key="connectionID">4102</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">captureAnimation:</string>
+						<reference key="source" ref="892321347"/>
+						<reference key="destination" ref="690859247"/>
+					</object>
+					<int key="connectionID">4103</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">captureOnChange</string>
+						<reference key="source" ref="932832352"/>
+						<reference key="destination" ref="167254766"/>
+					</object>
+					<int key="connectionID">4104</int>
 				</object>
 			</array>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -10148,6 +10161,7 @@ AAA</bytes>
 				<boolean value="YES" key="-3.ImportedFromIB2"/>
 				<string key="103.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="103.ImportedFromIB2"/>
+				<string key="106.IBEditorWindowLastContentRect">{{399, 665}, {148, 23}}</string>
 				<string key="106.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="106.ImportedFromIB2"/>
 				<string key="111.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10189,6 +10203,7 @@ AAA</bytes>
 				<boolean value="YES" key="283.ImportedFromIB2"/>
 				<string key="284.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="284.ImportedFromIB2"/>
+				<string key="285.IBEditorWindowLastContentRect">{{328, 645}, {152, 43}}</string>
 				<string key="285.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="285.ImportedFromIB2"/>
 				<string key="29.IBEditorWindowLastContentRect">{{133, 688}, {327, 20}}</string>
@@ -10699,6 +10714,7 @@ AAA</bytes>
 				<boolean value="YES" key="544.ImportedFromIB2"/>
 				<string key="56.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="56.ImportedFromIB2"/>
+				<string key="57.IBEditorWindowLastContentRect">{{145, 545}, {168, 143}}</string>
 				<string key="57.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="57.ImportedFromIB2"/>
 				<string key="58.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10723,6 +10739,7 @@ AAA</bytes>
 				<boolean value="YES" key="606.ImportedFromIB2"/>
 				<string key="607.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="607.ImportedFromIB2"/>
+				<string key="608.IBEditorWindowLastContentRect">{{421, 515}, {298, 103}}</string>
 				<string key="608.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="608.ImportedFromIB2"/>
 				<string key="609.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -10916,7 +10933,7 @@ AAA</bytes>
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">4100</int>
+			<int key="maxID">4104</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -10927,11 +10944,39 @@ AAA</bytes>
 						<string key="createFloppyImage:">id</string>
 						<string key="runModal:">id</string>
 					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="createFloppyImage:">
+							<string key="name">createFloppyImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="runModal:">
+							<string key="name">runModal:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+					</dictionary>
 					<dictionary class="NSMutableDictionary" key="outlets">
 						<string key="sectors">NSMatrix</string>
 						<string key="sides">NSMatrix</string>
 						<string key="tracks">NSPopUpButton</string>
 						<string key="window">NSWindow</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<object class="IBToOneOutletInfo" key="sectors">
+							<string key="name">sectors</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="sides">
+							<string key="name">sides</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="tracks">
+							<string key="name">tracks</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="window">
+							<string key="name">window</string>
+							<string key="candidateClassName">NSWindow</string>
+						</object>
 					</dictionary>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>
@@ -10986,6 +11031,120 @@ AAA</bytes>
 						<string key="setHeight:">id</string>
 						<string key="setWidth:">id</string>
 						<string key="updateEnabledStates:">id</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="changeViewedJoystick:">
+							<string key="name">changeViewedJoystick:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseCartridgeImage:">
+							<string key="name">chooseCartridgeImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseDefaultImagesLocation:">
+							<string key="name">chooseDefaultImagesLocation:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseFloppyImageA:">
+							<string key="name">chooseFloppyImageA:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseFloppyImageB:">
+							<string key="name">chooseFloppyImageB:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseGemdosImage:">
+							<string key="name">chooseGemdosImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseHdImage:">
+							<string key="name">chooseHdImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseIdeMasterHdImage:">
+							<string key="name">chooseIdeMasterHdImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseIdeSlaveHdImage:">
+							<string key="name">chooseIdeSlaveHdImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseKeyboardMappingFile:">
+							<string key="name">chooseKeyboardMappingFile:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseMidiOutputFile:">
+							<string key="name">chooseMidiOutputFile:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="choosePrintToFile:">
+							<string key="name">choosePrintToFile:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseRS232InputFile:">
+							<string key="name">chooseRS232InputFile:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseRS232OutputFile:">
+							<string key="name">chooseRS232OutputFile:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="chooseTosImage:">
+							<string key="name">chooseTosImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="commitAndClose:">
+							<string key="name">commitAndClose:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ejectFloppyA:">
+							<string key="name">ejectFloppyA:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ejectFloppyB:">
+							<string key="name">ejectFloppyB:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ejectGemdosImage:">
+							<string key="name">ejectGemdosImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ejectHdImage:">
+							<string key="name">ejectHdImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ejectIdeMasterHdImage:">
+							<string key="name">ejectIdeMasterHdImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ejectIdeSlaveHdImage:">
+							<string key="name">ejectIdeSlaveHdImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="loadConfigFrom:">
+							<string key="name">loadConfigFrom:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="loadPrefs:">
+							<string key="name">loadPrefs:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="saveConfigAs:">
+							<string key="name">saveConfigAs:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="setHeight:">
+							<string key="name">setHeight:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="setWidth:">
+							<string key="name">setWidth:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="updateEnabledStates:">
+							<string key="name">updateEnabledStates:</string>
+							<string key="candidateClassName">id</string>
+						</object>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="outlets">
 						<string key="autoInsertB">NSButton</string>
@@ -11052,6 +11211,260 @@ AAA</bytes>
 						<string key="writeRS232ToFile">NSTextField</string>
 						<string key="zoomSTLowRes">NSButton</string>
 					</dictionary>
+					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<object class="IBToOneOutletInfo" key="autoInsertB">
+							<string key="name">autoInsertB</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="blitter">
+							<string key="name">blitter</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="bootFromHD">
+							<string key="name">bootFromHD</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="captureOnChange">
+							<string key="name">captureOnChange</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="cartridgeImage">
+							<string key="name">cartridgeImage</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="colorDepth">
+							<string key="name">colorDepth</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="compatibleCpu">
+							<string key="name">compatibleCpu</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="configFile">
+							<string key="name">configFile</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="cpuClock">
+							<string key="name">cpuClock</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="cpuType">
+							<string key="name">cpuType</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="currentJoystick">
+							<string key="name">currentJoystick</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="defaultImagesLocation">
+							<string key="name">defaultImagesLocation</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="enableAutoFire">
+							<string key="name">enableAutoFire</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="enableDSP">
+							<string key="name">enableDSP</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="enableMidi">
+							<string key="name">enableMidi</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="enablePrinter">
+							<string key="name">enablePrinter</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="enableRS232">
+							<string key="name">enableRS232</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="enableSound">
+							<string key="name">enableSound</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="falconTTRatio">
+							<string key="name">falconTTRatio</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="floppyImageA">
+							<string key="name">floppyImageA</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="floppyImageB">
+							<string key="name">floppyImageB</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="force8bpp">
+							<string key="name">force8bpp</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="frameSkip">
+							<string key="name">frameSkip</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="fullScreen">
+							<string key="name">fullScreen</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="gemdosImage">
+							<string key="name">gemdosImage</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="hdImage">
+							<string key="name">hdImage</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="heightStepper">
+							<string key="name">heightStepper</string>
+							<string key="candidateClassName">NSStepper</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="ideMasterHdImage">
+							<string key="name">ideMasterHdImage</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="ideSlaveHdImage">
+							<string key="name">ideSlaveHdImage</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="interleaved">
+							<string key="name">interleaved</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="joystickDown">
+							<string key="name">joystickDown</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="joystickFire">
+							<string key="name">joystickFire</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="joystickLeft">
+							<string key="name">joystickLeft</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="joystickMode">
+							<string key="name">joystickMode</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="joystickRight">
+							<string key="name">joystickRight</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="joystickUp">
+							<string key="name">joystickUp</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="keyboardMapping">
+							<string key="name">keyboardMapping</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="keyboardMappingFile">
+							<string key="name">keyboardMappingFile</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="ledDisks">
+							<string key="name">ledDisks</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="machineType">
+							<string key="name">machineType</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="maxZoomedHeight">
+							<string key="name">maxZoomedHeight</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="maxZoomedWidth">
+							<string key="name">maxZoomedWidth</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="monitor">
+							<string key="name">monitor</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="nSpec512Treshold">
+							<string key="name">nSpec512Treshold</string>
+							<string key="candidateClassName">NSSlider</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="patchTimerD">
+							<string key="name">patchTimerD</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="playbackQuality">
+							<string key="name">playbackQuality</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="printToFile">
+							<string key="name">printToFile</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="ramSize">
+							<string key="name">ramSize</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="readRS232FromFile">
+							<string key="name">readRS232FromFile</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="realJoystick">
+							<string key="name">realJoystick</string>
+							<string key="candidateClassName">NSPopUpButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="realTime">
+							<string key="name">realTime</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="resolution">
+							<string key="name">resolution</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="showStatusBar">
+							<string key="name">showStatusBar</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="slowFDC">
+							<string key="name">slowFDC</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="tosImage">
+							<string key="name">tosImage</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="useBorders">
+							<string key="name">useBorders</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="useVDIResolution">
+							<string key="name">useVDIResolution</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="widthStepper">
+							<string key="name">widthStepper</string>
+							<string key="candidateClassName">NSStepper</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="window">
+							<string key="name">window</string>
+							<string key="candidateClassName">NSWindow</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="writeMidiToFile">
+							<string key="name">writeMidiToFile</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="writeProtection">
+							<string key="name">writeProtection</string>
+							<string key="candidateClassName">NSMatrix</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="writeRS232ToFile">
+							<string key="name">writeRS232ToFile</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="zoomSTLowRes">
+							<string key="name">zoomSTLowRes</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+					</dictionary>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>
 						<string key="minorKey">src/gui-osx/PrefsController.h</string>
@@ -11065,10 +11478,38 @@ AAA</bytes>
 						<string key="ejectIDEHdImage:">id</string>
 						<string key="myAction:">id</string>
 					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="chooseIDEHdImage:">
+							<string key="name">chooseIDEHdImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="ejectIDEHdImage:">
+							<string key="name">ejectIDEHdImage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="myAction:">
+							<string key="name">myAction:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+					</dictionary>
 					<dictionary class="NSMutableDictionary" key="outlets">
 						<string key="confirmQuit">NSButton</string>
 						<string key="fastForward">NSButton</string>
 						<string key="useIDEHD">NSButton</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<object class="IBToOneOutletInfo" key="confirmQuit">
+							<string key="name">confirmQuit</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="fastForward">
+							<string key="name">fastForward</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="useIDEHD">
+							<string key="name">useIDEHD</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
 					</dictionary>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBUserSource</string>
@@ -11096,11 +11537,95 @@ AAA</bytes>
 						<string key="saveMemorySnap:">id</string>
 						<string key="warmReset:">id</string>
 					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="captureAnimation:">
+							<string key="name">captureAnimation:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="captureScreen:">
+							<string key="name">captureScreen:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="captureSound:">
+							<string key="name">captureSound:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="coldReset:">
+							<string key="name">coldReset:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="debugUI:">
+							<string key="name">debugUI:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="doFullScreen:">
+							<string key="name">doFullScreen:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="endCaptureSound:">
+							<string key="name">endCaptureSound:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="help:">
+							<string key="name">help:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="insertDiskA:">
+							<string key="name">insertDiskA:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="insertDiskB:">
+							<string key="name">insertDiskB:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="openConfig:">
+							<string key="name">openConfig:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="prefsMenu:">
+							<string key="name">prefsMenu:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="restoreMemorySnap:">
+							<string key="name">restoreMemorySnap:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="saveConfig:">
+							<string key="name">saveConfig:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="saveMemorySnap:">
+							<string key="name">saveMemorySnap:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="warmReset:">
+							<string key="name">warmReset:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+					</dictionary>
 					<dictionary class="NSMutableDictionary" key="outlets">
 						<string key="beginCaptureAnim">NSMenuItem</string>
 						<string key="beginCaptureSound">NSMenuItem</string>
 						<string key="endCaptureAnim">NSMenuItem</string>
 						<string key="endCaptureSound">NSMenuItem</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<object class="IBToOneOutletInfo" key="beginCaptureAnim">
+							<string key="name">beginCaptureAnim</string>
+							<string key="candidateClassName">NSMenuItem</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="beginCaptureSound">
+							<string key="name">beginCaptureSound</string>
+							<string key="candidateClassName">NSMenuItem</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="endCaptureAnim">
+							<string key="name">endCaptureAnim</string>
+							<string key="candidateClassName">NSMenuItem</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="endCaptureSound">
+							<string key="name">endCaptureSound</string>
+							<string key="candidateClassName">NSMenuItem</string>
+						</object>
 					</dictionary>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>
@@ -11116,10 +11641,42 @@ AAA</bytes>
 						<string key="enableDebugger:">id</string>
 						<string key="fastForward:">id</string>
 					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="debuggerGUI:">
+							<string key="name">debuggerGUI:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="enableBIOSInterception:">
+							<string key="name">enableBIOSInterception:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="enableDebugger:">
+							<string key="name">enableDebugger:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="fastForward:">
+							<string key="name">fastForward:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+					</dictionary>
 					<dictionary class="NSMutableDictionary" key="outlets">
 						<string key="enableBIOSMenu">NSMenuItem</string>
 						<string key="enableDebuggerMenu">NSMenuItem</string>
 						<string key="fastForward">NSMenuItem</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<object class="IBToOneOutletInfo" key="enableBIOSMenu">
+							<string key="name">enableBIOSMenu</string>
+							<string key="candidateClassName">NSMenuItem</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="enableDebuggerMenu">
+							<string key="name">enableDebuggerMenu</string>
+							<string key="candidateClassName">NSMenuItem</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="fastForward">
+							<string key="name">fastForward</string>
+							<string key="candidateClassName">NSMenuItem</string>
+						</object>
 					</dictionary>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBUserSource</string>
