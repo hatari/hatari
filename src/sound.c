@@ -229,6 +229,7 @@ static ymu16	Vol3Voices = 0;				/* volume 0-0x1f for voices having a constant vo
 Uint8		SoundRegs[ 14 ];
 
 int		YmVolumeMixing = YM_LINEAR_MIXING;
+//int		YmVolumeMixing = YM_TABLE_MIXING;
 bool		UseLowPassFilter = false;
 
 bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
@@ -1194,7 +1195,7 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 			SamplesToGenerate = 0;
 	}
 
-//fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , nSamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
+//fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , SamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
 
 	return SamplesToGenerate;
 }
@@ -1286,10 +1287,15 @@ void Sound_Update(bool FillFrame)
 void Sound_Update_VBL(void)
 {
 	/*Compute a fractional equivalent of SamplesPerFrame, to avoid rounding propagation */
+#if 0
 	SamplesPerFrame_unrounded += ( ((yms64)nAudioFrequency) << 32 ) / nScreenRefreshRate;
 	SamplesPerFrame = SamplesPerFrame_unrounded >> 32;		/* use integer part */
 	SamplesPerFrame_unrounded &= 0xffffffff;			/* keep fractional part */
-
+#else
+	SamplesPerFrame_unrounded += ( ((yms64)nAudioFrequency * 160256) << 28 ) / 8021247;
+	SamplesPerFrame = SamplesPerFrame_unrounded >> 28;		/* use integer part */
+	SamplesPerFrame_unrounded &= 0x0fffffff;			/* keep fractional part */
+#endif
 	Sound_Update(true);					/* generate as many samples as needed to fill this VBL */
 
 	CurrentSamplesNb = 0;					/* VBL is complete, reset counter */

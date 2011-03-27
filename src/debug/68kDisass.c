@@ -2463,6 +2463,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine)
 {
+	return m68k_disasm (f, addr, nextpc, cnt);
   if ( DisasmEngine == DISASM_ENGINE_UAE )
 	return m68k_disasm (f, addr, nextpc, cnt);
   else if ( DisasmEngine == DISASM_ENGINE_EXT )

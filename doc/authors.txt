@@ -146,8 +146,6 @@ projects which we would like to acknowledge here:
 
 - The new sound core uses some code/ideas from the following GPL
   projects :
-  * tone and noise steps computations are from StSound 1.2 by Arnaud
-    Carré.
   * 5 bits volume table and 16*16*16 combinations of all volume are
     from Sc68 by Benjamin Gerard.
   * 4 bits to 5 bits volume interpolation from 16*16*16 to 32*32*32
