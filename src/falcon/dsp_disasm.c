@@ -414,6 +414,8 @@ void dsp56k_disasm_reg_save(void)
 void dsp56k_disasm_reg_compare(void)
 {
 	int i;
+	bool bRegA = false;
+	bool bRegB = false;
 	
 	for (i=4; i<64; i++) {
 		if (registers_save[i] == dsp_core.registers[i]) {
@@ -425,10 +427,6 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_X1:
 			case DSP_REG_Y0:
 			case DSP_REG_Y1:
-			case DSP_REG_A0:
-			case DSP_REG_A1:
-			case DSP_REG_B0:
-			case DSP_REG_B1:
 				fprintf(stderr,"\tReg: %s  0x%06x -> 0x%06x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
 			case DSP_REG_R0:
@@ -460,26 +458,32 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_LC:
 				fprintf(stderr,"\tReg: %s  0x%04x -> 0x%04x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
-			case DSP_REG_A2:
-			case DSP_REG_B2:
 			case DSP_REG_OMR:
 			case DSP_REG_SP:
 			case DSP_REG_SSH:
 			case DSP_REG_SSL:
 				fprintf(stderr,"\tReg: %s  0x%02x -> 0x%02x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
-			case DSP_REG_A:
-			case DSP_REG_B:
-				{
-					fprintf(stderr,"\tReg: %s  0x%02x:%06x:%06x -> 0x%02x:%06x:%06x\n",
-						registers_name[i],
-						registers_save[DSP_REG_A2+(i & 1)],
-						registers_save[DSP_REG_A1+(i & 1)],
-						registers_save[DSP_REG_A0+(i & 1)],
-						dsp_core.registers[DSP_REG_A2+(i & 1)],
-						dsp_core.registers[DSP_REG_A1+(i & 1)],
-						dsp_core.registers[DSP_REG_A0+(i & 1)]
+			case DSP_REG_A0:
+			case DSP_REG_A1:
+			case DSP_REG_A2:
+				if (bRegA == false) {
+					fprintf(stderr,"\tReg: a   0x%02x:%06x:%06x -> 0x%02x:%06x:%06x\n",
+						registers_save[DSP_REG_A2],	registers_save[DSP_REG_A1],	registers_save[DSP_REG_A0],
+						dsp_core.registers[DSP_REG_A2],	dsp_core.registers[DSP_REG_A1],	dsp_core.registers[DSP_REG_A0]
 					);
+					bRegA = true;
+				}
+				break;
+			case DSP_REG_B0:
+			case DSP_REG_B1:
+			case DSP_REG_B2:
+				if (bRegB == false) {
+					fprintf(stderr,"\tReg: b   0x%02x:%06x:%06x -> 0x%02x:%06x:%06x\n",
+						registers_save[DSP_REG_B2],	registers_save[DSP_REG_B1],	registers_save[DSP_REG_B0],
+						dsp_core.registers[DSP_REG_B2],	dsp_core.registers[DSP_REG_B1],	dsp_core.registers[DSP_REG_B0]
+					);
+					bRegB = true;
 				}
 				break;
 		}

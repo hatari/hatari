@@ -86,7 +86,7 @@ static Uint32 read_memory(int space, Uint16 address);
 static inline Uint32 read_memory_p(Uint16 address);
 static Uint32 read_memory_disasm(int space, Uint16 address);
 
-static void write_memory(int space, Uint16 address, Uint32 value);
+static inline void write_memory(int space, Uint16 address, Uint32 value);
 static void write_memory_raw(int space, Uint16 address, Uint32 value);
 static void write_memory_disasm(int space, Uint16 address, Uint32 value);
 
@@ -709,12 +709,12 @@ void dsp56k_execute_instruction(void)
 	dsp_core.instr_cycle = 2;
 
 	/* Disasm current instruction ? (trace mode only) */
-	if (LogTraceFlags & (TRACE_DSP_DISASM)) {	
+	if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM)) {	
 		/* Call dsp56k_disasm only when DSP is called in trace mode */
 		if (isDsp_in_disasm_mode == false) {
 			disasm_return = dsp56k_disasm(DSP_TRACE_MODE);
 			
-			if (disasm_return != 0 && LogTraceFlags & (TRACE_DSP_DISASM_REG)) {
+			if (disasm_return != 0 && LOG_TRACE_LEVEL(TRACE_DSP_DISASM_REG)) {
 				/* DSP regs trace enabled only if DSP DISASM is enabled */
 				dsp56k_disasm_reg_save();
 			}
@@ -731,17 +731,17 @@ void dsp56k_execute_instruction(void)
 	}
 
 	/* Disasm current instruction ? (trace mode only) */
-	if (LogTraceFlags & (TRACE_DSP_DISASM)) {
+	if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM)) {
 		/* Display only when DSP is called in trace mode */
 		if (isDsp_in_disasm_mode == false) {
 			if (disasm_return != 0) {
 				fprintf(stderr, "%s", dsp56k_getInstructionText());
 				
 				/* DSP regs trace enabled only if DSP DISASM is enabled */
-				if (LogTraceFlags & (TRACE_DSP_DISASM_REG))
+				if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM_REG))
 					dsp56k_disasm_reg_compare();
 
-				if (LogTraceFlags & (TRACE_DSP_DISASM_MEM)) {
+				if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM_MEM)) {
 					/* 1 memory change to display ? */
 					if (disasm_memory_ptr == 1)
 						fprintf(stderr, "\t%s\n", str_disasm_memory[0]);
@@ -1190,9 +1190,9 @@ static Uint32 read_memory(int space, Uint16 address)
 	return dsp_core.ramext[address & (DSP_RAMSIZE-1)] & BITMASK(24);
 }
 
-static void write_memory(int space, Uint16 address, Uint32 value)
+static inline void write_memory(int space, Uint16 address, Uint32 value)
 {
-	if (LogTraceFlags & (TRACE_DSP_DISASM_MEM))
+	if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM_MEM))
 		write_memory_disasm(space, address, value);
 	else	
 		write_memory_raw(space, address, value);
