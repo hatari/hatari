@@ -114,8 +114,10 @@ extern char *Log_MatchTrace(const char *text, int state);
 #define TRACE_DSP_HOST_COMMAND	 (1ll<<35)
 #define TRACE_DSP_HOST_SSI	 (1ll<<36)
 #define TRACE_DSP_DISASM	 (1ll<<37)
-#define TRACE_DSP_STATE		 (1ll<<38)
-#define TRACE_DSP_INTERRUPT	 (1ll<<39)
+#define TRACE_DSP_DISASM_REG	 (1ll<<38)
+#define TRACE_DSP_DISASM_MEM	 (1ll<<39)
+#define TRACE_DSP_STATE		 (1ll<<40)
+#define TRACE_DSP_INTERRUPT	 (1ll<<41)
 
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
@@ -138,7 +140,7 @@ extern char *Log_MatchTrace(const char *text, int state);
 #define	TRACE_IOMEM_ALL		( TRACE_IOMEM_RD | TRACE_IOMEM_WR )
 
 #define TRACE_DSP_ALL		( TRACE_DSP_HOST_INTERFACE | TRACE_DSP_HOST_COMMAND | TRACE_DSP_HOST_SSI | TRACE_DSP_DISASM \
-		| TRACE_DSP_STATE | TRACE_DSP_INTERRUPT )
+		| TRACE_DSP_DISASM_REG | TRACE_DSP_DISASM_MEM | TRACE_DSP_STATE | TRACE_DSP_INTERRUPT )
 
 extern FILE *TraceFile;
 extern Uint64 LogTraceFlags;

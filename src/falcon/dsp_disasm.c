@@ -30,7 +30,6 @@
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
 
-#define DEBUG 0
 
 /* More disasm infos, if wanted */
 #define DSP_DISASM_REG_PC 0

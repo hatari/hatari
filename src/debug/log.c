@@ -96,6 +96,8 @@ TraceOptions[] = {
 	{ TRACE_DSP_HOST_SSI	 , "dsp_host_ssi" },
 	{ TRACE_DSP_INTERRUPT	 , "dsp_interrupt" },
 	{ TRACE_DSP_DISASM	 , "dsp_disasm" },
+	{ TRACE_DSP_DISASM_REG	 , "dsp_disasm_reg" },
+	{ TRACE_DSP_DISASM_MEM	 , "dsp_disasm_mem" },
 	{ TRACE_DSP_STATE	 , "dsp_state" },
 	{ TRACE_DSP_ALL		 , "dsp_all" },
 
