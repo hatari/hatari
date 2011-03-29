@@ -151,7 +151,7 @@ extern Uint64 LogTraceFlags;
 #define	LOG_TRACE(level, args...) \
 	if (unlikely(LogTraceFlags & level)) fprintf(TraceFile, args)
 #endif
-#define LOG_TRACE_LEVEL( level )	(LogTraceFlags & level)
+#define LOG_TRACE_LEVEL( level )	(unlikely(LogTraceFlags & level))
 
 #else		/* ENABLE_TRACING */
 
