@@ -32,10 +32,6 @@
 # include "main.h"
 
 
-/* More disasm infos, if wanted */
-#define DSP_DISASM 0		/* Main DSP disassembler switch */
-#define DSP_DISASM_MEM 0 	/* Memory changes */
-
 #define DSP_COUNT_IPS 0		/* Count instruction per seconds */
 
 
