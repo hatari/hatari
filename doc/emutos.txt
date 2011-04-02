@@ -357,6 +357,7 @@ Demos:
 - Gobi Toons (by Dune)
 - Grimey (by Reservoir Gods)
 - High Fidelity Dreams (by Aura)
+- HighResMode (by Paradox)
 - Kick my assembler (by Orion), start doesn't look right
 - Madness (by Cream)
 - Mathematica (by Aura)
