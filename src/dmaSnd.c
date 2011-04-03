@@ -305,6 +305,10 @@ static inline int DmaSnd_EndOfFrameReached(void)
 	else
 	{
 		nDmaSoundControl &= ~DMASNDCTRL_PLAY;
+
+		/* DMA sound is stopped, remove interrupt */
+		CycInt_RemovePendingInterrupt(INTERRUPT_DMASOUND);
+
 		return true;
 	}
 
@@ -585,7 +589,8 @@ void DmaSnd_SoundControl_WriteWord(void)
 		//fprintf(stderr, "Turning off DMA sound emulation.\n");
 		/* Create samples up until this point with current values */
 		Sound_Update(false);
-
+		/* DMA sound is stopped, remove interrupt */
+		CycInt_RemovePendingInterrupt(INTERRUPT_DMASOUND);
 	}
 
 	nDmaSoundControl = nNewSndCtrl;
