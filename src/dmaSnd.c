@@ -189,10 +189,7 @@ static const Sint16 LMC1992_Bass_Treble_Table[16] =
 
 static const int DmaSndSampleRates[4] =
 {
-	CPU_FREQ / 1280,	/* 6258  Hz */
-	CPU_FREQ / 640,		/* 12517 Hz */
-	CPU_FREQ / 320,		/* 25033 Hz */
-	CPU_FREQ / 160		/* 50066 Hz */
+	6258, 12517, 25033, 50066
 };
 
 
