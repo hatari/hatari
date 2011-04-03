@@ -567,6 +567,35 @@ void DmaSnd_SoundControl_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Write word to sound control register (0xff8900).
+ */
+void DmaSnd_SoundControl_WriteWord(void)
+{
+	Uint16 nNewSndCtrl;
+
+	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", IoMem_ReadWord(0xff8900));
+
+	nNewSndCtrl = IoMem_ReadWord(0xff8900) & 3;
+
+	if (!(nDmaSoundControl & DMASNDCTRL_PLAY) && (nNewSndCtrl & DMASNDCTRL_PLAY))
+	{
+		//fprintf(stderr, "Turning on DMA sound emulation.\n");
+		DmaSnd_StartNewFrame();
+	}
+	else if ((nDmaSoundControl & DMASNDCTRL_PLAY) && !(nNewSndCtrl & DMASNDCTRL_PLAY))
+	{
+		//fprintf(stderr, "Turning off DMA sound emulation.\n");
+		/* Create samples up until this point with current values */
+		Sound_Update(false);
+
+	}
+
+	nDmaSoundControl = nNewSndCtrl;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Read word from sound frame count high register (0xff8909).
  */
 void DmaSnd_FrameCountHigh_ReadByte(void)
@@ -663,7 +692,8 @@ void DmaSnd_SoundModeCtrl_ReadByte(void)
  */
 void DmaSnd_SoundModeCtrl_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd mode write: 0x%02x\n", IoMem_ReadWord(0xff8921));
+	LOG_TRACE(TRACE_DMASND, "DMA snd mode write: 0x%02x mode=%s freq=%d\n", IoMem_ReadByte(0xff8921),
+		IoMem_ReadByte(0xff8921) & DMASNDMODE_MONO ? "mono" : "stereo" , DmaSndSampleRates[ IoMem_ReadByte(0xff8921) & 3 ]);
 
 	/* STE or TT - hopefully STFM emulation never gets here :)
 	 * We maskout to only hit bits that exist on a real STE
@@ -815,35 +845,6 @@ void DmaSnd_MicrowireMask_WriteWord(void)
 	}
 
 	LOG_TRACE(TRACE_DMASND, "Microwire mask write: 0x%x\n", IoMem_ReadWord(0xff8924));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Write word to sound control register (0xff8900).
- */
-void DmaSnd_SoundControl_WriteWord(void)
-{
-	Uint16 nNewSndCtrl;
-
-	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", IoMem_ReadWord(0xff8900));
-
-	nNewSndCtrl = IoMem_ReadWord(0xff8900) & 3;
-
-	if (!(nDmaSoundControl & DMASNDCTRL_PLAY) && (nNewSndCtrl & DMASNDCTRL_PLAY))
-	{
-		//fprintf(stderr, "Turning on DMA sound emulation.\n");
-		DmaSnd_StartNewFrame();
-	}
-	else if ((nDmaSoundControl & DMASNDCTRL_PLAY) && !(nNewSndCtrl & DMASNDCTRL_PLAY))
-	{
-		//fprintf(stderr, "Turning off DMA sound emulation.\n");
-		/* Create samples up until this point with current values */
-		Sound_Update(false);
-
-	}
-
-	nDmaSoundControl = nNewSndCtrl;
 }
 
 

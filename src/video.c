@@ -313,6 +313,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "screenSnapShot.h"
 #include "shortcut.h"
 #include "sound.h"
+#include "dmaSnd.h"
 #include "spec512.h"
 #include "stMemory.h"
 #include "vdi.h"

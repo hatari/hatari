@@ -19,7 +19,8 @@ extern void DmaSnd_Reset(bool bCold);
 extern void DmaSnd_MemorySnapShot_Capture(bool bSave);
 extern void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
 extern void DmaSnd_InterruptHandler(void);
-extern void DmaSnd_InterruptHandler_Microwire(void);
+extern void DmaSnd_HBL_Update(void);
+
 extern void DmaSnd_SoundControl_ReadWord(void);
 extern void DmaSnd_SoundControl_WriteWord(void);
 extern void DmaSnd_FrameCountHigh_ReadByte(void);
@@ -36,10 +37,13 @@ extern void DmaSnd_FrameEndMed_WriteByte(void);
 extern void DmaSnd_FrameEndLow_WriteByte(void);
 extern void DmaSnd_SoundModeCtrl_ReadByte(void);
 extern void DmaSnd_SoundModeCtrl_WriteByte(void);
+
+extern void DmaSnd_InterruptHandler_Microwire(void);
 extern void DmaSnd_MicrowireData_ReadWord(void);
 extern void DmaSnd_MicrowireData_WriteWord(void);
 extern void DmaSnd_MicrowireMask_ReadWord(void);
 extern void DmaSnd_MicrowireMask_WriteWord(void);
+
 extern void DmaSnd_Init_Bass_and_Treble_Tables(void);
 
 
