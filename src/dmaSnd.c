@@ -108,8 +108,8 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 
 
 /* Global variables that can be changed/read from other parts of Hatari */
-void DmaSnd_Init_Bass_and_Treble_Tables(void);
 
+static void DmaSnd_Apply_LMC(int nMixBufIdx, int nSamplesToGenerate);
 static void DmaSnd_Set_Tone_Level(int set_bass, int set_treb);
 static float DmaSnd_IIRfilterL(float xn);
 static float DmaSnd_IIRfilterR(float xn);
@@ -343,23 +343,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					break;
 			}
 		}
-		
-		/* Apply LMC1992 sound modifications (Bass and Treble) 
-		   The Bass and Treble get samples at nAudioFrequency rate.
-	       The tone control's sampling frequency must be at least 22050 Hz to sound good. 
-		*/
-		for (i = 0; i < nSamplesToGenerate; i++) {
-			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx][0] = 0.5 + DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-			MixBuffer[nBufIdx][1] = 0.5 + DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
-		}
 
-		/* Apply LMC1992 sound modifications (Left, Right and Master Volume) */
-		for (i = 0; i < nSamplesToGenerate; i++) {
-			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx][0] = (((MixBuffer[nBufIdx][0] * microwire.leftVolume) >> 16) * microwire.masterVolume) >> 16;
-			MixBuffer[nBufIdx][1] = (((MixBuffer[nBufIdx][1] * microwire.rightVolume) >> 16) * microwire.masterVolume) >> 16;
-		}
+		/* Apply LMC1992 sound modifications (Bass and Treble) */
+		DmaSnd_Apply_LMC ( nMixBufIdx , nSamplesToGenerate );
 		
 		return;
 	}
@@ -480,10 +466,22 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		}
 	}
 
-	/* Apply LMC1992 sound modifications (Bass and Treble) 
-	   The Bass and Treble get samples at nAudioFrequency rate.
-	   The tone control's sampling frequency must be at least 22050 Hz to sound good. 
-	*/
+	/* Apply LMC1992 sound modifications (Bass and Treble) */
+	DmaSnd_Apply_LMC ( nMixBufIdx , nSamplesToGenerate );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Apply LMC1992 sound modifications (Bass and Treble)
+ * The Bass and Treble get samples at nAudioFrequency rate.
+ * The tone control's sampling frequency must be at least 22050 Hz to sound good.
+ */
+static void DmaSnd_Apply_LMC(int nMixBufIdx, int nSamplesToGenerate)
+{
+	int nBufIdx;
+	int i;
+
 	for (i = 0; i < nSamplesToGenerate; i++) {
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 		MixBuffer[nBufIdx][0] = 0.5 + DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
