@@ -1970,7 +1970,7 @@ activate any extended resolution here.
 Screen Dialog</h4>
 
 <div class="floatimage">
-<img src="images/screen.png" width="350" height="336" alt="Hatari's
+<img src="images/screen.png" width="520" height="320" alt="Hatari's
 GUI - the Hatari screen dialog">
 </div>
 
@@ -1994,24 +1994,38 @@ on your screen.
  screen animation recording!
 </p>
 <p>
- "Statusbar" toggles the statusbar at the bottom of the screen.
- The statusbar shows the floppy drive LEDs, the current frameskip value,
- the machine type including TOS version and memory size, and whether
- recording is currently active.
+Indicators that you can have on the Hatari window:
+<ul>
+<li>"Statusbar" at the bottom of the screen.
+The statusbar shows the floppy drive LEDs, the current frameskip value,
+the machine type including TOS version and memory size, and whether
+recording is currently active.</li>
+<li>"Drive led" is a colored rectangle shown on top of the Hatari window
+contents. It will show any disk (floppy or hard disk) activity.</li>
+<li>"None" turns both of above options off.</li>
+</ul>
 </p>
 <p>
-"Max zoomed" option controls up to which size Hatari tries to scale
+"Keep desktop resolution" option will use your desktop resolution
+for fullscreen to avoid issues related to resolution switching,
+especially on LCD monitors (they're slow).  If this isn't enabled,
+values from the "Max zoomed win" option are used in selecting
+a suitable resolution.
+<p>
+"Max zoomed win" option controls up to which size Hatari tries to scale
 the Atari resolutions and how much of the borders (enabled in Atari
-Monitor dialog) will be shown.  There are several limitations in
-this:
+Monitor dialog) will be shown.  Note that there are several limitations
+in this and the "Keep desktop resolution" option, partly because Hatari
+has different implementations for different video modes:
 </p>
 <ul>
 <li>VDI resolutions (selectable in Atari Monitor dialog) aren't scaled.</li>
 <li>ST and STE video emulation supports only doubling of the ST-low
     resolution.</li>
 <li>Hatari doesn't support downscaling. If the original Atari resolution
-    is larger (for example TT-high), the Hatari screen size will also be
-    larger than requested.</li>
+    is larger than the specified size (e.g. TT-high), the Hatari screen
+    size will also be larger than requested.  Hatari Falcon/TT window size
+    will be limited to the Desktop size though.</li>
 <li>TT and Falcon resolutions support only <em>integer</em> scaling ratios.
     If the scaling ratio cannot match the requested size exactly, Hatari
     will use a ratio that will produce smaller size closest to the
@@ -2021,7 +2035,7 @@ this:
 You should set these values to a size that suits best your monitor
 resolution. It's intended to help in getting Hatari to best use your
 monitor space on a windowed mode and in fullscreen avoiding "fuzzy"
-scaling either by Hatari or your LCD monitor.
+scaling done by your LCD monitor.
 </p>
 <p>
 Giving "-z 2" option on command line will reset max zoomed size to
@@ -2032,11 +2046,12 @@ not be enabled on very slow computers.
 <p>Click the <span class="button">Screenshot</span> button to create
 a screenshot in PNG (or BMP) format to the current working directory
 or click the <span class="button">Record&nbsp;AVI</span> button to
-record an AVI format video of Hatari screen (and audio) output.  You
-can opt to record new movie frames only when the screen content really
-changed.
+record an AVI format video of Hatari screen (and audio) output.
 </p>
-
+<p>
+Selecting "Crop statusbar" option will leave statusbar out from
+the screenshots and recorded videos.
+</p>
 
 <a name="The Keyboard Dialog"></a><h4 class="gui">The Keyboard Dialog</h4>
 
