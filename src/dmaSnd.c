@@ -516,6 +516,23 @@ void DmaSnd_InterruptHandler(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * DMA sound is using an 8 bytes FIFO that is checked and filled on each HBL
+ * (at 50066 Hz 8 bit stereo, the DMA requires approx 6.5 new bytes per HBL)
+ * Calling Sound_Update on each HBL allows to emulate some programs that modify
+ * the data between FrameStart and FrameEnd while DMA sound is ON
+ * (eg the demo 'Mental Hangover' or the game 'Power Up Plus')
+ * This function should be called from the HBL's handler (in video.c)
+ */
+void DmaSnd_HBL_Update(void)
+{
+	/* If DMA sound is ON, update sound */
+	if (nDmaSoundControl & DMASNDCTRL_PLAY)
+		Sound_Update(false);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Create actual position for frame count registers.
  */
 static Uint32 DmaSnd_GetFrameCount(void)
