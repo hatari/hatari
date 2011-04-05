@@ -2,14 +2,16 @@
 Hatari on constrained devices
 -----------------------------
 
-Note: Comments in the toplevel Makefile-default.cnf file suggest
-suitable compilation options for different platforms.
-
 In this directory are Hatari configurations files for mobile etc
 devices on which the builtin Hatari defaults aren't appropriate.
 Just copy suitable config file to the device /etc/ directory (or
 to /usr/local/etc directory if Hatari is installed under /usr/local)
 as 'hatari.cfg'.
+
+Below are some comments about the configuration files. Some comments
+about suitable compiler options for these platforms are in Hatari v1.4
+default Makefile (which is now replaced with CMake):
+http://hg.berlios.de/repos/hatari/file/dabb65b541c9/Makefile-default.cnf
 
 If these configuration settings don't provide sufficient performance,
 use of an earlier Hatari version such as v0.95 (or even earlier)
@@ -20,7 +22,7 @@ Hatari versions and therefore they're somewhat faster.
 n810.cfg
 --------
 
-Configuration file for the Nokia 770/N800/N810 TI Omap2 based devices:
+Configuration file for the Nokia 770/N800/N810 TI Omap2/ARMv6 based devices:
 - Shortcut keys adapted for the device keys:
   - Menu, Increase, Decrease, Fullscreen, Joystick keyemu fire
 - Max Hatari screen size set to device screen size
