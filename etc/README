@@ -9,8 +9,8 @@ to /usr/local/etc directory if Hatari is installed under /usr/local)
 as 'hatari.cfg'.
 
 Below are some comments about the configuration files. Some comments
-about suitable compiler options for these platforms are in Hatari v1.4
-default Makefile (which is now replaced with CMake):
+about suitable compiler options for these platforms can be found from
+the Hatari v1.4 default Makefile (which is now replaced with CMake):
 http://hg.berlios.de/repos/hatari/file/dabb65b541c9/Makefile-default.cnf
 
 If these configuration settings don't provide sufficient performance,
@@ -35,6 +35,9 @@ Configuration file for the Nokia 770/N800/N810 TI Omap2/ARMv6 based devices:
   typing when they're enabled as N770 & N800 don't have a keyboard and N810
   keyboard is very small so typing is quite awkward)
 
+For more information on these devices, see e.g:
+	http://en.wikipedia.org/wiki/Nokia_N800
+
 
 win-ce.cfg
 ----------
@@ -47,3 +50,6 @@ Configuration file for Windows Mobile based devices:
   - Frameskip enabled
   - High spec512 threshold
   - 11kHz sound
+
+For more information on Windows CE and device based on it, see:
+	http://en.wikipedia.org/wiki/Windowsce
