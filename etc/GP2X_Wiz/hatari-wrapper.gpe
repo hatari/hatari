@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# experimental Hatari launcher for GP2X Wiz
+cd hatari
+./hatari.gpe -f --bpp 16 -c ./wiz.cfg | tee ./hatari-log.txt
+sync
+cd /usr/gp2x
+exec /usr/gp2x/gp2xmenu
