@@ -17,6 +17,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "configuration.h"
 #include "cfgopts.h"
 #include "audio.h"
+#include "sound.h"
 #include "file.h"
 #include "log.h"
 #include "m68000.h"
@@ -231,6 +232,7 @@ static const struct Config_Tag configs_Sound[] =
 	{ "nPlaybackFreq", Int_Tag, &ConfigureParams.Sound.nPlaybackFreq },
 	{ "nSdlAudioBufferSize", Int_Tag, &ConfigureParams.Sound.SdlAudioBufferSize },
 	{ "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
+	{ "YmVolumeMixing", Int_Tag, &ConfigureParams.Sound.YmVolumeMixing },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -496,6 +498,7 @@ void Configuration_SetDefault(void)
 	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",
 	        psWorkingDir, PATHSEP);
 	ConfigureParams.Sound.SdlAudioBufferSize = 0;
+	ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
 
 	/* Set defaults for Rom */
 	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img",
@@ -584,6 +587,13 @@ void Configuration_Apply(bool bReset)
 
 	/* Set playback frequency */
 	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
+
+	/* YM Mixing */
+	if ( ( ConfigureParams.Sound.YmVolumeMixing != YM_LINEAR_MIXING )
+	  && ( ConfigureParams.Sound.YmVolumeMixing != YM_TABLE_MIXING ) )
+		ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
+
+	YmVolumeMixing = ConfigureParams.Sound.YmVolumeMixing;
 
 	/* Check/constrain CPU settings and change corresponding
 	 * UAE cpu_level & cpu_compatible variables
