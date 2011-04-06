@@ -8,12 +8,15 @@
   but since the DMA sound has to be mixed together with the PSG sound and
   the output frequency of the host computer differs from the DMA sound
   frequency, the copy function is a little bit complicated.
-  For reducing copy latency, we set a cycle-interrupt event with
-  CycInt_AddRelativeInterrupt to occur just after a sound frame should be
-  finished. There we update the sound.
   The update function also triggers the ST interrupts (Timer A and MFP-i7)
   which are often used in ST programs for setting a new sound frame after
   the old one has finished.
+
+  To support programs that write into the frame buffer while it's played,
+  we should update dma sound on each video HBL.
+  This is also how it works on a real STE : bytes are read by the DMA
+  at the end of each HBL and stored in a small FIFO (8 bytes) that is sent
+  to the DAC depending on the chosen DMA output freq.
 
   Falcon sound emulation is all taken into account in crossbar.c
 
@@ -274,12 +277,13 @@ static void DmaSnd_StartNewFrame(void)
 		return;
 	}
 
-	/* To get smooth sound, set an "interrupt" for the end of the frame that
-	 * updates the sound mix buffer. */
-	nCyclesForFrame = dma.frameLen * (CPU_FREQ / DmaSnd_DetectSampleRate());
-	if (!(dma.soundMode & DMASNDMODE_MONO))  /* Is it stereo? */
-		nCyclesForFrame = nCyclesForFrame / 2;
-	CycInt_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);
+// [NP] No more need for a timer since dma sound is updated on each HBL
+//	/* To get smooth sound, set an "interrupt" for the end of the frame that
+//	 * updates the sound mix buffer. */
+//	nCyclesForFrame = dma.frameLen * (CPU_FREQ / DmaSnd_DetectSampleRate());
+//	if (!(dma.soundMode & DMASNDMODE_MONO))  /* Is it stereo? */
+//		nCyclesForFrame = nCyclesForFrame / 2;
+//	CycInt_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);
 }
 
 
