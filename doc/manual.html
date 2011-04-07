@@ -493,19 +493,20 @@ use the given file as configuration file instead of
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>--fast-forward &lt;bool&gt;</b></td>
+<b>-k, --keymap
+&lt;file&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-On fast machine helps skipping (fast forwarding) Hatari
-output
+load keyboard mapping from &lt;file&gt;
 </td>
 </table>
-<a name="Display options"></a>
-<h3>Display options</h3>
+
+<a name="Common display options"></a>
+<h3>Common display options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
@@ -586,74 +587,15 @@ Grab mouse (also) in window mode
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>-z, --zoom &lt;x&gt;</b></td>
+<b>--fast-forward &lt;bool&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Zoom low resolution (1=no, 2=yes)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--max-width &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Maximum window width for zooming (Falcon/TT only)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--max-height &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Maximum window height for zooming (Falcon/TT only)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--aspect &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Whether to do monitor aspect ratio correction (Falcon/TT only)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--borders &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Show ST/STE screen borders (for low/med resolution overscan demos)
+On fast machine helps skipping (fast forwarding) Hatari
+output
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -700,8 +642,40 @@ Show statusbar (with floppy leds etc etc)
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Show overlay drive led when statusbar isn&rsquo;t
-shown
+Show overlay drive led when statusbar isn&rsquo;t shown
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--bpp &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Force internal bitdepth (x = 8/15/16/32, 0=disable)
+</td>
+</table>
+
+<a name="ST/STE specific display options"></a>
+<h3>ST/STE specific display options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--borders &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Show screen borders (for low/med resolution overscan demos)
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -726,16 +700,87 @@ conversion functions (0 &lt;= x &lt;= 512, 0=disable)
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>--bpp &lt;bool&gt;</b></td>
+<b>-z, --zoom &lt;x&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Force internal bitdepth (x = 8/15/16/32, 0=disable)
+Zoom low resolution (1=no, 2=yes)
 </td>
 </table>
+
+<a name="Falcon/TT specific display options"></a>
+<h3>Falcon/TT specific display options</h3>
+<p>
+Zooming to sizes specified below is internally done using integer
+scaling factors. This means that different Atari resolutions may show
+up with different sizes, but they are never blurry.
+</p>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--desktop &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Whether to use desktop resolution on fullscreen to avoid issues
+related to resolution switching. Otherwise fullscreen will use
+a resolution that is closest to the Hatari window size
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--max-width &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Maximum window width for zooming
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--max-height &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Maximum window height for zooming
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--aspect &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Whether to do monitor aspect ratio correction
+</td>
+</table>
+
 <a name="VDI options"></a>
 <h3>VDI options</h3>
 <table width="100%" border=0 rules="none" frame="void"
@@ -798,6 +843,7 @@ Use extended VDI resolution with width &lt;w&gt; (320 &lt; w &lt;= 1280)
 Use extended VDI resolution with height &lt;h&gt; (200 &lt; h &lt;= 960)
 </td>
 </table>
+
 <a name="Screen capture options"></a>
 <h3>Screen capture options</h3>
 <table width="100%" border=0 rules="none" frame="void"
@@ -875,6 +921,7 @@ Force avi frame rate (x = 50/60/71/...)
 Use &lt;file&gt; to record avi
 </td>
 </table>
+
 <a name="Devices options"></a>
 <h3>Devices options</h3>
 <table width="100%" border=0 rules="none" frame="void"
@@ -984,6 +1031,7 @@ Enable serial port support and use &lt;file&gt; as the input device
 Enable serial port support and use &lt;file&gt; as the output device
 </td>
 </table>
+
 <a name="Disk options"></a>
 <h3>Disk options</h3>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1125,6 +1173,7 @@ Emulate an IDE slave hard disk with an image &lt;file&gt;
 slow down FDC emulation (deprecated)
 </td>
 </table>
+
 <a name="Memory options"></a>
 <h3>Memory options</h3>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1191,6 +1240,7 @@ disabled)
 Load memory snap-shot &lt;file&gt;
 </td>
 </table>
+
 <a name="CPU options"></a>
 <h3>CPU options</h3>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1239,6 +1289,7 @@ Set the CPU clock (8, 16 or 32 Mhz)
 Use a more compatible but slower 68000 CPU mode
 </td>
 </table>
+
 <a name="Misc system options"></a>
 <h3>Misc system options</h3>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1253,7 +1304,7 @@ Use a more compatible but slower 68000 CPU mode
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-select machine type (x = st, ste, tt or falcon)
+Select machine type (x = st, ste, tt or falcon)
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1276,23 +1327,6 @@ Enable blitter emulation (ST only)
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>--timer-d &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Patch redundantly high Timer-D frequency set by TOS.  This about doubles
-Hatari speed as the original Timer-D frequency causes most of the
-interrupts.
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
 <b>--dsp &lt;x&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1300,8 +1334,22 @@ interrupts.
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Falcon DSP emulation (x = none, dummy or emu, Falcon
-only)
+Falcon DSP emulation (x = none, dummy or emu, Falcon only)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--mic &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable/disable (Falcon only) microphone
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1324,7 +1372,6 @@ DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
 supports.
 </td>
 </table>
-
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
@@ -1347,26 +1394,24 @@ buffer to a fixed number of milliseconds of sound (using 20 is often
 a good choice if you have such problems). Most users will not need this option.
 </td>
 </table>
-
-
-
-
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>-k, --keymap
-&lt;file&gt;</b></td>
+<b>--timer-d &lt;bool&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-load keyboard mapping from &lt;file&gt;
+Patch redundantly high Timer-D frequency set by TOS.  This about doubles
+Hatari speed as the original Timer-D frequency causes most of the
+interrupts.
 </td>
 </table>
+
 <a name="Debug options"></a>
 <h3>Debug options</h3>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1925,7 +1970,7 @@ activate any extended resolution here.
 Screen Dialog</h4>
 
 <div class="floatimage">
-<img src="images/screen.png" width="350" height="336" alt="Hatari's
+<img src="images/screen.png" width="520" height="320" alt="Hatari's
 GUI - the Hatari screen dialog">
 </div>
 
@@ -1949,24 +1994,38 @@ on your screen.
  screen animation recording!
 </p>
 <p>
- "Statusbar" toggles the statusbar at the bottom of the screen.
- The statusbar shows the floppy drive LEDs, the current frameskip value,
- the machine type including TOS version and memory size, and whether
- recording is currently active.
+Indicators that you can have on the Hatari window:
+<ul>
+<li>"Statusbar" at the bottom of the screen.
+The statusbar shows the floppy drive LEDs, the current frameskip value,
+the machine type including TOS version and memory size, and whether
+recording is currently active.</li>
+<li>"Drive led" is a colored rectangle shown on top of the Hatari window
+contents. It will show any disk (floppy or hard disk) activity.</li>
+<li>"None" turns both of above options off.</li>
+</ul>
 </p>
 <p>
-"Max zoomed" option controls up to which size Hatari tries to scale
+"Keep desktop resolution" option will use your desktop resolution
+for fullscreen to avoid issues related to resolution switching,
+especially on LCD monitors (they're slow).  If this isn't enabled,
+values from the "Max zoomed win" option are used in selecting
+a suitable resolution.
+<p>
+"Max zoomed win" option controls up to which size Hatari tries to scale
 the Atari resolutions and how much of the borders (enabled in Atari
-Monitor dialog) will be shown.  There are several limitations in
-this:
+Monitor dialog) will be shown.  Note that there are several limitations
+in this and the "Keep desktop resolution" option, partly because Hatari
+has different implementations for different video modes:
 </p>
 <ul>
 <li>VDI resolutions (selectable in Atari Monitor dialog) aren't scaled.</li>
 <li>ST and STE video emulation supports only doubling of the ST-low
     resolution.</li>
 <li>Hatari doesn't support downscaling. If the original Atari resolution
-    is larger (for example TT-high), the Hatari screen size will also be
-    larger than requested.</li>
+    is larger than the specified size (e.g. TT-high), the Hatari screen
+    size will also be larger than requested.  Hatari Falcon/TT window size
+    will be limited to the Desktop size though.</li>
 <li>TT and Falcon resolutions support only <em>integer</em> scaling ratios.
     If the scaling ratio cannot match the requested size exactly, Hatari
     will use a ratio that will produce smaller size closest to the
@@ -1976,7 +2035,7 @@ this:
 You should set these values to a size that suits best your monitor
 resolution. It's intended to help in getting Hatari to best use your
 monitor space on a windowed mode and in fullscreen avoiding "fuzzy"
-scaling either by Hatari or your LCD monitor.
+scaling done by your LCD monitor.
 </p>
 <p>
 Giving "-z 2" option on command line will reset max zoomed size to
@@ -1987,11 +2046,12 @@ not be enabled on very slow computers.
 <p>Click the <span class="button">Screenshot</span> button to create
 a screenshot in PNG (or BMP) format to the current working directory
 or click the <span class="button">Record&nbsp;AVI</span> button to
-record an AVI format video of Hatari screen (and audio) output.  You
-can opt to record new movie frames only when the screen content really
-changed.
+record an AVI format video of Hatari screen (and audio) output.
 </p>
-
+<p>
+Selecting "Crop statusbar" option will leave statusbar out from
+the screenshots and recorded videos.
+</p>
 
 <a name="The Keyboard Dialog"></a><h4 class="gui">The Keyboard Dialog</h4>
 

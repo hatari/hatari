@@ -28,6 +28,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "floppy.h"
 #include "screen.h"
+#include "sound.h"
 #include "video.h"
 #include "vdi.h"
 #include "joy.h"
@@ -120,6 +121,7 @@ enum {
 	OPT_DSP,
 	OPT_MICROPHONE,
 	OPT_TIMERD,
+	OPT_YM_MIXING,
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
 	OPT_DEBUG,		/* debug options */
@@ -315,6 +317,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
 	{ OPT_MICROPHONE,   NULL, "--mic",
 	  "<bool>", "Enable/disable (Falcon only) microphone" },
+	{ OPT_YM_MIXING,   NULL, "--ym-mixing",
+	  "<x>", "YM sound mixing method (x=linear/table)" },
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
@@ -1439,6 +1443,22 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			bLoadAutoSave = false;
 			break;			
 #endif
+		case OPT_YM_MIXING:
+			i += 1;
+			if (strcasecmp(argv[i], "linear") == 0)
+			{
+				ConfigureParams.Sound.YmVolumeMixing = YM_LINEAR_MIXING;
+			}
+			else if (strcasecmp(argv[i], "table") == 0)
+			{
+				ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_YM_MIXING, argv[i], "Unknown YM mixing method");
+			}
+			break;
+
 		case OPT_SOUND:
 			i += 1;
 			if (strcasecmp(argv[i], "off") == 0)

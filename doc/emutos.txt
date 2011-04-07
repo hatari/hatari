@@ -104,7 +104,7 @@ which location depends on the TOS version.
 Debugging issues with EmuTOS
 ============================
 
-To debug problems with EmuTOS, you have to recompile it from source
+To debug problems with EmuTOS, you have to recompile it from the source
 after enabling the MIDI debug output in its config.h header file. Then
 start Hatari with the "--midi-out /dev/stderr" optio and you will see
 the EmuTOS debug output such as calls to missing Line-A functions.
@@ -118,13 +118,14 @@ debugger.
 
 After loading the symbols to the debugger, disassembling the problematic
 address should provide more clues for the problem.  Or you can just look
-up the program counter value given in panic message from the AHCC
-emutos.map file.
+up the program counter value given in the EmuTOS panic message from
+the AHCC emutos.map file.
 
-Hatari profiling support (see patches on hatari-devel) can be used to
-debug OS freezes.  If EmuTOS gets stuck, just profile it for a while
-and then ask debugger for a profile that tells where it's looping and
-then disasm that part with symbols directly in Hatari.
+Hatari profiling support can be used to debug OS freezes.  If EmuTOS gets
+stuck, just profile it for a while and then ask debugger for a profile
+that tells where it's looping and then disassemble that part with symbols
+directly in Hatari.  More information on the debugger and profiling is
+in the Hatari manual.
 
 [2] AHCC: http://members.chello.nl/h.robbers/
 
@@ -179,6 +180,7 @@ Demos:
 - Save The Earth (by Defence Force)
 - SillyVenture 2k10 (invitro by Mystic Bytes)
 - Soundtracker (by Equinox)
+- Stone tower (by FUN)
 - Sweety (by DHS)
 - Tut! (by Wildfire)
 - Two in One (by DHS)
@@ -330,10 +332,10 @@ There are not that many freely available or even commercial programs
 that would be STE specific (or even STE enhanced):
     http://atari-ste.anvil-soft.com/html/archivapps.htm
 
-Missing blitter support in EmuTOS (XBios function etc) is an additional
-reason why some programs/demos (such as Blittermania) don't work with it.
-But following STE specific demos, games and apps work (mostly) fine
-with EmuTOS.
+Missing DMA and Blitter support in EmuTOS (XBios functions etc) is
+an additional reason why some programs/demos (such as Blittermania)
+don't work with it. But following STE specific demos, games and apps
+work (mostly) fine with EmuTOS.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
@@ -354,6 +356,8 @@ Demos:
 - Illusion (by Next)
 - Gobi Toons (by Dune)
 - Grimey (by Reservoir Gods)
+- High Fidelity Dreams (by Aura)
+- HighResMode (by Paradox)
 - Kick my assembler (by Orion), start doesn't look right
 - Madness (by Cream)
 - Mathematica (by Aura)
@@ -365,7 +369,7 @@ Demos:
 - New Year -94 Intro (by Extream)
 - Pacemaker (by Paradox), stops at end-part
 - Paracon 6 & 7 remindtros (by Paradox)
-- Powerrise (by Light)
+- Power Rise (by Light)
 - Reanimation (by Syntax)
 - Realtime (by MJJ Prod)
 - Sinfull Sinuses (by Chronicle)
@@ -397,6 +401,7 @@ Color games:
 - Stupid balloon game
 - Substation* (demo)
 - Tomtar
+- Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
 
 Music Applications:
@@ -409,6 +414,8 @@ Music Applications:
 
 Most of the non-GEM ST tracker & chip music composer programs
 work also with EmuTOS too (not just STe ones).
+
+Protracker STE complains about missing DMA.
 
 
 "Almost" working color STE games
@@ -498,7 +505,7 @@ Utilities:
 - Cecile hard disk (image) driver
 
 Mostly working applications:
-- AceMidi demo (softsynth sounds needs DSP)
+- AceMidi demo (softsynth sounds need DSP)
 - FlaySID (sound needs DSP)
 - Fractal Playground (parameter input doesn't work)
 - Kronos (benchmark)

@@ -44,6 +44,7 @@ typedef struct
   int nPlaybackFreq;
   int SdlAudioBufferSize;
   char szYMCaptureFileName[FILENAME_MAX];
+  int YmVolumeMixing;
 } CNF_SOUND;
 
 
