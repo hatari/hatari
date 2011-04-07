@@ -1062,9 +1062,10 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Uses STE DMA, blitter and palette</td>
     </tr>
     <tr>
-      <td>Power Up*</td>
-      <td class="minor">1.4</td>
-      <td>STE music sounds broken, but DMA sound effects and ST music work</td>
+      <td><a href="http://cichon.cz/pu/index.html">Power Up*</a></td>
+      <td>1.5</td>
+      <td>Very weird sound routine in STE mode : play a 2 bytes sample in a loop with
+	  DMA sound and update the content of this sample with an MFP timer</td>
     </tr>
     <tr>
       <td><a href="http://www.rgcd.co.uk/r0x/">R0X</a></td>
@@ -1419,10 +1420,11 @@ are just STE enhanced.  These are marked with '*'.</p>
     <tr>
       <td>The Pixels Twins:
       <a href="http://pouet.net/prod.php?which=11181">Mental Hangover</a></td>
-      <td class="minor">1.4</td>
+      <td>1.5</td>
       <td>Does not work with cartridge / HD emulation. Real Time Clock should
 	  also be disabled to prevent a bug in the boot sector's loader (depends
-	  on the TOS version used). Sound doesn't seem correct (noisy)</td>
+	  on the TOS version used). Sound requires Hatari &gt;= 1.5 to work
+	  (the routines write in the sample buffer while it's played by the dma)</td>
     </tr>
     <tr>
       <td>Unit 17:
