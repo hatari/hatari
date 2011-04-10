@@ -19,7 +19,7 @@ extern void DmaSnd_Reset(bool bCold);
 extern void DmaSnd_MemorySnapShot_Capture(bool bSave);
 extern void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
 extern void DmaSnd_InterruptHandler(void);
-extern void DmaSnd_HBL_Update(void);
+extern void DmaSnd_STE_HBL_Update(void);
 
 extern void DmaSnd_SoundControl_ReadWord(void);
 extern void DmaSnd_SoundControl_WriteWord(void);

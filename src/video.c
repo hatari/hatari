@@ -1441,7 +1441,7 @@ void Video_InterruptHandler_HBL ( void )
 
 	Video_EndHBL();					/* Check some borders removal and copy line to display buffer */
 
-	DmaSnd_HBL_Update();				/* Update DMA sound if needed */
+	DmaSnd_STE_HBL_Update();			/* Update STE DMA sound if needed */
 
 	nHBL++;						/* Increase HBL count */
 
