@@ -257,7 +257,7 @@ static int DmaSnd_DetectSampleRate(void)
  */
 static void DmaSnd_StartNewFrame(void)
 {
-	int nCyclesForFrame;
+//	int nCyclesForFrame;
 
 	dma.frameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
 	dma.frameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
