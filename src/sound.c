@@ -228,7 +228,7 @@ static ymu16	Vol3Voices = 0;				/* volume 0-0x1f for voices having a constant vo
 /* Global variables that can be changed/read from other parts of Hatari */
 Uint8		SoundRegs[ 14 ];
 
-int		YmVolumeMixing = YM_LINEAR_MIXING;
+int		YmVolumeMixing = YM_TABLE_MIXING;
 bool		UseLowPassFilter = false;
 
 bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
