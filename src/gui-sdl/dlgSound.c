@@ -24,10 +24,12 @@ const char DlgSound_fileid[] = "Hatari dlgSound.c : " __DATE__ " " __TIME__;
 #define DLGSOUND_44KHZ      11
 #define DLGSOUND_48KHZ      12
 #define DLGSOUND_50KHZ      13
-#define DLGSOUND_RECNAME    17
-#define DLGSOUND_RECBROWSE  18
-#define DLGSOUND_RECORD     19
-#define DLGSOUND_EXIT       20
+#define DLGSOUND_TABLE      15
+#define DLGSOUND_LINEAR     16
+#define DLGSOUND_RECNAME    20
+#define DLGSOUND_RECBROWSE  21
+#define DLGSOUND_RECORD     22
+#define DLGSOUND_EXIT       23
 
 
 static char dlgRecordName[35];
@@ -36,28 +38,32 @@ static char dlgRecordName[35];
 /* The sound dialog: */
 static SGOBJ sounddlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 38,24, NULL },
-	{ SGBOX, 0, 0, 1,1, 36,11, NULL },
-	{ SGTEXT, 0, 0, 13,2, 13,1, "Sound options" },
-	{ SGCHECKBOX, 0, 0, 12,4, 14,1, "Enable sound" },
+	{ SGBOX,      0,0,  0, 0, 38,24, NULL },
+	{ SGBOX,      0,0,  1, 1, 36,11, NULL },
+	{ SGTEXT,     0,0,  4, 2, 13,1, "SOUND" },
+	{ SGCHECKBOX, 0,0, 14, 2, 14,1, "Enabled" },
 
-	{ SGTEXT, 0, 0, 11,6, 14,1, "Playback quality:" },
-	{ SGRADIOBUT, 0, 0, 2,8, 10,1, "11025 Hz" },
-	{ SGRADIOBUT, 0, 0, 2,9, 10,1, "12517 Hz" },
-	{ SGRADIOBUT, 0, 0, 2,10, 10,1, "16000 Hz" },
-	{ SGRADIOBUT, 0, 0, 14,8, 10,1, "22050 Hz" },
-	{ SGRADIOBUT, 0, 0, 14,9, 10,1, "25033 Hz" },
-	{ SGRADIOBUT, 0, 0, 14,10, 10,1, "32000 Hz" },
-	{ SGRADIOBUT, 0, 0, 26,8, 10,1, "44100 Hz" },
-	{ SGRADIOBUT, 0, 0, 26,9, 10,1, "48000 Hz" },
-	{ SGRADIOBUT, 0, 0, 26,10, 10,1, "50066 Hz" },
+	{ SGTEXT,     0,0,  4, 4, 14,1, "Playback quality:" },
+	{ SGRADIOBUT, 0,0,  2, 6, 10,1, "11025 Hz" },
+	{ SGRADIOBUT, 0,0,  2, 7, 10,1, "12517 Hz" },
+	{ SGRADIOBUT, 0,0,  2, 8, 10,1, "16000 Hz" },
+	{ SGRADIOBUT, 0,0, 14, 6, 10,1, "22050 Hz" },
+	{ SGRADIOBUT, 0,0, 14, 7, 10,1, "25033 Hz" },
+	{ SGRADIOBUT, 0,0, 14, 8, 10,1, "32000 Hz" },
+	{ SGRADIOBUT, 0,0, 26, 6, 10,1, "44100 Hz" },
+	{ SGRADIOBUT, 0,0, 26, 7, 10,1, "48000 Hz" },
+	{ SGRADIOBUT, 0,0, 26, 8, 10,1, "50066 Hz" },
 
-	{ SGBOX, 0, 0, 1,13, 36,8, NULL },
-	{ SGTEXT, 0, 0, 13,14, 14,1, "Capture YM/WAV" },
-	{ SGTEXT, 0, 0, 2,16, 26,1, "File name (*.wav or *.ym):" },
-	{ SGTEXT, 0, 0, 2,17, 34,1, dlgRecordName },
-	{ SGBUTTON, 0, 0, 30,16, 6,1, "Browse" },
-	{ SGBUTTON, 0, 0, 12,19, 16,1, NULL },
+	{ SGTEXT,     0,0,  2,10, 10,1, "YM mixing:" },
+	{ SGRADIOBUT, 0,0, 14,10, 10,1, "ST table" },
+	{ SGRADIOBUT, 0,0, 26,10, 10,1, "Linear" },
+
+	{ SGBOX,      0,0,  1,13, 36,8, NULL },
+	{ SGTEXT,     0,0, 13,14, 14,1, "Capture YM/WAV" },
+	{ SGTEXT,     0,0,  2,16, 26,1, "File name (*.wav / *.ym):" },
+	{ SGTEXT,     0,0,  2,17, 34,1, dlgRecordName },
+	{ SGBUTTON,   0,0, 28,16,  8,1, " Browse " },
+	{ SGBUTTON,   0,0, 12,19, 16,1, NULL },
 	{ SGBUTTON, SG_DEFAULT, 0, 10,22, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -106,6 +112,13 @@ void Dialog_SoundDlg(void)
 			break;
 		}
 	}
+
+	sounddlg[DLGSOUND_TABLE].state &= ~SG_SELECTED;
+	sounddlg[DLGSOUND_LINEAR].state &= ~SG_SELECTED;
+	if (ConfigureParams.Sound.YmVolumeMixing == YM_TABLE_MIXING)
+		sounddlg[DLGSOUND_TABLE].state |= SG_SELECTED;
+	else
+		sounddlg[DLGSOUND_LINEAR].state |= SG_SELECTED;
 
 	File_ShrinkName(dlgRecordName, ConfigureParams.Sound.szYMCaptureFileName, sounddlg[DLGSOUND_RECNAME].w);
 
@@ -159,4 +172,9 @@ void Dialog_SoundDlg(void)
 			break;
 		}
 	}
+
+	if (sounddlg[DLGSOUND_TABLE].state & SG_SELECTED)
+		ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
+	else
+		ConfigureParams.Sound.YmVolumeMixing = YM_LINEAR_MIXING;
 }
