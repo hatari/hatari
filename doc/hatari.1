@@ -250,7 +250,7 @@ DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
 supports.
 .TP 
 .B \-\-sound-buffer-size <x>
-SDL's sound buffer size : 10-100, or 0 to use default buffer size.
+SDL's sound buffer size: 10-100, or 0 to use default buffer size.
 By default Hatari uses an SDL buffer size of 1024 samples, which
 gives approximatively 20-30 ms of sound depending on the chosen sound
 frequency. Under some OS or with not fully supported sound card, this
@@ -258,6 +258,11 @@ default setting can cause a bigger delay at lower frequency (nearly 0.5 sec).
 In that case, you can use this option to force the size of the sound
 buffer to a fixed number of milliseconds of sound (using 20 is often
 a good choice if you have such problems). Most users will not need this option.
+.TP 
+.B \-\-ym-mixing <x>
+Select a method for mixing the three YM2149 voice volumes together.
+"table" uses a lookup table of audio output voltage values measured
+on STF and "linear" just averages the 3 YM voices.
 .TP 
 .B \-\-timer-d <bool>
 Patch redundantly high Timer-D frequency set by TOS.  This about doubles

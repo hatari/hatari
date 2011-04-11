@@ -1399,6 +1399,23 @@ a good choice if you have such problems). Most users will not need this option.
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
+<b>--ym-mixing &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Select a method for mixing the three YM2149 voice volumes together.
+"table" uses a lookup table of audio output voltage values measured
+on STF and "linear" just averages the 3 YM voices.
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
 <b>--timer-d &lt;bool&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1407,8 +1424,8 @@ a good choice if you have such problems). Most users will not need this option.
 <td width="21%"></td>
 <td width="77%">
 Patch redundantly high Timer-D frequency set by TOS.  This about doubles
-Hatari speed as the original Timer-D frequency causes most of the
-interrupts.
+Hatari speed (for ST/e emulation) as the original Timer-D frequency causes
+most of the interrupts.
 </td>
 </table>
 
@@ -2088,7 +2105,7 @@ the screenshots and recorded videos.
 <a name="The Sound Dialog"></a><h4 class="gui">The Sound Dialog</h4>
 
 <div class="floatimage">
-<img src="images/sound.png" width="380" height="384" alt="Hatari's GUI - the sound dialog">
+<img src="images/sound.png" width="380" height="383" alt="Hatari's GUI - the sound dialog">
 </div>
 
 <p>Here you can control the sound subsystem.</p>
