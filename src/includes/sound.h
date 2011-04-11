@@ -56,6 +56,7 @@ extern void Sound_WriteReg( int reg , Uint8 data );
 extern bool Sound_BeginRecording(char *pszCaptureFileName);
 extern void Sound_EndRecording(void);
 extern bool Sound_AreWeRecording(void);
+extern void Sound_SetYmVolumeMixing(void);
 
 
 #endif  /* HATARI_SOUND_H */

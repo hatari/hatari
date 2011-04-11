@@ -594,6 +594,7 @@ void Configuration_Apply(bool bReset)
 		ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
 
 	YmVolumeMixing = ConfigureParams.Sound.YmVolumeMixing;
+	Sound_SetYmVolumeMixing();
 
 	/* Check/constrain CPU settings and change corresponding
 	 * UAE cpu_level & cpu_compatible variables

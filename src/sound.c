@@ -262,6 +262,7 @@ static void	YM2149_BuildLinearVolumeTable(ymu16 *out);
 static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsigned int Level, bool DoCenter);
 
 static void	YM2149_EnvBuild		(void);
+static void	Ym2149_BuildVolumeTable	(void);
 static void	Ym2149_Init		(void);
 static void	Ym2149_Reset		(void);
 
@@ -545,6 +546,28 @@ static void	YM2149_EnvBuild ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Depending on the YM mixing method, build the table used to convert
+ * the 3 YM volumes into a single sample.
+ */
+
+static void	Ym2149_BuildVolumeTable(void)
+{
+	/* Depending on the volume mixing method, we use a table based on real measures */
+	/* or a table based on a linear volume mixing. */
+printf ( "mixing %d\n" , YmVolumeMixing );
+	if ( YmVolumeMixing == YM_TABLE_MIXING )
+		interpolate_volumetable(ymout5_u16);		/* expand the 16*16*16 values in volumetable_original to 32*32*32 */
+	else
+		YM2149_BuildLinearVolumeTable(ymout5_u16);	/* combine the 32 possible volumes */
+
+	/* Normalise/center the values (convert from u16 to s16) */
+	YM2149_Normalise_5bit_Table ( ymout5_u16 , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Init some internal tables for faster results (env, volume)
  * and reset the internal states.
  */
@@ -554,15 +577,8 @@ static void	Ym2149_Init(void)
 	/* Build the 16 envelope shapes */
 	YM2149_EnvBuild();
 
-	/* Depending on the volume mixing method, we use a table based on real measures */
-	/* or a table based on a linear volume mixing. */
-	if ( YmVolumeMixing == YM_TABLE_MIXING )
-		interpolate_volumetable(ymout5_u16);	/* expand the 16*16*16 values in volumetable_original to 32*32*32 */
-	else
-		YM2149_BuildLinearVolumeTable(ymout5_u16);	/* combine the 32 possible volumes */
-
-	/* Normalise/center the values (convert from u16 to s16) */
-	YM2149_Normalise_5bit_Table ( ymout5_u16 , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );
+	/* Build the volume conversion table */
+	Ym2149_BuildVolumeTable();
 
 	/* Reset YM2149 internal states */
 	Ym2149_Reset();
@@ -1194,7 +1210,7 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 			SamplesToGenerate = 0;
 	}
 
-//fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , nSamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
+//fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , SamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
 
 	return SamplesToGenerate;
 }
@@ -1365,5 +1381,16 @@ void Sound_EndRecording(void)
 bool Sound_AreWeRecording(void)
 {
 	return (bRecordingYM || bRecordingWav);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Rebuild volume conversion table
+ */
+void Sound_SetYmVolumeMixing(void)
+{
+	/* Build the volume conversion table */
+	Ym2149_BuildVolumeTable();
 }
 
