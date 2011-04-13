@@ -14,6 +14,8 @@ Emulation:
 - Sound improvements:
   - STE DMA sound problem on low frequencies fixed
   - Sound latency on US TOS fixed (with more accurate timings)
+  - By default mix 3 YM voices using a lookup table of values
+    measured on real STF (improves e.g. Flashback demo sound)
 - Video emulation on STF/STE:
   - On STE, correctly shift display 8 pixels to the left when using
     224 bytes overscan
@@ -35,14 +37,17 @@ Emulator:
 - Falcon/TT Videl/hostscreen improvements:
   - New setting/option for using Desktop resolution & scaling
     in fullscreen instead of changing the resolution. On by default
-  - User's desktop size is used as max limit for Videl zooming
+  - User's desktop size is used as max limit for Videl zooming.
+    Requires SDL >= 1.2.10
   - Videl resolution change is done immediately, not 3 VBLs late
   - Fix issues in switching between same sized VDI & TT resolutions
 - SDL GUI improvements:
   - DSP can be disabled from the GUI without needing to restart Hatari
+  - Disk access LED and desktop-resolution options
   - AVI video length (mins:secs) is shown in titlebar during recording
   - Option for cropping statusbar from videos & screenshots
   - Fileselector scrollbar can be used with mouse
+  - YM mixing method selection
 - Debugging improvements:
   - New disassembler with more Motorola like syntax
   - Option to disable Falcon mic
