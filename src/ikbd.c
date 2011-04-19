@@ -1530,7 +1530,7 @@ static void IKBD_Cmd_SetClock(void)
  */
 static unsigned char IKBD_ConvertToBCD(unsigned short int Value)
 {
-	return (((Value/10))<<4) | (Value%10);
+	return (((Value/10)%10)<<4) | (Value%10);
 }
 
 
@@ -1542,12 +1542,6 @@ static unsigned char IKBD_ConvertToBCD(unsigned short int Value)
  *   Returns:
  *     0xFC  ; time-of-day event header
  *     YY    ; year (2 least significant digits)
- *     There seems to be a problem with the bcd conversion of the year
- *     when year/10 >= 10. So the bcd conversion keeps the part > 10.
- *     If you put year%100 here (as says the doc), and put a real bcd
- *     conversion function in misc.c, then you end up with year 2031
- *     instead of 2003...
- *
  *     MM    ; month
  *     DD    ; day
  *     hh    ; hour
