@@ -2,7 +2,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2011 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -831,9 +831,11 @@ class MachineDialog(HatariUIDialog):
 
         vbox = gtk.VBox()
         self.compatible = gtk.CheckButton("Compatible CPU")
+        self.rtc = gtk.CheckButton("Real-time clock")
         self.timerd = gtk.CheckButton("Patch Timer-D")
         vbox.add(self.compatible)
         vbox.add(self.timerd)
+        vbox.add(self.rtc)
         table_add_widget_row(table, row, "Misc.:", vbox, fullspan)
         row += 1
 
@@ -859,6 +861,7 @@ class MachineDialog(HatariUIDialog):
             self.tos.set_filename(tos)
         self.compatible.set_active(config.get_compatible())
         self.timerd.set_active(config.get_timerd())
+        self.rtc.set_active(config.get_rtc())
 
     def _get_active_radio(self, radios):
         idx = 0
@@ -878,6 +881,7 @@ class MachineDialog(HatariUIDialog):
         config.set_tos(self.tos.get_filename())
         config.set_compatible(self.compatible.get_active())
         config.set_timerd(self.timerd.get_active())
+        config.set_rtc(self.rtc.get_active())
         config.flush_updates()
 
     def run(self, config):

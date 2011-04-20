@@ -3,7 +3,7 @@
 # Classes for Hatari emulator instance and mapping its congfiguration
 # variables with its command line option.
 #
-# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2011 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -407,6 +407,14 @@ class HatariConfigMapping(ConfigStore):
     def set_timerd(self, value):
         self.set("[System]", "bPatchTimerD", value)
         self._change_option("--timer-d %s" % str(value))
+
+    # ------------ RTC ---------------
+    def get_rtc(self):
+        return self.get("[System]", "bRealTimeClock")
+
+    def set_rtc(self, value):
+        self.set("[System]", "bRealTimeClock", value)
+        self._change_option("--rtc %s" % str(value))
 
     # ------------ fastforward ---------------
     def get_fastforward(self):

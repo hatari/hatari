@@ -2,6 +2,9 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2011-04:
+- Support RTC
+
 2011-02:
 - Support new tracepoints (AES, DSP, Videl, Crossbar)
 - Disasm update for new Hatari disassembly output
