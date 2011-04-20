@@ -2,7 +2,7 @@
 #
 # Misc common helper classes and functions for the Hatari UI
 #
-# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2011 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class UInfo:
     name = "Hatari UI"
     logo = "hatari.png"
     icon = "hatari-icon.png"
-    copyright = "UI copyright (C) 2008-2010 by Eero Tamminen"
+    copyright = "UI copyright (C) 2008-2011 by Eero Tamminen"
 
     # path to the directory where the called script resides
     path = os.path.dirname(sys.argv[0])

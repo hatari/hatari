@@ -4,7 +4,7 @@
 # configuration files: loading, saving, setting/getting variables,
 # mapping them to sections, listing changes
 #
-# Copyright (C) 2008-2010 by Eero Tamminen <eerot at berlios>
+# Copyright (C) 2008-2011 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
