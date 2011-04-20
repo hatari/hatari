@@ -120,10 +120,11 @@ enum {
 	OPT_BLITTER,
 	OPT_DSP,
 	OPT_MICROPHONE,
-	OPT_TIMERD,
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
 	OPT_YM_MIXING,
+	OPT_TIMERD,
+	OPT_RTC,
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
 	OPT_TRACE,
@@ -325,7 +326,9 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "YM sound mixing method (x=linear/table)" },
 	{ OPT_TIMERD,    NULL, "--timer-d",
 	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
-	
+	{ OPT_RTC,    NULL, "--rtc",
+	  "<bool>", "Enable real-time clock" },
+
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
@@ -1371,6 +1374,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_TIMERD:
 			ok = Opt_Bool(argv[++i], OPT_TIMERD, &ConfigureParams.System.bPatchTimerD);
+			break;			
+			
+		case OPT_RTC:
+			ok = Opt_Bool(argv[++i], OPT_RTC, &ConfigureParams.System.bRealTimeClock);
 			break;			
 
 		case OPT_DSP:
