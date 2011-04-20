@@ -431,6 +431,10 @@ class DisplayDialog(HatariUIDialog):
         scalew.set_tooltip_text("Preferred/maximum zoomed width")
         scaleh.set_tooltip_text("Preferred/maximum zoomed height")
 
+        desktop = gtk.CheckButton("Keep desktop resolution")
+        desktop.set_active(config.get_desktop())
+        desktop.set_tooltip_text("Whether to keep desktop resolution in fullscreen and (try to) scale Atari screen by an integer factor instead")
+
         borders = gtk.CheckButton("ST/STE overscan borders")
         borders.set_active(config.get_borders())
         borders.set_tooltip_text("Whether to show overscan borders in ST/STE low/mid-rez. Visible border area is affected by max. zoom size")
@@ -457,6 +461,7 @@ class DisplayDialog(HatariUIDialog):
         dialog.vbox.add(gtk.Label("Max zoomed size:"))
         dialog.vbox.add(scalew)
         dialog.vbox.add(scaleh)
+        dialog.vbox.add(desktop)
         dialog.vbox.add(borders)
         dialog.vbox.add(statusbar)
         dialog.vbox.add(led)
@@ -467,6 +472,7 @@ class DisplayDialog(HatariUIDialog):
         self.skip = skip
         self.maxw = maxadjw
         self.maxh = maxadjh
+        self.desktop = desktop
         self.borders = borders
         self.statusbar = statusbar
         self.led = led
@@ -482,6 +488,7 @@ class DisplayDialog(HatariUIDialog):
             config.lock_updates()
             config.set_frameskip(self.skip.get_active())
             config.set_max_size(self.maxw.get_value(), self.maxh.get_value())
+            config.set_desktop(self.desktop.get_active())
             config.set_borders(self.borders.get_active())
             config.set_statusbar(self.statusbar.get_active())
             config.set_led(self.led.get_active())

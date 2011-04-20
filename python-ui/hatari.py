@@ -638,6 +638,14 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Screen]", "nSpec512Threshold", value)
         self._change_option("--spec512 %d" % value)
 
+    # --------- keep desktop res -----------
+    def get_desktop(self):
+        return self.get("[Screen]", "bKeepResolution")
+    
+    def set_desktop(self, value):
+        self.set("[Screen]", "bKeepResolution", value)
+        self._change_option("--desktop %s" % str(value))
+
     # ------------ show borders ---------------
     def get_borders(self):
         return self.get("[Screen]", "bAllowOverscan")
