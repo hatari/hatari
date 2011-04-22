@@ -1528,9 +1528,9 @@ static void IKBD_Cmd_SetClock(void)
 /**
  * Convert value to 2-digit BCD
  */
-static unsigned char IKBD_ConvertToBCD(unsigned short int Value)
+static Uint8 IKBD_ConvertToBCD(Uint16 Value)
 {
-	return (((Value/10)%10)<<4) | (Value%10);
+	return (((Value/10))<<4) | (Value%10);
 }
 
 
@@ -1542,6 +1542,8 @@ static unsigned char IKBD_ConvertToBCD(unsigned short int Value)
  *   Returns:
  *     0xFC  ; time-of-day event header
  *     YY    ; year (2 least significant digits)
+ *     TOS 2 requires BCD conversion with overflow (((value / 10) << 4) & 0xff)
+ *     instead of one that pre-truncates the number (((value / 10) % 10) << 4)
  *     MM    ; month
  *     DD    ; day
  *     hh    ; hour
