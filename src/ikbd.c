@@ -1526,11 +1526,14 @@ static void IKBD_Cmd_SetClock(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Convert value to 2-digit BCD
+ * Convert value to 2-digit BCD.
+ * Note: TOS 2.0x requires BCD conversion with overflow, so the decade
+ * is not calculated modulo 10, or it will end up in the year 2039
+ * instead...
  */
-static unsigned char IKBD_ConvertToBCD(unsigned short int Value)
+static Uint8 IKBD_ConvertToBCD(Uint16 Value)
 {
-	return (((Value/10)%10)<<4) | (Value%10);
+	return ((Value/10)<<4) | (Value%10);
 }
 
 
