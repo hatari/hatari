@@ -57,6 +57,12 @@
 /* Define to 1 if you have the 'nanosleep' function. */
 #cmakedefine HAVE_NANOSLEEP 1
 
+/* Define to 1 if you have the 'alphasort' function. */
+#cmakedefine HAVE_ALPHASORT 1
+
+/* Define to 1 if you have the 'scandir' function. */
+#cmakedefine HAVE_SCANDIR 1
+
 
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "@BIN2DATADIR@"

@@ -163,6 +163,8 @@ check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
 check_function_exists(memalign HAVE_MEMALIGN)
 check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)
 check_function_exists(nanosleep HAVE_NANOSLEEP)
+check_function_exists(alphasort HAVE_ALPHASORT)
+check_function_exists(scandir HAVE_SCANDIR)
 
 # #############
 # Other CFLAGS:
