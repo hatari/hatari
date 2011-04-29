@@ -108,6 +108,8 @@
 /* 2008/12/20	[NP]	In m68k_run_1(), when checking interrupts and STOP mode, we should test		*/
 /*			PendingInterruptCount before regs.spcflags to have a faster evaluation of the	*/
 /*			'while' condition (PendingInterruptCount <= 0 is true less often than STOP==0)	*/
+/* 2011/04/29	[NP]	In Exception(), check the new PC is not on odd address ; raise an address error	*/
+/*			exception if it's the case.							*/
 
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
@@ -840,7 +842,7 @@ static void InterruptAddJitter (int Level , int Pending)
 /* and get a conflict with 'normal' cpu exceptions. */
 void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 {
-    uae_u32 currpc = m68k_getpc ();
+    uae_u32 currpc = m68k_getpc () , newpc;
 
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
@@ -994,6 +996,22 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
         write_log("Uninitialized exception handler #%i!\n", nr);
 	DebugUI();
     }
+    newpc = get_long (regs.vbr + 4*nr);
+    if ( newpc & 1)				/* check new pc is even */
+      {
+        if ( nr==2 || nr==3 )			/* address error during bus/address error -> stop emulation */
+            {
+		fprintf(stderr,"Address Error during exception 2/3, aborting new PC=$%x\n",newpc);
+		DebugUI();
+            }
+        else
+            {
+		fprintf(stderr,"Address Error during exception, new PC=$%x\n",newpc);
+		Exception ( 3 , m68k_getpc() , M68000_EXC_SRC_CPU );
+            }
+        return;
+      }
+
     m68k_setpc (get_long (regs.vbr + 4*nr));
     fill_prefetch_0 ();
     /* Handle trace flags depending on current state */
