@@ -338,6 +338,19 @@ void FDC_DmaStatus_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Copy data from DMA workspace into ST RAM
+ */
+static void FDC_DMADataFromFloppy(void)
+{
+	Uint32 Address = FDC_ReadDMAAddress();
+	STMemory_SafeCopy(Address, DMASectorWorkSpace, NUMBYTESPERSECTOR, "FDC DMA data read");
+	/* Update DMA pointer */
+	FDC_WriteDMAAddress(Address+NUMBYTESPERSECTOR);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  *
  */
 static void FDC_UpdateDiskDrive(void)
@@ -1554,20 +1567,6 @@ bool FDC_WriteSectorFromFloppy(void)
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc write sector failed\n" );
 	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Copy data from DMA workspace into ST RAM
- */
-void FDC_DMADataFromFloppy(void)
-{
-	/* Copy data to DMA address */
-	memcpy(&STRam[FDC_ReadDMAAddress()], DMASectorWorkSpace, NUMBYTESPERSECTOR );
-
-	/* Update DMA pointer */
-	FDC_WriteDMAAddress(FDC_ReadDMAAddress()+NUMBYTESPERSECTOR);
 }
 
 

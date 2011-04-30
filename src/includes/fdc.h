@@ -120,7 +120,6 @@ extern Uint32 FDC_ReadDMAAddress(void);
 extern void FDC_WriteDMAAddress(Uint32 Address);
 extern bool FDC_ReadSectorFromFloppy(void);
 extern bool FDC_WriteSectorFromFloppy(void);
-extern void FDC_DMADataFromFloppy(void);
 extern void FDC_DiskController_WriteWord(void);
 extern void FDC_DiskControllerStatus_ReadWord(void);
 extern void FDC_DmaModeControl_WriteWord(void);

@@ -146,12 +146,15 @@ static void HDC_Cmd_Inquiry(void)
 
 	inquiry_bytes[4] = count - 8;
 
-	memcpy(&STRam[nDmaAddr], inquiry_bytes, count);
+	if (STMemory_SafeCopy(nDmaAddr, inquiry_bytes, count, "HDC DMA inquiry"))
+		HDCCommand.returnCode = HD_STATUS_OK;
+	else
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+
 	FDC_WriteDMAAddress(nDmaAddr + count);
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	HDCCommand.returnCode = HD_STATUS_OK;
 	nLastError = HD_REQSENS_OK;
 	bSetLastBlockAddr = false;
 	//FDCSectorCountRegister = 0;
@@ -237,12 +240,15 @@ static void HDC_Cmd_RequestSense(void)
 	fprintf(stderr,"\n");
 	*/
 
-	memcpy(&STRam[nDmaAddr], retbuf, nRetLen);
+	if (STMemory_SafeCopy(nDmaAddr, retbuf, nRetLen, "HDC request sense"))
+		HDCCommand.returnCode = HD_STATUS_OK;
+	else
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+
 	FDC_WriteDMAAddress(nDmaAddr + nRetLen);
 
 	FDC_SetDMAStatus(false);            /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	HDCCommand.returnCode = HD_STATUS_OK;
 	//FDCSectorCountRegister = 0;
 }
 
@@ -262,7 +268,12 @@ static void HDC_Cmd_ModeSense(void)
 
 	nDmaAddr = FDC_ReadDMAAddress();
 
-	if (HDCCommand.command[2] == 0 && HD_SECTORCOUNT(HDCCommand) == 0x10)
+	if (!STMemory_ValidArea(nDmaAddr, 16))
+	{
+		Log_Printf(LOG_WARN, "HCD mode sense uses invalid RAM range 0x%x+%i\n", nDmaAddr, 16);
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+	}
+	else if (HDCCommand.command[2] == 0 && HD_SECTORCOUNT(HDCCommand) == 0x10)
 	{
 		size_t blocks;
 		blocks = File_Length(ConfigureParams.HardDisk.szHardDiskImage) / 512;
@@ -347,9 +358,18 @@ static void HDC_Cmd_WriteSector(void)
 	else
 	{
 		/* write - if allowed */
+		Uint32 nDmaAddr = FDC_ReadDMAAddress();
 #ifndef DISALLOW_HDC_WRITE
-		n = fwrite(&STRam[FDC_ReadDMAAddress()], 512,
-		           HD_SECTORCOUNT(HDCCommand), hd_image_file);
+		if (STMemory_ValidArea(nDmaAddr, 512*HD_SECTORCOUNT(HDCCommand)))
+		{
+			n = fwrite(&STRam[nDmaAddr], 512,
+				   HD_SECTORCOUNT(HDCCommand), hd_image_file);
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "HDC sector write uses invalid RAM range 0x%x+%i\n",
+				   nDmaAddr, 512*HD_SECTORCOUNT(HDCCommand));
+		}
 #endif
 		if (n == HD_SECTORCOUNT(HDCCommand))
 		{
@@ -363,7 +383,7 @@ static void HDC_Cmd_WriteSector(void)
 		}
 
 		/* Update DMA counter */
-		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*n);
+		FDC_WriteDMAAddress(nDmaAddr + 512*n);
 	}
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
@@ -396,8 +416,17 @@ static void HDC_Cmd_ReadSector(void)
 	}
 	else
 	{
-		n = fread(&STRam[FDC_ReadDMAAddress()], 512,
-		          HD_SECTORCOUNT(HDCCommand), hd_image_file);
+		Uint32 nDmaAddr = FDC_ReadDMAAddress();
+		if (STMemory_ValidArea(nDmaAddr, 512*HD_SECTORCOUNT(HDCCommand)))
+		{
+			n = fread(&STRam[nDmaAddr], 512,
+				   HD_SECTORCOUNT(HDCCommand), hd_image_file);
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "HDC sector read uses invalid RAM range 0x%x+%i\n",
+				   nDmaAddr, 512*HD_SECTORCOUNT(HDCCommand));
+		}
 		if (n == HD_SECTORCOUNT(HDCCommand))
 		{
 			HDCCommand.returnCode = HD_STATUS_OK;
@@ -410,7 +439,7 @@ static void HDC_Cmd_ReadSector(void)
 		}
 
 		/* Update DMA counter */
-		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*n);
+		FDC_WriteDMAAddress(nDmaAddr + 512*n);
 	}
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
