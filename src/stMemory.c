@@ -42,6 +42,37 @@ void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
 	memset(&STRam[StartAddress], 0, EndAddress-StartAddress);
 }
 
+/**
+ * Copy given memory area safely to Atari RAM.
+ * If the memory area isn't fully within RAM, only the valid parts are written.
+ * Useful for all kinds of IO operations.
+ * 
+ * addr - destination Atari RAM address
+ * src - source Hatari memory address
+ * len - number of bytes to copy
+ * name - name / description if this memory copy for error messages
+ * 
+ * Return true if whole copy was safe / valid.
+ */
+bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, size_t len, const char *name)
+{
+	Uint32 end;
+
+	if (STMemory_ValidArea(addr, len))
+	{
+		memcpy(&STRam[addr], src, len);
+		return true;
+	}
+
+	Log_Printf(LOG_WARN, "Invalid '%s' RAM range 0x%x+%i!\n", name, addr, len);
+
+	for (end = addr + len; addr < end; addr++, src++)
+	{
+		if (STMemory_ValidArea(addr, 1))
+			STRam[addr] = *src;
+	}
+	return false;
+}
 
 /**
  * Save/Restore snapshot of RAM / ROM variables
