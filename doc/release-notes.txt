@@ -9,13 +9,20 @@
 Emulation:
 - Alternative CPU core based on WinUAE
   (for more accurate future HW interaction emulation)
-- Remove old ST Sound's code used for tone and noise step compute
-  (some low period values were not correctly emulated)
+- DSP:
+  - Timings are adjusted for cycle accurate WinAUE core.  This means some
+    regressions for DSP using demos that by luck happened to work with
+    the old AUE core in Hatari v1.4 and which is still the default
+  - Undocumented 2 bit shift special case for DSP SSI <-> crossbar exchanges
+    in hanshake mode with 32 Mhz clock (fixes DSP MP2 player used in many
+    demos & programs)
 - Sound improvements:
   - STE DMA sound problem on low frequencies fixed
   - Sound latency on US TOS fixed (with more accurate timings)
   - By default mix 3 YM voices using a lookup table of values
     measured on real STF (improves e.g. Flashback demo sound)
+  - Remove old ST Sound's code used for tone and noise step compute
+    (some low period values were not correctly emulated)
 - Video emulation on STF/STE:
   - On STE, correctly shift display 8 pixels to the left when using
     224 bytes overscan
