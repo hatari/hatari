@@ -144,6 +144,91 @@ ACSI DMA and Floppy Disk Controller(FDC)
   actually CANCEL the interrupt? Can this be done?
 */
 
+/*-----------------------------------------------------------------------*/
+/* FDC Emulation commands */
+enum
+{
+	FDCEMU_CMD_NULL = 0,
+	/* Type I */
+	FDCEMU_CMD_RESTORE,
+	FDCEMU_CMD_SEEK,
+	FDCEMU_CMD_STEP,
+	FDCEMU_CMD_STEPIN,
+	FDCEMU_CMD_STEPOUT,
+	/* Type II */
+	FDCEMU_CMD_READSECTORS,
+	FDCEMU_CMD_READMULTIPLESECTORS,
+	FDCEMU_CMD_WRITESECTORS,
+	FDCEMU_CMD_WRITEMULTIPLESECTORS,
+	/* Type III */
+	FDCEMU_CMD_READADDRESS,
+};
+
+/* FDC Emulation commands */
+#define  FDCEMU_RUN_NULL      0
+
+/* FDC Running Restore commands */
+enum
+{
+	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO,
+	FDCEMU_RUN_RESTORE_COMPLETE
+};
+
+/* FDC Running Seek commands */
+enum
+{
+	FDCEMU_RUN_SEEK_TOTRACK,
+	FDCEMU_RUN_SEEK_COMPLETE
+};
+
+/* FDC Running Step commands */
+enum
+{
+	FDCEMU_RUN_STEP_ONCE,
+	FDCEMU_RUN_STEP_COMPLETE
+};
+
+/* FDC Running Step In commands */
+enum
+{
+	FDCEMU_RUN_STEPIN_ONCE,
+	FDCEMU_RUN_STEPIN_COMPLETE
+};
+
+/* FDC Running Step Out commands */
+enum
+{
+	FDCEMU_RUN_STEPOUT_ONCE,
+	FDCEMU_RUN_STEPOUT_COMPLETE
+};
+
+/* FDC Running Read Sector/s commands */
+enum
+{
+	FDCEMU_RUN_READSECTORS_READDATA,
+	FDCEMU_RUN_READSECTORS_COMPLETE
+};
+
+/* FDC Running write Sector/s commands */
+enum
+{
+	FDCEMU_RUN_WRITESECTORS_WRITEDATA,
+	FDCEMU_RUN_WRITESECTORS_COMPLETE
+};
+
+/* FDC Running Read Address commands */
+enum
+{
+	FDCEMU_RUN_READADDRESS,
+	FDCEMU_RUN_READADDRESS_COMPLETE
+};
+
+
+/* Commands are taking the equivalent of FDC_DELAY_CYCLES cpu cycles to execute */
+/* to try to simulate the speed of a real ST floppy drive */
+#define FDC_DELAY_CYCLES		92160
+//#define FDC_DELAY_CYCLES		1536	// 'Just Bugging Demo' by ACF requires a very fast delay (bug in the loader)
+
 
 Sint16 FDCSectorCountRegister;
 
@@ -171,6 +256,19 @@ static short int nReadWriteSectors;
 
 static Uint8 DMASectorWorkSpace[NUMBYTESPERSECTOR];             /* Workspace used to copy to/from for floppy DMA */
 
+
+static void FDC_ResetDMAStatus(void);
+static int  FDC_FindFloppyDrive(void);
+static void FDC_UpdateRestoreCmd(void);
+static void FDC_UpdateSeekCmd(void);
+static void FDC_UpdateStepCmd(void);
+static void FDC_UpdateStepInCmd(void);
+static void FDC_UpdateStepOutCmd(void);
+static void FDC_UpdateReadSectorsCmd(void);
+static void FDC_UpdateWriteSectorsCmd(void);
+static void FDC_UpdateReadAddressCmd(void);
+static bool FDC_ReadSectorFromFloppy(void);
+static bool FDC_WriteSectorFromFloppy(void);
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -276,7 +374,7 @@ static void FDC_UpdateMotor(void)
  *
  * This is done by 'toggling' bit 8 of the DMA Mode Control register
  */
-void FDC_ResetDMAStatus(void)
+static void FDC_ResetDMAStatus(void)
 {
 	DMAStatus_ff8606rd = 0;           /* Clear out */
 
@@ -393,7 +491,7 @@ static void FDC_SetDiskControllerStatus(void)
 /**
  * Return device for FDC, check PORTA bits 1,2(0=on,1=off)
  */
-int FDC_FindFloppyDrive(void)
+static int FDC_FindFloppyDrive(void)
 {
 	/* Check Drive A first */
 	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x2)==0)
@@ -535,7 +633,7 @@ void FDC_InterruptHandler_Update(void)
 /**
  * Run 'RESTORE' command
  */
-void FDC_UpdateRestoreCmd(void)
+static void FDC_UpdateRestoreCmd(void)
 {
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -568,7 +666,7 @@ void FDC_UpdateRestoreCmd(void)
 /**
  * Run 'SEEK' command
  */
-void FDC_UpdateSeekCmd(void)
+static void FDC_UpdateSeekCmd(void)
 {
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -604,7 +702,7 @@ void FDC_UpdateSeekCmd(void)
 /**
  * Run 'STEP' command
  */
-void FDC_UpdateStepCmd(void)
+static void FDC_UpdateStepCmd(void)
 {
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -635,7 +733,7 @@ void FDC_UpdateStepCmd(void)
 /**
  * Run 'STEP IN' command
  */
-void FDC_UpdateStepInCmd(void)
+static void FDC_UpdateStepInCmd(void)
 {
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -663,7 +761,7 @@ void FDC_UpdateStepInCmd(void)
 /**
  * Run 'STEP OUT' command
  */
-void FDC_UpdateStepOutCmd(void)
+static void FDC_UpdateStepOutCmd(void)
 {
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -693,7 +791,7 @@ void FDC_UpdateStepOutCmd(void)
 /**
  * Run 'READ SECTOR/S' command
  */
-void FDC_UpdateReadSectorsCmd(void)
+static void FDC_UpdateReadSectorsCmd(void)
 {
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -743,7 +841,7 @@ void FDC_UpdateReadSectorsCmd(void)
 /**
  * Run 'WRITE SECTOR/S' command
  */
-void FDC_UpdateWriteSectorsCmd(void)
+static void FDC_UpdateWriteSectorsCmd(void)
 {
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -795,7 +893,7 @@ void FDC_UpdateWriteSectorsCmd(void)
 /**
  * Run 'READ ADDRESS' command
  */
-void FDC_UpdateReadAddressCmd(void)
+static void FDC_UpdateReadAddressCmd(void)
 {
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -1502,7 +1600,7 @@ void FDC_WriteDMAAddress(Uint32 Address)
  * Read sector from floppy drive into workspace
  * We copy the bytes in chunks to simulate reading of the floppy using DMA
  */
-bool FDC_ReadSectorFromFloppy(void)
+static bool FDC_ReadSectorFromFloppy(void)
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1536,7 +1634,7 @@ bool FDC_ReadSectorFromFloppy(void)
  * Write sector from workspace to floppy drive
  * We copy the bytes in chunks to simulate writing of the floppy using DMA
  */
-bool FDC_WriteSectorFromFloppy(void)
+static bool FDC_WriteSectorFromFloppy(void)
 {
 	Uint32 Address;
 	int FrameCycles, HblCounterVideo, LineCycles;
