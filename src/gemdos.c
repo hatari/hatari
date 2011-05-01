@@ -93,7 +93,7 @@ typedef struct {
 #define  MAX_FILE_HANDLES    32    /* We can allow 32 files open at once */
 
 /*
-   DateTime structure used by TOS call $57 f_dattime
+   DateTime structure used by TOS call $57 f_dtatime
    Changed to fix potential problem with alignment.
 */
 typedef struct {
@@ -149,6 +149,7 @@ static bool GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime)
 {
 	struct tm *x;
 
+	/* localtime takes DST into account */
 	x = localtime(&t);
 
 	if (x == NULL)
@@ -204,6 +205,8 @@ static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 	timespec.tm_mday = (DateTime->dateword & 0x1F);
 	timespec.tm_mon  = ((DateTime->dateword & 0x1E0) >> 5) - 1;
 	timespec.tm_year = ((DateTime->dateword & 0xFE00) >> 9) + 80;
+	/* check whether DST should be taken into account */
+	timespec.tm_isdst = -1;
 
 	/* set new modification time */
 	timebuf.modtime = mktime(&timespec);
