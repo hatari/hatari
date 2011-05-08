@@ -122,7 +122,7 @@ if(PNG_FOUND)
 endif(PNG_FOUND)
 
 if(X11_FOUND)
-	target_link_libraries(hatari ${X11_X11_LIB})
+	target_link_libraries(hatari ${X11_LIBRARIES})
 endif(X11_FOUND)
 
 if(PORTAUDIO_FOUND)
