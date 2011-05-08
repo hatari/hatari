@@ -206,7 +206,7 @@ bool Main_UnPauseEmulation(void)
 	if ( bEmulationActive )
 		return false;
 
-	Sound_ResetBufferIndex();
+	Sound_BufferIndexNeedReset = true;
 	Audio_EnableAudio(ConfigureParams.Sound.bEnableSound);
 	bEmulationActive = true;
 

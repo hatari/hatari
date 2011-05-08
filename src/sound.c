@@ -242,6 +242,8 @@ static yms64	SamplesPerFrame_unrounded = 0;		/* Number of samples for the curren
 static int 	SamplesPerFrame;			/* Number of samples to generate for the current VBL */
 static int	CurrentSamplesNb = 0;			/* Number of samples already generated for the current VBL */
 
+bool		Sound_BufferIndexNeedReset = false;
+
 
 /*--------------------------------------------------------------*/
 /* Local functions prototypes					*/
@@ -1107,6 +1109,10 @@ void Sound_Reset(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Reset the sound buffer index variables.
+ * Very important : this function should only be called by setting
+ * Sound_BufferIndexNeedReset=true ; sound buffer index should be reset
+ * only after the sound for the whole VBL was updated (CurrentSamplesNb returns to 0)
+ * else it will alter the value of DMA Frame Count ($ff8909/0b/0d)
  */
 void Sound_ResetBufferIndex(void)
 {
@@ -1310,6 +1316,12 @@ void Sound_Update_VBL(void)
 
 	CurrentSamplesNb = 0;					/* VBL is complete, reset counter */
 
+	/* Reset sound buffer if needed (after pause, fast forward, ...) */
+	if ( Sound_BufferIndexNeedReset )
+	{
+		Sound_ResetBufferIndex ();
+		Sound_BufferIndexNeedReset = false;
+	}
 	
 	/* Record AVI audio frame is necessary */
 	if ( bRecordingAvi )

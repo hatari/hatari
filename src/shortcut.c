@@ -154,7 +154,7 @@ static void ShortCut_FastForward(void)
 		ConfigureParams.System.bFastForward = false;
 
 		/* Reset the sound emulation variables: */
-		Sound_ResetBufferIndex();
+		Sound_BufferIndexNeedReset = true;
 	}
 	else
 	{

@@ -20,6 +20,7 @@ extern Uint8	SoundRegs[ 14 ];		/* store YM regs 0 to 13 */
 extern int	nGeneratedSamples;
 extern bool	bEnvelopeFreqFlag;
 extern Sint16	MixBuffer[MIXBUFFER_SIZE][2];
+extern bool	Sound_BufferIndexNeedReset;
 
 /* STSound sound renderer active */
 #include <SDL_types.h>
