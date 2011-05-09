@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 1.4
+                                 Version 1.5
 
                           http://hatari.berlios.de/
 
@@ -12,7 +12,8 @@ Contents:
 1. License
 2. What is Hatari?
 3. Compiling and installing
-   3.1 Known problems
+   3.1 WinUAE and "old" UAE CPU cores
+   3.2 Known problems
 4. Running Hatari
 5. Contact
 
@@ -99,14 +100,31 @@ works fine, you'll get the executable "hatari" in the src/ subdirectory of the
 build tree. You can then install the emulator by typing "make install".
 
 
- 3.1) Known problems
+ 3.1) WinUAE and "old" UAE CPU cores
 
-RHEL 5 and the derived CentOS v5.x Linux distributions ship
+By default Hatari is built with the "old" UAE CPU core used in the earlier
+Hatari releases, but the new v1.5 supports also new & experimental WinUAE CPU
+core which offers better cycle accuracy (especially for Falcon emulation) and
+in future also some potential extra features like MMU support.
+
+The WinUAE CPU core can be enabled by toggling the ENABLE_WINUAE_CPU
+variable in the Hatari CMake configuration (e.g. with the interactive
+"ccmake" program).
+
+The plan is to eventually (in the next version) have WinUAE CPU core
+enabled by default and deprecate the "old" UAE CPU core, but currently
+WinUAE CPU core is still lacking all the ST/STE specific tweaks and
+testing for ST/STE compatibility.
+
+
+ 3.2) Known problems
+
+Old RHEL 5 and the derived CentOS v5.x Linux distributions ship
 with a broken readline library:
 	https://bugzilla.redhat.com/show_bug.cgi?id=499837
 
 To get CMake readline detection and linking working on them,
-you need to give these as arguments to the "cmake" command above:
+you need to give these as extra arguments to the "cmake" command:
    -DCMAKE_C_FLAGS=-lncurses -DCMAKE_EXE_LINKER_FLAGS=-lncurses
 
 

@@ -7,15 +7,17 @@
  -------------------
 
 Emulation:
-- Alternative CPU core based on WinUAE
-  (for more accurate future HW interaction emulation)
+- Alternative CPU core based on WinUAE for more accurate future
+  HW interaction emulation (see README on how to enable it)
 - DSP:
-  - Timings are adjusted for cycle accurate WinUAE core.  This means some
-    regressions for DSP using demos that by luck happened to work with
-    the old UAE core in Hatari v1.4 and which is still the default
+  - Some DSP-timing sensitive Falcon demos that by luck happened to work
+    with Hatari v1.4, don't work anymore in v1.5 with the default UAE CPU
+    core.  This is because while DSP cycle accuracy has been improved,
+    the default UAE CPU core isn't fully cycle accurate.  The experimental
+    WinUAE core is needed to run them
   - Undocumented 2 bit shift special case for DSP SSI <-> crossbar exchanges
     in hanshake mode with 32 Mhz clock (fixes DSP MP2 player used in many
-    demos & programs)
+    demos & programs, but that requires also using WinUAE core)
 - Sound improvements:
   - STE DMA sound problem on low frequencies fixed
   - Sound latency on US TOS fixed (with more accurate timings)
