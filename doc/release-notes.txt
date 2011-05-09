@@ -10,9 +10,9 @@ Emulation:
 - Alternative CPU core based on WinUAE
   (for more accurate future HW interaction emulation)
 - DSP:
-  - Timings are adjusted for cycle accurate WinAUE core.  This means some
+  - Timings are adjusted for cycle accurate WinUAE core.  This means some
     regressions for DSP using demos that by luck happened to work with
-    the old AUE core in Hatari v1.4 and which is still the default
+    the old UAE core in Hatari v1.4 and which is still the default
   - Undocumented 2 bit shift special case for DSP SSI <-> crossbar exchanges
     in hanshake mode with 32 Mhz clock (fixes DSP MP2 player used in many
     demos & programs)
