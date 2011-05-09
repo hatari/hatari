@@ -13,6 +13,7 @@ Contents:
 - Using a soundcard with built-in MIDI synthesis capability 
 - Making MIDI soft-synthetizer to work with ALSA
 - Using FluidSynth instead of Timidity
+- Other software synthetizers
 - Making it all to work with Hatari
 - MIDI and networking
 - Software
@@ -46,6 +47,8 @@ To make it use less CPU and be more responsive, use:
 
 Make vkeybd (virtual midi keyboard app) into an ALSA input device with:
   vkeybd
+Or  use the newer & nicer looking "Virtual MIDI Piano Keyboard":
+  vmpk
 
 View the resulting (software) ALSA input and output devices:
   aconnect -i -o
@@ -58,7 +61,7 @@ Now you can use the virtual midi keyboard for testing the sound
 synthesis.
 
 
-Finally You can test how well midi files are played.
+Finally you can test how well midi files are played.
 Check which ALSA port Timidity provides:
   aplaymidi -l
 
@@ -87,8 +90,17 @@ And if you don't like the FluidSynth shell, use:
 Qsynth provides a GUI for above:
   qsynth <soundfont>
 
-FYI: FluidSynth v1.0.7a (in Debian Etch & Ubuntu Hardy) has buffer
-overruns, but they're fixed in v1.0.8 (in Debian Lenny etc).
+Note: FluidSynth v1.0.7a in older (obsolete) Linux distros has buffer
+overruns, but they're fixed in v1.0.8 or newer that are in the current
+Linux distros.
+
+
+Other software synthetizers
+---------------------------
+
+Of the other soft-synthetizers, I like also Horgand organ emulator
+as it has pretty good organ sound, but it needs Jack connection kit
+(+ e.g. qjackctl) for sound to work properly (not have sound underruns).
 
 
 Making it all to work with Hatari
@@ -101,11 +113,11 @@ as HW midi devices, run following as *root*:
 
 When you list your ALSA output devices with:
   aconnect -o
-You should see in addition to Timidity also 4 virtual hardware
+You should see in addition to the soft-synth also 4 virtual hardware
 devices.
 
 Then connect (with aconnect or one of the GUIs) the first virtual
-HW port to the same Timidity port where you connected the virtual
+HW port to the same soft-synth port where you connected the virtual
 midi keyboard.
 
 Check which number was assigned by ALSA to the new virtual midi card:
@@ -116,10 +128,11 @@ VirMidi was Card 1 and as the port used above was first one, I give
 Hatari the following midi device:
   hatari --midi /dev/snd/midiC1D0
 
-FYI: SDL_mixer (at least in Ubuntu Feisty) takes exclusive access to
-the PCM (sound) device, but as the soft synthetizer was already
-connected to it, I neded to use --nosound option to get MIDI sound
-working. This isn't a problem anymore in Debian Lenny.
+Note: In older (obsolete) Linux distros SDL_mixer may take exclusive
+access to the PCM (sound) device, but as the soft synthetizer is
+already connected to it, one may need to use --nosound option to get
+MIDI sound working. In recent distros this shouldn't anymore be
+a problem thanks to Pulseaudio.
 
 
 MIDI and networking
@@ -172,11 +185,14 @@ In Debian, the tools mentioned above come from following packages:
 - awesfx (sfxload)
 - pmidi
 - vkeybd
+- vmpk
 - aconnectgui
 - qsynth
 - fluidsynth
 - fluid-soundfont-* (soundfonts)
 - timidity
+- horgand
+- qjackctl
 - socat
 See http://packages.debian.org/ for more details on them.
 
@@ -185,11 +201,17 @@ Below are upstream links to some of these tools.
 Vkeybd:
   http://alsa.opensrc.org/Vkeybd
 
+Virtual MIDI Piano Keyboard (vmpk):
+  http://vmpk.sourceforge.net/
+
 Patch (ALSA connecting) utilities:
   http://alsa.opensrc.org/AlsaMidiPatchbays    
 
 FluidSynth:
   http://www.iiwu.org/fluidsynth/
+
+Horgand:
+  http://horgand.berlios.de/
 
 Soundfonts:
   http://alsa.opensrc.org/SoundFontHandling
@@ -199,6 +221,9 @@ List of some soft-synthetizers:
 
 Kaconnect:
   http://alsamodular.sourceforge.net/
+
+QjackCtl:
+  http://qjackctl.sourceforge.net/
 
 socat:
   http://www.dest-unreach.org/socat/
