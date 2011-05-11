@@ -33,6 +33,8 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			After a reset command, returns $F1 after $F0 (needed by Dragonnels Demo).	*/
 /*			This fixes the Transbeauce 2 demo menu, the Dragonnels demo menu and the	*/
 /*			Froggies Over The Fence demo menu (yeah ! enjoy this master piece of demo !).	*/
+/* 2011/05/11	[NP]	Add proper support for emulating TX buffer empty/full in status register bit 1	*/
+/*			when writing to $fffc02 (using an internal timer).				*/
 
 
 #include <time.h>
@@ -84,7 +86,9 @@ static bool bMouseEnabledDuringReset;
 static Uint8 ACIAControlRegister = 0;
 static Uint8 ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;  /* Pass when read 0xfffc00 */
 static Uint8 ACIAByte;				/* When a byte has arrived at the ACIA (from the keyboard) it is stored here */
+static Uint8 ACIATxDataRegister;		/* When a byte must be sent by the ACIA (to the keyboard) it is stored here */
 static bool bByteInTransitToACIA = false;	/* Is a byte being sent to the ACIA from the keyboard? */
+static bool bByteInTransitFromACIA = false;	/* Is a byte being sent from the ACIA to the keyboard? */
 
 /*
   6850 ACIA (Asynchronous Communications Inferface Apdater)
@@ -342,6 +346,7 @@ CustomCodeDefinitions[] =
 void ACIA_Reset(void)
 {
 	bByteInTransitToACIA = false;
+	bByteInTransitFromACIA = false;
 	ACIAControlRegister = 0;
 	ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 }
@@ -368,6 +373,7 @@ void IKBD_Reset_ExeMode ( void )
 
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
 	bByteInTransitToACIA = false;
+	bByteInTransitFromACIA = false;
 	// IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
 	IKBD_AddKeyToKeyboardBuffer(0xF1);		/* [NP] Dragonnels demo needs this */
 }
@@ -448,7 +454,9 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ACIAControlRegister, sizeof(ACIAControlRegister));
 	MemorySnapShot_Store(&ACIAStatusRegister, sizeof(ACIAStatusRegister));
 	MemorySnapShot_Store(&ACIAByte, sizeof(ACIAByte));
+//	MemorySnapShot_Store(&ACIATxDataRegister, sizeof(ACIATxDataRegister));
 	MemorySnapShot_Store(&bByteInTransitToACIA, sizeof(bByteInTransitToACIA));
+//	MemorySnapShot_Store(&bByteInTransitFromACIA, sizeof(bByteInTransitFromACIA));
 	MemorySnapShot_Store(&bMouseDisabled, sizeof(bMouseDisabled));
 	MemorySnapShot_Store(&bJoystickDisabled, sizeof(bJoystickDisabled));
 	MemorySnapShot_Store(&bDuringResetCriticalTime, sizeof(bDuringResetCriticalTime));
@@ -1930,37 +1938,54 @@ Uint16 IKBD_GetByteFromACIA(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Byte received in the ACIA from the keyboard processor. Store byte for read
- * from $fffc02 and schedule MFP interrupt to be triggered later.
+ * This interrupt handler is used to simulate a correct number of CPU cycles
+ * when sending a byte from the ACIA to the ikdb or when receiving a byte
+ * from the ikbd to the ACIA (because ACIA serial transfers are running
+ * at 7812.5 bps, bytes should not be available immediatly as it would break
+ * some programs)
+ * - Byte received in the ACIA from the keyboard processor : store byte for read
+ *   from $fffc02 and schedule MFP interrupt to be triggered just a few cycles after.
+ * - Byte sent from the ACIA to the keyboard processor : pass the byte to
+ *   IKBD_SendByteToKeyboardProcessor and set TX_BUFFER_EMPTY in status register.
  */
 void IKBD_InterruptHandler_ACIA(void)
 {
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
-	/* Copy keyboard byte, ready for read from $fffc02 */
-	ACIAByte = Keyboard.Buffer[Keyboard.BufferHead++];
-	Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
+	if ( bByteInTransitToACIA )
+	{
+		/* Copy keyboard byte, ready for read from $fffc02 */
+		ACIAByte = Keyboard.Buffer[Keyboard.BufferHead++];
+		Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
 
-	/* Did we get an over-run? Ie byte has arrived from keyboard processor BEFORE CPU has read previous one from ACIA */
-	if (ACIAStatusRegister&ACIA_STATUS_REGISTER__RX_BUFFER_FULL)
-		ACIAStatusRegister |= ACIA_STATUS_REGISTER__OVERRUN_ERROR;  /* Set over-run */
+		/* Did we get an over-run? Ie byte has arrived from keyboard processor BEFORE CPU has read previous one from ACIA */
+		if (ACIAStatusRegister&ACIA_STATUS_REGISTER__RX_BUFFER_FULL)
+			ACIAStatusRegister |= ACIA_STATUS_REGISTER__OVERRUN_ERROR;  /* Set over-run */
 
-	/* ACIA buffer is now full */
-	ACIAStatusRegister |= ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
-	/* Signal interrupt pending */
-	ACIAStatusRegister |= ACIA_STATUS_REGISTER__INTERRUPT_REQUEST;
+		/* ACIA buffer is now full */
+		ACIAStatusRegister |= ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
+		/* Signal interrupt pending */
+		ACIAStatusRegister |= ACIA_STATUS_REGISTER__INTERRUPT_REQUEST;
 
-	/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
-	/* NOTE: GPIP will remain low(0) until keyboard data is read from $fffc02. */
-	MFP_GPIP &= ~0x10;
+		/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
+		/* NOTE: GPIP will remain low(0) until keyboard data is read from $fffc02. */
+		MFP_GPIP &= ~0x10;
 
-	/* There seems to be a small gap on a real ST between the point in time
-	 * the ACIA_STATUS_REGISTER__RX_BUFFER_FULL bit is set and the MFP
-	 * interrupt is triggered - for example the "V8 music system" demo
-	 * depends on this behaviour. To emulate this, we simply start another
-	 * Int which triggers the MFP interrupt later: */
-	CycInt_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP);
+		/* There seems to be a small gap on a real ST between the point in time
+		* the ACIA_STATUS_REGISTER__RX_BUFFER_FULL bit is set and the MFP
+		* interrupt is triggered - for example the "V8 music system" demo
+		* depends on this behaviour. To emulate this, we simply start another
+		* Int which triggers the MFP interrupt later: */
+		CycInt_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP);
+	}
+
+	if ( bByteInTransitFromACIA )
+	{
+		IKBD_SendByteToKeyboardProcessor(ACIATxDataRegister);  		/* Pass the byte to the keyboard processor */
+		ACIAStatusRegister |= ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;	/* TX buffer is now empty */
+		bByteInTransitFromACIA = false;					/* ready to send another byte */
+	}
 }
 
 
@@ -2089,10 +2114,6 @@ void IKBD_KeyboardControl_ReadByte(void)
 
 	IoMem[0xfffc00] = ACIAStatusRegister;
 
-	/* For our emulation send is immediate, so let's set the acknowledge
-	 * buffer empty bit for the next time the program polls the register */
-	ACIAStatusRegister |= ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
-
 	if (LOG_TRACE_LEVEL(TRACE_IKBD_ACIA))
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -2171,13 +2192,25 @@ void IKBD_KeyboardData_WriteByte(void)
 				IoMem[0xfffc02], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 
-	IKBD_SendByteToKeyboardProcessor(IoMem[0xfffc02]);  /* Pass our byte to the keyboard processor */
 
-	/* Some games like USS John Young / FOF54 actually check whether the
-	 * transmit-buffer-empty bit is really cleared after writing a data
-	 * byte to the IKBD, so we have to temporarily clear this bit, too,
-	 * although the byte is send immediately to our virtual IKBD. */
-	ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
+	if ( bByteInTransitFromACIA == false )			/* we're not already transfering a byte to the ikbd */
+	{
+//		IKBD_SendByteToKeyboardProcessor(IoMem[0xfffc02]);  /* Pass our byte to the keyboard processor */
+		ACIATxDataRegister = IoMem[0xfffc02];		/* store the byte that we want to send to the ikbd */
+
+		/* Delay the processing of the byte in IKBD_InterruptHandler_ACIA */
+		/* The delay doesn't seem to be constant, so we add a small random number of max 40 cycles */
+		/* (else some programs get stuck in an endless loop ('Pandemonium Demos' by Chaos) */
+		CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+
+		/* Some games like USS John Young / FOF54 actually check whether the
+		* transmit-buffer-empty bit is really cleared after writing a data
+		* byte to the IKBD, so we have to temporarily clear this bit, too,
+		* although the byte is send immediately to our virtual IKBD. */
+		ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;		/* TX buffer is full */
+
+		bByteInTransitFromACIA = true;
+	}
 }
 
 
