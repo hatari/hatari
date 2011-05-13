@@ -129,7 +129,6 @@ void Resolution_Search(int *width, int *height, int *bpp)
 		/* resolution change not allowed? */
 		if (ConfigureParams.Screen.bKeepResolution) {
 			Resolution_GetDesktopSize(width, height);
-			*bpp = 0;
 			return;
 		}
 		modeflags |= SDL_FULLSCREEN;
