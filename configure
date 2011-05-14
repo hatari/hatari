@@ -92,6 +92,9 @@ do
   shift 1
 done
 
+# remove previous cmake's cache
+rm -f `dirname $0`/CMakeCache.txt
+
 cmake `dirname $0` $cmake_args || exit 1
 
 echo
