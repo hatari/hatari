@@ -51,6 +51,8 @@ void Resolution_Init(void)
 		ConfigureParams.Screen.nMaxWidth = DesktopWidth;
 		ConfigureParams.Screen.nMaxHeight = DesktopHeight;
 	}
+	Dprintf(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
+	Dprintf(("Configured Max res: %dx%d\n",ConfigureParams.Screen.nMaxWidth,ConfigureParams.Screen.nMaxHeight));
 }
 
 /**
@@ -128,6 +130,7 @@ void Resolution_Search(int *width, int *height, int *bpp)
 	if (bInFullScreen) {
 		/* resolution change not allowed? */
 		if (ConfigureParams.Screen.bKeepResolution) {
+			Dprintf(("resolution: limit to desktop size\n"));
 			Resolution_GetDesktopSize(width, height);
 			return;
 		}
@@ -182,11 +185,19 @@ void Resolution_GetLimits(int *width, int *height, int *bpp)
 {
 	*width = *height = 0;
 	/* constrain max size to what HW/SDL offers */
+	Dprintf(("resolution: request limits for: %dx%dx%d\n", *width, *height, *bpp));
 	Resolution_Search(width, height, bpp);
+
+	if (bInFullScreen && ConfigureParams.Screen.bKeepResolution) {
+		/* resolution change not allowed */
+		Dprintf(("resolution: limit to desktop size\n"));
+		Resolution_GetDesktopSize(width, height);
+		return;
+	}
 	if (!(*width && *height) ||
 	    (ConfigureParams.Screen.nMaxWidth < *width &&
 	     ConfigureParams.Screen.nMaxHeight < *height)) {
-		/* already within it, use user provided value */
+		Dprintf(("resolution: limit to user configured max\n"));
 		*width = ConfigureParams.Screen.nMaxWidth;
 		*height = ConfigureParams.Screen.nMaxHeight;
 	}

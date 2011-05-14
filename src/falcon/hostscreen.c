@@ -89,6 +89,8 @@ void HostScreen_UnInit(void)
 void HostScreen_toggleFullScreen(void)
 {
 	sdl_videoparams ^= SDL_FULLSCREEN;
+	Dprintf(("Fullscreen = %s, width = %d, height = %d, bpp = %d\n",
+		 sdl_videoparams&SDL_FULLSCREEN?"true":"false", hs_width_req, hs_height_req, hs_bpp));
 
 	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
 	/* force screen redraw */
@@ -237,7 +239,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	Statusbar_Init(sdlscrn);
 
 	Dprintf(("Surface Pitch = %d, width = %d, height = %d\n", sdlscrn->pitch, sdlscrn->w, sdlscrn->h));
-	Dprintf(("Must Lock? %s\n", SDL_MUSTLOCK(surf) ? "YES" : "NO"));
+	Dprintf(("Must Lock? %s\n", SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
 
 	// is the SDL_update needed?
 	doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
