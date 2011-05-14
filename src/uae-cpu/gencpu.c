@@ -1480,6 +1480,15 @@ static void gen_opcode (unsigned long int opcode)
 	break;
     case i_JSR:
 	genamode (curi->smode, "srcreg", curi->size, "src", 0, 0);
+	printf ("\tuaecptr oldpc = m68k_getpc () + %d;\n", m68k_pc_offset);
+	if (using_exception_3) {
+	    printf ("\tif (srca & 1) {\n");
+	    printf ("\t\tlast_addr_for_exception_3 = oldpc;\n");
+	    printf ("\t\tlast_fault_for_exception_3 = srca;\n");
+	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
+	    printf ("\t}\n");
+	    need_endlabel = 1;
+	}
 	printf ("\tm68k_do_jsr(m68k_getpc() + %d, srca);\n", m68k_pc_offset);
 	fill_prefetch_0 ();
 	m68k_pc_offset = 0;
@@ -1496,6 +1505,14 @@ static void gen_opcode (unsigned long int opcode)
 	break;
     case i_JMP:
 	genamode (curi->smode, "srcreg", curi->size, "src", 0, 0);
+	if (using_exception_3) {
+	    printf ("\tif (srca & 1) {\n");
+	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 6;\n");
+	    printf ("\t\tlast_fault_for_exception_3 = srca;\n");
+	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
+	    printf ("\t}\n");
+	    need_endlabel = 1;
+	}
 	printf ("\tm68k_setpc(srca);\n");
 	fill_prefetch_0 ();
 	m68k_pc_offset = 0;
@@ -1515,7 +1532,7 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tuae_s32 s = (uae_s32)src + 2;\n");
 	if (using_exception_3) {
 	    printf ("\tif (src & 1) {\n");
-	    printf ("\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");	// [NP] FIXME should be +4, not +2 (same as DBcc) ?
+	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");	// [NP] FIXME should be +4, not +2 (same as DBcc) ?
 	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + s;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
