@@ -556,7 +556,6 @@ static void	Ym2149_BuildVolumeTable(void)
 {
 	/* Depending on the volume mixing method, we use a table based on real measures */
 	/* or a table based on a linear volume mixing. */
-printf ( "mixing %d\n" , YmVolumeMixing );
 	if ( YmVolumeMixing == YM_TABLE_MIXING )
 		interpolate_volumetable(ymout5_u16);		/* expand the 16*16*16 values in volumetable_original to 32*32*32 */
 	else
