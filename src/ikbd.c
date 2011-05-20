@@ -167,7 +167,7 @@ static bool bByteInTransitFromACIA = false;	/* Is a byte being sent from the ACI
   ST ACIA:-
     Note CTS,DCD and RTS are not connected! Phew!
     The keyboard ACIA are address 0xfffc000 and 0xfffc02.
-    Default parameters are :- 8-bit word, 1 stopbit, no parity, 77812.5 baud; 500KHz/64 (keyboard clock div)
+    Default parameters are :- 8-bit word, 1 stopbit, no parity, 7812.5 baud; 500KHz/64 (keyboard clock div)
     Default MIDI parameters are are above but :- 31250 baud; 500KHz/16 (MIDI clock div)
 */
 
@@ -2201,7 +2201,14 @@ void IKBD_KeyboardData_WriteByte(void)
 		/* Delay the processing of the byte in IKBD_InterruptHandler_ACIA */
 		/* The delay doesn't seem to be constant, so we add a small random number of max 40 cycles */
 		/* (else some programs get stuck in an endless loop ('Pandemonium Demos' by Chaos) */
-		CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+
+		// [NP] FIXME 2011/05/20 : if we use a delay of ACIA_CYCLES=7200, tos 1.02 and 1.04 are showing
+		// a bug where addr $6122/$6124 are overwritten by the stack, preventing the desktop
+		// to be restored at the correct resolution !
+		// For now, use a delay of 1000 cycles ; need to do complete measures on a real ST for this
+		//CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+// delay cycles <=1560 ok, > 1570 bad for tos 1.02/1.04
+		CycInt_AddRelativeInterrupt(1000+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
 
 		/* Some games like USS John Young / FOF54 actually check whether the
 		* transmit-buffer-empty bit is really cleared after writing a data
