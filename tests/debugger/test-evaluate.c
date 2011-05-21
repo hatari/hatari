@@ -8,6 +8,10 @@
 #include "evaluate.h"
 #include "m68000.h"
 #include "main.h"
+#include "screen.h"
+#include "video.h"
+
+#define VBL_VALUE 21
 
 int main(int argc, const char *argv[])
 {
@@ -17,6 +21,7 @@ int main(int argc, const char *argv[])
 		"*1+2",
 		"1+(2",
 		"1)+2",
+		"foo+1+bar",
 	};
 	/* expected to succeed, with given result */
 	struct {
@@ -26,6 +31,7 @@ int main(int argc, const char *argv[])
 		{ "1+2*3", 7 },
 		{ "(2+5)*3", 9 },
 		{ "d0 + 2", 12 },
+		{ "VBL+10", VBL_VALUE + 10 },
 		{ "~%101 & $f0f0f ^ 0x21 * 0x200", 0xF4D0A },
 	};
 	int i, offset, tests = 0, errors = 0;
@@ -33,6 +39,7 @@ int main(int argc, const char *argv[])
 	Uint32 result;
 
 	/* set values needed by above succesful calculations */
+	nVBLs = VBL_VALUE;
 	memset(Regs, 0, sizeof(Regs));
 	Regs[REG_D0] = 10;
 	memset(STRam, 0, sizeof(STRam));
