@@ -22,7 +22,7 @@ Emulation improvements
 - Real HD 6301 (keyboard processor of the ST) emulation
   (Current special casing is enough for all known demos using 6301)
 
-- Upgrade the CPU core of Hatari to the latest WinUAE or E-UAE CPU core.
+- Finish upgrading the CPU core of Hatari to the latest WinUAE
   (MMU emulation and better cycle accuracy is needed by some programs)
 
 - Get the games/demos working that are marked as non-working in the manual.
@@ -36,10 +36,6 @@ Emulation improvements
 - ACSI emulation seems to be broken in TT mode.
 
 - Add SCC serial port emulation for Falcon/TT mode.
-
-- Add support for spec512 mode in med res too
-  (needed by 'No Cooper - Greetings', 'Punish your machine - Best part of the
-   creation', 'Highres mode by Paradox')
 
 - Some Falcon games/demos only work with 32 MHz CPU emulation (might be due to
   the fact that we don't emulate the 68030 cache yet?)

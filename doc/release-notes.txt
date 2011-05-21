@@ -8,7 +8,7 @@
 
 Emulation:
 - Alternative CPU core based on WinUAE for more accurate future
-  HW interaction emulation (see README on how to enable it)
+  HW interaction emulation (see readme.txt on how to enable it)
 - DSP:
   - Some DSP-timing sensitive Falcon demos that by luck happened to work
     with Hatari v1.4, don't work anymore in v1.5 with the default UAE CPU
@@ -77,7 +77,8 @@ Emulator:
   - ":lock" option to breakpoints that will show without stopping the
     emulation the same output as what's shown on entering the debugger
   - ":file" option to breakpoints that executes the commands from
-    given file when the breakpoint is hit
+    given file when the breakpoint is hit, this can be used to chain
+    debugger actions
   - multiple breakpoints options can be specified per breakpoint
   - parenthesis in "evaluate" command are used to indicate memory
     accesses (instead of operator precedence like earlier)
