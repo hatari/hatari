@@ -3010,6 +3010,7 @@ Process basepage information:
 &gt; symbols calc.sym 0x01a2bc
 </pre>
 
+
 <a name="Breakpoints"></a><h3>Breakpoints</h3>
 
 <p>
@@ -3109,17 +3110,6 @@ emulation state</a> above).
 </p>
 
 <p>
-If you want to specify yourself the information you see on breakpoint
-hits, use the ":file" option and give it the file specifying the
-debugger commands that should be executed when that breakpoint is hit.
-It can also be used e.g. to do automatic breakpoint "chaining" where
-after one breakpoint is hit, another is set.  For example:
-</p>
-<pre>
-&gt; b ($ffff9202).w & 3 = 3 :file my-commands.ini
-</pre>
-
-<p>
 ":once" option that removes the breakpoint after it's hit can be
 useful when one wants to get out of a loop (when PC is at instruction
 that branches back to loop start) or just to get to a specific point
@@ -3135,6 +3125,86 @@ Whereas giving count (like ":2") as option will break only on every
 &lt;count&gt; time the breakpoint is hit.
 </p>
 
+<p>
+If you want to specify yourself the information you see on breakpoint
+hits, use the ":file" option and give it the file specifying the
+debugger commands that should be executed when that breakpoint is hit.
+</p>
+<pre>
+&gt; b ($ffff9202).w & 3 = 3 :file my-commands.ini
+</pre>
+
+<p>
+You can specify as many of these options as you want, see below for
+an example.
+</p>
+
+
+<h4>Chaining breakpoints and other actions</h4>
+
+<p>
+As the file pointed by the breakpoint ":file" option can contain any
+debugger commands, it can also be used to do automatic "chaining" of
+debugger and breakpoint actions so that after one breakpoint is hit,
+another one is set.
+</p>
+
+<p>For example if you have these input files:</p>
+<ul>
+<li>"break.ini":
+<pre>
+b GemdosOpcode = 0x3D :trace :file trace.ini
+</pre>
+</li>
+<li>"trace.ini":
+<pre>
+setopt --bios-intercept --trace gemdos,xbios,fdc,io_all
+b VBL = "VBL+4" :trace :file disable.ini
+</pre>
+</li>
+<li>"disable.ini":
+<pre>
+trace none
+b all
+</pre>
+</li>
+</ul>
+
+<p>
+And then start Hatari with the first debugger input file and a GEMDOS
+harddisk directory containing "desktop.inf" file:
+</p>
+<pre>
+hatari --parse break.ini -d testdir
+</pre>
+
+<ol>
+<li>"break.ini" input file will break when TOS opens
+    the "desktop.inf" file (it's the first Fopen() i.e. GEMDOS call
+    0x3D done by TOS at boot) and the breakpoint will run
+    the debugger commands from the "trace.ini" file
+<li>"trace.ini" input file sets Hatari to trace several things
+    (see <a href="#Tracing">Tracing</a> section below) in the
+    emulated system for few VBLs until breakpoint runs commands
+    from the "disable.ini" file
+<li>"disable.ini" input file will disable tracing and remove
+    all (remaining) breakpoints
+</ol>
+
+<p>
+<em>Note:</em> because debugger input files cannot "continue"
+emulation, ":trace" option needs to be used for the breakpoint(s)
+if you want emulation to continue after the breakpoint action(s).
+</p>
+
+<p>
+Hint: It's better to test each input file separate before testing the
+whole chain.  Besides the ":file" breakpoint option, these debugger
+input files can be also read with the debugger "file" command, "lock"
+command "file" option and with the Hatari "--parse" command line
+option.
+</p>
+
 
 <h4>Breakpoint helper variables</h4>
 
@@ -3145,13 +3215,14 @@ by "b help". For example:
 </p>
 <ul>
 <li>If you want to stop at a specific cycle within a frame (that is,
-PC relative to the current VBL/HBL in cycles), set breakpoints to
-specific "HBL" and "LineCycles" variable values.  The "e" command
-can be used to calculate suitable register and variable values.</li>
+    PC relative to the current VBL/HBL in cycles), set breakpoints to
+    specific "HBL" and "LineCycles" variable values.  The "e" command
+    can be used to calculate suitable register and variable values.
+</li>
 <li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
-to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
-By default they contain the 0xffff value, so to trace e.g. AES calls,
-one needs to use something like this:
+    to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
+    By default they contain the 0xffff value, so to trace e.g. AES calls,
+    one needs to use something like this:
 <pre>
 b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
 </pre>
@@ -3166,15 +3237,21 @@ that call has finished.</li>
 -->
 </ul>
 
+<p>"info" command can be used to list OS-call opcodes. For example,
+to see GEMDOS opcodes, use:</p>
+<pre>
+info gemdos 1
+</pre>
+
 
 <a name="Tracing"></a><h3>Tracing</h3>
 
 <p>
-After analyzing and/or setting new breakpoints, you can continue the
-emulation with the "c" command. You can continue for a given number of
-CPU instructions (or DSP instructions when "dc" is used), or you can
-continue forever (until a non-tracing breakpoint triggers) if you omit
-the instruction count.
+After analyzing the emulation state and/or setting new breakpoints,
+you can continue the emulation with the "c" command. You can continue
+for a given number of CPU instructions (or DSP instructions when "dc"
+is used), or you can continue forever (until a non-tracing breakpoint
+triggers) if you omit the instruction count.
 </p>
 
 <p>
@@ -3192,8 +3269,8 @@ Because Hatari normally emulates things at the hardware level, tracing
 certain Atari OS Traps requires setting additional Hatari options
 which tell it to intercept this higher level functionality:
 <ul>
-<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting
-    (which has also some other side-effects)
+<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting with
+    the "--bios-intercept" option (which has also some other side-effects)
 </li>
 <li>GEMDOS tracing requires enabling the GEMDOS harddisk emulation
     (which doesn't work under MiNT because it re-implements GEMDOS)</li>
