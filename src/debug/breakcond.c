@@ -607,6 +607,22 @@ static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 	return false;
 }
 
+/**
+ * If given string is a Hatari variable name, set value to given
+ * variable value and return true, otherwise return false.
+ */
+bool BreakCond_GetHatariVariable(const char *name, Uint32 *value)
+{
+	bc_value_t bc_value;
+	if (!BreakCond_ParseVariable(name, &bc_value)) {
+		return false;
+	}
+	bc_value.mask = 0xffffffff;
+	bc_value.is_indirect = false;
+	*value = BreakCond_GetValue(&bc_value);
+	return true;
+}
+
 
 /**
  * If given string matches a suitable symbol, set bc_value
@@ -1637,6 +1653,7 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 			filename = Str_Trim(option+4);
 			if (!File_Exists(filename)) {
 				fprintf(stderr, "ERROR: given file '%s' doesn't exist!\n", filename);
+				fprintf(stderr, "(if you use 'cd' command, do it before setting breakpoints)\n");
 				return false;
 			}
 			options->filename = filename;

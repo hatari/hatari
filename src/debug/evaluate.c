@@ -21,6 +21,7 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include <stdbool.h>
 #include <SDL_types.h>
+#include "breakcond.h"
 #include "configuration.h"
 #include "dsp.h"
 #include "debugcpu.h"
@@ -31,9 +32,9 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include "symbols.h"
 
 /* define which character indicates which type of number on expression  */
-#define PREFIX_BIN '%'                            /* binary decimal       */
-#define PREFIX_DEC '#'                             /* normal decimal       */
-#define PREFIX_HEX '$'                             /* hexadecimal          */
+#define PREFIX_BIN '%'                            /* binary decimal     */
+#define PREFIX_DEC '#'                             /* normal decimal    */
+#define PREFIX_HEX '$'                             /* hexadecimal       */
 
 /* define error codes                                                   */
 #define CLAC_EXP_ERR "No expression given"
@@ -241,6 +242,10 @@ static int getValue(const char *str, Uint32 *number, bool bForDsp)
 		if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, number)) {
 			return len;
 		}
+	}
+	/* internal Hatari variable? */
+	if (BreakCond_GetHatariVariable(name, number)) {
+		return len;
 	}
 
 	/* none of above, assume it's a number */
