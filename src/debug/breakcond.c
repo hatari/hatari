@@ -347,12 +347,12 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 				DebugDsp_InitSession();
 				DebugInfo_ShowSessionInfo();
 			}
-			if (bp->options.filename) {
-				DebugUI_ParseFile(bp->options.filename);
-			}
 			BreakCond_Print(bp);
 			if (bp->options.once) {
 				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
+			}
+			if (bp->options.filename) {
+				DebugUI_ParseFile(bp->options.filename);
 			}
 			if (bp->options.trace) {
 				return 0;
