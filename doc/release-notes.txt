@@ -71,7 +71,8 @@ Emulator:
   - BIOS/XBIOS/GEMDOS/VDI/AES/Line-A/Line-F opcode breakpoint support
   - "aes", "vdi" and "gemdos" subcommands for "info".  Without arguments
     they will output information about corresponding OS part state,
-    with (a non-zero) argument, opcode/call name table is shown
+    with (a non-zero) argument, opcode/call name table is shown.
+    "video" subcommand for showing video related information.
   - "file" subcommand to "lock" that executes debugger commands from
     given file when debugger is entered (or ":lock" breakpoint is hit)
   - ":lock" option to breakpoints that will show without stopping the

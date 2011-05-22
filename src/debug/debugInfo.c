@@ -205,6 +205,32 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 	}
 }
 
+/**
+ * DebugInfo_Video: display video related information
+ */
+static void DebugInfo_Video(Uint32 dummy)
+{
+	const char *mode;
+	switch (OverscanMode) {
+	case OVERSCANMODE_NONE:
+		mode = "none";
+		break;
+	case OVERSCANMODE_TOP:
+		mode = "top";
+		break;
+	case OVERSCANMODE_BOTTOM:
+		mode = "bottom";
+		break;
+	default:
+		mode = "unknown";
+	}
+	fprintf(stderr, "Video base   : 0x%x\n", VideoBase);
+	fprintf(stderr, "VBL counter  : %d\n", nVBLs);
+	fprintf(stderr, "HBL line     : %d\n", nHBL);
+	fprintf(stderr, "Overscan mode: %s\n", mode);
+	fprintf(stderr, "Refresh rate : %d Hz\n", nScreenRefreshRate);
+	fprintf(stderr, "Frame skips  : %d\n", nFrameSkips);
+}
 
 /* ------------------------------------------------------------------
  * Falcon HW information
@@ -708,7 +734,8 @@ static const struct {
 	{ true, "regaddr",   DebugInfo_RegAddr, DebugInfo_RegAddrArgs, "Show <disasm|memdump> from CPU/DSP address pointed by <register>" },
 	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU registers values" },
 	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with <value>, show opcodes)" },
-	{ false,"videl",     DebugInfo_Videl,      NULL, "Show Falcon Videl HW registers values" }
+	{ false,"videl",     DebugInfo_Videl,      NULL, "Show Falcon Videl HW registers values" },
+	{ false,"video",     DebugInfo_Video,      NULL, "Show Video related values" }
 };
 
 static int LockedFunction = 3; /* index for the "default" function */
