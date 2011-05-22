@@ -33,6 +33,7 @@ static void print_prefix(LOGTYPE nType)
 		break;
 	case LOG_WARN:
 		sType = "WARNING: ";
+		break;
 	default:
 		return;
 	}
