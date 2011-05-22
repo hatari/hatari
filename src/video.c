@@ -383,18 +383,18 @@ static bool bSteBorderFlag;			/* true when screen width has been switched to 336
 static int NewSteBorderFlag = -1;		/* New value for next line */
 static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need convertion to SDL */
 
-int	LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess last time ff8264 was set for the current VBL */
-int	LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
+static int LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess last time ff8264 was set for the current VBL */
+static int LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
+
+static int LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
+static int LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
+static int RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
+static int VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 
 int	LastCycleHblException;			/* value of Cycles_GetCounter last time a level 2 interrupt was executed by the CPU */
 
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
-
-int	LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
-int	LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
-int	RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
-int	VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 
 #define HBL_JITTER_MAX_POS 5
 int	HblJitterIndex = 0;
