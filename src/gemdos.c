@@ -582,13 +582,13 @@ void GemDOS_InitDrives(void)
 	bool bMultiPartitions;
 
 	/* intialize data for harddrive emulation: */
-	if (!GEMDOS_EMU_ON)
+	if (!emudrives)
 	{
 		emudrives = malloc(MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 		if (!emudrives)
 		{
 			perror("GemDOS_InitDrives");
-			return;
+			abort(); /* fatal */
 		}
 		memset(emudrives, 0, MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 	}
@@ -701,10 +701,12 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&bEmudrivesAvailable, sizeof(bEmudrivesAvailable));
 	if (bEmudrivesAvailable)
 	{
-		if (!bSave && !emudrives)
+		if (!emudrives)
 		{
-			/* We're loading a memory snapshot, but the emudrives
-			 * structure has not been malloc yet... let's do it now! */
+			/* As memory snapshot contained emulated drive(s),
+			 * but currently there are none allocated yet...
+			 * let's do it now!
+			 */
 			GemDOS_InitDrives();
 		}
 
@@ -716,7 +718,10 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 				/* Allocate a dummy drive */
 				emudrives[i] = malloc(sizeof(EMULATEDDRIVE));
 				if (!emudrives[i])
+				{
 					perror("GemDOS_MemorySnapShot_Capture");
+					continue;
+				}
 				memset(emudrives[i], 0, sizeof(EMULATEDDRIVE));
 				bDummyDrive = true;
 			}
@@ -950,9 +955,10 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 
 	/* Assume there were invalid characters or that the host file
 	 * was too long to fit into GEMDOS 8+3 filename limits.
-	 * Change name to a pattern that will match such host files
-	 * and try again.
+	 * If that's the case, modify the name to a pattern that
+	 * will match such host files and try again.
 	 */
+	modified = false;
 
 	/* catch potentially invalid characters */
 	for (tmp = name; *tmp; tmp++)
