@@ -1232,7 +1232,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* One complete planar 2 chunky line */
 					Uint16 *p2cline = malloc(sizeof(Uint16)*vw);
 
-					Uint16 *fvram_line = fvram;
+					Uint16 *fvram_line;
 					Uint16 *hvram_line = (Uint16 *)hvram;
 
 					for (h = 0; h < scrheight; h++) {

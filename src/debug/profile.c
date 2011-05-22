@@ -417,7 +417,7 @@ void Profile_CpuStop(void)
 	/* user didn't change RAM or TOS size in the meanwhile? */
 	assert(cpu_profile.size == (STRamEnd + 0x20000 + TosSize) / 2);
 
-	/* find lowest and highest  addresses executed */
+	/* find lowest and highest addresses executed... */
 	item = cpu_profile.data;
 
 	/* ...for normal RAM */
@@ -465,10 +465,9 @@ void Profile_CpuStop(void)
 	cpu_profile.sort_arr = sort_arr;
 	cpu_profile.active = active;
 
-	/* ...and fill addresses for used instructions... */
-	item = cpu_profile.data;
+	/* and fill addresses for used instructions... */
 	
-	/* normal RAM */
+	/* ...for normal RAM */
 	area = &cpu_profile.ram;
 	item = cpu_profile.data + area->lowest;
 	for (i = area->lowest; i <= area->highest; i++, item++) {
@@ -477,7 +476,7 @@ void Profile_CpuStop(void)
 		}
 	}
 
-	/* Cartridge ROM */
+	/* ...for Cartridge ROM */
 	area = &cpu_profile.rom;
 	item = cpu_profile.data + area->lowest;
 	for (i = area->lowest; i <= area->highest; i++, item++) {
@@ -486,7 +485,7 @@ void Profile_CpuStop(void)
 		}
 	}
 
-	/* TOS ROM */
+	/* ...for TOS ROM */
 	area = &cpu_profile.tos;
 	item = cpu_profile.data + area->lowest;
 	for (i = area->lowest; i <= area->highest; i++, item++) {
