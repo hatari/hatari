@@ -23,7 +23,7 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 #include "xbios.h"
 
 
-#define XBIOS_DEBUG 0	/* for floppy read/write */
+#define XBIOS_DEBUG 0	/* for floppy read/write & rsconf */
 
 
 /* List of Atari ST RS-232 baud rates */
@@ -55,19 +55,19 @@ static const int BaudRates[] =
 static bool XBios_Floprd(Uint32 Params)
 {
 #if XBIOS_DEBUG
-	char *pBuffer;
+	Uint32 pBuffer;
 	Uint16 Dev,Sector,Side,Track,Count;
 
 	/* Read details from stack */
-	pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+	pBuffer = STMemory_ReadLong(Params+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
 	Sector = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD);
 	Track = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 	Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-	Log_Printf(LOG_DEBUG, "FLOPRD %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
-	           Side, Track, Sector, Count, M68000_GetPC());
+	Log_Printf(LOG_DEBUG, "FLOPRD %s,0x%x,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].sFileName,
+	           pBuffer, Side, Track, Sector, Count, M68000_GetPC());
 #endif
 
 	return false;
@@ -81,19 +81,19 @@ static bool XBios_Floprd(Uint32 Params)
 static bool XBios_Flopwr(Uint32 Params)
 {
 #if XBIOS_DEBUG
-	char *pBuffer;
+	Uint32 pBuffer;
 	Uint16 Dev,Sector,Side,Track,Count;
 
 	/* Read details from stack */
-	pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+	pBuffer = STMemory_ReadLong(Params+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
 	Sector = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD);
 	Track = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 	Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-	Log_Printf(LOG_DEBUG, "FLOPWR %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
-	           Side, Track, Sector, Count, M68000_GetPC());
+	Log_Printf(LOG_DEBUG, "FLOPWR %s,0x%x,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].sFileName,
+	           pBuffer, Side, Track, Sector, Count, M68000_GetPC());
 #endif
 
 	return false;
@@ -106,15 +106,19 @@ static bool XBios_Flopwr(Uint32 Params)
  */
 static bool XBios_Rsconf(Uint32 Params)
 {
-	Sint16 Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
+	Sint16 Baud,Ctrl,Ucr;
 
 	Baud = STMemory_ReadWord(Params+SIZE_WORD);
 	Ctrl = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
 	Ucr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+#if XBIOS_DEBUG
+	Sint16 Rsr,Tsr,Scr;
 	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-
+	Log_Printf(LOG_DEBUG, "RSCONF baud,ctrl,ucr,rsr,tsr,scr: %d,%d,%d,%d,%d,%d\n",
+		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr);
+#endif
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
 	if (ConfigureParams.RS232.bEnableRS232)
 	{
