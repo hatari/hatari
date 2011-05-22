@@ -2523,8 +2523,6 @@ bool Video_RenderTTScreen(void)
  */
 static void Video_DrawScreen(void)
 {
-	bool bScreenChanged;
-
 	/* Skip frame if need to */
 	if (nVBLs % (nFrameSkips+1))
 		return;
@@ -2537,11 +2535,11 @@ static void Video_DrawScreen(void)
 	/* Now draw the screen! */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
 	{
-		bScreenChanged = VIDEL_renderScreen();
+		VIDEL_renderScreen();
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
 	{
-		bScreenChanged = Video_RenderTTScreen();
+		Video_RenderTTScreen();
 	}
 	else
 	{
@@ -2551,7 +2549,7 @@ static void Video_DrawScreen(void)
 		if (!bUseVDIRes && nHBL < nLastVisibleHbl)
 			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nLastVisibleHbl - nHBL ) );
 
-		bScreenChanged = Screen_Draw();
+		Screen_Draw();
 	}
 }
 
