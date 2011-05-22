@@ -500,7 +500,6 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, Uint1
 	long	TotalSectors;
 	int	Sides_fixed;
 	int	SectorsPerTrack_fixed;
-	int	TracksPerDisk_fixed;
 
 	/* Now guess at number of sides */
 	if ( nDiskSize < (500*1024) )				/* If size >500k assume 2 sides */
@@ -528,14 +527,15 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, Uint1
 	/* unknown combination, assume boot sector is correct */
 	else						{ SectorsPerTrack_fixed = *pnSectorsPerTrack; }
 
-	TracksPerDisk_fixed = TotalSectors / ( SectorsPerTrack_fixed * Sides_fixed );
-
 	/* Valid new values if necessary */
 	if ( ( *pnSides != Sides_fixed ) || ( *pnSectorsPerTrack != SectorsPerTrack_fixed ) )
 	{
-//		Log_Printf(LOG_WARN, "Floppy_DoubleCheckFormat: boot sector doesn't match disk image's size :"
-//			" total sectors %ld->%ld sides %d->%d sectors %d->%d tracks %d\n",
-//			nSectorsPerDisk , TotalSectors , *pnSides , Sides_fixed , *pnSectorsPerTrack , SectorsPerTrack_fixed , TracksPerDisk_fixed );
+#if 0
+		int TracksPerDisk_fixed = TotalSectors / ( SectorsPerTrack_fixed * Sides_fixed );
+		Log_Printf(LOG_WARN, "Floppy_DoubleCheckFormat: boot sector doesn't match disk image's size :"
+			" total sectors %ld->%ld sides %d->%d sectors %d->%d tracks %d\n",
+			nSectorsPerDisk , TotalSectors , *pnSides , Sides_fixed , *pnSectorsPerTrack , SectorsPerTrack_fixed , TracksPerDisk_fixed );
+#endif
 		*pnSides = Sides_fixed;
 		*pnSectorsPerTrack = SectorsPerTrack_fixed;
 	}
