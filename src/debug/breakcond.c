@@ -342,14 +342,14 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
 				i+1, name, bp->hits);
 
+			BreakCond_Print(bp);
+			if (bp->options.once) {
+				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
+			}
 			if (bp->options.lock) {
 				DebugCpu_InitSession();
 				DebugDsp_InitSession();
 				DebugInfo_ShowSessionInfo();
-			}
-			BreakCond_Print(bp);
-			if (bp->options.once) {
-				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
 			}
 			if (bp->options.filename) {
 				DebugUI_ParseFile(bp->options.filename);
