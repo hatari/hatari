@@ -221,13 +221,16 @@ static void DebugInfo_Video(Uint32 dummy)
 	case OVERSCANMODE_BOTTOM:
 		mode = "bottom";
 		break;
+	case OVERSCANMODE_TOP|OVERSCANMODE_BOTTOM:
+		mode = "top+bottom";
+		break;
 	default:
 		mode = "unknown";
 	}
 	fprintf(stderr, "Video base   : 0x%x\n", VideoBase);
 	fprintf(stderr, "VBL counter  : %d\n", nVBLs);
 	fprintf(stderr, "HBL line     : %d\n", nHBL);
-	fprintf(stderr, "Overscan mode: %s\n", mode);
+	fprintf(stderr, "V-overscan   : %s\n", mode);
 	fprintf(stderr, "Refresh rate : %d Hz\n", nScreenRefreshRate);
 	fprintf(stderr, "Frame skips  : %d\n", nFrameSkips);
 }
