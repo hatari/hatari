@@ -145,6 +145,7 @@ void IoMem_Init(void)
 		case MACHINE_STE: pInterceptAccessFuncs = IoMemTable_STE; break;
 		case MACHINE_TT: pInterceptAccessFuncs = IoMemTable_TT; break;
 		case MACHINE_FALCON: pInterceptAccessFuncs = IoMemTable_Falcon; break;
+		default: abort(); /* bug */
 	}
 
 	/* Now set the correct handlers */
