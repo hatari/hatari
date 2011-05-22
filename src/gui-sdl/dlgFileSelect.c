@@ -464,22 +464,18 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	bool reloaddir = true;              /* Do we have to reload the directory file list? */
 	int retbut;
 	int oldcursorstate;
-	int selection = -1;                 /* The actual selection, -1 if none selected */
+	int selection;                      /* The selection index */
 	char *zipfilename;                  /* Filename in zip file */
 	char *zipdir;
 	bool browsingzip = false;           /* Are we browsing an archive? */
 	zip_dir *zipfiles = NULL;
 	SDL_Event sdlEvent;
-	float yScrolbar_pos;				/* Vertical position of the scrollbar */
 	int yScrolbar_size;				/* Size of the vertical scrollbar */
 
 	ypos = 0;
 	scrollbar_Ypos = 0.0;
 	refreshentries = true;
 	entries = 0;
-
-	yScrolbar_pos = 0;
-	yScrolbar_size = 0;
 
 	/* Allocate memory for the file and path name strings: */
 	pStringMem = malloc(4 * FILENAME_MAX);
@@ -649,7 +645,6 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 					}
 					reloaddir = true;
 					/* Copy the path name to the dialog */
-					selection = -1;                /* Remove old selection */
 					zipfilename[0] = '\0';
 					dlgfname[0] = 0;
 					ypos = 0;
@@ -681,7 +676,6 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 					File_ShrinkName(dlgpath, tempstr, DLGPATH_SIZE);
 					strcpy(path, tempstr);
 					reloaddir = true;
-					selection = -1;                /* Remove old selection */
 					dlgfname[0] = 0;
 					ypos = 0;
 					scrollbar_Ypos = 0.0;
@@ -806,7 +800,6 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			if (reloaddir)
 			{
 				/* Remove old selection */
-				selection = -1;
 				fname[0] = 0;
 				dlgfname[0] = 0;
 				ypos = 0;
