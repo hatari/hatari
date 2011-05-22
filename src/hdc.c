@@ -426,6 +426,7 @@ static void HDC_Cmd_ReadSector(void)
 		{
 			Log_Printf(LOG_WARN, "HDC sector read uses invalid RAM range 0x%x+%i\n",
 				   nDmaAddr, 512*HD_SECTORCOUNT(HDCCommand));
+			n = 0;
 		}
 		if (n == HD_SECTORCOUNT(HDCCommand))
 		{
