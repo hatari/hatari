@@ -108,7 +108,7 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 	int y, ret = -1;
 	int w = surface->w - CropLeft - CropRight;
 	int h = surface->h - CropTop - CropBottom;
-	Uint8 *src_ptr, *row_ptr;
+	Uint8 *src_ptr;
 	Uint8 rowbuf[3*surface->w];
 	SDL_PixelFormat *fmt = surface->format;
 	png_colorp palette_ptr = NULL;
@@ -175,22 +175,18 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 		switch (fmt->BytesPerPixel) {
 		case 1:
 			/* unpack 8-bit data with RGB palette */
-			row_ptr = rowbuf;
-			PixelConvert_8to24Bits(row_ptr, src_ptr, w, fmt->palette->colors);
+			PixelConvert_8to24Bits(rowbuf, src_ptr, w, fmt->palette->colors);
 			break;
 		case 2:
 			/* unpack 16-bit RGB pixels */
-			row_ptr = rowbuf;
-			PixelConvert_16to24Bits(row_ptr, (Uint16*)src_ptr, w, fmt);
+			PixelConvert_16to24Bits(rowbuf, (Uint16*)src_ptr, w, fmt);
 			break;
 		case 3:
 			/* PNG can handle 24-bits */
-			row_ptr = src_ptr;
 			break;
 		case 4:
 			/* unpack 32-bit RGBA pixels */
-			row_ptr = rowbuf;
-			PixelConvert_32to24Bits(row_ptr, (Uint32*)src_ptr, w, fmt);
+			PixelConvert_32to24Bits(rowbuf, (Uint32*)src_ptr, w, fmt);
 			break;
 		}
 		/* and unlock surface before syscalls */
