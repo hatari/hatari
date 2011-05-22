@@ -95,8 +95,10 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 		do
 		{
 			fptr = Str_Trim(fgets(line, sizeof(line), file));  /* get input line */
+			if (fptr == NULL)
+				break;
 		}
-		while ( memcmp(line,header,strlen(header)) && !feof(file));
+		while (memcmp(fptr,header,strlen(header)));
 	}
 
 	if ( !feof(file) )
@@ -106,77 +108,68 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 			if (fptr == NULL)
 				continue;
 			lineno++;
-			if (line[0] == '#')
-				continue;                               /* skip comments */
-			if (line[0] == '[')
-				continue;                               /* skip next header */
-			tok = Str_Trim(strtok(line, "=\n\r"));          /* get first token */
-			if (tok != NULL)
+			if (fptr[0] == '#')
+				continue;                       /* skip comments */
+			if (fptr[0] == '[')
+				continue;                       /* skip next header */
+			tok = Str_Trim(strtok(fptr, "="));      /* get first token */
+			if (tok == NULL)
+				continue;
+			next = Str_Trim(strtok(NULL, "="));     /* get actual config information */
+			if (next == NULL)
+				continue;
+			for (ptr = configs; ptr->buf; ++ptr)    /* scan for token */
 			{
-				next = Str_Trim(strtok(NULL, "=\n\r"));     /* get actual config information */
-				for (ptr = configs; ptr->buf; ++ptr)    /* scan for token */
+				if (!strcmp(tok, ptr->code))    /* got a match? */
 				{
-					if (!strcmp(tok, ptr->code))        /* got a match? */
+					count++;
+					switch (ptr->type)      /* check type */
 					{
-						switch (ptr->type)              /* check type */
-						{
-						 case Bool_Tag:
-							if (!strcasecmp(next,"FALSE"))
-								*((bool *)(ptr->buf)) = false;
-							else if (!strcasecmp(next,"TRUE"))
-								*((bool *)(ptr->buf)) = true;
-							++count;
-							break;
-
-						 case Char_Tag:
-							sscanf(next, "%c", (char *)(ptr->buf));
-							++count;
-							break;
-
-						 case Short_Tag:
-							sscanf(next, "%hd", (short *)(ptr->buf));
-							++count;
-							break;
-
-						 case Int_Tag:
-							sscanf(next, "%d", (int *)(ptr->buf));
-							++count;
-							break;
-
-						 case Long_Tag:
-							sscanf(next, "%ld", (long *)(ptr->buf));
-							++count;
-							break;
-
-						 case Float_Tag:
-							sscanf(next, "%g", (float *)ptr->buf);
-							++count;
-							break;
-
-						 case Double_Tag:
-							sscanf(next, "%lg", (double *)ptr->buf);
-							++count;
-							break;
-
-						 case String_Tag:
-							if(next)
-								strcpy((char *)ptr->buf, next);
-							else
-								*(char *)ptr->buf = 0;
-							++count;
-							break;
-
-						 case Error_Tag:
-						 default:
-							printf("Error in Config file %s on line %d\n", filename, lineno);
-							break;
-						}
+					case Bool_Tag:
+						if (!strcasecmp(next,"FALSE"))
+							*((bool *)(ptr->buf)) = false;
+						else if (!strcasecmp(next,"TRUE"))
+							*((bool *)(ptr->buf)) = true;
+						break;
+						
+					case Char_Tag:
+						sscanf(next, "%c", (char *)(ptr->buf));
+						break;
+						
+					case Short_Tag:
+						sscanf(next, "%hd", (short *)(ptr->buf));
+						break;
+						
+					case Int_Tag:
+						sscanf(next, "%d", (int *)(ptr->buf));
+						break;
+						
+					case Long_Tag:
+						sscanf(next, "%ld", (long *)(ptr->buf));
+						break;
+						
+					case Float_Tag:
+						sscanf(next, "%g", (float *)ptr->buf);
+						break;
+						
+					case Double_Tag:
+						sscanf(next, "%lg", (double *)ptr->buf);
+						break;
+						
+					case String_Tag:
+						strcpy((char *)ptr->buf, next);
+						break;
+						
+					case Error_Tag:
+					default:
+						count--;
+						printf("Error in Config file %s on line %d\n", filename, lineno);
+						break;
 					}
-
 				}
 			}
 		}
-		while ( fptr!=NULL && line[0]!='[');
+		while (fptr != NULL && fptr[0] != '[');
 
 	fclose(file);
 	return count;
@@ -277,7 +270,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	const struct Config_Tag *ptr;
 	int count=0, lineno=0, retval;
 	FILE *cfgfile, *tempfile;
-	char *fptr, *tok, *next;
+	char *fptr, *tok;
 	char line[1024];
 	bool bUseTempCfg = false;
 	const char *sTempCfgName = "_temp_.cfg";
@@ -315,11 +308,11 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		do
 		{
 			fptr = Str_Trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
-			if (feof(cfgfile))
+			if (fptr == NULL)
 				break;
-			fprintf(tempfile, "%s\n", line);
+			fprintf(tempfile, "%s\n", fptr);
 		}
-		while(memcmp(line, header, headerlen));
+		while(memcmp(fptr, header, headerlen));
 	}
 
 	if (feof(cfgfile))
@@ -346,24 +339,24 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		for(;;)
 		{
 			fptr = Str_Trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+			/* error or eof? */
 			if (fptr == NULL)
 				break;
 			lineno++;
-			if (line[0] == '#')
+			if (fptr[0] == '#')
 			{
-				fprintf(tempfile, "%s\n", line);
+				fprintf(tempfile, "%s\n", fptr);
 				continue;                                 /* skip comments */
 			}
-			if (line[0] == '[' || feof(cfgfile))
+			if (fptr[0] == '[')
 			{
 				break;
 			}
 
-			tok = Str_Trim(strtok(line, "=\n\r"));           /* get first token */
+			tok = Str_Trim(strtok(fptr, "="));               /* get first token */
 			if (tok != NULL)
 			{
 				int i = 0;
-				next = strtok(line, "=\n\r");             /* get actual config information */
 				for (ptr = configs; ptr->buf; ++ptr, i++) /* scan for token */
 				{
 					if (!strcmp(tok, ptr->code))           /* got a match? */
@@ -408,9 +401,9 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		for(;;)
 		{
 			fptr = Str_Trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
-			if (feof(cfgfile))
+			if (fptr == NULL)
 				break;
-			fprintf(tempfile, "%s\n", line);
+			fprintf(tempfile, "%s\n", fptr);
 		}
 	}
 
