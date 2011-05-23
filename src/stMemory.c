@@ -54,7 +54,7 @@ void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
  * 
  * Return true if whole copy was safe / valid.
  */
-bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, size_t len, const char *name)
+bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *name)
 {
 	Uint32 end;
 
@@ -63,7 +63,6 @@ bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, size_t len, const char *name)
 		memcpy(&STRam[addr], src, len);
 		return true;
 	}
-
 	Log_Printf(LOG_WARN, "Invalid '%s' RAM range 0x%x+%i!\n", name, addr, len);
 
 	for (end = addr + len; addr < end; addr++, src++)
