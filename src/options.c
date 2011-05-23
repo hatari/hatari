@@ -643,7 +643,7 @@ static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
  * Checks also that if option is supposed to have argument,
  * whether there's one.
  */
-static int Opt_WhichOption(int argc, const char *argv[], int idx)
+static int Opt_WhichOption(int argc, const char * const argv[], int idx)
 {
 	const opt_t *opt;
 	const char *str = argv[idx];
@@ -818,7 +818,7 @@ static bool Opt_HandleArgument(const char *path)
  * parse all Hatari command line options and set Hatari state accordingly.
  * Returns true if everything was OK, false otherwise.
  */
-bool Opt_ParseParameters(int argc, const char *argv[])
+bool Opt_ParseParameters(int argc, const char * const argv[])
 {
 	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq, temp;
 	const char *errstr;
