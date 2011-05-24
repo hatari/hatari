@@ -19,7 +19,7 @@ Emulation improvements
 	  (See http://pasti.fxatari.com/)
 	- Support .DIM images created with the "Get sectors: used" option
 
-- Real HD 6301 (keyboard processor of the ST) emulation
+- Real HD 6301 (keyboard processor of the ST) emulation.
   (Current special casing is enough for all known demos using 6301)
 
 - Finish upgrading the CPU core of Hatari to the latest WinUAE
@@ -37,10 +37,11 @@ Emulation improvements
 
 - Add SCC serial port emulation for Falcon/TT mode.
 
-- Some Falcon games/demos only work with 32 MHz CPU emulation (might be due to
-  the fact that we don't emulate the 68030 cache yet?)
+- Some Falcon games/demos only work with 32 MHz CPU emulation.
+  (might be due to timings problems (videl, DMA, cpu cycles, dsp cycles, ...)
 
 - Fix falcon sound quality (sound is sometimes noisy)
+  Sound is also toggling between nice to noise with some demos.
 
 - Improve STE Microwire/LMC1992 emulation.
 
@@ -50,14 +51,9 @@ Emulation improvements
 DSP emulation / Falcon sound matrix
 -----------------------------------
 
-- Improve the Port C (SSI) emulation (mixing of handshake and non handshake transfers)
-	- Dsp SSI internal clock (is it used on falcon ?)
-
-- Improve the crossbar and SSI transfers in handshake mode
+- Dsp SSI internal clock (is it used on falcon ?)
 
 - Verify DSP instructions cycle count, especially with external RAM
-
-- Run-time toggling of DSP tracing
 
 
 Other potential Hatari functionality improvements
