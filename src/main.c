@@ -107,12 +107,12 @@ static Uint32 Main_GetTicks(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return a clock counter in micro seconds.
+ * Return a time counter in micro seconds.
  * If gettimeofday is available, we use it directly, else we convert the
  * return of SDL_GetTicks in micro sec.
  */
 
-static Sint64	Clock_GetTicks ( void )
+static Sint64	Time_GetTicks ( void )
 {
         Sint64		ticks_micro;
 
@@ -135,7 +135,7 @@ static Sint64	Clock_GetTicks ( void )
  * (which is portable, but less accurate as is uses milli-seconds)
  */
 
-static void	Clock_Delay ( Sint64 ticks_micro )
+static void	Time_Delay ( Sint64 ticks_micro )
 {
 #if HAVE_NANOSLEEP
 	struct timespec	ts;
@@ -285,7 +285,7 @@ void Main_WaitOnVbl(void)
 	}
 
 	FrameDuration_micro = (Sint64) ( 1000000.0 / nScreenRefreshRate + 0.5 );	/* round to closest integer */
-	CurrentTicks = Clock_GetTicks();
+	CurrentTicks = Time_GetTicks();
 
 	if ( DestTicks == 0 )					/* first call, init DestTicks */
 		DestTicks = CurrentTicks + FrameDuration_micro;
@@ -325,19 +325,19 @@ void Main_WaitOnVbl(void)
 	{
 		/* Accurate sleeping is possible -> use SDL_Delay to free the CPU */
 		if (nDelay > 1000)
-			Clock_Delay(nDelay - 1000);
+			Time_Delay(nDelay - 1000);
 	}
 	else
 	{
 		/* No accurate SDL_Delay -> only wait if more than 5ms to go... */
 		if (nDelay > 5000)
-			Clock_Delay(nDelay<10000 ? nDelay-1000 : 9000);
+			Time_Delay(nDelay<10000 ? nDelay-1000 : 9000);
 	}
 
 	/* Now busy-wait for the right tick: */
 	while (nDelay > 0)
 	{
-		CurrentTicks = Clock_GetTicks();
+		CurrentTicks = Time_GetTicks();
 		nDelay = DestTicks - CurrentTicks;
 	}
 
