@@ -458,8 +458,6 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 		dmaPlay.isRunning = 0;
 		dmaPlay.loopMode = 0;
 		nCbar_DmaSoundControl = sndCtrl;
-		memset(dac.buffer_left, 0, sizeof(dac.buffer_left));
-		memset(dac.buffer_right, 0, sizeof(dac.buffer_right));
 	}
 
 	/* DMA Record mode */
@@ -467,16 +465,16 @@ void Crossbar_DmaCtrlReg_WriteByte(void)
 	{
 		/* Turning on DMA record sound emulation */
 		dmaRecord.isRunning = 1;
-		dmaRecord.loopMode = (sndCtrl & 0x20) >> 5;
 		nCbar_DmaSoundControl = sndCtrl;
+		dmaRecord.loopMode = (sndCtrl & 0x20) >> 5;
 		Crossbar_setDmaRecord_Settings();
 	}
 	else if (dmaRecord.isRunning && ((sndCtrl & CROSSBAR_SNDCTRL_RECORD) == 0))
 	{
 		/* Turning off DMA record sound emulation */
-		nCbar_DmaSoundControl = sndCtrl;
 		dmaRecord.isRunning = 0;
 		dmaRecord.loopMode = 0;
+		nCbar_DmaSoundControl = sndCtrl;
 	}
 }
 
@@ -1476,10 +1474,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 
 	/* Check if end-of-frame has been reached and raise interrupts if needed. */
 	if (dmaPlay.frameCounter >= dmaPlay.frameLen)
-	{
-		/* Update sound */
-		//Sound_Update(false);
-		
+	{		
 		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
 		if (dmaPlay.mfp15_int) {
 			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
@@ -1498,8 +1493,16 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 			Crossbar_setDmaPlay_Settings();
 		} 
 		else {
+			/* Create samples up until this point with current values */
+			Sound_Update(false);
+
 			dmaCtrlReg = IoMem_ReadByte(0xff8901) & 0xfe;
-			IoMem_bput(0xff8901, dmaCtrlReg);
+			IoMem_WriteByte(0xff8901, dmaCtrlReg);
+
+			/* Turning off DMA play sound emulation */
+			dmaPlay.isRunning = 0;
+			dmaPlay.loopMode = 0;
+			nCbar_DmaSoundControl = dmaCtrlReg;
 		}
 	}
 }
@@ -1586,7 +1589,12 @@ void Crossbar_SendDataToDmaRecord(Sint16 value)
 		}
 		else {
 			dmaCtrlReg = IoMem_ReadByte(0xff8901) & 0xef;
-			IoMem_bput(0xff8901, dmaCtrlReg);
+			IoMem_WriteByte(0xff8901, dmaCtrlReg);
+
+			/* Turning off DMA record sound emulation */
+			dmaRecord.isRunning = 0;
+			dmaRecord.loopMode = 0;
+			nCbar_DmaSoundControl = dmaCtrlReg;
 		}
 	}
 }
