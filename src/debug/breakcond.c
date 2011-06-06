@@ -523,6 +523,7 @@ static Uint32 GetVdiOpcode(void)
 /* sorted by variable name so that this can be bisected */
 static const var_addr_t hatari_vars[] = {
 	{ "AesOpcode", (Uint32*)GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
+	{ "BasepageTextSegment", (Uint32*)DebugInfo_GetTextSegment, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "BiosOpcode", (Uint32*)GetBiosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "FrameCycles", (Uint32*)GetFrameCycles, VALUE_TYPE_FUNCTION32, 0, NULL },
 	{ "GemdosOpcode", (Uint32*)GetGemdosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },

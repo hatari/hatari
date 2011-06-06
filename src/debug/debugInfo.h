@@ -10,6 +10,7 @@
 #ifndef HATARI_DEBUGINFO_H
 #define HATARI_DEBUGINFO_H
 
+extern Uint32 DebugInfo_GetTextSegment(void);
 extern void DebugInfo_ShowSessionInfo(void);
 extern char *DebugInfo_MatchInfo(const char *text, int state);
 extern char *DebugInfo_MatchLock(const char *text, int state);
