@@ -49,6 +49,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 
 #define COUNTRY_SPAIN 4
 
+
 /**
  * DebugInfo_GetSysbase: set osversion to given argument.
  * return sysbase address on success and zero on failure.
@@ -178,12 +179,18 @@ static void DebugInfo_Basepage(Uint32 basepage)
 static void DebugInfo_OSHeader(Uint32 dummy)
 {
 	Uint32 sysbase, gemblock, basepage;
-	Uint16 osversion, osconf;
+	Uint16 osversion, osconf, langbits;
+	const char *lang;
+	static const char langs[][3] = {
+		"us", "de", "fr", "uk", "es", "it", "se", "ch" /* fr */, "ch" /* de */,
+		"tr", "fi", "no", "dk", "sa", "nl", "cz", "hu"
+	};
 
 	sysbase = DebugInfo_GetSysbase(&osversion);
 	if (!sysbase) {
 		return;
 	}
+	fprintf(stderr, "TOS OS header information:\n");
 	fprintf(stderr, "OS base addr : 0x%06x\n", sysbase);
 	fprintf(stderr, "OS RAM end+1 : 0x%06x\n", STMemory_ReadLong(sysbase+0x0C));
 	fprintf(stderr, "TOS version  : 0x%x\n", osversion);
@@ -207,7 +214,15 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 	fprintf(stderr, "OS DOS date  : 0x%x\n", STMemory_ReadLong(sysbase+0x1E));
 
 	osconf = STMemory_ReadWord(sysbase+0x1C);
-	fprintf(stderr, "OS Conf bits : lang=%d, %s\n", osconf>>1, osconf&1 ? "PAL":"NTSC");
+	langbits = osconf >> 1;
+	if (langbits == 127) {
+		lang = "all";
+	} else if (langbits < ARRAYSIZE(langs)) {
+		lang = langs[langbits];
+	} else {
+		lang = "unknown";
+	}
+	fprintf(stderr, "OS Conf bits : 0x%04x (%s, %s)\n", osconf, lang, osconf&1 ? "PAL":"NTSC");
 	fprintf(stderr, "Cookie Jar   : 0x%06x\n", STMemory_ReadLong(COOKIE_JAR));
 
 	if (osversion >= 0x0102) {
@@ -224,6 +239,28 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 		fprintf(stderr, "Basepage     : 0x%06x\n", basepage);
 	}
 }
+
+
+/**
+ * DebugInfo_Cookiejar: display TOS Cookiejar content
+ */
+static void DebugInfo_Cookiejar(Uint32 dummy)
+{
+	Uint32 jar = STMemory_ReadLong(COOKIE_JAR);
+	if (!jar) {
+		fprintf(stderr, "Cookiejar is empty.\n");
+		return;
+	}
+	fprintf(stderr, "Cookiejar contents:\n");
+	while (STMemory_ValidArea(jar, 8) && STMemory_ReadLong(jar)) {
+		fprintf(stderr, "%c%c%c%c = 0x%08x\n",
+			STRam[jar], STRam[jar+1], STRam[jar+2], STRam[jar+3],
+			STMemory_ReadLong(jar+4));
+		jar += 8;
+	}
+	
+}
+
 
 /**
  * DebugInfo_Video: display video related information
@@ -742,6 +779,7 @@ static const struct {
 } infotable[] = {
 	{ false,"aes",       AES_Info,             NULL, "Show AES vector contents (with <value>, show opcodes)" },
 	{ false,"basepage",  DebugInfo_Basepage,   NULL, "Show program basepage info at given <address>" },
+	{ false,"cookiejar", DebugInfo_Cookiejar,  NULL, "Show TOS Cookiejar contents" },
 	{ false,"crossbar",  DebugInfo_Crossbar,   NULL, "Show Falcon crossbar HW register values" },
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
 	{ true, "disasm",    DebugInfo_CpuDisAsm,  NULL, "Disasm CPU from PC or given <address>" },
@@ -761,7 +799,7 @@ static const struct {
 	{ false,"video",     DebugInfo_Video,      NULL, "Show Video related values" }
 };
 
-static int LockedFunction = 3; /* index for the "default" function */
+static int LockedFunction = 4; /* index for the "default" function */
 static Uint32 LockedArgument;
 
 /**
