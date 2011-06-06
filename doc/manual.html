@@ -2985,30 +2985,16 @@ help in debugging it later.
 
 <p>
 If you're debugging normal TOS/GEM programs instead of code loaded
-into a fixed address (like EmuTOS is), you can use the "info basepage"
-command to find out the text segment address to which the program code
-has been loaded into, and then load symbols so that their addresses
-are offset by the text segment address:
+into a fixed address (like e.g. EmuTOS is), after the program has been
+loaded, load the symbols with the program text segment address offset:
 </p>
 <pre>
-&gt; info basepage
-Process basepage information:
-- TPA start      : 0x01a1bc
-- TPA end +1     : 0x7da700
-- Text segment   : 0x01a2bc
-- Text size      : 0xe1e0
-- Data segment   : 0x02849c
-- Data size      : 0x1b76
-- BSS segment    : 0x02a012
-- BSS size       : 0x3750
-- Process DTA    : 0x01a23c
-- Parent basepage: 0x00e91c
-- Environment    : 0x01a1ae
-'PATH='
-'C:\'
-- Command argslen: 0
-&gt; symbols calc.sym 0x01a2bc
+&gt; symbols calc.sym BasepageTextSegment
 </pre>
+<p>
+(The value of the above virtual "BasepageTextSegment" debugger variable
+comes from a program basepage, see "info basepage" output.)
+</p>
 
 
 <a name="Breakpoints"></a><h3>Breakpoints</h3>
@@ -3214,10 +3200,20 @@ conditional breakpoints on values of some "virtual" variables listed
 by "b help". For example:
 </p>
 <ul>
+<li>If you want the emulation to stop on the first instruction of
+    next program, after TOS desktop is up, set a breakpoin on
+    the text segment address given in a program basepage:
+<pre>
+b  pc = BasepageTextSegment  :once
+</pre>
+</li>
 <li>If you want to stop at a specific cycle within a frame (that is,
     PC relative to the current VBL/HBL in cycles), set breakpoints to
-    specific "HBL" and "LineCycles" variable values.  The "e" command
-    can be used to calculate suitable register and variable values.
+    specific "HBL" and "LineCycles" variable values.  If you for
+    example want to break after 20 HBLs, use:
+<pre>
+b  HBL = "HBL+20"
+</pre>
 </li>
 <li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
     to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
