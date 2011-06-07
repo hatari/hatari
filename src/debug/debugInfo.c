@@ -223,7 +223,6 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 		lang = "unknown";
 	}
 	fprintf(stderr, "OS Conf bits : 0x%04x (%s, %s)\n", osconf, lang, osconf&1 ? "PAL":"NTSC");
-	fprintf(stderr, "Cookie Jar   : 0x%06x\n", STMemory_ReadLong(COOKIE_JAR));
 
 	if (osversion >= 0x0102) {
 		/* last 3 OS header fields are only available as of TOS 1.02 */
@@ -246,19 +245,24 @@ static void DebugInfo_OSHeader(Uint32 dummy)
  */
 static void DebugInfo_Cookiejar(Uint32 dummy)
 {
+	int items;
+
 	Uint32 jar = STMemory_ReadLong(COOKIE_JAR);
 	if (!jar) {
 		fprintf(stderr, "Cookiejar is empty.\n");
 		return;
 	}
+
 	fprintf(stderr, "Cookiejar contents:\n");
+	items = 0;
 	while (STMemory_ValidArea(jar, 8) && STMemory_ReadLong(jar)) {
 		fprintf(stderr, "%c%c%c%c = 0x%08x\n",
 			STRam[jar], STRam[jar+1], STRam[jar+2], STRam[jar+3],
 			STMemory_ReadLong(jar+4));
 		jar += 8;
+		items++;
 	}
-	
+	fprintf(stderr, "%d items at 0x%06x.\n", items, STMemory_ReadLong(COOKIE_JAR));
 }
 
 
