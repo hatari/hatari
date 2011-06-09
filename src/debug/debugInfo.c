@@ -183,7 +183,7 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 	const char *lang;
 	static const char langs[][3] = {
 		"us", "de", "fr", "uk", "es", "it", "se", "ch" /* fr */, "ch" /* de */,
-		"tr", "fi", "no", "dk", "sa", "nl", "cz", "hu"
+		"tr", "fi", "no", "dk", "sa", "nl", "cs", "hu"
 	};
 
 	sysbase = DebugInfo_GetSysbase(&osversion);
