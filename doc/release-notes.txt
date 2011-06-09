@@ -74,12 +74,13 @@ Emulator:
     they will output information about corresponding OS part state,
     with (a non-zero) argument, opcode/call name table is shown.
     "video" subcommand for showing video related information.
+    "cookiejar" subcommand for showing cookiejar contents.
   - "file" subcommand to "lock" that executes debugger commands from
     given file when debugger is entered (or ":lock" breakpoint is hit)
-  - ":lock" option to breakpoints that will show without stopping the
-    emulation the same output as what's shown on entering the debugger
+  - ":lock" option to breakpoints that will show (without stopping the
+    emulation) the same output as what's shown on entering the debugger
   - ":file" option to breakpoints that executes the commands from
-    given file when the breakpoint is hit, this can be used to chain
+    given file when the breakpoint is hit. This can be used to chain
     debugger actions
   - multiple breakpoints options can be specified per breakpoint
   - parenthesis in "evaluate" command are used to indicate memory
