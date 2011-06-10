@@ -2989,10 +2989,10 @@ into a fixed address (like e.g. EmuTOS is), after the program has been
 loaded, load the symbols with the program text segment address offset:
 </p>
 <pre>
-&gt; symbols calc.sym BasepageTextSegment
+&gt; symbols calc.sym TEXT
 </pre>
 <p>
-(The value of the above virtual "BasepageTextSegment" debugger variable
+(The value of the above virtual "TEXT" debugger variable
 comes from a program basepage, see "info basepage" output.)
 </p>
 
@@ -3201,10 +3201,17 @@ by "b help". For example:
 </p>
 <ul>
 <li>If you want the emulation to stop on the first instruction of
-    next program, after TOS desktop is up, set a breakpoin on
-    the text segment address given in a program basepage:
+    next program, after TOS desktop is up, set a breakpoint on
+    the TEXT segment address given in a program basepage:
 <pre>
-b  pc = BasepageTextSegment  :once
+b  pc = TEXT  :once
+</pre>
+</li>
+<li>To find out current program DATA and BSS segment contents,
+    use the corresponding variables:
+<pre>
+m "data"
+m "bss"
 </pre>
 </li>
 <li>If you want to stop at a specific cycle within a frame (that is,

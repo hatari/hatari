@@ -101,10 +101,10 @@ static Uint32 DebugInfo_CurrentBasepage(void)
 
 
 /**
- * DebugInfo_TextSegment: return text segment address in TOS process basepage
- * or zero if that is missing/invalid.  For virtual debugger variable.
+ * GetSegmentAddress: return segment address at given offset in
+ * TOS process basepage or zero if that is missing/invalid.
  */
-Uint32 DebugInfo_GetTextSegment(void)
+static Uint32 GetSegmentAddress(unsigned offset)
 {
 	Uint32 basepage = DebugInfo_CurrentBasepage();
 	if (!basepage) {
@@ -115,7 +115,32 @@ Uint32 DebugInfo_GetTextSegment(void)
 		fprintf(stderr, "Basepage address 0x%06x is invalid!\n", basepage);
 		return 0;
 	}
-	return STMemory_ReadLong(basepage+0x08);
+	return STMemory_ReadLong(basepage+offset);
+}
+
+/**
+ * DebugInfo_GetTEXT: return current program TEXT segment address
+ * or zero if basepage missing/invalid.  For virtual debugger variable.
+ */
+Uint32 DebugInfo_GetTEXT(void)
+{
+	return GetSegmentAddress(0x08);
+}
+/**
+ * DebugInfo_GetDATA: return current program DATA segment address
+ * or zero if basepage missing/invalid.  For virtual debugger variable.
+ */
+Uint32 DebugInfo_GetDATA(void)
+{
+	return GetSegmentAddress(0x010);
+}
+/**
+ * DebugInfo_GetBSS: return current program BSS segment address
+ * or zero if basepage missing/invalid.  For virtual debugger variable.
+ */
+Uint32 DebugInfo_GetBSS(void)
+{
+	return GetSegmentAddress(0x18);
 }
 
 

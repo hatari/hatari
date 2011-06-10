@@ -69,7 +69,8 @@ Emulator:
   - Support for tracing AES calls.  VDI calls can now be traced
     also without using an extended VDI resolution
   - BIOS/XBIOS/GEMDOS/VDI/AES/Line-A/Line-F opcode breakpoint support
-  - BasepageTextSegment variable for catching TOS program startup
+  - TEXT, DATA and BSS variables for addresses of corresponding segments
+    in currently loaded program
   - "aes", "vdi" and "gemdos" subcommands for "info".  Without arguments
     they will output information about corresponding OS part state,
     with (a non-zero) argument, opcode/call name table is shown.
