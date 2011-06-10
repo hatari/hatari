@@ -23,7 +23,11 @@ Emulation improvements
   (Current special casing is enough for all known demos using 6301)
 
 - Finish upgrading the CPU core of Hatari to the latest WinUAE
-  (MMU emulation and better cycle accuracy is needed by some programs)
+  which has better cycle accuracy needed by some programs:
+	- Integrate MMU emulation
+	- Add Exception debugging support
+	- Fix & document cmdline options for selecting prefetch etc
+	  - GUI options for above
 
 - Get the games/demos working that are marked as non-working in the manual.
 
@@ -47,13 +51,9 @@ Emulation improvements
 
 - improve STE DMA sound emulation - some demos still render wrong.
 
-
-DSP emulation / Falcon sound matrix
------------------------------------
-
-- Dsp SSI internal clock (is it used on falcon ?)
-
-- Verify DSP instructions cycle count, especially with external RAM
+- DSP emulation / Falcon sound matrix:
+	- Dsp SSI internal clock (is it used on falcon ?)
+	- Verify DSP instructions cycle count, especially with external RAM
 
 
 Other potential Hatari functionality improvements

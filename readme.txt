@@ -109,14 +109,14 @@ in future also some potential extra features like MMU support.
 
 The WinUAE CPU core can be enabled by toggling the ENABLE_WINUAE_CPU
 variable in the Hatari CMake configuration (e.g. with the interactive
-"ccmake" program).
-Alternatively, you can run "./configure --enable-winuae-cpu", which will run
-cmake with the correct parameters.
+"ccmake" program).  Alternatively, you can run "./configure
+--enable-winuae-cpu", which will run cmake with the correct
+parameters.
 
 The plan is to eventually (in the next version) have WinUAE CPU core
 enabled by default and deprecate the "old" UAE CPU core, but currently
-WinUAE CPU core is still lacking all the ST/STE specific tweaks and
-testing for ST/STE compatibility.
+WinUAE CPU core is still lacking all the ST/STE specific tweaks, proper
+testing for ST/STE compatibility and some of the debugger support.
 
 
  3.2) Known problems
