@@ -4,14 +4,16 @@ Hatari on constrained devices
 
 In this directory are Hatari configurations files for mobile etc
 devices on which the builtin Hatari defaults aren't appropriate.
-Just copy suitable config file to the device /etc/ directory (or
-to /usr/local/etc directory if Hatari is installed under /usr/local)
-as 'hatari.cfg'.
+Just copy suitable config file to the device /etc/ directory as
+'hatari.cfg'.
 
 Below are some comments about the configuration files. Some comments
 about suitable compiler options for these platforms can be found from
 the Hatari v1.4 default Makefile (which is now replaced with CMake):
 http://hg.berlios.de/repos/hatari/file/dabb65b541c9/Makefile-default.cnf
+
+Hatari v1.5 gets screen size automatically, so setting that shouldn't
+anymore be necessary, but shouldn't harm either.
 
 If these configuration settings don't provide sufficient performance,
 use of an earlier Hatari version such as v0.95 (or even earlier)
