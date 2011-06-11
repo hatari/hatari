@@ -215,6 +215,11 @@ static int getValue(const char *str, Uint32 *number, bool bForDsp)
 	memcpy(name, str, len);
 	name[len] = '\0';
 
+	/* internal Hatari variable? */
+	if (BreakCond_GetHatariVariable(name, number)) {
+		return len;
+	}
+
 	if (bForDsp) {
 		/* DSP register or symbol? */
 		if (DSP_GetRegisterAddress(name, &addr, &mask)) {
@@ -242,10 +247,6 @@ static int getValue(const char *str, Uint32 *number, bool bForDsp)
 		if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, number)) {
 			return len;
 		}
-	}
-	/* internal Hatari variable? */
-	if (BreakCond_GetHatariVariable(name, number)) {
-		return len;
 	}
 
 	/* none of above, assume it's a number */
