@@ -1,7 +1,7 @@
 
 set(SOURCES
 	audio.c avi_record.c bios.c blitter.c cart.c cfgopts.c
-	configuration.c options.c change.c
+	clocks_timings.c configuration.c options.c change.c
 	control.c cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c
 	floppy.c gemdos.c hd6301_cpu.c hdc.c ide.c ikbd.c ioMem.c
 	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
