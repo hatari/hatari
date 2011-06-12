@@ -48,6 +48,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "avi_record.h"
 #include "debugui.h"
+#include "clocks_timings.h"
 
 #include "hatari-glue.h"
 
@@ -577,6 +578,7 @@ static void Main_Init(void)
 		fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
 		exit(-1);
 	}
+	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 	Resolution_Init();
 	SDLGui_Init();
 	Printer_Init();

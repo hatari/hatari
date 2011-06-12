@@ -34,6 +34,7 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "vdi.h"
 #include "falcon/dsp.h"
+#include "clocks_timings.h"
 
 bool bIsEmuTOS;
 Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
@@ -439,6 +440,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
+		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
@@ -450,6 +452,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to TT mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_TT;
+		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 32;
 		ConfigureParams.System.nCpuLevel = 3;
@@ -461,6 +464,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to Falcon mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
+		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 #if ENABLE_DSP_EMU
 		ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
 		DSP_Init();
@@ -476,6 +480,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to ST mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_ST;
+		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
@@ -488,6 +493,7 @@ static void TOS_CheckSysConfig(void)
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
+		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;

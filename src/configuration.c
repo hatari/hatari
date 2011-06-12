@@ -27,6 +27,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "vdi.h"
 #include "video.h"
 #include "avi_record.h"
+#include "clocks_timings.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -574,6 +575,9 @@ void Configuration_Apply(bool bReset)
 	{
 		nFrameSkips = ConfigureParams.Screen.nFrameSkips;
 	}
+
+	/* Init clocks for this machine */
+	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 
 	/* Sound settings */
 	/* SDL sound buffer in ms */
