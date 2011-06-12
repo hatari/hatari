@@ -125,8 +125,6 @@ const char ClocksTimings_fileid[] = "Hatari clocks_timings.c : " __DATE__ " " __
 #include "main.h"
 #include "configuration.h"
 #include "log.h"
-#include "screen.h"
-//#include "video.h"
 #include "clocks_timings.h"
 
 
