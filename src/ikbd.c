@@ -282,6 +282,8 @@ static void IKBD_CustomCodeHandler_Transbeauce2Menu_Read ( void );
 static void IKBD_CustomCodeHandler_Transbeauce2Menu_Write ( Uint8 aciabyte );
 static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void );
 static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte );
+static void IKBD_CustomCodeHandler_ChaosAD_Read ( void );
+static void IKBD_CustomCodeHandler_ChaosAD_Write ( Uint8 aciabyte );
 
 
 static int	MemoryLoadNbBytesTotal = 0;		/* total number of bytes to send with the command 0x20 */
@@ -334,6 +336,15 @@ CustomCodeDefinitions[] =
 		IKBD_CustomCodeHandler_DragonnelsMenu_Read ,
 		IKBD_CustomCodeHandler_DragonnelsMenu_Write ,
 		"Dragonnels Main Menu"
+	},
+	{
+		0x9ad7fcdf ,
+		IKBD_CustomCodeHandler_CommonBoot ,
+		109 ,
+		0xa11d8be5 ,
+		IKBD_CustomCodeHandler_ChaosAD_Read ,
+		IKBD_CustomCodeHandler_ChaosAD_Write ,
+		"Chaos A.D."
 	}
 };
 
@@ -1631,7 +1642,8 @@ static void IKBD_Cmd_ReadMemory(void)
  */
 static void IKBD_Cmd_Execute(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_Execute\n");
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_Execute addr 0x%x\n",
+		(Keyboard.InputBuffer[1] << 8) + Keyboard.InputBuffer[2]);
 
 	if ( pIKBD_CustomCodeHandler_Write )
 	{
@@ -2435,5 +2447,65 @@ static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void )
 static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte )
 {
   /* Ignore write */
+}
+
+
+
+/*----------------------------------------------------------------------*/
+/* Chaos A.D. protection's decoder					*/
+/* This custom program reads bytes, decode them and send back the result*/
+/* to the 68000.							*/
+/* The program first returns $fe to indicate it's ready to receive the	*/
+/* encoded bytes.							*/
+/* The program then receives the 8 bytes used to decode the data and	*/
+/* store them in $f0 - $f7 (KeyBuffer is already initialized, so we	*/
+/* ignore those 8 bytes).						*/
+/* Then for any received byte a XOR is made with one of the byte in the	*/
+/* 8 bytes buffer, by incrementing an index in this buffer.		*/
+/* The decoded byte is written to addr $13 (TDR) to be received by ACIA	*/
+/*----------------------------------------------------------------------*/
+
+static void IKBD_CustomCodeHandler_ChaosAD_Read ( void )
+{
+	static bool	FirstCall = true;
+
+	if ( FirstCall == true )
+		IKBD_AddKeyToKeyboardBuffer_Real ( 0xfe , ACIA_CYCLES );
+
+	FirstCall = false;
+}
+
+static void IKBD_CustomCodeHandler_ChaosAD_Write ( Uint8 aciabyte )
+{
+	static int	IgnoreNb = 8;
+	Uint8		KeyBuffer[] = { 0xca , 0x0a , 0xbc , 0x00 , 0xde , 0xde , 0xfe , 0xca };
+	static int	Index = 0;
+	static int	Count = 0;
+
+	/* We ignore the first 8 bytes we received (they're already in KeyBuffer) */
+	if ( IgnoreNb > 0 )
+	{
+		IgnoreNb--;
+		return;
+	}
+
+	if ( Count <= 6080 )						/* there're 6081 bytes to decode */
+	{
+		Count++;
+		
+		aciabyte ^= KeyBuffer[ Index ];
+		Index++;
+		Index &= 0x07;
+
+		IKBD_AddKeyToKeyboardBuffer_Real ( aciabyte , ACIA_CYCLES );
+	}
+
+	else
+	{
+		/* When all bytes were decoded if 0x08 is written to $fffc02 */
+		/* the program will terminate itself and leave Execution mode */
+		if ( aciabyte == 0x08 )
+			IKBD_Reset_ExeMode ();
+	}
 }
 
