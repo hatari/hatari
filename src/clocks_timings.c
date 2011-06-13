@@ -178,8 +178,6 @@ bool	RoundVBLPerSec = false;						/* if false, don't round number of VBL to 50/6
 
 void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 {
-fprintf ( stderr , "clock init %d\n" , MachineType );
-
 	memset ( (void *)&MachineClocks , 0 , sizeof ( MachineClocks ) );
 
 	if ( MachineType == MACHINE_ST )
