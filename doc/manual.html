@@ -2833,11 +2833,12 @@ DSP commands:
       dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
 
-<h4>Entering arguments to debugger commands</h4>
+<a name="Entering arguments to debugger commands">
+</a><h4>Entering arguments to debugger commands</h4>
 
 <p>
 After writing (with TAB completion) one of the above command names,
-pressing TAB will show all the available subcommands for that command.
+pressing TAB will (for most commands) show all the available subcommands.
 </p>
 
 <p>
@@ -2857,26 +2858,29 @@ names (a0-7, d0-7)!</em>  Otherwise results from expressions and
 conditional breakpoints can be unexpected.
 </p>
 
+<h5>Arithmetic expressions (calculations)</h5>
+
 <p>
-Instead of a number, you can also use an expression, by surrounding
-it with quotes ("").  An expression can contain calculations with
-register and symbol values in addition to numbers.  For example to
-give a sum of A0 and D0 register values to a command, use "a0+d0".
+Instead of a number, you can also use an arithmetic expression, by
+surrounding it with quotes ("").  An expression can contain
+calculations with CPU and DSP register, symbol and Hatari variable
+values in addition to numbers. For example to give a sum of A0 and
+D0 register values to a command, use "a0+d0".
 </p>
 
 <p>
-Within expressions parenthesis are used both to change the order
-of precendence <em>and</em> to indicate indirect addressing.
-Unlike with conditional breakpoints (explained below), you cannot
-give size for the indirect addressing, a long value is always read
-from the RAM address given within parenthesis.  For example to get
-long pointed by stack pointer + 2, use "(a7+2)".
+Within arithmetic expressions parenthesis are used both to change
+the order of precendence <em>and</em> to indicate indirect addressing.
+Unlike with conditional breakpoint expressions (explained below), you
+cannot give size for the indirect addressing, a long value is always
+read from the RAM address given within parenthesis.  For example to
+get a long value pointed by stack pointer + 2, use "(a7+2)".
 </p>
 
 <p>
-Expressions are always evaluated before being given to a command.
-Expressions don't need to be quoted for the "evaluate" or "address"
-commands as those always interpret their results as expressions.
+Values of arithmetic expressions are always evaluated before being
+given to a command. Except for "evaluate" and "address" commands
+they always need to be marked with quotes ("").
 </p>
 
 <p>
@@ -2943,9 +2947,10 @@ subcommand.
 
 <p>
 "file" subcommand can be used to get (arbitrary number of) commands
-parsed and executed from a given debugger input file.  With breakpoints
-this can be used to almost anything (see below).  Continue (e.g. for
-given number of instructions) command cannot be used in this though.
+parsed and executed from a given debugger input file.  With
+breakpoints this can be used to do almost anything (see below).
+Continuing the emulation (e.g. for given number of instructions)
+cannot be done with this though.
 </p>
 
 <p>
@@ -2959,8 +2964,9 @@ Without arguments "lock" command will show the available options
 <p>
 You can load symbol name/address information from a file to the
 debugger with the "symbols" command (and with "dspsymbols" for DSP).
-These symbolic names can be used in expressions and all breakpoints.
-They also show up in the "disasm" command output.
+These symbolic names can be used in arithmetic expressions and
+conditional breakpoint expressions.  They also show up in the "disasm"
+command output.
 </p>
 
 <p>The symbols file format is following:</p>
@@ -2971,14 +2977,14 @@ e0107e T supexec
 </pre>
 <p>
 Where 'T' means text (code), 'D' means data and 'B' means BSS section
-type of address.  The symbol hexadecimal address, type letter and name
-are separated by white space.  Empty lines and lines starting with '#'
-(comments) are ignored.
+type of address.  The hexadecimal address, address type letter and the
+symbol name are separated by white space.  Empty lines and lines
+starting with '#' (comments) are ignored.
 </p>
 
 <p>
 AHCC C-compiler can provide a symbol file suitable for this with its
-"-n 'nm' list" option (not enabled by default). If you're reverse
+"-n" 'nm' list option (not enabled by default). If you're reverse
 engineering some code, you could just create your own symbols file to
 help in debugging it later.
 </p>
@@ -2989,11 +2995,12 @@ into a fixed address (like e.g. EmuTOS is), after the program has been
 loaded, load the symbols with the program text segment address offset:
 </p>
 <pre>
-&gt; symbols calc.sym TEXT
+&gt; symbols calc.sym "TEXT"
 </pre>
 <p>
-(The value of the above virtual "TEXT" debugger variable
-comes from a program basepage, see "info basepage" output.)
+(The value of the above virtual "TEXT" debugger variable comes from a
+program basepage, it's set after the program is loaded by TOS, see
+"info basepage" output.)
 </p>
 
 
@@ -3017,9 +3024,9 @@ you need to use "b" command to remove or list them.)
 
 <p>
 Then there are the conditional breakpoints which can handle much more
-complex break conditions; they can track changes to register and
-memory values with bitmasks, include multiple conditions for
-triggering a breakpoint and so on.  Use "b" (or "db" for the DSP) 
+complex break condition expressions; they can track changes to
+register and memory values with bitmasks, include multiple conditions
+for triggering a breakpoint and so on.  Use "b" (or "db" for the DSP) 
 to manage them. "b help" explains the syntax:
 </p>
 
@@ -3039,10 +3046,13 @@ where:
 <p>
 If the value is in parenthesis like in '($ff820)' or '(a0)', then the
 used value will be read from the memory address pointed by it.  Note
-that this value is checked at run-time whereas quoted expressions
-(mentioned above, please read!) are evaluated already when adding a
-breakpoint.  For example, to break when a value in an address (later)
-pointed by A0 matches the value <em>currently</em> in D0, one would use:
+that this conditional breakpoint expression value is checked at
+run-time whereas quoted arithmetic expressions (mentioned in
+<a href="#Entering arguments to debugger commands">Entering arguments
+to debugger commands</a> above, please read!) are evaluated already when
+adding a breakpoint.  For example, to break when a value in an address
+(later) pointed by A0 matches the value <em>currently</em> in D0, one
+would use:
 </p>
 <pre>
 &gt; b (a0) = "d0"
@@ -3062,26 +3072,26 @@ b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
 </pre>
 
 <p>
-As a convenience, if the value expressions on both sides of the
-comparison are exactly the same, right side is replaced with its
-current value. For inequality ('!') comparison, conditional breakpoint
-tracks all further changes for the given address/register expression.
-This can be used for example to find out all value changes in a given
-memory address (see examples below).
+As a convenience, if the both sides of the comparison are exactly the
+same, right side is replaced with value to which it evaluates when the
+expression is parsed. For inequality ('!') comparison, conditional
+breakpoint will track all further changes for the given address/register
+expression. This can be used for example to find out all value changes
+in a given memory address (see examples below).
 </p>
 
 
 <h4>Breakpoint action options</h4>
 
 <p>
-There are several options on actions that will happen when a specified
-breakpoint is hit.  You can give any of them for conditional
-breakpoints, the address breakpoints accept only one per breakpoint
-and they don't support the ":file" option.
+There are several options for actions that are done when the specified
+breakpoint is hit.  You can give any of these options for conditional
+breakpoints, but the address breakpoints accept only one option per
+breakpoint and they don't support the ":file" option.
 </p>
 
-":trace" option will make breakpoint to print out the tracked
-value instead of breaking.  This can be useful e.g. when tracking
+":trace" option will make breakpoint to print out the tracked value
+without stopping the emulation.  This can be useful e.g. when tracking
 changes to some HW register, like this:
 </p>
 <pre>
@@ -3240,8 +3250,10 @@ that call has finished.</li>
 -->
 </ul>
 
-<p>"info" command can be used to list OS-call opcodes. For example,
-to see GEMDOS opcodes, use:</p>
+<p>
+Hint: "info" command "aes", "gemdos" and "vdi" subcommands for can be
+used to list the corresponding OS-call opcodes. For example,
+to see the GEMDOS opcodes, use:</p>
 <pre>
 info gemdos 1
 </pre>
@@ -3281,7 +3293,7 @@ which tell it to intercept this higher level functionality:
 <p>
 If use of above isn't possible for the things you'd like to track,
 you can use the OS call opcode breakpoints explained above with the
-":trace" option.
+":trace" breakpoint option.
 </p>
 <p>
 Tracing options can be set even from a program within the emulation
@@ -3396,7 +3408,7 @@ history, editing and especially with the command, command argument and
 symbol name completion support. If you're building Hatari yourself,
 please make sure that you have the GNU readline development files
 installed (on Debian / Ubuntu these come from the libreadline5-dev
-package). Otherwise this doesn't get enabled when you configure
+package). Otherwise completion doesn't get enabled when you configure
 Hatari.
 </p>
 
@@ -3570,15 +3582,9 @@ with the <span class="commandline">--spec512 0</span> option.
 
 <h5>Statusbar and drive LED</h5>
 <p>
-If your version of libSDL uses VSync to synchronize the screen
-output, drawing of the statusbar or the drive LED (when statusbar is
-disabled) may have some minor impact on performance too.  Normally
-they shouldn't.
-</p>
-<p>
-To also the drive LED shown when statusbar is disabled, you need to
-start Hatari with <span class="commandline">--drive-led off</span>.
-Then just save the Hatari configuration to make that option permanent.
+If your version of libSDL uses VSync to synchronize the screen output,
+drawing of the statusbar or the drive LED may have some minor impact
+on performance too.  Normally they shouldn't.
 </p>
 
 
