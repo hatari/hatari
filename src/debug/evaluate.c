@@ -195,15 +195,16 @@ static int getNumber(const char *str, Uint32 *number, int *nbase)
 
 
 /**
- * Parse unsigned register/symbol/number value and set it to "number".
+ * Parse unsigned register/symbol/number value and set it to "number"
+ * and the number base used for parsing to "base".
  * Return how many characters were parsed or zero for error.
  */
-static int getValue(const char *str, Uint32 *number, bool bForDsp)
+static int getValue(const char *str, Uint32 *number, int *base, bool bForDsp)
 {
 	char name[64];
 	const char *end;
 	Uint32 mask, *addr;
-	int len, dummy;
+	int len;
 
 	for (end = str; *end == '_' || isalnum(*end); end++);
 	
@@ -214,6 +215,8 @@ static int getValue(const char *str, Uint32 *number, bool bForDsp)
 	}
 	memcpy(name, str, len);
 	name[len] = '\0';
+
+	*base = 0; /* no base (e.g. variable) */
 
 	/* internal Hatari variable? */
 	if (BreakCond_GetHatariVariable(name, number)) {
@@ -250,9 +253,47 @@ static int getValue(const char *str, Uint32 *number, bool bForDsp)
 	}
 
 	/* none of above, assume it's a number */
-	return getNumber(str, number, &dummy);
+	return getNumber(str, number, base);
 }
 
+
+/* Check that number string is OK and isn't followed by unrecognized
+ * character (last char char is zero). If not, complain about it.
+ * Return true for success and false for failure.
+ */
+static bool isNumberOK(const char *str, int offset, int base)
+{
+	const char *basestr;
+
+	if (!offset) {
+		return false;
+	}
+	if (!str[offset]) {
+		/* no extra chars after the parsed part */
+		return true;
+	}
+	switch (base) {
+	case 0:
+		fprintf(stderr, "Name '%s' contains non-alphanumeric characters!\n", str);
+		return false;
+	case 2:
+		basestr = "binary";
+		break;
+	case 8:
+		basestr = "octal";
+		break;
+	case 10:
+		basestr = "decimal";
+		break;
+	case 16:
+		basestr = "hexadecimal";
+		break;
+	default:
+		basestr = "unknown";
+	}
+	fprintf(stderr, "Extra characters in %s based number '%s'!\n", basestr, str);
+	return false;
+}
 
 /**
  * Parse & set an (unsigned) number, assume it's in the configured
@@ -261,52 +302,30 @@ static int getValue(const char *str, Uint32 *number, bool bForDsp)
  */
 bool Eval_Number(const char *str, Uint32 *number)
 {
-	int offset, base = 0;
-	
+	int offset, base;
+	/* TODO: add CPU/DSP flag and use getValue() instead of getNumber()
+	 * like getRange() does, so that user can use variable names in
+	 * addition to numbers.
+	 */
 	offset = getNumber(str, number, &base);
-	if (!offset) {
-		return false;
-	}
-	if (str[offset]) {
-		const char *basestr;
-
-		switch (base) {
-		case 2:
-			basestr = "binary";
-			break;
-		case 8:
-			basestr = "octal";
-			break;
-		case 10:
-			basestr = "decimal";
-			break;
-		case 16:
-			basestr = "hexadecimal";
-			break;
-		default:
-			basestr = "unknown";
-	}
-		fprintf(stderr, "Extra characters in %s based number '%s'!\n",
-			basestr, str);
-		return false;
-	}
-	return true;
+	return isNumberOK(str, offset, base);
 }
 
 
 /**
- * Get a an adress range, eg. "$fa0000-$fa0100"
+ * Parse an address range, eg. "$fa0000[-$fa0100]" or "pc[-a0]" and
+ * output appropriate warnings if range or values are invalid.
+ * Address can also be a register/variable/symbol name.
  * returns:
- *  0 if OK,
- * -1 if not syntaxically a range,
- * -2 if values are invalid,
- * -3 if syntaxically range, but not value-wise.
+ * -1 if invalid address or range,
+ *  0 if single address,
+ * +1 if a range.
  */
-static int getRange(char *str1, Uint32 *lower, Uint32 *upper)
+int Eval_Range(char *str1, Uint32 *lower, Uint32 *upper, bool fordsp)
 {
+	int offset, base, ret;
 	bool fDash = false;
 	char *str2 = str1;
-	int ret = 0;
 
 	while (*str2) {
 		if (*str2 == '-') {
@@ -316,46 +335,35 @@ static int getRange(char *str1, Uint32 *lower, Uint32 *upper)
 		}
 		str2++;
 	}
-	if (!fDash)
-		return -1;
 
-	if (!Eval_Number(str1, lower))
-		ret = -2;
-	else if (!Eval_Number(str2, upper))
-		ret = -2;
-	else if (*lower > *upper)
-		ret = -3;
-	*--str2 = '-';
-	return ret;
-}
-
-
-/**
- * Parse an adress range, eg. "$fa0000[-$fa0100]" + show appropriate warnings
- * returns:
- * -1 if invalid address or range,
- *  0 if single address,
- * +1 if a range.
- */
-int Eval_Range(char *str, Uint32 *lower, Uint32 *upper)
-{
-	switch (getRange(str, lower, upper)) {
-	case 0:
-		return 1;
-	case -1:
-		/* single address, not a range */
-		if (!Eval_Number(str, lower))
-			return -1;
-		return 0;
-	case -2:
-		fprintf(stderr,"Invalid address values in '%s'!\n", str);
-		return -1;
-	case -3:
-		fprintf(stderr,"Invalid range ($%x > $%x)!\n", *lower, *upper);
-		return -1;
+	offset = getValue(str1, lower, &base, fordsp);
+	if (!isNumberOK(str1, offset, base)) {
+		/* first number not OK */
+		fprintf(stderr,"Invalid address value '%s'!\n", str1);
+		ret = -1;
+	} else {
+		/* first number OK */
+		ret = 0;
 	}
-	fprintf(stderr, "INTERNAL ERROR: Unknown getRange() return value.\n");
-	return -1;
+	if (fDash) {
+		offset = getValue(str2, upper, &base, fordsp);
+		if (!isNumberOK(str2, offset, base)) {
+			/* second number not OK */
+			fprintf(stderr, "Invalid address value '%s'!\n", str2);
+			ret = -1;
+		} else {
+			if (*lower > *upper) {
+				fprintf(stderr,"Invalid range ($%x > $%x)!\n", *lower, *upper);
+				/* not a range */
+				ret = -1;
+			} else {
+				/* second number & range OK */
+				ret = 1;
+			}
+		}
+		*--str2 = '-';
+	}
+	return ret;
 }
 
 
@@ -375,7 +383,7 @@ const char* Eval_Expression(const char *in, Uint32 *out, int *erroff, bool bForD
 	/* offset: character offset in expression			*/
 
 	long long value;
-	int offset = 0;
+	int dummy, offset = 0;
 	char mark;
 	
 	/* Uses global variables:	*/
@@ -437,7 +445,7 @@ const char* Eval_Expression(const char *in, Uint32 *out, int *erroff, bool bForD
 			if (id.valid == false) {
 				Uint32 tmp;
 				int consumed;
-				consumed = getValue(&(in[offset]), &tmp, bForDsp);
+				consumed = getValue(&(in[offset]), &tmp, &dummy, bForDsp);
 				/* number parsed? */
 				if (consumed) {
 					offset += consumed;

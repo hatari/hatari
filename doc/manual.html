@@ -2879,8 +2879,12 @@ get a long value pointed by stack pointer + 2, use "(a7+2)".
 
 <p>
 Values of arithmetic expressions are always evaluated before being
-given to a command. Except for "evaluate" and "address" commands
-they always need to be marked with quotes ("").
+given to a command.  Except for "evaluate" and "address" commands,
+they always need to be marked with quotes (""). Besides arithmetics,
+this can be used also to give symbol/register/variable values to
+commands that don't otherwise interpret them.  If command complains
+that it didn't recognize e.g. a register name, just put it to quotes
+and it will be "evaluated" before being given to the command.
 </p>
 
 <p>
@@ -2911,7 +2915,7 @@ Usage:  d [start address-[end address]]
         position or from current PC if no last position is available.
 </pre>
 <pre>
-&gt; disasm
+&gt; disasm pc
 0000aa6e: 2f08 0241 0fff 207c 00fe MOVE.L A0,-(A7)
 0000aa70: 0241 0fff 207c 00fe 78c0 AND.W #$0fff,D1
 0000aa74: 207c 00fe 78c0 2070 1000 MOVEA.L #$00fe78c0,A0
@@ -2920,9 +2924,11 @@ Usage:  d [start address-[end address]]
 </pre>
 
 <p>
-Each time you enter the debugger, "disasm" command will disassemble
-from the current PC address unless you give it another address (range)
-and on further invocations it continues showing successive addresses.
+Both commands accept in addition to numeric addresses also register
+and symbol names, like in above example.  If you don't specify an
+address, the commands continue showing from an address that comes
+after the previously shown data.  "disasm" command default address
+will be reseted to PC address everytime you re-enter the debugger.
 </p>
 
 <p>
@@ -3220,8 +3226,8 @@ b  pc = TEXT  :once
 <li>To find out current program DATA and BSS segment contents,
     use the corresponding variables:
 <pre>
-m "data"
-m "bss"
+m data
+m bss
 </pre>
 </li>
 <li>If you want to stop at a specific cycle within a frame (that is,
