@@ -2858,7 +2858,8 @@ names (a0-7, d0-7)!</em>  Otherwise results from expressions and
 conditional breakpoints can be unexpected.
 </p>
 
-<h5>Arithmetic expressions (calculations)</h5>
+
+<h4>Calculations and immediate evaluation</h4>
 
 <p>
 Instead of a number, you can also use an arithmetic expression, by
@@ -2916,11 +2917,11 @@ Usage:  d [start address-[end address]]
 </pre>
 <pre>
 &gt; disasm pc
-0000aa6e: 2f08 0241 0fff 207c 00fe MOVE.L A0,-(A7)
-0000aa70: 0241 0fff 207c 00fe 78c0 AND.W #$0fff,D1
-0000aa74: 207c 00fe 78c0 2070 1000 MOVEA.L #$00fe78c0,A0
-0000aa7a: 2070 1000 4ed0 0241 0ffe MOVEA.L (A0, D1.W*1, $00) == $00fe34ae,A0
-0000aa7e: 4ed0 0241 0ffe 6712 e549 JMP.L (A0)
+$00aa6e : 2f08                                 move.l    a0,-(sp)
+$00aa70 : 0241 0fff                            andi.w    #$fff,d1
+$00aa74 : 207c 00fe 78c0                       movea.l   #$fe78c0,a0
+$00aa7a : 2070 1000                            movea.l   (a0,d1.w),a0
+$00aa7e : 4ed0                                 jmp       (a0)
 </pre>
 
 <p>
@@ -2935,6 +2936,7 @@ will be reseted to PC address everytime you re-enter the debugger.
 You can use the "info" command to see state of specific sets of HW
 registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 </p>
+
 
 <h4>Selecting what information is shown on entering the debugger</h4>
 
@@ -2953,17 +2955,19 @@ subcommand.
 
 <p>
 "file" subcommand can be used to get (arbitrary number of) commands
-parsed and executed from a given debugger input file.  With
-breakpoints this can be used to do almost anything (see below).
-Continuing the emulation (e.g. for given number of instructions)
-cannot be done with this though.
+parsed and executed from a given debugger input file whenever debugger
+is entered.  With this you can output any information you need:
 </p>
+<pre>
+lock file debugger.ini
+</pre>
 
 <p>
 To disable showing of this extra information, use "lock default".
 Without arguments "lock" command will show the available options
 (like the "info" command does).
 </p>
+
 
 <a name="Debug symbols"></a><h3>Debug symbols</h3>
 
@@ -3001,7 +3005,7 @@ into a fixed address (like e.g. EmuTOS is), after the program has been
 loaded, load the symbols with the program text segment address offset:
 </p>
 <pre>
-&gt; symbols calc.sym "TEXT"
+symbols calc.sym "TEXT"
 </pre>
 <p>
 (The value of the above virtual "TEXT" debugger variable comes from a
@@ -3019,13 +3023,13 @@ program counter hits a given address. Use "a" (or "da" for the DSP)
 to create them, for example:
 </p>
 <pre>
-&gt; a $e01034
-&gt; a some_symbol
+a $e01034
+a some_symbol
 </pre>
 
 <p>
-(Address breakpoints are just wrappers for conditional breakpoints so
-you need to use "b" command to remove or list them.)
+Note that address breakpoints are just wrappers for conditional
+breakpoints so you need to use "b" command to remove or list them.
 </p>
 
 <p>
@@ -3033,20 +3037,125 @@ Then there are the conditional breakpoints which can handle much more
 complex break condition expressions; they can track changes to
 register and memory values with bitmasks, include multiple conditions
 for triggering a breakpoint and so on.  Use "b" (or "db" for the DSP) 
-to manage them. "b help" explains the syntax:
+to manage them.
 </p>
 
+<p>Help explains the general syntax:</p>
 <pre>
-breakpoint = &lt;condition&gt; [ &amp;&amp; &lt;condition&gt; ... ] [option]
-condition = &lt;value&gt;[.mode] [&amp; &lt;number&gt;] &lt;comparison&gt; &lt;value&gt;[.mode]
+&gt; help b
+'breakpoint' or 'b' - set/remove/list conditional CPU breakpoints
+Usage:  b &lt;condition&gt; [&amp;&amp; &lt;condition&gt; ...] [:&lt;option&gt;] | &lt;index&gt; | help | all
+
+Set breakpoint with given &lt;conditions&gt;, remove breakpoint with
+given &lt;index&gt;, remove all breakpoints with 'all' or output
+breakpoint condition syntax with 'help'.  Without arguments,
+lists currently active breakpoints.
+</pre>
+
+<p>
+Unless you give breakpoint one of the pre-defined subcommands ('all',
+'help'), index for a breakpoint to remove or no arguments (to list
+breakpoints), the arguments are interpreted as a new breakpoint
+definition.
+</p>
+
+<p>
+Each conditional breakpoint can have (currently up to 4) conditions
+which are separated by "&amp;&amp;".  All of the breakpoint's
+conditions need to be true for a breakpoint to trigger.
+</p>
+
+
+<a name="Breakpoint options"></a><h4>Breakpoint options</h4>
+
+<p>
+Normally when a breakpoint is triggered, emulation is stopped and you
+get to the debugger. Breakpoint options can be used to affect what
+happens when a breakpoint is triggered.  These options are given after
+the conditions and are prefixed with ':'. 
+</p>
+
+<dl>
+<dt><em>&lt;count&gt;</em></dt>
+<dd>Break only on every &lt;count&gt; hit. For example, to stop
+on every other time PC is at given address, use:
+<pre>
+a $1234 :2
+</pre>
+</dd>
+
+<dt><em>once</em></dt>
+<dd>
+Delete the breakpoint when it's hit i.e. trigger it only once. It may
+be useful if you just want to get a specific address. Or if you're on
+an instruction that jumps back to a start of the loop and you want to
+finish the loop, you couuld use:
+<pre>
+b pc &gt; "pc" :once
+continue
+</pre>
+</dd>
+
+<dt><em>trace</em></dt>
+<dd>
+Continue emulation without stopping after printing the value that
+triggered the breakpoint and doing other possible option actions.
+This is most useful when investigating memory or register value
+changes (explained below).
+</dd>
+
+<dt><em>lock</em></dt>
+<dd>
+Show the same information on breakpoint hit as you see when entering
+the debugger (see the "lock" command in
+<a href="#Inspecting emulation state">Inspecting emulation state</a>
+above).  This enables also trace option as you would anyway see this
+information if debugger would be entered.
+</dd>
+
+<dt><em>file &lt;file&gt;</em></dt>
+<dd>
+Execute debugger commands from given &lt;file&gt; when this breakpoint
+is hit.  With this you have complete control over what information is
+show when the debugger is hit, you can even chain breakpoints (as
+explained in
+<a href="#Chaining breakpoints">Chaining breakpoints</a> later on)
+etc.  Use this if "lock" option isn't enough or you want different
+information show on breakpoints and when entering the debugger.
+</dd>
+</dl>
+
+<p>
+Note: you can give multiple options for conditional breakpoints, but
+for address breakpoints you can give only one these options.  And
+"file" option is supported only for conditional breakpoints.
+</p>
+
+
+<a name="Breakpoint conditions"></a><h4>Breakpoint conditions</h4>
+
+<p>
+"b help" explains very briefly the breakpoint condition syntax:
+</p>
+<pre>
+&gt; b help
+condition = &lt;value&gt;[.mode] [&amp; &lt;mask&gt;] &lt;comparison&gt; &lt;value&gt;[.mode]
 
 where:
         value = [(] &lt;register/symbol/variable name | number&gt; [)]
-        number = [#|$|%]&lt;digits&gt;
+        number/mask = [#|$|%]&lt;digits&gt;
         comparison = '&lt;' | '&gt;' | '=' | '!'
         addressing mode (width) = 'b' | 'w' | 'l'
         addressing mode (space) = 'p' | 'x' | 'y'
-        option = : &lt;count&gt; | 'once' | 'trace'
+</pre>
+
+<p>
+For CPU breakpoints, mode is the address width; it can be byte ("b"),
+word ("w") or long ("l", default).  For DSP breakpoints, mode specifies
+the address space: "P", "X" or "Y". Note that on DSP only R0-R7
+registers can be used for memory addressing.  For example;
+<pre>
+db (r0).x = 1 &amp;&amp; (r0).y = 2
 </pre>
 
 <p>
@@ -3055,97 +3164,128 @@ used value will be read from the memory address pointed by it.  Note
 that this conditional breakpoint expression value is checked at
 run-time whereas quoted arithmetic expressions (mentioned in
 <a href="#Entering arguments to debugger commands">Entering arguments
-to debugger commands</a> above, please read!) are evaluated already when
+to debugger commands</a> above) are evaluated already when
 adding a breakpoint.  For example, to break when a value in an address
 (later) pointed by A0 matches the value <em>currently</em> in D0, one
 would use:
 </p>
 <pre>
-&gt; b (a0) = "d0"
+b (a0) = "d0"
 </pre>
 
 <p>
-M68k addresses can have byte ("b"), word ("w") or long ("l", default)
-width. DSP addresses belong to different address spaces: "P", "X" or
-"Y". Note that on DSP only R0-R7 registers can be used for memory
-addressing.
-</p>
-
-<p>Examples:</p>
+If you're interested only on certain bits in the value, you can use
+'&amp;' and a numeric mask on either side of comparison operator to
+mask the coresponding value, like this:
 <pre>
-b (r0).x = 1 &amp;&amp; (r0).y = 2
-b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
+b ($ff820).w &amp; 3 = (a0)  &amp;&amp;  (a1) = d0 & %1100
+</pre>
+
+<p>
+Comparison operators should be familiar from math and C except for '!'
+which indicates inequality ("is not") comparison.  For example:
+</p>
+<pre>
+b d0 &gt; $20  &amp;&amp;  d0 &lt; $40  &amp;&amp;  d0 ! $30
 </pre>
 
 <p>
 As a convenience, if the both sides of the comparison are exactly the
-same, right side is replaced with value to which it evaluates when the
-expression is parsed. For inequality ('!') comparison, conditional
-breakpoint will track all further changes for the given address/register
-expression. This can be used for example to find out all value changes
-in a given memory address (see examples below).
-</p>
-
-
-<h4>Breakpoint action options</h4>
-
-<p>
-There are several options for actions that are done when the specified
-breakpoint is hit.  You can give any of these options for conditional
-breakpoints, but the address breakpoints accept only one option per
-breakpoint and they don't support the ":file" option.
-</p>
-
-":trace" option will make breakpoint to print out the tracked value
-without stopping the emulation.  This can be useful e.g. when tracking
-changes to some HW register, like this:
+same (i.e. condition is redundant as it's always either true or
+false), the <em>right side</em> of the comparison is replaced with
+its current value.  This way you can give something like this:
 </p>
 <pre>
-&gt; b ($ffff9202).w ! ($ffff9202).w :trace
+b pc &gt; "pc"
+</pre>
+<p>As:</p>
+<pre>
+b pc &gt; pc
 </pre>
 
 <p>
-If you want to see the same information as you see when entering the
-debugger, use the ":lock" option instead of the ":trace" option (see
-the "lock" command in <a href="#Inspecting emulation state">Inspecting
-emulation state</a> above).
-</p>
-
-<p>
-":once" option that removes the breakpoint after it's hit can be
-useful when one wants to get out of a loop (when PC is at instruction
-that branches back to loop start) or just to get to a specific point
-in code:
+That in itself isn't so useful, but for inequality ('!') comparison,
+conditional breakpoint will additionally track and output all further
+changes for the given address/register expression. This can be used
+for example to find out all value changes in a given memory address,
+like this:
 </p>
 <pre>
-&gt; b pc &gt; pc :once
-&gt; a some_symbol :once
+b ($ffff9202).w ! ($ffff9202).w :trace
 </pre>
-
 <p>
-Whereas giving count (like ":2") as option will break only on every
-&lt;count&gt; time the breakpoint is hit.
+Typically with this one would use the breakpoint "trace" option like
+above.
 </p>
 
+
+<h4>Breakpoint helper variables</h4>
+
 <p>
-If you want to specify yourself the information you see on breakpoint
-hits, use the ":file" option and give it the file specifying the
-debugger commands that should be executed when that breakpoint is hit.
+In addition to loaded symbols, the debugger supports also setting
+conditional breakpoints on values of some "virtual" variables listed
+by "b help". For example:
 </p>
+<ul>
+<li>If you want the emulation to stop on the first instruction of
+    next program, after TOS desktop is up, set a breakpoint on
+    the TEXT segment address given in a program basepage:
 <pre>
-&gt; b ($ffff9202).w & 3 = 3 :file my-commands.ini
+b  pc = TEXT  :once
 </pre>
+Note: you cannot use an address breakpoint for this because value of a
+variable given to it is evaluated when the breakpoint is set, not at
+run-time, so it cannot get the new value that the TEXT variable gets
+when you start a program.
+</li>
+<li>To find out current program DATA and BSS segment contents,
+    use the corresponding variables:
+<pre>
+m data
+m bss
+</pre>
+</li>
+<li>If you want to stop at a specific cycle within a frame (that is,
+    PC relative to the current VBL/HBL in cycles), set breakpoints to
+    specific "HBL" and "LineCycles" variable values.  If you for
+    example want to break after 20 HBLs, use:
+<pre>
+b  HBL = "HBL+20"
+</pre>
+</li>
+<li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
+    to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
+    By default they contain the 0xffff value, so to trace e.g. AES calls,
+    one needs to use something like this:
+<pre>
+b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
+</pre>
+</li>
+<!--
+<li>"OSExitPC" variable can be used to catch exit from an OS call.
+<pre>
+b pc = OSExitPC :once
+</pre>
+It's valid after OS call breakpoint is triggered and before
+that call has finished.</li>
+-->
+</ul>
 
 <p>
-You can specify as many of these options as you want, see below for
-an example.
-</p>
+Hint: "info" command "aes", "gemdos" and "vdi" subcommands for can be
+used to list the corresponding OS-call opcodes. For example,
+to see the GEMDOS opcodes, use:</p>
+<pre>
+info gemdos 1
+</pre>
 
 
+<a name="Chaining breakpoints"></a><h4>
 <h4>Chaining breakpoints and other actions</h4>
 
 <p>
-As the file pointed by the breakpoint ":file" option can contain any
+As the file pointed by the breakpoint ":file" option (see
+<a href="#Breakpoint options">Breakpoint options</a>) can contain any
 debugger commands, it can also be used to do automatic "chaining" of
 debugger and breakpoint actions so that after one breakpoint is hit,
 another one is set.
@@ -3206,63 +3346,6 @@ input files can be also read with the debugger "file" command, "lock"
 command "file" option and with the Hatari "--parse" command line
 option.
 </p>
-
-
-<h4>Breakpoint helper variables</h4>
-
-<p>
-In addition to loaded symbols, the debugger supports also setting
-conditional breakpoints on values of some "virtual" variables listed
-by "b help". For example:
-</p>
-<ul>
-<li>If you want the emulation to stop on the first instruction of
-    next program, after TOS desktop is up, set a breakpoint on
-    the TEXT segment address given in a program basepage:
-<pre>
-b  pc = TEXT  :once
-</pre>
-</li>
-<li>To find out current program DATA and BSS segment contents,
-    use the corresponding variables:
-<pre>
-m data
-m bss
-</pre>
-</li>
-<li>If you want to stop at a specific cycle within a frame (that is,
-    PC relative to the current VBL/HBL in cycles), set breakpoints to
-    specific "HBL" and "LineCycles" variable values.  If you for
-    example want to break after 20 HBLs, use:
-<pre>
-b  HBL = "HBL+20"
-</pre>
-</li>
-<li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
-    to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
-    By default they contain the 0xffff value, so to trace e.g. AES calls,
-    one needs to use something like this:
-<pre>
-b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
-</pre>
-</li>
-<!--
-<li>"OSExitPC" variable can be used to catch exit from an OS call.
-<pre>
-b pc = OSExitPC :once
-</pre>
-It's valid after OS call breakpoint is triggered and before
-that call has finished.</li>
--->
-</ul>
-
-<p>
-Hint: "info" command "aes", "gemdos" and "vdi" subcommands for can be
-used to list the corresponding OS-call opcodes. For example,
-to see the GEMDOS opcodes, use:</p>
-<pre>
-info gemdos 1
-</pre>
 
 
 <a name="Tracing"></a><h3>Tracing</h3>

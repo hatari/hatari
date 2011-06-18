@@ -1546,11 +1546,11 @@ static void BreakCond_Help(void)
 	Uint32 value;
 	int i;
 	fputs(
-"  condition = <value>[.mode] [& <number>] <comparison> <value>[.mode]\n"
+"  condition = <value>[.mode] [& <mask>] <comparison> <value>[.mode]\n"
 "\n"
 "  where:\n"
 "  	value = [(] <register/symbol/variable name | number> [)]\n"
-"  	number = [#|$|%]<digits>\n"
+"  	number/mask = [#|$|%]<digits>\n"
 "  	comparison = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
