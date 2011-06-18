@@ -1546,7 +1546,6 @@ static void BreakCond_Help(void)
 	Uint32 value;
 	int i;
 	fputs(
-"  breakpoint = <condition> [ && <condition> ... ] [option]\n"
 "  condition = <value>[.mode] [& <number>] <comparison> <value>[.mode]\n"
 "\n"
 "  where:\n"
@@ -1555,20 +1554,15 @@ static void BreakCond_Help(void)
 "  	comparison = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
-"  	option = : <count> | 'once' | 'trace' | 'lock' | 'file' <file>\n"
 "\n"
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
 "\n"
-"  If the value expressions on both sides of the comparison are exactly\n"
-"  the same, right side is replaced with its current value and for\n"
-"  inequality ('!') comparison, the breakpoint tracks all further changes\n"
-"  for the given address/register expression.  'trace' option for continuing\n"
-"  without breaking can be useful with this. 'lock' option will show the\n"
-"  same information that's seen on entering debugger. 'file' option will\n"
-"  execute debugger commands from the given file when a breakpoint is hit.\n"
-"  'once' option removes breakpoint after hit and giving count as option\n"
-"  will break only on every <count> hit.\n"
+"  If the parsed value expressions on both sides of it are exactly\n"
+"  the same, right side is replaced with its current value.  For\n"
+"  inequality ('!') comparison, the breakpoint will additionally track\n"
+"  all further changes for the given address/register expression value.\n"
+"  (This is useful for tracking register and memory value changes.)\n"
 "\n"
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
@@ -1607,17 +1601,20 @@ static void BreakCond_Help(void)
 /* ------------- breakpoint condition parsing, public API ------------ */
 
 const char BreakCond_Description[] =
-	"[ <condition> [:<count>|once|trace|lock] | <index> | help | all ]\n"
-	"\tSet breakpoint with given <condition>, remove breakpoint with\n"
-	"\tgiven <index>, or list all breakpoints when no args are given.\n"
-	"\t'help' outputs breakpoint condition syntax help, 'all' removes\n"
-	"\tall breakpoints.  Multiple breakpoint action options can be\n"
-	"\tspecified after the breakpoint condition(s):\n"
-	"\t- ':trace', prints the breakpoint match without stopping\n"
-	"\t- ':lock', prints the debugger entry info without stopping\n"
-	"\t- ':file <file>', executes debugger commands from given file\n"
-	"\t- ':once', deletes the breakpoint after it's hit\n"
-	"\t- ':<count>', breaks only on every <count> hit";
+	"<condition> [&& <condition> ...] [:<option>] | <index> | help | all\n"
+	"\n"
+	"\tSet breakpoint with given <conditions>, remove breakpoint with\n"
+	"\tgiven <index>, remove all breakpoints with 'all' or output\n"
+	"\tbreakpoint condition syntax with 'help'.  Without arguments,\n"
+	"\tlists currently active breakpoints.\n"
+	"\n"
+	"\tMultiple breakpoint action options can be specified after\n"
+	"\tthe breakpoint condition(s):\n"
+	"\t- 'trace', print the breakpoint match without stopping\n"
+	"\t- 'lock', print the debugger entry info without stopping\n"
+	"\t- 'file <file>', execute debugger commands from given <file>\n"
+	"\t- 'once', delete the breakpoint after it's hit\n"
+	"\t- '<count>', break only on every <count> hit";
 
 /**
  * Parse options for the given breakpoint command.
@@ -1739,13 +1736,15 @@ cleanup:
 
 
 const char BreakAddr_Description[] =
-	"<address> [:<count>|once|trace|lock]\n"
+	"<address> [:<option>]\n"
 	"\tCreate conditional breakpoint for given PC <address>.\n"
+	"\n"
 	"\tBreakpoint action option alternatives:\n"
-	"\t- ':trace', prints the breakpoint match without stopping\n"
-	"\t- ':lock', prints the debugger entry info without stopping\n"
-	"\t- ':once', deletes the breakpoint after it's hit\n"
-	"\t- ':<count>', breaks only on every <count> hit\n"
+	"\t- 'trace', print the breakpoint match without stopping\n"
+	"\t- 'lock', print the debugger entry info without stopping\n"
+	"\t- 'once', delete the breakpoint after it's hit\n"
+	"\t- '<count>', break only on every <count> hit\n"
+	"\n"
 	"\tUse conditional breakpoint commands to manage the created\n"
 	"\tbreakpoints.";
 
