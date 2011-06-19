@@ -590,18 +590,19 @@ void DmaSnd_SoundControl_WriteWord(void)
 
 	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", IoMem_ReadWord(0xff8900));
 
+        /* Before starting/stopping DMA sound, create samples up until this point with current values */
+	Sound_Update(false);
+
 	nNewSndCtrl = IoMem_ReadWord(0xff8900) & 3;
 
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY) && (nNewSndCtrl & DMASNDCTRL_PLAY))
 	{
-		//fprintf(stderr, "Turning on DMA sound emulation.\n");
+		LOG_TRACE(TRACE_DMASND, "DMA snd control write: starting dma sound output\n");
 		DmaSnd_StartNewFrame();
 	}
 	else if ((nDmaSoundControl & DMASNDCTRL_PLAY) && !(nNewSndCtrl & DMASNDCTRL_PLAY))
 	{
-		//fprintf(stderr, "Turning off DMA sound emulation.\n");
-		/* Create samples up until this point with current values */
-		Sound_Update(false);
+		LOG_TRACE(TRACE_DMASND, "DMA snd control write: stopping dma sound output\n");
 		/* DMA sound is stopped, remove interrupt */
 		CycInt_RemovePendingInterrupt(INTERRUPT_DMASOUND);
 	}
