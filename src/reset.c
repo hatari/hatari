@@ -30,7 +30,8 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "video.h"
 #include "falcon/videl.h"
-
+#include "debugcpu.h"
+#include "debugdsp.h"
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -74,6 +75,9 @@ static int Reset_ST(bool bCold)
 	else
 		Screen_Reset();               /* Reset screen */
 	M68000_Reset(bCold);          /* Reset CPU */
+
+	DebugCpu_SetDebugging();      /* Re-set debugging flag if needed */
+	DebugDsp_SetDebugging();
 
 	Midi_Reset();
 
