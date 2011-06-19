@@ -26,6 +26,10 @@ Emulation improvements
   which has better cycle accuracy needed by some programs:
 	- Integrate MMU emulation
 	- Add Exception debugging support
+	- Instead of calling Reset_Cold()/m68k_reset()/uae_reset()
+	  directly from newcpu.c, show user a notice (dialog)
+	  about what happened and let user do the reboot
+	  (see "Emulation reset, old-UAE vs. WinAUE core" mail-thread)
 	- Update WinUAE core to its latest (a year newer) version
 	- Fix & document cmdline options for selecting prefetch etc
 	  - GUI options for above
@@ -80,8 +84,11 @@ Other potential Hatari functionality improvements
 
 - Steem emulator debugging features missing from Hatari debugger.
   These should be straightforward to implement:
-	- History of executed instructions and how many cycles
-	  they took
+	- Breakpoints on iterrupts
+	- Breaking on exceptions 2-8 vs. bombs vs. don't break.
+          Hatari has only an option to break on address & bus errors
+	  & uninitialized exception handler.
+	- History of executed instructions and how many cycles they took
 	  (= Steem History view & Trace info)
 	- Showing values both in different lengts and numeric bases.
 	  (In Hatari one gets latter with "evaluate" command, e.g. "e a0",
@@ -103,10 +110,6 @@ Other potential Hatari functionality improvements
 	  (= Steem options)
 	- Run for N cycles
 	  (Hatari continue command accepts only instructions, not cycles)
-	- Breakpoints on iterrupts
-	- Breaking on exceptions 2-8 vs. bombs vs. don't break.
-          Hatari has only an option to break on address & bus errors
-	  & uninitialized exception handler.
   These are more complicated ones:
 	- Monitoring reads & writes to specific address.  Hatari supports
 	  only monitoring changes to values, not having breakpoints of
@@ -128,7 +131,7 @@ Other potential Hatari functionality improvements
 	- A stop/run button and a debugger "step" button
 	- Possibility to click to an address on dump window to define
 	  a simple PC breakpoint (or monitor memory on B/W/L accesses)
-	- A way to search for hexa/text in Hatari's RAM.
+	- A way to search for hex/text in Hatari's RAM.
 
 (See "Steem debugger features not in Hatari debugger"
  hatari-devel mail thread for more info.)
