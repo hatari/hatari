@@ -121,8 +121,6 @@ endif(PORTAUDIO_FOUND)
 # CPP Definitions:
 # ################
 
-add_definitions(-DCONFDIR=\"/etc\")
-
 # Test for large file support:
 execute_process(COMMAND getconf LFS_CFLAGS
                 OUTPUT_VARIABLE DETECTED_LFS_CFLAGS
@@ -225,6 +223,15 @@ endif()
 if(NOT DOCDIR)
 	set(DOCDIR share/doc/hatari)
 endif()
+
+if(NOT ETCDIR)
+	if(WIN32)
+		set(ETCDIR .)
+	else()
+		set(ETCDIR /etc)
+	endif()
+endif()
+add_definitions(-DCONFDIR=\"${ETCDIR}\")
 
 # #########################################
 # Create config.h and recurse into subdirs:
