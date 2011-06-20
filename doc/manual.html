@@ -3245,9 +3245,13 @@ by "b help". For example:
     next program; after TOS desktop is up, set a breakpoint on
     the TEXT segment address given in a program basepage:
 <pre>
-b  pc = TEXT
+b  pc = TEXT :once
 </pre>
-Note: you cannot use an address breakpoint for this because value of a
+Note1: It's better to trigger it only once because if you'd leave it on,
+during reboot you would get a warning for every instruction until TOS sets
+a valid basepage.
+<br>
+Note2: you cannot use an address breakpoint for this because value of a
 variable given to it is evaluated when the breakpoint is set, not at
 run-time, so it cannot get the new value that the TEXT variable gets
 when you start a program.
@@ -3261,7 +3265,7 @@ m  bss
 </li>
 <li>If you want to stop at a specific cycle within a frame (that is,
     PC relative to the current VBL/HBL in cycles), set breakpoints to
-    specific "HBL" and "LineCycles" variable values.  If you for
+    specific "HBL" and "FrameCycles" variable values.  If you for
     example want to break after 20 HBLs, use:
 <pre>
 b  HBL = "HBL+20"
@@ -3585,7 +3589,7 @@ b  ($ff820a).b & 2 ! ($ff820a).b & 2  :trace
 <dd>To stop e.g. when VBL is 100, HBL is 40 and line cycles is 5,
 use the corresponding debugger variables:
 <pre>
-b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  LineCycles = 5
+b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  FrameCycles = 5
 </pre>
 </dd>
 
