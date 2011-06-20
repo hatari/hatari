@@ -90,6 +90,7 @@ const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
 #include "wavFormat.h"
 #include "ymFormat.h"
 #include "avi_record.h"
+#include "clocks_timings.h"
 
 
 
@@ -1178,22 +1179,40 @@ void Sound_MemorySnapShot_Capture(bool bSave)
  */
 static int Sound_SetSamplesPassed(bool FillFrame)
 {
+#ifdef old_code
 	int nSampleCycles;
+#endif
 	int nSoundCycles;
 	int SamplesToGenerate;				/* How many samples are needed for this time-frame */
 
+#ifdef old_code
 	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_SOUND);
+#else
+	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+#endif
 
 	/* example : 160256 cycles per VBL, 44Khz = 882 samples per VBL at 50 Hz */
 	/* 882/160256 samples per cpu clock cycle */
 
-	SamplesToGenerate = nSoundCycles * SamplesPerFrame / CYCLES_PER_FRAME;
+	/* Total number of samples that we should have at this point of the VBL */
+	SamplesToGenerate = nSoundCycles * SamplesPerFrame
+		/ ClocksTimings_GetCyclesPerVBL ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
+
+//if (SamplesToGenerate > SamplesPerFrame )
+//fprintf ( stderr , "over run %d %d\n" , SamplesPerFrame , SamplesToGenerate );
+
 	if (SamplesToGenerate > SamplesPerFrame)
 		SamplesToGenerate = SamplesPerFrame;
 
+#ifdef old_code
 	nSampleCycles = SamplesToGenerate * CYCLES_PER_FRAME / SamplesPerFrame;
 	nSoundCycles -= nSampleCycles;
 	Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
+#else
+	SamplesToGenerate -= CurrentSamplesNb;		/* don't count samples that were already generated up to now */
+	if ( SamplesToGenerate < 0 )
+		SamplesToGenerate = 0;
+#endif
 
 	/* If we're called from the VBL interrupt (FillFrame==true), we must ensure we have */
 	/* an exact total of SamplesPerFrame samples during a full VBL (we take into account */
@@ -1302,18 +1321,37 @@ void Sound_Update(bool FillFrame)
 
 /*-----------------------------------------------------------------------*/
 /**
- * On each VBL, complete samples
+ * On the end of each VBL, complete audio buffer to reach SamplesPerFrame samples.
+ * As Sound_Update(false) could be called several times during the VBL, the audio
+ * buffer might be already partially filled.
+ * We must first complete the buffer using the same value of SamplesPerFrame
+ * by calling Sound_Update(true) ; then we can compute a new value for
+ * SamplesPerFrame that will be used for the next VBL to come.
  */
 void Sound_Update_VBL(void)
 {
-	/*Compute a fractional equivalent of SamplesPerFrame, to avoid rounding propagation */
+//	static yms64 TotalSamples = 0;
+
+
+	Sound_Update(true);					/* generate as many samples as needed to fill this VBL */
+//fprintf ( stderr , "vbl done %d %d\n" , SamplesPerFrame , CurrentSamplesNb );
+
+	CurrentSamplesNb = 0;					/* VBL is complete, reset counter for next VBL */
+
+	/*Compute a fractional equivalent of SamplesPerFrame for the next VBL, to avoid rounding propagation */
+#if 0
 	SamplesPerFrame_unrounded += ( ((yms64)nAudioFrequency) << 32 ) / nScreenRefreshRate;
 	SamplesPerFrame = SamplesPerFrame_unrounded >> 32;		/* use integer part */
 	SamplesPerFrame_unrounded &= 0xffffffff;			/* keep fractional part */
+#else
+//	SamplesPerFrame_unrounded += ( ((yms64)nAudioFrequency * 160256) << 28 ) / 8021247;
+SamplesPerFrame_unrounded += (yms64) ClocksTimings_GetSamplesPerVBL ( ConfigureParams.System.nMachineType , nScreenRefreshRate , nAudioFrequency );
+	SamplesPerFrame = SamplesPerFrame_unrounded >> 28;		/* use integer part */
+	SamplesPerFrame_unrounded &= 0x0fffffff;			/* keep fractional part */
 
-	Sound_Update(true);					/* generate as many samples as needed to fill this VBL */
-
-	CurrentSamplesNb = 0;					/* VBL is complete, reset counter */
+//TotalSamples += (yms64) ClocksTimings_GetSamplesPerVBL ( ConfigureParams.System.nMachineType , nScreenRefreshRate , nAudioFrequency );
+//fprintf ( stderr , "vbl samp %lld\n" , TotalSamples >> 28 );
+#endif
 
 	/* Reset sound buffer if needed (after pause, fast forward, ...) */
 	if ( Sound_BufferIndexNeedReset )
