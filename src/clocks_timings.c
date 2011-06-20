@@ -472,6 +472,9 @@ Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int Screen
  *
  * The returned number of samples per VBL is << 28 to simulate maximum precision using
  * 64 bits integers (lower 28 bits are for the floating point part).
+ * example for STF/STE with emulation's audio freq = 44100 :
+ *	PAL  STF/STE video PAL :	881.07 samples per VBL  (instead of 882 for 50 Hz)
+ *					44053.56 samples for 50 VBLs (instead of 44100 for 1 sec at 50 Hz)
  */
 
 Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefreshRate , int AudioFreq )
