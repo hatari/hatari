@@ -688,6 +688,8 @@ void DmaSnd_FrameEndMed_WriteByte(void)
 void DmaSnd_FrameEndLow_WriteByte(void)
 {
 	LOG_TRACE(TRACE_DMASND, "DMA snd frame end low: 0x%02x\n", IoMem_ReadByte(0xff8913));
+
+//LOG_TRACE(TRACE_DMASND, "DMA pos %d / %d\n", dma.frameCounter_int , dma.frameLen );
 }
 
 
