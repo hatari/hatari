@@ -14,6 +14,7 @@ Contents:
 3. Compiling and installing
    3.1 WinUAE and "old" UAE CPU cores
    3.2 Known problems
+   3.3 Notes for Linux distribution packagers
 4. Running Hatari
 5. Contact
 
@@ -128,6 +129,22 @@ with a broken readline library:
 To get CMake readline detection and linking working on them,
 you need to give these as extra arguments to the "cmake" command:
    -DCMAKE_C_FLAGS=-lncurses -DCMAKE_EXE_LINKER_FLAGS=-lncurses
+
+
+ 3.3) Notes for Linux distribution packagers
+
+If Hatari package will have two application menu entries for Hatari,
+one for the Python UI embedding Hatari, and another one for the plain
+SDL version, the latter could open also a terminal window for Hatari
+command line debugger and its console messages:
+x-terminal-emulator -T "Hatari debug window, invoke debugger with AltGr+Pause" -e hatari
+
+tools/hatari-tos-register.sh is a minimal example of Linux init script
+registering Hatari as a (binfmt_misc) handler for TOS binaries.
+
+Alternatively one could add a mime type for TOS binaries with xdg-mime:
+  http://portland.freedesktop.org/xdg-utils-1.0/xdg-mime.html
+But registering handlers for mime-types seems desktop specific.
 
 
  4) Running Hatari
