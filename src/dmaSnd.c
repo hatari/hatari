@@ -136,6 +136,8 @@ struct dma_s {
 	Uint32 frameCounter_dec;	/* Counter in current sound frame, decimal part */
 	Uint32 frameLen;		/* Length of the frame */
 };
+Sint64 frameCounter_float;
+
 
 struct microwire_s {
 	Uint16 data;			/* Microwire Data register */
@@ -268,7 +270,8 @@ static void DmaSnd_StartNewFrame(void)
 
 	dma.frameCounter_int = 0;
 	dma.frameCounter_dec = 0;
-	
+	frameCounter_float = 0;
+
 	dma.frameLen = dma.frameEndAddr - dma.frameStartAddr;
 
 	if (dma.frameEndAddr <= dma.frameStartAddr)
@@ -339,7 +342,11 @@ static inline int DmaSnd_EndOfFrameReached(void)
  */
 void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
+#ifdef olddma
 	Uint32 FreqRatio;
+#else
+	Sint64 FreqRatio;
+#endif
 	int i, intPart;
 	int nBufIdx;
 	Sint8 *pFrameStart;
@@ -373,8 +380,12 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	pFrameStart = (Sint8 *)&STRam[dma.frameStartAddr];
 
 	/* Compute ratio between hatari's sound frequency and host computer's sound frequency */
+#ifdef olddma
 	FreqRatio = (Uint32)(DmaSnd_DetectSampleRate() / (double)nAudioFrequency * 65536.0 + 0.5);
-
+#else
+FreqRatio = ( ((Sint64)DmaSnd_DetectSampleRate()) << 32 ) / nAudioFrequency;
+dma.frameCounter_int = frameCounter_float >> 32;
+#endif
 	if (dma.soundMode & DMASNDMODE_MONO)
 	{
 		/* Mono 8-bit */
@@ -420,12 +431,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][0];	
 
 			/* Increase ratio pointer to next DMA sample */
+#ifdef olddma
 			dma.frameCounter_dec += FreqRatio;
 			if (dma.frameCounter_dec >= 65536) {
 				intPart = dma.frameCounter_dec >> 16;
 				dma.frameCounter_int += intPart;
 				dma.frameCounter_dec -= intPart* 65536;
 			}
+#else
+			frameCounter_float += FreqRatio;
+#endif
 		}
 	}
 	else
@@ -477,12 +492,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			}
 
 			/* Increase ratio pointer to next DMA sample */
+#ifdef olddma
 			dma.frameCounter_dec += FreqRatio;
 			if (dma.frameCounter_dec >= 65536) {
 				intPart = dma.frameCounter_dec >> 16;
 				dma.frameCounter_int += intPart;
 				dma.frameCounter_dec -= intPart* 65536;
 			}
+#else
+			frameCounter_float += FreqRatio;
+#endif
 		}
 	}
 
@@ -558,7 +577,11 @@ static Uint32 DmaSnd_GetFrameCount(void)
 	Sound_Update(false);
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-		nActCount = dma.frameStartAddr + (int)dma.frameCounter_int;
+#ifdef olddma
+	nActCount = dma.frameStartAddr + (int)dma.frameCounter_int;
+#else
+	nActCount = dma.frameStartAddr + (int)(frameCounter_float>>32);
+#endif
 	else
 		nActCount = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | IoMem[0xff8907];
 
