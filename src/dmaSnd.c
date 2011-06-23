@@ -453,7 +453,7 @@ dma.frameCounter_int = frameCounter_float >> 32;
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			/* Is end of DMA buffer reached ? */
-			if ((dma.frameCounter_int | 1) >= dma.frameLen) {
+			if (dma.frameCounter_int >= dma.frameLen) {
 				if (DmaSnd_EndOfFrameReached())
 					break;
 				else
