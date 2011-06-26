@@ -248,3 +248,6 @@ include(FindPythonInterp)
 if(PYTHONINTERP_FOUND)
 	add_subdirectory(python-ui)
 endif(PYTHONINTERP_FOUND)
+
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/Uninstall.cmake)
