@@ -121,8 +121,6 @@ endif(PORTAUDIO_FOUND)
 # CPP Definitions:
 # ################
 
-add_definitions(-DCONFDIR=\"/etc\")
-
 # Test for large file support:
 execute_process(COMMAND getconf LFS_CFLAGS
                 OUTPUT_VARIABLE DETECTED_LFS_CFLAGS
@@ -226,6 +224,15 @@ if(NOT DOCDIR)
 	set(DOCDIR share/doc/hatari)
 endif()
 
+if(NOT ETCDIR)
+	if(WIN32)
+		set(ETCDIR .)
+	else()
+		set(ETCDIR /etc)
+	endif()
+endif()
+add_definitions(-DCONFDIR=\"${ETCDIR}\")
+
 # #########################################
 # Create config.h and recurse into subdirs:
 # #########################################
@@ -241,3 +248,6 @@ include(FindPythonInterp)
 if(PYTHONINTERP_FOUND)
 	add_subdirectory(python-ui)
 endif(PYTHONINTERP_FOUND)
+
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/Uninstall.cmake)

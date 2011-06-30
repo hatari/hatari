@@ -55,6 +55,9 @@ void DebugUI_PrintCmdHelp(const char *psCmd) { }
 /* fake debugInfo.c stuff */
 #include "debugInfo.h"
 void DebugInfo_ShowSessionInfo(void) {}
+Uint32 DebugInfo_GetTEXT(void) { return 0x1234; }
+Uint32 DebugInfo_GetDATA(void) { return 0x12f4; }
+Uint32 DebugInfo_GetBSS(void)  { return 0x1f34; }
 
 /* fake Hatari video variables */
 #include "screen.h"

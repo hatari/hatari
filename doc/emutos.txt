@@ -183,7 +183,9 @@ Demos:
 - Soundtracker (by Equinox)
 - ST soccer (intro by Exceptions)
 - Stone tower (by FUN)
+- Superstar! (intro by Positivity/Dma-Sc/Ukko)
 - Sweety (by DHS)
+- Twelve (by Paulo Simoes)
 - Tut! (by Wildfire)
 - Two in One (by DHS)
 - Visualize (by Checkpoint)
@@ -406,9 +408,10 @@ Color games:
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
 
-Music Applications:
+STE (enhanced) music applications:
 - Blipp Blopper
 - Desktracker
+- Hextracker
 - MaxYMizer
 - Octalyzer
 - Paula

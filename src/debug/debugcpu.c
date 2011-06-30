@@ -169,7 +169,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (Eval_Range(psArgs[1], &disasm_addr, &disasm_upper))
+		switch (Eval_Range(psArgs[1], &disasm_addr, &disasm_upper, false))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -396,7 +396,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (Eval_Range(psArgs[1], &memdump_addr, &memdump_upper))
+		switch (Eval_Range(psArgs[1], &memdump_addr, &memdump_upper, false))
 		{
 		case -1:
 			/* invalid value(s) */

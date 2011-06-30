@@ -26,6 +26,11 @@ Emulation improvements
   which has better cycle accuracy needed by some programs:
 	- Integrate MMU emulation
 	- Add Exception debugging support
+	- Instead of calling Reset_Cold()/m68k_reset()/uae_reset()
+	  directly from newcpu.c, show user a notice (dialog)
+	  about what happened and let user do the reboot
+	  (see "Emulation reset, old-UAE vs. WinAUE core" mail-thread)
+	- Update WinUAE core to its latest (a year newer) version
 	- Fix & document cmdline options for selecting prefetch etc
 	  - GUI options for above
 
@@ -65,25 +70,91 @@ Other potential Hatari functionality improvements
 
 - Support harddisk write protection also for IDE & ACSI drives?
 
-- Debugger improvements:
-	- configuration options for controlling disassembly output format
+- Preliminary debugger work for the other features + cleanup:
+	- All DebugUI invocations should give reason for it
+	  (exception, breakpoint...)
+	- All parsing functions should return error code on error
+	- Eval_Number() could take DSP/CPU flag like Eval_Range()
+	  does so that all commands taking numeric args can accept
+	  also symbol, variable & register names
+	- Skip & tell user to rename any of the loaded symbols that
+	  have same name as internal Hatari variables
+	- Change "" for expressions to {} so that quotes can
+	  be used for e.g. search strings?
+
+- Steem emulator debugging features missing from Hatari debugger.
+  These should be straightforward to implement:
+	- Breakpoints on iterrupts
+	- Breaking on exceptions 2-8 vs. bombs vs. don't break.
+          Hatari has only an option to break on address & bus errors
+	  & uninitialized exception handler.
+	- History of executed instructions and how many cycles they took
+	  (= Steem History view & Trace info)
+	- Showing values both in different lengts and numeric bases.
+	  (In Hatari one gets latter with "evaluate" command, e.g. "e a0",
+	  but that doesn't show the value as it were long/word/byte)
+	- All register values being shown with above info
+          (= Steem Register monitor)
+	- info commands for PSG, MFP, FDC and IKBD register values
+	  (= Steem monitors for these)
+	- Info command for "timings" i.e. cycles since	HBL/VBL,
+	  timer values, video address & scanline
+	  (= Steem Timings view)
+	- memory dump in text format
+	  (= Steem Text monitor)
+        - Stack content display: m "a7-$40"-"a7"
+	  (= Steem Stack display)
+	- Text string and binary values (hex) search
+	  (= widgets in Steem monitor windows)
+	- Disasm format options being changable at run-time
+	  (= Steem options)
+	- Run for N cycles
+	  (Hatari continue command accepts only instructions, not cycles)
+  These are more complicated ones:
+	- Monitoring reads & writes to specific address.  Hatari supports
+	  only monitoring changes to values, not having breakpoints of
+	  reading values or writing the same value.  Slow
+	- Showing breakpoints in instruction dumps.  Hatari breakpoints
+	  are more advanced than the trivial address breakpoints, so
+	  this would require adding efficient support for plain PC
+	  based breakpoints
+	- Adding new symbol names for arbitrary addresses one at the time.
+	  Hatari debugger currently requires new symbols to be added to
+	  a file containing all the symbols + reloading that file
+	- Memory dump that shows also disassembly and values
+	  in different bases
+	  (= Steem Memory monitor)
+  Basic GUI debugger features:
+	- Ability to open as many dump/info windows as wanted
+	  (hex/asm/mfp/video/sound/...) and have those content
+	  refreshed each time emulation is stopped.
+	- A stop/run button and a debugger "step" button
+	- Possibility to click to an address on dump window to define
+	  a simple PC breakpoint (or monitor memory on B/W/L accesses)
+	- A way to search for hex/text in Hatari's RAM.
+
+(See "Steem debugger features not in Hatari debugger"
+ hatari-devel mail thread for more info.)
+
+- MonST debugger features missing from Hatari debugger
+  (ones not mentioned in Steem features):
+	- Address breakpoints can have conditions that are evaluated
+	  only on that address
+	- Marking breakpoint types in disassembly (<count> for counted
+	  ones, ? for conditional ones, * for others)
 	- Shortcut command for telling to run until given
 	  (temporary) conditional breakpoint is hit
 	- Running until code returns from ROM (exiting from super mode?)
 	- Single stepping that skips Traps, Line-A, Line-F. And one that
 	  skips also BSRs and JSRs.  Run until RTS/RTE command
-	- Command to run slowly
-	- Saving machine status (at least registers) to history buffer each
-	  time debugger is entered (exception or breakpoint is hit), or at
-	  every instruction, and being able both to view this history and
-	  set it as the new machine state
+	- Saving full machine status (like registers) to history buffer
+	  each time debugger is entered (exception or breakpoint is hit)
+	  and viewing of that history
 	- SP & SSP as CPU register names (active & supervisor stack)
 	- Fill and copy memory command
-	- Search.  For bytes or strings (Monst supports also searching
-	  instruction (subsets) but that's too complicated)
-	- A built in window system (ncurses based would constrict
-	  output area, maybe implement it externally to Hatari?)
- Most of these are Monst features that Hatari debugger doesn't implement.
+	- Search for an address which disassembly output matches
+	  given instruction substring
+	- User variables which values can be set & used in expressions
 
 - Improved screen handling:
 	- Direct 16-bit & 32-bit support for monochrome and VDI modes

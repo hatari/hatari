@@ -10,6 +10,11 @@
 #ifndef HATARI_DEBUGDSP_H
 #define HATARI_DEBUGDSP_H
 
+#ifdef ENABLE_DSP_EMU
+extern void DebugDsp_SetDebugging(void);
+#else /* !ENABLE_DSP_EMU */
+#define DebugDsp_SetDebugging()
+#endif /* !ENABLE_DSP_EMU */
 extern void DebugDsp_Check(void);
 extern int DebugDsp_DisAsm(int nArgc, char *psArgs[]);
 extern int DebugDsp_MemDump(int nArgc, char *psArgs[]);

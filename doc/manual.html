@@ -131,6 +131,7 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#Breakpoints">Breakpoints</a>
     <li><a href="#Tracing">Tracing</a>
     <li><a href="#Profiling">Profiling</a>
+    <li><a href="#Usage examples">Usage examples</a>
     <li><a href="#Build notes">Build notes</a>
   </ul>
   <li><a href="#Performance">Performance</a>
@@ -152,8 +153,8 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
 
 <a name="General description"></a><h3>General description</h3>
 <p>
-Hatari is an Atari ST, STE, TT and Falcon emulator for Linux, FreeBSD, BeOS and
-other Systems which are supported by the SDL library.
+Hatari is an Atari ST, STE, TT and Falcon emulator for Linux, OSX,
+Windows and other Systems which are supported by the SDL library.
 The emulator is open source software and is distributed under the terms of the
 <a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU General
 Public License (GPL)</a>.
@@ -169,7 +170,7 @@ Unlike many other Atari ST emulators which try to give you a good
 environment for running GEM applications, Hatari tries to emulate the hardware
 of a ST as close as possible so that it is able to run most of the old ST games
 and demos. Of course you can run normal GEM applications with Hatari, too.
-Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
+Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
 </p>
 
 <a name="Features"></a><h3>Features</h3>
@@ -181,6 +182,7 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
     overscan effects for all borders in color resolutions</li>
   <li>512 color ST palette</li>
+  <li>Spec512 mode support for low and medium resolutions</li>
   <li>many raster effects </li>
   <li>scaling of low resolutions by factor two</li>
   <li>interleaved lines rendering of ST-medium and (scaled) ST-low
@@ -260,7 +262,7 @@ to be affected by them.</p>
 
 <a name="System requirements"></a><h3>System requirements</h3>
 
-<p> Hatari currently has the following system requirements: </p>
+<p> Hatari currently has the following minimum system requirements:</p>
 <ul>
   <li>a fast PC (&gt;500MHz, for Falcon and TT emulation
       <a href="#Performance">even faster</a>)</li>
@@ -272,14 +274,14 @@ to be affected by them.</p>
 </ul>
 
 <p>
-Certain versions of Hatari have successfully been tested by various people on
+Earlier versions of Hatari have successfully been tested by various people on
 the following systems:
 </p>
 <ul>
   <li>Linux/i86 with Kernel 2.4.x and 2.6.x</li>
   <li>Linux/PPC with Kernel 2.4.x and 2.6.x</li>
   <li>BeOS/i86 </li>
-  <li>Apple PowerMac with Mac OS X </li>
+  <li>Apple Mac OS X on PowerPC and i86</li>
   <li>NetBSD 1.6 </li>
   <li>NetBSD on a Digital Alpha</li>
   <li>FreeBSD 4.1 on an i486, FreeBSD 4.8 on a Pentium 4 and FreeBSD 5.1</li>
@@ -293,52 +295,65 @@ the following systems:
 
 <a name="Compiling Hatari"></a><h3>Compiling Hatari</h3>
 
-<p> First, you need the SDL library, you can get it at:
-<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>. Most
-distributions already ship a suitable version.
-Make sure to install the appropriate header files as well often called
-"libsdl-dev" or the like.
-</p>
-<p> Second, you need the zLib compression library. You can get it from <a
- href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>
-but the version shipped with your distribution will be sufficient in
-most cases. Make sure to have the header files
-for it installed as well.
-</p>
+<p>Required:</p>
+<ul>
+<li>A C compiler. Preferably GCC, but others have worked too.</li>
+<li>A working CMake installation. See
+<a href="http://www.cmake.org/">http://www.cmake.org/</a> for details.
+<li>The SDL library v1.2.10 or newer. You can get it from
+<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>.
+</li>
+<li>The zLib compression library. You can get it from
+<a href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>.
+</li>
+</ul>
+
+<p>Optional:</p>
+<ul>
+<li>The PNG image library for PNG format screenshots and to
+decrease AVI video recording file sizes. You can get it from
+<a href="http://www.libpng.org/">http://www.libpng.org/</a>.</li>
+<li>The GNU Readline library for Hatari debugger command line editing.</li>
+<li>The Xlib library to support Hatari Python UI window embedding
+on systems with the X window system (Linux and other unixes).</li>
+<li>The portaudio library for Falcon microphone recording support</li>
+</ul>
 <p>
-For optional features like PNG format screenshots and Hatari window
-embedding, you need to have the header files for libpng and libX11.
-For Falcon microphone recording support portaudio library is needed.
+The versions available in your Linux distribution will be sufficient
+in most cases, but make sure you have also the header files installed
+for the libraries as well! Typically they're in a corresponding -dev
+package.
 </p>
+
 <p>
-Of course, you need the GNU C compiler and (GNU) Make, too!
-</p>
-<p> Change to the <span class="file">hatari/</span> directory, copy
-<span class="file">Makefile-default.cnf</span> to
-<span class="file">Makefile.cnf</span> and adapt the configuration file
-to suite your system. Alternatively, you can use the supplied configure
-script to auto-detect all parameters (type
-"<span class="commandline">./configure --help</span>"
-to see the options of the script).
-Don't forget to use some good CFLAGS for the compiler optimizations, e.g.
-run <span class="commandline">configure</span> in the following way:
-</p>
+After you've verified that you have the required libraries and their
+development files, change to the <span class="file">hatari/</span>
+directory.  Create a <span class="file">build/</span> directory under
+it and configure the build system for your environment:
 <pre>
-CFLAGS="-O3 -fomit-frame-pointer" ./configure
+mkdir -p build
+cd build
+cmake ..
 </pre>
 <p>
 Then compile Hatari by typing <span class="commandline">make</span>.
-If all
-works fine, you'll get the executable <span class="commandline">hatari</span>
+If all works fine, you'll get the executable <span class="commandline">hatari</span>
 in the src/ subdirectory.
+</p>
+<p>
+Note: Instead of calling CMake directly, you can also use the supplied
+configure script to run CMake and to give the arguments (like install
+prefix) in a format familiar from GNU Autotools using programs.  Type
+"<span class="commandline">./configure --help</span>"
+to see all the options supported by this script.
 </p>
 
 <a name="Installation of a TOS ROM"></a><h3>Installation of a TOS ROM</h3>
 
 <p>
 Before you can start Hatari, you have to copy a TOS ROM image to the data
-directory (the data directory is specified
-in the configuration file <span class="file">Makefile.cnf</span>) and
+directory (<span class="file">&lt;prefix&gt;/share/hatari/</span>, by
+default <span class="file">/usr/local/share/hatari/</span>) and
 rename it to <span class="commandline">tos.img</span>, or use the
 <span class="commandline">--tos</span> command line option to tell
 Hatari where to find a TOS ROM.
@@ -366,12 +381,11 @@ select a TOS image file from the GUI. </p>
 
 <a name="Installation of the binary"></a><h3>Installation of the binary</h3>
 
-<p> Type <span class="commandline">make install</span> as root to do a
-systemwide installation. In this case it is recommended
-to set the DATADIR variable in Makefile.cnf to a proper value. <tt>/usr/local/share/hatari</tt>
-is a good value in that case.</p>
-<p>The Hatari executable should now be in your PATH and accessible from
-anywhere.</p>
+<p> Type <span class="commandline">make install</span> as "root" user to
+do a systemwide installation.</p>
+<p>Assuming you didn't change the default installation prefix and that
+<span class="file">/usr/local/bin/</span> is in your PATH, you should
+be now able to start the Hatari executable from anywhere.</p>
 <p> When you finally have got a TOS image, try starting Hatari with the
 option <span class="commandline">--help</span> to find out more about
 its command line parameters. </p>
@@ -2027,6 +2041,7 @@ on your screen.
 </p>
 <p>
 Indicators that you can have on the Hatari window:
+</p>
 <ul>
 <li>"Statusbar" at the bottom of the screen.
 The statusbar shows the floppy drive LEDs, the current frameskip value,
@@ -2036,7 +2051,6 @@ recording is currently active.</li>
 contents. It will show any disk (floppy or hard disk) activity.</li>
 <li>"None" turns both of above options off.</li>
 </ul>
-</p>
 <p>
 "Keep desktop resolution" option will use your desktop resolution
 for fullscreen to avoid issues related to resolution switching,
@@ -2610,7 +2624,7 @@ the Cecile hard disk driver to the image from the Cecile CC_TOOLS.APP:
 Click the "Installer" button and save the Cecile driver to the
 1st partition on "Hatari IDE disk". If you want to also use your HD
 image in ST/STE mode, you need to get and install AHDI 6 driver on it
-instead (see <a href="ACSI hard disk emulation">ASCI hard disk
+instead (see <a href="#ACSI hard disk emulation">ASCI hard disk
 emulation</a> section).
 </p>
 <p>
@@ -2833,11 +2847,12 @@ DSP commands:
       dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
 
-<h4>Entering arguments to debugger commands</h4>
+<a name="Entering arguments to debugger commands">
+</a><h4>Entering arguments to debugger commands</h4>
 
 <p>
 After writing (with TAB completion) one of the above command names,
-pressing TAB will show all the available subcommands for that command.
+pressing TAB will (for most commands) show all the available subcommands.
 </p>
 
 <p>
@@ -2857,26 +2872,34 @@ names (a0-7, d0-7)!</em>  Otherwise results from expressions and
 conditional breakpoints can be unexpected.
 </p>
 
+
+<h4>Calculations and immediate evaluation</h4>
+
 <p>
-Instead of a number, you can also use an expression, by surrounding
-it with quotes ("").  An expression can contain calculations with
-register and symbol values in addition to numbers.  For example to
-give a sum of A0 and D0 register values to a command, use "a0+d0".
+Instead of a number, you can also use an arithmetic expression, by
+surrounding it with quotes ("").  An expression can contain
+calculations with CPU and DSP register, symbol and Hatari variable
+values in addition to numbers. For example to give a sum of A0 and
+D0 register values to a command, use "a0+d0".
 </p>
 
 <p>
-Within expressions parenthesis are used both to change the order
-of precendence <em>and</em> to indicate indirect addressing.
-Unlike with conditional breakpoints (explained below), you cannot
-give size for the indirect addressing, a long value is always read
-from the RAM address given within parenthesis.  For example to get
-long pointed by stack pointer + 2, use "(a7+2)".
+Within arithmetic expressions parenthesis are used both to change
+the order of precendence <em>and</em> to indicate indirect addressing.
+Unlike with conditional breakpoint expressions (explained below), you
+cannot give size for the indirect addressing, a long value is always
+read from the RAM address given within parenthesis.  For example to
+get a long value pointed by stack pointer + 2, use "(a7+2)".
 </p>
 
 <p>
-Expressions are always evaluated before being given to a command.
-Expressions don't need to be quoted for the "evaluate" or "address"
-commands as those always interpret their results as expressions.
+Values of arithmetic expressions are always evaluated before being
+given to a command.  Except for "evaluate" and "address" commands,
+they always need to be marked with quotes (""). Besides arithmetics,
+this can be used also to give symbol/register/variable values to
+commands that don't otherwise interpret them.  If command complains
+that it didn't recognize e.g. a register name, just put it to quotes
+and it will be "evaluated" before being given to the command.
 </p>
 
 <p>
@@ -2907,24 +2930,27 @@ Usage:  d [start address-[end address]]
         position or from current PC if no last position is available.
 </pre>
 <pre>
-&gt; disasm
-0000aa6e: 2f08 0241 0fff 207c 00fe MOVE.L A0,-(A7)
-0000aa70: 0241 0fff 207c 00fe 78c0 AND.W #$0fff,D1
-0000aa74: 207c 00fe 78c0 2070 1000 MOVEA.L #$00fe78c0,A0
-0000aa7a: 2070 1000 4ed0 0241 0ffe MOVEA.L (A0, D1.W*1, $00) == $00fe34ae,A0
-0000aa7e: 4ed0 0241 0ffe 6712 e549 JMP.L (A0)
+&gt; disasm pc
+$00aa6e : 2f08                                 move.l    a0,-(sp)
+$00aa70 : 0241 0fff                            andi.w    #$fff,d1
+$00aa74 : 207c 00fe 78c0                       movea.l   #$fe78c0,a0
+$00aa7a : 2070 1000                            movea.l   (a0,d1.w),a0
+$00aa7e : 4ed0                                 jmp       (a0)
 </pre>
 
 <p>
-Each time you enter the debugger, "disasm" command will disassemble
-from the current PC address unless you give it another address (range)
-and on further invocations it continues showing successive addresses.
+Both commands accept in addition to numeric addresses also register
+and symbol names, like in above example.  If you don't specify an
+address, the commands continue showing from an address that comes
+after the previously shown data.  "disasm" command default address
+will be reseted to PC address everytime you re-enter the debugger.
 </p>
 
 <p>
 You can use the "info" command to see state of specific sets of HW
 registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 </p>
+
 
 <h4>Selecting what information is shown on entering the debugger</h4>
 
@@ -2943,10 +2969,12 @@ subcommand.
 
 <p>
 "file" subcommand can be used to get (arbitrary number of) commands
-parsed and executed from a given debugger input file.  With breakpoints
-this can be used to almost anything (see below).  Continue (e.g. for
-given number of instructions) command cannot be used in this though.
+parsed and executed from a given debugger input file whenever debugger
+is entered.  With this you can output any information you need:
 </p>
+<pre>
+lock file debugger.ini
+</pre>
 
 <p>
 To disable showing of this extra information, use "lock default".
@@ -2954,13 +2982,15 @@ Without arguments "lock" command will show the available options
 (like the "info" command does).
 </p>
 
+
 <a name="Debug symbols"></a><h3>Debug symbols</h3>
 
 <p>
 You can load symbol name/address information from a file to the
 debugger with the "symbols" command (and with "dspsymbols" for DSP).
-These symbolic names can be used in expressions and all breakpoints.
-They also show up in the "disasm" command output.
+These symbolic names can be used in arithmetic expressions and
+conditional breakpoint expressions.  They also show up in the "disasm"
+command output.
 </p>
 
 <p>The symbols file format is following:</p>
@@ -2971,14 +3001,14 @@ e0107e T supexec
 </pre>
 <p>
 Where 'T' means text (code), 'D' means data and 'B' means BSS section
-type of address.  The symbol hexadecimal address, type letter and name
-are separated by white space.  Empty lines and lines starting with '#'
-(comments) are ignored.
+type of address.  The hexadecimal address, address type letter and the
+symbol name are separated by white space.  Empty lines and lines
+starting with '#' (comments) are ignored.
 </p>
 
 <p>
 AHCC C-compiler can provide a symbol file suitable for this with its
-"-n 'nm' list" option (not enabled by default). If you're reverse
+"-n" 'nm' list option (not enabled by default). If you're reverse
 engineering some code, you could just create your own symbols file to
 help in debugging it later.
 </p>
@@ -2989,11 +3019,12 @@ into a fixed address (like e.g. EmuTOS is), after the program has been
 loaded, load the symbols with the program text segment address offset:
 </p>
 <pre>
-&gt; symbols calc.sym TEXT
+symbols calc.sym "TEXT"
 </pre>
 <p>
-(The value of the above virtual "TEXT" debugger variable
-comes from a program basepage, see "info basepage" output.)
+(The value of the above virtual "TEXT" debugger variable comes from a
+program basepage, it's set after the program is loaded by TOS, see
+"info basepage" output.)
 </p>
 
 
@@ -3006,130 +3037,273 @@ program counter hits a given address. Use "a" (or "da" for the DSP)
 to create them, for example:
 </p>
 <pre>
-&gt; a $e01034
-&gt; a some_symbol
+a $e01034
+a some_symbol
 </pre>
 
 <p>
-(Address breakpoints are just wrappers for conditional breakpoints so
-you need to use "b" command to remove or list them.)
+Note that address breakpoints are just wrappers for conditional
+breakpoints so you need to use "b" command to remove or list them.
 </p>
 
 <p>
 Then there are the conditional breakpoints which can handle much more
-complex break conditions; they can track changes to register and
-memory values with bitmasks, include multiple conditions for
-triggering a breakpoint and so on.  Use "b" (or "db" for the DSP) 
-to manage them. "b help" explains the syntax:
+complex break condition expressions; they can track changes to
+register and memory values with bitmasks, include multiple conditions
+for triggering a breakpoint and so on.  Use "b" (or "db" for the DSP) 
+to manage them.
 </p>
 
+<p>Help explains the general syntax:</p>
 <pre>
-breakpoint = &lt;condition&gt; [ &amp;&amp; &lt;condition&gt; ... ] [option]
-condition = &lt;value&gt;[.mode] [&amp; &lt;number&gt;] &lt;comparison&gt; &lt;value&gt;[.mode]
+&gt; help b
+'breakpoint' or 'b' - set/remove/list conditional CPU breakpoints
+Usage:  b &lt;condition&gt; [&amp;&amp; &lt;condition&gt; ...] [:&lt;option&gt;] | &lt;index&gt; | help | all
+
+Set breakpoint with given &lt;conditions&gt;, remove breakpoint with
+given &lt;index&gt;, remove all breakpoints with 'all' or output
+breakpoint condition syntax with 'help'.  Without arguments,
+lists currently active breakpoints.
+</pre>
+
+<p>
+Unless you give breakpoint one of the pre-defined subcommands ('all',
+'help'), index for a breakpoint to remove or no arguments (to list
+breakpoints), the arguments are interpreted as a new breakpoint
+definition.
+</p>
+
+<p>
+Each conditional breakpoint can have (currently up to 4) conditions
+which are separated by "&amp;&amp;".  All of the breakpoint's
+conditions need to be true for a breakpoint to trigger.
+</p>
+
+
+<a name="Breakpoint options"></a><h4>Breakpoint options</h4>
+
+<p>
+Normally when a breakpoint is triggered, emulation is stopped and you
+get to the debugger. Breakpoint options can be used to affect what
+happens when a breakpoint is triggered.  These options are given after
+the conditions and are prefixed with ':'. 
+</p>
+
+<dl>
+<dt><em>&lt;count&gt;</em></dt>
+<dd>Break only on every &lt;count&gt; hit. For example, to stop
+on every other time PC is at given address, use:
+<pre>
+a $1234 :2
+</pre>
+</dd>
+
+<dt><em>once</em></dt>
+<dd>
+Delete the breakpoint when it's hit i.e. trigger it only once. It may
+be useful if you just want to get a specific address. Or if you're on
+an instruction that jumps back to a start of the loop and you want to
+finish the loop, you couuld use:
+<pre>
+b pc &gt; "pc" :once
+continue
+</pre>
+</dd>
+
+<dt><em>trace</em></dt>
+<dd>
+Continue emulation without stopping after printing the value that
+triggered the breakpoint and doing other possible option actions.
+This is most useful when investigating memory or register value
+changes (explained below).
+</dd>
+
+<dt><em>lock</em></dt>
+<dd>
+Show the same information on breakpoint hit as you see when entering
+the debugger (see the "lock" command in
+<a href="#Inspecting emulation state">Inspecting emulation state</a>
+above).  This enables also trace option as you would anyway see this
+information if debugger would be entered.
+</dd>
+
+<dt><em>file &lt;file&gt;</em></dt>
+<dd>
+Execute debugger commands from given &lt;file&gt; when this breakpoint
+is hit.  With this you have complete control over what information is
+show when the debugger is hit, you can even chain breakpoints (as
+explained in
+<a href="#Chaining breakpoints">Chaining breakpoints</a> later on)
+etc.  Use this if "lock" option isn't enough or you want different
+information show on breakpoints and when entering the debugger.
+</dd>
+</dl>
+
+<p>
+Note: you can give multiple options for conditional breakpoints, but
+for address breakpoints you can give only one these options.  And
+"file" option is supported only for conditional breakpoints.
+</p>
+
+
+<a name="Breakpoint conditions"></a><h4>Breakpoint conditions</h4>
+
+<p>
+"b help" explains very briefly the breakpoint condition syntax:
+</p>
+<pre>
+&gt; b help
+condition = &lt;value&gt;[.mode] [&amp; &lt;mask&gt;] &lt;comparison&gt; &lt;value&gt;[.mode]
 
 where:
         value = [(] &lt;register/symbol/variable name | number&gt; [)]
-        number = [#|$|%]&lt;digits&gt;
+        number/mask = [#|$|%]&lt;digits&gt;
         comparison = '&lt;' | '&gt;' | '=' | '!'
         addressing mode (width) = 'b' | 'w' | 'l'
         addressing mode (space) = 'p' | 'x' | 'y'
-        option = : &lt;count&gt; | 'once' | 'trace'
+</pre>
+
+<p>
+For CPU breakpoints, mode is the address width; it can be byte ("b"),
+word ("w") or long ("l", default).  For DSP breakpoints, mode specifies
+the address space: "P", "X" or "Y". Note that on DSP only R0-R7
+registers can be used for memory addressing.  For example;
+<pre>
+db (r0).x = 1 &amp;&amp; (r0).y = 2
 </pre>
 
 <p>
 If the value is in parenthesis like in '($ff820)' or '(a0)', then the
 used value will be read from the memory address pointed by it.  Note
-that this value is checked at run-time whereas quoted expressions
-(mentioned above, please read!) are evaluated already when adding a
-breakpoint.  For example, to break when a value in an address (later)
-pointed by A0 matches the value <em>currently</em> in D0, one would use:
+that this conditional breakpoint expression value is checked at
+run-time whereas quoted arithmetic expressions (mentioned in
+<a href="#Entering arguments to debugger commands">Entering arguments
+to debugger commands</a> above) are evaluated already when
+adding a breakpoint.  For example, to break when a value in an address
+(later) pointed by A0 matches the value <em>currently</em> in D0, one
+would use:
 </p>
 <pre>
-&gt; b (a0) = "d0"
+b (a0) = "d0"
 </pre>
 
 <p>
-M68k addresses can have byte ("b"), word ("w") or long ("l", default)
-width. DSP addresses belong to different address spaces: "P", "X" or
-"Y". Note that on DSP only R0-R7 registers can be used for memory
-addressing.
-</p>
-
-<p>Examples:</p>
+If you're interested only on certain bits in the value, you can use
+'&amp;' and a numeric mask on either side of comparison operator to
+mask the coresponding value, like this:
 <pre>
-b (r0).x = 1 &amp;&amp; (r0).y = 2
-b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
+b ($ff820).w &amp; 3 = (a0)  &amp;&amp;  (a1) = d0 & %1100
 </pre>
 
 <p>
-As a convenience, if the value expressions on both sides of the
-comparison are exactly the same, right side is replaced with its
-current value. For inequality ('!') comparison, conditional breakpoint
-tracks all further changes for the given address/register expression.
-This can be used for example to find out all value changes in a given
-memory address (see examples below).
-</p>
-
-
-<h4>Breakpoint action options</h4>
-
-<p>
-There are several options on actions that will happen when a specified
-breakpoint is hit.  You can give any of them for conditional
-breakpoints, the address breakpoints accept only one per breakpoint
-and they don't support the ":file" option.
-</p>
-
-":trace" option will make breakpoint to print out the tracked
-value instead of breaking.  This can be useful e.g. when tracking
-changes to some HW register, like this:
+Comparison operators should be familiar and obvious, except for '!'
+which indicates inequality ("is not") comparison.  For example:
 </p>
 <pre>
-&gt; b ($ffff9202).w ! ($ffff9202).w :trace
+b d0 &gt; $20  &amp;&amp;  d0 &lt; $40  &amp;&amp;  d0 ! $30
 </pre>
 
 <p>
-If you want to see the same information as you see when entering the
-debugger, use the ":lock" option instead of the ":trace" option (see
-the "lock" command in <a href="#Inspecting emulation state">Inspecting
-emulation state</a> above).
-</p>
-
-<p>
-":once" option that removes the breakpoint after it's hit can be
-useful when one wants to get out of a loop (when PC is at instruction
-that branches back to loop start) or just to get to a specific point
-in code:
+As a convenience, if the both sides of the comparison are exactly the
+same (i.e. condition is redundant as it's always either true or
+false), the <em>right side</em> of the comparison is replaced with
+its current value.  This way you can give something like this:
 </p>
 <pre>
-&gt; b pc &gt; pc :once
-&gt; a some_symbol :once
+b pc &gt; "pc"
+</pre>
+<p>As:</p>
+<pre>
+b pc &gt; pc
 </pre>
 
 <p>
-Whereas giving count (like ":2") as option will break only on every
-&lt;count&gt; time the breakpoint is hit.
-</p>
-
-<p>
-If you want to specify yourself the information you see on breakpoint
-hits, use the ":file" option and give it the file specifying the
-debugger commands that should be executed when that breakpoint is hit.
+That in itself isn't so useful, but for inequality ('!') comparison,
+conditional breakpoint will additionally track and output all further
+changes for the given address/register expression. This can be used
+for example to find out all value changes in a given memory address,
+like this:
 </p>
 <pre>
-&gt; b ($ffff9202).w & 3 = 3 :file my-commands.ini
+b ($ffff9202).w ! ($ffff9202).w :trace
 </pre>
-
 <p>
-You can specify as many of these options as you want, see below for
-an example.
+Typically with this one would use the breakpoint "trace" option like
+above.
 </p>
 
 
+<a name="Breakpoint variables"></a><h4>Breakpoint variables</h4>
+
+<p>
+In addition to loaded symbols, the debugger supports also setting
+conditional breakpoints on values of some "virtual" variables listed
+by "b help". For example:
+</p>
+<ul>
+<li>If you want the emulation to stop on the first instruction of
+    next program; after TOS desktop is up, set a breakpoint on
+    the TEXT segment address given in a program basepage:
+<pre>
+b  pc = TEXT :once
+</pre>
+Note1: It's better to trigger it only once because if you'd leave it on,
+during reboot you would get a warning for every instruction until TOS sets
+a valid basepage.
+<br>
+Note2: you cannot use an address breakpoint for this because value of a
+variable given to it is evaluated when the breakpoint is set, not at
+run-time, so it cannot get the new value that the TEXT variable gets
+when you start a program.
+</li>
+<li>To find out current program DATA and BSS segment contents,
+    use the corresponding variables:
+<pre>
+m  data
+m  bss
+</pre>
+</li>
+<li>If you want to stop at a specific cycle within a frame (that is,
+    PC relative to the current VBL/HBL in cycles), set breakpoints to
+    specific "HBL" and "FrameCycles" variable values.  If you for
+    example want to break after 20 HBLs, use:
+<pre>
+b  HBL = "HBL+20"
+</pre>
+</li>
+<li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
+    to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
+    By default they contain the 0xffff value, so to trace e.g. AES calls,
+    one needs to use something like this:
+<pre>
+b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
+</pre>
+</li>
+<!--
+<li>"OSExitPC" variable can be used to catch exit from an OS call.
+<pre>
+b pc = OSExitPC :once
+</pre>
+It's valid after OS call breakpoint is triggered and before
+that call has finished.</li>
+-->
+</ul>
+
+<p>
+Hint: "info" command "aes", "gemdos" and "vdi" subcommands for can be
+used to list the corresponding OS-call opcodes. For example,
+to see the GEMDOS opcodes, use:</p>
+<pre>
+info gemdos 1
+</pre>
+
+
+<a name="Chaining breakpoints"></a>
 <h4>Chaining breakpoints and other actions</h4>
 
 <p>
-As the file pointed by the breakpoint ":file" option can contain any
+As the file pointed by the breakpoint ":file" option (see
+<a href="#Breakpoint options">Breakpoint options</a>) can contain any
 debugger commands, it can also be used to do automatic "chaining" of
 debugger and breakpoint actions so that after one breakpoint is hit,
 another one is set.
@@ -3192,61 +3366,6 @@ option.
 </p>
 
 
-<h4>Breakpoint helper variables</h4>
-
-<p>
-In addition to loaded symbols, the debugger supports also setting
-conditional breakpoints on values of some "virtual" variables listed
-by "b help". For example:
-</p>
-<ul>
-<li>If you want the emulation to stop on the first instruction of
-    next program, after TOS desktop is up, set a breakpoint on
-    the TEXT segment address given in a program basepage:
-<pre>
-b  pc = TEXT  :once
-</pre>
-</li>
-<li>To find out current program DATA and BSS segment contents,
-    use the corresponding variables:
-<pre>
-m "data"
-m "bss"
-</pre>
-</li>
-<li>If you want to stop at a specific cycle within a frame (that is,
-    PC relative to the current VBL/HBL in cycles), set breakpoints to
-    specific "HBL" and "LineCycles" variable values.  If you for
-    example want to break after 20 HBLs, use:
-<pre>
-b  HBL = "HBL+20"
-</pre>
-</li>
-<li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
-    to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
-    By default they contain the 0xffff value, so to trace e.g. AES calls,
-    one needs to use something like this:
-<pre>
-b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
-</pre>
-</li>
-<!--
-<li>"OSExitPC" variable can be used to catch exit from an OS call.
-<pre>
-b pc = OSExitPC :once
-</pre>
-It's valid after OS call breakpoint is triggered and before
-that call has finished.</li>
--->
-</ul>
-
-<p>"info" command can be used to list OS-call opcodes. For example,
-to see GEMDOS opcodes, use:</p>
-<pre>
-info gemdos 1
-</pre>
-
-
 <a name="Tracing"></a><h3>Tracing</h3>
 
 <p>
@@ -3281,7 +3400,7 @@ which tell it to intercept this higher level functionality:
 <p>
 If use of above isn't possible for the things you'd like to track,
 you can use the OS call opcode breakpoints explained above with the
-":trace" option.
+":trace" breakpoint option.
 </p>
 <p>
 Tracing options can be set even from a program within the emulation
@@ -3388,6 +3507,149 @@ also be shown in the disassembly output.
 </p>
 
 
+<a name="Usage examples"></a><h3>Usage examples</h3>
+
+<p>
+Here's a list of some common debugging tasks and how to do them
+with the Hatari debugger:
+</p>
+
+<dl>
+<dt><em>Stopping on program startup and examining its data</em></dt>
+<dd>Please see <a href="#Breakpoint variables">Breakpoint variables</a>
+and <a href="#Inspecting emulation state">Inspecting emulation state</a>
+sections.
+</dd>
+
+<dt><em>Tracing specific things in the system</em></dt>
+<dd>To trace e.g. all GEMDOS calls and IO operations, use:
+<pre>
+trace  gemdos,io_all
+</pre>
+Please see <a href="#Tracing">Tracing</a> section for more information
+on tracing, what's possible with in and what are its limitations.
+</dd>
+
+<dt><em>Stopping when certain PC address is passed Nth time</em></dt>
+<dd>To stop e.g. after function/subroutine at $12345 is called for
+the 6th time:
+<pre>
+a  $12345 :6
+</pre>
+</dd>
+
+<dt><em>Stopping when register has a specific value</em></dt>
+<dd>To stop when e.g. D1 register contains value 5, set a breakpoint on:
+<pre>
+b  d1 = 5
+</pre>
+</dd>
+
+<dt><em>Stopping when a register value changes</em></dt>
+<dd>To stop when e.g. D1 register value changes, set a breakpoint on:
+<pre>
+b  d1 ! d1
+</pre>
+</dd>
+
+<dt><em>Stopping when register value is within some range</em></dt>
+<dd>To stop when e.g. D1 register value is within range of 10-30,
+set a breakpoint on:
+<pre>
+b  d1 &gt; 9  &amp;&amp;  d1 &lt; 31
+</pre>
+</dd>
+
+<dt><em>Stopping when memory location has a specific value</em></dt>
+<dd>To stop when e.g. bit 1 of the Video Shifter Sync Mode byte at
+IO address $ff820a is set i.e. video frequency is 60Hz, set
+a breakpoint on:
+<pre>
+b  ($ff820a).b & 2 = 2
+</pre>
+</dd>
+
+<dt><em>Stopping when a memory value changes</em></dt>
+<dd>To stop when above bit changes, set a breakpoint on its value
+being different from the current value ('!' compares for inequality):
+<pre>
+b  ($ff820a).b & 2 ! ($ff820a).b & 2
+</pre>
+</dd>
+
+<dt><em>Tracing all changes in specific memory location</em></dt>
+<dd>To see the new values and continue without stopping, use
+the ":trace" breakpoint option:
+<pre>
+b  ($ff820a).b & 2 ! ($ff820a).b & 2  :trace
+</pre>
+</dd>
+
+<dt><em>Stopping at specific screen position</em></dt>
+<dd>To stop e.g. when VBL is 100, HBL is 40 and line cycles is 5,
+use the corresponding debugger variables:
+<pre>
+b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  FrameCycles = 5
+</pre>
+</dd>
+
+<dt><em>Stopping after value increases/decreases by certain amount</em></dt>
+<dd>To stop e.g. after D0 value has increased by 10, set breakpoint on:
+<pre>
+b  d0 = "d0 + 10"
+</pre>
+</dd>
+
+<dt><em>Single step so that new register values are shown after each step</em></dt>
+<dd>
+<pre>
+lock registers
+c 1
+[new register values]
+c 1
+[new register values]
+...
+</pre>
+</dd>
+
+<dt><em>Showing current stack contents</em></dt>
+<dd>To see first 64 bytes on top of the stack, use:
+<pre>
+m  "a7-64"-a7
+</pre>
+</dd>
+
+<dt><em>Seeing specific information each time debugger is entered</em></dt>
+<dd>To see above information whenever some breakpoint is hit,
+you enter debugger manually etc, write that command to e.g.
+<span class="file">stack.ini</span> file and then use:
+<pre>
+lock  file stack.ini
+</pre>
+Please see also <a href="#Chaining breakpoints">Chaining breakpoints</a>
+section for more examples on what you can do with the debugger input files.
+</dd>
+
+<dt><em>Finding where program or OS is stuck</em></dt>
+<dd>Profiling tells from which addresses CPU is running
+executing the instructions:
+<pre>
+profile  on
+c
+[after a while, use AltGr+Pause to get back to debugger]
+profile  counts
+</pre>
+</dd>
+
+</dl>
+
+<p>
+Hint: for most of above commands, one just needs to prefix them with
+"d" (or "dsp" if using full command names) to do similar operation on
+DSP.
+</p>
+
+
 <a name="Build notes"></a><h3>Build notes</h3>
 
 <p>
@@ -3396,7 +3658,7 @@ history, editing and especially with the command, command argument and
 symbol name completion support. If you're building Hatari yourself,
 please make sure that you have the GNU readline development files
 installed (on Debian / Ubuntu these come from the libreadline5-dev
-package). Otherwise this doesn't get enabled when you configure
+package). Otherwise completion doesn't get enabled when you configure
 Hatari.
 </p>
 
@@ -3570,15 +3832,9 @@ with the <span class="commandline">--spec512 0</span> option.
 
 <h5>Statusbar and drive LED</h5>
 <p>
-If your version of libSDL uses VSync to synchronize the screen
-output, drawing of the statusbar or the drive LED (when statusbar is
-disabled) may have some minor impact on performance too.  Normally
-they shouldn't.
-</p>
-<p>
-To also the drive LED shown when statusbar is disabled, you need to
-start Hatari with <span class="commandline">--drive-led off</span>.
-Then just save the Hatari configuration to make that option permanent.
+If your version of libSDL uses VSync to synchronize the screen output,
+drawing of the statusbar or the drive LED may have some minor impact
+on performance too.  Normally they shouldn't.
 </p>
 
 
@@ -3700,7 +3956,7 @@ parts of the emulated system is much trickier.
  src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
  border="0" height="31" width="88"></a></td>
       <td align="right">
-      October 2010
+      June 2011
       </td>
     </tr>
   </tbody>

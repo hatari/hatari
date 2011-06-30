@@ -59,6 +59,8 @@ Emulator:
   - YM mixing method selection
 - Debugging improvements:
   - New disassembler with more Motorola like syntax
+  - CPU & DSP "disasm" and "memdump" commands accept register & symbol
+    names in addition to numeric addresses / address ranges
   - Option to disable Falcon mic
     ("--mic off" is needed for Mudflap debugging)
   - "--run-vbls" can be set also at run-time

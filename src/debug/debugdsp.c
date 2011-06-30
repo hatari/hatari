@@ -154,7 +154,7 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (Eval_Range(psArgs[1], &lower, &upper))
+		switch (Eval_Range(psArgs[1], &lower, &upper, true))
 		{
 			case -1:
 				/* invalid value(s) */
@@ -241,7 +241,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
 			return DEBUGGER_CMDDONE;
 		}
-		switch (Eval_Range(psArgs[2], &lower, &upper))
+		switch (Eval_Range(psArgs[2], &lower, &upper, true))
 		{
 		case -1:
 			/* invalid value(s) */

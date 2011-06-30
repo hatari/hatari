@@ -659,7 +659,7 @@ void Configuration_Load(const char *psFileName)
 
 	if (!File_Exists(psFileName))
 	{
-		fprintf(stderr, "Configuration file %s not found.\n", psFileName);
+		Log_Printf(LOG_DEBUG, "Configuration file %s not found.\n", psFileName);
 		return;
 	}
 

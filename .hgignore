@@ -29,7 +29,7 @@ python-ui/hatariui.1.gz
 
 website/screens
 
-doc/hatari.1.gz
+*.1.gz
 doc/doxygen/html
 
 # switch to regexp syntax.
