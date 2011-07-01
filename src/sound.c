@@ -172,8 +172,8 @@ static yms16 *ymout5 = (yms16 *)ymout5_u16;
 /* Current sound replay freq (usually 44100 Hz) */
 #define YM_REPLAY_FREQ   nAudioFrequency
 
-/* YM-2149 clock on Atari ST is 2 MHz */
-#define YM_ATARI_CLOCK		(CPU_FREQ / 4)
+/* YM-2149 clock on all Atari models is 2 MHz */
+#define YM_ATARI_CLOCK		(MachineClocks.YM_Freq)
 
 
 /* Merge/read the 3 volumes in a single integer (5 bits per volume) */
