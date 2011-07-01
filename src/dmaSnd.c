@@ -706,7 +706,8 @@ void DmaSnd_InterruptHandler(void)
  */
 void DmaSnd_STE_HBL_Update(void)
 {
-	if ( ConfigureParams.System.nMachineType != MACHINE_STE )
+	if ( ( ConfigureParams.System.nMachineType != MACHINE_STE )
+	  && ( ConfigureParams.System.nMachineType != MACHINE_MEGA_STE ) )
 		return;
 
 

@@ -926,7 +926,8 @@ static void Video_WriteToShifter ( Uint8 Res )
 	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
 	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 32 ) )
 	{
-		if ( ( ConfigureParams.System.nMachineType == MACHINE_STE )	/* special case for 504/4 on STE -> add 20 bytes to left border */
+		if ( ( ( ConfigureParams.System.nMachineType == MACHINE_STE )	/* special case for 504/4 on STE -> add 20 bytes to left border */
+			|| ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) )
 			&& ( ShifterFrame.ResPosHi.LineCycles == 504 ) && ( LineCycles == 4 ) )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_2_STE;
@@ -975,7 +976,8 @@ static void Video_WriteToShifter ( Uint8 Res )
 	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
 		  && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 16 )
 	          && ( ShifterFrame.ResPosHi.LineCycles == LINE_EMPTY_CYCLE_71_STE )
-		  && ( ConfigureParams.System.nMachineType == MACHINE_STE ) )
+		  && ( ( ConfigureParams.System.nMachineType == MACHINE_STE )
+		      || ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) ) )
 	{
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
@@ -2841,7 +2843,9 @@ void Video_ScreenCounter_WriteByte(void)
  */
 void Video_Sync_ReadByte(void)
 {
-	if ( (ConfigureParams.System.nMachineType == MACHINE_ST) || (ConfigureParams.System.nMachineType == MACHINE_STE) )
+	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
+	  || (ConfigureParams.System.nMachineType == MACHINE_STE)
+	  || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) )
 		IoMem[0xff820a] |= 0xfc;		/* set unused bits 2-7 to 1 */
 }
 
@@ -2884,7 +2888,9 @@ void Video_ShifterMode_ReadByte(void)
 	else
 		IoMem[0xff8260] = VideoShifterByte;	/* Read shifter register, set unused bits to 1 */
 
-	if ( (ConfigureParams.System.nMachineType == MACHINE_ST) || (ConfigureParams.System.nMachineType == MACHINE_STE) )
+	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
+	  || (ConfigureParams.System.nMachineType == MACHINE_STE)
+	  || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) )
 		IoMem[0xff8260] |= 0xfc;		/* set unused bits 2-7 to 1 */
 }
 
