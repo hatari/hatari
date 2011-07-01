@@ -54,6 +54,8 @@ typedef struct
 
 
 
+extern CLOCKS_STRUCT	MachineClocks;
+
 extern bool	RoundVBLPerSec;
 
 
