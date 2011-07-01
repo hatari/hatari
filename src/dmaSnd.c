@@ -243,7 +243,7 @@ void DmaSnd_Reset(bool bCold)
 
 	if (bCold)
 	{
-		dma.soundMode = 3;
+		dma.soundMode = 0;
 		FIFO_Pos = 0;
 		FIFO_NbBytes = 0;
 		microwire.masterVolume = 7;
