@@ -10,7 +10,7 @@
   audio samples per VBL, ...)
 
   The video freq is not exactly 50 or 60 Hz because the number of cpu cycles
-  per second is not a multiple of the number of cpu cycles per second.
+  per second is not a multiple of the number of cpu cycles per VBL.
   This can cause synchronisation errors between audio and video effects
   when both components use different clocks (eg in STE where audio DMA clock
   is not the same as the cpu clock).
