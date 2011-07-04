@@ -375,7 +375,7 @@ Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefre
 	}
 
 	/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
-	/* -> comment code to keep the default value from above */
+	/* -> TODO, for now comment code to keep the default value from above */
 	//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
 	//	CyclesPerVBL = MachineClocks.CPU_Freq / ScreenRefreshRate;
 
@@ -416,7 +416,7 @@ Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshR
 			VBLPerSec = ( (Sint64)MachineClocks.CPU_Freq << 24 ) / ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate );
 
 		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
-		/* -> comment code to keep the default value from above */
+		/* -> TODO, for now comment code to keep the default value from above */
 		//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
 		//	VBLPerSec = ScreenRefreshRate << 24;
 	}
@@ -451,7 +451,7 @@ Uint32	ClocksTimings_GetVBLDuration_micro ( MACHINETYPE MachineType , int Screen
 			VBLDuration_micro = (Uint32) (1000000.0 * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) / MachineClocks.CPU_Freq + 0.5);
 
 		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
-		/* -> comment code to keep the default value from above */
+		/* -> TODO, for now comment code to keep the default value from above */
 		//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
 		//	VBLDuration_micro = (Uint32) (1000000.0 / ScreenRefreshRate + 0.5);
 	}
@@ -491,7 +491,7 @@ Sint64	ClocksTimings_GetSamplesPerVBL ( MACHINETYPE MachineType , int ScreenRefr
 			SamplesPerVBL = ( ((Sint64)AudioFreq * ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate ) ) << 28 ) / MachineClocks.CPU_Freq;
 
 		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
-		/* -> comment code to keep the default value from above */
+		/* -> TODO, for now comment code to keep the default value from above */
 		//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
 		//	SamplesPerVBL = ( ((Sint64)AudioFreq) << 28 ) / ScreenRefreshRate;
 	}
