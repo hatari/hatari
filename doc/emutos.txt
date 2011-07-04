@@ -178,7 +178,7 @@ Demos:
 - Posh (by Checkpoint)
 - Rebirth (by MMJ production)
 - Save The Earth (by Defence Force)
-- SillyVenture 2k10 (invitro by Mystic Bytes)
+- SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - Sommarhack 2011 (invite by DHS)
 - Soundtracker (by Equinox)
 - ST soccer (intro by Exceptions)
@@ -350,6 +350,7 @@ Demos:
 - Azed/Jungle demo (by Atari)
 - Beat Demo (by Frontline)
 - Birdie (by Zeal)
+- Blue Period (by Paradox)
 - CD-player (by Light)
 - Cernit Trandafir (by DHS)
 - Core Flakes (by New Core)
@@ -371,6 +372,7 @@ Demos:
 - Mind Rewind (by Reservoir Gods)
 - MovieSTE (by Tony Barker)
 - New Year -94 Intro (by Extream)
+- No Monkey (by Tomchi), some extra pixels in first text scroller
 - Pacemaker (by Paradox), stops at end-part
 - Paracon 6 & 7 remindtros (by Paradox)
 - Power Rise (by Light)
@@ -380,6 +382,7 @@ Demos:
 - Sommarhack (by DHS)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
+- Summer Delights (by DHS), sound missing
 - Sventure intro (by Paradox)
 - Vision (by POV)
 - XiTEC Presentation (by Omega)
