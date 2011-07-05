@@ -9,6 +9,8 @@
 Emulation:
 - Alternative CPU core based on WinUAE for more accurate future
   HW interaction emulation (see readme.txt on how to enable it)
+- Use precise clocks values (as described in Atari's official schematics)
+  for better video/dma audio synchronisation (e.g. More Or Less Zero by DHS)
 - DSP:
   - Some DSP-timing sensitive Falcon demos that by luck happened to work
     with Hatari v1.4, don't work anymore in v1.5 with the default UAE CPU
@@ -19,10 +21,13 @@ Emulation:
     in hanshake mode with 32 Mhz clock (fixes DSP MP2 player used in many
     demos & programs, but that requires also using WinUAE core)
 - Sound improvements:
-  - STE DMA sound problem on low frequencies fixed
-  - Sound latency on US TOS fixed (with more accurate timings)
+  - Major rewrite and accuracy improvements in STE DMA sound, including
+    emulation of the 8 bytes FIFO, giving results nearly identical to
+    a real STE (e.g. HexTracker by Paulo Simoes)
+  - Improved precision in sound emulation, with nearly no rounding errors
+    over successive VBL (correct sound latency on US TOS running at 60 Hz)
   - By default mix 3 YM voices using a lookup table of values
-    measured on real STF (improves e.g. Flashback demo sound)
+    measured on real STF to improves digisound (e.g. Flashback demo sound)
   - Remove old ST Sound's code used for tone and noise step compute
     (some low period values were not correctly emulated)
 - Video emulation on STF/STE:
