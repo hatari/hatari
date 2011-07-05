@@ -27,7 +27,7 @@ Emulation:
   - Improved precision in sound emulation, with nearly no rounding errors
     over successive VBL (correct sound latency on US TOS running at 60 Hz)
   - By default mix 3 YM voices using a lookup table of values
-    measured on real STF to improves digisound (e.g. Flashback demo sound)
+    measured on real STF to improve digisound (e.g. Flashback demo sound)
   - Remove old ST Sound's code used for tone and noise step compute
     (some low period values were not correctly emulated)
 - Video emulation on STF/STE:
