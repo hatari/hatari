@@ -275,7 +275,7 @@ void Main_WaitOnVbl(void)
 	Sint64 CurrentTicks;
 	static Sint64 DestTicks = 0;
 	Sint64 FrameDuration_micro;
-	int nDelay;
+	Sint64 nDelay;
 
 	nVBLCount++;
 	if (nRunVBLs &&	nVBLCount >= nRunVBLs)
