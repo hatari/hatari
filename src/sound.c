@@ -1112,7 +1112,8 @@ void Sound_Reset(void)
  * Very important : this function should only be called by setting
  * Sound_BufferIndexNeedReset=true ; sound buffer index should be reset
  * only after the sound for the whole VBL was updated (CurrentSamplesNb returns to 0)
- * else it will alter the value of DMA Frame Count ($ff8909/0b/0d)
+ * else it will alter the value of DMA Frame Count ($ff8909/0b/0d) and
+ * could cause crashes in some programs.
  */
 void Sound_ResetBufferIndex(void)
 {
@@ -1224,17 +1225,20 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 			SamplesToGenerate = 0;
 	}
 
-	/* Check we don't fill the sound's ring buffer before it's played by Audio_Callback */
-	/* (this should never happen, except if the system suffers major slowdown due to */
-	/* other processes or if we run in fast forward mode) */
-	if ( SamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples )
+	/* Check we don't fill the sound's ring buffer before it's played by Audio_Callback()	*/
+	/* This should never happen, except if the system suffers major slowdown due to	other	*/
+	/* processes or if we run in fast forward mode.						*/
+	/* In the case of slowdown, we set Sound_BufferIndexNeedReset to "resync" the working	*/
+	/* buffer's index ActiveSndBufIdx with the system buffer's index CompleteSndBufIdx.	*/
+	/* In the case of fast forward, we do nothing here, Sound_BufferIndexNeedReset will be	*/
+	/* set when the user exits fast forward mode.						*/
+	if ( ( SamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples ) && ( ConfigureParams.System.bFastForward == false ) )
 	{
-		SamplesToGenerate = MIXBUFFER_SIZE - nGeneratedSamples;
-		if ( SamplesToGenerate < 0 )
-			SamplesToGenerate = 0;
+		Log_Printf ( LOG_WARN , "Your system is too slow, some sound samples were not correctly emulated\n" );
+		Sound_BufferIndexNeedReset = true;
 	}
 
-//fprintf ( stderr , "samp_gen %d / %d frac %lx\n" , SamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
+//fprintf ( stderr , "vbl %d hbl %d samp_gen %d / %d frac %lx\n" , nVBLs , nHBL , SamplesToGenerate , SamplesPerFrame , (long int)SamplesPerFrame_unrounded );
 
 	return SamplesToGenerate;
 }
