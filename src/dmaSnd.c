@@ -323,19 +323,35 @@ static void DmaSnd_FIFO_Refill(void)
  * Pull one sample/byte from the DMA Audio's FIFO and decrease the number of
  * remaining bytes.
  * If the FIFO is empty, return 0 (empty sample)
+ * Note : on a real STE, the 8 bytes FIFO is refilled on each HBL, which gives
+ * a total of 313*8=125326 bytes per sec read by the DMA. As the max freq
+ * is 50066 Hz, the STE can play 100132 bytes per sec in stereo ; so on a real STE
+ * the FIFO can never be empty while DMA is ON.
+ * But on Hatari, if the user chooses an audio's output frequency that is much
+ * lower than the current DMA freq, audio will be updated less frequently than
+ * on each HBL and it could require to process more than DMASND_FIFO_SIZE in one
+ * call to DmaSnd_GenerateSamples(). This is why we allow DmaSnd_FIFO_Refill()
+ * to be called if FIFO is empty but DMA sound is still ON.
+ * This way, sound remains correct even if the user uses very low output freq.
  */
 static Sint8 DmaSnd_FIFO_PullByte(void)
 {
 	Sint8	sample;
 
-LOG_TRACE(TRACE_DMASND, "DMA snd fifo pull pos %d nb %d %02x\n", FIFO_Pos , FIFO_NbBytes , (Uint8)FIFO[ FIFO_Pos ] );
-
 	if ( FIFO_NbBytes == 0 )
 	{
-		LOG_TRACE(TRACE_DMASND, "DMA snd fifo empty\n" );
-		return 0;
+		/* If DMA sound is OFF, don't update the FIFO */
+		if ( ( nDmaSoundControl & DMASNDCTRL_PLAY ) == 0)
+		{
+			LOG_TRACE(TRACE_DMASND, "DMA snd fifo empty for pull\n" );
+			return 0;
+		}
+		else
+			DmaSnd_FIFO_Refill();
 	}
 
+
+LOG_TRACE(TRACE_DMASND, "DMA snd fifo pull pos %d nb %d %02x\n", FIFO_Pos , FIFO_NbBytes , (Uint8)FIFO[ FIFO_Pos ] );
 
 	sample = FIFO[ FIFO_Pos ];				/* Get oldest byte from the FIFO */
 	FIFO_Pos = (FIFO_Pos+1) & DMASND_FIFO_SIZE_MASK;	/* Pos to be pulled on next call */
