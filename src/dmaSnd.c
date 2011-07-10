@@ -1144,18 +1144,14 @@ static float DmaSnd_IIRfilterR(float xn)
  */
 static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in)
 {
-	static	Sint16	loop[4] = { 0, 0, 0, 0 };
+	static	Sint16	lowPassFilter[2] = { 0, 0 };
 	static	Sint16	out = 0;
-	static	int	count = 0;
 
 	if (DmaSnd_LowPass)
 	{
-		if(--count < 0)
-			count = 3;
-
-		out -= loop[count];
-		loop[count] = in;
-		out += loop[count];
+		out = lowPassFilter[0] + (lowPassFilter[1]<<1) + in;
+		lowPassFilter[0] = lowPassFilter[1];
+		lowPassFilter[1] = in;
 
 		return out; /* Filter Gain = 4 */
 	}else
@@ -1169,18 +1165,14 @@ static Sint16 DmaSnd_LowPassFilterLeft(Sint16 in)
  */
 static Sint16 DmaSnd_LowPassFilterRight(Sint16 in)
 {
-	static	Sint16	loop[4] = { 0, 0, 0, 0 };
+	static	Sint16	lowPassFilter[2] = { 0, 0 };
 	static	Sint16	out = 0;
-	static	int	count = 0;
 
 	if (DmaSnd_LowPass)
 	{
-		if(--count < 0)
-			count = 3;
-
-		out -= loop[count];
-		loop[count] = in;
-		out += loop[count];
+		out = lowPassFilter[0] + (lowPassFilter[1]<<1) + in;
+		lowPassFilter[0] = lowPassFilter[1];
+		lowPassFilter[1] = in;
 
 		return out; /* Filter Gain = 4 */
 	}else
