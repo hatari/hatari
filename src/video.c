@@ -206,7 +206,7 @@
 /*			multiple of 2 cycles, we allow cycles 56/64 and 60/68 (fix nosync.tos	*/
 /*			that uses the STOP instruction to produce a 0 byte line on the first	*/
 /*			displayed line (found on atari-forum.com)).				*/
-/* 2008/12/26	[NP]	When reading $ff8260 on ST/STE, set unused bits to 1 instead of 0	*/
+/* 2008/12/26	[NP]	When reading $ff8260 on STF, set unused bits to 1 instead of 0		*/
 /*			(fix wrong TOS resolution in Awesome Menu Disk 16).			*/
 /*			Set unused bit to 1 when reading $ff820a too.				*/
 /* 2009/01/16	[NP]	Handle special case when writing only in upper byte of a color reg.	*/
@@ -2888,9 +2888,7 @@ void Video_ShifterMode_ReadByte(void)
 	else
 		IoMem[0xff8260] = VideoShifterByte;	/* Read shifter register, set unused bits to 1 */
 
-	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
-	  || (ConfigureParams.System.nMachineType == MACHINE_STE)
-	  || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) )
+	if (ConfigureParams.System.nMachineType == MACHINE_ST)
 		IoMem[0xff8260] |= 0xfc;		/* set unused bits 2-7 to 1 */
 }
 
