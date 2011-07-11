@@ -23,6 +23,7 @@
 #include "Shared.h"
 #include "video.h"
 #include "avi_record.h"
+#include "../debug/debugui.h"
 
 // for Hatari
 
@@ -678,7 +679,7 @@ int main (int argc, char **argv)
     }
 
 #if SDL_USE_NIB_FILE
-    NSApplicationMain (argc, argv);
+    NSApplicationMain (argc, (const char**)argv);
 #else
     CustomApplicationMain (argc, argv);
 #endif

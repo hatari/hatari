@@ -60,7 +60,7 @@ void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 	NSCAssert((cchTarget > 0), @"Target buffer size must be greater than zero.");
 
 	// Copy the string
-	strncpy(szTarget, [[path stringByExpandingTildeInPath] cString], cchTarget);
+	strncpy(szTarget, [[path stringByExpandingTildeInPath] cStringUsingEncoding:[NSString defaultCStringEncoding]], cchTarget);
 	
 	// Make sure it is null terminated (as strncpy does not null-terminate if the buffer is too small)
 	szTarget[cchTarget - 1] = 0;
