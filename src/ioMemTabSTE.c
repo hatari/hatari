@@ -46,7 +46,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8208, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8209, SIZE_BYTE, Video_ScreenCounter_ReadByte, Video_ScreenCounter_WriteByte },
 	{ 0xff820a, SIZE_BYTE, Video_Sync_ReadByte, Video_Sync_WriteByte },
-	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here : FIXME should return 0 not ff */
 	{ 0xff820c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, Video_ScreenBaseSTE_WriteByte },
 	{ 0xff820e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
@@ -68,10 +68,10 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff825c, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color14_WriteWord },        /* COLOR 14 */
 	{ 0xff825e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color15_WriteWord },        /* COLOR 15 */
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
-	{ 0xff8261, 3,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8261, 3,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here : FIXME should return 0 not ff */
 	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, Video_HorScroll_Write_8264 },	/* STE horizontal fine scrolling (no prefetch) */
 	{ 0xff8265, SIZE_BYTE, IoMem_ReadWithoutInterception, Video_HorScroll_Write_8265 },	/* STE horizontal fine scrolling */
-	{ 0xff8266, 26,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8266, 26,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here : FIXME should return 0 not ff */
 
 	{ 0xff8604, SIZE_WORD, FDC_DiskControllerStatus_ReadWord, FDC_DiskController_WriteWord },
 	{ 0xff8606, SIZE_WORD, FDC_DmaStatus_ReadWord, FDC_DmaModeControl_WriteWord },
