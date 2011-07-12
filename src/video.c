@@ -2886,10 +2886,10 @@ void Video_ShifterMode_ReadByte(void)
 	if (bUseHighRes)
 		IoMem[0xff8260] = 2;			/* If mono monitor, force to high resolution */
 	else
-		IoMem[0xff8260] = VideoShifterByte;	/* Read shifter register, set unused bits to 1 */
+		IoMem[0xff8260] = VideoShifterByte;	/* Only use bits 0 and 1, unused bits 2-7 are set to 0 */
 
 	if (ConfigureParams.System.nMachineType == MACHINE_ST)
-		IoMem[0xff8260] |= 0xfc;		/* set unused bits 2-7 to 1 */
+		IoMem[0xff8260] |= 0xfc;		/* On STF, set unused bits 2-7 to 1 */
 }
 
 /*-----------------------------------------------------------------------*/
