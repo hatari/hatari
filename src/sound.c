@@ -1232,7 +1232,8 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 	/* buffer's index ActiveSndBufIdx with the system buffer's index CompleteSndBufIdx.	*/
 	/* In the case of fast forward, we do nothing here, Sound_BufferIndexNeedReset will be	*/
 	/* set when the user exits fast forward mode.						*/
-	if ( ( SamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples ) && ( ConfigureParams.System.bFastForward == false ) )
+	if ( ( SamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples ) && ( ConfigureParams.System.bFastForward == false )
+	    && ( ConfigureParams.Sound.bEnableSound == true ) )
 	{
 		Log_Printf ( LOG_WARN , "Your system is too slow, some sound samples were not correctly emulated\n" );
 		Sound_BufferIndexNeedReset = true;
