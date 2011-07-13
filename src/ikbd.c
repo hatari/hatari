@@ -35,6 +35,9 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			Froggies Over The Fence demo menu (yeah ! enjoy this master piece of demo !).	*/
 /* 2011/05/11	[NP]	Add proper support for emulating TX buffer empty/full in status register bit 1	*/
 /*			when writing to $fffc02 (using an internal timer).				*/
+/* 2011/07/14	[NP]	Don't clear bytes in transit when ACIA_Reset is called ; if a byte is sent to	*/
+/*			the ikbd it should not be cancelled ? FIXME : this would need more tests on a	*/
+/*			real ST (fix Froggies Over The Fence's menu when selecting a demo).		*/
 
 
 #include <time.h>
@@ -356,8 +359,14 @@ CustomCodeDefinitions[] =
  */
 void ACIA_Reset(void)
 {
+	LOG_TRACE(TRACE_IKBD_EXEC, "ikbd acia reset\n");
+
+/* [NP] 2011/07/14 FIXME : Acia reset should not clear bytes in transit ? */
+/* Else, "Froggies Over The Fence" doesn't exit the custom ikbd mode */
+#if 0
 	bByteInTransitToACIA = false;
 	bByteInTransitFromACIA = false;
+#endif
 	ACIAControlRegister = 0;
 	ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 }
