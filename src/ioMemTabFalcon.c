@@ -153,8 +153,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8208, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8209, SIZE_BYTE, Video_ScreenCounter_ReadByte, Video_ScreenCounter_WriteByte },
 	{ 0xff820a, SIZE_BYTE, Video_Sync_ReadByte, Video_Sync_WriteByte },
-	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff820c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here : return 0 not ff */
+	{ 0xff820c, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here : return 0 not ff */
 	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, VIDEL_ScreenBase_WriteByte },            /* Video base low byte */
 	{ 0xff820e, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon line offset */
 	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, Video_LineWidth_WriteByte },
@@ -162,11 +162,11 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8212, 46, IoMem_VoidRead, IoMem_VoidWrite },                                      /* No bus error here */
 	{ 0xff8240, 32, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },                  /* ST color regs */
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
-	{ 0xff8261, 3,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8261, 3,         IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon horizontal fine scrolling high ? */
 	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read, Video_HorScroll_Write },                   /* horizontal fine scrolling */
 	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_FALC_ShiftModeWriteWord },  /* Falcon shift mode */
-	{ 0xff8268, 24,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8268, 24,        IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 
 	{ 0xff8280, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HHC_WriteWord },            /* HHC : Horizontal Hold Counter */
 	{ 0xff8282, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HHT_WriteWord },            /* HHT : Horizontal Hold Timer */

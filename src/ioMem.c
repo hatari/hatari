@@ -617,6 +617,26 @@ void IoMem_VoidRead(void)
 
 /*-------------------------------------------------------------------------*/
 /**
+ * This is the same function as IoMem_VoidRead, but for IO registers that
+ * return 0x00 instead of 0xff when read (this is the case for some video
+ * registers on STE, Falcon, ...)
+ */
+void IoMem_VoidRead_00(void)
+{
+	Uint32 a;
+
+	/* handler is probably called only once, so we have to take care of the neighbour "void IO registers" */
+	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress + nIoMemAccessSize; a++)
+	{
+		if (pInterceptReadTable[a - 0xff8000] == IoMem_VoidRead_00)
+		{
+			IoMem[a] = 0x00;
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------*/
+/**
  * This is the write handler for the IO memory locations without an assigned
  * IO register and which also do not generate a bus error. We simply ignore
  * a write access to these registers.
