@@ -2906,6 +2906,7 @@ STATIC_INLINE int do_specialties (int cycles)
 			return 1;
 	
 		do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
+		M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
 	    /* It is possible one or more ints happen at the same time */
 	    /* We must process them during the same cpu cycle until the special INT flag is set */
