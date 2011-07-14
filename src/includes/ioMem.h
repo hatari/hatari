@@ -109,6 +109,7 @@ extern void IoMem_BusErrorOddReadAccess(void);
 extern void IoMem_BusErrorEvenWriteAccess(void);
 extern void IoMem_BusErrorOddWriteAccess(void);
 extern void IoMem_VoidRead(void);
+extern void IoMem_VoidRead_00(void);
 extern void IoMem_VoidWrite(void);
 extern void IoMem_WriteWithoutInterception(void);
 extern void IoMem_ReadWithoutInterception(void);
