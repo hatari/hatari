@@ -120,9 +120,9 @@ static Sint64	Time_GetTicks ( void )
 #if HAVE_GETTIMEOFDAY
         struct timeval	now;
         gettimeofday ( &now , NULL );
-        ticks_micro = now.tv_sec * 1000000UL + now.tv_usec;
+        ticks_micro = (Sint64)now.tv_sec * 1000000 + now.tv_usec;
 #else
-	ticks_micro = SDL_GetTicks() * 1000UL;		/* milli sec -> micro sec */
+	ticks_micro = (Sint64)SDL_GetTicks() * 1000;		/* milli sec -> micro sec */
 #endif
 
 	return ticks_micro;
