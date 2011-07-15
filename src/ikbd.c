@@ -474,9 +474,9 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ACIAControlRegister, sizeof(ACIAControlRegister));
 	MemorySnapShot_Store(&ACIAStatusRegister, sizeof(ACIAStatusRegister));
 	MemorySnapShot_Store(&ACIAByte, sizeof(ACIAByte));
-//	MemorySnapShot_Store(&ACIATxDataRegister, sizeof(ACIATxDataRegister));
+	MemorySnapShot_Store(&ACIATxDataRegister, sizeof(ACIATxDataRegister));
 	MemorySnapShot_Store(&bByteInTransitToACIA, sizeof(bByteInTransitToACIA));
-//	MemorySnapShot_Store(&bByteInTransitFromACIA, sizeof(bByteInTransitFromACIA));
+	MemorySnapShot_Store(&bByteInTransitFromACIA, sizeof(bByteInTransitFromACIA));
 	MemorySnapShot_Store(&bMouseDisabled, sizeof(bMouseDisabled));
 	MemorySnapShot_Store(&bJoystickDisabled, sizeof(bJoystickDisabled));
 	MemorySnapShot_Store(&bDuringResetCriticalTime, sizeof(bDuringResetCriticalTime));
