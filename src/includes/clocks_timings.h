@@ -59,6 +59,8 @@ extern CLOCKS_STRUCT	MachineClocks;
 extern bool	RoundVBLPerSec;
 
 
+#define	CLOCKS_TIMINGS_SHIFT_VBL	24		/* The value returned by ClocksTimings_GetVBLPerSec is << 24 to increase precision */
+
 /* Functions' prototypes */
 
 void	ClocksTimings_InitMachine ( MACHINETYPE MachineType );

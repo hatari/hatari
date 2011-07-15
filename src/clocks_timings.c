@@ -399,7 +399,7 @@ Uint32	ClocksTimings_GetCyclesPerVBL ( MACHINETYPE MachineType , int ScreenRefre
  *	NTSC STF/STE video PAL :	49.986 VBL/sec
  *	NTSC STF/STE video NTSC :	59.958 VBL/sec
  *
- * The returned number of VBL per sec is << 24 to simulate floating point using Uint32.
+ * The returned number of VBL per sec is << 24 (=CLOCKS_TIMINGS_SHIFT_VBL) to simulate floating point using Uint32.
  */
 
 Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshRate )
@@ -407,18 +407,18 @@ Uint32	ClocksTimings_GetVBLPerSec ( MACHINETYPE MachineType , int ScreenRefreshR
 	Uint32	VBLPerSec;							/* Upper 8 bits are for int part, 24 lower bits for float part */
 
 
-	VBLPerSec = ScreenRefreshRate << 24;					/* default rounded value */
+	VBLPerSec = ScreenRefreshRate << CLOCKS_TIMINGS_SHIFT_VBL;		/* default rounded value */
 
 	if ( RoundVBLPerSec == false )
 	{
 		/* STF and STE have the same numbers of cycles per VBL */
 		if ( ( MachineType == MACHINE_ST ) || ( MachineType == MACHINE_STE ) )
-			VBLPerSec = ( (Sint64)MachineClocks.CPU_Freq << 24 ) / ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate );
+			VBLPerSec = ( (Sint64)MachineClocks.CPU_Freq << CLOCKS_TIMINGS_SHIFT_VBL ) / ClocksTimings_GetCyclesPerVBL ( MachineType , ScreenRefreshRate );
 
 		/* For machines where cpu freq can be changed, we don't know the number of cycles per VBL */
 		/* -> TODO, for now comment code to keep the default value from above */
 		//else if ( ( MachineType == MACHINE_MEGA_STE ) || ( MachineType == MACHINE_TT ) || ( MachineType == MACHINE_FALCON ) )
-		//	VBLPerSec = ScreenRefreshRate << 24;
+		//	VBLPerSec = ScreenRefreshRate << CLOCKS_TIMINGS_SHIFT_VBL;
 	}
 
 
