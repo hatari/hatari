@@ -25,7 +25,7 @@ extern bool	Avi_RecordVideoStream ( void );
 extern bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int SampleLength );
 
 extern bool	Avi_AreWeRecording ( void );
-extern bool	Avi_StartRecording ( char *FileName , bool CropGui , int Fps , int VideoCodec );
+extern bool	Avi_StartRecording ( char *FileName , bool CropGui , Uint32 Fps , Uint32 Fps_scale , int VideoCodec );
 extern bool	Avi_StopRecording ( void );
 
 

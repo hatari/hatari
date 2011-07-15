@@ -273,7 +273,8 @@ typedef struct {
   int		CropTop;
   int		CropBottom;
 
-  int		Fps;
+  int		Fps;					/* Fps << 24 */
+  int		Fps_scale;				/* 1 << 24 */
 
   int		AudioCodec;
   int		AudioFreq;
@@ -498,9 +499,9 @@ bool	Avi_RecordVideoStream ( void )
 		return false;
 	}
 
-	if (++AviParams.TotalVideoFrames % AviParams.Fps == 0)
+	if (++AviParams.TotalVideoFrames % ( AviParams.Fps / AviParams.Fps_scale ) == 0)
 	{
-		int secs = AviParams.TotalVideoFrames / AviParams.Fps;
+		int secs = AviParams.TotalVideoFrames / ( AviParams.Fps / AviParams.Fps_scale );
 		char str[6] = "00:00";
 		str[0] = '0' + (secs / 60) / 10;
 		str[1] = '0' + (secs / 60) % 10;
@@ -572,7 +573,7 @@ bool	Avi_RecordAudioStream ( Sint16 pSamples[][2] , int SampleIndex , int Sample
 
 static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADER *pAviFileHeader )
 {
-	int	Width , Height , BitCount , Fps , SizeImage;
+	int	Width , Height , BitCount , Fps , Fps_scale , SizeImage;
 	int	AudioFreq;
 
 	memset ( pAviFileHeader , 0 , sizeof ( *pAviFileHeader ) );
@@ -581,6 +582,7 @@ static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADE
 	Height =pAviParams->Height;
 	BitCount = pAviParams->BitCount;
 	Fps = pAviParams->Fps;
+	Fps_scale = pAviParams->Fps_scale;
 	AudioFreq = pAviParams->AudioFreq;
 
 	SizeImage = 0;
@@ -602,8 +604,8 @@ static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADE
 
 	Avi_Store4cc ( pAviFileHeader->AviHeader.Header.ChunkName , "avih" );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.ChunkSize , sizeof ( AVI_STREAM_AVIH ) - 8 );
-	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.microsec_per_frame , 1000000 / Fps );
-	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.max_bytes_per_second , SizeImage * Fps + AudioFreq * 4 );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.microsec_per_frame , (Uint32)( ( 1000000 * (Sint64)Fps_scale ) / Fps ) );
+	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.max_bytes_per_second , (Uint32)( ( (Sint64)SizeImage * Fps ) / Fps_scale + AudioFreq * 4 ) );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.padding_granularity , 0 );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.flags , AVIF_HASINDEX | AVIF_ISINTERLEAVED | AVIF_TRUSTCKTYPE );
 	Avi_StoreU32 ( pAviFileHeader->AviHeader.Header.total_frames , 0 );			/* number of video frames (-> completed later) */
@@ -634,7 +636,7 @@ static void	Avi_BuildFileHeader ( RECORD_AVI_PARAMS *pAviParams , AVI_FILE_HEADE
 	Avi_StoreU16 ( pAviFileHeader->VideoStream.Header.priority , 0 );
 	Avi_StoreU16 ( pAviFileHeader->VideoStream.Header.language , 0 );
 	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.initial_frames , 0 );
-	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.time_scale , 1 );
+	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.time_scale , Fps_scale );
 	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.data_rate , Fps );
 	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.start_time , 0 );
 	Avi_StoreU32 ( pAviFileHeader->VideoStream.Header.data_length , 0 );			/* number of video frames (-> completed later) */
@@ -952,7 +954,7 @@ bool	Avi_AreWeRecording ( void )
 
 
 
-bool	Avi_StartRecording ( char *FileName , bool CropGui , int Fps , int VideoCodec )
+bool	Avi_StartRecording ( char *FileName , bool CropGui , Uint32 Fps , Uint32 Fps_scale , int VideoCodec )
 {
 	memset ( &AviParams , 0 , sizeof ( AviParams ) );
 
@@ -962,6 +964,7 @@ bool	Avi_StartRecording ( char *FileName , bool CropGui , int Fps , int VideoCod
 	AviParams.AudioFreq = ConfigureParams.Sound.nPlaybackFreq;
 	AviParams.Surface = sdlscrn;
 	AviParams.Fps = Fps;
+	AviParams.Fps_scale = Fps_scale;
 
 	if ( !CropGui )					/* Keep gui's status bar */
 	{

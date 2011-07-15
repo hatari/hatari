@@ -28,6 +28,7 @@ const char ShortCut_fileid[] = "Hatari shortcut.c : " __DATE__ " " __TIME__;
 #include "sdlgui.h"
 #include "video.h"
 #include "avi_record.h"
+#include "clocks_timings.h"
 
 static SHORTCUTKEYIDX ShortCutKey = SHORTCUT_NONE;  /* current shortcut key */
 
@@ -112,7 +113,10 @@ static void ShortCut_RecordAnimation(void)
 	{
 		/* Start animation */
 		Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
-			( ConfigureParams.Video.AviRecordFps == 0 ? nScreenRefreshRate : ConfigureParams.Video.AviRecordFps ) ,
+			ConfigureParams.Video.AviRecordFps == 0 ?
+				ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
+				(Uint32)ConfigureParams.Video.AviRecordFps << 24 ,
+			1 << 24 ,
 			ConfigureParams.Video.AviRecordVcodec );
 	}
 }

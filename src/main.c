@@ -768,7 +768,10 @@ int main(int argc, char *argv[])
 
 	if ( AviRecordOnStartup )	/* Immediatly starts avi recording ? */
 		Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
-			( ConfigureParams.Video.AviRecordFps == 0 ? nScreenRefreshRate : ConfigureParams.Video.AviRecordFps ) ,
+			ConfigureParams.Video.AviRecordFps == 0 ?
+				ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
+				(Uint32)ConfigureParams.Video.AviRecordFps << 24 ,
+			1 << 24 ,
 			ConfigureParams.Video.AviRecordVcodec );
 
 	/* Run emulation */

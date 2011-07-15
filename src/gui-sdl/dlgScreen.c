@@ -19,6 +19,7 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "avi_record.h"
 #include "statusbar.h"
+#include "clocks_timings.h"
 
 #define ITEMS_IN_ARRAY(a) (sizeof(a)/sizeof(a[0]))
 
@@ -392,7 +393,10 @@ void Dialog_WindowDlg(void)
 			{
 				ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 				Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
-					( ConfigureParams.Video.AviRecordFps == 0 ? nScreenRefreshRate : ConfigureParams.Video.AviRecordFps ) ,
+					ConfigureParams.Video.AviRecordFps == 0 ?
+						ClocksTimings_GetVBLPerSec ( ConfigureParams.System.nMachineType , nScreenRefreshRate ) :
+						(Uint32)ConfigureParams.Video.AviRecordFps << 24 ,
+					1 << 24 ,
 					ConfigureParams.Video.AviRecordVcodec );
 				windowdlg[DLGSCRN_RECANIM].txt = "Stop record";
 			}
