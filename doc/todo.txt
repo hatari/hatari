@@ -47,14 +47,12 @@ Emulation improvements
 - Add SCC serial port emulation for Falcon/TT mode.
 
 - Some Falcon games/demos only work with 32 MHz CPU emulation.
-  (might be due to timings problems (videl, DMA, cpu cycles, dsp cycles, ...)
+  (might be due to timings problems (videl, DMA, cpu cycles, dsp cycles, ...))
 
 - Fix falcon sound quality (sound is sometimes noisy)
   Sound is also toggling between nice to noise with some demos.
 
 - Improve STE Microwire/LMC1992 emulation.
-
-- improve STE DMA sound emulation - some demos still render wrong.
 
 - DSP emulation / Falcon sound matrix:
 	- Dsp SSI internal clock (is it used on falcon ?)
