@@ -17,7 +17,6 @@ const char DlgSystem_fileid[] = "Hatari dlgSystem.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
-#include "clocks_timings.h"
 
 
 /* The old Uae cpu "System" dialog: */
@@ -195,8 +194,6 @@ void Dialog_SystemDlg(void)
 	ConfigureParams.System.bBlitter = (systemdlg[DLGSYS_BLITTER].state & SG_SELECTED);
 	ConfigureParams.System.bRealTimeClock = (systemdlg[DLGSYS_RTC].state & SG_SELECTED);
 	ConfigureParams.System.bPatchTimerD = (systemdlg[DLGSYS_TIMERD].state & SG_SELECTED);
-
-	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 }
 
 /* The new WinUae cpu "System" dialog: */
@@ -456,7 +453,5 @@ void Dialog_SystemDlg(void)
 
 	ConfigureParams.System.bCompatibleFPU = (systemdlg[DLGSYS_FPU_COMPAT].state & SG_SELECTED);
 	ConfigureParams.System.bMMU = (systemdlg[DLGSYS_MMU_EMUL].state & SG_SELECTED);
-
-	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 }
 #endif
