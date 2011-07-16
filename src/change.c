@@ -41,7 +41,6 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 #if ENABLE_DSP_EMU
 # include "falcon/dsp.h"
 #endif
-#include "clocks_timings.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -267,7 +266,6 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || changed->System.nMachineType != current->System.nMachineType)
 	{
 		Dprintf("- blitter/rtc/dsp/machine>\n");
-		ClocksTimings_InitMachine ( changed->System.nMachineType );
 		IoMem_UnInit();
 		bReInitIoMem = true;
 	}
