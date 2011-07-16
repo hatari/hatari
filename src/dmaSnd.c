@@ -302,7 +302,10 @@ static void DmaSnd_FIFO_Refill(void)
 
 	/* If End Address == Start Address, don't update the FIFO */
 	if (dma.frameEndAddr == dma.frameStartAddr)
+	{
+		DmaSnd_EndOfFrameReached();			/* Stop dma audio if loop mode is off */
 		return;
+	}
 	
 	/* Refill the whole FIFO */
 	while ( DMASND_FIFO_SIZE - dma.FIFO_NbBytes >= 2 )
