@@ -38,6 +38,8 @@ Emulation:
   - Correctly shift the screen 4 pixels to the left when left border is removed
     in med res overscan (Hatari 1.4 handled only low res, fixes 'No Cooper'
     by 1984, 'Best Part Of The Creation' by Delta Force)
+  - Precisely emulate the number of frames per sec (eg 50.053 fps in PAL
+    instead of the usual 50 Hz)
 
 Emulator:
 - Atari program given as argument to Hatari will be automatically
@@ -47,7 +49,8 @@ Emulator:
   (follow them with --dsp none to disable DSP emulation)
 - Memory state saving and restoring fixes, especially for Falcon
   - Crossbar state is included -> state file ABI break
-- AVI recording options can be set in the new [Video] config file section
+- AVI recording options can be set in the new [Video] config file section
+- AVI recording supports non integer frame rates.
 - Falcon/TT Videl/hostscreen improvements:
   - New setting/option for using Desktop resolution & scaling
     in fullscreen instead of changing the resolution. On by default
