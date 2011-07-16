@@ -706,9 +706,7 @@ static Uint32 DmaSnd_GetFrameCount(void)
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
 		nActCount = dma.frameCounterAddr;
 	else
-		nActCount = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | IoMem[0xff8907];
-
-	nActCount &= ~1;
+		nActCount = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
 
 	return nActCount;
 }
