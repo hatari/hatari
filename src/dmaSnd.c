@@ -349,14 +349,12 @@ static Sint8 DmaSnd_FIFO_PullByte(void)
 
 	if ( dma.FIFO_NbBytes == 0 )
 	{
-		/* If DMA sound is OFF, don't update the FIFO */
-		if ( ( nDmaSoundControl & DMASNDCTRL_PLAY ) == 0)
+		DmaSnd_FIFO_Refill();
+		if ( dma.FIFO_NbBytes == 0 )                    /* Refill didn't add any new bytes */
 		{
 			LOG_TRACE(TRACE_DMASND, "DMA snd fifo empty for pull\n" );
 			return 0;
 		}
-		else
-			DmaSnd_FIFO_Refill();
 	}
 
 
