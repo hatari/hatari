@@ -135,17 +135,20 @@ struct dma_s {
 	Uint16 soundMode;		/* Sound mode register */
 	Uint32 frameStartAddr;		/* Sound frame start */
 	Uint32 frameEndAddr;		/* Sound frame end */
-	Uint32 frameCounter_int;	/* Counter in current sound frame, integer part */
-	Uint32 frameCounter_dec;	/* Counter in current sound frame, decimal part */
-	Uint32 frameLen;		/* Length of the frame */
+	Uint32 frameCounterAddr;	/* Sound frame current address counter */
+
+	/* Internal 8 byte FIFO */
+	Sint8 FIFO[ DMASND_FIFO_SIZE ];
+	Uint16 FIFO_Pos;		/* from 0 to DMASND_FIFO_SIZE-1 */
+	Uint16 FIFO_NbBytes;		/* from 0 to DMASND_FIFO_SIZE */
+
+	Sint16 FrameMono;		/* latest values read from the FIFO */
+	Sint16 FrameLeft;
+	Sint16 FrameRight;
 };
-Sint64 frameCounter_float;	// rename
-Sint8 FIFO[ DMASND_FIFO_SIZE ];
-Uint16 FIFO_Pos = 0;			/* from 0 to DMASND_FIFO_SIZE-1 */
-Uint16 FIFO_NbBytes = 0;		/* from 0 to DMASND_FIFO_SIZE */
-Uint32 frameCounterAddr;		/* Sound frame current address counter */
-Sint64 FreqRatio;
-bool InitSample;
+
+Sint64	frameCounter_float = 0;
+bool	DmaInitSample = false;
 
 
 struct microwire_s {
@@ -174,7 +177,6 @@ static struct lmc1992_s lmc1992;
 
 /* dB = 20log(gain)  :  gain = antilog(dB/20)                                */
 /* Table gain values = (int)(powf(10.0, dB/20.0)*65536.0 + 0.5)  2dB steps   */
-
 
 /* Values for LMC1992 Master volume control (*65536) */
 static const Uint16 LMC1992_Master_Volume_Table[64] =
@@ -239,11 +241,15 @@ void DmaSnd_Reset(bool bCold)
 {
 	nDmaSoundControl = 0;
 
+	dma.FIFO_Pos = 0;
+	dma.FIFO_NbBytes = 0;
+	dma.FrameMono = 0;
+	dma.FrameLeft = 0;
+	dma.FrameRight = 0;
+
 	if (bCold)
 	{
 		dma.soundMode = 0;
-		FIFO_Pos = 0;
-		FIFO_NbBytes = 0;
 		microwire.masterVolume = 7;
 		microwire.leftVolume = 655;
 		microwire.rightVolume = 655;
@@ -294,20 +300,20 @@ static void DmaSnd_FIFO_Refill(void)
 		return;
 	
 	/* Refill the whole FIFO */
-	while ( DMASND_FIFO_SIZE - FIFO_NbBytes >= 2 )
+	while ( DMASND_FIFO_SIZE - dma.FIFO_NbBytes >= 2 )
 	{
 		/* Add one word to the FIFO */
-		LOG_TRACE(TRACE_DMASND, "DMA snd fifo refill adr=%x pos %d nb %d %x %x\n", frameCounterAddr , FIFO_Pos , FIFO_NbBytes ,
-			STRam[ frameCounterAddr ] , STRam[ frameCounterAddr+1 ] );
+		LOG_TRACE(TRACE_DMASND, "DMA snd fifo refill adr=%x pos %d nb %d %x %x\n", dma.frameCounterAddr , dma.FIFO_Pos , dma.FIFO_NbBytes ,
+			STRam[ dma.frameCounterAddr ] , STRam[ dma.frameCounterAddr+1 ] );
 
-		FIFO[ ( FIFO_Pos+FIFO_NbBytes+0 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STRam[ frameCounterAddr ];		/* add upper byte of the word */
-		FIFO[ ( FIFO_Pos+FIFO_NbBytes+1 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STRam[ frameCounterAddr+1 ];	/* add lower byte of the word */
+		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+0 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STRam[ dma.frameCounterAddr ];	/* add upper byte of the word */
+		dma.FIFO[ ( dma.FIFO_Pos+dma.FIFO_NbBytes+1 ) & DMASND_FIFO_SIZE_MASK ] = (Sint8)STRam[ dma.frameCounterAddr+1 ];	/* add lower byte of the word */
 
-		FIFO_NbBytes += 2;				/* One word more in the FIFO */
+		dma.FIFO_NbBytes += 2;				/* One word more in the FIFO */
 
 		/* Increase current frame address and check if we reached frame's end */
-		frameCounterAddr += 2;
-		if ( frameCounterAddr == dma.frameEndAddr )	/* end of frame reached, should we loop or stop dma ? */
+		dma.frameCounterAddr += 2;
+		if ( dma.frameCounterAddr == dma.frameEndAddr )	/* end of frame reached, should we loop or stop dma ? */
 		{
 			if ( DmaSnd_EndOfFrameReached() )
 				break;				/* Loop mode off, dma audio is now turned off */
@@ -336,7 +342,7 @@ static Sint8 DmaSnd_FIFO_PullByte(void)
 {
 	Sint8	sample;
 
-	if ( FIFO_NbBytes == 0 )
+	if ( dma.FIFO_NbBytes == 0 )
 	{
 		/* If DMA sound is OFF, don't update the FIFO */
 		if ( ( nDmaSoundControl & DMASNDCTRL_PLAY ) == 0)
@@ -349,11 +355,11 @@ static Sint8 DmaSnd_FIFO_PullByte(void)
 	}
 
 
-LOG_TRACE(TRACE_DMASND, "DMA snd fifo pull pos %d nb %d %02x\n", FIFO_Pos , FIFO_NbBytes , (Uint8)FIFO[ FIFO_Pos ] );
+	LOG_TRACE(TRACE_DMASND, "DMA snd fifo pull pos %d nb %d %02x\n", dma.FIFO_Pos , dma.FIFO_NbBytes , (Uint8)dma.FIFO[ dma.FIFO_Pos ] );
 
-	sample = FIFO[ FIFO_Pos ];				/* Get oldest byte from the FIFO */
-	FIFO_Pos = (FIFO_Pos+1) & DMASND_FIFO_SIZE_MASK;	/* Pos to be pulled on next call */
-	FIFO_NbBytes--;						/* One byte less in the FIFO */
+	sample = dma.FIFO[ dma.FIFO_Pos ];			/* Get oldest byte from the FIFO */
+	dma.FIFO_Pos = (dma.FIFO_Pos+1) & DMASND_FIFO_SIZE_MASK;/* Pos to be pulled on next call */
+	dma.FIFO_NbBytes--;					/* One byte less in the FIFO */
 
 	return sample;
 }
@@ -370,19 +376,19 @@ static void DmaSnd_FIFO_SetStereo(void)
 {
 	Uint16	NewPos;
 
-	if ( FIFO_Pos & 1 )
+	if ( dma.FIFO_Pos & 1 )
 	{
-		NewPos = (FIFO_Pos+1) & DMASND_FIFO_SIZE_MASK;	/* skip the byte on odd address */
+		NewPos = (dma.FIFO_Pos+1) & DMASND_FIFO_SIZE_MASK;	/* skip the byte on odd address */
 
 		if ( nDmaSoundControl & DMASNDCTRL_PLAY )	/* print a log if we change while playing */
-			{ LOG_TRACE(TRACE_DMASND, "DMA snd switching to stereo mode while playing mono FIFO_pos %d->%d\n", FIFO_Pos , NewPos ); }
+			{ LOG_TRACE(TRACE_DMASND, "DMA snd switching to stereo mode while playing mono FIFO_pos %d->%d\n", dma.FIFO_Pos , NewPos ); }
 		else
-			{ LOG_TRACE(TRACE_DMASND, "DMA snd switching to stereo mode FIFO_pos %d->%d\n", FIFO_Pos , NewPos ); }
+			{ LOG_TRACE(TRACE_DMASND, "DMA snd switching to stereo mode FIFO_pos %d->%d\n", dma.FIFO_Pos , NewPos ); }
 
-		FIFO_Pos = NewPos;
+		dma.FIFO_Pos = NewPos;
 
-		if ( FIFO_NbBytes > 0 )
-			FIFO_NbBytes--;				/* remove one byte if FIFO was not already empty */
+		if ( dma.FIFO_NbBytes > 0 )
+			dma.FIFO_NbBytes--;			/* remove one byte if FIFO was not already empty */
 	}
 	
 }
@@ -401,8 +407,8 @@ static int DmaSnd_DetectSampleRate(void)
 /*-----------------------------------------------------------------------*/
 /**
  * This function is called when a new sound frame is started.
- * It copies the start and end address from the I/O registers, calculates
- * the sample length, etc.
+ * It copies the start and end address from the I/O registers and set
+ * the frame counter addr to the start of this new frame.
  */
 static void DmaSnd_StartNewFrame(void)
 {
@@ -411,25 +417,11 @@ static void DmaSnd_StartNewFrame(void)
 	dma.frameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
 	dma.frameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
 
+	dma.frameCounterAddr = dma.frameStartAddr;
+
 	LOG_TRACE(TRACE_DMASND, "DMA snd new frame start=%x end=%x\n", dma.frameStartAddr, dma.frameEndAddr);
 
-	frameCounterAddr = dma.frameStartAddr;
 
-#ifdef nofifo
-	dma.frameCounter_int = 0;
-	dma.frameCounter_dec = 0;
-	frameCounter_float = 0;
-
-	dma.frameLen = dma.frameEndAddr - dma.frameStartAddr;
-
-	if (dma.frameEndAddr <= dma.frameStartAddr)
-	{
-		Log_Printf(LOG_WARN, "DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
-		          dma.frameStartAddr, dma.frameEndAddr);
-		dma.frameLen = 0;
-		return;
-	}
-#endif
 
 // [NP] No more need for a timer since dma sound is updated on each HBL
 //	/* To get smooth sound, set an "interrupt" for the end of the frame that
@@ -496,12 +488,12 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int i;
 	int nBufIdx;
 	Sint8 	MonoByte , LeftByte , RightByte;
-	static Sint16 FrameMono = 0, FrameLeft = 0, FrameRight = 0;
 	unsigned n;
+	Sint64 FreqRatio;
 
 
 	/* DMA Audio OFF and FIFO empty : process YM2149's output */
-	if ( !(nDmaSoundControl & DMASNDCTRL_PLAY) && ( FIFO_NbBytes == 0 ) )
+	if ( !(nDmaSoundControl & DMASNDCTRL_PLAY) && ( dma.FIFO_NbBytes == 0 ) )
 	{
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
@@ -526,9 +518,10 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	}
 
 
-	/* DMA Audio ON */
+	/* DMA Audio ON or FIFO not empty yet */
 
-	/* Compute ratio between hatari's sound frequency and host computer's sound frequency */
+	/* Compute ratio between DMA's sound frequency and host computer's sound frequency, */
+	/* use << 32 to simulate floating point precision */
 	FreqRatio = ( ((Sint64)DmaSnd_DetectSampleRate()) << 32 ) / nAudioFrequency;
 
 	if (dma.soundMode & DMASNDMODE_MONO)
@@ -536,12 +529,12 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Mono 8-bit */
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
-			if ( InitSample )
+			if ( DmaInitSample )
 			{
 				MonoByte = DmaSnd_FIFO_PullByte ();
-				FrameMono      = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
+				dma.FrameMono  = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
 				/* No-Click */   DmaSnd_LowPassFilterRight( (Sint16)MonoByte );
-				InitSample = false;
+				DmaInitSample = false;
 			}
 
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
@@ -549,16 +542,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			switch (microwire.mixing) {
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + FrameMono * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameMono * -((256*3/4)/4)/4;
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = FrameMono * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][0] = dma.FrameMono * -((256*3/4)/4)/4;
 					break;
 				default:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = (FrameMono * -((256*3/4)/4)/4) +
+					MixBuffer[nBufIdx][0] = (dma.FrameMono * -((256*3/4)/4)/4) +
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					break;
 			}
@@ -571,7 +564,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			while ( n > 0 )						/* pull as many bytes from the FIFO as needed */
 			{
 				MonoByte = DmaSnd_FIFO_PullByte ();
-				FrameMono      = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
+				dma.FrameMono  = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
 				/* No-Click */   DmaSnd_LowPassFilterRight( (Sint16)MonoByte );
 				n--;
 			}
@@ -583,13 +576,13 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Stereo 8-bit */
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
-			if ( InitSample )
+			if ( DmaInitSample )
 			{
 				LeftByte = DmaSnd_FIFO_PullByte ();
 				RightByte = DmaSnd_FIFO_PullByte ();
-				FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)LeftByte );
-				FrameRight = DmaSnd_LowPassFilterRight( (Sint16)RightByte );
-				InitSample = false;
+				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)LeftByte );
+				dma.FrameRight = DmaSnd_LowPassFilterRight( (Sint16)RightByte );
+				DmaInitSample = false;
 			}
 
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
@@ -597,20 +590,20 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			switch (microwire.mixing) {
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + FrameLeft * -((256*3/4)/4)/4;
-					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + FrameRight * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameLeft * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + dma.FrameRight * -((256*3/4)/4)/4;
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = FrameLeft * -((256*3/4)/4)/4;
-					MixBuffer[nBufIdx][1] = FrameRight * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][1] = dma.FrameRight * -((256*3/4)/4)/4;
 					break;
 				default:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = (FrameLeft * -((256*3/4)/4)/4) +
+					MixBuffer[nBufIdx][0] = (dma.FrameLeft * -((256*3/4)/4)/4) +
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
-					MixBuffer[nBufIdx][1] = (FrameRight * -((256*3/4)/4)/4) +
+					MixBuffer[nBufIdx][1] = (dma.FrameRight * -((256*3/4)/4)/4) +
 								(((Sint32)MixBuffer[nBufIdx][1] * 16384)/65536);
 					break;
 			}
@@ -622,8 +615,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			{
 				LeftByte = DmaSnd_FIFO_PullByte ();
 				RightByte = DmaSnd_FIFO_PullByte ();
-				FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)LeftByte );
-				FrameRight = DmaSnd_LowPassFilterRight( (Sint16)RightByte );
+				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)LeftByte );
+				dma.FrameRight = DmaSnd_LowPassFilterRight( (Sint16)RightByte );
 				n--;
 			}
 			frameCounter_float &= 0xffffffff;			/* only keep the fractional part */
@@ -691,7 +684,7 @@ void DmaSnd_STE_HBL_Update(void)
 	DmaSnd_FIFO_Refill ();
 
 	/* If DMA sound is ON or FIFO is not empty, update sound */
-	if  ( (nDmaSoundControl & DMASNDCTRL_PLAY) || ( FIFO_NbBytes > 0 ) )
+	if  ( (nDmaSoundControl & DMASNDCTRL_PLAY) || ( dma.FIFO_NbBytes > 0 ) )
 		Sound_Update(false);
 
 	/* As long as display is OFF, the DMA will refill the FIFO after playing some samples during the HBL */
@@ -701,7 +694,7 @@ void DmaSnd_STE_HBL_Update(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Create actual position for frame count registers.
+ * Return current frame counter address
  */
 static Uint32 DmaSnd_GetFrameCount(void)
 {
@@ -711,15 +704,7 @@ static Uint32 DmaSnd_GetFrameCount(void)
 	Sound_Update(false);
 
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-#ifdef nofifo
- #ifdef olddma
-	nActCount = dma.frameStartAddr + (int)dma.frameCounter_int;
- #else
-	nActCount = dma.frameStartAddr + (int)(frameCounter_float>>32);
- #endif
-#else
-	nActCount = frameCounterAddr;
-#endif
+		nActCount = dma.frameCounterAddr;
 	else
 		nActCount = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | IoMem[0xff8907];
 
@@ -759,7 +744,7 @@ void DmaSnd_SoundControl_WriteWord(void)
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY) && (nNewSndCtrl & DMASNDCTRL_PLAY))
 	{
 		LOG_TRACE(TRACE_DMASND, "DMA snd control write: starting dma sound output\n");
-		InitSample = true;
+		DmaInitSample = true;
 		frameCounter_float = 0;
 		DmaSnd_StartNewFrame();
 	}
@@ -821,7 +806,7 @@ void DmaSnd_FrameStartMed_WriteByte(void)
 void DmaSnd_FrameStartLow_WriteByte(void)
 {
 	LOG_TRACE(TRACE_DMASND, "DMA snd frame start low: 0x%02x\n", IoMem_ReadByte(0xff8907));
-LOG_TRACE(TRACE_DMASND, "DMA pos %d / %d\n", frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+LOG_TRACE(TRACE_DMASND, "DMA pos %d / %d\n", dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameCountHigh_WriteByte(void)
@@ -853,7 +838,7 @@ void DmaSnd_FrameEndLow_WriteByte(void)
 {
 	LOG_TRACE(TRACE_DMASND, "DMA snd frame end low: 0x%02x\n", IoMem_ReadByte(0xff8913));
 
-LOG_TRACE(TRACE_DMASND, "DMA pos %d / %d\n", frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+LOG_TRACE(TRACE_DMASND, "DMA pos %d / %d\n", dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 
