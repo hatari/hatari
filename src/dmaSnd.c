@@ -412,24 +412,12 @@ static int DmaSnd_DetectSampleRate(void)
  */
 static void DmaSnd_StartNewFrame(void)
 {
-//	int nCyclesForFrame;
-
 	dma.frameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
 	dma.frameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
 
 	dma.frameCounterAddr = dma.frameStartAddr;
 
 	LOG_TRACE(TRACE_DMASND, "DMA snd new frame start=%x end=%x\n", dma.frameStartAddr, dma.frameEndAddr);
-
-
-
-// [NP] No more need for a timer since dma sound is updated on each HBL
-//	/* To get smooth sound, set an "interrupt" for the end of the frame that
-//	 * updates the sound mix buffer. */
-//	nCyclesForFrame = dma.frameLen * (CPU_FREQ / DmaSnd_DetectSampleRate());
-//	if (!(dma.soundMode & DMASNDMODE_MONO))  /* Is it stereo? */
-//		nCyclesForFrame = nCyclesForFrame / 2;
-//	CycInt_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);
 }
 
 
@@ -455,10 +443,6 @@ static inline int DmaSnd_EndOfFrameReached(void)
 	else
 	{
 		nDmaSoundControl &= ~DMASNDCTRL_PLAY;
-
-		/* DMA sound is stopped, remove interrupt */
-		CycInt_RemovePendingInterrupt(INTERRUPT_DMASOUND);
-
 		return true;
 	}
 
@@ -650,21 +634,6 @@ static void DmaSnd_Apply_LMC(int nMixBufIdx, int nSamplesToGenerate)
 
 /*-----------------------------------------------------------------------*/
 /**
- * DMA sound end of frame "interrupt". Used for updating the sound after
- * a frame has been finished.
- */
-void DmaSnd_InterruptHandler(void)
-{
-	/* Remove this interrupt from list and re-order */
-	CycInt_AcknowledgeInterrupt();
-
-	/* Update sound */
-	Sound_Update(false);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * STE DMA sound is using an 8 bytes FIFO that is checked and filled on each HBL
  * (at 50066 Hz 8 bit stereo, the DMA requires approx 6.5 new bytes per HBL)
  * Calling Sound_Update on each HBL allows to emulate some programs that modify
@@ -749,8 +718,6 @@ void DmaSnd_SoundControl_WriteWord(void)
 	else if ((nDmaSoundControl & DMASNDCTRL_PLAY) && !(nNewSndCtrl & DMASNDCTRL_PLAY))
 	{
 		LOG_TRACE(TRACE_DMASND, "DMA snd control write: stopping dma sound output\n");
-		/* DMA sound is stopped, remove interrupt */
-		CycInt_RemovePendingInterrupt(INTERRUPT_DMASOUND);
 	}
 
 	nDmaSoundControl = nNewSndCtrl;
