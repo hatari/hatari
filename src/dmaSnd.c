@@ -240,6 +240,15 @@ void DmaSnd_Init(void)
 void DmaSnd_Reset(bool bCold)
 {
 	nDmaSoundControl = 0;
+	dma.soundMode = 0;
+
+	/* [NP] Set start/end to 0 even on warm reset ? (fix 'Brace' by Diamond Design) */
+	IoMem[0xff8903] = 0;				/* frame start addr = 0 */
+	IoMem[0xff8905] = 0;
+	IoMem[0xff8907] = 0;
+	IoMem[0xff890f] = 0;				/* frame end addr = 0 */
+	IoMem[0xff8911] = 0;
+	IoMem[0xff8913] = 0;
 
 	dma.FIFO_Pos = 0;
 	dma.FIFO_NbBytes = 0;
@@ -247,16 +256,12 @@ void DmaSnd_Reset(bool bCold)
 	dma.FrameLeft = 0;
 	dma.FrameRight = 0;
 
-	if (bCold)
-	{
-		dma.soundMode = 0;
-		microwire.masterVolume = 7;
-		microwire.leftVolume = 655;
-		microwire.rightVolume = 655;
-		microwire.mixing = 0;
-		microwire.bass = 6;
-		microwire.treble = 6;
-	}
+	microwire.masterVolume = 7;
+	microwire.leftVolume = 655;
+	microwire.rightVolume = 655;
+	microwire.mixing = 0;
+	microwire.bass = 6;
+	microwire.treble = 6;
 
 	/* Initialise microwire LMC1992 IIR filter parameters */
 	DmaSnd_Init_Bass_and_Treble_Tables();
