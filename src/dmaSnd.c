@@ -694,7 +694,7 @@ void DmaSnd_STE_HBL_Update(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return current frame counter address
+ * Return current frame counter address (value is always even)
  */
 static Uint32 DmaSnd_GetFrameCount(void)
 {
@@ -793,50 +793,56 @@ void DmaSnd_FrameCountLow_ReadByte(void)
  */
 void DmaSnd_FrameStartHigh_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame start high: 0x%02x\n", IoMem_ReadByte(0xff8903));
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame start high: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8903) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameStartMed_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame start med: 0x%02x\n", IoMem_ReadByte(0xff8905));
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame start med: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8905) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameStartLow_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame start low: 0x%02x\n", IoMem_ReadByte(0xff8907));
-LOG_TRACE(TRACE_DMASND, "DMA pos %d / %d\n", dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame start low: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8907) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameCountHigh_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame count high: 0x%02x\n", IoMem_ReadByte(0xff8909));
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame count high: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8909) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameCountMed_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame count med: 0x%02x\n", IoMem_ReadByte(0xff890b));
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame count med: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff890b) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameCountLow_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame count low: 0x%02x\n", IoMem_ReadByte(0xff890d));
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame count low: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff890d) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameEndHigh_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame end high: 0x%02x\n", IoMem_ReadByte(0xff890f));
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame end high: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff890f) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameEndMed_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame end med: 0x%02x\n", IoMem_ReadByte(0xff8911));
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame end med: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8911) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 void DmaSnd_FrameEndLow_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame end low: 0x%02x\n", IoMem_ReadByte(0xff8913));
-
-LOG_TRACE(TRACE_DMASND, "DMA pos %d / %d\n", dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	LOG_TRACE(TRACE_DMASND, "DMA snd frame end low: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8913) ,
+		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
 }
 
 
