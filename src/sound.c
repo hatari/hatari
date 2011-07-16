@@ -1180,17 +1180,10 @@ void Sound_MemorySnapShot_Capture(bool bSave)
  */
 static int Sound_SetSamplesPassed(bool FillFrame)
 {
-#ifdef old_code
-	int nSampleCycles;
-#endif
 	int nSoundCycles;
 	int SamplesToGenerate;				/* How many samples are needed for this time-frame */
 
-#ifdef old_code
-	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_SOUND);
-#else
 	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-#endif
 
 	/* example : 160256 cycles per VBL, 44Khz = 882 samples per VBL at 50 Hz */
 	/* 882/160256 samples per cpu clock cycle */
@@ -1205,15 +1198,10 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 	if (SamplesToGenerate > SamplesPerFrame)
 		SamplesToGenerate = SamplesPerFrame;
 
-#ifdef old_code
-	nSampleCycles = SamplesToGenerate * CYCLES_PER_FRAME / SamplesPerFrame;
-	nSoundCycles -= nSampleCycles;
-	Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
-#else
 	SamplesToGenerate -= CurrentSamplesNb;		/* don't count samples that were already generated up to now */
 	if ( SamplesToGenerate < 0 )
 		SamplesToGenerate = 0;
-#endif
+
 
 	/* If we're called from the VBL interrupt (FillFrame==true), we must ensure we have */
 	/* an exact total of SamplesPerFrame samples during a full VBL (we take into account */
@@ -1335,30 +1323,18 @@ void Sound_Update(bool FillFrame)
  */
 void Sound_Update_VBL(void)
 {
-//	static yms64 TotalSamples = 0;
-
-
 	Sound_Update(true);					/* generate as many samples as needed to fill this VBL */
 //fprintf ( stderr , "vbl done %d %d\n" , SamplesPerFrame , CurrentSamplesNb );
 
 	CurrentSamplesNb = 0;					/* VBL is complete, reset counter for next VBL */
 
 	/*Compute a fractional equivalent of SamplesPerFrame for the next VBL, to avoid rounding propagation */
-#if 0
-	SamplesPerFrame_unrounded += ( ((yms64)nAudioFrequency) << 32 ) / nScreenRefreshRate;
-	SamplesPerFrame = SamplesPerFrame_unrounded >> 32;		/* use integer part */
-	SamplesPerFrame_unrounded &= 0xffffffff;			/* keep fractional part */
-#else
-//	SamplesPerFrame_unrounded += ( ((yms64)nAudioFrequency * 160256) << 28 ) / 8021247;
-SamplesPerFrame_unrounded += (yms64) ClocksTimings_GetSamplesPerVBL ( ConfigureParams.System.nMachineType , nScreenRefreshRate , nAudioFrequency );
+	SamplesPerFrame_unrounded += (yms64) ClocksTimings_GetSamplesPerVBL ( ConfigureParams.System.nMachineType ,
+			nScreenRefreshRate , nAudioFrequency );
 	SamplesPerFrame = SamplesPerFrame_unrounded >> 28;		/* use integer part */
-	SamplesPerFrame_unrounded &= 0x0fffffff;			/* keep fractional part */
+	SamplesPerFrame_unrounded &= 0x0fffffff;			/* keep fractional part in the lower 28 bits */
 
-//TotalSamples += (yms64) ClocksTimings_GetSamplesPerVBL ( ConfigureParams.System.nMachineType , nScreenRefreshRate , nAudioFrequency );
-//fprintf ( stderr , "vbl samp %lld\n" , TotalSamples >> 28 );
-#endif
-
-	/* Reset sound buffer if needed (after pause, fast forward, ...) */
+	/* Reset sound buffer if needed (after pause, fast forward, slow system, ...) */
 	if ( Sound_BufferIndexNeedReset )
 	{
 		Sound_ResetBufferIndex ();
