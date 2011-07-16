@@ -267,7 +267,6 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || changed->System.nMachineType != current->System.nMachineType)
 	{
 		Dprintf("- blitter/rtc/dsp/machine>\n");
-		ClocksTimings_InitMachine ( changed->System.nMachineType );
 		IoMem_UnInit();
 		bReInitIoMem = true;
 	}
