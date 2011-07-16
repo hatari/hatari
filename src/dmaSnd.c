@@ -216,8 +216,6 @@ static const int DmaSndSampleRates[4] =
 
 static void	DmaSnd_FIFO_Refill(void);
 static Sint8	DmaSnd_FIFO_PullByte(void);
-static void	DmaSnd_FIFO_ReadByte( Sint8 *pMono);
-static void	DmaSnd_FIFO_ReadWord( Sint8 *pLeft , Sint8 *pRight );
 static void	DmaSnd_FIFO_SetStereo(void);
 
 static int	DmaSnd_DetectSampleRate(void);
@@ -358,44 +356,6 @@ LOG_TRACE(TRACE_DMASND, "DMA snd fifo pull pos %d nb %d %02x\n", FIFO_Pos , FIFO
 	FIFO_NbBytes--;						/* One byte less in the FIFO */
 
 	return sample;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read 1 sample/byte from the DMA Audio's FIFO without pulling it
- * from the FIFO. This is used in 'mono' mode.
- * If the FIFO is empty, return 0 (empty sample)
- */
-static void DmaSnd_FIFO_ReadByte( Sint8 *pMono)
-{
-	if ( FIFO_NbBytes == 0 )
-	{
-		*pMono = 0;
-		return;
-	}
-
-	*pMono = FIFO[ FIFO_Pos ];				/* Get oldest byte from the FIFO */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read 2 samples/1 word from the DMA Audio's FIFO without pulling them
- * from the FIFO. This is used in 'stereo' mode.
- * If the FIFO is empty, return 0 (empty samples)
- */
-static void DmaSnd_FIFO_ReadWord( Sint8 *pLeft , Sint8 *pRight )
-{
-	if ( FIFO_NbBytes == 0 )
-	{
-		*pLeft = 0;
-		*pRight = 0;
-	}
-
-	/* In stereo mode, FIFO_pos is even and can be 0, 2, 4 or 6 -> no need to mask with DMASND_FIFO_SIZE_MASK */
-	*pLeft = FIFO[ FIFO_Pos ];
-	*pRight = FIFO[ FIFO_Pos+1 ];
 }
 
 
