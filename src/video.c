@@ -1427,7 +1427,8 @@ void Video_InterruptHandler_HBL ( void )
 	/* this new HBL should be put in pending state to be processed later) */
         /* -> any HBL occuring between LastCycleHblException and LastCycleHblException+56 should be ignored */
 	if ( ( LastCycleHblException != -1 )
-	  && ( ( FrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 ) )
+	  && ( ( FrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 )
+	  && ( ( M68000_GetPC() < 0x8280 ) || ( M68000_GetPC() > 0x82b0 ) ) )	/* FIXME : except for European Demos intro where 8280<pc<82b0 */
 	{
 		/* simultaneous case, don't call M68000_Exception */
 		LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
