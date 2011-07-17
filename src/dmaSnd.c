@@ -916,33 +916,39 @@ void DmaSnd_InterruptHandler_Microwire(void)
 		switch ((microwire.data >> 6) & 0x7) {
 			case 0:
 				/* Mixing command */
+				LOG_TRACE ( TRACE_DMASND, "Microwire new mixing=0x%x\n", microwire.data & 0x3 );
 				microwire.mixing = microwire.data & 0x3;
 				break;
 			case 1:
 				/* Bass command */
+				LOG_TRACE ( TRACE_DMASND, "Microwire new bass=0x%x\n", microwire.data & 0xf );
 				microwire.bass = microwire.data & 0xf;
 				DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
 						      LMC1992_Bass_Treble_Table[microwire.treble]);
 				break;
 			case 2: 
 				/* Treble command */
+				LOG_TRACE ( TRACE_DMASND, "Microwire new trebble=0x%x\n", microwire.data & 0xf );
 				microwire.treble = microwire.data & 0xf;
 				DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
 						      LMC1992_Bass_Treble_Table[microwire.treble]);
 				break;
 			case 3:
 				/* Master volume command */
+				LOG_TRACE ( TRACE_DMASND, "Microwire new master volume=0x%x\n", microwire.data & 0x3f );
 				microwire.masterVolume = LMC1992_Master_Volume_Table[microwire.data & 0x3f];
 				lmc1992.left_gain = (microwire.leftVolume * (Uint32)microwire.masterVolume) * (1.0/(65536.0*65536.0));
 				lmc1992.right_gain = (microwire.rightVolume * (Uint32)microwire.masterVolume) * (1.0/(65536.0*65536.0));
 				break;
 			case 4:
 				/* Right channel volume */
+				LOG_TRACE ( TRACE_DMASND, "Microwire new right volume=0x%x\n", microwire.data & 0x1f );
 				microwire.rightVolume = LMC1992_LeftRight_Volume_Table[microwire.data & 0x1f];
 				lmc1992.right_gain = (microwire.rightVolume * (Uint32)microwire.masterVolume) * (1.0/(65536.0*65536.0));
 				break;
 			case 5:
 				/* Left channel volume */
+				LOG_TRACE ( TRACE_DMASND, "Microwire new left volume=0x%x\n", microwire.data & 0x1f );
 				microwire.leftVolume = LMC1992_LeftRight_Volume_Table[microwire.data & 0x1f];
 				lmc1992.left_gain = (microwire.leftVolume * (Uint32)microwire.masterVolume) * (1.0/(65536.0*65536.0));
 				break;
