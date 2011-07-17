@@ -58,6 +58,8 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 
 #ifdef COMPRESS_MEMORYSNAPSHOT
 
+/* Remove possible conflicting mkdir declaration from cpu/sysdepis.h */
+#undef mkdir
 #include <zlib.h>
 typedef gzFile MSS_File;
 
