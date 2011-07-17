@@ -366,6 +366,9 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
 
 #if defined(WIN32)
 
+/* Remove possible conflicting TCHAR declaration from cpu/compat.h */
+#undef TCHAR
+
 #include <windows.h>
 
 static void *qemu_memalign(size_t alignment, size_t size)
