@@ -256,12 +256,16 @@ void DmaSnd_Reset(bool bCold)
 	dma.FrameLeft = 0;
 	dma.FrameRight = 0;
 
-	microwire.masterVolume = 7;
-	microwire.leftVolume = 655;
-	microwire.rightVolume = 655;
-	microwire.mixing = 0;
-	microwire.bass = 6;
-	microwire.treble = 6;
+	if ( bCold )
+	{
+		/* Microwire has no reset signal, it will keep its values on warm reset */
+		microwire.masterVolume = 7;		/* -80 dB ; TOS 1.62 will put 0x28 (ie 65535) = 0 dB (max volume) */
+		microwire.leftVolume = 655;		/* -40 dB ; TOS 1.62 will put 0x14 (ie 65535) = 0 dB (max volume) */
+		microwire.rightVolume = 655;		/* -40 db ; TOS 1.62 will put 0x14 (ie 65535) = 0 dB (max volume) */
+		microwire.mixing = 0;
+		microwire.bass = 6;			/* 0 dB (flat) */
+		microwire.treble = 6;			/* 0 dB (flat) */
+	}
 
 	/* Initialise microwire LMC1992 IIR filter parameters */
 	DmaSnd_Init_Bass_and_Treble_Tables();
