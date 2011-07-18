@@ -963,8 +963,11 @@ bool	Avi_StartRecording ( char *FileName , bool CropGui , Uint32 Fps , Uint32 Fp
 	AviParams.AudioCodec = AVI_RECORD_AUDIO_CODEC_PCM;
 	AviParams.AudioFreq = ConfigureParams.Sound.nPlaybackFreq;
 	AviParams.Surface = sdlscrn;
-	AviParams.Fps = Fps;
-	AviParams.Fps_scale = Fps_scale;
+
+	/* Some video players (quicktime, ...) don't support a value of Fps_scale */
+	/* above 100000. So we decrease the precision from << 24 to << 16 for Fps and Fps_scale */
+	AviParams.Fps = Fps >> 8;			/* refresh rate << 16 */
+	AviParams.Fps_scale = Fps_scale >> 8;		/* 1 << 16 */
 
 	if ( !CropGui )					/* Keep gui's status bar */
 	{
