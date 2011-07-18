@@ -94,9 +94,9 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
 
 struct videl_s {
-	bool  bUseSTShifter;			/* whether to use ST or Falcon palette */
-	Uint8 reg_ffff8006_save;		/* save reg_ffff8006 as it's a read only register */
-	Uint8 monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
+	bool   bUseSTShifter;			/* whether to use ST or Falcon palette */
+	Uint8  reg_ffff8006_save;		/* save reg_ffff8006 as it's a read only register */
+	Uint8  monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
 };
 
 static struct videl_s videl;
@@ -107,6 +107,7 @@ static struct videl_s videl;
 static int width, height, bpp;
 static bool hostColorsSync;
 
+Uint16 vfc_counter;			/* counter for VFC register $ff82a0 (to be internalized when VIDEL emulation is complete) */
 
 /* Autozoom */
 static int zoomwidth, prev_scrwidth;
@@ -129,6 +130,8 @@ void VIDEL_reset(void)
 	
 	hostColorsSync = false; 
 
+	vfc_counter = 0;
+	
 	/* Autozoom */
 	zoomwidth=prev_scrwidth=0;
 	zoomheight=prev_scrheight=0;
@@ -152,6 +155,7 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&videl, sizeof(videl));
+	MemorySnapShot_Store(&vfc_counter, sizeof(vfc_counter));
 }
 
 /**
@@ -382,11 +386,10 @@ void VIDEL_HEE_WriteWord(void)
 /**
  *  Write Vertical Frequency Counter (VFC)
  */
-void VIDEL_VFC_WriteWord(void)
+void VIDEL_VFC_ReadWord(void)
 {
-	Uint16 vfc = IoMem_ReadWord(0xff82a0);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82a0 Vertical Frequency Counter (VFC) write: 0x%02x\n", vfc);
+	IoMem_WriteWord(0xff82a0, vfc_counter);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff82a0 Vertical Frequency Counter (VFC) read: 0x%02x\n", vfc_counter);
 }
 
 /**

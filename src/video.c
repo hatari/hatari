@@ -1404,6 +1404,13 @@ void Video_InterruptHandler_HBL ( void )
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
+	/* Videl Vertical counter increment (To be removed when Videl emulation is finished) */
+	/* VFC is incremented every half line, here, we increment it every line (should be completed) */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		vfc_counter += 1;
+	}
+
+	
 	/* Increment the hbl jitter index */
 	HblJitterIndex++;
 	if ( HblJitterIndex == HBL_JITTER_MAX_POS )
@@ -2686,6 +2693,11 @@ void Video_InterruptHandler_VBL ( void )
 	/* Set video registers for frame */
 	Video_ClearOnVBL();
 
+	/* Videl Vertical counter reset (To be removed when Videl emulation is finished) */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		vfc_counter = 0;
+	}
+	
 	/* Since we don't execute HBL functions in VDI mode, we've got to
 	 * initialize the first HBL palette here when VDI mode is enabled. */
 	if (bUseVDIRes)

@@ -8,6 +8,9 @@
 #ifndef HATARI_VIDEL_H
 #define HATARI_VIDEL_H
 
+/* To be removed when Videl emulation is complete */
+extern Uint16 vfc_counter;			/* counter for VFC register $ff82a0 */
+
 extern bool VIDEL_renderScreen(void);
 
 extern void VIDEL_reset(void);
@@ -31,7 +34,7 @@ extern void VIDEL_HDE_WriteWord(void);
 extern void VIDEL_HSS_WriteWord(void);
 extern void VIDEL_HFS_WriteWord(void);
 extern void VIDEL_HEE_WriteWord(void);
-extern void VIDEL_VFC_WriteWord(void);
+extern void VIDEL_VFC_ReadWord(void);
 extern void VIDEL_VFT_WriteWord(void);
 extern void VIDEL_VBB_WriteWord(void);
 extern void VIDEL_VBE_WriteWord(void);

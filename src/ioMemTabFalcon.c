@@ -178,7 +178,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff828e, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HFS_WriteWord },            /* HFS : Horizontal FS */
 	{ 0xff8290, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HEE_WriteWord },            /* HEE : Horizontal EE */
 	{ 0xff8292, 14,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
-	{ 0xff82a0, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_VFC_WriteWord },            /* VFC - Vertical Frequency Counter */
+	{ 0xff82a0, SIZE_WORD, VIDEL_VFC_ReadWord, IoMem_VoidWrite },                           /* VFC - Vertical Frequency Counter */
 	{ 0xff82a2, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_VFT_WriteWord },            /* VFT - Vertical Frequency Timer */
 	{ 0xff82a4, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_VBB_WriteWord },            /* VBB - Vertical Border Begin */
 	{ 0xff82a6, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_VBE_WriteWord },            /* VBE - Vertical Border End */
