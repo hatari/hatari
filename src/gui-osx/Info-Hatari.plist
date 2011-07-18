@@ -66,7 +66,7 @@
 	<key>CFBundleSignature</key>
 	<string>HATA</string>
 	<key>CFBundleVersion</key>
-	<string>1.4</string>
+	<string>1.5</string>
 	<key>Hatari</key>
 	<string>SDL Cocoa App</string>
 	<key>NSMainNibFile</key>

@@ -3,7 +3,7 @@
                                    --------
                                 Release Notes
 
- Development version
+ Version 1.5.0 (2011-07-19):
  -------------------
 
 Emulation:
