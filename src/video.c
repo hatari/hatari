@@ -291,7 +291,12 @@
 /* 2011/04/03	[NP]	Call DmaSnd_HBL_Update() on each HBL to handle programs that modify	*/
 /*			the samples data while those data are played by the DMA sound.		*/
 /*			(fixes the game Power Up Plus and the demo Mental Hangover).		*/ 
-
+/* 2011/07/30	[NP]	Add blank line detection in STF mode when switching 60/50 Hz at cycle	*/
+/*			28. The shifter will still read bytes and border removal is possible,	*/
+/*			but the line will be blank (we use color 0 for now, but the line should	*/
+/*			be black).								*/
+/*			(fix spectrum 512 part in Overscan Demo and shforstv by Paulo Simoes	*/
+/*			by removing "parasite" pixels on the 1st line).				*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -344,6 +349,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #define BORDERMASK_EMPTY_LINE		0x80	/* 60/50 Hz switch prevents the line to start, video counter is not incremented */
 #define BORDERMASK_LEFT_OFF_MED		0x100	/* removal of left border with hi/med res switch -> +26 bytes (for 4 pixels hardware scrolling) */
 #define BORDERMASK_LEFT_OFF_2_STE	0x200	/* shorter removal of left border with hi/lo res switch -> +20 bytes (STE only)*/
+#define BORDERMASK_BLANK_LINE		0x400	/* 60/50 Hz switch blanks the rest of the line, but video counter is still incremented */
 
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
@@ -1209,6 +1215,17 @@ void Video_Sync_WriteByte ( void )
 	        && ( HblCounterVideo >= nStartHBL )		/* only if display is on */
 	        && ( HblCounterVideo < nEndHBL ) )		/* only if display is on */
 	{
+		/* Blank line switching freq on STF : switch to 60 Hz on cycle 28, then go back to 50 Hz on cycle 36 */
+		/* This creates a blank line where no signal is displayed, but the video counter will still change for this line */
+		/* This blank line can be combined with left/right border changes */
+		if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 16 )
+	        	&& ( ShifterFrame.FreqPos60.LineCycles == LINE_EMPTY_CYCLE_71_STF )
+			&& ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
+		{
+			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_BLANK_LINE;
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect blank line freq\n"  ); 
+		}
+
 		/* Add 2 bytes to left border : switch to 60 Hz before LINE_START_CYCLE_60 to force an early start */
 		/* of the DE signal, then go back to 50 Hz. Note that depending on where the 50 Hz switch is made */
 		/* the HBL signal will be at position 508 (60 Hz line) or 512 (50 Hz line) */
@@ -1993,10 +2010,13 @@ static void Video_CopyScreenLineColor(void)
 			pVideoRasterEndLine = pVideoRaster;
 		}
 
+		/* Shifter read bytes and borders can change, but display is blank, so finally clear the line with color 0 */
+		if (LineBorderMask & BORDERMASK_BLANK_LINE)
+			memset(pSTScreen, 0, SCREENBYTES_LINE);
+
 		/* Full right border removal up to the end of the line (cycle 512) */
 		if (LineBorderMask & BORDERMASK_RIGHT_OFF_FULL)
 			pVideoRaster += BORDERBYTES_RIGHT_FULL;
-
 
 		/* Correct the offset for pVideoRaster from BORDERMASK_LEFT_OFF above if needed */
 		pVideoRaster -= VideoOffset;		/* VideoOffset is 0 or -2 */
