@@ -140,6 +140,7 @@ int Statusbar_SetHeight(int width, int height)
 {
 	ScreenHeight = height;
 	StatusbarHeight = Statusbar_GetHeightForSize(width, height);
+	DEBUGPRINT(("Statusbar_SetHeight(%d, %d) -> %d\n", width, height, StatusbarHeight));
 	return StatusbarHeight;
 }
 
@@ -214,6 +215,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	int i, fontw, fonth, offset;
 	const char *text[MAX_DRIVE_LEDS] = { "A:", "B:", "HD:" };
 
+	DEBUGPRINT(("Statusbar_Init()\n"));
 	assert(surf);
 
 	/* dark green and light green for leds themselves */
@@ -236,6 +238,7 @@ void Statusbar_Init(SDL_Surface *surf)
 		StatusbarHeight = 0;
 	}
 	if (!StatusbarHeight) {
+		DEBUGPRINT(("Doesn't fit <- Statusbar_Init()\n"));
 		return;
 	}
 
@@ -324,7 +327,7 @@ void Statusbar_Init(SDL_Surface *surf)
 
 	/* and blit statusbar on screen */
 	SDL_UpdateRects(surf, 1, &sbarbox);
-	DEBUGPRINT(("Draw statusbar\n"));
+	DEBUGPRINT(("Drawn <- Statusbar_Init()\n"));
 }
 
 
@@ -629,6 +632,11 @@ void Statusbar_Update(SDL_Surface *surf)
 	}
 	assert(surf);
 	/* Statusbar_Init() not called before this? */
+#if DEBUG
+	if (surf->h != ScreenHeight + StatusbarHeight) {
+		printf("%d != %d + %d\n", surf->h, ScreenHeight, StatusbarHeight);
+	}
+#endif
 	assert(surf->h == ScreenHeight + StatusbarHeight);
 
 	rect = LedRect;
