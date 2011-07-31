@@ -38,6 +38,8 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /* 2011/07/14	[NP]	Don't clear bytes in transit when ACIA_Reset is called ; if a byte is sent to	*/
 /*			the ikbd it should not be cancelled ? FIXME : this would need more tests on a	*/
 /*			real ST (fix Froggies Over The Fence's menu when selecting a demo).		*/
+/* 2011/07/31	[NP]	Don't clear bytes in transit in the ACIA when the IKBD is reset (fix Overdrive	*/
+/*			by Phalanx).									*/
 
 
 #include <time.h>
@@ -392,8 +394,12 @@ void IKBD_Reset_ExeMode ( void )
 	IKBD_ExeMode = false;
 
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
+/* [NP] 2011/07/31 FIXME : IKBD reset should not reset acia and clear bytes in transit */
+/* Else, "Overdrive" lock after doing a 68000 "reset" */
+#if 0
 	bByteInTransitToACIA = false;
 	bByteInTransitFromACIA = false;
+#endif
 	// IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
 	IKBD_AddKeyToKeyboardBuffer(0xF1);		/* [NP] Dragonnels demo needs this */
 }
