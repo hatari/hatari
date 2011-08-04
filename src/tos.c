@@ -489,7 +489,7 @@ static void TOS_CheckSysConfig(void)
 	else if ((TosVersion < 0x0300 && ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	         || (TosVersion < 0x0200 && ConfigureParams.System.nMachineType == MACHINE_TT))
 	{
-		Log_AlertDlg(LOG_ERROR, "This TOS versions does not work in TT/Falcon mode.\n"
+		Log_AlertDlg(LOG_ERROR, "This TOS version does not work in TT/Falcon mode.\n"
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
@@ -501,10 +501,14 @@ static void TOS_CheckSysConfig(void)
 	}
 	else if (TosVersion >= 0x0300 && ConfigureParams.System.nCpuLevel < 2)
 	{
-		Log_AlertDlg(LOG_ERROR, "This TOS versions requires a CPU >= 68020.\n"
+		Log_AlertDlg(LOG_ERROR, "This TOS version requires a CPU >= 68020.\n"
 		             " ==> Switching to 68020 mode now.\n");
 		ConfigureParams.System.nCpuLevel = 2;
 		M68000_CheckCpuSettings();
+	}
+	if (TosVersion < 0x0104 && ConfigureParams.HardDisk.bUseHardDiskDirectories)
+	{
+		Log_AlertDlg(LOG_ERROR, "GEMDOS HD emulation doesn't work properly with this TOS version, please use at least TOS 1.04.\n");
 	}
 }
 
