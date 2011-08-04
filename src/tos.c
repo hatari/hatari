@@ -508,7 +508,8 @@ static void TOS_CheckSysConfig(void)
 	}
 	if (TosVersion < 0x0104 && ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
-		Log_AlertDlg(LOG_ERROR, "GEMDOS HD emulation doesn't work properly with this TOS version, please use at least TOS 1.04.\n");
+		Log_AlertDlg(LOG_ERROR, "Please use at least TOS v1.04 for the HD directory emulation "
+			     "(all required GEMDOS functionality isn't completely emulated for this TOS version).");
 	}
 }
 
