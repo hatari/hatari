@@ -25,6 +25,9 @@ static SDL_Surface *pBigFontGfx = NULL;     /* The big font graphics */
 static SDL_Surface *pFontGfx = NULL;        /* The actual font graphics */
 static int current_object = 0;				/* Current selected object */
 
+int sdlgui_fontwidth;			/* Width of the actual font */
+int sdlgui_fontheight;			/* Height of the actual font */
+
 /*-----------------------------------------------------------------------*/
 /**
  * Load an 1 plane XBM into a 8 planes SDL_Surface.
