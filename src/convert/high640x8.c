@@ -63,6 +63,6 @@ static void ConvertHighRes_640x8Bit(void)
 			ebp += 1;                               /* Next ST copy pixels */
 		}
 
-		/*??  esi = esi -40*8 +PCScreenBytesPerLine/2;*/   /* Back to start of line + Offset to next line */
+		esi += PCScreenBytesPerLine/4 - 40*4;           /* advance to start of next line */
 	}
 }
