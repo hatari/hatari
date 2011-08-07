@@ -114,6 +114,10 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 #endif
 
 #if ENABLE_WINUAE_CPU
+	/* Did change CPU address mode? */
+	if (changed->System.bAddressSpace24 != current->System.bAddressSpace24)
+		return true;
+
 	/* Did change CPU prefetch mode? */
 	if (changed->System.bCompatibleCpu != current->System.bCompatibleCpu)
 		return true;
