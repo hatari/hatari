@@ -42,6 +42,7 @@ const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "screen.h"
 #include "video.h"
+#include "clocks_timings.h"
 
 
 /*
@@ -229,6 +230,37 @@ enum
 #define FDC_DELAY_CYCLES		92160
 //#define FDC_DELAY_CYCLES		1536	// 'Just Bugging Demo' by ACF requires a very fast delay (bug in the loader)
 
+/* Standard hardware values for the FDC. This should allow to get good timings estimation */
+/* when dealing with non protected disks that require a correct speed (MSA or ST images) */
+/* FIXME : Those timings should be improved by taking into account the 16 bytes DMA fifo and the time */
+/* it takes to reach the track/sector/address before really reading it */
+
+#define	FDC_BITRATE_STANDARD		250000			/* read/write speed in bits per sec */
+#define	FDC_RPM_STANDARD		300			/* 300 RPM or 5 spins per sec */
+#define	FDC_TRACK_BYTES_STANDARD	( ( FDC_BITRATE_STANDARD / 8 ) / ( FDC_RPM_STANDARD / 60 ) )	/* 6250 bytes */
+
+#define FDC_TRANSFER_BYTES_US( n )	(  n * 8 * 1000000.L / FDC_BITRATE_STANDARD )	/* micro sec to read/write 'n' bytes */
+
+/* Delays are in micro sec */
+#define	FDC_DELAY_READ_SECTOR_STANDARD		FDC_TRANSFER_BYTES_US( NUMBYTESPERSECTOR )	/* 512 bytes per sector */
+#define	FDC_DELAY_WRITE_SECTOR_STANDARD		FDC_TRANSFER_BYTES_US( NUMBYTESPERSECTOR )	/* 512 bytes per sector */
+
+#define	FDC_DELAY_TYPE_I_PREPARE		100		/* Types I commands take at least 0.1 ms to execute */
+								/* (~800 cpu cycles @ 8 Mhz). FIXME : this was not measured, it's */
+								/* to avoid returning immediatly when command has no effect */
+#define	FDC_DELAY_TYPE_II_PREPARE		1		/* Start Type II commands immediatly */
+#define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediatly */
+#define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME : this was not measured */
+								
+#define	FDC_DELAY_READ_ADDR_STANDARD		FDC_TRANSFER_BYTES_US( 6 )
+#define	FDC_DELAY_READ_TRACK_STANDARD		FDC_TRANSFER_BYTES_US( FDC_TRACK_BYTES_STANDARD )
+#define	FDC_DELAY_WRITE_TRACK_STANDARD		FDC_TRANSFER_BYTES_US( FDC_TRACK_BYTES_STANDARD )
+
+#define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
+
+
+static int FDC_StepRate_ms[] = { 2 , 3 , 5 , 6 };		/* controlled by bits 1 and 0 (r1/r0) in type I commands */
+
 
 Sint16 FDCSectorCountRegister;
 
@@ -246,6 +278,7 @@ static int FDCStepDirection;                                    /* +Track on 'St
 static bool bDMAWaiting;                                        /* Is DMA waiting to copy? */
 static int bMotorOn;                                            /* Is motor on? */
 static int MotorSlowingCount;                                   /* Counter used to slow motor before stopping */
+static int FDC_StepRate;					/* Value of bits 0 and 1 for current Type I command */
 
 static short int nReadWriteTrack;                               /* Parameters used in sector read/writes */
 static short int nReadWriteSector;
@@ -257,16 +290,18 @@ static short int nReadWriteSectors;
 static Uint8 DMASectorWorkSpace[NUMBYTESPERSECTOR];             /* Workspace used to copy to/from for floppy DMA */
 
 
+static int FDC_DelayToCpuCycles ( int Delay_micro );
+
 static void FDC_ResetDMAStatus(void);
 static int  FDC_FindFloppyDrive(void);
-static void FDC_UpdateRestoreCmd(void);
-static void FDC_UpdateSeekCmd(void);
-static void FDC_UpdateStepCmd(void);
-static void FDC_UpdateStepInCmd(void);
-static void FDC_UpdateStepOutCmd(void);
-static void FDC_UpdateReadSectorsCmd(void);
-static void FDC_UpdateWriteSectorsCmd(void);
-static void FDC_UpdateReadAddressCmd(void);
+static int FDC_UpdateRestoreCmd(void);
+static int FDC_UpdateSeekCmd(void);
+static int FDC_UpdateStepCmd(void);
+static int FDC_UpdateStepInCmd(void);
+static int FDC_UpdateStepOutCmd(void);
+static int FDC_UpdateReadSectorsCmd(void);
+static int FDC_UpdateWriteSectorsCmd(void);
+static int FDC_UpdateReadAddressCmd(void);
 static bool FDC_ReadSectorFromFloppy(void);
 static bool FDC_WriteSectorFromFloppy(void);
 
@@ -327,6 +362,18 @@ void FDC_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nReadWriteSectorsPerTrack, sizeof(nReadWriteSectorsPerTrack));
 	MemorySnapShot_Store(&nReadWriteSectors, sizeof(nReadWriteSectors));
 	MemorySnapShot_Store(DMASectorWorkSpace, sizeof(DMASectorWorkSpace));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Convert a delay in micro seconds to its equivalent of cpu cycles
+ * (FIXME : for now we use a fixed 8 MHz clock, because cycInt.c requires it)
+ */
+static int FDC_DelayToCpuCycles ( int Delay_micro )
+{
+  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDCEmulationCommand , Delay_micro , (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4 );
+	return (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
 }
 
 
@@ -544,12 +591,14 @@ void FDC_GpipRead(void)
 
 	if ((MFP_GPIP & 0x20) == nLastGpipBit)
 	{
+#if 0
 		if (!ConfigureParams.DiskImage.bSlowFloppy)
 		{
 			/* Restart FDC update interrupt to occur right after a few cycles */
 			CycInt_RemovePendingInterrupt(INTERRUPT_FDC);
 			CycInt_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_FDC);
 		}
+#endif
 	}
 	else
 	{
@@ -568,6 +617,8 @@ void FDC_GpipRead(void)
  */
 void FDC_InterruptHandler_Update(void)
 {
+	int	Delay_micro = 0;
+
 	CycInt_AcknowledgeInterrupt();
 
 	/* Do we have a DMA ready to copy? */
@@ -589,32 +640,32 @@ void FDC_InterruptHandler_Update(void)
 		switch(FDCEmulationCommand)
 		{
 		 case FDCEMU_CMD_RESTORE:
-			FDC_UpdateRestoreCmd();
+			Delay_micro = FDC_UpdateRestoreCmd();
 			break;
 		 case FDCEMU_CMD_SEEK:
-			FDC_UpdateSeekCmd();
+			Delay_micro = FDC_UpdateSeekCmd();
 			break;
 		 case FDCEMU_CMD_STEP:
-			FDC_UpdateStepCmd();
+			Delay_micro = FDC_UpdateStepCmd();
 			break;
 		 case FDCEMU_CMD_STEPIN:
-			FDC_UpdateStepInCmd();
+			Delay_micro = FDC_UpdateStepInCmd();
 			break;
 		 case FDCEMU_CMD_STEPOUT:
-			FDC_UpdateStepOutCmd();
+			Delay_micro = FDC_UpdateStepOutCmd();
 			break;
 
 		 case FDCEMU_CMD_READSECTORS:
 		 case FDCEMU_CMD_READMULTIPLESECTORS:
-			FDC_UpdateReadSectorsCmd();
+			Delay_micro = FDC_UpdateReadSectorsCmd();
 			break;
 		 case FDCEMU_CMD_WRITESECTORS:
 		 case FDCEMU_CMD_WRITEMULTIPLESECTORS:
-			FDC_UpdateWriteSectorsCmd();
+			Delay_micro = FDC_UpdateWriteSectorsCmd();
 			break;
 
 		 case FDCEMU_CMD_READADDRESS:
-			FDC_UpdateReadAddressCmd();
+			Delay_micro = FDC_UpdateReadAddressCmd();
 			break;
 		}
 
@@ -622,9 +673,11 @@ void FDC_InterruptHandler_Update(void)
 		FDC_SetDiskControllerStatus();
 	}
 
-	if (FDCEmulationCommand != FDCEMU_CMD_NULL || bMotorOn)
+//	if (FDCEmulationCommand != FDCEMU_CMD_NULL || bMotorOn)
+	if (FDCEmulationCommand != FDCEMU_CMD_NULL)
 	{
-		CycInt_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
+//		CycInt_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
+		CycInt_AddAbsoluteInterrupt ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC );
 	}
 }
 
@@ -633,19 +686,25 @@ void FDC_InterruptHandler_Update(void)
 /**
  * Run 'RESTORE' command
  */
-static void FDC_UpdateRestoreCmd(void)
+static int FDC_UpdateRestoreCmd(void)
 {
+	int	Delay_micro = 0;
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO:
 		/* Are we at track zero? */
 		if (FDCTrackRegister>0)
+		{
 			FDCTrackRegister--;             /* Move towards track zero */
+			Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
+		}
 		else
 		{
 			FDCTrackRegister = 0;           /* We're there */
 			FDCEmulationRunning = FDCEMU_RUN_RESTORE_COMPLETE;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_RESTORE_COMPLETE:
@@ -659,6 +718,8 @@ static void FDC_UpdateRestoreCmd(void)
 		FDC_TurnMotorOff();
 		break;
 	}
+
+	return Delay_micro;
 }
 
 
@@ -666,15 +727,21 @@ static void FDC_UpdateRestoreCmd(void)
 /**
  * Run 'SEEK' command
  */
-static void FDC_UpdateSeekCmd(void)
+static int FDC_UpdateSeekCmd(void)
 {
+	int	Delay_micro = 0;
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_SEEK_TOTRACK:
+//fprintf ( stderr , "seek %d\n" , FDCTrackRegister );
 		/* Are we at the selected track? */
 		if (FDCTrackRegister==FDCDataRegister)
+		{
 			FDCEmulationRunning = FDCEMU_RUN_SEEK_COMPLETE;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		}
 		else
 		{
 			/* No, seek towards track */
@@ -682,9 +749,11 @@ static void FDC_UpdateSeekCmd(void)
 				FDCTrackRegister--;
 			else
 				FDCTrackRegister++;
+			Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
 		}
 		break;
 	 case FDCEMU_RUN_SEEK_COMPLETE:
+//fprintf ( stderr , "seek complete %d\n" , FDCTrackRegister );
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
@@ -695,6 +764,8 @@ static void FDC_UpdateSeekCmd(void)
 		FDC_TurnMotorOff();
 		break;
 	}
+
+	return Delay_micro;
 }
 
 
@@ -702,8 +773,10 @@ static void FDC_UpdateSeekCmd(void)
 /**
  * Run 'STEP' command
  */
-static void FDC_UpdateStepCmd(void)
+static int FDC_UpdateStepCmd(void)
 {
+	int	Delay_micro = 0;
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
@@ -711,7 +784,12 @@ static void FDC_UpdateStepCmd(void)
 		/* Move head by one track in same direction as last step */
 		FDCTrackRegister += FDCStepDirection;
 		if (FDCTrackRegister<0)             /* Limit to stop */
+		{
 			FDCTrackRegister = 0;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go before track 0 */
+		}
+		else
+			Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
 
 		FDCEmulationRunning = FDCEMU_RUN_STEP_COMPLETE;
 		break;
@@ -726,6 +804,8 @@ static void FDC_UpdateStepCmd(void)
 		FDC_TurnMotorOff();
 		break;
 	}
+
+	return Delay_micro;
 }
 
 
@@ -733,8 +813,10 @@ static void FDC_UpdateStepCmd(void)
 /**
  * Run 'STEP IN' command
  */
-static void FDC_UpdateStepInCmd(void)
+static int FDC_UpdateStepInCmd(void)
 {
+	int	Delay_micro = 0;
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
@@ -742,6 +824,7 @@ static void FDC_UpdateStepInCmd(void)
 		FDCTrackRegister++;
 
 		FDCEmulationRunning = FDCEMU_RUN_STEPIN_COMPLETE;
+		Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
 		break;
 	 case FDCEMU_RUN_STEPIN_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
@@ -754,6 +837,8 @@ static void FDC_UpdateStepInCmd(void)
 		FDC_TurnMotorOff();
 		break;
 	}
+
+	return Delay_micro;
 }
 
 
@@ -761,15 +846,22 @@ static void FDC_UpdateStepInCmd(void)
 /**
  * Run 'STEP OUT' command
  */
-static void FDC_UpdateStepOutCmd(void)
+static int FDC_UpdateStepOutCmd(void)
 {
+	int	Delay_micro = 0;
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_STEPOUT_ONCE:
 		FDCTrackRegister--;
 		if (FDCTrackRegister < 0)           /* Limit to stop */
+		{
 			FDCTrackRegister = 0;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go before track 0 */
+		}
+		else
+			Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
 
 		FDCEmulationRunning = FDCEMU_RUN_STEPOUT_COMPLETE;
 		break;
@@ -784,6 +876,8 @@ static void FDC_UpdateStepOutCmd(void)
 		FDC_TurnMotorOff();
 		break;
 	}
+
+	return Delay_micro;
 }
 
 
@@ -791,8 +885,10 @@ static void FDC_UpdateStepOutCmd(void)
 /**
  * Run 'READ SECTOR/S' command
  */
-static void FDC_UpdateReadSectorsCmd(void)
+static int FDC_UpdateReadSectorsCmd(void)
 {
+	int	Delay_micro = 0;
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
@@ -807,7 +903,11 @@ static void FDC_UpdateReadSectorsCmd(void)
 			/* Have we finished? */
 			nReadWriteSectors--;
 			if (nReadWriteSectors<=0)
+			{
 				FDCEmulationRunning = FDCEMU_RUN_READSECTORS_COMPLETE;
+				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			}
+			Delay_micro = FDC_DELAY_READ_SECTOR_STANDARD;
 
 			bDMAWaiting = true;
 		}
@@ -834,6 +934,8 @@ static void FDC_UpdateReadSectorsCmd(void)
 		FDC_TurnMotorOff();
 		break;
 	}
+
+	return Delay_micro;
 }
 
 
@@ -841,8 +943,10 @@ static void FDC_UpdateReadSectorsCmd(void)
 /**
  * Run 'WRITE SECTOR/S' command
  */
-static void FDC_UpdateWriteSectorsCmd(void)
+static int FDC_UpdateWriteSectorsCmd(void)
 {
+	int	Delay_micro = 0;
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
@@ -858,7 +962,11 @@ static void FDC_UpdateWriteSectorsCmd(void)
 			/* Have we finished? */
 			nReadWriteSectors--;
 			if (nReadWriteSectors<=0)
+			{
 				FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_COMPLETE;
+				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			}
+			Delay_micro = FDC_DELAY_WRITE_SECTOR_STANDARD;
 
 			/* Update DMA pointer */
 			FDC_WriteDMAAddress(FDC_ReadDMAAddress()+NUMBYTESPERSECTOR);
@@ -886,6 +994,8 @@ static void FDC_UpdateWriteSectorsCmd(void)
 		FDC_TurnMotorOff();
 		break;
 	}
+
+	return Delay_micro;
 }
 
 
@@ -893,14 +1003,17 @@ static void FDC_UpdateWriteSectorsCmd(void)
 /**
  * Run 'READ ADDRESS' command
  */
-static void FDC_UpdateReadAddressCmd(void)
+static int FDC_UpdateReadAddressCmd(void)
 {
+	int	Delay_micro = 0;
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_READADDRESS:
 		/* not implemented, just return with no error */
 		FDCEmulationRunning = FDCEMU_RUN_READADDRESS_COMPLETE;
+		Delay_micro = FDC_DELAY_READ_ADDR_STANDARD;
 		break;
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
@@ -913,6 +1026,8 @@ static void FDC_UpdateReadAddressCmd(void)
 		FDC_TurnMotorOff();
 		break;
 	}
+
+	return Delay_micro;
 }
 
 
@@ -925,9 +1040,9 @@ static void FDC_UpdateReadAddressCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeI_Restore(void)
+static int FDC_TypeI_Restore(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -939,13 +1054,14 @@ static void FDC_TypeI_Restore(void)
 	FDCEmulationRunning = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeI_Seek(void)
+static int FDC_TypeI_Seek(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -957,13 +1073,14 @@ static void FDC_TypeI_Seek(void)
 	FDCEmulationRunning = FDCEMU_RUN_SEEK_TOTRACK;
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeI_Step(void)
+static int FDC_TypeI_Step(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -975,13 +1092,14 @@ static void FDC_TypeI_Step(void)
 	FDCEmulationRunning = FDCEMU_RUN_STEP_ONCE;
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeI_StepIn(void)
+static int FDC_TypeI_StepIn(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -994,13 +1112,14 @@ static void FDC_TypeI_StepIn(void)
 	FDCStepDirection = 1;                 /* Increment track*/
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeI_StepOut(void)
+static int FDC_TypeI_StepOut(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1013,6 +1132,7 @@ static void FDC_TypeI_StepOut(void)
 	FDCStepDirection = -1;                /* Decrement track */
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
 
@@ -1025,9 +1145,9 @@ static void FDC_TypeI_StepOut(void)
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeII_ReadSector(void)
+static int FDC_TypeII_ReadSector(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1041,13 +1161,14 @@ static void FDC_TypeII_ReadSector(void)
 	FDC_SetReadWriteParameters(1);        /* Read in a single sector */
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_II_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeII_ReadMultipleSectors(void)
+static int FDC_TypeII_ReadMultipleSectors(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1062,13 +1183,14 @@ static void FDC_TypeII_ReadMultipleSectors(void)
 	FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Read multiple sectors */
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_II_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeII_WriteSector(void)
+static int FDC_TypeII_WriteSector(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1082,13 +1204,14 @@ static void FDC_TypeII_WriteSector(void)
 	FDC_SetReadWriteParameters(1);                        /* Write out a single sector */
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_II_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeII_WriteMultipleSectors(void)
+static int FDC_TypeII_WriteMultipleSectors(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1102,6 +1225,7 @@ static void FDC_TypeII_WriteMultipleSectors(void)
 	FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Write multiple sectors */
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_II_PREPARE;
 }
 
 
@@ -1114,9 +1238,9 @@ static void FDC_TypeII_WriteMultipleSectors(void)
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeIII_ReadAddress(void)
+static int FDC_TypeIII_ReadAddress(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1130,13 +1254,14 @@ static void FDC_TypeIII_ReadAddress(void)
 	FDCEmulationRunning = FDCEMU_RUN_READADDRESS;
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_III_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeIII_ReadTrack(void)
+static int FDC_TypeIII_ReadTrack(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1154,13 +1279,14 @@ static void FDC_TypeIII_ReadTrack(void)
 	FDC_SetReadWriteParameters(nReadWriteSectorsPerTrack);  /* Read whole track */
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_III_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeIII_WriteTrack(void)
+static int FDC_TypeIII_WriteTrack(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1178,6 +1304,7 @@ static void FDC_TypeIII_WriteTrack(void)
 	FDC_SetReadWriteParameters(nReadWriteSectorsPerTrack);  /* Write whole track */
 
 	FDC_SetDiskControllerStatus();
+	return FDC_DELAY_TYPE_III_PREPARE;
 }
 
 
@@ -1190,9 +1317,9 @@ static void FDC_TypeIII_WriteTrack(void)
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
+static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
+	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1206,6 +1333,7 @@ static void FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 	/* Reset FDC */
 	FDCEmulationCommand = FDCEMU_CMD_NULL;
 	FDCEmulationRunning = FDCEMU_RUN_NULL;
+	return FDC_DELAY_TYPE_IV_PREPARE;
 }
 
 
@@ -1213,35 +1341,41 @@ static void FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 /**
  * Execute Type I commands
  */
-static void FDC_ExecuteTypeICommands(void)
+static int FDC_ExecuteTypeICommands(void)
 {
+	int	Delay_micro;
+
 	MFP_GPIP |= 0x20;
 
 	/* Check Type I Command */
 	switch(FDCCommandRegister&0xf0)
 	{
 	 case 0x00:             /* Restore */
-		FDC_TypeI_Restore();
+		Delay_micro = FDC_TypeI_Restore();
 		break;
 	 case 0x10:             /* Seek */
-		FDC_TypeI_Seek();
+		Delay_micro = FDC_TypeI_Seek();
 		break;
 	 case 0x20:             /* Step */
 	 case 0x30:
-		FDC_TypeI_Step();
+		Delay_micro = FDC_TypeI_Step();
 		break;
 	 case 0x40:             /* Step-In */
 	 case 0x50:
-		FDC_TypeI_StepIn();
+		Delay_micro = FDC_TypeI_StepIn();
 		break;
 	 case 0x60:             /* Step-Out */
 	 case 0x70:
-		FDC_TypeI_StepOut();
+		Delay_micro = FDC_TypeI_StepOut();
 		break;
 	}
 
+	FDC_StepRate = FDCCommandRegister & 0x03;			/* keep bits 0 and 1 */
+
 	/* Signal motor on as we need to execute command */
 	FDC_TurnMotorOn();
+
+	return Delay_micro;
 }
 
 
@@ -1249,29 +1383,33 @@ static void FDC_ExecuteTypeICommands(void)
 /**
  * Execute Type II commands
  */
-static void FDC_ExecuteTypeIICommands(void)
+static int FDC_ExecuteTypeIICommands(void)
 {
+	int	Delay_micro;
+
 	MFP_GPIP |= 0x20;
 
 	/* Check Type II Command */
 	switch(FDCCommandRegister&0xf0)
 	{
 	 case 0x80:             /* Read Sector */
-		FDC_TypeII_ReadSector();
+		Delay_micro = FDC_TypeII_ReadSector();
 		break;
 	 case 0x90:             /* Read Sectors */
-		FDC_TypeII_ReadMultipleSectors();
+		Delay_micro = FDC_TypeII_ReadMultipleSectors();
 		break;
 	 case 0xa0:             /* Write Sector */
-		FDC_TypeII_WriteSector();
+		Delay_micro = FDC_TypeII_WriteSector();
 		break;
 	 case 0xb0:             /* Write Sectors */
-		FDC_TypeII_WriteMultipleSectors();
+		Delay_micro = FDC_TypeII_WriteMultipleSectors();
 		break;
 	}
 
 	/* Signal motor on as we need to execute command */
 	FDC_TurnMotorOn();
+
+	return Delay_micro;
 }
 
 
@@ -1279,26 +1417,30 @@ static void FDC_ExecuteTypeIICommands(void)
 /**
  * Execute Type III commands
  */
-static void FDC_ExecuteTypeIIICommands(void)
+static int FDC_ExecuteTypeIIICommands(void)
 {
+	int	Delay_micro;
+
 	MFP_GPIP |= 0x20;
 
 	/* Check Type III Command */
 	switch(FDCCommandRegister&0xf0)
 	{
 	 case 0xc0:             /* Read Address */
-		FDC_TypeIII_ReadAddress();
+		Delay_micro = FDC_TypeIII_ReadAddress();
 		break;
 	 case 0xe0:             /* Read Track */
-		FDC_TypeIII_ReadTrack();
+		Delay_micro = FDC_TypeIII_ReadTrack();
 		break;
 	 case 0xf0:             /* Write Track */
-		FDC_TypeIII_WriteTrack();
+		Delay_micro = FDC_TypeIII_WriteTrack();
 		break;
 	}
 
 	/* Signal motor on as we need to execute command */
 	FDC_TurnMotorOn();
+
+	return Delay_micro;
 }
 
 
@@ -1306,16 +1448,20 @@ static void FDC_ExecuteTypeIIICommands(void)
 /**
  * Execute Type IV commands
  */
-static void FDC_ExecuteTypeIVCommands(void)
+static int FDC_ExecuteTypeIVCommands(void)
 {
+	int	Delay_micro;
+
 	if (FDCCommandRegister!=0xD8)           /* Is an 'immediate interrupt command'? don't reset interrupt */
 		MFP_GPIP |= 0x20;
 
 	/* Check Type IV Command */
 	if ((FDCCommandRegister&0x0c) == 0)     /* I3 and I2 are clear? If so we don't need a CPU interrupt */
-		FDC_TypeIV_ForceInterrupt(false);   /* Force Interrupt - no interrupt */
+		Delay_micro = FDC_TypeIV_ForceInterrupt(false);   /* Force Interrupt - no interrupt */
 	else
-		FDC_TypeIV_ForceInterrupt(true);    /* Force Interrupt */
+		Delay_micro = FDC_TypeIV_ForceInterrupt(true);    /* Force Interrupt */
+
+	return Delay_micro;
 }
 
 
@@ -1325,17 +1471,19 @@ static void FDC_ExecuteTypeIVCommands(void)
  */
 static void FDC_ExecuteCommand(void)
 {
+	int	Delay_micro;
+
 	/* Check type of command and execute */
 	if ((FDCCommandRegister&0x80) == 0)           /* Type I - Restore,Seek,Step,Step-In,Step-Out */
-		FDC_ExecuteTypeICommands();
+		Delay_micro = FDC_ExecuteTypeICommands();
 	else if ((FDCCommandRegister&0x40) == 0)      /* Type II - Read Sector, Write Sector */
-		FDC_ExecuteTypeIICommands();
+		Delay_micro = FDC_ExecuteTypeIICommands();
 	else if ((FDCCommandRegister&0xf0) != 0xd0)   /* Type III - Read Address, Read Track, Write Track */
-		FDC_ExecuteTypeIIICommands();
+		Delay_micro = FDC_ExecuteTypeIIICommands();
 	else                                          /* Type IV - Force Interrupt */
-		FDC_ExecuteTypeIVCommands();
+		Delay_micro = FDC_ExecuteTypeIVCommands();
 
-	CycInt_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
+	CycInt_AddAbsoluteInterrupt ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC );
 }
 
 
