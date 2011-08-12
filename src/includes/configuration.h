@@ -283,8 +283,9 @@ typedef struct
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
   bool bRealTimeClock;
   bool bPatchTimerD;
+  bool bFastBoot;                 /* Enable to patch TOS for fast boot */
   bool bFastForward;
-  
+
 #if ENABLE_WINUAE_CPU
   bool bAddressSpace24;
   bool bCycleExactCpu;

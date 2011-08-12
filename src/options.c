@@ -124,6 +124,7 @@ enum {
 	OPT_SOUNDBUFFERSIZE,
 	OPT_YM_MIXING,
 	OPT_TIMERD,
+	OPT_FASTBOOT,
 	OPT_RTC,
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
@@ -326,6 +327,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "YM sound mixing method (x=linear/table)" },
 	{ OPT_TIMERD,    NULL, "--timer-d",
 	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
+	{ OPT_FASTBOOT, NULL, "--fast-boot",
+	  "<bool>", "Patch TOS for faster boot" },
 	{ OPT_RTC,    NULL, "--rtc",
 	  "<bool>", "Enable real-time clock" },
 
@@ -1251,7 +1254,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = false;
 			}
 			break;
-			
+
 			/* Memory options */
 		case OPT_MEMSIZE:
 			memsize = atoi(argv[++i]);
@@ -1262,7 +1265,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ConfigureParams.Memory.nMemorySize = memsize;
 			bLoadAutoSave = false;
 			break;
-      
+
 		case OPT_TOS:
 			i += 1;
 			ok = Opt_StrCpy(OPT_TOS, true, ConfigureParams.Rom.szTosImageFileName,
@@ -1363,22 +1366,25 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			bLoadAutoSave = false;
 			break;
-			
+
 		case OPT_BLITTER:
 			ok = Opt_Bool(argv[++i], OPT_BLITTER, &ConfigureParams.System.bBlitter);
 			if (ok)
 			{
 				bLoadAutoSave = false;
 			}
-			break;			
-			
+			break;
+
 		case OPT_TIMERD:
 			ok = Opt_Bool(argv[++i], OPT_TIMERD, &ConfigureParams.System.bPatchTimerD);
-			break;			
-			
+			break;
+		case OPT_FASTBOOT:
+			ok = Opt_Bool(argv[++i], OPT_FASTBOOT, &ConfigureParams.System.bFastBoot);
+			break;
+
 		case OPT_RTC:
 			ok = Opt_Bool(argv[++i], OPT_RTC, &ConfigureParams.System.bRealTimeClock);
-			break;			
+			break;
 
 		case OPT_DSP:
 			i += 1;

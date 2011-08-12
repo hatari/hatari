@@ -130,16 +130,21 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x04, STMemory_ReadLong(TosAddress+4));
 
 	/* Fill in magic numbers, so TOS does not try to reference MMU */
-	STMemory_WriteLong(0x420, 0x752019f3);            /* memvalid - configuration is valid */
-	STMemory_WriteLong(0x43a, 0x237698aa);            /* another magic # */
-	STMemory_WriteLong(0x51a, 0x5555aaaa);            /* and another */
+	if (ConfigureParams.System.bFastBoot
+	    || ConfigureParams.Memory.nMemorySize > 4)
+	{
+		/* Write magic values to sysvars to signal valid config */
+		STMemory_WriteLong(0x420, 0x752019f3);    /* memvalid */
+		STMemory_WriteLong(0x43a, 0x237698aa);    /* memval2 */
+		STMemory_WriteLong(0x51a, 0x5555aaaa);    /* memval3 */
+	}
 
 	/* Set memory size, adjust for extra VDI screens if needed.
 	 * Note: TOS seems to set phys_top-0x8000 as the screen base
 	 * address - so we have to move phys_top down in VDI resolution
 	 * mode, although there is more "physical" ST RAM available. */
 	screensize = VDIWidth * VDIHeight / 8 * VDIPlanes;
-        /* Use 32 kiB in normal screen mode or when the screen size is smaller than 32 kiB */
+	/* Use 32 kiB in normal screen mode or when the screen size is smaller than 32 kiB */
 	if (!bUseVDIRes || screensize < 0x8000)
 		screensize = 0x8000;
 	/* mem top - upper end of user memory (right before the screen memory).
