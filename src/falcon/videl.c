@@ -1183,8 +1183,8 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 		switch(scrbpp) {
 			case 1:
 				{
-					/* One complete planar 2 chunky line */
-					Uint8 *p2cline = malloc(sizeof(Uint8)*vw);
+					/* One complete 16-pixel aligned planar 2 chunky line */
+					Uint8 *p2cline = malloc(sizeof(Uint8) * ((vw+15) & ~15));
 
 					Uint16 *fvram_line;
 					Uint8 *hvram_line = hvram;
@@ -1232,8 +1232,8 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				break;
 			case 2:
 				{
-					/* One complete planar 2 chunky line */
-					Uint16 *p2cline = malloc(sizeof(Uint16)*vw);
+					/* One complete 16-pixel aligned planar 2 chunky line */
+					Uint16 *p2cline = malloc(sizeof(Uint16) * ((vw+15) & ~15));
 
 					Uint16 *fvram_line;
 					Uint16 *hvram_line = (Uint16 *)hvram;
@@ -1285,9 +1285,8 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				break;
 			case 4:
 				{
-					/* One complete planar 2 chunky line */
-					Uint32 *p2cline = malloc(sizeof(Uint32)*vw);
-
+					/* One complete 16-pixel aligned planar 2 chunky line */
+					Uint32 *p2cline = malloc(sizeof(Uint32) * ((vw+15) & ~15));
 					Uint16 *fvram_line;
 					Uint32 *hvram_line = (Uint32 *)hvram;
 
