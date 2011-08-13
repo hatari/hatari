@@ -252,7 +252,11 @@ Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 Patch redundantly high Timer-D frequency set by TOS.  This about doubles
 Hatari speed (for ST/e emulation) as the original Timer-D frequency causes
 most of the interrupts.
-.TP 
+.TP
+.B \-\-fast-boot <bool>
+Patch TOS and initialize the so-called "memvalid" system variables to by-pass
+the memory test of TOS, so that the system boots faster.
+.TP
 .B \-\-rtc <bool>
 Enable real-time clock
 .SH "Sound options"
