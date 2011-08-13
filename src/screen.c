@@ -74,6 +74,8 @@ static Uint8 *pPCScreenDest;                       /* Destination PC buffer */
 static int STScreenEndHorizLine;                   /* End lines to be converted */
 static int PCScreenBytesPerLine;
 static int STScreenWidthBytes;
+static int PCScreenOffsetX;                        /* how many pixels to skip from left when drawing */
+static int PCScreenOffsetY;                        /* how many pixels to skip from top when drawing */
 static SDL_Rect STScreenRect;                      /* screen size without statusbar */
 
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
@@ -410,9 +412,25 @@ static void Screen_SetResolution(void)
 	Screen_SetSTScreenOffsets();  
 	Height += Statusbar_SetHeight(Width, Height);
 
+	PCScreenOffsetX = PCScreenOffsetY = 0;
+
 	/* SDL Video attributes: */
 	if (bInFullScreen)
 	{
+		if (ConfigureParams.Screen.bKeepResolutionST)
+		{
+			/* use desktop resolution */
+			Resolution_GetDesktopSize(&maxW, &maxH);
+			SBarHeight = Statusbar_GetHeightForSize(maxW, maxH);
+			/* re-calculate statusbar height for this resolution */
+			Statusbar_SetHeight(maxW, maxH-SBarHeight);
+			/* center Atari screen to resolution */
+			PCScreenOffsetY = (maxH - Height)/2;
+			PCScreenOffsetX = (maxW - Width)/2;
+			/* and select desktop resolution */
+			Height = maxH;
+			Width = maxW;
+		}
 		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
 		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
 		 * but it doesn't work with partial screen updates done by the ST screen
@@ -964,6 +982,10 @@ static void Screen_SetConvertDetails(void)
 	pPCScreenDest = sdlscrn->pixels;              /* Destination PC screen */
 
 	PCScreenBytesPerLine = sdlscrn->pitch;        /* Bytes per line */
+
+	/* Center to available framebuffer */
+	pPCScreenDest += PCScreenOffsetY * PCScreenBytesPerLine + PCScreenOffsetX * (sdlscrn->format->BitsPerPixel/8);
+
 	pHBLPalettes = pFrameBuffer->HBLPalettes;     /* HBL palettes pointer */
 	/* Not in TV-Mode? Then double up on Y: */
 	bScrDoubleY = !(ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_TV);

@@ -212,6 +212,7 @@ typedef struct
   int nFrameSkips;
   bool bFullScreen;
   bool bKeepResolution;
+  bool bKeepResolutionST;
   bool bAllowOverscan;
   bool bAspectCorrect;
   bool bUseExtVdiResolutions;
