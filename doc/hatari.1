@@ -94,6 +94,16 @@ Force internal bitdepth (x = 8/15/16/32, 0=disable)
 .B \-\-borders <bool>
 Show ST/STE screen borders (for low/med resolution overscan demos)
 .TP
+.B \-\-desktop-st <bool>
+Whether fullscreen mode uses desktop resolution to avoid: messing
+multi-screen setups, several seconds delay needed by LCD monitors
+resolution switching and the resulting sound break. As Hatari ST/E
+display code doesn't support zooming (except low-rez doubling), it
+doesn't get scaled (by Hatari or monitor) when this is enabled.
+Therefore this is mainly useful only if you suffer from the described
+effects, but still want to grab mouse and remove other distractions
+from the screen just by toggling fullscreen mode.
+.TP 
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with
 the slower but more accurate Spectrum512 screen conversion functions
