@@ -120,13 +120,13 @@ enum {
 	OPT_MACHINE,		/* system options */
 	OPT_BLITTER,
 	OPT_DSP,
-	OPT_MICROPHONE,
-	OPT_SOUND,
-	OPT_SOUNDBUFFERSIZE,
-	OPT_YM_MIXING,
 	OPT_TIMERD,
 	OPT_FASTBOOT,
 	OPT_RTC,
+	OPT_MICROPHONE,		/* sound options */
+	OPT_SOUND,
+	OPT_SOUNDBUFFERSIZE,
+	OPT_YM_MIXING,
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
 	OPT_TRACE,
@@ -320,6 +320,14 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
+	{ OPT_TIMERD,    NULL, "--timer-d",
+	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
+	{ OPT_FASTBOOT, NULL, "--fast-boot",
+	  "<bool>", "Patch TOS for faster boot" },
+	{ OPT_RTC,    NULL, "--rtc",
+	  "<bool>", "Enable real-time clock" },
+
+	{ OPT_HEADER, NULL, NULL, NULL, "Sound" },
 	{ OPT_MICROPHONE,   NULL, "--mic",
 	  "<bool>", "Enable/disable (Falcon only) microphone" },
 	{ OPT_SOUND,   NULL, "--sound",
@@ -328,12 +336,6 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Sound buffer size for SDL in ms (x=0/10-100, 0=default)" },
 	{ OPT_YM_MIXING,   NULL, "--ym-mixing",
 	  "<x>", "YM sound mixing method (x=linear/table)" },
-	{ OPT_TIMERD,    NULL, "--timer-d",
-	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
-	{ OPT_FASTBOOT, NULL, "--fast-boot",
-	  "<bool>", "Patch TOS for faster boot" },
-	{ OPT_RTC,    NULL, "--rtc",
-	  "<bool>", "Enable real-time clock" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
@@ -840,18 +842,18 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		/* last argument can be a non-option */
 		if (argv[i][0] != '-' && i+1 == argc)
 			return Opt_HandleArgument(argv[i]);
-    
+
 		/* WhichOption() checks also that there is an argument,
 		 * so we don't need to check that below
 		 */
 		switch(Opt_WhichOption(argc, argv, i))
 		{
-		
+
 			/* general options */
 		case OPT_HELP:
 			Opt_ShowHelp();
 			return false;
-			
+
 		case OPT_VERSION:
 			Opt_ShowVersion();
 			return false;
@@ -863,7 +865,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_FASTFORWARD:
 			ok = Opt_Bool(argv[++i], OPT_FASTFORWARD, &ConfigureParams.System.bFastForward);
 			break;
-			
+
 		case OPT_CONFIGFILE:
 			i += 1;
 			/* true -> file needs to exist */
@@ -875,7 +877,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
 			}
 			break;
-		
+
 			/* common display options */
 		case OPT_MONO:
 			ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
@@ -906,11 +908,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			bLoadAutoSave = false;
 			break;
-			
+
 		case OPT_FULLSCREEN:
 			ConfigureParams.Screen.bFullScreen = true;
 			break;
-			
+
 		case OPT_WINDOW:
 			ConfigureParams.Screen.bFullScreen = false;
 			break;
@@ -918,7 +920,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_GRAB:
 			bGrabMouse = true;
 			break;
-			
+
 		case OPT_FRAMESKIPS:
 			skips = atoi(argv[++i]);
 			if (skips < 0)
@@ -932,15 +934,15 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			ConfigureParams.Screen.nFrameSkips = skips;
 			break;
-			
+
 		case OPT_STATUSBAR:
 			ok = Opt_Bool(argv[++i], OPT_STATUSBAR, &ConfigureParams.Screen.bShowStatusbar);
 			break;
-			
+
 		case OPT_DRIVE_LED:
 			ok = Opt_Bool(argv[++i], OPT_DRIVE_LED, &ConfigureParams.Screen.bShowDriveLed);
 			break;
-			
+
 		case OPT_FORCEBPP:
 			planes = atoi(argv[++i]);
 			switch(planes)
@@ -958,7 +960,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
-			
+
 			/* ST/STE display options */
 		case OPT_BORDERS:
 			ok = Opt_Bool(argv[++i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
@@ -1132,7 +1134,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_JOYSTICK0+port, argv[i], "Invalid joystick type");
 			}
 			break;
-			
+
 		case OPT_PRINTER:
 			i += 1;
 			/* "none" can be used to disable printer */
@@ -1140,7 +1142,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 					argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
 					&ConfigureParams.Printer.bEnablePrinting);
 			break;
-			
+
 		case OPT_MIDI_IN:
 			i += 1;
 			ok = Opt_StrCpy(OPT_MIDI_IN, true, ConfigureParams.Midi.sMidiInFileName,
@@ -1239,7 +1241,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = false;
 			}
 			break;
-			
+
 		case OPT_IDEMASTERHDIMAGE:
 			i += 1;
 			ok = Opt_StrCpy(OPT_IDEMASTERHDIMAGE, true, ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
@@ -1283,7 +1285,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = false;
 			}
 			break;
-			
+
 		case OPT_CARTRIDGE:
 			i += 1;
 			ok = Opt_StrCpy(OPT_CARTRIDGE, true, ConfigureParams.Rom.szCartridgeImageFileName,
@@ -1306,7 +1308,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = false;
 			}
 			break;
-			
+
 			/* CPU options */
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
@@ -1318,7 +1320,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ConfigureParams.System.nCpuLevel = ncpu;
 			bLoadAutoSave = false;
 			break;
-			
+
 		case OPT_CPUCLOCK:
 			cpuclock = atoi(argv[++i]);
 			if(cpuclock != 8 && cpuclock != 16 && cpuclock != 32)
@@ -1328,7 +1330,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ConfigureParams.System.nCpuFreq = cpuclock;
 			bLoadAutoSave = false;
 			break;
-			
+
 		case OPT_COMPATIBLE:
 			ok = Opt_Bool(argv[++i], OPT_COMPATIBLE, &ConfigureParams.System.bCompatibleCpu);
 			if (ok)
@@ -1336,6 +1338,51 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				bLoadAutoSave = false;
 			}
 			break;
+#if ENABLE_WINUAE_CPU
+		case OPT_CPU_ADDR24:
+			ok = Opt_Bool(argv[++i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
+			bLoadAutoSave = false;
+			break;
+
+		case OPT_CPU_CYCLE_EXACT:
+			ok = Opt_Bool(argv[++i], OPT_CPU_CYCLE_EXACT, &ConfigureParams.System.bCycleExactCpu);
+			bLoadAutoSave = false;
+			break;
+
+		case OPT_FPU_TYPE:
+			i += 1;
+			if (strcasecmp(argv[i], "none") == 0)
+			{
+				ConfigureParams.System.n_FPUType = FPU_NONE;
+			}
+			else if (strcasecmp(argv[i], "68881") == 0)
+			{
+				ConfigureParams.System.n_FPUType = FPU_68881;
+			}
+			else if (strcasecmp(argv[i], "68882") == 0)
+			{
+				ConfigureParams.System.n_FPUType = FPU_68882;
+			}
+			else if (strcasecmp(argv[i], "internal") == 0)
+			{
+				ConfigureParams.System.n_FPUType = FPU_CPU;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_FPU_TYPE, argv[i], "Unknown FPU type");
+			}
+			bLoadAutoSave = false;
+			break;
+
+		case OPT_FPU_COMPATIBLE:
+			ok = Opt_Bool(argv[++i], OPT_FPU_COMPATIBLE, &ConfigureParams.System.bCompatibleFPU);
+			break;
+
+		case OPT_MMU:
+			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
+			bLoadAutoSave = false;
+			break;
+#endif
 
 			/* system options */
 		case OPT_MACHINE:
@@ -1418,51 +1465,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			bLoadAutoSave = false;
 			break;
 
-#if ENABLE_WINUAE_CPU
-		case OPT_CPU_ADDR24:
-			ok = Opt_Bool(argv[++i], OPT_CPU_ADDR24, &ConfigureParams.System.bAddressSpace24);
-			bLoadAutoSave = false;
-			break;			
-
-		case OPT_CPU_CYCLE_EXACT:
-			ok = Opt_Bool(argv[++i], OPT_CPU_CYCLE_EXACT, &ConfigureParams.System.bCycleExactCpu);
-			bLoadAutoSave = false;
-			break;			
-
-		case OPT_FPU_TYPE:
-			i += 1;
-			if (strcasecmp(argv[i], "none") == 0)
-			{
-				ConfigureParams.System.n_FPUType = FPU_NONE;
-			}
-			else if (strcasecmp(argv[i], "68881") == 0)
-			{
-				ConfigureParams.System.n_FPUType = FPU_68881;
-			}
-			else if (strcasecmp(argv[i], "68882") == 0)
-			{
-				ConfigureParams.System.n_FPUType = FPU_68882;
-			}
-			else if (strcasecmp(argv[i], "internal") == 0)
-			{
-				ConfigureParams.System.n_FPUType = FPU_CPU;
-			}
-			else
-			{
-				return Opt_ShowError(OPT_FPU_TYPE, argv[i], "Unknown FPU type");
-			}
-			bLoadAutoSave = false;
-			break;
-
-		case OPT_FPU_COMPATIBLE:
-			ok = Opt_Bool(argv[++i], OPT_FPU_COMPATIBLE, &ConfigureParams.System.bCompatibleFPU);
-			break;			
-
-		case OPT_MMU:
-			ok = Opt_Bool(argv[++i], OPT_MMU, &ConfigureParams.System.bMMU);
-			bLoadAutoSave = false;
-			break;			
-#endif
+			/* sound options */
 		case OPT_YM_MIXING:
 			i += 1;
 			if (strcasecmp(argv[i], "linear") == 0)
@@ -1511,7 +1514,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			
 		case OPT_MICROPHONE:
 			ok = Opt_Bool(argv[++i], OPT_MICROPHONE, &ConfigureParams.Sound.bEnableMicrophone);
-			break;			
+			break;
 
 		case OPT_KEYMAPFILE:
 			i += 1;
