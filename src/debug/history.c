@@ -39,8 +39,8 @@ typedef struct {
 } hist_item_t;
 
 static struct {
-	int idx;          /* index to current history item */
-	int count;        /* how many items of history are collected */
+	unsigned idx;     /* index to current history item */
+	unsigned count;   /* how many items of history are collected */
 	Uint16 dsp_pc;    /* last CPU PC position */
 	Uint32 cpu_pc;    /* last DSP PC position */
 	hist_item_t item[HISTORY_ITEMS];  /* ring-buffer */
@@ -144,7 +144,7 @@ Uint32 History_GetLastDsp(void) { return History.dsp_pc; }
 /**
  * Show collected CPU/DSP debugger/breakpoint history
  */
-void History_Show(int count)
+void History_Show(Uint32 count)
 {
 	bool show_all;
 	int i;
@@ -154,6 +154,11 @@ void History_Show(int count)
 	}
 	if (count > History.count) {
 		count = History.count;
+	} else {
+		if (!count) {
+			/* default to all */
+			count = History.count;
+		}
 	}
 	if (count <= 0) {
 		fprintf(stderr,  "No history items to show.\n");

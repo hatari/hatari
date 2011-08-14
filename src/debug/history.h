@@ -24,7 +24,7 @@ extern Uint32 History_GetLastCpu(void);
 extern Uint32 History_GetLastDsp(void);
 
 /* for debugInfo.c */
-extern void History_Show(int count);
+extern void History_Show(Uint32 count);
 
 /* for debugui */
 extern void History_Mark(debug_reason_t reason);
