@@ -2833,6 +2833,7 @@ Generic commands:
            cd (  ) : change directory
      evaluate ( e) : evaluate an expression
          help ( h) : print help
+      history (hi) : show last CPU & DSP PC values & executed instructions
          info ( i) : show machine/OS information
          lock (  ) : specify information to show on entering the debugger
       logfile ( f) : open or close log file
@@ -3547,7 +3548,7 @@ sections.
 trace  gemdos,io_all
 </pre>
 Please see <a href="#Tracing">Tracing</a> section for more information
-on tracing, what's possible with in and what are its limitations.
+on tracing, what's possible with it and what are its limitations.
 </dd>
 
 <dt><em>Stopping when certain PC address is passed Nth time</em></dt>
@@ -3617,6 +3618,30 @@ b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  FrameCycles = 5
 <dd>To stop e.g. after D0 value has increased by 10, set breakpoint on:
 <pre>
 b  d0 = "d0 + 10"
+</pre>
+</dd>
+
+<dt><em>Seeing code leading to a breakpoint</em></dt>
+<dd>To see the instructions executed before debugger was entered,
+you need to enabled history tracking beforehand and then whenever the
+debugger is entered, you can request given number (here 16) of past
+instructions to be shown:
+<pre>
+history on
+c
+[breakpoint is hit and debugger entered]
+history 16
+</pre>
+</dd>
+
+<dt><em>Getting instruction execution history for every breakpoint</em></dt>
+<dd>
+To see last 16 instructions whenever (a normal or tracing) breakpoint
+is hit:
+<pre>
+history on
+lock history 16
+c
 </pre>
 </dd>
 
