@@ -181,15 +181,15 @@ void History_Show(Uint32 count)
 		if (History.item[i].shown && !show_all) {
 			continue;
 		}
-		if (History.item[i].reason != REASON_NONE) {
-			fprintf(stderr, "*%s*:\n", History_ReasonStr(History.item[i].reason));
-		}
 		if (History.item[i].for_dsp) {
 			Uint16 pc = History.item[i].pc.dsp;
 			DSP_DisasmAddress(pc, pc);
 		} else {
 			Uint32 dummy;
-			Disasm(stderr, History.item[i].pc.dsp, &dummy, 1, DISASM_ENGINE_EXT);
+			Disasm(stderr, History.item[i].pc.cpu, &dummy, 1, DISASM_ENGINE_EXT);
+		}
+		if (History.item[i].reason != REASON_NONE) {
+			fprintf(stderr, "Debugger: *%s*\n", History_ReasonStr(History.item[i].reason));
 		}
 	}
 }
