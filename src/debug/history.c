@@ -192,7 +192,7 @@ void History_Show(int count)
 /**
  * Command: Show collected CPU/DSP debugger/breakpoint history
  */
-bool History_Parse(int nArgc, char *psArgs[])
+int History_Parse(int nArgc, char *psArgs[])
 {
 	int count;
 

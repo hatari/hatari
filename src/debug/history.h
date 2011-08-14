@@ -28,6 +28,6 @@ extern void History_Show(int count);
 
 /* for debugui */
 extern void History_Mark(debug_reason_t reason);
-extern bool History_Parse(int nArgc, char *psArgv[]);
+extern int History_Parse(int nArgc, char *psArgv[]);
 
 #endif

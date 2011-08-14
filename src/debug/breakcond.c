@@ -32,6 +32,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "debugInfo.h"
 #include "debugui.h"
 #include "evaluate.h"
+#include "history.h"
 #include "symbols.h"
 #include "68kDisass.h"
 
@@ -355,6 +356,7 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 				DebugUI_ParseFile(bp->options.filename);
 			}
 			if (bp->options.trace) {
+				History_Mark(REASON_TRACE_BREAKPOINT);
 				return 0;
 			} else {
 				/* indexes for BreakCond_Remove() start from 1 */
@@ -368,7 +370,7 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 /* ------------- breakpoint condition checking, public API ------------- */
 
 /**
- * Return matched CPU breakpoint index or zero for an error.
+ * Return matched CPU breakpoint index or zero for no hits.
  */
 int BreakCond_MatchCpu(void)
 {
@@ -376,7 +378,7 @@ int BreakCond_MatchCpu(void)
 }
 
 /**
- * Return matched DSP breakpoint index or zero for an error.
+ * Return matched DSP breakpoint index or zero for no hits.
  */
 int BreakCond_MatchDsp(void)
 {
@@ -532,6 +534,8 @@ static const var_addr_t hatari_vars[] = {
 	{ "LineAOpcode", (Uint32*)GetLineAOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "LineCycles", (Uint32*)GetLineCycles, VALUE_TYPE_FUNCTION32, 0, "is always divisable by 4" },
 	{ "LineFOpcode", (Uint32*)GetLineFOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
+	{ "PrevCpuPC", (Uint32*)History_GetLastCpu, VALUE_TYPE_FUNCTION32, 0, "initially zero" },
+	{ "PrevDspPC", (Uint32*)History_GetLastDsp, VALUE_TYPE_FUNCTION32, 0, "initially zero" },
 	{ "TEXT", (Uint32*)DebugInfo_GetTEXT, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, NULL },
 	{ "VdiOpcode", (Uint32*)GetVdiOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },

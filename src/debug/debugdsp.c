@@ -21,6 +21,7 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 #include "debugdsp.h"
 #include "dsp.h"
 #include "evaluate.h"
+#include "history.h"
 #include "memorySnapShot.h"
 #include "profile.h"
 #include "str.h"
@@ -356,6 +357,10 @@ void DebugDsp_Check(void)
 		if (nDspSteps == 0)
 			DebugUI(REASON_DSP_STEPS);
 	}
+	if (bHistoryEnabled)
+	{
+		History_AddDsp();
+	}
 }
 
 
@@ -369,7 +374,7 @@ void DebugDsp_SetDebugging(void)
 	bDspProfiling = Profile_DspStart();
 	nDspActiveCBs = BreakCond_BreakPointCount(true);
 
-	if (nDspActiveCBs || nDspSteps || bDspProfiling)
+	if (nDspActiveCBs || nDspSteps || bDspProfiling || bHistoryEnabled)
 		DSP_SetDebugging(true);
 	else
 		DSP_SetDebugging(false);
