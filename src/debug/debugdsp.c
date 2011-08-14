@@ -348,13 +348,13 @@ void DebugDsp_Check(void)
 	if (nDspActiveCBs)
 	{
 		if (BreakCond_MatchDsp())
-			DebugUI();
+			DebugUI(REASON_DSP_BREAKPOINT);
 	}
 	if (nDspSteps)
 	{
 		nDspSteps -= 1;
 		if (nDspSteps == 0)
-			DebugUI();
+			DebugUI(REASON_DSP_STEPS);
 	}
 }
 

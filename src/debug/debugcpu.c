@@ -523,13 +523,13 @@ void DebugCpu_Check(void)
 	if (nCpuActiveCBs)
 	{
 		if (BreakCond_MatchCpu())
-			DebugUI();
+			DebugUI(REASON_CPU_BREAKPOINT);
 	}
 	if (nCpuSteps)
 	{
 		nCpuSteps -= 1;
 		if (nCpuSteps == 0)
-			DebugUI();
+			DebugUI(REASON_CPU_STEPS);
 	}
 }
 

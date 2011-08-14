@@ -896,14 +896,14 @@ bool DebugUI_SetParseFile(const char *path)
 /**
  * Debugger user interface main function.
  */
-void DebugUI(void)
+void DebugUI(debug_reason_t reason)
 {
 	int cmdret, alertLevel;
 	char *expCmd, *psCmd = NULL;
 	static const char *welcome =
 		"\n----------------------------------------------------------------------"
 		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
-	
+
 	if (bInFullScreen)
 		Screen_ReturnFromFullScreen();
 
