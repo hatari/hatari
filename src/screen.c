@@ -119,9 +119,12 @@ static void Screen_SetupRGBTable(void)
 			{
 				/* STe 0xfff format */
 				STColor = (r<<8) | (g<<4) | (b);
-				rr = ((r & 0x7) << 5) | ((r & 0x8) << 1);
-				gg = ((g & 0x7) << 5) | ((g & 0x8) << 1);
-				bb = ((b & 0x7) << 5) | ((b & 0x8) << 1);
+				rr = ((r & 0x7) << 1) | ((r & 0x8) >> 3);
+				rr |= rr << 4;
+				gg = ((g & 0x7) << 1) | ((g & 0x8) >> 3);
+				gg |= gg << 4;
+				bb = ((b & 0x7) << 1) | ((b & 0x8) >> 3);
+				bb |= bb << 4;
 				RGBColor = SDL_MapRGB(sdlscrn->format, rr, gg, bb);
 				if (sdlscrn->format->BitsPerPixel <= 16)
 				{
@@ -182,9 +185,13 @@ static void Screen_CreatePalette(void)
 			g = HBLPalettes[i] << 1;
 			b = HBLPalettes[i] << 5;
 			/* move top bit of 0x1e0 to lowest in 0xf0 */
-			sdlColors[j].r = (r & 0xe0) | ((r & 0x100) >> 4);
-			sdlColors[j].g = (g & 0xe0) | ((g & 0x100) >> 4);
-			sdlColors[j].b = (b & 0xe0) | ((b & 0x100) >> 4);
+			r = (r & 0xe0) | ((r & 0x100) >> 4);
+			g = (g & 0xe0) | ((g & 0x100) >> 4);
+			b = (b & 0xe0) | ((b & 0x100) >> 4);
+			/* Set color in table */
+			sdlColors[j].r = r | (r >> 4);
+			sdlColors[j].g = g | (g >> 4);
+			sdlColors[j].b = b | (b >> 4);
 		}
 		SDL_SetColors(sdlscrn, sdlColors, 10, 16);
 	}
