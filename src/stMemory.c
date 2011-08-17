@@ -131,7 +131,7 @@ void STMemory_SetDefaultConfig(void)
 
 	/* Fill in magic numbers, so TOS does not try to reference MMU */
 	if (ConfigureParams.System.bFastBoot
-	    || ConfigureParams.Memory.nMemorySize > 4)
+	    || (ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS))
 	{
 		/* Write magic values to sysvars to signal valid config */
 		STMemory_WriteLong(0x420, 0x752019f3);    /* memvalid */
