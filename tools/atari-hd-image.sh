@@ -1,6 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 # script for creating a compatible DOS HD image for Hatari
 # with a single FAT16 partition of given size
+#
+# requires bash as other shells (like dash) don't always interpret
+# the DOS Master Boot Record checksum octal values given to
+# "echo" correctly (can be checked with "od -t o1 $diskfile").
 
 # defaults for disk attributes
 diskfile=hd.img   # HD image filename
@@ -82,15 +86,17 @@ fi
 # temporary files
 tmppart=$diskfile.part
 
+error="premature script exit"
 # script exit/error handling
 exit_cleanup ()
 {
 	echo
-	if [ $? -eq 0 ]; then
+	if [ -z "$error" ]; then
 		echo "$step) Cleaning up..."
 	else
+		echo "ERROR: $error"
 		echo
-		echo "ERROR, cleaning up..."
+		echo "cleaning up..."
 		echo "rm -f $diskfile"
 		rm -f $diskfile
 	fi
@@ -109,6 +115,7 @@ dd if=/dev/zero of=$diskfile bs=$((512+partsize)) count=1
 echo
 step=$(($step+1))
 echo "$step) Creating DOS Master Boot Record partition table..."
+
 echo "Add DOS MBR signature needed by sfdisk:"
 echo -e "\0125\0252" | dd of=$diskfile bs=1 seek=510 count=2
 
@@ -127,6 +134,7 @@ $sfdisk --no-reread $diskfile << EOF
 ,,$parttype,*
 EOF
 if [ $? -ne 0 ]; then
+	error="'sfdisk' failed."
 	exit 2
 fi
 
@@ -135,7 +143,7 @@ step=$(($step+1))
 echo "$step) Creating Atari TOS compatible DOS partition..."
 sectors=$($sfdisk -l $diskfile|awk '/\*/{print $5}')
 if [ -z "$sectors" ] || [ $sectors -eq 0 ]; then
-	echo "ERROR: couldn't get partition size information."
+	error="couldn't get partition size information."
 	exit 2
 fi
 # mkdosfs keeps the sector count below 32765 when -A is used by increasing
@@ -170,7 +178,7 @@ if [ \! -z $contentdir ]; then
 	echo "MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $contentdir/* ::"
 	MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $contentdir/* ::
 	if [ $? -ne 0 ]; then
-		echo "ERROR: failed."
+		error="mcopy failed."
 		exit 2
 	fi
 fi
@@ -181,7 +189,7 @@ step=$(($step+1))
 echo "$step) Copying the partition to disk image..."
 start=$($sfdisk -l $diskfile|awk '/\*/{print $3}')
 if [ -z "$sectors" ] || [ $sectors -eq 0 ]; then
-	echo "ERROR: couldn't get partition start information."
+	error="couldn't get partition start information."
 	exit 2
 fi
 echo "dd if=$tmppart of=$diskfile bs=512 seek=$start count=$sectors"
@@ -189,3 +197,4 @@ dd if=$tmppart of=$diskfile bs=512 seek=$start count=$sectors
 
 step=$(($step+1))
 # cleanup is done by exit_cleanup() trap
+error=""
