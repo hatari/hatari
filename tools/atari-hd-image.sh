@@ -6,7 +6,8 @@
 diskfile=hd.img   # HD image filename
 partname=DOS      # partition name
 
-if [ $# -lt 1 ]; then
+# no args or first arg has non-digit characters
+if [ $# -lt 1 ] || [ \! -z "$(echo $1|tr -d 0-9)" ]; then
 	name=${0##*/}
 	echo
 	echo "usage: $name <size> [filename] [partition name] [directory]"

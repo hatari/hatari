@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # argument checks
-if [ $# -lt 1 ] || [ $1 -lt 2 ] || [ $1 -gt 16 ]; then
+if [ $# -lt 1 ] || [ \! -z "$(echo $1|tr -d 0-9)" ] || [ $1 -lt 2 ] || [ $1 -gt 16 ]; then
 	echo "Usage: ${0##*/} <Hatari instances, 2-16> [extra Hatari args]"
 	echo
 	echo "Example of running 4 Hatari instances in a MIDI ring, each using midi/ as HD:"
