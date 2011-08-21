@@ -132,16 +132,6 @@ void History_Mark(debug_reason_t reason)
 }
 
 /**
- * Get previous CPU PC position
- */
-Uint32 History_GetLastCpu(void) { return History.cpu_pc; }
-/**
- * Get previous DSP PC position
- */
-Uint32 History_GetLastDsp(void) { return History.dsp_pc; }
-
-
-/**
  * Show collected CPU/DSP debugger/breakpoint history
  */
 void History_Show(Uint32 count)

@@ -19,10 +19,6 @@ extern void History_AddDsp(void);
 /* for debugInfo.c & breakcond.c */
 extern void History_Enable(bool enable);
 
-/* for breakcond.c */
-extern Uint32 History_GetLastCpu(void);
-extern Uint32 History_GetLastDsp(void);
-
 /* for debugInfo.c */
 extern void History_Show(Uint32 count);
 
