@@ -146,6 +146,24 @@ ACSI DMA and Floppy Disk Controller(FDC)
 */
 
 /*-----------------------------------------------------------------------*/
+
+#define	FDC_STR_BIT_BUSY			0x01
+#define	FDC_STR_BIT_DRQ_INDEX			0x02
+#define	FDC_STR_BIT_LOST_DATA_TR00		0x04
+#define	FDC_STR_BIT_CRC_ERROR			0x08
+#define	FDC_STR_BIT_RNF				0x10
+#define	FDC_STR_BIT_SPIN_UP_RECORD_TYPE		0x20
+#define	FDC_STR_BIT_WPRT			0x40
+#define	FDC_STR_BIT_MOTOR_ON			0x80
+
+
+#define	FDC_COMMAND_BIT_VERIFY			(1<<2)		/* 0=verify after type I, 1=no verify after type I */
+#define	FDC_COMMAND_BIT_MOTOR_ON		(1<<3)		/* 0=enable motor test, 1=disable motor test */
+#define	FDC_COMMAND_BIT_UPDATE_TRACK		(1<<4)		/* 0=don't update TR after type I, 1=update TR after type I */
+#define	FDC_COMMAND_BIT_MULTIPLE_SECTOR		(1<<4)		/* 0=read/write only 1 sector, 1=read/write many sectors */
+
+
+
 /* FDC Emulation commands */
 enum
 {
@@ -163,6 +181,9 @@ enum
 	FDCEMU_CMD_WRITEMULTIPLESECTORS,
 	/* Type III */
 	FDCEMU_CMD_READADDRESS,
+
+	/* Other states */
+	FDCEMU_CMD_MOTOR_STOP
 };
 
 /* FDC Emulation commands */
@@ -242,8 +263,9 @@ enum
 #define FDC_TRANSFER_BYTES_US( n )	(  n * 8 * 1000000.L / FDC_BITRATE_STANDARD )	/* micro sec to read/write 'n' bytes */
 
 /* Delays are in micro sec */
-#define	FDC_DELAY_READ_SECTOR_STANDARD		FDC_TRANSFER_BYTES_US( NUMBYTESPERSECTOR )	/* 512 bytes per sector */
-#define	FDC_DELAY_WRITE_SECTOR_STANDARD		FDC_TRANSFER_BYTES_US( NUMBYTESPERSECTOR )	/* 512 bytes per sector */
+#define	FDC_DELAY_MOTOR_ON			( 1000000.L * 6 / ( FDC_RPM_STANDARD / 60 ) )	/* 6 spins to reach correct speed */
+#define	FDC_DELAY_MOTOR_OFF			( 1000000.L * 2 )	/* Turn off motor 2 sec after the last command */
+
 
 #define	FDC_DELAY_TYPE_I_PREPARE		100		/* Types I commands take at least 0.1 ms to execute */
 								/* (~800 cpu cycles @ 8 Mhz). FIXME : this was not measured, it's */
@@ -252,6 +274,9 @@ enum
 #define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediatly */
 #define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME : this was not measured */
 								
+#define	FDC_DELAY_READ_SECTOR_STANDARD		FDC_TRANSFER_BYTES_US( NUMBYTESPERSECTOR )	/* 512 bytes per sector */
+#define	FDC_DELAY_WRITE_SECTOR_STANDARD		FDC_TRANSFER_BYTES_US( NUMBYTESPERSECTOR )	/* 512 bytes per sector */
+
 #define	FDC_DELAY_READ_ADDR_STANDARD		FDC_TRANSFER_BYTES_US( 6 )
 #define	FDC_DELAY_READ_TRACK_STANDARD		FDC_TRANSFER_BYTES_US( FDC_TRACK_BYTES_STANDARD )
 #define	FDC_DELAY_WRITE_TRACK_STANDARD		FDC_TRANSFER_BYTES_US( FDC_TRACK_BYTES_STANDARD )
@@ -276,8 +301,8 @@ static int FDCEmulationCommand;                                 /* FDC emulation
 static int FDCEmulationRunning;                                 /* Running command under above */
 static int FDCStepDirection;                                    /* +Track on 'Step' command */
 static bool bDMAWaiting;                                        /* Is DMA waiting to copy? */
-static int bMotorOn;                                            /* Is motor on? */
-static int MotorSlowingCount;                                   /* Counter used to slow motor before stopping */
+static int bMotorOn;                                            /* Is motor on? */ // FIXME NP use SR instead
+static int MotorSlowingCount;                                   /* Counter used to slow motor before stopping */	/* FIXME NP remove */
 static int FDC_StepRate;					/* Value of bits 0 and 1 for current Type I command */
 
 static short int nReadWriteTrack;                               /* Parameters used in sector read/writes */
@@ -294,6 +319,7 @@ static int FDC_DelayToCpuCycles ( int Delay_micro );
 
 static void FDC_ResetDMAStatus(void);
 static int  FDC_FindFloppyDrive(void);
+static int FDC_UpdateMotorStop(void);
 static int FDC_UpdateRestoreCmd(void);
 static int FDC_UpdateSeekCmd(void);
 static int FDC_UpdateStepCmd(void);
@@ -329,7 +355,6 @@ void FDC_Reset(void)
 	FDCStepDirection = 1;                         /* +Track on 'Step' command */
 	bDMAWaiting = false;                          /* No DMA waiting */
 	bMotorOn = false;                             /* Motor off */
-	MotorSlowingCount = 0;                        /* Counter for motor slowing down before stopping */
 }
 
 
@@ -377,42 +402,7 @@ static int FDC_DelayToCpuCycles ( int Delay_micro )
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Turn floppy motor on
- */
-static void FDC_TurnMotorOn(void)
-{
-	bMotorOn = true;                  /* Turn motor on */
-	MotorSlowingCount = 0;
-}
 
-
-/*-----------------------------------------------------------------------*/
-/**
- * Turn floppy motor off (this sets a count as it takes a set amount of time for the motor to slow to a halt)
- */
-static void FDC_TurnMotorOff(void)
-{
-	MotorSlowingCount = 160;          /* Set timer so takes 'x' HBLs before turn off... */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Update floppy drive motor each HBL, to simulate slowing down and stopping for drive; needed for New Zealand Story(PP_001)
- */
-static void FDC_UpdateMotor(void)
-{
-	/* Is drive slowing down? Decrement counter */
-	if (MotorSlowingCount>0)
-	{
-		MotorSlowingCount--;
-
-		if (MotorSlowingCount==0)
-			bMotorOn = false;         /* Motor finally stopped */
-	}
-}
 
 
 /*-----------------------------------------------------------------------*/
@@ -517,8 +507,10 @@ static void FDC_SetDiskControllerStatus(void)
 	/* Update disk */
 	FDC_UpdateDiskDrive();
 
+#if 1		/* rewrite block */
 	/* Clear out to default */
-	DiskControllerStatus_ff8604rd = 0;
+	//DiskControllerStatus_ff8604rd = 0;
+	DiskControllerStatus_ff8604rd &= FDC_STR_BIT_MOTOR_ON;
 
 	/* ONLY do this if we are running a Type I command */
 	if ((FDCCommandRegister&0x80)==0)
@@ -531,6 +523,14 @@ static void FDC_SetDiskControllerStatus(void)
 	/* If no disk inserted, tag as error */
 	if (!EmulationDrives[nReadWriteDev].bDiskInserted)
 		DiskControllerStatus_ff8604rd |= 0x10;     /* RNF - Record not found, ie no disk in drive */
+#endif
+}
+
+
+static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
+{
+	DiskControllerStatus_ff8604rd &= (~DisableBits);		/* clear bits in DisableBits */
+	DiskControllerStatus_ff8604rd |= EnableBits;			/* set bits in EnableBits */
 }
 
 
@@ -630,9 +630,6 @@ void FDC_InterruptHandler_Update(void)
 		bDMAWaiting = false;
 	}
 
-	/* Update drive motor */
-	FDC_UpdateMotor();
-
 	/* Is FDC active? */
 	if (FDCEmulationCommand!=FDCEMU_CMD_NULL)
 	{
@@ -667,18 +664,53 @@ void FDC_InterruptHandler_Update(void)
 		 case FDCEMU_CMD_READADDRESS:
 			Delay_micro = FDC_UpdateReadAddressCmd();
 			break;
+
+		 case FDCEMU_CMD_MOTOR_STOP:
+			Delay_micro = FDC_UpdateMotorStop();
+			break;
 		}
 
 		/* Set disk controller status (RD 0xff8604) */
 		FDC_SetDiskControllerStatus();
 	}
 
-//	if (FDCEmulationCommand != FDCEMU_CMD_NULL || bMotorOn)
 	if (FDCEmulationCommand != FDCEMU_CMD_NULL)
 	{
-//		CycInt_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
 		CycInt_AddAbsoluteInterrupt ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC );
 	}
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Common to all commands once they're completed :
+ * - remove busy bit
+ * - stop motor after 2 sec
+ */
+
+static int FDC_CmdCompleteCommon(void)
+{
+  FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* remove busy bit */
+
+  FDCEmulationCommand = FDCEMU_CMD_MOTOR_STOP;			/* next state */
+  return FDC_DELAY_MOTOR_OFF;
+}
+
+
+static int FDC_UpdateMotorStop(void)
+{
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LOG_TRACE(TRACE_FDC, "fdc motor stopped VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+	FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON , 0 );		/* unset motor bit */
+bMotorOn = false;         /* Motor finally stopped */
+
+	FDCEmulationCommand = FDCEMU_CMD_NULL;			/* motor stopped, this is the last state */
+	return 0;
 }
 
 
@@ -713,9 +745,7 @@ static int FDC_UpdateRestoreCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);          /* No DMA error */
 		/* Done */
-		FDCEmulationCommand = FDCEMU_CMD_NULL;
-		/* Turn motor off */
-		FDC_TurnMotorOff();
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	}
 
@@ -759,9 +789,7 @@ static int FDC_UpdateSeekCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);          /* No DMA error */
 		/* Done */
-		FDCEmulationCommand = FDCEMU_CMD_NULL;
-		/* Turn motor off */
-		FDC_TurnMotorOff();
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	}
 
@@ -799,9 +827,7 @@ static int FDC_UpdateStepCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
-		FDCEmulationCommand = FDCEMU_CMD_NULL;
-		/* Turn motor off */
-		FDC_TurnMotorOff();
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	}
 
@@ -832,9 +858,7 @@ static int FDC_UpdateStepInCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
-		FDCEmulationCommand = FDCEMU_CMD_NULL;
-		/* Turn motor off */
-		FDC_TurnMotorOff();
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	}
 
@@ -871,9 +895,7 @@ static int FDC_UpdateStepOutCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
-		FDCEmulationCommand = FDCEMU_CMD_NULL;
-		/* Turn motor off */
-		FDC_TurnMotorOff();
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	}
 
@@ -918,9 +940,7 @@ static int FDC_UpdateReadSectorsCmd(void)
 			/* Set error */
 			FDC_SetDMAStatus(true);             /* DMA error */
 			/* Done */
-			FDCEmulationCommand = FDCEMU_CMD_NULL;
-			/* Turn motor off */
-			FDC_TurnMotorOff();
+			Delay_micro = FDC_CmdCompleteCommon();
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_COMPLETE:
@@ -929,9 +949,7 @@ static int FDC_UpdateReadSectorsCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);              /* No DMA error */
 		/* Done */
-		FDCEmulationCommand = FDCEMU_CMD_NULL;
-		/* Turn motor off */
-		FDC_TurnMotorOff();
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	}
 
@@ -978,9 +996,7 @@ static int FDC_UpdateWriteSectorsCmd(void)
 			/* Set error */
 			FDC_SetDMAStatus(true);             /* DMA error */
 			/* Done */
-			FDCEmulationCommand = FDCEMU_CMD_NULL;
-			/* Turn motor off */
-			FDC_TurnMotorOff();
+			Delay_micro = FDC_CmdCompleteCommon();
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_COMPLETE:
@@ -989,9 +1005,7 @@ static int FDC_UpdateWriteSectorsCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);              /* No DMA error */
 		/* Done */
-		FDCEmulationCommand = FDCEMU_CMD_NULL;
-		/* Turn motor off */
-		FDC_TurnMotorOff();
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	}
 
@@ -1021,9 +1035,7 @@ static int FDC_UpdateReadAddressCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
-		FDCEmulationCommand = FDCEMU_CMD_NULL;
-		/* Turn motor off */
-		FDC_TurnMotorOff();
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	}
 
@@ -1031,6 +1043,39 @@ static int FDC_UpdateReadAddressCmd(void)
 }
 
 
+
+/**
+ * Common to types I, II and III
+ *
+ * Start Motor if needed
+ */
+
+static int FDC_Check_MotorON ( Uint8 FDC_CR )
+{
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+bMotorOn = true;                  /* Turn motor on */
+
+	if ( ( ( FDC_CR & FDC_COMMAND_BIT_MOTOR_ON ) == 0 )				/* command wants motor on */
+	  && ( ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_MOTOR_ON ) == 0 ) )	/* motor on not enabled yet */
+	{
+		LOG_TRACE(TRACE_FDC, "fdc start motor VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );				/* set motor bit */
+		return FDC_DELAY_MOTOR_ON;						/* motor's delay */
+	}
+
+	/* Other cases : set bit in STR and don't add delay */
+	LOG_TRACE(TRACE_FDC, "fdc motor already on VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );
+	return 0;
+}
+
+	
+	
 /*-----------------------------------------------------------------------*/
 /**
  * Type I Commands
@@ -1053,6 +1098,8 @@ static int FDC_TypeI_Restore(void)
 	FDCEmulationCommand = FDCEMU_CMD_RESTORE;
 	FDCEmulationRunning = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
 
+	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
@@ -1072,6 +1119,8 @@ static int FDC_TypeI_Seek(void)
 	FDCEmulationCommand = FDCEMU_CMD_SEEK;
 	FDCEmulationRunning = FDCEMU_RUN_SEEK_TOTRACK;
 
+	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
@@ -1087,9 +1136,11 @@ static int FDC_TypeI_Step(void)
 	LOG_TRACE(TRACE_FDC, "fdc type I step %d VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDCStepDirection, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	/* Set emulation to step(same direction as last seek executed, eg 'FDCStepDirection') */
+	/* Set emulation to step (same direction as last seek executed, eg 'FDCStepDirection') */
 	FDCEmulationCommand = FDCEMU_CMD_STEP;
 	FDCEmulationRunning = FDCEMU_RUN_STEP_ONCE;
+
+	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
@@ -1111,6 +1162,8 @@ static int FDC_TypeI_StepIn(void)
 	FDCEmulationRunning = FDCEMU_RUN_STEPIN_ONCE;
 	FDCStepDirection = 1;                 /* Increment track*/
 
+	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
@@ -1130,6 +1183,8 @@ static int FDC_TypeI_StepOut(void)
 	FDCEmulationCommand = FDCEMU_CMD_STEPOUT;
 	FDCEmulationRunning = FDCEMU_RUN_STEPOUT_ONCE;
 	FDCStepDirection = -1;                /* Decrement track */
+
+	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
@@ -1159,6 +1214,8 @@ static int FDC_TypeII_ReadSector(void)
 	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
 	/* Set reading parameters */
 	FDC_SetReadWriteParameters(1);        /* Read in a single sector */
+
+	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_II_PREPARE;
@@ -1372,9 +1429,9 @@ static int FDC_ExecuteTypeICommands(void)
 
 	FDC_StepRate = FDCCommandRegister & 0x03;			/* keep bits 0 and 1 */
 
-	/* Signal motor on as we need to execute command */
-	FDC_TurnMotorOn();
-
+	/* Check if motor needs to be started and add possible delay */
+	Delay_micro += FDC_Check_MotorON ( FDCCommandRegister );
+	
 	return Delay_micro;
 }
 
@@ -1406,8 +1463,8 @@ static int FDC_ExecuteTypeIICommands(void)
 		break;
 	}
 
-	/* Signal motor on as we need to execute command */
-	FDC_TurnMotorOn();
+	/* Check if motor needs to be started and add possible delay */
+	Delay_micro += FDC_Check_MotorON ( FDCCommandRegister );
 
 	return Delay_micro;
 }
@@ -1437,8 +1494,8 @@ static int FDC_ExecuteTypeIIICommands(void)
 		break;
 	}
 
-	/* Signal motor on as we need to execute command */
-	FDC_TurnMotorOn();
+	/* Check if motor need to be started and add possible delay */
+	Delay_micro += FDC_Check_MotorON ( FDCCommandRegister );
 
 	return Delay_micro;
 }
