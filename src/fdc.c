@@ -1389,6 +1389,7 @@ static int FDC_TypeIII_WriteTrack(void)
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 {
+	int	Delay_micro;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -1400,10 +1401,10 @@ static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 	if (bCauseCPUInterrupt)
 		FDC_AcknowledgeInterrupt();
 
-	/* Reset FDC */
-	FDCEmulationCommand = FDCEMU_CMD_NULL;
-	FDCEmulationRunning = FDCEMU_RUN_NULL;
-	return FDC_DELAY_TYPE_IV_PREPARE;
+	/* Remove busy bit and stop the motor */
+	Delay_micro = FDC_CmdCompleteCommon();
+
+	return FDC_DELAY_TYPE_IV_PREPARE + Delay_micro;
 }
 
 
