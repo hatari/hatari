@@ -1587,8 +1587,16 @@ static void FDC_WriteCommandRegister(void)
 	LOG_TRACE(TRACE_FDC, "fdc write 8604 command=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  DiskControllerWord_ff8604wr, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
+	/* If fdc is busy, only 'Force Interrupt' is possible */
+	if ( ( ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY ) == 1 )
+		&& ( ( DiskControllerWord_ff8604wr & 0xf0 ) != 0xd0 ) )
+	{
+		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, command=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			DiskControllerWord_ff8604wr, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		return;
+	}
+
 	FDCCommandRegister = DiskControllerWord_ff8604wr;
-	/* And execute */
 	FDC_ExecuteCommand();
 }
 
