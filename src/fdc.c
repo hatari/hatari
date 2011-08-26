@@ -148,11 +148,14 @@ ACSI DMA and Floppy Disk Controller(FDC)
 /*-----------------------------------------------------------------------*/
 
 #define	FDC_STR_BIT_BUSY			0x01
-#define	FDC_STR_BIT_DRQ_INDEX			0x02
-#define	FDC_STR_BIT_LOST_DATA_TR00		0x04
+#define	FDC_STR_BIT_INDEX			0x02		/* type I */
+#define	FDC_STR_BIT_DRQ				0x02		/* type II and III */
+#define	FDC_STR_BIT_TR00			0x04		/* type I */
+#define	FDC_STR_BIT_LOST_DATA			0x04		/* type II and III */
 #define	FDC_STR_BIT_CRC_ERROR			0x08
 #define	FDC_STR_BIT_RNF				0x10
-#define	FDC_STR_BIT_SPIN_UP_RECORD_TYPE		0x20
+#define	FDC_STR_BIT_SPIN_UP			0x20		/* type I */
+#define	FDC_STR_BIT_RECORD_TYPE			0x20		/* type II and III */
 #define	FDC_STR_BIT_WPRT			0x40
 #define	FDC_STR_BIT_MOTOR_ON			0x80
 
@@ -706,7 +709,7 @@ static int FDC_UpdateMotorStop(void)
 	LOG_TRACE(TRACE_FDC, "fdc motor stopped VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON , 0 );		/* unset motor bit */
+	FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON | FDC_STR_BIT_SPIN_UP , 0 );	/* unset motor and spinup bits */
 bMotorOn = false;         /* Motor finally stopped */
 
 	FDCEmulationCommand = FDCEMU_CMD_NULL;			/* motor stopped, this is the last state */
@@ -721,6 +724,8 @@ bMotorOn = false;         /* Motor finally stopped */
 static int FDC_UpdateRestoreCmd(void)
 {
 	int	Delay_micro = 0;
+
+	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
 
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -760,6 +765,8 @@ static int FDC_UpdateRestoreCmd(void)
 static int FDC_UpdateSeekCmd(void)
 {
 	int	Delay_micro = 0;
+
+	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
 
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -805,6 +812,8 @@ static int FDC_UpdateStepCmd(void)
 {
 	int	Delay_micro = 0;
 
+	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
@@ -843,6 +852,8 @@ static int FDC_UpdateStepInCmd(void)
 {
 	int	Delay_micro = 0;
 
+	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
+
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
@@ -873,6 +884,8 @@ static int FDC_UpdateStepInCmd(void)
 static int FDC_UpdateStepOutCmd(void)
 {
 	int	Delay_micro = 0;
+
+	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
 
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
@@ -1098,7 +1111,7 @@ static int FDC_TypeI_Restore(void)
 	FDCEmulationCommand = FDCEMU_CMD_RESTORE;
 	FDCEmulationRunning = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
 
-	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
@@ -1119,7 +1132,7 @@ static int FDC_TypeI_Seek(void)
 	FDCEmulationCommand = FDCEMU_CMD_SEEK;
 	FDCEmulationRunning = FDCEMU_RUN_SEEK_TOTRACK;
 
-	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
@@ -1140,7 +1153,7 @@ static int FDC_TypeI_Step(void)
 	FDCEmulationCommand = FDCEMU_CMD_STEP;
 	FDCEmulationRunning = FDCEMU_RUN_STEP_ONCE;
 
-	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
@@ -1162,7 +1175,7 @@ static int FDC_TypeI_StepIn(void)
 	FDCEmulationRunning = FDCEMU_RUN_STEPIN_ONCE;
 	FDCStepDirection = 1;                 /* Increment track*/
 
-	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
@@ -1184,7 +1197,7 @@ static int FDC_TypeI_StepOut(void)
 	FDCEmulationRunning = FDCEMU_RUN_STEPOUT_ONCE;
 	FDCStepDirection = -1;                /* Decrement track */
 
-	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
@@ -1215,7 +1228,7 @@ static int FDC_TypeII_ReadSector(void)
 	/* Set reading parameters */
 	FDC_SetReadWriteParameters(1);        /* Read in a single sector */
 
-	FDC_Update_STR ( FDC_STR_BIT_DRQ_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_II_PREPARE;
