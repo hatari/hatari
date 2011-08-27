@@ -259,6 +259,8 @@ enum
 /* FIXME : Those timings should be improved by taking into account the 16 bytes DMA fifo and the time */
 /* it takes to reach the track/sector/address before really reading it */
 
+#define	FDC_PHYSICAL_MAX_TRACK		85			/* head can't go beyond 85 tracks */
+
 #define	FDC_BITRATE_STANDARD		250000			/* read/write speed in bits per sec */
 #define	FDC_RPM_STANDARD		300			/* 300 RPM or 5 spins per sec */
 #define	FDC_TRACK_BYTES_STANDARD	( ( FDC_BITRATE_STANDARD / 8 ) / ( FDC_RPM_STANDARD / 60 ) )	/* 6250 bytes */
@@ -286,6 +288,7 @@ enum
 
 #define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
 
+#define	FDC_STEP_RATE				( FDCCommandRegister & 0x03 )	/* keep bits 0 and 1 of the current type I command */
 
 static int FDC_StepRate_ms[] = { 2 , 3 , 5 , 6 };		/* controlled by bits 1 and 0 (r1/r0) in type I commands */
 
@@ -298,15 +301,16 @@ static Uint16 DiskControllerStatus_ff8604rd;                    /* 0xff8604 (rea
 Uint16 DMAModeControl_ff8606wr;                                 /* 0xff8606 (write) */
 static Uint16 DMAStatus_ff8606rd;                               /* 0xff8606 (read) */
 
-static Uint16 FDCCommandRegister;
-static Sint16 FDCTrackRegister, FDCSectorRegister, FDCDataRegister;
+static Uint16 FDCCommandRegister;			// FIXME NP : use Uint8 and remove "& 0xff"
+static Sint16 FDCTrackRegister, FDCSectorRegister, FDCDataRegister;		// FIXME NP : use Uint8 and remove "& 0xff"
 static int FDCEmulationCommand;                                 /* FDC emulation command currently being exceuted */
 static int FDCEmulationRunning;                                 /* Running command under above */
 static int FDCStepDirection;                                    /* +Track on 'Step' command */
 static bool bDMAWaiting;                                        /* Is DMA waiting to copy? */
 static int bMotorOn;                                            /* Is motor on? */ // FIXME NP use SR instead
 static int MotorSlowingCount;                                   /* Counter used to slow motor before stopping */	/* FIXME NP remove */
-static int FDC_StepRate;					/* Value of bits 0 and 1 for current Type I command */
+
+static Uint8 HeadTrack[ MAX_FLOPPYDRIVES ];			/* A: and B: */
 
 static short int nReadWriteTrack;                               /* Parameters used in sector read/writes */
 static short int nReadWriteSector;
@@ -340,6 +344,8 @@ static bool FDC_WriteSectorFromFloppy(void);
  */
 void FDC_Reset(void)
 {
+	int	i;
+
 	/* Clear out FDC registers */
 	DiskControllerStatus_ff8604rd = 0;
 	DiskControllerWord_ff8604wr = 0;
@@ -352,12 +358,15 @@ void FDC_Reset(void)
 	FDCDataRegister = 0;
 	FDCSectorCountRegister = 0;
 
-	FDCEmulationCommand = FDCEMU_CMD_NULL;        /* FDC emulation command currently being exceuted */
-	FDCEmulationRunning = FDCEMU_RUN_NULL;        /* Running command under above */
+	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
+		HeadTrack[ i ] = 0;			/* Set all drives to track 0 */
 
-	FDCStepDirection = 1;                         /* +Track on 'Step' command */
-	bDMAWaiting = false;                          /* No DMA waiting */
-	bMotorOn = false;                             /* Motor off */
+	FDCEmulationCommand = FDCEMU_CMD_NULL;		/* FDC emulation command currently being exceuted */
+	FDCEmulationRunning = FDCEMU_RUN_NULL;		/* Running command under above */
+
+	FDCStepDirection = 1;				/* +Track on 'Step' command */
+	bDMAWaiting = false;				/* No DMA waiting */
+	bMotorOn = false;				/* Motor off */
 }
 
 
@@ -574,7 +583,7 @@ void FDC_AcknowledgeInterrupt(void)
 static void FDC_SetReadWriteParameters(int nSectors)
 {
 	/* Copy read/write details so we can modify them */
-	nReadWriteTrack = FDCTrackRegister;
+	nReadWriteTrack = HeadTrack[ nReadWriteDev ]; //FDCTrackRegister;
 	nReadWriteSector = FDCSectorRegister;
 	nReadWriteSide = (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01;
 	nReadWriteSectors = nSectors;
@@ -701,6 +710,32 @@ static int FDC_CmdCompleteCommon(void)
 }
 
 
+
+/**
+ * Verify track after a type I command.
+ * The FDC will read the first ID field of the current track and will
+ * compare the track number in this ID field with the current Track Register.
+ * If they don't match, an error is set with the RNF bit.
+ * NOTE : in the case of Hatari when using ST/MSA images, the track is always the correct one,
+ * so the verify will always be good.
+ * This function could be improved to support other images format where logical track
+ * could be different from physical track (eg Pasti)
+ */
+
+static void FDC_VerifyTrack(void)
+{
+  /* In the case of Hatari when using ST/MSA images, the track is always the correct one */
+  /* This function could be improved to support other images format where logical track */
+  /* could be different from physical track (eg Pasti) */
+  FDC_Update_STR ( FDC_STR_BIT_RNF , 0 );			/* remove RNF bit */
+}
+
+
+
+/**
+ * When the motor really stops (2 secs after the last command), clear all related bits in SR
+ */
+
 static int FDC_UpdateMotorStop(void)
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -731,15 +766,26 @@ static int FDC_UpdateRestoreCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO:
-		/* Are we at track zero? */
-		if (FDCTrackRegister>0)
+		if ( FDCTrackRegister == 0 )				/* Track 0 not reached after 255 attempts ? */
+		{							/* (this should never happen in the case of Hatari) */
+			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
+			/* Acknowledge interrupt, move along there's nothing more to see */
+			FDC_AcknowledgeInterrupt();
+			/* Set error */
+			FDC_SetDMAStatus(true);				 /* DMA error */
+			/* Done */
+			Delay_micro = FDC_CmdCompleteCommon();
+		}
+
+		if ( HeadTrack[ nReadWriteDev ] != 0 )			/* Are we at track zero? */
 		{
-			FDCTrackRegister--;             /* Move towards track zero */
-			Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
+			FDCTrackRegister = ( FDCTrackRegister - 1 ) & 0xff;
+			HeadTrack[ nReadWriteDev ]--;			/* Move physical head */
+			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
 		}
 		else
 		{
-			FDCTrackRegister = 0;           /* We're there */
+			FDCTrackRegister = 0;				/* Update Track Register to 0 */
 			FDCEmulationRunning = FDCEMU_RUN_RESTORE_COMPLETE;
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		}
@@ -749,6 +795,9 @@ static int FDC_UpdateRestoreCmd(void)
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
 		FDC_SetDMAStatus(false);          /* No DMA error */
+
+		if ( FDCCommandRegister & FDC_COMMAND_BIT_VERIFY )
+			FDC_VerifyTrack();
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
@@ -772,29 +821,46 @@ static int FDC_UpdateSeekCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_SEEK_TOTRACK:
-//fprintf ( stderr , "seek %d\n" , FDCTrackRegister );
-		/* Are we at the selected track? */
-		if (FDCTrackRegister==FDCDataRegister)
+		if ( FDCTrackRegister == FDCDataRegister )		/* Are we at the selected track? */
 		{
 			FDCEmulationRunning = FDCEMU_RUN_SEEK_COMPLETE;
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		}
 		else
 		{
-			/* No, seek towards track */
-			if (FDCDataRegister<FDCTrackRegister)
-				FDCTrackRegister--;
+			if ( FDCDataRegister < FDCTrackRegister )	/* Set StepDirection to the correct value */
+				FDCStepDirection = -1;
 			else
-				FDCTrackRegister++;
-			Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
+				FDCStepDirection = 1;
+
+			/* Move head by one track depending on FDCStepDirection and update Track Register */
+			FDCTrackRegister = ( FDCTrackRegister + FDCStepDirection ) & 0xff;
+
+			if ( ( HeadTrack[ nReadWriteDev ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDCStepDirection == 1 ) )
+				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go after max track */
+
+			else if ( ( HeadTrack[ nReadWriteDev ] == 0 ) && ( FDCStepDirection == -1 ) )
+			{
+				FDCTrackRegister = 0;				/* If we reach track 0, we stop there */
+				FDCEmulationRunning = FDCEMU_RUN_SEEK_COMPLETE;
+				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			}
+
+			else
+			{
+				HeadTrack[ nReadWriteDev ] += FDCStepDirection;	/* Move physical head */
+				Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
+			}
 		}
 		break;
 	 case FDCEMU_RUN_SEEK_COMPLETE:
-//fprintf ( stderr , "seek complete %d\n" , FDCTrackRegister );
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
 		FDC_SetDMAStatus(false);          /* No DMA error */
+
+		if ( FDCCommandRegister & FDC_COMMAND_BIT_VERIFY )
+			FDC_VerifyTrack();
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
@@ -818,15 +884,21 @@ static int FDC_UpdateStepCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_STEP_ONCE:
-		/* Move head by one track in same direction as last step */
-		FDCTrackRegister += FDCStepDirection;
-		if (FDCTrackRegister<0)             /* Limit to stop */
-		{
-			FDCTrackRegister = 0;
+		/* Move head by one track depending on FDCStepDirection */
+		if ( FDCCommandRegister & FDC_COMMAND_BIT_UPDATE_TRACK )
+			FDCTrackRegister = ( FDCTrackRegister + FDCStepDirection ) & 0xff;
+
+		if ( ( HeadTrack[ nReadWriteDev ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDCStepDirection == 1 ) )
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go after max track */
+
+		else if ( ( HeadTrack[ nReadWriteDev ] == 0 ) && ( FDCStepDirection == -1 ) )
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go before track 0 */
-		}
+
 		else
-			Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
+		{
+			HeadTrack[ nReadWriteDev ] += FDCStepDirection;	/* Move physical head */
+			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
+		}
 
 		FDCEmulationRunning = FDCEMU_RUN_STEP_COMPLETE;
 		break;
@@ -835,6 +907,9 @@ static int FDC_UpdateStepCmd(void)
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
 		FDC_SetDMAStatus(false);            /* No DMA error */
+
+		if ( FDCCommandRegister & FDC_COMMAND_BIT_VERIFY )
+			FDC_VerifyTrack();
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
@@ -858,16 +933,27 @@ static int FDC_UpdateStepInCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_STEPIN_ONCE:
-		FDCTrackRegister++;
+		if ( FDCCommandRegister & FDC_COMMAND_BIT_UPDATE_TRACK )
+			FDCTrackRegister = ( FDCTrackRegister + 1 ) & 0xff;
+
+		if ( HeadTrack[ nReadWriteDev ] == FDC_PHYSICAL_MAX_TRACK )
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go after max track */
+		else
+		{
+			HeadTrack[ nReadWriteDev ]++;			/* Move physical head */
+			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
+		}
 
 		FDCEmulationRunning = FDCEMU_RUN_STEPIN_COMPLETE;
-		Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
 		break;
 	 case FDCEMU_RUN_STEPIN_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
 		FDC_SetDMAStatus(false);            /* No DMA error */
+
+		if ( FDCCommandRegister & FDC_COMMAND_BIT_VERIFY )
+			FDC_VerifyTrack();
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
@@ -891,14 +977,16 @@ static int FDC_UpdateStepOutCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_STEPOUT_ONCE:
-		FDCTrackRegister--;
-		if (FDCTrackRegister < 0)           /* Limit to stop */
-		{
-			FDCTrackRegister = 0;
+		if ( FDCCommandRegister & FDC_COMMAND_BIT_UPDATE_TRACK )
+			FDCTrackRegister = ( FDCTrackRegister - 1 ) & 0xff;
+
+		if ( HeadTrack[ nReadWriteDev ] == 0 )
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go before track 0 */
-		}
 		else
-			Delay_micro = FDC_StepRate_ms[ FDC_StepRate ] * 1000;
+		{
+			HeadTrack[ nReadWriteDev ]--;			/* Move physical head */
+			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
+		}
 
 		FDCEmulationRunning = FDCEMU_RUN_STEPOUT_COMPLETE;
 		break;
@@ -907,6 +995,9 @@ static int FDC_UpdateStepOutCmd(void)
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
 		FDC_SetDMAStatus(false);            /* No DMA error */
+
+		if ( FDCCommandRegister & FDC_COMMAND_BIT_VERIFY )
+			FDC_VerifyTrack();
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
@@ -1113,6 +1204,13 @@ static int FDC_TypeI_Restore(void)
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
+	/* The FDC will try 255 times to reach track 0 using step out signals */
+	/* If track 0 signal is not detected after 255 attempts, the command is interrupted */
+	/* and FDC_STR_BIT_RNF is set in the Status Register. */
+	/* This will never happen in the case of Hatari, because the physical track can't go */
+	/* beyond track FDC_PHYSICAL_MAX_TRACK (=85) */
+	FDCTrackRegister = 0xff;				
+
 	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
@@ -1173,7 +1271,7 @@ static int FDC_TypeI_StepIn(void)
 	/* Set emulation to step in(Set 'FDCStepDirection') */
 	FDCEmulationCommand = FDCEMU_CMD_STEPIN;
 	FDCEmulationRunning = FDCEMU_RUN_STEPIN_ONCE;
-	FDCStepDirection = 1;                 /* Increment track*/
+	FDCStepDirection = 1;					/* Increment track*/
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
@@ -1195,7 +1293,7 @@ static int FDC_TypeI_StepOut(void)
 	/* Set emulation to step out(Set 'FDCStepDirection') */
 	FDCEmulationCommand = FDCEMU_CMD_STEPOUT;
 	FDCEmulationRunning = FDCEMU_RUN_STEPOUT_ONCE;
-	FDCStepDirection = -1;                /* Decrement track */
+	FDCStepDirection = -1;					/* Decrement track */
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
@@ -1440,8 +1538,6 @@ static int FDC_ExecuteTypeICommands(void)
 		Delay_micro = FDC_TypeI_StepOut();
 		break;
 	}
-
-	FDC_StepRate = FDCCommandRegister & 0x03;			/* keep bits 0 and 1 */
 
 	/* Check if motor needs to be started and add possible delay */
 	Delay_micro += FDC_Check_MotorON ( FDCCommandRegister );
