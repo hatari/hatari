@@ -161,6 +161,7 @@ ACSI DMA and Floppy Disk Controller(FDC)
 
 
 #define	FDC_COMMAND_BIT_VERIFY			(1<<2)		/* 0=verify after type I, 1=no verify after type I */
+#define	FDC_COMMAND_BIT_HEAD_LOAD		(1<<2)		/* for type II/III 0=no extra delay, 1=add 30 ms delay to set the head */
 #define	FDC_COMMAND_BIT_MOTOR_ON		(1<<3)		/* 0=enable motor test, 1=disable motor test */
 #define	FDC_COMMAND_BIT_UPDATE_TRACK		(1<<4)		/* 0=don't update TR after type I, 1=update TR after type I */
 #define	FDC_COMMAND_BIT_MULTIPLE_SECTOR		(1<<4)		/* 0=read/write only 1 sector, 1=read/write many sectors */
@@ -231,6 +232,7 @@ enum
 enum
 {
 	FDCEMU_RUN_READSECTORS_READDATA,
+	FDCEMU_RUN_READSECTORS_RNF,
 	FDCEMU_RUN_READSECTORS_COMPLETE
 };
 
@@ -271,6 +273,9 @@ enum
 #define	FDC_DELAY_MOTOR_ON			( 1000000.L * 6 / ( FDC_RPM_STANDARD / 60 ) )	/* 6 spins to reach correct speed */
 #define	FDC_DELAY_MOTOR_OFF			( 1000000.L * 2 )	/* Turn off motor 2 sec after the last command */
 
+#define	FDC_DELAY_HEAD_LOAD			( 30 * 1000 )	/* Additionnal 30 ms delay to load the head in type II/III */
+
+#define	FDC_DELAY_RNF				( 1000000.L * 5 / ( FDC_RPM_STANDARD / 60 ) )	/* 5 spins to set RNF */
 
 #define	FDC_DELAY_TYPE_I_PREPARE		100		/* Types I commands take at least 0.1 ms to execute */
 								/* (~800 cpu cycles @ 8 Mhz). FIXME : this was not measured, it's */
@@ -306,7 +311,7 @@ static Sint16 FDCTrackRegister, FDCSectorRegister, FDCDataRegister;		// FIXME NP
 static int FDCEmulationCommand;                                 /* FDC emulation command currently being exceuted */
 static int FDCEmulationRunning;                                 /* Running command under above */
 static int FDCStepDirection;                                    /* +Track on 'Step' command */
-static bool bDMAWaiting;                                        /* Is DMA waiting to copy? */
+static bool bDMAWaiting;                                        /* Is DMA waiting to copy? */	// FIXME NP : remove
 static int bMotorOn;                                            /* Is motor on? */ // FIXME NP use SR instead
 static int MotorSlowingCount;                                   /* Counter used to slow motor before stopping */	/* FIXME NP remove */
 
@@ -365,7 +370,6 @@ void FDC_Reset(void)
 	FDCEmulationRunning = FDCEMU_RUN_NULL;		/* Running command under above */
 
 	FDCStepDirection = 1;				/* +Track on 'Step' command */
-	bDMAWaiting = false;				/* No DMA waiting */
 	bMotorOn = false;				/* Motor off */
 }
 
@@ -389,9 +393,9 @@ void FDC_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&FDCEmulationCommand, sizeof(FDCEmulationCommand));
 	MemorySnapShot_Store(&FDCEmulationRunning, sizeof(FDCEmulationRunning));
 	MemorySnapShot_Store(&FDCStepDirection, sizeof(FDCStepDirection));
-	MemorySnapShot_Store(&bDMAWaiting, sizeof(bDMAWaiting));
-	MemorySnapShot_Store(&bMotorOn, sizeof(bMotorOn));
-	MemorySnapShot_Store(&MotorSlowingCount, sizeof(MotorSlowingCount));
+	MemorySnapShot_Store(&bDMAWaiting, sizeof(bDMAWaiting));			// FIXME NP : remove
+	MemorySnapShot_Store(&bMotorOn, sizeof(bMotorOn));				// FIXME NP : remove
+	MemorySnapShot_Store(&MotorSlowingCount, sizeof(MotorSlowingCount));		// FIXME NP : remove
 	MemorySnapShot_Store(&nReadWriteTrack, sizeof(nReadWriteTrack));
 	MemorySnapShot_Store(&nReadWriteSector, sizeof(nReadWriteSector));
 	MemorySnapShot_Store(&nReadWriteSide, sizeof(nReadWriteSide));
@@ -485,7 +489,7 @@ void FDC_DmaStatus_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Copy data from DMA workspace into ST RAM
+ * Copy data from DMA workspace into ST RAM and update DMA address
  */
 static void FDC_DMADataFromFloppy(void)
 {
@@ -632,15 +636,6 @@ void FDC_InterruptHandler_Update(void)
 	int	Delay_micro = 0;
 
 	CycInt_AcknowledgeInterrupt();
-
-	/* Do we have a DMA ready to copy? */
-	if (bDMAWaiting)
-	{
-		/* Yes, copy it */
-		FDC_DMADataFromFloppy();
-		/* Signal done */
-		bDMAWaiting = false;
-	}
 
 	/* Is FDC active? */
 	if (FDCEmulationCommand!=FDCEMU_CMD_NULL)
@@ -1014,38 +1009,51 @@ static int FDC_UpdateStepOutCmd(void)
 static int FDC_UpdateReadSectorsCmd(void)
 {
 	int	Delay_micro = 0;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
 
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
 		/* Read in a sector */
-		if (FDC_ReadSectorFromFloppy())         /* Read a single sector through DMA */
+		if ( FDC_ReadSectorFromFloppy() )			/* Read a single sector into temporary buffer */
 		{
-			FDCSectorCountRegister--;           /* Decrement FDCSectorCount */
-			if (FDCSectorCountRegister <= 0)
-				FDCSectorCountRegister = 0;
+			if ( FDCSectorCountRegister > 0 )		/* Transfer data to RAM only if DMA sector > 0 */
+			{
+				FDC_DMADataFromFloppy();		/* Copy from DMA buffer to ST RAM */
+				FDCSectorCountRegister--;		/* One block/sector of 512 bytes was copied by DMA */
+			}
+			else
+				FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );	/* If DMA is OFF, data are lost */
 
-			/* Have we finished? */
-			nReadWriteSectors--;
-			if (nReadWriteSectors<=0)
+			if ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
+				FDCSectorRegister++;			/* Try to read next sector and set RNF if not possible */
+			else						/* Multi=0, stop here with no error */
 			{
 				FDCEmulationRunning = FDCEMU_RUN_READSECTORS_COMPLETE;
-				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 			}
-			Delay_micro = FDC_DELAY_READ_SECTOR_STANDARD;
-
-			bDMAWaiting = true;
+			Delay_micro = FDC_DELAY_READ_SECTOR_STANDARD;	/* Add delay for the sector we just read */
 		}
-		else
+		else							/* Sector FDCSectorRegister was not found */
 		{
-			/* Acknowledge interrupt, move along there's nothing more to see */
-			FDC_AcknowledgeInterrupt();
-			/* Set error */
-			FDC_SetDMAStatus(true);             /* DMA error */
-			/* Done */
-			Delay_micro = FDC_CmdCompleteCommon();
+			FDCEmulationRunning = FDCEMU_RUN_READSECTORS_RNF;
+			Delay_micro = FDC_DELAY_RNF;
 		}
+		break;
+	 case FDCEMU_RUN_READSECTORS_RNF:
+		LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			  FDCSectorRegister , HeadTrack[ nReadWriteDev ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(true);             /* DMA error */
+		/* Done */
+		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	 case FDCEMU_RUN_READSECTORS_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
@@ -1313,66 +1321,58 @@ static int FDC_TypeI_StepOut(void)
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeII_ReadSector(void)
 {
+	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type II read sector %d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDCSectorRegister, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type II read sector sect=0x%x multi=%s dmacount=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDCSectorRegister, ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDCSectorCountRegister ,
+		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	/* Set emulation to read a single sector */
+	/* Set emulation to read sector(s) */
 	FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
 	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
 	/* Set reading parameters */
-	FDC_SetReadWriteParameters(1);        /* Read in a single sector */
+	FDC_SetReadWriteParameters(1);					/* Read in a single sector */
 
-	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
+	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
+		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
 
+	if ( FDCCommandRegister & FDC_COMMAND_BIT_HEAD_LOAD )
+		Delay_micro = FDC_DELAY_HEAD_LOAD;
+	
 	FDC_SetDiskControllerStatus();
-	return FDC_DELAY_TYPE_II_PREPARE;
-}
-
-
-/*-----------------------------------------------------------------------*/
-static int FDC_TypeII_ReadMultipleSectors(void)
-{
-	int	FrameCycles, HblCounterVideo, LineCycles;
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-	LOG_TRACE(TRACE_FDC, "fdc type II read multi sectors %d count %d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDCSectorRegister, FDCSectorCountRegister, nVBLs,
-		  FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-
-	/* Set emulation to read sectors */
-	FDCEmulationCommand = FDCEMU_CMD_READMULTIPLESECTORS;
-	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
-	/* Set reading parameters */
-	FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Read multiple sectors */
-
-	FDC_SetDiskControllerStatus();
-	return FDC_DELAY_TYPE_II_PREPARE;
+	return FDC_DELAY_TYPE_II_PREPARE + Delay_micro;
 }
 
 
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeII_WriteSector(void)
 {
+	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type II write sector %d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDCSectorRegister, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type II write sector %d multi=%s VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDCSectorRegister, ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" ,
+		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	/* Set emulation to write a single sector */
+	/* Set emulation to write a sector(s) */
 	FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
 	FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
 	/* Set writing parameters */
 	FDC_SetReadWriteParameters(1);                        /* Write out a single sector */
 
+	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
+		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
+
+	if ( FDCCommandRegister & FDC_COMMAND_BIT_HEAD_LOAD )
+		Delay_micro = FDC_DELAY_HEAD_LOAD;
+	
 	FDC_SetDiskControllerStatus();
-	return FDC_DELAY_TYPE_II_PREPARE;
+	return FDC_DELAY_TYPE_II_PREPARE + Delay_micro;
 }
 
 
@@ -1512,7 +1512,7 @@ static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
  */
 static int FDC_ExecuteTypeICommands(void)
 {
-	int	Delay_micro;
+	int	Delay_micro = 0;
 
 	MFP_GPIP |= 0x20;
 
@@ -1552,18 +1552,16 @@ static int FDC_ExecuteTypeICommands(void)
  */
 static int FDC_ExecuteTypeIICommands(void)
 {
-	int	Delay_micro;
+	int	Delay_micro = 0;
 
 	MFP_GPIP |= 0x20;
 
 	/* Check Type II Command */
 	switch(FDCCommandRegister&0xf0)
 	{
-	 case 0x80:             /* Read Sector */
+	 case 0x80:             /* Read Sector multi=0*/
+	 case 0x90:             /* Read Sectors multi=1 */
 		Delay_micro = FDC_TypeII_ReadSector();
-		break;
-	 case 0x90:             /* Read Sectors */
-		Delay_micro = FDC_TypeII_ReadMultipleSectors();
 		break;
 	 case 0xa0:             /* Write Sector */
 		Delay_micro = FDC_TypeII_WriteSector();
@@ -1586,7 +1584,7 @@ static int FDC_ExecuteTypeIICommands(void)
  */
 static int FDC_ExecuteTypeIIICommands(void)
 {
-	int	Delay_micro;
+	int	Delay_micro = 0;
 
 	MFP_GPIP |= 0x20;
 
