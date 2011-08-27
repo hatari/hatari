@@ -1589,7 +1589,7 @@ static void FDC_WriteCommandRegister(void)
 		  DiskControllerWord_ff8604wr, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* If fdc is busy, only 'Force Interrupt' is possible */
-	if ( ( ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY ) == 1 )
+	if ( ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY )
 		&& ( ( DiskControllerWord_ff8604wr & 0xf0 ) != 0xd0 ) )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, command=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
@@ -1615,6 +1615,14 @@ static void FDC_WriteTrackRegister(void)
 	LOG_TRACE(TRACE_FDC, "fdc write 8604 track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		DiskControllerWord_ff8604wr , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
+	/* If fdc is busy, Track Register can't be modified */
+	if ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY )
+	{
+		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, track=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			DiskControllerWord_ff8604wr, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		return;
+	}
+
 	FDCTrackRegister = DiskControllerWord_ff8604wr & 0xff;	/* 0...79 */
 }
 
@@ -1631,6 +1639,14 @@ static void FDC_WriteSectorRegister(void)
 
 	LOG_TRACE(TRACE_FDC, "fdc write 8604 sector=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		DiskControllerWord_ff8604wr , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+
+	/* If fdc is busy, Sector Register can't be modified */
+	if ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY )
+	{
+		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, sector=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			DiskControllerWord_ff8604wr, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		return;
+	}
 
 	FDCSectorRegister = DiskControllerWord_ff8604wr & 0xff;	/* 1,2,3..... */
 }
