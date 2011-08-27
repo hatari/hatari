@@ -764,6 +764,7 @@ static int FDC_UpdateRestoreCmd(void)
 		if ( FDCTrackRegister == 0 )				/* Track 0 not reached after 255 attempts ? */
 		{							/* (this should never happen in the case of Hatari) */
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
+			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			/* Acknowledge interrupt, move along there's nothing more to see */
 			FDC_AcknowledgeInterrupt();
 			/* Set error */
@@ -772,14 +773,16 @@ static int FDC_UpdateRestoreCmd(void)
 			Delay_micro = FDC_CmdCompleteCommon();
 		}
 
-		if ( HeadTrack[ nReadWriteDev ] != 0 )			/* Are we at track zero? */
+		if ( HeadTrack[ nReadWriteDev ] != 0 )			/* Are we at track zero ? */
 		{
+			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			FDCTrackRegister = ( FDCTrackRegister - 1 ) & 0xff;
 			HeadTrack[ nReadWriteDev ]--;			/* Move physical head */
 			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
 		}
 		else
 		{
+			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 			FDCTrackRegister = 0;				/* Update Track Register to 0 */
 			FDCEmulationRunning = FDCEMU_RUN_RESTORE_COMPLETE;
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
@@ -816,7 +819,7 @@ static int FDC_UpdateSeekCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_SEEK_TOTRACK:
-		if ( FDCTrackRegister == FDCDataRegister )		/* Are we at the selected track? */
+		if ( FDCTrackRegister == FDCDataRegister )		/* Are we at the selected track ? */
 		{
 			FDCEmulationRunning = FDCEMU_RUN_SEEK_COMPLETE;
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
@@ -847,6 +850,12 @@ static int FDC_UpdateSeekCmd(void)
 				Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
 			}
 		}
+
+		if ( HeadTrack[ nReadWriteDev ] == 0 )
+			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+		else
+			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
+
 		break;
 	 case FDCEMU_RUN_SEEK_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
@@ -895,6 +904,11 @@ static int FDC_UpdateStepCmd(void)
 			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
 		}
 
+		if ( HeadTrack[ nReadWriteDev ] == 0 )
+			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+		else
+			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
+
 		FDCEmulationRunning = FDCEMU_RUN_STEP_COMPLETE;
 		break;
 	 case FDCEMU_RUN_STEP_COMPLETE:
@@ -939,6 +953,11 @@ static int FDC_UpdateStepInCmd(void)
 			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
 		}
 
+		if ( HeadTrack[ nReadWriteDev ] == 0 )
+			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+		else
+			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
+
 		FDCEmulationRunning = FDCEMU_RUN_STEPIN_COMPLETE;
 		break;
 	 case FDCEMU_RUN_STEPIN_COMPLETE:
@@ -982,6 +1001,11 @@ static int FDC_UpdateStepOutCmd(void)
 			HeadTrack[ nReadWriteDev ]--;			/* Move physical head */
 			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
 		}
+
+		if ( HeadTrack[ nReadWriteDev ] == 0 )
+			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+		else
+			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 
 		FDCEmulationRunning = FDCEMU_RUN_STEPOUT_COMPLETE;
 		break;
