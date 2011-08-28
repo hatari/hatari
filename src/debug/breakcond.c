@@ -327,6 +327,7 @@ static void BreakCond_ShowTracked(bc_condition_t *condition, int count)
  */
 static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char *name)
 {
+	bool for_dsp;
 	int i;
 	
 	for (i = 0; i < count; bp++, i++) {
@@ -343,9 +344,16 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
 				i+1, name, bp->hits);
 
+			for_dsp = (bp-i == BreakPointsDsp);
+			if (for_dsp) {
+				History_Mark(REASON_DSP_BREAKPOINT);
+			} else {
+				History_Mark(REASON_CPU_BREAKPOINT);
+			}
 			BreakCond_Print(bp);
+
 			if (bp->options.once) {
-				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
+				BreakCond_Remove(i+1, for_dsp);
 			}
 			if (bp->options.lock) {
 				DebugCpu_InitSession();
@@ -356,7 +364,6 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 				DebugUI_ParseFile(bp->options.filename);
 			}
 			if (bp->options.trace) {
-				History_Mark(REASON_TRACE_BREAKPOINT);
 				return 0;
 			} else {
 				/* indexes for BreakCond_Remove() start from 1 */

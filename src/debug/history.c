@@ -41,8 +41,6 @@ typedef struct {
 static struct {
 	unsigned idx;     /* index to current history item */
 	unsigned count;   /* how many items of history are collected */
-	Uint16 dsp_pc;    /* last CPU PC position */
-	Uint32 cpu_pc;    /* last DSP PC position */
 	hist_item_t item[HISTORY_ITEMS];  /* ring-buffer */
 } History;
 
@@ -107,7 +105,6 @@ void History_AddCpu(void)
 	History_Advance();
 	History.item[History.idx].for_dsp = false;
 	History.item[History.idx].pc.cpu = pc;
-	History.cpu_pc = pc;
 }
 
 /**
@@ -120,7 +117,6 @@ void History_AddDsp(void)
 	History_Advance();
 	History.item[History.idx].for_dsp = true;
 	History.item[History.idx].pc.dsp = pc;
-	History.dsp_pc = pc;
 }
 
 /**
@@ -156,6 +152,7 @@ void History_Show(Uint32 count)
 	}
 
 	i = History.idx;
+	show_all = false;
 	if (History.item[i].shown) {
 		/* even last item already shown, show all again */
 		show_all = true;
@@ -171,6 +168,8 @@ void History_Show(Uint32 count)
 		if (History.item[i].shown && !show_all) {
 			continue;
 		}
+		History.item[i].shown = true;
+
 		if (History.item[i].for_dsp) {
 			Uint16 pc = History.item[i].pc.dsp;
 			DSP_DisasmAddress(pc, pc);
