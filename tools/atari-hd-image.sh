@@ -1,16 +1,12 @@
-#!/bin/bash
-# script for creating a compatible DOS HD image for Hatari
-# with a single FAT16 partition of given size
-#
-# requires bash as other shells (like dash) don't always interpret
-# the DOS Master Boot Record checksum octal values given to
-# "echo" correctly (can be checked with "od -t o1 $diskfile").
+#!/bin/sh
+# script for creating a compatible DOS HD image for Hatari with
+# a single FAT16 partition of given size, with given contents
 
 # defaults for disk attributes
 diskfile=hd.img   # HD image filename
 partname=DOS      # partition name
 
-# no args or first arg has non-digit characters
+# no args or first arg has non-digit characters?
 if [ $# -lt 1 ] || [ \! -z "$(echo $1|tr -d 0-9)" ]; then
 	name=${0##*/}
 	echo
@@ -37,8 +33,8 @@ PATH=/sbin:$PATH
 export PATH
 
 # check tools
-if [ -z $(which sfdisk) ] || [ -z $(which mkdosfs) ]; then
-	echo "ERROR: either sfdisk or mkdosfs missing!"
+if [ -z $(which mkdosfs) ] || [ -z $(which python) ]; then
+	echo "ERROR: either mkdosfs or python tool missing!"
 	exit 1
 fi
 
@@ -51,15 +47,16 @@ if [ $1 -gt 256 ]; then
 	echo "ERROR: EmuTOS supports only partitions up to 256 (MB)."
 	exit 1
 fi
-# disk geometry
-cylinders=$((4*$1))	# 16*32*512 is 1/4MB
-diskheads=16
-tracksectors=32		# same as used by mkdosfs
-sectorsize=512
-partsize=$(($cylinders*$diskheads*$tracksectors*$sectorsize))
 
-# counts in sectors with correct disk geometry
-sfdisk="sfdisk -uS -C $cylinders -H $diskheads -S $tracksectors"
+# disk geometry
+skip=0            # alignment / "padding" sectors between MBR before partition
+diskheads=16
+tracksectors=32	  # same as used by mkdosfs
+sectorsize=512
+
+# partition size in sectors:
+# 16*32*512 is 1/4MB -> multiply by 4 to get number of required sectors
+partsectors=$((4*$1*$diskheads*$tracksectors))
 
 # check optional arguments
 if [ \! -z $2 ]; then
@@ -108,44 +105,95 @@ trap exit_cleanup EXIT
 
 echo
 step=1
-echo "$step) Creating $1MB sparse disk image..."
-echo "dd if=/dev/zero of=$diskfile bs=1 count=0 seek=$((512+partsize))"
-dd if=/dev/zero of=$diskfile bs=$((512+partsize)) count=1
+echo "$step) Creating DOS Master Boot Record / partition table..."
+# See:
+# - http://en.wikipedia.org/wiki/Master_boot_record
+# - http://en.wikipedia.org/wiki/Cylinder-head-sector
+# - http://en.wikipedia.org/wiki/File_Allocation_Table#Boot_Sector
+# For DOS MBR, the values are little endian.
+# -----------
+python << EOF
+#!/usr/bin/env python
+mbr = bytearray(512)
 
-echo
-step=$(($step+1))
-echo "$step) Creating DOS Master Boot Record partition table..."
+def set_long(idx, value):
+    mbr[idx+0] = value & 0xff
+    mbr[idx+1] = value >> 8 & 0xff
+    mbr[idx+2] = value >> 16 & 0xff
+    mbr[idx+3] = value >> 24
 
-echo "Add DOS MBR signature needed by sfdisk:"
-echo -e "\0125\0252" | dd of=$diskfile bs=1 seek=510 count=2
+def set_word(idx, value):
+    mbr[idx] = value & 0xff
+    mbr[idx+1] = value >> 8 & 0xff
 
-echo "Add partition table to MBR with single FAT16 partition:"
-clusters=$(($partsize/1024))
-if [ $clusters -le 32765 ]; then
-	fatbits=16
-	parttype="0x4"
-else
-	fatbits=16
-	parttype="0x6"
-fi
-echo "Using FAT$fatbits partition type $parttype"
-echo "$sfdisk --no-reread $diskfile: ,,$parttype,*"
-$sfdisk --no-reread $diskfile << EOF
-,,$parttype,*
+def set_CHS(idx, values):
+    c, h, s = values
+    print "CHS: %3d,%3d,%3d @ $%x" % (c,h,s,idx)
+    mbr[idx] = h
+    mbr[idx+1] = (s & 0x3F) | ((c >> 2) & 0xC0)
+    mbr[idx+2] = c & 0xFF
+
+def LBA2CHS(lba):
+    c = lba / ($tracksectors * $diskheads)
+    h = (lba / $tracksectors) % $diskheads
+    s = (lba % $tracksectors) + 1
+    return (c,h,s)
+
+# disk size
+sectors = 1 + $skip + $partsectors
+if sectors < 65536:
+    set_word(0x13, sectors)
+    set_long(0x20, sectors)
+    parttype=0x4
+else:
+    set_long(0x20, sectors)
+    parttype=0x6
+
+# reserved sectors = MBR
+mbr[0x0E] = 1
+
+# CHS information
+set_word(0x0B, $sectorsize)
+mbr[0x0D] = 2 # sectors / cluster
+set_word(0x18, $tracksectors)
+set_word(0x1A, $diskheads)
+  
+# non-removable disk
+mbr[0x15] = 0xF8
+mbr[0x24] = 0x80
+
+# partition size in sectors
+partsectors = $partsectors - 1
+# first partition takes all
+offset = 0x1BE
+mbr[offset] = 0x80 # bootable
+mbr[offset+4] = parttype
+# partition start & sector count in LBA
+set_long(offset + 0x08, 1)
+set_long(offset + 0x0C, partsectors)
+# partition start & end in CHS
+set_CHS(offset + 1, LBA2CHS(1))
+set_CHS(offset + 5, LBA2CHS(partsectors))
+# 3 last partitions are empty
+for i in (1,2,3):
+    offset += 0x10
+    set_long(offset + 0x08, partsectors+1)
+    set_long(offset + 0x0C, 0)
+    set_CHS(offset + 1, LBA2CHS(partsectors+1))
+    set_CHS(offset + 5, LBA2CHS(partsectors))
+
+# MBR signature
+mbr[0x1FE] = 0x55
+mbr[0x1FF] = 0xAA
+
+open("$diskfile", "wb").write(bytes(mbr))
 EOF
-if [ $? -ne 0 ]; then
-	error="'sfdisk' failed."
-	exit 2
-fi
+# -----------
+od -t x1 $diskfile
 
 echo
 step=$(($step+1))
-echo "$step) Creating Atari TOS compatible DOS partition..."
-sectors=$($sfdisk -l $diskfile|awk '/\*/{print $5}')
-if [ -z "$sectors" ] || [ $sectors -eq 0 ]; then
-	error="couldn't get partition size information."
-	exit 2
-fi
+echo "$step) Creating an Atari TOS compatible DOS partition..."
 # mkdosfs keeps the sector count below 32765 when -A is used by increasing
 # the logical sector size (this is for TOS compatibility, -A guarantees
 # also 2 sectors / cluster and Atari serial number etc).  Mtools barfs
@@ -153,22 +201,21 @@ fi
 # suitable cluster count & corresponding track size and align (decrease)
 # the file system sector count accordingly.
 tracksize=32
-clustertmp=$((sectors/2))
-echo "Sectors: $sectors, sectors/track: $tracksize, clusters: $clustertmp"
+clustertmp=$((partsectors/2))
+echo "Sectors: $partsectors, sectors/track: $tracksize, clusters: $clustertmp"
 while [ $clustertmp -gt 32765 ]; do
 	clustertmp=$((clustertmp/2))
 	tracksize=$(($tracksize*2))
 	echo "Doubling sector size as >32765 clusters -> $clustertmp clusters"
 done
-origsectors=$sectors
-sectors=$(($sectors/$tracksize))
+sectors=$(($partsectors/$tracksize))
 sectors=$(($sectors*$tracksize))
 kilobytes=$(($sectors/2))
-if [ $sectors -ne $origsectors ]; then
-	echo "Align sector count with clusters/sectors/track: $origsectors -> $sectors ($kilobytes kB)"
+if [ $sectors -ne $partsectors ]; then
+	echo "Align sector count with clusters/sectors/track: $partsectors -> $sectors ($kilobytes kB)"
 fi
-echo "mkdosfs -A -F $fatbits -n $partname -C $tmppart $kilobytes"
-mkdosfs -A -n $partname -C $tmppart $kilobytes
+echo "mkdosfs -A -F 16 -n $partname -C $tmppart $kilobytes"
+mkdosfs -A -F 16 -n $partname -C $tmppart $kilobytes
 
 if [ \! -z $contentdir ]; then
 	echo
@@ -187,13 +234,8 @@ echo
 step=$(($step+1))
 # copy the partition into disk
 echo "$step) Copying the partition to disk image..."
-start=$($sfdisk -l $diskfile|awk '/\*/{print $3}')
-if [ -z "$sectors" ] || [ $sectors -eq 0 ]; then
-	error="couldn't get partition start information."
-	exit 2
-fi
-echo "dd if=$tmppart of=$diskfile bs=512 seek=$start count=$sectors"
-dd if=$tmppart of=$diskfile bs=512 seek=$start count=$sectors
+echo "dd if=$tmppart of=$diskfile bs=512 seek=$((1+$skip)) count=$sectors"
+dd if=$tmppart of=$diskfile bs=512 seek=$((1+$skip)) count=$sectors
 
 step=$(($step+1))
 # cleanup is done by exit_cleanup() trap
