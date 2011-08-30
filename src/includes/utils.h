@@ -10,10 +10,15 @@
 #include <SDL_types.h>
 
 
-#define CRC32_POLY      0x04c11db7      /* IEEE 802.3 recommandation */
+#define CRC32_POLY	0x04c11db7	/* IEEE 802.3 recommandation */
 
 extern void    crc32_reset ( Uint32 *crc );
 extern void    crc32_add_byte ( Uint32 *crc , Uint8 c );
+
+#define CRC16_POLY	0x1021		/* CCITT */
+
+extern void    crc16_reset ( Uint16 *crc );
+extern void    crc16_add_byte ( Uint16 *crc , Uint8 c );
 
 
 #endif		/* HATARI_UTILS_H */
