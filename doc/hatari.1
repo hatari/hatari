@@ -199,8 +199,13 @@ as it disables the file attribute modifications for the GEMDOS hard disk
 emulation.
 .TP 
 .B \-d, \-\-harddrive <dir>
-Emulate harddrive partition(s) with <dir> contents
-.TP 
+Emulate harddrive partition(s) with <dir> contents.  If directory
+contains only single letter (C-Z) subdirectories, each of these
+subdirectories will be treated as a separate partition, otherwise the
+given directory itself will be assigned to drive "C:". In the multiple
+partition case, the letters used as the subdirectory names will
+determine to which drives/partitions they're assigned.
+.TP
 .B \-\-acsi <file>
 Emulate an ACSI hard disk with an image <file>
 .TP 

@@ -2532,8 +2532,10 @@ while the emulator is running.
 </p>
 <p>
 On a 32-bit host system, the size of a hard disk image is limited to 2 GB.
-On 64-bit host systems, bigger images might be possible but the support for
-bigger images is not tested very well yet.
+On 64-bit host systems, bigger images might be possible but the support
+for bigger images is not tested very well yet.  How large partition sizes
+are supported inside the hard disk (images) depends on the TOS version.
+TOS 1.0x supports up to 256MB partitions and TOS 4.0x up to 1GB ones.
 </p>
 
 
@@ -2549,11 +2551,11 @@ length limit.
 </p>
 <p>
 If you provide <span class="commandline">--harddisk</span> option
-a directory containing only single letter subdirectories, each of
-these subdirectories will be treated as a separate partition, otherwise
-the given directory itself will be assigned to drive "C:". In the
-multiple partition case, the letters used as the subdirectory names
-will determine to which drives/partitions they're assigned.
+a directory containing only single letter (C-Z) subdirectories, each
+of these subdirectories will be treated as a separate partition,
+otherwise the given directory itself will be assigned to drive "C:".
+In the multiple partition case, the letters used as the subdirectory
+names will determine to which drives/partitions they're assigned.
 </p>
 <p>
 GEMDOS drive emulation is an easy way to share files between the
@@ -3280,8 +3282,8 @@ when you start a program.
 <li>To find out current program DATA and BSS segment contents,
     use the corresponding variables:
 <pre>
-m  data
-m  bss
+m  DATA
+m  BSS
 </pre>
 </li>
 <li>If you want to stop at a specific cycle within a frame (that is,
@@ -3300,14 +3302,6 @@ b  HBL = "HBL+20"
 b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
 </pre>
 </li>
-<!--
-<li>"OSExitPC" variable can be used to catch exit from an OS call.
-<pre>
-b pc = OSExitPC :once
-</pre>
-It's valid after OS call breakpoint is triggered and before
-that call has finished.</li>
--->
 </ul>
 
 <p>
