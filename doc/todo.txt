@@ -69,9 +69,6 @@ Other potential Hatari functionality improvements
 - Support harddisk write protection also for IDE & ACSI drives?
 
 - Preliminary debugger work for the other features + cleanup:
-	- All DebugUI invocations should give reason for it
-	  (exception, breakpoint...)
-	- All parsing functions should return error code on error
 	- Eval_Number() could take DSP/CPU flag like Eval_Range()
 	  does so that all commands taking numeric args can accept
 	  also symbol, variable & register names
@@ -82,12 +79,10 @@ Other potential Hatari functionality improvements
 
 - Steem emulator debugging features missing from Hatari debugger.
   These should be straightforward to implement:
-	- Breakpoints on iterrupts
+	- Breakpoints on interrupts
 	- Breaking on exceptions 2-8 vs. bombs vs. don't break.
           Hatari has only an option to break on address & bus errors
 	  & uninitialized exception handler.
-	- History of executed instructions and how many cycles they took
-	  (= Steem History view & Trace info)
 	- Showing values both in different lengts and numeric bases.
 	  (In Hatari one gets latter with "evaluate" command, e.g. "e a0",
 	  but that doesn't show the value as it were long/word/byte)
