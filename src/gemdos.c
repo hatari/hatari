@@ -2448,6 +2448,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	{
 		/* Volume name */
 		strcpy(pDTA->dta_name,"EMULATED.001");
+		pDTA->dta_name[11] = '0' + Drive;
 		Regs[REG_D0] = GEMDOS_EOK;          /* Got volume */
 		return true;
 	}
