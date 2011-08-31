@@ -511,7 +511,7 @@ static bool GEMDOS_IsHDDPresent(int iDrive)
 static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 {
 	struct dirent **files;
-	int count, i;
+	int count, i, last;
 	char letter;
 	bool bMultiPartitions;
 
@@ -529,13 +529,14 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 	else if (count <= 2)
 	{
 		/* Empty directory Only "." and ".."), assume single partition mode */
-		*pnMaxDrives = 1;
+		last = 1;
 		bMultiPartitions = false;
 	}
 	else
 	{
 		bMultiPartitions = true;
 		/* Check all files in the directory */
+		last = 0;
 		for (i = 0; i < count; i++)
 		{
 			letter = toupper(files[i]->d_name[0]);
@@ -550,16 +551,22 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 				/* folder with name other than C-Z...
 				 * (until Z under MultiTOS, to P otherwise)
 				 * ... so use single partition mode! */
-				*pnMaxDrives = 1;
+				last = 1;
 				bMultiPartitions = false;
 				break;
 			}
-			*pnMaxDrives = letter - 'C' + 1;
+
+			/* alphasort isn't case insensitive */
+			letter = letter - 'C' + 1;
+			if (letter > last)
+				last = letter;
 		}
 	}
 
-	if (*pnMaxDrives > MAX_HARDDRIVES)
+	if (last > MAX_HARDDRIVES)
 		*pnMaxDrives = MAX_HARDDRIVES;
+	else
+		*pnMaxDrives = last;
 
 	/* Free file list */
 	for (i = 0; i < count; i++)
