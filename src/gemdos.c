@@ -26,6 +26,9 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include <config.h>
 
 #include <sys/stat.h>
+#if HAVE_STATVFS
+#include <sys/statvfs.h>
+#endif
 #include <sys/types.h>
 #include <utime.h>
 #include <time.h>
@@ -1371,6 +1374,9 @@ static bool GemDOS_SetDTA(Uint32 Params)
  */
 static bool GemDOS_DFree(Uint32 Params)
 {
+#ifdef HAVE_STATVFS
+	struct statvfs buf;
+#endif
 	int Drive, Total, Free;
 	Uint32 Address;
 
@@ -1398,10 +1404,47 @@ static bool GemDOS_DFree(Uint32 Params)
 		return true;
 	}
 
-	/* fake 32MB drive with 16MB free */
-	Total = 32*1024;
-	Free = 16*1024;
+#ifdef HAVE_STATVFS
+	if (statvfs(emudrives[Drive-2]->hd_emulation_dir, &buf) == 0)
+	{
+		Total = buf.f_blocks/1024 * buf.f_frsize;
+		if (buf.f_bavail)
+			Free = buf.f_bavail;	/* free for unprivileged user */
+		else
+			Free = buf.f_bfree;
+		Free = Free/1024 * buf.f_bsize;
 
+		/* TOS version limits based on:
+		 *   http://www.seimet.de/atari/en/hddriverfaq.html
+		 */
+		if (TosVersion >= 0x0400)
+		{
+			if (Total > 1024*1024)
+				Total = 1024*1024;
+		}
+		else
+		{
+			if (TosVersion >= 0x0106)
+			{
+				if (Total > 512*1024)
+					Total = 512*1024;
+			}
+			else
+			{
+				if (Total > 256*1024)
+					Total = 256*1024;
+			}
+		}
+		if (Free > Total)
+			Free = Total;
+	}
+	else
+#endif
+	{
+		/* fake 32MB drive with 16MB free */
+		Total = 32*1024;
+		Free = 16*1024;
+	}
 	STMemory_WriteLong(Address,  Free);             /* free clusters */
 	STMemory_WriteLong(Address+SIZE_LONG, Total);   /* total clusters */
 
