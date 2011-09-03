@@ -17,7 +17,7 @@ Contents:
 Hatari and EmuTOS
 =================
 
-To run the emulator a TOS ROM image is needed.  EmuTOS, a free
+To run the emulator, a TOS ROM image is needed.  EmuTOS, a free
 implementation of TOS, is shipped with the official releases of
 Hatari.
 
@@ -25,6 +25,20 @@ This tos.img ROM image is identical to the official binary package of
 EmuTOS, which is available at the SourceForge website of EmuTOS.  For
 downloading other versions or the source code of EmuTOS, please visit
 the EmuTOS website.
+
+The tos.img file included with the latest Hatari releases is the
+"all languages" etos512k.img from a preceeding EmuTOS release:
+- Hatari v1.4.0, v1.5.0:
+  http://sourceforge.net/projects/emutos/files/emutos/0.8.5/
+- Hatari v1.1.0, v1.2.0, v1.3.0, v1.3.1:
+  http://sourceforge.net/projects/emutos/files/emutos/0.8.4/
+- Hatari v1.0.0, v1.0.1:
+  http://sourceforge.net/projects/emutos/files/emutos/0.8.3/
+- Hatari v0.95:
+  http://sourceforge.net/projects/emutos/files/emutos/0.8.2/
+
+Earlier Hatari binary releases have included one of the smaller
+EmuTOS image files.
 
 
 What is EmuTOS

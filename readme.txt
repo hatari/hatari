@@ -152,13 +152,20 @@ But registering handlers for mime-types seems desktop specific.
 
 For information about how to use the running emulator, please read the file
 doc/manual.html. Here are just some hints for the impatient people:
-Before you can run the emulator, you need a TOS ROM image that should be
-stored as "tos.img" in the data directory of the emulator (see the variable
-DATADIR in Makefile.cnf).
 
-While the emulator is running, you can open the configuration menu by
-pressing F12, the F11 key will toggle fullscreen/windowed mode.
-Pressing ALTGR-q will quit the emulator.
+* Before you can run the emulator, you need a TOS ROM image.  If one
+  named as "tos.img" is neither in the data directory of the emulator
+  (DATADIR variable in CMake configuration), or in the current
+  directory, Hatari will ask you to select one.
+
+  - Hatari binary packages ship unmodified EmuTOS ROM image with them
+    (renamed as tos.img), but you need an original Atari TOS ROM image
+    for best compatibility.  For more information on EmuTOS, see
+    doc/emutos.txt.
+
+* While the emulator is running, you can open the configuration menu
+  by pressing F12, the F11 key will toggle fullscreen/windowed mode.
+  Pressing ALTGR-q will quit the emulator.
 
 
  5) Contact
