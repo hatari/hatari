@@ -266,6 +266,8 @@ class HatariConfigMapping(ConfigStore):
 
         self._hatari = hatari
         self._lock_updates = False
+        self._desktop_w = 0
+        self._desktop_h = 0
         self._options = []
 
     def validate(self):
@@ -687,9 +689,17 @@ class HatariConfigMapping(ConfigStore):
         self._change_option("--aspect %s" % str(value))
 
     # ------------ max window size ---------------
+    def set_desktop_size(self, w, h):
+        self._desktop_w = w
+        self._desktop_h = h
+
     def get_max_size(self):
         w = self.get("[Screen]", "nMaxWidth")
         h = self.get("[Screen]", "nMaxHeight")
+        # default to desktop size?
+        if not (w or h):
+            w = self._desktop_w
+            h = self._desktop_h
         return (w, h)
 
     def set_max_size(self, w, h):
