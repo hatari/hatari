@@ -186,6 +186,8 @@ enum
 	FDCEMU_CMD_WRITEMULTIPLESECTORS,
 	/* Type III */
 	FDCEMU_CMD_READADDRESS,
+	FDCEMU_CMD_READTRACK,
+	FDCEMU_CMD_WRITETRACK,
 
 	/* Other states */
 	FDCEMU_CMD_MOTOR_STOP
@@ -250,6 +252,20 @@ enum
 {
 	FDCEMU_RUN_READADDRESS,
 	FDCEMU_RUN_READADDRESS_COMPLETE
+};
+
+/* FDC Running Read Track commands */
+enum
+{
+	FDCEMU_RUN_READTRACK,
+	FDCEMU_RUN_READTRACK_COMPLETE
+};
+
+/* FDC Running Write Track commands */
+enum
+{
+	FDCEMU_RUN_WRITETRACK,
+	FDCEMU_RUN_WRITETRACK_COMPLETE
 };
 
 
@@ -324,6 +340,7 @@ static int MotorSlowingCount;                                   /* Counter used 
 
 static Uint8 HeadTrack[ MAX_FLOPPYDRIVES ];			/* A: and B: */
 static Uint8 ID_FieldLastSector;				/* Sector number returned by Read Address (to simulate a spinning disk) */
+static Uint8 CommandType;					/* Type of latest FDC command */
 
 static short int nReadWriteTrack;                               /* Parameters used in sector read/writes */
 static short int nReadWriteSector;
@@ -332,7 +349,9 @@ static short int nReadWriteDev;
 static unsigned short int nReadWriteSectorsPerTrack;
 static short int nReadWriteSectors;		// FIXME NP : remove
 
-static Uint8 DMASectorWorkSpace[ DMA_DISK_SECTOR_SIZE ];	/* Workspace used to copy to/from for floppy DMA */
+static Uint8 DMASectorWorkSpace[ DMA_DISK_SECTOR_SIZE ];	// FIXME remove , use DMADiskWorkSpace
+static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace used to transfer bytes between floppy and DMA */
+									/* It should be large enough to contain a whole track */
 
 
 static int FDC_DelayToCpuCycles ( int Delay_micro );
@@ -349,7 +368,8 @@ static int FDC_UpdateStepOutCmd(void);
 static int FDC_UpdateReadSectorsCmd(void);
 static int FDC_UpdateWriteSectorsCmd(void);
 static int FDC_UpdateReadAddressCmd(void);
-static bool FDC_ReadSectorFromFloppy(void);
+static int FDC_UpdateReadTrackCmd(void);
+static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector );
 static bool FDC_WriteSectorToFloppy ( int DMASectorsCount );
 
 /*-----------------------------------------------------------------------*/
@@ -372,6 +392,7 @@ void FDC_Reset(void)
 	FDCDataRegister = 0;
 	FDCSectorCountRegister = 0;
 	ID_FieldLastSector = 1;
+	CommandType = 0;
 
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 		HeadTrack[ i ] = 0;			/* Set all drives to track 0 */
@@ -412,7 +433,7 @@ void FDC_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nReadWriteDev, sizeof(nReadWriteDev));
 	MemorySnapShot_Store(&nReadWriteSectorsPerTrack, sizeof(nReadWriteSectorsPerTrack));
 	MemorySnapShot_Store(&nReadWriteSectors, sizeof(nReadWriteSectors));		// FIXME NP : remove
-	MemorySnapShot_Store(DMASectorWorkSpace, sizeof(DMASectorWorkSpace));
+	MemorySnapShot_Store(DMASectorWorkSpace, sizeof(DMASectorWorkSpace));		// FIMXE NP : use DMADiskWorkSpace
 }
 
 
@@ -520,8 +541,11 @@ void FDC_DmaStatus_ReadWord(void)
  */
 static void FDC_DMADataFromFloppy( int NbBytes )
 {
+	if ( NbBytes == 0 )
+		return;
+
 	Uint32 Address = FDC_ReadDMAAddress();
-	STMemory_SafeCopy(Address, DMASectorWorkSpace, NbBytes, "FDC DMA data read");
+	STMemory_SafeCopy(Address, DMADiskWorkSpace, NbBytes, "FDC DMA data read");
 	/* Update DMA pointer */
 	FDC_WriteDMAAddress ( Address + NbBytes );
 }
@@ -553,14 +577,14 @@ static void FDC_SetDiskControllerStatus(void)
 #if 1		/* rewrite block */
 	/* Clear out to default */
 	//DiskControllerStatus_ff8604rd = 0;
-	DiskControllerStatus_ff8604rd &= FDC_STR_BIT_MOTOR_ON;
+//	DiskControllerStatus_ff8604rd &= FDC_STR_BIT_MOTOR_ON;
 
 	/* ONLY do this if we are running a Type I command */
 	if ((FDCCommandRegister&0x80)==0)
 	{
 		/* Type I - Restore, Seek, Step, Step-In, Step-Out */
-		if (FDCTrackRegister==0)
-			DiskControllerStatus_ff8604rd |= 0x4;    /* Bit 2 - Track Zero, '0' if head is NOT at zero */
+//		if (FDCTrackRegister==0)
+//			DiskControllerStatus_ff8604rd |= 0x4;    /* Bit 2 - Track Zero, '0' if head is NOT at zero */
 	}
 
 	/* If no disk inserted, tag as error */
@@ -574,6 +598,7 @@ static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 {
 	DiskControllerStatus_ff8604rd &= (~DisableBits);		/* clear bits in DisableBits */
 	DiskControllerStatus_ff8604rd |= EnableBits;			/* set bits in EnableBits */
+fprintf ( stderr , "fdc str 0x%x\n" , DiskControllerStatus_ff8604rd );
 }
 
 
@@ -698,6 +723,10 @@ void FDC_InterruptHandler_Update(void)
 			Delay_micro = FDC_UpdateReadAddressCmd();
 			break;
 
+		 case FDCEMU_CMD_READTRACK:
+			Delay_micro = FDC_UpdateReadTrackCmd();
+			break;
+
 		 case FDCEMU_CMD_MOTOR_STOP:
 			Delay_micro = FDC_UpdateMotorStop();
 			break;
@@ -746,8 +775,6 @@ static int FDC_CmdCompleteCommon(void)
 static void FDC_VerifyTrack(void)
 {
   /* In the case of Hatari when using ST/MSA images, the track is always the correct one */
-  /* This function could be improved to support other images format where logical track */
-  /* could be different from physical track (eg Pasti) */
   FDC_Update_STR ( FDC_STR_BIT_RNF , 0 );			/* remove RNF bit */
 }
 
@@ -1069,7 +1096,7 @@ static int FDC_UpdateReadSectorsCmd(void)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
 		/* Read in a sector */
-		if ( FDC_ReadSectorFromFloppy() )			/* Read a single 512 bytes sector into temporary buffer */
+		if ( FDC_ReadSectorFromFloppy ( DMADiskWorkSpace , FDCSectorRegister ) )	/* Read a single 512 bytes sector into temporary buffer */
 		{
 			if ( FDCSectorCountRegister > 0 )		/* Transfer data to RAM only if DMA sector > 0 */
 			{
@@ -1206,7 +1233,20 @@ static int FDC_UpdateReadAddressCmd(void)
 {
 	int	Delay_micro = 0;
 	Uint16	CRC;
+	Uint8	buf[ 4+6 ];
+	Uint8	*p;
 
+	if ( ! EmulationDrives[nReadWriteDev].bDiskInserted )	/* Set RNF bit if no disk is inserted */
+	{
+		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(true);             /* DMA error */
+		/* Done */
+		Delay_micro = FDC_CmdCompleteCommon();
+	}
+
+	
 	/* Which command is running? */
 	switch (FDCEmulationRunning)
 	{
@@ -1216,16 +1256,23 @@ static int FDC_UpdateReadAddressCmd(void)
 
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
 		/* a simplified ID fied based on current track/sector/side */
-		DMASectorWorkSpace[ 0 ] = HeadTrack[ nReadWriteDev ];
-		DMASectorWorkSpace[ 1 ] = FDC_SIDE;
-		DMASectorWorkSpace[ 2 ] = ID_FieldLastSector;
-		DMASectorWorkSpace[ 3 ] = FDC_SECTOR_SIZE_512;	/* ST/MSA images are 512 bytes per sector */
+		p = buf;
+		*p++ = 0xa1;					/* SYNC bytes and IAM byte are included in the CRC */
+		*p++ = 0xa1;
+		*p++ = 0xa1;
+		*p++ = 0xfe;
+		*p++ = HeadTrack[ nReadWriteDev ];
+		*p++ = FDC_SIDE;
+		*p++ = ID_FieldLastSector;
+		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
 
-		FDC_CRC16 ( DMASectorWorkSpace , 4 , &CRC );
+		FDC_CRC16 ( buf , 8 , &CRC );
 
-		DMASectorWorkSpace[ 4 ] = CRC >> 8;
-		DMASectorWorkSpace[ 5 ] = CRC & 0xff;
+		*p++ = CRC >> 8;
+		*p++ = CRC & 0xff;
 
+		memcpy ( DMADiskWorkSpace , buf + 4 , 6 );	/* Don't return the 3 x $A1 and $FE in the Address Field */
+		
 		ID_FieldLastSector++;				/* Increase sector for next Read Address command */
 		
 		if ( FDCSectorCountRegister > 0 )		/* Transfer data to RAM only if DMA sector > 0 */
@@ -1252,6 +1299,113 @@ static int FDC_UpdateReadAddressCmd(void)
 	return Delay_micro;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Run 'READ TRACK' command
+ */
+static int FDC_UpdateReadTrackCmd(void)
+{
+	int	Delay_micro = 0;
+	Uint16	CRC;
+	Uint8	*buf;
+	Uint8	*buf_crc;
+	int	Sector;
+	int	i;
+	int	NbBytes;
+
+	if ( ! EmulationDrives[nReadWriteDev].bDiskInserted )	/* Set RNF bit if no disk is inserted */
+	{
+		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(true);             /* DMA error */
+		/* Done */
+		Delay_micro = FDC_CmdCompleteCommon();
+	}
+
+
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_READTRACK:
+
+		/* Build the track data */
+		buf = DMADiskWorkSpace;
+		for ( i=0 ; i<60 ; i++ )		*buf++ = 0x4e;		/* GAP1 */
+
+		for ( Sector=1 ; Sector<=nReadWriteSectorsPerTrack ; Sector++ )
+		{
+			for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP2 */
+
+			buf_crc = buf;
+			for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
+			*buf++ = 0xfe;						/* Index Address Mark */
+			*buf++ = HeadTrack[ nReadWriteDev ];			/* Track */
+			*buf++ = FDC_SIDE;					/* Side */
+			*buf++ = Sector;					/* Sector */
+			*buf++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
+			FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
+			*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
+			*buf++ = CRC & 0xff;					/* CRC2 */
+
+			for ( i=0 ; i<22 ; i++ )	*buf++ = 0x4e;		/* GAP3-1 */
+			for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP3-2 */
+
+			buf_crc = buf;
+			for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
+			*buf++ = 0xfb;						/* Data Address Mark */
+
+			if ( ! FDC_ReadSectorFromFloppy ( buf , Sector ) )	/* Read a single 512 bytes sector into temporary buffer */
+			{
+				FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
+				FDC_AcknowledgeInterrupt();
+				/* Set error */
+				FDC_SetDMAStatus(true);             /* DMA error */
+				/* Done */
+				Delay_micro = FDC_CmdCompleteCommon();
+			}
+			buf += 512;
+
+			FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
+			*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
+			*buf++ = CRC & 0xff;					/* CRC2 */
+
+			for ( i=0 ; i<40 ; i++ )	*buf++ = 0x4e;		/* GAP4 */
+		}
+
+		while ( buf < DMADiskWorkSpace + FDC_TRACK_BYTES_STANDARD )	/* Complete the track buffer */
+		       *buf++ = 0x4e;						/* GAP5 */
+
+
+		/* Transfer Track data to RAM using DMA */
+		if ( FDCSectorCountRegister * DMA_DISK_SECTOR_SIZE < FDC_TRACK_BYTES_STANDARD )
+		{
+			FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* Not enough DMA sectors, some data will be lost */
+			NbBytes = FDCSectorCountRegister * DMA_DISK_SECTOR_SIZE;
+		}
+		else
+			NbBytes = FDC_TRACK_BYTES_STANDARD;
+
+		FDC_DMADataFromFloppy( NbBytes );				/* Copy Track data from DMA buffer to ST RAM */
+		FDCSectorCountRegister -= NbBytes / DMA_DISK_SECTOR_SIZE;	/* TODO : update FDCSectorCountRegister more precisely */
+		
+
+		FDCEmulationRunning = FDCEMU_RUN_READTRACK_COMPLETE;
+		Delay_micro = FDC_DELAY_READ_TRACK_STANDARD;
+		break;
+	 case FDCEMU_RUN_READTRACK_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(false);            /* No DMA error */
+		/* Done */
+		Delay_micro = FDC_CmdCompleteCommon();
+		break;
+	}
+
+	return Delay_micro;
+}
 
 
 /**
@@ -1490,8 +1644,8 @@ static int FDC_TypeIII_ReadAddress(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III read address VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type III read address track=0x%x side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  HeadTrack[ nReadWriteDev ], FDC_SIDE, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
 	FDCEmulationCommand = FDCEMU_CMD_READADDRESS;
@@ -1511,25 +1665,28 @@ static int FDC_TypeIII_ReadAddress(void)
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeIII_ReadTrack(void)
 {
+	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III read track 0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDCTrackRegister, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-
-	Log_Printf(LOG_TODO, "FDC type III command 'read track' does not work yet!\n");
-
-	/* FIXME: "Read track" should read more than only the sectors! (also sector headers, gaps, etc.) */
+	LOG_TRACE(TRACE_FDC, "fdc type III read track track=0x%x side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  HeadTrack[ nReadWriteDev ], FDC_SIDE, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read a single track */
-	FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
-	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
+	FDCEmulationCommand = FDCEMU_CMD_READTRACK;
+	FDCEmulationRunning = FDCEMU_RUN_READTRACK;
 	/* Set reading parameters */
 	FDC_SetReadWriteParameters();
 
+	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
+		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
+
+	if ( FDCCommandRegister & FDC_COMMAND_BIT_HEAD_LOAD )
+		Delay_micro = FDC_DELAY_HEAD_LOAD;
+
 	FDC_SetDiskControllerStatus();
-	return FDC_DELAY_TYPE_III_PREPARE;
+	return FDC_DELAY_TYPE_III_PREPARE + Delay_micro;
 }
 
 
@@ -1577,6 +1734,21 @@ static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 	LOG_TRACE(TRACE_FDC, "fdc type IV force int VBL=%d video_cyc=%d %d@%dpc=%x\n",
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
+	FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );		/* Remove BUSY bit */
+
+	/* When a Type II/III command is interrupted, LOST DATA bit should be reset ? (Super Monaco GP on Superior 65) */
+	FDC_Update_STR ( FDC_STR_BIT_LOST_DATA , 0 );		/* Remove LOST DATA / TR00 bit */
+
+	/* TR00 is updated when a type I command is interrupted or when no command was running */
+	if ( ( ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY ) == 0 )	/* No command running */
+	  || ( CommandType == 1 ) )						/* Busy command is Type I */
+	{
+		if ( HeadTrack[ nReadWriteDev ] == 0 )
+			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+	}
+
+	/* FIXME : BetterCopy complains about Read Sector error */
+
 	/* Acknowledge interrupt, move along there's nothing more to see */
 	if (bCauseCPUInterrupt)
 		FDC_AcknowledgeInterrupt();
@@ -1596,6 +1768,7 @@ static int FDC_ExecuteTypeICommands(void)
 {
 	int	Delay_micro = 0;
 
+	CommandType = 1;
 	MFP_GPIP |= 0x20;
 
 	/* Check Type I Command */
@@ -1636,6 +1809,7 @@ static int FDC_ExecuteTypeIICommands(void)
 {
 	int	Delay_micro = 0;
 
+	CommandType = 2;
 	MFP_GPIP |= 0x20;
 
 	/* Check Type II Command */
@@ -1666,6 +1840,7 @@ static int FDC_ExecuteTypeIIICommands(void)
 {
 	int	Delay_micro = 0;
 
+	CommandType = 3;
 	MFP_GPIP |= 0x20;
 
 	/* Check Type III Command */
@@ -2017,18 +2192,18 @@ void FDC_WriteDMAAddress(Uint32 Address)
  * Read sector from floppy drive into workspace
  * We copy the bytes in chunks to simulate reading of the floppy using DMA
  */
-static bool FDC_ReadSectorFromFloppy(void)
+static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc read sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_ReadDMAAddress(), nReadWriteDev, FDCSectorRegister, HeadTrack[ nReadWriteDev ], nReadWriteSide,
+		FDC_ReadDMAAddress(), nReadWriteDev, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* Copy 1 sector to our workspace */
-	if ( Floppy_ReadSectors ( nReadWriteDev, DMASectorWorkSpace, FDCSectorRegister, HeadTrack[ nReadWriteDev ], nReadWriteSide, 1, NULL ) )
+	if ( Floppy_ReadSectors ( nReadWriteDev, buf, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide, 1, NULL ) )
 		return true;
 
 	/* Failed */
@@ -2064,7 +2239,7 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount )
 		pBuffer = &STRam[Address];
 	else
 	{
-		pBuffer = DMASectorWorkSpace;				/* If DMA can't transfer data, we write '0' bytes */
+		pBuffer = DMADiskWorkSpace;				/* If DMA can't transfer data, we write '0' bytes */
 		memset ( pBuffer , 0 , DMA_DISK_SECTOR_SIZE );
 	}
 	
