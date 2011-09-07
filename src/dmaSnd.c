@@ -154,7 +154,8 @@ bool	DmaInitSample = false;
 struct microwire_s {
 	Uint16 data;			/* Microwire Data register */
 	Uint16 mask;			/* Microwire Mask register */
-	int mwTransferSteps;		/* Microwire shifting counter */
+	Uint16 mwTransferSteps;		/* Microwire shifting counter */
+	Uint16 pendingCyclesOver;	/* Number of delayed cycles for the interrupt */
 	Uint16 mixing;			/* Mixing command */
 	Uint16 bass;			/* Bass command */
 	Uint16 treble;			/* Treble command */
@@ -271,6 +272,7 @@ void DmaSnd_Reset(bool bCold)
 	DmaSnd_Init_Bass_and_Treble_Tables();
 
 	microwire.mwTransferSteps = 0;
+	microwire.pendingCyclesOver = 8;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -873,35 +875,35 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	Uint8 i, bit;
 	Uint16 saveData;
 	
+	/* How many cycle was this sound interrupt delayed (>= 0) */
+	microwire.pendingCyclesOver += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
-	--microwire.mwTransferSteps;
-
-	/* Shift data register until it becomes zero. */
-	if (microwire.mwTransferSteps > 1)
+	/* Shift the mask and data according to the number of cycles (8 cycles for a shift) */
+	do
 	{
+		--microwire.mwTransferSteps;
+			/* Shift data register until it becomes zero. */
 		IoMem_WriteWord(0xff8922, microwire.data<<(16-microwire.mwTransferSteps));
+			/* Rotate mask register */
+		IoMem_WriteWord(0xff8924, (microwire.mask<<(16-microwire.mwTransferSteps))
+								|(microwire.mask>>microwire.mwTransferSteps));
+		/* 8 cycles for 1 shift */
+		microwire.pendingCyclesOver -= 8;
 	}
-	else
-	{
-		/* Paradox XMAS 2004 demo continuesly writes to the data
-		 * register, but still expects to read a zero inbetween,
-		 * so we have to output a zero before we're really done
-		 * with the transfer. */
-		IoMem_WriteWord(0xff8922, 0);
-	}
+	while ((microwire.mwTransferSteps != 0) && (microwire.pendingCyclesOver >= 8) );
 
-	/* Rotate mask register */
-	IoMem_WriteWord(0xff8924, (microwire.mask<<(16-microwire.mwTransferSteps))
-	                          |(microwire.mask>>microwire.mwTransferSteps));
-
+	/* Is the transfer finished ? */
 	if (microwire.mwTransferSteps > 0)
 	{
-		CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
+		/* No ==> start a new internal interrupt to continue to tranfer the data */
+		microwire.pendingCyclesOver = 8 - microwire.pendingCyclesOver;
+		CycInt_AddRelativeInterrupt(microwire.pendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
-	else {
-		/* Decode the address + command word according to the binary mask */
+	else 
+	{
+		/* Yes : decode the address + command word according to the binary mask */
 		bit = 0;
 		saveData = microwire.data;
 		microwire.data = 0;
@@ -984,7 +986,8 @@ void DmaSnd_MicrowireData_WriteWord(void)
 		microwire.data = IoMem_ReadWord(0xff8922);
 		/* Start shifting events to simulate a microwire transfer */
 		microwire.mwTransferSteps = 16;
-		CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
+		microwire.pendingCyclesOver = 8;
+		CycInt_AddRelativeInterrupt(microwire.pendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 
 	LOG_TRACE(TRACE_DMASND, "Microwire data write: 0x%x\n", IoMem_ReadWord(0xff8922));
