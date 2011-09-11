@@ -144,6 +144,12 @@ ACSI DMA and Floppy Disk Controller(FDC)
   command (causes an interrupt in the MFP). INTRQ is reset by reading the status
   register OR by loading a new command. So, does this mean the GPIP? Or does it
   actually CANCEL the interrupt? Can this be done?
+
+  NOTE : The DMA is connected to the FDC and its Data Register, each time a DRQ
+  is made by the FDC, it's handled by the DMA through its internal 16 bytes buffer.
+  This means that in the case of the Atari ST the LOST_DATA bit will never be set
+  in the Status Register (but data can be lost if FDCSectorCountRegister=0 as there
+  will be no transfer between DMA and RAM)
 */
 
 /*-----------------------------------------------------------------------*/
@@ -235,6 +241,7 @@ enum
 enum
 {
 	FDCEMU_RUN_READSECTORS_READDATA,
+	FDCEMU_RUN_READSECTORS_READDATA_DMA,
 	FDCEMU_RUN_READSECTORS_RNF,
 	FDCEMU_RUN_READSECTORS_COMPLETE
 };
@@ -276,6 +283,7 @@ enum
 /* it takes to reach the track/sector/address before really reading it */
 
 #define	DMA_DISK_SECTOR_SIZE		512			/* sector count at $ff8606 is for 512 bytes blocks */
+#define	DMA_DISK_TRANSFER_SIZE		16			/* DMA transfers blocks of 16 bytes at a time */
 
 #define	FDC_PHYSICAL_MAX_TRACK		85			/* head can't go beyond 85 tracks */
 
@@ -300,6 +308,8 @@ enum
 #define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediatly */
 #define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME : this was not measured */
 								
+#define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
+
 #define	FDC_DELAY_READ_SECTOR_STANDARD		FDC_TRANSFER_BYTES_US( NUMBYTESPERSECTOR )	/* 512 bytes per sector */
 #define	FDC_DELAY_WRITE_SECTOR_STANDARD		FDC_TRANSFER_BYTES_US( NUMBYTESPERSECTOR )	/* 512 bytes per sector */
 
@@ -308,6 +318,10 @@ enum
 #define	FDC_DELAY_WRITE_TRACK_STANDARD		FDC_TRANSFER_BYTES_US( FDC_TRACK_BYTES_STANDARD )
 
 #define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
+
+#define	FDC_DELAY_COMMAND_IMMEDIATE		1		/* Number of us to go immediatly to another state */
+
+
 
 #define	FDC_STEP_RATE				( FDCCommandRegister & 0x03 )	/* keep bits 0 and 1 of the current type I command */
 
@@ -352,13 +366,19 @@ static short int nReadWriteSectors;		// FIXME NP : remove
 static Uint8 DMASectorWorkSpace[ DMA_DISK_SECTOR_SIZE ];	// FIXME remove , use DMADiskWorkSpace
 static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace used to transfer bytes between floppy and DMA */
 									/* It should be large enough to contain a whole track */
-
+static int	DMA_PosInBuffer;
+static int	DMA_BytesToTransfer;
+static Uint16	DMA_BytesInSector;
+									
 
 static int FDC_DelayToCpuCycles ( int Delay_micro );
 static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
 static void FDC_ResetDMAStatus(void);
+static bool FDC_DMA_ReadFromFloppy ( void );
+
 static int  FDC_FindFloppyDrive(void);
+static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
 static int FDC_UpdateMotorStop(void);
 static int FDC_UpdateRestoreCmd(void);
 static int FDC_UpdateSeekCmd(void);
@@ -477,11 +497,14 @@ static void FDC_ResetDMAStatus(void)
 {
 	DMAStatus_ff8606rd = 0;           /* Clear out */
 
-	FDCSectorCountRegister = 0;
+//	FDCSectorCountRegister = 0;	// [NP] FIXME wrong, remove
+	DMA_PosInBuffer = 0;
+	DMA_BytesToTransfer = 0;
+	DMA_BytesInSector = DMA_DISK_SECTOR_SIZE;
 	FDC_SetDMAStatus(false);          /* Set no error */
 
 	/* Reset HDC command status */
-	HDCSectorCount = 0;
+	HDCSectorCount = 0;			/* [NP] FIXME Don't reset hdc sector count ? */
 	/*HDCCommand.byteCount = 0;*/  /* Not done on real ST? */
 	HDCCommand.returnCode = 0;
 }
@@ -548,6 +571,51 @@ static void FDC_DMADataFromFloppy( int NbBytes )
 	STMemory_SafeCopy(Address, DMADiskWorkSpace, NbBytes, "FDC DMA data read");
 	/* Update DMA pointer */
 	FDC_WriteDMAAddress ( Address + NbBytes );
+}
+
+
+
+/**
+ * Transfer 16 bytes from the DMA workspace to the RAM.
+ *
+ * Return true if there're no more bytes to transfer or false if some
+ * bytes can still be tranfered by the DMA.
+ *
+ * NOTE : The DMA is connected to the FDC, each time a DRQ is made by the FDC,
+ * it's handled by the DMA and stored in the DMA 16 bytes buffer. This means
+ * FDC_STR_BIT_LOST_DATA will never be set (but data can be lost if FDCSectorCountRegister=0)
+ */
+
+static bool FDC_DMA_ReadFromFloppy ( void )
+{
+	Uint32	Address;
+
+	if ( DMA_BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+		return true;						/* There should be at least 16 bytes to start a DMA transfer */
+
+	if ( FDCSectorCountRegister == 0 )
+	{
+		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
+		DMA_BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
+		return false;						/* FDC DMA is off but we still need to read all bytes from the floppy */
+	}
+
+	/* Transfer data and update DMA address */
+	Address = FDC_ReadDMAAddress();
+	STMemory_SafeCopy ( Address , DMADiskWorkSpace + DMA_PosInBuffer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
+	DMA_PosInBuffer += DMA_DISK_TRANSFER_SIZE;
+	DMA_BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
+	FDC_WriteDMAAddress ( Address + DMA_DISK_TRANSFER_SIZE );
+
+	/* Update Sector Count */
+	DMA_BytesInSector -= DMA_DISK_TRANSFER_SIZE;
+	if ( DMA_BytesInSector <= 0 )
+	{
+		FDCSectorCountRegister--;
+		DMA_BytesInSector = DMA_DISK_SECTOR_SIZE;
+	}
+
+	return false;							/* Transfer is not complete */
 }
 
 
@@ -1095,29 +1163,38 @@ static int FDC_UpdateReadSectorsCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
-		/* Read in a sector */
-		if ( FDC_ReadSectorFromFloppy ( DMADiskWorkSpace , FDCSectorRegister ) )	/* Read a single 512 bytes sector into temporary buffer */
+		/* Read a single 512 bytes sector into temporary buffer */
+		if ( FDC_ReadSectorFromFloppy ( DMADiskWorkSpace + DMA_PosInBuffer , FDCSectorRegister ) )
 		{
-			if ( FDCSectorCountRegister > 0 )		/* Transfer data to RAM only if DMA sector > 0 */
-			{
-				FDC_DMADataFromFloppy ( DMA_DISK_SECTOR_SIZE );	/* Copy from DMA buffer to ST RAM */
-				FDCSectorCountRegister--;		/* One block/sector of 512 bytes was copied by DMA */
-			}
-			else
-				FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );	/* If DMA is OFF, data are lost */
-
-			if ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
-				FDCSectorRegister++;			/* Try to read next sector and set RNF if not possible */
-			else						/* Multi=0, stop here with no error */
-			{
-				FDCEmulationRunning = FDCEMU_RUN_READSECTORS_COMPLETE;
-			}
-			Delay_micro = FDC_DELAY_READ_SECTOR_STANDARD;	/* Add delay for the sector we just read */
+			DMA_BytesToTransfer += NUMBYTESPERSECTOR;	/* 512 bytes per sector for ST/MSA disk images */
+				
+			FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA_DMA;
+			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just read */
 		}
 		else							/* Sector FDCSectorRegister was not found */
 		{
 			FDCEmulationRunning = FDCEMU_RUN_READSECTORS_RNF;
 			Delay_micro = FDC_DELAY_RNF;
+		}
+		break;
+	 case FDCEMU_RUN_READSECTORS_READDATA_DMA:
+		if ( ! FDC_DMA_ReadFromFloppy () )
+		{
+			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Continue transferring blocks of 16 bytes */
+		}
+		else							/* Sector completly transferred, check for multi bit */
+		{
+			if ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
+			{
+				FDCSectorRegister++;			/* Try to read next sector and set RNF if not possible */
+				FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
+				Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			}
+			else						/* Multi=0, stop here with no error */
+			{
+				FDCEmulationRunning = FDCEMU_RUN_READSECTORS_COMPLETE;
+				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			}
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_RNF:
@@ -1349,8 +1426,8 @@ static int FDC_UpdateReadTrackCmd(void)
 			*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
 			*buf++ = CRC & 0xff;					/* CRC2 */
 
-			for ( i=0 ; i<22 ; i++ )	*buf++ = 0x4e;		/* GAP3-1 */
-			for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP3-2 */
+			for ( i=0 ; i<22 ; i++ )	*buf++ = 0x4e;		/* GAP3a */
+			for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP3b */
 
 			buf_crc = buf;
 			for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
@@ -1734,9 +1811,7 @@ static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 	LOG_TRACE(TRACE_FDC, "fdc type IV force int VBL=%d video_cyc=%d %d@%dpc=%x\n",
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );		/* Remove BUSY bit */
-
-	/* When a Type II/III command is interrupted, LOST DATA bit should be reset ? (Super Monaco GP on Superior 65) */
+	/* For Type II/III commands, LOST DATA bit is never set (DRQ is always handled by the DMA) (Super Monaco GP on Superior 65) */
 	FDC_Update_STR ( FDC_STR_BIT_LOST_DATA , 0 );		/* Remove LOST DATA / TR00 bit */
 
 	/* TR00 is updated when a type I command is interrupted or when no command was running */
@@ -1747,7 +1822,7 @@ static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 	}
 
-	/* FIXME : BetterCopy complains about Read Sector error */
+	FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );		/* Remove BUSY bit */
 
 	/* Acknowledge interrupt, move along there's nothing more to see */
 	if (bCauseCPUInterrupt)
