@@ -258,6 +258,7 @@ enum
 enum
 {
 	FDCEMU_RUN_READADDRESS,
+	FDCEMU_RUN_READADDRESS_DMA,
 	FDCEMU_RUN_READADDRESS_COMPLETE
 };
 
@@ -367,6 +368,7 @@ static Uint8 DMASectorWorkSpace[ DMA_DISK_SECTOR_SIZE ];	// FIXME remove , use D
 static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace used to transfer bytes between floppy and DMA */
 									/* It should be large enough to contain a whole track */
 static int	DMA_PosInBuffer;
+static int	DMA_PosInBufferTransfer;
 static int	DMA_BytesToTransfer;
 static Uint16	DMA_BytesInSector;
 									
@@ -495,10 +497,17 @@ static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC )
  */
 static void FDC_ResetDMAStatus(void)
 {
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LOG_TRACE(TRACE_FDC, "fdc reset dma VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
 	DMAStatus_ff8606rd = 0;           /* Clear out */
 
 //	FDCSectorCountRegister = 0;	// [NP] FIXME wrong, remove
 	DMA_PosInBuffer = 0;
+	DMA_PosInBufferTransfer = 0;
 	DMA_BytesToTransfer = 0;
 	DMA_BytesInSector = DMA_DISK_SECTOR_SIZE;
 	FDC_SetDMAStatus(false);          /* Set no error */
@@ -576,7 +585,30 @@ static void FDC_DMADataFromFloppy( int NbBytes )
 
 
 /**
+ * Init some variables before starting a new DMA transfer.
+ * We must store new data just after the most recent bytes that
+ * were not yet transfered by the DMA (16 bytes buffer)
+ */
+
+static void FDC_DMA_InitTransfer ( void )
+{
+	DMA_BytesToTransfer = DMA_PosInBufferTransfer & 0xf;		/* How many bytes remain in the current 16 bytes buffer ? */
+	if ( DMA_BytesToTransfer == 0 )					/* DMA buffer is empty */
+	{
+		DMA_PosInBuffer = 0;					/* Add new data at the start of DMADiskWorkSpace */
+		DMA_PosInBufferTransfer = 0;
+	}
+	else
+		DMA_PosInBuffer = DMA_PosInBufferTransfer;		/* Add new data after the latest bytes stored in the 16 bytes buffer */
+}
+
+
+/**
  * Transfer 16 bytes from the DMA workspace to the RAM.
+ * Instead of handling a real 16 bytes buffer, this implementation moves
+ * a 16 bytes window in DMADiskWorkSpace. The current position of this window
+ * is stored in DMA_PosInBufferTransfer and contains the equivalent of the
+ * DMA's internal 16 bytes buffer.
  *
  * Return true if there're no more bytes to transfer or false if some
  * bytes can still be tranfered by the DMA.
@@ -589,6 +621,7 @@ static void FDC_DMADataFromFloppy( int NbBytes )
 static bool FDC_DMA_ReadFromFloppy ( void )
 {
 	Uint32	Address;
+//fprintf ( stderr , "dma transfer count=%d bytes=%d pos=%d\n" , FDCSectorCountRegister, DMA_BytesToTransfer, DMA_PosInBufferTransfer );
 
 	if ( DMA_BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
 		return true;						/* There should be at least 16 bytes to start a DMA transfer */
@@ -596,14 +629,15 @@ static bool FDC_DMA_ReadFromFloppy ( void )
 	if ( FDCSectorCountRegister == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
+		DMA_PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
 		DMA_BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
 		return false;						/* FDC DMA is off but we still need to read all bytes from the floppy */
 	}
 
 	/* Transfer data and update DMA address */
 	Address = FDC_ReadDMAAddress();
-	STMemory_SafeCopy ( Address , DMADiskWorkSpace + DMA_PosInBuffer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
-	DMA_PosInBuffer += DMA_DISK_TRANSFER_SIZE;
+	STMemory_SafeCopy ( Address , DMADiskWorkSpace + DMA_PosInBufferTransfer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
+	DMA_PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
 	DMA_BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
 	FDC_WriteDMAAddress ( Address + DMA_DISK_TRANSFER_SIZE );
 
@@ -1164,9 +1198,11 @@ static int FDC_UpdateReadSectorsCmd(void)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
 		/* Read a single 512 bytes sector into temporary buffer */
+		FDC_DMA_InitTransfer ();				/* Update DMA_PosInBuffer */
 		if ( FDC_ReadSectorFromFloppy ( DMADiskWorkSpace + DMA_PosInBuffer , FDCSectorRegister ) )
 		{
 			DMA_BytesToTransfer += NUMBYTESPERSECTOR;	/* 512 bytes per sector for ST/MSA disk images */
+			DMA_PosInBuffer += NUMBYTESPERSECTOR;
 				
 			FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA_DMA;
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just read */
@@ -1339,6 +1375,7 @@ static int FDC_UpdateReadAddressCmd(void)
 		*p++ = 0xa1;
 		*p++ = 0xfe;
 		*p++ = HeadTrack[ nReadWriteDev ];
+		FDCSectorRegister = HeadTrack[ nReadWriteDev ];	/* The 1st byte of the ID field is also copied into Sector Register */
 		*p++ = FDC_SIDE;
 		*p++ = ID_FieldLastSector;
 		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
@@ -1348,20 +1385,21 @@ static int FDC_UpdateReadAddressCmd(void)
 		*p++ = CRC >> 8;
 		*p++ = CRC & 0xff;
 
-		memcpy ( DMADiskWorkSpace , buf + 4 , 6 );	/* Don't return the 3 x $A1 and $FE in the Address Field */
-		
 		ID_FieldLastSector++;				/* Increase sector for next Read Address command */
-		
-		if ( FDCSectorCountRegister > 0 )		/* Transfer data to RAM only if DMA sector > 0 */
-		{
-			FDC_DMADataFromFloppy( 6 );		/* Copy ID field from DMA buffer to ST RAM */
-			/* TODO : update FDCSectorCountRegister when transferring only 6 bytes */
-		}
-		else
-			FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );	/* If DMA is OFF, data are lost */
+
+		FDC_DMA_InitTransfer ();			/* Update DMA_PosInBuffer */
+		memcpy ( DMADiskWorkSpace + DMA_PosInBuffer , buf + 4 , 6 );	/* Don't return the 3 x $A1 and $FE in the Address Field */
+		DMA_BytesToTransfer += 6;			/* 6 bytes per ID field */
+		DMA_PosInBuffer += 6;
+
+		FDCEmulationRunning = FDCEMU_RUN_READADDRESS_DMA;
+		Delay_micro = FDC_DELAY_READ_ADDR_STANDARD;
+		break;
+	 case FDCEMU_RUN_READADDRESS_DMA:
+		FDC_DMA_ReadFromFloppy ();			/* Transfer bytes if 16 bytes or more are in the DMA buffer */
 
 		FDCEmulationRunning = FDCEMU_RUN_READADDRESS_COMPLETE;
-		Delay_micro = FDC_DELAY_READ_ADDR_STANDARD;
+		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		break;
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
@@ -1655,9 +1693,9 @@ static int FDC_TypeII_ReadSector(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type II read sector sect=0x%x multi=%s dmacount=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type II read sector sect=0x%x multi=%s dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDCSectorRegister, ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDCSectorCountRegister ,
-		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		  FDC_ReadDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read sector(s) */
 	FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
@@ -1684,9 +1722,9 @@ static int FDC_TypeII_WriteSector(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type II write sector %d multi=%s VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDCSectorRegister, ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" ,
-		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type II write sector %d multi=%s dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDCSectorRegister, ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDCSectorCountRegister,
+		  FDC_ReadDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to write a sector(s) */
 	FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
@@ -1721,8 +1759,9 @@ static int FDC_TypeIII_ReadAddress(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III read address track=0x%x side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  HeadTrack[ nReadWriteDev ], FDC_SIDE, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type III read address track=0x%x side=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  HeadTrack[ nReadWriteDev ], FDC_SIDE, FDC_ReadDMAAddress(),
+		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
 	FDCEmulationCommand = FDCEMU_CMD_READADDRESS;
@@ -1747,8 +1786,9 @@ static int FDC_TypeIII_ReadTrack(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III read track track=0x%x side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  HeadTrack[ nReadWriteDev ], FDC_SIDE, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type III read track track=0x%x side=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  HeadTrack[ nReadWriteDev ], FDC_SIDE, FDC_ReadDMAAddress(),
+		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read a single track */
 	FDCEmulationCommand = FDCEMU_CMD_READTRACK;
@@ -1774,8 +1814,9 @@ static int FDC_TypeIII_WriteTrack(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III write track 0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDCTrackRegister, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type III write track track=0x%x side=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  HeadTrack[ nReadWriteDev ], FDC_SIDE, FDC_ReadDMAAddress(),
+		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	Log_Printf(LOG_TODO, "FDC type III command 'write track' does not work yet!\n");
 
