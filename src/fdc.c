@@ -391,7 +391,7 @@ static int FDC_UpdateReadSectorsCmd(void);
 static int FDC_UpdateWriteSectorsCmd(void);
 static int FDC_UpdateReadAddressCmd(void);
 static int FDC_UpdateReadTrackCmd(void);
-static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector );
+static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorSize );
 static bool FDC_WriteSectorToFloppy ( int DMASectorsCount );
 
 /*-----------------------------------------------------------------------*/
@@ -1189,6 +1189,7 @@ static int FDC_UpdateReadSectorsCmd(void)
 {
 	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	int	SectorSize;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1197,12 +1198,12 @@ static int FDC_UpdateReadSectorsCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
-		/* Read a single 512 bytes sector into temporary buffer */
+		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_DMA_InitTransfer ();				/* Update DMA_PosInBuffer */
-		if ( FDC_ReadSectorFromFloppy ( DMADiskWorkSpace + DMA_PosInBuffer , FDCSectorRegister ) )
+		if ( FDC_ReadSectorFromFloppy ( DMADiskWorkSpace + DMA_PosInBuffer , FDCSectorRegister , &SectorSize ) )
 		{
-			DMA_BytesToTransfer += NUMBYTESPERSECTOR;	/* 512 bytes per sector for ST/MSA disk images */
-			DMA_PosInBuffer += NUMBYTESPERSECTOR;
+			DMA_BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
+			DMA_PosInBuffer += SectorSize;
 				
 			FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA_DMA;
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just read */
@@ -1426,6 +1427,7 @@ static int FDC_UpdateReadTrackCmd(void)
 	Uint8	*buf;
 	Uint8	*buf_crc;
 	int	Sector;
+	int	SectorSize;
 	int	i;
 	int	NbBytes;
 
@@ -1471,7 +1473,7 @@ static int FDC_UpdateReadTrackCmd(void)
 			for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
 			*buf++ = 0xfb;						/* Data Address Mark */
 
-			if ( ! FDC_ReadSectorFromFloppy ( buf , Sector ) )	/* Read a single 512 bytes sector into temporary buffer */
+			if ( ! FDC_ReadSectorFromFloppy ( buf , Sector , &SectorSize ) )	/* Read a single 512 bytes sector into temporary buffer */
 			{
 				FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 				FDC_AcknowledgeInterrupt();
@@ -1480,7 +1482,7 @@ static int FDC_UpdateReadTrackCmd(void)
 				/* Done */
 				Delay_micro = FDC_CmdCompleteCommon();
 			}
-			buf += 512;
+			buf += SectorSize;
 
 			FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
 			*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
@@ -2308,7 +2310,7 @@ void FDC_WriteDMAAddress(Uint32 Address)
  * Read sector from floppy drive into workspace
  * We copy the bytes in chunks to simulate reading of the floppy using DMA
  */
-static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector )
+static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorSize )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -2319,7 +2321,7 @@ static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector )
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* Copy 1 sector to our workspace */
-	if ( Floppy_ReadSectors ( nReadWriteDev, buf, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide, 1, NULL ) )
+	if ( Floppy_ReadSectors ( nReadWriteDev, buf, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide, 1, NULL, pSectorSize ) )
 		return true;
 
 	/* Failed */
