@@ -266,6 +266,7 @@ enum
 enum
 {
 	FDCEMU_RUN_READTRACK,
+	FDCEMU_RUN_READTRACK_DMA,
 	FDCEMU_RUN_READTRACK_COMPLETE
 };
 
@@ -1429,7 +1430,6 @@ static int FDC_UpdateReadTrackCmd(void)
 	int	Sector;
 	int	SectorSize;
 	int	i;
-	int	NbBytes;
 
 	if ( ! EmulationDrives[nReadWriteDev].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
@@ -1448,7 +1448,8 @@ static int FDC_UpdateReadTrackCmd(void)
 	 case FDCEMU_RUN_READTRACK:
 
 		/* Build the track data */
-		buf = DMADiskWorkSpace;
+		FDC_DMA_InitTransfer ();					/* Update DMA_PosInBuffer */
+		buf = DMADiskWorkSpace + DMA_PosInBuffer;
 		for ( i=0 ; i<60 ; i++ )		*buf++ = 0x4e;		/* GAP1 */
 
 		for ( Sector=1 ; Sector<=nReadWriteSectorsPerTrack ; Sector++ )
@@ -1491,25 +1492,27 @@ static int FDC_UpdateReadTrackCmd(void)
 			for ( i=0 ; i<40 ; i++ )	*buf++ = 0x4e;		/* GAP4 */
 		}
 
-		while ( buf < DMADiskWorkSpace + FDC_TRACK_BYTES_STANDARD )	/* Complete the track buffer */
+		while ( buf < DMADiskWorkSpace + DMA_PosInBuffer + FDC_TRACK_BYTES_STANDARD )	/* Complete the track buffer */
 		       *buf++ = 0x4e;						/* GAP5 */
 
 
 		/* Transfer Track data to RAM using DMA */
-		if ( FDCSectorCountRegister * DMA_DISK_SECTOR_SIZE < FDC_TRACK_BYTES_STANDARD )
+		DMA_BytesToTransfer += FDC_TRACK_BYTES_STANDARD;
+		DMA_PosInBuffer += FDC_TRACK_BYTES_STANDARD;
+
+		FDCEmulationRunning = FDCEMU_RUN_READTRACK_DMA;
+		Delay_micro = FDC_DELAY_TRANSFER_DMA_16;			/* Transfer blocks of 16 bytes from the track we just read */
+		break;
+	 case FDCEMU_RUN_READTRACK_DMA:
+		if ( ! FDC_DMA_ReadFromFloppy () )
 		{
-			FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* Not enough DMA sectors, some data will be lost */
-			NbBytes = FDCSectorCountRegister * DMA_DISK_SECTOR_SIZE;
+			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;		/* Continue transferring blocks of 16 bytes */
 		}
-		else
-			NbBytes = FDC_TRACK_BYTES_STANDARD;
-
-		FDC_DMADataFromFloppy( NbBytes );				/* Copy Track data from DMA buffer to ST RAM */
-		FDCSectorCountRegister -= NbBytes / DMA_DISK_SECTOR_SIZE;	/* TODO : update FDCSectorCountRegister more precisely */
-		
-
-		FDCEmulationRunning = FDCEMU_RUN_READTRACK_COMPLETE;
-		Delay_micro = FDC_DELAY_READ_TRACK_STANDARD;
+		else								/* Track completly transferred */
+		{
+			FDCEmulationRunning = FDCEMU_RUN_READTRACK_COMPLETE;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		}
 		break;
 	 case FDCEMU_RUN_READTRACK_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
