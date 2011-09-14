@@ -588,19 +588,31 @@ static void FDC_DMADataFromFloppy( int NbBytes )
 /**
  * Init some variables before starting a new DMA transfer.
  * We must store new data just after the most recent bytes that
- * were not yet transfered by the DMA (16 bytes buffer)
+ * were not yet transferred by the DMA (16 bytes buffer).
+ * To avoid writing above the limit of DMADiskWorkSpace, we move
+ * the current 16 bytes buffer at the start of DMADiskWorkSpace
+ * if some bytes remain to be transferred, this way we never use
+ * more than FDC_TRACK_BYTES_STANDARD in DMADiskWorkSpace.
  */
 
 static void FDC_DMA_InitTransfer ( void )
 {
-	DMA_BytesToTransfer = DMA_PosInBufferTransfer & 0xf;		/* How many bytes remain in the current 16 bytes buffer ? */
+	int	i;
+
+	/* How many bytes remain in the current 16 bytes DMA buffer ? */
 	if ( DMA_BytesToTransfer == 0 )					/* DMA buffer is empty */
 	{
 		DMA_PosInBuffer = 0;					/* Add new data at the start of DMADiskWorkSpace */
 		DMA_PosInBufferTransfer = 0;
 	}
-	else
-		DMA_PosInBuffer = DMA_PosInBufferTransfer;		/* Add new data after the latest bytes stored in the 16 bytes buffer */
+	else								/* 16 bytes buffer partially filled */
+	{
+		for ( i=0 ; i<DMA_BytesToTransfer ; i++ )		/* Move these bytes at the start of the buffer */
+			DMADiskWorkSpace[ i ] = DMADiskWorkSpace[ DMA_PosInBufferTransfer + i ];
+
+		DMA_PosInBuffer = DMA_BytesToTransfer;			/* Add new data after the latest bytes stored in the 16 bytes buffer */
+		DMA_PosInBufferTransfer = 0;
+	}
 }
 
 
@@ -622,7 +634,7 @@ static void FDC_DMA_InitTransfer ( void )
 static bool FDC_DMA_ReadFromFloppy ( void )
 {
 	Uint32	Address;
-//fprintf ( stderr , "dma transfer count=%d bytes=%d pos=%d\n" , FDCSectorCountRegister, DMA_BytesToTransfer, DMA_PosInBufferTransfer );
+fprintf ( stderr , "dma transfer count=%d bytes=%d pos=%d\n" , FDCSectorCountRegister, DMA_BytesToTransfer, DMA_PosInBufferTransfer );
 
 	if ( DMA_BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
 		return true;						/* There should be at least 16 bytes to start a DMA transfer */
