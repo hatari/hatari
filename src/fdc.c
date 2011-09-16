@@ -250,6 +250,7 @@ enum
 enum
 {
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA,
+	FDCEMU_RUN_WRITESECTORS_WRITEDATA_DMA,
 	FDCEMU_RUN_WRITESECTORS_RNF,
 	FDCEMU_RUN_WRITESECTORS_COMPLETE
 };
@@ -379,6 +380,7 @@ static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
 static void FDC_ResetDMAStatus(void);
 static bool FDC_DMA_ReadFromFloppy ( void );
+static bool FDC_DMA_WriteToFloppy ( void );
 
 static int  FDC_FindFloppyDrive(void);
 static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
@@ -393,7 +395,7 @@ static int FDC_UpdateWriteSectorsCmd(void);
 static int FDC_UpdateReadAddressCmd(void);
 static int FDC_UpdateReadTrackCmd(void);
 static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorSize );
-static bool FDC_WriteSectorToFloppy ( int DMASectorsCount );
+static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *pSectorSize );
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -634,7 +636,7 @@ static void FDC_DMA_InitTransfer ( void )
 static bool FDC_DMA_ReadFromFloppy ( void )
 {
 	Uint32	Address;
-fprintf ( stderr , "dma transfer count=%d bytes=%d pos=%d\n" , FDCSectorCountRegister, DMA_BytesToTransfer, DMA_PosInBufferTransfer );
+//fprintf ( stderr , "dma transfer read count=%d bytes=%d pos=%d\n" , FDCSectorCountRegister, DMA_BytesToTransfer, DMA_PosInBufferTransfer );
 
 	if ( DMA_BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
 		return true;						/* There should be at least 16 bytes to start a DMA transfer */
@@ -663,6 +665,56 @@ fprintf ( stderr , "dma transfer count=%d bytes=%d pos=%d\n" , FDCSectorCountReg
 	}
 
 	return false;							/* Transfer is not complete */
+}
+
+
+/**
+ * Transfer 16 bytes from the RAM to disk using DMA.
+ * This is used to write data to the disk with correct timings
+ * by writing blocks of 16 bytes at a time.
+ *
+ * Return true if there're no more bytes to transfer or false if some
+ * bytes can still be tranfered by the DMA.
+ *
+ * NOTE : in the case of the emulation in Hatari, the sector is first written
+ * to the disk image and this function is just used to increment
+ * DMA address at the correct pace to simulate that bytes are written from
+ * blocks of 16 bytes handled by the DMA.
+ */
+
+static bool FDC_DMA_WriteToFloppy ( void )
+{
+	Uint32	Address;
+//fprintf ( stderr , "dma transfer write count=%d bytes=%d pos=%d\n" , FDCSectorCountRegister, DMA_BytesToTransfer, DMA_PosInBufferTransfer );
+
+	if ( DMA_BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+		return true;						/* There should be at least 16 bytes to start a DMA transfer */
+
+	if ( FDCSectorCountRegister == 0 )
+	{
+		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
+		DMA_PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
+		DMA_BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
+		return false;						/* FDC DMA is off but we still need to process the whole sector */
+	}
+
+	/* Transfer data and update DMA address */
+	Address = FDC_ReadDMAAddress();
+	//STMemory_SafeCopy ( Address , DMADiskWorkSpace + DMA_PosInBufferTransfer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
+	DMA_PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
+	DMA_BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
+	FDC_WriteDMAAddress ( Address + DMA_DISK_TRANSFER_SIZE );
+
+	/* Update Sector Count */
+	DMA_BytesInSector -= DMA_DISK_TRANSFER_SIZE;
+	if ( DMA_BytesInSector <= 0 )
+	{
+		FDCSectorCountRegister--;
+		DMA_BytesInSector = DMA_DISK_SECTOR_SIZE;
+	}
+
+	return false;							/* Transfer is not complete */
+
 }
 
 
@@ -1281,6 +1333,7 @@ static int FDC_UpdateWriteSectorsCmd(void)
 {
 	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	int	SectorSize;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -1304,26 +1357,40 @@ static int FDC_UpdateWriteSectorsCmd(void)
 	switch (FDCEmulationRunning)
 	{
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA:
-		/* Write a sector */
-		if ( FDC_WriteSectorToFloppy ( FDCSectorCountRegister ) )	/* Write a single 512 bytes sector */
+		/* Write a single sector from RAM (512 bytes for ST/MSA) */
+		FDC_DMA_InitTransfer ();				/* Update DMA_PosInBuffer */
+		if ( FDC_WriteSectorToFloppy ( FDCSectorCountRegister , FDCSectorRegister , &SectorSize ) )
 		{
-			if ( FDCSectorCountRegister > 0 )		/* Transfer data from RAM only if DMA sector > 0 */
-				FDCSectorCountRegister--;		/* One block/sector of 512 bytes was copied by DMA */
-			else
-				FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );	/* If DMA is OFF, data are lost */
-
-			if ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
-				FDCSectorRegister++;			/* Try to write next sector and set RNF if not possible */
-			else						/* Multi=0, stop here with no error */
-			{
-				FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_COMPLETE;
-			}
-			Delay_micro = FDC_DELAY_WRITE_SECTOR_STANDARD;	/* Add delay for the sector we just wrote */
+			DMA_BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
+			DMA_PosInBuffer += SectorSize;
+				
+			FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA_DMA;
+			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just wrote */
 		}
 		else							/* Sector FDCSectorRegister was not found */
 		{
-			FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_RNF;
+			FDCEmulationRunning = FDCEMU_RUN_READSECTORS_RNF;
 			Delay_micro = FDC_DELAY_RNF;
+		}
+		break;
+	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_DMA:
+		if ( ! FDC_DMA_WriteToFloppy () )
+		{
+			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Continue transferring blocks of 16 bytes */
+		}
+		else							/* Sector completly transferred, check for multi bit */
+		{
+			if ( FDCCommandRegister & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
+			{
+				FDCSectorRegister++;			/* Try to write next sector and set RNF if not possible */
+				FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
+				Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			}
+			else						/* Multi=0, stop here with no error */
+			{
+				FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_COMPLETE;
+				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			}
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_RNF:
@@ -2352,24 +2419,19 @@ static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorS
  * If DMASectorsCount==0, the DMA won't transfer any byte from RAM to the FDC
  * and some '0' bytes will be written to the disk.
  */
-static bool FDC_WriteSectorToFloppy ( int DMASectorsCount )
+static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *pSectorSize )
 {
-	Uint32 Address;
 	Uint8 *pBuffer;
 	int FrameCycles, HblCounterVideo, LineCycles;
-
-
-	/* Get DMA address */
-	Address = FDC_ReadDMAAddress();
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc write sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		Address, nReadWriteDev, FDCSectorRegister, HeadTrack[ nReadWriteDev ], nReadWriteSide,
+		FDC_ReadDMAAddress(), nReadWriteDev, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	if ( DMASectorsCount > 0 )
-		pBuffer = &STRam[Address];
+		pBuffer = &STRam[ FDC_ReadDMAAddress() ];
 	else
 	{
 		pBuffer = DMADiskWorkSpace;				/* If DMA can't transfer data, we write '0' bytes */
@@ -2377,7 +2439,7 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount )
 	}
 	
 	/* Write 1 sector from our workspace */
-	if ( Floppy_WriteSectors ( nReadWriteDev, pBuffer, FDCSectorRegister, HeadTrack[ nReadWriteDev ], nReadWriteSide, 1, NULL ) )
+	if ( Floppy_WriteSectors ( nReadWriteDev, pBuffer, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide, 1, NULL, pSectorSize ) )
 		return true;
 
 	/* Failed */

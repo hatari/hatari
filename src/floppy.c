@@ -661,7 +661,7 @@ bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
  */
 bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
                          Uint16 Track, Uint16 Side, short Count,
-                         int *pnSectorsPerTrack)
+                         int *pnSectorsPerTrack, int *pSectorSize)
 {
 	Uint8 *pDiskBuffer;
 	Uint16 nSectorsPerTrack, nSides, nBytesPerTrack;
@@ -684,6 +684,9 @@ bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		/* Write back number of sector per track */
 		if (pnSectorsPerTrack)
 			*pnSectorsPerTrack = nSectorsPerTrack;
+
+		if (pSectorSize)
+			*pSectorSize = NUMBYTESPERSECTOR;			/* Size is 512 bytes for ST/MSA */
 
 		/* Debug check as if we write over the end of a track we write into side 2! */
 		if (Count > nSectorsPerTrack)
