@@ -359,9 +359,9 @@ static Uint8 HeadTrack[ MAX_FLOPPYDRIVES ];			/* A: and B: */
 static Uint8 ID_FieldLastSector;				/* Sector number returned by Read Address (to simulate a spinning disk) */
 static Uint8 CommandType;					/* Type of latest FDC command */
 
-static short int nReadWriteTrack;                               /* Parameters used in sector read/writes */
-static short int nReadWriteSector;
-static short int nReadWriteSide;
+static short int nReadWriteTrack;                               /* Parameters used in sector read/writes */  // FIXME NP : remove
+static short int nReadWriteSector;		// FIXME NP : remove
+static short int nReadWriteSide;		// FIXME NP : remove
 static short int nReadWriteDev;
 static unsigned short int nReadWriteSectorsPerTrack;
 static short int nReadWriteSectors;		// FIXME NP : remove
@@ -452,13 +452,13 @@ void FDC_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&bDMAWaiting, sizeof(bDMAWaiting));			// FIXME NP : remove
 	MemorySnapShot_Store(&bMotorOn, sizeof(bMotorOn));				// FIXME NP : remove
 	MemorySnapShot_Store(&MotorSlowingCount, sizeof(MotorSlowingCount));		// FIXME NP : remove
-	MemorySnapShot_Store(&nReadWriteTrack, sizeof(nReadWriteTrack));
-	MemorySnapShot_Store(&nReadWriteSector, sizeof(nReadWriteSector));
-	MemorySnapShot_Store(&nReadWriteSide, sizeof(nReadWriteSide));
+	MemorySnapShot_Store(&nReadWriteTrack, sizeof(nReadWriteTrack));		// FIXME NP : remove
+	MemorySnapShot_Store(&nReadWriteSector, sizeof(nReadWriteSector));		// FIXME NP : remove
+	MemorySnapShot_Store(&nReadWriteSide, sizeof(nReadWriteSide));			// FIXME NP : remove
 	MemorySnapShot_Store(&nReadWriteDev, sizeof(nReadWriteDev));
 	MemorySnapShot_Store(&nReadWriteSectorsPerTrack, sizeof(nReadWriteSectorsPerTrack));
 	MemorySnapShot_Store(&nReadWriteSectors, sizeof(nReadWriteSectors));		// FIXME NP : remove
-	MemorySnapShot_Store(DMASectorWorkSpace, sizeof(DMASectorWorkSpace));		// FIMXE NP : use DMADiskWorkSpace
+	MemorySnapShot_Store(DMASectorWorkSpace, sizeof(DMASectorWorkSpace));		// FIXME NP : use DMADiskWorkSpace
 }
 
 
@@ -569,24 +569,6 @@ void FDC_DmaStatus_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/**
- * Copy data from DMA workspace into ST RAM and update DMA address
- * FIXME : we copy NbBytes at a time ; to really emulate the DMA in that
- * case, we should copy chunks of 16 bytes.
- */
-static void FDC_DMADataFromFloppy( int NbBytes )
-{
-	if ( NbBytes == 0 )
-		return;
-
-	Uint32 Address = FDC_ReadDMAAddress();
-	STMemory_SafeCopy(Address, DMADiskWorkSpace, NbBytes, "FDC DMA data read");
-	/* Update DMA pointer */
-	FDC_WriteDMAAddress ( Address + NbBytes );
-}
-
-
-
 /**
  * Init some variables before starting a new DMA transfer.
  * We must store new data just after the most recent bytes that
@@ -805,10 +787,6 @@ void FDC_AcknowledgeInterrupt(void)
  */
 static void FDC_SetReadWriteParameters(void)
 {
-	/* Copy read/write details so we can modify them */
-	nReadWriteTrack = HeadTrack[ nReadWriteDev ]; //FDCTrackRegister;
-	nReadWriteSector = FDCSectorRegister;
-	nReadWriteSide = (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01;
 	/* Update disk */
 	FDC_UpdateDiskDrive();
 }
@@ -2399,11 +2377,11 @@ static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorS
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc read sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_ReadDMAAddress(), nReadWriteDev, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide,
+		FDC_ReadDMAAddress(), nReadWriteDev, Sector, HeadTrack[ nReadWriteDev ], FDC_SIDE,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* Copy 1 sector to our workspace */
-	if ( Floppy_ReadSectors ( nReadWriteDev, buf, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide, 1, NULL, pSectorSize ) )
+	if ( Floppy_ReadSectors ( nReadWriteDev, buf, Sector, HeadTrack[ nReadWriteDev ], FDC_SIDE, 1, NULL, pSectorSize ) )
 		return true;
 
 	/* Failed */
@@ -2427,7 +2405,7 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc write sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_ReadDMAAddress(), nReadWriteDev, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide,
+		FDC_ReadDMAAddress(), nReadWriteDev, Sector, HeadTrack[ nReadWriteDev ], FDC_SIDE,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	if ( DMASectorsCount > 0 )
@@ -2439,7 +2417,7 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *
 	}
 	
 	/* Write 1 sector from our workspace */
-	if ( Floppy_WriteSectors ( nReadWriteDev, pBuffer, Sector, HeadTrack[ nReadWriteDev ], nReadWriteSide, 1, NULL, pSectorSize ) )
+	if ( Floppy_WriteSectors ( nReadWriteDev, pBuffer, Sector, HeadTrack[ nReadWriteDev ], FDC_SIDE, 1, NULL, pSectorSize ) )
 		return true;
 
 	/* Failed */
