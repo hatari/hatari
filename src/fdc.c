@@ -863,15 +863,21 @@ static int FDC_CmdCompleteCommon(void)
  * compare the track number in this ID field with the current Track Register.
  * If they don't match, an error is set with the RNF bit.
  * NOTE : in the case of Hatari when using ST/MSA images, the track is always the correct one,
- * so the verify will always be good.
+ * so the verify will always be good (except if no disk is inserted)
  * This function could be improved to support other images format where logical track
  * could be different from physical track (eg Pasti)
  */
 
 static void FDC_VerifyTrack(void)
 {
-  /* In the case of Hatari when using ST/MSA images, the track is always the correct one */
-  FDC_Update_STR ( FDC_STR_BIT_RNF , 0 );			/* remove RNF bit */
+	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
+	{
+		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* Set RNF bit */
+		return;
+	}
+
+	/* In the case of Hatari when using ST/MSA images, the track is always the correct one */
+	FDC_Update_STR ( FDC_STR_BIT_RNF , 0 );			/* remove RNF bit */
 }
 
 
