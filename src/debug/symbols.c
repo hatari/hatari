@@ -12,7 +12,8 @@
  * Symbol/address file contents are identical to "nm" output i.e. composed
  * of a hexadecimal addresses followed by a space, letter indicating symbol
  * type (T = text/code, D = data, B = BSS), space and the symbol name.
- * Empty lines and lines starting with '#' are ignored.
+ * Empty lines and lines starting with '#' are ignored.  AHCC SYM output
+ * compatible.
  */
 const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 
@@ -97,7 +98,7 @@ static int symbols_by_name(const void *s1, const void *s2)
 static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 maxaddr, symtype_t gettype)
 {
 	symbol_list_t *list;
-	char symchar, buffer[80], name[MAX_SYM_SIZE+1], *buf;
+	char symchar, buffer[128], name[MAX_SYM_SIZE+1], *buf;
 	int count, line, symbols;
 	symtype_t symtype;
 	Uint32 address;
@@ -111,8 +112,8 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 m
 	/* count content lines */
 	symbols = 0;
 	while (fgets(buffer, sizeof(buffer), fp)) {
-		/* skip comments */
-		if (*buffer == '#') {
+		/* skip comments (AHCC SYM file comments start with '*') */
+		if (*buffer == '#' || *buffer == '*') {
 			continue;
 		}
 		/* skip empty lines */
@@ -139,8 +140,8 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 m
 	/* read symbols */
 	count = 0;
 	for (line = 1; fgets(buffer, sizeof(buffer), fp); line++) {
-		/* skip comments */
-		if (*buffer == '#') {
+		/* skip comments (AHCC SYM file comments start with '*') */
+		if (*buffer == '#' || *buffer == '*') {
 			continue;
 		}
 		/* skip empty lines */
@@ -160,6 +161,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 m
 		}
 		switch (toupper(symchar)) {
 		case 'T': symtype = SYMTYPE_TEXT; break;
+		case 'O': symtype = SYMTYPE_DATA; break;	/* AHCC type for _StkSize etc */
 		case 'D': symtype = SYMTYPE_DATA; break;
 		case 'B': symtype = SYMTYPE_BSS; break;
 		default:
