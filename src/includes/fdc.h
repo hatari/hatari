@@ -9,10 +9,7 @@
 #define HATARI_FDC_H
 
 
-/* except for first, only commented out lines in hdc.c need these */
-extern Uint16 DiskControllerWord_ff8604wr;
 extern Uint16 DMAModeControl_ff8606wr;
-extern Sint16 FDCSectorCountRegister;
 
 extern void FDC_AcknowledgeInterrupt(void);
 extern void FDC_DiskController_WriteWord(void);

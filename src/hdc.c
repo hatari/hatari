@@ -14,6 +14,7 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "fdc.h"
 #include "hdc.h"
+#include "ioMem.h"
 #include "log.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
@@ -727,7 +728,7 @@ void HDC_WriteCommandPacket(void)
 		return;
 
 	/* command byte sent, store it. */
-	HDCCommand.command[HDCCommand.byteCount] = (DiskControllerWord_ff8604wr&0xFF);
+	HDCCommand.command[HDCCommand.byteCount] = IoMem_ReadByte(0xff8605);
 
 	/* We only support one target with ID 0 */
 	if (HD_TARGET(HDCCommand) != 0)
