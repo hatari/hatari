@@ -925,7 +925,7 @@ static int FDC_UpdateRestoreCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);          /* No DMA error */
 
-		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
+		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
@@ -994,7 +994,7 @@ static int FDC_UpdateSeekCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);          /* No DMA error */
 
-		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
+		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
@@ -1048,7 +1048,7 @@ static int FDC_UpdateStepCmd(void)
 		/* Set error */
 		FDC_SetDMAStatus(false);            /* No DMA error */
 
-		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
+		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
