@@ -173,9 +173,7 @@ enum
 	/* Type I */
 	FDCEMU_CMD_RESTORE,
 	FDCEMU_CMD_SEEK,
-	FDCEMU_CMD_STEP,
-	FDCEMU_CMD_STEPIN,
-	FDCEMU_CMD_STEPOUT,
+	FDCEMU_CMD_STEP,					/* Also used for STEP IN and STEP OUT */
 	/* Type II */
 	FDCEMU_CMD_READSECTORS,
 	FDCEMU_CMD_READMULTIPLESECTORS,
@@ -202,15 +200,9 @@ enum
 	/* Seek */
 	FDCEMU_RUN_SEEK_TOTRACK,
 	FDCEMU_RUN_SEEK_COMPLETE,
-	/* Step */
+	/* Step / Step In / Step Out */
 	FDCEMU_RUN_STEP_ONCE,
 	FDCEMU_RUN_STEP_COMPLETE,
-	/* Step In */
-	FDCEMU_RUN_STEPIN_ONCE,
-	FDCEMU_RUN_STEPIN_COMPLETE,
-	/* Step Out */
-	FDCEMU_RUN_STEPOUT_ONCE,
-	FDCEMU_RUN_STEPOUT_COMPLETE,
 	/* Read Sector */
 	FDCEMU_RUN_READSECTORS_READDATA,
 	FDCEMU_RUN_READSECTORS_READDATA_DMA,
@@ -362,8 +354,6 @@ static int FDC_UpdateMotorStop(void);
 static int FDC_UpdateRestoreCmd(void);
 static int FDC_UpdateSeekCmd(void);
 static int FDC_UpdateStepCmd(void);
-static int FDC_UpdateStepInCmd(void);
-static int FDC_UpdateStepOutCmd(void);
 static int FDC_UpdateReadSectorsCmd(void);
 static int FDC_UpdateWriteSectorsCmd(void);
 static int FDC_UpdateReadAddressCmd(void);
@@ -799,12 +789,6 @@ void FDC_InterruptHandler_Update(void)
 		 case FDCEMU_CMD_STEP:
 			Delay_micro = FDC_UpdateStepCmd();
 			break;
-		 case FDCEMU_CMD_STEPIN:
-			Delay_micro = FDC_UpdateStepInCmd();
-			break;
-		 case FDCEMU_CMD_STEPOUT:
-			Delay_micro = FDC_UpdateStepOutCmd();
-			break;
 
 		 case FDCEMU_CMD_READSECTORS:
 		 case FDCEMU_CMD_READMULTIPLESECTORS:
@@ -1044,7 +1028,7 @@ static int FDC_UpdateStepCmd(void)
 	 case FDCEMU_RUN_STEP_ONCE:
 		/* Move head by one track depending on FDC.StepDirection */
 		if ( FDC.CR & FDC_COMMAND_BIT_UPDATE_TRACK )
-			FDC.TR += FDC.StepDirection;
+			FDC.TR += FDC.StepDirection;			/* Update Track Register */
 
 		if ( ( HeadTrack[ FDC_DRIVE ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go after max track */
@@ -1054,7 +1038,7 @@ static int FDC_UpdateStepCmd(void)
 
 		else
 		{
-			HeadTrack[ FDC_DRIVE ] += FDC.StepDirection;/* Move physical head */
+			HeadTrack[ FDC_DRIVE ] += FDC.StepDirection;	/* Move physical head */
 			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
 		}
 
@@ -1066,104 +1050,6 @@ static int FDC_UpdateStepCmd(void)
 		FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
 		break;
 	 case FDCEMU_RUN_STEP_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);            /* No DMA error */
-
-		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
-			FDC_VerifyTrack();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
-		break;
-	}
-
-	return Delay_micro;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Run 'STEP IN' command
- */
-static int FDC_UpdateStepInCmd(void)
-{
-	int	Delay_micro = 0;
-
-	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
-
-	/* Which command is running? */
-	switch (FDC.CommandState)
-	{
-	 case FDCEMU_RUN_STEPIN_ONCE:
-		if ( FDC.CR & FDC_COMMAND_BIT_UPDATE_TRACK )
-			FDC.TR++;
-
-		if ( HeadTrack[ FDC_DRIVE ] == FDC_PHYSICAL_MAX_TRACK )
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go after max track */
-		else
-		{
-			HeadTrack[ FDC_DRIVE ]++;			/* Move physical head */
-			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
-		}
-
-		if ( HeadTrack[ FDC_DRIVE ] == 0 )
-			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
-		else
-			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
-
-		FDC.CommandState = FDCEMU_RUN_STEPIN_COMPLETE;
-		break;
-	 case FDCEMU_RUN_STEPIN_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);            /* No DMA error */
-
-		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
-			FDC_VerifyTrack();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
-		break;
-	}
-
-	return Delay_micro;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Run 'STEP OUT' command
- */
-static int FDC_UpdateStepOutCmd(void)
-{
-	int	Delay_micro = 0;
-
-	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
-
-	/* Which command is running? */
-	switch (FDC.CommandState)
-	{
-	 case FDCEMU_RUN_STEPOUT_ONCE:
-		if ( FDC.CR & FDC_COMMAND_BIT_UPDATE_TRACK )
-			FDC.TR--;
-
-		if ( HeadTrack[ FDC_DRIVE ] == 0 )
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go before track 0 */
-		else
-		{
-			HeadTrack[ FDC_DRIVE ]--;			/* Move physical head */
-			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
-		}
-
-		if ( HeadTrack[ FDC_DRIVE ] == 0 )
-			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
-		else
-			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
-
-		FDC.CommandState = FDCEMU_RUN_STEPOUT_COMPLETE;
-		break;
-	 case FDCEMU_RUN_STEPOUT_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
@@ -1638,7 +1524,7 @@ static int FDC_TypeI_Step(void)
 	LOG_TRACE(TRACE_FDC, "fdc type I step %d VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.StepDirection, nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	/* Set emulation to step (same direction as last seek executed, eg 'FDC.StepDirection') */
+	/* Set emulation to step (using same direction as latest seek executed, ie 'FDC.StepDirection') */
 	FDC.Command = FDCEMU_CMD_STEP;
 	FDC.CommandState = FDCEMU_RUN_STEP_ONCE;
 
@@ -1659,9 +1545,9 @@ static int FDC_TypeI_StepIn(void)
 	LOG_TRACE(TRACE_FDC, "fdc type I step in VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	/* Set emulation to step in(Set 'FDC.StepDirection') */
-	FDC.Command = FDCEMU_CMD_STEPIN;
-	FDC.CommandState = FDCEMU_RUN_STEPIN_ONCE;
+	/* Set emulation to step in (direction = +1) */
+	FDC.Command = FDCEMU_CMD_STEP;
+	FDC.CommandState = FDCEMU_RUN_STEP_ONCE;
 	FDC.StepDirection = 1;						/* Increment track*/
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
@@ -1681,9 +1567,9 @@ static int FDC_TypeI_StepOut(void)
 	LOG_TRACE(TRACE_FDC, "fdc type I step out VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	/* Set emulation to step out(Set 'FDC.StepDirection') */
-	FDC.Command = FDCEMU_CMD_STEPOUT;
-	FDC.CommandState = FDCEMU_RUN_STEPOUT_ONCE;
+	/* Set emulation to step out (direction = -1) */
+	FDC.Command = FDCEMU_CMD_STEP;
+	FDC.CommandState = FDCEMU_RUN_STEP_ONCE;
 	FDC.StepDirection = -1;						/* Decrement track */
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
