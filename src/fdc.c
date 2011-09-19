@@ -176,9 +176,7 @@ enum
 	FDCEMU_CMD_STEP,					/* Also used for STEP IN and STEP OUT */
 	/* Type II */
 	FDCEMU_CMD_READSECTORS,
-	FDCEMU_CMD_READMULTIPLESECTORS,
 	FDCEMU_CMD_WRITESECTORS,
-	FDCEMU_CMD_WRITEMULTIPLESECTORS,
 	/* Type III */
 	FDCEMU_CMD_READADDRESS,
 	FDCEMU_CMD_READTRACK,
@@ -784,11 +782,9 @@ void FDC_InterruptHandler_Update(void)
 			break;
 
 		 case FDCEMU_CMD_READSECTORS:
-		 case FDCEMU_CMD_READMULTIPLESECTORS:
 			Delay_micro = FDC_UpdateReadSectorsCmd();
 			break;
 		 case FDCEMU_CMD_WRITESECTORS:
-		 case FDCEMU_CMD_WRITEMULTIPLESECTORS:
 			Delay_micro = FDC_UpdateWriteSectorsCmd();
 			break;
 
