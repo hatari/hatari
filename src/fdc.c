@@ -674,13 +674,6 @@ static void FDC_SetDiskControllerStatus(void)
 {
 	/* Update disk */
 	FDC_UpdateDiskDrive();
-
-#if 1		/* rewrite block */
-
-	/* If no disk inserted, tag as error */
-	if (!EmulationDrives[ FDC_DRIVE ].bDiskInserted)
-		DiskControllerStatus_ff8604rd |= 0x10;     /* RNF - Record not found, ie no disk in drive */
-#endif
 }
 
 
