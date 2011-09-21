@@ -2089,7 +2089,7 @@ void FDC_DiskController_WriteWord(void)
  */
 void FDC_DiskControllerStatus_ReadWord(void)
 {
-	Sint16 DiskControllerByte = 0;					/* Used to pass back the parameter */
+	Uint16 DiskControllerByte = 0;					/* Used to pass back the parameter */
 	int FrameCycles, HblCounterVideo, LineCycles;
 
 
@@ -2114,14 +2114,11 @@ void FDC_DiskControllerStatus_ReadWord(void)
 	}
 	else
 	{
-		/* old FDC code */
+		/* FDC code */
 		switch (DMAModeControl_ff8606wr&0x6)			/* Bits 1,2 (A1,A0) */
 		{
 		 case 0x0:						/* 0 0 - Status register */
 			DiskControllerByte = DiskControllerStatus_ff8604rd;
-
-			if (Floppy_IsWriteProtected(FDC_DRIVE))
-				DiskControllerByte |= 0x40;
 
 			if (EmulationDrives[FDC_DRIVE].bMediaChanged)
 			{
@@ -2133,7 +2130,7 @@ void FDC_DiskControllerStatus_ReadWord(void)
 				EmulationDrives[FDC_DRIVE].bMediaChanged = false;
 			}
 
-			/* Reset FDC GPIP */
+			/* When Status Register is read, FDC's INTRQ is reset */
 			MFP_GPIP |= 0x20;
 			break;
 		 case 0x2:						/* 0 1 - Track register */
