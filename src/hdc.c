@@ -135,7 +135,7 @@ static void HDC_Cmd_Inquiry(void)
 	Uint32 nDmaAddr;
 	int count;
 
-	nDmaAddr = FDC_ReadDMAAddress();
+	nDmaAddr = FDC_GetDMAAddress();
 	count = HD_SECTORCOUNT(HDCCommand);
 
 #ifdef HDC_VERBOSE
@@ -193,7 +193,7 @@ static void HDC_Cmd_RequestSense(void)
 		nRetLen = 22;
 	}
 
-	nDmaAddr = FDC_ReadDMAAddress();
+	nDmaAddr = FDC_GetDMAAddress();
 
 	memset(retbuf, 0, nRetLen);
 
@@ -267,7 +267,7 @@ static void HDC_Cmd_ModeSense(void)
 	fprintf(stderr,"HDC: Mode Sense.\n");
 #endif
 
-	nDmaAddr = FDC_ReadDMAAddress();
+	nDmaAddr = FDC_GetDMAAddress();
 
 	if (!STMemory_ValidArea(nDmaAddr, 16))
 	{
@@ -359,7 +359,7 @@ static void HDC_Cmd_WriteSector(void)
 	else
 	{
 		/* write - if allowed */
-		Uint32 nDmaAddr = FDC_ReadDMAAddress();
+		Uint32 nDmaAddr = FDC_GetDMAAddress();
 #ifndef DISALLOW_HDC_WRITE
 		if (STMemory_ValidArea(nDmaAddr, 512*HD_SECTORCOUNT(HDCCommand)))
 		{
@@ -406,7 +406,7 @@ static void HDC_Cmd_ReadSector(void)
 
 #ifdef HDC_VERBOSE
 	fprintf(stderr,"Reading %i sectors from 0x%x to addr: 0x%x\n",
-	        HD_SECTORCOUNT(HDCCommand), nLastBlockAddr, FDC_ReadDMAAddress());
+	        HD_SECTORCOUNT(HDCCommand), nLastBlockAddr, FDC_GetDMAAddress());
 #endif
 
 	/* seek to the position */
@@ -417,7 +417,7 @@ static void HDC_Cmd_ReadSector(void)
 	}
 	else
 	{
-		Uint32 nDmaAddr = FDC_ReadDMAAddress();
+		Uint32 nDmaAddr = FDC_GetDMAAddress();
 		if (STMemory_ValidArea(nDmaAddr, 512*HD_SECTORCOUNT(HDCCommand)))
 		{
 			n = fread(&STRam[nDmaAddr], 512,

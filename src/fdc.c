@@ -583,7 +583,7 @@ static bool FDC_DMA_ReadFromFloppy ( void )
 	}
 
 	/* Transfer data and update DMA address */
-	Address = FDC_ReadDMAAddress();
+	Address = FDC_GetDMAAddress();
 	STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
 	FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
 	FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
@@ -632,7 +632,7 @@ static bool FDC_DMA_WriteToFloppy ( void )
 	}
 
 	/* Transfer data and update DMA address */
-	Address = FDC_ReadDMAAddress();
+	Address = FDC_GetDMAAddress();
 	//STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
 	FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
 	FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
@@ -1586,7 +1586,7 @@ static int FDC_TypeII_ReadSector(void)
 
 	LOG_TRACE(TRACE_FDC, "fdc type II read sector sect=0x%x multi=%s dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDC_DMA.SectorCount ,
-		  FDC_ReadDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read sector(s) */
 	FDC.Command = FDCEMU_CMD_READSECTORS;
@@ -1615,7 +1615,7 @@ static int FDC_TypeII_WriteSector(void)
 
 	LOG_TRACE(TRACE_FDC, "fdc type II write sector %d multi=%s dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDC_DMA.SectorCount,
-		  FDC_ReadDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to write a sector(s) */
 	FDC.Command = FDCEMU_CMD_WRITESECTORS;
@@ -1651,7 +1651,7 @@ static int FDC_TypeIII_ReadAddress(void)
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type III read address track=0x%x side=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_ReadDMAAddress(),
+		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
@@ -1678,7 +1678,7 @@ static int FDC_TypeIII_ReadTrack(void)
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type III read track track=0x%x side=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_ReadDMAAddress(),
+		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read a single track */
@@ -1706,7 +1706,7 @@ static int FDC_TypeIII_WriteTrack(void)
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type III write track track=0x%x side=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_ReadDMAAddress(),
+		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	Log_Printf(LOG_TODO, "FDC type III command 'write track' does not work yet!\n");
@@ -2156,9 +2156,41 @@ void FDC_DiskControllerStatus_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read DMA address from ST's RAM (always up-to-date)
+ * Read hi/med/low DMA address byte at $ff8609/0b/0d
  */
-Uint32 FDC_ReadDMAAddress(void)
+void	FDC_DmaAddress_ReadByte ( void )
+{
+	int FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	LOG_TRACE(TRACE_FDC, "fdc read dma address %x val=0x%02x address=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+		IoAccessCurrentAddress , IoMem[ IoAccessCurrentAddress ] , FDC_GetDMAAddress() ,
+		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write hi/med/low DMA address byte at $ff8609/0b/0d
+ */
+void	FDC_DmaAddress_WriteByte ( void )
+{
+	int FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	LOG_TRACE(TRACE_FDC, "fdc write dma address %x val=0x%02x address=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+		IoAccessCurrentAddress , IoMem[ IoAccessCurrentAddress ] , FDC_GetDMAAddress() ,
+		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Get DMA address used to transfer data between FDC and RAM
+ */
+Uint32 FDC_GetDMAAddress(void)
 {
 	Uint32 Address;
 
@@ -2201,7 +2233,7 @@ static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorS
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc read sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_ReadDMAAddress(), FDC_DRIVE, Sector, HeadTrack[ FDC_DRIVE ], FDC_SIDE,
+		FDC_GetDMAAddress(), FDC_DRIVE, Sector, HeadTrack[ FDC_DRIVE ], FDC_SIDE,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* Copy 1 sector to our workspace */
@@ -2229,11 +2261,11 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc write sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_ReadDMAAddress(), FDC_DRIVE, Sector, HeadTrack[ FDC_DRIVE ], FDC_SIDE,
+		FDC_GetDMAAddress(), FDC_DRIVE, Sector, HeadTrack[ FDC_DRIVE ], FDC_SIDE,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	if ( DMASectorsCount > 0 )
-		pBuffer = &STRam[ FDC_ReadDMAAddress() ];
+		pBuffer = &STRam[ FDC_GetDMAAddress() ];
 	else
 	{
 		pBuffer = DMADiskWorkSpace;				/* If DMA can't transfer data, we write '0' bytes */
