@@ -324,8 +324,6 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace use
 
 
 
-static Uint16 DiskControllerStatus_ff8604rd;                    /* 0xff8604 (read) */
-
 Uint16 DMAModeControl_ff8606wr;                                 /* 0xff8606 (write) */
 static Uint16 DMAStatus_ff8606rd;                               /* 0xff8606 (read) */
 
@@ -368,7 +366,6 @@ void FDC_Reset(void)
 	int	i;
 
 	/* Clear out FDC registers */
-	DiskControllerStatus_ff8604rd = 0;
 	DMAStatus_ff8606rd = 0x01;
 	DMAModeControl_ff8606wr = 0;
 
@@ -376,6 +373,7 @@ void FDC_Reset(void)
 	FDC.TR = 0;
 	FDC.SR = 1;
 	FDC.DR = 0;
+	FDC.STR = 0;
 	FDC.StepDirection = 1;
 	FDC.ID_FieldLastSector = 1;
 
@@ -398,7 +396,6 @@ void FDC_Reset(void)
 void FDC_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
-	MemorySnapShot_Store(&DiskControllerStatus_ff8604rd, sizeof(DiskControllerStatus_ff8604rd));
 	MemorySnapShot_Store(&DMAStatus_ff8606rd, sizeof(DMAStatus_ff8606rd));
 	MemorySnapShot_Store(&DMAModeControl_ff8606wr, sizeof(DMAModeControl_ff8606wr));
 	MemorySnapShot_Store(&nReadWriteSectorsPerTrack, sizeof(nReadWriteSectorsPerTrack));
@@ -677,9 +674,9 @@ static void FDC_SetDiskControllerStatus(void)
 
 static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 {
-	DiskControllerStatus_ff8604rd &= (~DisableBits);		/* clear bits in DisableBits */
-	DiskControllerStatus_ff8604rd |= EnableBits;			/* set bits in EnableBits */
-fprintf ( stderr , "fdc str 0x%x\n" , DiskControllerStatus_ff8604rd );
+	FDC.STR &= (~DisableBits);		/* clear bits in DisableBits */
+	FDC.STR |= EnableBits;			/* set bits in EnableBits */
+fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
 }
 
 
@@ -1428,13 +1425,13 @@ static int FDC_Check_MotorON ( Uint8 FDC_CR )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	if ( ( ( FDC_CR & FDC_COMMAND_BIT_MOTOR_ON ) == 0 )				/* command wants motor on / spin up */
-	  && ( ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_MOTOR_ON ) == 0 ) )	/* motor on not enabled yet */
+	if ( ( ( FDC_CR & FDC_COMMAND_BIT_MOTOR_ON ) == 0 )			/* Command wants motor on / spin up */
+	  && ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 ) )			/* Motor on not enabled yet */
 	{
 		LOG_TRACE(TRACE_FDC, "fdc start motor VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );				/* set motor bit */
-		return FDC_DELAY_MOTOR_ON;						/* motor's delay */
+		FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );			/* Set motor bit */
+		return FDC_DELAY_MOTOR_ON;					/* Motor's delay */
 	}
 
 	/* Other cases : set bit in STR and don't add delay */
@@ -1744,12 +1741,13 @@ static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 	LOG_TRACE(TRACE_FDC, "fdc type IV force int VBL=%d video_cyc=%d %d@%dpc=%x\n",
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	/* For Type II/III commands, LOST DATA bit is never set (DRQ is always handled by the DMA) (Super Monaco GP on Superior 65) */
+	/* For Type II/III commands, LOST DATA bit is never set (DRQ is always handled by the DMA) */
+	/* (eg Super Monaco GP on Superior 65 : loader fails if LOST DATA is set when there're not enough DMA sectors to transfer bytes) */
 	FDC_Update_STR ( FDC_STR_BIT_LOST_DATA , 0 );			/* Remove LOST DATA / TR00 bit */
 
 	/* TR00 is updated when a type I command is interrupted or when no command was running */
-	if ( ( ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY ) == 0 )	/* No command running */
-	  || ( FDC.CommandType == 1 ) )						/* Busy command is Type I */
+	if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
+	  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
 	{
 		if ( HeadTrack[ FDC_DRIVE ] == 0 )
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
@@ -1947,7 +1945,7 @@ static void FDC_WriteCommandRegister(void)
 		  IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* If fdc is busy, only 'Force Interrupt' is possible */
-	if ( ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY )
+	if ( ( FDC.STR & FDC_STR_BIT_BUSY )
 		&& ( ( IoMem_ReadByte(0xff8605) & 0xf0 ) != 0xd0 ) )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, command=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
@@ -1974,7 +1972,7 @@ static void FDC_WriteTrackRegister(void)
 		IoMem_ReadByte(0xff8605) , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* If fdc is busy, Track Register can't be modified */
-	if ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY )
+	if ( FDC.STR & FDC_STR_BIT_BUSY )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, track=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -1999,7 +1997,7 @@ static void FDC_WriteSectorRegister(void)
 		IoMem_ReadByte(0xff8605) , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* If fdc is busy, Sector Register can't be modified */
-	if ( DiskControllerStatus_ff8604rd & FDC_STR_BIT_BUSY )
+	if ( FDC.STR & FDC_STR_BIT_BUSY )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, sector=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2118,7 +2116,7 @@ void FDC_DiskControllerStatus_ReadWord(void)
 		switch (DMAModeControl_ff8606wr&0x6)			/* Bits 1,2 (A1,A0) */
 		{
 		 case 0x0:						/* 0 0 - Status register */
-			DiskControllerByte = DiskControllerStatus_ff8604rd;
+			DiskControllerByte = FDC.STR;
 
 			if (EmulationDrives[FDC_DRIVE].bMediaChanged)
 			{
