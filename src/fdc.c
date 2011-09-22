@@ -304,6 +304,8 @@ typedef struct {
 
 typedef struct {
 	/* DMA internal registers */
+	Uint16		Status;
+	Uint16		Mode;
 	Uint16		SectorCount;
 	Uint16		BytesInSector;
 
@@ -324,10 +326,6 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace use
 
 
 
-Uint16 DMAModeControl_ff8606wr;                                 /* 0xff8606 (write) */
-static Uint16 DMAStatus_ff8606rd;                               /* 0xff8606 (read) */
-
-
 static unsigned short int nReadWriteSectorsPerTrack;
 
 
@@ -340,7 +338,7 @@ static unsigned short int nReadWriteSectorsPerTrack;
 static int FDC_DelayToCpuCycles ( int Delay_micro );
 static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
-static void FDC_ResetDMAStatus(void);
+static void FDC_ResetDMA(void);
 static bool FDC_DMA_ReadFromFloppy ( void );
 static bool FDC_DMA_WriteToFloppy ( void );
 
@@ -366,8 +364,6 @@ void FDC_Reset(void)
 	int	i;
 
 	/* Clear out FDC registers */
-	DMAStatus_ff8606rd = 0x01;
-	DMAModeControl_ff8606wr = 0;
 
 	FDC.CR = 0;
 	FDC.TR = 0;
@@ -381,8 +377,10 @@ void FDC_Reset(void)
 	FDC.CommandState = FDCEMU_RUN_NULL;
 	FDC.CommandType = 0;
 
+	FDC_DMA.Status = 1;				/* no DMA error and SectorCount=0 */
+	FDC_DMA.Mode = 0;
 	FDC_DMA.SectorCount = 0;
-	FDC_ResetDMAStatus();
+	FDC_ResetDMA();
 
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 		HeadTrack[ i ] = 0;			/* Set all drives to track 0 */
@@ -396,8 +394,6 @@ void FDC_Reset(void)
 void FDC_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
-	MemorySnapShot_Store(&DMAStatus_ff8606rd, sizeof(DMAStatus_ff8606rd));
-	MemorySnapShot_Store(&DMAModeControl_ff8606wr, sizeof(DMAModeControl_ff8606wr));
 	MemorySnapShot_Store(&nReadWriteSectorsPerTrack, sizeof(nReadWriteSectorsPerTrack));
 
 
@@ -442,11 +438,11 @@ static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reset DMA Status (RD 0xff8606)
+ * Reset DMA (clear internal 16 bytes buffer)
  *
  * This is done by 'toggling' bit 8 of the DMA Mode Control register
  */
-static void FDC_ResetDMAStatus(void)
+static void FDC_ResetDMA(void)
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -454,17 +450,15 @@ static void FDC_ResetDMAStatus(void)
 	LOG_TRACE(TRACE_FDC, "fdc reset dma VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	DMAStatus_ff8606rd = 0;           /* Clear out */
-
+	/* Reset bytes count for current DMA sector */
 	FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
-	FDC_SetDMAStatus(false);          /* Set no error */
 
+	/* Reset variables used to handle DMA transfer */
 	FDC_DMA.PosInBuffer = 0;
 	FDC_DMA.PosInBufferTransfer = 0;
 	FDC_DMA.BytesToTransfer = 0;
 
 	/* Reset HDC command status */
-	HDCSectorCount = 0;			/* [NP] FIXME Don't reset hdc sector count ? */
 	/*HDCCommand.byteCount = 0;*/  /* Not done on real ST? */
 	HDCCommand.returnCode = 0;
 }
@@ -480,39 +474,16 @@ static void FDC_ResetDMAStatus(void)
  * Bit 0 - _Error Status (0=Error)
  * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
  * Bit 2 - _Data Request Inactive Status
+ *
+ * FIXME [NP] : is bit 0 really used on ST ? It seems it's always 1 (no DMA error)
  */
 void FDC_SetDMAStatus(bool bError)
 {
-	DMAStatus_ff8606rd &= 0x1;        /* Clear(except for error) */
-
 	/* Set error condition - NOTE this is incorrect in the FDC Doc's! */
 	if (!bError)
-		DMAStatus_ff8606rd |= 0x1;
-
-	/* Set zero sector count */
-
-	if (DMAModeControl_ff8606wr&0x08)         /* Get which sector count? */
-		DMAStatus_ff8606rd |= (HDCSectorCount)?0x2:0;		/* HDC */
+		FDC_DMA.Status |= 0x1;					/* No Error, set bit 0 */
 	else
-		DMAStatus_ff8606rd |= (FDC_DMA.SectorCount)?0x2:0;	/* FDC */
-	/* Perhaps the DRQ should be set here */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read DMA Status (RD 0xff8606)
- */
-void FDC_DmaStatus_ReadWord(void)
-{
-	if (nIoMemAccessSize == SIZE_BYTE)
-	{
-		/* This register does not like to be accessed in byte mode on a normal ST */
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ);
-		return;
-	}
-
-	IoMem_WriteWord(0xff8606, DMAStatus_ff8606rd);
+		FDC_DMA.Status &= ~0x1;					/* Error, clear bit 0 */
 }
 
 
@@ -2048,7 +2019,7 @@ void FDC_DiskController_WriteWord(void)
 		IoMem_ReadWord(0xff8604), nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* Is it an ASCII HD command? */
-	if ( ( DMAModeControl_ff8606wr & 0x0018 ) == 8 )
+	if ( ( FDC_DMA.Mode & 0x0018 ) == 8 )
 	{
 		/*  Handle HDC functions */
 		HDC_WriteCommandPacket();
@@ -2056,12 +2027,12 @@ void FDC_DiskController_WriteWord(void)
 	}
 
 	/* Are we trying to set the SectorCount ? */
-	if ( DMAModeControl_ff8606wr & 0x10 )				/* Bit 4 */
+	if ( FDC_DMA.Mode & 0x10 )					/* Bit 4 */
 		FDC_WriteSectorCountRegister();
 	else
 	{
 		/* Write to FDC registers */
-		switch ( DMAModeControl_ff8606wr & 0x6 )
+		switch ( FDC_DMA.Mode & 0x6 )
 		{   /* Bits 1,2 (A1,A0) */
 		 case 0x0:						/* 0 0 - Command register */
 			FDC_WriteCommandRegister();
@@ -2100,12 +2071,12 @@ void FDC_DiskControllerStatus_ReadWord(void)
 
 	M68000_WaitState(4);
 
-	if ((DMAModeControl_ff8606wr & 0x18) == 0x08)			/* HDC status reg selected? */
+	if ((FDC_DMA.Mode & 0x18) == 0x08)				/* HDC status reg selected? */
 	{
 		/* return the HDC status reg */
 		DiskControllerByte = HDCCommand.returnCode;
 	}
-	else if ((DMAModeControl_ff8606wr & 0x18) == 0x18)		/* HDC sector counter??? */
+	else if ((FDC_DMA.Mode & 0x18) == 0x18)				/* HDC sector counter??? */
 	{
 		Log_Printf(LOG_DEBUG, "*** Read HDC sector counter???\n");
 		DiskControllerByte = HDCSectorCount;
@@ -2113,7 +2084,7 @@ void FDC_DiskControllerStatus_ReadWord(void)
 	else
 	{
 		/* FDC code */
-		switch (DMAModeControl_ff8606wr&0x6)			/* Bits 1,2 (A1,A0) */
+		switch (FDC_DMA.Mode & 0x6)				/* Bits 1,2 (A1,A0) */
 		{
 		 case 0x0:						/* 0 0 - Status register */
 			DiskControllerByte = FDC.STR;
@@ -2149,6 +2120,75 @@ void FDC_DiskControllerStatus_ReadWord(void)
 
 	LOG_TRACE(TRACE_FDC, "fdc read 8604 ctrl status=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		DiskControllerByte , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write word to 0xff8606 (DMA Mode Control)
+ *
+ * Eg.
+ * $80 - Selects command/status register
+ * $82 - Selects track register
+ * $84 - Selects sector register
+ * $86 - Selects data regsiter
+ * NOTE - OR above values with $100 is transfer from memory to floppy
+ * Also if bit 4 is set, write to sector count register
+ */
+void FDC_DmaModeControl_WriteWord(void)
+{
+	Uint16 Mode_prev;						/* Store previous write to 0xff8606 for 'toggle' checks */
+	int FrameCycles, HblCounterVideo, LineCycles;
+
+
+	if (nIoMemAccessSize == SIZE_BYTE)
+	{
+		/* This register does not like to be accessed in byte mode on a normal ST */
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE);
+		return;
+	}
+
+	Mode_prev = FDC_DMA.Mode;					/* Store previous to check for _read/_write toggle (DMA reset) */
+	FDC_DMA.Mode = IoMem_ReadWord(0xff8606);			/* Store to DMA Mode control */
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	LOG_TRACE(TRACE_FDC, "fdc write 8606 ctrl=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+		FDC_DMA.Mode , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+
+	/* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
+	if ((Mode_prev ^ FDC_DMA.Mode) & 0x0100)
+		FDC_ResetDMA();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read DMA Status (RD 0xff8606)
+ *
+ * Bit 0 - Error Status (0=Error)
+ * Bit 1 - Sector Count Zero Status (0=Sector Count Zero)
+ * Bit 2 - Data Request Inactive Status
+ */
+void FDC_DmaStatus_ReadWord(void)
+{
+	if (nIoMemAccessSize == SIZE_BYTE)
+	{
+		/* This register does not like to be accessed in byte mode on a normal ST */
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ);
+		return;
+	}
+
+	/* Set zero sector count */
+	FDC_DMA.Status &= ~0x2;						/* Clear bit 1 */
+	if ( FDC_DMA.Mode & 0x08 )					/* Get which sector count ? */
+		FDC_DMA.Status |= (HDCSectorCount)?0x2:0;		/* HDC */
+	else
+		FDC_DMA.Status |= (FDC_DMA.SectorCount)?0x2:0;		/* FDC */
+
+	/* In the case of the ST, DRQ is always 0 because it's handled by the DMA and its 16 bytes buffer */
+
+	IoMem_WriteWord(0xff8606, FDC_DMA.Status);
 }
 
 
@@ -2277,45 +2317,6 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc write sector failed\n" );
 	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Write word to 0xff8606 (DMA Mode Control)
- *
- * Eg.
- * $80 - Selects command/status register
- * $82 - Selects track register
- * $84 - Selects sector register
- * $86 - Selects data regsiter
- * NOTE - OR above values with $100 is transfer from memory to floppy
- * Also if bit 4 is set, write to sector count register
- */
-void FDC_DmaModeControl_WriteWord(void)
-{
-	Uint16 DMAModeControl_ff8606wr_prev;                     /* stores previous write to 0xff8606 for 'toggle' checks */
-	int FrameCycles, HblCounterVideo, LineCycles;
-
-
-	if (nIoMemAccessSize == SIZE_BYTE)
-	{
-		/* This register does not like to be accessed in byte mode on a normal ST */
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE);
-		return;
-	}
-
-	DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
-	DMAModeControl_ff8606wr = IoMem_ReadWord(0xff8606);      /* Store to DMA Mode control */
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-	LOG_TRACE(TRACE_FDC, "fdc write 8606 ctrl=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		DMAModeControl_ff8606wr , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
-
-	/* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
-	if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr) & 0x0100)
-		FDC_ResetDMAStatus();
 }
 
 
