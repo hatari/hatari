@@ -862,8 +862,6 @@ static int FDC_UpdateRestoreCmd(void)
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			/* Acknowledge interrupt, move along there's nothing more to see */
 			FDC_AcknowledgeInterrupt();
-			/* Set error */
-			FDC_SetDMAStatus(true);				 /* DMA error */
 			/* Done */
 			Delay_micro = FDC_CmdCompleteCommon();
 		}
@@ -886,8 +884,6 @@ static int FDC_UpdateRestoreCmd(void)
 	 case FDCEMU_RUN_RESTORE_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);          /* No DMA error */
 
 		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
@@ -955,8 +951,6 @@ static int FDC_UpdateSeekCmd(void)
 	 case FDCEMU_RUN_SEEK_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);          /* No DMA error */
 
 		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
@@ -1009,8 +1003,6 @@ static int FDC_UpdateStepCmd(void)
 	 case FDCEMU_RUN_STEP_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);            /* No DMA error */
 
 		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
@@ -1083,16 +1075,12 @@ static int FDC_UpdateReadSectorsCmd(void)
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(true);             /* DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	 case FDCEMU_RUN_READSECTORS_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);              /* No DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
@@ -1121,8 +1109,6 @@ static int FDC_UpdateWriteSectorsCmd(void)
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );		/* Set WPRT bit */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(true);             /* DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 	}
@@ -1177,16 +1163,12 @@ static int FDC_UpdateWriteSectorsCmd(void)
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(true);             /* DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);              /* No DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
@@ -1211,8 +1193,6 @@ static int FDC_UpdateReadAddressCmd(void)
 	{
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(true);             /* DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 	}
@@ -1262,8 +1242,6 @@ static int FDC_UpdateReadAddressCmd(void)
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
@@ -1291,8 +1269,6 @@ static int FDC_UpdateReadTrackCmd(void)
 	{
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(true);             /* DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 	}
@@ -1334,8 +1310,6 @@ static int FDC_UpdateReadTrackCmd(void)
 			{
 				FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 				FDC_AcknowledgeInterrupt();
-				/* Set error */
-				FDC_SetDMAStatus(true);             /* DMA error */
 				/* Done */
 				Delay_micro = FDC_CmdCompleteCommon();
 			}
@@ -1373,8 +1347,6 @@ static int FDC_UpdateReadTrackCmd(void)
 	 case FDCEMU_RUN_READTRACK_COMPLETE:
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
-		/* Set error */
-		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
 		Delay_micro = FDC_CmdCompleteCommon();
 		break;
