@@ -21,7 +21,6 @@ extern void FDC_DmaAddress_WriteByte(void);
 
 extern void FDC_FloppyMode_ReadByte(void);
 extern void FDC_FloppyMode_WriteByte(void);
-extern void FDC_GpipRead(void);
 extern void FDC_InterruptHandler_Update(void);
 extern void FDC_MemorySnapShot_Capture(bool bSave);
 extern Uint32 FDC_GetDMAAddress(void);

@@ -694,33 +694,6 @@ static void FDC_SetReadWriteParameters(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * ST program (or TOS) has read the MFP GPIP register to check if the FDC
- * is already done. Then we can skip the usual FDC waiting period!
- */
-void FDC_GpipRead(void)
-{
-	static int nLastGpipBit;
-
-	if ((MFP_GPIP & 0x20) == nLastGpipBit)
-	{
-#if 0
-		if (!ConfigureParams.DiskImage.bSlowFloppy)
-		{
-			/* Restart FDC update interrupt to occur right after a few cycles */
-			CycInt_RemovePendingInterrupt(INTERRUPT_FDC);
-			CycInt_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_FDC);
-		}
-#endif
-	}
-	else
-	{
-		nLastGpipBit = MFP_GPIP & 0x20;
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Update floppy drive after a while.
  * Some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't work
  * if the FDC is too fast. So we use the update "interrupt" for delayed

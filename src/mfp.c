@@ -1011,8 +1011,6 @@ void MFP_GPIP_ReadByte(void)
 		}
 	}
 
-	FDC_GpipRead();
-
 	IoMem[0xfffa01] = MFP_GPIP;
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
