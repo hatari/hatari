@@ -497,7 +497,6 @@ void FDC_SetDMAStatus(bool bError)
  * if some bytes remain to be transferred, this way we never use
  * more than FDC_TRACK_BYTES_STANDARD in DMADiskWorkSpace.
  */
-
 static void FDC_DMA_InitTransfer ( void )
 {
 	int	i;
@@ -519,6 +518,7 @@ static void FDC_DMA_InitTransfer ( void )
 }
 
 
+/*-----------------------------------------------------------------------*/
 /**
  * Transfer 16 bytes from the DMA workspace to the RAM.
  * Instead of handling a real 16 bytes buffer, this implementation moves
@@ -533,7 +533,6 @@ static void FDC_DMA_InitTransfer ( void )
  * it's handled by the DMA and stored in the DMA 16 bytes buffer. This means
  * FDC_STR_BIT_LOST_DATA will never be set (but data can be lost if FDC_DMA.SectorCount==0)
  */
-
 static bool FDC_DMA_ReadFromFloppy ( void )
 {
 	Uint32	Address;
@@ -569,6 +568,7 @@ static bool FDC_DMA_ReadFromFloppy ( void )
 }
 
 
+/*-----------------------------------------------------------------------*/
 /**
  * Transfer 16 bytes from the RAM to disk using DMA.
  * This is used to write data to the disk with correct timings
@@ -582,7 +582,6 @@ static bool FDC_DMA_ReadFromFloppy ( void )
  * DMA address at the correct pace to simulate that bytes are written from
  * blocks of 16 bytes handled by the DMA.
  */
-
 static bool FDC_DMA_WriteToFloppy ( void )
 {
 	Uint32	Address;
@@ -694,11 +693,13 @@ static void FDC_SetReadWriteParameters(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Update floppy drive after a while.
- * Some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't work
- * if the FDC is too fast. So we use the update "interrupt" for delayed
- * execution of the commands.
- * FIXME: We urgently need better timings here!
+ * Handle the current FDC command.
+ * We use a timer to go from one state to another to emulate the different
+ * phases of an FDC command.
+ * When the command completes (success or failure), FDC.Command will be
+ * set to FDCEMU_CMD_NULL. Until then, this function will be called to
+ * handle each state of the command and the corresponding delay in micro
+ * seconds.
  */
 void FDC_InterruptHandler_Update(void)
 {
@@ -753,14 +754,12 @@ void FDC_InterruptHandler_Update(void)
 }
 
 
-
 /*-----------------------------------------------------------------------*/
 /**
  * Common to all commands once they're completed :
  * - remove busy bit
  * - stop motor after 2 sec
  */
-
 static int FDC_CmdCompleteCommon(void)
 {
   FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* Remove busy bit */
@@ -770,7 +769,7 @@ static int FDC_CmdCompleteCommon(void)
 }
 
 
-
+/*-----------------------------------------------------------------------*/
 /**
  * Verify track after a type I command.
  * The FDC will read the first ID field of the current track and will
@@ -781,7 +780,6 @@ static int FDC_CmdCompleteCommon(void)
  * This function could be improved to support other images format where logical track
  * could be different from physical track (eg Pasti)
  */
-
 static void FDC_VerifyTrack(void)
 {
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
@@ -795,11 +793,10 @@ static void FDC_VerifyTrack(void)
 }
 
 
-
+/*-----------------------------------------------------------------------*/
 /**
  * When the motor really stops (2 secs after the last command), clear all related bits in SR
  */
-
 static int FDC_UpdateMotorStop(void)
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -1329,6 +1326,7 @@ static int FDC_UpdateReadTrackCmd(void)
 }
 
 
+/*-----------------------------------------------------------------------*/
 /**
  * Common to types I, II and III
  *
@@ -1357,8 +1355,7 @@ static int FDC_Check_MotorON ( Uint8 FDC_CR )
 	return 0;
 }
 
-	
-	
+
 /*-----------------------------------------------------------------------*/
 /**
  * Type I Commands
@@ -1485,7 +1482,7 @@ static int FDC_TypeI_StepOut(void)
 /**
  * Type II Commands
  *
- * Read Sector, Read Multiple Sectors, Write Sector, Write Multiple Sectors
+ * Read Sector, Write Sector
  */
 
 
