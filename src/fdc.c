@@ -4,13 +4,15 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  Floppy Disk Controller(FDC) emulation. We need to simulate the movement of
-  the head of the floppy disk drive to accurately perform the FDC commands,
-  such as 'Step'. The is important for ST demo disk images. We have to go
-  into a lot of details - including the start up/stop of the drive motor.
-  To help with this emulation, we keep our own internal commands which are
-  checked each HBL to perform the transfer of data from our disk image into
-  the ST RAM area by simulating the DMA.
+  Floppy Disk Controller(FDC) emulation.
+  All commands are emulated with good timings estimation, as many programs
+  (demo or cracked games) rely on accurate FDC timings and DMA transfer by blocks
+  of 16 bytes.
+  The behaviour of all FDC's registers matches the official docs and should not
+  cause programs to fail when accessing the FDC (especially for Status Register).
+  As Hatari only handles ST/MSA disk images that only support 512 bytes sectors as
+  well as a fixed number of sectors per track, a few parts of the FDC emulation are
+  simplified and would need to be changed to handle more complex disk images (Pasti).
 */
 
 const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
@@ -242,7 +244,7 @@ enum
 								/* to avoid returning immediatly when command has no effect */
 #define	FDC_DELAY_TYPE_II_PREPARE		1		/* Start Type II commands immediatly */
 #define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediatly */
-#define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME : this was not measured */
+#define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME [NP] : this was not measured */
 								
 #define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
 
@@ -262,7 +264,7 @@ enum
 #define FDC_SIDE				( (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01 )	/* Side 0 or 1 */
 #define	FDC_DRIVE				FDC_FindFloppyDrive()
 
-#define	FDC_STEP_RATE				( FDC.CR & 0x03 )	/* Keep bits 0 and 1 of the current type I command */
+#define	FDC_STEP_RATE				( FDC.CR & 0x03 )	/* Bits 0 and 1 of the current type I command */
 
 static int FDC_StepRate_ms[] = { 2 , 3 , 5 , 6 };		/* Controlled by bits 1 and 0 (r1/r0) in type I commands */
 
@@ -287,7 +289,7 @@ typedef struct {
 	int		CommandState;				/* Current state for the running command */
 	Uint8		CommandType;				/* Type of latest FDC command (1,2,3 or 4) */
 
-	Uint8		ID_FieldLastSector;			/* Sector number returned by Read Address (to simulate a spinning disk) */
+	Uint8		ID_FieldLastSector;			/* Last sector number returned by Read Address (to simulate a spinning disk) */
 } FDC_STRUCT;
 
 
@@ -416,9 +418,9 @@ static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reset variables used in FDC
+ * Reset variables used in FDC and DMA emulation
  */
-void FDC_Reset(void)
+void FDC_Reset ( void )
 {
 	int	i;
 
@@ -452,7 +454,7 @@ void FDC_Reset(void)
  *
  * This is done by 'toggling' bit 8 of the DMA Mode Control register
  */
-static void FDC_ResetDMA(void)
+static void FDC_ResetDMA ( void )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -476,17 +478,17 @@ static void FDC_ResetDMA(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set DMA Status (RD 0xff8606)
+ * Set DMA Status at $ff8606
  *
- * Bit 0 - _Error Status (0=Error)
+ * Bit 0 - _Error Status (0=Error 1=No erroe)
  * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
  * Bit 2 - _Data Request Inactive Status
  *
  * FIXME [NP] : is bit 0 really used on ST ? It seems it's always 1 (no DMA error)
  */
-void FDC_SetDMAStatus(bool bError)
+void FDC_SetDMAStatus ( bool bError )
 {
-	/* Set error condition - NOTE this is incorrect in the FDC Doc's! */
+	/* Set error bit */
 	if (!bError)
 		FDC_DMA.Status |= 0x1;					/* No Error, set bit 0 */
 	else
@@ -627,7 +629,7 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return device for FDC, check PORTA bits 1,2(0=on,1=off)
+ * Return device for FDC, check PORTA bits 1,2 (0=on,1=off)
  */
 static int FDC_FindFloppyDrive ( void )
 {
@@ -668,7 +670,7 @@ static int FDC_GetSectorsPerTrack ( int Track , int Side )
 /**
  * Acknowledge FDC interrupt
  */
-void FDC_AcknowledgeInterrupt(void)
+void FDC_AcknowledgeInterrupt ( void )
 {
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	MFP_InputOnChannel(MFP_FDCHDC_BIT,MFP_IERB,&MFP_IPRB);
@@ -686,7 +688,7 @@ void FDC_AcknowledgeInterrupt(void)
  * handle each state of the command and the corresponding delay in micro
  * seconds.
  */
-void FDC_InterruptHandler_Update(void)
+void FDC_InterruptHandler_Update ( void )
 {
 	int	Delay_micro = 0;
 
@@ -1172,7 +1174,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 			FDC.ID_FieldLastSector = 1;
 
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
-		/* a simplified ID fied based on current track/sector/side */
+		/* a simplified ID field based on current track/sector/side */
 		p = buf;
 		*p++ = 0xa1;					/* SYNC bytes and IAM byte are included in the CRC */
 		*p++ = 0xa1;
@@ -2113,7 +2115,7 @@ void FDC_DmaStatus_ReadWord ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read hi/med/low DMA address bytes at $ff8609/0b/0d
+ * Read hi/med/low DMA address byte at $ff8609/0b/0d
  */
 void	FDC_DmaAddress_ReadByte ( void )
 {
@@ -2129,7 +2131,7 @@ void	FDC_DmaAddress_ReadByte ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write hi/med/low DMA address bytes at $ff8609/0b/0d
+ * Write hi/med/low DMA address byte at $ff8609/0b/0d
  */
 void	FDC_DmaAddress_WriteByte ( void )
 {
@@ -2160,7 +2162,7 @@ Uint32 FDC_GetDMAAddress(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write DMA address to ST's RAM(always keep up-to-date)
+ * Write a new address to the FDC DMA address registers at $ff8909/0b/0d
  */
 void FDC_WriteDMAAddress ( Uint32 Address )
 {
