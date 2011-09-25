@@ -120,23 +120,12 @@ ACSI DMA and Floppy Disk Controller(FDC)
     1  1    Data Register    Data Register
 
 
-  This handles any read/writes to the FDC and PSG. FDC commands are then sent
-  through to read/write disk sector code. We have full documents on 1772 FDC,
-  but they use r0,r1,r2,r3 etc.. which are not seen at first glance as Atari
-  access them via the A0,A1 bits. Once this is understood it is all relativly
-  easy as a lot of information can be ignored as we are using disk images and
-  not actual disks. We do NOT support the reading of the PC's A: drive - newer
-  PC's cannot read an ST single sided disk, ST disks are very old and so are
-  dirty which gets onto the PC drive heads and ruins them and also support for
-  disk sector access under the various modern operating systems is not so easy
-  (if possible at all).
-
   According to the documentation INTRQ is generated at the completion of each
   command (causes an interrupt in the MFP). INTRQ is reset by reading the status
   register OR by loading a new command. So, does this mean the GPIP? Or does it
   actually CANCEL the interrupt? Can this be done?
 
-  NOTE : The DMA is connected to the FDC and its Data Register, each time a DRQ
+  NOTE [NP] : The DMA is connected to the FDC and its Data Register, each time a DRQ
   is made by the FDC, it's handled by the DMA through its internal 16 bytes buffer.
   This means that in the case of the Atari ST the LOST_DATA bit will never be set
   in the Status Register (but data can be lost if FDC_DMA.SectorCount=0 as there
@@ -229,7 +218,7 @@ enum
 
 /* Standard hardware values for the FDC. This should allow to get good timings estimation */
 /* when dealing with non protected disks that require a correct speed (MSA or ST images) */
-/* FIXME : Those timings could be improved by taking into account the time */
+/* FIXME [NP] : Those timings could be improved by taking into account the time */
 /* it takes to reach the track index/sector/address field before really reading it, but this level */
 /* of accuracy is not necessary for ST/MSA disk images (it would be required to emulate protections */
 /* in Pasti disk images) */
@@ -249,7 +238,7 @@ enum
 #define	FDC_DELAY_RNF				( 1000000.L * 5 / ( FDC_RPM_STANDARD / 60 ) )	/* 5 spins to set RNF */
 
 #define	FDC_DELAY_TYPE_I_PREPARE		100		/* Types I commands take at least 0.1 ms to execute */
-								/* (~800 cpu cycles @ 8 Mhz). FIXME : this was not measured, it's */
+								/* (~800 cpu cycles @ 8 Mhz). FIXME [NP] : this was not measured, it's */
 								/* to avoid returning immediatly when command has no effect */
 #define	FDC_DELAY_TYPE_II_PREPARE		1		/* Start Type II commands immediatly */
 #define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediatly */
@@ -329,25 +318,101 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace use
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static int FDC_DelayToCpuCycles ( int Delay_micro );
-static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
+static int	FDC_DelayToCpuCycles ( int Delay_micro );
+static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
-static void FDC_ResetDMA(void);
-static bool FDC_DMA_ReadFromFloppy ( void );
-static bool FDC_DMA_WriteToFloppy ( void );
+static void	FDC_ResetDMA ( void );
+static void	FDC_DMA_InitTransfer ( void );
+static bool	FDC_DMA_ReadFromFloppy ( void );
+static bool	FDC_DMA_WriteToFloppy ( void );
 
-static int FDC_FindFloppyDrive(void);
-static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
-static int FDC_UpdateMotorStop(void);
-static int FDC_UpdateRestoreCmd(void);
-static int FDC_UpdateSeekCmd(void);
-static int FDC_UpdateStepCmd(void);
-static int FDC_UpdateReadSectorsCmd(void);
-static int FDC_UpdateWriteSectorsCmd(void);
-static int FDC_UpdateReadAddressCmd(void);
-static int FDC_UpdateReadTrackCmd(void);
-static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorSize );
-static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *pSectorSize );
+static int	FDC_FindFloppyDrive ( void );
+static int	FDC_GetSectorsPerTrack ( int Track , int Side );
+
+static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
+static int	FDC_CmdCompleteCommon ( void );
+static void	FDC_VerifyTrack ( void );
+static int	FDC_UpdateMotorStop ( void );
+static int	FDC_UpdateRestoreCmd ( void );
+static int	FDC_UpdateSeekCmd ( void );
+static int	FDC_UpdateStepCmd ( void );
+static int	FDC_UpdateReadSectorsCmd ( void );
+static int	FDC_UpdateWriteSectorsCmd ( void );
+static int	FDC_UpdateReadAddressCmd ( void );
+static int	FDC_UpdateReadTrackCmd ( void );
+
+static int	FDC_Check_MotorON ( Uint8 FDC_CR );
+static int	FDC_TypeI_Restore ( void );
+static int	FDC_TypeI_Seek ( void );
+static int	FDC_TypeI_Step ( void );
+static int	FDC_TypeI_StepIn ( void );
+static int	FDC_TypeI_StepOut ( void );
+static int	FDC_TypeII_ReadSector ( void );
+static int	FDC_TypeII_WriteSector(void);
+static int	FDC_TypeIII_ReadAddress ( void );
+static int	FDC_TypeIII_ReadTrack ( void );
+static int	FDC_TypeIII_WriteTrack ( void );
+static int	FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt );
+
+static int	FDC_ExecuteTypeICommands ( void );
+static int	FDC_ExecuteTypeIICommands ( void );
+static int	FDC_ExecuteTypeIIICommands ( void );
+static int	FDC_ExecuteTypeIVCommands ( void );
+static void	FDC_ExecuteCommand ( void );
+
+static void	FDC_WriteSectorCountRegister ( void );
+static void	FDC_WriteCommandRegister ( void );
+static void	FDC_WriteTrackRegister ( void );
+static void	FDC_WriteSectorRegister ( void );
+static void	FDC_WriteDataRegister ( void );
+
+static bool	FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorSize );
+static bool	FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *pSectorSize );
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
+void FDC_MemorySnapShot_Capture(bool bSave)
+{
+	MemorySnapShot_Store(&FDC, sizeof(FDC));
+	MemorySnapShot_Store(&FDC_DMA, sizeof(FDC_DMA));
+	MemorySnapShot_Store(HeadTrack, sizeof(HeadTrack));
+
+	MemorySnapShot_Store(DMADiskWorkSpace, sizeof(DMADiskWorkSpace));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Convert a delay in micro seconds to its equivalent of cpu cycles
+ * (FIXME [NP] : for now we use a fixed 8 MHz clock, because cycInt.c requires it)
+ */
+static int FDC_DelayToCpuCycles ( int Delay_micro )
+{
+  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4 );
+	return (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute the CRC16 of 'nb' bytes stored in 'buf'.
+ */
+static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC )
+{
+	int	i;
+
+	crc16_reset ( pCRC );
+	for ( i=0 ; i<nb ; i++ )
+	{
+//		fprintf ( stderr , "fdc crc16 %d 0x%x\n" , i , buf[ i ] );
+		crc16_add_byte ( pCRC , buf[ i ] );
+	}
+//	fprintf ( stderr , "fdc crc16 0x%x 0x%x\n" , *pCRC>>8 , *pCRC & 0xff );
+}
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -383,50 +448,6 @@ void FDC_Reset(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
- */
-void FDC_MemorySnapShot_Capture(bool bSave)
-{
-	MemorySnapShot_Store(&FDC, sizeof(FDC));
-	MemorySnapShot_Store(&FDC_DMA, sizeof(FDC_DMA));
-	MemorySnapShot_Store(HeadTrack, sizeof(HeadTrack));
-
-	MemorySnapShot_Store(DMADiskWorkSpace, sizeof(DMADiskWorkSpace));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Convert a delay in micro seconds to its equivalent of cpu cycles
- * (FIXME : for now we use a fixed 8 MHz clock, because cycInt.c requires it)
- */
-static int FDC_DelayToCpuCycles ( int Delay_micro )
-{
-  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4 );
-	return (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Compute the CRC16 of 'nb' bytes stored in 'buf'.
- */
-static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC )
-{
-	int	i;
-
-	crc16_reset ( pCRC );
-	for ( i=0 ; i<nb ; i++ )
-	{
-//		fprintf ( stderr , "fdc crc16 %d 0x%x\n" , i , buf[ i ] );
-		crc16_add_byte ( pCRC , buf[ i ] );
-	}
-//	fprintf ( stderr , "fdc crc16 0x%x 0x%x\n" , *pCRC>>8 , *pCRC & 0xff );
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Reset DMA (clear internal 16 bytes buffer)
  *
  * This is done by 'toggling' bit 8 of the DMA Mode Control register
@@ -456,9 +477,6 @@ static void FDC_ResetDMA(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Set DMA Status (RD 0xff8606)
- *
- * NOTE FDC Doc's are incorrect - Bit 0 is '0' on error (See TOS floprd, Ninja III etc...)
- * Look like Atari(yet again) connected the hardware up differently to the spec'
  *
  * Bit 0 - _Error Status (0=Error)
  * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
@@ -518,7 +536,7 @@ static void FDC_DMA_InitTransfer ( void )
  * Return true if there're no more bytes to transfer or false if some
  * bytes can still be tranfered by the DMA.
  *
- * NOTE : The DMA is connected to the FDC, each time a DRQ is made by the FDC,
+ * NOTE [NP] : The DMA is connected to the FDC, each time a DRQ is made by the FDC,
  * it's handled by the DMA and stored in the DMA 16 bytes buffer. This means
  * FDC_STR_BIT_LOST_DATA will never be set (but data can be lost if FDC_DMA.SectorCount==0)
  */
@@ -566,7 +584,7 @@ static bool FDC_DMA_ReadFromFloppy ( void )
  * Return true if there're no more bytes to transfer or false if some
  * bytes can still be tranfered by the DMA.
  *
- * NOTE : in the case of the emulation in Hatari, the sector is first written
+ * NOTE [NP] : in the case of the emulation in Hatari, the sector is first written
  * to the disk image and this function is just used to increment
  * DMA address at the correct pace to simulate that bytes are written from
  * blocks of 16 bytes handled by the DMA.
@@ -609,44 +627,30 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Update the FDC's Status Register.
- * All bits in DisableBits are cleared in STR, then all bits in EnableBits
- * are set in STR.
- */
-static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
-{
-	FDC.STR &= (~DisableBits);		/* clear bits in DisableBits */
-	FDC.STR |= EnableBits;			/* set bits in EnableBits */
-fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Return device for FDC, check PORTA bits 1,2(0=on,1=off)
  */
-static int FDC_FindFloppyDrive(void)
+static int FDC_FindFloppyDrive ( void )
 {
 	/* Check Drive A first */
 	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x2)==0)
-		return 0;                     /* Device 0 (A:) */
+		return 0;						/* Device 0 (A:) */
 	/* If off, check Drive B */
 	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x4)==0)
-		return 1;                     /* Device 1 (B:) */
+		return 1;						/* Device 1 (B:) */
 
 	/* None appear to be selected so default to Drive A */
-	return 0;                         /* Device 0 (A:) */
+	return 0;							/* Device 0 (A:) */
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
  * Return number of sectors for track/side of current drive
- * TODO : this function calls Floppy_FindDiskDetails which handles only ST/MSA
+ * TODO [NP] : this function calls Floppy_FindDiskDetails which handles only ST/MSA
  * disk image so far, so this implies all tracks have in fact the same number
  * of sectors (we don't use Track and Side for now)
  */
-static int FDC_GetSectorsPerTrack( int Track , int Side )
+static int FDC_GetSectorsPerTrack ( int Track , int Side )
 {
 	Uint16	SectorsPerTrack;
 
@@ -734,11 +738,25 @@ void FDC_InterruptHandler_Update(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Update the FDC's Status Register.
+ * All bits in DisableBits are cleared in STR, then all bits in EnableBits
+ * are set in STR.
+ */
+static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
+{
+	FDC.STR &= (~DisableBits);		/* clear bits in DisableBits */
+	FDC.STR |= EnableBits;			/* set bits in EnableBits */
+fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Common to all commands once they're completed :
  * - remove busy bit
  * - stop motor after 2 sec
  */
-static int FDC_CmdCompleteCommon(void)
+static int FDC_CmdCompleteCommon ( void )
 {
   FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* Remove busy bit */
 
@@ -758,7 +776,7 @@ static int FDC_CmdCompleteCommon(void)
  * This function could be improved to support other images format where logical track
  * could be different from physical track (eg Pasti)
  */
-static void FDC_VerifyTrack(void)
+static void FDC_VerifyTrack ( void )
 {
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
@@ -775,7 +793,7 @@ static void FDC_VerifyTrack(void)
 /**
  * When the motor really stops (2 secs after the last command), clear all related bits in SR
  */
-static int FDC_UpdateMotorStop(void)
+static int FDC_UpdateMotorStop ( void )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -794,7 +812,7 @@ static int FDC_UpdateMotorStop(void)
 /**
  * Run 'RESTORE' command
  */
-static int FDC_UpdateRestoreCmd(void)
+static int FDC_UpdateRestoreCmd ( void )
 {
 	int	Delay_micro = 0;
 
@@ -848,7 +866,7 @@ static int FDC_UpdateRestoreCmd(void)
 /**
  * Run 'SEEK' command
  */
-static int FDC_UpdateSeekCmd(void)
+static int FDC_UpdateSeekCmd ( void )
 {
 	int	Delay_micro = 0;
 
@@ -915,7 +933,7 @@ static int FDC_UpdateSeekCmd(void)
 /**
  * Run 'STEP' command
  */
-static int FDC_UpdateStepCmd(void)
+static int FDC_UpdateStepCmd ( void )
 {
 	int	Delay_micro = 0;
 
@@ -967,7 +985,7 @@ static int FDC_UpdateStepCmd(void)
 /**
  * Run 'READ SECTOR/S' command
  */
-static int FDC_UpdateReadSectorsCmd(void)
+static int FDC_UpdateReadSectorsCmd ( void )
 {
 	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -1042,7 +1060,7 @@ static int FDC_UpdateReadSectorsCmd(void)
 /**
  * Run 'WRITE SECTOR/S' command
  */
-static int FDC_UpdateWriteSectorsCmd(void)
+static int FDC_UpdateWriteSectorsCmd ( void )
 {
 	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -1130,7 +1148,7 @@ static int FDC_UpdateWriteSectorsCmd(void)
 /**
  * Run 'READ ADDRESS' command
  */
-static int FDC_UpdateReadAddressCmd(void)
+static int FDC_UpdateReadAddressCmd ( void )
 {
 	int	Delay_micro = 0;
 	Uint16	CRC;
@@ -1203,7 +1221,7 @@ static int FDC_UpdateReadAddressCmd(void)
 /**
  * Run 'READ TRACK' command
  */
-static int FDC_UpdateReadTrackCmd(void)
+static int FDC_UpdateReadTrackCmd ( void )
 {
 	int	Delay_micro = 0;
 	Uint16	CRC;
@@ -1370,7 +1388,7 @@ static int FDC_TypeI_Restore(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeI_Seek(void)
+static int FDC_TypeI_Seek ( void )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1390,7 +1408,7 @@ static int FDC_TypeI_Seek(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeI_Step(void)
+static int FDC_TypeI_Step ( void )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1431,7 +1449,7 @@ static int FDC_TypeI_StepIn(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeI_StepOut(void)
+static int FDC_TypeI_StepOut ( void )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1460,7 +1478,7 @@ static int FDC_TypeI_StepOut(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeII_ReadSector(void)
+static int FDC_TypeII_ReadSector ( void )
 {
 	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -1486,7 +1504,7 @@ static int FDC_TypeII_ReadSector(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeII_WriteSector(void)
+static int FDC_TypeII_WriteSector ( void )
 {
 	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -1520,7 +1538,7 @@ static int FDC_TypeII_WriteSector(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeIII_ReadAddress(void)
+static int FDC_TypeIII_ReadAddress ( void )
 {
 	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -1546,7 +1564,7 @@ static int FDC_TypeIII_ReadAddress(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeIII_ReadTrack(void)
+static int FDC_TypeIII_ReadTrack ( void )
 {
 	int	Delay_micro = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -1572,7 +1590,7 @@ static int FDC_TypeIII_ReadTrack(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeIII_WriteTrack(void)
+static int FDC_TypeIII_WriteTrack ( void )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1604,7 +1622,7 @@ static int FDC_TypeIII_WriteTrack(void)
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
+static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 {
 	int	Delay_micro;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -1643,7 +1661,7 @@ static int FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 /**
  * Execute Type I commands
  */
-static int FDC_ExecuteTypeICommands(void)
+static int FDC_ExecuteTypeICommands ( void )
 {
 	int	Delay_micro = 0;
 
@@ -1684,7 +1702,7 @@ static int FDC_ExecuteTypeICommands(void)
 /**
  * Execute Type II commands
  */
-static int FDC_ExecuteTypeIICommands(void)
+static int FDC_ExecuteTypeIICommands ( void )
 {
 	int	Delay_micro = 0;
 
@@ -1715,7 +1733,7 @@ static int FDC_ExecuteTypeIICommands(void)
 /**
  * Execute Type III commands
  */
-static int FDC_ExecuteTypeIIICommands(void)
+static int FDC_ExecuteTypeIIICommands ( void )
 {
 	int	Delay_micro = 0;
 
@@ -1747,7 +1765,7 @@ static int FDC_ExecuteTypeIIICommands(void)
 /**
  * Execute Type IV commands
  */
-static int FDC_ExecuteTypeIVCommands(void)
+static int FDC_ExecuteTypeIVCommands ( void )
 {
 	int	Delay_micro;
 
@@ -1769,7 +1787,7 @@ static int FDC_ExecuteTypeIVCommands(void)
 /**
  * Find FDC command type and execute
  */
-static void FDC_ExecuteCommand(void)
+static void FDC_ExecuteCommand ( void )
 {
 	int	Delay_micro;
 
@@ -1789,9 +1807,9 @@ static void FDC_ExecuteCommand(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to SectorCount register (WR 0xff8604)
+ * Write to SectorCount register $ff8604
  */
-static void FDC_WriteSectorCountRegister(void)
+static void FDC_WriteSectorCountRegister ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1806,9 +1824,9 @@ static void FDC_WriteSectorCountRegister(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to Command register (WR 0xff8604)
+ * Write to Command register $ff8604
  */
-static void FDC_WriteCommandRegister(void)
+static void FDC_WriteCommandRegister ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1833,9 +1851,9 @@ static void FDC_WriteCommandRegister(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to Track register (WR 0xff8604)
+ * Write to Track register $ff8604
  */
-static void FDC_WriteTrackRegister(void)
+static void FDC_WriteTrackRegister ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1858,9 +1876,9 @@ static void FDC_WriteTrackRegister(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to Sector register (WR 0xff8604)
+ * Write to Sector register $ff8604
  */
-static void FDC_WriteSectorRegister(void)
+static void FDC_WriteSectorRegister ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1883,9 +1901,9 @@ static void FDC_WriteSectorRegister(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to Data register (WR 0xff8604)
+ * Write to Data register $ff8604
  */
-static void FDC_WriteDataRegister(void)
+static void FDC_WriteDataRegister ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1900,9 +1918,9 @@ static void FDC_WriteDataRegister(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Store byte in FDC registers or DMA sector count, when write to 0xff8604
+ * Store byte in FDC registers or DMA sector count, when writing to $ff8604
  */
-void FDC_DiskController_WriteWord(void)
+void FDC_DiskController_WriteWord ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1955,10 +1973,9 @@ void FDC_DiskController_WriteWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read Status/FDC registers, when read from 0xff8604
- * Return 'DiskControllerByte'
+ * Return Status/FDC register when reading from $ff8604
  */
-void FDC_DiskControllerStatus_ReadWord(void)
+void FDC_DiskControllerStatus_ReadWord ( void )
 {
 	Uint16 DiskControllerByte = 0;					/* Used to pass back the parameter */
 	int FrameCycles, HblCounterVideo, LineCycles;
@@ -2027,7 +2044,7 @@ void FDC_DiskControllerStatus_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write word to 0xff8606 (DMA Mode Control)
+ * Write word to $ff8606 (DMA Mode Control)
  *
  * Eg.
  * $80 - Selects command/status register
@@ -2037,7 +2054,7 @@ void FDC_DiskControllerStatus_ReadWord(void)
  * NOTE - OR above values with $100 is transfer from memory to floppy
  * Also if bit 4 is set, write to sector count register
  */
-void FDC_DmaModeControl_WriteWord(void)
+void FDC_DmaModeControl_WriteWord ( void )
 {
 	Uint16 Mode_prev;						/* Store previous write to 0xff8606 for 'toggle' checks */
 	int FrameCycles, HblCounterVideo, LineCycles;
@@ -2066,13 +2083,13 @@ void FDC_DmaModeControl_WriteWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read DMA Status (RD 0xff8606)
+ * Read DMA Status at $ff8606
  *
  * Bit 0 - Error Status (0=Error)
  * Bit 1 - Sector Count Zero Status (0=Sector Count Zero)
  * Bit 2 - Data Request Inactive Status
  */
-void FDC_DmaStatus_ReadWord(void)
+void FDC_DmaStatus_ReadWord ( void )
 {
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
@@ -2096,7 +2113,7 @@ void FDC_DmaStatus_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read hi/med/low DMA address byte at $ff8609/0b/0d
+ * Read hi/med/low DMA address bytes at $ff8609/0b/0d
  */
 void	FDC_DmaAddress_ReadByte ( void )
 {
@@ -2112,7 +2129,7 @@ void	FDC_DmaAddress_ReadByte ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write hi/med/low DMA address byte at $ff8609/0b/0d
+ * Write hi/med/low DMA address bytes at $ff8609/0b/0d
  */
 void	FDC_DmaAddress_WriteByte ( void )
 {
@@ -2145,7 +2162,7 @@ Uint32 FDC_GetDMAAddress(void)
 /**
  * Write DMA address to ST's RAM(always keep up-to-date)
  */
-void FDC_WriteDMAAddress(Uint32 Address)
+void FDC_WriteDMAAddress ( Uint32 Address )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
@@ -2240,7 +2257,7 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *
  * For HD - disks:  0x03
  * for ED - disks:  0x30 (not supported by TOS)
  */
-void FDC_FloppyMode_WriteByte(void)
+void FDC_FloppyMode_WriteByte ( void )
 {
 	// printf("Write to floppy mode reg.: 0x%02x\n", IoMem_ReadByte(0xff860f));
 }
@@ -2264,7 +2281,7 @@ void FDC_FloppyMode_WriteByte(void)
  *           |+------- Media detect 2
  *           +-------- Disk changed
  */
-void FDC_FloppyMode_ReadByte(void)
+void FDC_FloppyMode_ReadByte ( void )
 {
 	IoMem_WriteByte(0xff860f, 0x80);  // FIXME: Is this ok?
 	// printf("Read from floppy mode reg.: 0x%02x\n", IoMem_ReadByte(0xff860f));

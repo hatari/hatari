@@ -60,8 +60,6 @@ static Uint8 nLastError;
 /*
   FDC registers used:
   - FDCSectorCountRegister
-  - DiskControllerStatus_ff8604rd
-  - DMAModeControl_ff8606wr
 */
 
 
