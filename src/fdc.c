@@ -325,12 +325,6 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace use
 								/* It should be large enough to contain a whole track */
 
 
-
-static unsigned short int nReadWriteSectorsPerTrack;
-
-
-
-
 /*--------------------------------------------------------------*/
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
@@ -393,11 +387,6 @@ void FDC_Reset(void)
  */
 void FDC_MemorySnapShot_Capture(bool bSave)
 {
-	/* Save/Restore details */
-	MemorySnapShot_Store(&nReadWriteSectorsPerTrack, sizeof(nReadWriteSectorsPerTrack));
-
-
-
 	MemorySnapShot_Store(&FDC, sizeof(FDC));
 	MemorySnapShot_Store(&FDC_DMA, sizeof(FDC_DMA));
 	MemorySnapShot_Store(HeadTrack, sizeof(HeadTrack));
@@ -620,28 +609,10 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- *
+ * Update the FDC's Status Register.
+ * All bits in DisableBits are cleared in STR, then all bits in EnableBits
+ * are set in STR.
  */
-static void FDC_UpdateDiskDrive(void)
-{
-	/* Set details for current selecte drive */
-
-	if (EmulationDrives[ FDC_DRIVE ].bDiskInserted)
-		Floppy_FindDiskDetails(EmulationDrives[ FDC_DRIVE ].pBuffer,EmulationDrives[ FDC_DRIVE ].nImageBytes,&nReadWriteSectorsPerTrack,NULL);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Set disk controller status (RD 0xff8604)
- */
-static void FDC_SetDiskControllerStatus(void)
-{
-	/* Update disk */
-	FDC_UpdateDiskDrive();
-}
-
-
 static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 {
 	FDC.STR &= (~DisableBits);		/* clear bits in DisableBits */
@@ -670,6 +641,27 @@ static int FDC_FindFloppyDrive(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return number of sectors for track/side of current drive
+ * TODO : this function calls Floppy_FindDiskDetails which handles only ST/MSA
+ * disk image so far, so this implies all tracks have in fact the same number
+ * of sectors (we don't use Track and Side for now)
+ */
+static int FDC_GetSectorsPerTrack( int Track , int Side )
+{
+	Uint16	SectorsPerTrack;
+
+	if (EmulationDrives[ FDC_DRIVE ].bDiskInserted)
+	{
+		Floppy_FindDiskDetails ( EmulationDrives[ FDC_DRIVE ].pBuffer , EmulationDrives[ FDC_DRIVE ].nImageBytes , &SectorsPerTrack , NULL );
+		return SectorsPerTrack;
+	}
+	else
+		return 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Acknowledge FDC interrupt
  */
 void FDC_AcknowledgeInterrupt(void)
@@ -677,17 +669,6 @@ void FDC_AcknowledgeInterrupt(void)
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	MFP_InputOnChannel(MFP_FDCHDC_BIT,MFP_IERB,&MFP_IPRB);
 	MFP_GPIP &= ~0x20;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Copy parameters for disk sector/s read/write
- */
-static void FDC_SetReadWriteParameters(void)
-{
-	/* Update disk */
-	FDC_UpdateDiskDrive();
 }
 
 
@@ -742,9 +723,6 @@ void FDC_InterruptHandler_Update(void)
 			Delay_micro = FDC_UpdateMotorStop();
 			break;
 		}
-
-		/* Set disk controller status (RD 0xff8604) */
-		FDC_SetDiskControllerStatus();
 	}
 
 	if (FDC.Command != FDCEMU_CMD_NULL)
@@ -1172,7 +1150,7 @@ static int FDC_UpdateReadAddressCmd(void)
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READADDRESS:
-		if ( FDC.ID_FieldLastSector > nReadWriteSectorsPerTrack )
+		if ( FDC.ID_FieldLastSector > FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) )
 			FDC.ID_FieldLastSector = 1;
 
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
@@ -1254,7 +1232,7 @@ static int FDC_UpdateReadTrackCmd(void)
 		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
 		for ( i=0 ; i<60 ; i++ )		*buf++ = 0x4e;		/* GAP1 */
 
-		for ( Sector=1 ; Sector<=nReadWriteSectorsPerTrack ; Sector++ )
+		for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) ; Sector++ )
 		{
 			for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP2 */
 
@@ -1387,7 +1365,6 @@ static int FDC_TypeI_Restore(void)
 	/* beyond track FDC_PHYSICAL_MAX_TRACK (=90) */
 	FDC.TR = 0xff;				
 
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
@@ -1408,7 +1385,6 @@ static int FDC_TypeI_Seek(void)
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
@@ -1429,7 +1405,6 @@ static int FDC_TypeI_Step(void)
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
@@ -1451,7 +1426,6 @@ static int FDC_TypeI_StepIn(void)
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
@@ -1473,7 +1447,6 @@ static int FDC_TypeI_StepOut(void)
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
 
@@ -1501,8 +1474,6 @@ static int FDC_TypeII_ReadSector(void)
 	/* Set emulation to read sector(s) */
 	FDC.Command = FDCEMU_CMD_READSECTORS;
 	FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA;
-	/* Set reading parameters */
-	FDC_SetReadWriteParameters();
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
@@ -1510,7 +1481,6 @@ static int FDC_TypeII_ReadSector(void)
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		Delay_micro = FDC_DELAY_HEAD_LOAD;
 	
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_II_PREPARE + Delay_micro;
 }
 
@@ -1530,8 +1500,6 @@ static int FDC_TypeII_WriteSector(void)
 	/* Set emulation to write a sector(s) */
 	FDC.Command = FDCEMU_CMD_WRITESECTORS;
 	FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
-	/* Set writing parameters */
-	FDC_SetReadWriteParameters();
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
@@ -1539,7 +1507,6 @@ static int FDC_TypeII_WriteSector(void)
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		Delay_micro = FDC_DELAY_HEAD_LOAD;
 	
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_II_PREPARE + Delay_micro;
 }
 
@@ -1574,7 +1541,6 @@ static int FDC_TypeIII_ReadAddress(void)
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		Delay_micro = FDC_DELAY_HEAD_LOAD;
 	
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_III_PREPARE + Delay_micro;
 }
 
@@ -1594,8 +1560,6 @@ static int FDC_TypeIII_ReadTrack(void)
 	/* Set emulation to read a single track */
 	FDC.Command = FDCEMU_CMD_READTRACK;
 	FDC.CommandState = FDCEMU_RUN_READTRACK;
-	/* Set reading parameters */
-	FDC_SetReadWriteParameters();
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
@@ -1603,7 +1567,6 @@ static int FDC_TypeIII_ReadTrack(void)
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		Delay_micro = FDC_DELAY_HEAD_LOAD;
 
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_III_PREPARE + Delay_micro;
 }
 
@@ -1627,10 +1590,7 @@ static int FDC_TypeIII_WriteTrack(void)
 	FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );				/* FIXME : Not supported yet, set RNF bit */
 	FDC.Command = FDCEMU_CMD_NULL;
 	FDC.CommandState = FDCEMU_RUN_NULL;
-	/* Set writing parameters */
-	FDC_SetReadWriteParameters();
 
-	FDC_SetDiskControllerStatus();
 	return FDC_DELAY_TYPE_III_PREPARE;
 }
 
