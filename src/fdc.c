@@ -332,7 +332,7 @@ static int	FDC_FindFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Track , int Side );
 
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
-static int	FDC_CmdCompleteCommon ( void );
+static int	FDC_CmdCompleteCommon ( bool DoInt );
 static void	FDC_VerifyTrack ( void );
 static int	FDC_UpdateMotorStop ( void );
 static int	FDC_UpdateRestoreCmd ( void );
@@ -746,8 +746,8 @@ void FDC_InterruptHandler_Update ( void )
  */
 static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 {
-	FDC.STR &= (~DisableBits);		/* clear bits in DisableBits */
-	FDC.STR |= EnableBits;			/* set bits in EnableBits */
+	FDC.STR &= (~DisableBits);					/* Clear bits in DisableBits */
+	FDC.STR |= EnableBits;						/* Set bits in EnableBits */
 fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
 }
 
@@ -756,14 +756,18 @@ fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
 /**
  * Common to all commands once they're completed :
  * - remove busy bit
+ * - acknowledge interrupt if necessary
  * - stop motor after 2 sec
  */
-static int FDC_CmdCompleteCommon ( void )
+static int FDC_CmdCompleteCommon ( bool DoInt )
 {
-  FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* Remove busy bit */
+	FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* Remove busy bit */
 
-  FDC.Command = FDCEMU_CMD_MOTOR_STOP;				/* Fake command to stop the motor */
-  return FDC_DELAY_MOTOR_OFF;
+	if ( DoInt )
+		FDC_AcknowledgeInterrupt();
+
+	FDC.Command = FDCEMU_CMD_MOTOR_STOP;				/* Fake command to stop the motor */
+	return FDC_DELAY_MOTOR_OFF;
 }
 
 
@@ -780,14 +784,14 @@ static int FDC_CmdCompleteCommon ( void )
  */
 static void FDC_VerifyTrack ( void )
 {
-	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
+	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )		/* Set RNF bit if no disk is inserted */
 	{
-		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* Set RNF bit */
+		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
 		return;
 	}
 
 	/* In the case of Hatari when using ST/MSA images, the track is always the correct one */
-	FDC_Update_STR ( FDC_STR_BIT_RNF , 0 );			/* remove RNF bit */
+	FDC_Update_STR ( FDC_STR_BIT_RNF , 0 );				/* remove RNF bit */
 }
 
 
@@ -828,10 +832,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		{							/* (this should never happen in the case of Hatari) */
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
-			/* Acknowledge interrupt, move along there's nothing more to see */
-			FDC_AcknowledgeInterrupt();
-			/* Done */
-			Delay_micro = FDC_CmdCompleteCommon();
+			Delay_micro = FDC_CmdCompleteCommon( true );
 		}
 
 		if ( HeadTrack[ FDC_DRIVE ] != 0 )		/* Are we at track zero ? */
@@ -850,13 +851,9 @@ static int FDC_UpdateRestoreCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_RESTORE_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-
 		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
@@ -917,13 +914,9 @@ static int FDC_UpdateSeekCmd ( void )
 
 		break;
 	 case FDCEMU_RUN_SEEK_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-
 		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
@@ -969,13 +962,9 @@ static int FDC_UpdateStepCmd ( void )
 		FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
 		break;
 	 case FDCEMU_RUN_STEP_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-
 		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
 			FDC_VerifyTrack();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
@@ -1041,16 +1030,10 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			  FDC.SR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	 case FDCEMU_RUN_READSECTORS_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
@@ -1076,9 +1059,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			  FDC.SR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );		/* Set WPRT bit */
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 	}
 	else
 		FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );		/* Unset WPRT bit */
@@ -1129,16 +1110,10 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			  FDC.SR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
@@ -1160,9 +1135,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 	}
 
 	
@@ -1208,10 +1181,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		break;
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
@@ -1236,9 +1206,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 	}
 
 
@@ -1277,9 +1245,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 			if ( ! FDC_ReadSectorFromFloppy ( buf , Sector , &SectorSize ) )	/* Read a single 512 bytes sector into temporary buffer */
 			{
 				FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-				FDC_AcknowledgeInterrupt();
-				/* Done */
-				Delay_micro = FDC_CmdCompleteCommon();
+				Delay_micro = FDC_CmdCompleteCommon( true );
 			}
 			buf += SectorSize;
 
@@ -1313,10 +1279,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READTRACK_COMPLETE:
-		/* Acknowledge interrupt, move along there's nothing more to see */
-		FDC_AcknowledgeInterrupt();
-		/* Done */
-		Delay_micro = FDC_CmdCompleteCommon();
+		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
@@ -1646,14 +1609,8 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 	}
 
-	FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* Remove BUSY bit */
-
-	/* Acknowledge interrupt, move along there's nothing more to see */
-	if (bCauseCPUInterrupt)
-		FDC_AcknowledgeInterrupt();
-
-	/* Remove busy bit and stop the motor */
-	Delay_micro = FDC_CmdCompleteCommon();
+	/* Remove busy bit, ack int and stop the motor */
+	Delay_micro = FDC_CmdCompleteCommon( bCauseCPUInterrupt );
 
 	return FDC_DELAY_TYPE_IV_PREPARE + Delay_micro;
 }
