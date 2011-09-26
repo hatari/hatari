@@ -1965,6 +1965,18 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 		switch (FDC_DMA.Mode & 0x6)				/* Bits 1,2 (A1,A0) */
 		{
 		 case 0x0:						/* 0 0 - Status register */
+			/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
+			/* seems to be updated after a Type I command */
+			/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
+			if ( FDC.CommandType == 1 )
+			{
+				if ( Floppy_IsWriteProtected ( FDC_DRIVE ) )
+					FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+				else
+					FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
+			}
+
+
 			DiskControllerByte = FDC.STR;
 
 			if (EmulationDrives[FDC_DRIVE].bMediaChanged)
@@ -1972,7 +1984,8 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 				/* Some games apparently poll the write-protection signal to check
 				 * for disk image changes (the signal seems to change when you
 				 * exchange disks on a real ST). We now also simulate this behaviour
-				 * here, so that these games can continue with the other disk. */
+				 * here, so that these games can continue with the other disk.
+				 * FIXME [NP] : this should be improved */
 				DiskControllerByte ^= 0x40;
 				EmulationDrives[FDC_DRIVE].bMediaChanged = false;
 			}
