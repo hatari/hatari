@@ -337,7 +337,7 @@ static void CustomApplicationMain (int argc, char **argv)
 
 - (IBAction)debugUI:(id)sender
 {
-	DebugUI();
+	DebugUI(REASON_USER);
 }
 
 - (IBAction)warmReset:(id)sender
