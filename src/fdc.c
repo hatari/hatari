@@ -248,7 +248,8 @@ enum
 								
 #define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
 
-#define	FDC_DELAY_READ_ADDR_STANDARD		FDC_TRANSFER_BYTES_US( 6 )
+#define	FDC_DELAY_READ_ADDR_STANDARD		FDC_TRANSFER_BYTES_US( 600 + 6  )	/* We consider we need to read approx 600 bytes to find the next */
+								/* ID Field on the disk (512 bytes sector + gaps), then 6 bytes for the ID Field itself */
 
 #define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
 
