@@ -512,10 +512,12 @@ static void FDC_DMA_InitTransfer ( void )
 	int	i;
 
 	/* How many bytes remain in the current 16 bytes DMA buffer ? */
-	if ( FDC_DMA.BytesToTransfer == 0 )				/* DMA buffer is empty */
+	if ( ( FDC_DMA.BytesToTransfer == 0 )				/* DMA buffer is empty */
+	  || ( FDC_DMA.BytesToTransfer > DMA_DISK_TRANSFER_SIZE ) )	/* Previous DMA transfer did not finish (FDC errror or Force Int command) */
 	{
 		FDC_DMA.PosInBuffer = 0;				/* Add new data at the start of DMADiskWorkSpace */
 		FDC_DMA.PosInBufferTransfer = 0;
+		FDC_DMA.BytesToTransfer = 0;				/* No more data to transfer from the previous DMA buffer */
 	}
 	else								/* 16 bytes buffer partially filled */
 	{
@@ -1451,8 +1453,8 @@ static int FDC_TypeII_ReadSector ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type II read sector sect=0x%x multi=%s dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDC_DMA.SectorCount ,
+	LOG_TRACE(TRACE_FDC, "fdc type II read sector sector=0x%x multi=%s track=0x%x side=%d dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , HeadTrack[ FDC_DRIVE ] , FDC_SIDE, FDC_DMA.SectorCount ,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read sector(s) */
@@ -1477,8 +1479,8 @@ static int FDC_TypeII_WriteSector ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type II write sector %d multi=%s dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDC_DMA.SectorCount,
+	LOG_TRACE(TRACE_FDC, "fdc type II write sector sector=0x%x multi=%s track=0x%x side=%d dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , HeadTrack[ FDC_DRIVE ] , FDC_SIDE, FDC_DMA.SectorCount,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to write a sector(s) */
