@@ -1146,6 +1146,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READADDRESS:
+		FDC.ID_FieldLastSector++;			/* Increase sector from latest ID Field */
 		if ( FDC.ID_FieldLastSector > FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) )
 			FDC.ID_FieldLastSector = 1;
 
@@ -1166,8 +1167,6 @@ static int FDC_UpdateReadAddressCmd ( void )
 
 		*p++ = CRC >> 8;
 		*p++ = CRC & 0xff;
-
-		FDC.ID_FieldLastSector++;			/* Increase sector for next Read Address command */
 
 		FDC_DMA_InitTransfer ();			/* Update FDC_DMA.PosInBuffer */
 		memcpy ( DMADiskWorkSpace + FDC_DMA.PosInBuffer , buf + 4 , 6 );	/* Don't return the 3 x $A1 and $FE in the Address Field */
@@ -1233,6 +1232,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 			*buf++ = HeadTrack[ FDC_DRIVE ];			/* Track */
 			*buf++ = FDC_SIDE;					/* Side */
 			*buf++ = Sector;					/* Sector */
+			FDC.ID_FieldLastSector = Sector;
 			*buf++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
 			FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
 			*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
