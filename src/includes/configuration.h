@@ -160,16 +160,9 @@ typedef struct
 } CNF_DISKIMAGE;
 
 
-/* Hard drives configuration */
-#define MAX_HARDDRIVES  23
-
-typedef enum
-{
-  DRIVE_C,
-  DRIVE_D,
-  DRIVE_E,
-  DRIVE_F
-} DRIVELETTER;
+/* Hard drives configuration: C: - Z: */
+#define MAX_HARDDRIVES  24
+#define DRIVE_C 0
 
 typedef struct
 {
