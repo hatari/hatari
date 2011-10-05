@@ -248,9 +248,6 @@ enum
 								
 #define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
 
-#define	FDC_DELAY_READ_ADDR_STANDARD		FDC_TRANSFER_BYTES_US( 600 + 6  )	/* We consider we need to read approx 600 bytes to find the next */
-								/* ID Field on the disk (512 bytes sector + gaps), then 6 bytes for the ID Field itself */
-
 #define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
 
 #define	FDC_DELAY_COMMAND_IMMEDIATE		1		/* Number of us to go immediatly to another state */
@@ -998,6 +995,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		{
 			FDC_DMA.BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
 			FDC_DMA.PosInBuffer += SectorSize;
+			FDC.ID_FieldLastSector = FDC.SR;
 				
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_DMA;
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just read */
@@ -1078,6 +1076,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		{
 			FDC_DMA.BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
 			FDC_DMA.PosInBuffer += SectorSize;
+			FDC.ID_FieldLastSector = FDC.SR;
 				
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_DMA;
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just wrote */
@@ -1134,6 +1133,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 	Uint16	CRC;
 	Uint8	buf[ 4+6 ];
 	Uint8	*p;
+	int	Sector;
 
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
@@ -1146,9 +1146,9 @@ static int FDC_UpdateReadAddressCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READADDRESS:
-		FDC.ID_FieldLastSector++;			/* Increase sector from latest ID Field */
-		if ( FDC.ID_FieldLastSector > FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) )
-			FDC.ID_FieldLastSector = 1;
+		Sector = FDC.ID_FieldLastSector + 1;		/* Increase sector from latest ID Field */
+		if ( Sector > FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) )
+			Sector = 1;
 
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
 		/* a simplified ID field based on current track/sector/side */
@@ -1160,7 +1160,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 		*p++ = HeadTrack[ FDC_DRIVE ];
 		FDC.SR = HeadTrack[ FDC_DRIVE ];		/* The 1st byte of the ID field is also copied into Sector Register */
 		*p++ = FDC_SIDE;
-		*p++ = FDC.ID_FieldLastSector;
+		*p++ = Sector;
 		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
 
 		FDC_CRC16 ( buf , 8 , &CRC );
@@ -1174,7 +1174,19 @@ static int FDC_UpdateReadAddressCmd ( void )
 		FDC_DMA.PosInBuffer += 6;
 
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_DMA;
-		Delay_micro = FDC_DELAY_READ_ADDR_STANDARD;
+
+		/* Very simplified method to get correct timings when doing a Read Address just after an index pulse */
+		/* or after a previous Read Address. The right method is to use a timer to count bytes since the */
+		/* latest index pulse, but this would add too much complexity just to handle ST/MSA disk images. */
+		/* So we use a simpler method where ID_FieldLastSector is set to 0 when we simulate an index pulse. */
+		/* The number of bytes to skip should be exactly the same as the GAPs used in ReadTrack */
+		/* (allow Procopy to analyze an ST/MSA disk with the correct timings) */
+		if ( FDC.ID_FieldLastSector == 0 )				/* First Read Address just after an index pulse */
+			Delay_micro = FDC_TRANSFER_BYTES_US ( 72 + 3 + 1 + 6 );	/* Skip 72+3+1 bytes then read 6 bytes */
+		else								/* Read Address after a previous sector was just read */
+			Delay_micro = FDC_TRANSFER_BYTES_US ( 614 + 6 );	/* Skip 614 bytes then read 6 bytes */
+
+		FDC.ID_FieldLastSector = Sector;
 		break;
 	 case FDCEMU_RUN_READADDRESS_DMA:
 		FDC_DMA_ReadFromFloppy ();			/* Transfer bytes if 16 bytes or more are in the DMA buffer */
@@ -1740,6 +1752,12 @@ static int FDC_ExecuteTypeIVCommands ( void )
 	else
 		Delay_micro = FDC_TypeIV_ForceInterrupt(true);		/* Force Interrupt */
 
+if ( FDC.CR == 0xd4 )
+{
+fprintf ( stderr , "force int sect 0\n" );
+	FDC.ID_FieldLastSector = 0;
+}
+		
 	FDC.CommandType = 4;						/* Change CommandType after interrupting the current command */
 	return Delay_micro;
 }
