@@ -1609,7 +1609,8 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type IV force int VBL=%d video_cyc=%d %d@%dpc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type IV force int 0x%x irq=%d index=%d VBL=%d video_cyc=%d %d@%dpc=%x\n",
+		  FDC.CR , ( FDC.CR & 0x8 ) >> 3 , ( FDC.CR & 0x4 ) >> 2 ,
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* For Type II/III commands, LOST DATA bit is never set (DRQ is always handled by the DMA) */
@@ -1743,20 +1744,24 @@ static int FDC_ExecuteTypeIVCommands ( void )
 {
 	int	Delay_micro;
 
-	if ( FDC.CR != 0xD8 )						/* Is an 'immediate interrupt command' ? Don't reset interrupt */
-		MFP_GPIP |= 0x20;
+	/* Check Type IV command */
+	/* Most of the time a 0xD8 command is followed by a 0xD0 command to clear the IRQ signal */
+	if ( FDC.CR & 0x8 )						/* I3 set (0xD8) : immediate interrupt with IRQ */
+		Delay_micro = FDC_TypeIV_ForceInterrupt ( true );
 
-	/* Check Type IV Command */
-	if ( ( FDC.CR & 0x0c ) == 0 )					/* I3 and I2 are clear? If so we don't need a CPU interrupt */
-		Delay_micro = FDC_TypeIV_ForceInterrupt(false);		/* Force Interrupt - no interrupt */
-	else
-		Delay_micro = FDC_TypeIV_ForceInterrupt(true);		/* Force Interrupt */
+	else if ( FDC.CR & 0x4 )					/* I2 set (0xD4) : IRQ on next index pulse */
+	{
+		/* FIXME [NP] This is not complete, we should report */
+		/* an interrupt each time the FDC sees an index pulse, not just once */
+		FDC.ID_FieldLastSector = 0;				/* We simulate an index pulse now */
+		Delay_micro = FDC_TypeIV_ForceInterrupt ( true );
+	}
 
-if ( FDC.CR == 0xd4 )
-{
-fprintf ( stderr , "force int sect 0\n" );
-	FDC.ID_FieldLastSector = 0;
-}
+	else								/* I3-I2 clear (0xD0) : stop command without IRQ */
+	{
+		MFP_GPIP |= 0x20;					/* reset IRQ signal */
+		Delay_micro = FDC_TypeIV_ForceInterrupt ( false );
+	}
 		
 	FDC.CommandType = 4;						/* Change CommandType after interrupting the current command */
 	return Delay_micro;
