@@ -328,6 +328,7 @@ static bool	FDC_DMA_WriteToFloppy ( void );
 
 static int	FDC_FindFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Track , int Side );
+static int	FDC_GetSidesPerDisk ( int Track );
 
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
 static int	FDC_CmdCompleteCommon ( bool DoInt );
@@ -660,6 +661,20 @@ static int FDC_GetSectorsPerTrack ( int Track , int Side )
 	{
 		Floppy_FindDiskDetails ( EmulationDrives[ FDC_DRIVE ].pBuffer , EmulationDrives[ FDC_DRIVE ].nImageBytes , &SectorsPerTrack , NULL );
 		return SectorsPerTrack;
+	}
+	else
+		return 0;
+}
+
+
+static int FDC_GetSidesPerDisk ( int Track )
+{
+	Uint16	SidesPerDisk;
+
+	if (EmulationDrives[ FDC_DRIVE ].bDiskInserted)
+	{
+		Floppy_FindDiskDetails ( EmulationDrives[ FDC_DRIVE ].pBuffer , EmulationDrives[ FDC_DRIVE ].nImageBytes , NULL , &SidesPerDisk );
+		return SidesPerDisk;					/* 1 or 2 */
 	}
 	else
 		return 0;
@@ -1219,7 +1234,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
-		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
+		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* [NP] Should we return random bytes instead ? */
 		Delay_micro = FDC_CmdCompleteCommon( true );
 	}
 
@@ -1232,48 +1247,58 @@ static int FDC_UpdateReadTrackCmd ( void )
 		/* Build the track data */
 		FDC_DMA_InitTransfer ();					/* Update FDC_DMA.PosInBuffer */
 		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
-		for ( i=0 ; i<60 ; i++ )		*buf++ = 0x4e;		/* GAP1 */
 
-		for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) ; Sector++ )
+		if ( ( FDC_SIDE == 1 )						/* Try to read side 1 on a disk that doesn't have 2 sides */
+			&& ( FDC_GetSidesPerDisk ( HeadTrack[ FDC_DRIVE ] ) != 2 ) )
 		{
-			for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP2 */
-
-			buf_crc = buf;
-			for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
-			*buf++ = 0xfe;						/* Index Address Mark */
-			*buf++ = HeadTrack[ FDC_DRIVE ];			/* Track */
-			*buf++ = FDC_SIDE;					/* Side */
-			*buf++ = Sector;					/* Sector */
-			FDC.ID_FieldLastSector = Sector;
-			*buf++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
-			FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
-			*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
-			*buf++ = CRC & 0xff;					/* CRC2 */
-
-			for ( i=0 ; i<22 ; i++ )	*buf++ = 0x4e;		/* GAP3a */
-			for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP3b */
-
-			buf_crc = buf;
-			for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
-			*buf++ = 0xfb;						/* Data Address Mark */
-
-			if ( ! FDC_ReadSectorFromFloppy ( buf , Sector , &SectorSize ) )	/* Read a single 512 bytes sector into temporary buffer */
-			{
-				FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-				Delay_micro = FDC_CmdCompleteCommon( true );
-			}
-			buf += SectorSize;
-
-			FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
-			*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
-			*buf++ = CRC & 0xff;					/* CRC2 */
-
-			for ( i=0 ; i<40 ; i++ )	*buf++ = 0x4e;		/* GAP4 */
+			for ( i=0 ; i<FDC_TRACK_BYTES_STANDARD ; i++ )
+				*buf++ = rand() & 0xff;				/* Fill the track buffer with random bytes */
 		}
+		
+		else								/* Track/side available in the disk image */
+		{
+			for ( i=0 ; i<60 ; i++ )		*buf++ = 0x4e;		/* GAP1 */
 
-		while ( buf < DMADiskWorkSpace + FDC_DMA.PosInBuffer + FDC_TRACK_BYTES_STANDARD )	/* Complete the track buffer */
-		       *buf++ = 0x4e;						/* GAP5 */
+			for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) ; Sector++ )
+			{
+				for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP2 */
 
+				buf_crc = buf;
+				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
+				*buf++ = 0xfe;						/* Index Address Mark */
+				*buf++ = HeadTrack[ FDC_DRIVE ];			/* Track */
+				*buf++ = FDC_SIDE;					/* Side */
+				*buf++ = Sector;					/* Sector */
+				FDC.ID_FieldLastSector = Sector;
+				*buf++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
+				FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
+				*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
+				*buf++ = CRC & 0xff;					/* CRC2 */
+
+				for ( i=0 ; i<22 ; i++ )	*buf++ = 0x4e;		/* GAP3a */
+				for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP3b */
+
+				buf_crc = buf;
+				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
+				*buf++ = 0xfb;						/* Data Address Mark */
+
+				if ( ! FDC_ReadSectorFromFloppy ( buf , Sector , &SectorSize ) )	/* Read a single 512 bytes sector into temporary buffer */
+				{
+					/* Do nothing in case of error, we could put some random bytes, but this case should */
+					/* not happen with ST/MSA disk images, all sectors should be present on each track. */
+				}
+				buf += SectorSize;
+
+				FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
+				*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
+				*buf++ = CRC & 0xff;					/* CRC2 */
+
+				for ( i=0 ; i<40 ; i++ )	*buf++ = 0x4e;		/* GAP4 */
+			}
+
+			while ( buf < DMADiskWorkSpace + FDC_DMA.PosInBuffer + FDC_TRACK_BYTES_STANDARD )	/* Complete the track buffer */
+			      *buf++ = 0x4e;						/* GAP5 */
+		}
 
 		/* Transfer Track data to RAM using DMA */
 		FDC_DMA.BytesToTransfer += FDC_TRACK_BYTES_STANDARD;
