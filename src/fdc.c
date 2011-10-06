@@ -392,7 +392,7 @@ void FDC_MemorySnapShot_Capture(bool bSave)
  */
 static int FDC_DelayToCpuCycles ( int Delay_micro )
 {
-  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4 );
+//  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4 );
 	return (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
 }
 
@@ -763,7 +763,7 @@ static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 {
 	FDC.STR &= (~DisableBits);					/* Clear bits in DisableBits */
 	FDC.STR |= EnableBits;						/* Set bits in EnableBits */
-fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
+//fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
 }
 
 
