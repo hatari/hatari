@@ -12,25 +12,14 @@
 #define HATARI_HDC_H
 
 
-/* HD Command packet macros */
-#define HD_OPCODE(a) (a.command[0] & 0x1F)             /* get opcode (bit 0-4) */
-#define HD_TARGET(a) ((a.command[0] & 0xE0)>>5)        /* get HD target # (5-7) */
-#define HD_DEVICE(a) ((a.command[1] & 0xE0) >>5)       /* get device # (5-7) */
-
-#define HD_LBA_MSB(a) ((unsigned) a.command[1] & 0x1F) /* Logical Block adress, MSB */
-#define HD_LBA_MID(a) ((unsigned) a.command[2])        /* Logical Block adress */
-#define HD_LBA_LSB(a) ((unsigned) a.command[3])        /* Logical Block adress, LSB */
-
-#define HD_SECTORCOUNT(a) (a.command[4] & 0xFF)        /* get sector count */
-#define HD_CONTROL(a) (a.command[5] & 0xFF)            /* get control byte */
-
-
 /* Opcodes */
 /* The following are multi-sector transfers with seek implied */
 #define HD_VERIFY_TRACK    0x05               /* Verify track */
 #define HD_FORMAT_TRACK    0x06               /* Format track */
 #define HD_READ_SECTOR     0x08               /* Read sector */
+#define HD_READ_SECTOR1    0x28               /* Read sector (class 1) */
 #define HD_WRITE_SECTOR    0x0A               /* Write sector */
+#define HD_WRITE_SECTOR1   0x2A               /* Write sector (class 1) */
 
 /* other codes */
 #define HD_TEST_UNIT_RDY   0x00               /* Test unit ready */
@@ -42,6 +31,7 @@
 #define HD_MODESENSE       0x1A               /* Mode sense */
 #define HD_REQ_SENSE       0x03               /* Request sense */
 #define HD_SHIP            0x1B               /* Ship drive */
+#define HD_READ_CAPACITY1  0x25               /* Read capacity (class 1) */
 
 /* Status codes */
 #define HD_STATUS_OK       0x00
@@ -63,9 +53,14 @@
    Structure representing an ACSI command block.
 */
 typedef struct {
-  int byteCount;         /* count of number of command bytes written */
-  unsigned char command[6]; 
-  short int returnCode;  /* return code from the HDC operation */
+  int readCount;    /* count of number of command bytes written */
+  unsigned char target;
+  unsigned char opcode;
+  bool extended;
+
+  int byteCount;             /* count of number of command bytes written */
+  unsigned char command[10];
+  short int returnCode;      /* return code from the HDC operation */
 } HDCOMMAND;
 
 extern HDCOMMAND HDCCommand;
