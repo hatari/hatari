@@ -263,7 +263,7 @@ class Tokens:
     "--rs232-out",
     "--disk-a",
     "--disk-b",
-    "--slowfdc",
+    "--fastfdc",
     "--protect-floppy",
     "--protect-hd",
     "--harddrive",

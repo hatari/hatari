@@ -2,6 +2,9 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2011-10:
+- Replace --slowfdc with --fastfdc
+
 2011-04:
 - Support RTC and "keep desktop resolution" options
 

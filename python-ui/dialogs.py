@@ -298,15 +298,15 @@ class FloppyDialog(HatariUIDialog):
         table_add_widget_row(table, row, "Write protection:", protect)
 
         row += 1
-        slowfdc = gtk.CheckButton("Slow floppy access")
-        slowfdc.set_active(config.get_slowfdc())
-        slowfdc.set_tooltip_text("May be required by some rare game/demo")
-        table_add_widget_row(table, row, None, slowfdc)
+        fastfdc = gtk.CheckButton("Fast floppy access")
+        fastfdc.set_active(config.get_fastfdc())
+        fastfdc.set_tooltip_text("Can cause incompatibilites with some games/demos")
+        table_add_widget_row(table, row, None, fastfdc)
 
         table.show_all()
 
         self.protect = protect
-        self.slowfdc = slowfdc
+        self.fastfdc = fastfdc
     
     def run(self, config):
         "run(config), show disk image dialog"
@@ -320,7 +320,7 @@ class FloppyDialog(HatariUIDialog):
             for drive in range(2):
                 config.set_floppy(drive, self.floppy[drive].get_filename())
             config.set_floppy_protection(self.protect.get_active())
-            config.set_slowfdc(self.slowfdc.get_active())
+            config.set_fastfdc(self.fastfdc.get_active())
             config.flush_updates()
 
 

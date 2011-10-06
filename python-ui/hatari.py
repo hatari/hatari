@@ -496,13 +496,13 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Floppy]", "szDisk%cFileName" %  ("A", "B")[drive], filename)
         self._change_option("--disk-%c %s" % (("a", "b")[drive], filename))
 
-    # ------------ slow FDC access ---------------
-    def get_slowfdc(self):
-        return self.get("[Floppy]", "bSlowFloppy")
+    # ------------ fast FDC access ---------------
+    def get_fastfdc(self):
+        return self.get("[Floppy]", "FastFloppy")
 
-    def set_slowfdc(self, value):
-        self.set("[Floppy]", "bSlowFloppy", value)
-        self._change_option("--slowfdc %s" % str(value))
+    def set_fastfdc(self, value):
+        self.set("[Floppy]", "FastFloppy", value)
+        self._change_option("--fastfdc %s" % str(value))
 
     # ------------- disk protection -------------
     def get_protection_types(self):

@@ -55,7 +55,7 @@
     IBOutlet NSPopUpButton *realJoystick;
     IBOutlet NSButton *realTime;
     IBOutlet NSMatrix *resolution;
-    IBOutlet NSButton *slowFDC;
+    IBOutlet NSButton *fastFDC;
     IBOutlet NSTextField *tosImage;
     IBOutlet NSButton *useBorders;
     IBOutlet NSButton *useVDIResolution;

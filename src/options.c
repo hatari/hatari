@@ -97,6 +97,7 @@ enum {
 	OPT_DISKA,		/* disk options */
 	OPT_DISKB,
 	OPT_SLOWFLOPPY,
+	OPT_FASTFLOPPY,
 	OPT_WRITEPROT_FLOPPY,
 	OPT_WRITEPROT_HD,
 	OPT_HARDDRIVE,
@@ -267,7 +268,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DISKB, NULL, "--disk-b",
 	  "<file>", "Set disk image for floppy drive B" },
 	{ OPT_SLOWFLOPPY,   NULL, "--slowfdc",
-	  "<bool>", "Slow down floppy disk access emulation" },
+	  "<bool>", "Slow down floppy disk access emulation (deprecated, use --fastfdc)" },
+	{ OPT_FASTFLOPPY,   NULL, "--fastfdc",
+	  "<bool>", "Speed up floppy disk access emulation (can break some programs)" },
 	{ OPT_WRITEPROT_FLOPPY, NULL, "--protect-floppy",
 	  "<x>", "Write protect floppy image contents (on/off/auto)" },
 	{ OPT_WRITEPROT_HD, NULL, "--protect-hd",
@@ -1192,7 +1195,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_SLOWFLOPPY:
-			ok = Opt_Bool(argv[++i], OPT_SLOWFLOPPY, &ConfigureParams.DiskImage.bSlowFloppy);
+			i++;
+			fprintf(stderr, "\nWarning: --slowfdc is not supported anymore, use --fastfdc\n\n");
+			break;
+
+		case OPT_FASTFLOPPY:
+			ok = Opt_Bool(argv[++i], OPT_FASTFLOPPY, &ConfigureParams.DiskImage.FastFloppy);
 			break;
 
 		case OPT_WRITEPROT_FLOPPY:

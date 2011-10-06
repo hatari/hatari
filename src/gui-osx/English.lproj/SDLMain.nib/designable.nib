@@ -612,7 +612,7 @@
 												<object class="NSButtonCell" key="NSCell" id="141243605">
 													<int key="NSCellFlags">67239424</int>
 													<int key="NSCellFlags2">0</int>
-													<string key="NSContents">Slow down FDC emulation</string>
+													<string key="NSContents">Speed up FDC emulation</string>
 													<reference key="NSSupport" ref="980492233"/>
 													<reference key="NSControlView" ref="989049671"/>
 													<int key="NSButtonFlags">1211912703</int>
@@ -6877,7 +6877,7 @@ AAA</bytes>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
-						<string key="label">slowFDC</string>
+						<string key="label">fastFDC</string>
 						<reference key="source" ref="932832352"/>
 						<reference key="destination" ref="989049671"/>
 					</object>
@@ -11200,7 +11200,7 @@ AAA</bytes>
 						<string key="realTime">NSButton</string>
 						<string key="resolution">NSMatrix</string>
 						<string key="showStatusBar">NSButton</string>
-						<string key="slowFDC">NSButton</string>
+						<string key="fastFDC">NSButton</string>
 						<string key="tosImage">NSTextField</string>
 						<string key="useBorders">NSButton</string>
 						<string key="useVDIResolution">NSButton</string>
@@ -11424,8 +11424,8 @@ AAA</bytes>
 							<string key="name">showStatusBar</string>
 							<string key="candidateClassName">NSButton</string>
 						</object>
-						<object class="IBToOneOutletInfo" key="slowFDC">
-							<string key="name">slowFDC</string>
+						<object class="IBToOneOutletInfo" key="fastFDC">
+							<string key="name">fastFDC</string>
 							<string key="candidateClassName">NSButton</string>
 						</object>
 						<object class="IBToOneOutletInfo" key="tosImage">

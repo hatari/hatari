@@ -152,7 +152,7 @@ typedef enum
 typedef struct
 {
   bool bAutoInsertDiskB;
-  bool bSlowFloppy;                  /* true to slow down FDC emulation */
+  bool FastFloppy;			/* true to speed up FDC emulation */
   WRITEPROTECTION nWriteProtection;
   char szDiskZipPath[MAX_FLOPPYDRIVES][FILENAME_MAX];
   char szDiskFileName[MAX_FLOPPYDRIVES][FILENAME_MAX];

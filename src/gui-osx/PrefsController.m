@@ -632,7 +632,7 @@ static const int nSoundFreqs[] =
     IMPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
     IMPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
     IMPORT_SWITCH(realTime, ConfigureParams.System.bRealTimeClock);
-    IMPORT_SWITCH(slowFDC, ConfigureParams.DiskImage.bSlowFloppy);
+    IMPORT_SWITCH(fastFDC, ConfigureParams.DiskImage.FastFloppy);
     IMPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
     IMPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     IMPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
@@ -843,7 +843,7 @@ static const int nSoundFreqs[] =
     EXPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
     EXPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
     EXPORT_SWITCH(realTime, ConfigureParams.System.bRealTimeClock);
-    EXPORT_SWITCH(slowFDC, ConfigureParams.DiskImage.bSlowFloppy);
+    EXPORT_SWITCH(fastFDC, ConfigureParams.DiskImage.FastFloppy);
     EXPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
     EXPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     EXPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);

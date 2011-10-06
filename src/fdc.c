@@ -273,6 +273,9 @@ static int FDC_StepRate_ms[] = { 2 , 3 , 5 , 6 };		/* Controlled by bits 1 and 0
 #define	FDC_SECTOR_SIZE_1024			3
 
 
+#define	FDC_FAST_FDC_FACTOR			10		/* Divide all delays by this value when --fastfdc is used */
+
+
 typedef struct {
 	/* WD1772 internal registers */
 	Uint8		DR;					/* Data Register */
@@ -392,8 +395,15 @@ void FDC_MemorySnapShot_Capture(bool bSave)
  */
 static int FDC_DelayToCpuCycles ( int Delay_micro )
 {
-//  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4 );
-	return (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
+	int	Delay;
+
+	Delay = (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
+
+	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( Delay > FDC_FAST_FDC_FACTOR ) )
+		Delay /= FDC_FAST_FDC_FACTOR;
+
+//  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
+	return Delay;
 }
 
 
