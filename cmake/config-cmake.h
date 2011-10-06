@@ -63,6 +63,9 @@
 /* Define to 1 if you have the 'scandir' function. */
 #cmakedefine HAVE_SCANDIR 1
 
+/* Define to 1 if you have the 'statvfs' function. */
+#cmakedefine HAVE_STATVFS 1
+
 
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "@BIN2DATADIR@"

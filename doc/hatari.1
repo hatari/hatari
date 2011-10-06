@@ -94,6 +94,16 @@ Force internal bitdepth (x = 8/15/16/32, 0=disable)
 .B \-\-borders <bool>
 Show ST/STE screen borders (for low/med resolution overscan demos)
 .TP
+.B \-\-desktop-st <bool>
+Whether fullscreen mode uses desktop resolution to avoid: messing
+multi-screen setups, several seconds delay needed by LCD monitors
+resolution switching and the resulting sound break. As Hatari ST/E
+display code doesn't support zooming (except low-rez doubling), it
+doesn't get scaled (by Hatari or monitor) when this is enabled.
+Therefore this is mainly useful only if you suffer from the described
+effects, but still want to grab mouse and remove other distractions
+from the screen just by toggling fullscreen mode.
+.TP 
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with
 the slower but more accurate Spectrum512 screen conversion functions
@@ -189,8 +199,13 @@ as it disables the file attribute modifications for the GEMDOS hard disk
 emulation.
 .TP 
 .B \-d, \-\-harddrive <dir>
-Emulate harddrive partition(s) with <dir> contents
-.TP 
+Emulate harddrive partition(s) with <dir> contents.  If directory
+contains only single letter (C-Z) subdirectories, each of these
+subdirectories will be treated as a separate partition, otherwise the
+given directory itself will be assigned to drive "C:". In the multiple
+partition case, the letters used as the subdirectory names will
+determine to which drives/partitions they're assigned.
+.TP
 .B \-\-acsi <file>
 Emulate an ACSI hard disk with an image <file>
 .TP 
@@ -238,6 +253,19 @@ Enable blitter emulation (ST only)
 .B \-\-dsp <x>
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP 
+.B \-\-timer-d <bool>
+Patch redundantly high Timer-D frequency set by TOS.  This about doubles
+Hatari speed (for ST/e emulation) as the original Timer-D frequency causes
+most of the interrupts.
+.TP
+.B \-\-fast-boot <bool>
+Patch TOS and initialize the so-called "memvalid" system variables to by-pass
+the memory test of TOS, so that the system boots faster.
+.TP
+.B \-\-rtc <bool>
+Enable real-time clock
+.SH "Sound options"
+.TP 
 .B \-\-mic <bool>
 Enable/disable (Falcon only) microphone
 .TP 
@@ -263,14 +291,6 @@ a good choice if you have such problems). Most users will not need this option.
 Select a method for mixing the three YM2149 voice volumes together.
 "table" uses a lookup table of audio output voltage values measured
 on STF and "linear" just averages the 3 YM voices.
-.TP 
-.B \-\-timer-d <bool>
-Patch redundantly high Timer-D frequency set by TOS.  This about doubles
-Hatari speed (for ST/e emulation) as the original Timer-D frequency causes
-most of the interrupts.
-.TP 
-.B \-\-rtc <bool>
-Enable real-time clock
 .SH "Debug options"
 .TP 
 .B \-D, \-\-debug

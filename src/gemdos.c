@@ -26,6 +26,9 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include <config.h>
 
 #include <sys/stat.h>
+#if HAVE_STATVFS
+#include <sys/statvfs.h>
+#endif
 #include <sys/types.h>
 #include <utime.h>
 #include <time.h>
@@ -485,23 +488,6 @@ static bool GEMDOS_DoesHostDriveFolderExist(char* lpstrPath, int iDrive)
 	return bExist;
 }
 
-/*-----------------------------------------------------------------------*/
-/**
- * Routine to check if any emulated drive is present
- */
-#if 0
-static bool GEMDOS_IsHDDPresent(int iDrive)
-{
-	bool bPresent = false;
-
-	if ((iDrive <= nNumDrives) && (iDrive > 1))
-		if (emudrives[iDrive-2])
-			bPresent = true;
-
-	return bPresent;
-}
-#endif
-
 
 /**
  * Determine upper limit of partitions that should be emulated.
@@ -511,7 +497,7 @@ static bool GEMDOS_IsHDDPresent(int iDrive)
 static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 {
 	struct dirent **files;
-	int count, i;
+	int count, i, last;
 	char letter;
 	bool bMultiPartitions;
 
@@ -529,13 +515,14 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 	else if (count <= 2)
 	{
 		/* Empty directory Only "." and ".."), assume single partition mode */
-		*pnMaxDrives = 1;
+		last = 1;
 		bMultiPartitions = false;
 	}
 	else
 	{
 		bMultiPartitions = true;
 		/* Check all files in the directory */
+		last = 0;
 		for (i = 0; i < count; i++)
 		{
 			letter = toupper(files[i]->d_name[0]);
@@ -550,16 +537,22 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 				/* folder with name other than C-Z...
 				 * (until Z under MultiTOS, to P otherwise)
 				 * ... so use single partition mode! */
-				*pnMaxDrives = 1;
+				last = 1;
 				bMultiPartitions = false;
 				break;
 			}
-			*pnMaxDrives = letter - 'C' + 1;
+
+			/* alphasort isn't case insensitive */
+			letter = letter - 'C' + 1;
+			if (letter > last)
+				last = letter;
 		}
 	}
 
-	if (*pnMaxDrives > MAX_HARDDRIVES)
+	if (last > MAX_HARDDRIVES)
 		*pnMaxDrives = MAX_HARDDRIVES;
+	else
+		*pnMaxDrives = last;
 
 	/* Free file list */
 	for (i = 0; i < count; i++)
@@ -822,31 +815,36 @@ static int GemDOS_FindDriveNumber(char *pszFileName)
 	return CurrentDrive;
 }
 
+
+/**
+ * Return true if drive ID (C:2, D:3 etc...) matches emulated hard-drive
+ */
+static bool GemDOS_IsDriveEmulated(int drive)
+{
+	drive -= 2;
+	if (drive < 0 || drive >= MAX_HARDDRIVES)
+		return false;
+	if (!emudrives[drive])
+		return false;
+	assert(emudrives[drive]->drive_number == drive+2);
+	return true;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Return drive ID(C:2, D:3 etc...) or -1 if not one of our emulation hard-drives
  */
-static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
+static int GemDOS_FileName2HardDriveID(char *pszFileName)
 {
-	int DriveNumber;
-	int n;
-
 	/* Do we even have a hard-drive? */
 	if (GEMDOS_EMU_ON)
 	{
+		int DriveNumber;
+
 		/* Find drive letter (as number) */
 		DriveNumber = GemDOS_FindDriveNumber(pszFileName);
-
-		/* We've got support for multiple drives here... */
-		if (DriveNumber > 1)	// If it is not a Floppy Drive
-		{
-			for (n=0; n<MAX_HARDDRIVES; n++)
-			{
-				/* Check if drive letter matches */
-				if (emudrives[n] &&  DriveNumber == emudrives[n]->drive_number)
-					return DriveNumber;
-			}
-		}
+		if (GemDOS_IsDriveEmulated(DriveNumber))
+			return DriveNumber;
 	}
 
 	/* Not a high-level redirected drive, let TOS handle it */
@@ -1376,34 +1374,83 @@ static bool GemDOS_SetDTA(Uint32 Params)
  */
 static bool GemDOS_DFree(Uint32 Params)
 {
-	int Drive;
+#ifdef HAVE_STATVFS
+	struct statvfs buf;
+#endif
+	int Drive, Total, Free;
 	Uint32 Address;
 
 	Address = STMemory_ReadLong(Params);
 	Drive = STMemory_ReadWord(Params+SIZE_LONG);
 
+	/* Note: Drive = 0 means current drive, 1 = A:, 2 = B:, 3 = C:, etc. */
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dfree(0x%x, %i)\n", Address, Drive);
+	if (Drive == 0)
+		Drive = CurrentDrive;
+	else
+		Drive--;
 
 	/* is it our drive? */
-	if ((Drive == 0 && CurrentDrive >= 2) || Drive >= 3)
+	if (!GemDOS_IsDriveEmulated(Drive))
 	{
-		/* Check that write is requested to valid memory area */
-		if (!STMemory_ValidArea(Address, 16))
-		{
-			Log_Printf(LOG_WARN, "GEMDOS Dfree() failed due to invalid RAM range 0x%x+%i\n", Address, 16);
-			Regs[REG_D0] = GEMDOS_ERANGE;
-			return true;
-		}
-		/* FIXME: Report actual free drive space */
-		STMemory_WriteLong(Address,  16*1024);           /* free clusters (mock 16 Mb) */
-		STMemory_WriteLong(Address+SIZE_LONG, 32*1024 ); /* total clusters (mock 32 Mb) */
-
-		STMemory_WriteLong(Address+SIZE_LONG*2, 512 );   /* bytes per sector */
-		STMemory_WriteLong(Address+SIZE_LONG*3, 2 );     /* sectors per cluster */
+		/* no, redirect to TOS */
+		return false;
+	}
+	/* Check that write is requested to valid memory area */
+	if (!STMemory_ValidArea(Address, 16))
+	{
+		Log_Printf(LOG_WARN, "GEMDOS Dfree() failed due to invalid RAM range 0x%x+%i\n", Address, 16);
+		Regs[REG_D0] = GEMDOS_ERANGE;
 		return true;
 	}
-	/* redirect to TOS */
-	return false;
+
+#ifdef HAVE_STATVFS
+	if (statvfs(emudrives[Drive-2]->hd_emulation_dir, &buf) == 0)
+	{
+		Total = buf.f_blocks/1024 * buf.f_frsize;
+		if (buf.f_bavail)
+			Free = buf.f_bavail;	/* free for unprivileged user */
+		else
+			Free = buf.f_bfree;
+		Free = Free/1024 * buf.f_bsize;
+
+		/* TOS version limits based on:
+		 *   http://www.seimet.de/atari/en/hddriverfaq.html
+		 */
+		if (TosVersion >= 0x0400)
+		{
+			if (Total > 1024*1024)
+				Total = 1024*1024;
+		}
+		else
+		{
+			if (TosVersion >= 0x0106)
+			{
+				if (Total > 512*1024)
+					Total = 512*1024;
+			}
+			else
+			{
+				if (Total > 256*1024)
+					Total = 256*1024;
+			}
+		}
+		if (Free > Total)
+			Free = Total;
+	}
+	else
+#endif
+	{
+		/* fake 32MB drive with 16MB free */
+		Total = 32*1024;
+		Free = 16*1024;
+	}
+	STMemory_WriteLong(Address,  Free);             /* free clusters */
+	STMemory_WriteLong(Address+SIZE_LONG, Total);   /* total clusters */
+
+	STMemory_WriteLong(Address+SIZE_LONG*2, 512);   /* bytes per sector */
+	STMemory_WriteLong(Address+SIZE_LONG*3, 2);     /* sectors per cluster (cluster = 1KB) */
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1421,7 +1468,7 @@ static bool GemDOS_MkDir(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dcreate(\"%s\")\n", pDirName);
 
-	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
+	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
 	if (!ISHARDDRIVE(Drive))
 	{
@@ -1473,7 +1520,7 @@ static bool GemDOS_RmDir(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Ddelete(\"%s\")\n", pDirName);
 
-	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
+	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
 	if (!ISHARDDRIVE(Drive))
 	{
@@ -1527,7 +1574,7 @@ static bool GemDOS_ChDir(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dsetpath(\"%s\")\n", pDirName);
 
-	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
+	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
 	if (!ISHARDDRIVE(Drive))
 	{
@@ -1616,7 +1663,7 @@ static bool GemDOS_Create(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fcreate(\"%s\", 0x%x)\n", pszFileName, Mode);
 
-	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
+	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
 	if (!ISHARDDRIVE(Drive))
 	{
@@ -1737,7 +1784,7 @@ static bool GemDOS_Open(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fopen(\"%s\", 0x%x)\n", pszFileName, Mode);
 
-	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
+	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
 	if (!ISHARDDRIVE(Drive))
 	{
@@ -2006,7 +2053,7 @@ static bool GemDOS_FDelete(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fdelete(\"%s\")\n", pszFileName);
 
-	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
+	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
 	if (!ISHARDDRIVE(Drive))
 	{
@@ -2125,7 +2172,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 
 	/* Find filename */
 	psFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
-	nDrive = GemDOS_IsFileNameAHardDrive(psFileName);
+	nDrive = GemDOS_FileName2HardDriveID(psFileName);
 
 	nRwFlag = STMemory_ReadWord(Params+SIZE_LONG);
 	nAttrib = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
@@ -2229,25 +2276,19 @@ static bool GemDOS_GetDir(Uint32 Params)
 
 	Address = STMemory_ReadLong(Params);
 	Drive = STMemory_ReadWord(Params+SIZE_LONG);
-	/* Note: Drive = 0 means current drive, 1 = A:, 2 = B:, 3 = C:, etc. */
 
+	/* Note: Drive = 0 means current drive, 1 = A:, 2 = B:, 3 = C:, etc. */
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dgetpath(0x%x, %i)\n", Address, (int)Drive);
+	if (Drive == 0)
+		Drive = CurrentDrive;
+	else
+		Drive--;
 
 	/* is it our drive? */
-	if ((Drive == 0 && CurrentDrive >= 2) || (Drive >= 3 /*&& Drive <= nNumDrives*/))
+	if (GemDOS_IsDriveEmulated(Drive))
 	{
 		char path[MAX_GEMDOS_PATH];
 		int i,len,c;
-
-		if (Drive == 0)
-			Drive = CurrentDrive;
-		else
-			Drive--;
-
-		if (emudrives[Drive-2] == NULL)
-		{
-			return false;
-		}
 
 		*path = '\0';
 		strncat(path,&emudrives[Drive-2]->fs_currpath[strlen(emudrives[Drive-2]->hd_emulation_dir)], sizeof(path)-1);
@@ -2300,7 +2341,7 @@ static int GemDOS_Pexec(Uint32 Params)
 	 case 0:      /* Load and go */
 	 case 3:      /* Load, don't go */
 		pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-		Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
+		Drive = GemDOS_FileName2HardDriveID(pszFileName);
 		
 		/* If not using A: or B:, use my own routines to load */
 		if (ISHARDDRIVE(Drive))
@@ -2413,7 +2454,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fsfirst(\"%s\", 0x%x)\n", pszFileName, nAttrSFirst);
 
-	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
+	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 	if (!ISHARDDRIVE(Drive))
 	{
 		/* redirect to TOS */
@@ -2450,6 +2491,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	{
 		/* Volume name */
 		strcpy(pDTA->dta_name,"EMULATED.001");
+		pDTA->dta_name[11] = '0' + Drive;
 		Regs[REG_D0] = GEMDOS_EOK;          /* Got volume */
 		return true;
 	}
@@ -2535,8 +2577,8 @@ static bool GemDOS_Rename(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Frename(\"%s\", \"%s\")\n", pszOldFileName, pszNewFileName);
 
-	NewDrive = GemDOS_IsFileNameAHardDrive(pszNewFileName);
-	OldDrive = GemDOS_IsFileNameAHardDrive(pszOldFileName);
+	NewDrive = GemDOS_FileName2HardDriveID(pszNewFileName);
+	OldDrive = GemDOS_FileName2HardDriveID(pszOldFileName);
 	if (!(ISHARDDRIVE(NewDrive) && ISHARDDRIVE(OldDrive)))
 	{
 		/* redirect to TOS */

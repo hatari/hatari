@@ -40,6 +40,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "debugInfo.h"
 #include "debugui.h"
 #include "evaluate.h"
+#include "history.h"
 #include "symbols.h"
 
 int bExceptionDebugging;
@@ -776,6 +777,14 @@ static const dbgcommand_t uicommand[] =
 	  "[command]\n"
 	  "\tPrint help text for available commands.",
 	  false },
+	{ History_Parse, NULL,
+	  "history", "hi",
+	  "show last CPU & DSP PC values & executed instructions",
+	  "on|off|<count>\n"
+	  "\t'on' and 'off' can be used to enabled & disable history,\n"
+	  "\tcount will show (at max) given number of last saved PC values\n"
+	  "\tand instructions at corresponding RAM addresses.",
+	  false },
 	{ DebugInfo_Command, DebugInfo_MatchInfo,
 	  "info", "i",
 	  "show machine/OS information",
@@ -896,14 +905,16 @@ bool DebugUI_SetParseFile(const char *path)
 /**
  * Debugger user interface main function.
  */
-void DebugUI(void)
+void DebugUI(debug_reason_t reason)
 {
 	int cmdret, alertLevel;
 	char *expCmd, *psCmd = NULL;
 	static const char *welcome =
 		"\n----------------------------------------------------------------------"
 		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
-	
+
+	History_Mark(reason);
+
 	if (bInFullScreen)
 		Screen_ReturnFromFullScreen();
 

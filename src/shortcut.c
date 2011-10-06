@@ -199,7 +199,7 @@ static void ShortCut_Debug(void)
 
 	/* Call the debugger */
 	running = Main_PauseEmulation(true);
-	DebugUI();
+	DebugUI(REASON_USER);
 	if (running)
 		Main_UnPauseEmulation();
 }

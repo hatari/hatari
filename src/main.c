@@ -585,6 +585,7 @@ static void Main_Init(void)
 	Printer_Init();
 	RS232_Init();
 	Midi_Init();
+	Control_CheckUpdates();       /* enable window embedding? */
 	Screen_Init();
 	Main_SetTitle(NULL);
 	HostScreen_Init();

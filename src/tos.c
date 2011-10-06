@@ -270,8 +270,11 @@ static void TOS_FixRom(void)
 			{
 				/* Only apply the patch if it is really needed: */
 				if (pPatch->Flags == TP_ALWAYS
-				    || (pPatch->Flags == TP_HDIMAGE_OFF && !ACSI_EMU_ON && !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
-				    || (pPatch->Flags == TP_ANTI_STE && ConfigureParams.System.nMachineType == MACHINE_ST))
+				    || (pPatch->Flags == TP_HDIMAGE_OFF && !ACSI_EMU_ON
+				        && !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage
+				        && ConfigureParams.System.bFastBoot)
+				    || (pPatch->Flags == TP_ANTI_STE
+				        && ConfigureParams.System.nMachineType == MACHINE_ST))
 				{
 					/* Now we can really apply the patch! */
 					Log_Printf(LOG_DEBUG, "Applying TOS patch '%s'.\n", pPatch->pszName);

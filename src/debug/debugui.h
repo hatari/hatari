@@ -17,11 +17,21 @@ enum {
 	DEBUGGER_CMDDONE   // Command done
 };
 
+typedef enum {
+	REASON_NONE,       // uninitialized
+	REASON_CPU_EXCEPTION,
+	REASON_CPU_BREAKPOINT,
+	REASON_DSP_BREAKPOINT,
+	REASON_CPU_STEPS,
+	REASON_DSP_STEPS,
+	REASON_USER        // e.g. keyboard shortcut
+} debug_reason_t;
+
 /* Whether CPU exceptions invoke DebugUI */
 extern int bExceptionDebugging;
 
-extern void DebugUI(void);
 extern void DebugUI_Init(void);
+extern void DebugUI(debug_reason_t reason);
 extern bool DebugUI_RemoteParse(char *input);
 extern bool DebugUI_ParseFile(const char *path);
 extern bool DebugUI_SetParseFile(const char *input);

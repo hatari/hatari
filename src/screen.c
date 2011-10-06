@@ -74,6 +74,8 @@ static Uint8 *pPCScreenDest;                       /* Destination PC buffer */
 static int STScreenEndHorizLine;                   /* End lines to be converted */
 static int PCScreenBytesPerLine;
 static int STScreenWidthBytes;
+static int PCScreenOffsetX;                        /* how many pixels to skip from left when drawing */
+static int PCScreenOffsetY;                        /* how many pixels to skip from top when drawing */
 static SDL_Rect STScreenRect;                      /* screen size without statusbar */
 
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
@@ -117,9 +119,12 @@ static void Screen_SetupRGBTable(void)
 			{
 				/* STe 0xfff format */
 				STColor = (r<<8) | (g<<4) | (b);
-				rr = ((r & 0x7) << 5) | ((r & 0x8) << 1);
-				gg = ((g & 0x7) << 5) | ((g & 0x8) << 1);
-				bb = ((b & 0x7) << 5) | ((b & 0x8) << 1);
+				rr = ((r & 0x7) << 1) | ((r & 0x8) >> 3);
+				rr |= rr << 4;
+				gg = ((g & 0x7) << 1) | ((g & 0x8) >> 3);
+				gg |= gg << 4;
+				bb = ((b & 0x7) << 1) | ((b & 0x8) >> 3);
+				bb |= bb << 4;
 				RGBColor = SDL_MapRGB(sdlscrn->format, rr, gg, bb);
 				if (sdlscrn->format->BitsPerPixel <= 16)
 				{
@@ -180,9 +185,13 @@ static void Screen_CreatePalette(void)
 			g = HBLPalettes[i] << 1;
 			b = HBLPalettes[i] << 5;
 			/* move top bit of 0x1e0 to lowest in 0xf0 */
-			sdlColors[j].r = (r & 0xe0) | ((r & 0x100) >> 4);
-			sdlColors[j].g = (g & 0xe0) | ((g & 0x100) >> 4);
-			sdlColors[j].b = (b & 0xe0) | ((b & 0x100) >> 4);
+			r = (r & 0xe0) | ((r & 0x100) >> 4);
+			g = (g & 0xe0) | ((g & 0x100) >> 4);
+			b = (b & 0xe0) | ((b & 0x100) >> 4);
+			/* Set color in table */
+			sdlColors[j].r = r | (r >> 4);
+			sdlColors[j].g = g | (g >> 4);
+			sdlColors[j].b = b | (b >> 4);
 		}
 		SDL_SetColors(sdlscrn, sdlColors, 10, 16);
 	}
@@ -410,9 +419,25 @@ static void Screen_SetResolution(void)
 	Screen_SetSTScreenOffsets();  
 	Height += Statusbar_SetHeight(Width, Height);
 
+	PCScreenOffsetX = PCScreenOffsetY = 0;
+
 	/* SDL Video attributes: */
 	if (bInFullScreen)
 	{
+		if (ConfigureParams.Screen.bKeepResolutionST)
+		{
+			/* use desktop resolution */
+			Resolution_GetDesktopSize(&maxW, &maxH);
+			SBarHeight = Statusbar_GetHeightForSize(maxW, maxH);
+			/* re-calculate statusbar height for this resolution */
+			Statusbar_SetHeight(maxW, maxH-SBarHeight);
+			/* center Atari screen to resolution */
+			PCScreenOffsetY = (maxH - Height)/2;
+			PCScreenOffsetX = (maxW - Width)/2;
+			/* and select desktop resolution */
+			Height = maxH;
+			Width = maxW;
+		}
 		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
 		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
 		 * but it doesn't work with partial screen updates done by the ST screen
@@ -964,6 +989,10 @@ static void Screen_SetConvertDetails(void)
 	pPCScreenDest = sdlscrn->pixels;              /* Destination PC screen */
 
 	PCScreenBytesPerLine = sdlscrn->pitch;        /* Bytes per line */
+
+	/* Center to available framebuffer */
+	pPCScreenDest += PCScreenOffsetY * PCScreenBytesPerLine + PCScreenOffsetX * (sdlscrn->format->BitsPerPixel/8);
+
 	pHBLPalettes = pFrameBuffer->HBLPalettes;     /* HBL palettes pointer */
 	/* Not in TV-Mode? Then double up on Y: */
 	bScrDoubleY = !(ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_TV);

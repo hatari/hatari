@@ -61,6 +61,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nFrameSkips", Int_Tag, &ConfigureParams.Screen.nFrameSkips },
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
 	{ "bKeepResolution", Bool_Tag, &ConfigureParams.Screen.bKeepResolution },
+	{ "bKeepResolutionST", Bool_Tag, &ConfigureParams.Screen.bKeepResolutionST },
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "nSpec512Threshold", Int_Tag, &ConfigureParams.Screen.nSpec512Threshold },
 	{ "nForceBpp", Int_Tag, &ConfigureParams.Screen.nForceBpp },
@@ -324,6 +325,7 @@ static const struct Config_Tag configs_System[] =
 	{ "nDSPType", Int_Tag, &ConfigureParams.System.nDSPType },
 	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
+	{ "bFastBoot", Bool_Tag, &ConfigureParams.System.bFastBoot },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
 
 #if ENABLE_WINUAE_CPU
@@ -475,6 +477,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = false;
 	ConfigureParams.Screen.bKeepResolution = true;
+	ConfigureParams.Screen.bKeepResolutionST = false;
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = true;
 	ConfigureParams.Screen.nSpec512Threshold = 16;
@@ -514,6 +517,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.bPatchTimerD = true;
+	ConfigureParams.System.bFastBoot = true;
 	ConfigureParams.System.bRealTimeClock = true;
 	ConfigureParams.System.bFastForward = false;
 #if ENABLE_WINUAE_CPU

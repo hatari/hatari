@@ -163,6 +163,7 @@ check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)
 check_function_exists(nanosleep HAVE_NANOSLEEP)
 check_function_exists(alphasort HAVE_ALPHASORT)
 check_function_exists(scandir HAVE_SCANDIR)
+check_function_exists(statvfs HAVE_STATVFS)
 
 # #############
 # Other CFLAGS:

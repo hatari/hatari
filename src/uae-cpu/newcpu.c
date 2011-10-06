@@ -956,7 +956,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    put_long (m68k_areg(regs, 7)+10, last_addr_for_exception_3);
 	    if (bExceptionDebugging) {
 	      fprintf(stderr,"Address Error at address $%x, PC=$%x\n",last_fault_for_exception_3,currpc);
-	      DebugUI();
+	      DebugUI(REASON_CPU_EXCEPTION);
 	    }
 	}
 	else {    /* Bus error */
@@ -977,7 +977,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	              BusErrorAddress, (long)currpc);
 	      unset_special(SPCFLAG_BUSERROR);
 	      if (bExceptionDebugging)
-	        DebugUI();
+	        DebugUI(REASON_CPU_EXCEPTION);
 	      else
 		DlgAlert_Notice("Detected double bus error => CPU halted!\nEmulation needs to be reset.\n");
 	      regs.intmask = 7;
@@ -986,7 +986,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    }
 	    if (bExceptionDebugging && BusErrorAddress!=0xff8a00) {
 	      fprintf(stderr,"Bus Error at address $%x, PC=$%lx\n", BusErrorAddress, (long)currpc);
-	      DebugUI();
+	      DebugUI(REASON_CPU_EXCEPTION);
 	    }
 	}
     }
@@ -994,7 +994,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* Set PC and flags */
     if (bExceptionDebugging && get_long (regs.vbr + 4*nr) == 0) {
         write_log("Uninitialized exception handler #%i!\n", nr);
-	DebugUI();
+	DebugUI(REASON_CPU_EXCEPTION);
     }
     newpc = get_long (regs.vbr + 4*nr);
     if ( newpc & 1)				/* check new pc is even */
@@ -1002,7 +1002,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
         if ( nr==2 || nr==3 )			/* address error during bus/address error -> stop emulation */
             {
 		fprintf(stderr,"Address Error during exception 2/3, aborting new PC=$%x\n",newpc);
-		DebugUI();
+		DebugUI(REASON_CPU_EXCEPTION);
             }
         else
             {

@@ -21,6 +21,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 #include "debugcpu.h"
 #include "evaluate.h"
 #include "hatari-glue.h"
+#include "history.h"
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
@@ -523,13 +524,17 @@ void DebugCpu_Check(void)
 	if (nCpuActiveCBs)
 	{
 		if (BreakCond_MatchCpu())
-			DebugUI();
+			DebugUI(REASON_CPU_BREAKPOINT);
 	}
 	if (nCpuSteps)
 	{
 		nCpuSteps -= 1;
 		if (nCpuSteps == 0)
-			DebugUI();
+			DebugUI(REASON_CPU_STEPS);
+	}
+	if (bHistoryEnabled)
+	{
+		History_AddCpu();
 	}
 }
 
@@ -543,7 +548,7 @@ void DebugCpu_SetDebugging(void)
 	bCpuProfiling = Profile_CpuStart();
 	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 
-	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling)
+	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || bHistoryEnabled)
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);

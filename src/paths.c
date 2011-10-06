@@ -183,11 +183,26 @@ static void Paths_InitHomeDirs(void)
 	char *psHome;
 
 	psHome = getenv("HOME");
-	if (!psHome)
+	if (psHome)
+		strncpy(sUserHomeDir, psHome, FILENAME_MAX);
+#if defined(WIN32)
+	else
 	{
+		char *psDrive;
+		int len = 0;
 		/* Windows home path? */
 		psHome = getenv("HOMEPATH");
+		psDrive = getenv("HOMEDRIVE");
+		if (psDrive)
+		{
+			len = strlen(psDrive);
+			len = len < FILENAME_MAX ? len : FILENAME_MAX;
+			strncpy(sUserHomeDir, psDrive, len);
+		}
+		if (psHome)
+			strncpy(sUserHomeDir+len, psHome, FILENAME_MAX-len);
 	}
+#endif
 	if (!psHome)
 	{
 		/* $HOME not set, so let's use current working dir as home */
@@ -196,7 +211,6 @@ static void Paths_InitHomeDirs(void)
 	}
 	else
 	{
-		strncpy(sUserHomeDir, psHome, FILENAME_MAX);
 		sUserHomeDir[FILENAME_MAX-1] = 0;
 
 		/* Try to use a .hatari directory in the users home directory */

@@ -149,6 +149,8 @@ class UICallbacks:
         socket.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
         socket.set_events(gtk.gdk.ALL_EVENTS_MASK)
         socket.set_flags(gtk.CAN_FOCUS)
+        # set max Hatari window size = desktop size
+        self.config.set_desktop_size(gtk.gdk.screen_width(), gtk.gdk.screen_height())
         # set initial embedded hatari size
         width, height = self.config.get_window_size()
         socket.set_size_request(width, height)

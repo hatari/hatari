@@ -41,10 +41,11 @@ const char DlgSystem_fileid[] = "Hatari dlgSystem.c : " __DATE__ " " __TIME__;
 #define DLGSYS_BLITTER  25
 #define DLGSYS_RTC      26
 #define DLGSYS_TIMERD   27
+#define DLGSYS_FASTBOOT 28
 
 static SGOBJ systemdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 36,24, NULL },
+	{ SGBOX, 0, 0, 0,0, 36,25, NULL },
 	{ SGTEXT, 0, 0, 11,1, 14,1, "System options" },
 
 	{ SGBOX, 0, 0, 2,3, 16,9, NULL },
@@ -77,8 +78,9 @@ static SGOBJ systemdlg[] =
 	{ SGCHECKBOX, 0, 0, 2,18, 20,1, "Blitter emulation" },
 	{ SGCHECKBOX, 0, 0, 2,19, 27,1, "Real time clock emulation" },
 	{ SGCHECKBOX, 0, 0, 2,20, 15,1, "Patch Timer-D" },
+	{ SGCHECKBOX, 0, 0, 2,21, 27,1, "Patch TOS for faster boot" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 8,22, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 8,23, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -153,6 +155,11 @@ void Dialog_SystemDlg(void)
 	else
 		systemdlg[DLGSYS_TIMERD].state &= ~SG_SELECTED;
 
+	if (ConfigureParams.System.bFastBoot)
+		systemdlg[DLGSYS_FASTBOOT].state |= SG_SELECTED;
+	else
+		systemdlg[DLGSYS_FASTBOOT].state &= ~SG_SELECTED;
+
 	/* Show the dialog: */
 	SDLGui_DoDialog(systemdlg, NULL);
 
@@ -194,6 +201,7 @@ void Dialog_SystemDlg(void)
 	ConfigureParams.System.bBlitter = (systemdlg[DLGSYS_BLITTER].state & SG_SELECTED);
 	ConfigureParams.System.bRealTimeClock = (systemdlg[DLGSYS_RTC].state & SG_SELECTED);
 	ConfigureParams.System.bPatchTimerD = (systemdlg[DLGSYS_TIMERD].state & SG_SELECTED);
+	ConfigureParams.System.bFastBoot = (systemdlg[DLGSYS_FASTBOOT].state & SG_SELECTED);
 }
 
 /* The new WinUae cpu "System" dialog: */

@@ -3,8 +3,30 @@
                                    --------
                                 Release Notes
 
+ Development version:
+ --------------------
+
+Emulation:
+- more accurate microwire clock emulation.
+
+Emulator:
+- "--fast-boot" option to initialize "memvalid" system variables to
+  by-pass the memory test of TOS, so that the system boots faster
+- "--desktop-st" option to keep desktop resolution also for ST/STE modes
+  (unfortunately without scaling besides the low-res doubling)
+- Warn user when using GEMDOS / HD emu with too old TOS version
+- GEMDOS HD emu Dfree() reports host disk total and free size if
+  they're below value understood by TOS and it forwards requests
+  for other (IDE/ACSI image) partitions to TOS
+- Debugger improvements:
+  - "history" command to list instructions executed before entering
+    debugger
+
+Other changes:
+
+
  Version 1.5.0 (2011-07-19):
- -------------------
+ ---------------------------
 
 Emulation:
 - Alternative CPU core based on WinUAE for more accurate future

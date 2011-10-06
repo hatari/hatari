@@ -32,6 +32,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "debugInfo.h"
 #include "debugui.h"
 #include "evaluate.h"
+#include "history.h"
 #include "symbols.h"
 #include "68kDisass.h"
 
@@ -326,13 +327,12 @@ static void BreakCond_ShowTracked(bc_condition_t *condition, int count)
  */
 static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char *name)
 {
-	int i;
+	bool for_dsp;
+	int i, ret;
 	
 	for (i = 0; i < count; bp++, i++) {
 
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
-
-			BreakCond_ShowTracked(bp->conditions, bp->ccount);
 
 			bp->hits++;
 			if (bp->options.skip &&
@@ -342,10 +342,13 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
 				i+1, name, bp->hits);
 
-			BreakCond_Print(bp);
-			if (bp->options.once) {
-				BreakCond_Remove(i+1, (bp-i == BreakPointsDsp));
+			for_dsp = (bp-i == BreakPointsDsp);
+			if (for_dsp) {
+				History_Mark(REASON_DSP_BREAKPOINT);
+			} else {
+				History_Mark(REASON_CPU_BREAKPOINT);
 			}
+
 			if (bp->options.lock) {
 				DebugCpu_InitSession();
 				DebugDsp_InitSession();
@@ -354,12 +357,20 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			if (bp->options.filename) {
 				DebugUI_ParseFile(bp->options.filename);
 			}
+
 			if (bp->options.trace) {
-				return 0;
+				ret = 0;
 			} else {
 				/* indexes for BreakCond_Remove() start from 1 */
-				return i + 1;
+				ret = i + 1;
 			}
+			
+			BreakCond_Print(bp);
+			BreakCond_ShowTracked(bp->conditions, bp->ccount);
+			if (bp->options.once) {
+				BreakCond_Remove(i+1, for_dsp);
+			}
+			return ret;
 		}
 	}
 	return 0;
@@ -368,7 +379,7 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 /* ------------- breakpoint condition checking, public API ------------- */
 
 /**
- * Return matched CPU breakpoint index or zero for an error.
+ * Return matched CPU breakpoint index or zero for no hits.
  */
 int BreakCond_MatchCpu(void)
 {
@@ -376,7 +387,7 @@ int BreakCond_MatchCpu(void)
 }
 
 /**
- * Return matched DSP breakpoint index or zero for an error.
+ * Return matched DSP breakpoint index or zero for no hits.
  */
 int BreakCond_MatchDsp(void)
 {
