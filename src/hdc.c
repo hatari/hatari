@@ -50,6 +50,20 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 #define HDC_ReadInt24(a, i) (((unsigned) a[i] << 16) | ((unsigned) a[i + 1] << 8) | a[i + 2])
 #define HDC_ReadInt32(a, i) (((unsigned) a[i] << 24) | ((unsigned) a[i + 1] << 16) | ((unsigned) a[i + 2] << 8) | a[i + 3])
 
+/**
+ *  Structure representing an ACSI command block.
+ */
+typedef struct {
+  int readCount;    /* count of number of command bytes written */
+  unsigned char target;
+  unsigned char opcode;
+  bool extended;
+
+  int byteCount;             /* count of number of command bytes written */
+  unsigned char command[10];
+  short int returnCode;      /* return code from the HDC operation */
+} HDCOMMAND;
+
 /* HDC globals */
 HDCOMMAND HDCCommand;
 int nPartitions = 0;
@@ -805,6 +819,36 @@ void HDC_UnInit(void)
 	nNumDrives -= nPartitions;
 	nPartitions = 0;
 	bAcsiEmuOn = false;
+}
+
+
+/*---------------------------------------------------------------------*/
+/**
+ * Reset command status.
+ */
+void HDC_ResetCommandStatus(void)
+{
+	/*HDCCommand.byteCount = 0;*/  /* Not done on real ST? */
+	HDCCommand.returnCode = 0;
+}
+
+
+/**
+ * Get command status.
+ */
+short int HDC_GetCommandStatus(void)
+{
+	return HDCCommand.returnCode;
+}
+
+
+/*---------------------------------------------------------------------*/
+/**
+ * Get sector count.
+ */
+short int HDC_GetSectorCount(void)
+{
+	return HDCSectorCount;
 }
 
 

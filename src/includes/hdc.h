@@ -49,27 +49,17 @@
 
 #define ACSI_EMU_ON        bAcsiEmuOn         /* Do we have HDC emulation? */
 
-/* 
-   Structure representing an ACSI command block.
-*/
-typedef struct {
-  int readCount;    /* count of number of command bytes written */
-  unsigned char target;
-  unsigned char opcode;
-  bool extended;
-
-  int byteCount;             /* count of number of command bytes written */
-  unsigned char command[10];
-  short int returnCode;      /* return code from the HDC operation */
-} HDCOMMAND;
-
-extern HDCOMMAND HDCCommand;
-extern short int HDCSectorCount;
 extern int nPartitions;
 extern bool bAcsiEmuOn;
 
+/**
+ * API.
+ */
 extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
+extern void HDC_ResetCommandStatus(void);
+extern short int HDC_GetCommandStatus(void);
+extern short int HDC_GetSectorCount(void);
 extern void HDC_WriteCommandPacket(void);
 
 #endif /* HATARI_HDC_H */

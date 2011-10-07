@@ -480,8 +480,7 @@ static void FDC_ResetDMA ( void )
 	FDC_DMA.BytesToTransfer = 0;
 
 	/* Reset HDC command status */
-	/*HDCCommand.byteCount = 0;*/  /* Not done on real ST? */
-	HDCCommand.returnCode = 0;
+	HDC_ResetCommandStatus();
 }
 
 
@@ -2013,12 +2012,12 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	if ((FDC_DMA.Mode & 0x18) == 0x08)				/* HDC status reg selected? */
 	{
 		/* return the HDC status reg */
-		DiskControllerByte = HDCCommand.returnCode;
+		DiskControllerByte = HDC_GetCommandStatus();
 	}
 	else if ((FDC_DMA.Mode & 0x18) == 0x18)				/* HDC sector counter??? */
 	{
 		Log_Printf(LOG_DEBUG, "*** Read HDC sector counter???\n");
-		DiskControllerByte = HDCSectorCount;
+		DiskControllerByte = HDC_GetSectorCount();
 	}
 	else
 	{
@@ -2134,7 +2133,7 @@ void FDC_DmaStatus_ReadWord ( void )
 	/* Set zero sector count */
 	FDC_DMA.Status &= ~0x2;						/* Clear bit 1 */
 	if ( FDC_DMA.Mode & 0x08 )					/* Get which sector count ? */
-		FDC_DMA.Status |= (HDCSectorCount)?0x2:0;		/* HDC */
+		FDC_DMA.Status |= (HDC_GetSectorCount())?0x2:0;		/* HDC */
 	else
 		FDC_DMA.Status |= (FDC_DMA.SectorCount)?0x2:0;		/* FDC */
 
