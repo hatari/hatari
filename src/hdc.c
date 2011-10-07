@@ -46,6 +46,10 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 // #define HDC_VERBOSE           /* display operations */
 // #define HDC_REALLY_VERBOSE    /* display command packets */
 
+#define HDC_ReadInt16(a, i) (((unsigned) a[i] << 8) | a[i + 1])
+#define HDC_ReadInt24(a, i) (((unsigned) a[i] << 16) | ((unsigned) a[i + 1] << 8) | a[i + 2])
+#define HDC_ReadInt32(a, i) (((unsigned) a[i] << 24) | ((unsigned) a[i + 1] << 16) | ((unsigned) a[i + 2] << 8) | a[i + 3])
+
 /* HDC globals */
 HDCOMMAND HDCCommand;
 int nPartitions = 0;
@@ -86,8 +90,7 @@ static unsigned char inquiry_bytes[] =
  */
 static unsigned char HDC_GetDevice(void)
 {
-	unsigned char* c = HDCCommand.command;
-	return (c[1] & 0xE0) >> 5;
+	return (HDCCommand.command[1] & 0xE0) >> 5;
 }
 
 /**
@@ -96,12 +99,11 @@ static unsigned char HDC_GetDevice(void)
 static unsigned long HDC_GetOffset(void)
 {
 	/* offset = logical block address * 512 */
-	unsigned char* c = HDCCommand.command;
 	return HDCCommand.opcode < 0x20?
 		// class 0
-		(((unsigned) (c[1] & 0x1F) << 16) | ((unsigned) c[2] << 8) | c[3]) << 9 :
+		(HDC_ReadInt24(HDCCommand.command, 1) & 0x1FFFFF) << 9 :
 		// class 1
-		(((unsigned) c[2] << 24) | ((unsigned) c[3] << 16) | ((unsigned) c[4] << 8) | c[5]) << 9;
+		HDC_ReadInt32(HDCCommand.command, 2) << 9;
 }
 
 /**
@@ -109,12 +111,11 @@ static unsigned long HDC_GetOffset(void)
  */
 static int HDC_GetCount(void)
 {
-	unsigned char* c = HDCCommand.command;
 	return HDCCommand.opcode < 0x20?
 		// class 0
-		c[4] :
+		HDCCommand.command[4] :
 		// class1
-		(c[7] << 8) | c[8];
+		HDC_ReadInt16(HDCCommand.command, 7);
 }
 
 /**
@@ -123,12 +124,11 @@ static int HDC_GetCount(void)
 #ifdef HDC_REALLY_VERBOSE
 static unsigned char HDC_GetControl(void)
 {
-	unsigned char* c = HDCCommand.command;
 	return HDCCommand.opcode < 0x20?
 		// class 0
-		c[5] :
+		HDCCommand.command[5] :
 		// class1
-		c[9];
+		HDCCommand.command[9];
 }
 #endif
 
@@ -730,10 +730,7 @@ static void HDC_GetInfo(void)
 		return;
 	}
 
-	hdSize = (((unsigned long) hdinfo[0] << 24)
-	        | ((unsigned long) hdinfo[1] << 16)
-	        | ((unsigned long) hdinfo[2] << 8)
-	        | ((unsigned long) hdinfo[3]));
+	hdSize = HDC_ReadInt32(hdinfo, 0);
 
 #ifdef HDC_VERBOSE
 	fprintf(stderr, "Total disk size %li Mb\n", hdSize>>11);
