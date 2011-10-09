@@ -477,9 +477,11 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nCpuLevel = 3;
 		M68000_CheckCpuSettings();
 	}
-	else if (TosVersion <= 0x0104 && ConfigureParams.System.nCpuLevel > 0)
+	else if (TosVersion <= 0x0104 &&
+	         (ConfigureParams.System.nCpuLevel > 0 || ConfigureParams.System.nMachineType != MACHINE_ST))
 	{
-		Log_AlertDlg(LOG_ERROR, "TOS versions <= 1.4 work only with a 68000 CPU.\n"
+		Log_AlertDlg(LOG_ERROR, "TOS versions <= 1.4 work only in\n"
+		             "ST mode and with a 68000 CPU.\n"
 		             " ==> Switching to ST mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_ST;
