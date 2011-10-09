@@ -832,6 +832,7 @@ static int FDC_UpdateMotorStop ( void )
 		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON | FDC_STR_BIT_SPIN_UP , 0 );	/* Unset motor and spinup bits */
+						/* [NP] FIXME should we clear spin up here or only when the motor is started again ? */
 
 	FDC.Command = FDCEMU_CMD_NULL;					/* Motor stopped, this is the last state */
 	return 0;
@@ -1354,7 +1355,7 @@ static int FDC_Check_MotorON ( Uint8 FDC_CR )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc start motor VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );			/* Set motor bit */
+		FDC_Update_STR ( FDC_STR_BIT_SPIN_UP , FDC_STR_BIT_MOTOR_ON );	/* Unset spin up bit and set motor bit */
 		return FDC_DELAY_MOTOR_ON;					/* Motor's delay */
 	}
 
