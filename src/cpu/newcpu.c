@@ -47,10 +47,10 @@
 #include "memory.h"
 #include "newcpu.h"
 #include "main.h"
+#include "m68000.h"
 #include "cpummu.h"
 #include "cpu_prefetch.h"
 #include "main.h"
-#include "m68000.h"
 #include "reset.h"
 #include "cycInt.h"
 #include "mfp.h"
@@ -109,6 +109,8 @@ int movem_next[256];
 cpuop_func *cpufunctbl[65536];
 
 int OpcodeFamily;
+int BusCyclePenalty = 0;
+
 struct mmufixup mmufixup[2];
 
 extern uae_u32 get_fpsr (void);
@@ -2848,6 +2850,7 @@ STATIC_INLINE int do_specialties (int cycles)
 		} else
 			c = 4;
 		do_cycles (c * CYCLE_UNIT);
+		
 		if (regs.spcflags & SPCFLAG_COPPER)
 			do_copper ();
 	}
@@ -2906,7 +2909,7 @@ STATIC_INLINE int do_specialties (int cycles)
 			return 1;
 	
 		do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
-		M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+		M68000_AddCycles(cpu_cycles / CYCLE_UNIT);
 
 	    /* It is possible one or more ints happen at the same time */
 	    /* We must process them during the same cpu cycle until the special INT flag is set */
@@ -3107,16 +3110,16 @@ static void m68k_run_1 (void)
 
 		count_instr (opcode);
 
-	/*m68k_dumpstate(stderr, NULL);*/
-	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
-	{
-	    int FrameCycles, HblCounterVideo, LineCycles;
+		/*m68k_dumpstate(stderr, NULL);*/
+		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
 
-	    Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
-	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
-	}
+			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+		}
 
 #if DEBUG_CD32CDTVIO
 		out_cd32io (m68k_getpc ());
@@ -3137,6 +3140,8 @@ static void m68k_run_1 (void)
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
 		
+		M68000_AddCyclesWithPairing(cpu_cycles);
+		
 		/* We can have several interrupts at the same time before the next CPU instruction */
 		/* We must check for pending interrupt and call do_specialties_interrupt() only */
 		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
@@ -3148,7 +3153,7 @@ static void m68k_run_1 (void)
 		}
 		
 		if (r->spcflags) {
-			if (do_specialties (cpu_cycles))
+			if (do_specialties (cpu_cycles/ CYCLE_UNIT))
 				return;
 		}
 		regs.ipl = regs.ipl_pin;
@@ -3390,7 +3395,7 @@ retry:
 			cpu_cycles |= cycles_val;
 
 
-			M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+			M68000_AddCycles(cpu_cycles  / CYCLE_UNIT);
 
 			if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 				/* Add some extra cycles to simulate a wait state */
@@ -3410,7 +3415,7 @@ retry:
 			}
 		
 			if (regs.spcflags) {
-				if (do_specialties (cpu_cycles* 2 / CYCLE_UNIT))
+				if (do_specialties (cpu_cycles / CYCLE_UNIT))
 					return;
 			}
 	
@@ -3469,7 +3474,7 @@ retry:
 static void m68k_run_2ce (void)
 {
 	struct regstruct *r = &regs;
-	int tmpcycles = MAX68020CYCLES;
+	int tmpcycles = MAX68020CYCLES, tmpcycles2 = 0;
 
 	ipl_fetch ();
 	for (;;) {
@@ -3486,17 +3491,44 @@ static void m68k_run_2ce (void)
 		(*cpufunctbl[opcode])(opcode);
 		if (r->ce020memcycles > 0) {
 			tmpcycles = CYCLE_UNIT * MAX68020CYCLES;
+tmpcycles2 = r->ce020memcycles / cpucycleunit;
 			do_cycles_ce (r->ce020memcycles);
 			r->ce020memcycles = 0;
 		}
+
+		M68000_AddCycles(tmpcycles2 * 2 /*/ CYCLE_UNIT*/);
+
+		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+			/* Add some extra cycles to simulate a wait state */
+			unset_special(SPCFLAG_EXTRA_CYCLES);
+			M68000_AddCycles(nWaitStateCycles);
+			nWaitStateCycles = 0;
+		}
+		
+		/* We can have several interrupts at the same time before the next CPU instruction */
+		/* We must check for pending interrupt and call do_specialties_interrupt() only */
+		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+		/* and prevent exiting the STOP state when calling do_specialties() after. */
+		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
+			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+		}
+		
 		if (r->spcflags) {
 			if (do_specialties (0))
 				return;
 		}
+	
+		/* Run DSP 56k code if necessary */
+		if (bDspEnabled) {
+			DSP_Run(/*cpu_cycles * 2 / CYCLE_UNIT*/tmpcycles2 * 8);
+		}
+
 		tmpcycles -= cpucycleunit;
 		if (tmpcycles <= 0) {
 			do_cycles_ce (1 * CYCLE_UNIT);
-			tmpcycles = CYCLE_UNIT * MAX68020CYCLES;;
+			tmpcycles = CYCLE_UNIT * MAX68020CYCLES;
 		}
 		regs.ipl = regs.ipl_pin;
 	}
@@ -3544,7 +3576,7 @@ static void m68k_run_2p (void)
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
 
-		M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+		M68000_AddCycles(cpu_cycles  / CYCLE_UNIT);
 
 		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 			/* Add some extra cycles to simulate a wait state */
@@ -3564,13 +3596,13 @@ static void m68k_run_2p (void)
 		}
 		
 		if (r->spcflags) {
-			if (do_specialties (cpu_cycles* 2 / CYCLE_UNIT))
+			if (do_specialties (cpu_cycles / CYCLE_UNIT))
 				return;
 		}
 	
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
-			DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);
+			DSP_Run(cpu_cycles*2/ CYCLE_UNIT);
 		}
 	}
 }
@@ -3607,7 +3639,7 @@ static void m68k_run_2 (void)
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
 
-		M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+		M68000_AddCycles(cpu_cycles  / CYCLE_UNIT);
 
 		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 			/* Add some extra cycles to simulate a wait state */
@@ -3628,7 +3660,7 @@ static void m68k_run_2 (void)
 		
 		
 		if (r->spcflags) {
-			if (do_specialties (cpu_cycles* 2 / CYCLE_UNIT))
+			if (do_specialties (cpu_cycles / CYCLE_UNIT))
 				return;   
 		}
 		
