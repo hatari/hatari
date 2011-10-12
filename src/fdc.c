@@ -264,7 +264,7 @@ enum
 
 #define	FDC_STEP_RATE				( FDC.CR & 0x03 )	/* Bits 0 and 1 of the current type I command */
 
-static int FDC_StepRate_ms[] = { 2 , 3 , 5 , 6 };		/* Controlled by bits 1 and 0 (r1/r0) in type I commands */
+static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 0 (r1/r0) in type I commands */
 
 
 #define	FDC_SECTOR_SIZE_128			0		/* Sector size used in the ID fields */
