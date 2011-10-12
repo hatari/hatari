@@ -1653,11 +1653,15 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 	FDC_Update_STR ( FDC_STR_BIT_LOST_DATA , 0 );			/* Remove LOST DATA / TR00 bit */
 
 	/* TR00 is updated when a type I command is interrupted or when no command was running */
+	/* MOTOR ON is also set when a type I command is interrupted or when no command was running */
+	/* (eg Knightmare on DBUG 24 : loader fails if motor is off because of the added delay to start it) */
 	if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
 	  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
 	{
 		if ( HeadTrack[ FDC_DRIVE ] == 0 )
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+
+		FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );		/* Set Motor ON */
 	}
 
 	/* Remove busy bit, ack int and stop the motor */
