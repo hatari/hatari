@@ -42,6 +42,8 @@ static int count_read_ea, count_write_ea, count_cycles_ea;
 
 static int optimized_flags;
 
+long nCurInstrCycPos;  /* Hatari only : Stores where we have to patch in the current cycles value */
+
 #define GF_APDI 1
 #define GF_AD8R 2
 #define GF_PC8R 4
@@ -1491,9 +1493,10 @@ static void gen_opcode (unsigned long int opcode)
 
 	insn_n_cycles = using_prefetch ? 0 : 4;
 
-    /* Store the family of the instruction (used to check for pairing on ST)
-     * and leave some space for patching in the current cycles later */
-    printf ("\tOpcodeFamily = %d;\n", curi->mnemo);
+	/* Store the family of the instruction (used to check for pairing on ST)
+	* and leave some space for patching in the current cycles later */
+	printf ("\tOpcodeFamily = %d; CurrentInstrCycles =     \n", curi->mnemo);
+	nCurInstrCycPos = ftell(stdout) - 5;
 
 	if (using_ce020) {
 		if (using_ce020 == 2) {
@@ -3496,7 +3499,7 @@ static void gen_opcode (unsigned long int opcode)
 
 static void generate_includes (FILE * f)
 {
-	fprintf (f, "#include \"sysconfig.h\"\n");
+/*	fprintf (f, "#include \"sysconfig.h\"\n");
 	fprintf (f, "#include \"sysdeps.h\"\n");
 	fprintf (f, "#include \"options_cpu.h\"\n");
 	fprintf (f, "#include \"memory.h\"\n");
@@ -3507,7 +3510,17 @@ static void generate_includes (FILE * f)
 	fprintf (f, "#include \"cputbl.h\"\n");
 	fprintf (f, "#include \"main.h\"\n");
 	fprintf (f, "#include \"cpummu.h\"\n");
-
+*/
+	fprintf (f, "#include \"sysdeps.h\"\n");
+	fprintf (f, "#include \"hatari-glue.h\"\n");
+	fprintf (f, "#include \"maccess.h\"\n");
+	fprintf (f, "#include \"memory.h\"\n");
+	fprintf (f, "#include \"custom.h\"\n");
+	fprintf (f, "#include \"newcpu.h\"\n");
+	fprintf (f, "#include \"cpu_prefetch.h\"\n");
+	fprintf (f, "#include \"cputbl.h\"\n");
+	fprintf (f, "#include \"main.h\"\n");
+	fprintf (f, "#include \"cpummu.h\"\n");
 
 	fprintf (f, "#define CPUFUNC(x) x##_ff\n"
 		"#define SET_CFLG_ALWAYS(x) SET_CFLG(x)\n"
@@ -3752,6 +3765,11 @@ static void generate_one_opcode (int rp)
 		printf("#endif\n");
 	opcode_next_clev[rp] = next_cpu_level;
 	opcode_last_postfix[rp] = postfix;
+
+	/* Hatari only : Now patch in the instruction cycles at the beginning of the function: */
+	fseek(stdout, nCurInstrCycPos, SEEK_SET);
+	printf("%d;", insn_n_cycles);
+	fseek(stdout, 0, SEEK_END);
 
 	if (generate_stbl) {
 //		char *name = ua (lookuptab[idx].name);

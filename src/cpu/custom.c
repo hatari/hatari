@@ -68,18 +68,18 @@ void do_cycles_ce (long cycles)
 	static int extra_cycle;
 
 	cycles += extra_cycle;
-/*
+
 	while (cycles >= CYCLE_UNIT) {
-		int hpos = current_hpos () + 1;
-		sync_copper (hpos);
-		decide_line (hpos);
-		decide_fetch_ce (hpos);
-		if (bltstate != BLT_done)
-			decide_blitter (hpos);
+//		int hpos = current_hpos () + 1;
+//		sync_copper (hpos);
+//		decide_line (hpos);
+//		decide_fetch_ce (hpos);
+//		if (bltstate != BLT_done)
+//			decide_blitter (hpos);
 		do_cycles (1 * CYCLE_UNIT);
 		cycles -= CYCLE_UNIT;
 	}
-*/
+
 	extra_cycle = cycles;
 }
 
