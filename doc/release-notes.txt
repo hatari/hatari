@@ -7,22 +7,37 @@
  --------------------
 
 Emulation:
-- more accurate microwire clock emulation.
+- More accurate FDC emulation
+- more accurate microwire clock emulation
+- SCSI class 1 (ICD) command support for drives > 1 GB
+- Improved color conversion table so that colors are a little bit brighter
 
 Emulator:
+- Switch to ST mode when using TOS <= 1.04
+- Replace "--slowfdc" with "--fastfdc" option and default to
+  fast FDC being OFF
 - "--fast-boot" option to initialize "memvalid" system variables to
   by-pass the memory test of TOS, so that the system boots faster
 - "--desktop-st" option to keep desktop resolution also for ST/STE modes
   (unfortunately without scaling besides the low-res doubling)
-- Warn user when using GEMDOS / HD emu with too old TOS version
-- GEMDOS HD emu Dfree() reports host disk total and free size if
-  they're below value understood by TOS and it forwards requests
-  for other (IDE/ACSI image) partitions to TOS
+- GEMDOS HD emulation:
+  - Allow drives up to Z: (not Y:)
+  - Unique name for each partition
+  - Warn user when using too old TOS version
+  - Dfree() reports host disk total and free size if they're below
+    value understood by TOS and unlike earlier, it forwards Dfree()
+    requests  for other (IDE/ACSI image) partitions to TOS
 - Debugger improvements:
   - "history" command to list instructions executed before entering
     debugger
 
 Other changes:
+- Fixes to Hatari UI Hatari window embedding
+- Latest Linux sfdisk is borked so atari-hd-image script creates
+  HD image partition table now itself (experimental)
+- Windows needs also HOMEDRIVE for full home path in case Hatari
+  isn't installed on C:, bug 18297
+- Minor fixes
 
 
  Version 1.5.0 (2011-07-19):
