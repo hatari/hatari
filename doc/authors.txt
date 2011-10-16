@@ -110,7 +110,9 @@ is missing here, please remind me!):
 - Markus Fritze: New m68k disassembler with more Motorola like syntax
   and options for controlling how the output looks.
 
-- Deniz Turkoglu : Patches for the Max OS X GUI.
+- Deniz Turkoglu: Patches for the Max OS X GUI.
+
+- Markus Heiden: SCSI class 1 (ICD) command support for drives > 1 GB
 
 
  Code from other projects
@@ -123,7 +125,7 @@ projects which we would like to acknowledge here:
   source code which has been written by Paul Bates.
   (http://www.sourceforge.net/projects/winston/)
 
-- The originial CPU core has been taken from UAE which has been written
+- The original CPU core has been taken from UAE which has been written
   by Bernd Schmidt and others. (http://uae.coresystems.de/)
 
 - The new alternative CPU core has been taken from WinUAE.
