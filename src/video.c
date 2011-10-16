@@ -1053,7 +1053,8 @@ static void Video_WriteToShifter ( Uint8 Res )
 	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF )
 	        && ( Res == 0x01 ) )
 	{
-		if ( LineCycles == LINE_LEFT_MED_CYCLE_1 )		/* 'No Cooper' timing */
+		if ( ( LineCycles == LINE_LEFT_MED_CYCLE_1 )		/* 'No Cooper' timing */
+		  || ( LineCycles == LINE_LEFT_MED_CYCLE_1+16 )	)	/* 'No Cooper' timing while removing bottom border */
 		{
 			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect med res overscan offset 0 byte\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 0 << 20 );
