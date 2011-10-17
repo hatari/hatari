@@ -2041,6 +2041,11 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 					FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
 			}
 
+			/* When there's no disk in drive, the floppy drive hardware can't see */
+			/* the difference with an inserted disk that would be write protected */
+			if ( ! EmulationDrives[ FDC_DRIVE ].bDiskInserted )
+				FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );                /* Set WPRT bit */
+
 
 			DiskControllerByte = FDC.STR;
 
