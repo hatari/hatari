@@ -57,6 +57,11 @@
 /*			always return 0xff (tested on STF).				*/
 /*			When PSGRegisterSelect > 15, reads to $ff8800 also return 0xff.	*/
 /* 2009/01/24	[NP]	Remove redundant test, as movep implies SIZE_BYTE access.	*/
+/* 2011/10/30	[NP]	There's a special case when reading a register from $ff8800 :	*/
+/*			if the register number was not changed since the last write,	*/
+/*			then we must return the value that was written to $ff8802	*/
+/*			without masking the unused bit (fix the game Murders In Venice,	*/
+/*			which expects to read $10 from reg 3).				*/
 
 
 /* Emulating wait states when accessing $ff8800/01/02/03 with different 'move' variants	*/
@@ -124,8 +129,9 @@ const char PSG_fileid[] = "Hatari psg.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 
 
-Uint8 PSGRegisterSelect;        /* 0xff8800 (read/write) */
-Uint8 PSGRegisters[16];         /* Register in PSG, see PSG_REG_xxxx */
+Uint8 PSGRegisterSelect;        /* Write to 0xff8800 sets the register number used in read/write accesses */
+Uint8 PSGRegisterReadData;	/* Value returned when reading from 0xff8800 */
+Uint8 PSGRegisters[16];         /* Registers in PSG, see PSG_REG_xxxx */
 
 static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
 
@@ -137,6 +143,7 @@ static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
 void PSG_Reset(void)
 {
 	PSGRegisterSelect = 0;
+	PSGRegisterReadData = 0;
 	memset(PSGRegisters, 0, sizeof(PSGRegisters));
 	LastStrobe=0;
 }
@@ -150,6 +157,7 @@ void PSG_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&PSGRegisterSelect, sizeof(PSGRegisterSelect));
+	MemorySnapShot_Store(&PSGRegisterReadData, sizeof(PSGRegisterReadData));
 	MemorySnapShot_Store(PSGRegisters, sizeof(PSGRegisters));
 	MemorySnapShot_Store(&LastStrobe, sizeof(LastStrobe));
 }
@@ -167,6 +175,11 @@ void PSG_Set_SelectRegister(Uint8 val)
 	/* with 0xf. Instead, we keep the 8 bits, but we must ignore */
 	/* read/write to ff8802 when PSGRegisterSelect >= 16 */
 	PSGRegisterSelect = val;
+
+	/* When address register is changed, a read from $ff8800 should */
+	/* return the masked value of the register. We set the value here */
+	/* to be returned in case PSG_Get_DataRegister is called */
+	PSGRegisterReadData = PSGRegisters[PSGRegisterSelect];
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
@@ -216,7 +229,7 @@ Uint8 PSG_Get_DataRegister(void)
 	}
 
 	/* Read data last selected by register */
-	return PSGRegisters[PSGRegisterSelect];
+	return PSGRegisterReadData;
 }
 
 
@@ -242,6 +255,10 @@ void PSG_Set_DataRegister(Uint8 val)
 	/* Create samples up until this point with current values */
 	Sound_Update(false);
 
+	/* When a read is made from $ff8800 without changing PSGRegisterSelect, we should return */
+	/* the non masked value. */
+	PSGRegisterReadData = val;			/* store non masked value for PSG_Get_DataRegister */
+
 	/* Copy value to PSGRegisters[] */
 	PSGRegisters[PSGRegisterSelect] = val;
 
@@ -253,7 +270,6 @@ void PSG_Set_DataRegister(Uint8 val)
 	else if ( ( PSGRegisterSelect == PSG_REG_CHANNEL_A_AMP ) || ( PSGRegisterSelect == PSG_REG_CHANNEL_B_AMP )
 		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_AMP ) || ( PSGRegisterSelect == PSG_REG_NOISE_GENERATOR ) )
 	  PSGRegisters[PSGRegisterSelect] &= 0x1f;	/* only keep bits 0 - 4 */
-
 
 
 	if ( PSGRegisterSelect < NUM_PSG_SOUND_REGISTERS )

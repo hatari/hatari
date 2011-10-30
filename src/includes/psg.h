@@ -30,7 +30,6 @@ enum
 
 #define NUM_PSG_SOUND_REGISTERS    14   /* Number of register, not including IO ports */
 
-extern Uint8 PSGRegisterSelect;
 extern Uint8 PSGRegisters[16];
 
 extern void PSG_Reset(void);
