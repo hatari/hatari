@@ -756,6 +756,11 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&ConfigureParams.Memory.nMemorySize, sizeof(ConfigureParams.Memory.nMemorySize));
 
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[0], sizeof(ConfigureParams.DiskImage.szDiskFileName[0]));
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[0], sizeof(ConfigureParams.DiskImage.szDiskZipPath[0]));
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[1], sizeof(ConfigureParams.DiskImage.szDiskFileName[1]));
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[1], sizeof(ConfigureParams.DiskImage.szDiskZipPath[1]));
+
 	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskDirectories, sizeof(ConfigureParams.HardDisk.bUseHardDiskDirectories));
 	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C]));
 	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskImage, sizeof(ConfigureParams.HardDisk.bUseHardDiskImage));
