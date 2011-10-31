@@ -35,7 +35,7 @@ extern int current_hpos (void);
 
 static void events_schedule (void);
 
-extern unsigned long currcycle, nextevent, is_lastline;
+extern unsigned long currcycle, nextevent, is_lastline, hatari030ce_currcycle;
 typedef void (*evfunc)(void);
 typedef void (*evfunc2)(uae_u32);
 

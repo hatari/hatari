@@ -3474,10 +3474,11 @@ retry:
 static void m68k_run_2ce (void)
 {
 	struct regstruct *r = &regs;
-	int tmpcycles = MAX68020CYCLES, tmpcycles2 = 0;
+	int tmpcycles = MAX68020CYCLES;
 
 	ipl_fetch ();
 	for (;;) {
+		hatari030ce_currcycle = 0;
 		/*m68k_dumpstate(stderr, NULL);*/
 		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 		{
@@ -3491,12 +3492,11 @@ static void m68k_run_2ce (void)
 		(*cpufunctbl[opcode])(opcode);
 		if (r->ce020memcycles > 0) {
 			tmpcycles = CYCLE_UNIT * MAX68020CYCLES;
-tmpcycles2 = r->ce020memcycles / cpucycleunit;
 			do_cycles_ce (r->ce020memcycles);
 			r->ce020memcycles = 0;
 		}
 
-		M68000_AddCycles(tmpcycles2 * 2 /*/ CYCLE_UNIT*/);
+		M68000_AddCycles(hatari030ce_currcycle *2/ cpucycleunit);
 
 		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 			/* Add some extra cycles to simulate a wait state */
@@ -3522,7 +3522,7 @@ tmpcycles2 = r->ce020memcycles / cpucycleunit;
 	
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
-			DSP_Run(/*cpu_cycles * 2 / CYCLE_UNIT*/tmpcycles2 * 8);
+			DSP_Run(hatari030ce_currcycle *2/ cpucycleunit);
 		}
 
 		tmpcycles -= cpucycleunit;
