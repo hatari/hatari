@@ -201,6 +201,10 @@ struct regstruct
 	uae_u32 prefetch020data[CPU_PIPELINE_MAX];
 	uae_u32 prefetch020addr[CPU_PIPELINE_MAX];
 	int ce020memcycles;
+	uae_u16 ce_030_cycleshead;
+	uae_u16 ce_030_cyclestail;
+	uae_u16 ce_030_cyclescache;
+	uae_u16 ce_030_cyclesnocache;
 };
 
 extern struct regstruct regs;

@@ -2909,7 +2909,7 @@ STATIC_INLINE int do_specialties (int cycles)
 			return 1;
 	
 		do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
-		M68000_AddCycles(cpu_cycles / CYCLE_UNIT);
+		M68000_AddCycles(4);
 
 	    /* It is possible one or more ints happen at the same time */
 	    /* We must process them during the same cpu cycle until the special INT flag is set */
@@ -3475,6 +3475,7 @@ static void m68k_run_2ce (void)
 {
 	struct regstruct *r = &regs;
 	int tmpcycles = MAX68020CYCLES;
+	int sav_tail = 0;
 
 	ipl_fetch ();
 	for (;;) {
@@ -3490,6 +3491,22 @@ static void m68k_run_2ce (void)
 
 		uae_u32 opcode = x_prefetch (0);
 		(*cpufunctbl[opcode])(opcode);
+		
+		/* Laurent : if 68030 instr cache is on, cycles are computed with head / tail / and cache_cycles
+		 *           else, cycles are equal to non cache cycles.
+		 */
+		if ((currprefs.cpu_model == 68030) && ((r->cacr & 3) == 1)) { // not frozen and enabled
+			if (r->ce_030_cycleshead < sav_tail)
+				r->ce020memcycles += ((r->ce_030_cyclescache * cpucycleunit) - r->ce_030_cycleshead);
+			else
+				r->ce020memcycles += ((r->ce_030_cyclescache * cpucycleunit) - sav_tail);
+
+			sav_tail = r->ce_030_cyclestail;
+		}
+		else {
+			r->ce020memcycles += r->ce_030_cyclesnocache * cpucycleunit;
+		}
+
 		if (r->ce020memcycles > 0) {
 			tmpcycles = CYCLE_UNIT * MAX68020CYCLES;
 			do_cycles_ce (r->ce020memcycles);
