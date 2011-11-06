@@ -7,8 +7,9 @@
  --------------------
 
 Emulation:
-- More accurate FDC emulation
-- more accurate microwire clock emulation
+- More accurate FDC emulation (correct status bits and commands' timings,
+  DMA transfer by blocks of 16 bytes, floppy change detection)
+- More accurate microwire clock emulation
 - SCSI class 1 (ICD) command support for drives > 1 GB
 - Improved color conversion table so that colors are a little bit brighter
 
