@@ -61,6 +61,7 @@ static int Reset_ST(bool bCold)
 	{
 		FDC_Reset();                /* Reset FDC */
 	}
+	Floppy_Reset();			/* Reset Floppy */
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 		Crossbar_Reset(bCold);        /* Reset Crossbar sound */

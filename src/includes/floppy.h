@@ -10,6 +10,15 @@
 
 #include "configuration.h"
 
+
+
+#define MAX_FLOPPYDRIVES    2					/* A: and B: */
+#define NUMBYTESPERSECTOR 512					/* All supported disk images are 512 bytes per sector */
+
+#define	FLOPPY_DRIVE_TRANSITION_STATE_INSERT		1
+#define	FLOPPY_DRIVE_TRANSITION_STATE_EJECT		2
+#define	FLOPPY_DRIVE_TRANSITION_DELAY_VBL		18	/* min of 16 VBLs */
+
 /* Structure for each drive connected as emulation */
 typedef struct
 {
@@ -17,24 +26,29 @@ typedef struct
 	char sFileName[FILENAME_MAX];
 	int nImageBytes;
 	bool bDiskInserted;
-	bool bMediaChanged;
 	bool bContentsChanged;
 	bool bOKToSave;
-} EMULATION_DRIVE;
 
-#define MAX_FLOPPYDRIVES    2     /* A:, B: */
-#define NUMBYTESPERSECTOR 512     /* All disks are 512 bytes per sector */
+	/* For the emulation of the WPRT bit when a disk is changed */
+	int TransitionState1;
+	int TransitionState1_VBL;
+	int TransitionState2;
+	int TransitionState2_VBL;
+} EMULATION_DRIVE;
 
 extern EMULATION_DRIVE EmulationDrives[MAX_FLOPPYDRIVES];
 extern int nBootDrive;
 
+
 extern void Floppy_Init(void);
 extern void Floppy_UnInit(void);
+extern void Floppy_Reset(void);
 extern void Floppy_MemorySnapShot_Capture(bool bSave);
 extern void Floppy_GetBootDrive(void);
 extern bool Floppy_IsWriteProtected(int Drive);
 extern const char* Floppy_SetDiskFileNameNone(int Drive);
 extern const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const char *pszZipPath);
+extern int Floppy_DriveTransitionUpdateState ( int Drive );
 extern bool Floppy_InsertDiskIntoDrive(int Drive);
 extern bool Floppy_EjectDiskFromDrive(int Drive);
 extern void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes, Uint16 *pnSectorsPerTrack, Uint16 *pnSides);

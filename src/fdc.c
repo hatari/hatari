@@ -103,6 +103,7 @@ ACSI DMA and Floppy Disk Controller(FDC)
       spin-up time.  This bit is high after spin-up.  For Type II and Type III commands, Bit 5 low
       indicates a normal data mark.  Bit 5 high indicates a deleted data mark.
     Bit 6 - Write Protect.  This bit is not used during reads.  During writes, this bit is high when the disk is write protected.
+      After a type I command, this bit is constantly updated an give the current value of the WPT signal.
     Bit 7 - Motor On.  This bit is high when the drive motor is on, and low when the motor is off.
 
   0xff8606 - DMA Status(read), DMA Mode Control(write) - NOTE bits 0,9-15 are not used
@@ -132,6 +133,43 @@ ACSI DMA and Floppy Disk Controller(FDC)
   This means that in the case of the Atari ST the LOST_DATA bit will never be set
   in the Status Register (but data can be lost if FDC_DMA.SectorCount=0 as there
   will be no transfer between DMA and RAM)
+
+
+  Detecting disk changes :
+  ------------------------
+  3'1/2 floppy drives include a 'DSKCHG' signal on pin 34 to detect when a disk was changed.
+  Unfortunatelly on ST, this signal is not connected. Nevertheless, it's possible to detect
+  a disk was inserted or ejected by looking at the 'WPT' signal which tells if a disk is write
+  protected or not.
+  At the drive level, a light is emitted above the top left corner of the floppy :
+   - if the write protection hole on the floppy is opened, the light goes through and the disk
+     is considered to be write protected.
+   - if the write protection hole on the floppy is closed, the light can't go through and the
+     disk is write enabled.
+  The point is that when any "solid" part of the floppy obstructs the light signal, the WPT
+  signal will change immediatly : it will be considered as if a write enabled disk was present.
+  So, when a floppy is ejected or inserted, the body of the floppy will briefly obstruct the light,
+  whatever the state of the protection hole could be.
+  Similarly, when there's no floppy inside the drive, the light signal can pass through, so it will
+  be considered as if a write protected disk was present.
+  So, let's call 'C' the state when protection hole is Closed (ie WPT = 0) and 'O' the state
+  when protection hole is Opened (ie WPT = 1). We have the following cases :
+    - floppy in drive : state can be C or O depending on the protection tab. Let's call it 'X'
+    - no floppy in drive : state is equivalent to O (because the light signal is not obstructed)
+    - ejecting a floppy : states will go from X to C and finally to O
+    - inserting a floppy : states will go from O to C and finally to X
+
+  The TOS monitors the changes on the WPT signal to determine if a floppy was ejected or inserted.
+  On TOS 1.02fr, the code is located between $fc1bc4 and $fc1ebc. Every 8 VBL, one floppy drive is checked
+  to see if the WPT signal changed. When 1 drive is connected, this means a floppy change should keep the
+  WPT signal during at least 8 VBLs. When 2 drive are connected, each drive is checked every 16 VBLs, so
+  the WPT signal should be kept for at least 16 VBLs.
+
+  During these transition phases between "ejected" and "inserted", we force the WPT signal to either 0 or 1,
+  depending on which transition we're emulating (see Floppy_DriveTransitionUpdateState()) :
+    - Ejecting : WPT will be X, then 0, then 1
+    - Inserting : WPT will be 1, then 0, then X
+
 */
 
 /*-----------------------------------------------------------------------*/
@@ -2003,7 +2041,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 {
 	Uint16 DiskControllerByte = 0;					/* Used to pass back the parameter */
 	int FrameCycles, HblCounterVideo, LineCycles;
-
+	int ForceWPRT;
 
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
@@ -2046,19 +2084,18 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 			if ( ! EmulationDrives[ FDC_DRIVE ].bDiskInserted )
 				FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );                /* Set WPRT bit */
 
-
 			DiskControllerByte = FDC.STR;
 
-			if (EmulationDrives[FDC_DRIVE].bMediaChanged)
-			{
-				/* Some games apparently poll the write-protection signal to check
-				 * for disk image changes (the signal seems to change when you
-				 * exchange disks on a real ST). We now also simulate this behaviour
-				 * here, so that these games can continue with the other disk.
-				 * FIXME [NP] : this should be improved */
-				DiskControllerByte ^= 0x40;
-				EmulationDrives[FDC_DRIVE].bMediaChanged = false;
-			}
+			/* Temporarily change the WPRT bit if we're in a transition phase */
+			/* regarding the disk in the drive (inserting or ejecting) */
+			ForceWPRT = Floppy_DriveTransitionUpdateState ( FDC_DRIVE );
+			if ( ForceWPRT == 1 )
+				DiskControllerByte |= FDC_STR_BIT_WPRT;		/* Force setting WPRT */
+			if ( ForceWPRT == -1 )
+				DiskControllerByte &= ~FDC_STR_BIT_WPRT;	/* Force clearing WPRT */
+
+			if ( ForceWPRT != 0 )
+				LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n", ForceWPRT==1?1:0, nVBLs, FDC_DRIVE, DiskControllerByte );
 
 			/* When Status Register is read, FDC's INTRQ is reset */
 			MFP_GPIP |= 0x20;

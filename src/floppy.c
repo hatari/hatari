@@ -39,12 +39,15 @@ const char Floppy_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
 #include "msa.h"
 #include "st.h"
 #include "zip.h"
+#include "screen.h"
+#include "video.h"
 
 
 /* Emulation drive details, eg FileName, Inserted, Changed etc... */
 EMULATION_DRIVE EmulationDrives[MAX_FLOPPYDRIVES];
 /* Drive A is the default */
 int nBootDrive = 0;
+
 
 /* Possible disk image file extensions to scan for */
 static const char * const pszDiskImageNameExts[] =
@@ -57,7 +60,8 @@ static const char * const pszDiskImageNameExts[] =
 
 
 /* local functions */
-static bool Floppy_EjectBothDrives(void);
+static bool	Floppy_EjectBothDrives(void);
+static void	Floppy_DriveTransitionSetState ( int Drive , int State );
 
 
 /*-----------------------------------------------------------------------*/
@@ -91,6 +95,23 @@ void Floppy_UnInit(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Called on Warm/Cold Reset
+ */
+void Floppy_Reset(void)
+{
+	int	i;
+
+	/* Cancel any pending disk change transitions */
+	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
+	{
+		EmulationDrives[i].TransitionState1 = 0;
+		EmulationDrives[i].TransitionState2 = 0;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
 void Floppy_MemorySnapShot_Capture(bool bSave)
@@ -115,9 +136,12 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
 		if (EmulationDrives[i].pBuffer)
 			MemorySnapShot_Store(EmulationDrives[i].pBuffer, EmulationDrives[i].nImageBytes);
 		MemorySnapShot_Store(EmulationDrives[i].sFileName, sizeof(EmulationDrives[i].sFileName));
-		MemorySnapShot_Store(&EmulationDrives[i].bMediaChanged,sizeof(EmulationDrives[i].bMediaChanged));
 		MemorySnapShot_Store(&EmulationDrives[i].bContentsChanged,sizeof(EmulationDrives[i].bContentsChanged));
 		MemorySnapShot_Store(&EmulationDrives[i].bOKToSave,sizeof(EmulationDrives[i].bOKToSave));
+		MemorySnapShot_Store(&EmulationDrives[i].TransitionState1,sizeof(EmulationDrives[i].TransitionState1));
+		MemorySnapShot_Store(&EmulationDrives[i].TransitionState1_VBL,sizeof(EmulationDrives[i].TransitionState1_VBL));
+		MemorySnapShot_Store(&EmulationDrives[i].TransitionState2,sizeof(EmulationDrives[i].TransitionState2));
+		MemorySnapShot_Store(&EmulationDrives[i].TransitionState2_VBL,sizeof(EmulationDrives[i].TransitionState2_VBL));
 	}
 }
 
@@ -349,6 +373,113 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Update the drive when a disk is inserted or ejected. Depending on the state,
+ * we change the Write Protect bit for the drive (the TOS and other programs
+ * monitor this bit to detect that a disk was changed in the drive ; see fdc.c)
+ * The floppy drive transition can be a single action ("eject" or "insert"), or
+ * two actions ("eject then insert" or "insert then eject").
+ * First action is stored in State1 ; State2 store the second (or last) action.
+ * In case the user eject/insert several disks before returning to emulation,
+ * State1 will contain the first action, and State2 the latest action (intermediate
+ * actions are ignored, as they wouldn't be seen while the emulation is paused).
+ * Each action will take FLOPPY_DRIVE_TRANSITION_DELAY_VBL * 2 VBLs to execute,
+ * see fdc.c for details.
+ */
+static void	Floppy_DriveTransitionSetState ( int Drive , int State )
+{
+	/* First, update State1 and State2 depending on the current VBL number */
+	/* (we discard the return value as we don't want to update FDC.STR now) */
+	Floppy_DriveTransitionUpdateState ( Drive );
+
+	/* If State1 is not defined yet, we set it */
+	if ( EmulationDrives[Drive].TransitionState1 == 0 )
+	{
+		EmulationDrives[Drive].TransitionState1 = State;
+		EmulationDrives[Drive].TransitionState1_VBL = nVBLs;
+		/* Cancel State2 in case we start a new transition before State2 was over */
+		EmulationDrives[Drive].TransitionState2 = 0;	
+	}
+
+	/* State1 is already set, so we set State2 */
+	else
+	{
+		/* If State2 == State1, ignore it (eg : two inserts in a row) */
+		if ( EmulationDrives[Drive].TransitionState1 == State )
+			EmulationDrives[Drive].TransitionState2 = 0;
+		else
+		{
+			/* Set State2 just after State1 ends */
+			EmulationDrives[Drive].TransitionState2 = State;
+			EmulationDrives[Drive].TransitionState2_VBL = EmulationDrives[Drive].TransitionState1_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL * 2;
+		}
+	}
+//fprintf ( stderr , "drive transition state1 %d %d state2 %d %d\n" ,
+//	  EmulationDrives[Drive].TransitionState1 , EmulationDrives[Drive].TransitionState1_VBL,
+//	  EmulationDrives[Drive].TransitionState2 , EmulationDrives[Drive].TransitionState2_VBL );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * When a disk is inserted or ejected, each transition has 2 phases that
+ * lasts FLOPPY_DRIVE_TRANSITION_DELAY_VBL VBLs. This function checks if
+ * we're during one of these transition phases and tells if the Write
+ * Protect signal should be overwritten.
+ * Returns 0 if there's no change, 1 if WPRT should be forced to 1 and
+ * -1 if WPRT should be forced to 0 (see fdc.c for details).
+ */
+int	Floppy_DriveTransitionUpdateState ( int Drive )
+{
+	int	Force = 0;
+
+	if ( EmulationDrives[Drive].TransitionState1 != 0 )
+	{
+		if ( nVBLs >= EmulationDrives[Drive].TransitionState1_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL * 2 )
+			EmulationDrives[Drive].TransitionState1 = 0;	/* State1's delay elapsed */
+		else if ( nVBLs >= EmulationDrives[Drive].TransitionState1_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL )
+		{
+			if ( EmulationDrives[Drive].TransitionState1 == FLOPPY_DRIVE_TRANSITION_STATE_INSERT )
+				Force = -1;				/* Insert phase 2 : clear WPRT */
+			else
+				Force = 1;				/* Eject phase 2 : set WPRT */
+		}
+		else
+		{
+			if ( EmulationDrives[Drive].TransitionState1 == FLOPPY_DRIVE_TRANSITION_STATE_INSERT )
+				Force = 1;				/* Insert phase 1 : set WPRT */
+			else
+				Force = -1;				/* Eject phase 1 : clear WPRT */
+		}
+	}
+
+	if ( ( EmulationDrives[Drive].TransitionState2 != 0 )
+	  && ( nVBLs >= EmulationDrives[Drive].TransitionState2_VBL ) )
+	{
+		if ( nVBLs >= EmulationDrives[Drive].TransitionState2_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL * 2 )
+			EmulationDrives[Drive].TransitionState2 = 0;	/* State2's delay elapsed */
+		else if ( nVBLs >= EmulationDrives[Drive].TransitionState2_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL )
+		{
+			if ( EmulationDrives[Drive].TransitionState2 == FLOPPY_DRIVE_TRANSITION_STATE_INSERT )
+				Force = -1;				/* Insert phase 2 : clear WPRT */
+			else
+				Force = 1;				/* Eject phase 2 : set WPRT */
+		}
+		else
+		{
+			if ( EmulationDrives[Drive].TransitionState2 == FLOPPY_DRIVE_TRANSITION_STATE_INSERT )
+				Force = 1;				/* Insert phase 1 : set WPRT */
+			else
+				Force = -1;				/* Eject phase 1 : clear WPRT */
+		}
+	}
+
+
+	return Force;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Insert previously set disk file image into floppy drive.
  * The WHOLE image is copied into Hatari drive buffers, and
  * uncompressed if necessary.
@@ -399,8 +530,8 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	EmulationDrives[Drive].nImageBytes = nImageBytes;
 	EmulationDrives[Drive].bDiskInserted = true;
 	EmulationDrives[Drive].bContentsChanged = false;
-	EmulationDrives[Drive].bMediaChanged = true;
 	EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
+	Floppy_DriveTransitionSetState ( Drive , FLOPPY_DRIVE_TRANSITION_STATE_INSERT );
 	Log_Printf(LOG_INFO, "Inserted disk '%s' to drive %c:.",
 		   filename, 'A'+Drive);
 	return true;
@@ -450,6 +581,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 		Log_Printf(LOG_INFO, "Floppy %c: has been removed from drive.",
 			   'A'+Drive);
 
+		Floppy_DriveTransitionSetState ( Drive , FLOPPY_DRIVE_TRANSITION_STATE_EJECT );
 		bEjected = true;
 	}
 
