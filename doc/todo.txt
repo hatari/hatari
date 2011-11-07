@@ -9,9 +9,6 @@ in touch with us.
 Emulation improvements
 ----------------------
 
-- Improve FDC emulation (e.g. read-track and write-track commands do not work
-  right yet).
-
 - Improve disk image formats support:
 	- Add support for .STT images
 	  (created with the STEEM disk image program)
@@ -74,7 +71,7 @@ Other potential Hatari functionality improvements
 	  also symbol, variable & register names
 	- Skip & tell user to rename any of the loaded symbols that
 	  have same name as internal Hatari variables
-	- Change "" for expressions to {} so that quotes can
+	- Change "" for expressions to {} so that quotes can
 	  be used for e.g. search strings?
 
 - Steem emulator debugging features missing from Hatari debugger.
