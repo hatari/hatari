@@ -140,13 +140,17 @@ static void returncycles (const char *s, int cycles)
 		printf ("%sreturn %d * CYCLE_UNIT / 2;\n", s, cycles);
 }
 
-static void addcycles_ce020 (int cycles)
+static void addcycles_ce020 (int head, int tail, int cache_cycles, int noncache_cycles)
 {
 	if (!using_ce020)
 		return;
-	if (cycles > 0)
-		printf ("\tregs.ce020memcycles += %d * cpucycleunit;\n", cycles);
-	count_cycles += cycles;
+	if (cache_cycles > 0 && noncache_cycles > 0) {
+		printf ("\n\tregs.ce_030_cycleshead = %d;\n", head);
+		printf ("\tregs.ce_030_cyclestail = %d;\n", tail);
+		printf ("\tregs.ce_030_cyclescache = %d;\n", cache_cycles);
+		printf ("\tregs.ce_030_cyclesnocache = %d;\n", noncache_cycles);	
+	}
+	count_cycles += noncache_cycles;
 }
 static void addcycles000 (int cycles)
 {
@@ -1495,8 +1499,10 @@ static void gen_opcode (unsigned long int opcode)
 
 	/* Store the family of the instruction (used to check for pairing on ST)
 	* and leave some space for patching in the current cycles later */
-	printf ("\tOpcodeFamily = %d; CurrentInstrCycles =     \n", curi->mnemo);
-	nCurInstrCycPos = ftell(stdout) - 5;
+	if (!using_ce020) {
+		printf ("\tOpcodeFamily = %d; CurrentInstrCycles =     \n", curi->mnemo);
+		nCurInstrCycPos = ftell(stdout) - 5;
+	}
 
 	if (using_ce020) {
 		if (using_ce020 == 2) {
@@ -2079,8 +2085,6 @@ static void gen_opcode (unsigned long int opcode)
 		break;
 	case i_NOP:
 		fill_prefetch_next ();
-		if (using_ce020)
-			printf ("\tdo_cycles_ce (6 * CYCLE_UNIT);\n");
 		break;
 	case i_STOP:
 		if (using_prefetch) {
@@ -2429,7 +2433,7 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\t"); genastore ("(src - 1)", curi->smode, "srcreg", curi->size, "src");
 
 		printf ("\t\tif (src) {\n");
-		addcycles_ce020 (4);
+		addcycles_ce020 (0, 0, 4, 4);
 		if (using_exception_3) {
 			printf ("\t\t\tif (offs & 1) {\n");
 			printf ("\t\t\t\texception3i (opcode, m68k_getpc () + 2, m68k_getpc () + 2 + (uae_s32)offs + 2);\n");
@@ -2443,10 +2447,10 @@ static void gen_opcode (unsigned long int opcode)
 		if (using_ce)
 			printf ("\t\t\treturn;\n");
 		printf ("\t\t}\n");
-		addcycles_ce020 (8);
+		addcycles_ce020 (0, 0, 8, 8);
 		printf ("\t} else {\n");
 		addcycles000_2 ("\t\t", 2);
-		addcycles_ce020 (4);
+		addcycles_ce020 (0, 0, 4, 4);
 		printf ("\t}\n");
 		setpc ("oldpc + %d", m68k_pc_offset);
 		m68k_pc_offset = 0;
@@ -2494,7 +2498,7 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\t\tint cycles = (getDivu68kCycles((uae_u32)dst, (uae_u16)src));\n");
 			addcycles000_3 ("\t\t");
 		} else if (using_ce020) {
-			addcycles_ce020 (36);
+			addcycles_ce020 (0, 0, 36, 36);
 		}
 		/* The N flag appears to be set each time there is an overflow.
 		* Weird. but 68020 only sets N when dst is negative.. */
@@ -2542,7 +2546,7 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\t\tint cycles = (getDivs68kCycles((uae_s32)dst, (uae_s16)src));\n");
 			addcycles000_3 ("\t\t");
 		} else if (using_ce020) {
-			addcycles_ce020 (46);
+					addcycles_ce020 (0, 0, 46, 46);
 		}
 		printf ("\t\tif ((newv & 0xffff8000) != 0 && (newv & 0xffff8000) != 0xffff8000) {\n");
 		printf ("\t\t\tSET_VFLG (1);\n");
@@ -2578,7 +2582,7 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\t\tif (src & 1) cycles += 2;\n");
 			addcycles000_3 ("\t");
 		} else if (using_ce020) {
-			addcycles_ce020 (20);
+					addcycles_ce020 (0, 0, 20, 20);
 		}
 		genastore ("newv", curi->dmode, "dstreg", sz_long, "dst");
 		sync_m68k_pc ();
@@ -2603,7 +2607,7 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\t\tif ((usrc & 3) == 1 || (usrc & 3) == 2) cycles += 2;\n");
 			addcycles000_3 ("\t");
 		} else if (using_ce020) {
-			addcycles_ce020 (20);
+					addcycles_ce020 (0, 0, 20, 20);
 		}
 		genastore ("newv", curi->dmode, "dstreg", sz_long, "dst");
 		count_cycles += 38 - 4;
@@ -3199,7 +3203,7 @@ static void gen_opcode (unsigned long int opcode)
 		genamode (curi->smode, "srcreg", curi->size, "extra", 1, 0, 0);
 		genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0, 0);
 		if (using_ce020) {
-			addcycles_ce020 (70);
+					addcycles_ce020 (0, 0, 70, 70);
 		}
 		sync_m68k_pc ();
 		printf ("\tm68k_divl(opcode, dst, extra, oldpc);\n");
@@ -3208,7 +3212,7 @@ static void gen_opcode (unsigned long int opcode)
 		genamode (curi->smode, "srcreg", curi->size, "extra", 1, 0, 0);
 		genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0, 0);
 		if (using_ce020) {
-			addcycles_ce020 (40);
+					addcycles_ce020 (0, 0, 40, 40);
 		}
 		sync_m68k_pc ();
 		printf ("\tm68k_mull(opcode, dst, extra);\n");
@@ -3492,7 +3496,7 @@ static void gen_opcode (unsigned long int opcode)
 	if (did_prefetch >= 0)
 		fill_prefetch_finish ();
 	if (!count_cycles)
-		addcycles_ce020 (2);
+		addcycles_ce020 (0, 0, 2, 2);
 	sync_m68k_pc ();
 	did_prefetch = 0;
 }
@@ -3767,9 +3771,11 @@ static void generate_one_opcode (int rp)
 	opcode_last_postfix[rp] = postfix;
 
 	/* Hatari only : Now patch in the instruction cycles at the beginning of the function: */
-	fseek(stdout, nCurInstrCycPos, SEEK_SET);
-	printf("%d;", insn_n_cycles);
-	fseek(stdout, 0, SEEK_END);
+	if (!using_ce020) {
+		fseek(stdout, nCurInstrCycPos, SEEK_SET);
+		printf("%d;", insn_n_cycles);
+		fseek(stdout, 0, SEEK_END);
+	}
 
 	if (generate_stbl) {
 //		char *name = ua (lookuptab[idx].name);

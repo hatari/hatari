@@ -23,6 +23,7 @@ STATIC_INLINE void events_schedule (void)
 
 STATIC_INLINE void do_cycles_slow (unsigned long cycles_to_add)
 {
+/* Laurent: not needed, as hatari has it's own events management.
 	if (is_lastline && eventtab[ev_hsync].evtime - currcycle <= cycles_to_add
 		&& (long int)(read_processor_time () - vsyncmintime) < 0)
 		return;
@@ -39,6 +40,8 @@ STATIC_INLINE void do_cycles_slow (unsigned long cycles_to_add)
 		}
 		events_schedule();
 	}
+*/
+	hatari030ce_currcycle += cycles_to_add;
 	currcycle += cycles_to_add;
 }
 

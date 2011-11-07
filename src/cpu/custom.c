@@ -36,7 +36,7 @@ volatile frame_time_t vsyncmintime;
 
 void do_cycles_ce (long cycles);
 
-unsigned long int event_cycles, nextevent, is_lastline, currcycle;
+unsigned long int event_cycles, nextevent, is_lastline, currcycle, hatari030ce_currcycle;
 uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode);
 void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v);
 void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
