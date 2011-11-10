@@ -69,7 +69,7 @@ TOS ROM images:
   them a legal way to test Hatari with free demos, games etc.
 
 * Users who want to continue using Atari compatible operating systems
-  and need a open source replacement of TOS for modifications. Beside
+  and need an open source replacement of TOS for modifications. Beside
   EmuTOS they typically alse use FreeMiNT, XaAES and fVDI as operating
   system replacements/improvements.
 
@@ -85,7 +85,7 @@ TOS ROM images:
 EmuTOS compatibility
 ====================
 
-These comments apply to EmuTOS v0.8.5.
+These comments apply to EmuTOS v0.8.x.
 
 Many commercial games and applications work fine with EmuTOS. This is
 because games (like Bombjack, Nebulus, Oids, Super Hang-On, Turrican,
@@ -156,7 +156,7 @@ compatibility of freely available games and demos.
 
 Games that are considered good quality & fun, are marked with "*".
 All the listed demos are quite OK. Most demos can be downloaded from
-http://pouet.net/ .
+http://pouet.net/
 
 First are listed ST demos and games, then STE demos, games and music
 applications and last Falcon demos, games and (music) applications.
@@ -187,6 +187,7 @@ Demos:
 - Outline 2008 invite (by DHS)
 - Outline 2010 invite (by Checkpoint)
 - Overdose (by Aggression)
+- Pandemonium (by Chaos)
 - Paradise (by Dune Design)
 - Phaleon Gigademo
 - Posh (by Checkpoint)
@@ -238,50 +239,65 @@ Color games:
 - Teserae*
 - Yak (4KB gridrunner)
 
+Med-rez games:
+- Poker solitaire
+
 GEM games:
 - 4 Gewinnt* (Connect four)
-- Abalone
+- Awele v1.02 (in v1.01 menus close immediately after opening)
 - Ballerburg* (bug: mouse-over acts like click)
 - Biglife*
+- Centi
 - Chess* (works only from floppy)
-- Clicks*
+- Clicks* (needs wdialog)
 - Daleks*
 - Dame
 - DBWH
 - Drachen
+- Flipside (fs, othello)
 - Gem_mind
 - Gnuchess
+- Gobang* (needs EmuTOS >= v0.8.6)
+- Invers
 - Isola
 - Kensington
+- Magic Stones* (m_stones: tetris, 2x tetris, columns)
 - Mars (corewars)
 - Mathmaze
 - Megaroid*
 - Mines*
+- Mosaik
 - Nethack*
 - Orb
 - Pacman
 - Shanghai
+- Sixteen
 - Snake
+- Solitair*
 - Stello*
 - ST Concentration*
-- Solitair*
 - Sudoku*
 - Tartan* (chess)
+- Thor (Othello, unstable)
 - Thrust
 - Tricky yahoo
-- Worm farm
+- Verrueck (labyrinth)
 - Wator (slow)
+- WindowBall (breakout)
+- Worm farm
+- Wormania
 - zSudoku
 
 Monochrome games:
 - Balloons
 - Bounce
+- Columns* (needs EmuTOS >= 0.8.6, some text & gfx issues)
 - Delta patrol
 - Emperor (v1.0 & v1.5)
 - Fun Face (playable demo)
 - Go UP
 - HASCS
-- Lasermon
+- Lasermon (laser "chess")
 - Mandala
 - MiniGolf* (GFA basic)
 - Monkey Business
@@ -291,8 +307,9 @@ Monochrome games:
 - Pyro
 - Qix
 - Sbreak* (by Mark Overmars)
-- Wallball
+- Sherlock* (needs EmuTOS >= 0.8.6, some text issues)
 - Space war (bug: score missing)
+- Wallball
 
 Text games:
 - Advent (Colossal Cave)
@@ -312,25 +329,25 @@ the issues in them are assumed to be Line-A related (graphics don't
 show because they use Line-A drawing functions etc).
 
 GEM games:
-- Awele     (menus close immediately after opening)
-- Checkers
+- Abalone   (dragging doesn't work)
+- Bombs     (mouse clicks almost never work)
+- Checkers  (dragging doesn't work)
+- Corewar   (programs are shown as white, not with different patterns)
 - Dte       (mouse gets stuck)
-- Fs        (panic)
 - Gemamigo* (panic or double bus error)
-- Invaders* (shots go through buildings/shields???)
-- Othello
-- Patience* (dragging doesn't work, arrowheads drawn wrong)
-- Risk*     (dragging doesn't work)
-- Verrueck  (?)
+- Halma     (boxes are left on screen)
+- Invaders* (shots go through buildings/shields)
+- Patience* (dragging doesn't work, dialog selection persists)
+- Risky*    (dragging doesn't work)
+- Yams      (mouse clicks don't work)
 - Yukon*    (dragging doesn't work)
 
 Games that mix GEM UI and non-VDI drawing:
-- Backgam (line-A bitblit)
-- Fishes  (line-A line and filled rectangle)
-- Robugs* (line-A filled rectangle and draw sprite)
+- Backgam   (line-A bitblit)
+- Fishes    (line-A line and filled rectangle)
+- Robugs*   (line-A filled rectangle and draw sprite)
 
 Mono games:
-- Columns*	(keyboard input issues)
 - Crystal Caves* (Line-A bitblit and draw/clear sprite)
 - Domino	(line-A bitblit)
 - Lokomotive	(line-A bitblit)
@@ -340,7 +357,6 @@ Mono games:
 - Pipeline*	(line-A line and filled rectangle)
 - Pling II	(Line-A bitblit and draw/clear sprite)
 - Roll X	(line-A bitblit and get pixel)
-- Sherlock*	(many of the texts missing, not line-A issue)
 
 
 Working free/shareware Atari STE programs
