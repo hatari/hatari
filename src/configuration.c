@@ -73,6 +73,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bShowStatusbar", Bool_Tag, &ConfigureParams.Screen.bShowStatusbar },
 	{ "bShowDriveLed", Bool_Tag, &ConfigureParams.Screen.bShowDriveLed },
 	{ "bCrop", Bool_Tag, &ConfigureParams.Screen.bCrop },
+	{ "bForceMax", Bool_Tag, &ConfigureParams.Screen.bForceMax },
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
 	{ NULL , Error_Tag, NULL }
@@ -492,6 +493,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCrop = false;
 	/* default to desktop size */
+	ConfigureParams.Screen.bForceMax = false;
 	ConfigureParams.Screen.nMaxWidth = 0;
 	ConfigureParams.Screen.nMaxHeight = 0;
 

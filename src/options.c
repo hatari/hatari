@@ -72,6 +72,7 @@ enum {
 	OPT_RESOLUTION,		/* Falcon/TT display options */
 	OPT_MAXWIDTH,
 	OPT_MAXHEIGHT,
+	OPT_FORCE_MAX,
 	OPT_ASPECT,
 	OPT_VDI,		/* VDI options */
 	OPT_VDI_PLANES,
@@ -206,6 +207,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Maximum window width for zooming" },
 	{ OPT_MAXHEIGHT, NULL, "--max-height",
 	  "<x>", "Maximum window height for zooming" },
+	{ OPT_FORCE_MAX, NULL, "--force-max",
+	  "<bool>", "Resolution fixed to given max values" },
 	{ OPT_ASPECT, NULL, "--aspect",
 	  "<bool>", "Monitor aspect ratio correction" },
 
@@ -1012,6 +1015,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_MAXHEIGHT:
 			ConfigureParams.Screen.nMaxHeight = atoi(argv[++i]);
+			break;
+
+		case OPT_FORCE_MAX:
+			ok = Opt_Bool(argv[++i], OPT_FORCE_MAX, &ConfigureParams.Screen.bForceMax);
 			break;
 			
 		case OPT_ASPECT:

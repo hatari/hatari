@@ -217,6 +217,7 @@ typedef struct
   bool bShowStatusbar;
   bool bShowDriveLed;
   bool bCrop;
+  bool bForceMax;
   int nMaxWidth;
   int nMaxHeight;
 } CNF_SCREEN;
