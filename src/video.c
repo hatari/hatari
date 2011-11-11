@@ -2907,8 +2907,8 @@ void Video_LineWidth_ReadByte(void)
 {
 	if (ConfigureParams.System.nMachineType == MACHINE_ST)
 		IoMem[0xff820f] = 0;        /* On ST this is always 0 */
-	else
-		IoMem[0xff820f] = LineWidth;
+
+	/* If we're not in STF mode, we use the value already stored in $ff820f */
 }
 
 /*-----------------------------------------------------------------------*/
