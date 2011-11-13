@@ -646,15 +646,23 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, long nSectorsPerDisk, Uint1
 	if      ( TotalSectors == 80*9*Sides_fixed )	{ SectorsPerTrack_fixed = 9; }
 	else if ( TotalSectors == 81*9*Sides_fixed )	{ SectorsPerTrack_fixed = 9; }
 	else if ( TotalSectors == 82*9*Sides_fixed )	{ SectorsPerTrack_fixed = 9; }
+	else if ( TotalSectors == 83*9*Sides_fixed )	{ SectorsPerTrack_fixed = 9; }
+	else if ( TotalSectors == 84*9*Sides_fixed )	{ SectorsPerTrack_fixed = 9; }
 	else if ( TotalSectors == 80*10*Sides_fixed )	{ SectorsPerTrack_fixed = 10; }
 	else if ( TotalSectors == 81*10*Sides_fixed )	{ SectorsPerTrack_fixed = 10; }
 	else if ( TotalSectors == 82*10*Sides_fixed )	{ SectorsPerTrack_fixed = 10; }
+	else if ( TotalSectors == 83*10*Sides_fixed )	{ SectorsPerTrack_fixed = 10; }
+	else if ( TotalSectors == 84*10*Sides_fixed )	{ SectorsPerTrack_fixed = 10; }
 	else if ( TotalSectors == 80*11*Sides_fixed )	{ SectorsPerTrack_fixed = 11; }
 	else if ( TotalSectors == 81*11*Sides_fixed )	{ SectorsPerTrack_fixed = 11; }
 	else if ( TotalSectors == 82*11*Sides_fixed )	{ SectorsPerTrack_fixed = 11; }
+	else if ( TotalSectors == 83*11*Sides_fixed )	{ SectorsPerTrack_fixed = 11; }
+	else if ( TotalSectors == 84*11*Sides_fixed )	{ SectorsPerTrack_fixed = 11; }
 	else if ( TotalSectors == 80*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
 	else if ( TotalSectors == 81*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
 	else if ( TotalSectors == 82*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
+	else if ( TotalSectors == 83*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
+	else if ( TotalSectors == 84*12*Sides_fixed )	{ SectorsPerTrack_fixed = 12; }
 
 	/* unknown combination, assume boot sector is correct */
 	else						{ SectorsPerTrack_fixed = *pnSectorsPerTrack; }
