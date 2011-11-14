@@ -155,10 +155,16 @@ int Cycles_GetCounterOnWriteAccess(int nId)
 		/* (e.g. movem is not correctly handled) */
 		nAddCycles = CurrentInstrCycles + nWaitStateCycles;
 
-		/* assume the behaviour of a 'move' (since this is the most */
-		/* common instr used when requiring cycle precise writes) */
-		if ( nAddCycles >= 8 )
-			nAddCycles -= 4;			/* last 4 cycles are for prefetch */
+		if ( OpcodeFamily == i_CLR )				/* should also be the case for add, sub, and, or, eor, neg, not */
+			;						/* Do nothing, the write is done during the last 4 cycles */
+									/* (e.g bottom border removal in No Scroll / Delirious Demo 4) */
+		else
+		{
+			/* assume the behaviour of a 'move' (since this is the most */
+			/* common instr used when requiring cycle precise writes) */
+			if ( nAddCycles >= 8 )
+				nAddCycles -= 4;			/* last 4 cycles are for prefetch */
+		}
 	}
 
 	return nCyclesCounter[nId] + nAddCycles;
