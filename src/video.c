@@ -297,6 +297,9 @@
 /*			be black).								*/
 /*			(fix spectrum 512 part in Overscan Demo and shforstv by Paulo Simoes	*/
 /*			by removing "parasite" pixels on the 1st line).				*/
+/* 2011/11/17	[NP]	Improve timings used for the 0 byte line when switching hi/lo at the	*/
+/*			end of the line. The hi/lo switch can be at 496/508 or 500/508		*/
+/*			(fix NGC screen in Delirious Demo IV).					*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -993,9 +996,9 @@ static void Video_WriteToShifter ( Uint8 Res )
 	}
 
 	/* Empty line switching res on STF : switch to hi res just before the HBL then go back to lo/med res */
-	/* Next HBL will be an ampty line (used in 'No Buddies Land') */
+	/* Next HBL will be an ampty line (used in 'No Buddies Land' and 'Delirious Demo IV / NGC') */
 	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
-	          && ( ShifterFrame.ResPosHi.LineCycles == 500 )
+	          && ( ( ShifterFrame.ResPosHi.LineCycles == 500-4 ) || ( ShifterFrame.ResPosHi.LineCycles == 500 ) )
 	          && ( LineCycles == 508 ) )
 	{
 		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_EMPTY_LINE;
@@ -1927,7 +1930,7 @@ static void Video_CopyScreenLineColor(void)
 	}
 	else
 	{
-		/* Does have left bordder ? */
+		/* Does have left border ? */
 		if ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MED ) )	/* bigger line by 26 bytes on the left */
 		{
 			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT+VideoOffset;
