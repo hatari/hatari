@@ -300,6 +300,9 @@
 /* 2011/11/17	[NP]	Improve timings used for the 0 byte line when switching hi/lo at the	*/
 /*			end of the line. The hi/lo switch can be at 496/508 or 500/508		*/
 /*			(fix NGC screen in Delirious Demo IV).					*/
+/* 2011/11/18	[NP]	Add support for another method to do 4 pixel hardware scrolling by doing*/
+/*			a med/lo switch after the hi/lo switchi to remove left border		*/
+/*			(fix NGC screen in Delirious Demo IV).					*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1101,6 +1104,41 @@ static void Video_WriteToShifter ( Uint8 Res )
 		}
 	}
 
+#define SCROLL2_4PX
+#ifdef SCROLL2_4PX
+	/* Left border was removed with a hi/lo switch, then a med res switch was made */
+	/* Depending on the low res switch, the screen will be shifted as a low res overscan line */
+	/* This is a different method than the one used by ST Connexion with only 3 res switches */
+	/* (so we must cancel the med res overscan bit) */
+	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_OVERSCAN_MED_RES )
+		&& ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & ( 0xf << 20 ) ) == 0 )
+		&& ( Res == 0x00 ) )
+	{
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= (~BORDERMASK_OVERSCAN_MED_RES);	/* cancel mid res */
+
+		if ( LineCycles == 28 )
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll 2\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 13;
+		}
+		else if ( LineCycles == 32 )
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll 2\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 9;
+		}
+		else if ( LineCycles == 36 )
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll 2\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 5;
+		}
+		else if ( LineCycles == 40 )
+		{
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll 2\n" );
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 1;
+		}
+	}
+#endif
+
 
 	/* Update HBL's position only if display has not reached pos LINE_START_CYCLE_50 */
 	/* and HBL interrupt was already handled at the beginning of this line. */
@@ -1901,7 +1939,19 @@ static void Video_CopyScreenLineColor(void)
 		VideoOffset = - ( ( LineBorderMask >> 20 ) & 0x0f );		/* No Cooper=0  PYM=-2 in med res overscan */
 
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF )
+	{
+#ifdef SCROLL2_4PX
+		if      ( STF_PixelScroll == 13 )	VideoOffset = 2;
+		else if ( STF_PixelScroll == 9 )	VideoOffset = 0;
+		else if ( STF_PixelScroll == 5 )	VideoOffset = -2;
+		else if ( STF_PixelScroll == 1 )	VideoOffset = -4;
+
+		else					VideoOffset = -2;	/* Normal low res left border removal without 4 pixels scrolling */
+		STF_PixelScroll -= 8;
+#else
 		VideoOffset = -2;						/* always 2 bytes in low res overscan */
+#endif
+	}
 
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )
 		VideoOffset = -4;						/* 4 first bytes of the line are not shown */
