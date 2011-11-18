@@ -301,7 +301,11 @@
 /*			end of the line. The hi/lo switch can be at 496/508 or 500/508		*/
 /*			(fix NGC screen in Delirious Demo IV).					*/
 /* 2011/11/18	[NP]	Add support for another method to do 4 pixel hardware scrolling by doing*/
-/*			a med/lo switch after the hi/lo switchi to remove left border		*/
+/*			a med/lo switch after the hi/lo switch to remove left border		*/
+/*			(fix NGC screen in Delirious Demo IV).					*/
+/* 2011/11/19	[NP]	The 0 byte line obtained by switching hi/lo at the end of the line has	*/
+/*			no video signal at all (blank). In that case, the screen is shifted one	*/
+/*			line down, and bottom border removal will happen one line later too	*/
 /*			(fix NGC screen in Delirious Demo IV).					*/
 
 
@@ -417,6 +421,7 @@ int	VblJitterIndex = 0;
 int	VblJitterArray[] = 		{ 8,0,4,0,4 };		/* measured on STF */
 int	VblJitterArrayPending[] =	{ 8,8,12,8,12 };	/* not verified on STF, use the same as HBL */
 
+int	BlankLines = 0;				/* Number of empty line with no signal (by switching hi/lo near cycles 500) */
 
 
 typedef struct
@@ -860,7 +865,7 @@ static Uint32 Video_CalculateAddress ( void )
 			NbBytes = 0;
 
 		/* Add line cycles if we have not reached end of screen yet */
-		if ( HblCounterVideo < nEndHBL )
+		if ( HblCounterVideo < nEndHBL + BlankLines )
 			VideoAddress += PrevSize + NbBytes;
 	}
 
@@ -1007,6 +1012,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = 0;
 		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle = 0;
+		BlankLines++;						/* no video signal at all for this line */
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 2 %d<->%d for nHBL=%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayEndCycle , nHBL+1 );
 	}
@@ -1255,7 +1261,7 @@ void Video_Sync_WriteByte ( void )
 	if ( ( ShifterFrame.Freq == 0x00 ) && ( Freq == 0x02 )	/* switched from 60 Hz to 50 Hz ? */
 //	        && ( ShifterFrame.FreqPos60.VBL == nVBLs )	/* switched during the same VBL */
 	        && ( HblCounterVideo >= nStartHBL )		/* only if display is on */
-	        && ( HblCounterVideo < nEndHBL ) )		/* only if display is on */
+	        && ( HblCounterVideo < nEndHBL + BlankLines ) )	/* only if display is on */
 	{
 		/* Blank line switching freq on STF : switch to 60 Hz on cycle 28, then go back to 50 Hz on cycle 36 */
 		/* This creates a blank line where no signal is displayed, but the video counter will still change for this line */
@@ -1312,7 +1318,7 @@ void Video_Sync_WriteByte ( void )
 
 	if ( ( ShifterFrame.Freq == 0x02 && Freq == 0x00 )	/* switched from 50 Hz to 60 Hz ? */
 	        && ( HblCounterVideo >= nStartHBL )		/* only if display is on */
-	        && ( HblCounterVideo < nEndHBL ) )		/* only if display is on */
+	        && ( HblCounterVideo < nEndHBL + BlankLines ) )	/* only if display is on */
 	{
 		/* remove right border, display 44 bytes more : switch to 60 Hz at the position where */
 		/* the line ends in 50 Hz. Some programs don't switch back to 50 Hz immediatly */
@@ -1561,7 +1567,7 @@ static void Video_EndHBL(void)
 	}
 
 	/* Remove bottom border for a 60 Hz screen (tests are similar to the ones for top border) */
-	else if ( ( nHBL == VIDEO_END_HBL_60HZ-1 )			/* last displayed line in 60 Hz */
+	else if ( ( nHBL == VIDEO_END_HBL_60HZ + BlankLines - 1 )	/* last displayed line in 60 Hz */
 		&& ( nStartHBL == VIDEO_START_HBL_60HZ )		/* screen started in 60 Hz */
 		&& ( ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* and top border was not removed : this screen is only 60 Hz */
 		&& ( ShifterFrame.FreqPos50.VBL == nVBLs )		/* switch to 50 Hz during this VBL */
@@ -1577,7 +1583,7 @@ static void Video_EndHBL(void)
 	}
 
 	/* Remove bottom border for a 50 Hz screen (tests are similar to the ones for top border) */
-	else if ( ( nHBL == VIDEO_END_HBL_50HZ-1 )			/* last displayed line in 50 Hz */
+	else if ( ( nHBL == VIDEO_END_HBL_50HZ + BlankLines - 1 )	/* last displayed line in 50 Hz */
 		&& ( ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* border was not already removed at line VIDEO_END_HBL_60HZ-1 */
 		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
 		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL ) || ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveBottomCycle ) )
@@ -1756,7 +1762,7 @@ void Video_InterruptHandler_EndLine(void)
 	}
 
 	/* Timer B occurs at END of first visible screen line in Event Count mode */
-	if (nHBL >= nStartHBL && nHBL < nEndHBL)
+	if ( ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL + BlankLines ) )
 	{
 		/* Handle Timer B when using Event Count mode */
 		/* We must ensure that the write to fffa1b to activate timer B was */
@@ -1972,7 +1978,7 @@ static void Video_CopyScreenLineColor(void)
 
 
 	/* Is total blank line? I.e. top/bottom border? */
-	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL)
+	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL + BlankLines)
 	    || (LineBorderMask & BORDERMASK_EMPTY_LINE))
 	{
 		/* Clear line to color '0' */
@@ -2430,6 +2436,8 @@ static void Video_ResetShifterTimings(void)
 	TimerBEventCountCycleStart = -1;		/* reset timer B activation cycle for this VBL */
 
 	LastCycleHblException = -1;
+
+	BlankLines = 0;
 }
 
 
@@ -2891,7 +2899,7 @@ void Video_ScreenCounter_WriteByte(void)
 	/* If display has not started, we can still modify pVideoRaster */
 	/* We must also check the write does not overlap the end of the line (to be sure Video_EndHBL is called first) */
 	if ( ( ( LineCycles <= MMUStartCycle ) && ( nHBL == HblCounterVideo ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL + BlankLines ) )
 	{
 		pVideoRaster = &STRam[addr_new & ~1];		/* set new video address */
 		VideoCounterDelayedOffset = 0;
@@ -2900,7 +2908,7 @@ void Video_ScreenCounter_WriteByte(void)
 	}
 
 	/* Display is OFF (right border) but we can't change pVideoRaster now, we must process Video_CopyScreenLineColor first */
-	else if ( ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL )	/* line should be active */
+	else if ( ( nHBL >= nStartHBL ) && ( nHBL < nEndHBL + BlankLines )	/* line should be active */
 		&& ( ( LineCycles > ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle )		/* we're in the right border */
 		  || ( HblCounterVideo == nHBL+1 ) ) )		/* or the write overlaps the next line and Video_EndHBL was not called yet */
 	{
@@ -3006,7 +3014,7 @@ void Video_LineWidth_WriteByte(void)
 
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( nHBL == HblCounterVideo ) && ( LineCycles <= ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL + BlankLines ) )
 	{
 		LineWidth = NewWidth;		/* display is on, we can still change */
 		NewLineWidth = -1;		/* cancel 'pending' change */
@@ -3298,7 +3306,7 @@ void Video_HorScroll_Write(void)
 	/* for line n+1. */
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( LineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL + BlankLines ) )
 	{
 		HWScrollCount = ScrollCount;		/* display has not started, we can still change */
 		HWScrollPrefetch = Prefetch;
