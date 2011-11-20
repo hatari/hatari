@@ -102,7 +102,7 @@ display code doesn't support zooming (except low-rez doubling), it
 doesn't get scaled (by Hatari or monitor) when this is enabled.
 Therefore this is mainly useful only if you suffer from the described
 effects, but still want to grab mouse and remove other distractions
-from the screen just by toggling fullscreen mode.
+from the screen just by toggling fullscreen mode. (disabled by default)
 .TP 
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with
@@ -119,27 +119,34 @@ different sizes, but they are never blurry.
 .B \-\-desktop <bool>
 Whether to use desktop resolution on fullscreen to avoid issues
 related to resolution switching. Otherwise fullscreen will use
-a resolution that is closest to the Hatari window size
+a resolution that is closest to the Hatari window size.
+(enabled by default)
 .TP
 .B \-\-max-width <x>
 Preferred / maximum window width
-.TP 
+.TP
 .B \-\-max-height <x>
 Preferred / maximum window height
-.TP 
+.TP
+.B \-\-force-max <bool>
+Hatari window size is forced to specified maximum size and black borders
+used when Atari resolution doesn't scale evenly to it.  This is most
+useful when recording videos of Falcon demos that change their
+resolution. (disabled by default)
+.TP
 .B \-\-aspect <bool>
 Whether to do monitor aspect ratio correction (enabled by default)
 .SH "VDI options"
-.TP 
+.TP
 .B \-\-vdi <bool>
 Whether to use VDI screen mode
-.TP 
+.TP
 .B \-\-vdi\-planes <x>
 Use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)
-.TP 
+.TP
 .B \-\-vdi\-width <w>
 Use extended VDI resolution with width <w> (320 < w <= 1280)
-.TP 
+.TP
 .B \-\-vdi\-height <h>
 Use extended VDI resolution with height <h> (200 < h <= 960)
 .SH "Screen capture options"

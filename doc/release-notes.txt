@@ -19,6 +19,8 @@ Emulator:
   fast FDC being OFF
 - "--fast-boot" option to initialize "memvalid" system variables to
   by-pass the memory test of TOS, so that the system boots faster
+- "--force-max" option to force Hatari use specified maximum resolution
+  to avoid window size changes messing up Hatari video recording
 - "--desktop-st" option to keep desktop resolution also for ST/STE modes
   (unfortunately without scaling besides the low-res doubling)
 - GEMDOS HD emulation:

@@ -698,6 +698,28 @@ Show screen borders (for low/med resolution overscan demos)
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
+<b>--desktop-st &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Whether fullscreen mode uses desktop resolution to avoid: messing
+multi-screen setups, several seconds delay needed by LCD monitors
+resolution switching and the resulting sound break. As Hatari ST/E
+display code doesn't support zooming (except low-rez doubling), it
+doesn't get scaled (by Hatari or monitor) when this is enabled.
+Therefore this is mainly useful only if you suffer from the described
+effects, but still want to grab mouse and remove other distractions
+from the screen just by toggling fullscreen mode. (disabled by default)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
 <b>--spec512 &lt;x&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -747,7 +769,8 @@ up with different sizes, but they are never blurry.
 <td width="77%">
 Whether to use desktop resolution on fullscreen to avoid issues
 related to resolution switching. Otherwise fullscreen will use
-a resolution that is closest to the Hatari window size
+a resolution that is closest to the Hatari window size.
+(enabled by default)
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -785,6 +808,24 @@ Maximum window height for zooming
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
+<b>--force-max &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Hatari window size is forced to specified maximum size and black borders
+used when Atari resolution doesn't scale evenly to it.  This is most
+useful when recording videos of Falcon demos that change their
+resolution. (disabled by default)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
 <b>--aspect &lt;bool&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -792,7 +833,7 @@ Maximum window height for zooming
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Whether to do monitor aspect ratio correction
+Whether to do monitor aspect ratio correction (enabled by default)
 </td>
 </table>
 
