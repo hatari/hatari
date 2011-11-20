@@ -1947,13 +1947,16 @@ static void Video_CopyScreenLineColor(void)
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF )
 	{
 #ifdef SCROLL2_4PX
-		if      ( STF_PixelScroll == 13 )	VideoOffset = 2;
-		else if ( STF_PixelScroll == 9 )	VideoOffset = 0;
-		else if ( STF_PixelScroll == 5 )	VideoOffset = -2;
-		else if ( STF_PixelScroll == 1 )	VideoOffset = -4;
+		int	ShiftPixels = 0;
+
+		if      ( STF_PixelScroll == 13 )	{ VideoOffset = 2;	ShiftPixels = 8; }
+		else if ( STF_PixelScroll == 9 )	{ VideoOffset = 0;	ShiftPixels = 8; }
+		else if ( STF_PixelScroll == 5 )	{ VideoOffset = -2;	ShiftPixels = 8; }
+		else if ( STF_PixelScroll == 1 )	{ VideoOffset = -4;	ShiftPixels = 8; }
 
 		else					VideoOffset = -2;	/* Normal low res left border removal without 4 pixels scrolling */
-		STF_PixelScroll -= 8;
+
+		STF_PixelScroll -= ShiftPixels;
 #else
 		VideoOffset = -2;						/* always 2 bytes in low res overscan */
 #endif
