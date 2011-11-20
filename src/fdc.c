@@ -823,6 +823,12 @@ static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
  */
 static int FDC_CmdCompleteCommon ( bool DoInt )
 {
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LOG_TRACE(TRACE_FDC, "fdc complete command VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
 	FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* Remove busy bit */
 
 	if ( DoInt )
@@ -1547,7 +1553,7 @@ static int FDC_TypeII_ReadSector ( void )
 	FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA;
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
-		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
+		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		Delay_micro = FDC_DELAY_HEAD_LOAD;
@@ -1607,7 +1613,7 @@ static int FDC_TypeIII_ReadAddress ( void )
 	FDC.CommandState = FDCEMU_RUN_READADDRESS;
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
-		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
+		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		Delay_micro = FDC_DELAY_HEAD_LOAD;
@@ -1633,7 +1639,7 @@ static int FDC_TypeIII_ReadTrack ( void )
 	FDC.CommandState = FDCEMU_RUN_READTRACK;
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
-		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
+		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		Delay_micro = FDC_DELAY_HEAD_LOAD;
@@ -1877,7 +1883,7 @@ static void FDC_WriteSectorCountRegister ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc write 8604 sector count=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc write 8604 dma sector count=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	FDC_DMA.SectorCount = IoMem_ReadByte(0xff8605);
@@ -2069,7 +2075,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 		{
 		 case 0x0:						/* 0 0 - Status register */
 			/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
-			/* seems to be updated after a Type I command */
+			/* is updated after a Type I command */
 			/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
 			if ( FDC.CommandType == 1 )
 			{
@@ -2131,7 +2137,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
  * $84 - Selects sector register
  * $86 - Selects data regsiter
  * NOTE - OR above values with $100 is transfer from memory to floppy
- * Also if bit 4 is set, write to sector count register
+ * Also if bit 4 is set, write to DMA sector count register
  */
 void FDC_DmaModeControl_WriteWord ( void )
 {
