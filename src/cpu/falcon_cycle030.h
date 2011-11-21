@@ -209,7 +209,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	14,1,0,1,	18,1,2,1},	// BCHG.B #<data>.W,-(An)
 	{2,	0,	14,1,0,1,	19,1,2,1},	// BCHG.B #<data>.W,(d16,An)
 	{6,	2,	18,1,0,1,	24,1,3,1},	// BCHG.B #<data>.W,(d8,An,Xn)
-	{4, 2,	16,1,0,1,	20,1,2,1},	// BCHG.B #<data>.W,(xxx).W
+	{4,	2,	16,1,0,1,	20,1,2,1},	// BCHG.B #<data>.W,(xxx).W
 	{3,	0,	16,1,0,1,	23,1,3,1},	// BCHG.B #<data>.W,(xxx).L
 	{2,	0,	14,1,0,1,	19,1,2,1},	// BCHG.B #<data>.W,(d16,PC)
 	{6,	2,	18,1,0,1,	24,1,3,1},	// BCHG.B #<data>.W,(d8,PC,Xn)
@@ -219,7 +219,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	14,1,0,1,	18,1,2,1},	// BCLR.B #<data>.W,-(An)
 	{2,	0,	14,1,0,1,	19,1,2,1},	// BCLR.B #<data>.W,(d16,An)
 	{6,	2,	18,1,0,1,	24,1,3,1},	// BCLR.B #<data>.W,(d8,An,Xn)
-	{4, 2,	16,1,0,1,	20,1,2,1},	// BCLR.B #<data>.W,(xxx).W
+	{4,	2,	16,1,0,1,	20,1,2,1},	// BCLR.B #<data>.W,(xxx).W
 	{3,	0,	16,1,0,1,	23,1,3,1},	// BCLR.B #<data>.W,(xxx).L
 	{2,	0,	14,1,0,1,	19,1,2,1},	// BCLR.B #<data>.W,(d16,PC)
 	{6,	2,	18,1,0,1,	24,1,3,1},	// BCLR.B #<data>.W,(d8,PC,Xn)
@@ -229,7 +229,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	14,1,0,1,	18,1,2,1},	// BSET.B #<data>.W,-(An)
 	{2,	0,	14,1,0,1,	19,1,2,1},	// BSET.B #<data>.W,(d16,An)
 	{6,	2,	18,1,0,1,	24,1,3,1},	// BSET.B #<data>.W,(d8,An,Xn)
-	{4, 2,	16,1,0,1,	20,1,2,1},	// BSET.B #<data>.W,(xxx).W
+	{4,	2,	16,1,0,1,	20,1,2,1},	// BSET.B #<data>.W,(xxx).W
 	{3,	0,	16,1,0,1,	23,1,3,1},	// BSET.B #<data>.W,(xxx).L
 	{2,	0,	14,1,0,1,	19,1,2,1},	// BSET.B #<data>.W,(d16,PC)
 	{6,	2,	18,1,0,1,	24,1,3,1},	// BSET.B #<data>.W,(d8,PC,Xn)
@@ -761,7 +761,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	14,1,0,0,	22,1,3,0},	// MOVE.B (d16,An),SR
 	{4,	2,	16,1,0,0,	24,1,3,0},	// MOVE.B (d8,An,Xn),SR
 	{2,	2,	14,1,0,0,	22,1,3,0},	// MOVE.B (xxx).W,SR
-	{1, 0,	14,1,0,0,	23,1,3,0},	// MOVE.B (xxx).L,SR
+	{1,	0,	14,1,0,0,	23,1,3,0},	// MOVE.B (xxx).L,SR
 	{2,	2,	14,1,0,0,	22,1,3,0},	// MOVE.B (d16,PC),SR
 	{4,	2,	16,1,0,0,	24,1,3,0},	// MOVE.B (d8,PC,Xn),SR
 	{2,	0,	10,0,0,0,	18,0,3,0},	// MOVE.B #<data>.B,SR
@@ -796,7 +796,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	14,1,0,0,	22,1,3,0},	// MOVE.W (d16,An),SR
 	{4,	2,	16,1,0,0,	24,1,3,0},	// MOVE.W (d8,An,Xn),SR
 	{2,	2,	14,1,0,0,	22,1,3,0},	// MOVE.W (xxx).W,SR
-	{1, 0,	14,1,0,0,	23,1,3,0},	// MOVE.W (xxx).L,SR
+	{1,	0,	14,1,0,0,	23,1,3,0},	// MOVE.W (xxx).L,SR
 	{2,	2,	14,1,0,0,	22,1,3,0},	// MOVE.W (d16,PC),SR
 	{4,	2,	16,1,0,0,	24,1,3,0},	// MOVE.W (d8,PC,Xn),SR
 	{2,	0,	10,0,0,0,	18,0,3,0},	// MOVE.W #<data>.W,SR
@@ -873,9 +873,9 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{3,	0,	18,1,0,1,	20,1,1,1},	// TAS.B (An)+
 	{8,	0,	18,1,0,1,	20,1,1,1},	// TAS.B -(An)
 	{8,	0,	18,1,0,1,	22,1,2,1},	// TAS.B (d16,An)
-	{10,0,	20,1,0,1,	24,1,2,1},	// TAS.B (d8,An,Xn)
+	{10,	0,	20,1,0,1,	24,1,2,1},	// TAS.B (d8,An,Xn)
 	{8,	0,	18,1,0,1,	22,1,2,1},	// TAS.B (xxx).W
-	{10,0,	20,1,0,1,	24,1,2,1},	// TAS.B (xxx).L
+	{10,	0,	20,1,0,1,	24,1,2,1},	// TAS.B (xxx).L
 	{},	// MULL.L #<data>.W,Dn
 	{},	// MULL.L #<data>.W,(An)
 	{},	// MULL.L #<data>.W,(An)+
@@ -936,13 +936,13 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	0,	12,0,0,1,	19,0,2,1},	// JSR.L (xxx).L
 	{4,	0,	14,0,0,1,	21,0,2,1},	// JSR.L (d16,PC)
 	{6,	0,	16,0,0,1,	23,0,2,1},	// JSR.L (d8,PC,Xn)
-	{10,0,	 6,0,0,0,	12,0,2,0},	// JMP.L (An)
-	{12,0,	 8,0,0,0,	14,0,2,0},	// JMP.L (d16,An)
-	{14,0,	10,0,0,0,	16,0,2,0},	// JMP.L (d8,An,Xn)
-	{10,0,	 6,0,0,0,	12,0,2,0},	// JMP.L (xxx).W
-	{10,0,	 6,0,0,0,	12,0,2,0},	// JMP.L (xxx).L
-	{12,0,	 8,0,0,0,	14,0,2,0},	// JMP.L (d16,PC)
-	{14,0,	10,0,0,0,	16,0,2,0},	// JMP.L (d8,PC,Xn)
+	{10,	0,	 6,0,0,0,	12,0,2,0},	// JMP.L (An)
+	{12,	0,	 8,0,0,0,	14,0,2,0},	// JMP.L (d16,An)
+	{14,	0,	10,0,0,0,	16,0,2,0},	// JMP.L (d8,An,Xn)
+	{10,	0,	 6,0,0,0,	12,0,2,0},	// JMP.L (xxx).W
+	{10,	0,	 6,0,0,0,	12,0,2,0},	// JMP.L (xxx).L
+	{12,	0,	 8,0,0,0,	14,0,2,0},	// JMP.L (d16,PC)
+	{14,	0,	10,0,0,0,	16,0,2,0},	// JMP.L (d8,PC,Xn)
 	{2,	0,	 2,0,0,0,	 4,0,1,0},	// ADDQ.B #<data>,Dn
 	{1,	2,	10,1,0,1,	13,1,1,1},	// ADDQ.B #<data>,(An)
 	{0,	2,	10,1,0,1,	13,1,1,1},	// ADDQ.B #<data>,(An)+
@@ -1657,110 +1657,110 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	12,1,0,0,	16,1,2,0},	// ADDA.L (d16,PC),An
 	{4,	2,	14,1,0,0,	18,1,2,0},	// ADDA.L (d8,PC,Xn),An
 	{4,	0,	 6,0,0,0,	10,0,2,0},	// ADDA.L #<data>.L,An
-	{},	// ASRQ.B #<data>,Dn
-	{},	// LSRQ.B #<data>,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// ASRQ.B #<data>,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSRQ.B #<data>,Dn
 	{},	// ROXRQ.B #<data>,Dn
-	{},	// RORQ.B #<data>,Dn
+	{4,	0,	 6,0,0,0,	 8,0,1,0},	// RORQ.B #<data>,Dn
 	{},	// ASR.B Dn,Dn
 	{},	// LSR.B Dn,Dn
-	{},	// ROXR.B Dn,Dn
-	{},	// ROR.B Dn,Dn
-	{},	// ASRQ.W #<data>,Dn
-	{},	// LSRQ.W #<data>,Dn
+	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXR.B Dn,Dn
+	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROR.B Dn,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// ASRQ.W #<data>,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSRQ.W #<data>,Dn
 	{},	// ROXRQ.W #<data>,Dn
-	{},	// RORQ.W #<data>,Dn
+	{4,	0,	 6,0,0,0,	 8,0,1,0},	// RORQ.W #<data>,Dn
 	{},	// ASR.W Dn,Dn
 	{},	// LSR.W Dn,Dn
-	{},	// ROXR.W Dn,Dn
-	{},	// ROR.W Dn,Dn
-	{},	// ASRQ.L #<data>,Dn
-	{},	// LSRQ.L #<data>,Dn
+	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXR.W Dn,Dn
+	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROR.W Dn,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// ASRQ.L #<data>,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSRQ.L #<data>,Dn
 	{},	// ROXRQ.L #<data>,Dn
-	{},	// RORQ.L #<data>,Dn
+	{4,	0,	 6,0,0,0,	 8,0,1,0},	// RORQ.L #<data>,Dn
 	{},	// ASR.L Dn,Dn
 	{},	// LSR.L Dn,Dn
-	{},	// ROXR.L Dn,Dn
-	{},	// ROR.L Dn,Dn
-	{},	// ASRW.W (An)
-	{},	// ASRW.W (An)+
-	{},	// ASRW.W -(An)
-	{},	// ASRW.W (d16,An)
-	{},	// ASRW.W (d8,An,Xn)
-	{},	// ASRW.W (xxx).W
-	{},	// ASRW.W (xxx).L
-	{},	// ASLQ.B #<data>,Dn
-	{},	// LSLQ.B #<data>,Dn
+	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXR.L Dn,Dn
+	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROR.L Dn,Dn
+	{1,	1,	11,1,0,1,	13,1,1,1},	// ASRW.W (An)
+	{0,	1,	11,1,0,1,	13,1,1,1},	// ASRW.W (An)+
+	{2,	2,	12,1,0,1,	14,1,1,1},	// ASRW.W -(An)
+	{2,	2,	12,1,0,1,	16,1,2,1},	// ASRW.W (d16,An)
+	{4,	2,	14,1,0,1,	18,1,2,1},	// ASRW.W (d8,An,Xn)
+	{2,	2,	12,1,0,1,	16,1,2,1},	// ASRW.W (xxx).W
+	{1,	0,	12,1,0,1,	17,1,2,1},	// ASRW.W (xxx).L
+	{2,	0,	 6,0,0,0,	 8,0,1,0},	// ASLQ.B #<data>,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSLQ.B #<data>,Dn
 	{},	// ROXLQ.B #<data>,Dn
-	{},	// ROLQ.B #<data>,Dn
-	{},	// ASL.B Dn,Dn
+	{4,	0,	 6,0,0,0,	 8,0,1,0},	// ROLQ.B #<data>,Dn
+	{4,	0,	 8,0,0,0,	10,0,1,0},	// ASL.B Dn,Dn
 	{},	// LSL.B Dn,Dn
-	{},	// ROXL.B Dn,Dn
-	{},	// ROL.B Dn,Dn
-	{},	// ASLQ.W #<data>,Dn
-	{},	// LSLQ.W #<data>,Dn
+	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXL.B Dn,Dn
+	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROL.B Dn,Dn
+	{2,	0,	 6,0,0,0,	 8,0,1,0},	// ASLQ.W #<data>,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSLQ.W #<data>,Dn
 	{},	// ROXLQ.W #<data>,Dn
-	{},	// ROLQ.W #<data>,Dn
-	{},	// ASL.W Dn,Dn
+	{4,	0,	 6,0,0,0,	 8,0,1,0},	// ROLQ.W #<data>,Dn
+	{4,	0,	 8,0,0,0,	10,0,1,0},	// ASL.W Dn,Dn
 	{},	// LSL.W Dn,Dn
-	{},	// ROXL.W Dn,Dn
-	{},	// ROL.W Dn,Dn
-	{},	// ASLQ.L #<data>,Dn
-	{},	// LSLQ.L #<data>,Dn
+	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXL.W Dn,Dn
+	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROL.W Dn,Dn
+	{2,	0,	 6,0,0,0,	 8,0,1,0},	// ASLQ.L #<data>,Dn
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSLQ.L #<data>,Dn
 	{},	// ROXLQ.L #<data>,Dn
-	{},	// ROLQ.L #<data>,Dn
-	{},	// ASL.L Dn,Dn
+	{4,	0,	 6,0,0,0,	 8,0,1,0},	// ROLQ.L #<data>,Dn
+	{4,	0,	 8,0,0,0,	10,0,1,0},	// ASL.L Dn,Dn
 	{},	// LSL.L Dn,Dn
-	{},	// ROXL.L Dn,Dn
-	{},	// ROL.L Dn,Dn
-	{},	// ASLW.W (An)
-	{},	// ASLW.W (An)+
-	{},	// ASLW.W -(An)
-	{},	// ASLW.W (d16,An)
-	{},	// ASLW.W (d8,An,Xn)
-	{},	// ASLW.W (xxx).W
-	{},	// ASLW.W (xxx).L
-	{},	// LSRW.W (An)
-	{},	// LSRW.W (An)+
-	{},	// LSRW.W -(An)
-	{},	// LSRW.W (d16,An)
-	{},	// LSRW.W (d8,An,Xn)
-	{},	// LSRW.W (xxx).W
-	{},	// LSRW.W (xxx).L
-	{},	// LSLW.W (An)
-	{},	// LSLW.W (An)+
-	{},	// LSLW.W -(An)
-	{},	// LSLW.W (d16,An)
-	{},	// LSLW.W (d8,An,Xn)
-	{},	// LSLW.W (xxx).W
-	{},	// LSLW.W (xxx).L
-	{},	// ROXRW.W (An)
-	{},	// ROXRW.W (An)+
-	{},	// ROXRW.W -(An)
-	{},	// ROXRW.W (d16,An)
-	{},	// ROXRW.W (d8,An,Xn)
-	{},	// ROXRW.W (xxx).W
-	{},	// ROXRW.W (xxx).L
-	{},	// ROXLW.W (An)
-	{},	// ROXLW.W (An)+
-	{},	// ROXLW.W -(An)
-	{},	// ROXLW.W (d16,An)
-	{},	// ROXLW.W (d8,An,Xn)
-	{},	// ROXLW.W (xxx).W
-	{},	// ROXLW.W (xxx).L
-	{},	// RORW.W (An)
-	{},	// RORW.W (An)+
-	{},	// RORW.W -(An)
-	{},	// RORW.W (d16,An)
-	{},	// RORW.W (d8,An,Xn)
-	{},	// RORW.W (xxx).W
-	{},	// RORW.W (xxx).L
-	{},	// ROLW.W (An)
-	{},	// ROLW.W (An)+
-	{},	// ROLW.W -(An)
-	{},	// ROLW.W (d16,An)
-	{},	// ROLW.W (d8,An,Xn)
-	{},	// ROLW.W (xxx).W
-	{},	// ROLW.W (xxx).L
+	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXL.L Dn,Dn
+	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROL.L Dn,Dn
+	{1,	1,	13,1,0,1,	15,1,1,1},	// ASLW.W (An)
+	{0,	1,	13,1,0,1,	15,1,1,1},	// ASLW.W (An)+
+	{2,	2,	14,1,0,1,	16,1,1,1},	// ASLW.W -(An)
+	{2,	2,	14,1,0,1,	18,1,2,1},	// ASLW.W (d16,An)
+	{4,	2,	16,1,0,1,	20,1,2,1},	// ASLW.W (d8,An,Xn)
+	{2,	2,	14,1,0,1,	18,1,2,1},	// ASLW.W (xxx).W
+	{1,	0,	14,1,0,1,	19,1,2,1},	// ASLW.W (xxx).L
+	{1,	1,	11,1,0,1,	13,1,1,1},	// LSRW.W (An)
+	{0,	1,	11,1,0,1,	13,1,1,1},	// LSRW.W (An)+
+	{2,	2,	12,1,0,1,	14,1,1,1},	// LSRW.W -(An)
+	{2,	2,	12,1,0,1,	16,1,2,1},	// LSRW.W (d16,An)
+	{4,	2,	14,1,0,1,	18,1,2,1},	// LSRW.W (d8,An,Xn)
+	{2,	2,	12,1,0,1,	16,1,2,1},	// LSRW.W (xxx).W
+	{1,	0,	12,1,0,1,	17,1,2,1},	// LSRW.W (xxx).L
+	{1,	1,	11,1,0,1,	13,1,1,1},	// LSLW.W (An)
+	{0,	1,	11,1,0,1,	13,1,1,1},	// LSLW.W (An)+
+	{2,	2,	12,1,0,1,	14,1,1,1},	// LSLW.W -(An)
+	{2,	2,	12,1,0,1,	16,1,2,1},	// LSLW.W (d16,An)
+	{4,	2,	14,1,0,1,	18,1,2,1},	// LSLW.W (d8,An,Xn)
+	{2,	2,	12,1,0,1,	16,1,2,1},	// LSLW.W (xxx).W
+	{1,	0,	12,1,0,1,	17,1,2,1},	// LSLW.W (xxx).L
+	{1,	1,	 9,1,0,0,	11,1,1,0},	// ROXRW.W (An)
+	{0,	1,	 9,1,0,0,	11,1,1,0},	// ROXRW.W (An)+
+	{2,	2,	10,1,0,0,	12,1,1,0},	// ROXRW.W -(An)
+	{2,	2,	10,1,0,0,	14,1,2,0},	// ROXRW.W (d16,An)
+	{4,	2,	12,1,0,0,	16,1,2,0},	// ROXRW.W (d8,An,Xn)
+	{2,	2,	10,1,0,0,	14,1,2,0},	// ROXRW.W (xxx).W
+	{1,	0,	10,1,0,0,	15,1,2,0},	// ROXRW.W (xxx).L
+	{1,	1,	 9,1,0,0,	11,1,1,0},	// ROXLW.W (An)
+	{0,	1,	 9,1,0,0,	11,1,1,0},	// ROXLW.W (An)+
+	{2,	2,	10,1,0,0,	12,1,1,0},	// ROXLW.W -(An)
+	{2,	2,	10,1,0,0,	14,1,2,0},	// ROXLW.W (d16,An)
+	{4,	2,	12,1,0,0,	16,1,2,0},	// ROXLW.W (d8,An,Xn)
+	{2,	2,	10,1,0,0,	14,1,2,0},	// ROXLW.W (xxx).W
+	{1,	0,	10,1,0,0,	15,1,2,0},	// ROXLW.W (xxx).L
+	{1,	1,	13,1,0,1,	15,1,1,1},	// RORW.W (An)
+	{0,	1,	13,1,0,1,	15,1,1,1},	// RORW.W (An)+
+	{2,	2,	14,1,0,1,	16,1,1,1},	// RORW.W -(An)
+	{2,	2,	14,1,0,1,	18,1,2,1},	// RORW.W (d16,An)
+	{4,	2,	16,1,0,1,	20,1,2,1},	// RORW.W (d8,An,Xn)
+	{2,	2,	14,1,0,1,	18,1,2,1},	// RORW.W (xxx).W
+	{1,	0,	14,1,0,1,	19,1,2,1},	// RORW.W (xxx).L
+	{1,	1,	13,1,0,1,	15,1,1,1},	// ROLW.W (An)
+	{0,	1,	13,1,0,1,	15,1,1,1},	// ROLW.W (An)+
+	{2,	2,	14,1,0,1,	16,1,1,1},	// ROLW.W -(An)
+	{2,	2,	14,1,0,1,	18,1,2,1},	// ROLW.W (d16,An)
+	{4,	2,	16,1,0,1,	20,1,2,1},	// ROLW.W (d8,An,Xn)
+	{2,	2,	14,1,0,1,	18,1,2,1},	// ROLW.W (xxx).W
+	{1,	0,	14,1,0,1,	19,1,2,1},	// ROLW.W (xxx).L
 	{},	// BFTST.L #<data>.W,Dn
 	{},	// BFTST.L #<data>.W,(An)
 	{},	// BFTST.L #<data>.W,(d16,An)
