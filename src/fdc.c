@@ -1956,12 +1956,12 @@ static void FDC_WriteTrackRegister ( void )
 	LOG_TRACE(TRACE_FDC, "fdc write 8604 track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		IoMem_ReadByte(0xff8605) , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
-	/* If fdc is busy, Track Register can't be modified */
+	/* [NP] Contrary to what is written in the WD1772 doc, Track Register can be changed */
+	/* while the fdc is busy */
 	if ( FDC.STR & FDC_STR_BIT_BUSY )
 	{
-		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, track=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, track=0x%x may be ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		return;
 	}
 
 	FDC.TR = IoMem_ReadByte(0xff8605);
@@ -1981,12 +1981,13 @@ static void FDC_WriteSectorRegister ( void )
 	LOG_TRACE(TRACE_FDC, "fdc write 8604 sector=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		IoMem_ReadByte(0xff8605) , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
-	/* If fdc is busy, Sector Register can't be modified */
+	/* [NP] Contrary to what is written in the WD1772 doc, Sector Register can be changed */
+	/* while the fdc is busy (but it will have no effect once the sector's header is found) */
+	/* (fix Delirious Demo IV's loader, which is bugged and set SR after starting the Read Sector command */
 	if ( FDC.STR & FDC_STR_BIT_BUSY )
 	{
-		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, sector=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, sector=0x%x may be ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		return;
 	}
 
 	FDC.SR = IoMem_ReadByte(0xff8605);
