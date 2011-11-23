@@ -12,6 +12,8 @@ Emulation:
 - More accurate microwire clock emulation
 - SCSI class 1 (ICD) command support for drives > 1 GB
 - Improved color conversion table so that colors are a little bit brighter
+- Improve shifter (add another method to do 4 pixel hardware scrolling,
+    better emulation for 0 byte blank line)
 
 Emulator:
 - Switch to ST mode when using TOS <= 1.04
