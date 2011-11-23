@@ -39,5 +39,6 @@ extern void VDI_Info(Uint32 bShowOpcodes);
 extern bool VDI_AES_Entry(void);
 extern void VDI_LineA(Uint32 LineABase, Uint32 FontBase);
 extern void VDI_Complete(void);
+extern void VDI_Reset(void);
 
 #endif  /* HATARI_VDI_H */

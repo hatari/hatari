@@ -155,6 +155,16 @@ static void VDI_FixDesktopInf(void);
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Called to reset VDI variables on reset.
+ */
+void VDI_Reset(void)
+{
+	/* no VDI calls in progress */
+	VDI_OldPC = 0;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Returns given value after constraining it within "min" and "max" values
  * and making it evenly divisable by "align"
  */

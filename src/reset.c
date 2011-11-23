@@ -55,6 +55,7 @@ static int Reset_ST(bool bCold)
 	CycInt_Reset();               /* Reset interrupts */
 	MFP_Reset();                  /* Setup MFP chip */
 	Video_Reset();                /* Reset video */
+	VDI_Reset();                  /* Reset internal VDI variables */
 
 	GemDOS_Reset();               /* Reset GEMDOS emulation */
 	if (bCold)
