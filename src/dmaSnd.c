@@ -142,8 +142,7 @@ struct dma_s {
 	Uint16 FIFO_Pos;		/* from 0 to DMASND_FIFO_SIZE-1 */
 	Uint16 FIFO_NbBytes;		/* from 0 to DMASND_FIFO_SIZE */
 
-	Sint16 FrameMono;		/* latest values read from the FIFO */
-	Sint16 FrameLeft;
+	Sint16 FrameLeft;		/* latest values read from the FIFO */
 	Sint16 FrameRight;
 };
 
@@ -253,7 +252,6 @@ void DmaSnd_Reset(bool bCold)
 
 	dma.FIFO_Pos = 0;
 	dma.FIFO_NbBytes = 0;
-	dma.FrameMono = 0;
 	dma.FrameLeft = 0;
 	dma.FrameRight = 0;
 
@@ -498,11 +496,14 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			switch (microwire.mixing) {
 				case 1:
 					/* YM2149 */
+					MixBuffer[nBufIdx][1]  = MixBuffer[nBufIdx][0] + dma.FrameRight * -((256*3/4)/4)/4;	
+					MixBuffer[nBufIdx][0] += dma.FrameLeft * -((256*3/4)/4)/4;	
 					break;
 				default:
 					/* YM2149 - 12dB */
 					MixBuffer[nBufIdx][0] /= 4;
-					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][0];	
+					MixBuffer[nBufIdx][1]  = MixBuffer[nBufIdx][0] + dma.FrameRight * -((256*3/4)/4)/4;	
+					MixBuffer[nBufIdx][0] += dma.FrameLeft * -((256*3/4)/4)/4;	
 					break;
 			}
 		}
@@ -528,8 +529,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			if ( DmaInitSample )
 			{
 				MonoByte = DmaSnd_FIFO_PullByte ();
-				dma.FrameMono  = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
-				/* No-Click */   DmaSnd_LowPassFilterRight( (Sint16)MonoByte );
+				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
+				dma.FrameRight = DmaSnd_LowPassFilterRight( (Sint16)MonoByte );
 				DmaInitSample = false;
 			}
 
@@ -538,16 +539,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			switch (microwire.mixing) {
 				case 1:
 					/* DMA and YM2149 mixing */
-					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameMono * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameLeft * -((256*3/4)/4)/4;
 					break;
 				case 2:
 					/* DMA sound only */
-					MixBuffer[nBufIdx][0] = dma.FrameMono * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
 					break;
 				default:
 					/* DMA and (YM2149 - 12dB) mixing */
 					/* instead of 16462 (-12dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = (dma.FrameMono * -((256*3/4)/4)/4) +
+					MixBuffer[nBufIdx][0] = (dma.FrameLeft * -((256*3/4)/4)/4) +
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					break;
 			}
@@ -560,8 +561,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			while ( n > 0 )						/* pull as many bytes from the FIFO as needed */
 			{
 				MonoByte = DmaSnd_FIFO_PullByte ();
-				dma.FrameMono  = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
-				/* No-Click */   DmaSnd_LowPassFilterRight( (Sint16)MonoByte );
+				dma.FrameLeft  = DmaSnd_LowPassFilterLeft( (Sint16)MonoByte );
+				dma.FrameRight = DmaSnd_LowPassFilterRight( (Sint16)MonoByte );
 				n--;
 			}
 			frameCounter_float &= 0xffffffff;			/* only keep the fractional part */
@@ -638,8 +639,8 @@ static void DmaSnd_Apply_LMC(int nMixBufIdx, int nSamplesToGenerate)
 	/* Apply LMC1992 sound modifications (Left, Right and Master Volume) */
 	for (i = 0; i < nSamplesToGenerate; i++) {
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		MixBuffer[nBufIdx][0] = DmaSnd_IIRfilterL(MixBuffer[nBufIdx][0]);
-		MixBuffer[nBufIdx][1] = DmaSnd_IIRfilterR(MixBuffer[nBufIdx][1]);
+		MixBuffer[nBufIdx][0] = DmaSnd_IIRfilterL( Subsonic_IIR_HPF_Left(MixBuffer[nBufIdx][0]) );
+		MixBuffer[nBufIdx][1] = DmaSnd_IIRfilterR( Subsonic_IIR_HPF_Right(MixBuffer[nBufIdx][1]) );
  	}
 }
 

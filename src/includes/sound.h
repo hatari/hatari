@@ -58,6 +58,8 @@ extern bool Sound_BeginRecording(char *pszCaptureFileName);
 extern void Sound_EndRecording(void);
 extern bool Sound_AreWeRecording(void);
 extern void Sound_SetYmVolumeMixing(void);
+extern ymsample Subsonic_IIR_HPF_Left(ymsample x0);
+extern ymsample Subsonic_IIR_HPF_Right(ymsample x0);
 
 
 #endif  /* HATARI_SOUND_H */

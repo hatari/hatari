@@ -66,6 +66,7 @@
 /* 2008/10/26	[NP]	Correctly save/restore all necessary variables in		*/
 /*			Sound_MemorySnapShot_Capture.					*/
 /* 2008/11/23	[NP]	Clean source, remove old sound core.				*/
+/* 2011/11/03	[DS]	Stereo DC filtering which accounts for DMA sound.               */
 
 
 
@@ -191,15 +192,10 @@ static yms16 *ymout5 = (yms16 *)ymout5_u16;
 
 
 /*--------------------------------------------------------------*/
-/* Variables for the DC adjuster / Low Pass Filter		*/
+/* Variables for the Low Pass Filter				*/
 /*--------------------------------------------------------------*/
-#define DC_ADJUST_BUFFERLEN		512		/* must be a power of 2 */
 
-static ymsample	dc_buffer[DC_ADJUST_BUFFERLEN];
-static int	dc_pos;
-static int	dc_sum;
 static ymsample	m_lowPassFilter[2];
-
 
 
 /*--------------------------------------------------------------*/
@@ -250,9 +246,6 @@ bool		Sound_BufferIndexNeedReset = false;
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static void	DcAdjuster_Reset	(void);
-static void	DcAdjuster_AddSample	(ymsample sample);
-static ymsample	DcAdjuster_GetDcLevel	(void);
 static void	LowPassFilter_Reset	(void);
 static ymsample	LowPassFilter		(ymsample in);
 
@@ -284,31 +277,32 @@ static void	Sound_GenerateSamples(int SamplesToGenerate);
 /* DC Adjuster / Low Pass Filter routines.			*/
 /*--------------------------------------------------------------*/
 
-static void	DcAdjuster_Reset(void)
+/* 6dB/octave first order HPF fc = (1.0-0.998)*44100/(2.0*pi)	*/
+/* Z pole = 0.99804 --> FS = 44100 Hz : fc=13.7 Hz (11 Hz meas) */
+/* a = (int32_t)(32768.0*(1.0 - pole)) :       a = 64 !!!	*/
+/* Input range: -32768 to 32767  Maximum step: +65536 or -65472	*/
+
+ymsample	Subsonic_IIR_HPF_Left(ymsample x0)
 {
-	int	i;
+	static	yms32	x1 = 0, y1 = 0, y0 = 0;
 
-	for (i=0 ; i<DC_ADJUST_BUFFERLEN ; i++)
-		dc_buffer[i] = 0;
+	y1 += ((x0 - x1)<<15) - (y0<<6);  /*  64*y0  */
+	y0 = y1>>15;
+	x1 = x0;
 
-	dc_pos = 0;
-	dc_sum = 0;
+	return y0;
 }
 
 
-static void	DcAdjuster_AddSample(ymsample sample)
+ymsample	Subsonic_IIR_HPF_Right(ymsample x0)
 {
-	dc_sum -= dc_buffer[dc_pos];
-	dc_sum += sample;
+	static	yms32	x1 = 0, y1 = 0, y0 = 0;
 
-	dc_buffer[dc_pos] = sample;
-	dc_pos = (dc_pos+1)&(DC_ADJUST_BUFFERLEN-1);
-}
+	y1 += ((x0 - x1)<<15) - (y0<<6);  /*  64*y0  */
+	y0 = y1>>15;
+	x1 = x0;
 
-
-static ymsample	DcAdjuster_GetDcLevel(void)
-{
-	return dc_sum / DC_ADJUST_BUFFERLEN;
+	return y0;
 }
 
 
@@ -613,7 +607,6 @@ static void	Ym2149_Reset(void)
 	envShape = 0;
 	envPos = 0;
 
-	DcAdjuster_Reset ();
 	LowPassFilter_Reset ();
 }
 
@@ -844,9 +837,6 @@ static ymsample	YM2149_NextSample(void)
 	if ( envPos >= (3*32) << 24 )			/* blocks 0, 1 and 2 were used (envPos 0 to 95) */
 		envPos -= (2*32) << 24;			/* replay/loop blocks 1 and 2 (envPos 32 to 95) */
 
-	DcAdjuster_AddSample(sample);			/* Calculate DC level */
-	sample = sample - DcAdjuster_GetDcLevel();	/* normalize sound level */
-
 	/* Apply low pass filter ? */
 	if ( UseLowPassFilter )
 	{
@@ -907,9 +897,6 @@ static ymsample	YM2149_NextSample(void)
 	envPos += envStep;
 	if ( envPos >= (3*32) << 24 )			/* blocks 0, 1 and 2 were used (envPos 0 to 95) */
 		envPos -= (2*32) << 24;			/* replay/loop blocks 1 and 2 (envPos 32 to 95) */
-
-	DcAdjuster_AddSample(sample);			/* Calculate DC level */
-	sample = sample - DcAdjuster_GetDcLevel();	/* normalize sound level */
 
 	/* Apply low pass filter ? */
 	if ( UseLowPassFilter )
@@ -1250,7 +1237,7 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 		for (i = 0; i < SamplesToGenerate; i++)
 		{
 			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
+			MixBuffer[idx][0] = MixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample() );
 		}
  		/* If Falcon emulation, crossbar does the job */
  		Crossbar_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
@@ -1262,7 +1249,7 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
 			MixBuffer[idx][0] = MixBuffer[idx][1] = (YM2149_NextSample() >> 1);
 		}
- 		/* If Ste or TT emulation, DmaSnd does the job */
+ 		/* If Ste or TT emulation, DmaSnd does mixing and filtering */
  		DmaSnd_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_ST)
@@ -1270,10 +1257,8 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 		for (i = 0; i < SamplesToGenerate; i++)
 		{
 			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
+			MixBuffer[idx][0] = MixBuffer[idx][1] = Subsonic_IIR_HPF_Left( YM2149_NextSample() );
 		}
-		/* If ST emulation, DmaSnd doesn't do the job
-		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate); */
  	}
 
 	ActiveSndBufIdx = (ActiveSndBufIdx + SamplesToGenerate) % MIXBUFFER_SIZE;
