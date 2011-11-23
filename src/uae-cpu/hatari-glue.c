@@ -175,7 +175,7 @@ unsigned long OpCode_VDI(uae_u32 opcode)
 	Uint32 pc = M68000_GetPC();
 
 	/* this is valid only after VDI trap, called from cartridge code */
-	if (VDI_OldPC && pc >= 0xfa000 && pc < 0xfc0000)
+	if (VDI_OldPC && pc >= 0xfa0000 && pc < 0xfc0000)
 	{
 		VDI_Complete();
 
