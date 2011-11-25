@@ -876,17 +876,17 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{10,	0,	20,1,0,1,	24,1,2,1},	// TAS.B (d8,An,Xn)
 	{8,	0,	18,1,0,1,	22,1,2,1},	// TAS.B (xxx).W
 	{10,	0,	20,1,0,1,	24,1,2,1},	// TAS.B (xxx).L
-	{},	// MULL.L #<data>.W,Dn
-	{},	// MULL.L #<data>.W,(An)
-	{},	// MULL.L #<data>.W,(An)+
-	{},	// MULL.L #<data>.W,-(An)
-	{},	// MULL.L #<data>.W,(d16,An)
-	{},	// MULL.L #<data>.W,(d8,An,Xn)
-	{},	// MULL.L #<data>.W,(xxx).W
-	{},	// MULL.L #<data>.W,(xxx).L
-	{},	// MULL.L #<data>.W,(d16,PC)
-	{},	// MULL.L #<data>.W,(d8,PC,Xn)
-	{},	// MULL.L #<data>.W,#<data>.L
+	{8,	0,	48,0,0,0,	52,0,2,0},	// MULL.L #<data>.W,Dn		(Max Value)
+	{3,	0,	54,1,0,0,	59,1,2,0},	// MULL.L #<data>.W,(An)		(Max Value)
+	{6,	1,	57,1,0,0,	61,1,2,0},	// MULL.L #<data>.W,(An)+		(Max Value)
+	{4,	0,	54,1,0,0,	59,1,2,0},	// MULL.L #<data>.W,-(An)		(Max Value)
+	{6,	0,	56,1,0,0,	64,1,3,0},	// MULL.L #<data>.W,(d16,An)		(Max Value)
+	{10,	2,	60,1,0,0,	66,1,3,0},	// MULL.L #<data>.W,(d8,An,Xn)		(Max Value)
+	{8,	2,	58,1,0,0,	64,1,3,0},	// MULL.L #<data>.W,(xxx).W		(Max Value)
+	{7,	0,	58,1,0,0,	65,1,3,0},	// MULL.L #<data>.W,(xxx).L		(Max Value)
+	{6,	0,	56,1,0,0,	64,1,3,0},	// MULL.L #<data>.W,(d16,PC)		(Max Value)
+	{10,	2,	60,1,0,0,	66,1,3,0},	// MULL.L #<data>.W,(d8,PC,Xn)		(Max Value)
+	{10,	0,	50,0,0,0,	56,0,3,0},	// MULL.L #<data>.W,#<data>.L		(Max Value)
 	{},	// DIVL.L #<data>.W,Dn
 	{},	// DIVL.L #<data>.W,(An)
 	{},	// DIVL.L #<data>.W,(An)+
@@ -1269,17 +1269,17 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	12,1,0,0,	16,1,2,0},	// OR.L (d16,PC),Dn
 	{4,	2,	14,1,0,0,	18,1,2,0},	// OR.L (d8,PC,Xn),Dn
 	{4,	0,	 6,0,0,0,	10,0,2,0},	// OR.L #<data>.L,Dn
-	{},	// DIVU.W Dn,Dn
-	{},	// DIVU.W (An),Dn
-	{},	// DIVU.W (An)+,Dn
-	{},	// DIVU.W -(An),Dn
-	{},	// DIVU.W (d16,An),Dn
-	{},	// DIVU.W (d8,An,Xn),Dn
-	{},	// DIVU.W (xxx).W,Dn
-	{},	// DIVU.W (xxx).L,Dn
-	{},	// DIVU.W (d16,PC),Dn
-	{},	// DIVU.W (d8,PC,Xn),Dn
-	{},	// DIVU.W #<data>.W,Dn
+	{2,	0,	44,0,0,0,	46,0,1,0},	// DIVU.W Dn,Dn		(Max Value)
+	{1,	1,	49,1,0,0,	51,1,1,0},	// DIVU.W (An),Dn		(Max Value)
+	{0,	1,	49,1,0,0,	51,1,1,0},	// DIVU.W (An)+,Dn		(Max Value)
+	{2,	2,	50,1,0,0,	52,1,1,0},	// DIVU.W -(An),Dn		(Max Value)
+	{2,	2,	50,1,0,0,	54,1,2,0},	// DIVU.W (d16,An),Dn		(Max Value)
+	{4,	2,	52,1,0,0,	56,1,2,0},	// DIVU.W (d8,An,Xn),Dn		(Max Value)
+	{2,	2,	50,1,0,0,	54,1,2,0},	// DIVU.W (xxx).W,Dn		(Max Value)
+	{1,	0,	50,1,0,0,	55,1,2,0},	// DIVU.W (xxx).L,Dn		(Max Value)
+	{2,	2,	50,1,0,0,	54,1,2,0},	// DIVU.W (d16,PC),Dn		(Max Value)
+	{4,	2,	52,1,0,0,	56,1,2,0},	// DIVU.W (d8,PC,Xn),Dn		(Max Value)
+	{2,	0,	46,0,0,0,	50,0,2,0},	// DIVU.W #<data>.W,Dn		(Max Value)
 	{0,	0,	 4,0,0,0,	 6,0,1,0},	// SBCD.B Dn,Dn
 	{2,	1,	19,2,0,1,	22,2,1,1},	// SBCD.B -(An),-(An)
 	{1,	2,	10,1,0,1,	13,1,1,1},	// OR.B Dn,(An)
@@ -1307,17 +1307,17 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	3,	21,1,0,1,	26,1,2,1},	// OR.L Dn,(d8,An,Xn)
 	{2,	3,	19,1,0,1,	24,1,2,1},	// OR.L Dn,(xxx).W
 	{1,	1,	19,1,0,1,	25,1,2,1},	// OR.L Dn,(xxx).L
-	{},	// DIVS.W Dn,Dn
-	{},	// DIVS.W (An),Dn
-	{},	// DIVS.W (An)+,Dn
-	{},	// DIVS.W -(An),Dn
-	{},	// DIVS.W (d16,An),Dn
-	{},	// DIVS.W (d8,An,Xn),Dn
-	{},	// DIVS.W (xxx).W,Dn
-	{},	// DIVS.W (xxx).L,Dn
-	{},	// DIVS.W (d16,PC),Dn
-	{},	// DIVS.W (d8,PC,Xn),Dn
-	{},	// DIVS.W #<data>.W,Dn
+	{2,	0,	56,0,0,0,	58,0,1,0},	// DIVS.W Dn,Dn		(Max Value)
+	{1,	1,	61,1,0,0,	63,1,1,0},	// DIVS.W (An),Dn		(Max Value)
+	{0,	1,	61,1,0,0,	63,1,1,0},	// DIVS.W (An)+,Dn		(Max Value)
+	{2,	2,	62,1,0,0,	64,1,1,0},	// DIVS.W -(An),Dn		(Max Value)
+	{2,	2,	62,1,0,0,	66,1,2,0},	// DIVS.W (d16,An),Dn		(Max Value)
+	{4,	2,	64,1,0,0,	68,1,2,0},	// DIVS.W (d8,An,Xn),Dn		(Max Value)
+	{2,	2,	62,1,0,0,	66,1,2,0},	// DIVS.W (xxx).W,Dn		(Max Value)
+	{1,	0,	62,1,0,0,	67,1,2,0},	// DIVS.W (xxx).L,Dn		(Max Value)
+	{2,	2,	62,1,0,0,	66,1,2,0},	// DIVS.W (d16,PC),Dn		(Max Value)
+	{4,	2,	64,1,0,0,	68,1,2,0},	// DIVS.W (d8,PC,Xn),Dn		(Max Value)
+	{2,	0,	58,0,0,0,	62,0,2,0},	// DIVS.W #<data>.W,Dn		(Max Value)
 	{2,	0,	 2,0,0,0,	 4,0,1,0},	// SUB.B Dn,Dn
 	{1,	1,	 7,1,0,0,	 9,1,1,0},	// SUB.B (An),Dn
 	{0,	1,	 7,1,0,0,	 9,1,1,0},	// SUB.B (An)+,Dn
@@ -1523,17 +1523,17 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	12,1,0,0,	16,1,2,0},	// AND.L (d16,PC),Dn
 	{4,	2,	14,1,0,0,	18,1,2,0},	// AND.L (d8,PC,Xn),Dn
 	{4,	0,	 6,0,0,0,	10,0,2,0},	// AND.L #<data>.L,Dn
-	{},	// MULU.W Dn,Dn
-	{},	// MULU.W (An),Dn
-	{},	// MULU.W (An)+,Dn
-	{},	// MULU.W -(An),Dn
-	{},	// MULU.W (d16,An),Dn
-	{},	// MULU.W (d8,An,Xn),Dn
-	{},	// MULU.W (xxx).W,Dn
-	{},	// MULU.W (xxx).L,Dn
-	{},	// MULU.W (d16,PC),Dn
-	{},	// MULU.W (d8,PC,Xn),Dn
-	{},	// MULU.W #<data>.W,Dn
+	{2,	0,	28,0,0,0,	30,0,1,0},	// MULU.W Dn,Dn		(Max Value)
+	{3,	1,	33,1,0,0,	35,1,1,0},	// MULU.W (An),Dn		(Max Value)
+	{2,	1,	33,1,0,0,	35,1,1,0},	// MULU.W (An)+,Dn		(Max Value)
+	{4,	2,	34,1,0,0,	36,1,1,0},	// MULU.W -(An),Dn		(Max Value)
+	{4,	1,	34,1,0,0,	38,1,2,0},	// MULU.W (d16,An),Dn		(Max Value)
+	{6,	2,	36,1,0,0,	40,1,2,0},	// MULU.W (d8,An,Xn),Dn		(Max Value)
+	{4,	2,	34,1,0,0,	38,1,2,0},	// MULU.W (xxx).W,Dn		(Max Value)
+	{3,	0,	34,1,0,0,	39,1,2,0},	// MULU.W (xxx).L,Dn		(Max Value)
+	{4,	1,	34,1,0,0,	38,1,2,0},	// MULU.W (d16,PC),Dn		(Max Value)
+	{6,	2,	36,1,0,0,	40,1,2,0},	// MULU.W (d8,PC,Xn),Dn		(Max Value)
+	{4,	0,	30,0,0,0,	38,0,2,0},	// MULU.W #<data>.W,Dn		(Max Value)
 	{0,	0,	 4,0,0,0,	 6,0,1,0},	// ABCD.B Dn,Dn
 	{2,	1,	19,2,0,1,	22,2,1,1},	// ABCD.B -(An),-(An)
 	{1,	2,	10,1,0,1,	13,1,1,1},	// AND.B Dn,(An)
@@ -1560,17 +1560,17 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	3,	21,1,0,1,	26,1,2,1},	// AND.L Dn,(d8,An,Xn)
 	{2,	3,	19,1,0,1,	24,1,2,1},	// AND.L Dn,(xxx).W
 	{1,	1,	19,1,0,1,	25,1,2,1},	// AND.L Dn,(xxx).L
-	{},	// MULS.W Dn,Dn
-	{},	// MULS.W (An),Dn
-	{},	// MULS.W (An)+,Dn
-	{},	// MULS.W -(An),Dn
-	{},	// MULS.W (d16,An),Dn
-	{},	// MULS.W (d8,An,Xn),Dn
-	{},	// MULS.W (xxx).W,Dn
-	{},	// MULS.W (xxx).L,Dn
-	{},	// MULS.W (d16,PC),Dn
-	{},	// MULS.W (d8,PC,Xn),Dn
-	{},	// MULS.W #<data>.W,Dn
+	{2,	0,	28,0,0,0,	30,0,1,0},	// MULS.W Dn,Dn		(Max Value)
+	{3,	1,	33,1,0,0,	35,1,1,0},	// MULS.W (An),Dn		(Max Value)
+	{2,	1,	33,1,0,0,	35,1,1,0},	// MULS.W (An)+,Dn		(Max Value)
+	{4,	2,	34,1,0,0,	36,1,1,0},	// MULS.W -(An),Dn		(Max Value)
+	{4,	1,	34,1,0,0,	38,1,2,0},	// MULS.W (d16,An),Dn		(Max Value)
+	{6,	2,	36,1,0,0,	40,1,2,0},	// MULS.W (d8,An,Xn),Dn		(Max Value)
+	{4,	2,	34,1,0,0,	38,1,2,0},	// MULS.W (xxx).W,Dn		(Max Value)
+	{3,	0,	34,1,0,0,	39,1,2,0},	// MULS.W (xxx).L,Dn		(Max Value)
+	{4,	1,	34,1,0,0,	38,1,2,0},	// MULS.W (d16,PC),Dn		(Max Value)
+	{6,	2,	36,1,0,0,	40,1,2,0},	// MULS.W (d8,PC,Xn),Dn		(Max Value)
+	{4,	0,	30,0,0,0,	38,0,2,0},	// MULS.W #<data>.W,Dn		(Max Value)
 	{2,	0,	 2,0,0,0,	 4,0,1,0},	// ADD.B Dn,Dn
 	{1,	1,	 7,1,0,0,	 9,1,1,0},	// ADD.B (An),Dn
 	{0,	1,	 7,1,0,0,	 9,1,1,0},	// ADD.B (An)+,Dn
