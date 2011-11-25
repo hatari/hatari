@@ -44,15 +44,15 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{8,	3,	25,1,0,1,	32,1,3,1},	// ORI.L #<data>.L,(d8,An,Xn)
 	{6,	3,	23,1,0,1,	30,1,3,1},	// ORI.L #<data>.L,(xxx).W
 	{5,	1,	23,1,0,1,	31,1,3,1},	// ORI.L #<data>.L,(xxx).L
-	{},	// CHK2.B #<data>.W,(An)
-	{},	// CHK2.B #<data>.W,(d16,An)
-	{},	// CHK2.B #<data>.W,(d8,An,Xn)
-	{},	// CHK2.B #<data>.W,(xxx).W
-	{},	// CHK2.B #<data>.W,(xxx).L
-	{},	// CHK2.B #<data>.W,(d16,PC)
-	{},	// CHK2.B #<data>.W,(d8,PC,Xn)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.B #<data>.W,(An)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.B #<data>.W,(d16,An)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.B #<data>.W,(d8,An,Xn)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.B #<data>.W,(xxx).W	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.B #<data>.W,(xxx).L	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.B #<data>.W,(d16,PC)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.B #<data>.W,(d8,PC,Xn)	(See CHK2 table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// BTST.L Dn,Dn
-	{},	// MVPMR.W (d16,An),Dn
+	{2,	0,	14,2,0,0,	16,2,1,0},	// MVPMR.W (d16,An),Dn
 	{1,	1,	 9,1,0,0,	11,1,1,0},	// BTST.B Dn,(An)
 	{0,	1,	 9,1,0,0,	11,1,1,0},	// BTST.B Dn,(An)+
 	{2,	2,	10,1,0,0,	12,1,1,0},	// BTST.B Dn,-(An)
@@ -64,7 +64,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	2,	12,1,0,0,	16,1,2,0},	// BTST.B Dn,(d8,PC,Xn)
 	{2,	0,	 6,0,0,0,	10,0,2,0},	// BTST.B Dn,#<data>.B
 	{6,	0,	 6,0,0,0,	 8,0,1,0},	// BCHG.L Dn,Dn
-	{},	// MVPMR.L (d16,An),Dn
+	{2,	0,	38,4,0,0,	40,4,1,0},	// MVPMR.L (d16,An),Dn
 	{1,	1,	13,1,0,1,	15,1,1,1},	// BCHG.B Dn,(An)
 	{0,	1,	13,1,0,1,	15,1,1,1},	// BCHG.B Dn,(An)+
 	{2,	2,	14,1,0,1,	16,1,1,1},	// BCHG.B Dn,-(An)
@@ -75,7 +75,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	14,1,0,1,	18,1,2,1},	// BCHG.B Dn,(d16,PC)
 	{4,	2,	16,1,0,1,	20,1,2,1},	// BCHG.B Dn,(d8,PC,Xn)
 	{6,	0,	 6,0,0,0,	 8,0,1,0},	// BCLR.L Dn,Dn
-	{},	// MVPRM.W Dn,(d16,An)
+	{4,	0,	14,0,0,2,	16,0,1,2},	// MVPRM.W Dn,(d16,An)
 	{1,	1,	13,1,0,1,	15,1,1,1},	// BCLR.B Dn,(An)
 	{0,	1,	13,1,0,1,	15,1,1,1},	// BCLR.B Dn,(An)+
 	{2,	2,	14,1,0,1,	16,1,1,1},	// BCLR.B Dn,-(An)
@@ -86,7 +86,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	14,1,0,1,	18,1,2,1},	// BCLR.B Dn,(d16,PC)
 	{4,	2,	16,1,0,1,	20,1,2,1},	// BCLR.B Dn,(d8,PC,Xn)
 	{6,	0,	 6,0,0,0,	 8,0,1,0},	// BSET.L Dn,Dn
-	{},	// MVPRM.L Dn,(d16,An)
+	{4,	0,	38,0,0,4,	40,0,1,4},	// MVPRM.L Dn,(d16,An)
 	{1,	1,	13,1,0,1,	15,1,1,1},	// BSET.B Dn,(An)
 	{0,	1,	13,1,0,1,	15,1,1,1},	// BSET.B Dn,(An)+
 	{2,	2,	14,1,0,1,	16,1,1,1},	// BSET.B Dn,-(An)
@@ -122,13 +122,13 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{8,	3,	25,1,0,1,	32,1,3,1},	// ANDI.L #<data>.L,(d8,An,Xn)
 	{6,	3,	23,1,0,1,	30,1,3,1},	// ANDI.L #<data>.L,(xxx).W
 	{5,	1,	23,1,0,1,	31,1,3,1},	// ANDI.L #<data>.L,(xxx).L
-	{},	// CHK2.W #<data>.W,(An)
-	{},	// CHK2.W #<data>.W,(d16,An)
-	{},	// CHK2.W #<data>.W,(d8,An,Xn)
-	{},	// CHK2.W #<data>.W,(xxx).W
-	{},	// CHK2.W #<data>.W,(xxx).L
-	{},	// CHK2.W #<data>.W,(d16,PC)
-	{},	// CHK2.W #<data>.W,(d8,PC,Xn)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.W #<data>.W,(An)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.W #<data>.W,(d16,An)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.W #<data>.W,(d8,An,Xn)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.W #<data>.W,(xxx).W	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.W #<data>.W,(xxx).L	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.W #<data>.W,(d16,PC)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.W #<data>.W,(d8,PC,Xn)	(See CHK2 table below)
 	{6,	0,	 4,0,0,0,	 8,0,2,0},	// SUBI.B #<data>.W,Dn
 	{1,	2,	10,1,0,1,	16,1,2,1},	// SUBI.B #<data>.W,(An)
 	{2,	2,	12,1,0,1,	17,1,2,1},	// SUBI.B #<data>.W,(An)+
@@ -153,13 +153,13 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{8,	3,	25,1,0,1,	32,1,3,1},	// SUBI.L #<data>.L,(d8,An,Xn)
 	{6,	3,	23,1,0,1,	30,1,3,1},	// SUBI.L #<data>.L,(xxx).W
 	{5,	1,	23,1,0,1,	31,1,3,1},	// SUBI.L #<data>.L,(xxx).L
-	{},	// CHK2.L #<data>.W,(An)
-	{},	// CHK2.L #<data>.W,(d16,An)
-	{},	// CHK2.L #<data>.W,(d8,An,Xn)
-	{},	// CHK2.L #<data>.W,(xxx).W
-	{},	// CHK2.L #<data>.W,(xxx).L
-	{},	// CHK2.L #<data>.W,(d16,PC)
-	{},	// CHK2.L #<data>.W,(d8,PC,Xn)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.L #<data>.W,(An)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.L #<data>.W,(d16,An)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.L #<data>.W,(d8,An,Xn)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.L #<data>.W,(xxx).W	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.L #<data>.W,(xxx).L	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.L #<data>.W,(d16,PC)	(See CHK2 table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK2.L #<data>.W,(d8,PC,Xn)	(See CHK2 table below)
 	{6,	0,	 4,0,0,0,	 8,0,2,0},	// ADDI.B #<data>.W,Dn
 	{1,	2,	10,1,0,1,	16,1,2,1},	// ADDI.B #<data>.W,(An)
 	{2,	2,	12,1,0,1,	17,1,2,1},	// ADDI.B #<data>.W,(An)+
@@ -184,15 +184,15 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{8,	3,	25,1,0,1,	32,1,3,1},	// ADDI.L #<data>.L,(d8,An,Xn)
 	{6,	3,	23,1,0,1,	30,1,3,1},	// ADDI.L #<data>.L,(xxx).W
 	{5,	1,	23,1,0,1,	31,1,3,1},	// ADDI.L #<data>.L,(xxx).L
-	{},	// RTM.L Dn
-	{},	// RTM.L An
-	{},	// CALLM.L (An)
-	{},	// CALLM.L (d16,An)
-	{},	// CALLM.L (d8,An,Xn)
-	{},	// CALLM.L (xxx).W
-	{},	// CALLM.L (xxx).L
-	{},	// CALLM.L (d16,PC)
-	{},	// CALLM.L (d8,PC,Xn)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// RTM.L Dn			/* Not present in 68030 */
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// RTM.L An			/* Not present in 68030 */
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CALLM.L (An)			/* Not present in 68030 */
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CALLM.L (d16,An)		/* Not present in 68030 */
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CALLM.L (d8,An,Xn)		/* Not present in 68030 */
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CALLM.L (xxx).W		/* Not present in 68030 */
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CALLM.L (xxx).L		/* Not present in 68030 */
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CALLM.L (d16,PC)		/* Not present in 68030 */
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CALLM.L (d8,PC,Xn)		/* Not present in 68030 */
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// BTST.L #<data>.W,Dn
 	{1,	1,	 9,1,0,0,	14,1,2,0},	// BTST.B #<data>.W,(An)
 	{2,	1,	11,1,0,0,	15,1,2,0},	// BTST.B #<data>.W,(An)+
@@ -259,13 +259,13 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{8,	3,	25,1,0,1,	32,1,3,1},	// EORI.L #<data>.L,(d8,An,Xn)
 	{6,	3,	23,1,0,1,	30,1,3,1},	// EORI.L #<data>.L,(xxx).W
 	{5,	1,	23,1,0,1,	31,1,3,1},	// EORI.L #<data>.L,(xxx).L
-	{},	// CAS.B #<data>.W,(An)
-	{},	// CAS.B #<data>.W,(An)+
-	{},	// CAS.B #<data>.W,-(An)
-	{},	// CAS.B #<data>.W,(d16,An)
-	{},	// CAS.B #<data>.W,(d8,An,Xn)
-	{},	// CAS.B #<data>.W,(xxx).W
-	{},	// CAS.B #<data>.W,(xxx).L
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.B #<data>.W,(An)		(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.B #<data>.W,(An)+	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.B #<data>.W,-(An)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.B #<data>.W,(d16,An)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.B #<data>.W,(d8,An,Xn)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.B #<data>.W,(xxx).W	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.B #<data>.W,(xxx).L	(See CAS table below)
 	{6,	0,	 4,0,0,0,	 8,0,2,0},	// CMPI.B #<data>.B,Dn
 	{1,	1,	 7,1,0,0,	12,1,2,0},	// CMPI.B #<data>.W,(An)
 	{2,	1,	 9,1,0,0,	13,1,2,0},	// CMPI.B #<data>.W,(An)+
@@ -296,14 +296,14 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{5,	0,	16,1,0,0,	23,1,3,0},	// CMPI.L #<data>.L,(xxx).L
 	{4,	0,	14,1,0,0,	22,1,3,0},	// CMPI.L #<data>.L,(d16,PC)
 	{8,	2,	18,1,0,0,	24,1,3,0},	// CMPI.L #<data>.L,(d8,PC,Xn)
-	{},	// CAS.W #<data>.W,(An)
-	{},	// CAS.W #<data>.W,(An)+
-	{},	// CAS.W #<data>.W,-(An)
-	{},	// CAS.W #<data>.W,(d16,An)
-	{},	// CAS.W #<data>.W,(d8,An,Xn)
-	{},	// CAS.W #<data>.W,(xxx).W
-	{},	// CAS.W #<data>.W,(xxx).L
-	{},	// CAS2.W #<data>.L
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.W #<data>.W,(An)		(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.W #<data>.W,(An)+	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.W #<data>.W,-(An)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.W #<data>.W,(d16,An)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.W #<data>.W,(d8,An,Xn)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.W #<data>.W,(xxx).W	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.W #<data>.W,(xxx).L	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS2.W #<data>.L		(See CAS2 table below)
 	{},	// MOVES.B #<data>.W,(An)
 	{},	// MOVES.B #<data>.W,(An)+
 	{},	// MOVES.B #<data>.W,-(An)
@@ -325,14 +325,14 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{},	// MOVES.L #<data>.W,(d8,An,Xn)
 	{},	// MOVES.L #<data>.W,(xxx).W
 	{},	// MOVES.L #<data>.W,(xxx).L
-	{},	// CAS.L #<data>.W,(An)
-	{},	// CAS.L #<data>.W,(An)+
-	{},	// CAS.L #<data>.W,-(An)
-	{},	// CAS.L #<data>.W,(d16,An)
-	{},	// CAS.L #<data>.W,(d8,An,Xn)
-	{},	// CAS.L #<data>.W,(xxx).W
-	{},	// CAS.L #<data>.W,(xxx).L
-	{},	// CAS2.L #<data>.L
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.L #<data>.W,(An)		(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.L #<data>.W,(An)+	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.L #<data>.W,-(An)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.L #<data>.W,(d16,An)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.L #<data>.W,(d8,An,Xn)	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.L #<data>.W,(xxx).W	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS.L #<data>.W,(xxx).L	(See CAS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CAS2.L #<data>.L		(See CAS2 table below)
 	{2,	0,	 2,0,0,0,	 4,0,1,0},	// MOVE.B Dn,Dn
 	{1,	1,	 7,1,0,0,	 9,1,1,0},	// MOVE.B (An),Dn
 	{0,	1,	 7,1,0,0,	 9,1,1,0},	// MOVE.B (An)+,Dn
@@ -669,28 +669,28 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{6,	2,	14,1,0,1,	19,1,2,1},	// MOVE.W SR,(d8,An,Xn)
 	{4,	2,	12,1,0,1,	17,1,2,1},	// MOVE.W SR,(xxx).W
 	{3,	0,	12,1,0,1,	18,1,2,1},	// MOVE.W SR,(xxx).L
-	{},	// CHK.L Dn,Dn
-	{},	// CHK.L (An),Dn
-	{},	// CHK.L (An)+,Dn
-	{},	// CHK.L -(An),Dn
-	{},	// CHK.L (d16,An),Dn
-	{},	// CHK.L (d8,An,Xn),Dn
-	{},	// CHK.L (xxx).W,Dn
-	{},	// CHK.L (xxx).L,Dn
-	{},	// CHK.L (d16,PC),Dn
-	{},	// CHK.L (d8,PC,Xn),Dn
-	{},	// CHK.L #<data>.L,Dn
-	{},	// CHK.W Dn,Dn
-	{},	// CHK.W (An),Dn
-	{},	// CHK.W (An)+,Dn
-	{},	// CHK.W -(An),Dn
-	{},	// CHK.W (d16,An),Dn
-	{},	// CHK.W (d8,An,Xn),Dn
-	{},	// CHK.W (xxx).W,Dn
-	{},	// CHK.W (xxx).L,Dn
-	{},	// CHK.W (d16,PC),Dn
-	{},	// CHK.W (d8,PC,Xn),Dn
-	{},	// CHK.W #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L Dn,Dn		(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L (An),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L (An)+,Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L -(An),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L (d16,An),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L (d8,An,Xn),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L (xxx).W,Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L (xxx).L,Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L (d16,PC),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L (d8,PC,Xn),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.L #<data>.L,Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W Dn,Dn		(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W (An),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W (An)+,Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W -(An),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W (d16,An),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W (d8,An,Xn),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W (xxx).W,Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W (xxx).L,Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W (d16,PC),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W (d8,PC,Xn),Dn	(See CHK table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// CHK.W #<data>.W,Dn	(See CHK table below)
 	{6,	0,	 4,0,0,0,	 6,0,1,0},	// LEA.L (An),An
 	{6,	0,	 4,0,0,0,	 8,0,2,0},	// LEA.L (d16,An),An
 	{8,	0,	 6,0,0,0,	10,0,2,0},	// LEA.L (d8,An,Xn),An
@@ -801,7 +801,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	2,	16,1,0,0,	24,1,3,0},	// MOVE.W (d8,PC,Xn),SR
 	{2,	0,	10,0,0,0,	18,0,3,0},	// MOVE.W #<data>.W,SR
 	{0,	0,	 6,0,0,0,	 8,0,1,0},	// NBCD.B Dn
-	{},	// LINK.L An,#<data>.L
+	{2,	0,	12,0,0,1,	17,0,2,1},	// LINK.L An,#<data>.L
 	{},	// NBCD.B (An)
 	{},	// NBCD.B (An)+
 	{},	// NBCD.B -(An)
@@ -810,7 +810,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{},	// NBCD.B (xxx).W
 	{},	// NBCD.B (xxx).L
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// SWAP.W Dn
-	{},	// BKPTQ.L #<data>
+	{1,	0,	15,1,0,0,	15,1,0,0},	// BKPTQ.L #<data>
 	{2,	2,	12,0,0,1,	14,0,1,1},	// PEA.L (An)
 	{2,	2,	12,0,0,1,	16,0,2,1},	// PEA.L (d16,An)
 	{4,	2,	14,0,0,1,	18,0,2,1},	// PEA.L (d8,An,Xn)
@@ -915,18 +915,18 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{},	// MVMEL.L #<data>.W,(d16,PC)
 	{},	// MVMEL.L #<data>.W,(d8,PC,Xn)
 	{},	// TRAPQ.L #<data>
-	{},	// LINK.W An,#<data>.W
-	{},	// UNLK.L An
+	{0,	0,	 6,0,0,1,	 9,0,1,1},	// LINK.W An,#<data>.W
+	{0,	0,	 7,1,0,0,	 9,1,1,0},	// UNLK.L An
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// MOVE An,USP.L
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// MOVE USP.L,An
-	{0,	0,	518,0,0,0,	520,0,1,0}, // RESET.L 
+	{0,	0,	518,0,0,0,	520,0,1,0}, 	// RESET.L 
 	{0,	0,	 2,0,0,0,	 4,0,1,0},	// NOP.L 
 	{0,	0,	 8,0,0,0,	12,0,2,0},	// STOP.L #<data>.W
-	{},	// RTE.L 
-	{},	// RTD.L #<data>.W
-	{},	// RTS.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// RTE.L	(See RTE table below) 
+	{2,	0,	12,1,0,0,	18,1,2,0},	// RTD.L #<data>.W
+	{1,	0,	11,1,0,0,	17,1,2,0},	// RTS.L 
 	{},	// TRAPV.L 
-	{},	// RTR.L 
+	{1,	0,	16,2,0,0,	22,2,2,0},	// RTR.L 
 	{},	// MOVEC2.L #<data>.W
 	{},	// MOVE2C.L #<data>.W
 	{2,	0,	12,0,0,1,	19,0,2,1},	// JSR.L (An)
@@ -1908,5 +1908,131 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	1,	19,2,0,1,	22,2,1,1},	// SBCD.B -(An),-(An)
 	{0,	0,	 4,0,0,0,	 6,0,1,0},	// ABCD.B Dn,Dn
 	{2,	1,	19,2,0,1,	22,2,1,1}	// ABCD.B -(An),-(An)
+};
+
+
+/** 
+  Cycles table for CHK2.BW instruction. 
+  First column is for no exception case, 2nd column is for the exception taken case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_CHK2_BW [] = {
+	{3,	1,	25,2,0,0,	30,2,2,0}, {3,	1,	57,3,0,4,	68,3,4,4},	// CHK2.BW #<data>.W,(An)
+	{4,	0,	26,2,0,0,	31,2,2,0}, {4,	0,	58,3,0,4,	69,3,4,4},	// CHK2.BW #<data>.W,(d16,An)
+	{8,	2,	30,2,0,0,	36,2,3,0}, {8,	2,	62,3,0,4,	74,3,5,4},	// CHK2.BW #<data>.W,(d8,An,Xn)
+	{6,	2,	28,2,0,0,	32,2,2,0}, {6,	2,	60,3,0,4,	70,3,4,4},	// CHK2.BW #<data>.W,(xxx).W
+	{5,	0,	28,2,0,0,	35,2,3,0}, {5,	0,	60,3,0,4,	73,3,5,4},	// CHK2.BW #<data>.W,(xxx).L
+	{4,	0,	26,2,0,0,	31,2,2,0}, {4,	0,	58,3,0,4,	69,3,4,4},	// CHK2.BW #<data>.W,(d16,PC)
+	{8,	2,	30,2,0,0,	36,2,3,0}, {8,	2,	62,3,0,4,	74,3,5,4}	// CHK2.BW #<data>.W,(d8,PC,Xn)
+};
+
+/** 
+  Cycles table for CHK2.L instruction. 
+  First column is for no exception case, 2nd column is for the exception taken case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_CHK2_L [] = {
+	{3,	0,	34,2,0,0,	39,2,2,0}, {3,	0,	86,3,0,4,	97,3,4,4},	// CHK2.L #<data>.W,(An)
+	{6,	0,	36,2,0,0,	44,2,3,0}, {6,	0,	88,3,0,4,	102,3,5,4},	// CHK2.L #<data>.W,(d16,An)
+	{10,	2,	40,2,0,0,	46,2,3,0}, {10,	2,	92,3,0,4,	104,3,5,4},	// CHK2.L #<data>.W,(d8,An,Xn)
+	{8,	2,	38,2,0,0,	44,2,3,0}, {8,	2,	90,3,0,4,	102,3,5,4},	// CHK2.L #<data>.W,(xxx).W
+	{7,	0,	38,2,0,0,	45,2,3,0}, {7,	0,	90,3,0,4,	103,3,5,4},	// CHK2.L #<data>.W,(xxx).L
+	{6,	0,	36,2,0,0,	44,2,3,0}, {6,	0,	88,3,0,4,	102,3,5,4},	// CHK2.L #<data>.W,(d16,PC)
+	{10,	2,	40,2,0,0,	46,2,3,0}, {10,	2,	92,3,0,4,	104,3,5,4}	// CHK2.L #<data>.W,(d8,PC,Xn)
+};
+
+/** 
+  Cycles table for CHK.L instruction. 
+  First column is for no exception case, 2nd column is for the exception taken case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_CHK_L [] = {
+	{8,	0,	 8,0,0,0,	10,0,1,0},	{4,	0,	58,1,0,4,	66,1,3,4},// CHK.L Dn,Dn
+	{1,	1,	17,1,0,0,	19,1,1,0},	{1,	1,	67,2,0,4,	75,2,3,4},// CHK.L (An),Dn
+	{0,	1,	17,1,0,0,	19,1,1,0},	{0,	1,	67,2,0,4,	75,2,3,4},// CHK.L (An)+,Dn
+	{2,	2,	18,1,0,0,	20,1,1,0},	{2,	2,	68,2,0,4,	76,2,3,4},// CHK.L -(An),Dn
+	{2,	2,	18,1,0,0,	22,1,2,0},	{2,	2,	68,2,0,4,	78,2,4,4},// CHK.L (d16,An),Dn
+	{4,	2,	20,1,0,0,	24,1,2,0},	{4,	2,	70,2,0,4,	80,2,4,4},// CHK.L (d8,An,Xn),Dn
+	{2,	2,	18,1,0,0,	22,1,2,0},	{2,	2,	68,2,0,4,	78,2,4,4},// CHK.L (xxx).W,Dn
+	{1,	0,	18,1,0,0,	23,1,2,0},	{1,	0,	68,2,0,4,	79,2,4,4},// CHK.L (xxx).L,Dn
+	{2,	2,	18,1,0,0,	22,1,2,0},	{2,	2,	68,2,0,4,	78,2,4,4},// CHK.L (d16,PC),Dn
+	{4,	2,	20,1,0,0,	24,1,2,0},	{4,	2,	70,2,0,4,	80,2,4,4},// CHK.L (d8,PC,Xn),Dn
+	{4,	0,	12,0,0,0,	16,0,2,0},	{4,	0,	62,1,0,4,	72,1,4,4} // CHK.L #<data>.L,Dn
+};
+
+/** 
+  Cycles table for CHK.W  instruction. 
+  First column is for no exception case, 2nd column is for the exception taken case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_CHK_W [] = {
+	{8,	0,	 8,0,0,0,	10,0,1,0},	{4,	0,	38,1,0,4,	46,1,3,4},// CHK.W Dn,Dn
+	{1,	1,	13,1,0,0,	15,1,1,0},	{1,	1,	43,2,0,4,	51,2,3,4},// CHK.W (An),Dn
+	{0,	1,	13,1,0,0,	15,1,1,0},	{0,	1,	43,2,0,4,	51,2,3,4},// CHK.W (An)+,Dn
+	{2,	2,	14,1,0,0,	16,1,1,0},	{2,	2,	44,2,0,4,	52,2,3,4},// CHK.W -(An),Dn
+	{2,	2,	14,1,0,0,	18,1,2,0},	{2,	2,	44,2,0,4,	54,2,4,4},// CHK.W (d16,An),Dn
+	{4,	2,	16,1,0,0,	20,1,2,0},	{4,	2,	46,2,0,4,	56,2,4,4},// CHK.W (d8,An,Xn),Dn
+	{2,	2,	14,1,0,0,	18,1,2,0},	{2,	2,	44,2,0,4,	54,2,4,4},// CHK.W (xxx).W,Dn
+	{1,	0,	14,1,0,0,	19,1,2,0},	{1,	0,	44,2,0,4,	55,2,4,4},// CHK.W (xxx).L,Dn
+	{2,	2,	14,1,0,0,	18,1,2,0},	{2,	2,	44,2,0,4,	54,2,4,4},// CHK.W (d16,PC),Dn
+	{4,	2,	16,1,0,0,	20,1,2,0},	{4,	2,	46,2,0,4,	56,2,4,4},// CHK.W (d8,PC,Xn),Dn
+	{2,	0,	10,0,0,0,	14,0,2,0},	{2,	0,	40,1,0,4,	50,1,4,4} // CHK.W #<data>.W,Dn
+};
+
+
+/** 
+  Cycles table for CAS.BW  instruction. 
+  First column is for succesful compare case, 2nd column is for unsuccesful compare case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_CAS_BW [] = {
+	{4,	0,	19,1,0,1,	23,1,2,1}, {4,	0,	15,1,0,0,	19,1,2,0},	// CAS.BW #<data>.W,(An)
+	{3,	0,	21,1,0,1,	25,1,2,1}, {3,	0,	17,1,0,0,	21,1,2,0},	// CAS.BW #<data>.W,(An)+
+	{4,	0,	19,1,0,1,	23,1,2,1}, {4,	0,	15,1,0,0,	19,1,2,0},	// CAS.BW #<data>.W,-(An)
+	{6,	0,	21,1,0,1,	25,1,2,1}, {6,	0,	17,1,0,0,	21,1,2,0},	// CAS.BW #<data>.W,(d16,An)
+	{8,	0,	23,1,0,1,	29,1,3,1}, {8,	0,	19,1,0,0,	25,1,3,0},	// CAS.BW #<data>.W,(d8,An,Xn)
+	{6,	0,	21,1,0,1,	25,1,2,1}, {6,	0,	17,1,0,0,	21,1,2,0},	// CAS.BW #<data>.W,(xxx).W
+	{8,	0,	23,1,0,1,	29,1,3,1}, {8,	0,	19,1,0,0,	25,1,3,0}	// CAS.BW #<data>.W,(xxx).L
+};
+
+/** 
+  Cycles table for CAS.L  instruction. 
+  First column is for succesful compare case, 2nd column is for unsuccesful compare case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_CAS_L [] = {
+	{6,	0,	29,1,0,1,	33,1,2,1}, {6,	0,	21,1,0,0,	25,1,2,0},	// CAS.L #<data>.W,(An)
+	{5,	0,	31,1,0,1,	35,1,2,1}, {5,	0,	23,1,0,0,	27,1,2,0},	// CAS.L #<data>.W,(An)+
+	{6,	0,	29,1,0,1,	33,1,2,1}, {6,	0,	21,1,0,0,	25,1,2,0},	// CAS.L #<data>.W,-(An)
+	{8,	0,	31,1,0,1,	38,1,3,1}, {8,	0,	23,1,0,0,	30,1,3,0},	// CAS.L #<data>.W,(d16,An)
+	{10,	0,	33,1,0,1,	39,1,3,1}, {10,	0,	25,1,0,0,	31,1,3,0},	// CAS.L #<data>.W,(d8,An,Xn)
+	{8,	0,	31,1,0,1,	37,1,3,1}, {8,	0,	23,1,0,0,	29,1,3,0},	// CAS.L #<data>.W,(xxx).W
+	{10,	0,	33,1,0,1,	39,1,3,1}, {10,	0,	25,1,0,0,	31,1,3,0}	// CAS.L #<data>.W,(xxx).L
+};
+
+
+/** 
+  Cycles table for CAS2.W  instruction. 
+  First column is for succesful compare case, 2nd column is for unsuccesful compare case
+  The table indicates Maximum time.
+  */
+struct table_falcon_cycles_t table_falcon_cycles_CAS2_W [] = {
+	{2,	0,	32,2,0,2,	38,2,2,2}, {2,	0,	28,2,0,0,	32,2,2,0}	// CAS2.W #<data>.L
+};
+
+/** 
+  Cycles table for CAS2.L  instruction. 
+  First column is for succesful compare case, 2nd column is for unsuccesful compare case
+  The table indicates Maximum time.
+  */
+struct table_falcon_cycles_t table_falcon_cycles_CAS2_L [] = {
+	{2,	0,	48,2,0,2,	54,2,2,2}, {2,	0,	36,2,0,0,	40,2,2,0}	// CAS2.L #<data>.L
+};
+
+/** 
+  Cycles table for RTE  instruction. 
+  This table gives the cycles for all RTE cases. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_RTE [] = {
+	{1,	0,	26,4,0,0,	32,4,2,0},	// RTE.L (Normal four Word)
+	{1,	0,	26,4,0,0,	32,4,2,0},	// RTE.L (six Word)
+	{1,	0,	20,4,0,0,	20,4,0,0},	// RTE.L (throwaway)
+	{1,	0,	40,7,0,0,	44,7,2,0},	// RTE.L (coprocessor)
+	{1,	0,	56,10,0,0,	60,10,2,0},	// RTE.L (short fault)
+	{1,	0,	126,25,0,0,	120,25,2,0}	// RTE.L (long fault)
 };
 
