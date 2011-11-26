@@ -848,7 +848,8 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
  * compare the track number in this ID field with the current Track Register.
  * If they don't match, an error is set with the RNF bit.
  * NOTE : in the case of Hatari when using ST/MSA images, the track is always the correct one,
- * so the verify will always be good (except if no disk is inserted)
+ * so the verify will always be good (except if no disk is inserted or the physical head is
+ * not on the same track as FDC.TR)
  * This function could be improved to support other images format where logical track
  * could be different from physical track (eg Pasti)
  */
@@ -856,6 +857,21 @@ static void FDC_VerifyTrack ( void )
 {
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )		/* Set RNF bit if no disk is inserted */
 	{
+		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
+		return;
+	}
+
+	/* In the case of Hatari when using ST/MSA images, the physical track and the track register */
+	/* should always be the same. Else, it means TR was not correctly set before running the type I command */
+	if ( HeadTrack[ FDC_DRIVE ] != FDC.TR )
+	{
+		int	FrameCycles, HblCounterVideo, LineCycles;
+
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed TR=0x%x head=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			FDC.TR , HeadTrack[ FDC_DRIVE ] ,
+			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
 		return;
 	}
@@ -922,7 +938,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_RESTORE_COMPLETE:
-		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
+		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 			FDC_VerifyTrack();
 		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
@@ -985,7 +1001,7 @@ static int FDC_UpdateSeekCmd ( void )
 
 		break;
 	 case FDCEMU_RUN_SEEK_COMPLETE:
-		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
+		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 			FDC_VerifyTrack();
 		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
@@ -1033,7 +1049,7 @@ static int FDC_UpdateStepCmd ( void )
 		FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
 		break;
 	 case FDCEMU_RUN_STEP_COMPLETE:
-		if ( ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) == 0 )
+		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 			FDC_VerifyTrack();
 		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
