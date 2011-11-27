@@ -129,8 +129,11 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x00, STMemory_ReadLong(TosAddress));
 	STMemory_WriteLong(0x04, STMemory_ReadLong(TosAddress+4));
 
-	/* Fill in magic numbers, so TOS does not try to reference MMU */
-	if (ConfigureParams.System.bFastBoot
+	/* Fill in magic numbers to bypass TOS' memory tests in the case */
+	/* of EmuTOS or if more than 4 MB of ram are used */
+	/* (those tests should not be bypassed in the common STF/STE cases */
+	/* as some programs rely on the RAM content after those tests) */
+	if ((ConfigureParams.System.bFastBoot && bIsEmuTOS)
 	    || (ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS))
 	{
 		/* Write magic values to sysvars to signal valid config */
