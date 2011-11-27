@@ -876,7 +876,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{10,	0,	20,1,0,1,	24,1,2,1},	// TAS.B (d8,An,Xn)
 	{8,	0,	18,1,0,1,	22,1,2,1},	// TAS.B (xxx).W
 	{10,	0,	20,1,0,1,	24,1,2,1},	// TAS.B (xxx).L
-	{8,	0,	48,0,0,0,	52,0,2,0},	// MULL.L #<data>.W,Dn		(Max Value)
+	{8,	0,	48,0,0,0,	52,0,2,0},	// MULL.L #<data>.W,Dn			(Max Value)
 	{3,	0,	54,1,0,0,	59,1,2,0},	// MULL.L #<data>.W,(An)		(Max Value)
 	{6,	1,	57,1,0,0,	61,1,2,0},	// MULL.L #<data>.W,(An)+		(Max Value)
 	{4,	0,	54,1,0,0,	59,1,2,0},	// MULL.L #<data>.W,-(An)		(Max Value)
@@ -887,17 +887,17 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{6,	0,	56,1,0,0,	64,1,3,0},	// MULL.L #<data>.W,(d16,PC)		(Max Value)
 	{10,	2,	60,1,0,0,	66,1,3,0},	// MULL.L #<data>.W,(d8,PC,Xn)		(Max Value)
 	{10,	0,	50,0,0,0,	56,0,3,0},	// MULL.L #<data>.W,#<data>.L		(Max Value)
-	{},	// DIVL.L #<data>.W,Dn
-	{},	// DIVL.L #<data>.W,(An)
-	{},	// DIVL.L #<data>.W,(An)+
-	{},	// DIVL.L #<data>.W,-(An)
-	{},	// DIVL.L #<data>.W,(d16,An)
-	{},	// DIVL.L #<data>.W,(d8,An,Xn)
-	{},	// DIVL.L #<data>.W,(xxx).W
-	{},	// DIVL.L #<data>.W,(xxx).L
-	{},	// DIVL.L #<data>.W,(d16,PC)
-	{},	// DIVL.L #<data>.W,(d8,PC,Xn)
-	{},	// DIVL.L #<data>.W,#<data>.L
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,Dn		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,(An)		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,(An)+		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,-(An)		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,(d16,An)		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,(d8,An,Xn)		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,(xxx).W		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,(xxx).L		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,(d16,PC)		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,(d8,PC,Xn)		(See DIVL table below)(Max Value)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DIVL.L #<data>.W,#<data>.L		(See DIVL table below)(Max Value)
 	{},	// MVMEL.W #<data>.W,(An)
 	{},	// MVMEL.W #<data>.W,(An)+
 	{},	// MVMEL.W #<data>.W,(d16,An)
@@ -914,7 +914,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{},	// MVMEL.L #<data>.W,(xxx).L
 	{},	// MVMEL.L #<data>.W,(d16,PC)
 	{},	// MVMEL.L #<data>.W,(d8,PC,Xn)
-	{},	// TRAPQ.L #<data>
+	{0,	0,	28,1,0,4,	34,1,2,4},	// TRAPQ.L #<data>
 	{0,	0,	 6,0,0,1,	 9,0,1,1},	// LINK.W An,#<data>.W
 	{0,	0,	 7,1,0,0,	 9,1,1,0},	// UNLK.L An
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// MOVE An,USP.L
@@ -925,10 +925,10 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{0,	0,	 0,0,0,0,	 0,0,0,0},	// RTE.L	(See RTE table below) 
 	{2,	0,	12,1,0,0,	18,1,2,0},	// RTD.L #<data>.W
 	{1,	0,	11,1,0,0,	17,1,2,0},	// RTS.L 
-	{},	// TRAPV.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPV.L		(See TRAPV table below)
 	{1,	0,	16,2,0,0,	22,2,2,0},	// RTR.L 
-	{},	// MOVEC2.L #<data>.W
-	{},	// MOVE2C.L #<data>.W
+	{6,	0,	 6,0,0,0,	 8,0,1,0},	// MOVEC2.L #<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// MOVE2C.L #<data>.W		(See MOVEC table below)
 	{2,	0,	12,0,0,1,	19,0,2,1},	// JSR.L (An)
 	{4,	0,	14,0,0,1,	21,0,2,1},	// JSR.L (d16,An)
 	{6,	0,	16,0,0,1,	23,0,2,1},	// JSR.L (d8,An,Xn)
@@ -970,7 +970,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	3,	19,1,0,1,	24,1,2,1},	// ADDQ.L #<data>,(xxx).W
 	{1,	1,	19,1,0,1,	25,1,2,1},	// ADDQ.L #<data>,(xxx).L
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -978,9 +978,9 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{2,	0,	 2,0,0,0,	 4,0,1,0},	// SUBQ.B #<data>,Dn
 	{1,	2,	10,1,0,1,	13,1,1,1},	// SUBQ.B #<data>,(An)
 	{0,	2,	10,1,0,1,	13,1,1,1},	// SUBQ.B #<data>,(An)+
@@ -1008,7 +1008,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	3,	19,1,0,1,	24,1,2,1},	// SUBQ.L #<data>,(xxx).W
 	{1,	1,	19,1,0,1,	25,1,2,1},	// SUBQ.L #<data>,(xxx).L
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1016,11 +1016,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1028,11 +1028,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1040,11 +1040,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1052,11 +1052,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1064,11 +1064,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1076,11 +1076,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1088,11 +1088,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1100,11 +1100,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1112,11 +1112,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1124,11 +1124,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1136,11 +1136,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1148,11 +1148,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1160,11 +1160,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1172,11 +1172,11 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Scc.B Dn
-	{},	// DBcc.W Dn,#<data>.W
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// DBcc.W Dn,#<data>.W		(See DBcc table below)
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)
 	{0,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B (An)+
 	{2,	1,	 9,0,0,1,	11,0,1,1},	// Scc.B -(An)
@@ -1184,57 +1184,57 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (d8,An,Xn)
 	{2,	1,	 9,0,0,1,	13,0,2,1},	// Scc.B (xxx).W
 	{4,	1,	11,0,0,1,	15,0,2,1},	// Scc.B (xxx).L
-	{},	// TRAPcc.L #<data>.W
-	{},	// TRAPcc.L #<data>.L
-	{},	// TRAPcc.L 
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// BSR.W #<data>.W
-	{},	// BSRQ.B #<data>
-	{},	// BSR.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
-	{},	// Bcc.W #<data>.W
-	{},	// BccQ.B #<data>
-	{},	// Bcc.L #<data>.L
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.W		(See TRAPCC.W table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L #<data>.L		(See TRAPCC.L table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// TRAPcc.L 		(See TRAPCC table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{2,	0,	 8,0,0,1,	15,0,2,1},	// BSR.W #<data>.W
+	{2,	0,	 8,0,0,1,	15,0,2,1},	// BSRQ.B #<data>
+	{2,	0,	12,0,0,1,	19,0,2,1},	// BSR.L #<data>.L
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.W #<data>.W		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BccQ.B #<data>		(See Bcc table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// Bcc.L #<data>.L		(See Bcc table below)
 	{2,	0,	 2,0,0,0,	 4,0,1,0},	// MOVEQ.L #<data>,Dn
 	{2,	0,	 2,0,0,0,	 4,0,1,0},	// OR.B Dn,Dn
 	{1,	1,	 7,1,0,0,	 9,1,1,0},	// OR.B (An),Dn
@@ -1269,7 +1269,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	12,1,0,0,	16,1,2,0},	// OR.L (d16,PC),Dn
 	{4,	2,	14,1,0,0,	18,1,2,0},	// OR.L (d8,PC,Xn),Dn
 	{4,	0,	 6,0,0,0,	10,0,2,0},	// OR.L #<data>.L,Dn
-	{2,	0,	44,0,0,0,	46,0,1,0},	// DIVU.W Dn,Dn		(Max Value)
+	{2,	0,	44,0,0,0,	46,0,1,0},	// DIVU.W Dn,Dn			(Max Value)
 	{1,	1,	49,1,0,0,	51,1,1,0},	// DIVU.W (An),Dn		(Max Value)
 	{0,	1,	49,1,0,0,	51,1,1,0},	// DIVU.W (An)+,Dn		(Max Value)
 	{2,	2,	50,1,0,0,	52,1,1,0},	// DIVU.W -(An),Dn		(Max Value)
@@ -1307,7 +1307,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	3,	21,1,0,1,	26,1,2,1},	// OR.L Dn,(d8,An,Xn)
 	{2,	3,	19,1,0,1,	24,1,2,1},	// OR.L Dn,(xxx).W
 	{1,	1,	19,1,0,1,	25,1,2,1},	// OR.L Dn,(xxx).L
-	{2,	0,	56,0,0,0,	58,0,1,0},	// DIVS.W Dn,Dn		(Max Value)
+	{2,	0,	56,0,0,0,	58,0,1,0},	// DIVS.W Dn,Dn			(Max Value)
 	{1,	1,	61,1,0,0,	63,1,1,0},	// DIVS.W (An),Dn		(Max Value)
 	{0,	1,	61,1,0,0,	63,1,1,0},	// DIVS.W (An)+,Dn		(Max Value)
 	{2,	2,	62,1,0,0,	64,1,1,0},	// DIVS.W -(An),Dn		(Max Value)
@@ -1523,7 +1523,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{2,	2,	12,1,0,0,	16,1,2,0},	// AND.L (d16,PC),Dn
 	{4,	2,	14,1,0,0,	18,1,2,0},	// AND.L (d8,PC,Xn),Dn
 	{4,	0,	 6,0,0,0,	10,0,2,0},	// AND.L #<data>.L,Dn
-	{2,	0,	28,0,0,0,	30,0,1,0},	// MULU.W Dn,Dn		(Max Value)
+	{2,	0,	28,0,0,0,	30,0,1,0},	// MULU.W Dn,Dn			(Max Value)
 	{3,	1,	33,1,0,0,	35,1,1,0},	// MULU.W (An),Dn		(Max Value)
 	{2,	1,	33,1,0,0,	35,1,1,0},	// MULU.W (An)+,Dn		(Max Value)
 	{4,	2,	34,1,0,0,	36,1,1,0},	// MULU.W -(An),Dn		(Max Value)
@@ -1560,7 +1560,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	3,	21,1,0,1,	26,1,2,1},	// AND.L Dn,(d8,An,Xn)
 	{2,	3,	19,1,0,1,	24,1,2,1},	// AND.L Dn,(xxx).W
 	{1,	1,	19,1,0,1,	25,1,2,1},	// AND.L Dn,(xxx).L
-	{2,	0,	28,0,0,0,	30,0,1,0},	// MULS.W Dn,Dn		(Max Value)
+	{2,	0,	28,0,0,0,	30,0,1,0},	// MULS.W Dn,Dn			(Max Value)
 	{3,	1,	33,1,0,0,	35,1,1,0},	// MULS.W (An),Dn		(Max Value)
 	{2,	1,	33,1,0,0,	35,1,1,0},	// MULS.W (An)+,Dn		(Max Value)
 	{4,	2,	34,1,0,0,	36,1,1,0},	// MULS.W -(An),Dn		(Max Value)
@@ -1661,24 +1661,24 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSRQ.B #<data>,Dn
 	{},	// ROXRQ.B #<data>,Dn
 	{4,	0,	 6,0,0,0,	 8,0,1,0},	// RORQ.B #<data>,Dn
-	{},	// ASR.B Dn,Dn
-	{},	// LSR.B Dn,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// ASR.B Dn,Dn		(See ASR table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// LSR.B Dn,Dn		(See LSD table below)
 	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXR.B Dn,Dn
 	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROR.B Dn,Dn
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// ASRQ.W #<data>,Dn
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSRQ.W #<data>,Dn
 	{},	// ROXRQ.W #<data>,Dn
 	{4,	0,	 6,0,0,0,	 8,0,1,0},	// RORQ.W #<data>,Dn
-	{},	// ASR.W Dn,Dn
-	{},	// LSR.W Dn,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// ASR.W Dn,Dn		(See ASR table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// LSR.W Dn,Dn		(See LSD table below)
 	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXR.W Dn,Dn
 	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROR.W Dn,Dn
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// ASRQ.L #<data>,Dn
 	{4,	0,	 4,0,0,0,	 6,0,1,0},	// LSRQ.L #<data>,Dn
 	{},	// ROXRQ.L #<data>,Dn
 	{4,	0,	 6,0,0,0,	 8,0,1,0},	// RORQ.L #<data>,Dn
-	{},	// ASR.L Dn,Dn
-	{},	// LSR.L Dn,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// ASR.L Dn,Dn		(See ASR table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// LSR.L Dn,Dn		(See LSD table below)
 	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXR.L Dn,Dn
 	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROR.L Dn,Dn
 	{1,	1,	11,1,0,1,	13,1,1,1},	// ASRW.W (An)
@@ -1693,7 +1693,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{},	// ROXLQ.B #<data>,Dn
 	{4,	0,	 6,0,0,0,	 8,0,1,0},	// ROLQ.B #<data>,Dn
 	{4,	0,	 8,0,0,0,	10,0,1,0},	// ASL.B Dn,Dn
-	{},	// LSL.B Dn,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// LSL.B Dn,Dn		(See LSD table below)
 	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXL.B Dn,Dn
 	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROL.B Dn,Dn
 	{2,	0,	 6,0,0,0,	 8,0,1,0},	// ASLQ.W #<data>,Dn
@@ -1701,7 +1701,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{},	// ROXLQ.W #<data>,Dn
 	{4,	0,	 6,0,0,0,	 8,0,1,0},	// ROLQ.W #<data>,Dn
 	{4,	0,	 8,0,0,0,	10,0,1,0},	// ASL.W Dn,Dn
-	{},	// LSL.W Dn,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// LSL.W Dn,Dn		(See LSD table below)
 	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXL.W Dn,Dn
 	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROL.W Dn,Dn
 	{2,	0,	 6,0,0,0,	 8,0,1,0},	// ASLQ.L #<data>,Dn
@@ -1709,7 +1709,7 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{},	// ROXLQ.L #<data>,Dn
 	{4,	0,	 6,0,0,0,	 8,0,1,0},	// ROLQ.L #<data>,Dn
 	{4,	0,	 8,0,0,0,	10,0,1,0},	// ASL.L Dn,Dn
-	{},	// LSL.L Dn,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// LSL.L Dn,Dn		(See LSD table below)
 	{10,	0,	12,0,0,0,	14,0,1,0},	// ROXL.L Dn,Dn
 	{6,	0,	 8,0,0,0,	10,0,1,0},	// ROL.L Dn,Dn
 	{1,	1,	13,1,0,1,	15,1,1,1},	// ASLW.W (An)
@@ -1761,62 +1761,62 @@ struct table_falcon_cycles_t table_falcon_cycles [] = {
 	{4,	2,	16,1,0,1,	20,1,2,1},	// ROLW.W (d8,An,Xn)
 	{2,	2,	14,1,0,1,	18,1,2,1},	// ROLW.W (xxx).W
 	{1,	0,	14,1,0,1,	19,1,2,1},	// ROLW.W (xxx).L
-	{},	// BFTST.L #<data>.W,Dn
-	{},	// BFTST.L #<data>.W,(An)
-	{},	// BFTST.L #<data>.W,(d16,An)
-	{},	// BFTST.L #<data>.W,(d8,An,Xn)
-	{},	// BFTST.L #<data>.W,(xxx).W
-	{},	// BFTST.L #<data>.W,(xxx).L
-	{},	// BFTST.L #<data>.W,(d16,PC)
-	{},	// BFTST.L #<data>.W,(d8,PC,Xn)
-	{},	// BFEXTU.L #<data>.W,Dn
-	{},	// BFEXTU.L #<data>.W,(An)
-	{},	// BFEXTU.L #<data>.W,(d16,An)
-	{},	// BFEXTU.L #<data>.W,(d8,An,Xn)
-	{},	// BFEXTU.L #<data>.W,(xxx).W
-	{},	// BFEXTU.L #<data>.W,(xxx).L
-	{},	// BFEXTU.L #<data>.W,(d16,PC)
-	{},	// BFEXTU.L #<data>.W,(d8,PC,Xn)
-	{},	// BFCHG.L #<data>.W,Dn
-	{},	// BFCHG.L #<data>.W,(An)
-	{},	// BFCHG.L #<data>.W,(d16,An)
-	{},	// BFCHG.L #<data>.W,(d8,An,Xn)
-	{},	// BFCHG.L #<data>.W,(xxx).W
-	{},	// BFCHG.L #<data>.W,(xxx).L
-	{},	// BFEXTS.L #<data>.W,Dn
-	{},	// BFEXTS.L #<data>.W,(An)
-	{},	// BFEXTS.L #<data>.W,(d16,An)
-	{},	// BFEXTS.L #<data>.W,(d8,An,Xn)
-	{},	// BFEXTS.L #<data>.W,(xxx).W
-	{},	// BFEXTS.L #<data>.W,(xxx).L
-	{},	// BFEXTS.L #<data>.W,(d16,PC)
-	{},	// BFEXTS.L #<data>.W,(d8,PC,Xn)
-	{},	// BFCLR.L #<data>.W,Dn
-	{},	// BFCLR.L #<data>.W,(An)
-	{},	// BFCLR.L #<data>.W,(d16,An)
-	{},	// BFCLR.L #<data>.W,(d8,An,Xn)
-	{},	// BFCLR.L #<data>.W,(xxx).W
-	{},	// BFCLR.L #<data>.W,(xxx).L
-	{},	// BFFFO.L #<data>.W,Dn
-	{},	// BFFFO.L #<data>.W,(An)
-	{},	// BFFFO.L #<data>.W,(d16,An)
-	{},	// BFFFO.L #<data>.W,(d8,An,Xn)
-	{},	// BFFFO.L #<data>.W,(xxx).W
-	{},	// BFFFO.L #<data>.W,(xxx).L
-	{},	// BFFFO.L #<data>.W,(d16,PC)
-	{},	// BFFFO.L #<data>.W,(d8,PC,Xn)
-	{},	// BFSET.L #<data>.W,Dn
-	{},	// BFSET.L #<data>.W,(An)
-	{},	// BFSET.L #<data>.W,(d16,An)
-	{},	// BFSET.L #<data>.W,(d8,An,Xn)
-	{},	// BFSET.L #<data>.W,(xxx).W
-	{},	// BFSET.L #<data>.W,(xxx).L
-	{},	// BFINS.L #<data>.W,Dn
-	{},	// BFINS.L #<data>.W,(An)
-	{},	// BFINS.L #<data>.W,(d16,An)
-	{},	// BFINS.L #<data>.W,(d8,An,Xn)
-	{},	// BFINS.L #<data>.W,(xxx).W
-	{},	// BFINS.L #<data>.W,(xxx).L
+	{8,	0,	 8,0,0,0,	10,0,1,0},	// BFTST.L #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFTST.L #<data>.W,(An)		(See BFTST table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFTST.L #<data>.W,(d16,An)		(See BFTST table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFTST.L #<data>.W,(d8,An,Xn)		(See BFTST table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFTST.L #<data>.W,(xxx).W		(See BFTST table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFTST.L #<data>.W,(xxx).L		(See BFTST table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFTST.L #<data>.W,(d16,PC)		(See BFTST table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFTST.L #<data>.W,(d8,PC,Xn)		(See BFTST table below)
+	{10,	0,	10,0,0,0,	12,0,1,0},	// BFEXTU.L #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTU.L #<data>.W,(An)		(See BFEXTU table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTU.L #<data>.W,(d16,An)		(See BFEXTU table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTU.L #<data>.W,(d8,An,Xn)		(See BFEXTU table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTU.L #<data>.W,(xxx).W		(See BFEXTU table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTU.L #<data>.W,(xxx).L		(See BFEXTU table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTU.L #<data>.W,(d16,PC)		(See BFEXTU table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTU.L #<data>.W,(d8,PC,Xn)		(See BFEXTU table below)
+	{14,	0,	14,0,0,0,	16,0,1,0},	// BFCHG.L #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCHG.L #<data>.W,(An)		(See BFCHG table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCHG.L #<data>.W,(d16,An)		(See BFCHG table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCHG.L #<data>.W,(d8,An,Xn)		(See BFCHG table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCHG.L #<data>.W,(xxx).W		(See BFCHG table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCHG.L #<data>.W,(xxx).L		(See BFCHG table below)
+	{10,	0,	10,0,0,0,	12,0,1,0},	// BFEXTS.L #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTS.L #<data>.W,(An)		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTS.L #<data>.W,(d16,An)		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTS.L #<data>.W,(d8,An,Xn)		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTS.L #<data>.W,(xxx).W		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTS.L #<data>.W,(xxx).L		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTS.L #<data>.W,(d16,PC)		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFEXTS.L #<data>.W,(d8,PC,Xn)		(See BFEXTS table below)
+	{14,	0,	14,0,0,0,	16,0,1,0},	// BFCLR.L #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCLR.L #<data>.W,(An)		(See BFCLR table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCLR.L #<data>.W,(d16,An)		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCLR.L #<data>.W,(d8,An,Xn)		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCLR.L #<data>.W,(xxx).W		(See BFEXTS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFCLR.L #<data>.W,(xxx).L		(See BFEXTS table below)
+	{20,	0,	20,0,0,0,	22,0,1,0},	// BFFFO.L #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFFFO.L #<data>.W,(An)		(See BFFFO table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFFFO.L #<data>.W,(d16,An)		(See BFFFO table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFFFO.L #<data>.W,(d8,An,Xn)		(See BFFFO table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFFFO.L #<data>.W,(xxx).W		(See BFFFO table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFFFO.L #<data>.W,(xxx).L		(See BFFFO table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFFFO.L #<data>.W,(d16,PC)		(See BFFFO table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFFFO.L #<data>.W,(d8,PC,Xn)		(See BFFFO table below)
+	{14,	0,	14,0,0,0,	16,0,1,0},	// BFSET.L #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFSET.L #<data>.W,(An)		(See BFSET table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFSET.L #<data>.W,(d16,An)		(See BFSET table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFSET.L #<data>.W,(d8,An,Xn)		(See BFSET table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFSET.L #<data>.W,(xxx).W		(See BFSET table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFSET.L #<data>.W,(xxx).L		(See BFSET table below)
+	{12,	0,	12,0,0,0,	14,0,1,0},	// BFINS.L #<data>.W,Dn
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFINS.L #<data>.W,(An)		(See BFINS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFINS.L #<data>.W,(d16,An)		(See BFINS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFINS.L #<data>.W,(d8,An,Xn)		(See BFINS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFINS.L #<data>.W,(xxx).W		(See BFINS table below)
+	{0,	0,	 0,0,0,0,	 0,0,0,0},	// BFINS.L #<data>.W,(xxx).L		(See BFINS table below)
 	{},	// MMUOP030.L (An),#<data>.W
 	{},	// MMUOP030.L (d16,An),#<data>.W
 	{},	// MMUOP030.L (d8,An,Xn),#<data>.W
@@ -1975,7 +1975,6 @@ struct table_falcon_cycles_t table_falcon_cycles_CHK_W [] = {
 	{2,	0,	10,0,0,0,	14,0,2,0},	{2,	0,	40,1,0,4,	50,1,4,4} // CHK.W #<data>.W,Dn
 };
 
-
 /** 
   Cycles table for CAS.BW  instruction. 
   First column is for succesful compare case, 2nd column is for unsuccesful compare case
@@ -2004,28 +2003,26 @@ struct table_falcon_cycles_t table_falcon_cycles_CAS_L [] = {
 	{10,	0,	33,1,0,1,	39,1,3,1}, {10,	0,	25,1,0,0,	31,1,3,0}	// CAS.L #<data>.W,(xxx).L
 };
 
-
 /** 
   Cycles table for CAS2.W  instruction. 
-  First column is for succesful compare case, 2nd column is for unsuccesful compare case
   The table indicates Maximum time.
   */
 struct table_falcon_cycles_t table_falcon_cycles_CAS2_W [] = {
-	{2,	0,	32,2,0,2,	38,2,2,2}, {2,	0,	28,2,0,0,	32,2,2,0}	// CAS2.W #<data>.L
+	{2,	0,	32,2,0,2,	38,2,2,2},	// CAS2.W #<data>.L (succesful compare) 
+	{2,	0,	28,2,0,0,	32,2,2,0}	// CAS2.W #<data>.L (unsuccesful compare)
 };
 
 /** 
   Cycles table for CAS2.L  instruction. 
-  First column is for succesful compare case, 2nd column is for unsuccesful compare case
   The table indicates Maximum time.
   */
 struct table_falcon_cycles_t table_falcon_cycles_CAS2_L [] = {
-	{2,	0,	48,2,0,2,	54,2,2,2}, {2,	0,	36,2,0,0,	40,2,2,0}	// CAS2.L #<data>.L
+	{2,	0,	48,2,0,2,	54,2,2,2},	// CAS2.L #<data>.L (succesful compare) 
+	{2,	0,	36,2,0,0,	40,2,2,0}	// CAS2.L #<data>.L (unsuccesful compare) 
 };
 
 /** 
   Cycles table for RTE  instruction. 
-  This table gives the cycles for all RTE cases. 
   */
 struct table_falcon_cycles_t table_falcon_cycles_RTE [] = {
 	{1,	0,	26,4,0,0,	32,4,2,0},	// RTE.L (Normal four Word)
@@ -2036,3 +2033,236 @@ struct table_falcon_cycles_t table_falcon_cycles_RTE [] = {
 	{1,	0,	126,25,0,0,	120,25,2,0}	// RTE.L (long fault)
 };
 
+/** 
+  Cycles table for Bcc  instruction. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_Bcc [] = {
+	{6,	0,	 6,0,0,0,	12,0,2,0},	// Bcc (taken)
+	{4,	0,	 4,0,0,0,	 6,0,1,0},	// Bcc.B (not taken)
+	{6,	0,	 6,0,0,0,	 8,0,1,0},	// Bcc.W (not taken)
+	{6,	0,	 6,0,0,0,	12,0,2,0}	// Bcc.L (not taken)
+};
+
+/** 
+  Cycles table for DBcc  instruction. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_DBcc [] = {
+	{6,	0,	 6,0,0,0,	12,0,2,0},	// DBcc (cc = false, count not expired)
+	{10,	0,	10,0,0,0,	19,0,3,0},	// DBcc (cc = false, count expired)
+	{6,	0,	 6,0,0,0,	10,0,1,0}	// DBcc (cc = true)
+};
+
+/** 
+  Cycles table for TRAPcc  instruction. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_TRAPcc [] = {
+	{2,	0,	34,1,0,5,	40,1,2,5},	// TRAPcc (trap)
+	{4,	0,	 4,0,0,0,	 6,0,1,0}	// TRAPcc (no trap)
+};
+
+/** 
+  Cycles table for TRAPcc.W  instruction. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_TRAPcc_W [] = {
+	{5,	0,	36,1,0,5,	44,1,3,5},	// TRAPcc.W (trap)
+	{6,	0,	 6,0,0,0,	 8,0,1,0}	// TRAPcc.W (no trap)
+};
+
+/** 
+  Cycles table for TRAPcc.L  instruction. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_TRAPcc_L [] = {
+	{6,	0,	62,1,0,5,	70,1,3,5},	// TRAPcc.L (trap)
+	{8,	0,	 8,0,0,0,	12,0,2,0}	// TRAPcc.L (no trap)
+};
+
+/** 
+  Cycles table for TRAPV  instruction. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_TRAPV [] = {
+	{2,	0,	34,1,0,5,	40,1,2,5},	// TRAPV (trap)
+	{4,	0,	 4,0,0,0,	 6,0,1,0}	// TRAPV (no trap)
+};
+
+/** 
+  Cycles table for DIVU.L instruction. 
+  The table indicates Maximum time.
+  */
+struct table_falcon_cycles_t table_falcon_cycles_DIVU_L [] = {
+	{14,	0,	82,0,0,0,	86,0,2,0},	// DIVU.L #<data>.W,Dn
+	{1,	0,	88,1,0,0,	93,1,2,0},	// DIVU.L #<data>.W,(An)
+	{4,	1,	91,1,0,0,	95,1,2,0},	// DIVU.L #<data>.W,(An)+
+	{2,	0,	88,1,0,0,	93,1,2,0},	// DIVU.L #<data>.W,-(An)
+	{4,	0,	90,1,0,0,	98,1,3,0},	// DIVU.L #<data>.W,(d16,An)
+	{8,	2,	94,1,0,0,	100,1,3,0},	// DIVU.L #<data>.W,(d8,An,Xn)
+	{6,	2,	92,1,0,0,	99,1,3,0},	// DIVU.L #<data>.W,(xxx).W
+	{5,	0,	92,1,0,0,	98,1,3,0},	// DIVU.L #<data>.W,(xxx).L
+	{4,	0,	90,1,0,0,	98,1,3,0},	// DIVU.L #<data>.W,(d16,PC)
+	{8,	2,	94,1,0,0,	100,1,3,0},	// DIVU.L #<data>.W,(d8,PC,Xn)
+	{6,	0,	84,0,0,0,	90,0,3,0}	// DIVU.L #<data>.W,#<data>.L
+};
+
+/** 
+  Cycles table for DIVS.L instruction. 
+  The table indicates Maximum time.
+  */
+struct table_falcon_cycles_t table_falcon_cycles_DIVS_L [] = {
+	{16,	0,	94,0,0,0,	98,0,2,0},	// DIVS.L #<data>.W,Dn
+	{1,	0,	100,1,0,0,	105,1,2,0},	// DIVS.L #<data>.W,(An)
+	{4,	1,	103,1,0,0,	107,1,2,0},	// DIVS.L #<data>.W,(An)+
+	{2,	0,	100,1,0,0,	105,1,2,0},	// DIVS.L #<data>.W,-(An)
+	{4,	0,	102,1,0,0,	110,1,3,0},	// DIVS.L #<data>.W,(d16,An)
+	{8,	2,	106,1,0,0,	112,1,3,0},	// DIVS.L #<data>.W,(d8,An,Xn)
+	{6,	2,	104,1,0,0,	110,1,3,0},	// DIVS.L #<data>.W,(xxx).W
+	{5,	0,	104,1,0,0,	111,1,3,0},	// DIVS.L #<data>.W,(xxx).L
+	{4,	0,	102,1,0,0,	110,1,3,0},	// DIVS.L #<data>.W,(d16,PC)
+	{8,	2,	106,1,0,0,	112,1,3,0},	// DIVS.L #<data>.W,(d8,PC,Xn)
+	{6,	0,	96,0,0,0,	102,0,3,0}	// DIVS.L #<data>.W,#<data>.L
+};
+
+/** 
+  Cycles table for BFTST Mem instruction. 
+  First column is for Mem < 5bits case, 2nd column is for Mem = 5bits case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_BFTST_Mem [] = {
+	{14,	0,	14,1,0,0,	18,1,2,0},	{14,	0,	20,2,0,0,	24,2,2,0},	// BFTST.L #<data>.W,(An)
+	{16,	0,	16,1,0,0,	20,1,2,0},	{16,	0,	22,2,0,0,	26,2,2,0},	// BFTST.L #<data>.W,(d16,An)
+	{18,	0,	18,1,0,0,	24,1,3,0},	{18,	0,	24,2,0,0,	30,2,3,0},	// BFTST.L #<data>.W,(d8,An,Xn)
+	{16,	0,	16,1,0,0,	20,1,2,0},	{16,	0,	22,2,0,0,	26,2,2,0},	// BFTST.L #<data>.W,(xxx).W
+	{18,	0,	18,1,0,0,	24,1,3,0},	{18,	0,	24,2,0,0,	30,2,3,0},	// BFTST.L #<data>.W,(xxx).L
+	{16,	0,	16,1,0,0,	20,1,2,0},	{16,	0,	22,2,0,0,	26,2,2,0},	// BFTST.L #<data>.W,(d16,PC)
+	{18,	0,	18,1,0,0,	24,1,3,0},	{18,	0,	24,2,0,0,	30,2,3,0}	// BFTST.L #<data>.W,(d8,PC,Xn)
+};
+
+/** 
+  Cycles table for BFEXTU Mem instruction. 
+  First column is for Mem < 5bits case, 2nd column is for Mem = 5bits case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_BFEXTU_Mem [] = {
+	{14,	0,	16,1,0,0,	20,1,2,0},	{14,	0,	24,2,0,0,	28,2,2,0},	// BFEXTU.L #<data>.W,(An)	
+	{16,	0,	18,1,0,0,	22,1,2,0},	{16,	0,	26,2,0,0,	30,2,2,0},	// BFEXTU.L #<data>.W,(d16,An)
+	{18,	0,	20,1,0,0,	26,1,3,0},	{18,	0,	28,2,0,0,	34,2,3,0},	// BFEXTU.L #<data>.W,(d8,An,Xn)
+	{16,	0,	18,1,0,0,	22,1,2,0},	{16,	0,	26,2,0,0,	30,2,2,0},	// BFEXTU.L #<data>.W,(xxx).W	
+	{18,	0,	20,1,0,0,	26,1,3,0},	{18,	0,	28,2,0,0,	34,2,3,0},	// BFEXTU.L #<data>.W,(xxx).L	
+	{16,	0,	18,1,0,0,	22,1,2,0},	{16,	0,	26,2,0,0,	30,2,2,0},	// BFEXTU.L #<data>.W,(d16,PC)
+	{18,	0,	20,1,0,0,	26,1,3,0},	{18,	0,	28,2,0,0,	34,2,3,0}	// BFEXTU.L #<data>.W,(d8,PC,Xn)
+};
+	
+/** 
+  Cycles table for BFCHG Mem instruction. 
+  First column is for Mem < 5bits case, 2nd column is for Mem = 5bits case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_BFCHG_Mem [] = {
+	{14,	0,	20,1,0,1,	24,1,2,1},	{14,	0,	32,2,0,2,	36,2,2,2},	// BFCHG.L #<data>.W,(An)	
+	{16,	0,	22,1,0,1,	26,1,2,1},	{16,	0,	34,2,0,2,	38,2,2,2},	// BFCHG.L #<data>.W,(d16,An)	
+	{18,	0,	24,1,0,1,	30,1,3,1},	{18,	0,	36,2,0,2,	42,2,3,2},	// BFCHG.L #<data>.W,(d8,An,Xn)
+	{16,	0,	22,1,0,1,	26,1,2,1},	{16,	0,	34,2,0,2,	38,2,2,2},	// BFCHG.L #<data>.W,(xxx).W	
+	{18,	0,	24,1,0,1,	30,1,3,1},	{18,	0,	36,2,0,2,	42,2,3,2}	// BFCHG.L #<data>.W,(xxx).L	
+};
+	
+/** 
+  Cycles table for BFEXTS Mem instruction. 
+  First column is for Mem < 5bits case, 2nd column is for Mem = 5bits case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_BFEXTS_Mem [] = {
+	{14,	0,	16,1,0,0,	20,1,2,0},	{14,	0,	24,2,0,0,	28,2,2,0},	// BFEXTS.L #<data>.W,(An)	
+	{16,	0,	18,1,0,0,	22,1,2,0},	{16,	0,	26,2,0,0,	30,2,2,0},	// BFEXTS.L #<data>.W,(d16,An)
+	{18,	0,	20,1,0,0,	26,1,3,0},	{18,	0,	28,2,0,0,	34,2,3,0},	// BFEXTS.L #<data>.W,(d8,An,Xn)
+	{16,	0,	18,1,0,0,	22,1,2,0},	{16,	0,	26,2,0,0,	30,2,2,0},	// BFEXTS.L #<data>.W,(xxx).W	
+	{18,	0,	20,1,0,0,	26,1,3,0},	{18,	0,	28,2,0,0,	34,2,3,0},	// BFEXTS.L #<data>.W,(xxx).L	
+	{16,	0,	18,1,0,0,	22,1,2,0},	{16,	0,	26,2,0,0,	30,2,2,0},	// BFEXTS.L #<data>.W,(d16,PC)
+	{18,	0,	20,1,0,0,	26,1,3,0},	{18,	0,	28,2,0,0,	34,2,3,0}	// BFEXTS.L #<data>.W,(d8,PC,Xn)
+};
+
+/** 
+  Cycles table for BFCLR Mem instruction. 
+  First column is for Mem < 5bits case, 2nd column is for Mem = 5bits case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_BFCLR_Mem [] = {
+	{14,	0,	20,1,0,1,	24,1,2,1},	{14,	0,	32,2,0,2,	36,2,2,2},	// BFCLR.L #<data>.W,(An)	
+	{16,	0,	22,1,0,1,	26,1,2,1},	{16,	0,	34,2,0,2,	38,2,2,2},	// BFCLR.L #<data>.W,(d16,An)	
+	{18,	0,	24,1,0,1,	30,1,3,1},	{18,	0,	36,2,0,2,	42,2,3,2},	// BFCLR.L #<data>.W,(d8,An,Xn)
+	{16,	0,	22,1,0,1,	26,1,2,1},	{16,	0,	34,2,0,2,	38,2,2,2},	// BFCLR.L #<data>.W,(xxx).W	
+	{18,	0,	24,1,0,1,	30,1,3,1},	{18,	0,	36,2,0,2,	42,2,3,2}	// BFCLR.L #<data>.W,(xxx).L	
+};
+
+/** 
+  Cycles table for BFFFO Mem instruction. 
+  First column is for Mem < 5bits case, 2nd column is for Mem = 5bits case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_BFFFO_Mem [] = {
+	{14,	0,	26,1,0,0,	30,1,2,0},	{14,	0,	34,2,0,0,	38,2,2,0},	// BFFFO.L #<data>.W,(An)		(See BFFFO table below)
+	{16,	0,	28,1,0,0,	32,1,2,0},	{16,	0,	36,2,0,0,	40,2,2,0},	// BFFFO.L #<data>.W,(d16,An)		(See BFFFO table below)
+	{18,	0,	30,1,0,0,	36,1,3,0},	{18,	0,	38,2,0,0,	44,2,3,0},	// BFFFO.L #<data>.W,(d8,An,Xn)		(See BFFFO table below)
+	{16,	0,	28,1,0,0,	32,1,2,0},	{16,	0,	36,2,0,0,	40,2,2,0},	// BFFFO.L #<data>.W,(xxx).W		(See BFFFO table below)
+	{18,	0,	30,1,0,0,	36,1,3,0},	{18,	0,	38,2,0,0,	44,2,3,0},	// BFFFO.L #<data>.W,(xxx).L		(See BFFFO table below)
+	{16,	0,	28,1,0,0,	32,1,2,0},	{16,	0,	36,2,0,0,	40,2,2,0},	// BFFFO.L #<data>.W,(d16,PC)		(See BFFFO table below)
+	{18,	0,	30,1,0,0,	36,1,3,0},	{18,	0,	38,2,0,0,	44,2,3,0}	// BFFFO.L #<data>.W,(d8,PC,Xn)		(See BFFFO table below)
+};
+
+/** 
+  Cycles table for BFSET Mem instruction. 
+  First column is for Mem < 5bits case, 2nd column is for Mem = 5bits case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_BFSET_Mem [] = {
+	{14,	0,	20,1,0,1,	24,1,2,1},	{14,	0,	32,2,0,2,	36,2,2,2},	// BFSET.L #<data>.W,(An)	
+	{16,	0,	22,1,0,1,	26,1,2,1},	{16,	0,	34,2,0,2,	38,2,2,2},	// BFSET.L #<data>.W,(d16,An)	
+	{18,	0,	24,1,0,1,	30,1,3,1},	{18,	0,	36,2,0,2,	42,2,3,2},	// BFSET.L #<data>.W,(d8,An,Xn)
+	{16,	0,	22,1,0,1,	26,1,2,1},	{16,	0,	34,2,0,2,	38,2,2,2},	// BFSET.L #<data>.W,(xxx).W	
+	{18,	0,	24,1,0,1,	30,1,3,1},	{18,	0,	36,2,0,2,	42,2,3,2}	// BFSET.L #<data>.W,(xxx).L	
+};
+
+/** 
+  Cycles table for BFINS Mem instruction. 
+  First column is for Mem < 5bits case, 2nd column is for Mem = 5bits case
+  */
+struct table_falcon_cycles_t table_falcon_cycles_BFINS_Mem [] = {
+	{14,	0,	18,1,0,1,	22,1,2,1},	{14,	0,	28,2,0,2,	32,2,2,2},	// BFINS.L #<data>.W,(An)		(See BFINS table below)
+	{16,	0,	20,1,0,1,	24,1,2,1},	{16,	0,	30,2,0,2,	34,2,2,2},	// BFINS.L #<data>.W,(d16,An)		(See BFINS table below)
+	{18,	0,	22,1,0,1,	28,1,3,1},	{18,	0,	32,2,0,2,	38,2,3,2},	// BFINS.L #<data>.W,(d8,An,Xn)		(See BFINS table below)
+	{16,	0,	20,1,0,1,	24,1,2,1},	{16,	0,	30,2,0,2,	34,2,2,2},	// BFINS.L #<data>.W,(xxx).W		(See BFINS table below)
+	{18,	0,	22,1,0,1,	28,1,3,1},	{18,	0,	32,2,0,2,	38,2,3,2}	// BFINS.L #<data>.W,(xxx).L		(See BFINS table below)
+};
+
+/** 
+  Cycles table for LSD Dx,Dy instruction. 
+  LSD can be LSR or LSL. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_LSD [] = {
+	{6,	0,	 6,0,0,0,	 8,0,1,0},	// LSD.[B/W/L] Dn,Dn	(shift count is less than or equal to the size of data)
+	{8,	0,	 8,0,0,0,	10,0,1,0}	// LSD.[B/W/L] Dn,Dn	(shift count is greater than size of data)
+};
+
+/** 
+  Cycles table for ASR Dx,Dy instruction. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_ASR [] = {
+	{6,	0,	 6,0,0,0,	 8,0,1,0},	// ASR.[B/W/L] Dn,Dn	(shift count is less than or equal to the size of data)
+	{10,	0,	10,0,0,0,	12,0,1,0}	// ASR.[B/W/L] Dn,Dn	(shift count is greater than size of data)
+};
+
+/** 
+  Cycles table for MOVEC Rn,Cr-[A/B] instruction. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_MOVEC [] = {
+	{6,	0,	 6,0,0,0,	 8,0,1,0},	// MOVEC.L Rn,CR-A	(Control Registers USP,VBR, CAAR,MSP, and ISP)
+	{4,	0,	12,0,0,0,	14,0,1,0}	// MOVEC.L Rn,CR-B	(Control Registers SFC, DFC,and CACR)
+};
+
+/** 
+  Cycles table for 68030 internal timings. 
+  */
+struct table_falcon_cycles_t table_falcon_cycles_68030_internal [] = {
+	{1,	0,	11,1,0,0,	11,1,0,0},	// BKPT
+	{0,	0,	35,2,0,4,	40,2,2,4},	// Interrupt (I-Stack)
+	{0,	0,	53,2,0,8,	48,2,2,8},	// Interrupt (M-Stack)
+	{0,	0,	518,0,0,0,	520,0,1,0},	// RESET Instruction
+	{0,	0,	 8,0,0,0,	12,0,2,0},	// STOP
+	{0,	0,	34,1,0,5,	40,1,2,5},	// TRACE
+	{0,	0,	28,1,0,4,	34,1,2,4},	// Illegal Instruction
+	{0,	0,	28,1,0,4,	34,1,2,4},	// A-Line Trap
+	{0,	0,	28,1,0,4,	34,1,2,4},	// F-Line Trap
+	{0,	0,	28,1,0,4,	34,1,2,4},	// Privilege Violation	
+	{0,	0,	58,1,0,10,	64,1,2,10},	// Bus Cycle Fault (Short)
+	{0,	0,	102,1,0,24,	168,1,2,24}	// Bus Cycle Fault (Long)
+};
