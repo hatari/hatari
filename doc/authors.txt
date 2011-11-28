@@ -114,6 +114,11 @@ is missing here, please remind me!):
 
 - Markus Heiden: SCSI class 1 (ICD) command support for drives > 1 GB
 
+- nash67: tested hundreds (!) of games from various CD compilations
+  and reported the non working ones on atari-forum.com. Huge thanks for
+  that tedious work, it helped tracking down some less common cases
+  not used in demos (keyboard, joystick, FDC, tos, ...)
+
 
  Code from other projects
  ------------------------
