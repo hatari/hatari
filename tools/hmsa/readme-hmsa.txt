@@ -46,7 +46,7 @@ SEE ALSO
        Hmsa is part of hatari.
 
 AUTHOR
-       Written by Thomas Huth <huth@users.berlios.de>.  This manual  page  and
+       Written by Thomas Huth <huth at tuxfamily.org>.  This manual  page  and
        empty disk creation was added by Eero Tamminen.
 
 LICENSE

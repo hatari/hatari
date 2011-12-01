@@ -603,7 +603,7 @@ static void CustomApplicationMain (int argc, char **argv)
 
 - (IBAction)help:(id)sender
 {
-	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://hatari.berlios.de/docs.html"]];
+	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://hatari.tuxfamily.org/docs.html"]];
 }
 
 

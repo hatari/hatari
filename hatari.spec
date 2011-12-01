@@ -8,7 +8,7 @@
 BuildRequires: bash coreutils cpio cpp diffutils file filesystem findutils glibc glibc-devel grep groff gzip libgcc m4 make man mktemp patch readline sed tar unzip util-linux zlib zlib-devel SDL SDL-devel autoconf binutils gcc libtool rpm
 
 Name:         hatari
-URL:          http://hatari.berlios.de/
+URL:          http://hatari.tuxfamily.org/
 License:      GPL
 Group:        System/Emulators/Other
 Autoreqprov:  on

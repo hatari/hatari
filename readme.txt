@@ -4,7 +4,7 @@
 
                                  Version 1.5
 
-                          http://hatari.berlios.de/
+                          http://hatari.tuxfamily.org/
 
 
 Contents:
@@ -174,7 +174,7 @@ doc/manual.html. Here are just some hints for the impatient people:
 If you want to contact the authors of Hatari, please have a look at the file
 doc/authors.txt for the e-mail addresses or use the Hatari mailing list.
 
-Visit the project pages of Hatari on Berlios.de for more details:
+Visit the website of Hatari on Tuxfamily.org for more details:
 
- http://developer.berlios.de/projects/hatari/
+ http://hatari.tuxfamily.org/contact.html
 

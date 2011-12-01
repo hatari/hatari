@@ -5,7 +5,7 @@
 - Nicolas Pomarede <npomarede at corp.free.fr> : Project admin,
   improving CPU, video, sound, IKBD and floppy emulation.
 
-- Thomas Huth <huth at users.berlios.de> : Project initiator and
+- Thomas Huth <huth at tuxfamily.org> : Project initiator and
   admin, currently more or less in hibernation mode.
 
 - Eero Tamminen <eerot at users.berlios.de> : Speed improvements & code

@@ -10,7 +10,7 @@ Just copy suitable config file to the device /etc/ directory as
 Below are some comments about the configuration files. Some comments
 about suitable compiler options for these platforms can be found from
 the Hatari v1.4 default Makefile (which is now replaced with CMake):
-http://hg.berlios.de/repos/hatari/file/dabb65b541c9/Makefile-default.cnf
+http://hg.tuxfamily.org/mercurialroot/hatari/hatari/file/dabb65b541c9/Makefile-default.cnf
 
 Hatari v1.5 gets screen size automatically, so setting that shouldn't
 anymore be necessary, but shouldn't harm either.

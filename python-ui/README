@@ -26,7 +26,7 @@ My guess at the required versions for the dependencies are:
 - PyGtk >= 2.12   (on Debian/Ubuntu PyGtk is in python-gtk2 package)
 
 Hatari UI is included with the Hatari sources:
-	http://hg.berlios.de/repos/hatari/file/tip/
+	http://hg.tuxfamily.org/mercurialroot/hatari/hatari/file/tip/python-ui
 
 Hatari UI has been tested only on Linux (Ubuntu v7.04 and Debian Lenny
 & Squeeze). I would assume it works also on other unix systems such as
