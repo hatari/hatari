@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "readcpu.h"
+#include "falcon_cycle030.h"
 
 #define BOOL_TYPE "int"
 /* Define the minimal 680x0 where NV flags are not affected by xBCD instructions.  */
@@ -64,6 +65,8 @@ static int *opcode_last_postfix;
 static unsigned long *counts;
 static int generate_stbl;
 static int fixupcnt;
+
+static int instr_index = 0;	/* Added to give a unique index to each 68030 cycle exact instruction (CPU_EMU_21) */
 
 #define GENA_GETV_NO_FETCH	0
 #define GENA_GETV_FETCH		1
@@ -134,8 +137,16 @@ static void returncycles (const char *s, int cycles)
 {
 	if (using_ce)
 		return;
-	if (using_ce020)
+	
+	if (using_ce020 == 1)
 		printf ("%sreturn;\n", s);
+	else if (using_ce020 == 2) {
+		if (table_falcon_cycles[instr_index].cache_cycles != 0)
+			printf ("\tregs.ce030_instr_cycles = table_falcon_cycles[%d];\n", instr_index);
+		else
+			printf ("\tregs.ce030_instr_cycles = table_falcon_cycles[0];\n");
+		printf ("%sreturn;\n", s);
+	}
 	else
 		printf ("%sreturn %d * CYCLE_UNIT / 2;\n", s, cycles);
 }
@@ -145,10 +156,7 @@ static void addcycles_ce020 (int head, int tail, int cache_cycles, int noncache_
 	if (!using_ce020)
 		return;
 	if (cache_cycles > 0 && noncache_cycles > 0) {
-		printf ("\n\tregs.ce_030_cycleshead = %d;\n", head);
-		printf ("\tregs.ce_030_cyclestail = %d;\n", tail);
-		printf ("\tregs.ce_030_cyclescache = %d;\n", cache_cycles);
-		printf ("\tregs.ce_030_cyclesnocache = %d;\n", noncache_cycles);	
+//		printf ("\n\tregs.ce_030_cycleshead = %d;\n", head);
 	}
 	count_cycles += noncache_cycles;
 }
@@ -1150,37 +1158,40 @@ static void genmovemle_ce (uae_u16 opcode)
 		addcycles000 (2);
 	}
 	start_brace ();
+	printf ("\tuae_u16 add_cycles = 0;\n");
+
 	if (table68k[opcode].size == sz_long) {
 		if (table68k[opcode].dmode == Apdi) {
 			printf ("\tuae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
-			printf ("\twhile (amask) { srca -= %d; put_word_ce (srca, m68k_areg (regs, movem_index2[amask]) >> 16); put_word_ce (srca + 2, m68k_areg (regs, movem_index2[amask])); amask = movem_next[amask]; }\n",
+			printf ("\twhile (amask) { srca -= %d; put_word_ce (srca, m68k_areg (regs, movem_index2[amask]) >> 16); put_word_ce (srca + 2, m68k_areg (regs, movem_index2[amask])); amask = movem_next[amask]; add_cycles +=8;}\n",
 				size);
-			printf ("\twhile (dmask) { srca -= %d; put_word_ce (srca, m68k_dreg (regs, movem_index2[dmask]) >> 16); put_word_ce (srca + 2, m68k_dreg (regs, movem_index2[dmask])); dmask = movem_next[dmask]; }\n",
+			printf ("\twhile (dmask) { srca -= %d; put_word_ce (srca, m68k_dreg (regs, movem_index2[dmask]) >> 16); put_word_ce (srca + 2, m68k_dreg (regs, movem_index2[dmask])); dmask = movem_next[dmask];}\n",
 				size);
 			printf ("\tm68k_areg (regs, dstreg) = srca;\n");
 		} else {
 			printf ("\tuae_u16 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
-			printf ("\twhile (dmask) { put_word_ce (srca, m68k_dreg (regs, movem_index1[dmask]) >> 16); put_word_ce (srca + 2, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; }\n",
+			printf ("\twhile (dmask) { put_word_ce (srca, m68k_dreg (regs, movem_index1[dmask]) >> 16); put_word_ce (srca + 2, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; add_cycles +=8;}\n",
 				size);
-			printf ("\twhile (amask) { put_word_ce (srca, m68k_areg (regs, movem_index1[amask]) >> 16); put_word_ce (srca + 2, m68k_areg (regs, movem_index1[amask])); srca += %d; amask = movem_next[amask]; }\n",
+			printf ("\twhile (amask) { put_word_ce (srca, m68k_areg (regs, movem_index1[amask]) >> 16); put_word_ce (srca + 2, m68k_areg (regs, movem_index1[amask])); srca += %d; amask = movem_next[amask];}\n",
 				size);
 		}
 	} else {
 		if (table68k[opcode].dmode == Apdi) {
 			printf ("\tuae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
-			printf ("\twhile (amask) { srca -= %d; put_word_ce (srca, m68k_areg (regs, movem_index2[amask])); amask = movem_next[amask]; }\n",
+			printf ("\twhile (amask) { srca -= %d; put_word_ce (srca, m68k_areg (regs, movem_index2[amask])); amask = movem_next[amask]; add_cycles +=4;}\n",
 				size);
 			printf ("\twhile (dmask) { srca -= %d; put_word_ce (srca, m68k_dreg (regs, movem_index2[dmask])); dmask = movem_next[dmask]; }\n",
 				size);
 			printf ("\tm68k_areg (regs, dstreg) = srca;\n");
 		} else {
 			printf ("\tuae_u16 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
-			printf ("\twhile (dmask) { put_word_ce (srca, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; }\n",
+			printf ("\twhile (dmask) { put_word_ce (srca, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; add_cycles +=4;}\n",
 				size);
 			printf ("\twhile (amask) { put_word_ce (srca, m68k_areg (regs, movem_index1[amask])); srca += %d; amask = movem_next[amask]; }\n",
 				size);
 		}
 	}
+	printf ("\tregs.ce030_instr_addcycles = add_cycles;\n");
 	count_ncycles++;
 	fill_prefetch_next ();
 }
@@ -3753,7 +3764,9 @@ static void generate_one_opcode (int rp)
 	gen_opcode (opcode);
 	if (need_endlabel)
 		printf ("%s: ;\n", endlabelstr);
+
 	returncycles ("", insn_n_cycles);
+	
 	printf ("}");
 	if (using_ce || using_prefetch) {
 		if (count_read + count_write + count_cycles == 0)
@@ -3776,6 +3789,10 @@ static void generate_one_opcode (int rp)
 		printf("%d;", insn_n_cycles);
 		fseek(stdout, 0, SEEK_END);
 	}
+
+	/* Hatari only : inc instruction index for cycle exact 68030 cpu */ 
+	if (using_ce020 == 2)
+		instr_index += 1;
 
 	if (generate_stbl) {
 //		char *name = ua (lookuptab[idx].name);

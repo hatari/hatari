@@ -41,7 +41,6 @@ STATIC_INLINE void do_cycles_slow (unsigned long cycles_to_add)
 		events_schedule();
 	}
 */
-	hatari030ce_currcycle += cycles_to_add;
 	currcycle += cycles_to_add;
 }
 

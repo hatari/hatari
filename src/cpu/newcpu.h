@@ -17,6 +17,7 @@
 #include "events.h"
 #include "memory.h"
 #include "custom.h"
+#include "falcon_cycle030.h"
 
 /* Possible exceptions sources for M68000_Exception() and Exception() */
 #define M68000_EXC_SRC_CPU	    1  /* Direct CPU exception */
@@ -78,6 +79,8 @@ extern int fpp_movem_next[256];
 #endif
 
 extern int OpcodeFamily;
+
+typedef struct falcon_cycles_t falcon_cycles;
 
 typedef unsigned long REGPARAM3 cpuop_func (uae_u32) REGPARAM;
 typedef void REGPARAM3 cpuop_func_ce (uae_u32) REGPARAM;
@@ -201,10 +204,8 @@ struct regstruct
 	uae_u32 prefetch020data[CPU_PIPELINE_MAX];
 	uae_u32 prefetch020addr[CPU_PIPELINE_MAX];
 	int ce020memcycles;
-	uae_u16 ce_030_cycleshead;
-	uae_u16 ce_030_cyclestail;
-	uae_u16 ce_030_cyclescache;
-	uae_u16 ce_030_cyclesnocache;
+	struct falcon_cycles_t ce030_instr_cycles;
+	int ce030_instr_addcycles;
 };
 
 extern struct regstruct regs;

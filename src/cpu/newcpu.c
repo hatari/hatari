@@ -67,6 +67,7 @@
 #include "log.h"
 #include "debugui.h"
 #include "debugcpu.h"
+//#include "falcon_cycle030.h"
 
 
 #ifdef JIT
@@ -3474,12 +3475,14 @@ retry:
 static void m68k_run_2ce (void)
 {
 	struct regstruct *r = &regs;
-	int tmpcycles = MAX68020CYCLES;
 	int sav_tail = 0;
+	int curr_cycles = 0;
 
+	struct falcon_cycles_t falcon_instr_cycle;
+	
 	ipl_fetch ();
+
 	for (;;) {
-		hatari030ce_currcycle = 0;
 		/*m68k_dumpstate(stderr, NULL);*/
 		if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 		{
@@ -3489,31 +3492,30 @@ static void m68k_run_2ce (void)
 			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 		}
 
+		/* clear add_cycles for instructions like movem */
+		regs.ce030_instr_addcycles = 0;
+
 		uae_u32 opcode = x_prefetch (0);
 		(*cpufunctbl[opcode])(opcode);
 		
 		/* Laurent : if 68030 instr cache is on, cycles are computed with head / tail / and cache_cycles
 		 *           else, cycles are equal to non cache cycles.
 		 */
-		if ((currprefs.cpu_model == 68030) && ((r->cacr & 3) == 1)) { // not frozen and enabled
-			if (r->ce_030_cycleshead < sav_tail)
-				r->ce020memcycles += ((r->ce_030_cyclescache * cpucycleunit) - r->ce_030_cycleshead);
-			else
-				r->ce020memcycles += ((r->ce_030_cyclescache * cpucycleunit) - sav_tail);
+		falcon_instr_cycle = regs.ce030_instr_cycles;
 
-			sav_tail = r->ce_030_cyclestail;
+		if ((currprefs.cpu_model == 68030) && ((r->cacr & 3) == 1)) { // not frozen and enabled
+			if (falcon_instr_cycle.head < sav_tail)
+				curr_cycles = (falcon_instr_cycle.cache_cycles - falcon_instr_cycle.head);
+			else
+				curr_cycles = (falcon_instr_cycle.cache_cycles - sav_tail);
+
+			sav_tail = falcon_instr_cycle.tail;
 		}
 		else {
-			r->ce020memcycles += r->ce_030_cyclesnocache * cpucycleunit;
+			curr_cycles = falcon_instr_cycle.noncache_cycles;
 		}
 
-		if (r->ce020memcycles > 0) {
-			tmpcycles = CYCLE_UNIT * MAX68020CYCLES;
-			do_cycles_ce (r->ce020memcycles);
-			r->ce020memcycles = 0;
-		}
-
-		M68000_AddCycles(hatari030ce_currcycle *2/ cpucycleunit);
+		M68000_AddCycles(curr_cycles);
 
 		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 			/* Add some extra cycles to simulate a wait state */
@@ -3539,15 +3541,8 @@ static void m68k_run_2ce (void)
 	
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
-			DSP_Run(hatari030ce_currcycle *2/ cpucycleunit);
+			DSP_Run(curr_cycles);
 		}
-
-		tmpcycles -= cpucycleunit;
-		if (tmpcycles <= 0) {
-			do_cycles_ce (1 * CYCLE_UNIT);
-			tmpcycles = CYCLE_UNIT * MAX68020CYCLES;
-		}
-		regs.ipl = regs.ipl_pin;
 	}
 }
 
