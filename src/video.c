@@ -1119,7 +1119,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 	/* (so we must cancel the med res overscan bit) */
 	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_OVERSCAN_MED_RES )
 		&& ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & ( 0xf << 20 ) ) == 0 )
-		&& ( Res == 0x00 ) )
+		&& ( Res == 0x00 ) && ( LineCycles <= 40 )  )
 	{
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask &= (~BORDERMASK_OVERSCAN_MED_RES);	/* cancel mid res */
 
