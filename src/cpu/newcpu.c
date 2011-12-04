@@ -3515,6 +3515,7 @@ static void m68k_run_2ce (void)
 			curr_cycles = falcon_instr_cycle.noncache_cycles;
 		}
 
+		curr_cycles += regs.ce030_instr_addcycles;
 		M68000_AddCycles(curr_cycles);
 
 		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {

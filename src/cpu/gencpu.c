@@ -66,7 +66,11 @@ static unsigned long *counts;
 static int generate_stbl;
 static int fixupcnt;
 
-static int instr_index = 0;	/* Added to give a unique index to each 68030 cycle exact instruction (CPU_EMU_21) */
+static int instr_index = 0;	/* Hatari: Added to give a unique index to each 68030 cycle exact instruction (CPU_EMU_21) */
+static int instr_table;		/* Hatari: Used to know which cycle table to use (CPU_EMU_21) */
+static int instr_table_index;	/* Hatari: Used when the cycle table is not the generic one to set the line of the table (CPU_EMU_21) */
+
+
 
 #define GENA_GETV_NO_FETCH	0
 #define GENA_GETV_FETCH		1
@@ -74,6 +78,44 @@ static int instr_index = 0;	/* Added to give a unique index to each 68030 cycle 
 #define GENA_MOVEM_DO_INC	0
 #define GENA_MOVEM_NO_INC	1
 #define GENA_MOVEM_MOVE16	2
+
+/** 
+  Table_labels table for all case. 
+  */
+static const char* falcon_cycles_tables[] = {
+	"table_falcon_cycles",
+	"table_falcon_cycles_CHK2_BW",
+	"table_falcon_cycles_CHK2_L",
+	"table_falcon_cycles_CHK_L",
+	"table_falcon_cycles_CHK_W",
+	"table_falcon_cycles_CAS_BW",
+	"table_falcon_cycles_CAS_L",
+	"table_falcon_cycles_CAS2_W",
+	"table_falcon_cycles_CAS2_L",
+	"table_falcon_cycles_RTE",
+	"table_falcon_cycles_Bcc",
+	"table_falcon_cycles_DBcc",
+	"table_falcon_cycles_TRAPcc",
+	"table_falcon_cycles_TRAPcc_W",
+	"table_falcon_cycles_TRAPcc_L",
+	"table_falcon_cycles_TRAPV",
+	"table_falcon_cycles_DIVU_L",
+	"table_falcon_cycles_DIVS_L",
+	"table_falcon_cycles_BFTST_Mem",
+	"table_falcon_cycles_BFEXTU_Mem",
+	"table_falcon_cycles_BFCHG_Mem",
+	"table_falcon_cycles_BFEXTS_Mem",
+	"table_falcon_cycles_BFCLR_Mem",
+	"table_falcon_cycles_BFFFO_Mem",
+	"table_falcon_cycles_BFSET_Mem",
+	"table_falcon_cycles_BFINS_Mem",
+	"table_falcon_cycles_LSD",
+	"table_falcon_cycles_ASR",
+	"table_falcon_cycles_MOVEC",
+	"table_falcon_cycles_MOVES_EA_RN",
+	"table_falcon_cycles_MOVES_RN_EA",
+	"table_falcon_cycles_68030_internal"
+};
 
 static void read_counts (void)
 {
@@ -141,10 +183,17 @@ static void returncycles (const char *s, int cycles)
 	if (using_ce020 == 1)
 		printf ("%sreturn;\n", s);
 	else if (using_ce020 == 2) {
-		if (table_falcon_cycles[instr_index].cache_cycles != 0)
-			printf ("\tregs.ce030_instr_cycles = table_falcon_cycles[%d];\n", instr_index);
-		else
+
+		// This first if statement should be removed when all the cycles are correctly generated for the Falcon 68030 CPU
+		// The next "else" should be removed too and only the printf line should be keept.
+		if (instr_table == 0 && table_falcon_cycles[instr_index].cache_cycles == 0) {
+			// set a temporary false value for this instruction cycles timing.
 			printf ("\tregs.ce030_instr_cycles = table_falcon_cycles[0];\n");
+		}
+		else {
+			printf ("\tregs.ce030_instr_cycles = %s[%d];\n", falcon_cycles_tables[instr_table], instr_table_index);
+		}
+
 		printf ("%sreturn;\n", s);
 	}
 	else
@@ -156,7 +205,7 @@ static void addcycles_ce020 (int head, int tail, int cache_cycles, int noncache_
 	if (!using_ce020)
 		return;
 	if (cache_cycles > 0 && noncache_cycles > 0) {
-//		printf ("\n\tregs.ce_030_cycleshead = %d;\n", head);
+		//not needed anymore
 	}
 	count_cycles += noncache_cycles;
 }
@@ -1064,11 +1113,12 @@ static void genmovemel (uae_u16 opcode)
 	count_read += table68k[opcode].size == sz_long ? 2 : 1;
 	printf ("\tuae_u16 mask = %s;\n", gen_nextiword (0));
 	printf ("\tunsigned int dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
+	printf ("\tuae_u16 regs_number = 0;\n");
 	genamode (table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1, 0);
 	start_brace ();
-	printf ("\twhile (dmask) { m68k_dreg (regs, movem_index1[dmask]) = %s; srca += %d; dmask = movem_next[dmask]; }\n",
+	printf ("\twhile (dmask) { m68k_dreg (regs, movem_index1[dmask]) = %s; srca += %d; dmask = movem_next[dmask]; regs_number++; }\n",
 		getcode, size);
-	printf ("\twhile (amask) { m68k_areg (regs, movem_index1[amask]) = %s; srca += %d; amask = movem_next[amask]; }\n",
+	printf ("\twhile (amask) { m68k_areg (regs, movem_index1[amask]) = %s; srca += %d; amask = movem_next[amask]; regs_number++; }\n",
 		getcode, size);
 
 	if (table68k[opcode].dmode == Aipi) {
@@ -1076,6 +1126,14 @@ static void genmovemel (uae_u16 opcode)
 		count_read++;
 	}
 	count_ncycles++;
+
+	if (using_ce020 == 2) {
+		if (table68k[opcode].size == sz_long)
+			printf ("\tregs.ce030_instr_addcycles = regs_number * 8;\n");
+		else
+			printf ("\tregs.ce030_instr_addcycles = regs_number * 4;\n");
+	}
+	
 	fill_prefetch_next ();
 }
 
@@ -1104,6 +1162,7 @@ static void genmovemel_ce (uae_u16 opcode)
 	count_read++;
 	if (table68k[opcode].dmode == Aipi)
 		printf ("\tm68k_areg (regs, dstreg) = srca;\n");
+
 	count_ncycles++;
 	fill_prefetch_next ();
 }
@@ -1123,6 +1182,7 @@ static void genmovemle (uae_u16 opcode)
 	printf ("\tuae_u16 mask = %s;\n", gen_nextiword (0));
 	genamode (table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1, 0);
 	start_brace ();
+	printf ("\tuae_u16 regs_number = 0;\n");
 	if (table68k[opcode].dmode == Apdi) {
 		printf ("\tuae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
 		if (!using_mmu)
@@ -1133,18 +1193,26 @@ static void genmovemle (uae_u16 opcode)
 			printf ("\t\tif (type) m68k_areg (regs, dstreg) = srca;\n");
 		printf ("\t\t%s, m68k_areg (regs, movem_index2[amask]));\n", putcode);
 		printf ("\t\tamask = movem_next[amask];\n");
+		printf ("\t\tregs_number++;\n");
 		printf ("\t}\n");
-		printf ("\twhile (dmask) { srca -= %d; %s, m68k_dreg (regs, movem_index2[dmask])); dmask = movem_next[dmask]; }\n",
+		printf ("\twhile (dmask) { srca -= %d; %s, m68k_dreg (regs, movem_index2[dmask])); dmask = movem_next[dmask]; regs_number++; }\n",
 			size, putcode);
 		printf ("\tm68k_areg (regs, dstreg) = srca;\n");
 	} else {
 		printf ("\tuae_u16 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
-		printf ("\twhile (dmask) { %s, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; }\n",
+		printf ("\twhile (dmask) { %s, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; regs_number++; }\n",
 			putcode, size);
-		printf ("\twhile (amask) { %s, m68k_areg (regs, movem_index1[amask])); srca += %d; amask = movem_next[amask]; }\n",
+		printf ("\twhile (amask) { %s, m68k_areg (regs, movem_index1[amask])); srca += %d; amask = movem_next[amask]; regs_number++; }\n",
 			putcode, size);
 	}
+
 	count_ncycles++;
+	if (using_ce020 == 2) {
+		if (table68k[opcode].size == sz_long)
+			printf ("\tregs.ce030_instr_addcycles = regs_number * 8;\n");
+		else
+			printf ("\tregs.ce030_instr_addcycles = regs_number * 4;\n");
+	}
 	fill_prefetch_next ();
 }
 
@@ -1158,19 +1226,17 @@ static void genmovemle_ce (uae_u16 opcode)
 		addcycles000 (2);
 	}
 	start_brace ();
-	printf ("\tuae_u16 add_cycles = 0;\n");
-
 	if (table68k[opcode].size == sz_long) {
 		if (table68k[opcode].dmode == Apdi) {
 			printf ("\tuae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
-			printf ("\twhile (amask) { srca -= %d; put_word_ce (srca, m68k_areg (regs, movem_index2[amask]) >> 16); put_word_ce (srca + 2, m68k_areg (regs, movem_index2[amask])); amask = movem_next[amask]; add_cycles +=8;}\n",
+			printf ("\twhile (amask) { srca -= %d; put_word_ce (srca, m68k_areg (regs, movem_index2[amask]) >> 16); put_word_ce (srca + 2, m68k_areg (regs, movem_index2[amask])); amask = movem_next[amask]; }\n",
 				size);
 			printf ("\twhile (dmask) { srca -= %d; put_word_ce (srca, m68k_dreg (regs, movem_index2[dmask]) >> 16); put_word_ce (srca + 2, m68k_dreg (regs, movem_index2[dmask])); dmask = movem_next[dmask];}\n",
 				size);
 			printf ("\tm68k_areg (regs, dstreg) = srca;\n");
 		} else {
 			printf ("\tuae_u16 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
-			printf ("\twhile (dmask) { put_word_ce (srca, m68k_dreg (regs, movem_index1[dmask]) >> 16); put_word_ce (srca + 2, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; add_cycles +=8;}\n",
+			printf ("\twhile (dmask) { put_word_ce (srca, m68k_dreg (regs, movem_index1[dmask]) >> 16); put_word_ce (srca + 2, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; }\n",
 				size);
 			printf ("\twhile (amask) { put_word_ce (srca, m68k_areg (regs, movem_index1[amask]) >> 16); put_word_ce (srca + 2, m68k_areg (regs, movem_index1[amask])); srca += %d; amask = movem_next[amask];}\n",
 				size);
@@ -1178,20 +1244,20 @@ static void genmovemle_ce (uae_u16 opcode)
 	} else {
 		if (table68k[opcode].dmode == Apdi) {
 			printf ("\tuae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
-			printf ("\twhile (amask) { srca -= %d; put_word_ce (srca, m68k_areg (regs, movem_index2[amask])); amask = movem_next[amask]; add_cycles +=4;}\n",
+			printf ("\twhile (amask) { srca -= %d; put_word_ce (srca, m68k_areg (regs, movem_index2[amask])); amask = movem_next[amask]; }\n",
 				size);
 			printf ("\twhile (dmask) { srca -= %d; put_word_ce (srca, m68k_dreg (regs, movem_index2[dmask])); dmask = movem_next[dmask]; }\n",
 				size);
 			printf ("\tm68k_areg (regs, dstreg) = srca;\n");
 		} else {
 			printf ("\tuae_u16 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
-			printf ("\twhile (dmask) { put_word_ce (srca, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; add_cycles +=4;}\n",
+			printf ("\twhile (dmask) { put_word_ce (srca, m68k_dreg (regs, movem_index1[dmask])); srca += %d; dmask = movem_next[dmask]; }\n",
 				size);
 			printf ("\twhile (amask) { put_word_ce (srca, m68k_areg (regs, movem_index1[amask])); srca += %d; amask = movem_next[amask]; }\n",
 				size);
 		}
 	}
-	printf ("\tregs.ce030_instr_addcycles = add_cycles;\n");
+	
 	count_ncycles++;
 	fill_prefetch_next ();
 }
@@ -1513,6 +1579,11 @@ static void gen_opcode (unsigned long int opcode)
 	if (!using_ce020) {
 		printf ("\tOpcodeFamily = %d; CurrentInstrCycles =     \n", curi->mnemo);
 		nCurInstrCycPos = ftell(stdout) - 5;
+	}
+	else if (using_ce020 == 2) {
+		/* Initialize the cycle table to the general table by default */
+		instr_table = 0;
+		instr_table_index = instr_index;
 	}
 
 	if (using_ce020) {
@@ -2166,6 +2237,8 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\tipl_fetch ();\n");
 		    need_endlabel = 1;
 		}
+		instr_table = 9;
+		instr_table_index = 0;
 		/* PC is set and prefetch filled. */
 		m68k_pc_offset = 0;
 		fill_prefetch_full ();

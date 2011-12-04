@@ -8,8 +8,6 @@
 #define FALCON030_CYCLES
 
 
-typedef struct falcon_cycles_t falcon_cycles;
-
 struct falcon_cycles_t {
 	int head;
 	int tail;
@@ -2315,7 +2313,6 @@ static const struct falcon_cycles_t table_falcon_cycles_MOVES_RN_EA [] = {
   Cycles table for 68030 internal timings. 
   */
 static const struct falcon_cycles_t table_falcon_cycles_68030_internal [] = {
-	{0,	0,	 0,0,0,0,	 0,0,0,0},	// 0 cycles
 	{1,	0,	11,1,0,0,	11,1,0,0},	// BKPT
 	{0,	0,	35,2,0,4,	40,2,2,4},	// Interrupt (I-Stack)
 	{0,	0,	53,2,0,8,	48,2,2,8},	// Interrupt (M-Stack)
