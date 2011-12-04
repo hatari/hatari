@@ -38,7 +38,7 @@ static void ConvertMediumRes_640x32Bit_Spec(void)
 
 static void Line_ConvertMediumRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
 {
-	Uint32 ebx, ecx, edx;
+	Uint32 ebx, ecx;
 	int x, Screen4BytesPerLine;
 	Uint32 pixelspace[5]; /* Workspace to store pixels to so can print in right order for Spec512 */
 
@@ -48,7 +48,6 @@ static void Line_ConvertMediumRes_640x32Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint3
 	pixelspace[4] = 0;
 
 	Spec512_StartScanLine();        /* Build up palettes for every 4 pixels, store in 'ScanLinePalettes' */
-	edx = 0;                        /* Clear index for loop */
 
 	x = STScreenWidthBytes >> 2;   /* Amount to draw across in 16-pixels (4 bytes) */
 	Screen4BytesPerLine = PCScreenBytesPerLine/4;

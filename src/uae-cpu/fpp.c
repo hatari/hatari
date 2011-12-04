@@ -1358,6 +1358,9 @@ void restore_fpu (void)
     int model, i;
 
     model = restore_u32();
+    if (model != 0 && (model < 68040 || model > 68060)) {
+	fprintf(stderr, "Warning: Unexpected CPU model\n");
+    }
 
     for (i = 0; i < 8; i++) {
 	uae_u32 w1 = restore_u32 ();

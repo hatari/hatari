@@ -1754,7 +1754,8 @@ static void ide_atapi_cmd(IDEState *s)
 	break;
 	case GPCMD_READ_TOC_PMA_ATIP:
 	{
-		int format, msf, start_track, len;
+		int format, len;
+		// int msf, start_track;
 		uint64_t total_sectors;
 
 		bdrv_get_geometry(s->bs, &total_sectors);
@@ -1767,8 +1768,8 @@ static void ide_atapi_cmd(IDEState *s)
 		}
 		max_len = ube16_to_cpu(packet + 7);
 		format = packet[9] >> 6;
-		msf = (packet[1] >> 1) & 1;
-		start_track = packet[6];
+		// msf = (packet[1] >> 1) & 1;
+		// start_track = packet[6];
 		switch (format)
 		{
 		case 0:
