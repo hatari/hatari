@@ -485,6 +485,7 @@ static void	Video_WriteToShifter ( Uint8 Res );
 static void 	Video_Sync_SetDefaultStartEnd ( Uint8 Freq , int HblCounterVideo , int LineCycles );
 
 static int	Video_HBL_GetPos ( void );
+static int	Video_TimerB_GetDefaultPos ( void );
 static void	Video_EndHBL ( void );
 static void	Video_StartHBL ( void );
 
@@ -1448,6 +1449,52 @@ int Video_TimerB_GetPos ( int LineNumber )
 		Pos = ShifterFrame.ShifterLines[ LineNumber ].DisplayStartCycle + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
 
+//fprintf ( stderr , "timerb pos=%d\n" , Pos );
+	return Pos;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute the default cycle position where the timer B should happen
+ * on the next line, when restarting the INTERRUPT_VIDEO_ENDLINE handler.
+ * In low/med res, the position depends on the video frequency (50/60 Hz)
+ * In high res, the position is always the same.
+ */
+int Video_TimerB_GetDefaultPos ( void )
+{
+	int Pos;
+
+	if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )			/* we're counting end of line events */
+	{
+		if ( ( IoMem_ReadByte ( 0xff8260 ) & 3 ) == 2 )		/* hi res */
+			Pos = LINE_END_CYCLE_71;
+
+		else							/* low res or med res */
+		{
+			if ( IoMem_ReadByte ( 0xff820a ) & 2 )		/* 50 Hz, pos 376 */
+				Pos = LINE_END_CYCLE_50;
+			else                          			/* 60 Hz, pos 372 */
+				Pos = LINE_END_CYCLE_60;
+		}
+	}
+	else								/* we're counting start of line events */
+	{
+		if ( ( IoMem_ReadByte ( 0xff8260 ) & 3 ) == 2 )		/* hi res */
+			Pos = LINE_START_CYCLE_71;
+
+		else							/* low res or med res */
+		{
+			if ( IoMem_ReadByte ( 0xff820a ) & 2 )		/* 50 Hz, pos 56 */
+				Pos = LINE_START_CYCLE_50;
+			else                          			/* 60 Hz, pos 52 */
+				Pos = LINE_START_CYCLE_60;
+		}
+	}
+
+	Pos += TIMERB_VIDEO_CYCLE_OFFSET;
+
+//fprintf ( stderr , "timerb default pos=%d\n" , Pos );
 	return Pos;
 }
 
@@ -1748,12 +1795,12 @@ void Video_InterruptHandler_EndLine(void)
 			if ( HblCounterVideo == nHBL+1 )		/* int happened in fact on the next line nHBL+1 */
 				LineCycles += nCyclesPerLine;
 
-			LineTimerBCycle = Video_TimerB_GetPos( HblCounterVideo );
+			LineTimerBCycle = Video_TimerB_GetDefaultPos ();
 		}
 
 		else							/* count start of line, no possible delay to handle */
 		{
-			LineTimerBCycle = Video_TimerB_GetPos( HblCounterVideo );
+			LineTimerBCycle = Video_TimerB_GetDefaultPos ();
 		}
 
 //fprintf ( stderr , "new tb %d %d %d\n" , LineTimerBCycle , nCyclesPerLine , LineTimerBCycle - LineCycles + nCyclesPerLine );
