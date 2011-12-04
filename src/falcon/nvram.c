@@ -163,11 +163,15 @@ void NvRam_Init(void)
 	{
 		if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_VGA)   // VGA ?
 		{
-			nvram[NVRAM_MONITOR] |= 32;		// VGA mode
+			nvram[NVRAM_VMODE1] &= ~0x01;		// No doublescan
+			nvram[NVRAM_VMODE2] |= 0x10;		// VGA mode
+			nvram[NVRAM_VMODE2] &= ~0x20;		// 60 Hz
 		}
 		else
 		{
-			nvram[NVRAM_MONITOR] &= ~32;		// TV/RGB mode
+			nvram[NVRAM_VMODE1] |= 0x01;		// Interlaced
+			nvram[NVRAM_VMODE2] &= ~0x10;		// TV/RGB mode
+			nvram[NVRAM_VMODE2] |= 0x20;		// 50 Hz
 		}
 		NvRam_SetChecksum();
 	}
