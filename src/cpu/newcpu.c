@@ -1844,50 +1844,45 @@ kludge_me_do:
 	fill_prefetch_slow ();
 	exception_trace (nr);
 	
-    /* Handle exception cycles (special case for MFP) */
-    if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
-    {
-      M68000_AddCycles(44+12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
-    }
-    else if (nr >= 24 && nr <= 31)
-    {
-      if ( nr == 26 )				/* HBL */
-      {
-        /* store current cycle pos when then interrupt was received (see video.c) */
-        LastCycleHblException = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-        M68000_AddCycles(44+12);		/* Video Interrupt */
-      }
-      else if ( nr == 28 ) 			/* VBL */
-        M68000_AddCycles(44+12);		/* Video Interrupt */
-      else
-        M68000_AddCycles(44+4);			/* Other Interrupts */
-    }
-    else if(nr >= 32 && nr <= 47)
-    {
-      M68000_AddCycles(34-4);			/* Trap (total is 34, but cpuemu.c already adds 4) */
-    }
-    else switch(nr)
-    {
-      case 2: M68000_AddCycles(50); break;	/* Bus error */
-      case 3: M68000_AddCycles(50); break;	/* Address error */
-      case 4: M68000_AddCycles(34); break;	/* Illegal instruction */
-      case 5: M68000_AddCycles(38); break;	/* Div by zero */
-      case 6: M68000_AddCycles(40); break;	/* CHK */
-      case 7: M68000_AddCycles(34); break;	/* TRAPV */
-      case 8: M68000_AddCycles(34); break;	/* Privilege violation */
-      case 9: M68000_AddCycles(34); break;	/* Trace */
-      case 10: M68000_AddCycles(34); break;	/* Line-A - probably wrong */
-      case 11: M68000_AddCycles(34); break;	/* Line-F - probably wrong */
-      default:
-        /* FIXME: Add right cycles value for MFP interrupts and copro exceptions ... */
-        if(nr < 64)
-          M68000_AddCycles(4);			/* Coprocessor and unassigned exceptions (???) */
-        else
-          M68000_AddCycles(44+12);		/* Must be a MFP or DSP interrupt */
-        break;
-    }
-
+	/* Handle exception cycles (special case for MFP) */
+	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
+		M68000_AddCycles(44+12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+	}
+	else if (nr >= 24 && nr <= 31) {
+		if ( nr == 26 ) {				/* HBL */
+			/* store current cycle pos when then interrupt was received (see video.c) */
+			LastCycleHblException = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+			M68000_AddCycles(44+12);		/* Video Interrupt */
+		}
+		else if ( nr == 28 ) 				/* VBL */
+			M68000_AddCycles(44+12);		/* Video Interrupt */
+		else
+			M68000_AddCycles(44+4);			/* Other Interrupts */
+		}
+	else if(nr >= 32 && nr <= 47) {
+		M68000_AddCycles(34-4);				/* Trap (total is 34, but cpuemu.c already adds 4) */
+	}
+	else switch(nr) {
+		case 2: M68000_AddCycles(50); break;		/* Bus error */
+		case 3: M68000_AddCycles(50); break;		/* Address error */
+		case 4: M68000_AddCycles(34); break;		/* Illegal instruction */
+		case 5: M68000_AddCycles(38); break;		/* Div by zero */
+		case 6: M68000_AddCycles(40); break;		/* CHK */
+		case 7: M68000_AddCycles(34); break;		/* TRAPV */
+		case 8: M68000_AddCycles(34); break;		/* Privilege violation */
+		case 9: M68000_AddCycles(34); break;		/* Trace */
+		case 10: M68000_AddCycles(34); break;		/* Line-A - probably wrong */
+		case 11: M68000_AddCycles(34); break;		/* Line-F - probably wrong */
+		default:
+		/* FIXME: Add right cycles value for MFP interrupts and copro exceptions ... */
+		if(nr < 64)
+			M68000_AddCycles(4);			/* Coprocessor and unassigned exceptions (???) */
+		else
+			M68000_AddCycles(44+12);		/* Must be a MFP or DSP interrupt */
+		break;
+	}
 }
+
 
 /* Handle exceptions. We need a special case to handle MFP exceptions */
 /* on Atari ST, because it's possible to change the MFP's vector base */
