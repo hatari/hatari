@@ -750,15 +750,15 @@ void RS232_RSR_WriteByte(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Read from the Transmitter Status Register.
+ * When RS232 emulation is not enabled, we still return 0x80 to allow
+ * some games to work when they don't require send/receive on the RS232 port
+ * (eg : 'Treasure Trap', 'The Deep' write some debug informations to RS232)
  */
 void RS232_TSR_ReadByte(void)
 {
 	M68000_WaitState(4);
 
-	if (ConfigureParams.RS232.bEnableRS232)
-		IoMem[0xfffa2d] |= 0x80;        /* Buffer empty */
-	else
-		IoMem[0xfffa2d] &= ~0x80;       /* Buffer not empty */
+	IoMem[0xfffa2d] |= 0x80;        /* Buffer empty */
 
 	Dprintf(("RS232: Read from TSR: $%x\n", (int)IoMem[0xfffa2d]));
 }
