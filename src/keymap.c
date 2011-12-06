@@ -787,11 +787,6 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 		/* Ignore modifier keys that aren't passed to the ST */
 		return;
 	}
-	else if (symkey == SDLK_CAPSLOCK)
-	{
-		/* Simulate another capslock key press */
-		IKBD_PressSTKey(0x3A, true);
-	}
 
 	/* Release key (only if was pressed) */
 	if (Keyboard.KeyStates[symkey])
