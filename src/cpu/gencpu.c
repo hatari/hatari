@@ -70,6 +70,54 @@ static int instr_index = 0;	/* Hatari: Added to give a unique index to each 6803
 static int instr_table;		/* Hatari: Used to know which cycle table to use (CPU_EMU_21) */
 static int instr_table_index;	/* Hatari: Used when the cycle table is not the generic one to set the line of the table (CPU_EMU_21) */
 
+/* used to disable the return cycles function call when there are more than one cycle to take into account for an instruction */
+/* Falcon CPU only (CPUEMU_21)) */
+static bool no_return_cycles; 
+
+/* All the following indexes are useful to get the correct cycle index in the cycle tables for 68030 cycle exact CPU (CPU_21) */
+/* Hatari only code */
+static int chk_w_index = 0;
+static int chk_l_index = 0;
+static int chk2_b_index = 0;
+static int chk2_w_index = 0;
+static int chk2_l_index = 0;
+static int cas_b_index = 0;
+static int cas_w_index = 0;
+static int cas_l_index = 0;
+
+/* These defines describe the different tables used for 68030 Cycle exact (Hatari only) */
+#define TABLE_FALCON_CYCLES			0
+#define TABLE_FALCON_CYCLES_CHK2_BW		1
+#define TABLE_FALCON_CYCLES_CHK2_L		2
+#define TABLE_FALCON_CYCLES_CHK_L		3
+#define TABLE_FALCON_CYCLES_CHK_W		4
+#define TABLE_FALCON_CYCLES_CAS_BW		5
+#define TABLE_FALCON_CYCLES_CAS_L		6
+#define TABLE_FALCON_CYCLES_CAS2_W		7
+#define TABLE_FALCON_CYCLES_CAS2_L		8
+#define TABLE_FALCON_CYCLES_RTE			9
+#define TABLE_FALCON_CYCLES_BCC			10
+#define TABLE_FALCON_CYCLES_DBCC		11
+#define TABLE_FALCON_CYCLES_TRAPCC		12
+#define TABLE_FALCON_CYCLES_TRAPCC_W		13
+#define TABLE_FALCON_CYCLES_TRAPCC_L		14
+#define TABLE_FALCON_CYCLES_TRAPV		15
+#define TABLE_FALCON_CYCLES_DIVU_L		16
+#define TABLE_FALCON_CYCLES_DIVS_L		17
+#define TABLE_FALCON_CYCLES_BFTST_MEM		18
+#define TABLE_FALCON_CYCLES_BFEXTU_MEM		19
+#define TABLE_FALCON_CYCLES_BFCHG_MEM		20
+#define TABLE_FALCON_CYCLES_BFEXTS_MEM		21
+#define TABLE_FALCON_CYCLES_BFCLR_MEM		22
+#define TABLE_FALCON_CYCLES_BFFFO_MEM		23
+#define TABLE_FALCON_CYCLES_BFSET_MEM		24
+#define TABLE_FALCON_CYCLES_BFINS_MEM		25
+#define TABLE_FALCON_CYCLES_LSD			26
+#define TABLE_FALCON_CYCLES_ASR			27
+#define TABLE_FALCON_CYCLES_MOVEC		28
+#define TABLE_FALCON_CYCLES_MOVES_EA_RN		29
+#define TABLE_FALCON_CYCLES_MOVES_RN_EA		30
+#define TABLE_FALCON_CYCLES_68030_INTERNAL	31
 
 
 #define GENA_GETV_NO_FETCH	0
@@ -183,23 +231,25 @@ static void returncycles (const char *s, int cycles)
 	if (using_ce020 == 1)
 		printf ("%sreturn;\n", s);
 	else if (using_ce020 == 2) {
-
-		// This first if statement should be removed when all the cycles are correctly generated for the Falcon 68030 CPU
+		if (no_return_cycles == true)
+			return;
+		// TODO: This first if statement should be removed when all the cycles are correctly generated for the Falcon 68030 CPU
 		// The next "else" should be removed too and only the printf line should be keept.
-		if (instr_table == 0 && table_falcon_cycles[instr_index].cache_cycles == 0) {
+		if (instr_table == TABLE_FALCON_CYCLES && table_falcon_cycles[instr_index].cache_cycles == 0) {
 			// set a temporary false value for this instruction cycles timing.
 			printf ("\tregs.ce030_instr_cycles = table_falcon_cycles[0];\n");
 		}
 		else {
-			printf ("\tregs.ce030_instr_cycles = %s[%d];\n", falcon_cycles_tables[instr_table], instr_table_index);
+			printf ("%s\tregs.ce030_instr_cycles = %s[%d];\n", s, falcon_cycles_tables[instr_table], instr_table_index);
 		}
 
-		printf ("%sreturn;\n", s);
+		printf ("%s\treturn;\n", s);
 	}
 	else
 		printf ("%sreturn %d * CYCLE_UNIT / 2;\n", s, cycles);
 }
 
+/* Todo : remove this function when all Falcon cycles are coded */
 static void addcycles_ce020 (int head, int tail, int cache_cycles, int noncache_cycles)
 {
 	if (!using_ce020)
@@ -209,6 +259,7 @@ static void addcycles_ce020 (int head, int tail, int cache_cycles, int noncache_
 	}
 	count_cycles += noncache_cycles;
 }
+
 static void addcycles000 (int cycles)
 {
 	if (!using_ce)
@@ -1582,8 +1633,9 @@ static void gen_opcode (unsigned long int opcode)
 	}
 	else if (using_ce020 == 2) {
 		/* Initialize the cycle table to the general table by default */
-		instr_table = 0;
+		instr_table = TABLE_FALCON_CYCLES;
 		instr_table_index = instr_index;
+		no_return_cycles = false;
 	}
 
 	if (using_ce020) {
@@ -2237,7 +2289,7 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\tipl_fetch ();\n");
 		    need_endlabel = 1;
 		}
-		instr_table = 9;
+		instr_table = TABLE_FALCON_CYCLES_RTE;
 		instr_table_index = 0;
 		/* PC is set and prefetch filled. */
 		m68k_pc_offset = 0;
@@ -2430,6 +2482,9 @@ static void gen_opcode (unsigned long int opcode)
 	case i_Bcc:
 		// bcc.b branch: idle cycle, prefetch, prefetch
 		// bcc.b not branch: 2 idle cycles, prefetch
+
+		instr_table = TABLE_FALCON_CYCLES_BCC;
+
 		if (curi->size == sz_long) {
 			if (cpu_level < 2) {
 				addcycles000 (2);
@@ -2466,7 +2521,8 @@ static void gen_opcode (unsigned long int opcode)
 				printf ("\treturn 10 * CYCLE_UNIT / 2;\n");
 		} else {
 			incpc ("(uae_s32)src + 2");
-			returncycles ("\t", 10);
+			instr_table_index = 0;
+			returncycles ("", 10);
 		}
 		printf ("didnt_jump:;\n");
 		need_endlabel = 1;
@@ -2480,6 +2536,14 @@ static void gen_opcode (unsigned long int opcode)
 			fill_prefetch_full ();
 		} else {
 			fill_prefetch_full ();
+		}
+		if (using_ce020 == 2) {
+			if (curi->size == sz_byte)
+				instr_table_index = 1;
+			else if (curi->size == sz_word)
+				instr_table_index = 2;
+			else
+				instr_table_index = 3;
 		}
 		insn_n_cycles = curi->size == sz_byte ? 8 : 12;
 		break;
@@ -2728,21 +2792,40 @@ static void gen_opcode (unsigned long int opcode)
 		case sz_byte:
 			printf ("\tlower = (uae_s32)(uae_s8)%s (dsta); upper = (uae_s32)(uae_s8)%s (dsta + 1);\n", srcb, srcb);
 			printf ("\tif ((extra & 0x8000) == 0) reg = (uae_s32)(uae_s8)reg;\n");
+			if (using_ce020 == 2) {
+				instr_table = TABLE_FALCON_CYCLES_CHK2_BW;
+				instr_table_index = chk2_b_index * 2;
+				chk2_b_index ++;
+			}
 			break;
 		case sz_word:
 			printf ("\tlower = (uae_s32)(uae_s16)%s (dsta); upper = (uae_s32)(uae_s16)%s (dsta + 2);\n", srcw, srcw);
 			printf ("\tif ((extra & 0x8000) == 0) reg = (uae_s32)(uae_s16)reg;\n");
+			if (using_ce020 == 2) {
+				instr_table = TABLE_FALCON_CYCLES_CHK2_BW;
+				instr_table_index = chk2_w_index * 2;
+				chk2_w_index ++;
+			}
 			break;
 		case sz_long:
 			printf ("\tlower = %s (dsta); upper = %s (dsta + 4);\n", srcl, srcl);
+			if (using_ce020 == 2) {
+				instr_table = TABLE_FALCON_CYCLES_CHK2_L;
+				instr_table_index = chk2_l_index * 2;
+				chk2_l_index ++;
+			}
 			break;
 		default:
 			abort ();
 		}
 		printf ("\tSET_ZFLG (upper == reg || lower == reg);\n");
 		printf ("\tSET_CFLG_ALWAYS (lower <= upper ? reg < lower || reg > upper : reg > upper || reg < lower);\n");
-		printf ("\tif ((extra & 0x800) && GET_CFLG ()) { Exception (6, oldpc ,M68000_EXC_SRC_CPU); goto %s; }\n}\n", endlabelstr);
-		need_endlabel = 1;
+		printf ("\tif ((extra & 0x800) && GET_CFLG ()) {\n");
+		printf ("\t\tException (6, oldpc ,M68000_EXC_SRC_CPU);\n");
+		instr_table_index ++;	/* take the Exception cycle value in the CHK2 table */
+		returncycles ("\t", 0);
+		printf ("\t}\n}\n");
+		instr_table_index --;	/* take the No Exception cycle value in the CHK2 table */
 		break;
 
 	case i_ASR:
@@ -3174,6 +3257,24 @@ static void gen_opcode (unsigned long int opcode)
 		break;
 	case i_CAS:
 		{
+			if (using_ce020 == 2) {
+				no_return_cycles = true;
+				if (curi->size == sz_byte) {
+					instr_table = TABLE_FALCON_CYCLES_CAS_BW;
+					instr_table_index = cas_b_index * 2;
+					cas_b_index ++;
+				}
+				else if (curi->size == sz_word) {
+					instr_table = TABLE_FALCON_CYCLES_CAS_BW;
+					instr_table_index = cas_w_index * 2;
+					cas_w_index ++;
+				}
+				else {
+					instr_table = TABLE_FALCON_CYCLES_CAS_L;
+					instr_table_index = cas_l_index * 2;
+					cas_l_index ++;
+				}
+			}
 			int old_brace_level;
 			genamode (curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 			genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0, 0);
@@ -3186,10 +3287,14 @@ static void gen_opcode (unsigned long int opcode)
 			old_brace_level = n_braces;
 			start_brace ();
 			genastore ("(m68k_dreg (regs, ru))", curi->dmode, "dstreg", curi->size, "dst");
+			if (using_ce020 == 2) 
+				printf ("\tregs.ce030_instr_cycles = %s[%d];\n", falcon_cycles_tables[instr_table], instr_table_index);
 			pop_braces (old_brace_level);
 			printf ("else");
 			start_brace ();
 			printf ("m68k_dreg (regs, rc) = dst;\n");
+			if (using_ce020 == 2) 
+				printf ("\tregs.ce030_instr_cycles = %s[%d];\n", falcon_cycles_tables[instr_table], instr_table_index + 1);
 			pop_braces (old_brace_level);
 		}
 		break;
