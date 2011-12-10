@@ -142,9 +142,14 @@ static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
  */
 void PSG_Reset(void)
 {
+        int     i;
+
 	PSGRegisterSelect = 0;
 	PSGRegisterReadData = 0;
 	memset(PSGRegisters, 0, sizeof(PSGRegisters));
+        for ( i=0 ; i<14 ; i++ )		/* Update sound's emulation registers */
+		Sound_WriteReg ( i , 0 );
+
 	LastStrobe=0;
 }
 
