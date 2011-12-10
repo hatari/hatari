@@ -23,6 +23,7 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__
 #include "ikbd.h"
 #include "screen.h"
 #include "video.h"
+#include "psg.h"
 
 #include "sysdeps.h"
 #include "maccess.h"
@@ -50,6 +51,9 @@ void customreset(void)
 
 	/* Reseting the GLUE video chip should also set freq/res register to 0 */
 	Video_Reset_Glue ();
+
+	/* Reset the YM2149 (stop any sound) */
+	PSG_Reset ();
 }
 
 
