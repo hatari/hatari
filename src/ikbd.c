@@ -866,6 +866,7 @@ static void IKBD_SendCursorMousePacket(void)
 	/* Limit to '10' loops as host mouse cursor might have a VERY poor quality. */
 	/* Eg, a single mouse movement on and ST gives delta's of '1', mostly, */
 	/* but host mouse might go as high as 20+! */
+//fprintf ( stderr , "key %d %d %d %d %d %d\n" , KeyboardProcessor.Mouse.DeltaX , KeyboardProcessor.Mouse.DeltaY, Keyboard.bOldLButtonDown,Keyboard.bLButtonDown, Keyboard.bOldRButtonDown,Keyboard.bRButtonDown );
 	while ( (i<10) && ((KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
 	                   || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown))) )
 	{
@@ -1989,6 +1990,7 @@ void IKBD_InterruptHandler_ACIA(void)
 		/* Did we get an over-run? Ie byte has arrived from keyboard processor BEFORE CPU has read previous one from ACIA */
 		if (ACIAStatusRegister&ACIA_STATUS_REGISTER__RX_BUFFER_FULL)
 			ACIAStatusRegister |= ACIA_STATUS_REGISTER__OVERRUN_ERROR;  /* Set over-run */
+//fprintf ( stderr , "int acia %x %x\n" , ACIAByte, ACIAStatusRegister );
 
 		/* ACIA buffer is now full */
 		ACIAStatusRegister |= ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
@@ -2021,6 +2023,7 @@ void IKBD_InterruptHandler_ACIA(void)
  */
 void IKBD_InterruptHandler_MFP(void)
 {
+//fprintf ( stderr , "int mfp %x %x\n" , ACIAByte, ACIAStatusRegister );
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
@@ -2208,43 +2211,44 @@ void IKBD_KeyboardControl_WriteByte(void)
  */
 void IKBD_KeyboardData_WriteByte(void)
 {
+	int FrameCycles, HblCounterVideo, LineCycles;
+
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
 
-	if (LOG_TRACE_LEVEL(TRACE_IKBD_ACIA))
-	{
-		int FrameCycles, HblCounterVideo, LineCycles;
-		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-		LOG_TRACE_PRINT("ikbd write fffc02 data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LOG_TRACE(TRACE_IKBD_ACIA, "ikbd write fffc02 data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
 				IoMem[0xfffc02], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
-	}
 
 
-	if ( bByteInTransitFromACIA == false )			/* we're not already transfering a byte to the ikbd */
+	if ( bByteInTransitFromACIA == true )			/* we're already transfering a byte to the ikbd */
 	{
-//		IKBD_SendByteToKeyboardProcessor(IoMem[0xfffc02]);  /* Pass our byte to the keyboard processor */
-		ACIATxDataRegister = IoMem[0xfffc02];		/* store the byte that we want to send to the ikbd */
+		LOG_TRACE(TRACE_IKBD_ACIA, "ikbd write fffc02 data=0x%x cancels command 0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+				IoMem[0xfffc02], ACIATxDataRegister, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 
-		/* Delay the processing of the byte in IKBD_InterruptHandler_ACIA */
-		/* The delay doesn't seem to be constant, so we add a small random number of max 40 cycles */
-		/* (else some programs get stuck in an endless loop ('Pandemonium Demos' by Chaos) */
-
-		// [NP] FIXME 2011/05/20 : if we use a delay of ACIA_CYCLES=7200, tos 1.02 and 1.04 are showing
-		// a bug where addr $6122/$6124 are overwritten by the stack, preventing the desktop
-		// to be restored at the correct resolution !
-		// For now, use a delay of 1000 cycles ; need to do complete measures on a real ST for this
-		//CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
-// delay cycles <=1560 ok, > 1570 bad for tos 1.02/1.04
-		CycInt_AddRelativeInterrupt(1000+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
-
-		/* Some games like USS John Young / FOF54 actually check whether the
-		* transmit-buffer-empty bit is really cleared after writing a data
-		* byte to the IKBD, so we have to temporarily clear this bit, too,
-		* although the byte is send immediately to our virtual IKBD. */
-		ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;		/* TX buffer is full */
-
-		bByteInTransitFromACIA = true;
 	}
+
+	ACIATxDataRegister = IoMem[0xfffc02];		/* store the byte that we want to send to the ikbd */
+
+	/* Delay the processing of the byte in IKBD_InterruptHandler_ACIA */
+	/* The delay doesn't seem to be constant, so we add a small random number of max 40 cycles */
+	/* (else some programs get stuck in an endless loop ('Pandemonium Demos' by Chaos) */
+
+	// [NP] FIXME 2011/05/20 : if we use a delay of ACIA_CYCLES=7200, tos 1.02 and 1.04 are showing
+	// a bug where addr $6122/$6124 are overwritten by the stack, preventing the desktop
+	// to be restored at the correct resolution !
+	// For now, use a delay of 1000 cycles ; need to do complete measures on a real ST for this
+	//CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+// delay cycles <=1560 ok, > 1570 bad for tos 1.02/1.04
+	CycInt_AddRelativeInterrupt(1000+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+
+	/* Some games like USS John Young / FOF54 actually check whether the
+	* transmit-buffer-empty bit is really cleared after writing a data
+	* byte to the IKBD, so we have to temporarily clear this bit, too,
+	* although the byte is send immediately to our virtual IKBD. */
+	ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;		/* TX buffer is full */
+
+	bByteInTransitFromACIA = true;
 }
 
 
