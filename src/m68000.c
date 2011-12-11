@@ -56,6 +56,8 @@
 /*			(fixes Sommarhack 2010 Invitation by DHS).					*/
 /* 2010/11/07	[NP]	Add pairing between bit shift instr and JMP (fixes lsl.w #2,d0 + jmp 2(pc,d0)	*/
 /*			used in Fullparts by Hemoroids).						*/
+/* 2011/12/11	[NP]	Add pairing between MUL and JSR (fixes muls #52,d2 + jsr 0(a1,d2.w) used in	*/
+/*			Lemmings Compilation 40's Intro).						 */
 
 
 const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
@@ -165,6 +167,9 @@ static void M68000_InitPairing(void)
 	PairingArray[ i_MULU ][ i_DIVS ] = 1;
 	PairingArray[ i_MULS ][ i_DIVU ] = 1;
 	PairingArray[ i_MULS ][ i_DIVS ] = 1;
+
+	PairingArray[ i_MULU ][ i_JSR ] = 1;
+	PairingArray[ i_MULS ][ i_JSR ] = 1;
 
 	PairingArray[ i_BTST ][  i_Bcc ] = 1;
 
