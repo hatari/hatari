@@ -29,10 +29,16 @@ static SDL_Joystick *sdlJoystick[6] =   /* SDL's joystick structures */
 	NULL, NULL, NULL, NULL, NULL, NULL
 };
 
+/* Further explanation see JoyInit() */
+static JOYAXISMAPPING *sdlJoystickMapping[6] = /* references which axis are actually in use by the selected SDL joystick */
+{
+    NULL, NULL, NULL, NULL, NULL, NULL
+};
+
 static bool bJoystickWorking[6] =       /* Is joystick plugged in and working? */
 {
-	false, false, false, false, false, false
-}; 
+    NULL, NULL, NULL, NULL, NULL, NULL
+};
 
 int JoystickSpaceBar = false;           /* State of space-bar on joystick button 2 */
 static Uint8 nJoyKeyEmu[6];
@@ -45,7 +51,28 @@ static Uint16 nSteJoySelect;
  */
 void Joy_Init(void)
 {
+	/* Joystick axis mapping table				*/
+	/* Matthias Arndt <marndt@asmsoftware.de>		*/
+	/* Somehow, not all SDL joysticks are created equal.	*/
+	/* Not all pads or sticks use axis 0 for x and axis 1	*/
+	/* for y information.					*/
+	/* This table allows to remap the axis to used.		*/
+	/* A joystick is identified by its SDL name and 	*/
+	/* followed by the X axis to use and the Y axis.	*/
+	/* Find out the axis number with the tool jstest.	*/
+
+	/* FIXME: Read those settings from a configuration file and make them tunable from the GUI. */
+	static JOYAXISMAPPING AxisMappingTable [] =
+	{
+       		/* USB game pad with ID ID 0079:0011, sold by Speedlink*/
+		{"USB Gamepad" , 3, 4},
+		/* default entry, is used if no other SDL joystick name does match */
+		{"*DEFAULT*" , 0, 1},
+	};
+
 	int i, nPadsConnected;
+
+	JOYAXISMAPPING *thismapping;
 
 	/* Initialise SDL's joystick subsystem: */
 	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) < 0)
@@ -66,6 +93,19 @@ void Joy_Init(void)
 			/* Set as working */
 			bJoystickWorking[i] = true;
 			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, SDL_JoystickName(i));
+			/* determine joystick axis mapping for given SDL joystick name: */
+			thismapping = AxisMappingTable;
+			while(strcmp(thismapping->SDLJoystickName, "*DEFAULT*") != 0)
+			{
+				/* check if ID string matches the one reported by SDL: */
+				if(strncmp(thismapping->SDLJoystickName, SDL_JoystickName(i),strlen(thismapping->SDLJoystickName)) == 0)
+					break;
+				/* iterate mapping table: */
+				thismapping++;
+			}
+
+			sdlJoystickMapping[i] = thismapping;
+			Log_Printf(LOG_DEBUG, "Joystick %i maps axis %d and %d\n", i, sdlJoystickMapping[i]->XAxisID, sdlJoystickMapping[i]->YAxisID);
 		}
 	}
 
@@ -143,9 +183,9 @@ Uint8 Joy_GetStickData(int nStJoyId)
 	         && bJoystickWorking[nSdlJoyId])
 	{
 		/* get joystick axis from configuration settings and make them plausible */
-		JoyReading.XAxisID = 0;
-		JoyReading.YAxisID = 1;
-		
+		JoyReading.XAxisID = sdlJoystickMapping[nSdlJoyId]->XAxisID;
+		JoyReading.YAxisID = sdlJoystickMapping[nSdlJoyId]->YAxisID;
+
 		/* make selected axis IDs plausible */
 		if(  (JoyReading.XAxisID == JoyReading.YAxisID) /* same joystick axis for two directions? */
 		   ||(JoyReading.XAxisID > nAxes)               /* ID for x axis beyond nr of existing axes? */
@@ -156,7 +196,7 @@ Uint8 Joy_GetStickData(int nStJoyId)
 			JoyReading.XAxisID = 0;
 			JoyReading.YAxisID = 1;
 		}
-		
+
 		/* Read real joystick and map to emulated ST joystick for emulation */
 		if (!Joy_ReadJoystick(nSdlJoyId, &JoyReading))
 		{

@@ -11,9 +11,15 @@
 typedef struct
 {
 	int XPos,YPos;                /* the actually read axis values in range of -32768...0...32767 */
-	int XAxisID,YAxisID;          /* the IDs of the physical PC jyostick's axis to be used to gain ST joystick axis input */
+	int XAxisID,YAxisID;          /* the IDs of the physical PC joystick's axis to be used to gain ST joystick axis input */
 	int Buttons;                  /* JOY_BUTTON1 */
 } JOYREADING;
+
+typedef struct
+{
+    char SDLJoystickName[50];
+    int XAxisID,YAxisID;           /* the IDs associated with a certain SDL joystick */
+} JOYAXISMAPPING;
 
 enum
 {
