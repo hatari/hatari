@@ -1741,6 +1741,9 @@ static void m68k_run_1 (void)
 	/* the error to build the exception stack frame */
 	BusErrorPC = m68k_getpc();
 
+	if (bDspEnabled)
+	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
+
 	cycles = (*cpufunctbl[opcode])(opcode);
 
 #ifdef DEBUG_PREFETCH
@@ -1750,9 +1753,6 @@ static void m68k_run_1 (void)
 	    debugging = 1;
 	}
 #endif
-
-	if (bDspEnabled)
-	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
 
 	M68000_AddCyclesWithPairing(cycles);
 	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
@@ -1791,7 +1791,7 @@ static void m68k_run_1 (void)
 
 	/* Run DSP 56k code if necessary */
 	if (bDspEnabled) {
-	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) );
+	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) * 2);
 	}
     }
 }
