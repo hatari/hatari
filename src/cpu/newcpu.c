@@ -3490,6 +3490,10 @@ static void m68k_run_2ce (void)
 		/* clear add_cycles for instructions like movem */
 		regs.ce030_instr_addcycles = 0;
 
+		/* Clear M68000 cycle counter */ 
+		if (bDspEnabled)
+			Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
+
 		uae_u32 opcode = x_prefetch (0);
 		(*cpufunctbl[opcode])(opcode);
 		
@@ -3537,7 +3541,7 @@ static void m68k_run_2ce (void)
 	
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
-			DSP_Run(curr_cycles);
+			DSP_Run(Cycles_GetCounter(CYCLES_COUNTER_CPU) * 2);
 		}
 	}
 }
