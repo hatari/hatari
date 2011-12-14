@@ -24,24 +24,24 @@ const char Joy_fileid[] = "Hatari joy.c : " __DATE__ " " __TIME__;
 #define JOY_BUTTON2  2
 
 
-static SDL_Joystick *sdlJoystick[6] =   /* SDL's joystick structures */
+static SDL_Joystick *sdlJoystick[ JOYSTICK_COUNT ] =		/* SDL's joystick structures */
 {
 	NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 /* Further explanation see JoyInit() */
-static JOYAXISMAPPING *sdlJoystickMapping[6] = /* references which axis are actually in use by the selected SDL joystick */
+static JOYAXISMAPPING *sdlJoystickMapping[ JOYSTICK_COUNT ] =	/* references which axis are actually in use by the selected SDL joystick */
 {
-    NULL, NULL, NULL, NULL, NULL, NULL
+	NULL, NULL, NULL, NULL, NULL, NULL
 };
 
-static bool bJoystickWorking[6] =       /* Is joystick plugged in and working? */
+static bool bJoystickWorking[ JOYSTICK_COUNT ] =		/* Is joystick plugged in and working? */
 {
-    NULL, NULL, NULL, NULL, NULL, NULL
+	false, false, false, false, false, false
 };
 
 int JoystickSpaceBar = false;           /* State of space-bar on joystick button 2 */
-static Uint8 nJoyKeyEmu[6];
+static Uint8 nJoyKeyEmu[ JOYSTICK_COUNT ];
 static Uint16 nSteJoySelect;
 
 
@@ -83,7 +83,7 @@ void Joy_Init(void)
 
 	/* Scan joystick connection array for working joysticks */
 	nPadsConnected = SDL_NumJoysticks();
-	for (i = 0; i < nPadsConnected && i < 6; i++)
+	for (i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
 	{
 		/* Open the joystick for use */
 		sdlJoystick[i] = SDL_JoystickOpen(i);
@@ -123,7 +123,7 @@ void Joy_UnInit(void)
 
 	nPadsConnected = SDL_NumJoysticks();
 
-	for (i = 0; i < nPadsConnected && i < 6; i++)
+	for (i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
 	{
 		if (bJoystickWorking[i] == true)
 		{
