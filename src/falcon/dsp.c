@@ -28,6 +28,7 @@
 #include "dsp.h"
 #include "crossbar.h"
 #include "configuration.h"
+#include "cycInt.h"
 
 #if ENABLE_DSP_EMU
 #include "m68000.h"
@@ -642,15 +643,22 @@ void DSP_SsiTransmit_SCK(void)
 
 /**
  * Read access wrapper for ioMemTabFalcon (DSP Host port)
+ * DSP Host interface port is accessed by the 68030 in Byte mode.
+ * A move.w value,$ffA206 results in 2 bus access for the 68030.
  */
 void DSP_HandleReadAccess(void)
 {
 	Uint32 addr;
 	Uint8 value;
+	bool multi_access = false; 
+	
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
 #if ENABLE_DSP_EMU
 		value = dsp_core_read_host(addr-DSP_HW_OFFSET);
+		if (multi_access == true)
+			M68000_AddCycles(4);
+		multi_access = true;
 #else
 		/* this value prevents TOS from hanging in the DSP init code */
 		value = 0xff;
@@ -663,17 +671,24 @@ void DSP_HandleReadAccess(void)
 
 /**
  * Write access wrapper for ioMemTabFalcon (DSP Host port)
+ * DSP Host interface port is accessed by the 68030 in Byte mode.
+ * A move.w value,$ffA206 results in 2 bus access for the 68030.
  */
 void DSP_HandleWriteAccess(void)
 {
 	Uint32 addr;
 	Uint8 value;
+	bool multi_access = false; 
+
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
 		value = IoMem_ReadByte(addr);
 		Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
 #if ENABLE_DSP_EMU
 		dsp_core_write_host(addr-DSP_HW_OFFSET, value);
+		if (multi_access == true)
+			M68000_AddCycles(4);
+		multi_access = true;
 #endif
 	}
 }
