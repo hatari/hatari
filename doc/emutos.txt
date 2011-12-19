@@ -40,6 +40,11 @@ The tos.img file included with the latest Hatari releases is the
 Earlier Hatari binary releases have included one of the smaller
 EmuTOS image files.
 
+Note for EmuTOS before 0.8.6 :
+  In order to work with Hatari, EmuTOS 0.8.5 and earlier require
+  the FastBoot option to be enabled. This is used to skip some memory
+  tests (that Hatari doesn't support yet) when EmuTOS try to determine
+  the available RAM size.
 
 What is EmuTOS
 ==============
