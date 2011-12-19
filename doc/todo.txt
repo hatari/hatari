@@ -56,6 +56,27 @@ Emulation improvements
 	- Verify DSP instructions cycle count, especially with external RAM
 
 
+Programs known as not fully functionnal (not an exhaustive list)
+----------------------------------------------------------------
+
+Demos :
+  - video : Omega - Full Overscan Screen, Phalanx Demo - Dragon,
+	Dragonnels - Happy Island, Phaleon Demo - Future Minds,
+	Decade Demo - Reset, TNT - Death Of The Left Border,
+	Anomaly Demo - Menu, Delirious Demo IV - STE Detection,
+	Ventura - Ultimate Dist, Syntax Terror - TCB, ICE - Kryos,
+	ICE - Intruding, ICE - Jamcols, Extreme Rage, Paradox - XMas 2004,
+	ICE - Space Tale, ICE - The Wave Of The Future, Snork - DNT Screen 1
+  - cpu/timers : Pandemonium Demos - Mega 3D, Audio Art, UMD Intro
+  - ikbd : Dragonnels - Unlimited Bobs
+
+Games :
+  - cpu/timers : FOF 42 - Subbuteo, Bolo, Final Conflict, The Ultimate Ride,
+	Treasure Trap
+  - ikbd : F29, Superior 109 - Special Forces
+  - sound : RBI Baseball 2
+
+
 Other potential Hatari functionality improvements
 -------------------------------------------------
 
