@@ -600,7 +600,8 @@ void Configuration_Apply(bool bReset)
 
 	/* YM Mixing */
 	if ( ( ConfigureParams.Sound.YmVolumeMixing != YM_LINEAR_MIXING )
-	  && ( ConfigureParams.Sound.YmVolumeMixing != YM_TABLE_MIXING ) )
+	  && ( ConfigureParams.Sound.YmVolumeMixing != YM_TABLE_MIXING  )
+	  && ( ConfigureParams.Sound.YmVolumeMixing != YM_MODEL_MIXING ) )
 		ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
 
 	YmVolumeMixing = ConfigureParams.Sound.YmVolumeMixing;

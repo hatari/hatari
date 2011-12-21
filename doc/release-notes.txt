@@ -16,7 +16,7 @@ Emulation:
 - Improve shifter (add another method to do 4 pixel hardware scrolling,
     better emulation for 0 byte blank line)
 - Some fixes to the IKBD emulation
-- Better filters for sound emulation
+- Better filters and model for sound emulation
 
 Emulator:
 - Switch to ST mode when using TOS <= 1.04

@@ -246,6 +246,7 @@ static void	volumetable_set		(ymu16 *volumetable, int i, int j, int k, int val);
 static int	volumetable_interpolate	(int y1, int y2);
 static void	interpolate_volumetable	(ymu16 *out);
 
+static void	YM2149_BuildModelVolumeTable(ymu16 *out);
 static void	YM2149_BuildLinearVolumeTable(ymu16 *out);
 static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsigned int Level, bool DoCenter);
 
@@ -495,6 +496,78 @@ static void	YM2149_BuildLinearVolumeTable(ymu16 *out)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Build a circuit analysed version of the conversion table.
+ * David Savinkoff designed this algorithm by analysing data
+ * measured by Paulo Simoes and Benjamin Gerard.
+ * The numbers are arrived at by assuming a current steering
+ * resistor ladder network and using the voltage divider rule.
+ */
+
+static void	YM2149_BuildModelVolumeTable(ymu16 *out)
+{
+#define Quartet 0                     /* 1 = Compile for Quartet Mode */
+
+#define FOURTH2 1.189207115002721067  /* Fourth root of two */
+#define SQRT3   1.732050807568877294  /* Square root of three */
+/* R8=1k (pulldown) + YM//1K (Quartet pullup)*/
+#define YM_Gth  0.7113248654051871177 /* = (1//(3^1/2 - 1) + 1)/2 */
+
+#if     Quartet
+/* Quartet Mode (MaxVol is 46602 in Paulo Simoes table) */
+#define MaxVol  (56700.0*YM_Gth)      /* Quartet Mode Maximum value */
+#define WARP    (6.0*(1.0+YM_Gth))    /* Quartet Mode WARP (50% duty PWM) */
+#else
+/* Normal Mode  (Maxvol is 65119 in Simoes' table, 65535 in Gerard's */
+#define MaxVol  56700.0               /* Normal Mode Maximum value in table */
+#define WARP    SQRT3                 /* Normal Mode WARP */
+#endif
+
+	double conductance;
+	double conductance_[32];
+	int	i, j, k;
+	int	res;
+
+/**
+ * YM2149 and R8=1k follows (2^-1/4)^(n-31) better when 2 voices are
+ * summed (A+B or B+C or C+A) rather than individually (A or B or C):
+ *   conductance = 2.0/3.0/(1.0-1.0/SQRT3)-2.0/3.0;
+ * When taken into consideration with three voices.
+ *
+ * Note that the YM2149 does not use laser trimmed resistances, thus
+ * has offsets that are added and/or multiplied with (2^-1/4)^(n-31).
+ */
+	conductance = 2.0/3.0/(1.0-1.0/WARP)-2.0/3.0;
+
+/**
+ * Because the YM current output (voltage source with series resistances)
+ * is connected to a grounded resistor to develop the output voltage
+ * (instead of a current to voltage converter), the output transfer
+ * function is not linear. Thus:
+ * 2.0*conductance_[n] = 1.0/(1.0-1.0/FOURTH2/(1.0/conductance + 1.0))-1.0;
+ */
+	for (i = 31; i >= 1; i--)
+	{
+		conductance_[i] = conductance/2.0;
+		conductance = 1.0/(1.0-1.0/FOURTH2/(1.0/conductance + 1.0))-1.0;
+	}
+	conductance_[0] = 1.0e-8;
+
+/* Sum the conductances as a function of a voltage divider: Vout=Vin*(Rout/Rout+Rin) */
+	for (i = 0; i < 32; i++)
+		for (j = 0; j < 32; j++)
+			for (k = 0; k < 32; k++)
+			{
+				res = (int)(0.5+(MaxVol*WARP)/(1.0 +
+					1.0/(conductance_[i]+conductance_[j]+conductance_[k])));
+				volumetable_set ( out, i, j, k, res );
+			}
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Normalise and optionally center the volume table used to
  * convert the 3 volumes to a final signed 16 bit sample.
  * This allows to adapt the amplitude/volume of the samples and
@@ -581,7 +654,9 @@ static void	Ym2149_BuildVolumeTable(void)
 {
 	/* Depending on the volume mixing method, we use a table based on real measures */
 	/* or a table based on a linear volume mixing. */
-	if ( YmVolumeMixing == YM_TABLE_MIXING )
+	if ( YmVolumeMixing == YM_MODEL_MIXING )
+		YM2149_BuildModelVolumeTable(ymout5_u16);	/* create 32*32*32 circuit analysed model of the volume table */
+	else if ( YmVolumeMixing == YM_TABLE_MIXING )
 		interpolate_volumetable(ymout5_u16);		/* expand the 16*16*16 values in volumetable_original to 32*32*32 */
 	else
 		YM2149_BuildLinearVolumeTable(ymout5_u16);	/* combine the 32 possible volumes */

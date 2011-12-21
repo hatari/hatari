@@ -90,7 +90,7 @@ is missing here, please remind me!):
   working.
 
 - David Savinkoff: More accurate printer emulation, LMC1992 emulation
-  patches and IIR filter.
+  patches, IIR/Low Pass filters and many improvements to the YM2149 model.
 
 - Cyprian Konador: Found some bugs in the blitter cycles emulation
 

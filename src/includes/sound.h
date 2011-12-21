@@ -43,6 +43,7 @@ typedef		yms16			ymsample;	/* Output samples are mono 16bits signed PCM */
 
 #define YM_LINEAR_MIXING		1		/* Use ymout1c5bit[] to build ymout5[] */
 #define YM_TABLE_MIXING			2		/* Use volumetable_original to build ymout5[] */
+#define YM_MODEL_MIXING			3		/* Use circuit analysis model to build ymout5[] */
 
 extern int	YmVolumeMixing;
 extern bool	UseLowPassFilter;

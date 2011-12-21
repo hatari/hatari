@@ -341,7 +341,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
 	  "<x>", "Sound buffer size for SDL in ms (x=0/10-100, 0=default)" },
 	{ OPT_YM_MIXING,   NULL, "--ym-mixing",
-	  "<x>", "YM sound mixing method (x=linear/table)" },
+	  "<x>", "YM sound mixing method (x=linear/table/model)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
@@ -1490,6 +1490,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			else if (strcasecmp(argv[i], "table") == 0)
 			{
 				ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
+			}
+			else if (strcasecmp(argv[i], "model") == 0)
+			{
+				ConfigureParams.Sound.YmVolumeMixing = YM_MODEL_MIXING;
 			}
 			else
 			{
