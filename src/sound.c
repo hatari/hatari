@@ -192,13 +192,6 @@ static yms16 *ymout5 = (yms16 *)ymout5_u16;
 
 
 /*--------------------------------------------------------------*/
-/* Variables for the Low Pass Filter				*/
-/*--------------------------------------------------------------*/
-
-static ymsample	m_lowPassFilter[2];
-
-
-/*--------------------------------------------------------------*/
 /* Variables for the YM2149 emulator (need to be saved and	*/
 /* restored in memory snapshots)				*/
 /*--------------------------------------------------------------*/
@@ -246,8 +239,7 @@ bool		Sound_BufferIndexNeedReset = false;
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static void	LowPassFilter_Reset	(void);
-static ymsample	LowPassFilter		(ymsample in);
+static ymsample	LowPassFilter		(ymsample x0);
 
 static int	volumetable_get		(int i, int j, int k);
 static void	volumetable_set		(ymu16 *volumetable, int i, int j, int k, int val);
@@ -274,14 +266,15 @@ static void	Sound_GenerateSamples(int SamplesToGenerate);
 
 
 /*--------------------------------------------------------------*/
-/* DC Adjuster / Low Pass Filter routines.			*/
+/* DC Adjuster							*/
 /*--------------------------------------------------------------*/
 
-/* 6dB/octave first order HPF fc = (1.0-0.998)*44100/(2.0*pi)	*/
-/* Z pole = 0.99804 --> FS = 44100 Hz : fc=13.7 Hz (11 Hz meas) */
-/* a = (int32_t)(32768.0*(1.0 - pole)) :       a = 64 !!!	*/
-/* Input range: -32768 to 32767  Maximum step: +65536 or -65472	*/
-
+/**
+ * 6dB/octave first order HPF fc = (1.0-0.998)*44100/(2.0*pi)
+ * Z pole = 0.99804 --> FS = 44100 Hz : fc=13.7 Hz (11 Hz meas)
+ * a = (int32_t)(32768.0*(1.0 - pole)) :       a = 64 !!!
+ * Input range: -32768 to 32767  Maximum step: +65536 or -65472
+ */
 ymsample	Subsonic_IIR_HPF_Left(ymsample x0)
 {
 	static	yms32	x1 = 0, y1 = 0, y0 = 0;
@@ -306,21 +299,58 @@ ymsample	Subsonic_IIR_HPF_Right(ymsample x0)
 }
 
 
-static void	LowPassFilter_Reset(void)
-{
-	m_lowPassFilter[0] = 0;
-	m_lowPassFilter[1] = 0;
-}
+/*--------------------------------------------------------------*/
+/* Low Pass Filter routines.					*/
+/*--------------------------------------------------------------*/
 
-
-static ymsample	LowPassFilter(ymsample in)
+/**
+ * Get coefficients for different Fs (C10 is in ST only):
+ * Wc = 2*M_PI*4895.1;
+ * Fs = 44100;
+ * warp = Wc/tanf((Wc/2)/Fs);
+ * b = Wc/(warp+Wc);
+ * a = (Wc-warp)/(warp+Wc);
+ *
+ * #define B_z (yms32)( 0.2667*(1<<15))
+ * #define A_z (yms32)(-0.4667*(1<<15))
+ *
+ * y0 = (B_z*(x0 + x1) - A_z*y0) >> 15;
+ * x1 = x0;
+ *
+ * The Lowpass Filter formed by C10 = 0.1 uF
+ * and
+ * R8=1k // 1k*(65119-46602/65119) // R9=10k // R10=5.1k //
+ * (R12=470)*(100=Q1_HFE) = 206.865 ohms when YM2149 is High
+ * and
+ * R8=1k // R9=10k // R10=5.1k // (R12=470)*(100=Q1_HFE)
+ *                        = 759.1   ohms when YM2149 is Low
+ * High corner is 1/(2*pi*(0.1*10e-6)*206.865) fc = 7693.7 Hz
+ * Low  corner is 1/(2*pi*(0.1*10e-6)*795.1)   fc = 2096.6 Hz
+ * Notes:
+ * - using STF reference designators R8 R9 R10 C10 (from dec 1986 schematics)
+ * - using corresponding numbers from psgstrep and psgquart
+ * - 65119 is the largest value in Paulo's psgstrep table
+ * - 46602 is the largest value in Paulo's psgquart table
+ * - this low pass filter uses the highest cutoff frequency
+ *   on the STf (a slightly lower frequency is reasonable).
+ *
+ * A first order lowpass filter with a high cutoff frequency
+ * is used when the YM2149 pulls high, and a lowpass filter
+ * with a low cutoff frequency is used when R8 pulls low.
+ */
+static ymsample	LowPassFilter(ymsample x0)
 {
-	ymsample	out;
- 
-	out = (m_lowPassFilter[0]>>2) + (m_lowPassFilter[1]>>1) + (in>>2);
-	m_lowPassFilter[0] = m_lowPassFilter[1];
-	m_lowPassFilter[1] = in;
-	return out;
+	static	yms32 y0 = 0, x1 = 0;
+
+	if (x0 >= y0)
+	/* YM Pull up:   fc = 7586.1 Hz (44.1 KHz), fc = 8257.0 Hz (48 KHz) */
+		y0 = (3*(x0 + x1) + (y0<<1)) >> 3;
+	else
+	/* R8 Pull down: fc = 1992.0 Hz (44.1 KHz), fc = 2168.0 Hz (48 KHz) */
+		y0 = ((x0 + x1) + (6*y0)) >> 3;
+
+	x1 = x0;
+	return y0;
 }
 
 
@@ -606,8 +636,6 @@ static void	Ym2149_Reset(void)
 
 	envShape = 0;
 	envPos = 0;
-
-	LowPassFilter_Reset ();
 }
 
 
