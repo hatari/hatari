@@ -39,7 +39,7 @@ static char dlgRecordName[35];
 /* The sound dialog: */
 static SGOBJ sounddlg[] =
 {
-	{ SGBOX,      0,0,  0, 0, 40,26, NULL },
+	{ SGBOX,      0,0,  0, 0, 40,25, NULL },
 	{ SGBOX,      0,0,  1, 1, 38,13, NULL },
 	{ SGTEXT,     0,0,  4, 2, 13,1, "SOUND" },
 	{ SGCHECKBOX, 0,0, 14, 2, 14,1, "Enabled" },
@@ -60,13 +60,13 @@ static SGOBJ sounddlg[] =
 	{ SGRADIOBUT, 0,0, 15,12, 10,1, "ST table" },
 	{ SGRADIOBUT, 0,0, 28,12, 10,1, "Linear" },
 
-	{ SGBOX,      0,0,  1,15, 38,8, NULL },
+	{ SGBOX,      0,0,  1,15, 38,7, NULL },
 	{ SGTEXT,     0,0, 13,16, 14,1, "Capture YM/WAV" },
-	{ SGTEXT,     0,0,  2,18, 26,1, "File name (*.wav / *.ym):" },
-	{ SGTEXT,     0,0,  2,19, 34,1, dlgRecordName },
-	{ SGBUTTON,   0,0, 28,18,  8,1, " Browse " },
-	{ SGBUTTON,   0,0, 12,21, 16,1, NULL },
-	{ SGBUTTON, SG_DEFAULT, 0, 10,24, 20,1, "Back to main menu" },
+	{ SGTEXT,     0,0,  2,17, 26,1, "File name (*.wav / *.ym):" },
+	{ SGTEXT,     0,0,  2,18, 34,1, dlgRecordName },
+	{ SGBUTTON,   0,0, 28,17,  8,1, " Browse " },
+	{ SGBUTTON,   0,0, 12,20, 16,1, NULL },
+	{ SGBUTTON, SG_DEFAULT, 0, 10,23, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
