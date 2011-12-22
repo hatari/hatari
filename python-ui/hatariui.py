@@ -441,7 +441,6 @@ class UIActions:
         ("compatibility", None, "Hatari compatibility list", None, None, self.help.view_hatari_compatibility),
         ("release", None, "Hatari release notes", None, None, self.help.view_hatari_releasenotes),
         ("todo", None, "Hatari TODO", None, None, self.help.view_hatari_todo),
-        ("bugs", None, "Report a bug", None, None, self.help.view_hatari_bugs),
         ("mails", None, "Hatari mailing lists", None, None, self.help.view_hatari_mails),
         ("changes", None, "Latest Hatari changes", None, None, self.help.view_hatari_repository),
         ("authors", None, "Hatari authors", None, None, self.help.view_hatari_authors),
@@ -619,7 +618,7 @@ class UIActions:
         ("Devices", ("display", "floppy", "harddisk", "joystick", "machine", "device", "sound")),
         ("Configuration", ("path", None, "lconfig", "sconfig")),
         ("Debug", ("debug", "trace")),
-        ("Help", ("manual", "compatibility", "release", "todo", None, "bugs", "mails", "changes", None, "authors", "hatari", "hatariui", "about",))
+        ("Help", ("manual", "compatibility", "release", "todo", None, "mails", "changes", None, "authors", "hatari", "hatariui", "about",))
         )
         bar = gtk.MenuBar()
 
