@@ -6,6 +6,9 @@
  Development version:
  --------------------
 
+The Hatari project has been moved from hatari.berlios.de to
+http://hatari.tuxfamily.org/. Please update all bookmarks!
+
 Emulation:
 - More accurate FDC emulation (correct status bits and commands' timings,
   DMA transfer by blocks of 16 bytes, floppy change detection). This should
@@ -20,8 +23,7 @@ Emulation:
 
 Emulator:
 - Switch to ST mode when using TOS <= 1.04
-- Replace "--slowfdc" with "--fastfdc" option and default to
-  fast FDC being OFF
+- Replace "--slowfdc" with "--fastfdc" option and default to fast FDC being OFF
 - "--fast-boot" option to initialize "memvalid" system variables to
   by-pass the memory test of TOS, so that the system boots faster
 - "--force-max" option to force Hatari use specified maximum resolution
@@ -38,6 +40,7 @@ Emulator:
 - Debugger improvements:
   - "history" command to list instructions executed before entering
     debugger
+- Fixed behavior of the Caps Lock key
 
 Other changes:
 - Fixes to Hatari UI Hatari window embedding
