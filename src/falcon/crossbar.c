@@ -955,6 +955,8 @@ void Crossbar_DstControler_WriteWord(void)
 	adc.isConnectedToDma   = (destCtrl & 0x6) == 0x6 ? 1 : 0;
 
 	dmaPlay.isConnectedToDspInHandShakeMode = (((destCtrl >> 4) & 7) == 0 ? 1 : 0);
+	dmaPlay.handshakeMode_Frame = dmaPlay.isConnectedToDspInHandShakeMode;
+
 	dmaRecord.isConnectedToDspInHandShakeMode = ((destCtrl & 0xf) == 2 ? 1 : 0);
 }
 
@@ -1421,24 +1423,26 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 		}
 	}
 
-	/* if handshake mode */
-	if (dmaPlay.isConnectedToDspInHandShakeMode && crossbar.dmaPlay_freq == CROSSBAR_FREQ_32MHZ) {
+	if (dmaPlay.isConnectedToDspInHandShakeMode) {
+		/* Handshake mode */
 		if (dmaPlay.handshakeMode_Frame == 0)
 			return;
 
 		dmaPlay.frameCounter += increment_frame;
 
 		/* Special undocumented transfer mode : 
-		   when DMA Play --> DSP Receive is in HandShake mode (32 Mhz)
-		   and  DSP Send --> DAC is not in handshake mode (25 Mhz)
+		   When DMA Play --> DSP Receive is in HandShake mode at 32 Mhz,
 		   datas are shifted 2 bits on the left after the transfer.
-		   This occurs with all demos using the Mpeg2 player from nocrew (amanita, ...)) 
+		   This occurs with all demos using the Mpeg2 player from nocrew (amanita, LostBlubb, Wait, ...) 
 		*/
-		temp = (crossbar.save_special_transfer<<2) + ((value & 0xc000)>>14);
-		crossbar.save_special_transfer = value;
-		value = temp;
+		if (crossbar.dmaPlay_freq == CROSSBAR_FREQ_32MHZ) {
+			temp = (crossbar.save_special_transfer<<2) + ((value & 0xc000)>>14);
+			crossbar.save_special_transfer = value;
+			value = temp;
+		}
 	}
 	else {
+		/* Non Handshake mode */
 		dmaPlay.frameCounter += increment_frame;
 	}
 
