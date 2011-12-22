@@ -196,3 +196,38 @@ Other potential Hatari functionality improvements
 	- By default the directory config values should be empty in
 	  which case the code will at run-time decide to use current
 	  directory, but not modify the path config setting.
+
+
+Bugs reports
+------------
+
+- When playing Tautology 2 I noticed the mod player sound goes in and out of
+  sync. fading into crackle and back. (Using Hatari 1.4 with TOS 4.04 on Mac
+  OS X 10.6.5)
+  http://developer.berlios.de/bugs/?func=detailbug&bug_id=17781&group_id=10436
+
+- Problem: On real Falcon there is a minor feature in videl. You can simply
+  fade whole screen to black, if you just clear the Horizontal Border End
+  ($ffff8286) and start fading colors from 0 to 255 to $ffff9800 or vice versa.
+	test <put picture to screen>
+	move.w #255-1,d7
+	moveq #0,d6
+	.loop <vsync, stop#$2300>
+	clr.w $ffff8286.w
+	move.l d6,$ffff9800.w
+	addq.l #1,d6
+	dbf d7,.loop
+  Now it does this exactly opposite direction, it fades bgcolor from 0 to 255.
+  http://developer.berlios.de/bugs/?func=detailbug&bug_id=18002&group_id=10436
+
+- To compare my real Falcon with Hatari on my Windows 7 PC, I make some short
+  benchmarks with Kronos. The disk benchmark in Kronos runs in 1-2 minutes on
+  my real Falcon. The same disk benchmark in Kronos under Hatari 1.5 runs any
+  longer than 20 minutes. Only when I use the AltGr + X option, before the
+  benchmark runs, then the disk benchmark in kronos is comparable fast as my
+  16MHz Falcon.
+  http://developer.berlios.de/bugs/?func=detailbug&bug_id=18298&group_id=10436
+
+- Mouse double clicks do not work right in TT mode (problem reported with both,
+  TOS 3.06 and EmuTOS)
+  http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2011/12/msg00067.html
