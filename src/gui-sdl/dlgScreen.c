@@ -319,6 +319,8 @@ void Dialog_WindowDlg(void)
 		windowdlg[DLGSCRN_STATUSBAR].state |= SG_SELECTED;
 	else if (ConfigureParams.Screen.bShowDriveLed)
 		windowdlg[DLGSCRN_DRIVELED].state |= SG_SELECTED;
+	else
+		windowdlg[DLGSCRN_NONE].state |= SG_SELECTED;
 
 	for (i = 0; i < ITEMS_IN_ARRAY(skip_frames); i++)
 	{
