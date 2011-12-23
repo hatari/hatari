@@ -1276,10 +1276,10 @@ static void gen_opcode (unsigned long int opcode)
 
 	printf ("\tuaecptr memp = m68k_areg(regs, dstreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword ());
 	if (curi->size == sz_word) {
-	    printf ("\tput_byte(memp, src >> 8); put_byte(memp + 2, src);\n");
+	    printf ("\tMovepByteNbr=1; put_byte(memp, src >> 8); MovepByteNbr=2; put_byte(memp + 2, src);\n");
 	} else {
-	    printf ("\tput_byte(memp, src >> 24); put_byte(memp + 2, src >> 16);\n");
-	    printf ("\tput_byte(memp + 4, src >> 8); put_byte(memp + 6, src);\n");
+	    printf ("\tMovepByteNbr=1; put_byte(memp, src >> 24); MovepByteNbr=2; put_byte(memp + 2, src >> 16);\n");
+	    printf ("\tMovepByteNbr=3; put_byte(memp + 4, src >> 8); MovepByteNbr=4; put_byte(memp + 6, src);\n");
 	}
         if(curi->size==sz_long)  insn_n_cycles=24;  else  insn_n_cycles=16;
 	break;

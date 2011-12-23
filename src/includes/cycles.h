@@ -23,6 +23,7 @@ enum
 extern int nCyclesMainCounter;
 
 extern int CurrentInstrCycles;
+extern int MovepByteNbr;
 
 
 extern void Cycles_MemorySnapShot_Capture(bool bSave);

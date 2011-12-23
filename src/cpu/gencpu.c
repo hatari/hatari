@@ -2060,11 +2060,11 @@ static void gen_opcode (unsigned long int opcode)
 		genamode (curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 		printf ("\tuaecptr memp = m68k_areg (regs, dstreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword (0));
 		if (curi->size == sz_word) {
-			printf ("\t%s (memp, src >> 8); %s (memp + 2, src);\n", dstb, dstb);
+			printf ("\tMovepByteNbr=1; %s (memp, src >> 8); MovepByteNbr=2; %s (memp + 2, src);\n", dstb, dstb);
 			count_write += 2;
 		} else {
-			printf ("\t%s (memp, src >> 24); %s (memp + 2, src >> 16);\n", dstb, dstb);
-			printf ("\t%s (memp + 4, src >> 8); %s (memp + 6, src);\n", dstb, dstb);
+			printf ("\tMovepByteNbr=1; %s (memp, src >> 24); MovepByteNbr=2; %s (memp + 2, src >> 16);\n", dstb, dstb);
+			printf ("\tMovepByteNbr=3; %s (memp + 4, src >> 8); MovepByteNbr=4; %s (memp + 6, src);\n", dstb, dstb);
 			count_write += 4;
 		}
 		fill_prefetch_next ();

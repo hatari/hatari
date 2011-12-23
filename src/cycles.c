@@ -38,6 +38,8 @@ int nCyclesMainCounter;				/* Main cycles counter */
 static int nCyclesCounter[CYCLES_COUNTER_MAX];	/* Array with all counters */
 
 int CurrentInstrCycles;
+int MovepByteNbr;				/* Number of the byte currently transferred in a movep (1..2 or 1..4) */
+
 
 
 
@@ -125,6 +127,9 @@ int Cycles_GetCounterOnReadAccess(int nId)
 		/* Assume we use 'move src,dst' : access cycle depends on dst mode */
 		if ( Opcode == 0x11f8 )				/* move.b xxx.w,xxx.w (eg MOVE.B $ffff8209.w,$26.w in Bird Mad Girl Show) */
 			nAddCycles = CurrentInstrCycles + nWaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
+		else if ( OpcodeFamily == i_MVPRM )					/* eg movep.l d0,$ffc3(a1) in E605 (STE) */
+			nAddCycles = 12 + MovepByteNbr * 4;				/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
+											/* something must be wrong in video.c */
 		else
 			nAddCycles = CurrentInstrCycles + nWaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
 	}
