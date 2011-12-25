@@ -232,7 +232,3 @@ Bugs reports
   benchmark runs, then the disk benchmark in kronos is comparable fast as my
   16MHz Falcon.
   http://developer.berlios.de/bugs/?func=detailbug&bug_id=18298&group_id=10436
-
-- Mouse double clicks do not work right in TT mode (problem reported with both,
-  TOS 3.06 and EmuTOS)
-  http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2011/12/msg00067.html

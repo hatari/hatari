@@ -1727,13 +1727,13 @@ static void Video_EndHBL(void)
  */
 static void Video_StartHBL(void)
 {
-	if ( ( IoMem_ReadByte( 0xff8260 ) & 3 ) == 2 )		/* hi res */
+	if ((ConfigureParams.System.nMachineType == MACHINE_TT && bUseHighRes)
+	    || (IoMem_ReadByte(0xff8260 ) & 3) == 2)		/* hi res */
 	{
 		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
 		ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = LINE_START_CYCLE_71;
 		ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = LINE_END_CYCLE_71;
 	}
-
 	else
 	{
 		if ( IoMem_ReadByte ( 0xff820a ) & 2 )		/* 50 Hz */
@@ -2785,6 +2785,9 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 
 	/* TODO replace CYCLES_PER_FRAME */
 	CyclesPerVBL = CYCLES_PER_FRAME;
+	/* Note: Refresh rate less than 50 Hz does not make sense! */
+	assert(CyclesPerVBL <= CPU_FREQ/49);
+	/* Add new VBL interrupt: */
 	CycInt_AddRelativeInterrupt(CyclesPerVBL - PendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 }
 
@@ -3218,23 +3221,31 @@ void Video_Color15_WriteWord(void)
  */
 void Video_ShifterMode_WriteByte(void)
 {
-	if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	/* Don't store if VDI resolution (and don't store if hi-res?) */
+	if (!bUseVDIRes /* && !bUseHighRes */)
 	{
-		TTRes = IoMem_ReadByte(0xff8260) & 7;
-		IoMem_WriteByte(0xff8262, TTRes);           /* Copy to TT shifter mode register */
-	}
-	
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-		VIDEL_ST_ShiftModeWriteByte();
-
-	if (/*!bUseHighRes &&*/ !bUseVDIRes)                /* Don't store if hi-res and don't store if VDI resolution */
-	{
-		VideoShifterByte = IoMem[0xff8260] & 3;		/* We only care for lower 2-bits */
-		if ( VideoShifterByte == 3 )			/* 3 is not a valid resolution, use low res instead */
+		/* We only care for lower 2-bits */
+		VideoShifterByte = IoMem[0xff8260] & 3;
+		/* 3 is not a valid resolution, use low res instead */
+		if ( VideoShifterByte == 3 )
 		{
 			VideoShifterByte = 0;
 			IoMem_WriteByte(0xff8260,0);
 		}
+	}
+
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	{
+		VIDEL_ST_ShiftModeWriteByte();
+	}
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	{
+		TTRes = IoMem_ReadByte(0xff8260) & 7;
+		/* Copy to TT shifter mode register: */
+		IoMem_WriteByte(0xff8262, TTRes);
+	}
+	else	/* ST and STE mode */
+	{
 		Video_WriteToShifter(VideoShifterByte);
 		Video_SetHBLPaletteMaskPointers();
 		*pHBLPaletteMasks &= 0xff00ffff;
