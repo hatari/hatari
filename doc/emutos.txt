@@ -28,6 +28,8 @@ the EmuTOS website.
 
 The tos.img file included with the latest Hatari releases is the
 "all languages" etos512k.img from a preceeding EmuTOS release:
+- Hatari v1.6.0:
+  http://sourceforge.net/projects/emutos/files/emutos/0.8.6/
 - Hatari v1.4.0, v1.5.0:
   http://sourceforge.net/projects/emutos/files/emutos/0.8.5/
 - Hatari v1.1.0, v1.2.0, v1.3.0, v1.3.1:
