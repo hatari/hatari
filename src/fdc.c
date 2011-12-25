@@ -440,8 +440,8 @@ static int FDC_DelayToCpuCycles ( int Delay_micro )
 	Delay = (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
 
 	/* Our conversion expect FDC_Freq to be the same as CPU_Freq (8 Mhz) */
-	/* but the Falcon uses a 16 MHz clock from the Ajax FDC */
-	/* FIXME : as stated above, this should handled better, without involving 8 MHz CPU_Freq */
+	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
+	/* FIXME : as stated above, this should be handled better, without involving 8 MHz CPU_Freq */
 	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
 		Delay /= 2;					/* correct delays for a 8 MHz clock instead of 16 */
 
