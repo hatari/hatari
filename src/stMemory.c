@@ -129,11 +129,12 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x00, STMemory_ReadLong(TosAddress));
 	STMemory_WriteLong(0x04, STMemory_ReadLong(TosAddress+4));
 
-	/* Fill in magic numbers to bypass TOS' memory tests in the case */
-	/* of EmuTOS or if more than 4 MB of ram are used */
-	/* (those tests should not be bypassed in the common STF/STE cases */
-	/* as some programs rely on the RAM content after those tests) */
-	if ((ConfigureParams.System.bFastBoot && bIsEmuTOS)
+	/* Fill in magic numbers to bypass TOS' memory tests for faster boot or
+	 * if VDI resolution is enabled or if more than 4 MB of ram are used.
+	 * (for highest compatibility, those tests should not be bypassed in
+	 *  the common STF/STE cases as some programs like "Yolanda" rely on
+	 *  the RAM content after those tests) */
+	if (ConfigureParams.System.bFastBoot || bUseVDIRes
 	    || (ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS))
 	{
 		/* Write magic values to sysvars to signal valid config */

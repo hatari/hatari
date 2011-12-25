@@ -519,7 +519,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.bPatchTimerD = true;
-	ConfigureParams.System.bFastBoot = false;
+	ConfigureParams.System.bFastBoot = true;
 	ConfigureParams.System.bRealTimeClock = true;
 	ConfigureParams.System.bFastForward = false;
 #if ENABLE_WINUAE_CPU
