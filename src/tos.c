@@ -626,8 +626,14 @@ int TOS_LoadImage(void)
 	}
 
 	/* Fix TOS image, modify code for emulation */
-	if (!bIsEmuTOS)
+	if (ConfigureParams.Rom.bPatchTos && !bIsEmuTOS)
+	{
 		TOS_FixRom();
+	}
+	else
+	{
+		Log_Printf(LOG_DEBUG, "Skipped TOS patches.\n");
+	}
 
 	/* Set connected devices, memory configuration, etc. */
 	STMemory_SetDefaultConfig();

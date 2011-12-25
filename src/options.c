@@ -106,9 +106,10 @@ enum {
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
 	OPT_MEMSIZE,		/* memory options */
-	OPT_TOS,
-	OPT_CARTRIDGE,
 	OPT_MEMSTATE,
+	OPT_TOS,		/* ROM options */
+	OPT_PATCHTOS,
+	OPT_CARTRIDGE,
 	OPT_CPULEVEL,		/* CPU options */
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
@@ -290,13 +291,17 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB)" },
-	{ OPT_TOS,       "-t", "--tos",
-	  "<file>", "Use TOS image <file>" },
-	{ OPT_CARTRIDGE, NULL, "--cartridge",
-	  "<file>", "Use ROM cartridge image <file>" },
 	{ OPT_MEMSTATE,   NULL, "--memstate",
 	  "<file>", "Load memory snap-shot <file>" },
-	
+
+	{ OPT_HEADER, NULL, NULL, NULL, "ROM" },
+	{ OPT_TOS,       "-t", "--tos",
+	  "<file>", "Use TOS image <file>" },
+	{ OPT_PATCHTOS, NULL, "--patch-tos",
+	  "<bool>", "Apply TOS patches (experts only, leave it enabled!)" },
+	{ OPT_CARTRIDGE, NULL, "--cartridge",
+	  "<file>", "Use ROM cartridge image <file>" },
+
 	{ OPT_HEADER, NULL, NULL, NULL, "CPU" },
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
@@ -329,7 +334,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_TIMERD,    NULL, "--timer-d",
 	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
 	{ OPT_FASTBOOT, NULL, "--fast-boot",
-	  "<bool>", "Patch TOS for faster boot" },
+	  "<bool>", "Patch TOS and memvalid system variables for faster boot" },
 	{ OPT_RTC,    NULL, "--rtc",
 	  "<bool>", "Enable real-time clock" },
 
@@ -339,7 +344,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
-	  "<x>", "Sound buffer size for SDL in ms (x=0/10-100, 0=default)" },
+	  "<x>", "Sound buffer size in ms (x=0/10-100, 0=default)" },
 	{ OPT_YM_MIXING,   NULL, "--ym-mixing",
 	  "<x>", "YM sound mixing method (x=linear/table/model)" },
 
@@ -1299,6 +1304,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				bLoadAutoSave = false;
 			}
+			break;
+
+		case OPT_PATCHTOS:
+			ok = Opt_Bool(argv[++i], OPT_PATCHTOS, &ConfigureParams.Rom.bPatchTos);
 			break;
 
 		case OPT_CARTRIDGE:

@@ -284,6 +284,7 @@ static const struct Config_Tag configs_HardDisk[] =
 static const struct Config_Tag configs_Rom[] =
 {
 	{ "szTosImageFileName", String_Tag, ConfigureParams.Rom.szTosImageFileName },
+	{ "bPatchTos", Bool_Tag, &ConfigureParams.Rom.bPatchTos },
 	{ "szCartridgeImageFileName", String_Tag, ConfigureParams.Rom.szCartridgeImageFileName },
 	{ NULL , Error_Tag, NULL }
 };
@@ -509,6 +510,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Rom */
 	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img",
 	        Paths_GetDataDir(), PATHSEP);
+	ConfigureParams.Rom.bPatchTos = true;
 	strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
 	/* Set defaults for System */

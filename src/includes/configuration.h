@@ -32,6 +32,7 @@ typedef struct
 typedef struct
 {
   char szTosImageFileName[FILENAME_MAX];
+  bool bPatchTos;
   char szCartridgeImageFileName[FILENAME_MAX];
 } CNF_ROM;
 
