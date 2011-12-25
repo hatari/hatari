@@ -78,8 +78,7 @@ Demos :
 Games :
   - cpu/timers : FOF 42 - Subbuteo, Bolo, Final Conflict, The Ultimate Ride,
 	Treasure Trap
-  - ikbd : F29, Superior 109 - Special Forces
-  - sound : RBI Baseball 2
+  - ikbd : F29, Superior 109 - Special Forces, Warlock's Quest
 
 
 Other potential Hatari functionality improvements
