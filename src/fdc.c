@@ -223,6 +223,7 @@ enum
 
 	/* Restore */
 	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO,
+	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP,
 	FDCEMU_RUN_RESTORE_COMPLETE,
 	/* Seek */
 	FDCEMU_RUN_SEEK_TOTRACK,
@@ -925,6 +926,17 @@ static int FDC_UpdateRestoreCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO:
+		/* The FDC will try 255 times to reach track 0 using step out signals */
+		/* If track 0 signal is not detected after 255 attempts, the command is interrupted */
+		/* and FDC_STR_BIT_RNF is set in the Status Register. */
+		/* This will never happen in the case of Hatari, because the physical track can't go */
+		/* beyond track FDC_PHYSICAL_MAX_TRACK (=90) */
+		/* TR should be set to 255 once the spin-up sequence is made and the command */
+		/* can't be interrupted anymore by another command (else TR value will be wrong */
+		/* for other type I commands) */
+		FDC.TR = 0xff;				
+		FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP;	/* continue in the _LOOP state */
+	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP:
 		if ( FDC.TR == 0 )					/* Track 0 not reached after 255 attempts ? */
 		{							/* (this should never happen in the case of Hatari) */
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
@@ -932,11 +944,11 @@ static int FDC_UpdateRestoreCmd ( void )
 			Delay_micro = FDC_CmdCompleteCommon( true );
 		}
 
-		if ( HeadTrack[ FDC_DRIVE ] != 0 )		/* Are we at track zero ? */
+		if ( HeadTrack[ FDC_DRIVE ] != 0 )			/* Are we at track zero ? */
 		{
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			FDC.TR--;					/* One less attempt */
-			HeadTrack[ FDC_DRIVE ]--;		/* Move physical head */
+			HeadTrack[ FDC_DRIVE ]--;			/* Move physical head */
 			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
 		}
 		else
@@ -1486,13 +1498,6 @@ static int FDC_TypeI_Restore(void)
 	FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
-
-	/* The FDC will try 255 times to reach track 0 using step out signals */
-	/* If track 0 signal is not detected after 255 attempts, the command is interrupted */
-	/* and FDC_STR_BIT_RNF is set in the Status Register. */
-	/* This will never happen in the case of Hatari, because the physical track can't go */
-	/* beyond track FDC_PHYSICAL_MAX_TRACK (=90) */
-	FDC.TR = 0xff;				
 
 	return FDC_DELAY_TYPE_I_PREPARE;
 }
