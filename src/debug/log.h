@@ -149,7 +149,7 @@ extern Uint64 LogTraceFlags;
 
 #ifndef _VCWIN_
 #define	LOG_TRACE(level, args...) \
-	if (unlikely(LogTraceFlags & level)) fprintf(TraceFile, args)
+	if (unlikely(LogTraceFlags & level)) { fprintf(TraceFile, args); fflush(TraceFile); }
 #endif
 #define LOG_TRACE_LEVEL( level )	(unlikely(LogTraceFlags & level))
 

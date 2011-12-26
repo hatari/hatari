@@ -41,6 +41,7 @@ Emulator:
 - Debugger improvements:
   - "history" command to list instructions executed before entering
     debugger
+  - each trace output line is flushed to avoid it being buffered
 - Fixed behavior of the Caps Lock key
 
 Other changes:
