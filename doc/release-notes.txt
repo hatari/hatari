@@ -20,6 +20,7 @@ Emulation:
     better emulation for 0 byte blank line)
 - Some fixes to the IKBD emulation
 - Better filters and model for sound emulation
+- Some changes to Falcon's emulation (DSP, CPU)
 
 Emulator:
 - Switch to ST mode when using TOS <= 1.04
@@ -58,16 +59,16 @@ Fixed Demos :
   Cream - Madness (FDC)
 
 Fixed Games :
-  Superior 65 - Super Monaco GP, DBug 24 - Knightmare, X-Out (Pompey Pirates 27),
+  Superior 65 - Super Monaco GP, DBug 24 - Knightmare, Pompey Pirates 27 - X-Out,
   Fuzion 32 - Pang, Fuzion 108 - The Simpson, Fuzion 40 - Super Grand Prix,
   Fuzion 46 - Warlock, Fuzion 51 - Navy Seals, Fuzion 61 - Gods, Fuzion 78 -
   Carmen Sandiego, Fuzion 82 - Flight Of The Intruder, Fuzion 83 - RBI Baseball 2,
   Fuzion 102 - Exile, PP46 - Yolanda, Medway Boys 15 - Murders In Venice,
   Medway Boys 83 - Yogi Bear, BBC 2 - Platoon, BBC 39 - The Deep, Superior 71 - The
-  Running Man, Adrenaline 24 - Demon Blue
+  Running Man, Adrenaline 24 - Demon Blue, Superior 93 - Alien Storm
 
-Fixed Programs :
-  Procopy 1.50, Terminators Copy 1.68
+Fixed Misc Programs :
+  Procopy 1.50, Terminators Copy 1.68, maxYMizer (caps lock key)
 
 
  Version 1.5.0 (2011-07-19):

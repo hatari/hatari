@@ -1966,55 +1966,56 @@ Uint16 IKBD_GetByteFromACIA(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * This interrupt handler is used to simulate a correct number of CPU cycles
+ * These interrupt handlers are used to simulate a correct number of CPU cycles
  * when sending a byte from the ACIA to the ikdb or when receiving a byte
  * from the ikbd to the ACIA (because ACIA serial transfers are running
  * at 7812.5 bps, bytes should not be available immediatly as it would break
  * some programs)
- * - Byte received in the ACIA from the keyboard processor : store byte for read
+ * - Byte received in the ACIA from the keyboard processor (RX) : store byte for read
  *   from $fffc02 and schedule MFP interrupt to be triggered just a few cycles after.
- * - Byte sent from the ACIA to the keyboard processor : pass the byte to
+ * - Byte sent from the ACIA to the keyboard processor (TX) : pass the byte to
  *   IKBD_SendByteToKeyboardProcessor and set TX_BUFFER_EMPTY in status register.
  */
-void IKBD_InterruptHandler_ACIA(void)
+void IKBD_InterruptHandler_ACIA_RX(void)
 {
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
-	if ( bByteInTransitToACIA )
-	{
-		/* Copy keyboard byte, ready for read from $fffc02 */
-		ACIAByte = Keyboard.Buffer[Keyboard.BufferHead++];
-		Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
+	/* Copy keyboard byte, ready for read from $fffc02 */
+	ACIAByte = Keyboard.Buffer[Keyboard.BufferHead++];
+	Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
 
-		/* Did we get an over-run? Ie byte has arrived from keyboard processor BEFORE CPU has read previous one from ACIA */
-		if (ACIAStatusRegister&ACIA_STATUS_REGISTER__RX_BUFFER_FULL)
-			ACIAStatusRegister |= ACIA_STATUS_REGISTER__OVERRUN_ERROR;  /* Set over-run */
+	/* Did we get an over-run? Ie byte has arrived from keyboard processor BEFORE CPU has read previous one from ACIA */
+	if (ACIAStatusRegister&ACIA_STATUS_REGISTER__RX_BUFFER_FULL)
+		ACIAStatusRegister |= ACIA_STATUS_REGISTER__OVERRUN_ERROR;  /* Set over-run */
 //fprintf ( stderr , "int acia %x %x\n" , ACIAByte, ACIAStatusRegister );
 
-		/* ACIA buffer is now full */
-		ACIAStatusRegister |= ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
-		/* Signal interrupt pending */
-		ACIAStatusRegister |= ACIA_STATUS_REGISTER__INTERRUPT_REQUEST;
+	/* ACIA buffer is now full */
+	ACIAStatusRegister |= ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
+	/* Signal interrupt pending */
+	ACIAStatusRegister |= ACIA_STATUS_REGISTER__INTERRUPT_REQUEST;
 
-		/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
-		/* NOTE: GPIP will remain low(0) until keyboard data is read from $fffc02. */
-		MFP_GPIP &= ~0x10;
+	/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
+	/* NOTE: GPIP will remain low(0) until keyboard data is read from $fffc02. */
+	MFP_GPIP &= ~0x10;
 
-		/* There seems to be a small gap on a real ST between the point in time
-		* the ACIA_STATUS_REGISTER__RX_BUFFER_FULL bit is set and the MFP
-		* interrupt is triggered - for example the "V8 music system" demo
-		* depends on this behaviour. To emulate this, we simply start another
-		* Int which triggers the MFP interrupt later: */
-		CycInt_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP);
-	}
+	/* There seems to be a small gap on a real ST between the point in time
+	* the ACIA_STATUS_REGISTER__RX_BUFFER_FULL bit is set and the MFP
+	* interrupt is triggered - for example the "V8 music system" demo
+	* depends on this behaviour. To emulate this, we simply start another
+	* Int which triggers the MFP interrupt later: */
+	CycInt_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP);
+}
 
-	if ( bByteInTransitFromACIA )
-	{
-		IKBD_SendByteToKeyboardProcessor(ACIATxDataRegister);  		/* Pass the byte to the keyboard processor */
-		ACIAStatusRegister |= ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;	/* TX buffer is now empty */
-		bByteInTransitFromACIA = false;					/* ready to send another byte */
-	}
+
+void IKBD_InterruptHandler_ACIA_TX(void)
+{
+	/* Remove this interrupt from list and re-order */
+	CycInt_AcknowledgeInterrupt();
+
+	IKBD_SendByteToKeyboardProcessor(ACIATxDataRegister);  		/* Pass the byte to the keyboard processor */
+	ACIAStatusRegister |= ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;	/* TX buffer is now empty */
+	bByteInTransitFromACIA = false;					/* ready to send another byte */
 }
 
 
@@ -2052,7 +2053,7 @@ static void IKBD_SendByteToACIA(int nAciaCycles)
 	if (!bByteInTransitToACIA)
 	{
 		/* Send byte to ACIA */
-		CycInt_AddRelativeInterrupt(nAciaCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+		CycInt_AddRelativeInterrupt(nAciaCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA_RX);
 		/* Set flag so only transmit one byte at a time */
 		bByteInTransitToACIA = true;
 	}
@@ -2238,9 +2239,9 @@ void IKBD_KeyboardData_WriteByte(void)
 	// a bug where addr $6122/$6124 are overwritten by the stack, preventing the desktop
 	// to be restored at the correct resolution !
 	// For now, use a delay of 1000 cycles ; need to do complete measures on a real ST for this
-	//CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+	//CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA_TX);
 // delay cycles <=1560 ok, > 1570 bad for tos 1.02/1.04
-	CycInt_AddRelativeInterrupt(1000+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
+	CycInt_AddRelativeInterrupt(1000+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA_TX);
 
 	/* Some games like USS John Young / FOF54 actually check whether the
 	* transmit-buffer-empty bit is really cleared after writing a data
