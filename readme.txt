@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 1.5
+                                 Version 1.6
 
                           http://hatari.tuxfamily.org/
 
@@ -103,10 +103,11 @@ build tree. You can then install the emulator by typing "make install".
 
  3.1) WinUAE and "old" UAE CPU cores
 
-By default Hatari is built with the "old" UAE CPU core used in the earlier
-Hatari releases, but the new v1.5 supports also new & experimental WinUAE CPU
-core which offers better cycle accuracy (especially for Falcon emulation) and
-in future also some potential extra features like MMU support.
+By default Hatari is built with the "old" UAE CPU core used in the
+earlier Hatari releases, but versions starting from v1.5 support also
+new & experimental WinUAE CPU core which offers more cycle accurate
+030 & DSP emulation and from v1.6 onwards also working 030 MMU
+emulation.
 
 The WinUAE CPU core can be enabled by toggling the ENABLE_WINUAE_CPU
 variable in the Hatari CMake configuration (e.g. with the interactive
@@ -114,10 +115,19 @@ variable in the Hatari CMake configuration (e.g. with the interactive
 --enable-winuae-cpu", which will run cmake with the correct
 parameters.
 
-The plan is to eventually (in the next version) have WinUAE CPU core
-enabled by default and deprecate the "old" UAE CPU core, but currently
-WinUAE CPU core is still lacking all the ST/STE specific tweaks, proper
-testing for ST/STE compatibility and some of the debugger support.
+The plan is to eventually have WinUAE CPU core enabled by default and
+deprecate the "old" UAE CPU core, but currently WinUAE CPU core:
+- is lacking all the ST/STE specific tweaks and proper testing
+  for ST/STE compatibility
+- despite better emulation, it still doesn't run all the Falcon
+  programs that run with the "old" core although it works better
+  for most of them
+- doesn't have full debugger support
+
+It's recommended to use Hatari built with the "old" (default) UAE CPU
+core for ST/STE emulation and the new WinAUE core for Falcon emulation.
+And test also the old core if Falcon programs don't work with the new
+one...
 
 
  3.2) Known problems
