@@ -40,7 +40,9 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			real ST (fix Froggies Over The Fence's menu when selecting a demo).		*/
 /* 2011/07/31	[NP]	Don't clear bytes in transit in the ACIA when the IKBD is reset (fix Overdrive	*/
 /*			by Phalanx).									*/
-
+/* 2011/12/27	[NP]	When sending new bytes while a byte is already in transfer from ACIA to IKBD,	*/
+/*			don't restart the internal TX timer (fix 'Pandemonium Demos' Intro).		*/
+/*			eg : .loop : move.b d0,$fc02.w    btst #1,$fc00.w    beq.s .loop		*/
 
 #include <time.h>
 
@@ -2231,23 +2233,29 @@ void IKBD_KeyboardData_WriteByte(void)
 
 	ACIATxDataRegister = IoMem[0xfffc02];		/* store the byte that we want to send to the ikbd */
 
-	/* Delay the processing of the byte in IKBD_InterruptHandler_ACIA */
-	/* The delay doesn't seem to be constant, so we add a small random number of max 40 cycles */
-	/* (else some programs get stuck in an endless loop ('Pandemonium Demos' by Chaos) */
+	/* [NP] FIXME 2011/12/27 : when writing constantly in $fffc02, we should replace ACIATxDataRegister */
+	/* but we should not restart INTERRUPT_IKBD_ACIA_TX from the start each time, nor reset TX_BUFFER bit */
+	/* ('Pandemonium Demos' by Chaos). This should be measured on a real ST. */
+	if ( bByteInTransitFromACIA == false )
+	{
+		/* Delay the processing of the byte in IKBD_InterruptHandler_ACIA */
+		/* The delay doesn't seem to be constant, so we add a small random number of max 40 cycles */
+		/* (else some programs get stuck in an endless loop ('Pandemonium Demos' by Chaos) */
 
-	// [NP] FIXME 2011/05/20 : if we use a delay of ACIA_CYCLES=7200, tos 1.02 and 1.04 are showing
-	// a bug where addr $6122/$6124 are overwritten by the stack, preventing the desktop
-	// to be restored at the correct resolution !
-	// For now, use a delay of 1000 cycles ; need to do complete measures on a real ST for this
-	//CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA_TX);
+		// [NP] FIXME 2011/05/20 : if we use a delay of ACIA_CYCLES=7200, tos 1.02 and 1.04 are showing
+		// a bug where addr $6122/$6124 are overwritten by the stack, preventing the desktop
+		// to be restored at the correct resolution !
+		// For now, use a delay of 1000 cycles ; need to do complete measures on a real ST for this
+		//CycInt_AddRelativeInterrupt(ACIA_CYCLES+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA_TX);
 // delay cycles <=1560 ok, > 1570 bad for tos 1.02/1.04
-	CycInt_AddRelativeInterrupt(1000+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA_TX);
+		CycInt_AddRelativeInterrupt(1000+rand()%40, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA_TX);
 
-	/* Some games like USS John Young / FOF54 actually check whether the
-	* transmit-buffer-empty bit is really cleared after writing a data
-	* byte to the IKBD, so we have to temporarily clear this bit, too,
-	* although the byte is send immediately to our virtual IKBD. */
-	ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;		/* TX buffer is full */
+		/* Some games like USS John Young / FOF54 actually check whether the
+		* transmit-buffer-empty bit is really cleared after writing a data
+		* byte to the IKBD, so we have to temporarily clear this bit, too,
+		* although the byte is send immediately to our virtual IKBD. */
+		ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;		/* TX buffer is full */
+	}
 
 	bByteInTransitFromACIA = true;
 }
