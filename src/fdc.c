@@ -330,6 +330,8 @@ typedef struct {
 	int		Command;				/* FDC emulation command currently being exceuted */
 	int		CommandState;				/* Current state for the running command */
 	Uint8		CommandType;				/* Type of latest FDC command (1,2,3 or 4) */
+	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one */
+								/* ([NP] FIXME : only possible during prepare+spinup phases ?) */
 
 	Uint8		ID_FieldLastSector;			/* Last sector number returned by Read Address (to simulate a spinning disk) */
 } FDC_STRUCT;
@@ -758,6 +760,10 @@ void FDC_AcknowledgeInterrupt ( void )
  * set to FDCEMU_CMD_NULL. Until then, this function will be called to
  * handle each state of the command and the corresponding delay in micro
  * seconds.
+ * This handler is called after a first delay corresponding to the prepare
+ * delay and the eventual motor on delay.
+ * Once we reach this point, the current command can not be replaced by
+ * another command (except 'Force Interrupt')
  */
 void FDC_InterruptHandler_Update ( void )
 {
@@ -768,6 +774,8 @@ void FDC_InterruptHandler_Update ( void )
 	/* Is FDC active? */
 	if (FDC.Command!=FDCEMU_CMD_NULL)
 	{
+		FDC.ReplaceCommandPossible = false;
+	
 		/* Which command are we running? */
 		switch(FDC.Command)
 		{
@@ -1926,6 +1934,7 @@ static void FDC_ExecuteCommand ( void )
 	else								/* Type IV - Force Interrupt */
 		Delay_micro = FDC_ExecuteTypeIVCommands();
 
+	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the Delay_micro phase */
 	CycInt_AddAbsoluteInterrupt ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC );
 }
 
@@ -1961,12 +1970,30 @@ static void FDC_WriteCommandRegister ( void )
 		  IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* If fdc is busy, only 'Force Interrupt' is possible */
-	if ( ( FDC.STR & FDC_STR_BIT_BUSY )
-		&& ( ( IoMem_ReadByte(0xff8605) & 0xf0 ) != 0xd0 ) )
+	/* [NP] : it's also possible to start a new command just after another command */
+	/* was started and spinup phase was not completed yet (or is this only possible during the 'prepare' delay ?) */
+	/* FIXME : this delay was not measured, it should be at least 880 cycles for Overdrive Demos by Phalanx */
+	/* For now, we allow to cancel the current command if we're in the prepare+spinup delay */
+	if ( FDC.STR & FDC_STR_BIT_BUSY )
 	{
-		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, command=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		return;
+		if ( ( IoMem_ReadByte(0xff8605) & 0xf0 ) == 0xd0 )		/* 'Force Interrupt' command */
+		{
+			LOG_TRACE(TRACE_FDC, "fdc write 8604 while fdc busy, current command=0x%x interrupted by command=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				FDC.CR , IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		}
+
+		else if ( FDC.ReplaceCommandPossible )
+		{
+			LOG_TRACE(TRACE_FDC, "fdc write 8604 while fdc busy in prepare+spinup, current command=0x%x replaced by command=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				FDC.CR , IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		}
+
+		else								/* Other cases : new command is ignored */
+		{
+			LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, command=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+			return;
+		}
 	}
 
 	FDC.CR = IoMem_ReadByte(0xff8605);
