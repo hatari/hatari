@@ -20,6 +20,7 @@ Emulation:
     better emulation for 0 byte blank line)
 - Some fixes to the IKBD emulation
 - Better filters and model for sound emulation
+- Correct VBL timings in TT monochrome (double clicking works now)
 - Some changes to Falcon's emulation (DSP, CPU)
 
 Emulator:
