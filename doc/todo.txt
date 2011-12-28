@@ -202,8 +202,8 @@ Other potential Hatari functionality improvements
 	  directory, but not modify the path config setting.
 
 
-Bugs reports
-------------
+Bug reports
+-----------
 
 - When playing Tautology 2 I noticed the mod player sound goes in and out of
   sync. fading into crackle and back. (Using Hatari 1.4 with TOS 4.04 on Mac
