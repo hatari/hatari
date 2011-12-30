@@ -325,7 +325,7 @@ static void			Disass68kLoadSymbols(const char *filename)
 
 static void			Disass68kInit(const char *baseDirectory)
 {
-	char	filename[PATH_MAX];
+	char	filename[FILENAME_MAX];
 
 	disStructCounts = 0;
 	sprintf(filename, "%s/DisassStructs.txt", baseDirectory);
