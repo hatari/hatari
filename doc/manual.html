@@ -55,7 +55,7 @@
 <h1 class="pageheader">Hatari User's Manual</h1>
 
 <p class="pageheader">
-Version 1.5
+Version 1.6
 </p>
 <p class="pageheader">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
@@ -1253,6 +1253,24 @@ KiB
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
+<b>--memstate &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Load memory snap-shot &lt;file&gt;
+</td>
+</table>
+
+<a name="ROM options"></a>
+<h3>ROM options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
 <b>-t, --tos
 &lt;imagefile&gt;</b></td>
 </table>
@@ -1262,6 +1280,23 @@ KiB
 <td width="21%"></td>
 <td width="77%">
 Specify TOS ROM image to use
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>--patch-tos
+&lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Use this option to enable/disable TOS ROM patching. Experts only! Leave
+this enabled unless you know what you are doing!
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1279,21 +1314,6 @@ Specify TOS ROM image to use
 Use ROM cartridge image &lt;file&gt; (only works if
 GEMDOS HD emulation and extended VDI resolution are
 disabled)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--memstate &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Load memory snap-shot &lt;file&gt;
 </td>
 </table>
 
@@ -4038,7 +4058,7 @@ parts of the emulated system is much trickier.
  src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
  border="0" height="31" width="88"></a></td>
       <td align="right">
-      September 2011
+      December 2011
       </td>
     </tr>
   </tbody>

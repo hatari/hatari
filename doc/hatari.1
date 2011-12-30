@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2011-05-09" "Hatari" ""
+.TH "HATARI" "1" "2011-12-30" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -226,18 +226,23 @@ Emulate an IDE slave hard disk with an image <file>
 speed up FDC emulation (can cause incompatibilities)
 .SH "Memory options"
 .TP 
+.B \-\-memstate <file>
+Load memory snap-shot <file>
+.TP 
 .B \-s, \-\-memsize <x>
 Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
+.SH "ROM options"
 .TP 
 .B \-t, \-\-tos <imagefile>
 Specify TOS ROM image to use
 .TP 
+.B \-\-patch-tos <bool>
+Use this option to enable/disable TOS ROM patching. Experts only! Leave
+this enabled unless you know what you are doing!
+.TP 
 .B \-\-cartridge <imagefile>
 Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
-.TP 
-.B \-\-memstate <file>
-Load memory snap-shot <file>
 .SH "CPU options"
 .TP 
 .B \-\-cpulevel <x>
