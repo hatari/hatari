@@ -21,7 +21,11 @@ Emulation:
 - Some fixes to the IKBD emulation
 - Better filters and model for sound emulation
 - Correct VBL timings in TT monochrome (double clicking works now)
-- Some changes to Falcon's emulation (DSP, CPU)
+- More cycle accurate Falcon DSP <-> CPU emulation.  All the demos that
+  needed 32Mhz CPU with the old CPU core in Hatari v1.5, work now at
+  correct 16Mhz with the WinUAE CPU core
+- 030 MMU emulation with the WinAUE CPU core
+
 
 Emulator:
 - Switch to ST mode when using TOS <= 1.04

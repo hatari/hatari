@@ -1695,10 +1695,9 @@ the column contains "-". The column for whether the program works and
 for whether it has (working) sound have "yes" when this is true and
 otherwise "-".</p>
 
-<p>Due to missing MMU emulation, incomplete VIDEL emulation and only
-partially cycle accurate CPU/DSP interaction (and other possible
-emulation bugs), some Falcon programs don't work yet.
-<b>Note:</b> more DSP-timing critical demos (for example ones using
+<p>Due to incomplete VIDEL emulation and some remaining emulation
+cycle accuracies, some Falcon programs don't work yet.
+<b>Note:</b> more timing critical demos (for example ones using
 NoCrew's DSP MP2-player) that are marked as working in the list below,
 <em>work only with the experimental WinUAE core</em>. Please see
 Hatari readme.txt on how to enable that.</p>
@@ -2121,12 +2120,11 @@ Hatari readme.txt on how to enable that.</p>
     </tr>
     <tr>
       <td><a href="http://www.fatal-design.com/pinball/">Pinball Dreams</a></td>
-      <td class="major">1.3</td>
+      <td class="major">1.6</td>
       <td>-</td>
       <td>-</td>
       <td>Colors in main menu wrong and it doesn't react to input,
-      sound is just noise.  Menu works with "--cpuclock 32", but
-      game screen is scrambled / doesn't work.</td>
+      sound is just noise.  Game screen is scrambled / doesn't work.</td>
     </tr>
     <tr>
       <td>Pingo98</td>
@@ -2406,10 +2404,10 @@ Hatari readme.txt on how to enable that.</p>
     </tr>
     <tr>
       <td>Watership</td>
-      <td class="minor">1.4</td>
+      <td class="minor">1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>For now requires --cpuclock 32 to work properly with Hatari. Some glitched on bottom of the screen</td>
+      <td>Some glitches at the bottom of the screen</td>
     </tr>
     <tr>
       <td><a href="http://newbeat.atari.org/main.php?page=productions">Willie Adventurer</a></td>
@@ -2619,18 +2617,18 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=1180">Are You Experienced?</a></td>
-      <td>1.3</td>
+      <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>For now requires --cpuclock 32 to work properly with Hatari</td>
+      <td>Requires WinUAE CPU core</td>
     </tr>
     <tr>
       <td>EKO:
       <a href="http://www.pouet.net/prod.php?which=8572">E.K.O System</a></td>
-      <td>1.3</td>
+      <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>For now requires --cpuclock 32 to work properly with Hatari</td>
+      <td>Requires WinUAE CPU core</td>
     </tr>
     <tr>
       <td>EKO:
@@ -2772,10 +2770,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>Lazer:
       <a href="http://pouet.net/prod.php?which=5201">Lost Blubb</a></td>
-      <td>1.3</td>
+      <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>For now requires --cpuclock 32 to work properly with Hatari</td>
+      <td>Requires WinUAE CPU core</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -2828,10 +2826,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>MJJ Prod:
       <a href="http://pouet.net/prod.php?which=28764">Bound 42</a></td>
-      <td>1.4</td>
+      <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs CPU 32 Mhz for now, else, the demo is very slow</td>
+      <td>With old UAE core, stops at cyan millstone screen</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -2853,11 +2851,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>Mystic bytes:
       <a href="http://pouet.net/prod.php?which=17780">Time Out</a></td>
-      <td>1.3</td>
+      <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Needs 8MB RAM. For now requires also --cpuclock 32 to
-          work properly with Hatari</td>
+      <td>Requires 8MB RAM and WinUAE CPU core</td>
     </tr>
     <tr>
       <td>New Beat:
@@ -2966,10 +2963,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>The Respectables:
       <a href="http://www.pouet.net/prod.php?which=28806">Cebit 93 demo</a></td>
-      <td class="minor">1.4</td>
+      <td class="minor">1.6</td>
       <td>yes</td>
       <td>-</td>
-      <td>Screen is drawn properly only with --cpuclock 32</td>
+      <td>Screen isn't drawn properly with old UAE core</td>
     </tr>
     <tr>
       <td>Trio:
