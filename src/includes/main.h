@@ -11,7 +11,7 @@
 
 /* Name and version for window title: */
 //#define PROG_NAME "Hatari devel (" __DATE__ ")"
-#define PROG_NAME "Hatari v1.5.0"
+#define PROG_NAME "Hatari v1.6.0"
 
 #include "config.h"
 

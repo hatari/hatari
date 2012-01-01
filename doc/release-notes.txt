@@ -3,8 +3,8 @@
                                    --------
                                 Release Notes
 
- Development version:
- --------------------
+ Version 1.6.0 (2012-01-01):
+ ---------------------------
 
 The Hatari project has been moved from hatari.berlios.de to
 http://hatari.tuxfamily.org/. Please update all bookmarks!

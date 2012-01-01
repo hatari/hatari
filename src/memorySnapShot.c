@@ -52,7 +52,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "statusbar.h"
 
 
-#define VERSION_STRING      "16-a3"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "1.6.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
 
