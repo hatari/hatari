@@ -66,9 +66,9 @@ static unsigned long *counts;
 static int generate_stbl;
 static int fixupcnt;
 
-static int instr_index = 0;	/* Hatari: Added to give a unique index to each 68030 cycle exact instruction (CPU_EMU_21) */
-static int instr_table;		/* Hatari: Used to know which cycle table to use (CPU_EMU_21) */
-static int instr_table_index;	/* Hatari: Used when the cycle table is not the generic one to set the line of the table (CPU_EMU_21) */
+static int instr_index = 0;		/* Hatari: Added to give a unique index to each 68030 cycle exact instruction (CPU_EMU_21) */
+static int instr_table;			/* Hatari: Used to know which cycle table to use (CPU_EMU_21) */
+static int instr_table_index;		/* Hatari: Used when the cycle table is not the generic one to set the line of the table (CPU_EMU_21) */
 
 /* used to disable the return cycles function call when there are more than one cycle to take into account for an instruction */
 /* Falcon CPU only (CPUEMU_21)) */
@@ -2645,8 +2645,6 @@ static void gen_opcode (unsigned long int opcode)
 			start_brace ();
 			printf ("\t\tint cycles = (getDivu68kCycles((uae_u32)dst, (uae_u16)src));\n");
 			addcycles000_3 ("\t\t");
-		} else if (using_ce020) {
-			addcycles_ce020 (0, 0, 36, 36);
 		}
 		/* The N flag appears to be set each time there is an overflow.
 		* Weird. but 68020 only sets N when dst is negative.. */
@@ -2693,8 +2691,6 @@ static void gen_opcode (unsigned long int opcode)
 			start_brace ();
 			printf ("\t\tint cycles = (getDivs68kCycles((uae_s32)dst, (uae_s16)src));\n");
 			addcycles000_3 ("\t\t");
-		} else if (using_ce020) {
-					addcycles_ce020 (0, 0, 46, 46);
 		}
 		printf ("\t\tif ((newv & 0xffff8000) != 0 && (newv & 0xffff8000) != 0xffff8000) {\n");
 		printf ("\t\t\tSET_VFLG (1);\n");
@@ -2729,8 +2725,6 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\tfor(bits = 0; bits < 16 && src; bits++, src >>= 1)\n");
 			printf ("\t\tif (src & 1) cycles += 2;\n");
 			addcycles000_3 ("\t");
-		} else if (using_ce020) {
-					addcycles_ce020 (0, 0, 20, 20);
 		}
 		genastore ("newv", curi->dmode, "dstreg", sz_long, "dst");
 		sync_m68k_pc ();
@@ -2754,8 +2748,6 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\tfor(bits = 0; bits < 16 && usrc; bits++, usrc >>= 1)\n");
 			printf ("\t\tif ((usrc & 3) == 1 || (usrc & 3) == 2) cycles += 2;\n");
 			addcycles000_3 ("\t");
-		} else if (using_ce020) {
-					addcycles_ce020 (0, 0, 20, 20);
 		}
 		genastore ("newv", curi->dmode, "dstreg", sz_long, "dst");
 		count_cycles += 38 - 4;
@@ -2849,8 +2841,15 @@ static void gen_opcode (unsigned long int opcode)
 		duplicate_carry (1);
 		if (source_is_imm1_8 (curi))
 			printf ("\t} else {\n");
-		else
+		else {
+			if (using_ce020 == 2){
+				no_return_cycles = true;
+				printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_ASR[1];\n");
+			}
 			printf ("\t} else if (cnt > 0) {\n");
+			if (using_ce020 == 2)
+				printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_ASR[0];\n");
+		}
 		printf ("\t\tval >>= cnt - 1;\n");
 		printf ("\t\tSET_CFLG (val & 1);\n");
 		duplicate_carry (1);
@@ -2924,8 +2923,15 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\t\tval = 0;\n");
 		if (source_is_imm1_8 (curi))
 			printf ("\t} else {\n");
-		else
+		else {
+			if (using_ce020 == 2){
+				no_return_cycles = true;
+				printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_LSD[1];\n");
+			}
 			printf ("\t} else if (cnt > 0) {\n");
+			if (using_ce020 == 2)
+				printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_LSD[0];\n");
+		}
 		printf ("\t\tval >>= cnt - 1;\n");
 		printf ("\t\tSET_CFLG (val & 1);\n");
 		duplicate_carry (1);
@@ -2955,8 +2961,15 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\t\tval = 0;\n");
 		if (source_is_imm1_8 (curi))
 			printf ("\t} else {\n");
-		else
+		else {
+			if (using_ce020 == 2){
+				no_return_cycles = true;
+				printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_LSD[1];\n");
+			}
 			printf ("\t} else if (cnt > 0) {\n");
+			if (using_ce020 == 2)
+				printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_LSD[0];\n");
+		}
 		printf ("\t\tval <<= (cnt - 1);\n");
 		printf ("\t\tSET_CFLG ((val & %s) >> %d);\n", cmask (curi->size), bit_size (curi->size) - 1);
 		duplicate_carry (1);
@@ -3391,18 +3404,12 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\tuaecptr oldpc = m68k_getpc ();\n");
 		genamode (curi->smode, "srcreg", curi->size, "extra", 1, 0, 0);
 		genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0, 0);
-		if (using_ce020) {
-					addcycles_ce020 (0, 0, 70, 70);
-		}
 		sync_m68k_pc ();
 		printf ("\tm68k_divl(opcode, dst, extra, oldpc);\n");
 		break;
 	case i_MULL:
 		genamode (curi->smode, "srcreg", curi->size, "extra", 1, 0, 0);
 		genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0, 0);
-		if (using_ce020) {
-					addcycles_ce020 (0, 0, 40, 40);
-		}
 		sync_m68k_pc ();
 		printf ("\tm68k_mull(opcode, dst, extra);\n");
 		break;
