@@ -55,6 +55,15 @@ static bool bDspDebugging;
 bool bDspEnabled = false;
 bool bDspHostInterruptPending = false;
 
+static const char* x_ext_memory_addr_name[] = {
+	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	"PBC", "PCC", "PBDDR", "PCDDR", "PBD", "PCD", "", "",
+	"HCR", "HSR", "", "HRX/HTX", "CRA", "CRB", "SSISR/TSR", "RX/TX",
+	"SCR", "SSR", "SCCR", "STXA", "SRX/STX", "SRX/STX", "SRX/STX", "",
+	"", "", "", "", "", "", "BCR", "IPR"	
+};
+
 
 /**
  * Trigger HREQ interrupt at the host CPU.
@@ -315,7 +324,7 @@ Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char 
 
 	for (mem = dsp_memdump_addr; mem <= dsp_memdump_upper; mem++) {
 		/* special printing of host communication/transmit registers */
-		if (space == 'X' && (mem == 0xffeb || mem == 0xffef)) {
+		if (space == 'X' && mem >= 0xffc0) {
 			if (mem == 0xffeb) {
 				fprintf(stderr,"X periph:%04x  HTX : %06x   RTX:%06x\n", 
 					mem, dsp_core.dsp_host_htx, dsp_core.dsp_host_rtx);
@@ -323,6 +332,10 @@ Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char 
 			else if (mem == 0xffef) {
 				fprintf(stderr,"X periph:%04x  SSI TX : %06x   SSI RX:%06x\n", 
 					mem, dsp_core.ssi.transmit_value, dsp_core.ssi.received_value);
+			}
+			else {
+				value = DSP_ReadMemory(mem, space, &mem_str);
+				fprintf(stderr,"%s:%04x  %06x\t%s\n", mem_str, mem, value, x_ext_memory_addr_name[mem-0xffc0]);
 			}
 			continue;
 		}
