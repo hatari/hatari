@@ -3472,6 +3472,7 @@ static void m68k_run_2ce (void)
 	struct regstruct *r = &regs;
 	int sav_tail = 0;
 	int curr_cycles = 0;
+	int cyc_to_go;
 
 	struct falcon_cycles_t falcon_instr_cycle;
 	
@@ -3515,6 +3516,20 @@ static void m68k_run_2ce (void)
 		}
 
 		curr_cycles += regs.ce030_instr_addcycles;
+
+		cyc_to_go = 0;
+
+		while (curr_cycles > 20) {
+			M68000_AddCycles(20);
+			curr_cycles -= 20;
+			/* Run DSP 56k code if necessary */
+			if (bDspEnabled) {
+				DSP_Run(40);
+			}
+			cyc_to_go += 20;
+		}
+
+
 		M68000_AddCycles(curr_cycles);
 
 		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
@@ -3541,7 +3556,7 @@ static void m68k_run_2ce (void)
 	
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
-			DSP_Run(Cycles_GetCounter(CYCLES_COUNTER_CPU) * 2);
+			DSP_Run((Cycles_GetCounter(CYCLES_COUNTER_CPU) * 2) - cyc_to_go);
 		}
 	}
 }
