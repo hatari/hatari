@@ -521,8 +521,9 @@ static void TOS_CheckSysConfig(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Load TOS Rom image file into ST memory space and fix image so can emulate correctly
- * Pre TOS 1.06 are loaded at 0xFC0000 with later ones at 0xE00000
+ * Load TOS Rom image file into ST memory space and fix image so it can be
+ * emulated correctly.  Pre TOS 1.06 are loaded at 0xFC0000 and later ones
+ * at 0xE00000.
  */
 int TOS_LoadImage(void)
 {
@@ -531,7 +532,7 @@ int TOS_LoadImage(void)
 
 	bTosImageLoaded = false;
 
-	/* Load TOS image into memory so we can check it's vesion */
+	/* Load TOS image into memory so that we can check its version */
 	TosVersion = 0;
 	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, &nFileSize, pszTosNameExts);
 
