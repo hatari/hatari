@@ -13,7 +13,7 @@ User visible changes in Hatari (Python Gtk) UI
 - Disasm update for new Hatari disassembly output
 
 2011-01:
-- Use new Gtk v1.12 tooltip API
+- Use new Gtk v2.12 tooltip API
 - Support capture cropping
 
 2010-10:

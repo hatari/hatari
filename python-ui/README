@@ -22,7 +22,7 @@ Requirements
 ------------
 
 My guess at the required versions for the dependencies are:
-- Python >= 2.4
+- Python >= 2.6
 - PyGtk >= 2.12   (on Debian/Ubuntu PyGtk is in python-gtk2 package)
 
 Hatari UI is included with the Hatari sources:
