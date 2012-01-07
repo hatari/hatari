@@ -184,6 +184,7 @@ class Hatari:
         if self.pid:
             os.kill(self.pid, signal.SIGKILL)
             print("killed hatari with PID %d" % self.pid)
+            self.control.close()
             self.control = None
             self.pid = 0
 
