@@ -45,7 +45,7 @@ Running
 
 Being a Python program, Hatari UI doesn't need to be built.
 You can just run it from where you extracted it (or checked
-it out of BerliOS HG repo) by calling its wrapper script:
+it out of TuxFamily HG repo) by calling its wrapper script:
 	/path/to/script/hatariui
 
 Or you can run just the debugger:
@@ -61,7 +61,7 @@ Notes
 Hatari UI runs a Hatari version found on $PATH.  If you want
 to use a version of Hatari that hasn't been installed, you
 need to modify the search path, for example like this:
-	PATH=../src:$PATH hatariui
+	PATH=../build/src:$PATH hatariui
 
 If UI is started without the embedding option, the actions
 (in menus and toolbars) have also shortcuts.  They cannot

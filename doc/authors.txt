@@ -8,7 +8,7 @@
 - Thomas Huth <huth at tuxfamily.org> : Project initiator and
   admin, currently more or less in hibernation mode.
 
-- Eero Tamminen <eerot at users.berlios.de> : Speed improvements & code
+- Eero Tamminen <oak at helsinkinet fi> : Speed improvements & code
   cleanup, parts of the STE emulation, Hatari embedding & remote
   control, pause & auto frameskip support, statusbar & overlay led,
   conditional breakpoints and other debugger improvements, PNG saving
