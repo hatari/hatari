@@ -13,8 +13,8 @@ Contents:
 2. What is Hatari?
 3. Compiling and installing
    3.1 WinUAE and "old" UAE CPU cores
-   3.2 Known problems
-   3.3 Notes for Linux distribution packagers
+   3.2 Notes for Linux distribution packagers
+       3.2.1 Known distro problems
 4. Running Hatari
 5. Contact
 
@@ -130,18 +130,7 @@ And test also the old core if Falcon programs don't work with the new
 one...
 
 
- 3.2) Known problems
-
-Old RHEL 5 and the derived CentOS v5.x Linux distributions ship
-with a broken readline library:
-	https://bugzilla.redhat.com/show_bug.cgi?id=499837
-
-To get CMake readline detection and linking working on them,
-you need to give these as extra arguments to the "cmake" command:
-   -DCMAKE_C_FLAGS=-lncurses -DCMAKE_EXE_LINKER_FLAGS=-lncurses
-
-
- 3.3) Notes for Linux distribution packagers
+ 3.2) Notes for Linux distribution packagers
 
 If Hatari package will have two application menu entries for Hatari,
 one for the Python UI embedding Hatari, and another one for the plain
@@ -155,6 +144,21 @@ registering Hatari as a (binfmt_misc) handler for TOS binaries.
 Alternatively one could add a mime type for TOS binaries with xdg-mime:
   http://portland.freedesktop.org/xdg-utils-1.0/xdg-mime.html
 But registering handlers for mime-types seems desktop specific.
+
+
+ 3.2.1) Known distro problems
+
+Old RHEL 5 and the derived CentOS v5.x Linux distributions ship
+with a broken readline library:
+	https://bugzilla.redhat.com/show_bug.cgi?id=499837
+
+To get CMake readline detection and linking working on them,
+you need to give these as extra arguments to the "cmake" command:
+   -DCMAKE_C_FLAGS=-lncurses -DCMAKE_EXE_LINKER_FLAGS=-lncurses
+
+They also have too old Python/PyGtk version for the python based
+Hatari scripts.  Here are patches for Hatari v1.5/v1.6 Python UI:
+http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2012/01/msg00008.html
 
 
  4) Running Hatari
