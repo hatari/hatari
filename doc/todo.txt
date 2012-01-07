@@ -43,8 +43,8 @@ Emulation improvements
 
 - Add SCC serial port emulation for Falcon/TT mode.
 
-- Some Falcon games/demos only work with 32 MHz CPU emulation.
-  (might be due to timings problems (videl, DMA, cpu cycles, dsp cycles, ...))
+- Disable VDI mode for TOS v4 as it doesn't support it (and VDI mode
+  is redundant as Falcon's Videl allows similar resolutions)
 
 - Fix falcon sound quality (sound is sometimes noisy)
   Sound is also toggling between nice to noise with some demos.
@@ -61,8 +61,8 @@ Emulation improvements
   http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2011/12/msg00123.html
 
 
-Programs known as not fully functionnal (not an exhaustive list)
-----------------------------------------------------------------
+Programs known as not fully functional (not an exhaustive list)
+---------------------------------------------------------------
 
 Demos :
   - video : Omega - Full Overscan Screen, Phalanx Demo - Dragon,
@@ -226,8 +226,13 @@ Bug reports
 
 - To compare my real Falcon with Hatari on my Windows 7 PC, I make some short
   benchmarks with Kronos. The disk benchmark in Kronos runs in 1-2 minutes on
-  my real Falcon. The same disk benchmark in Kronos under Hatari 1.5 runs any
-  longer than 20 minutes. Only when I use the AltGr + X option, before the
-  benchmark runs, then the disk benchmark in kronos is comparable fast as my
-  16MHz Falcon.
+  my real Falcon. The same disk benchmark in Kronos under Hatari 1.5 runs
+  longer than 20 minutes with GEMDOS emulation.  Only when I use the AltGr + X
+  option, before the benchmark runs, then the disk benchmark in kronos is
+  comparable fast as my 16MHz Falcon.
   http://developer.berlios.de/bugs/?func=detailbug&bug_id=18298&group_id=10436
+
+  -> Hatari GEMDOS emulation needs to do a lot of extra kernel file & directory
+     accesses which with current code seem unavoidable.  They're a problem only
+     with test programs like Kronos, for those one should consider using
+     harddisk image files instead.
