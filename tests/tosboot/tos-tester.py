@@ -53,11 +53,17 @@ Screenshot name indicates the used combination, for example:
         etos512k-falcon-rgb-14M.png
         etos512k-st-mono-1M.png
 
-NOTE: If hconsole isn't installed to one of the standard
-locations (under /usr or /usr/local), or you don't run this
-from within Hatari sources, you need to specify hconsole.py
-location with PYTHONPATH, like this:
-   PYTHONPATH=/path/to/hconsole %s <TOS images>
+
+NOTE: If you want to test the latest, uninstalled version of Hatari,
+you need to set PATH to point to your Hatari binary directory, like
+this:
+	PATH=../../build/src:$PATH %s <TOS images>
+
+If hconsole isn't installed to one of the standard locations (under
+/usr or /usr/local), or you don't run this from within Hatari sources,
+you also need to specify hconsole.py location with:
+	export PYTHONPATH=/path/to/hconsole
+
 
 ERROR: %s!
 """ % (scriptname, scriptname, msg))
