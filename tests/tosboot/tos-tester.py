@@ -3,19 +3,7 @@
 # This script tests that all given TOS image files boot under
 # Hatari with several different HW configurations and saves
 # verification screenshots into current directory.
-#
-# If Hatari and hconsole are installed to the system and
-# you want to test those, you need to tell where hconsole
-# is installed by setting PYTHONPATH correctly, like this:
-#   export PYTHONPATH=/usr/share/hatari/hconsole
-#   ./tos-tester.py <TOS images>
 # 
-# If you want to test latest versions of hconsole and Hatari,
-# you need to set also PATH to point to your Hatari binary
-# directory, like this:
-#   export PYTHONPATH=../../tools/hconsole
-#   PATH=../../build/src:$PATH ./tos-tester.py <TOS images>
-#
 # Copyright (C) 2012 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -28,11 +16,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import hconsole, os, sys
+import os, sys
+
+# add most likely hconsole locations to module import path,
+# prefer the devel version in Hatari sources, if it's found
+def add_hconsole_paths():
+    subdirs = len(os.path.abspath(os.curdir).split(os.path.sep))-1
+    for level in range(subdirs):
+        f = level*(".." + os.path.sep) + "tools/hconsole/hconsole.py"
+        if os.path.isfile(f):
+            f = os.path.dirname(f)
+            sys.path.append(f)
+            print "Added local hconsole path: %s" % f
+            break
+    sys.path += ["/usr/local/share/hatari/hconsole",
+                 "/usr/share/hatari/hconsole"]
+
+add_hconsole_paths()
+import hconsole
 
 def warning(msg):
     sys.stderr.write("WARNING: %s\n" % msg)
 def error_exit(msg):
+    scriptname = os.path.basename(sys.argv[0])
     sys.stderr.write("""
 usage: %s <TOS image files>
 
@@ -47,8 +53,14 @@ Screenshot name indicates the used combination, for example:
         etos512k-falcon-rgb-14M.png
         etos512k-st-mono-1M.png
 
+NOTE: If hconsole isn't installed to one of the standard
+locations (under /usr or /usr/local), or you don't run this
+from within Hatari sources, you need to specify hconsole.py
+location with PYTHONPATH, like this:
+   PYTHONPATH=/path/to/hconsole %s <TOS images>
+
 ERROR: %s!
-""" % (os.path.basename(sys.argv[0]), msg))
+""" % (scriptname, scriptname, msg))
     sys.exit(1)
 
 
