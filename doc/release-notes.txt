@@ -3,6 +3,15 @@
                                    --------
                                 Release Notes
 
+ Development version
+ -------------------
+
+Other changes:
+- Test programs added for testing TOS booting with different
+  HW configurations and for finding out values needed in
+  Hatari keymaps
+
+
  Version 1.6.0 (2012-01-01):
  ---------------------------
 
