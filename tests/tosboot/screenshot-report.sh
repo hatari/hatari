@@ -102,7 +102,8 @@ echo "<a name=mismatched></a><h2>Mismatched screenshots</h2>" >> $report
 if [ -z "$mismatched" ]; then
 	echo "None." >> $report
 else
-	echo "<p>Images which PNG/BMP screenshot files exactly the same (the image content could still be identical although files aren't, due to changes e.g. in compression)." >> $report
+	echo "<p>Images which PNG/BMP screenshot file isn't exactly the same as the reference file" >> $report
+	echo "(the image content could still be identical although the files aren't, due to changes e.g. in compression)." >> $report
 	#echo "Left = new image, middle = difference, right = reference image:" >> $report
 	echo "<p>Left = new image, right = reference image:" >> $report
 	mkdir -p $difdir
