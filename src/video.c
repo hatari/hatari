@@ -621,21 +621,20 @@ void Video_Reset_Glue(void)
  */
 static void	Video_SetSystemTimings(void)
 {
-  if ( ConfigureParams.System.nMachineType == MACHINE_ST )
-    {
-      LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
-      LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
-      RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
-      VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
-    }
-
-  else					/* STE, Falcon, TT */
-    {
-      LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STE;
-      LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STE;
-      RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
-      VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STE;
-    }
+	if ( ConfigureParams.System.nMachineType == MACHINE_ST )
+	{
+		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
+		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
+		RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
+		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
+	}
+	else				/* STE, Falcon, TT */
+	{
+		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STE;
+		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STE;
+		RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
+		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STE;
+	}
 }
 
 
@@ -725,7 +724,6 @@ static Uint32 Video_CalculateAddress ( void )
 	int PrevSize;
 	int CurSize;
 	int LineStartCycle , LineEndCycle;
-	
 
 	/* Find number of cycles passed during frame */
 	/* We need to substract '12' for correct video address calculation */
