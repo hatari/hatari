@@ -3,7 +3,7 @@ INSTALL(PROGRAMS hatariui
 	DESTINATION ${BINDIR})
 
 INSTALL(PROGRAMS config.py dialogs.py hatari.py uihelpers.py
-	hatariui.py debugui.py
+	hatariui.py debugui.py conftypes.py
 	DESTINATION ${DATADIR}/hatariui/)
 
 INSTALL(FILES README TODO release-notes.txt hatari-icon.png hatari.png

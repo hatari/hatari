@@ -4,7 +4,7 @@
 # configuration files: loading, saving, setting/getting variables,
 # mapping them to sections, listing changes
 #
-# Copyright (C) 2008-2011 by Eero Tamminen
+# Copyright (C) 2008-2012 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # GNU General Public License for more details.
 
 import os
+# mapping from Hatari config variable name to type id (Bool, Int, String)
+from conftypes import conftypes
 
 # ------------------------------------------------------
 # Helper functions for type safe Hatari configuration variable access.
@@ -26,16 +28,16 @@ def value_to_text(key, value):
     "value_to_text(key, value) -> text, convert Python type to string"
     valtype = type(value)
     if valtype == bool:
-        assert(key[0] == "b") # bool prefix
+        assert(conftypes[key] == "Bool")
         if value:
             text = "TRUE"
         else:
             text = "FALSE"
     elif valtype == int:
-        assert(key[0] in ("n", "k")) # numeric/keycode prefix
+        assert(conftypes[key] == "Int")
         text = str(value)
     else:
-        assert(key[0] == "s") # string prefix
+        assert(conftypes[key] == "String")
         if value == None:
             text = ""
         else:
