@@ -136,7 +136,7 @@ echo "<a name=new></a><h2>New screenshots</h2>" >> $report
 if [ -z "$new" ]; then
 	echo "None." >> $report
 else
-	msg="<p>These are candinates to be moved to the '$refdir' directory:"
+	msg="<p>These are candidates to be moved to the '$refdir' directory:"
 	echo "<p>$msg" >> $report
 	for img in $new; do
 		get_name $img
