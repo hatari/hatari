@@ -8,6 +8,7 @@
 #import <Cocoa/Cocoa.h>
 
 // Wrapper to run an NSWindow modally
+@protocol NSWindowDelegate;
 @interface ModalWrapper : NSWindowController <NSWindowDelegate>
 {
     IBOutlet NSWindow *modalWindow;
