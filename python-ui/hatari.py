@@ -174,6 +174,9 @@ class Hatari:
         except OSError as value:
             print("Hatari PID %d had exited in the meanwhile:\n\t%s" % (self.pid, value))
             self.pid = 0
+            if self.control:
+                self.control.close()
+                self.control = None
             return False
         return True
     
@@ -225,7 +228,7 @@ class Hatari:
 
     def kill(self):
         "kill(), kill Hatari if it's running"
-        if self.pid:
+        if self.is_running():
             os.kill(self.pid, signal.SIGKILL)
             print("killed hatari with PID %d" % self.pid)
             self.pid = 0
