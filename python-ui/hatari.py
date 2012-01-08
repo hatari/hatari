@@ -3,7 +3,7 @@
 # Classes for Hatari emulator instance and mapping its congfiguration
 # variables with its command line option.
 #
-# Copyright (C) 2008-2011 by Eero Tamminen
+# Copyright (C) 2008-2012 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -624,7 +624,6 @@ class HatariConfigMapping(ConfigStore):
     
     def get_frameskip(self):
         fs = self.get("[Screen]", "nFrameSkips")
-        print("Frameskip", fs)
         if fs < 0 or fs > 5:
             return 5
         return fs
@@ -695,6 +694,9 @@ class HatariConfigMapping(ConfigStore):
     def set_desktop_size(self, w, h):
         self._desktop_w = w
         self._desktop_h = h
+        
+    def get_desktop_size(self):
+        return (self._desktop_w, self._desktop_h)
 
     def get_max_size(self):
         w = self.get("[Screen]", "nMaxWidth")

@@ -2,7 +2,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2011 by Eero Tamminen
+# Copyright (C) 2008-2012 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -300,7 +300,7 @@ class FloppyDialog(HatariUIDialog):
         row += 1
         fastfdc = gtk.CheckButton("Fast floppy access")
         fastfdc.set_active(config.get_fastfdc())
-        fastfdc.set_tooltip_text("Can cause incompatibilites with some games/demos")
+        fastfdc.set_tooltip_text("Can cause incompatibilities with some games/demos")
         table_add_widget_row(table, row, None, fastfdc)
 
         table.show_all()
@@ -422,8 +422,9 @@ class DisplayDialog(HatariUIDialog):
         skip.set_tooltip_text("Set how many frames are skipped")
 
         maxw, maxh = config.get_max_size()
-        maxadjw = gtk.Adjustment(maxw, 320, 1280, 8, 40)
-        maxadjh = gtk.Adjustment(maxh, 200,  960, 8, 40)
+        topw, toph = config.get_desktop_size()
+        maxadjw = gtk.Adjustment(maxw, 320, topw, 8, 40)
+        maxadjh = gtk.Adjustment(maxh, 200, toph, 8, 40)
         scalew = gtk.HScale(maxadjw)
         scaleh = gtk.HScale(maxadjh)
         scalew.set_digits(0)
@@ -431,7 +432,7 @@ class DisplayDialog(HatariUIDialog):
         scalew.set_tooltip_text("Preferred/maximum zoomed width")
         scaleh.set_tooltip_text("Preferred/maximum zoomed height")
 
-        desktop = gtk.CheckButton("Keep desktop resolution")
+        desktop = gtk.CheckButton("Keep desktop resolution (for Falcon/TT)")
         desktop.set_active(config.get_desktop())
         desktop.set_tooltip_text("Whether to keep desktop resolution in fullscreen and (try to) scale Atari screen by an integer factor instead")
 
@@ -704,7 +705,7 @@ class TraceDialog(HatariUIDialog):
         "dsp_state"
     ]
     def __init__(self, parent):
-        self.savedpoints = "none"
+        self.savedpoints = None
         hbox1 = gtk.HBox()
         hbox1.add(create_button("Load", self._load_traces))
         hbox1.add(create_button("Clear", self._clear_traces))
@@ -746,6 +747,8 @@ class TraceDialog(HatariUIDialog):
 
     def _set_traces(self, tracepoints):
         self._clear_traces()
+        if not tracepoints:
+            return
         for trace in tracepoints.split(","):
             if trace in self.tracewidgets:
                 self.tracewidgets[trace].set_active(True)
