@@ -71,16 +71,22 @@ ERROR: %s!
 
 
 class TOS:
-    def __init__(self, argv):
+    def __init__(self, images):
+        "check & store given list of TOS image file names"
         self.images = []
-        if len(argv) < 1:
+        if len(images) < 1:
             error_exit("no TOS image files given")
-        for img in argv:
+        for img in images:
             self.add_image(img)
         if not self.images:
             error_exit("no (valid) TOS image files given")
+
+    def files(self):
+        "return list of stored, valid TOS image file names"
+        return self.images
     
     def image_machines(self, img):
+        "return tuple of (IsEmuTOS, <tuple of supported machine types>) for given TOS image"
         (version, is_etos) = self.image_version(img)
         if is_etos:
             if version > 0x200:
@@ -99,7 +105,7 @@ class TOS:
             return (is_etos, ("falcon",))
     
     def image_version(self, img):
-        "return tuple of (TOSversion, IsEmuTOS)"
+        "return tuple of (TOSversion, IsEmuTOS) for given TOS image"
         f = open(img)
         f.seek(0x2, 0)
         version = (ord(f.read(1)) << 8) + ord(f.read(1))
@@ -108,7 +114,7 @@ class TOS:
         return (version, etos == "ETOS")
     
     def add_image(self, img):
-        "add valid TOS images"
+        "check and store given, valid TOS image to internal list"
         if not os.path.isfile(img):
             warning("'%s' isn't a file")
             return
@@ -128,32 +134,33 @@ class TOS:
             return
         self.images.append(img)
 
-    def files(self):
-        return self.images
-
 
 class Tester:
     # dummy config file to force suitable default options
     dummycfg = "dummy.cfg"
     defaults = [sys.argv[0], "--configfile", dummycfg]
-    hddir = "gemdos"
+    hdtestdir = "gemdos"
     
     def __init__(self):
+        "test setup initialization"
         self.images = TOS(sys.argv[1:])
-        # dummy configuration to avoid user's own config,
-        # get rid of the dialogs, disable GEMDOS emu by default,
-        # use empty blank disk to avoid TOS error when no disks
-        # and get rid of statusbar and borders in TOS screenshots
-        # to make them smaller & more consistent
+        # write specific configuration to:
+        # - avoid user's own config
+        # - get rid of the dialogs
+        # - disable GEMDOS emu by default
+        # - use empty blank disk to avoid TOS error when no disks
+        # - limit Videl zooming to same sizes as ST screen zooming
+        # - get rid of statusbar and borders in TOS screenshots
+        #   to make them smaller & more consistent
         dummy = open(self.dummycfg, "w")
         dummy.write("[Log]\nnAlertDlgLogLevel = 0\nbConfirmQuit = FALSE\n")
         dummy.write("[HardDisk]\nbUseHardDiskDirectory = FALSE\n")
         dummy.write("[Floppy]\nszDiskAFileName = blank-a.st.gz\n")
-        dummy.write("[Screen]\nbCrop = TRUE\nbAllowOverscan=FALSE\n")
+        dummy.write("[Screen]\nnMaxWidth=832\nnMaxHeight=576\nbCrop = TRUE\nbAllowOverscan=FALSE\n")
         dummy.close()
         # directory for GEMDOS emu testing
-        if not os.path.isdir(self.hddir):
-            os.mkdir(self.hddir)
+        if not os.path.isdir(self.hdtestdir):
+            os.mkdir(self.hdtestdir)
         # remove left over screenshots
         if os.path.isfile("grab0001.png"):
             os.remove("grab0001.png")
@@ -161,6 +168,7 @@ class Tester:
             os.remove("grab0001.bmp")
 
     def test(self, identity, testargs, bootwait, deskwait):
+        "run single boot test for TOS image"
         sys.argv = self.defaults + testargs
         instance = hconsole.Main()
         # pass memory test
@@ -180,6 +188,7 @@ class Tester:
         instance.run("kill")
 
     def run(self):
+        "run all TOS boot tests"
         for tos in self.images.files():
 
             name = os.path.basename(tos)
@@ -231,7 +240,7 @@ class Tester:
                                 testargs += ["--monitor", monitor]
                             if gemdos:
                                 identity += "-gemdos"
-                                testargs += ["--harddrive", self.hddir]
+                                testargs += ["--harddrive", self.hdtestdir]
                             self.test(identity, testargs, bootwait, deskwait)
 
 
