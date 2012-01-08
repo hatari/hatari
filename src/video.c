@@ -547,14 +547,7 @@ void Video_MemorySnapShot_Capture(bool bSave)
 void Video_Reset(void)
 {
 	/* NOTE! Must reset all of these register type things here!!!! */
-
-	/* Are we in high-res? */
-	if (bUseHighRes)
-		VideoShifterByte = ST_HIGH_RES;    /* Boot up for mono monitor */
-	else
-		VideoShifterByte = ST_LOW_RES;
-	if (bUseVDIRes)
-		VideoShifterByte = VDIRes;
+	Video_Reset_Glue();
 
 	/* Set system specific timings */
 	Video_SetSystemTimings();
@@ -608,8 +601,17 @@ void Video_Reset(void)
  */
 void Video_Reset_Glue(void)
 {
-	IoMem_WriteByte(0xff820a,0);		/* video freq */
-	IoMem_WriteByte(0xff8260,0);		/* video res */
+	IoMem_WriteByte(0xff820a,0);			/* Video frequency */
+
+	/* Are we in high-res? */
+	if (bUseHighRes)
+		VideoShifterByte = ST_HIGH_RES;		/* Mono monitor */
+	else
+		VideoShifterByte = ST_LOW_RES;
+	if (bUseVDIRes)
+		VideoShifterByte = VDIRes;
+
+	IoMem_WriteByte(0xff8260, VideoShifterByte);
 }
 
 
@@ -3243,7 +3245,7 @@ void Video_ShifterMode_WriteByte(void)
 		/* Copy to TT shifter mode register: */
 		IoMem_WriteByte(0xff8262, TTRes);
 	}
-	else	/* ST and STE mode */
+	else if (!bUseVDIRes)	/* ST and STE mode */
 	{
 		Video_WriteToShifter(VideoShifterByte);
 		Video_SetHBLPaletteMaskPointers();
