@@ -102,18 +102,21 @@ echo "<a name=mismatched></a><h2>Mismatched screenshots</h2>" >> $report
 if [ -z "$mismatched" ]; then
 	echo "None." >> $report
 else
-	echo "Left = new image, middle = difference, right = reference image:" >> $report
+	echo "<p>Images which PNG/BMP screenshot files exactly the same (the image content could still be identical although files aren't, due to changes e.g. in compression)." >> $report
+	#echo "Left = new image, middle = difference, right = reference image:" >> $report
+	echo "<p>Left = new image, right = reference image:" >> $report
 	mkdir -p $difdir
 	for img in $mismatched; do
 		refimg=$refdir/$img
 		get_name $img
 		diff=$difdir/$name.png
-		compare $img $refimg $diff
-		if [ $? -eq 0 ]; then
-			echo "<p><div align=center><img src=$img><img src=$diff><img src=$refimg><br>$name</div>" >> $report
-		else
+		# disable compare usage, it gets stuck with TT mono images
+		#compare $img $refimg $diff
+		#if [ $? -eq 0 ]; then
+		#	echo "<p><div align=center><img src=$img><img src=$diff><img src=$refimg><br>$name</div>" >> $report
+		#else
 			echo "<p><div align=center><img src=$img><img src=$refimg><br>$name</div>" >> $report
-		fi
+		#fi
 	done
 fi
 
@@ -133,7 +136,7 @@ echo "<a name=new></a><h2>New screenshots</h2>" >> $report
 if [ -z "$new" ]; then
 	echo "None." >> $report
 else
-	msg="These are candinates to be moved to the '$refdir' directory:"
+	msg="<p>These are candinates to be moved to the '$refdir' directory:"
 	echo "<p>$msg" >> $report
 	for img in $new; do
 		get_name $img
