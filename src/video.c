@@ -2438,7 +2438,7 @@ static void Video_ResetShifterTimings(void)
 
 	nSyncByte = IoMem_ReadByte(0xff820a);
 
-	if (bUseHighRes)
+	if ((IoMem_ReadByte(0xff8260) & 3) == 2)
 	{
 		/* 71 Hz, monochrome */
 		nScreenRefreshRate = 71;
