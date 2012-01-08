@@ -1727,7 +1727,7 @@ static void Video_EndHBL(void)
  */
 static void Video_StartHBL(void)
 {
-	if (bUseHighRes || (IoMem_ReadByte(0xff8260) & 3) == 2)  /* hi res */
+	if ((IoMem_ReadByte(0xff8260) & 3) == 2)  /* hi res */
 	{
 		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
 		ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = LINE_START_CYCLE_71;
