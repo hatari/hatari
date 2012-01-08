@@ -28,10 +28,10 @@ My guess at the required versions for the dependencies are:
 Hatari UI is included with the Hatari sources:
 	http://hg.tuxfamily.org/mercurialroot/hatari/hatari/file/tip/python-ui
 
-Hatari UI has been tested only on Linux (Ubuntu v7.04 and Debian Lenny
-& Squeeze). I would assume it works also on other unix systems such as
-Apple OSX. It won't work on Windows as the required Windows socket
-support is missing from the Hatari emulator.
+Hatari UI has been tested on several Linux versions.  I would assume
+it to work also on other unix systems such as Apple OSX. It won't work
+on Windows as the required Windows socket support is missing from the
+Hatari emulator.
 
 Embedding the Hatari emulator window is currently supported only for
 systems using an X window system (from libSDL sources it would seem

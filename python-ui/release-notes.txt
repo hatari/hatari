@@ -2,6 +2,13 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2012-01:
+- Add microphone and YM voice mixing sound options
+- Fix asserts and empty hatari config file caused by
+  Hatari v1.6 config variable names changes by changing
+  how Hatari config variable types are handled
+- Update UI version to v1.1 (mainly due to config change)
+
 2011-10:
 - Replace --slowfdc with --fastfdc
 

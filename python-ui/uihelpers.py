@@ -2,7 +2,7 @@
 #
 # Misc common helper classes and functions for the Hatari UI
 #
-# Copyright (C) 2008-2011 by Eero Tamminen
+# Copyright (C) 2008-2012 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,11 +34,11 @@ import gobject
 class UInfo:
     """singleton constants for the UI windows,
     one instance is needed to initialize these properly"""
-    version = "v1.0"
+    version = "v1.1"
     name = "Hatari UI"
     logo = "hatari.png"
     icon = "hatari-icon.png"
-    copyright = "UI copyright (C) 2008-2011 by Eero Tamminen"
+    copyright = "UI copyright (C) 2008-2012 by Eero Tamminen"
 
     # path to the directory where the called script resides
     path = os.path.dirname(sys.argv[0])
