@@ -26,6 +26,7 @@ from conftypes import conftypes
 
 def value_to_text(key, value):
     "value_to_text(key, value) -> text, convert Python type to string"
+    assert(key in conftypes)
     valtype = type(value)
     if valtype == bool:
         assert(conftypes[key] == "Bool")
