@@ -621,24 +621,36 @@ class PathDialog(HatariUIDialog):
 class SoundDialog(HatariUIDialog):
 
     def _create_dialog(self, config):
-        combo = gtk.combo_box_entry_new_text()
-        for text in config.get_sound_values():
-            combo.append_text(text)
-        enabled, hz = config.get_sound()
+        enabled, curhz = config.get_sound()
+
         self.enabled = gtk.CheckButton("Sound enabled")
         self.enabled.set_active(enabled)
-        combo.child.set_text(hz)
-        box = gtk.HBox()
-        box.pack_start(gtk.Label("Sound frequency:"), False, False)
-        box.add(combo)
-        self.sound = combo.child
+
+        hz = gtk.combo_box_new_text()
+        for text in config.get_sound_values():
+            hz.append_text(text)
+        hz.set_active(curhz)
+        self.hz = hz
+
+        ymmixer = gtk.combo_box_new_text()
+        for text in config.get_ymmixer_types():
+            ymmixer.append_text(text)
+        ymmixer.set_active(config.get_ymmixer())
+        self.ymmixer = ymmixer
+
+        self.mic = gtk.CheckButton("Enable (Falcon) microphone")
+        self.mic.set_active(config.get_mic())
 
         dialog = gtk.Dialog("Sound settings", self.parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
         dialog.vbox.add(self.enabled)
-        dialog.vbox.add(box)
+        dialog.vbox.add(gtk.Label("Sound frequency::"))
+        dialog.vbox.add(hz)
+        dialog.vbox.add(gtk.Label("YM voices mixing method:"))
+        dialog.vbox.add(ymmixer)
+        dialog.vbox.add(self.mic)
         dialog.vbox.show_all()
         self.dialog = dialog
 
@@ -649,11 +661,13 @@ class SoundDialog(HatariUIDialog):
         response = self.dialog.run()
         self.dialog.hide()
         if response == gtk.RESPONSE_APPLY:
+            config.lock_updates()
+            config.set_mic(self.mic.get_active())
+            config.set_ymmixer(self.ymmixer.get_active())
             enabled = self.enabled.get_active()
-            hz1 = self.sound.get_text()
-            hz2 = config.set_sound(enabled, hz1)
-            if hz2 != hz1:
-                self.sound.set_text(hz2)
+            hz = self.hz.get_active()
+            config.set_sound(enabled, hz)
+            config.flush_updates()
         
 
 # ---------------------------

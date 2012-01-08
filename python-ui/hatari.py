@@ -439,27 +439,38 @@ class HatariConfigMapping(ConfigStore):
     def get_sound(self):
         enabled = self.get("[Sound]", "bEnableSound")
         hz = str(self.get("[Sound]", "nPlaybackFreq"))
-        return (enabled, hz)
+        idx = self.get_sound_values().index(hz)
+        return (enabled, idx)
 
-    def set_sound(self, enabled, hz):
+    def set_sound(self, enabled, idx):
         # map get_sound_values() index to Hatari config
-        try:
-            hz = int(hz)
-        except ValueError:
-            hz = 0
-        if hz < 6000 or hz > 50066:
-            hz = 44100
-        self.set("[Sound]", "nPlaybackFreq", hz)
+        hz = self.get_sound_values()[idx]
+        self.set("[Sound]", "nPlaybackFreq", int(hz))
         self.set("[Sound]", "bEnableSound", enabled)
-        value = str(hz)
         # and to cli option
         if enabled:
-            self._change_option("--sound %s" % value)
+            self._change_option("--sound %s" % hz)
         else:
             self._change_option("--sound off")
-        return value
-        
-        
+    
+    def get_ymmixer_types(self):
+        return ("linear", "table", "model")
+    
+    def get_ymmixer(self):
+        # values for types are start from 1, not 0
+        return self.get("[Sound]", "YmVolumeMixing")-1
+    
+    def set_ymmixer(self, value):
+        self.set("[Sound]", "YmVolumeMixing", value+1)
+        self._change_option("--ym-mixing %s" % self.get_ymmixer_types()[value])
+    
+    def get_mic(self):
+        return self.get("[Sound]", "bEnableMicrophone")
+    
+    def set_mic(self, value):
+        self.set("[Sound]", "bEnableMicrophone", value)
+        self._change_option("--mic %s" % str(value))
+
     # ----------- joystick --------------
     def get_joystick_types(self):
         return ("Disabled", "Real joystick", "Keyboard")
