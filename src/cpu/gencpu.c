@@ -84,6 +84,7 @@ static int chk2_l_index = 0;
 static int cas_b_index = 0;
 static int cas_w_index = 0;
 static int cas_l_index = 0;
+static int divl_index = 0;
 
 /* These defines describe the different tables used for 68030 Cycle exact (Hatari only) */
 #define TABLE_FALCON_CYCLES			0
@@ -2537,7 +2538,7 @@ static void gen_opcode (unsigned long int opcode)
 		} else {
 			fill_prefetch_full ();
 		}
-		if (using_ce020 == 2) {
+		if (using_ce020 == 2) { /* For Falcon cycle exact timings only (CPU_EMU_21) */
 			if (curi->size == sz_byte)
 				instr_table_index = 1;
 			else if (curi->size == sz_word)
@@ -2571,17 +2572,20 @@ static void gen_opcode (unsigned long int opcode)
 			fill_prefetch_next ();
 		break;
 	case i_DBcc:
+		no_return_cycles = true;
 		genamode (curi->smode, "srcreg", curi->size, "src", 1, 0, GF_AA | GF_NOREFILL);
 		genamode (curi->dmode, "dstreg", curi->size, "offs", 1, 0, GF_AA | GF_NOREFILL);
 		printf ("\tuaecptr oldpc = m68k_getpc ();\n");
 		addcycles000 (2);
 		printf ("\tif (!cctrue (%d)) {\n", curi->cc);
-		incpc ("(uae_s32)offs + 2");
-		printf ("\t"); fill_prefetch_1 (0);
-		printf ("\t"); genastore ("(src - 1)", curi->smode, "srcreg", curi->size, "src");
+		printf ("\t");incpc ("(uae_s32)offs + 2");
+		fill_prefetch_1 (0);
+		printf ("\t");genastore ("(src - 1)", curi->smode, "srcreg", curi->size, "src");
 
 		printf ("\t\tif (src) {\n");
-		addcycles_ce020 (0, 0, 4, 4);
+		if (using_ce020 == 2)
+			printf ("\t\t\tregs.ce030_instr_cycles = table_falcon_cycles_DBcc[0];\n");
+
 		if (using_exception_3) {
 			printf ("\t\t\tif (offs & 1) {\n");
 			printf ("\t\t\t\texception3i (opcode, m68k_getpc () + 2, m68k_getpc () + 2 + (uae_s32)offs + 2);\n");
@@ -2592,13 +2596,16 @@ static void gen_opcode (unsigned long int opcode)
 		irc2ir ();
 		fill_prefetch_1 (2);
 		returncycles ("\t\t\t", 12);
-		if (using_ce)
+		if (using_ce || using_ce020 == 2)
 			printf ("\t\t\treturn;\n");
 		printf ("\t\t}\n");
-		addcycles_ce020 (0, 0, 8, 8);
+		if (using_ce020 == 2)
+			printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_DBcc[1];\n");
 		printf ("\t} else {\n");
+		if (using_ce020 == 2)
+			printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_DBcc[2];\n");
+
 		addcycles000_2 ("\t\t", 2);
-		addcycles_ce020 (0, 0, 4, 4);
 		printf ("\t}\n");
 		setpc ("oldpc + %d", m68k_pc_offset);
 		m68k_pc_offset = 0;
@@ -3267,6 +3274,13 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\tint regno = (src >> 12) & 15;\n");
 		printf ("\tuae_u32 *regp = regs.regs + regno;\n");
 		printf ("\tif (! m68k_move2c(src & 0xFFF, regp)) goto %s;\n", endlabelstr);
+		if (using_ce020 == 2) {
+			no_return_cycles = true;
+			printf ("\tif((src & 0xFFF) < 3)\n");
+			printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_MOVEC[1];\n");
+			printf ("\telse\n");
+			printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_MOVEC[0];\n");
+		}
 		break;
 	case i_CAS:
 		{
@@ -3406,6 +3420,14 @@ static void gen_opcode (unsigned long int opcode)
 		genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0, 0);
 		sync_m68k_pc ();
 		printf ("\tm68k_divl(opcode, dst, extra, oldpc);\n");
+		if (using_ce020 == 2) {
+			no_return_cycles = true;
+			printf ("\tif (extra & 0x800)\n");
+			printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_DIVS_L[%d];\n", divl_index);
+			printf ("\telse\n");
+			printf ("\t\tregs.ce030_instr_cycles = table_falcon_cycles_DIVU_L[%d];\n", divl_index);
+			divl_index ++;
+		}
 		break;
 	case i_MULL:
 		genamode (curi->smode, "srcreg", curi->size, "extra", 1, 0, 0);
