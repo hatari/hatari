@@ -206,20 +206,22 @@ class Tester:
                     if is_etos:
                         # EmuTOS is slower than TOS 1.x
                         deskwait += 2
-                    memories = (1, 4) # (0, 1, 2, 4)
                     if machine == "st":
+                        memories = (0, 2)
                         monitors = ("tv", "mono", "vdi1", "vdi4")
                     else:
+                        memories = (1, 4)
                         monitors = ("rgb", "mono", "vdi1", "vdi4")
                 else:
                     bootwait = 2
                     # e.g. TOS3 is quite slow in color modes
                     deskwait = 5
-                    memories = (1,14) # (1, 4, 8, 14)
                     if machine == "tt" or is_etos:
-                        monitors = ("rgb", "mono", "vdi1", "vdi4")
+                        memories = (2, 10)
+                        monitors = ("vga", "mono", "vdi1", "vdi4")
                     else:
                         # VDI modes don't work with TOS4
+                        memories = (4, 14)
                         monitors = ("rgb", "vga", "mono")
 
                 for monitor in monitors:
