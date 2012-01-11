@@ -307,6 +307,8 @@
 /*			no video signal at all (blank). In that case, the screen is shifted one	*/
 /*			line down, and bottom border removal will happen one line later too	*/
 /*			(fix NGC screen in Delirious Demo IV).					*/
+/* 2012/01/11	[NP]	Don't remove left border when the hi/lo switch is made at cycle >= 12	*/
+/*			(fix 'Kill The Beast 2' in the Vodka Demo)				*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -941,6 +943,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 	/* This can be done with a hi/lo res switch or a hi/med res switch */
 	if ( ( ShifterFrame.Res == 0x02 ) && ( Res == 0x00 )	/* switched from hi res to lo res */
 //	        && ( LineCycles >= 12 )				/* switch back to low res should be after cycle 8 */
+		&& ( ( ShifterFrame.ResPosHi.LineCycles < 12 ) || ( ShifterFrame.ResPosHi.LineCycles >= 504 ) )		/* switch to hi between 504 and 8 */
 	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
 	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 32 ) )
 	{
@@ -1005,7 +1008,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 	}
 
 	/* Empty line switching res on STF : switch to hi res just before the HBL then go back to lo/med res */
-	/* Next HBL will be an ampty line (used in 'No Buddies Land' and 'Delirious Demo IV / NGC') */
+	/* Next HBL will be an empty line (used in 'No Buddies Land' and 'Delirious Demo IV / NGC') */
 	else if ( ( ShifterFrame.Res == 0x02 )			/* switched from hi res */
 	          && ( ( ShifterFrame.ResPosHi.LineCycles == 500-4 ) || ( ShifterFrame.ResPosHi.LineCycles == 500 ) )
 	          && ( LineCycles == 508 ) )
