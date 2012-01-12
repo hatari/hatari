@@ -43,7 +43,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "history.h"
 #include "symbols.h"
 
-int bExceptionDebugging;
+int bExceptionDebugging = false;
 
 FILE *debugOutput = NULL;
 
