@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 1.6
+                                 Version 1.6.1
 
                           http://hatari.tuxfamily.org/
 
@@ -125,7 +125,7 @@ deprecate the "old" UAE CPU core, but currently WinUAE CPU core:
 - doesn't have full debugger support
 
 It's recommended to use Hatari built with the "old" (default) UAE CPU
-core for ST/STE emulation and the new WinAUE core for Falcon emulation.
+core for ST/STE emulation and the new WinUAE core for Falcon emulation.
 And test also the old core if Falcon programs don't work with the new
 one...
 
