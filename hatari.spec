@@ -12,7 +12,7 @@ URL:          http://hatari.tuxfamily.org/
 License:      GPL
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      1.6.0
+Version:      1.6.1
 Release:      1
 Summary:      an Atari ST emulator suitable for playing games
 Source:       %{name}-%{version}.tar.gz
@@ -58,6 +58,9 @@ rm -rf $RPM_BUILD_ROOT
 %_docdir/%{name}/images/*.png
 
 %changelog -n hatari
+
+* Fri Jan 13 2012 - Nicolas Pomarede
+- Hatari version 1.6.1
 
 * Sun Jan 1st 2012 - Nicolas Pomarede
 - Hatari "Happy New Year 2012" version 1.6.0
