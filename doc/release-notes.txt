@@ -6,8 +6,12 @@
  Development version
  -------------------
 
+This version is mainly a bugfix for 1.6.0, where monochrome mode
+gave a black screen and was not usable.
+
 Emulation:
 - Fixes to bootup issues in monocrome mode
+- Better left border removal timings
 - DSP external memory access cycles taken into account
 
 Other changes:
@@ -17,6 +21,10 @@ Other changes:
 - Test programs added for testing TOS booting with different
   HW configurations and for finding out values needed in
   Hatari keymaps
+- Remove a potential segfault in the debugger
+
+Fixed Demos :
+  Vodka Demo - Kill The Beast 2 (left border removal)
 
 
  Version 1.6.0 (2012-01-01):
