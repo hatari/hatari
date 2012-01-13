@@ -171,9 +171,11 @@ void dsp_core_reset(void)
 	dsp_core.periph[DSP_SPACE_X][DSP_HOST_HSR]=(1<<DSP_HOST_HSR_HTDE);
 
 	/* host port init, cpu side */
-	dsp_core.hostport[CPU_HOST_CVR]=0x12;
-	dsp_core.hostport[CPU_HOST_ISR]=(1<<CPU_HOST_ISR_TRDY)|(1<<CPU_HOST_ISR_TXDE);
-	dsp_core.hostport[CPU_HOST_IVR]=0x0f;
+	dsp_core.hostport[CPU_HOST_ICR] = 0x0;
+	dsp_core.hostport[CPU_HOST_CVR] = 0x12;
+	dsp_core.hostport[CPU_HOST_ISR] = (1<<CPU_HOST_ISR_TRDY)|(1<<CPU_HOST_ISR_TXDE);
+	dsp_core.hostport[CPU_HOST_IVR] = 0x0f;
+	dsp_core.hostport[CPU_HOST_RX0] = 0x0;
 
 	/* SSI registers */
 	dsp_core.periph[DSP_SPACE_X][DSP_SSI_SR]=1<<DSP_SSI_SR_TDE;
