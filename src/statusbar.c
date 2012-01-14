@@ -405,7 +405,7 @@ void Statusbar_UpdateInfo(void)
 		if (ConfigureParams.Memory.nMemorySize) {
 			*end++ = '0' + ConfigureParams.Memory.nMemorySize;
 		} else {
-			end = Statusbar_AddString(end, "1/2");
+			end = Statusbar_AddString(end, "0.5");
 		}
 	}
 	end = Statusbar_AddString(end, "MB ");
