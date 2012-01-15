@@ -1868,6 +1868,12 @@ static void Video_StoreResolution(int y)
 	/* Clear resolution, and set with current value */
 	if (!(bUseHighRes || bUseVDIRes))
 	{
+		if ( y >= HBL_PALETTE_MASKS )				/* we're above the limit (res was switched to mono for more than 1 VBL in color mode ?) */
+		{
+//			fprintf ( stderr , "store res %d line %d hbl %d %x %x %d\n" , res , y , nHBL, Mask , HBLPaletteMasks[y] , sizeof(HBLPalettes) );
+			y = HBL_PALETTE_MASKS - 1;			/* store in the last palette line */
+		}
+
 		HBLPaletteMasks[y] &= ~(0x3<<16);
 		res = IoMem_ReadByte(0xff8260)&0x3;
 
