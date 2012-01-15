@@ -3,6 +3,15 @@
                                    --------
                                 Release Notes
 
+ Development version
+ -------------------
+
+Emulation:
+- Fixes a rare potential crash when running in color mode and switching
+  to monochrome mode for more than one VBL (eg : protection code used
+  in The European Demos and The Transbeauce II Demo)
+
+
  Version 1.6.1 (2012-01-13):
  ---------------------------
 
