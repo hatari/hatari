@@ -37,8 +37,8 @@ set(ENABLE_WINUAE_CPU 0
 # - stack protection
 # - checking of pointer accesses
 #
-# Before running CMake, install "libmudflap<version>-<gcc-version>-dev"
-# package (libmudflap0-4.3-dev in Debian Lenny).
+# Before running CMake, install "mudflap" library development package
+# (libmudflap0-4.4-dev in Debian Squeeze and libmudflap-devel in Fedora).
 #
 # After this you can configure Hatari with Mudflap:
 #   cd build; make clean; cmake -D ENABLE_MUDFLAP:BOOL=1 -D ..
