@@ -1995,7 +1995,10 @@ static void Video_CopyScreenLineColor(void)
 	STF_PixelScroll = ShifterFrame.ShifterLines[ nHBL ].DisplayPixelShift;
 
 	/* Get resolution for this line (in case of mixed low/med screen) */
-	LineRes = ( HBLPaletteMasks[nHBL-nFirstVisibleHbl] >> 16 ) & 1;		/* 0=low res  1=med res */
+	i = nHBL-nFirstVisibleHbl;
+	if ( i >= HBL_PALETTE_MASKS )
+		i = HBL_PALETTE_MASKS - 1;
+	LineRes = ( HBLPaletteMasks[i] >> 16 ) & 1;		/* 0=low res  1=med res */
 
 	//fprintf(stderr , "copy line %d start %d end %d 0x%x 0x%x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
 
