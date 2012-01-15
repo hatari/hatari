@@ -414,14 +414,20 @@ int	LastCycleHblException;			/* value of Cycles_GetCounter last time a level 2 i
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
 
-#define HBL_JITTER_MAX_POS 5
-int	HblJitterIndex = 0;
-int	HblJitterArray[] = 		{ 8,4,4,0,0 };		/* measured on STF */
-int	HblJitterArrayPending[] =	{ 4,4,4,4,4 };	// { 8,8,12,8,12 };	/* measured on STF, not always accurate */
-#define VBL_JITTER_MAX_POS 5
-int	VblJitterIndex = 0;
-int	VblJitterArray[] = 		{ 8,0,4,0,4 };		/* measured on STF */
-int	VblJitterArrayPending[] =	{ 8,8,12,8,12 };	/* not verified on STF, use the same as HBL */
+int HblJitterIndex = 0;
+const int HblJitterArray[] = {
+	8,4,4,0,0 /* measured on STF */
+};
+const int HblJitterArrayPending[] = {
+	4,4,4,4,4 // { 8,8,12,8,12 }; /* measured on STF, not always accurate */
+};
+int VblJitterIndex = 0;
+const int VblJitterArray[] = {
+	8,0,4,0,4 /* measured on STF */
+};
+const int VblJitterArrayPending[] = {
+	8,8,12,8,12 /* not verified on STF, use the same as HBL */
+};
 
 int	BlankLines = 0;				/* Number of empty line with no signal (by switching hi/lo near cycles 500) */
 
@@ -1528,8 +1534,7 @@ void Video_InterruptHandler_HBL ( void )
 	
 	/* Increment the hbl jitter index */
 	HblJitterIndex++;
-	if ( HblJitterIndex == HBL_JITTER_MAX_POS )
-		HblJitterIndex = 0;
+	HblJitterIndex %= HBL_JITTER_ARRAY_SIZE;
 	
 	LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nHBL , FrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
@@ -2811,8 +2816,7 @@ void Video_InterruptHandler_VBL ( void )
 
 	/* Increment the vbl jitter index */
 	VblJitterIndex++;
-	if ( VblJitterIndex == VBL_JITTER_MAX_POS )
-		VblJitterIndex = 0;
+	VblJitterIndex %= VBL_JITTER_ARRAY_SIZE;
 	
 	/* Set frame cycles, used for Video Address */
 	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + VblVideoCycleOffset);

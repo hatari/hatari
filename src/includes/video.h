@@ -134,12 +134,14 @@ extern int TimerBEventCountCycleStart;
 
 extern int LastCycleHblException;
 
+#define HBL_JITTER_ARRAY_SIZE 5
 extern int HblJitterIndex;
-extern int HblJitterArray[];
-extern int HblJitterArrayPending[];
+extern const int HblJitterArray[HBL_JITTER_ARRAY_SIZE];
+extern const int HblJitterArrayPending[HBL_JITTER_ARRAY_SIZE];
+#define VBL_JITTER_ARRAY_SIZE 5
 extern int VblJitterIndex;
-extern int VblJitterArray[];
-extern int VblJitterArrayPending[];
+extern const int VblJitterArray[VBL_JITTER_ARRAY_SIZE];
+extern const int VblJitterArrayPending[VBL_JITTER_ARRAY_SIZE];
 
 
 /*--------------------------------------------------------------*/
