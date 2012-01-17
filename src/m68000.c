@@ -210,17 +210,24 @@ void M68000_Init(void)
  */
 void M68000_Reset(bool bCold)
 {
-	/* Clear registers */
+#if ENABLE_WINUAE_CPU
 	if (bCold)
 	{
+		/* Clear registers, but we need to keep SPCFLAG_MODE_CHANGE and SPCFLAG_BRK unchanged */
+		int spcFlags = regs.spcflags & (SPCFLAG_MODE_CHANGE | SPCFLAG_BRK);
+		memset(&regs, 0, sizeof(regs));
+		regs.spcflags = spcFlags;
+	}
+	/* Now reset the WINUAE CPU core */
+	/* Laurent : for now, using parameter 0 (Hard reset), but some other parameters can be used here (see newcpu.c) */
+	m68k_reset(0);
+#else /* UAE CPU core */
+	if (bCold)
+	{
+		/* Clear registers */
 		memset(&regs, 0, sizeof(regs));
 	}
-
-	/* Now directly reset the UAE CPU core: */
-	/* Laurent : for now, using parameter 0, but some other parameters can be used here (see newcpu.c) */
-#if ENABLE_WINUAE_CPU
-	m68k_reset(0);
-#else
+	/* Now reset the UAE CPU core */
 	m68k_reset();
 #endif
 	BusMode = BUS_MODE_CPU;

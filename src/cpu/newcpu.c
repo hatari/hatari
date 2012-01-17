@@ -2359,7 +2359,7 @@ void m68k_mull (uae_u32 opcode, uae_u32 src, uae_u16 extra)
 
 void m68k_reset (int hardreset)
 {
-	regs.spcflags = 0;
+	regs.spcflags &= SPCFLAG_MODE_CHANGE | SPCFLAG_BRK;
 	regs.ipl = regs.ipl_pin = 0;
 #ifdef SAVESTATE
 	if (savestate_state == STATE_RESTORE || savestate_state == STATE_REWIND) {
@@ -2899,11 +2899,6 @@ STATIC_INLINE int do_specialties (int cycles)
 #endif
 
 	while (regs.spcflags & SPCFLAG_STOP) {
-
-	    /* Take care of quit event if needed */
-	    if (regs.spcflags & SPCFLAG_BRK)
-			return 1;
-	
 		do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
 		M68000_AddCycles(4);
 
@@ -3006,7 +3001,7 @@ STATIC_INLINE int do_specialties (int cycles)
 		DebugCpu_Check();
 
 	if ((regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE))) {
-		unset_special(SPCFLAG_MODE_CHANGE);
+		unset_special(SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
 		return 1;
 	}
 	return 0;
@@ -3729,8 +3724,6 @@ static void exception2_handle (uaecptr addr, uaecptr fault)
 
 void m68k_go (int may_quit)
 {
-	int hardboot = 1;
-
 	if (in_m68k_go || !may_quit) {
 		write_log ("Bug! m68k_go is not reentrant.\n");
 		abort ();
@@ -3742,15 +3735,11 @@ void m68k_go (int may_quit)
 	in_m68k_go++;
 	for (;;) {
 		void (*run_func)(void);
-		
-		if (regs.spcflags & SPCFLAG_BRK) {
-			unset_special(SPCFLAG_BRK);
+
+		/* Exit hatari ? */
+		if (bQuitProgram == true)
 			break;
-		}
-
-		quit_program = 0;
-		hardboot = 0;
-
+		
 #ifdef DEBUGGER
 		if (debugging)
 			debug ();
