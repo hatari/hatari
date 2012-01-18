@@ -36,8 +36,10 @@ ifneq ($(MUDFLAP),)
 # - stack protection
 # - checking of pointer accesses (AFAIK works only on x86)
 #
-# Before build, install "libmudflap<version>-<gcc-version>-dev"
-# package (libmudflap0-4.3-dev in Debian Lenny).
+# Before build, install mudflap library development package,
+# typically it's named either "libmudflap<version>-<gcc-version>-dev"
+# (e.g. libmudflap0-4.4-dev in Debian Squeeze) or "libmudflap-devel"
+# (e.g. in Fedora).
 #
 # To build, use:
 #	make clean; make MUDFLAP=1
