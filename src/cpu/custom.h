@@ -224,4 +224,10 @@ extern int inprec_open(char *fname, int record);
 extern void sleep_millis (int ms);
 extern void mmu_do_hit (void);
 
+/* referred by prefetch.h */
+extern uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode);
+extern void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v);
+extern uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode);
+extern void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
+
 #endif /* WINUAE_CUSTOM_H */

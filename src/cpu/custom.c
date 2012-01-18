@@ -24,25 +24,26 @@
 
 #define WRITE_LOG_BUF_SIZE 4096
 
+/* TODO: move custom.c stuff declarations to custom.h? */
+
+/* declated in newcpu.c */
 extern struct regstruct mmu_backup_regs;
+/* declared in events.h, used in events_*.h */
+volatile frame_time_t vsyncmintime;
+/* declared in events.h like do_cycles_ce() */
+unsigned long int nextevent, is_lastline, currcycle;
+/* declared in events.h, used in events_*.h */
+struct ev eventtab[ev_max];
+
+uae_u16 dmacon;
+
 static uae_u32 mmu_struct, mmu_callback, mmu_regs;
 static uae_u32 mmu_fault_bank_addr, mmu_fault_addr;
 static int mmu_fault_size, mmu_fault_rw;
 static int mmu_slots;
 static struct regstruct mmur;
 static int userdtsc = 0;
-int qpcdivisor = 0;
-volatile frame_time_t vsyncmintime;
-
-void do_cycles_ce (long cycles);
-
-unsigned long int event_cycles, nextevent, is_lastline, currcycle;
-uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode);
-void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v);
-void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
-uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode);
-frame_time_t read_processor_time_qpf (void);
-frame_time_t read_processor_time_rdtsc (void);
+static int qpcdivisor = 0;
 
 
 typedef struct _LARGE_INTEGER
@@ -58,10 +59,7 @@ typedef struct _LARGE_INTEGER
      };
 } LARGE_INTEGER, *PLARGE_INTEGER;
 
-uae_u16 dmacon;
-uae_u8 cycle_line[256];
-
-struct ev eventtab[ev_max];
+static uae_u8 cycle_line[256];
 
 void do_cycles_ce (long cycles)
 {
@@ -231,6 +229,7 @@ void wait_cpu_cycle_write (uaecptr addr, int mode, uae_u32 v)
 int is_cycle_ce (void)
 {
 	int hpos = current_hpos ();
+	/* TODO: nothing sets cycle_line contents! */
 	return cycle_line[hpos];
 }
 
@@ -371,37 +370,21 @@ void fpux_restore (int *v)
 }
 
 /* Code taken from win32.cpp*/
-frame_time_t read_processor_time (void)
+static frame_time_t read_processor_time_qpf (void)
 {
-#if 0
-	static int cnt;
-
-	cnt++;
-	if (cnt > 1000000) {
-		write_log(L"**************\n");
-		cnt = 0;
-	}
-#endif
-	if (userdtsc)
-		return read_processor_time_rdtsc ();
-	else
-		return read_processor_time_qpf ();
-}
-
-/* Code taken from win32.cpp*/
-frame_time_t read_processor_time_qpf (void)
-{
-/* Laurent : may be coded later
+#if 0 /* Laurent : may be coded later */
 	LARGE_INTEGER counter;
 	QueryPerformanceCounter (&counter);
 	if (qpcdivisor == 0)
 		return (frame_time_t)(counter.LowPart);
 	return (frame_time_t)(counter.QuadPart >> qpcdivisor);
-*/
+#else
+	return 0;
+#endif
 }
 
 /* Code taken from win32.cpp*/
-frame_time_t read_processor_time_rdtsc (void)
+static frame_time_t read_processor_time_rdtsc (void)
 {
 	frame_time_t foo = 0;
 #if defined(X86_MSVC_ASSEMBLY)
@@ -417,6 +400,24 @@ frame_time_t read_processor_time_rdtsc (void)
 	foo |= bar << 26;
 #endif
 	return foo;
+}
+
+/* Code taken from win32.cpp*/
+frame_time_t read_processor_time (void)
+{
+#if 0
+	static int cnt;
+
+	cnt++;
+	if (cnt > 1000000) {
+		write_log(L"**************\n");
+		cnt = 0;
+	}
+#endif
+	if (userdtsc)
+		return read_processor_time_rdtsc ();
+	else
+		return read_processor_time_qpf ();
 }
 
 /* Code taken from win32.cpp*/
