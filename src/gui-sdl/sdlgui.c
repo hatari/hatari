@@ -620,6 +620,7 @@ void SDLGui_DrawDialog(const SGOBJ *dlg)
 /*-----------------------------------------------------------------------*/
 /**
  * Search an object at a certain position.
+ * Return object index or -1 if it wasn't found.
  */
 static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 {
@@ -738,7 +739,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 
 	/* If current object is the scrollbar, and mouse is still down, we can scroll it */
 	/* also if the mouse pointer has left the scrollbar */
-	if (dlg[current_object].type == SGSCROLLBAR) {
+	if (current_object >= 0 && dlg[current_object].type == SGSCROLLBAR) {
 		if (b & SDL_BUTTON(1)) {
 			obj = current_object;
 			dlg[obj].state |= SG_MOUSEDOWN;
