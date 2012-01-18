@@ -1702,7 +1702,7 @@ for whether it has (working) sound have "yes" when this is true and
 otherwise "-".</p>
 
 <p>Due to incomplete VIDEL emulation and some remaining emulation
-cycle accuracies, some Falcon programs don't work yet.
+cycle accuracy issues, some Falcon programs don't work yet.
 <b>Note:</b> more timing critical demos (for example ones using
 NoCrew's DSP MP2-player) that are marked as working in the list below,
 <em>work only with the experimental WinUAE core</em>. Please see
@@ -1968,10 +1968,10 @@ Hatari readme.txt on how to enable that.</p>
     </tr>
     <tr>
       <td><a href="http://www.pouet.net/prod.php?which=25919">"K"</a></td>
-      <td class="major">1.3</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Preview for a Karting game by EXA.  Freezes at startup.</td>
+      <td class="major">1.6</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Preview for a Karting game by EXA.  Only training practice available</td>
     </tr>
     <tr>
       <td><a href="http://www.sebastien-pastore.com/killing/">Killing Impact</a></td>
@@ -2127,10 +2127,9 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td><a href="http://www.fatal-design.com/pinball/">Pinball Dreams</a></td>
       <td class="major">1.6</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Colors in main menu wrong and it doesn't react to input,
-      sound is just noise.  Game screen is scrambled / doesn't work.</td>
+      <td>Main menu works only with WinUAE core.  Actual game screen is scrambled / doesn't work.</td>
     </tr>
     <tr>
       <td>Pingo98</td>
@@ -2233,7 +2232,7 @@ Hatari readme.txt on how to enable that.</p>
     </tr>
     <tr>
       <td>SBM v1.03</td>
-      <td class="major">1.3</td>
+      <td class="major">1.6</td>
       <td>-</td>
       <td>-</td>
       <td>Newer SBM versions bomb out immediately at startup</td>
@@ -2541,10 +2540,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>Cream:
       <a href="http://jfhaslam.atari.org/downloads/bin_vga.zip">Binliner preview</a></td>
-      <td class="minor">1.3</td>
+      <td class="minor">1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>VGA only. Freaky screen works, Land &amp; Worship screens bomb</td>
+      <td>VGA only. Freaky screen works only with old UAE core. Land &amp; Worship screens bomb</td>
     </tr>
     <tr>
       <td>Cruor:
@@ -2663,7 +2662,7 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=15676">_</a></td>
-      <td class="major">1.3</td>
+      <td class="major">1.6</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes or exits after few screens</td>
@@ -2687,7 +2686,7 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>EXA:
       <a href="http://www.pouet.net/prod.php?which=17784">Entcarte</a></td>
-      <td class="major">1.3</td>
+      <td class="major">1.6</td>
       <td>-</td>
       <td>-</td>
       <td>Bombs immediately</td>
@@ -2832,10 +2831,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>MJJ Prod:
       <a href="http://pouet.net/prod.php?which=28764">Bound 42</a></td>
-      <td>1.6</td>
+      <td>1.4</td>
       <td>yes</td>
       <td>emu</td>
-      <td>With old UAE core, stops at cyan millstone screen</td>
+      <td>Crashes at cyan millstone screen</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -2860,7 +2859,7 @@ Hatari readme.txt on how to enable that.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Requires 8MB RAM and WinUAE CPU core</td>
+      <td>Requires WinUAE CPU core</td>
     </tr>
     <tr>
       <td>New Beat:
@@ -2889,10 +2888,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>NoCrew:
       <a href="http://www.pouet.net/prod.php?which=15140">Stocasto</a></td>
-      <td class="major">1.4</td>
+      <td class="major">1.6</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Gets stuck early in the demo</td>
+      <td>Bombs on startup (in v1.5 it froze, but in later stage)</td>
     </tr>
     <tr>
       <td>Opium:
@@ -2972,7 +2971,7 @@ Hatari readme.txt on how to enable that.</p>
       <td class="minor">1.6</td>
       <td>yes</td>
       <td>-</td>
-      <td>Screen isn't drawn properly with old UAE core</td>
+      <td>Requires WinUAE CPU core for screen to be drawn correctly</td>
     </tr>
     <tr>
       <td>Trio:
@@ -3035,8 +3034,8 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>Toons:
       <a href="http://pouet.net/prod.php?which=8584">Yepyha</a></td>
-      <td class="major">1.4</td>
-      <td>-</td>
+      <td class="major">1.6</td>
+      <td>yes</td>
       <td>-</td>
       <td>Strange screen sizes, stops in middle.  With DSP, has
           background music, but stops earlier to DSP stack overflow</td>
@@ -3044,10 +3043,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>T.O.Y.S:
       <a href="http://pouet.net/prod.php?which=2019">wait</a></td>
-      <td>1.4</td>
-      <td>-</td>
+      <td>1.6</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>Uses NoCrew DSP MP2-player. No Sound, otherwise fine</td>
+      <td>Uses NoCrew DSP MP2-player</td>
     </tr>
     <tr>
       <td>Wildfire:
