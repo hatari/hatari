@@ -251,7 +251,7 @@ static void mmu_dump_table(const char * label, uaecptr root_ptr)
 #endif
 
 /* {{{ mmu_dump_atc */
-void mmu_dump_atc(void)
+static void mmu_dump_atc(void)
 {
 	int i, j;
 	for (i = 0; i < 2; i++) {
@@ -271,10 +271,10 @@ void mmu_dump_atc(void)
 void mmu_dump_tables(void)
 {
 	fprintf(stderr, "URP: %08x   SRP: %08x  MMUSR: %x  TC: %x\n", regs.urp, regs.srp, regs.mmusr, regs.tcr);
-	mmu_dump_ttr(L"DTT0", regs.dtt0);
-	mmu_dump_ttr(L"DTT1", regs.dtt1);
-	mmu_dump_ttr(L"ITT0", regs.itt0);
-	mmu_dump_ttr(L"ITT1", regs.itt1);
+	mmu_dump_ttr("DTT0", regs.dtt0);
+	mmu_dump_ttr("DTT1", regs.dtt1);
+	mmu_dump_ttr("ITT0", regs.itt0);
+	mmu_dump_ttr("ITT1", regs.itt1);
 	mmu_dump_atc();
 #if DEBUG
 	mmu_dump_table("SRP", regs.srp);
