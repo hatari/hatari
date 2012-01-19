@@ -20,6 +20,8 @@
 #define	FPCR_PRECISION_DOUBLE	0x00000080
 #define FPCR_PRECISION_EXTENDED	0x00000000
 
+extern uae_u32 get_fpsr (void);
+
 #if USE_LONG_DOUBLE
 STATIC_INLINE long double to_exten(uae_u32 wrd1, uae_u32 wrd2, uae_u32 wrd3)
 {
