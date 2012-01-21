@@ -1051,6 +1051,9 @@ static void IKBD_CheckResetDisableBug(void)
  */
 void IKBD_InterruptHandler_ResetTimer(void)
 {
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD Reset timer completed, resuming ikbd processing VBLs=%i framecyc=%i\n",
+	          nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
+
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
@@ -1082,7 +1085,7 @@ void IKBD_InterruptHandler_ResetTimer(void)
  */
 static void IKBD_Cmd_Reset(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_Reset. VBLs=%i framecyc=%i\n",
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_Reset VBLs=%i framecyc=%i\n",
 	          nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
 
 	/* Check for error series of bytes, eg 0x80,0x01 */
@@ -1119,7 +1122,7 @@ static void IKBD_Cmd_Reset(void)
 		bBothMouseAndJoy = false;
 		bMouseEnabledDuringReset = false;
 
-		LOG_TRACE(TRACE_IKBD_ALL, "IKBD reset done.\n");
+		LOG_TRACE(TRACE_IKBD_ALL, "IKBD reset done, starting reset timer\n");
 	}
 	/* else if not 0x80,0x01 just ignore */
 }
