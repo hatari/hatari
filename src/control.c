@@ -83,7 +83,7 @@ static bool Control_InsertKey(const char *event)
 		int keycode = strtol(key, &endptr, 0);
 		/* not a valid number or keycode is out of range? */
 		if (*endptr || keycode < 0 || keycode > 255) {
-			fprintf(stderr, "ERROR: '%s' is not valid key scancode, got %d\n",
+			fprintf(stderr, "ERROR: '%s' isn't a valid key scancode, got value %d\n",
 				key, keycode);
 			return false;
 		}
@@ -94,6 +94,10 @@ static bool Control_InsertKey(const char *event)
 			IKBD_PressSTKey(keycode, false);
 		}
 	} else {
+		if (!isalnum(key[0])) {
+			fprintf(stderr, "ERROR: non-alphanumeric character '%c' needs to be given as keycode\n", key[0]);
+			return false;
+		}
 		if (down) {
 			Keymap_SimulateCharacter(key[0], true);
 		}

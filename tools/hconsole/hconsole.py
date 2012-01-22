@@ -33,10 +33,46 @@ if str is bytes:
     def input(prompt):
         return raw_input(prompt)
 
-# Atari scancodes for special keys, needed when wanting to
-# output something else than alphanumberic keys to Hatari
-# (when using keypress/down/up commands)
 class Scancode:
+    "Atari scancodes for keys without alphanumeric characters"
+    # US keyboard scancode mapping for characters which need shift
+    Shifted = {
+        '!': "0x2",
+        '@': "0x3",
+        '#': "0x4",
+        '$': "0x5",
+        '%': "0x6",
+        '^': "0x7",
+        '&': "0x8",
+        '*': "0x9",
+        '(': "10",
+        ')': "11",
+        '_': "12",
+        '+': "13",
+        '~': "41",
+        '{': "26",
+        '}': "27",
+        ':': "39",
+        '"': "40",
+        '|': "43",
+        '<': "51",
+        '>': "52",
+        '?': "53"
+    }
+    # US keyboard scancode mapping for characters which don't need shift
+    UnShifted = {
+        '-': "12",
+        '=': "13",
+        '[': "26",
+        ']': "27",
+        ';': "39",
+        "'": "40",
+        '\\': "43",
+        '",': "51",
+        '.': "52",
+        '/': "53"
+    }
+    # special keys without corresponding character
     Tab = "15"
     Return = "28"
     Enter = "114"
@@ -80,6 +116,7 @@ class Hatari:
         if not self.run_hatari(args):
             print("ERROR: failed to run Hatari")
             sys.exit(1)
+        self.shiftdown = False
         self.verbose = False
 
     def _assert_hatari_compatibility(self):
@@ -145,16 +182,38 @@ class Hatari:
 
     def trigger_shortcut(self, shortcut):
         return self.send_message("hatari-shortcut %s" % shortcut)
+    
+    def _shift_up(self):
+        if self.shiftdown:
+            self.shiftdown = False
+            return self.send_message("hatari-event keyup %s" % Scancode.LeftShift, True)
+        return True
+    
+    def _unshifted_keypress(self, key):
+        self._shift_up()
+        if key == ' ':
+            # white space gets stripped, use scancode instead
+            key = Scancode.Space
+        return self.send_message("hatari-event keypress %s" % key, True)
+
+    def _shifted_keypress(self, key):
+        if not self.shiftdown:
+            self.shiftdown = True
+            self.send_message("hatari-event keydown %s" % Scancode.LeftShift, True)
+        return self.send_message("hatari-event keypress %s" % key, True)
 
     def send_string(self, text):
         print("string:", text)
-        for item in text:
-            if item == ' ':
-                # white space gets stripped, use scancode instead
-                item = "57"
-            if not self.send_message("hatari-event keypress %s" % item, True):
+        for key in text:
+            if key in Scancode.Shifted:
+                ok = self._shifted_keypress(Scancode.Shifted[key])
+            elif key in Scancode.UnShifted:
+                ok = self._unshifted_keypress(Scancode.UnShifted[key])
+            else:
+                ok = self._unshifted_keypress(key)
+            if not ok:
                 return False
-        return True
+        return self._shift_up()
 
     def insert_event(self, event):
         if event.startswith("text "):
