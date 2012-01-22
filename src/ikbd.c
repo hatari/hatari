@@ -2226,6 +2226,13 @@ void IKBD_KeyboardData_WriteByte(void)
 	LOG_TRACE(TRACE_IKBD_ACIA, "ikbd write fffc02 data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
 				IoMem[0xfffc02], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 
+	if ( bDuringResetCriticalTime )				/* warn when some byte are sent to the IKBD during its reset */
+	{
+		LOG_TRACE(TRACE_IKBD_ACIA, "ikbd write fffc02 data=0x%x during reset might be ignored video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+				IoMem[0xfffc02],  FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+
+	}
+
 
 	if ( bByteInTransitFromACIA == true )			/* we're already transfering a byte to the ikbd */
 	{
