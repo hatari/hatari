@@ -335,6 +335,12 @@ static void CustomApplicationMain (int argc, char **argv)
 	--in_propdialog;
 }
 
+- (IBAction) openPreferences:(id)sender 
+{
+	[[PrefsController prefs] loadPrefs:sender];
+}
+
+
 - (IBAction)debugUI:(id)sender
 {
 	DebugUI(REASON_USER);
@@ -601,14 +607,78 @@ static void CustomApplicationMain (int argc, char **argv)
 	SDL_PushEvent((SDL_Event*)&event);	// Send the F11 key release
 }
 
+
 - (IBAction)help:(id)sender
 {
 	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://hatari.tuxfamily.org/docs.html"]];
 }
 
 
-- (IBAction)openConfig:(id)sender {
+- (IBAction)openConfig:(id)sender 
+{
+	BOOL applyChanges = true;
+	NSString *ConfigFile = [NSString stringWithCString:(sConfigFileName) encoding:NSASCIIStringEncoding];
+	NSOpenPanel *openPanel = [ NSOpenPanel openPanel ];
+	
+	CNF_PARAMS CurrentParams;
+	
+	
+	// Backup of configuration settings to CurrentParams (which we will only
+	// commit back to the configuration settings if choosing user confirm)
+	CurrentParams = ConfigureParams;
+	
+	GuiOsx_Pause();
+	
+	if ( [ openPanel runModalForDirectory:nil file:ConfigFile types:nil ] )
+	{
+		ConfigFile = [ [ openPanel filenames ] objectAtIndex:0 ];
+	}
+	else
+	{
+		ConfigFile = nil;
+	}
+	
+	//[openPanel release];
+	
+	if (ConfigFile != nil)
+	{
+		// Make a non-const C string out of it
+		const char* constSzPath = [ConfigFile cStringUsingEncoding:NSASCIIStringEncoding];
+		size_t cbPath = strlen(constSzPath) + 1;
+		char szPath[cbPath];
+		strncpy(szPath, constSzPath, cbPath);	
+		
+		// Load the config into ConfigureParams
+		Configuration_Load(szPath);
+		strcpy(sConfigFileName,szPath);
+		// Refresh all the controls to match ConfigureParams
+		
+		if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
+		{
+			applyChanges = ( 0 == NSRunAlertPanel (
+												   NSLocalizedStringFromTable(@"Reset the emulator",@"Localizable",@"comment"), 
+												   NSLocalizedStringFromTable(@"Must be reset",@"Localizable",@"comment"),
+												   NSLocalizedStringFromTable(@"Don't reset",@"Localizable",@"comment"), 
+												   NSLocalizedStringFromTable(@"Reset",@"Localizable",@"comment"), nil) );
+		}
+		
+		// Commit the new configuration
+		if (applyChanges)
+		{
+			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, false);
+		}
+		else
+		{
+			ConfigureParams = CurrentParams;
+		}
+		
+		
+	}
+	
+	GuiOsx_Resume();
+	//[ConfigFile release];
 }
+
 
 - (IBAction)saveConfig:(id)sender {
 }

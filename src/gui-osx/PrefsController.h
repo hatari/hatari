@@ -49,22 +49,26 @@
     IBOutlet NSButton *patchTimerD;
     IBOutlet NSPopUpButton *enableDSP;
     IBOutlet NSMatrix *playbackQuality;
-    IBOutlet NSTextField *printToFile;
+    IBOutlet NSMatrix *YMVoicesMixing;
+	IBOutlet NSTextField *printToFile;
     IBOutlet NSMatrix *ramSize;
     IBOutlet NSTextField *readRS232FromFile;
     IBOutlet NSPopUpButton *realJoystick;
     IBOutlet NSButton *realTime;
+	IBOutlet NSButton *FastBootPatch;
     IBOutlet NSMatrix *resolution;
     IBOutlet NSButton *fastFDC;
     IBOutlet NSTextField *tosImage;
     IBOutlet NSButton *useBorders;
     IBOutlet NSButton *useVDIResolution;
     IBOutlet NSTextField *writeMidiToFile;
-    IBOutlet NSMatrix *writeProtection;
+    IBOutlet NSMatrix *floppyWriteProtection;
+	IBOutlet NSMatrix *HDWriteProtection;
     IBOutlet NSTextField *writeRS232ToFile;
     IBOutlet NSButton *zoomSTLowRes;
     IBOutlet NSSlider *nSpec512Treshold;
 	
+	IBOutlet NSButton *keepDesktopResolution;
 	IBOutlet NSButton *falconTTRatio;
 	IBOutlet NSButton *fullScreen;
 	IBOutlet NSButton *ledDisks;
@@ -117,7 +121,7 @@
 - (IBAction)updateEnabledStates:(id)sender;
 - (IBAction)setWidth:(id)sender;
 - (IBAction)setHeight:(id)sender;
-
++(PrefsController*)prefs;
 
 
 @end

@@ -576,7 +576,16 @@ static const int nSoundFreqs[] =
 	[self setAllControls];
 
 	// Display the window
-	[[ModalWrapper alloc] runModal:window];
+	ModalWrapper *mw=[[ModalWrapper alloc] init];
+	
+	[mw runModal:window];
+	
+	[mw release];
+	
+	//GuiOsx_Pause();
+	
+	//[[NSApplication sharedApplication] runModalForWindow:window];
+
 }
 
 
@@ -637,7 +646,8 @@ static const int nSoundFreqs[] =
     IMPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     IMPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
     IMPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.sMidiOutFileName);
-	IMPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
+	IMPORT_RADIO(floppyWriteProtection, ConfigureParams.DiskImage.nWriteProtection);
+	IMPORT_RADIO(HDWriteProtection, ConfigureParams.HardDisk.nWriteProtection);
     IMPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
     // IMPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
 	IMPORT_SWITCH(showStatusBar, ConfigureParams.Screen.bShowStatusbar);
@@ -648,13 +658,18 @@ static const int nSoundFreqs[] =
 	IMPORT_SWITCH(falconTTRatio, ConfigureParams.Screen.bAspectCorrect);
 	IMPORT_SWITCH(fullScreen, ConfigureParams.Screen.bFullScreen);
 	IMPORT_SWITCH(ledDisks, ConfigureParams.Screen.bShowDriveLed);
+	IMPORT_SWITCH(keepDesktopResolution, ConfigureParams.Screen.bKeepResolution);
+	
+	//v1.6.1
+	IMPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
+	IMPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 	
 	//deal with the Max Zoomed Stepper
 	IMPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	IMPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
 	
-	[widthStepper setIntValue:[maxZoomedWidth intValue]];
-	[heightStepper setIntValue:[maxZoomedHeight intValue]];
+	[widthStepper setDoubleValue:[maxZoomedWidth intValue]];
+	[heightStepper setDoubleValue:[maxZoomedHeight intValue]];
 	
 	
 	
@@ -848,15 +863,21 @@ static const int nSoundFreqs[] =
     EXPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     EXPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
     EXPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.sMidiOutFileName);
-	EXPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
-    EXPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
+	EXPORT_RADIO(floppyWriteProtection, ConfigureParams.DiskImage.nWriteProtection);
+    EXPORT_RADIO(HDWriteProtection, ConfigureParams.HardDisk.nWriteProtection);
+	EXPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
     // EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
 	EXPORT_SWITCH(showStatusBar,ConfigureParams.Screen.bShowStatusbar);
 	EXPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
 	
 	EXPORT_SWITCH(falconTTRatio, ConfigureParams.Screen.bAspectCorrect);
 	EXPORT_SWITCH(fullScreen, ConfigureParams.Screen.bFullScreen);
-	IMPORT_SWITCH(ledDisks, ConfigureParams.Screen.bShowDriveLed);
+	EXPORT_SWITCH(ledDisks, ConfigureParams.Screen.bShowDriveLed);
+	EXPORT_SWITCH(keepDesktopResolution, ConfigureParams.Screen.bKeepResolution);
+	
+	//v1.6.1
+	EXPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
+	EXPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
 	
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
@@ -942,6 +963,16 @@ static const int nSoundFreqs[] =
 	NSLog(@"Change Max Zoom height: %ld", [sender intValue]);
     [maxZoomedHeight setIntValue: [sender intValue]];
 }
+
++(PrefsController*)prefs
+{
+	static PrefsController* prefs = nil;
+	if (!prefs)
+		prefs = [[PrefsController alloc] init];
+	
+	return prefs;
+}
+
 
 
 @end

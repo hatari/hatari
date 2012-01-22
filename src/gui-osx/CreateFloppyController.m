@@ -87,7 +87,9 @@
 
 - (IBAction)runModal:(id)sender
 {
-	[[ModalWrapper alloc] runModal:window];
+	ModalWrapper *mw=[[ModalWrapper alloc] init];
+	[mw runModal:window];
+	[mw release];
 }
 
 

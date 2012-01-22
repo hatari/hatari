@@ -55,10 +55,14 @@
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>Hatari</string>
+	<key>CFBundleHelpBookFolder</key>
+	<string>Hatari Help Folder</string>
+	<key>CFBundleHelpBookName</key>
+	<string>Hatari Help</string>
 	<key>CFBundleIconFile</key>
 	<string>Hatari</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.sourceforge.hatari</string>
+	<string>org.tuxfamily.hatari</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
@@ -66,9 +70,11 @@
 	<key>CFBundleSignature</key>
 	<string>HATA</string>
 	<key>CFBundleVersion</key>
-	<string>1.6</string>
+	<string>1.6.1</string>
 	<key>Hatari</key>
 	<string>SDL Cocoa App</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.4.0</string>
 	<key>NSMainNibFile</key>
 	<string>SDLMain.nib</string>
 	<key>NSPrincipalClass</key>

@@ -19,11 +19,14 @@
 - (IBAction)openConfig:(id)sender;
 - (IBAction)saveConfig:(id)sender;
 - (IBAction)prefsMenu:(id)sender;
+
+- (IBAction)openPreferences:(id)sender;
+
 - (IBAction)warmReset:(id)sender;
 - (IBAction)coldReset:(id)sender;
 - (IBAction)insertDiskA:(id)sender;
 - (IBAction)insertDiskB:(id)sender;
-- (IBAction)help:(id)sender;
+//- (IBAction)help:(id)sender;
 - (IBAction)captureScreen:(id)sender;
 - (IBAction)captureAnimation:(id)sender;
 - (IBAction)endCaptureAnimation:(id)sender;
