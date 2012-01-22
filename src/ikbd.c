@@ -43,6 +43,8 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /* 2011/12/27	[NP]	When sending new bytes while a byte is already in transfer from ACIA to IKBD,	*/
 /*			don't restart the internal TX timer (fix 'Pandemonium Demos' Intro).		*/
 /*			eg : .loop : move.b d0,$fc02.w    btst #1,$fc00.w    beq.s .loop		*/
+/* 2012/01/22	[NP]	Enable both mouse and joystick reporting when commands 0x12 and 0x14 are	*/
+/*			received during the IKBD reset.							*/
 
 #include <time.h>
 
@@ -176,6 +178,19 @@ static bool bByteInTransitFromACIA = false;	/* Is a byte being sent from the ACI
     The keyboard ACIA are address 0xfffc000 and 0xfffc02.
     Default parameters are :- 8-bit word, 1 stopbit, no parity, 7812.5 baud; 500KHz/64 (keyboard clock div)
     Default MIDI parameters are are above but :- 31250 baud; 500KHz/16 (MIDI clock div)
+
+
+  Special behaviours during the IKBD reset :
+    If the following commands are received during the reset of the IKBD,
+    the IKBD will go in a special mode and report both mouse and joystick at the same time :
+	0x08 0x14		relative mouse on , joysticks auto
+	0x08 0x0b 0x14		relative mouse on , mouse threshold , joysticks auto (eg Barbarian 1 by Psygnosis)
+	0x12 0x14		disable mouse , joysticks auto (eg Hammerfist)
+	0x12 0x1a		disable mouse , disable joysticks
+
+    In that case mouse and joystick buttons will be reported in a "mouse report" packet
+    and joystick actions (except buttons) will be reported in a "joystick report" packet.
+
 */
 
 /* List of possible keyboard commands, others are seen as NOPs by keyboard processor */
@@ -1037,8 +1052,8 @@ static void IKBD_CheckResetDisableBug(void)
 			KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 			bBothMouseAndJoy = true;
 
-			LOG_TRACE(TRACE_IKBD_ALL, "IKBD Mouse+Joystick disabled "
-			          "during RESET. Revert.\n");
+			LOG_TRACE(TRACE_IKBD_ALL, "ikbd cancel commands 0x12 and 0x1a received during reset,"
+				" enabling joystick and mouse reporting at the same time\n" );
 		}
 	}
 }
@@ -1051,7 +1066,7 @@ static void IKBD_CheckResetDisableBug(void)
  */
 void IKBD_InterruptHandler_ResetTimer(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD Reset timer completed, resuming ikbd processing VBLs=%i framecyc=%i\n",
+	LOG_TRACE(TRACE_IKBD_CMDS, "ikbd reset timer completed, resuming ikbd processing VBLs=%i framecyc=%i\n",
 	          nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
 
 	/* Remove this interrupt from list and re-order */
@@ -1122,7 +1137,7 @@ static void IKBD_Cmd_Reset(void)
 		bBothMouseAndJoy = false;
 		bMouseEnabledDuringReset = false;
 
-		LOG_TRACE(TRACE_IKBD_ALL, "IKBD reset done, starting reset timer\n");
+		LOG_TRACE(TRACE_IKBD_ALL, "ikbd reset done, starting reset timer\n");
 	}
 	/* else if not 0x80,0x01 just ignore */
 }
@@ -1404,14 +1419,23 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 	KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 	KeyboardProcessor.MouseMode = AUTOMODE_OFF;
 
-	/* If mouse was also enabled within time of a reset it isn't disabled now!
-	 * (Used by the game Barbarian 1 by Psygnosis for example) */
-	if (bMouseEnabledDuringReset)
+	/* If mouse was also enabled within time of a reset (0x08 command) it isn't disabled now!
+	 * (used by the game Barbarian 1 by Psygnosis for example) */
+	if ( bDuringResetCriticalTime && bMouseEnabledDuringReset )
 	{
 		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 		bBothMouseAndJoy = true;
-		LOG_TRACE(TRACE_IKBD_ALL, "IKBD joystick and mouse "
-		          "enabled during RESET. Mouse not disabled!\n");
+		LOG_TRACE(TRACE_IKBD_ALL, "ikbd commands 0x08 and 0x14 received during reset,"
+			" enabling joystick and mouse reporting at the same time\n" );
+	}
+	/* If mouse was disabled during the reset (0x12 command) it is enabled again
+	 * (used by the game Hammerfist for example) */
+	else if ( bDuringResetCriticalTime && bMouseDisabled )
+	{
+		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
+		bBothMouseAndJoy = true;
+		LOG_TRACE(TRACE_IKBD_ALL, "ikbd commands 0x12 and 0x14 received during reset,"
+			" enabling joystick and mouse reporting at the same time\n" );
 	}
 
 	/* This command resets the internally previously stored joystick states */
