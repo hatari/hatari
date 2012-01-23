@@ -3,7 +3,7 @@ lock regaddr disasm a0
 
 # Track when GEMODS is called with the Dgetdrv() opcode
 # (happens e.g. when EmuTOS console prints the prompt):
-breakpoint  GemdosOpcode < 0xffff  &&  GemdosOpcode = 0x19  :info
+breakpoint  GemdosOpcode < 0xffff  &&  GemdosOpcode = 0x19  :lock
 
 # NOTE: "info" flag above will cause this to be just traced and
 # information specified by "lock" command above to be printed,

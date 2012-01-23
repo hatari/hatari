@@ -3,12 +3,15 @@
 # You can try it with something like this:
 #   hconsole.py example-commands --exit -- --tos etos512k.img
 #
-# I.e. specify TOS image for Hatari and exit after the the input file.
+# I.e. specify EmuTOS image for Hatari and exit after the the input file.
 #
 # For more fun, use also Hatari's --bios-intercept option. :-)
 
-# wait for TOS to boot
-sleep 3
+# without this EmuTOS boot takes 10s more
+setopt --fastfdc on
+
+# wait for EmuTOS to boot
+sleep 5
 
 # Note: keypress/down/up commands take either one character or
 # a multidigit key scancode.  Scancodes need to be used for keys
