@@ -1387,14 +1387,16 @@ static void dsp_write_reg(Uint32 numreg, Uint32 value)
 			dsp_core.registers[DSP_REG_SR] = value & 0xaf7f;
 			break;
 		case DSP_REG_SP:
-			stack_error = dsp_core.registers[DSP_REG_SP] & (1<<DSP_SP_SE);
-			if ((stack_error==0) && (value & (1<<DSP_SP_SE))) {
-				/* Stack full, raise interrupt */
+			stack_error = dsp_core.registers[DSP_REG_SP] & (3<<DSP_SP_SE);
+			if ((stack_error==0) && (value & (3<<DSP_SP_SE))) {
+				/* Stack underflow or overflow detected, raise interrupt */
 				dsp_add_interrupt(DSP_INTER_STACK_ERROR);
 				if (!isDsp_in_disasm_mode)
-					fprintf(stderr,"Dsp: Stack Overflow\n");
+					fprintf(stderr,"Dsp: Stack Overflow or Underflow\n");
+				dsp_core.registers[DSP_REG_SP] = value & (3<<DSP_SP_SE);
 			}
-			dsp_core.registers[DSP_REG_SP] = value & BITMASK(6); 
+			else
+				dsp_core.registers[DSP_REG_SP] = value & BITMASK(6); 
 			dsp_compute_ssh_ssl();
 			break;
 		case DSP_REG_SSH:
