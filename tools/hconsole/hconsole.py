@@ -168,7 +168,7 @@ class Hatari:
             self.control.sendall(bytes(msg + "\n", "ASCII"))
             # KLUDGE: wait so that Hatari output comes before next prompt
             if fast:
-                interval = self.interval/2
+                interval = self.interval/4
             else:
                 interval = self.interval
             time.sleep(interval)
