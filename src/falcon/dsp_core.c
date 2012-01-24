@@ -184,7 +184,9 @@ void dsp_core_reset(void)
 	dsp_core.ssi.TX = 0;
 	dsp_core.ssi.RX = 0;
 	dsp_core.ssi.dspPlay_handshakeMode_frame = 0;
-	
+	dsp_core_ssi_configure(DSP_SSI_CRA, 0);
+	dsp_core_ssi_configure(DSP_SSI_CRB, 0);
+
 	/* Other hardware registers */
 	dsp_core.periph[DSP_SPACE_X][DSP_IPR]=0;
 	dsp_core.periph[DSP_SPACE_X][DSP_BCR]=0xffff;
