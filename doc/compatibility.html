@@ -2013,10 +2013,10 @@ Hatari readme.txt on how to enable that.</p>
     </tr>
     <tr>
       <td><a href="http://www.llamasoft.co.uk/lc-16bit.php">Llamazap</a></td>
-      <td class="minor">1.6</td>
+      <td>1.6</td>
       <td>-</td>
       <td>-</td>
-      <td>Requires joypad.  DSP sounds don't work</td>
+      <td>Requires joypad.  Linked version doesn't have (DSP) music, others have</td>
     </tr> 
     <tr>
       <td>Madtris</td>
@@ -2597,10 +2597,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>Digital Chaos:
       <a href="http://www.pouet.net/prod.php?which=17802">Built-in Obsolescence</a></td>
-      <td class="major">1.6</td>
+      <td>1.6.2</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Music plays, but no output. Gives DSP stack overflow</td>
+      <td>Requires WinUAE CPU core, gives DSP stack overflows</td>
     </tr>
     <tr>
       <td>DNT Crew:
@@ -2984,10 +2984,10 @@ Hatari readme.txt on how to enable that.</p>
     <tr>
       <td>Trio:
       <a href="http://www.pouet.net/prod.php?which=15974">X-tasie</a></td>
-      <td class="major">1.3</td>
+      <td class="major">1.6</td>
       <td>-</td>
       <td>-</td>
-      <td>Quits without doing anything (requires 030 MMU which UAE doesn't emulate?)</td>
+      <td>With old UAE, quits without doing anything (requires 030 MMU), with WinUAE, black screen</td>
     </tr>
     <tr>
       <td>tSCc:
@@ -3194,11 +3194,13 @@ site.</p>
       <td>NoCrew MP2 sound player</td>
     </tr>
     <tr>
-      <td><a href="http://www.rainbowpainter.com/about/rainbow2multimedia.html">Rainbow
-          II multimedia</a></td>
+      <td><a href="http://www.rainbowpainter.com/about/rainbow2multimedia.html">Rainbow II multimedia</a></td>
       <td>1.5</td>
       <td>emu</td>
-      <td>Works only with the new winuae CPU core. With old cpu core, bombs immediately at startup (MMU not emulated in old cpu)</td>
+      <td>Works only with the new WinUAE CPU core. With old UAE core,
+          bombs immediately at startup (MMU not emulated in old UAE).
+          Mouse cannot traverse whole screen unless mouse grab or
+          fullscreen mode is used</td>
     </tr>
     <tr>
       <td>Whip</td>
@@ -3242,7 +3244,7 @@ support or work only on them.</p>
       <td><a href="http://freemint.de/en/">FreeMiNT</a></td>
       <td>1.2</td>
       <td>Needs to be installed/booted from an ACSI or IDE HD image and
-      memory protection needs to be disabled (Hatari UAE core doesn't
+      memory protection needs to be disabled (Hatari old UAE core doesn't
       emulate MMU)</td>
     </tr>
     <tr>
