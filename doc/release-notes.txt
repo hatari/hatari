@@ -12,9 +12,21 @@ Emulation:
   in The European Demos and The Transbeauce II Demo)
 - Handle commands 0x12 and 0x14 sent during the IKBD reset (enable both
   mouse and joystick reporting at the same time)
+- Fix to DSP stack overflow handling
+- Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
+  to TOS instead of trying to handle them as normal files
+
+Emulator:
+- Reverted preferred Videl resolution zoomed size setting from
+  host desktop resolution back to 832x576 it was in Hatari v1.4,
+  so that Falcon/TT emulation window sizes by default are closer
+  to ST/STE ones (especially on large resolution monitors).
 
 Fixed Games :
   Hammerfist (fire button)
+
+Fixed demos :
+  Built-in Obsolescence (DSP stack overflow)
 
 
  Version 1.6.1 (2012-01-13):
@@ -35,7 +47,6 @@ Other changes:
 - Test programs added for testing TOS booting with different
   HW configurations and for finding out values needed in
   Hatari keymaps
-- Remove a potential segfault in the debugger
 
 Fixed Demos :
   Vodka Demo - Kill The Beast 2 (left border removal)
