@@ -493,10 +493,10 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowStatusbar = true;
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCrop = false;
-	/* default to desktop size */
+	/* gives zoomed Falcon/TT windows about same size as ST/STE windows */
+	ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
+	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
 	ConfigureParams.Screen.bForceMax = false;
-	ConfigureParams.Screen.nMaxWidth = 0;
-	ConfigureParams.Screen.nMaxHeight = 0;
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;
