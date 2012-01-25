@@ -799,19 +799,25 @@ static bool GemDOS_IsInvalidFileHandle(int Handle)
 /*-----------------------------------------------------------------------*/
 /**
  * Find drive letter from a filename, eg C,D... and return as drive ID(C:2, D:3...)
- * returns the current drive number if none is specified.
+ * returns the current drive number if no drive is specified.  For special
+ * devices (CON:, AUX:, PRN:), returns an invalid drive number.
  */
 static int GemDOS_FindDriveNumber(char *pszFileName)
 {
 	/* Does have 'A:' or 'C:' etc.. at start of string? */
-	if ((pszFileName[0] != '\0') && (pszFileName[1] == ':'))
+	if (pszFileName[0] != '\0' && pszFileName[1] == ':')
 	{
-		if ((pszFileName[0] >= 'a') && (pszFileName[0] <= 'z'))
-			return (pszFileName[0]-'a');
-		else if ((pszFileName[0] >= 'A') && (pszFileName[0] <= 'Z'))
-			return (pszFileName[0]-'A');
+		char letter = toupper(pszFileName[0]);
+		if (letter >= 'A' && letter <= 'Z')
+			return (letter-'A');
 	}
-
+	else if (strlen(pszFileName) == 4 && pszFileName[3] == ':')
+	{
+		/* ':' can be used only as drive indicator, not otherwise,
+		 * so no need to check even special device name.
+		 */
+		return 0;
+	}
 	return CurrentDrive;
 }
 
@@ -1782,13 +1788,14 @@ static bool GemDOS_Open(Uint32 Params)
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fopen(\"%s\", 0x%x)\n", pszFileName, Mode);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fopen(\"%s\", %s)\n", pszFileName, Modes[Mode&0x03].desc);
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
 	if (!ISHARDDRIVE(Drive))
 	{
 		/* redirect to TOS */
+		LOG_TRACE(TRACE_OS_GEMDOS, "-> to TOS\n");
 		return false;
 	}
 
