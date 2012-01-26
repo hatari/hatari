@@ -17,10 +17,11 @@ Emulation:
   to TOS instead of trying to handle them as normal files
 
 Emulator:
-- Reverted preferred Videl resolution zoomed size setting from
+- Change max allowed VDI resolution from 1280x960 to 1920x1200
+- Revert preferred Videl resolution max zooming size setting from
   host desktop resolution back to 832x576 it was in Hatari v1.4,
   so that Falcon/TT emulation window sizes by default are closer
-  to ST/STE ones (especially on large resolution monitors).
+  to ST/STE ones on larger resolution monitors.
 
 Fixed Games :
   Hammerfist (fire button)

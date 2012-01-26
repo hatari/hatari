@@ -73,7 +73,6 @@ allocations. The allocations and ways to make them smaller are:
   to 640 and 400. As Hatari allocates 2*2 framebuffers (of size
   width*height/8) for page flipping in Screen_Init(), decreasing
   their size can have have a large effect.
-  - Change list of VDI modes in Hatari dialog accordingly!
 
 * Do not load bigfont in gui-sdl/sdlgui.c, especially if the device
   screen is smaller than VGA.  Both fonts together take about 1/3 MB.
