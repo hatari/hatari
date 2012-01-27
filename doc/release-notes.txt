@@ -17,6 +17,8 @@ Emulation:
   to TOS instead of trying to handle them as normal files
 
 Emulator:
+- Support run-time changing of CPU level and machine type from
+  the GUI also with WinUAE CPU core
 - Change max allowed VDI resolution from 1280x960 to 1920x1200
 - Revert preferred Videl resolution max zooming size setting from
   host desktop resolution back to 832x576 it was in Hatari v1.4,
@@ -26,6 +28,7 @@ Emulator:
 Other changes:
 - Hatari UI supports file paths with spaces in them and spaces in Hatari
   options given through its control socket can be quoted with '\'.
+- Support for alpha-numeric characters in Hconsole "text" command
 
 Fixed Games :
   Hammerfist (fire button)
