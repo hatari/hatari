@@ -48,10 +48,17 @@ class Hatari:
 
     def is_compatible(self):
         "check Hatari compatibility and return error string if it's not"
-        for line in os.popen(self.hataribin + " -h").readlines():
+        error = "Hatari not found or it doesn't support the required --control-socket option!"
+        pipe = os.popen(self.hataribin + " -h")
+        for line in pipe.readlines():
             if line.find("--control-socket") >= 0:
-                return None
-        return "Hatari not found or it doesn't support the required --control-socket option!"
+                error = None
+                break
+        try:
+            pipe.close()
+        except IOError:
+            pass
+        return error
 
     def save_config(self):
         os.popen(self.hataribin + " --saveconfig")
