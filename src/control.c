@@ -283,7 +283,8 @@ static bool Control_Usage(const char *cmd)
 		"- hatari-stop\n"
 		"- hatari-cont\n"
 		"The last two can be used to stop and continue the Hatari emulation.\n"
-		"All commands need to be separated by newlines.\n"
+		"All commands need to be separated by newlines.  Spaces in command\n"
+		"line option arguments need to be quoted with \\.\n"
 		);
 	return false;
 }

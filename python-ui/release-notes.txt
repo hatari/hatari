@@ -8,6 +8,7 @@ User visible changes in Hatari (Python Gtk) UI
   Hatari v1.6 config variable names changes by changing
   how Hatari config variable types are handled
 - Update UI version to v1.1 (mainly due to config change)
+- Support spaces in file paths/names
 
 2011-10:
 - Replace --slowfdc with --fastfdc

@@ -446,7 +446,8 @@ static bool Change_Options(int argc, const char *argv[])
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse given command line and change Hatari options accordingly
+ * Parse given command line and change Hatari options accordingly.
+ * Given string must be stripped and not empty.
  * Return false if parsing failed or there were no args, true otherwise
  */
 bool Change_ApplyCommandline(char *cmdline)
@@ -459,7 +460,7 @@ bool Change_ApplyCommandline(char *cmdline)
 	inarg = argc = 0;
 	for (i = 0; cmdline[i]; i++)
 	{
-		if (isspace(cmdline[i]))
+		if (isspace(cmdline[i]) && cmdline[i-1] != '\\')
 		{
 			inarg = 0;
 			continue;
@@ -490,13 +491,22 @@ bool Change_ApplyCommandline(char *cmdline)
 	{
 		if (isspace(cmdline[i]))
 		{
-			cmdline[i] = '\0';
-			if (inarg)
+			if (cmdline[i-1] != '\\')
 			{
-				fprintf(stderr, "- '%s'\n", argv[argc-1]);
+				cmdline[i] = '\0';
+				if (inarg)
+				{
+					fprintf(stderr, "- '%s'\n", argv[argc-1]);
+				}
+				inarg = 0;
+				continue;
 			}
-			inarg = 0;
-			continue;
+			else
+			{
+				/* remove quote for space */
+				memcpy(cmdline+i-1, cmdline+i, strlen(cmdline+i)+1);
+				i--;
+			}
 		}
 		if (!inarg)
 		{

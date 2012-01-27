@@ -23,6 +23,10 @@ Emulator:
   so that Falcon/TT emulation window sizes by default are closer
   to ST/STE ones on larger resolution monitors.
 
+Other changes:
+- Hatari UI supports file paths with spaces in them and spaces in Hatari
+  options given through its control socket can be quoted with '\'.
+
 Fixed Games :
   Hammerfist (fire button)
 

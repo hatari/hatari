@@ -292,7 +292,10 @@ class HatariConfigMapping(ConfigStore):
             else:
                 getattr(self, method)()
 
-    def _change_option(self, option):
+    def _change_option(self, option, quoted = None):
+        "handle option changing, and quote spaces for quoted part of it"
+        if quoted:
+            option = "%s %s" % (option, quoted.replace(" ", "\\ "))
         if self._lock_updates:
             self._options.append(option)
         else:
@@ -508,7 +511,7 @@ class HatariConfigMapping(ConfigStore):
     
     def set_floppy(self, drive, filename):
         self.set("[Floppy]", "szDisk%cFileName" %  ("A", "B")[drive], filename)
-        self._change_option("--disk-%c %s" % (("a", "b")[drive], filename))
+        self._change_option("--disk-%c" % ("a", "b")[drive], str(filename))
 
     # ------------ fast FDC access ---------------
     def get_fastfdc(self):
@@ -545,7 +548,7 @@ class HatariConfigMapping(ConfigStore):
         if dirname and os.path.isdir(dirname):
             self.set("[HardDisk]", "bUseHardDiskDirectory", True)
         self.set("[HardDisk]", "szHardDiskDirectory", dirname)
-        self._change_option("--harddrive %s" % dirname)
+        self._change_option("--harddrive", str(dirname))
 
     # ------------ ACSI HD (file) ---------------
     def get_acsi_image(self):
@@ -556,7 +559,7 @@ class HatariConfigMapping(ConfigStore):
         if filename and os.path.isfile(filename):
             self.set("[HardDisk]", "bUseHardDiskImage", True)
         self.set("[HardDisk]", "szHardDiskImage", filename)
-        self._change_option("--acsi %s" % filename)
+        self._change_option("--acsi", str(filename))
 
     # ------------ IDE master (file) ---------------
     def get_idemaster_image(self):
@@ -567,7 +570,7 @@ class HatariConfigMapping(ConfigStore):
         if filename and os.path.isfile(filename):
             self.set("[HardDisk]", "bUseIdeMasterHardDiskImage", True)
         self.set("[HardDisk]", "szIdeMasterHardDiskImage", filename)
-        self._change_option("--ide-master %s" % filename)
+        self._change_option("--ide-master", str(filename))
 
     # ------------ IDE slave (file) ---------------
     def get_ideslave_image(self):
@@ -578,7 +581,7 @@ class HatariConfigMapping(ConfigStore):
         if filename and os.path.isfile(filename):
             self.set("[HardDisk]", "bUseIdeSlaveHardDiskImage", True)
         self.set("[HardDisk]", "szIdeSlaveHardDiskImage", filename)
-        self._change_option("--ide-slave %s" % filename)
+        self._change_option("--ide-slave", str(filename))
 
     # ------------ TOS ROM ---------------
     def get_tos(self):
@@ -586,7 +589,7 @@ class HatariConfigMapping(ConfigStore):
     
     def set_tos(self, filename):
         self.set("[ROM]", "szTosImageFileName", filename)
-        self._change_option("--tos %s" % filename)
+        self._change_option("--tos", str(filename))
 
     # ------------ memory ---------------
     def get_memory_names(self):
