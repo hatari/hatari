@@ -81,9 +81,10 @@ const char CfgOpts_fileid[] = "Hatari cfgopts.c : " __DATE__ " " __TIME__;
 int input_config(const char *filename, const struct Config_Tag configs[], const char *header)
 {
 	const struct Config_Tag *ptr;
-	int count=0, lineno=0;
+	int count=0, lineno=0, type;
 	FILE *file;
-	char *fptr,*tok,*next;
+	char *fptr,*tok;
+	const char *next;
 	char line[1024];
 
 	file = fopen(filename,"r");
@@ -115,15 +116,22 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 			tok = Str_Trim(strtok(fptr, "="));      /* get first token */
 			if (tok == NULL)
 				continue;
-			next = Str_Trim(strtok(NULL, "="));     /* get actual config information */
-			if (next == NULL)
-				continue;
 			for (ptr = configs; ptr->buf; ++ptr)    /* scan for token */
 			{
 				if (!strcmp(tok, ptr->code))    /* got a match? */
 				{
+					type = ptr->type;
+					/* get actual config value */
+					next = Str_Trim(strtok(NULL, "="));
+					if (next == NULL)
+					{
+						if (type == String_Tag)
+							next = ""; /* field with empty string */
+						else
+							type = Error_Tag;
+					}
 					count++;
-					switch (ptr->type)      /* check type */
+					switch (type)      /* check type */
 					{
 					case Bool_Tag:
 						if (!strcasecmp(next,"FALSE"))
