@@ -436,7 +436,7 @@ void build_cpufunctbl (void)
 	write_log ("Building CPU, %d opcodes (%d %d %d)\n",
 		opcnt, lvl,
 		currprefs.cpu_cycle_exact ? -1 : currprefs.cpu_compatible ? 1 : 0, currprefs.address_space_24);
-	write_log ("CPU=%d, FPU=%d, MMU=%d, JIT%s=%d.\n",
+	write_log ("CPU=%d, FPU=%d, MMU(040)=%d, JIT%s=%d.\n",
 		currprefs.cpu_model, currprefs.fpu_model,
 		currprefs.mmu_model,
 		currprefs.cachesize ? (currprefs.compfpu ? "=CPU/FPU" : "=CPU") : "",
