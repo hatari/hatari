@@ -179,7 +179,6 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 
 	/* Did set new printer parameters? */
 	if (changed->Printer.bEnablePrinting != current->Printer.bEnablePrinting
-	    || changed->Printer.bPrintToFile != current->Printer.bPrintToFile
 	    || strcmp(changed->Printer.szPrintToFileName,current->Printer.szPrintToFileName))
 	{
 		Dprintf("- printer>\n");

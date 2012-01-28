@@ -228,7 +228,6 @@ typedef struct
 typedef struct
 {
   bool bEnablePrinting;
-  bool bPrintToFile;
   char szPrintToFileName[FILENAME_MAX];
 } CNF_PRINTER;
 
