@@ -120,11 +120,20 @@ class Hatari:
         self.verbose = False
 
     def _assert_hatari_compatibility(self):
-        for line in os.popen(self.hataribin + " -h").readlines():
+        "check Hatari compatibility and return error string if it's not"
+        error = True
+        pipe = os.popen(self.hataribin + " -h")
+        for line in pipe.readlines():
             if line.find("--control-socket") >= 0:
-                return
-        print("ERROR: Hatari not found or it doesn't support the required --control-socket option!")
-        sys.exit(-1)
+                error = False
+                break
+        try:
+            pipe.close()
+        except IOError:
+            pass
+        if error:
+            print("ERROR: %s" % error)
+            sys.exit(-1)
         
     def is_running(self):
         if not self.pid:
