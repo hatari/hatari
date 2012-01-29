@@ -15,6 +15,7 @@ Emulation:
 - Fix to DSP stack overflow handling
 - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
   to TOS instead of trying to handle them as normal files
+- Changes in the prefetch code for some instructions
 
 Emulator:
 - Support run-time changing of CPU level and machine type from
@@ -31,7 +32,8 @@ Other changes:
 - Support for alpha-numeric characters in Hconsole "text" command
 
 Fixed Games :
-  Hammerfist (fire button)
+  Hammerfist (fire button),
+  Automation 168 - Operation Clean Streets (prefetch in the CPU emulation)
 
 Fixed demos :
   Built-in Obsolescence (DSP stack overflow)
