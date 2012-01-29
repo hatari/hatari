@@ -1,0 +1,16 @@
+#E 9A 07
+#Z 01 C:\GEMDOS.PRG@
+#W 00 00 02 06 26 0C 08 C:\*.*@
+#W 00 00 02 08 26 0C 00 @
+#W 00 00 02 0A 26 0C 00 @
+#W 00 00 02 0D 26 0C 00 @
+#M 00 00 01 FF A FLOPPY A@ @
+#M 01 00 01 FF B FLOPPY B@ @
+#M 02 00 01 FF C HARDDISK B@ @
+#F FF 28 @ *.*@
+#D FF 02 @ *.*@
+#G 08 FF *.APP@ @
+#G 08 FF *.PRG@ @
+#P 08 FF *.TTP@ @
+#F 08 FF *.TOS@ @
+#T 00 03 03 FF   TRASH@ @
