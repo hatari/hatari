@@ -63,6 +63,8 @@
 /*			Use BusCyclePenalty to properly handle the 2/4 cycles added in that case when	*/
 /*			addressing mode	is Ad8r or PC8r	(ULM Demo Menu, Anomaly Demo Intro, DHS		*/
 /*			Sommarhack 2010) (see m68000.h)							*/
+/* 2012/01/29	[NP]	Add refill_prefetch for i_EOR to fix Operation Clean Streets self modified code.*/
+/*			Ugly hack, we need better prefetch emulation (switch to winuae gencpu.c)	*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -968,6 +970,7 @@ static void gen_opcode (unsigned long int opcode)
         genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
         genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0);
         printf ("\tsrc %c= dst;\n", curi->mnemo == i_OR ? '|' : curi->mnemo == i_AND ? '&' : '^');
+	printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] For Operation Clean Streets - Automation 168, need better prefetch emulation
         genflags (flag_logical, curi->size, "src", "", "");
         genastore ("src", curi->dmode, "dstreg", curi->size, "dst");
         if(curi->size==sz_long && curi->dmode==Dreg)
