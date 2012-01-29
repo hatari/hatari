@@ -1,0 +1,7 @@
+; trivial GEMDOS program to signify that boot succceeded
+.C [-iinclude]
+gemdos.prg
+=
+ahcstart.o
+gemdos.c
+ahccstdi.lib
