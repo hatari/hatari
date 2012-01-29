@@ -1,9 +1,10 @@
 # hconsole input file to build disk/gemdos.prg with AHCC
 #
 # usage:
-# 1. symlink disk/ dir under AHCC dir
+# 1. symlink ahcc_p.ttp program, include and lib directories for
+#    AHCC under disk/ directory
 # 2. run:
-#    hconsole.py ahcc-build -- -m --machine tt --tos etos512k.img <path to AHCC dir>
+#    hconsole.py disk/ahcc-build -- -m --machine tt --tos etos512k.img disk
 
 # boot faster (1s instead of >10s) and show EmuCON output on console
 setopt --fast-forward yes --fastfdc on --bios-intercept
@@ -17,7 +18,7 @@ keypress Z
 keyup 29
 
 # output command to re-build test.prg
-text ahcc_p.ttp c:\disk\gemdos.prj
+text ahcc_p.ttp gemdos.prj
 # press Return to execute it
 keypress 28
 
