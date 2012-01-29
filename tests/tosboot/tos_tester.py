@@ -61,7 +61,7 @@ class TOS:
     def _add_file(self, img):
         "get TOS file size and basename for 'img'"
         if not os.path.isfile(img):
-            raise AssertionError("'%s' isn't a file" % img)
+            raise AssertionError("'%s' given as TOS image isn't a file" % img)
         
         size = os.stat(img).st_size
         tossizes = (196608, 262144, 524288)
@@ -137,7 +137,7 @@ class Config:
     
     # defaults
     bools = []
-    disks = ("gemdos",)
+    disks = ("floppy", "gemdos")
     graphics = ("mono", "rgb")
     machines = ("st", "ste", "tt", "falcon")
     memsizes = (0, 4, 14)
@@ -159,7 +159,7 @@ class Config:
             try:
                 images.append(TOS(img))
             except AssertionError as msg:
-                warning(msg)
+                self.usage(msg)
         if len(images) < 1:
             self.usage("no TOS image files given")
         return images
@@ -252,12 +252,11 @@ you also need to specify hconsole.py location with:
         else:
             raise AssertionError("unknown machine %s" % machine)
         if disktype in disks:
-            # TODO: is this machine type and this enough to make sure
-            # that TOS supports given disk type?
             if disktype == "gemdos":
                 return tos.supports_gemdos()
-            else:
-                print "TODO: support other than 'gemdos' disk type'"
+            elif disktype != "floppy":
+                # ASCI/IDE HD driver / TOS version checks...?
+                print "TODO: support disktype '%s'" % disktype
                 return False
             return True
         return False
@@ -293,14 +292,18 @@ you also need to specify hconsole.py location with:
 
 # -----------------------------------------------
 class Tester:
+    output = "output" + os.path.sep
+    report = output + "report.txt"
     # dummy Hatari config file to force suitable default options
-    dummycfg = "dummy.cfg"
-    defaults = [sys.argv[0], "--configfile", dummycfg]
-    printin  = "disk" + os.path.sep + "printer-in"
-    printout = "disk" + os.path.sep + "printer-out"
-    fifofile = "disk" + os.path.sep + "midi-out"
-    testprg  = "disk" + os.path.sep + "GEMDOS.PRG"
-    hdimage  = "hd.img"
+    dummycfg  = "dummy.cfg"
+    defaults  = [sys.argv[0], "--configfile", dummycfg]
+    testprg   = "disk" + os.path.sep + "GEMDOS.PRG"
+    textinput = "disk" + os.path.sep + "text"
+    printout  = output + "printer-out"
+    fifofile  = output + "midi-out"
+    floppy    = "floppy.st.gz"
+    hdimage   = "hd.img"
+    ideimage  = "ide.img"
     
     def __init__(self):
         "test setup initialization"
@@ -316,38 +319,39 @@ class Tester:
         # write specific configuration to:
         # - avoid user's own config
         # - get rid of the dialogs
-        # - disable GEMDOS emu by default
-        # - use floppy disk image to avoid TOS error when no disks
         # - limit Videl zooming to same sizes as ST screen zooming
         # - get rid of statusbar and borders in TOS screenshots
         #   to make them smaller & more consistent
+        # - disable GEMDOS emu by default
+        # - use empty floppy disk image to avoid TOS error when no disks
         # - set printer output file
         # - disable MIDI in, use MIDI out as fifo file to signify test completion
         dummy = open(self.dummycfg, "w")
         dummy.write("[Log]\nnAlertDlgLogLevel = 0\nbConfirmQuit = FALSE\n")
+        dummy.write("[Screen]\nnMaxWidth=832\nnMaxHeight=576\nbCrop = TRUE\nbAllowOverscan=FALSE\n")
         dummy.write("[HardDisk]\nbUseHardDiskDirectory = FALSE\n")
         dummy.write("[Floppy]\nszDiskAFileName = blank-a.st.gz\n")
-        dummy.write("[Screen]\nnMaxWidth=832\nnMaxHeight=576\nbCrop = TRUE\nbAllowOverscan=FALSE\n")
         dummy.write("[Printer]\nbEnablePrinting = TRUE\nszPrintToFileName = %s\n" % self.printout)
         dummy.write("[Midi]\nbEnableMidi = TRUE\nsMidiInFileName = \nsMidiOutFileName = %s\n" % self.fifofile)
         dummy.close()
     
     def cleanup_files(self):
-        for path in (self.fifofile, self.printin, self.printout, "grab0001.png", "grab0001.bmp"):
+        for path in (self.fifofile, self.printout, "grab0001.png", "grab0001.bmp"):
             if os.path.exists(path):
                 os.remove(path)
     
     def create_files(self):
-        print "TODO: create file content for test program to print"
-        open(self.printin, "w")
-        os.mkfifo(self.fifofile)
+        if not os.path.exists(self.output):
+            os.mkdir(self.output)
+        if not os.path.exists(self.fifofile):
+            os.mkfifo(self.fifofile)
     
     def get_screenshot(self, instance, identity):
         instance.run("screenshot")
         if os.path.isfile("grab0001.png"):
-            os.rename("grab0001.png", identity+".png")
+            os.rename("grab0001.png", self.output + identity + ".png")
         elif os.path.isfile("grab0001.bmp"):
-            os.rename("grab0001.bmp", identity+".bmp")
+            os.rename("grab0001.bmp", self.output + identity + ".bmp")
         else:
             warning("failed to locate screenshot grab0001.{png,bmp}")
         
@@ -357,19 +361,19 @@ class Tester:
         print("Waiting %ss for fifo '%s' input..." % (timeout, self.fifofile))
         sets = select.select([fifo], [], [], timeout)
         if sets[0]:
-            print "...fifo is READY, read what's in fifo:",
+            print "...test program is READY, read what's in its fifo:",
             try:
                 # read can block, make sure it's eventually interrupted
                 signal.alarm(timeout)
                 line = fifo.readline()
                 print line
-                print "TODO: verify fifo output was OK, not indicating partial failure"
                 signal.alarm(0)
-                return True
+                result = (line == "success")
+                return (True, result)
             except IOError:
                 pass
         print "ERROR: TIMEOUT without fifo input, BOOT FAILED"
-        return False
+        return (False, False)
     
     
     def open_fifo(self, timeout):
@@ -396,6 +400,9 @@ class Tester:
             print "ERROR: failed to get fifo to Hatari!"
             self.get_screenshot(instance, identity)
             instance.run("kill")
+            return (False, False, False)
+        else:
+            init_ok = True
 
         if tos.memwait:
             # pass memory test
@@ -403,15 +410,17 @@ class Tester:
             instance.run("keypress %s" % hconsole.Scancode.Space)
         
         # wait until test program has been run and output something to fifo
-        if self.wait_fifo(fifo, tos.fullwait):
-            print "TODO: verify printer output"
+        prog_ok, test_ok = self.wait_fifo(fifo, tos.fullwait)
+        if test_ok:
+            print "TODO: verify '%s' output against '%s'" % (self.printout, self.textinput)
         else:
             print "TODO: collect info on failure, regs etc"
         
         # get screenshot and get rid of this Hatari instance
         self.get_screenshot(instance, identity)
         instance.run("kill")
-    
+        return (init_ok, prog_ok, test_ok)
+
     
     def prepare_test(self, tos, machine, monitor, disk, memory, extra):
         "compose test ID and Hatari command line args, then call .test()"
@@ -421,7 +430,7 @@ class Tester:
         if extra:
             identity += "-%s%s" % (extra[0].replace("-", ""), extra[1])
             testargs += extra
-        
+
         if monitor[:3] == "vdi":
             planes = monitor[-1]
             testargs +=  ["--vdi-planes", planes]
@@ -431,25 +440,27 @@ class Tester:
                 testargs += ["--vdi-width", "320", "--vdi-height", "240"]
         else:
             testargs += ["--monitor", monitor]
-        
+
         if disk == "gemdos":
             # use Hatari autostart, must be last thing added to testargs!
             testargs += [self.testprg]
+        elif disk == "floppy":
+            testargs += ["--disk-a", self.floppy]
         elif disk == "acsi":
             testargs += ["--acsi", self.hdimage]
         elif disk == "ide":
-            testargs += ["--ide-master", self.hdimage]
+            testargs += ["--ide-master", self.ideimage]
         else:
-            # floppy
-            pass
-        
-        self.test(identity, testargs, tos)
-    
-    
+            raise AssertionError("unknown disk type '%s'" % disk)
+
+        results = self.test(identity, testargs, tos)
+        self.results[tos.name].append((identity, results))
+
     def run(self, config):
         "run all TOS boot test combinations"
+        self.results = {}
         for tos in config.images:
-            
+            self.results[tos.name] = []
             print
             print "***** TESTING: %s *****" % tos.name
             print
@@ -479,8 +490,47 @@ class Tester:
         self.cleanup_files()
     
     def summary(self):
-        "TODO: summarize test results"
-        pass
+        "summarize test results"
+        cases = [0, 0, 0]
+        passed = [0, 0, 0]
+        
+        report = open(self.report, "w")
+        report.write("\nTest report:\n------------\n")
+        for tos, configs in self.results.items():
+            if not configs:
+                report.write("\n+ WARNING: no configurations for '%s' TOS!\n" % tos)
+                continue
+            report.write("\n+ %s:\n" % tos)
+            for config, results in configs:
+                # convert True/False bools to FAIL/pass strings
+                values = [("FAIL","pass")[int(r)] for r in results]
+                report.write("  - %s: %s\n" % (config, values))
+                # update statistics
+                for idx in range(len(results)):
+                    cases[idx] += 1
+                    passed[idx] += results[idx]
+                print cases, passed
+        
+        report.write("\nSummar of FAIL/pass values:\n")
+        idx = 0
+        for line in ("Hatari init", "Test program running", "Its test-cases"):
+            passes, all = passed[idx], cases[idx]
+            if passes < all:
+                if not passes:
+                    result = "all %d FAILED" % all
+                else:
+                    result = "%d/%d passed" % (passes, all)
+            else:
+                result = "all %d passed" % all
+            report.write("- %s: %s\n" % (line, result))
+            idx += 1
+        report.write("\n")
+        
+        # print report out too
+        print "--- %s ---" % self.report
+        report = open(self.report, "r")
+        for line in report.readlines():
+            print line.strip()
 
 
 # -----------------------------------------------
