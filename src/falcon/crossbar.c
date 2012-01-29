@@ -1103,6 +1103,7 @@ static void Crossbar_Recalculate_Clocks_Cycles(void)
 	if ((crossbar.int_freq_divider == 6) || (crossbar.int_freq_divider == 8) || 
 	    (crossbar.int_freq_divider == 10) || (crossbar.int_freq_divider >= 12)) {
 		crossbar.isDacMuted = 1;
+		LOG_TRACE(TRACE_CROSSBAR, "           DAC is muted\n");
 	}
 
 	// Compute Ratio between host computer sound frequency and Hatari's sound frequency.
@@ -1295,8 +1296,6 @@ static void Crossbar_Process_DSPXmit_Transfer(void)
 	if (!dspXmit.isConnectedToCodec && !dspXmit.isConnectedToDma && !dspXmit.isConnectedToDsp)
 		return;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : DSP --> Crossbar transfer\n");
-
 	if (dspXmit.wordCount == 0) {
 		frame = 1;
 	}
@@ -1309,6 +1308,8 @@ static void Crossbar_Process_DSPXmit_Transfer(void)
 
 	/* read data from DSP Xmit */
 	data = DSP_SsiReadTxValue();
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : DSP --> Crossbar transfer\t0x%06x\n", data);
 
  	/* Send DSP data to the DAC ? */
 	if (dspXmit.isConnectedToCodec) {
