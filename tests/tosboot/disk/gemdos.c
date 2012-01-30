@@ -10,28 +10,32 @@
  * operations in co-operations with tos_tester.py Hatari test driver.
  * 
  * Full test should eventually be something like:
- * - open 'test' for writing -> fail
- * - make 'test' writable
- * - remove 'test'
- * - open 'test' for writing
+ * - clear screen
  * - open 'text' for reading
  * - write 'text' content to 'test'
  * - close 'test' and 'text'
- * - dup stdin & stdout handles
  * - make 'test' read-only
+ * - TODO: execute another instance of itself with options
+ *         that tell the second instance to do rest of testing
+ * - TODO: dup stdin & stdout handles
  * - open 'test' for reading
- * - force that to stdin
+ * - TODO: force that to stdin
  * . open printer for writing
- * - force stdout to printer
- * - read stdin and write it to stdout
- * - restore stdin & stdout
+ * - TODO: force stdout to printer
+ * - TODO: read stdin and write it to stdout
+ *   - for now, directly copy 'test' -> 'printer'
+ * - TODO: restore stdin & stdout
  * - close test & printer
+ * - truncate 'test' -> fail
+ * - make 'test' writable
+ * - truncate 'test'
  * As last step, output to MIDI 'success' that everything succeeded
- * (except first expected failure) or 'failure' if something failed.
+ * (except the expected failure) or 'failure' if something failed.
  * 
  * TOS tester will additionally verify that the pipeline worked fine
  * by comparing the input and output file contents:
  *   'text' --'test'--> printer
+ * And that 'text' is again empty after test.
  */
 #ifdef __PUREC__	/* or AHCC */
 # include <tos.h>
@@ -39,7 +43,9 @@
 # include <osbind.h>
 #endif
 #include <stdio.h>
+#include <stdbool.h>
 
+#define INPUT_FILE "text"
 #define OUTPUT_FILE "test"
 
 /* NOTE: write_midi() assumes messages are of same size! */
@@ -54,45 +60,108 @@ static long open_device(const char *path, int attr)
 {
 	long handle = Fopen(path, attr);
 	if (handle < 0) {
-		printf("ERROR: Fopen(%c: '%s', %d) -> %d\r\n", 'A'+Dgetdrv(), path, FO_WRITE, handle);
+		printf("ERROR: Fopen(%c: '%s', %d) -> %d\r\n", 'A'+Dgetdrv(), path, attr, handle);
 		msg = failure;
 	}
 	return handle;
 }
 
-/* device/file msg writing */
-static void write_device(const char *path)
+/* device/file closing with error handling */
+static void close_device(long handle)
 {
-	long handle = open_device(path, FO_WRITE);
-	if (handle >= 0) {
-		int bytes = Fwrite(handle, sizeof(success)-1, success);
-		if (bytes != sizeof(success)-1) {
-			printf("ERROR: Fwrite(%ld, %d, '%s') -> %d\r\n", handle, sizeof(success)-1, success, bytes);
-			msg = failure;
+	if (Fclose(handle) != 0) {
+		Cconws("ERROR: file close failed\r\n");
+		msg = failure;
+	}
+}
+
+static void print_ioerror(const char *op, int handle, int bufsize, char *buffer, long count)
+{
+	if (!count) {
+		return;
+	}
+	printf("ERROR: %s(%d, %d, %p) -> %d\r\n", op, handle, bufsize, buffer, count);
+	msg = failure;
+}
+
+/* writing INPUT_FILE content to given device/file */
+static void write_device(const char *from, const char *to)
+{
+	long handle1, handle2;
+	long count1, count2;
+	char buffer[64];
+
+	handle1 = open_device(from, FO_READ);
+	if (handle1 < 0) {
+		return;
+	}
+	handle2 = open_device(to, FO_WRITE);
+	if (handle2 < 0) {
+		return;
+	}
+	while (1) {
+		/* copy file contents */
+		count1 = Fread(handle1, sizeof(buffer), buffer);
+		if (count1 <= 0 || count1 > sizeof(buffer)) {
+			print_ioerror("Fread", handle1, sizeof(buffer), buffer, count1);
+			break;
 		}
-		Fwrite(handle, 1, "\n");
-		if (Fclose(handle) != 0) {
-			Cconws("ERROR: file close failed\r\n");
-			msg = failure;
+		count2 = Fwrite(handle2, count1, buffer);
+		if (count1 <= 0) {
+			print_ioerror("Fwrite", handle2, count1, buffer, count2);
+			break;
 		}
 	}
+	close_device(handle1);
+	close_device(handle2);
 }
 
 static void write_printer(void)
 {
-	Cconws("Printer...\r\n");
+	Cconws(OUTPUT_FILE " -> PRN:\r\n");
         if (Cprnos()) {
-		write_device("PRN:");
+		write_device(OUTPUT_FILE, "PRN:");
 	} else {
 		Cconws("ERROR: 'PRN:' not ready!\r\n");
 		msg = failure;
 	}
 }
 
-static void write_disk(void)
+static void set_mode(const char *path, int mode)
 {
-	Cconws("Disk...\r\n");
-	write_device(OUTPUT_FILE);
+	/* TODO: AHCC misses FA_SET (1) */
+	int result = Fattrib(path, 1, mode);
+	if (result != mode) {
+		printf("ERROR: Fattrib(%s, 1, %d) -> %d\r\n", path, mode, result);
+		msg = failure;
+	}
+}
+
+static void write_file(void)
+{
+	Cconws(INPUT_FILE " -> " OUTPUT_FILE "\r\n");
+	write_device(INPUT_FILE, OUTPUT_FILE);
+	set_mode(OUTPUT_FILE, FA_READONLY);
+}
+
+static void truncate_file(void)
+{
+	long handle;
+	Cconws("Truncate " OUTPUT_FILE "\r\n");
+	handle = Fcreate(OUTPUT_FILE, 0);
+	if (handle >= 0) {
+		printf("ERROR: truncate succeeded, Fcreate(" OUTPUT_FILE ", 0) -> %d\r\n", handle);
+		msg = failure;
+		close_device(handle);
+	}
+	set_mode(OUTPUT_FILE, 0);
+	handle = Fcreate(OUTPUT_FILE, 0);
+	if (handle >= 0) {
+		close_device(handle);
+	} else {
+		printf("ERROR: truncate failed, Fcreate(" OUTPUT_FILE ", 0) -> %d\r\n", handle);
+		msg = failure;
+	}
 }
 
 #if TEST_REDIRECTION /* TODO */
@@ -145,8 +214,9 @@ int main()
 	stdout_to_printer();
 	stdin_stdout_reset();
 #endif
-	write_disk();
+	write_file();
 	write_printer();
+	truncate_file();
 	write_midi();
 
 	wait_key();
