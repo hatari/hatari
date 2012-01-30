@@ -299,6 +299,7 @@ class Tester:
     defaults  = [sys.argv[0], "--configfile", dummycfg]
     testprg   = "disk" + os.path.sep + "GEMDOS.PRG"
     textinput = "disk" + os.path.sep + "text"
+    textoutput= "disk" + os.path.sep + "test"
     printout  = output + "printer-out"
     fifofile  = output + "midi-out"
     floppy    = "floppy.st.gz"
@@ -365,11 +366,10 @@ class Tester:
             try:
                 # read can block, make sure it's eventually interrupted
                 signal.alarm(timeout)
-                line = fifo.readline()
-                print line
+                line = fifo.readline().strip()
                 signal.alarm(0)
-                result = (line == "success")
-                return (True, result)
+                print line
+                return (True, (line == "success"))
             except IOError:
                 pass
         print "ERROR: TIMEOUT without fifo input, BOOT FAILED"
@@ -413,6 +413,7 @@ class Tester:
         prog_ok, test_ok = self.wait_fifo(fifo, tos.fullwait)
         if test_ok:
             print "TODO: verify '%s' output against '%s'" % (self.printout, self.textinput)
+            print "TODO: verify '%s' is empty (again)" % self.textoutput
         else:
             print "TODO: collect info on failure, regs etc"
         
@@ -509,11 +510,10 @@ class Tester:
                 for idx in range(len(results)):
                     cases[idx] += 1
                     passed[idx] += results[idx]
-                print cases, passed
         
-        report.write("\nSummar of FAIL/pass values:\n")
+        report.write("\nSummary of FAIL/pass values:\n")
         idx = 0
-        for line in ("Hatari init", "Test program running", "Its test-cases"):
+        for line in ("Hatari init", "Test program running", "Test program test-cases"):
             passes, all = passed[idx], cases[idx]
             if passes < all:
                 if not passes:

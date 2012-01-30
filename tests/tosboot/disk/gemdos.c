@@ -190,7 +190,7 @@ static void stdin_stdout_reset(void)
 static void write_midi(void)
 {
 	Cconws("Midi...\r\n");
-	Midiws(sizeof(success)-1, msg);
+	Midiws(sizeof(success)-2, msg);
 	Midiws(0, "\n");
 }
 
