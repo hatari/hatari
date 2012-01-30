@@ -47,7 +47,7 @@ blank-a.st.gz:
 # create 360KB (single side) test floppy that autoruns $(PRG).
 # requires:
 # - mformat & mcopy from mtools
-floppy.st.gz: $(PRG) $(DIR)/text $(DIR)/test floppy/*.INF
+floppy.st.gz: $(PRG) $(DIR)/text floppy/*.INF
 	dd if=/dev/zero of=floppy.st bs=1024 count=360
 	mformat -a -t 80 -h 1 -n 9 -i floppy.st ::
 	MTOOLS_NO_VFAT=1 mcopy -i floppy.st -spmv $(PRG) $(DIR)/text $(DIR)/test floppy/*.INF ::
@@ -57,7 +57,7 @@ floppy.st.gz: $(PRG) $(DIR)/text $(DIR)/test floppy/*.INF
 
 # optional 16MB HD image for EmuTOS/ACSI testing without HD drivers
 # converts floppy desktop infos for HD (A: -> C:)
-hd.img: $(PRG) $(DIR)/text $(DIR)/test floppy/*.INF
+hd.img: $(PRG) $(DIR)/text floppy/*.INF
 	mkdir tmp
 	cp -a $(PRG) $(DIR)/text $(DIR)/test tmp/
 	for i in floppy/*.INF; do sed 's/A:/C:/g' < $$i > tmp/$${i##*/}; done
