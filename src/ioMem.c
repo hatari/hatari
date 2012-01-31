@@ -264,7 +264,7 @@ uae_u32 IoMem_bget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000)
+	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, BUS_ERROR_READ);
@@ -304,7 +304,7 @@ uae_u32 IoMem_wget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000)
+	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, BUS_ERROR_READ);
@@ -356,7 +356,7 @@ uae_u32 IoMem_lget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000)
+	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, BUS_ERROR_READ);
