@@ -228,7 +228,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8920, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_DmaTrckCtrl_WriteByte },       /* Crossbar track control */
 	{ 0xff8921, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_SoundModeCtrl_WriteByte },     /* DMA sound mode control */
 	{ 0xff8922, SIZE_WORD, IoMem_VoidRead_00, IoMem_VoidWrite },                                  /* Microwire data - n/a on Falcon */
-	{ 0xff8924, SIZE_WORD, IoMem_VoidRead_00, IoMem_VoidWrite },                                  /* Microwire mask - n/a on Falcon */
+	{ 0xff8924, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },       /* Microwire mask - n/a on Falcon */
 
 	{ 0xff8930, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_SrcControler_WriteWord },   /* Crossbar source controler */
 	{ 0xff8932, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_DstControler_WriteWord },   /* Crossbar destination controler */
