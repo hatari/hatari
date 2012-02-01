@@ -17,7 +17,10 @@ floppy.st.gz  -- floppy image with the test program / files
 hd.img        -- HD image with the the test program / files
                  and DOS partition table
 
+Other files and directories:
 readme.txt -- this text file
+tos/*      -- TOSDIR in Makefile points here for your TOS images
+
 
 
 Usage
@@ -26,6 +29,9 @@ Usage
 If you want to test Hatari version that isn't in your PATH,
 you need to give PATH for the Hatari binary you want to test,
 like this:
+	PATH=../../build/src:$PATH make
+
+Or when calling TOS tester and specifying TOS images directly:
 	PATH=../../build/src:$PATH ./tos_tester.py <TOS images>
 
 To view the produced screenshots, either use ImageMagick:
@@ -87,27 +93,29 @@ Testing should be done both for old UAE CPU core and the new WinUAE
 one.  This should give good enough coverage of all the possible bootup
 issues.
 
+Note that it's enought to give the whole set of HW configurations to
+TOS tester, it will automatically select a suitable subset of HW
+combinations to test, for each given TOS versions.
+
 
 TODO
 ----
 
 Do more testing and add some usage examples.
 
-Atari testing app should also copy file contents (with redirection)
-and TOS tester script should check that copied file contents match
-original.
-
-More GEMDOS tests to testing app?
+Testing program for GEMDOS HD emulation should test also file
+redirection.
 
 --
 
 Add testing of ASCI and IDE drives in addition to the GEMDOS HD and
 floppy tests.
 
-This isn't very straightforward because both needed different drivers
-and images and some have issues with different TOS versions and
-formatting requires using interactive Atari programs, so they cannot
-be automatically re-generated.
+This isn't very straightforward because both need different drivers
+and therefore different disk images and the drivers either have issues
+with e.g. EmuTOS, or don't support all machines.  Formatting and
+installing the drivers requires using interactive Atari programs,
+so these images cannot be automatically (re-)generated.
 
 EmuTOS supports directly HDs with DOS (not Atari) partition table,
 but only for ASCI.  Maybe that could be tested first, possibly with
