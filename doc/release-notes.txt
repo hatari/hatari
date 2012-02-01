@@ -16,6 +16,7 @@ Emulation:
 - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
   to TOS instead of trying to handle them as normal files
 - Changes in the prefetch code for some instructions
+- Changed behavior of the Microwire registers in Falcon mode
 
 Emulator:
 - Support run-time changing of CPU level and machine type from
@@ -34,6 +35,7 @@ Other changes:
 Fixed Games :
   Hammerfist (fire button),
   Automation 168 - Operation Clean Streets (prefetch in the CPU emulation)
+  Impossible Mission II (some versions had the same prefetch issue in the CPU)
 
 Fixed demos :
   Built-in Obsolescence (DSP stack overflow)
