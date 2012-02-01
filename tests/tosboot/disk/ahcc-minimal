@@ -1,0 +1,12 @@
+# hconsole input file to build disk/minimal.prg with AHCC
+# (see ahcc-gemdos file for more info on commands below)
+setopt --fast-forward yes --fastfdc on --bios-intercept
+sleep 1
+keydown 29
+keypress Z
+keyup 29
+text ahcc_p.ttp minimal.prj
+keypress 28
+sleep 3
+kill
+quit

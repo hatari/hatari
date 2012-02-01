@@ -1,7 +1,8 @@
-; trivial GEMDOS program to signify that boot succceeded
+; GEMDOS test program to signify that boot succceeded
 .C [-iinclude]
 gemdos.prg
 =
 ahcstart.o
-gemdos.c
+common.c (common.h)
+gemdos.c (common.h)
 ahccstdi.lib
