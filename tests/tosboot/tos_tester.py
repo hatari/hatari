@@ -321,11 +321,12 @@ class Tester:
     dummycfg  = "dummy.cfg"
     defaults  = [sys.argv[0], "--configfile", dummycfg]
     testprg   = "disk" + os.path.sep + "GEMDOS.PRG"
-    textinput = "disk" + os.path.sep + "text"
-    textoutput= "disk" + os.path.sep + "test"
+    textinput = "disk" + os.path.sep + "TEXT"
+    textoutput= "disk" + os.path.sep + "TEST"
     printout  = output + "printer-out"
     fifofile  = output + "midi-out"
-    floppy    = "floppy.st.gz"
+    bootauto  = "bootauto.st.gz" # TOS old not to support GEMDOS HD either
+    bootdesk  = "bootdesk.st.gz"
     hdimage   = "hd.img"
     ideimage  = "ide.img"
     
@@ -469,7 +470,10 @@ class Tester:
             # use Hatari autostart, must be last thing added to testargs!
             testargs += [self.testprg]
         elif disk == "floppy":
-            testargs += ["--disk-a", self.floppy]
+            if tos.supports_gemdos():
+                testargs += ["--disk-a", self.bootdesk]
+            else:
+                testargs += ["--disk-a", self.bootauto]
         elif disk == "acsi":
             testargs += ["--acsi", self.hdimage]
         elif disk == "ide":
