@@ -291,6 +291,29 @@ you also need to specify hconsole.py location with:
 
 
 # -----------------------------------------------
+def verify_match(srcfile, dstfile):
+    if not os.path.exists(dstfile):
+        print "ERROR: file '%s' missing -> test FAILED" % dstfile
+        return False
+    i = 0
+    f2 = open(srcfile)
+    for line in open(dstfile).readlines():
+        i += 1
+        if line != f2.readline():
+            print "ERROR: file '%s' line %d doesn't match file '%s' -> test FAILED" % (srcfile, dstfile)
+            return False
+    return True
+
+def verify_empty(srcfile):
+    if not os.path.exists(srcfile):
+        print "ERROR: file '%s' missing -> test FAILED" % srcfile
+        return False
+    lines = len(open(srcfile).readlines())
+    if lines > 0:
+        print "ERROR: file '%s' isn't empty -> test FAILED" % srcfile
+        return False
+    return True
+
 class Tester:
     output = "output" + os.path.sep
     report = output + "report.txt"
@@ -400,7 +423,7 @@ class Tester:
             print "ERROR: failed to get fifo to Hatari!"
             self.get_screenshot(instance, identity)
             instance.run("kill")
-            return (False, False, False)
+            return (False, False, False, False)
         else:
             init_ok = True
 
@@ -410,17 +433,17 @@ class Tester:
             instance.run("keypress %s" % hconsole.Scancode.Space)
         
         # wait until test program has been run and output something to fifo
-        prog_ok, test_ok = self.wait_fifo(fifo, tos.fullwait)
-        if test_ok:
-            print "TODO: verify '%s' output against '%s'" % (self.printout, self.textinput)
-            print "TODO: verify '%s' is empty (again)" % self.textoutput
+        prog_ok, tests_ok = self.wait_fifo(fifo, tos.fullwait)
+        if tests_ok:
+            output_ok = verify_empty(self.textoutput) and verify_match(self.textinput, self.printout)
         else:
             print "TODO: collect info on failure, regs etc"
+            output_ok = False
         
         # get screenshot and get rid of this Hatari instance
         self.get_screenshot(instance, identity)
         instance.run("kill")
-        return (init_ok, prog_ok, test_ok)
+        return (init_ok, prog_ok, tests_ok, output_ok)
 
     
     def prepare_test(self, tos, machine, monitor, disk, memory, extra):
@@ -492,12 +515,15 @@ class Tester:
     
     def summary(self):
         "summarize test results"
-        cases = [0, 0, 0]
-        passed = [0, 0, 0]
+        cases = [0, 0, 0, 0]
+        passed = [0, 0, 0, 0]
+        tosnames = self.results.keys()
+        tosnames.sort()
         
         report = open(self.report, "w")
         report.write("\nTest report:\n------------\n")
-        for tos, configs in self.results.items():
+        for tos in tosnames:
+            configs = self.results[tos]
             if not configs:
                 report.write("\n+ WARNING: no configurations for '%s' TOS!\n" % tos)
                 continue
@@ -513,7 +539,7 @@ class Tester:
         
         report.write("\nSummary of FAIL/pass values:\n")
         idx = 0
-        for line in ("Hatari init", "Test program running", "Test program test-cases"):
+        for line in ("Hatari init", "Test program running", "Test program test-cases", "Test program output"):
             passes, all = passed[idx], cases[idx]
             if passes < all:
                 if not passes:
