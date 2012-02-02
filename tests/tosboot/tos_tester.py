@@ -92,21 +92,27 @@ class TOS:
         if self.etos:
             # EmuTOS 512k, 256k and 192k versions have different machine support
             if version > 0x200:
-                info = (2, 8, ("st", "ste", "tt", "falcon"))
+                # startup screen on falcon 14MB is really slow
+                info = (5, 10, ("st", "ste", "tt", "falcon"))
             elif version > 0x160:
                 info = (2, 8, ("st", "ste", "tt"))
             else:
                 info = (0, 5, ("st",))
+        elif version <= 0x100:
+            # boots up really slow with 4MB
+            info = (0, 16, ("st",))
         elif version <= 0x104:
-            info = (0, 5, ("st",))
+            info = (0, 6, ("st",))
         elif version < 0x200:
-            info = (0, 5, ("ste",))
+            info = (0, 6, ("ste",))
         elif version < 0x300:
-            info = (0, 5, ("st", "ste", "tt"))
+            info = (0, 6, ("st", "ste", "tt"))
         elif version < 0x400:
-            info = (0, 8, ("tt",))
+            # memcheck comes up fast, but boot takes time
+            info = (2, 8, ("tt",))
         elif version < 0x500:
-            info = (2, 8, ("falcon",))
+            # memcheck takes long to come up with 14MB
+            info = (3, 8, ("falcon",))
         else:
             raise AssertionError("'%s' TOS version 0x%x isn't valid" % (name, version))
         
