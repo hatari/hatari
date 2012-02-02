@@ -85,7 +85,7 @@ static Uint32 LedColorOn, LedColorOff, RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
 
-#define MAX_MESSAGE_LEN 33
+#define MAX_MESSAGE_LEN 35
 typedef struct msg_item {
 	struct msg_item *next;
 	char msg[MAX_MESSAGE_LEN+1];
@@ -419,7 +419,7 @@ void Statusbar_UpdateInfo(void)
 		end = Statusbar_AddString(end, "STE");
 		break;
 	case MACHINE_MEGA_STE:
-		end = Statusbar_AddString(end, "Mega STE");
+		end = Statusbar_AddString(end, "MegaSTE");
 		break;
 	case MACHINE_TT:
 		end = Statusbar_AddString(end, "TT");
