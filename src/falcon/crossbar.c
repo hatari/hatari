@@ -415,6 +415,44 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 /*----------------------------------------------------------------------*/
 
 /**
+ * Write byte to Microwire Mask register(0xff8924).
+ * Note: On Falcon, the Microwire is not present.
+ *       But for compatibility with the STe, Atari implemented the Microwire
+ *       as follow (when one writes at the following address): 
+ *       $ff8922: always reads 0 for any value written at this address
+ *       $ff8924: NOT the value, then 8 cycles later, NOT the value again to its initial value.
+ */
+void Crossbar_Microwire_WriteWord(void)
+{
+	Uint16 microwire = IoMem_ReadWord(0xff8924);
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8924 (MicroWire Mask) write: 0x%04x\n", microwire);
+
+	/* NOT the value and store it */
+	microwire = ~microwire;
+	IoMem_WriteWord(0xff8924, microwire);
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8924 (MicroWire Mask) NOT value: 0x%04x\n", microwire);
+
+	/* Start a new Microwire interrupt */
+	CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_MICROWIRE);
+}
+
+/**
+ * Crossbar Microwire mask interrupt.
+ */
+void Crossbar_InterruptHandler_Microwire(void)
+{
+	Uint16 microwire = IoMem_ReadWord(0xff8924);
+
+	/* Remove this interrupt from list and re-order */
+	CycInt_AcknowledgeInterrupt();
+
+	/* NOT the value again to it's original value and store it */
+	microwire = ~microwire;
+	IoMem_WriteWord(0xff8924, microwire);
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8924 (MicroWire Mask) NOT value to original: 0x%04x\n", microwire);
+}
+
+/**
  * Write byte to buffer interrupts (0xff8900).
  */
 void Crossbar_BufferInter_WriteByte(void)

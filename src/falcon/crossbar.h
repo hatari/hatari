@@ -64,10 +64,12 @@ extern void Crossbar_AdcInput_WriteByte(void);
 extern void Crossbar_InputAmp_WriteByte(void);
 extern void Crossbar_OutputReduct_WriteByte(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
+extern void Crossbar_Microwire_WriteWord(void);
 
 /* Called by cycint.c */
 extern void Crossbar_InterruptHandler_25Mhz(void);
 extern void Crossbar_InterruptHandler_32Mhz(void);
+extern void Crossbar_InterruptHandler_Microwire(void);
 
 /* Called by dsp.c */
 void Crossbar_DmaPlayInHandShakeMode(void);
