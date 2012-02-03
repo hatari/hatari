@@ -131,7 +131,7 @@ const char PSG_fileid[] = "Hatari psg.c : " __DATE__ " " __TIME__;
 
 Uint8 PSGRegisterSelect;        /* Write to 0xff8800 sets the register number used in read/write accesses */
 Uint8 PSGRegisterReadData;	/* Value returned when reading from 0xff8800 */
-Uint8 PSGRegisters[16];         /* Registers in PSG, see PSG_REG_xxxx */
+Uint8 PSGRegisters[NUM_PSG_REGISTERS]; /* Registers in PSG, see PSG_REG_xxxx */
 
 static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
 
@@ -147,7 +147,8 @@ void PSG_Reset(void)
 	PSGRegisterSelect = 0;
 	PSGRegisterReadData = 0;
 	memset(PSGRegisters, 0, sizeof(PSGRegisters));
-        for ( i=0 ; i<14 ; i++ )		/* Update sound's emulation registers */
+	/* Update sound's emulation registers */
+        for ( i=0 ; i < NUM_PSG_SOUND_REGISTERS; i++ )
 		Sound_WriteReg ( i , 0 );
 
 	LastStrobe=0;
@@ -204,32 +205,32 @@ void PSG_Set_SelectRegister(Uint8 val)
 Uint8 PSG_Get_DataRegister(void)
 {
 	/* Is a valid PSG register currently selected ? */
-	if ( PSGRegisterSelect >= 16 )
+	if ( PSGRegisterSelect >= NUM_PSG_REGISTERS )
 		return 0xff;				/* not valid, return 0xff */
 
-	if (PSGRegisterSelect == 14)
+	if (PSGRegisterSelect == PSG_REG_IO_PORTA)
 	{
 		/* Second parallel port joystick uses centronics strobe bit as fire button: */
 		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT2].nJoystickMode != JOYSTICK_DISABLED)
 		{
 			if (Joy_GetStickData(JOYID_PARPORT2) & 0x80)
-				PSGRegisters[14] &= ~32;
+				PSGRegisters[PSG_REG_IO_PORTA] &= ~32;
 			else
-				PSGRegisters[14] |= 32;
+				PSGRegisters[PSG_REG_IO_PORTA] |= 32;
 		}
 	}
-	else if (PSGRegisterSelect == 15)
+	else if (PSGRegisterSelect == PSG_REG_IO_PORTB)
 	{
 		/* PSG register 15 is parallel port data register - used by parallel port joysticks: */
 		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
 		{
-			PSGRegisters[15] &= 0x0f;
-			PSGRegisters[15] |= ~Joy_GetStickData(JOYID_PARPORT1) << 4;
+			PSGRegisters[PSG_REG_IO_PORTB] &= 0x0f;
+			PSGRegisters[PSG_REG_IO_PORTB] |= ~Joy_GetStickData(JOYID_PARPORT1) << 4;
 		}
 		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT2].nJoystickMode != JOYSTICK_DISABLED)
 		{
-			PSGRegisters[15] &= 0xf0;
-			PSGRegisters[15] |= ~Joy_GetStickData(JOYID_PARPORT2) & 0x0f;
+			PSGRegisters[PSG_REG_IO_PORTB] &= 0xf0;
+			PSGRegisters[PSG_REG_IO_PORTB] |= ~Joy_GetStickData(JOYID_PARPORT2) & 0x0f;
 		}
 	}
 
@@ -254,7 +255,7 @@ void PSG_Set_DataRegister(Uint8 val)
 	}
 
 	/* Is a valid PSG register currently selected ? */
-	if ( PSGRegisterSelect >= 16 )
+	if ( PSGRegisterSelect >= NUM_PSG_REGISTERS )
 		return;					/* not valid, ignore write and do nothing */
 
 	/* Create samples up until this point with current values */
