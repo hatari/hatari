@@ -25,12 +25,13 @@ enum
   PSG_REG_ENV_COARSE,         /* 0x1100 */
   PSG_REG_ENV_SHAPE,          /* 0x1101 */
   PSG_REG_IO_PORTA,           /* 0x1110 */
-  PSG_REG_IO_PORTB            /* 0x1111 */
+  PSG_REG_IO_PORTB,           /* 0x1111 */
+  NUM_PSG_REGISTERS
 };
 
 #define NUM_PSG_SOUND_REGISTERS    14   /* Number of register, not including IO ports */
 
-extern Uint8 PSGRegisters[16];
+extern Uint8 PSGRegisters[NUM_PSG_REGISTERS];
 
 extern void PSG_Reset(void);
 extern void PSG_MemorySnapShot_Capture(bool bSave);
