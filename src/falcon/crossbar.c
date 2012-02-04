@@ -433,11 +433,11 @@ void Crossbar_Microwire_WriteWord(void)
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8924 (MicroWire Mask) NOT value: 0x%04x\n", microwire);
 
 	/* Start a new Microwire interrupt */
-	CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_CROSSBAR_MICROWIRE);
+	CycInt_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 }
 
 /**
- * Crossbar Microwire mask interrupt.
+ * Crossbar Microwire mask interrupt, called from dmaSnd.c
  */
 void Crossbar_InterruptHandler_Microwire(void)
 {

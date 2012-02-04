@@ -106,6 +106,7 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 #include "sound.h"
 #include "stMemory.h"
+#include "crossbar.h"
 
 #define TONE_STEPS 13
 
@@ -875,6 +876,12 @@ void DmaSnd_InterruptHandler_Microwire(void)
 {
 	Uint8 i, bit;
 	Uint16 saveData;
+
+	/* If emulated computer is the Falcon, let's the crossbar Microwire code do the job. */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		Crossbar_InterruptHandler_Microwire();
+		return;
+	}
 	
 	/* How many cycle was this sound interrupt delayed (>= 0) */
 	microwire.pendingCyclesOver += -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
