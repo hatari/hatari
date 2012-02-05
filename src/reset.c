@@ -30,6 +30,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "video.h"
 #include "falcon/videl.h"
+#include "falcon/dsp.h"
 #include "debugcpu.h"
 #include "debugdsp.h"
 
@@ -64,8 +65,10 @@ static int Reset_ST(bool bCold)
 	}
 	Floppy_Reset();			/* Reset Floppy */
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		DSP_Reset();                  /* Reset the DSP */
 		Crossbar_Reset(bCold);        /* Reset Crossbar sound */
+	}
 	else
 		DmaSnd_Reset(bCold);          /* Reset DMA sound */
 
