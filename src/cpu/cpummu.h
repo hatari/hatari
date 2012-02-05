@@ -40,20 +40,40 @@
 #define bug
 #endif
 
-/*struct m68k_exception {
+#if 0
+struct m68k_exception {
 	int prb;
 	m68k_exception (int exc) : prb (exc) {}
 	operator int() { return prb; }
-};*/
-typedef int m68k_exception;
-
+};
 #define SAVE_EXCEPTION
 #define RESTORE_EXCEPTION
-//#define TRY(var) try
-//#define CATCH(var) catch(m68k_exception var)
-#define CATCH(var) if (except != 0)
-//#define THROW(n) except=n
-//#define THROW_AGAIN(var) except=var
+#define TRY(var) try
+#define CATCH(var) catch(m68k_exception var)
+#define THROW(n) throw m68k_exception(n)
+#define THROW_AGAIN(var) throw
+
+#else
+/* we are in plain C, just use a stack of long jumps */
+#include <setjmp.h>
+extern jmp_buf __exbuf;
+extern int     __exvalue;
+#define TRY(DUMMY)       __exvalue=setjmp(__exbuf);       \
+                  if (__exvalue==0) { __pushtry(&__exbuf);
+#define CATCH(x)  __poptry(); } else { fprintf(stderr,"Gotcha! %d %s in %d\n",__exvalue,__FILE__,__LINE__);
+#define ENDTRY    __poptry();}
+#define THROW(x) if (__is_catched()) {fprintf(stderr,"Longjumping %s in %d\n",__FILE__,__LINE__);longjmp(__exbuf,x);}
+#define THROW_AGAIN(var) if (__is_catched()) longjmp(*__poptry(),__exvalue)
+#define SAVE_EXCEPTION
+#define RESTORE_EXCEPTION
+jmp_buf* __poptry(void);
+void __pushtry(jmp_buf *j);
+int __is_catched(void);
+
+typedef  int m68k_exception;
+
+#endif
+
 #define VOLATILE
 #define ALWAYS_INLINE __inline
 
@@ -61,7 +81,7 @@ static __inline void flush_internals (void) { }
 
 //typedef uae_u8 flagtype;
 
-static m68k_exception except;
+//static m68k_exception except;
 
 struct xttrx {
     uae_u32 log_addr_base : 8;

@@ -1513,7 +1513,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		mmu_set_super (1);
 	}
 	if (nr == 2) {
-//		write_log ("%08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
+		write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
 //		if (currpc == 0x0013b5e2)
 //			activate_debugger ();
 		// bus error
@@ -2590,7 +2590,8 @@ static void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr ex
 	}
 
 	if (!reg) {
-		op_illg (opcode);
+		write_log ("Bad PMOVE at %08x\n",m68k_getpc());
+ 		op_illg (opcode);
 		return;
 	}
 #if MMUOP_DEBUG > 0
@@ -3316,13 +3317,11 @@ static void opcodedebug (uae_u32 pc, uae_u16 opcode)
 	for (lookup = lookuptab;lookup->mnemo != dp->mnemo; lookup++)
 		;
 	fault = 0;
-//	TRY(prb) {
-	except = 0;
-	addr = mmu_translate (pc, (regs.mmu_ssw & 4) ? 1 : 0, 0, 0);
-//	} CATCH (prb) {
-	if (except != 0) {
+	TRY(prb) {
+		addr = mmu_translate (pc, (regs.mmu_ssw & 4) ? 1 : 0, 0, 0);
+	} CATCH (prb) {
 		fault = 1;
-	}
+	} ENDTRY
 	if (!fault) {
 		write_log ("mmufixup=%d %04x %04x\n", mmufixup[0].reg, regs.wb3_status, regs.mmu_ssw);
 		m68k_disasm_2 (stdout, addr, NULL, 1, NULL, NULL, 0);
@@ -3332,16 +3331,17 @@ static void opcodedebug (uae_u32 pc, uae_u16 opcode)
 }
 #endif
 
+static oldpc;
 /* Aranym MMU 68040  */
 static void m68k_run_mmu040 (void)
 {
-	uae_u32 opcode;
-	uaecptr pc;
+	uae_u32 opcode = 0;
+	uaecptr pc = 0;
+	uaecptr fault = 0;
 	m68k_exception save_except;
 	
-retry:
-//	TRY (prb) {
-		except = 0;
+	for (;;) {
+	TRY (prb) {
 		for (;;) {
 			if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
 			{
@@ -3351,7 +3351,7 @@ retry:
 				m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 			}
 
-			pc = regs.fault_pc = m68k_getpc ();
+			 pc = oldpc = regs.fault_pc = m68k_getpc ();
 #if 0
 			static int done;
 			if (pc == 0x16AF94) {
@@ -3413,11 +3413,9 @@ retry:
 			if (bDspEnabled) {
 				DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);
 			}
-		}
-	
-//	} CATCH (prb) {
-	if (except != 0) {
-		save_except = except;
+		} /* End of for;; */
+	} CATCH (prb) {
+		save_except = __exvalue;
 		if (currprefs.mmu_model == 68060) {
 			regs.fault_pc = pc;
 			if (mmufixup[1].reg >= 0) {
@@ -3429,7 +3427,7 @@ retry:
 				// movem to memory?
 				if ((opcode & 0xff80) == 0x4880) {
 					regs.mmu_ssw |= MMU_SSW_CM;
-					//write_log ("MMU_SSW_CM\n");
+					write_log ("MMU_SSW_CM\n");
 				}
 			}
 		}
@@ -3440,23 +3438,10 @@ retry:
 			m68k_areg (regs, mmufixup[0].reg) = mmufixup[0].value;
 			mmufixup[0].reg = -1;
 		}
-		//activate_debugger ();
-//		TRY (prb2) {
-			except = 0;
-			Exception (save_except, regs.fault_pc, true);
-//		} CATCH (prb2) {
-		if (except != 0) {
-			write_log ("MMU: double bus error, rebooting..\n");
-			regs.tcr = 0;
-			m68k_reset (0);
-			m68k_setpc (0xf80002);
-			mmu_reset ();
-			uae_reset (1);
-			return;
-		}
-		goto retry;
-	}
 
+		Exception_mmu (save_except, oldpc);
+	} ENDTRY
+	} /* end for ;; */
 }
 
 /* "cycle exact" 68020/030  */
