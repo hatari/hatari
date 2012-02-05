@@ -131,7 +131,7 @@ const char PSG_fileid[] = "Hatari psg.c : " __DATE__ " " __TIME__;
 
 Uint8 PSGRegisterSelect;        /* Write to 0xff8800 sets the register number used in read/write accesses */
 Uint8 PSGRegisterReadData;	/* Value returned when reading from 0xff8800 */
-Uint8 PSGRegisters[NUM_PSG_REGISTERS]; /* Registers in PSG, see PSG_REG_xxxx */
+Uint8 PSGRegisters[MAX_PSG_REGISTERS]; /* Registers in PSG, see PSG_REG_xxxx */
 
 static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
 
@@ -205,7 +205,7 @@ void PSG_Set_SelectRegister(Uint8 val)
 Uint8 PSG_Get_DataRegister(void)
 {
 	/* Is a valid PSG register currently selected ? */
-	if ( PSGRegisterSelect >= NUM_PSG_REGISTERS )
+	if ( PSGRegisterSelect >= MAX_PSG_REGISTERS )
 		return 0xff;				/* not valid, return 0xff */
 
 	if (PSGRegisterSelect == PSG_REG_IO_PORTA)
@@ -255,7 +255,7 @@ void PSG_Set_DataRegister(Uint8 val)
 	}
 
 	/* Is a valid PSG register currently selected ? */
-	if ( PSGRegisterSelect >= NUM_PSG_REGISTERS )
+	if ( PSGRegisterSelect >= MAX_PSG_REGISTERS )
 		return;					/* not valid, ignore write and do nothing */
 
 	/* Create samples up until this point with current values */
