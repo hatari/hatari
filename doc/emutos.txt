@@ -395,11 +395,12 @@ Demos:
 - E605 (by Light)
 - Ecstacy A (by ICE), breaks at the end
 - French Kiss (by DHS)
-- Illusion (by Next)
 - Gobi Toons (by Dune)
 - Grimey (by Reservoir Gods)
 - High Fidelity Dreams (by Aura)
 - HighResMode (by Paradox)
+- Illusion (by Next)
+- Jam-Cols (by ICE, some color/offset issues)
 - Kick my assembler (by Orion), start doesn't look right
 - Madness (by Cream)
 - Mathematica (by Aura)
@@ -432,28 +433,30 @@ Color games:
 - ChuChu Rocket* (full version)
 - Dynaplus*
 - Frantick
+- Micromachines preview (by .tscc)
 - No Limit II (shareware pinball)
 - Obsession* (demo of commercial pinball)
 - Operation Garfield
 - Pacman on E
-- Power Up
+- Power Up (no blitter in use)
 - Skulls (shareware "minesweeper")
 - Spy 4k
 - Stardust* (tunnel sequence demo)
 - STEtris
 - STrEet Fighter II (incomplete)
-- Stupid balloon game
+- Stupid balloon game (with what version?)
 - Substation* (demo)
 - Tomtar
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
+- Zero-5 (demo, ship cockpit flickers a lot)
 
-STE (enhanced) music applications:
+STE (enhanced) color applications:
 - Blipp Blopper
-- Desktracker
+- DeskTracker MT
 - Hextracker
 - MaxYMizer
-- Octalyzer
+- Octalyzer (with what version?)
 - Paula
 - Sirius Player
 
@@ -463,20 +466,25 @@ work also with EmuTOS too (not just STe ones).
 Protracker STE complains about missing DMA.
 
 
-"Almost" working color STE games
---------------------------------
+"Almost" working color STE programs
+-----------------------------------
 
-There are some STE (enhanced) games that would appear otherwise to
+There are some STE (enhanced) programs that would appear otherwise to
 work perfectly, but some part of the graphics just don't show.  They
 are listed in case someone, someday, starts to fix the EmuTOS line-A
 things (mainly bitblt).
 
+- Alien Thing preview (all moving sprites are missing)
+- Art for Kids (cursor doesn't show; after use, memory corruption+panic)
 - Atari Scene Card Battle (card images don't show)
+- AttackWave (all graphics don't show)
 - Blat (main graphics don't show)
 - Breakdance (another scene game, game freezes when playing)
-- Mr Boomer (all graphics don't show)
+- Mr Boomer (all graphics don't show and no music)
 - Kolmik (tiles don't show)
 - Pooz (all graphics don't show)
+- R0x (moving sprites don't show)
+- Roger (no graphics except bg show)
 
 
 Working TT specific demos
