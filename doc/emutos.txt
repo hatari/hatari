@@ -48,6 +48,7 @@ Note for EmuTOS before 0.8.6 :
   tests (that Hatari doesn't support yet) when EmuTOS try to determine
   the available RAM size.
 
+
 What is EmuTOS
 ==============
 
@@ -176,21 +177,34 @@ There are so many freely available color games and demos that from
 those only the ones found working with EmuTOS are listed. Often the
 non-working ones "Panic" EmuTOS.
 
+Note: Several of the demos below (on floppy images) need EmuTOS
+2012-02-08 CVS snapshot or newer.
+
+
 Demos:
 - 2011 (by Positivity & Sector One, 4kB intro)
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
 - Anomaly (by MMJ-Prod)
 - Breath (by Mystic Bytes)
+- Calimer-o (by Oxygene)
 - Coast II Coast (by Sector One, 4kB intro)
+- Cuddly Demos (by CareBears)
 - Darktrip (by Legend, doesn't work with >2MB of RAM)
 - Dark Side of the Spoon (by ULM)
 - Death of the Clock Cycles (by Aggression)
 - Dimensio (by Condemned)
+- Eat my bollocks (by Equinox)
+- Fantasia (by Dune)
 - Flashback (by Carebears)
+- Flipo (by Oxygene)
 - Frenchies (by Frenchies, 96KB intro)
 - Grafik -und Sounddemo (by Eckhard Kruse, font issues)
 - Hallucinations (by Reservoir Gods)
+- Illusion (by Dune)
+- No Cooper (by 1984)
+- Odd Stuff (by Dune)
+- Ooh Crikey (by Lost Boys)
 - Outline 2008 invite (by DHS)
 - Outline 2010 invite (by Checkpoint)
 - Overdose (by Aggression)
@@ -198,19 +212,26 @@ Demos:
 - Paradise (by Dune Design)
 - Phaleon Gigademo
 - Posh (by Checkpoint)
+- Punish your machine (by Delta Force)
 - Rebirth (by MMJ production)
 - Save The Earth (by Defence Force)
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - Sommarhack 2011 (invite by DHS)
 - Soundtracker (by Equinox)
+- SoWatt (by CareBears, main menu is garbage, but subdemos mostly work)
+- ST NICCC (by Oxygene)
 - ST soccer (intro by Exceptions)
 - Stone tower (by FUN)
 - Superstar! (intro by Positivity/Dma-Sc/Ukko)
 - Sweety (by DHS)
-- Twelve (by Paulo Simoes)
+- Syntax Terror (by Delta Force)
+- Transbeauce II (by BushWacKers)
 - Tut! (by Wildfire)
+- Twelve (by Paulo Simoes)
 - Two in One (by DHS)
+- Virtual (by Equinox)
 - Visualize (by Checkpoint)
+- Vodka demo (by Equinox)
 - YmRockerz musicdisks from "Wave upon Wave" to "Seven"
 - Xmas2000 (by Paranoid)
 
@@ -373,10 +394,16 @@ There are not that many freely available or even commercial programs
 that would be STE specific (or even STE enhanced):
     http://atari-ste.anvil-soft.com/html/archivapps.htm
 
+But following STE specific demos, games and apps work (mostly) fine
+with EmuTOS.
+
+Note: If you use 60Hz EmuTOS version (etos256us.img and etos512k.img),
+you may get screen flicker and music playback issues with demos and
+games.
+
 Missing DMA and Blitter support in EmuTOS (XBios functions etc) is
 an additional reason why some programs/demos (such as Blittermania)
-don't work with it. But following STE specific demos, games and apps
-work (mostly) fine with EmuTOS.
+don't work with it.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
@@ -411,7 +438,7 @@ Demos:
 - MovieSTE (by Tony Barker)
 - New Year -94 Intro (by Extream)
 - No Monkey (by Tomchi), some extra pixels in first text scroller
-- Pacemaker (by Paradox), stops at end-part
+- Pacemaker (by Paradox), end part works only from floppy image
 - Paracon 6 & 7 remindtros (by Paradox)
 - Power Rise (by Light)
 - Reanimation (by Syntax)
@@ -420,7 +447,7 @@ Demos:
 - Sommarhack (by DHS)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
-- Summer Delights (by DHS), sound missing
+- Summer Delights (by DHS)
 - Sventure intro (by Paradox)
 - Vision (by POV)
 - XiTEC Presentation (by Omega)
@@ -444,26 +471,28 @@ Color games:
 - Stardust* (tunnel sequence demo)
 - STEtris
 - STrEet Fighter II (incomplete)
-- Stupid balloon game (with what version?)
+- Stupid balloon game (joysticks swapped?)
 - Substation* (demo)
+- The chronicles of Omega
 - Tomtar
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
-- Zero-5 (demo, ship cockpit flickers a lot)
+- Zero-5 (demo)
 
 STE (enhanced) color applications:
 - Blipp Blopper
 - DeskTracker MT
 - Hextracker
 - MaxYMizer
-- Octalyzer (with what version?)
+- Octalyzer
 - Paula
+- Protracker STE
 - Sirius Player
 
 Most of the non-GEM ST tracker & chip music composer programs
 work also with EmuTOS too (not just STe ones).
 
-Protracker STE complains about missing DMA.
+Checksum/Equinox version of Protracker 2 STE crashes though.
 
 
 "Almost" working color STE programs
@@ -474,17 +503,20 @@ work perfectly, but some part of the graphics just don't show.  They
 are listed in case someone, someday, starts to fix the EmuTOS line-A
 things (mainly bitblt).
 
-- Alien Thing preview (all moving sprites are missing)
-- Art for Kids (cursor doesn't show; after use, memory corruption+panic)
-- Atari Scene Card Battle (card images don't show)
-- AttackWave (all graphics don't show)
-- Blat (main graphics don't show)
+- Alien Thing preview (no-line A functions, but all sprites are missing)
+- Art for Kids (line-A sprite enable function -> cursor doesn't show;
+  rectangle drawing -> screen corruption + panic)
+- Atari Scene Card Battle (card images missing due to line-A bitblit)
+- AttackWave (most graphics missing due to line-A bitblit)
+- Blat (main graphics missing due to line-A bitblit)
 - Breakdance (another scene game, game freezes when playing)
-- Mr Boomer (all graphics don't show and no music)
-- Kolmik (tiles don't show)
-- Pooz (all graphics don't show)
-- R0x (moving sprites don't show)
-- Roger (no graphics except bg show)
+- Cameleon (all graphics missing due to line-A bitblit) 
+- Mr Boomer (graphics missing due to Line-A bitblit and no music)
+- H Mec 2 (no graphics due to line-A bitblit)
+- Kolmik (tiles don't show due to line-A bitblit)
+- Pooz (graphics don't show due to line-A bitblit)
+- R0x (main menu graphics don't show due to line-A bitblit)
+- Roger (no graphics except bg show, line-A bitblits)
 
 
 Working TT specific demos
