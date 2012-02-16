@@ -177,8 +177,11 @@ There are so many freely available color games and demos that from
 those only the ones found working with EmuTOS are listed. Often the
 non-working ones "Panic" EmuTOS.
 
-Note: Several of the demos below (on floppy images) need EmuTOS
-2012-02-08 CVS snapshot or newer.
+For best compatibility with ST emulation, one should use 192kB
+or 256kB version of EmuTOS.
+
+Additionally, several of the demos below (on floppy images) need
+EmuTOS 2012-02-08 CVS snapshot or newer.
 
 
 Demos:
@@ -187,10 +190,12 @@ Demos:
 - 4kker (by Checkpoint, 4KB intro)
 - Anomaly (by MMJ-Prod)
 - Breath (by Mystic Bytes)
+- Beyond Imagination (by NLC), in GFA basic
 - Calimer-o (by Oxygene)
+- Charts Compilation (by Next)
 - Coast II Coast (by Sector One, 4kB intro)
 - Cuddly Demos (by CareBears)
-- Darktrip (by Legend, doesn't work with >2MB of RAM)
+- Darktrip (by Legend), doesn't work with >2MB of RAM
 - Dark Side of the Spoon (by ULM)
 - Death of the Clock Cycles (by Aggression)
 - Dimensio (by Condemned)
@@ -199,7 +204,7 @@ Demos:
 - Flashback (by Carebears)
 - Flipo (by Oxygene)
 - Frenchies (by Frenchies, 96KB intro)
-- Grafik -und Sounddemo (by Eckhard Kruse, font issues)
+- Grafik -und Sounddemo (by Eckhard Kruse), font issues
 - Hallucinations (by Reservoir Gods)
 - Illusion (by Dune)
 - No Cooper (by 1984)
@@ -210,7 +215,7 @@ Demos:
 - Overdose (by Aggression)
 - Pandemonium (by Chaos)
 - Paradise (by Dune Design)
-- Phaleon Gigademo
+- Phaleon Gigademo (by Next), select "fast loader"
 - Posh (by Checkpoint)
 - Punish your machine (by Delta Force)
 - Rebirth (by MMJ production)
@@ -218,7 +223,7 @@ Demos:
 - SillyVenture 2k10 & 2k11 (invitros by Mystic Bytes & Aggression)
 - Sommarhack 2011 (invite by DHS)
 - Soundtracker (by Equinox)
-- SoWatt (by CareBears, main menu is garbage, but subdemos mostly work)
+- SoWatt (by CareBears)
 - ST NICCC (by Oxygene)
 - ST soccer (intro by Exceptions)
 - Stone tower (by FUN)
@@ -397,27 +402,31 @@ that would be STE specific (or even STE enhanced):
 But following STE specific demos, games and apps work (mostly) fine
 with EmuTOS.
 
-Note: If you use 60Hz EmuTOS version (etos256us.img and etos512k.img),
-you may get screen flicker and music playback issues with demos and
-games.
+Note: STE emulation needs 256kB version of EmuTOS.  If you use 60Hz
+EmuTOS version (etos256us.img), you may get screen flicker and music
+playback issues with demos and games.
 
-Missing DMA and Blitter support in EmuTOS (XBios functions etc) is
-an additional reason why some programs/demos (such as Blittermania)
+Missing Blitter support in EmuTOS (XBios functions etc) is an
+additional reason why some programs/demos (such as Blittermania)
 don't work with it.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
 - 20 years megademo (by Atari scene collective), issues in some screens
 - 20 years Atari STE megademo (by Paradox), some screen don't work
+- 32768 colors showdown (by Tronic of Effect)
 - Again (by Paradox)
+- Amiga Demo 2 (by Oxygene), music disk
 - Armada is dead (by Aggression)
 - Azed/Jungle demo (by Atari)
 - Beat Demo (by Frontline)
+- Bird Mad Girl Show (by Fraggle's)
 - Birdie (by Zeal)
 - Blue Period (by Paradox)
 - CD-player (by Light)
 - Cernit Trandafir (by DHS)
 - Core Flakes (by New Core)
+- Devotion (by Excellence in Art)
 - Dynamite (by Unit 17)
 - E605 (by Light)
 - Ecstacy A (by ICE), breaks at the end
@@ -427,7 +436,8 @@ Demos:
 - High Fidelity Dreams (by Aura)
 - HighResMode (by Paradox)
 - Illusion (by Next)
-- Jam-Cols (by ICE, some color/offset issues)
+- Jam-Cols (by ICE)
+- Just Musix 2 (by DHS)
 - Kick my assembler (by Orion), start doesn't look right
 - Madness (by Cream)
 - Mathematica (by Aura)
@@ -436,6 +446,7 @@ Demos:
 - Meshake (by Spice Boys)
 - Mind Rewind (by Reservoir Gods)
 - MovieSTE (by Tony Barker)
+- Necrosys (by Hemoroids)
 - New Year -94 Intro (by Extream)
 - No Monkey (by Tomchi), some extra pixels in first text scroller
 - Pacemaker (by Paradox), end part works only from floppy image
@@ -449,6 +460,7 @@ Demos:
 - STE Wars (by Tony Barker)
 - Summer Delights (by DHS)
 - Sventure intro (by Paradox)
+- Techno drugs (by NLC)
 - Vision (by POV)
 - XiTEC Presentation (by Omega)
 
@@ -486,13 +498,12 @@ STE (enhanced) color applications:
 - MaxYMizer
 - Octalyzer
 - Paula
-- Protracker STE
+- Protracker 2 STE
 - Sirius Player
 
 Most of the non-GEM ST tracker & chip music composer programs
-work also with EmuTOS too (not just STe ones).
-
-Checksum/Equinox version of Protracker 2 STE crashes though.
+work also with EmuTOS too (not just STe ones), most even with
+the 512kB EmuTOS version.
 
 
 "Almost" working color STE programs
@@ -531,6 +542,9 @@ Working TT specific demos
 
 Working free/shareware Falcon demos, games and applications
 -----------------------------------------------------------
+
+Falcon emulation requires 512kB version of EmuTOS (the one shipped
+with Hatari).
 
 Missing Videl and DSP support in EmuTOS is probably the reason why
 many of the demos and games get wrong video mode and their graphics
