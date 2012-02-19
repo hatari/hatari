@@ -108,8 +108,13 @@ static void Bios_VT52(Uint8 value)
 
 	if (escape_target) {
 		if (++escape_index == 1) {
-			/* VT52 escape sequences with arguments? */
+			/* VT52 escape sequences */
 			switch(value) {
+			case 'E':	/* clear screen+home -> newline */
+				fputs("\n", stderr);
+				hpos_host = 0;
+				break;
+			/* sequences with arguments */
 			case 'b':	/* foreground color */
 			case 'c':	/* background color */
 				escape_target = 2;
