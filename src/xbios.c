@@ -23,6 +23,8 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 #include "xbios.h"
 
 
+#define HATARI_CONTROL_OPCODE 255
+
 #define XBIOS_DEBUG 0	/* for floppy read/write & rsconf */
 
 
@@ -66,8 +68,11 @@ static bool XBios_Floprd(Uint32 Params)
 	Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-	Log_Printf(LOG_DEBUG, "FLOPRD %s,0x%x,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].sFileName,
-	           pBuffer, Side, Track, Sector, Count, M68000_GetPC());
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 8 Floprd %s,0x%x,%d,%d,%d,%d at addr 0x%X\n",
+		  EmulationDrives[Dev].sFileName, pBuffer,
+		  Side, Track, Sector, Count, M68000_GetPC());
+#else
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 8 (Floprd)\n");
 #endif
 
 	return false;
@@ -92,8 +97,11 @@ static bool XBios_Flopwr(Uint32 Params)
 	Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-	Log_Printf(LOG_DEBUG, "FLOPWR %s,0x%x,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].sFileName,
-	           pBuffer, Side, Track, Sector, Count, M68000_GetPC());
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 9 Flopwr %s,0x%x,%d,%d,%d,%d at addr 0x%X\n",
+		  EmulationDrives[Dev].sFileName, pBuffer,
+		  Side, Track, Sector, Count, M68000_GetPC());
+#else
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 9 (Flopwr)\n");
 #endif
 
 	return false;
@@ -116,8 +124,10 @@ static bool XBios_Rsconf(Uint32 Params)
 	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	Log_Printf(LOG_DEBUG, "RSCONF baud,ctrl,ucr,rsr,tsr,scr: %d,%d,%d,%d,%d,%d\n",
+	Log_Printf(LOG_DEBUG, "XBIOS 15 Rsconf(baud,ctrl,ucr,rsr,tsr,scr: %d,%d,%d,%d,%d,%d)\n",
 		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr);
+#else
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 15 Rsconf(baud,ctrl,ucr...: %d,%d,%d...)\n", Baud, Ctrl, Ucr);
 #endif
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
 	if (ConfigureParams.RS232.bEnableRS232)
@@ -153,6 +163,7 @@ static bool XBios_Rsconf(Uint32 Params)
  */
 static bool XBios_Scrdmp(Uint32 Params)
 {
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 20 Scrdmp()\n");
 	ScreenSnapShot_SaveScreen();
 
 	/* Correct return code? */
@@ -163,14 +174,25 @@ static bool XBios_Scrdmp(Uint32 Params)
 
 
 /**
+ * XBIOS VsetMode
+ * Call 88
+ */
+static bool XBios_VsetMode(Uint32 Params)
+{
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 88 VsetMode(0x%2x)\n", STMemory_ReadWord(Params+SIZE_WORD));
+	return false;
+}
+
+
+/**
  * XBIOS remote control interface for Hatari
  * Call 255
  */
 static bool XBios_HatariControl(Uint32 Params)
 {
 	char *pText;
-
 	pText = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %d HatariControl(%s)\n", HATARI_CONTROL_OPCODE, pText);
 	Control_ProcessBuffer(pText);
 	Regs[REG_D0] = 0;
 	return true;
@@ -354,9 +376,6 @@ static const char* XBios_Call2Name(Uint16 opcode)
 	if (opcode < ARRAYSIZE(names) && names[opcode]) {
 		return names[opcode];
 	}
-	if (opcode == 255) {
-		return "HatariControl";
-	}
 	return "???";
 }
 #endif
@@ -374,23 +393,25 @@ bool XBios(void)
 	Params = Regs[REG_A7];
 	XBiosCall = STMemory_ReadWord(Params);
 
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %hd (%s)\n",
-		  XBiosCall, XBios_Call2Name(XBiosCall));
-
 	switch (XBiosCall)
 	{
-	 case 8:
+	case 8:
 		return XBios_Floprd(Params);
-	 case 9:
+	case 9:
 		return XBios_Flopwr(Params);
-	 case 15:
+	case 15:
 		return XBios_Rsconf(Params);
-	 case 20:
+	case 20:
 		return XBios_Scrdmp(Params);
-	 case 255:
+	case 88:
+		return XBios_VsetMode(Params);
+
+	case HATARI_CONTROL_OPCODE:
 		return XBios_HatariControl(Params);
 
 	 default:  /* Call as normal! */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %hd (%s)\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall));
 		return false;
 	}
 }
