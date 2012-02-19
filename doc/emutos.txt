@@ -543,33 +543,83 @@ Working TT specific demos
 Working free/shareware Falcon demos, games and applications
 -----------------------------------------------------------
 
-Falcon emulation requires 512kB version of EmuTOS (the one shipped
-with Hatari).
+Falcon emulation requires 512kB version of EmuTOS
+(the one shipped with Hatari).
 
-Missing Videl and DSP support in EmuTOS is probably the reason why
-many of the demos and games get wrong video mode and their graphics
-look completely broken under EmuTOS.  Following Falcon only
-demos, games and apps work (mostly) fine though.
+Partial Videl/VsetMode() and missing Falcon sound matrix & DSP OS
+function support in EmuTOS is probably the reason why many of the
+demos and games graphics look broken or they freeze at startup.
+Following Falcon only demos, games and apps work (mostly) fine
+though.
 
 Working demos:
+- 1600x600
 - 30l coke, needs DSP
-- A Rh Positive 4k (by tSSc), needs DSP
-- Alive (by Fun Industries)
-- Ascii (by Reservoir Gods)
+- A Rh Positive 4k (by tSCc), needs DSP
+- Ascii (by Reservoir Gods), disable DSP
 - ATS (by DHS)
+- Autowachen Verboten (by Lazer)
 - Birdshow
-- Blue & Flu 4k (by New Beat)
+- Bugs from outer space (by Impulse)
+  - bad sound
+- Cebit 93 (by Respectables)
+  - needs WinUAE CPU core
+- Cooler than ever (by ICE)
+  - bad sound
 - DBA Magazine 14 intro (by Lazer)
+- Earth (by Gaston)
+- Falcon Flight (by Opium)
+- Firestarter (by Shadows)
+- Flu 4k (by New Beat)
+- Fungle beats (by FUN)
+  - needs WinUAE CPU core
 - Game of Life 4k (by Aggression)
 - Illusion 64 (by Paranoia)
+  - plasma screen has garbage on right side,
+    end screen at top & bottom
 - Mouse (animation + music)
-- Snowstorm (by Reservoir Gods)
-- Terrorize Your Soul (by tSSc)
+- RGB Reine (by New Beat)
+- Rock Solid (by Paranoia)
+- Six Sievert (by tSCc)
+- Snowstorm (by Reservoir Gods), disable DSP
+- Sonolumineszenz (by Avena)
+  - No sound
+- Terrorize Your Soul (by tSCc)
   - fonts and colors aren't right on all screens
-- Virtual City, needs DSP, freezes at exit
-- ZZ 9 Plural Z Alpha (by tSSc)
+- Videl visions slideshow
+- Virtual City, needs DSP
+  - freezes at exit
+- Weltchmerz (by Avena)
+- ZZ 9 Plural Z Alpha (by tSCc)
 
-Workign games:
+Demos regressed in EmuTOS v0.8.6:
+- Blue (by New Beat)
+  - just exits to bus error
+
+Partly working demos:
+- Agony (by DNT crew)
+  - freezes after a while
+    XBIOS 109 (Dsp_ExecProg)
+    Bus error bget at 00400000
+- Built-in Obsolescence (by Digital Chaos)
+  - requires WinUAE core
+  - Eventually dies to Dsp Stack Over/underflow  
+- Motion (unfinished demo by Aggression)
+  - only writer screens work
+- Gurkensalat (by Lazer)
+  - freezes after a while
+- Illness (by Escape)
+  - freezes after a while to
+    Bus error lget at 4e700cb9
+- Jesterday (by POV)
+  - Music demo, but no music as it needs DSP
+- Oergs (by Lazer)
+- Schlumpf (by Lazer)
+  - colors are wrong
+  - Dsp: Stack underflow
+
+
+Working games:
 - Aces High (preview)
 - Blum
 - Cavemania (demo version)
@@ -599,10 +649,12 @@ Workign games:
 - Willie's Adventure* (preview2)
 
 Games regressed in EmuTOS v0.8.6:
-- SBM v0.8 (Bomberman clone)*, doesn't work anymore
 - Madtris colors are all wrong
 - Rave (screen graphics are garbage)
+- SBM v0.8 (Bomberman clone)*, doesn't work anymore
+  - Bus error wget at 00400000
 - Vertical Mayhem (Columns clone)*, black screen at start
+  - _SND cookie & available OS function mismatch
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -613,7 +665,7 @@ Games working with extra hacks:
   - with EmuTOS enabling DSP freezes the games right at startup
     (with normal TOS4, DSP is used for background music)
 
-Almost working demos & games:
+Almost working games:
 - Des Lazers & des Hommes: game area graphics are missing
   (AFAIK they're rendered with DSP)
 - LlamaZap free version: colors are all wrong
@@ -622,8 +674,13 @@ Almost working demos & games:
 - TUM, GEM minesweeper: says "sorry, sound system is locked"
   on every click
 - Masters of Chaos starts, but then doesn't react to input
-- Motion (unfinished demo by Aggression)
-  - only writer screens work
+
+Games using Line-A bitblit (not supported by EmuTOS):
+- Gold island demo
+- Men at War
+- Tron 2
+- Ultimate Arena Falcon edition
+
 
 Working applications:
 - Aniplayer v2.22
@@ -633,6 +690,7 @@ Working applications:
 - Godpaint (by Reservoir Gods)
 - ICDraw, .ICO and .IB3 GEM viewer
 - Kronos v1.91 benchmark
+- Rainbow 2 multimedia, needs WinUAE CPU core for MMU
 
 Partly working applications:
 - Centurbo benchmark:
