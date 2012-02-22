@@ -119,6 +119,9 @@ is missing here, please remind me!):
   that tedious work, it helped tracking down some less common cases
   not used in demos (keyboard, joystick, FDC, tos, ...)
 
+- Gilles Fetis: fixes to MMU emulation (from NeXT emulator project
+  using Hatari code)
+
 
  Code from other projects
  ------------------------
