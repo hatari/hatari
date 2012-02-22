@@ -351,17 +351,14 @@ bool Profile_CpuStart(void)
  */
 void Profile_CpuUpdate(void)
 {
-	Uint32 idx, opcode, cycles;
-	
+	Uint32 idx, cycles;
 	idx = address2index(M68000_GetPC());
+	assert(idx < cpu_profile.size);
 
 	if (likely(cpu_profile.data[idx].count < MAX_PROFILE_VALUE)) {
 		cpu_profile.data[idx].count++;
 	}
-	
-	opcode = get_iword_prefetch (0);
-	cycles = (*cpufunctbl[opcode])(opcode) + nWaitStateCycles;
-	
+	cycles = CurrentInstrCycles + nWaitStateCycles;
 	if (likely(cpu_profile.data[idx].cycles < MAX_PROFILE_VALUE - cycles)) {
 			cpu_profile.data[idx].cycles += cycles;
 	}
