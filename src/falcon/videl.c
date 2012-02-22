@@ -78,13 +78,11 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #include "videl.h"
 
 
-#define handleRead(a) IoMem_ReadByte(a)
-#define handleReadW(a) IoMem_ReadWord(a)
 #define Atari2HostAddr(a) (&STRam[a])
-
 
 #define HW	0xff8200
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
+
 
 struct videl_s {
 	bool   bUseSTShifter;			/* whether to use ST or Falcon palette */
@@ -94,51 +92,55 @@ struct videl_s {
 	Uint16 upperBorderSize;			/* Size of the upper border */
 	Uint16 lowerBorderSize;			/* Size of the lower border */
 	Uint16 YSize;				/* Y size of the graphical area */
+
+	Uint16 save_scrWidth;				/* save screen width to detect a change of X resolution */
+	Uint16 save_scrHeight;				/* save screen height to detect a change of Y resolution */
+	Uint16 save_scrBpp;				/* save screen Bpp to detect a change of bitplan mode */
+
+	bool hostColorsSync;				/* Sync palette with host's */
+};
+
+struct videl_zoom_s {
+	Uint16 zoomwidth;
+	Uint16 prev_scrwidth;
+	Uint16 zoomheight;
+	Uint16 prev_scrheight;
+	int *zoomxtable;
+	int *zoomytable;
 };
 
 static struct videl_s videl;
-
-/* TODO: put these to some struct so that it's easier to see
- * they're VIDEL global
- */
-static int width, height, bpp;
-static bool hostColorsSync;
+static struct videl_zoom_s videl_zoom;
 
 Uint16 vfc_counter;			/* counter for VFC register $ff82a0 (to be internalized when VIDEL emulation is complete) */
 
-/* Autozoom */
-static int zoomwidth, prev_scrwidth;
-static int zoomheight, prev_scrheight;
-static int *zoomxtable;
-static int *zoomytable;
-
-
-
-static void VIDEL_renderScreenNoZoom(void);
-static void VIDEL_renderScreenZoom(void);
-
        
-// Called upon startup and when CPU encounters a RESET instruction.
+/**
+ *  Called upon startup and when CPU encounters a RESET instruction.
+ */
 void VIDEL_reset(void)
 {
 	videl.bUseSTShifter = false;				/* Use Falcon color palette by default */
 	videl.reg_ffff8006_save = IoMem_ReadByte(0xff8006);
 	videl.monitor_type  = videl.reg_ffff8006_save & 0xc0;
 	
-	hostColorsSync = false; 
+	videl.hostColorsSync = false; 
 
 	vfc_counter = 0;
 	
 	/* Autozoom */
-	zoomwidth=prev_scrwidth=0;
-	zoomheight=prev_scrheight=0;
-	zoomxtable=NULL;
-	zoomytable=NULL;
+	videl_zoom.zoomwidth = 0;
+	videl_zoom.prev_scrwidth = 0;
+	videl_zoom.zoomheight = 0;
+	videl_zoom.prev_scrheight = 0;
+	videl_zoom.zoomxtable = NULL;
+	videl_zoom.zoomytable = NULL;
 
 	/* Default resolution to boot with */
-	width = 640;
-	height = 480;
-	HostScreen_setWindowSize(width, height, ConfigureParams.Screen.nForceBpp);
+	videl.save_scrWidth = 640;
+	videl.save_scrHeight = 480;
+	videl.save_scrBpp = ConfigureParams.Screen.nForceBpp;
+	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
 
 	/* Reset IO register (some are not initialized by TOS) */
 	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
@@ -152,6 +154,7 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&videl, sizeof(videl));
+	MemorySnapShot_Store(&videl_zoom, sizeof(videl_zoom));
 	MemorySnapShot_Store(&vfc_counter, sizeof(vfc_counter));
 }
 
@@ -160,12 +163,12 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
  */
 void VIDEL_ColorRegsWrite(void)
 {
-	hostColorsSync = false;
+	videl.hostColorsSync = false;
 }
 
 /**
  * VIDEL_Monitor_WriteByte : Contains memory and monitor configuration. 
- *                           This register is  read only.
+ *                           This register is read only.
  */
 void VIDEL_Monitor_WriteByte(void)
 {
@@ -243,6 +246,7 @@ void VIDEL_ST_ShiftModeWriteByte(void)
 			video_mode = videl.monitor_type == FALCON_MONITOR_VGA ? 0x8 : 0x6;
 			break;
 		case 3:	/* ???/320 Pixels */
+		default:
 			line_width = 0x50;
 			video_mode = 0x0;
 			break;
@@ -472,13 +476,13 @@ void VIDEL_VMD_WriteWord(void)
 
 static long VIDEL_getVideoramAddress(void)
 {
-	return (handleRead(HW + 1) << 16) | (handleRead(HW + 3) << 8) | handleRead(HW + 0x0d);
+	return (IoMem_ReadByte(HW + 1) << 16) | (IoMem_ReadByte(HW + 3) << 8) | IoMem_ReadByte(HW + 0x0d);
 }
 
 static int VIDEL_getScreenBpp(void)
 {
-	int f_shift = handleReadW(HW + 0x66);
-	int st_shift = handleRead(HW + 0x60);
+	int f_shift = IoMem_ReadWord(HW + 0x66);
+	int st_shift = IoMem_ReadByte(HW + 0x60);
 	/* to get bpp, we must examine f_shift and st_shift.
 	 * f_shift is valid if any of bits no. 10, 8 or 4
 	 * is set. Priority in f_shift is: 10 ">" 8 ">" 4, i.e.
@@ -503,14 +507,14 @@ static int VIDEL_getScreenBpp(void)
 	else /* if (st_shift == 0x02) */
 		bits_per_pixel = 1;
 
-//	LOG_TRACE(TRACE_VIDEL, "Videl works in %d bpp, f_shift=%04x, st_shift=%d", bits_per_pixel, f_shift, st_shift);
+/*	LOG_TRACE(TRACE_VIDEL, "Videl works in %d bpp, f_shift=%04x, st_shift=%d", bits_per_pixel, f_shift, st_shift); */
 
 	return bits_per_pixel;
 }
 
 static int VIDEL_getScreenWidth(void)
 {
-	return (handleReadW(HW + 0x10) & 0x03ff) * 16 / VIDEL_getScreenBpp();
+	return (IoMem_ReadWord(HW + 0x10) & 0x03ff) * 16 / VIDEL_getScreenBpp();
 }
 
 /** VIDEL_getScreenHeight : returns the visible y resolution
@@ -522,11 +526,11 @@ static int VIDEL_getScreenWidth(void)
  */
 static int VIDEL_getScreenHeight(void)
 {
-	Uint16 vbb = handleReadW(HW + 0xa4) & 0x07ff;
-	Uint16 vbe = handleReadW(HW + 0xa6) & 0x07ff;  
-	Uint16 vdb = handleReadW(HW + 0xa8) & 0x07ff;
-	Uint16 vde = handleReadW(HW + 0xaa) & 0x07ff;
-	Uint16 vmode = handleReadW(HW + 0xc2);
+	Uint16 vbb = IoMem_ReadWord(HW + 0xa4) & 0x07ff;
+	Uint16 vbe = IoMem_ReadWord(HW + 0xa6) & 0x07ff;  
+	Uint16 vdb = IoMem_ReadWord(HW + 0xa8) & 0x07ff;
+	Uint16 vde = IoMem_ReadWord(HW + 0xaa) & 0x07ff;
+	Uint16 vmode = IoMem_ReadWord(HW + 0xc2);
 
 	/* We must take the positive value only, as a program like AceTracker starts the */
 	/* graphical area 1 line before the end of the upper border */
@@ -534,13 +538,13 @@ static int VIDEL_getScreenHeight(void)
 	videl.lowerBorderSize = vbb - vde > 0 ? vbb - vde : 0;
 	videl.YSize = vde - vdb;
 	
-	if (!(vmode & 0x02)){		// interlace
+	if (!(vmode & 0x02)){		/* interlace */
 		videl.YSize >>= 1;
 		videl.upperBorderSize >>= 1;
 		videl.lowerBorderSize >>= 1;
 	}
 	
-	if (vmode & 0x01) {		// double
+	if (vmode & 0x01) {		/* double */
 		videl.YSize >>= 1;
 		videl.upperBorderSize >>= 1;
 		videl.lowerBorderSize >>= 1;
@@ -572,29 +576,29 @@ static void VIDEL_getMonitorScale(int *sx, int *sy)
 	 *    1       0       0         0      640x480 -> 1 x 1
 	 *    1       0       0         1      640x240 -> 1 x 2
 	 */
-	int vmode = handleReadW(HW + 0xc2);
+	int vmode = IoMem_ReadWord(HW + 0xc2);
 
 	/* half pixel seems to have opposite meaning on
 	 * VGA and RGB monitor, so they need to handled separately
 	 */
 	if (videl.monitor_type) == FALCON_MONITOR_VGA) {
-		if (vmode & 0x08) {  // quarter pixel
+		if (vmode & 0x08) {  /* quarter pixel */
 			*sx = 1;
 		} else {
 			*sx = 2;
 		}
-		if (vmode & 0x01) {  // double line
+		if (vmode & 0x01) {  /* double line */
 			*sy = 2;
 		} else {
 			*sy = 1;
 		}
 	} else {
-		if (vmode & 0x04) {  // half pixel
+		if (vmode & 0x04) {  /* half pixel */
 			*sx = 1;
 		} else {
 			*sx = 2;
 		}
-		if (vmode & 0x02) {  // interlace used only on RGB?
+		if (vmode & 0x02) {  /* interlace used only on RGB ? */
 			*sy = 1;
 		} else {
 			*sy = 2;
@@ -608,10 +612,10 @@ static void VIDEL_getMonitorScale(int *sx, int *sy)
  */
 static void VIDEL_updateColors(void)
 {
-	int i, r, g, b, colors = 1 << bpp;
+	int i, r, g, b, colors = 1 << videl.save_scrBpp;
 
-#define F_COLORS(i) handleRead(VIDEL_COLOR_REGS_BEGIN + (i))
-#define STE_COLORS(i)	handleRead(0xff8240 + (i))
+#define F_COLORS(i) IoMem_ReadByte(VIDEL_COLOR_REGS_BEGIN + (i))
+#define STE_COLORS(i)	IoMem_ReadByte(0xff8240 + (i))
 
 	if (!videl.bUseSTShifter) {
 		for (i = 0; i < colors; i++) {
@@ -642,55 +646,84 @@ static void VIDEL_updateColors(void)
 		HostScreen_updatePalette(colors);
 	}
 
-	hostColorsSync = true;
+	videl.hostColorsSync = true;
 }
 
 
 void VIDEL_ZoomModeChanged(void)
 {
 	/* User selected another zoom mode, so set a new screen resolution now */
-	HostScreen_setWindowSize(width, height, bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
+	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
 }
 
 
 bool VIDEL_renderScreen(void)
 {
+	/* Atari screen infos */
 	int vw	 = VIDEL_getScreenWidth();
 	int vh	 = VIDEL_getScreenHeight();
 	int vbpp = VIDEL_getScreenBpp();
+
+	int lineoffset = IoMem_ReadWord(HW + 0x0e) & 0x01ff; /* 9 bits */
+	int linewidth = IoMem_ReadWord(HW + 0x10) & 0x03ff;  /* 10 bits */
+
 	bool change = false;
 
-	if (vw > 0 && vw != width) {
-		LOG_TRACE(TRACE_VIDEL, "Videl width change from %d to %d\n", width, vw);
-		width = vw;
+	if (vw > 0 && vw != videl.save_scrWidth) {
+		LOG_TRACE(TRACE_VIDEL, "Videl width change from %d to %d\n", videl.save_scrWidth, vw);
+		videl.save_scrWidth = vw;
 		change = true;
 	}
-	if (vh > 0 && vh != height) {
-		LOG_TRACE(TRACE_VIDEL, "Videl height change from %d to %d\n", height, vh);
-		height = vh;
+	if (vh > 0 && vh != videl.save_scrHeight) {
+		LOG_TRACE(TRACE_VIDEL, "Videl height change from %d to %d\n", videl.save_scrHeight, vh);
+		videl.save_scrHeight = vh;
 		change = true;
 	}
-	if (vbpp != bpp) {
-		LOG_TRACE(TRACE_VIDEL, "Videl bpp change from %d to %d\n", bpp, vbpp);
-		bpp = vbpp;
+	if (vbpp != videl.save_scrBpp) {
+		LOG_TRACE(TRACE_VIDEL, "Videl bpp change from %d to %d\n", videl.save_scrBpp, vbpp);
+		videl.save_scrBpp = vbpp;
 		change = true;
 	}
 	if (change) {
-		LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n", width, height, bpp);
-		HostScreen_setWindowSize(width, height, bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
+		LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n", videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
+		HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
 	}
 
 	if (!HostScreen_renderBegin())
 		return false;
 
+	/* 
+	   I think this implementation is naive: 
+	   indeed, I suspect that we should instead skip lineoffset
+	   words each time we have read "more" than linewidth words
+	   (possibly "more" because of the number of bit planes).
+	   Moreover, the 1 bit plane mode is particular;
+	   while doing some experiments on my Falcon, it seems to
+	   behave like the 4 bit planes mode.
+	   At last, we have also to take into account the 4 bits register
+	   located at the word $ffff8264 (bit offset). This register makes
+	   the semantics of the lineoffset register change a little.
+	   int bitoffset = IoMem_ReadWord(HW + 0x64) & 0x000f;
+	   The meaning of this register in True Color mode is not clear
+	   for me at the moment (and my experiments on the Falcon don't help
+	   me).
+	*/
+	int nextline = linewidth + lineoffset;
+
+	if ((vw<32) || (vh<32))
+		return false;
+
+	if (videl.save_scrBpp < 16 && videl.hostColorsSync == 0)
+		VIDEL_updateColors();
+
 	if (nScreenZoomX * nScreenZoomY != 1) {
-		VIDEL_renderScreenZoom();
+		VIDEL_ConvertScreenZoom(vw, vh, videl.save_scrBpp, nextline);
 	} else {
-		VIDEL_renderScreenNoZoom();
+		VIDEL_ConvertScreenNoZoom(vw, vh, videl.save_scrBpp, nextline);
 	}
 
-	HostScreen_renderEnd();
 
+	HostScreen_renderEnd();
 	HostScreen_update1(false);
 
 	return true;
@@ -828,40 +861,6 @@ static void VIDEL_bitplaneToChunky(Uint16 *atariBitplaneData, Uint16 bpp,
 #endif
 }
 
-
-static void VIDEL_renderScreenNoZoom(void)
-{
-	int vw	 = VIDEL_getScreenWidth();
-	int vh	 = VIDEL_getScreenHeight();
-
-	int lineoffset = handleReadW(HW + 0x0e) & 0x01ff; // 9 bits
-	int linewidth = handleReadW(HW + 0x10) & 0x03ff; // 10 bits
-	/* 
-	   I think this implementation is naive: 
-	   indeed, I suspect that we should instead skip lineoffset
-	   words each time we have read "more" than linewidth words
-	   (possibly "more" because of the number of bit planes).
-	   Moreover, the 1 bit plane mode is particular;
-	   while doing some experiments on my Falcon, it seems to
-	   behave like the 4 bit planes mode.
-	   At last, we have also to take into account the 4 bits register
-	   located at the word $ffff8264 (bit offset). This register makes
-	   the semantics of the lineoffset register change a little.
-	   int bitoffset = handleReadW(HW + 0x64) & 0x000f;
-	   The meaning of this register in True Color mode is not clear
-	   for me at the moment (and my experiments on the Falcon don't help
-	   me).
-	*/
-	int nextline = linewidth + lineoffset;
-
-	if (bpp < 16 && !hostColorsSync) {
-		VIDEL_updateColors();
-	}
-
-	VIDEL_ConvertScreenNoZoom(vw, vh, bpp, nextline);
-}
-
-
 void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 {
 	int scrpitch = HostScreen_getPitch();
@@ -873,7 +872,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	Uint8 *hvram = HostScreen_getVideoramAddress();
 	SDL_PixelFormat *scrfmt = HostScreen_getFormat();
 
-	int hscrolloffset = (handleRead(HW + 0x65) & 0x0f);
+	int hscrolloffset = (IoMem_ReadByte(HW + 0x65) & 0x0f);
 
 	/* If emulated computer is the TT, we use the same rendering for display, but without the borders */
 	if (ConfigureParams.System.nMachineType == MACHINE_TT) {
@@ -905,10 +904,10 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	if (vbpp < 16) {
 		/* Bitplanes modes */
 
-		// The SDL colors blitting...
+		/* The SDL colors blitting... */
 		Uint8 color[16];
 
-		// FIXME: The byte swap could be done here by enrolling the loop into 2 each by 8 pixels
+		/* FIXME: The byte swap could be done here by enrolling the loop into 2 each by 8 pixels */
 		switch ( HostScreen_getBpp() ) {
 			case 1:
 				{
@@ -1064,7 +1063,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 
 	} else {
 
-		// Falcon TC (High Color)
+		/* Falcon TC (High Color) */
 		switch ( HostScreen_getBpp() )  {
 			case 1:
 			{
@@ -1114,8 +1113,10 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 
 				for (h = 0; h < vh_clip; h++) {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-					//FIXME: here might be a runtime little/big video endian switch like:
-					//      if ( /* videocard memory in Motorola endian format */ false)
+					/* FIXME: here might be a runtime little/big video endian switch like:
+					      if ( " videocard memory in Motorola endian format " false)
+					*/
+
 					/* Render the upper border */
 					if (h < videl.upperBorderSize) {
 						memset(hvram_line, HostScreen_getPaletteColor(0), vw_clip<<1);
@@ -1143,7 +1144,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the graphical area */
 					else if (h < videl.upperBorderSize + videl.YSize) {
 						for (w = 0; w < vw_clip; w++) {
-							// byteswap with SDL asm macros
+							/* byteswap with SDL asm macros */
 							*hvram_column++ = SDL_SwapBE16(*fvram_column++);
 						}
 						fvram_line += nextline;
@@ -1154,7 +1155,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 							*hvram_column++ = HostScreen_getPaletteColor(0);
 						}
 					}
-#endif // SDL_BYTEORDER == SDL_BIG_ENDIAN
+#endif /* SDL_BYTEORDER == SDL_BIG_ENDIAN */
 
 					hvram_line += scrpitch>>1;
 				}
@@ -1200,27 +1201,6 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 }
 
 
-static void VIDEL_renderScreenZoom(void)
-{
-	/* Atari screen infos */
-	int vw	 = VIDEL_getScreenWidth();
-	int vh	 = VIDEL_getScreenHeight();
-
-	int lineoffset = handleReadW(HW + 0x0e) & 0x01ff; // 9 bits
-	int linewidth = handleReadW(HW + 0x10) & 0x03ff; // 10 bits
-	/* same remark as before: too naive */
-	int nextline = linewidth + lineoffset;
-
-	if ((vw<32) || (vh<32))  return;
-
-	if (bpp<16 && !hostColorsSync) {
-		VIDEL_updateColors();
-	}
-
-	VIDEL_ConvertScreenZoom(vw, vh, bpp, nextline);
-}
-
-
 void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 {
 	int i, j, w, h, cursrcline;
@@ -1246,7 +1226,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 	SDL_PixelFormat *scrfmt = HostScreen_getFormat();
 	Uint8 *hvram = (Uint8 *) HostScreen_getVideoramAddress();
 
-	int hscrolloffset = (handleRead(HW + 0x65) & 0x0f);
+	int hscrolloffset = (IoMem_ReadByte(HW + 0x65) & 0x0f);
 
 	/* Horizontal scroll register set? */
 	if (hscrolloffset) {
@@ -1268,27 +1248,27 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 	}
 
 	/* New zoom ? */
-	if ((zoomwidth != vw) || (scrwidth != prev_scrwidth)) {
-		if (zoomxtable) {
-			free(zoomxtable);
+	if ((videl_zoom.zoomwidth != vw) || (scrwidth != videl_zoom.prev_scrwidth)) {
+		if (videl_zoom.zoomxtable) {
+			free(videl_zoom.zoomxtable);
 		}
-		zoomxtable = malloc(sizeof(int)*scrwidth);
+		videl_zoom.zoomxtable = malloc(sizeof(int)*scrwidth);
 		for (i=0; i<scrwidth; i++) {
-			zoomxtable[i] = (vw*i)/scrwidth;
+			videl_zoom.zoomxtable[i] = (vw*i)/scrwidth;
 		}
-		zoomwidth = vw;
-		prev_scrwidth = scrwidth;
+		videl_zoom.zoomwidth = vw;
+		videl_zoom.prev_scrwidth = scrwidth;
 	}
-	if ((zoomheight != vh) || (scrheight != prev_scrheight)) {
-		if (zoomytable) {
-			free(zoomytable);
+	if ((videl_zoom.zoomheight != vh) || (scrheight != videl_zoom.prev_scrheight)) {
+		if (videl_zoom.zoomytable) {
+			free(videl_zoom.zoomytable);
 		}
-		zoomytable = malloc(sizeof(int)*scrheight);
+		videl_zoom.zoomytable = malloc(sizeof(int)*scrheight);
 		for (i=0; i<scrheight; i++) {
-			zoomytable[i] = (vh*i)/scrheight;
+			videl_zoom.zoomytable[i] = (vh*i)/scrheight;
 		}
-		zoomheight = vh;
-		prev_scrheight = scrheight;
+		videl_zoom.zoomheight = vh;
+		videl_zoom.prev_scrheight = scrheight;
 	}
 
 	cursrcline = -1;
@@ -1309,7 +1289,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the upper border */
 					if (h < videl.upperBorderSize * coefy) {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1320,11 +1300,11 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					}
 					/* Render the graphical area */
 					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						fvram_line = fvram + (zoomytable[scrIdx] * nextline);
+						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
 						scrIdx ++;
 
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
 						} else {
 							Uint16 *fvram_column = fvram_line;
@@ -1350,7 +1330,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = p2cline[zoomxtable[w]];
+								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w]];
 							}
 						}
 
@@ -1358,7 +1338,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the bottom border */
 					else {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1369,7 +1349,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					}
 
 					hvram_line += scrpitch;
-					cursrcline = zoomytable[h];
+					cursrcline = videl_zoom.zoomytable[h];
 				}
 				free(p2cline);
 			}
@@ -1385,7 +1365,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the upper border */
 					if (h < videl.upperBorderSize * coefy) {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1396,11 +1376,11 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					}
 					/* Render the graphical area */
 					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						fvram_line = fvram + (zoomytable[scrIdx] * nextline);
+						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
 						scrIdx ++;
 
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
 						} else {
 							Uint16 *fvram_column = fvram_line;
@@ -1430,14 +1410,14 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = p2cline[zoomxtable[w]];
+								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w]];
 							}
 						}
 					}
 					/* Render the bottom border */
 					else {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1448,7 +1428,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					}
 
 					hvram_line += scrpitch>>1;
-					cursrcline = zoomytable[h];
+					cursrcline = videl_zoom.zoomytable[h];
 				}
 
 				free(p2cline);
@@ -1466,7 +1446,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the upper border */
 					if (h < videl.upperBorderSize * coefy) {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1477,10 +1457,10 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					}
 					/* Render the graphical area */
 					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						fvram_line = fvram + (zoomytable[scrIdx] * nextline);
+						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
 						scrIdx ++;
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							Uint16 *fvram_column = fvram_line;
@@ -1510,14 +1490,14 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = p2cline[zoomxtable[w]];
+								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w]];
 							}
 						}
 					}
 					/* Render the bottom border */
 					else {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1527,7 +1507,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						}
 					}
 
-					cursrcline = zoomytable[h];
+					cursrcline = videl_zoom.zoomytable[h];
 					hvram_line += scrpitch>>2;
 				}
 
@@ -1549,7 +1529,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the upper border */
 					if (h < videl.upperBorderSize * coefy) {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1562,21 +1542,21 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
 						Uint16 *fvram_column;
 
-						fvram_line = fvram + (zoomytable[scrIdx] * nextline);
+						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
 						scrIdx ++;
 
 						fvram_column = fvram_line;
 						hvram_column = hvram_line;
 
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
 						} else {
 							for (w = 0; w < scrwidth; w++) {
 								Uint16 srcword;
 								Uint8 dstbyte;
 							
-								srcword = SDL_SwapBE16(fvram_column[zoomxtable[w]]);
+								srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w]]);
 
 								dstbyte = ((srcword>>13) & 7) << 5;
 								dstbyte |= ((srcword>>8) & 7) << 2;
@@ -1589,7 +1569,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the bottom border */
 					else {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1599,7 +1579,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						}
 					}
 
-					cursrcline = zoomytable[h];
+					cursrcline = videl_zoom.zoomytable[h];
 					hvram_line += scrpitch;
 				}
 			}
@@ -1613,7 +1593,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the upper border */
 					if (h < videl.upperBorderSize * coefy) {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1626,20 +1606,20 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
 						Uint16 *fvram_column;
 
-						fvram_line = fvram + (zoomytable[scrIdx] * nextline);
+						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
 						scrIdx ++;
 
 						fvram_column = fvram_line;
 						hvram_column = hvram_line;
 
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
 						} else {
 							for (w = 0; w < scrwidth; w++) {
 								Uint16 srcword;
 							
-								srcword = SDL_SwapBE16(fvram_column[zoomxtable[w]]);
+								srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w]]);
 								*hvram_column++ = srcword;
 							}
 						}
@@ -1647,7 +1627,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the bottom border */
 					else {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1657,7 +1637,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						}
 					}
 
-					cursrcline = zoomytable[h];
+					cursrcline = videl_zoom.zoomytable[h];
 					hvram_line += scrpitch>>1;
 				}
 			}
@@ -1671,7 +1651,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the upper border */
 					if (h < videl.upperBorderSize * coefy) {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1684,19 +1664,19 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
 						Uint16 *fvram_column;
 
-						fvram_line = fvram + (zoomytable[scrIdx] * nextline);
+						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
 						scrIdx ++;
 						fvram_column = fvram_line;
 						hvram_column = hvram_line;
 
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							for (w = 0; w < scrwidth; w++) {
 								Uint16 srcword;
 							
-								srcword = fvram_column[zoomxtable[w]];
+								srcword = fvram_column[videl_zoom.zoomxtable[w]];
 
 								*hvram_column++ =
 									SDL_MapRGB(scrfmt,
@@ -1710,7 +1690,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					/* Render the bottom border */
 					else {
 						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
+						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
 							/* Zoom a new line */
@@ -1720,7 +1700,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						}
 					}
 
-					cursrcline = zoomytable[h];
+					cursrcline = videl_zoom.zoomytable[h];
 					hvram_line += scrpitch>>2;
 				}
 			}
