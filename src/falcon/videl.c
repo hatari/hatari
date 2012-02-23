@@ -83,14 +83,19 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #define HW	0xff8200
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
 
+#define MAX_SCREEN_WIDTH 2000	/* max width of the display */
+
 
 struct videl_s {
 	bool   bUseSTShifter;			/* whether to use ST or Falcon palette */
 	Uint8  reg_ffff8006_save;		/* save reg_ffff8006 as it's a read only register */
 	Uint8  monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
 
+	Uint16 leftBorderSize;			/* Size of the left border */
+	Uint16 rightBorderSize;			/* Size of the right border */
 	Uint16 upperBorderSize;			/* Size of the upper border */
 	Uint16 lowerBorderSize;			/* Size of the lower border */
+	Uint16 XSize;				/* X size of the graphical area */
 	Uint16 YSize;				/* Y size of the graphical area */
 
 	Uint16 save_scrWidth;				/* save screen width to detect a change of X resolution */
@@ -114,6 +119,9 @@ static struct videl_zoom_s videl_zoom;
 
 Uint16 vfc_counter;			/* counter for VFC register $ff82a0 (to be internalized when VIDEL emulation is complete) */
 
+static void VIDEL_memset_uint32(Uint32 *addr, Uint32 color, int count);
+static void VIDEL_memset_uint16(Uint16 *addr, Uint16 color, int count);
+static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count);
        
 /**
  *  Called upon startup and when CPU encounters a RESET instruction.
@@ -512,12 +520,35 @@ static int VIDEL_getScreenBpp(void)
 	return bits_per_pixel;
 }
 
+/**
+ *  VIDEL_getScreenWidth : returns the visible X resolution
+ *	left border + graphic area + right border
+ *	left border  : hdb - hbe ???
+ *	right border : hbb - hde ???
+ *	Graphics display : starts at cycle HDB and ends at cycle HDE. 
+ */
 static int VIDEL_getScreenWidth(void)
 {
-	return (IoMem_ReadWord(HW + 0x10) & 0x03ff) * 16 / VIDEL_getScreenBpp();
+	Uint16 hbb = IoMem_ReadWord(HW + 0x84) & 0x03ff;
+	Uint16 hbe = IoMem_ReadWord(HW + 0x86) & 0x03ff;  
+	Uint16 hdb = IoMem_ReadWord(HW + 0x88) & 0x01ff;
+	Uint16 hde = IoMem_ReadWord(HW + 0x8a) & 0x03ff;
+
+	videl.leftBorderSize = hdb - hbe > 0 ? hdb - hbe : 0;
+	videl.rightBorderSize = hbb - hde > 0 ? hbb - hde : 0;
+	videl.XSize = (IoMem_ReadWord(HW + 0x10) & 0x03ff) * 16 / VIDEL_getScreenBpp();
+
+	/* If the user disabled the borders display from the gui, we suppress them */
+	if (ConfigureParams.Screen.bAllowOverscan == 0) {
+		videl.leftBorderSize = 0;
+		videl.rightBorderSize = 0;
+	}
+
+	return videl.leftBorderSize + videl.XSize + videl.rightBorderSize;
 }
 
-/** VIDEL_getScreenHeight : returns the visible y resolution
+/**
+ *  VIDEL_getScreenHeight : returns the visible Y resolution
  *	upper border + graphic area + lower border
  *	upper border : vdb - vbe
  *	lower border : vbb - vde
@@ -537,7 +568,13 @@ static int VIDEL_getScreenHeight(void)
 	videl.upperBorderSize = vdb - vbe > 0 ? vdb - vbe : 0;
 	videl.lowerBorderSize = vbb - vde > 0 ? vbb - vde : 0;
 	videl.YSize = vde - vdb;
-	
+
+	/* If the user disabled the borders display from the gui, we suppress them */
+	if (ConfigureParams.Screen.bAllowOverscan == 0) {
+		videl.upperBorderSize = 0;
+		videl.lowerBorderSize = 0;
+	}
+
 	if (!(vmode & 0x02)){		/* interlace */
 		videl.YSize >>= 1;
 		videl.upperBorderSize >>= 1;
@@ -864,18 +901,26 @@ static void VIDEL_bitplaneToChunky(Uint16 *atariBitplaneData, Uint16 bpp,
 void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 {
 	int scrpitch = HostScreen_getPitch();
-	int h;
+	int h, w, j;
 
-	long atariVideoRAM = VIDEL_getVideoramAddress();
-
-	Uint16 *fvram = (Uint16 *) Atari2HostAddr(atariVideoRAM);
+	Uint16 *fvram = (Uint16 *) Atari2HostAddr(VIDEL_getVideoramAddress());
 	Uint8 *hvram = HostScreen_getVideoramAddress();
 	SDL_PixelFormat *scrfmt = HostScreen_getFormat();
 
+	Uint16 lowBorderSize, rightBorderSize;
+
 	int hscrolloffset = (IoMem_ReadByte(HW + 0x65) & 0x0f);
+
+	/* Horizontal scroll register set? */
+	if (hscrolloffset) {
+		/* Yes, so we need to adjust offset to next line: */
+		nextline += vbpp;
+	}
 
 	/* If emulated computer is the TT, we use the same rendering for display, but without the borders */
 	if (ConfigureParams.System.nMachineType == MACHINE_TT) {
+		videl.leftBorderSize = 0;
+		videl.rightBorderSize = 0;
 		videl.upperBorderSize = 0;
 		videl.lowerBorderSize = 0;
 	}
@@ -888,11 +933,43 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	if (vw>scrwidth) vw_clip = scrwidth;
 	if (vh>scrheight) vh_clip = scrheight;	
 
-	/* Horizontal scroll register set? */
-	if (hscrolloffset) {
-		/* Yes, so we need to adjust offset to next line: */
-		nextline += vbpp;
+	/* If emulated computer is the FALCON, we must take :
+	 * vw = X area display size and not all the X sreen with the borders into account
+	 * vh = Y area display size and not all the Y sreen with the borders into account
+	 */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		vw = videl.XSize;
+		vh = videl.YSize;
 	}
+
+	/* If there's not enough space to display the left border, just return */
+	if (vw_clip < videl.leftBorderSize)
+		return;
+	/* If there's not enough space for the left border + the graphic area, we clip */ 
+	if (vw_clip < vw + videl.leftBorderSize) {
+		vw = vw_clip - videl.leftBorderSize;
+		rightBorderSize = 0;
+	}
+	/* if there's not enough space for the left border + the graphic area + the right border, we clip the border */
+	else if (vw_clip < vw + videl.leftBorderSize + videl.rightBorderSize)
+		rightBorderSize = vw_clip - videl.leftBorderSize - vw;
+	else
+		rightBorderSize = videl.rightBorderSize;
+
+	/* If there's not enough space to display the upper border, just return */
+	if (vh_clip < videl.upperBorderSize)
+		return;
+
+	/* If there's not enough space for the upper border + the graphic area, we clip */ 
+	if (vh_clip < vh + videl.upperBorderSize) {
+		vh = vh_clip - videl.upperBorderSize;
+		lowBorderSize = 0;
+	}
+	/* if there's not enough space for the upper border + the graphic area + the lower border, we clip the border */
+	else if (vh_clip < vh + videl.upperBorderSize + videl.lowerBorderSize)
+		lowBorderSize = vh_clip - videl.upperBorderSize - vh;
+	else
+		lowBorderSize = videl.lowerBorderSize;
 
 	/* Center screen */
 	hvram += ((scrheight-vh_clip)>>1)*scrpitch;
@@ -910,153 +987,146 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 		/* FIXME: The byte swap could be done here by enrolling the loop into 2 each by 8 pixels */
 		switch ( HostScreen_getBpp() ) {
 			case 1:
-				{
+			{
 				Uint8 *hvram_line = hvram;
 
-				for (h = 0; h < vh_clip; h++) {
+				/* Render the upper border */
+				VIDEL_memset_uint8 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * scrpitch);
+				hvram_line += videl.upperBorderSize * scrpitch;
+
+				/* Render the graphical area */
+				for (h = 0; h < vh; h++) {
 					Uint16 *fvram_column = fvram_line;
 					Uint8 *hvram_column = hvram_line;
-					int w;
 
-					/* Render the upper border */
-					if (h < videl.upperBorderSize) {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
-					}
-					/* Render the graphical area */
-					else if (h < videl.upperBorderSize + videl.YSize) {
-						/* First 16 pixels: */
-						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-						memcpy(hvram_column, color+hscrolloffset, 16-hscrolloffset);
-						hvram_column += 16-hscrolloffset;
+					/* Left border first */
+					VIDEL_memset_uint8 (hvram_column, HostScreen_getPaletteColor(0), videl.leftBorderSize);
+					hvram_column += videl.leftBorderSize;
+				
+					/* First 16 pixels */
+					VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+					memcpy(hvram_column, color+hscrolloffset, 16-hscrolloffset);
+					hvram_column += 16-hscrolloffset;
+					fvram_column += vbpp;
+					/* Now the main part of the line */
+					for (w = 1; w < (vw+15)>>4; w++) {
+						VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
+						memcpy(hvram_column, color, 16);
+						hvram_column += 16;
 						fvram_column += vbpp;
-						/* Now the main part of the line: */
-						for (w = 1; w < (vw_clip+15)>>4; w++) {
-							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-							memcpy(hvram_column, color, 16);
-							hvram_column += 16;
-							fvram_column += vbpp;
-						}
-						/* Last pixels of the line for fine scrolling: */
-						if (hscrolloffset) {
-							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-							memcpy(hvram_column, color, hscrolloffset);
-						}
-
-						fvram_line += nextline;
 					}
-					/* Render the bottom border */
-					else {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
+					/* Last pixels of the line for fine scrolling */
+					if (hscrolloffset) {
+						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+						memcpy(hvram_column, color, hscrolloffset);
 					}
+					/* Right border */
+					VIDEL_memset_uint8 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
 
+					fvram_line += nextline;
 					hvram_line += scrpitch;
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint8 (hvram_line, HostScreen_getPaletteColor(0), lowBorderSize * scrpitch);
 			}
 			break;
 			case 2:
 			{
 				Uint16 *hvram_line = (Uint16 *)hvram;
 
-				for (h = 0; h < vh_clip; h++) {
+				/* Render the upper border */
+				VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * (scrpitch>>1));
+				hvram_line += videl.upperBorderSize * (scrpitch>>1);
+
+				/* Render the graphical area */
+				for (h = 0; h < vh; h++) {
 					Uint16 *fvram_column = fvram_line;
 					Uint16 *hvram_column = hvram_line;
-					int w, j;
 
-					/* Render the upper border */
-					if (h < videl.upperBorderSize) {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
+					/* Left border first */
+					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), videl.leftBorderSize);
+					hvram_column += videl.leftBorderSize;
+				
+					/* First 16 pixels */
+					VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+					for (j = 0; j < 16 - hscrolloffset; j++) {
+						*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
 					}
-					/* Render the graphical area */
-					else if (h < videl.upperBorderSize + videl.YSize) {
-						/* First 16 pixels: */
-						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-						for (j = 0; j < 16 - hscrolloffset; j++) {
-							*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+					fvram_column += vbpp;
+					/* Now the main part of the line */
+					for (w = 1; w < (vw+15)>>4; w++) {
+						VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
+						for (j=0; j<16; j++) {
+							*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 						}
 						fvram_column += vbpp;
-						/* Now the main part of the line: */
-						for (w = 1; w < (vw_clip+15)>>4; w++) {
-							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-							for (j=0; j<16; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
-							}
-							fvram_column += vbpp;
-						}
-						/* Last pixels of the line for fine scrolling: */
-						if (hscrolloffset) {
-							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-							for (j = 0; j < hscrolloffset; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor(color[j]);
-							}
-						}
-
-						fvram_line += nextline;
 					}
-					/* Render the bottom border */
-					else {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
+					/* Last pixels of the line for fine scrolling */
+					if (hscrolloffset) {
+						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+						for (j = 0; j < hscrolloffset; j++) {
+							*hvram_column++ = HostScreen_getPaletteColor(color[j]);
 						}
 					}
+					/* Right border */
+					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
 
+					fvram_line += nextline;
 					hvram_line += scrpitch>>1;
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), lowBorderSize * (scrpitch>>1));
 			}
 			break;
 			case 4:
 			{
 				Uint32 *hvram_line = (Uint32 *)hvram;
-				for (h = 0; h < vh_clip; h++) {
+
+				/* Render the upper border */
+				VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * (scrpitch>>2));
+				hvram_line += videl.upperBorderSize * (scrpitch>>2);
+
+				/* Render the graphical area */
+				for (h = 0; h < vh; h++) {
 					Uint16 *fvram_column = fvram_line;
 					Uint32 *hvram_column = hvram_line;
-					int w, j;
 
-					/* Render the upper border */
-					if (h < videl.upperBorderSize) {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
+					/* Left border first */
+					VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), videl.leftBorderSize);
+					hvram_column += videl.leftBorderSize;
+				
+					/* First 16 pixels */
+					VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+					for (j = 0; j < 16 - hscrolloffset; j++) {
+						*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
 					}
-					/* Render the graphical area */
-					else if (h < videl.upperBorderSize + videl.YSize) {
-						/* First 16 pixels: */
-						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-						for (j = 0; j < 16 - hscrolloffset; j++) {
-							*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+					fvram_column += vbpp;
+					/* Now the main part of the line */
+					for (w = 1; w < (vw+15)>>4; w++) {
+						VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
+						for (j=0; j<16; j++) {
+							*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 						}
 						fvram_column += vbpp;
-						/* Now the main part of the line: */
-						for (w = 1; w < (vw_clip+15)>>4; w++) {
-							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-							for (j=0; j<16; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
-							}
-							fvram_column += vbpp;
-						}
-						/* Last pixels of the line for fine scrolling: */
-						if (hscrolloffset) {
-							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-							for (j = 0; j < hscrolloffset; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor(color[j]);
-							}
-						}
-						fvram_line += nextline;
 					}
-					/* Render the bottom border */
-					else {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
+					/* Last pixels of the line for fine scrolling */
+					if (hscrolloffset) {
+						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+						for (j = 0; j < hscrolloffset; j++) {
+							*hvram_column++ = HostScreen_getPaletteColor(color[j]);
 						}
 					}
+					/* Right border */
+					VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
 
+					fvram_line += nextline;
 					hvram_line += scrpitch>>2;
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), lowBorderSize * (scrpitch>>2));
 			}
 			break;
 		}
@@ -1069,131 +1139,109 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 			{
 				/* FIXME: when Videl switches to 16bpp, set the palette to 3:3:2 */
 				Uint8 *hvram_line = hvram;
-				for (h = 0; h < vh_clip; h++) {
+
+				/* Render the upper border */
+				VIDEL_memset_uint8 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * scrpitch);
+				hvram_line += videl.upperBorderSize * scrpitch;
+
+				/* Render the graphical area */
+				for (h = 0; h < vh; h++) {
 					Uint16 *fvram_column = fvram_line;
 					Uint8 *hvram_column = hvram_line;
-					int w, tmp;
+					int tmp;
 
-					/* Render the upper border */
-					if (h < videl.upperBorderSize) {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
-					}
-					/* Render the graphical area */
-					else if (h < videl.upperBorderSize + videl.YSize) {
-						for (w = 0; w < vw_clip; w++) {
-							
-							tmp = SDL_SwapBE16(*fvram_column);
+					/* Left border first */
+					VIDEL_memset_uint8 (hvram_column, HostScreen_getPaletteColor(0), videl.leftBorderSize);
+					hvram_column += videl.leftBorderSize;
 
-							*hvram_column = ((tmp>>13) & 7) << 5;
-							*hvram_column |= ((tmp>>8) & 7) << 2;
-							*hvram_column |= ((tmp>>2) & 3);
-
-							hvram_column++;
-							fvram_column++;
-						}
-
-						fvram_line += nextline;
-					}
-					/* Render the bottom border */
-					else {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
+					/* Graphical area */
+					for (w = 0; w < vw; w++) {
+						tmp = SDL_SwapBE16(*fvram_column++);
+						*hvram_column++ = (((tmp>>13) & 7) << 5) + (((tmp>>8) & 7) << 2) + (((tmp>>2) & 3));
 					}
 
+					/* Right border */
+					VIDEL_memset_uint8 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
+
+					fvram_line += nextline;
 					hvram_line += scrpitch;
 				}
+				/* Render the bottom border */
+				VIDEL_memset_uint8 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * scrpitch);
 			}
 			break;
 			case 2:
 			{
 				Uint16 *hvram_line = (Uint16 *)hvram;
 
-				for (h = 0; h < vh_clip; h++) {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-					/* FIXME: here might be a runtime little/big video endian switch like:
-					      if ( " videocard memory in Motorola endian format " false)
-					*/
+				/* Render the upper border */
+				VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * (scrpitch>>1));
+				hvram_line += videl.upperBorderSize * (scrpitch>>1);
 
-					/* Render the upper border */
-					if (h < videl.upperBorderSize) {
-						memset(hvram_line, HostScreen_getPaletteColor(0), vw_clip<<1);
-					}
-					/* Render the graphical area */
-					else if (h < videl.upperBorderSize + videl.YSize) {
-						memcpy(hvram_line, fvram_line, vw_clip<<1);
-						fvram_line += nextline;
-					}
-					/* Render the bottom border */
-					else {
-						memset(hvram_line, HostScreen_getPaletteColor(0), vw_clip<<1);
-					}
-#else
-					int w;
-					Uint16 *fvram_column = fvram_line;
+				/* Render the graphical area */
+				for (h = 0; h < vh; h++) {
 					Uint16 *hvram_column = hvram_line;
 
-					/* Render the upper border */
-					if (h < videl.upperBorderSize) {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
-					}
-					/* Render the graphical area */
-					else if (h < videl.upperBorderSize + videl.YSize) {
-						for (w = 0; w < vw_clip; w++) {
-							/* byteswap with SDL asm macros */
-							*hvram_column++ = SDL_SwapBE16(*fvram_column++);
-						}
-						fvram_line += nextline;
-					}
-					/* Render the bottom border */
-					else {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
-					}
+					/* Left border first */
+					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), videl.leftBorderSize);
+					hvram_column += videl.leftBorderSize;
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+					/* FIXME: here might be a runtime little/big video endian switch like:
+						if ( " videocard memory in Motorola endian format " false)
+					*/
+					memcpy(hvram_column, fvram_line, vw<<1);
+					hvram_column += vw<<1;
+#else
+					Uint16 *fvram_column = fvram_line;
+					/* Graphical area */
+					for (w = 0; w < vw; w++)
+						*hvram_column ++ = SDL_SwapBE16(*fvram_column++);
 #endif /* SDL_BYTEORDER == SDL_BIG_ENDIAN */
 
+					/* Right border */
+					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
+
+					fvram_line += nextline;
 					hvram_line += scrpitch>>1;
 				}
+
+				/* Render the bottom border */
+				VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * (scrpitch>>1));
 			}
 			break;
 			case 4:
 			{
 				Uint32 *hvram_line = (Uint32 *)hvram;
 
-				for (h = 0; h < vh_clip; h++) {
+				/* Render the upper border */
+				VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * (scrpitch>>2));
+				hvram_line += videl.upperBorderSize * (scrpitch>>2);
+
+				/* Render the graphical area */
+				for (h = 0; h < vh; h++) {
 					Uint16 *fvram_column = fvram_line;
 					Uint32 *hvram_column = hvram_line;
-					int w;
 
-					/* Render the upper border */
-					if (h < videl.upperBorderSize) {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
-					}
-					/* Render the graphical area */
-					else if (h < videl.upperBorderSize + videl.YSize) {
-						for (w = 0; w < vw_clip; w++) {
-							Uint16 srcword = *fvram_column++;
+					/* Left border first */
+					VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), videl.leftBorderSize);
+					hvram_column += videl.leftBorderSize;
 
-							*hvram_column++ = SDL_MapRGB(scrfmt, (srcword & 0xf8), (((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c)), ((srcword >> 5) & 0xf8));
-							fvram_line += nextline;
-						}
-					}
-					/* Render the bottom border */
-					else {
-						for (w = 0; w < vw_clip; w++) {
-							*hvram_column++ = HostScreen_getPaletteColor(0);
-						}
+					/* Graphical area */
+					for (w = 0; w < vw; w++) {
+						Uint16 srcword = *fvram_column++;
+						*hvram_column ++ = SDL_MapRGB(scrfmt, (srcword & 0xf8), (((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c)), ((srcword >> 5) & 0xf8));
 					}
 
-					hvram_line += scrpitch>>2;
+					/* Right border */
+					VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
 				}
+
+				fvram_line += nextline;
+				hvram_line += scrpitch>>2;
+
+				/* Render the bottom border */
+				VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * (scrpitch>>2));
 			}
 			break;
 		}
@@ -1214,6 +1262,8 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 	/* If emulated computer is the TT, we use the same rendering for display, but without the borders */
 	if (ConfigureParams.System.nMachineType == MACHINE_TT) {
+		videl.leftBorderSize = 0;
+		videl.rightBorderSize = 0;
 		videl.upperBorderSize = 0;
 		videl.lowerBorderSize = 0;
 	}
@@ -1273,6 +1323,9 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 	cursrcline = -1;
 
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		vw = videl.XSize;
+
 	if (vbpp<16) {
 		Uint8 color[16];
 
@@ -1330,10 +1383,17 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w]];
+								/* Left border first */
+								if (w < videl.leftBorderSize)
+									hvram_line[w] = HostScreen_getPaletteColor(0);
+								/* Graphical area */
+								else if (w - videl.leftBorderSize < videl.XSize * coefx)
+									hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize]];
+								/* Right border now */
+								else
+									hvram_line[w] = HostScreen_getPaletteColor(0);
 							}
 						}
-
 					}
 					/* Render the bottom border */
 					else {
@@ -1410,7 +1470,15 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w]];
+								/* Left border first */
+								if (w < videl.leftBorderSize)
+									hvram_line[w] = HostScreen_getPaletteColor(0);
+								/* Graphical area */
+								else if (w - videl.leftBorderSize < videl.XSize * coefx)
+									hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize]];
+								/* Right border now */
+								else
+									hvram_line[w] = HostScreen_getPaletteColor(0);
 							}
 						}
 					}
@@ -1490,7 +1558,15 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w]];
+								/* Left border first */
+								if (w < videl.leftBorderSize)
+									hvram_line[w] = HostScreen_getPaletteColor(0);
+								/* Graphical area */
+								else if (w - videl.leftBorderSize < videl.XSize * coefx)
+									hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize]];
+								/* Right border now */
+								else
+									hvram_line[w] = HostScreen_getPaletteColor(0);
 							}
 						}
 					}
@@ -1552,17 +1628,26 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
 						} else {
+							/* Zoom a new line */
 							for (w = 0; w < scrwidth; w++) {
 								Uint16 srcword;
 								Uint8 dstbyte;
 							
-								srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w]]);
+								/* Left border first */
+								if (w < videl.leftBorderSize)
+									*hvram_column++ = HostScreen_getPaletteColor(0);
+								/* Graphical area */
+								else if (w - videl.leftBorderSize < videl.XSize * coefx) {
+									srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize]]);
 
-								dstbyte = ((srcword>>13) & 7) << 5;
-								dstbyte |= ((srcword>>8) & 7) << 2;
-								dstbyte |= ((srcword>>2) & 3);
-
-								*hvram_column++ = dstbyte;
+									dstbyte = ((srcword>>13) & 7) << 5;
+									dstbyte |= ((srcword>>8) & 7) << 2;
+									dstbyte |= ((srcword>>2) & 3);
+									*hvram_column++ = dstbyte;
+								}
+								/* Right border now */
+								else
+									*hvram_column++ = HostScreen_getPaletteColor(0);
 							}
 						}
 					}
@@ -1616,11 +1701,21 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
 						} else {
+							/* Zoom a new line */
 							for (w = 0; w < scrwidth; w++) {
 								Uint16 srcword;
 							
-								srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w]]);
-								*hvram_column++ = srcword;
+								/* Left border first */
+								if (w < videl.leftBorderSize)
+									*hvram_column++ = HostScreen_getPaletteColor(0);
+								/* Graphical area */
+								else if (w - videl.leftBorderSize < videl.XSize * coefx) {
+									srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize]]);
+									*hvram_column++ = srcword;
+								}
+								/* Right border now */
+								else
+									*hvram_column++ = HostScreen_getPaletteColor(0);
 							}
 						}
 					}
@@ -1673,17 +1768,22 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						if (videl_zoom.zoomytable[h] == cursrcline) {
 							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 						} else {
+							/* Zoom a new line */
 							for (w = 0; w < scrwidth; w++) {
 								Uint16 srcword;
 							
-								srcword = fvram_column[videl_zoom.zoomxtable[w]];
+								/* Left border first */
+								if (w < videl.leftBorderSize)
+									*hvram_column++ = HostScreen_getPaletteColor(0);
+								/* Graphical area */
+								else if (w - videl.leftBorderSize < videl.XSize * coefx) {
+									srcword = fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize]];
 
-								*hvram_column++ =
-									SDL_MapRGB(scrfmt,
-										   (srcword & 0xf8),
-										   (((srcword & 0x07) << 5) |
-											   ((srcword >> 11) & 0x3c)),
-										   ((srcword >> 5) & 0xf8));
+									*hvram_column++ = SDL_MapRGB(scrfmt, (srcword & 0xf8), (((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c)), ((srcword >> 5) & 0xf8));
+								}
+								/* Right border now */
+								else
+									*hvram_column++ = HostScreen_getPaletteColor(0);
 							}
 						}
 					}
@@ -1707,4 +1807,23 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 			break;
 		}
 	}
+}
+
+static void VIDEL_memset_uint32(Uint32 *addr, Uint32 color, int count)
+{
+	while (count-- > 0) {
+		*addr++ = color;
+	}
+}
+
+static void VIDEL_memset_uint16(Uint16 *addr, Uint16 color, int count)
+{
+	while (count-- > 0) {
+		*addr++ = color;
+	}
+}
+
+static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count)
+{
+	memset(addr, color, count);
 }
