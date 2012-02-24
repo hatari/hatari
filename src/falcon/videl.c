@@ -1266,6 +1266,8 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 		videl.rightBorderSize = 0;
 		videl.upperBorderSize = 0;
 		videl.lowerBorderSize = 0;
+		videl.XSize = vw;
+		videl.YSize = vh;
 	}
 
 	/* Host screen infos */
@@ -1323,8 +1325,13 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 	cursrcline = -1;
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	/* We reuse the following values to compute the display area size in zoom mode */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
 		vw = videl.XSize;
+		vh = videl.YSize;
+//		scrwidth = vw * coefx;
+		scrheight = vh * coefy;
+	}
 
 	if (vbpp<16) {
 		Uint8 color[16];
@@ -1338,79 +1345,62 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				Uint8 *hvram_line = hvram;
 				Uint8 *hvram_column = p2cline;
 
+				/* Render the upper border */
+				VIDEL_memset_uint8 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * coefy * scrpitch);
+				hvram_line += videl.upperBorderSize * coefy * scrpitch;
+
+				/* Render the graphical area */
 				for (h = 0; h < scrheight; h++) {
-					/* Render the upper border */
-					if (h < videl.upperBorderSize * coefy) {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
-						}
-					}
-					/* Render the graphical area */
-					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
-						scrIdx ++;
 
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
-						} else {
-							Uint16 *fvram_column = fvram_line;
-							hvram_column = p2cline;
+					fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
+					scrIdx ++;
 
-							/* First 16 pixels of a new line */
-							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-							memcpy(hvram_column, color+hscrolloffset, 16-hscrolloffset);
-							hvram_column += 16-hscrolloffset;
+					/* Recopy the same line ? */
+					if (videl_zoom.zoomytable[h] == cursrcline) {
+						memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
+					} else {
+						Uint16 *fvram_column = fvram_line;
+						hvram_column = p2cline;
+
+						/* First 16 pixels of a new line */
+						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+						memcpy(hvram_column, color+hscrolloffset, 16-hscrolloffset);
+						hvram_column += 16-hscrolloffset;
+						fvram_column += vbpp;
+						/* Convert main part of the new line */
+						for (w=1; w < (vw+15)>>4; w++) {
+							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
+							memcpy(hvram_column, color, 16);
+							hvram_column += 16;
 							fvram_column += vbpp;
-							/* Convert main part of the new line */
-							for (w=1; w < (vw+15)>>4; w++) {
-								VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-								memcpy(hvram_column, color, 16);
-								hvram_column += 16;
-								fvram_column += vbpp;
-							}
-							/* Last pixels of the line for fine scrolling: */
-							if (hscrolloffset) {
-								VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-								memcpy(hvram_column, color, hscrolloffset);
-							}
-
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								/* Left border first */
-								if (w < videl.leftBorderSize)
-									hvram_line[w] = HostScreen_getPaletteColor(0);
-								/* Graphical area */
-								else if (w - videl.leftBorderSize < videl.XSize * coefx)
-									hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize]];
-								/* Right border now */
-								else
-									hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
 						}
-					}
-					/* Render the bottom border */
-					else {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
+						/* Last pixels of the line for fine scrolling */
+						if (hscrolloffset) {
+							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+							memcpy(hvram_column, color, hscrolloffset);
+						}
+
+						/* Zoom a new line */
+						for (w=0; w<scrwidth; w++) {
+							/* Display the Left border */
+							if (w < videl.leftBorderSize * coefx)
 								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
+							/* Display the Graphical area */
+							else if (w - videl.leftBorderSize * coefx < videl.XSize * coefx)
+								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize * coefx]];
+							/* Display the Right border */
+							else
+								hvram_line[w] = HostScreen_getPaletteColor(0);
 						}
 					}
 
 					hvram_line += scrpitch;
 					cursrcline = videl_zoom.zoomytable[h];
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint8 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * coefy * scrpitch);
+
 				free(p2cline);
 			}
 			break;
@@ -1421,83 +1411,64 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				Uint16 *hvram_line = (Uint16 *)hvram;
 				Uint16 *hvram_column = p2cline;
 
+				/* Render the upper border */
+				VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * coefy * (scrpitch>>1));
+				hvram_line += videl.upperBorderSize * coefy * (scrpitch>>1);
+
+				/* Render the graphical area */
 				for (h = 0; h < scrheight; h++) {
-					/* Render the upper border */
-					if (h < videl.upperBorderSize * coefy) {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
+					fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
+					scrIdx ++;
+
+					/* Recopy the same line ? */
+					if (videl_zoom.zoomytable[h] == cursrcline) {
+						memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
+					} else {
+						Uint16 *fvram_column = fvram_line;
+						hvram_column = p2cline;
+
+						/* First 16 pixels of a new line */
+						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+						for (j = 0; j < 16 - hscrolloffset; j++) {
+							*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
 						}
-					}
-					/* Render the graphical area */
-					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
-						scrIdx ++;
-
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
-						} else {
-							Uint16 *fvram_column = fvram_line;
-							hvram_column = p2cline;
-
-							/* First 16 pixels of a new line: */
-							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-							for (j = 0; j < 16 - hscrolloffset; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+						fvram_column += vbpp;
+						/* Convert the main part of the new line */
+						for (w = 1; w < (vw+15)>>4; w++) {
+							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
+							for (j=0; j<16; j++) {
+								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 							}
 							fvram_column += vbpp;
-							/* Convert the main part of the new line: */
-							for (w = 1; w < (vw+15)>>4; w++) {
-								VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-								for (j=0; j<16; j++) {
-									*hvram_column++ = HostScreen_getPaletteColor( color[j] );
-								}
-								fvram_column += vbpp;
-							}
-							/* Last pixels of the new line for fine scrolling: */
-							if (hscrolloffset) {
-								VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-								for (j = 0; j < hscrolloffset; j++) {
-									*hvram_column++ = HostScreen_getPaletteColor(color[j]);
-								}
-							}
-
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								/* Left border first */
-								if (w < videl.leftBorderSize)
-									hvram_line[w] = HostScreen_getPaletteColor(0);
-								/* Graphical area */
-								else if (w - videl.leftBorderSize < videl.XSize * coefx)
-									hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize]];
-								/* Right border now */
-								else
-									hvram_line[w] = HostScreen_getPaletteColor(0);
+						}
+						/* Last pixels of the new line for fine scrolling */
+						if (hscrolloffset) {
+							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+							for (j = 0; j < hscrolloffset; j++) {
+								*hvram_column++ = HostScreen_getPaletteColor(color[j]);
 							}
 						}
-					}
-					/* Render the bottom border */
-					else {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
+
+						/* Zoom a new line */
+						for (w=0; w<scrwidth; w++) {
+							/* Display the Left border */
+							if (w < videl.leftBorderSize * coefx)
 								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
+							/* Display the Graphical area */
+							else if (w - videl.leftBorderSize * coefx < videl.XSize * coefx)
+								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize * coefx]];
+							/* Display the Right border */
+							else
+								hvram_line[w] = HostScreen_getPaletteColor(0);
 						}
 					}
 
 					hvram_line += scrpitch>>1;
 					cursrcline = videl_zoom.zoomytable[h];
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * coefy * (scrpitch>>1));
 
 				free(p2cline);
 			}
@@ -1509,83 +1480,63 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				Uint32 *hvram_line = (Uint32 *)hvram;
 				Uint32 *hvram_column = p2cline;
 
+				/* Render the upper border */
+				VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * coefy * (scrpitch>>2));
+				hvram_line += videl.upperBorderSize * coefy * (scrpitch>>2);
+
+				/* Render the graphical area */
 				for (h = 0; h < scrheight; h++) {
+					fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
+					scrIdx ++;
+					/* Recopy the same line ? */
+					if (videl_zoom.zoomytable[h] == cursrcline) {
+						memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
+					} else {
+						Uint16 *fvram_column = fvram_line;
+						hvram_column = p2cline;
 
-					/* Render the upper border */
-					if (h < videl.upperBorderSize * coefy) {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
+						/* First 16 pixels of a new line */
+						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+						for (j = 0; j < 16 - hscrolloffset; j++) {
+							*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
 						}
-					}
-					/* Render the graphical area */
-					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
-						scrIdx ++;
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							Uint16 *fvram_column = fvram_line;
-							hvram_column = p2cline;
-
-							/* First 16 pixels of a new line: */
-							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-							for (j = 0; j < 16 - hscrolloffset; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+						fvram_column += vbpp;
+						/* Convert the main part of the new line */
+						for (w = 1; w < (vw+15)>>4; w++) {
+							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
+							for (j=0; j<16; j++) {
+								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 							}
 							fvram_column += vbpp;
-							/* Convert the main part of the new line: */
-							for (w = 1; w < (vw+15)>>4; w++) {
-								VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-								for (j=0; j<16; j++) {
-									*hvram_column++ = HostScreen_getPaletteColor( color[j] );
-								}
-								fvram_column += vbpp;
-							}
-							/* Last pixels of the new line for fine scrolling: */
-							if (hscrolloffset) {
-								VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-								for (j = 0; j < hscrolloffset; j++) {
-									*hvram_column++ = HostScreen_getPaletteColor(color[j]);
-								}
-							}
-
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								/* Left border first */
-								if (w < videl.leftBorderSize)
-									hvram_line[w] = HostScreen_getPaletteColor(0);
-								/* Graphical area */
-								else if (w - videl.leftBorderSize < videl.XSize * coefx)
-									hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize]];
-								/* Right border now */
-								else
-									hvram_line[w] = HostScreen_getPaletteColor(0);
+						}
+						/* Last pixels of the new line for fine scrolling */
+						if (hscrolloffset) {
+							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+							for (j = 0; j < hscrolloffset; j++) {
+								*hvram_column++ = HostScreen_getPaletteColor(color[j]);
 							}
 						}
-					}
-					/* Render the bottom border */
-					else {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
+
+						/* Zoom a new line */
+						for (w=0; w<scrwidth; w++) {
+							/* Display the Left border */
+							if (w < videl.leftBorderSize * coefx)
 								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
+							/* Display the Graphical area */
+							else if (w - videl.leftBorderSize * coefx < videl.XSize * coefx)
+								hvram_line[w] = p2cline[videl_zoom.zoomxtable[w - videl.leftBorderSize * coefx]];
+							/* Display the Right border */
+							else
+								hvram_line[w] = HostScreen_getPaletteColor(0);
 						}
 					}
 
 					cursrcline = videl_zoom.zoomytable[h];
 					hvram_line += scrpitch>>2;
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * coefy * (scrpitch>>2));
 
 				free(p2cline);
 			}
@@ -1601,72 +1552,53 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				Uint8 *hvram_line = hvram;
 				Uint8 *hvram_column = hvram_line;
 
+				/* Render the upper border */
+				VIDEL_memset_uint8 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * coefy * scrpitch);
+				hvram_line += videl.upperBorderSize * coefy * scrpitch;
+
+				/* Render the graphical area */
 				for (h = 0; h < scrheight; h++) {
-					/* Render the upper border */
-					if (h < videl.upperBorderSize * coefy) {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
-						}
-					}
-					/* Render the graphical area */
-					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						Uint16 *fvram_column;
+					Uint16 *fvram_column;
 
-						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
-						scrIdx ++;
+					fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
+					scrIdx ++;
 
-						fvram_column = fvram_line;
-						hvram_column = hvram_line;
+					fvram_column = fvram_line;
+					hvram_column = hvram_line;
 
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w = 0; w < scrwidth; w++) {
-								Uint16 srcword;
-								Uint8 dstbyte;
+					/* Recopy the same line ? */
+					if (videl_zoom.zoomytable[h] == cursrcline) {
+						memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
+					} else {
+						/* Zoom a new line */
+						for (w = 0; w < scrwidth; w++) {
+							Uint16 srcword;
+							Uint8 dstbyte;
 							
-								/* Left border first */
-								if (w < videl.leftBorderSize)
-									*hvram_column++ = HostScreen_getPaletteColor(0);
-								/* Graphical area */
-								else if (w - videl.leftBorderSize < videl.XSize * coefx) {
-									srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize]]);
+							/* Left border first */
+							if (w < videl.leftBorderSize * coefx)
+								*hvram_column++ = HostScreen_getPaletteColor(0);
+							/* Graphical area */
+							else if (w - videl.leftBorderSize * coefx < videl.XSize * coefx) {
+								srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize * coefx]]);
 
-									dstbyte = ((srcword>>13) & 7) << 5;
-									dstbyte |= ((srcword>>8) & 7) << 2;
-									dstbyte |= ((srcword>>2) & 3);
-									*hvram_column++ = dstbyte;
-								}
-								/* Right border now */
-								else
-									*hvram_column++ = HostScreen_getPaletteColor(0);
+								dstbyte = ((srcword>>13) & 7) << 5;
+								dstbyte |= ((srcword>>8) & 7) << 2;
+								dstbyte |= ((srcword>>2) & 3);
+								*hvram_column++ = dstbyte;
 							}
-						}
-					}
-					/* Render the bottom border */
-					else {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
+							/* Right border now */
+							else
+								*hvram_column++ = HostScreen_getPaletteColor(0);
 						}
 					}
 
 					cursrcline = videl_zoom.zoomytable[h];
 					hvram_line += scrpitch;
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint8 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * coefy * scrpitch);
 			}
 			break;
 			case 2:
@@ -1674,67 +1606,48 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				Uint16 *hvram_line = (Uint16 *)hvram;
 				Uint16 *hvram_column = hvram_line;
 
+				/* Render the upper border */
+				VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * coefy * (scrpitch>>1));
+				hvram_line += videl.upperBorderSize * coefy * (scrpitch>>1);
+
+				/* Render the graphical area */
 				for (h = 0; h < scrheight; h++) {
-					/* Render the upper border */
-					if (h < videl.upperBorderSize * coefy) {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
-						}
-					}
-					/* Render the graphical area */
-					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						Uint16 *fvram_column;
+					Uint16 *fvram_column;
 
-						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
-						scrIdx ++;
+					fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
+					scrIdx ++;
 
-						fvram_column = fvram_line;
-						hvram_column = hvram_line;
+					fvram_column = fvram_line;
+					hvram_column = hvram_line;
 
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w = 0; w < scrwidth; w++) {
-								Uint16 srcword;
+					/* Recopy the same line ? */
+					if (videl_zoom.zoomytable[h] == cursrcline) {
+						memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
+					} else {
+						/* Zoom a new line */
+						for (w = 0; w < scrwidth; w++) {
+							Uint16 srcword;
 							
-								/* Left border first */
-								if (w < videl.leftBorderSize)
-									*hvram_column++ = HostScreen_getPaletteColor(0);
-								/* Graphical area */
-								else if (w - videl.leftBorderSize < videl.XSize * coefx) {
-									srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize]]);
-									*hvram_column++ = srcword;
-								}
-								/* Right border now */
-								else
-									*hvram_column++ = HostScreen_getPaletteColor(0);
+							/* Left border first */
+							if (w < videl.leftBorderSize * coefx)
+								*hvram_column++ = HostScreen_getPaletteColor(0);
+							/* Graphical area */
+							else if (w - videl.leftBorderSize * coefx < videl.XSize * coefx) {
+								srcword = SDL_SwapBE16(fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize * coefx]]);
+								*hvram_column++ = srcword;
 							}
-						}
-					}
-					/* Render the bottom border */
-					else {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
+							/* Right border now */
+							else
+								*hvram_column++ = HostScreen_getPaletteColor(0);
 						}
 					}
 
 					cursrcline = videl_zoom.zoomytable[h];
 					hvram_line += scrpitch>>1;
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * coefy * (scrpitch>>1));
 			}
 			break;
 			case 4:
@@ -1742,67 +1655,47 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				Uint32 *hvram_line = (Uint32 *)hvram;
 				Uint32 *hvram_column = hvram_line;
 
+				/* Render the upper border */
+				VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), videl.upperBorderSize * coefy * (scrpitch>>2));
+				hvram_line += videl.upperBorderSize * coefy * (scrpitch>>2);
+
+				/* Render the graphical area */
 				for (h = 0; h < scrheight; h++) {
-					/* Render the upper border */
-					if (h < videl.upperBorderSize * coefy) {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
-						}
-					}
-					/* Render the graphical area */
-					else if (h < (videl.upperBorderSize + videl.YSize) * coefy) {
-						Uint16 *fvram_column;
+					Uint16 *fvram_column;
 
-						fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
-						scrIdx ++;
-						fvram_column = fvram_line;
-						hvram_column = hvram_line;
+					fvram_line = fvram + (videl_zoom.zoomytable[scrIdx] * nextline);
+					scrIdx ++;
+					fvram_column = fvram_line;
+					hvram_column = hvram_line;
 
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w = 0; w < scrwidth; w++) {
-								Uint16 srcword;
-							
-								/* Left border first */
-								if (w < videl.leftBorderSize)
-									*hvram_column++ = HostScreen_getPaletteColor(0);
-								/* Graphical area */
-								else if (w - videl.leftBorderSize < videl.XSize * coefx) {
-									srcword = fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize]];
+					/* Recopy the same line ? */
+					if (videl_zoom.zoomytable[h] == cursrcline) {
+						memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
+					} else {
+						/* Zoom a new line */
+						for (w = 0; w < scrwidth; w++) {
+							Uint16 srcword;
 
-									*hvram_column++ = SDL_MapRGB(scrfmt, (srcword & 0xf8), (((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c)), ((srcword >> 5) & 0xf8));
-								}
-								/* Right border now */
-								else
-									*hvram_column++ = HostScreen_getPaletteColor(0);
+							/* Left border first */
+							if (w < videl.leftBorderSize * coefx)
+								*hvram_column++ = HostScreen_getPaletteColor(0);
+							/* Graphical area */
+							else if (w - videl.leftBorderSize * coefx < videl.XSize * coefx) {
+								srcword = fvram_column[videl_zoom.zoomxtable[w - videl.leftBorderSize * coefx]];
+								*hvram_column++ = SDL_MapRGB(scrfmt, (srcword & 0xf8), (((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c)), ((srcword >> 5) & 0xf8));
 							}
-						}
-					}
-					/* Render the bottom border */
-					else {
-						/* Recopy the same line ? */
-						if (videl_zoom.zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						} else {
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w] = HostScreen_getPaletteColor(0);
-							}
+							/* Right border now */
+							else
+								*hvram_column++ = HostScreen_getPaletteColor(0);
 						}
 					}
 
 					cursrcline = videl_zoom.zoomytable[h];
 					hvram_line += scrpitch>>2;
 				}
+
+				/* Render the lower border */
+				VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), videl.lowerBorderSize * coefy * (scrpitch>>2));
 			}
 			break;
 		}
