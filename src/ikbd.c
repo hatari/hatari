@@ -45,6 +45,9 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			eg : .loop : move.b d0,$fc02.w    btst #1,$fc00.w    beq.s .loop		*/
 /* 2012/01/22	[NP]	Enable both mouse and joystick reporting when commands 0x12 and 0x14 are	*/
 /*			received during the IKBD reset.							*/
+/* 2012/02/26	[NP]	Handle TX interrupt in the ACIA (eg by sendding 0xb6 instead of 0x96 after	*/
+/*			resetting the ACIA) (fix the game 'Hades Nebula').				*/
+
 
 #include <time.h>
 
@@ -1988,7 +1991,7 @@ Uint16 IKBD_GetByteFromACIA(void)
 	ACIAStatusRegister &= ~(ACIA_STATUS_REGISTER__RX_BUFFER_FULL | ACIA_STATUS_REGISTER__INTERRUPT_REQUEST | ACIA_STATUS_REGISTER__OVERRUN_ERROR);
 
 	/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
-	MFP_GPIP |= 0x10;
+	MFP_GPIP |= 0x10;				/* clear IRQ signal */
 	return ACIAByte;  /* Return byte from keyboard */
 }
 
@@ -2026,7 +2029,7 @@ void IKBD_InterruptHandler_ACIA_RX(void)
 
 	/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
 	/* NOTE: GPIP will remain low(0) until keyboard data is read from $fffc02. */
-	MFP_GPIP &= ~0x10;
+	MFP_GPIP &= ~0x10;				/* set IRQ signal */
 
 	/* There seems to be a small gap on a real ST between the point in time
 	* the ACIA_STATUS_REGISTER__RX_BUFFER_FULL bit is set and the MFP
@@ -2045,6 +2048,14 @@ void IKBD_InterruptHandler_ACIA_TX(void)
 	IKBD_SendByteToKeyboardProcessor(ACIATxDataRegister);  		/* Pass the byte to the keyboard processor */
 	ACIAStatusRegister |= ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;	/* TX buffer is now empty */
 	bByteInTransitFromACIA = false;					/* ready to send another byte */
+
+	/* If TX interrupt is enabled do an IRQ now */
+	if ( ( ACIAControlRegister & 0x60 ) == 0x20 )			/* CR6+CR5 = 01 -> transmit interrupt disabled */
+	{
+		/* NOTE: GPIP will remain low(0) until byte is written to $fffc02. */
+		MFP_GPIP &= ~0x10;					/* set IRQ signal */
+		MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+	}
 }
 
 
@@ -2217,22 +2228,32 @@ void IKBD_KeyboardData_ReadByte(void)
  */
 void IKBD_KeyboardControl_WriteByte(void)
 {
+	int FrameCycles, HblCounterVideo, LineCycles;
+
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
 
-	if (LOG_TRACE_LEVEL(TRACE_IKBD_ACIA))
-	{
-		int FrameCycles, HblCounterVideo, LineCycles;
-		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-		LOG_TRACE_PRINT("ikbd write fffc00 ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LOG_TRACE(TRACE_IKBD_ACIA, "ikbd write fffc00 ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
 				IoMem[0xfffc00], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
-	}
 
 	/* [NP] We only handle reset of the ACIA */
 	if ( ( IoMem[0xfffc00] & 0x03 ) == 0x03 )
 		ACIA_Reset();
 
-	/* Nothing... */
+	/* If TX interrupt is enabled (CR6+CR5 go from 00 to 01) and TX buffer is empty, do an IRQ now */
+	if ( ( ( ACIAControlRegister & 0x60 ) == 0x00 )			/* CR6+CR5 = 00 -> transmit interrupt disabled */
+	  && ( ( IoMem[0xfffc00] & 0x60 ) == 0x20 )			/* CR6+CR5 = 01 -> transmit interrupt enabled */
+	  && ( ACIAStatusRegister & ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY ) )
+	{
+		LOG_TRACE(TRACE_IKBD_ACIA, "ikbd write fffc00 ctrl=0x%x enable ACIA TX IRQ video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+				IoMem[0xfffc00], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+		/* NOTE: GPIP will remain low(0) until byte is written to $fffc02. */
+		MFP_GPIP &= ~0x10;					/* set IRQ signal */
+		MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+	}
+
+	ACIAControlRegister = IoMem[0xfffc00];
 }
 
 /*-----------------------------------------------------------------------*/
@@ -2265,7 +2286,12 @@ void IKBD_KeyboardData_WriteByte(void)
 
 	}
 
-	ACIATxDataRegister = IoMem[0xfffc02];		/* store the byte that we want to send to the ikbd */
+	ACIATxDataRegister = IoMem[0xfffc02];			/* store the byte that we want to send to the ikbd */
+
+	/* A write in TDR clears the TX IRQ */
+	if ( ( ACIAControlRegister & 0x60 ) == 0x20 )		/* CR6+CR5 = 01 -> transmit interrupt enabled */
+		MFP_GPIP |= 0x10;				/* clear IRQ signal */
+
 
 	/* [NP] FIXME 2011/12/27 : when writing constantly in $fffc02, we should replace ACIATxDataRegister */
 	/* but we should not restart INTERRUPT_IKBD_ACIA_TX from the start each time, nor reset TX_BUFFER bit */
