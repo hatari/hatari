@@ -12,6 +12,7 @@ Emulation:
   in The European Demos and The Transbeauce II Demo)
 - Handle commands 0x12 and 0x14 sent during the IKBD reset (enable both
   mouse and joystick reporting at the same time)
+- Handle the TX IRQ in the ACIA (bits CR6+CR5=0x01)
 - Fix to DSP stack overflow handling
 - Fix DSP to be reseted on emulation reset
 - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
@@ -45,6 +46,7 @@ Fixed Games :
   Hammerfist (fire button),
   Automation 168 - Operation Clean Streets (prefetch in the CPU emulation)
   Impossible Mission II (some versions had the same prefetch issue in the CPU)
+  Hades Nebula (fire button)
 
 Fixed demos :
   Built-in Obsolescence (DSP stack overflow)

@@ -45,7 +45,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			eg : .loop : move.b d0,$fc02.w    btst #1,$fc00.w    beq.s .loop		*/
 /* 2012/01/22	[NP]	Enable both mouse and joystick reporting when commands 0x12 and 0x14 are	*/
 /*			received during the IKBD reset.							*/
-/* 2012/02/26	[NP]	Handle TX interrupt in the ACIA (eg by sendding 0xb6 instead of 0x96 after	*/
+/* 2012/02/26	[NP]	Handle TX interrupt in the ACIA (eg by sending 0xb6 instead of 0x96 after	*/
 /*			resetting the ACIA) (fix the game 'Hades Nebula').				*/
 
 
