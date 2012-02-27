@@ -101,6 +101,9 @@ TraceOptions[] = {
 	{ TRACE_DSP_STATE	 , "dsp_state" },
 	{ TRACE_DSP_ALL		 , "dsp_all" },
 
+	{ TRACE_DSP_SYMBOLS	 , "dsp_symbols" },
+	{ TRACE_CPU_SYMBOLS	 , "cpu_symbols" },
+
 	{ TRACE_ALL		 , "all" }
 };
 

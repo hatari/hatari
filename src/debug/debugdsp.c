@@ -22,6 +22,7 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "evaluate.h"
 #include "history.h"
+#include "log.h"
 #include "memorySnapShot.h"
 #include "profile.h"
 #include "str.h"
@@ -345,7 +346,10 @@ void DebugDsp_Check(void)
 	{
 		Profile_DspUpdate();
 	}
-	/* TODO: show symbols while disassembling DSP instructions */
+	if (LOG_TRACE_LEVEL((TRACE_DSP_DISASM|TRACE_DSP_SYMBOLS)))
+	{
+		DebugDsp_ShowAddressInfo(DSP_GetPC());
+	}
 	if (nDspActiveCBs)
 	{
 		if (BreakCond_MatchDsp())
@@ -374,7 +378,8 @@ void DebugDsp_SetDebugging(void)
 	bDspProfiling = Profile_DspStart();
 	nDspActiveCBs = BreakCond_BreakPointCount(true);
 
-	if (nDspActiveCBs || nDspSteps || bDspProfiling || bHistoryEnabled)
+	if (nDspActiveCBs || nDspSteps || bDspProfiling || bHistoryEnabled
+	    || LOG_TRACE_LEVEL((TRACE_DSP_DISASM|TRACE_DSP_SYMBOLS)))
 		DSP_SetDebugging(true);
 	else
 		DSP_SetDebugging(false);

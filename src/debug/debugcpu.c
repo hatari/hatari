@@ -517,7 +517,7 @@ void DebugCpu_Check(void)
 	{
 		Profile_CpuUpdate();
 	}
-	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+	if (LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS)))
 	{
 		DebugCpu_ShowAddressInfo(M68000_GetPC());
 	}
@@ -548,7 +548,8 @@ void DebugCpu_SetDebugging(void)
 	bCpuProfiling = Profile_CpuStart();
 	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 
-	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || bHistoryEnabled)
+	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || bHistoryEnabled
+	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS)))
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);

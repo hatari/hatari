@@ -84,6 +84,11 @@ Games :
 Other potential Hatari functionality improvements
 -------------------------------------------------
 
+- Profile data causes symbol tracing to output line for every
+  instruction.  This can be fixed by moving profiling information
+  output to disassembly code, this way disassembly + profiling info
+  can also be made more readable
+
 - Improved boot drive & partition handling code:
   - count partitions the same way in ACSI, IDE & GEMDOS
   - move BootDrive stuff from floppy.c e.g. to tos.c where NumDrives is
