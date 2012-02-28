@@ -130,7 +130,7 @@ void VIDEL_reset(void)
 {
 	videl.bUseSTShifter = false;				/* Use Falcon color palette by default */
 	videl.reg_ffff8006_save = IoMem_ReadByte(0xff8006);
-	videl.monitor_type  = videl.reg_ffff8006_save & 0xc0;
+	videl.monitor_type = videl.reg_ffff8006_save & 0xc0;
 	
 	videl.hostColorsSync = false; 
 
@@ -153,6 +153,9 @@ void VIDEL_reset(void)
 	/* Reset IO register (some are not initialized by TOS) */
 	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
 	IoMem_WriteWord(0xff8264, 0);    /* Horizontal scroll */
+
+	/* Init synch mode register */
+	 VIDEL_SyncMode_WriteByte();
 }
 
 /**
@@ -183,6 +186,28 @@ void VIDEL_Monitor_WriteByte(void)
 	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff8006 Monitor and memory conf write (Read only)\n");
 	/* Restore hardware value */
 	IoMem_WriteByte(0xff8006, videl.reg_ffff8006_save);
+}
+
+/**
+ * VIDEL_SyncMode_WriteByte : Videl synchronization mode. 
+ *             $FFFF820A [R/W] _______0  .................................. SYNC-MODE
+                                     ||
+                                     |+--Synchronisation [ 0:internal / 1:external ]
+                                     +---Vertical frequency [ Read-only bit ]
+                                         [ Monochrome monitor:0 / Colour monitor:1 ]
+ */
+void VIDEL_SyncMode_WriteByte(void)
+{
+	Uint8 syncMode = IoMem_ReadByte(0xff820a);
+
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ffff820a Sync Mode write: 0x%02x\n", syncMode);
+
+	if (videl.monitor_type == FALCON_MONITOR_MONO)
+		syncMode &= 0xfd;
+	else
+		syncMode |= 0x2;
+	
+	IoMem_WriteByte(0xff820a, syncMode);
 }
 
 /**
