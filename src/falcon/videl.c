@@ -554,10 +554,12 @@ static int VIDEL_getScreenBpp(void)
  */
 static int VIDEL_getScreenWidth(void)
 {
-	Uint16 hbb = IoMem_ReadWord(HW + 0x84) & 0x03ff;
-	Uint16 hbe = IoMem_ReadWord(HW + 0x86) & 0x03ff;  
-	Uint16 hdb = IoMem_ReadWord(HW + 0x88) & 0x01ff;
-	Uint16 hde = IoMem_ReadWord(HW + 0x8a) & 0x03ff;
+	/* If the user disabled the borders display from the gui, we suppress them */
+	if (ConfigureParams.Screen.bAllowOverscan == 0) {
+		videl.leftBorderSize = 0;
+		videl.rightBorderSize = 0;
+		return videl.XSize;
+	}
 
 	/* According to Aura and Animal Mine doc about Videl, if a monochrome monitor is connected,
 	 * HDB and HDE have no significance and no border is displayed.
@@ -565,20 +567,76 @@ static int VIDEL_getScreenWidth(void)
 	if (videl.monitor_type == FALCON_MONITOR_MONO) {
 		videl.leftBorderSize = 0;
 		videl.rightBorderSize = 0;
+		return videl.XSize;
+	}
+
+	Uint16 hbb = IoMem_ReadWord(HW + 0x84) & 0x01ff;
+	Uint16 hbe = IoMem_ReadWord(HW + 0x86) & 0x01ff;  
+	Uint16 hdb = IoMem_ReadWord(HW + 0x88) & 0x01ff;
+	Uint16 hde = IoMem_ReadWord(HW + 0x8a) & 0x01ff;
+
+	Uint16 hdb_offset, hde_offset;
+	Uint16 bpp = VIDEL_getScreenBpp();
+	Uint16 cycPerPixel, divider;
+	Sint16 leftBorder, rightBorder;
+	Uint16 vdm = IoMem_ReadWord(0xff82c2) & 0xc;
+	Uint16 hht = IoMem_ReadWord(0xff8282) & 0x1ff;
+
+	/* Compute cycles per pixel */
+	if (vdm == 0)
+		cycPerPixel = 4;
+	else if (vdm == 4)
+		cycPerPixel = 2;
+	else
+		cycPerPixel = 1;
+
+	/* Compute the divider */
+	if (videl.monitor_type == FALCON_MONITOR_VGA) {
+		if (cycPerPixel == 4)
+			divider = 4;
+		else
+			divider = 2;
+	}
+	else if (videl.bUseSTShifter == true) {
+		divider = 16;
 	}
 	else {
-		videl.leftBorderSize = hdb - hbe > 0 ? hdb - hbe : 0;
-		videl.rightBorderSize = hbb - hde > 0 ? hbb - hde : 0;
+		divider = cycPerPixel;
 	}
+
+		
+	/* Compute hdb_offset and hde_offset */
+	if (videl.bUseSTShifter == false) {
+		if (bpp < 16) {
+			/* falcon mode bpp */
+			hdb_offset = ((64+(128/bpp + 16 + 2) * cycPerPixel) / divider ) + 1;
+			hde_offset = ((128/bpp + 2) * cycPerPixel) / divider;
+		}
+		else {
+			/* falcon mode true color */
+			hdb_offset = ((64 + 16 * cycPerPixel) / divider ) + 1;
+			hde_offset = 0;
+		}
+	}
+	else {
+		/* ST bitplan mode */
+		hdb_offset = ((128+(128/bpp + 2) * cycPerPixel) / divider ) + 1;
+		hde_offset = ((128/bpp + 2) * cycPerPixel) / divider;
+	}
+
+	LOG_TRACE(TRACE_VIDEL, "hdb_offset=%04x,    hde_offset=%04x\n", hdb_offset, hde_offset);
+
+	leftBorder = hbe - hdb_offset;
+	if (leftBorder < 0)
+		leftBorder += hht + 2;
+
+	rightBorder = hbb - hde_offset;
+
+	videl.leftBorderSize = hdb - leftBorder > 0 ? (hdb - leftBorder) / cycPerPixel : 0;
+	videl.rightBorderSize = rightBorder - hde > 0 ? (rightBorder - hde)/ cycPerPixel : 0;
 
 	/* X Size of the Display area */
 	videl.XSize = (IoMem_ReadWord(HW + 0x10) & 0x03ff) * 16 / VIDEL_getScreenBpp();
-
-	/* If the user disabled the borders display from the gui, we suppress them */
-	if (ConfigureParams.Screen.bAllowOverscan == 0) {
-		videl.leftBorderSize = 0;
-		videl.rightBorderSize = 0;
-	}
 
 	return videl.leftBorderSize + videl.XSize + videl.rightBorderSize;
 }
