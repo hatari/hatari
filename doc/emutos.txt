@@ -399,8 +399,8 @@ There are not that many freely available or even commercial programs
 that would be STE specific (or even STE enhanced):
     http://atari-ste.anvil-soft.com/html/archivapps.htm
 
-But following STE specific demos, games and apps work (mostly) fine
-with EmuTOS.
+But following STE specific & enhanced demos, games and apps work
+(mostly) fine with EmuTOS.
 
 Note: STE emulation needs 256kB version of EmuTOS.  If you use 60Hz
 EmuTOS version (etos256us.img), you may get screen flicker and music
@@ -468,6 +468,7 @@ Color games:
 - 4K Pacman (bug: background not cleared to black)
 - Aerial Combat 3
 - Alien Blast (demo)
+- Astrodia
 - Battletris+
 - ChuChu Rocket* (full version)
 - Dynaplus*
@@ -477,7 +478,7 @@ Color games:
 - Obsession* (demo of commercial pinball)
 - Operation Garfield
 - Pacman on E
-- Power Up (no blitter in use)
+- Power Up
 - Skulls (shareware "minesweeper")
 - Spy 4k
 - Stardust* (tunnel sequence demo)
@@ -546,11 +547,11 @@ Working free/shareware Falcon demos, games and applications
 Falcon emulation requires 512kB version of EmuTOS
 (the one shipped with Hatari).
 
-Partial Videl/VsetMode() and missing Falcon sound matrix & DSP OS
-function support in EmuTOS is probably the reason why many of the
-demos and games graphics look broken or they freeze at startup.
-Following Falcon only demos, games and apps work (mostly) fine
-though.
+Partial Videl/VsetMode() implementation, missing VDI 256-color &
+HiColor support and missing Falcon sound matrix & DSP XBios functions
+in EmuTOS probably explain why graphics in many of the demos &games
+look broken or they freeze at startup. Following Falcon only demos,
+games and apps work (mostly) fine though.
 
 Working demos:
 - 1600x600
@@ -614,9 +615,11 @@ Partly working demos:
 - Jesterday (by POV)
   - Music demo, but no music as it needs DSP
 - Oergs (by Lazer)
-- Schlumpf (by Lazer)
-  - colors are wrong
-  - Dsp: Stack underflow
+  - Music is bad
+- Schlumpf invtro (by Lazer)
+  - Music is bad
+  - Colors are wrong
+  - Input doesn't work to advance next screen
 
 
 Working games:
@@ -634,6 +637,8 @@ Working games:
 - Hexogan (use number pad)
 - Impulse (Breakout clone)*
 - Lamemine
+- LlamaZap free version (requires joypad, not joystick)
+- Madtris
 - Nibe
 - Running (demo)*
 - Radical Race (demo)*
@@ -649,8 +654,8 @@ Working games:
 - Willie's Adventure* (preview2)
 
 Games regressed in EmuTOS v0.8.6:
-- Madtris colors are all wrong
-- Rave (screen graphics are garbage)
+- Rave*
+  - Colors/graphics are wrong
 - SBM v0.8 (Bomberman clone)*, doesn't work anymore
   - Bus error wget at 00400000
 - Vertical Mayhem (Columns clone)*, black screen at start
@@ -668,14 +673,12 @@ Games working with extra hacks:
 Almost working games:
 - Des Lazers & des Hommes: game area graphics are missing
   (AFAIK they're rendered with DSP)
-- LlamaZap free version: colors are all wrong
-  (note: this requires joypad, not joystick)
 - Santarun (GEM): just too slow
 - TUM, GEM minesweeper: says "sorry, sound system is locked"
   on every click
 - Masters of Chaos starts, but then doesn't react to input
 
-Games using Line-A bitblit (not supported by EmuTOS):
+Games using Line-A bitblit not supported by EmuTOS:
 - Gold island demo
 - Men at War
 - Tron 2
