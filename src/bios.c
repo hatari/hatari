@@ -23,40 +23,6 @@ const char Bios__fileid[] = "Hatari bios.c : " __DATE__ " " __TIME__;
 
 /*-----------------------------------------------------------------------*/
 /**
- * BIOS Return input device status
- * Call 1
- */
-static bool Bios_Bconstat(Uint32 Params)
-{
-	Uint16 Dev;
-
-	Dev = STMemory_ReadWord(Params+SIZE_WORD);
-
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconstat(%i)\n", Dev);
-
-	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * BIOS Read character from device
- * Call 2
- */
-static bool Bios_Bconin(Uint32 Params)
-{
-	Uint16 Dev;
-
-	Dev = STMemory_ReadWord(Params+SIZE_WORD);
-
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconin(%i)\n", Dev);
-
-	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Convert given BIOS CON: device character output to ASCII.
  * Accepts one character at the time, parses VT52 escape codes
  * and maps Atari characters to their closest ASCII equivalents.
@@ -223,7 +189,7 @@ static bool Bios_Bconout(Uint32 Params)
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 	Char = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconout(%i, 0x%02x)\n", Dev, Char);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 3 Bconout(%i, 0x%02x)\n", Dev, Char);
 
 	if (Dev == 2) {
 		Bios_VT52(Char);
@@ -249,37 +215,21 @@ static bool Bios_RWabs(Uint32 Params)
 	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS Rwabs %i,%d,0x%lX,%d,%d\n",
-	          Dev, RWFlag, STRAM_ADDR(pBuffer), RecNo, Number);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 4 Rwabs(%d,0x%lX,%d,%d,%i)\n",
+	          RWFlag, STRAM_ADDR(pBuffer), Number, RecNo, Dev);
 
 	return false;
 }
 
 
 /*-----------------------------------------------------------------------*/
-/**
- * BIOS Return output device status
- * Call 8
- */
-static bool Bios_Bcostat(Uint32 Params)
-{
-	Uint16 Dev;
 
-	Dev = STMemory_ReadWord(Params+SIZE_WORD);
-
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bcostat(%i)\n", Dev);
-
-	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Print BIOS call name when BIOS tracing enabled.
- */
-static bool Bios_Trace(Uint16 BiosCall)
-{
 #if ENABLE_TRACING
+/**
+ * Map BIOS call opcode to BIOS function name
+ */
+static const char* Bios_Call2Name(Uint16 opcode)
+{
 	/* GCC uses substrings from above trace statements
 	 * where they match, so having them again here
 	 * wastes only a pointer & simplifies things
@@ -289,15 +239,12 @@ static bool Bios_Trace(Uint16 BiosCall)
 		"Rwabs",  "Setexc",  "Tickcal","Getbpb",
 		"Bcostat","Mediach", "Drvmap", "Kbshift"
 	};
-	if (BiosCall < ARRAYSIZE(names)) {
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS %s()\n", names[BiosCall]);
-	} else {
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS %d?\n", BiosCall);
+	if (opcode < ARRAYSIZE(names) && names[opcode]) {
+		return names[opcode];
 	}
-#endif
-	/* let TOS handle it */
-	return false;
+	return "???";
 }
+#endif
 
 
 /*-----------------------------------------------------------------------*/
@@ -318,17 +265,26 @@ bool Bios(void)
 	/* Intercept? */
 	switch(BiosCall)
 	{
-	 case 0x1:
-		return Bios_Bconstat(Params);
-	 case 0x2:
-		return Bios_Bconin(Params);
-	 case 0x3:
+	case 0x3:
 		return Bios_Bconout(Params);
-	 case 0x4:
+	case 0x4:
 		return Bios_RWabs(Params);
-	 case 0x8:
-		return Bios_Bcostat(Params);
-	 default:
-		return Bios_Trace(BiosCall);
+
+	case 0x1:
+	case 0x2:
+	case 0x7:
+	case 0x8:
+	case 0x9:
+	case 0xB:
+		/* print arg for calls taking single word */
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS %hd %s(0x%02x)\n",
+			  BiosCall, Bios_Call2Name(BiosCall),
+			  STMemory_ReadWord(Params+SIZE_WORD));
+		return false;
+
+	default:
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS %hd (%s)\n",
+			  BiosCall, Bios_Call2Name(BiosCall));
+		return false;
 	}
 }

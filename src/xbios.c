@@ -68,11 +68,11 @@ static bool XBios_Floprd(Uint32 Params)
 	Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 8 Floprd %s,0x%x,%d,%d,%d,%d at addr 0x%X\n",
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS   8 Floprd %s,0x%x,%d,%d,%d,%d at addr 0x%X\n",
 		  EmulationDrives[Dev].sFileName, pBuffer,
 		  Side, Track, Sector, Count, M68000_GetPC());
 #else
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 8 (Floprd)\n");
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS   8 (Floprd)\n");
 #endif
 
 	return false;
@@ -97,11 +97,11 @@ static bool XBios_Flopwr(Uint32 Params)
 	Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 9 Flopwr %s,0x%x,%d,%d,%d,%d at addr 0x%X\n",
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS   9 Flopwr %s,0x%x,%d,%d,%d,%d at addr 0x%X\n",
 		  EmulationDrives[Dev].sFileName, pBuffer,
 		  Side, Track, Sector, Count, M68000_GetPC());
 #else
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 9 (Flopwr)\n");
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS   9 (Flopwr)\n");
 #endif
 
 	return false;
@@ -124,10 +124,10 @@ static bool XBios_Rsconf(Uint32 Params)
 	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	Log_Printf(LOG_DEBUG, "XBIOS 15 Rsconf(baud,ctrl,ucr,rsr,tsr,scr: %d,%d,%d,%d,%d,%d)\n",
+	Log_Printf(LOG_DEBUG, "XBIOS 15  Rsconf(baud,ctrl,ucr,rsr,tsr,scr: %d,%d,%d,%d,%d,%d)\n",
 		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr);
 #else
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 15 Rsconf(baud,ctrl,ucr...: %d,%d,%d...)\n", Baud, Ctrl, Ucr);
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS  15 Rsconf(baud,ctrl,ucr...: %d,%d,%d...)\n", Baud, Ctrl, Ucr);
 #endif
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
 	if (ConfigureParams.RS232.bEnableRS232)
@@ -163,24 +163,13 @@ static bool XBios_Rsconf(Uint32 Params)
  */
 static bool XBios_Scrdmp(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 20 Scrdmp()\n");
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS  20 Scrdmp()\n");
 	ScreenSnapShot_SaveScreen();
 
 	/* Correct return code? */
 	Regs[REG_D0] = 0;
 
 	return true;
-}
-
-
-/**
- * XBIOS VsetMode
- * Call 88
- */
-static bool XBios_VsetMode(Uint32 Params)
-{
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 88 VsetMode(0x%2x)\n", STMemory_ReadWord(Params+SIZE_WORD));
-	return false;
 }
 
 
@@ -192,7 +181,7 @@ static bool XBios_HatariControl(Uint32 Params)
 {
 	char *pText;
 	pText = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %d HatariControl(%s)\n", HATARI_CONTROL_OPCODE, pText);
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %3d HatariControl(%s)\n", HATARI_CONTROL_OPCODE, pText);
 	Control_ProcessBuffer(pText);
 	Regs[REG_D0] = 0;
 	return true;
@@ -403,14 +392,44 @@ bool XBios(void)
 		return XBios_Rsconf(Params);
 	case 20:
 		return XBios_Scrdmp(Params);
-	case 88:
-		return XBios_VsetMode(Params);
+	
+	case 1:		/* Ssbrk */
+	case 14:	/* Iorec */
+	case 26:	/* Jdisint */
+	case 27:	/* Jenabint */
+	case 29:	/* Offgibit */
+	case 30:	/* Ongibit */
+	case 33:	/* Setprt */
+	case 44:	/* Bconmap */
+	case 64:	/* Blitmode */
+	case 80:	/* EsetShift */
+	case 82:	/* EsetBank */
+	case 86:	/* EsetGray */
+	case 87:	/* EsetSmear */
+	case 88:	/* VsetMode */
+	case 90:	/* VsetSync */
+	case 91:	/* VgetSize */
+	case 102:	/* Dsp_RemoveInterrupts */
+	case 112:	/* Dsp_TriggerHC */
+	case 117:	/* Dsp_InqSubrAbility */
+	case 118:	/* Dsp_RunSubroutine */
+	case 119:	/* Dsp_Hf0 */
+	case 120:	/* Dsp_Hf1 */
+	case 132:	/* Setmode */
+	case 134:	/* Setmontracks */
+	case 136:	/* Buffoper */
+	case 140:	/* Sndstatus */
+		/* print arg for calls taking single word */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %3hd %s(0x%02x)\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadWord(Params+SIZE_WORD));
+		return false;
 
 	case HATARI_CONTROL_OPCODE:
 		return XBios_HatariControl(Params);
 
-	 default:  /* Call as normal! */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %hd (%s)\n",
+	default:  /* Call as normal! */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %3hd (%s)\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall));
 		return false;
 	}
