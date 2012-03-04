@@ -241,6 +241,18 @@ static const char* Bios_Call2Name(Uint16 opcode)
 	}
 	return "???";
 }
+
+void Bios_Info(Uint32 dummy)
+{
+	Uint16 opcode;
+	for (opcode = 0; opcode <= 0xB; ) {
+		fprintf(stderr, "%02x %-9s", opcode,
+			Bios_Call2Name(opcode));
+		if (++opcode % 6 == 0) {
+			fputs("\n", stderr);
+		}
+	}
+}
 #endif
 
 

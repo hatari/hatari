@@ -381,6 +381,18 @@ static const char* XBios_Call2Name(Uint16 opcode)
 	}
 	return "???";
 }
+
+void XBios_Info(Uint32 dummy)
+{
+	Uint16 opcode;
+	for (opcode = 0; opcode < 168; ) {
+		fprintf(stderr, "%02x %-21s", opcode,
+			XBios_Call2Name(opcode));
+		if (++opcode % 3 == 0) {
+			fputs("\n", stderr);
+		}
+	}
+}
 #endif
 
 
