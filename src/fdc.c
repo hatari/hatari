@@ -372,6 +372,7 @@ static void	FDC_DMA_InitTransfer ( void );
 static bool	FDC_DMA_ReadFromFloppy ( void );
 static bool	FDC_DMA_WriteToFloppy ( void );
 
+static bool	FDC_ValidFloppyDrive ( void );
 static int	FDC_FindFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Track );
@@ -688,6 +689,20 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Check if a floppy drive is selected
+ * If not, we should ignore the corresponding FDC commands
+ */
+static bool FDC_ValidFloppyDrive ( void )
+{
+	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x6)==0x6)
+		return false;						/* neither A: not B: are selected */
+	else
+		return true;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Return device for FDC, check PORTA bits 1,2 (0=on,1=off)
  */
 static int FDC_FindFloppyDrive ( void )
@@ -700,6 +715,7 @@ static int FDC_FindFloppyDrive ( void )
 		return 1;						/* Device 1 (B:) */
 
 	/* None appear to be selected so default to Drive A */
+	/* [NP] 2012/03/04 : this is certainly wrong, we should ignore commands, not default to A: (see FDC_ValidFloppyDrive()) */
 	return 0;							/* Device 0 (A:) */
 }
 
@@ -1994,6 +2010,15 @@ static void FDC_WriteCommandRegister ( void )
 				IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 			return;
 		}
+	}
+
+
+	if ( ( ( IoMem_ReadByte(0xff8605) & 0xf0 ) != 0xd0 )			/* Type I, II and III commands */
+	  && ( !FDC_ValidFloppyDrive() ) )
+	{
+		LOG_TRACE(TRACE_FDC, "fdc write 8604 no drive selected, command=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		return;
 	}
 
 	FDC.CR = IoMem_ReadByte(0xff8605);
