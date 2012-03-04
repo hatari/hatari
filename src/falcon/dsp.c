@@ -211,10 +211,10 @@ Uint16 DSP_GetInstrCycles(void)
 /**
  * Disassemble DSP code between given addresses, return next PC address
  */
-Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
+Uint16 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 {
 #if ENABLE_DSP_EMU
-	Uint32 dsp_pc;
+	Uint16 dsp_pc;
 
 	for (dsp_pc=lowerAdr; dsp_pc<=UpperAdr; dsp_pc++) {
 		dsp_pc += dsp56k_execute_one_disasm_instruction(dsp_pc);

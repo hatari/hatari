@@ -705,11 +705,11 @@ void dsp56k_init_cpu(void)
 /**
  * Execute one instruction in trace mode at a given PC address.
  * */
-Uint32 dsp56k_execute_one_disasm_instruction(Uint32 pc)
+Uint16 dsp56k_execute_one_disasm_instruction(Uint16 pc)
 {
 	dsp_core_t *ptr1, *ptr2;
 	static dsp_core_t dsp_core_save;
-	Uint32 instruction_length;
+	Uint16 instruction_length;
 
 	ptr1 = &dsp_core;
 	ptr2 = &dsp_core_save;

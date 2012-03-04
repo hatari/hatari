@@ -45,7 +45,7 @@
 
 /* Current instruction */
 static Uint32 cur_inst;
-static Uint32 disasm_cur_inst_len;
+static Uint16 disasm_cur_inst_len;
 static char str_instr[50];
 static char str_instr2[120];
 static char parallelmove_name[64];
