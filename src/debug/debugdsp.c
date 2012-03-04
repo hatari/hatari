@@ -119,24 +119,9 @@ error_msg:
  */
 static void DebugDsp_ShowAddressInfo(Uint16 addr)
 {
-	Uint32 count, cycles;
-	const char *symbol;
-	bool shown = false;
-
-	symbol = Symbols_GetByDspAddress(addr);
+	const char *symbol = Symbols_GetByDspAddress(addr);
 	if (symbol)
-	{
-		fprintf(debugOutput, "%s", symbol);
-		shown = true;
-	}
-	if (Profile_DspAddressData(addr, &count, &cycles))
-	{
-		fprintf(debugOutput, "%s%d/%d times/cycles",
-			(shown ? ", " : ""), count, cycles);
-		shown = true;
-	}
-	if (shown)
-		fprintf(debugOutput, ":\n");
+		fprintf(debugOutput, "%s:\n", symbol);
 }
 
 

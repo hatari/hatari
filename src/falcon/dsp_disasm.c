@@ -29,6 +29,7 @@
 #include "dsp_core.h"
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
+#include "profile.h"
 
 
 /* More disasm infos, if wanted */
@@ -46,7 +47,7 @@
 static Uint32 cur_inst;
 static Uint32 disasm_cur_inst_len;
 static char str_instr[50];
-static char str_instr2[100];
+static char str_instr2[120];
 static char parallelmove_name[64];
 
 /* Previous instruction */
@@ -538,16 +539,22 @@ Uint16 dsp56k_disasm(dsp_trace_disasm_t mode)
  */
 const char* dsp56k_getInstructionText(void)
 {
+	const int len = sizeof(str_instr);
+	Uint32 count, cycles;
+	int offset;
+
 	if (isLooping) {
 		*str_instr2 = 0;
 	}
-	else if (disasm_cur_inst_len == 1) {
-		sprintf(str_instr2, "p:%04x  %06x         (%02d cyc)  %s\n", prev_inst_pc, cur_inst, dsp_core.instr_cycle, str_instr);
-	} 
-	else {
-		sprintf(str_instr2, "p:%04x  %06x %06x  (%02d cyc)  %s\n", prev_inst_pc, cur_inst, read_memory(prev_inst_pc + 1), dsp_core.instr_cycle, str_instr);
+	if (disasm_cur_inst_len == 1) {
+		offset = sprintf(str_instr2, "p:%04x  %06x         (%02d cyc)  %-*s\n", prev_inst_pc, cur_inst, dsp_core.instr_cycle, len, str_instr);
+	} else {
+		offset = sprintf(str_instr2, "p:%04x  %06x %06x  (%02d cyc)  %-*s\n", prev_inst_pc, cur_inst, read_memory(prev_inst_pc + 1), dsp_core.instr_cycle, len, str_instr);
 	}
-
+	if (offset > 2 && Profile_DspAddressData(prev_inst_pc, &count, &cycles)) {
+		offset -= 2;
+		sprintf(str_instr2+offset, "%d/%d times/cycles\n", count, cycles);
+	}
 	return str_instr2;
 } 
 
