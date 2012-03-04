@@ -9,5 +9,6 @@
 #define HATARI_XBIOS_H
 
 extern bool XBios(void);
+extern void XBios_Info(Uint32 dummy);
 
 #endif

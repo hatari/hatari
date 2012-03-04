@@ -181,20 +181,19 @@ static void Bios_VT52(Uint8 value)
  * BIOS Write character to device
  * Call 3
  */
-static bool Bios_Bconout(Uint32 Params)
+static void Bios_Bconout(Uint32 Params)
 {
 	Uint16 Dev;
 	Uint8 Char;
 
-	Dev = STMemory_ReadWord(Params+SIZE_WORD);
-	Char = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
+	Dev = STMemory_ReadWord(Params);
+	Char = STMemory_ReadWord(Params+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS 3 Bconout(%i, 0x%02x)\n", Dev, Char);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hX)\n", Dev, Char);
 
 	if (Dev == 2) {
 		Bios_VT52(Char);
 	}
-	return false;
 }
 
 
@@ -203,22 +202,20 @@ static bool Bios_Bconout(Uint32 Params)
  * BIOS Read/Write disk sector
  * Call 4
  */
-static bool Bios_RWabs(Uint32 Params)
+static void Bios_RWabs(Uint32 Params)
 {
 	Uint32 pBuffer;
 	Uint16 RWFlag, Number, RecNo, Dev;
 
 	/* Read details from stack */
-	RWFlag = STMemory_ReadWord(Params+SIZE_WORD);
-	pBuffer = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
-	Number = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG);
-	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD);
-	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
+	RWFlag = STMemory_ReadWord(Params);
+	pBuffer = STMemory_ReadLong(Params+SIZE_WORD);
+	Number = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
+	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
+	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS 4 Rwabs(%d,0x%lX,%d,%d,%i)\n",
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x04 Rwabs(%d,0x%lX,%d,%d,%i)\n",
 	          RWFlag, STRAM_ADDR(pBuffer), Number, RecNo, Dev);
-
-	return false;
 }
 
 
@@ -244,6 +241,18 @@ static const char* Bios_Call2Name(Uint16 opcode)
 	}
 	return "???";
 }
+
+void Bios_Info(Uint32 dummy)
+{
+	Uint16 opcode;
+	for (opcode = 0; opcode <= 0xB; ) {
+		fprintf(stderr, "%02x %-9s", opcode,
+			Bios_Call2Name(opcode));
+		if (++opcode % 6 == 0) {
+			fputs("\n", stderr);
+		}
+	}
+}
 #endif
 
 
@@ -261,14 +270,28 @@ bool Bios(void)
 	/* Get call */
 	Params = Regs[REG_A7];
 	BiosCall = STMemory_ReadWord(Params);
+	Params += SIZE_WORD;
 
 	/* Intercept? */
 	switch(BiosCall)
 	{
 	case 0x3:
-		return Bios_Bconout(Params);
+		Bios_Bconout(Params);
+		break;
 	case 0x4:
-		return Bios_RWabs(Params);
+		Bios_RWabs(Params);
+		break;
+
+	case 0x0:
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x00 Getmpb(0x%X)\n",
+			  STMemory_ReadLong(Params));
+		break;
+
+	case 0x5:
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x05 Setexc(0x%hX, 0x%X)\n",
+			  STMemory_ReadWord(Params),
+			  STMemory_ReadLong(Params)+SIZE_WORD);
+		break;
 
 	case 0x1:
 	case 0x2:
@@ -276,15 +299,22 @@ bool Bios(void)
 	case 0x8:
 	case 0x9:
 	case 0xB:
-		/* print arg for calls taking single word */
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS %hd %s(0x%02x)\n",
+		/* commands taking a single word */
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s(0x%hX)\n",
 			  BiosCall, Bios_Call2Name(BiosCall),
-			  STMemory_ReadWord(Params+SIZE_WORD));
-		return false;
+			  STMemory_ReadWord(Params));
+		break;
+
+	case 0x6:
+	case 0xA:
+		/* commands taking no args */
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s()\n",
+			  BiosCall, Bios_Call2Name(BiosCall));
+		break;
 
 	default:
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS %hd (%s)\n",
-			  BiosCall, Bios_Call2Name(BiosCall));
-		return false;
+		Log_Printf(LOG_WARN, "Unknown BIOS call 0x%x!\n", BiosCall);
+		break;
 	}
+	return false;
 }

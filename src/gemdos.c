@@ -1211,72 +1211,6 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 
 /*-----------------------------------------------------------------------*/
 /**
- * GEMDOS Cauxin
- * Call 0x3
- */
-#if 0
-static bool GemDOS_Cauxin(Uint32 Params)
-{
-	Uint8 c;
-
-	/* Wait here until a character is ready */
-	while(!RS232_GetStatus())
-		;
-
-	/* And read character */
-	RS232_ReadBytes(&c,1);
-	Regs[REG_D0] = c;
-
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Cauxin() = 0x%x\n", (int)c);
-
-	return true;
-}
-#endif
-
-/*-----------------------------------------------------------------------*/
-/**
- * GEMDOS Cauxout
- * Call 0x4
- */
-#if 0
-static bool GemDOS_Cauxout(Uint32 Params)
-{
-	Uint8 c;
-
-	/* Get character from the stack */
-	c = STMemory_ReadWord(Params);
-
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Cauxout(0x%x)\n", (int)c);
-
-	/* Send character to RS232 */
-	RS232_TransferBytesTo(&c, 1);
-
-	return true;
-}
-#endif
-
-/*-----------------------------------------------------------------------*/
-/**
- * GEMDOS Cprnout
- * Call 0x5
- */
-#if 0
-static bool GemDOS_Cprnout(Uint32 Params)
-{
-	Uint8 c;
-
-	/* Send character to printer(or file) */
-	c = STMemory_ReadWord(Params);
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Cprnout(0x%x)\n", (int)c);
-	Printer_TransferByteTo(c);
-	Regs[REG_D0] = -1;                /* Printer OK */
-
-	return true;
-}
-#endif
-
-/*-----------------------------------------------------------------------*/
-/**
  * GEMDOS Set drive (0=A,1=B,2=C etc...)
  * Call 0xE
  */
@@ -1285,67 +1219,12 @@ static bool GemDOS_SetDrv(Uint32 Params)
 	/* Read details from stack for our own use */
 	CurrentDrive = STMemory_ReadWord(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dsetdrv(0x%x)\n", (int)CurrentDrive);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x0E Dsetdrv(0x%x)\n", (int)CurrentDrive);
 
 	/* Still re-direct to TOS */
 	return false;
 }
 
-/*-----------------------------------------------------------------------*/
-/**
- * GEMDOS Cprnos
- * Call 0x11
- */
-#if 0
-static bool GemDOS_Cprnos(Uint32 Params)
-{
-	/* printer status depends if printing is enabled or not... */
-	if (ConfigureParams.Printer.bEnablePrinting)
-		Regs[REG_D0] = -1;              /* Printer OK */
-	else
-		Regs[REG_D0] = 0;               /* printer not ready if printing disabled */
-
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Cprnos() = 0x%x\n", Regs[REG_D0]);
-
-	return true;
-}
-#endif
-
-/*-----------------------------------------------------------------------*/
-/**
- * GEMDOS Cauxis
- * Call 0x12
- */
-#if 0
-static bool GemDOS_Cauxis(Uint32 Params)
-{
-	/* Read our RS232 state */
-	if (RS232_GetStatus())
-		Regs[REG_D0] = -1;              /* Chars waiting */
-	else
-		Regs[REG_D0] = 0;
-
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Cauxis() = 0x%x\n", Regs[REG_D0]);
-
-	return true;
-}
-#endif
-
-/*-----------------------------------------------------------------------*/
-/**
- * GEMDOS Cauxos
- * Call 0x13
- */
-#if 0
-static bool GemDOS_Cauxos(Uint32 Params)
-{
-	Regs[REG_D0] = -1;                /* Device ready */
-
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Cauxos() = 0x%x\n", Regs[REG_D0]);
-
-	return true;
-}
-#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -1357,7 +1236,7 @@ static bool GemDOS_SetDTA(Uint32 Params)
 	/*  Look up on stack to find where DTA is */
 	Uint32 nDTA = STMemory_ReadLong(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fsetdta(0x%x)\n", nDTA);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x1A Fsetdta(0x%x)\n", nDTA);
 
 	if (STMemory_ValidArea(nDTA, sizeof(DTA)))
 	{
@@ -1390,7 +1269,7 @@ static bool GemDOS_DFree(Uint32 Params)
 	Drive = STMemory_ReadWord(Params+SIZE_LONG);
 
 	/* Note: Drive = 0 means current drive, 1 = A:, 2 = B:, 3 = C:, etc. */
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dfree(0x%x, %i)\n", Address, Drive);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x36 Dfree(0x%x, %i)\n", Address, Drive);
 	if (Drive == 0)
 		Drive = CurrentDrive;
 	else
@@ -1472,7 +1351,7 @@ static bool GemDOS_MkDir(Uint32 Params)
 	/* Find directory to make */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dcreate(\"%s\")\n", pDirName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x39 Dcreate(\"%s\")\n", pDirName);
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
@@ -1524,7 +1403,7 @@ static bool GemDOS_RmDir(Uint32 Params)
 	/* Find directory to make */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Ddelete(\"%s\")\n", pDirName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3A Ddelete(\"%s\")\n", pDirName);
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
@@ -1578,7 +1457,7 @@ static bool GemDOS_ChDir(Uint32 Params)
 	/* Find new directory */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dsetpath(\"%s\")\n", pDirName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3B Dsetpath(\"%s\")\n", pDirName);
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
@@ -1667,7 +1546,7 @@ static bool GemDOS_Create(Uint32 Params)
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fcreate(\"%s\", 0x%x)\n", pszFileName, Mode);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3C Fcreate(\"%s\", 0x%x)\n", pszFileName, Mode);
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
@@ -1788,7 +1667,7 @@ static bool GemDOS_Open(Uint32 Params)
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fopen(\"%s\", %s)\n", pszFileName, Modes[Mode&0x03].desc);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3D Fopen(\"%s\", %s)\n", pszFileName, Modes[Mode&0x03].desc);
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
@@ -1886,7 +1765,7 @@ static bool GemDOS_Close(Uint32 Params)
 	/* Find our handle - may belong to TOS */
 	Handle = STMemory_ReadWord(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fclose(%i)\n", Handle);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3E Fclose(%i)\n", Handle);
 
 	Handle -= BASE_FILEHANDLE;
 
@@ -1928,7 +1807,7 @@ static bool GemDOS_Read(Uint32 Params)
 	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
 	pBuffer = (char *)STRAM_ADDR(Addr);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fread(%i, %i, 0x%x)\n", 
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3F Fread(%i, %i, 0x%x)\n", 
 	          Handle, Size, Addr);
 
 	Handle -= BASE_FILEHANDLE;
@@ -2003,7 +1882,7 @@ static bool GemDOS_Write(Uint32 Params)
 	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
 	pBuffer = (char *)STRAM_ADDR(Addr);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fwrite(%i, %i, 0x%x)\n", 
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x40 Fwrite(%i, %i, 0x%x)\n", 
 	          Handle, Size, Addr);
 
 	Handle -= BASE_FILEHANDLE;
@@ -2058,7 +1937,7 @@ static bool GemDOS_FDelete(Uint32 Params)
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fdelete(\"%s\")\n", pszFileName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x41 Fdelete(\"%s\")\n", pszFileName);
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
@@ -2115,7 +1994,7 @@ static bool GemDOS_LSeek(Uint32 Params)
 	Handle = STMemory_ReadWord(Params+SIZE_LONG);
 	Mode = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fseek(%li, %i, %i)\n", Offset, Handle, Mode);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x42 Fseek(%li, %i, %i)\n", Offset, Handle, Mode);
 
 	Handle -= BASE_FILEHANDLE;
 
@@ -2184,7 +2063,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 	nRwFlag = STMemory_ReadWord(Params+SIZE_LONG);
 	nAttrib = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fattrib(\"%s\", %d, 0x%x)\n",
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x43 Fattrib(\"%s\", %d, 0x%x)\n",
 	          psFileName, nRwFlag, nAttrib);
 
 	if (!ISHARDDRIVE(nDrive))
@@ -2285,7 +2164,7 @@ static bool GemDOS_GetDir(Uint32 Params)
 	Drive = STMemory_ReadWord(Params+SIZE_LONG);
 
 	/* Note: Drive = 0 means current drive, 1 = A:, 2 = B:, 3 = C:, etc. */
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Dgetpath(0x%x, %i)\n", Address, (int)Drive);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x47 Dgetpath(0x%x, %i)\n", Address, (int)Drive);
 	if (Drive == 0)
 		Drive = CurrentDrive;
 	else
@@ -2340,7 +2219,7 @@ static int GemDOS_Pexec(Uint32 Params)
 	/* Find PExec mode */
 	Mode = STMemory_ReadWord(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Pexec(%i, ...)\n", Mode);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4B Pexec(%i, ...)\n", Mode);
 
 	/* Re-direct as needed */
 	switch(Mode)
@@ -2382,7 +2261,7 @@ static bool GemDOS_SNext(void)
 	int Index;
 	int ret;
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fsnext()\n");
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4F Fsnext()\n");
 
 	/* Refresh pDTA pointer (from the current basepage) */
 	nDTA = STMemory_ReadLong(STMemory_ReadLong(act_pd)+32);
@@ -2459,7 +2338,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	nAttrSFirst = STMemory_ReadWord(Params+SIZE_LONG);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fsfirst(\"%s\", 0x%x)\n", pszFileName, nAttrSFirst);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4E Fsfirst(\"%s\", 0x%x)\n", pszFileName, nAttrSFirst);
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 	if (!ISHARDDRIVE(Drive))
@@ -2582,7 +2461,7 @@ static bool GemDOS_Rename(Uint32 Params)
 	pszOldFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
 	pszNewFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Frename(\"%s\", \"%s\")\n", pszOldFileName, pszNewFileName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x56 Frename(\"%s\", \"%s\")\n", pszOldFileName, pszNewFileName);
 
 	NewDrive = GemDOS_FileName2HardDriveID(pszNewFileName);
 	OldDrive = GemDOS_FileName2HardDriveID(pszOldFileName);
@@ -2631,7 +2510,7 @@ static bool GemDOS_GSDToF(Uint32 Params)
 	Handle = STMemory_ReadWord(Params+SIZE_LONG);
 	Flag = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS Fdatime(0x%x, %i, %i)\n", pBuffer,
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x57 Fdatime(0x%x, %i, %i)\n", pBuffer,
 	          Handle, Flag);
 
 	Handle -= BASE_FILEHANDLE;
@@ -2909,41 +2788,9 @@ void GemDOS_OpCode(void)
 	/* Intercept call */
 	switch(GemDOSCall)
 	{
-	 /*
-	 case 0x3:
-		Finished = GemDOS_Cauxin(Params);
-		break;
-	 */
-	 /*
-	 case 0x4:
-		Finished = GemDOS_Cauxout(Params);
-		break;
-	 */
-	 /* direct printing via GEMDOS */
-	 /*
-	 case 0x5:
-		Finished = GemDOS_Cprnout(Params);
-		break;
-	 */
-	 case 0xe:
+	 case 0x0e:
 		Finished = GemDOS_SetDrv(Params);
 		break;
-	 /* Printer status  */
-	 /*
-	 case 0x11:
-		Finished = GemDOS_Cprnos(Params);
-		break;
-	 */
-	 /*
-	 case 0x12:
-		Finished = GemDOS_Cauxis(Params);
-		break;
-	 */
-	 /*
-	 case 0x13:
-		Finished = GemDOS_Cauxos(Params);
-		break;
-	 */
 	 case 0x1a:
 		Finished = GemDOS_SetDTA(Params);
 		break;
@@ -3002,8 +2849,56 @@ void GemDOS_OpCode(void)
 	 case 0x57:
 		Finished = GemDOS_GSDToF(Params);
 		break;
-	 default:
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS call 0x%X (%s)\n",
+
+	case 0x01:	/* Conin */
+	case 0x03:	/* Cauxin */
+	case 0x12:	/* Cauxis */
+	case 0x13:	/* Cauxos */
+	case 0x0B:	/* Conis */
+	case 0x10:	/* Conos */
+	case 0x08:	/* Cnecin */
+	case 0x11:	/* Cprnos */
+	case 0x07:	/* Crawcin */
+	case 0x19:	/* Dgetdrv */
+	case 0x2F:	/* Fgetdta */
+	case 0x00:	/* Pterm0 */
+	case 0x30:	/* Sversion */
+	case 0x2A:	/* Tgetdate */
+	case 0x2C:	/* Tgettime */
+		/* commands with no args */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s()\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
+		break;
+		
+		/* print args for other calls */
+	case 0x02:	/* Cconout */
+	case 0x04:	/* Cauxout */
+	case 0x05:	/* Cprnout */
+	case 0x06:	/* Crawio */
+	case 0x2b:	/* Tsetdate */
+	case 0x2d:	/* Tsettime */
+	case 0x45:	/* Fdup */
+	case 0x4c:	/* Pterm */
+		/* commands taking single word */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%hX)\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+			  STMemory_ReadWord(Params));
+		break;
+
+	case 0x09:	/* Cconws */
+	case 0x0A:	/* Cconrs */
+	case 0x20:	/* Super */
+	case 0x48:	/* Malloc */
+	case 0x49:	/* Mfree */
+		/* commands taking longs or pointers */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X)\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+			  STMemory_ReadLong(Params));
+		break;
+
+	default:
+		/* rest of commands */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX (%s)\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
 	}
 
