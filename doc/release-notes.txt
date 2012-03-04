@@ -31,11 +31,15 @@ Emulator:
   host desktop resolution back to 832x576 it was in Hatari v1.4,
   so that Falcon/TT emulation window sizes by default are closer
   to ST/STE ones on larger resolution monitors
-- Support for tracing of all symbols loaded to the debugger.
-  This can be used to get CPU and DSP function traces
-- Fix to debugger CPU cycle profiling modifying CPU state
-- More info to XBios, IKBD, Videl and Crossbar traces
 - Fix statusbar assert
+- Debugging improvements:
+  - Fix to debugger CPU cycle profiling modifying CPU state
+  - Profiling info is shown at end of disassembly lines
+  - Support for tracing all symbols loaded to the debugger,
+    this can be used to get CPU and DSP function traces
+  - Show args for all Bios and most XBios & Gemdos calls when tracing
+  - "info" command can output opcode tables for BIOS & XBIOS too
+  - More info to FDC, IKBD, Videl and Crossbar traces
 
 Other changes:
 - Hatari UI supports file paths with spaces in them and spaces in Hatari

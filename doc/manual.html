@@ -3076,7 +3076,8 @@ You can load symbol name/address information from a file to the
 debugger with the "symbols" command (and with "dspsymbols" for DSP).
 These symbolic names can be used in arithmetic expressions and
 conditional breakpoint expressions.  They also show up in the "disasm"
-command output.
+command output and you can trace calls to them with "trace cpu_symbols"
+(and DSP symbols with "trace dsp_symbols").
 </p>
 
 <p>The symbols file format is following:</p>
@@ -3368,9 +3369,9 @@ b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
 </ul>
 
 <p>
-Hint: "info" command "aes", "gemdos" and "vdi" subcommands for can be
-used to list the corresponding OS-call opcodes. For example,
-to see the GEMDOS opcodes, use:</p>
+Hint: "info" command "aes", "bios", "gemdos", "vdi" and "xbios"
+subcommands for can be used to list the corresponding OS-call opcodes.
+For example, to see the GEMDOS opcodes, use:</p>
 <pre>
 info gemdos 1
 </pre>
@@ -3476,9 +3477,8 @@ which tell it to intercept this higher level functionality:
     (which doesn't work under MiNT because it re-implements GEMDOS)</li>
 </ul>
 <p>
-If use of above isn't possible for the things you'd like to track,
-you can use the OS call opcode breakpoints explained above with the
-":trace" breakpoint option.
+Unlike with AES and VDI tracing, BIOS, GEMDOS and XBIOS traces show
+arguments for most of the calls.
 </p>
 <p>
 Tracing options can be set even from a program within the emulation
@@ -3490,6 +3490,11 @@ console.
 <p>
 Note that the trace output file can be set only when Hatari starts,
 it cannot be changed from within the debugger (or emulation).
+</p>
+<p>
+If tracing isn't possible for the things you'd like to track, you can
+use the OS call opcode breakpoints explained above with the ":trace"
+breakpoint option.
 </p>
 
 
