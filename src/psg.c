@@ -144,9 +144,19 @@ void PSG_Reset(void)
 {
         int     i;
 
+	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+	{
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("ym reset video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+		                FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
+
 	PSGRegisterSelect = 0;
 	PSGRegisterReadData = 0;
 	memset(PSGRegisters, 0, sizeof(PSGRegisters));
+	PSGRegisters[PSG_REG_IO_PORTA] = 0xff;			/* no drive selected + side 0 after a reset */
+
 	/* Update sound's emulation registers */
         for ( i=0 ; i < NUM_PSG_SOUND_REGISTERS; i++ )
 		Sound_WriteReg ( i , 0 );
