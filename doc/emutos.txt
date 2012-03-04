@@ -416,6 +416,7 @@ Demos:
 - 20 years Atari STE megademo (by Paradox), some screen don't work
 - 32768 colors showdown (by Tronic of Effect)
 - Again (by Paradox)
+- AltParty 2008 intro (by Paradox)
 - Amiga Demo 2 (by Oxygene), music disk
 - Armada is dead (by Aggression)
 - Azed/Jungle demo (by Atari)
@@ -454,8 +455,12 @@ Demos:
 - Power Rise (by Light)
 - Reanimation (by Syntax)
 - Realtime (by MJJ Prod)
+- RGBeast (by Aggression)
+- Save the Earth (by Defence Force)
 - Sinfull Sinuses (by Chronicle)
+- Sierpinski overdose 4K (by GGN), med-rez+blitter, end gfx aren't right
 - Sommarhack (by DHS)
+- Songs Of The Unexpected (by OUCH)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
 - Summer Delights (by DHS)
@@ -513,7 +518,7 @@ the 512kB EmuTOS version.
 There are some STE (enhanced) programs that would appear otherwise to
 work perfectly, but some part of the graphics just don't show.  They
 are listed in case someone, someday, starts to fix the EmuTOS line-A
-things (mainly bitblt).
+things (mainly bitblt), or fixes the games to use e.g. VDI.
 
 - Alien Thing preview (no-line A functions, but all sprites are missing)
 - Art for Kids (line-A sprite enable function -> cursor doesn't show;
@@ -526,9 +531,13 @@ things (mainly bitblt).
 - Mr Boomer (graphics missing due to Line-A bitblit and no music)
 - H Mec 2 (no graphics due to line-A bitblit)
 - Kolmik (tiles don't show due to line-A bitblit)
+- Poker Square (graphics don't show due to line-A bitblit)
 - Pooz (graphics don't show due to line-A bitblit)
 - R0x (main menu graphics don't show due to line-A bitblit)
 - Roger (no graphics except bg show, line-A bitblits)
+
+Several of these (and Falcon) games are by Paradize:
+	http://paradize.final-memory.org/games.shtml
 
 
 Working TT specific demos
@@ -590,6 +599,7 @@ Working demos:
 - Videl visions slideshow
 - Virtual City, needs DSP
   - freezes at exit
+- Warum (by Lazer)
 - Weltchmerz (by Avena)
 - ZZ 9 Plural Z Alpha (by tSCc)
 
@@ -621,12 +631,23 @@ Partly working demos:
   - Colors are wrong
   - Input doesn't work to advance next screen
 
+Demos that with normal TOS work without DSP,
+but don't work with EmuTOS at all:
+- GEM demo (by DHS & AssemSoft):
+  - needs HiColor mode
+- Gourand demos:
+  - panic with bus error
+    M68000 Bus Error reading at address $ffa5f8.
+  - these have asm sources!
+- Beams (by .tscc):
+  panic with bus error:
+  M68000 Bus Error reading at address $3b4.
+
 
 Working games:
 - Aces High (preview)
 - Blum
 - Cavemania (demo version)
-- Columns by Deadheart* (demo)
 - Corsair
 - DB 4K
 - Double Bobble 2000* (by Reservoir Gods), disable DSP
@@ -637,6 +658,7 @@ Working games:
 - Hexogan (use number pad)
 - Impulse (Breakout clone)*
 - Lamemine
+- Les Dinosaures (demo)
 - LlamaZap free version (requires joypad, not joystick)
 - Madtris
 - Nibe
@@ -651,9 +673,10 @@ Working games:
 - Tautology II* (by Reservoir Gods)
 - Toy Man
 - Willie's Adventure (preview1), disable DSP
-- Willie's Adventure* (preview2)
 
 Games regressed in EmuTOS v0.8.6:
+- Columns by Deadheart* (demo)
+  - Colors/graphics are wrong
 - Rave*
   - Colors/graphics are wrong
 - SBM v0.8 (Bomberman clone)*, doesn't work anymore
@@ -670,19 +693,39 @@ Games working with extra hacks:
   - with EmuTOS enabling DSP freezes the games right at startup
     (with normal TOS4, DSP is used for background music)
 
-Almost working games:
-- Des Lazers & des Hommes: game area graphics are missing
-  (AFAIK they're rendered with DSP)
+Mostly working games:
+- Multibriques: colors are wrong
 - Santarun (GEM): just too slow
 - TUM, GEM minesweeper: says "sorry, sound system is locked"
   on every click
-- Masters of Chaos starts, but then doesn't react to input
+- Willie's Adventure* (preview2), gfx leave garbage on screen
+
+Games that might be possible to get working (they
+show something and/or don't use DSP / sound matrix):
+- Block Blizzard preview: stops when loading
+- Bomb Squad: crashes to bus error
+- Conquest of Elysium: doesn't start
+- Des Lazers & des Hommes: game area graphics are missing
+  (AFAIK they're rendered with DSP)
+- It's Great: bus errors, requires ST-med resolution
+- Jeu de Poker: colors wrong, freezes at menu, needs VGA
+- Masters of Chaos: starts, but then doesn't react to input
+- Neurobot: just exits
+- Painium: Intro works, but game itself exits to corrupted desktop
+- Tetrhex: says it's unable to change resolution, on OK panics
+- TsccTron: M68000 Bus Error reading at address $0.
+- Zodiax: after VsetMode(0x0), white corrupted screen
 
 Games using Line-A bitblit not supported by EmuTOS:
-- Gold island demo
+- Chainz
+- Confusion (demos 1 & 2)
+- Gold island (demo)
+- Jewelz
+- Let's play Shanghai (demo)
 - Men at War
 - Tron 2
 - Ultimate Arena Falcon edition
+- Sweety Things
 
 
 Working applications:
