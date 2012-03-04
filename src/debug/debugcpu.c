@@ -139,24 +139,9 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
  */
 static void DebugCpu_ShowAddressInfo(Uint32 addr)
 {
-	Uint32 count, cycles;
-	const char *symbol;
-	bool shown = false;
-
-	symbol = Symbols_GetByCpuAddress(addr);
+	const char *symbol = Symbols_GetByCpuAddress(addr);
 	if (symbol)
-	{
-		fprintf(debugOutput, "%s", symbol);
-		shown = true;
-	}
-	if (Profile_CpuAddressData(addr, &count, &cycles))
-	{
-		fprintf(debugOutput, "%s%d/%d times/cycles",
-			(shown ? ", " : ""), count, cycles);
-		shown = true;
-	}
-	if (shown)
-		fprintf(debugOutput, ":\n");
+		fprintf(debugOutput, "%s:\n", symbol);
 }
 
 /**

@@ -15,6 +15,7 @@
 #include "main.h"
 #include "newcpu.h"
 #include "paths.h"
+#include "profile.h"
 #include "tos.h"
 #include "68kDisass.h"
 
@@ -2444,7 +2445,16 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 			Disass68kComposeStr(lineBuffer, " ;", optionPosComment, 0);
 			Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+3, 0);
 		}
-
+		else if (optionPosComment >= 0)
+		{
+			/* assume comments are for things which aren't profiled */
+			Uint32	count, cycles;
+			if (Profile_CpuAddressData(addr, &count, &cycles))
+			{
+				sprintf(commentBuffer, "%d/%d times/cycles", count, cycles);
+				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+1, 0);
+			}
+		}
 		fprintf(f, "%s\n", lineBuffer);
 //		if(strstr(opcodeBuffer, "RTS") || strstr(opcodeBuffer, "RTE") || strstr(opcodeBuffer, "JMP")
 //		|| strstr(opcodeBuffer, "rts") || strstr(opcodeBuffer, "rte") || strstr(opcodeBuffer, "jmp"))
