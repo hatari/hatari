@@ -3002,8 +3002,56 @@ void GemDOS_OpCode(void)
 	 case 0x57:
 		Finished = GemDOS_GSDToF(Params);
 		break;
-	 default:
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS call 0x%X (%s)\n",
+
+	case 0x01:	/* Conin */
+	case 0x03:	/* Cauxin */
+	case 0x12:	/* Cauxis */
+	case 0x13:	/* Cauxos */
+	case 0x0B:	/* Conis */
+	case 0x10:	/* Conos */
+	case 0x08:	/* Cnecin */
+	case 0x11:	/* Cprnos */
+	case 0x07:	/* Crawcin */
+	case 0x19:	/* Dgetdrv */
+	case 0x2F:	/* Fgetdta */
+	case 0x00:	/* Pterm0 */
+	case 0x30:	/* Sversion */
+	case 0x2A:	/* Tgetdate */
+	case 0x2C:	/* Tgettime */
+		/* commands with no args */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s()\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
+		break;
+		
+		/* print args for other calls */
+	case 0x02:	/* Cconout */
+	case 0x04:	/* Cauxout */
+	case 0x05:	/* Cprnout */
+	case 0x06:	/* Crawio */
+	case 0x2b:	/* Tsetdate */
+	case 0x2d:	/* Tsettime */
+	case 0x45:	/* Fdup */
+	case 0x4c:	/* Pterm */
+		/* commands taking single word */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%hX)\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+			  STMemory_ReadWord(Params));
+		break;
+
+	case 0x09:	/* Cconws */
+	case 0x0A:	/* Cconrs */
+	case 0x20:	/* Super */
+	case 0x48:	/* Malloc */
+	case 0x49:	/* Mfree */
+		/* commands taking longs or pointers */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X)\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+			  STMemory_ReadLong(Params));
+		break;
+
+	default:
+		/* rest of commands */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX (%s)\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
 	}
 
