@@ -13,6 +13,7 @@ Emulation:
 - Handle commands 0x12 and 0x14 sent during the IKBD reset (enable both
   mouse and joystick reporting at the same time)
 - Handle the TX IRQ in the ACIA (bits CR6+CR5=0x01)
+- Ignore FDC commands when no drive is selected
 - Fix to DSP stack overflow handling
 - Fix DSP to be reseted on emulation reset
 - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
@@ -52,6 +53,7 @@ Fixed Games :
 
 Fixed demos :
   Built-in Obsolescence (DSP stack overflow)
+  Japtro and Rising Force by Holocaust (FDC, buggy loader)
 
 
  Version 1.6.1 (2012-01-13):
