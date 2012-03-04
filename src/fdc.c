@@ -1514,8 +1514,8 @@ static int FDC_TypeI_Restore(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I restore drive=%d current_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC_DRIVE , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type I restore drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
 	FDC.Command = FDCEMU_CMD_RESTORE;
@@ -1534,8 +1534,8 @@ static int FDC_TypeI_Seek ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I seek track=0x%x drive=%d current_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC.DR, FDC_DRIVE , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type I seek dest_track=0x%x drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.DR, FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to chosen track */
 	FDC.Command = FDCEMU_CMD_SEEK;
@@ -1554,8 +1554,8 @@ static int FDC_TypeI_Step ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step %d drive=%d current_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC.StepDirection, FDC_DRIVE , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type I step %d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.StepDirection, FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step (using same direction as latest seek executed, ie 'FDC.StepDirection') */
 	FDC.Command = FDCEMU_CMD_STEP;
@@ -1574,8 +1574,8 @@ static int FDC_TypeI_StepIn(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step in drive=%d current_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC_DRIVE , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type I step in drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step in (direction = +1) */
 	FDC.Command = FDCEMU_CMD_STEP;
@@ -1595,8 +1595,8 @@ static int FDC_TypeI_StepOut ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step out drive=%d current_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC_DRIVE , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type I step out drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step out (direction = -1) */
 	FDC.Command = FDCEMU_CMD_STEP;
@@ -1625,8 +1625,8 @@ static int FDC_TypeII_ReadSector ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type II read sector sector=0x%x multi=%s track=0x%x side=%d drive=%d dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , HeadTrack[ FDC_DRIVE ] , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount ,
+	LOG_TRACE(TRACE_FDC, "fdc type II read sector sector=0x%x multi=%s tr=0x%x head_track=0x%x side=%d drive=%d dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDC.TR , HeadTrack[ FDC_DRIVE ] , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount ,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read sector(s) */
@@ -1651,8 +1651,8 @@ static int FDC_TypeII_WriteSector ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type II write sector sector=0x%x multi=%s track=0x%x side=%d drive=%d dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , HeadTrack[ FDC_DRIVE ] , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount,
+	LOG_TRACE(TRACE_FDC, "fdc type II write sector sector=0x%x multi=%s tr=0x%x head_track=0x%x side=%d drive=%d dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" , FDC.TR , HeadTrack[ FDC_DRIVE ] , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to write a sector(s) */
@@ -1685,8 +1685,8 @@ static int FDC_TypeIII_ReadAddress ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III read address track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
+	LOG_TRACE(TRACE_FDC, "fdc type III read address tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.TR , HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
@@ -1711,8 +1711,8 @@ static int FDC_TypeIII_ReadTrack ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III read track track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
+	LOG_TRACE(TRACE_FDC, "fdc type III read track tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.TR , HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read a single track */
@@ -1736,8 +1736,8 @@ static int FDC_TypeIII_WriteTrack ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III write track track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
+	LOG_TRACE(TRACE_FDC, "fdc type III write track tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.TR , HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	Log_Printf(LOG_TODO, "FDC type III command 'write track' does not work yet!\n");
