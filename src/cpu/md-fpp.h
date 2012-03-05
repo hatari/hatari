@@ -35,11 +35,10 @@ STATIC_INLINE long double to_exten(uae_u32 wrd1, uae_u32 wrd2, uae_u32 wrd3)
 STATIC_INLINE void from_exten(long double src, uae_u32 * wrd1, uae_u32 * wrd2, uae_u32 * wrd3)
 {
     register uae_u32 *longarray = (uae_u32 *)&src;
-    register uae_u16 *finalword = (uae_u16 *)(&src + 8);
 
-    *wrd1 = ((uae_u32)*finalword)<<16;
-    *wrd2 = longarray[1];
-    *wrd3 = longarray[0]; // little endian
+	*wrd1 = (longarray[2] & 0xffff)<<16;
+	*wrd2 = longarray[1];
+	*wrd3 = longarray[0]; // little endian
 }
 #define HAVE_from_exten
 #endif /* USE_LONG_DOUBLE */
