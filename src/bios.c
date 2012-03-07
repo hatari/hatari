@@ -189,7 +189,7 @@ static void Bios_Bconout(Uint32 Params)
 	Dev = STMemory_ReadWord(Params);
 	Char = STMemory_ReadWord(Params+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hX)\n", Dev, Char);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hhX)\n", Dev, Char);
 
 	if (Dev == 2) {
 		Bios_VT52(Char);

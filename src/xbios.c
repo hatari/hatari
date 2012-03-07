@@ -195,7 +195,7 @@ static bool XBios_HatariControl(Uint32 Params)
 {
 	char *pText;
 	pText = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX HatariControl(%s)\n", HATARI_CONTROL_OPCODE, pText);
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s)\n", HATARI_CONTROL_OPCODE, pText);
 	Control_ProcessBuffer(pText);
 	Regs[REG_D0] = 0;
 	return true;
