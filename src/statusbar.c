@@ -47,7 +47,8 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 
 #define DEBUG 0
 #if DEBUG
-#define DEBUGPRINT(x) printf x
+#include <execinfo.h>
+# define DEBUGPRINT(x) printf x
 #else
 #define DEBUGPRINT(x)
 #endif
@@ -120,11 +121,14 @@ int Statusbar_GetHeightForSize(int width, int height)
 		 * does to decide the font size.
 		 */
 		if (width >= 640 && height >= (400-24)) {
+			DEBUGPRINT(("Statusbar_GetHeightForSize(%d, %d) -> %d\n", width, height, 24));
 			return 24;
 		} else {
+			DEBUGPRINT(("Statusbar_GetHeightForSize(%d, %d) -> %d\n", width, height, 12));
 			return 12;
 		}
 	}
+	DEBUGPRINT(("Statusbar_GetHeightForSize(%d, %d) -> %d\n", width, height, 0));
 	return 0;
 }
 
@@ -138,6 +142,12 @@ int Statusbar_GetHeightForSize(int width, int height)
  */
 int Statusbar_SetHeight(int width, int height)
 {
+#if DEBUG
+	/* find out from where the set height is called */
+	void *addr[8];
+	int count = backtrace(addr, sizeof(addr)/sizeof(*addr));
+	backtrace_symbols_fd(addr, count, fileno(stderr));
+#endif
 	ScreenHeight = height;
 	StatusbarHeight = Statusbar_GetHeightForSize(width, height);
 	DEBUGPRINT(("Statusbar_SetHeight(%d, %d) -> %d\n", width, height, StatusbarHeight));
