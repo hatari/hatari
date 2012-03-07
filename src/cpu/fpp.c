@@ -336,7 +336,11 @@ STATIC_INLINE fptype to_pack (uae_u32 wrd1, uae_u32 wrd2, uae_u32 wrd3)
 	*cp++ = ((wrd1 >> 20) & 0xf) + '0';
 	*cp++ = ((wrd1 >> 16) & 0xf) + '0';
 	*cp = 0;
+#if USE_LONG_DOUBLE
+	sscanf (str, "%Le", &d);
+#else
 	sscanf (str, "%le", &d);
+#endif
 	return d;
 }
 
@@ -347,7 +351,11 @@ STATIC_INLINE void from_pack (fptype src, uae_u32 * wrd1, uae_u32 * wrd2, uae_u3
 	char *cp;
 	char str[100];
 
+#if USE_LONG_DOUBLE
+	sprintf (str, "%.16Le", src);
+#else
 	sprintf (str, "%.16e", src);
+#endif
 	cp = str;
 	*wrd1 = *wrd2 = *wrd3 = 0;
 	if (*cp == '-') {
