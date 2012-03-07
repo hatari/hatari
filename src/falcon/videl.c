@@ -649,6 +649,11 @@ static Uint16 VIDEL_getScreenBpp(void)
  */
 static int VIDEL_getScreenWidth(void)
 {
+	Uint16 bpp = VIDEL_getScreenBpp();
+
+	/* X Size of the Display area */
+	videl.XSize = (IoMem_ReadWord(0xff8210) & 0x03ff) * 16 / bpp;
+
 	/* If the user disabled the borders display from the gui, we suppress them */
 	if (ConfigureParams.Screen.bAllowOverscan == 0) {
 		videl.leftBorderSize = 0;
@@ -673,7 +678,6 @@ static int VIDEL_getScreenWidth(void)
 	Uint16 hht = IoMem_ReadWord(0xff8282) & 0x1ff;
 
 	Uint16 hdb_offset, hde_offset;
-	Uint16 bpp = VIDEL_getScreenBpp();
 	Uint16 cycPerPixel, divider;
 	Sint16 leftBorder, rightBorder;
 
@@ -740,9 +744,6 @@ static int VIDEL_getScreenWidth(void)
 		fprintf(stderr, "BORDER RIGHT < 0\n");
 		videl.rightBorderSize = 0;
 	}
-
-	/* X Size of the Display area */
-	videl.XSize = (IoMem_ReadWord(0xff8210) & 0x03ff) * 16 / bpp;
 
 	return videl.leftBorderSize + videl.XSize + videl.rightBorderSize;
 }
