@@ -636,7 +636,7 @@ static void	Video_SetSystemTimings(void)
 		RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
 		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 	}
-	else				/* STE, Falcon, TT */
+	else				/* STE, TT */
 	{
 		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STE;
 		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STE;
@@ -771,7 +771,7 @@ static Uint32 Video_CalculateAddress ( void )
 		VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
 		if (ConfigureParams.System.nMachineType != MACHINE_ST)
 		{
-			/* on STe 2 aligned, on Falcon 4 aligned, on TT 8 aligned. We do STe. */
+			/* on STe 2 aligned, on TT 8 aligned. We do STe. */
 			VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
 		}
 
@@ -2542,7 +2542,7 @@ static void Video_ClearOnVBL(void)
 	VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
 	if (ConfigureParams.System.nMachineType != MACHINE_ST)
 	{
-		/* on STe 2 aligned, on Falcon 4 aligned, on TT 8 aligned. We do STe. */
+		/* on STe 2 aligned, on TT 8 aligned. We do STe. */
 		VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
 	}
 	pVideoRaster = &STRam[VideoBase];
@@ -3249,11 +3249,7 @@ void Video_ShifterMode_WriteByte(void)
 		}
 	}
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-	{
-		VIDEL_ST_ShiftModeWriteByte();
-	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	if (ConfigureParams.System.nMachineType == MACHINE_TT)
 	{
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
 		/* Copy to TT shifter mode register: */

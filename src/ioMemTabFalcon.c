@@ -22,7 +22,6 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __T
 #include "rs232.h"
 #include "rtc.h"
 #include "screen.h"
-#include "video.h"
 #include "blitter.h"
 #include "crossbar.h"
 #include "falcon/videl.h"
@@ -147,26 +146,25 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8202, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8203, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_ScreenBase_WriteByte },     /* Video base med byte */
 	{ 0xff8204, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8205, SIZE_BYTE, Video_ScreenCounter_ReadByte, Video_ScreenCounter_WriteByte },
+	{ 0xff8205, SIZE_BYTE, VIDEL_ScreenCounter_ReadByte, VIDEL_ScreenCounter_WriteByte },
 	{ 0xff8206, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8207, SIZE_BYTE, Video_ScreenCounter_ReadByte, Video_ScreenCounter_WriteByte },
+	{ 0xff8207, SIZE_BYTE, VIDEL_ScreenCounter_ReadByte, VIDEL_ScreenCounter_WriteByte },
 	{ 0xff8208, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8209, SIZE_BYTE, Video_ScreenCounter_ReadByte, Video_ScreenCounter_WriteByte },
+	{ 0xff8209, SIZE_BYTE, VIDEL_ScreenCounter_ReadByte, VIDEL_ScreenCounter_WriteByte },
 	{ 0xff820a, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_SyncMode_WriteByte },       /* VIDEL Synch mode */
 	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here : return 0 not ff */
 	{ 0xff820c, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here : return 0 not ff */
-	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, VIDEL_ScreenBase_WriteByte },            /* Video base low byte */
-	{ 0xff820e, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon line offset */
-	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, Video_LineWidth_WriteByte },
-	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon line width */
-	{ 0xff8212, 46, IoMem_VoidRead, IoMem_VoidWrite },                                      /* No bus error here */
-	{ 0xff8240, 32, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },                  /* ST color regs */
-	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
-	{ 0xff8261, 3,         IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
-	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon horizontal fine scrolling high ? */
-	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read, Video_HorScroll_Write },                   /* horizontal fine scrolling */
-	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_FALC_ShiftModeWriteWord },  /* Falcon shift mode */
-	{ 0xff8268, 24,        IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
+	{ 0xff820d, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_ScreenBase_WriteByte },     /* Video base low byte */
+	{ 0xff820e, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_LineOffset_WriteWord },     /* Falcon line offset */
+	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_Line_Width_WriteWord },     /* Falcon line width */
+	{ 0xff8212, 46       , IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff8240, 32       , IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },           /* ST color regs */
+	{ 0xff8260, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_ST_ShiftModeWriteByte },
+	{ 0xff8261, 3        , IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
+	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_HorScroll64_WriteByte },    /* Falcon horizontal fine scrolling high ? */
+	{ 0xff8265, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_HorScroll65_WriteByte },    /* horizontal fine scrolling */
+	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_Falcon_ShiftMode_WriteWord }, /* Falcon shift mode */
+	{ 0xff8268, 24       , IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 
 	{ 0xff8280, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HHC_WriteWord },            /* HHC : Horizontal Hold Counter */
 	{ 0xff8282, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_HHT_WriteWord },            /* HHT : Horizontal Hold Timer */
