@@ -699,7 +699,6 @@ static int VIDEL_getScreenWidth(void)
 		divider = cycPerPixel;
 	}
 
-		
 	/* Compute hdb_offset and hde_offset */
 	if (videl.bUseSTShifter == false) {
 		if (bpp < 16) {
@@ -721,17 +720,29 @@ static int VIDEL_getScreenWidth(void)
 
 	LOG_TRACE(TRACE_VIDEL, "hdb_offset=%04x,    hde_offset=%04x\n", hdb_offset, hde_offset);
 
-	leftBorder = hbe - hdb_offset;
-	if (leftBorder < 0)
-		leftBorder += hht + 2;
+	/* Compute left border size in cycles */
+	if (IoMem_ReadWord(0xff8288) & 0x0200)
+		leftBorder = hdb - hbe + hdb_offset - hht - 2;
+	else
+		leftBorder = hdb - hbe + hdb_offset;
 
-	rightBorder = hbb - hde_offset;
+	/* Compute right border size in cycles */
+	rightBorder = hbb - hde_offset - hde;
 
-	videl.leftBorderSize = hdb - leftBorder > 0 ? (hdb - leftBorder) / cycPerPixel : 0;
-	videl.rightBorderSize = rightBorder - hde > 0 ? (rightBorder - hde)/ cycPerPixel : 0;
+	videl.leftBorderSize = leftBorder / cycPerPixel;
+	videl.rightBorderSize = rightBorder / cycPerPixel;
+
+	if (videl.leftBorderSize < 0) {
+		fprintf(stderr, "BORDER LEFT < 0   %d\n", videl.leftBorderSize);
+		videl.leftBorderSize = 0;
+	}
+	if (videl.rightBorderSize < 0) {
+		fprintf(stderr, "BORDER RIGHT < 0\n");
+		videl.rightBorderSize = 0;
+	}
 
 	/* X Size of the Display area */
-	videl.XSize = (IoMem_ReadWord(0xff8210) & 0x03ff) * 16 / VIDEL_getScreenBpp();
+	videl.XSize = (IoMem_ReadWord(0xff8210) & 0x03ff) * 16 / bpp;
 
 	return videl.leftBorderSize + videl.XSize + videl.rightBorderSize;
 }
