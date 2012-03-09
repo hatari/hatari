@@ -1137,6 +1137,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 		videl.rightBorderSize = 0;
 		videl.upperBorderSize = 0;
 		videl.lowerBorderSize = 0;
+		fvram = (Uint16 *) Atari2HostAddr(VIDEL_getVideoramAddress());
 	}
 
 	/* Clip to SDL_Surface dimensions */
@@ -1513,6 +1514,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 		videl.lowerBorderSize = 0;
 		videl.XSize = vw;
 		videl.YSize = vh;
+		fvram = (Uint16 *) Atari2HostAddr(VIDEL_getVideoramAddress());
 	}
 
 	/* Host screen infos */
