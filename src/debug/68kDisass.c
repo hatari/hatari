@@ -32,12 +32,12 @@ typedef enum {
 static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoBrackets;
 
 // values <0 will hide the group
-static int				optionPosAddress = 0;	// current address
-static int				optionPosHexdump = 10;	// 16-bit words at this address
-static int				optionPosLabel = 35;	// label, if defined
-static int				optionPosOpcode = 47;	// opcode
-static int				optionPosOperand = 57;	// operands for the opcode
-static int				optionPosComment = 82;	// comment, if defined
+static const int			optionPosAddress = 0;	// current address
+static const int			optionPosHexdump = 10;	// 16-bit words at this address
+static const int			optionPosLabel = 35;	// label, if defined
+static const int			optionPosOpcode = 47;	// opcode
+static const int			optionPosOperand = 57;	// operands for the opcode
+static const int			optionPosComment = 82;	// comment, if defined
 
 /***
  *	Motorola 16-/32-Bit Microprocessor and coprocessor types
