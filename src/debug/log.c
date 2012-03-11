@@ -29,7 +29,7 @@ const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "vdi.h"
 
-
+#if ENABLE_TRACING
 static struct {
 	Uint64 Level;
 	const char *Name;
@@ -106,6 +106,7 @@ TraceOptions[] = {
 
 	{ TRACE_ALL		 , "all" }
 };
+#endif /* ENABLE_TRACING */
 
 
 Uint64	LogTraceFlags = TRACE_NONE;

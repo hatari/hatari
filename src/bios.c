@@ -253,7 +253,12 @@ void Bios_Info(Uint32 dummy)
 		}
 	}
 }
-#endif
+#else /* !ENABLE_TRACING */
+void Bios_Info(Uint32 bShowOpcodes)
+{
+	        fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+}
+#endif /* !ENABLE_TRACING */
 
 
 /*-----------------------------------------------------------------------*/

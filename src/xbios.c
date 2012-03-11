@@ -118,9 +118,9 @@ static bool XBios_Devconnect(Uint32 Params)
 }
 
 #else /* !ENABLE_TRACING */
-#define XBios_Floprd     false
-#define XBios_Flopwr     false
-#define XBios_Devconnect false
+#define XBios_Floprd(params)     false
+#define XBios_Flopwr(params)     false
+#define XBios_Devconnect(params) false
 #endif
 
 
@@ -393,7 +393,12 @@ void XBios_Info(Uint32 dummy)
 		}
 	}
 }
-#endif
+#else /* !ENABLE_TRACING */
+void XBios_Info(Uint32 bShowOpcodes)
+{
+	        fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+}
+#endif /* !ENABLE_TRACING */
 
 
 /**
