@@ -2956,7 +2956,7 @@ void Video_ScreenCounter_WriteByte(void)
 	/* addr_new should now be the same as on a real STE */
 	/* Compute the new video address with one modified byte */
 	if ( IoAccessCurrentAddress == 0xff8205 )
-		addr_new = ( addr_new & 0x00ffff ) | ( AddrByte << 16 );
+		addr_new = ( addr_new & 0x00ffff ) | ( ( AddrByte & 0x3f ) << 16 );
 	else if ( IoAccessCurrentAddress == 0xff8207 )
 		addr_new = ( addr_new & 0xff00ff ) | ( AddrByte << 8 );
 	else if ( IoAccessCurrentAddress == 0xff8209 )
