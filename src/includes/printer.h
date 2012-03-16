@@ -6,7 +6,6 @@
 
 extern void Printer_Init(void);
 extern void Printer_UnInit(void);
-extern void Printer_CloseAllConnections(void);
 extern bool Printer_TransferByteTo(Uint8 Byte);
 extern void Printer_CheckIdleStatus(void);
 

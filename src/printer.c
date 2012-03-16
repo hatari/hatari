@@ -17,27 +17,22 @@ const char Printer_fileid[] = "Hatari printer.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "paths.h"
 #include "printer.h"
+#include "log.h"
 
-/* #define PRINTER_DEBUG */
+#define PRINTER_DEBUG 0
+#if PRINTER_DEBUG
+#define Dprintf(a) printf a
+#else
+#define Dprintf(a)
+#endif
 
-#define PRINTER_FILENAME "hatari.prn"
+/* After ~4 seconds (4*50 VBLs), flush & close printer */
+#define PRINTER_IDLE_CLOSE   (4*50)
 
-#define PRINTER_IDLE_CLOSE   (4*50)     /* After 4 seconds, close printer */
-
-#define PRINTER_BUFFER_SIZE  2048       /* 2k buffer which when full will be written to printer/file */
-
-static Uint8 PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store character before output */
-static size_t nPrinterBufferChars;      /* # characters in above buffer */
-static bool bConnectedPrinter;
 static int nIdleCount;
+static int bUnflushed;
 
 static FILE *pPrinterHandle;
-
-
-/* internal functions */
-static void Printer_ResetInternalBuffer(void);
-static bool Printer_EmptyInternalBuffer(void);
-static void Printer_AddByteToInternalBuffer(Uint8 Byte);
 
 
 /*-----------------------------------------------------------------------*/
@@ -46,33 +41,26 @@ static void Printer_AddByteToInternalBuffer(Uint8 Byte);
  */
 void Printer_Init(void)
 {
-#ifdef PRINTER_DEBUG
-	fprintf(stderr,"Printer_Init()\n");
-#endif
+	char *separator;
+	Dprintf((stderr, "Printer_Init()\n"));
 
-	/* A valid file name for printing is already set up in configuration.c.
-	 * But we check it again since the user might have entered an invalid
-	 * file name in the hatari.cfg file... */
-	if (strlen(ConfigureParams.Printer.szPrintToFileName) <= 1)
-	{
-		const char *psHomeDir;
-		psHomeDir = Paths_GetHatariHome();
+	/* disabled from config/command line? */
+	if (!ConfigureParams.Printer.szPrintToFileName[0])
+		return;
 
-		/* construct filename for printing.... */
-		if (strlen(psHomeDir)+1+strlen(PRINTER_FILENAME) < sizeof(ConfigureParams.Printer.szPrintToFileName))
-		{
-			sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%c%s",
-			        psHomeDir, PATHSEP, PRINTER_FILENAME);
-		}
-		else
-		{
-			strcpy(ConfigureParams.Printer.szPrintToFileName, PRINTER_FILENAME);
-		}
+	/* printer name without path? */
+	separator = strrchr(ConfigureParams.Printer.szPrintToFileName, PATHSEP);
+	if (!separator)
+		return;
+	
+	*separator = '\0';
+	if (!File_DirExists(ConfigureParams.Printer.szPrintToFileName)) {
+		Log_AlertDlg(LOG_ERROR, "Printer output file directory inaccessible. Printing disabled.");
+		ConfigureParams.Printer.bEnablePrinting = false;
 	}
+	*separator = PATHSEP;
 
-#ifdef PRINTER_DEBUG
-	fprintf(stderr,"Filename for printing: %s \n", ConfigureParams.Printer.szPrintToFileName);
-#endif
+	Dprintf((stderr, "Filename for printing: %s \n", ConfigureParams.Printer.szPrintToFileName));
 }
 
 
@@ -82,86 +70,12 @@ void Printer_Init(void)
  */
 void Printer_UnInit(void)
 {
-	/* Close any open files */
-	Printer_CloseAllConnections();
-
-#ifdef PRINTER_DEBUG
-	fprintf(stderr,"Printer_UnInit()\n");
-#endif
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Close all open output file, empty buffers etc.
- */
-void Printer_CloseAllConnections(void)
-{
-	/* Empty buffer */
-	Printer_EmptyInternalBuffer();
+	Dprintf((stderr, "Printer_UnInit()\n"));
 
 	/* Close any open files */
 	pPrinterHandle = File_Close(pPrinterHandle);
-
-	/* Signal finished with printing */
-	bConnectedPrinter = false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Reset Printer Buffer
- */
-static void Printer_ResetInternalBuffer(void)
-{
-	nPrinterBufferChars = 0;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Empty Printer Buffer
- */
-static bool Printer_EmptyInternalBuffer(void)
-{
-	/* Write bytes to file */
-	if (nPrinterBufferChars > 0)
-	{
-		if (pPrinterHandle)
-		{
-			size_t n;
-			/* Write bytes out */
-			n = fwrite((Uint8 *)PrinterBuffer, sizeof(Uint8),
-			           nPrinterBufferChars, pPrinterHandle);
-			if (n < nPrinterBufferChars)
-			{
-				/* we wrote less then expected! */
-				fprintf(stderr, "Printer_EmptyInternalBuffer():"
-					"ERROR not all chars were written\n");
-			}
-		}
-
-		/* Reset */
-		Printer_ResetInternalBuffer();
-
-		return true;
-	}
-	/* Nothing to do */
-	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Add byte to our internal buffer, and when full write out - needed to speed
- */
-static void Printer_AddByteToInternalBuffer(Uint8 Byte)
-{
-	/* Is buffer full? If so empty */
-	if (nPrinterBufferChars == PRINTER_BUFFER_SIZE)
-		Printer_EmptyInternalBuffer();
-	/* Add character */
-	PrinterBuffer[nPrinterBufferChars++] = Byte;
+	bUnflushed = false;
+	nIdleCount = 0;
 }
 
 
@@ -178,25 +92,24 @@ bool Printer_TransferByteTo(Uint8 Byte)
 		return false;   /* Failed if printing disabled */
 
 	/* Have we made a connection to our printer/file? */
-	if (!bConnectedPrinter)
+	if (!pPrinterHandle)
 	{
 		/* open printer file... */
 		pPrinterHandle = File_Open(ConfigureParams.Printer.szPrintToFileName, "a+");
-		bConnectedPrinter = (pPrinterHandle != NULL);
-
-		/* Reset the printer */
-		Printer_ResetInternalBuffer();
+		if (!pPrinterHandle)
+		{
+			Log_AlertDlg(LOG_ERROR, "Printer output file open failed. Printing disabled.");
+			ConfigureParams.Printer.bEnablePrinting = false;
+			return false;
+		}
 	}
-
-	/* Is all OK? */
-	if (bConnectedPrinter)
+	if (fputc(Byte, pPrinterHandle) != Byte)
 	{
-		/* Add byte to our buffer. */
-		Printer_AddByteToInternalBuffer(Byte);
-		return true;    /* OK */
+		fprintf(stderr, "ERROR: Printer_TransferByteTo() writing failed!\n");
+		return false;
 	}
-	else
-		return false;   /* Failed */
+	bUnflushed = true;
+	return true;
 }
 
 
@@ -208,8 +121,10 @@ bool Printer_TransferByteTo(Uint8 Byte)
 void Printer_CheckIdleStatus(void)
 {
 	/* Is anything waiting for printer? */
-	if (Printer_EmptyInternalBuffer())
+	if (bUnflushed)
 	{
+		fflush(pPrinterHandle);
+		bUnflushed = false;
 		nIdleCount = 0;
 	}
 	else
@@ -219,8 +134,7 @@ void Printer_CheckIdleStatus(void)
 		if (nIdleCount >= PRINTER_IDLE_CLOSE)
 		{
 			/* Close printer output */
-			Printer_CloseAllConnections();
-			nIdleCount = 0;
+			Printer_UnInit();
 		}
 	}
 }

@@ -152,6 +152,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	bool bReInitIoMem = false;
 	bool bScreenModeChange = false;
 	bool bReInitMidi = false;
+	bool bReInitPrinter = false;
 	bool bFloppyInsert[MAX_FLOPPYDRIVES];
 	int i;
 
@@ -182,7 +183,8 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || strcmp(changed->Printer.szPrintToFileName,current->Printer.szPrintToFileName))
 	{
 		Dprintf("- printer>\n");
-		Printer_CloseAllConnections();
+		Printer_UnInit();
+		bReInitPrinter = true;
 	}
 
 	/* Did set new RS232 parameters? */
@@ -371,6 +373,13 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	{
 		Dprintf("- IO mem<\n");
 		IoMem_Init();
+	}
+
+	/* Re-init Printer emulation? */
+	if (bReInitPrinter)
+	{
+		Dprintf("- printer<\n");
+		Printer_Init();
 	}
 
 	/* Re-init MIDI emulation? */
