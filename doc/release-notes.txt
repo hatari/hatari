@@ -18,6 +18,7 @@ Emulation:
 - Fix DSP to be reseted on emulation reset
 - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
   to TOS instead of trying to handle them as normal files
+- printer output is single, not double buffered
 - Changes in the prefetch code for some instructions
 - Changed behavior of the Microwire registers in Falcon mode
 - Fixes to few Falcon IO registers
