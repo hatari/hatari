@@ -3190,7 +3190,7 @@ a $1234 :2
 Delete the breakpoint when it's hit i.e. trigger it only once. It may
 be useful if you just want to get a specific address. Or if you're on
 an instruction that jumps back to a start of the loop and you want to
-finish the loop, you couuld use:
+finish the loop, you could use:
 <pre>
 b pc &gt; "pc" :once
 continue
@@ -3737,9 +3737,8 @@ Please see also <a href="#Chaining breakpoints">Chaining breakpoints</a>
 section for more examples on what you can do with the debugger input files.
 </dd>
 
-<dt><em>Finding where program or OS is stuck</em></dt>
-<dd>Profiling tells from which addresses CPU is running
-executing the instructions:
+<dt><em>Finding where a program or the OS is stuck</em></dt>
+<dd>Profiling tells from which addresses CPU is executing the instructions:
 <pre>
 profile  on
 c
@@ -3751,9 +3750,9 @@ profile  counts
 </dl>
 
 <p>
-Hint: for most of above commands, one just needs to prefix them with
+Hint: for most of the above commands, one just needs to prefix them with
 "d" (or "dsp" if using full command names) to do similar operation on
-DSP.
+the DSP.
 </p>
 
 
@@ -3761,14 +3760,15 @@ DSP.
 
 <p>
 Lastly, the debugger is much nicer to use with the command line
-history, editing and especially with the command, command argument and
-symbol name completion support. If you're building Hatari yourself,
-please make sure that you have the GNU readline development files
-installed (on Debian / Ubuntu these come from the libreadline5-dev
-package). Otherwise completion doesn't get enabled when you configure
-Hatari.
+history, editing and especially the completion support for the
+command, command argument and symbol names.
 </p>
-
+<p>
+If you're building Hatari yourself, please make sure that you have the
+GNU readline development files installed (on Debian / Ubuntu these
+come from the libreadline5-dev package). Otherwise the name completion
+and other features don't get enabled when you configure Hatari.
+</p>
 <p>
 ENABLE_TRACING define needs to be set for tracing to work.
 By default it should be enabled.
@@ -3838,7 +3838,7 @@ an effect!
 Emulating the Falcon DSP is performance-wise several times more demanding
 than emulating the m68k; DSP runs at higher frequency, executes many
 instructions for each m68k instruction and emulation isn't as mature
-and optimized.  Unless some program needs DSP, <em>none</em> or
+and optimized.  Unless some Falcon program needs DSP, <em>none</em> or
 <em>dummy</em> DSP emulation mode could be used.  Even of the programs
 that do use DSP, many use it only for background music and work
 fine without the real DSP emulation.
@@ -3933,15 +3933,16 @@ to use zooming, disabling borders may help a bit.
 Handling Spec512 color modes which change the ST/e palette constantly
 takes some extra CPU.  If you have problems with CPU usage in such
 screens and you care more e.g. from the sound quality than visuals, you
-can disable the Spec512 mode handling by zeroing the threshold for that
-with the <span class="commandline">--spec512 0</span> option.
+can either increase the threshold or disable the Spec512 mode handling
+completely by zeroing the threshold for that with the
+<span class="commandline">--spec512 0</span> option.
 </p>
 
 <h5>Statusbar and drive LED</h5>
 <p>
-If your version of libSDL uses VSync to synchronize the screen output,
-drawing of the statusbar or the drive LED may have some minor impact
-on performance too.  Normally they shouldn't.
+If your version of the SDL library uses VSync to synchronize the screen
+output, drawing of the statusbar or the drive LED may have some minor
+impact on performance too.  Normally they shouldn't.
 </p>
 
 
@@ -3970,13 +3971,13 @@ It depends on what you want to measure, but usually it's best to
 disable sound and set high frame skip like
 <span class="commandline">--sound off --frameskips 60</span> so that
 the associated external overheads are minimized.  E.g. video output
-can on some platforms do VSync and measurements would then show
-your monitor refresh frequency instead of actual Hatari performance.
+can on some platforms do VSync and measurements would then show your
+monitor refresh frequency instead of the actual Hatari performance.
 </p>
 <p>
 On Unix systems with <span class="commandline">times()</span> function
 call, only the time spent by the Hatari process itself is measured.
-On other systems much less accurate SDL "wall clock" timings are
+On other systems, much less accurate SDL "wall clock" timings are
 used.  To make latter more accurate you could use also
 <span class="commandline">--run-vbls</span> option to specify how many
 VBLs Hatari should run before it exits.  In this case it's best to
@@ -3985,7 +3986,7 @@ given as memory snapshot to Hatari with the frame skip set equal to
 the VBL count.
 </p>
 <p>
-Note that the numbers can fluctuate quite a bit, <em>especially</em>
+Note that these numbers can fluctuate quite a bit, <em>especially</em>
 when the SDL timings are used, so for (statistically) reliable numbers
 you may need to repeat the measurement several times.  You should of
 course make also sure that the system doesn't have any other activity
