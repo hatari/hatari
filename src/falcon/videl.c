@@ -88,10 +88,10 @@ struct videl_s {
 	Uint8  monitor_type;			/* 00 Monochrome (SM124) / 01 Color (SC1224) / 10 VGA Color / 11 Television ($FFFF8006) */
 	Uint32 videoBaseAddr;			/* Video base address, refreshed after each VBL */
 
-	Uint16 leftBorderSize;			/* Size of the left border */
-	Uint16 rightBorderSize;			/* Size of the right border */
-	Uint16 upperBorderSize;			/* Size of the upper border */
-	Uint16 lowerBorderSize;			/* Size of the lower border */
+	Sint16 leftBorderSize;			/* Size of the left border */
+	Sint16 rightBorderSize;			/* Size of the right border */
+	Sint16 upperBorderSize;			/* Size of the upper border */
+	Sint16 lowerBorderSize;			/* Size of the lower border */
 	Uint16 XSize;				/* X size of the graphical area */
 	Uint16 YSize;				/* Y size of the graphical area */
 
@@ -677,8 +677,8 @@ static int VIDEL_getScreenWidth(void)
 	Uint16 vdm = IoMem_ReadWord(0xff82c2) & 0xc;
 	Uint16 hht = IoMem_ReadWord(0xff8282) & 0x1ff;
 
-	Uint16 hdb_offset, hde_offset;
 	Uint16 cycPerPixel, divider;
+	Sint16 hdb_offset, hde_offset;
 	Sint16 leftBorder, rightBorder;
 
 	/* Compute cycles per pixel */
@@ -735,13 +735,14 @@ static int VIDEL_getScreenWidth(void)
 
 	videl.leftBorderSize = leftBorder / cycPerPixel;
 	videl.rightBorderSize = rightBorder / cycPerPixel;
+	LOG_TRACE(TRACE_VIDEL, "left border size=%04x,    right border size=%04x\n", videl.leftBorderSize, videl.rightBorderSize);
 
 	if (videl.leftBorderSize < 0) {
-		fprintf(stderr, "BORDER LEFT < 0   %d\n", videl.leftBorderSize);
+//		fprintf(stderr, "BORDER LEFT < 0   %d\n", videl.leftBorderSize);
 		videl.leftBorderSize = 0;
 	}
 	if (videl.rightBorderSize < 0) {
-		fprintf(stderr, "BORDER RIGHT < 0\n");
+//		fprintf(stderr, "BORDER RIGHT < 0   %d\n", videl.rightBorderSize);
 		videl.rightBorderSize = 0;
 	}
 
