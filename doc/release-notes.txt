@@ -23,6 +23,7 @@ Emulation:
 - Changed behavior of the Microwire registers in Falcon mode
 - Fixes to few Falcon IO registers
 - 68040 MMU emulation fixes
+- add more timings for the 224 bytes overscan detection on STE
 
 Emulator:
 - Support run-time changing of CPU level and machine type from
