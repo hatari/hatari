@@ -953,9 +953,10 @@ static void Video_WriteToShifter ( Uint8 Res )
 	        && ( LineCycles <= (LINE_START_CYCLE_71+28) )
 	        && ( FrameCycles - ShifterFrame.ResPosHi.FrameCycles <= 32 ) )
 	{
-		if ( ( ( ConfigureParams.System.nMachineType == MACHINE_STE )	/* special case for 504/4 on STE -> add 20 bytes to left border */
+		if ( ( ( ConfigureParams.System.nMachineType == MACHINE_STE )	/* special case for 504/4 and 508/4 on STE -> add 20 bytes to left border */
 			|| ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE ) )
-			&& ( ShifterFrame.ResPosHi.LineCycles == 504 ) && ( LineCycles == 4 ) )
+			&& ( ( ( ShifterFrame.ResPosHi.LineCycles == 504 ) && ( LineCycles == 4 ) )
+			  || ( ( ShifterFrame.ResPosHi.LineCycles == 508 ) && ( LineCycles == 4 ) ) ) )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_2_STE;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71+16;	/* starts 16 pixels later */
