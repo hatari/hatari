@@ -61,6 +61,7 @@ Fixed demos :
   Built-in Obsolescence (DSP stack overflow)
   Japtro and Rising Force by Holocaust (FDC, buggy loader)
   Delirious Demos IV (video, STE detection)
+  Antiques by Dune/Sector One (224 bytes STE overscan)
 
 
  Version 1.6.1 (2012-01-13):
