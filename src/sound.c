@@ -147,16 +147,16 @@ static const ymu16 ymout1c5bit[ 32 ] =
 };
 
 /* Convert a constant 4 bits volume to the internal 5 bits value : */
-/* volume5=volume4*2+1, except for volumes 0 and 1 which become 0 and 2, */
+/* volume5=volume4*2+1, except for volumes 0 and 1 which remain 0 and 1, */
 /* in order to map [0,15] into [0,31] (O must remain 0, and 15 must give 31) */
-static const ymu16 YmVolume4to5[ 16 ] = { 0,2,5,7,9,11,13,15,17,19,21,23,25,27,29,31 };
+static const ymu16 YmVolume4to5[ 16 ] = { 0,1,5,7,9,11,13,15,17,19,21,23,25,27,29,31 };
 
 /* Table of unsigned 4 bit D/A output level for 3 channels as measured on a real ST */
-static ymu16 volumetable_original[ 16 * 16 * 16 ] =
+static ymu16 volumetable_original[16][16][16] =
 #include "ym2149_fixed_vol.h"
 
 /* Corresponding table interpolated to 5 bit D/A output level (16 bits unsigned) */
-static ymu16 ymout5_u16[ 32 * 32 * 32 ];
+static ymu16 ymout5_u16[32][32][32];
 
 /* Same table, after conversion to signed results (same pointer, with different type) */
 static yms16 *ymout5 = (yms16 *)ymout5_u16;
@@ -241,13 +241,10 @@ bool		Sound_BufferIndexNeedReset = false;
 
 static ymsample	LowPassFilter		(ymsample x0);
 
-static int	volumetable_get		(int i, int j, int k);
-static void	volumetable_set		(ymu16 *volumetable, int i, int j, int k, int val);
-static int	volumetable_interpolate	(int y1, int y2);
-static void	interpolate_volumetable	(ymu16 *out);
+static void	interpolate_volumetable	(ymu16 volumetable[32][32][32]);
 
-static void	YM2149_BuildModelVolumeTable(ymu16 *out);
-static void	YM2149_BuildLinearVolumeTable(ymu16 *out);
+static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32]);
+static void	YM2149_BuildLinearVolumeTable(ymu16 volumetable[32][32][32]);
 static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsigned int Level, bool DoCenter);
 
 static void	YM2149_EnvBuild		(void);
@@ -363,108 +360,43 @@ static ymsample	LowPassFilter(ymsample x0)
 /* of all possible fixed volume combinations on a ST.		*/
 /*--------------------------------------------------------------*/
 
-static int	volumetable_get(int i, int j, int k)
+static void	interpolate_volumetable(ymu16 volumetable[32][32][32])
 {
-	/* access at boundary finds the last value instead of the first */
-	if (i == 16)
-		i = 15;
-	if (j == 16)
-		j = 15;
-	if (k == 16)
-		k = 15;
+	int	i, j, k;
 
-	return volumetable_original[i + 16 * j + 16 * 16 * k];
-}
-
-static void	volumetable_set(ymu16 *volumetable, int i, int j, int k, int val)
-{
-	volumetable[i + 32 * j + 32 * 32 * k] = val;
-}
-
-/* the table is exponential in nature. These weighing factors approximate
- * that the value in-between needs to be closer to the lower value in y2 */
-static int	volumetable_interpolate(int y1, int y2)
-{
-	int erpolate;
-	erpolate = (y1 * 4 + y2 * 6) / 10u;
-	if (erpolate > 65535)
-	{
-//		fprintf ( stderr , "sature>:%d %d %d\n",erpolate,y1,y2 );
-		erpolate = 65535;
-	}
-	if (erpolate < 0)
-	{
-//		fprintf ( stderr , "sature<:%d %d %d\n",erpolate,y1,y2 );
-		erpolate = 0;
-	}
-	return erpolate;
-}
-
-static void	interpolate_volumetable(ymu16 *out)
-{
-	int i, j, k;
-	int i1, i2;
-
-	/* we are doing 4-dimensional interpolation here. For each
-	* known measurement point, we must find 8 new values. These values occur
-	* as follows:
-	*
-	* - one at the exact same position
-	* - one half-way in i direction
-	* - one half-way in j direction
-	* - one half-way in k direction
-	* - one half-way in i+j direction
-	* - one half-way in i+k direction
-	* - one half-way in j+k direction
-	* - one half-way in i+j+k direction
-	*
-	* The algorithm currently is very simplistic. Probably more points should be
-	* weighted in the multicomponented directions, for instance i+j+k should be
-	* an average of all surrounding data points. This probably doesn't matter much,
-	* though. This is because the only way to reach those locations is to modulate
-	* more than one voice with the envelope, and this is rare.
-	*/
-
-	for (i = 0; i < 16; i++)
-	{
-		for (j = 0; j < 16; j++)
-		{
-			for (k = 0; k < 16; k++)
-			{
-				i1 = volumetable_get(i, j, k);
-				/* copy value unchanged to new position */
-				volumetable_set(out,i*2, j*2, k*2, i1);
- 
-				/* interpolate in i direction */
-				i2 = volumetable_get(i + 1, j, k);
-				volumetable_set(out,i*2 + 1, j*2, k*2, volumetable_interpolate(i1, i2));
-
-				/* interpolate in j direction */
-				i2 = volumetable_get(i, j+1, k);
-				volumetable_set(out,i*2, j*2 + 1, k*2, volumetable_interpolate(i1, i2));
-
-				/* interpolate in k direction */
-				i2 = volumetable_get(i, j, k+1);
-				volumetable_set(out,i*2, j*2, k*2+1, volumetable_interpolate(i1, i2));
-
-				/* interpolate in i + j direction */
-				i2 = volumetable_get(i + 1, j + 1, k);
-				volumetable_set(out,i*2 + 1, j*2 + 1, k*2, volumetable_interpolate(i1, i2));
-
-				/* interpolate in i + k direction */
-				i2 = volumetable_get(i + 1, j, k + 1);
-				volumetable_set(out,i*2 + 1, j*2, k*2 + 1, volumetable_interpolate(i1, i2));
-
-				/* interpolate in j + k direction */
-				i2 = volumetable_get(i, j + 1, k + 1);
-				volumetable_set(out,i*2, j*2 + 1, k*2 + 1, volumetable_interpolate(i1, i2));
-
-				/* interpolate in i + j + k direction */
-				i2 = volumetable_get(i + 1, j + 1, k + 1);
-				volumetable_set(out,i*2 + 1, j*2 + 1, k*2 + 1, volumetable_interpolate(i1, i2));
+	for (i = 1; i < 32; i += 2) { /* Copy 16 Panels to make a Block */
+		for (j = 1; j < 32; j += 2) { /* Copy 16 Rows to make a Panel */
+			for (k = 1; k < 32; k += 2) { /* Copy 16 Elements to make a Row */
+				volumetable[i][j][k] = volumetable_original[(i-1)/2][(j-1)/2][(k-1)/2];
 			}
+			volumetable[i][j][0] = volumetable[i][j][1]; /* Move 0th Element */
+			volumetable[i][j][1] = volumetable[i][j][3]; /* Move 1st Element */
+			/* Interpolate 3rd Element */
+			volumetable[i][j][3] = (ymu16)(0.5 + sqrt((double)volumetable[i][j][1] * volumetable[i][j][5]));
+			for (k = 2; k < 32; k += 2) /* Interpolate Even Elements */
+				volumetable[i][j][k] = (ymu16)(0.5 + sqrt((double)volumetable[i][j][k-1] * volumetable[i][j][k+1]));
 		}
+		for (k = 0; k < 32; k++) {
+			volumetable[i][0][k] = volumetable[i][1][k]; /* Move 0th Row */
+			volumetable[i][1][k] = volumetable[i][3][k]; /* Move 1st Row */
+			/* Interpolate 3rd Row */
+			volumetable[i][3][k] = (ymu16)(0.5 + sqrt((double)volumetable[i][1][k] * volumetable[i][5][k]));
+		}
+		for (j = 2; j < 32; j += 2) /* Interpolate Even Rows */
+			for (k = 0; k < 32; k++)
+				volumetable[i][j][k] = (ymu16)(0.5 + sqrt((double)volumetable[i][j-1][k] * volumetable[i][j+1][k]));
 	}
+	for (j = 0; j < 32; j++)
+		for (k = 0; k < 32; k++) {
+			volumetable[0][j][k] = volumetable[1][j][k]; /* Move 0th Panel */
+			volumetable[1][j][k] = volumetable[3][j][k]; /* Move 1st Panel */
+			/* Interpolate 3rd Panel */
+			volumetable[3][j][k] = (ymu16)(0.5 + sqrt((double)volumetable[1][j][k] * volumetable[5][j][k]));
+		}
+	for (i = 2; i < 32; i += 2) /* Interpolate Even Panels */
+		for (j = 0; j < 32; j++) /* Interpolate Even Panels */
+			for (k = 0; k < 32; k++)
+				volumetable[i][j][k] = (ymu16)(0.5 + sqrt((double)volumetable[i-1][j][k] * volumetable[i+1][j][k]));
 }
 
 
@@ -477,18 +409,14 @@ static void	interpolate_volumetable(ymu16 *out)
  * (each value of ymout1c5bit is in [0,65535])
  */
 
-static void	YM2149_BuildLinearVolumeTable(ymu16 *out)
+static void	YM2149_BuildLinearVolumeTable(ymu16 volumetable[32][32][32])
 {
 	int	i, j, k;
-	int	res;
 
 	for (i = 0; i < 32; i++)
 		for (j = 0; j < 32; j++)
 			for (k = 0; k < 32; k++)
-			{
-				res = ( ymout1c5bit[ i ] + ymout1c5bit[ j ] + ymout1c5bit[ k ] ) / 3;
-				volumetable_set ( out, i, j, k, res );
-			}
+				volumetable[i][j][k] = (ymu16)( ((ymu32)ymout1c5bit[i] + ymout1c5bit[j] + ymout1c5bit[k]) / 3);
 }
 
 
@@ -503,7 +431,7 @@ static void	YM2149_BuildLinearVolumeTable(ymu16 *out)
  * resistor ladder network and using the voltage divider rule.
  */
 
-static void	YM2149_BuildModelVolumeTable(ymu16 *out)
+static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
 {
 #define Quartet 0                     /* 1 = Compile for Quartet Mode */
 
@@ -525,7 +453,6 @@ static void	YM2149_BuildModelVolumeTable(ymu16 *out)
 	double conductance;
 	double conductance_[32];
 	int	i, j, k;
-	int	res;
 
 /**
  * YM2149 and R8=1k follows (2^-1/4)^(n-31) better when 2 voices are
@@ -557,9 +484,8 @@ static void	YM2149_BuildModelVolumeTable(ymu16 *out)
 		for (j = 0; j < 32; j++)
 			for (k = 0; k < 32; k++)
 			{
-				res = (int)(0.5+(MaxVol*WARP)/(1.0 +
+				volumetable[i][j][k] = (ymu16)(0.5+(MaxVol*WARP)/(1.0 +
 					1.0/(conductance_[i]+conductance_[j]+conductance_[k])));
-				volumetable_set ( out, i, j, k, res );
 			}
 }
 
@@ -662,7 +588,7 @@ static void	Ym2149_BuildVolumeTable(void)
 		YM2149_BuildLinearVolumeTable(ymout5_u16);	/* combine the 32 possible volumes */
 
 	/* Normalise/center the values (convert from u16 to s16) */
-	YM2149_Normalise_5bit_Table ( ymout5_u16 , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );
+	YM2149_Normalise_5bit_Table ( ymout5_u16[0][0] , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );
 }
 
 
