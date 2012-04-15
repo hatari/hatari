@@ -283,14 +283,17 @@ GEM games:
 - Centi
 - Chess* (works only from floppy)
 - Clicks* (needs wdialog)
+- Corewar (needs EmuTOS > 0.8.6)
 - Daleks*
 - Dame
 - DBWH
 - Drachen
 - Flipside (fs, othello)
 - Gem_mind
+- Gemamigo* (needs EmuTOS > 0.8.6)
 - Gnuchess
 - Gobang* (needs EmuTOS >= v0.8.6)
+- Halma (needs EmuTOS > 0.8.6)
 - Invers
 - Isola
 - Kensington
@@ -324,7 +327,7 @@ GEM games:
 Monochrome games:
 - Balloons
 - Bounce
-- Columns* (needs EmuTOS >= 0.8.6, some text & gfx issues)
+- Columns* (needs EmuTOS >= 0.8.6, some text issues)
 - Delta patrol
 - Emperor (v1.0 & v1.5)
 - Fun Face (playable demo)
@@ -365,10 +368,7 @@ GEM games:
 - Abalone   (dragging doesn't work)
 - Bombs     (mouse clicks almost never work)
 - Checkers  (dragging doesn't work)
-- Corewar   (programs are shown as white, not with different patterns)
 - Dte       (mouse gets stuck)
-- Gemamigo* (panic or double bus error)
-- Halma     (boxes are left on screen)
 - Invaders* (shots go through buildings/shields)
 - Patience* (dragging doesn't work, dialog selection persists)
 - Risky*    (dragging doesn't work)
@@ -405,10 +405,6 @@ But following STE specific & enhanced demos, games and apps work
 Note: STE emulation needs 256kB version of EmuTOS.  If you use 60Hz
 EmuTOS version (etos256us.img), you may get screen flicker and music
 playback issues with demos and games.
-
-Missing Blitter support in EmuTOS (XBios functions etc) is an
-additional reason why some programs/demos (such as Blittermania)
-don't work with it.
 
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
@@ -558,8 +554,8 @@ Falcon emulation requires 512kB version of EmuTOS
 
 Partial Videl/VsetMode() implementation, missing VDI 256-color &
 HiColor support and missing Falcon sound matrix & DSP XBios functions
-in EmuTOS probably explain why graphics in many of the demos &games
-look broken or they freeze at startup. Following Falcon only demos,
+in EmuTOS probably explain why graphics in many of the demos & games
+look broken or they freeze at startup.  Following Falcon only demos,
 games and apps work (mostly) fine though.
 
 Working demos:
@@ -682,7 +678,7 @@ Games regressed in EmuTOS v0.8.6:
 - SBM v0.8 (Bomberman clone)*, doesn't work anymore
   - Bus error wget at 00400000
 - Vertical Mayhem (Columns clone)*, black screen at start
-  - _SND cookie & available OS function mismatch
+  - maybe due to missing sound matrix calls
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
