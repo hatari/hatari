@@ -24,7 +24,7 @@ Emulation:
 - Fixes to few Falcon IO registers
 - 68040 MMU emulation fixes
 - add more timings for the 224 bytes overscan detection on STE
-- Correct PC in stack when JMP generates an illegal adress exception
+- Correct PC in stack when JMP generates an illegal address exception
 
 Emulator:
 - Support run-time changing of CPU level and machine type from
