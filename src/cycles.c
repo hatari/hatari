@@ -163,6 +163,10 @@ int Cycles_GetCounterOnWriteAccess(int nId)
 		if ( OpcodeFamily == i_CLR )				/* should also be the case for add, sub, and, or, eor, neg, not */
 			;						/* Do nothing, the write is done during the last 4 cycles */
 									/* (e.g bottom border removal in No Scroll / Delirious Demo 4) */
+
+		else if ( ( OpcodeFamily == i_BCHG ) || ( OpcodeFamily == i_BCLR ) || ( OpcodeFamily == i_BSET ) )
+			;						/* Do nothing, the write is done during the last 4 cycles */
+
 		else
 		{
 			/* assume the behaviour of a 'move' (since this is the most */
