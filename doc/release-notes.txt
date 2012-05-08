@@ -25,6 +25,7 @@ Emulation:
 - 68040 MMU emulation fixes
 - add more timings for the 224 bytes overscan detection on STE
 - Correct PC in stack when JMP generates an illegal address exception
+- Correct write timing for BCHG/BCLR/BSET when removing borders
 
 Emulator:
 - Support run-time changing of CPU level and machine type from
@@ -63,6 +64,8 @@ Fixed demos :
   Japtro and Rising Force by Holocaust (FDC, buggy loader)
   Delirious Demos IV (video, STE detection)
   Antiques by Dune/Sector One (224 bytes STE overscan)
+  The Wave Of the Future by ICE (STE flickering top border)
+  Electrocution I by Sphere on Stax Menu 66 (STE flickering bottom border)
 
 
  Version 1.6.1 (2012-01-13):
