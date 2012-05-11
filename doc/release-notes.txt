@@ -26,6 +26,7 @@ Emulation:
 - add more timings for the 224 bytes overscan detection on STE
 - Correct PC in stack when JMP generates an illegal address exception
 - Correct write timing for BCHG/BCLR/BSET when removing borders
+- Implemented IKBD set-clock function
 
 Emulator:
 - Support run-time changing of CPU level and machine type from
@@ -58,6 +59,7 @@ Fixed Games :
   Automation 168 - Operation Clean Streets (prefetch in the CPU emulation)
   Impossible Mission II (some versions had the same prefetch issue in the CPU)
   Hades Nebula (fire button)
+  Zombi (IKBD set-clock was missing)
 
 Fixed demos :
   Built-in Obsolescence (DSP stack overflow)

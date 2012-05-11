@@ -94,6 +94,8 @@ static bool bMouseDisabled, bJoystickDisabled;
 static bool bDuringResetCriticalTime, bBothMouseAndJoy;
 static bool bMouseEnabledDuringReset;
 
+static time_t nTimeOffset;			/* Offset between current time and emulated time */
+
 /* ACIA */
 static Uint8 ACIAControlRegister = 0;
 static Uint8 ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;  /* Pass when read 0xfffc00 */
@@ -436,6 +438,7 @@ void IKBD_Reset(bool bCold)
 		KeyboardProcessor.bReset = false;
 		if (CycInt_InterruptActive(INTERRUPT_IKBD_RESETTIMER))
 			CycInt_RemovePendingInterrupt(INTERRUPT_IKBD_RESETTIMER);
+		nTimeOffset = 0;
 	}
 
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
@@ -493,6 +496,7 @@ void IKBD_Reset(bool bCold)
 void IKBD_MemorySnapShot_Capture(bool bSave)
 {
 	unsigned int i;
+	time_t nEmuTime;
 
 	/* Save/Restore details */
 	MemorySnapShot_Store(&Keyboard, sizeof(Keyboard));
@@ -527,6 +531,19 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 
 		if ( i >= sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) )	/* not found (should not happen) */
 			IKBD_ExeMode = false;			/* turn off exe mode */
+	}
+
+	/* The time offset is special: When 0, the emulated system is running
+	 * with the current time, so we assume that it will also continue with
+	 * real time when the memory snapshot is loaded again. When it is not
+	 * zero, the program (like the game "Zombi") might expect a certain
+	 * system date. In this case we initialize the nTimeOffset during
+	 * loading so that it maches this system date again. */
+	nEmuTime = (nTimeOffset != 0) ? (time(NULL) - nTimeOffset) : 0;
+	MemorySnapShot_Store(&nEmuTime, sizeof(nEmuTime));
+	if (!bSave)
+	{
+		nTimeOffset = (nEmuTime != 0) ? (time(NULL) - nEmuTime) : 0;
 	}
 }
 
@@ -1573,7 +1590,27 @@ static void IKBD_Cmd_DisableJoysticks(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Convert value from 2-digit BCD.
+ */
+static Uint16 IKBD_FromBCD(Uint8 Value)
+{
+	return ((Value >> 4) * 10) | (Value & 0x0f);
+}
+
+
+/**
+ * Convert value to 2-digit BCD.
+ * Note: TOS 2.0x requires BCD conversion with overflow, so the decade
+ * is not calculated modulo 10, or it will end up in the year 2039
+ * instead...
+ */
+static Uint8 IKBD_ToBCD(Uint16 Value)
+{
+	return ((Value / 10) << 4) | (Value % 10);
+}
+
+
 /**
  * TIME-OF-DAY CLOCK SET
  *
@@ -1587,24 +1624,25 @@ static void IKBD_Cmd_DisableJoysticks(void)
  */
 static void IKBD_Cmd_SetClock(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_SetClock\n");
+	struct tm NewTime;
+
+	LOG_TRACE(TRACE_IKBD_CMDS,
+		  "IKBD_Cmd_SetClock: %02x %02x %02x %02x %02x %02x\n",
+		  Keyboard.InputBuffer[1], Keyboard.InputBuffer[2],
+		  Keyboard.InputBuffer[3], Keyboard.InputBuffer[4],
+		  Keyboard.InputBuffer[5], Keyboard.InputBuffer[6]);
+
+	NewTime.tm_year = IKBD_FromBCD(Keyboard.InputBuffer[1]);
+	NewTime.tm_mon = IKBD_FromBCD(Keyboard.InputBuffer[2]) - 1;
+	NewTime.tm_mday = IKBD_FromBCD(Keyboard.InputBuffer[3]);
+	NewTime.tm_hour = IKBD_FromBCD(Keyboard.InputBuffer[4]);
+	NewTime.tm_min = IKBD_FromBCD(Keyboard.InputBuffer[5]);
+	NewTime.tm_sec = IKBD_FromBCD(Keyboard.InputBuffer[6]);
+
+	nTimeOffset = time(NULL) - mktime(&NewTime);
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Convert value to 2-digit BCD.
- * Note: TOS 2.0x requires BCD conversion with overflow, so the decade
- * is not calculated modulo 10, or it will end up in the year 2039
- * instead...
- */
-static Uint8 IKBD_ConvertToBCD(Uint16 Value)
-{
-	return ((Value/10)<<4) | (Value%10);
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * INTERROGATE TIME-OF-DAT CLOCK
  *
@@ -1624,18 +1662,18 @@ static void IKBD_Cmd_ReadClock(void)
 	time_t nTimeTicks;
 
 	/* Get system time */
-	nTimeTicks = time(NULL);
+	nTimeTicks = time(NULL) - nTimeOffset;
 	SystemTime = localtime(&nTimeTicks);
 
 	/* Return packet */
 	IKBD_AddKeyToKeyboardBufferWithDelay(0xFC, 32000);
 	/* Return time-of-day clock as yy-mm-dd-hh-mm-ss as BCD */
-	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_year));  /* yy - year (2 least significant digits) */
-	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_mon+1)); /* mm - Month */
-	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_mday));  /* dd - Day */
-	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_hour));  /* hh - Hour */
-	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_min));   /* mm - Minute */
-	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_sec));   /* ss - Second */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ToBCD(SystemTime->tm_year));  /* yy - year (2 least significant digits) */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ToBCD(SystemTime->tm_mon+1)); /* mm - Month */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ToBCD(SystemTime->tm_mday));  /* dd - Day */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ToBCD(SystemTime->tm_hour));  /* hh - Hour */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ToBCD(SystemTime->tm_min));   /* mm - Minute */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ToBCD(SystemTime->tm_sec));   /* ss - Second */
 
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReadClock\n");
 }
