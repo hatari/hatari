@@ -396,7 +396,6 @@ static int NewLineWidth = -1;			/* Used in STE mode when writing to the line wid
 static int VideoCounterDelayedOffset = 0;	/* Used in STE mode when changing video counter while display is on */
 static Uint8 *pVideoRasterDelayed = NULL;	/* Used in STE mode when changing video counter while display is off in the right border */
 static Uint8 *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
-static Uint8 VideoShifterByte;			/* VideoShifter (0xff8260) value store in video chip */
 static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
 static int NewSteBorderFlag = -1;		/* New value for next line */
 static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need convertion to SDL */
@@ -524,7 +523,6 @@ static void	Video_ColorReg_WriteWord(Uint32 addr);
 void Video_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
-	MemorySnapShot_Store(&VideoShifterByte, sizeof(VideoShifterByte));
 	MemorySnapShot_Store(&TTRes, sizeof(TTRes));
 	MemorySnapShot_Store(&bUseHighRes, sizeof(bUseHighRes));
 	MemorySnapShot_Store(&nVBLs, sizeof(nVBLs));
@@ -609,6 +607,8 @@ void Video_Reset(void)
  */
 void Video_Reset_Glue(void)
 {
+	Uint8 VideoShifterByte;
+
 	IoMem_WriteByte(0xff820a,0);			/* Video frequency */
 
 	/* Are we in high-res? */
@@ -3049,11 +3049,11 @@ void Video_ShifterMode_ReadByte(void)
 {
 	if (bUseHighRes)
 		IoMem[0xff8260] = 2;			/* If mono monitor, force to high resolution */
-	else
-		IoMem[0xff8260] = VideoShifterByte;	/* Only use bits 0 and 1, unused bits 2-7 are set to 0 */
 
 	if (ConfigureParams.System.nMachineType == MACHINE_ST)
 		IoMem[0xff8260] |= 0xfc;		/* On STF, set unused bits 2-7 to 1 */
+	else
+		IoMem[0xff8260] &= 0x03;		/* Only use bits 0 and 1, unused bits 2-7 are set to 0 */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -3237,18 +3237,7 @@ void Video_Color15_WriteWord(void)
  */
 void Video_ShifterMode_WriteByte(void)
 {
-	/* Don't store if VDI resolution (and don't store if hi-res?) */
-	if (!bUseVDIRes /* && !bUseHighRes */)
-	{
-		/* We only care for lower 2-bits */
-		VideoShifterByte = IoMem[0xff8260] & 3;
-		/* 3 is not a valid resolution, use low res instead */
-		if ( VideoShifterByte == 3 )
-		{
-			VideoShifterByte = 0;
-			IoMem_WriteByte(0xff8260,0);
-		}
-	}
+	Uint8 VideoShifterByte;
 
 	if (ConfigureParams.System.nMachineType == MACHINE_TT)
 	{
@@ -3258,6 +3247,15 @@ void Video_ShifterMode_WriteByte(void)
 	}
 	else if (!bUseVDIRes)	/* ST and STE mode */
 	{
+		/* We only care for lower 2-bits */
+		VideoShifterByte = IoMem[0xff8260] & 3;
+		/* 3 is not a valid resolution, use low res instead */
+		if ( VideoShifterByte == 3 )
+		{
+			VideoShifterByte = 0;
+			IoMem_WriteByte(0xff8260,0);
+		}
+
 		Video_WriteToShifter(VideoShifterByte);
 		Video_SetHBLPaletteMaskPointers();
 		*pHBLPaletteMasks &= 0xff00ffff;
