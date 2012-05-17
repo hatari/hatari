@@ -126,7 +126,9 @@ Check which number was assigned by ALSA to the new virtual midi card:
 And give to Hatari the corresponding ALSA midi device.  In my case
 VirMidi was Card 1 and as the port used above was first one, I give
 Hatari the following midi device:
-  hatari --midi /dev/snd/midiC1D0
+  hatari --midi-out /dev/snd/midiC1D0
+
+(For the virtual midi keyboard, give same device with --midi-in option.)
 
 Note: In older (obsolete) Linux distros SDL_mixer may take exclusive
 access to the PCM (sound) device, but as the soft synthetizer is
