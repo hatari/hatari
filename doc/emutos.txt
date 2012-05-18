@@ -5,13 +5,16 @@ Contents:
 - EmuTOS usage
 - EmuTOS compatibility
 - Debugging issues with EmuTOS
+  - EmuTOS debug output and debug symbols
+  - Debugging panics
+  - Debugging freezes
 - EmuTOS compatibility lists
   - Working free/shareware Atari ST demos and games
   - Non-working free/shareware GEM/mono Atari ST games
   - Atari ST drawing programs / image viewers
-  - Atari ST midi programs
+  - Atari ST MIDI programs
   - Working free/shareware Atari STE programs
-  - "Almost" working color Atari STE games
+  - "Almost" working color Atari STE programs
   - Atari TT programs
   - Falcon free/shareware demos, games and applications
 
@@ -28,8 +31,8 @@ EmuTOS, which is available at the SourceForge website of EmuTOS.  For
 downloading other versions or the source code of EmuTOS, please visit
 the EmuTOS website.
 
-The tos.img file included with the latest Hatari releases is the
-"all languages" etos512k.img from a preceeding EmuTOS release:
+The tos.img file included with the latest Hatari releases is
+the etos512k.img[1] from a preceeding EmuTOS release:
 - Hatari v1.6.0:
   http://sourceforge.net/projects/emutos/files/emutos/0.8.6/
 - Hatari v1.4.0, v1.5.0:
@@ -44,11 +47,16 @@ The tos.img file included with the latest Hatari releases is the
 Earlier Hatari binary releases have included one of the smaller
 EmuTOS image files.
 
-Note for EmuTOS before 0.8.6 :
+[1] the "all languages" version intended mainly for TT & Falcon.
+    While the 192k and 256k version on some cases work better
+    for ST and STE programs, only the 512k image contains
+    support for all the hardware and languages.
+
+Note for EmuTOS before 0.8.6:
   In order to work with Hatari, EmuTOS 0.8.5 and earlier require
   the FastBoot option to be enabled. This is used to skip some memory
-  tests (that Hatari doesn't support yet) when EmuTOS try to determine
-  the available RAM size.
+  tests (that Hatari doesn't support yet) when EmuTOS tries to
+  determine the available RAM size.
 
 
 What is EmuTOS
@@ -109,7 +117,7 @@ wanting proper AES/VDI support should install replacement for these,
 either the free XaAES + fVDI, or the earlier commercial solutions like
 NVDI.
 
-Free games have the issue that they often use the Line-A functionality
+Free games have the issue that some of them use the Line-A functionality
 which is not supported by EmuTOS[1] unlike AES/VDI.  This is partly a
 problem with the tools that they've been done with (for example older
 STOS and GFA basic version liked to use Line-A for graphics). There
@@ -128,30 +136,81 @@ which location depends on the TOS version.
 Debugging issues with EmuTOS
 ============================
 
-To debug problems with EmuTOS, you have to recompile it from the source
+EmuTOS debug output and debug symbols
+-------------------------------------
+
+To get EmuTOS's own debug output, you need to recompile it from the source
 after enabling the MIDI debug output in its config.h header file. Then
-start Hatari with the "--midi-out /dev/stderr" optio and you will see
-the EmuTOS debug output such as calls to missing Line-A functions.
+start Hatari with the "--midi-out /dev/stderr" option and you will see
+the EmuTOS debug output (such as calls to missing Line-A functions).
 
-To inspect EmuTOS issues with the Hatari debugger, you'll need symbols
-for the EmuTOS image you're using.  If you've compiled EmuTOS with
-AHCC[2], you can get suitable symbols with its "-n" linker flag, or
-you can use a script coming with Hatari (ahcc-symbols-convert.sh) to
-convert AHCC *.map file to "nm" format supported by the Hatari
-debugger.
+If you've compiled EmuTOS with AHCC[1], you can get suitable symbols
+with its "-n" linker flag, or you can use a script coming with Hatari
+(ahcc-symbols-convert.sh) to convert AHCC *.map file to "nm" format
+supported by the Hatari debugger.
 
-After loading the symbols to the debugger, disassembling the problematic
-address should provide more clues for the problem.  Or you can just look
-up the program counter value given in the EmuTOS panic message from
-the AHCC emutos.map file.
+[1] AHCC: http://members.chello.nl/h.robbers/
+
+After loading the symbols to the debugger, disassembling the
+problematic address should provide more clues for the problem.  Or you
+can just look up the program counter value given in the EmuTOS panic
+message from the AHCC emutos.map file.
+
+Debugging panics
+----------------
+
+When debugging EmuTOS panics, the best option is to start Hatari with
+--bios-intercept (to be able to track Bios & XBios calls) and ask
+Hatari debugger to stop when the program is started:
+-----------
+> b pc=TEXT
+CPU condition breakpoint 1 with 1 condition(s) added:
+pc = TEXT
+> c
+Returning to emulation...
+-----------
+'>' in above example indicates what you type to debugger.
+
+Then when the debugger is invoked at program startup, you can then ask
+it to:
+- collect CPU instruction history,
+- break on exceptions that trigger the panic, and
+- trace all OS calls and line-A opcodes leading to it
+with:
+-----------
+> history on
+> setopt -D
+Exception debugging enabled.
+> trace os_all
+> b LineAOpcode ! LineAOpcode :trace
+CPU condition breakpoint 2 with 1 condition(s) added:
+LineAOpcode ! LineAOpcode
+-> Track value changes, show value(s) when matched.
+-> Trace instead of breaking, but show still hits.
+> c
+Returning to emulation...
+-----------
+
+So that when the exception causing the panic triggers the debug, you
+see the OS calls and line-A opcodes leading to it. You can then ask
+what the register values are at that point and the CPU instructions
+leading to that with the "r" and "history" commands.  Memory state and
+addresses accessed by the instructions can be inspected with the "m"
+command.
+
+For more info on Hatari debugger usage, see the Hatari manual section
+on it.
+
+Debugging freezes
+-----------------
 
 Hatari profiling support can be used to debug OS freezes.  If EmuTOS gets
 stuck, just profile it for a while and then ask debugger for a profile
 that tells where it's looping and then disassemble that part with symbols
-directly in Hatari.  More information on the debugger and profiling is
-in the Hatari manual.
+directly in Hatari.
 
-[2] AHCC: http://members.chello.nl/h.robbers/
+With EmuTOS debug symbols, you can also ask debugger to "trace
+cpu_symbols" to get trace of all the EmuTOS function calls.
 
 
 EmuTOS compatibility lists
@@ -161,15 +220,16 @@ The compatibility lists below cater for users who don't have Atari HW
 and therefore won't have (legal) version of commercial Atari software
 and most likely lack motivation to investigate applications very
 deeply (Linux offers better alternatives nowadays for most of that).
-I.e. the list skips commercial software and concentrates on EmuTOS
+I.e. the lists skip commercial software and concentrate on EmuTOS
 compatibility of freely available games and demos.
 
 Games that are considered good quality & fun, are marked with "*".
-All the listed demos are quite OK. Most demos can be downloaded from
-http://pouet.net/
+All the listed demos are quite OK. Most demos can be downloaded from:
+	http://pouet.net/
 
-First are listed ST demos and games, then STE demos, games and music
-applications and last Falcon demos, games and (music) applications.
+First are listed ST demos, games graphics and MIDI applications,
+then STE demos, games and music applications, then TT programs
+and last Falcon demos, games and (mostly music) applications.
 
 
 Working free/shareware Atari ST demos and games
@@ -270,7 +330,7 @@ Color games:
 - Spacewar
 - Starball* (shareware)
 - Sweeper
-- Tankx*
+- Tanx*
 - Teserae*
 - Yak (4KB gridrunner)
 
@@ -428,7 +488,7 @@ Not working:
 - Speed of Light v3.8 (complains of not supporting TrueColor and exits)
 
 
-Atari ST midi programs
+Atari ST MIDI programs
 ----------------------
 
 Working:
@@ -441,10 +501,10 @@ Working:
 
 Not working:
 - Cubase lite (guesses etv_timer vector wrong -> panic)
-- FinalCut Pro demo (panic on midi play)
+- FinalCut Pro demo (panic on MIDI play)
 - Music Mouse (uses line-A hline for cursor)
 
-Midi programs are available from Tim's midi world:
+MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
 
 
@@ -549,7 +609,7 @@ Color games:
 - Wolfenstein3D v0.8a* (a bit unstable)
 - Zero-5 (demo)
 
-STE (enhanced) color applications:
+STE (enhanced) color music applications:
 - Blipp Blopper
 - DeskTracker MT
 - Hextracker
@@ -614,7 +674,7 @@ Problematic demos:
 
 
 Falcon free/shareware demos, games and applications
------------------------------------------------------------
+---------------------------------------------------
 
 Falcon emulation requires 512kB version of EmuTOS
 (the one shipped with Hatari).
@@ -623,7 +683,7 @@ Partial Videl/VsetMode() implementation, missing VDI 256-color &
 HiColor support and missing Falcon sound matrix & DSP XBios functions
 in EmuTOS probably explain why graphics in many of the demos & games
 look broken or they freeze at startup.  Following Falcon only demos,
-×games and apps work (mostly) fine though.
+games and apps work (mostly) fine though.
 
 Working demos:
 - 1600x600
