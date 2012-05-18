@@ -6,8 +6,8 @@
 
   XBios Handler (Trap #14)
 
-  We intercept and direct some XBios calls to handle the RS-232 etc. and help
-  with floppy debugging.
+  We intercept and direct some XBios calls to handle the RS-232 etc.
+  and to help with debugging.
 */
 const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 
@@ -60,7 +60,7 @@ static bool XBios_Floprd(Uint32 Params)
 
 	/* Read details from stack */
 	pBuffer = STMemory_ReadLong(Params);
-	Dev = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG);
+	Dev = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG); /* skip reserved long */
 	Sector = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD);
 	Track = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 	Side = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
@@ -84,7 +84,7 @@ static bool XBios_Flopwr(Uint32 Params)
 
 	/* Read details from stack */
 	pBuffer = STMemory_ReadLong(Params);
-	Dev = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG);
+	Dev = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG); /* skip reserved long */
 	Sector = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD);
 	Track = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 	Side = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
@@ -106,7 +106,7 @@ static bool XBios_Devconnect(Uint32 Params)
 	Uint16 src,dst,clk,prescale,protocol;
 
 	/* Read details from stack */
-	src = STMemory_ReadLong(Params);
+	src = STMemory_ReadWord(Params);
 	dst = STMemory_ReadWord(Params+SIZE_WORD);
 	clk = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
 	prescale = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
@@ -496,7 +496,7 @@ bool XBios(void)
 	case 38:	/* Supexec */
 	case 48:	/* Metainit */
 	case 141:	/* Buffptr */
-		/* ones taking longs or pointers */
+		/* ones taking long or pointer */
 		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X)\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
 			  STMemory_ReadLong(Params));
@@ -518,6 +518,53 @@ bool XBios(void)
 			  XBiosCall, XBios_Call2Name(XBiosCall),
 			  STMemory_ReadWord(Params),
 			  STMemory_ReadWord(Params+SIZE_WORD));
+		return false;
+
+	case 12:	/* Midiws */
+	case 13:	/* Mfpint */
+	case 25:	/* Ikbdws */
+		/* ones taking word lenght/index and pointer */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(%hd, 0x%X)\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadWord(Params),
+			  STMemory_ReadLong(Params+SIZE_WORD));
+		return false;
+
+	case 11:	/* Dbmsg */
+	case 84:	/* EsetPalette */
+	case 85:	/* EgetPalette */
+	case 93:	/* VsetRGB */
+	case 94:	/* VgetRGB */
+		/* ones taking word, word and long/pointer */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%hX, 0x%hX, 0x%X)\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadWord(Params),
+			  STMemory_ReadWord(Params+SIZE_WORD),
+			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD));
+		return false;
+
+	case 106:	/* Dsp_Available */
+	case 107:	/* Dsp_Reserve */
+	case 111:	/* Dsp_LodToBinary */
+	case 126:	/* Dsp_SetVectors */
+		/* ones taking two longs/pointers */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X)\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadLong(Params+SIZE_LONG));
+		return false;
+
+	case 5:		/* Setscreen */
+	case 109:	/* Dsp_ExecProg */
+	case 110:	/* Dsp_ExecBoot */
+	case 116:	/* Dsp_LoadSubroutine */
+	case 146:	/* VsetMask */
+		/* ones taking two longs/pointers and a word */
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X, 0x%hX)\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadLong(Params+SIZE_LONG),
+			  STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG));
 		return false;
 
 	default:  /* rest of XBios calls */
