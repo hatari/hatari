@@ -8,10 +8,12 @@ Contents:
 - EmuTOS compatibility lists
   - Working free/shareware Atari ST demos and games
   - Non-working free/shareware GEM/mono Atari ST games
+  - Atari ST drawing programs / image viewers
+  - Atari ST midi programs
   - Working free/shareware Atari STE programs
-  - "Almost" working color STE games
-  - Working TT specific demos
-  - Working free/shareware Falcon demos, games and applications
+  - "Almost" working color Atari STE games
+  - Atari TT programs
+  - Falcon free/shareware demos, games and applications
 
 
 Hatari and EmuTOS
@@ -289,7 +291,9 @@ GEM games:
 - DBWH
 - Drachen
 - Flipside (fs, othello)
+- Frix
 - Gem_mind
+- GEMcell
 - Gemamigo* (needs EmuTOS > 0.8.6)
 - Gnuchess
 - Gobang* (needs EmuTOS >= v0.8.6)
@@ -303,13 +307,18 @@ GEM games:
 - Megaroid*
 - Mines*
 - Mosaik
+- Nanjing
 - Nethack*
+- Never Mind
 - Orb
 - Pacman
+- Planet (celectial body calculations)
 - Shanghai
-- Sixteen
+- Sixteen (puzzle)
+- Sliders
 - Snake
 - Solitair*
+- Spiegel ("mirrormagic")
 - Stello*
 - ST Concentration*
 - Sudoku*
@@ -326,9 +335,10 @@ GEM games:
 
 Monochrome games:
 - Balloons
-- Bounce
+- Bouncing boubles
 - Columns* (needs EmuTOS >= 0.8.6, some text issues)
 - Delta patrol
+- Diamond miner
 - Emperor (v1.0 & v1.5)
 - Fun Face (playable demo)
 - Go UP
@@ -340,9 +350,11 @@ Monochrome games:
 - Mr Dash
 - Poolmono*
 - Punssi
+- Puzzlepuzzle
 - Pyro
 - Qix
 - Sbreak* (by Mark Overmars)
+- Skull diggery
 - Sherlock* (needs EmuTOS >= 0.8.6, some text issues)
 - Space war (bug: score missing)
 - Wallball
@@ -353,6 +365,7 @@ Text games:
 - Hack
 - Larn
 - Omega
+- Quix
 
 
 Non-working free/shareware GEM/mono Atari ST games
@@ -360,19 +373,20 @@ Non-working free/shareware GEM/mono Atari ST games
 
 Although there are plenty of color demos and games, the number of
 (even remotely fun) free GEM or monochrome games and demos is so low
-that for those I list here non-working ones.  Unless otherwise stated,
-the issues in them are assumed to be Line-A related (graphics don't
-show because they use Line-A drawing functions etc).
+that for those I list here non-working ones.  Typically the issues
+are either use of unsupported line-A functions or with user input.
 
 GEM games:
 - Abalone   (dragging doesn't work)
-- Bombs     (mouse clicks almost never work)
+- Anduril   ('h' and 'j' keys don't work)
+- Bombs     (minesweeper, mouse clicks almost never work)
 - Checkers  (dragging doesn't work)
 - Dte       (mouse gets stuck)
-- Invaders* (shots go through buildings/shields)
+- Invaders* ('-' key doesn't work)
+- Minds     (minesweeper, mouse clicks almost never work)
 - Patience* (dragging doesn't work, dialog selection persists)
 - Risky*    (dragging doesn't work)
-- Yams      (mouse clicks don't work)
+- Yams      (minesweeper, mouse clicks don't work)
 - Yukon*    (dragging doesn't work)
 
 Games that mix GEM UI and non-VDI drawing:
@@ -381,15 +395,57 @@ Games that mix GEM UI and non-VDI drawing:
 - Robugs*   (line-A filled rectangle and draw sprite)
 
 Mono games:
-- Crystal Caves* (Line-A bitblit and draw/clear sprite)
+- Big Blow      (line-A bitblit)
+- Crystal Caves* (line-A bitblit and draw/clear sprite)
+- CW Puzzle     (line-A bitblit + line & point draw in start)
 - Domino	(line-A bitblit)
+- Gluckrad      (line-A bitblit)
 - Lokomotive	(line-A bitblit)
-- MacPan*	(Line-A draw/clear sprite)
+- MacPan*	(line-A draw/clear sprite)
+- Macrowar	(line-A bitblit)
 - Midimaze*	(joystick doesn't work)
-- MineFeld	(Line-A draw/clear sprite)
+- MineFeld	(line-A draw/clear sprite)
+- Minigolf*     (line-A draw/clear sprite)
+- Pacballs      (line-A bitblit + panic)
 - Pipeline*	(line-A line and filled rectangle)
-- Pling II	(Line-A bitblit and draw/clear sprite)
+- Pling II	(line-A bitblit and draw/clear sprite)
+- Ramses*       (panic after Mediach())
 - Roll X	(line-A bitblit and get pixel)
+- Take2*        (line-A bitblit)
+
+
+Atari ST drawing programs / image viewers
+-----------------------------------------
+
+Working:
+- iffcnv, IFF convertor/viewer
+- spslide, Spec512 viewer
+- ImCon v1.1, image converter/viewer
+- Photochrome v4 (all buttons don't work)
+
+Not working:
+- Neochrome master (uses most of line-A functions)
+- Speed of Light v3.8 (complains of not supporting TrueColor and exits)
+
+
+Atari ST midi programs
+----------------------
+
+Working:
+- Dr T's KCS v4
+- Dr T's Tiger Cub v2.0
+- EditTrack
+- EZ-Score
+- Henry Cosh's Accompanist
+- Ludwig
+
+Not working:
+- Cubase lite (panic at startup)
+- FinalCut Pro demo (panic on midi play)
+- Music Mouse (uses line-A hline for cursor)
+
+Midi programs are available from Tim's midi world:
+	http://tamw.atari-users.net/
 
 
 Working free/shareware Atari STE programs
@@ -454,7 +510,7 @@ Demos:
 - RGBeast (by Aggression)
 - Save the Earth (by Defence Force)
 - Sinfull Sinuses (by Chronicle)
-- Sierpinski overdose 4K (by GGN), med-rez+blitter, end gfx aren't right
+- Sierpinski overdose 4K (by GGN), med-rez+blitter only
 - Sommarhack (by DHS)
 - Songs Of The Unexpected (by OUCH)
 - STE slideshow (by DHS)
@@ -508,8 +564,8 @@ work also with EmuTOS too (not just STe ones), most even with
 the 512kB EmuTOS version.
 
 
-"Almost" working color STE programs
------------------------------------
+"Almost" working color Atari STE programs
+-----------------------------------------
 
 There are some STE (enhanced) programs that would appear otherwise to
 work perfectly, but some part of the graphics just don't show.  They
@@ -536,17 +592,28 @@ Several of these (and Falcon) games are by Paradize:
 	http://paradize.final-memory.org/games.shtml
 
 
-Working TT specific demos
--------------------------
+Atari TT programs
+-----------------
 
+Broken applications:
+- PixArt4, clicks to windows don't work
+  http://www.1632systems.co.uk/www/html/Product/pixart.htm
+
+Working demos:
 - 256mbrot, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
 - Adebug 3DTT demo (by Brainstorm)
+- Mandelbrot explorer (by .tSCc)
 - TT highres slideshow (by .tSCc)
-- XiTEC presentation (by Omega)
+- Shiny Bubbles TT (by Xanth FX)
+- XiTEC demos (by Omega)
+
+Problematic demos:
+- Swing (by Omega), instead of just showing bombs on exit,
+  there's panic with priviledge violation
 
 
-Working free/shareware Falcon demos, games and applications
+Falcon free/shareware demos, games and applications
 -----------------------------------------------------------
 
 Falcon emulation requires 512kB version of EmuTOS
@@ -556,7 +623,7 @@ Partial Videl/VsetMode() implementation, missing VDI 256-color &
 HiColor support and missing Falcon sound matrix & DSP XBios functions
 in EmuTOS probably explain why graphics in many of the demos & games
 look broken or they freeze at startup.  Following Falcon only demos,
-games and apps work (mostly) fine though.
+×games and apps work (mostly) fine though.
 
 Working demos:
 - 1600x600
@@ -739,7 +806,7 @@ Partly working applications:
   - DSP speed 0, with normal TOS the correct 32Mhz
    (bogus speed values for FPU & CPU as with normal TOS)
 - Fractal Playground
-  - DSP needs to  be disabled, keyboard input doesn't work
+  - DSP needs to be disabled, keyboard input doesn't work
 - Smurf (GEM image viewer)
   - loaded images are totally white
 - Whip! (virtual light machine)
