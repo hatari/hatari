@@ -440,7 +440,7 @@ Working:
 - Ludwig
 
 Not working:
-- Cubase lite (panic at startup)
+- Cubase lite (guesses etv_timer vector wrong -> panic)
 - FinalCut Pro demo (panic on midi play)
 - Music Mouse (uses line-A hline for cursor)
 
