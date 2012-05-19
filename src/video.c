@@ -1608,7 +1608,8 @@ static void Video_EndHBL(void)
 	/* occured before the 60 Hz or occured after cycle LineRemoveTopCycle on line 33.	*/
 	if ( ( nHBL == VIDEO_START_HBL_60HZ-1 )				/* last HBL before first line of a 60 Hz screen */
 		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
-		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL ) || ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveTopCycle ) )
+		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL )
+		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveTopCycle ) ) )
 		&& (   ( ShifterFrame.FreqPos50.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos50.FrameCycles < ShifterFrame.FreqPos60.FrameCycles )
 		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
@@ -1627,7 +1628,8 @@ static void Video_EndHBL(void)
 		&& ( nStartHBL == VIDEO_START_HBL_60HZ )		/* screen started in 60 Hz */
 		&& ( ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* and top border was not removed : this screen is only 60 Hz */
 		&& ( ShifterFrame.FreqPos50.VBL == nVBLs )		/* switch to 50 Hz during this VBL */
-		&& ( ( ShifterFrame.FreqPos50.HBL < nHBL ) || ( ShifterFrame.FreqPos50.LineCycles <= LineRemoveBottomCycle ) )
+		&& ( ( ShifterFrame.FreqPos50.HBL < nHBL )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles <= LineRemoveBottomCycle ) ) )
 		&& (   ( ShifterFrame.FreqPos60.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos60.FrameCycles < ShifterFrame.FreqPos50.FrameCycles )
 		    || ( ShifterFrame.FreqPos60.HBL > nHBL )
@@ -1642,7 +1644,8 @@ static void Video_EndHBL(void)
 	else if ( ( nHBL == VIDEO_END_HBL_50HZ + BlankLines - 1 )	/* last displayed line in 50 Hz */
 		&& ( ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* border was not already removed at line VIDEO_END_HBL_60HZ-1 */
 		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
-		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL ) || ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveBottomCycle ) )
+		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL )
+		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveBottomCycle ) ) )
 		&& (   ( ShifterFrame.FreqPos50.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos50.FrameCycles < ShifterFrame.FreqPos60.FrameCycles )
 		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
