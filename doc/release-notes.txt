@@ -28,6 +28,7 @@ Emulation:
 - Correct PC in stack when JMP generates an illegal address exception
 - Correct write timing for BCHG/BCLR/BSET when removing borders
 - Implemented IKBD set-clock function
+- Fix to top/bottom border removal in a rare case
 
 Emulator:
 - Support run-time changing of CPU level and machine type from
@@ -69,6 +70,7 @@ Fixed demos :
   Antiques by Dune/Sector One (224 bytes STE overscan)
   The Wave Of the Future by ICE (STE flickering top border)
   Electrocution I by Sphere on Stax Menu 66 (STE flickering bottom border)
+  Musical Wonders 1990 by Offbeat (video, bottom border not removed)
 
 
  Version 1.6.1 (2012-01-13):
