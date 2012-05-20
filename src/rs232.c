@@ -43,7 +43,6 @@ const char RS232_fileid[] = "Hatari rs232.c : " __DATE__ " " __TIME__;
 #endif
 
 
-bool bConnectedRS232 = false;      /* Connection to RS232? */
 static FILE *hComIn = NULL;        /* Handle to file for reading */
 static FILE *hComOut = NULL;       /* Handle to file for writing */
 
@@ -196,52 +195,58 @@ static bool RS232_SetBitsConfig(FILE *fhndl, int nCharSize, int nStopBits, bool 
  */
 static bool RS232_OpenCOMPort(void)
 {
-	if (bConnectedRS232)
-		return true;
+	bool ok = true;
 
-	/* Create our COM file for output */
-	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb");
-	if (hComOut == NULL)
+	if (!hComOut && ConfigureParams.RS232.szOutFileName[0])
 	{
-		Log_Printf(LOG_WARN, "RS232: Failed to open output file %s\n",
-		         ConfigureParams.RS232.szOutFileName);
-		return false;
-	}
-	setvbuf(hComOut, NULL, _IONBF, 0);
-
-	/* Create our COM file for input */
-	hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb");
-	if (hComIn == NULL)
-	{
-		Log_Printf(LOG_WARN, "RS232: Failed to open input file %s\n",
-		         ConfigureParams.RS232.szInFileName);
-		fclose(hComOut); hComOut = NULL;
-		return false;
-	}
-	setvbuf(hComIn, NULL, _IONBF, 0);
-
+		/* Create our COM file for output */
+		hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb");
+		if (hComOut)
+		{
+			setvbuf(hComOut, NULL, _IONBF, 0);
 #if HAVE_TERMIOS_H
-	/* First set the output parameters to "raw" mode */
-	if (!RS232_SetRawMode(hComOut))
-	{
-		Log_Printf(LOG_WARN, "Can't set raw mode for %s\n",
-		        ConfigureParams.RS232.szOutFileName);
-	}
-
-	/* Now set the input parameters to "raw" mode */
-	if (!RS232_SetRawMode(hComIn))
-	{
-		Log_Printf(LOG_WARN, "Can't set raw mode for %s\n",
-		        ConfigureParams.RS232.szInFileName);
-	}
+			/* First set the output parameters to "raw" mode */
+			if (!RS232_SetRawMode(hComOut))
+			{
+				Log_Printf(LOG_WARN, "Can't set raw mode for %s\n",
+					   ConfigureParams.RS232.szOutFileName);
+			}
 #endif
+			Dprintf(("Successfully opened RS232 output file.\n"));
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "RS232: Failed to open output file %s\n",
+				   ConfigureParams.RS232.szOutFileName);
+			ok = false;
+		}
+	}
 
-	/* Set all OK */
-	bConnectedRS232 = true;
-
-	Dprintf(("Successfully opened RS232 files.\n"));
-
-	return true;
+	if (!hComIn && ConfigureParams.RS232.szInFileName[0])
+	{
+		/* Create our COM file for input */
+		hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb");
+		if (hComIn)
+		{
+			setvbuf(hComIn, NULL, _IONBF, 0);
+#if HAVE_TERMIOS_H
+			/* Now set the input parameters to "raw" mode */
+			if (!RS232_SetRawMode(hComIn))
+			{
+				Log_Printf(LOG_WARN, "Can't set raw mode for %s\n",
+					   ConfigureParams.RS232.szInFileName);
+			}
+#endif
+			Dprintf(("Successfully opened RS232 input file.\n"));
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "RS232: Failed to open input file %s\n",
+				   ConfigureParams.RS232.szInFileName);
+			ok = false;
+		}
+	}
+	return ok;
 }
 
 
@@ -251,20 +256,18 @@ static bool RS232_OpenCOMPort(void)
  */
 static void RS232_CloseCOMPort(void)
 {
-	/* Do have file open? */
-	if (bConnectedRS232)
+	if (hComIn)
 	{
-		bConnectedRS232 = false;
-
 		/* Close */
 		fclose(hComIn);
 		hComIn = NULL;
-
+	}
+	if (hComOut)
+	{
 		fclose(hComOut);
 		hComOut = NULL;
-
-		Dprintf(("Closed RS232 files.\n"));
 	}
+	Dprintf(("Closed RS232 files.\n"));
 }
 
 
@@ -347,16 +350,25 @@ void RS232_Init(void)
 {
 	if (ConfigureParams.RS232.bEnableRS232)
 	{
+		if (!RS232_OpenCOMPort())
+		{
+			RS232_CloseCOMPort();
+			Log_AlertDlg(LOG_ERROR, "RS232 input or output file open failed. RS232 support disabled.");
+			ConfigureParams.RS232.bEnableRS232 = false;
+			return;
+		}
+	}
+	if (hComIn)
+	{
 		/* Create semaphore */
 		if (pSemFreeBuf == NULL)
 			pSemFreeBuf = SDL_CreateSemaphore(MAX_RS232INPUT_BUFFER);
 		if (pSemFreeBuf == NULL)
 		{
+			RS232_CloseCOMPort();
 			Log_Printf(LOG_WARN, "RS232_Init: Can't create semaphore!\n");
 			return;
 		}
-
-		RS232_OpenCOMPort();
 
 		/* Create thread to wait for incoming bytes over RS-232 */
 		if (!RS232Thread)
@@ -610,7 +622,7 @@ bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
 		RS232_OpenCOMPort();
 
 	/* Have we connected to the RS232? */
-	if (bConnectedRS232)
+	if (hComOut)
 	{
 		/* Send bytes directly to the COM file */
 		if (fwrite(pBytes, 1, nBytes, hComOut))
@@ -635,7 +647,7 @@ bool RS232_ReadBytes(Uint8 *pBytes, int nBytes)
 	int i;
 
 	/* Connected? */
-	if (bConnectedRS232 && InputBuffer_Head != InputBuffer_Tail)
+	if (hComIn && InputBuffer_Head != InputBuffer_Tail)
 	{
 		/* Read bytes out of input buffer */
 		for (i=0; i<nBytes; i++)
@@ -658,7 +670,7 @@ bool RS232_ReadBytes(Uint8 *pBytes, int nBytes)
 bool RS232_GetStatus(void)
 {
 	/* Connected? */
-	if (bConnectedRS232)
+	if (hComIn)
 	{
 		/* Do we have bytes in the input buffer? */
 		if (InputBuffer_Head != InputBuffer_Tail)
@@ -714,8 +726,7 @@ void RS232_UCR_WriteByte(void)
 
 	Dprintf(("RS232: Write to UCR: $%x\n", (int)IoMem[0xfffa29]));
 
-	if (bConnectedRS232)
-		RS232_HandleUCR(IoMem[0xfffa29]);
+	RS232_HandleUCR(IoMem[0xfffa29]);
 }
 
 

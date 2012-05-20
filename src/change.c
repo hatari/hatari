@@ -362,7 +362,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 
 	/* Re-initialize the RS232 emulation: */
-	if (ConfigureParams.RS232.bEnableRS232 && !bConnectedRS232)
+	if (ConfigureParams.RS232.bEnableRS232)
 	{
 		Dprintf("- RS-232<\n");
 		RS232_Init();

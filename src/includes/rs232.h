@@ -11,8 +11,6 @@
 
 #define  MAX_RS232INPUT_BUFFER    2048  /* Must be ^2 */
 
-extern bool bConnectedRS232;
-
 extern void RS232_Init(void);
 extern void RS232_UnInit(void);
 extern void RS232_HandleUCR(Sint16 ucr);
