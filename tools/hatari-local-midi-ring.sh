@@ -17,15 +17,15 @@ for i in $(seq $count); do
 	mkfifo midi$i
 done
 
-# hatari command line
-hatari="hatari $args"
+# show full path
+hatari=$(which hatari)
 
 # run MIDI ring Hatari instances
 catpids=""
 for i in $(seq $(($count-1))); do
 	next=$(($i+1))
-	echo $hatari --midi-in midi$i --midi-out midi$next &
-	$hatari --midi-in midi$i --midi-out midi$next &
+	echo $hatari --midi-in midi$i --midi-out midi$next $args &
+	hatari --midi-in midi$i --midi-out midi$next $args &
 	# Without this Hataris would deadlock as fifos
 	# block the process until both ends are opened.
 	# Hatari opens midi output first (for writing),
@@ -34,8 +34,8 @@ for i in $(seq $(($count-1))); do
 	catpids="$catpids $!"
 done
 # and join the beginning and end of the MIDI ring
-echo $hatari --midi-in midi$count --midi-out midi1 &
-$hatari --midi-in midi$count --midi-out midi1 &
+echo $hatari --midi-in midi$count --midi-out midi1 $args &
+hatari --midi-in midi$count --midi-out midi1 $args &
 cat midi1 >/dev/null &
 catpids="$catpids $!"
 
