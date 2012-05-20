@@ -18,7 +18,7 @@ bootauto.st.gz -- floppy image with the test files and test program
 bootdesk.st.gz -- floppy image with the test files and test program
                   run from *.INF desktop file
 hd.img         -- HD image with the the test program / files
-                 and DOS partition table
+                  and DOS partition table
 
 Other files and directories:
 readme.txt -- this text file
@@ -34,7 +34,13 @@ you need to give PATH for the Hatari binary you want to test,
 like this:
 	PATH=../../build/src:$PATH make
 
-Or when calling TOS tester and specifying TOS images directly:
+Before running that, tos/ subdirectory should have (symbolic links to)
+TOS images you want to test, at least EmuTOS etos512k.img image.
+Or add this before above command:
+	TOSDIR=<path to TOS images dir>
+
+Alternatively, you can call the TOS tester directly and specify
+the TOS images it should test:
 	PATH=../../build/src:$PATH ./tos_tester.py <TOS images>
 
 To view the produced screenshots, either use ImageMagick:
@@ -62,10 +68,13 @@ supports:
 
 * With and without GEMDOS harddisk directory emulation
 
-* Arbitrary boolean Hatari command line options
+* Arbitrary boolean Hatari command line options specified
+  with the "--bool" option
 
 You can use the command line options to specify which set of these
 is used and TOS tester will go through all combinations of them.
+
+See "tos_tester.py -h" output for examples.
 
 
 What to test
