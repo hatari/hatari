@@ -20,8 +20,12 @@
 /* output either success or failure to midi at end of test */
 extern void write_midi(void);
 
+/* output given file content to console */
+extern void write2console(const char *input);
 /* output given file content to printer */
-extern void write_printer(const char *input);
+extern void write2printer(const char *input);
+/* output given file content to serial port */
+extern void write2serial(const char *input);
 
 /* copy input file to output file and then sets it read-only */
 extern void copy_file(const char *input, const char *output);

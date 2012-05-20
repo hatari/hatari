@@ -57,8 +57,8 @@ static void print_ioerror(const char *op, int handle, int bufsize, char *buffer,
 	msg = failure;
 }
 
-/* write given file content to to given device/file */
-static void write_device(const char *from, const char *to)
+/* write given file content to to given device/file with GEMDOS */
+static void write_gemdos_device(const char *from, const char *to)
 {
 	long handle1, handle2;
 	long count1, count2;
@@ -104,28 +104,50 @@ static void set_mode(const char *path, int mode)
  * documented in the header
  */
 
-void write_printer(const char *input)
+void write2console(const char *input)
 {
-	printf("%s -> :PRN:\r\n", input);
+	printf("\r\n%s -> CON: (console)\r\n", input);
+        if (Cconos()) {
+		write_gemdos_device(input, "CON:");
+	} else {
+		Cconws("ERROR: 'CON:' not ready!\r\n");
+		msg = failure;
+	}
+}
+
+void write2printer(const char *input)
+{
+	printf("\r\n%s -> PRN: (printer)\r\n", input);
         if (Cprnos()) {
-		write_device(input, "PRN:");
+		write_gemdos_device(input, "PRN:");
 	} else {
 		Cconws("ERROR: 'PRN:' not ready!\r\n");
 		msg = failure;
 	}
 }
 
+void write2serial(const char *input)
+{
+	printf("\r\n%s -> AUX: (serial)\r\n", input);
+        if (Cauxos()) {
+		write_gemdos_device(input, "AUX:");
+	} else {
+		Cconws("ERROR: 'AUX:' not ready!\r\n");
+		msg = failure;
+	}
+}
+
 void copy_file(const char *input, const char *output)
 {
-	printf("%s -> %s\r\n", input, output);
-	write_device(input, output);
+	printf("\r\n%s -> %s\r\n", input, output);
+	write_gemdos_device(input, output);
 	set_mode(output, FA_READONLY);
 }
 
 void truncate_file(const char *readonly)
 {
 	long handle;
-	printf("Truncate -> %s\r\n", readonly);
+	printf("\r\nTruncate -> %s\r\n", readonly);
 	handle = Fcreate(readonly, 0);
 	if (handle >= 0) {
 		printf("ERROR: truncate succeeded, Fcreate(\"%s\", 0) -> %ld\r\n", readonly, handle);
@@ -144,14 +166,14 @@ void truncate_file(const char *readonly)
 
 void write_midi(void)
 {
-	Cconws("Midi...\r\n");
+	printf("\r\nResult -> Midi (%s)\r\n", success);
 	Midiws(sizeof(success)-2, msg);
 	Midiws(0, "\n");
 }
 
 void clear_screen(void)
 {
-	Cconws("\033E");
+	printf("\033EGEMDOS version = 0x%x\r\n", Sversion());
 }
 
 void wait_key(void)
@@ -160,7 +182,7 @@ void wait_key(void)
 	while (Cconis()) {
 		Cconin();
 	}
-	Cconws("<press a key>\r\n");
+	Cconws("\r\n<press a key>\r\n");
 	Cconin();
 }
 

@@ -18,15 +18,20 @@
  * - TODO: execute another instance of tester with option that
  *         tell the second instance to do rest of tests
  * - TODO: dup stdin & stdout handles
- * - open OUTPUT_FILE for reading
- * - TODO: force that to stdin
- * . open printer for writing
- * - TODO: force stdout to printer
- * - TODO: read stdin and write it to stdout
- *   - for now, directly copy OUTPUT_FILE -> printer
- * - TODO: restore stdin & stdout
- * - close OUTPUT_FILE & printer
- * - truncate OUTPUT_FILE -> fail
+ * - output OUTPUT_FILE to CON:
+ *   - open OUTPUT_FILE for reading
+ *   - TODO: force that to stdin
+ *   - open "CON:" (console) for writing
+ *   - TODO: force stdout there
+ *   - TODO: read stdin and write it to stdout
+ *     - for now, directly copy OUTPUT_FILE -> "CON:"
+ *   - TODO: restore stdin & stdout
+ *    - close OUTPUT_FILE & "CON:"
+ * - output same file similarly to PRN: (printer)
+ *   - NOTE: this fails for TOS v1.02 - v2.06 when done in a program
+ *     auto-started from the AUTO-folder or from DESKTOP.INF
+ * - output same file similarly to AUX: (serial)
+ * - truncate OUTPUT_FILE -> expected to fail
  * - make OUTPUT_FILE writable
  * - truncate OUTPUT_FILE
  * 
@@ -47,7 +52,9 @@ int main()
 	clear_screen();
 
 	copy_file(INPUT_FILE, OUTPUT_FILE);
-	write_printer(OUTPUT_FILE);
+	write2console(OUTPUT_FILE);
+	write2printer(OUTPUT_FILE);
+	write2serial(OUTPUT_FILE);
 	truncate_file(OUTPUT_FILE);
 
 	write_midi();
