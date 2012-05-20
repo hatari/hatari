@@ -3,20 +3,26 @@
 # Start two Hatari instances connected through emulated rs232 connection.
 # Given arguments (if any) are passed to the invoked Hatari instances.
 # Their rs232 connection goes through shared local fifo file.
+#
+# To run development version of Hatari, use something like:
+#	PATH=../../build/src:$PATH hatari-local-rs232.sh <options>
 
 # open fifos
 for i in 1 2; do
 	mkfifo rs232-$i
 done
 
+# show full path
+hatari=$(which hatari)
+
 # pass all args to the Hatari instances
-hatari="hatari $*"
+args=$*
 
 # connect the Hatari instances with fifos
-echo "$hatari --rs232-in rs232-1 --rs232-out rs232-2 &"
-$hatari --rs232-in rs232-1 --rs232-out rs232-2 &
-echo "$hatari --rs232-in rs232-2 --rs232-out rs232-1 &"
-$hatari --rs232-in rs232-2 --rs232-out rs232-1 &
+echo "$hatari --rs232-in rs232-1 --rs232-out rs232-2 $args &"
+hatari --rs232-in rs232-1 --rs232-out rs232-2 $args &
+echo "$hatari --rs232-in rs232-2 --rs232-out rs232-1 $args &"
+hatari --rs232-in rs232-2 --rs232-out rs232-1 $args &
 
 # Without this Hataris would deadlock as fifos
 # block the process until both ends are opened.
