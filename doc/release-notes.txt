@@ -22,6 +22,7 @@ Emulation:
 - printer output is single, not double buffered
 - Changes in the prefetch code for some instructions
 - Changed behavior of the Microwire registers in Falcon mode
+- Fixes to FPU register value conversion
 - Fixes to few Falcon IO registers
 - 68040 MMU emulation fixes
 - add more timings for the 224 bytes overscan detection on STE
@@ -33,11 +34,12 @@ Emulation:
 Emulator:
 - Support run-time changing of CPU level and machine type from
   the GUI also with WinUAE CPU core
-- Change max allowed VDI resolution from 1280x960 to 1920x1200
+- Increase max allowed VDI resolution from 1280x960 to 1920x1200
 - Revert preferred Videl resolution max zooming size setting from
   host desktop resolution back to 832x576 it was in Hatari v1.4,
   so that Falcon/TT emulation window sizes by default are closer
   to ST/STE ones on larger resolution monitors
+- RS232 input/output can be disabled by specifying an empty path
 - Fix statusbar assert
 - Debugging improvements:
   - Fix to debugger CPU cycle profiling modifying CPU state
@@ -53,8 +55,10 @@ Other changes:
   options given through its control socket can be quoted with '\'.
 - Support for alpha-numeric characters in Hconsole "text" command
 - Fixes to Hatari UI and hconsole error handling and examples
-- TOS tester testing covers more GEMDOS functionality and is fully
-  automated 
+- Fixed hatari-local-midi-ring.sh & hatari-local-rs232.sh arg handling
+- TOS tester testing covers more GEMDOS functionality, works with
+  all Hatari supported TOS versions and HW configurations and it's
+  fully automated 
 
 Fixed Games :
   Hammerfist (fire button),
