@@ -2,5 +2,6 @@ Here's some test text
 used for testing that
 reading and writing files
 through the GEMDOS HD
-emulation works fine
-under Hatari.
+emulation and special
+devices works fine under
+Hatari.

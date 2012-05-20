@@ -39,9 +39,9 @@
  * everything (except for the expected failure) succeeded.
  * 
  * TOS tester will additionally verify that the pipeline worked fine
- * by comparing the input and printer output file contents match,
- * i.e. that this pipeline worked fine:
- *	INPUT_FILE --(OUTPUT_FILE)--> printer
+ * by checking that the device output file contents match what's
+ * expected i.e. this whole pipeline works as expected:
+ *	INPUT_FILE --(OUTPUT_FILE)--> device
  * 
  * And that OUTPUT_FILE is again empty after test.
  */

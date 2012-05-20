@@ -142,6 +142,7 @@ class Config:
     all_memsizes = (0, 1, 2, 4, 6, 8, 10, 12, 14)
     
     # defaults
+    fast = False
     bools = []
     disks = ("floppy", "gemdos")
     graphics = ("mono", "rgb")
@@ -149,9 +150,9 @@ class Config:
     memsizes = (0, 4, 14)
     
     def __init__(self, argv):
-        longopts = ["bool=", "disks=", "graphics=", "help", "machines=", "memsizes="]
+        longopts = ["bool=", "disks=", "fast", "graphics=", "help", "machines=", "memsizes="]
         try:
-            opts, paths = getopt.gnu_getopt(argv[1:], "b:d:g:hm:s:", longopts)
+            opts, paths = getopt.gnu_getopt(argv[1:], "b:d:fg:hm:s:", longopts)
         except getopt.GetoptError as error:
             self.usage(error)
         self.handle_options(opts)
@@ -177,6 +178,8 @@ class Config:
             args = arg.split(",")
             if opt in ("-h", "--help"):
                 self.usage()
+            if opt in ("-f", "--fast"):
+                self.fast = True
             elif opt in ("-b", "--bool"):
                 self.bools += args
             elif opt in ("-d", "--disks"):
@@ -213,6 +216,7 @@ Usage: %s [options] <TOS image files>
 
 Options:
 \t-h, --help\tthis help
+\t-f, --fast\tdo tests with "--fastfdc yes --fast-forward yes"
 \t-d, --disks\t%s
 \t-g, --graphics\t%s
 \t-m, --machines\t%s
@@ -299,26 +303,20 @@ you also need to specify hconsole.py location with:
 # -----------------------------------------------
 def verify_match(srcfile, dstfile):
     if not os.path.exists(dstfile):
-        print "ERROR: file '%s' missing -> test FAILED" % dstfile
-        return False
+        return "file '%s' missing" % dstfile
     i = 0
     f2 = open(srcfile)
     for line in open(dstfile).readlines():
         i += 1
         if line != f2.readline():
-            print "ERROR: file '%s' line %d doesn't match file '%s' -> test FAILED" % (srcfile, dstfile)
-            return False
-    return True
+            return "file '%s' line %d doesn't match file '%s'" % (dstfile, i, srcfile)
 
 def verify_empty(srcfile):
     if not os.path.exists(srcfile):
-        print "ERROR: file '%s' missing -> test FAILED" % srcfile
-        return False
+        return "file '%s' missing" % srcfile
     lines = len(open(srcfile).readlines())
     if lines > 0:
-        print "ERROR: file '%s' isn't empty -> test FAILED" % srcfile
-        return False
-    return True
+        return "file '%s' isn't empty (%d lines)" % (srcfile, lines)
 
 class Tester:
     output = "output" + os.path.sep
@@ -330,6 +328,7 @@ class Tester:
     textinput = "disk" + os.path.sep + "TEXT"
     textoutput= "disk" + os.path.sep + "TEST"
     printout  = output + "printer-out"
+    serialout = output + "serial-out"
     fifofile  = output + "midi-out"
     bootauto  = "bootauto.st.gz" # TOS old not to support GEMDOS HD either
     bootdesk  = "bootdesk.st.gz"
@@ -338,13 +337,17 @@ class Tester:
     
     def __init__(self):
         "test setup initialization"
-        self.cleanup_files()
+        self.cleanup_all_files()
         self.create_config()
         self.create_files()
         signal.signal(signal.SIGALRM, self.alarm_handler)
     
     def alarm_handler(self, signum, frame):
-        print "ERROR: timeout %s triggered -> test FAILED" % (signum, frame)
+        if signum == signal.SIGALRM:
+            print "ERROR: timeout triggered -> test FAILED"
+        else:
+            print "ERROR: unknown signal %d received" % signum
+            raise AssertionError
     
     def create_config(self):
         # write specific configuration to:
@@ -356,6 +359,7 @@ class Tester:
         # - disable GEMDOS emu by default
         # - use empty floppy disk image to avoid TOS error when no disks
         # - set printer output file
+        # - disable serial in and set serial output file
         # - disable MIDI in, use MIDI out as fifo file to signify test completion
         dummy = open(self.dummycfg, "w")
         dummy.write("[Log]\nnAlertDlgLogLevel = 0\nbConfirmQuit = FALSE\n")
@@ -363,13 +367,16 @@ class Tester:
         dummy.write("[HardDisk]\nbUseHardDiskDirectory = FALSE\n")
         dummy.write("[Floppy]\nszDiskAFileName = blank-a.st.gz\n")
         dummy.write("[Printer]\nbEnablePrinting = TRUE\nszPrintToFileName = %s\n" % self.printout)
+        dummy.write("[RS232]\nbEnableRS232 = TRUE\nszInFileName = \nszOutFileName = %s\n" % self.serialout)
         dummy.write("[Midi]\nbEnableMidi = TRUE\nsMidiInFileName = \nsMidiOutFileName = %s\n" % self.fifofile)
         dummy.close()
-    
-    def cleanup_files(self):
-        for path in (self.fifofile, self.printout, "grab0001.png", "grab0001.bmp"):
+
+    def cleanup_all_files(self):
+        # left overs from last run
+        for path in (self.fifofile, "grab0001.png", "grab0001.bmp"):
             if os.path.exists(path):
                 os.remove(path)
+        self.cleanup_test_files()
     
     def create_files(self):
         if not os.path.exists(self.output):
@@ -385,7 +392,48 @@ class Tester:
             os.rename("grab0001.bmp", self.output + identity + ".bmp")
         else:
             warning("failed to locate screenshot grab0001.{png,bmp}")
-        
+
+    def cleanup_test_files(self):
+        for path in (self.serialout, self.printout):
+            if os.path.exists(path):
+                os.remove(path)
+
+    def verify_output(self, identity, tos, memory):
+        # both tos version and amount of memory affect what
+        # GEMDOS operations work properly...
+        ok = True
+        # check file truncate
+        error = verify_empty(self.textoutput)
+        if error:
+            print "ERROR: file wasn't truncated:\n\t%s" % error
+            os.rename(self.textoutput, "%s.%s" % (self.textoutput, identity))
+            ok = False
+        # check serial output
+        error = verify_match(self.textinput, self.serialout)
+        if error:
+            if not tos.etos:
+                print "ERROR: serial output doesn't match input:\n\t%s" % error
+                ok = False
+            else:
+                # doesn't currently work with EmuTOS
+                print "WARNING: serial output doesn't match input:\n\t%s" % error
+            os.rename(self.serialout, "%s.%s" % (self.serialout, identity))
+        # check printer output
+        error = verify_match(self.textinput, self.printout)
+        if error:
+            if tos.etos or tos.version > 0x206 or (tos.version == 0x100 and memory > 1):
+                print "ERROR: printer output doesn't match input (EmuTOS, TOS v1.00 or >v2.06)\n\t%s" % error
+                os.rename(self.printout, "%s.%s" % (self.printout, identity))
+                ok = False
+            else:
+                if os.path.exists(self.printout):
+                    error = verify_empty(self.printout)
+                    if error:
+                        print "WARNING: unexpected printer output (TOS v1.02 - TOS v2.06):\n\t%s" % error
+                        os.rename(self.printout, "%s.%s" % (self.printout, identity))
+        self.cleanup_test_files()
+        return ok
+
 
     def wait_fifo(self, fifo, timeout):
         "wait_fifo(fifo) -> wait until fifo has input until given timeout"
@@ -420,7 +468,7 @@ class Tester:
             return None
     
     
-    def test(self, identity, testargs, tos):
+    def test(self, identity, testargs, tos, memory):
         "run single boot test with given args and waits"
         # overwrite argv used by hconsole constructor
         sys.argv = self.defaults + testargs
@@ -442,7 +490,7 @@ class Tester:
         # wait until test program has been run and output something to fifo
         prog_ok, tests_ok = self.wait_fifo(fifo, tos.fullwait)
         if tests_ok:
-            output_ok = verify_empty(self.textoutput) and verify_match(self.textinput, self.printout)
+            output_ok = self.verify_output(identity, tos, memory)
         else:
             print "TODO: collect info on failure, regs etc"
             output_ok = False
@@ -453,7 +501,7 @@ class Tester:
         return (init_ok, prog_ok, tests_ok, output_ok)
 
     
-    def prepare_test(self, tos, machine, monitor, disk, memory, extra):
+    def prepare_test(self, config, tos, machine, monitor, disk, memory, extra):
         "compose test ID and Hatari command line args, then call .test()"
         identity = "%s-%s-%s-%s-%sM" % (tos.name, machine, monitor, disk, memory)
         testargs = ["--tos", tos.path, "--machine", machine, "--memsize", str(memory)]
@@ -471,7 +519,10 @@ class Tester:
                 testargs += ["--vdi-width", "320", "--vdi-height", "240"]
         else:
             testargs += ["--monitor", monitor]
-
+        
+        if config.fast:
+            testargs += ["--fastfdc", "yes", "--fast-forward", "yes"]
+        
         if disk == "gemdos":
             # use Hatari autostart, must be last thing added to testargs!
             testargs += [self.testprg]
@@ -487,7 +538,7 @@ class Tester:
         else:
             raise AssertionError("unknown disk type '%s'" % disk)
 
-        results = self.test(identity, testargs, tos)
+        results = self.test(identity, testargs, tos, memory)
         self.results[tos.name].append((identity, results))
 
     def run(self, config):
@@ -514,14 +565,14 @@ class Tester:
                             if config.bools:
                                 for opt in config.bools:
                                     for val in ('on', 'off'):
-                                        self.prepare_test(tos, machine, monitor, disk, memory, [opt, val])
+                                        self.prepare_test(config, tos, machine, monitor, disk, memory, [opt, val])
                                         count += 1
                             else:
-                                self.prepare_test(tos, machine, monitor, disk, memory, None)
+                                self.prepare_test(config, tos, machine, monitor, disk, memory, None)
                                 count += 1
             if not count:
                 warning("no matching configuration for TOS '%s'" % tos.name)
-        self.cleanup_files()
+        self.cleanup_all_files()
     
     def summary(self):
         "summarize test results"
