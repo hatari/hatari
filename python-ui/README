@@ -61,7 +61,7 @@ Notes
 Hatari UI runs a Hatari version found on $PATH.  If you want
 to use a version of Hatari that hasn't been installed, you
 need to modify the search path, for example like this:
-	PATH=../build/src:$PATH hatariui
+	PATH=../build/src:.:$PATH hatariui
 
 If UI is started without the embedding option, the actions
 (in menus and toolbars) have also shortcuts.  They cannot
