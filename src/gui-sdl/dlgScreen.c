@@ -56,7 +56,7 @@ static SGOBJ monitordlg[] =
 	{ SGRADIOBUT, 0, 0, 12,3,  6,1, "RGB" },
 	{ SGRADIOBUT, 0, 0, 19,3,  6,1, "VGA" },
 	{ SGRADIOBUT, 0, 0, 26,3,  6,1, "TV" },
-	{ SGCHECKBOX, 0, 0,  6,5, 22,1, "Show ST/STE borders" },
+	{ SGCHECKBOX, 0, 0, 12,5, 22,1, "Show borders" },
 
 	{ SGBOX,      0, 0,  1,8, 32,7, NULL },
 	{ SGCHECKBOX, 0, 0,  4,9, 33,1, "Use extended VDI screen" },

@@ -436,9 +436,9 @@ class DisplayDialog(HatariUIDialog):
         desktop.set_active(config.get_desktop())
         desktop.set_tooltip_text("Whether to keep desktop resolution in fullscreen and (try to) scale Atari screen by an integer factor instead")
 
-        borders = gtk.CheckButton("ST/STE overscan borders")
+        borders = gtk.CheckButton("Screen borders")
         borders.set_active(config.get_borders())
-        borders.set_tooltip_text("Whether to show overscan borders in ST/STE low/mid-rez. Visible border area is affected by max. zoom size")
+        borders.set_tooltip_text("Whether to show overscan borders in ST/STE low/mid-rez or in Falcon color resolutions. Visible border area is affected by max. zoom size")
 
         statusbar = gtk.CheckButton("Show statusbar")
         statusbar.set_active(config.get_statusbar())

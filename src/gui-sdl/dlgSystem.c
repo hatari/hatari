@@ -278,7 +278,7 @@ static SGOBJ systemdlg[] =
 	{ SGCHECKBOX, 0, 0, 3,18, 27,1, "Real time clock emulation" },
 	{ SGCHECKBOX, 0, 0, 3,19, 15,1, "Patch Timer-D" },
 	{ SGCHECKBOX, 0, 0, 3,20, 20,1, "Blitter emulation" },
-	{ SGCHECKBOX, 0, 0, 3,21, 15,1, "MMU 040 emulation" },
+	{ SGCHECKBOX, 0, 0, 3,21, 15,1, "040 MMU emulation" },
 
 	{ SGBOX, 0, 0, 32,13, 26,9, NULL },
 	{ SGTEXT, 0, 0, 33,13, 11,1, "FPU" },
