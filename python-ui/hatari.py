@@ -671,6 +671,22 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Screen]", "bKeepResolution", value)
         self._change_option("--desktop %s" % str(value))
 
+    # --------- keep desktop res - st ------
+    def get_desktop_st(self):
+        return self.get("[Screen]", "bKeepResolutionST")
+    
+    def set_desktop_st(self, value):
+        self.set("[Screen]", "bKeepResolutionST", value)
+        self._change_option("--desktop-st %s" % str(value))
+
+    # ------------ force max ---------------
+    def get_force_max(self):
+        return self.get("[Screen]", "bForceMax")
+    
+    def set_force_max(self, value):
+        self.set("[Screen]", "bForceMax", value)
+        self._change_option("--force-max %s" % str(value))
+
     # ------------ show borders ---------------
     def get_borders(self):
         return self.get("[Screen]", "bAllowOverscan")

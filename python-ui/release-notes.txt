@@ -2,6 +2,11 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2012-05:
+- Add --desktop-st and --force-max options support
+  (latter helps video recording of Falcon demos
+   doing lots of resolution changes)
+
 2012-01:
 - Add microphone and YM voice mixing sound options
 - Fix asserts and empty hatari config file caused by
