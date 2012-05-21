@@ -255,7 +255,8 @@ you also need to specify hconsole.py location with:
         if machine in ("st", "ste"):
             disks = ("floppy", "gemdos", "acsi")
         elif machine == "tt":
-            # according to todo.txt, Hatari ACSI emulation doesn't work for TT
+            # TODO: according to todo.txt, Hatari ACSI emulation
+            # doesn't currently work for TT
             disks = ("floppy", "gemdos")
         elif machine == "falcon":
             disks = ("floppy", "gemdos", "ide")
