@@ -292,8 +292,8 @@ you also need to specify hconsole.py location with:
         if machine in ("st", "ste"):
             sizes = (0, 1, 2, 4)
         elif machine in ("tt", "falcon"):
-            # TODO: is 0.5MB valid memory size for TT & Falcon?
-            sizes = self.all_memsizes
+            # 0 (512kB) isn't valid memory size for Falcon/TT
+            sizes = self.all_memsizes[1:]
         else:
             raise AssertionError("unknown machine %s" % machine)
         if memsize in sizes:
