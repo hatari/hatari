@@ -80,7 +80,7 @@ static void write_gemdos_device(const char *from, const char *to)
 			break;
 		}
 		count2 = Fwrite(handle2, count1, buffer);
-		if (count1 <= 0) {
+		if (count2 <= 0) {
 			print_ioerror("Fwrite", handle2, count1, buffer, count2);
 			break;
 		}
