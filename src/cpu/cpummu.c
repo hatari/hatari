@@ -2,7 +2,7 @@
  * cpummu.cpp -  MMU emulation
  *
  * Copyright (c) 2001-2004 Milan Jurik of ARAnyM dev team (see AUTHORS)
- * 
+ *
  * Inspired by UAE MMU patch
  *
  * This file is part of the ARAnyM project which builds a new and powerful
@@ -59,7 +59,6 @@ static void mmu_dump_ttr(const TCHAR * label, uae_u32 ttr)
 	from_addr = ttr & MMU_TTR_LOGICAL_BASE;
 	to_addr = (ttr & MMU_TTR_LOGICAL_MASK) << 8;
 
-	
 	fprintf(stderr, "%s: [%08lx] %08lx - %08lx enabled=%d supervisor=%d wp=%d cm=%02d\n",
 			label, ttr,
 			from_addr, to_addr,
@@ -1062,7 +1061,7 @@ jmp_buf* __poptry(void) {
 		exit(-1);
 	}
 }
-void __pushtry(jmp_buf* j) { 
+void __pushtry(jmp_buf* j) {
 	if (s_try_stack_size<MAX_TRY_STACK) {
 		// fprintf(stderr,"push jmpbuf=%08x\n",(*j)[0]);
 		memcpy(&s_try_stack[s_try_stack_size],j,sizeof(jmp_buf));

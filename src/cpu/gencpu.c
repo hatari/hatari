@@ -72,7 +72,7 @@ static int instr_table_index;		/* Hatari: Used when the cycle table is not the g
 
 /* used to disable the return cycles function call when there are more than one cycle to take into account for an instruction */
 /* Falcon CPU only (CPUEMU_21)) */
-static bool no_return_cycles; 
+static bool no_return_cycles;
 
 /* All the following indexes are useful to get the correct cycle index in the cycle tables for 68030 cycle exact CPU (CPU_21) */
 /* Hatari only code */
@@ -128,8 +128,8 @@ static int divl_index = 0;
 #define GENA_MOVEM_NO_INC	1
 #define GENA_MOVEM_MOVE16	2
 
-/** 
-  Table_labels table for all case. 
+/**
+  Table_labels table for all case.
   */
 static const char* falcon_cycles_tables[] = {
 	"table_falcon_cycles",
@@ -228,7 +228,7 @@ static void returncycles (const char *s, int cycles)
 {
 	if (using_ce)
 		return;
-	
+
 	if (using_ce020 == 1)
 		printf ("%sreturn;\n", s);
 	else if (using_ce020 == 2) {
@@ -737,7 +737,7 @@ static void genamode2 (amodes mode, const char *reg, wordsizes size, const char 
 		break;
 	case Ad16: // (d16,An)
 		printf ("\tuaecptr %sa = m68k_areg (regs, %s) + (uae_s32)(uae_s16)%s;\n", name, reg, gen_nextiword (flags));
-		count_read_ea++; 
+		count_read_ea++;
 		break;
 	case Ad8r: // (d8,An,Xn)
 		printf ("\tuaecptr %sa;\n", name);
@@ -759,7 +759,7 @@ static void genamode2 (amodes mode, const char *reg, wordsizes size, const char 
 				count_cycles_ea += 2;
 			}
 			printf ("\t%sa = get_disp_ea_000 (m68k_areg (regs, %s), %s);\n", name, reg, gen_nextiword (flags));
-			count_read_ea++; 
+			count_read_ea++;
 		}
 		break;
 	case PC16: // (d16,PC,Xn)
@@ -1185,7 +1185,7 @@ static void genmovemel (uae_u16 opcode)
 		else
 			printf ("\tregs.ce030_instr_addcycles = regs_number * 4;\n");
 	}
-	
+
 	fill_prefetch_next ();
 }
 
@@ -1309,7 +1309,7 @@ static void genmovemle_ce (uae_u16 opcode)
 				size);
 		}
 	}
-	
+
 	count_ncycles++;
 	fill_prefetch_next ();
 }
@@ -1598,7 +1598,7 @@ static void shift_ce (amodes dmode, int size)
 	}
 }
 
-// BCHG/BSET/BCLR Dx,Dx or #xx,Dx adds 2 cycles if bit number > 15 
+// BCHG/BSET/BCLR Dx,Dx or #xx,Dx adds 2 cycles if bit number > 15
 static void bsetcycles (struct instr *curi)
 {
 	if (curi->size == sz_byte) {
@@ -2469,7 +2469,7 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\tm68k_do_bsr_ce030 (m68k_getpc () + %d, s);\n", m68k_pc_offset);
 		} else if (using_ce) {
 			printf ("\tm68k_do_bsr_ce (m68k_getpc () + %d, s);\n", m68k_pc_offset);
-		} else if (using_indirect) {	
+		} else if (using_indirect) {
 			printf ("\tm68k_do_bsri (m68k_getpc () + %d, s);\n", m68k_pc_offset);
 		} else if (using_mmu) {
 			printf ("\tm68k_do_bsr_mmu (m68k_getpc () + %d, s);\n", m68k_pc_offset);
@@ -3314,13 +3314,13 @@ static void gen_opcode (unsigned long int opcode)
 			old_brace_level = n_braces;
 			start_brace ();
 			genastore ("(m68k_dreg (regs, ru))", curi->dmode, "dstreg", curi->size, "dst");
-			if (using_ce020 == 2) 
+			if (using_ce020 == 2)
 				printf ("\tregs.ce030_instr_cycles = %s[%d];\n", falcon_cycles_tables[instr_table], instr_table_index);
 			pop_braces (old_brace_level);
 			printf ("else");
 			start_brace ();
 			printf ("m68k_dreg (regs, rc) = dst;\n");
-			if (using_ce020 == 2) 
+			if (using_ce020 == 2)
 				printf ("\tregs.ce030_instr_cycles = %s[%d];\n", falcon_cycles_tables[instr_table], instr_table_index + 1);
 			pop_braces (old_brace_level);
 		}
@@ -3973,7 +3973,7 @@ static void generate_one_opcode (int rp)
 		printf ("%s: ;\n", endlabelstr);
 
 	returncycles ("", insn_n_cycles);
-	
+
 	printf ("}");
 	if (using_ce || using_prefetch) {
 		if (count_read + count_write + count_cycles == 0)
@@ -3997,7 +3997,7 @@ static void generate_one_opcode (int rp)
 		fseek(stdout, 0, SEEK_END);
 	}
 
-	/* Hatari only : inc instruction index for cycle exact 68030 cpu */ 
+	/* Hatari only : inc instruction index for cycle exact 68030 cpu */
 	if (using_ce020 == 2)
 		instr_index += 1;
 

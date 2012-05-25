@@ -1842,7 +1842,7 @@ kludge_me_do:
 #endif
 	fill_prefetch_slow ();
 	exception_trace (nr);
-	
+
 	/* Handle exception cycles (special case for MFP) */
 	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
 		M68000_AddCycles(44+12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
@@ -2394,7 +2394,7 @@ void m68k_reset (int hardreset)
 	regs.intmask = 7;
 	regs.vbr = regs.sfc = regs.dfc = 0;
 	regs.irc = 0xffff;
-	
+
 	m68k_areg (regs, 7) = get_long (0);
 	m68k_setpc (get_long (4));
 
@@ -2846,7 +2846,7 @@ STATIC_INLINE int do_specialties (int cycles)
 		} else
 			c = 4;
 		do_cycles (c * CYCLE_UNIT);
-		
+
 		if (regs.spcflags & SPCFLAG_COPPER)
 			do_copper ();
 	}
@@ -2875,39 +2875,39 @@ STATIC_INLINE int do_specialties (int cycles)
 		Exception (3, 0, M68000_EXC_SRC_CPU);
 	}
 
-    /* Handle the STOP instruction */
-    if ( regs.spcflags & SPCFLAG_STOP ) {
-        /* We first test if there's a pending interrupt that would */
-        /* allow to immediatly leave the STOP state */
-        if ( do_specialties_interrupt(true) ) {		/* test if there's an interrupt and add pending jitter */
-            regs.stopped = 0;
-            unset_special (SPCFLAG_STOP);
-        }
-#if 0
-	if (regs.spcflags & SPCFLAG_MFP)			/* MFP int */
-	    MFP_CheckPendingInterrupts();
-	
-	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {	/* VBL/HBL ints */
-	    int intr = intlev ();
-	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-	    if (intr != -1 && intr > regs.intmask) {
-	        Interrupt (intr , true);		/* process the interrupt and add pending jitter */
-		regs.stopped = 0;
-		unset_special (SPCFLAG_STOP);
+	/* Handle the STOP instruction */
+	if ( regs.spcflags & SPCFLAG_STOP ) {
+	    /* We first test if there's a pending interrupt that would */
+	    /* allow to immediatly leave the STOP state */
+	    if ( do_specialties_interrupt(true) ) {		/* test if there's an interrupt and add pending jitter */
+	        regs.stopped = 0;
+	        unset_special (SPCFLAG_STOP);
 	    }
-	}
+#if 0
+	    if (regs.spcflags & SPCFLAG_MFP)			/* MFP int */
+	        MFP_CheckPendingInterrupts();
+
+	    if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {	/* VBL/HBL ints */
+		int intr = intlev ();
+		unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+		if (intr != -1 && intr > regs.intmask) {
+		    Interrupt (intr , true);	/* process the interrupt and add pending jitter */
+		    regs.stopped = 0;
+		    unset_special (SPCFLAG_STOP);
+		}
+	    }
 #endif
 
-	while (regs.spcflags & SPCFLAG_STOP) {
+	    while (regs.spcflags & SPCFLAG_STOP) {
 		do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
 		M68000_AddCycles(4);
 
-	    /* It is possible one or more ints happen at the same time */
-	    /* We must process them during the same cpu cycle until the special INT flag is set */
+		/* It is possible one or more ints happen at the same time */
+		/* We must process them during the same cpu cycle until the special INT flag is set */
 		while (PendingInterruptCount<=0 && PendingInterruptFunction) {
 			/* 1st, we call the interrupt handler */
 			CALL_VAR(PendingInterruptFunction);
-		
+
 			/* Then we check if this handler triggered an interrupt to process */
 			if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
 				regs.stopped = 0;
@@ -2919,7 +2919,7 @@ STATIC_INLINE int do_specialties (int cycles)
 			if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
 				MFP_CheckPendingInterrupts();
 			}
-		
+
 #if AMIGA_ONLY
 			if (regs.spcflags & SPCFLAG_COPPER)
 				do_copper ();
@@ -2968,7 +2968,7 @@ STATIC_INLINE int do_specialties (int cycles)
 				}
 			}
 		}
-	}
+	    }
 	}
 
 	if (regs.spcflags & SPCFLAG_TRACE)
@@ -3130,9 +3130,9 @@ static void m68k_run_1 (void)
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
-		
+
 		M68000_AddCyclesWithPairing(cpu_cycles);
-		
+
 		/* We can have several interrupts at the same time before the next CPU instruction */
 		/* We must check for pending interrupt and call do_specialties_interrupt() only */
 		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
@@ -3142,7 +3142,7 @@ static void m68k_run_1 (void)
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
-		
+
 		if (r->spcflags) {
 			if (do_specialties (cpu_cycles/ CYCLE_UNIT))
 				return;
@@ -3339,7 +3339,7 @@ static void m68k_run_mmu040 (void)
 	uaecptr pc = 0;
 	uaecptr fault = 0;
 	m68k_exception save_except;
-	
+
 	for (;;) {
 	TRY (prb) {
 		for (;;) {
@@ -3403,12 +3403,12 @@ static void m68k_run_mmu040 (void)
 				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 			}
-		
+
 			if (regs.spcflags) {
 				if (do_specialties (cpu_cycles / CYCLE_UNIT))
 					return;
 			}
-	
+
 			/* Run DSP 56k code if necessary */
 			if (bDspEnabled) {
 				DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);
@@ -3453,7 +3453,7 @@ static void m68k_run_2ce (void)
 	int curr_cycles = 0;
 
 	struct falcon_cycles_t falcon_instr_cycle;
-	
+
 	ipl_fetch ();
 
 	for (;;) {
@@ -3469,13 +3469,13 @@ static void m68k_run_2ce (void)
 		/* clear add_cycles for instructions like movem */
 		regs.ce030_instr_addcycles = 0;
 
-		/* Clear M68000 cycle counter */ 
+		/* Clear M68000 cycle counter */
 		if (bDspEnabled)
 			Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
 
 		uae_u32 opcode = x_prefetch (0);
 		(*cpufunctbl[opcode])(opcode);
-		
+
 		/* Laurent : if 68030 instr cache is on, cycles are computed with head / tail / and cache_cycles
 		 *           else, cycles are equal to non cache cycles.
 		 */
@@ -3503,7 +3503,7 @@ static void m68k_run_2ce (void)
 			M68000_AddCycles(nWaitStateCycles);
 			nWaitStateCycles = 0;
 		}
-		
+
 		/* We can have several interrupts at the same time before the next CPU instruction */
 		/* We must check for pending interrupt and call do_specialties_interrupt() only */
 		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
@@ -3513,12 +3513,12 @@ static void m68k_run_2ce (void)
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
-		
+
 		if (r->spcflags) {
 			if (do_specialties (0))
 				return;
 		}
-	
+
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
 			DSP_Run(Cycles_GetCounter(CYCLES_COUNTER_CPU) * 2);
@@ -3576,7 +3576,7 @@ static void m68k_run_2p (void)
 			M68000_AddCycles(nWaitStateCycles);
 			nWaitStateCycles = 0;
 		}
-		
+
 		/* We can have several interrupts at the same time before the next CPU instruction */
 		/* We must check for pending interrupt and call do_specialties_interrupt() only */
 		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
@@ -3586,12 +3586,12 @@ static void m68k_run_2p (void)
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
-		
+
 		if (r->spcflags) {
 			if (do_specialties (cpu_cycles / CYCLE_UNIT))
 				return;
 		}
-	
+
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
 			DSP_Run(cpu_cycles*2/ CYCLE_UNIT);
@@ -3625,7 +3625,7 @@ static void m68k_run_2 (void)
 			write_log ("%04X ", opcode);
 			used[opcode] = 1;
 		}
-#endif	
+#endif
 		do_cycles (cpu_cycles);
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
@@ -3649,16 +3649,15 @@ static void m68k_run_2 (void)
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
-		
-		
+
 		if (r->spcflags) {
 			if (do_specialties (cpu_cycles / CYCLE_UNIT))
-				return;   
+				return;
 		}
-		
+
 		/* Run DSP 56k code if necessary */
 		if (bDspEnabled) {
-			DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);	
+			DSP_Run(cpu_cycles* 2 / CYCLE_UNIT);
 		}
 	}
 }
@@ -3723,7 +3722,7 @@ void m68k_go (int may_quit)
 		/* Exit hatari ? */
 		if (bQuitProgram == true)
 			break;
-		
+
 #ifdef DEBUGGER
 		if (debugging)
 			debug ();
