@@ -1,7 +1,4 @@
-/* Let's see whether hiding this away somewhere where the compiler can't
-see it will cure it of its silly urge to mis-optimize the comparison */
-extern long int diff32(frame_time_t x, frame_time_t y);
-extern int pissoff_value;
+
 
 STATIC_INLINE void events_schedule (void)
 {

@@ -28,8 +28,6 @@
 
 /* declated in newcpu.c */
 extern struct regstruct mmu_backup_regs;
-/* declared in events.h, used in events_*.h */
-volatile frame_time_t vsyncmintime;
 /* declared in events.h like do_cycles_ce() */
 unsigned long int nextevent, is_lastline, currcycle;
 /* declared in events.h, used in events_*.h */
@@ -246,7 +244,6 @@ void reset_frame_rate_hack (void)
 
 	rpt_did_reset = 1;
 	is_lastline = 0;
-	vsyncmintime = read_processor_time () + vsynctime;
 	write_log ("Resetting frame rate hack\n");
 */
 }
@@ -370,76 +367,9 @@ void fpux_restore (int *v)
 }
 
 /* Code taken from win32.cpp*/
-static frame_time_t read_processor_time_qpf (void)
-{
-#if 0 /* Laurent : may be coded later */
-	LARGE_INTEGER counter;
-	QueryPerformanceCounter (&counter);
-	if (qpcdivisor == 0)
-		return (frame_time_t)(counter.LowPart);
-	return (frame_time_t)(counter.QuadPart >> qpcdivisor);
-#else
-	return 0;
-#endif
-}
-
-/* Code taken from win32.cpp*/
-static frame_time_t read_processor_time_rdtsc (void)
-{
-	frame_time_t foo = 0;
-#if defined(X86_MSVC_ASSEMBLY)
-	frame_time_t bar;
-	__asm
-	{
-		rdtsc
-			mov foo, eax
-			mov bar, edx
-	}
-	/* very high speed CPU's RDTSC might overflow without this.. */
-	foo >>= 6;
-	foo |= bar << 26;
-#endif
-	return foo;
-}
-
-/* Code taken from win32.cpp*/
-frame_time_t read_processor_time (void)
-{
-#if 0
-	static int cnt;
-
-	cnt++;
-	if (cnt > 1000000) {
-		write_log(L"**************\n");
-		cnt = 0;
-	}
-#endif
-	if (userdtsc)
-		return read_processor_time_rdtsc ();
-	else
-		return read_processor_time_qpf ();
-}
-
-/* Code taken from win32.cpp*/
 void sleep_millis (int ms)
 {
-/* Laurent : may be coded later (DSL-Delay ?)
-	unsigned int TimerEvent;
-	int start;
-	int cnt;
-
-	start = read_processor_time ();
-	EnterCriticalSection (&cs_time);
-	cnt = timehandlecounter++;
-	if (timehandlecounter >= MAX_TIMEHANDLES)
-		timehandlecounter = 0;
-	LeaveCriticalSection (&cs_time);
-	TimerEvent = timeSetEvent (ms, 0, (LPTIMECALLBACK)timehandle[cnt], 0, TIME_ONESHOT | TIME_CALLBACK_EVENT_SET);
-	WaitForSingleObject (timehandle[cnt], ms);
-	ResetEvent (timehandle[cnt]);
-	timeKillEvent (TimerEvent);
-	idletime += read_processor_time () - start;
-*/
+/* Laurent : may be coded later (DSL-Delay ?) */
 }
 
 

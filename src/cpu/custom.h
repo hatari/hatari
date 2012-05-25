@@ -9,8 +9,6 @@
 #ifndef WINUAE_CUSTOM_H
 #define WINUAE_CUSTOM_H
 
-#include "rpt.h"
-
 /* These are the masks that are ORed together in the chipset_mask option.
  * If CSMASK_AGA is set, the ECS bits are guaranteed to be set as well.  */
 #define CSMASK_ECS_AGNUS 1
@@ -118,7 +116,7 @@ extern int maxvpos, maxvpos_nom;
 extern int hsyncstartpos;
 extern int minfirstline, vblank_endline, numscrlines;
 extern int vblank_hz, fake_vblank_hz, vblank_skip, doublescan;
-extern frame_time_t syncbase;
+
 #define NUMSCRLINES (maxvpos + 1 - minfirstline + 1)
 
 #define DMA_AUD0      0x0001

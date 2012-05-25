@@ -44,6 +44,7 @@ STATIC_INLINE void do_cycles_slow (unsigned long cycles_to_add)
 	currcycle += cycles_to_add;
 }
 
+/*
 STATIC_INLINE void do_cycles_fast (void)
 {
 	if (is_lastline && eventtab[ev_hsync].evtime - currcycle <= 1
@@ -63,6 +64,7 @@ STATIC_INLINE void do_cycles_fast (void)
 	}
 
 }
+*/
 
 /* This is a special-case function.  Normally, all events should lie in the
 future; they should only ever be active at the current cycle during

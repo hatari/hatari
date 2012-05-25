@@ -16,13 +16,8 @@
 
 #define do_cycles do_cycles_slow
 
-//#include "machdep/rpt.h"
-#include "rpt.h"
-
-extern volatile frame_time_t vsynctime, vsyncmintime;
 extern void reset_frame_rate_hack (void);
 extern int rpt_available;
-extern frame_time_t syncbase;
 
 extern void compute_vsynctime (void);
 extern void init_eventtab (void);
