@@ -317,7 +317,7 @@ ymsample	Subsonic_IIR_HPF_Right(ymsample x0)
  *
  * The Lowpass Filter formed by C10 = 0.1 uF
  * and
- * R8=1k // 1k*(65119-46602/65119) // R9=10k // R10=5.1k //
+ * R8=1k // 1k*(65119-46602)/65119 // R9=10k // R10=5.1k //
  * (R12=470)*(100=Q1_HFE) = 206.865 ohms when YM2149 is High
  * and
  * R8=1k // R9=10k // R10=5.1k // (R12=470)*(100=Q1_HFE)
@@ -433,22 +433,9 @@ static void	YM2149_BuildLinearVolumeTable(ymu16 volumetable[32][32][32])
 
 static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
 {
-#define Quartet 0                     /* 1 = Compile for Quartet Mode */
-
-#define FOURTH2 1.189207115002721067  /* Fourth root of two */
-#define SQRT3   1.732050807568877294  /* Square root of three */
-/* R8=1k (pulldown) + YM//1K (Quartet pullup)*/
-#define YM_Gth  0.7113248654051871177 /* = (1//(3^1/2 - 1) + 1)/2 */
-
-#if     Quartet
-/* Quartet Mode (MaxVol is 46602 in Paulo Simoes table) */
-#define MaxVol  (56700.0*YM_Gth)      /* Quartet Mode Maximum value */
-#define WARP    (6.0*(1.0+YM_Gth))    /* Quartet Mode WARP (50% duty PWM) */
-#else
-/* Normal Mode  (Maxvol is 65119 in Simoes' table, 65535 in Gerard's */
-#define MaxVol  56700.0               /* Normal Mode Maximum value in table */
-#define WARP    SQRT3                 /* Normal Mode WARP */
-#endif
+#define MaxVol  65535.0               /* Normal Mode Maximum value in table */
+#define FOURTH2 1.19                  /* Fourth root of two from YM2149 */
+#define WARP    1.666666666666666667  /* measured as 1.65932 from 46602 */
 
 	double conductance;
 	double conductance_[32];
@@ -457,13 +444,13 @@ static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
 /**
  * YM2149 and R8=1k follows (2^-1/4)^(n-31) better when 2 voices are
  * summed (A+B or B+C or C+A) rather than individually (A or B or C):
- *   conductance = 2.0/3.0/(1.0-1.0/SQRT3)-2.0/3.0;
+ *   conductance = 2.0/3.0/(1.0-1.0/WARP)-2.0/3.0;
  * When taken into consideration with three voices.
  *
  * Note that the YM2149 does not use laser trimmed resistances, thus
  * has offsets that are added and/or multiplied with (2^-1/4)^(n-31).
  */
-	conductance = 2.0/3.0/(1.0-1.0/WARP)-2.0/3.0;
+	conductance = 2.0/3.0/(1.0-1.0/WARP)-2.0/3.0; /* conductance = 1.0 */
 
 /**
  * Because the YM current output (voltage source with series resistances)
@@ -477,9 +464,14 @@ static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
 		conductance_[i] = conductance/2.0;
 		conductance = 1.0/(1.0-1.0/FOURTH2/(1.0/conductance + 1.0))-1.0;
 	}
-	conductance_[0] = 1.0e-8;
+	conductance_[0] = 1.0e-8; /* Avoid divide by zero */
 
-/* Sum the conductances as a function of a voltage divider: Vout=Vin*(Rout/Rout+Rin) */
+/**
+ * Normal Mode:  (Maxvol is 65119 in Simoes' table, 65535 in Gerard's
+ *
+ * Sum the conductances as a function of a voltage divider:
+ * Vout=Vin*Rout/(Rout+Rin)
+ */
 	for (i = 0; i < 32; i++)
 		for (j = 0; j < 32; j++)
 			for (k = 0; k < 32; k++)
@@ -487,6 +479,19 @@ static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
 				volumetable[i][j][k] = (ymu16)(0.5+(MaxVol*WARP)/(1.0 +
 					1.0/(conductance_[i]+conductance_[j]+conductance_[k])));
 			}
+
+/**
+ * Quartet Mode: (MaxVol is 46602 in Paulo Simoes table)   *
+ * R8=1k (pulldown) + YM//1K (Quartet pullup) 50% duty PWM *
+ *
+ *	for (i = 0; i < 32; i++)
+ *		for (j = 0; j < 32; j++)
+ *			for (k = 0; k < 32; k++)
+ *			{
+ *				volumetable[i][j][k] = (ymu16)(0.5+(MaxVol*WARP)/(1.0 +
+ *					2.0/(conductance_[i]+conductance_[j]+conductance_[k])));
+ *			}
+ */
 }
 
 
@@ -679,7 +684,8 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 
 	per = rHigh&15;
 	per = (per<<8)+rLow;
-	if (per <= 5)
+
+	if  (per <= (int)(YM_ATARI_CLOCK/(YM_REPLAY_FREQ*7)) )
 		return 0;
 
 	step = YM_ATARI_CLOCK;
@@ -701,8 +707,8 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 	if ( per == 0 )
 		per = 1;				/* result for Per=0 is the same as for Per=1 */	
 #else
-	if ( per <= 5 )
-		return 0;				/* discard too high frequencies, they give a very bad sound */	
+	if  (per <= (int)(YM_ATARI_CLOCK/(YM_REPLAY_FREQ*7)) )
+		return 0;				/* discard frequencies higher than 80% of nyquist rate. */
 #endif
 
 	step = YM_ATARI_CLOCK;
@@ -853,6 +859,16 @@ static ymsample	YM2149_NextSample(void)
 	Tone3Voices &= ( Env3Voices | Vol3Voices );
 
 	/* D/A conversion of the 3 volumes into a sample using a precomputed conversion table */
+
+	if (stepA == 0  &&  (Tone3Voices & YM_MASK_A) > 1)
+		Tone3Voices -= 1;    /* DC level correction for high frequency 'quartet mode' */
+
+	if (stepB == 0  &&  (Tone3Voices & YM_MASK_B) > 1<<5)
+		Tone3Voices -= 1<<5;
+
+	if (stepC == 0  &&  (Tone3Voices & YM_MASK_C) > 1<<10)
+		Tone3Voices -= 1<<10;
+
 	sample = ymout5[ Tone3Voices ];			/* 16 bits signed value */
 
 
@@ -914,6 +930,16 @@ static ymsample	YM2149_NextSample(void)
 	Tone3Voices &= ( Env3Voices | Vol3Voices );
 
 	/* D/A conversion of the 3 volumes into a sample using a precomputed conversion table */
+
+	if (stepA == 0  &&  (Tone3Voices & YM_MASK_A) > 1)
+		Tone3Voices -= 1;    /* DC level correction for high frequency 'quartet mode' */
+
+	if (stepB == 0  &&  (Tone3Voices & YM_MASK_B) > 1<<5)
+		Tone3Voices -= 1<<5;
+
+	if (stepC == 0  &&  (Tone3Voices & YM_MASK_C) > 1<<10)
+		Tone3Voices -= 1<<10;
+
 	sample = ymout5[ Tone3Voices ];			/* 16 bits signed value */
 
 
