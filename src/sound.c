@@ -429,6 +429,47 @@ static void	YM2149_BuildLinearVolumeTable(ymu16 volumetable[32][32][32])
  * measured by Paulo Simoes and Benjamin Gerard.
  * The numbers are arrived at by assuming a current steering
  * resistor ladder network and using the voltage divider rule.
+ *
+ * If one looks at the ST schematic of the YM2149, one sees
+ * three sound pins tied together and attached to a 1000 ohm
+ * resistor (1k) that has the other end grounded.
+ * The 1k resistor is also in parallel with a 0.1 microfarad
+ * capacitor (on the Atari ST, not STE or others). The voltage
+ * developed across the 1K resistor is the output voltage which
+ * I call Vout.
+ *
+ * The output of the YM2149 is modeled well as pullup resistors.
+ * Thus, the three sound pins are seen as three parallel
+ * computer-controlled, adjustable pull-up resistors.
+ * To emulate the output of the YM2149, one must determine the
+ * resistance values of the YM2149 relative to the 1k resistor,
+ * which is done by the 'math model'.
+ *
+ * The AC + DC math model is:
+ *
+ * (MaxVol*WARP) / (1.0 + 1.0/(conductance_[i]+conductance_[j]+conductance_[k]))
+ * or
+ * (MaxVol*WARP) / (1.0 + 1.0/( 1/Ra +1/Rb  +1/Rc )) , Ra = channel A resistance
+ *
+ * Note that the first 1.0 in the formula represents the
+ * normalized 1k resistor (1.0 * 1000 ohms = 1k).
+ *
+ * The YM2149 DC component model represents the output voltage
+ * filtered of high frequency AC component, but DC component
+ * remains.
+ * The YM2149 DC component mode treats the voltage exactly as if
+ * it were low pass filtered. This is more than what is required
+ * to make 'quartet mode sound'. Simplicity leads to Generality!
+ *
+ * The DC component model model is:
+ *
+ * (MaxVol*WARP) / (2.0 + 1.0/( 1/Ra + 1/Rb  + 1/Rc))
+ * or
+ * (MaxVol*WARP*0.5) / (1.0 + 0.5/( 1/Ra + 1/Rb  + 1/Rc))
+ *
+ * Note that the 1.0 represents the normalized 1k resistor.
+ * 0.5 represents 50% duty cycle for the parallel resistors
+ * being summed (this effectively doubles the pull-up resistance).
  */
 
 static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
@@ -467,7 +508,8 @@ static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
 	conductance_[0] = 1.0e-8; /* Avoid divide by zero */
 
 /**
- * Normal Mode:  (Maxvol is 65119 in Simoes' table, 65535 in Gerard's
+ * YM2149 AC + DC components model:
+ * (Note that Maxvol is 65119 in Simoes' table, 65535 in Gerard's)
  *
  * Sum the conductances as a function of a voltage divider:
  * Vout=Vin*Rout/(Rout+Rin)
@@ -481,8 +523,9 @@ static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
 			}
 
 /**
- * Quartet Mode: (MaxVol is 46602 in Paulo Simoes table)   *
- * R8=1k (pulldown) + YM//1K (Quartet pullup) 50% duty PWM *
+ * YM2149 DC component model:
+ * R8=1k (pulldown) + YM//1K (pullup) with YM 50% duty PWM
+ * (Note that MaxVol is 46602 in Paulo Simoes Quartet mode table)
  *
  *	for (i = 0; i < 32; i++)
  *		for (j = 0; j < 32; j++)
@@ -858,16 +901,20 @@ static ymsample	YM2149_NextSample(void)
 	/* volumes depending on the output state of each voice (0 or 0x1f) */
 	Tone3Voices &= ( Env3Voices | Vol3Voices );
 
-	/* D/A conversion of the 3 volumes into a sample using a precomputed conversion table */
+	/* When a step period is 0, the represented frequency was filtered from the */
+	/* ouput of the YM2149. Thus, use the transient DC component of the sample. */
+	/* Note that the "-1" table offset is a "good fit" for the DC component.    */
 
 	if (stepA == 0  &&  (Tone3Voices & YM_MASK_A) > 1)
-		Tone3Voices -= 1;    /* DC level correction for high frequency 'quartet mode' */
+		Tone3Voices -= 1;     /* Voice A AC component removed; Transient DC component remains */
 
 	if (stepB == 0  &&  (Tone3Voices & YM_MASK_B) > 1<<5)
-		Tone3Voices -= 1<<5;
+		Tone3Voices -= 1<<5;  /* Voice B AC component removed; Transient DC component remains */
 
 	if (stepC == 0  &&  (Tone3Voices & YM_MASK_C) > 1<<10)
-		Tone3Voices -= 1<<10;
+		Tone3Voices -= 1<<10; /* Voice C AC component removed; Transient DC component remains */
+
+	/* D/A conversion of the 3 volumes into a sample using a precomputed conversion table */
 
 	sample = ymout5[ Tone3Voices ];			/* 16 bits signed value */
 
@@ -932,13 +979,13 @@ static ymsample	YM2149_NextSample(void)
 	/* D/A conversion of the 3 volumes into a sample using a precomputed conversion table */
 
 	if (stepA == 0  &&  (Tone3Voices & YM_MASK_A) > 1)
-		Tone3Voices -= 1;    /* DC level correction for high frequency 'quartet mode' */
+		Tone3Voices -= 1;     /* Voice A AC component removed; Transient DC component remains */
 
 	if (stepB == 0  &&  (Tone3Voices & YM_MASK_B) > 1<<5)
-		Tone3Voices -= 1<<5;
+		Tone3Voices -= 1<<5;  /* Voice B AC component removed; Transient DC component remains */
 
 	if (stepC == 0  &&  (Tone3Voices & YM_MASK_C) > 1<<10)
-		Tone3Voices -= 1<<10;
+		Tone3Voices -= 1<<10; /* Voice C AC component removed; Transient DC component remains */
 
 	sample = ymout5[ Tone3Voices ];			/* 16 bits signed value */
 
