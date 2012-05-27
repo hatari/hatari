@@ -29,6 +29,12 @@ is missing here, please remind me!):
 - Jean-Baptiste Berlioz <tobe at freemind-tobe.com> : Cycle accurate
   Blitter emulation.
 
+- David Savinkoff : More accurate printer emulation, LMC1992 emulation
+  patches, IIR/Low Pass filters and many improvements to the YM2149 model
+  to get a close emulation of the circuit used to merge and filter the
+  output of the 3 YM2149 voices.
+  Great work to enhance the sound quality.
+
 - Matthias Arndt <marndt at asmsoftware.de> : Wrote the original version
   of the Hatari user manual, fixed the printer emulation functions.
 
@@ -88,9 +94,6 @@ is missing here, please remind me!):
 
 - Volker Seebode: Fix to ASCI emulation to get other than AHDI drivers
   working.
-
-- David Savinkoff: More accurate printer emulation, LMC1992 emulation
-  patches, IIR/Low Pass filters and many improvements to the YM2149 model.
 
 - Cyprian Konador: Found some bugs in the blitter cycles emulation
 
