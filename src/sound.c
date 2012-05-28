@@ -1349,7 +1349,7 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 		for (i = 0; i < SamplesToGenerate; i++)
 		{
 			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[idx][0] = MixBuffer[idx][1] = (YM2149_NextSample() >> 1);
+			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
 		}
  		/* If Ste or TT emulation, DmaSnd does mixing and filtering */
  		DmaSnd_GenerateSamples(ActiveSndBufIdx, SamplesToGenerate);
