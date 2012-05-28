@@ -1426,7 +1426,12 @@ static void Exception_ce000 (int nr, uaecptr oldpc)
 {
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int sv = regs.s;
-	int start, interrupt;
+	int start;
+
+#if AMIGA_ONLY
+	int interrupt;
+	interrupt = nr >= 24 && nr < 24 + 8;
+#endif
 
 	start = 6;
 	if (nr == 7) // TRAPV
@@ -1435,7 +1440,6 @@ static void Exception_ce000 (int nr, uaecptr oldpc)
 		start = 2;
 	else if (nr == 4 || nr == 8) // ILLG & PRIVIL VIOL
 		start = 2;
-	interrupt = nr >= 24 && nr < 24 + 8;
 
 	if (start)
 		do_cycles_ce000 (start);
@@ -1466,11 +1470,13 @@ static void Exception_ce000 (int nr, uaecptr oldpc)
 	}
 	m68k_areg (regs, 7) -= 6;
 	put_word_ce (m68k_areg (regs, 7) + 4, currpc); // write low address
+#if AMIGA_ONLY
 	if (interrupt) {
 		// fetch interrupt vector number
 		nr = get_byte_ce (0x00fffff1 | ((nr - 24) << 1));
 		do_cycles_ce000 (4);
 	}
+#endif
 	put_word_ce (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 	put_word_ce (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
 kludge_me_do:
@@ -3131,7 +3137,7 @@ static void m68k_run_1 (void)
 		cpu_cycles &= cycles_mask;
 		cpu_cycles |= cycles_val;
 
-		M68000_AddCyclesWithPairing(cpu_cycles);
+		M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT);
 
 		/* We can have several interrupts at the same time before the next CPU instruction */
 		/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -3144,7 +3150,7 @@ static void m68k_run_1 (void)
 		}
 
 		if (r->spcflags) {
-			if (do_specialties (cpu_cycles/ CYCLE_UNIT))
+			if (do_specialties (cpu_cycles / CYCLE_UNIT))
 				return;
 		}
 		regs.ipl = regs.ipl_pin;
@@ -3169,6 +3175,8 @@ static void m68k_run_1_ce (void)
 {
 	struct regstruct *r = &regs;
 
+	currcycle = 0;
+
 	ipl_fetch ();
 	for (;;) {
 		uae_u32 opcode = r->ir;
@@ -3186,6 +3194,18 @@ static void m68k_run_1_ce (void)
 		out_cd32io (m68k_getpc ());
 #endif
 		(*cpufunctbl[opcode])(opcode);
+
+		/* HACK for Hatari: Adding cycles should of course not be done
+		 * here in CE mode (so this should be removed later), but until
+		 * we're really there, this helps to get this mode running at
+		 * at least to a basic extend! */
+		M68000_AddCyclesWithPairing(currcycle * 2 / CYCLE_UNIT);
+		currcycle = 0;
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
+			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+		}
+
 		if (r->spcflags) {
 			if (do_specialties (0))
 				return;

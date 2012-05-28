@@ -61,7 +61,7 @@ static uae_u8 cycle_line[256];
 
 void do_cycles_ce (long cycles)
 {
-	static int extra_cycle;
+	static int extra_cycle = 0;
 
 	cycles += extra_cycle;
 
