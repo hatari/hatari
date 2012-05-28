@@ -279,6 +279,8 @@ void M68000_CheckCpuSettings(void)
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 
 #if ENABLE_WINUAE_CPU
+	/* WinUAE core uses cpu_model instead of cpu_level, so we've got to
+	 * convert these values here: */
 	switch (changed_prefs.cpu_level) {
 		case 0 : changed_prefs.cpu_model = 68000; break;
 		case 1 : changed_prefs.cpu_model = 68010; break;
@@ -288,6 +290,7 @@ void M68000_CheckCpuSettings(void)
 		case 5 : changed_prefs.cpu_model = 68060; break;
 		default: fprintf (stderr, "Init680x0() : Error, cpu_level unknown\n");
 	}
+	currprefs.cpu_level = changed_prefs.cpu_level;
 
 	changed_prefs.address_space_24 = ConfigureParams.System.bAddressSpace24;
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
