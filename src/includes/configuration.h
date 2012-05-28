@@ -261,10 +261,10 @@ typedef enum
 #if ENABLE_WINUAE_CPU
 typedef enum
 {
-  FPU_NONE,
-  FPU_68881,
-  FPU_68882,
-  FPU_CPU
+  FPU_NONE = 0,
+  FPU_68881 = 68881,
+  FPU_68882 = 68882,
+  FPU_CPU = 68040
 } FPUTYPE;
 #endif
 
