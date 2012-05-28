@@ -482,7 +482,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
 	int i;
 	int nBufIdx;
-	Sint8 	MonoByte , LeftByte , RightByte;
+	Sint8 MonoByte , LeftByte , RightByte;
 	unsigned n;
 	Sint64 FreqRatio;
 
@@ -496,12 +496,15 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 			switch (microwire.mixing) {
 				case 1:
-					/* YM2149 */
+					/* DMA and (YM2149 0 dB) mixing */
 					MixBuffer[nBufIdx][1]  = MixBuffer[nBufIdx][0] + dma.FrameRight * -((256*3/4)/4)/4;	
 					MixBuffer[nBufIdx][0] += dma.FrameLeft * -((256*3/4)/4)/4;	
 					break;
+				case 2:
+					/* DMA only (but DMA is off in that case) */
+					MixBuffer[nBufIdx][0]  = MixBuffer[nBufIdx][1] = 0;
 				default:
-					/* YM2149 - 12dB */
+					/* DMA and (YM2149 -12 dB) mixing */
 					MixBuffer[nBufIdx][0] /= 4;
 					MixBuffer[nBufIdx][1]  = MixBuffer[nBufIdx][0] + dma.FrameRight * -((256*3/4)/4)/4;	
 					MixBuffer[nBufIdx][0] += dma.FrameLeft * -((256*3/4)/4)/4;	
@@ -511,7 +514,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 		/* Apply LMC1992 sound modifications (Bass and Treble) */
 		DmaSnd_Apply_LMC ( nMixBufIdx , nSamplesToGenerate );
-		
+
 		return;
 	}
 
@@ -539,16 +542,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 			switch (microwire.mixing) {
 				case 1:
-					/* DMA and YM2149 mixing */
+					/* DMA and (YM2149 0 dB) mixing */
 					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameLeft * -((256*3/4)/4)/4;
 					break;
 				case 2:
-					/* DMA sound only */
+					/* DMA only */
 					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
 					break;
 				default:
-					/* DMA and (YM2149 - 12dB) mixing */
-					/* instead of 16462 (-12dB), we approximate by 16384 */
+					/* DMA and (YM2149 -12 dB) mixing */
+					/* instead of 16462 (-12 dB), we approximate by 16384 */
 					MixBuffer[nBufIdx][0] = (dma.FrameLeft * -((256*3/4)/4)/4) +
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					break;
@@ -587,18 +590,18 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 			switch (microwire.mixing) {
 				case 1:
-					/* DMA and YM2149 mixing */
+					/* DMA and (YM2149 0 dB) mixing */
 					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameLeft * -((256*3/4)/4)/4;
 					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + dma.FrameRight * -((256*3/4)/4)/4;
 					break;
 				case 2:
-					/* DMA sound only */
+					/* DMA only */
 					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
 					MixBuffer[nBufIdx][1] = dma.FrameRight * -((256*3/4)/4)/4;
 					break;
 				default:
-					/* DMA and (YM2149 - 12dB) mixing */
-					/* instead of 16462 (-12dB), we approximate by 16384 */
+					/* DMA and (YM2149 -12 dB) mixing */
+					/* instead of 16462 (-12 dB), we approximate by 16384 */
 					MixBuffer[nBufIdx][0] = (dma.FrameLeft * -((256*3/4)/4)/4) +
 								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
 					MixBuffer[nBufIdx][1] = (dma.FrameRight * -((256*3/4)/4)/4) +
