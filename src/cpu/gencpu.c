@@ -219,10 +219,6 @@ static void fpulimit (void)
 	limit_braces = n_braces;
 	n_braces = 0;
 }
-static void cpulimit (void)
-{
-	printf ("#ifndef CPUEMU_68000_ONLY\n");
-}
 
 static void returncycles (const char *s, int cycles)
 {
@@ -2283,7 +2279,7 @@ static void gen_opcode (unsigned long int opcode)
 		    pop_braces (old_brace_level);
 		    printf ("\tregs.sr = newsr; MakeFromSR ();\n");
 		    printf ("\tif (newpc & 1) {\n");
-		    printf ("\t\texception3i (0x%04X, m68k_getpc (), newpc);\n", opcode);
+		    printf ("\t\texception3i (0x%04lX, m68k_getpc (), newpc);\n", opcode);
 			printf ("\t\tgoto %s;\n", endlabelstr);
 			printf ("\t}\n");
 		    printf ("\t\tm68k_setpc (newpc);\n");
@@ -2306,12 +2302,12 @@ static void gen_opcode (unsigned long int opcode)
 			genamode (curi->smode, "srcreg", curi->size, "offs", 1, 0, 0);
 			printf ("\tm68k_areg (regs, 7) += offs;\n");
 			printf ("\tif (pc & 1) {\n");
-			printf ("\t\texception3i (0x%04X, m68k_getpc (), pc);\n", opcode);
+			printf ("\t\texception3i (0x%04lX, m68k_getpc (), pc);\n", opcode);
 			printf ("\t\tgoto %s;\n", endlabelstr);
 			printf ("\t}\n");
 		}
 	    printf ("\tif (pc & 1) {\n");
-	    printf ("\t\texception3i (0x%04X, m68k_getpc(), pc);\n", opcode);
+	    printf ("\t\texception3i (0x%04lX, m68k_getpc(), pc);\n", opcode);
 		printf ("\t\tgoto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		setpc ("pc");
@@ -2371,7 +2367,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (m68k_getpc () & 1) {\n");
 		printf ("\t\tuaecptr faultpc = m68k_getpc ();\n");
 		printf ("\t\tm68k_setpc (pc);\n");
-		printf ("\t\texception3i (0x%04X, pc, faultpc);\n", opcode);
+		printf ("\t\texception3i (0x%04lX, pc, faultpc);\n", opcode);
 		printf ("\t\tgoto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		count_read += 2;
@@ -3886,7 +3882,7 @@ static void generate_one_opcode (int rp)
 		//char *name = ua (lookuptab[idx].name);
 		const char *name = lookuptab[idx].name;
 		if (generate_stbl)
-			fprintf (stblfile, "{ %sCPUFUNC(op_%04x_%d), %d }, /* %s */\n",
+			fprintf (stblfile, "{ %sCPUFUNC(op_%04lx_%d), %ld }, /* %s */\n",
 			(using_ce || using_ce020) ? "(cpuop_func*)" : "",
 			opcode, opcode_last_postfix[rp],
 			opcode, name);
@@ -4006,7 +4002,7 @@ static void generate_one_opcode (int rp)
 		const char *name = lookuptab[idx].name;
 		if (i68000)
 			fprintf (stblfile, "#ifndef CPUEMU_68000_ONLY\n");
-		fprintf (stblfile, "{ %sCPUFUNC(op_%04x_%d), %d }, /* %s */\n",
+		fprintf (stblfile, "{ %sCPUFUNC(op_%04lx_%d), %ld }, /* %s */\n",
 			(using_ce || using_ce020) ? "(cpuop_func*)" : "",
 			opcode, postfix, opcode, name);
 		if (i68000)

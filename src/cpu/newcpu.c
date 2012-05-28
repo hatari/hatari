@@ -3331,7 +3331,8 @@ static void opcodedebug (uae_u32 pc, uae_u16 opcode)
 }
 #endif
 
-static oldpc;
+static uaecptr oldpc;
+
 /* Aranym MMU 68040  */
 static void m68k_run_mmu040 (void)
 {
@@ -4147,11 +4148,11 @@ void m68k_dumpstate (FILE *f, uaecptr *nextpc)
 	int i, j;
 
 	for (i = 0; i < 8; i++){
-		f_out (f, "  D%d %08lX ", i, m68k_dreg (regs, i));
+		f_out (f, "  D%d %08X ", i, m68k_dreg (regs, i));
 		if ((i & 3) == 3) f_out (f, "\n");
 	}
 	for (i = 0; i < 8; i++){
-		f_out (f, "  A%d %08lX ", i, m68k_areg (regs, i));
+		f_out (f, "  A%d %08X ", i, m68k_areg (regs, i));
 		if ((i & 3) == 3) f_out (f, "\n");
 	}
 	if (regs.s == 0)
@@ -4207,7 +4208,7 @@ void m68k_dumpstate (FILE *f, uaecptr *nextpc)
 
 	m68k_disasm (f, m68k_getpc (), nextpc, 1);
 	if (nextpc)
-		f_out (f, "Next PC: %08lx\n", *nextpc);
+		f_out (f, "Next PC: %08x\n", *nextpc);
 }
 
 #ifdef SAVESTATE

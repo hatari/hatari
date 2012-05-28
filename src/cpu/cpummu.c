@@ -59,7 +59,7 @@ static void mmu_dump_ttr(const TCHAR * label, uae_u32 ttr)
 	from_addr = ttr & MMU_TTR_LOGICAL_BASE;
 	to_addr = (ttr & MMU_TTR_LOGICAL_MASK) << 8;
 
-	fprintf(stderr, "%s: [%08lx] %08lx - %08lx enabled=%d supervisor=%d wp=%d cm=%02d\n",
+	fprintf(stderr, "%s: [%08x] %08x - %08x enabled=%d supervisor=%d wp=%d cm=%02d\n",
 			label, ttr,
 			from_addr, to_addr,
 			ttr & MMU_TTR_BIT_ENABLED ? 1 : 0,
@@ -409,7 +409,7 @@ static ALWAYS_INLINE bool mmu_fill_atc_l1(uaecptr addr, bool super, bool data, b
 	}
 	if (write) {
 		if (l->write_protect) {
-			fprintf(stderr, "MMU: write protected (via %s) %lx\n", l->tt ? "ttr" : "atc", addr);
+			fprintf(stderr, "MMU: write protected (via %s) %x\n", l->tt ? "ttr" : "atc", addr);
 			goto fail;
 		}
 		if (!l->modified)
@@ -470,7 +470,7 @@ static uaecptr REGPARAM2 mmu_lookup_pagetable(uaecptr addr, bool super, bool wri
 	desc_addr = (desc & MMU_ROOT_PTR_ADDR_MASK) | i;
 	desc = phys_get_long(desc_addr);
 	if ((desc & 2) == 0) {
-		fprintf(stderr, "MMU: invalid root descriptor for %lx desc at %lx desc=%lx %s at %d\n", addr,desc_addr,desc,__FILE__,__LINE__);
+		fprintf(stderr, "MMU: invalid root descriptor for %x desc at %x desc=%x %s at %d\n", addr,desc_addr,desc,__FILE__,__LINE__);
 		return 0;
 	}
 
@@ -483,7 +483,7 @@ static uaecptr REGPARAM2 mmu_lookup_pagetable(uaecptr addr, bool super, bool wri
 	desc_addr = (desc & MMU_ROOT_PTR_ADDR_MASK) | i;
 	desc = phys_get_long(desc_addr);
 	if ((desc & 2) == 0) {
-		fprintf(stderr, "MMU: invalid ptr descriptor for %lx desc at %lx desc=%lx %s at %d\n", addr,desc_addr,desc,__FILE__,__LINE__);
+		fprintf(stderr, "MMU: invalid ptr descriptor for %x desc at %x desc=%x %s at %d\n", addr,desc_addr,desc,__FILE__,__LINE__);
 		return 0;
 	}
 	wp |= desc;
@@ -506,7 +506,7 @@ static uaecptr REGPARAM2 mmu_lookup_pagetable(uaecptr addr, bool super, bool wri
 		desc = phys_get_long(desc_addr);
 	}
 	if ((desc & 1) == 0) {
-		fprintf(stderr, "MMU: invalid page descriptor log=%08lx desc=%08lx @%08lx %s at %d\n", addr, desc, desc_addr,__FILE__,__LINE__);
+		fprintf(stderr, "MMU: invalid page descriptor log=%08x desc=%08x @%08x %s at %d\n", addr, desc, desc_addr,__FILE__,__LINE__);
 		return desc;
 	}
 
