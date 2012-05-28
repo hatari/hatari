@@ -7,29 +7,36 @@
  -------------------
 
 Emulation:
-- Support for Falcon/Videl screen borders
-- Fixes a rare potential crash when running in color mode and switching
-  to monochrome mode for more than one VBL (eg : protection code used
-  in The European Demos and The Transbeauce II Demo)
-- Handle commands 0x12 and 0x14 sent during the IKBD reset (enable both
-  mouse and joystick reporting at the same time)
-- Handle the TX IRQ in the ACIA (bits CR6+CR5=0x01)
+- ST video changes :
+  - Fixes a rare potential crash when running in color mode and switching
+    to monochrome mode for more than one VBL (eg : protection code used
+    in The European Demos and The Transbeauce II Demo)
+  - add more timings for the 224 bytes overscan detection on STE
+  - Correct write timing for BCHG/BCLR/BSET when removing borders
+  - Fix to top/bottom border removal in a rare case
+- IKBD/ACIA changes :
+  - Handle commands 0x12 and 0x14 sent during the IKBD reset (enable both
+    mouse and joystick reporting at the same time)
+  - Handle the TX IRQ in the ACIA (bits CR6+CR5=0x01)
+  - Implemented IKBD set-clock function
+- Sound changes :
+  - Improve YM2149 sound filtering to be closer to a real STF
+  - Increase output volume for STE DMA sound (compared to the YM2149's volume)
+- CPU/MMU/DSP changes :
+  - Changes in the prefetch code for some instructions
+  - Correct PC in stack when JMP generates an illegal address exception
+  - Fix to DSP stack overflow handling
+  - Fix DSP to be reset on emulation reset
+  - Fixes to FPU register value conversion
+  - 68040 MMU emulation fixes
+- Falcon changes :
+  - Support for Falcon/Videl screen borders
+  - Fixes to few Falcon IO registers
+  - Changed behavior of the Microwire registers in Falcon mode
 - Ignore FDC commands when no drive is selected
-- Fix to DSP stack overflow handling
-- Fix DSP to be reseted on emulation reset
 - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
   to TOS instead of trying to handle them as normal files
 - printer output is single, not double buffered
-- Changes in the prefetch code for some instructions
-- Changed behavior of the Microwire registers in Falcon mode
-- Fixes to FPU register value conversion
-- Fixes to few Falcon IO registers
-- 68040 MMU emulation fixes
-- add more timings for the 224 bytes overscan detection on STE
-- Correct PC in stack when JMP generates an illegal address exception
-- Correct write timing for BCHG/BCLR/BSET when removing borders
-- Implemented IKBD set-clock function
-- Fix to top/bottom border removal in a rare case
 
 Emulator:
 - Support run-time changing of CPU level and machine type from
