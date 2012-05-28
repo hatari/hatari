@@ -2692,6 +2692,7 @@ void GemDOS_Info(Uint32 bShowOpcodes)
 		return;
 	}
 
+	fprintf(stderr, "Connected drives mask: 0x%x\n\n", ConnectedDriveMask);
 	fputs("GEMDOS HDD emulation drives:\n", stderr);
 	for(i = 0; i<MAX_HARDDRIVES; i++)
 	{
