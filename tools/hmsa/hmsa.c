@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 	}
 
 	srcfile = argv[1];
-	srcdot = strchr(srcfile, '.');
+	srcdot = strrchr(srcfile, '.');
 	if(srcdot == NULL) {
 		usage(argv[0]);
 		fprintf(stderr, "ERROR: extension missing for file name %s!\n", argv[1]);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 	}
 
 	strcpy(dstfile, srcfile);
-	dstdot = strchr(dstfile, '.');
+	dstdot = strrchr(dstfile, '.');
 	if (isMsa) {
 		/* Convert MSA to ST disk image */
 		strcpy(dstdot, ".st");
