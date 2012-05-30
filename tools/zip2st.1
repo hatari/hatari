@@ -1,4 +1,4 @@
-.TH "ZIP2ST" "1" "2010-11-21" "Hatari" "Hatari utilities"
+.TH "ZIP2ST" "1" "2012-05-30" "Hatari" "Hatari utilities"
 .SH NAME
 zip2st \- a program for converting .zip archives to Atari .st disk images
 .SH SYNOPSIS
@@ -12,8 +12,12 @@ If the destination filename is not given, use the name of the .zip
 file, without the extension, and save it in the current working
 directory.
 .PP
+Any single directories (other than 'auto') at root of the zip archive
+are traversed down to avoid adding redundant intermediate directories
+from the zip file to the generated disk image.
+.PP
 The .st disk image is a raw disk image, and can be written to a floppy
-using dd(1).
+using dd(1) or converted to .msa disk image with hmsa(1).
 .PP
 The contents of the uncompressed zip file need to be smaller than
 2.88MB (the largest floppy image size supported by Hatari).
