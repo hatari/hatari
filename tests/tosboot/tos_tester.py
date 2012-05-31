@@ -412,13 +412,9 @@ class Tester:
         # check serial output
         error = verify_match(self.textinput, self.serialout)
         if error:
-            if not tos.etos:
-                print "ERROR: serial output doesn't match input:\n\t%s" % error
-                ok = False
-            else:
-                # doesn't currently work with EmuTOS
-                print "WARNING: serial output doesn't match input:\n\t%s" % error
+            print "ERROR: serial output doesn't match input:\n\t%s" % error
             os.rename(self.serialout, "%s.%s" % (self.serialout, identity))
+            ok = False
         # check printer output
         error = verify_match(self.textinput, self.printout)
         if error:
