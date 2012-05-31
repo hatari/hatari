@@ -96,7 +96,7 @@ if(READLINE_FOUND)
 	set(CMAKE_REQUIRED_LIBRARIES "")
 endif(READLINE_FOUND)
 
-find_package(ZLIB)
+find_package(ZLIB REQUIRED)
 if(ZLIB_FOUND)
 	set(HAVE_LIBZ 1)
 	set(HAVE_ZLIB_H 1)
