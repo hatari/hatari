@@ -1447,6 +1447,30 @@ static void Exception_ce000 (int nr, uaecptr oldpc)
 	exception_debug (nr);
 	MakeSR ();
 
+	/* Handle Hatari GEM and BIOS traps */
+	if (bVdiAesIntercept && nr == 0x22) {
+		/* Intercept VDI & AES exceptions (Trap #2) */
+		if (VDI_AES_Entry()) {
+			/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
+			 * This will call OpCode_VDI() after completion of Trap call!
+			 * This is used to modify specific VDI return vectors contents.
+			*/
+			VDI_OldPC = currpc;
+			currpc = CART_VDI_OPCODE_ADDR;
+		}
+	}
+	if (bBiosIntercept) {
+		/* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
+		if (nr == 0x2d) {
+			/* Intercept BIOS calls */
+			if (Bios())  return;
+		}
+		else if (nr == 0x2e) {
+			/* Intercept XBIOS calls */
+			if (XBios())  return;
+		}
+	}
+
 	if (!regs.s) {
 		regs.usp = m68k_areg (regs, 7);
 		m68k_areg (regs, 7) = regs.isp;

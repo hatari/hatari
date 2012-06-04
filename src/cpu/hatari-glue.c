@@ -29,6 +29,7 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__
 #include "maccess.h"
 #include "memory.h"
 #include "newcpu.h"
+#include "cpu_prefetch.h"
 #include "hatari-glue.h"
 
 
@@ -148,8 +149,10 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
 	}
 
 	m68k_incpc(2);
-	fill_prefetch_0();
-	return 4;
+	regs.ir = regs.irc;
+	get_word_prefetch(2);
+
+	return 4 * CYCLE_UNIT / 2;
 }
 
 
@@ -162,8 +165,10 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
 	GemDOS_OpCode();    /* handler code in gemdos.c */
 
 	m68k_incpc(2);
-	fill_prefetch_0();
-	return 4;
+	regs.ir = regs.irc;
+	get_word_prefetch(2);
+
+	return 4 * CYCLE_UNIT / 2;
 }
 
 
@@ -177,6 +182,9 @@ unsigned long OpCode_VDI(uae_u32 opcode)
 	/* Set PC back to where originated from to continue instruction decoding */
 	m68k_setpc(VDI_OldPC);
 
-	fill_prefetch_0();
-	return 4;
+	get_word_prefetch (0);
+	regs.ir = regs.irc;
+	get_word_prefetch(2);
+
+	return 4 * CYCLE_UNIT / 2;
 }
