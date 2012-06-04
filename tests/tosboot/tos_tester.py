@@ -145,7 +145,7 @@ class Config:
     fast = False
     bools = []
     disks = ("floppy", "gemdos")
-    graphics = ("mono", "rgb")
+    graphics = ("mono", "rgb", "vdi1")
     machines = ("st", "ste", "tt", "falcon")
     memsizes = (0, 4, 14)
     
