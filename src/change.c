@@ -129,6 +129,10 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	/* Did change MMU? */
 	if (changed->System.bMMU != current->System.bMMU)
 		return true;
+ 
+	/* Did change FPU? */
+	if (changed->System.n_FPUType != current->System.n_FPUType)
+		return true;
 #endif
 
 	/* Did change size of memory? */
