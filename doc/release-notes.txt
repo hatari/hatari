@@ -15,54 +15,67 @@ Emulation:
   - Correct write timing for BCHG/BCLR/BSET when removing borders
   - Fix to top/bottom border removal in a rare case
 - IKBD/ACIA changes :
-  - Handle commands 0x12 and 0x14 sent during the IKBD reset (enable both
-    mouse and joystick reporting at the same time)
+  - Handle commands 0x12 and 0x14 sent during the IKBD reset
+    (enable both mouse and joystick reporting at the same time)
   - Handle the TX IRQ in the ACIA (bits CR6+CR5=0x01)
   - Implemented IKBD set-clock function
 - Sound changes :
   - Improve YM2149 sound filtering to be closer to a real STF
   - Increase output volume for STE DMA sound (compared to the YM2149's volume)
-- CPU/MMU/DSP changes :
-  - Changes in the prefetch code for some instructions
-  - Correct PC in stack when JMP generates an illegal address exception
+- DSP changes :
   - Fix to DSP stack overflow handling
   - Fix DSP to be reset on emulation reset
-  - Fixes to FPU register value conversion
+- Old UAE core specific changes :
+  - Changes in the prefetch code for some instructions
+  - Correct PC in stack when JMP generates an illegal address exception
+- WinUAE core specific changes :
   - 68040 MMU emulation fixes
+  - Fix GEMDOS/VDI emulation (illegal opcode) handling
+  - Fix WinUAE core to work with ST emulation (boot TOS 1.x)
+  - Fix FPU to be enabled when switching to TT emulation
+  - Fixes to FPU register value conversion
 - Falcon changes :
   - Support for Falcon/Videl screen borders
   - Fixes to few Falcon IO registers
   - Changed behavior of the Microwire registers in Falcon mode
-- Ignore FDC commands when no drive is selected
-- Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
-  to TOS instead of trying to handle them as normal files
-- printer output is single, not double buffered
+- Misc changes :
+  - Ignore FDC commands when no drive is selected
+  - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
+    to TOS instead of trying to handle them as normal files
+  - printer output is single, not double buffered
 
 Emulator:
-- Support run-time changing of CPU level and machine type from
-  the GUI also with WinUAE CPU core
-- Increase max allowed VDI resolution from 1280x960 to 1920x1200
-- Revert preferred Videl resolution max zooming size setting from
-  host desktop resolution back to 832x576 it was in Hatari v1.4,
-  so that Falcon/TT emulation window sizes by default are closer
-  to ST/STE ones on larger resolution monitors
-- RS232 input/output can be disabled by specifying an empty path
-- Fix statusbar assert
+- RS232 input&output and printer output can be disabled from command
+  line by specifying an empty path
+- Video changes:
+  - Increase max allowed VDI resolution from 1280x960 to 1920x1200
+  - Revert preferred Videl resolution max zooming size setting from
+    host desktop resolution back to 832x576 it was in Hatari v1.4,
+    so that Falcon/TT emulation window sizes by default are closer
+    to ST/STE ones on larger resolution monitors
+  - Fix statusbar assert
+- WinUAE core specific changes:
+  - Default to Falcon with WinUAE core (old CPU core still defaults to ST)
+  - Support run-time changing of CPU level, FPU type and machine type
+    from the GUI (also) with WinUAE CPU core
 - Debugging improvements:
   - Fix to debugger CPU cycle profiling modifying CPU state
   - Profiling info is shown at end of disassembly lines
   - Support for tracing all symbols loaded to the debugger,
-    this can be used to get CPU and DSP function traces
+    this can be used to get function traces for both CPU and DSP
   - Show args for all Bios and most XBios & Gemdos calls when tracing
   - "info" command can output opcode tables for BIOS & XBIOS too
   - More info to FDC, IKBD, Videl and Crossbar traces
 
 Other changes:
-- Hatari UI supports file paths with spaces in them and spaces in Hatari
-  options given through its control socket can be quoted with '\'.
+- Hatari OSX UI updated for Hatari v1.6.1 changes
+- Hatari Python UI supports file paths with spaces in them and spaces in
+  Hatari options given through its control socket can be quoted with '\'.
 - Support for alpha-numeric characters in Hconsole "text" command
 - Fixes to Hatari UI and hconsole error handling and examples
 - Fixed hatari-local-midi-ring.sh & hatari-local-rs232.sh arg handling
+- zip2st removes intermediate directories from created floppy
+- Fixed hmsa to handle files with multiple "." characters in their names
 - TOS tester testing covers more GEMDOS functionality, works with
   all Hatari supported TOS versions and HW configurations and it's
   fully automated 
