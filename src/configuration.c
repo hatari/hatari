@@ -522,6 +522,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.n_FPUType = FPU_NONE;
 	ConfigureParams.System.bCompatibleFPU = true;
 	ConfigureParams.System.bMMU = false;
+	ConfigureParams.System.bCycleExactCpu = true;
 #else
 	/* ...and to ST with old UAE CPU core */
 	ConfigureParams.System.nMachineType = MACHINE_ST;
