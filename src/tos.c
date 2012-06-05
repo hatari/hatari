@@ -437,6 +437,7 @@ bool TOS_AutoStartClose(FILE *fp)
  */
 static void TOS_CheckSysConfig(void)
 {
+	MACHINETYPE oldMachineType = ConfigureParams.System.nMachineType;
 	if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
@@ -447,7 +448,6 @@ static void TOS_CheckSysConfig(void)
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
-		M68000_CheckCpuSettings();
 	}
 	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nMachineType != MACHINE_TT)
 	{
@@ -459,7 +459,6 @@ static void TOS_CheckSysConfig(void)
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 32;
 		ConfigureParams.System.nCpuLevel = 3;
-		M68000_CheckCpuSettings();
 	}
 	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nMachineType != MACHINE_FALCON)
 	{
@@ -475,7 +474,6 @@ static void TOS_CheckSysConfig(void)
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 16;
 		ConfigureParams.System.nCpuLevel = 3;
-		M68000_CheckCpuSettings();
 	}
 	else if (TosVersion <= 0x0104 &&
 	         (ConfigureParams.System.nCpuLevel > 0 || ConfigureParams.System.nMachineType != MACHINE_ST))
@@ -489,7 +487,6 @@ static void TOS_CheckSysConfig(void)
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
-		M68000_CheckCpuSettings();
 	}
 	else if ((TosVersion < 0x0300 && ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	         || (TosVersion < 0x0200 && ConfigureParams.System.nMachineType == MACHINE_TT))
@@ -502,13 +499,27 @@ static void TOS_CheckSysConfig(void)
 		IoMem_Init();
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
-		M68000_CheckCpuSettings();
 	}
 	else if (TosVersion >= 0x0300 && ConfigureParams.System.nCpuLevel < 2)
 	{
 		Log_AlertDlg(LOG_ERROR, "This TOS version requires a CPU >= 68020.\n"
 		             " ==> Switching to 68020 mode now.\n");
 		ConfigureParams.System.nCpuLevel = 2;
+	}
+	/* TOS version triggered changes? */
+	if (ConfigureParams.System.nMachineType != oldMachineType)
+	{
+#if ENABLE_WINUAE_CPU
+		if (ConfigureParams.System.nMachineType == MACHINE_TT)
+		{
+			ConfigureParams.System.bCompatibleFPU = true;
+			ConfigureParams.System.n_FPUType = FPU_68882;
+		} else {
+			ConfigureParams.System.n_FPUType = FPU_NONE;	/* TODO: or leave it as-is? */
+		}
+		ConfigureParams.System.bAddressSpace24 = true;
+		ConfigureParams.System.bMMU = false;	/* does this affect also other than 040 CPUs? */
+#endif
 		M68000_CheckCpuSettings();
 	}
 	if (TosVersion < 0x0104 && ConfigureParams.HardDisk.bUseHardDiskDirectories)

@@ -1432,7 +1432,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			else if (strcasecmp(argv[i], "falcon") == 0)
 			{
 #if ENABLE_DSP_EMU
-		ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
+				ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
 #endif
 				ConfigureParams.System.nMachineType = MACHINE_FALCON;
 				ConfigureParams.System.nCpuLevel = 3;
@@ -1442,6 +1442,17 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
+#if ENABLE_WINUAE_CPU
+			ConfigureParams.System.bMMU = false;	/* does this affect also other than 040 CPUs? */
+			ConfigureParams.System.bAddressSpace24 = true;
+			if (strcasecmp(argv[i], "tt") == 0)
+			{
+				ConfigureParams.System.bCompatibleFPU = true;
+				ConfigureParams.System.n_FPUType = FPU_68882;
+			} else {
+				ConfigureParams.System.n_FPUType = FPU_NONE;	/* TODO: or leave it as-is? */
+			}
+#endif
 			bLoadAutoSave = false;
 			break;
 
