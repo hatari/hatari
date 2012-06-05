@@ -512,23 +512,29 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
 	/* Set defaults for System */
-	ConfigureParams.System.nCpuLevel = 0;
-	ConfigureParams.System.nCpuFreq = 8;
-	ConfigureParams.System.bCompatibleCpu = true;
+#if ENABLE_WINUAE_CPU
+	/* Default to Falcon with WinUAE CPU core... */
+	ConfigureParams.System.nMachineType = MACHINE_FALCON;
+	ConfigureParams.System.nCpuLevel = 3;
+	ConfigureParams.System.nCpuFreq = 16;
+	ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
+	ConfigureParams.System.bAddressSpace24 = true;
+	ConfigureParams.System.n_FPUType = FPU_NONE;
+	ConfigureParams.System.bCompatibleFPU = true;
+	ConfigureParams.System.bMMU = false;
+#else
+	/* ...and to ST with old UAE CPU core */
 	ConfigureParams.System.nMachineType = MACHINE_ST;
-	ConfigureParams.System.bBlitter = false;
+ 	ConfigureParams.System.nCpuLevel = 0;
+ 	ConfigureParams.System.nCpuFreq = 8;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
+#endif
+	ConfigureParams.System.bCompatibleCpu = true;
+	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.bPatchTimerD = true;
 	ConfigureParams.System.bFastBoot = true;
 	ConfigureParams.System.bRealTimeClock = true;
 	ConfigureParams.System.bFastForward = false;
-#if ENABLE_WINUAE_CPU
-	ConfigureParams.System.bAddressSpace24 = true;
-	ConfigureParams.System.bCycleExactCpu = false;
-	ConfigureParams.System.n_FPUType = FPU_NONE;
-	ConfigureParams.System.bCompatibleFPU = false;
-	ConfigureParams.System.bMMU = false;
-#endif
 
 	/* Set defaults for Video */
 #if HAVE_LIBPNG
