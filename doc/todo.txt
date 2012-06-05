@@ -9,10 +9,17 @@ in touch with us.
 Emulation improvements
 ----------------------
 
-- Investigate what TOS functionality doesn't work for programs started
-  from the DESKTOP.INF and in which TOS versions that happens (like
-  printing doesn't work with TOS versions v1.02 - v2.06).  Document
-  that in manual (page) for the Hatari "autorun" feature.
+- Investigate what TOS version/functionality doesn't work for programs
+  started from the DESKTOP/NEWDESK.INF and why, e.g:
+	- Printing doesn't work with TOS versions v1.02 - v2.06
+	- Tony Benett: Virtual City demo bombs
+	- NoCrew: Aggressive Party 2 4k demo doesn't work
+	- Running 1997 shareware version doesn't work
+  Document that in manual (page) for the Hatari "autorun" feature.
+
+- Keyboard detection sometimes fails when --fast-forward is enabled
+  while TOS boots / game is loaded (e.g. Falcon Snake game packed
+  with Sentry).
 
 - Improve disk image formats support:
 	- Add support for .STT images
@@ -38,7 +45,12 @@ Emulation improvements
 
 - Get the games/demos working that are marked as non-working in the manual.
 
-- Improve TT and/or Falcon emulation, especially VIDEL
+- Improve TT and/or Falcon emulation, especially VIDEL, e.g:
+  - Palette switching during screen drawing
+  - ST screen modes centering when Videl borders are enabled
+
+- Hold & Sample and Hypermono modes for TT shifter:
+  http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2012/04/msg00030.html
 
 - TT/FastRAM support as some demos need >14MB
 

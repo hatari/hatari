@@ -40,6 +40,7 @@ Emulation:
   - Changed behavior of the Microwire registers in Falcon mode
 - Misc changes :
   - Ignore FDC commands when no drive is selected
+  - Fix TT SCSI register reads to return all bits zero instead of set
   - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
     to TOS instead of trying to handle them as normal files
   - printer output is single, not double buffered
