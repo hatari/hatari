@@ -24,6 +24,11 @@ Other files and directories:
 readme.txt -- this text file
 tos/*      -- TOSDIR in Makefile points here for your TOS images
 
+There's also "screenshot-report.sh" script to generate a HTML report
+out of the screenshots saved by TOS tester which will list missing
+tests and any differences in the produced screenshots.  For that, you
+need "reference" directory to contain screenshots from an earlier,
+succesful run of TOS tester.
 
 
 Usage
@@ -53,20 +58,27 @@ browser to view it.
 What TOS tester tests
 ---------------------
 
-These are the HW configurations combinations that TOS tester currently
+These are the HW configuration combinations that TOS tester currently
 supports:
 
-* ST, STE, TT, Falcon machine types
+* ST, STE, TT and Falcon machine types
 
-  EmuTOS 512k is tested for all the machine types, EmuTOS 192/256k and
-  TOS v2.x with all except Falcon, rest of TOSes are tested only with
-  a single machine type.
+  EmuTOS 512k is tested for all the machine types.  EmuTOS 192k, 256k
+  and TOS v2.x are tested with all machine types except Falcon. Rest
+  of TOSes are tested only with a single machine type.
 
-* TV, VGA, RGB and monochrome monitors and 1 & 4 plane VDI modes
+* TV, VGA, RGB and monochrome monitors and 1, 2 & 4 plane VDI modes
 
-* Different amounts of memory
+* Different amounts of memory from 0 (0.5MB) to 14MB
 
 * With and without GEMDOS harddisk directory emulation
+
+  Test program is started either from a floppy or an emulated GEMDOS
+  HD (directory) using *.INF file, or in case of TOS v1.00 - 1.02,
+  from floppy auto/-folder.  GEMDOS HD testing is done with more
+  extensive gemdos.prg test program, floppy testing with minimal.prg
+  test program which doesn't change the floppy content (to avoid its
+  repository file update).
 
 * Arbitrary boolean Hatari command line options specified
   with the "--bool" option
@@ -110,15 +122,16 @@ TOS tester, it will automatically select a suitable subset of HW
 combinations to test, for each given TOS versions.
 
 
-TODO
-----
+Potential TODOs
+---------------
 
-Do more testing and add some usage examples.
+Extend GEMDOS test program to test also:
+* starting another program
+* file redirection
 
-Testing program for GEMDOS HD emulation should test also file
-redirection.
+But only if all TOS versions support that properly.
 
---
+-
 
 Add testing of ASCI and IDE drives in addition to the GEMDOS HD and
 floppy tests.
@@ -132,3 +145,32 @@ so these images cannot be automatically (re-)generated.
 EmuTOS supports directly HDs with DOS (not Atari) partition table,
 but only for ASCI.  Maybe that could be tested first, possibly with
 a disk having also MiNT (= WinUAE / MMU testing at the same time).
+
+-
+
+Machine type specific test programs e.g. for:
+* ST color resolution overscan
+* STE blitter and overscan
+* TT FPU operations, could output e.g. speed
+* Falcon DSP operations
+
+If pre-existing demo programs are used for these, it's better
+if they're small.
+
+Such programs also needs to have some static screen which doesn't
+automatically advance so that a screenshot can be taken of it.
+Alternatively, test program could be accompanied with debugger
+script(s) that stop the program at suitable point and take a
+screenshot.
+
+-
+
+Current screenshot-report.sh script assumes that Hatari will always
+create identical screenshots for the same screen content.  This might
+not be true if underlying libpng gets updated, so it would be better
+to have some e.g. SDL binary that loads two images, compares their
+uncompressed content and either reports that, or shows the difference.
+
+-
+
+Tester for DMA sound output and comparison for the produced sound.
