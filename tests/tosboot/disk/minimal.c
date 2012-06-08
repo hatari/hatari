@@ -22,6 +22,6 @@ int main()
 	write2printer(INPUT_FILE);
 	write2serial(INPUT_FILE);
 	write_midi();
-	wait_key();
+	wait_enter();
 	return 0;
 }

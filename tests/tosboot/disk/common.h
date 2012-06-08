@@ -37,4 +37,4 @@ extern void copy_file(const char *input, const char *output);
 extern void truncate_file(const char *readonly);
 
 extern void clear_screen(void);
-extern void wait_key(void);
+extern void wait_enter(void);

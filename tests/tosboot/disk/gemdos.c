@@ -58,6 +58,6 @@ int main()
 	truncate_file(OUTPUT_FILE);
 
 	write_midi();
-	wait_key();
+	wait_enter();
 	return 0;
 }

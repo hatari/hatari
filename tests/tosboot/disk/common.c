@@ -176,14 +176,24 @@ void clear_screen(void)
 	printf("\033EGEMDOS version = 0x%x\r\n", Sversion());
 }
 
-void wait_key(void)
+static int is_enter(long key)
+{
+	int scancode = (key >> 16) & 0xff;
+	/* return or enter? */
+	if (scancode == 28 || scancode == 114) {
+		return 1;
+	}
+	return 0;
+}
+
+void wait_enter(void)
 {
 	/* eat buffered keys */
 	while (Cconis()) {
 		Cconin();
 	}
-	Cconws("\r\n<press a key>\r\n");
-	Cconin();
+	Cconws("\r\n<press Enter>\r\n");
+	while (!is_enter(Cconin()));
 }
 
 /* ------- TODO ------ */
