@@ -231,6 +231,10 @@ on BerliOS hatari-devel mail thread for more info.)
 Bug reports
 -----------
 
+- Atari programs can crash Hatari because sound DMA code isn't robust
+  against bad register values:
+  http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2012/02/msg00082.html
+
 - When playing Tautology 2 I noticed the mod player sound goes in and out of
   sync. fading into crackle and back. (Using Hatari 1.4 with TOS 4.04 on Mac
   OS X 10.6.5)
