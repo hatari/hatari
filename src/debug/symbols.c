@@ -84,7 +84,8 @@ static int symbols_by_name(const void *s1, const void *s2)
 
 	ret = strcmp(name1, name2);
 	if (!ret) {
-		fprintf(stderr, "WARNING: symbol '%s' listed twice.\n", name1);
+		fprintf(stderr, "WARNING: addresses 0x%x & 0x%x have the same '%s' name.\n",
+			((const symbol_t*)s1)->address, ((const symbol_t*)s2)->address, name1);
 	}
 	return ret;
 }
@@ -150,7 +151,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 m
 			continue;
 		}
 		assert(count < symbols); /* file not modified in meanwhile? */
-		if (sscanf(buffer, "%x %c %32[0-9A-Za-z_]s", &address, &symchar, name) != 3) {
+		if (sscanf(buffer, "%x %c %32[0-9A-Za-z_.]s", &address, &symchar, name) != 3) {
 			fprintf(stderr, "WARNING: syntax error in '%s' on line %d, skipping.\n", filename, line);
 			continue;
 		}
