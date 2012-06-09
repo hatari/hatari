@@ -511,16 +511,9 @@ extern void log_close (FILE *f);
 /* Every Amiga hardware clock cycle takes this many "virtual" cycles.  This
    used to be hardcoded as 1, but using higher values allows us to time some
    stuff more precisely.
-   512 is the official value from now on - it can't change, unless we want
-   _another_ config option "finegrain2_m68k_speed".
-
    We define this value here rather than in events.h so that gencpu.c sees
    it.  */
-#define CYCLE_UNIT 512
-
-/* This one is used by cfgfile.c.  We could reduce the CYCLE_UNIT back to 1,
-   I'm not 100% sure this code is bug free yet.  */
-#define OFFICIAL_CYCLE_UNIT 512
+#define CYCLE_UNIT 2
 
 /*
  * You can specify numbers from 0 to 5 here. It is possible that higher

@@ -3199,8 +3199,6 @@ static void m68k_run_1_ce (void)
 {
 	struct regstruct *r = &regs;
 
-	currcycle = 0;
-
 	ipl_fetch ();
 	for (;;) {
 		uae_u32 opcode = r->ir;
@@ -3214,9 +3212,7 @@ static void m68k_run_1_ce (void)
 			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 		}
 
-#if DEBUG_CD32CDTVIO
-		out_cd32io (m68k_getpc ());
-#endif
+		currcycle = 0;
 		(*cpufunctbl[opcode])(opcode);
 
 		/* HACK for Hatari: Adding cycles should of course not be done
@@ -3224,7 +3220,6 @@ static void m68k_run_1_ce (void)
 		 * we're really there, this helps to get this mode running at
 		 * at least to a basic extend! */
 		M68000_AddCyclesWithPairing(currcycle * 2 / CYCLE_UNIT);
-		currcycle = 0;
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
