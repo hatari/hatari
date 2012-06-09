@@ -231,7 +231,7 @@ on BerliOS hatari-devel mail thread for more info.)
 Bug reports
 -----------
 
-- Atari programs can crash Hatari because sound DMA code isn't robust
+- Atari programs can crash Hatari in Falcon mode because sound DMA code isn't robust
   against bad register values:
   http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2012/02/msg00082.html
 
