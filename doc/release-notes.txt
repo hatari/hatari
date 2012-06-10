@@ -55,6 +55,8 @@ Emulator:
     so that Falcon/TT emulation window sizes by default are closer
     to ST/STE ones on larger resolution monitors
   - Fix statusbar assert
+  - Add --sound-sync option to keep video synchronized with the audio
+    in case the OS audio's driver has some latency issues
 - WinUAE core specific changes:
   - Default to Falcon with WinUAE core (old CPU core still defaults to ST)
   - Support run-time changing of CPU level, FPU type and machine type

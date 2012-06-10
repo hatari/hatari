@@ -2239,12 +2239,15 @@ the screenshots and recorded videos.
 <a name="The Sound Dialog"></a><h4 class="gui">The Sound Dialog</h4>
 
 <div class="floatimage">
-<img src="images/sound.png" width="380" height="383" alt="Hatari's GUI - the sound dialog">
+<img src="images/sound.png" width="400" height="400" alt="Hatari's GUI - the sound dialog">
 </div>
 
 <p>Here you can control the sound subsystem.</p>
-<p>Check if you want emulated sound at all. Emulation is faster if
+<p>Check "Enabled" if you want emulated sound at all. Emulation is faster if
 sound emulation is turned off.</p>
+<p>If you experiment latency issues with your OS audio's output, you
+can check the "Synchronize" option to adjust Hatari's video emulation to match
+your OS audio.</p>
 <p>
  Nine frequencies from low to high quality are available. Experiment a
  little bit to find out which fits best for your setup.
@@ -2254,8 +2257,10 @@ sound emulation is turned off.</p>
  the STE/TT/Falcon sound DMA.
 </p>
 <p>
-YM voice volume mixing "ST table" method uses a lookup table of audio output
-voltage values measured on STF and "Linear" just averages the 3 YM voices.
+YM voices volume mixing "ST table" method uses a lookup table of audio output
+voltage values measured on STF, "Math model" uses a complex model to mix the
+3 YM voices and "Linear" just averages the 3 YM voices. Use "ST table" or "Math model"
+for accurate sound's emulation.
 </p>
 <p>
  You can select to record a piece of sound here.
