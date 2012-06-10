@@ -129,6 +129,7 @@ enum {
 	OPT_MICROPHONE,		/* sound options */
 	OPT_SOUND,
 	OPT_SOUNDBUFFERSIZE,
+	OPT_SOUNDSYNC,
 	OPT_YM_MIXING,
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
@@ -345,6 +346,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
 	  "<x>", "Sound buffer size in ms (x=0/10-100, 0=default)" },
+	{ OPT_SOUNDSYNC,   NULL, "--sound-sync",
+	  "<bool>", "Sound synchronized emulation (on|off, off=default)" },
 	{ OPT_YM_MIXING,   NULL, "--ym-mixing",
 	  "<x>", "YM sound mixing method (x=linear/table/model)" },
 
@@ -1549,6 +1552,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 					return Opt_ShowError(OPT_SOUNDBUFFERSIZE, argv[i], "Unsupported sound buffer size");
 				}
 			ConfigureParams.Sound.SdlAudioBufferSize = temp;
+			break;
+
+		case OPT_SOUNDSYNC:
+			ok = Opt_Bool(argv[++i], OPT_SOUNDSYNC, &ConfigureParams.Sound.bEnableSoundSync);
 			break;
 			
 		case OPT_MICROPHONE:

@@ -1527,6 +1527,27 @@ a good choice if you have such problems). Most users will not need this option.
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
+<b>--sound-sync &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+The emulation rate is nudged by +100 or 0 or -100 micro-seconds on occasion.
+This prevents the sound buffer from overflowing (long latency and
+lost samples) or underflowing (short latency and repeated samples).
+The emulation rate smoothly deviates by a maximum of 0.58% until
+synchronized, while the emulator continuously generates every sound
+sample and the crystal controlled sound system consumes every sample.
+<br>(on|off, off is the default)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
 <b>--ym-mixing &lt;x&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"

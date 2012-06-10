@@ -232,6 +232,7 @@ static const struct Config_Tag configs_Sound[] =
 {
 	{ "bEnableMicrophone", Bool_Tag, &ConfigureParams.Sound.bEnableMicrophone },
 	{ "bEnableSound", Bool_Tag, &ConfigureParams.Sound.bEnableSound },
+	{ "bEnableSoundSync", Bool_Tag, &ConfigureParams.Sound.bEnableSoundSync },
 	{ "nPlaybackFreq", Int_Tag, &ConfigureParams.Sound.nPlaybackFreq },
 	{ "nSdlAudioBufferSize", Int_Tag, &ConfigureParams.Sound.SdlAudioBufferSize },
 	{ "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
@@ -499,6 +500,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;
 	ConfigureParams.Sound.bEnableSound = true;
+	ConfigureParams.Sound.bEnableSoundSync = false;
 	ConfigureParams.Sound.nPlaybackFreq = 44100;
 	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",
 	        psWorkingDir, PATHSEP);

@@ -15,22 +15,23 @@ const char DlgSound_fileid[] = "Hatari dlgSound.c : " __DATE__ " " __TIME__;
 
 
 #define DLGSOUND_ENABLE     3
-#define DLGSOUND_11KHZ      5
-#define DLGSOUND_12KHZ      6
-#define DLGSOUND_16KHZ      7
-#define DLGSOUND_22KHZ      8
-#define DLGSOUND_25KHZ      9
-#define DLGSOUND_32KHZ      10
-#define DLGSOUND_44KHZ      11
-#define DLGSOUND_48KHZ      12
-#define DLGSOUND_50KHZ      13
-#define DLGSOUND_MODEL      15
-#define DLGSOUND_TABLE      16
-#define DLGSOUND_LINEAR     17
-#define DLGSOUND_RECNAME    21
-#define DLGSOUND_RECBROWSE  22
-#define DLGSOUND_RECORD     23
-#define DLGSOUND_EXIT       24
+#define DLGSOUND_SYNC       4
+#define DLGSOUND_11KHZ      6
+#define DLGSOUND_12KHZ      7
+#define DLGSOUND_16KHZ      8
+#define DLGSOUND_22KHZ      9
+#define DLGSOUND_25KHZ      10
+#define DLGSOUND_32KHZ      11
+#define DLGSOUND_44KHZ      12
+#define DLGSOUND_48KHZ      13
+#define DLGSOUND_50KHZ      14
+#define DLGSOUND_MODEL      16
+#define DLGSOUND_TABLE      17
+#define DLGSOUND_LINEAR     18
+#define DLGSOUND_RECNAME    22
+#define DLGSOUND_RECBROWSE  23
+#define DLGSOUND_RECORD     24
+#define DLGSOUND_EXIT       25
 
 
 static char dlgRecordName[35];
@@ -42,7 +43,8 @@ static SGOBJ sounddlg[] =
 	{ SGBOX,      0,0,  0, 0, 40,25, NULL },
 	{ SGBOX,      0,0,  1, 1, 38,13, NULL },
 	{ SGTEXT,     0,0,  4, 2, 13,1, "SOUND" },
-	{ SGCHECKBOX, 0,0, 14, 2, 14,1, "Enabled" },
+	{ SGCHECKBOX, 0,0, 13, 2, 14,1, "Enabled" },
+	{ SGCHECKBOX, 0,0, 25, 2, 14,1, "Synchronize" },
 
 	{ SGTEXT,     0,0,  4, 4, 14,1, "Playback quality:" },
 	{ SGRADIOBUT, 0,0,  2, 6, 10,1, "11025 Hz" },
@@ -101,6 +103,11 @@ void Dialog_SoundDlg(void)
 		sounddlg[DLGSOUND_ENABLE].state |= SG_SELECTED;
 	else
 		sounddlg[DLGSOUND_ENABLE].state &= ~SG_SELECTED;
+
+	if (ConfigureParams.Sound.bEnableSoundSync)
+		sounddlg[DLGSOUND_SYNC].state |= SG_SELECTED;
+	else
+		sounddlg[DLGSOUND_SYNC].state &= ~SG_SELECTED;
 
 	for (i = DLGSOUND_11KHZ; i <= DLGSOUND_50KHZ; i++)
 		sounddlg[i].state &= ~SG_SELECTED;
@@ -169,6 +176,8 @@ void Dialog_SoundDlg(void)
 
 	/* Read values from dialog */
 	ConfigureParams.Sound.bEnableSound = (sounddlg[DLGSOUND_ENABLE].state & SG_SELECTED);
+
+	ConfigureParams.Sound.bEnableSoundSync = (sounddlg[DLGSOUND_SYNC].state & SG_SELECTED);
 
 	for (i = DLGSOUND_11KHZ; i <= DLGSOUND_50KHZ; i++)
 	{

@@ -292,6 +292,8 @@ void Main_WaitOnVbl(void)
 	if ( DestTicks == 0 )					/* first call, init DestTicks */
 		DestTicks = CurrentTicks + FrameDuration_micro;
 
+	DestTicks += pulse_swallowing_count; /* audio.c - Audio_CallBack() */
+
 	nDelay = DestTicks - CurrentTicks;
 
 	/* Do not wait if we are in fast forward mode or if we are totally out of sync */

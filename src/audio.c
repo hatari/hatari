@@ -18,6 +18,9 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 #include "dmaSnd.h"
 #include "falcon/crossbar.h"
 
+#include "screen.h"
+#include "video.h"	/* FIXME: video.h is dependent on HBL_PALETTE_LINES from screen.h */
+
 
 int nAudioFrequency = 44100;			/* Sound playback frequency */
 bool bSoundWorking = false;			/* Is sound OK */
@@ -25,7 +28,8 @@ volatile bool bPlayingBuffer = false;		/* Is playing buffer? */
 int SoundBufferSize = 1024 / 4;			/* Size of sound buffer (in samples) */
 int CompleteSndBufIdx;				/* Replay-index into MixBuffer */
 int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */
-
+int pulse_swallowing_count = 0;			/* Sound disciplined emulation rate controlled by  */
+						/*  window comparator and pulse swallowing counter */
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -34,10 +38,41 @@ int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */
 static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
 	Sint16 *pBuffer;
-	int i;
+	int i, window, nSamplesPerFrame;
 
 	pBuffer = (Sint16 *)stream;
 	len = len / 4;  // Use length in samples (16 bit stereo), not in bytes
+
+	/* Adjust emulation rate within +/- 0.58% (10 cents) occasionally,
+	 * to synchronize sound. Note that an octave (frequency doubling)
+	 * has 12 semitones (12th root of two for a semitone), and that
+	 * one semitone has 100 cents (1200th root of two for one cent).
+	 * Ten cents are desired, thus, the 120th root of two minus one is
+	 * multiplied by 1,000,000 to convert to microseconds, and divided
+	 * by nScreenRefreshRate=60 to get a 96 microseconds swallow size.
+	 * (2^(10cents/(12semitones*100cents)) - 1) * 10^6 / nScreenRefreshRate
+	 * See: main.c - Main_WaitOnVbl()
+	 */
+
+	pulse_swallowing_count = 0;	/* 0 = Unaltered emulation rate */
+
+	if (ConfigureParams.Sound.bEnableSoundSync)
+	{
+		/* Sound synchronized emulation */
+		nSamplesPerFrame = nAudioFrequency/nScreenRefreshRate;
+		window = (nSamplesPerFrame > SoundBufferSize) ? nSamplesPerFrame : SoundBufferSize;
+
+		/* Window Comparator for SoundBufferSize */
+		if (nGeneratedSamples < window + (window >> 1))
+		/* Increase emulation rate to maintain sound synchronization */
+			pulse_swallowing_count = -5793 / nScreenRefreshRate;
+		else
+		if (nGeneratedSamples > (window << 1) + (window >> 2))
+		/* Decrease emulation rate to maintain sound synchronization */
+			pulse_swallowing_count = 5793 / nScreenRefreshRate;
+
+		/* Otherwise emulation rate is unaltered. */
+	}
 
 	if (nGeneratedSamples >= len)
 	{

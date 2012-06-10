@@ -299,6 +299,16 @@ In that case, you can use this option to force the size of the sound
 buffer to a fixed number of milliseconds of sound (using 20 is often
 a good choice if you have such problems). Most users will not need this option.
 .TP 
+.B \-\-sound-sync <bool>
+The emulation rate is nudged by +100 or 0 or -100 micro-seconds on occasion.
+This prevents the sound buffer from overflowing (long latency and
+lost samples) or underflowing (short latency and repeated samples).
+The emulation rate smoothly deviates by a maximum of 0.58% until
+synchronized, while the emulator continuously generates every sound
+sample and the crystal controlled sound system consumes every sample.
+.br
+(on|off, off=default)
+.TP 
 .B \-\-ym-mixing <x>
 Select a method for mixing the three YM2149 voice volumes together.
 "model" uses a mathematical model of the YM voices,
