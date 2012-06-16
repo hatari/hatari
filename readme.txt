@@ -132,6 +132,12 @@ one...
 
  3.2) Notes for Linux distribution packagers
 
+TOS tester in tests/tosboot/ directory can be used to verify that
+Hatari was built fine enough that it's able to boot all tested TOS
+versions in various different HW configurations and run some GEMDOS
+based tests.  For EmuTOS, use version v0.8.7 or newer, older versions
+are buggy and fail the GEMDOS tests.
+
 If Hatari package will have two application menu entries for Hatari,
 one for the Python UI embedding Hatari, and another one for the plain
 SDL version, the latter could open also a terminal window for Hatari
