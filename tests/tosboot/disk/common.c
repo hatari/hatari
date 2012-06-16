@@ -167,6 +167,7 @@ void truncate_file(const char *readonly)
 void write_midi(void)
 {
 	printf("\r\nResult -> Midi (%s)\r\n", success);
+	Vsync();  /* sync screen output before sending result */
 	Midiws(sizeof(success)-2, msg);
 	Midiws(0, "\n");
 }

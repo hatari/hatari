@@ -16,7 +16,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import getopt, os, signal, select, sys
+import getopt, os, signal, select, sys, time
 
 # add most likely hconsole locations to module import path,
 # prefer the devel version in Hatari sources, if it's found
@@ -481,7 +481,7 @@ class Tester:
 
         if tos.memwait:
             # pass memory test
-            instance.run("sleep %d" % tos.memwait)
+            time.sleep(tos.memwait)
             instance.run("keypress %s" % hconsole.Scancode.Space)
         
         # wait until test program has been run and output something to fifo
@@ -492,8 +492,11 @@ class Tester:
             print "TODO: collect info on failure, regs etc"
             output_ok = False
         
-        # get screenshot and get rid of this Hatari instance
+        # get screenshot after a small wait (to guarantee all
+        # test program output got to screen even with frameskip)
+        time.sleep(0.2)
         self.get_screenshot(instance, identity)
+        # get rid of this Hatari instance
         instance.run("kill")
         return (init_ok, prog_ok, tests_ok, output_ok)
 
