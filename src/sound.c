@@ -240,6 +240,7 @@ bool		Sound_BufferIndexNeedReset = false;
 /*--------------------------------------------------------------*/
 
 static ymsample	LowPassFilter		(ymsample x0);
+static ymsample	PWMaliasFilter		(ymsample x0);
 
 static void	interpolate_volumetable	(ymu16 volumetable[32][32][32]);
 
@@ -346,6 +347,34 @@ static ymsample	LowPassFilter(ymsample x0)
 	else
 	/* R8 Pull down: fc = 1992.0 Hz (44.1 KHz), fc = 2168.0 Hz (48 KHz) */
 		y0 = ((x0 + x1) + (6*y0)) >> 3;
+
+	x1 = x0;
+	return y0;
+}
+
+/**
+ * This piecewise selective filter works by filtering the falling
+ * edge of a sampled pulse-wave differently from the rising edge.
+ *
+ * Piecewise selective filtering is effective because harmonics on
+ * one part of a wave partially define harmonics on other portions.
+ *
+ * Piecewise selective filtering can efficiently reduce aliasing
+ * with minimal harmonic removal.
+ *
+ * I disclose this information into the public domain so that it
+ * cannot be patented. May 23 2012 David Savinkoff.
+ */
+static ymsample	PWMaliasFilter(ymsample x0)
+{
+	static	yms32 y0 = 0, x1 = 0;
+
+	if (x0 >= y0)
+	/* YM Pull up   */
+		y0 = x0;
+	else
+	/* R8 Pull down */
+		y0 = (3*(x0 + x1) + (y0<<1)) >> 3;
 
 	x1 = x0;
 	return y0;
@@ -931,11 +960,9 @@ static ymsample	YM2149_NextSample(void)
 
 	/* Apply low pass filter ? */
 	if ( UseLowPassFilter )
-	{
-		sample = LowPassFilter(sample);
-	}
-
-	return sample;
+		return LowPassFilter(sample);
+	else
+		return PWMaliasFilter(sample);
 }
 #else
 static ymsample	YM2149_NextSample(void)
@@ -1002,11 +1029,9 @@ static ymsample	YM2149_NextSample(void)
 
 	/* Apply low pass filter ? */
 	if ( UseLowPassFilter )
-	{
-		sample = LowPassFilter(sample);
-	}
-
-	return sample;
+		return LowPassFilter(sample);
+	else
+		return PWMaliasFilter(sample);
 }
 #endif
 
