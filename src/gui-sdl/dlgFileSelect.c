@@ -458,12 +458,12 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 {
 	struct dirent **files = NULL;
 	char *pStringMem;
-	char *retpath;
+	char *retpath = NULL;
 	const char *home;
 	char *path, *fname;                 /* The actual file and path names */
 	bool reloaddir = true;              /* Do we have to reload the directory file list? */
 	int retbut;
-	int oldcursorstate;
+	bool bOldMouseVisibility;
 	int selection;                      /* The selection index */
 	char *zipfilename;                  /* Filename in zip file */
 	char *zipdir;
@@ -486,6 +486,10 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	zipfilename[0] = 0;
 	fname[0] = 0;
 	path[0] = 0;
+
+	/* Save mouse state and enable cursor */
+	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
+	SDL_ShowCursor(SDL_ENABLE);
 
 	SDLGui_CenterDlg(fsdlg);
 	if (bAllowNew)
@@ -511,8 +515,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 		if (!(File_DirExists(path) || getcwd(path, FILENAME_MAX)))
 		{
 			perror("SDLGui_FileSelect: non-existing path and CWD failed");
-			free(pStringMem);
-			return NULL;
+			goto clean_exit;
 		}
 	}
 
@@ -520,11 +523,6 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	File_MakeValidPathName(path);
 	File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 	File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
-
-	/* Save old mouse cursor state and enable cursor */
-	oldcursorstate = SDL_ShowCursor(SDL_QUERY);
-	if (oldcursorstate == SDL_DISABLE)
-		SDL_ShowCursor(SDL_ENABLE);
 
 	do
 	{
@@ -538,8 +536,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 				if(!files)
 				{
 					fprintf(stderr, "SDLGui_FileSelect: ZIP_GetFilesDir error!\n");
-					free(pStringMem);
-					return NULL;
+					goto clean_exit;
 				}
 			}
 			else
@@ -557,8 +554,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			if (entries < 0)
 			{
 				fprintf(stderr, "SDLGui_FileSelect: Path not found.\n");
-				free(pStringMem);
-				return NULL;
+				goto clean_exit;
 			}
 
 			/* reload always implies refresh */
@@ -582,8 +578,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 		{
 			if (!DlgFileSelect_RefreshEntries(files, path, browsingzip))
 			{
-				free(pStringMem);
-				return NULL;
+				goto clean_exit;
 			}
 			refreshentries = false;
 		}
@@ -600,8 +595,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			if (!tempstr)
 			{
 				perror("Error while allocating temporary memory in SDLGui_FileSelect()");
-				free(pStringMem);
-				return NULL;
+				goto clean_exit;
 			}
 
 			if (browsingzip == true)
@@ -610,8 +604,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 						   zipdir, files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name))
 				{
 					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
-					free(pStringMem);
-					return NULL;
+					goto clean_exit;
 				}
 				/* directory? */
 				if (File_DoesFileNameEndWithSlash(tempstr))
@@ -665,8 +658,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 						   path, files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name))
 				{
 					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
-					free(pStringMem);
-					return NULL;
+					goto clean_exit;
 				}
 				if (File_DirExists(tempstr))
 				{
@@ -812,9 +804,6 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	while (retbut!=SGFSDLG_OKAY && retbut!=SGFSDLG_CANCEL
 	       && retbut!=SDLGUI_QUIT && retbut != SDLGUI_ERROR && !bQuitProgram);
 
-	if (oldcursorstate == SDL_DISABLE)
-		SDL_ShowCursor(SDL_DISABLE);
-
 	files_free(files);
 
 	if (browsingzip)
@@ -832,6 +821,8 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	}
 	else
 		retpath = NULL;
+clean_exit:
+	SDL_ShowCursor(bOldMouseVisibility);
 	free(pStringMem);
 	return retpath;
 }
