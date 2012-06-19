@@ -48,6 +48,8 @@ Emulation:
 Emulator:
 - RS232 input&output and printer output can be disabled from command
   line by specifying an empty path
+- Fix loading of memory snapshot from SDL GUI not to leave host cursor
+  enabled
 - Video changes:
   - Increase max allowed VDI resolution from 1280x960 to 1920x1200
   - Revert preferred Videl resolution max zooming size setting from
