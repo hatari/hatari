@@ -243,7 +243,7 @@ For best compatibility with ST emulation, one should use 192kB
 or 256kB version of EmuTOS.
 
 Additionally, several of the demos below (on floppy images) need
-EmuTOS 2012-02-08 CVS snapshot or newer.
+EmuTOS v0.8.7 or newer.
 
 
 Demos:
@@ -345,7 +345,7 @@ GEM games:
 - Centi
 - Chess* (works only from floppy)
 - Clicks* (needs wdialog)
-- Corewar (needs EmuTOS > 0.8.6)
+- Corewar (needs EmuTOS >= 0.8.7)
 - Daleks*
 - Dame
 - DBWH
@@ -354,10 +354,10 @@ GEM games:
 - Frix
 - Gem_mind
 - GEMcell
-- Gemamigo* (needs EmuTOS > 0.8.6)
+- Gemamigo* (needs EmuTOS >= 0.8.7)
 - Gnuchess
 - Gobang* (needs EmuTOS >= v0.8.6)
-- Halma (needs EmuTOS > 0.8.6)
+- Halma (needs EmuTOS >= 0.8.7)
 - Invers
 - Isola
 - Kensington
