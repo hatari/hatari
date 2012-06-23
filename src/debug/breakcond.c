@@ -737,7 +737,7 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 		return true;
 	}
 	/* Exact UAE core 32-bit PC & 16-bit SR register values
-	 * can be gotten only through AUE accessors, not directly
+	 * can be gotten only through UAE accessors, not directly
 	 */
 	if (strcasecmp(regname, "PC") == 0) {
 		bc_value->bits = 32;

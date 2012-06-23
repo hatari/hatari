@@ -29,7 +29,7 @@ Uint32 IoAccessBaseAddress;
 int nWaitStateCycles;
 void MakeFromSR(void) { }
 
-/* fake AUE core registers */
+/* fake UAE core registers */
 #include "newcpu.h"
 cpuop_func *cpufunctbl[65536];
 struct regstruct regs;
