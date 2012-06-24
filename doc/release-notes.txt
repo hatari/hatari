@@ -3,8 +3,8 @@
                                    --------
                                 Release Notes
 
- Development version
- -------------------
+ Version 1.6.2 (2012-06-24):
+ ---------------------------
 
 Emulation:
 - ST video changes :

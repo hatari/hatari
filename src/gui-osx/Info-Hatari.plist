@@ -70,7 +70,7 @@
 	<key>CFBundleSignature</key>
 	<string>HATA</string>
 	<key>CFBundleVersion</key>
-	<string>1.6.1</string>
+	<string>1.6.2</string>
 	<key>Hatari</key>
 	<string>SDL Cocoa App</string>
 	<key>LSMinimumSystemVersion</key>

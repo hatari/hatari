@@ -38,7 +38,7 @@ Emulation improvements
 	- Instead of calling Reset_Cold()/m68k_reset()/uae_reset()
 	  directly from newcpu.c, show user a notice (dialog)
 	  about what happened and let user do the reboot
-	  (see "Emulation reset, old-UAE vs. WinAUE core" mail-thread)
+	  (see "Emulation reset, old-UAE vs. WinUAE core" mail-thread)
 	- Update WinUAE core to its latest (a year newer) version
 	- Fix & document cmdline options for selecting prefetch etc
 	  - GUI options for above
