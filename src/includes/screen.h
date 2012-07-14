@@ -104,4 +104,6 @@ extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ModeChanged(void);
 extern bool Screen_Draw(void);
 
+extern bool bTTSampleHold;      /* TT special video mode */
+
 #endif  /* ifndef HATARI_SCREEN_H */

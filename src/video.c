@@ -403,6 +403,12 @@ static bool bSteBorderFlag;			/* true when screen width has been switched to 336
 static int NewSteBorderFlag = -1;		/* New value for next line */
 static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need convertion to SDL */
 
+bool bTTSampleHold = false;				/* TT special video mode */
+static bool bTTHypermono = false;		/* TT special video mode */
+
+static int TTSpecialVideoMode = 0;		/* TT special video mode */
+static int nPrevTTSpecialVideoMode = 0;	/* TT special video mode */
+
 static int LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess last time ff8264 was set for the current VBL */
 static int LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
 
@@ -2608,7 +2614,7 @@ static void Video_UpdateTTPalette(int bpp)
 		for (i = 0; i < 16; i++)
 		{
 			stcolor = IoMem_ReadWord(src);
-			ttcolor = ((stcolor&0x700) << 1) | ((stcolor&0x70) << 1) | ((stcolor&0x7) << 1);
+			ttcolor = ((stcolor&0x777) << 1) | ((stcolor&0x888) >> 3);
 			IoMem_WriteWord(dst, ttcolor);
 			src += SIZE_WORD;
 			dst += SIZE_WORD;
@@ -2617,11 +2623,41 @@ static void Video_UpdateTTPalette(int bpp)
 	}
 
 	colors = 1 << bpp;
-	if (bpp == 1)
+	if ((bpp == 1) && (TTRes == TT_HIGH_RES))
 	{
 		/* Monochrome mode... palette is hardwired (?) */
 		HostScreen_setPaletteColor(0, 255, 255, 255);
 		HostScreen_setPaletteColor(1, 0, 0, 0);
+	}
+	else if (bpp == 1)
+	{
+		/* Monochrome mode... palette is taken from first and last TT pallett color */
+		ttpalette = 0xff8400;
+		lowbyte = IoMem_ReadByte(ttpalette++);
+		highbyte = IoMem_ReadByte(ttpalette++);
+		r = (lowbyte  & 0x0f) << 4;
+		g = (highbyte & 0xf0);
+		b = (highbyte & 0x0f) << 4;
+		//printf("%d: (%d,%d,%d)\n", 0,r,g,b);
+		if(bTTHypermono)
+		{
+			r = g = b = highbyte;
+		}
+		HostScreen_setPaletteColor(0, r,g,b);
+
+		ttpalette = 0xff85fe;
+		lowbyte = IoMem_ReadByte(ttpalette++);
+		highbyte = IoMem_ReadByte(ttpalette++);
+		r = (lowbyte  & 0x0f) << 4;
+		g = (highbyte & 0xf0);
+		b = (highbyte & 0x0f) << 4;
+		if(bTTHypermono)
+		{
+			r = g = b = highbyte;
+		}
+		//printf("%d: (%d,%d,%d)\n", 1,r,g,b);
+		HostScreen_setPaletteColor(1, r,g,b);
+
 	}
 	else
 	{
@@ -2633,6 +2669,10 @@ static void Video_UpdateTTPalette(int bpp)
 			g = (highbyte & 0xf0);
 			b = (highbyte & 0x0f) << 4;
 			//printf("%d: (%d,%d,%d)\n", i,r,g,b);
+			if(bTTHypermono)
+			{
+				r = g = b = highbyte;
+			}
 			HostScreen_setPaletteColor(i, r,g,b);
 		}
 	}
@@ -2665,6 +2705,11 @@ bool Video_RenderTTScreen(void)
 	if (!(bTTColorsSync && bTTColorsSTSync))
 	{
 		Video_UpdateTTPalette(bpp);
+	}
+	else if (TTSpecialVideoMode != nPrevTTSpecialVideoMode)
+	{
+		Video_UpdateTTPalette(bpp);
+		nPrevTTSpecialVideoMode = TTSpecialVideoMode;
 	}
 
 	/* Yes, we are abusing the Videl routines for rendering the TT modes! */
@@ -3250,6 +3295,9 @@ void Video_ShifterMode_WriteByte(void)
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
 		/* Copy to TT shifter mode register: */
 		IoMem_WriteByte(0xff8262, TTRes);
+
+		bTTSampleHold = false;
+		bTTHypermono = false;
 	}
 	else if (!bUseVDIRes)	/* ST and STE mode */
 	{
@@ -3414,6 +3462,7 @@ void Video_HorScroll_Write(void)
 void Video_TTShiftMode_WriteWord(void)
 {
 	TTRes = IoMem_ReadByte(0xff8262) & 7;
+	TTSpecialVideoMode = IoMem_ReadByte(0xff8262) & 0x90;
 
 	/*fprintf(stderr, "Write to FF8262: %x, res=%i\n", IoMem_ReadWord(0xff8262), TTRes);*/
 
@@ -3422,6 +3471,25 @@ void Video_TTShiftMode_WriteWord(void)
 	{
 		IoMem_WriteByte(0xff8260, TTRes);
 		Video_ShifterMode_WriteByte();
+		IoMem_WriteByte(0xff8262, TTRes | TTSpecialVideoMode);
+	}
+
+	if(TTSpecialVideoMode & 0x80)
+	{
+		bTTSampleHold = true;
+	}
+	else
+	{
+		bTTSampleHold = false;
+	}
+
+	if(TTSpecialVideoMode & 0x10)
+	{
+		bTTHypermono = true;
+	}
+	else
+	{
+		bTTHypermono = false;
 	}
 }
 

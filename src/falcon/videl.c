@@ -1139,6 +1139,8 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 		videl.upperBorderSize = 0;
 		videl.lowerBorderSize = 0;
 		fvram = (Uint16 *) Atari2HostAddr(VIDEL_getVideoramAddress());
+	} else {
+		bTTSampleHold = false;
 	}
 
 	/* Clip to SDL_Surface dimensions */
@@ -1241,6 +1243,17 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 					}
 					/* Right border */
 					VIDEL_memset_uint8 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
+
+					if (bTTSampleHold) {
+						Uint8 TMPPixel = 0;
+						for (w=0; w < (vw); w++) {
+							if (hvram_line[w] == 0) {
+								hvram_line[w] = TMPPixel;
+							} else {
+								TMPPixel = hvram_line[w];
+							}
+						}
+					}
 
 					fvram_line += nextline;
 					hvram_line += scrpitch;
@@ -1516,6 +1529,8 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 		videl.XSize = vw;
 		videl.YSize = vh;
 		fvram = (Uint16 *) Atari2HostAddr(VIDEL_getVideoramAddress());
+	} else {
+		bTTSampleHold = false;
 	}
 
 	/* Host screen infos */
@@ -1644,6 +1659,18 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						/* Display the Right border */
 						VIDEL_memset_uint8 (hvram_column, HostScreen_getPaletteColor(0), videl.rightBorderSize * coefx);
 						hvram_column += videl.rightBorderSize * coefx;
+
+						if (bTTSampleHold) {
+							Uint8 TMPPixel = 0;
+							for (w=0; w < (vw*coefx); w++) {
+								if (hvram_line[w] == 0) {
+									hvram_line[w] = TMPPixel;
+								} else {
+									TMPPixel = hvram_line[w];
+								}
+							}
+						}
+
 					}
 
 					hvram_line += scrpitch;
