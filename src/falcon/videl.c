@@ -162,7 +162,6 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&videl, sizeof(videl));
-	MemorySnapShot_Store(&videl_zoom, sizeof(videl_zoom));
 	MemorySnapShot_Store(&vfc_counter, sizeof(vfc_counter));
 }
 
