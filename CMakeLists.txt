@@ -117,6 +117,11 @@ if(PORTAUDIO_FOUND)
 	set(HAVE_PORTAUDIO 1)
 endif(PORTAUDIO_FOUND)
 
+find_package(CapsImage)
+if(CAPSIMAGE_FOUND)
+	set(HAVE_CAPSIMAGE 1)
+endif(CAPSIMAGE_FOUND)
+
 # ################
 # CPP Definitions:
 # ################

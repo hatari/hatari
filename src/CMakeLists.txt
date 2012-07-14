@@ -129,6 +129,10 @@ if(PORTAUDIO_FOUND)
 	target_link_libraries(hatari ${PORTAUDIO_LIBRARY})
 endif(PORTAUDIO_FOUND)
 
+if(CAPSIMAGE_FOUND)
+	target_link_libraries(hatari ${CAPSIMAGE_LIBRARY})
+endif(CAPSIMAGE_FOUND)
+
 if(WIN32)
 	# Needed for socket() on Windows
 	target_link_libraries(hatari ws2_32)

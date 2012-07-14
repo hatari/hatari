@@ -9,6 +9,9 @@
 /* Define if you have the PortAudio library */
 #cmakedefine HAVE_PORTAUDIO 1
 
+/* Define if you have the capsimage library */
+#cmakedefine HAVE_CAPSIMAGE 1
+
 /* Define if you have a X11 environment */
 #cmakedefine HAVE_X11 1
 
