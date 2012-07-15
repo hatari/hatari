@@ -59,6 +59,10 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include <sys/time.h>
 #endif
 
+#ifdef HAVE_CAPSIMAGE
+#include <caps/capsimage.h>
+#endif
+
 
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
 
@@ -581,6 +585,15 @@ static void Main_Init(void)
 		fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
 		exit(-1);
 	}
+
+#ifdef HAVE_CAPSIMAGE
+	if (CAPSInit() != imgeOk)
+	{
+		fprintf(stderr, "Could not initialize the capsimage library\n" );
+		exit(-1);
+	}
+#endif
+
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 	Resolution_Init();
 	SDLGui_Init();
@@ -656,6 +669,10 @@ static void Main_UnInit(void)
 	HostScreen_UnInit();
 	Screen_UnInit();
 	Exit680x0();
+
+#ifdef HAVE_CAPSIMAGE
+	CAPSExit();
+#endif
 
 	/* SDL uninit: */
 	SDL_Quit();

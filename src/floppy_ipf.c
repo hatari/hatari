@@ -17,6 +17,9 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "floppy_ipf.h"
 #include "log.h"
 
+#ifdef HAVE_CAPSIMAGE
+#include <caps/capsimage.h>
+#endif
 
 
 
@@ -38,7 +41,11 @@ bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
  */
 Uint8 *IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 {
-#ifdef HAVE_CAPSIMAGE
+#ifndef HAVE_CAPSIMAGE
+	Log_AlertDlg(LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled.");
+	return NULL;
+
+#else
 	Uint8 *pIPFFile;
 
 	*pImageSize = 0;
@@ -46,14 +53,42 @@ Uint8 *IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 	/* Just load directly a buffer, and set ImageSize accordingly */
 	pIPFFile = File_Read(pszFileName, pImageSize, NULL);
 	if (!pIPFFile)
+	{
 		*pImageSize = 0;
+		return NULL;
+	}
 	
 	*pImageType = FLOPPY_IMAGE_TYPE_IPF;
-	return pIPFFile;
 
-#else
-	Log_AlertDlg(LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled.");
-	return NULL;
+	/* */
+	int i, id = CAPSAddImage();
+
+        if (CAPSLockImageMemory(id, pIPFFile, (CapsULong)*pImageSize, DI_LOCK_MEMREF ) == imgeOk)
+        {
+                struct CapsImageInfo cii;
+
+                if (CAPSGetImageInfo(&cii, id) == imgeOk)
+                {
+                        printf("Type: %d\n", (int)cii.type);
+                        printf("Release: %d\n", (int)cii.release);
+                        printf("Revision: %d\n", (int)cii.revision);
+                        printf("Min Cylinder: %d\n", (int)cii.mincylinder);
+                        printf("Max Cylinder: %d\n", (int)cii.maxcylinder);
+                        printf("Min Head: %d\n", (int)cii.minhead);
+                        printf("Max Head: %d\n", (int)cii.maxhead);
+                        printf("Creation Date: %04d/%02d/%02d %02d:%02d:%02d.%03d\n", (int)cii.crdt.year, (int)cii.crdt.month, (int)cii.crdt.day, (int)cii.crdt.hour, (int)cii.crdt.min, (int)cii.crdt.sec, (int)cii.crdt.tick);
+                        printf("Platforms:");
+                        for (i = 0; i < CAPS_MAXPLATFORM; i++)
+                                if (cii.platform[i] != ciipNA)
+                                        printf(" %s", CAPSGetPlatformName(cii.platform[i]));
+                        printf("\n");
+                }
+                CAPSUnlockImage(id);
+        }
+        CAPSRemImage(id);
+
+	
+	return pIPFFile;
 #endif
 }
 
