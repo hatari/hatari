@@ -15,6 +15,7 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "floppy.h"
 #include "floppy_ipf.h"
+#include "log.h"
 
 
 
@@ -37,6 +38,7 @@ bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
  */
 Uint8 *IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 {
+#ifdef HAVE_CAPSIMAGE
 	Uint8 *pIPFFile;
 
 	*pImageSize = 0;
@@ -45,9 +47,14 @@ Uint8 *IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 	pIPFFile = File_Read(pszFileName, pImageSize, NULL);
 	if (!pIPFFile)
 		*pImageSize = 0;
-
+	
 	*pImageType = FLOPPY_IMAGE_TYPE_IPF;
 	return pIPFFile;
+
+#else
+	Log_AlertDlg(LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled.");
+	return NULL;
+#endif
 }
 
 
