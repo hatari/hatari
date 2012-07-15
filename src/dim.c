@@ -60,7 +60,7 @@ bool DIM_FileNameIsDIM(const char *pszFileName, bool bAllowGZ)
  * Load .DIM file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-Uint8 *DIM_ReadDisk(const char *pszFileName, long *pImageSize)
+Uint8 *DIM_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 {
 	Uint8 *pDimFile;
 	Uint8 *pDiskBuffer = NULL;
@@ -96,6 +96,7 @@ Uint8 *DIM_ReadDisk(const char *pszFileName, long *pImageSize)
 		*pImageSize = 0;
 	}
 
+	*pImageType = FLOPPY_IMAGE_TYPE_DIM;
 	return pDiskBuffer;
 }
 

@@ -6,5 +6,5 @@
 */
 
 extern bool DIM_FileNameIsDIM(const char *pszFileName, bool bAllowGZ);
-extern Uint8 *DIM_ReadDisk(const char *pszFileName, long *pImageSize);
+extern Uint8 *DIM_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType);
 extern bool DIM_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize);

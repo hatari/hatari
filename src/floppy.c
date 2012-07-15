@@ -125,6 +125,7 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
+		MemorySnapShot_Store(&EmulationDrives[i].ImageType, sizeof(EmulationDrives[i].ImageType));
 		MemorySnapShot_Store(&EmulationDrives[i].bDiskInserted, sizeof(EmulationDrives[i].bDiskInserted));
 		MemorySnapShot_Store(&EmulationDrives[i].nImageBytes, sizeof(EmulationDrives[i].nImageBytes));
 		if (!bSave && EmulationDrives[i].bDiskInserted)
@@ -487,8 +488,9 @@ int	Floppy_DriveTransitionUpdateState ( int Drive )
  */
 bool Floppy_InsertDiskIntoDrive(int Drive)
 {
-	long nImageBytes = 0;
-	char *filename;
+	long	nImageBytes = 0;
+	char	*filename;
+	int	ImageType = 0;
 
 	/* Eject disk, if one is inserted (doesn't inform user) */
 	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
@@ -507,11 +509,11 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 
 	/* Check disk image type and read the file: */
 	if (MSA_FileNameIsMSA(filename, true))
-		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(filename, &nImageBytes);
+		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(filename, &nImageBytes, &ImageType);
 	else if (ST_FileNameIsST(filename, true))
-		EmulationDrives[Drive].pBuffer = ST_ReadDisk(filename, &nImageBytes);
+		EmulationDrives[Drive].pBuffer = ST_ReadDisk(filename, &nImageBytes, &ImageType);
 	else if (DIM_FileNameIsDIM(filename, true))
-		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(filename, &nImageBytes);
+		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(filename, &nImageBytes, &ImageType);
 	else if (ZIP_FileNameIsZIP(filename))
 	{
 		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
@@ -527,6 +529,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	strcpy(EmulationDrives[Drive].sFileName, filename);
 
 	/* Store size and set drive states */
+	EmulationDrives[Drive].ImageType = ImageType;
 	EmulationDrives[Drive].nImageBytes = nImageBytes;
 	EmulationDrives[Drive].bDiskInserted = true;
 	EmulationDrives[Drive].bContentsChanged = false;

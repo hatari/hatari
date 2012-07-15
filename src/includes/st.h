@@ -6,5 +6,5 @@
 */
 
 extern bool ST_FileNameIsST(const char *pszFileName, bool bAllowGZ);
-extern Uint8 *ST_ReadDisk(const char *pszFileName, long *pImageSize);
+extern Uint8 *ST_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType);
 extern bool ST_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize);

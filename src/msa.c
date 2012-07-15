@@ -215,7 +215,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
  * Uncompress .MSA file into memory, set number bytes of the disk image and
  * return a pointer to the buffer.
  */
-Uint8 *MSA_ReadDisk(const char *pszFileName, long *pImageSize)
+Uint8 *MSA_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 {
 	Uint8 *pMsaFile;
 	Uint8 *pDiskBuffer = NULL;
@@ -233,6 +233,7 @@ Uint8 *MSA_ReadDisk(const char *pszFileName, long *pImageSize)
 		free(pMsaFile);
 	}
 
+	*pImageType = FLOPPY_IMAGE_TYPE_MSA;
 	/* Return pointer to buffer, NULL if failed */
 	return pDiskBuffer;
 }

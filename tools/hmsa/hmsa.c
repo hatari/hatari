@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
 	unsigned char *diskbuf;
 	const char *srcfile, *srcdot;
 	char *dstfile, *dstdot;
+	int ImageType;
 
 	if(argc < 2 || argv[1][0] == '-') {
 		usage(argv[0]);
@@ -205,7 +206,7 @@ int main(int argc, char *argv[])
 	
 	if (isMsa) {
 		/* Read the source disk image */
-		diskbuf = MSA_ReadDisk(srcfile, &disksize);
+		diskbuf = MSA_ReadDisk(srcfile, &disksize, &ImageType);
 		if (!diskbuf || disksize < 512*8) {
 			fprintf(stderr, "ERROR: could not read MSA disk %s!\n", srcfile);
 			retval = -1;
