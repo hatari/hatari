@@ -3,7 +3,7 @@ set(SOURCES
 	audio.c avi_record.c bios.c blitter.c cart.c cfgopts.c
 	clocks_timings.c configuration.c options.c change.c
 	control.c cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c
-	floppy.c gemdos.c hd6301_cpu.c hdc.c ide.c ikbd.c ioMem.c
+	floppy.c floppy_ipf.c gemdos.c hd6301_cpu.c hdc.c ide.c ikbd.c ioMem.c
 	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
 	keymap.c m68000.c main.c midi.c memorySnapShot.c mfp.c
 	paths.c  psg.c printer.c resolution.c rs232.c reset.c rtc.c

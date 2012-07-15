@@ -1,7 +1,7 @@
 /*
   Hatari - floppy.c
 
-  This file is distributed under the GNU Public License, version 2 or at
+  This file is distributed under the GNU General Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
   This is where we read/write sectors to/from the disk image buffers.
@@ -29,15 +29,16 @@ const char Floppy_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
-#include "dim.h"
 #include "file.h"
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
 #include "log.h"
 #include "memorySnapShot.h"
-#include "msa.h"
 #include "st.h"
+#include "msa.h"
+#include "dim.h"
+#include "floppy_ipf.h"
 #include "zip.h"
 #include "screen.h"
 #include "video.h"
@@ -55,6 +56,7 @@ static const char * const pszDiskImageNameExts[] =
 	".msa",
 	".st",
 	".dim",
+	".ipf",
 	NULL
 };
 
@@ -514,6 +516,8 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		EmulationDrives[Drive].pBuffer = ST_ReadDisk(filename, &nImageBytes, &ImageType);
 	else if (DIM_FileNameIsDIM(filename, true))
 		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(filename, &nImageBytes, &ImageType);
+	else if (IPF_FileNameIsIPF(filename, true))
+		EmulationDrives[Drive].pBuffer = IPF_ReadDisk(filename, &nImageBytes, &ImageType);
 	else if (ZIP_FileNameIsZIP(filename))
 	{
 		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
@@ -563,13 +567,15 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			/* Is OK to save image (if boot-sector is bad, don't allow a save) */
 			if (EmulationDrives[Drive].bOKToSave && !Floppy_IsWriteProtected(Drive))
 			{
-				/* Save as .MSA or .ST image? */
+				/* Save as .MSA, .ST, .DIM or .IPF image? */
 				if (MSA_FileNameIsMSA(psFileName, true))
 					bSaved = MSA_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ST_FileNameIsST(psFileName, true))
 					bSaved = ST_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (DIM_FileNameIsDIM(psFileName, true))
 					bSaved = DIM_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (IPF_FileNameIsIPF(psFileName, true))
+					bSaved = IPF_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ZIP_FileNameIsZIP(psFileName))
 					bSaved = ZIP_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				if (bSaved)
