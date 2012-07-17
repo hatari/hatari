@@ -94,6 +94,7 @@ Uint8 *DIM_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 	if (pDiskBuffer == NULL)
 	{
 		*pImageSize = 0;
+		return NULL;
 	}
 
 	*pImageType = FLOPPY_IMAGE_TYPE_DIM;

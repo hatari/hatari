@@ -233,6 +233,9 @@ Uint8 *MSA_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 		free(pMsaFile);
 	}
 
+	if ( ( pMsaFile == NULL ) || ( pDiskBuffer == NULL ) )
+		return NULL;
+
 	*pImageType = FLOPPY_IMAGE_TYPE_MSA;
 	/* Return pointer to buffer, NULL if failed */
 	return pDiskBuffer;

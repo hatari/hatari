@@ -492,7 +492,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 {
 	long	nImageBytes = 0;
 	char	*filename;
-	int	ImageType = 0;
+	int	ImageType = FLOPPY_IMAGE_TYPE_NONE;
 
 	/* Eject disk, if one is inserted (doesn't inform user) */
 	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
@@ -524,10 +524,14 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, zippath, &nImageBytes);
 	}
 
-	if (EmulationDrives[Drive].pBuffer == NULL)
+	if ( (EmulationDrives[Drive].pBuffer == NULL) || ( ImageType == FLOPPY_IMAGE_TYPE_NONE ) )
 	{
 		return false;
 	}
+
+	/* Init the drive emulation for IPF images */
+//	if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+//		IPF_Insert ();
 
 	/* Store image filename (required for ejecting the disk later!) */
 	strcpy(EmulationDrives[Drive].sFileName, filename);
@@ -594,6 +598,11 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 		bEjected = true;
 	}
 
+	/* Free data used by this IPF image */
+//	if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+//		IPF_Eject ();
+
+
 	/* Drive is now empty */
 	if (EmulationDrives[Drive].pBuffer != NULL)
 	{
@@ -602,6 +611,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 	}
 
 	EmulationDrives[Drive].sFileName[0] = '\0';
+	EmulationDrives[Drive].ImageType = FLOPPY_IMAGE_TYPE_NONE;
 	EmulationDrives[Drive].nImageBytes = 0;
 	EmulationDrives[Drive].bDiskInserted = false;
 	EmulationDrives[Drive].bContentsChanged = false;

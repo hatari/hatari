@@ -64,7 +64,10 @@ Uint8 *ST_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 	/* Just load directly a buffer, and set ImageSize accordingly */
 	pStFile = File_Read(pszFileName, pImageSize, NULL);
 	if (!pStFile)
+	{
 		*pImageSize = 0;
+		return NULL;
+	}
 
 	*pImageType = FLOPPY_IMAGE_TYPE_ST;
 	return pStFile;
