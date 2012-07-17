@@ -59,11 +59,33 @@ Uint8 *IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 	}
 	
 	*pImageType = FLOPPY_IMAGE_TYPE_IPF;
+	return pIPFFile;
+#endif
+}
 
-	/* */
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save .IPF file from memory buffer. Returns true is all OK.
+ */
+bool IPF_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
+{
+	/* saving is not supported for IPF files */
+	return false;
+}
+
+
+
+bool	IPF_Insert ( Uint8 *pImageBuffer , long ImageSize )
+{
+#ifndef HAVE_CAPSIMAGE
+	return false;
+
+#else
+		/* */
 	int i, id = CAPSAddImage();
 
-        if (CAPSLockImageMemory(id, pIPFFile, (CapsULong)*pImageSize, DI_LOCK_MEMREF ) == imgeOk)
+        if ( CAPSLockImageMemory ( id , pImageBuffer , (CapsULong)ImageSize , DI_LOCK_MEMREF ) == imgeOk)
         {
                 struct CapsImageInfo cii;
 
@@ -88,17 +110,9 @@ Uint8 *IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
         CAPSRemImage(id);
 
 	
-	return pIPFFile;
+	return true;
 #endif
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Save .IPF file from memory buffer. Returns true is all OK.
- */
-bool IPF_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
-{
-	/* saving is not supported for IPF files */
-	return false;
-}
+

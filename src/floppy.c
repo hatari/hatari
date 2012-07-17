@@ -529,9 +529,13 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		return false;
 	}
 
-	/* Init the drive emulation for IPF images */
-//	if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
-//		IPF_Insert ();
+	/* For IPF, call specific function to handle the inserted image */
+	if ( ImageType == FLOPPY_IMAGE_TYPE_IPF )
+		if ( IPF_Insert ( EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
+		{
+			free ( EmulationDrives[Drive].pBuffer );
+			return false;
+		}
 
 	/* Store image filename (required for ejecting the disk later!) */
 	strcpy(EmulationDrives[Drive].sFileName, filename);
