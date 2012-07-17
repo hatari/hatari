@@ -552,6 +552,9 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));
 	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));
 	MemorySnapShot_Store(&ShifterFrame, sizeof(ShifterFrame));
+	MemorySnapShot_Store(&bTTSampleHold, sizeof(bTTSampleHold));
+	MemorySnapShot_Store(&bTTHypermono, sizeof(bTTHypermono));
+	MemorySnapShot_Store(&TTSpecialVideoMode, sizeof(TTSpecialVideoMode));
 }
 
 
@@ -2631,7 +2634,7 @@ static void Video_UpdateTTPalette(int bpp)
 	}
 	else if (bpp == 1)
 	{
-		/* Monochrome mode... palette is taken from first and last TT pallett color */
+		/* Monochrome mode... palette is taken from first and last TT color */
 		ttpalette = 0xff8400;
 		lowbyte = IoMem_ReadByte(ttpalette++);
 		highbyte = IoMem_ReadByte(ttpalette++);
