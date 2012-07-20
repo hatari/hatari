@@ -24,8 +24,8 @@ if(ENABLE_OSX_BUNDLE)
 	    gui-osx/Hatari.icns gui-osx/English.lproj gui-osx/French.lproj)
 endif(ENABLE_OSX_BUNDLE)
 
-# When building for Windows, define specific sources for gui and ressources
-# and set the subsytem of the resulting .exe to "windows GUI" instead of "console"
+# When building for Windows, define specific sources for gui and resources
+# and set the subsystem of the resulting .exe to "windows GUI" instead of "console"
 if(WIN32)
 	set(GUIWIN_SOURCES gui-win/opencon.c)
 	set(GUIWIN_RES gui-win/hatari-winicon.rc)
