@@ -42,6 +42,7 @@
 
   -->
   </style>
+  <script type="text/javascript" src="toc.js"></script>
 </head>
 
 <body>
@@ -61,43 +62,13 @@ Hatari on the WWW: <strong><a href="http://hatari.tuxfamily.org/"
 </p>
 
 <h2>Index</h2>
-<ul>
-  <li><a href="#Introduction">Introduction</a>
-  <ul>
-    <li><a href="#Reporting">Reporting compatibility issues</a>
-  </ul>
-  <li><a href="#ST">ST software compatibility list</a>
-  <ul>
-    <li><a href="#ST games">ST games</a>
-    <li><a href="#ST demos">ST demos</a>
-    <li><a href="#ST applications">ST applications</a>
-    <ul>
-      <li><a href="#midinotes">Midi setup</a>
-    </ul>
-  </ul>
-  <li><a href="#STE">STE software compatibility list</a>
-  <ul>
-    <li><a href="#STE games">STE games</a>
-    <li><a href="#STE demos">STE demos</a>
-    <li><a href="#STE applications">STE applications</a>
-  </ul>
-  <li><a href="#TT">TT software compatibility list</a>
-  <ul>
-    <li><a href="#TT games">TT games</a>
-    <li><a href="#TT demos">TT demos</a>
-  </ul>
-  <li><a href="#Falcon">Falcon software compatibility list</a>
-  <ul>
-    <li><a href="#Falcon games">Falcon games</a>
-    <li><a href="#Falcon demos">Falcon demos</a>
-    <li><a href="#Falcon applications">Falcon applications</a>
-  </ul>
-  <li><a href="#TT/Falcon utilities">TT/Falcon utilities</a>
-  <li><a href="#Software">Software sites</a>
-</ul>
+
+<div id="toc">
+<!-- The TOC is generated automatically via JavaScript -->
+</div>
 
 
-<a name="Introduction"></a><h2>Introduction</h2>
+<h2>Introduction</h2>
 
 <p>Here are lists of Atari software that have been tested with
 different Hatari versions and configurations.  <em>The lists concentrate
@@ -120,7 +91,7 @@ or with which it was last tested still to have issues, is given in
 the version field.</p>
 
 
-<a name="Reporting"></a><h3>Reporting compatibility issues</h3>
+<h3>Reporting compatibility issues</h3>
 
 <p>If something that works on the real hardware doesn't work properly
 in Hatari (or something has started working in latest Hatari version)
@@ -152,12 +123,12 @@ For more information, see emutos.txt.</li>
 </ul>
 
 
-<a name="ST"></a><h2>ST software compatibility list</h2>
+<h2>ST software compatibility list</h2>
 
 <p>This is not a comprehensive list. By default <b>everything that
 works on a real ST should work also in Hatari</b>.</p>
 
-<a name="ST games"></a><h4>ST games</h4>
+<h4>ST games</h4>
 
 <table border="1" cellpadding="3">
   <caption align="bottom">Tested ST games</caption>
@@ -374,7 +345,7 @@ works on a real ST should work also in Hatari</b>.</p>
   </tbody>
 </table>
 
-<a name="ST demos"></a><h4>ST demos</h4>
+<h4>ST demos</h4>
 
 <p>Some (very) rare demos try to install IKBD code.  Hatari doesn't have
 full 6301 emulator, but has specific code to handle these particular demos.
@@ -699,7 +670,7 @@ for border removal).</p>
   </tbody>
 </table>
 
-<a name="ST applications"></a><h4>ST applications</h4>
+<h4>ST applications</h4>
 
 <p>Note that some applications can even crash at startup if their
 configuration or data files are not writable.</p>
@@ -992,21 +963,21 @@ configuration or data files are not writable.</p>
   </tbody>
 </table>
 
-<a name="midinotes"></a><h4>Midi setup</h4>
+<h4>Midi setup</h4>
 
 <p>If you don't have a MIDI sequencer, on Linux you can use
 a softsynth like Timidity or FluidSynth instead (if your distribution
 supports ALSA). For instructions, see midi-linux.txt file.</p>
 
 
-<a name="STE"></a><h2>STE software compatibility list</h2>
+<h2>STE software compatibility list</h2>
 
 <p>By default everything should work with the STE emulation.  The lists
 below contain nearly all the STE specific software that the developers
 could get their hands on...</p>
 
 
-<a name="STE games"></a><h4>STE games</h4>
+<h4>STE games</h4>
 
 <p>First are some STE games that do work with the STE features
 in Hatari.  Most of these games work only on STE, but here are also some
@@ -1233,7 +1204,7 @@ are just STE enhanced.  These are marked with '*'.</p>
   </tbody>
 </table>
 
-<a name="STE demos"></a><h4>STE demos</h4>
+<h4>STE demos</h4>
 
 <p>Blitter emulation cycle-accuracy is an issue for some demos.</p>
 
@@ -1559,7 +1530,7 @@ are just STE enhanced.  These are marked with '*'.</p>
   </tbody>
 </table>
 
-<a name="STE applications"></a><h4>STE applications</h4>
+<h4>STE applications</h4>
 
 <p>Finally some STE only or STE enhanced applications.</p>
 <table border="1" cellpadding="3">
@@ -1602,13 +1573,13 @@ are just STE enhanced.  These are marked with '*'.</p>
 </table>
 
 
-<a name="TT"></a><h2>TT software compatibility list</h2>
+<h2>TT software compatibility list</h2>
 
 <p>Most programs that work on TT work also in the Falcon emulation and
 as all 1-8 bit GEM programs work without problems under TT emulation
 this section lists only TT-specific games and demos.</p>
 
-<a name="TT games"></a><h4>TT games</h4>
+<h4>TT games</h4>
 
 <table border="1" cellpadding="3">
   <caption align="bottom">TT games</caption>
@@ -1633,7 +1604,7 @@ this section lists only TT-specific games and demos.</p>
   </tbody>
 </table>
 
-<a name="TT demos"></a><h4>TT demos</h4>
+<h4>TT demos</h4>
 
 <table border="1" cellpadding="3">
   <caption align="bottom">TT demos</caption>
@@ -1701,7 +1672,7 @@ this section lists only TT-specific games and demos.</p>
 </table>
 
 
-<a name="Falcon"></a><h2>Falcon software compatibility list</h2>
+<h2>Falcon software compatibility list</h2>
 
 <p>You can select between three different DSP emulation modes with
 the Hatari "--dsp" option:
@@ -1728,7 +1699,7 @@ NoCrew's DSP MP2-player) that are marked as working in the list below,
 <em>work only with the experimental WinUAE core</em>. Please see
 Hatari readme.txt on how to enable that.</p>
 
-<a name="Falcon games"></a><h4>Falcon games</h4>
+<h4>Falcon games</h4>
 
 <p>Here are listed some Falcon games:</p>
 <table border="1" cellpadding="3">
@@ -2462,7 +2433,7 @@ Hatari readme.txt on how to enable that.</p>
 </table>
 
 
-<a name="Falcon demos"></a><h4>Falcon demos</h4>
+<h4>Falcon demos</h4>
 
 <p>Here are listed some Falcon demos:</p>
 <table border="1" cellpadding="3">
@@ -3095,7 +3066,7 @@ and demo tools from the dhs.nu <a href="http://dhs.nu/">demoscene</a>
 site.</p>
 
 
-<a name="Falcon applications"></a><h4>Falcon applications</h4>
+<h4>Falcon applications</h4>
 
 <p>Here are listed some <em>Falcon specific</em> applications:</p>
 <table border="1" cellpadding="3">
@@ -3248,7 +3219,7 @@ site.</p>
 </table>
 
 
-<a name="TT/Falcon utilities"></a><h2>TT/Falcon utilities</h2>
+<h2>TT/Falcon utilities</h2>
 
 <p>Here are some utilities that either have specific TT and/or Falcon
 support or work only on them.</p>
@@ -3297,7 +3268,7 @@ support or work only on them.</p>
 <br>
 
 
-<a name="Software"></a><h2>Software sites</h2>
+<h2>Software sites</h2>
 
 <p>In case you're new to the Atari scene or an old-timer who's forgotten
 where all the freely available software is, these file archive sites
@@ -3317,7 +3288,7 @@ still retain their Atari sections:</p>
  src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
  border="0" height="31" width="88"></a></td>
       <td align="right">
-      Hatari development team, June 2012
+      Hatari development team, July 2012
       </td>
     </tr>
   </tbody>

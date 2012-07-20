@@ -48,6 +48,7 @@
 
   -->
   </style>
+  <script type="text/javascript" src="toc.js"></script>
 </head>
 
 <body>
@@ -67,91 +68,15 @@ Hatari on the WWW: <strong><a href="http://hatari.tuxfamily.org/"
 </p>
 
 <h2>Index</h2>
-<ul>
-  <li><a href="#Introduction">Introduction</a>
-  <ul>
-    <li><a href="#General description">General description</a>
-    <li><a href="#Features">Features</a>
-    <li><a href="#STE hardware emulation">STE hardware emulation</a>
-    <li><a href="#TT hardware emulation">Experimental TT hardware emulation</a>
-    <li><a href="#Falcon hardware emulation">Falcon hardware emulation</a>
-    <li><a href="#System requirements">System requirements</a>
-  </ul>
-  <li><a href="#Compiling and running">Compiling and running</a>
-  <ul>
-    <li><a href="#Compiling Hatari">Compiling Hatari</a>
-    <li><a href="#Installation of a TOS ROM">Installation of a TOS ROM</a>
-    <li><a href="#Installation of the binary">Installation of the binary</a>
-    <li><a href="#Running Hatari for the first time">Running Hatari for the first time</a>
-  </ul>
-  <li><a href="#Command line options">Command line options and arguments</a>
-  <li><a href="#Using the emulated system">Using the emulated system</a>
-  <ul>
-    <li><a href="#The GUI">The GUI</a>
-    <ul>
-      <li><a href="#The Main Menu">The Main Menu</a>
-      <li><a href="#The File Selector Dialog">The File Selector Dialog</a>
-      <li><a href="#The System Dialog">The System Dialog</a>
-      <li><a href="#The Floppy Disks Dialog">The Floppy Disks Dialog</a>
-      <li><a href="#The Hard Disks Dialog">The Hard Disks Dialog</a>
-      <li><a href="#The Memory Dialog">The Memory Dialog</a>
-      <li><a href="#The ROM Dialog">The ROM Dialog</a>
-      <li><a href="#The Joystick Dialog">The Joystick Dialog</a>
-      <li><a href="#The Atari Monitor Dialog">The Atari Monitor Dialog</a>
-      <li><a href="#The Hatari Screen Dialog">The Hatari Screen Dialog</a>
-      <li><a href="#The Keyboard Dialog">The Keyboard Dialog</a>
-      <li><a href="#The Sound Dialog">The Sound Dialog</a>
-      <li><a href="#The Devices Dialog">The Devices Dialog</a>
-    </ul>
-    <li><a href="#Keyboard shortcuts">Keyboard shortcuts</a>
-    <li><a href="#Emulated Atari ST keyboard">Emulated Atari ST keyboard</a>
-    <li><a href="#Emulated mouse">Emulated mouse</a>
-    <li><a href="#Emulated joystick">Emulated joystick</a>
-    <li><a href="#Emulated video">Emulated video</a>
-    <li><a href="#Emulated printer">Emulated printer</a>
-    <li><a href="#Emulated RS232">Emulated RS232</a>
-  </ul>
-  <li><a href="#Floppy disk images">Floppy disk images</a>
-  <li><a href="#Hard disk support">Hard disk support</a>
-  <ul>
-    <li><a href="#GEMDOS based hard disk emulation">GEMDOS based hard disk emulation</a></li>
-    <li><a href="#ACSI hard disk emulation">ACSI hard disk emulation</a></li>
-    <li><a href="#IDE hard disk emulation">IDE hard disk emulation</a></li>
-  </ul>
-  <li><a href="#Moving files to/from hard disk images">Moving files to/from hard disk images</a>
-  <ul>
-    <li><a href="#Using HD Driver with GEMDOS partitions">Using HD Driver with GEMDOS partitions</a></li>
-    <li><a href="#Accessing HDD image partitions outside of Hatari">Accessing HDD image partitions outside of Hatari</a></li>
-  </ul>
-  <li><a href="#The debugger">The debugger</a>
-  <ul>
-    <li><a href="#General debugger use">General debugger use</a>
-    <li><a href="#Inspecting emulation state">Inspecting emulation state</a>
-    <li><a href="#Debug symbols">Debug symbols</a>
-    <li><a href="#Breakpoints">Breakpoints</a>
-    <li><a href="#Tracing">Tracing</a>
-    <li><a href="#Profiling">Profiling</a>
-    <li><a href="#Usage examples">Usage examples</a>
-    <li><a href="#Build notes">Build notes</a>
-  </ul>
-  <li><a href="#Performance">Performance</a>
-  <ul>
-    <li><a href="#Improving Hatari performance">Improving Hatari performance</a>
-    <li><a href="#Emulation options">Emulation options</a>
-    <li><a href="#Emulator options">Emulator options</a>
-    <li><a href="#Measuring the performance">Measuring the performance</a>
-  </ul>
-  <li><a href="#Appendix">Appendix</a>
-  <ul>
-    <li><a href="#Copying">Copying</a>
-    <li><a href="#Introduction to Emulation">Introduction to Emulation</a>
-  </ul>
-</ul>
+
+<div id="toc">
+<!-- The TOC is generated automatically via JavaScript -->
+</div>
 
 
-<a name="Introduction"></a><h2>Introduction</h2>
+<h2>Introduction</h2>
 
-<a name="General description"></a><h3>General description</h3>
+<h3>General description</h3>
 <p>
 Hatari is an Atari ST, STE, TT and Falcon emulator for Linux, OSX,
 Windows and other Systems which are supported by the SDL library.
@@ -173,7 +98,7 @@ and demos. Of course you can run normal GEM applications with Hatari, too.
 Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
 </p>
 
-<a name="Features"></a><h3>Features</h3>
+<h3>Features</h3>
 <ul>
   <li>68000 - 68040 emulation via the UAE CPU core
       (MMU emulation only with the WinUAE CPU core)</li>
@@ -213,7 +138,6 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
   <li>TOS versions 1.00, 1.02, 1.04 and 2.06 (and EmuTOS) can be used in ST mode.</li>
 </ul>
 
-<a name="STE hardware emulation"></a>
 <h4>STE hardware emulation</h4>
 <p>There is support for following additional STE features:</p>
 <ul>
@@ -227,7 +151,6 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
   <li>TOS versions 1.06, 1.62, 2.05 and 2.06 (and EmuTOS) can be used in STE mode.</li>
 </ul>
 
-<a name="TT hardware emulation"></a>
 <h4>Experimental TT hardware emulation</h4>
 <p>There is support for following additional TT features:</p>
 <ul>
@@ -237,7 +160,6 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
   <li>Only TOS version 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
 
-<a name="Falcon hardware emulation"></a>
 <h4>Falcon hardware emulation</h4>
 <p>There is support for following additional Falcon features:</p>
 <ul>
@@ -261,7 +183,7 @@ Software Compatibility List</a> for which Atari programs are known
 to be affected by them.</p>
 
 
-<a name="System requirements"></a><h3>System requirements</h3>
+<h3>System requirements</h3>
 
 <p> Hatari currently has the following minimum system requirements:</p>
 <ul>
@@ -293,9 +215,9 @@ the following systems:
   <li>Windows XP</li>
 </ul>
 
-<a name="Compiling and running"></a><h2>Compiling and running</h2>
+<h2>Compiling and running</h2>
 
-<a name="Compiling Hatari"></a><h3>Compiling Hatari</h3>
+<h3>Compiling Hatari</h3>
 
 <p>Required:</p>
 <ul>
@@ -350,7 +272,7 @@ prefix) in a format familiar from GNU Autotools using programs.  Type
 to see all the options supported by this script.
 </p>
 
-<a name="Installation of a TOS ROM"></a><h3>Installation of a TOS ROM</h3>
+<h3>Installation of a TOS ROM</h3>
 
 <p>
 Before you can start Hatari, you have to copy a TOS ROM image to the data
@@ -381,7 +303,7 @@ more details), but it's free and compatible with Hatari.</p>
 find a suitable TOS image in the default dir, you'll get the chance to
 select a TOS image file from the GUI. </p>
 
-<a name="Installation of the binary"></a><h3>Installation of the binary</h3>
+<h3>Installation of the binary</h3>
 
 <p> Type <span class="commandline">make install</span> as "root" user to
 do a systemwide installation.</p>
@@ -392,7 +314,7 @@ be now able to start the Hatari executable from anywhere.</p>
 option <span class="commandline">--help</span> to find out more about
 its command line parameters. </p>
 
-<a name="Running Hatari for the first time"></a><h3>Running Hatari for the first time</h3>
+<h3>Running Hatari for the first time</h3>
 
 <p> Now type <span class="commandline">hatari</span> to run the
 emulator for the first time. If all goes
@@ -403,8 +325,7 @@ to turn on the GUI to
 configure Hatari to suit your needs, press <span class="key">F11</span>
 to toggle windowed and fullscreen mode. </p>
 
-<a name="Command line options"></a><h2>Command line options
-and arguments</h2>
+<h2>Command line options and arguments</h2>
 
 <p>Usage:</p>
 <pre>
@@ -440,7 +361,6 @@ and removing extra paragraphs:
   { if(out) print }' | sed -e 's/h2/h3/g' -e 's/<\/*p>//g'
 -->
 
-<a name="General options"></a>
 <h3>General options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -521,7 +441,6 @@ load keyboard mapping from &lt;file&gt;
 </td>
 </table>
 
-<a name="Common display options"></a>
 <h3>Common display options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -677,7 +596,6 @@ Force internal bitdepth (x = 8/15/16/32, 0=disable)
 </td>
 </table>
 
-<a name="ST/STE specific display options"></a>
 <h3>ST/STE specific display options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -749,7 +667,6 @@ Zoom low resolution (1=no, 2=yes)
 </td>
 </table>
 
-<a name="Falcon/TT specific display options"></a>
 <h3>Falcon/TT specific display options</h3>
 <p>
 Zooming to sizes specified below is internally done using integer
@@ -838,7 +755,6 @@ Whether to do monitor aspect ratio correction (enabled by default)
 </td>
 </table>
 
-<a name="VDI options"></a>
 <h3>VDI options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -901,7 +817,6 @@ Use extended VDI resolution with height &lt;h&gt; (200 &lt; h &lt;= 960)
 </td>
 </table>
 
-<a name="Screen capture options"></a>
 <h3>Screen capture options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -979,7 +894,6 @@ Use &lt;file&gt; to record avi
 </td>
 </table>
 
-<a name="Devices options"></a>
 <h3>Devices options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1089,7 +1003,6 @@ Enable serial port support and use &lt;file&gt; as the output device
 </td>
 </table>
 
-<a name="Disk options"></a>
 <h3>Disk options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1231,7 +1144,6 @@ speed up FDC emulation (can cause incompatibilities)
 </td>
 </table>
 
-<a name="Memory options"></a>
 <h3>Memory options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1265,7 +1177,6 @@ Load memory snap-shot &lt;file&gt;
 </td>
 </table>
 
-<a name="ROM options"></a>
 <h3>ROM options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1318,7 +1229,6 @@ disabled)
 </td>
 </table>
 
-<a name="CPU options"></a>
 <h3>CPU options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1367,7 +1277,6 @@ Use a more compatible but slower 68000 CPU mode
 </td>
 </table>
 
-<a name="Misc system options"></a>
 <h3>Misc system options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1463,7 +1372,6 @@ Enable real-time clock
 </td>
 </table>
 
-<a name="Sound options"></a>
 <h3>Sound options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1562,7 +1470,6 @@ on STF and "linear" just averages the 3 YM voices.
 </td>
 </table>
 
-<a name="Debug options"></a>
 <h3>Debug options</h3>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1722,18 +1629,18 @@ Exit after X VBLs
 <p>Type <span class="commandline">hatari --help</span> to list all
 the command line options supported by a given version of Hatari.</p>
 
-<a name="Using the emulated system"></a><h2>Using the emulated system</h2>
+<h2>Using the emulated system</h2>
 
 <p> Once you've started Hatari succesfully, you can use the emulator as
 an almost complete Atari ST computer system. </p>
 
-<a name="The GUI"></a><h3>The GUI</h3>
+<h3>The GUI</h3>
 
 <p>Press <span class="key">F12</span> to enter the GUI. Navigate it
 with the mouse.
 The GUI is rather self explanatory.</p>
 
-<a name="The Main Menu"></a><h4 class="gui">The Main Menu</h4>
+<h4 class="gui">The Main Menu</h4>
 
 <div class="floatimage">
 <img src="images/main.png" width="500" height="304" alt="Hatari's GUI - the main menu">
@@ -1768,7 +1675,7 @@ changes that you have made.
 </p>
 
 
-<a name="The File Selector Dialog"></a><h4 class="gui">The File Selector Dialog</h4>
+<h4 class="gui">The File Selector Dialog</h4>
 
 <div class="floatimage">
 <img src="images/fileselector.png" width="640" height="399" alt="Hatari's GUI - the fileselector">
@@ -1792,7 +1699,7 @@ changes that you have made.
 </p>
 
 
-<a name="The System Dialog"></a><h4 class="gui">The System Dialog</h4>
+<h4 class="gui">The System Dialog</h4>
 
 <div class="floatimage">
 <img src="images/system.png" width="360" height="384" alt="Hatari's GUI - the system dialog">
@@ -1880,7 +1787,7 @@ changes that you have made.
  <span class="commandline">--machine</span> command line option.</p>
 
 
-<a name="The Floppy Disks Dialog"></a><h4 class="gui">The Floppy Disks Dialog</h4>
+<h4 class="gui">The Floppy Disks Dialog</h4>
 
 <div class="floatimage">
 <img src="images/floppydisks.png" width="640" height="320" alt="Hatari's GUI - the floppy disks dialog">
@@ -1952,7 +1859,7 @@ ends with a 'b'.
 </p>
 
 
-<a name="The Hard Disks Dialog"></a><h4 class="gui">The Hard Disks Dialog</h4>
+<h4 class="gui">The Hard Disks Dialog</h4>
 
 <div class="floatimage">
 <img src="images/harddisks.png" width="640" height="304" alt="Hatari's GUI - the hard disks dialog">
@@ -1983,7 +1890,7 @@ ends with a 'b'.
 </p>
 
 
-<a name="The Memory Dialog"></a><h4 class="gui">The Memory Dialog</h4>
+<h4 class="gui">The Memory Dialog</h4>
 
 <div class="floatimage">
 <img src="images/memory.png" width="398" height="349" alt="Hatari's GUI - the memory dialog">
@@ -2005,7 +1912,7 @@ different versions of Hatari. E.q. if you compile a newer Hatari, you
 cannot load your old memory snapshots back.</p>
 
 
-<a name="The ROM Dialog"></a><h4 class="gui">The ROM Dialog</h4>
+<h4 class="gui">The ROM Dialog</h4>
 
 <div class="floatimage">
 <img src="images/tos.png" width="519" height="367" alt="Hatari's GUI - the ROM dialog">
@@ -2039,7 +1946,7 @@ when changing one of these option.
 </p>
 
 
-<a name="The Joystick Dialog"></a><h4 class="gui">The Joystick Dialog</h4>
+<h4 class="gui">The Joystick Dialog</h4>
 
 <div class="floatimage">
 <img src="images/joystick.png" width="320" height="288" alt="Hatari's GUI - the joystick dialog">
@@ -2072,7 +1979,7 @@ certain games. In some other games, it gets worse if you enable this option.</p>
 <p>See also the chapter "Emulated Joystick" for details.</p>
 
 
-<a name="The Atari Monitor Dialog"></a><h4 class="gui">The Atari Monitor Dialog</h4>
+<h4 class="gui">The Atari Monitor Dialog</h4>
 
 <div class="floatimage">
 <img src="images/monitor.png" width="340" height="304" alt="Hatari's
@@ -2117,8 +2024,7 @@ activate any extended resolution here.
 </p>
 
 
-<a name="The Hatari Screen Dialog"></a><h4 class="gui">The Hatari
-Screen Dialog</h4>
+<h4 class="gui">The Hatari Screen Dialog</h4>
 
 <div class="floatimage">
 <img src="images/screen.png" width="520" height="320" alt="Hatari's
@@ -2204,7 +2110,7 @@ Selecting "Crop statusbar" option will leave statusbar out from
 the screenshots and recorded videos.
 </p>
 
-<a name="The Keyboard Dialog"></a><h4 class="gui">The Keyboard Dialog</h4>
+<h4 class="gui">The Keyboard Dialog</h4>
 
 <div class="floatimage">
 <img src="images/keyboard.png" width="459" height="223" alt="Hatari's GUI - the keyboard dialog">
@@ -2236,7 +2142,7 @@ the screenshots and recorded videos.
 </p>
 
 
-<a name="The Sound Dialog"></a><h4 class="gui">The Sound Dialog</h4>
+<h4 class="gui">The Sound Dialog</h4>
 
 <div class="floatimage">
 <img src="images/sound.png" width="400" height="400" alt="Hatari's GUI - the sound dialog">
@@ -2272,7 +2178,7 @@ for accurate sound's emulation.
 </p>
 
 
-<a name="The Devices Dialog"></a><h4 class="gui">The Devices Dialog</h4>
+<h4 class="gui">The Devices Dialog</h4>
 
 <div class="floatimage">
 <img src="images/devices.png" width="520" height="383" alt="Hatari's GUI - the device dialog">
@@ -2305,7 +2211,7 @@ Hatari instances.
 </p>
 
 
-<a name="Keyboard shortcuts"></a><h3 style="clear:both;">Keyboard shortcuts</h3>
+<h3 style="clear:both;">Keyboard shortcuts</h3>
 
 <p> While the emulator is running, you can activate or toggle various
 features via Hatari keyboard shortcuts. Below are listed the default
@@ -2399,7 +2305,7 @@ The required key values can be seen in the SDL_keysym.h include file
 (usually in /usr/include/SDL/).</p>
 
 
-<a name="Emulated Atari ST keyboard"></a><h3>Emulated Atari ST keyboard</h3>
+<h3>Emulated Atari ST keyboard</h3>
 
 <p> All other keys on the keyboard act as the normal Atari ST keys so
 pressing SPACE on your PC will result in an emulated press of the SPACE
@@ -2448,7 +2354,7 @@ simultenous key presses (or even just two depending on which keys
 are in question).  Expensive gaming keyboards support more.</p>
 
 
-<a name="Emulated mouse"></a><h3>Emulated mouse</h3>
+<h3>Emulated mouse</h3>
 
 <p>For obvious reasons your PC mouse will act as the emulated Atari ST
 mouse. In fullscreen mode it will act as expected, directly controlling
@@ -2464,7 +2370,7 @@ Hatari is up and running. Note: pausing the emulation will also
 (temporarily) release the mouse grab.</p>
 <p>Mouse scrollwheel will act as cursor up and down keys. </p>
 
-<a name="Emulated joystick"></a><h3>Emulated joystick</h3>
+<h3>Emulated joystick</h3>
 
 <p>The Atari ST joysticks are emulated ofcourse allowing you to play
 your favourite games with Hatari. </p>
@@ -2489,7 +2395,7 @@ cursorkeys in this mode as long as you press <span class="key">SHIFT</span>
 along with the cursorkeys.  You can also configure these keys from the
 joystick options.</p>
 
-<a name="Emulated video"></a><h3>Emulated video</h3>
+<h3>Emulated video</h3>
 
 <p>Hatari emulates all screen modes of the original machine.</p>
 <p>
@@ -2506,7 +2412,7 @@ into your Mega ST.</p>
 <p>Make sure to disable extended VDI modes for playing games as 99% of
 all ST games will not be able to make use of higher resolutions.</p>
 
-<a name="Emulated printer"></a><h3>Emulated printer</h3>
+<h3>Emulated printer</h3>
 
 <p>Due to the fact that printer handling is very different between Unix
 style machines and the Atari ST, emulation
@@ -2526,7 +2432,7 @@ Atari and set your printer device file as Hatari's printer output.<br>
 <em>NOTE:</em> This has not been tested yet and the Hatari team cannot
 guarantee that it will work.</p>
 
-<a name="Emulated RS232"></a><h3>Emulated RS232</h3>
+<h3>Emulated RS232</h3>
 
 <p>Serial communications in Hatari is designed to directly use a serial
 port on your PC.</p>
@@ -2536,7 +2442,7 @@ the communication parameters like baudrate from your ST communications
 software. Hatari will do the rest and handle
 the serial input and output for you.</p>
 
-<a name="Floppy disk images"></a><h2>Floppy disk images</h2>
+<h2>Floppy disk images</h2>
 
 <p>Hatari does not use floppy disks directly but disk images due to
 differences between the floppy disk controllers of the ST and the PC.
@@ -2607,7 +2513,7 @@ your highscores and savegames are lost if you load the game from such
 a zipped disk image.</p>
 
 
-<a name="Hard disk support"></a><h2>Hard disk support</h2>
+<h2>Hard disk support</h2>
 
 <p>
 Hatari supports three ways of emulating Atari hard drives: The low-level
@@ -2629,7 +2535,7 @@ TOS 1.0x supports up to 256MB partitions and TOS 4.0x up to 1GB ones.
 </p>
 
 
-<a name="GEMDOS based hard disk emulation"></a><h3>GEMDOS based hard disk emulation</h3>
+<h3>GEMDOS based hard disk emulation</h3>
 <p>
 With the GEMDOS based drive emulation, you can easily "mount" a
 folder from the host file system to a drive of the emulated Atari. To
@@ -2677,7 +2583,7 @@ files on the GEMDOS emulated drive, you should try to copy them to a
 floppy disk image or a real hard disk image!
 </p>
 
-<a name="ACSI hard disk emulation"></a><h3>ACSI hard disk emulation</h3>
+<h3>ACSI hard disk emulation</h3>
 <p>
 To use the ACSI hard disk emulation, you need a hard disk image file
 with a pre-installed HD driver in it. You can try to get an image of
@@ -2704,7 +2610,7 @@ After installing the hard disk driver to the fresh HD image with
 HINSTALL.PRG, you can boot directly from the hard disk image.
 </p>
 
-<a name="IDE hard disk emulation"></a><h3>IDE hard disk emulation</h3>
+<h3>IDE hard disk emulation</h3>
 <p>
 <p>
 As the IDE disk format (little endian) differs from the ACSI disk format
@@ -2745,8 +2651,7 @@ with the <span class="commandline">--ide-master</span> parameter.
 </p>
 
 
-<a name="Moving files to/from hard disk images"></a><h2>Moving files
-to/from hard disk images</h2>
+<h2>Moving files to/from hard disk images</h2>
 
 <p>Moving files to and from Atari hard disk images can be done
 either through GEMDOS partitions (host directories mounted inside
@@ -2760,8 +2665,7 @@ a GEMDOS partition i.e. such to be before hard disk image partitions,
 and still to be able to access all the IDE/ACSI partitions, you need to
 use HD Driver.</p>
 
-<a name="Using HD Driver with GEMDOS partitions"></a><h3>Using HD Driver
-with GEMDOS partitions</h3>
+<h3>Using HD Driver with GEMDOS partitions</h3>
 
 <p>Uwe Seimet's <a href="http://www.seimet.de/atari/en/hddriver.html">HD
 Driver</a> works fine with both the Hatari GEMDOS partitions and normal
@@ -2796,8 +2700,7 @@ its AUTO folder, like this: "<span class="commandline">hatari
 </p>
 
 
-<a name="Accessing HDD image partitions outside of Hatari"></a><h3>Accessing
-HDD image partitions outside of Hatari</h3>
+<h3>Accessing HDD image partitions outside of Hatari</h3>
 
 <p>
 If you want to access the harddisk image partitions also outside
@@ -2879,7 +2782,7 @@ the disk image from Hatari:
 # losetup -d $loop
 </pre>
 
-<a name="The debugger"></a><h2>The debugger</h2>
+<h2>The debugger</h2>
 
 <p>
 Hatari has a built-in debugging interface which can be used for
@@ -2914,7 +2817,7 @@ xterm -T "Hatari debug window" -e hatari
 </pre>
 
 
-<a name="General debugger use"></a><h3>General debugger use</h3>
+<h3>General debugger use</h3>
 
 <p>
 At the debugger prompt, type "help" to get a list of all
@@ -2960,8 +2863,8 @@ DSP commands:
       dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
 
-<a name="Entering arguments to debugger commands">
-</a><h4>Entering arguments to debugger commands</h4>
+
+<h4>Entering arguments to debugger commands</h4>
 
 <p>
 After writing (with TAB completion) one of the above command names,
@@ -3022,7 +2925,7 @@ by typing '$' and pressing TAB.
 </p>
 
 
-<a name="Inspecting emulation state"></a><h3>Inspecting emulation state</h3>
+<h3>Inspecting emulation state</h3>
 
 <p>
 In the beginning, probably the most interesting commands are "m" and "d"
@@ -3096,7 +2999,7 @@ Without arguments "lock" command will show the available options
 </p>
 
 
-<a name="Debug symbols"></a><h3>Debug symbols</h3>
+<h3>Debug symbols</h3>
 
 <p>
 You can load symbol name/address information from a file to the
@@ -3142,7 +3045,7 @@ program basepage, it's set after the program is loaded by TOS, see
 </p>
 
 
-<a name="Breakpoints"></a><h3>Breakpoints</h3>
+<h3>Breakpoints</h3>
 
 <p>
 There are two ways to specify breakpoints for Hatari. First, there are
@@ -3194,7 +3097,7 @@ conditions need to be true for a breakpoint to trigger.
 </p>
 
 
-<a name="Breakpoint options"></a><h4>Breakpoint options</h4>
+<h4>Breakpoint options</h4>
 
 <p>
 Normally when a breakpoint is triggered, emulation is stopped and you
@@ -3260,7 +3163,7 @@ for address breakpoints you can give only one these options.  And
 </p>
 
 
-<a name="Breakpoint conditions"></a><h4>Breakpoint conditions</h4>
+<h4>Breakpoint conditions</h4>
 
 <p>
 "b help" explains very briefly the breakpoint condition syntax:
@@ -3347,7 +3250,7 @@ above.
 </p>
 
 
-<a name="Breakpoint variables"></a><h4>Breakpoint variables</h4>
+<h4>Breakpoint variables</h4>
 
 <p>
 In addition to loaded symbols, the debugger supports also setting
@@ -3404,7 +3307,6 @@ info gemdos 1
 </pre>
 
 
-<a name="Chaining breakpoints"></a>
 <h4>Chaining breakpoints and other actions</h4>
 
 <p>
@@ -3472,7 +3374,7 @@ option.
 </p>
 
 
-<a name="Tracing"></a><h3>Tracing</h3>
+<h3>Tracing</h3>
 
 <p>
 After analyzing the emulation state and/or setting new breakpoints,
@@ -3525,7 +3427,7 @@ breakpoint option.
 </p>
 
 
-<a name="Profiling"></a><h3>Profiling</h3>
+<h3>Profiling</h3>
 
 <p>
 Profiling tells where the emulated code spends most of its (emulated)
@@ -3617,7 +3519,7 @@ also be shown in the disassembly output.
 </p>
 
 
-<a name="Usage examples"></a><h3>Usage examples</h3>
+<h3>Usage examples</h3>
 
 <p>
 Here's a list of some common debugging tasks and how to do them
@@ -3783,7 +3685,7 @@ the DSP.
 </p>
 
 
-<a name="Build notes"></a><h3>Build notes</h3>
+<h3>Build notes</h3>
 
 <p>
 Lastly, the debugger is much nicer to use with the command line
@@ -3802,7 +3704,7 @@ By default it should be enabled.
 </p>
 
 
-<a name="Performance"></a><h2>Performance</h2>
+<h2>Performance</h2>
 
 <p>Hatari performance varies between Atari programs, depending on what
 features Hatari needs to emulate for them.  Less accurate Atari
@@ -3813,7 +3715,7 @@ overhead.</p>
 have a noticeable effect on performance.</p>
 
 
-<a name="Improving Hatari performance"></a><h3>Improving Hatari performance</h3>
+<h3>Improving Hatari performance</h3>
 
 <p>
 Hatari currently runs best in 16 or 32 bits per pixel color depth
@@ -3851,7 +3753,7 @@ can be slower despite optimizations.
 </p>
 
 
-<a name="Emulation options"></a><h3>Emulation options</h3>
+<h3>Emulation options</h3>
 
 <p>
 Emulation options have the largest impact on performance.
@@ -3860,7 +3762,7 @@ the emulation needs to be rebooted for any of these changes to take
 an effect!
 </p>
 
-<h5>DSP</h5>
+<h4>DSP</h4>
 <p>
 Emulating the Falcon DSP is performance-wise several times more demanding
 than emulating the m68k; DSP runs at higher frequency, executes many
@@ -3871,7 +3773,7 @@ that do use DSP, many use it only for background music and work
 fine without the real DSP emulation.
 </p>
 
-<h5>Timer-D</h5>
+<h4>Timer-D</h4>
 <p>
 The single largest factor contributing to general Hatari emulation
 performance is the handling of interrupts.  Enabling Timer-D patching
@@ -3880,7 +3782,7 @@ significantly reduces the number of interrupts generated by the emulated
 Atari machine. Using this has adverse effect only for very rare programs.
 </p>
 
-<h5>Compatible CPU</h5>
+<h4>Compatible CPU</h4>
 <p>
 After the DSP and  interrupts, m68k emulation takes most time.
 Disabling the "Slower but more compatible CPU" option will speed up
@@ -3907,7 +3809,7 @@ a last resort.
 </p>
 
 
-<a name="Emulator options"></a><h3>Emulator options</h3>
+<h3>Emulator options</h3>
 
 <p>
 Emulator options don't usually have as large effect on performance as
@@ -3916,7 +3818,7 @@ just the quality of the emulation "output". These options can also
 be toggled at run-time without rebooting the emulation.
 </p>
 
-<h5>Sound</h5>
+<h4>Sound</h4>
 <p>
 Internal Hatari sound handling and the SDL_mixer sound thread
 libALSA sound processing can account up to 1/3 of the Hatari CPU usage
@@ -3927,7 +3829,7 @@ in Hatari as this can significantly reduce the number of generated
 interrupts.
 </p>
 
-<h5>Frame skipping</h5>
+<h4>Frame skipping</h4>
 <p>
 Screen rendering can take noticeable amount of CPU time. The default
 Hatari "auto" frame skipping should be used unless there's a good
@@ -3944,7 +3846,7 @@ emulation to run slower than a real Atari.  If SDL doesn't use VSync,
 Hatari does redundant work to convert frames you can't see.
 </p>
 
-<h5>Zooming</h5>
+<h4>Zooming</h4>
 <p>
 If you are not using frame skip, disabling zooming can have
 noticeable improvement on performance.  You can do this by specifying
@@ -3955,7 +3857,7 @@ mode-lines (e.g. "320x200") to your xorg.conf file.  If you still want
 to use zooming, disabling borders may help a bit.
 </p>
 
-<h5>Spec512 color handling</h5>
+<h4>Spec512 color handling</h4>
 <p>
 Handling Spec512 color modes which change the ST/e palette constantly
 takes some extra CPU.  If you have problems with CPU usage in such
@@ -3965,7 +3867,7 @@ completely by zeroing the threshold for that with the
 <span class="commandline">--spec512 0</span> option.
 </p>
 
-<h5>Statusbar and drive LED</h5>
+<h4>Statusbar and drive LED</h4>
 <p>
 If your version of the SDL library uses VSync to synchronize the screen
 output, drawing of the statusbar or the drive LED may have some minor
@@ -3973,7 +3875,7 @@ impact on performance too.  Normally they shouldn't.
 </p>
 
 
-<a name="Measuring the performance"></a><h3>Measuring the performance</h3>
+<h3>Measuring the performance</h3>
 
 <p>
 There are a couple of ways to monitor and measure Hatari performance.
@@ -4021,9 +3923,9 @@ at the same time you're making the measurements.
 </p>
 
 
-<a name="Appendix"></a><h2>Appendix</h2>
+<h2>Appendix</h2>
 
-<a name="Copying"></a><h3>Copying</h3>
+<h3>Copying</h3>
 
 <div class="backdropped">
 <p>This program is free software; you can redistribute it and/or modify
@@ -4045,7 +3947,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 Foundation</a> | <a href="http://www.fsf.org/licenses/gpl.html">The
 GNU General Public License</a></p>
 
-<a name="Introduction to Emulation"></a><h3>Introduction to Emulation</h3>
+<h3>Introduction to Emulation</h3>
 
 <p>Emulation via software is an art and Hatari is an example of this.</p>
 <p>Emulation is to make a computer behave like a (probably) completely
@@ -4091,7 +3993,7 @@ parts of the emulated system is much trickier.
  src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
  border="0" height="31" width="88"></a></td>
       <td align="right">
-      June 2012
+      July 2012
       </td>
     </tr>
   </tbody>
