@@ -86,7 +86,7 @@ static Uint32 LedColorOn, LedColorOff, RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
 
-#define MAX_MESSAGE_LEN 35
+#define MAX_MESSAGE_LEN 34
 typedef struct msg_item {
 	struct msg_item *next;
 	char msg[MAX_MESSAGE_LEN+1];
