@@ -67,12 +67,11 @@ Hatari on the WWW: <strong><a href="http://hatari.tuxfamily.org/"
  target="_blank">http://hatari.tuxfamily.org/</a></strong>
 </p>
 
-<h2>Index</h2>
+<h2 class="no-TOC">Index</h2>
 
-<div id="toc">
+<div id="generated-toc">
 <!-- The TOC is generated automatically via JavaScript -->
 </div>
-
 
 <h2>Introduction</h2>
 
@@ -1797,7 +1796,7 @@ changes that you have made.
  This dialog can be used to choose which floppy disks should be emulated
  in the disk drives. You can use most standard Atari ST disk image files.
  You may select and browse also zipped disk images. See the chapter
- <a href="#Floppy disk images">"Floppy disk images"</a> for details.
+ <a href="#Floppy_disk_images">"Floppy disk images"</a> for details.
 </p>
 <p>
  Click on the button <span class="button">Browse</span> next to the
@@ -2185,7 +2184,7 @@ for accurate sound's emulation.
 </div>
 
 <p>Check the first checkmark to enable experimental printer support.
-See the <a href="#Emulated printer">Emulated printer</a> section for
+See the <a href="#Emulated_printer">Emulated printer</a> section for
 details.</p>
 
 <p>As Hatari currently only supports printing to file, click on <span
@@ -2412,7 +2411,7 @@ into your Mega ST.</p>
 <p>Make sure to disable extended VDI modes for playing games as 99% of
 all ST games will not be able to make use of higher resolutions.</p>
 
-<h3>Emulated printer</h3>
+<h3 id="Emulated_printer">Emulated printer</h3>
 
 <p>Due to the fact that printer handling is very different between Unix
 style machines and the Atari ST, emulation
@@ -2442,7 +2441,7 @@ the communication parameters like baudrate from your ST communications
 software. Hatari will do the rest and handle
 the serial input and output for you.</p>
 
-<h2>Floppy disk images</h2>
+<h2 id="Floppy_disk_images">Floppy disk images</h2>
 
 <p>Hatari does not use floppy disks directly but disk images due to
 differences between the floppy disk controllers of the ST and the PC.
@@ -2571,7 +2570,7 @@ If you want to use GEMDOS HD emulation and ACSI/IDE disk images together,
 use a multiple partition GEMDOS emulation setup and select the partition
 subdirectories (letters) so that they don't conflict with the ACSI/IDE
 drive partitions (letters).  With HD Driver you have also another option,
-see <a href="#Using HD Driver with GEMDOS partitions">Using HD Driver
+see <a href="#Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver
 with GEMDOS partitions</a>.</li>
 <li><em>The GEMDOS drive emulation does not work (very well) with TOS
 1.00 and 1.02</em>.  Use at least TOS 1.04 if you want the GEMDOS drive
@@ -2583,7 +2582,7 @@ files on the GEMDOS emulated drive, you should try to copy them to a
 floppy disk image or a real hard disk image!
 </p>
 
-<h3>ACSI hard disk emulation</h3>
+<h3 id="ACSI_hard_disk_emulation">ACSI hard disk emulation</h3>
 <p>
 To use the ACSI hard disk emulation, you need a hard disk image file
 with a pre-installed HD driver in it. You can try to get an image of
@@ -2642,7 +2641,7 @@ the Cecile hard disk driver to the image from the Cecile CC_TOOLS.APP:
 Click the "Installer" button and save the Cecile driver to the
 1st partition on "Hatari IDE disk". If you want to also use your HD
 image in ST/STE mode, you need to get and install AHDI 6 driver on it
-instead (see <a href="#ACSI hard disk emulation">ASCI hard disk
+instead (see <a href="#ACSI_hard_disk_emulation">ASCI hard disk
 emulation</a> section).
 </p>
 <p>
@@ -2665,7 +2664,7 @@ a GEMDOS partition i.e. such to be before hard disk image partitions,
 and still to be able to access all the IDE/ACSI partitions, you need to
 use HD Driver.</p>
 
-<h3>Using HD Driver with GEMDOS partitions</h3>
+<h3 id="Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver with GEMDOS partitions</h3>
 
 <p>Uwe Seimet's <a href="http://www.seimet.de/atari/en/hddriver.html">HD
 Driver</a> works fine with both the Hatari GEMDOS partitions and normal
@@ -2864,7 +2863,7 @@ DSP commands:
 </pre>
 
 
-<h4>Entering arguments to debugger commands</h4>
+<h4 id="Entering_arguments_to_debugger_commands">Entering arguments to debugger commands</h4>
 
 <p>
 After writing (with TAB completion) one of the above command names,
@@ -2919,13 +2918,13 @@ and it will be "evaluated" before being given to the command.
 </p>
 
 <p>
-With command argument completion (see <a href="#Build notes">build
+With command argument completion (see <a href="#Build_notes">build
 notes</a>), result from the last "evaluate" command can be inserted
 by typing '$' and pressing TAB.
 </p>
 
 
-<h3>Inspecting emulation state</h3>
+<h3 id="Inspecting_emulation_state">Inspecting emulation state</h3>
 
 <p>
 In the beginning, probably the most interesting commands are "m" and "d"
@@ -3097,7 +3096,7 @@ conditions need to be true for a breakpoint to trigger.
 </p>
 
 
-<h4>Breakpoint options</h4>
+<h4 id="Breakpoint_options">Breakpoint options</h4>
 
 <p>
 Normally when a breakpoint is triggered, emulation is stopped and you
@@ -3139,7 +3138,7 @@ changes (explained below).
 <dd>
 Show the same information on breakpoint hit as you see when entering
 the debugger (see the "lock" command in
-<a href="#Inspecting emulation state">Inspecting emulation state</a>
+<a href="#Inspecting_emulation_state">Inspecting emulation state</a>
 above).  This enables also trace option as you would anyway see this
 information if debugger would be entered.
 </dd>
@@ -3150,7 +3149,7 @@ Execute debugger commands from given &lt;file&gt; when this breakpoint
 is hit.  With this you have complete control over what information is
 show when the debugger is hit, you can even chain breakpoints (as
 explained in
-<a href="#Chaining breakpoints">Chaining breakpoints</a> later on)
+<a href="#Chaining_breakpoints">Chaining breakpoints</a> later on)
 etc.  Use this if "lock" option isn't enough or you want different
 information show on breakpoints and when entering the debugger.
 </dd>
@@ -3194,7 +3193,7 @@ If the value is in parenthesis like in '($ff820)' or '(a0)', then the
 used value will be read from the memory address pointed by it.  Note
 that this conditional breakpoint expression value is checked at
 run-time whereas quoted arithmetic expressions (mentioned in
-<a href="#Entering arguments to debugger commands">Entering arguments
+<a href="#Entering_arguments_to_debugger_commands">Entering arguments
 to debugger commands</a> above) are evaluated already when
 adding a breakpoint.  For example, to break when a value in an address
 (later) pointed by A0 matches the value <em>currently</em> in D0, one
@@ -3209,7 +3208,7 @@ If you're interested only on certain bits in the value, you can use
 '&amp;' and a numeric mask on either side of comparison operator to
 mask the coresponding value, like this:
 <pre>
-b ($ff820).w &amp; 3 = (a0)  &amp;&amp;  (a1) = d0 & %1100
+b ($ff820).w &amp; 3 = (a0)  &amp;&amp;  (a1) = d0 &amp; %1100
 </pre>
 
 <p>
@@ -3307,11 +3306,11 @@ info gemdos 1
 </pre>
 
 
-<h4>Chaining breakpoints and other actions</h4>
+<h4 id="Chaining_breakpoints">Chaining breakpoints and other actions</h4>
 
 <p>
 As the file pointed by the breakpoint ":file" option (see
-<a href="#Breakpoint options">Breakpoint options</a>) can contain any
+<a href="#Breakpoint_options">Breakpoint options</a>) can contain any
 debugger commands, it can also be used to do automatic "chaining" of
 debugger and breakpoint actions so that after one breakpoint is hit,
 another one is set.
@@ -3528,8 +3527,8 @@ with the Hatari debugger:
 
 <dl>
 <dt><em>Stopping on program startup and examining its data</em></dt>
-<dd>Please see <a href="#Breakpoint variables">Breakpoint variables</a>
-and <a href="#Inspecting emulation state">Inspecting emulation state</a>
+<dd>Please see <a href="#Breakpoint_variables">Breakpoint variables</a>
+and <a href="#Inspecting_emulation_state">Inspecting emulation state</a>
 sections.
 </dd>
 
@@ -3662,7 +3661,7 @@ you enter debugger manually etc, write that command to e.g.
 <pre>
 lock  file stack.ini
 </pre>
-Please see also <a href="#Chaining breakpoints">Chaining breakpoints</a>
+Please see also <a href="#Chaining_breakpoints">Chaining breakpoints</a>
 section for more examples on what you can do with the debugger input files.
 </dd>
 
@@ -3685,7 +3684,7 @@ the DSP.
 </p>
 
 
-<h3>Build notes</h3>
+<h3 id="Build_notes">Build notes</h3>
 
 <p>
 Lastly, the debugger is much nicer to use with the command line
@@ -3704,7 +3703,7 @@ By default it should be enabled.
 </p>
 
 
-<h2>Performance</h2>
+<h2 id="Performance">Performance</h2>
 
 <p>Hatari performance varies between Atari programs, depending on what
 features Hatari needs to emulate for them.  Less accurate Atari
