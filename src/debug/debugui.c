@@ -193,33 +193,40 @@ static bool DebugUI_IsForDsp(const char *cmd)
 }
 
 /**
- * Evaluate everything include within "" and replace them with the result.
- * Caller needs to free the returned string separately if its address
- * doesn't match the given input string.
+ * Evaluate everything include within single or double quotes ("" or '')
+ * and replace them with the result.
+ * Caller needs to free the returned string separately.
  * 
- * Return string with expressions (potentially) expanded, or
+ * Return new string with expressions (potentially) expanded, or
  * NULL when there's an error in the expression.
  */
-static char *DebugUI_EvaluateExpressions(char *input)
+static char *DebugUI_EvaluateExpressions(const char *initial)
 {
 	int offset, count, diff, inputlen;
-	char *end, *start, *initial;
+	char *end, *start, *input;
 	const char *errstr;
 	char valuestr[12];
 	Uint32 value;
 	bool fordsp;
 
 	/* input is split later on, need to save len here */
+	input = strdup(initial);
+	if (!input)
+	{
+		perror("ERROR: Input string alloc failed\n");
+		return NULL;
+	}
 	fordsp = DebugUI_IsForDsp(input);
 	inputlen = strlen(input);
-	initial = start = input;
+	start = input;
 	
-	while ((start = strchr(start, '"')))
+	while ((count = strcspn(start, "\"'")))
 	{
-		end = strchr(start+1, '"');
+		start += count;
+		end = strchr(start+1, *start);
 		if (!end)
 		{
-			fprintf(stderr, "ERROR: matching '\"' missing from '%s'!\n", start);
+			fprintf(stderr, "ERROR: matching '%c' missing from '%s'!\n", *start, start);
 			return NULL;
 		}
 		
@@ -233,7 +240,7 @@ static char *DebugUI_EvaluateExpressions(char *input)
 		*end = '\0';
 		errstr = Eval_Expression(start+1, &value, &offset, fordsp);
 		if (errstr) {
-			*end = '"';
+			*end = *start; /* restore expression mark */
 			fprintf(stderr, "Expression ERROR:\n'%s'\n%*c-%s\n",
 				input, (int)(start-input)+offset+3, '^', errstr);
 			return NULL;
@@ -241,7 +248,7 @@ static char *DebugUI_EvaluateExpressions(char *input)
 		end++;
 		
 		count = sprintf(valuestr, "$%x", value);
-		fprintf(stderr, "- \"%s\" -> %s\n", start+1, valuestr);
+		fprintf(stderr, "- '%s' -> %s\n", start+1, valuestr);
 
 		diff = end-start;
 		if (count < diff)
@@ -266,8 +273,7 @@ static char *DebugUI_EvaluateExpressions(char *input)
 			start += count;
 			memcpy(start, end, strlen(end) + 1);
 
-			if (input != initial)
-				free(input);
+			free(input);
 			input = tmp;
 		}
 	}
@@ -708,7 +714,9 @@ static char *DebugUI_GetCommand(char *input)
 		HIST_ENTRY *hist = previous_history();
 		/* don't store successive duplicate entries */
 		if (!hist || !hist->line || strcmp(hist->line, input) != 0)
+		{
 			add_history(input);
+		}
 		free(input);
 	}
 
@@ -948,14 +956,13 @@ void DebugUI(debug_reason_t reason)
 		if (!psCmd)
 			break;
 
-		/* returns new string if expressions needed expanding! */
+		/* returns new expression expanded string */
 		if (!(expCmd = DebugUI_EvaluateExpressions(psCmd)))
 			continue;
 
 		/* Parse and execute the command string */
 		cmdret = DebugUI_ParseCommand(expCmd);
-		if (expCmd != psCmd)
-			free(expCmd);
+		free(expCmd);
 	}
 	while (cmdret != DEBUGGER_END);
 
@@ -1036,8 +1043,7 @@ bool DebugUI_ParseFile(const char *path)
 		cmd = Str_Trim(expanded);
 		fprintf(stderr, "> %s\n", cmd);
 		DebugUI_ParseCommand(cmd);
-		if (expanded != input)
-			free(expanded);
+		free(expanded);
 	}
 
 	free(input);
@@ -1057,19 +1063,26 @@ bool DebugUI_ParseFile(const char *path)
 
 
 /**
- * Remote/parallel debugger usage API.
+ * Remote/parallel debugger line usage API.
  * Return false for failed command, true for success.
  */
-bool DebugUI_RemoteParse(char *input)
+bool DebugUI_ParseLine(const char *input)
 {
-	int ret;
+	char *expanded;
+	int ret = 0;
 
 	DebugUI_Init();
-	
-	ret = DebugUI_ParseCommand(input);
 
-	DebugCpu_SetDebugging();
-	DebugDsp_SetDebugging();
+	/* returns new string if input needed expanding! */
+	expanded = DebugUI_EvaluateExpressions(input);
+	if (expanded)
+	{
+		fprintf(stderr, "> %s\n", expanded);
+		ret = DebugUI_ParseCommand(expanded);
+		free(expanded);
 
+		DebugCpu_SetDebugging();
+		DebugDsp_SetDebugging();
+	}
 	return (ret == DEBUGGER_CMDDONE);
 }
