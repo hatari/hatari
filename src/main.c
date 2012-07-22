@@ -20,6 +20,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "audio.h"
 #include "joy.h"
 #include "floppy.h"
+#include "floppy_ipf.h"
 #include "gemdos.h"
 #include "hdc.h"
 #include "ide.h"
@@ -586,13 +587,11 @@ static void Main_Init(void)
 		exit(-1);
 	}
 
-#ifdef HAVE_CAPSIMAGE
-	if (CAPSInit() != imgeOk)
+	if ( IPF_Init() != true )
 	{
-		fprintf(stderr, "Could not initialize the capsimage library\n" );
+		fprintf(stderr, "Could not initialize the IPF support\n" );
 		exit(-1);
 	}
-#endif
 
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 	Resolution_Init();
