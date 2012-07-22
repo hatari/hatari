@@ -30,6 +30,9 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "symbols.h"
 #include "68kDisass.h"
+#include "console.h"
+#include "options.h"
+
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
 #define NON_PRINT_CHAR '.'     /* character to display for non-printables */
@@ -521,6 +524,10 @@ void DebugCpu_Check(void)
 	{
 		History_AddCpu();
 	}
+	if (ConOutDevice != CONOUT_DEVICE_NONE)
+	{
+		Console_Check();
+	}
 }
 
 /**
@@ -534,7 +541,8 @@ void DebugCpu_SetDebugging(void)
 	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 
 	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || bHistoryEnabled
-	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS)))
+	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS))
+	    || ConOutDevice != CONOUT_DEVICE_NONE)
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);

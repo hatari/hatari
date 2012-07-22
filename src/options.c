@@ -45,6 +45,8 @@ bool bLoadMemorySave;      /* Load memory snapshot provided via option at startu
 bool bBiosIntercept;       /* whether UAE should intercept Bios & XBios calls */
 bool AviRecordOnStartup;   /* Start avi recording at startup */
 
+int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
+
 static bool bNoSDLParachute;
 
 /*  List of supported options. */
@@ -133,6 +135,7 @@ enum {
 	OPT_YM_MIXING,
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
+	OPT_CONOUT,
 	OPT_TRACE,
 	OPT_TRACEFILE,
 	OPT_PARSE,
@@ -355,7 +358,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
-	  NULL, "Toggle X/Bios interception & CON: redirection" },
+	  NULL, "Toggle X/Bios interception" },
+	{ OPT_CONOUT,   NULL, "--conout",
+	  "<device>", "Show console output (0-7, 2=TOS VT52 console)'" },
 	{ OPT_TRACE,   NULL, "--trace",
 	  "<trace1,...>", "Activate emulation tracing, see '--trace help'" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
@@ -1597,6 +1602,15 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				fprintf(stderr, "X/Bios interception enabled.\n");
 				bBiosIntercept = true;
+			}
+			break;
+
+		case OPT_CONOUT:
+			i += 1;
+			ConOutDevice = atoi(argv[i]);
+			if (ConOutDevice < 0 || ConOutDevice > 7)
+			{
+				return Opt_ShowError(OPT_CONOUT, argv[i], "Invalid console device number");
 			}
 			break;
 
