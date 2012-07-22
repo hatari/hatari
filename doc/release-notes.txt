@@ -3,6 +3,26 @@
                                    --------
                                 Release Notes
 
+ Development version:
+ --------------------
+
+Emulation:
+- TT video emulation:
+  - Extend the ST palette registers from 9bit to 12bit for ST modes
+  - Duochrome mode instead of monochrome for ST High
+  - Implementation of SampleHold in TT Hypermono video mode
+
+Emulator:
+- Debugger:
+  - Fix: expression expansion doesn't mess lines in command line history
+  - Also remote API debugger commands can use expression expansion
+  - Either single or double quotes can be used to mark expressions
+    (above two features make temporary debug output easier within Hatari)
+
+Other changes:
+- HTML documentation indeces generated dynamically with JS
+
+
  Version 1.6.2 (2012-06-24):
  ---------------------------
 

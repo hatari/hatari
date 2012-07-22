@@ -9,10 +9,11 @@
   admin, currently more or less in hibernation mode.
 
 - Eero Tamminen <oak at helsinkinet fi> : Speed improvements & code
-  cleanup, parts of the STE emulation, Hatari embedding & remote
-  control, pause & auto frameskip support, statusbar & overlay led,
-  conditional breakpoints and other debugger improvements, PNG saving
-  and other patches.
+  cleanup, small parts of the STE emulation, Python CLI, UI & TOS
+  tester + Hatari window embedding & remote control API, pause & auto
+  frameskip support, statusbar & overlay led, conditional breakpoints
+  and other debugger features, GEMDOS HD emulation improvements, PNG
+  saving.
 
 - Laurent Sallafranque: Many fixes and speedups to DSP emulation,
   DSP debugging support, crossbar emulation, falcon microphone
@@ -95,7 +96,8 @@ is missing here, please remind me!):
 - Volker Seebode: Fix to ASCI emulation to get other than AHDI drivers
   working.
 
-- Cyprian Konador: Found some bugs in the blitter cycles emulation
+- Cyprian Konador: Found some bugs in the blitter cycles emulation,
+  duochrome and samplehold modes for TT video emulation.
 
 - Jerome Vernet: Some updates to the OS X Xcode project file and OS X
   GUI, supplied a french keymapping file for OS X.
@@ -120,10 +122,10 @@ is missing here, please remind me!):
 - nash67: tested hundreds (!) of games from various CD compilations
   and reported the non working ones on atari-forum.com. Huge thanks for
   that tedious work, it helped tracking down some less common cases
-  not used in demos (keyboard, joystick, FDC, tos, ...)
+  not used in demos (keyboard, joystick, FDC, tos, ...).
 
 - Gilles Fetis: fixes to MMU emulation (from NeXT emulator project
-  using Hatari code)
+  using Hatari code).
 
 
  Code from other projects
