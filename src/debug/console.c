@@ -233,12 +233,16 @@ void Console_Check(void)
 		return;
 	}
 	switch(ConOutDevice) {
-	case 2:	/* EmuTOS/TOS/MiNT/etc console */
+	case 2:	/* EmuTOS/TOS/MiNT/etc console, VT-52 terminal */
 		vt52_emu(chr);
 		break;
-	case 1: /* EmuTOS RS232 debug console */
-	case 3: /* EmuTOS MIDI debug console */
-	case 5: /* raw screen device (no escape sequence / control char processing) */
+	case 0: /* Printer/Parallel port */
+	case 1: /* Aux device, the RS-232 port */
+	case 3: /* MIDI port */
+	case 4: /* Keyboard port */
+	case 5: /* Raw screen device (no escape sequence / control char processing) */
+	case 6: /* ST compatible RS-232 port (Modem 1) */
+	case 7: /* SCC channel B (Modem 2) */
 		map_character(chr);
 		break;
 	}

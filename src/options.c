@@ -358,9 +358,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
-	  NULL, "Toggle X/Bios interception" },
+	  NULL, "Toggle X/Bios interception & Hatari XBios 255 support" },
 	{ OPT_CONOUT,   NULL, "--conout",
-	  "<device>", "Show console output (0-7, 2=TOS VT52 console)'" },
+	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
 	{ OPT_TRACE,   NULL, "--trace",
 	  "<trace1,...>", "Activate emulation tracing, see '--trace help'" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
@@ -1610,7 +1610,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ConOutDevice = atoi(argv[i]);
 			if (ConOutDevice < 0 || ConOutDevice > 7)
 			{
-				return Opt_ShowError(OPT_CONOUT, argv[i], "Invalid console device number");
+				return Opt_ShowError(OPT_CONOUT, argv[i], "Invalid console device vector number");
 			}
 			break;
 
