@@ -13,3 +13,5 @@ extern bool	IPF_Init ( void );
 extern bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize );
 extern bool	IPF_Eject ( int Drive );
 
+extern void	IPF_SetDriveSide ( void );
+

@@ -17,6 +17,7 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "floppy_ipf.h"
 #include "fdc.h"
 #include "log.h"
+#include "psg.h"
 
 #ifdef HAVE_CAPSIMAGE
 #include <caps/fdc.h>
@@ -95,7 +96,9 @@ bool IPF_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 
 
 
-
+/*
+ * Init the FDC and the drives used to handle IPF images
+ */
 bool	IPF_Init ( void )
 {
 #ifndef HAVE_CAPSIMAGE
@@ -153,8 +156,9 @@ bool	IPF_Init ( void )
 
 
 
-/* Init the ressources to handle the IPF image inserted into a drive (0=A: 1=B:) */
-
+/*
+ * Init the ressources to handle the IPF image inserted into a drive (0=A: 1=B:)
+ */
 bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 {
 #ifndef HAVE_CAPSIMAGE
@@ -210,8 +214,9 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 
 
 
-/* When ejecting a disk, free the ressources associated with an IPF image */
-
+/*
+ * When ejecting a disk, free the ressources associated with an IPF image
+ */
 bool	IPF_Eject ( int Drive )
 {
 #ifndef HAVE_CAPSIMAGE
@@ -240,7 +245,9 @@ bool	IPF_Eject ( int Drive )
 
 
 
-/* Empty callback function, we do nothing special when track is changed */
+/*
+ * Empty callback function, we do nothing special when track is changed
+ */
 static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 {
 }
@@ -248,7 +255,9 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 
 
 
-/* Callback function called when the FDC change the IRQ signal */
+/*
+ * Callback function used when the FDC change the IRQ signal
+ */
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 {
 
@@ -261,17 +270,51 @@ static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 
 
 
-/* Callback function called when the FDC change the DRQ signal */
-/* -> copy the byte to/from the DMA fifo if it's a read or a write to the disk */
+/*
+ * Callback function used when the FDC change the DRQ signal
+ * -> copy the byte to/from the DMA fifo if it's a read or a write to the disk
+ */
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 {
 	if ( State == 0 )
 		return;					/* DRQ bit was reset, do nothing */
 
-
-
 }
 
+
+
+
+/*
+ * Set the drive and the side to be used for the next FDC commands
+ */
+void	IPF_SetDriveSide ( void )
+{
+#ifndef HAVE_CAPSIMAGE
+	return;
+
+#else
+	int	Side;
+
+	Side = ( (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01 );		/* Side 0 or 1 */
+
+	IPF_State.Fdc.drivenew = -1;					/* by default, don't change drive */
+
+	/* Check drive 1 first */
+	if ( (PSGRegisters[PSG_REG_IO_PORTA]&0x4) == 0 )
+	{
+		IPF_State.Drive[ 1 ].newside = Side;
+		IPF_State.Fdc.drivenew = 1;
+	}
+
+	/* If both drive 0 and drive 1 are enabled, we keep only drive 0 as newdrive */
+	if ( (PSGRegisters[PSG_REG_IO_PORTA]&0x2) == 0 )
+	{
+		IPF_State.Drive[ 0 ].newside = Side;
+		IPF_State.Fdc.drivenew = 0;
+	}
+
+#endif
+}
 
 
 
