@@ -10,6 +10,10 @@ Uint64 LogTraceFlags = 0;
 #include "configuration.h"
 CNF_PARAMS ConfigureParams;
 
+/* fake cycles stuff */
+#include "cycles.h"
+int CurrentInstrCycles;
+
 /* fake ST RAM */
 #include "stMemory.h"
 Uint8 STRam[16*1024*1024];
@@ -49,7 +53,7 @@ Uint32 TosAddress, TosSize;
 #include "debug_priv.h"
 #include "debugui.h"
 FILE *debugOutput;
-void DebugUI(void) { }
+void DebugUI(debug_reason_t reason) { }
 void DebugUI_PrintCmdHelp(const char *psCmd) { }
 
 /* fake debugInfo.c stuff */
@@ -58,6 +62,33 @@ void DebugInfo_ShowSessionInfo(void) {}
 Uint32 DebugInfo_GetTEXT(void) { return 0x1234; }
 Uint32 DebugInfo_GetDATA(void) { return 0x12f4; }
 Uint32 DebugInfo_GetBSS(void)  { return 0x1f34; }
+
+/* fake debugdsp. stuff */
+#include "debugdsp.h"
+void DebugDsp_InitSession(void) { }
+
+/* use fake dsp.c stuff in case config.h is configured with DSP emu */
+#include "dsp.h"
+bool bDspEnabled;
+Uint16 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr) { return 0; }
+Uint16 DSP_GetInstrCycles(void) { return 0; }
+Uint16 DSP_GetPC(void) { return 0; }
+int DSP_GetRegisterAddress(const char *arg, Uint32 **addr, Uint32 *mask)
+{
+	*addr = NULL; /* find if this gets used */
+	*mask = 0;
+	return 0;
+}
+Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
+{
+	*mem_str = NULL; /* find if this gets used */
+	return 0;
+}
+
+/* fake console redirection */
+#include "console.h"
+int ConOutDevice;
+void Console_Check(void) { }
 
 /* fake Hatari video variables */
 #include "screen.h"

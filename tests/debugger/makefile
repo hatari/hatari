@@ -15,6 +15,10 @@
 # Set the C compiler (e.g. gcc)
 CC = gcc
 
+# Directory given for 'cmake' i.e. where CMake created the config.h.
+# Could also be simply "../.." or "../../build".
+CONFIGDIR := $(shell find ../.. -name config.h | head -1 | sed 's%/[^/]*$$%%')
+
 # SDL-Library configuration (compiler flags and linker options) - you normally
 # don't have to change this if you have correctly installed the SDL library!
 SDL_CFLAGS := $(shell sdl-config --cflags)
@@ -23,8 +27,8 @@ SDL_CFLAGS := $(shell sdl-config --cflags)
 WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
   -Wbad-function-cast -Wcast-qual  -Wpointer-arith -Wwrite-strings -Wall
 
-# Hatari include directories:
-INCFLAGS = -I../.. -I../../src/includes -I../../src/uae-cpu \
+# Hatari source include directories:
+INCFLAGS = -I$(CONFIGDIR) -I../../src/includes -I../../src/uae-cpu \
   -I../../src/debug -I../../src/falcon
 
 # Set extra flags passed to the compiler
@@ -93,7 +97,7 @@ test: $(TESTS)
 
 # all the real & dummy deps
 SOURCEDEPS = test-dummies.c ../../src/debug/breakcond.c \
-	../../src/debug/debugcpu.c ../../src/falcon/dsp.c \
+	../../src/debug/debugcpu.c ../../src/debug/history.c \
 	../../src/debug/evaluate.c ../../src/debug/profile.c \
 	../../src/debug/symbols.c ../../src/str.c
 
