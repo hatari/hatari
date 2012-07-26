@@ -1,5 +1,6 @@
 /* 
  * Code to test Hatari conditional breakpoints in src/debug/breakcond.c
+ * (both matching and setting CPU and DSP breakpoints)
  */
 #include "main.h"
 #include "dsp.h"

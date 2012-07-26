@@ -1,5 +1,6 @@
 /* 
  * Code to test Hatari expression evaluation in src/debug/evaluate.c
+ * (including Hatari variable and CPU register values in expressions)
  */
 #include <stdio.h>
 #include <SDL_types.h>
