@@ -56,6 +56,7 @@ extern bool Floppy_IsWriteProtected(int Drive);
 extern const char* Floppy_SetDiskFileNameNone(int Drive);
 extern const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const char *pszZipPath);
 extern int Floppy_DriveTransitionUpdateState ( int Drive );
+extern void Floppy_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );
 extern bool Floppy_InsertDiskIntoDrive(int Drive);
 extern bool Floppy_EjectDiskFromDrive(int Drive);
 extern void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes, Uint16 *pnSectorsPerTrack, Uint16 *pnSides);

@@ -286,8 +286,11 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 
 /*
  * Set the drive and the side to be used for the next FDC commands
+ * io_porta_old is the previous value, io_porta_new is the new value
+ * to take into account.
+ * We report a side change only when a drive is selected.
  */
-void	IPF_SetDriveSide ( void )
+void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 {
 #ifndef HAVE_CAPSIMAGE
 	return;
@@ -295,22 +298,22 @@ void	IPF_SetDriveSide ( void )
 #else
 	int	Side;
 
-	Side = ( (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01 );		/* Side 0 or 1 */
+	Side = ( (~io_porta_new) & 0x01 );		/* Side 0 or 1 */
 
-	IPF_State.Fdc.drivenew = -1;					/* by default, don't change drive */
+	IPF_State.Fdc.drivenew = -1;			/* By default, don't change drive */
 
 	/* Check drive 1 first */
-	if ( (PSGRegisters[PSG_REG_IO_PORTA]&0x4) == 0 )
+	if ( ( io_porta_new & 0x04 ) == 0 )
 	{
 		IPF_State.Drive[ 1 ].newside = Side;
-		IPF_State.Fdc.drivenew = 1;
+		IPF_State.Fdc.drivenew = 1;		/* Select drive 1 */
 	}
 
 	/* If both drive 0 and drive 1 are enabled, we keep only drive 0 as newdrive */
-	if ( (PSGRegisters[PSG_REG_IO_PORTA]&0x2) == 0 )
+	if ( ( io_porta_new & 0x02 ) == 0 )
 	{
 		IPF_State.Drive[ 0 ].newside = Side;
-		IPF_State.Fdc.drivenew = 0;
+		IPF_State.Fdc.drivenew = 0;		/* Select drive 0 (and un-select drive 1 if set above) */
 	}
 
 #endif

@@ -483,6 +483,23 @@ int	Floppy_DriveTransitionUpdateState ( int Drive )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Handle a write in the IO_PORTA register $E through $ff8802. Only bits
+ * 0-2 are available here, others are masked to 0.
+ * bit 0 : side select
+ * bit 1-2 : drive select
+ */
+void	Floppy_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
+{
+	if ( io_porta_old == io_porta_new )
+		return;						/* no change */
+
+
+	IPF_SetDriveSide ( io_porta_old , io_porta_new );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Insert previously set disk file image into floppy drive.
  * The WHOLE image is copied into Hatari drive buffers, and
  * uncompressed if necessary.
