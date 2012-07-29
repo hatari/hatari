@@ -290,7 +290,6 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 		Byte = CAPSFdcRead ( &IPF_State.Fdc , 3 );	/* Read from FDC's reg 3 */
 		FDC_DMA_FIFO_Push ( Byte );		/* Add byte to the DMA FIFO */
 	}
-
 }
 
 
@@ -327,7 +326,6 @@ void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 		IPF_State.Drive[ 0 ].newside = Side;
 		IPF_State.Fdc.drivenew = 0;		/* Select drive 0 (and un-select drive 1 if set above) */
 	}
-
 #endif
 }
 

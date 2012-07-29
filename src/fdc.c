@@ -287,15 +287,15 @@ enum
 #define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediatly */
 #define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME [NP] : this was not measured */
 								
-#define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
+#define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( FDC_DMA_FIFO_SIZE )
 
 #define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
 
 #define	FDC_DELAY_COMMAND_IMMEDIATE		1		/* Number of us to go immediatly to another state */
 
 
-#define	DMA_DISK_SECTOR_SIZE			512		/* Sector count at $ff8606 is for 512 bytes blocks */
-#define	DMA_DISK_TRANSFER_SIZE			16		/* DMA transfers blocks of 16 bytes at a time */
+#define	FDC_DMA_SECTOR_SIZE			512		/* Sector count at $ff8606 is for 512 bytes blocks */
+#define	FDC_DMA_FIFO_SIZE			16		/* DMA transfers blocks of 16 bytes at a time */
 
 #define	FDC_PHYSICAL_MAX_TRACK			90		/* Head can't go beyond 90 tracks */
 
@@ -343,6 +343,9 @@ typedef struct {
 	Uint16		Mode;
 	Uint16		SectorCount;
 	Uint16		BytesInSector;
+
+	Uint8		FIFO[ FDC_DMA_FIFO_SIZE ];
+	int		FIFO_Size;				/* Between 0 and FDC_DMA_FIFO_SIZE */
 
 	/* Variables to handle our DMA buffer */
 	int		PosInBuffer;
@@ -521,8 +524,11 @@ static void FDC_ResetDMA ( void )
 	LOG_TRACE(TRACE_FDC, "fdc reset dma VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
+	/* Empty FIFO */
+	FDC_DMA.FIFO_Size = 0;
+
 	/* Reset bytes count for current DMA sector */
-	FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
+	FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
 
 	/* Reset variables used to handle DMA transfer */
 	FDC_DMA.PosInBuffer = 0;
@@ -570,7 +576,7 @@ static void FDC_DMA_InitTransfer ( void )
 
 	/* How many bytes remain in the current 16 bytes DMA buffer ? */
 	if ( ( FDC_DMA.BytesToTransfer == 0 )				/* DMA buffer is empty */
-	  || ( FDC_DMA.BytesToTransfer > DMA_DISK_TRANSFER_SIZE ) )	/* Previous DMA transfer did not finish (FDC errror or Force Int command) */
+	  || ( FDC_DMA.BytesToTransfer > FDC_DMA_FIFO_SIZE ) )	/* Previous DMA transfer did not finish (FDC errror or Force Int command) */
 	{
 		FDC_DMA.PosInBuffer = 0;				/* Add new data at the start of DMADiskWorkSpace */
 		FDC_DMA.PosInBufferTransfer = 0;
@@ -600,23 +606,76 @@ int	FDC_DMA_GetModeControl_R_WR ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Get a byte from the DMA's FIFO buffer.
- * If the buffer is empty and DMA is ON, load 16 bytes in the FIFO from DMA's address.
- */
-Uint8	FDC_DMA_FIFO_Pull ( void )
-{
-	return 0;
-}
-
-
-/**
- * Add a byte to the DMA's FIFO buffer.
+ * Add a byte to the DMA's FIFO buffer (read from disk).
  * If the buffer is full and DMA is ON, write the FIFO's 16 bytes to DMA's address.
  */
 void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 {
+	Uint32	Address;
+
+	if ( FDC_DMA.SectorCount == 0 )
+	{
+		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
+		/* TODO : clear error bit 0 in DMA status ? */
+		return;
+	}
+
+	FDC_DMA.FIFO [ FDC_DMA.FIFO_Size++ ] = Byte;
+
+	if ( FDC_DMA.FIFO_Size < FDC_DMA_FIFO_SIZE )			/* FIFO is not full yet */
+		return;
+
+	/* FIFO full : transfer data and update DMA address */
+	Address = FDC_GetDMAAddress();
+	STMemory_SafeCopy ( Address , FDC_DMA.FIFO , FDC_DMA_FIFO_SIZE , "FDC DMA push to fifo" );
+	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
+	FDC_DMA.FIFO_Size = 0;						/* FIFO is now empty again */
+
+	/* Update Sector Count */
+	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
+	if ( FDC_DMA.BytesInSector <= 0 )
+	{
+		FDC_DMA.SectorCount--;
+		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
+	}
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Get a byte from the DMA's FIFO buffer (write to disk).
+ * If the buffer is empty and DMA is ON, load 16 bytes in the FIFO from DMA's address.
+ */
+Uint8	FDC_DMA_FIFO_Pull ( void )
+{
+	Uint32	Address;
+
+	if ( FDC_DMA.SectorCount == 0 )
+	{
+		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
+		/* TODO : clear error bit 0 in DMA status ? */
+		return 0;						/* Write a '0' byte when dma is off */
+	}
+
+	if ( FDC_DMA.FIFO_Size > 0 )					/* FIFO is not empty yet */
+		return FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE - ( FDC_DMA.FIFO_Size-- ) ];	/* return byte at pos 0, 1, .., 15 */
+	
+	/* FIFO empty : transfer data and update DMA address */
+	Address = FDC_GetDMAAddress();
+	memcpy ( FDC_DMA.FIFO , &STRam[ Address ] , FDC_DMA_FIFO_SIZE );/* TODO : check we read from a valid RAM location ? */
+	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
+	FDC_DMA.FIFO_Size = FDC_DMA_FIFO_SIZE - 1;			/* FIFO is now full again (minus the byte we will return below) */
+
+	/* Update Sector Count */
+	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
+	if ( FDC_DMA.BytesInSector <= 0 )
+	{
+		FDC_DMA.SectorCount--;
+		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
+	}
+
+	return FDC_DMA.FIFO [ 0 ];					/* return the 1st byte we just transfered in the FIFO */
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -639,30 +698,30 @@ static bool FDC_DMA_ReadFromFloppy ( void )
 	Uint32	Address;
 //fprintf ( stderr , "dma transfer read count=%d bytes=%d pos=%d\n" , FDC_DMA.SectorCount, FDC_DMA.BytesToTransfer, FDC_DMA.PosInBufferTransfer );
 
-	if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
 		return true;						/* There should be at least 16 bytes to start a DMA transfer */
 
 	if ( FDC_DMA.SectorCount == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
-		FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
-		FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
+		FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
+		FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
 		return false;						/* FDC DMA is off but we still need to read all bytes from the floppy */
 	}
 
 	/* Transfer data and update DMA address */
 	Address = FDC_GetDMAAddress();
-	STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
-	FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
-	FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
-	FDC_WriteDMAAddress ( Address + DMA_DISK_TRANSFER_SIZE );
+	STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , FDC_DMA_FIFO_SIZE , "FDC DMA data read" );
+	FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
+	FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
+	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
 
 	/* Update Sector Count */
-	FDC_DMA.BytesInSector -= DMA_DISK_TRANSFER_SIZE;
+	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
 	if ( FDC_DMA.BytesInSector <= 0 )
 	{
 		FDC_DMA.SectorCount--;
-		FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
+		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
 	}
 
 	return false;							/* Transfer is not complete */
@@ -688,30 +747,30 @@ static bool FDC_DMA_WriteToFloppy ( void )
 	Uint32	Address;
 //fprintf ( stderr , "dma transfer write count=%d bytes=%d pos=%d\n" , FDC_DMA.SectorCount, FDC_DMA.BytesToTransfer, FDC_DMA.PosInBufferTransfer );
 
-	if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
 		return true;						/* There should be at least 16 bytes to start a DMA transfer */
 
 	if ( FDC_DMA.SectorCount == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
-		FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
-		FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
+		FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
+		FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
 		return false;						/* FDC DMA is off but we still need to process the whole sector */
 	}
 
 	/* Transfer data and update DMA address */
 	Address = FDC_GetDMAAddress();
-	//STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
-	FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
-	FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
-	FDC_WriteDMAAddress ( Address + DMA_DISK_TRANSFER_SIZE );
+	//STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , FDC_DMA_FIFO_SIZE , "FDC DMA data read" );
+	FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
+	FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
+	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
 
 	/* Update Sector Count */
-	FDC_DMA.BytesInSector -= DMA_DISK_TRANSFER_SIZE;
+	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
 	if ( FDC_DMA.BytesInSector <= 0 )
 	{
 		FDC_DMA.SectorCount--;
-		FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
+		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
 	}
 
 	return false;							/* Transfer is not complete */
@@ -2462,7 +2521,7 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *
 	else
 	{
 		pBuffer = DMADiskWorkSpace;				/* If DMA can't transfer data, we write '0' bytes */
-		memset ( pBuffer , 0 , DMA_DISK_SECTOR_SIZE );
+		memset ( pBuffer , 0 , FDC_DMA_SECTOR_SIZE );
 	}
 	
 	/* Write 1 sector from our workspace */
