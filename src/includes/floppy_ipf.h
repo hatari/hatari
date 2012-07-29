@@ -14,4 +14,5 @@ extern bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize );
 extern bool	IPF_Eject ( int Drive );
 
 extern void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );
+extern void	IPF_Emulate ( int NbCycles );
 

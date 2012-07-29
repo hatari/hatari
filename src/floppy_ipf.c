@@ -321,3 +321,18 @@ void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 
 
 
+/*
+ * Run the FDC emulation during NbCycles cycles (relative to the 8MHz FDC's clock)
+ */
+void	IPF_Emulate ( int NbCycles )
+{
+#ifndef HAVE_CAPSIMAGE
+	return;
+
+#else
+	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );
+#endif
+}
+
+
+
