@@ -556,7 +556,7 @@ static void FDC_ResetDMA ( void )
 /**
  * Set DMA Status at $ff8606
  *
- * Bit 0 - _Error Status (0=Error 1=No erroe)
+ * Bit 0 - _Error Status (0=Error 1=No error)
  * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
  * Bit 2 - _Data Request Inactive Status
  *
