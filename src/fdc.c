@@ -327,7 +327,7 @@ typedef struct {
 	int		StepDirection;				/* +1 (Step In) or -1 (Step Out) */
 
 	/* Other variables */
-	int		Command;				/* FDC emulation command currently being exceuted */
+	int		Command;				/* FDC emulation command currently being executed */
 	int		CommandState;				/* Current state for the running command */
 	Uint8		CommandType;				/* Type of latest FDC command (1,2,3 or 4) */
 	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one */
