@@ -705,10 +705,15 @@ voices.</p>
 <p class="paramdesc">Toggle whether CPU exceptions invoke
 the debugger</p>
 <p class="parameter">&minus;&minus;bios-intercept</p>
-<p class="paramdesc">Toggle Bios/XBios call interception and
-BIOS CON: output (e.g. EmuTOS console) redirection to host
-terminal. Needed for Bios/XBios call tracing. Allows Atari programs
-to modify Hatari state through XBios 255 calls.</p>
+<p class="paramdesc">Toggle Bios/XBios call interception needed for
+Bios/XBios call tracing.  Allows Atari programs to modify Hatari state
+through XBios 255 calls which are processed as Hatari commandline
+arguments.  Atari printscreen call takes also Hatari screenshot.</p>
+<p class="parameter">&minus;&minus;conout &lt;device&gt;</p>
+<p class="paramdesc">Enable console (xconout vector functions) output
+redirection for given &lt;device&gt; to host terminal.  Device 2 is for
+the (CON:) VT52 console, which vector function catches also EmuTOS panic
+messages and MiNT console output, not just normal BIOS console output.</p>
 <p class="parameter">&minus;&minus;trace
 &lt;trace1,...&gt;</p>
 <p class="paramdesc">Activate debug traces, see
@@ -2537,9 +2542,7 @@ arguments for most of the calls.
 <p>
 Tracing options can be set even from a program within the emulation
 if you enable the Hatari "--bios-intercept" option and call XBios 255
-from the program with a suitable Hatari command line string.  Bios
-interception will also show the (Bios level) CON: output on the host
-console.
+from the program with a suitable Hatari command line string.
 </p>
 <p>
 Note that the trace output file can be set only when Hatari starts,
