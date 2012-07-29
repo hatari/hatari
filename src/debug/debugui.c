@@ -53,6 +53,7 @@ static int debugCommands;
 /* stores last 'e' command result as hex, used for TAB-completion */
 static char lastResult[10];
 
+/* parse debugger commands from here on init */
 static const char *parseFileName;
 
 
@@ -219,8 +220,8 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 	fordsp = DebugUI_IsForDsp(input);
 	inputlen = strlen(input);
 	start = input;
-	
-	while ((count = strcspn(start, "\"'")))
+
+	while ((count = strcspn(start, "\"'")) && *(start+count))
 	{
 		start += count;
 		end = strchr(start+1, *start);
@@ -246,7 +247,7 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 			return NULL;
 		}
 		end++;
-		
+
 		count = sprintf(valuestr, "$%x", value);
 		fprintf(stderr, "- '%s' -> %s\n", start+1, valuestr);
 
