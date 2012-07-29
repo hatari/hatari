@@ -589,6 +589,17 @@ static void FDC_DMA_InitTransfer ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the value of bit 8 in the FDC's DMA mode control register.
+ * 0=dma read  0x100=dma write
+ */
+int	FDC_DMA_GetModeControl_R_WR ( void )
+{
+	return FDC_DMA.Mode & 0x100;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Transfer 16 bytes from the DMA workspace to the RAM.
  * Instead of handling a real 16 bytes buffer, this implementation moves
  * a 16 bytes window in DMADiskWorkSpace. The current position of this window

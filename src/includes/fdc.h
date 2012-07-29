@@ -21,6 +21,7 @@ extern void	FDC_DiskController_WriteWord ( void );
 extern void	FDC_DiskControllerStatus_ReadWord ( void );
 extern void	FDC_DmaModeControl_WriteWord ( void );
 extern void	FDC_DmaStatus_ReadWord ( void );
+extern int	FDC_DMA_GetModeControl_R_WR ( void );
 extern void	FDC_DmaAddress_ReadByte ( void );
 extern void	FDC_DmaAddress_WriteByte ( void );
 extern Uint32	FDC_GetDMAAddress ( void );
