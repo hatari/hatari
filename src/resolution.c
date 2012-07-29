@@ -52,7 +52,7 @@ void Resolution_Init(void)
 		ConfigureParams.Screen.nMaxHeight = DesktopHeight;
 	}
 	Dprintf(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
-	Dprintf(("Configured Max res: %dx%d\n",ConfigureParams.Screen.nMaxWidth,ConfigureParams.Screen.nMaxHeight));
+	fprintf(stderr, "Configured max Hatari resolution = %dx%d.\n", ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight);
 }
 
 /**

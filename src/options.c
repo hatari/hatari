@@ -977,6 +977,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			default:
 				return Opt_ShowError(OPT_FORCEBPP, argv[i], "Invalid bit depth");
 			}
+			fprintf(stderr, "Hatari window BPP = %d.\n", planes);
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
 
@@ -996,6 +997,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_SPEC512, argv[i],
 						     "Invalid palette writes per line threshold for Spec512");
 			}
+			fprintf(stderr, "Spec512 threshold = %d palette writes per line.\n", threshold);
 			ConfigureParams.Screen.nSpec512Threshold = threshold;
 			break;
 
@@ -1070,6 +1072,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_AVIRECORD_FPS, argv[i],
 							"Invalid frame rate for avi recording");
 			}
+			fprintf(stderr, "AVI recording FPS = %d.\n", val);
 			ConfigureParams.Video.AviRecordFps = val;
 			break;
 
@@ -1545,6 +1548,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.Sound.nPlaybackFreq = freq;
 				ConfigureParams.Sound.bEnableSound = true;
 			}
+			fprintf(stderr, "Sound %s, frequency = %d.\n", ConfigureParams.Sound.bEnableSound ? "ON" : "OFF", ConfigureParams.Sound.nPlaybackFreq);
 			break;
 
 		case OPT_SOUNDBUFFERSIZE:
@@ -1556,6 +1560,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				{
 					return Opt_ShowError(OPT_SOUNDBUFFERSIZE, argv[i], "Unsupported sound buffer size");
 				}
+			fprintf(stderr, "SDL sound buffer size = %d ms.\n", temp);
 			ConfigureParams.Sound.SdlAudioBufferSize = temp;
 			break;
 
@@ -1612,6 +1617,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_CONOUT, argv[i], "Invalid console device vector number");
 			}
+			fprintf(stderr, "Xcounout device %d vector redirection enabled.\n", ConOutDevice);
 			break;
 
 		case OPT_PARACHUTE:
