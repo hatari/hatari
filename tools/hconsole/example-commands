@@ -5,7 +5,7 @@
 #
 # I.e. specify EmuTOS image for Hatari and exit after the the input file.
 #
-# For more fun, use also Hatari's --bios-intercept option. :-)
+# For more fun, use also Hatari's "--conout 2". :-)
 
 # without this EmuTOS boot takes 10s more
 setopt --fastfdc on

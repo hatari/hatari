@@ -367,6 +367,7 @@ class Tokens:
     "--ym-mixing",
     "--debug",
     "--bios-intercept",
+    "--conout",
     "--trace",
     "--trace-file",
     "--parse",

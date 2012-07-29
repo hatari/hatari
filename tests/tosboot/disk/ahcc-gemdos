@@ -7,7 +7,7 @@
 #    hconsole.py disk/ahcc-build -- -m --machine tt --tos etos512k.img disk
 
 # boot faster (1s instead of >10s) and show EmuCON output on console
-setopt --fast-forward yes --fastfdc on --bios-intercept
+setopt --fast-forward yes --fastfdc on --conout 2
 
 # wait for EmuTOS to boot
 sleep 1
