@@ -170,6 +170,17 @@ ACSI DMA and Floppy Disk Controller(FDC)
     - Ejecting : WPT will be X, then 0, then 1
     - Inserting : WPT will be 1, then 0, then X
 
+
+  DMA :
+  -----
+  We emulate only one 16 bytes FIFO, but the DMA in a real ST has in fact 2 16 bytes FIFO which
+  are used when the DMA chip requires to access external memory (while one FIFO is filled/flushed to memory,
+  the other FIFO is used to store bytes sent/received at the same time from the FDC).
+
+  In write mode, the DMA fills immediatly the 2 FIFO as soon as the DMA sector count register is written
+  with a >0 value, which means DMA address counter will increase by 32 bytes. In our case, we fill one 16 bytes
+  FIFO only at the time where the FDC asks for some bytes to be written on disk.
+
 */
 
 /*-----------------------------------------------------------------------*/
@@ -529,6 +540,7 @@ static void FDC_ResetDMA ( void )
 
 	/* Reset bytes count for current DMA sector */
 	FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
+	FDC_DMA.SectorCount = 0;
 
 	/* Reset variables used to handle DMA transfer */
 	FDC_DMA.PosInBuffer = 0;
