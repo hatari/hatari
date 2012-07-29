@@ -42,6 +42,37 @@ static void Bios_RWabs(Uint32 Params)
 	          RWFlag, STRAM_ADDR(pBuffer), Number, RecNo, Dev);
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * BIOS Set/query exception vectors
+ * Call 5
+ */
+static void Bios_Setexe(Uint32 Params)
+{
+	Uint16 vec = STMemory_ReadWord(Params);
+	Uint32 addr = STMemory_ReadLong(Params+SIZE_WORD);
+	struct {
+		int vec;
+		const char *name;
+	} *vecname, vecnames[] =
+	{
+		{ 0x002, "BUSERROR" },
+		{ 0x003, "ADDRESSERROR" },
+		{ 0x004, "ILLEGALINSTRUCTION" },
+		{ 0x021, "GEMDOS" },
+		{ 0x022, "GEM" },
+		{ 0x02D, "BIOS" },
+		{ 0x02E, "XBIOS" },
+		{ 0x100, "TIMER" },
+		{ 0x101, "CRITICALERROR" },
+		{ 0x102, "TERMINATE" },
+		{ 0x000, "???" }
+	};
+	for (vecname = &(vecnames[0]); vecname->vec && vec != vecname->vec; vecname++)
+		;
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x05 Setexc(0x%hX VEC_%s, 0x%X)\n", vec, vecname->name, addr);
+}
+
 
 /*-----------------------------------------------------------------------*/
 
@@ -112,7 +143,7 @@ bool Bios(void)
 	case 0x3:
 		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hhX)\n",
 			  STMemory_ReadWord(Params),
-			  STMemory_ReadWord(Params)+SIZE_WORD);
+			  STMemory_ReadWord(Params+SIZE_WORD));
 		break;
 
 	case 0x4:
@@ -120,9 +151,7 @@ bool Bios(void)
 		break;
 
 	case 0x5:
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x05 Setexc(0x%hX, 0x%X)\n",
-			  STMemory_ReadWord(Params),
-			  STMemory_ReadLong(Params)+SIZE_WORD);
+		Bios_Setexe(Params);
 		break;
 
 	case 0x1:
