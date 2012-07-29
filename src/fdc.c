@@ -600,6 +600,27 @@ int	FDC_DMA_GetModeControl_R_WR ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Get a byte from the DMA's FIFO buffer.
+ * If the buffer is empty and DMA is ON, load 16 bytes in the FIFO from DMA's address.
+ */
+Uint8	FDC_DMA_FIFO_Pull ( void )
+{
+	return 0;
+}
+
+
+/**
+ * Add a byte to the DMA's FIFO buffer.
+ * If the buffer is full and DMA is ON, write the FIFO's 16 bytes to DMA's address.
+ */
+void	FDC_DMA_FIFO_Push ( Uint8 Byte )
+{
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Transfer 16 bytes from the DMA workspace to the RAM.
  * Instead of handling a real 16 bytes buffer, this implementation moves
  * a 16 bytes window in DMADiskWorkSpace. The current position of this window

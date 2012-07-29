@@ -270,12 +270,26 @@ static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 
 /*
  * Callback function used when the FDC change the DRQ signal
- * -> copy the byte to/from the DMA fifo if it's a read or a write to the disk
+ * -> copy the byte to/from the DMA's FIFO if it's a read or a write to the disk
  */
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 {
+	Uint8	Byte;
+
 	if ( State == 0 )
 		return;					/* DRQ bit was reset, do nothing */
+
+	if ( FDC_DMA_GetModeControl_R_WR () != 0 )	/* DMA write mode */
+	{
+		Byte = FDC_DMA_FIFO_Pull ();		/* Get a byte from the DMA FIFO */
+		CAPSFdcWrite ( &IPF_State.Fdc , 3 , Byte );	/* Write to FDC's reg 3 */
+	}
+
+	else						/* DMA read mode */
+	{
+		Byte = CAPSFdcRead ( &IPF_State.Fdc , 3 );	/* Read from FDC's reg 3 */
+		FDC_DMA_FIFO_Push ( Byte );		/* Add byte to the DMA FIFO */
+	}
 
 }
 
