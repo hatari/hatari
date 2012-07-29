@@ -172,8 +172,8 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 	ImageId = CAPSAddImage();
 	if ( ImageId < 0 )
 	{
-                fprintf ( stderr , "IPF : error CAPSAddImage\n" );
-                return false;
+		fprintf ( stderr , "IPF : error CAPSAddImage\n" );
+		return false;
         }
 
         if ( CAPSLockImageMemory ( ImageId , pImageBuffer , (CapsULong)ImageSize , DI_LOCK_MEMREF ) == imgeOk )
@@ -202,6 +202,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
         else
 	{
 		CAPSRemImage ( ImageId ) ;
+		return false;
 	}
 
 
