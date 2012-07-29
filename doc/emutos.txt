@@ -144,26 +144,37 @@ EmuTOS debug output and debug symbols
 To get EmuTOS's own debug output, you need to recompile it from the source
 after enabling the MIDI debug output in its config.h header file. Then
 start Hatari with the "--midi-out /dev/stderr" option and you will see
-the EmuTOS debug output (such as calls to missing Line-A functions).
+there the EmuTOS debug output (such as calls to missing Line-A functions).
 
-If you've compiled EmuTOS with AHCC[1], you can get suitable symbols
-with its "-n" linker flag, or you can use a script coming with Hatari
-(ahcc-symbols-convert.sh) to convert AHCC *.map file to "nm" format
-supported by the Hatari debugger.
+With EmuTOS debug symbols, you can also ask debugger to "trace
+cpu_symbols" to get trace of all the function calls EmuTOS calls.
 
-[1] AHCC: http://members.chello.nl/h.robbers/
+There's a script[1] you can use to convert the emutos2.map file
+(produced during EmuTOS build) to a format you can load to Hatari
+debugger with its "symbols" command[2].
 
-After loading the symbols to the debugger, disassembling the
+[1] http://sourceforge.net/mailarchive/message.php?msg_id=29381777
+[2] http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/manual.html#Debug_symbols
+
+If you've compiled EmuTOS with AHCC[3] instead of GCC, you can get
+suitable symbols with its "-n" linker flag, or you can use a script
+coming with Hatari (ahcc-symbols-convert.sh) to convert AHCC *.map
+file to a format supported by the Hatari debugger.
+
+[3] AHCC: http://members.chello.nl/h.robbers/
+
+After loading the symbols to the Hatari debugger, disassembling the
 problematic address should provide more clues for the problem.  Or you
 can just look up the program counter value given in the EmuTOS panic
-message from the AHCC emutos.map file.
+message from the map file.
 
 Debugging panics
 ----------------
 
 When debugging EmuTOS panics, the best option is to start Hatari with
---bios-intercept (to be able to track Bios & XBios calls) and ask
-Hatari debugger to stop when the program is started:
+"--bios-intercept --conout 2" (to enable Bios / XBios call tracking &
+to redirect EmuTOS panic etc messages to console) and then ask Hatari
+debugger to stop when the program is started:
 -----------
 > b pc=TEXT
 CPU condition breakpoint 1 with 1 condition(s) added:
@@ -171,13 +182,12 @@ pc = TEXT
 > c
 Returning to emulation...
 -----------
-'>' in above example indicates what you type to debugger.
+(In above example '>' indicates what you type to debugger.)
 
-Then when the debugger is invoked at program startup, you can then ask
-it to:
+Then when the debugger is invoked at program startup, you can ask it to:
 - collect CPU instruction history,
 - break on exceptions that trigger the panic, and
-- trace all OS calls and line-A opcodes leading to it
+- trace all OS calls and line-A opcodes leading to the panic
 with:
 -----------
 > history on
@@ -194,36 +204,36 @@ Returning to emulation...
 -----------
 
 So that when the exception causing the panic triggers the debug, you
-see the OS calls and line-A opcodes leading to it. You can then ask
-what the register values are at that point and the CPU instructions
-leading to that with the "r" and "history" commands.  Memory state and
-addresses accessed by the instructions can be inspected with the "m"
-command.
+see the OS calls and line-A opcodes leading to it, and have a panic
+message on console from which you can copy&paste relevant parts.
+
+You can then ask what the register values are at that point and what
+are the CPU instructions leading to it with the "r" and "history"
+commands. Memory state and addresses accessed by the instructions can
+be inspected with the "m" command.
 
 For more info on Hatari debugger usage, see the Hatari manual section
-on it.
+on it:
+http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/manual.html#The_debugger
 
 Debugging freezes
 -----------------
 
 Hatari profiling support can be used to debug OS freezes.  If EmuTOS gets
 stuck, just profile it for a while and then ask debugger for a profile
-that tells where it's looping and then disassemble that part with symbols
+that tells where it's looping.  Then disassemble that part with symbols
 directly in Hatari.
-
-With EmuTOS debug symbols, you can also ask debugger to "trace
-cpu_symbols" to get trace of all the EmuTOS function calls.
 
 
 EmuTOS compatibility lists
 ==========================
 
-The compatibility lists below cater for users who don't have Atari HW
-and therefore won't have (legal) version of commercial Atari software
-and most likely lack motivation to investigate applications very
-deeply (Linux offers better alternatives nowadays for most of that).
-I.e. the lists skip commercial software and concentrate on EmuTOS
-compatibility of freely available games and demos.
+The compatibility lists below cater mainly for users who don't have
+Atari HW and therefore won't have (legal) version of commercial Atari
+software and most likely lack motivation to investigate applications
+very deeply (Linux offers better alternatives nowadays for most of
+that). I.e. the lists skip commercial software and concentrate on
+EmuTOS compatibility of freely available games and demos.
 
 Games that are considered good quality & fun, are marked with "*".
 All the listed demos are quite OK. Most demos can be downloaded from:
@@ -444,7 +454,7 @@ GEM games:
 - Bombs     (minesweeper, mouse clicks almost never work)
 - Checkers  (dragging doesn't work)
 - Dte       (mouse gets stuck)
-- Invaders* ('-' key doesn't work)
+- Invaders* (needs EmuTOS >= 0.8.7, '-' key doesn't work)
 - Minds     (minesweeper, mouse clicks almost never work)
 - Patience* (dragging doesn't work, dialog selection persists)
 - Risky*    (dragging doesn't work)
@@ -500,6 +510,7 @@ Working:
 - EZ-Score
 - Henry Cosh's Accompanist
 - Ludwig
+- Sequencer One
 
 Not working:
 - Cubase lite (guesses etv_timer vector wrong -> panic)
@@ -669,10 +680,8 @@ Working demos:
 - TT highres slideshow (by .tSCc)
 - Shiny Bubbles TT (by Xanth FX)
 - XiTEC demos (by Omega)
-
-Problematic demos:
-- Swing (by Omega), instead of just showing bombs on exit,
-  there's panic with priviledge violation
+  - On exiting Swing EmuTOS panics with priviledge violation
+    (TOS bombs and continues)
 
 
 Falcon free/shareware demos, games and applications
@@ -728,9 +737,9 @@ Working demos:
 - Weltchmerz (by Avena)
 - ZZ 9 Plural Z Alpha (by tSCc)
 
-Demos regressed in EmuTOS v0.8.6:
+Demos regressed in EmuTOS v0.8.7:
 - Blue (by New Beat)
-  - just exits to bus error
+  - just exits
 
 Partly working demos:
 - Agony (by DNT crew)
@@ -799,15 +808,23 @@ Working games:
 - Toy Man
 - Willie's Adventure (preview1), disable DSP
 
-Games regressed in EmuTOS v0.8.6:
+Games regressed in EmuTOS v0.8.x:
 - Columns by Deadheart* (demo)
-  - Colors/graphics are wrong
+  - In v0.8.6 colors/graphics are wrong, in v0.8.7,
+    screen is just black (with music on background)
 - Rave*
-  - Colors/graphics are wrong
-- SBM v0.8 (Bomberman clone)*, doesn't work anymore
+  - In v0.8.6, colors/graphics are wrong only at actual game lower half,
+    with v0.8.7, they're wrong already at start and for whole screen
+- SBM v0.8 (Bomberman clone)*
   - Bus error wget at 00400000
-- Vertical Mayhem (Columns clone)*, black screen at start
-  - maybe due to missing sound matrix calls
+
+Problems with newer (than v1.4) Hatari versions:
+- Vertical Mayhem (Columns clone)*
+  - With newer Hatari versions, freezes with black screen at start,
+    maybe due to missing EmuTOS sound matrix calls
+- Willie's Adventure* (preview2)
+  - with newer Hatari versions, doesn't work fluently and
+    sprites don't show completely & leave garbage on screen
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -823,7 +840,6 @@ Mostly working games:
 - Santarun (GEM): just too slow
 - TUM, GEM minesweeper: says "sorry, sound system is locked"
   on every click
-- Willie's Adventure* (preview2), gfx leave garbage on screen
 
 Games that might be possible to get working (they
 show something and/or don't use DSP / sound matrix):
