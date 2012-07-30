@@ -18,6 +18,8 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "fdc.h"
 #include "log.h"
 #include "psg.h"
+#include "screen.h"
+#include "video.h"
 
 #ifdef HAVE_CAPSIMAGE
 #include <caps/fdc.h>
@@ -265,7 +267,7 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
  */
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 {
-	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x\n" , State );
+	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x VBL=%d\n" , State , nVBLs );
 
 	if ( State )
 		FDC_AcknowledgeInterrupt();		/* IRQ bit was set */
@@ -284,7 +286,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 {
 	Uint8	Byte;
 
-	LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x\n" , State );
+	LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x VBL=%d\n" , State , nVBLs );
 
 	if ( State == 0 )
 		return;					/* DRQ bit was reset, do nothing */
@@ -319,6 +321,8 @@ void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 #else
 	int	Side;
 
+	LOG_TRACE(TRACE_FDC, "fdc ipf change drive/side io_porta_old=0x%x io_porta_new=0x%x VBL=%d\n" , io_porta_old , io_porta_new , nVBLs );
+
 	Side = ( (~io_porta_new) & 0x01 );		/* Side 0 or 1 */
 
 	IPF_State.Fdc.drivenew = -1;			/* By default, don't change drive */
@@ -352,7 +356,7 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
 
 #else
-	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x\n" , Reg , Byte );
+	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d\n" , Reg , Byte , nVBLs );
 
 	CAPSFdcWrite ( &IPF_State.Fdc , Reg , Byte );
 #endif
@@ -373,7 +377,7 @@ Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
 	Uint8	Byte;
 
 	Byte = CAPSFdcRead ( &IPF_State.Fdc , Reg );
-	LOG_TRACE(TRACE_FDC, "fdc ipf read reg=%d data=0x%x\n" , Reg , Byte );
+	LOG_TRACE(TRACE_FDC, "fdc ipf read reg=%d data=0x%x VBL=%d\n" , Reg , Byte , nVBLs );
 
 	return Byte;
 #endif
@@ -391,7 +395,7 @@ void	IPF_Emulate ( int NbCycles )
 	return;
 
 #else
-	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d\n" , NbCycles );
+//	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d VBL=%d\n" , NbCycles , nVBLs );
 
 	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );
 #endif
