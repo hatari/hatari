@@ -206,6 +206,9 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 	}
 
 	IPF_State.CapsImage[ Drive ] = ImageId;
+
+	IPF_State.Drive[ Drive ].diskattr |= CAPSDRIVE_DA_IN;
+
 	return true;
 #endif
 }
@@ -237,6 +240,9 @@ bool	IPF_Eject ( int Drive )
 	}
 
 	IPF_State.CapsImage[ Drive ] = -1;
+
+	IPF_State.Drive[ Drive ].diskattr &= ~CAPSDRIVE_DA_IN;
+
 	return true;
 #endif
 }
