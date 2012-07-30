@@ -265,6 +265,8 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
  */
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 {
+	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x\n" , State );
+
 	if ( State )
 		FDC_AcknowledgeInterrupt();		/* IRQ bit was set */
 	else
@@ -281,6 +283,8 @@ static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 {
 	Uint8	Byte;
+
+	LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x\n" , State );
 
 	if ( State == 0 )
 		return;					/* DRQ bit was reset, do nothing */
@@ -387,6 +391,8 @@ void	IPF_Emulate ( int NbCycles )
 	return;
 
 #else
+	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d\n" , NbCycles );
+
 	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );
 #endif
 }
