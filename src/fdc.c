@@ -22,6 +22,7 @@ const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
 #include "fdc.h"
 #include "hdc.h"
 #include "floppy.h"
+#include "floppy_ipf.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
@@ -2241,6 +2242,12 @@ void FDC_DiskController_WriteWord ( void )
 		FDC_WriteSectorCountRegister();
 	else
 	{
+
+		/* IPF TEMP */
+		IPF_FDC_WriteReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 , IoMem_ReadByte(0xff8605) );
+		return;
+		/* IPF TEMP */
+
 		/* Write to FDC registers */
 		switch ( FDC_DMA.Mode & 0x6 )
 		{   /* Bits 1,2 (A1,A0) */
@@ -2292,6 +2299,12 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	}
 	else
 	{
+
+		/* IPF TEMP */
+		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
+		/* IPF TEMP */
+
+#if 0
 		/* FDC code */
 		switch (FDC_DMA.Mode & 0x6)				/* Bits 1,2 (A1,A0) */
 		{
@@ -2338,6 +2351,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 			DiskControllerByte = FDC.DR;
 			break;
 		}
+#endif
 	}
 
 	IoMem_WriteWord(0xff8604, DiskControllerByte);
