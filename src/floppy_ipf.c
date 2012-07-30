@@ -331,6 +331,47 @@ void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 
 
 
+
+/*
+ * Write a byte into one of the FDC registers
+ * 0=command   1=track   2=sector   3=data
+ */
+void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
+{
+#ifndef HAVE_CAPSIMAGE
+	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
+
+#else
+	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x\n" , Reg , Byte );
+
+	CAPSFdcWrite ( &IPF_State.Fdc , Reg , Byte );
+#endif
+}
+
+
+
+
+/*
+ * Read the content of one of the FDC registers
+ * 0=command   1=track   2=sector   3=data
+ */
+Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
+{
+#ifndef HAVE_CAPSIMAGE
+	return 0;					/* This should not be reached (an IPF image can't be inserted without capsimage) */
+#else
+	Uint8	Byte;
+
+	Byte = CAPSFdcRead ( &IPF_State.Fdc , Reg );
+	LOG_TRACE(TRACE_FDC, "fdc ipf read reg=%d data=0x%x\n" , Reg , Byte );
+
+	return Byte;
+#endif
+}
+
+
+
+
 /*
  * Run the FDC emulation during NbCycles cycles (relative to the 8MHz FDC's clock)
  */
