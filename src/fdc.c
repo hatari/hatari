@@ -2304,7 +2304,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
 		/* IPF TEMP */
 
-#if 0
+#if 1
 		/* FDC code */
 		switch (FDC_DMA.Mode & 0x6)				/* Bits 1,2 (A1,A0) */
 		{
@@ -2326,6 +2326,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 				FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );                /* Set WPRT bit */
 
 			DiskControllerByte = FDC.STR;
+		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
 
 			/* Temporarily change the WPRT bit if we're in a transition phase */
 			/* regarding the disk in the drive (inserting or ejecting) */
@@ -2343,12 +2344,15 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 			break;
 		 case 0x2:						/* 0 1 - Track register */
 			DiskControllerByte = FDC.TR;
+		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
 			break;
 		 case 0x4:						/* 1 0 - Sector register */
 			DiskControllerByte = FDC.SR;
+		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
 			break;
 		 case 0x6:						/* 1 1 - Data register */
 			DiskControllerByte = FDC.DR;
+		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
 			break;
 		}
 #endif

@@ -127,8 +127,9 @@ bool	IPF_Init ( void )
 	}
 
 	/* Init FDC with 2 physical drives */
-	IPF_State.Fdc.model = cfdcmWD1772;
+	memset ( &IPF_State.Fdc , 0 , sizeof ( IPF_State.Fdc ) );
 	IPF_State.Fdc.type = sizeof( struct CapsFdc );
+	IPF_State.Fdc.model = cfdcmWD1772;
 	IPF_State.Fdc.drive = IPF_State.Drive;
 	IPF_State.Fdc.drivecnt = MAX_FLOPPYDRIVES;
 
@@ -207,6 +208,15 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		return false;
 	}
 
+// 	if ( CAPSLoadImage ( ImageId , DI_LOCK_DENALT | DI_LOCK_DENVAR | DI_LOCK_UPDATEFD ) != imgeOk )
+// 	{
+// 		fprintf ( stderr , "IPF : error CAPSLoadImage\n" );
+// 		CAPSUnlockImage ( ImageId );
+// 		CAPSRemImage ( ImageId ) ;
+// 		return false;
+// 	}
+
+	
 	IPF_State.CapsImage[ Drive ] = ImageId;
 
 	IPF_State.Drive[ Drive ].diskattr |= CAPSDRIVE_DA_IN;
@@ -253,10 +263,28 @@ bool	IPF_Eject ( int Drive )
 
 
 /*
- * Empty callback function, we do nothing special when track is changed
+ * Callback function used when track is changed.
+ * We need to update the track data by calling CAPSLockTrack
  */
 static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 {
+	int	Drive = State;				/* State is the drive number in that case */
+	struct CapsDrive *pd = pc->drive+Drive;		/* Current drive where the track change occurred */
+	struct CapsTrackInfoT1 cti;
+
+	cti.type=1;
+	if ( CAPSLockTrack ( &cti , IPF_State.CapsImage[ Drive ] , pd->buftrack , pd->bufside ,
+			DI_LOCK_DENALT|DI_LOCK_DENVAR|DI_LOCK_UPDATEFD|DI_LOCK_TYPE ) != imgeOk )
+		return;
+
+	LOG_TRACE(TRACE_FDC, "fdc ipf callback trk drive=%d buftrack=%d bufside=%d VBL=%d\n" , Drive ,
+		  pd->buftrack , pd->bufside , nVBLs );
+
+	pd->ttype	= cti.type;
+	pd->trackbuf	= cti.trackbuf;
+	pd->timebuf	= cti.timebuf;
+	pd->tracklen	= cti.tracklen;
+	pd->overlap	= cti.overlap;
 }
 
 
@@ -286,8 +314,6 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 {
 	Uint8	Byte;
 
-	LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x VBL=%d\n" , State , nVBLs );
-
 	if ( State == 0 )
 		return;					/* DRQ bit was reset, do nothing */
 
@@ -295,12 +321,16 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 	{
 		Byte = FDC_DMA_FIFO_Pull ();		/* Get a byte from the DMA FIFO */
 		CAPSFdcWrite ( &IPF_State.Fdc , 3 , Byte );	/* Write to FDC's reg 3 */
+
+		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x write byte 0x%02x VBL=%d\n" , State , Byte , nVBLs );
 	}
 
 	else						/* DMA read mode */
 	{
 		Byte = CAPSFdcRead ( &IPF_State.Fdc , 3 );	/* Read from FDC's reg 3 */
 		FDC_DMA_FIFO_Push ( Byte );		/* Add byte to the DMA FIFO */
+
+		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x read byte 0x%02x VBL=%d\n" , State , Byte , nVBLs );
 	}
 }
 
