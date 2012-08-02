@@ -208,13 +208,13 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		return false;
 	}
 
-// 	if ( CAPSLoadImage ( ImageId , DI_LOCK_DENALT | DI_LOCK_DENVAR | DI_LOCK_UPDATEFD ) != imgeOk )
-// 	{
-// 		fprintf ( stderr , "IPF : error CAPSLoadImage\n" );
-// 		CAPSUnlockImage ( ImageId );
-// 		CAPSRemImage ( ImageId ) ;
-// 		return false;
-// 	}
+	if ( CAPSLoadImage ( ImageId , DI_LOCK_DENALT | DI_LOCK_DENVAR | DI_LOCK_UPDATEFD ) != imgeOk )
+	{
+		fprintf ( stderr , "IPF : error CAPSLoadImage\n" );
+		CAPSUnlockImage ( ImageId );
+		CAPSRemImage ( ImageId ) ;
+		return false;
+	}
 
 	
 	IPF_State.CapsImage[ Drive ] = ImageId;
