@@ -278,6 +278,15 @@ enum
 /* of accuracy is not necessary for ST/MSA disk images (it would be required to emulate protections */
 /* in Pasti disk images) */
 
+/*
+ * Notes on timings required for precise emulation :
+ * For a standard floppy recorded with a constant speed, the FDC will take 32 microsec
+ * to read/write 1 byte on the floppy. On STF with a 8 MHz CPU clock, this means one byte can be
+ * transferred every 256 cpu cycles. So, to get some correct timings as required by some games' protection
+ * we must update the emulated FDC's state every 256 cycles (it could be less frequently and still work,
+ * due to the 16 bytes DMA FIFO that will transfer data only 16 bytes at a time, every 256*16=4096 cycles)
+ */
+
 #define	FDC_BITRATE_STANDARD			250000		/* read/write speed of the WD1772 in bits per sec */
 #define	FDC_RPM_STANDARD			300		/* 300 RPM or 5 spins per sec */
 #define	FDC_TRACK_BYTES_STANDARD		( ( FDC_BITRATE_STANDARD / 8 ) / ( FDC_RPM_STANDARD / 60 ) )	/* 6250 bytes */
@@ -299,7 +308,7 @@ enum
 #define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediatly */
 #define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME [NP] : this was not measured */
 								
-#define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( FDC_DMA_FIFO_SIZE )
+#define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( FDC_DMA_FIFO_SIZE )	/* 32*16=512 micro sec */
 
 #define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
 
