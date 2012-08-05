@@ -538,7 +538,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	else if (ZIP_FileNameIsZIP(filename))
 	{
 		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
-		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, zippath, &nImageBytes);
+		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, zippath, &nImageBytes, &ImageType);
 	}
 
 	if ( (EmulationDrives[Drive].pBuffer == NULL) || ( ImageType == FLOPPY_IMAGE_TYPE_NONE ) )
