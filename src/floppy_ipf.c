@@ -31,17 +31,17 @@ typedef struct
 	struct CapsFdc		Fdc;				/* Fdc state */
 	struct CapsDrive 	Drive[ MAX_FLOPPYDRIVES ];	/* Physical drives */
 	CapsLong		CapsImage[ MAX_FLOPPYDRIVES ];	/* For the IPF disk images */
-
 } IPF_STRUCT;
 
 
 static IPF_STRUCT	IPF_State;			/* All variables related to the IPF support */
 
 
+#ifdef HAVE_CAPSIMAGE
 static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
-
+#endif
 
 
 /*-----------------------------------------------------------------------*/
@@ -266,6 +266,7 @@ bool	IPF_Eject ( int Drive )
  * Callback function used when track is changed.
  * We need to update the track data by calling CAPSLockTrack
  */
+#ifdef HAVE_CAPSIMAGE
 static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 {
 	int	Drive = State;				/* State is the drive number in that case */
@@ -286,6 +287,7 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 	pd->tracklen	= cti.tracklen;
 	pd->overlap	= cti.overlap;
 }
+#endif
 
 
 
@@ -293,6 +295,7 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 /*
  * Callback function used when the FDC change the IRQ signal
  */
+#ifdef HAVE_CAPSIMAGE
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 {
 	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x VBL=%d\n" , State , nVBLs );
@@ -302,6 +305,7 @@ static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 	else
 		FDC_ClearIRQ();				/* IRQ bit was reset */
 }
+#endif
 
 
 
@@ -310,6 +314,7 @@ static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
  * Callback function used when the FDC change the DRQ signal
  * -> copy the byte to/from the DMA's FIFO if it's a read or a write to the disk
  */
+#ifdef HAVE_CAPSIMAGE
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 {
 	Uint8	Byte;
@@ -333,6 +338,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x read byte 0x%02x VBL=%d\n" , State , Byte , nVBLs );
 	}
 }
+#endif
 
 
 
