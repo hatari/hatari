@@ -219,7 +219,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 	
 	IPF_State.CapsImage[ Drive ] = ImageId;
 
-	IPF_State.Drive[ Drive ].diskattr |= CAPSDRIVE_DA_IN;
+	IPF_State.Drive[ Drive ].diskattr |= ( CAPSDRIVE_DA_IN | CAPSDRIVE_DA_WP );	/* Disk inserted and write protected */
 
 	return true;
 #endif
