@@ -338,6 +338,10 @@ static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 
 #define	FDC_FAST_FDC_FACTOR			10		/* Divide all delays by this value when --fastfdc is used */
 
 
+#define	FDC_EMULATION_MODE_INTERNAL		1		/* Use fdc.c to handle emulation (ST, MSA and DIM images) */
+#define	FDC_EMULATION_MODE_IPF			2		/* Use floppy_ipf.c to handle emulation (IPF images ) */
+
+
 typedef struct {
 	/* WD1772 internal registers */
 	Uint8		DR;					/* Data Register */
@@ -398,6 +402,7 @@ static bool	FDC_DMA_WriteToFloppy ( void );
 
 static bool	FDC_ValidFloppyDrive ( void );
 static int	FDC_FindFloppyDrive ( void );
+static int	FDC_GetEmulationMode ( void );
 static int	FDC_GetSectorsPerTrack ( int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Track );
 
@@ -830,6 +835,20 @@ static int FDC_FindFloppyDrive ( void )
 	/* None appear to be selected so default to Drive A */
 	/* [NP] 2012/03/04 : this is certainly wrong, we should ignore commands, not default to A: (see FDC_ValidFloppyDrive()) */
 	return 0;							/* Device 0 (A:) */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the mode to handle a read/write in $ff86xx
+ * Depending on the images inserted in each floppy drive and on the
+ * selected drive, we must choose which fdc emulation should be used.
+ * Possible emulation methods are 'internal' or 'ipf'.
+ */
+static int FDC_GetEmulationMode ( void )
+{
+//	return FDC_EMULATION_MODE_INTERNAL;
+	return FDC_EMULATION_MODE_IPF;
 }
 
 
@@ -2223,6 +2242,8 @@ static void FDC_WriteDataRegister ( void )
 void FDC_DiskController_WriteWord ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
+	int EmulationMode;
+	int FDC_reg;
 
 	if ( nIoMemAccessSize == SIZE_BYTE )
 	{
@@ -2251,27 +2272,31 @@ void FDC_DiskController_WriteWord ( void )
 		FDC_WriteSectorCountRegister();
 	else
 	{
+		FDC_reg = ( FDC_DMA.Mode & 0x6 ) >> 1;			/* Bits 1,2 (A0,A1) */
 
-		/* IPF TEMP */
-		IPF_FDC_WriteReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 , IoMem_ReadByte(0xff8605) );
-		return;
-		/* IPF TEMP */
-
-		/* Write to FDC registers */
-		switch ( FDC_DMA.Mode & 0x6 )
-		{   /* Bits 1,2 (A1,A0) */
-		 case 0x0:						/* 0 0 - Command register */
-			FDC_WriteCommandRegister();
-			break;
-		 case 0x2:						/* 0 1 - Track register */
-			FDC_WriteTrackRegister();
-			break;
-		 case 0x4:						/* 1 0 - Sector register */
-			FDC_WriteSectorRegister();
-			break;
-		 case 0x6:						/* 1 1 - Data register */
-			FDC_WriteDataRegister();
-			break;
+		EmulationMode = FDC_GetEmulationMode();
+		if ( EmulationMode == FDC_EMULATION_MODE_INTERNAL )
+		{
+			/* Write to FDC registers */
+			switch ( FDC_reg )
+			{
+			case 0x0:					/* 0 0 - Command register */
+				FDC_WriteCommandRegister();
+				break;
+			case 0x1:					/* 0 1 - Track register */
+				FDC_WriteTrackRegister();
+				break;
+			case 0x2:					/* 1 0 - Sector register */
+				FDC_WriteSectorRegister();
+				break;
+			case 0x3:					/* 1 1 - Data register */
+				FDC_WriteDataRegister();
+				break;
+			}
+		}
+		else if ( EmulationMode == FDC_EMULATION_MODE_IPF )
+		{
+			IPF_FDC_WriteReg ( FDC_reg , IoMem_ReadByte(0xff8605) );
 		}
 	}
 }
