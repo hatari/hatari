@@ -361,7 +361,7 @@ void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 
 	Side = ( (~io_porta_new) & 0x01 );		/* Side 0 or 1 */
 
-	IPF_State.Fdc.drivenew = -1;			/* By default, don't change drive */
+	IPF_State.Fdc.drivenew = -1;			/* By default, don't select any drive */
 
 	/* Check drive 1 first */
 	if ( ( io_porta_new & 0x04 ) == 0 )
