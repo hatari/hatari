@@ -2311,6 +2311,8 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	Uint16 DiskControllerByte = 0;					/* Used to pass back the parameter */
 	int FrameCycles, HblCounterVideo, LineCycles;
 	int ForceWPRT;
+	int EmulationMode;
+	int FDC_reg;
 
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
@@ -2333,35 +2335,54 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	}
 	else
 	{
+		FDC_reg = ( FDC_DMA.Mode & 0x6 ) >> 1;			/* Bits 1,2 (A0,A1) */
 
-		/* IPF TEMP */
-		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
-		/* IPF TEMP */
-
-#if 1
-		/* FDC code */
-		switch (FDC_DMA.Mode & 0x6)				/* Bits 1,2 (A1,A0) */
+		EmulationMode = FDC_GetEmulationMode();
+		if ( EmulationMode == FDC_EMULATION_MODE_INTERNAL )
 		{
-		 case 0x0:						/* 0 0 - Status register */
-			/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
-			/* is updated after a Type I command */
-			/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
-			if ( FDC.CommandType == 1 )
+			switch ( FDC_reg )
 			{
-				if ( Floppy_IsWriteProtected ( FDC_DRIVE ) )
-					FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
-				else
-					FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
+			case 0x0:						/* 0 0 - Status register */
+				/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
+				/* is updated after a Type I command */
+				/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
+				if ( FDC.CommandType == 1 )
+				{
+					if ( Floppy_IsWriteProtected ( FDC_DRIVE ) )
+						FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+					else
+						FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
+				}
+
+				/* When there's no disk in drive, the floppy drive hardware can't see */
+				/* the difference with an inserted disk that would be write protected */
+				if ( ! EmulationDrives[ FDC_DRIVE ].bDiskInserted )
+					FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );                /* Set WPRT bit */
+
+				DiskControllerByte = FDC.STR;
+
+				/* When Status Register is read, FDC's INTRQ is reset */
+				FDC_ClearIRQ();
+				break;
+			case 0x1:						/* 0 1 - Track register */
+				DiskControllerByte = FDC.TR;
+				break;
+			case 0x2:						/* 1 0 - Sector register */
+				DiskControllerByte = FDC.SR;
+				break;
+			case 0x3:						/* 1 1 - Data register */
+				DiskControllerByte = FDC.DR;
+				break;
 			}
+		}
+		else if ( EmulationMode == FDC_EMULATION_MODE_IPF )
+		{
+			DiskControllerByte = IPF_FDC_ReadReg ( FDC_reg );
+		}
 
-			/* When there's no disk in drive, the floppy drive hardware can't see */
-			/* the difference with an inserted disk that would be write protected */
-			if ( ! EmulationDrives[ FDC_DRIVE ].bDiskInserted )
-				FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );                /* Set WPRT bit */
-
-			DiskControllerByte = FDC.STR;
-		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
-
+		/* Common to all emulation's modes : handle insert/eject with FDC_STR_BIT_WPRT in STR */
+		if ( FDC_reg == 0x0 )						/* 0 0 - Status register */
+		{
 			/* Temporarily change the WPRT bit if we're in a transition phase */
 			/* regarding the disk in the drive (inserting or ejecting) */
 			ForceWPRT = Floppy_DriveTransitionUpdateState ( FDC_DRIVE );
@@ -2372,24 +2393,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 
 			if ( ForceWPRT != 0 )
 				LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n", ForceWPRT==1?1:0, nVBLs, FDC_DRIVE, DiskControllerByte );
-
-			/* When Status Register is read, FDC's INTRQ is reset */
-			FDC_ClearIRQ();
-			break;
-		 case 0x2:						/* 0 1 - Track register */
-			DiskControllerByte = FDC.TR;
-		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
-			break;
-		 case 0x4:						/* 1 0 - Sector register */
-			DiskControllerByte = FDC.SR;
-		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
-			break;
-		 case 0x6:						/* 1 1 - Data register */
-			DiskControllerByte = FDC.DR;
-		DiskControllerByte = IPF_FDC_ReadReg ( ( FDC_DMA.Mode & 0x6 ) >> 1 );
-			break;
 		}
-#endif
 	}
 
 	IoMem_WriteWord(0xff8604, DiskControllerByte);
