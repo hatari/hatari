@@ -42,6 +42,11 @@ int MovepByteNbr;				/* Number of the byte currently transferred in a movep (1..
 
 
 
+static void	Cycles_UpdateCounters(void);
+static int	Cycles_GetInternalCycleOnReadAccess(void);
+static int	Cycles_GetInternalCycleOnWriteAccess(void);
+
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -102,20 +107,18 @@ int Cycles_GetCounter(int nId)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read a counter on CPU memory read access by taking care of the instruction
- * type (add the needed amount of additional cycles).
+ * Compute the cycles where a read actually happens inside a specific
+ * instruction type. We use some common cases, this should be handled more
+ * accurately in the cpu emulation for each opcode.
  */
-int Cycles_GetCounterOnReadAccess(int nId)
+static int Cycles_GetInternalCycleOnReadAccess(void)
 {
-	int nAddCycles;
+	int AddCycles;
 	int Opcode;
-
-	/* Update counters first so we read an up-to-date value */
-	Cycles_UpdateCounters();
 
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
-		nAddCycles = 4 + nWaitStateCycles;
+		AddCycles = 4 + nWaitStateCycles;
 	}
 	else							/* BUS_MODE_CPU */
 	{
@@ -126,39 +129,38 @@ int Cycles_GetCounterOnReadAccess(int nId)
 
 		/* Assume we use 'move src,dst' : access cycle depends on dst mode */
 		if ( Opcode == 0x11f8 )				/* move.b xxx.w,xxx.w (eg MOVE.B $ffff8209.w,$26.w in Bird Mad Girl Show) */
-			nAddCycles = CurrentInstrCycles + nWaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
+			AddCycles = CurrentInstrCycles + nWaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
 		else if ( OpcodeFamily == i_MVPRM )					/* eg movep.l d0,$ffc3(a1) in E605 (STE) */
-			nAddCycles = 12 + MovepByteNbr * 4;				/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
+			AddCycles = 12 + MovepByteNbr * 4;				/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
 											/* something must be wrong in video.c */
 		else
-			nAddCycles = CurrentInstrCycles + nWaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
+			AddCycles = CurrentInstrCycles + nWaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
 	}
 
-	return nCyclesCounter[nId] + nAddCycles;
+	return AddCycles;
 }
+
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read a counter on CPU memory write access by taking care of the instruction
- * type (add the needed amount of additional cycles).
+ * Compute the cycles where a write actually happens inside a specific
+ * instruction type. We use some common cases, this should be handled more
+ * accurately in the cpu emulation for each opcode.
  */
-int Cycles_GetCounterOnWriteAccess(int nId)
+static int Cycles_GetInternalCycleOnWriteAccess(void)
 {
-	int nAddCycles;
-
-	/* Update counters first so we read an up-to-date value */
-	Cycles_UpdateCounters();
+	int AddCycles;
 
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
-		nAddCycles = 4 + nWaitStateCycles;
+		AddCycles = 4 + nWaitStateCycles;
 	}
 	else							/* BUS_MODE_CPU */
 	{
 		/* TODO: Find proper cycles count depending on the type of the current instruction */
 		/* (e.g. movem is not correctly handled) */
-		nAddCycles = CurrentInstrCycles + nWaitStateCycles;
+		AddCycles = CurrentInstrCycles + nWaitStateCycles;
 
 		if ( OpcodeFamily == i_CLR )				/* should also be the case for add, sub, and, or, eor, neg, not */
 			;						/* Do nothing, the write is done during the last 4 cycles */
@@ -171,10 +173,41 @@ int Cycles_GetCounterOnWriteAccess(int nId)
 		{
 			/* assume the behaviour of a 'move' (since this is the most */
 			/* common instr used when requiring cycle precise writes) */
-			if ( nAddCycles >= 8 )
-				nAddCycles -= 4;			/* last 4 cycles are for prefetch */
+			if ( AddCycles >= 8 )
+				AddCycles -= 4;			/* last 4 cycles are for prefetch */
 		}
 	}
 
-	return nCyclesCounter[nId] + nAddCycles;
+	return AddCycles;
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read a counter on CPU memory read access by taking care of the instruction
+ * type (add the needed amount of additional cycles).
+ */
+int Cycles_GetCounterOnReadAccess(int nId)
+{
+	int AddCycles;
+
+	AddCycles = Cycles_GetInternalCycleOnReadAccess();
+
+	return Cycles_GetCounter(nId) + AddCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read a counter on CPU memory write access by taking care of the instruction
+ * type (add the needed amount of additional cycles).
+ */
+int Cycles_GetCounterOnWriteAccess(int nId)
+{
+	int AddCycles;
+
+	AddCycles = Cycles_GetInternalCycleOnWriteAccess();
+
+	return Cycles_GetCounter(nId) + AddCycles;
+}
+
