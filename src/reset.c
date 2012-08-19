@@ -41,6 +41,8 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
  */
 static int Reset_ST(bool bCold)
 {
+	CyclesGlobalClockCounter = 0;		/* reset main clock counter */
+
 	if (bCold)
 	{
 		int ret;
