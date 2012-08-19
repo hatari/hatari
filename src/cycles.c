@@ -23,6 +23,8 @@
 /* 2011/03/26	[NP]	In Cycles_GetCounterOnReadAccess, add a special case for opcode	*/
 /*			$11f8 'move.b xxx.w,xxx.w' (fix MOVE.B $ffff8209.w,$26.w in	*/
 /*			'Bird Mad Girl Show' demo's loader/protection)			*/
+/* 2012/08/19	[NP]	Add a global counter CyclesGlobalClockCounter to count cycles	*/
+/*			since the last reset.						*/
 
 
 const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
@@ -33,12 +35,14 @@ const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
 #include "cycles.h"
 
 
-int nCyclesMainCounter;				/* Main cycles counter */
+int	nCyclesMainCounter;			/* Main cycles counter since previous Cycles_UpdateCounters() */
 
 static int nCyclesCounter[CYCLES_COUNTER_MAX];	/* Array with all counters */
 
-int CurrentInstrCycles;
-int MovepByteNbr;				/* Number of the byte currently transferred in a movep (1..2 or 1..4) */
+Sint64	CyclesGlobalClockCounter;		/* Gloabl clock counter since previous reset */
+
+int	CurrentInstrCycles;
+int	MovepByteNbr;				/* Number of the byte currently transferred in a movep (1..2 or 1..4) */
 
 
 
@@ -57,6 +61,7 @@ void Cycles_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	MemorySnapShot_Store(&nCyclesMainCounter, sizeof(nCyclesMainCounter));
 	MemorySnapShot_Store(nCyclesCounter, sizeof(nCyclesCounter));
+	MemorySnapShot_Store(&CyclesGlobalClockCounter, sizeof(CyclesGlobalClockCounter));
 	MemorySnapShot_Store(&CurrentInstrCycles, sizeof(CurrentInstrCycles));
 }
 
@@ -73,6 +78,8 @@ static void Cycles_UpdateCounters(void)
 	{
 		nCyclesCounter[i] += nCyclesMainCounter;
 	}
+
+	CyclesGlobalClockCounter += nCyclesMainCounter;
 
 	nCyclesMainCounter = 0;
 }
@@ -209,5 +216,37 @@ int Cycles_GetCounterOnWriteAccess(int nId)
 	AddCycles = Cycles_GetInternalCycleOnWriteAccess();
 
 	return Cycles_GetCounter(nId) + AddCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read the main clock counter on CPU memory read access by taking care of the instruction
+ * type (add the needed amount of additional cycles).
+ */
+Sint64 Cycles_GetClockCounterOnReadAccess(void)
+{
+	int AddCycles;
+
+	AddCycles = Cycles_GetInternalCycleOnReadAccess();
+	Cycles_UpdateCounters();
+
+	return CyclesGlobalClockCounter + AddCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read the main clock counter on CPU memory write access by taking care of the instruction
+ * type (add the needed amount of additional cycles).
+ */
+Sint64 Cycles_GetClockCounterOnWriteAccess(void)
+{
+	int AddCycles;
+
+	AddCycles = Cycles_GetInternalCycleOnWriteAccess();
+	Cycles_UpdateCounters();
+
+	return CyclesGlobalClockCounter + AddCycles;
 }
 
