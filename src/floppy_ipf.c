@@ -394,6 +394,8 @@ void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 		IPF_State.Drive[ 0 ].newside = Side;
 		IPF_State.Fdc.drivenew = 0;		/* Select drive 0 (and un-select drive 1 if set above) */
 	}
+
+	IPF_Emulate();					/* Update emulation's state up to this point, then set new drive/side */
 #endif
 }
 
