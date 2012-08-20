@@ -61,10 +61,7 @@ static int Reset_ST(bool bCold)
 	VDI_Reset();                  /* Reset internal VDI variables */
 
 	GemDOS_Reset();               /* Reset GEMDOS emulation */
-	if (bCold)
-	{
-		FDC_Reset();                /* Reset FDC */
-	}
+	FDC_Reset();			/* Reset FDC */
 	Floppy_Reset();			/* Reset Floppy */
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
