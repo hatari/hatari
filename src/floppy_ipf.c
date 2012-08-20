@@ -296,8 +296,8 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 			DI_LOCK_DENALT|DI_LOCK_DENVAR|DI_LOCK_UPDATEFD|DI_LOCK_TYPE ) != imgeOk )
 		return;
 
-	LOG_TRACE(TRACE_FDC, "fdc ipf callback trk drive=%d buftrack=%d bufside=%d VBL=%d\n" , Drive ,
-		  pd->buftrack , pd->bufside , nVBLs );
+	LOG_TRACE(TRACE_FDC, "fdc ipf callback trk drive=%d buftrack=%d bufside=%d VBL=%d HBL=%d\n" , Drive ,
+		  pd->buftrack , pd->bufside , nVBLs , nHBL );
 
 	pd->ttype	= cti.type;
 	pd->trackbuf	= cti.trackbuf;
@@ -316,7 +316,7 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 #ifdef HAVE_CAPSIMAGE
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 {
-	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x VBL=%d\n" , State , nVBLs );
+	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x VBL=%d HBL=%d\n" , State , nVBLs , nHBL );
 
 	if ( State )
 		FDC_AcknowledgeInterrupt();		/* IRQ bit was set */
@@ -345,7 +345,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 		Byte = FDC_DMA_FIFO_Pull ();		/* Get a byte from the DMA FIFO */
 		CAPSFdcWrite ( &IPF_State.Fdc , 3 , Byte );	/* Write to FDC's reg 3 */
 
-		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x write byte 0x%02x VBL=%d\n" , State , Byte , nVBLs );
+		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x write byte 0x%02x VBL=%d HBL=%d\n" , State , Byte , nVBLs , nHBL );
 	}
 
 	else						/* DMA read mode */
@@ -353,7 +353,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 		Byte = CAPSFdcRead ( &IPF_State.Fdc , 3 );	/* Read from FDC's reg 3 */
 		FDC_DMA_FIFO_Push ( Byte );		/* Add byte to the DMA FIFO */
 
-		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x read byte 0x%02x VBL=%d\n" , State , Byte , nVBLs );
+		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x read byte 0x%02x VBL=%d HBL=%d\n" , State , Byte , nVBLs , nHBL );
 	}
 }
 #endif
@@ -375,7 +375,7 @@ void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 #else
 	int	Side;
 
-	LOG_TRACE(TRACE_FDC, "fdc ipf change drive/side io_porta_old=0x%x io_porta_new=0x%x VBL=%d\n" , io_porta_old , io_porta_new , nVBLs );
+	LOG_TRACE(TRACE_FDC, "fdc ipf change drive/side io_porta_old=0x%x io_porta_new=0x%x VBL=%d HBL=%d\n" , io_porta_old , io_porta_new , nVBLs , nHBL );
 
 	Side = ( (~io_porta_new) & 0x01 );		/* Side 0 or 1 */
 
@@ -410,7 +410,7 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
 
 #else
-	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d\n" , Reg , Byte , nVBLs );
+	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
 
 	IPF_Emulate();					/* Update emulation's state up to this point */
 
@@ -435,7 +435,7 @@ Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
 	IPF_Emulate();					/* Update emulation's state up to this point */
 
 	Byte = CAPSFdcRead ( &IPF_State.Fdc , Reg );
-	LOG_TRACE(TRACE_FDC, "fdc ipf read reg=%d data=0x%x VBL=%d\n" , Reg , Byte , nVBLs );
+	LOG_TRACE(TRACE_FDC, "fdc ipf read reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
 
 	return Byte;
 #endif
@@ -459,7 +459,7 @@ void	IPF_Emulate ( void )
 	if ( NbCycles < 0 )
 		NbCycles = 0;						/* We should call CAPSFdcEmulate even when NbCycles=0 */
 
-	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d VBL=%d clock=%lld\n" , NbCycles , nVBLs , CyclesGlobalClockCounter );
+	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d VBL=%d HBL=%d clock=%lld\n" , NbCycles , nVBLs , nHBL , CyclesGlobalClockCounter );
 
 	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );			/* Process at max NbCycles */
 	IPF_State.FdcClock += IPF_State.Fdc.clockact;			/* clockact can be < NbCycle in some cases */
