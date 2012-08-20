@@ -29,6 +29,9 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 
 typedef struct
 {
+	Uint32			CapsLibRelease;
+	Uint32			CapsLibRevision;
+
 	struct CapsFdc		Fdc;				/* Fdc state */
 	struct CapsDrive 	Drive[ MAX_FLOPPYDRIVES ];	/* Physical drives */
 	CapsLong		CapsImage[ MAX_FLOPPYDRIVES ];	/* For the IPF disk images */
@@ -111,6 +114,7 @@ bool	IPF_Init ( void )
 
 #else
 	int	i;
+	struct CapsVersionInfo	caps_vi;
 
 	fprintf ( stderr , "IPF : IPF_Init\n" );
 
@@ -119,6 +123,15 @@ bool	IPF_Init ( void )
 		fprintf ( stderr , "IPF : Could not initialize the capsimage library\n" );
 		return false;
         }
+
+	if ( CAPSGetVersionInfo ( &caps_vi , 0 ) != imgeOk )
+        {
+		fprintf ( stderr , "IPF : CAPSVersionInfo failed\n" );
+		return false;
+        }
+	fprintf ( stderr , "IPF : capsimage library version release=%d revision=%d\n" , caps_vi.release , caps_vi.revision );
+	IPF_State.CapsLibRelease = caps_vi.release;
+	IPF_State.CapsLibRevision = caps_vi.revision;
 
 	/* Default values for each physical drive */
 	memset ( IPF_State.Drive , 0 , sizeof ( IPF_State.Drive ) );
