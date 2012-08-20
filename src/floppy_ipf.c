@@ -443,15 +443,22 @@ Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
 /*
  * Run the FDC emulation during NbCycles cycles (relative to the 8MHz FDC's clock)
  */
-void	IPF_Emulate ( int NbCycles )
+void	IPF_Emulate ( void )
 {
 #ifndef HAVE_CAPSIMAGE
 	return;
 
 #else
+	int NbCycles;
+
+	NbCycles = CyclesGlobalClockCounter - IPF_State.FdcClock;	/* Number of cycles since last emulation */
+	if ( NbCycles < 0 )
+		NbCycles = 0;						/* We should call CAPSFdcEmulate even when NbCycles=0 */
+
 	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d VBL=%d clock=%lld\n" , NbCycles , nVBLs , CyclesGlobalClockCounter );
 
-	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );
+	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );			/* Process at max NbCycles */
+	IPF_State.FdcClock += IPF_State.Fdc.clockact;			/* clockact can be < NbCycle in some cases */
 #endif
 }
 

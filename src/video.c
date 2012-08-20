@@ -1585,7 +1585,7 @@ void Video_InterruptHandler_HBL ( void )
 	DmaSnd_STE_HBL_Update();			/* Update STE DMA sound if needed */
 
 	/* TEMP IPF */
-	IPF_Emulate ( nCyclesPerLine );
+	IPF_Emulate();
 	/* TEMP IPF */
 
 	nHBL++;						/* Increase HBL count */

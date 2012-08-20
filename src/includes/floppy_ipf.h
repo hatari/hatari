@@ -17,5 +17,5 @@ extern void	IPF_Reset ( void );
 extern void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );
 extern void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte );
 extern Uint8	IPF_FDC_ReadReg ( Uint8 Reg );
-extern void	IPF_Emulate ( int NbCycles );
+extern void	IPF_Emulate ( void );
 
