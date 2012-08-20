@@ -17,6 +17,7 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "floppy_ipf.h"
 #include "fdc.h"
 #include "log.h"
+#include "memorySnapShot.h"
 #include "psg.h"
 #include "screen.h"
 #include "video.h"
@@ -48,6 +49,33 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
 #endif
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
+void IPF_MemorySnapShot_Capture(bool bSave)
+{
+	int	StructSize;
+
+	if ( bSave )					/* Saving snapshot */
+	{
+		StructSize = sizeof ( IPF_State );	/* 0 if HAVE_CAPSIMAGE is not defined */
+		MemorySnapShot_Store(&StructSize, sizeof(StructSize));
+fprintf ( stderr , "ipf save %d\n" , StructSize );
+		if ( StructSize > 0 )
+			MemorySnapShot_Store(&IPF_State, sizeof(IPF_State));
+	}
+
+	else						/* Restoring snapshot */
+	{
+	}
+}
+
+
 
 
 /*-----------------------------------------------------------------------*/

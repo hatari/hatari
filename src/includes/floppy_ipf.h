@@ -5,6 +5,7 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
+extern void	IPF_MemorySnapShot_Capture(bool bSave);
 extern bool	IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);
 extern Uint8	*IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType);
 extern bool	IPF_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize);
