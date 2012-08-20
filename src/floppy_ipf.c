@@ -412,6 +412,8 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 #else
 	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d\n" , Reg , Byte , nVBLs );
 
+	IPF_Emulate();					/* Update emulation's state up to this point */
+
 	CAPSFdcWrite ( &IPF_State.Fdc , Reg , Byte );
 #endif
 }
@@ -429,6 +431,8 @@ Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
 	return 0;					/* This should not be reached (an IPF image can't be inserted without capsimage) */
 #else
 	Uint8	Byte;
+
+	IPF_Emulate();					/* Update emulation's state up to this point */
 
 	Byte = CAPSFdcRead ( &IPF_State.Fdc , Reg );
 	LOG_TRACE(TRACE_FDC, "fdc ipf read reg=%d data=0x%x VBL=%d\n" , Reg , Byte , nVBLs );
