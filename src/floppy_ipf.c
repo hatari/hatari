@@ -30,6 +30,7 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 
 typedef struct
 {
+#ifdef HAVE_CAPSIMAGE
 	Uint32			CapsLibRelease;
 	Uint32			CapsLibRevision;
 
@@ -38,6 +39,7 @@ typedef struct
 	CapsLong		CapsImage[ MAX_FLOPPYDRIVES ];	/* For the IPF disk images */
 
 	Sint64			FdcClock;			/* Current value of CyclesGlobalClockCounter */
+#endif
 } IPF_STRUCT;
 
 
@@ -56,6 +58,8 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
 /*-----------------------------------------------------------------------*/
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ * We must take care of whether Hatari was compiled with IPF support of not
+ * when saving/restoring snapshots to avoid incompatibilies.
  */
 void IPF_MemorySnapShot_Capture(bool bSave)
 {
