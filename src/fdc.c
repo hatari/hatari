@@ -533,6 +533,9 @@ void FDC_Reset ( void )
 
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 		HeadTrack[ i ] = 0;			/* Set all drives to track 0 */
+
+	/* Also reset IPF emulation */
+	IPF_Reset();
 }
 
 

@@ -266,6 +266,21 @@ bool	IPF_Eject ( int Drive )
 
 
 /*
+ * Reset FDC state when a reset signal was received
+ */
+void IPF_Reset ( void )
+{
+#ifdef HAVE_CAPSIMAGE
+	CAPSFdcReset ( &IPF_State.Fdc );
+
+	IPF_State.FdcClock = CyclesGlobalClockCounter;
+#endif
+}
+
+
+
+
+/*
  * Callback function used when track is changed.
  * We need to update the track data by calling CAPSLockTrack
  */

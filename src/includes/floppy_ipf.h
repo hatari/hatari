@@ -13,6 +13,7 @@ extern bool	IPF_Init ( void );
 extern bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize );
 extern bool	IPF_Eject ( int Drive );
 
+extern void	IPF_Reset ( void );
 extern void	IPF_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );
 extern void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte );
 extern Uint8	IPF_FDC_ReadReg ( Uint8 Reg );
