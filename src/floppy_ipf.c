@@ -20,6 +20,7 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "psg.h"
 #include "screen.h"
 #include "video.h"
+#include "cycles.h"
 
 #ifdef HAVE_CAPSIMAGE
 #include <caps/fdc.h>
@@ -31,6 +32,8 @@ typedef struct
 	struct CapsFdc		Fdc;				/* Fdc state */
 	struct CapsDrive 	Drive[ MAX_FLOPPYDRIVES ];	/* Physical drives */
 	CapsLong		CapsImage[ MAX_FLOPPYDRIVES ];	/* For the IPF disk images */
+
+	Sint64			FdcClock;			/* Current value of CyclesGlobalClockCounter */
 } IPF_STRUCT;
 
 
@@ -431,7 +434,7 @@ void	IPF_Emulate ( int NbCycles )
 	return;
 
 #else
-//	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d VBL=%d\n" , NbCycles , nVBLs );
+	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d VBL=%d clock=%lld\n" , NbCycles , nVBLs , CyclesGlobalClockCounter );
 
 	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );
 #endif
