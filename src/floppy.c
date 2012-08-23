@@ -487,14 +487,18 @@ int	Floppy_DriveTransitionUpdateState ( int Drive )
  * 0-2 are available here, others are masked to 0.
  * bit 0 : side select
  * bit 1-2 : drive select
+ * - We don't do anything for the internal fdc emulation, as it directly uses
+ *   the IO_PORTA's value.
+ * - We forward the change to IPF emulation, as it doesn't have direct access
+ *   to this IO_PORTA register.
  */
 void	Floppy_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 {
 	if ( io_porta_old == io_porta_new )
-		return;						/* no change */
+		return;						/* No change */
 
 
-	IPF_SetDriveSide ( io_porta_old , io_porta_new );
+	IPF_SetDriveSide ( io_porta_old , io_porta_new );	/* Forward change to IPF emulation */
 }
 
 
