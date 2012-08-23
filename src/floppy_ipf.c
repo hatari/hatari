@@ -18,7 +18,6 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "fdc.h"
 #include "log.h"
 #include "memorySnapShot.h"
-#include "psg.h"
 #include "screen.h"
 #include "video.h"
 #include "cycles.h"
