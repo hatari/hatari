@@ -850,8 +850,32 @@ static int FDC_FindFloppyDrive ( void )
  */
 static int FDC_GetEmulationMode ( void )
 {
+	int	Mode;
+
+	Mode = FDC_EMULATION_MODE_INTERNAL;				/* Default if no drive is selected */
+
+	/* Check drive 1 first */
+	if ( ( PSGRegisters[PSG_REG_IO_PORTA] & 0x04 ) == 0 )
+	{
+		if ( EmulationDrives[ 1 ].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+			Mode = FDC_EMULATION_MODE_IPF;
+		else
+			Mode = FDC_EMULATION_MODE_INTERNAL;
+	}
+
+	/* If both drive 0 and drive 1 are enabled, we keep only drive 0 to choose emulation's mode */
+	if ( ( PSGRegisters[PSG_REG_IO_PORTA] & 0x02 ) == 0 )
+	{
+		if ( EmulationDrives[ 0 ].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+			Mode = FDC_EMULATION_MODE_IPF;
+		else
+			Mode = FDC_EMULATION_MODE_INTERNAL;
+	}
+
+//fprintf ( stderr , "emul mode %x %d\n" , PSGRegisters[PSG_REG_IO_PORTA] & 0x06 , Mode );
 //	return FDC_EMULATION_MODE_INTERNAL;
-	return FDC_EMULATION_MODE_IPF;
+//	return FDC_EMULATION_MODE_IPF;
+	return Mode;
 }
 
 
