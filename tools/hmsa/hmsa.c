@@ -76,6 +76,19 @@ int DlgAlert_Query(const char *text)
 	return TRUE;
 }
 
+
+/**
+ * ../src/file.c requires zip.c, which calls IPF_FileNameIsIPF
+ * We create an empty function to replace it, as we don't use IPF here
+ * and don't want to compile with all the IPF related files.
+ */
+extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);		/* function prototype */
+extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
+{
+	return FALSE;
+}
+
+
 /**
  * Create MSA or ST image of requested size.
  * return error string or NULL for success.
