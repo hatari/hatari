@@ -243,8 +243,8 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		TOS_MemorySnapShot_Capture(true);
 		STMemory_MemorySnapShot_Capture(true);
 		FDC_MemorySnapShot_Capture(true);
-		IPF_MemorySnapShot_Capture(true);
 		Floppy_MemorySnapShot_Capture(true);
+		IPF_MemorySnapShot_Capture(true);			/* After fdc/floppy are saved */
 		GemDOS_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
 		CycInt_MemorySnapShot_Capture(true);
@@ -297,7 +297,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		STMemory_MemorySnapShot_Capture(false);
 		FDC_MemorySnapShot_Capture(false);
 		Floppy_MemorySnapShot_Capture(false);
-		IPF_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored */
+		IPF_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as IPF depend on them */
 		GemDOS_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);
 		CycInt_MemorySnapShot_Capture(false);
