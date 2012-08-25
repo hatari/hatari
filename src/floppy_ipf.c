@@ -63,6 +63,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
 void IPF_MemorySnapShot_Capture(bool bSave)
 {
 	int	StructSize;
+	char	TempBuf[ 1000 ];			/* Should be large enough to contain IPF_STRUCT when HAVE_CAPSIMAGE is defined (~600 bytes) */
 
 	if ( bSave )					/* Saving snapshot */
 	{
@@ -75,6 +76,26 @@ fprintf ( stderr , "ipf save %d\n" , StructSize );
 
 	else						/* Restoring snapshot */
 	{
+		MemorySnapShot_Store(&StructSize, sizeof(StructSize));
+fprintf ( stderr , "ipf load %d\n" , StructSize );
+		if ( ( StructSize == 0 ) && ( sizeof ( IPF_State ) > 0 ) )
+		{
+			Log_AlertDlg(LOG_ERROR, "This memory snapshot doesn't include IPF data but this version of Hatari was built with IPF support");
+			return;				/* Continue restoring the rest of the memory snapshot */
+		}
+		else if ( ( StructSize > 0 ) && ( sizeof ( IPF_State ) == 0 ) )
+		{
+			Log_AlertDlg(LOG_ERROR, "This memory snapshot includes IPF data but this version of Hatari was not built with IPF support");
+			MemorySnapShot_Store(TempBuf, StructSize);	/* Read the IPF data, but ignore them */
+			return;				/* Continue restoring the rest of the memory snapshot */
+		}
+
+		if ( StructSize > 0 )
+		{
+			MemorySnapShot_Store(&IPF_State, sizeof(IPF_State));
+			/* TODO : need to update some pointers in Fdc/Drive/CapsImage */
+fprintf ( stderr , "ipf load ok\n" );
+		}
 	}
 }
 
