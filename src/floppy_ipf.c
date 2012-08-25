@@ -88,6 +88,12 @@ fprintf ( stderr , "ipf load %d\n" , StructSize );
 			MemorySnapShot_Skip( StructSize );	/* Ignore the IPF data */
 			return;				/* Continue restoring the rest of the memory snapshot */
 		}
+		else if ( ( StructSize > 0 ) && ( StructSize != sizeof ( IPF_State ) ) )
+		{
+			Log_AlertDlg(LOG_ERROR, "This memory snapshot includes IPF data different from the ones handled in this version of Hatari");
+			MemorySnapShot_Skip( StructSize );	/* Ignore the IPF data */
+			return;				/* Continue restoring the rest of the memory snapshot */
+		}
 
 		if ( StructSize > 0 )
 		{
