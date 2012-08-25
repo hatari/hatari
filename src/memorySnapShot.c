@@ -133,6 +133,20 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Seek into file from current position
+ */
+static int MemorySnapShot_fseek(MSS_File fhndl, int pos)
+{
+#ifdef COMPRESS_MEMORYSNAPSHOT
+	return (int)gzseek(fhndl, pos, SEEK_CUR);	/* return -1 if error, new position >=0 if OK */
+#else
+	return seek(fhndl, pos, SEEK_CUR);		/* return -1 if error, 0 if OK */
+#endif
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
  * how to handle data.
  */
@@ -202,6 +216,26 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 static void MemorySnapShot_CloseFile(void)
 {
 	MemorySnapShot_fclose(CaptureFile);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Skip Nb bytes when reading from/writing to file.
+ */
+void MemorySnapShot_Skip(int Nb)
+{
+	int res;
+
+	/* Check no file errors */
+	if (CaptureFile != NULL)
+	{
+		res = MemorySnapShot_fseek(CaptureFile, Nb);
+
+		/* Did seek OK? */
+		if (res < 0)
+			bCaptureError = true;
+	}
 }
 
 
