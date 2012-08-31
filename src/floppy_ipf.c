@@ -63,6 +63,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
 void IPF_MemorySnapShot_Capture(bool bSave)
 {
 	int	StructSize;
+	int	Drive;
 
 	if ( bSave )					/* Saving snapshot */
 	{
@@ -98,8 +99,33 @@ fprintf ( stderr , "ipf load %d\n" , StructSize );
 		if ( StructSize > 0 )
 		{
 			MemorySnapShot_Store(&IPF_State, sizeof(IPF_State));
-			/* TODO : need to update some pointers in Fdc/Drive/CapsImage */
-fprintf ( stderr , "ipf load ok\n" );
+
+			/* For IPF structures, we need to update some pointers in Fdc/Drive/CapsImage */
+			/* drive : PUBYTE trackbuf, PUDWORD timebuf */
+			/* fdc : PCAPSDRIVE driveprc, PCAPSDRIVE drive, CAPSFDCHOOK callback functions */
+			CAPSFdcInvalidateTrack ( &IPF_State.Fdc , 0 );	/* Invalidate buffered track data for drive 0 */
+			CAPSFdcInvalidateTrack ( &IPF_State.Fdc , 1 );	/* Invalidate buffered track data for drive 1 */
+
+			IPF_State.Fdc.drive = IPF_State.Drive;		/* Connect drives array to the FDC */
+			if ( IPF_State.Fdc.driveprc != NULL )		/* Recompute active drive's pointer */
+				IPF_State.Fdc.driveprc = IPF_State.Fdc.drive + IPF_State.Fdc.driveact;
+
+			/* Set callback functions */
+			IPF_State.Fdc.cbirq = IPF_CallBack_Irq;
+			IPF_State.Fdc.cbdrq = IPF_CallBack_Drq;
+			IPF_State.Fdc.cbtrk = IPF_CallBack_Trk;
+
+			/* Call IPF_Insert to recompute IPF_State.CapsImage[ Drive ] */
+			for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
+				if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+					if ( IPF_Insert ( Drive , EmulationDrives[Drive].pBuffer , EmulationDrives[Drive].nImageBytes ) == false )
+					{
+						Log_AlertDlg(LOG_ERROR, "Error restoring IPF image %s in drive %d" ,
+							EmulationDrives[Drive].sFileName , Drive );
+						return;
+					}
+
+		fprintf ( stderr , "ipf load ok\n" );
 		}
 	}
 }
