@@ -110,7 +110,8 @@
 /*			'while' condition (PendingInterruptCount <= 0 is true less often than STOP==0)	*/
 /* 2011/04/29	[NP]	In Exception(), check the new PC is not on odd address ; raise an address error	*/
 /*			exception if it's the case.							*/
-
+/* 2012/09/01	[NP]	Add a special case to correct the stacked PC when a bus error happens during	*/
+/*			a movem (fix the game Blood Money).						*/
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -969,8 +970,13 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
 	    /* [NP] PC stored in the stack frame is not necessarily pointing to the next instruction ! */
 	    /* FIXME : we should have a proper model for this, in the meantime we handle specific cases */
-	    if ( get_word(BusErrorPC) == 0x21f8 )			/* move.l $0.w,$24.w (Transbeauce 2 loader) */
-	      put_long (m68k_areg(regs, 7)+10, currpc-2);		/* correct PC is 2 bytes less than usual value */
+	    if ( get_word(BusErrorPC) == 0x21f8 )					/* move.l $0.w,$24.w (Transbeauce 2 loader) */
+	      put_long (m68k_areg(regs, 7)+10, currpc-2);				/* correct PC is 2 bytes less than usual value */
+
+	    else if ( ( BusErrorPC=0xccc ) && ( get_word(BusErrorPC) == 0x48d6 ) )	/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
+	      put_long (m68k_areg(regs, 7)+10, currpc+2);				/* correct PC is 2 bytes more than usual value */
+	    //fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , get_word(BusErrorPC));
+
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n",
