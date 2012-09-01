@@ -1,8 +1,8 @@
 /*
  * Hatari - blitter.c
  *
- * This file is distributed under the GNU Public License, version 2 or at
- * your option any later version. Read the file gpl.txt for details.
+ * This file is distributed under the GNU General Public License, version 2
+ * or at your option any later version. Read the file gpl.txt for details.
  *
  * Blitter emulation. The 'Blitter' chip is found in the Mega-ST, STE/Mega-STE
  * and Falcon. It provides a very fast BitBlit function in hardware.

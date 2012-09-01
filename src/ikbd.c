@@ -1,8 +1,8 @@
 /*
   Hatari - ikbd.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   The keyboard processor(6301) handles any joystick/mouse task and sends bytes
   to the ACIA(6850). When a byte arrives in the ACIA (which takes just over

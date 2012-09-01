@@ -1,8 +1,8 @@
 /*
   Hatari - hostscreen.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   Host video routines. This file originally came from the Aranym project but
   has been thoroughly reworked for Hatari. However, integration with the rest

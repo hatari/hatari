@@ -2,8 +2,8 @@
   Hatari - microphone.c
   microphone (jack connector) emulation (Falcon mode only)
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   This program uses the PortAudio Portable Audio Library.
   For more information see: http://www.portaudio.com

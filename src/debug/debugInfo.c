@@ -1,8 +1,8 @@
 /*
   Hatari - debuginfo.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   debuginfo.c - functions needed to show info about the atari HW & OS
    components and "lock" that info to be shown on entering the debugger.

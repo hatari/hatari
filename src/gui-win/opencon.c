@@ -1,8 +1,8 @@
 /*
   Hatari - opencon.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   The SDL library redirects the stdio normally to the files stdout.txt and stderr.txt.
   But with this redirection, the debugger of Hatari does not work anymore.

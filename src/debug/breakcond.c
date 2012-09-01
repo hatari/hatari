@@ -3,8 +3,8 @@
 
   Copyright (c) 2009-2010 by Eero Tamminen
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   breakcond.c - code for breakpoint conditions that can check variable
   and memory values against each other, mask them etc. before deciding

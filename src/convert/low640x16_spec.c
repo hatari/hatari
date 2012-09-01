@@ -1,8 +1,8 @@
 /*
   Hatari - low640x16_spec.c
 
-  This file is distributed under the GNU Public License, version 2 or at your
-  option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   Screen conversion, Low Res Spec512 to 640x16Bit
 */

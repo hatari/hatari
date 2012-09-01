@@ -2,8 +2,8 @@
   Hatari - hd6301_cpu.h
   Copyright Laurent Sallafranque 2009
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   hd6301_cpu.h - this is the cpu core emulation for hd 6301 processor
 */

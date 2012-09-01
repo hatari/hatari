@@ -1,8 +1,8 @@
 /*
   Hatari - screen.c
 
-  This file is distributed under the GNU Public License, version 2 or at your
-  option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   This code converts a 1/2/4 plane ST format screen to either 8, 16 or 32-bit PC
   format. An awful lot of processing is needed to do this conversion - we

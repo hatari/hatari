@@ -1,8 +1,8 @@
 /*
   Hatari - dmaSnd.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   STE DMA sound emulation. Does not seem to be very hard at first glance,
   but since the DMA sound has to be mixed together with the PSG sound and

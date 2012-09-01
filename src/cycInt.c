@@ -1,8 +1,8 @@
 /*
   Hatari - cycInt.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   This code handles our table with callbacks for cycle accurate program
   interruption. We add any pending callback handler into a table so that we do

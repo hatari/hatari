@@ -1,8 +1,8 @@
 /*
   Hatari - m68000.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   These routines originally (in WinSTon) handled exceptions as well as some
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a

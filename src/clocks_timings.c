@@ -1,8 +1,8 @@
 /*
   Hatari - clocks_timings.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   Clocks Timings for the hardware components in each supported machine type,
   as well as functions taking into account the exact length of a VBL to

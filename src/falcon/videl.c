@@ -1,8 +1,8 @@
 /*
   Hatari - videl.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   Falcon Videl emulation. The Videl is the graphics shifter chip of the Falcon.
   It supports free programmable resolutions with 1, 2, 4, 8 or 16 bits per

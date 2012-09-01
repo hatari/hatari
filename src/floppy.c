@@ -1,8 +1,8 @@
 /*
   Hatari - floppy.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   This is where we read/write sectors to/from the disk image buffers.
   NOTE: these buffers are in memory so we only need to write routines for

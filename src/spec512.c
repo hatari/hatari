@@ -1,8 +1,8 @@
 /*
   Hatari - spec512.c
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
   Handle storing of writes to ST palette using clock-cycle counts. We can use
   this to accurately any form of Spectrum512 style images - even down to the

@@ -1,12 +1,12 @@
 /*
   Hatari - compat.h
 
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 
-  This file contains all the includes and defines specific to windows (such as TCHAR)
-  needed by WinUae CPU core. 
-  The aim is to have minimum changes in WinUae CPU core for next updates
+  This file contains all the includes and defines specific to windows (such as
+  TCHAR) needed by WinUAE CPU core.
+  The aim is to have minimum changes in WinUae CPU core for next updates.
 */
 
 #ifndef HATARI_COMPAT_H

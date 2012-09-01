@@ -1,8 +1,8 @@
 /*
   Hatari tool: MSA and ST disk image creator and converter - hmsa.c
  
-  This file is distributed under the GNU Public License, version 2 or at
-  your option any later version. Read the file gpl.txt for details.
+  This file is distributed under the GNU General Public License, version 2
+  or at your option any later version. Read the file gpl.txt for details.
 */
 
 #include <stdio.h>
@@ -124,8 +124,8 @@ based on the file name extension (.msa or .st).\n\
 If the given file doesn't exist and you give also a disk size\n\
 (SS, DS, HD, ED), an empty disk of the given size will be created.\n\
 \n\
-This software is distributed under the GNU Public License, version 2 or\n\
-at your option any later version. Please read the file gpl.txt for details.\n\
+This software is distributed under the GNU General Public License, version 2\n\
+or at your option any later version. Please read the file gpl.txt for details.\n\
 \n",
 		       name);
 }

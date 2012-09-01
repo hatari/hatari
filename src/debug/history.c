@@ -3,8 +3,8 @@
  * 
  * Copyright (C) 2011 by Eero Tamminen
  *
- * This file is distributed under the GNU Public License, version 2 or at
- * your option any later version. Read the file gpl.txt for details.
+ * This file is distributed under the GNU General Public License, version 2
+ * or at your option any later version. Read the file gpl.txt for details.
  *
  * history.c - functions for debugger entry & breakpoint history
  */
