@@ -26,6 +26,7 @@ tools/hmsa/hmsa.1.gz
 
 python-ui/*.pyc
 python-ui/hatariui.1.gz
+python-ui/conftypes.py
 
 website/screens
 
