@@ -20,9 +20,12 @@ Emulator:
   - Also remote API debugger commands can use expression expansion
   - Either single or double quotes can be used to mark expressions
     (above two features make temporary debug output easier within Hatari)
+  - output what value was set by options if it's not otherwise shown by UI
+  - Show AES call arguments (for intin array) in traces
 
 Other changes:
 - HTML documentation indeces generated dynamically with JS
+- Debugger tests building fixed
 
 
  Version 1.6.2 (2012-06-24):
