@@ -228,9 +228,13 @@ void Console_Check(void)
 	}
 	chr = STMemory_ReadWord(stack + SIZE_WORD);
 	if (chr & 0xff00) {
-		fprintf(stderr, "WARNING: xconout character has high bits: 0x%x '%c'.\n", chr, chr&0xff);
-		/* higher bits, assume not correct arg */
-		return;
+		/* allow 0xff high byte (sign extension?) */
+		if ((chr & 0xff00) != 0xff00) {
+			fprintf(stderr, "WARNING: xconout character has unknown high byte bits: 0x%x '%c'.\n", chr, chr&0xff);
+			/* higher bits, assume not correct arg */
+			return;
+		}
+		chr &= 0xff;
 	}
 	switch(ConOutDevice) {
 	case 2:	/* EmuTOS/TOS/MiNT/etc console, VT-52 terminal */
