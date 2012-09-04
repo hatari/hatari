@@ -6,7 +6,7 @@ Contents:
 - EmuTOS compatibility
 - Debugging issues with EmuTOS
   - EmuTOS debug output and debug symbols
-  - Debugging panics
+  - Debugging OS calls, Line-A usage and panics
   - Debugging freezes
 - EmuTOS compatibility lists
   - Working free/shareware Atari ST demos and games
@@ -141,17 +141,19 @@ Debugging issues with EmuTOS
 EmuTOS debug output and debug symbols
 -------------------------------------
 
-To get EmuTOS's own debug output, you need to recompile it from the source
-after enabling the MIDI debug output in its config.h header file. Then
-start Hatari with the "--midi-out /dev/stderr" option and you will see
-there the EmuTOS debug output (such as calls to missing Line-A functions).
+To get extra debug output from EmuTOS, or add your own debug
+statements, you need to recompile it from the source after enabling
+the MIDI debug output in its config.h header file. Then start Hatari
+with the "--midi-out /dev/stderr" option and you will see there the
+EmuTOS debug output (such as calls to missing Line-A functions).
 
-With EmuTOS debug symbols, you can also ask debugger to "trace
-cpu_symbols" to get trace of all the function calls EmuTOS calls.
+By loading the etos512k.sym EmuTOS debug symbols file coming with the
+512k EmuTOS image, you can also ask debugger to "trace cpu_symbols" to
+get trace of all the function calls EmuTOS does.
 
-There's a script[1] you can use to convert the emutos2.map file
-(produced during EmuTOS build) to a format you can load to Hatari
-debugger with its "symbols" command[2].
+For other EmuTOS versions, there's a script[1] you can use to convert
+the emutos2.map file (produced during EmuTOS build) to a format you
+can load to Hatari debugger with its "symbols" command[2].
 
 [1] http://sourceforge.net/mailarchive/message.php?msg_id=29381777
 [2] http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/manual.html#Debug_symbols
@@ -168,8 +170,8 @@ problematic address should provide more clues for the problem.  Or you
 can just look up the program counter value given in the EmuTOS panic
 message from the map file.
 
-Debugging panics
-----------------
+Debugging OS calls, Line-A usage and panics
+-------------------------------------------
 
 When debugging EmuTOS panics, the best option is to start Hatari with
 "--bios-intercept --conout 2" (to enable Bios / XBios call tracking &
