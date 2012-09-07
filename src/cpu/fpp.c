@@ -821,7 +821,7 @@ void fpuop_dbcc (uae_u32 opcode, uae_u16 extra)
 
 void fpuop_scc (uae_u32 opcode, uae_u16 extra)
 {
-	uae_u32 ad;
+	uae_u32 ad = 0;
 	int cc;
 
 #if DEBUG_FPP
@@ -887,7 +887,7 @@ void fpuop_bcc (uae_u32 opcode, uaecptr pc, uae_u32 extra)
 
 void fpuop_save (uae_u32 opcode)
 {
-	uae_u32 ad;
+	uae_u32 ad = 0;
 	int incr = (opcode & 0x38) == 0x20 ? -1 : 1;
 	int fpu_version = get_fpu_version();
 	int i;
@@ -960,7 +960,7 @@ void fpuop_save (uae_u32 opcode)
 
 void fpuop_restore (uae_u32 opcode)
 {
-	uae_u32 ad;
+	uae_u32 ad = 0;
 	uae_u32 d;
 	int incr = (opcode & 0x38) == 0x20 ? -1 : 1;
 
