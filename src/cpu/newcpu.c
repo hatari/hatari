@@ -10,32 +10,7 @@
 #define MMUOP_DEBUG 2
 #define DEBUG_CD32CDTVIO 0
 
-/*
- * #include "compat.h"
-#include "sysconfig.h"
-#include "sysdeps.h"
-
-#include "options_cpu.h"
-#include "events.h"
-//#include "uae.h"
-#include "memory.h"
-#include "custom.h"
-#include "newcpu.h"
-#include "cpummu.h"
-#include "cpu_prefetch.h"
-//#include "autoconf.h"
-//#include "traps.h"
-//#include "ersatz.h"
-//#include "debug.h"
-//#include "gui.h"
-#include "savestate.h"
-#include "blitter.h"
-#include "ar.h"
-//#include "gayle.h"
-//#include "cia.h"
-//#include "inputdevice.h"
-*/
-
+#include "main.h"
 #include "compat.h"
 #include "sysconfig.h"
 #include "sysdeps.h"
@@ -50,8 +25,8 @@
 #include "m68000.h"
 #include "md-fpp.h"
 #include "cpummu.h"
+#include "cpummu030.h"
 #include "cpu_prefetch.h"
-#include "main.h"
 #include "reset.h"
 #include "cycInt.h"
 #include "mfp.h"
@@ -119,9 +94,9 @@ struct mmufixup mmufixup[2];
 #define MC68060_PCR   0x04300000
 #define MC68EC060_PCR 0x04310000
 
-static uae_u64 srp_030, crp_030;
-static uae_u32 tt0_030, tt1_030, tc_030;
-static uae_u16 mmusr_030;
+uae_u64 srp_030, crp_030;
+uae_u32 tt0_030, tt1_030, tc_030;
+uae_u16 mmusr_030;
 
 static struct cache020 caches020[CACHELINES020];
 static struct cache030 icaches030[CACHELINES030];
@@ -196,7 +171,17 @@ void (*x_put_byte)(uaecptr,uae_u32);
 // shared memory access functions
 static void set_x_funcs (void)
 {
-	if (currprefs.mmu_model) {
+	if (currprefs.mmu_model && currprefs.cpu_level < 68040) {
+		x_prefetch = get_iword_mmu030;
+		x_next_iword = next_iword_mmu030;
+		x_next_ilong = next_ilong_mmu030;
+		x_put_long = put_long_mmu030;
+		x_put_word = put_word_mmu030;
+		x_put_byte = put_byte_mmu030;
+		x_get_long = get_long_mmu030;
+		x_get_word = get_word_mmu030;
+		x_get_byte = get_byte_mmu030;
+	} else if (currprefs.mmu_model) {
 		x_prefetch = get_iword_mmu;
 		x_next_iword = next_iword_mmu;
 		x_next_ilong = next_ilong_mmu;
@@ -361,6 +346,8 @@ void build_cpufunctbl (void)
 		tbl = op_smalltbl_2_ff;
 		if (currprefs.cpu_cycle_exact)
 			tbl = op_smalltbl_23_ff;
+		if (currprefs.mmu_model)
+			tbl = op_smalltbl_32_ff;
 		break;
 	case 68020:
 		lvl = 2;
@@ -436,9 +423,8 @@ void build_cpufunctbl (void)
 	write_log ("Building CPU, %d opcodes (%d %d %d)\n",
 		opcnt, lvl,
 		currprefs.cpu_cycle_exact ? -1 : currprefs.cpu_compatible ? 1 : 0, currprefs.address_space_24);
-	write_log ("CPU=%d, FPU=%d, MMU(040)=%d, JIT%s=%d.\n",
-		currprefs.cpu_model, currprefs.fpu_model,
-		currprefs.mmu_model,
+	write_log ("CPU=%d, FPU=%d, MMU=%d, JIT%s=%d.\n", currprefs.cpu_model,
+		currprefs.fpu_model, currprefs.mmu_model,
 		currprefs.cachesize ? (currprefs.compfpu ? "=CPU/FPU" : "=CPU") : "",
 		currprefs.cachesize);
 #ifdef JIT
@@ -1205,12 +1191,13 @@ uae_u32 REGPARAM3 get_disp_ea_000 (uae_u32 base, uae_u32 dp) REGPARAM
 #endif
 }
 
+#if AMIGA_ONLY
 STATIC_INLINE int in_rom (uaecptr pc)
 {
 	return (munge24 (pc) & 0xFFF80000) == 0xF80000;
 }
 
-#if AMIGA_ONLY
+
 STATIC_INLINE int in_rtarea (uaecptr pc)
 {
 	return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom;
@@ -2550,133 +2537,6 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 
 #ifdef CPUEMU_0
 
-static const TCHAR *mmu30regs[] = { "TCR", "", "SRP", "CRP", "", "", "", "" };
-
-static void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
-{
-	int preg = (next >> 10) & 31;
-	int rw = (next >> 9) & 1;
-	int fd = (next >> 8) & 1;
-	const TCHAR *reg = NULL;
-	uae_u32 otc = tc_030;
-	int siz;
-
-	switch (preg)
-	{
-	case 0x10: // TC
-		reg = "TC";
-		siz = 4;
-		if (rw)
-			x_put_long (extra, tc_030);
-		else
-			tc_030 = x_get_long (extra);
-		break;
-	case 0x12: // SRP
-		reg = "SRP";
-		siz = 8;
-		if (rw) {
-			x_put_long (extra, srp_030 >> 32);
-			x_put_long (extra + 4, srp_030);
-		} else {
-			srp_030 = (uae_u64)x_get_long (extra) << 32;
-			srp_030 |= x_get_long (extra + 4);
-		}
-		break;
-	case 0x13: // CRP
-		reg = "CRP";
-		siz = 8;
-		if (rw) {
-			x_put_long (extra, crp_030 >> 32);
-			x_put_long (extra + 4, crp_030);
-		} else {
-			crp_030 = (uae_u64)x_get_long (extra) << 32;
-			crp_030 |= x_get_long (extra + 4);
-		}
-		break;
-	case 0x18: // MMUSR
-		reg = "MMUSR";
-		siz = 2;
-		if (rw)
-			x_put_word (extra, mmusr_030);
-		else
-			mmusr_030 = x_get_word (extra);
-		break;
-	case 0x02: // TT0
-		reg = "TT0";
-		siz = 4;
-		if (rw)
-			x_put_long (extra, tt0_030);
-		else
-			tt0_030 = x_get_long (extra);
-		break;
-	case 0x03: // TT1
-		reg = "TT1";
-		siz = 4;
-		if (rw)
-			x_put_long (extra, tt1_030);
-		else
-			tt1_030 = x_get_long (extra);
-		break;
-	}
-
-	if (!reg) {
-		write_log ("Bad PMOVE at %08x\n",m68k_getpc());
- 		op_illg (opcode);
-		return;
-	}
-#if MMUOP_DEBUG > 0
-	{
-		uae_u32 val;
-		if (siz == 8) {
-			uae_u32 val2 = x_get_long (extra);
-			val = x_get_long (extra + 4);
-			if (rw)
-				write_log ("PMOVE %s,%08X%08X", reg, val2, val);
-			else
-				write_log ("PMOVE %08X%08X,%s", val2, val, reg);
-		} else {
-			if (siz == 4)
-				val = x_get_long (extra);
-			else
-				val = x_get_word (extra);
-			if (rw)
-				write_log ("PMOVE %s,%08X", reg, val);
-			else
-				write_log ("PMOVE %08X,%s", val, reg);
-		}
-		write_log (" PC=%08X\n", pc);
-	}
-#endif
-	if (currprefs.cs_mbdmac == 1 && currprefs.mbresmem_low_size > 0) {
-		if (otc != tc_030) {
-#if AMIGA_ONLY
-			a3000_fakekick (tc_030 & 0x80000000);
-#endif
-		}
-	}
-}
-
-static void mmu_op30_ptest (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
-{
-#if MMUOP_DEBUG > 0
-	TCHAR tmp[10];
-
-	tmp[0] = 0;
-	if ((next >> 8) & 1)
-		_stprintf (tmp, ",A%d", (next >> 4) & 15);
-	write_log ("PTEST%c %02X,%08X,#%X%s PC=%08X\n",
-		((next >> 9) & 1) ? 'W' : 'R', (next & 15), extra, (next >> 10) & 7, tmp, pc);
-#endif
-	mmusr_030 = 0;
-}
-
-static void mmu_op30_pflush (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
-{
-#if MMUOP_DEBUG > 0
-	write_log ("PFLUSH PC=%08X\n", pc);
-#endif
-}
-
 void mmu_op30 (uaecptr pc, uae_u32 opcode, uae_u16 extra, uaecptr extraa)
 {
 	if (currprefs.cpu_model != 68030) {
@@ -2686,8 +2546,10 @@ void mmu_op30 (uaecptr pc, uae_u32 opcode, uae_u16 extra, uaecptr extraa)
 	}
 	if (extra & 0x8000)
 		mmu_op30_ptest (pc, opcode, extra, extraa);
-	else if (extra & 0x2000)
+	else if ((extra & 0x2000) && (extra & 0x1C00))
 		mmu_op30_pflush (pc, opcode, extra, extraa);
+	else if ((extra & 0x2000) && !(extra & 0x1C00))
+		mmu_op30_pload (pc, opcode, extra, extraa);
 	else
 		mmu_op30_pmove (pc, opcode, extra, extraa);
 }

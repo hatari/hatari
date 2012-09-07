@@ -150,6 +150,16 @@ struct cache040
 	uae_u32 tag[CACHELINES040];
 };
 
+extern uae_u64 srp_030, crp_030;
+extern uae_u32 tt0_030, tt1_030, tc_030;
+extern uae_u16 mmusr_030;
+
+struct mmufixup
+{
+    int reg;
+    uae_u32 value;
+};
+extern struct mmufixup mmufixup[2];
 
 struct regstruct
 {
@@ -430,6 +440,7 @@ extern const struct cputbl op_smalltbl_31_ff[]; // MMU
 /* 68030 */
 extern const struct cputbl op_smalltbl_2_ff[];
 extern const struct cputbl op_smalltbl_22_ff[]; // CE
+extern const struct cputbl op_smalltbl_32_ff[]; // MMU
 /* 68020 */
 extern const struct cputbl op_smalltbl_3_ff[];
 extern const struct cputbl op_smalltbl_23_ff[]; // CE
@@ -472,25 +483,5 @@ extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
 /* How many cycles to add to the current instruction in case a "misaligned" bus acces is made */
 /* (used when addressing mode is d8(an,ix)) */
 extern int BusCyclePenalty;
-
-STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
-{
-/* Laurent : let's see this later
-    uae_u32 currpc = m68k_getpc ();
-    uae_u32 addr = currpc + o;
-    uae_u32 offs = addr - prefetch_pc;
-    uae_u32 v;
-    if (offs > 3) {
-	refill_prefetch (currpc, o);
-	offs = addr - prefetch_pc;
-    }
-    v = do_get_mem_word (((uae_u8 *)&prefetch) + offs);
-    if (offs >= 2)
-	refill_prefetch (currpc, 2);
-    */
-    /* printf ("get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */
-    //return v;
-    return 0;
-}
 
 #endif

@@ -29,6 +29,7 @@
  * - Handle cache inhibit bit when accessing ATC entries
  */
 
+#include "main.h"
 #include "compat.h"
 #include "sysconfig.h"
 #include "sysdeps.h"
@@ -39,7 +40,6 @@
 #include "maccess.h"
 #include "memory.h"
 #include "newcpu.h"
-#include "main.h"
 #include "cpummu030.h"
 #include "cpu_prefetch.h"
 #include "main.h"
@@ -2080,4 +2080,172 @@ uae_u8 mmu030_get_byte(uaecptr addr, bool data, int size) {
         mmu030_create_atc_entry(addr, regs.s != 0, data, false);
         return mmu030_get_byte_atc(addr, mmu030_logical_is_in_atc(addr,regs.s!=0,data,false), regs.s != 0, data);
     }
+}
+
+
+uae_u16 REGPARAM2 mmu030_get_word_unaligned(uaecptr addr, bool data)
+{
+	uae_u16 res;
+
+	res = (uae_u16)mmu030_get_byte(addr, data, sz_word) << 8;
+	SAVE_EXCEPTION;
+	TRY(prb) {
+		res |= mmu030_get_byte(addr + 1, data, sz_word);
+		RESTORE_EXCEPTION;
+	}
+	CATCH(prb) {
+		RESTORE_EXCEPTION;
+		regs.mmu_fault_addr = addr;
+		regs.mmu_ssw |= MMU_SSW_MA;
+		THROW_AGAIN(prb);
+	} ENDTRY
+	return res;
+}
+
+uae_u32 REGPARAM2 mmu030_get_long_unaligned(uaecptr addr, bool data)
+{
+	uae_u32 res;
+
+	if (likely(!(addr & 1))) {
+		res = (uae_u32)mmu030_get_word(addr, data, sz_long) << 16;
+		SAVE_EXCEPTION;
+		TRY(prb) {
+			res |= mmu030_get_word(addr + 2, data, sz_long);
+			RESTORE_EXCEPTION;
+		}
+		CATCH(prb) {
+			RESTORE_EXCEPTION;
+			regs.mmu_fault_addr = addr;
+			regs.mmu_ssw |= MMU_SSW_MA;
+			THROW_AGAIN(prb);
+		} ENDTRY
+	} else {
+		res = (uae_u32)mmu030_get_byte(addr, data, sz_long) << 8;
+		SAVE_EXCEPTION;
+		TRY(prb) {
+			res = (res | mmu030_get_byte(addr + 1, data, sz_long)) << 8;
+			res = (res | mmu030_get_byte(addr + 2, data, sz_long)) << 8;
+			res |= mmu030_get_byte(addr + 3, data, sz_long);
+			RESTORE_EXCEPTION;
+		}
+		CATCH(prb) {
+			RESTORE_EXCEPTION;
+			regs.mmu_fault_addr = addr;
+			regs.mmu_ssw |= MMU_SSW_MA;
+			THROW_AGAIN(prb);
+		} ENDTRY
+	}
+	return res;
+}
+
+
+void REGPARAM2 mmu030_put_long_unaligned(uaecptr addr, uae_u32 val, bool data)
+{
+	SAVE_EXCEPTION;
+	TRY(prb) {
+		if (likely(!(addr & 1))) {
+			mmu030_put_word(addr, val >> 16, data, sz_long);
+			mmu030_put_word(addr + 2, val, data, sz_long);
+		} else {
+			mmu030_put_byte(addr, val >> 24, data, sz_long);
+			mmu030_put_byte(addr + 1, val >> 16, data, sz_long);
+			mmu030_put_byte(addr + 2, val >> 8, data, sz_long);
+			mmu030_put_byte(addr + 3, val, data, sz_long);
+		}
+		RESTORE_EXCEPTION;
+	}
+	CATCH(prb) {
+		RESTORE_EXCEPTION;
+		regs.wb3_data = val;
+		if (regs.mmu_fault_addr != addr) {
+			regs.mmu_fault_addr = addr;
+			regs.mmu_ssw |= MMU_SSW_MA;
+		}
+		THROW_AGAIN(prb);
+	} ENDTRY
+}
+
+void REGPARAM2 mmu030_put_word_unaligned(uaecptr addr, uae_u16 val, bool data)
+{
+	SAVE_EXCEPTION;
+	TRY(prb) {
+		mmu030_put_byte(addr, val >> 8, data, sz_word);
+		mmu030_put_byte(addr + 1, val, data, sz_word);
+		RESTORE_EXCEPTION;
+	}
+	CATCH(prb) {
+		RESTORE_EXCEPTION;
+		regs.wb3_data = val;
+		if (regs.mmu_fault_addr != addr) {
+			regs.mmu_fault_addr = addr;
+			regs.mmu_ssw |= MMU_SSW_MA;
+		}
+		THROW_AGAIN(prb);
+	} ENDTRY
+}
+
+
+uae_u32 REGPARAM2 sfc030_get_long(uaecptr addr)
+{
+	printf("FIXME: sfc030_get_long\n");
+	return 0;
+
+}
+
+uae_u16 REGPARAM2 sfc030_get_word(uaecptr addr)
+{
+	printf("FIXME: sfc030_get_word\n");
+	return 0;
+}
+
+uae_u8 REGPARAM2 sfc030_get_byte(uaecptr addr)
+{
+	printf("FIXME: sfc030_get_byte\n");
+	return 0;
+}
+
+void REGPARAM2 dfc030_put_long(uaecptr addr, uae_u32 val)
+{
+	printf("FIXME: dfc030_put_long\n");
+}
+
+void REGPARAM2 dfc030_put_word(uaecptr addr, uae_u16 val)
+{
+	printf("FIXME: dfc030_put_word\n");
+}
+
+void REGPARAM2 dfc030_put_byte(uaecptr addr, uae_u8 val)
+{
+	printf("FIXME: dfc030_put_byte\n");
+}
+
+
+void m68k_do_rte_mmu030 (uaecptr a7)
+{
+	uae_u16 ssr = get_word_mmu030 (a7 + 8 + 4);
+	if (ssr & MMU_SSW_CT) {
+		uaecptr src_a7 = a7 + 8 - 8;
+		uaecptr dst_a7 = a7 + 8 + 52;
+		put_word_mmu030 (dst_a7 + 0, get_word_mmu030 (src_a7 + 0));
+		put_long_mmu030 (dst_a7 + 2, get_long_mmu030 (src_a7 + 2));
+		// skip this word
+		put_long_mmu030 (dst_a7 + 8, get_long_mmu030 (src_a7 + 8));
+	}
+}
+
+void flush_mmu030 (uaecptr addr, int n)
+{
+}
+
+void m68k_do_rts_mmu030 (void)
+{
+	m68k_setpc (get_long_mmu030 (m68k_areg (regs, 7)));
+	m68k_areg (regs, 7) += 4;
+}
+
+void m68k_do_bsr_mmu030 (uaecptr oldpc, uae_s32 offset)
+{
+	put_long_mmu030 (m68k_areg (regs, 7) - 4, oldpc);
+	m68k_areg (regs, 7) -= 4;
+	m68k_incpci (offset);
 }

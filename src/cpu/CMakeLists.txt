@@ -24,8 +24,8 @@ if(CMAKE_CROSSCOMPILING)
 		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gencpu.c
 			${CMAKE_CURRENT_SOURCE_DIR}/readcpu.c cpudefs.c)
 
-	add_custom_command(OUTPUT cpuemu_0.c cpuemu_11.c cpuemu_12.c
-				cpuemu_20.c cpuemu_21.c cpuemu_31.c cpustbl.c
+	add_custom_command(OUTPUT cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_12.c
+				cpuemu_20.c cpuemu_21.c cpuemu_31.c cpuemu_32.c
 		COMMAND ${CMAKE_CURRENT_BINARY_DIR}/gencpu
 		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gencpu)
 
@@ -41,8 +41,8 @@ else()	# Rules for normal build follow
 	add_executable(gencpu gencpu.c readcpu.c cpudefs.c)
 
 	get_target_property(GENCPU_EXE gencpu LOCATION)
-	add_custom_command(OUTPUT cpuemu_0.c cpuemu_11.c cpuemu_12.c
-				cpuemu_20.c cpuemu_21.c cpuemu_31.c cpustbl.c
+	add_custom_command(OUTPUT cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_12.c
+				cpuemu_20.c cpuemu_21.c cpuemu_31.c cpuemu_32.c
 		COMMAND ${GENCPU_EXE}  DEPENDS gencpu)
 
 endif(CMAKE_CROSSCOMPILING)
@@ -55,6 +55,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-unused-label")
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_library(UaeCpu
-	cpudefs.c cpuemu_0.c cpuemu_11.c cpuemu_12.c cpuemu_20.c cpuemu_21.c cpuemu_31.c 
-	cpummu.c cpustbl.c custom.c	hatari-glue.c memory.c newcpu.c readcpu.c fpp.c
+	cpuemu_0.c cpuemu_11.c cpuemu_12.c cpuemu_20.c cpuemu_21.c cpuemu_31.c
+	cpuemu_32.c cpudefs.c cpummu.c cpummu030.c cpustbl.c custom.c
+	hatari-glue.c memory.c newcpu.c readcpu.c fpp.c
 	)
