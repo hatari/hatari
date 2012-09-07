@@ -168,3 +168,6 @@ projects which we would like to acknowledge here:
 
 - The IDE hard disk emulation is based on code from QEMU.
   (http://www.qemu.org/)
+
+- The MMU emulation for the 68030 has been taken from the NeXT emulator
+  Previous (thanks to Andreas Grabher!)

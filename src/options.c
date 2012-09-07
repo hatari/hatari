@@ -1454,9 +1454,13 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
 #if ENABLE_WINUAE_CPU
-			ConfigureParams.System.bMMU = false;	/* does this affect also other than 040 CPUs? */
-			ConfigureParams.System.bAddressSpace24 = true;
-			if (strcasecmp(argv[i], "tt") == 0)
+			if (ConfigureParams.System.nMachineType == MACHINE_ST ||
+			    ConfigureParams.System.nMachineType == MACHINE_STE)
+			{
+				ConfigureParams.System.bMMU = false;
+				ConfigureParams.System.bAddressSpace24 = true;
+			}
+			if (ConfigureParams.System.nMachineType == MACHINE_TT)
 			{
 				ConfigureParams.System.bCompatibleFPU = true;
 				ConfigureParams.System.n_FPUType = FPU_68882;
