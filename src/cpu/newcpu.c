@@ -3663,7 +3663,7 @@ void m68k_go (int may_quit)
 #ifdef JIT
 				currprefs.cpu_model >= 68020 && currprefs.cachesize ? m68k_run_jit :
 #endif
-				(currprefs.cpu_model == 68040 || currprefs.cpu_model == 68060) && currprefs.mmu_model ? m68k_run_mmu040 :
+				currprefs.cpu_model >= 68020 && currprefs.mmu_model ? m68k_run_mmu040 :
 				currprefs.cpu_model >= 68020 && currprefs.cpu_cycle_exact ? m68k_run_2ce :
 				currprefs.cpu_compatible ? m68k_run_2p : m68k_run_2;
 		}
