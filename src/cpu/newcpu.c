@@ -3018,6 +3018,10 @@ static void m68k_run_1 (void)
 			//write_log ("%08X-%04X ", pc, opcode);
 		}
 #endif
+		/* In case of a Bus Error, we need the PC of the instruction
+		 * that caused  the error to build the exception stack frame */
+		BusErrorPC = m68k_getpc();
+
 		do_cycles (cpu_cycles);
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
@@ -3073,6 +3077,10 @@ static void m68k_run_1_ce (void)
 			LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 			m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 		}
+
+		/* In case of a Bus Error, we need the PC of the instruction
+		 * that caused  the error to build the exception stack frame */
+		BusErrorPC = m68k_getpc();
 
 		currcycle = 0;
 		(*cpufunctbl[opcode])(opcode);
@@ -3253,7 +3261,7 @@ static void m68k_run_mmu040 (void)
 				m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 			}
 
-			 pc = oldpc = regs.fault_pc = m68k_getpc ();
+			BusErrorPC = pc = oldpc = regs.fault_pc = m68k_getpc ();
 #if 0
 			static int done;
 			if (pc == 0x16AF94) {
@@ -3375,6 +3383,10 @@ static void m68k_run_2ce (void)
 		if (bDspEnabled)
 			Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
 
+		/* In case of a Bus Error, we need the PC of the instruction
+		 * that caused  the error to build the exception stack frame */
+		BusErrorPC = m68k_getpc();
+
 		uae_u32 opcode = x_prefetch (0);
 		(*cpufunctbl[opcode])(opcode);
 
@@ -3464,6 +3476,10 @@ static void m68k_run_2p (void)
 
 		count_instr (opcode);
 
+		/* In case of a Bus Error, we need the PC of the instruction
+		 * that caused  the error to build the exception stack frame */
+		BusErrorPC = m68k_getpc();
+
 		prefetch_pc = m68k_getpc () + 2;
 		prefetch = get_longi (prefetch_pc);
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
@@ -3528,6 +3544,10 @@ static void m68k_run_2 (void)
 			used[opcode] = 1;
 		}
 #endif
+		/* In case of a Bus Error, we need the PC of the instruction
+		 * that caused  the error to build the exception stack frame */
+		BusErrorPC = m68k_getpc();
+
 		do_cycles (cpu_cycles);
 		cpu_cycles = (*cpufunctbl[opcode])(opcode);
 		cpu_cycles &= cycles_mask;
