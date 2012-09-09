@@ -266,6 +266,11 @@ static void TOS_FixRom(void)
 		if (pPatch->Version == TosVersion
 		    && (pPatch->Country == TosCountry || pPatch->Country == -1))
 		{
+#if ENABLE_WINUAE_CPU
+			bool use_mmu = ConfigureParams.System.bMMU;
+#else
+			bool use_mmu = false;
+#endif
 			/* Make sure that we really patch the right place by comparing data: */
 			if(STMemory_ReadLong(pPatch->Address) == pPatch->OldData)
 			{
@@ -276,10 +281,7 @@ static void TOS_FixRom(void)
 				        && ConfigureParams.System.bFastBoot)
 				    || (pPatch->Flags == TP_ANTI_STE
 				        && ConfigureParams.System.nMachineType == MACHINE_ST)
-#if ENABLE_WINUAE_CPU
-				    || (pPatch->Flags == TP_ANTI_PMMU
-				        && !ConfigureParams.System.bMMU)
-#endif
+				    || (pPatch->Flags == TP_ANTI_PMMU && !use_mmu)
 				   )
 				{
 					/* Now we can really apply the patch! */
