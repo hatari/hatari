@@ -15,6 +15,7 @@ Emulation:
 Emulator:
 - Much improved console redirection functionality and a separate --conout
   option for it (--bios-intercept doesn't anymore imply console redirection)
+- Give warning if GEMDOS dir/file path exceeds 8+8 characters
 - Debugger:
   - Fix: expression expansion doesn't mess lines in command line history
   - Also remote API debugger commands can use expression expansion
