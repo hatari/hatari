@@ -60,7 +60,7 @@
 
 
 #define MMUOP_DEBUG 1
-#define MMU030_ATC_DBG_MSG 1
+#define MMU030_ATC_DBG_MSG 0
 #define MMU030_REG_DBG_MSG 1
 
 /* for debugging messages */
@@ -1172,7 +1172,8 @@ uae_u32 mmu030_table_search(uaecptr addr, bool super, bool data, bool write, int
                 mmu030.status |= (MMUSR_LIMIT_VIOLATION|MMUSR_INVALID);
                 write_log("limit violation (lower limit %i)\n",limit);
                 goto stop_search;
-            } else if (table_index>limit) {
+            }
+            if (!(descr[descr_num][0]&DESCR_LOWER_MASK) && (table_index>limit)) {
                 mmu030.status |= (MMUSR_LIMIT_VIOLATION|MMUSR_INVALID);
                 write_log("limit violation (upper limit %i)\n",limit);
                 goto stop_search;
@@ -1310,7 +1311,8 @@ handle_page_descriptor:
                     mmu030.status |= (MMUSR_LIMIT_VIOLATION|MMUSR_INVALID);
                     write_log("Limit violation (lower limit %i)\n",limit);
                     goto stop_search;
-                } else if (table_index>limit) {
+                }
+                if (!(descr[descr_num][0]&DESCR_LOWER_MASK) && (table_index>limit)) {
                     mmu030.status |= (MMUSR_LIMIT_VIOLATION|MMUSR_INVALID);
                     write_log("Limit violation (upper limit %i)\n",limit);
                     goto stop_search;
@@ -1320,11 +1322,12 @@ handle_page_descriptor:
         /* Get all unused bits of the logical address table index field.
          * they are added to the page address */
         /* TODO: They should be added via "unsigned addition". How to? */
-        for (i = t; i<=mmu030.translation.last_table; i++) {
-            unused_fields_mask |= mmu030.translation.table[i].mask;
-        }
+        do {
+            unused_fields_mask |= mmu030.translation.table[t].mask;
+            t++;
+        } while (t<=mmu030.translation.last_table);
         page_addr = addr&unused_fields_mask;
-        write_log("Logical address unused bits: %08X (mask = %08X)",
+        write_log("Logical address unused bits: %08X (mask = %08X)\n",
                   page_addr,unused_fields_mask);
     }
     
