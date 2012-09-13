@@ -235,7 +235,8 @@ Atari HW and therefore won't have (legal) version of commercial Atari
 software and most likely lack motivation to investigate applications
 very deeply (Linux offers better alternatives nowadays for most of
 that). I.e. the lists skip commercial software and concentrate on
-EmuTOS compatibility of freely available games and demos.
+EmuTOS compatibility of freely available games and demos, or commercial
+ones that have been released later on for free distribution.
 
 Games that are considered good quality & fun, are marked with "*".
 All the listed demos are quite OK. Most demos can be downloaded from:
@@ -319,35 +320,60 @@ Demos:
 
 Color games:
 - Archon 4KB
-- Alien Blockade
+- Alien Blockade* (quixx)
+- Atax (minor gfx issues)
 - Bellum*
+- Blaster
 - Bombs Away
+- Bombzai
 - ChuChu Rocket* (Lite version for STFM)
 - Clogged Up
 - Crapman*
-- Dave Munsie games (shareware)
+- Dave Munsie games* (shareware)
+  http://www.atarimania.com/list_games_atari-st-munsie-dave_team_950_S_G.html
+- Donkey Island (adventure)
+- Dot 2 Dots (for kids)
 - Entombed
+- French adaptations of classic games:
+  Boulderdash, Demineur, Jewel, Qbert, Sokoban
 - Flip'em* (4KB puzzle)
+- Fuzzball*
+- Golgafrincham (mod compile with 2-player minigame)
 - Grav*
+- Grav2*
 - Hackman II*
 - Hang About (4KB mountain climbing)
 - Haywire
 - Hector*
+- Hero (RPG)
 - Jetpac
+- LLamasoft games
+  http://minotaurproject.co.uk/lc-16bit.php
+- Master Breakout
+- Missile Alert
+- Monkeys and Balloons
 - Nibe 2
 - Nova
-- Pengy
+- Out of this Word* (typing game)
 - Punt II
 - Rockfall*
 - Robert in the Fire Factory
 - Santafly
+- Sideways
+- Sinister development games (shareware)
 - Snowball Fight
 - Spacewar
 - Starball* (shareware)
 - Sweeper
 - Tanx*
 - Teserae*
+- The lost world
+- Video poker
+- WalZ (breakout)
+- Warzone
+- Whip Snapper's race
 - Yak (4KB gridrunner)
+- Zap
 
 Med-rez games:
 - Poker solitaire
@@ -418,7 +444,7 @@ Monochrome games:
 - Fun Face (playable demo)
 - Go UP
 - HASCS
-- Lasermon (laser "chess")
+- Lasermon (laser "chess", there's also color version)
 - Mandala
 - MiniGolf* (GFA basic)
 - Monkey Business
