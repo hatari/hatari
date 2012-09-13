@@ -103,6 +103,7 @@ enum {
 	OPT_FASTFLOPPY,
 	OPT_WRITEPROT_FLOPPY,
 	OPT_WRITEPROT_HD,
+	OPT_GEMDOS_CASE,
 	OPT_HARDDRIVE,
 	OPT_ACSIHDIMAGE,
 	OPT_IDEMASTERHDIMAGE,
@@ -283,6 +284,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Write protect floppy image contents (on/off/auto)" },
 	{ OPT_WRITEPROT_HD, NULL, "--protect-hd",
 	  "<x>", "Write protect harddrive <dir> contents (on/off/auto)" },
+	{ OPT_GEMDOS_CASE, NULL, "--gemdos-case",
+	  "<x>", "Forcibly up/lowercase new GEMDOS dir/filenames (off/upper/lower)" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate harddrive partition(s) with <dir> contents" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
@@ -1248,6 +1251,18 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_AUTO;
 			else
 				return Opt_ShowError(OPT_WRITEPROT_HD, argv[i], "Unknown option value");
+			break;
+
+		case OPT_GEMDOS_CASE:
+			i += 1;
+			if (strcasecmp(argv[i], "off") == 0)
+				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_NOP;
+			else if (strcasecmp(argv[i], "upper") == 0)
+				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_UPPER;
+			else if (strcasecmp(argv[i], "lower") == 0)
+				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_LOWER;
+			else
+				return Opt_ShowError(OPT_GEMDOS_CASE, argv[i], "Unknown option value");
 			break;
 
 		case OPT_HARDDRIVE:

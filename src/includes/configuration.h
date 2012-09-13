@@ -166,6 +166,13 @@ typedef struct
 #define MAX_HARDDRIVES  24
 #define DRIVE_C 0
 
+typedef enum
+{
+  GEMDOS_NOP,
+  GEMDOS_UPPER,
+  GEMDOS_LOWER
+} GEMDOS_CHR_CONV;
+
 typedef struct
 {
   int nHardDiskDir;
@@ -174,6 +181,7 @@ typedef struct
   bool bUseIdeMasterHardDiskImage;
   bool bUseIdeSlaveHardDiskImage;
   WRITEPROTECTION nWriteProtection;
+  GEMDOS_CHR_CONV nGemdosCase;
   bool bBootFromHardDisk;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
   char szHardDiskImage[FILENAME_MAX];

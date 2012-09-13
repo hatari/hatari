@@ -906,6 +906,11 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 }
 
 
+static int to_same(int ch)
+{
+	return ch;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Check whether given TOS file/dir exists in given host path.
@@ -919,6 +924,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 {
 	char *tmp, *match, name[strlen(origname) + 3];
 	int dot, namelen, pathlen;
+	int (*chr_conv)(int);
 	bool modified;
 
 	strcpy(name, origname);
@@ -1013,7 +1019,21 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	}
 
 	/* not found, copy file/dirname as is */
-	strncat(path+pathlen, origname, maxlen-pathlen);
+	switch (ConfigureParams.HardDisk.nGemdosCase) {
+	case GEMDOS_UPPER:
+		chr_conv = toupper;
+		break;
+	case GEMDOS_LOWER:
+		chr_conv = tolower;
+		break;
+	default:
+		chr_conv = to_same;
+	}
+	tmp = name;
+	while (*origname)
+		*tmp++ = chr_conv(*origname++);
+	*tmp = '\0';
+	strncat(path+pathlen, name, maxlen-pathlen);
 	return false;
 }
 
