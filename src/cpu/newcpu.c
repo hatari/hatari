@@ -1529,6 +1529,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		regs.s = 1;
 		mmu_set_super (1);
 	}
+	/* FIXME: Address and bus errors differ between 68030 and 68040 ! */
 	if (nr == 2) {
 		write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
 //		if (currpc == 0x0013b5e2)
@@ -1536,32 +1537,32 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		// bus error
 		for (i = 0 ; i < 7 ; i++) {
 			m68k_areg (regs, 7) -= 4;
-			put_long_mmu (m68k_areg (regs, 7), 0);
+			x_put_long (m68k_areg (regs, 7), 0);
 		}
 		m68k_areg (regs, 7) -= 4;
-		put_long_mmu (m68k_areg (regs, 7), regs.wb3_data);
+		x_put_long (m68k_areg (regs, 7), regs.wb3_data);
 		m68k_areg (regs, 7) -= 4;
-		put_long_mmu (m68k_areg (regs, 7), regs.mmu_fault_addr);
+		x_put_long (m68k_areg (regs, 7), regs.mmu_fault_addr);
 		m68k_areg (regs, 7) -= 4;
-		put_long_mmu (m68k_areg (regs, 7), regs.mmu_fault_addr);
+		x_put_long (m68k_areg (regs, 7), regs.mmu_fault_addr);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0);
+		x_put_word (m68k_areg (regs, 7), 0);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0);
+		x_put_word (m68k_areg (regs, 7), 0);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), regs.wb3_status);
+		x_put_word (m68k_areg (regs, 7), regs.wb3_status);
 		regs.wb3_status = 0;
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), regs.mmu_ssw);
+		x_put_word (m68k_areg (regs, 7), regs.mmu_ssw);
 		m68k_areg (regs, 7) -= 4;
-		put_long_mmu (m68k_areg (regs, 7), regs.mmu_fault_addr);
+		x_put_long (m68k_areg (regs, 7), regs.mmu_fault_addr);
 
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0x7000 + nr * 4);
+		x_put_word (m68k_areg (regs, 7), 0x7000 + nr * 4);
 		m68k_areg (regs, 7) -= 4;
-		put_long_mmu (m68k_areg (regs, 7), oldpc);
+		x_put_long (m68k_areg (regs, 7), oldpc);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), regs.sr);
+		x_put_word (m68k_areg (regs, 7), regs.sr);
 		goto kludge_me_do;
 
 	} else if (nr == 3) {
@@ -1572,55 +1573,55 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		ssw |= 0x20;
 		for (i = 0 ; i < 36; i++) {
 			m68k_areg (regs, 7) -= 2;
-			put_word_mmu (m68k_areg (regs, 7), 0);
+			x_put_word (m68k_areg (regs, 7), 0);
 		}
 		m68k_areg (regs, 7) -= 4;
-		put_long_mmu (m68k_areg (regs, 7), last_fault_for_exception_3);
+		x_put_long (m68k_areg (regs, 7), last_fault_for_exception_3);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0);
+		x_put_word (m68k_areg (regs, 7), 0);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0);
+		x_put_word (m68k_areg (regs, 7), 0);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0);
+		x_put_word (m68k_areg (regs, 7), 0);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), ssw);
+		x_put_word (m68k_areg (regs, 7), ssw);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0xb000 + nr * 4);
+		x_put_word (m68k_areg (regs, 7), 0xb000 + nr * 4);
 		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, get_long (regs.vbr + 4*nr));
 
 	} else if (nr ==5 || nr == 6 || nr == 7 || nr == 9) {
 
 		m68k_areg (regs, 7) -= 4;
-		put_long_mmu (m68k_areg (regs, 7), oldpc);
+		x_put_long (m68k_areg (regs, 7), oldpc);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0x2000 + nr * 4);
+		x_put_word (m68k_areg (regs, 7), 0x2000 + nr * 4);
 
 	} else if (regs.m && nr >= 24 && nr < 32) { /* M + Interrupt */
 
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), nr * 4);
+		x_put_word (m68k_areg (regs, 7), nr * 4);
 		m68k_areg (regs, 7) -= 4;
-		put_long_mmu (m68k_areg (regs, 7), currpc);
+		x_put_long (m68k_areg (regs, 7), currpc);
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), regs.sr);
+		x_put_word (m68k_areg (regs, 7), regs.sr);
 		regs.sr |= (1 << 13);
 		regs.msp = m68k_areg (regs, 7);
 		m68k_areg (regs, 7) = regs.isp;
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), 0x1000 + nr * 4);
+		x_put_word (m68k_areg (regs, 7), 0x1000 + nr * 4);
 
 	} else {
 
 		m68k_areg (regs, 7) -= 2;
-		put_word_mmu (m68k_areg (regs, 7), nr * 4);
+		x_put_word (m68k_areg (regs, 7), nr * 4);
 
 	}
 	m68k_areg (regs, 7) -= 4;
-	put_long_mmu (m68k_areg (regs, 7), currpc);
+	x_put_long (m68k_areg (regs, 7), currpc);
 	m68k_areg (regs, 7) -= 2;
-	put_word_mmu (m68k_areg (regs, 7), regs.sr);
+	x_put_word (m68k_areg (regs, 7), regs.sr);
 kludge_me_do:
-	newpc = get_long_mmu (regs.vbr + 4 * nr);
+	newpc = x_get_long (regs.vbr + 4 * nr);
 	if (newpc & 1) {
 		if (nr == 2 || nr == 3)
 			Reset_Cold();  /* there is nothing else we can do.. */
