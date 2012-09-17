@@ -171,7 +171,7 @@ void (*x_put_byte)(uaecptr,uae_u32);
 // shared memory access functions
 static void set_x_funcs (void)
 {
-	if (currprefs.mmu_model && currprefs.cpu_level < 68040) {
+	if (currprefs.mmu_model && currprefs.cpu_model == 68030) {
 		x_prefetch = get_iword_mmu030;
 		x_next_iword = next_iword_mmu030;
 		x_next_ilong = next_ilong_mmu030;
@@ -3683,7 +3683,7 @@ void m68k_go (int may_quit)
 #ifdef JIT
 				currprefs.cpu_model >= 68020 && currprefs.cachesize ? m68k_run_jit :
 #endif
-				currprefs.cpu_model >= 68020 && currprefs.mmu_model ? m68k_run_mmu040 :
+				currprefs.cpu_model >= 68030 && currprefs.mmu_model ? m68k_run_mmu040 :
 				currprefs.cpu_model >= 68020 && currprefs.cpu_cycle_exact ? m68k_run_2ce :
 				currprefs.cpu_compatible ? m68k_run_2p : m68k_run_2;
 		}
