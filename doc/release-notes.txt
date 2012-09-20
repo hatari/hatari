@@ -30,6 +30,9 @@ Other changes:
 - HTML documentation indeces generated dynamically with JS
 - Debugger tests building fixed
 
+Fixed Games:
+- Captain Blood (fixed problem with the clock)
+
 
  Version 1.6.2 (2012-06-24):
  ---------------------------

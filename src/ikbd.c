@@ -1595,7 +1595,7 @@ static void IKBD_Cmd_DisableJoysticks(void)
  */
 static Uint16 IKBD_FromBCD(Uint8 Value)
 {
-	return ((Value >> 4) * 10) | (Value & 0x0f);
+	return ((Value >> 4) * 10) + (Value & 0x0f);
 }
 
 
@@ -1638,6 +1638,7 @@ static void IKBD_Cmd_SetClock(void)
 	NewTime.tm_hour = IKBD_FromBCD(Keyboard.InputBuffer[4]);
 	NewTime.tm_min = IKBD_FromBCD(Keyboard.InputBuffer[5]);
 	NewTime.tm_sec = IKBD_FromBCD(Keyboard.InputBuffer[6]);
+	NewTime.tm_isdst = -1;
 
 	nTimeOffset = time(NULL) - mktime(&NewTime);
 }
@@ -1675,7 +1676,10 @@ static void IKBD_Cmd_ReadClock(void)
 	IKBD_AddKeyToKeyboardBuffer(IKBD_ToBCD(SystemTime->tm_min));   /* mm - Minute */
 	IKBD_AddKeyToKeyboardBuffer(IKBD_ToBCD(SystemTime->tm_sec));   /* ss - Second */
 
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReadClock\n");
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReadClock: %02x %02x %02x %02x %02x %02x\n",
+		  IKBD_ToBCD(SystemTime->tm_year), IKBD_ToBCD(SystemTime->tm_mon+1),
+		  IKBD_ToBCD(SystemTime->tm_mday), IKBD_ToBCD(SystemTime->tm_hour),
+		  IKBD_ToBCD(SystemTime->tm_min), IKBD_ToBCD(SystemTime->tm_sec));
 }
 
 
