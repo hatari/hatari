@@ -24,6 +24,8 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__
 #include "screen.h"
 #include "video.h"
 #include "psg.h"
+#include "mfp.h"
+#include "fdc.h"
 
 #include "sysdeps.h"
 #include "maccess.h"
@@ -40,6 +42,8 @@ int pendingInterrupts = 0;
 
 /**
  * Reset custom chips
+ * In case the RESET instruction is called, we must reset all the peripherals
+ * connected to the CPU's reset pin.
  */
 void customreset(void)
 {
@@ -54,6 +58,12 @@ void customreset(void)
 
         /* Reset the YM2149 (stop any sound) */
         PSG_Reset ();
+
+	/* Reset the MFP */
+	MFP_Reset ();
+
+	/* Reset the FDC */
+	FDC_Reset ();
 }
 
 
