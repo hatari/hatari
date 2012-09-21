@@ -88,13 +88,14 @@ static SGOBJ fsdlg[] =
 };
 
 
-static int ypos;                        /* First entry number to be displayed */
-static bool refreshentries;             /* Do we have to update the file names in the dialog? */
-static int entries;                     /* How many files are in the actual directory? */
-static int oldMouseY = 0;				/* Keep the latest Y mouse position for scrollbar move computing */
+static int ypos = -1;				/* First entry number to be displayed. If -1, file selector start on the 1st file */
+						/* else we continue from the previous position when SDLGui_FileSelect is called again */
+static bool refreshentries;			/* Do we have to update the file names in the dialog? */
+static int entries;				/* How many files are in the actual directory? */
+static int oldMouseY = 0;			/* Keep the latest Y mouse position for scrollbar move computing */
 static int mouseClicked = 0;			/* used to know if mouse if down for the first time or not */
-static int mouseIsOut = 0;				/* used to keep info that mouse if above or under the scrollbar when mousebutton is down */
-static float scrollbar_Ypos = 0.0;	    /* scrollbar heigth */
+static int mouseIsOut = 0;			/* used to keep info that mouse if above or under the scrollbar when mousebutton is down */
+static float scrollbar_Ypos = 0.0;		/* scrollbar heigth */
 
 /* Convert file position (in file list) to scrollbar y position */
 static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void);
@@ -470,10 +471,17 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	bool browsingzip = false;           /* Are we browsing an archive? */
 	zip_dir *zipfiles = NULL;
 	SDL_Event sdlEvent;
-	int yScrolbar_size;				/* Size of the vertical scrollbar */
+	int yScrolbar_size;                 /* Size of the vertical scrollbar */
 
-	ypos = 0;
-	scrollbar_Ypos = 0.0;
+	/* If this is the first call to SDLGui_FileSelect, we reset scrollbar_Ypos and ypos */
+	/* Else, we keep the previous value of scrollbar_Ypos and update ypos below, to open */
+	/* the fileselector at the same position it was used */
+	if ( ypos < 0 )
+	{
+		scrollbar_Ypos = 0.0;
+		ypos = 0;
+	}
+
 	refreshentries = true;
 	entries = 0;
 
