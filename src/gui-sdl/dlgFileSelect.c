@@ -48,6 +48,8 @@ static char dlgfname[DLGFNAME_SIZE+1];  /* Name of the selected file in the dial
 #define DLGFILENAMES_SIZE 59
 static char dlgfilenames[SGFS_NUMENTRIES][DLGFILENAMES_SIZE+1];  /* Visible file names in the dialog */
 
+#define SCROLLBAR_MIN_HEIGHT 4		/* Min value for yScrollbar_size */
+
 /* The dialog data: */
 static SGOBJ fsdlg[] =
 {
@@ -471,7 +473,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	bool browsingzip = false;           /* Are we browsing an archive? */
 	zip_dir *zipfiles = NULL;
 	SDL_Event sdlEvent;
-	int yScrolbar_size;                 /* Size of the vertical scrollbar */
+	int yScrollbar_size;                 /* Size of the vertical scrollbar */
 
 	/* If this is the first call to SDLGui_FileSelect, we reset scrollbar_Ypos and ypos */
 	/* Else, we keep the previous value of scrollbar_Ypos and update ypos below, to open */
@@ -572,15 +574,19 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 
 		/* Refresh scrollbar size */
  		if (entries <= SGFS_NUMENTRIES)
-			yScrolbar_size = (SGFS_NUMENTRIES-2) * sdlgui_fontheight;
+			yScrollbar_size = (SGFS_NUMENTRIES-2) * sdlgui_fontheight;
 		else
-			yScrolbar_size = (int)((SGFS_NUMENTRIES-2) / ((float)entries/(float)SGFS_NUMENTRIES) * sdlgui_fontheight);
-		fsdlg[SGFSDLG_SCROLLBAR].w = yScrolbar_size;
-		
+		{
+			yScrollbar_size = (int)((SGFS_NUMENTRIES-2) / ((float)entries/(float)SGFS_NUMENTRIES) * sdlgui_fontheight);
+			if ( yScrollbar_size < SCROLLBAR_MIN_HEIGHT )		/* Value could be 0 for very large directory */
+				yScrollbar_size = SCROLLBAR_MIN_HEIGHT;
+		}
+		fsdlg[SGFSDLG_SCROLLBAR].w = yScrollbar_size;
+
 		/* Refresh scrolbar pos */
 		fsdlg[SGFSDLG_SCROLLBAR].h = (int) (scrollbar_Ypos * sdlgui_fontheight);
 		ypos = (int) (scrollbar_Ypos * ((float)entries/(float)(SGFS_NUMENTRIES-2)) + 0.5);
-		
+
 		/* Update the file name strings in the dialog? */
 		if (refreshentries)
 		{
