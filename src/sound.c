@@ -721,15 +721,22 @@ static void	Ym2149_Reset(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Returns a pseudo random value, used to generate white noise.
+ * As measured by David Savinkoff, the YM2149 uses a 17 stage LSFR with
+ * 2 taps (17,14)
  */
 
 static ymu32	YM2149_RndCompute(void)
 {
-	ymu32	bit;
-
-	bit = (RndRack&1) ^ ((RndRack>>2)&1);
-	RndRack = (RndRack>>1) | (bit<<16);
-	return (bit ? 0 : 0xffff);
+	/*  17 stage, 2 taps (17, 14) LFSR */
+	if (RndRack & 1)
+	{
+		RndRack = RndRack>>1 ^ 0x12000;		/* bits 17 and 14 are ones */
+		return 0xffff;
+	}
+	else
+	{	RndRack >>= 1;
+		return 0;
+	}
 }
 
 
@@ -907,7 +914,7 @@ static ymsample	YM2149_NextSample(void)
 	/* Noise value : 0 or 0xffff */
 	if ( noisePos&0xffff0000 )
 	{
-		currentNoise ^= YM2149_RndCompute();
+		currentNoise = YM2149_RndCompute();
 		noisePos &= 0xffff;
 	}
 	bn = currentNoise;				/* 0 or 0xffff */
@@ -977,7 +984,7 @@ static ymsample	YM2149_NextSample(void)
 	/* Noise value : 0 or 0xffff */
 	if ( noisePos&0xff000000 )			/* integer part > 0 */
 	{
-		currentNoise ^= YM2149_RndCompute();
+		currentNoise = YM2149_RndCompute();
 		noisePos &= 0xffffff;			/* keep fractional part of noisePos */
 	}
 	bn = currentNoise;				/* 0 or 0xffff */
