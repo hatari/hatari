@@ -25,6 +25,7 @@ Emulator:
     (above two features make temporary debug output easier within Hatari)
   - output what value was set by options if it's not otherwise shown by UI
   - Show AES call arguments (for intin array) in traces
+- Fileselector : remember previous position, handle large directory better
 
 Other changes:
 - HTML documentation indeces generated dynamically with JS
