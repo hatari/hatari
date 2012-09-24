@@ -847,6 +847,10 @@ static int FDC_FindFloppyDrive ( void )
  * Depending on the images inserted in each floppy drive and on the
  * selected drive, we must choose which fdc emulation should be used.
  * Possible emulation methods are 'internal' or 'ipf'.
+ * To avoid mixing emulation methods on both drives when possible (which
+ * could lead to inconstancies when precise timings are required), we also
+ * use the IPF mode for an empty drive if the other drive contains an IPF
+ * image.
  */
 static int FDC_GetEmulationMode ( void )
 {
@@ -859,6 +863,9 @@ static int FDC_GetEmulationMode ( void )
 	{
 		if ( EmulationDrives[ 1 ].ImageType == FLOPPY_IMAGE_TYPE_IPF )
 			Mode = FDC_EMULATION_MODE_IPF;
+		else if ( ( EmulationDrives[ 1 ].ImageType == FLOPPY_IMAGE_TYPE_NONE )		/* Drive 1 is empty */
+			&& ( EmulationDrives[ 0 ].ImageType == FLOPPY_IMAGE_TYPE_IPF ) )	/* Drive 0 is an IPF image */
+			Mode = FDC_EMULATION_MODE_IPF;						/* Use IPF for drive 1 too */
 		else
 			Mode = FDC_EMULATION_MODE_INTERNAL;
 	}
@@ -868,6 +875,9 @@ static int FDC_GetEmulationMode ( void )
 	{
 		if ( EmulationDrives[ 0 ].ImageType == FLOPPY_IMAGE_TYPE_IPF )
 			Mode = FDC_EMULATION_MODE_IPF;
+		else if ( ( EmulationDrives[ 0 ].ImageType == FLOPPY_IMAGE_TYPE_NONE )		/* Drive 0 is empty */
+			&& ( EmulationDrives[ 1 ].ImageType == FLOPPY_IMAGE_TYPE_IPF ) )	/* Drive 1 is an IPF image */
+			Mode = FDC_EMULATION_MODE_IPF;						/* Use IPF for drive 0 too */
 		else
 			Mode = FDC_EMULATION_MODE_INTERNAL;
 	}
