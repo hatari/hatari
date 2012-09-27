@@ -1695,12 +1695,16 @@ limitations which are due to the way the GEMDOS drive emulation is
 implemented:
 </p>
 <ul>
+<li>Directory entries are returned in a (case-insensitively) sorted
+order, for consistency.  E.g. moving files to a different directory and
+back (without changing their names) like AUTOSORT does, doesn't change
+that order. You need to rename the files.</li>
 <li>It is not possible to use a cartridge image at the same time
 with the GEMDOS drive emulation (Hatari has it's own cartridge code
 that is used for GEMDOS emulation).</li>
-<li>As MiNT installs its own GEMDOS handler, it doesn't work with
-the GEMDOS drive emulation.  MiNT needs to be booted from a real hard
-disk image.</li>
+<li>Anything that installs its own GEMDOS handler, like MiNT, doesn't work
+with the GEMDOS drive emulation.  Such things need to be run from a real
+hard disk image.</li>
 <li>GEMDOS drive emulation conflicts with the ACSI and IDE harddisk images.
 If you want to use GEMDOS HD emulation and ACSI/IDE disk images together,
 use a multiple partition GEMDOS emulation setup and select the partition
