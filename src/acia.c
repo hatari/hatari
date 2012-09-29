@@ -137,10 +137,10 @@ typedef struct {
 
 	int		State_RX;
 	Uint8		RSR;					/* Receive Shift Register */
-	Uint8		RSR_Size;				/* How many bits left to receive in RSR (7/8 .. 0) */
-	Uint8		RSR_Parity;				/* Current parity bit value for receive */
-	Uint8		RSR_StopBits;				/* How many stop bits left to receive (1 or 2) */
-
+	Uint8		RX_Size;				/* How many bits left to receive in RSR (7/8 .. 0) */
+	Uint8		RX_Parity;				/* Current parity bit value for receive */
+	Uint8		RX_StopBits;				/* How many stop bits left to receive (1 or 2) */
+	Uint		RX_Overrun;				/* Set to 1 if previous RDR was not read when RSR is full */ 
 
 	/* Other variables */
 	char		*ACIA_Name;
@@ -190,10 +190,110 @@ enum
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
+static void	ACIA_Reset  ( ACIA_STRUCT *pACIA );
+
+static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA );
+static void	ACIA_ChangeMFP_IRQ ( int IRQ );
+
 static void	ACIA_Prepare_TX ( ACIA_STRUCT *pACIA );
+static void	ACIA_Prepare_RX ( ACIA_STRUCT *pACIA );
 static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA );
 static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA );
 
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Init an ACIA.
+ */
+void	ACIA_Init  ( ACIA_STRUCT *pACIA )
+{
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset an ACIA.
+ * There's no RESET pin on the MC6850, so the only way to reset the ACIA
+ * is to set bit 0 an 1 to 0x03 in the CR to force a master reset.
+ */
+static void	ACIA_Reset  ( ACIA_STRUCT *pACIA )
+{
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check if the interrupt signal must be changed.
+ * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP pin,
+ * so they share the same IRQ bit in the MFP.
+ */
+static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
+{
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set or reset the ACIA's IRQ bit in the MFP.
+ */
+static void	ACIA_ChangeMFP_IRQ ( int IRQ )
+{
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read SR.
+ */
+Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
+{
+	return pACIA->SR;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to CR.
+ */
+void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
+{
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read RDR. This will clear RDRF, PE and IRQ.
+ * OVRN bit is set when reading RDR, not when the actual overrun happened
+ * during ACIA_Clock_RX.
+ */
+Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
+{
+	pACIA->SR &= ~( ACIA_SR_BIT_RDRF | ACIA_SR_BIT_PE | ACIA_SR_BIT_IRQ );
+
+	if ( pACIA->RX_Overrun )
+	{  
+		pACIA->SR |= ACIA_SR_BIT_OVRN;
+		pACIA->RX_Overrun = 0;
+	}
+
+	// int;
+
+	return pACIA->RDR;
+}
 
 
 
@@ -210,6 +310,8 @@ void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 
 	if ( pACIA->TX_State == ACIA_STATE_IDLE )			/* No transfer at the moment */
 		ACIA_Prepare_TX ( pACIA );				/* Copy to TSR */
+
+	// int;
 }
 
 
@@ -236,22 +338,41 @@ static void	ACIA_Prepare_TX ( ACIA_STRUCT *pACIA )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Prepare a new reception. Initialize parity, data size and stop bits.
+ */
+static void	ACIA_Prepare_RX ( ACIA_STRUCT *pACIA )
+{
+	pACIA->RSR = 0;
+	pACIA->RX_Parity = 0;
+	pACIA->RX_Size = ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].DataBits;
+	pACIA->RX_StopBits = ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].StopBits;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Write a new bit on the TX line each time the TX clock expires.
  * This will send TDR over the serial line, using TSR, with additional
  * parity and start/stop bits.
+ * We send bit 0 of TSR, then TSR is shifted to the right.
  */
 static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 {
 	int	StateNext;
-	Uint8	bit;
+	Uint8	tx_bit;
 
 	
 	StateNext = -1;
 	switch ( pACIA->TX_State )
 	{
 	  case ACIA_STATE_IDLE :
-		if ( pACIA->SR & ACIA_SR_BIT_TDRE == 0 )		/* If TDR is not empty when we reach idle state, this */
-			ACIA_Prepare_TX ( pACIA );			/* means we already have a new byte to send immediatly */
+		/* If TSR is empty and TDR is not empty when we reach idle state, */
+		/* this means we already have a new byte to send immediatly */
+		if ( ( pACIA->TX_Size == 0 )
+		    && ( ( pACIA->SR & ACIA_SR_BIT_TDRE ) == 0 ) )
+			ACIA_Prepare_TX ( pACIA );
 
 		if ( pACIA->TX_Size == 0 )				/* TSR is empty */
 			pACIA->Set_Line_TX ( 1 );			/* Send stop bits when idle */
@@ -263,9 +384,9 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 		break;
 
 	  case ACIA_STATE_DATA_BIT :
-		bit = pACIA->TSR & 1;					/* New bit to send */
-		pACIA->Set_Line_TX ( bit );
-		pACIA->TX_Parity ^= bit;
+		tx_bit = pACIA->TSR & 1;					/* New bit to send */
+		pACIA->Set_Line_TX ( tx_bit );
+		pACIA->TX_Parity ^= tx_bit;
 		pACIA->TSR >> 1;
 		pACIA->TX_Size--;
 
@@ -279,10 +400,10 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 		break;
 
 	  case ACIA_STATE_PARITY_BIT :
-		if ( ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].Parity != ACIA_PARITY_EVEN )
-			pACIA->Set_Line_TX ( bit );
+		if ( ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].Parity == ACIA_PARITY_EVEN )
+			pACIA->Set_Line_TX ( pACIA->TX_Parity );
 		else
-			pACIA->Set_Line_TX ( ( ~bit ) & 1 );
+			pACIA->Set_Line_TX ( ( ~pACIA->TX_Parity ) & 1 );
 
 		StateNext = ACIA_STATE_STOP_BIT;
 		break;
@@ -309,9 +430,86 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 /**
  * Interpret a new bit on the RX line each time the RX clock expires.
  * This will fill RDR with bits received from the serial line, using RSR.
+ * Incoming bits are stored in bit 7 of RSR, then RSR is shifted to the right.
  */
 static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 {
+	int	StateNext;
+	Uint8	rx_bit;
+
+
+	rx_bit = pACIA->Get_Line_RX;
+
+	StateNext = -1;
+	switch ( pACIA->TX_State )
+	{
+	  case ACIA_STATE_IDLE :
+		if ( rx_bit == 0 )					/* Receive 1 start bit */
+		{
+			ACIA_Prepare_RX ( pACIA );
+			StateNext = ACIA_STATE_DATA_BIT;
+		}
+		break;							/* If no start bit, we stay in idle state */
+
+	  case ACIA_STATE_DATA_BIT :
+		if ( rx_bit )
+			pACIA->RSR |= 0x80;
+		pACIA->RX_Parity ^= rx_bit;
+		pACIA->RX_Size--;
+
+		if ( pACIA->RX_Size > 0 )				/* All bits were not received yet */
+		{
+			pACIA->RSR >> 1;
+		}
+		else
+		{
+			if ( pACIA->SR & ACIA_SR_BIT_RDRF )
+			{
+				pACIA->RX_Overrun = 1;			/* Bit in SR is set when reading RDR */
+				// int;
+			}
+			if ( ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].Parity != ACIA_PARITY_NONE )
+				StateNext = ACIA_STATE_PARITY_BIT;
+			else
+				StateNext = ACIA_STATE_STOP_BIT;	/* No parity */
+		}
+		break;
+
+	  case ACIA_STATE_PARITY_BIT :
+		if ( ( ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].Parity == ACIA_PARITY_EVEN )
+		    && ( pACIA->RX_Parity != rx_bit ) )
+			pACIA->SR |= ACIA_SR_BIT_PE;
+
+		else if ( pACIA->RX_Parity == rx_bit )			/* Odd parity */
+			pACIA->SR |= ACIA_SR_BIT_PE;
+
+		StateNext = ACIA_STATE_STOP_BIT;
+		break;
+
+	  case ACIA_STATE_STOP_BIT :
+		if ( rx_bit == 1 )					/* Wait for 1 or 2 "1" stop bits */
+		{
+			pACIA->TX_StopBits--;
+			if ( pACIA->TX_StopBits == 0 )			/* All stop bits were received : reception is complete */
+			{
+				pACIA->SR &= ~ACIA_SR_BIT_FE;
+				pACIA->RDR = pACIA->RSR;
+				StateNext = ACIA_STATE_IDLE;		/* Go to idle state and wait for start bit */
+			}
+		}
+		else							/* Not a valid stop bit */
+		{
+			/* According to the A6850 doc, RSR is copied to RDR in case of a framing error */
+			/* (Should be the same for the MC6850 ?) */
+			pACIA->SR |= ACIA_SR_BIT_FE;
+			pACIA->RDR = pACIA->RSR;
+			StateNext = ACIA_STATE_IDLE;			/* Go to idle state and wait for start bit */
+		}
+		break;
+	}
+
+	if ( StateNext >= 0 )
+		pACIA->TX_State = StateNext;				/* Go to a new state */
 
 }
 
