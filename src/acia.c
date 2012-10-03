@@ -121,31 +121,8 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 #define	ACIA_CR_RECEIVE_INTERRUPT_ENABLE( CR )	( ( CR >> 7 ) & 0x01 )	/* CR7 : Reveive interrupt enable */
 
 
-typedef struct {
-	/* MC6850 internal registers */
-	Uint8		CR;					/* Control Register */
-	Uint8		SR;					/* Status Register */
-	Uint8		TDR;					/* Transmit Data Register */
-	Uint8		RDR;					/* Receive Data Register */
-	
-	int		TX_State;
-	Uint8		TDR_New;				/* 1 if a new byte was written in TDR and should be copied to TSR */
-	Uint8		TSR;					/* Transmit Shift Register */
-	Uint8		TX_Size;				/* How many data bits left to transmit in TSR (7/8 .. 0) */
-	Uint8		TX_Parity;				/* Current parity bit value for transmit */
-	Uint8		TX_StopBits;				/* How many stop bits left to transmit (1 or 2) */
 
-	int		State_RX;
-	Uint8		RSR;					/* Receive Shift Register */
-	Uint8		RX_Size;				/* How many bits left to receive in RSR (7/8 .. 0) */
-	Uint8		RX_Parity;				/* Current parity bit value for receive */
-	Uint8		RX_StopBits;				/* How many stop bits left to receive (1 or 2) */
-	Uint		RX_Overrun;				/* Set to 1 if previous RDR was not read when RSR is full */ 
-
-	/* Other variables */
-	char		*ACIA_Name;
-} ACIA_STRUCT;
-
+int	ACIA_Counter_Divide[ 3 ] = { 1 , 16 , 64 };		/* Used to divide txclock/rxclock to get the correct baud rate */
 
 
 /* Data size, parity and stop bits used for the transfer depending on CR_WORD_SELECT */
@@ -184,21 +161,34 @@ enum
 };
 
 
+#define		ACIA_MAX_NB		2				/* 2 ACIAs in the ST */
+
+ACIA_STRUCT		ACIA[ ACIA_MAX_NB ];
+ACIA_STRUCT		*pACIA_IKBD;
+ACIA_STRUCT		*pACIA_MIDI;
+
+
 
 
 /*--------------------------------------------------------------*/
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static void	ACIA_Reset  ( ACIA_STRUCT *pACIA );
+static void		ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA );
 
-static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA );
-static void	ACIA_ChangeMFP_IRQ ( int IRQ );
+static void		ACIA_Set_Line_IRQ_MFP ( int val );
+static Uint8 		ACIA_Get_Line_CTS_Dummy ( void );
+static Uint8 		ACIA_Get_Line_DCD_Dummy ( void );
+static void		ACIA_Set_Line_RTS_Dummy ( int val );
 
-static void	ACIA_Prepare_TX ( ACIA_STRUCT *pACIA );
-static void	ACIA_Prepare_RX ( ACIA_STRUCT *pACIA );
-static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA );
-static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA );
+static void		ACIA_MasterReset ( ACIA_STRUCT *pACIA );
+
+static void		ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA );
+
+static void		ACIA_Prepare_TX ( ACIA_STRUCT *pACIA );
+static void		ACIA_Prepare_RX ( ACIA_STRUCT *pACIA );
+static void		ACIA_Clock_TX ( ACIA_STRUCT *pACIA );
+static void		ACIA_Clock_RX ( ACIA_STRUCT *pACIA );
 
 
 
@@ -206,10 +196,137 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA );
 
 /*-----------------------------------------------------------------------*/
 /**
- * Init an ACIA.
+ * Init the 2 ACIAs in an Atari ST.
+ * Both ACIAs have a 500 MHZ TX/RX clock.
+ * This is called only once, when the emulator starts.
  */
-void	ACIA_Init  ( ACIA_STRUCT *pACIA )
+void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 {
+	int	i;
+
+	for ( i=0 ; i<ACIA_MAX_NB ; i++ )
+	{
+		memset ( (void *)&(pAllACIA[ i ]) , 0 , sizeof ( ACIA_STRUCT) );
+
+		pAllACIA[ i ].TX_Clock = TX_Clock;
+		pAllACIA[ i ].RX_Clock = RX_Clock;
+	}
+
+	/* Set the default common callback functions + other pointers */
+	ACIA_Init_Pointers ( pAllACIA );
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Init some functions/memory pointers for each ACIA.
+ */
+static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
+{
+	int	i;
+
+	for ( i=0 ; i<ACIA_MAX_NB ; i++ )
+	{
+		/* Set the default common callback functions */
+		pAllACIA[ i ].Set_Line_IRQ = ACIA_Set_Line_IRQ_MFP;
+		pAllACIA[ i ].Get_Line_CTS = ACIA_Get_Line_CTS_Dummy;
+		pAllACIA[ i ].Get_Line_DCD = ACIA_Get_Line_DCD_Dummy;
+		pAllACIA[ i ].Set_Line_RTS = ACIA_Set_Line_RTS_Dummy;
+	}
+
+	strcpy ( pAllACIA[ 0 ].ACIA_Name , "IKBD" );
+	strcpy ( pAllACIA[ 1 ].ACIA_Name , "MIDI" );
+
+	pACIA_IKBD = &(pAllACIA[ 0 ]);
+	pACIA_MIDI = &(pAllACIA[ 1 ]);
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set or reset the ACIA's IRQ signal.
+ * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP pin,
+ * so they share the same IRQ bit in the MFP.
+ */
+static void	ACIA_Set_Line_IRQ_MFP ( int val )
+{
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read the RX pin
+ */
+Uint8 	ACIA_Get_Line_RX ( void )
+{
+	return 0;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read the Clear To Send (CTS) pin
+ * Note : this is not connected on an ST, so we always return ''
+ */
+static Uint8 	ACIA_Get_Line_CTS_Dummy ( void )
+{
+	return 0;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read the Data Carrier Detect (DCD) pin
+ * Note : this is not connected on an ST, so we always return ''
+ */
+static Uint8 	ACIA_Get_Line_DCD_Dummy ( void )
+{
+	return 0;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set the Request To Send (RTS) pin.
+ * Note : this is not connected on an ST, so we ignore it.
+ */
+static void	ACIA_Set_Line_RTS_Dummy ( int val )
+{
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Interrupt called each time a new bit must be sent / received with the IKBD.
+ * This interrupt will be called at freq ( 500 MHz / ACIA_CR_COUNTER_DIVIDE )
+ * On ST, RX_Clock = TX_Clock = 500 MHz.
+ */
+void	ACIA_InterruptHandler_IKBD ( void )
+{
+	ACIA_Clock_TX ( pACIA_IKBD );
+	ACIA_Clock_RX ( pACIA_IKBD );
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Interrupt called each time a new bit must be sent / received with the MIDI.
+ * This interrupt will be called at freq ( 500 MHz / ACIA_CR_COUNTER_DIVIDE )
+ * On ST, RX_Clock = TX_Clock = 500 MHz.
+ */
+void	ACIA_InterruptHandler_MIDI ( void )
+{
+	ACIA_Clock_TX ( pACIA_MIDI );
+	ACIA_Clock_RX ( pACIA_MIDI );
 }
 
 
@@ -220,9 +337,31 @@ void	ACIA_Init  ( ACIA_STRUCT *pACIA )
  * Reset an ACIA.
  * There's no RESET pin on the MC6850, so the only way to reset the ACIA
  * is to set bit 0 an 1 to 0x03 in the CR to force a master reset.
+ * This will clear SR (except CTS and DCD) and halt/initialize both the
+ * receiver and transmitter.
  */
-static void	ACIA_Reset  ( ACIA_STRUCT *pACIA )
+static void	ACIA_MasterReset ( ACIA_STRUCT *pACIA )
 {
+	Uint8		dcd_bit;
+	Uint8		cts_bit;
+
+
+	dcd_bit = pACIA->Get_Line_DCD ();
+	cts_bit = pACIA->Get_Line_CTS ();
+
+	pACIA->SR = ACIA_SR_BIT_TDRE | ( dcd_bit << 2 ) | ( cts_bit << 3 );
+
+	pACIA->TX_State = ACIA_STATE_IDLE;
+	pACIA->TSR = 0;
+	pACIA->TX_Size = 0;
+	pACIA->TX_SendBrk = 0;
+
+	pACIA->RX_State = ACIA_STATE_IDLE;
+	pACIA->RSR = 0;
+	pACIA->RX_Size = 0;
+	pACIA->RX_Overrun = 0;
+
+	/* TODO : set RTS and irq */
 }
 
 
@@ -230,24 +369,30 @@ static void	ACIA_Reset  ( ACIA_STRUCT *pACIA )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check if the interrupt signal must be changed.
- * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP pin,
- * so they share the same IRQ bit in the MFP.
+ * Check if the IRQ must be changed in SR.
+ * When there's a change, we must change the IRQ line too.
  */
 static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 {
+	Uint8		irq_bit_new;
+
+	irq_bit_new = 0;
+
+
+	if ( ( pACIA->SR & ACIA_SR_BIT_IRQ ) != irq_bit_new )
+	{
+		if ( irq_bit_new )
+		{
+			pACIA->SR |= ACIA_SR_BIT_IRQ;			/* Set IRQ bit */
+			pACIA->Set_Line_IRQ ( 0 );			/* IRQ line goes low */
+		}
+		else
+		{
+			pACIA->SR &= ~ACIA_SR_BIT_IRQ;			/* Clear IRQ bit */
+			pACIA->Set_Line_IRQ ( 1 );			/* IRQ line goes high */
+		}
+	}
 }
-
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Set or reset the ACIA's IRQ bit in the MFP.
- */
-static void	ACIA_ChangeMFP_IRQ ( int IRQ )
-{
-}
-
 
 
 
@@ -269,6 +414,54 @@ Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
  */
 void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 {
+	int	Divide;
+
+
+	/* Bit 0 and 1 : Counter Divide */
+	Divide = ACIA_CR_COUNTER_DIVIDE ( CR );
+	if ( Divide == 0x03 )
+	{
+		ACIA_MasterReset ( pACIA );
+	}
+	else
+	{
+		if ( ACIA_CR_COUNTER_DIVIDE ( CR ) != ACIA_CR_COUNTER_DIVIDE ( pACIA->CR ) )
+		{
+			Divide = ACIA_Counter_Divide[ Divide ];
+			// TODO set timer
+		}
+		
+	}
+
+	/* Bits 2, 3 and 4 : word select */
+	/* Don't do anything here, see ACIA_Prepare_TX and ACIA_Prepare_RX */
+
+	/* Bits 5 and 6 : transmitter control */
+	pACIA->TX_EnableInt = 0;
+	pACIA->TX_SendBrk = 0;
+	switch ( ACIA_CR_TRANSMITTER_CONTROL ( CR ) )
+	{
+	  case 0x00 :
+		pACIA->Set_Line_RTS ( 0 );
+		break;
+	  case 0x01 :
+		pACIA->Set_Line_RTS ( 0 );
+		pACIA->TX_EnableInt = 1;
+		break;
+	  case 0x02 :
+		pACIA->Set_Line_RTS ( 1 );
+		break;
+	  case 0x03 :
+		pACIA->Set_Line_RTS ( 0 );
+		pACIA->TX_SendBrk = 1;					/* We will send break bit until CR is changed */
+		break;
+	}
+
+	/* Bits 7 : receive interrupt enable, see ACIA_UpdateIRQ */
+
+	ACIA_UpdateIRQ ( pACIA );
+
+	pACIA->CR = CR;
 }
 
 
@@ -277,7 +470,7 @@ void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 /*-----------------------------------------------------------------------*/
 /**
  * Read RDR. This will clear RDRF, PE and IRQ.
- * OVRN bit is set when reading RDR, not when the actual overrun happened
+ * OVRN bit is set only when reading RDR, not when the actual overrun happened
  * during ACIA_Clock_RX.
  */
 Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
@@ -290,7 +483,7 @@ Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 		pACIA->RX_Overrun = 0;
 	}
 
-	// int;
+	ACIA_UpdateIRQ ( pACIA );
 
 	return pACIA->RDR;
 }
@@ -306,12 +499,12 @@ Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 {
 	pACIA->TDR = TDR;
-	pACIA->SR &= ~ACIA_SR_BIT_TDRE;					/* TDR is not empty */
+	pACIA->SR &= ~ACIA_SR_BIT_TDRE;					/* TDR is not empty anymore */
 
 	if ( pACIA->TX_State == ACIA_STATE_IDLE )			/* No transfer at the moment */
 		ACIA_Prepare_TX ( pACIA );				/* Copy to TSR */
 
-	// int;
+	ACIA_UpdateIRQ ( pACIA );
 }
 
 
@@ -368,6 +561,12 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 	switch ( pACIA->TX_State )
 	{
 	  case ACIA_STATE_IDLE :
+		if ( pACIA->TX_SendBrk )
+		{
+			pACIA->Set_Line_TX ( 0 );			/* Send 1 break bit */
+			break;
+		}
+
 		/* If TSR is empty and TDR is not empty when we reach idle state, */
 		/* this means we already have a new byte to send immediatly */
 		if ( ( pACIA->TX_Size == 0 )
@@ -376,6 +575,7 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 
 		if ( pACIA->TX_Size == 0 )				/* TSR is empty */
 			pACIA->Set_Line_TX ( 1 );			/* Send stop bits when idle */
+
 		else							/* TSR has some new bits to transfer */
 		{
 			pACIA->Set_Line_TX ( 0 );			/* Send 1 start bit */
@@ -384,7 +584,7 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 		break;
 
 	  case ACIA_STATE_DATA_BIT :
-		tx_bit = pACIA->TSR & 1;					/* New bit to send */
+		tx_bit = pACIA->TSR & 1;				/* New bit to send */
 		pACIA->Set_Line_TX ( tx_bit );
 		pACIA->TX_Parity ^= tx_bit;
 		pACIA->TSR >> 1;
@@ -428,7 +628,7 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Interpret a new bit on the RX line each time the RX clock expires.
+ * Handle a new bit on the RX line each time the RX clock expires.
  * This will fill RDR with bits received from the serial line, using RSR.
  * Incoming bits are stored in bit 7 of RSR, then RSR is shifted to the right.
  */
@@ -438,10 +638,10 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 	Uint8	rx_bit;
 
 
-	rx_bit = pACIA->Get_Line_RX;
+	rx_bit = pACIA->Get_Line_RX();
 
 	StateNext = -1;
-	switch ( pACIA->TX_State )
+	switch ( pACIA->RX_State )
 	{
 	  case ACIA_STATE_IDLE :
 		if ( rx_bit == 0 )					/* Receive 1 start bit */
@@ -489,11 +689,17 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 	  case ACIA_STATE_STOP_BIT :
 		if ( rx_bit == 1 )					/* Wait for 1 or 2 "1" stop bits */
 		{
-			pACIA->TX_StopBits--;
-			if ( pACIA->TX_StopBits == 0 )			/* All stop bits were received : reception is complete */
+			pACIA->RX_StopBits--;
+			if ( pACIA->RX_StopBits == 0 )			/* All stop bits were received : reception is complete */
 			{
 				pACIA->SR &= ~ACIA_SR_BIT_FE;
-				pACIA->RDR = pACIA->RSR;
+				
+				if ( ( pACIA->SR & ACIA_SR_BIT_RDRF ) == 0 )
+				{
+					pACIA->RDR = pACIA->RSR;
+					pACIA->SR |= ACIA_SR_BIT_RDRF;
+					ACIA_UpdateIRQ ( pACIA );
+				}
 				StateNext = ACIA_STATE_IDLE;		/* Go to idle state and wait for start bit */
 			}
 		}
@@ -509,8 +715,7 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 	}
 
 	if ( StateNext >= 0 )
-		pACIA->TX_State = StateNext;				/* Go to a new state */
-
+		pACIA->RX_State = StateNext;				/* Go to a new state */
 }
 
 
