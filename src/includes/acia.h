@@ -18,7 +18,9 @@ typedef struct {
 
 	Uint32		TX_Clock;				/* 500 MHz on ST */
 	Uint32		RX_Clock;				/* 500 MHz on ST */
-	
+
+	Uint8		FirstMasterReset;			/* Set to 1 on first use, always 0 after 1st Master Reset */
+
 	int		TX_State;
 	Uint8		TSR;					/* Transmit Shift Register */
 	Uint8		TX_Size;				/* How many data bits left to transmit in TSR (7/8 .. 0) */

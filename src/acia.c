@@ -16,6 +16,9 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
    - MC6850 datasheet by Motorola (DS9493R4, 1985)
    - A6850 datasheet by Altera (A-DS-A6850-01, 1996) (nearly identical component)
 
+  Others references :
+   - MAME's 6850acia.c for RTS, CTS and DCD behaviour
+
 
   Pins:-
     Vss
@@ -181,7 +184,7 @@ static Uint8 		ACIA_Get_Line_CTS_Dummy ( void );
 static Uint8 		ACIA_Get_Line_DCD_Dummy ( void );
 static void		ACIA_Set_Line_RTS_Dummy ( int val );
 
-static void		ACIA_MasterReset ( ACIA_STRUCT *pACIA );
+static void		ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR );
 
 static void		ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA );
 
@@ -210,6 +213,7 @@ void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 
 		pAllACIA[ i ].TX_Clock = TX_Clock;
 		pAllACIA[ i ].RX_Clock = RX_Clock;
+		pAllACIA[ i ].FirstMasterReset = 1;
 	}
 
 	/* Set the default common callback functions + other pointers */
@@ -273,7 +277,8 @@ Uint8 	ACIA_Get_Line_RX ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * Read the Clear To Send (CTS) pin
- * Note : this is not connected on an ST, so we always return ''
+ * When CTS is high, TDRE should always be set to 0
+ * Note : this is not connected on an ST, so we always return 0.
  */
 static Uint8 	ACIA_Get_Line_CTS_Dummy ( void )
 {
@@ -340,10 +345,11 @@ void	ACIA_InterruptHandler_MIDI ( void )
  * This will clear SR (except CTS and DCD) and halt/initialize both the
  * receiver and transmitter.
  */
-static void	ACIA_MasterReset ( ACIA_STRUCT *pACIA )
+static void	ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR )
 {
 	Uint8		dcd_bit;
 	Uint8		cts_bit;
+	Uint8		rts_bit;
 
 
 	dcd_bit = pACIA->Get_Line_DCD ();
@@ -361,7 +367,18 @@ static void	ACIA_MasterReset ( ACIA_STRUCT *pACIA )
 	pACIA->RX_Size = 0;
 	pACIA->RX_Overrun = 0;
 
-	/* TODO : set RTS and irq */
+	/* On Master Reset, IRQ line is high */
+	/* If it's the 1st reset, RTS should be high, else RTS depends on CR bit 5 and 6 */
+	pACIA->Set_Line_IRQ ( 1 );			/* IRQ line goes high */
+	if ( pACIA->FirstMasterReset == 1 )
+	{
+		pACIA->FirstMasterReset = 0;
+		rts_bit = 1;				/* RTS line goes high */
+	}
+	else
+		rts_bit = ( ACIA_CR_TRANSMITTER_CONTROL ( CR ) == 0x02 ) ? 1 : 0;
+
+	pACIA->Set_Line_RTS ( rts_bit );
 }
 
 
@@ -399,10 +416,22 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 /*-----------------------------------------------------------------------*/
 /**
  * Read SR.
+ * When CTS is high, TDRE should always be masked to 0.
  */
 Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 {
-	return pACIA->SR;
+	Uint8	SR;
+
+
+	SR = pACIA->SR;
+
+	if ( pACIA->Get_Line_CTS() == 1 )
+	{
+		SR |= ACIA_SR_BIT_CTS;
+		SR &= ~ACIA_SR_BIT_TDRE;
+	}
+
+	return SR;
 }
 
 
@@ -421,7 +450,7 @@ void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 	Divide = ACIA_CR_COUNTER_DIVIDE ( CR );
 	if ( Divide == 0x03 )
 	{
-		ACIA_MasterReset ( pACIA );
+		ACIA_MasterReset ( pACIA , CR );
 	}
 	else
 	{
