@@ -13,6 +13,8 @@ Emulation:
   - Implementation of SampleHold in TT Hypermono video mode
 - Sound changes :
   - Better model of the YM2149 noise generation (no noticeable audible impact)
+- CPU changes:
+  - Added experimental MMU emulation for the 68030 mode
 
 Emulator:
 - Much improved console redirection functionality and a separate --conout
