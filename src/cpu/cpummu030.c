@@ -1007,13 +1007,17 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     bool early_termination = false;
     
     int i;
-    
+    int old_regs_s;   /* Supervisor status when this function has been called */
+
     /* Clear bus error flag, so we only detect our own bus errors.
      * Restore bus error flag, before returning from this function!
      */
     bool restore_be = (regs.spcflags&SPCFLAG_BUSERROR) ? true : false;
     regs.spcflags &= ~SPCFLAG_BUSERROR;
-    
+
+    old_regs_s = regs.s;
+    regs.s = 1;      /* FIXME: Always enable supervisor (needed for SysMem) */
+
     /* Use super user root pointer if enabled in TC register and access is in
      * super user mode, else use cpu root pointer. */
     if ((tc_030&TC_ENABLE_SUPERVISOR) && super) {
@@ -1326,6 +1330,7 @@ stop_search:
         }
         mmu030.status = (mmu030.status&~MMUSR_NUM_LEVELS_MASK) | descr_num;
         regs.spcflags |= restore_be ? SPCFLAG_BUSERROR : 0;
+        regs.s = old_regs_s;
         /* If root pointer is page descriptor (descr_num 0), return 0 */
         return descr_num ? descr[descr_num][0] : 0;
     }
@@ -1377,6 +1382,8 @@ stop_search:
               mmu030.atc[i].physical.modified?1:0);
     
     regs.spcflags |= restore_be ? SPCFLAG_BUSERROR : 0;
+    regs.s = old_regs_s;
+
     return 0;
 }
 
