@@ -630,6 +630,7 @@ Color games:
 - Alien Blast (demo)
 - Astrodia
 - Battletris+
+- Boom (screen flashes during scrolling messages)
 - ChuChu Rocket* (full version)
 - Dynaplus*
 - Frantick
@@ -744,7 +745,7 @@ Working demos:
 - Earth (by Gaston)
 - Falcon Flight (by Opium)
 - Firestarter (by Shadows)
-- Flu 4k (by New Beat)
+- Flu 4k (by New Beat), needs FPU
 - Fungle beats (by FUN)
   - needs WinUAE CPU core
 - Game of Life 4k (by Aggression)
@@ -768,7 +769,7 @@ Working demos:
 - ZZ 9 Plural Z Alpha (by tSCc)
 
 Demos regressed in EmuTOS v0.8.7:
-- Blue (by New Beat)
+- Blue 4k (by New Beat)
   - just exits
 
 Partly working demos:
@@ -862,7 +863,7 @@ Games working with extra hacks:
     kbdvec correctly which use causes EmuTOS to panic.  This can be worked
     around with the following hack.prg:
     http://sourceforge.net/mailarchive/message.php?msg_id=26841274
-  - with EmuTOS enabling DSP freezes the games right at startup
+  - with EmuTOS, enabling DSP freezes the games right at startup
     (with normal TOS4, DSP is used for background music)
 
 Mostly working games:
@@ -875,10 +876,9 @@ Games that might be possible to get working (they
 show something and/or don't use DSP / sound matrix):
 - Block Blizzard preview: stops when loading
 - Bomb Squad: crashes to bus error
-- Conquest of Elysium: doesn't start
+- Conquest of Elysium: black screen with garbage
 - Des Lazers & des Hommes: game area graphics are missing
-  (AFAIK they're rendered with DSP)
-- It's Great: bus errors, requires ST-med resolution
+  (they're rendered with DSP)
 - Jeu de Poker: colors wrong, freezes at menu, needs VGA
 - Masters of Chaos: starts, but then doesn't react to input
 - Neurobot: just exits
@@ -891,6 +891,7 @@ Games using Line-A bitblit not supported by EmuTOS:
 - Chainz
 - Confusion (demos 1 & 2)
 - Gold island (demo)
+- It's Great, needs to be started in ST-med rez
 - Jewelz
 - Let's play Shanghai (demo)
 - Men at War
