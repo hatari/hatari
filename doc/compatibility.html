@@ -1685,8 +1685,8 @@ the Hatari "--dsp" option:
 <ul>
   <li><b>none</b>: No emulation.
       If program doesn't need/use DSP, this is the best option.</li>
-  <li><b>emu</b>: Experimental DSP emulation.
-      Needed if program requires DSP. Slow.</li>
+  <li><b>emu</b>: Experimental DSP emulation.  Needed if program
+      requires DSP. On by default for Falcon. Slow.</li>
   <li><b>dummy</b>: Faked DSP response to DSP commands.
       Some rare programs that need DSP may also work with faked DSP.
       This is much faster than the real DSP emulation.</li>
@@ -1707,7 +1707,6 @@ Hatari readme.txt on how to enable that.</p>
 
 <h3>Falcon games</h3>
 
-<p>Here are listed some Falcon games:</p>
 <table border="1" cellpadding="3">
   <caption>Falcon games</caption>
   <tbody>
@@ -1766,7 +1765,7 @@ Hatari readme.txt on how to enable that.</p>
       <td>1.4</td>
       <td>yes</td>
       <td>-</td>
-      <td>Background music works if DSP emu enabled</td>
+      <td>Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Bomb Squad</td>
@@ -1787,7 +1786,7 @@ Hatari readme.txt on how to enable that.</p>
       <td>1.4</td>
       <td>yes</td>
       <td>-</td>
-      <td>Background music works if DSP emu enabled</td>
+      <td>Background music if DSP emu enabled</td>
     </tr> 
     <tr>
       <td><a href="http://rg.atari.org/game.htm">Bunion</a></td>
@@ -1803,7 +1802,7 @@ Hatari readme.txt on how to enable that.</p>
       <td>-</td>
       <td>Some menus are black (space gets through them).
           After playing a while: "IKBD buffer is full!" (with WinUAE).
-	  Screen bottom has garbage. Background music works only with DSP emu</td>
+	  Screen bottom has garbage. Background music with DSP emu</td>
     </tr>
     <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">ChainZ</a></td>
@@ -1947,7 +1946,7 @@ Hatari readme.txt on how to enable that.</p>
       <td>1.3</td>
       <td>yes</td>
       <td>-</td>
-      <td>Nice breakout clone.  Has background music if DSP emu enabled</td>
+      <td>Nice breakout clone.  Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Ishar 3 (CD)</td>
@@ -2307,6 +2306,13 @@ Hatari readme.txt on how to enable that.</p>
       <td>Use STE joypad. Background music if DSP emu enabled</td>
     </tr>
     <tr>
+      <td>Sweety Things</td>
+      <td>1.6</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Background music if DSP emu enabled</td>
+    </tr>
+    <tr>
       <td><a href="http://pouet.net/prod.php?which=52226">Switch</a></td>
       <td>1.0</td>
       <td>yes</td>
@@ -2318,7 +2324,7 @@ Hatari readme.txt on how to enable that.</p>
       <td>1.4</td>
       <td>yes</td>
       <td>-</td>
-      <td>Background music works if DSP emu enabled</td>
+      <td>Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Tank Blaster</td>
@@ -2441,7 +2447,11 @@ Hatari readme.txt on how to enable that.</p>
 
 <h3>Falcon demos</h3>
 
-<p>Here are listed some Falcon demos:</p>
+<p>Some demos require FPU, although normal Falcon's don't have a one.
+Old UAE CPU core always emulates FPU both for TT and Falcon machines.
+WinUAE CPU core does that only for TT, but but you can enable FPU
+also for Falcon if demo is stated to require that.</p>
+
 <table border="1" cellpadding="3">
   <caption>Falcon demos</caption>
   <tbody>
@@ -2517,7 +2527,7 @@ Hatari readme.txt on how to enable that.</p>
       <td>yes</td>
       <td>-</td>
       <td>AVR animation/music with Brainstorm player.
-          Background music works only with DSP</td>
+          Background music with DSP emu</td>
     </tr>
     <tr>
       <td>Collapze:
@@ -2866,7 +2876,7 @@ Hatari readme.txt on how to enable that.</p>
       <td>1.1</td>
       <td>-</td>
       <td>-</td>
-      <td>Very nice 4K demos from New Beat</td>
+      <td>Very nice 4K demos from New Beat, Flu requires FPU</td>
     </tr>
     <tr>
       <td>New Beat:
