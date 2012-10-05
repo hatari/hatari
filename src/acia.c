@@ -369,11 +369,11 @@ static void	ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR )
 
 	/* On Master Reset, IRQ line is high */
 	/* If it's the 1st reset, RTS should be high, else RTS depends on CR bit 5 and 6 */
-	pACIA->Set_Line_IRQ ( 1 );			/* IRQ line goes high */
+	pACIA->Set_Line_IRQ ( 1 );					/* IRQ line goes high */
 	if ( pACIA->FirstMasterReset == 1 )
 	{
 		pACIA->FirstMasterReset = 0;
-		rts_bit = 1;				/* RTS line goes high */
+		rts_bit = 1;						/* RTS line goes high */
 	}
 	else
 		rts_bit = ( ACIA_CR_TRANSMITTER_CONTROL ( CR ) == 0x02 ) ? 1 : 0;
@@ -395,7 +395,17 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 
 	irq_bit_new = 0;
 
+	if ( ACIA_CR_RECEIVE_INTERRUPT_ENABLE ( pACIA->CR ) 		/* Check for RX causes of interrupt */
+	  && ( ( pACIA->SR & ( ACIA_SR_BIT_RDRF | ACIA_SR_BIT_DCD ) )
+	    || ( pACIA->RX_Overrun ) ) )
+	  irq_bit_new = 1;
 
+	if ( pACIA->TX_EnableInt					/* Check for TX causes of interrupt */
+	  && ( pACIA->SR & ACIA_SR_BIT_TDRE )
+	  && ( ( pACIA->SR & ACIA_SR_BIT_CTS ) == 0 ) )
+	  irq_bit_new = 1;
+	
+	/* Update SR and IRQ line if a change happened */
 	if ( ( pACIA->SR & ACIA_SR_BIT_IRQ ) != irq_bit_new )
 	{
 		if ( irq_bit_new )
@@ -416,20 +426,22 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 /*-----------------------------------------------------------------------*/
 /**
  * Read SR.
- * When CTS is high, TDRE should always be masked to 0.
+ * Also update CTS ; when CTS is high, TDRE should always be masked to 0.
  */
 Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 {
 	Uint8	SR;
 
 
+	if ( pACIA->Get_Line_CTS() == 1 )
+		pACIA->SR |= ACIA_SR_BIT_CTS;
+	else
+		pACIA->SR &= ~ACIA_SR_BIT_CTS;
+
 	SR = pACIA->SR;
 
-	if ( pACIA->Get_Line_CTS() == 1 )
-	{
-		SR |= ACIA_SR_BIT_CTS;
-		SR &= ~ACIA_SR_BIT_TDRE;
-	}
+	if ( SR & ACIA_SR_BIT_CTS )
+		SR &= ~ACIA_SR_BIT_TDRE;				/* Inhibit TDRE when CTS is set */
 
 	return SR;
 }
@@ -648,6 +660,8 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 		break;
 	}
 
+	ACIA_UpdateIRQ ( pACIA );
+
 	if ( StateNext >= 0 )
 		pACIA->TX_State = StateNext;				/* Go to a new state */
 }
@@ -694,8 +708,7 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 		{
 			if ( pACIA->SR & ACIA_SR_BIT_RDRF )
 			{
-				pACIA->RX_Overrun = 1;			/* Bit in SR is set when reading RDR */
-				// int;
+				pACIA->RX_Overrun = 1;			/* Bit in SR will be set when reading RDR */
 			}
 			if ( ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].Parity != ACIA_PARITY_NONE )
 				StateNext = ACIA_STATE_PARITY_BIT;
@@ -727,7 +740,6 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 				{
 					pACIA->RDR = pACIA->RSR;
 					pACIA->SR |= ACIA_SR_BIT_RDRF;
-					ACIA_UpdateIRQ ( pACIA );
 				}
 				StateNext = ACIA_STATE_IDLE;		/* Go to idle state and wait for start bit */
 			}
@@ -742,6 +754,8 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 		}
 		break;
 	}
+
+	ACIA_UpdateIRQ ( pACIA );
 
 	if ( StateNext >= 0 )
 		pACIA->RX_State = StateNext;				/* Go to a new state */
