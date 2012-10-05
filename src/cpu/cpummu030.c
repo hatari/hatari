@@ -274,7 +274,7 @@ void mmu_op30_ptest (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 	if ((next >> 8) & 1)
 		_stprintf (tmp, ",A%d", (next >> 4) & 15);
 	write_log ("PTEST%c %02X,%08X,#%X%s PC=%08X\n",
-               ((next >> 9) & 1) ? 'W' : 'R', (next & 15), extra, (next >> 10) & 7, tmp, pc);
+               ((next >> 9) & 1) ? 'R' : 'W', (next & 15), extra, (next >> 10) & 7, tmp, pc);
 #endif
 	mmusr_030 = 0;
     
@@ -1021,8 +1021,8 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     /* Use super user root pointer if enabled in TC register and access is in
      * super user mode, else use cpu root pointer. */
     if ((tc_030&TC_ENABLE_SUPERVISOR) && super) {
-        descr[descr_num][0] = (srp_030>>32)&0xFFFFFFFF;
-        descr[descr_num][1] = srp_030&0xFFFFFFFF;
+        descr[0][0] = (srp_030>>32)&0xFFFFFFFF;
+        descr[0][1] = srp_030&0xFFFFFFFF;
         write_log("Supervisor Root Pointer: %08X%08X\n",descr[descr_num][0],descr[descr_num][1]);
     } else {
         descr[0][0] = (crp_030>>32)&0xFFFFFFFF;
@@ -1042,6 +1042,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     switch (descr_type) {
         case DESCR_TYPE_INVALID:
             write_log("Fatal error: Root pointer is invalid descriptor!\n");
+            mmu030.status |= MMUSR_INVALID;
             goto stop_search;
         case DESCR_TYPE_EARLY_TERM:
             write_log("Root pointer is early termination page descriptor.\n");
@@ -1355,10 +1356,10 @@ stop_search:
     mmu030_atc_handle_history_bit(i);
     
     /* Create ATC entry */
-    mmu030.atc[i].logical.addr = addr&0xFFFFFF00; /* field is only 24 bit */
+    mmu030.atc[i].logical.addr = addr & (~mmu030.translation.page.mask); /* delete page index bits */
     mmu030.atc[i].logical.fc = fc;
     mmu030.atc[i].logical.valid = true;
-    mmu030.atc[i].physical.addr = page_addr; /* already masked to 24 bit */
+    mmu030.atc[i].physical.addr = page_addr & (~mmu030.translation.page.mask); /* delete page index bits */
     if ((mmu030.status&MMUSR_INVALID) || (mmu030.status&MMUSR_SUPER_VIOLATION)) {
         mmu030.atc[i].physical.bus_error = true;
     } else {
