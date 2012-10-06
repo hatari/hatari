@@ -188,6 +188,7 @@ static Uint8 		ACIA_Get_Line_CTS_Dummy ( void );
 static Uint8 		ACIA_Get_Line_DCD_Dummy ( void );
 static void		ACIA_Set_Line_RTS_Dummy ( int val );
 
+static void		ACIA_Set_Timers ( void *pACIA );
 static void		ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int InternalCycleOffset );
 
 static void		ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR );
@@ -240,6 +241,7 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 	{
 		/* Set the default common callback functions */
 		pAllACIA[ i ].Set_Line_IRQ = ACIA_Set_Line_IRQ_MFP;
+		pAllACIA[ i ].Set_Timers = ACIA_Set_Timers;
 		pAllACIA[ i ].Get_Line_CTS = ACIA_Get_Line_CTS_Dummy;
 		pAllACIA[ i ].Get_Line_DCD = ACIA_Get_Line_DCD_Dummy;
 		pAllACIA[ i ].Set_Line_RTS = ACIA_Set_Line_RTS_Dummy;
@@ -315,9 +317,23 @@ static void	ACIA_Set_Line_RTS_Dummy ( int val )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set the required timers to handle RX / TX, depending on the CR_DIVIDE
+ * value.
+ * When CR is changed with a new CR_DIVIDE value, we restart the timers.
+ */
+static void	ACIA_Set_Timers ( void *pACIA )
+{
+	ACIA_Start_InterruptHandler_IKBD ( (ACIA_STRUCT *)pACIA , 0 );
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Set a timer to handle the RX / TX bits at the expected baud rate.
- * On ST, TX_Clock and RX_Clock are the same, so the timer's freq will be
- * TX_Clock / Divider.
+ * NOTE : on ST, TX_Clock and RX_Clock are the same, so the timer's freq will be
+ * TX_Clock / Divider and we only need one timer interrupt to handle both RX and TX.
  * This freq should be converted to CPU_CYCLE : 1 ACIA cycle = 16 CPU cycles
  * (with cpu running at 8 MHz)
  * InternalCycleOffset allows to compensate for a != 0 value in PendingInterruptCount
@@ -377,6 +393,16 @@ void	ACIA_InterruptHandler_MIDI ( void )
 	ACIA_Clock_RX ( pACIA_MIDI );
 }
 
+
+
+
+/*----------------------------------------------------------------------*/
+/* The part below is the real core of the 6850's emulation.		*/
+/*									*/
+/* This core is not correlated to any specific machine. All the specific*/
+/* code between the 6850 and the rest of Hatari is called through some	*/
+/* callback functions (see above).					*/
+/*----------------------------------------------------------------------*/
 
 
 

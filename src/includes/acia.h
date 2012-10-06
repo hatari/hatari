@@ -42,6 +42,8 @@ typedef struct {
 	void		(*Set_Line_TX) ( int val );		/* Output : TX */
 	void		(*Set_Line_IRQ) ( int val );		/* Output : IRQ */
 
+	void		(*Set_Timers) ( void *pACIA );		/* Start timers to handle RX and TX bits at specified baud rate */
+	
 	Uint8		(*Get_Line_CTS) ( void );		/* Input  : Clear To Send (not connected in ST) */
 	Uint8		(*Get_Line_DCD) ( void );		/* Input  : Data Carrier Detect (not connected in ST) */
 	void		(*Set_Line_RTS) ( int val );		/* Output : Request To Send (not connected in ST) */
