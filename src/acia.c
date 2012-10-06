@@ -103,9 +103,13 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 
 
 #include "main.h"
-#include "acia.h"
 #include "log.h"
 #include "memorySnapShot.h"
+#include "configuration.h"
+#include "acia.h"
+#include "m68000.h"
+#include "cycInt.h"
+#include "clocks_timings.h"
 
 
 
@@ -183,6 +187,8 @@ static void		ACIA_Set_Line_IRQ_MFP ( int val );
 static Uint8 		ACIA_Get_Line_CTS_Dummy ( void );
 static Uint8 		ACIA_Get_Line_DCD_Dummy ( void );
 static void		ACIA_Set_Line_RTS_Dummy ( int val );
+
+static void		ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int InternalCycleOffset );
 
 static void		ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR );
 
@@ -309,14 +315,51 @@ static void	ACIA_Set_Line_RTS_Dummy ( int val )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set a timer to handle the RX / TX bits at the expected baud rate.
+ * On ST, TX_Clock and RX_Clock are the same, so the timer's freq will be
+ * TX_Clock / Divider.
+ * This freq should be converted to CPU_CYCLE : 1 ACIA cycle = 16 CPU cycles
+ * (with cpu running at 8 MHz)
+ * InternalCycleOffset allows to compensate for a != 0 value in PendingInterruptCount
+ * to keep a constant baud rate.
+ */
+static void	ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int InternalCycleOffset )
+{
+	int		Cycles;
+
+
+	Cycles = MachineClocks.CPU_Freq / pACIA->TX_Clock;		/* Convert ACIA cycles in CPU cycles */
+	Cycles *= pACIA->Clock_Divider;
+	Cycles <<= nCpuFreqShift;					/* Compensate for x2 or x4 cpu speed */
+
+	CycInt_AddRelativeInterruptWithOffset ( Cycles, INT_CPU_CYCLE, INTERRUPT_ACIA_IKBD , InternalCycleOffset );
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Interrupt called each time a new bit must be sent / received with the IKBD.
  * This interrupt will be called at freq ( 500 MHz / ACIA_CR_COUNTER_DIVIDE )
  * On ST, RX_Clock = TX_Clock = 500 MHz.
  */
 void	ACIA_InterruptHandler_IKBD ( void )
 {
+	int	PendingCyclesOver;
+
+
+	/* Number of internal cycles we went over for this timer ( <= 0 ) */
+	/* Used to restart the next timer and keep a constant baud rate */
+	PendingCyclesOver = -PendingInterruptCount;			/* >= 0 */
+
+	/* Remove this interrupt from list and re-order */
+	CycInt_AcknowledgeInterrupt();
+
 	ACIA_Clock_TX ( pACIA_IKBD );
 	ACIA_Clock_RX ( pACIA_IKBD );
+
+	ACIA_Start_InterruptHandler_IKBD ( pACIA_IKBD , -PendingCyclesOver );	/* Compensate for a != 0 value of PendingCyclesOver */
 }
 
 
@@ -468,8 +511,8 @@ void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 	{
 		if ( ACIA_CR_COUNTER_DIVIDE ( CR ) != ACIA_CR_COUNTER_DIVIDE ( pACIA->CR ) )
 		{
-			Divide = ACIA_Counter_Divide[ Divide ];
-			// TODO set timer
+			pACIA->Clock_Divider = ACIA_Counter_Divide[ Divide ];
+			ACIA_Start_InterruptHandler_IKBD ( pACIA , 0 );	/* Set a timer at the baud rate */
 		}
 		
 	}

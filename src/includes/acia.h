@@ -18,6 +18,7 @@ typedef struct {
 
 	Uint32		TX_Clock;				/* 500 MHz on ST */
 	Uint32		RX_Clock;				/* 500 MHz on ST */
+	int		Clock_Divider;				/* 1, 16 or 64 */
 
 	Uint8		FirstMasterReset;			/* Set to 1 on first use, always 0 after 1st Master Reset */
 
