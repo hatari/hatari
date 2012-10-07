@@ -117,6 +117,7 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 #include "acia.h"
 #include "m68000.h"
 #include "cycInt.h"
+#include "ioMem.h"
 #include "clocks_timings.h"
 #include "screen.h"
 #include "video.h"
@@ -201,6 +202,11 @@ static void		ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int Interna
 static void		ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR );
 
 static void		ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA );
+
+static Uint8		ACIA_Read_SR ( ACIA_STRUCT *pACIA );
+static void		ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR );
+static Uint8		ACIA_Read_RDR ( ACIA_STRUCT *pACIA );
+static void		ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR );
 
 static void		ACIA_Prepare_TX ( ACIA_STRUCT *pACIA );
 static void		ACIA_Prepare_RX ( ACIA_STRUCT *pACIA );
@@ -423,6 +429,94 @@ void	ACIA_InterruptHandler_MIDI ( void )
 
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Return SR for the IKBD's ACIA (0xfffc00)
+ */
+void	ACIA_IKBD_Read_SR ( void )
+{
+	/* ACIA registers need wait states. TODO : also add wait time for E clock */
+	M68000_WaitState(8);
+
+	IoMem[0xfffc00] = ACIA_Read_SR ( pACIA_IKBD );
+
+	if (LOG_TRACE_LEVEL(TRACE_ACIA))
+	{
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("acia %s read fffc00 sr=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
+		                IoMem[0xfffc00], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return RDR for the IKBD's ACIA (0xfffc02) : receive a byte from the IKBD
+ */
+void	ACIA_IKBD_Read_RDR ( void )
+{
+	/* ACIA registers need wait states. TODO : also add wait time for E clock */
+	M68000_WaitState(8);
+
+	IoMem[0xfffc02] = ACIA_Read_RDR ( pACIA_IKBD );
+
+	if (LOG_TRACE_LEVEL(TRACE_IKBD_ACIA))
+	{
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("acia %s read fffc02 rdr=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
+				IoMem[0xfffc02], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to CR in the IKBD's ACIA (0xfffc00)
+ */
+void	ACIA_IKBD_Write_CR ( void )
+{
+	int FrameCycles, HblCounterVideo, LineCycles;
+
+	/* ACIA registers need wait states. TODO : also add wait time for E clock */
+	M68000_WaitState(8);
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc00 cr=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
+				IoMem[0xfffc00], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+
+	ACIA_Write_CR ( pACIA_IKBD , IoMem[0xfffc00] );
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to TDR in the IKBD's ACIA (0xfffc02) : send a byte to the IKBD
+ */
+void	ACIA_IKBD_Write_TDR ( void )
+{
+	int FrameCycles, HblCounterVideo, LineCycles;
+
+	/* ACIA registers need wait states. TODO : also add wait time for E clock */
+	M68000_WaitState(8);
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc02 tdr=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
+				IoMem[0xfffc02], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+
+	ACIA_Write_TDR ( pACIA_IKBD , IoMem[0xfffc02] );
+}
+
+
+
+
 /*----------------------------------------------------------------------*/
 /* The part below is the real core of the 6850's emulation.		*/
 /*									*/
@@ -528,7 +622,7 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
  * Read SR.
  * Also update CTS ; when CTS is high, TDRE should always be masked to 0.
  */
-Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
+static Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 {
 	Uint8	SR;
 
@@ -555,7 +649,7 @@ Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 /**
  * Write to CR.
  */
-void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
+static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 {
 	int	Divide;
 
@@ -618,7 +712,7 @@ void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
  * OVRN bit is set only when reading RDR, not when the actual overrun happened
  * during ACIA_Clock_RX.
  */
-Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
+static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 {
 	pACIA->SR &= ~( ACIA_SR_BIT_RDRF | ACIA_SR_BIT_PE | ACIA_SR_BIT_IRQ );
 
@@ -644,7 +738,7 @@ Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
  * Write to TDR. If the TX process is idle, we prepare a new transfer
  * immediatly, else the TDR value will be sent when current transfer is over.
  */
-void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
+static void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 {
 	LOG_TRACE ( TRACE_ACIA, "acia %s write TDR data=0x%x overwrite=%s tx_state=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , TDR ,
 		( pACIA->SR & ACIA_SR_BIT_TDRE ) ? "no" : "yes" , pACIA->TX_State , nVBLs , nHBL );

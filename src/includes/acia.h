@@ -67,10 +67,11 @@ void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock );
 void	ACIA_InterruptHandler_IKBD ( void );
 void	ACIA_InterruptHandler_MIDI ( void );
 
-Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA );
-void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR );
-Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA );
-void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR );
+void	ACIA_IKBD_Read_SR ( void );
+void	ACIA_IKBD_Read_RDR ( void );
+void	ACIA_IKBD_Write_CR ( void );
+void	ACIA_IKBD_Write_TDR ( void );
+
 
 
 #endif /* ifndef HATARI_ACIA_H */
