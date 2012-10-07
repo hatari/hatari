@@ -23,6 +23,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "gemdos.h"
 #include "hdc.h"
 #include "ide.h"
+#include "acia.h"
 #include "ikbd.h"
 #include "ioMem.h"
 #include "keymap.h"
@@ -591,6 +592,7 @@ static void Main_Init(void)
 	Screen_Init();
 	Main_SetTitle(NULL);
 	HostScreen_Init();
+	ACIA_Init( ACIA_Array , MachineClocks.ACIA_Freq , MachineClocks.ACIA_Freq );
 	DSP_Init();
 	Floppy_Init();
 	M68000_Init();                /* Init CPU emulation */
