@@ -122,6 +122,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 #define TRACE_DSP_SYMBOLS	 (1ll<<42)
 #define TRACE_CPU_SYMBOLS	 (1ll<<43)
 
+#define TRACE_ACIA		 (1ll<<44)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

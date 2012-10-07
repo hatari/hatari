@@ -110,7 +110,8 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "cycInt.h"
 #include "clocks_timings.h"
-
+#include "screen.h"
+#include "video.h"
 
 
 #define	ACIA_SR_BIT_RDRF			0x01		/* Receive Data Register Full */
@@ -214,6 +215,9 @@ void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 {
 	int	i;
 
+
+	LOG_TRACE ( TRACE_ACIA, "acia init tx_clock=%d rx_clock=%d\n" , TX_Clock , RX_Clock );
+
 	for ( i=0 ; i<ACIA_MAX_NB ; i++ )
 	{
 		memset ( (void *)&(pAllACIA[ i ]) , 0 , sizeof ( ACIA_STRUCT) );
@@ -236,6 +240,7 @@ void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 {
 	int	i;
+
 
 	for ( i=0 ; i<ACIA_MAX_NB ; i++ )
 	{
@@ -265,6 +270,7 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
  */
 static void	ACIA_Set_Line_IRQ_MFP ( int val )
 {
+	LOG_TRACE ( TRACE_ACIA, "acia set irq val=0x%x VBL=%d HBL=%d\n" , val , nVBLs , nHBL );
 }
 
 
@@ -290,7 +296,11 @@ Uint8 	ACIA_Get_Line_RX ( void )
  */
 static Uint8 	ACIA_Get_Line_CTS_Dummy ( void )
 {
-	return 0;
+	Uint8		val;
+
+	val = 0;
+	LOG_TRACE ( TRACE_ACIA, "acia get cts=0x%x VBL=%d HBL=%d\n" , val , nVBLs , nHBL );
+	return val;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -300,7 +310,11 @@ static Uint8 	ACIA_Get_Line_CTS_Dummy ( void )
  */
 static Uint8 	ACIA_Get_Line_DCD_Dummy ( void )
 {
-	return 0;
+	Uint8		val;
+
+	val = 0;
+	LOG_TRACE ( TRACE_ACIA, "acia get dcd=0x%x VBL=%d HBL=%d\n" , val , nVBLs , nHBL );
+	return val;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -310,6 +324,7 @@ static Uint8 	ACIA_Get_Line_DCD_Dummy ( void )
  */
 static void	ACIA_Set_Line_RTS_Dummy ( int val )
 {
+	LOG_TRACE ( TRACE_ACIA, "acia set rts val=0x%x VBL=%d HBL=%d\n" , val , nVBLs , nHBL );
 }
 
 
@@ -348,6 +363,9 @@ static void	ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int Internal
 	Cycles *= pACIA->Clock_Divider;
 	Cycles <<= nCpuFreqShift;					/* Compensate for x2 or x4 cpu speed */
 
+	LOG_TRACE ( TRACE_ACIA, "acia %s start timer divider=%d cycles=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , 
+		pACIA->Clock_Divider , Cycles , nVBLs , nHBL );
+
 	CycInt_AddRelativeInterruptWithOffset ( Cycles, INT_CPU_CYCLE, INTERRUPT_ACIA_IKBD , InternalCycleOffset );
 }
 
@@ -359,6 +377,7 @@ static void	ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int Internal
  * Interrupt called each time a new bit must be sent / received with the IKBD.
  * This interrupt will be called at freq ( 500 MHz / ACIA_CR_COUNTER_DIVIDE )
  * On ST, RX_Clock = TX_Clock = 500 MHz.
+ * We continuously restart the interrupt, taking into account PendingCyclesOver.
  */
 void	ACIA_InterruptHandler_IKBD ( void )
 {
@@ -368,6 +387,8 @@ void	ACIA_InterruptHandler_IKBD ( void )
 	/* Number of internal cycles we went over for this timer ( <= 0 ) */
 	/* Used to restart the next timer and keep a constant baud rate */
 	PendingCyclesOver = -PendingInterruptCount;			/* >= 0 */
+
+	LOG_TRACE ( TRACE_ACIA, "acia IKBD interrupt handler pending_cyc=%d VBL=%d HBL=%d\n" , PendingCyclesOver , nVBLs , nHBL );
 
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
@@ -421,6 +442,8 @@ static void	ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR )
 	Uint8		rts_bit;
 
 
+	LOG_TRACE ( TRACE_ACIA, "acia %s master reset VBL=%d HBL=%d\n" , pACIA->ACIA_Name , nVBLs , nHBL );
+	
 	dcd_bit = pACIA->Get_Line_DCD ();
 	cts_bit = pACIA->Get_Line_CTS ();
 
@@ -477,6 +500,8 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 	/* Update SR and IRQ line if a change happened */
 	if ( ( pACIA->SR & ACIA_SR_BIT_IRQ ) != irq_bit_new )
 	{
+		LOG_TRACE ( TRACE_ACIA, "acia %s update irq irq_new=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , irq_bit_new , nVBLs , nHBL );
+
 		if ( irq_bit_new )
 		{
 			pACIA->SR |= ACIA_SR_BIT_IRQ;			/* Set IRQ bit */
@@ -512,6 +537,8 @@ Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 	if ( SR & ACIA_SR_BIT_CTS )
 		SR &= ~ACIA_SR_BIT_TDRE;				/* Inhibit TDRE when CTS is set */
 
+	LOG_TRACE ( TRACE_ACIA, "acia %s read SR data=0x%x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , SR , nVBLs , nHBL );
+
 	return SR;
 }
 
@@ -526,6 +553,8 @@ void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 {
 	int	Divide;
 
+
+	LOG_TRACE ( TRACE_ACIA, "acia %s write CR data=0x%x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , CR , nVBLs , nHBL );
 
 	/* Bit 0 and 1 : Counter Divide */
 	Divide = ACIA_CR_COUNTER_DIVIDE ( CR );
@@ -595,6 +624,9 @@ Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 
 	ACIA_UpdateIRQ ( pACIA );
 
+	LOG_TRACE ( TRACE_ACIA, "acia %s read RDR data=0x%x overrun=%s VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->RDR ,
+		( pACIA->SR & ACIA_SR_BIT_OVRN ) ? "yes" : "no" , nVBLs , nHBL );
+
 	return pACIA->RDR;
 }
 
@@ -608,6 +640,9 @@ Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
  */
 void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 {
+	LOG_TRACE ( TRACE_ACIA, "acia %s write TDR data=0x%x overwrite=%s tx_state=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , TDR ,
+		( pACIA->SR & ACIA_SR_BIT_TDRE ) ? "no" : "yes" , pACIA->TX_State , nVBLs , nHBL );
+
 	pACIA->TDR = TDR;
 	pACIA->SR &= ~ACIA_SR_BIT_TDRE;					/* TDR is not empty anymore */
 
@@ -634,6 +669,9 @@ static void	ACIA_Prepare_TX ( ACIA_STRUCT *pACIA )
 	pACIA->TX_StopBits = ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].StopBits;
 
 	pACIA->SR |= ACIA_SR_BIT_TDRE;					/* TDR was copied to TSR. TDR is now empty */
+
+	LOG_TRACE ( TRACE_ACIA, "acia %s prepare tx TSR=0x%x size=%d stop=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->TSR ,
+		pACIA->TX_Size , pACIA->TX_StopBits , nVBLs , nHBL );
 }
 
 
@@ -649,6 +687,9 @@ static void	ACIA_Prepare_RX ( ACIA_STRUCT *pACIA )
 	pACIA->RX_Parity = 0;
 	pACIA->RX_Size = ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].DataBits;
 	pACIA->RX_StopBits = ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].StopBits;
+
+	LOG_TRACE ( TRACE_ACIA, "acia %s prepare rx size=%d stop=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name ,
+		pACIA->RX_Size , pACIA->RX_StopBits , nVBLs , nHBL );
 }
 
 
@@ -666,7 +707,9 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 	int	StateNext;
 	Uint8	tx_bit;
 
-	
+
+	LOG_TRACE ( TRACE_ACIA, "acia %s clock_tx tx_state=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->TX_State , nVBLs , nHBL );
+
 	StateNext = -1;
 	switch ( pACIA->TX_State )
 	{
@@ -752,6 +795,8 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 
 	rx_bit = pACIA->Get_Line_RX();
 
+	LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx rx_state=%d bit=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->RX_State , rx_bit , nVBLs , nHBL );
+
 	StateNext = -1;
 	switch ( pACIA->RX_State )
 	{
@@ -777,6 +822,7 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 		{
 			if ( pACIA->SR & ACIA_SR_BIT_RDRF )
 			{
+				LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx overrun VBL=%d HBL=%d\n" , pACIA->ACIA_Name , nVBLs , nHBL );
 				pACIA->RX_Overrun = 1;			/* Bit in SR will be set when reading RDR */
 			}
 			if ( ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].Parity != ACIA_PARITY_NONE )
@@ -793,6 +839,9 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 
 		else if ( pACIA->RX_Parity == rx_bit )			/* Odd parity */
 			pACIA->SR |= ACIA_SR_BIT_PE;
+
+		if ( pACIA->SR & ACIA_SR_BIT_PE )
+			LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx parity error VBL=%d HBL=%d\n" , pACIA->ACIA_Name , nVBLs , nHBL );
 
 		StateNext = ACIA_STATE_STOP_BIT;
 		break;
@@ -815,6 +864,8 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 		}
 		else							/* Not a valid stop bit */
 		{
+			LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx framing error VBL=%d HBL=%d\n" , pACIA->ACIA_Name , nVBLs , nHBL );
+
 			/* According to the A6850 doc, RSR is copied to RDR in case of a framing error */
 			/* (Should be the same for the MC6850 ?) */
 			pACIA->SR |= ACIA_SR_BIT_FE;
