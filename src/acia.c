@@ -637,7 +637,7 @@ static Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 	if ( SR & ACIA_SR_BIT_CTS )
 		SR &= ~ACIA_SR_BIT_TDRE;				/* Inhibit TDRE when CTS is set */
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s read SR data=0x%x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , SR , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia %s read sr data=0x%x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , SR , nVBLs , nHBL );
 
 	return SR;
 }
@@ -654,7 +654,7 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 	int	Divide;
 
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s write CR data=0x%x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , CR , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia %s write cr data=0x%x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , CR , nVBLs , nHBL );
 
 	/* Bit 0 and 1 : Counter Divide */
 	Divide = ACIA_CR_COUNTER_DIVIDE ( CR );
@@ -724,7 +724,7 @@ static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 
 	ACIA_UpdateIRQ ( pACIA );
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s read RDR data=0x%x overrun=%s VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->RDR ,
+	LOG_TRACE ( TRACE_ACIA, "acia %s read rdr data=0x%x overrun=%s VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->RDR ,
 		( pACIA->SR & ACIA_SR_BIT_OVRN ) ? "yes" : "no" , nVBLs , nHBL );
 
 	return pACIA->RDR;
@@ -740,7 +740,7 @@ static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
  */
 static void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 {
-	LOG_TRACE ( TRACE_ACIA, "acia %s write TDR data=0x%x overwrite=%s tx_state=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , TDR ,
+	LOG_TRACE ( TRACE_ACIA, "acia %s write tdr data=0x%x overwrite=%s tx_state=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , TDR ,
 		( pACIA->SR & ACIA_SR_BIT_TDRE ) ? "no" : "yes" , pACIA->TX_State , nVBLs , nHBL );
 
 	pACIA->TDR = TDR;
@@ -770,7 +770,7 @@ static void	ACIA_Prepare_TX ( ACIA_STRUCT *pACIA )
 
 	pACIA->SR |= ACIA_SR_BIT_TDRE;					/* TDR was copied to TSR. TDR is now empty */
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s prepare tx TSR=0x%x size=%d stop=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->TSR ,
+	LOG_TRACE ( TRACE_ACIA, "acia %s prepare tx tsr=0x%x size=%d stop=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->TSR ,
 		pACIA->TX_Size , pACIA->TX_StopBits , nVBLs , nHBL );
 }
 
