@@ -858,6 +858,8 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 				{
 					pACIA->RDR = pACIA->RSR;
 					pACIA->SR |= ACIA_SR_BIT_RDRF;
+					LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx received RDR=0x%x VBL=%d HBL=%d\n" ,
+						pACIA->ACIA_Name , pACIA->RDR , nVBLs , nHBL );
 				}
 				StateNext = ACIA_STATE_IDLE;		/* Go to idle state and wait for start bit */
 			}
