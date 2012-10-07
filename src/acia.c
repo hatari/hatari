@@ -9,6 +9,14 @@
 
 const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 
+
+/* 2012/09/28	[NP]	Start of the full rewrite of the MC6850 ACIA emulation, using the official	*/
+/*			datasheets for maximum accuracy, as well as bit level serial transfers (start,	*/
+/*			stop and parity bits).								*/
+
+
+
+
 /*
   6850 ACIA (Asynchronous Communications Inferface Apdater)
 
@@ -169,9 +177,7 @@ enum
 };
 
 
-#define		ACIA_MAX_NB		2				/* 2 ACIAs in the ST */
-
-ACIA_STRUCT		ACIA[ ACIA_MAX_NB ];
+ACIA_STRUCT		ACIA_Array[ ACIA_MAX_NB ];
 ACIA_STRUCT		*pACIA_IKBD;
 ACIA_STRUCT		*pACIA_MIDI;
 

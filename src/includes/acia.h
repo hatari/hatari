@@ -54,6 +54,9 @@ typedef struct {
 } ACIA_STRUCT;
 
 
+#define		ACIA_MAX_NB		2			/* 2 ACIAs in the ST */
+
+extern ACIA_STRUCT		ACIA_Array[ ACIA_MAX_NB ];
 extern ACIA_STRUCT		*pACIA_IKBD;
 extern ACIA_STRUCT		*pACIA_MIDI;
 
