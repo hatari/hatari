@@ -592,7 +592,10 @@ static void Main_Init(void)
 	Screen_Init();
 	Main_SetTitle(NULL);
 	HostScreen_Init();
+
 	ACIA_Init( ACIA_Array , MachineClocks.ACIA_Freq , MachineClocks.ACIA_Freq );
+	IKBD_Init();			/* After ACIA_Init */
+
 	DSP_Init();
 	Floppy_Init();
 	M68000_Init();                /* Init CPU emulation */

@@ -62,6 +62,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "video.h"
 #include "utils.h"
+#include "acia.h"
 
 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
@@ -288,6 +289,11 @@ static const struct {
 };
 
 
+
+static void	IKBD_Init_Pointers ( ACIA_STRUCT *ACIA_IKBD );
+static Uint8	IKBD_Set_Line_TX ( void );
+static void	IKBD_Get_Line_RX ( int val );
+
 static void IKBD_SendByteToKeyboardProcessor(Uint16 bl);
 static Uint16 IKBD_GetByteFromACIA(void);
 static void IKBD_SendByteToACIA(int nAciaCycles);
@@ -394,6 +400,36 @@ void ACIA_Reset(void)
 	ACIAControlRegister = 0;
 	ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 }
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Init the IKBD processor.
+ * Connect the IKBD RX/TX callback functions to the ACIA.
+ * This is called only once, when the emulator starts.
+ */
+void	IKBD_Init ( void )
+{
+	LOG_TRACE ( TRACE_IKBD, "ikbd init\n" );
+
+	/* Set the callback functions for RX/TX line */
+	IKBD_Init_Pointers ( pACIA_IKBD );
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Init some functions/memory pointers for the IKBD.
+ */
+static void	IKBD_Init_Pointers ( ACIA_STRUCT *ACIA_IKBD )
+{
+	pACIA_IKBD->Get_Line_RX = IKBD_Set_Line_TX;			/* Connect ACIA's RX to IKBD's TX */
+	pACIA_IKBD->Set_Line_TX = IKBD_Get_Line_RX;			/* Connect ACIA's TX to IKBD's RX */
+}
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -545,7 +581,37 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 	{
 		nTimeOffset = (nEmuTime != 0) ? (time(NULL) - nEmuTime) : 0;
 	}
+
+	/* Set the callback functions for RX/TX line */
+	if (!bSave)						/* Restoring a snapshot */
+	{
+		IKBD_Init_Pointers ( pACIA_IKBD );
+	}
 }
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Send a bit on the IKBD's TX line (this is connected to the ACIA's RX)
+ */
+static Uint8	IKBD_Set_Line_TX ( void )
+{
+	return 0;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Receive a bit on the IKBD's RX line (this is connected to the ACIA's TX)
+ */
+static void	IKBD_Get_Line_RX ( int val )
+{
+}
+
+
 
 
 /*-----------------------------------------------------------------------*/

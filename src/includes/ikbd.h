@@ -82,6 +82,7 @@ extern KEYBOARD_PROCESSOR KeyboardProcessor;
 extern KEYBOARD Keyboard;
 
 extern void ACIA_Reset(void);
+extern void IKBD_Init ( void );
 extern void IKBD_Reset_ExeMode ( void );
 extern void IKBD_Reset(bool bCold);
 extern void IKBD_MemorySnapShot_Capture(bool bSave);

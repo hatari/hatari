@@ -191,10 +191,10 @@ ACIA_STRUCT		*pACIA_MIDI;
 
 static void		ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA );
 
-static void		ACIA_Set_Line_IRQ_MFP ( int val );
+static void		ACIA_Set_Line_IRQ_MFP ( int bit );
 static Uint8 		ACIA_Get_Line_CTS_Dummy ( void );
 static Uint8 		ACIA_Get_Line_DCD_Dummy ( void );
-static void		ACIA_Set_Line_RTS_Dummy ( int val );
+static void		ACIA_Set_Line_RTS_Dummy ( int bit );
 
 static void		ACIA_Set_Timers ( void *pACIA );
 static void		ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int InternalCycleOffset );
@@ -264,8 +264,8 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 		pAllACIA[ i ].Set_Line_RTS = ACIA_Set_Line_RTS_Dummy;
 	}
 
-	strcpy ( pAllACIA[ 0 ].ACIA_Name , "IKBD" );
-	strcpy ( pAllACIA[ 1 ].ACIA_Name , "MIDI" );
+	strcpy ( pAllACIA[ 0 ].ACIA_Name , "ikbd" );
+	strcpy ( pAllACIA[ 1 ].ACIA_Name , "midi" );
 
 	pACIA_IKBD = &(pAllACIA[ 0 ]);
 	pACIA_MIDI = &(pAllACIA[ 1 ]);
@@ -280,21 +280,9 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
  * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP pin,
  * so they share the same IRQ bit in the MFP.
  */
-static void	ACIA_Set_Line_IRQ_MFP ( int val )
+static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 {
-	LOG_TRACE ( TRACE_ACIA, "acia set irq val=0x%x VBL=%d HBL=%d\n" , val , nVBLs , nHBL );
-}
-
-
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read the RX pin
- */
-Uint8 	ACIA_Get_Line_RX ( void )
-{
-	return 0;
+	LOG_TRACE ( TRACE_ACIA, "acia set irq val=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
 }
 
 
@@ -308,11 +296,11 @@ Uint8 	ACIA_Get_Line_RX ( void )
  */
 static Uint8 	ACIA_Get_Line_CTS_Dummy ( void )
 {
-	Uint8		val;
+	Uint8		bit;
 
-	val = 0;
-	LOG_TRACE ( TRACE_ACIA, "acia get cts=0x%x VBL=%d HBL=%d\n" , val , nVBLs , nHBL );
-	return val;
+	bit = 0;
+	LOG_TRACE ( TRACE_ACIA, "acia get cts=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
+	return bit;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -322,11 +310,11 @@ static Uint8 	ACIA_Get_Line_CTS_Dummy ( void )
  */
 static Uint8 	ACIA_Get_Line_DCD_Dummy ( void )
 {
-	Uint8		val;
+	Uint8		bit;
 
-	val = 0;
-	LOG_TRACE ( TRACE_ACIA, "acia get dcd=0x%x VBL=%d HBL=%d\n" , val , nVBLs , nHBL );
-	return val;
+	bit = 0;
+	LOG_TRACE ( TRACE_ACIA, "acia get dcd=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
+	return bit;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -334,9 +322,9 @@ static Uint8 	ACIA_Get_Line_DCD_Dummy ( void )
  * Set the Request To Send (RTS) pin.
  * Note : this is not connected on an ST, so we ignore it.
  */
-static void	ACIA_Set_Line_RTS_Dummy ( int val )
+static void	ACIA_Set_Line_RTS_Dummy ( int bit )
 {
-	LOG_TRACE ( TRACE_ACIA, "acia set rts val=0x%x VBL=%d HBL=%d\n" , val , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia set rts val=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
 }
 
 
@@ -375,7 +363,7 @@ static void	ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int Internal
 	Cycles *= pACIA->Clock_Divider;
 	Cycles <<= nCpuFreqShift;					/* Compensate for x2 or x4 cpu speed */
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s start timer divider=%d cycles=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , 
+	LOG_TRACE ( TRACE_ACIA, "acia %s start timer divider=%d cpu_cycles=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name ,
 		pACIA->Clock_Divider , Cycles , nVBLs , nHBL );
 
 	CycInt_AddRelativeInterruptWithOffset ( Cycles, INT_CPU_CYCLE, INTERRUPT_ACIA_IKBD , InternalCycleOffset );
@@ -400,7 +388,7 @@ void	ACIA_InterruptHandler_IKBD ( void )
 	/* Used to restart the next timer and keep a constant baud rate */
 	PendingCyclesOver = -PendingInterruptCount;			/* >= 0 */
 
-	LOG_TRACE ( TRACE_ACIA, "acia IKBD interrupt handler pending_cyc=%d VBL=%d HBL=%d\n" , PendingCyclesOver , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia ikbd interrupt handler pending_cyc=%d VBL=%d HBL=%d\n" , PendingCyclesOver , nVBLs , nHBL );
 
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
