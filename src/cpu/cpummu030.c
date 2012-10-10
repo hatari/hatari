@@ -42,7 +42,7 @@
 #include "cpummu030.h"
 
 
-#define MMUOP_DEBUG 1
+#define MMU030_OP_DBG_MSG 1
 #define MMU030_ATC_DBG_MSG 0
 #define MMU030_REG_DBG_MSG 1
 
@@ -150,23 +150,52 @@ struct {
 
 
 /* -- MMU instructions -- */
-static const TCHAR *mmu30regs[] = { "TCR", "", "SRP", "CRP", "", "", "", "" };
-
 
 void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 {
 	int preg = (next >> 10) & 31;
 	int rw = (next >> 9) & 1;
 	int fd = (next >> 8) & 1;
-	const TCHAR *reg = NULL;
-	uae_u32 otc = tc_030;
-	int siz;
+    
+#if MMU030_OP_DBG_MSG
+    switch (preg) {
+        case 0x10:
+            write_log("PMOVE: %s TC %08X\n", rw?"read":"write",
+                      rw?tc_030:x_get_long(extra));
+            break;
+        case 0x12:
+            write_log("PMOVE: %s SRP %08X%08X\n", rw?"read":"write",
+                      rw?(uae_u32)(srp_030>>32)&0xFFFFFFFF:x_get_long(extra),
+                      rw?(uae_u32)srp_030&0xFFFFFFFF:x_get_long(extra+4));
+            break;
+        case 0x13:
+            write_log("PMOVE: %s CRP %08X%08X\n", rw?"read":"write",
+                      rw?(uae_u32)(crp_030>>32)&0xFFFFFFFF:x_get_long(extra),
+                      rw?(uae_u32)crp_030&0xFFFFFFFF:x_get_long(extra+4));
+            break;
+        case 0x18:
+            write_log("PMOVE: %s MMUSR %04X\n", rw?"read":"write",
+                      rw?mmusr_030:x_get_word(extra));
+            break;
+        case 0x02:
+            write_log("PMOVE: %s TT0 %08X\n", rw?"read":"write",
+                      rw?tt0_030:x_get_long(extra));
+            break;
+        case 0x03:
+            write_log("PMOVE: %s TT1 %08X\n", rw?"read":"write",
+                      rw?tt1_030:x_get_long(extra));
+            break;
+        default:
+            break;
+    }
+    if (!fd && !rw && !(preg==0x18)) {
+        write_log("PMOVE: flush ATC\n");
+    }
+#endif
     
 	switch (preg)
 	{
         case 0x10: // TC
-            reg = "TC";
-            siz = 4;
             if (rw)
                 x_put_long (extra, tc_030);
             else {
@@ -175,8 +204,6 @@ void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
             }
             break;
         case 0x12: // SRP
-            reg = "SRP";
-            siz = 8;
             if (rw) {
                 x_put_long (extra, srp_030 >> 32);
                 x_put_long (extra + 4, srp_030);
@@ -187,8 +214,6 @@ void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
             }
             break;
         case 0x13: // CRP
-            reg = "CRP";
-            siz = 8;
             if (rw) {
                 x_put_long (extra, crp_030 >> 32);
                 x_put_long (extra + 4, crp_030);
@@ -199,16 +224,12 @@ void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
             }
             break;
         case 0x18: // MMUSR
-            reg = "MMUSR";
-            siz = 2;
             if (rw)
                 x_put_word (extra, mmusr_030);
             else
                 mmusr_030 = x_get_word (extra);
             break;
         case 0x02: // TT0
-            reg = "TT0";
-            siz = 4;
             if (rw)
                 x_put_long (extra, tt0_030);
             else {
@@ -217,8 +238,6 @@ void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
             }
             break;
         case 0x03: // TT1
-            reg = "TT1";
-            siz = 4;
             if (rw)
                 x_put_long (extra, tt1_030);
             else {
@@ -226,62 +245,25 @@ void mmu_op30_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
                 mmu030.transparent.tt1 = mmu030_decode_tt(tt1_030);
             }
             break;
-	}
-    
-	if (!reg) {
-		write_log ("Bad PMOVE at %08x\n",m68k_getpc());
-		op_illg (opcode);
-		return;
+        default:
+            write_log ("Bad PMOVE at %08x\n",m68k_getpc());
+            op_illg (opcode);
+            return;
 	}
     
     if (!fd && !rw && !(preg==0x18)) {
-        write_log("PMOVE: Flush ATC\n");
         mmu030_flush_atc_all();
     }
-    
-#if MMUOP_DEBUG > 0
-	{
-		uae_u32 val;
-		if (siz == 8) {
-			uae_u32 val2 = x_get_long (extra);
-			val = x_get_long (extra + 4);
-			if (rw)
-				write_log ("PMOVE %s,%08X%08X", reg, val2, val);
-			else
-				write_log ("PMOVE %08X%08X,%s", val2, val, reg);
-		} else {
-			if (siz == 4)
-				val = x_get_long (extra);
-			else
-				val = x_get_word (extra);
-			if (rw)
-				write_log ("PMOVE %s,%08X", reg, val);
-			else
-				write_log ("PMOVE %08X,%s", val, reg);
-		}
-		write_log (" PC=%08X\n", pc);
-	}
-#endif
-    
 }
 
 void mmu_op30_ptest (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 {
-#if MMUOP_DEBUG > 0
-	TCHAR tmp[10];
-    
-	tmp[0] = 0;
-	if ((next >> 8) & 1)
-		_stprintf (tmp, ",A%d", (next >> 4) & 15);
-	write_log ("PTEST%c %02X,%08X,#%X%s PC=%08X\n",
-               ((next >> 9) & 1) ? 'R' : 'W', (next & 15), extra, (next >> 10) & 7, tmp, pc);
-#endif
 	mmusr_030 = 0;
     
     int level = (next&0x1C00)>>10;
     int rw = (next >> 9) & 1;
     int a = (next >> 8) & 1;
-    int areg = (next&0xE0)>>4;
+    int areg = (next&0xE0)>>5;
     uae_u32 fc = mmu_op30_helper_get_fc(next);
         
     bool write = rw ? false : true;
@@ -296,20 +278,10 @@ void mmu_op30_ptest (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
     if (!level && a) { /* correct ? */
         /* TODO: F-line unimplemented instruction exception */
     }
-    
-    if (!level) {
-        mmu030_ptest_atc_search(extra, fc, write);
-    } else {
-        ret = mmu030_table_search(extra, fc, write, level);
-        if (a) {
-            m68k_areg (regs, areg) = ret;
-        }
-    }
-    mmusr_030 = mmu030.status;
-    
-    
-    write_log("PTEST: %08X, fc = %i, level = %i, ",
-              extra, fc, level);
+        
+#if MMU030_OP_DBG_MSG
+    write_log("PTEST%c: addr = %08X, fc = %i, level = %i, ",
+              rw?'R':'W', extra, fc, level);
     if (a) {
         write_log("return descriptor to register A%i\n", areg);
     } else {
@@ -320,20 +292,29 @@ void mmu_op30_ptest (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
               (mmusr_030&MMUSR_SUPER_VIOLATION)?1:0, (mmusr_030&MMUSR_WRITE_PROTECTED)?1:0,
               (mmusr_030&MMUSR_INVALID)?1:0, (mmusr_030&MMUSR_MODIFIED)?1:0,
               (mmusr_030&MMUSR_TRANSP_ACCESS)?1:0, mmusr_030&MMUSR_NUM_LEVELS_MASK);
+#endif
+    
+    if (!level) {
+        mmu030_ptest_atc_search(extra, fc, write);
+    } else {
+        ret = mmu030_table_search(extra, fc, write, level);
+        if (a) {
+            m68k_areg (regs, areg) = ret;
+        }
+    }
+    mmusr_030 = mmu030.status;
 }
 
 void mmu_op30_pload (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 {
-#if MMUOP_DEBUG > 0
-    write_log ("PLOAD%c PC=%08X\n", ((next >> 9) & 1) ? 'W' : 'R', pc);
-#endif
-    
     int rw = (next >> 9) & 1;
     uae_u32 fc = mmu_op30_helper_get_fc(next);
     
     bool write = rw ? false : true;
 
+#if MMU030_OP_DBG_MSG
     write_log ("PLOAD%c: Create ATC entry for %08X, FC = %i\n", write?'W':'R', extra, fc);
+#endif
 
     mmu030_flush_atc_page(extra);
     mmu030_table_search(extra, fc, write, 0);
@@ -341,26 +322,37 @@ void mmu_op30_pload (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 
 void mmu_op30_pflush (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
 {
-    write_log ("PFLUSH PC=%08X, NEXT=%04X, EXTRA=%08X\n", pc, next, extra);
-
     uae_u16 mode = (next&0x1C00)>>10;
     uae_u32 fc_mask = (uae_u32)(next&0x00E0)>>5;
     uae_u32 fc_base = mmu_op30_helper_get_fc(next);
-        
+    
+#if MMU030_OP_DBG_MSG
     switch (mode) {
         case 0x1:
             write_log("PFLUSH: Flush all entries\n");
-            mmu030_flush_atc_all();
             break;
         case 0x4:
             write_log("PFLUSH: Flush by function code only\n");
             write_log("PFLUSH: function code: base = %08X, mask = %08X\n", fc_base, fc_mask);
-            mmu030_flush_atc_fc(fc_base, fc_mask);
             break;
         case 0x6:
             write_log("PFLUSH: Flush by function code and effective address\n");
             write_log("PFLUSH: function code: base = %08X, mask = %08X\n", fc_base, fc_mask);
             write_log("PFLUSH: effective address = %08X\n", extra);
+            break;
+        default:
+            break;
+    }
+#endif
+    
+    switch (mode) {
+        case 0x1:
+            mmu030_flush_atc_all();
+            break;
+        case 0x4:
+            mmu030_flush_atc_fc(fc_base, fc_mask);
+            break;
+        case 0x6:
             mmu030_flush_atc_page_fc(extra, fc_base, fc_mask);
             break;
             
