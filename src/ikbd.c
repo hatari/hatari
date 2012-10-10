@@ -47,6 +47,9 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			received during the IKBD reset.							*/
 /* 2012/02/26	[NP]	Handle TX interrupt in the ACIA (eg by sending 0xb6 instead of 0x96 after	*/
 /*			resetting the ACIA) (fix the game 'Hades Nebula').				*/
+/* 2012/10/10	[NP]	Use the new ACIA emulation in acia.c ; add support for the IKBD's SCI, which	*/
+/*			is similar to the ACIA, with fixed 8 data bits, 1 stop bit and no parity bit.	*/
+
 
 
 #include <time.h>
@@ -290,9 +293,60 @@ static const struct {
 
 
 
+
+#define	IKBD_TRCSR_BIT_WU			0x01		/* Wake Up */
+#define	IKBD_TRCSR_BIT_TE			0x02		/* Transmit Enable */
+#define	IKBD_TRCSR_BIT_TIE			0x04		/* Transmit Interrupt Enable */
+#define	IKBD_TRCSR_BIT_RE			0x08		/* Receive Enable */
+#define	IKBD_TRCSR_BIT_RIE			0x10		/* Receive Interrupt Enable */
+#define	IKBD_TRCSR_BIT_TDRE			0x20		/* Transmit Data Register Empty */
+#define	IKBD_TRCSR_BIT_ORFE			0x40		/* Over Run Framing Error */
+#define	IKBD_TRCSR_BIT_RDRF			0x80		/* Receive Data Register Full */
+
+
+
+/* Possible states when handling TX/RX in the IKBD's Serial Communication Interface */
+enum
+{
+	IKBD_SCI_STATE_IDLE = 0,
+	IKBD_SCI_STATE_DATA_BIT,
+	IKBD_SCI_STATE_STOP_BIT
+};
+
+
+
+typedef struct {
+	/* IKBD's SCI internal registers */
+	Uint8		RMCR;					/* reg 0x10 : Rate and Mode Control Register */
+	Uint8		TRCSR;					/* reg 0x11 : Transmit/Receive Control and Status Register */
+	Uint8		TDR;					/* reg 0x12 : Transmit Data Register */
+	Uint8		RDR;					/* reg 0x13 : Receive Data Register */
+
+	int		SCI_TX_State;
+	Uint8		TSR;					/* Transmit Shift Register */
+	Uint8		SCI_TX_Size;				/* How many data bits left to transmit in TSR (8 .. 0) */
+
+	int		SCI_RX_State;
+	Uint8		RSR;					/* Receive Shift Register */
+	Uint8		SCI_RX_Size;				/* How many bits left to receive in RSR (8 .. 0) */
+
+} IKBD_STRUCT;
+
+
+
+static IKBD_STRUCT	IKBD;
+static IKBD_STRUCT	*pIKBD = &IKBD;
+
+
+
+
+
+
+
 static void	IKBD_Init_Pointers ( ACIA_STRUCT *ACIA_IKBD );
-static Uint8	IKBD_Set_Line_TX ( void );
-static void	IKBD_Get_Line_RX ( int val );
+static void	IKBD_SCI_Get_Line_RX ( int rx_bit );
+static Uint8	IKBD_SCI_Set_Line_TX ( void );
+
 
 static void IKBD_SendByteToKeyboardProcessor(Uint16 bl);
 static Uint16 IKBD_GetByteFromACIA(void);
@@ -426,8 +480,8 @@ void	IKBD_Init ( void )
  */
 static void	IKBD_Init_Pointers ( ACIA_STRUCT *ACIA_IKBD )
 {
-	pACIA_IKBD->Get_Line_RX = IKBD_Set_Line_TX;			/* Connect ACIA's RX to IKBD's TX */
-	pACIA_IKBD->Set_Line_TX = IKBD_Get_Line_RX;			/* Connect ACIA's TX to IKBD's RX */
+	pACIA_IKBD->Get_Line_RX = IKBD_SCI_Set_Line_TX;			/* Connect ACIA's RX to IKBD SCI's TX */
+	pACIA_IKBD->Set_Line_TX = IKBD_SCI_Get_Line_RX;			/* Connect ACIA's TX to IKBD SCI's RX */
 }
 
 
@@ -594,21 +648,117 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Send a bit on the IKBD's TX line (this is connected to the ACIA's RX)
+ * Prepare a new transfer. Copy TDR to TSR and initialize data size.
+ * Transfer will then start at the next call of IKBD_SCI_Set_Line_TX.
  */
-static Uint8	IKBD_Set_Line_TX ( void )
+static void	IKBD_SCI_Prepare_TX ( IKBD_STRUCT *pIKBD )
 {
-	return 0;
+	pIKBD->TSR = pIKBD->TDR;
+	pIKBD->SCI_TX_Size = 8;
+
+	pIKBD->TRCSR |= IKBD_TRCSR_BIT_TDRE;				/* TDR was copied to TSR. TDR is now empty */
+
+	LOG_TRACE ( TRACE_ACIA, "ikbd acia prepare tx tsr=0x%x size=%d VBL=%d HBL=%d\n" , pIKBD->TSR , pIKBD->SCI_TX_Size , nVBLs , nHBL );
 }
+
 
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Receive a bit on the IKBD's RX line (this is connected to the ACIA's TX)
+ * Prepare a new reception. Initialize RSR and data size.
  */
-static void	IKBD_Get_Line_RX ( int val )
+static void	IKBD_SCI_Prepare_RX ( IKBD_STRUCT *pIKBD )
 {
+	pIKBD->RSR = 0;
+	pIKBD->SCI_RX_Size = 8;
+
+	LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia prepare rx size=%d VBL=%d HBL=%d\n" , pIKBD->SCI_RX_Size , nVBLs , nHBL );
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Receive a bit on the IKBD SCI's RX line (this is connected to the ACIA's TX)
+ * This will fill RDR with bits received from the serial line, using RSR.
+ * Incoming bits are stored in bit 7 of RSR, then RSR is shifted to the right.
+ * This is similar to the ACIA's RX, but with fixed parameters : 8 data bits,
+ * no parity bit and 1 stop bit.
+ */
+static void	IKBD_SCI_Get_Line_RX ( int rx_bit )
+{
+	int	StateNext;
+
+
+	LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia rx_state=%d bit=%d VBL=%d HBL=%d\n" , pIKBD->SCI_RX_State , rx_bit , nVBLs , nHBL );
+
+	StateNext = -1;
+	switch ( pIKBD->SCI_RX_State )
+	{
+	  case IKBD_SCI_STATE_IDLE :
+		if ( rx_bit == 0 )					/* Receive one "0" start bit */
+		{
+			IKBD_SCI_Prepare_RX ( pIKBD );
+			StateNext = IKBD_SCI_STATE_DATA_BIT;
+		}
+		break;							/* If no start bit, we stay in idle state */
+
+	  case IKBD_SCI_STATE_DATA_BIT :
+		if ( rx_bit )
+			pIKBD->RSR |= 0x80;
+		pIKBD->SCI_RX_Size--;
+
+		if ( pIKBD->SCI_RX_Size > 0 )				/* All bits were not received yet */
+			pIKBD->RSR >> 1;
+		else
+			StateNext = IKBD_SCI_STATE_STOP_BIT;
+		break;
+
+	  case IKBD_SCI_STATE_STOP_BIT :
+		if ( rx_bit == 1 )					/* Wait for one "1" stop bit */
+		{
+			pIKBD->TRCSR &= ~IKBD_TRCSR_BIT_ORFE;
+			
+			if ( ( pIKBD->TRCSR & IKBD_TRCSR_BIT_RDRF ) == 0 )
+			{
+				pIKBD->RDR = pIKBD->RSR;
+				pIKBD->TRCSR |= IKBD_TRCSR_BIT_RDRF;
+				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received RDR=0x%x VBL=%d HBL=%d\n" ,
+					pIKBD->RDR , nVBLs , nHBL );
+			}
+			else
+			{
+				pIKBD->TRCSR |= IKBD_TRCSR_BIT_ORFE;	/* Overrun Error */
+				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received RDR=0x%x : ignored, RDRF already set VBL=%d HBL=%d\n" ,
+					pIKBD->RDR , nVBLs , nHBL );
+			}
+			StateNext = IKBD_SCI_STATE_IDLE;		/* Go to idle state and wait for start bit */
+		}
+		else							/* Not a valid stop bit */
+		{
+			LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx framing error VBL=%d HBL=%d\n" , nVBLs , nHBL );
+			pIKBD->TRCSR |= IKBD_TRCSR_BIT_ORFE;		/* Framing Error */
+			StateNext = IKBD_SCI_STATE_IDLE;		/* Go to idle state and wait for start bit */
+		}
+		break;
+	}
+
+	if ( StateNext >= 0 )
+		pIKBD->SCI_RX_State = StateNext;			/* Go to a new state */
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Send a bit on the IKBD SCI's TX line (this is connected to the ACIA's RX)
+ */
+static Uint8	IKBD_SCI_Set_Line_TX ( void )
+{
+	return 0;
 }
 
 
