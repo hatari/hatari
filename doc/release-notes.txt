@@ -75,6 +75,7 @@ Emulation:
   - Fixes to few Falcon IO registers
   - Changed behavior of the Microwire registers in Falcon mode
 - Misc changes :
+  - IO registers can only be read in supervisor mode
   - Ignore FDC commands when no drive is selected
   - Fix TT SCSI register reads to return all bits zero instead of set
   - Fix for GEMDOS HD emu to direct special CON:/AUX:/PRN: device files
