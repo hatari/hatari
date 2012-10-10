@@ -43,6 +43,7 @@
 #include "log.h"
 #include "debugui.h"
 #include "debugcpu.h"
+#include "stMemory.h"
 //#include "falcon_cycle030.h"
 
 
@@ -1476,7 +1477,7 @@ static void Exception_ce000 (int nr, uaecptr oldpc)
 		put_word_ce (m68k_areg (regs, 7) + 0, mode);
 		put_word_ce (m68k_areg (regs, 7) + 2, last_fault_for_exception_3 >> 16);
 		do_cycles_ce000 (2);
-		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, get_long (4 * nr));
+		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, STMemory_ReadLong(4 * nr));
 		goto kludge_me_do;
 	}
 	m68k_areg (regs, 7) -= 6;
@@ -1587,7 +1588,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		x_put_word (m68k_areg (regs, 7), ssw);
 		m68k_areg (regs, 7) -= 2;
 		x_put_word (m68k_areg (regs, 7), 0xb000 + nr * 4);
-		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, get_long (regs.vbr + 4*nr));
+		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, STMemory_ReadLong(regs.vbr + 4*nr));
 
 	} else if (nr ==5 || nr == 6 || nr == 7 || nr == 9) {
 
@@ -1803,7 +1804,7 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 				m68k_areg (regs, 7) -= 2;
 				x_put_word (m68k_areg (regs, 7), 0xb000 + nr * 4);
 			}
-			write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, x_get_long (regs.vbr + 4*nr));
+			write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, STMemory_ReadLong(regs.vbr + 4*nr));
 		} else if (nr ==5 || nr == 6 || nr == 7 || nr == 9) {
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), oldpc);
@@ -1835,7 +1836,7 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 		x_put_word (m68k_areg (regs, 7) + 6, last_op_for_exception_3);
 		x_put_word (m68k_areg (regs, 7) + 8, regs.sr);
 		x_put_long (m68k_areg (regs, 7) + 10, last_addr_for_exception_3);
-		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, x_get_long (regs.vbr + 4*nr));
+		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, STMemory_ReadLong(regs.vbr + 4*nr));
 		goto kludge_me_do;
 	}
 
@@ -2527,7 +2528,7 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 		return 4;
 	}
 	if (warned < 20) {
-		write_log ("Illegal instruction: %04x at %08X -> %08X\n", opcode, pc, get_long (regs.vbr + 0x10));
+		write_log ("Illegal instruction: %04x at %08X -> %08X\n", opcode, pc, STMemory_ReadLong(regs.vbr + 0x10));
 		warned++;
 		//activate_debugger();
 	}
@@ -2910,7 +2911,7 @@ static void out_cd32io2 (void)
 {
 	uae_u32 request = cd32request;
 	write_log ("%08x returned\n", request);
-	//write_log ("ACTUAL=%d ERROR=%d\n", get_long (request + 32), get_byte (request + 31));
+	//write_log ("ACTUAL=%d ERROR=%d\n", get_long (request + 32), STMemory_ReadByte(request + 31));
 	cd32nextpc = 0;
 	cd32request = 0;
 }
@@ -2964,9 +2965,10 @@ static void out_cd32io (uae_u32 pc)
 				activate_debugger ();
 		}
 #endif
-		write_log ("CMD=%d DATA=%08X LEN=%d %OFF=%d PC=%x\n",
-			cmd, get_long (request + 40),
-			get_long (request + 36), get_long (request + 44), M68K_GETPC);
+		write_log ("CMD=%d DATA=%08X LEN=%d %OFF=%d PC=%x\n", cmd,
+			   STMemory_ReadLong(request + 40),
+			   STMemory_ReadLong(request + 36),
+			   STMemory_ReadLong(request + 44), M68K_GETPC);
 	}
 	if (ioreq < 0)
 		;//activate_debugger ();
@@ -4874,7 +4876,7 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 		v1 = c1->data[lws1];
 		if (get_long (addr) != v1) {
 			write_log ("data cache mismatch %d %d %08x %08x != %08x %08x %d PC=%08x\n",
-				size, aligned, addr, get_long (addr), v1, tag1, lws1, M68K_GETPC);
+				size, aligned, addr, STMemory_ReadLong(addr), v1, tag1, lws1, M68K_GETPC);
 			v1 = get_long (addr);
 		}
 	}
@@ -4898,7 +4900,7 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 		v2 = c2->data[lws2];
 		if (get_long (addr) != v2) {
 			write_log ("data cache mismatch %d %d %08x %08x != %08x %08x %d PC=%08x\n",
-				size, aligned, addr, get_long (addr), v2, tag2, lws2, M68K_GETPC);
+				size, aligned, addr, STMemory_ReadLong(addr), v2, tag2, lws2, M68K_GETPC);
 			v2 = get_long (addr);
 		}
 	}
