@@ -828,7 +828,7 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 		tx_bit = pACIA->TSR & 1;				/* New bit to send */
 		pACIA->Set_Line_TX ( tx_bit );
 		pACIA->TX_Parity ^= tx_bit;
-		pACIA->TSR >> 1;
+		pACIA->TSR >>= 1;
 		pACIA->TX_Size--;
 
 		if ( pACIA->TX_Size == 0 )
@@ -904,7 +904,7 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 
 		if ( pACIA->RX_Size > 0 )				/* All bits were not received yet */
 		{
-			pACIA->RSR >> 1;
+			pACIA->RSR >>= 1;
 		}
 		else
 		{
