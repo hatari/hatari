@@ -1530,12 +1530,38 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		regs.s = 1;
 		mmu_set_super (1);
 	}
-	/* FIXME: Address and bus errors differ between 68030 and 68040 ! */
-	if (nr == 2) {
+
+	if (nr == 2 && currprefs.cpu_model <= 68030) {
+		// Bus error for 68030 mode
 		write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
-//		if (currpc == 0x0013b5e2)
-//			activate_debugger ();
-		// bus error
+		m68k_areg (regs, 7) -= 4;
+		x_put_long (m68k_areg (regs, 7), 0);  // Internal register
+		m68k_areg (regs, 7) -= 4;
+		x_put_long (m68k_areg (regs, 7), regs.wb3_data);  // Data output buffer
+		m68k_areg (regs, 7) -= 4;
+		x_put_long (m68k_areg (regs, 7), 0);  // Internal register
+		m68k_areg (regs, 7) -= 4;
+		x_put_long (m68k_areg (regs, 7), regs.mmu_fault_addr);
+		m68k_areg (regs, 7) -= 2;
+		x_put_word (m68k_areg (regs, 7), 0);  // Instr. pipe stage B
+		m68k_areg (regs, 7) -= 2;
+		x_put_word (m68k_areg (regs, 7), 0);  // Instr. pipe stage C
+		m68k_areg (regs, 7) -= 2;
+		x_put_word (m68k_areg (regs, 7), regs.mmu_ssw);
+		m68k_areg (regs, 7) -= 2;
+		x_put_word (m68k_areg (regs, 7), 0);  // Internal register
+
+		m68k_areg (regs, 7) -= 2;
+		x_put_word (m68k_areg (regs, 7), 0xa000 + nr * 4);
+		m68k_areg (regs, 7) -= 4;
+		x_put_long (m68k_areg (regs, 7), oldpc);
+		m68k_areg (regs, 7) -= 2;
+		x_put_word (m68k_areg (regs, 7), regs.sr);
+		goto kludge_me_do;
+
+	} else if (nr == 2) {
+		// Bus error / access error for 68040
+		write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
 		for (i = 0 ; i < 7 ; i++) {
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), 0);
@@ -2751,7 +2777,7 @@ STATIC_INLINE int do_specialties (int cycles)
 		* functions since the PC should point to the address of the next
 		* instruction, so we're executing the bus errors here: */
 		unset_special(SPCFLAG_BUSERROR);
-		Exception(2, 0, M68000_EXC_SRC_CPU);
+		Exception(2, BusErrorPC, M68000_EXC_SRC_CPU);
 	}
 
 	if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {

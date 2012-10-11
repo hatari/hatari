@@ -42,9 +42,12 @@
 #include "cpummu030.h"
 
 
-#define MMU030_OP_DBG_MSG 1
+#define MMU030_OP_DBG_MSG 0
 #define MMU030_ATC_DBG_MSG 0
-#define MMU030_REG_DBG_MSG 1
+#define MMU030_REG_DBG_MSG 0
+
+#undef write_log
+#define write_log(...)
 
 /* for debugging messages */
 char table_letter[4] = {'A','B','C','D'};
@@ -1478,7 +1481,8 @@ void mmu030_put_long_atc(uaecptr addr, uae_u32 val, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
-        M68000_BusError(physical_addr, 0);
+        regs.mmu_fault_addr = addr;
+        THROW(2); //M68000_BusError(addr, 0);
         return;
     }
 
@@ -1497,7 +1501,8 @@ void mmu030_put_word_atc(uaecptr addr, uae_u16 val, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
-        M68000_BusError(physical_addr, 0);
+        regs.mmu_fault_addr = addr;
+        THROW(2); //M68000_BusError(addr, 0);
         return;
     }
 
@@ -1516,7 +1521,8 @@ void mmu030_put_byte_atc(uaecptr addr, uae_u8 val, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
-        M68000_BusError(physical_addr, 0);
+        regs.mmu_fault_addr = addr;
+        THROW(2); //M68000_BusError(addr, 0);
         return;
     }
 
@@ -1535,7 +1541,8 @@ uae_u32 mmu030_get_long_atc(uaecptr addr, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error) {
-        M68000_BusError(physical_addr, 1);
+        regs.mmu_fault_addr = addr;
+        THROW(2); //M68000_BusError(addr, 1);
         return 0;
     }
 
@@ -1554,7 +1561,8 @@ uae_u16 mmu030_get_word_atc(uaecptr addr, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error) {
-        M68000_BusError(physical_addr, 1);
+        regs.mmu_fault_addr = addr;
+        THROW(2); //M68000_BusError(addr, 1);
         return 0;
     }
     
@@ -1573,7 +1581,8 @@ uae_u8 mmu030_get_byte_atc(uaecptr addr, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error) {
-        M68000_BusError(physical_addr, 1);
+        regs.mmu_fault_addr = addr;
+        THROW(2); //M68000_BusError(addr, 1);
         return 0;
     }
 
