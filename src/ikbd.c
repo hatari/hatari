@@ -202,6 +202,10 @@ static bool bByteInTransitFromACIA = false;	/* Is a byte being sent from the ACI
 
 */
 
+
+static void IKBD_RunKeyboardCommand(Uint8 aciabyte);
+
+
 /* List of possible keyboard commands, others are seen as NOPs by keyboard processor */
 static void IKBD_Cmd_Reset(void);
 static void IKBD_Cmd_MouseAction(void);
@@ -346,6 +350,10 @@ static IKBD_STRUCT	*pIKBD = &IKBD;
 static void	IKBD_Init_Pointers ( ACIA_STRUCT *ACIA_IKBD );
 static void	IKBD_SCI_Get_Line_RX ( int rx_bit );
 static Uint8	IKBD_SCI_Set_Line_TX ( void );
+
+static void	IKBD_Process_RDR ( Uint8 RDR );
+
+
 
 
 static void IKBD_SendByteToKeyboardProcessor(Uint16 bl);
@@ -711,7 +719,7 @@ static void	IKBD_SCI_Get_Line_RX ( int rx_bit )
 		pIKBD->SCI_RX_Size--;
 
 		if ( pIKBD->SCI_RX_Size > 0 )				/* All bits were not received yet */
-			pIKBD->RSR >> 1;
+			pIKBD->RSR >>= 1;
 		else
 			StateNext = IKBD_SCI_STATE_STOP_BIT;
 		break;
@@ -727,12 +735,14 @@ static void	IKBD_SCI_Get_Line_RX ( int rx_bit )
 				pIKBD->TRCSR |= IKBD_TRCSR_BIT_RDRF;
 				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received RDR=0x%x VBL=%d HBL=%d\n" ,
 					pIKBD->RDR , nVBLs , nHBL );
+
+				IKBD_Process_RDR ( pIKBD->RDR );	/* Process this new byte */
 			}
 			else
 			{
 				pIKBD->TRCSR |= IKBD_TRCSR_BIT_ORFE;	/* Overrun Error */
-				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received RDR=0x%x : ignored, RDRF already set VBL=%d HBL=%d\n" ,
-					pIKBD->RDR , nVBLs , nHBL );
+				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received RSR=0x%x : ignored, RDR=0x%x and RDRF already set VBL=%d HBL=%d\n" ,
+					pIKBD->RSR , pIKBD->RDR , nVBLs , nHBL );
 			}
 			StateNext = IKBD_SCI_STATE_IDLE;		/* Go to idle state and wait for start bit */
 		}
@@ -760,6 +770,38 @@ static Uint8	IKBD_SCI_Set_Line_TX ( void )
 {
 	return 0;
 }
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle the byte that was received in the RDR from the ACIA.
+ * Depending on the IKBD's emulation mode, we either pass it to the standard
+ * ROM's emulation layer, or we pass it to the custom handlers.
+ */
+static void	IKBD_Process_RDR ( Uint8 RDR )
+{
+
+/* TODO : if bytes to send ikbd->acia, ignore RDR */
+
+	pIKBD->TRCSR &= ~IKBD_TRCSR_BIT_RDRF;				/* RDR was read */
+
+
+	/* If IKBD is executing custom code, send the byte to the function handling this code */
+	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Write )
+	{
+		(*pIKBD_CustomCodeHandler_Write) ( RDR );
+		return;
+	}
+
+	if ( MemoryLoadNbBytesLeft == 0 )				/* No pending MemoryLoad command */
+		IKBD_RunKeyboardCommand ( RDR );			/* Check for known commands */
+
+	else								/* MemoryLoad command is not finished yet */
+		IKBD_LoadMemoryByte ( RDR );				/* Process bytes sent to the IKBD's RAM */
+}
+
 
 
 
@@ -1231,6 +1273,22 @@ static void IKBD_SendAutoKeyboardCommands(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * When press/release key under host OS, execute this function.
+ */
+void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
+{
+	/* Store the state of each ST scancode : 1=pressed 0=released */
+	if ( bPress )		ScanCodeState[ ScanCode & 0x7f ] = 1;
+	else			ScanCodeState[ ScanCode & 0x7f ] = 0;
+
+	if (!bPress)
+		ScanCode |= 0x80;    /* Set top bit if released key */
+	IKBD_AddKeyToKeyboardBuffer(ScanCode);  /* And send to keyboard processor */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function is called regularly to automatically send keyboard, mouse
  * and joystick updates.
  */
@@ -1314,6 +1372,44 @@ void IKBD_InterruptHandler_ResetTimer(void)
 	/* Critical timer is over */
 	bDuringResetCriticalTime = false;
 	bMouseEnabledDuringReset = false;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Send data to keyboard processor via ACIA by writing to address 0xfffc02.
+ * For our emulation we bypass the ACIA (I've yet to see anything check for this)
+ * and add the byte directly into the keyboard input buffer.
+ */
+static void IKBD_RunKeyboardCommand(Uint8 aciabyte)
+{
+	int i=0;
+
+	/* Write into our keyboard input buffer */
+	Keyboard.InputBuffer[Keyboard.nBytesInInputBuffer++] = aciabyte;
+
+	/* Now check bytes to see if we have a valid/in-valid command string set */
+	while (KeyboardCommands[i].Command!=0xff)
+	{
+		/* Found command? */
+		if (KeyboardCommands[i].Command==Keyboard.InputBuffer[0])
+		{
+			/* Is string complete, then can execute? */
+			if (KeyboardCommands[i].NumParameters==Keyboard.nBytesInInputBuffer)
+			{
+				CALL_VAR(KeyboardCommands[i].pCallFunction);
+				Keyboard.nBytesInInputBuffer = 0;
+			}
+
+			return;
+		}
+
+		i++;
+	}
+
+	/* Command not known, reset buffer(IKBD assumes a NOP) */
+	Keyboard.nBytesInInputBuffer = 0;
 }
 
 
@@ -2180,63 +2276,7 @@ static void IKBD_Cmd_ReportJoystickAvailability(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Send data to keyboard processor via ACIA by writing to address 0xfffc02.
- * For our emulation we bypass the ACIA (I've yet to see anything check for this)
- * and add the byte directly into the keyboard input buffer.
- */
-static void IKBD_RunKeyboardCommand(Uint16 aciabyte)
-{
-	int i=0;
-
-	/* Write into our keyboard input buffer */
-	Keyboard.InputBuffer[Keyboard.nBytesInInputBuffer++] = aciabyte;
-
-	/* Now check bytes to see if we have a valid/in-valid command string set */
-	while (KeyboardCommands[i].Command!=0xff)
-	{
-		/* Found command? */
-		if (KeyboardCommands[i].Command==Keyboard.InputBuffer[0])
-		{
-			/* Is string complete, then can execute? */
-			if (KeyboardCommands[i].NumParameters==Keyboard.nBytesInInputBuffer)
-			{
-				CALL_VAR(KeyboardCommands[i].pCallFunction);
-				Keyboard.nBytesInInputBuffer = 0;
-			}
-
-			return;
-		}
-
-		i++;
-	}
-
-	/* Command not known, reset buffer(IKBD assumes a NOP) */
-	Keyboard.nBytesInInputBuffer = 0;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Send byte to our keyboard processor, and execute
- */
-static void IKBD_SendByteToKeyboardProcessor(Uint16 bl)
-{
-	/* If IKBD is executing custom code, send the byte to the function handling this code */
-	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Write )
-	{
-		(*pIKBD_CustomCodeHandler_Write) ( (Uint8) bl );
-		return;
-	}
-
-	if ( MemoryLoadNbBytesLeft == 0 )		/* No pending MemoryLoad command */
-		IKBD_RunKeyboardCommand ( bl );		/* check for known commands */
-
-	else						/* MemoryLoad command is not finished yet */
-		IKBD_LoadMemoryByte ( (Uint8) bl );	/* process bytes sent to the ikbd RAM */
-}
-
+#ifdef old_code
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2252,7 +2292,7 @@ Uint16 IKBD_GetByteFromACIA(void)
 	MFP_GPIP |= 0x10;				/* clear IRQ signal */
 	return ACIAByte;  /* Return byte from keyboard */
 }
-
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2268,6 +2308,7 @@ Uint16 IKBD_GetByteFromACIA(void)
  */
 void IKBD_InterruptHandler_ACIA_RX(void)
 {
+#ifdef old_code
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
@@ -2295,11 +2336,13 @@ void IKBD_InterruptHandler_ACIA_RX(void)
 	* depends on this behaviour. To emulate this, we simply start another
 	* Int which triggers the MFP interrupt later: */
 	CycInt_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP);
+#endif
 }
 
 
 void IKBD_InterruptHandler_ACIA_TX(void)
 {
+#ifdef old_code
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
@@ -2314,6 +2357,7 @@ void IKBD_InterruptHandler_ACIA_TX(void)
 		MFP_GPIP &= ~0x10;					/* set IRQ signal */
 		MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
 	}
+#endif
 }
 
 
@@ -2322,6 +2366,7 @@ void IKBD_InterruptHandler_ACIA_TX(void)
  */
 void IKBD_InterruptHandler_MFP(void)
 {
+#ifdef old_code
 //fprintf ( stderr , "int mfp %x %x\n" , ACIAByte, ACIAStatusRegister );
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
@@ -2335,7 +2380,9 @@ void IKBD_InterruptHandler_MFP(void)
 	/* If another key is waiting, start sending from keyboard processor now */
 	if (Keyboard.BufferHead!=Keyboard.BufferTail)
 		IKBD_SendByteToACIA(ACIA_CYCLES);
+#endif
 }
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -2356,6 +2403,8 @@ static void IKBD_SendByteToACIA(int nAciaCycles)
 		bByteInTransitToACIA = true;
 	}
 }
+
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -2416,21 +2465,8 @@ static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data, int nAciaCycles)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * When press/release key under host OS, execute this function.
- */
-void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
-{
-	/* Store the state of each ST scancode : 1=pressed 0=released */
-	if ( bPress )		ScanCodeState[ ScanCode & 0x7f ] = 1;
-	else			ScanCodeState[ ScanCode & 0x7f ] = 0;
 
-	if (!bPress)
-		ScanCode |= 0x80;    /* Set top bit if released key */
-	IKBD_AddKeyToKeyboardBuffer(ScanCode);  /* And send to keyboard processor */
-}
-
+#ifdef old_code
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2579,9 +2615,13 @@ void IKBD_KeyboardData_WriteByte(void)
 }
 
 
+#endif
+
+
+
 /*************************************************************************/
 /**
- * Below part is for emulating custom 6301 program sent to the ikbd RAM
+ * Below part is for emulating custom 6301 program sent to the IKBD's RAM
  * Specific read/write functions for each demo/game should be added here,
  * after being defined in the CustomCodeDefinitions[] array.
  *
@@ -2601,7 +2641,7 @@ void IKBD_KeyboardData_WriteByte(void)
  * ExeBootHandler will compute a 2nd CRC for the writes corresponding to
  * the 2nd and 3rd programs sent to the 6301's RAM.
  *
- * If a match is found for this 2nd CRC, we will override default ikbd's behaviour
+ * If a match is found for this 2nd CRC, we will override default IKBD's behaviour
  * for reading/writing to $fffc02 with ExeMainHandler_Read / ExeMainHandler_Write
  * (once the Execute command 0x22 is received).
  *
@@ -2616,7 +2656,7 @@ void IKBD_KeyboardData_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle writes to $fffc02 when loading bytes in the ikbd RAM.
+ * Handle writes to $fffc02 when loading bytes in the IKBD's RAM.
  * We compute a CRC of the bytes that are sent until MemoryLoadNbBytesLeft
  * reaches 0.
  * When all bytes are loaded, we look for a matching CRC ; if found, we
@@ -2666,9 +2706,9 @@ static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle writes to $fffc02 when executing custom code in the ikbd RAM.
- * This is used to send the small ikdb program that will handle keyboard/mouse/joystick
- * input.
+ * Handle writes to $fffc02 when executing custom code in the IKBD's RAM.
+ * This is used to send the small IKBD program that will handle
+ * keyboard/mouse/joystick input.
  * We compute a CRC of the bytes that are sent until we found a match
  * with a known custom ikbd program.
  */
