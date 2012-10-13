@@ -32,6 +32,7 @@ typedef enum
   INTERRUPT_MIDI,
 
   INTERRUPT_ACIA_IKBD,
+  INTERRUPT_ACIA_MFP,
 
   MAX_INTERRUPTS
 } interrupt_id;

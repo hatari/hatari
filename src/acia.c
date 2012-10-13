@@ -119,6 +119,7 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 #include "cycInt.h"
 #include "ioMem.h"
 #include "clocks_timings.h"
+#include "mfp.h"
 #include "screen.h"
 #include "video.h"
 
@@ -283,6 +284,40 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 {
 	LOG_TRACE ( TRACE_ACIA, "acia set irq val=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
+
+	if ( bit )
+	{
+		/* There's a small delay on a real ST between the point in time
+		* the irq bit is set and the MFP interrupt is triggered - for example
+		* the "V8 music system" demo depends on this behaviour. To emulate
+		* this, we simply start another Int which triggers the MFP interrupt later. */
+		CycInt_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_ACIA_MFP);
+
+		MFP_GPIP &= ~0x10;				/* set IRQ signal for GPIP P4 */
+	}
+	else
+	{
+		/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
+		MFP_GPIP |= 0x10;				/* IRQ bit was reset */
+	}
+}
+
+
+
+
+/**
+ * Start MFP interrupt a few cycles atfer the irq bit was set in the ACIA.
+ * NOTE/FIXME : from the hardware point of view, the ACIA's irq signal is immediatly propagated
+ * to the MFP and the MFP will then add a delay before generating a 68000 interrupt.
+ * As the MFP emulation doesn't support this yet, we handle the delay in the ACIA's emulation.
+ */
+void	ACIA_InterruptHandler_MFP ( void )
+{
+	/* Remove this interrupt from list and re-order */
+	CycInt_AcknowledgeInterrupt();
+
+	/* Acknowledge in MFP circuit, pass bit,enable,pending */
+	MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
 }
 
 

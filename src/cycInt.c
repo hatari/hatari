@@ -95,7 +95,8 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	Blitter_InterruptHandler,
 	Midi_InterruptHandler_Update,
 
-	ACIA_InterruptHandler_IKBD
+	ACIA_InterruptHandler_IKBD,
+	ACIA_InterruptHandler_MFP
 };
 
 /* Event timer structure - keeps next timer to occur in structure so don't need
