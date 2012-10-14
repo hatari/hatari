@@ -30,6 +30,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "file.h"
 #include "floppy.h"
 #include "gemdos.h"
+#include "acia.h"
 #include "ikbd.h"
 #include "cycInt.h"
 #include "cycles.h"
@@ -244,6 +245,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		FDC_MemorySnapShot_Capture(true);
 		Floppy_MemorySnapShot_Capture(true);
 		GemDOS_MemorySnapShot_Capture(true);
+		ACIA_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
 		CycInt_MemorySnapShot_Capture(true);
 		Cycles_MemorySnapShot_Capture(true);
@@ -296,7 +298,8 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		FDC_MemorySnapShot_Capture(false);
 		Floppy_MemorySnapShot_Capture(false);
 		GemDOS_MemorySnapShot_Capture(false);
-		IKBD_MemorySnapShot_Capture(false);
+		ACIA_MemorySnapShot_Capture(false);
+		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */
 		CycInt_MemorySnapShot_Capture(false);
 		Cycles_MemorySnapShot_Capture(false);
 		M68000_MemorySnapShot_Capture(false);

@@ -277,6 +277,21 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
+ */
+void	ACIA_MemorySnapShot_Capture ( bool bSave )
+{
+	MemorySnapShot_Store(&ACIA_Array, sizeof(ACIA_Array));
+
+	if ( !bSave )						/* If restoring */
+		ACIA_Init_Pointers ( ACIA_Array );		/* Restore pointers */
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Set or reset the ACIA's IRQ signal.
  * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP pin,
  * so they share the same IRQ bit in the MFP.
