@@ -42,12 +42,12 @@
 #include "cpummu030.h"
 
 
-#define MMU030_OP_DBG_MSG 0
+#define MMU030_OP_DBG_MSG 1
 #define MMU030_ATC_DBG_MSG 0
 #define MMU030_REG_DBG_MSG 0
 
-#undef write_log
-#define write_log(...)
+//#undef write_log
+//#define write_log(...)
 
 /* for debugging messages */
 char table_letter[4] = {'A','B','C','D'};
@@ -978,6 +978,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
      * root pointer, descriptors fetched from function code lookup table,
      * tables A, B, C and D and one indirect descriptor */
     uae_u32 descr[7][2];
+    uae_u32 descr_addr[7];
     uae_u32 descr_type;
     uaecptr table_addr = 0;
     uaecptr page_addr = 0;
@@ -1015,6 +1016,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
 
     /* Use super user root pointer if enabled in TC register and access is in
      * super user mode, else use cpu root pointer. */
+    descr_addr[0] = 0;
     if ((tc_030&TC_ENABLE_SUPERVISOR) && super) {
         descr[0][0] = (srp_030>>32)&0xFFFFFFFF;
         descr[0][1] = srp_030&0xFFFFFFFF;
@@ -1064,6 +1066,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
         
         /* Fetch next descriptor */
         descr_num++;
+        descr_addr[descr_num] = table_addr + table_index * next_size;
         if (next_size==4) {
             descr[descr_num][0] = phys_get_long(table_addr+(table_index*next_size));
             write_log("Next descriptor: %08X\n",descr[descr_num][0]);
@@ -1151,6 +1154,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
         
         /* Fetch next descriptor */
         descr_num++;
+        descr_addr[descr_num] = table_addr + table_index * next_size;
         if (next_size==4) {
             descr[descr_num][0] = phys_get_long(table_addr+(table_index*next_size));
             write_log("Next descriptor: %08X\n",descr[descr_num][0]);
@@ -1203,6 +1207,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     
     /* Fetch indirect descriptor */
     descr_num++;
+    descr_addr[descr_num] = indirect_addr;
     if (next_size==4) {
         descr[descr_num][0] = phys_get_long(indirect_addr);
         write_log("descr = %08X\n",descr[descr_num][0]);
@@ -1328,7 +1333,7 @@ stop_search:
         regs.spcflags |= restore_be ? SPCFLAG_BUSERROR : 0;
         regs.s = old_regs_s;
         /* If root pointer is page descriptor (descr_num 0), return 0 */
-        return descr_num ? descr[descr_num][0] : 0;
+        return descr_addr[descr_num];
     }
     
     /* Find an ATC entry to replace */
