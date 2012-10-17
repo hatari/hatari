@@ -293,14 +293,15 @@ void	ACIA_MemorySnapShot_Capture ( bool bSave )
 /*-----------------------------------------------------------------------*/
 /**
  * Set or reset the ACIA's IRQ signal.
+ * IRQ signal is inverted (0/low sets irq, 1/high resets irq)
  * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP pin,
  * so they share the same IRQ bit in the MFP.
  */
 static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 {
-	LOG_TRACE ( TRACE_ACIA, "acia set irq val=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia set irq line val=%d VBL=%d HBL=%d\n" , bit , nVBLs , nHBL );
 
-	if ( bit )
+	if ( bit == 0 )
 	{
 		/* There's a small delay on a real ST between the point in time
 		* the irq bit is set and the MFP interrupt is triggered - for example
@@ -328,6 +329,7 @@ static void	ACIA_Set_Line_IRQ_MFP ( int bit )
  */
 void	ACIA_InterruptHandler_MFP ( void )
 {
+fprintf ( stderr , "acia int mfp\n" );
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
@@ -628,17 +630,17 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 	if ( ACIA_CR_RECEIVE_INTERRUPT_ENABLE ( pACIA->CR ) 		/* Check for RX causes of interrupt */
 	  && ( ( pACIA->SR & ( ACIA_SR_BIT_RDRF | ACIA_SR_BIT_DCD ) )
 	    || ( pACIA->RX_Overrun ) ) )
-	  irq_bit_new = 1;
+	  irq_bit_new = ACIA_SR_BIT_IRQ;
 
 	if ( pACIA->TX_EnableInt					/* Check for TX causes of interrupt */
 	  && ( pACIA->SR & ACIA_SR_BIT_TDRE )
 	  && ( ( pACIA->SR & ACIA_SR_BIT_CTS ) == 0 ) )
-	  irq_bit_new = 1;
+	  irq_bit_new = ACIA_SR_BIT_IRQ;
 	
 	/* Update SR and IRQ line if a change happened */
 	if ( ( pACIA->SR & ACIA_SR_BIT_IRQ ) != irq_bit_new )
 	{
-		LOG_TRACE ( TRACE_ACIA, "acia %s update irq irq_new=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , irq_bit_new , nVBLs , nHBL );
+		LOG_TRACE ( TRACE_ACIA, "acia %s update irq irq_new=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , irq_bit_new?1:0 , nVBLs , nHBL );
 
 		if ( irq_bit_new )
 		{
@@ -706,6 +708,7 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 		{
 			pACIA->Clock_Divider = ACIA_Counter_Divide[ Divide ];
 			ACIA_Start_InterruptHandler_IKBD ( pACIA , 0 );	/* Set a timer at the baud rate */
+//FIXME
 		}
 		
 	}
