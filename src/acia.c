@@ -749,13 +749,14 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read RDR. This will clear RDRF, PE and IRQ.
+ * Read RDR. This will clear RDRF and PE.
  * OVRN bit is set only when reading RDR, not when the actual overrun happened
  * during ACIA_Clock_RX.
+ * IRQ bit should be updated depending on the new values of BIT_RDRF and BIT_OVRN.
  */
 static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 {
-	pACIA->SR &= ~( ACIA_SR_BIT_RDRF | ACIA_SR_BIT_PE | ACIA_SR_BIT_IRQ );
+	pACIA->SR &= ~( ACIA_SR_BIT_RDRF | ACIA_SR_BIT_PE );
 
 	if ( pACIA->RX_Overrun )
 	{  
