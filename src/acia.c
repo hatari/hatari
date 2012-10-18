@@ -788,8 +788,9 @@ static void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 	pACIA->TDR = TDR;
 	pACIA->SR &= ~ACIA_SR_BIT_TDRE;					/* TDR is not empty anymore */
 
-	if ( pACIA->TX_State == ACIA_STATE_IDLE )			/* No transfer at the moment */
-		ACIA_Prepare_TX ( pACIA );				/* Copy to TSR */
+	if ( ( pACIA->TX_State == ACIA_STATE_IDLE )			/* IDLE state and no transfer ready at the moment */
+	  && ( pACIA->TX_Size == 0 ) )
+		ACIA_Prepare_TX ( pACIA );				/* Copy to TSR and start a new transfer */
 
 	ACIA_UpdateIRQ ( pACIA );
 }
