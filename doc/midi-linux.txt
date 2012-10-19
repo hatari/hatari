@@ -16,7 +16,7 @@ Contents:
 - Other software synthetizers
 - Making it all to work with Hatari
 - MIDI and networking
-- Software
+- Linux & Atari MIDI related software
 - Additional documentation
 
 
@@ -178,8 +178,8 @@ If you don't have "socat" installed, local-midi-ring.sh script shows how
 to join several (local) Hatari emulators into a MIDI ring using fifos.
 
 
-Software
---------
+Linux & Atari MIDI related Software
+-----------------------------------
 
 In Debian, the tools mentioned above come from following packages:
 - alsa-utils (aconnect, aplaymidi)
@@ -230,7 +230,12 @@ QjackCtl:
 socat:
   http://www.dest-unreach.org/socat/
 
-MidiMaze:
+
+As to Atari MIDI programs, here's an incomplete list
+of games supporting MIDI music:
+http://www.atari-forum.com/viewtopic.php?f=3&t=21473&start=25#p195632
+
+MidiMaze supports up to 16 players over MIDI network:
   http://en.wikipedia.org/wiki/MIDI_Maze
 
 
