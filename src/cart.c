@@ -141,4 +141,20 @@ void Cart_ResetImage(void)
 		cpufunctbl[SYSINIT_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x000a */
 		cpufunctbl[VDI_OPCODE] = cpufunctbl[ 0x4afc ];		/* 0x000c */
 	}
+
+	/* although these don't need cartridge code, it's better
+	 * to configure all illegal opcodes in same place...
+	 */
+	if (ConfigureParams.Log.bNatFeats)
+	{
+		/* illegal opcodes for emulators Native Features */
+		cpufunctbl[NATFEAT_ID_OPCODE] = OpCode_NatFeat_ID;	/* 0x7300 */
+		cpufunctbl[NATFEAT_CALL_OPCODE] = OpCode_NatFeat_Call;	/* 0x7301 */
+	}
+	else
+	{
+		/* No Native Features : set same handler as 0x4afc (illegal) */
+		cpufunctbl[NATFEAT_ID_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
+		cpufunctbl[NATFEAT_CALL_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x7300 */
+	}
 }

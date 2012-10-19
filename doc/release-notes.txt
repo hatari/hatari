@@ -30,6 +30,8 @@ Emulator:
   - output what value was set by options if it's not otherwise shown by UI
   - Show function arguments (for values in intin and strings in addrin arrays)
     in AES traces
+  - support for the basic Native Features and --natfeats option to control it:
+    http://wiki.aranym.org/natfeats/proposal
 - Fileselector : remember previous position, handle large directory better
 
 Other changes:
