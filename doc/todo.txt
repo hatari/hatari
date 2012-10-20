@@ -64,8 +64,6 @@ Emulation improvements
 - Fix falcon sound quality (sound is sometimes noisy).
   Sound is also toggling between nice to noise with some demos.
 
-- Improve STE Microwire/LMC1992 emulation.
-
 - DSP emulation / Falcon sound matrix:
 	- Dsp SSI internal clock (is it used on falcon ?)
 	- Verify DSP instructions cycle count, especially with external RAM
