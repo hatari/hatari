@@ -49,9 +49,6 @@ Emulation improvements
   - Palette switching during screen drawing
   - ST screen modes centering when Videl borders are enabled
 
-- Hold & Sample and Hypermono modes for TT shifter:
-  http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2012/04/msg00030.html
-
 - TT/FastRAM support as some demos need >14MB
 
 - Add SCSI hard disk emulation for Falcon/TT mode.
