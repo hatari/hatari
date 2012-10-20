@@ -24,6 +24,8 @@ extern int intlev (void);
 extern unsigned long OpCode_GemDos(uae_u32 opcode);
 extern unsigned long OpCode_SysInit(uae_u32 opcode);
 extern unsigned long OpCode_VDI(uae_u32 opcode);
+extern unsigned long OpCode_NatFeat_ID(uae_u32 opcode);
+extern unsigned long OpCode_NatFeat_Call(uae_u32 opcode);
 
 #define write_log printf
 
