@@ -963,11 +963,17 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 		}
 		else
 		{
-			if ( pACIA->SR & ACIA_SR_BIT_RDRF )
-			{
-				LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx overrun VBL=%d HBL=%d\n" , pACIA->ACIA_Name , nVBLs , nHBL );
-				pACIA->RX_Overrun = 1;			/* Bit in SR will be set when reading RDR */
-			}
+// [NP] : MC6850 doc is not very clear "the overrun condition begins at the midpoint of the last bit
+// of the second character received [...]". Is it the last bit of the data word, or the stop bit ?
+// It makes more sense to check for overrun after the stop bit, when RSR should be copied to RDR,
+// because RDR could be read between the last data bit and the stop bit, so RX_Overrun and
+// ACIA_SR_BIT_OVRN would need to be cancelled.
+// 			if ( pACIA->SR & ACIA_SR_BIT_RDRF )
+// 			{
+// 				LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx overrun rsr=0x%x VBL=%d HBL=%d\n" ,
+// 					pACIA->ACIA_Name , pACIA->RSR , nVBLs , nHBL );
+// 				pACIA->RX_Overrun = 1;			/* Bit in SR will be set when reading RDR */
+// 			}
 			if ( ACIA_Serial_Params[ ACIA_CR_WORD_SELECT ( pACIA->CR ) ].Parity != ACIA_PARITY_NONE )
 				StateNext = ACIA_STATE_PARITY_BIT;
 			else
@@ -1001,8 +1007,14 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 				{
 					pACIA->RDR = pACIA->RSR;
 					pACIA->SR |= ACIA_SR_BIT_RDRF;
-					LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx received RDR=0x%x VBL=%d HBL=%d\n" ,
+					LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx received rdr=0x%x VBL=%d HBL=%d\n" ,
 						pACIA->ACIA_Name , pACIA->RDR , nVBLs , nHBL );
+				}
+				else
+				{
+					LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx overrun rsr=0x%x unread rdr=0x%x VBL=%d HBL=%d\n" ,
+						pACIA->ACIA_Name , pACIA->RSR , pACIA->RDR , nVBLs , nHBL );
+					pACIA->RX_Overrun = 1;		/* Bit in SR will be set when reading RDR */
 				}
 				StateNext = ACIA_STATE_IDLE;		/* Go to idle state and wait for start bit */
 			}

@@ -907,6 +907,14 @@ static void	IKBD_Process_RDR ( Uint8 RDR )
 static void	IKBD_Check_New_TDR ( void )
 {
 //  fprintf(stderr , "check new tdr %d %d\n", Keyboard.BufferHead , Keyboard.BufferTail );
+
+// 	/* If IKBD is executing custom code, call the function to update Keyboard.Buffer with a new TDR */
+// 	if ( ( Keyboard.BufferHead == Keyboard.BufferTail )
+// 	  && ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Read ) )
+// 	{
+// 		(*pIKBD_CustomCodeHandler_Read) ();
+// 	}
+
 	if ( Keyboard.BufferHead != Keyboard.BufferTail )
 	{
 		pIKBD->TDR = Keyboard.Buffer[ Keyboard.BufferHead++ ];
@@ -1454,6 +1462,11 @@ static void IKBD_SendAutoKeyboardCommands(void)
 			JoystickSpaceBar = false;         /* Complete */
 		}
 	}
+
+
+	/* If we're executing a custom IKBD program, call it to process the key/mouse/joystick event */
+	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Read )
+		(*pIKBD_CustomCodeHandler_Read) ();
 }
 
 
@@ -1468,8 +1481,13 @@ void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
 	else			ScanCodeState[ ScanCode & 0x7f ] = 0;
 
 	if (!bPress)
-		ScanCode |= 0x80;    /* Set top bit if released key */
+		ScanCode |= 0x80;				/* Set top bit if released key */
 	IKBD_Cmd_Return_Byte (ScanCode);			/* And send to keyboard processor */
+
+
+	/* If we're executing a custom IKBD program, call it to process the key event */
+	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Read )
+		(*pIKBD_CustomCodeHandler_Read) ();
 }
 
 
