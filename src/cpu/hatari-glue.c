@@ -189,10 +189,22 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
  */
 unsigned long OpCode_VDI(uae_u32 opcode)
 {
-	VDI_Complete();
+	Uint32 pc = M68000_GetPC();
 
-	/* Set PC back to where originated from to continue instruction decoding */
-	m68k_setpc(VDI_OldPC);
+	/* this is valid only after VDI trap, called from cartridge code */
+	if (VDI_OldPC && pc >= 0xfa0000 && pc < 0xfc0000)
+	{
+		VDI_Complete();
+
+		/* Set PC back to where originated from to continue instruction decoding */
+		m68k_setpc(VDI_OldPC);
+		VDI_OldPC = 0;
+	}
+	else
+	{
+		/* illegal instruction */
+		op_illg(opcode);
+	}
 
 	get_word_prefetch (0);
 	regs.ir = regs.irc;
