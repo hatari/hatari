@@ -779,6 +779,8 @@ static void	IKBD_SCI_Get_Line_RX ( int rx_bit )
 				pIKBD->TRCSR |= IKBD_TRCSR_BIT_ORFE;	/* Overrun Error */
 				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received rsr=0x%x : ignored, rdr=0x%x and rdrf already set VBL=%d HBL=%d\n" ,
 					pIKBD->RSR , pIKBD->RDR , nVBLs , nHBL );
+
+				IKBD_Process_RDR ( pIKBD->RDR );	/* RSR is lost, try to process the current RDR which was not read yet */
 			}
 			StateNext = IKBD_SCI_STATE_IDLE;		/* Go to idle state and wait for start bit */
 		}
@@ -874,7 +876,7 @@ static void	IKBD_Process_RDR ( Uint8 RDR )
 	/* before starting a new one). */
 	if ( Keyboard.BufferHead != Keyboard.BufferTail )		
 	{
-		LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia %d bytes to send in TDR, ignore new RDR=0x%x VBL=%d HBL=%d\n" ,
+		LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia %d bytes to send in tdr, ignore new rdr=0x%x VBL=%d HBL=%d\n" ,
 			( Keyboard.BufferTail - Keyboard.BufferHead ) & KEYBOARD_BUFFER_MASK , RDR , nVBLs , nHBL );
 		return;
 	}
