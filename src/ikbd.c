@@ -352,7 +352,7 @@ static IKBD_STRUCT	*pIKBD = &IKBD;
 /* Functions used to transfer data between the IKBD's SCI and the ACIA	*/
 /*-----------------------------------------------------------------------*/
 
-static void	IKBD_Init_Pointers ( ACIA_STRUCT *ACIA_IKBD );
+static void	IKBD_Init_Pointers ( ACIA_STRUCT *pACIA_IKBD );
 static void	IKBD_SCI_Get_Line_RX ( int rx_bit );
 static Uint8	IKBD_SCI_Set_Line_TX ( void );
 
@@ -376,7 +376,7 @@ static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data, int nAciaCycles);
 
 
 /* Belows part is used to emulate the behaviour of custom 6301 programs */
-/* sent to the ikbd RAM. */
+/* sent to the IKBD's RAM. */
 
 static void IKBD_LoadMemoryByte ( Uint8 aciabyte );
 
@@ -394,8 +394,8 @@ static void IKBD_CustomCodeHandler_ChaosAD_Write ( Uint8 aciabyte );
 
 static int	MemoryLoadNbBytesTotal = 0;		/* total number of bytes to send with the command 0x20 */
 static int	MemoryLoadNbBytesLeft = 0;		/* number of bytes that remain to be sent  */
-static Uint32	MemoryLoadCrc = 0xffffffff;		/* CRC of the bytes sent to the ikbd */
-static int	MemoryExeNbBytes = 0;			/* current number of bytes sent to the ikbd when IKBD_ExeMode is true */
+static Uint32	MemoryLoadCrc = 0xffffffff;		/* CRC of the bytes sent to the IKBD */
+static int	MemoryExeNbBytes = 0;			/* current number of bytes sent to the IKBD when IKBD_ExeMode is true */
 
 static void	(*pIKBD_CustomCodeHandler_Read) ( void );
 static void	(*pIKBD_CustomCodeHandler_Write) ( Uint8 );
@@ -411,7 +411,7 @@ static const struct
 	int		MainProgNbBytes;		/* number of bytes of the main 6301 program */
 	Uint32		MainProgCrc;			/* CRC of the main 6301 program */
 	void		(*ExeMainHandler_Read) ( void );/* function handling read to $fffc02 in the main 6301 program */
-	void		(*ExeMainHandler_Write) ( Uint8 ); /* funciton handling write to $fffc02 in the main 6301 program */
+	void		(*ExeMainHandler_Write) ( Uint8 ); /* function handling write to $fffc02 in the main 6301 program */
 	const char	*Name;
 }
 CustomCodeDefinitions[] =
@@ -496,8 +496,9 @@ void	IKBD_Init ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * Init some functions/memory pointers for the IKBD.
+ * This is called at Init and when restoring a memory snapshot.
  */
-static void	IKBD_Init_Pointers ( ACIA_STRUCT *ACIA_IKBD )
+static void	IKBD_Init_Pointers ( ACIA_STRUCT *pACIA_IKBD )
 {
 	pACIA_IKBD->Get_Line_RX = IKBD_SCI_Set_Line_TX;			/* Connect ACIA's RX to IKBD SCI's TX */
 	pACIA_IKBD->Set_Line_TX = IKBD_SCI_Get_Line_RX;			/* Connect ACIA's TX to IKBD SCI's RX */
@@ -669,7 +670,8 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 		nTimeOffset = (nEmuTime != 0) ? (time(NULL) - nEmuTime) : 0;
 	}
 
-	/* Set the callback functions for RX/TX lines with the ACIA */
+	/* Save the IKBD's SCI part and restore the callback functions for RX/TX lines with the ACIA */
+	MemorySnapShot_Store(&IKBD, sizeof(IKBD));
 	if (!bSave)						/* Restoring a snapshot */
 	{
 		IKBD_Init_Pointers ( pACIA_IKBD );
