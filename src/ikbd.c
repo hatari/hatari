@@ -2879,6 +2879,8 @@ static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
 {
 	unsigned int i;
 
+	FILE *f = fopen ( "/tmp/ikbd_loadmemory.dump" , "ab" ) ; fprintf ( f , "%c" , aciabyte ) ; fclose ( f );
+
 	crc32_add_byte ( &MemoryLoadCrc , aciabyte );
 
 	MemoryLoadNbBytesLeft--;
@@ -2925,6 +2927,8 @@ static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
 static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
 {
 	unsigned int i;
+
+	FILE *f = fopen ( "/tmp/ikbd_custom_program.dump" , "ab" ) ; fprintf ( f , "%c" , aciabyte ) ; fclose ( f );
 
 	crc32_add_byte ( &MemoryLoadCrc , aciabyte );
 	MemoryExeNbBytes++;
@@ -3024,10 +3028,16 @@ static void IKBD_CustomCodeHandler_Transbeauce2Menu_Write ( Uint8 aciabyte )
 
 /*----------------------------------------------------------------------*/
 /* Dragonnels demo menu.						*/
-/* Returns 1 byte with the Y position of the mouse.			*/
+/* When any byte is written in $fffc02, returns one byte with the	*/
+/* Y position of the mouse and the state of the left button.		*/
 /*----------------------------------------------------------------------*/
 
 static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void )
+{
+	/* Ignore read */
+}
+
+static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte )
 {
 	Uint8		res = 0;
 
@@ -3037,11 +3047,6 @@ static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void )
 	if ( Keyboard.bLButtonDown & BUTTON_MOUSE )	res = 0x80;	/* left mouse button */
 
 	IKBD_Send_Byte_Delay ( res , 0 );
-}
-
-static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte )
-{
-  /* Ignore write */
 }
 
 
