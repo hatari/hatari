@@ -249,6 +249,7 @@ void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 /*-----------------------------------------------------------------------*/
 /**
  * Init some functions/memory pointers for each ACIA.
+ * This is called at Init and when restoring a memory snapshot.
  */
 static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 {
@@ -707,8 +708,7 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 		if ( ACIA_CR_COUNTER_DIVIDE ( CR ) != ACIA_CR_COUNTER_DIVIDE ( pACIA->CR ) )
 		{
 			pACIA->Clock_Divider = ACIA_Counter_Divide[ Divide ];
-			ACIA_Start_InterruptHandler_IKBD ( pACIA , 0 );	/* Set a timer at the baud rate */
-//FIXME
+			pACIA->Set_Timers ( pACIA );			/* Set a timer at the baud rate computed from Clock_Divider */
 		}
 		
 	}
