@@ -777,8 +777,10 @@ static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to TDR. If the TX process is idle, we prepare a new transfer
- * immediatly, else the TDR value will be sent when current transfer is over.
+ * Write to TDR.
+ * If the TX process is idle, we should not prepare a new transfer
+ * immediatly, to ensure that BIT_TDRE remains clear until the next bit
+ * is sent (BIT_TDRE will be set again in ACIA_Clock_TX).
  */
 static void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 {
@@ -787,10 +789,6 @@ static void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 
 	pACIA->TDR = TDR;
 	pACIA->SR &= ~ACIA_SR_BIT_TDRE;					/* TDR is not empty anymore */
-
-	if ( ( pACIA->TX_State == ACIA_STATE_IDLE )			/* IDLE state and no transfer ready at the moment */
-	  && ( pACIA->TX_Size == 0 ) )
-		ACIA_Prepare_TX ( pACIA );				/* Copy to TSR and start a new transfer */
 
 	ACIA_UpdateIRQ ( pACIA );
 }
@@ -863,10 +861,9 @@ static void	ACIA_Clock_TX ( ACIA_STRUCT *pACIA )
 			break;
 		}
 
-		/* If TSR is empty and TDR is not empty when we reach idle state, */
-		/* this means we already have a new byte to send immediatly */
-		if ( ( pACIA->TX_Size == 0 )
-		    && ( ( pACIA->SR & ACIA_SR_BIT_TDRE ) == 0 ) )
+		/* If TDR is not empty when we are in idle state, */
+		/* this means we have a new byte to send */
+		if ( ( pACIA->SR & ACIA_SR_BIT_TDRE ) == 0 )
 			ACIA_Prepare_TX ( pACIA );
 
 		if ( pACIA->TX_Size == 0 )				/* TSR is empty */
