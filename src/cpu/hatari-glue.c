@@ -222,14 +222,12 @@ unsigned long OpCode_NatFeat_ID(uae_u32 opcode)
 	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
 	Uint16 SR = M68000_GetSR();
 
-	Regs[REG_D0] = NatFeat_ID(stack);
-
-	M68000_SetSR(SR);
-
-	m68k_incpc(2);
-	regs.ir = regs.irc;
-	get_word_prefetch(2);
-
+	if (NatFeat_ID(stack, &(Regs[REG_D0]))) {
+		M68000_SetSR(SR);
+		m68k_incpc(2);
+		regs.ir = regs.irc;
+		get_word_prefetch(2);
+	}
 	return 4 * CYCLE_UNIT / 2;
 }
 
@@ -243,13 +241,11 @@ unsigned long OpCode_NatFeat_Call(uae_u32 opcode)
 	bool super;
 
 	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);
-	Regs[REG_D0] = NatFeat_Call(stack, super);
-
-	M68000_SetSR(SR);
-
-	m68k_incpc(2);
-	regs.ir = regs.irc;
-	get_word_prefetch(2);
-
+	if (NatFeat_Call(stack, super, &(Regs[REG_D0]))) {
+		M68000_SetSR(SR);
+		m68k_incpc(2);
+		regs.ir = regs.irc;
+		get_word_prefetch(2);
+	}
 	return 4 * CYCLE_UNIT / 2;
 }

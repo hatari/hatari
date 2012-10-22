@@ -17,6 +17,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "configuration.h"
 #include "stMemory.h"
+#include "m68000.h"
 #include "natfeats.h"
 
 #define NF_DEBUG 1
@@ -27,13 +28,12 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 #endif
 
 /* TODO:
- * - bus error / priviledge exception, not just error return
  * - supervisor vs. user stack handling?
  * - clipboard and hostfs native features?
  */
 
 
-static Uint32 nf_name(Uint32 stack, Uint32 subid)
+static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Uint32 ptr, len;
 	const char *str;
@@ -44,8 +44,8 @@ static Uint32 nf_name(Uint32 stack, Uint32 subid)
 	Dprintf(("NF name[%d](0x%x, %d)\n", subid, ptr, len));
 
 	if (!STMemory_ValidArea(ptr, len)) {
-		/* TODO: bus error */
-		return 0;
+		M68000_BusError(ptr, BUS_ERROR_WRITE);
+		return false;
 	}
 	if (subid) {
 		str = PROG_NAME;
@@ -53,39 +53,41 @@ static Uint32 nf_name(Uint32 stack, Uint32 subid)
 		str = "Hatari";
 	}
 	buf = (char *)STRAM_ADDR(ptr);
-	return snprintf(buf, len, "%s", str);
+	*retval = snprintf(buf, len, "%s", str);
+	return true;
 }
 
-static Uint32 nf_version(Uint32 stack, Uint32 subid)
+static bool nf_version(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Dprintf(("NF version() -> 0x00010000\n"));
-	return 0x00010000;
+	*retval = 0x00010000;
+	return true;
 }
 
-static Uint32 nf_stderr(Uint32 stack, Uint32 subid)
+static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	const char *str;
-	Uint32 ptr, ret;
+	Uint32 ptr;
 
 	ptr = STMemory_ReadLong(stack);
 	//Dprintf(("NF stderr(0x%x)\n", ptr));
 
 	if (!STMemory_ValidArea(ptr, 1)) {
-		/* TODO: bus error */
-		return 0;
+		M68000_BusError(ptr, BUS_ERROR_READ);
+		return false;
 	}
 	str = (const char *)STRAM_ADDR(ptr);
-	ret = fprintf(stderr, "%s", str);
+	*retval = fprintf(stderr, "%s", str);
 	fflush(stderr);
-	return ret;
+	return true;
 }
 
-static Uint32 nf_shutdown(Uint32 stack, Uint32 subid)
+static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Dprintf(("NF shutdown()\n"));
 	ConfigureParams.Log.bConfirmQuit = false;
 	Main_RequestQuit();
-	return 0;
+	return true;
 }
 
 /* ---------------------------- */
@@ -95,7 +97,7 @@ static Uint32 nf_shutdown(Uint32 stack, Uint32 subid)
 static const struct {
 	const char *name;	/* feature name */
 	bool super;		/* should be called only in supervisor mode */
-	Uint32 (*cb)(Uint32 stack, Uint32 subid);
+	bool (*cb)(Uint32 stack, Uint32 subid, Uint32 *retval);
 } features[] = {
 	{ "NF_NAME",     false, nf_name },
 	{ "NF_VERSION",  false, nf_version },
@@ -110,7 +112,14 @@ static const struct {
 #define MASKOUTMASTERID(id)     ((id) & ((1L << ID_SHIFT)-1))
 
 
-Uint32 NatFeat_ID(Uint32 stack)
+/**
+ * Set retval to internal ID for requested Native Feature,
+ * or zero if feature is unknown/unsupported.
+ * 
+ * Return true if caller is to proceed normally,
+ * false if there was an exception.
+ */
+bool NatFeat_ID(Uint32 stack, Uint32 *retval)
 {
 	const char *name;
 	Uint32 ptr;
@@ -118,23 +127,33 @@ Uint32 NatFeat_ID(Uint32 stack)
 
 	ptr = STMemory_ReadLong(stack);
 	if (!STMemory_ValidArea(ptr, FEATNAME_MAX)) {
-		/* TODO: bus error */
-		return 0;
+		M68000_BusError(ptr, BUS_ERROR_READ);
+		return false;
 	}
+
 	name = (const char *)STRAM_ADDR(ptr);
 	Dprintf(("NF ID(0x%x)\n", ptr));
 	Dprintf(("   \"%s\"\n", name));
 
 	for (i = 0; i < ARRAYSIZE(features); i++) {
 		if (strcmp(features[i].name, name) == 0) {
-			return IDX2MASTERID(i);
+			*retval = IDX2MASTERID(i);
+			return true;
 		}
 	}
 	/* unknown feature */
-	return 0;
+	*retval = 0;
+	return true;
 }
 
-Uint32 NatFeat_Call(Uint32 stack, bool super)
+/**
+ * Do given Native Feature, if it is supported
+ * and set 'retval' accordingly.
+ * 
+ * Return true if caller is to proceed normally,
+ * false if there was an exception.
+ */
+bool NatFeat_Call(Uint32 stack, bool super, Uint32 *retval)
 {
 	Uint32 subid = STMemory_ReadLong(stack);
 	unsigned int idx = MASTERID2IDX(subid);
@@ -142,13 +161,13 @@ Uint32 NatFeat_Call(Uint32 stack, bool super)
 
 	if (idx >= ARRAYSIZE(features)) {
 		Dprintf(("ERROR: invalid NF ID %d requested\n", idx));
-		return 0; /* undefined */
+		return true; /* undefined */
 	}
 	if (features[idx].super && !super) {
 		Dprintf(("ERROR: NF function %d called without supervisor mode\n", idx));
-		/* TODO: priviledge exception */
-		return 0;
+		Exception(8, 0, M68000_EXC_SRC_CPU);
+		return false;
 	}
 	stack += SIZE_LONG;
-	return features[idx].cb(stack, subid);
+	return features[idx].cb(stack, subid, retval);
 }
