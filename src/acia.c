@@ -224,7 +224,7 @@ static void		ACIA_Clock_RX ( ACIA_STRUCT *pACIA );
  * Both ACIAs have a 500 MHZ TX/RX clock.
  * This is called only once, when the emulator starts.
  */
-void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
+void	ACIA_Init ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 {
 	int	i;
 
@@ -237,6 +237,7 @@ void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 
 		pAllACIA[ i ].TX_Clock = TX_Clock;
 		pAllACIA[ i ].RX_Clock = RX_Clock;
+		pAllACIA[ i ].Clock_Divider = 0;		/* Divider not initialized yet */
 		pAllACIA[ i ].FirstMasterReset = 1;
 	}
 
@@ -273,6 +274,28 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 	pACIA_MIDI = &(pAllACIA[ 1 ]);
 }
 
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * There's no real hardware reset on the ACIA, but as the Reset_ST()
+ * functions turns off all internal interrupts, we must restart the ACIA's
+ * interrupt after a reset.
+ */
+void	ACIA_Reset ( ACIA_STRUCT *pAllACIA )
+{
+	int	i;
+
+
+	LOG_TRACE ( TRACE_ACIA, "acia reset\n" );
+
+	for ( i=0 ; i<ACIA_MAX_NB ; i++ )
+	{
+		if ( pAllACIA[ i ].Clock_Divider > 0 )				/* Divider already initialized */
+			pAllACIA[ i ].Set_Timers ( &(pAllACIA[ i ]) );		/* Restart the timer */
+	}
+}
 
 
 

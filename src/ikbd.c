@@ -456,6 +456,7 @@ CustomCodeDefinitions[] =
 
 
 
+#ifdef old_code
 /*-----------------------------------------------------------------------*/
 /**
  * Reset the ACIA
@@ -473,7 +474,7 @@ void ACIA_Reset(void)
 	ACIAControlRegister = 0;
 	ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 }
-
+#endif
 
 
 
@@ -572,7 +573,7 @@ void IKBD_Reset(bool bCold)
 		ScanCodeState[ i ] = 0;				/* key is released */
 
 	/* Reset our ACIA status */
-	ACIA_Reset();
+//	ACIA_Reset();
 	/* And our keyboard states and clear key state table */
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;
 	Keyboard.nBytesInInputBuffer = 0;

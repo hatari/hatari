@@ -16,6 +16,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"
+#include "acia.h"
 #include "ikbd.h"
 #include "cycInt.h"
 #include "m68000.h"
@@ -74,7 +75,8 @@ static int Reset_ST(bool bCold)
 
 	PSG_Reset();                  /* Reset PSG */
 	Sound_Reset();                /* Reset Sound */
-	IKBD_Reset(bCold);            /* Keyboard */
+	ACIA_Reset( ACIA_Array );     /* ACIA */
+	IKBD_Reset(bCold);            /* Keyboard (after ACIA) */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
 		VIDEL_reset();
 	else

@@ -62,7 +62,8 @@ extern ACIA_STRUCT		*pACIA_MIDI;
 
 
 
-void	ACIA_Init  ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock );
+void	ACIA_Init ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock );
+void	ACIA_Reset ( ACIA_STRUCT *pAllACIA );
 void	ACIA_MemorySnapShot_Capture ( bool bSave );
 
 void	ACIA_InterruptHandler_MFP ( void );
