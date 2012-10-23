@@ -22,7 +22,9 @@ Emulator:
 - Give warning if GEMDOS dir/file path exceeds 8+3 characters
 - New --gemdos-case option to specify whether new dir/filenames
   are forced to upper or lower case
+- Fileselector remembers previous position which is nicer with large directories
 - Debugger:
+  - Fix: profiler assert on invalid PC register values
   - Fix: expression expansion doesn't mess lines in command line history
   - Also remote API debugger commands can use expression expansion
   - Either single or double quotes can be used to mark expressions
@@ -32,7 +34,9 @@ Emulator:
     in AES traces
   - support for the basic Native Features and --natfeats option to control it:
     http://wiki.aranym.org/natfeats/proposal
-- Fileselector : remember previous position, handle large directory better
+- Windows workarounds for:
+  - Windows localtime() not supporting dates before 1970 causes IKBD
+    emulation crashes (was not a problem with Cygwin libraries)
 
 Other changes:
 - HTML documentation indeces generated dynamically with JS
