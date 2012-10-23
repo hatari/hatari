@@ -79,8 +79,8 @@ static inline Uint32 address2index(Uint32 pc)
 	} else {
 		/* if in RAM, use as-is */
 		if (unlikely(pc >= STRamEnd)) {
-			fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x, skipping!\n", pc);
-			/* extra entry at end reserved for invalid PC values */
+			fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
+			/* extra entry at end is reserved for invalid PC values */
 			pc = STRamEnd + 0x20000 + TosSize;
 		}
 	}
@@ -353,7 +353,7 @@ void Profile_CpuUpdate(void)
 {
 	Uint32 idx, cycles;
 	idx = address2index(M68000_GetPC());
-	assert(idx < cpu_profile.size);
+	assert(idx <= cpu_profile.size);
 
 	if (likely(cpu_profile.data[idx].count < MAX_PROFILE_VALUE)) {
 		cpu_profile.data[idx].count++;
