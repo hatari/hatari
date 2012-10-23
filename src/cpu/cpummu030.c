@@ -437,6 +437,11 @@ void mmu030_flush_atc_all(void) {
     }
 }
 
+void mmu030_reset(void)
+{
+    mmu030.enabled = false;
+    mmu030_flush_atc_all();
+}
 
 /* Transparent Translation Registers (TT0 and TT1)
  *

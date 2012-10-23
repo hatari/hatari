@@ -433,9 +433,14 @@ void build_cpufunctbl (void)
 #endif
 	set_cpu_caches ();
 	if (currprefs.mmu_model) {
-		mmu_reset ();
-		mmu_set_tc (regs.tcr);
-		mmu_set_super (regs.s != 0);
+		if (currprefs.cpu_model >= 68040) {
+			mmu_reset ();
+			mmu_set_tc (regs.tcr);
+			mmu_set_super (regs.s != 0);
+		}
+		else {
+			mmu030_reset();
+		}
 	}
 }
 
@@ -2457,9 +2462,14 @@ void m68k_reset (int hardreset)
 	mmufixup[0].reg = -1;
 	mmufixup[1].reg = -1;
 	if (currprefs.mmu_model) {
-		mmu_reset ();
-		mmu_set_tc (regs.tcr);
-		mmu_set_super (regs.s != 0);
+		if (currprefs.cpu_model >= 68040) {
+			mmu_reset ();
+			mmu_set_tc (regs.tcr);
+			mmu_set_super (regs.s != 0);
+		}
+		else {
+			mmu030_reset ();
+		}
 	}
 
 #if AMIGA_ONLY
@@ -2467,8 +2477,8 @@ void m68k_reset (int hardreset)
 #endif
 	/* only (E)nable bit is zeroed when CPU is reset, A3000 SuperKickstart expects this */
 	tc_030 &= ~0x80000000;
-	tt0_030 &= ~0x80000000;
-	tt1_030 &= ~0x80000000;
+	tt0_030 &= ~0x00008000;
+	tt1_030 &= ~0x00008000;
 	if (hardreset) {
 		srp_030 = crp_030 = 0;
 		tt0_030 = tt1_030 = tc_030 = 0;
