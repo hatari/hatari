@@ -21,6 +21,7 @@ typedef struct {
 	int		Clock_Divider;				/* 1, 16 or 64 */
 
 	Uint8		FirstMasterReset;			/* Set to 1 on first use, always 0 after 1st Master Reset */
+	Uint8		SR_Read;				/* Set to 1 when SR is read and reset to 0 when RDR is read */
 
 	int		TX_State;
 	Uint8		TSR;					/* Transmit Shift Register */

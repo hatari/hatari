@@ -382,7 +382,7 @@ static Uint8 	ACIA_Get_Line_CTS_Dummy ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * Read the Data Carrier Detect (DCD) pin
- * Note : this is not connected on an ST, so we always return ''
+ * Note : this is not connected on an ST, so we always return 0.
  */
 static Uint8 	ACIA_Get_Line_DCD_Dummy ( void )
 {
@@ -697,6 +697,7 @@ static Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 		pACIA->SR &= ~ACIA_SR_BIT_CTS;
 
 	SR = pACIA->SR;
+	pACIA->SR_Read = 1;						/* Used in ACIA_Read_RDR to clear Overrun and DCD IRQ */
 
 	if ( SR & ACIA_SR_BIT_CTS )
 		SR &= ~ACIA_SR_BIT_TDRE;				/* Inhibit TDRE when CTS is set */
@@ -773,13 +774,24 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 /*-----------------------------------------------------------------------*/
 /**
  * Read RDR. This will clear RDRF and PE.
- * OVRN bit is set only when reading RDR, not when the actual overrun happened
- * during ACIA_Clock_RX.
- * IRQ bit should be updated depending on the new values of BIT_RDRF and BIT_OVRN.
+ * - OVRN / DCD bits are cleared if SR was read before reading RDR.
+ * - OVRN bit is set only when reading RDR, not when the actual overrun happened
+ *   during ACIA_Clock_RX.
+ * - IRQ bit should be updated depending on the new values of BIT_RDRF,
+ *   BIT_DCD and BIT_OVRN.
  */
 static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 {
 	pACIA->SR &= ~( ACIA_SR_BIT_RDRF | ACIA_SR_BIT_PE );
+
+	/* If we read RDR after reading SR, we clear OVRN / DCD bits */
+	if ( pACIA->SR_Read == 1 )
+	{
+		pACIA->SR_Read = 0;
+		pACIA->SR &= ~( ACIA_SR_BIT_DCD | ACIA_SR_BIT_OVRN );
+		if ( pACIA->Get_Line_DCD () == 1 )
+			pACIA->SR |= ACIA_SR_BIT_DCD;
+	}
 
 	if ( pACIA->RX_Overrun )
 	{  
