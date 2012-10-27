@@ -762,9 +762,9 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 
 	/* Bits 7 : receive interrupt enable, see ACIA_UpdateIRQ */
 
-	ACIA_UpdateIRQ ( pACIA );
-
 	pACIA->CR = CR;
+
+	ACIA_UpdateIRQ ( pACIA );
 }
 
 
