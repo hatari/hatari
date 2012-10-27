@@ -492,9 +492,9 @@ void AES_Info(Uint32 bShowOpcodes)
 	fprintf(stderr, "- Control: %#8x\n", AESControl);
 	fprintf(stderr, "- Global:  %#8x, %d bytes\n",
 		AESGlobal, 2+2+2+4+4+4+4+4+4);
-	fprintf(stderr, "- Intin:   %#8x, %d bytes\n",
+	fprintf(stderr, "- Intin:   %#8x, %d words\n",
 		AESIntin, STMemory_ReadWord(AESControl+2*1));
-	fprintf(stderr, "- Intout:  %#8x, %d bytes\n",
+	fprintf(stderr, "- Intout:  %#8x, %d words\n",
 		AESIntout, STMemory_ReadWord(AESControl+2*2));
 	fprintf(stderr, "- Addrin:  %#8x, %d longs\n",
 		AESAddrin, STMemory_ReadWord(AESControl+2*3));
