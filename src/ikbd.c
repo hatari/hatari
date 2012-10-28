@@ -705,7 +705,7 @@ static void	IKBD_SCI_Prepare_TX ( IKBD_STRUCT *pIKBD )
 
 	pIKBD->TRCSR |= IKBD_TRCSR_BIT_TDRE;				/* TDR was copied to TSR. TDR is now empty */
 
-	LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia prepare tx tsr=0x%x size=%d VBL=%d HBL=%d\n" , pIKBD->TSR , pIKBD->SCI_TX_Size , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia prepare tx tsr=0x%02x size=%d VBL=%d HBL=%d\n" , pIKBD->TSR , pIKBD->SCI_TX_Size , nVBLs , nHBL );
 }
 
 
@@ -772,7 +772,7 @@ static void	IKBD_SCI_Get_Line_RX ( int rx_bit )
 			{
 				pIKBD->RDR = pIKBD->RSR;
 				pIKBD->TRCSR |= IKBD_TRCSR_BIT_RDRF;
-				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received rsr=0x%x VBL=%d HBL=%d\n" ,
+				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received rsr=0x%02x VBL=%d HBL=%d\n" ,
 					pIKBD->RDR , nVBLs , nHBL );
 
 				IKBD_Process_RDR ( pIKBD->RDR );	/* Process this new byte */
@@ -780,7 +780,7 @@ static void	IKBD_SCI_Get_Line_RX ( int rx_bit )
 			else
 			{
 				pIKBD->TRCSR |= IKBD_TRCSR_BIT_ORFE;	/* Overrun Error */
-				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received rsr=0x%x : ignored, rdr=0x%x and rdrf already set VBL=%d HBL=%d\n" ,
+				LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia get_rx received rsr=0x%02x : ignored, rdr=0x%02x and rdrf already set VBL=%d HBL=%d\n" ,
 					pIKBD->RSR , pIKBD->RDR , nVBLs , nHBL );
 
 				IKBD_Process_RDR ( pIKBD->RDR );	/* RSR is lost, try to process the current RDR which was not read yet */
@@ -879,7 +879,7 @@ static void	IKBD_Process_RDR ( Uint8 RDR )
 	/* before starting a new one). */
 	if ( Keyboard.BufferHead != Keyboard.BufferTail )		
 	{
-		LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia %d bytes to send in tdr, ignore new rdr=0x%x VBL=%d HBL=%d\n" ,
+		LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia %d bytes to send in tdr, ignore new rdr=0x%02x VBL=%d HBL=%d\n" ,
 			( Keyboard.BufferTail - Keyboard.BufferHead ) & KEYBOARD_BUFFER_MASK , RDR , nVBLs , nHBL );
 		return;
 	}
@@ -973,7 +973,7 @@ static void	IKBD_Cmd_Return_Byte_Delay ( Uint8 Data , int Delay_Cycles )
  */
 static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 {
-fprintf ( stderr , "send byte=0x%x delay=%d\n" , Data , Delay_Cycles );
+fprintf ( stderr , "send byte=0x%02x delay=%d\n" , Data , Delay_Cycles );
 	/* Is keyboard initialised yet? Ignore any bytes until it is */
 	if (!KeyboardProcessor.bReset)
 		return;
@@ -2962,37 +2962,69 @@ static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
 
 /*----------------------------------------------------------------------*/
 /* Froggies Over The Fence menu.					*/
-/* Returns 2 bytes with the mouse position, keyboard can be used too.	*/
-/* Writing 0xff to $fffc02 will cause the 6301 to exit custom exe mode.	*/
+/* Returns 'n' bytes with the mouse position, keyboard can be used too.	*/
+/* Writing a <0 byte to $fffc02 will cause the 6301 to exit custom exe	*/
+/* mode (jmp $f000).							*/
+/* When writing byte 'n' >0 to $fffc02, the 6301 will return the content*/
+/* of RAM $7f+n to $7f+1.						*/
+/* $80/$81 contains deltaY/deltaX + left mouse button in bit 7, $82	*/
+/* contains LMB in bit 7 and $83 contains a fixed value 0xfc.		*/
+/* On each VBL, the demo will ask for 1 byte, then for 4 bytes ; only	*/
+/* the last 2 bytes ($81/$80) will be used, $83/$82 are ignored.	*/
+/* IKBD's $81 will be stored in $600 (CPU RAM), and $80 in $601.	*/
+/*									*/
+/* TODO : an extra delay of 7000 cycles is necessary to have $81 and $80*/
+/* received after the overrun condition was cleared at the 68000 level.	*/
+/* Does it mean some timings are wrong with acia/ikbd ?			*/
 /*----------------------------------------------------------------------*/
 
 static void IKBD_CustomCodeHandler_FroggiesMenu_Read ( void )
 {
-	Uint8		res1 = 0;
-	Uint8		res2 = 0;
-
-	if ( KeyboardProcessor.Mouse.DeltaX < 0 )	res1 = 0x7a;	/* mouse left */
-	if ( KeyboardProcessor.Mouse.DeltaX > 0 )	res1 = 0x06;	/* mouse right */
-	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res2 = 0x7a;	/* mouse up */
-	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res2 = 0x06;	/* mouse down */
-	if ( Keyboard.bLButtonDown & BUTTON_MOUSE )	res1 |= 0x80;	/* left mouse button */
-
-	if ( ScanCodeState[ 0x4b ] )			res1 |= 0x7a;	/* left */
-	if ( ScanCodeState[ 0x4d ] )			res1 |= 0x06;	/* right */
-	if ( ScanCodeState[ 0x48 ] )			res2 |= 0x7a;	/* up */
-	if ( ScanCodeState[ 0x50 ] )			res2 |= 0x06;	/* down */
-	if ( ScanCodeState[ 0x70 ] )			res1 |= 0x80;	/* keypad 0 */
-
-	IKBD_Send_Byte_Delay ( res1 , 0 );
-	IKBD_Send_Byte_Delay ( res2 , 0 );
+	/* Ignore read */
 }
 
 static void IKBD_CustomCodeHandler_FroggiesMenu_Write ( Uint8 aciabyte )
 {
-	/* When writing 0xff to $fffc02, Froggies ikbd's program will terminate itself */
-	/* and leave Execution mode */
-	if ( aciabyte == 0xff )
+	Uint8		res80 = 0;
+	Uint8		res81 = 0;
+	Uint8		res82 = 0;
+	Uint8		res83 = 0xfc;					/* fixed value, not used */
+
+	/* When writing a <0 byte to $fffc02, Froggies ikbd's program will terminate itself */
+	/* and leave Execution mode (jmp $f000) */
+	if ( aciabyte & 0x80 )
+	{
 		IKBD_Reset_ExeMode ();
+		return;
+	}
+
+	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res80 = 0x7a;	/* mouse up */
+	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res80 = 0x06;	/* mouse down */
+	if ( KeyboardProcessor.Mouse.DeltaX < 0 )	res81 = 0x7a;	/* mouse left */
+	if ( KeyboardProcessor.Mouse.DeltaX > 0 )	res81 = 0x06;	/* mouse right */
+	if ( Keyboard.bLButtonDown & BUTTON_MOUSE )	res82 |= 0x80;	/* left mouse button */
+
+	if ( ScanCodeState[ 0x48 ] )			res80 |= 0x7a;	/* up */
+	if ( ScanCodeState[ 0x50 ] )			res80 |= 0x06;	/* down */
+	if ( ScanCodeState[ 0x4b ] )			res81 |= 0x7a;	/* left */
+	if ( ScanCodeState[ 0x4d ] )			res81 |= 0x06;	/* right */
+	if ( ScanCodeState[ 0x70 ] )			res82 |= 0x80;	/* keypad 0 */
+
+	res80 |= res82;							/* bit 7 is left mouse button */
+	res81 |= res82;
+
+//	res80 = 0x10 ; res81 = 0x11 ; res82 = 0x12 ; res83 = 0x13 ;	/* force some discernible values to debug */
+	
+	if ( aciabyte == 1 )						/* Send 1 byte */
+		IKBD_Send_Byte_Delay ( res80 , 0 );			/* $80 in IKBD's RAM */
+
+	else if ( aciabyte == 4 )					/* Send 4 bytes */
+	{
+		IKBD_Send_Byte_Delay ( res83 , 0 );			/* $83 in IKBD's RAM */
+		IKBD_Send_Byte_Delay ( res82 , 0 );			/* $82 in IKBD's RAM */
+		IKBD_Send_Byte_Delay ( res81 , 0 );			/* $81 in IKBD's RAM */
+		IKBD_Send_Byte_Delay ( res80 , 7000 );			/* $80 in IKBD's RAM */
+	}
 }
 
 
