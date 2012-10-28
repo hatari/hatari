@@ -508,7 +508,7 @@ void	ACIA_IKBD_Read_SR ( void )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-		LOG_TRACE_PRINT("acia %s read fffc00 sr=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
+		LOG_TRACE_PRINT("acia %s read fffc00 sr=0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
 		                IoMem[0xfffc00], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 }
@@ -531,7 +531,7 @@ void	ACIA_IKBD_Read_RDR ( void )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-		LOG_TRACE_PRINT("acia %s read fffc02 rdr=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
+		LOG_TRACE_PRINT("acia %s read fffc02 rdr=0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
 				IoMem[0xfffc02], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 }
@@ -551,7 +551,7 @@ void	ACIA_IKBD_Write_CR ( void )
 	M68000_WaitState(8);
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc00 cr=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
+	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc00 cr=0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
 				IoMem[0xfffc00], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 
 	ACIA_Write_CR ( pACIA_IKBD , IoMem[0xfffc00] );
@@ -572,7 +572,7 @@ void	ACIA_IKBD_Write_TDR ( void )
 	M68000_WaitState(8);
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc02 tdr=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
+	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc02 tdr=0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
 				IoMem[0xfffc02], FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 
 	ACIA_Write_TDR ( pACIA_IKBD , IoMem[0xfffc02] );
@@ -702,7 +702,7 @@ static Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 	if ( SR & ACIA_SR_BIT_CTS )
 		SR &= ~ACIA_SR_BIT_TDRE;				/* Inhibit TDRE when CTS is set */
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s read sr data=0x%x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , SR , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia %s read sr data=0x%02x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , SR , nVBLs , nHBL );
 
 	return SR;
 }
@@ -719,7 +719,7 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 	int	Divide;
 
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s write cr data=0x%x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , CR , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia %s write cr data=0x%02x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , CR , nVBLs , nHBL );
 
 	/* Bit 0 and 1 : Counter Divide */
 	Divide = ACIA_CR_COUNTER_DIVIDE ( CR );
@@ -801,8 +801,8 @@ static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 
 	ACIA_UpdateIRQ ( pACIA );
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s read rdr data=0x%x overrun=%s VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->RDR ,
-		( pACIA->SR & ACIA_SR_BIT_OVRN ) ? "yes" : "no" , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_ACIA, "acia %s read rdr data=0x%02x new sr=0x%02x overrun=%s VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->RDR ,
+		pACIA->SR , ( pACIA->SR & ACIA_SR_BIT_OVRN ) ? "yes" : "no" , nVBLs , nHBL );
 
 	return pACIA->RDR;
 }
@@ -819,7 +819,7 @@ static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
  */
 static void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )
 {
-	LOG_TRACE ( TRACE_ACIA, "acia %s write tdr data=0x%x overwrite=%s tx_state=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , TDR ,
+	LOG_TRACE ( TRACE_ACIA, "acia %s write tdr data=0x%02x overwrite=%s tx_state=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , TDR ,
 		( pACIA->SR & ACIA_SR_BIT_TDRE ) ? "no" : "yes" , pACIA->TX_State , nVBLs , nHBL );
 
 	pACIA->TDR = TDR;
@@ -846,7 +846,7 @@ static void	ACIA_Prepare_TX ( ACIA_STRUCT *pACIA )
 
 	pACIA->SR |= ACIA_SR_BIT_TDRE;					/* TDR was copied to TSR. TDR is now empty */
 
-	LOG_TRACE ( TRACE_ACIA, "acia %s prepare tx tsr=0x%x size=%d stop=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->TSR ,
+	LOG_TRACE ( TRACE_ACIA, "acia %s prepare tx tsr=0x%02x size=%d stop=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , pACIA->TSR ,
 		pACIA->TX_Size , pACIA->TX_StopBits , nVBLs , nHBL );
 }
 
@@ -1002,7 +1002,7 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 // ACIA_SR_BIT_OVRN would need to be cancelled.
 // 			if ( pACIA->SR & ACIA_SR_BIT_RDRF )
 // 			{
-// 				LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx overrun rsr=0x%x VBL=%d HBL=%d\n" ,
+// 				LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx overrun rsr=0x%02x VBL=%d HBL=%d\n" ,
 // 					pACIA->ACIA_Name , pACIA->RSR , nVBLs , nHBL );
 // 				pACIA->RX_Overrun = 1;			/* Bit in SR will be set when reading RDR */
 // 			}
@@ -1039,12 +1039,12 @@ static void	ACIA_Clock_RX ( ACIA_STRUCT *pACIA )
 				{
 					pACIA->RDR = pACIA->RSR;
 					pACIA->SR |= ACIA_SR_BIT_RDRF;
-					LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx received rdr=0x%x VBL=%d HBL=%d\n" ,
+					LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx received rdr=0x%02x VBL=%d HBL=%d\n" ,
 						pACIA->ACIA_Name , pACIA->RDR , nVBLs , nHBL );
 				}
 				else
 				{
-					LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx overrun rsr=0x%x unread rdr=0x%x VBL=%d HBL=%d\n" ,
+					LOG_TRACE ( TRACE_ACIA, "acia %s clock_rx overrun rsr=0x%02x unread rdr=0x%02x VBL=%d HBL=%d\n" ,
 						pACIA->ACIA_Name , pACIA->RSR , pACIA->RDR , nVBLs , nHBL );
 					pACIA->RX_Overrun = 1;		/* Bit in SR will be set when reading RDR */
 				}
