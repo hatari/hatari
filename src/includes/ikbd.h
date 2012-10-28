@@ -85,16 +85,10 @@ extern void IKBD_Init ( void );
 extern void IKBD_Reset_ExeMode ( void );
 extern void IKBD_Reset(bool bCold);
 extern void IKBD_MemorySnapShot_Capture(bool bSave);
+
 extern void IKBD_InterruptHandler_ResetTimer(void);
-extern void IKBD_InterruptHandler_ACIA_RX(void);
-extern void IKBD_InterruptHandler_ACIA_TX(void);
-extern void IKBD_InterruptHandler_MFP(void);
 extern void IKBD_InterruptHandler_AutoSend(void);
 
 extern void IKBD_PressSTKey(Uint8 ScanCode, bool bPress);
-extern void IKBD_KeyboardControl_ReadByte(void);
-extern void IKBD_KeyboardData_ReadByte(void);
-extern void IKBD_KeyboardControl_WriteByte(void);
-extern void IKBD_KeyboardData_WriteByte(void);
 
 #endif  /* HATARI_IKBD_H */

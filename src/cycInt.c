@@ -83,10 +83,9 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	MFP_InterruptHandler_TimerB,
 	MFP_InterruptHandler_TimerC,
 	MFP_InterruptHandler_TimerD,
+	ACIA_InterruptHandler_IKBD,
+	ACIA_InterruptHandler_MFP,
 	IKBD_InterruptHandler_ResetTimer,
-	IKBD_InterruptHandler_ACIA_TX,
-	IKBD_InterruptHandler_ACIA_RX,
-	IKBD_InterruptHandler_MFP,
 	IKBD_InterruptHandler_AutoSend,
 	DmaSnd_InterruptHandler_Microwire, /* Used for both STE and Falcon Microwire emulation */
 	Crossbar_InterruptHandler_25Mhz,
@@ -95,8 +94,6 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	Blitter_InterruptHandler,
 	Midi_InterruptHandler_Update,
 
-	ACIA_InterruptHandler_IKBD,
-	ACIA_InterruptHandler_MFP
 };
 
 /* Event timer structure - keeps next timer to occur in structure so don't need

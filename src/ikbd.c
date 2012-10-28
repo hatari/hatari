@@ -2447,38 +2447,6 @@ static void IKBD_Cmd_ReportJoystickAvailability(void)
 
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * These interrupt handlers are used to simulate a correct number of CPU cycles
- * when sending a byte from the ACIA to the ikdb or when receiving a byte
- * from the ikbd to the ACIA (because ACIA serial transfers are running
- * at 7812.5 bps, bytes should not be available immediatly as it would break
- * some programs)
- * - Byte received in the ACIA from the keyboard processor (RX) : store byte for read
- *   from $fffc02 and schedule MFP interrupt to be triggered just a few cycles after.
- * - Byte sent from the ACIA to the keyboard processor (TX) : pass the byte to
- *   IKBD_SendByteToKeyboardProcessor and set TX_BUFFER_EMPTY in status register.
- */
-void IKBD_InterruptHandler_ACIA_RX(void)
-{
-}
-
-
-void IKBD_InterruptHandler_ACIA_TX(void)
-{
-}
-
-
-/**
- * Start MFP interrupt after byte has been received in the ACIA.
- */
-void IKBD_InterruptHandler_MFP(void)
-{
-}
-
-
-
-
 /*************************************************************************/
 /**
  * Below part is for emulating custom 6301 program sent to the IKBD's RAM
