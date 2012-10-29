@@ -379,7 +379,7 @@ CustomCodeDefinitions[] =
  */
 void	IKBD_Init ( void )
 {
-	LOG_TRACE ( TRACE_IKBD, "ikbd init\n" );
+	LOG_TRACE ( TRACE_IKBD_ALL, "ikbd init\n" );
 
 	/* Set the callback functions for RX/TX line */
 	IKBD_Init_Pointers ( pACIA_IKBD );
@@ -693,7 +693,7 @@ static Uint8	IKBD_SCI_Set_Line_TX ( void )
 	Uint8	tx_bit = 1;
 
 
-	LOG_TRACE ( TRACE_ACIA, "ikbd acia tx_state=%d tx_delay=%d VBL=%d HBL=%d\n" , pIKBD->SCI_TX_State , pIKBD->SCI_TX_Delay ,
+	LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia tx_state=%d tx_delay=%d VBL=%d HBL=%d\n" , pIKBD->SCI_TX_State , pIKBD->SCI_TX_Delay ,
 		nVBLs , nHBL );
 
 	StateNext = -1;
@@ -1212,7 +1212,7 @@ static void IKBD_SendOnMouseAction(void)
 			/* Only report if mouse in absolute mode */
 			if (KeyboardProcessor.MouseMode==AUTOMODE_MOUSEABS)
 			{
-				LOG_TRACE(TRACE_IKBD_ALL, "Report ABS on MouseAction\n");
+				LOG_TRACE(TRACE_IKBD_CMDS, "Report ABS on MouseAction\n");
 				IKBD_Cmd_ReadAbsMousePos();
 			}
 		}
