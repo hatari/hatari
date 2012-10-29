@@ -1876,6 +1876,7 @@ void mmu030_reset(int hardreset)
 		srp_030 = crp_030 = 0;
 		tt0_030 = tt1_030 = tc_030 = 0;
 		mmusr_030 = 0;
+		mmu030_flush_atc_all();
 	}
 }
 
