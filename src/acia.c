@@ -355,7 +355,7 @@ static void	ACIA_Set_Line_IRQ_MFP ( int bit )
  */
 void	ACIA_InterruptHandler_MFP ( void )
 {
-fprintf ( stderr , "acia int mfp\n" );
+//fprintf ( stderr , "acia int mfp\n" );
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 

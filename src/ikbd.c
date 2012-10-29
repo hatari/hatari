@@ -845,7 +845,7 @@ static void	IKBD_Cmd_Return_Byte_Delay ( Uint8 Data , int Delay_Cycles )
  */
 static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 {
-fprintf ( stderr , "send byte=0x%02x delay=%d\n" , Data , Delay_Cycles );
+//fprintf ( stderr , "send byte=0x%02x delay=%d\n" , Data , Delay_Cycles );
 	/* Is keyboard initialised yet? Ignore any bytes until it is */
 	if (!KeyboardProcessor.bReset)
 		return;
@@ -2419,7 +2419,8 @@ static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
 {
 	unsigned int i;
 
-	FILE *f = fopen ( "/tmp/ikbd_loadmemory.dump" , "ab" ) ; fprintf ( f , "%c" , aciabyte ) ; fclose ( f );
+	/* Write received bytes to a file for debug */
+//	FILE *f = fopen ( "/tmp/ikbd_loadmemory.dump" , "ab" ) ; fprintf ( f , "%c" , aciabyte ) ; fclose ( f );
 
 	crc32_add_byte ( &MemoryLoadCrc , aciabyte );
 
@@ -2468,7 +2469,8 @@ static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
 {
 	unsigned int i;
 
-	FILE *f = fopen ( "/tmp/ikbd_custom_program.dump" , "ab" ) ; fprintf ( f , "%c" , aciabyte ) ; fclose ( f );
+	/* Write received bytes to a file for debug */
+//	FILE *f = fopen ( "/tmp/ikbd_custom_program.dump" , "ab" ) ; fprintf ( f , "%c" , aciabyte ) ; fclose ( f );
 
 	crc32_add_byte ( &MemoryLoadCrc , aciabyte );
 	MemoryExeNbBytes++;
