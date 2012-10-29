@@ -41,7 +41,7 @@ void mmu030_flush_atc_fc(uae_u32 fc_base, uae_u32 fc_mask);
 void mmu030_flush_atc_page(uaecptr logical_addr);
 void mmu030_flush_atc_page_fc(uaecptr logical_addr, uae_u32 fc_base, uae_u32 fc_mask);
 void mmu030_flush_atc_all(void);
-void mmu030_reset(void);
+void mmu030_reset(int hardreset);
 
 int mmu030_match_ttr(uaecptr addr, uae_u32 fc, bool write);
 int mmu030_do_match_ttr(uae_u32 tt, TT_info masks, uaecptr addr, uae_u32 fc, bool write);

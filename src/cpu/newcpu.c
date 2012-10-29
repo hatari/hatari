@@ -439,7 +439,7 @@ void build_cpufunctbl (void)
 			mmu_set_super (regs.s != 0);
 		}
 		else {
-			mmu030_reset();
+			mmu030_reset (0);
 		}
 	}
 }
@@ -2468,22 +2468,9 @@ void m68k_reset (int hardreset)
 			mmu_set_super (regs.s != 0);
 		}
 		else {
-			mmu030_reset ();
+			mmu030_reset (hardreset);
 		}
 	}
-
-#if AMIGA_ONLY
-	a3000_fakekick (0);
-#endif
-	/* only (E)nable bit is zeroed when CPU is reset, A3000 SuperKickstart expects this */
-	tc_030 &= ~0x80000000;
-	tt0_030 &= ~0x00008000;
-	tt1_030 &= ~0x00008000;
-	if (hardreset) {
-		srp_030 = crp_030 = 0;
-		tt0_030 = tt1_030 = tc_030 = 0;
-	}
-	mmusr_030 = 0;
 
 	/* 68060 FPU is not compatible with 68040,
 	* 68060 accelerators' boot ROM disables the FPU
