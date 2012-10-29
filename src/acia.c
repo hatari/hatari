@@ -1,6 +1,8 @@
 /*
   Hatari - acia.c
 
+  Copyright (C) 2012 by Nicolas Pomarède
+
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
@@ -28,7 +30,7 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
    - MAME's 6850acia.c for RTS, CTS and DCD behaviour
 
 
-  Pins:-
+  Pins :
     Vss
     RX DATA Receive Data
     RX CLK Receive Clock
@@ -45,13 +47,13 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
     DCD Data Carrier Detect
     CTS Clear To Send
 
-  Registers:-
+  Registers :
     0xfffc00 Keyboard ACIA Control (write)/Status(read)
     0xfffc02 Keyboard ACIA Data
     0xfffc04 MIDI ACIA Control (write)/Status(read)
     0xfffc06 MIDI ACIA Data
 
-  Control Register (0xfffc00 write):-
+  Control Register (0xfffc00 write) :
     Bits 0,1 - These bits determine by which factor the transmitter and receiver
       clock will be divided. These bits also are joined with a master reset
       function. The 6850 has no separate reset line, so it must be
@@ -77,7 +79,7 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
         0 Interrupt disabled
         1 Interrupt enabled
 
-  Status Register (0xfffc00 read):-
+  Status Register (0xfffc00 read) :
     Bit 0 - When this bit is high, the RX data register is full. The byte must be read
       before a new character is received (otherwise an OVERRUN happens)
     Bit 1 - This bit reflects the status of the TX data buffer. An empty register
@@ -98,12 +100,12 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
       IRQ lines on one interrupt input. In cases where an interrupt is program-generated, bit 7
       can tell which IC cut off the interrupt.
 
-  ST ACIA:-
-    Note CTS,DCD and RTS are not connected! Phew!
+  ST ACIA :
+    CTS,DCD and RTS are not connected
     The keyboard ACIA addresses are 0xfffc000 and 0xfffc02.
     The MIDI ACIA addresses are 0xfffc004 and 0xfffc06.
-    Default parameters are :- 8-bit word, 1 stopbit, no parity, 7812.5 baud; 500KHz/64 (keyboard clock div)
-    Default MIDI parameters are as above but :- 31250 baud; 500KHz/16 (MIDI clock div)
+    Default keyboard parameters are : 8-bit word, 1 stopbit, no parity, 7812.5 baud; 500KHz/64 (keyboard clock div)
+    Default MIDI parameters are as above but : 31250 baud; 500KHz/16 (MIDI clock div)
 
 */
 

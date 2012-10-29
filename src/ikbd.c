@@ -4,19 +4,18 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  The keyboard processor(6301) handles any joystick/mouse task and sends bytes
-  to the ACIA(6850). When a byte arrives in the ACIA (which takes just over
-  7000 CPU cycles) an MFP interrupt is flagged. The CPU can now read the byte
-  from the ACIA by reading address $fffc02.
-  An annoying bug can be found in Dungeon Master. This, when run, turns off the
-  mouse input - but of course then you are unable to play the game! A bodge
-  flag has been added so we need to be told twice to turn off the mouse input
-  (although I think this causes errors in other games...).
-  Also, the ACIA_CYCLES time is very important for games such as Carrier
-  Command. The keyboard handler in this game has a bug in it, which corrupts
-  its own registers if more than one byte is queued up. This value was found by
-  a test program on a real ST and has correctly emulated the behaviour.
+  The keyboard processor(6301) handles any joystick/mouse/keyboard task
+  and sends bytes to the ACIA(6850).
+  The IKBD has a small ROM which is used to process various commands send
+  by the main CPU to the THE IKBD.
+  Due to lack of real HD6301 emulation, those commands are handled by
+  functionnaly equivalent code that tries to be as close as possible
+  to a real HD6301.
+
+  For program using their own HD6301 code, we also use some custom
+  handlers to emulate the expected result.
 */
+
 const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
@@ -103,84 +102,13 @@ static time_t nTimeOffset;			/* Offset between current time and emulated time */
 
 
 /*
-  6850 ACIA (Asynchronous Communications Inferface Apdater)
-  Page 41, ST Internals. Also ST Update Magazine, February 1989 (I glad I kept that!)
+  HD6301 processor by Hitachi
 
-  Pins:-
-    Vss
-    RX DATA Receive Data
-    RX CLK Receive Clock
-    TX CLK Transmitter Clock
-    RTS Request To Send
-    TX DATA Transmitter Data
-    IRQ Interrupt Request
-    CS 0,1,2 Chip Select
-    RS Register Select
-    Vcc Voltage
-    R/W Read/Write
-    E Enable
-    D0-D7 Data
-    DCD Data Carrier Detect
-    CTS Clear To Send
+  References :
+   - HD6301V1, HD63A01V1, HD63B01V1 CMOS MCU datasheet by Hitachi
 
-  Registers:-
-    0xfffc00 Keyboard ACIA Control (write)/Status(read)
-    0xfffc02 Keyboard ACIA Data
-    0xfffc04 MIDI ACIA Control (write)/Status(read)
-    0xfffc06 MIDI ACIA Data
-
-  Control Register (0xfffc00 write):-
-    Bits 0,1 - These bits determine by which factor the transmitter and receiver
-      clock will be divided. These bits also are joined with a master reset
-      function. The 6850 has no separate reset line, so it must be
-      accomplished though software.
-        0 0    RXCLK/TXCLK without division
-        0 1    RXCLK/TXCLK by 16 (MIDI)
-        1 0    RXCLK/TXCLK by 64 (Keyboard)
-        1 1    Master RESET
-    Bits 2,3,4 - These so-called Word Select bits tell whether 7 or 8 data-bits are
-      involved; whether 1 or 2 stop-bits are transferred; and the type of parity
-    Bits 5,6 - These Transmitter Control bits set the RTS output pin, and allow or prevent
-      an interrupt through the ACIA when the send register is emptied. Also, BREAK signals
-      can be sent over the serial output by this line. A BREAK signal is nothing more than
-      a long seqence of null bits
-        0 0    RTS low, transmitter IRQ disabled
-        0 1    RTS low, transmitter IRQ enabled
-        1 0    RTS high, transmitter IRQ disabled
-        1 1    RTS low, transmitter IRQ disabled, BREAK sent
-    Bit 7 - The Receiver Interrupt Enable bit determines whether the receiver interrupt
-      will be on. An interrupt can be caused by the DCD line chaning from low to high, or
-      by the receiver data buffer filling. Besides that, an interrupt can occur from an
-      OVERRUN ( a received character isn't properly read from the processior).
-        0 Interrupt disabled
-        1 Interrupt enabled
-
-  Status Register (0xfffc00 read):-
-    Bit 0 - When this bit is high, the RX data register is full. The byte must be read
-      before a new character is received (otherwise an OVERRUN happens)
-    Bit 1 - This bit reflects the status of the TX data buffer. An empty register
-      set the bit.
-    Bit 2 - A low-high change in pin DCD sets bit 2. If the receiver interrupt is allowable, the IRQ
-      is cancelled. The bit is cleared when the status register and the receiver register are
-      read. This also cancels the IRQ. Bit 2 register remains highis the signal on the DCD pin
-      is still high; Bit 2 register low if DCD becomes low.
-    Bit 3 - This line shows the status of CTS. This signal cannot be altered by a mater reset,
-      or by ACIA programming.
-    Bit 4 - Shows 'Frame Errors'. Frame errors are when no stop-bit is recognized in receiver
-      switching. It can be set with every new character.
-    Bit 5 - This bit display the previously mentioned OVERRUN condition. Bit 5 is reset when the
-      RX buffer is read.
-    Bit 6 - This bit recognizes whether the parity of a received character is correct. The bit is
-      set on an error.
-    Bit 7 - This signals the state of the IRQ pins; this bit make it possible to switch several
-      IRQ lines on one interrupt input. In cases where an interrupt is program-generated, bit 7
-      can tell which IC cut off the interrupt.
-
-  ST ACIA:-
-    Note CTS,DCD and RTS are not connected! Phew!
-    The keyboard ACIA are address 0xfffc000 and 0xfffc02.
-    Default parameters are :- 8-bit word, 1 stopbit, no parity, 7812.5 baud; 500KHz/64 (keyboard clock div)
-    Default MIDI parameters are are above but :- 31250 baud; 500KHz/16 (MIDI clock div)
+  The HD6301 is connected to the ACIA through TX and RX pins.
+  Serial transfers are made with 8 bit word, 1 stop bit, no parity and 7812.5 baud
 
 
   Special behaviours during the IKBD reset :
