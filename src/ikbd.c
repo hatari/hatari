@@ -864,13 +864,6 @@ static void	IKBD_Check_New_TDR ( void )
 {
 //  fprintf(stderr , "check new tdr %d %d\n", Keyboard.BufferHead , Keyboard.BufferTail );
 
-// 	/* If IKBD is executing custom code, call the function to update Keyboard.Buffer with a new TDR */
-// 	if ( ( Keyboard.BufferHead == Keyboard.BufferTail )
-// 	  && ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Read ) )
-// 	{
-// 		(*pIKBD_CustomCodeHandler_Read) ();
-// 	}
-
 	if ( Keyboard.BufferHead != Keyboard.BufferTail )
 	{
 		pIKBD->TDR = Keyboard.Buffer[ Keyboard.BufferHead++ ];
@@ -2570,7 +2563,6 @@ static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
 		pIKBD_CustomCodeHandler_Write = CustomCodeDefinitions[ i ].ExeMainHandler_Write;
 
 		Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
-//		(*pIKBD_CustomCodeHandler_Read) ();		/* initialize ACIAByte */
 	}
 
 	/* If not found, we keep on accumulating bytes until we find a matching crc */
