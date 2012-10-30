@@ -219,8 +219,7 @@ void M68000_Reset(bool bCold)
 		regs.spcflags = spcFlags;
 	}
 	/* Now reset the WINUAE CPU core */
-	/* Laurent : for now, using parameter 0 (Hard reset), but some other parameters can be used here (see newcpu.c) */
-	m68k_reset(0);
+	m68k_reset(bCold);
 #else /* UAE CPU core */
 	if (bCold)
 	{

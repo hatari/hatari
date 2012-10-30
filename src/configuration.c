@@ -42,6 +42,7 @@ static const struct Config_Tag configs_Log[] =
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
 	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
+	{ "bNatFeats", Bool_Tag, &ConfigureParams.Log.bNatFeats },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -373,6 +374,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
 	ConfigureParams.Log.bConfirmQuit = true;
+	ConfigureParams.Log.bNatFeats = false;
 
 	/* Set defaults for debugger */
 	ConfigureParams.Debugger.nNumberBase = 10;

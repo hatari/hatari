@@ -17,6 +17,7 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__
 #include "cycInt.h"
 #include "tos.h"
 #include "gemdos.h"
+#include "natfeats.h"
 #include "cart.h"
 #include "vdi.h"
 #include "stMemory.h"
@@ -203,5 +204,40 @@ unsigned long OpCode_VDI(uae_u32 opcode)
 		op_illg(opcode);
 	}
 	fill_prefetch_0();
+	return 4;
+}
+
+
+/**
+ * Emulator Native Features ID opcode interception.
+ */
+unsigned long OpCode_NatFeat_ID(uae_u32 opcode)
+{
+	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
+	Uint16 SR = M68000_GetSR();
+
+	if (NatFeat_ID(stack, &(Regs[REG_D0]))) {
+		M68000_SetSR(SR);
+		m68k_incpc(2);
+		fill_prefetch_0();
+	}
+	return 4;
+}
+
+/**
+ * Emulator Native Features call opcode interception.
+ */
+unsigned long OpCode_NatFeat_Call(uae_u32 opcode)
+{
+	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
+	Uint16 SR = M68000_GetSR();
+	bool super;
+	
+	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);
+	if (NatFeat_Call(stack, super, &(Regs[REG_D0]))) {
+		M68000_SetSR(SR);
+		m68k_incpc(2);
+		fill_prefetch_0();
+	}
 	return 4;
 }

@@ -497,7 +497,7 @@ static void HDC_Cmd_ReadSector(void)
 
 #ifdef HDC_VERBOSE
 	fprintf(stderr,"Reading %i sectors from 0x%x to addr: 0x%x\n",
-	        HDC_GetCount(), nLastBlockAddr, FDC_ReadDMAAddress());
+	        HDC_GetCount(), nLastBlockAddr, FDC_GetDMAAddress());
 #endif
 
 	/* seek to the position */

@@ -191,7 +191,7 @@ void SDLGui_CenterDlg(SGOBJ *dlg)
 void SDLGui_Text(int x, int y, const char *txt)
 {
 	int i;
-	char c;
+	unsigned char c;
 	SDL_Rect sr, dr;
 
 	for (i=0; txt[i]!=0; i++)

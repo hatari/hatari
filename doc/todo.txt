@@ -33,15 +33,16 @@ Emulation improvements
 
 - Finish upgrading the CPU core of Hatari to the latest WinUAE
   which has better cycle accuracy needed by some programs:
-	- Integrate MMU emulation
+	- Finish MMU emulation support
 	- Add Exception debugging support
 	- Instead of calling Reset_Cold()/m68k_reset()/uae_reset()
 	  directly from newcpu.c, show user a notice (dialog)
 	  about what happened and let user do the reboot
 	  (see "Emulation reset, old-UAE vs. WinUAE core" mail-thread)
+	- Make WinUAE core ST/STE emulation as good as with old UAE core
 	- Update WinUAE core to its latest (a year newer) version
-	- Fix & document cmdline options for selecting prefetch etc
-	  - GUI options for above
+	- Document cmdline options for selecting prefetch etc
+	  once they're stable
 
 - Get the games/demos working that are marked as non-working in the manual.
 
@@ -49,14 +50,11 @@ Emulation improvements
   - Palette switching during screen drawing
   - ST screen modes centering when Videl borders are enabled
 
-- Hold & Sample and Hypermono modes for TT shifter:
-  http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2012/04/msg00030.html
-
 - TT/FastRAM support as some demos need >14MB
 
 - Add SCSI hard disk emulation for Falcon/TT mode.
 
-- ACSI emulation seems to be broken in TT mode.
+- ACSI emulation doesn't work with TOS v3 (but works for TT/EmuTOS).
 
 - Add SCC serial port emulation for Falcon/TT mode.
 
@@ -65,8 +63,6 @@ Emulation improvements
 
 - Fix falcon sound quality (sound is sometimes noisy).
   Sound is also toggling between nice to noise with some demos.
-
-- Improve STE Microwire/LMC1992 emulation.
 
 - DSP emulation / Falcon sound matrix:
 	- Dsp SSI internal clock (is it used on falcon ?)
@@ -101,11 +97,6 @@ Games :
 Other potential Hatari functionality improvements
 -------------------------------------------------
 
-- Profile data causes symbol tracing to output line for every
-  instruction.  This can be fixed by moving profiling information
-  output to disassembly code, this way disassembly + profiling info
-  can also be made more readable
-
 - Improved boot drive & partition handling code:
   - count partitions the same way in ACSI, IDE & GEMDOS
   - move BootDrive stuff from floppy.c e.g. to tos.c where NumDrives is
@@ -129,9 +120,9 @@ Other potential Hatari functionality improvements
 	- Breaking on exceptions 2-8 vs. bombs vs. don't break.
           Hatari has only an option to break on address & bus errors
 	  & uninitialized exception handler.
-	- Showing values both in different lengts and numeric bases.
+	- Showing values both in different lengths and numeric bases.
 	  (In Hatari one gets latter with "evaluate" command, e.g. "e a0",
-	  but that doesn't show the value as it were long/word/byte)
+	  and showing the value as long/word/byte requires ANDing it)
 	- All register values being shown with above info
           (= Steem Register monitor)
 	- info commands for PSG, MFP, FDC and IKBD register values

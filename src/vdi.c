@@ -232,6 +232,23 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 
 /*-----------------------------------------------------------------------*/
 
+/* AES opcodes which have string args */
+static const struct {
+	int code;	/* AES opcode */
+	int count;	/* number of char * args _first_ in addrin[] */
+} AESStrings[] = {
+	{ 0x0D, 1 },	/* appl_find() */
+	{ 0x12, 1 },	/* appl_search() */
+	{ 0x23, 1 },	/* menu_register() */
+	{ 0x34, 1 },	/* form_alert() */
+	{ 0x51, 1 },	/* scrp_write() */
+	{ 0x5A, 2 },	/* fsel_input() */
+	{ 0x5B, 3 },	/* fsel_exinput() */
+	{ 0x6E, 1 },	/* rsrc_load() */
+	{ 0x7C, 1 }	/* shell_find() */
+};
+
+/* AES opcode -> function name mapping */
 static const char* AESName_10[] = {
 	"appl_init",		/* (0x0A) */
 	"appl_read",		/* (0x0B) */
@@ -377,17 +394,51 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 	fprintf(fp, "AES call %3hd ", opcode);
 	if (code > 0 && code < ARRAYSIZE(AESName_10) && AESName_10[code])
 	{
-		int items;
+		bool first = true;
+		int i, items;
+
 		fprintf(fp, "%s(", AESName_10[code]);
+
+		items = 0;
+		/* there are so few of these that linear search is fine */
+		for (i = 0; i < ARRAYSIZE(AESStrings); i++)
+		{
+			/* something that can be shown? */
+			if (AESStrings[i].code == opcode)
+			{
+				items = AESStrings[i].count;
+				break;
+			}
+		}
+		/* addrin array size in longs enough for items? */
+		if (items > 0 && items <= STMemory_ReadWord(AESControl+SIZE_WORD*3))
+		{
+			const char *str;
+			fputs("addrin: ", fp);
+			for (i = 0; i < items; i++)
+			{
+				if (first)
+					first = false;
+				else
+					fputs(", ", fp);
+				str = (const char *)STRAM_ADDR(STMemory_ReadLong(AESAddrin+SIZE_LONG*i));
+				fprintf(fp, "\"%s\"", str);
+			}
+		}
+		/* intin array size in words */
 		items = STMemory_ReadWord(AESControl+SIZE_WORD*1);
 		if (items > 0)
 		{
-			int i, first = 1;
+			if (!first)
+			{
+				fputs(", ", fp);
+				first = true;
+			}
 			fputs("intin: ", fp);
 			for (i = 0; i < items; i++)
 			{
 				if (first)
-					first = 0;
+					first = false;
 				else
 					fputs(",", fp);
 				fprintf(fp, "0x%x", STMemory_ReadWord(AESIntin+SIZE_WORD*i));
@@ -441,9 +492,9 @@ void AES_Info(Uint32 bShowOpcodes)
 	fprintf(stderr, "- Control: %#8x\n", AESControl);
 	fprintf(stderr, "- Global:  %#8x, %d bytes\n",
 		AESGlobal, 2+2+2+4+4+4+4+4+4);
-	fprintf(stderr, "- Intin:   %#8x, %d bytes\n",
+	fprintf(stderr, "- Intin:   %#8x, %d words\n",
 		AESIntin, STMemory_ReadWord(AESControl+2*1));
-	fprintf(stderr, "- Intout:  %#8x, %d bytes\n",
+	fprintf(stderr, "- Intout:  %#8x, %d words\n",
 		AESIntout, STMemory_ReadWord(AESControl+2*2));
 	fprintf(stderr, "- Addrin:  %#8x, %d longs\n",
 		AESAddrin, STMemory_ReadWord(AESControl+2*3));

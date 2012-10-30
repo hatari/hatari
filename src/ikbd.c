@@ -2020,6 +2020,7 @@ static Uint8 IKBD_ToBCD(Uint16 Value)
 static void IKBD_Cmd_SetClock(void)
 {
 	struct tm NewTime;
+	time_t nStamp;
 
 	LOG_TRACE(TRACE_IKBD_CMDS,
 		  "IKBD_Cmd_SetClock: %02x %02x %02x %02x %02x %02x\n",
@@ -2035,7 +2036,11 @@ static void IKBD_Cmd_SetClock(void)
 	NewTime.tm_sec = IKBD_FromBCD(Keyboard.InputBuffer[6]);
 	NewTime.tm_isdst = -1;
 
-	nTimeOffset = time(NULL) - mktime(&NewTime);
+	nStamp = mktime(&NewTime);
+	if (nStamp != (time_t)-1)
+		nTimeOffset = time(NULL) - nStamp;
+	else
+		nTimeOffset = 0;
 }
 
 
@@ -2060,6 +2065,17 @@ static void IKBD_Cmd_ReadClock(void)
 	/* Get system time */
 	nTimeTicks = time(NULL) - nTimeOffset;
 	SystemTime = localtime(&nTimeTicks);
+	if (SystemTime == NULL)
+	{
+		/* localtime may return NULL - try again with sane timestamp */
+		nTimeTicks = time(NULL);
+		SystemTime = localtime(&nTimeTicks);
+		if (SystemTime == NULL)
+		{
+			fprintf(stderr, "Failed to get system time\n");
+			return;
+		}
+	}
 
 	/* Return packet */
 	IKBD_Cmd_Return_Byte_Delay (0xFC, 32000-ACIA_CYCLES);

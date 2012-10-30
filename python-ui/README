@@ -11,8 +11,9 @@ itself. The UI is done with PyGtk i.e. in Python language, using the
 Gtk widget set.
 
 The main points of this new UI over the Hatari internal one are its
-configurability and providing a GUI for the (console based) debugger
-included with the Hatari emulator.
+configurability, more usable file selector, internationalization
+support and providing a GUI for the (console based) debugger included
+with the Hatari emulator.
 
 Note: this is an additional UI, the built-in Hatari SDL UI isn't being
 replaced or going anywhere!
@@ -29,15 +30,19 @@ Hatari UI is included with the Hatari sources:
 	http://hg.tuxfamily.org/mercurialroot/hatari/hatari/file/tip/python-ui
 
 Hatari UI has been tested on several Linux versions.  I would assume
-it to work also on other unix systems such as Apple OSX. It won't work
-on Windows as the required Windows socket support is missing from the
-Hatari emulator.
+it to work also on other unix systems such as Apple OSX. It may work
+with the Hatari Windows version, as long as it is built with socket
+support.
 
 Embedding the Hatari emulator window is currently supported only for
 systems using an X window system (from libSDL sources it would seem
 that Windows would also support window embedding, but support for that
 would need to be added both to Hatari and Hatari UI because SDL's
 own embedding disables all keyboard events in SDL program).
+
+Here are instructions on installing the dependencies for non-Linux
+platforms (neither tested nor supported as I don't use/have them):
+	http://pygtk.org/downloads.html
 
 
 Running
@@ -69,4 +74,5 @@ be used when Hatari window is embedded because then those
 shortcuts couldn't be used with Hatari.
 
 
-URL: http://koti.mbnet.fi/tammat/hatari/hatari-ui.shtml
+A www-page with more information about Hatari UI is here:
+	http://koti.mbnet.fi/tammat/hatari/hatari-ui.shtml

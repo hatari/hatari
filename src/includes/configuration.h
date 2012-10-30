@@ -16,6 +16,7 @@ typedef struct
   int nTextLogLevel;
   int nAlertDlgLogLevel;
   bool bConfirmQuit;
+  bool bNatFeats;
 } CNF_LOG;
 
 

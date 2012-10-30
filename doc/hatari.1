@@ -334,6 +334,10 @@ Enable console (xconout vector functions) output redirection for given
 <device> to host terminal.  Device 2 is for the (CON:) VT52 console,
 which vector function catches also EmuTOS panic messages and MiNT
 console output, not just normal BIOS console output.
+.TP 
+.B \-\-natfeats <bool>
+Enable/disable (basic) Native Features support.
+E.g. EmuTOS uses it for debug output.
 .TP
 .B \-\-trace <trace1,...>
 Activate debug traces, see

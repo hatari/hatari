@@ -99,6 +99,11 @@ enum {
 #define  SYSINIT_OPCODE      10  /* Free op-code to initialize system (connected drives etc.) */
 #define  VDI_OPCODE          12  /* Free op-code to call VDI handlers AFTER Trap#2 */
 
+/* Illegal opcodes used for Native Features emulation:
+ * http://wiki.aranym.org/natfeats/proposal#special_opcodes
+ */
+#define  NATFEAT_ID_OPCODE   0x7300
+#define  NATFEAT_CALL_OPCODE 0x7301
 
 
 /* Ugly hacks to adapt the main code to the different CPU cores: */
