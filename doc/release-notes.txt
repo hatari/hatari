@@ -7,14 +7,15 @@
  --------------------
 
 Emulation:
-- TT video emulation:
+- TT video emulation :
   - Extend the ST palette registers from 9bit to 12bit for ST modes
   - Duochrome mode instead of monochrome for ST High
   - Implementation of SampleHold in TT Hypermono video mode
 - Sound changes :
   - Better model of the YM2149 noise generation (no noticeable audible impact)
-- CPU changes:
+- CPU changes :
   - Added experimental MMU emulation for the 68030 mode
+- Full implementation of the MC6850 ACIA, giving much more robust IKBD emulation
 
 Emulator:
 - Much improved console redirection functionality and a separate --conout
