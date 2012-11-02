@@ -1,7 +1,7 @@
 /*
  * Hatari - profile.c
  * 
- * Copyright (C) 2010 by Eero Tamminen
+ * Copyright (C) 2010-2012 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -18,6 +18,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "profile.h"
 #include "stMemory.h"
 #include "symbols.h"
+#include "68kDisass.h"
 #include "tos.h"
 
 #define MAX_PROFILE_VALUE 0xFFFFFFFF
@@ -29,8 +30,7 @@ typedef struct {
 
 typedef struct {
 	unsigned long long all_cycles, all_count;
-	Uint32 max_cycles, max_cycles_addr;
-	Uint32 max_count, max_count_addr;
+	Uint32 max_cycles;	/* for overflow check (cycles > count) */
 	Uint32 lowest, highest;	/* active address range within memory area */
 	Uint32 active;          /* number of active addresses */
 } profile_area_t;
@@ -147,14 +147,6 @@ static void show_cpu_area_stats(profile_area_t *area)
 	fprintf(stderr, "- used cycles:\n  %llu (%.2f%% of all)\n",
 		area->all_cycles,
 		(float)area->all_cycles/cpu_profile.all_cycles*100);
-	fprintf(stderr, "- address with most cycles:\n  0x%06x, %d cycles (%.2f%% of all in area)\n",
-		index2address(area->max_cycles_addr),
-		area->max_cycles,
-		(float)area->max_cycles/area->all_cycles*100);
-	fprintf(stderr, "- address with most hits:\n  0x%06x, %d hits (%.2f%% of all in area)\n",
-		index2address(area->max_count_addr),
-		area->max_count,
-		(float)area->max_count/area->all_count*100);
 	if (area->max_cycles == MAX_PROFILE_VALUE) {
 		fprintf(stderr, "- Counters OVERFLOW!\n");
 	}
@@ -174,6 +166,50 @@ void Profile_CpuShowStats(void)
 
 	fprintf(stderr, "ROM TOS (0x%X-0x%X):\n", TosAddress, TosAddress+TosSize);
 	show_cpu_area_stats(&cpu_profile.tos);
+}
+
+
+/**
+ * Show first 'show' CPU instructions which execution was profiled,
+ * in the address order.
+ */
+static void Profile_CpuShowAddresses(unsigned int show)
+{
+	unsigned int shown, idx;
+	profile_item_t *data;
+	uaecptr nextpc, addr;
+	Uint32 size, active;
+	const char *symbol;
+
+	data = cpu_profile.data;
+	if (!data) {
+		fprintf(stderr, "ERROR: no CPU profiling data available!\n");
+		return;
+	}
+
+	size = cpu_profile.size;
+	active = cpu_profile.active;
+	if (!show || show > active) {
+		show = active;
+	}
+
+	nextpc = 0;
+	for (shown = idx = 0; shown < show && idx < size; idx++) {
+		if (!data[idx].count) {
+			continue;
+		}
+		addr = index2address(idx);
+		if (addr != nextpc && nextpc) {
+			printf("[...]\n");
+		}
+		symbol = Symbols_GetByCpuAddress(addr);
+		if (symbol) {
+			printf("%s:\n", symbol);
+		}
+		Disasm(stdout, addr, &nextpc, 1, DISASM_ENGINE_EXT);
+		shown++;
+	}
+	printf("Disassembled %d (of active %d) CPU addresses.\n", show, active);
 }
 
 
@@ -360,7 +396,9 @@ void Profile_CpuUpdate(void)
 	}
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 	if (likely(cpu_profile.data[idx].cycles < MAX_PROFILE_VALUE - cycles)) {
-			cpu_profile.data[idx].cycles += cycles;
+		cpu_profile.data[idx].cycles += cycles;
+	} else {
+		cpu_profile.data[idx].cycles = MAX_PROFILE_VALUE;
 	}
 }
 
@@ -368,30 +406,25 @@ void Profile_CpuUpdate(void)
 /**
  * Helper for collecting profile area statistics.
  */
-static void update_area(Uint32 i, profile_item_t *item, profile_area_t *area)
+static void update_area(Uint32 addr, profile_item_t *item, profile_area_t *area)
 {
-	Uint32 cycles, count = item->count;
+	Uint32 cycles = item->cycles;
+	Uint32 count = item->count;
+
 	if (!count) {
 		return;
 	}
-
 	area->all_count += count;
-	if (count > area->max_count) {
-		area->max_count = count;
-		area->max_count_addr = i;
-	}
-
-	cycles = item->cycles;
 	area->all_cycles += cycles;
+
 	if (cycles > area->max_cycles) {
 		area->max_cycles = cycles;
-		area->max_cycles_addr = i;
 	}
 
-	if (i < area->lowest) {
-		area->lowest = i;
+	if (addr < area->lowest) {
+		area->lowest = addr;
 	}
-	area->highest = i;
+	area->highest = addr;
 
 	area->active++;
 }
@@ -532,19 +565,52 @@ void Profile_DspShowStats(void)
 		area->all_count);
 	fprintf(stderr, "- used cycles:\n  %llu\n",
 		area->all_cycles);
-	fprintf(stderr, "- address with most cycles:\n  0x%04x, %d cycles (%.2f%% of all)\n",
-		area->max_cycles_addr,
-		area->max_cycles,
-		(float)area->max_cycles/area->all_cycles*100);
-	fprintf(stderr, "- address with most hits:\n  0x%04x, %d hits (%.2f%% of all)\n",
-		area->max_count_addr,
-		area->max_count,
-		(float)area->max_count/area->all_count*100);
 	if (area->max_cycles == MAX_PROFILE_VALUE) {
 		fprintf(stderr, "- Counters OVERFLOW!\n");
 	}
 }
 
+/**
+ * Show first 'show' DSP instructions which execution was profiled,
+ * in the address order.
+ */
+static void Profile_DspShowAddresses(unsigned int show)
+{
+	unsigned int shown;
+	profile_item_t *data;
+	Uint16 addr, nextpc;
+	Uint32 size, active;
+	const char *symbol;
+
+	data = dsp_profile.data;
+	if (!data) {
+		fprintf(stderr, "ERROR: no DSP profiling data available!\n");
+		return;
+	}
+
+	size = DSP_PROFILE_ARR_SIZE;
+	active = dsp_profile.ram.active;
+	if (!show || show > active) {
+		show = active;
+	}
+
+	nextpc = 0;
+	for (shown = addr = 0; shown < show && addr < size; addr++) {
+		if (!data[addr].count) {
+			continue;
+		}
+		if (addr != nextpc && nextpc) {
+			fputs("[...]\n", debugOutput);
+		}
+		symbol = Symbols_GetByDspAddress(addr);
+		if (symbol) {
+			fprintf(debugOutput, "%s:\n", symbol);
+		}
+		nextpc = DSP_DisasmAddress(addr, addr);
+		shown++;
+	}
+	printf("Disassembled %d (of active %d) DSP addresses.\n", show, active);
+}
 
 /**
  * compare function for qsort() to sort DSP profile data by descdending
@@ -726,6 +792,8 @@ void Profile_DspUpdate(void)
 	cycles = DSP_GetInstrCycles();
 	if (likely(dsp_profile.data[pc].cycles < MAX_PROFILE_VALUE - cycles)) {
 		dsp_profile.data[pc].cycles += cycles;
+	} else {
+		dsp_profile.data[pc].cycles = MAX_PROFILE_VALUE;
 	}
 }
 
@@ -792,7 +860,7 @@ void Profile_DspStop(void)
 char *Profile_Match(const char *text, int state)
 {
 	static const char *names[] = {
-		"on", "off", "counts", "cycles", "symbols", "stats"
+		"addresses", "counts", "cycles", "off", "on", "stats", "symbols"
 	};
 	static int i, len;
 	
@@ -811,12 +879,15 @@ char *Profile_Match(const char *text, int state)
 }
 
 const char Profile_Description[] =
-	  "<on|off|counts|cycles|symbols|stats> [show count]\n"
-	  "\ton & off enable and disable profiling.  Data is collected\n"
-	  "\tuntil debugger is entered again after which you can view\n"
-	  "\tstatistics about the data or view PC addresses that took\n"
-	  "\tmost cycles or functions/symbols called most often.\n"
-	  "\tYou can specify how many items are shown at most.";
+	  "<on|off|stats|counts|cycles|symbols|addresses> [show count]\n"
+	  "\t'on' & 'off' enable and disable profiling.  Data is collected\n"
+	  "\tuntil debugger is entered again at which point you get profiling\n"
+	  "\tstatistics ('stats') summary.  Then you can ask for list of the\n"
+	  "\tPC addresses, sorted either by execution 'counts' or 'cycles'\n"
+	  "\tthey used. Former can be limited just to addresses with 'symbols'.\n"
+	  "\t'addresses' lists the profiled addresses in order, with\n"
+	  "\tthe instructions (currently) residing at them.\n"
+	  "\tYou can also give optional limit on how many will be shown.";
 
 
 /**
@@ -870,11 +941,17 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 		} else {
 			Profile_CpuShowCounts(show, false);
 		}
-	} else if (strcmp(psArgs[1], "symbols") == 0)	{
+	} else if (strcmp(psArgs[1], "symbols") == 0) {
 		if (bForDsp) {
 			Profile_DspShowCounts(show, true);
 		} else {
 			Profile_CpuShowCounts(show, true);
+		}
+	} else if (strcmp(psArgs[1], "addresses") == 0) {
+		if (bForDsp) {
+			Profile_DspShowAddresses(show);
+		} else {
+			Profile_CpuShowAddresses(show);
 		}
 	} else {
 		DebugUI_PrintCmdHelp(psArgs[0]);
