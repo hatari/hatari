@@ -40,7 +40,7 @@ do
     ;;
     --prefix)
       prefix=${1##*=}		# get part after =
-      cmake_args="$cmake_cmd -DCMAKE_INSTALL_PREFIX:PATH=$prefix"
+      cmake_args="$cmake_args -DCMAKE_INSTALL_PREFIX:PATH=$prefix"
     ;;
     --enable-debug)
       build_type="Debug"

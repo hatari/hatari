@@ -905,7 +905,7 @@ int DebugInfo_Command(int nArgc, char *psArgs[])
 		}
 	}
 
-	if (infotable[sub].args) {
+	if (sub >= 0 && infotable[sub].args) {
 		/* value needs callback specific conversion */
 		value = infotable[sub].args(nArgc-2, psArgs+2);
 		ok = !!value;
