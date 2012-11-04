@@ -495,6 +495,15 @@ static int DebugCpu_Continue(int nArgc, char *psArgv[])
 	return DEBUGGER_END;
 }
 
+/**
+ * Command: Single-step CPU
+ */
+static int DebugCpu_Step(int nArgc, char *psArgv[])
+{
+	nCpuSteps = 1;
+	return DEBUGGER_END;
+}
+
 
 /**
  * This function is called after each CPU instruction when debugging is enabled.
@@ -602,7 +611,7 @@ static const dbgcommand_t cpucommands[] =
 	  "\tLoad the file <filename> into memory starting at <address>.",
 	  false },
 	{ DebugCpu_SaveBin, NULL,
-	  "savebin", "s",
+	  "savebin", "",
 	  "save memory to a file",
 	  "filename address length\n"
 	  "\tSave the memory block at <address> with given <length> to\n"
@@ -612,6 +621,12 @@ static const dbgcommand_t cpucommands[] =
 	  "symbols", "",
 	  "load CPU symbols & their addresses",
 	  Symbols_Description,
+	  false },
+	{ DebugCpu_Step, NULL,
+	  "step", "s",
+	  "single-step CPU",
+	  "\n"
+	  "\tExecute next CPU instruction (same as 'c 1')",
 	  false },
 	{ DebugCpu_Continue, NULL,
 	  "cont", "c",

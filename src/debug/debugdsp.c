@@ -293,6 +293,15 @@ static int DebugDsp_Continue(int nArgc, char *psArgv[])
 	return DEBUGGER_END;
 }
 
+/**
+ * Command: Single-step DSP
+ */
+static int DebugDsp_Step(int nArgc, char *psArgv[])
+{
+	nDspSteps = 1;
+	return DEBUGGER_END;
+}
+
 
 /**
  * DSP wrapper for BreakAddr_Command().
@@ -413,6 +422,12 @@ static const dbgcommand_t dspcommands[] =
 	  "[REG=value]"
 	  "\tSet or dump contents of DSP registers.",
 	  true },
+	{ DebugDsp_Step, NULL,
+	  "dspstep", "ds",
+	  "single-step DSP",
+	  "\n"
+	  "\tExecute next DSP instruction (equals 'dc 1')\n",
+	  false },
 	{ DebugDsp_Continue, NULL,
 	  "dspcont", "dc",
 	  "continue emulation / DSP single-stepping",
