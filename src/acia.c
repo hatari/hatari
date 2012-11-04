@@ -199,7 +199,7 @@ static Uint8 		ACIA_Get_Line_CTS_Dummy ( void );
 static Uint8 		ACIA_Get_Line_DCD_Dummy ( void );
 static void		ACIA_Set_Line_RTS_Dummy ( int bit );
 
-static void		ACIA_Set_Timers ( void *pACIA );
+static void		ACIA_Set_Timers_IKBD ( void *pACIA );
 static void		ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int InternalCycleOffset );
 
 static void		ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR );
@@ -263,7 +263,6 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 	{
 		/* Set the default common callback functions */
 		pAllACIA[ i ].Set_Line_IRQ = ACIA_Set_Line_IRQ_MFP;
-		pAllACIA[ i ].Set_Timers = ACIA_Set_Timers;
 		pAllACIA[ i ].Get_Line_CTS = ACIA_Get_Line_CTS_Dummy;
 		pAllACIA[ i ].Get_Line_DCD = ACIA_Get_Line_DCD_Dummy;
 		pAllACIA[ i ].Set_Line_RTS = ACIA_Set_Line_RTS_Dummy;
@@ -274,6 +273,9 @@ static void	ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA )
 
 	pACIA_IKBD = &(pAllACIA[ 0 ]);
 	pACIA_MIDI = &(pAllACIA[ 1 ]);
+
+	pACIA_IKBD->Set_Timers = ACIA_Set_Timers_IKBD;
+//	pACIA_MIDI->Set_Timers = ACIA_Set_Timers_MIDI;			/* Not used for now */
 }
 
 
@@ -414,7 +416,7 @@ static void	ACIA_Set_Line_RTS_Dummy ( int bit )
  * value.
  * When CR is changed with a new CR_DIVIDE value, we restart the timers.
  */
-static void	ACIA_Set_Timers ( void *pACIA )
+static void	ACIA_Set_Timers_IKBD ( void *pACIA )
 {
 	ACIA_Start_InterruptHandler_IKBD ( (ACIA_STRUCT *)pACIA , 0 );
 }
