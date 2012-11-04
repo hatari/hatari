@@ -75,6 +75,9 @@ const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "tos.h"
 
+#if ENABLE_WINUAE_CPU
+#include "mmu_common.h"
+#endif
 
 Uint32 BusErrorAddress;         /* Stores the offending address for bus-/address errors */
 Uint32 BusErrorPC;              /* Value of the PC when bus error occurs */
@@ -425,6 +428,12 @@ void M68000_BusError(Uint32 addr, bool bRead)
 	{
 		BusErrorAddress = addr;				/* Store for exception frame */
 		bBusErrorReadWrite = bRead;
+#if ENABLE_WINUAE_CPU
+		if (currprefs.mmu_model) {
+			THROW(2);
+			return;
+		}
+#endif
 		M68000_SetSpecial(SPCFLAG_BUSERROR);		/* The exception will be done in newcpu.c */
 	}
 }

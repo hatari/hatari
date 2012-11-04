@@ -1068,19 +1068,21 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
         
         /* Fetch next descriptor */
         descr_num++;
-        descr_addr[descr_num] = table_addr + table_index * next_size;
-        if (next_size==4) {
-            descr[0] = phys_get_long(descr_addr[descr_num]);
-            write_log("Next descriptor: %08X\n",descr[0]);
-        } else {
-            descr[0] = phys_get_long(descr_addr[descr_num]);
-            descr[1] = phys_get_long(descr_addr[descr_num]+4);
-            write_log("Next descriptor: %08X%08X\n",descr[0],descr[1]);
-        }
-        /* Check if a bus error occured */
-        if (regs.spcflags&SPCFLAG_BUSERROR) {
+        descr_addr[descr_num] = table_addr+(table_index*next_size);
+        TRY(prb) {
+            if (next_size==4) {
+                descr[0] = phys_get_long(descr_addr[descr_num]);
+                write_log("Next descriptor: %08X\n",descr[0]);
+            } else {
+                descr[0] = phys_get_long(descr_addr[descr_num]);
+                descr[1] = phys_get_long(descr_addr[descr_num]+4);
+                write_log("Next descriptor: %08X%08X\n",descr[0],descr[1]);
+            }
+        } CATCH(prb) {
+            /* Check if a bus error occured */
             goto bus_error_read;
-        }
+        } ENDTRY
+        
         descr_size = next_size;
         
         /* Check descriptor type */
@@ -1111,11 +1113,12 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
             /* Set the updated bit */
             if (!level && !(descr[0]&DESCR_U) && !(mmu030.status&MMUSR_SUPER_VIOLATION)) {
                 descr[0] |= DESCR_U;
-                phys_put_long(descr_addr[descr_num], descr[0]);
-                /* check if a bus error occured */
-                if (regs.spcflags&SPCFLAG_BUSERROR) {
+                TRY(prb) {
+                    phys_put_long(descr_addr[descr_num], descr[0]);
+                } CATCH(prb) {
+                    /* check if a bus error occured */
                     goto bus_error_write;
-                }
+                } ENDTRY
             }
             /* Update status bits */
             if (descr_size==8) {
@@ -1156,19 +1159,21 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
         
         /* Fetch next descriptor */
         descr_num++;
-        descr_addr[descr_num] = table_addr + table_index * next_size;
-        if (next_size==4) {
-            descr[0] = phys_get_long(descr_addr[descr_num]);
-            write_log("Next descriptor: %08X\n",descr[0]);
-        } else {
-            descr[0] = phys_get_long(descr_addr[descr_num]);
-            descr[1] = phys_get_long(descr_addr[descr_num]+4);
-            write_log("Next descriptor: %08X%08X\n",descr[0],descr[1]);
-        }
-        /* Check if a bus error occured */
-        if (regs.spcflags&SPCFLAG_BUSERROR) {
+        descr_addr[descr_num] = table_addr+(table_index*next_size);
+        TRY(prb) {
+            if (next_size==4) {
+                descr[0] = phys_get_long(descr_addr[descr_num]);
+                write_log("Next descriptor: %08X\n",descr[0]);
+            } else {
+                descr[0] = phys_get_long(descr_addr[descr_num]);
+                descr[1] = phys_get_long(descr_addr[descr_num]+4);
+                write_log("Next descriptor: %08X%08X\n",descr[0],descr[1]);
+            }
+        } CATCH(prb) {
+            /* Check if a bus error occured */
             goto bus_error_read;
-        }
+        } ENDTRY
+        
         descr_size = next_size;
         
         /* Check descriptor type */
@@ -1210,18 +1215,20 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     /* Fetch indirect descriptor */
     descr_num++;
     descr_addr[descr_num] = indirect_addr;
-    if (next_size==4) {
-        descr[0] = phys_get_long(descr_addr[descr_num]);
-        write_log("descr = %08X\n",descr[0]);
-    } else {
-        descr[0] = phys_get_long(descr_addr[descr_num]);
-        descr[1] = phys_get_long(descr_addr[descr_num]+4);
-        write_log("descr = %08X%08X",descr[0],descr[1]);
-    }
-    /* Check if a bus error occured */
-    if (regs.spcflags&SPCFLAG_BUSERROR) {
+    TRY(prb) {
+        if (next_size==4) {
+            descr[0] = phys_get_long(descr_addr[descr_num]);
+            write_log("descr = %08X\n",descr[0]);
+        } else {
+            descr[0] = phys_get_long(descr_addr[descr_num]);
+            descr[1] = phys_get_long(descr_addr[descr_num]+4);
+            write_log("descr = %08X%08X",descr[0],descr[1]);
+        }
+    } CATCH(prb) {
+        /* Check if a bus error occured */
         goto bus_error_read;
-    }
+    } ENDTRY
+    
     descr_size = next_size;
     
     /* Check descriptor type, only page descriptor is valid */
@@ -1247,10 +1254,11 @@ handle_page_descriptor:
             }
             /* write modified descriptor if neccessary */
             if (descr_modified) {
-                phys_put_long(descr_addr[descr_num], descr[0]);
-                if (regs.spcflags&SPCFLAG_BUSERROR) {
+                TRY(prb) {
+                    phys_put_long(descr_addr[descr_num], descr[0]);
+                } CATCH(prb) {
                     goto bus_error_write;
-                }
+                } ENDTRY
             }
         }
         
@@ -1316,6 +1324,7 @@ bus_error_read:
 bus_error_write:
     mmu030.status |= (MMUSR_BUS_ERROR|MMUSR_INVALID);
     write_log("Bus error during table search!\n");
+    { ENDTRY
         
 stop_search:    
     /* check if we have to handle ptest */
@@ -1475,7 +1484,11 @@ uae_u32 mmu030_ptest_table_search(uaecptr logical_addr, uae_u32 fc, bool write, 
 #define ATC030_PHYS_CI  0x04000000
 #define ATC030_PHYS_BE  0x08000000
 
-
+void mmu030_page_fault(uaecptr addr) {
+    write_log("MMU: page fault (logical addr = %08X)\n", addr);
+    regs.mmu_fault_addr = addr;
+    THROW(2);
+}
 
 void mmu030_put_long_atc(uaecptr addr, uae_u32 val, int l) {
     uae_u32 page_index = addr & mmu030.translation.page.mask;
@@ -1489,8 +1502,7 @@ void mmu030_put_long_atc(uaecptr addr, uae_u32 val, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
-        regs.mmu_fault_addr = addr;
-        THROW(2); //M68000_BusError(addr, 0);
+        mmu030_page_fault(addr);
         return;
     }
 
@@ -1509,8 +1521,7 @@ void mmu030_put_word_atc(uaecptr addr, uae_u16 val, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
-        regs.mmu_fault_addr = addr;
-        THROW(2); //M68000_BusError(addr, 0);
+        mmu030_page_fault(addr);
         return;
     }
 
@@ -1529,8 +1540,7 @@ void mmu030_put_byte_atc(uaecptr addr, uae_u8 val, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error || mmu030.atc[l].physical.write_protect) {
-        regs.mmu_fault_addr = addr;
-        THROW(2); //M68000_BusError(addr, 0);
+        mmu030_page_fault(addr);
         return;
     }
 
@@ -1549,8 +1559,7 @@ uae_u32 mmu030_get_long_atc(uaecptr addr, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error) {
-        regs.mmu_fault_addr = addr;
-        THROW(2); //M68000_BusError(addr, 1);
+        mmu030_page_fault(addr);
         return 0;
     }
 
@@ -1569,8 +1578,7 @@ uae_u16 mmu030_get_word_atc(uaecptr addr, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error) {
-        regs.mmu_fault_addr = addr;
-        THROW(2); //M68000_BusError(addr, 1);
+        mmu030_page_fault(addr);
         return 0;
     }
     
@@ -1589,8 +1597,7 @@ uae_u8 mmu030_get_byte_atc(uaecptr addr, int l) {
     physical_addr += page_index;
     
     if (mmu030.atc[l].physical.bus_error) {
-        regs.mmu_fault_addr = addr;
-        THROW(2); //M68000_BusError(addr, 1);
+        mmu030_page_fault(addr);
         return 0;
     }
 
