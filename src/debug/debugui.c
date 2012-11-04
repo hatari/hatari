@@ -693,13 +693,32 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 		return rl_completion_matches(text, rl_filename_completion_function);
 }
 
+/**
+ * Add non-repeated command to readline history
+ * and free the given string
+ *  @return	its new value
+ */
+static char *DebugUI_FreeCommand(char *input)
+{
+	if (input && *input)
+	{
+		HIST_ENTRY *hist = history_get(history_length);
+		/* don't store duplicate successive entries */
+		if (!hist || !hist->line || strcmp(hist->line, input) != 0)
+		{
+			add_history(input);
+		}
+		free(input);
+	}
+	return NULL;
+}
 
 /**
  * Read a command line from the keyboard and return a pointer to the string.
  * Only string returned by this function can be given for it as argument!
  * The string will be stored into command history buffer.
- * @return	Pointer to the string which should be deallocated after
- *              use or given back to this function for re-use/history.
+ * @return	Pointer to the string which should be given back to this
+ *              function or DebugUI_FreeCommand() for re-use/history.
  *              Returns NULL when error occured.
  */
 static char *DebugUI_GetCommand(char *input)
@@ -709,28 +728,28 @@ static char *DebugUI_GetCommand(char *input)
 	
 	/* Tell the completer that we want a crack first. */
 	rl_attempted_completion_function = DebugUI_Completion;
-
-	if (input && *input)
-	{
-		HIST_ENTRY *hist = previous_history();
-		/* don't store successive duplicate entries */
-		if (!hist || !hist->line || strcmp(hist->line, input) != 0)
-		{
-			add_history(input);
-		}
-		free(input);
-	}
-
+	input = DebugUI_FreeCommand(input);
 	return Str_Trim(readline("> "));
 }
 
 #else /* !HAVE_LIBREADLINE */
 
 /**
+ * Free Command input string
+ *  @return	its new value
+ */
+static char *DebugUI_FreeCommand(char *input)
+{
+	if (input)
+		free(input);
+	return NULL;
+}
+
+/**
  * Read a command line from the keyboard and return a pointer to the string.
  * Only string returned by this function can be given for it as argument!
- * @return	Pointer to the string which should be deallocated after
- *              use or given back to this function for re-use.
+ * @return	Pointer to the string which should be given back to this
+ *              function or DebugUI_FreeCommand() for re-use/freeing.
  *              Returns NULL when error occured.
  */
 static char *DebugUI_GetCommand(char *input)
@@ -967,9 +986,8 @@ void DebugUI(debug_reason_t reason)
 	}
 	while (cmdret != DEBUGGER_END);
 
-	/* free (and ignore) exit command */
-	if (psCmd)
-		free(psCmd);
+	/* free exit command */
+	psCmd = DebugUI_FreeCommand(psCmd);
 
 	Log_SetAlertLevel(alertLevel);
 	DebugUI_SetLogDefault();
