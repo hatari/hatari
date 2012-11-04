@@ -2269,9 +2269,9 @@ static void gen_opcode (unsigned long int opcode)
 		    printf ("\tuae_u16 newsr; uae_u32 newpc;\n");
 			printf ("\tfor (;;) {\n");
 			printf ("\t\tuaecptr a = m68k_areg (regs, 7);\n");
-			printf ("\t\tuae_s16 sr = %s (a);\n", srcw);
-			printf ("\t\tuae_s32 pc = %s (a + 2);\n", srcl);
-			printf ("\t\tuae_s16 format = %s (a + 2 + 4);\n", srcw);
+			printf ("\t\tuae_u16 sr = %s (a);\n", srcw);
+			printf ("\t\tuae_u32 pc = %s (a + 2);\n", srcl);
+			printf ("\t\tuae_u16 format = %s (a + 2 + 4);\n", srcw);
 			printf ("\t\tint frame = format >> 12;\n");
 			printf ("\t\tint offset = 8;\n");
 			printf ("\t\tnewsr = sr; newpc = pc;\n");
