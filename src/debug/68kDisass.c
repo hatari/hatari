@@ -2456,16 +2456,28 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+1, 0);
 			}
 		}
-		fprintf(f, "%s\n", lineBuffer);
+		addr += len;
+		if (f)
+			fprintf(f, "%s\n", lineBuffer);
 //		if(strstr(opcodeBuffer, "RTS") || strstr(opcodeBuffer, "RTE") || strstr(opcodeBuffer, "JMP")
 //		|| strstr(opcodeBuffer, "rts") || strstr(opcodeBuffer, "rte") || strstr(opcodeBuffer, "jmp"))
 //			fprintf(f, "\n");
-		addr += len;
     }
     if (nextpc)
 		*nextpc = addr;
 }
 
+
+/**
+ * Calculate next PC address from given one, without output
+ * @return	next PC address
+ */
+Uint32 Disasm_GetNextPC(Uint32 pc)
+{
+	uaecptr nextpc;
+	Disass68k_loop (NULL, pc, &nextpc, 1);
+	return nextpc;
+}
 
 /**
  * Call disassembly using the selected disassembly method.
