@@ -195,6 +195,38 @@ Uint16 DSP_GetPC(void)
 }
 
 /**
+ * Get next DSP PC without output (for debugging)
+ */
+Uint16 DSP_GetNextPC(Uint16 pc)
+{
+#if ENABLE_DSP_EMU
+	/* code is reduced copy from dsp56k_execute_one_disasm_instruction() */
+	dsp_core_t dsp_core_save;
+	Uint16 instruction_length;
+
+	if (!bDspEnabled)
+		return 0;
+
+	/* Save DSP context */
+	memcpy(&dsp_core_save, &dsp_core, sizeof(dsp_core));
+
+	/* Disasm instruction */
+	dsp_core.pc = pc;
+	/* why dsp56k_execute_one_disasm_instruction() does "-1"
+	 * for this value, that doesn't seem right???
+	 */
+	instruction_length = dsp56k_disasm(DSP_DISASM_MODE);
+
+	/* Restore DSP context */
+	memcpy(&dsp_core, &dsp_core_save, sizeof(dsp_core));
+
+	return pc + instruction_length;
+#else
+	return 0;
+#endif
+}
+
+/**
  * Get current DSP instruction cycles (for profiling)
  */
 Uint16 DSP_GetInstrCycles(void)

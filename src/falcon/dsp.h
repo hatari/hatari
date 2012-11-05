@@ -44,6 +44,7 @@ extern void DSP_MemorySnapShot_Capture(bool bSave);
 /* Dsp Debugger commands */
 extern void DSP_SetDebugging(bool enabled);
 extern Uint16 DSP_GetPC(void);
+extern Uint16 DSP_GetNextPC(Uint16 pc);
 extern Uint16 DSP_GetInstrCycles(void);
 extern Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str);
 extern Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space);
