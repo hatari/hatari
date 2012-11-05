@@ -32,12 +32,12 @@ typedef enum {
 static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoBrackets;
 
 // values <0 will hide the group
-static const int			optionPosAddress = 0;	// current address
-static const int			optionPosHexdump = 10;	// 16-bit words at this address
-static const int			optionPosLabel = 35;	// label, if defined
-static const int			optionPosOpcode = 47;	// opcode
-static const int			optionPosOperand = 57;	// operands for the opcode
-static const int			optionPosComment = 82;	// comment, if defined
+static int			optionPosAddress = 0;	// current address
+static int			optionPosHexdump = 10;	// 16-bit words at this address
+static int			optionPosLabel = 35;	// label, if defined
+static int			optionPosOpcode = 47;	// opcode
+static int			optionPosOperand = 57;	// operands for the opcode
+static int			optionPosComment = 82;	// comment, if defined
 
 /***
  *	Motorola 16-/32-Bit Microprocessor and coprocessor types
@@ -2466,11 +2466,11 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 }
 
 
-/*
- * Disasm should be called from Hatari's sources to use either uae's built in
- * disassembler (DISASM_ENGINE_UAE) or the stand alone disassembler above (DISASM_ENGINE_EXT)
+/**
+ * Call disassembly using the selected disassembly method.
+ * Disassemly methods are either uae's built in disassembler (DISASM_ENGINE_UAE)
+ * or the stand alone disassembler above (DISASM_ENGINE_EXT)
  */
-
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine)
 {
   if ( DisasmEngine == DISASM_ENGINE_UAE )
@@ -2479,3 +2479,95 @@ void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine)
 	return Disass68k_loop (f, addr, nextpc, cnt);
 }
 
+
+/**
+ * query disassembly output column positions.
+ */
+void Disasm_GetColumns(int *pos)
+{
+	pos[DISASM_COLUMN_ADDRESS] = optionPosAddress;
+	pos[DISASM_COLUMN_HEXDUMP] = optionPosHexdump;
+	pos[DISASM_COLUMN_LABEL]   = optionPosLabel;
+	pos[DISASM_COLUMN_OPCODE]  = optionPosOpcode;
+	pos[DISASM_COLUMN_OPERAND] = optionPosOperand;
+	pos[DISASM_COLUMN_COMMENT] = optionPosComment;
+}
+
+/**
+ * set disassembly output column positions.
+ */
+void Disasm_SetColumns(int *pos)
+{
+	optionPosAddress = pos[DISASM_COLUMN_ADDRESS];
+	optionPosHexdump = pos[DISASM_COLUMN_HEXDUMP];
+	optionPosLabel   = pos[DISASM_COLUMN_LABEL];
+	optionPosOpcode  = pos[DISASM_COLUMN_OPCODE];
+	optionPosOperand = pos[DISASM_COLUMN_OPERAND];
+	optionPosComment = pos[DISASM_COLUMN_COMMENT];
+}
+
+/**
+ * function to disable given disassembly output 'column'.
+ * input is current column positions in 'oldcols' and output
+ * is new column positions/values in 'newcols'.
+ */
+void Disasm_DisableColumn(int column, int *oldcols, int *newcols)
+{
+	int i, diff;
+
+	/* verify columns are in numeric order */
+	assert(column >= 0 && column < DISASM_COLUMNS);
+	for (i = 1; i < DISASM_COLUMNS; i++)
+	{
+		if (oldcols[i-1] > oldcols[i])
+		{
+			printf("WARNING: disassembly columns aren't in the expected order!\n");
+			return;
+		}
+	}
+	/* disable given column from disassembly and move rest of cols left */
+	newcols[column] = DISASM_COLUMN_DISABLE;
+	diff = oldcols[column+1] - oldcols[column];
+	for (i = column+1; i < DISASM_COLUMNS; i++)
+		newcols[i] = oldcols[i] - diff;
+}
+
+/**
+ * Get current disassembly output option flags
+ * @return	current output flags
+ */
+int Disasm_GetOptions(void)
+{
+	return options;
+}
+
+/**
+ * Set new disassembly output option flags
+ */
+void Disasm_SetOptions(int newoptions)
+{
+	options = newoptions;
+}
+
+/**
+ * Show disassembly output option flag descriptions,
+ * each line prefixed with 'prefix'
+ */
+void Disasm_OptionHelp(const char *prefix)
+{
+	const struct {
+		int flag;
+		const char *desc;
+	} option[] = {
+		{ doptNoBrackets, "no brackets around absolute addressing" },
+		{ doptOpcodesSmall, "opcodes in small letters" },
+		{ doptRegisterSmall, "register names in small letters" },
+		{ doptStackSP, "stack pointer as 'SP', not 'A7'" },
+		{ 0, NULL }
+	};
+	int i;
+	for (i = 0; option[i].desc; i++) {
+		assert(option[i].flag == (1 << i));
+		fprintf(stderr, "%s%d: %s\n", prefix, option[i].flag, option[i].desc);
+	}
+}
