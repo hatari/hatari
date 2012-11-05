@@ -26,10 +26,18 @@ Emulator:
 - Fileselector remembers previous position which is nicer with large directories
 - Debugger:
   - Fix: profiler assert on invalid PC register values
-  - Fix: expression expansion doesn't mess lines in command line history
+  - Fix: info command crash (triggered on NetBSD)
+  - Fix: debugger history duplicate removal
+  - Fix: expression expansion messing lines in command line history
   - Also remote API debugger commands can use expression expansion
-  - Either single or double quotes can be used to mark expressions
+  - Both single or double quotes can be used to mark expressions
     (above two features make temporary debug output easier within Hatari)
+  - "step" and "next" commands for single stepping CPU and DSP code
+    -> changes 's' shortcut use for saving for stepping
+  - "profile addresses" can be used to see addresses through which
+    code passed during profiling (gives e.g. much better overview of
+    code that is being run while program seems frozen than cpu trace)
+  - "setopt disasm" can be used to set disassembly output flags
   - output what value was set by options if it's not otherwise shown by UI
   - Show function arguments (for values in intin and strings in addrin arrays)
     in AES traces

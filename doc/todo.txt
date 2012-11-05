@@ -136,8 +136,6 @@ Other potential Hatari functionality improvements
 	  (= Steem Stack display)
 	- Text string and binary values (hex) search
 	  (= widgets in Steem monitor windows)
-	- Disasm format options being changable at run-time
-	  (= Steem options)
 	- Run for N cycles
 	  (Hatari 'continue' command accepts only instructions, not cycles)
 
