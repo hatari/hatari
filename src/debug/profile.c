@@ -175,6 +175,7 @@ void Profile_CpuShowStats(void)
  */
 static void Profile_CpuShowAddresses(unsigned int show)
 {
+	int oldcols[DISASM_COLUMNS], newcols[DISASM_COLUMNS];
 	unsigned int shown, idx;
 	profile_item_t *data;
 	uaecptr nextpc, addr;
@@ -193,6 +194,11 @@ static void Profile_CpuShowAddresses(unsigned int show)
 		show = active;
 	}
 
+	/* get/change columns */
+	Disasm_GetColumns(oldcols);
+	Disasm_DisableColumn(DISASM_COLUMN_HEXDUMP, oldcols, newcols);
+	Disasm_SetColumns(newcols);
+
 	nextpc = 0;
 	for (shown = idx = 0; shown < show && idx < size; idx++) {
 		if (!data[idx].count) {
@@ -210,6 +216,9 @@ static void Profile_CpuShowAddresses(unsigned int show)
 		shown++;
 	}
 	printf("Disassembled %d (of active %d) CPU addresses.\n", show, active);
+
+	/* restore disassembly columns */
+	Disasm_SetColumns(oldcols);
 }
 
 
