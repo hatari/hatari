@@ -90,10 +90,10 @@ static inline Uint32 address2index(Uint32 pc)
 
 
 /**
- * Get CPU cycles & count for given address.
+ * Get CPU cycles, count and count percentage for given address.
  * Return true if data was available and non-zero, false otherwise.
  */
-bool Profile_CpuAddressData(Uint32 addr, Uint32 *count, Uint32 *cycles)
+bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles)
 {
 	Uint32 idx;
 	if (!cpu_profile.data) {
@@ -102,6 +102,7 @@ bool Profile_CpuAddressData(Uint32 addr, Uint32 *count, Uint32 *cycles)
 	idx = address2index(addr);
 	*cycles = cpu_profile.data[idx].cycles;
 	*count = cpu_profile.data[idx].count;
+	*percentage = 100.0*(*count)/cpu_profile.all_count;
 	return (*count > 0);
 }
 
@@ -542,16 +543,17 @@ void Profile_CpuStop(void)
 /* ------------------ DSP profile results ----------------- */
 
 /**
- * Get DSP cycles & count for given address.
+ * Get DSP cycles, count and count percentage for given address.
  * Return true if data was available and non-zero, false otherwise.
  */
-bool Profile_DspAddressData(Uint16 addr, Uint32 *count, Uint32 *cycles)
+bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint32 *count, Uint32 *cycles)
 {
 	if (!dsp_profile.data) {
 		return false;
 	}
 	*cycles = dsp_profile.data[addr].cycles;
 	*count = dsp_profile.data[addr].count;
+	*percentage = 100.0*(*count)/dsp_profile.ram.all_count;
 	return (*count > 0);
 }
 
