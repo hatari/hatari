@@ -302,6 +302,21 @@ static int DebugDsp_Step(int nArgc, char *psArgv[])
 	return DEBUGGER_END;
 }
 
+/**
+ * Command: Step DSP, but proceed through subroutines
+ * Does this by temporary conditional breakpoint
+ */
+static int DebugDsp_Next(int nArgc, char *psArgv[])
+{
+	char command[32];
+	Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
+	sprintf(command, "pc=$%x :once\n", nextpc);
+	if (BreakCond_Command(command, true)) {
+		return DEBUGGER_END;
+	}
+	return DEBUGGER_CMDDONE;
+}
+
 
 /**
  * DSP wrapper for BreakAddr_Command().
@@ -426,7 +441,14 @@ static const dbgcommand_t dspcommands[] =
 	  "dspstep", "ds",
 	  "single-step DSP",
 	  "\n"
-	  "\tExecute next DSP instruction (equals 'dc 1')\n",
+	  "\tExecute next DSP instruction (equals 'dc 1')",
+	  false },
+	{ DebugDsp_Next, NULL,
+	  "dspnext", "dn",
+	  "step DSP, proceeding through subroutine calls",
+	  "\n"
+	  "\tLike the 'dspstep' command as long as subroutine calls do not\n"
+          "\thappen. When they do, the call is treated as one instruction.",
 	  false },
 	{ DebugDsp_Continue, NULL,
 	  "dspcont", "dc",

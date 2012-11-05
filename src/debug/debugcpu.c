@@ -504,6 +504,21 @@ static int DebugCpu_Step(int nArgc, char *psArgv[])
 	return DEBUGGER_END;
 }
 
+/**
+ * Command: Step CPU, but proceed through subroutines
+ * Does this by temporary conditional breakpoint
+ */
+static int DebugCpu_Next(int nArgc, char *psArgv[])
+{
+	char command[32];
+	Uint32 nextpc = Disasm_GetNextPC(M68000_GetPC());
+	sprintf(command, "pc=$%x :once\n", nextpc);
+	if (BreakCond_Command(command, false)) {
+		return DEBUGGER_END;
+	}
+	return DEBUGGER_CMDDONE;
+}
+
 
 /**
  * This function is called after each CPU instruction when debugging is enabled.
@@ -626,7 +641,14 @@ static const dbgcommand_t cpucommands[] =
 	  "step", "s",
 	  "single-step CPU",
 	  "\n"
-	  "\tExecute next CPU instruction (same as 'c 1')",
+	  "\tExecute next CPU instruction (equals 'c 1')",
+	  false },
+	{ DebugCpu_Next, NULL,
+	  "next", "n",
+	  "step CPU, proceeding through subroutine calls",
+	  "\n"
+	  "\tLike the 'step' command as long as subroutine calls do not\n"
+          "\thappen. When they do, the call is treated as one instruction.",
 	  false },
 	{ DebugCpu_Continue, NULL,
 	  "cont", "c",
