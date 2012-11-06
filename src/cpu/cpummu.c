@@ -1051,10 +1051,11 @@ static jmp_buf s_try_stack[MAX_TRY_STACK];
 jmp_buf* __poptry(void) {
 	if (s_try_stack_size>0) {
 			s_try_stack_size--;
-			if (s_try_stack_size>0)
-				memcpy(&__exbuf,&s_try_stack[s_try_stack_size-1],sizeof(jmp_buf));
+			if (s_try_stack_size == 0)
+				return NULL;
+			memcpy(&__exbuf,&s_try_stack[s_try_stack_size-1],sizeof(jmp_buf));
 			// fprintf(stderr,"pop jmpbuf=%08x\n",s_try_stack[s_try_stack_size][0]);
-			return &s_try_stack[s_try_stack_size];
+			return &s_try_stack[s_try_stack_size-1];
 		}
 	else {
 		fprintf(stderr,"try stack underflow...\n");
