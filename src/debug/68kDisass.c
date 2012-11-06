@@ -557,8 +557,9 @@ static const char *Disass68kSpecialRegister(int reg)
 	case REG_FPU_FPIAR:		sp = "FPIAR"; break;
 
 	// unknown register => unknown opcode!
-	default:		break;
+	default:		return NULL;
 	}
+
 	if(options & doptRegisterSmall)
 	{
 		strcpy(buf, sp);
