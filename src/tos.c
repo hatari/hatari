@@ -445,8 +445,10 @@ bool TOS_AutoStartClose(FILE *fp)
  */
 static void TOS_CheckSysConfig(void)
 {
+	int oldCpuLevel = ConfigureParams.System.nCpuLevel;
 	MACHINETYPE oldMachineType = ConfigureParams.System.nMachineType;
-	if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
+	if (((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
+	    || (TosVersion == 0x0162 && ConfigureParams.System.nCpuLevel != 0))
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
 		             " ==> Switching to STE mode now.\n");
@@ -488,7 +490,7 @@ static void TOS_CheckSysConfig(void)
 	{
 		Log_AlertDlg(LOG_ERROR, "TOS versions <= 1.4 work only in\n"
 		             "ST mode and with a 68000 CPU.\n"
-		             " ==> Switching to ST mode now.\n");
+		             " ==> Switching to ST mode with 68000 now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_ST;
 		ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
@@ -508,11 +510,17 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nCpuFreq = 8;
 		ConfigureParams.System.nCpuLevel = 0;
 	}
-	else if (TosVersion >= 0x0300 && ConfigureParams.System.nCpuLevel < 2)
+	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nCpuLevel < 2)
 	{
-		Log_AlertDlg(LOG_ERROR, "This TOS version requires a CPU >= 68020.\n"
+		Log_AlertDlg(LOG_ERROR, "TOS versions 4.x require a CPU >= 68020.\n"
 		             " ==> Switching to 68020 mode now.\n");
 		ConfigureParams.System.nCpuLevel = 2;
+	}
+	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nCpuLevel < 3)
+	{
+		Log_AlertDlg(LOG_ERROR, "TOS versions 3.0x require a CPU >= 68030.\n"
+		             " ==> Switching to 68030 mode now.\n");
+		ConfigureParams.System.nCpuLevel = 3;
 	}
 	/* TOS version triggered changes? */
 	if (ConfigureParams.System.nMachineType != oldMachineType)
@@ -531,6 +539,10 @@ static void TOS_CheckSysConfig(void)
 			ConfigureParams.System.bMMU = false;
 		}
 #endif
+		M68000_CheckCpuSettings();
+	}
+	else if (ConfigureParams.System.nCpuLevel != oldCpuLevel)
+	{
 		M68000_CheckCpuSettings();
 	}
 	if (TosVersion < 0x0104 && ConfigureParams.HardDisk.bUseHardDiskDirectories)
