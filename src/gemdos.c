@@ -2265,7 +2265,26 @@ static int GemDOS_Pexec(Uint32 Params)
 	/* Find PExec mode */
 	Mode = STMemory_ReadWord(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4B Pexec(%i, ...)\n", Mode);
+	if (LOG_TRACE_LEVEL(TRACE_OS_GEMDOS))
+	{
+		Uint32 fname, cmdline, environ;
+		fname = STMemory_ReadLong(Params+SIZE_WORD);
+		cmdline = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
+		environ = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
+		if (Mode == 0 || Mode == 3)
+		{
+			int cmdlen;
+			const char *name, *cmd;
+			name = (const char *)STRAM_ADDR(fname);
+			cmd = (const char *)STRAM_ADDR(cmdline);
+			cmdlen = *cmd++;
+			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x)\n", Mode, name, cmdlen, cmdlen?cmd:"", environ);
+		}
+		else
+		{
+			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x)\n", Mode, fname, cmdline, environ);
+		}
+	}
 
 	/* Re-direct as needed */
 	switch(Mode)
@@ -2817,7 +2836,7 @@ void GemDOS_OpCode(void)
 		Params = regs.usp;
 	else
 	{
-		Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;  /* super stack */
+		Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;  /* skip SR & PC pushed to super stack */
 		if (currprefs.cpu_level > 0)
 			Params += SIZE_WORD;   /* Skip extra word whe CPU is >=68010 */
 	}
