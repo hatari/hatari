@@ -322,22 +322,25 @@ static void BreakCond_ShowTracked(bc_condition_t *condition, int count)
 
 
 /**
- * Return which of the given condition breakpoints match
- * or zero if none matched
+ * Show all breakpoints which conditions matched and return which matched
+ * @return	index to last matching (non-tracing) breakpoint,
+ *		or zero if none matched
  */
 static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char *name)
 {
-	bool for_dsp;
-	int i, ret;
-	
+	int i, ret = 0;
+
 	for (i = 0; i < count; bp++, i++) {
 
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
+			bool for_dsp;
 
 			bp->hits++;
-			if (bp->options.skip &&
-			    (bp->hits % bp->options.skip) == 0) {
-				return 0;
+			if (bp->options.skip) {
+				if (bp->hits % bp->options.skip) {
+					/* check next */
+					continue;
+				}
 			}
 			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
 				i+1, name, bp->hits);
@@ -357,23 +360,22 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			if (bp->options.filename) {
 				DebugUI_ParseFile(bp->options.filename);
 			}
-
-			if (bp->options.trace) {
-				ret = 0;
-			} else {
-				/* indexes for BreakCond_Remove() start from 1 */
-				ret = i + 1;
-			}
 			
 			BreakCond_Print(bp);
 			BreakCond_ShowTracked(bp->conditions, bp->ccount);
+
 			if (bp->options.once) {
 				BreakCond_Remove(i+1, for_dsp);
+				count--;
 			}
-			return ret;
+			if (!bp->options.trace) {
+				/* index for current hit (BreakCond_Remove() indexes start from 1) */
+				ret = i + 1;
+			}
+			/* continue checking breakpoints to make sure all relevant actions get performed */
 		}
 	}
-	return 0;
+	return ret;
 }
 
 /* ------------- breakpoint condition checking, public API ------------- */
