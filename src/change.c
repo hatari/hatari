@@ -103,15 +103,21 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	/* Did change machine type? */
 	if (changed->System.nMachineType != current->System.nMachineType)
 		return true;
+	/* did change ST Blitter? */
+	else if (current->System.nMachineType == MACHINE_ST &&
+		 current->System.bBlitter != changed->System.bBlitter)
+		return true;
 
 #if ENABLE_DSP_EMU
 	/* enabling DSP needs reset (disabling it not) */
 	if (current->System.nDSPType != DSP_TYPE_EMU &&
 	    changed->System.nDSPType == DSP_TYPE_EMU)
-	{
 		return true;
-	}
 #endif
+
+	/* did change CPU type? */
+	if (changed->System.nCpuLevel != current->System.nCpuLevel)
+		return true;
 
 #if ENABLE_WINUAE_CPU
 	/* Did change CPU address mode? */
