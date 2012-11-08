@@ -13,6 +13,7 @@
 #include "config.h"
 #include "sysdeps.h"
 #include "main.h"
+#include "configuration.h"
 #include "newcpu.h"
 #include "paths.h"
 #include "profile.h"
@@ -2487,12 +2488,21 @@ Uint32 Disasm_GetNextPC(Uint32 pc)
  */
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine)
 {
-  if ( DisasmEngine == DISASM_ENGINE_UAE )
-	return m68k_disasm (f, addr, nextpc, cnt);
-  else if ( DisasmEngine == DISASM_ENGINE_EXT )
-	return Disass68k_loop (f, addr, nextpc, cnt);
+	if ( DisasmEngine == DISASM_ENGINE_UAE )
+		return m68k_disasm (f, addr, nextpc, cnt);
+	else if ( DisasmEngine == DISASM_ENGINE_EXT )
+		return Disass68k_loop (f, addr, nextpc, cnt);
+	else
+		fprintf(stderr, "Warning: unrecognized Disasm engine %d, valid values are %d & %d!\n",
+			DisasmEngine, DISASM_ENGINE_UAE, DISASM_ENGINE_EXT);
 }
 
+static void Disasm_CheckOptionEngine(void)
+{
+	if (ConfigureParams.Debugger.nDisasmEngine != DISASM_ENGINE_EXT)
+		fprintf(stderr, "Warning: disassembly options are supported only for DisasmEngine=%d!\n",
+		       DISASM_ENGINE_EXT);
+}
 
 /**
  * query disassembly output column positions.
@@ -2512,6 +2522,7 @@ void Disasm_GetColumns(int *pos)
  */
 void Disasm_SetColumns(int *pos)
 {
+	Disasm_CheckOptionEngine();
 	optionPosAddress = pos[DISASM_COLUMN_ADDRESS];
 	optionPosHexdump = pos[DISASM_COLUMN_HEXDUMP];
 	optionPosLabel   = pos[DISASM_COLUMN_LABEL];
@@ -2560,6 +2571,7 @@ int Disasm_GetOptions(void)
  */
 void Disasm_SetOptions(int newoptions)
 {
+	Disasm_CheckOptionEngine();
 	options = newoptions;
 }
 

@@ -17,6 +17,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include "config.h"
 #include "main.h"
+#include "configuration.h"
 #include "file.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
@@ -1810,7 +1811,7 @@ bool BreakAddr_Command(char *args, bool bForDsp)
 		DSP_DisasmAddress(addr, addr);
 	} else {
 		uaecptr dummy;
-		Disasm(stderr, (uaecptr)addr, &dummy, 1, DISASM_ENGINE_EXT);
+		Disasm(stderr, (uaecptr)addr, &dummy, 1, ConfigureParams.Debugger.nDisasmEngine);
 	}
 	return true;
 }

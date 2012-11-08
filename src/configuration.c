@@ -28,6 +28,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "video.h"
 #include "avi_record.h"
 #include "clocks_timings.h"
+#include "68kDisass.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -52,6 +53,7 @@ static const struct Config_Tag configs_Debugger[] =
 	{ "nNumberBase", Int_Tag, &ConfigureParams.Debugger.nNumberBase },
 	{ "nDisasmLines", Int_Tag, &ConfigureParams.Debugger.nDisasmLines },
 	{ "nMemdumpLines", Int_Tag, &ConfigureParams.Debugger.nMemdumpLines },
+	{ "nDisasmEngine", Int_Tag, &ConfigureParams.Debugger.nDisasmEngine },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -380,6 +382,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.nNumberBase = 10;
 	ConfigureParams.Debugger.nDisasmLines = 8;
 	ConfigureParams.Debugger.nMemdumpLines = 8;
+	/* this one has nicer output, but isn't as complete as UAE one */
+	ConfigureParams.Debugger.nDisasmEngine = DISASM_ENGINE_EXT;
 
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
