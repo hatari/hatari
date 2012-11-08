@@ -514,6 +514,7 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 	Uint32 nextpc = Disasm_GetNextPC(M68000_GetPC());
 	sprintf(command, "pc=$%x :once\n", nextpc);
 	if (BreakCond_Command(command, false)) {
+		nCpuSteps = 0;		/* using breakpoint, not steps */
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
@@ -536,11 +537,18 @@ void DebugCpu_Check(void)
 	if (nCpuActiveCBs)
 	{
 		if (BreakCond_MatchCpu())
+		{
 			DebugUI(REASON_CPU_BREAKPOINT);
+			/* make sure we don't decrease step count
+			 * below, before even even getting out of here
+			 */
+			if (nCpuSteps)
+				nCpuSteps++;
+		}
 	}
 	if (nCpuSteps)
 	{
-		nCpuSteps -= 1;
+		nCpuSteps--;
 		if (nCpuSteps == 0)
 			DebugUI(REASON_CPU_STEPS);
 	}

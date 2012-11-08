@@ -312,6 +312,7 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 	Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
 	sprintf(command, "pc=$%x :once\n", nextpc);
 	if (BreakCond_Command(command, true)) {
+		nDspSteps = 0;		/* using breakpoint, not steps */
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
@@ -362,11 +363,18 @@ void DebugDsp_Check(void)
 	if (nDspActiveCBs)
 	{
 		if (BreakCond_MatchDsp())
+		{
 			DebugUI(REASON_DSP_BREAKPOINT);
+			/* make sure we don't decrease step count
+			 * below, before even getting out of here
+			 */
+			if (nDspSteps)
+				nDspSteps++;
+		}
 	}
 	if (nDspSteps)
 	{
-		nDspSteps -= 1;
+		nDspSteps--;
 		if (nDspSteps == 0)
 			DebugUI(REASON_DSP_STEPS);
 	}
