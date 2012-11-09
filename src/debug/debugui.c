@@ -329,23 +329,6 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 	}
 	arg = argv[1];
 
-	if (strcasecmp(arg, "disasm") == 0)
-	{
-		int oldopt = Disasm_GetOptions();
-		if (argc >= 3)
-		{
-			int newopt = atoi(argv[2]);
-			Disasm_SetOptions(newopt);
-			fprintf(stderr, "Changed CPU disassembly output flags from %d to %d.\n", oldopt, newopt);
-		}
-		else
-		{
-			fprintf(stderr, "Current CPU disassembly output flags are %d, out of:\n", oldopt);
-			Disasm_OptionHelp("\t");
-		}
-		return DEBUGGER_CMDDONE;
-	}
-
 	for (i = 0; i < ARRAYSIZE(bases); i++)
 	{
 		if (strcasecmp(bases[i].name, arg) == 0)
@@ -861,12 +844,11 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_SetOptions, Opt_MatchOption,
 	  "setopt", "o",
 	  "set Hatari command line and debugger options",
-	  "[bin|dec|hex|disasm <bitmask>|<command line options>]\n"
+	  "[bin|dec|hex|<command line options>]\n"
 	  "\tSet Hatari options. For example to enable exception catching,\n"
 	  "\tuse following command line option: 'setopt --debug'. Special\n"
 	  "\t'bin', 'dec' and 'hex' arguments change the default number base\n"
-	  "\tused in debugger. 'disasm' sets CPU disassembly output option\n"
-	  "\tflags with argument, without it, it shows flag value descriptions.",
+	  "\tused in debugger.",
 	  false },
 	{ DebugUI_DoMemorySnap, NULL,
 	  "stateload", "",

@@ -32,6 +32,9 @@ typedef enum {
 
 static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoBrackets;
 
+/* all options */
+static const Diss68kOptions optionsMask = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoBrackets;
+
 // values <0 will hide the group
 static int			optionPosAddress = 0;	// current address
 static int			optionPosHexdump = 10;	// 16-bit words at this address
@@ -2497,7 +2500,7 @@ void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 static void Disasm_CheckOptionEngine(void)
 {
 	if (ConfigureParams.Debugger.bDisasmUAE)
-		fputs("WARNING: disassembly options are supported only for bDisasmUAE=false!\n", stderr);
+		fputs("WARNING: disassembly options are supported only for '--disasm ext'!\n", stderr);
 }
 
 /**
@@ -2563,34 +2566,64 @@ int Disasm_GetOptions(void)
 }
 
 /**
- * Set new disassembly output option flags
+ * Parse disasm command line option argument
+ * @return	error string (""=silent 'error') or NULL for success.
  */
-void Disasm_SetOptions(int newoptions)
+const char *Disasm_ParseOption(const char *arg)
 {
-	Disasm_CheckOptionEngine();
-	options = newoptions;
-	ConfigureParams.Debugger.nDisasmOptions = options;
-}
-
-/**
- * Show disassembly output option flag descriptions,
- * each line prefixed with 'prefix'
- */
-void Disasm_OptionHelp(const char *prefix)
-{
-	const struct {
-		int flag;
-		const char *desc;
-	} option[] = {
-		{ doptNoBrackets, "no brackets around absolute addressing" },
-		{ doptOpcodesSmall, "opcodes in small letters" },
-		{ doptRegisterSmall, "register names in small letters" },
-		{ doptStackSP, "stack pointer as 'SP', not 'A7'" },
-		{ 0, NULL }
-	};
-	int i;
-	for (i = 0; option[i].desc; i++) {
-		assert(option[i].flag == (1 << i));
-		fprintf(stderr, "%s%d: %s\n", prefix, option[i].flag, option[i].desc);
+	if (strcasecmp(arg, "help") == 0)
+	{
+		const struct {
+			int flag;
+			const char *desc;
+		} option[] = {
+			{ doptNoBrackets, "no brackets around absolute addressing" },
+			{ doptOpcodesSmall, "opcodes in small letters" },
+			{ doptRegisterSmall, "register names in small letters" },
+			{ doptStackSP, "stack pointer as 'SP', not 'A7'" },
+			{ 0, NULL }
+		};
+		int i;
+		fputs("Disassembly settings:\n"
+		      "\tuae - use CPU core internal disassembler which has better\n"
+		      "\t      instruction support\n"
+		      "\text - use external disassembler which has nicer output\n"
+		      "\t      and supports options below\n"
+		      "\t<bitmask> - disassembly output option flags\n"
+		      "Flag values:\n", stderr);
+		for (i = 0; option[i].desc; i++) {
+			assert(option[i].flag == (1 << i));
+			fprintf(stderr, "\t%d: %s\n", option[i].flag, option[i].desc);
+		}
+		fprintf(stderr, "Current settings are:\n\t--disasm %s --disasm %d\n",
+			ConfigureParams.Debugger.bDisasmUAE ? "uae" : "ext",
+			ConfigureParams.Debugger.nDisasmOptions);
+		return "";
+	}	
+	if (strcasecmp(arg, "uae") == 0)
+	{
+		fputs("Selected UAE CPU core internal disassembler.\n", stderr);
+		ConfigureParams.Debugger.bDisasmUAE = true;
+		return NULL;
 	}
+	if (strcasecmp(arg, "ext") == 0)
+	{
+		fputs("Selected external disassembler.\n", stderr);
+		fprintf(stderr, "Disassembly output flags are %d.\n", options);
+		ConfigureParams.Debugger.bDisasmUAE = false;
+		return NULL;
+	}
+	if (isdigit(*arg))
+	{
+		int newopt = atoi(arg);
+		if ((newopt|optionsMask) != optionsMask)
+		{
+			return "unknown flags in the bitmask";
+		}
+		fprintf(stderr, "Changed CPU disassembly output flags from %d to %d.\n", options, newopt);
+		ConfigureParams.Debugger.nDisasmOptions = options = newopt;
+		Disasm_CheckOptionEngine();
+		return NULL;
+	}
+	return "invalid disasm option";
 }

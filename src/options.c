@@ -36,8 +36,8 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "paths.h"
 #include "avi_record.h"
-
 #include "hatari-glue.h"
+#include "68kDisass.h"
 
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
@@ -137,6 +137,7 @@ enum {
 	OPT_DEBUG,		/* debug options */
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
+	OPT_DISASM,
 	OPT_NATFEATS,
 	OPT_TRACE,
 	OPT_TRACEFILE,
@@ -365,6 +366,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Toggle X/Bios interception & Hatari XBios 255 support" },
 	{ OPT_CONOUT,   NULL, "--conout",
 	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
+	{ OPT_DISASM,   NULL, "--disasm",
+	  "<x>", "Set disassembly options (help/uae/ext/<bitmask>)" },
 	{ OPT_NATFEATS, NULL, "--natfeats",
 	  "<bool>", "Whether Native Features support is enabled" },
 	{ OPT_TRACE,   NULL, "--trace",
@@ -1649,6 +1652,19 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_PARACHUTE:
 			bNoSDLParachute = true;
+			break;
+
+		case OPT_DISASM:
+			i += 1;
+			errstr = Disasm_ParseOption(argv[i]);
+			if (errstr)
+			{
+				if (!errstr[0]) {
+					/* silent parsing termination */
+					return false;
+				}
+				return Opt_ShowError(OPT_DISASM, argv[i], errstr);
+			}
 			break;
 			
 		case OPT_TRACE:

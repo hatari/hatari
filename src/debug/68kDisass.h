@@ -26,8 +26,7 @@ extern void Disasm_GetColumns(int *columns);
 extern void Disasm_SetColumns(int *columns);
 extern void Disasm_DisableColumn(int column, int *oldcols, int *newcols);
 
+extern const char* Disasm_ParseOption(const char *arg);
 extern int Disasm_GetOptions(void);
-extern void Disasm_SetOptions(int options);
-extern void Disasm_OptionHelp(const char *prefix);
 
 #endif		/* HATARI_68KDISASS_H */
