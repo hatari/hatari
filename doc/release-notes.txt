@@ -18,6 +18,7 @@ Emulation:
 - Full implementation of the MC6850 ACIA, giving much more robust IKBD emulation
 
 Emulator:
+- Fix: problems with run-time CPU type changing
 - Much improved console redirection functionality and a separate --conout
   option for it (--bios-intercept doesn't anymore imply console redirection)
 - Give warning if GEMDOS dir/file path exceeds 8+3 characters
@@ -25,27 +26,31 @@ Emulator:
   are forced to upper or lower case
 - Fileselector remembers previous position which is nicer with large directories
 - Debugger:
+  - "step" and "next" commands added for single stepping CPU and DSP code
+    -> 's' shortcut is now for "step", not "save"
+  - "--disasm" option for selecting between UAE core and external CPU
+    code dissassembler and setting output option flags for latter
+  - Fix: when several breakpoints should have triggered
+         on the same address, only first was handled
+  - Fix: after breakpoint, 'c <n>' continues one instruction too little
   - Fix: profiler assert on invalid PC register values
   - Fix: info command crash (triggered on NetBSD)
-  - Fix: debugger history duplicate removal
+  - Fix: debugger history duplicates removal
   - Fix: expression expansion messing lines in command line history
-  - Also remote API debugger commands can use expression expansion
-  - Both single or double quotes can be used to mark expressions
+  - Remote API debugger commands can also use expression expansion
+  - Both single and double quotes can be used to mark expressions
     (above two features make temporary debug output easier within Hatari)
-  - "step" and "next" commands for single stepping CPU and DSP code
-    -> changes 's' shortcut use for saving for stepping
   - "profile addresses" can be used to see addresses through which
-    code passed during profiling (gives e.g. much better overview of
-    code that is being run while program seems frozen than cpu trace)
-  - "setopt disasm" can be used to set disassembly output flags
+    code passed during profiling (e.g. while program seems frozen, this
+    gives much better overview of code that is being run, than cpu trace)
   - output what value was set by options if it's not otherwise shown by UI
-  - Show function arguments (for values in intin and strings in addrin arrays)
-    in AES traces
+  - Show function arguments for GEMDOS Pexec() call and AES calls
+    (for AES call values in intin array and strings in addrin array)
   - support for the basic Native Features and --natfeats option to control it:
     http://wiki.aranym.org/natfeats/proposal
 - Windows workarounds for:
   - Windows localtime() not supporting dates before 1970 causes IKBD
-    emulation crashes (was not a problem with Cygwin libraries)
+    emulation crashes (not a problem with Cygwin, just Mingw)
 
 Other changes:
 - HTML documentation indeces generated dynamically with JS
@@ -53,6 +58,7 @@ Other changes:
 
 Fixed Games:
 - Captain Blood (fixed problem with the clock)
+- Fokker and Downfall (had regressed in Hatari v1.6.x)
 
 
  Version 1.6.2 (2012-06-24):
