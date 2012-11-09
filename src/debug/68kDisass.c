@@ -2484,10 +2484,12 @@ Uint32 Disasm_GetNextPC(Uint32 pc)
 /**
  * Call disassembly using the selected disassembly method.
  * Disassemly methods are either uae's built in disassembler (DISASM_ENGINE_UAE)
- * or the stand alone disassembler above (DISASM_ENGINE_EXT)
+ * or the stand alone disassembler above (DISASM_ENGINE_EXT),
+ * whichever is selected in Hatari configuration
  */
-void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine)
+void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
+	int DisasmEngine = ConfigureParams.Debugger.nDisasmEngine;
 	if ( DisasmEngine == DISASM_ENGINE_UAE )
 		return m68k_disasm (f, addr, nextpc, cnt);
 	else if ( DisasmEngine == DISASM_ENGINE_EXT )

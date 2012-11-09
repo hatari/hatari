@@ -20,7 +20,6 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "symbols.h"
 #include "68kDisass.h"
 #include "tos.h"
-#include "configuration.h"
 
 #define MAX_PROFILE_VALUE 0xFFFFFFFF
 
@@ -215,7 +214,7 @@ static void Profile_CpuShowAddresses(unsigned int show)
 			printf("%s:\n", symbol);
 		}
 		/* NOTE: column setup works only with UAE disasm engine! */
-		Disasm(stdout, addr, &nextpc, 1, ConfigureParams.Debugger.nDisasmEngine);
+		Disasm(stdout, addr, &nextpc, 1);
 		shown++;
 	}
 	printf("Disassembled %d (of active %d) CPU addresses.\n", show, active);

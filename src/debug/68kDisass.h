@@ -12,7 +12,7 @@ extern Uint32 Disasm_GetNextPC(Uint32 pc);
 #define	DISASM_ENGINE_UAE	0		/* Use UAE's internal disassembler */
 #define	DISASM_ENGINE_EXT	1		/* Use external disassembler from 68kdisass.c */
 
-extern void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine);
+extern void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt);
 
 
 enum {

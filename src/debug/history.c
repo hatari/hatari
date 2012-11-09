@@ -21,7 +21,6 @@ const char History_fileid[] = "Hatari history.c : " __DATE__ " " __TIME__;
 #include "history.h"
 #include "m68000.h"
 #include "68kDisass.h"
-#include "configuration.h"
 
 bool bHistoryEnabled;
 
@@ -176,7 +175,7 @@ void History_Show(Uint32 count)
 			DSP_DisasmAddress(pc, pc);
 		} else {
 			Uint32 dummy;
-			Disasm(stderr, History.item[i].pc.cpu, &dummy, 1, ConfigureParams.Debugger.nDisasmEngine);
+			Disasm(stderr, History.item[i].pc.cpu, &dummy, 1);
 		}
 		if (History.item[i].reason != REASON_NONE) {
 			fprintf(stderr, "Debugger: *%s*\n", History_ReasonStr(History.item[i].reason));

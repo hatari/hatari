@@ -195,7 +195,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	for (insts = 0; insts < max_insts && disasm_addr < disasm_upper; insts++)
 	{
 		DebugCpu_ShowAddressInfo(disasm_addr);
-		Disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1, ConfigureParams.Debugger.nDisasmEngine);
+		Disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 		disasm_addr = nextpc;
 	}
 	fflush(debugOutput);
