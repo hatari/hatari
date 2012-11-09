@@ -8,12 +8,7 @@
 #define HATARI_68KDISASS_H
 
 extern Uint32 Disasm_GetNextPC(Uint32 pc);
-
-#define	DISASM_ENGINE_UAE	0		/* Use UAE's internal disassembler */
-#define	DISASM_ENGINE_EXT	1		/* Use external disassembler from 68kdisass.c */
-
 extern void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt);
-
 
 enum {
 	DISASM_COLUMN_ADDRESS = 0,
@@ -30,7 +25,6 @@ enum {
 extern void Disasm_GetColumns(int *columns);
 extern void Disasm_SetColumns(int *columns);
 extern void Disasm_DisableColumn(int column, int *oldcols, int *newcols);
-
 
 extern int Disasm_GetOptions(void);
 extern void Disasm_SetOptions(int options);

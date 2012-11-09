@@ -2482,28 +2482,22 @@ Uint32 Disasm_GetNextPC(Uint32 pc)
 }
 
 /**
- * Call disassembly using the selected disassembly method.
- * Disassemly methods are either uae's built in disassembler (DISASM_ENGINE_UAE)
- * or the stand alone disassembler above (DISASM_ENGINE_EXT),
+ * Call disassembly using the selected disassembly method,
+ * either internal UAE one, or the stand alone disassembler above,
  * whichever is selected in Hatari configuration
  */
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
-	int DisasmEngine = ConfigureParams.Debugger.nDisasmEngine;
-	if ( DisasmEngine == DISASM_ENGINE_UAE )
+	if (ConfigureParams.Debugger.bDisasmUAE)
 		return m68k_disasm (f, addr, nextpc, cnt);
-	else if ( DisasmEngine == DISASM_ENGINE_EXT )
-		return Disass68k_loop (f, addr, nextpc, cnt);
 	else
-		fprintf(stderr, "Warning: unrecognized Disasm engine %d, valid values are %d & %d!\n",
-			DisasmEngine, DISASM_ENGINE_UAE, DISASM_ENGINE_EXT);
+		return Disass68k_loop (f, addr, nextpc, cnt);
 }
 
 static void Disasm_CheckOptionEngine(void)
 {
-	if (ConfigureParams.Debugger.nDisasmEngine != DISASM_ENGINE_EXT)
-		fprintf(stderr, "Warning: disassembly options are supported only for DisasmEngine=%d!\n",
-		       DISASM_ENGINE_EXT);
+	if (ConfigureParams.Debugger.bDisasmUAE)
+		fputs("WARNING: disassembly options are supported only for bDisasmUAE=false!\n", stderr);
 }
 
 /**
@@ -2575,6 +2569,7 @@ void Disasm_SetOptions(int newoptions)
 {
 	Disasm_CheckOptionEngine();
 	options = newoptions;
+	ConfigureParams.Debugger.nDisasmOptions = options;
 }
 
 /**

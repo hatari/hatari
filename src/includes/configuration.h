@@ -26,7 +26,8 @@ typedef struct
   int nNumberBase;
   int nDisasmLines;
   int nMemdumpLines;
-  int nDisasmEngine;
+  int nDisasmOptions;
+  bool bDisasmUAE;
 } CNF_DEBUGGER;
 
 

@@ -53,7 +53,8 @@ static const struct Config_Tag configs_Debugger[] =
 	{ "nNumberBase", Int_Tag, &ConfigureParams.Debugger.nNumberBase },
 	{ "nDisasmLines", Int_Tag, &ConfigureParams.Debugger.nDisasmLines },
 	{ "nMemdumpLines", Int_Tag, &ConfigureParams.Debugger.nMemdumpLines },
-	{ "nDisasmEngine", Int_Tag, &ConfigureParams.Debugger.nDisasmEngine },
+	{ "nDisasmOptions", Int_Tag, &ConfigureParams.Debugger.nDisasmOptions },
+	{ "bDisasmUAE", Bool_Tag, &ConfigureParams.Debugger.bDisasmUAE },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -382,8 +383,9 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Debugger.nNumberBase = 10;
 	ConfigureParams.Debugger.nDisasmLines = 8;
 	ConfigureParams.Debugger.nMemdumpLines = 8;
-	/* this one has nicer output, but isn't as complete as UAE one */
-	ConfigureParams.Debugger.nDisasmEngine = DISASM_ENGINE_EXT;
+	/* external one has nicer output, but isn't as complete as UAE one */
+	ConfigureParams.Debugger.bDisasmUAE = false;
+	ConfigureParams.Debugger.nDisasmOptions = Disasm_GetOptions();
 
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
