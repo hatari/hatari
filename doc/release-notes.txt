@@ -57,8 +57,8 @@ Other changes:
 - Debugger tests building fixed
 
 Fixed Games:
-- Captain Blood (fixed problem with the clock)
-- Fokker and Downfall (had regressed in Hatari v1.6.x)
+- Captain Blood (IKBD, fixed problem when setting the clock)
+- Fokker and Downfall (ACIA/IKBD, had regressed in Hatari v1.6.x)
 
 
  Version 1.6.2 (2012-06-24):
