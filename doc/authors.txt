@@ -159,15 +159,17 @@ projects which we would like to acknowledge here:
 - The routines for saving and loading the ASCII configuration file
   (cfgopts.c) have originally been written by Jeffry J. Brickley.
 
-- The new sound core uses some code/ideas from the following GPL
+- The new sound core uses (or used) some code/ideas from the following GPL
   projects :
   * 5 bits volume table and 16*16*16 combinations of all volume are
     from Sc68 by Benjamin Gerard.
   * 4 bits to 5 bits volume interpolation from 16*16*16 to 32*32*32
     are from YM blep synthesis by Antti Lankila.
+  * Since Hatari 1.7, volume table based on measures by Paulo Simoes
 
 - The IDE hard disk emulation is based on code from QEMU.
   (http://www.qemu.org/)
 
 - The MMU emulation for the 68030 has been taken from the NeXT emulator
   Previous (thanks to Andreas Grabher!)
+
