@@ -13,6 +13,7 @@ Emulation:
   - Implementation of SampleHold in TT Hypermono video mode
 - Sound changes :
   - Better model of the YM2149 noise generation (no noticeable audible impact)
+  - Slightly better volume table (measured by Paulo Simoes on a real ST)
 - CPU changes :
   - Added experimental MMU emulation for the 68030 mode
 - Full implementation of the MC6850 ACIA, giving much more robust IKBD emulation
