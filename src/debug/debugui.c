@@ -190,7 +190,7 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
  */
 static bool DebugUI_IsForDsp(const char *cmd)
 {
-	return ((cmd[0] == 'd' && cmd[1] && !cmd[2])
+	return ((cmd[0] == 'd' && isalpha(cmd[1]) && !isalpha(cmd[2]))
 		|| strncmp(cmd, "dsp", 3) == 0);
 }
 
