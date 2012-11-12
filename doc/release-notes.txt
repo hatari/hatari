@@ -36,7 +36,9 @@ Emulator:
   - Fix: after breakpoint, 'c <n>' continues one instruction too little
   - Fix: profiler assert on invalid PC register values
   - Fix: info command crash (triggered on NetBSD)
+  - Fix: info osheader and basebase subcommands under MiNT
   - Fix: debugger history duplicates removal
+  - Fix: expression expanding CPU "pc" for DSP shortcut commands
   - Fix: expression expansion messing lines in command line history
   - Remote API debugger commands can also use expression expansion
   - Both single and double quotes can be used to mark expressions
