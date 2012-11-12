@@ -690,7 +690,7 @@ static void DebugInfo_RegAddr(Uint32 arg)
 {
 	bool forDsp;
 	char regname[3];
-	Uint32 *regvalue, mask;
+	Uint32 *reg32, regvalue, mask;
 	char cmdbuf[12], addrbuf[6];
 	char *argv[] = { cmdbuf, addrbuf };
 	
@@ -698,34 +698,48 @@ static void DebugInfo_RegAddr(Uint32 arg)
 	regname[1] = (arg>>16)&0xff;
 	regname[2] = '\0';
 
-	if (DebugCpu_GetRegisterAddress(regname, &regvalue)) {
+	if (DebugCpu_GetRegisterAddress(regname, &reg32)) {
+		regvalue = *reg32;
 		mask = 0xffffffff;
 		forDsp = false;
 	} else {
-		if (!DSP_GetRegisterAddress(regname, &regvalue, &mask)) {
+		int regsize = DSP_GetRegisterAddress(regname, &reg32, &mask);
+		switch (regsize) {
+			/* currently regaddr supports only 32-bit Rx regs, but maybe later... */
+		case 16:
+			regvalue = *((Uint16*)reg32);
+			break;
+		case 32:
+			regvalue = *reg32;
+			break;
+		default:
 			fprintf(stderr, "ERROR: invalid address/data register '%s'!\n", regname);
 			return;
 		}
 		forDsp = true;
 	}
-       	sprintf(addrbuf, "$%x", *regvalue & mask);
+       	sprintf(addrbuf, "$%x", regvalue & mask);
 
 	if ((arg & 0xff) == 'D') {
-		strcpy(cmdbuf, "disasm");
 		if (forDsp) {
 #if ENABLE_DSP_EMU
+			strcpy(cmdbuf, "dd");
 			DebugDsp_DisAsm(2, argv);
 #endif
 		} else {
+			strcpy(cmdbuf, "d");
 			DebugCpu_DisAsm(2, argv);
 		}
 	} else {
-		strcpy(cmdbuf, "memdump");
 		if (forDsp) {
 #if ENABLE_DSP_EMU
-			DebugDsp_MemDump(2, argv);
+			/* use "Y" address space */
+			char cmd[] = "dm"; char space[] = "y";
+			char *dargv[] = { cmd, space, addrbuf };
+			DebugDsp_MemDump(3, dargv);
 #endif
 		} else {
+			strcpy(cmdbuf, "m");
 			DebugCpu_MemDump(2, argv);
 		}
 	}
