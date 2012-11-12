@@ -2757,6 +2757,10 @@ void GemDOS_Info(Uint32 bShowOpcodes)
 		return;
 	}
 
+	/* GEMDOS vector set by Hatari can be overwritten e.g. MiNT */
+	fprintf(stderr, "Current GEMDOS handler: (0x84) = 0x%x, emu one = 0x%x\n", STMemory_ReadLong(0x0084), CART_GEMDOS);
+	fprintf(stderr, "Stored GEMDOS handler: (0x%x) = 0x%x\n\n", CART_OLDGEMDOS, STMemory_ReadLong(CART_OLDGEMDOS));
+
 	fprintf(stderr, "Connected drives mask: 0x%x\n\n", ConnectedDriveMask);
 	fputs("GEMDOS HDD emulation drives:\n", stderr);
 	for(i = 0; i<MAX_HARDDRIVES; i++)
