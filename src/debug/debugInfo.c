@@ -54,37 +54,48 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 
 
 /**
- * DebugInfo_GetSysbase: set osversion to given argument.
- * return sysbase address on success and zero on failure.
+ * DebugInfo_GetSysbase: get and validate system base
+ * return on success sysbase address (+ set rombase), on failure return zero
  */
-static Uint32 DebugInfo_GetSysbase(Uint16 *osversion)
+static Uint32 DebugInfo_GetSysbase(Uint32 *rombase)
 {
 	Uint32 sysbase = STMemory_ReadLong(OS_SYSBASE);
 
 	if (!STMemory_ValidArea(sysbase, OS_HEADER_SIZE)) {
-		fprintf(stderr, "Invalid TOS base address!\n");
+		fprintf(stderr, "Invalid TOS sysbase RAM address (0x%x)!\n", sysbase);
 		return 0;
 	}
-	if (sysbase != TosAddress || sysbase != STMemory_ReadLong(sysbase+0x08)) {
-		fprintf(stderr, "Sysbase and os_beg address in OS header mismatch!\n");
+	/* under TOS, sysbase = os_beg = TosAddress, but not under MiNT -> use os_beg */
+	*rombase = STMemory_ReadLong(sysbase+0x08);
+	if (!STMemory_ValidArea(*rombase, OS_HEADER_SIZE)) {
+		fprintf(stderr, "Invalid TOS sysbase ROM address (0x%x)!\n", *rombase);
 		return 0;
 	}
-	*osversion = STMemory_ReadWord(sysbase+0x02);
+	if (*rombase != TosAddress) {
+		fprintf(stderr, "os_beg (0x%x) != TOS address (0x%x), header in RAM not set up yet?\n",
+			*rombase, TosAddress);
+		return 0;
+	}
 	return sysbase;
 }
 
 /**
- * DebugInfo_CurrentBasepage: get currently running TOS program basepage
+ * DebugInfo_CurrentBasepage: get and validate currently running program basepage.
+ * if given sysbase is zero, use system sysbase.
  */
-static Uint32 DebugInfo_CurrentBasepage(void)
+static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase)
 {
-	Uint32 basepage, sysbase;
+	Uint32 basepage;
 	Uint16 osversion, osconf;
 
-	sysbase = DebugInfo_GetSysbase(&osversion);
 	if (!sysbase) {
-		return 0;
+		Uint32 rombase;
+		sysbase = DebugInfo_GetSysbase(&rombase);
+		if (!sysbase) {
+			return 0;
+		}
 	}
+	osversion = STMemory_ReadWord(sysbase+0x02);
 	if (osversion >= 0x0102) {
 		basepage = STMemory_ReadLong(sysbase+0x28);
 	} else {
@@ -109,7 +120,7 @@ static Uint32 DebugInfo_CurrentBasepage(void)
  */
 static Uint32 GetSegmentAddress(unsigned offset)
 {
-	Uint32 basepage = DebugInfo_CurrentBasepage();
+	Uint32 basepage = DebugInfo_CurrentBasepage(0);
 	if (!basepage) {
 		return 0;
 	}
@@ -158,7 +169,7 @@ static void DebugInfo_Basepage(Uint32 basepage)
 
 	if (!basepage) {
 		/* default to current process basepage */
-		basepage = DebugInfo_CurrentBasepage();
+		basepage = DebugInfo_CurrentBasepage(0);
 		if (!basepage) {
 			return;
 		}
@@ -202,11 +213,11 @@ static void DebugInfo_Basepage(Uint32 basepage)
 }
 
 /**
- * DebugInfo_OSHeader: display TOS OS Header
+ * DebugInfo_PrintOSHeader: output OS Header information
  */
-static void DebugInfo_OSHeader(Uint32 dummy)
+static void DebugInfo_PrintOSHeader(Uint32 sysbase)
 {
-	Uint32 sysbase, gemblock, basepage;
+	Uint32 gemblock, basepage;
 	Uint16 osversion, osconf, langbits;
 	const char *lang;
 	static const char langs[][3] = {
@@ -214,11 +225,7 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 		"tr", "fi", "no", "dk", "sa", "nl", "cs", "hu"
 	};
 
-	sysbase = DebugInfo_GetSysbase(&osversion);
-	if (!sysbase) {
-		return;
-	}
-	fprintf(stderr, "TOS OS header information:\n");
+	osversion = STMemory_ReadWord(sysbase+0x02);
 	fprintf(stderr, "OS base addr : 0x%06x\n", sysbase);
 	fprintf(stderr, "OS RAM end+1 : 0x%06x\n", STMemory_ReadLong(sysbase+0x0C));
 	fprintf(stderr, "TOS version  : 0x%x\n", osversion);
@@ -261,12 +268,32 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 		fprintf(stderr, "Memory pool  : 0x0056FA\n");
 		fprintf(stderr, "Kbshift addr : 0x000E1B\n");
 	}
-	basepage = DebugInfo_CurrentBasepage();
+	basepage = DebugInfo_CurrentBasepage(sysbase);
 	if (basepage) {
 		fprintf(stderr, "Basepage     : 0x%06x\n", basepage);
 	}
 }
 
+/**
+ * DebugInfo_OSHeader: display TOS OS Header and RAM one
+ * if their addresses differ
+ */
+static void DebugInfo_OSHeader(Uint32 dummy)
+{
+	Uint32 sysbase, rombase;
+
+	sysbase = DebugInfo_GetSysbase(&rombase);
+	if (!sysbase) {
+		return;
+	}
+	fprintf(stderr, "OS header information:\n");
+	DebugInfo_PrintOSHeader(sysbase);
+	if (sysbase != rombase) {
+		fprintf(stderr, "\nROM TOS OS header information:\n");
+		DebugInfo_PrintOSHeader(rombase);
+		return;
+	}
+}
 
 /**
  * DebugInfo_Cookiejar: display TOS Cookiejar content
