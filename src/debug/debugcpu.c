@@ -236,7 +236,7 @@ static char *DebugCpu_MatchRegister(const char *text, int state)
 
 
 /**
- * Set address of the named register to given argument.
+ * Set address of the named 32-bit register to given argument.
  * Return register size in bits or zero for uknown register name.
  * Handles D0-7 data and A0-7 address registers, but not PC & SR
  * registers as they need to be accessed using UAE accessors.
