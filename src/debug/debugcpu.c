@@ -625,7 +625,7 @@ static const dbgcommand_t cpucommands[] =
 	  "write bytes to memory",
 	  "address byte1 [byte2 ...]\n"
 	  "\tWrite bytes to a memory address, bytes are space separated\n"
-	  "\thexadecimals.",
+	  "\tvalues in current number base.",
 	  false },
 	{ DebugCpu_LoadBin, NULL,
 	  "loadbin", "l",
