@@ -224,13 +224,19 @@ static int getValue(const char *str, Uint32 *number, int *base, bool bForDsp)
 	}
 
 	if (bForDsp) {
+		int regsize = DSP_GetRegisterAddress(name, &addr, &mask);
 		/* DSP register or symbol? */
-		if (DSP_GetRegisterAddress(name, &addr, &mask)) {
+		switch (regsize) {
+		case 16:
+			*number = (*((Uint16*)addr) & mask);
+			return len;
+		case 32:
 			*number = (*addr & mask);
 			return len;
-		}
-		if (Symbols_GetDspAddress(SYMTYPE_ALL, name, number)) {
-			return len;
+		default:
+			if (Symbols_GetDspAddress(SYMTYPE_ALL, name, number)) {
+				return len;
+			}
 		}
 	} else {
 		/* a special case CPU register? */
