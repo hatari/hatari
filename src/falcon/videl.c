@@ -779,7 +779,13 @@ static int VIDEL_getScreenHeight(void)
 	}
 
 	/* Y Size of the Display area */
-	videl.YSize = vde - vdb;
+	if (vde >= vdb) {
+		videl.YSize = vde - vdb;
+	}
+	else {
+		LOG_TRACE(TRACE_VIDEL, "WARNING: vde=0x%x is less than vdb=0x%x\n",
+		          vde, vdb);
+	}
 
 	/* If the user disabled the borders display from the gui, we suppress them */
 	if (ConfigureParams.Screen.bAllowOverscan == 0) {
@@ -798,7 +804,7 @@ static int VIDEL_getScreenHeight(void)
 		videl.upperBorderSize >>= 1;
 		videl.lowerBorderSize >>= 1;
 	}
-	
+
 	return videl.upperBorderSize + videl.YSize + videl.lowerBorderSize;
 }
 
