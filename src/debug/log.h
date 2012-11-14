@@ -105,7 +105,7 @@ extern char *Log_MatchTrace(const char *text, int state);
 #define TRACE_OS_AES		 (1<<29)
 
 #define TRACE_IOMEM_RD  	 (1<<30)
-#define TRACE_IOMEM_WR  	 (1<<31)
+#define TRACE_IOMEM_WR  	 (1ULL<<31)
 
 #define TRACE_DMASND		 (1ll<<32)
 
