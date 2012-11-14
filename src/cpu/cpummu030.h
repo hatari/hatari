@@ -53,7 +53,7 @@ uae_u32 mmu030_get_long(uaecptr addr, uae_u32 fc, int size);
 uae_u16 mmu030_get_word(uaecptr addr, uae_u32 fc, int size);
 uae_u8  mmu030_get_byte(uaecptr addr, uae_u32 fc, int size);
 
-void mmu030_page_fault(uaecptr addr);
+void mmu030_page_fault(uaecptr addr, bool read);
 
 extern uae_u16 REGPARAM3 mmu030_get_word_unaligned(uaecptr addr, uae_u32 fc) REGPARAM;
 extern uae_u32 REGPARAM3 mmu030_get_long_unaligned(uaecptr addr, uae_u32 fc) REGPARAM;
