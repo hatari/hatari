@@ -42,12 +42,12 @@
 #include "cpummu030.h"
 
 
-#define MMU030_OP_DBG_MSG 1
+#define MMU030_OP_DBG_MSG 0
 #define MMU030_ATC_DBG_MSG 0
-#define MMU030_REG_DBG_MSG 1
+#define MMU030_REG_DBG_MSG 0
 
-//#undef write_log
-//#define write_log(...)
+#undef write_log
+#define write_log(...)
 
 /* for debugging messages */
 char table_letter[4] = {'A','B','C','D'};
@@ -1756,7 +1756,7 @@ uae_u16 REGPARAM2 mmu030_get_word_unaligned(uaecptr addr, uae_u32 fc)
 	}
 	CATCH(prb) {
 		RESTORE_EXCEPTION;
-		regs.mmu_fault_addr = addr;
+		// regs.mmu_fault_addr = addr;
 		regs.mmu_ssw |= MMU_SSW_MA;
 		THROW_AGAIN(prb);
 	} ENDTRY
@@ -1791,7 +1791,7 @@ uae_u32 REGPARAM2 mmu030_get_long_unaligned(uaecptr addr, uae_u32 fc)
 		}
 		CATCH(prb) {
 			RESTORE_EXCEPTION;
-			regs.mmu_fault_addr = addr;
+			// regs.mmu_fault_addr = addr;
 			regs.mmu_ssw |= MMU_SSW_MA;
 			THROW_AGAIN(prb);
 		} ENDTRY
@@ -1819,7 +1819,7 @@ void REGPARAM2 mmu030_put_long_unaligned(uaecptr addr, uae_u32 val, uae_u32 fc)
 		RESTORE_EXCEPTION;
 		regs.wb3_data = val;
 		if (regs.mmu_fault_addr != addr) {
-			regs.mmu_fault_addr = addr;
+			// regs.mmu_fault_addr = addr;
 			regs.mmu_ssw |= MMU_SSW_MA;
 		}
 		THROW_AGAIN(prb);
@@ -1838,7 +1838,7 @@ void REGPARAM2 mmu030_put_word_unaligned(uaecptr addr, uae_u16 val, uae_u32 fc)
 		RESTORE_EXCEPTION;
 		regs.wb3_data = val;
 		if (regs.mmu_fault_addr != addr) {
-			regs.mmu_fault_addr = addr;
+			// regs.mmu_fault_addr = addr;
 			regs.mmu_ssw |= MMU_SSW_MA;
 		}
 		THROW_AGAIN(prb);
