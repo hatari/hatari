@@ -61,14 +61,14 @@ p_ok:
 	move.l	a6,-(sp)
 	move.l	a0,a6
 	bsr.s	find_prog
-	bsr		pexec5
-	bsr		reloc
+	bsr	pexec5
+	bsr	load_n_reloc
 	clr.l	2(a6)
 	clr.l	10(a6)
 	move.l	d0,6(a6)
 
 	move.w	#48,-(sp)	; Sversion: get GEMDOS version
-	trap	#1			; call GEMDOS
+	trap	#1		; call GEMDOS
 	addq	#2,sp
 	ror.w	#8,d0		; Major version to high, minor version to low byte
 	cmp.w	#$0015,d0
@@ -91,7 +91,7 @@ no_0:
 	move.l	a0,a6
 	bsr.s	find_prog
 	bsr.s	pexec5
-	bsr.s	reloc
+	bsr.s	load_n_reloc
 gohome:
 	move.l	(sp)+,a6
 	rte
@@ -141,7 +141,7 @@ pexec5:
 	move.l	10(a6),-(sp)
 	move.l	6(a6),-(sp)
 	clr.l	-(sp)
-	move	#5,-(sp)
+	move	#5,-(sp)	; Create basepage
 	move	#$4b,-(sp)	; Pexec
 	trap	#1		; Gemdos
 	lea		16(sp),sp
@@ -152,71 +152,71 @@ pexecerr:
 	addq	#4,sp
 	bra.s	gohome
 
-reloc:
+
+load_n_reloc:
 	movem.l	a3-a5/d6-d7,-(sp)
-	move.l	d0,a5
+	move.l	d0,a5		; Basepage in a5
 	clr 	-(sp)
 	move.l	2(a6),-(sp)
 	move	#$3d,-(sp)	; Fopen
 	trap	#1		; Gemdos
 	addq	#8,sp
+	move.l	d0,d6		; Keep file handle in d6
 
-	move.l	d0,d6
-	move.l	a5,-(sp)
-	add.l	#228,(sp)
+	pea	256(a5)
 	pea 	$1c.w
 	move	d6,-(sp)
 	move	#$3f,-(sp)	; Fread
 	trap	#1		; Gemdos
 	lea 	12(sp),sp
 
-	cmp.w	#$601a,228(a5)  ; Check program header magic
-	beq.s	magic_ok
-	move	d6,-(sp)
-	move	#$3e,-(sp)	; Fclose
-	trap	#1		; Gemdos
-	addq	#4,sp
-	move.l	a5,-(sp)
-	move.w	#$49,-(sp)	; Mfree
-	trap	#1		; Release "pexeced" memory
-	addq.l	#6,sp
-	move.l	#-66,d0         ; Error code: Invalid PRG format
-	movem.l	(sp)+,a3-a5/d6-d7
-	addq	#4,sp           ; Drop return address
-	bra	gohome          ; Abort
-magic_ok:
-	; TODO: check size!!
-	move.l	a5,-(sp)
-	add.l	#256,(sp)
-	pea		$7fffffff
+	cmp.l	#$1c,d0
+	bne	hdr_not_ok
+
+	lea	256(a5),a3	; a3 points now to the program header
+	cmp.w	#$601a,(a3)	; Check program header magic
+	bne	hdr_not_ok
+
+	lea	8(a5),a4
+	move.l	a5,d0
+	add.l	#$100,d0
+	move.l	d0,(a4)+	; text start
+	move.l	2(a3),d0
+	move.l	d0,(a4)+	; text length
+	add.l	8(a5),d0
+	move.l	d0,(a4)+	; data start
+	move.l	6(a3),(a4)+	; data length
+	add.l	6(a3),d0
+	move.l	d0,(a4)+	; bss start
+	move.l	10(a3),(a4)+	; bss length
+
+	add.l	10(a3),d0
+	cmp.l	4(a5),d0	; is the TPA big enough?
+	bhi	hdr_not_ok
+
+	move.l	a5,d0
+	add.l	#$80,d0
+	move.l	d0,32(a5)	; default DTA always points to cmd line space!
+
+	move.l	24(a5),a4
+	add.l	14(a3),a4	; add symtab length => a4 points to reloc table
+	move.w	26(a3),d7	; d7 is now the absflag (0 means reloc)
+
+	pea	256(a5)
+	pea	$7fffffff
 	move	d6,-(sp)
 	move	#$3f,-(sp)	; Fread
 	trap	#1		; Gemdos
-	lea		12(sp),sp
+	lea	12(sp),sp
+
 	move	d6,-(sp)
 	move	#$3e,-(sp)	; Fclose
 	trap	#1		; Gemdos
 	addq	#4,sp
-	lea		8(a5),a4
-	move.l	a5,d0
-	add.l	#$100,d0
-	move.l	d0,(a4)+		; text start
-	move.l	230(a5),d0
-	move.l	d0,(a4)+		; text length
-	add.l	8(a5),d0		; data start
-	move.l	d0,(a4)+
-	move.l	234(a5),(a4)+	; data length
-	add.l	234(a5),d0
-	move.l	d0,(a4)+		; bss start
-	move.l	238(a5),(a4)+	; bss length
-	move.l	a5,d0
-	add.l	#$80,d0
-	move.l	d0,32(a5)
-	move.l	24(a5),a4
-	add.l	242(a5),a4		; symbol table length
+
 	move.l	8(a5),a3
 	move.l	a3,d0
-	tst.w	254(a5)
+	tst.w	d7		; check absflag
 	bne.s	relocdone
 
 	; Get first offset of the relocation table. Since A4 seems sometimes not
@@ -242,7 +242,7 @@ relloop0:
 	add.l	d0,(a3)
 relloop:
 	move.b	(a4),d7
-	move.b	#$00,(a4)+		; Some programs like GFA-Basic expect a clear memory
+	clr.b	(a4)+	; Some programs like GFA-Basic expect a clear memory
 	tst.b	d7
 	beq.s	relocdone
 	cmp.b	#1,d7
@@ -265,6 +265,22 @@ cleardone:
 	move.l	a5,d0
 	movem.l	(sp)+,a3-a5/d6-d7
 	rts
+
+hdr_not_ok:
+	move	d6,-(sp)
+	move	#$3e,-(sp)	; Fclose
+	trap	#1		; Gemdos
+	addq	#4,sp
+
+	move.l	a5,-(sp)
+	move.w	#$49,-(sp)	; Mfree
+	trap	#1		; Release "pexeced" memory
+	addq.l	#6,sp
+
+	move.l	#-66,d0         ; Error code: Invalid PRG format
+	movem.l	(sp)+,a3-a5/d6-d7
+	addq	#4,sp           ; Drop return address
+	bra	gohome          ; Abort
 
 
 
