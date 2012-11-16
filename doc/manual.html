@@ -718,6 +718,10 @@ arguments.  Atari printscreen call takes also Hatari screenshot.</p>
 redirection for given &lt;device&gt; to host terminal.  Device 2 is for
 the (CON:) VT52 console, which vector function catches also EmuTOS panic
 messages and MiNT console output, not just normal BIOS console output.</p>
+<p class="parameter">&minus;&minus;disasm &lt;x&gt;</p>
+<p class="paramdesc">Set disassembly options.  'uae' and 'ext' select
+the dissasembly engine to use, bitmask sets output options for the
+external disassembly engine and 'help' lists them.</p>
 <p class="parameter">&minus;&minus;natfeats &lt;bool&gt;</p>
 <p class="paramdesc">Enable/disable (basic) Native Features support.
 E.g. EmuTOS uses it for debug output.</p>
@@ -1934,8 +1938,8 @@ key combination.
 </p>
 
 <p>
-If you start Hatari with the "-D" command line option, m68k
-exceptions will automatically invoke the debugger. You can
+If you start Hatari with the "-D" command line option, certain m68k
+exceptions will automatically drop Hatari into the debugger. You can
 toggle this also later from the debugger with the "setopt -D"
 command.
 </p>
@@ -1990,8 +1994,10 @@ CPU commands:
       memdump ( m) : dump memory
      memwrite ( w) : write bytes to memory
       loadbin ( l) : load a file into memory
-      savebin ( s) : save memory to a file
+      savebin (  ) : save memory to a file
       symbols (  ) : load CPU symbols & their addresses
+         step ( s) : single-step CPU
+         next ( n) : step CPU, proceeding through subroutine calls
          cont ( c) : continue emulation / CPU single-stepping
 
 DSP commands:
@@ -2002,6 +2008,8 @@ DSP commands:
    dspsymbols (  ) : load DSP symbols & their addresses
    dspprofile (dp) : profile DSP code
        dspreg (dr) : read/write DSP registers
+      dspstep (ds) : single-step DSP
+      dspnext (dn) : step DSP, proceeding through subroutine calls
       dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
 
@@ -2102,6 +2110,11 @@ and symbol names, like in above example.  If you don't specify an
 address, the commands continue showing from an address that comes
 after the previously shown data.  "disasm" command default address
 will be reseted to PC address everytime you re-enter the debugger.
+</p>
+
+<p>
+Use "setopt --disasm help" if you want to set options controlling
+the disassembly output.
 </p>
 
 <p>
@@ -2432,8 +2445,8 @@ b  HBL = "HBL+20"
 </li>
 <li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
     to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
-    By default they contain the 0xffff value, so to trace e.g. AES calls,
-    one needs to use something like this:
+    By default they contain the 0xffff value, so to trace e.g. all AES
+    calls, instead of a specific one, one needs to use something like this:
 <pre>
 b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
 </pre>
@@ -2527,6 +2540,12 @@ triggers) if you omit the instruction count.
 </p>
 
 <p>
+If you want to continue just to the next instruction, use "s" (step)
+command to continue for exactly one instruction, or "n" (next), if you
+want to skip subroutine calls.
+</p>
+
+<p>
 If you want to continue with real-time disassembling, you can enable
 it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at the
 debugger prompt before continuing.
@@ -2597,24 +2616,20 @@ is processed and a summary of in which parts of the RAM the execution
 happened is shown:
 </p>
 <pre>
-Allocated CPU profile address buffer (4 KB).
+Allocated CPU profile address buffer (19 KB).
 Normal RAM (0-0x400000):
 - no activity
 Cartridge ROM (0xFA0000-0xFC0000):
 - no activity
-ROM TOS (0xE00000-0xE80000):
+ROM TOS (0xFC0000-0xFF0000):
 - active address range:
-  0xe0014c-0xe23f02
+  0xfc0652-0xfe75de
 - active instruction addresses:
-  707 (100.00% of all)
+  4540 (99.41% of all)
 - executed instructions:
-  629144 (100.00% of all)
+  3021736 (89.48% of all)
 - used cycles:
-  9408503 (100.00% of all)
-- address with most cycles:
-  0xe0dcca, 402628 cycles (4.28% of all in area)
-- address with most hits:
-  0xe004a4, 4900 hits (0.78% of all in area)
+  16419190 (90.12% of all)
 </pre>
 <p>
 (DSP RAM will be shown only as single area in profile information.)
@@ -2626,12 +2641,15 @@ After this you can request more detailed profiling information:
 <pre>
 &gt; profile
 'profile' - profile CPU code
-Usage:  profile &lt;on|off|counts|cycles|symbols|stats&gt; [show count]
-	on &amp; off enable and disable profiling.  Data is collected
-	until debugger is entered again after which you can view
-	statistics about the data or view PC addresses that took
-	most cycles or functions/symbols called most often.
-	You can specify how many items are shown at most.
+Usage:  profile <on|off|stats|counts|cycles|symbols|addresses> [show count]
+        'on' & 'off' enable and disable profiling.  Data is collected
+	until debugger is entered again at which point you get profiling
+        statistics ('stats') summary.  Then you can ask for list of the
+	PC addresses, sorted either by execution 'counts' or 'cycles'
+	they used. Former can be limited just to addresses with 'symbols'.
+        'addresses' lists the profiled addresses in order, with
+	the instructions (currently) residing at them.
+	You can also give optional limit on how many will be shown.
 </pre>
 
 <p>For example:</p>
@@ -2647,15 +2665,37 @@ addr:           count:
 0xe0dcd6        0.55%   3445
 8 CPU addresses listed.
 </pre>
+
 <p>
-If you have loaded symbol information for code addresses, with the
-"profile symbols" command you get a list of how many times the code
-execution passed through the defined symbol addresses.
+If profiling revealed that code only run in e.g. few hundred different
+addresses, you could ask for address-sorted profiling information on
+all of them:
+<pre>
+&gt; profile addresses 255
+$00aa92 :             addq.l    #4,sp                      0.18% (6096, 24384)
+$00aa94 :             movem.l   (sp)+,d6-d7/a5             0.18% (6096, 24384)
+$00aa98 :             move      d2,sr                      0.18% (6137, 24712)
+$00aa9a :             unlk      a6                         0.18% (6137, 49096)
+$00aa9c :             rts                                  0.18% (6137, 24560)
+[...]
+$fc0652 :             rts                                  0.01% (331, 2648)
+[...]
+$fc06c0 :             addq.l    #1,$466                    0.01% (331, 1796)
+$fc06c6 :             subq.w    #1,$452                    0.01% (331, 1324)
+$fc06cc :             bmi       $fc079a                    0.01% (331, 1324)
+...
+</pre>
+
+<p>
+If you have loaded symbol information for code addresses, it's shown
+with above addresses.  With the "profile symbols" command you get a
+list of how many times the code execution passed through the defined
+symbol addresses.
 </p>
 
 <p>
 After the profiling information has been post-processed, it will
-also be shown in the disassembly output.
+also be shown in the normal disassembly output.
 </p>
 
 
@@ -2749,6 +2789,23 @@ b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  FrameCycles = 5
 <dd>To stop e.g. after D0 value has increased by 10, set breakpoint on:
 <pre>
 b  d0 = "d0 + 10"
+</pre>
+</dd>
+
+<dt><em>Examining specific system call return value</em></dt>
+<dd>To check e.g. what's the Fopen() GEMDOS call return value,
+check with "info gemdos 1" it's code and then do:
+<pre>
+&gt; trace gemdos
+&gt; b GemdosOpcode = $3D
+&gt; c
+[...continue until breakpoint...]
+1. CPU breakpoint condition(s) matched 1 times.
+        GemdosOpcode = $3D
+&gt; n
+GEMDOS 0x3D Fopen("TEST.TXT", read-only)
+&gt; e d0
+= %1000000 (bin), #64 (dec), $40 (hex)
 </pre>
 </dd>
 
