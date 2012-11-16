@@ -1269,7 +1269,7 @@ typedef enum {
 typedef const struct {
 	int				cpuMask;
 	unsigned long	opcodeMask[2*5];
-	char			operationSize[4];
+	signed char		operationSize[4];
 	char			op[5];
 	const char		*opcodeName;
 	int				parameter[5];

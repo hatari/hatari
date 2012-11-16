@@ -36,6 +36,7 @@ Emulator:
   - Fix: after breakpoint, 'c <n>' continues one instruction too little
   - Fix: profiler assert on invalid PC register values
   - Fix: info command crash (triggered on NetBSD)
+  - Fix: disassember output bug on NetBSD (usigned char < -1 test)
   - Fix: info osheader and basebase subcommands under MiNT
   - Fix: debugger history duplicates removal
   - Fix: expression expanding CPU "pc" for DSP shortcut commands
