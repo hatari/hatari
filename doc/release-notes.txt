@@ -16,7 +16,11 @@ Emulation:
   - Slightly better volume table (measured by Paulo Simoes on a real ST)
 - CPU changes :
   - Added experimental MMU emulation for the 68030 mode
-- Full implementation of the MC6850 ACIA, giving much more robust IKBD emulation
+- Other changes :
+  - Full implementation of the MC6850 ACIA, giving much more robust
+    IKBD emulation
+  - Fix: GEMDOS HD emulation overwrote last 28 bytes of basepage space
+    for the started process command line (with with program header)
 
 Emulator:
 - Fix: problems with run-time CPU type changing
@@ -25,7 +29,8 @@ Emulator:
 - Give warning if GEMDOS dir/file path exceeds 8+3 characters
 - New --gemdos-case option to specify whether new dir/filenames
   are forced to upper or lower case
-- Fileselector remembers previous position which is nicer with large directories
+- SDL UI fileselector remembers previous position which is nicer with
+  large directories
 - Debugger:
   - "step" and "next" commands added for single stepping CPU and DSP code
     -> 's' shortcut is now for "step", not "save"
