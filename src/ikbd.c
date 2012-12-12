@@ -850,7 +850,8 @@ static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 	if (!KeyboardProcessor.bReset)
 		return;
 
-	pIKBD->SCI_TX_Delay = Delay_Cycles / 1024;		/* 1 bit at 7812.5 baud = 1024 cpu cycles at 8 MHz */
+	if ( Delay_Cycles > 0 )
+		pIKBD->SCI_TX_Delay = Delay_Cycles / 1024;	/* 1 bit at 7812.5 baud = 1024 cpu cycles at 8 MHz */
 
 
 	/* Check we have space to add byte */
@@ -2576,10 +2577,10 @@ static void IKBD_CustomCodeHandler_FroggiesMenu_Write ( Uint8 aciabyte )
 
 	else if ( aciabyte == 4 )					/* Send 4 bytes */
 	{
-		IKBD_Send_Byte_Delay ( res83 , 0 );			/* $83 in IKBD's RAM */
+		IKBD_Send_Byte_Delay ( res83 , 7000 );			/* $83 in IKBD's RAM */
 		IKBD_Send_Byte_Delay ( res82 , 0 );			/* $82 in IKBD's RAM */
 		IKBD_Send_Byte_Delay ( res81 , 0 );			/* $81 in IKBD's RAM */
-		IKBD_Send_Byte_Delay ( res80 , 7000 );			/* $80 in IKBD's RAM */
+		IKBD_Send_Byte_Delay ( res80 , 0 );			/* $80 in IKBD's RAM */
 	}
 }
 
