@@ -1,4 +1,5 @@
-
+# conftypes.py is created to source directory (instead of build directory)
+# so that Hatari UI can be tested directly from the source directory
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/conftypes.py
 	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gentypes.py < ${CMAKE_CURRENT_SOURCE_DIR}/../src/configuration.c > ${CMAKE_CURRENT_SOURCE_DIR}/conftypes.py
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../src/configuration.c ${CMAKE_CURRENT_SOURCE_DIR}/gentypes.py)
@@ -7,11 +8,12 @@ add_custom_target(conftypes ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/conftypes.py
 INSTALL(PROGRAMS hatariui
 	DESTINATION ${BINDIR})
 
-INSTALL(PROGRAMS config.py dialogs.py hatari.py uihelpers.py
-	hatariui.py debugui.py ${CMAKE_CURRENT_SOURCE_DIR}/conftypes.py
+INSTALL(PROGRAMS hatariui.py debugui.py
 	DESTINATION ${DATADIR}/hatariui/)
 
 INSTALL(FILES README TODO release-notes.txt hatari-icon.png hatari.png
+	config.py dialogs.py hatari.py uihelpers.py
+	${CMAKE_CURRENT_SOURCE_DIR}/conftypes.py
 	DESTINATION ${DATADIR}/hatariui/)
 
 INSTALL(FILES hatari-icon.png
