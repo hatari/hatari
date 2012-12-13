@@ -914,6 +914,11 @@ Partly working applications:
 - Centurbo benchmark:
   - DSP speed 0, with normal TOS the correct 32Mhz
    (bogus speed values for FPU & CPU as with normal TOS)
+- Escape paint (GEM)
+  - Icons don't show in image operations window, and their
+    places are inverted on mouse-over, image names show in
+    image list window only on highlight, some UI elements
+    flicker
 - Fractal Playground
   - DSP needs to be disabled, keyboard input doesn't work
 - Smurf (GEM image viewer)
@@ -938,9 +943,6 @@ Broken applications:
    - needs 256-colors not supported by EmuTOS
 - DSPdit (by .tscc)
   - panic with bus error
-- Escape paint (GEM)
-  - Starts, but file selector doesn't open when one
-    tries to open an image
 - FalcAMP (GEM)
   - panic with bus error
 - FlaySID
