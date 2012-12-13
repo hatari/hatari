@@ -49,7 +49,7 @@ Print command line options and terminate
 .B \-v, \-\-version
 Print version information and terminate
 .TP 
-.B \-\-confirm-quit <bool>
+.B \-\-confirm\-quit <bool>
 Whether Hatari confirms quitting
 .TP 
 .B \-c, \-\-configfile <filename>
@@ -58,7 +58,7 @@ use the given file as configuration file instead of ~/.hatari/hatari.cfg
 .B \-k, \-\-keymap <file>
 load keyboard mapping from <file>
 .TP 
-.B \-\-fast-forward <bool>
+.B \-\-fast\-forward <bool>
 On fast machine helps skipping (fast forwarding) Hatari output
 .SH "Common display options"
 .TP 
@@ -84,7 +84,7 @@ Skip <x> frames after each displayed frame to accelerate emulation
 .B \-\-statusbar <bool>
 Show statusbar (with floppy leds etc etc)
 .TP 
-.B \-\-drive-led <bool>
+.B \-\-drive\-led <bool>
 Show overlay drive led when statusbar isn't shown
 .TP
 .B \-\-bpp <bool>
@@ -94,7 +94,7 @@ Force internal bitdepth (x = 8/15/16/32, 0=disable)
 .B \-\-borders <bool>
 Show ST/STE screen borders (for low/med resolution overscan demos)
 .TP
-.B \-\-desktop-st <bool>
+.B \-\-desktop\-st <bool>
 Whether fullscreen mode uses desktop resolution to avoid: messing
 multi-screen setups, several seconds delay needed by LCD monitors
 resolution switching and the resulting sound break. As Hatari ST/E
@@ -122,13 +122,13 @@ related to resolution switching. Otherwise fullscreen will use
 a resolution that is closest to the Hatari window size.
 (enabled by default)
 .TP
-.B \-\-max-width <x>
+.B \-\-max\-width <x>
 Preferred / maximum window width
 .TP
-.B \-\-max-height <x>
+.B \-\-max\-height <x>
 Preferred / maximum window height
 .TP
-.B \-\-force-max <bool>
+.B \-\-force\-max <bool>
 Hatari window size is forced to specified maximum size and black borders
 used when Atari resolution doesn't scale evenly to it.  This is most
 useful when recording videos of Falcon demos that change their
@@ -157,13 +157,13 @@ Remove statusbar from the screen captures
 .B \-\-avirecord
 Start AVI recording
 .TP
-.B \-\-avi-vcodec <x>
+.B \-\-avi\-vcodec <x>
 Select avi video codec (x = bmp/png)
 .TP
-.B \-\-avi-fps <x>
+.B \-\-avi\-fps <x>
 Force avi frame rate (x = 50/60/71/...)
 .TP
-.B \-\-avi-file <file>
+.B \-\-avi\-file <file>
 Use <file> to record avi
 .SH "Devices options"
 .TP 
@@ -176,36 +176,36 @@ Set joystick type (none/keys/real) for given port
 .B \-\-printer <file>
 Enable printer support and write data to <file>
 .TP 
-.B \-\-midi-in <filename>
+.B \-\-midi\-in <filename>
 Enable MIDI support and write MIDI data to <file>
 .TP 
-.B \-\-midi-out <filename>
+.B \-\-midi\-out <filename>
 Enable MIDI support and read MIDI data from <file>
 .TP 
-.B \-\-rs232-in <filename>
+.B \-\-rs232\-in <filename>
 Enable serial port support and use <file> as the input device
 .TP 
-.B \-\-rs232-out <filename>
+.B \-\-rs232\-out <filename>
 Enable serial port support and use <file> as the output device
 .SH "Disk options"
 .TP
-.B \-\-disk-a <file>
+.B \-\-disk\-a <file>
 Set disk image for floppy drive A
 .TP
-.B \-\-disk-b <file>
+.B \-\-disk\-b <file>
 Set disk image for floppy drive B
 .TP
-.B \-\-protect-floppy <x>
+.B \-\-protect\-floppy <x>
 Write protect floppy image contents (on/off/auto). With "auto" option
 write protection is according to the disk image file attributes.
 .TP
-.B \-\-protect-hd <x>
+.B \-\-protect\-hd <x>
 Write protect harddrive <dir> contents (on/off/auto). With "auto" option
 the protection can be controlled by setting individual files attributes
 as it disables the file attribute modifications for the GEMDOS hard disk
 emulation.
 .TP
-.B \-\-gemdos-case <x>
+.B \-\-gemdos\-case <x>
 Specify whether new dir/filenames are forced to be in upper or lower case
 with the GEMDOS HD emulation. Off by default.
 .TP 
@@ -240,7 +240,7 @@ Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
 .B \-t, \-\-tos <imagefile>
 Specify TOS ROM image to use
 .TP 
-.B \-\-patch-tos <bool>
+.B \-\-patch\-tos <bool>
 Use this option to enable/disable TOS ROM patching. Experts only! Leave
 this enabled unless you know what you are doing!
 .TP 
@@ -269,12 +269,12 @@ Enable blitter emulation (ST only)
 .B \-\-dsp <x>
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP 
-.B \-\-timer-d <bool>
+.B \-\-timer\-d <bool>
 Patch redundantly high Timer-D frequency set by TOS.  This about doubles
 Hatari speed (for ST/e emulation) as the original Timer-D frequency causes
 most of the interrupts.
 .TP
-.B \-\-fast-boot <bool>
+.B \-\-fast\-boot <bool>
 Patch TOS and initialize the so-called "memvalid" system variables to by-pass
 the memory test of TOS, so that the system boots faster.
 .TP
@@ -293,7 +293,7 @@ DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
 (11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
 supports.
 .TP 
-.B \-\-sound-buffer-size <x>
+.B \-\-sound\-buffer\-size <x>
 SDL's sound buffer size: 10-100, or 0 to use default buffer size.
 By default Hatari uses an SDL buffer size of 1024 samples, which
 gives approximatively 20-30 ms of sound depending on the chosen sound
@@ -303,8 +303,8 @@ In that case, you can use this option to force the size of the sound
 buffer to a fixed number of milliseconds of sound (using 20 is often
 a good choice if you have such problems). Most users will not need this option.
 .TP 
-.B \-\-sound-sync <bool>
-The emulation rate is nudged by +100 or 0 or -100 micro-seconds on occasion.
+.B \-\-sound\-sync <bool>
+The emulation rate is nudged by +100 or 0 or \-100 micro-seconds on occasion.
 This prevents the sound buffer from overflowing (long latency and
 lost samples) or underflowing (short latency and repeated samples).
 The emulation rate smoothly deviates by a maximum of 0.58% until
@@ -313,7 +313,7 @@ sample and the crystal controlled sound system consumes every sample.
 .br
 (on|off, off=default)
 .TP 
-.B \-\-ym-mixing <x>
+.B \-\-ym\-mixing <x>
 Select a method for mixing the three YM2149 voice volumes together.
 "model" uses a mathematical model of the YM voices,
 "table" uses a lookup table of audio output voltage values measured
@@ -323,7 +323,7 @@ on STF and "linear" just averages the 3 YM voices.
 .B \-D, \-\-debug
 Toggle whether CPU exceptions invoke the debugger
 .TP 
-.B \-\-bios-intercept
+.B \-\-bios\-intercept
 Toggle Bios/XBios call interception needed for Bios/XBios call tracing.
 Allows Atari programs to modify Hatari state through XBios 255 calls
 which are processed as Hatari commandline arguments. Atari
@@ -349,7 +349,7 @@ Activate debug traces, see
 .B \-\-trace help
 for available tracing options
 .TP
-.B \-\-trace-file <file>
+.B \-\-trace\-file <file>
 Save trace output to <file> (default=stderr)
 .TP
 .B \-\-parse <file>
@@ -359,24 +359,24 @@ Parse/execute debugger commands from <file>
 Save Hatari configuration and exit. Hatari UI needs Hatari configuration
 file to start, this can be used to create it automatically.
 .TP
-.B \-\-no-parachute
+.B \-\-no\-parachute
 Disable SDL parachute to get Hatari core dumps. SDL parachute is enabled
 by default to restore video mode in case Hatari terminates abnormally
 while using non-standard screen resolution.
 .TP
-.B \-\-control-socket <file>
+.B \-\-control\-socket <file>
 Hatari reads options from given socket at run-time
 .TP
-.B \-\-log-file <file>
+.B \-\-log\-file <file>
 Save log output to <file> (default=stderr)
 .TP
-.B \-\-log-level <x>
+.B \-\-log\-level <x>
 Log output level (x=debug/todo/info/warn/error/fatal)
 .TP
-.B \-\-alert-level <x>
+.B \-\-alert\-level <x>
 Show dialog for log messages above given level
 .TP
-.B \-\-run-vbls <x>
+.B \-\-run\-vbls <x>
 Exit after X VBLs
 .SH "COMMANDS"
 The shortcut keys can be configured in the configuration file.
