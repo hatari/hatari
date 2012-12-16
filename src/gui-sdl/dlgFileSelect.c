@@ -23,18 +23,19 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c : " __DATE__ " " __T
 #define SGFS_NUMENTRIES   16            /* How many entries are displayed at once */
 
 
-#define SGFSDLG_FILENAME   5
-#define SGFSDLG_UPDIR      6
-#define SGFSDLG_HOMEDIR    7
-#define SGFSDLG_ROOTDIR    8
-#define SGFSDLG_ENTRYFIRST 11
-#define SGFSDLG_ENTRYLAST 26
-#define SGFSDLG_SCROLLBAR 27
-#define SGFSDLG_UP        28
-#define SGFSDLG_DOWN      29
-#define SGFSDLG_SHOWHIDDEN 30
-#define SGFSDLG_OKAY      31
-#define SGFSDLG_CANCEL    32
+#define SGFSDLG_FILENAME    5
+#define SGFSDLG_UPDIR       6
+#define SGFSDLG_CWD         7
+#define SGFSDLG_HOMEDIR     8
+#define SGFSDLG_ROOTDIR     9
+#define SGFSDLG_ENTRYFIRST 12
+#define SGFSDLG_ENTRYLAST  27
+#define SGFSDLG_SCROLLBAR  28
+#define SGFSDLG_UP         29
+#define SGFSDLG_DOWN       30
+#define SGFSDLG_SHOWHIDDEN 31
+#define SGFSDLG_OKAY       32
+#define SGFSDLG_CANCEL     33
 
 #define SCROLLOUT_ABOVE  1
 #define SCROLLOUT_UNDER  2
@@ -59,7 +60,8 @@ static SGOBJ fsdlg[] =
 	{ SGTEXT, 0, 0, 1,3, DLGPATH_SIZE,1, dlgpath },
 	{ SGTEXT, 0, 0, 1,4, 6,1, "File:" },
 	{ SGTEXT, 0, 0, 7,4, DLGFNAME_SIZE,1, dlgfname },
-	{ SGBUTTON, 0, 0, 51,1, 4,1, ".." },
+	{ SGBUTTON, 0, 0, 45,1, 4,1, ".." },
+	{ SGBUTTON, 0, 0, 50,1, 5,1, "CWD" },
 	{ SGBUTTON, 0, 0, 56,1, 3,1, "~" },
 	{ SGBUTTON, 0, 0, 60,1, 3,1, "/" },
 	{ SGBOX, 0, 0, 1,6, 62,16, NULL },
@@ -750,7 +752,11 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 				break;
 
 			case SGFSDLG_HOMEDIR:               /* Change to home directory */
-				home = Paths_GetUserHome();
+			case SGFSDLG_CWD:                   /* Change to current work directory */
+				if (retbut == SGFSDLG_CWD)
+					home = Paths_GetWorkingDir();
+				else
+					home = Paths_GetUserHome();
 				if (home == NULL || !*home)
 					break;
 				if (browsingzip)
