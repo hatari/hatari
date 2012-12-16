@@ -328,6 +328,27 @@ to turn on the GUI to
 configure Hatari to suit your needs, press <span class="key">F11</span>
 to toggle windowed and fullscreen mode. </p>
 
+<h3>Configuration options precedence</h3>
+
+<p>Hatari settings can come from several sources, with later ones
+overriding the earlier given ones:
+<ul>
+<li>Builtin Hatari default options (which are different for old UAE and WinUAE
+    CPU core builds, former defaults to ST, latter to Falcon)</li>
+<li>Global <span class="commandline">/etc/hatari.cfg</span>
+    (or <span class="commandline">/usr/local/etc/hatari.cfg</span>)
+    configuration file</li>
+<li>User specific <span class="commandline">~/.hatari/hatari.cfg</span>
+    configuration file</li>
+<li>Command line arguments
+<li>Option changes done at run-time in Hatari options GUI, with debugger "setopt"
+    command or through the (optionally enabled) Hatari control socket.
+</ul>
+
+<p>Some of the run-time changes require emulation to be reseted for them
+to take effect.</p>
+
+
 <h2>Command line options and arguments</h2>
 
 <p>Usage:</p>
@@ -380,8 +401,10 @@ terminate</p>
 <p class="paramdesc">Whether Hatari confirms quitting</p>
 <p class="parameter">&minus;c, &minus;&minus;configfile
 &lt;filename&gt;</p>
-<p class="paramdesc">use the given file as configuration
-file instead of ~/.hatari/hatari.cfg</p>
+<p class="paramdesc">Read additional configuration values from
+&lt;file&gt;, these override values read from the global and
+user configuration files
+</p>
 <p class="parameter">&minus;k, &minus;&minus;keymap
 &lt;file&gt;</p>
 <p class="paramdesc">load keyboard mapping from

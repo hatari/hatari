@@ -172,7 +172,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CONFIRMQUIT, NULL, "--confirm-quit",
 	  "<bool>", "Whether Hatari confirms quit" },
 	{ OPT_CONFIGFILE, "-c", "--configfile",
-	  "<file>", "Use <file> instead of the default hatari config file" },
+	  "<file>", "Read (additional) configuration values from <file>" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	{ OPT_FASTFORWARD, NULL, "--fast-forward",
