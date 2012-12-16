@@ -28,7 +28,8 @@ Emulator:
   option for it (--bios-intercept doesn't anymore imply console redirection)
 - Give warning if GEMDOS dir/file path exceeds 8+3 characters
 - New --gemdos-case option to specify whether new dir/filenames
-  are forced to upper or lower case
+  are forced to be created in upper (default) or lower case
+- SDL UI fileselector has "CWD" button for changing to Hatari's work directory
 - SDL UI fileselector remembers previous position which is nicer with
   large directories
 - Debugger:
@@ -48,7 +49,6 @@ Emulator:
   - Fix: expression expansion messing lines in command line history
   - Remote API debugger commands can also use expression expansion
   - Both single and double quotes can be used to mark expressions
-    (above two features make temporary debug output easier within Hatari)
   - "profile addresses" can be used to see addresses through which
     code passed during profiling (e.g. while program seems frozen, this
     gives much better overview of code that is being run, than cpu trace)
