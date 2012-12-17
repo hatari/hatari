@@ -1349,14 +1349,14 @@ for accurate sound's emulation.
 <img src="images/devices.png" width="520" height="383" alt="Hatari's GUI - the device dialog">
 </div>
 
-<p>Check the first checkmark to enable experimental printer support.
+<p>Check the first checkmark to enable printer support.
 See the <a href="#Emulated_printer">Emulated printer</a> section for
 details.</p>
 
 <p>As Hatari currently only supports printing to file, click on <span
  class="button">Browse</span> to select the file to print to. You can
 enter a new filename as well.</p>
-<p>Check the second checkmark to enable experimental RS232 support.
+<p>Check the second checkmark to enable RS232 support.
 The RS232 device is configured according to the settings of
 the emulated RS232 of the Atari ST. This means Hatari will
 automatically use baudrate and handshaking as configured for the
@@ -1365,7 +1365,7 @@ emulated ST.</p>
 device files for serial input and output.  On Linux a good choice is
 /dev/ttyS0 or /dev/ttyS1.
 </p>
-<p>Check the third checkmark to enable experimental MIDI support.
+<p>Check the third checkmark to enable MIDI support.
 Click on <span class="button">Browse</span> to select a suitable
 MIDI device files for MIDI input and output.</p>
 <p><span class="file">midi-linux.txt</span> file explains how to
@@ -1524,11 +1524,13 @@ are in question).  Expensive gaming keyboards support more.</p>
 <p>For obvious reasons your PC mouse will act as the emulated Atari ST
 mouse. In fullscreen mode it will act as expected, directly controlling
 the ST mouse pointer. </p>
-<p>However it is a little bit different in windowed mode. To make the
-mouse work there as expected you need to grab it first or lock it into
-the Hatari window. Do this by pressing the <span class="key">ALTGR+m</span>
+<p>However it is a little bit different in windowed mode as
+mouse cursor positions between host and emulated Atari can get
+out of sync. This can be worked around by constraining the mouse
+to the Hatari window. Pressing the <span class="key">ALTGR+m</span>
 hotkey combination or starting Hatari with the
-<span class="commandline">--grab</span> command line option.
+<span class="commandline">--grab</span> command line option
+grabs the mouse i.e. locks its movements to the Hatari window.
 Press the shortcut key (again) to go back to normal mouse behaviour
 which allows you to move mouse outside outside the Hatari window while
 Hatari is up and running. Note: pausing the emulation will also
@@ -1579,9 +1581,9 @@ all ST games will not be able to make use of higher resolutions.</p>
 
 <h3 id="Emulated_printer">Emulated printer</h3>
 
-<p>Due to the fact that printer handling is very different between Unix
-style machines and the Atari ST, emulation
-of the printer is achieved by writing all printer output to a file.</p>
+<p>Due to the fact that printer handling is different on Atari and
+current machines, emulation of the printer is achieved by writing all
+printer output to a file.</p>
 <p>The file will contain a sequence of data, the same that would appear
 on the data pins of the Atari ST printer port.
 That would include control characters and commands for graphic
@@ -1591,11 +1593,11 @@ in a messy data dump in the printer output.</p>
 do not format the output for a specific printer.
 The file contents can be used with your favourite text editor for
 further processing and printing to a real printer.</p>
-<p>To get real direct printing out of Hatari on a PostScript printer,
-you may set up a GDOS printer with a PostScript driver on the emulated
-Atari and set your printer device file as Hatari's printer output.<br>
-<em>NOTE:</em> This has not been tested yet and the Hatari team cannot
-guarantee that it will work.</p>
+<p>To get real direct printing out of Hatari you may set up a suitable
+(e.g. PostScript) GDOS or NVDI printer driver on the emulated Atari and
+set your printer device file as Hatari's printer output.<br>
+<em>NOTE:</em>If the driver doesn't match or there's some other problem,
+this can cause your printer to print out hundreds of pages of garbage.</p>
 
 <h3>Emulated RS232</h3>
 
