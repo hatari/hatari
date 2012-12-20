@@ -123,7 +123,7 @@ void Midi_Control_ReadByte(void)
 	Dprintf(("Midi_ReadControl : $%x.\n", MidiStatusRegister));
 
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
-	M68000_WaitState(8);
+	M68000_WaitState(6);
 
 	IoMem[0xfffc04] = MidiStatusRegister;
 }
@@ -135,7 +135,7 @@ void Midi_Control_ReadByte(void)
 void Midi_Control_WriteByte(void)
 {
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
-	M68000_WaitState(8);
+	M68000_WaitState(6);
 
 	MidiControlRegister = IoMem[0xfffc04];
 
@@ -162,7 +162,7 @@ void Midi_Data_ReadByte(void)
 	Dprintf(("Midi_ReadData : $%x.\n", 1));
 
 	/* ACIA registers need wait states (value seems to vary in certain cases) */
-	M68000_WaitState(8);
+	M68000_WaitState(6);
 
 	MidiStatusRegister &= ~(ACIA_SR_INTERRUPT_REQUEST|ACIA_SR_RX_FULL);
 
@@ -182,7 +182,7 @@ void Midi_Data_WriteByte(void)
 	Uint8 nTxDataByte;
 
 	/* ACIA registers need wait states (value seems to vary in certain cases) */
-	M68000_WaitState(8);
+	M68000_WaitState(6);
 
 	nTxDataByte = IoMem[0xfffc06];
 

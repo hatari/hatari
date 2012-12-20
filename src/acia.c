@@ -508,7 +508,7 @@ void	ACIA_InterruptHandler_MIDI ( void )
 void	ACIA_IKBD_Read_SR ( void )
 {
 	/* ACIA registers need wait states. TODO : also add wait time for E clock */
-	M68000_WaitState(8);
+	M68000_WaitState(6);
 
 	IoMem[0xfffc00] = ACIA_Read_SR ( pACIA_IKBD );
 
@@ -531,7 +531,7 @@ void	ACIA_IKBD_Read_SR ( void )
 void	ACIA_IKBD_Read_RDR ( void )
 {
 	/* ACIA registers need wait states. TODO : also add wait time for E clock */
-	M68000_WaitState(8);
+	M68000_WaitState(6);
 
 	IoMem[0xfffc02] = ACIA_Read_RDR ( pACIA_IKBD );
 
@@ -556,7 +556,7 @@ void	ACIA_IKBD_Write_CR ( void )
 	int FrameCycles, HblCounterVideo, LineCycles;
 
 	/* ACIA registers need wait states. TODO : also add wait time for E clock */
-	M68000_WaitState(8);
+	M68000_WaitState(6);
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc00 cr=0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
@@ -577,7 +577,7 @@ void	ACIA_IKBD_Write_TDR ( void )
 	int FrameCycles, HblCounterVideo, LineCycles;
 
 	/* ACIA registers need wait states. TODO : also add wait time for E clock */
-	M68000_WaitState(8);
+	M68000_WaitState(6);
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc02 tdr=0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
