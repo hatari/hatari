@@ -158,6 +158,12 @@ generated_toc = {
     arguments.callee.done = true;
 
     generated_toc.generate();
+
+    if (location.hash.length != 0 && window.onload == null) {
+        // Refresh location to make sure that the browser really jumps
+        // to the desired section!
+        location.href = location.href;
+    }
   }
 };
 
