@@ -2067,6 +2067,7 @@ static void gen_opcode (unsigned long int opcode)
 	case i_MVPRM: // MOVEP R->M
 		genamode (curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 		printf ("\tuaecptr memp = m68k_areg (regs, dstreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword (0));
+		/* [NP] Use MovepByteNbr to keep track of each access inside a movep */
 		if (curi->size == sz_word) {
 			printf ("\tMovepByteNbr=1; %s (memp, src >> 8); MovepByteNbr=2; %s (memp + 2, src);\n", dstb, dstb);
 			count_write += 2;
@@ -2081,14 +2082,24 @@ static void gen_opcode (unsigned long int opcode)
 	case i_MVPMR: // MOVEP M->R
 		printf ("\tuaecptr memp = m68k_areg (regs, srcreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword (0));
 		genamode (curi->dmode, "dstreg", curi->size, "dst", 2, 0, 0);
+		/* [NP] Use MovepByteNbr to keep track of each access inside a movep */
 		if (curi->size == sz_word) {
-			printf ("\tuae_u16 val = (%s (memp) << 8) + %s (memp + 2);\n", srcb, srcb);
+			//printf ("\tuae_u16 val = (%s (memp) << 8) + %s (memp + 2);\n", srcb, srcb);
+			printf ("\tuae_u16 val;\n");
+			printf ("\tMovepByteNbr=1; val = (%s (memp) << 8);\n", srcb);
+			printf ("\tMovepByteNbr=2; val += %s (memp + 2);\n", srcb);
 			count_read += 2;
 		} else {
-			printf ("\tuae_u32 val = (%s (memp) << 24) + (%s (memp + 2) << 16)\n", srcb, srcb);
-			printf ("              + (%s (memp + 4) << 8) + %s (memp + 6);\n", srcb, srcb);
+			//printf ("\tuae_u32 val = (%s (memp) << 24) + (%s (memp + 2) << 16)\n", srcb, srcb);
+			//printf ("              + (%s (memp + 4) << 8) + %s (memp + 6);\n", srcb, srcb);
+			printf ("\tuae_u32 val;\n");
+			printf ("\tMovepByteNbr=1; val = (%s (memp) << 24);\n", srcb);
+			printf ("\tMovepByteNbr=2; val += (%s (memp + 2) << 16);\n", srcb);
+			printf ("\tMovepByteNbr=2; val += (%s (memp + 4) << 8);\n", srcb);
+			printf ("\tMovepByteNbr=4; val += %s (memp + 6);\n", srcb);
 			count_read += 4;
 		}
+		printf ("\tMovepByteNbr=0;\n");
 		fill_prefetch_next ();
 		genastore ("val", curi->dmode, "dstreg", curi->size, "dst");
 		break;
