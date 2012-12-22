@@ -51,8 +51,6 @@
 #define MMU030_ATC_DBG_MSG 0
 #define MMU030_REG_DBG_MSG 0
 
-#undef write_log
-#define write_log(...)
 
 /* for debugging messages */
 char table_letter[4] = {'A','B','C','D'};
@@ -437,7 +435,9 @@ void mmu030_flush_atc_page(uaecptr logical_addr) {
 
 /* This function flushes all ATC entries */
 void mmu030_flush_atc_all(void) {
+#if MMU030_ATC_DBG_MSG
     write_log("ATC: Flushing all entries\n");
+#endif
     int i;
     for (i=0; i<ATC030_NUM_ENTRIES; i++) {
         mmu030.atc[i].logical.valid = false;
@@ -1029,11 +1029,15 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
         if ((tc_030&TC_ENABLE_SUPERVISOR) && super) {
             descr[0] = (srp_030>>32)&0xFFFFFFFF;
             descr[1] = srp_030&0xFFFFFFFF;
+#if MMU030_REG_DBG_MSG
             write_log("Supervisor Root Pointer: %08X%08X\n",descr[0],descr[1]);
+#endif // MMU030_REG_DBG_MSG
         } else {
             descr[0] = (crp_030>>32)&0xFFFFFFFF;
             descr[1] = crp_030&0xFFFFFFFF;
+#if MMU030_REG_DBG_MSG
             write_log("CPU Root Pointer: %08X%08X\n",descr[0],descr[1]);
+#endif
         }
                 
         if (descr[0]&RP_ZERO_BITS) {
@@ -1077,11 +1081,15 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
             
             if (next_size==4) {
                 descr[0] = phys_get_long(descr_addr[descr_num]);
+#if MMU030_REG_DBG_MSG
                 write_log("Next descriptor: %08X\n",descr[0]);
+#endif
             } else {
                 descr[0] = phys_get_long(descr_addr[descr_num]);
                 descr[1] = phys_get_long(descr_addr[descr_num]+4);
+#if MMU030_REG_DBG_MSG
                 write_log("Next descriptor: %08X%08X\n",descr[0],descr[1]);
+#endif
             }
             
             descr_size = next_size;
@@ -1095,7 +1103,9 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
                     mmu030.status |= MMUSR_INVALID;
                     goto stop_search;
                 case DESCR_TYPE_EARLY_TERM:
+#if MMU030_REG_DBG_MSG
                     write_log("Early termination page descriptor!\n");
+#endif
                     early_termination = true;
                     goto handle_page_descriptor;
                 case DESCR_TYPE_VALID4:
@@ -1135,7 +1145,9 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
             addr_position = (descr_size==4) ? 0 : 1;
             table_addr = descr[addr_position]&DESCR_TD_ADDR_MASK;
             table_index = (addr&mmu030.translation.table[t].mask)>>mmu030.translation.table[t].shift;
+#if MMU030_REG_DBG_MSG
             write_log("Table %c at %08X: index = %i, ",table_letter[t],table_addr,table_index);
+#endif // MMU030_REG_DBG_MSG
             t++; /* Proceed to the next table */
             
             /* Perform limit check */
@@ -1159,11 +1171,15 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
             
             if (next_size==4) {
                 descr[0] = phys_get_long(descr_addr[descr_num]);
+#if MMU030_REG_DBG_MSG
                 write_log("Next descriptor: %08X\n",descr[0]);
+#endif
             } else {
                 descr[0] = phys_get_long(descr_addr[descr_num]);
                 descr[1] = phys_get_long(descr_addr[descr_num]+4);
+#if MMU030_REG_DBG_MSG
                 write_log("Next descriptor: %08X%08X\n",descr[0],descr[1]);
+#endif
             }
             
             descr_size = next_size;
@@ -1179,7 +1195,9 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
                 case DESCR_TYPE_EARLY_TERM:
                     /* go to last level table handling code */
                     if (t<=mmu030.translation.last_table) {
+#if MMU030_REG_DBG_MSG
                         write_log("Early termination page descriptor!\n");
+#endif
                         early_termination = true;
                     }
                     goto handle_page_descriptor;
@@ -1291,14 +1309,18 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
                 t++;
             } while (t<=mmu030.translation.last_table);
             page_addr = addr&unused_fields_mask;
+#if MMU030_REG_DBG_MSG
             write_log("Logical address unused bits: %08X (mask = %08X)\n",
                       page_addr,unused_fields_mask);
+#endif
         }
         
         /* Get page address */
         addr_position = (descr_size==4) ? 0 : 1;
         page_addr += (descr[addr_position]&DESCR_PD_ADDR_MASK);
+#if MMU030_REG_DBG_MSG
         write_log("Page at %08X\n",page_addr);
+#endif // MMU030_REG_DBG_MSG
         
     stop_search:
         ; /* Make compiler happy */
@@ -1342,7 +1364,9 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
                 break;
             }
         }
+#if MMU030_ATC_DBG_MSG
         write_log("ATC is full. Replacing entry %i\n", i);
+#endif
     }
     mmu030_atc_handle_history_bit(i);
     
@@ -1363,7 +1387,8 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     }
     mmu030.atc[i].physical.cache_inhibit = cache_inhibit;
     mmu030.atc[i].physical.write_protect = write_protect;
-    
+
+#if MMU030_ATC_DBG_MSG
     write_log("ATC create entry(%i): logical = %08X, physical = %08X, FC = %i\n", i,
               mmu030.atc[i].logical.addr, mmu030.atc[i].physical.addr,
               mmu030.atc[i].logical.fc);
@@ -1372,7 +1397,8 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
               mmu030.atc[i].physical.cache_inhibit?1:0,
               mmu030.atc[i].physical.write_protect?1:0,
               mmu030.atc[i].physical.modified?1:0);
-
+#endif // MMU030_ATC_DBG_MSG
+    
     return 0;
 }
 
@@ -1634,7 +1660,9 @@ void mmu030_atc_handle_history_bit(int entry_num) {
             mmu030.atc[j].mru = 0;
         }
         mmu030.atc[entry_num].mru = 1;
+#if MMU030_ATC_DBG_MSG
         write_log("ATC: No more history zero-bits. Reset all.\n");
+#endif
     }
 }
 
@@ -1786,7 +1814,7 @@ uae_u32 REGPARAM2 mmu030_get_long_unaligned(uaecptr addr, uae_u32 fc)
 		}
 		CATCH(prb) {
 			RESTORE_EXCEPTION;
-			regs.mmu_fault_addr = addr;
+			// regs.mmu_fault_addr = addr;
 			regs.mmu_ssw |= MMU_SSW_MA;
 			THROW_AGAIN(prb);
 		} ENDTRY
