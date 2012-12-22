@@ -1621,7 +1621,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		x_put_word (m68k_areg (regs, 7), 0xb000 + nr * 4);
 		write_log ("Exception %d (%x) at %x -> %x!\n", nr, oldpc, currpc, STMemory_ReadLong(regs.vbr + 4*nr));
 
-	} else if (nr ==5 || nr == 6 || nr == 7 || nr == 9) {
+	} else if (nr ==5 || nr == 6 || nr == 7 || nr == 9 || nr == 56) {
 
 		m68k_areg (regs, 7) -= 4;
 		x_put_long (m68k_areg (regs, 7), oldpc);
