@@ -2474,7 +2474,7 @@ b  HBL = "HBL+20"
     By default they contain the 0xffff value, so to trace e.g. all AES
     calls, instead of a specific one, one needs to use something like this:
 <pre>
-b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
+b  AesOpcode ! AesOpcode  &amp;&amp;  AesOpcode &lt; 0xffff  :trace
 </pre>
 </li>
 </ul>
