@@ -15,6 +15,8 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 /* 2012/09/28	[NP]	Start of the full rewrite of the MC6850 ACIA emulation, using the official	*/
 /*			datasheets for maximum accuracy, as well as bit level serial transfers (start,	*/
 /*			stop and parity bits).								*/
+/* 2012/12/21	[NP]	Add accurate cycles delays when accessing an ACIA register, taking E Clock	*/
+/*			into account.									*/
 
 
 
@@ -106,6 +108,22 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
     The MIDI ACIA addresses are 0xfffc004 and 0xfffc06.
     Default keyboard parameters are : 8-bit word, 1 stopbit, no parity, 7812.5 baud; 500KHz/64 (keyboard clock div)
     Default MIDI parameters are as above but : 31250 baud; 500KHz/16 (MIDI clock div)
+
+
+  CPU cycles in the ST :
+    When accessing an ACIA register, an additional delay will be added to the usual number of
+    cycles for this CPU instruction. This delay is made of 2 parts (for a 68000 at 8 MHz) :
+	- a fixed delay of 6 cycles.
+	- a variable delay of 0 to 8 cycles to synchronise with the E Clock.
+
+    Examples for some common instructions measured on a real 520 STF
+    (with a0=$fffffc00 and 'n' the delay for E Clock) :
+	move.b  (a0),d2 : 14 cycles = 8 + 6 + n
+	move.w  (a0),d2 : 14 cycles = 8 + 6 + n
+	move.l  (a0),d2 : 24 cycles = 12 + 6 + 6 + n
+	movep.w (a0),d2 : 28 cycles = 16 + 6 + 6 + n
+	movep.l (a0),d2 : 48 cycles = 24 + 6 + 6 + 6 + 6 + n
+    (on ST, those values might be rounded to the next multiple of 4 cycles)
 
 */
 
@@ -503,12 +521,41 @@ void	ACIA_InterruptHandler_MIDI ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * - For each access to an ACIA register, a 6 cycles delay is added to the
+ *   normal 68000 timing for the current CPU instruction. If the instruction
+ *   accesses several registers at once, the delays are cumulated.
+ * - An additional delay will also be added to ensure the 68000 clock and
+ *   the E clock are synchronised ; this delay can add between 0 and 8 cycles
+ *   to reach the next multiple of 10 cycles. This delay is added only once
+ *   per CPU instruction.
+ * These delays are measured for an 8 MHz 68000 CPU.
+ */
+void	ACIA_AddWaitCycles ( void )
+{
+	int	cycles;
+
+	/* Add a default of 6 cycles for each access */
+	cycles = 6;
+
+	/* Wait for E clock only if this is the first ACIA access for this instruction */
+	/* (NOTE : in UAE, movep behaves like several bytes access with different IoAccessBaseAddress, */
+	/* so only the first movep's access should wait for E Clock) */
+	if ( ( ( MovepByteNbr == 0 ) && ( IoAccessBaseAddress == IoAccessCurrentAddress ) )
+	  || ( MovepByteNbr == 1 ) )					/* First access of a movep */
+		cycles += M68000_WaitEClock ();
+	
+	M68000_WaitState ( cycles );
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Return SR for the IKBD's ACIA (0xfffc00)
  */
 void	ACIA_IKBD_Read_SR ( void )
 {
-	/* ACIA registers need wait states. TODO : also add wait time for E clock */
-	M68000_WaitState(6);
+	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
 	IoMem[0xfffc00] = ACIA_Read_SR ( pACIA_IKBD );
 
@@ -530,8 +577,7 @@ void	ACIA_IKBD_Read_SR ( void )
  */
 void	ACIA_IKBD_Read_RDR ( void )
 {
-	/* ACIA registers need wait states. TODO : also add wait time for E clock */
-	M68000_WaitState(6);
+	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
 	IoMem[0xfffc02] = ACIA_Read_RDR ( pACIA_IKBD );
 
@@ -555,8 +601,7 @@ void	ACIA_IKBD_Write_CR ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
-	/* ACIA registers need wait states. TODO : also add wait time for E clock */
-	M68000_WaitState(6);
+	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc00 cr=0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,
@@ -576,8 +621,7 @@ void	ACIA_IKBD_Write_TDR ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
 
-	/* ACIA registers need wait states. TODO : also add wait time for E clock */
-	M68000_WaitState(6);
+	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LOG_TRACE(TRACE_IKBD_ACIA, "acia %s write fffc02 tdr=0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", pACIA_IKBD->ACIA_Name ,

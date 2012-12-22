@@ -71,6 +71,8 @@ void	ACIA_InterruptHandler_MFP ( void );
 void	ACIA_InterruptHandler_IKBD ( void );
 void	ACIA_InterruptHandler_MIDI ( void );
 
+void	ACIA_AddWaitCycles ( void );
+
 void	ACIA_IKBD_Read_SR ( void );
 void	ACIA_IKBD_Read_RDR ( void );
 void	ACIA_IKBD_Write_CR ( void );
