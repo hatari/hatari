@@ -513,3 +513,29 @@ void M68000_WaitState(int nCycles)
 
 	nWaitStateCycles += nCycles;	/* add all the wait states for this instruction */
 }
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Some components (HBL/VBL interrupts, access to the ACIA) require an
+ * extra delay to be synchronized with the E Clock.
+ * E Clock's frequency is 1/10th of the CPU, ie 0.8 MHz in an STF/STE
+ * This delay is a multiple of 2 and will follow the pattern [ 0 8 6 4 2 ]
+ */
+
+int	M68000_WaitEClock ( void )
+{
+	int	CyclesToNextE;
+
+	/* We must wait for the next multiple of 10 cycles to be synchronised with E Clock */
+	/* FIXME : use video counter to simulate E Clock, but we should use */
+	/* a global cpu counter */
+	CyclesToNextE = 10 - Cycles_GetCounter(CYCLES_COUNTER_VIDEO) % 10;
+	if ( CyclesToNextE == 10 )		/* we're already synchronised with E Clock */
+		CyclesToNextE = 0;
+	return CyclesToNextE;
+}
+
+
+

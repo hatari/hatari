@@ -270,5 +270,6 @@ extern void M68000_MemorySnapShot_Capture(bool bSave);
 extern void M68000_BusError(Uint32 addr, bool bReadWrite);
 extern void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource);
 extern void M68000_WaitState(int nCycles);
+extern int M68000_WaitEClock ( void );
 
 #endif
