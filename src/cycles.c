@@ -38,7 +38,8 @@ int nCyclesMainCounter;				/* Main cycles counter */
 static int nCyclesCounter[CYCLES_COUNTER_MAX];	/* Array with all counters */
 
 int CurrentInstrCycles;
-int MovepByteNbr;				/* Number of the byte currently transferred in a movep (1..2 or 1..4) */
+int MovepByteNbr = 0;				/* Number of the byte currently transferred in a movep (1..2 or 1..4) */
+						/* 0 means current instruction is not a movep */
 
 
 
