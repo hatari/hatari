@@ -1286,6 +1286,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tMovepByteNbr=1; put_byte(memp, src >> 24); MovepByteNbr=2; put_byte(memp + 2, src >> 16);\n");
 	    printf ("\tMovepByteNbr=3; put_byte(memp + 4, src >> 8); MovepByteNbr=4; put_byte(memp + 6, src);\n");
 	}
+	printf ("\tMovepByteNbr=0;\n");
         if(curi->size==sz_long)  insn_n_cycles=24;  else  insn_n_cycles=16;
 	break;
     case i_MVPMR:

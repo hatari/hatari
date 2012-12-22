@@ -2075,6 +2075,7 @@ static void gen_opcode (unsigned long int opcode)
 			printf ("\tMovepByteNbr=3; %s (memp + 4, src >> 8); MovepByteNbr=4; %s (memp + 6, src);\n", dstb, dstb);
 			count_write += 4;
 		}
+		printf ("\tMovepByteNbr=0;\n");
 		fill_prefetch_next ();
 		break;
 	case i_MVPMR: // MOVEP M->R
