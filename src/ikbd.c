@@ -48,7 +48,9 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			resetting the ACIA) (fix the game 'Hades Nebula').				*/
 /* 2012/10/10	[NP]	Use the new ACIA emulation in acia.c ; add support for the IKBD's SCI, which	*/
 /*			is similar to the ACIA, with fixed 8 data bits, 1 stop bit and no parity bit.	*/
-
+/* 2012/12/23	[NP]	Fix timings for the commands $16, $1C, $87-$9A. The first byte is returned	*/
+/*			between 'min' and 'max' cycles after receiving the full command. The delay	*/
+/*			is not fixed to simulate the slight variations measured on a real ST.		*/
 
 
 #include <time.h>
@@ -279,6 +281,7 @@ static Uint8	IKBD_SCI_Set_Line_TX ( void );
 static void	IKBD_Process_RDR ( Uint8 RDR );
 static void	IKBD_Check_New_TDR ( void );
 
+static int	IKBD_Delay_Random ( int min , int max );
 static void	IKBD_Cmd_Return_Byte ( Uint8 Data );
 static void	IKBD_Cmd_Return_Byte_Delay ( Uint8 Data , int Delay_Cycles );
 static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles );
@@ -801,6 +804,19 @@ static void	IKBD_Check_New_TDR ( void )
 }
 
 
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return a random number between 'min' and 'max'.
+ * This is used when the IKBD send bytes to the ACIA, to add some
+ * randomness to the delay (on real hardware, the delay is not constant
+ * when a command return some bytes).
+ */
+static int	IKBD_Delay_Random ( int min , int max )
+{
+	return min + rand() % ( max - min );
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -1902,7 +1918,7 @@ static void IKBD_Cmd_ReturnJoystick(void)
 
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xFD, 35000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xFD , IKBD_Delay_Random ( 7500 , 10000 ) );
 	IKBD_Cmd_Return_Byte (Joy_GetStickData(0));
 	IKBD_Cmd_Return_Byte (Joy_GetStickData(1));
 }
@@ -2079,7 +2095,7 @@ static void IKBD_Cmd_ReadClock(void)
 	}
 
 	/* Return packet */
-	IKBD_Cmd_Return_Byte_Delay (0xFC, 32000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xFC , IKBD_Delay_Random ( 7000 , 7500 ) );
 	/* Return time-of-day clock as yy-mm-dd-hh-mm-ss as BCD */
 	IKBD_Cmd_Return_Byte (IKBD_ToBCD(SystemTime->tm_year));		/* yy - year (2 least significant digits) */
 	IKBD_Cmd_Return_Byte (IKBD_ToBCD(SystemTime->tm_mon+1));	/* mm - Month */
@@ -2172,7 +2188,7 @@ static void IKBD_Cmd_ReportMouseAction(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseAction\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xf6, 30000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
 	IKBD_Cmd_Return_Byte (7);
 	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.Action);
 	IKBD_Cmd_Return_Byte (0);
@@ -2193,7 +2209,7 @@ static void IKBD_Cmd_ReportMouseMode(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseMode\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xf6, 30000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
 	switch (KeyboardProcessor.MouseMode)
 	{
 	 case AUTOMODE_MOUSEREL:
@@ -2237,7 +2253,7 @@ static void IKBD_Cmd_ReportMouseThreshold(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseThreshold\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xf6, 30000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
 	IKBD_Cmd_Return_Byte (0x0B);
 	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.XThreshold);
 	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.YThreshold);
@@ -2258,7 +2274,7 @@ static void IKBD_Cmd_ReportMouseScale(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseScale\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xf6, 30000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
 	IKBD_Cmd_Return_Byte (0x0C);
 	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.XScale);
 	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.YScale);
@@ -2279,7 +2295,7 @@ static void IKBD_Cmd_ReportMouseVertical(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseVertical\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xf6, 30000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
 	if (KeyboardProcessor.Mouse.YAxis == -1)
 		IKBD_Cmd_Return_Byte (0x0F);
 	else
@@ -2303,7 +2319,7 @@ static void IKBD_Cmd_ReportMouseAvailability(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseAvailability\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xf6, 30000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
 	if (KeyboardProcessor.MouseMode == AUTOMODE_OFF)
 		IKBD_Cmd_Return_Byte (0x12);
 	else
@@ -2327,7 +2343,7 @@ static void IKBD_Cmd_ReportJoystickMode(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportJoystickMode\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xf6, 30000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
 	switch (KeyboardProcessor.JoystickMode)
 	{
 	 case AUTOMODE_JOYSTICK:
@@ -2362,7 +2378,7 @@ static void IKBD_Cmd_ReportJoystickAvailability(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportJoystickAvailability\n");
 
-	IKBD_Cmd_Return_Byte_Delay (0xf6, 30000-ACIA_CYCLES);
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
 	if (KeyboardProcessor.JoystickMode == AUTOMODE_OFF)
 		IKBD_Cmd_Return_Byte (0x1A);
 	else
