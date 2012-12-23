@@ -150,6 +150,15 @@ generated_toc = {
     }
   },
 
+  getYPos: function(el) {
+    var y = 0;
+    while (el && !isNaN(el.offsetTop)) {
+        y += el.offsetTop;
+        el = el.parentNode;
+    }
+    return y;
+  },
+
   init: function() {
     // quit if this function has already been called
     if (arguments.callee.done) return;
@@ -159,10 +168,16 @@ generated_toc = {
 
     generated_toc.generate();
 
-    if (location.hash.length != 0 && window.onload == null) {
-        // Refresh location to make sure that the browser really jumps
-        // to the desired section!
-        location.href = location.href;
+    if (location.hash.length != 0) {
+        // Make sure that the browser scrolled to the right location!
+        var anchor = location.hash.substring(1);
+        var y = generated_toc.getYPos(document.getElementById(anchor));
+        if ('scrollTo' in window) {
+            window.scrollTo(0, y);
+        }
+        else if ('scroll' in window) {
+            window.scroll(0, y);
+        }
     }
   }
 };
