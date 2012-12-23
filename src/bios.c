@@ -141,7 +141,7 @@ bool Bios(void)
 		break;
 
 	case 0x3:
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hhX)\n",
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hX)\n",
 			  STMemory_ReadWord(Params),
 			  STMemory_ReadWord(Params+SIZE_WORD));
 		break;
