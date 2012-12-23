@@ -342,6 +342,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "falcon/videl.h"
 #include "falcon/hostscreen.h"
 #include "avi_record.h"
+#include "ikbd.h"
 
 
 /* The border's mask allows to keep track of all the border tricks		*/
@@ -2914,6 +2915,9 @@ void Video_InterruptHandler_VBL ( void )
 
 	/* Act on shortcut keys */
 	ShortCut_ActKey();
+
+	/* Update the IKBD's internal clock */
+	IKBD_UpdateClockOnVBL ();
 
 	/* Record video frame is necessary */
 	if ( bRecordingAvi )

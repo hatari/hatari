@@ -89,6 +89,9 @@ extern void IKBD_MemorySnapShot_Capture(bool bSave);
 extern void IKBD_InterruptHandler_ResetTimer(void);
 extern void IKBD_InterruptHandler_AutoSend(void);
 
+extern void IKBD_UpdateClockOnVBL ( void );
+
+
 extern void IKBD_PressSTKey(Uint8 ScanCode, bool bPress);
 
 #endif  /* HATARI_IKBD_H */

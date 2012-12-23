@@ -51,9 +51,11 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /* 2012/12/23	[NP]	Fix timings for the commands $16, $1C, $87-$9A. The first byte is returned	*/
 /*			between 'min' and 'max' cycles after receiving the full command. The delay	*/
 /*			is not fixed to simulate the slight variations measured on a real ST.		*/
+/* 2012/12/24	[NP]	Rewrite SetClock and ReadClock commands to behave like the real IKBD.		*/
+/*			Instead of using time()/localtime() to handle the clock, we now increment it	*/
+/*			on each VBL, taking care of the BCD data (overflows and such) like in the IKBD.	*/
+/*			(this new code is based on the HD6301 disassembly of the IKBD's ROM)		*/
 
-
-#include <time.h>
 
 #include "main.h"
 #include "ikbd.h"
@@ -67,6 +69,8 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "utils.h"
 #include "acia.h"
+#include "configuration.h"
+#include "clocks_timings.h"
 
 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
@@ -99,7 +103,6 @@ static bool bMouseDisabled, bJoystickDisabled;
 static bool bDuringResetCriticalTime, bBothMouseAndJoy;
 static bool bMouseEnabledDuringReset;
 
-static time_t nTimeOffset;			/* Offset between current time and emulated time */
 
 
 
@@ -265,6 +268,13 @@ typedef struct {
 	Uint8		RSR;					/* Receive Shift Register */
 	Uint8		SCI_RX_Size;				/* How many bits left to receive in RSR (8 .. 0) */
 
+
+	/* Date/Time is stored in the IKBD using 6 bytes in BCD format */
+	/* Clock is cleared on cold reset, but keeps its values on warm reset */
+	/* Original RAM location :  $82=year $83=month $84=day $85=hour $86=minute $87=second */
+	Uint8		Clock[ 6 ];
+	Sint64		Clock_micro;				/* Incremented every VBL to update Clock[] every second */
+
 } IKBD_STRUCT;
 
 
@@ -286,6 +296,9 @@ static void	IKBD_Cmd_Return_Byte ( Uint8 Data );
 static void	IKBD_Cmd_Return_Byte_Delay ( Uint8 Data , int Delay_Cycles );
 static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles );
 
+static bool	IKBD_BCD_Check ( Uint8 val );
+static Uint8	IKBD_BCD_Adjust ( Uint8 val );
+void		IKBD_UpdateClockOnVBL ( void );
 
 
 
@@ -440,8 +453,19 @@ void IKBD_Reset(bool bCold)
 		KeyboardProcessor.bReset = false;
 		if (CycInt_InterruptActive(INTERRUPT_IKBD_RESETTIMER))
 			CycInt_RemovePendingInterrupt(INTERRUPT_IKBD_RESETTIMER);
-		nTimeOffset = 0;
+
+		/* Clear clock data on cold reset */
+		for ( i=0 ; i<6 ; i++ )
+			pIKBD->Clock[ i ] = 0;
+		pIKBD->Clock_micro = 0;
 	}
+
+// pIKBD->Clock[ 0 ] = 0x99;
+// pIKBD->Clock[ 1 ] = 0x12;
+// pIKBD->Clock[ 2 ] = 0x31;
+// pIKBD->Clock[ 3 ] = 0x23;
+// pIKBD->Clock[ 4 ] = 0x59;
+// pIKBD->Clock[ 5 ] = 0x57;
 
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 	KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
@@ -511,7 +535,6 @@ void IKBD_Reset(bool bCold)
 void IKBD_MemorySnapShot_Capture(bool bSave)
 {
 	unsigned int i;
-	time_t nEmuTime;
 
 	/* Save/Restore details */
 	MemorySnapShot_Store(&Keyboard, sizeof(Keyboard));
@@ -540,18 +563,6 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 			IKBD_ExeMode = false;			/* turn off exe mode */
 	}
 
-	/* The time offset is special: When 0, the emulated system is running
-	 * with the current time, so we assume that it will also continue with
-	 * real time when the memory snapshot is loaded again. When it is not
-	 * zero, the program (like the game "Zombi") might expect a certain
-	 * system date. In this case we initialize the nTimeOffset during
-	 * loading so that it maches this system date again. */
-	nEmuTime = (nTimeOffset != 0) ? (time(NULL) - nTimeOffset) : 0;
-	MemorySnapShot_Store(&nEmuTime, sizeof(nEmuTime));
-	if (!bSave)
-	{
-		nTimeOffset = (nEmuTime != 0) ? (time(NULL) - nEmuTime) : 0;
-	}
 
 	/* Save the IKBD's SCI part and restore the callback functions for RX/TX lines with the ACIA */
 	MemorySnapShot_Store(&IKBD, sizeof(IKBD));
@@ -891,6 +902,136 @@ static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 /************************************************************************/
 /* End of the Serial Communication Interface				*/
 /************************************************************************/
+
+
+/**
+ * Check that the value is a correctly encoded BCD number
+ */
+static bool	IKBD_BCD_Check ( Uint8 val )
+{
+	if ( ( ( val & 0x0f ) > 0x09 )
+	  || ( ( val & 0xf0 ) > 0x90 ) )
+		return false;
+
+	return true;
+}
+
+
+/**
+ * After adding an integer number to a BCD number, the result is no more
+ * in BCD format. This function adjust the value to be a valid BCD number again.
+ * In the HD6301, this is done using the 'DAA' instruction (Decimal Adjust)
+ * to "propagate" values 10-15 to the next 4 bits and keep each nibble
+ * in the 0-9 range.
+ */
+
+static Uint8	IKBD_BCD_Adjust ( Uint8 val )
+{
+	if ( ( val & 0x0f ) > 0x09 )	/* low nibble no more in BCD */
+		val += 0x06;		/* clear bit 4 and add 1 to high nibble */
+	if ( ( val & 0xf0 ) > 0x90 )	/* high nibble no more in BCD */
+		val += 0x60;		/* propagate carry (but bits>7 will be lost) */
+
+	return val;
+}
+
+
+
+/**
+ * Update the IKBD's internal clock.
+ *
+ * This function is called on every VBL and we add the number of microseconds
+ * per VBL. When we reach 1000000 microseconds (1 sec), we update the Clock[]
+ * array by incrementing the 'second' byte.
+ *
+ * This code uses the same logic as the ROM version in the IKBD,
+ * don't try to optimise/rewrite it in a different way, as the TOS
+ * expects data to be handled this way.
+ * This works directly with BCD numbers and propagates the increment
+ * to the next byte each time the current byte reaches its maximum
+ * value.
+ *  - when SetClock is used, the IKBD doesn't check the range of each byte,
+ *    just that it's BCD encoded. So it's possible to set month/day/... to
+ *    invalid values beyond the maximum allowed. These values will not correctly
+ *    propagate to the next byte until they reach 0x99 and start again at 0x00.
+ *  - check leap year for the number of days in february if ( year & 3 == 0 )
+ *  - there's no explicit max for year : if year is 99 and increments,
+ *    next year will be 00 (due to the BCD overflow)
+ *    (used in the game 'Captain Blood' which sets clock to "99 12 31 00 00 00"
+ *    and ends the game when clock reaches "00 01 01 00 00 00")
+ */
+void	IKBD_UpdateClockOnVBL ( void )
+{
+	Sint64	FrameDuration_micro;
+	int	i;
+	Uint8	val;
+	Uint8	max;
+	Uint8	year;
+	Uint8	month;
+	/* Max value for year/month/day/hour/minute/second */
+	Uint8	val_max[ 6 ] = { 0xFF , 0x13 , 0x00 , 0x24 , 0x60 , 0x60 };
+	/* Max number of days per month ; 18 entries, because the index for this array is a BCD coded month */
+	Uint8	day_max[ 18 ] = { 0x32, 0x29, 0x32, 0x31, 0x32, 0x31, 0x32, 0x32, 0x31, 0,0,0,0,0,0, 0x32, 0x31, 0x32 };
+
+
+	/* Check if more than 1 second passed since last increment of date/time */
+        FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
+	pIKBD->Clock_micro += FrameDuration_micro;
+	if ( pIKBD->Clock_micro < 1000000 )
+		return;						/* Less than 1 second, don't increment date/time yet */
+	pIKBD->Clock_micro -= 1000000;
+
+
+	/* 1 second passed, we can increment the clock data */
+	LOG_TRACE(TRACE_IKBD_CMDS,
+		  "IKBD_UpdateClock: %02x %02x %02x %02x %02x %02x -> ", pIKBD->Clock[ 0 ] ,pIKBD->Clock[ 1 ] , pIKBD->Clock[ 2 ] ,
+		  pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
+
+	for ( i=5 ; i>=0 ; i-- )
+	{
+		val = pIKBD->Clock[ i ] + 1;			/* Increment current value */
+		val = IKBD_BCD_Adjust ( val );			/* Convert to BCD */
+
+		if ( i != 2 )
+			max = val_max[ i ];
+
+		else						/* Special case for days per month */
+		{
+			/* WARNING : it's possible to set the IKBD with month > 0x12, but in that case */
+			/* we would access day_max[] out of range. So, if month > 0x12, we limit to 31 days */
+			/* (this test is not done in the IKBD, but results would not be correct anyway) */
+			month = pIKBD->Clock[ 1 ];
+			if ( month > 0x12 )			/* Hatari specific, check range */
+				month = 0x12;
+			max = day_max[ month - 1 ];		/* Number of days for current month */
+			if ( pIKBD->Clock[ 1 ] == 2 )		/* For february, check leap year */
+			{
+				year = pIKBD->Clock[ 0 ];
+				/* Leap year test comes from the IKBD's ROM */
+				if ( year & 0x10 )
+					year += 0x0a;
+				if ( ( year & 0x03 ) == 0 )
+					max = 0x30;		/* This is a leap year, 29 days */
+			}
+		}
+
+		if ( val != max )
+		{
+			pIKBD->Clock[ i ] = val;		/* Max not reached, stop here */
+			break;
+		}
+		else if ( ( i == 1 ) || ( i == 2 ) )
+			pIKBD->Clock[ i ] = 1;			/* day/month start at 1 */
+		else
+			pIKBD->Clock[ i ] = 0;			/* hour/minute/second start at 0 */
+	}
+
+
+	LOG_TRACE(TRACE_IKBD_CMDS,
+		  "%02x %02x %02x %02x %02x %02x\n", pIKBD->Clock[ 0 ] ,pIKBD->Clock[ 1 ] , pIKBD->Clock[ 2 ] ,
+		  pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
+}
+
 
 
 
@@ -2002,27 +2143,7 @@ static void IKBD_Cmd_DisableJoysticks(void)
 }
 
 
-/**
- * Convert value from 2-digit BCD.
- */
-static Uint16 IKBD_FromBCD(Uint8 Value)
-{
-	return ((Value >> 4) * 10) + (Value & 0x0f);
-}
-
-
-/**
- * Convert value to 2-digit BCD.
- * Note: TOS 2.0x requires BCD conversion with overflow, so the decade
- * is not calculated modulo 10, or it will end up in the year 2039
- * instead...
- */
-static Uint8 IKBD_ToBCD(Uint16 Value)
-{
-	return ((Value / 10) << 4) | (Value % 10);
-}
-
-
+/*-----------------------------------------------------------------------*/
 /**
  * TIME-OF-DAY CLOCK SET
  *
@@ -2033,11 +2154,17 @@ static Uint8 IKBD_ToBCD(Uint16 Value)
  * hh        ; hour
  * mm        ; minute
  * ss        ; second
+ *
+ * All bytes are stored in BCD format. If a byte is not in BCD, we ignore it
+ * but we process the rest of the bytes.
+ * Note that the IKBD doesn't check that month/day/hour/second/minute are in
+ * their correct range, just that they're BCD encoded (so you can store 0x30 in hour
+ * for example, see IKBD_UpdateClockOnVBL())
  */
 static void IKBD_Cmd_SetClock(void)
 {
-	struct tm NewTime;
-	time_t nStamp;
+	int	i;
+	Uint8	val;
 
 	LOG_TRACE(TRACE_IKBD_CMDS,
 		  "IKBD_Cmd_SetClock: %02x %02x %02x %02x %02x %02x\n",
@@ -2045,22 +2172,16 @@ static void IKBD_Cmd_SetClock(void)
 		  Keyboard.InputBuffer[3], Keyboard.InputBuffer[4],
 		  Keyboard.InputBuffer[5], Keyboard.InputBuffer[6]);
 
-	NewTime.tm_year = IKBD_FromBCD(Keyboard.InputBuffer[1]);
-	NewTime.tm_mon = IKBD_FromBCD(Keyboard.InputBuffer[2]) - 1;
-	NewTime.tm_mday = IKBD_FromBCD(Keyboard.InputBuffer[3]);
-	NewTime.tm_hour = IKBD_FromBCD(Keyboard.InputBuffer[4]);
-	NewTime.tm_min = IKBD_FromBCD(Keyboard.InputBuffer[5]);
-	NewTime.tm_sec = IKBD_FromBCD(Keyboard.InputBuffer[6]);
-	NewTime.tm_isdst = -1;
-
-	nStamp = mktime(&NewTime);
-	if (nStamp != (time_t)-1)
-		nTimeOffset = time(NULL) - nStamp;
-	else
-		nTimeOffset = 0;
+	for ( i=1 ; i<=6 ; i++ )
+	{
+		val = Keyboard.InputBuffer[ i ];
+		if ( IKBD_BCD_Check ( val ) )			/* Check if valid BCD, else ignore */
+			pIKBD->Clock[ i-1 ] = val;		/* Store new value */
+	}
 }
 
 
+/*-----------------------------------------------------------------------*/
 /**
  * INTERROGATE TIME-OF-DAT CLOCK
  *
@@ -2073,41 +2194,20 @@ static void IKBD_Cmd_SetClock(void)
  *     hh    ; hour
  *     mm    ; minute
  *     ss    ; second
+ *
+ * All bytes are stored/returned in BCD format.
+ * Date/Time is updated in IKBD_UpdateClockOnVBL()
  */
 static void IKBD_Cmd_ReadClock(void)
 {
-	struct tm *SystemTime;
-	time_t nTimeTicks;
+	int	i;
 
-	/* Get system time */
-	nTimeTicks = time(NULL) - nTimeOffset;
-	SystemTime = localtime(&nTimeTicks);
-	if (SystemTime == NULL)
-	{
-		/* localtime may return NULL - try again with sane timestamp */
-		nTimeTicks = time(NULL);
-		SystemTime = localtime(&nTimeTicks);
-		if (SystemTime == NULL)
-		{
-			fprintf(stderr, "Failed to get system time\n");
-			return;
-		}
-	}
-
-	/* Return packet */
+	/* Return packet header */
 	IKBD_Cmd_Return_Byte_Delay ( 0xFC , IKBD_Delay_Random ( 7000 , 7500 ) );
-	/* Return time-of-day clock as yy-mm-dd-hh-mm-ss as BCD */
-	IKBD_Cmd_Return_Byte (IKBD_ToBCD(SystemTime->tm_year));		/* yy - year (2 least significant digits) */
-	IKBD_Cmd_Return_Byte (IKBD_ToBCD(SystemTime->tm_mon+1));	/* mm - Month */
-	IKBD_Cmd_Return_Byte (IKBD_ToBCD(SystemTime->tm_mday));		/* dd - Day */
-	IKBD_Cmd_Return_Byte (IKBD_ToBCD(SystemTime->tm_hour));		/* hh - Hour */
-	IKBD_Cmd_Return_Byte (IKBD_ToBCD(SystemTime->tm_min));		/* mm - Minute */
-	IKBD_Cmd_Return_Byte (IKBD_ToBCD(SystemTime->tm_sec));		/* ss - Second */
 
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReadClock: %02x %02x %02x %02x %02x %02x\n",
-		  IKBD_ToBCD(SystemTime->tm_year), IKBD_ToBCD(SystemTime->tm_mon+1),
-		  IKBD_ToBCD(SystemTime->tm_mday), IKBD_ToBCD(SystemTime->tm_hour),
-		  IKBD_ToBCD(SystemTime->tm_min), IKBD_ToBCD(SystemTime->tm_sec));
+	/* Return the 6 clock bytes */
+	for ( i=0 ; i<6 ; i++ )
+		IKBD_Cmd_Return_Byte ( pIKBD->Clock[ i ] );
 }
 
 
