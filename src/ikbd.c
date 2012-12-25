@@ -2243,10 +2243,24 @@ static void IKBD_Cmd_LoadMemory(void)
  *     0xF6    ; status header
  *     0x20    ; memory access
  *     { data }  ; 6 data bytes starting at ADR
+ *
+ * NOTE : This function requires to handle the IKBD's RAM, which is only
+ * possible when emulating a real HD6301 CPU. For now, we only return
+ * the correct header and 6 empty bytes.
  */
 static void IKBD_Cmd_ReadMemory(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReadMemory\n");
+	int	i;
+
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReadMemory (not implemented)\n");
+
+	/* Return packet header */
+	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+	IKBD_Cmd_Return_Byte ( 0x20 );
+
+	/* Return 6 empty bytes */
+	for ( i=0 ; i<6 ; i++ )
+		IKBD_Cmd_Return_Byte ( 0x00 );
 }
 
 
