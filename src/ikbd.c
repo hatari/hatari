@@ -1946,7 +1946,7 @@ static void IKBD_Cmd_SetYAxisUp(void)
  */
 static void IKBD_Cmd_StartKeyboardTransfer(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StartKeyboardTransfer\n");
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StartKeyboardTransfer (not implemented)\n");
 }
 
 
@@ -1975,7 +1975,7 @@ static void IKBD_Cmd_TurnMouseOff(void)
  */
 static void IKBD_Cmd_StopKeyboardTransfer(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StopKeyboardTransfer\n");
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StopKeyboardTransfer (not implemented)\n");
 }
 
 
@@ -2094,7 +2094,7 @@ static void IKBD_Cmd_SetJoystickDuration(void)
  */
 static void IKBD_Cmd_SetJoystickFireDuration(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_SetJoystickFireDuration\n");
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_SetJoystickFireDuration (not implemented)\n");
 }
 
 
@@ -2122,7 +2122,7 @@ static void IKBD_Cmd_SetJoystickFireDuration(void)
  */
 static void IKBD_Cmd_SetCursorForJoystick(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_SetCursorForJoystick\n");
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_SetCursorForJoystick (not implemented)\n");
 }
 
 
