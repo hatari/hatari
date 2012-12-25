@@ -968,6 +968,7 @@ void	IKBD_UpdateClockOnVBL ( void )
 	Uint8	max;
 	Uint8	year;
 	Uint8	month;
+
 	/* Max value for year/month/day/hour/minute/second */
 	Uint8	val_max[ 6 ] = { 0xFF , 0x13 , 0x00 , 0x24 , 0x60 , 0x60 };
 	/* Max number of days per month ; 18 entries, because the index for this array is a BCD coded month */
@@ -983,9 +984,9 @@ void	IKBD_UpdateClockOnVBL ( void )
 
 
 	/* 1 second passed, we can increment the clock data */
-	LOG_TRACE(TRACE_IKBD_CMDS,
-		  "IKBD_UpdateClock: %02x %02x %02x %02x %02x %02x -> ", pIKBD->Clock[ 0 ] ,pIKBD->Clock[ 1 ] , pIKBD->Clock[ 2 ] ,
-		  pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
+// 	LOG_TRACE(TRACE_IKBD_CMDS,
+// 		  "IKBD_UpdateClock: %02x %02x %02x %02x %02x %02x -> ", pIKBD->Clock[ 0 ] ,pIKBD->Clock[ 1 ] , pIKBD->Clock[ 2 ] ,
+// 		  pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
 
 	for ( i=5 ; i>=0 ; i-- )
 	{
@@ -1026,10 +1027,9 @@ void	IKBD_UpdateClockOnVBL ( void )
 			pIKBD->Clock[ i ] = 0;			/* hour/minute/second start at 0 */
 	}
 
-
-	LOG_TRACE(TRACE_IKBD_CMDS,
-		  "%02x %02x %02x %02x %02x %02x\n", pIKBD->Clock[ 0 ] ,pIKBD->Clock[ 1 ] , pIKBD->Clock[ 2 ] ,
-		  pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
+// 	LOG_TRACE(TRACE_IKBD_CMDS,
+// 		  "%02x %02x %02x %02x %02x %02x\n", pIKBD->Clock[ 0 ] ,pIKBD->Clock[ 1 ] , pIKBD->Clock[ 2 ] ,
+// 		  pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
 }
 
 
@@ -2201,6 +2201,11 @@ static void IKBD_Cmd_SetClock(void)
 static void IKBD_Cmd_ReadClock(void)
 {
 	int	i;
+
+	LOG_TRACE(TRACE_IKBD_CMDS,
+		"IKBD_Cmd_ReadClock: %02x %02x %02x %02x %02x %02x\n",
+		pIKBD->Clock[ 0 ] ,pIKBD->Clock[ 1 ] , pIKBD->Clock[ 2 ] ,
+		pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
 
 	/* Return packet header */
 	IKBD_Cmd_Return_Byte_Delay ( 0xFC , IKBD_Delay_Random ( 7000 , 7500 ) );
