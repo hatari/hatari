@@ -107,6 +107,9 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #include "sound.h"
 #include "stMemory.h"
 #include "crossbar.h"
+#include "screen.h"
+#include "video.h"
+#include "m68000.h"
 
 #define TONE_STEPS 13
 
@@ -706,7 +709,14 @@ void DmaSnd_SoundControl_ReadWord(void)
 {
 	IoMem_WriteWord(0xff8900, nDmaSoundControl);
 
-	LOG_TRACE(TRACE_DMASND, "DMA snd control read: 0x%04x\n", nDmaSoundControl);
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("DMA snd control read: 0x%04x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			nDmaSoundControl,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -718,7 +728,14 @@ void DmaSnd_SoundControl_WriteWord(void)
 {
 	Uint16 nNewSndCtrl;
 
-	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", IoMem_ReadWord(0xff8900));
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("DMA snd control write: 0x%04x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadWord(0xff8900),
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 
         /* Before starting/stopping DMA sound, create samples up until this point with current values */
 	Sound_Update(false);
@@ -777,56 +794,110 @@ void DmaSnd_FrameCountLow_ReadByte(void)
  */
 void DmaSnd_FrameStartHigh_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame start high: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8903) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("DMA snd frame start high: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff8903) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 void DmaSnd_FrameStartMed_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame start med: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8905) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("DMA snd frame start med: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff8905) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 void DmaSnd_FrameStartLow_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame start low: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8907) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+ 		LOG_TRACE_PRINT("DMA snd frame start low: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff8907) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 void DmaSnd_FrameCountHigh_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame count high: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8909) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+ 		LOG_TRACE_PRINT("DMA snd frame count high: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff8909) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 void DmaSnd_FrameCountMed_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame count med: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff890b) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+ 		LOG_TRACE_PRINT("DMA snd frame count med: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff890b) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 void DmaSnd_FrameCountLow_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame count low: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff890d) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+ 		LOG_TRACE_PRINT("DMA snd frame count low: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff890d) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 void DmaSnd_FrameEndHigh_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame end high: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff890f) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+ 		LOG_TRACE_PRINT("DMA snd frame end high: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff890f) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 void DmaSnd_FrameEndMed_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame end med: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8911) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("DMA snd frame end med: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff8911) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 void DmaSnd_FrameEndLow_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd frame end low: 0x%02x at pos %d/%d\n", IoMem_ReadByte(0xff8913) ,
-		dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr );
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("DMA snd frame end low: 0x%02x at pos %d/%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadByte(0xff8913) , dma.frameCounterAddr - dma.frameStartAddr , dma.frameEndAddr - dma.frameStartAddr  ,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -838,7 +909,13 @@ void DmaSnd_SoundModeCtrl_ReadByte(void)
 {
 	IoMem_WriteByte(0xff8921, dma.soundMode);
 
-	LOG_TRACE(TRACE_DMASND, "DMA snd mode read: 0x%02x\n", dma.soundMode);
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("DMA snd mode read: 0x%02x video_cyc=%d %d@%d pc=%x instr_cycle %d\n", dma.soundMode,
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -852,8 +929,14 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
 
 	SoundModeNew = IoMem_ReadByte(0xff8921);
 
-	LOG_TRACE(TRACE_DMASND, "DMA snd mode write: 0x%02x mode=%s freq=%d\n", SoundModeNew,
-		SoundModeNew & DMASNDMODE_MONO ? "mono" : "stereo" , DmaSndSampleRates[ SoundModeNew & 3 ]);
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("DMA snd mode write: 0x%02x mode=%s freq=%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			SoundModeNew, SoundModeNew & DMASNDMODE_MONO ? "mono" : "stereo" , DmaSndSampleRates[ SoundModeNew & 3 ],
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 
 	/* We maskout to only bits that exist on a real STE */
 	SoundModeNew &= 0x8f;
@@ -982,7 +1065,14 @@ void DmaSnd_InterruptHandler_Microwire(void)
 void DmaSnd_MicrowireData_ReadWord(void)
 {
 	/* Shifting is done in DmaSnd_InterruptHandler_Microwire! */
-	LOG_TRACE(TRACE_DMASND, "Microwire data read: 0x%x\n", IoMem_ReadWord(0xff8922));
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("Microwire data read: 0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadWord(0xff8922),
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -1001,7 +1091,14 @@ void DmaSnd_MicrowireData_WriteWord(void)
 		CycInt_AddRelativeInterrupt(microwire.pendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 
-	LOG_TRACE(TRACE_DMASND, "Microwire data write: 0x%x\n", IoMem_ReadWord(0xff8922));
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("Microwire data write: 0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadWord(0xff8922),
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -1011,7 +1108,14 @@ void DmaSnd_MicrowireData_WriteWord(void)
 void DmaSnd_MicrowireMask_ReadWord(void)
 {
 	/* Same as with data register, but mask is rotated, not shifted. */
-	LOG_TRACE(TRACE_DMASND,  "Microwire mask read: 0x%x\n", IoMem_ReadWord(0xff8924));
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("Microwire mask read: 0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadWord(0xff8924),
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -1026,7 +1130,14 @@ void DmaSnd_MicrowireMask_WriteWord(void)
 		microwire.mask = IoMem_ReadWord(0xff8924);
 	}
 
-	LOG_TRACE(TRACE_DMASND, "Microwire mask write: 0x%x\n", IoMem_ReadWord(0xff8924));
+	if(LOG_TRACE_LEVEL(TRACE_DMASND))
+	{
+                int FrameCycles, HblCounterVideo, LineCycles;
+                Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("Microwire mask write: 0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			IoMem_ReadWord(0xff8924),
+			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
