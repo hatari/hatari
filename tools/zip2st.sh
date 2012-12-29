@@ -12,8 +12,8 @@ if [ -z "$(which mformat)" ] || [ -z "$(which mcopy)" ]; then
 	exit 2
 fi
 
-# one ZIPFILE given?
-if [ $# -lt 1 ] || [ -z "$1" ] || [ $# -gt 2 ]; then
+usage ()
+{
 	name=${0##*/}
 	echo "Convert a .zip archive file to a .st disk image."
 	echo
@@ -26,12 +26,24 @@ if [ $# -lt 1 ] || [ -z "$1" ] || [ $# -gt 2 ]; then
 	echo "Example:"
 	echo " for zip in *.zip; do $name \$zip; done"
 	echo
-	echo "ERROR: wrong number of argument(s)."
+	if [ \! -z "$1" ]; then
+		echo "ERROR: $1!"
+	fi
 	exit 1
+}
+
+# one ZIPFILE given?
+if [ $# -lt 1 ] || [ -z "$1" ] || [ $# -gt 2 ]; then
+	usage "wrong number of argument(s)"
 fi
 
 ZIPFILE=$1
 STFILE=$2
+
+if [ \! -f "$ZIPFILE" ]; then
+	usage "given zipfile $ZIPFILE is missing"
+fi
+
 if [ -z "$STFILE" ]; then
 	# if no STFILE path given, save it to current dir (remove path)
 	# and use the ZIPFILE name with the extension removed.
