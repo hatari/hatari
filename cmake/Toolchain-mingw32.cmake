@@ -12,7 +12,18 @@ SET(CMAKE_CXX_COMPILER i586-pc-mingw32-g++)
 SET(CMAKE_RC_COMPILER i586-pc-mingw32-windres)
 
 # Base directory for the target environment
-SET(CMAKE_FIND_ROOT_PATH /usr/i586-pc-mingw32/sys-root/mingw )
+# We use the output from '-print-sysroot'
+EXECUTE_PROCESS( 
+   COMMAND ${CMAKE_C_COMPILER} -print-sysroot
+   OUTPUT_VARIABLE CMAKE_FIND_ROOT_PATH
+   OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+# bin/, include/, lib/ and share/ are often in "mingw/"
+# You might need to adjust the path for your system
+SET(CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH}/mingw)
+
+# Uncomment this line with your own values if above doesn't work
+#SET(CMAKE_FIND_ROOT_PATH /usr/i586-pc-mingw32/sys-root/mingw )
 
 # FindSDL.cmake doesn't search correctly in CMAKE_FIND_ROOT_PATH
 # so we force SDLDIR here
