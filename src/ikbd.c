@@ -919,7 +919,7 @@ static bool	IKBD_BCD_Check ( Uint8 val )
 
 /**
  * After adding an integer number to a BCD number, the result is no more
- * in BCD format. This function adjust the value to be a valid BCD number again.
+ * in BCD format. This function adjusts the value to be a valid BCD number again.
  * In the HD6301, this is done using the 'DAA' instruction (Decimal Adjust)
  * to "propagate" values 10-15 to the next 4 bits and keep each nibble
  * in the 0-9 range.
@@ -1617,16 +1617,20 @@ void IKBD_InterruptHandler_ResetTimer(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Send data to keyboard processor via ACIA by writing to address 0xfffc02.
- * For our emulation we bypass the ACIA (I've yet to see anything check for this)
- * and add the byte directly into the keyboard input buffer.
+ * When a byte is received by the IKBD, it is added to a small 8 byte buffer.
+ * If the first byte is a valid command, we wait for additionnal bytes if needed
+ * and then we execute the command's handler.
+ * If the first byte is not a valid command or after a successful command, we
+ * empty the input buffer (extra bytes, if any, are lost)
+ * If the input buffer is full when a new byte is received, the new byte is lost.
  */
 static void IKBD_RunKeyboardCommand(Uint8 aciabyte)
 {
 	int i=0;
 
-	/* Write into our keyboard input buffer */
-	Keyboard.InputBuffer[Keyboard.nBytesInInputBuffer++] = aciabyte;
+	/* Write into our keyboard input buffer if it's not full yet */
+	if ( Keyboard.nBytesInInputBuffer < SIZE_KEYBOARDINPUT_BUFFER )
+		Keyboard.InputBuffer[Keyboard.nBytesInInputBuffer++] = aciabyte;
 
 	/* Now check bytes to see if we have a valid/in-valid command string set */
 	while (KeyboardCommands[i].Command!=0xff)
@@ -1634,11 +1638,12 @@ static void IKBD_RunKeyboardCommand(Uint8 aciabyte)
 		/* Found command? */
 		if (KeyboardCommands[i].Command==Keyboard.InputBuffer[0])
 		{
-			/* Is string complete, then can execute? */
+			/* If the command is complete (with its potential parameters) we can execute it */
+			/* Else, we wait for the next bytes until the command is complete */
 			if (KeyboardCommands[i].NumParameters==Keyboard.nBytesInInputBuffer)
 			{
 				CALL_VAR(KeyboardCommands[i].pCallFunction);
-				Keyboard.nBytesInInputBuffer = 0;
+				Keyboard.nBytesInInputBuffer = 0;	/* Clear input buffer after processing a command */
 			}
 
 			return;
