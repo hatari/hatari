@@ -55,9 +55,12 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			Instead of using time()/localtime() to handle the clock, we now increment it	*/
 /*			on each VBL, taking care of the BCD data (overflows and such) like in the IKBD.	*/
 /*			(this new code is based on the HD6301 disassembly of the IKBD's ROM)		*/
-/* 2013/01/02	[NP]	Use IKBD_OutputBuffer_CheckFreeCount to ensure there's enough room in the	*/
+/* 2013/01/02	[NP]	- Use IKBD_OutputBuffer_CheckFreeCount to ensure there's enough room in the	*/
 /*			output buffer before sending an IKBD packet. If there's not enough bytes to	*/
 /*			transfer the whole packet, then the packet must be discarded.			*/
+/*			- Don't ignore a new RDR byte if the output buffer is not empty yet. The IKBD	*/
+/*			can handle new bytes asynchronously using some interrupt while still processing	*/
+/*			another command. New RDR is discarded only if the input buffer is full.		*/
 
 
 #include "main.h"
@@ -789,21 +792,9 @@ static Uint8	IKBD_SCI_Set_Line_TX ( void )
  * Handle the byte that was received in the RDR from the ACIA.
  * Depending on the IKBD's emulation mode, we either pass it to the standard
  * ROM's emulation layer, or we pass it to the custom handlers.
- * The byte can also be ignored (and create a possible overrun) if we still
- * have data to return from a previous command.
  */
 static void	IKBD_Process_RDR ( Uint8 RDR )
 {
-	/* If we still have some bytes to send though TDR from a previous command, */
-	/* don't process a new command for now (the IKBD needs to complete a command */
-	/* before starting a new one). */
-	if ( Keyboard.BufferHead != Keyboard.BufferTail )		
-	{
-		LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia %d bytes to send in tdr, ignore new rdr=0x%02x VBL=%d HBL=%d\n" ,
-			( Keyboard.BufferTail - Keyboard.BufferHead ) & KEYBOARD_BUFFER_MASK , RDR , nVBLs , nHBL );
-		return;
-	}
-
 	pIKBD->TRCSR &= ~IKBD_TRCSR_BIT_RDRF;				/* RDR was read */
 
 
@@ -857,8 +848,8 @@ static void	IKBD_Check_New_TDR ( void )
  */
 static bool	IKBD_OutputBuffer_CheckFreeCount ( int Nb )
 {
-fprintf ( stderr , "check %d %d head %d tail %d\n" , Nb , SIZE_KEYBOARD_BUFFER - Keyboard.NbBytesInOutputBuffer ,
-      Keyboard.BufferHead , Keyboard.BufferTail );
+// fprintf ( stderr , "check %d %d head %d tail %d\n" , Nb , SIZE_KEYBOARD_BUFFER - Keyboard.NbBytesInOutputBuffer ,
+//       Keyboard.BufferHead , Keyboard.BufferTail );
 
 	if ( SIZE_KEYBOARD_BUFFER - Keyboard.NbBytesInOutputBuffer >= Nb )
 		return true;
