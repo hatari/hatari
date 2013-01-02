@@ -49,10 +49,13 @@ typedef struct {
 #define SIZE_KEYBOARDINPUT_BUFFER 8
 typedef struct {
   Uint8 KeyStates[SDLK_LAST];           /* State of PC's keys, TRUE is down */
-  Uint8 Buffer[SIZE_KEYBOARD_BUFFER];   /* Keyboard buffer */
-  int BufferHead,BufferTail;                    /* Pointers into above buffer */
-  Uint8 InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];  /* Buffer for data send from CPU to keyboard processor (commands) */
-  int nBytesInInputBuffer;                      /* Number of command bytes in above buffer */
+
+  Uint8 Buffer[SIZE_KEYBOARD_BUFFER];		/* Keyboard output buffer */
+  int BufferHead,BufferTail;			/* Pointers into above buffer */
+  int NbBytesInOutputBuffer;			/* Number of bytes in output buffer */
+
+  Uint8 InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];	/* Buffer for data send from CPU to keyboard processor (commands) */
+  int nBytesInInputBuffer;			/* Number of command bytes in above buffer */
 
   int bLButtonDown,bRButtonDown;                /* Mouse states in emulation system, BUTTON_xxxx */
   int bOldLButtonDown,bOldRButtonDown;

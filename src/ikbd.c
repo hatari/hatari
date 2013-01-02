@@ -55,6 +55,9 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			Instead of using time()/localtime() to handle the clock, we now increment it	*/
 /*			on each VBL, taking care of the BCD data (overflows and such) like in the IKBD.	*/
 /*			(this new code is based on the HD6301 disassembly of the IKBD's ROM)		*/
+/* 2013/01/02	[NP]	Use IKBD_OutputBuffer_CheckFreeCount to ensure there's enough room in the	*/
+/*			output buffer before sending an IKBD packet. If there's not enough bytes to	*/
+/*			transfer the whole packet, then the packet must be discarded.			*/
 
 
 #include "main.h"
@@ -114,6 +117,26 @@ static bool bMouseEnabledDuringReset;
 
   The HD6301 is connected to the ACIA through TX and RX pins.
   Serial transfers are made with 8 bit word, 1 stop bit, no parity and 7812.5 baud
+
+  The IKBD's ROM is using 2 buffers to handle input/output on the serial line
+  in an asynchronous way, by using the SCI's interrupt at address $FEE2. This means
+  the IKBD can execute a new command as soon as the current one is completed, as it is
+  the interrupt function that will handle sending bytes to the ACIA.
+
+  Input buffer : 8 bytes, located at $CD-$D4 in the IKBD's RAM.
+	New bytes received in RDR are added to this buffer, until we have
+	enough bytes to obtain a valid command (with its potential parameters)
+	If the buffer already contains 8 bytes, new bytes are ignored (lost).
+	This buffer is emptied if a valid command was processed or if the first
+	byte in the buffer is not a valid command.
+
+  Output buffer : 20 bytes as a ring buffer, located at $D9-$ED in the IKBD's RAM.
+	When the IKBD automatically reports events or when a command returns some bytes,
+	those 'n' bytes are added to the ring buffer.
+	If the ring buffer doesn't have enough space to store 'n' new bytes, the 'n' bytes
+	are ignored (lost).
+	Each time a byte is correctly sent in TDR, a new byte is processed, until the ring
+	buffer becomes empty.
 
 
   Special behaviours during the IKBD reset :
@@ -291,6 +314,7 @@ static Uint8	IKBD_SCI_Set_Line_TX ( void );
 static void	IKBD_Process_RDR ( Uint8 RDR );
 static void	IKBD_Check_New_TDR ( void );
 
+static bool	IKBD_OutputBuffer_CheckFreeCount ( int Nb );
 static int	IKBD_Delay_Random ( int min , int max );
 static void	IKBD_Cmd_Return_Byte ( Uint8 Data );
 static void	IKBD_Cmd_Return_Byte_Delay ( Uint8 Data , int Delay_Cycles );
@@ -436,6 +460,7 @@ void IKBD_Reset_ExeMode ( void )
 	IKBD_ExeMode = false;
 
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
+	Keyboard.NbBytesInOutputBuffer = 0;
 
 	// IKBD_Cmd_Return_Byte (0xF0);		/* Assume OK, return correct code */
 	IKBD_Cmd_Return_Byte (0xF1);		/* [NP] Dragonnels demo needs this */
@@ -490,6 +515,7 @@ void IKBD_Reset(bool bCold)
 
 	/* Reset our keyboard states and clear key state table */
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;
+	Keyboard.NbBytesInOutputBuffer = 0;
 	Keyboard.nBytesInInputBuffer = 0;
 	memset(Keyboard.KeyStates, 0, sizeof(Keyboard.KeyStates));
 	Keyboard.bLButtonDown = BUTTON_NULL;
@@ -556,6 +582,7 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 				pIKBD_CustomCodeHandler_Read = CustomCodeDefinitions[ i ].ExeMainHandler_Read;
 				pIKBD_CustomCodeHandler_Write = CustomCodeDefinitions[ i ].ExeMainHandler_Write;
 				Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
+				Keyboard.NbBytesInOutputBuffer = 0;
 				break;
 			}
 
@@ -810,7 +837,36 @@ static void	IKBD_Check_New_TDR ( void )
 	{
 		pIKBD->TDR = Keyboard.Buffer[ Keyboard.BufferHead++ ];
 		Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
+		Keyboard.NbBytesInOutputBuffer--;
 		pIKBD->TRCSR &= ~IKBD_TRCSR_BIT_TDRE;
+	}
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return true if the output buffer can store 'Nb' new bytes,
+ * else return false.
+ * (Some games like 'Downfall' or 'Fokker' are continually issuing the same
+ * command without waiting for the returned bytes, which will fill the
+ * output buffer. In that case, new messages are lost until the buffer has
+ * some room again for a whole packet)
+ */
+static bool	IKBD_OutputBuffer_CheckFreeCount ( int Nb )
+{
+fprintf ( stderr , "check %d %d head %d tail %d\n" , Nb , SIZE_KEYBOARD_BUFFER - Keyboard.NbBytesInOutputBuffer ,
+      Keyboard.BufferHead , Keyboard.BufferTail );
+
+	if ( SIZE_KEYBOARD_BUFFER - Keyboard.NbBytesInOutputBuffer >= Nb )
+		return true;
+
+	else
+	{
+		LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia output buffer is full, can't send %d bytes VBL=%d HBL=%d\n" ,
+			Nb, nVBLs , nHBL );
+		return false;
 	}
 }
 
@@ -887,10 +943,11 @@ static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 		/* Add byte to our buffer */
 		Keyboard.Buffer[Keyboard.BufferTail++] = Data;
 		Keyboard.BufferTail &= KEYBOARD_BUFFER_MASK;
+		Keyboard.NbBytesInOutputBuffer++;
 	}
 	else
 	{
-		Log_Printf(LOG_ERROR, "IKBD buffer is full!\n");
+		Log_Printf(LOG_ERROR, "IKBD buffer is full, can't send 0x%02x!\n" , Data );
 	}
 }
 
@@ -1234,9 +1291,13 @@ static void IKBD_SendRelMousePacket(void)
 				Header |= 0x02;
 			if (Keyboard.bRButtonDown)
 				Header |= 0x01;
-			IKBD_Cmd_Return_Byte (Header);
-			IKBD_Cmd_Return_Byte (ByteRelX);
-			IKBD_Cmd_Return_Byte (ByteRelY*KeyboardProcessor.Mouse.YAxis);
+
+			if ( IKBD_OutputBuffer_CheckFreeCount ( 3 ) )
+			{
+				IKBD_Cmd_Return_Byte (Header);
+				IKBD_Cmd_Return_Byte (ByteRelX);
+				IKBD_Cmd_Return_Byte (ByteRelY*KeyboardProcessor.Mouse.YAxis);
+			}
 
 			KeyboardProcessor.Mouse.DeltaX -= ByteRelX;
 			KeyboardProcessor.Mouse.DeltaY -= ByteRelY;
@@ -1281,9 +1342,11 @@ static void IKBD_SelAutoJoysticks(void)
 	JoyData = KeyboardProcessor.Joy.JoyData[0];
 	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[0])
 	{
-		IKBD_Cmd_Return_Byte (0xFE);			/* Joystick 0/Mouse */
-		IKBD_Cmd_Return_Byte (JoyData);
-
+		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+		{
+			IKBD_Cmd_Return_Byte (0xFE);			/* Joystick 0 / Mouse */
+			IKBD_Cmd_Return_Byte (JoyData);
+		}
 		KeyboardProcessor.Joy.PrevJoyData[0] = JoyData;
 	}
 
@@ -1291,9 +1354,11 @@ static void IKBD_SelAutoJoysticks(void)
 	JoyData = KeyboardProcessor.Joy.JoyData[1];
 	if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[1])
 	{
-		IKBD_Cmd_Return_Byte (0xFF);			/* Joystick 1 */
-		IKBD_Cmd_Return_Byte (JoyData);
-
+		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+		{
+			IKBD_Cmd_Return_Byte (0xFF);			/* Joystick 1 */
+			IKBD_Cmd_Return_Byte (JoyData);
+		}
 		KeyboardProcessor.Joy.PrevJoyData[1] = JoyData;
 	}
 }
@@ -1310,17 +1375,19 @@ static void IKBD_SendOnMouseAction(void)
 	/* Report buttons as keys? Do in relative/absolute mode */
 	if (KeyboardProcessor.Mouse.Action&0x4)
 	{
-		/* Left button? */
-		if ( (IKBD_ButtonBool(Keyboard.bLButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldLButtonDown))) )
-			IKBD_Cmd_Return_Byte (0x74);		/* Left */
-		else if ( (IKBD_ButtonBool(Keyboard.bOldLButtonDown) && (!IKBD_ButtonBool(Keyboard.bLButtonDown))) )
-			IKBD_Cmd_Return_Byte (0x74|0x80);
-		/* Right button? */
-		if ( (IKBD_ButtonBool(Keyboard.bRButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldRButtonDown))) )
-			IKBD_Cmd_Return_Byte (0x75);		/* Right */
-		else if ( (IKBD_ButtonBool(Keyboard.bOldRButtonDown) && (!IKBD_ButtonBool(Keyboard.bRButtonDown))) )
-			IKBD_Cmd_Return_Byte (0x75|0x80);
-
+		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+		{
+			/* Left button? */
+			if ( (IKBD_ButtonBool(Keyboard.bLButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldLButtonDown))) )
+				IKBD_Cmd_Return_Byte (0x74);		/* Left */
+			else if ( (IKBD_ButtonBool(Keyboard.bOldLButtonDown) && (!IKBD_ButtonBool(Keyboard.bLButtonDown))) )
+				IKBD_Cmd_Return_Byte (0x74|0x80);
+			/* Right button? */
+			if ( (IKBD_ButtonBool(Keyboard.bRButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldRButtonDown))) )
+				IKBD_Cmd_Return_Byte (0x75);		/* Right */
+			else if ( (IKBD_ButtonBool(Keyboard.bOldRButtonDown) && (!IKBD_ButtonBool(Keyboard.bRButtonDown))) )
+				IKBD_Cmd_Return_Byte (0x75|0x80);
+		}
 		/* Ignore bottom two bits, so return now */
 		return;
 	}
@@ -1397,43 +1464,57 @@ static void IKBD_SendCursorMousePacket(void)
 		/* Left? */
 		if (KeyboardProcessor.Mouse.DeltaX<0)
 		{
-			IKBD_Cmd_Return_Byte (75);		/* Left cursor */
-			IKBD_Cmd_Return_Byte (75|0x80);
+			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			{
+				IKBD_Cmd_Return_Byte (75);		/* Left cursor */
+				IKBD_Cmd_Return_Byte (75|0x80);
+			}
 			KeyboardProcessor.Mouse.DeltaX++;
 		}
 		/* Right? */
 		if (KeyboardProcessor.Mouse.DeltaX>0)
 		{
-			IKBD_Cmd_Return_Byte (77);		/* Right cursor */
-			IKBD_Cmd_Return_Byte (77|0x80);
+			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			{
+				IKBD_Cmd_Return_Byte (77);		/* Right cursor */
+				IKBD_Cmd_Return_Byte (77|0x80);
+			}
 			KeyboardProcessor.Mouse.DeltaX--;
 		}
 		/* Up? */
 		if (KeyboardProcessor.Mouse.DeltaY<0)
 		{
-			IKBD_Cmd_Return_Byte (72);		/* Up cursor */
-			IKBD_Cmd_Return_Byte (72|0x80);
+			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			{
+				IKBD_Cmd_Return_Byte (72);		/* Up cursor */
+				IKBD_Cmd_Return_Byte (72|0x80);
+			}
 			KeyboardProcessor.Mouse.DeltaY++;
 		}
 		/* Down? */
 		if (KeyboardProcessor.Mouse.DeltaY>0)
 		{
-			IKBD_Cmd_Return_Byte (80);		/* Down cursor */
-			IKBD_Cmd_Return_Byte (80|0x80);
+			if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+			{
+				IKBD_Cmd_Return_Byte (80);		/* Down cursor */
+				IKBD_Cmd_Return_Byte (80|0x80);
+			}
 			KeyboardProcessor.Mouse.DeltaY--;
 		}
 
-		/* Left button? */
-		if ( (IKBD_ButtonBool(Keyboard.bLButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldLButtonDown))) )
-			IKBD_Cmd_Return_Byte (0x74);		/* Left */
-		else if ( (IKBD_ButtonBool(Keyboard.bOldLButtonDown) && (!IKBD_ButtonBool(Keyboard.bLButtonDown))) )
-			IKBD_Cmd_Return_Byte (0x74|0x80);
-		/* Right button? */
-		if ( (IKBD_ButtonBool(Keyboard.bRButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldRButtonDown))) )
-			IKBD_Cmd_Return_Byte (0x75);		/* Right */
-		else if ( (IKBD_ButtonBool(Keyboard.bOldRButtonDown) && (!IKBD_ButtonBool(Keyboard.bRButtonDown))) )
-			IKBD_Cmd_Return_Byte (0x75|0x80);
-
+		if ( IKBD_OutputBuffer_CheckFreeCount ( 2 ) )
+		{
+			/* Left button? */
+			if ( (IKBD_ButtonBool(Keyboard.bLButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldLButtonDown))) )
+				IKBD_Cmd_Return_Byte (0x74);		/* Left */
+			else if ( (IKBD_ButtonBool(Keyboard.bOldLButtonDown) && (!IKBD_ButtonBool(Keyboard.bLButtonDown))) )
+				IKBD_Cmd_Return_Byte (0x74|0x80);
+			/* Right button? */
+			if ( (IKBD_ButtonBool(Keyboard.bRButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldRButtonDown))) )
+				IKBD_Cmd_Return_Byte (0x75);		/* Right */
+			else if ( (IKBD_ButtonBool(Keyboard.bOldRButtonDown) && (!IKBD_ButtonBool(Keyboard.bRButtonDown))) )
+				IKBD_Cmd_Return_Byte (0x75|0x80);
+		}
 		Keyboard.bOldLButtonDown = Keyboard.bLButtonDown;
 		Keyboard.bOldRButtonDown = Keyboard.bRButtonDown;
 
@@ -1517,8 +1598,11 @@ void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
 
 	if (!bPress)
 		ScanCode |= 0x80;				/* Set top bit if released key */
-	IKBD_Cmd_Return_Byte (ScanCode);			/* And send to keyboard processor */
 
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 1 ) )
+	{
+		IKBD_Cmd_Return_Byte (ScanCode);		/* And send to keyboard processor */
+	}
 
 	/* If we're executing a custom IKBD program, call it to process the key event */
 	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Read )
@@ -1695,6 +1779,7 @@ static void IKBD_Cmd_Reset(void)
 
 		/* flush all queued bytes that would be read in $fffc02 */
 		Keyboard.BufferHead = Keyboard.BufferTail = 0;
+		Keyboard.NbBytesInOutputBuffer = 0;
 
 		/* This command returns either the byte 0xf0 or 0xf1 (depending
 		 * on the version of the IKBD ROM) when the reset has been
@@ -1881,12 +1966,15 @@ static void IKBD_Cmd_ReadAbsMousePos(void)
 	Buttons &= ~PrevButtons;
 
 	/* And send packet */
-	IKBD_Cmd_Return_Byte_Delay (0xf7, 18000-ACIA_CYCLES);
-	IKBD_Cmd_Return_Byte (Buttons);
-	IKBD_Cmd_Return_Byte ((unsigned int)KeyboardProcessor.Abs.X>>8);
-	IKBD_Cmd_Return_Byte ((unsigned int)KeyboardProcessor.Abs.X&0xff);
-	IKBD_Cmd_Return_Byte ((unsigned int)KeyboardProcessor.Abs.Y>>8);
-	IKBD_Cmd_Return_Byte ((unsigned int)KeyboardProcessor.Abs.Y&0xff);
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 6 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay (0xf7, 18000-ACIA_CYCLES);
+		IKBD_Cmd_Return_Byte (Buttons);
+		IKBD_Cmd_Return_Byte ((unsigned int)KeyboardProcessor.Abs.X>>8);
+		IKBD_Cmd_Return_Byte ((unsigned int)KeyboardProcessor.Abs.X&0xff);
+		IKBD_Cmd_Return_Byte ((unsigned int)KeyboardProcessor.Abs.Y>>8);
+		IKBD_Cmd_Return_Byte ((unsigned int)KeyboardProcessor.Abs.Y&0xff);
+	}
 
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReadAbsMousePos %d,%d 0x%X\n",
 	          KeyboardProcessor.Abs.X, KeyboardProcessor.Abs.Y, Buttons);
@@ -2056,17 +2144,20 @@ static void IKBD_Cmd_ReturnJoystick(void)
 	 * whole packet into the buffer anymore, and the game hangs due to
 	 * these incomplete answers. To avoid this situation, only execute
 	 * this command if there is enough space left in our Keyboard.Buffer! */
-	if (((Keyboard.BufferHead-1-Keyboard.BufferTail)&KEYBOARD_BUFFER_MASK) < 3)
-	{
-		LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick ignored - buffer is full!\n");
-		return;
-	}
+// 	if (((Keyboard.BufferHead-1-Keyboard.BufferTail)&KEYBOARD_BUFFER_MASK) < 3)
+// 	{
+// 		LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick ignored - buffer is full!\n");
+// 		return;
+// 	}
 
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xFD , IKBD_Delay_Random ( 7500 , 10000 ) );
-	IKBD_Cmd_Return_Byte (Joy_GetStickData(0));
-	IKBD_Cmd_Return_Byte (Joy_GetStickData(1));
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 3 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xFD , IKBD_Delay_Random ( 7500 , 10000 ) );
+		IKBD_Cmd_Return_Byte (Joy_GetStickData(0));
+		IKBD_Cmd_Return_Byte (Joy_GetStickData(1));
+	}
 }
 
 
@@ -2213,11 +2304,14 @@ static void IKBD_Cmd_ReadClock(void)
 		pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
 
 	/* Return packet header */
-	IKBD_Cmd_Return_Byte_Delay ( 0xFC , IKBD_Delay_Random ( 7000 , 7500 ) );
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 7 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xFC , IKBD_Delay_Random ( 7000 , 7500 ) );
 
-	/* Return the 6 clock bytes */
-	for ( i=0 ; i<6 ; i++ )
-		IKBD_Cmd_Return_Byte ( pIKBD->Clock[ i ] );
+		/* Return the 6 clock bytes */
+		for ( i=0 ; i<6 ; i++ )
+			IKBD_Cmd_Return_Byte ( pIKBD->Clock[ i ] );
+	}
 }
 
 
@@ -2265,12 +2359,15 @@ static void IKBD_Cmd_ReadMemory(void)
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReadMemory (not implemented)\n");
 
 	/* Return packet header */
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	IKBD_Cmd_Return_Byte ( 0x20 );
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		IKBD_Cmd_Return_Byte ( 0x20 );
 
-	/* Return 6 empty bytes */
-	for ( i=0 ; i<6 ; i++ )
-		IKBD_Cmd_Return_Byte ( 0x00 );
+		/* Return 6 empty bytes */
+		for ( i=0 ; i<6 ; i++ )
+			IKBD_Cmd_Return_Byte ( 0x00 );
+	}
 }
 
 
@@ -2312,14 +2409,17 @@ static void IKBD_Cmd_ReportMouseAction(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseAction\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	IKBD_Cmd_Return_Byte (7);
-	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.Action);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		IKBD_Cmd_Return_Byte (7);
+		IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.Action);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+	}
 }
 
 
@@ -2333,36 +2433,39 @@ static void IKBD_Cmd_ReportMouseMode(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseMode\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	switch (KeyboardProcessor.MouseMode)
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
 	{
-	 case AUTOMODE_MOUSEREL:
-		IKBD_Cmd_Return_Byte (8);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		break;
-	 case AUTOMODE_MOUSEABS:
-		IKBD_Cmd_Return_Byte (9);
-		IKBD_Cmd_Return_Byte (KeyboardProcessor.Abs.MaxX >> 8);
-		IKBD_Cmd_Return_Byte (KeyboardProcessor.Abs.MaxX);
-		IKBD_Cmd_Return_Byte (KeyboardProcessor.Abs.MaxY >> 8);
-		IKBD_Cmd_Return_Byte (KeyboardProcessor.Abs.MaxY);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		break;
-	 case AUTOMODE_MOUSECURSOR:
-		IKBD_Cmd_Return_Byte (10);
-		IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.KeyCodeDeltaX);
-		IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.KeyCodeDeltaY);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		break;
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		switch (KeyboardProcessor.MouseMode)
+		{
+		case AUTOMODE_MOUSEREL:
+			IKBD_Cmd_Return_Byte (8);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			break;
+		case AUTOMODE_MOUSEABS:
+			IKBD_Cmd_Return_Byte (9);
+			IKBD_Cmd_Return_Byte (KeyboardProcessor.Abs.MaxX >> 8);
+			IKBD_Cmd_Return_Byte (KeyboardProcessor.Abs.MaxX);
+			IKBD_Cmd_Return_Byte (KeyboardProcessor.Abs.MaxY >> 8);
+			IKBD_Cmd_Return_Byte (KeyboardProcessor.Abs.MaxY);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			break;
+		case AUTOMODE_MOUSECURSOR:
+			IKBD_Cmd_Return_Byte (10);
+			IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.KeyCodeDeltaX);
+			IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.KeyCodeDeltaY);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			break;
+		}
 	}
 }
 
@@ -2377,14 +2480,17 @@ static void IKBD_Cmd_ReportMouseThreshold(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseThreshold\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	IKBD_Cmd_Return_Byte (0x0B);
-	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.XThreshold);
-	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.YThreshold);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		IKBD_Cmd_Return_Byte (0x0B);
+		IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.XThreshold);
+		IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.YThreshold);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+	}
 }
 
 
@@ -2398,14 +2504,17 @@ static void IKBD_Cmd_ReportMouseScale(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseScale\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	IKBD_Cmd_Return_Byte (0x0C);
-	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.XScale);
-	IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.YScale);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		IKBD_Cmd_Return_Byte (0x0C);
+		IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.XScale);
+		IKBD_Cmd_Return_Byte (KeyboardProcessor.Mouse.YScale);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+	}
 }
 
 
@@ -2419,17 +2528,20 @@ static void IKBD_Cmd_ReportMouseVertical(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseVertical\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	if (KeyboardProcessor.Mouse.YAxis == -1)
-		IKBD_Cmd_Return_Byte (0x0F);
-	else
-		IKBD_Cmd_Return_Byte (0x10);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		if (KeyboardProcessor.Mouse.YAxis == -1)
+			IKBD_Cmd_Return_Byte (0x0F);
+		else
+			IKBD_Cmd_Return_Byte (0x10);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+	}
 }
 
 
@@ -2443,17 +2555,20 @@ static void IKBD_Cmd_ReportMouseAvailability(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseAvailability\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	if (KeyboardProcessor.MouseMode == AUTOMODE_OFF)
-		IKBD_Cmd_Return_Byte (0x12);
-	else
-		IKBD_Cmd_Return_Byte (0x00);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		if (KeyboardProcessor.MouseMode == AUTOMODE_OFF)
+			IKBD_Cmd_Return_Byte (0x12);
+		else
+			IKBD_Cmd_Return_Byte (0x00);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+	}
 }
 
 
@@ -2467,27 +2582,30 @@ static void IKBD_Cmd_ReportJoystickMode(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportJoystickMode\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	switch (KeyboardProcessor.JoystickMode)
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
 	{
-	 case AUTOMODE_JOYSTICK:
-		IKBD_Cmd_Return_Byte (0x14);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		break;
-	 default:    /* TODO: Joystick keycodes mode not supported yet! */
-		IKBD_Cmd_Return_Byte (0x15);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		IKBD_Cmd_Return_Byte (0);
-		break;
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		switch (KeyboardProcessor.JoystickMode)
+		{
+		case AUTOMODE_JOYSTICK:
+			IKBD_Cmd_Return_Byte (0x14);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			break;
+		default:    /* TODO: Joystick keycodes mode not supported yet! */
+			IKBD_Cmd_Return_Byte (0x15);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			IKBD_Cmd_Return_Byte (0);
+			break;
+		}
 	}
 }
 
@@ -2502,17 +2620,20 @@ static void IKBD_Cmd_ReportJoystickAvailability(void)
 {
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReportJoystickAvailability\n");
 
-	IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
-	if (KeyboardProcessor.JoystickMode == AUTOMODE_OFF)
-		IKBD_Cmd_Return_Byte (0x1A);
-	else
-		IKBD_Cmd_Return_Byte (0x00);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
-	IKBD_Cmd_Return_Byte (0);
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 8 ) )
+	{
+		IKBD_Cmd_Return_Byte_Delay ( 0xF6 , IKBD_Delay_Random ( 7000 , 7500 ) );
+		if (KeyboardProcessor.JoystickMode == AUTOMODE_OFF)
+			IKBD_Cmd_Return_Byte (0x1A);
+		else
+			IKBD_Cmd_Return_Byte (0x00);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+		IKBD_Cmd_Return_Byte (0);
+	}
 }
 
 
@@ -2650,6 +2771,7 @@ static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
 		pIKBD_CustomCodeHandler_Write = CustomCodeDefinitions[ i ].ExeMainHandler_Write;
 
 		Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
+		Keyboard.NbBytesInOutputBuffer = 0;
 	}
 
 	/* If not found, we keep on accumulating bytes until we find a matching crc */
