@@ -938,8 +938,8 @@ static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 		pIKBD->SCI_TX_Delay = Delay_Cycles / 1024;	/* 1 bit at 7812.5 baud = 1024 cpu cycles at 8 MHz */
 
 
-	/* Check we have space to add byte */
-	if (Keyboard.BufferHead!=((Keyboard.BufferTail+1)&KEYBOARD_BUFFER_MASK))
+	/* Check we have space to add one byte */
+	if ( IKBD_OutputBuffer_CheckFreeCount ( 1 ) )
 	{
 		/* Add byte to our buffer */
 		Keyboard.Buffer[Keyboard.BufferTail++] = Data;
