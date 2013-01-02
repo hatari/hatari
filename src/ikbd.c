@@ -849,10 +849,11 @@ static void	IKBD_Check_New_TDR ( void )
 /**
  * Return true if the output buffer can store 'Nb' new bytes,
  * else return false.
- * (Some games like 'Downfall' or 'Fokker' are continually issuing the same
- * command without waiting for the returned bytes, which will fill the
- * output buffer. In that case, new messages are lost until the buffer has
- * some room again for a whole packet)
+ * Some games like 'Downfall' or 'Fokker' are continually issuing the same
+ * IKBD_Cmd_ReturnJoystick command without waiting for the returned bytes,
+ * which will fill the output buffer faster than the CPU can empty it.
+ * In that case, new messages must be discarded until the buffer has some room
+ * again for a whole packet.
  */
 static bool	IKBD_OutputBuffer_CheckFreeCount ( int Nb )
 {
@@ -2138,18 +2139,6 @@ static void IKBD_Cmd_StopJoystick(void)
  */
 static void IKBD_Cmd_ReturnJoystick(void)
 {
-	/* The game "Downfall" continually issues this command during the
-	 * title screen - faster than processing the 3 bytes from the ACIA,
-	 * so it floods our Keyboard.Buffer ... in the end, we can not put the
-	 * whole packet into the buffer anymore, and the game hangs due to
-	 * these incomplete answers. To avoid this situation, only execute
-	 * this command if there is enough space left in our Keyboard.Buffer! */
-// 	if (((Keyboard.BufferHead-1-Keyboard.BufferTail)&KEYBOARD_BUFFER_MASK) < 3)
-// 	{
-// 		LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick ignored - buffer is full!\n");
-// 		return;
-// 	}
-
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick\n");
 
 	if ( IKBD_OutputBuffer_CheckFreeCount ( 3 ) )
