@@ -824,7 +824,7 @@ static void	IKBD_Check_New_TDR ( void )
 {
 //  fprintf(stderr , "check new tdr %d %d\n", Keyboard.BufferHead , Keyboard.BufferTail );
 
-	if ( Keyboard.BufferHead != Keyboard.BufferTail )
+	if ( Keyboard.NbBytesInOutputBuffer > 0 )
 	{
 		pIKBD->TDR = Keyboard.Buffer[ Keyboard.BufferHead++ ];
 		Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
