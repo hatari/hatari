@@ -586,8 +586,15 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 		fsdlg[SGFSDLG_SCROLLBAR].w = yScrollbar_size;
 
 		/* Refresh scrolbar pos */
-		fsdlg[SGFSDLG_SCROLLBAR].h = (int) (scrollbar_Ypos * sdlgui_fontheight);
 		ypos = (int) (scrollbar_Ypos * ((float)entries/(float)(SGFS_NUMENTRIES-2)) + 0.5);
+
+		if (ypos+SGFS_NUMENTRIES >= entries) {			/* Ensure Y pos is in the correct boundaries */
+			ypos = entries - SGFS_NUMENTRIES;
+			if ( ypos < 0 )
+				ypos = 0;
+			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
+		}
+		fsdlg[SGFSDLG_SCROLLBAR].h = (int) (scrollbar_Ypos * sdlgui_fontheight);
 
 		/* Update the file name strings in the dialog? */
 		if (refreshentries)
