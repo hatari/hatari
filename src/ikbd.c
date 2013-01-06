@@ -91,6 +91,10 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 
 #define ABS_PREVBUTTONS  (0x02|0x8) /* Don't report any buttons up on first call to 'IKBD_Cmd_ReadAbsMousePos' */
 
+#define	IKBD_ROM_VERSION	0xF1	/* On reset, the IKBD will return either 0xF0 or 0xF1, depending on the IKBD's ROM */
+					/* version. Only very early ST returned 0xF0, so we use 0xF1 which is the most common case.*/
+					/* Beside, some programs explicitly wait for 0xF1 after a reset (Dragonnels demo) */
+
 
 /* Keyboard state */
 KEYBOARD Keyboard;
@@ -450,7 +454,7 @@ static void	IKBD_Init_Pointers ( ACIA_STRUCT *pACIA_IKBD )
 
 /* Cancel execution of any program that was uploaded to the 6301's RAM */
 /* This function is also called when performing a 68000 'reset' ; in that */
-/* case we need to return $F0 and $F1. */
+/* case we need to return IKBD_ROM_VERSION (0xF1) */
 
 void IKBD_Reset_ExeMode ( void )
 {
@@ -465,8 +469,7 @@ void IKBD_Reset_ExeMode ( void )
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
 	Keyboard.NbBytesInOutputBuffer = 0;
 
-	// IKBD_Cmd_Return_Byte (0xF0);		/* Assume OK, return correct code */
-	IKBD_Cmd_Return_Byte (0xF1);		/* [NP] Dragonnels demo needs this */
+	IKBD_Cmd_Return_Byte (IKBD_ROM_VERSION);
 }
 
 
@@ -1749,8 +1752,8 @@ static void IKBD_RunKeyboardCommand(Uint8 aciabyte)
  * 0x80
  * 0x01
  *
- * Performs self test and checks for stuck (closed) keys, if OK returns 0xF0 or
- * 0xF1. Otherwise returns break codes for keys (not emulated).
+ * Performs self test and checks for stuck (closed) keys, if OK returns
+ * IKBD_ROM_VERSION (0xF1). Otherwise returns break codes for keys (not emulated).
  */
 static void IKBD_Cmd_Reset(void)
 {
@@ -1781,7 +1784,7 @@ static void IKBD_Cmd_Reset(void)
 		 * - Lotus Turbo Esprit 2 requires at least a delay of 50000
 		 *   cycles or it will crash during start up.
 		 */
-		IKBD_Cmd_Return_Byte_Delay (0xf1, 50000-ACIA_CYCLES);
+		IKBD_Cmd_Return_Byte_Delay (IKBD_ROM_VERSION, 50000-ACIA_CYCLES);
 
 		/* Start timer - some commands are send during this time they may be ignored (see real ST!) */
 		CycInt_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
