@@ -379,7 +379,7 @@ static const char* AESName_10[] = {
 static const char* AES_Opcode2Name(Uint16 opcode)
 {
 	int code = opcode - 10;
-	if (code > 0 && code < ARRAYSIZE(AESName_10) && AESName_10[code])
+	if (code >= 0 && code < ARRAYSIZE(AESName_10) && AESName_10[code])
 		return AESName_10[code];
 	else
 		return "???";
@@ -392,7 +392,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 {
 	int code = opcode - 10;
 	fprintf(fp, "AES call %3hd ", opcode);
-	if (code > 0 && code < ARRAYSIZE(AESName_10) && AESName_10[code])
+	if (code >= 0 && code < ARRAYSIZE(AESName_10) && AESName_10[code])
 	{
 		bool first = true;
 		int i, items;
