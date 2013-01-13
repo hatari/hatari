@@ -16,9 +16,11 @@ Emulation:
   - Slightly better volume table (measured by Paulo Simoes on a real ST)
 - CPU changes :
   - Added experimental MMU emulation for the 68030 mode
-- Other changes :
+- ACIA/IKBD changes :
   - Full implementation of the MC6850 ACIA, giving much more robust
     IKBD emulation
+  - Better timings for all IKBD commands (measured on a real STF)
+- Other changes :
   - Fix: GEMDOS HD emulation overwrote last 28 bytes of basepage space
     for the started process command line (with with program header)
 
