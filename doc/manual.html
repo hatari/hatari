@@ -1,13 +1,13 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
   <title>Hatari User's Manual</title>
   <meta name="description"
-        content="User's manual for the Atari ST emulator Hatari">
-  <meta name="author" content="Hatari development team">
-  <meta name="keywords" content="hatari, documentation, manual, linux">
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
-  <meta http-equiv="Content-Style-Type" content="text/css">
+        content="User's manual for the Atari ST emulator Hatari" />
+  <meta name="author" content="Hatari development team" />
+  <meta name="keywords" content="hatari, documentation, manual, linux" />
+  <meta name="viewport" content="width=device-width; initial-scale=1.0;" />
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
   <style type="text/css">
   <!--
 	body {  background:#FFFFFF;
@@ -20,6 +20,7 @@
 	h2 { border-bottom:solid thin black;}
 	h4.gui { clear:right }
 	h5 { margin-bottom:2px; margin-left:1em; }
+	hr { width: 100%; height: 2px; margin-top:4ex; margin-bottom: 2ex; }
 
 	pre {	color: black;
 		background:#eeeeee;
@@ -44,6 +45,14 @@
 	.backdropped { background:#ffffee; }
 	.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
 	.floatimage { clear:right; float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
+	.validhtml { border-width:3px; float:left; }
+	.bottomdate { float:right; }
+	.clearboth { clear:both; }
+
+	table.keytable { border:1px solid; }
+	table.keytable tbody { text-align:center; }
+	table.keytable th { border:1px solid; padding:3px; }
+	table.keytable td { border:1px solid; padding:3px; }
 
 	p.parameter { margin: 1px 1em 1px 11%; font-weight:bold; }
 	p.paramdesc { margin: 1px 1em 1px 22%; }
@@ -480,7 +489,7 @@ Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
 <p class="parameter">Zooming to sizes
 specified below is internally done using integer scaling factors.
 This means that different Atari resolutions may show up with
-different sizes, but they are never blurry. <br>
+different sizes, but they are never blurry. <br />
 &minus;&minus;desktop &lt;bool&gt;</p>
 <p class="paramdesc">Whether to use desktop resolution on
 fullscreen to avoid issues related to resolution switching.
@@ -715,7 +724,7 @@ from overflowing (long latency and lost samples) or underflowing
 (short latency and repeated samples). The emulation rate smoothly
 deviates by a maximum of 0.58% until synchronized, while the
 emulator continuously generates every sound sample and the crystal
-controlled sound system consumes every sample.<br>
+controlled sound system consumes every sample.<br />
 (on|off, off=default)</p>
 <p class="parameter">&minus;&minus;ym-mixing
 &lt;x&gt;</p>
@@ -806,7 +815,8 @@ The GUI is rather self explanatory.</p>
 <h4 class="gui">The Main Menu</h4>
 
 <div class="floatimage">
-<img src="images/main.png" width="500" height="304" alt="Hatari's GUI - the main menu">
+  <img src="images/main.png" width="500" height="304"
+       alt="Hatari's GUI - the main menu" />
 </div>
 
 <p>
@@ -841,7 +851,8 @@ changes that you have made.
 <h4 class="gui">The File Selector Dialog</h4>
 
 <div class="floatimage">
-<img src="images/fileselector.png" width="640" height="399" alt="Hatari's GUI - the fileselector">
+  <img src="images/fileselector.png" width="640" height="399"
+       alt="Hatari's GUI - the fileselector" />
 </div>
 
 <p>
@@ -866,7 +877,8 @@ changes that you have made.
 <h4 class="gui">The System Dialog</h4>
 
 <div class="floatimage">
-<img src="images/system.png" width="360" height="384" alt="Hatari's GUI - the system dialog">
+  <img src="images/system.png" width="360" height="384"
+       alt="Hatari's GUI - the system dialog" />
 </div>
 
 <p>
@@ -900,7 +912,7 @@ changes that you have made.
  some more advanced hardware features. There are not that many demos or
  games that really require an STE but since most normal ST games/demos also
  work with an STE, it's normally safe to always work in STE mode.
- <br>
+ <br />
  TT and Falcon are more advanced, but they are not as compatible to the ST as
  the STE was. Therefore many old games and demos do not work with these machine
  types anymore. There were only very few programs that were made for the TT
@@ -954,7 +966,8 @@ changes that you have made.
 <h4 class="gui">The Floppy Disks Dialog</h4>
 
 <div class="floatimage">
-<img src="images/floppydisks.png" width="640" height="320" alt="Hatari's GUI - the floppy disks dialog">
+  <img src="images/floppydisks.png" width="640" height="320"
+       alt="Hatari's GUI - the floppy disks dialog" />
 </div>
 
 <p>
@@ -979,7 +992,7 @@ insert the second disk of a two disk game automatically.
 Some games then use the second drive automatically.
 In the case that a game is not able to find the disk in the second drive,
 you have to insert the second disk in drive A: manually when prompted.
-<br>
+<br />
 <em>NOTE:</em> This option only works properly if the file name of the
 first disks ends with an 'a' before the extension and the second disk name
 ends with a 'b'.
@@ -998,7 +1011,8 @@ ends with a 'b'.
 </p>
 
 <div class="floatimage">
-<img src="images/newfloppy.png" width="290" height="224" alt="Hatari's GUI - the new floppy dialog">
+  <img src="images/newfloppy.png" width="290" height="224"
+       alt="Hatari's GUI - the new floppy dialog" />
 </div>
 
 <p>
@@ -1026,7 +1040,8 @@ ends with a 'b'.
 <h4 class="gui">The Hard Disks Dialog</h4>
 
 <div class="floatimage">
-<img src="images/harddisks.png" width="640" height="304" alt="Hatari's GUI - the hard disks dialog">
+  <img src="images/harddisks.png" width="640" height="304"
+       alt="Hatari's GUI - the hard disks dialog" />
 </div>
 
 <p>
@@ -1057,7 +1072,8 @@ ends with a 'b'.
 <h4 class="gui">The Memory Dialog</h4>
 
 <div class="floatimage">
-<img src="images/memory.png" width="398" height="349" alt="Hatari's GUI - the memory dialog">
+  <img src="images/memory.png" width="398" height="349"
+       alt="Hatari's GUI - the memory dialog" />
 </div>
 
 <p>You can select the amount of RAM for the emulated ST here. Only
@@ -1079,7 +1095,8 @@ cannot load your old memory snapshots back.</p>
 <h4 class="gui">The ROM Dialog</h4>
 
 <div class="floatimage">
-<img src="images/tos.png" width="519" height="367" alt="Hatari's GUI - the ROM dialog">
+  <img src="images/tos.png" width="519" height="367"
+       alt="Hatari's GUI - the ROM dialog" />
 </div>
 
 <p>Here you can select the TOS image to use. Click on <span
@@ -1113,7 +1130,8 @@ when changing one of these option.
 <h4 class="gui">The Joystick Dialog</h4>
 
 <div class="floatimage">
-<img src="images/joystick.png" width="320" height="288" alt="Hatari's GUI - the joystick dialog">
+  <img src="images/joystick.png" width="320" height="288"
+       alt="Hatari's GUI - the joystick dialog" />
 </div>
 
 <p>In this dialog, you can configure the emulated joysticks.
@@ -1146,8 +1164,8 @@ certain games. In some other games, it gets worse if you enable this option.</p>
 <h4 class="gui">The Atari Monitor Dialog</h4>
 
 <div class="floatimage">
-<img src="images/monitor.png" width="340" height="304" alt="Hatari's
-GUI - the Atari monitor dialog">
+  <img src="images/monitor.png" width="340" height="304"
+       alt="Hatari's GUI - the Atari monitor dialog" />
 </div>
 
 <p>
@@ -1162,7 +1180,7 @@ GUI - the Atari monitor dialog">
  switch to ST medium resolution, you will get a TV-like screen rendering
  which is a little bit faster but darker compared to the normal "RGB"
  monitor mode. Switching between mono and a color monitor acts like a monitor
- switch on a real ST - so beware, this will reboot your emulated system!<br>
+ switch on a real ST - so beware, this will reboot your emulated system!<br />
  In TT mode, you can only choose between TT-high resolution ("Mono")
  and normal modes (select one of the other monitor types).
  Finally the Falcon mode supports all four types of monitors. Note that most
@@ -1181,7 +1199,7 @@ Extended VDI resolutions will emulate a sort of extended graphics
 card in the emulated ST which give you larger resolutions with a higher
 colordepth for GEM. Select a resolution and color depth. Check to
 activate. It will disable all other video options mentioned above.
-Uncheck to get back to a normal ST behaviour.<br>
+Uncheck to get back to a normal ST behaviour.<br />
 <em>Note:</em> Using an extended resolution will only work with GEM
 conformant applications. 99% of all games and demos will not run if you
 activate any extended resolution here.
@@ -1191,8 +1209,8 @@ activate any extended resolution here.
 <h4 class="gui">The Hatari Screen Dialog</h4>
 
 <div class="floatimage">
-<img src="images/screen.png" width="520" height="320" alt="Hatari's
-GUI - the Hatari screen dialog">
+  <img src="images/screen.png" width="520" height="320"
+       alt="Hatari's GUI - the Hatari screen dialog" />
 </div>
 
 <p>
@@ -1210,7 +1228,7 @@ on your screen.
  a fast computer. When selecting 1, 2 or 4, drawing of corresponding number
  of frames will be skipped after each frame actually shown by Hatari.
  Select "Auto" to let the emulator to decide whether, and
- how many frames will be skipped.<br>
+ how many frames will be skipped.<br />
  <em>Note:</em> The frameskip option also affects the frame rate of the
  screen animation recording!
 </p>
@@ -1277,7 +1295,8 @@ the screenshots and recorded videos.
 <h4 class="gui">The Keyboard Dialog</h4>
 
 <div class="floatimage">
-<img src="images/keyboard.png" width="459" height="223" alt="Hatari's GUI - the keyboard dialog">
+  <img src="images/keyboard.png" width="459" height="223"
+       alt="Hatari's GUI - the keyboard dialog" />
 </div>
 
 <p>Here you can select the keyboard mapping to use. Two different mappings
@@ -1309,7 +1328,8 @@ the screenshots and recorded videos.
 <h4 class="gui">The Sound Dialog</h4>
 
 <div class="floatimage">
-<img src="images/sound.png" width="400" height="400" alt="Hatari's GUI - the sound dialog">
+  <img src="images/sound.png" width="400" height="400"
+       alt="Hatari's GUI - the sound dialog" />
 </div>
 
 <p>Here you can control the sound subsystem.</p>
@@ -1345,7 +1365,8 @@ for accurate sound's emulation.
 <h4 class="gui">The Devices Dialog</h4>
 
 <div class="floatimage">
-<img src="images/devices.png" width="520" height="383" alt="Hatari's GUI - the device dialog">
+  <img src="images/devices.png" width="520" height="383"
+       alt="Hatari's GUI - the device dialog" />
 </div>
 
 <p>Check the first checkmark to enable printer support.
@@ -1375,19 +1396,19 @@ Hatari instances.
 </p>
 
 
-<h3 style="clear:both;">Keyboard shortcuts</h3>
+<h3 class="clearboth">Keyboard shortcuts</h3>
 
 <p> While the emulator is running, you can activate or toggle various
 features via Hatari keyboard shortcuts. Below are listed the default
 shortcut key bindings:</p>
-<table border="1" cellpadding="3">
+<table border="1" class="keytable">
   <thead>
     <tr class="backdropped">
       <th>Shortcut</th>
       <th>Purpose</th>
     </tr>
   </thead>
-  <tbody style="text-align:center;">
+  <tbody>
     <tr>
       <td><span class="key">ALTGR+a</span></td>
       <td>record animation</td>
@@ -1475,14 +1496,15 @@ The required key values can be seen in the SDL_keysym.h include file
 <p> All other keys on the keyboard act as the normal Atari ST keys so
 pressing SPACE on your PC will result in an emulated press of the SPACE
 key on the ST. The following keys have special meanings: </p>
-<table border="1" cellpadding="3">
+
+<table class="keytable">
   <thead>
     <tr class="backdropped">
       <th>Key</th>
       <th>Meaning</th>
     </tr>
   </thead>
-  <tbody style="text-align:center;">
+  <tbody>
     <tr>
       <td><span class="key">Alt</span></td>
       <td>will act as the ST's ALTERNATE key</td>
@@ -1597,7 +1619,7 @@ The file contents can be used with your favourite text editor for
 further processing and printing to a real printer.</p>
 <p>To get real direct printing out of Hatari you may set up a suitable
 (e.g. PostScript) GDOS or NVDI printer driver on the emulated Atari and
-set your printer device file as Hatari's printer output.<br>
+set your printer device file as Hatari's printer output.<br />
 <em>NOTE:</em>If the driver doesn't match or there's some other problem,
 this can cause your printer to print out hundreds of pages of garbage.</p>
 
@@ -2450,7 +2472,7 @@ b  pc = TEXT :once
 Note1: It's better to trigger it only once because if you'd leave it on,
 during reboot you would get a warning for every instruction until TOS sets
 a valid basepage.
-<br>
+<br />
 Note2: you cannot use an address breakpoint for this because value of a
 variable given to it is evaluated when the breakpoint is set, not at
 run-time, so it cannot get the new value that the TEXT variable gets
@@ -3208,20 +3230,17 @@ emulation of the various custom chips and hardware
 parts of the emulated system is much trickier.
 </p>
 
-<hr style="width: 100%; height: 2px; margin-top:4ex;">
-<table style="width:100%; border-style:none;">
-  <tbody>
-    <tr>
-      <td style="text-align:left;">
-        <a href="http://validator.w3.org/check/referer"><img
-          src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
-          height="31" width="88" style="border-width:0px;"></a>
-      </td>
-      <td style="text-align:right;">
-        January 2013
-      </td>
-    </tr>
-  </tbody>
-</table>
+<hr />
+
+<div class="validhtml">
+  <a href="http://validator.w3.org/check/referer"><img
+    src="http://www.w3.org/html/logo/downloads/HTML5_Badge_32.png"
+    alt="Valid HTML!" height="32" width="32" /></a>
+</div>
+
+<div class="bottomdate">
+  January 2013
+</div>
+
 </body>
 </html>

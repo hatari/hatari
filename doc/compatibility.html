@@ -1,13 +1,12 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
   <title>Hatari Atari Software Compatibility List</title>
   <meta name="description"
-        content="Atari Software Compatibility List for the Hatari emulator">
-  <meta name="author" content="Hatari development team">
-  <meta name="keywords" content="hatari, documentation, manual, linux">
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
-  <meta http-equiv="Content-Style-Type" content="text/css">
+        content="Atari Software Compatibility List for the Hatari emulator" />
+  <meta name="author" content="Hatari development team" />
+  <meta name="keywords" content="hatari, documentation, manual, linux" />
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
   <style type="text/css">
   <!--
 	body {  background:#FFFFFF;
@@ -18,10 +17,11 @@
 		}
 
 	h2 { border-bottom:solid thin black;}
+	hr { width: 100%; height: 2px; margin-top:4ex; margin-bottom: 2ex; }
 
-	th { text-align:center; }
+	th { text-align:center; padding:3px; }
 	caption { caption-side:bottom; }
-	td { font-family:Verdana,Arial,Helvetica,sans-serif; }
+	td { font-family:Verdana,Arial,Helvetica,sans-serif; padding:3px; }
 	td.subheader { text-align:right; font-style:italic; }
 	td.minor { background:#ffa060 }
 	td.major { background:#ff4040 }
@@ -40,6 +40,8 @@
 	.backdropped { background:#ffffee; }
 	.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
 	.floatimage { clear:right; float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
+	.validhtml { border-width:3px; float:left; }
+	.bottomdate { float:right; }
   -->
   </style>
   <script type="text/javascript" src="toc.js"></script>
@@ -137,7 +139,7 @@ works on a real ST should work also in Hatari</b>.</p>
 
 <h3>ST games</h3>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>Tested ST games</caption>
   <thead>
     <tr class="backdropped">
@@ -386,7 +388,7 @@ They are marked with '*'.  Few remaining screen sync issues are related to
 hi/lo frequency switching or switching to 60 Hz for too long (used
 for border removal).</p>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>Tested ST demos</caption>
   <thead>
     <tr class="backdropped">
@@ -710,7 +712,7 @@ for border removal).</p>
 <p>Note that some applications can even crash at startup if their
 configuration or data files are not writable.</p>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>Tested applications</caption>
   <thead>
     <tr class="backdropped">
@@ -837,7 +839,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
-      <td>Accompanist<br>(Henry Cosh Sequencer)</td>
+      <td>Accompanist<br />(Henry Cosh Sequencer)</td>
       <td>1.2</td>
       <td><a href="#Midi_setup">MIDI input/output</a> works</td>
     </tr>
@@ -1022,7 +1024,7 @@ in Hatari.  Most of these games work only on STE, but here are also some
 games which work (or have a version that works) also on ST, i.e. they
 are just STE enhanced.  These are marked with '*'.</p>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>Tested STE games</caption>
   <thead>
     <tr class="backdropped">
@@ -1248,7 +1250,7 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <p>Blitter emulation cycle-accuracy is an issue for some demos.</p>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>Tested STE demos</caption>
   <thead>
     <tr class="backdropped">
@@ -1575,7 +1577,7 @@ are just STE enhanced.  These are marked with '*'.</p>
 <h3>STE applications</h3>
 
 <p>Finally some STE only or STE enhanced applications.</p>
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>tested STE applications</caption>
   <thead>
     <tr class="backdropped">
@@ -1625,7 +1627,7 @@ this section lists only TT-specific games and demos.</p>
 
 <h3>TT games</h3>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>TT games</caption>
   <thead>
     <tr class="backdropped">
@@ -1652,7 +1654,7 @@ this section lists only TT-specific games and demos.</p>
 
 <h3>TT demos</h3>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>TT demos</caption>
   <thead>
     <tr class="backdropped">
@@ -1749,7 +1751,7 @@ Hatari readme.txt on how to enable that.</p>
 
 <h3>Falcon games</h3>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>Falcon games</caption>
   <thead>
     <tr class="backdropped">
@@ -1920,11 +1922,11 @@ Hatari readme.txt on how to enable that.</p>
       <td></td>
     </tr> 
    <tr>
-      <td>Evolution Dino Dudes<br>(aka. Humans)</td>
+      <td>Evolution Dino Dudes<br />(aka. Humans)</td>
       <td class="major">1.3</td>
       <td>-</td>
       <td>-</td>
-      <td>Intro and menu work, but graphics are distorted in game.<br>
+      <td>Intro and menu work, but graphics are distorted in game.<br />
           (Game writes twice to the $ff820e register during one VBL!)</td>
     </tr>
     <tr>
@@ -2503,7 +2505,7 @@ Old UAE CPU core always emulates FPU both for TT and Falcon machines.
 WinUAE CPU core does that only for TT, but but you can enable FPU
 also for Falcon if demo is stated to require that.</p>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>Falcon demos</caption>
   <thead>
     <tr class="backdropped">
@@ -3221,7 +3223,7 @@ site.</p>
 <h3>Falcon applications</h3>
 
 <p>Here are listed some <em>Falcon specific</em> applications:</p>
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>Falcon applications</caption>
   <thead>
     <tr class="backdropped">
@@ -3378,7 +3380,7 @@ site.</p>
 <p>Here are some utilities that either have specific TT and/or Falcon
 support or work only on them.</p>
 
-<table border="1" cellpadding="3">
+<table border="1">
   <caption>TT/Falcon utilities</caption>
   <thead>
     <tr class="backdropped">
@@ -3450,20 +3452,17 @@ Atari:
 </ul>
 
 
-<hr style="width: 100%; height: 2px;">
-<table style="width:100%; border-style:none;">
-  <tbody>
-    <tr>
-      <td style="text-align:left;">
-        <a href="http://validator.w3.org/check/referer"><img
-           src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
-           height="31" width="88" style="border-width:0px;"></a>
-      </td>
-      <td style="text-align:right;">
-        Hatari development team, January 2013
-      </td>
-    </tr>
-  </tbody>
-</table>
+<hr />
+
+<div class="validhtml">
+  <a href="http://validator.w3.org/check/referer"><img
+    src="http://www.w3.org/html/logo/downloads/HTML5_Badge_32.png"
+    alt="Valid HTML!" height="32" width="32" /></a>
+</div>
+
+<div class="bottomdate">
+  January 2013
+</div>
+
 </body>
 </html>
