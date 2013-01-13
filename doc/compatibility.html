@@ -3,11 +3,9 @@
 <head>
   <title>Hatari Atari Software Compatibility List</title>
   <meta name="description"
- content="Atari Software Compatibility List for the Hatari emulator">
+        content="Atari Software Compatibility List for the Hatari emulator">
   <meta name="author" content="Hatari development team">
   <meta name="keywords" content="hatari, documentation, manual, linux">
-  <meta name="resource-type" content="document">
-  <meta name="distribution" content="global">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
   <meta http-equiv="Content-Style-Type" content="text/css">
   <style type="text/css">
@@ -21,7 +19,10 @@
 
 	h2 { border-bottom:solid thin black;}
 
+	th { text-align:center; }
+	caption { caption-side:bottom; }
 	td { font-family:Verdana,Arial,Helvetica,sans-serif; }
+	td.subheader { text-align:right; font-style:italic; }
 	td.minor { background:#ffa060 }
 	td.major { background:#ff4040 }
 	a.minor { background:#ffa060 }
@@ -39,7 +40,6 @@
 	.backdropped { background:#ffffee; }
 	.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
 	.floatimage { clear:right; float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
-        caption { caption-side:bottom; }
   -->
   </style>
   <script type="text/javascript" src="toc.js"></script>
@@ -139,12 +139,14 @@ works on a real ST should work also in Hatari</b>.</p>
 
 <table border="1" cellpadding="3">
   <caption>Tested ST games</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Game</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
+      <th>Game</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td>Alien World</td>
       <td>before 1.0</td>
@@ -386,12 +388,14 @@ for border removal).</p>
 
 <table border="1" cellpadding="3">
   <caption>Tested ST demos</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Demo</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
+      <th>Demo</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td>1984:
       <a href="http://pouet.net/prod.php?which=11198">No Cooper</a></td>
@@ -708,14 +712,16 @@ configuration or data files are not writable.</p>
 
 <table border="1" cellpadding="3">
   <caption>Tested applications</caption>
+  <thead>
+    <tr class="backdropped">
+      <th>Application</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
   <tbody>
     <tr class="backdropped">
-      <td align="center">Application</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
-    </tr>
-    <tr class="backdropped">
-      <td colspan="3" align="right"><i>Programming</i></td>
+      <td colspan="3" class="subheader">Programming</td>
     </tr>
     <tr>
       <td><a href="http://members.chello.nl/h.robbers/">AHCC</a></td>
@@ -760,7 +766,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Graphics</i></td>
+      <td colspan="3" class="subheader">Graphics</td>
     </tr>
     <tr>
       <td>Crackart</td>
@@ -803,7 +809,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Sound</i></td>
+      <td colspan="3" class="subheader">Sound</td>
     </tr>
     <tr>
       <td>MusicMon 2</td>
@@ -847,7 +853,7 @@ configuration or data files are not writable.</p>
           and sampled sound work</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Text Editors</i></td>
+      <td colspan="3" class="subheader">Text Editors</td>
     </tr>
     <tr>
       <td>Tempus</td>
@@ -865,7 +871,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Business applications</i></td>
+      <td colspan="3" class="subheader">Business applications</td>
     </tr>
     <tr>
       <td>Opus spreadsheet</td>
@@ -893,7 +899,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Communications</i></td>
+      <td colspan="3" class="subheader">Communications</td>
     </tr>
     <tr>
       <td>CAB browser</td>
@@ -911,7 +917,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Desktops</i></td>
+      <td colspan="3" class="subheader">Desktops</td>
     </tr>
     <tr>
       <td><a href="http://solair.eunet.rs/~vdjole/teradesk.htm">Teradesk desktop</a></td>
@@ -924,7 +930,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Science</i></td>
+      <td colspan="3" class="subheader">Science</td>
     </tr>
     <tr>
       <td>Euler</td>
@@ -942,7 +948,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Utilities</i></td>
+      <td colspan="3" class="subheader">Utilities</td>
     </tr>
     <tr>
       <td>Revenge Document Displayer</td>
@@ -980,7 +986,7 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Others</i></td>
+      <td colspan="3" class="subheader">Others</td>
     </tr>
     <tr>
       <td>ZX Spectrum emulator</td>
@@ -1018,12 +1024,14 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <table border="1" cellpadding="3">
   <caption>Tested STE games</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
+      <th>Title</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=54847">4K Pacman</a></td>
       <td>1.4</td>
@@ -1242,12 +1250,14 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <table border="1" cellpadding="3">
   <caption>Tested STE demos</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Demo</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
+      <th>Demo</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td>Aggression:
       <a href="http://pouet.net/prod.php?which=29352">Armada is dead</a></td>
@@ -1567,12 +1577,14 @@ are just STE enhanced.  These are marked with '*'.</p>
 <p>Finally some STE only or STE enhanced applications.</p>
 <table border="1" cellpadding="3">
   <caption>tested STE applications</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Application</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
+      <th>Application</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td><a href="http://www.pouet.net/prod.php?which=56822">Hextracker</a></td>
       <td>1.5</td>
@@ -1615,12 +1627,14 @@ this section lists only TT-specific games and demos.</p>
 
 <table border="1" cellpadding="3">
   <caption>TT games</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Game</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
+      <th>Game</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
       <td class="major">1.2</td>
@@ -1640,12 +1654,14 @@ this section lists only TT-specific games and demos.</p>
 
 <table border="1" cellpadding="3">
   <caption>TT demos</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Demo</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
+      <th>Demo</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td>Brainstorm:
       <a href="http://www.pouet.net/prod.php?which=15752">Adebug 3DTT demo</a></td>
@@ -1735,14 +1751,16 @@ Hatari readme.txt on how to enable that.</p>
 
 <table border="1" cellpadding="3">
   <caption>Falcon games</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Sound</td>
-      <td align="center">DSP</td>
-      <td align="center">Comment</td>
+      <th>Title</th>
+      <th>Hatari version</th>
+      <th>Sound</th>
+      <th>DSP</th>
+      <th>Comment</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td><a href="http://logitron.atari.online.fr/aazohm_english.htm">Aazohm Krypth</a></td>
       <td>1.3</td>
@@ -2487,14 +2505,16 @@ also for Falcon if demo is stated to require that.</p>
 
 <table border="1" cellpadding="3">
   <caption>Falcon demos</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Sound</td>
-      <td align="center">DSP</td>
-      <td align="center">Comment</td>
+      <th>Title</th>
+      <th>Hatari version</th>
+      <th>Sound</th>
+      <th>DSP</th>
+      <th>Comment</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td>Aggression:
       <a href="http://www.pouet.net/prod.php?which=13699">Agressive II party info</a></td>
@@ -3203,13 +3223,15 @@ site.</p>
 <p>Here are listed some <em>Falcon specific</em> applications:</p>
 <table border="1" cellpadding="3">
   <caption>Falcon applications</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Hatari version</td>
-      <td align="center">DSP</td>
-      <td align="center">Comment</td>
+      <th>Title</th>
+      <th>Hatari version</th>
+      <th>DSP</th>
+      <th>Comment</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td><a href="http://newbeat.atari.org/main.php?page=productions">AceMidi</a>
           (demo)</td>
@@ -3358,12 +3380,14 @@ support or work only on them.</p>
 
 <table border="1" cellpadding="3">
   <caption>TT/Falcon utilities</caption>
-  <tbody>
+  <thead>
     <tr class="backdropped">
-      <td align="center">Utility</td>
-      <td align="center">Hatari version</td>
-      <td align="center">Notes</td>
+      <th>Utility</th>
+      <th>Hatari version</th>
+      <th>Notes</th>
     </tr>
+  </thead>
+  <tbody>
     <tr>
       <td><a href="http://adebug.sourceforge.net/">Adebug (reloaded)</a></td>
       <td>1.6.2+</td>
@@ -3427,14 +3451,16 @@ Atari:
 
 
 <hr style="width: 100%; height: 2px;">
-<table border="0" width="100%">
+<table style="width:100%; border-style:none;">
   <tbody>
     <tr>
-      <td align="left"><a href="http://validator.w3.org/check/referer"><img
- src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
- height="31" width="88" style="border-width:0px;"></a></td>
-      <td align="right">
-      Hatari development team, November 2012
+      <td style="text-align:left;">
+        <a href="http://validator.w3.org/check/referer"><img
+           src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
+           height="31" width="88" style="border-width:0px;"></a>
+      </td>
+      <td style="text-align:right;">
+        Hatari development team, January 2013
       </td>
     </tr>
   </tbody>
