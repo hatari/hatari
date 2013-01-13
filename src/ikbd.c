@@ -61,6 +61,8 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			- Don't ignore a new RDR byte if the output buffer is not empty yet. The IKBD	*/
 /*			can handle new bytes asynchronously using some interrupt while still processing	*/
 /*			another command. New RDR is discarded only if the input buffer is full.		*/
+/* 2013/01/13	[NP]	For hardware and software reset, share the common code in IKBD_Boot_ROM().	*/
+
 
 
 #include "main.h"
@@ -315,6 +317,8 @@ static IKBD_STRUCT	*pIKBD = &IKBD;
 
 
 static void	IKBD_Init_Pointers ( ACIA_STRUCT *pACIA_IKBD );
+static void	IKBD_Boot_ROM ( bool ClearAllRAM );
+
 static void	IKBD_SCI_Get_Line_RX ( int rx_bit );
 static Uint8	IKBD_SCI_Set_Line_TX ( void );
 
@@ -452,39 +456,56 @@ static void	IKBD_Init_Pointers ( ACIA_STRUCT *pACIA_IKBD )
  * Reset the IKBD processor
  */
 
-/* Cancel execution of any program that was uploaded to the 6301's RAM */
-/* This function is also called when performing a 68000 'reset' ; in that */
-/* case we need to return IKBD_ROM_VERSION (0xF1) */
-
-void IKBD_Reset_ExeMode ( void )
+/* This function is called after a hardware reset of the IKBD.
+ * Cold reset is when the computer is turned off/on.
+ * Warm reset is when the reset button is pressed or the 68000
+ * RESET instruction is used.
+ * We clear the serial interface and we execute the function
+ * that emulates booting the ROM at 0xF000.
+ */
+void	IKBD_Reset ( bool bCold )
 {
-	LOG_TRACE(TRACE_IKBD_EXEC, "ikbd custom exe off\n");
+	LOG_TRACE ( TRACE_IKBD_ALL , "ikbd reset mode=%s\n" , bCold?"cold":"warm" );
 
-	/* Reset any custom code run with the Execute command 0x22 */
-	MemoryLoadNbBytesLeft = 0;
-	pIKBD_CustomCodeHandler_Read = NULL;
-	pIKBD_CustomCodeHandler_Write = NULL;
-	IKBD_ExeMode = false;
+	/* Reset the SCI */
+	pIKBD->TRCSR = IKBD_TRCSR_BIT_TDRE;
 
-	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
-	Keyboard.NbBytesInOutputBuffer = 0;
+	pIKBD->SCI_TX_State = IKBD_SCI_STATE_IDLE;
+	pIKBD->TSR = 0;
+	pIKBD->SCI_TX_Size = 0;
+	pIKBD->SCI_TX_Delay = 0;
 
-	IKBD_Cmd_Return_Byte (IKBD_ROM_VERSION);
+	pIKBD->SCI_RX_State = IKBD_SCI_STATE_IDLE;
+	pIKBD->RSR = 0;
+	pIKBD->SCI_RX_Size = 0;
+
+
+	/* On cold reset, clear the whole RAM (including clock data) */
+	/* On warm reset, the clock data should be kept */
+	if ( bCold )
+		IKBD_Boot_ROM ( true );
+	else
+		IKBD_Boot_ROM ( false );
 }
 
 
-void IKBD_Reset(bool bCold)
+
+/* This function emulates the boot code stored in the ROM at address $F000.
+ * This boot code is called either after a hardware reset, or when the
+ * reset command ($80 $01) is received.
+ * Depending on the conditions, we should clear the clock data or not (the
+ * real IKBD will test+clear RAM either in range $80-$FF or in range $89-$FF)
+ */
+static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 {
 	int	i;
 
 
-	/* Reset internal keyboard processor details */
-	if (bCold)
-	{
-		KeyboardProcessor.bReset = false;
-		if (CycInt_InterruptActive(INTERRUPT_IKBD_RESETTIMER))
-			CycInt_RemovePendingInterrupt(INTERRUPT_IKBD_RESETTIMER);
+	LOG_TRACE ( TRACE_IKBD_ALL , "ikbd boot rom clear_all=%s\n" , ClearAllRAM?"yes":"no" );
 
+	/* Clear clock data when the 128 bytes of RAM are cleared */
+	if ( ClearAllRAM )
+	{
 		/* Clear clock data on cold reset */
 		for ( i=0 ; i<6 ; i++ )
 			pIKBD->Clock[ i ] = 0;
@@ -498,6 +519,7 @@ void IKBD_Reset(bool bCold)
 // pIKBD->Clock[ 4 ] = 0x59;
 // pIKBD->Clock[ 5 ] = 0x57;
 
+	/* Set default reporting mode for mouse/joysticks */
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 	KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 
@@ -523,6 +545,7 @@ void IKBD_Reset(bool bCold)
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;
 	Keyboard.NbBytesInOutputBuffer = 0;
 	Keyboard.nBytesInInputBuffer = 0;
+
 	memset(Keyboard.KeyStates, 0, sizeof(Keyboard.KeyStates));
 	Keyboard.bLButtonDown = BUTTON_NULL;
 	Keyboard.bRButtonDown = BUTTON_NULL;
@@ -534,29 +557,63 @@ void IKBD_Reset(bool bCold)
 	bMouseDisabled = bJoystickDisabled = false;
 	/* do emulate hardware 'quirk' where if disable both with 'x' time
 	 * of a RESET command they are ignored! */
-	bDuringResetCriticalTime = bBothMouseAndJoy = false;
+	bDuringResetCriticalTime = true;
+	bBothMouseAndJoy = false;
 	bMouseEnabledDuringReset = false;
 
 
-	/* Reset the SCI */
-	pIKBD->TRCSR = IKBD_TRCSR_BIT_TDRE;
-
-	pIKBD->SCI_TX_State = IKBD_SCI_STATE_IDLE;
-	pIKBD->TSR = 0;
-	pIKBD->SCI_TX_Size = 0;
-	pIKBD->SCI_TX_Delay = 0;
-
-	pIKBD->SCI_RX_State = IKBD_SCI_STATE_IDLE;
-	pIKBD->RSR = 0;
-	pIKBD->SCI_RX_Size = 0;
-
-
 	/* Remove any custom handlers used to emulate code loaded to the 6301's RAM */
-	IKBD_Reset_ExeMode ();
+	if ( IKBD_ExeMode == true )
+	{
+		LOG_TRACE ( TRACE_IKBD_ALL , "ikbd custom exe off\n" );
+
+		MemoryLoadNbBytesLeft = 0;
+		pIKBD_CustomCodeHandler_Read = NULL;
+		pIKBD_CustomCodeHandler_Write = NULL;
+		IKBD_ExeMode = false;
+	}
+	
+
+ 	KeyboardProcessor.bReset = false;
+
+	/* During the boot, the IKBD will test all the keys to ensure no key */
+	/* is stuck. We use a timer to emulate the time needed for this part */
+	/* (eg Lotus Turbo Esprit 2 requires at least a delay of 50000 cycles */
+	/* or it will crash during start up) */
+	CycInt_AddRelativeInterrupt( IKBD_RESET_CYCLES , INT_CPU_CYCLE , INTERRUPT_IKBD_RESETTIMER );
+
 
 	/* Add auto-update function to the queue */
-	CycInt_AddRelativeInterrupt(150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
+	CycInt_AddRelativeInterrupt ( 150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND );
+	LOG_TRACE ( TRACE_IKBD_ALL , "ikbd reset done, starting reset timer\n" );
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * This timer is started by IKBD_Boot_ROM to emulate the time needed
+ * to setup the IKBD in its default state after a reset.
+ * If some IKBD commands are received during the boot phase they may be ignored.
+ */
+void IKBD_InterruptHandler_ResetTimer(void)
+{
+	LOG_TRACE(TRACE_IKBD_ALL, "ikbd reset timer completed, resuming ikbd processing VBLs=%i framecyc=%i\n",
+	          nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
+
+	/* Remove this interrupt from list and re-order */
+	CycInt_AcknowledgeInterrupt();
+
+	/* Turn processor on; can now process commands */
+	KeyboardProcessor.bReset = true;
+
+	/* Critical timer is over */
+	bDuringResetCriticalTime = false;
+	bMouseEnabledDuringReset = false;
+
+	/* Return $F1 when IKBD's boot is complete */
+	IKBD_Cmd_Return_Byte ( IKBD_ROM_VERSION );
+}
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -1671,28 +1728,6 @@ static void IKBD_CheckResetDisableBug(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Start timer after keyboard RESET command to emulate 'quirk'
- * If some IKBD commands are sent during time after a RESET they may be ignored
- */
-void IKBD_InterruptHandler_ResetTimer(void)
-{
-	LOG_TRACE(TRACE_IKBD_CMDS, "ikbd reset timer completed, resuming ikbd processing VBLs=%i framecyc=%i\n",
-	          nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
-
-	/* Remove this interrupt from list and re-order */
-	CycInt_AcknowledgeInterrupt();
-
-	/* Turn processor on; can now process commands */
-	KeyboardProcessor.bReset = true;
-
-	/* Critical timer is over */
-	bDuringResetCriticalTime = false;
-	bMouseEnabledDuringReset = false;
-}
-
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -1760,42 +1795,10 @@ static void IKBD_Cmd_Reset(void)
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_Reset VBLs=%i framecyc=%i\n",
 	          nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
 
-	/* Check for error series of bytes, eg 0x80,0x01 */
+	/* Check that 0x01 was received after 0x80 */
 	if (Keyboard.InputBuffer[1] == 0x01)
 	{
-		/* Set defaults */
-		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
-		KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
-		KeyboardProcessor.Abs.X = ABS_X_ONRESET;
-		KeyboardProcessor.Abs.Y = ABS_Y_ONRESET;
-		KeyboardProcessor.Abs.MaxX = ABS_MAX_X_ONRESET;
-		KeyboardProcessor.Abs.MaxY = ABS_MAY_Y_ONRESET;
-		KeyboardProcessor.Abs.PrevReadAbsMouseButtons = ABS_PREVBUTTONS;
-
-		/* flush all queued bytes that would be read in $fffc02 */
-		Keyboard.BufferHead = Keyboard.BufferTail = 0;
-		Keyboard.NbBytesInOutputBuffer = 0;
-
-		/* This command returns either the byte 0xf0 or 0xf1 (depending
-		 * on the version of the IKBD ROM) when the reset has been
-		 * successful. Some notes:
-		 * - Dragonnels demo requires 0xf1 so we use only this value
-		 *   right now.
-		 * - Lotus Turbo Esprit 2 requires at least a delay of 50000
-		 *   cycles or it will crash during start up.
-		 */
-		IKBD_Cmd_Return_Byte_Delay (IKBD_ROM_VERSION, 50000-ACIA_CYCLES);
-
-		/* Start timer - some commands are send during this time they may be ignored (see real ST!) */
-		CycInt_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
-
-		/* Set this 'critical' flag, gets reset when timer expires */
-		bDuringResetCriticalTime = true;
-		bMouseDisabled = bJoystickDisabled = false;
-		bBothMouseAndJoy = false;
-		bMouseEnabledDuringReset = false;
-
-		LOG_TRACE(TRACE_IKBD_ALL, "ikbd reset done, starting reset timer\n");
+		IKBD_Boot_ROM ( false );
 	}
 	/* else if not 0x80,0x01 just ignore */
 }
@@ -2262,7 +2265,7 @@ static void IKBD_Cmd_SetClock(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * INTERROGATE TIME-OF-DAT CLOCK
+ * INTERROGATE TIME-OF-DAY CLOCK
  *
  * 0x1C
  *   Returns:
@@ -2796,7 +2799,7 @@ static void IKBD_CustomCodeHandler_FroggiesMenu_Write ( Uint8 aciabyte )
 	/* and leave Execution mode (jmp $f000) */
 	if ( aciabyte & 0x80 )
 	{
-		IKBD_Reset_ExeMode ();
+		IKBD_Boot_ROM ( false );
 		return;
 	}
 
@@ -2940,7 +2943,7 @@ static void IKBD_CustomCodeHandler_ChaosAD_Write ( Uint8 aciabyte )
 		/* When all bytes were decoded if 0x08 is written to $fffc02 */
 		/* the program will terminate itself and leave Execution mode */
 		if ( aciabyte == 0x08 )
-			IKBD_Reset_ExeMode ();
+			IKBD_Boot_ROM ( false );
 	}
 }
 
