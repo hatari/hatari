@@ -574,8 +574,6 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 	}
 	
 
- 	KeyboardProcessor.bReset = false;
-
 	/* During the boot, the IKBD will test all the keys to ensure no key */
 	/* is stuck. We use a timer to emulate the time needed for this part */
 	/* (eg Lotus Turbo Esprit 2 requires at least a delay of 50000 cycles */
@@ -603,10 +601,7 @@ void IKBD_InterruptHandler_ResetTimer(void)
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
-	/* Turn processor on; can now process commands */
-	KeyboardProcessor.bReset = true;
-
-	/* Critical timer is over */
+	/* Reset timer is over */
 	bDuringResetCriticalTime = false;
 	bMouseEnabledDuringReset = false;
 
@@ -982,7 +977,7 @@ static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 {
 //fprintf ( stderr , "send byte=0x%02x delay=%d\n" , Data , Delay_Cycles );
 	/* Is keyboard initialised yet? Ignore any bytes until it is */
-	if (!KeyboardProcessor.bReset)
+	if ( bDuringResetCriticalTime )
 		return;
 
 	if ( Delay_Cycles > 0 )
@@ -1583,7 +1578,7 @@ static void IKBD_SendCursorMousePacket(void)
 static void IKBD_SendAutoKeyboardCommands(void)
 {
 	/* Don't do anything until processor is first reset */
-	if (!KeyboardProcessor.bReset)
+	if ( bDuringResetCriticalTime )
 		return;
 
 	/* Read joysticks for this frame */

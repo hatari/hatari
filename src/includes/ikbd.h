@@ -40,7 +40,6 @@ typedef struct {
   JOY      Joy;
   int MouseMode;                  /* AUTOMODE_xxxx */
   int JoystickMode;               /* AUTOMODE_xxxx */
-  bool bReset;                    /* Set to TRUE is keyboard 'RESET' and now active */
 } KEYBOARD_PROCESSOR;
 
 /* Keyboard state */
