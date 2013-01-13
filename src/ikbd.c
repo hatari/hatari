@@ -84,14 +84,14 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
 #define ACIA_CYCLES    7200         /* Cycles (Multiple of 4) between sent to ACIA from keyboard along serial line - 500Hz/64, (approx' 6920-7200cycles from test program) */
 
-#define IKBD_RESET_CYCLES  223500   /* Cycles after RESET before complete */
-
 #define ABS_X_ONRESET    0          /* Initial XY for absolute mouse position after RESET command */
 #define ABS_Y_ONRESET    0
 #define ABS_MAX_X_ONRESET  320      /* Initial absolute mouse limits after RESET command */
 #define ABS_MAY_Y_ONRESET  200      /* These values are never actually used as user MUST call 'IKBD_Cmd_AbsMouseMode' before ever using them */
 
 #define ABS_PREVBUTTONS  (0x02|0x8) /* Don't report any buttons up on first call to 'IKBD_Cmd_ReadAbsMousePos' */
+
+#define IKBD_RESET_CYCLES  502000	/* Number of cycles (for a 68000 at 8 MHz) between sending the reset command and receiving $F1 */
 
 #define	IKBD_ROM_VERSION	0xF1	/* On reset, the IKBD will return either 0xF0 or 0xF1, depending on the IKBD's ROM */
 					/* version. Only very early ST returned 0xF0, so we use 0xF1 which is the most common case.*/
@@ -611,7 +611,7 @@ void IKBD_InterruptHandler_ResetTimer(void)
 	bMouseEnabledDuringReset = false;
 
 	/* Return $F1 when IKBD's boot is complete */
-	IKBD_Cmd_Return_Byte ( IKBD_ROM_VERSION );
+	IKBD_Cmd_Return_Byte_Delay ( IKBD_ROM_VERSION , IKBD_Delay_Random ( 0 , 3000 ) );
 }
 
 
