@@ -1303,7 +1303,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
             }
             /* Get all unused bits of the logical address table index field.
              * they are added to the page address */
-            /* TODO: They should be added via "unsigned addition". How to? */
+            /* TODO: They should be added via "signed addition". How to? */
             do {
                 unused_fields_mask |= mmu030.translation.table[t].mask;
                 t++;
@@ -1749,8 +1749,6 @@ uae_u16 mmu030_get_word(uaecptr addr, uae_u32 fc, int size) {
     
 	//                                        addr,super,write
 	if ((!mmu030.enabled) || (mmu030_match_ttr(addr,fc,false)&TT_OK_MATCH) || (fc==7)) {
-        int test = phys_get_word(addr);
-        return test;
 		return phys_get_word(addr);
     }
     
