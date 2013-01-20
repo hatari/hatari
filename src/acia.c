@@ -353,7 +353,7 @@ static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 		* the irq bit is set and the MFP interrupt is triggered - for example
 		* the "V8 music system" demo depends on this behaviour. To emulate
 		* this, we simply start another Int which triggers the MFP interrupt later. */
-		CycInt_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_ACIA_MFP);
+		CycInt_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_ACIA_MFP);
 
 		MFP_GPIP &= ~0x10;				/* set IRQ signal for GPIP P4 */
 	}
