@@ -157,7 +157,7 @@ static void show_cpu_area_stats(profile_area_t *area)
 /**
  * show CPU area (RAM, ROM, TOS) specific statistics.
  */
-void Profile_CpuShowStats(void)
+static void Profile_CpuShowStats(void)
 {
 	fprintf(stderr, "Normal RAM (0-0x%X):\n", STRamEnd);
 	show_cpu_area_stats(&cpu_profile.ram);
@@ -244,7 +244,7 @@ static int profile_by_cpu_cycles(const void *p1, const void *p2)
 /**
  * Sort CPU profile data addresses by cycle counts and show the results.
  */
-void Profile_CpuShowCycles(unsigned int show)
+static void Profile_CpuShowCycles(unsigned int show)
 {
 	unsigned int active;
 	Uint32 *sort_arr, *end, addr;
@@ -273,9 +273,8 @@ void Profile_CpuShowCycles(unsigned int show)
 	printf("%d CPU addresses listed.\n", show);
 }
 
-
 /**
- * compare function for qsort() to sort CPU profile data by descdending
+ * compare function for qsort() to sort CPU profile data by descending
  * address access counts.
  */
 static int profile_by_cpu_count(const void *p1, const void *p2)
@@ -296,7 +295,7 @@ static int profile_by_cpu_count(const void *p1, const void *p2)
  * If symbols are requested and symbols are loaded, show (only) addresses
  * matching a symbol.
  */
-void Profile_CpuShowCounts(unsigned int show, bool only_symbols)
+static void Profile_CpuShowCounts(unsigned int show, bool only_symbols)
 {
 	profile_item_t *data = cpu_profile.data;
 	unsigned int symbols, matched, active;
@@ -561,7 +560,7 @@ bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint32 *count, Uint3
 /**
  * show DSP specific profile statistics.
  */
-void Profile_DspShowStats(void)
+static void Profile_DspShowStats(void)
 {
 	profile_area_t *area = &dsp_profile.ram;
 	fprintf(stderr, "DSP profile statistics (0x0-0xFFFF):\n");
@@ -644,7 +643,7 @@ static int profile_by_dsp_cycles(const void *p1, const void *p2)
 /**
  * Sort DSP profile data addresses by cycle counts and show the results.
  */
-void Profile_DspShowCycles(unsigned int show)
+static void Profile_DspShowCycles(unsigned int show)
 {
 	unsigned int active;
 	Uint16 *sort_arr, *end, addr;
@@ -696,7 +695,7 @@ static int profile_by_dsp_count(const void *p1, const void *p2)
  * If symbols are requested and symbols are loaded, show (only) addresses
  * matching a symbol.
  */
-void Profile_DspShowCounts(unsigned int show, bool only_symbols)
+static void Profile_DspShowCounts(unsigned int show, bool only_symbols)
 {
 	profile_item_t *data = dsp_profile.data;
 	unsigned int symbols, matched, active;

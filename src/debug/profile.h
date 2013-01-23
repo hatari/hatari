@@ -18,9 +18,6 @@ extern bool Profile_CpuStart(void);
 extern void Profile_CpuUpdate(void);
 extern void Profile_CpuStop(void);
 /* CPU profile results */
-extern void Profile_CpuShowStats(void);
-extern void Profile_CpuShowCycles(unsigned int show);
-extern void Profile_CpuShowCounts(unsigned int show, bool only_symbols);
 extern bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles);
 
 /* DSP profile control */
@@ -28,9 +25,6 @@ extern bool Profile_DspStart(void);
 extern void Profile_DspUpdate(void);
 extern void Profile_DspStop(void);
 /* DSP profile results */
-extern void Profile_DspShowStats(void);
-extern void Profile_DspShowCycles(unsigned int show);
-extern void Profile_DspShowCounts(unsigned int show, bool only_symbols);
 extern bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint32 *count, Uint32 *cycles);
 
 #endif
