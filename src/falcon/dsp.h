@@ -48,7 +48,7 @@ extern Uint16 DSP_GetNextPC(Uint16 pc);
 extern Uint16 DSP_GetInstrCycles(void);
 extern Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str);
 extern Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space);
-extern Uint16 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr);
+extern Uint16 DSP_DisasmAddress(FILE *out, Uint16 lowerAdr, Uint16 UpperAdr);
 extern void DSP_DisasmRegisters(void);
 extern int DSP_GetRegisterAddress(const char *arg, Uint32 **addr, Uint32 *mask);
 extern bool DSP_Disasm_SetRegister(const char *arg, Uint32 value);

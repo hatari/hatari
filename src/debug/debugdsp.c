@@ -186,7 +186,7 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 	printf("DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	while (dsp_disasm_addr < dsp_disasm_upper) {
 		DebugDsp_ShowAddressInfo(dsp_disasm_addr);
-		dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_addr);
+		dsp_disasm_addr = DSP_DisasmAddress(stderr, dsp_disasm_addr, dsp_disasm_addr);
 	}
 
 	return DEBUGGER_CMDCONT;

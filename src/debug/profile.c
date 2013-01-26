@@ -1,7 +1,7 @@
 /*
  * Hatari - profile.c
  * 
- * Copyright (C) 2010-2012 by Eero Tamminen
+ * Copyright (C) 2010-2013 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -20,6 +20,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "symbols.h"
 #include "68kDisass.h"
 #include "tos.h"
+#include "file.h"
 
 #define MAX_PROFILE_VALUE 0xFFFFFFFF
 
@@ -171,14 +172,6 @@ static void show_cpu_area_stats(profile_area_t *area)
  */
 static void Profile_CpuShowStats(void)
 {
-#if ENABLE_WINUAE_CPU
-	int i;
-	fprintf(stderr, "\nCache misses per instruction, number of occurrences:\n");
-	for (i = 0; i < MAX_MISS; i++) {
-		fprintf(stderr, "- %d: %d\n", i, cpu_profile.miss_counts[i]);
-	}
-	fprintf(stderr, "\n");
-#endif
 	fprintf(stderr, "Normal RAM (0-0x%X):\n", STRamEnd);
 	show_cpu_area_stats(&cpu_profile.ram);
 
@@ -187,6 +180,16 @@ static void Profile_CpuShowStats(void)
 
 	fprintf(stderr, "ROM TOS (0x%X-0x%X):\n", TosAddress, TosAddress+TosSize);
 	show_cpu_area_stats(&cpu_profile.tos);
+
+#if ENABLE_WINUAE_CPU
+	if (cpu_profile.all_misses) {	/* CPU cache in use? */
+		int i;
+		fprintf(stderr, "\nCache misses per instruction, number of occurrences:\n");
+		for (i = 0; i < MAX_MISS; i++) {
+			fprintf(stderr, "- %d: %d\n", i, cpu_profile.miss_counts[i]);
+		}
+	}
+#endif
 }
 
 
@@ -194,14 +197,14 @@ static void Profile_CpuShowStats(void)
  * Show first 'show' CPU instructions which execution was profiled,
  * in the address order.
  */
-static void Profile_CpuShowAddresses(unsigned int show)
+static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
 {
 	int oldcols[DISASM_COLUMNS], newcols[DISASM_COLUMNS];
 	unsigned int shown, idx;
+	const char *symbol;
 	profile_item_t *data;
 	uaecptr nextpc, addr;
 	Uint32 size, active;
-	const char *symbol;
 
 	data = cpu_profile.data;
 	if (!data) {
@@ -227,14 +230,14 @@ static void Profile_CpuShowAddresses(unsigned int show)
 		}
 		addr = index2address(idx);
 		if (addr != nextpc && nextpc) {
-			printf("[...]\n");
+			fprintf(out, "[...]\n");
 		}
 		symbol = Symbols_GetByCpuAddress(addr);
 		if (symbol) {
-			printf("%s:\n", symbol);
+			fprintf(out, "%s:\n", symbol);
 		}
 		/* NOTE: column setup works only with UAE disasm engine! */
-		Disasm(stdout, addr, &nextpc, 1);
+		Disasm(out, addr, &nextpc, 1);
 		shown++;
 	}
 	printf("Disassembled %d (of active %d) CPU addresses.\n", show, active);
@@ -668,7 +671,7 @@ static void Profile_DspShowStats(void)
  * Show first 'show' DSP instructions which execution was profiled,
  * in the address order.
  */
-static void Profile_DspShowAddresses(unsigned int show)
+static void Profile_DspShowAddresses(unsigned int show, FILE *out)
 {
 	unsigned int shown;
 	profile_item_t *data;
@@ -694,13 +697,13 @@ static void Profile_DspShowAddresses(unsigned int show)
 			continue;
 		}
 		if (addr != nextpc && nextpc) {
-			fputs("[...]\n", debugOutput);
+			fputs("[...]\n", out);
 		}
 		symbol = Symbols_GetByDspAddress(addr);
 		if (symbol) {
-			fprintf(debugOutput, "%s:\n", symbol);
+			fprintf(out, "%s:\n", symbol);
 		}
-		nextpc = DSP_DisasmAddress(addr, addr);
+		nextpc = DSP_DisasmAddress(out, addr, addr);
 		shown++;
 	}
 	printf("Disassembled %d (of active %d) DSP addresses.\n", show, active);
@@ -973,15 +976,16 @@ char *Profile_Match(const char *text, int state)
 }
 
 const char Profile_Description[] =
-	  "<on|off|stats|counts|cycles|misses|symbols|addresses> [show count]\n"
+	  "<on|off|stats|counts|cycles|misses|symbols|addresses> [show count] [file]\n"
 	  "\t'on' & 'off' enable and disable profiling.  Data is collected\n"
 	  "\tuntil debugger is entered again at which point you get profiling\n"
 	  "\tstatistics ('stats') summary.  Then you can ask for list of the\n"
 	  "\tPC addresses, sorted either by execution 'counts', used 'cycles'\n"
-	  "\tor icache misses. First can be limited just to addresses with 'symbols'.\n"
+	  "\tor cache misses. First can be limited just to addresses with 'symbols'.\n"
 	  "\t'addresses' lists the profiled addresses in order, with\n"
 	  "\tthe instructions (currently) residing at them.\n"
-	  "\tYou can also give optional limit on how many will be shown.";
+	  "\tOptional count will limit on how many will be shown.\n"
+	  "\tFor 'addresses' you can also give optional output file name.";
 
 
 /**
@@ -1049,10 +1053,27 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 			Profile_CpuShowCounts(show, true);
 		}
 	} else if (strcmp(psArgs[1], "addresses") == 0) {
-		if (bForDsp) {
-			Profile_DspShowAddresses(show);
+		FILE *out;
+		if (nArgc > 3) {
+			if (File_Exists(psArgs[3])) {
+				fprintf(stderr, "ERROR: output file already exists,\nremove it or give another name!\n");
+				return false;
+			}
+			if (!(out = fopen(psArgs[3], "w"))) {
+				fprintf(stderr, "ERROR: opening '%s' for writing failed!\n", psArgs[3]);
+				perror(NULL);
+				return false;
+			}
 		} else {
-			Profile_CpuShowAddresses(show);
+			out = stdout;
+		}
+		if (bForDsp) {
+			Profile_DspShowAddresses(show, out);
+		} else {
+			Profile_CpuShowAddresses(show, out);
+		}
+		if (out != stdout) {
+			fclose(out);
 		}
 	} else {
 		DebugUI_PrintCmdHelp(psArgs[0]);

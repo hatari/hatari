@@ -705,7 +705,7 @@ void dsp56k_init_cpu(void)
 /**
  * Execute one instruction in trace mode at a given PC address.
  * */
-Uint16 dsp56k_execute_one_disasm_instruction(Uint16 pc)
+Uint16 dsp56k_execute_one_disasm_instruction(FILE *out, Uint16 pc)
 {
 	dsp_core_t *ptr1, *ptr2;
 	static dsp_core_t dsp_core_save;
@@ -729,7 +729,7 @@ Uint16 dsp56k_execute_one_disasm_instruction(Uint16 pc)
 	/* Execute instruction at address given in parameter to get the number of cycles it takes */
 	dsp56k_execute_instruction();
 
-	fprintf(stderr, "%s", dsp56k_getInstructionText());
+	fprintf(out, "%s", dsp56k_getInstructionText());
 
 	/* Restore DSP context after executing instruction */
 	memcpy(ptr1, ptr2, sizeof(dsp_core));

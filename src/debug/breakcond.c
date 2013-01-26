@@ -1807,7 +1807,7 @@ bool BreakAddr_Command(char *args, bool bForDsp)
 
 	/* on success, show on what instruction it was added */
 	if (bForDsp) {
-		DSP_DisasmAddress(addr, addr);
+		DSP_DisasmAddress(stderr, addr, addr);
 	} else {
 		uaecptr dummy;
 		Disasm(stderr, (uaecptr)addr, &dummy, 1);
