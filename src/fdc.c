@@ -147,7 +147,7 @@ ACSI DMA and Floppy Disk Controller(FDC)
    - if the write protection hole on the floppy is closed, the light can't go through and the
      disk is write enabled.
   The point is that when any "solid" part of the floppy obstructs the light signal, the WPT
-  signal will change immediatly : it will be considered as if a write enabled disk was present.
+  signal will change immediately : it will be considered as if a write enabled disk was present.
   So, when a floppy is ejected or inserted, the body of the floppy will briefly obstruct the light,
   whatever the state of the protection hole could be.
   Similarly, when there's no floppy inside the drive, the light signal can pass through, so it will
@@ -282,16 +282,16 @@ enum
 
 #define	FDC_DELAY_TYPE_I_PREPARE		100		/* Types I commands take at least 0.1 ms to execute */
 								/* (~800 cpu cycles @ 8 Mhz). FIXME [NP] : this was not measured, it's */
-								/* to avoid returning immediatly when command has no effect */
-#define	FDC_DELAY_TYPE_II_PREPARE		1		/* Start Type II commands immediatly */
-#define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediatly */
+								/* to avoid returning immediately when command has no effect */
+#define	FDC_DELAY_TYPE_II_PREPARE		1		/* Start Type II commands immediately */
+#define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediately */
 #define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME [NP] : this was not measured */
 								
 #define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
 
 #define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
 
-#define	FDC_DELAY_COMMAND_IMMEDIATE		1		/* Number of us to go immediatly to another state */
+#define	FDC_DELAY_COMMAND_IMMEDIATE		1		/* Number of us to go immediately to another state */
 
 
 #define	DMA_DISK_SECTOR_SIZE			512		/* Sector count at $ff8606 is for 512 bytes blocks */

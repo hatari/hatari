@@ -17,9 +17,9 @@
 /*			More precise support for reading video counter $ff8205/07/09.		*/
 /* 2007/04/14	[NP]	Precise reloading of $ff8201/03 into $ff8205/07/09 at line 310 on cycle	*/
 /*			RESTART_VIDEO_COUNTER_CYCLE (ULM DSOTS Demo).				*/
-/* 2007/04/16	[NP]	Better Video_CalculateAddress. We must substract a "magic" 12 cycles to	*/
+/* 2007/04/16	[NP]	Better Video_CalculateAddress. We must subtract a "magic" 12 cycles to	*/
 /*			Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) to get a correct	*/
-/*			value (No Cooper's video synchro protection is finaly OK :) ).		*/
+/*			value (No Cooper's video synchro protection is finally OK :) ).		*/
 /* 2007/04/17	[NP]	- Switch to 60 Hz to remove top border on line 33 should occur before	*/
 /*			LINE_REMOVE_TOP_CYCLE (a few cycles before the HBL)			*/
 /* 2007/04/23	[NP]	- Slight change in Video_StoreResolution to ignore hi res if the line	*/
@@ -93,7 +93,7 @@
 /* 2008/02/02	[NP]	Added 0 byte line detection when switching hi/lo res at position 28	*/
 /*			(Lemmings screen in Nostalgic-o-demo).					*/
 /* 2008/02/03	[NP]	On STE, write to video counter $ff8205/07/09 should only be applied	*/
-/*			immediatly if display has not started for the line (before cycle	*/
+/*			immediately if display has not started for the line (before cycle	*/
 /*			LINE_END_CYCLE_50). If write occurs after, the change to pVideoRaster	*/
 /*			should be delayed to the end of the line, after processing the current	*/
 /*			line with Video_CopyScreenLineColor (Stardust Tunnel Demo).		*/
@@ -117,7 +117,7 @@
 /* 2008/03/13	[NP]	On STE, LineWidth value in $ff820f is added to the shifter counter just	*/
 /*			when display is turned off on a line (when right border is started,	*/
 /*			which is usually on cycle 376).						*/
-/*			This means a write to $ff820f should be applied immediatly only if it	*/
+/*			This means a write to $ff820f should be applied immediately only if it	*/
 /*			occurs before cycle LineEndCycle. Else, it is stored in NewLineWidth	*/
 /*			and used after Video_CopyScreenLine has processed the current line	*/
 /*			(improve the bump mapping part in Pacemaker by Paradox).		*/
@@ -127,7 +127,7 @@
 /*			On STE, better support for writing to video counter, line width and	*/
 /*			hw scroll. If write to register occurs just at the start of a new line	*/
 /*			but before Video_EndHBL (because the move started just before cycle 512)*/
-/*			then the new value should not be set immediatly but stored and set	*/
+/*			then the new value should not be set immediately but stored and set	*/
 /*			during Video_EndHBL (fix the bump mapping part in Pacemaker by Paradox).*/
 /* 2008/03/25	[NP]	On STE, when bSteBorderFlag is true, we should add 16 pixels to the left*/
 /*			border, not to the right one (Just Musix 2 Menu by DHS).		*/
@@ -185,7 +185,7 @@
 /*			has not started yet).							*/
 /* 2008/09/25	[NP]	Use nLastVisibleHbl to store the number of the last hbl line that should*/
 /*			be copied to the emulator's screen buffer.				*/
-/*			On STE, allow to change immediatly video address, hw scroll and		*/
+/*			On STE, allow to change immediately video address, hw scroll and	*/
 /*			linewidth when nHBL>=nLastVisibleHbl instead of nHBL>=nEndHBL		*/
 /*			(fix Power Rise / Xtrem D demo).					*/
 /* 2008/11/15	[NP]	For STE registers, add in the TRACE call if the write is delayed or	*/
@@ -402,7 +402,7 @@ static Uint8 *pVideoRasterDelayed = NULL;	/* Used in STE mode when changing vide
 static Uint8 *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
 static int NewSteBorderFlag = -1;		/* New value for next line */
-static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need convertion to SDL */
+static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need conversion to SDL */
 
 bool bTTSampleHold = false;				/* TT special video mode */
 static bool bTTHypermono = false;		/* TT special video mode */
@@ -747,7 +747,7 @@ static Uint32 Video_CalculateAddress ( void )
 	int LineStartCycle , LineEndCycle;
 
 	/* Find number of cycles passed during frame */
-	/* We need to substract '12' for correct video address calculation */
+	/* We need to subtract '12' for correct video address calculation */
 	FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 12;
 
 	/* Now find which pixel we are on (ignore left/right borders) */
@@ -1345,7 +1345,7 @@ void Video_Sync_WriteByte ( void )
 	        && ( HblCounterVideo < nEndHBL + BlankLines ) )	/* only if display is on */
 	{
 		/* remove right border, display 44 bytes more : switch to 60 Hz at the position where */
-		/* the line ends in 50 Hz. Some programs don't switch back to 50 Hz immediatly */
+		/* the line ends in 50 Hz. Some programs don't switch back to 50 Hz immediately */
 		/* (sync screen in SNY II), so we just check if freq changes to 60 Hz at the position where line should end in 50 Hz */
 		if ( ( LineCycles == LINE_END_CYCLE_50 )
 			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_50 ) )
@@ -1566,7 +1566,7 @@ void Video_InterruptHandler_HBL ( void )
 	/* But if a "real" (non pending) HBL occurs during the first 56 cycles needed by the */
 	/* CPU to prepare the exception, we must ignore this HBL signal (instead of considering */
 	/* this new HBL should be put in pending state to be processed later) */
-        /* -> any HBL occuring between LastCycleHblException and LastCycleHblException+56 should be ignored */
+        /* -> any HBL occurring between LastCycleHblException and LastCycleHblException+56 should be ignored */
 	if ( ( LastCycleHblException != -1 )
 	  && ( ( FrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 )
 	  && ( ( M68000_GetPC() < 0x8280 ) || ( M68000_GetPC() > 0x82b0 ) ) )	/* FIXME : except for European Demos intro where 8280<pc<82b0 */
@@ -1617,8 +1617,8 @@ static void Video_EndHBL(void)
 	//
 
 	/* Remove top border if the switch to 60 Hz was made during this vbl before cycle	*/
-	/* LineRemoveTopCycle on line 33 and if the switch to 50 Hz has not yet occured or	*/
-	/* occured before the 60 Hz or occured after cycle LineRemoveTopCycle on line 33.	*/
+	/* LineRemoveTopCycle on line 33 and if the switch to 50 Hz has not yet occurred or	*/
+	/* occurred before the 60 Hz or occurred after cycle LineRemoveTopCycle on line 33.	*/
 	if ( ( nHBL == VIDEO_START_HBL_60HZ-1 )				/* last HBL before first line of a 60 Hz screen */
 		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
 		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL )
@@ -2334,7 +2334,7 @@ static void Video_CopyScreenLineColor(void)
 
 
 		/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
-		/* as well as scrolling occuring when removing the left border. */
+		/* as well as scrolling occurring when removing the left border. */
 		/* If >0, shift the line by STF_PixelScroll pixels to the right */
 		/* If <0, shift the line by -STF_PixelScroll pixels to the left */
 		/* This should be handled after the STE's hardware scrolling as it will scroll */
@@ -2873,7 +2873,7 @@ void Video_InterruptHandler_VBL ( void )
 {
 	int PendingCyclesOver;
 
-	/* Store cycles we went over for this frame(this is our inital count) */
+	/* Store cycles we went over for this frame(this is our initial count) */
 	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );    /* +ve */
 
 	/* Remove this interrupt from list and re-order */
@@ -3349,7 +3349,7 @@ void Video_ShifterMode_WriteByte(void)
  * of each line won't be displayed and you get the equivalent of a shorter 304 pixels line.
  * As a consequence, this register is rarely used to scroll the line.
  *
- * By writing a value > 0 in $ff8265 (to start prefetching) and immediatly after a value of 0
+ * By writing a value > 0 in $ff8265 (to start prefetching) and immediately after a value of 0
  * in $ff8264 (no scroll and no prefetch), it's possible to fill the internal registers used
  * for the scrolling even if scrolling is set to 0. In that case, the shifter will start displaying
  * each line 16 pixels earlier (as the data are already available in the internal registers).

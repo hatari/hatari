@@ -502,7 +502,7 @@ static void Screen_SetResolution(void)
 		if (sdlscrn->format->BitsPerPixel == 8)
 			Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
 		else
-			Screen_SetupRGBTable();         /* Create color convertion table */
+			Screen_SetupRGBTable();         /* Create color conversion table */
 
 		Statusbar_Init(sdlscrn);
 		

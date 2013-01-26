@@ -523,7 +523,7 @@ bool XBios(void)
 	case 12:	/* Midiws */
 	case 13:	/* Mfpint */
 	case 25:	/* Ikbdws */
-		/* ones taking word lenght/index and pointer */
+		/* ones taking word length/index and pointer */
 		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(%hd, 0x%X)\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
 			  STMemory_ReadWord(Params),

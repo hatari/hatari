@@ -2033,7 +2033,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 		printf("IDE: CMD=%02x\n", val);
 #endif
 		s = ide_if->cur_drive;
-		/* ignore commands to non existant slave */
+		/* ignore commands to non existent slave */
 		if (s != ide_if && !s->bs)
 		{
 			fprintf(stderr,"IDE: CMD to non-existant slave!\n");

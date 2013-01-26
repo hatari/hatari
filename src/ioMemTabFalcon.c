@@ -228,8 +228,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8922, SIZE_WORD, IoMem_VoidRead_00, IoMem_VoidWrite },                                  /* Microwire data - n/a on Falcon, alwayes read 0 */
 	{ 0xff8924, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_Microwire_WriteWord },         /* Microwire mask - n/a on Falcon, see crossbar.c */
 
-	{ 0xff8930, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_SrcControler_WriteWord },   /* Crossbar source controler */
-	{ 0xff8932, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_DstControler_WriteWord },   /* Crossbar destination controler */
+	{ 0xff8930, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_SrcControler_WriteWord },   /* Crossbar source controller */
+	{ 0xff8932, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_DstControler_WriteWord },   /* Crossbar destination controller */
 	{ 0xff8934, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_FreqDivExt_WriteByte },     /* External clock divider */
 	{ 0xff8935, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_FreqDivInt_WriteByte },     /* Internal clock divider */
 	{ 0xff8936, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_TrackRecSelect_WriteByte }, /* Track record select */

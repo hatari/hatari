@@ -293,7 +293,7 @@ typedef struct {
 	Uint8		TSR;					/* Transmit Shift Register */
 	Uint8		SCI_TX_Size;				/* How many data bits left to transmit in TSR (8 .. 0) */
 	int		SCI_TX_Delay;				/* If >0, wait SCI_TX_Delay calls of IKBD_SCI_Set_Line_TX before */
-								/* transfering a new byte in TDR (to simulate the time needed by */
+								/* transferring a new byte in TDR (to simulate the time needed by */
 								/* the IKBD to process a command and return the result) */
 
 	int		SCI_RX_State;
@@ -969,7 +969,7 @@ static void	IKBD_Cmd_Return_Byte_Delay ( Uint8 Data , int Delay_Cycles )
  * and we pull a new byte each time TDR needs to be re-filled.
  *
  * A possible delay can be specified to simulate the fact that some IKBD's
- * commands don't return immediatly the first byte. This delay is given
+ * commands don't return immediately the first byte. This delay is given
  * in 68000 cycles at 8 MHz and should be converted to a number of bits
  * at the chosen baud rate.
  */

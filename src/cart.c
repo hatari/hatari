@@ -115,7 +115,7 @@ void Cart_ResetImage(void)
 	/* Use internal cartridge when user wants extended VDI resolution or GEMDOS HD. */
 	if (bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
-		/* Copy built-in cartrige data into the cartridge memory of the ST */
+		/* Copy built-in cartridge data into the cartridge memory of the ST */
 		memcpy(&RomMem[0xfa0000], Cart_data, sizeof(Cart_data));
 		PatchIllegal = true;
 	}

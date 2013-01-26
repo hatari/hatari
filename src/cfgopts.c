@@ -49,8 +49,8 @@
 /     number of data items limited only by memory.
 /
 /  Like the original code from which this was taken, this is released
-/  to the Public Domain.  I cannot make any guarentees other than these
-/  work for me and I find them usefull.  Feel free to pass these on to
+/  to the Public Domain.  I cannot make any guarantees other than these
+/  work for me and I find them useful.  Feel free to pass these on to
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
