@@ -4695,6 +4695,7 @@ STATIC_INLINE void fill_icache020 (uae_u32 addr, int idx)
 		return;
 	}
 	// cache miss
+	CpuInstruction.iCacheMisses++;
 	data = mem_access_delay_longi_read_ce020 (addr);
 	if (!(regs.cacr & 2)) {
 		c->tag = tag;
@@ -4710,6 +4711,7 @@ uae_u32 get_word_ce020_prefetch (int o)
 	int i;
 	uae_u32 pc = m68k_getpc () + o;
 
+	CpuInstruction.iCacheMisses = 0;
 	for (;;) {
 		for (i = 0; i < 2; i++) {
 			if (pc == regs.prefetch020addr[0]) {
@@ -4779,6 +4781,7 @@ STATIC_INLINE void fill_icache030 (uae_u32 addr, int idx)
 		return;
 	}
 	// cache miss
+	CpuInstruction.iCacheMisses++;
 	data = mem_access_delay_longi_read_ce020 (addr);
 	if ((regs.cacr & 3) == 1) { // not frozen and enabled
 		update_cache030 (c, data, tag, lws);
@@ -4946,6 +4949,7 @@ uae_u32 get_word_ce030_prefetch (int o)
 	int i;
 	uae_u32 pc = m68k_getpc () + o;
 
+	CpuInstruction.iCacheMisses = 0;
 	for (;;) {
 		for (i = 0; i < 2; i++) {
 			if (pc == regs.prefetch020addr[0]) {

@@ -2454,10 +2454,10 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		{
 			/* assume comments are for things which aren't profiled */
 			float percentage;
-			Uint32 count, cycles;
-			if (Profile_CpuAddressData(addr, &percentage, &count, &cycles))
+			Uint32 count, cycles, misses;
+			if (Profile_CpuAddressData(addr, &percentage, &count, &cycles, &misses))
 			{
-				sprintf(commentBuffer, "%5.2f%% (%d, %d)", percentage, count, cycles);
+				sprintf(commentBuffer, "%5.2f%% (%u, %u, %u)", percentage, count, cycles, misses);
 				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+1, 0);
 			}
 		}

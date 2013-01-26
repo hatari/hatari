@@ -25,18 +25,22 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 
 typedef struct {
 	Uint32 count;	/* how many times this address is used */
-	Uint32 cycles;	/* what address this is (for sorting) */
+	Uint32 cycles;	/* how many CPU cycles was taken at this address */
+	Uint32 misses;  /* how many CPU cache misses happend at this address */
 } profile_item_t;
 
 typedef struct {
-	unsigned long long all_cycles, all_count;
-	Uint32 max_cycles;	/* for overflow check (cycles > count) */
+	unsigned long long all_cycles, all_count, all_misses;
+	Uint32 max_cycles;	/* for overflow check (cycles > count or misses) */
 	Uint32 lowest, highest;	/* active address range within memory area */
 	Uint32 active;          /* number of active addresses */
 } profile_area_t;
 
+#define MAX_MISS 4
+
 static struct {
-	unsigned long long all_cycles, all_count;
+	unsigned long long all_cycles, all_count, all_misses;
+	Uint32 miss_counts[MAX_MISS];
 	Uint32 size;          /* number of allocated profile data items */
 	profile_item_t *data; /* profile data items */
 	profile_area_t ram;   /* normal RAM stats */
@@ -93,13 +97,14 @@ static inline Uint32 address2index(Uint32 pc)
  * Get CPU cycles, count and count percentage for given address.
  * Return true if data was available and non-zero, false otherwise.
  */
-bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles)
+bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint32 *misses)
 {
 	Uint32 idx;
 	if (!cpu_profile.data) {
 		return false;
 	}
 	idx = address2index(addr);
+	*misses = cpu_profile.data[idx].misses;
 	*cycles = cpu_profile.data[idx].cycles;
 	*count = cpu_profile.data[idx].count;
 	*percentage = 100.0*(*count)/cpu_profile.all_count;
@@ -148,6 +153,13 @@ static void show_cpu_area_stats(profile_area_t *area)
 	fprintf(stderr, "- used cycles:\n  %llu (%.2f%% of all)\n",
 		area->all_cycles,
 		(float)area->all_cycles/cpu_profile.all_cycles*100);
+#if ENABLE_WINUAE_CPU
+	if (cpu_profile.all_misses) {	/* CPU cache in use? */
+		fprintf(stderr, "- instruction cache misses:\n  %llu (%.2f%% of all)\n",
+			area->all_misses,
+			(float)area->all_misses/cpu_profile.all_misses*100);
+	}
+#endif
 	if (area->max_cycles == MAX_PROFILE_VALUE) {
 		fprintf(stderr, "- Counters OVERFLOW!\n");
 	}
@@ -159,6 +171,14 @@ static void show_cpu_area_stats(profile_area_t *area)
  */
 static void Profile_CpuShowStats(void)
 {
+#if ENABLE_WINUAE_CPU
+	int i;
+	fprintf(stderr, "\nCache misses per instruction, number of occurrences:\n");
+	for (i = 0; i < MAX_MISS; i++) {
+		fprintf(stderr, "- %d: %d\n", i, cpu_profile.miss_counts[i]);
+	}
+	fprintf(stderr, "\n");
+#endif
 	fprintf(stderr, "Normal RAM (0-0x%X):\n", STRamEnd);
 	show_cpu_area_stats(&cpu_profile.ram);
 
@@ -225,8 +245,55 @@ static void Profile_CpuShowAddresses(unsigned int show)
 
 
 /**
- * compare function for qsort() to sort CPU profile data by descdending
- * address cycles counts.
+ * compare function for qsort() to sort CPU profile data by instruction cache misses.
+ */
+static int profile_by_cpu_misses(const void *p1, const void *p2)
+{
+	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].misses;
+	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].misses;
+	if (count1 > count2) {
+		return -1;
+	}
+	if (count1 < count2) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * Sort CPU profile data addresses by instruction cache misses and show the results.
+ */
+static void Profile_CpuShowMisses(unsigned int show)
+{
+	unsigned int active;
+	Uint32 *sort_arr, *end, addr;
+	profile_item_t *data = cpu_profile.data;
+	float percentage;
+	Uint32 count;
+
+	if (!data) {
+		fprintf(stderr, "ERROR: no CPU profiling data available!\n");
+		return;
+	}
+
+	active = cpu_profile.active;
+	sort_arr = cpu_profile.sort_arr;
+	qsort(sort_arr, active, sizeof(*sort_arr), profile_by_cpu_misses);
+
+	printf("addr:\t\tmisses:\n");
+	show = (show < active ? show : active);
+	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
+		addr = index2address(*sort_arr);
+		count = data[*sort_arr].misses;
+		percentage = 100.0*count/cpu_profile.all_misses;
+		printf("0x%06x\t%.2f%%\t%d%s\n", addr, percentage, count,
+		       count == MAX_PROFILE_VALUE ? " (OVERFLOW)" : "");
+	}
+	printf("%d CPU addresses listed.\n", show);
+}
+
+/**
+ * compare function for qsort() to sort CPU profile data by cycles counts.
  */
 static int profile_by_cpu_cycles(const void *p1, const void *p2)
 {
@@ -388,28 +455,42 @@ bool Profile_CpuStart(void)
 		perror("ERROR, new CPU profile buffer alloc failed");
 		cpu_profile.enabled = false;
 	}
+	memset(cpu_profile.miss_counts, 0, sizeof(cpu_profile.miss_counts));
+
 	return cpu_profile.enabled;
 }
-
 
 /**
  * Update CPU cycle and count statistics for PC address.
  */
 void Profile_CpuUpdate(void)
 {
-	Uint32 idx, cycles;
+	Uint32 idx, cycles, misses;
+
 	idx = address2index(M68000_GetPC());
 	assert(idx <= cpu_profile.size);
 
 	if (likely(cpu_profile.data[idx].count < MAX_PROFILE_VALUE)) {
 		cpu_profile.data[idx].count++;
 	}
+
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 	if (likely(cpu_profile.data[idx].cycles < MAX_PROFILE_VALUE - cycles)) {
 		cpu_profile.data[idx].cycles += cycles;
 	} else {
 		cpu_profile.data[idx].cycles = MAX_PROFILE_VALUE;
 	}
+
+#if ENABLE_WINUAE_CPU
+	misses = CpuInstruction.iCacheMisses;
+	assert(misses < MAX_MISS);
+	cpu_profile.miss_counts[misses]++;
+	if (likely(cpu_profile.data[idx].misses < MAX_PROFILE_VALUE - misses)) {
+		cpu_profile.data[idx].misses += misses;
+	} else {
+		cpu_profile.data[idx].misses = MAX_PROFILE_VALUE;
+	}
+#endif
 }
 
 
@@ -425,6 +506,7 @@ static void update_area(Uint32 addr, profile_item_t *item, profile_area_t *area)
 		return;
 	}
 	area->all_count += count;
+	area->all_misses += item->misses;
 	area->all_cycles += cycles;
 
 	if (cycles > area->max_cycles) {
@@ -487,6 +569,7 @@ void Profile_CpuStop(void)
 		update_area(i, item, area);
 	}
 
+	cpu_profile.all_misses = cpu_profile.ram.all_misses + cpu_profile.rom.all_misses + cpu_profile.tos.all_misses;
 	cpu_profile.all_cycles = cpu_profile.ram.all_cycles + cpu_profile.rom.all_cycles + cpu_profile.tos.all_cycles;
 	cpu_profile.all_count = cpu_profile.ram.all_count + cpu_profile.rom.all_count + cpu_profile.tos.all_count;
 
@@ -871,7 +954,7 @@ void Profile_DspStop(void)
 char *Profile_Match(const char *text, int state)
 {
 	static const char *names[] = {
-		"addresses", "counts", "cycles", "off", "on", "stats", "symbols"
+		"addresses", "counts", "cycles", "misses", "off", "on", "stats", "symbols"
 	};
 	static int i, len;
 	
@@ -890,12 +973,12 @@ char *Profile_Match(const char *text, int state)
 }
 
 const char Profile_Description[] =
-	  "<on|off|stats|counts|cycles|symbols|addresses> [show count]\n"
+	  "<on|off|stats|counts|cycles|misses|symbols|addresses> [show count]\n"
 	  "\t'on' & 'off' enable and disable profiling.  Data is collected\n"
 	  "\tuntil debugger is entered again at which point you get profiling\n"
 	  "\tstatistics ('stats') summary.  Then you can ask for list of the\n"
-	  "\tPC addresses, sorted either by execution 'counts' or 'cycles'\n"
-	  "\tthey used. Former can be limited just to addresses with 'symbols'.\n"
+	  "\tPC addresses, sorted either by execution 'counts', used 'cycles'\n"
+	  "\tor icache misses. First can be limited just to addresses with 'symbols'.\n"
 	  "\t'addresses' lists the profiled addresses in order, with\n"
 	  "\tthe instructions (currently) residing at them.\n"
 	  "\tYou can also give optional limit on how many will be shown.";
@@ -939,6 +1022,13 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 			Profile_DspShowStats();
 		} else {
 			Profile_CpuShowStats();
+		}
+	} else if (strcmp(psArgs[1], "misses") == 0) {
+		if (bForDsp) {
+			fprintf(stderr, "Cache misses are recorded only for CPU, not DSP.\n");
+			return false;
+		} else {
+			Profile_CpuShowMisses(show);
 		}
 	} else if (strcmp(psArgs[1], "cycles") == 0) {
 		if (bForDsp) {

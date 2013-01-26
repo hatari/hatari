@@ -18,7 +18,7 @@ extern bool Profile_CpuStart(void);
 extern void Profile_CpuUpdate(void);
 extern void Profile_CpuStop(void);
 /* CPU profile results */
-extern bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles);
+extern bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint32 *misses);
 
 /* DSP profile control */
 extern bool Profile_DspStart(void);
