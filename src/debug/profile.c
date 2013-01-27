@@ -477,7 +477,11 @@ void Profile_CpuUpdate(void)
 		cpu_profile.data[idx].count++;
 	}
 
+#if 1
+	cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
+#else	/* this is needed when non-cycle exact option is used with WinUAE CPU core */
 	cycles = CurrentInstrCycles + nWaitStateCycles;
+#endif
 	if (likely(cpu_profile.data[idx].cycles < MAX_PROFILE_VALUE - cycles)) {
 		cpu_profile.data[idx].cycles += cycles;
 	} else {
