@@ -42,7 +42,7 @@ static SDL_Joystick *sdlJoystick[ JOYSTICK_COUNT ] =		/* SDL's joystick structur
 };
 
 /* Further explanation see JoyInit() */
-static JOYAXISMAPPING *sdlJoystickMapping[ JOYSTICK_COUNT ] =	/* references which axis are actually in use by the selected SDL joystick */
+static JOYAXISMAPPING const *sdlJoystickMapping[ JOYSTICK_COUNT ] =	/* references which axis are actually in use by the selected SDL joystick */
 {
 	NULL, NULL, NULL, NULL, NULL, NULL
 };
