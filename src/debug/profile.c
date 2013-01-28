@@ -59,6 +59,7 @@ static struct {
 	profile_item_t *data; /* profile data */
 	profile_area_t ram;   /* normal RAM stats */
 	Uint16 *sort_arr;     /* data indexes used for sorting */
+	Uint16 prev_pc;       /* previous PC for which the cycles are for */
 	bool enabled;         /* true when profiling enabled */
 } dsp_profile;
 
@@ -875,6 +876,8 @@ bool Profile_DspStart(void)
 		perror("ERROR, new DSP profile buffer alloc failed");
 		dsp_profile.enabled = false;
 	}
+	/* first instruction cycles destination */
+	dsp_profile.prev_pc = DSP_GetPC();
 	return dsp_profile.enabled;
 }
 
@@ -883,19 +886,22 @@ bool Profile_DspStart(void)
  */
 void Profile_DspUpdate(void)
 {
-	Uint16 pc, cycles;
+	Uint16 pc, prev_pc, cycles;
 
 	pc = DSP_GetPC();
 	if (likely(dsp_profile.data[pc].count < MAX_PROFILE_VALUE)) {
 		dsp_profile.data[pc].count++;
 	}
 
+	/* cycle information at this point is for previous instruction */
+	prev_pc = dsp_profile.prev_pc;
 	cycles = DSP_GetInstrCycles();
-	if (likely(dsp_profile.data[pc].cycles < MAX_PROFILE_VALUE - cycles)) {
-		dsp_profile.data[pc].cycles += cycles;
+	if (likely(dsp_profile.data[prev_pc].cycles < MAX_PROFILE_VALUE - cycles)) {
+		dsp_profile.data[prev_pc].cycles += cycles;
 	} else {
-		dsp_profile.data[pc].cycles = MAX_PROFILE_VALUE;
+		dsp_profile.data[prev_pc].cycles = MAX_PROFILE_VALUE;
 	}
+	dsp_profile.prev_pc = pc;
 }
 
 
