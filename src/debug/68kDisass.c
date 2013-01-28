@@ -1696,7 +1696,6 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 {
 	long	baseAddr = addr;
 	int		val;
-	const char	*sp;
 	labelBuffer[0] = 0;
 	opcodeBuffer[0] = 0;
 	operandBuffer[0] = 0;
@@ -1824,6 +1823,8 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 
 	case dtPointer:
 	case dtFunctionPointer:
+				{
+				const char	*sp;
 				val = (Disass68kGetWord(addr) << 16) | Disass68kGetWord(addr+2);
 				sp = Disass68kSymbolName(val, 2);
 				strcpy(opcodeBuffer,"DC.L");
@@ -1832,6 +1833,7 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 				else
 					sprintf(operandBuffer,"$%6.6x", val);
 				return 4;
+				}
 
 	default:	break;
 	}
@@ -1919,6 +1921,7 @@ more:
 				static const char	*sccCond[16]  = {  "T",  "F", "HI", "LS",  "CC", "CS", "NE", "EQ",  "VC", "VS", "PL", "MI",  "GE", "LT", "GT", "LE" };
 				static const char	*dbCond[16]   = {  "T", "RA", "HI", "LS",  "CC", "CS", "NE", "EQ",  "VC", "VS", "PL", "MI",  "GE", "LT", "GT", "LE" };
 				static const char	*fpuCond[64]  = { "F", "EQ", "OGT", "OGE", "OLT", "OLE", "OGL", "OR", "UN", "UEQ", "UGT", "UGE", "ULT", "ULE", "NE", "T", "SF", "SEQ", "GT", "GE", "LT", "LE", "GL", "GLE", "NGLE", "NGL", "NLE", "NLT", "NGE", "NGT", "SNE", "ST" };
+				char	buf[8];
 
 				const char	*sp = NULL;
 				switch(ots->opcodeName[++i])
@@ -1946,7 +1949,6 @@ more:
 				{
 					if(options & doptOpcodesSmall)
 					{
-						char	buf[8];
 						strcpy(buf, sp);
 						sp = buf;
 						char	*bp = buf;
