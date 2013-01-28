@@ -131,22 +131,29 @@ static inline unsigned short	Disass68kGetWord(long addr)
 static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 {
 	long	index;
-
+	long	fileLength;
+	int	lineCount;
+	char	*fbuf;
+	FILE	*f;
+	
 	if(filebuf)
 		*filebuf = NULL;
-	FILE	*f = fopen(filename, "r");
+	f = fopen(filename, "r");
 	if(!f) return 0;
 	if(fseek(f, 0, SEEK_END))
 		return 0;
-	long	fileLength = ftell(f);
-	if(!fileLength) return 0;
+	fileLength = ftell(f);
+	if(fileLength <= 0) return 0;
 	if(fseek(f, 0, SEEK_SET))
 		return 0;
-	char	*fbuf = malloc(fileLength);
+	fbuf = malloc(fileLength);
 	if(!fbuf) return 0;
 	if((size_t)fileLength != fread(fbuf, sizeof(char), fileLength, f))
+	{
+		free(fbuf);
 		return 0;
-	int	lineCount = 0;
+	}
+	lineCount = 0;
 	for(index=0; index<fileLength; ++index)
 	{
 		if(fbuf[index] == '\r')	// convert potential CR into a space (which we ignore at the end of the line anyway)
@@ -164,15 +171,16 @@ static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 
 static void			Disass68kLoadStructInfo(const char *filename)
 {
+	int	i,j;
+	char	*nextLine;
+	char	*line;
 	char	*fbuf = NULL;
 	int		lineCount = Disass68kLoadTextFile(filename, &fbuf);
-	if(!lineCount) { if(fbuf) free(fbuf); return; }
+	if(!lineCount) return;
 	disStructEntry	*se = NULL;
 	disStructEntries = realloc(disStructEntries, sizeof(disStructEntry) * (disStructCounts + lineCount));
 	if(!disStructEntries) { free(fbuf); return; }
-	char	*line = fbuf;
-	char	*nextLine;
-	int	i,j;
+	line = fbuf;
 
 	for(i=0; i<lineCount; line = nextLine, ++i)
 	{
@@ -238,14 +246,15 @@ static void			Disass68kLoadStructInfo(const char *filename)
 
 static void			Disass68kLoadSymbols(const char *filename)
 {
+	int	i,j;
+	char	*nextLine;
+	char	*line;
 	char	*fbuf = NULL;
 	int		lineCount = Disass68kLoadTextFile(filename, &fbuf);
-	if(!lineCount) { if(fbuf) free(fbuf); return; }
+	if(!lineCount) return;
 	disSymbolEntries = realloc(disSymbolEntries, sizeof(disSymbolEntry) * (disSymbolCounts + lineCount));
 	if(!disSymbolEntries) { free(fbuf); return; }
-	char	*line = fbuf;
-	char	*nextLine;
-	int	i,j;
+	line = fbuf;
 
 	for(i=0; i<lineCount; line = nextLine, ++i)
 	{
