@@ -93,16 +93,16 @@ static int symbols_by_name(const void *s1, const void *s2)
 
 /**
  * Load symbols of given type and the symbol address addresses from
- * the given file and add given offset to the addresses.
+ * the given file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 maxaddr, symtype_t gettype)
+static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32 maxaddr, symtype_t gettype)
 {
 	symbol_list_t *list;
 	char symchar, buffer[128], name[MAX_SYM_SIZE+1], *buf;
 	int count, line, symbols;
+	Uint32 address, offset;
 	symtype_t symtype;
-	Uint32 address;
 	FILE *fp;
 	
 	if (!(fp = fopen(filename, "r"))) {
@@ -155,21 +155,30 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 offset, Uint32 m
 			fprintf(stderr, "WARNING: syntax error in '%s' on line %d, skipping.\n", filename, line);
 			continue;
 		}
-		address += offset;
-		if (address > maxaddr) {
-			fprintf(stderr, "WARNING: invalid address 0x%x in '%s' on line %d, skipping.\n", address, filename, line);
-			continue;
-		}
 		switch (toupper(symchar)) {
-		case 'T': symtype = SYMTYPE_TEXT; break;
-		case 'O': symtype = SYMTYPE_DATA; break;	/* AHCC type for _StkSize etc */
-		case 'D': symtype = SYMTYPE_DATA; break;
-		case 'B': symtype = SYMTYPE_BSS; break;
+		case 'T':
+			symtype = SYMTYPE_TEXT;
+			offset = offsets[0];
+			break;
+		case 'O':	/* AHCC type for _StkSize etc */
+		case 'D':
+			symtype = SYMTYPE_DATA;
+			offset = offsets[1];
+			break;
+		case 'B':
+			symtype = SYMTYPE_BSS;
+			offset = offsets[2];
+			break;
 		default:
 			fprintf(stderr, "WARNING: unrecognized symbol type '%c' on line %d in '%s', skipping.\n", symchar, line, filename);
 			continue;
 		}
 		if (!(gettype & symtype)) {
+			continue;
+		}
+		address += offset;
+		if (address > maxaddr) {
+			fprintf(stderr, "WARNING: invalid address 0x%x in '%s' on line %d, skipping.\n", address, filename, line);
 			continue;
 		}
 		list->names[count].address = address;
@@ -471,12 +480,16 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 }
 
 const char Symbols_Description[] =
-	"<filename|addr|name|free> [offset]\n"
-	"\tLoads symbol names and their addresses (with optional offset)\n"
-	"\tfrom given <filename>.  If there were previously loaded symbols,\n"
-	"\tthey're replaced.  Giving either 'name' or 'addr' instead of\n"
-	"\ta file name, will list the currently loaded symbols. Giving\n"
-	"\t'free' will remove the loaded symbols.";
+	"<filename|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
+	"\tLoads symbol names and their addresses from the given file.\n"
+	"\tIf one base address/offset is given, its added to all addresses.\n"
+	"\tIf three offsets are given (and non-zero), they're applied to\n"
+	"\t text (T), data (D) and BSS (B) symbols. If there were previously\n"
+	"\tloaded symbols, they're replaced.\n"
+	"\n"
+	"\tGiving either 'name' or 'addr' instead of a file name, will\n"
+	"\tlist the currently loaded symbols.  Giving 'free' will remove\n"
+	"\tthe loaded symbols.";
 
 /**
  * Handle debugger 'symbols' command and its arguments
@@ -484,9 +497,10 @@ const char Symbols_Description[] =
 int Symbols_Command(int nArgc, char *psArgs[])
 {
 	enum { TYPE_NONE, TYPE_CPU, TYPE_DSP } listtype;
-	Uint32 offset, maxaddr;
+	Uint32 offsets[3], maxaddr;
 	symbol_list_t *list;
 	const char *file;
+	int i;
 
 	if (strcmp("dspsymbols", psArgs[0]) == 0) {
 		listtype = TYPE_DSP;
@@ -520,14 +534,20 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		}
 		return DEBUGGER_CMDDONE;
 	}
-	if (nArgc >= 3) {
-		int dummy;
-		Eval_Expression(psArgs[2], &offset, &dummy, listtype==TYPE_DSP);
-	} else {
-		offset = 0;
+
+	/* get offsets */
+	offsets[0] = 0;
+	for (i = 0; i < ARRAYSIZE(offsets); i++) {
+		if (i+2 < nArgc) {
+			int dummy;
+			Eval_Expression(psArgs[i+2], &(offsets[i]), &dummy, listtype==TYPE_DSP);
+		} else {
+			/* default to first (text) offset */
+			offsets[i] = offsets[0];
+		}
 	}
 
-	list = Symbols_Load(file, offset, maxaddr, SYMTYPE_ALL);
+	list = Symbols_Load(file, offsets, maxaddr, SYMTYPE_ALL);
 	if (list) {
 		if (listtype == TYPE_CPU) {
 			Symbols_Free(CpuSymbolsList);
