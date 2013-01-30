@@ -13,6 +13,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include <stdio.h>
 #include "main.h"
 #include "debug_priv.h"
+#include "debugInfo.h"
 #include "dsp.h"
 #include "m68000.h"
 #include "profile.h"
@@ -179,7 +180,7 @@ static void Profile_CpuShowStats(void)
 	fprintf(stderr, "Cartridge ROM (0xFA0000-0xFC0000):\n");
 	show_cpu_area_stats(&cpu_profile.rom);
 
-	fprintf(stderr, "ROM TOS (0x%X-0x%X):\n", TosAddress, TosAddress+TosSize);
+	fprintf(stderr, "ROM TOS (0x%X-0x%X):\n", TosAddress, TosAddress + TosSize);
 	show_cpu_area_stats(&cpu_profile.tos);
 
 #if ENABLE_WINUAE_CPU
@@ -205,13 +206,22 @@ static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
 	const char *symbol;
 	profile_item_t *data;
 	uaecptr nextpc, addr;
-	Uint32 size, active;
+	Uint32 size, active, text;
 
 	data = cpu_profile.data;
 	if (!data) {
 		fprintf(stderr, "ERROR: no CPU profiling data available!\n");
 		return;
 	}
+
+	/* some information for interpreting the addresses */
+	fprintf(out, "ROM TOS:\t0x%06x-0x%06x\n", TosAddress, TosAddress + TosSize);
+	fprintf(out, "Normal RAM:\t0x%06x-0x%06x\n", 0, STRamEnd);
+	text = DebugInfo_GetTEXT();
+	if (text < TosAddress) {
+		fprintf(out, "Program TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
+	}
+	fprintf(out, "Cartridge ROM:\t0xfa0000-0xfc0000\n");
 
 	size = cpu_profile.size;
 	active = cpu_profile.active;
