@@ -23,6 +23,13 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "file.h"
 
+/* This is relevant with WinUAE CPU core:
+ * - the default cycle exact variant needs this define to be 1
+ * - non-cycle exact and MMU variants need this define to be 0
+ * for cycle counts to make any sense
+ */
+#define USE_CYCLES_COUNTER 1
+
 #define MAX_PROFILE_VALUE 0xFFFFFFFF
 
 typedef struct {
@@ -50,6 +57,7 @@ static struct {
 	profile_area_t tos;   /* ROM TOS stats */
 	Uint32 active;        /* number of active data items in all areas */
 	Uint32 *sort_arr;     /* data indexes used for sorting */
+	int prev_cycles;      /* previous instruction cycles counter */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
 
@@ -470,6 +478,7 @@ bool Profile_CpuStart(void)
 		cpu_profile.enabled = false;
 	}
 	memset(cpu_profile.miss_counts, 0, sizeof(cpu_profile.miss_counts));
+	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
 
 	return cpu_profile.enabled;
 }
@@ -488,9 +497,12 @@ void Profile_CpuUpdate(void)
 		cpu_profile.data[idx].count++;
 	}
 
-#if 1
+#ifdef USE_CYCLES_COUNTER
 	cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
-#else	/* this is needed when non-cycle exact option is used with WinUAE CPU core */
+	/* cycles taken by current instruction */
+	cycles -= cpu_profile.prev_cycles;
+	cpu_profile.prev_cycles += cycles;
+#else
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
 	if (likely(cpu_profile.data[idx].cycles < MAX_PROFILE_VALUE - cycles)) {
