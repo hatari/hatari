@@ -193,7 +193,9 @@ class Profile:
         sum = float(sum)
 
         idx = 0
-        if not self.count:
+        if self.count:
+            count = self.count
+        else:
             count = len(keys)
         for key in keys:
             if idx >= count:
@@ -247,7 +249,7 @@ class Main:
         prof = Profile()
         instr = cycles = misses = False
         for opt, arg in opts:
-            self.write("%s: %s\n" % (opt, arg))
+            #self.write("%s: %s\n" % (opt, arg))
             if opt in ("-c", "--cycles"):
                 cycles = True
             elif opt in ("-f", "--first"):
