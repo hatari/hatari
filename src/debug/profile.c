@@ -24,11 +24,14 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "file.h"
 
 /* This is relevant with WinUAE CPU core:
- * - the default cycle exact variant needs this define to be 1
+ * - the default cycle exact variant needs this define to be non-zero
  * - non-cycle exact and MMU variants need this define to be 0
  * for cycle counts to make any sense
  */
 #define USE_CYCLES_COUNTER 1
+
+/* if non-zero, output info on profiled data while profiling */
+#define DEBUG 0
 
 #define MAX_PROFILE_VALUE 0xFFFFFFFF
 
@@ -57,7 +60,8 @@ static struct {
 	profile_area_t tos;   /* ROM TOS stats */
 	Uint32 active;        /* number of active data items in all areas */
 	Uint32 *sort_arr;     /* data indexes used for sorting */
-	int prev_cycles;      /* previous instruction cycles counter */
+	Uint32 prev_cycles;   /* previous instruction cycles counter */
+	Uint32 prev_idx;      /* previous instruction address index */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
 
@@ -479,6 +483,7 @@ bool Profile_CpuStart(void)
 	}
 	memset(cpu_profile.miss_counts, 0, sizeof(cpu_profile.miss_counts));
 	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
+	cpu_profile.prev_idx = address2index(M68000_GetPC());
 
 	return cpu_profile.enabled;
 }
@@ -488,7 +493,10 @@ bool Profile_CpuStart(void)
  */
 void Profile_CpuUpdate(void)
 {
-	Uint32 idx, cycles, misses;
+#if DEBUG
+	static Uint32 zero_cycles;
+#endif
+	Uint32 idx, prev_idx, cycles, misses;
 
 	idx = address2index(M68000_GetPC());
 	assert(idx <= cpu_profile.size);
@@ -496,22 +504,33 @@ void Profile_CpuUpdate(void)
 	if (likely(cpu_profile.data[idx].count < MAX_PROFILE_VALUE)) {
 		cpu_profile.data[idx].count++;
 	}
+	prev_idx = cpu_profile.prev_idx;
 
 #if USE_CYCLES_COUNTER
 	cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
 	/* cycles taken by current instruction */
 	cycles -= cpu_profile.prev_cycles;
 	cpu_profile.prev_cycles += cycles;
+
+#if DEBUG
+	if (cycles == 0) {
+		zero_cycles++;
+		if (zero_cycles % 1024 == 0) {
+			fprintf(stderr, "WARNING: %d zero cycles, latest at 0x%x\n", zero_cycles, M68000_GetPC());
+		}
+	}
+#endif
 #else
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
-	if (likely(cpu_profile.data[idx].cycles < MAX_PROFILE_VALUE - cycles)) {
-		cpu_profile.data[idx].cycles += cycles;
+	if (likely(cpu_profile.data[prev_idx].cycles < MAX_PROFILE_VALUE - cycles)) {
+		cpu_profile.data[prev_idx].cycles += cycles;
 	} else {
-		cpu_profile.data[idx].cycles = MAX_PROFILE_VALUE;
+		cpu_profile.data[prev_idx].cycles = MAX_PROFILE_VALUE;
 	}
 
 #if ENABLE_WINUAE_CPU
+	/* TODO: should this also use prev_idx? */
 	misses = CpuInstruction.iCacheMisses;
 	assert(misses < MAX_MISS);
 	cpu_profile.miss_counts[misses]++;
@@ -521,6 +540,7 @@ void Profile_CpuUpdate(void)
 		cpu_profile.data[idx].misses = MAX_PROFILE_VALUE;
 	}
 #endif
+	cpu_profile.prev_idx = idx;
 }
 
 
