@@ -115,10 +115,10 @@ static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase)
 
 
 /**
- * GetSegmentAddress: return segment address at given offset in
+ * GetBasepageValue: return basepage value at given offset in
  * TOS process basepage or zero if that is missing/invalid.
  */
-static Uint32 GetSegmentAddress(unsigned offset)
+static Uint32 GetBasepageValue(unsigned offset)
 {
 	Uint32 basepage = DebugInfo_CurrentBasepage(0);
 	if (!basepage) {
@@ -138,7 +138,19 @@ static Uint32 GetSegmentAddress(unsigned offset)
  */
 Uint32 DebugInfo_GetTEXT(void)
 {
-	return GetSegmentAddress(0x08);
+	return GetBasepageValue(0x08);
+}
+/**
+ * DebugInfo_GetTEXTEnd: return current program TEXT segment end address
+ * or zero if basepage missing/invalid.  For virtual debugger variable.
+ */
+Uint32 DebugInfo_GetTEXTEnd(void)
+{
+	Uint32 addr = GetBasepageValue(0x08);
+	if (addr) {
+		return addr + GetBasepageValue(0x0C) - 1;
+	}
+	return 0;
 }
 /**
  * DebugInfo_GetDATA: return current program DATA segment address
@@ -146,7 +158,7 @@ Uint32 DebugInfo_GetTEXT(void)
  */
 Uint32 DebugInfo_GetDATA(void)
 {
-	return GetSegmentAddress(0x010);
+	return GetBasepageValue(0x010);
 }
 /**
  * DebugInfo_GetBSS: return current program BSS segment address
@@ -154,7 +166,7 @@ Uint32 DebugInfo_GetDATA(void)
  */
 Uint32 DebugInfo_GetBSS(void)
 {
-	return GetSegmentAddress(0x18);
+	return GetBasepageValue(0x18);
 }
 
 

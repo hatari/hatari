@@ -10,8 +10,9 @@
 #ifndef HATARI_DEBUGINFO_H
 #define HATARI_DEBUGINFO_H
 
-/* for breakcond.c */
+/* for breakcond.c & profile.c */
 extern Uint32 DebugInfo_GetTEXT(void);
+extern Uint32 DebugInfo_GetTEXTEnd(void);
 extern Uint32 DebugInfo_GetDATA(void);
 extern Uint32 DebugInfo_GetBSS(void);
 

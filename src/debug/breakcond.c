@@ -546,6 +546,7 @@ static const var_addr_t hatari_vars[] = {
 	{ "LineCycles", (Uint32*)GetLineCycles, VALUE_TYPE_FUNCTION32, 0, "is always divisable by 4" },
 	{ "LineFOpcode", (Uint32*)GetLineFOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "TEXT", (Uint32*)DebugInfo_GetTEXT, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+	{ "TEXTEnd", (Uint32*)DebugInfo_GetTEXTEnd, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, NULL },
 	{ "VdiOpcode", (Uint32*)GetVdiOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "XbiosOpcode", (Uint32*)GetXbiosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" }
