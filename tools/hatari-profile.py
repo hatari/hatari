@@ -9,30 +9,25 @@ import getopt, os, re, sys
 class Instructions:
     "current function instructions state and some state of all instructions"
     def __init__(self, name):
-        self.mins = [0xffff,0xffff,0xffff]
-        self.maxs = [0,0,0]
+        self.max_addr = [0,0,0]
+        self.max_val = [0,0,0]
         self.zero(name)
 
     def zero(self, name):
         self.name = name
-        self.addr = None
-        self.data = [0,0,0]	# current function
-        self.items = False
+        self.addr = None	# just label, not real function yet
+        self.data = [0,0,0]	# current function stats
 
-    def set_addr(self, addr):
+    def add(self, addr, strvalues):
         # only first one is used
         if not self.addr:
             self.addr = addr
-
-    def add(self, strvalues):
-        self.items = True
         for i in range(len(strvalues)):
             value = int(strvalues[i])
             self.data[i] += value
-            if value > self.maxs[i]:
-                self.maxs[i] = value
-            if value < self.mins[i]:
-                self.mins[i] = value
+            if value > self.max_val[i]:
+                self.max_val[i] = value
+                self.max_addr[i] = addr
 
     def show(self):
         print "%s @ 0x%x: %d, %d, %d" % (self.name, self.addr, self.data[0], self.data[1], self.data[2])
@@ -137,7 +132,7 @@ class Profile:
 
     def _change_function(self, function, name):
         "store current function data and then reset it"
-        if function.items:
+        if function.addr:
             self.profile[function.name] = function.data
             if self.verbose:
                 function.show()
@@ -168,8 +163,7 @@ class Profile:
                     addr, counts = match.groups()
                     addr = int(addr, 16)
                     self._check_symbols(instructions, addr)
-                    instructions.set_addr(addr)
-                    instructions.add(counts.split(','))
+                    instructions.add(addr, counts.split(','))
                 else:
                     self.error("ERROR: unrecognized address line %d:\n\t'%s'\n" % (lines, line))
                     unknown += 1
@@ -197,13 +191,13 @@ class Profile:
     def output_stats(self):
         "output profile statistics"
         self.write("\n")
+        instr = self.instructions
         names = ("Instructions", "Cycles", "Cache misses")
         items = len(self.profile.values()[0])
         for i in range(items):
             self.write("%s:\n" % names[i])
+            self.write("- max = %d, at 0x%x\n" % (instr.max_val[i], instr.max_addr[i]))
             self.write("- %d in total\n" % self.sums[i])
-            self.write("- max = %d / address\n" % self.instructions.maxs[i])
-            self.write("- min = %d / address\n" % self.instructions.mins[i])
 
     def _output_list(self, keys, field, heading):
         self.write("\n%s:\n" % heading)
