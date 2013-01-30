@@ -41,6 +41,7 @@ class Profile:
         self.count = 0			# all
         self.instructions = None	# Instructions instance
         self.verbose = False
+        self.address = None		# hash
         self.symbols = None		# hash
         self.profile = None		# hash
         self.sums = None		# list
@@ -53,10 +54,10 @@ class Profile:
         self.r_address = re.compile("^\$([0-9a-f]+) :.*% \((.*)\)$")
         # <symbol>:
         # _biostrap:
-        self.r_function = re.compile("^([_a-zA-Z][_a-zA-Z0-9]+):$")
+        self.r_function = re.compile("^([_a-zA-Z][_.a-zA-Z0-9]*):$")
         # Hatari symbol format:
         # <address> [tTbBdD] <symbol name>
-        self.r_symbol = re.compile("^([a-fA-F0-9]+) ([bBdDtT]) ([_a-zA-Z0-9]+)$")
+        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([_a-zA-Z][_.a-zA-Z0-9]*)$")
         # default emulation addresses
         self.addr_text = 0
         self.addr_ram = 0
@@ -109,12 +110,15 @@ class Profile:
                 continue
             match = self.r_symbol.match(line)
             if match:
-                addr,kind,name = match.groups()
+                dummy,addr,kind,name = match.groups()
                 if kind in ('t', 'T'):
                     addr = int(addr,16)
                     if self.verbose:
                         self.error("%d = 0x%x\n" % (addr, name))
                     if addr in self.symbols:
+                        # prefer function names over object names
+                        if name[-2:] == ".o":
+                            continue
                         self.error("WARNING: replacing '%s' at 0x%x with '%s'\n" % (self.symbols[addr], addr, name))
                     self.symbols[addr] = name
             else:
@@ -143,14 +147,21 @@ class Profile:
         if self.symbols:
             if addr >= self.addr_text and addr < self.addr_tos:
                 # non-TOS address are relative to TEXT start
-                addr -= self.addr_text
-            if addr in self.symbols:
-                self._change_function(function, self.symbols[addr])
+                idx = addr - self.addr_text
+            else:
+                idx = addr
+            # overrides profile data function names for same address
+            if idx in self.symbols:
+                name = self.symbols[idx]
+                self._change_function(function, name)
+                # this function needs address info in output
+                self.address[name] = addr
 
     def parse_profile(self, f):
         "parse profile data"
         unknown = lines = 0
         instructions = Instructions("HATARI_PROFILE_BEGIN")
+        self.address = {}
         self.profile = {}
         for line in f.readlines():
             lines += 1
@@ -206,7 +217,6 @@ class Profile:
             self.write("- information missing\n")
             return
         sum = float(sum)
-
         idx = 0
         if self.count:
             count = self.count
@@ -216,7 +226,11 @@ class Profile:
             if idx >= count:
                 break
             value = self.profile[key][field]
-            self.write("%6.2f%% %8s  %s\n" % (value*100.0/sum, value, key))
+            if key in self.address:
+                addr = "\t(at 0x%x)" % self.address[key]
+            else:
+                addr = ""
+            self.write("%6.2f%% %8s  %s%s\n" % (value*100.0/sum, value, key, addr))
             idx += 1
 
     def cmp_instructions(self, a, b):
