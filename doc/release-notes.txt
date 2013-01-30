@@ -42,6 +42,7 @@ Emulator:
   - Fix: when several breakpoints should have triggered
          on the same address, only first was handled
   - Fix: after breakpoint, 'c <n>' continues one instruction too little
+  - Fix: profiler CPU & DSP cycles information is for previous instruction
   - Fix: profiler assert on invalid PC register values
   - Fix: info command crash (triggered on NetBSD)
   - Fix: disassember output bug on NetBSD (usigned char < -1 test)
@@ -54,6 +55,11 @@ Emulator:
   - "profile addresses" can be used to see addresses through which
     code passed during profiling (e.g. while program seems frozen, this
     gives much better overview of code that is being run, than cpu trace)
+    and to save that data to a file for post-processing
+  - profiler provides CPU cycles and cache misses information
+    when using cycle-exact WinUAE CPU core (Falcon emu default)
+  - In addition to text section offset, data and bss section offsets
+    can be given when loading symbols (useful for Devpac symbols)
   - output what value was set by options if it's not otherwise shown by UI
   - Show function arguments for GEMDOS Pexec() call and AES calls
     (for AES call values in intin array and strings in addrin array)
@@ -66,6 +72,14 @@ Emulator:
 Other changes:
 - HTML documentation indeces generated dynamically with JS
 - Debugger tests building fixed
+- Added scripts for converting symbol tables in Devpac 3 listings and DSP LOD
+  files to a format understood by Hatari debugger 'symbols' command
+- hatari-profiler.py script for post-processing output from Hatari
+  debugger's CPU and DSP profiling commands:
+	profile addresses <count> <file>
+	dspprofile addresses <count> <file>
+  With symbol address information it can provide function level
+  instruction, processor cycle and cache miss statistics.
 
 Fixed Games:
 - Captain Blood (IKBD, fixed problem when setting the clock)
