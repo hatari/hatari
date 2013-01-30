@@ -6,14 +6,17 @@
 
 import getopt, os, re, sys
 
-class Function:
+class Instructions:
+    "current function instructions state and some state of all instructions"
     def __init__(self, name):
+        self.mins = [0xffff,0xffff,0xffff]
+        self.maxs = [0,0,0]
         self.zero(name)
 
     def zero(self, name):
         self.name = name
         self.addr = None
-        self.data = [0,0,0]
+        self.data = [0,0,0]	# current function
         self.items = False
 
     def set_addr(self, addr):
@@ -24,7 +27,12 @@ class Function:
     def add(self, strvalues):
         self.items = True
         for i in range(len(strvalues)):
-            self.data[i] += int(strvalues[i])
+            value = int(strvalues[i])
+            self.data[i] += value
+            if value > self.maxs[i]:
+                self.maxs[i] = value
+            if value < self.mins[i]:
+                self.mins[i] = value
 
     def show(self):
         print "%s @ 0x%x: %d, %d, %d" % (self.name, self.addr, self.data[0], self.data[1], self.data[2])
@@ -35,11 +43,12 @@ class Profile:
     def __init__(self):
         self.error = sys.stderr.write
         self.write = sys.stdout.write
-        self.count = 0		# all
+        self.count = 0			# all
+        self.instructions = None	# Instructions instance
         self.verbose = False
-        self.symbols = None	# hash
-        self.profile = None	# hash
-        self.sums = None	# list
+        self.symbols = None		# hash
+        self.profile = None		# hash
+        self.sums = None		# list
         # Hatari profile format:
         # <name>: <hex>-<hex>
         # ROM TOS:	0xe00000-0xe80000
@@ -119,11 +128,11 @@ class Profile:
         self.error("%d lines with %d code symbols/addresses parsed, %d unknown.\n" % (lines, len(self.symbols), unknown))
 
     def _sum_values(self):
+        "calculate totals"
         values = [0,0,0]
         for data in self.profile.values():
             for i in range(len(data)):
                 values[i] += data[i]
-        self.error("Totals for instructions, cycles and misses:\n\t%s\n" % values)
         self.sums = values
 
     def _change_function(self, function, name):
@@ -146,7 +155,7 @@ class Profile:
     def parse_profile(self, f):
         "parse profile data"
         unknown = lines = 0
-        function = Function("HATARI_PROFILE_BEGIN")
+        instructions = Instructions("HATARI_PROFILE_BEGIN")
         self.profile = {}
         for line in f.readlines():
             lines += 1
@@ -158,9 +167,9 @@ class Profile:
                 if match:
                     addr, counts = match.groups()
                     addr = int(addr, 16)
-                    self._check_symbols(function, addr)
-                    function.set_addr(addr)
-                    function.add(counts.split(','))
+                    self._check_symbols(instructions, addr)
+                    instructions.set_addr(addr)
+                    instructions.add(counts.split(','))
                 else:
                     self.error("ERROR: unrecognized address line %d:\n\t'%s'\n" % (lines, line))
                     unknown += 1
@@ -168,7 +177,7 @@ class Profile:
             if line[-1:] == ':':
                 match = self.r_function.match(line)
                 if match:
-                    self._change_function(function, match.group(1))
+                    self._change_function(instructions, match.group(1))
                 else:
                     self.error("ERROR: unrecognized function line %d:\n\t'%s'\n" % (lines, line))
                     unknown += 1
@@ -176,15 +185,27 @@ class Profile:
             if not self.parse_header(line):
                 self.error("WARNING: unrecognized line %d:\n\t'%s'\n" % (lines, line))
                 unknown += 1
-        self._change_function(function, "HATARI_PROFILE_END")
+        self._change_function(instructions, "HATARI_PROFILE_END")
         self.error("%d lines processed with %d functions.\n" % (lines, len(self.profile)))
         if 2*unknown > lines:
             self.error("ERROR: more than half of the lines were unrecognized!\n")
         if len(self.profile) < 2:
             self.error("ERROR: less than 2 functions found!\n")
+        self.instructions = instructions
         self._sum_values()
 
-    def _output(self, keys, field, heading):
+    def output_stats(self):
+        "output profile statistics"
+        self.write("\n")
+        names = ("Instructions", "Cycles", "Cache misses")
+        items = len(self.profile.values()[0])
+        for i in range(items):
+            self.write("%s:\n" % names[i])
+            self.write("- %d in total\n" % self.sums[i])
+            self.write("- max = %d / address\n" % self.instructions.maxs[i])
+            self.write("- min = %d / address\n" % self.instructions.mins[i])
+
+    def _output_list(self, keys, field, heading):
         self.write("\n%s:\n" % heading)
         sum = self.sums[field]
         if sum == 0:
@@ -216,17 +237,17 @@ class Profile:
     def output_instructions(self):
         keys = self.profile.keys()
         keys.sort(self.cmp_instructions, None, True)
-        self._output(keys, 0, "Executed instructions")
+        self._output_list(keys, 0, "Executed instructions")
 
     def output_cycles(self):
         keys = self.profile.keys()
         keys.sort(self.cmp_cycles, None, True)
-        self._output(keys, 1, "Used cycles")
+        self._output_list(keys, 1, "Used cycles")
 
     def output_misses(self):
         keys = self.profile.keys()
         keys.sort(self.cmp_misses, None, True)
-        self._output(keys, 2, "Cache misses")
+        self._output_list(keys, 2, "Cache misses")
 
 
 class Main:
@@ -240,17 +261,20 @@ class Main:
 
     def parse_args(self):
         try:
-            longopts = ["cycles", "first", "instr", "misses", "output=", "symbols=", "verbose"]
-            opts, rest = getopt.getopt(self.args, "cf:imo:s:v", longopts)
+            longopts = ["addresses=", "cycles", "first", "instr", "misses", "output=", "stats", "verbose"]
+            opts, rest = getopt.getopt(self.args, "a:cf:imo:sv", longopts)
             del longopts
         except getopt.GetoptError as err:
             self.usage(err)
 
         prof = Profile()
-        instr = cycles = misses = False
+        stats = instr = cycles = misses = False
         for opt, arg in opts:
             #self.write("%s: %s\n" % (opt, arg))
-            if opt in ("-c", "--cycles"):
+            if opt in ("-a", "--addresses"):
+                self.write("\nParsing symbol address information from %s...\n" % arg)
+                prof.parse_symbols(self.open_file(arg))
+            elif opt in ("-c", "--cycles"):
                 cycles = True
             elif opt in ("-f", "--first"):
                 try:
@@ -263,9 +287,8 @@ class Main:
                 misses = True
             elif opt in ("-o", "--output"):
                 prof.set_output(self.open_file(arg))
-            elif opt in ("-s", "--symbols"):
-                self.write("\nParsing symbol information from %s...\n" % arg)
-                prof.parse_symbols(self.open_file(arg))
+            elif opt in ("-s", "--stats"):
+                stats = True
             elif opt in ("-v", "--verbose"):
                 prof.set_verbose(True)
             else:
@@ -273,6 +296,8 @@ class Main:
         for arg in rest:
             self.write("\nParsing profile information from %s...\n" % arg)
             prof.parse_profile(self.open_file(arg))
+            if stats:
+                prof.output_stats()
             if instr:
                 prof.output_instructions()
             if cycles:
@@ -284,7 +309,7 @@ class Main:
         try:
             return open(path)
         except IOError, err:
-            usage("opening given '%s' file failed:\n\t%s" % (path, err))
+            self.usage("opening given '%s' file failed:\n\t%s" % (path, err))
 
     def usage(self, msg):
         self.write("""
@@ -304,24 +329,26 @@ used cycles and (CPU instruction) cache misses.
 Usage: %s [options] <profile files>
 
 Options:
+	-a <symbols>	symbol address information file
         -c		output cycles usage information
         -i		output intruction count information
         -m		output cache miss information
         -f <count>	output only first <count> items
 	-o <file name>	output file name (default is stdout)
-	-s <symbols>	symbol address information file
+        -s		output profile statistics
         -v		verbose parsing output
 
 Long options for above are:
+	--addresses
 	--cycles
         --instr
         --misses
         --output
-        --symbols
+        --stats
         --verbose
 
 For example:
-	%s -s etos512k.sym -cim -f 10 profile1.txt profile2.txt
+	%s -a etos512k.sym -cims -f 10 profile1.txt profile2.txt
 
 For each given profile file, output is a sorted list of functions, for
 each of the requested profiling items (instructions, cycles, misses).
