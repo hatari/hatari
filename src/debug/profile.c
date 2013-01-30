@@ -497,7 +497,7 @@ void Profile_CpuUpdate(void)
 		cpu_profile.data[idx].count++;
 	}
 
-#ifdef USE_CYCLES_COUNTER
+#if USE_CYCLES_COUNTER
 	cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
 	/* cycles taken by current instruction */
 	cycles -= cpu_profile.prev_cycles;
