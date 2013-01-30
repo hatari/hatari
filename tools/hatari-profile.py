@@ -49,14 +49,17 @@ class Profile:
         # <name>: <hex>-<hex>
         # ROM TOS:	0xe00000-0xe80000
         self.r_header = re.compile("^([^:]+):[^0]*0x([0-9a-f]+)-0x([0-9a-f]+)$")
-        # $<hex>  :  <ASM>  <percentage>% (<count>,<cycles>[,<misses>])
+        # $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
         # $e5af38 :   rts           0.00% (12, 0, 12)
-        self.r_address = re.compile("^\$([0-9a-f]+) :.*% \((.*)\)$")
+        self.r_cpuaddress = re.compile("^\$([0-9a-f]+) :.*% \((.*)\)$")
+        # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
+        # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
+        self.r_dspaddress = re.compile("^p:([0-9a-f]+) .*% \((.*)\)$")
         # <symbol>:
         # _biostrap:
         self.r_function = re.compile("^([_a-zA-Z][_.a-zA-Z0-9]*):$")
         # Hatari symbol format:
-        # <address> [tTbBdD] <symbol name>
+        # [0x]<hex> [tTbBdD] <symbol name>
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([_a-zA-Z][_.a-zA-Z0-9]*)$")
         # default emulation addresses
         self.addr_text = 0
@@ -157,7 +160,7 @@ class Profile:
                 # this function needs address info in output
                 self.address[name] = addr
 
-    def parse_profile(self, f):
+    def _parse_profile(self, f, r_address):
         "parse profile data"
         unknown = lines = 0
         instructions = Instructions("HATARI_PROFILE_BEGIN")
@@ -168,8 +171,18 @@ class Profile:
             line = line.strip()
             if line == "[...]":
                 continue
-            if line[0] == '$':
-                match = self.r_address.match(line)
+            # symbol?
+            if line[-1:] == ':':
+                match = self.r_function.match(line)
+                if match:
+                    self._change_function(instructions, match.group(1))
+                else:
+                    self.error("ERROR: unrecognized function line %d:\n\t'%s'\n" % (lines, line))
+                    unknown += 1
+                continue
+            # CPU or DSP address line?
+            if line[0] in ('$', 'p'):
+                match = r_address.match(line)
                 if match:
                     addr, counts = match.groups()
                     addr = int(addr, 16)
@@ -179,25 +192,26 @@ class Profile:
                     self.error("ERROR: unrecognized address line %d:\n\t'%s'\n" % (lines, line))
                     unknown += 1
                 continue
-            if line[-1:] == ':':
-                match = self.r_function.match(line)
-                if match:
-                    self._change_function(instructions, match.group(1))
-                else:
-                    self.error("ERROR: unrecognized function line %d:\n\t'%s'\n" % (lines, line))
-                    unknown += 1
-                continue
+            # header?
             if not self.parse_header(line):
                 self.error("WARNING: unrecognized line %d:\n\t'%s'\n" % (lines, line))
                 unknown += 1
         self._change_function(instructions, "HATARI_PROFILE_END")
+        self.instructions = instructions
         self.error("%d lines processed with %d functions.\n" % (lines, len(self.profile)))
         if 2*unknown > lines:
             self.error("ERROR: more than half of the lines were unrecognized!\n")
-        if len(self.profile) < 2:
-            self.error("ERROR: less than 2 functions found!\n")
-        self.instructions = instructions
+        if len(self.profile) < 1:
+            self.error("ERROR: no functions found!\n")
+            return False
         self._sum_values()
+        return True
+
+    def parse_profile_cpu(self, f):
+        return self._parse_profile(f, self.r_cpuaddress)
+
+    def parse_profile_dsp(self, f):
+        return self._parse_profile(f, self.r_dspaddress)
 
     def output_stats(self):
         "output profile statistics"
@@ -230,7 +244,7 @@ class Profile:
                 addr = "\t(at 0x%x)" % self.address[key]
             else:
                 addr = ""
-            self.write("%6.2f%% %8s  %s%s\n" % (value*100.0/sum, value, key, addr))
+            self.write("%6.2f%% %9s  %s%s\n" % (value*100.0/sum, value, key, addr))
             idx += 1
 
     def cmp_instructions(self, a, b):
@@ -269,14 +283,14 @@ class Main:
 
     def parse_args(self):
         try:
-            longopts = ["addresses=", "cycles", "first", "instr", "misses", "output=", "stats", "verbose"]
-            opts, rest = getopt.getopt(self.args, "a:cf:imo:sv", longopts)
+            longopts = ["addresses=", "dsp", "cycles", "first", "instr", "misses", "output=", "stats", "verbose"]
+            opts, rest = getopt.getopt(self.args, "a:cdf:imo:sv", longopts)
             del longopts
         except getopt.GetoptError as err:
             self.usage(err)
 
         prof = Profile()
-        stats = instr = cycles = misses = False
+        dsp = stats = instr = cycles = misses = False
         for opt, arg in opts:
             #self.write("%s: %s\n" % (opt, arg))
             if opt in ("-a", "--addresses"):
@@ -284,6 +298,8 @@ class Main:
                 prof.parse_symbols(self.open_file(arg))
             elif opt in ("-c", "--cycles"):
                 cycles = True
+            elif opt in ("-d", "--dsp"):
+                dsp = True
             elif opt in ("-f", "--first"):
                 try:
                     prof.set_count(int(arg))
@@ -303,7 +319,12 @@ class Main:
                 self.usage("unknown option '%s'" % opt)
         for arg in rest:
             self.write("\nParsing profile information from %s...\n" % arg)
-            prof.parse_profile(self.open_file(arg))
+            if dsp:
+                fun = prof.parse_profile_dsp
+            else:
+                fun = prof.parse_profile_cpu
+            if not fun(self.open_file(arg)):
+                return
             if stats:
                 prof.output_stats()
             if instr:
@@ -337,6 +358,7 @@ used cycles and (CPU instruction) cache misses.
 Usage: %s [options] <profile files>
 
 Options:
+        -d		profile data is for DSP, not CPU
 	-a <symbols>	symbol address information file
         -c		output cycles usage information
         -i		output intruction count information
@@ -347,6 +369,7 @@ Options:
         -v		verbose parsing output
 
 Long options for above are:
+        --dsp
 	--addresses
 	--cycles
         --instr
