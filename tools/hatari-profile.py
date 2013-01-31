@@ -105,6 +105,7 @@ class Profile(Output):
         if not match:
             return False
         name,start,end = match.groups()
+        end = int(end, 16)
         start = int(start, 16)
         name = name.split()[-1]
         if name == "TEXT":
@@ -118,7 +119,7 @@ class Profile(Output):
         else:
             self.warning("unrecognized profile header line")
             return False
-        if self.addr_text[1] > self.addr_text[0]:
+        if self.addr_text[1] < self.addr_text[0]:
             self.error_exit("invalid TEXT area range: 0x%x-0x%x" % self.addr_text)
         if self.addr_text[0] >= self.addr_tos or self.addr_ram >= self.addr_tos:
             self.error_exit("TOS address isn't higher than TEXT and RAM start addresses")
@@ -176,18 +177,19 @@ class Profile(Output):
                 values[i] += data[i]
         self.sums = values
 
-    def _change_function(self, function, name):
-        "store current function data and then reset it"
-        if name == function.name:
+    def _change_function(self, function, newname):
+        "store current function data and then reset to new function"
+        oldname = function.name
+        if newname == oldname:
             return
         # contains instructions (= meaningful data)?
         if function.addr:
-            if function.name in self.profile:
-                self.warning("overriding symbol '%s' data:\n\t%s -> %s" % (self.profile[function.name], function.data))
-            self.profile[function.name] = function.data
+            if oldname in self.profile:
+                self.warning("overriding symbol '%s' data:\n\t%s -> %s" % (oldname, self.profile[oldname], function.data))
+            self.profile[oldname] = function.data
             if self.verbose:
                 function.show()
-        function.zero(name)
+        function.zero(newname)
 
     def _check_symbols(self, function, addr):
         "if address is in new symbol (=function), change function"
