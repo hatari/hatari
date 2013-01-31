@@ -6,6 +6,29 @@
 
 import getopt, os, re, sys
 
+class Output:
+    def __init__(self):
+        self.write = sys.stdout.write
+
+    def set_output(self, f):
+        "set output data file"
+        self.write = f.write
+
+    # rest are independent of output file
+    def message(self, msg):
+        "show message to user"
+        sys.stderr.write("%s\n" % msg)
+
+    def warning(self, msg):
+        "show warning to user"
+        sys.stderr.write("WARNING: %s\n" % msg)
+
+    def error_exit(self, msg):
+        "show error to user + exit"
+        sys.stderr.write("ERROR: %s!\n" % msg)
+        sys.exit(1)
+
+
 class Instructions:
     "current function instructions state and some state of all instructions"
     def __init__(self, name):
@@ -33,11 +56,11 @@ class Instructions:
         print "%s @ 0x%x: %d, %d, %d" % (self.name, self.addr, self.data[0], self.data[1], self.data[2])
 
 
-class Profile:
+class Profile(Output):
+
     # Hatari symbol and profile information processor
     def __init__(self):
-        self.error = sys.stderr.write
-        self.write = sys.stdout.write
+        Output.__init__(self)
         self.count = 0			# all
         self.instructions = None	# Instructions instance
         self.verbose = False
@@ -61,15 +84,11 @@ class Profile:
         # Hatari symbol format:
         # [0x]<hex> [tTbBdD] <symbol name>
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([_a-zA-Z][_.a-zA-Z0-9]*)$")
-        # default emulation addresses
-        self.addr_text = 0
+        # default emulation addresses / ranges
+        self.addr_text = (0,0)
         self.addr_ram = 0
         self.addr_tos = 0xe00000
         self.addr_cartridge = 0xfa0000
-
-    def set_output(self, f):
-        "set output file"
-        self.write = f.write
 
     def set_count(self, count):
         self.count = count
@@ -80,6 +99,7 @@ class Profile:
 
     def parse_header(self, line):
         "parse profile header"
+        # TODO: store also area ends?
         match = self.r_header.match(line)
         if not match:
             return False
@@ -87,7 +107,7 @@ class Profile:
         start = int(start, 16)
         name = name.split()[-1]
         if name == "TEXT":
-            self.addr_text = start
+            self.addr_text = (start,end)
         elif name == "TOS":
             self.addr_tos = start
         elif name == "RAM":
@@ -95,11 +115,24 @@ class Profile:
         elif name == "ROM":
             self.addr_cartridge = start
         else:
-            self.error("ERROR: unrecognized profile header line\n")
+            self.warning("unrecognized profile header line")
             return False
-        if self.addr_text >= self.addr_tos or self.addr_ram >= self.addr_tos:
-            self.error("ERROR: TOS address isn't higher than TEXT and RAM start addresses\n")
+        if self.addr_text[1] > self.addr_text[0]:
+            self.error_exit("invalid TEXT area range: 0x%x-0x%x" % self.addr_text)
+        if self.addr_text[0] >= self.addr_tos or self.addr_ram >= self.addr_tos:
+            self.error_exit("TOS address isn't higher than TEXT and RAM start addresses")
         return True
+
+    def _get_profile_type(self, f):
+        "get profile processor type or exit if it's unknown"
+        field = f.readline().split()
+        if len(field) != 3 or field[0] != "Hatari":
+            self.error_exit("unrecognized file, line 1 misses Hatari profiler identification")
+        if field[1] == "CPU":
+            return self.r_cpuaddress
+        if field[1] == "DSP":
+            return self.r_dspaddress
+        self.error_exit("unrecognized profile processor type '%s' in line 1" % field[1])
 
     def parse_symbols(self, f):
         "parse symbol file contents"
@@ -117,17 +150,17 @@ class Profile:
                 if kind in ('t', 'T'):
                     addr = int(addr,16)
                     if self.verbose:
-                        self.error("%d = 0x%x\n" % (addr, name))
+                        self.message("%d = 0x%x\n" % (addr, name))
                     if addr in self.symbols:
                         # prefer function names over object names
                         if name[-2:] == ".o":
                             continue
-                        self.error("WARNING: replacing '%s' at 0x%x with '%s'\n" % (self.symbols[addr], addr, name))
+                        self.warning("replacing '%s' at 0x%x with '%s'" % (self.symbols[addr], addr, name))
                     self.symbols[addr] = name
             else:
-                self.error("ERROR: unrecognized symbol line %d:\n\t'%s'\n" % (lines, line))
+                self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
-        self.error("%d lines with %d code symbols/addresses parsed, %d unknown.\n" % (lines, len(self.symbols), unknown))
+        self.message("%d lines with %d code symbols/addresses parsed, %d unknown.\n" % (lines, len(self.symbols), unknown))
 
     def _sum_values(self):
         "calculate totals"
@@ -139,6 +172,8 @@ class Profile:
 
     def _change_function(self, function, name):
         "store current function data and then reset it"
+        if name == function.name:
+            return
         if function.addr:
             self.profile[function.name] = function.data
             if self.verbose:
@@ -148,21 +183,39 @@ class Profile:
     def _check_symbols(self, function, addr):
         "if address is in new symbol (=function), change function"
         if self.symbols:
-            if addr >= self.addr_text and addr < self.addr_tos:
-                # non-TOS address are relative to TEXT start
-                idx = addr - self.addr_text
-            else:
-                idx = addr
+            idx = addr
+            if addr >= self.addr_text[0] and addr <= self.addr_text[1]:
+                # within TEXT area -> relative to TEXT start
+                idx -= self.addr_text[0]
             # overrides profile data function names for same address
             if idx in self.symbols:
                 name = self.symbols[idx]
                 self._change_function(function, name)
                 # this function needs address info in output
                 self.address[name] = addr
+            return
+        if addr in self.address:
+            # has been already assigned
+            return
+        # as no better symbol, name it according to area where it is
+        # (this is slow as it's done on all addresses, but for now
+        #  this was easiest way to add it)
+        if addr < self.addr_tos:
+            if addr >= self.addr_text[0] and addr <= self.addr_text[1]:
+                name = "PROGRAM_TEXT_SECTION"
+            else:
+                name = "MISC_RAM_AREA"
+        elif addr < self.addr_cartridge:
+            name = "ROM_TOS_AREA"
+        else:
+            name = "ROM_CARTRIDGE_AREA"
+        self._change_function(function, name)
+        self.address[name] = addr
 
-    def _parse_profile(self, f, r_address):
+    def parse_profile(self, f):
         "parse profile data"
         unknown = lines = 0
+        r_address = self._get_profile_type(f)
         instructions = Instructions("HATARI_PROFILE_BEGIN")
         self.address = {}
         self.profile = {}
@@ -177,7 +230,7 @@ class Profile:
                 if match:
                     self._change_function(instructions, match.group(1))
                 else:
-                    self.error("ERROR: unrecognized function line %d:\n\t'%s'\n" % (lines, line))
+                    self.error_exit("unrecognized function line %d:\n\t'%s'" % (lines, line))
                     unknown += 1
                 continue
             # CPU or DSP address line?
@@ -189,29 +242,21 @@ class Profile:
                     self._check_symbols(instructions, addr)
                     instructions.add(addr, counts.split(','))
                 else:
-                    self.error("ERROR: unrecognized address line %d:\n\t'%s'\n" % (lines, line))
+                    self.error_exit("unrecognized address line %d:\n\t'%s'" % (lines, line))
                     unknown += 1
                 continue
             # header?
             if not self.parse_header(line):
-                self.error("WARNING: unrecognized line %d:\n\t'%s'\n" % (lines, line))
+                self.warning("unrecognized line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
         self._change_function(instructions, "HATARI_PROFILE_END")
         self.instructions = instructions
-        self.error("%d lines processed with %d functions.\n" % (lines, len(self.profile)))
+        self.message("%d lines processed with %d functions." % (lines, len(self.profile)))
         if 2*unknown > lines:
-            self.error("ERROR: more than half of the lines were unrecognized!\n")
+            self.error_exit("more than half of the lines were unrecognized!")
         if len(self.profile) < 1:
-            self.error("ERROR: no functions found!\n")
-            return False
+            self.error_exit("no functions found!")
         self._sum_values()
-        return True
-
-    def parse_profile_cpu(self, f):
-        return self._parse_profile(f, self.r_cpuaddress)
-
-    def parse_profile_dsp(self, f):
-        return self._parse_profile(f, self.r_dspaddress)
 
     def output_stats(self):
         "output profile statistics"
@@ -241,10 +286,10 @@ class Profile:
                 break
             value = self.profile[key][field]
             if key in self.address:
-                addr = "\t(at 0x%x)" % self.address[key]
+                addr = "(0x%04x)" % self.address[key]
             else:
                 addr = ""
-            self.write("%6.2f%% %9s  %s%s\n" % (value*100.0/sum, value, key, addr))
+            self.write("%6.2f%% %9s  %-24s%s\n" % (value*100.0/sum, value, key, addr))
             idx += 1
 
     def cmp_instructions(self, a, b):
@@ -272,19 +317,19 @@ class Profile:
         self._output_list(keys, 2, "Cache misses")
 
 
-class Main:
+class Main(Output):
     def __init__(self, argv):
+        Output.__init__(self)
         self.name = os.path.basename(argv[0])
-        self.write = sys.stderr.write
-        self.write("Hatari profile data processor\n")
+        self.message("Hatari profile data processor")
         if len(argv) < 2:
             self.usage("argument(s) missing")
         self.args = argv[1:]
 
     def parse_args(self):
         try:
-            longopts = ["addresses=", "dsp", "cycles", "first", "instr", "misses", "output=", "stats", "verbose"]
-            opts, rest = getopt.getopt(self.args, "a:cdf:imo:sv", longopts)
+            longopts = ["addresses=", "cycles", "first", "instr", "misses", "output=", "stats", "verbose"]
+            opts, rest = getopt.getopt(self.args, "a:cf:imo:sv", longopts)
             del longopts
         except getopt.GetoptError as err:
             self.usage(err)
@@ -292,14 +337,12 @@ class Main:
         prof = Profile()
         dsp = stats = instr = cycles = misses = False
         for opt, arg in opts:
-            #self.write("%s: %s\n" % (opt, arg))
+            #self.message("%s: %s" % (opt, arg))
             if opt in ("-a", "--addresses"):
-                self.write("\nParsing symbol address information from %s...\n" % arg)
+                self.message("\nParsing symbol address information from %s..." % arg)
                 prof.parse_symbols(self.open_file(arg))
             elif opt in ("-c", "--cycles"):
                 cycles = True
-            elif opt in ("-d", "--dsp"):
-                dsp = True
             elif opt in ("-f", "--first"):
                 try:
                     prof.set_count(int(arg))
@@ -318,13 +361,8 @@ class Main:
             else:
                 self.usage("unknown option '%s'" % opt)
         for arg in rest:
-            self.write("\nParsing profile information from %s...\n" % arg)
-            if dsp:
-                fun = prof.parse_profile_dsp
-            else:
-                fun = prof.parse_profile_cpu
-            if not fun(self.open_file(arg)):
-                return
+            self.message("\nParsing profile information from %s..." % arg)
+            prof.parse_profile(self.open_file(arg))
             if stats:
                 prof.output_stats()
             if instr:
@@ -341,7 +379,7 @@ class Main:
             self.usage("opening given '%s' file failed:\n\t%s" % (path, err))
 
     def usage(self, msg):
-        self.write("""
+        self.message("""
 Script for processing Hatari debugger profiling information produced
 with the following debugger command:
 	profile addresses 0 <file name>
@@ -358,7 +396,6 @@ used cycles and (CPU instruction) cache misses.
 Usage: %s [options] <profile files>
 
 Options:
-        -d		profile data is for DSP, not CPU
 	-a <symbols>	symbol address information file
         -c		output cycles usage information
         -i		output intruction count information
@@ -369,7 +406,6 @@ Options:
         -v		verbose parsing output
 
 Long options for above are:
-        --dsp
 	--addresses
 	--cycles
         --instr
@@ -395,8 +431,7 @@ TODO:
   for KCachegrind:
         http://kcachegrind.sourceforge.net/
 
-ERROR: %s!
-""" % (self.name, self.name, msg))
+ERROR: %s!""" % (self.name, self.name, msg))
         sys.exit(1)
 
 
