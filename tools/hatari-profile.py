@@ -34,6 +34,7 @@ class Instructions:
     def __init__(self, name, dsp):
         self.max_addr = [0,0,0]
         self.max_val = [0,0,0]
+        self.areas = {}		# which memory area boundaries have been passed
         self.isForDsp = dsp
         self.zero(name)
 
@@ -179,13 +180,11 @@ class Profile(Output):
 
     def _change_function(self, function, newname):
         "store current function data and then reset to new function"
-        oldname = function.name
-        if newname == oldname:
-            return
         # contains instructions (= meaningful data)?
         if function.addr:
+            oldname = function.name
             if oldname in self.profile:
-                self.warning("overriding symbol '%s' data:\n\t%s -> %s" % (oldname, self.profile[oldname], function.data))
+                self.warning("when switching from '%s' to '%s' symbol, overriding data for former:\n\t%s -> %s" % (oldname, newname, self.profile[oldname], function.data))
             self.profile[oldname] = function.data
             if self.verbose:
                 function.show()
@@ -204,29 +203,47 @@ class Profile(Output):
                 self._change_function(function, name)
                 # this function needs address info in output
                 self.address[name] = addr
-            return
+                return
         if function.isForDsp or addr in self.address:
             # not CPU code or has been already assigned
             return
-        # as no better symbol, name it according to area where it is
-        # (this is slow as it's done on all addresses, but for now
-        #  this was easiest way to add it)
+        # as no better symbol, name it according to area where it moved to
         if addr < self.addr_tos:
-            if addr >= self.addr_text[0] and addr <= self.addr_text[1]:
+            if addr < self.addr_text[0]:
+                if "ram_start" not in function.areas:
+                    function.areas["ram_start"] = True
+                    name = "RAM_BEFORE_TEXT"
+                else:
+                    return
+            elif addr > self.addr_text[1]:
+                if "ram_end" not in function.areas:
+                    function.areas["ram_end"] = True
+                    name = "RAM_AFTER_TEXT"
+                else:
+                    return
+            elif "text" not in function.areas:
+                function.areas["text"] = True
                 name = "PROGRAM_TEXT_SECTION"
             else:
-                name = "MISC_RAM_AREA"
+                return
         elif addr < self.addr_cartridge:
-            name = "ROM_TOS_AREA"
-        else:
+            if "tos" not in function.areas:
+                function.areas["tos"] = True
+                name = "ROM_TOS_AREA"
+            else:
+                return
+        elif "cart" not in function.areas:
+            function.areas["cart"] = True
             name = "ROM_CARTRIDGE_AREA"
+        else:
+            return
         self._change_function(function, name)
         self.address[name] = addr
 
     def parse_profile(self, f):
         "parse profile data"
-        unknown = lines = 0
         r_address, instructions = self._get_profile_type(f)
+        prev_addr = unknown = lines = 0
         self.address = {}
         self.profile = {}
         for line in f.readlines():
@@ -249,6 +266,9 @@ class Profile(Output):
                 if match:
                     addr, counts = match.groups()
                     addr = int(addr, 16)
+                    if prev_addr > addr:
+                        self.error_exit("memory addresses are not in order on line %d" % lines)
+                    prev_addr = addr
                     self._check_symbols(instructions, addr)
                     instructions.add(addr, counts.split(','))
                 else:
