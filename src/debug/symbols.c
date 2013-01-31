@@ -151,7 +151,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 			continue;
 		}
 		assert(count < symbols); /* file not modified in meanwhile? */
-		if (sscanf(buffer, "%x %c %32[0-9A-Za-z_.]s", &address, &symchar, name) != 3) {
+		if (sscanf(buffer, "%x %c %32[0-9A-Za-z_.-]s", &address, &symchar, name) != 3) {
 			fprintf(stderr, "WARNING: syntax error in '%s' on line %d, skipping.\n", filename, line);
 			continue;
 		}
