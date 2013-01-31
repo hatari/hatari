@@ -88,19 +88,19 @@ static inline Uint32 address2index(Uint32 pc)
 		fprintf(stderr, "WARNING: odd CPU profile instruction address 0x%x!\n", pc);
 	}
 	if (pc >= TosAddress && pc < TosAddress + TosSize) {
-		/* TOS, put it after RAM & ROM data */
-		pc = pc - TosAddress + STRamEnd + 0x20000;
-	
+		/* TOS, put it after RAM data */
+		pc = pc - TosAddress + STRamEnd;
+
 	} else if (pc >= 0xFA0000 && pc < 0xFC0000) {
-		/* ROM, put it after RAM data */
-		pc = pc - 0xFA0000 + STRamEnd;
+		/* ROM, put it after RAM & TOS data */
+		pc = pc - 0xFA0000 + STRamEnd + TosSize;
 
 	} else {
 		/* if in RAM, use as-is */
 		if (unlikely(pc >= STRamEnd)) {
 			fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
 			/* extra entry at end is reserved for invalid PC values */
-			pc = STRamEnd + 0x20000 + TosSize;
+			pc = STRamEnd + TosSize + 0x20000;
 		}
 	}
 	/* CPU instructions are at even addresses, save space by halving */
@@ -137,13 +137,13 @@ static Uint32 index2address(Uint32 idx)
 	if (idx < STRamEnd) {
 		return idx;
 	}
-	/* ROM */
-	idx -= STRamEnd;
-	if (idx < 0x20000) {
-		return idx + 0xFA0000;
-	}
 	/* TOS */
-	return idx - 0x20000 + TosAddress;
+	idx -= STRamEnd;
+	if (idx < TosSize) {
+		return idx + TosAddress;
+	}
+	/* ROM */
+	return idx - TosSize + 0xFA0000;
 }
 
 
