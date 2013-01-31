@@ -39,7 +39,7 @@ typedef struct {
 	Uint32 count;	/* how many times this address is used */
 	Uint32 cycles;	/* how many CPU cycles was taken at this address */
 	Uint32 misses;  /* how many CPU cache misses happend at this address */
-} profile_item_t;
+} cpu_profile_item_t;
 
 typedef struct {
 	unsigned long long all_cycles, all_count, all_misses;
@@ -53,8 +53,8 @@ typedef struct {
 static struct {
 	unsigned long long all_cycles, all_count, all_misses;
 	Uint32 miss_counts[MAX_MISS];
+	cpu_profile_item_t *data; /* profile data items */
 	Uint32 size;          /* number of allocated profile data items */
-	profile_item_t *data; /* profile data items */
 	profile_area_t ram;   /* normal RAM stats */
 	profile_area_t rom;   /* cartridge ROM stats */
 	profile_area_t tos;   /* ROM TOS stats */
@@ -68,8 +68,15 @@ static struct {
 
 #define DSP_PROFILE_ARR_SIZE 0x10000
 
+typedef struct {
+	Uint32 count;		/* how many times this address is used */
+	Uint32 cycles;		/* how many DSP cycles was taken at this address */
+	Uint16 min_cycle;
+	Uint16 max_cycle;
+} dsp_profile_item_t;
+
 static struct {
-	profile_item_t *data; /* profile data */
+	dsp_profile_item_t *data; /* profile data */
 	profile_area_t ram;   /* normal RAM stats */
 	Uint16 *sort_arr;     /* data indexes used for sorting */
 	Uint16 prev_pc;       /* previous PC for which the cycles are for */
@@ -216,7 +223,7 @@ static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
 	int oldcols[DISASM_COLUMNS], newcols[DISASM_COLUMNS];
 	unsigned int shown, idx;
 	const char *symbol;
-	profile_item_t *data;
+	cpu_profile_item_t *data;
 	uaecptr nextpc, addr;
 	Uint32 size, active, text;
 
@@ -293,7 +300,7 @@ static void Profile_CpuShowMisses(unsigned int show)
 {
 	unsigned int active;
 	Uint32 *sort_arr, *end, addr;
-	profile_item_t *data = cpu_profile.data;
+	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
 	Uint32 count;
 
@@ -341,7 +348,7 @@ static void Profile_CpuShowCycles(unsigned int show)
 {
 	unsigned int active;
 	Uint32 *sort_arr, *end, addr;
-	profile_item_t *data = cpu_profile.data;
+	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
 	Uint32 count;
 
@@ -390,7 +397,7 @@ static int profile_by_cpu_count(const void *p1, const void *p2)
  */
 static void Profile_CpuShowCounts(unsigned int show, bool only_symbols)
 {
-	profile_item_t *data = cpu_profile.data;
+	cpu_profile_item_t *data = cpu_profile.data;
 	unsigned int symbols, matched, active;
 	Uint32 *sort_arr, *end, addr;
 	const char *name;
@@ -496,7 +503,8 @@ void Profile_CpuUpdate(void)
 #if DEBUG
 	static Uint32 zero_cycles;
 #endif
-	Uint32 idx, prev_idx, cycles, misses;
+	Uint32 idx, cycles, misses;
+	cpu_profile_item_t *prev;
 
 	idx = address2index(M68000_GetPC());
 	assert(idx <= cpu_profile.size);
@@ -504,7 +512,8 @@ void Profile_CpuUpdate(void)
 	if (likely(cpu_profile.data[idx].count < MAX_PROFILE_VALUE)) {
 		cpu_profile.data[idx].count++;
 	}
-	prev_idx = cpu_profile.prev_idx;
+	prev = cpu_profile.data + cpu_profile.prev_idx;
+	cpu_profile.prev_idx = idx;
 
 #if USE_CYCLES_COUNTER
 	cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
@@ -523,14 +532,14 @@ void Profile_CpuUpdate(void)
 #else
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
-	if (likely(cpu_profile.data[prev_idx].cycles < MAX_PROFILE_VALUE - cycles)) {
-		cpu_profile.data[prev_idx].cycles += cycles;
+	if (likely(prev->cycles < MAX_PROFILE_VALUE - cycles)) {
+		prev->cycles += cycles;
 	} else {
-		cpu_profile.data[prev_idx].cycles = MAX_PROFILE_VALUE;
+		prev->cycles = MAX_PROFILE_VALUE;
 	}
 
 #if ENABLE_WINUAE_CPU
-	/* TODO: should this also use prev_idx? */
+	/* TODO: should this also use prev? */
 	misses = CpuInstruction.iCacheMisses;
 	assert(misses < MAX_MISS);
 	cpu_profile.miss_counts[misses]++;
@@ -540,14 +549,13 @@ void Profile_CpuUpdate(void)
 		cpu_profile.data[idx].misses = MAX_PROFILE_VALUE;
 	}
 #endif
-	cpu_profile.prev_idx = idx;
 }
 
 
 /**
- * Helper for collecting profile area statistics.
+ * Helper for collecting CPU & DSP profile area statistics.
  */
-static void update_area(Uint32 addr, profile_item_t *item, profile_area_t *area)
+static void update_area(Uint32 addr, cpu_profile_item_t *item, profile_area_t *area)
 {
 	Uint32 cycles = item->cycles;
 	Uint32 count = item->count;
@@ -578,7 +586,7 @@ static void update_area(Uint32 addr, profile_item_t *item, profile_area_t *area)
  */
 void Profile_CpuStop(void)
 {
-	profile_item_t *item;
+	cpu_profile_item_t *item;
 	profile_area_t *area;
 	Uint32 *sort_arr;
 	Uint32 i, active;
@@ -679,13 +687,22 @@ void Profile_CpuStop(void)
  * Get DSP cycles, count and count percentage for given address.
  * Return true if data was available and non-zero, false otherwise.
  */
-bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint32 *count, Uint32 *cycles)
+bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint16 *mincycle, Uint16 *maxcycle)
 {
+	dsp_profile_item_t *item;
 	if (!dsp_profile.data) {
 		return false;
 	}
-	*cycles = dsp_profile.data[addr].cycles;
-	*count = dsp_profile.data[addr].count;
+	item = dsp_profile.data + addr;
+
+	*cycles = item->cycles;
+	*count = item->count;
+	*maxcycle = item->max_cycle;
+	if (*maxcycle) {
+		*mincycle = item->min_cycle;
+	} else {
+		*mincycle = 0;
+	}
 	*percentage = 100.0*(*count)/dsp_profile.ram.all_count;
 	return (*count > 0);
 }
@@ -721,7 +738,7 @@ static void Profile_DspShowStats(void)
 static void Profile_DspShowAddresses(unsigned int show, FILE *out)
 {
 	unsigned int shown;
-	profile_item_t *data;
+	dsp_profile_item_t *data;
 	Uint16 addr, nextpc;
 	Uint32 size, active;
 	const char *symbol;
@@ -780,7 +797,7 @@ static void Profile_DspShowCycles(unsigned int show)
 {
 	unsigned int active;
 	Uint16 *sort_arr, *end, addr;
-	profile_item_t *data = dsp_profile.data;
+	dsp_profile_item_t *data = dsp_profile.data;
 	float percentage;
 	Uint32 count;
 
@@ -830,7 +847,7 @@ static int profile_by_dsp_count(const void *p1, const void *p2)
  */
 static void Profile_DspShowCounts(unsigned int show, bool only_symbols)
 {
-	profile_item_t *data = dsp_profile.data;
+	dsp_profile_item_t *data = dsp_profile.data;
 	unsigned int symbols, matched, active;
 	Uint16 *sort_arr, *end, addr;
 	const char *name;
@@ -898,6 +915,9 @@ static void Profile_DspShowCounts(unsigned int show, bool only_symbols)
  */
 bool Profile_DspStart(void)
 {
+	dsp_profile_item_t *item;
+	int i;
+
 	if (dsp_profile.sort_arr) {
 		/* remove previous results */
 		free(dsp_profile.sort_arr);
@@ -918,6 +938,10 @@ bool Profile_DspStart(void)
 		perror("ERROR, new DSP profile buffer alloc failed");
 		dsp_profile.enabled = false;
 	}
+	item = dsp_profile.data;
+	for (i = 0; i < DSP_PROFILE_ARR_SIZE; i++, item++) {
+		item->min_cycle = 0xFFFF;
+	}
 	/* first instruction cycles destination */
 	dsp_profile.prev_pc = DSP_GetPC();
 	return dsp_profile.enabled;
@@ -928,22 +952,29 @@ bool Profile_DspStart(void)
  */
 void Profile_DspUpdate(void)
 {
-	Uint16 pc, prev_pc, cycles;
+	dsp_profile_item_t *prev;
+	Uint16 pc, cycles;
 
 	pc = DSP_GetPC();
 	if (likely(dsp_profile.data[pc].count < MAX_PROFILE_VALUE)) {
 		dsp_profile.data[pc].count++;
 	}
+	prev = dsp_profile.data + dsp_profile.prev_pc;
+	dsp_profile.prev_pc = pc;
 
 	/* cycle information at this point is for previous instruction */
-	prev_pc = dsp_profile.prev_pc;
 	cycles = DSP_GetInstrCycles();
-	if (likely(dsp_profile.data[prev_pc].cycles < MAX_PROFILE_VALUE - cycles)) {
-		dsp_profile.data[prev_pc].cycles += cycles;
+	if (likely(prev->cycles < MAX_PROFILE_VALUE - cycles)) {
+		prev->cycles += cycles;
 	} else {
-		dsp_profile.data[prev_pc].cycles = MAX_PROFILE_VALUE;
+		prev->cycles = MAX_PROFILE_VALUE;
 	}
-	dsp_profile.prev_pc = pc;
+	if (unlikely(cycles < prev->min_cycle)) {
+		prev->min_cycle = cycles;
+	}
+	if (unlikely(cycles > prev->max_cycle)) {
+		prev->max_cycle = cycles;
+	}
 }
 
 
@@ -953,7 +984,8 @@ void Profile_DspUpdate(void)
  */
 void Profile_DspStop(void)
 {
-	profile_item_t *item;
+	cpu_profile_item_t cpuitem;
+	dsp_profile_item_t *item;
 	profile_area_t *area;
 	Uint16 *sort_arr;
 	Uint32 i;
@@ -967,8 +999,11 @@ void Profile_DspStop(void)
 	memset(area, 0, sizeof(profile_area_t));
 	area->lowest = DSP_PROFILE_ARR_SIZE;
 
+	cpuitem.misses = 0;
 	for (i = 0; i < DSP_PROFILE_ARR_SIZE; i++, item++) {
-		update_area(i, item, area);
+		cpuitem.count = item->count;
+		cpuitem.cycles = item->cycles;
+		update_area(i, &cpuitem, area);
 	}
 
 	/* allocate address array for sorting */
