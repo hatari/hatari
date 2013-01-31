@@ -137,6 +137,9 @@ class Profile(Output):
 
     def parse_symbols(self, f):
         "parse symbol file contents"
+        # TODO: what if same symbol name is specified for multiple addresses?
+        # - keep track of the names and add some post-fix to them so that
+        #   they don't overwrite each others data in self.profile hash?
         if not self.symbols:
             self.symbols = {}
         unknown = lines = 0
@@ -155,6 +158,8 @@ class Profile(Output):
                     if addr in self.symbols:
                         # prefer function names over object names
                         if name[-2:] == ".o":
+                            continue
+                        if self.symbols[addr] == name:
                             continue
                         self.warning("replacing '%s' at 0x%x with '%s'" % (self.symbols[addr], addr, name))
                     self.symbols[addr] = name
@@ -175,7 +180,10 @@ class Profile(Output):
         "store current function data and then reset it"
         if name == function.name:
             return
+        # contains instructions (= meaningful data)?
         if function.addr:
+            if function.name in self.profile:
+                self.warning("overriding symbol '%s' data:\n\t%s -> %s" % (self.profile[function.name], function.data))
             self.profile[function.name] = function.data
             if self.verbose:
                 function.show()
