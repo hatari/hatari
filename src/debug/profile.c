@@ -1116,6 +1116,7 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 				perror(NULL);
 				return false;
 			}
+			fprintf(out, "Hatari %s profile\n", bForDsp ? "DSP" : "CPU");
 		} else {
 			out = stdout;
 		}
