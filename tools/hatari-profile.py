@@ -47,7 +47,7 @@ class Instructions:
         # only first one is used
         if not self.addr:
             self.addr = addr
-        for i in range(len(strvalues)):
+        for i in range(min(3, len(strvalues))):
             value = int(strvalues[i])
             self.data[i] += value
             if value > self.max_val[i]:
@@ -319,7 +319,7 @@ class Profile(Output):
                 addr = "(0x%04x)" % self.address[key]
             else:
                 addr = ""
-            self.write("%6.2f%% %9s  %-24s%s\n" % (value*100.0/sum, value, key, addr))
+            self.write("%6.2f%% %9s %-28s%s\n" % (value*100.0/sum, value, key, addr))
             idx += 1
 
     def cmp_instructions(self, a, b):
