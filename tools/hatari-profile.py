@@ -31,9 +31,10 @@ class Output:
 
 class Instructions:
     "current function instructions state and some state of all instructions"
-    def __init__(self, name):
+    def __init__(self, name, dsp):
         self.max_addr = [0,0,0]
         self.max_val = [0,0,0]
+        self.isForDsp = dsp
         self.zero(name)
 
     def zero(self, name):
@@ -129,9 +130,9 @@ class Profile(Output):
         if len(field) != 3 or field[0] != "Hatari":
             self.error_exit("unrecognized file, line 1 misses Hatari profiler identification")
         if field[1] == "CPU":
-            return self.r_cpuaddress
+            return (self.r_cpuaddress, Instructions("HATARI_PROFILE_BEGIN", False))
         if field[1] == "DSP":
-            return self.r_dspaddress
+            return (self.r_dspaddress, Instructions("HATARI_PROFILE_BEGIN", True))
         self.error_exit("unrecognized profile processor type '%s' in line 1" % field[1])
 
     def parse_symbols(self, f):
@@ -194,8 +195,8 @@ class Profile(Output):
                 # this function needs address info in output
                 self.address[name] = addr
             return
-        if addr in self.address:
-            # has been already assigned
+        if function.isForDsp or addr in self.address:
+            # not CPU code or has been already assigned
             return
         # as no better symbol, name it according to area where it is
         # (this is slow as it's done on all addresses, but for now
@@ -215,8 +216,7 @@ class Profile(Output):
     def parse_profile(self, f):
         "parse profile data"
         unknown = lines = 0
-        r_address = self._get_profile_type(f)
-        instructions = Instructions("HATARI_PROFILE_BEGIN")
+        r_address, instructions = self._get_profile_type(f)
         self.address = {}
         self.profile = {}
         for line in f.readlines():
