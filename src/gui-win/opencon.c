@@ -21,11 +21,11 @@
 
 void Win_OpenCon(void)
 {
-	if (!bExceptionDebugging)
-		return;
-
-	AllocConsole();
-	freopen("CON", "w", stdout);
-	freopen("CON", "r", stdin);
-	freopen("CON", "wr", stderr);
+	if (ConfigureParams.Log.bConsoleWindow)
+	{
+		AllocConsole();
+		freopen("CON", "w", stdout);
+		freopen("CON", "r", stdin);
+		freopen("CON", "w", stderr);
+	}
 }

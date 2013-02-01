@@ -134,7 +134,10 @@ enum {
 	OPT_SOUNDBUFFERSIZE,
 	OPT_SOUNDSYNC,
 	OPT_YM_MIXING,
-	OPT_DEBUG,		/* debug options */
+#ifdef WIN32
+	OPT_WINCON,		/* debug options */
+#endif
+	OPT_DEBUG,
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
 	OPT_DISASM,
@@ -360,6 +363,10 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "YM sound mixing method (x=linear/table/model)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
+#ifdef WIN32
+	{ OPT_WINCON, "-W", "--wincon",
+	  NULL, "Open console window (Windows only)" },
+#endif
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
@@ -1609,6 +1616,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 			
 			/* debug options */
+#ifdef WIN32
+		case OPT_WINCON:
+			ConfigureParams.Log.bConsoleWindow = true;
+			break;
+#endif
 		case OPT_DEBUG:
 			if (bExceptionDebugging)
 			{
