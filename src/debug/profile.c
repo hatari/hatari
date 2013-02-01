@@ -607,16 +607,7 @@ void Profile_CpuStop(void)
 	area->lowest = cpu_profile.size;
 
 	for (i = 0; i < STRamEnd/2; i++, item++) {
-		update_area(i, item, area);
-	}
-
-	/* ... for Cartridge ROM */
-	area = &cpu_profile.rom;
-	memset(area, 0, sizeof(profile_area_t));
-	area->lowest = cpu_profile.size;
-
-	for (; i < (STRamEnd + 0x20000)/2; i++, item++) {
-		update_area(i, item, area);
+		update_cpu_area(i, item, area);
 	}
 
 	/* ...for ROM TOS */
@@ -624,8 +615,17 @@ void Profile_CpuStop(void)
 	memset(area, 0, sizeof(profile_area_t));
 	area->lowest = cpu_profile.size;
 
+	for (; i < (STRamEnd + TosSize)/2; i++, item++) {
+		update_cpu_area(i, item, area);
+	}
+
+	/* ... for Cartridge ROM */
+	area = &cpu_profile.rom;
+	memset(area, 0, sizeof(profile_area_t));
+	area->lowest = cpu_profile.size;
+
 	for (; i < cpu_profile.size; i++, item++) {
-		update_area(i, item, area);
+		update_cpu_area(i, item, area);
 	}
 
 	cpu_profile.all_misses = cpu_profile.ram.all_misses + cpu_profile.rom.all_misses + cpu_profile.tos.all_misses;
@@ -658,8 +658,8 @@ void Profile_CpuStop(void)
 		}
 	}
 
-	/* ...for Cartridge ROM */
-	area = &cpu_profile.rom;
+	/* ...for TOS ROM */
+	area = &cpu_profile.tos;
 	item = cpu_profile.data + area->lowest;
 	for (i = area->lowest; i <= area->highest; i++, item++) {
 		if (item->count) {
@@ -667,8 +667,8 @@ void Profile_CpuStop(void)
 		}
 	}
 
-	/* ...for TOS ROM */
-	area = &cpu_profile.tos;
+	/* ...for Cartridge ROM */
+	area = &cpu_profile.rom;
 	item = cpu_profile.data + area->lowest;
 	for (i = area->lowest; i <= area->highest; i++, item++) {
 		if (item->count) {
