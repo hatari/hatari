@@ -34,6 +34,23 @@ Emulator:
 - SDL UI fileselector has "CWD" button for changing to Hatari's work directory
 - SDL UI fileselector remembers previous position which is nicer with
   large directories
+- Profiler:
+  - Fix: profiler assert on invalid PC register values
+  - Fix: profiler CPU & DSP cycles information is for previous instruction
+  - profiler provides CPU instruction cache misses information when using
+    cycle-exact WinUAE CPU core (Falcon emu default)
+  - for DSP, profiler adds min/max cycle difference info
+    (shown by post-processor under "Cache misses" heading)
+  - "profile addresses" can be used to see addresses through which
+    code passed during profiling (e.g. while program seems frozen, this
+    gives much better overview of code that is being run, than cpu trace)
+    and to save that data to a file for post-processing
+  - hatari-profiler.py script for post-processing output from the profiler
+    CPU and DSP profiling commands:
+	profile addresses <count> <file>
+	dspprofile addresses <count> <file>
+    - With symbol address information it can provide function level
+      instruction, processor cycle and cache miss statistics.
 - Debugger:
   - "step" and "next" commands added for single stepping CPU and DSP code
     -> 's' shortcut is now for "step", not "save"
@@ -42,8 +59,6 @@ Emulator:
   - Fix: when several breakpoints should have triggered
          on the same address, only first was handled
   - Fix: after breakpoint, 'c <n>' continues one instruction too little
-  - Fix: profiler CPU & DSP cycles information is for previous instruction
-  - Fix: profiler assert on invalid PC register values
   - Fix: info command crash (triggered on NetBSD)
   - Fix: disassember output bug on NetBSD (usigned char < -1 test)
   - Fix: info osheader and basebase subcommands under MiNT
@@ -52,12 +67,6 @@ Emulator:
   - Fix: expression expansion messing lines in command line history
   - Remote API debugger commands can also use expression expansion
   - Both single and double quotes can be used to mark expressions
-  - "profile addresses" can be used to see addresses through which
-    code passed during profiling (e.g. while program seems frozen, this
-    gives much better overview of code that is being run, than cpu trace)
-    and to save that data to a file for post-processing
-  - profiler provides CPU cycles and cache misses information
-    when using cycle-exact WinUAE CPU core (Falcon emu default)
   - In addition to text section offset, data and bss section offsets
     can be given when loading symbols (useful for Devpac symbols)
   - output what value was set by options if it's not otherwise shown by UI
@@ -65,21 +74,20 @@ Emulator:
     (for AES call values in intin array and strings in addrin array)
   - support for the basic Native Features and --natfeats option to control it:
     http://wiki.aranym.org/natfeats/proposal
-- Windows workarounds for:
-  - Windows localtime() not supporting dates before 1970 causes IKBD
-    emulation crashes (not a problem with Cygwin, just Mingw)
+
+Windows specific changes:
+- "-W" option added for opening a console window.  Like on all other platforms,
+  "-D" will now just toggle CPU exception handling
+- Fix: console stderr redirection fixed (used invalid "wr" mode)
+- Fix: Windows localtime() not supporting dates before 1970 causes IKBD
+  emulation crashes (not a problem with Cygwin, just Mingw)
 
 Other changes:
 - HTML documentation indeces generated dynamically with JS
 - Debugger tests building fixed
 - Added scripts for converting symbol tables in Devpac 3 listings and DSP LOD
-  files to a format understood by Hatari debugger 'symbols' command
-- hatari-profiler.py script for post-processing output from Hatari
-  debugger's CPU and DSP profiling commands:
-	profile addresses <count> <file>
-	dspprofile addresses <count> <file>
-  With symbol address information it can provide function level
-  instruction, processor cycle and cache miss statistics.
+  files to a format understood by Hatari debugger 'symbols' command,
+  and to clean 'nm' output of GCC & VBCC built a.out binaries for it
 
 Fixed Games:
 - Captain Blood (IKBD, fixed problem when setting the clock)
