@@ -778,9 +778,11 @@ void dsp56k_execute_instruction(void)
 		opcodes_parmove[(cur_inst>>20) & BITMASK(4)]();
 	}
 
-	/* Add the waitstate due to external memory access */
+	/* Add the waitstate due to external memory access
+	 * (2 extra cycles per extra access to the external memory after the first one
+	 */
 	if (nb_access_to_extMemory > 1)
-		dsp_core.instr_cycle += nb_access_to_extMemory - 1;
+		dsp_core.instr_cycle += (nb_access_to_extMemory - 1) * 2;
 	
 	/* Disasm current instruction ? (trace mode only) */
 	if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM)) {
