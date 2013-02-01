@@ -142,6 +142,8 @@ static inline void M68000_SetSR(Uint16 v)
 typedef struct {
 	/* these are provided only by WinUAE CPU core */
 	int iCacheMisses;
+	int iSave_instr_tail;
+
 	/* TODO: move other instruction specific Hatari variables here */
 } cpu_instruction_t;
 

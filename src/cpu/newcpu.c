@@ -3386,7 +3386,6 @@ static void m68k_run_mmu040 (void)
 static void m68k_run_2ce (void)
 {
 	struct regstruct *r = &regs;
-	int sav_tail = 0;
 	int curr_cycles = 0;
 
 	struct falcon_cycles_t falcon_instr_cycle;
@@ -3417,18 +3416,18 @@ static void m68k_run_2ce (void)
 		uae_u32 opcode = x_prefetch (0);
 		(*cpufunctbl[opcode])(opcode);
 
-		/* Laurent : if 68030 instr cache is on, cycles are computed with head / tail / and cache_cycles
+		/* Laurent : if 68030 instr cache is on, not frozen and nohitcache miss, cycles are computed with head / tail / and cache_cycles
 		 *           else, cycles are equal to non cache cycles.
 		 */
 		falcon_instr_cycle = regs.ce030_instr_cycles;
 
-		if ((currprefs.cpu_model == 68030) && ((r->cacr & 3) == 1)) { // not frozen and enabled
-			if (falcon_instr_cycle.head < sav_tail)
+		if ((currprefs.cpu_model == 68030) && ((r->cacr & 3) == 1) && (CpuInstruction.iCacheMisses == 0)) { // not frozen and enabled
+			if (falcon_instr_cycle.head < CpuInstruction.iSave_instr_tail)
 				curr_cycles = (falcon_instr_cycle.cache_cycles - falcon_instr_cycle.head);
 			else
-				curr_cycles = (falcon_instr_cycle.cache_cycles - sav_tail);
+				curr_cycles = (falcon_instr_cycle.cache_cycles - CpuInstruction.iSave_instr_tail);
 
-			sav_tail = falcon_instr_cycle.tail;
+			CpuInstruction.iSave_instr_tail = falcon_instr_cycle.tail;
 		}
 		else {
 			curr_cycles = falcon_instr_cycle.noncache_cycles;
