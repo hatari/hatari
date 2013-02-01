@@ -13,6 +13,7 @@ CNF_PARAMS ConfigureParams;
 /* fake cycles stuff */
 #include "cycles.h"
 int CurrentInstrCycles;
+int Cycles_GetCounter(int nId) { return 0; }
 
 /* fake ST RAM */
 #include "stMemory.h"
@@ -31,6 +32,7 @@ Uint32 IoAccessBaseAddress;
 /* fake CPU wrapper stuff */
 #include "m68000.h"
 int nWaitStateCycles;
+cpu_instruction_t CpuInstruction;
 void MakeFromSR(void) { }
 
 /* fake UAE core registers */
@@ -60,6 +62,7 @@ void DebugUI_PrintCmdHelp(const char *psCmd) { }
 #include "debugInfo.h"
 void DebugInfo_ShowSessionInfo(void) {}
 Uint32 DebugInfo_GetTEXT(void) { return 0x1234; }
+Uint32 DebugInfo_GetTEXTEnd(void) { return 0x1234; }
 Uint32 DebugInfo_GetDATA(void) { return 0x12f4; }
 Uint32 DebugInfo_GetBSS(void)  { return 0x1f34; }
 
@@ -70,7 +73,7 @@ void DebugDsp_InitSession(void) { }
 /* use fake dsp.c stuff in case config.h is configured with DSP emu */
 #include "dsp.h"
 bool bDspEnabled;
-Uint16 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr) { return 0; }
+Uint16 DSP_DisasmAddress(FILE *f, Uint16 lowerAdr, Uint16 UpperAdr) { return 0; }
 Uint16 DSP_GetInstrCycles(void) { return 0; }
 Uint16 DSP_GetPC(void) { return 0; }
 int DSP_GetRegisterAddress(const char *arg, Uint32 **addr, Uint32 *mask)
@@ -129,4 +132,8 @@ bool DebugUI_ParseFile(const char *path)
 
 /* fake disassembly output */
 #include "68kDisass.h"
-void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt , int DisasmEngine) {}
+Uint32 Disasm_GetNextPC(Uint32 pc) { return pc+2; }
+void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int count) {}
+void Disasm_GetColumns(int *columns) {}
+void Disasm_SetColumns(int *columns) {}
+void Disasm_DisableColumn(int column, int *oldcols, int *newcols) {}
