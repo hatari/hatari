@@ -521,14 +521,14 @@ void Profile_CpuUpdate(void)
 	cycles -= cpu_profile.prev_cycles;
 	cpu_profile.prev_cycles += cycles;
 
-#if DEBUG
+# if DEBUG
 	if (cycles == 0) {
 		zero_cycles++;
-		if (zero_cycles % 1024 == 0) {
+		if (zero_cycles % 512 == 0) {
 			fprintf(stderr, "WARNING: %d zero cycles, latest at 0x%x\n", zero_cycles, M68000_GetPC());
 		}
 	}
-#endif
+# endif
 #else
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
@@ -941,8 +941,10 @@ bool Profile_DspStart(void)
 	for (i = 0; i < DSP_PROFILE_ARR_SIZE; i++, item++) {
 		item->min_cycle = 0xFFFF;
 	}
-	/* first instruction cycles destination */
-	dsp_profile.prev_pc = DSP_GetPC();
+	/* first instruction cycles will be lost, but at least it
+	 * doesn't give wrong difference information
+	 */
+	dsp_profile.prev_pc = DSP_PROFILE_ARR_SIZE-1;
 	return dsp_profile.enabled;
 }
 
