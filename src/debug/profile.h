@@ -25,6 +25,6 @@ extern bool Profile_DspStart(void);
 extern void Profile_DspUpdate(void);
 extern void Profile_DspStop(void);
 /* DSP profile results */
-extern bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint16 *cycle_diff);
+extern bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint64 *count, Uint64 *cycles, Uint16 *cycle_diff);
 
 #endif

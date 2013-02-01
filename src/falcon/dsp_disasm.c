@@ -540,7 +540,7 @@ Uint16 dsp56k_disasm(dsp_trace_disasm_t mode)
 const char* dsp56k_getInstructionText(void)
 {
 	const int len = sizeof(str_instr);
-	Uint32 count, cycles;
+	Uint64 count, cycles;
 	Uint16 cycle_diff;
 	float percentage;
 	int offset;
@@ -555,7 +555,7 @@ const char* dsp56k_getInstructionText(void)
 	}
 	if (offset > 2 && Profile_DspAddressData(prev_inst_pc, &percentage, &count, &cycles, &cycle_diff)) {
 		offset -= 2;
-		sprintf(str_instr2+offset, "%5.2f%% (%d, %d, %d)\n", percentage, count, cycles, cycle_diff);
+		sprintf(str_instr2+offset, "%5.2f%% (%lld, %lld, %d)\n", percentage, count, cycles, cycle_diff);
 	}
 	return str_instr2;
 } 
