@@ -512,7 +512,7 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 {
 	char command[32];
 	Uint32 nextpc = Disasm_GetNextPC(M68000_GetPC());
-	sprintf(command, "pc=$%x :once\n", nextpc);
+	sprintf(command, "pc=$%x :once :quiet\n", nextpc);
 	if (BreakCond_Command(command, false)) {
 		nCpuSteps = 0;		/* using breakpoint, not steps */
 		return DEBUGGER_END;

@@ -94,6 +94,7 @@ typedef struct {
 	char *filename;	/* file where to read commands to do on hit */
 	int skip;	/* how many times to hit before breaking */
 	bool once;	/* remove after hit&break */
+	bool quiet;	/* no output from setting & hitting */
 	bool trace;	/* trace mode, don't break */
 	bool lock;	/* tracing + show locked info */
 } bc_options_t;
@@ -342,8 +343,12 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 					continue;
 				}
 			}
-			fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
-				i+1, name, bp->hits);
+			if (!bp->options.quiet) {
+				fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
+					i+1, name, bp->hits);			
+				BreakCond_Print(bp);
+			}
+			BreakCond_ShowTracked(bp->conditions, bp->ccount);
 
 			for_dsp = (bp-i == BreakPointsDsp);
 			if (for_dsp) {
@@ -360,9 +365,6 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			if (bp->options.filename) {
 				DebugUI_ParseFile(bp->options.filename);
 			}
-			
-			BreakCond_Print(bp);
-			BreakCond_ShowTracked(bp->conditions, bp->ccount);
 
 			if (bp->options.once) {
 				BreakCond_Remove(i+1, for_dsp);
@@ -1390,27 +1392,33 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 	}
 	if (ccount > 0) {
 		(*bcount)++;
-		fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added:\n\t%s\n",
-			name, *bcount, ccount, bp->expression);
-		BreakCond_CheckTracking(bp);
-		if (options->skip) {
-			fprintf(stderr, "-> Break only on every %d hit.\n", options->skip);
-			bp->options.skip = options->skip;
-		}
-		if (options->once) {
-			fprintf(stderr, "-> Once, delete after breaking.\n");
-			bp->options.once = true;
-		}
-		if (options->trace) {
-			fprintf(stderr, "-> Trace instead of breaking, but show still hits.\n");
-			if (options->lock) {
-				fprintf(stderr, "-> Show also info selected with lock command.\n");
-				bp->options.lock = true;
+		if (!options->quiet) {
+			fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added:\n\t%s\n",
+				name, *bcount, ccount, bp->expression);
+			if (options->skip) {
+				fprintf(stderr, "-> Break only on every %d hit.\n", options->skip);
 			}
-			bp->options.trace = true;
+			if (options->once) {
+				fprintf(stderr, "-> Once, delete after breaking.\n");
+			}
+			if (options->trace) {
+				fprintf(stderr, "-> Trace instead of breaking, but show still hits.\n");
+				if (options->lock) {
+					fprintf(stderr, "-> Show also info selected with lock command.\n");
+				}
+			}
+			if (options->filename) {
+				fprintf(stderr, "-> Execute debugger commands from '%s' file on hit.\n", options->filename);
+			}
 		}
+		BreakCond_CheckTracking(bp);
+
+		bp->options.quiet = options->quiet;
+		bp->options.skip = options->skip;
+		bp->options.once = options->once;
+		bp->options.trace = options->trace;
+		bp->options.lock = options->lock;
 		if (options->filename) {
-			fprintf(stderr, "-> Execute debugger commands from '%s' file on hit.\n", options->filename);
 			bp->options.filename = strdup(options->filename);
 		}
 	} else {
@@ -1509,8 +1517,10 @@ static bool BreakCond_Remove(int position, bool bForDsp)
 		return false;
 	}
 	offset = position - 1;
-	fprintf(stderr, "Removed %s breakpoint %d:\n", name, position);
-	BreakCond_Print(&(bp[offset]));
+	if (!bp[offset].options.quiet) {
+		fprintf(stderr, "Removed %s breakpoint %d:\n", name, position);
+		BreakCond_Print(&(bp[offset]));
+	}
 	free(bp[offset].expression);
 	if (bp[offset].options.filename) {
 		free(bp[offset].options.filename);
@@ -1628,6 +1638,7 @@ const char BreakCond_Description[] =
 	"\t- 'lock', print the debugger entry info without stopping\n"
 	"\t- 'file <file>', execute debugger commands from given <file>\n"
 	"\t- 'once', delete the breakpoint after it's hit\n"
+	"\t- 'quiet', no output from setting & hitting breakpoint\n"
 	"\t- '<count>', break only on every <count> hit";
 
 /**
@@ -1658,6 +1669,8 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 
 		if (strcmp(option, "once") == 0) {
 			options->once = true;
+		} else if (strcmp(option, "quiet") == 0) {
+			options->quiet = true;
 		} else if (strcmp(option, "trace") == 0) {
 			options->trace = true;
 		} else if (strcmp(option, "lock") == 0) {
@@ -1757,6 +1770,7 @@ const char BreakAddr_Description[] =
 	"\t- 'trace', print the breakpoint match without stopping\n"
 	"\t- 'lock', print the debugger entry info without stopping\n"
 	"\t- 'once', delete the breakpoint after it's hit\n"
+	"\t- 'quiet', no output from setting & hitting breakpoint\n"
 	"\t- '<count>', break only on every <count> hit\n"
 	"\n"
 	"\tUse conditional breakpoint commands to manage the created\n"

@@ -65,6 +65,7 @@ Emulator:
   - Fix: debugger history duplicates removal
   - Fix: expression expanding CPU "pc" for DSP shortcut commands
   - Fix: expression expansion messing lines in command line history
+  - Add ':quiet' option to breakpoints
   - Remote API debugger commands can also use expression expansion
   - Both single and double quotes can be used to mark expressions
   - In addition to text section offset, data and bss section offsets

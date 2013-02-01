@@ -310,7 +310,7 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 {
 	char command[32];
 	Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
-	sprintf(command, "pc=$%x :once\n", nextpc);
+	sprintf(command, "pc=$%x :once :quiet\n", nextpc);
 	if (BreakCond_Command(command, true)) {
 		nDspSteps = 0;		/* using breakpoint, not steps */
 		return DEBUGGER_END;
