@@ -13,10 +13,9 @@
 #include <windows.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <SDL_types.h>
 
 #include "opencon.h"
-#include "../debug/debugui.h"
+#include "../includes/configuration.h"
 
 
 void Win_OpenCon(void)
