@@ -3913,11 +3913,6 @@ static void dsp_pm_8(void)
 	dsp_calc_ea(ea1, &x_addr);
 	dsp_calc_ea(ea2, &y_addr);
 
-	/* 2 more cycles are needed if X:address1 and Y:address2 are both in external memory */
-	if ((x_addr>=0x200) && (y_addr>=0x200)) {
-		dsp_core.instr_cycle += 2;
-	}
-
 	switch((cur_inst>>18) & BITMASK(2)) {
 		case 0:	numreg1=DSP_REG_X0;	break;
 		case 1:	numreg1=DSP_REG_X1;	break;
