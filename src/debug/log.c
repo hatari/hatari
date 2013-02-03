@@ -106,6 +106,8 @@ TraceOptions[] = {
 	{ TRACE_DSP_SYMBOLS	 , "dsp_symbols" },
 	{ TRACE_CPU_SYMBOLS	 , "cpu_symbols" },
 
+	{ TRACE_NVRAM  	         , "nvram" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */

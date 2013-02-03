@@ -262,8 +262,8 @@ void NvRam_Data_ReadByte(void)
 	{
 		value = nvram[nvram_index];
 	}
-	Dprintf(("Reading NVRAM data at %d = %d ($%02x)\n", nvram_index, value, value));
 
+	LOG_TRACE(TRACE_NVRAM, "NVRAM : read data at %d = %d ($%02x)\n", nvram_index, value, value);
 	IoMem_WriteByte(0xff8963, value);
 }
 
@@ -276,6 +276,6 @@ void NvRam_Data_ReadByte(void)
 void NvRam_Data_WriteByte(void)
 {
 	Uint8 value = IoMem_ReadByte(0xff8963);
-	Dprintf(("Writing NVRAM data at %d = %d ($%02x)\n", nvram_index, value, value));
+	LOG_TRACE(TRACE_NVRAM, "NVRAM : write data at %d = %d ($%02x)\n", nvram_index, value, value);
 	nvram[nvram_index] = value;
 }
