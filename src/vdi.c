@@ -188,8 +188,8 @@ int VDI_Limit(int value, int align, int min, int max)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set Width/Height/BitDepth according to passed GEMRES_640x480,
- * GEMRES_800x600, GEMRES_OTHER. Align size when necessary.
+ * Set Width/Height/BitDepth according to passed GEMCOLOR_2/4/16.
+ * Align size when necessary.
  */
 void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 {
