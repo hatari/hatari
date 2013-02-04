@@ -29,9 +29,9 @@
 #define MAX_VDI_BYTES 300*1024
 #define MAX_VDI_WIDTH  2048
 #define MAX_VDI_HEIGHT 1280
-/* next in-all-bitdepths aligned size up from smallest ST res. */
-#define MIN_VDI_WIDTH   384
-#define MIN_VDI_HEIGHT  208
+/* smaller doesn't make sense even for testing */
+#define MIN_VDI_WIDTH   320
+#define MIN_VDI_HEIGHT  200
 
 
 enum

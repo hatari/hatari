@@ -202,6 +202,12 @@ static bool VDI_ByteLimit(int *width, int *height, int planes)
 	ratio = sqrt(MAX_VDI_BYTES) / sqrt(size);
 	*width = (*width) * ratio;
 	*height = (*height) * ratio;
+	if (*width < MIN_VDI_WIDTH || *height < MIN_VDI_HEIGHT)
+	{
+		*width = MIN_VDI_WIDTH;
+		*height = MIN_VDI_HEIGHT;
+		fputs("Bad VDI screen ratio / too small size -> use smallest valid size.\n", stderr);
+	}
 	return true;
 }
 
