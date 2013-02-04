@@ -185,6 +185,25 @@ int VDI_Limit(int value, int align, int min, int max)
 	return value;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Limit width and height to VDI screen size in bytes, retaining their ratio.
+ * Return true if limiting was done.
+ */
+static bool VDI_ByteLimit(int *width, int *height, int planes)
+{
+	double ratio;
+	int size;
+	
+	size = (*width)*(*height)*planes/8;
+	if (size <= MAX_VDI_BYTES)
+		return false;
+
+	ratio = sqrt(MAX_VDI_BYTES) / sqrt(size);
+	*width = (*width) * ratio;
+	*height = (*height) * ratio;
+	return true;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -193,6 +212,9 @@ int VDI_Limit(int value, int align, int min, int max)
  */
 void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 {
+	int w = WidthRequest;
+	int h = HeightRequest;
+
 	/* Color depth */
 	switch (GEMColor)
 	{
@@ -216,11 +238,15 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 		break;
 	}
 
+	/* screen size in bytes needs to be below limit */
+	VDI_ByteLimit(&w, &h, VDIPlanes);
+
 	/* width needs to be aligned to 16 bytes */
-	VDIWidth = VDI_Limit(WidthRequest, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+	VDIWidth = VDI_Limit(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
 	/* height needs to be multiple of cell height */
-	VDIHeight = VDI_Limit(HeightRequest, VDICharHeight, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-	printf("VDI screen: request = %dx%d@%d, aligned result = %dx%d@%d\n",
+	VDIHeight = VDI_Limit(h, VDICharHeight, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+
+	printf("VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
 	       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
 
 	/* Write resolution to re-boot takes effect with correct bit-depth */

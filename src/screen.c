@@ -536,8 +536,8 @@ void Screen_Init(void)
 	/* Allocate previous screen check workspace. We are going to double-buffer a double-buffered screen. Oh. */
 	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
 	{
-		FrameBuffers[i].pSTScreen = malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
-		FrameBuffers[i].pSTScreenCopy = malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
+		FrameBuffers[i].pSTScreen = malloc(MAX_VDI_BYTES);
+		FrameBuffers[i].pSTScreenCopy = malloc(MAX_VDI_BYTES);
 		if (!FrameBuffers[i].pSTScreen || !FrameBuffers[i].pSTScreenCopy)
 		{
 			fprintf(stderr, "Failed to allocate frame buffer memory.\n");
