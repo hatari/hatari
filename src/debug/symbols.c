@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols.c
  * 
- * Copyright (C) 2010 by Eero Tamminen
+ * Copyright (C) 2010-2013 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -233,7 +233,11 @@ static void Symbols_Free(symbol_list_t* list)
 	}
 	free(list->addresses);
 	free(list->names);
-	list->count = 0;	/* catch use of freed list */
+
+	/* catch use of freed list */
+	list->addresses = NULL;
+	list->names = NULL;
+	list->count = 0;
 	free(list);
 }
 
@@ -378,9 +382,9 @@ bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr)
 
 /**
  * Search symbol by address.
- * Return symbol name if address matches, NULL otherwise.
+ * Return symbol index if address matches, -1 otherwise.
  */
-static const char* Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
+static int Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
 {
 	symbol_t *entries;
 	/* left, right, middle */
@@ -388,7 +392,7 @@ static const char* Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
 	Uint32 curr;
 
 	if (!list) {
-		return NULL;
+		return -1;
 	}
 	entries = list->addresses;
 
@@ -399,7 +403,7 @@ static const char* Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
 		m = (l+r) >> 1;
 		curr = entries[m].address;
 		if (curr == addr) {
-			return (const char*)entries[m].name;
+			return m;
 		}
 		if (curr > addr) {
 			r = m-1;
@@ -407,7 +411,7 @@ static const char* Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
 			l = m+1;
 		}
 	} while (l <= r);
-	return NULL;
+	return -1;
 }
 
 /**
@@ -417,18 +421,55 @@ static const char* Symbols_SearchByAddress(symbol_list_t* list, Uint32 addr)
  */
 const char* Symbols_GetByCpuAddress(Uint32 addr)
 {
-	return Symbols_SearchByAddress(CpuSymbolsList, addr);
+	int idx = Symbols_SearchByAddress(CpuSymbolsList, addr);
+	if (idx < 0) {
+		return NULL;
+	}
+	return CpuSymbolsList->addresses[idx].name;
 }
 /**
  * Search DSP symbol by address.
  * Return symbol name if address matches, NULL otherwise.
  * Returned name is valid only until next Symbols_* function call.
  */
-const char* Symbols_GetByDspAddress(Uint32 addr)
+const char* Symbols_GetByDspAddress(Uint16 addr)
 {
-	return Symbols_SearchByAddress(DspSymbolsList, addr);
+	int idx = Symbols_SearchByAddress(DspSymbolsList, addr);
+	if (idx < 0) {
+		return NULL;
+	}
+	return CpuSymbolsList->addresses[idx].name;
 }
 
+/**
+ * Search CPU symbol by address.
+ * Return symbol index if address matches, -1 otherwise.
+ */
+int Symbols_GetCpuAddressIndex(Uint32 addr)
+{
+	return Symbols_SearchByAddress(CpuSymbolsList, addr);	
+}
+
+/**
+ * Search DSP symbol by address.
+ * Return symbol index if address matches, -1 otherwise.
+ */
+int Symbols_GetDspAddressIndex(Uint16 addr)
+{
+	return Symbols_SearchByAddress(CpuSymbolsList, addr);	
+}
+
+/**
+ * Return how many symbols are loaded/available
+ */
+unsigned int Symbols_CpuCount(void)
+{
+	return (CpuSymbolsList ? CpuSymbolsList->count : 0);
+}
+unsigned int Symbols_DspCount(void)
+{
+	return (DspSymbolsList ? DspSymbolsList->count : 0);
+}
 
 /* ---------------- symbol showing and command parsing ------------------ */
 
@@ -560,16 +601,4 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 	return DEBUGGER_CMDDONE;
-}
-
-/**
- * Return how many symbols are loaded/available
- */
-unsigned int Symbols_CpuCount(void)
-{
-	return (CpuSymbolsList ? CpuSymbolsList->count : 0);
-}
-unsigned int Symbols_DspCount(void)
-{
-	return (DspSymbolsList ? DspSymbolsList->count : 0);
 }

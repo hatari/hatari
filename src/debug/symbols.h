@@ -30,11 +30,14 @@ extern bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, Uint32 *a
 extern bool Symbols_GetDspAddress(symtype_t symtype, const char *name, Uint32 *addr);
 /* symbol address -> name search */
 extern const char* Symbols_GetByCpuAddress(Uint32 addr);
-extern const char* Symbols_GetByDspAddress(Uint32 addr);
-/* symbols/dspsymbols command parsing */
-extern int Symbols_Command(int nArgc, char *psArgs[]);
+extern const char* Symbols_GetByDspAddress(Uint16 addr);
+/* symbol address -> index */
+extern int Symbols_GetCpuAddressIndex(Uint32 addr);
+extern int Symbols_GetDspAddressIndex(Uint16 addr);
 /* how many symbols are loaded */
 extern unsigned int Symbols_CpuCount(void);
 extern unsigned int Symbols_DspCount(void);
+/* symbols/dspsymbols command parsing */
+extern int Symbols_Command(int nArgc, char *psArgs[]);
 
 #endif
