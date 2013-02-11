@@ -31,9 +31,12 @@ class Output:
 
 class Instructions:
     "current function instructions state and some state of all instructions"
+    names = ("Executed instructions", "Used cycles", "Cache misses")
+
     def __init__(self, name, dsp):
         self.max_addr = [0,0,0]
         self.max_val = [0,0,0]
+        self.totals = [0,0,0]
         self.areas = {}		# which memory area boundaries have been passed
         self.isForDsp = dsp
         self.zero(name)
@@ -57,19 +60,28 @@ class Instructions:
     def show(self):
         print "%s @ 0x%x: %d, %d, %d" % (self.name, self.addr, self.data[0], self.data[1], self.data[2])
 
+    def sum_values(self, values):
+        "calculate totals for given instruction value sets"
+        if values:
+            sums = [0,0,0]
+            items = min(len(sums), len(values[0]))
+            for data in values:
+                for i in range(items):
+                    sums[i] += data[i]
+            self.totals = sums
+
 
 class Profile(Output):
 
     # Hatari symbol and profile information processor
     def __init__(self):
         Output.__init__(self)
-        self.count = 0			# all
         self.instructions = None	# Instructions instance
         self.verbose = False
         self.address = None		# hash
         self.symbols = None		# hash
         self.profile = None		# hash
-        self.sums = None		# list
+        self.callers = None		# hash
         # Hatari profile format:
         # <name>: <hex>-<hex>
         # ROM TOS:	0xe00000-0xe80000
@@ -80,6 +92,9 @@ class Profile(Output):
         # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
         # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
         self.r_dspaddress = re.compile("^p:([0-9a-f]+) .*% \((.*)\)$")
+        # caller info:
+        # 0x<hex> = <count>
+        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
         # <symbol>:
         # _biostrap:
         self.r_function = re.compile("^([_a-zA-Z][_.a-zA-Z0-9]*):$")
@@ -91,9 +106,6 @@ class Profile(Output):
         self.addr_ram = 0
         self.addr_tos = 0xe00000
         self.addr_cartridge = 0xfa0000
-
-    def set_count(self, count):
-        self.count = count
 
     def set_verbose(self, verbose):
         "set verbose on/off"
@@ -128,14 +140,15 @@ class Profile(Output):
 
     def _get_profile_type(self, f):
         "get profile processor type or exit if it's unknown"
-        field = f.readline().split()
+        line = f.readline()
+        field = line.split()
         if len(field) != 3 or field[0] != "Hatari":
-            self.error_exit("unrecognized file, line 1 misses Hatari profiler identification")
+            self.error_exit("unrecognized file, line 1:\n\t%smisses Hatari profiler identification" % line)
         if field[1] == "CPU":
             return (self.r_cpuaddress, Instructions("HATARI_PROFILE_BEGIN", False))
         if field[1] == "DSP":
             return (self.r_dspaddress, Instructions("HATARI_PROFILE_BEGIN", True))
-        self.error_exit("unrecognized profile processor type '%s' in line 1" % field[1])
+        self.error_exit("unrecognized profile processor type '%s' in line 1:\t\n%s" % (field[1], line))
 
     def parse_symbols(self, f):
         "parse symbol file contents"
@@ -148,7 +161,7 @@ class Profile(Output):
         for line in f.readlines():
             lines += 1
             line = line.strip()
-            if line[0] == '#':
+            if line.startswith('#'):
                 continue
             match = self.r_symbol.match(line)
             if match:
@@ -170,13 +183,36 @@ class Profile(Output):
                 unknown += 1
         self.message("%d lines with %d code symbols/addresses parsed, %d unknown.\n" % (lines, len(self.symbols), unknown))
 
-    def _sum_values(self):
-        "calculate totals"
-        values = [0,0,0]
-        for data in self.profile.values():
-            for i in range(len(data)):
-                values[i] += data[i]
-        self.sums = values
+    def _parse_caller(self, line):
+        "parse callee: caller call count information"
+        #0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
+        callers = line.split(',')
+        if len(callers) < 2:
+            self.warning("caller info missing")
+            return False
+        if ':' not in callers[0]:
+            self.warning("callee/caller separator ':' missing")
+            return False
+        last = callers[-1]
+        if len(last) and last[-1] != ')':
+            self.warning("last item isn't empty or symbol name")
+            return False
+
+        addr, callers[0] = callers[0].split(':')
+        addr = int(addr, 16)
+        self.callers[addr] = {}
+        for caller in callers[:-1]:
+            caller = caller.strip()
+            match = self.r_caller.match(caller)
+            if match:
+                caddr, count = match.groups()
+                caddr = int(caddr, 16)
+                count = int(count, 10)
+                self.callers[addr][caddr] = count
+            else:
+                self.warning("unrecognized caller info '%s'" % caller)
+                return False
+        return True
 
     def _change_function(self, function, newname):
         "store current function data and then reset to new function"
@@ -246,22 +282,12 @@ class Profile(Output):
         prev_addr = unknown = lines = 0
         self.address = {}
         self.profile = {}
+        self.callers = {}
         for line in f.readlines():
             lines += 1
             line = line.strip()
-            if line == "[...]":
-                continue
-            # symbol?
-            if line[-1:] == ':':
-                match = self.r_function.match(line)
-                if match:
-                    self._change_function(instructions, match.group(1))
-                else:
-                    self.error_exit("unrecognized function line %d:\n\t'%s'" % (lines, line))
-                    unknown += 1
-                continue
             # CPU or DSP address line?
-            if line[0] in ('$', 'p'):
+            if line.startswith('$') or line.startswith('p:'):
                 match = r_address.match(line)
                 if match:
                     addr, counts = match.groups()
@@ -273,12 +299,28 @@ class Profile(Output):
                     instructions.add(addr, counts.split(','))
                 else:
                     self.error_exit("unrecognized address line %d:\n\t'%s'" % (lines, line))
-                    unknown += 1
+                continue
+            # symbol?
+            if line.endswith(':'):
+                match = self.r_function.match(line)
+                if match:
+                    self._change_function(instructions, match.group(1))
+                else:
+                    self.error_exit("unrecognized function line %d:\n\t'%s'" % (lines, line))
+                continue
+            # address discontinuation
+            if line == "[...]":
+                continue
+            # caller information
+            if line.startswith('0x'):
+                if not self._parse_caller(line):
+                    self.error_exit("unrecognized caller line %d:\n\t'%s'" % (lines, line))
                 continue
             # header?
             if not self.parse_header(line):
                 self.warning("unrecognized line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
+
         self._change_function(instructions, "HATARI_PROFILE_END")
         self.instructions = instructions
         self.message("%d lines processed with %d functions." % (lines, len(self.profile)))
@@ -286,26 +328,67 @@ class Profile(Output):
             self.error_exit("more than half of the lines were unrecognized!")
         if len(self.profile) < 1:
             self.error_exit("no functions found!")
-        self._sum_values()
 
-    def output_stats(self):
+
+class ProfileStats(Output):
+
+    # Hatari symbol and profile information statistics output
+    def __init__(self):
+        Output.__init__(self)
+        self.do_totals = False
+        self.do_instr = False
+        self.do_cycles = False
+        self.do_misses = False
+        self.count = 0			# all
+
+    def set_count(self, count):
+        self.count = count
+
+    def show_totals(self, show):
+        self.do_totals = show
+    def show_instructions(self, show):
+        self.do_instr = show
+    def show_cycles(self, show):
+        self.do_cycles = show
+    def show_misses(self, show):
+        self.do_misses = show
+
+    def do_output(self):
+        if self.do_totals:
+            self.output_totals()
+        if self.do_instr:
+            self.output_instructions()
+        if self.do_cycles:
+            self.output_cycles()
+        if self.do_misses:
+            self.output_misses()
+
+    def set_profile(self, prof):
+        self.profile = prof.profile
+        self.address = prof.address
+        self.instr = prof.instructions
+        self.instr.sum_values(self.profile.values())
+
+    def output_totals(self):
         "output profile statistics"
         self.write("\n")
-        instr = self.instructions
-        names = ("Instructions", "Cycles", "Cache misses")
-        items = len(self.profile.values()[0])
+        instr = self.instr
+        items = len(instr.totals)
         for i in range(items):
-            self.write("%s:\n" % names[i])
+            if not instr.totals[i]:
+                continue
+            self.write("%s:\n" % instr.names[i])
             self.write("- max = %d, at 0x%x\n" % (instr.max_val[i], instr.max_addr[i]))
-            self.write("- %d in total\n" % self.sums[i])
+            self.write("- %d in total\n" % instr.totals[i])
 
-    def _output_list(self, keys, field, heading):
-        self.write("\n%s:\n" % heading)
-        sum = self.sums[field]
-        if sum == 0:
+    def _output_list(self, keys, field):
+        self.write("\n%s:\n" % self.instr.names[field])
+        totals = self.instr.totals
+        total = totals[field]
+        if total == 0:
             self.write("- information missing\n")
             return
-        sum = float(sum)
+        total = float(total)
         idx = 0
         if self.count:
             count = self.count
@@ -319,32 +402,32 @@ class Profile(Output):
                 addr = "(0x%04x)" % self.address[key]
             else:
                 addr = ""
-            self.write("%6.2f%% %9s %-28s%s\n" % (value*100.0/sum, value, key, addr))
+            self.write("%6.2f%% %9s %-28s%s\n" % (value*100.0/total, value, key, addr))
             idx += 1
 
-    def cmp_instructions(self, a, b):
+    def _cmp_instructions(self, a, b):
         return cmp(self.profile[a][0], self.profile[b][0])
 
-    def cmp_cycles(self, a, b):
+    def _cmp_cycles(self, a, b):
         return cmp(self.profile[a][1], self.profile[b][1])
 
-    def cmp_misses(self, a, b):
+    def _cmp_misses(self, a, b):
         return cmp(self.profile[a][2], self.profile[b][2])
 
     def output_instructions(self):
         keys = self.profile.keys()
-        keys.sort(self.cmp_instructions, None, True)
-        self._output_list(keys, 0, "Executed instructions")
+        keys.sort(self._cmp_instructions, None, True)
+        self._output_list(keys, 0)
 
     def output_cycles(self):
         keys = self.profile.keys()
-        keys.sort(self.cmp_cycles, None, True)
-        self._output_list(keys, 1, "Used cycles")
+        keys.sort(self._cmp_cycles, None, True)
+        self._output_list(keys, 1)
 
     def output_misses(self):
         keys = self.profile.keys()
-        keys.sort(self.cmp_misses, None, True)
-        self._output_list(keys, 2, "Cache misses")
+        keys.sort(self._cmp_misses, None, True)
+        self._output_list(keys, 2)
 
 
 class Main(Output):
@@ -365,27 +448,29 @@ class Main(Output):
             self.usage(err)
 
         prof = Profile()
-        dsp = stats = instr = cycles = misses = False
+        stats = ProfileStats()
         for opt, arg in opts:
             #self.message("%s: %s" % (opt, arg))
             if opt in ("-a", "--addresses"):
                 self.message("\nParsing symbol address information from %s..." % arg)
                 prof.parse_symbols(self.open_file(arg))
             elif opt in ("-c", "--cycles"):
-                cycles = True
+                stats.show_cycles(True)
             elif opt in ("-f", "--first"):
                 try:
-                    prof.set_count(int(arg))
+                    stats.set_count(int(arg))
                 except ValueError:
                     self.usage("invalid '%s' value" % opt)                    
             elif opt in ("-i", "--instr"):
-                instr = True
+                stats.show_instructions(True)
             elif opt in ("-m", "--misses"):
-                misses = True
+                stats.show_misses(True)
             elif opt in ("-o", "--output"):
-                prof.set_output(self.open_file(arg))
+                out = self.open_file(arg)
+                prof.set_output(out)
+                stats.set_output(out)
             elif opt in ("-s", "--stats"):
-                stats = True
+                stats.show_totals(True)
             elif opt in ("-v", "--verbose"):
                 prof.set_verbose(True)
             else:
@@ -393,14 +478,8 @@ class Main(Output):
         for arg in rest:
             self.message("\nParsing profile information from %s..." % arg)
             prof.parse_profile(self.open_file(arg))
-            if stats:
-                prof.output_stats()
-            if instr:
-                prof.output_instructions()
-            if cycles:
-                prof.output_cycles()
-            if misses:
-                prof.output_misses()
+            stats.set_profile(prof)
+            stats.do_output()
 
     def open_file(self, path):
         try:
