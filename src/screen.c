@@ -380,7 +380,7 @@ static void Screen_SetResolution(void)
 		/* Statusbar height for doubled screen size */
 		SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
-		Resolution_GetLimits(&maxW, &maxH, &BitCount);
+		Resolution_GetLimits(&maxW, &maxH, &BitCount, ConfigureParams.Screen.bKeepResolutionST);
 		
 		/* Zoom if necessary, factors used for scaling mouse motions */
 		if (STRes == ST_LOW_RES &&

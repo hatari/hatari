@@ -10,7 +10,7 @@
 
 extern void Resolution_Init(void);
 extern void Resolution_GetDesktopSize(int *width, int *height);
-extern void Resolution_GetLimits(int *width, int *height, int *bpp);
+extern void Resolution_GetLimits(int *width, int *height, int *bpp, bool keepDesktop);
 extern void Resolution_Search(int *width, int *height, int *bpp);
 
 #endif

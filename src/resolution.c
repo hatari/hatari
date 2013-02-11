@@ -198,14 +198,14 @@ void Resolution_Search(int *width, int *height, int *bpp)
  * configuration, or if that's too large for the requested bit depth,
  * to the largest available video mode size.
  */
-void Resolution_GetLimits(int *width, int *height, int *bpp)
+void Resolution_GetLimits(int *width, int *height, int *bpp, bool keep)
 {
 	*width = *height = 0;
 	/* constrain max size to what HW/SDL offers */
 	Dprintf(("resolution: request limits for: %dx%dx%d\n", *width, *height, *bpp));
 	Resolution_Search(width, height, bpp);
 	
-	if (bInFullScreen && ConfigureParams.Screen.bKeepResolution) {
+	if (bInFullScreen && keep) {
 		/* resolution change not allowed */
 		Resolution_GetDesktopSize(width, height);
 		return;
