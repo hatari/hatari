@@ -4,8 +4,8 @@
 #
 # 2013 (C) Eero Tamminen, licensed under GPL v2+
 """
-A tool for processing Hatari debugger profiling information produced
-with the following debugger command:
+A tool for post-processing Hatari debugger profiling information
+produced with the following debugger command:
 	profile addresses 0 <file name>
 
 It sums profiling information given for code addresses, to functions
@@ -22,7 +22,7 @@ Usage: hatari-profile [options] <profile files>
 Options:
 	-a <symbols>	symbol address information file
         -c		output cycles usage information
-        -i		output intruction count information
+        -i		output instruction count information
         -m		output cache miss information
         -f <count>	output only first <count> items
 	-o <file name>	output file name (default is stdout)
@@ -34,6 +34,7 @@ Long options for above are:
 	--cycles
         --instr
         --misses
+        --first
         --output
         --stats
         --verbose
@@ -49,56 +50,68 @@ Symbol information should be in same format as for Hatari debugger
 interpreted as absolute, otherwise, as relative to program TEXT (code)
 section start address start given in the profile data file.
 
-TODO:
-- Output in Valgrind callgrind format:
-        http://valgrind.org/docs/manual/cl-format.html
-  for KCachegrind:
-        http://kcachegrind.sourceforge.net/
+TODO: Output in Valgrind callgrind format:
+       http://valgrind.org/docs/manual/cl-format.html
+for KCachegrind:
+       http://kcachegrind.sourceforge.net/
 """
 
 import getopt, os, re, sys
 
+
 class Output:
+    "base class for screen and file outputs"
+
     def __init__(self):
         self.write = sys.stdout.write
+        self.error_write = sys.stderr.write
 
-    def set_output(self, f):
-        "set output data file"
-        self.write = f.write
+    def set_output(self, out):
+        "set normal output data file"
+        self.write = out.write
+
+    def set_error_output(self, out):
+        "set error output data file"
+        self.error_write = out.write
 
     # rest are independent of output file
     def message(self, msg):
         "show message to user"
-        sys.stderr.write("%s\n" % msg)
+        self.error_write("%s\n" % msg)
 
     def warning(self, msg):
         "show warning to user"
-        sys.stderr.write("WARNING: %s\n" % msg)
+        self.error_write("WARNING: %s\n" % msg)
 
     def error_exit(self, msg):
         "show error to user + exit"
-        sys.stderr.write("ERROR: %s!\n" % msg)
+        self.error_write("ERROR: %s!\n" % msg)
         sys.exit(1)
 
 
 class Instructions:
-    "current function instructions state and some state of all instructions"
+    "current function instructions state + info on all instructions"
+
     names = ("Executed instructions", "Used cycles", "Cache misses")
 
     def __init__(self, name, dsp):
-        self.max_addr = [0,0,0]
-        self.max_val = [0,0,0]
-        self.totals = [0,0,0]
+        self.max_addr = [0, 0, 0]
+        self.max_val = [0, 0, 0]
+        self.totals = [0, 0, 0]
         self.areas = {}		# which memory area boundaries have been passed
-        self.isForDsp = dsp
+        self.for_dsp = dsp
         self.zero(name)
 
     def zero(self, name):
+        "start collecting new 'name' function instructions information"
+        # stupid pylint, this method IS called from __init__,
+        # so these are actually set "in" __init__...
         self.name = name
         self.addr = None	# just label, not real function yet
-        self.data = [0,0,0]	# current function stats
+        self.data = [0, 0, 0]	# current function stats
 
     def add(self, addr, strvalues):
+        "add strvalues string list of values for given address"
         # only first one is used
         if not self.addr:
             self.addr = addr
@@ -110,12 +123,13 @@ class Instructions:
                 self.max_addr[i] = addr
 
     def show(self):
+        "show current function instruction state"
         print "%s @ 0x%x: %d, %d, %d" % (self.name, self.addr, self.data[0], self.data[1], self.data[2])
 
     def sum_values(self, values):
         "calculate totals for given instruction value sets"
         if values:
-            sums = [0,0,0]
+            sums = [0, 0, 0]
             items = min(len(sums), len(values[0]))
             for data in values:
                 for i in range(items):
@@ -124,16 +138,17 @@ class Instructions:
 
 
 class Profile(Output):
+    "Hatari profile parsing and information"
 
     # Hatari symbol and profile information processor
     def __init__(self):
         Output.__init__(self)
         self.instructions = None	# Instructions instance
         self.verbose = False
-        self.address = None		# hash
-        self.symbols = None		# hash
-        self.profile = None		# hash
-        self.callers = None		# hash
+        self.address = None		# hash of (symbol:addr)
+        self.symbols = None		# hash of (addr:symbol)
+        self.profile = None		# hash of profile (symbol:data)
+        self.callers = None		# hash of (callee:(caller:count))
         # Hatari profile format:
         # <name>: <hex>-<hex>
         # ROM TOS:	0xe00000-0xe80000
@@ -154,7 +169,7 @@ class Profile(Output):
         # [0x]<hex> [tTbBdD] <symbol name>
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([_a-zA-Z][_.a-zA-Z0-9]*)$")
         # default emulation addresses / ranges
-        self.addr_text = (0,0)
+        self.addr_text = (0, 0)
         self.addr_ram = 0
         self.addr_tos = 0xe00000
         self.addr_cartridge = 0xfa0000
@@ -169,12 +184,12 @@ class Profile(Output):
         match = self.r_header.match(line)
         if not match:
             return False
-        name,start,end = match.groups()
+        name, start, end = match.groups()
         end = int(end, 16)
         start = int(start, 16)
         name = name.split()[-1]
         if name == "TEXT":
-            self.addr_text = (start,end)
+            self.addr_text = (start, end)
         elif name == "TOS":
             self.addr_tos = start
         elif name == "RAM":
@@ -190,9 +205,9 @@ class Profile(Output):
             self.error_exit("TOS address isn't higher than TEXT and RAM start addresses")
         return True
 
-    def _get_profile_type(self, f):
+    def _get_profile_type(self, obj):
         "get profile processor type or exit if it's unknown"
-        line = f.readline()
+        line = obj.readline()
         field = line.split()
         if len(field) != 3 or field[0] != "Hatari":
             self.error_exit("unrecognized file, line 1:\n\t%smisses Hatari profiler identification" % line)
@@ -202,7 +217,7 @@ class Profile(Output):
             return (self.r_dspaddress, Instructions("HATARI_PROFILE_BEGIN", True))
         self.error_exit("unrecognized profile processor type '%s' in line 1:\t\n%s" % (field[1], line))
 
-    def parse_symbols(self, f):
+    def parse_symbols(self, obj):
         "parse symbol file contents"
         # TODO: what if same symbol name is specified for multiple addresses?
         # - keep track of the names and add some post-fix to them so that
@@ -210,16 +225,16 @@ class Profile(Output):
         if not self.symbols:
             self.symbols = {}
         unknown = lines = 0
-        for line in f.readlines():
+        for line in obj.readlines():
             lines += 1
             line = line.strip()
             if line.startswith('#'):
                 continue
             match = self.r_symbol.match(line)
             if match:
-                dummy,addr,kind,name = match.groups()
+                dummy, addr, kind, name = match.groups()
                 if kind in ('t', 'T'):
-                    addr = int(addr,16)
+                    addr = int(addr, 16)
                     if self.verbose:
                         self.message("%d = 0x%x\n" % (addr, name))
                     if addr in self.symbols:
@@ -292,7 +307,7 @@ class Profile(Output):
                 # this function needs address info in output
                 self.address[name] = addr
                 return
-        if function.isForDsp or addr in self.address:
+        if function.for_dsp or addr in self.address:
             # not CPU code or has been already assigned
             return
         # as no better symbol, name it according to area where it moved to
@@ -328,14 +343,14 @@ class Profile(Output):
         self._change_function(function, name)
         self.address[name] = addr
 
-    def parse_profile(self, f):
+    def parse_profile(self, obj):
         "parse profile data"
-        r_address, instructions = self._get_profile_type(f)
+        r_address, instructions = self._get_profile_type(obj)
         prev_addr = unknown = lines = 0
         self.address = {}
         self.profile = {}
         self.callers = {}
-        for line in f.readlines():
+        for line in obj.readlines():
             lines += 1
             line = line.strip()
             # CPU or DSP address line?
@@ -383,10 +398,14 @@ class Profile(Output):
 
 
 class ProfileStats(Output):
+    "profile information statistics output"
 
     # Hatari symbol and profile information statistics output
     def __init__(self):
         Output.__init__(self)
+        self.profile = None
+        self.address = None
+        self.instr = None
         self.do_totals = False
         self.do_instr = False
         self.do_cycles = False
@@ -394,18 +413,24 @@ class ProfileStats(Output):
         self.count = 0			# all
 
     def set_count(self, count):
+        "set how many items to show in lists (0=all)"
         self.count = count
 
     def show_totals(self, show):
+        "dis/enable totals list"
         self.do_totals = show
     def show_instructions(self, show):
+        "dis/enable instructions list"
         self.do_instr = show
     def show_cycles(self, show):
+        "dis/enable cycles list"
         self.do_cycles = show
     def show_misses(self, show):
+        "dis/enable cache misses list"
         self.do_misses = show
 
     def do_output(self):
+        "output enabled lists"
         if self.do_totals:
             self.output_totals()
         if self.do_instr:
@@ -416,6 +441,7 @@ class ProfileStats(Output):
             self.output_misses()
 
     def set_profile(self, prof):
+        "set profiling info to use for output"
         self.profile = prof.profile
         self.address = prof.address
         self.instr = prof.instructions
@@ -434,6 +460,7 @@ class ProfileStats(Output):
             self.write("- %d in total\n" % instr.totals[i])
 
     def _output_list(self, keys, field):
+        "list output functionality"
         self.write("\n%s:\n" % self.instr.names[field])
         totals = self.instr.totals
         total = totals[field]
@@ -457,32 +484,40 @@ class ProfileStats(Output):
             self.write("%6.2f%% %9s %-28s%s\n" % (value*100.0/total, value, key, addr))
             idx += 1
 
-    def _cmp_instructions(self, a, b):
-        return cmp(self.profile[a][0], self.profile[b][0])
+    def _cmp_instructions(self, i, j):
+        "compare instruction counts"
+        return cmp(self.profile[i][0], self.profile[j][0])
 
-    def _cmp_cycles(self, a, b):
-        return cmp(self.profile[a][1], self.profile[b][1])
+    def _cmp_cycles(self, i, j):
+        "compare cycle counts"
+        return cmp(self.profile[i][1], self.profile[j][1])
 
-    def _cmp_misses(self, a, b):
-        return cmp(self.profile[a][2], self.profile[b][2])
+    def _cmp_misses(self, i, j):
+        "compare cache miss counts"
+        return cmp(self.profile[i][2], self.profile[j][2])
 
     def output_instructions(self):
+        "output instructions usage list"
         keys = self.profile.keys()
         keys.sort(self._cmp_instructions, None, True)
         self._output_list(keys, 0)
 
     def output_cycles(self):
+        "output cycles usage list"
         keys = self.profile.keys()
         keys.sort(self._cmp_cycles, None, True)
         self._output_list(keys, 1)
 
     def output_misses(self):
+        "output cache misses list"
         keys = self.profile.keys()
         keys.sort(self._cmp_misses, None, True)
         self._output_list(keys, 2)
 
 
 class Main(Output):
+    "program main loop & args parsing"
+
     def __init__(self, argv):
         Output.__init__(self)
         self.name = os.path.basename(argv[0])
@@ -492,6 +527,7 @@ class Main(Output):
         self.args = argv[1:]
 
     def parse_args(self):
+        "parse & handle program arguments"
         try:
             longopts = ["addresses=", "cycles", "first", "instr", "misses", "output=", "stats", "verbose"]
             opts, rest = getopt.getopt(self.args, "a:cf:imo:sv", longopts)
@@ -540,6 +576,7 @@ class Main(Output):
             self.usage("opening given '%s' file failed:\n\t%s" % (path, err))
 
     def usage(self, msg):
+        "show program usage + error message"
         self.message(__doc__)
         self.message("ERROR: %s!" % msg)
         sys.exit(1)
