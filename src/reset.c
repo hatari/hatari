@@ -29,6 +29,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "tos.h"
 #include "vdi.h"
+#include "nvram.h"
 #include "video.h"
 #include "falcon/videl.h"
 #include "falcon/dsp.h"
@@ -58,6 +59,7 @@ static int Reset_ST(bool bCold)
 	MFP_Reset();                  /* Setup MFP chip */
 	Video_Reset();                /* Reset video */
 	VDI_Reset();                  /* Reset internal VDI variables */
+	NvRam_Reset();                /* reset NvRAM (video) settings */
 
 	GemDOS_Reset();               /* Reset GEMDOS emulation */
 	if (bCold)

@@ -228,21 +228,19 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 		VDIRes = 2;
 		VDIPlanes = 1;
 		VDIColors = 2;
-		VDICharHeight = 16;
 		break;
 	 case GEMCOLOR_4:
 		VDIRes = 1;
 		VDIPlanes = 2;
 		VDIColors = 4;
-		VDICharHeight = 8;
 		break;
 	 case GEMCOLOR_16:
 		VDIRes = 0;
 		VDIPlanes = 4;
 		VDIColors = 16;
-		VDICharHeight = 8;
 		break;
 	}
+	VDICharHeight = HeightRequest < 400 ? 8 : 16;
 
 	/* screen size in bytes needs to be below limit */
 	VDI_ByteLimit(&w, &h, VDIPlanes);
