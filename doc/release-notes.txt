@@ -28,11 +28,12 @@ Emulator:
 - Fix: problems with run-time CPU type changing
 - Much improved console redirection functionality and a separate --conout
   option for it (--bios-intercept doesn't anymore imply console redirection)
-- VDI screen mode:
+- Display handling:
+  - Fix: max resolution limit wasn't handled properly for ST mode
   - Setup NVRAM video mode based on VDI mode, when in VDI mode.
     This makes VDI mode work with EmuTOS also under Falcon emulation
     which is useful as EmuTOS doesn't support native VIDEL expanders
-  - Limit screen memory usage to 300kB, this allows upto 2048x1200
+  - Limit VDI screen memory usage to 300kB, this allows upto 2048x1200
     monochrome and 1024x600/800x768 16-color VDI screens
 - GEMDOS HD emulation:
   - Give warning if GEMDOS dir/file path exceeds 8+3 characters
