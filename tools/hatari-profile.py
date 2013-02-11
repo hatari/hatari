@@ -3,6 +3,58 @@
 # Hatari profile data processor
 #
 # 2013 (C) Eero Tamminen, licensed under GPL v2+
+"""
+A tool for processing Hatari debugger profiling information produced
+with the following debugger command:
+	profile addresses 0 <file name>
+
+It sums profiling information given for code addresses, to functions
+where those addresses/instruction belong to.  All addresses between
+two function names (in profile file) or symbol addresses (in symbols
+file) are assumed to belong to the first function/symbol.
+
+Supported (Hatari CPU and DSP) profile items are instruction counts,
+used cycles and (CPU instruction) cache misses.
+
+
+Usage: hatari-profile [options] <profile files>
+
+Options:
+	-a <symbols>	symbol address information file
+        -c		output cycles usage information
+        -i		output intruction count information
+        -m		output cache miss information
+        -f <count>	output only first <count> items
+	-o <file name>	output file name (default is stdout)
+        -s		output profile statistics
+        -v		verbose parsing output
+
+Long options for above are:
+	--addresses
+	--cycles
+        --instr
+        --misses
+        --output
+        --stats
+        --verbose
+
+For example:
+	hatari-profile -a etos512k.sym -cims -f 10 prof1.txt prof2.txt
+
+For each given profile file, output is a sorted list of functions, for
+each of the requested profiling items (instructions, cycles, misses).
+
+Symbol information should be in same format as for Hatari debugger
+'symbols' command.  If addresses are within ROM area, they're
+interpreted as absolute, otherwise, as relative to program TEXT (code)
+section start address start given in the profile data file.
+
+TODO:
+- Output in Valgrind callgrind format:
+        http://valgrind.org/docs/manual/cl-format.html
+  for KCachegrind:
+        http://kcachegrind.sourceforge.net/
+"""
 
 import getopt, os, re, sys
 
@@ -488,59 +540,8 @@ class Main(Output):
             self.usage("opening given '%s' file failed:\n\t%s" % (path, err))
 
     def usage(self, msg):
-        self.message("""
-Script for processing Hatari debugger profiling information produced
-with the following debugger command:
-	profile addresses 0 <file name>
-
-It sums profiling information given for code addresses, to functions
-where those addresses/instruction belong to.  All addresses between
-two function names (in profile file) or symbol addresses (in symbols
-file) are assumed to belong to the first function/symbol.
-
-Supported (Hatari CPU and DSP) profile items are instruction counts,
-used cycles and (CPU instruction) cache misses.
-
-
-Usage: %s [options] <profile files>
-
-Options:
-	-a <symbols>	symbol address information file
-        -c		output cycles usage information
-        -i		output intruction count information
-        -m		output cache miss information
-        -f <count>	output only first <count> items
-	-o <file name>	output file name (default is stdout)
-        -s		output profile statistics
-        -v		verbose parsing output
-
-Long options for above are:
-	--addresses
-	--cycles
-        --instr
-        --misses
-        --output
-        --stats
-        --verbose
-
-For example:
-	%s -a etos512k.sym -cims -f 10 profile1.txt profile2.txt
-
-For each given profile file, output is a sorted list of functions, for
-each of the requested profiling items (instructions, cycles, misses).
-
-Symbol information should be in same format as for Hatari debugger
-'symbols' command.  If addresses are within ROM area, they're
-interpreted as absolute, otherwise, as relative to program TEXT (code)
-section start address start given in the profile data file.
-
-TODO:
-- Output in Valgrind callgrind format:
-        http://valgrind.org/docs/manual/cl-format.html
-  for KCachegrind:
-        http://kcachegrind.sourceforge.net/
-
-ERROR: %s!""" % (self.name, self.name, msg))
+        self.message(__doc__)
+        self.message("ERROR: %s!" % msg)
         sys.exit(1)
 
 
