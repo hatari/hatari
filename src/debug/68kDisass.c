@@ -2406,7 +2406,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 
     while (cnt-- > 0) {
-		int		addrWidth = 6;		// 6 on an ST, 8 on a TT
+		const int	addrWidth = 6;		// 6 on an ST, 8 on a TT
 		char	lineBuffer[1024];
 
 		char	addressBuffer[32];
@@ -2548,23 +2548,26 @@ void Disasm_SetColumns(int *pos)
  */
 void Disasm_DisableColumn(int column, int *oldcols, int *newcols)
 {
-	int i, diff;
+	int i, diff = 0;
 
-	/* verify columns are in numeric order */
 	assert(column >= 0 && column < DISASM_COLUMNS);
-	for (i = 1; i < DISASM_COLUMNS; i++)
+	if (column+1 < DISASM_COLUMNS)
+		diff = oldcols[column+1] - oldcols[column];
+
+	for (i = 0; i < DISASM_COLUMNS; i++)
 	{
-		if (oldcols[i-1] > oldcols[i])
+		if (i && oldcols[i-1] > oldcols[i])
 		{
 			printf("WARNING: disassembly columns aren't in the expected order!\n");
 			return;
 		}
+		if (i < column)
+			newcols[i] = oldcols[i];
+		else if (i > column)
+			newcols[i] = oldcols[i] - diff;
+		else
+			newcols[column] = DISASM_COLUMN_DISABLE;
 	}
-	/* disable given column from disassembly and move rest of cols left */
-	newcols[column] = DISASM_COLUMN_DISABLE;
-	diff = oldcols[column+1] - oldcols[column];
-	for (i = column+1; i < DISASM_COLUMNS; i++)
-		newcols[i] = oldcols[i] - diff;
 }
 
 /**
