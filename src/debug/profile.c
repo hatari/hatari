@@ -43,7 +43,7 @@ typedef struct {
 /* CPU/DSP memory area statistics */
 typedef struct {
 	Uint64 all_cycles, all_count, all_misses;
-	Uint32 max_cycles;	/* for overflow check (cycles > count or misses) */
+	Uint64 max_cycles;	/* for overflow check (cycles > count or misses) */
 	Uint32 lowest, highest;	/* active address range within memory area */
 	Uint32 active;          /* number of active addresses */
 } profile_area_t;
@@ -674,7 +674,10 @@ void Profile_CpuUpdate(void)
 #if DEBUG
 	static Uint32 zero_cycles;
 #endif
-	Uint32 pc, idx, cycles, misses;
+#if ENABLE_WINUAE_CPU
+	Uint32 misses;
+#endif
+	Uint32 pc, idx, cycles;
 	cpu_profile_item_t *prev;
 
 	pc = M68000_GetPC();
