@@ -162,12 +162,12 @@ class Profile(Output):
         # caller info:
         # 0x<hex> = <count>
         self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
-        # <symbol>:
+        # <symbol/objectfile name>:
         # _biostrap:
-        self.r_function = re.compile("^([_a-zA-Z][_.a-zA-Z0-9]*):$")
+        self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
         # Hatari symbol format:
-        # [0x]<hex> [tTbBdD] <symbol name>
-        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([_a-zA-Z][_.a-zA-Z0-9]*)$")
+        # [0x]<hex> [tTbBdD] <symbol/objectfile name>
+        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
         # default emulation addresses / ranges
         self.addr_text = (0, 0)
         self.addr_ram = 0
@@ -239,11 +239,13 @@ class Profile(Output):
                         self.message("%d = 0x%x\n" % (addr, name))
                     if addr in self.symbols:
                         # prefer function names over object names
-                        if name[-2:] == ".o":
+                        if name.endswith('.o'):
                             continue
-                        if self.symbols[addr] == name:
-                            continue
-                        self.warning("replacing '%s' at 0x%x with '%s'" % (self.symbols[addr], addr, name))
+                        oldname = self.symbols[addr]
+                        lendiff = abs(len(name) - len(oldname))
+                        # don't warn about object name replacements or adding/removing short prefix
+                        if not (oldname.endswith('.o') or (lendiff < 3 and (name.endswith(oldname) or oldname.endswith(name)))):
+                            self.warning("replacing '%s' at 0x%x with '%s'" % (oldname, addr, name))
                     self.symbols[addr] = name
             else:
                 self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
@@ -477,6 +479,8 @@ class ProfileStats(Output):
             if idx >= count:
                 break
             value = self.profile[key][field]
+            if not value:
+                break
             if key in self.address:
                 addr = "(0x%04x)" % self.address[key]
             else:
