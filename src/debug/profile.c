@@ -23,10 +23,8 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "file.h"
 
-/* if non-zero, output info on profiled data while profiling */
+/* if non-zero, output warnings on syspicious cycle values */
 #define DEBUG 0
-
-#define CALLERS_START_COUNT 4
 
 typedef struct {
 	Uint32 addr;		/* number of calls */
@@ -52,7 +50,7 @@ typedef struct {
 /* This is relevant with WinUAE CPU core:
  * - the default cycle exact variant needs this define to be non-zero
  * - non-cycle exact and MMU variants need this define to be 0
- * for cycle counts to make any sense
+ *   for cycle counts to make any sense
  */
 #define USE_CYCLES_COUNTER 1
 
@@ -671,9 +669,6 @@ bool Profile_CpuStart(void)
  */
 void Profile_CpuUpdate(void)
 {
-#if DEBUG
-	static Uint32 zero_cycles;
-#endif
 #if ENABLE_WINUAE_CPU
 	Uint32 misses;
 #endif
@@ -694,22 +689,32 @@ void Profile_CpuUpdate(void)
 	cpu_profile.prev_idx = idx;
 
 #if USE_CYCLES_COUNTER
-	cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
-	/* cycles taken by current instruction */
-	cycles -= cpu_profile.prev_cycles;
-	cpu_profile.prev_cycles += cycles;
-
-# if DEBUG
+	/* Confusingly, with DSP enabled, cycle counter is for this instruction,
+	 * without DSP enabled, it's a monotonically increasing counter.
+	 */
+	if (bDspEnabled) {
+		cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
+	} else {
+		Uint32 newcycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
+		cycles = newcycles - cpu_profile.prev_cycles;
+		cpu_profile.prev_cycles = newcycles;
+	}
+#else
+	cycles = CurrentInstrCycles + nWaitStateCycles;
+#endif
+	/* catch negative and too large cycles */
+	if (cycles > 512) {
+		fprintf(stderr, "WARNING: cycles %d > 512 at 0x%x\n",
+			cycles, M68000_GetPC());
+	}
+#if DEBUG
 	if (cycles == 0) {
-		zero_cycles++;
-		if (zero_cycles % 512 == 0) {
+		static Uint32 zero_cycles;
+		if (++zero_cycles % 256 == 0) {
 			fprintf(stderr, "WARNING: %d zero cycles, latest at 0x%x\n",
 				zero_cycles, M68000_GetPC());
 		}
 	}
-# endif
-#else
-	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
 	if (likely(prev->cycles < MAX_CPU_PROFILE_VALUE - cycles)) {
 		prev->cycles += cycles;
@@ -856,7 +861,6 @@ void Profile_CpuStop(void)
 	//printf("%d/%d/%d\n", area->active, sort_arr-cpu_profile.sort_arr, active);
 
 	Profile_CpuShowStats();
-	return;
 }
 
 
@@ -933,8 +937,6 @@ static void Profile_DspShowAddresses(unsigned int show, FILE *out)
 		fprintf(stderr, "ERROR: no DSP profiling data available!\n");
 		return;
 	}
-
-	show_caller_info(out, dsp_profile.sites, dsp_profile.callsite, true);
 
 	size = DSP_PROFILE_ARR_SIZE;
 	active = dsp_profile.ram.active;
@@ -1252,7 +1254,6 @@ void Profile_DspStop(void)
 	//printf("%d/%d/%d\n", area->active, sort_arr-dsp_profile.sort_arr, active);
 
 	Profile_DspShowStats();
-	return;
 }
 
 
