@@ -398,22 +398,13 @@ static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
 	const char *symbol;
 	cpu_profile_item_t *data;
 	uaecptr nextpc, addr;
-	Uint32 size, active, text;
+	Uint32 size, active;
 
 	data = cpu_profile.data;
 	if (!data) {
 		fprintf(stderr, "ERROR: no CPU profiling data available!\n");
 		return;
 	}
-
-	/* some information for interpreting the addresses */
-	fprintf(out, "ROM TOS:\t0x%06x-0x%06x\n", TosAddress, TosAddress + TosSize);
-	fprintf(out, "Normal RAM:\t0x%06x-0x%06x\n", 0, STRamEnd);
-	text = DebugInfo_GetTEXT();
-	if (text < TosAddress) {
-		fprintf(out, "Program TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
-	}
-	fprintf(out, "Cartridge ROM:\t0xfa0000-0xfc0000\n");
 
 	size = cpu_profile.size;
 	active = cpu_profile.active;
@@ -1384,6 +1375,8 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 	} else if (strcmp(psArgs[1], "addresses") == 0) {
 		FILE *out;
 		if (nArgc > 3) {
+			Uint32 freq;
+			const char *proc;
 			if (File_Exists(psArgs[3])) {
 				fprintf(stderr, "ERROR: output file already exists,\nremove it or give another name!\n");
 				return false;
@@ -1393,18 +1386,38 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 				perror(NULL);
 				return false;
 			}
-			fprintf(out, "Hatari %s profile\n", bForDsp ? "DSP" : "CPU");
+			if (bForDsp) {
+				freq = MachineClocks.DSP_Freq;
+				proc = "DSP";
+			} else {
+				freq = MachineClocks.CPU_Freq;
+				proc = "CPU";
+			}
+			fprintf(out, "Hatari %s profile\n", proc);
+			fprintf(out, "Cycles/second:\t%u\n", freq);
 		} else {
 			out = stdout;
 		}
 		if (bForDsp) {
-			Profile_DspShowAddresses(show, out);
-			if (out != stdout) {
+			if (out == stdout) {
+				Profile_DspShowAddresses(show, out);
+			} else {
+				Profile_DspShowAddresses(show, out);
 				Profile_DspShowCallers(out);
 			}
 		} else {
-			Profile_CpuShowAddresses(show, out);
-			if (out != stdout) {
+			if (out == stdout) {
+				Profile_CpuShowAddresses(show, out);
+			} else {
+				Uint32 text;
+				/* some information for interpreting the addresses */
+				fprintf(out, "ROM_TOS:\t0x%06x-0x%06x\n", TosAddress, TosAddress + TosSize);
+				text = DebugInfo_GetTEXT();
+				if (text < TosAddress) {
+					fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
+				}
+				fprintf(out, "CARTRIDGE:\t0xfa0000-0xfc0000\n");
+				Profile_CpuShowAddresses(show, out);
 				Profile_CpuShowCallers(out);
 			}
 		}

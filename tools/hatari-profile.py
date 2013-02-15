@@ -128,12 +128,14 @@ class InstructionStats:
 
     names = ("Executed instructions", "Used cycles", "Cache misses")
 
-    def __init__(self, name, dsp):
-        self.max_addr = [0, 0, 0]
-        self.max_val = [0, 0, 0]
-        self.totals = [0, 0, 0]
+    def __init__(self, name, processor, hz):
+        self.items = len(self.names)
+        self.max_addr = [0] * self.items
+        self.max_val = [0] * self.items
+        self.totals = [0] * self.items
         self.areas = {}		# which memory area boundaries have been passed
-        self.for_dsp = dsp
+        self.processor = processor
+        self.hz = hz
         self.zero(name, None)
 
     def has_data(self):
@@ -146,40 +148,75 @@ class InstructionStats:
         # stupid pylint, this method IS called from __init__,
         # so these are actually set "in" __init__...
         self.name = name
-        self.addr = addr	# 0 if address isn't know at this stage
-        self.data = [0, 0, 0]	# current function stats
+        self.addr = addr
+        self.data = [0] * self.items
 
     def add(self, addr, strvalues):
         "add strvalues string list of values to current state"
-        for i in range(min(3, len(strvalues))):
+        for i in range(self.items):
             value = int(strvalues[i])
             self.data[i] += value
             if value > self.max_val[i]:
                 self.max_val[i] = value
                 self.max_addr[i] = addr
 
+    def get_time(self, data):
+        "return time (in seconds) spent by given data item"
+        return float(data[1])/self.hz
+
     def show(self):
         "show current function instruction state"
-        print "0x%x = %s: %s" % (self.addr, self.name, repr(self.data))
+        print "0x%x = %s: %s (%.5fs)" % (self.addr, self.name, repr(self.data), self.get_time(self.data))
 
     def sum_values(self, values):
         "calculate totals for given instruction value sets"
         if values:
-            sums = [0, 0, 0]
-            items = min(len(sums), len(values[0]))
+            sums = [0] * self.items
             for data in values:
-                for i in range(items):
+                for i in range(self.items):
                     sums[i] += data[i]
             self.totals = sums
 
 
-class Profile(Output):
-    "Hatari profile parsing and information"
+class EmulatorProfile(Output):
+    "Emulator profile data file parsing and profile information"
 
-    # Hatari symbol and profile information processor
-    def __init__(self):
+    def __init__(self, emuid, processor):
         Output.__init__(self)
-        self.verbose = False
+        # processors information
+        self.processor = processor
+        # profile data format
+        #
+        # emulator ID line:
+        # <ID> <processor name> profile
+        self.emuid = emuid
+        # processor clock speed
+        self.r_clock = re.compile("^Cycles/second:\t([0-9]+)$")
+        # memory areas:
+        # <area>: 0x<hex>-0x<hex>
+        # TOS:	0xe00000-0xe80000
+        self.r_area = re.compile("^([^:]+):[^0]*0x([0-9a-f]+)-0x([0-9a-f]+)$")
+        # processor names, memory areas and their disassembly formats
+        # are specified by subclasses with disasm argument
+        self.r_disasm = {}
+        for key in processor.keys():
+            assert(processor[key]["areas"])
+            self.r_disasm[key] = re.compile(processor[key]['regexp'])
+        # <symbol/objectfile name>:
+        # _biostrap:
+        self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
+        # caller info, part of:
+        # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
+        # 0x<hex> = <count>
+        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
+        # symbol file format:
+        # [0x]<hex> [tTbBdD] <symbol/objectfile name>
+        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
+
+        # default emulation memory address range name
+        self.default_area = None
+        assert(self.text_area)		# areas key should be set by sub class
+        self.areas = None
         self.stats = None		# InstructionStats instance
         self.address = None		# hash of (symbol:addr)
         self.symbols = {}		# hash of (addr:symbol)
@@ -187,88 +224,55 @@ class Profile(Output):
         self.symbols_sorted = None	# sorted list of symbol addresses
         self.profile = None		# hash of profile (symbol:data)
         self.callers = None		# hash of (callee:(caller:count))
-        # Hatari profile format:
-        # <name>: <hex>-<hex>
-        # ROM TOS:	0xe00000-0xe80000
-        self.r_header = re.compile("^([^:]+):[^0]*0x([0-9a-f]+)-0x([0-9a-f]+)$")
-        # $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
-        # $e5af38 :   rts           0.00% (12, 0, 12)
-        self.r_cpuaddress = re.compile("^\$([0-9a-f]+) :.*% \((.*)\)$")
-        # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
-        # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
-        self.r_dspaddress = re.compile("^p:([0-9a-f]+) .*% \((.*)\)$")
-        # caller info:
-        # 0x<hex> = <count>
-        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
-        # <symbol/objectfile name>:
-        # _biostrap:
-        self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
-        # Hatari symbol file format:
-        # [0x]<hex> [tTbBdD] <symbol/objectfile name>
-        self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
-        # default emulation addresses / ranges
-        self.addr_text = (0, 0)
-        self.addr_ram = 0
-        self.addr_tos = 0xe00000
-        self.addr_cartridge = 0xfa0000
+        self.verbose = False
 
     def set_verbose(self, verbose):
         "set verbose on/off"
         self.verbose = verbose
 
-    def parse_header(self, line):
-        "parse profile header"
-        # TODO: store also area ends?
-        match = self.r_header.match(line)
+    def _parse_areas(self, line):
+        "parse profile data memory area lines"
+        match = self.r_area.match(line)
         if not match:
             return False
         name, start, end = match.groups()
         end = int(end, 16)
         start = int(start, 16)
-        name = name.split()[-1]
-        if name == "TEXT":
-            self.addr_text = (start, end)
-        elif name == "TOS":
-            self.addr_tos = start
-        elif name == "RAM":
-            self.addr_ram = start
-        elif name == "ROM":
-            self.addr_cartridge = start
+        if name in self.areas:
+            self.areas[name] = (start, end)
         else:
-            self.warning("unrecognized profile header line")
+            self.warning("unrecognized profile memory arear line")
             return False
-        if self.addr_text[1] < self.addr_text[0]:
-            self.error_exit("invalid TEXT area range: 0x%x-0x%x" % self.addr_text)
-        if self.addr_text[0] >= self.addr_tos or self.addr_ram >= self.addr_tos:
-            self.error_exit("TOS address isn't higher than TEXT and RAM start addresses")
+        if end < start:
+            self.error_exit("invalid %s memory area range: 0x%x-0x%x" % (name, start, end))
         return True
 
     def _get_area(self, addr):
-        "return area name + offset, used if no symbol matches"
-        if addr < self.addr_tos:
-            if addr < self.addr_text[0]:
-                return ("RAM_BEFORE_TEXT", self.addr_ram - addr)
-            elif addr > self.addr_text[1]:
-                return ("RAM_AFTER_TEXT", self.addr_text[1] - addr)
-            else:
-                return ("PROGRAM_TEXT_SECTION", self.addr_text[0] - addr)
-        elif addr < self.addr_cartridge:
-            return ("ROM_TOS_AREA", self.addr_tos - addr)
-        else:
-            return ("ROM_CARTRIDGE_AREA", self.addr_cartridge - addr)
-        return (None, 0)
+        "return memory area name + offset (used if no symbol matches)"
+        for key, value in self.areas.items():
+            if value[1] and addr >= value[0] and addr <= value[1]:
+                return (key, value[0] - addr)
+        return (self.default_area, addr)
 
     def _get_profile_type(self, obj):
-        "get profile processor type or exit if it's unknown"
+        "get profile processor type and speed information or exit if it's unknown"
         line = obj.readline()
         field = line.split()
-        if len(field) != 3 or field[0] != "Hatari":
-            self.error_exit("unrecognized file, line 1:\n\t%smisses Hatari profiler identification" % line)
-        if field[1] == "CPU":
-            return (self.r_cpuaddress, InstructionStats("HATARI_PROFILE_BEGIN", False))
-        if field[1] == "DSP":
-            return (self.r_dspaddress, InstructionStats("HATARI_PROFILE_BEGIN", True))
-        self.error_exit("unrecognized profile processor type '%s' in line 1:\t\n%s" % (field[1], line))
+        if len(field) != 3 or field[0] != self.emuid:
+            self.error_exit("unrecognized file, line 1:\n\t%smisses %s profiler identification" % line, self.emuid)
+
+        processor = field[1]
+        if processor not in self.processor:
+            self.error_exit("unrecognized profile processor type '%s' on line 1:\n\t%s" % (processor, line))
+        self.areas = self.processor[processor]["areas"]
+        self.default_area = "%s_RAM" % processor
+
+        line = obj.readline()
+        match = self.r_clock.match(line)
+        if not match:
+            self.error_exit("invalid %s clock information on line 2:\n\t%s" % (processor, line))
+        hz = int(match.group(1))
+        return (self.r_disasm[processor], InstructionStats("PROFILE_BEGIN", processor, hz))
 
     def _add_symbol(self, addr, name):
         "assign given symbol name to given address"
@@ -342,10 +346,10 @@ class Profile(Output):
     def _addr2relative(self, addr):
         "return absolute address converted to relative if it's within TEXT segment, for symbol lookup"
         idx = addr
-        if not self.stats.for_dsp:
-            if addr >= self.addr_text[0] and addr <= self.addr_text[1]:
-                # within TEXT area -> relative to TEXT start
-                idx -= self.addr_text[0]
+        area = self.areas[self.text_area]
+        if addr >= area[0] and addr <= area[1]:
+            # within TEXT area -> relative to TEXT start
+            idx -= area[0]
         return idx
 
     def get_symbol(self, addr):
@@ -401,8 +405,6 @@ class Profile(Output):
             # this function needs address info in output
             self.address[name] = addr
             return
-        if self.stats.for_dsp:
-            return
         # as no better symbol, name it according to area where it moved to
         area,offset = self._get_area(addr)
         if area:
@@ -453,18 +455,61 @@ class Profile(Output):
                 if not self._parse_caller(line):
                     self.error_exit("unrecognized caller line %d:\n\t'%s'" % (lines, line))
                 continue
-            # header?
-            if not self.parse_header(line):
+            # memory areas?
+            if not self._parse_areas(line):
                 self.warning("unrecognized line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
 
-        self._change_function("HATARI_PROFILE_END", None)
+        self._change_function("PROFILE_END", None)
         self.message("%d lines processed with %d functions." % (lines, len(self.profile)))
         if 2*unknown > lines:
             self.error_exit("more than half of the lines were unrecognized!")
         if len(self.profile) < 1:
             self.error_exit("no functions found!")
         self.stats.sum_values(self.profile.values())
+
+
+class HatariProfile(EmulatorProfile):
+    "EmulatorProfile subclass for Hatari with suitable data parsing regexps and processor information"
+    def __init__(self):
+        # Emulator name used as first word in profile file
+        name = "Hatari"
+
+        # name used for program code section in "areas" hash
+        self.text_area = "PROGRAM_TEXT"
+
+        # information on emulated processors
+        #
+        # * Non-overlapping memory areas that may be specified in profile,
+        #   and their default values (zero = undefined at this stage).
+        #   (Checked if instruction are before any of the symbol addresses)
+        #
+        # * Regexp for the processor disassembly information,
+        #   its match contains 2 items:
+        #   - instruction address
+        #   - 3 comma separated performance values
+        # 
+        processors = {
+            "CPU" : {
+                "areas" : {
+                    self.text_area	: (0, 0),
+                    "ROM_TOS"	: (0xe00000, 0xe80000),
+                    "CARTRIDGE"	: (0xfa0000, 0xfc0000)
+                },
+                # $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
+                # $e5af38 :   rts           0.00% (12, 0, 12)
+                "regexp" : "^\$([0-9a-f]+) :.*% \((.*)\)$"
+            },
+            "DSP" : {
+                "areas" : {
+                    self.text_area	: (0, 0),
+                },
+                # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
+                # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
+                "regexp" : "^p:([0-9a-f]+) .*% \((.*)\)$"
+            }
+        }
+        EmulatorProfile.__init__(self, name, processors)
 
 
 class ProfileStats(Output):
@@ -477,7 +522,7 @@ class ProfileStats(Output):
         self.address = None
         self.callers = None
         self.callcount = None
-        self.totals = None
+        self.stats = None
         self.do_totals = False
         self.do_called = False
         self.do_instr = False
@@ -529,12 +574,14 @@ class ProfileStats(Output):
         self.callers = prof.callers
         self.profile = prof.profile
         self.address = prof.address
-        self.totals = prof.stats
+        self.stats = prof.stats
 
     def output_totals(self):
         "output profile statistics"
-        self.write("\n")
-        totals = self.totals
+        totals = self.stats
+        time = totals.get_time(totals.totals)
+        self.write("\nTime spent in profile = %.5fs.\n\n" % time)
+
         items = len(totals.totals)
         for i in range(items):
             if not totals.totals[i]:
@@ -547,18 +594,31 @@ class ProfileStats(Output):
             self.write("- max = %d,%s at 0x%x\n" % (totals.max_val[i], name, addr))
             self.write("- %d in total\n" % totals.totals[i])
 
-    def _output_keyval(self, key, value, total):
+    def _output_keyval(self, idx, key, value, total, time = 0):
         "output list addr, value information"
         if not value:
-            return
+            return False
         percentage = 100.0 * value / total
-        if percentage < self.limit:
-            return
+        if self.count and self.limit:
+            # if both list limits are given, both must be exceeded
+            if percentage < self.limit and idx >= self.count:
+                return False
+        elif self.limit and percentage < self.limit:
+            return False
+        elif self.count and idx >= self.count:
+            return False
         if key in self.address:
-            addr = "(0x%04x)" % self.address[key]
+            if time:
+                info = "(0x%06x,%9.5fs)" % (self.address[key], time)
+            else:
+                info = "(0x%06x)" % self.address[key]
         else:
-            addr = ""
-        self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, key, addr))
+            if time:
+                info = "(%.5fs)" % time
+            else:
+                info = ""
+        self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, key, info))
+        return True
 
     def _cmp_called(self, i, j):
         "compare calls"
@@ -575,46 +635,39 @@ class ProfileStats(Output):
                 calls += count
             self.callcount[addr] = calls
             total += calls
+        keys.sort(self._cmp_called, None, True)
         self.write("\nCalls:\n")
         if total == 0:
             self.write("- information missing\n")
             return
-        keys.sort(self._cmp_called, None, True)
+
         idx = 0
-        total = float(total)
-        if self.count:
-            count = self.count
-        else:
-            count = len(keys)
         for key in keys:
-            if idx >= count:
-                break
             value = self.callcount[key]
             name = self.profobj.get_symbol(key)
             if not name:
                 name = "0x%x" % key
-            self._output_keyval(name, value, total)
+            if not self._output_keyval(idx, name, value, total):
+                break
             idx += 1
 
     def _output_list(self, keys, field):
         "list output functionality"
-        self.write("\n%s:\n" % self.totals.names[field])
-        totals = self.totals.totals
+        stats = self.stats
+        totals = stats.totals
         total = totals[field]
+        self.write("\n%s:\n" % stats.names[field])
         if total == 0:
             self.write("- information missing\n")
             return
-        total = float(total)
-        idx = 0
-        if self.count:
-            count = self.count
-        else:
-            count = len(keys)
+
+        time = idx = 0
         for key in keys:
-            if idx >= count:
-                break
+            if field == 1:	# cycles
+                time = stats.get_time(self.profile[key])
             value = self.profile[key][field]
-            self._output_keyval(key, value, total)
+            if not self._output_keyval(idx, key, value, total, time):
+                break
             idx += 1
 
     def _cmp_instructions(self, i, j):
@@ -765,10 +818,12 @@ label="%s";
                 self.write("N%s -> N%s [label=\"%s\"];\n" % (cname, name, label))
 
         values = profile.profile
-        total = profile.stats.totals[0]
+        stats = profile.stats
+        total = stats.totals[0]
         # output nodes
         for name in nodes.keys():
             count = values[name][0]
+            time = stats.get_time(values[name])
             percentage = 100.0 * count / total
             if percentage >= self.limit:
                 style = " color=red style=filled fillcolor=lightgray" # shape=diamond
@@ -776,9 +831,9 @@ label="%s";
                 style = ""
             if name in callees:
                 calls = callees[name]
-                self.write("N%s [label=\"%.2f%%\\n%s\\n(%d calls)\"%s];\n" % (name, percentage, name, calls, style))
+                self.write("N%s [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s];\n" % (name, percentage, time, name, calls, style))
             else:
-                self.write("N%s [label=\"%.2f%%\\n%s\"%s];\n" % (name, percentage, name, style))
+                self.write("N%s [label=\"%.2f%%\\n%.5fs\\n%s\"%s];\n" % (name, percentage, time, name, style))
 
         self.write(self.footer)
         return True
@@ -819,7 +874,7 @@ class Main(Output):
         except getopt.GetoptError as err:
             self.usage(err)
 
-        prof = Profile()
+        prof = HatariProfile()
         do_graphs = False
         graph = ProfileGraph()
         stats = ProfileStats()
