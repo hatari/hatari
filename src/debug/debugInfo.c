@@ -870,6 +870,7 @@ static const struct {
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
 	{ true, "disasm",    DebugInfo_CpuDisAsm,  NULL, "Disasm CPU from PC or given <address>" },
 #if ENABLE_DSP_EMU
+	{ false, "dsp",      DSP_Info,             NULL, "Show misc. DSP core info (stack etc)" },
 	{ true, "dspdisasm", DebugInfo_DspDisAsm,  NULL, "Disasm DSP from given <address>" },
 	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
 	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP registers values" },

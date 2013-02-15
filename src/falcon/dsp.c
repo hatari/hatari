@@ -389,7 +389,49 @@ Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char 
 	return dsp_memdump_upper+1;
 }
 
+/**
+ * Show information on DSP core state which isn't
+ * shown by any of the other commands (dd, dm, dr).
+ */
+void DSP_Info(Uint32 dummy)
+{
+#if ENABLE_DSP_EMU
+	int i, j;
+	const char *stackname[] = { "SSH", "SSL" };
 
+	fputs("DSP core information:\n", stderr);
+
+	for (i = 0; i < ARRAYSIZE(stackname); i++) {
+		fprintf(stderr, "- %s stack:", stackname[i]);
+		for (j = 0; j < ARRAYSIZE(dsp_core.stack[0]); j++) {
+			fprintf(stderr, " %04hx", dsp_core.stack[i][j]);
+		}
+		fputs("\n", stderr);
+	}
+
+	fprintf(stderr, "- Interrupt IPL:");
+	for (i = 0; i < ARRAYSIZE(dsp_core.interrupt_ipl); i++) {
+		fprintf(stderr, " %04hx", dsp_core.interrupt_ipl[i]);
+	}
+	fputs("\n", stderr);
+
+	fprintf(stderr, "- Pending ints: ");
+	for (i = 0; i < ARRAYSIZE(dsp_core.interrupt_isPending); i++) {
+		fprintf(stderr, " %04hx", dsp_core.interrupt_isPending[i]);
+	}
+	fputs("\n", stderr);
+
+	fprintf(stderr, "- Hostport:");
+	for (i = 0; i < ARRAYSIZE(dsp_core.hostport); i++) {
+		fprintf(stderr, " %02x", dsp_core.hostport[i]);
+	}
+	fputs("\n", stderr);
+#endif
+}
+
+/**
+ * Show DSP register contents
+ */
 void DSP_DisasmRegisters(void)
 {
 #if ENABLE_DSP_EMU
@@ -523,7 +565,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	
 	/* bisect */
 	l = 0;
-	r = sizeof (registers) / sizeof (*registers) - 1;
+	r = ARRAYSIZE(registers) - 1;
 	do {
 		m = (l+r) >> 1;
 		for (i = 0; i < len; i++) {
