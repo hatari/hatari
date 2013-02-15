@@ -46,9 +46,12 @@ Emulator:
 - Profiler:
   - Fix: profiler assert on invalid PC register values
   - Fix: profiler CPU & DSP cycles information is for previous instruction
-  - profiler provides CPU instruction cache misses information when using
+  - Fix: WinUAE CPU requires cycles counter usage for getting current
+    CPU instruction cycles
+  - Profiler provides timing information, based on used cycles
+  - Profiler provides CPU instruction cache misses information when using
     cycle-exact WinUAE CPU core (Falcon emu default)
-  - for DSP, profiler adds min/max cycle difference info
+  - For DSP, profiler adds min/max cycle difference info to disassembly
     (shown by post-processor under "Cache misses" heading)
   - "profile addresses" can be used to see addresses through which
     code passed during profiling (e.g. while program seems frozen, this
@@ -61,6 +64,7 @@ Emulator:
     - With symbol address information it can provide function level
       instruction, processor cycle and cache miss statistics.
 - Debugger:
+  - "dsp" subcommand added to "info" command, to show e.g. DSP stack content
   - "step" and "next" commands added for single stepping CPU and DSP code
     -> 's' shortcut is now for "step", not "save"
   - "--disasm" option for selecting between UAE core and external CPU
@@ -79,11 +83,11 @@ Emulator:
   - Both single and double quotes can be used to mark expressions
   - In addition to text section offset, data and bss section offsets
     can be given when loading symbols (useful for Devpac symbols)
-  - output what value was set by options if it's not otherwise shown by UI
+  - Output what value was set by options if it's not otherwise shown by UI
   - Show function arguments for GEMDOS Pexec() call and AES calls
     (for AES call values in intin array and strings in addrin array)
   - Add NVRAM read & write tracing
-  - support for the basic Native Features and --natfeats option to control it:
+  - Support for the basic Native Features and --natfeats option to control it:
     http://wiki.aranym.org/natfeats/proposal
 
 Windows specific changes:
