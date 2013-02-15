@@ -678,7 +678,7 @@ void Profile_CpuUpdate(void)
 #if ENABLE_WINUAE_CPU
 	Uint32 misses;
 #endif
-	Uint32 pc, idx, cycles;
+	Uint32 prev_pc, pc, idx, cycles;
 	cpu_profile_item_t *prev;
 
 	pc = M68000_GetPC();
@@ -688,8 +688,8 @@ void Profile_CpuUpdate(void)
 	if (likely(cpu_profile.data[idx].count < MAX_CPU_PROFILE_VALUE)) {
 		cpu_profile.data[idx].count++;
 	}
-	update_caller_info(false, pc, cpu_profile.sites, cpu_profile.callsite,
-			   index2address(cpu_profile.prev_idx));
+	prev_pc = index2address(cpu_profile.prev_idx);
+	update_caller_info(false, pc, cpu_profile.sites, cpu_profile.callsite, prev_pc);
 
 	prev = cpu_profile.data + cpu_profile.prev_idx;
 	cpu_profile.prev_idx = idx;
@@ -708,17 +708,17 @@ void Profile_CpuUpdate(void)
 #else
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
-	/* catch negative and too large cycles */
-	if (cycles > 512) {
+	/* catch too large (and negative) cycles, ignore STOP instruction */
+	if (cycles > 256 && STMemory_ReadWord(prev_pc) != 0x4e72) {
 		fprintf(stderr, "WARNING: cycles %d > 512 at 0x%x\n",
-			cycles, M68000_GetPC());
+			cycles, prev_pc);
 	}
 #if DEBUG
 	if (cycles == 0) {
 		static Uint32 zero_cycles;
 		if (++zero_cycles % 256 == 0) {
 			fprintf(stderr, "WARNING: %d zero cycles, latest at 0x%x\n",
-				zero_cycles, M68000_GetPC());
+				zero_cycles, prev_pc);
 		}
 	}
 #endif
