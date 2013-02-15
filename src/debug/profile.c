@@ -15,6 +15,8 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "debug_priv.h"
 #include "debugInfo.h"
 #include "dsp.h"
+#include "configuration.h"
+#include "clocks_timings.h"
 #include "m68000.h"
 #include "profile.h"
 #include "stMemory.h"
@@ -336,22 +338,23 @@ static void show_cpu_area_stats(profile_area_t *area)
 		index2address(area->highest));
 	fprintf(stderr, "- active instruction addresses:\n  %d (%.2f%% of all)\n",
 		area->active,
-		(float)area->active/cpu_profile.active*100);
+		100.0 * area->active / cpu_profile.active);
 	fprintf(stderr, "- executed instructions:\n  %llu (%.2f%% of all)\n",
 		area->all_count,
-		(float)area->all_count/cpu_profile.all_count*100);
-	fprintf(stderr, "- used cycles:\n  %llu (%.2f%% of all)\n",
-		area->all_cycles,
-		(float)area->all_cycles/cpu_profile.all_cycles*100);
+		100.0 * area->all_count / cpu_profile.all_count);
 #if ENABLE_WINUAE_CPU
 	if (cpu_profile.all_misses) {	/* CPU cache in use? */
 		fprintf(stderr, "- instruction cache misses:\n  %llu (%.2f%% of all)\n",
 			area->all_misses,
-			(float)area->all_misses/cpu_profile.all_misses*100);
+			100.0 * area->all_misses / cpu_profile.all_misses);
 	}
 #endif
+	fprintf(stderr, "- used cycles:\n  %llu (%.2f%% of all)\n  = %.5fs\n",
+		area->all_cycles,
+		100.0 * area->all_cycles / cpu_profile.all_cycles,
+		(double)area->all_cycles / MachineClocks.CPU_Freq);
 	if (area->max_cycles == MAX_CPU_PROFILE_VALUE) {
-		fprintf(stderr, "- Counters OVERFLOW!\n");
+		fprintf(stderr, "  *** COUNTER OVERFLOW! ***\n");
 	}
 }
 
@@ -364,11 +367,14 @@ static void Profile_CpuShowStats(void)
 	fprintf(stderr, "Normal RAM (0-0x%X):\n", STRamEnd);
 	show_cpu_area_stats(&cpu_profile.ram);
 
+	fprintf(stderr, "ROM TOS (0x%X-0x%X):\n", TosAddress, TosAddress + TosSize);
+	show_cpu_area_stats(&cpu_profile.tos);
+
 	fprintf(stderr, "Cartridge ROM (0xFA0000-0xFC0000):\n");
 	show_cpu_area_stats(&cpu_profile.rom);
 
-	fprintf(stderr, "ROM TOS (0x%X-0x%X):\n", TosAddress, TosAddress + TosSize);
-	show_cpu_area_stats(&cpu_profile.tos);
+	fprintf(stderr, "\n= %.5fs\n",
+		(double)cpu_profile.all_cycles / MachineClocks.CPU_Freq);
 
 #if ENABLE_WINUAE_CPU
 	if (cpu_profile.all_misses) {	/* CPU cache in use? */
@@ -650,7 +656,7 @@ bool Profile_CpuStart(void)
 	cpu_profile.data = calloc(cpu_profile.size+1, sizeof(*cpu_profile.data));
 	if (cpu_profile.data) {
 		printf("Allocated CPU profile buffer (%d MB).\n",
-		       (int)sizeof(*cpu_profile.data)*cpu_profile.size/1024/1024);
+		       (int)sizeof(*cpu_profile.data)*cpu_profile.size/(1024*1024));
 	} else {
 		perror("ERROR, new CPU profile buffer alloc failed");
 		cpu_profile.enabled = false;
@@ -906,8 +912,6 @@ static void Profile_DspShowStats(void)
 		area->active);
 	fprintf(stderr, "- executed instructions:\n  %llu\n",
 		area->all_count);
-	fprintf(stderr, "- used cycles:\n  %llu\n",
-		area->all_cycles);
 	/* indicates either instruction(s) that address different memory areas
 	 * (they can have different access costs), or more significantly,
 	 * DSP code that has changed during profiling.
@@ -915,9 +919,12 @@ static void Profile_DspShowStats(void)
 	fprintf(stderr, "- sum of per instruction cycle changes\n  (can indicate code change during profiling):\n  %llu\n",
 		area->all_misses);
 
+	fprintf(stderr, "- used cycles:\n  %llu\n",
+		area->all_cycles);
 	if (area->max_cycles == MAX_DSP_PROFILE_VALUE) {
-		fprintf(stderr, "- Counters OVERFLOW!\n");
+		fprintf(stderr, "  *** COUNTERS OVERFLOW! ***\n");
 	}
+	fprintf(stderr, "\n= %.5fs\n", (double)(area->all_cycles) / MachineClocks.DSP_Freq);
 }
 
 /**
