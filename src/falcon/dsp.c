@@ -157,9 +157,9 @@ void DSP_Run(int nHostCycles)
         if (unlikely(bDspDebugging)) {
                 while (save_cycles > 0)
                 {
-                        DebugDsp_Check();
                         dsp56k_execute_instruction();
                         save_cycles -= dsp_core.instr_cycle;
+                        DebugDsp_Check();
                 }
         } else {
 		//	fprintf(stderr, "--> %d\n", save_cycles);

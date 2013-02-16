@@ -26,7 +26,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "file.h"
 
 /* if non-zero, output warnings on syspicious cycle values */
-#define DEBUG 0
+#define DEBUG 1
 
 typedef struct {
 	Uint32 addr;		/* number of calls */
@@ -79,7 +79,7 @@ static struct {
 	callee_t *callsite;   /* symbol specific caller information */
 	Uint32 *sort_arr;     /* data indexes used for sorting */
 	Uint32 prev_cycles;   /* previous instruction cycles counter */
-	Uint32 prev_idx;      /* previous instruction address index */
+	Uint32 prev_pc;       /* previous instruction address */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
@@ -658,7 +658,7 @@ bool Profile_CpuStart(void)
 
 	memset(cpu_profile.miss_counts, 0, sizeof(cpu_profile.miss_counts));
 	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
-	cpu_profile.prev_idx = address2index(M68000_GetPC());
+	cpu_profile.prev_pc = M68000_GetPC();
 
 	cpu_profile.processed = false;
 	return cpu_profile.enabled;
@@ -666,27 +666,29 @@ bool Profile_CpuStart(void)
 
 /**
  * Update CPU cycle and count statistics for PC address.
+ *
+ * This gets called after instruction has executed and PC
+ * has advanced to next instruction.
  */
 void Profile_CpuUpdate(void)
 {
 #if ENABLE_WINUAE_CPU
 	Uint32 misses;
 #endif
-	Uint32 prev_pc, pc, idx, cycles;
+	Uint32 pc, prev_pc, idx, cycles;
 	cpu_profile_item_t *prev;
 
-	pc = M68000_GetPC();
-	idx = address2index(pc);
-	assert(idx <= cpu_profile.size);
-
-	if (likely(cpu_profile.data[idx].count < MAX_CPU_PROFILE_VALUE)) {
-		cpu_profile.data[idx].count++;
-	}
-	prev_pc = index2address(cpu_profile.prev_idx);
+	prev_pc = cpu_profile.prev_pc;
+	cpu_profile.prev_pc = pc = M68000_GetPC();
 	update_caller_info(false, pc, cpu_profile.sites, cpu_profile.callsite, prev_pc);
 
-	prev = cpu_profile.data + cpu_profile.prev_idx;
-	cpu_profile.prev_idx = idx;
+	idx = address2index(prev_pc);
+	assert(idx <= cpu_profile.size);
+	prev = cpu_profile.data + idx;
+
+	if (likely(prev->count < MAX_CPU_PROFILE_VALUE)) {
+		prev->count++;
+	}
 
 #if USE_CYCLES_COUNTER
 	/* Confusingly, with DSP enabled, cycle counter is for this instruction,
@@ -723,14 +725,13 @@ void Profile_CpuUpdate(void)
 	}
 
 #if ENABLE_WINUAE_CPU
-	/* TODO: should this also use prev? */
 	misses = CpuInstruction.iCacheMisses;
 	assert(misses < MAX_MISS);
 	cpu_profile.miss_counts[misses]++;
-	if (likely(cpu_profile.data[idx].misses < MAX_CPU_PROFILE_VALUE - misses)) {
-		cpu_profile.data[idx].misses += misses;
+	if (likely(prev->misses < MAX_CPU_PROFILE_VALUE - misses)) {
+		prev->misses += misses;
 	} else {
-		cpu_profile.data[idx].misses = MAX_CPU_PROFILE_VALUE;
+		prev->misses = MAX_CPU_PROFILE_VALUE;
 	}
 #endif
 }
@@ -1136,10 +1137,7 @@ bool Profile_DspStart(void)
 
 	cpu_profile.sites = alloc_caller_info("DSP", dsp_profile.sites, Symbols_DspCount(), &(dsp_profile.callsite));
 
-	/* first instruction cycles will be lost, but at least it
-	 * doesn't give wrong difference information
-	 */
-	dsp_profile.prev_pc = DSP_PROFILE_ARR_SIZE-1;
+	dsp_profile.prev_pc = DSP_GetPC();
 
 	dsp_profile.processed = false;
 	return dsp_profile.enabled;
@@ -1147,22 +1145,24 @@ bool Profile_DspStart(void)
 
 /**
  * Update DSP cycle and count statistics for PC address.
+ *
+ * This is called after instruction is executed and PC points
+ * to next instruction i.e. info is for previous PC address.
  */
 void Profile_DspUpdate(void)
 {
 	dsp_profile_item_t *prev;
-	Uint16 pc, cycles;
+	Uint16 pc, prev_pc, cycles;
 
-	pc = DSP_GetPC();
-	if (likely(dsp_profile.data[pc].count < MAX_DSP_PROFILE_VALUE)) {
-		dsp_profile.data[pc].count++;
+	prev_pc = dsp_profile.prev_pc;
+	dsp_profile.prev_pc = pc = DSP_GetPC();
+	update_caller_info(true, pc, dsp_profile.sites, dsp_profile.callsite, prev_pc);
+
+	prev = dsp_profile.data + prev_pc;
+	if (likely(prev->count < MAX_DSP_PROFILE_VALUE)) {
+		prev->count++;
 	}
-	update_caller_info(true, pc, dsp_profile.sites, dsp_profile.callsite, dsp_profile.prev_pc);
 
-	prev = dsp_profile.data + dsp_profile.prev_pc;
-	dsp_profile.prev_pc = pc;
-
-	/* cycle information at this point is for previous instruction */
 	cycles = DSP_GetInstrCycles();
 	if (likely(prev->cycles < MAX_DSP_PROFILE_VALUE - cycles)) {
 		prev->cycles += cycles;
