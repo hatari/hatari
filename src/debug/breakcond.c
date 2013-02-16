@@ -357,15 +357,17 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 				History_Mark(REASON_CPU_BREAKPOINT);
 			}
 
-			if (bp->options.lock) {
+			if (bp->options.lock || bp->options.filename) {
 				DebugCpu_InitSession();
 				DebugDsp_InitSession();
-				DebugInfo_ShowSessionInfo();
-			}
-			if (bp->options.filename) {
-				DebugUI_ParseFile(bp->options.filename);
-			}
 
+				if (bp->options.lock) {
+					DebugInfo_ShowSessionInfo();
+				}
+				if (bp->options.filename) {
+					DebugUI_ParseFile(bp->options.filename);
+				}
+			}
 			if (bp->options.once) {
 				BreakCond_Remove(i+1, for_dsp);
 				count--;

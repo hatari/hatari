@@ -45,6 +45,7 @@ Emulator:
     large directories
 - Profiler:
   - Fix: profiler assert on invalid PC register values
+  - Fix: profiler usage in debugger files invoked by breakpoints
   - Fix: profiler CPU & DSP cycles information is for previous instruction
   - Fix: WinUAE CPU requires cycles counter usage for getting current
     CPU instruction cycles

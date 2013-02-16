@@ -80,6 +80,7 @@ static struct {
 	Uint32 *sort_arr;     /* data indexes used for sorting */
 	Uint32 prev_cycles;   /* previous instruction cycles counter */
 	Uint32 prev_idx;      /* previous instruction address index */
+	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
 
@@ -101,6 +102,7 @@ static struct {
 	callee_t *callsite;   /* symbol specific caller information */
 	Uint16 *sort_arr;     /* data indexes used for sorting */
 	Uint16 prev_pc;       /* previous PC for which the cycles are for */
+	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } dsp_profile;
 
@@ -658,6 +660,7 @@ bool Profile_CpuStart(void)
 	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
 	cpu_profile.prev_idx = address2index(M68000_GetPC());
 
+	cpu_profile.processed = false;
 	return cpu_profile.enabled;
 }
 
@@ -772,7 +775,7 @@ void Profile_CpuStop(void)
 	Uint32 *sort_arr;
 	Uint32 i, active;
 
-	if (!cpu_profile.enabled) {
+	if (cpu_profile.processed || !cpu_profile.enabled) {
 		return;
 	}
 	/* user didn't change RAM or TOS size in the meanwhile? */
@@ -858,6 +861,7 @@ void Profile_CpuStop(void)
 	//printf("%d/%d/%d\n", area->active, sort_arr-cpu_profile.sort_arr, active);
 
 	Profile_CpuShowStats();
+	cpu_profile.processed = true;
 }
 
 
@@ -1137,6 +1141,7 @@ bool Profile_DspStart(void)
 	 */
 	dsp_profile.prev_pc = DSP_PROFILE_ARR_SIZE-1;
 
+	dsp_profile.processed = false;
 	return dsp_profile.enabled;
 }
 
@@ -1215,7 +1220,7 @@ void Profile_DspStop(void)
 	Uint16 *sort_arr;
 	Uint32 i;
 
-	if (!dsp_profile.enabled) {
+	if (dsp_profile.processed || !dsp_profile.enabled) {
 		return;
 	}
 	/* find lowest and highest  addresses executed */
@@ -1252,6 +1257,7 @@ void Profile_DspStop(void)
 	//printf("%d/%d/%d\n", area->active, sort_arr-dsp_profile.sort_arr, active);
 
 	Profile_DspShowStats();
+	dsp_profile.processed = true;
 }
 
 
