@@ -89,7 +89,7 @@ TODO: Output in Valgrind callgrind format:
 for KCachegrind:
        http://kcachegrind.sourceforge.net/
 """
-from bisect import bisect_left, bisect_right
+from bisect import bisect_right
 import getopt, os, re, sys
 
 
@@ -126,22 +126,19 @@ class Output:
 class InstructionStats:
     "current function instructions state + info on all instructions"
 
-    names = ("Executed instructions", "Used cycles", "Cache misses")
-
-    def __init__(self, name, processor, hz):
+    def __init__(self, name, processor, hz, info):
+        "function name, processor name, its speed, processor info dict"
+        self.instructions_field = info["instructions_field"]
+        self.cycles_field = info["cycles_field"]
+        self.names = info["fields"]
         self.items = len(self.names)
         self.max_addr = [0] * self.items
         self.max_val = [0] * self.items
         self.totals = [0] * self.items
-        self.areas = {}		# which memory area boundaries have been passed
         self.processor = processor
         self.hz = hz
+        self.areas = {}		# which memory area boundaries have been passed
         self.zero(name, None)
-
-    def has_data(self):
-        "return whether function has valid data yet"
-        # other values are valid only if there are instructions
-        return (self.data[0] != 0)
 
     def zero(self, name, addr):
         "start collecting new 'name' function instructions information"
@@ -151,10 +148,24 @@ class InstructionStats:
         self.addr = addr
         self.data = [0] * self.items
 
+    def has_data(self):
+        "return whether function has valid data yet"
+        # other values are valid only if there are instructions
+        return (self.data[self.instructions_field] != 0)
+
     def add(self, addr, strvalues):
         "add strvalues string list of values to current state"
-        for i in range(self.items):
-            value = int(strvalues[i])
+        values = [0] + [int(x) for x in strvalues]
+        # first instruction in a function?
+        if not self.data[self.instructions_field]:
+            # function call count is same as its first instructions count
+            value = values[self.instructions_field]
+            self.data[0] = value
+            if value > self.max_val[0]:
+                self.max_val[0] = value
+                self.max_addr[0] = addr
+        for i in range(1, self.items):
+            value = values[i]
             self.data[i] += value
             if value > self.max_val[i]:
                 self.max_val[i] = value
@@ -162,7 +173,7 @@ class InstructionStats:
 
     def get_time(self, data):
         "return time (in seconds) spent by given data item"
-        return float(data[1])/self.hz
+        return float(data[self.cycles_field])/self.hz
 
     def show(self):
         "show current function instruction state"
@@ -272,7 +283,8 @@ class EmulatorProfile(Output):
         if not match:
             self.error_exit("invalid %s clock information on line 2:\n\t%s" % (processor, line))
         hz = int(match.group(1))
-        return (self.r_disasm[processor], InstructionStats("PROFILE_BEGIN", processor, hz))
+        info = self.processor[processor]
+        return (self.r_disasm[processor], InstructionStats("PROFILE_BEGIN", processor, hz, info))
 
     def _add_symbol(self, addr, name):
         "assign given symbol name to given address"
@@ -369,11 +381,8 @@ class EmulatorProfile(Output):
                 self.symbols_sorted.sort()
                 self.symbols_need_sort = False
             relative = self._addr2relative(addr)
-            idx = bisect_left(self.symbols_sorted, relative) - 1
-            if idx < 0:
-                if self.symbols_sorted[0] == relative:
-                    return (self.symbols[relative], 0)
-            elif idx <= len(self.symbols_sorted):
+            idx = bisect_right(self.symbols_sorted, relative) - 1
+            if idx >= 0:
                 saddr = self.symbols_sorted[idx]
                 return (self.symbols[saddr], relative - saddr)
         return self._get_area(addr)
@@ -406,7 +415,7 @@ class EmulatorProfile(Output):
             self.address[name] = addr
             return
         # as no better symbol, name it according to area where it moved to
-        area,offset = self._get_area(addr)
+        area, offset = self._get_area(addr)
         if area:
             self._change_area(addr, area)
 
@@ -498,7 +507,11 @@ class HatariProfile(EmulatorProfile):
                 },
                 # $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
                 # $e5af38 :   rts           0.00% (12, 0, 12)
-                "regexp" : "^\$([0-9a-f]+) :.*% \((.*)\)$"
+                "regexp" : "^\$([0-9a-f]+) :.*% \((.*)\)$",
+                # First fields is always "Calls", them come ones from second "regexp" match group
+                "fields" : ("Calls", "Executed instructions", "Used cycles", "I-cache misses"),
+                "instructions_field": 1,
+                "cycles_field": 2
             },
             "DSP" : {
                 "areas" : {
@@ -506,7 +519,11 @@ class HatariProfile(EmulatorProfile):
                 },
                 # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
                 # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
-                "regexp" : "^p:([0-9a-f]+) .*% \((.*)\)$"
+                "regexp" : "^p:([0-9a-f]+) .*% \((.*)\)$",
+                # First fields is always "Calls", them come ones from second "regexp" match group
+                "fields" : ("Calls", "Executed instructions", "Used cycles", "Largest cycle differences (= code changes during profiling)"),
+                "instructions_field": 1,
+                "cycles_field": 2
             }
         }
         EmulatorProfile.__init__(self, name, processors)
@@ -518,6 +535,7 @@ class ProfileStats(Output):
     # Hatari symbol and profile information statistics output
     def __init__(self):
         Output.__init__(self)
+        self.profobj = None
         self.profile = None
         self.address = None
         self.callers = None
@@ -560,7 +578,7 @@ class ProfileStats(Output):
         if self.do_totals:
             self.output_totals()
         if self.do_called:
-            self.output_called()
+            self.output_calls()
         if self.do_instr:
             self.output_instructions()
         if self.do_cycles:
@@ -620,11 +638,12 @@ class ProfileStats(Output):
         self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, key, info))
         return True
 
-    def _cmp_called(self, i, j):
+    def __cmp_called(self, i, j):
         "compare calls"
         return cmp(self.callcount[i], self.callcount[j])
 
-    def output_called(self):
+    # TODO: remove when refactoring
+    def _output_called(self):
         "output called list"
         keys = self.callers.keys()
         self.callcount = {}
@@ -663,42 +682,52 @@ class ProfileStats(Output):
 
         time = idx = 0
         for key in keys:
-            if field == 1:	# cycles
+            if field == stats.cycles_field:
                 time = stats.get_time(self.profile[key])
             value = self.profile[key][field]
             if not self._output_keyval(idx, key, value, total, time):
                 break
             idx += 1
 
+    def _cmp_calls(self, i, j):
+        "compare function calls"
+        return cmp(self.profile[i][0], self.profile[j][0])
+
     def _cmp_instructions(self, i, j):
         "compare instruction counts"
-        return cmp(self.profile[i][0], self.profile[j][0])
+        return cmp(self.profile[i][1], self.profile[j][1])
 
     def _cmp_cycles(self, i, j):
         "compare cycle counts"
-        return cmp(self.profile[i][1], self.profile[j][1])
+        return cmp(self.profile[i][2], self.profile[j][2])
 
     def _cmp_misses(self, i, j):
         "compare cache miss counts"
-        return cmp(self.profile[i][2], self.profile[j][2])
+        return cmp(self.profile[i][3], self.profile[j][3])
+
+    def output_calls(self):
+        "output function calls list"
+        keys = self.profile.keys()
+        keys.sort(self._cmp_calls, None, True)
+        self._output_list(keys, 0)
 
     def output_instructions(self):
         "output instructions usage list"
         keys = self.profile.keys()
         keys.sort(self._cmp_instructions, None, True)
-        self._output_list(keys, 0)
+        self._output_list(keys, 1)
 
     def output_cycles(self):
         "output cycles usage list"
         keys = self.profile.keys()
         keys.sort(self._cmp_cycles, None, True)
-        self._output_list(keys, 1)
+        self._output_list(keys, 2)
 
     def output_misses(self):
         "output cache misses list"
         keys = self.profile.keys()
         keys.sort(self._cmp_misses, None, True)
-        self._output_list(keys, 2)
+        self._output_list(keys, 3)
 
 
 class ProfileGraph(Output):
@@ -791,7 +820,7 @@ label="%s";
             if not name:
                 name = "$%x" % addr
             callees[name] = total
-            if name in self.ignore_to:
+            if name in ignore_to:
                 continue
             for caddr, count in callers[addr].items():
                 cname, offset = profile.get_preceeding_symbol(caddr)
@@ -809,7 +838,7 @@ label="%s";
                 if self.only and name not in self.only and cname not in self.only:
                     continue
                 nodes[name] = True
-                if cname in self.ignore_from:
+                if cname in ignore_from:
                     continue
                 nodes[cname] = True
                 if count != total:
