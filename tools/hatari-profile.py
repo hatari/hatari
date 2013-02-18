@@ -52,8 +52,9 @@ For each given profile file, output is:
 - profile statistics
 - a sorted list of functions, for each of the profile data items
   (calls, instructions, cycles...)
-- callgraph information in "dot" format, saved to <name>.dot file
-  (prof1.dot and prof2.dot in the example)
+- callgraph in "dot" format, for each of the profile data items,
+  for each profile file, saved to <name>-<itemindex>.dot files
+  (prof1-0.dot, prof1-2.dot etc)
 
 
 Callgraph filtering options to remove nodes and edges from the graph:
@@ -119,6 +120,7 @@ class InstructionStats:
 
     def __init__(self, name, processor, hz, info):
         "function name, processor name, its speed, processor info dict"
+        # first field is ALWAYS calls count
         self.instructions_field = info["instructions_field"]
         self.cycles_field = info["cycles_field"]
         self.names = info["fields"]
@@ -302,6 +304,79 @@ class ProfileSymbols(Output):
         return self.get_area(addr)
 
 
+class ProfileCallers(Output):
+    "profile data callee/caller information parser & handler"
+
+    def __init__(self):
+        Output.__init__(self)
+        # caller info in callee line:
+        # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
+        # 0x<hex> = <count>
+        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
+        self.callinfo = None
+        self.name_offset = None
+
+    def zero(self):
+        "clear caller info for next profile"
+        # TODO: remove this when profile parsing is sequealized
+        self.callinfo = {}
+
+    def parse_line(self, line):
+        "parse callee: caller call count information"
+        #0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
+        callers = line.split(',')
+        if len(callers) < 2:
+            self.warning("caller info missing")
+            return False
+        if ':' not in callers[0]:
+            self.warning("callee/caller separator ':' missing")
+            return False
+        last = callers[-1]
+        if len(last) and last[-1] != ')':
+            self.warning("last item isn't empty or symbol name")
+            return False
+
+        addr, callers[0] = callers[0].split(':')
+        callinfo = {}
+        for caller in callers[:-1]:
+            caller = caller.strip()
+            match = self.r_caller.match(caller)
+            if match:
+                caddr, count = match.groups()
+                caddr = int(caddr, 16)
+                count = int(count, 10)
+                callinfo[caddr] = count
+            else:
+                self.warning("unrecognized caller info '%s'" % caller)
+                return False
+        self.callinfo[int(addr, 16)] = callinfo
+        return True
+
+    def _resolve(self, symbols):
+        "resolve caller symbols and add them name_offset dict"
+        name_offset = {}
+        for addr, caller in self.callinfo.items():
+            name_offset[addr] = (symbols.get_symbol(addr), 0)
+            for caddr in caller.keys():
+                name_offset[caddr] = symbols.get_preceeding_symbol(caddr)
+        self.name_offset = name_offset
+
+    def _validate(self, profile):
+        "validate callinfo against profile data"
+        for addr, caller in self.callinfo.items():
+            total = 0
+            for count in caller.values():
+                total += count
+            name = self.name_offset[addr][0]
+            calls = profile[name][0]
+            if calls != total:
+                self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % (name, addr, calls, total))
+
+    def complete(self, profile, symbols):
+        "validate and post-process caller information"
+        self._resolve(symbols)
+        self._validate(profile)
+
 
 class EmulatorProfile(Output):
     "Emulator profile data file parsing and profile information"
@@ -310,6 +385,7 @@ class EmulatorProfile(Output):
         Output.__init__(self)
         self.symbols = symbols		# ProfileSymbols instance
         self.processor = processor	# processor information dict
+        self.callers = ProfileCallers()
 
         # profile data format
         #
@@ -327,15 +403,10 @@ class EmulatorProfile(Output):
         # <symbol/objectfile name>: (in disassembly)
         # _biostrap:
         self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
-        # caller info in callee line:
-        # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
-        # 0x<hex> = <count>
-        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
 
         self.stats = None		# InstructionStats instance
         self.address = None		# hash of (symbol:addr)
         self.profile = None		# hash of profile (symbol:data)
-        self.callers = None		# hash of (callee:(caller:count))
         self.verbose = False
 
     def set_verbose(self, verbose):
@@ -365,37 +436,6 @@ class EmulatorProfile(Output):
         hz = int(match.group(1))
         info = self.processor[processor]
         return (self.r_disasm[processor], InstructionStats("PROFILE_BEGIN", processor, hz, info))
-
-    def _parse_caller(self, line):
-        "parse callee: caller call count information"
-        #0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
-        callers = line.split(',')
-        if len(callers) < 2:
-            self.warning("caller info missing")
-            return False
-        if ':' not in callers[0]:
-            self.warning("callee/caller separator ':' missing")
-            return False
-        last = callers[-1]
-        if len(last) and last[-1] != ')':
-            self.warning("last item isn't empty or symbol name")
-            return False
-
-        addr, callers[0] = callers[0].split(':')
-        addr = int(addr, 16)
-        self.callers[addr] = {}
-        for caller in callers[:-1]:
-            caller = caller.strip()
-            match = self.r_caller.match(caller)
-            if match:
-                caddr, count = match.groups()
-                caddr = int(caddr, 16)
-                count = int(count, 10)
-                self.callers[addr][caddr] = count
-            else:
-                self.warning("unrecognized caller info '%s'" % caller)
-                return False
-        return True
 
     def _change_function(self, newname, addr):
         "store current function data and then reset to new function"
@@ -435,7 +475,7 @@ class EmulatorProfile(Output):
         prev_addr = unknown = lines = 0
         self.address = {}
         self.profile = {}
-        self.callers = {}
+        self.callers.zero()
         for line in fobj.readlines():
             lines += 1
             line = line.strip()
@@ -471,7 +511,7 @@ class EmulatorProfile(Output):
                 continue
             # caller information
             if line.startswith('0x'):
-                if not self._parse_caller(line):
+                if not self.callers.parse_line(line):
                     self.error_exit("unrecognized caller line %d:\n\t'%s'" % (lines, line))
                 continue
             # memory areas?
@@ -486,6 +526,7 @@ class EmulatorProfile(Output):
         if len(self.profile) < 1:
             self.error_exit("no functions found!")
         self.stats.sum_values(self.profile.values())
+        self.callers.complete(self.profile, self.symbols)
 
 
 class HatariProfile(EmulatorProfile):
@@ -689,11 +730,19 @@ label="%s";
 
     def __init__(self):
         Output.__init__(self)
+        self.profobj = None
+        self.nodes = None
+        self.edges = None
+        self.output_enabled = False
         self.limit = 10.0
         self.only = []
         self.ignore = []
         self.ignore_from = []
         self.ignore_to = []
+
+    def enable_output(self):
+        "enable output"
+        self.output_enabled = True
 
     def set_limit(self, limit):
         "set graph node emphatizing limit, as instructions percentage"
@@ -715,74 +764,98 @@ label="%s";
         "set list of symbols to ignore calls to"
         self.ignore_to = lst
 
-    def do_output(self, profobj, name):
-        "output graph of previusly set profile data to previously set file"
-        callers = profobj.callers
-        if not callers:
+    def _filter_profile(self, profobj):
+        "filter profile content to nodes and edges members"
+        self.profobj = None
+        callobj = profobj.callers
+        if not callobj.callinfo:
             self.warning("callee/caller information missing")
             return False
-        title = "Function call counts and used instruction percentages, %s" % name
-        self.write(self.header % title)
-
         nodes = {}
-        callees = {}
-        # output edges
+        edges = {}
         ignore_to = self.ignore_to + self.ignore
         ignore_from = self.ignore_from + self.ignore
-        for addr in callers.keys():
-            total = 0
-            for count in callers[addr].values():
-                total += count
-            name = profobj.symbols.get_symbol(addr)
-            if not name:
-                name = "$%x" % addr
-            callees[name] = total
+        for addr, callers in callobj.callinfo.items():
+            name = callobj.name_offset[addr][0]
+            calls = profobj.profile[name][0]	# calls count
             if name in ignore_to:
                 continue
-            for caddr, count in callers[addr].items():
-                cname, offset = profobj.symbols.get_preceeding_symbol(caddr)
-                if cname:
-                    # no recursion
-                    #if cname == name:
-                    #    continue
-                    if offset:
-                        label = "%s+%d\\n($%x)" % (cname, offset, caddr)
-                    else:
-                        label = cname
-                else:
-                    cname = "$%x" % caddr
-                    label = cname
+            for caddr, count in callers.items():
+                cname, offset = callobj.name_offset[caddr]
+                # no recursion
+                #if cname == name:
+                #    continue
                 if self.only and name not in self.only and cname not in self.only:
                     continue
                 nodes[name] = True
                 if cname in ignore_from:
                     continue
+                # caller can also be a node
                 nodes[cname] = True
-                if count != total:
-                    percentage = 100.0 * count / total
-                    label = "%s\\n%d calls\\n=%.2f%%" % (label, count, percentage)
-                self.write("N%s -> N%s [label=\"%s\"];\n" % (cname, name, label))
+                edges[caddr] = (name, cname, offset, count, calls)
+        if not nodes:
+            return False
+        self.profobj = profobj
+        self.nodes = nodes
+        self.edges = edges
+        return True
 
-        values = profobj.profile
-        stats = profobj.stats
-        total = stats.totals[0]
-        # output nodes
-        for name in nodes.keys():
-            count = values[name][0]
-            time = stats.get_time(values[name])
+    def _output_nodes(self, field, total):
+        "output graph nodes from filtered edges dict"
+        profile = self.profobj.profile
+        stats = self.profobj.stats
+        for name in self.nodes.keys():
+            values = profile[name]
+            count = values[field]
             percentage = 100.0 * count / total
             if percentage >= self.limit:
                 style = " color=red style=filled fillcolor=lightgray" # shape=diamond
             else:
                 style = ""
-            if name in callees:
-                calls = callees[name]
+            calls = values[0]
+            if field == stats.cycles_field:
+                time = stats.get_time(values)
                 self.write("N%s [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s];\n" % (name, percentage, time, name, calls, style))
+            elif field:
+                self.write("N%s [label=\"%.2f%%\\n%d\\n%s\\n(%d calls)\"%s];\n" % (name, percentage, count, name, calls, style))
             else:
-                self.write("N%s [label=\"%.2f%%\\n%.5fs\\n%s\"%s];\n" % (name, percentage, time, name, style))
+                self.write("N%s [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (name, percentage, name, count, style))
 
-        self.write(self.footer)
-        return True
+    def _output_edges(self):
+        "output graph edges from filtered edges dict"
+        for addr, data in self.edges.items():
+            name, cname, offset, count, calls = data
+            if offset:
+                label = "%s+%d\\n($%x)" % (cname, offset, addr)
+            else:
+                label = name
+            if count != calls:
+                percentage = 100.0 * count / calls
+                label = "%s\\n%d calls\\n=%.2f%%" % (label, count, percentage)
+            self.write("N%s -> N%s [label=\"%s\"];\n" % (cname, name, label))
+
+    def do_output(self, profobj, fname):
+        "output graphs for given profile data"
+        if not (self.output_enabled and self._filter_profile(profobj)):
+            return
+        basename = os.path.splitext(fname)[0]
+        for field in range(profobj.stats.items):
+            total = profobj.stats.totals[field]
+            if not total:
+                continue
+            dotname = "%s-%d.dot" % (basename, field)
+            self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
+            try:
+                self.set_output(open(dotname, "w"))
+            except IOError, err:
+                self.warning(err)
+                continue
+            name = profobj.stats.names[field]
+            title = "%s, for %s" % (name, fname)
+            self.write(self.header % title)
+            self._output_nodes(field, total)
+            self._output_edges()
+            self.write(self.footer)
 
 
 class Main(Output):
@@ -818,7 +891,6 @@ class Main(Output):
             self.usage(err)
 
         prof = HatariProfile()
-        do_graphs = False
         graph = ProfileGraph()
         stats = ProfileStats()
         for opt, arg in opts:
@@ -829,7 +901,7 @@ class Main(Output):
             elif opt in ("-f", "--first"):
                 stats.set_count(self.get_value(opt, arg, False))
             elif opt in ("-g", "--graph"):
-                do_graphs = True
+                graph.enable_output()
             elif opt == "--ignore":
                 graph.set_ignore(arg.split(','))
             elif opt == "--ignore-from":
@@ -861,18 +933,7 @@ class Main(Output):
             prof.parse_profile(self.open_file(arg, "r"))
             self.write("\nProfile information from '%s':\n" % arg)
             stats.do_output(prof)
-            if do_graphs:
-                self.do_graph(graph, prof, arg)
-
-    def do_graph(self, graph, profile, fname):
-        "output callgraph for given profile data file"
-        if '.' in fname:
-            dotname = fname[:fname.rindex('.')]
-        dotname += ".dot"
-        graph.set_output(self.open_file(dotname, "w"))
-        self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
-        if not graph.do_output(profile, fname):
-            os.remove(dotname)
+            graph.do_output(prof, arg)
 
     def open_file(self, path, mode):
         "open given path in given mode & return file object"
