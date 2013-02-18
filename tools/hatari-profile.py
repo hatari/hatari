@@ -96,19 +96,13 @@ import getopt, os, re, sys
 class Output:
     "base class for error and file outputs"
 
-    # class instance as all errors need to go to the same place
-    error_write = sys.stderr.write
-
     def __init__(self):
+        self.error_write = sys.stderr.write
         self.write = sys.stdout.write
 
     def set_output(self, out):
         "set normal output data file"
         self.write = out.write
-
-    def set_error_output(self, out):
-        "set error output data file"
-        self.error_write = out.write
 
     # rest are independent of output file
     def message(self, msg):
@@ -281,7 +275,7 @@ class ProfileSymbols(Output):
             else:
                 self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
-        self.message("%d lines with %d code symbols/addresses parsed, %d unknown.\n" % (lines, len(self.symbols), unknown))
+        self.message("%d lines with %d code symbols/addresses parsed, %d unknown." % (lines, len(self.symbols), unknown))
 
     def _text_relative(self, addr):
         "return absolute address converted to relative if it's within TEXT segment, for symbol lookup"
@@ -926,6 +920,8 @@ class Main(Output):
                 stats.set_limit(limit)
             elif opt in ("-o", "--output"):
                 out = self.open_file(arg, "w")
+                self.message("\nSet output to go to '%s'." % arg)
+                self.set_output(out)
                 prof.set_output(out)
                 stats.set_output(out)
             elif opt in ("-s", "--stats"):
@@ -937,21 +933,21 @@ class Main(Output):
         for arg in rest:
             self.message("\nParsing profile information from %s..." % arg)
             prof.parse_profile(self.open_file(arg, "r"))
+            self.write("\nProfile information from '%s':\n" % arg)
             stats.set_profile(prof)
             stats.do_output()
             if do_graphs:
                 self.do_graph(graph, prof, arg)
 
     def do_graph(self, graph, profile, fname):
-        "output callgraph for given profile data for given file"
+        "output callgraph for given profile data file"
         if '.' in fname:
             dotname = fname[:fname.rindex('.')]
         dotname += ".dot"
         graph.set_output(self.open_file(dotname, "w"))
         graph.set_profile(profile)
-        if graph.do_output(fname):
-            self.message("\nGenerated '%s' callgraph DOT file." % dotname)
-        else:
+        self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
+        if not graph.do_output(fname):
             os.remove(dotname)
 
     def open_file(self, path, mode):
