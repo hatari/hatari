@@ -26,11 +26,8 @@ Usage: hatari-profile [options] <profile files>
 
 Options:
 	-a <symbols>	symbol address information file
-        -c		list top cycles usage
-        -e		list most called symbols
-        -i		list top instructions usage
-        -m		list top cache misses
         -s		list profile statistics
+        -t		list top functions for all profile items
         -f <count>	list only first <count> items
         -l <limit>      list only items which percentage >= limit
 	-o <file name>	statistics output file name (default is stdout)
@@ -39,11 +36,8 @@ Options:
 
 Long options for above are:
 	--addresses
-	--cycles
-        --called
-        --instr
-        --misses
         --stats
+        --top
         --first
         --limit
         --output
@@ -52,11 +46,12 @@ Long options for above are:
 
 
 For example:
-	hatari-profile -a etos512k.sym -cimes -g -f 10 prof1.txt prof2.txt
+	hatari-profile -a etos512k.sym -st -g -f 10 prof1.txt prof2.txt
 
 For each given profile file, output is:
-- a sorted list of functions, for each of the requested profiling items
-  (instructions, cycles, misses).
+- profile statistics
+- a sorted list of functions, for each of the profile data items
+  (calls, instructions, cycles...)
 - callgraph information in "dot" format, saved to <name>.dot file
   (prof1.dot and prof2.dot in the example)
 
@@ -188,16 +183,17 @@ class InstructionStats:
 class ProfileSymbols(Output):
     "class for handling parsing and matching symbols, memory areas and their addresses"
 
-    def __init__(self):
+    def __init__(self, text_area):
         Output.__init__(self)
         self.symbols = {}		# hash of (addr:symbol)
         self.symbols_need_sort = False
         self.symbols_sorted = None	# sorted list of symbol addresses
         self.areas = None
         # default emulation memory address range name
+        # (for processor for which current data is for)
         self.default_area = None
         # TEXT area name
-        self.text_area = None
+        self.text_area = text_area
         # memory areas:
         # <area>: 0x<hex>-0x<hex>
         # TOS:	0xe00000-0xe80000
@@ -205,10 +201,6 @@ class ProfileSymbols(Output):
         # symbol file format:
         # [0x]<hex> [tTbBdD] <symbol/objectfile name>
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
-
-    def set_text(self, text):
-        "set TEXT area name"
-        self.text_area = text
 
     def set_areas(self, areas, default):
         "set areas dict and default area name"
@@ -330,7 +322,7 @@ class EmulatorProfile(Output):
         # are specified by subclasses with disasm argument
         self.r_disasm = {}
         for key in processor.keys():
-            assert(processor[key]["areas"])
+            assert(processor[key]['areas'] and processor[key]['fields'])
             self.r_disasm[key] = re.compile(processor[key]['regexp'])
         # <symbol/objectfile name>: (in disassembly)
         # _biostrap:
@@ -359,7 +351,7 @@ class EmulatorProfile(Output):
         line = fobj.readline()
         field = line.split()
         if len(field) != 3 or field[0] != self.emuid:
-            self.error_exit("unrecognized file, line 1:\n\t%smisses %s profiler identification" % line, self.emuid)
+            self.error_exit("unrecognized file, line 1:\n\t%smisses %s profiler identification" % (line, self.emuid))
 
         processor = field[1]
         if processor not in self.processor:
@@ -433,7 +425,7 @@ class EmulatorProfile(Output):
             self.address[name] = addr
             return
         # as no better symbol, name it according to area where it moved to
-        area, offset = self.symbols.get_area(addr)
+        area, dummy = self.symbols.get_area(addr)
         if area:
             self._change_area(addr, area)
 
@@ -527,7 +519,7 @@ class HatariProfile(EmulatorProfile):
                 # $e5af38 :   rts           0.00% (12, 0, 12)
                 "regexp" : "^\$([0-9a-f]+) :.*% \((.*)\)$",
                 # First fields is always "Calls", them come ones from second "regexp" match group
-                "fields" : ("Calls", "Executed instructions", "Used cycles", "I-cache misses"),
+                "fields" : ("Calls", "Executed instructions", "Used cycles", "Instruction cache misses"),
                 "instructions_field": 1,
                 "cycles_field": 2
             },
@@ -544,27 +536,81 @@ class HatariProfile(EmulatorProfile):
                 "cycles_field": 2
             }
         }
-        symbols = ProfileSymbols()
-        symbols.set_text(text_area)
+        symbols = ProfileSymbols(text_area)
         EmulatorProfile.__init__(self, name, processors, symbols)
+
+
+class ProfileSorter:
+    "profile information sorting and list output class"
+
+    def __init__(self, profobj, write):
+        self.profobj = profobj
+        self.profile = profobj.profile
+        self.write = write
+        self.field = None
+
+    def _cmp_field(self, i, j):
+        "compare currently selected field in profile data"
+        field = self.field
+        return cmp(self.profile[i][field], self.profile[j][field])
+
+    def _output_list(self, keys, count, limit):
+        "output list for currently selected field"
+        field = self.field
+        stats = self.profobj.stats
+        total = stats.totals[field]
+        self.write("\n%s:\n" % stats.names[field])
+        addresses = self.profobj.address
+
+        time = idx = 0
+        for key in keys:
+            value = self.profile[key][field]
+            if not value:
+                break
+
+            percentage = 100.0 * value / total
+            if count and limit:
+                # if both list limits are given, both must be exceeded
+                if percentage < limit and idx >= count:
+                    break
+            elif limit and percentage < limit:
+                break
+            elif count and idx >= count:
+                break
+            idx += 1
+
+            if key in addresses:
+                if field == stats.cycles_field:
+                    time = stats.get_time(self.profile[key])
+                    info = "(0x%06x,%9.5fs)" % (addresses[key], time)
+                else:
+                    info = "(0x%06x)" % addresses[key]
+            else:
+                if field == stats.cycles_field:
+                    time = stats.get_time(self.profile[key])
+                    info = "(%.5fs)" % time
+                else:
+                    info = ""
+            self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, key, info))
+
+    def do_list(self, field, count, limit):
+        "sort and show list for given profile data field"
+        if self.profobj.stats.totals[field] == 0:
+            return
+        self.field = field
+        keys = self.profile.keys()
+        keys.sort(self._cmp_field, None, True)
+        self._output_list(keys, count, limit)
 
 
 class ProfileStats(Output):
     "profile information statistics output"
 
-    # Hatari symbol and profile information statistics output
     def __init__(self):
         Output.__init__(self)
-        self.profobj = None
-        self.profile = None
-        self.address = None
-        self.callers = None
-        self.callcount = None
-        self.do_totals = False
-        self.do_called = False
-        self.do_instr = False
-        self.do_cycles = False
-        self.do_misses = False
+        self.sorter = None
+        self.show_totals = False
+        self.show_top = False
         self.limit = 1
         self.count = 0
 
@@ -576,145 +622,42 @@ class ProfileStats(Output):
         "set smallest percentage to show in lists (0=all)"
         self.limit = limit
 
-    def show_totals(self, show):
-        "dis/enable totals list"
-        self.do_totals = show
-    def show_called(self, show):
-        "dis/enable called list"
-        self.do_called = show
-    def show_instructions(self, show):
-        "dis/enable instructions list"
-        self.do_instr = show
-    def show_cycles(self, show):
-        "dis/enable cycles list"
-        self.do_cycles = show
-    def show_misses(self, show):
-        "dis/enable cache misses list"
-        self.do_misses = show
+    def enable_totals(self):
+        "enable totals list"
+        self.show_totals = True
 
-    def do_output(self):
-        "output enabled lists"
-        if self.do_totals:
-            self.output_totals()
-        if self.do_called:
-            self.output_calls()
-        if self.do_instr:
-            self.output_instructions()
-        if self.do_cycles:
-            self.output_cycles()
-        if self.do_misses:
-            self.output_misses()
+    def enable_top(self):
+        "enable showing listing for top items"
+        self.show_top = True
 
-    def set_profile(self, prof):
-        "set profiling info to use for output"
-        self.profobj = prof
-        self.callers = prof.callers
-        self.profile = prof.profile
-        self.address = prof.address
-
-    def output_totals(self):
+    def output_totals(self, profile):
         "output profile statistics"
-        totals = self.profobj.stats
+        totals = profile.stats
         time = totals.get_time(totals.totals)
         self.write("\nTime spent in profile = %.5fs.\n\n" % time)
 
-        symbols = self.profobj.symbols
+        symbols = profile.symbols
         items = len(totals.totals)
         for i in range(items):
             if not totals.totals[i]:
                 continue
             addr = totals.max_addr[i]
-            name, offset = symbols.get_preceeding_symbol(addr)
+            name, dummy = symbols.get_preceeding_symbol(addr)
             if name:
                 name = " in %s" % name
             self.write("%s:\n" % totals.names[i])
             self.write("- max = %d,%s at 0x%x\n" % (totals.max_val[i], name, addr))
             self.write("- %d in total\n" % totals.totals[i])
 
-    def _output_keyval(self, idx, key, value, total, time = 0):
-        "output list addr, value information"
-        if not value:
-            return False
-        percentage = 100.0 * value / total
-        if self.count and self.limit:
-            # if both list limits are given, both must be exceeded
-            if percentage < self.limit and idx >= self.count:
-                return False
-        elif self.limit and percentage < self.limit:
-            return False
-        elif self.count and idx >= self.count:
-            return False
-        if key in self.address:
-            if time:
-                info = "(0x%06x,%9.5fs)" % (self.address[key], time)
-            else:
-                info = "(0x%06x)" % self.address[key]
-        else:
-            if time:
-                info = "(%.5fs)" % time
-            else:
-                info = ""
-        self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, key, info))
-        return True
-
-    def _output_list(self, keys, field):
-        "list output functionality"
-        stats = self.profobj.stats
-        totals = stats.totals
-        total = totals[field]
-        self.write("\n%s:\n" % stats.names[field])
-        if total == 0:
-            self.write("- information missing\n")
-            return
-
-        time = idx = 0
-        for key in keys:
-            if field == stats.cycles_field:
-                time = stats.get_time(self.profile[key])
-            value = self.profile[key][field]
-            if not self._output_keyval(idx, key, value, total, time):
-                break
-            idx += 1
-
-    def _cmp_calls(self, i, j):
-        "compare function calls"
-        return cmp(self.profile[i][0], self.profile[j][0])
-
-    def _cmp_instructions(self, i, j):
-        "compare instruction counts"
-        return cmp(self.profile[i][1], self.profile[j][1])
-
-    def _cmp_cycles(self, i, j):
-        "compare cycle counts"
-        return cmp(self.profile[i][2], self.profile[j][2])
-
-    def _cmp_misses(self, i, j):
-        "compare cache miss counts"
-        return cmp(self.profile[i][3], self.profile[j][3])
-
-    def output_calls(self):
-        "output function calls list"
-        keys = self.profile.keys()
-        keys.sort(self._cmp_calls, None, True)
-        self._output_list(keys, 0)
-
-    def output_instructions(self):
-        "output instructions usage list"
-        keys = self.profile.keys()
-        keys.sort(self._cmp_instructions, None, True)
-        self._output_list(keys, 1)
-
-    def output_cycles(self):
-        "output cycles usage list"
-        keys = self.profile.keys()
-        keys.sort(self._cmp_cycles, None, True)
-        self._output_list(keys, 2)
-
-    def output_misses(self):
-        "output cache misses list"
-        keys = self.profile.keys()
-        keys.sort(self._cmp_misses, None, True)
-        self._output_list(keys, 3)
+    def do_output(self, profile):
+        "output enabled lists"
+        if self.show_totals:
+            self.output_totals(profile)
+        if self.show_top:
+            sorter = ProfileSorter(profile, self.write)
+            items = range(profile.stats.items)
+            for item in items:
+                sorter.do_list(item, self.count, self.limit)
 
 
 class ProfileGraph(Output):
@@ -746,9 +689,6 @@ label="%s";
 
     def __init__(self):
         Output.__init__(self)
-        self.profile = None
-        self.write = None
-        self.name = "<no name>"
         self.limit = 10.0
         self.only = []
         self.ignore = []
@@ -775,14 +715,9 @@ label="%s";
         "set list of symbols to ignore calls to"
         self.ignore_to = lst
 
-    def set_profile(self, profile):
-        "process profile data for the callgraph"
-        self.profile = profile
-
-    def do_output(self, name):
+    def do_output(self, profobj, name):
         "output graph of previusly set profile data to previously set file"
-        profile = self.profile
-        callers = profile.callers
+        callers = profobj.callers
         if not callers:
             self.warning("callee/caller information missing")
             return False
@@ -798,14 +733,14 @@ label="%s";
             total = 0
             for count in callers[addr].values():
                 total += count
-            name = profile.symbols.get_symbol(addr)
+            name = profobj.symbols.get_symbol(addr)
             if not name:
                 name = "$%x" % addr
             callees[name] = total
             if name in ignore_to:
                 continue
             for caddr, count in callers[addr].items():
-                cname, offset = profile.symbols.get_preceeding_symbol(caddr)
+                cname, offset = profobj.symbols.get_preceeding_symbol(caddr)
                 if cname:
                     # no recursion
                     #if cname == name:
@@ -828,8 +763,8 @@ label="%s";
                     label = "%s\\n%d calls\\n=%.2f%%" % (label, count, percentage)
                 self.write("N%s -> N%s [label=\"%s\"];\n" % (cname, name, label))
 
-        values = profile.profile
-        stats = profile.stats
+        values = profobj.profile
+        stats = profobj.stats
         total = stats.totals[0]
         # output nodes
         for name in nodes.keys():
@@ -854,19 +789,16 @@ class Main(Output):
     "program main loop & args parsing"
     longopts = [
         "addresses=",
-        "cycles",
-        "called",
         "first",
         "graph",
         "ignore=",
         "ignore-to=",
         "ignore-from=",
-        "instr",
         "limit=",
-        "misses",
         "only=",
         "output=",
         "stats",
+        "top",
         "verbose"
     ]
 
@@ -881,7 +813,7 @@ class Main(Output):
     def parse_args(self):
         "parse & handle program arguments"
         try:
-            opts, rest = getopt.getopt(self.args, "a:cef:gil:mo:sv", self.longopts)
+            opts, rest = getopt.getopt(self.args, "a:f:gl:o:stv", self.longopts)
         except getopt.GetoptError as err:
             self.usage(err)
 
@@ -894,18 +826,10 @@ class Main(Output):
             if opt in ("-a", "--addresses"):
                 self.message("\nParsing symbol address information from %s..." % arg)
                 prof.parse_symbols(self.open_file(arg, "r"))
-            elif opt in ("-c", "--cycles"):
-                stats.show_cycles(True)
-            elif opt in ("-e", "--called"):
-                stats.show_called(True)
             elif opt in ("-f", "--first"):
                 stats.set_count(self.get_value(opt, arg, False))
             elif opt in ("-g", "--graph"):
                 do_graphs = True
-            elif opt in ("-i", "--instr"):
-                stats.show_instructions(True)
-            elif opt in ("-m", "--misses"):
-                stats.show_misses(True)
             elif opt == "--ignore":
                 graph.set_ignore(arg.split(','))
             elif opt == "--ignore-from":
@@ -925,7 +849,9 @@ class Main(Output):
                 prof.set_output(out)
                 stats.set_output(out)
             elif opt in ("-s", "--stats"):
-                stats.show_totals(True)
+                stats.enable_totals()
+            elif opt in ("-t", "--top"):
+                stats.enable_top()
             elif opt in ("-v", "--verbose"):
                 prof.set_verbose(True)
             else:
@@ -934,8 +860,7 @@ class Main(Output):
             self.message("\nParsing profile information from %s..." % arg)
             prof.parse_profile(self.open_file(arg, "r"))
             self.write("\nProfile information from '%s':\n" % arg)
-            stats.set_profile(prof)
-            stats.do_output()
+            stats.do_output(prof)
             if do_graphs:
                 self.do_graph(graph, prof, arg)
 
@@ -945,9 +870,8 @@ class Main(Output):
             dotname = fname[:fname.rindex('.')]
         dotname += ".dot"
         graph.set_output(self.open_file(dotname, "w"))
-        graph.set_profile(profile)
         self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
-        if not graph.do_output(fname):
+        if not graph.do_output(profile, fname):
             os.remove(dotname)
 
     def open_file(self, path, mode):
