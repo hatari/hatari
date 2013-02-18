@@ -94,11 +94,13 @@ import getopt, os, re, sys
 
 
 class Output:
-    "base class for screen and file outputs"
+    "base class for error and file outputs"
+
+    # class instance as all errors need to go to the same place
+    error_write = sys.stderr.write
 
     def __init__(self):
         self.write = sys.stdout.write
-        self.error_write = sys.stderr.write
 
     def set_output(self, out):
         "set normal output data file"
@@ -661,39 +663,6 @@ class ProfileStats(Output):
         self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, key, info))
         return True
 
-    def __cmp_called(self, i, j):
-        "compare calls"
-        return cmp(self.callcount[i], self.callcount[j])
-
-    # TODO: remove when refactoring
-    def _output_called(self):
-        "output called list"
-        keys = self.callers.keys()
-        self.callcount = {}
-        total = 0
-        for addr in keys:
-            calls = 0
-            for count in self.callers[addr].values():
-                calls += count
-            self.callcount[addr] = calls
-            total += calls
-        keys.sort(self._cmp_called, None, True)
-        self.write("\nCalls:\n")
-        if total == 0:
-            self.write("- information missing\n")
-            return
-
-        idx = 0
-        symbols = self.profobj.symbols
-        for key in keys:
-            value = self.callcount[key]
-            name = symbols.get_symbol(key)
-            if not name:
-                name = "0x%x" % key
-            if not self._output_keyval(idx, name, value, total):
-                break
-            idx += 1
-
     def _output_list(self, keys, field):
         "list output functionality"
         stats = self.profobj.stats
@@ -792,11 +761,6 @@ label="%s";
         self.ignore_from = []
         self.ignore_to = []
 
-    def set_output(self, fobj, name):
-        "set output file object and its name"
-        self.write = fobj.write
-        self.name = name
-
     def set_limit(self, limit):
         "set graph node emphatizing limit, as instructions percentage"
         self.limit = limit
@@ -821,14 +785,14 @@ label="%s";
         "process profile data for the callgraph"
         self.profile = profile
 
-    def do_output(self):
+    def do_output(self, name):
         "output graph of previusly set profile data to previously set file"
         profile = self.profile
         callers = profile.callers
         if not callers:
             self.warning("callee/caller information missing")
             return False
-        title = "Function call counts and used instruction percentages, %s" % self.name
+        title = "Function call counts and used instruction percentages, %s" % name
         self.write(self.header % title)
 
         nodes = {}
@@ -983,9 +947,9 @@ class Main(Output):
         if '.' in fname:
             dotname = fname[:fname.rindex('.')]
         dotname += ".dot"
-        graph.set_output(self.open_file(dotname, "w"), fname)
+        graph.set_output(self.open_file(dotname, "w"))
         graph.set_profile(profile)
-        if graph.do_output():
+        if graph.do_output(fname):
             self.message("\nGenerated '%s' callgraph DOT file." % dotname)
         else:
             os.remove(dotname)
