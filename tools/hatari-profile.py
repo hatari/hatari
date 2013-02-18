@@ -189,60 +189,38 @@ class InstructionStats:
             self.totals = sums
 
 
-class EmulatorProfile(Output):
-    "Emulator profile data file parsing and profile information"
+class ProfileSymbols(Output):
+    "class for handling parsing and matching symbols, memory areas and their addresses"
 
-    def __init__(self, emuid, processor):
+    def __init__(self):
         Output.__init__(self)
-        # processors information
-        self.processor = processor
-        # profile data format
-        #
-        # emulator ID line:
-        # <ID> <processor name> profile
-        self.emuid = emuid
-        # processor clock speed
-        self.r_clock = re.compile("^Cycles/second:\t([0-9]+)$")
+        self.symbols = {}		# hash of (addr:symbol)
+        self.symbols_need_sort = False
+        self.symbols_sorted = None	# sorted list of symbol addresses
+        self.areas = None
+        # default emulation memory address range name
+        self.default_area = None
+        # TEXT area name
+        self.text_area = None
         # memory areas:
         # <area>: 0x<hex>-0x<hex>
         # TOS:	0xe00000-0xe80000
         self.r_area = re.compile("^([^:]+):[^0]*0x([0-9a-f]+)-0x([0-9a-f]+)$")
-        # processor names, memory areas and their disassembly formats
-        # are specified by subclasses with disasm argument
-        self.r_disasm = {}
-        for key in processor.keys():
-            assert(processor[key]["areas"])
-            self.r_disasm[key] = re.compile(processor[key]['regexp'])
-        # <symbol/objectfile name>:
-        # _biostrap:
-        self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
-        # caller info, part of:
-        # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
-        # 0x<hex> = <count>
-        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
         # symbol file format:
         # [0x]<hex> [tTbBdD] <symbol/objectfile name>
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
 
-        # default emulation memory address range name
-        self.default_area = None
-        assert(self.text_area)		# areas key should be set by sub class
-        self.areas = None
-        self.stats = None		# InstructionStats instance
-        self.address = None		# hash of (symbol:addr)
-        self.symbols = {}		# hash of (addr:symbol)
-        self.symbols_need_sort = False
-        self.symbols_sorted = None	# sorted list of symbol addresses
-        self.profile = None		# hash of profile (symbol:data)
-        self.callers = None		# hash of (callee:(caller:count))
-        self.verbose = False
+    def set_text(self, text):
+        "set TEXT area name"
+        self.text_area = text
 
-    def set_verbose(self, verbose):
-        "set verbose on/off"
-        self.verbose = verbose
+    def set_areas(self, areas, default):
+        "set areas dict and default area name"
+        self.default_area = default
+        self.areas = areas
 
-    def _parse_areas(self, line):
-        "parse profile data memory area lines"
+    def parse_areas(self, line):
+        "parse memory area lines from data"
         match = self.r_area.match(line)
         if not match:
             return False
@@ -252,41 +230,20 @@ class EmulatorProfile(Output):
         if name in self.areas:
             self.areas[name] = (start, end)
         else:
-            self.warning("unrecognized profile memory arear line")
+            self.warning("unrecognized memory arear line")
             return False
         if end < start:
             self.error_exit("invalid %s memory area range: 0x%x-0x%x" % (name, start, end))
         return True
 
-    def _get_area(self, addr):
+    def get_area(self, addr):
         "return memory area name + offset (used if no symbol matches)"
         for key, value in self.areas.items():
             if value[1] and addr >= value[0] and addr <= value[1]:
                 return (key, value[0] - addr)
         return (self.default_area, addr)
 
-    def _get_profile_type(self, obj):
-        "get profile processor type and speed information or exit if it's unknown"
-        line = obj.readline()
-        field = line.split()
-        if len(field) != 3 or field[0] != self.emuid:
-            self.error_exit("unrecognized file, line 1:\n\t%smisses %s profiler identification" % line, self.emuid)
-
-        processor = field[1]
-        if processor not in self.processor:
-            self.error_exit("unrecognized profile processor type '%s' on line 1:\n\t%s" % (processor, line))
-        self.areas = self.processor[processor]["areas"]
-        self.default_area = "%s_RAM" % processor
-
-        line = obj.readline()
-        match = self.r_clock.match(line)
-        if not match:
-            self.error_exit("invalid %s clock information on line 2:\n\t%s" % (processor, line))
-        hz = int(match.group(1))
-        info = self.processor[processor]
-        return (self.r_disasm[processor], InstructionStats("PROFILE_BEGIN", processor, hz, info))
-
-    def _add_symbol(self, addr, name):
+    def add_symbol(self, addr, name):
         "assign given symbol name to given address"
         if addr in self.symbols:
             # prefer function names over object names
@@ -300,7 +257,7 @@ class EmulatorProfile(Output):
         self.symbols[addr] = name
         self.symbols_need_sort = True
 
-    def parse_symbols(self, obj):
+    def parse_symbols(self, obj, verbose):
         "parse symbol file contents"
         # TODO: what if same symbol name is specified for multiple addresses?
         # - keep track of the names and add some post-fix to them so that
@@ -316,13 +273,110 @@ class EmulatorProfile(Output):
                 dummy, addr, kind, name = match.groups()
                 if kind in ('t', 'T'):
                     addr = int(addr, 16)
-                    self._add_symbol(addr, name)
-                    if self.verbose:
+                    self.add_symbol(addr, name)
+                    if verbose:
                         self.message("0x%x = %s" % (addr, name))
             else:
                 self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
         self.message("%d lines with %d code symbols/addresses parsed, %d unknown.\n" % (lines, len(self.symbols), unknown))
+
+    def _text_relative(self, addr):
+        "return absolute address converted to relative if it's within TEXT segment, for symbol lookup"
+        idx = addr
+        area = self.areas[self.text_area]
+        if addr >= area[0] and addr <= area[1]:
+            # within TEXT area -> relative to TEXT start
+            idx -= area[0]
+        return idx
+
+    def get_symbol(self, addr):
+        "return symbol name for given address, or None"
+        if self.symbols:
+            idx = self._text_relative(addr)
+            # overrides profile data function names for same address
+            if idx in self.symbols:
+                return self.symbols[idx]
+        return None
+
+    def get_preceeding_symbol(self, addr):
+        "resolve non-function addresses to preceeding function name+offset"
+        if self.symbols:
+            if self.symbols_need_sort:
+                self.symbols_sorted = self.symbols.keys()
+                self.symbols_sorted.sort()
+                self.symbols_need_sort = False
+            relative = self._text_relative(addr)
+            idx = bisect_right(self.symbols_sorted, relative) - 1
+            if idx >= 0:
+                saddr = self.symbols_sorted[idx]
+                return (self.symbols[saddr], relative - saddr)
+        return self.get_area(addr)
+
+
+
+class EmulatorProfile(Output):
+    "Emulator profile data file parsing and profile information"
+
+    def __init__(self, emuid, processor, symbols):
+        Output.__init__(self)
+        self.symbols = symbols		# ProfileSymbols instance
+        self.processor = processor	# processor information dict
+
+        # profile data format
+        #
+        # emulator ID line:
+        # <ID> <processor name> profile
+        self.emuid = emuid
+        # processor clock speed
+        self.r_clock = re.compile("^Cycles/second:\t([0-9]+)$")
+        # processor names, memory areas and their disassembly formats
+        # are specified by subclasses with disasm argument
+        self.r_disasm = {}
+        for key in processor.keys():
+            assert(processor[key]["areas"])
+            self.r_disasm[key] = re.compile(processor[key]['regexp'])
+        # <symbol/objectfile name>: (in disassembly)
+        # _biostrap:
+        self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
+        # caller info in callee line:
+        # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
+        # 0x<hex> = <count>
+        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
+
+        self.stats = None		# InstructionStats instance
+        self.address = None		# hash of (symbol:addr)
+        self.profile = None		# hash of profile (symbol:data)
+        self.callers = None		# hash of (callee:(caller:count))
+        self.verbose = False
+
+    def set_verbose(self, verbose):
+        "set verbose on/off"
+        self.verbose = verbose
+
+    def parse_symbols(self, fobj):
+        "parse symbols from given file object"
+        self.symbols.parse_symbols(fobj, self.verbose)
+
+    def _get_profile_type(self, fobj):
+        "get profile processor type and speed information or exit if it's unknown"
+        line = fobj.readline()
+        field = line.split()
+        if len(field) != 3 or field[0] != self.emuid:
+            self.error_exit("unrecognized file, line 1:\n\t%smisses %s profiler identification" % line, self.emuid)
+
+        processor = field[1]
+        if processor not in self.processor:
+            self.error_exit("unrecognized profile processor type '%s' on line 1:\n\t%s" % (processor, line))
+        self.symbols.set_areas(self.processor[processor]["areas"], "%s_RAM" % processor)
+
+        line = fobj.readline()
+        match = self.r_clock.match(line)
+        if not match:
+            self.error_exit("invalid %s clock information on line 2:\n\t%s" % (processor, line))
+        hz = int(match.group(1))
+        info = self.processor[processor]
+        return (self.r_disasm[processor], InstructionStats("PROFILE_BEGIN", processor, hz, info))
 
     def _parse_caller(self, line):
         "parse callee: caller call count information"
@@ -355,38 +409,6 @@ class EmulatorProfile(Output):
                 return False
         return True
 
-    def _addr2relative(self, addr):
-        "return absolute address converted to relative if it's within TEXT segment, for symbol lookup"
-        idx = addr
-        area = self.areas[self.text_area]
-        if addr >= area[0] and addr <= area[1]:
-            # within TEXT area -> relative to TEXT start
-            idx -= area[0]
-        return idx
-
-    def get_symbol(self, addr):
-        "return symbol name for given address, or None"
-        if self.symbols:
-            idx = self._addr2relative(addr)
-            # overrides profile data function names for same address
-            if idx in self.symbols:
-                return self.symbols[idx]
-        return None
-
-    def get_preceeding_symbol(self, addr):
-        "resolve non-function addresses to preceeding function name+offset"
-        if self.symbols:
-            if self.symbols_need_sort:
-                self.symbols_sorted = self.symbols.keys()
-                self.symbols_sorted.sort()
-                self.symbols_need_sort = False
-            relative = self._addr2relative(addr)
-            idx = bisect_right(self.symbols_sorted, relative) - 1
-            if idx >= 0:
-                saddr = self.symbols_sorted[idx]
-                return (self.symbols[saddr], relative - saddr)
-        return self._get_area(addr)
-
     def _change_function(self, newname, addr):
         "store current function data and then reset to new function"
         function = self.stats
@@ -408,25 +430,25 @@ class EmulatorProfile(Output):
 
     def _check_symbols(self, addr):
         "if address is in new symbol (=function), change function"
-        name = self.get_symbol(addr)
+        name = self.symbols.get_symbol(addr)
         if name:
             self._change_function(name, addr)
             # this function needs address info in output
             self.address[name] = addr
             return
         # as no better symbol, name it according to area where it moved to
-        area, offset = self._get_area(addr)
+        area, offset = self.symbols.get_area(addr)
         if area:
             self._change_area(addr, area)
 
-    def parse_profile(self, obj):
+    def parse_profile(self, fobj):
         "parse profile data"
-        r_address, self.stats = self._get_profile_type(obj)
+        r_address, self.stats = self._get_profile_type(fobj)
         prev_addr = unknown = lines = 0
         self.address = {}
         self.profile = {}
         self.callers = {}
-        for line in obj.readlines():
+        for line in fobj.readlines():
             lines += 1
             line = line.strip()
             # CPU or DSP address line?
@@ -441,7 +463,7 @@ class EmulatorProfile(Output):
                     # TODO: refactor, don't poke stats innards
                     if not self.stats.addr:
                         # symbol matched from profile, got now address for it
-                        self._add_symbol(addr, self.stats.name)
+                        self.symbols.add_symbol(addr, self.stats.name)
                         self.stats.addr = addr
                     self._check_symbols(addr)
                     self.stats.add(addr, counts.split(','))
@@ -465,7 +487,7 @@ class EmulatorProfile(Output):
                     self.error_exit("unrecognized caller line %d:\n\t'%s'" % (lines, line))
                 continue
             # memory areas?
-            if not self._parse_areas(line):
+            if not self.symbols.parse_areas(line):
                 self.warning("unrecognized line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
 
@@ -484,8 +506,8 @@ class HatariProfile(EmulatorProfile):
         # Emulator name used as first word in profile file
         name = "Hatari"
 
-        # name used for program code section in "areas" hash
-        self.text_area = "PROGRAM_TEXT"
+        # name used for program code section in "areas" dicts below
+        text_area = "PROGRAM_TEXT"
 
         # information on emulated processors
         #
@@ -501,7 +523,7 @@ class HatariProfile(EmulatorProfile):
         processors = {
             "CPU" : {
                 "areas" : {
-                    self.text_area	: (0, 0),
+                    text_area	: (0, 0),
                     "ROM_TOS"	: (0xe00000, 0xe80000),
                     "CARTRIDGE"	: (0xfa0000, 0xfc0000)
                 },
@@ -515,7 +537,7 @@ class HatariProfile(EmulatorProfile):
             },
             "DSP" : {
                 "areas" : {
-                    self.text_area	: (0, 0),
+                    text_area	: (0, 0),
                 },
                 # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
                 # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
@@ -526,7 +548,9 @@ class HatariProfile(EmulatorProfile):
                 "cycles_field": 2
             }
         }
-        EmulatorProfile.__init__(self, name, processors)
+        symbols = ProfileSymbols()
+        symbols.set_text(text_area)
+        EmulatorProfile.__init__(self, name, processors, symbols)
 
 
 class ProfileStats(Output):
@@ -540,7 +564,6 @@ class ProfileStats(Output):
         self.address = None
         self.callers = None
         self.callcount = None
-        self.stats = None
         self.do_totals = False
         self.do_called = False
         self.do_instr = False
@@ -592,20 +615,20 @@ class ProfileStats(Output):
         self.callers = prof.callers
         self.profile = prof.profile
         self.address = prof.address
-        self.stats = prof.stats
 
     def output_totals(self):
         "output profile statistics"
-        totals = self.stats
+        totals = self.profobj.stats
         time = totals.get_time(totals.totals)
         self.write("\nTime spent in profile = %.5fs.\n\n" % time)
 
+        symbols = self.profobj.symbols
         items = len(totals.totals)
         for i in range(items):
             if not totals.totals[i]:
                 continue
             addr = totals.max_addr[i]
-            name, offset = self.profobj.get_preceeding_symbol(addr)
+            name, offset = symbols.get_preceeding_symbol(addr)
             if name:
                 name = " in %s" % name
             self.write("%s:\n" % totals.names[i])
@@ -661,9 +684,10 @@ class ProfileStats(Output):
             return
 
         idx = 0
+        symbols = self.profobj.symbols
         for key in keys:
             value = self.callcount[key]
-            name = self.profobj.get_symbol(key)
+            name = symbols.get_symbol(key)
             if not name:
                 name = "0x%x" % key
             if not self._output_keyval(idx, name, value, total):
@@ -672,7 +696,7 @@ class ProfileStats(Output):
 
     def _output_list(self, keys, field):
         "list output functionality"
-        stats = self.stats
+        stats = self.profobj.stats
         totals = stats.totals
         total = totals[field]
         self.write("\n%s:\n" % stats.names[field])
@@ -816,14 +840,14 @@ label="%s";
             total = 0
             for count in callers[addr].values():
                 total += count
-            name = profile.get_symbol(addr)
+            name = profile.symbols.get_symbol(addr)
             if not name:
                 name = "$%x" % addr
             callees[name] = total
             if name in ignore_to:
                 continue
             for caddr, count in callers[addr].items():
-                cname, offset = profile.get_preceeding_symbol(caddr)
+                cname, offset = profile.symbols.get_preceeding_symbol(caddr)
                 if cname:
                     # no recursion
                     #if cname == name:
