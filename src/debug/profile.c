@@ -26,7 +26,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "file.h"
 
 /* if non-zero, output warnings on syspicious cycle values */
-#define DEBUG 1
+#define DEBUG 0
 
 typedef struct {
 	Uint32 addr;		/* number of calls */
@@ -322,7 +322,11 @@ bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint3
 	*misses = cpu_profile.data[idx].misses;
 	*cycles = cpu_profile.data[idx].cycles;
 	*count = cpu_profile.data[idx].count;
-	*percentage = 100.0*(*count)/cpu_profile.all_count;
+	if (cpu_profile.all_count) {
+		*percentage = 100.0*(*count)/cpu_profile.all_count;
+	} else {
+		*percentage = 0.0;
+	}
 	return (*count > 0);
 }
 
@@ -711,11 +715,8 @@ void Profile_CpuUpdate(void)
 	}
 #if DEBUG
 	if (cycles == 0) {
-		static Uint32 zero_cycles;
-		if (++zero_cycles % 256 == 0) {
-			fprintf(stderr, "WARNING: %d zero cycles, latest at 0x%x\n",
-				zero_cycles, prev_pc);
-		}
+		Uint32 nextpc;
+		Disasm(debugOutput, prev_pc, &nextpc, 1);
 	}
 #endif
 	if (likely(prev->cycles < MAX_CPU_PROFILE_VALUE - cycles)) {
@@ -887,7 +888,11 @@ bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint64 *count, Uint6
 	} else {
 		*cycle_diff = 0;
 	}
-	*percentage = 100.0*(*count)/dsp_profile.ram.all_count;
+	if (dsp_profile.ram.all_count) {
+		*percentage = 100.0*(*count)/dsp_profile.ram.all_count;
+	} else {
+		*percentage = 0.0;
+	}
 	return (*count > 0);
 }
 
