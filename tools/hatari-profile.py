@@ -210,7 +210,7 @@ class ProfileSymbols(Output):
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
 
     def set_areas(self, areas, default):
-        "set areas dict and default area name"
+        "set areas dict and default (zero-started) RAM area name"
         self.default_area = default
         self.areas = areas
 
@@ -238,7 +238,7 @@ class ProfileSymbols(Output):
         "return memory area name + offset (used if no symbol matches)"
         for key, value in self.areas.items():
             if value[1] and addr >= value[0] and addr <= value[1]:
-                return (key, value[0] - addr)
+                return (key, addr - value[0])
         return (self.default_area, addr)
 
     def _text_relative(self, addr):
