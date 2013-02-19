@@ -3,6 +3,11 @@
 # Hatari profile data processor
 #
 # 2013 (C) Eero Tamminen, licensed under GPL v2+
+#
+# TODO: Output in Valgrind callgrind format:
+#       http://valgrind.org/docs/manual/cl-format.html
+# for KCachegrind:
+#       http://kcachegrind.sourceforge.net/
 """
 A tool for post-processing Hatari debugger profiling information
 produced with the following debugger command:
@@ -28,8 +33,8 @@ Options:
 	-a <symbols>	symbol address information file
         -s		list profile statistics
         -t		list top functions for all profile items
-        -f <count>	list only first <count> items
-        -l <limit>      list only items which percentage >= limit
+        -f <count>	list at least first <count> items
+        -l <limit>      list at least items which percentage >= limit
 	-o <file name>	statistics output file name (default is stdout)
         -g              write <profile>.dot callgraph files
         -v		verbose parsing output
@@ -57,6 +62,13 @@ For each given profile file, output is:
   (prof1-0.dot, prof1-2.dot etc)
 
 
+When both -l and -f options are specified, they're combined.  Produced
+lists contain at least number of items specified for -f, and more if
+there are additional items which percentage of total is larger than
+one given for -l.  In callgraphs these options affect which nodes are
+highlighted.
+
+
 Callgraph filtering options to remove nodes and edges from the graph:
 	--ignore <list>         no nodes for these symbols
 	--ignore-to <list>	no arrows to these symbols
@@ -71,19 +83,11 @@ option, as they can get called at any point.  Leaf or intermediate
 functions which are called from everywhere (like malloc) can be good
 candinates to give for '--ignore' option.
 
-In callgraph --limit option affects only which items will be highlighted.
-
 
 To convert dot files e.g. to SVG, use:
 	dot -Tsvg graph.dot > graph.svg
 
 ('dot' tool is in Graphviz package.)
-
-
-TODO: Output in Valgrind callgrind format:
-       http://valgrind.org/docs/manual/cl-format.html
-for KCachegrind:
-       http://kcachegrind.sourceforge.net/
 """
 from bisect import bisect_right
 import getopt, os, re, sys
@@ -595,6 +599,21 @@ class ProfileSorter:
         field = self.field
         return cmp(self.profile[i][field], self.profile[j][field])
 
+    def get_combined_limit(self, field, count, limit):
+        "return percentage for given profile field that satisfies both count & limit constraint"
+        if not count:
+            return limit
+        keys = self.profile.keys()
+        if len(keys) <= count:
+            return 0.0
+        self.field = field
+        keys.sort(self._cmp_field, None, True)
+        total = self.profobj.stats.totals[field]
+        percentage = self.profile[keys[count]][field] * 100.0 / total
+        if percentage < limit or not limit:
+            return percentage
+        return limit
+
     def _output_list(self, keys, count, limit):
         "output list for currently selected field"
         field = self.field
@@ -644,24 +663,37 @@ class ProfileSorter:
         self._output_list(keys, count, limit)
 
 
-class ProfileStats(Output):
-    "profile information statistics output"
+class ProfileOutput(Output):
+    "base class for profile output options"
 
     def __init__(self):
         Output.__init__(self)
-        self.sorter = None
-        self.show_totals = False
-        self.show_top = False
-        self.limit = 1
+        # both unset so that subclasses can set defaults reasonable for them
+        self.limit = 0.0
         self.count = 0
 
     def set_count(self, count):
-        "set how many items to show in lists (0=all)"
+        "set how many items to show or highlight at minimum, 0 = all/unset"
+        if count < 0:
+            self.error_exit("Invalid item count: %d" % count)
         self.count = count
 
     def set_limit(self, limit):
-        "set smallest percentage to show in lists (0=all)"
+        "set percentage is shown or highlighted at minimum, 0.0 = all/unset"
+        if limit < 0.0 or limit > 100.0:
+            self.error_exit("Invalid percentage: %d" % limit)
         self.limit = limit
+
+
+class ProfileStats(ProfileOutput):
+    "profile information statistics output"
+
+    def __init__(self):
+        ProfileOutput.__init__(self)
+        self.limit = 1.0
+        self.sorter = None
+        self.show_totals = False
+        self.show_top = False
 
     def enable_totals(self):
         "enable totals list"
@@ -701,7 +733,7 @@ class ProfileStats(Output):
                 sorter.do_list(item, self.count, self.limit)
 
 
-class ProfileGraph(Output):
+class ProfileGraph(ProfileOutput):
     "profile callgraph output"
 
     header = """
@@ -729,12 +761,12 @@ label="%s";
     footer = "}\n"
 
     def __init__(self):
-        Output.__init__(self)
+        ProfileOutput.__init__(self)
+        self.count = 8
         self.profobj = None
         self.nodes = None
         self.edges = None
         self.output_enabled = False
-        self.limit = 10.0
         self.only = []
         self.ignore = []
         self.ignore_from = []
@@ -743,10 +775,6 @@ label="%s";
     def enable_output(self):
         "enable output"
         self.output_enabled = True
-
-    def set_limit(self, limit):
-        "set graph node emphatizing limit, as instructions percentage"
-        self.limit = limit
 
     def set_only(self, lst):
         "set list of only symbols to include"
@@ -800,15 +828,17 @@ label="%s";
         self.edges = edges
         return True
 
-    def _output_nodes(self, field, total):
-        "output graph nodes from filtered edges dict"
+    def _output_nodes(self, field, sorter):
+        "output graph nodes from filtered nodes dict"
         profile = self.profobj.profile
         stats = self.profobj.stats
+        total = stats.totals[field]
+        limit = sorter.get_combined_limit(field, self.count, self.limit)
         for name in self.nodes.keys():
             values = profile[name]
             count = values[field]
             percentage = 100.0 * count / total
-            if percentage >= self.limit:
+            if percentage >= limit:
                 style = " color=red style=filled fillcolor=lightgray" # shape=diamond
             else:
                 style = ""
@@ -838,10 +868,10 @@ label="%s";
         "output graphs for given profile data"
         if not (self.output_enabled and self._filter_profile(profobj)):
             return
+        sorter = ProfileSorter(self.profobj, None)
         basename = os.path.splitext(fname)[0]
         for field in range(profobj.stats.items):
-            total = profobj.stats.totals[field]
-            if not total:
+            if not profobj.stats.totals[field]:
                 continue
             dotname = "%s-%d.dot" % (basename, field)
             self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
@@ -853,7 +883,7 @@ label="%s";
             name = profobj.stats.names[field]
             title = "%s, for %s" % (name, fname)
             self.write(self.header % title)
-            self._output_nodes(field, total)
+            self._output_nodes(field, sorter)
             self._output_edges()
             self.write(self.footer)
 
