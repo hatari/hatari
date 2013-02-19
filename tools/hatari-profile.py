@@ -122,7 +122,7 @@ class Output:
 class InstructionStats:
     "current function instructions state + info on all instructions"
 
-    def __init__(self, name, processor, hz, info):
+    def __init__(self, processor, hz, info):
         "function name, processor name, its speed, processor info dict"
         # first field is ALWAYS calls count
         self.instructions_field = info["instructions_field"]
@@ -135,7 +135,7 @@ class InstructionStats:
         self.processor = processor
         self.hz = hz
         self.areas = {}		# which memory area boundaries have been passed
-        self.zero(name, None)
+        self.zero(None, None)
 
     def zero(self, name, addr):
         "start collecting new 'name' function instructions information"
@@ -191,6 +191,7 @@ class ProfileSymbols(Output):
 
     def __init__(self, text_area):
         Output.__init__(self)
+        self.names = {}
         self.symbols = {}		# hash of (addr:symbol)
         self.symbols_need_sort = False
         self.symbols_sorted = None	# sorted list of symbol addresses
@@ -213,22 +214,25 @@ class ProfileSymbols(Output):
         self.default_area = default
         self.areas = areas
 
-    def parse_areas(self, line):
+    def parse_areas(self, fobj, parsed):
         "parse memory area lines from data"
-        match = self.r_area.match(line)
-        if not match:
-            return False
-        name, start, end = match.groups()
-        end = int(end, 16)
-        start = int(start, 16)
-        if name in self.areas:
+        while True:
+            line = fobj.readline()
+            if not line:
+                return None, parsed
+            match = self.r_area.match(line.strip())
+            if not match:
+                return line, parsed
+            parsed += 1
+            name, start, end = match.groups()
+            end = int(end, 16)
+            start = int(start, 16)
+            if name not in self.areas:
+                self.warning("unrecognized memory area '%s' on line %d" % (name, parsed))
+                continue
             self.areas[name] = (start, end)
-        else:
-            self.warning("unrecognized memory arear line")
-            return False
-        if end < start:
-            self.error_exit("invalid %s memory area range: 0x%x-0x%x" % (name, start, end))
-        return True
+            if end < start:
+                self.error_exit("invalid %s memory area range: 0x%x-0x%x on line %d" % (name, start, end, parsed))
 
     def get_area(self, addr):
         "return memory area name + offset (used if no symbol matches)"
@@ -237,25 +241,57 @@ class ProfileSymbols(Output):
                 return (key, value[0] - addr)
         return (self.default_area, addr)
 
-    def add_symbol(self, addr, name):
-        "assign given symbol name to given address"
+    def _text_relative(self, addr):
+        "return absolute address converted to TEXT relative if it's within TEXT segment"
+        idx = addr
+        area = self.areas[self.text_area]
+        if addr >= area[0] and addr <= area[1]:
+            # within TEXT area -> relative to TEXT start
+            idx -= area[0]
+        return idx
+
+    def _add_symbol(self, addr, name):
+        "assign given symbol name to given address, return name (in case it had to be changed)"
+        name = name.replace('.', '_').replace('$', 'D')
         if addr in self.symbols:
+            # symbol exists already for that address
+            if name == self.symbols[addr]:
+                return
             # prefer function names over object names
-            if name.endswith('.o'):
+            if name.endswith('_o'):
                 return
             oldname = self.symbols[addr]
             lendiff = abs(len(name) - len(oldname))
-            # don't warn about object name replacements or adding/removing short prefix
-            if not (oldname.endswith('.o') or (lendiff < 3 and (name.endswith(oldname) or oldname.endswith(name)))):
+            minlen = min(len(name), min(oldname))
+            # don't warn about object name replacements,
+            # or adding/removing short prefix or postfix
+            if not (oldname.endswith('_o') or
+                    (lendiff < 3 and minlen > 3 and
+                     (name.endswith(oldname) or oldname.endswith(name) or
+                     name.startswith(oldname) or oldname.startswith(name)))):
                 self.warning("replacing '%s' at 0x%x with '%s'" % (oldname, addr, name))
+        if name in self.names:
+            # symbol with same name already exists at another address
+            idx = 1
+            while True:
+                newname = "%s_%d" % (name, idx)
+                if newname in self.names:
+                    idx += 1
+                    continue
+                self.warning("renaming '%s' at 0x%x as '%s' to avoid clash with same symbol at 0x%x" % (name, addr, newname, self.names[name]))
+                name = newname
+                break
+        self.names[name] = addr
         self.symbols[addr] = name
         self.symbols_need_sort = True
+        return name
+
+    def add_symbol_relative(self, addr, name):
+        "add potentially TEXT relative symbol"
+        self._add_symbol(self._text_relative(addr), name)
 
     def parse_symbols(self, obj, verbose):
         "parse symbol file contents"
-        # TODO: what if same symbol name is specified for multiple addresses?
-        # - keep track of the names and add some post-fix to them so that
-        #   they don't overwrite each others data in self.profile hash?
         unknown = lines = 0
         for line in obj.readlines():
             lines += 1
@@ -267,22 +303,13 @@ class ProfileSymbols(Output):
                 dummy, addr, kind, name = match.groups()
                 if kind in ('t', 'T'):
                     addr = int(addr, 16)
-                    self.add_symbol(addr, name)
+                    name = self._add_symbol(addr, name)
                     if verbose:
                         self.message("0x%x = %s" % (addr, name))
             else:
                 self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
         self.message("%d lines with %d code symbols/addresses parsed, %d unknown." % (lines, len(self.symbols), unknown))
-
-    def _text_relative(self, addr):
-        "return absolute address converted to relative if it's within TEXT segment, for symbol lookup"
-        idx = addr
-        area = self.areas[self.text_area]
-        if addr >= area[0] and addr <= area[1]:
-            # within TEXT area -> relative to TEXT start
-            idx -= area[0]
-        return idx
 
     def get_symbol(self, addr):
         "return symbol name for given address, or None"
@@ -325,36 +352,38 @@ class ProfileCallers(Output):
         # TODO: remove this when profile parsing is sequealized
         self.callinfo = {}
 
-    def parse_line(self, line):
+    def parse_callers(self, fobj, parsed, line):
         "parse callee: caller call count information"
         #0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
-        callers = line.split(',')
-        if len(callers) < 2:
-            self.warning("caller info missing")
-            return False
-        if ':' not in callers[0]:
-            self.warning("callee/caller separator ':' missing")
-            return False
-        last = callers[-1]
-        if len(last) and last[-1] != ')':
-            self.warning("last item isn't empty or symbol name")
-            return False
+        while True:
+            if not line:
+                return None, parsed
+            if not line.startswith("0x"):
+                return line, parsed
+            callers = line.split(',')
+            if len(callers) < 2:
+                self.error_exit("caller info missing on callee line %d\n\t'%s'" % (parsed, line))
+            if ':' not in callers[0]:
+                self.error_exit("callee/caller separator ':' missing on callee line %d\n\t'%s'" % (parsed, line))
+            last = callers[-1].strip()
+            if len(last) and last[-1] != ')':
+                self.error_exit("last item isn't empty or symbol name on callee line %d\n\t'%s'" % (parsed, line))
 
-        addr, callers[0] = callers[0].split(':')
-        callinfo = {}
-        for caller in callers[:-1]:
-            caller = caller.strip()
-            match = self.r_caller.match(caller)
-            if match:
-                caddr, count = match.groups()
-                caddr = int(caddr, 16)
-                count = int(count, 10)
-                callinfo[caddr] = count
-            else:
-                self.warning("unrecognized caller info '%s'" % caller)
-                return False
-        self.callinfo[int(addr, 16)] = callinfo
-        return True
+            addr, callers[0] = callers[0].split(':')
+            callinfo = {}
+            for caller in callers[:-1]:
+                caller = caller.strip()
+                match = self.r_caller.match(caller)
+                if match:
+                    caddr, count = match.groups()
+                    caddr = int(caddr, 16)
+                    count = int(count, 10)
+                    callinfo[caddr] = count
+                else:
+                    self.error_exit("unrecognized caller info '%s' on callee line %d\n\t'%s'" % (caller, parsed, line))
+            self.callinfo[int(addr, 16)] = callinfo
+            parsed += 1
+            line = fobj.readline()
 
     def _resolve(self, symbols):
         "resolve caller symbols and add them name_offset dict"
@@ -438,97 +467,118 @@ class EmulatorProfile(Output):
         if not match:
             self.error_exit("invalid %s clock information on line 2:\n\t%s" % (processor, line))
         hz = int(match.group(1))
-        info = self.processor[processor]
-        return (self.r_disasm[processor], InstructionStats("PROFILE_BEGIN", processor, hz, info))
+        self.stats = InstructionStats(processor, hz, self.processor[processor])
+        return (2, self.r_disasm[processor])
 
     def _change_function(self, newname, addr):
         "store current function data and then reset to new function"
         function = self.stats
         if function.has_data():
+            oldaddr = function.addr
             oldname = function.name
-            if oldname in self.profile:
-                self.warning("when switching from '%s' to '%s' symbol, overriding data for former:\n\t%s -> %s" % (oldname, newname, self.profile[oldname], function.data))
+            if not oldname:
+                oldname, offset = self.symbols.get_preceeding_symbol(oldaddr)
+                oldaddr -= offset
+            elif oldname in self.profile:
+                info = (oldname, self.address[oldname], oldaddr, self.profile[oldname], function.data)
+                self.warning("overriding data for '%s' at 0x%x with same symbol at 0x%x:\n\t%s -> %s" % info)
+            self.message("SAVED INFO: %s at 0x%x %s" % (oldname, oldaddr, function.data))
+            self.address[oldname] = oldaddr
             self.profile[oldname] = function.data
             if self.verbose:
                 function.show()
         function.zero(newname, addr)
 
-    def _change_area(self, addr, area):
+    def _change_area(self, addr, name):
         "switch function to given area, if not already in it"
-        if area not in self.stats.areas:
-            self.stats.areas[area] = True
-            self._change_function(area, addr)
-            self.address[area] = addr
+        if name not in self.stats.areas:
+            self.stats.areas[name] = True
+            self._change_function(name, addr)
 
     def _check_symbols(self, addr):
         "if address is in new symbol (=function), change function"
         name = self.symbols.get_symbol(addr)
         if name:
             self._change_function(name, addr)
-            # this function needs address info in output
-            self.address[name] = addr
             return
         # as no better symbol, name it according to area where it moved to
-        area, dummy = self.symbols.get_area(addr)
-        if area:
-            self._change_area(addr, area)
+        name, dummy = self.symbols.get_area(addr)
+        if name:
+            self._change_area(addr, name)
 
-    def parse_profile(self, fobj):
-        "parse profile data"
-        r_address, self.stats = self._get_profile_type(fobj)
-        prev_addr = unknown = lines = 0
-        self.address = {}
-        self.profile = {}
-        self.callers.zero()
-        for line in fobj.readlines():
-            lines += 1
+    def _parse_disassembly(self, fobj, parsed, line, r_address):
+        "parse profile disassembly"
+        prev_addr = 0
+        discontinued = False
+        while True:
+            if not line:
+                return None, parsed
             line = line.strip()
-            # CPU or DSP address line?
-            if line.startswith('$') or line.startswith('p:'):
-                match = r_address.match(line)
-                if match:
-                    addr, counts = match.groups()
-                    addr = int(addr, 16)
-                    if prev_addr > addr:
-                        self.error_exit("memory addresses are not in order on line %d" % lines)
-                    prev_addr = addr
-                    # TODO: refactor, don't poke stats innards
-                    if not self.stats.addr:
-                        # symbol matched from profile, got now address for it
-                        self.symbols.add_symbol(addr, self.stats.name)
-                        self.stats.addr = addr
-                    self._check_symbols(addr)
-                    self.stats.add(addr, counts.split(','))
-                else:
-                    self.error_exit("unrecognized address line %d:\n\t'%s'" % (lines, line))
-                continue
-            # symbol?
-            if line.endswith(':'):
+            if line == "[...]":
+                # address discontinuation
+                discontinued = True
+            elif line.endswith(':'):
+                # symbol
                 match = self.r_function.match(line)
                 if match:
                     self._change_function(match.group(1), None)
                 else:
-                    self.error_exit("unrecognized function line %d:\n\t'%s'" % (lines, line))
-                continue
-            # address discontinuation
-            if line == "[...]":
-                continue
-            # caller information
-            if line.startswith('0x'):
-                if not self.callers.parse_line(line):
-                    self.error_exit("unrecognized caller line %d:\n\t'%s'" % (lines, line))
-                continue
-            # memory areas?
-            if not self.symbols.parse_areas(line):
-                self.warning("unrecognized line %d:\n\t'%s'" % (lines, line))
-                unknown += 1
+                    self.error_exit("unrecognized function line %d:\n\t'%s'" % (parsed, line))
+            else:
+                # disassembly line
+                match = r_address.match(line)
+                if not match:
+                    # done
+                    return line, parsed
+                addr, counts = match.groups()
+                addr = int(addr, 16)
+                if prev_addr > addr:
+                    self.error_exit("memory addresses are not in order on line %d" % parsed)
+                prev_addr = addr
+                newname = None
+                # TODO: refactor, don't poke stats innards
+                if self.stats.name and not self.stats.addr:
+                    newname = self.stats.name
+                    # symbol matched below, got now address for it
+                    self.symbols.add_symbol_relative(addr, newname)
+                    self.stats.addr = addr
+                if discontinued:
+                    discontinued = False
+                    # may skip to a function which name is not visible in profile file
+                    name, offset = self.symbols.get_preceeding_symbol(addr)
+                    if name != self.stats.name:
+                        self.message("DISCONTINUATION: %s at 0x%x -> %s at 0x%x" % (self.stats.name, self.stats.addr, name, addr-offset))
+                        self._change_function(name, addr-offset)
+                        newname = name
+                if not newname:
+                    self._check_symbols(addr)
+                self.stats.add(addr, counts.split(','))
+            # next line
+            parsed += 1
+            line = fobj.readline()
 
-        self._change_function("PROFILE_END", None)
-        self.message("%d lines processed with %d functions." % (lines, len(self.profile)))
-        if 2*unknown > lines:
-            self.error_exit("more than half of the lines were unrecognized!")
+    def parse_profile(self, fobj):
+        "parse profile data"
+        self.address = {}
+        self.profile = {}
+        self.callers.zero()
+        # header
+        parsed, r_address = self._get_profile_type(fobj)
+        # memory areas
+        line, parsed = self.symbols.parse_areas(fobj, parsed)
+        # instructions / memory addresses
+        line, parsed = self._parse_disassembly(fobj, parsed, line, r_address)
+        # caller information
+        line, parsed = self.callers.parse_callers(fobj, parsed, line)
+        # unrecognized lines
+        if line:
+            self.error_exit("unrecognized line %d:\n\t'%s'" % (parsed, line))
+        # parsing info
+        self.message("%d lines processed with %d functions." % (parsed, len(self.profile)))
         if len(self.profile) < 1:
             self.error_exit("no functions found!")
+        # finish
+        self._change_function(None, None)
         self.stats.sum_values(self.profile.values())
         self.callers.complete(self.profile, self.symbols)
 
@@ -639,7 +689,7 @@ class ProfileSorter:
                 break
             idx += 1
 
-            if key in addresses:
+            if addresses[key]:
                 if field == stats.cycles_field:
                     time = stats.get_time(self.profile[key])
                     info = "(0x%06x,%9.5fs)" % (addresses[key], time)
