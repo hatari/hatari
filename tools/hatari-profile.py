@@ -251,7 +251,7 @@ class ProfileSymbols(Output):
         return idx
 
     def _add_symbol(self, addr, name):
-        "assign given symbol name to given address, return name (in case it had to be changed)"
+        "assign given symbol name to given address"
         name = name.replace('.', '_').replace('$', 'D')
         if addr in self.symbols:
             # symbol exists already for that address
@@ -284,16 +284,15 @@ class ProfileSymbols(Output):
         self.names[name] = addr
         self.symbols[addr] = name
         self.symbols_need_sort = True
-        return name
 
     def add_symbol_relative(self, addr, name):
         "add potentially TEXT relative symbol"
         self._add_symbol(self._text_relative(addr), name)
 
-    def parse_symbols(self, obj, verbose):
+    def parse_symbols(self, fobj):
         "parse symbol file contents"
         unknown = lines = 0
-        for line in obj.readlines():
+        for line in fobj.readlines():
             lines += 1
             line = line.strip()
             if line.startswith('#'):
@@ -303,9 +302,7 @@ class ProfileSymbols(Output):
                 dummy, addr, kind, name = match.groups()
                 if kind in ('t', 'T'):
                     addr = int(addr, 16)
-                    name = self._add_symbol(addr, name)
-                    if verbose:
-                        self.message("0x%x = %s" % (addr, name))
+                    self._add_symbol(addr, name)
             else:
                 self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
                 unknown += 1
@@ -448,7 +445,7 @@ class EmulatorProfile(Output):
 
     def parse_symbols(self, fobj):
         "parse symbols from given file object"
-        self.symbols.parse_symbols(fobj, self.verbose)
+        self.symbols.parse_symbols(fobj)
 
     def _get_profile_type(self, fobj):
         "get profile processor type and speed information or exit if it's unknown"
@@ -482,7 +479,8 @@ class EmulatorProfile(Output):
             elif oldname in self.profile:
                 info = (oldname, self.address[oldname], oldaddr, self.profile[oldname], function.data)
                 self.warning("overriding data for '%s' at 0x%x with same symbol at 0x%x:\n\t%s -> %s" % info)
-            self.message("SAVED INFO: %s at 0x%x %s" % (oldname, oldaddr, function.data))
+            if self.verbose:
+                self.message("SAVED INFO: %s at 0x%x %s" % (oldname, oldaddr, function.data))
             self.address[oldname] = oldaddr
             self.profile[oldname] = function.data
             if self.verbose:
@@ -573,14 +571,14 @@ class EmulatorProfile(Output):
         # unrecognized lines
         if line:
             self.error_exit("unrecognized line %d:\n\t'%s'" % (parsed, line))
-        # parsing info
-        self.message("%d lines processed with %d functions." % (parsed, len(self.profile)))
-        if len(self.profile) < 1:
-            self.error_exit("no functions found!")
         # finish
         self._change_function(None, None)
         self.stats.sum_values(self.profile.values())
         self.callers.complete(self.profile, self.symbols)
+        # parsing info
+        self.message("%d lines processed with %d functions." % (parsed, len(self.profile)))
+        if len(self.profile) < 1:
+            self.error_exit("no functions found!")
 
 
 class HatariProfile(EmulatorProfile):
@@ -847,7 +845,7 @@ label="%s";
         self.profobj = None
         callobj = profobj.callers
         if not callobj.callinfo:
-            self.warning("callee/caller information missing")
+            self.message("INFO: callee/caller information missing")
             return False
         nodes = {}
         edges = {}
