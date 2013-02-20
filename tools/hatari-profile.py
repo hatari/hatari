@@ -30,7 +30,8 @@ section start address start given in the profile data file.
 Usage: hatari-profile [options] <profile files>
 
 Options:
-	-a <symbols>	symbol address information file
+	-a <symbols>	absolute symbol address information file
+        -r <symbols>	TEXT (code section) relative symbols file
         -s		list profile statistics
         -t		list top functions for all profile items
         -f <count>	list at least first <count> items
@@ -40,7 +41,8 @@ Options:
         -v		verbose parsing output
 
 Long options for above are:
-	--addresses
+	--absolute
+        --relative
         --stats
         --top
         --first
@@ -146,9 +148,9 @@ class InstructionStats:
         self.addr = addr
         self.data = [0] * self.items
 
-    def change_area(self, name):
+    def change_area(self, name, addr):
         "switch to given area, if not already in it, return True if switched"
-        if name and name not in self.areas:
+        if addr > self.addr and name and name not in self.areas:
             self.areas[name] = True
             return True
         return False
@@ -159,6 +161,10 @@ class InstructionStats:
             self.addr = addr
             return self.name
         return None
+
+    def rename(self, name):
+        "rename function"
+        self.name = name
 
     def has_data(self):
         "return whether function has valid data yet"
@@ -187,9 +193,9 @@ class InstructionStats:
         "return time (in seconds) spent by given data item"
         return float(data[self.cycles_field])/self.hz
 
-    def show(self):
-        "show current function instruction state"
-        print "0x%x = %s: %s (%.5fs)" % (self.addr, self.name, repr(self.data), self.get_time(self.data))
+    def __repr__(self):
+        "return printable current function instruction state"
+        return "0x%x = %s: %s (%.5fs)" % (self.addr, self.name, repr(self.data), self.get_time(self.data))
 
     def sum_values(self, values):
         "calculate totals for given instruction value sets"
@@ -206,8 +212,10 @@ class ProfileSymbols(Output):
 
     def __init__(self, text_area):
         Output.__init__(self)
-        self.names = {}
-        self.symbols = {}		# hash of (addr:symbol)
+        self.names = None
+        self.symbols = None	# (addr:symbol) dict for resolving
+        self.absolute = {}	# (addr:symbol) dict of absolute symbols
+        self.relative = {}	# (addr:symbol) dict of relative symbols
         self.symbols_need_sort = False
         self.symbols_sorted = None	# sorted list of symbol addresses
         self.areas = None
@@ -229,15 +237,15 @@ class ProfileSymbols(Output):
         self.default_area = default
         self.areas = areas
 
-    def parse_areas(self, fobj, parsed):
+    def parse_areas(self, fobj, parsed, verbose):
         "parse memory area lines from data"
         while True:
             line = fobj.readline()
             if not line:
-                return None, parsed
+                break
             match = self.r_area.match(line.strip())
             if not match:
-                return line, parsed
+                break
             parsed += 1
             name, start, end = match.groups()
             end = int(end, 16)
@@ -247,7 +255,11 @@ class ProfileSymbols(Output):
                 continue
             self.areas[name] = (start, end)
             if end < start:
-                self.error_exit("invalid %s memory area range: 0x%x-0x%x on line %d" % (name, start, end, parsed))
+                self.error_exit("invalid memory area '%s': 0x%x-0x%x on line %d" % (name, start, end, parsed))
+            elif verbose:
+                self.message("memory area '%s': 0x%x-0x%x" % (name, start, end))
+        self._relocate_symbols(verbose)
+        return line, parsed
 
     def get_area(self, addr):
         "return memory area name + offset (used if no symbol matches)"
@@ -256,36 +268,59 @@ class ProfileSymbols(Output):
                 return (key, addr - value[0])
         return (self.default_area, addr)
 
-    def _text_relative(self, addr):
-        "return absolute address converted to TEXT relative if it's within TEXT segment"
-        idx = addr
-        area = self.areas[self.text_area]
-        if addr >= area[0] and addr <= area[1]:
-            # within TEXT area -> relative to TEXT start
-            idx -= area[0]
-        return idx
-
-    def _add_symbol(self, addr, name):
-        "assign given symbol name to given address"
-        name = name.replace('.', '_').replace('$', 'D')
-        if addr in self.symbols:
+    def _check_symbol(self, addr, name, symbols):
+        "return True if symbol is OK for addition"
+        if addr in symbols:
             # symbol exists already for that address
-            if name == self.symbols[addr]:
-                return
+            if name == symbols[addr]:
+                return False
             # prefer function names over object names
-            if name.endswith('_o'):
-                return
-            oldname = self.symbols[addr]
+            if name.endswith('.o'):
+                return False
+            oldname = symbols[addr]
             lendiff = abs(len(name) - len(oldname))
             minlen = min(len(name), min(oldname))
             # don't warn about object name replacements,
             # or adding/removing short prefix or postfix
-            if not (oldname.endswith('_o') or
+            if not (oldname.endswith('.o') or
                     (lendiff < 3 and minlen > 3 and
                      (name.endswith(oldname) or oldname.endswith(name) or
                      name.startswith(oldname) or oldname.startswith(name)))):
                 self.warning("replacing '%s' at 0x%x with '%s'" % (oldname, addr, name))
+        return True
+
+    def parse_symbols(self, fobj, is_relative):
+        "parse symbol file contents"
+        unknown = lines = 0
+        if is_relative:
+            symbols = self.relative
+        else:
+            symbols = self.absolute
+        for line in fobj.readlines():
+            lines += 1
+            line = line.strip()
+            if line.startswith('#'):
+                continue
+            match = self.r_symbol.match(line)
+            if match:
+                dummy, addr, kind, name = match.groups()
+                if kind in ('t', 'T'):
+                    addr = int(addr, 16)
+                    if self._check_symbol(addr, name, symbols):
+                        symbols[addr] = name
+            else:
+                self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
+                unknown += 1
+        self.message("%d lines with %d code symbols/addresses parsed, %d unknown." % (lines, len(symbols), unknown))
+
+    def _rename_symbol(self, addr, name):
+        "return symbol name, potentially renamed if there were conflicts"
+        # TODO: remove replaces after callgraph uses indexes
+        # instead of symbols for node names
+        name = name.replace('.', '_').replace('$', 'D')
         if name in self.names:
+            if addr == self.names[name]:
+                return name
             # symbol with same name already exists at another address
             idx = 1
             while True:
@@ -297,53 +332,62 @@ class ProfileSymbols(Output):
                 name = newname
                 break
         self.names[name] = addr
-        self.symbols[addr] = name
+        return name
+
+    def _relocate_symbols(self, verbose):
+        "combine absolute and relative symbols to single lookup"
+        # renaming is done only at this point (after parsing memory areas)
+        # to avoid addresses in names dict to be messed by relative symbols
+        self.names = {}
+        self.symbols = {}
         self.symbols_need_sort = True
+        for addr, name in self.absolute.items():
+            name = self._rename_symbol(addr, name)
+            self.symbols[addr] = name
+            if verbose:
+                self.message("0x%x: %s (absolute)" % (addr, name))
+        if not self.relative:
+            return
+        if self.text_area not in self.areas:
+            self.error_exit("'%s' area range missing from profile, needed for relative symbols" % self.text_area)
+        area = self.areas[self.text_area]
+        for addr, name in self.relative.items():
+            addr += area[0]
+            # -1 used because compiler can add TEXT symbol right after end of TEXT section
+            if addr < area[0] or addr-1 > area[1]:
+                self.error_exit("relative symbol '%s' address 0x%x is outside of TEXT area: 0x%x-0x%x" % (name, addr, area[0], area[1]))
+            if self._check_symbol(addr, name, self.symbols):
+                name = self._rename_symbol(addr, name)
+                self.symbols[addr] = name
+                if verbose:
+                    self.message("0x%x: %s (relative)" % (addr, name))
 
-    def add_symbol_relative(self, addr, name):
-        "add potentially TEXT relative symbol"
-        self._add_symbol(self._text_relative(addr), name)
-
-    def parse_symbols(self, fobj):
-        "parse symbol file contents"
-        unknown = lines = 0
-        for line in fobj.readlines():
-            lines += 1
-            line = line.strip()
-            if line.startswith('#'):
-                continue
-            match = self.r_symbol.match(line)
-            if match:
-                dummy, addr, kind, name = match.groups()
-                if kind in ('t', 'T'):
-                    addr = int(addr, 16)
-                    self._add_symbol(addr, name)
-            else:
-                self.warning("unrecognized symbol line %d:\n\t'%s'" % (lines, line))
-                unknown += 1
-        self.message("%d lines with %d code symbols/addresses parsed, %d unknown." % (lines, len(self.symbols), unknown))
+    def add_profile_symbol(self, addr, name):
+        "add absolute symbol and return its name in case it got renamed"
+        if self._check_symbol(addr, name, self.symbols):
+            name = self._rename_symbol(addr, name)
+            self.symbols[addr] = name
+            self.symbols_need_sort = True
+        return name
 
     def get_symbol(self, addr):
         "return symbol name for given address, or None"
-        if self.symbols:
-            idx = self._text_relative(addr)
-            # overrides profile data function names for same address
-            if idx in self.symbols:
-                return self.symbols[idx]
+        if addr in self.symbols:
+            return self.symbols[addr]
         return None
 
     def get_preceeding_symbol(self, addr):
         "resolve non-function addresses to preceeding function name+offset"
+        # should be called only after profile addresses has started
         if self.symbols:
             if self.symbols_need_sort:
                 self.symbols_sorted = self.symbols.keys()
                 self.symbols_sorted.sort()
                 self.symbols_need_sort = False
-            relative = self._text_relative(addr)
-            idx = bisect_right(self.symbols_sorted, relative) - 1
+            idx = bisect_right(self.symbols_sorted, addr) - 1
             if idx >= 0:
                 saddr = self.symbols_sorted[idx]
-                return (self.symbols[saddr], relative - saddr)
+                return (self.symbols[saddr], addr - saddr)
         return self.get_area(addr)
 
 
@@ -458,9 +502,9 @@ class EmulatorProfile(Output):
         "set verbose on/off"
         self.verbose = verbose
 
-    def parse_symbols(self, fobj):
+    def parse_symbols(self, fobj, is_relative):
         "parse symbols from given file object"
-        self.symbols.parse_symbols(fobj)
+        self.symbols.parse_symbols(fobj, is_relative)
 
     def _get_profile_type(self, fobj):
         "get profile processor type and speed information or exit if it's unknown"
@@ -491,13 +535,13 @@ class EmulatorProfile(Output):
             if not oldname:
                 oldname, offset = self.symbols.get_preceeding_symbol(oldaddr)
                 oldaddr -= offset
-            elif oldname in self.profile:
+            if oldname in self.profile:
                 info = (oldname, self.address[oldname], oldaddr, self.profile[oldname], function.data)
                 self.warning("overriding data for '%s' at 0x%x with same symbol at 0x%x:\n\t%s -> %s" % info)
             self.address[oldname] = oldaddr
             self.profile[oldname] = function.data
             if self.verbose:
-                function.show()
+                self.message(function)
         function.zero(newname, addr)
 
     def _check_symbols(self, addr):
@@ -507,8 +551,9 @@ class EmulatorProfile(Output):
             self._change_function(name, addr)
         else:
             # as no better symbol, name it according to area where it moved to?
-            name, dummy = self.symbols.get_area(addr)
-            if self.stats.change_area(name):
+            name, offset = self.symbols.get_area(addr)
+            addr -= offset
+            if self.stats.change_area(name, addr):
                 self._change_function(name, addr)
 
     def _parse_disassembly(self, fobj, parsed, line, r_address):
@@ -542,16 +587,24 @@ class EmulatorProfile(Output):
                 prev_addr = addr
                 newname = self.stats.name_for_address(addr)
                 if newname:
-                    # symbol name finally got address on this profile line
-                    self.symbols.add_symbol_relative(addr, newname)
-                if discontinued:
+                    # new symbol name finally got address on this profile line,
+                    # but it may need renaming due to symbol name clashes
+                    newname = self.symbols.add_profile_symbol(addr, newname)
+                    self.stats.rename(newname)
+                elif discontinued:
                     discontinued = False
-                    # may skip to a function which name is not visible in profile file
+                    # continuation may skip to a function which name is not visible in profile file
                     name, offset = self.symbols.get_preceeding_symbol(addr)
-                    if name != self.stats.name:
+                    symaddr = addr - offset
+                    # if changed area, preceeding symbol can be before area start,
+                    # so need to check both address, and name having changed
+                    if symaddr > self.stats.addr and name != self.stats.name:
+                        addr = symaddr
                         if self.verbose:
-                            self.message("DISCONTINUATION: %s at 0x%x -> %s at 0x%x" % (self.stats.name, self.stats.addr, name, addr-offset))
-                        self._change_function(name, addr-offset)
+                            self.message("DISCONTINUATION: %s at 0x%x -> %s at 0x%x" % (self.stats.name, self.stats.addr, name, addr))
+                        #if newname:
+                        #    self.warning("name_for_address() got name '%s' instead of '%s' from get_preceeding_symbol()" % (newname, name))
+                        self._change_function(name, addr)
                         newname = name
                 if not newname:
                     self._check_symbols(addr)
@@ -568,7 +621,7 @@ class EmulatorProfile(Output):
         # header
         parsed, r_address = self._get_profile_type(fobj)
         # memory areas
-        line, parsed = self.symbols.parse_areas(fobj, parsed)
+        line, parsed = self.symbols.parse_areas(fobj, parsed, self.verbose)
         # instructions / memory addresses
         line, parsed = self._parse_disassembly(fobj, parsed, line, r_address)
         # caller information
@@ -768,9 +821,12 @@ class ProfileStats(ProfileOutput):
             if not totals.totals[i]:
                 continue
             addr = totals.max_addr[i]
-            name, dummy = symbols.get_preceeding_symbol(addr)
+            name, offset = symbols.get_preceeding_symbol(addr)
             if name:
-                name = " in %s" % name
+                if offset:
+                    name = " in %s+%d" % (name, offset)
+                else:
+                    name = " in %s" % name
             self.write("%s:\n" % totals.names[i])
             self.write("- max = %d,%s at 0x%x\n" % (totals.max_val[i], name, addr))
             self.write("- %d in total\n" % totals.totals[i])
@@ -944,7 +1000,7 @@ label="%s";
 class Main(Output):
     "program main loop & args parsing"
     longopts = [
-        "addresses=",
+        "absolute=",
         "first",
         "graph",
         "ignore=",
@@ -953,6 +1009,7 @@ class Main(Output):
         "limit=",
         "only=",
         "output=",
+        "relative=",
         "stats",
         "top",
         "verbose"
@@ -969,7 +1026,7 @@ class Main(Output):
     def parse_args(self):
         "parse & handle program arguments"
         try:
-            opts, rest = getopt.getopt(self.args, "a:f:gl:o:stv", self.longopts)
+            opts, rest = getopt.getopt(self.args, "a:f:gl:o:r:stv", self.longopts)
         except getopt.GetoptError as err:
             self.usage(err)
 
@@ -978,11 +1035,20 @@ class Main(Output):
         stats = ProfileStats()
         for opt, arg in opts:
             #self.message("%s: %s" % (opt, arg))
-            if opt in ("-a", "--addresses"):
-                self.message("\nParsing symbol address information from %s..." % arg)
-                prof.parse_symbols(self.open_file(arg, "r"))
+            if opt in ("-a", "--absolute"):
+                self.message("\nParsing absolute symbol address information from %s..." % arg)
+                prof.parse_symbols(self.open_file(arg, "r"), False)
+            elif opt in ("-r", "--relative"):
+                self.message("\nParsing TEXT relative symbol address information from %s..." % arg)
+                prof.parse_symbols(self.open_file(arg, "r"), True)
             elif opt in ("-f", "--first"):
-                stats.set_count(self.get_value(opt, arg, False))
+                count = self.get_value(opt, arg, False)
+                graph.set_count(count)
+                stats.set_count(count)
+            elif opt in ("-l", "--limit"):
+                limit = self.get_value(opt, arg, True)
+                graph.set_limit(limit)
+                stats.set_limit(limit)
             elif opt in ("-g", "--graph"):
                 graph.enable_output()
             elif opt == "--ignore":
@@ -993,10 +1059,6 @@ class Main(Output):
                 graph.set_ignore_to(arg.split(','))
             elif opt == "--only":
                 graph.set_only(arg.split(','))
-            elif opt in ("-l", "--limit"):
-                limit = self.get_value(opt, arg, True)
-                graph.set_limit(limit)
-                stats.set_limit(limit)
             elif opt in ("-o", "--output"):
                 out = self.open_file(arg, "w")
                 self.message("\nSet output to go to '%s'." % arg)
@@ -1010,7 +1072,7 @@ class Main(Output):
             elif opt in ("-v", "--verbose"):
                 prof.set_verbose(True)
             else:
-                self.usage("unknown option '%s'" % opt)
+                self.usage("unknown option '%s' with value '%s'" % (opt, arg))
         for arg in rest:
             self.message("\nParsing profile information from %s..." % arg)
             prof.parse_profile(self.open_file(arg, "r"))
