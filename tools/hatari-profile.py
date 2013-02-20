@@ -120,11 +120,12 @@ class Output:
 
 
 class InstructionStats:
-    "current function instructions state + info on all instructions"
+    # TODO: separate current function and whole profile states
+    "current function instructions state + statistics on all instructions"
 
     def __init__(self, processor, hz, info):
         "function name, processor name, its speed, processor info dict"
-        # first field is ALWAYS calls count
+        # field 0 is ALWAYS calls count
         self.instructions_field = info["instructions_field"]
         self.cycles_field = info["cycles_field"]
         self.names = info["fields"]
@@ -144,6 +145,20 @@ class InstructionStats:
         self.name = name
         self.addr = addr
         self.data = [0] * self.items
+
+    def change_area(self, name):
+        "switch to given area, if not already in it, return True if switched"
+        if name and name not in self.areas:
+            self.areas[name] = True
+            return True
+        return False
+
+    def name_for_address(self, addr):
+        "if name but no address, use given address and return name, otherwise None"
+        if self.name and not self.addr:
+            self.addr = addr
+            return self.name
+        return None
 
     def has_data(self):
         "return whether function has valid data yet"
@@ -479,30 +494,22 @@ class EmulatorProfile(Output):
             elif oldname in self.profile:
                 info = (oldname, self.address[oldname], oldaddr, self.profile[oldname], function.data)
                 self.warning("overriding data for '%s' at 0x%x with same symbol at 0x%x:\n\t%s -> %s" % info)
-            if self.verbose:
-                self.message("SAVED INFO: %s at 0x%x %s" % (oldname, oldaddr, function.data))
             self.address[oldname] = oldaddr
             self.profile[oldname] = function.data
             if self.verbose:
                 function.show()
         function.zero(newname, addr)
 
-    def _change_area(self, addr, name):
-        "switch function to given area, if not already in it"
-        if name not in self.stats.areas:
-            self.stats.areas[name] = True
-            self._change_function(name, addr)
-
     def _check_symbols(self, addr):
         "if address is in new symbol (=function), change function"
         name = self.symbols.get_symbol(addr)
         if name:
             self._change_function(name, addr)
-            return
-        # as no better symbol, name it according to area where it moved to
-        name, dummy = self.symbols.get_area(addr)
-        if name:
-            self._change_area(addr, name)
+        else:
+            # as no better symbol, name it according to area where it moved to?
+            name, dummy = self.symbols.get_area(addr)
+            if self.stats.change_area(name):
+                self._change_function(name, addr)
 
     def _parse_disassembly(self, fobj, parsed, line, r_address):
         "parse profile disassembly"
@@ -533,19 +540,17 @@ class EmulatorProfile(Output):
                 if prev_addr > addr:
                     self.error_exit("memory addresses are not in order on line %d" % parsed)
                 prev_addr = addr
-                newname = None
-                # TODO: refactor, don't poke stats innards
-                if self.stats.name and not self.stats.addr:
-                    newname = self.stats.name
-                    # symbol matched below, got now address for it
+                newname = self.stats.name_for_address(addr)
+                if newname:
+                    # symbol name finally got address on this profile line
                     self.symbols.add_symbol_relative(addr, newname)
-                    self.stats.addr = addr
                 if discontinued:
                     discontinued = False
                     # may skip to a function which name is not visible in profile file
                     name, offset = self.symbols.get_preceeding_symbol(addr)
                     if name != self.stats.name:
-                        self.message("DISCONTINUATION: %s at 0x%x -> %s at 0x%x" % (self.stats.name, self.stats.addr, name, addr-offset))
+                        if self.verbose:
+                            self.message("DISCONTINUATION: %s at 0x%x -> %s at 0x%x" % (self.stats.name, self.stats.addr, name, addr-offset))
                         self._change_function(name, addr-offset)
                         newname = name
                 if not newname:
