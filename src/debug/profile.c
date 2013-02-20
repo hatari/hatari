@@ -1388,10 +1388,6 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 		if (nArgc > 3) {
 			Uint32 freq;
 			const char *proc;
-			if (File_Exists(psArgs[3])) {
-				fprintf(stderr, "ERROR: output file already exists,\nremove it or give another name!\n");
-				return false;
-			}
 			if (!(out = fopen(psArgs[3], "w"))) {
 				fprintf(stderr, "ERROR: opening '%s' for writing failed!\n", psArgs[3]);
 				perror(NULL);
