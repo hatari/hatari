@@ -15,7 +15,6 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "bios.h"
 #include "configuration.h"
 #include "debugInfo.h"
-#include "debug_priv.h"
 #include "debugcpu.h"
 #include "debugdsp.h"
 #include "debugui.h"
@@ -808,8 +807,6 @@ static char *parse_filename;
 static void DebugInfo_FileParse(Uint32 dummy)
 {
 	if (parse_filename) {
-		DebugCpu_InitSession();
-		DebugDsp_InitSession();
 		DebugUI_ParseFile(parse_filename);
 	} else {
 		fputs("ERROR: debugger input file name to parse isn't set!\n", stderr);
