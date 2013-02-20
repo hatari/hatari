@@ -403,14 +403,10 @@ class ProfileCallers(Output):
         self.callinfo = None
         self.name_offset = None
 
-    def zero(self):
-        "clear caller info for next profile"
-        # TODO: remove this when profile parsing is sequealized
-        self.callinfo = {}
-
     def parse_callers(self, fobj, parsed, line):
         "parse callee: caller call count information"
         #0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
+        self.callinfo = {}
         while True:
             if not line:
                 return None, parsed
@@ -617,7 +613,6 @@ class EmulatorProfile(Output):
         "parse profile data"
         self.address = {}
         self.profile = {}
-        self.callers.zero()
         # header
         parsed, r_address = self._get_profile_type(fobj)
         # memory areas
