@@ -817,25 +817,25 @@ class ProfileStats(ProfileOutput):
 
     def output_totals(self, profile):
         "output profile statistics"
-        totals = profile.stats
-        time = totals.get_time(totals.totals)
+        stats = profile.stats
+        time = stats.get_time(stats.totals)
         self.write("\nTime spent in profile = %.5fs.\n\n" % time)
 
         symbols = profile.symbols
-        items = len(totals.totals)
+        items = len(stats.totals)
         for i in range(items):
-            if not totals.totals[i]:
+            if not stats.totals[i]:
                 continue
-            addr = totals.max_addr[i]
+            addr = stats.max_addr[i]
             name, offset = symbols.get_preceeding_symbol(addr)
             if name:
                 if offset:
                     name = " in %s+%d" % (name, offset)
                 else:
                     name = " in %s" % name
-            self.write("%s:\n" % totals.names[i])
-            self.write("- max = %d,%s at 0x%x\n" % (totals.max_val[i], name, addr))
-            self.write("- %d in total\n" % totals.totals[i])
+            self.write("%s:\n" % stats.names[i])
+            self.write("- max = %d,%s at 0x%x\n" % (stats.max_val[i], name, addr))
+            self.write("- %d in total\n" % stats.totals[i])
 
     def do_output(self, profile):
         "output enabled lists"
