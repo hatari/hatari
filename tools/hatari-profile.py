@@ -168,12 +168,17 @@ class FunctionStats:
 
 class InstructionStats:
     "statistics on all instructions"
+    # not changable, these are expectatations about the data fields
+    # in this, FunctionStats, ProfileCallers and ProfileGraph classes
+    callcount_field = 0
+    instructions_field = 1
 
     def __init__(self, processor, hz, info):
         "function name, processor name, its speed, processor info dict"
         self.cycles_field = info["cycles_field"]
         self.names = info["fields"]
         self.items = len(self.names)
+        self.max_line = [0] * self.items
         self.max_addr = [0] * self.items
         self.max_val = [0] * self.items
         self.totals = [0] * self.items
@@ -188,13 +193,14 @@ class InstructionStats:
             return True
         return False
 
-    def add(self, addr, values):
+    def add(self, addr, values, line):
         "add statistics for given list to current profile state"
         for i in range(1, self.items):
             value = values[i]
             if value > self.max_val[i]:
                 self.max_val[i] = value
                 self.max_addr[i] = addr
+                self.max_line[i] = line
 
     def add_callcount(self, function):
         "add given function call count to statistics"
@@ -202,6 +208,7 @@ class InstructionStats:
         if value > self.max_val[0]:
             self.max_val[0] = value
             self.max_addr[0] = function.addr
+            self.max_line[0] = function.line
 
     def get_time(self, data):
         "return time (in seconds) spent by given data item"
@@ -585,7 +592,7 @@ class EmulatorProfile(Output):
                 newname = name
         if not newname:
             function = self._check_symbols(function, addr)
-        self.stats.add(addr, counts)
+        self.stats.add(addr, counts, self.linenro)
         function.add(counts)
         return function
 
@@ -834,7 +841,8 @@ class ProfileStats(ProfileOutput):
                 else:
                     name = " in %s" % name
             self.write("%s:\n" % stats.names[i])
-            self.write("- max = %d,%s at 0x%x\n" % (stats.max_val[i], name, addr))
+            info = (stats.max_val[i], name, addr, stats.max_line[i])
+            self.write("- max = %d,%s at 0x%x, on line %d\n" % info)
             self.write("- %d in total\n" % stats.totals[i])
 
     def do_output(self, profile):
