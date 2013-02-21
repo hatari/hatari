@@ -121,14 +121,56 @@ class Output:
         sys.exit(1)
 
 
+class FunctionStats:
+    "current function (instructions) state"
+
+    def __init__(self, name, addr, line, items):
+        "start collecting new 'name' function instructions information"
+        self.name = name
+        self.addr = addr
+        # profile line on which function starts
+        self.line = line
+        # field 0 is ALWAYS calls count and field 1 instructions count!
+        self.data = [0] * items
+
+    def has_data(self):
+        "return whether function has valid data yet"
+        # other values are valid only if there are instructions
+        return (self.data[1] != 0)
+
+    def name_for_address(self, addr):
+        "if name but no address, use given address and return name, otherwise None"
+        if self.name and not self.addr:
+            self.addr = addr
+            return self.name
+        return None
+
+    def rename(self, name, offset):
+        "rename function with given address offset"
+        self.addr -= offset
+        self.name = name
+
+    def add(self, values):
+        "add list of values to current state"
+        # first instruction in a function?
+        data = self.data
+        if not data[1]:
+            # function call count is same as instruction
+            # count for its first instruction
+            data[0] = values[1]
+        for i in range(1, len(data)):
+            data[i] += values[i]
+
+    def __repr__(self):
+        "return printable current function instruction state"
+        return "0x%x = %s: %s" % (self.addr, self.name, repr(self.data))
+
+
 class InstructionStats:
-    # TODO: separate current function and whole profile states
-    "current function instructions state + statistics on all instructions"
+    "statistics on all instructions"
 
     def __init__(self, processor, hz, info):
         "function name, processor name, its speed, processor info dict"
-        # field 0 is ALWAYS calls count
-        self.instructions_field = info["instructions_field"]
         self.cycles_field = info["cycles_field"]
         self.names = info["fields"]
         self.items = len(self.names)
@@ -138,72 +180,40 @@ class InstructionStats:
         self.processor = processor
         self.hz = hz
         self.areas = {}		# which memory area boundaries have been passed
-        self.zero(None, None)
 
-    def zero(self, name, addr):
-        "start collecting new 'name' function instructions information"
-        # stupid pylint, this method IS called from __init__,
-        # so these are actually set "in" __init__...
-        self.name = name
-        self.addr = addr
-        self.data = [0] * self.items
-
-    def change_area(self, name, addr):
-        "switch to given area, if not already in it, return True if switched"
-        if addr > self.addr and name and name not in self.areas:
+    def change_area(self, function, name, addr):
+        "switch to given area, if function not already in it, return True if switched"
+        if addr > function.addr and name and name not in self.areas:
             self.areas[name] = True
             return True
         return False
 
-    def name_for_address(self, addr):
-        "if name but no address, use given address and return name, otherwise None"
-        if self.name and not self.addr:
-            self.addr = addr
-            return self.name
-        return None
-
-    def rename(self, name):
-        "rename function"
-        self.name = name
-
-    def has_data(self):
-        "return whether function has valid data yet"
-        # other values are valid only if there are instructions
-        return (self.data[self.instructions_field] != 0)
-
-    def add(self, addr, strvalues):
-        "add strvalues string list of values to current state"
-        values = [0] + [int(x) for x in strvalues]
-        # first instruction in a function?
-        if not self.data[self.instructions_field]:
-            # function call count is same as its first instructions count
-            value = values[self.instructions_field]
-            self.data[0] = value
-            if value > self.max_val[0]:
-                self.max_val[0] = value
-                self.max_addr[0] = addr
+    def add(self, addr, values):
+        "add statistics for given list to current profile state"
         for i in range(1, self.items):
             value = values[i]
-            self.data[i] += value
             if value > self.max_val[i]:
                 self.max_val[i] = value
                 self.max_addr[i] = addr
+
+    def add_callcount(self, function):
+        "add given function call count to statistics"
+        value = function.data[0]
+        if value > self.max_val[0]:
+            self.max_val[0] = value
+            self.max_addr[0] = function.addr
 
     def get_time(self, data):
         "return time (in seconds) spent by given data item"
         return float(data[self.cycles_field])/self.hz
 
-    def __repr__(self):
-        "return printable current function instruction state"
-        return "0x%x = %s: %s (%.5fs)" % (self.addr, self.name, repr(self.data), self.get_time(self.data))
-
-    def sum_values(self, values):
-        "calculate totals for given instruction value sets"
-        if values:
+    def sum_values(self, functions):
+        "calculate totals for given functions data"
+        if functions:
             sums = [0] * self.items
-            for data in values:
+            for fun in functions:
                 for i in range(self.items):
-                    sums[i] += data[i]
+                    sums[i] += fun.data[i]
             self.totals = sums
 
 
@@ -315,9 +325,6 @@ class ProfileSymbols(Output):
 
     def _rename_symbol(self, addr, name):
         "return symbol name, potentially renamed if there were conflicts"
-        # TODO: remove replaces after callgraph uses indexes
-        # instead of symbols for node names
-        name = name.replace('.', '_').replace('$', 'D')
         if name in self.names:
             if addr == self.names[name]:
                 return name
@@ -401,7 +408,7 @@ class ProfileCallers(Output):
         # 0x<hex> = <count>
         self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
         self.callinfo = None
-        self.name_offset = None
+        self.addr_name_offset = None
 
     def parse_callers(self, fobj, parsed, line):
         "parse callee: caller call count information"
@@ -409,9 +416,9 @@ class ProfileCallers(Output):
         self.callinfo = {}
         while True:
             if not line:
-                return None, parsed
+                break
             if not line.startswith("0x"):
-                return line, parsed
+                break
             callers = line.split(',')
             if len(callers) < 2:
                 self.error_exit("caller info missing on callee line %d\n\t'%s'" % (parsed, line))
@@ -436,15 +443,17 @@ class ProfileCallers(Output):
             self.callinfo[int(addr, 16)] = callinfo
             parsed += 1
             line = fobj.readline()
+        return line, parsed
 
     def _resolve(self, symbols):
-        "resolve caller symbols and add them name_offset dict"
-        name_offset = {}
+        "resolve caller symbols and add them name_addr_offset dict"
+        addr_name_offset = {}
         for addr, caller in self.callinfo.items():
-            name_offset[addr] = (symbols.get_symbol(addr), 0)
+            addr_name_offset[addr] = (addr, symbols.get_symbol(addr), 0)
             for caddr in caller.keys():
-                name_offset[caddr] = symbols.get_preceeding_symbol(caddr)
-        self.name_offset = name_offset
+                name, offset = symbols.get_preceeding_symbol(caddr)
+                addr_name_offset[caddr] = (caddr-offset, name, offset)
+        self.addr_name_offset = addr_name_offset
 
     def _validate(self, profile):
         "validate callinfo against profile data"
@@ -452,9 +461,9 @@ class ProfileCallers(Output):
             total = 0
             for count in caller.values():
                 total += count
-            name = self.name_offset[addr][0]
-            calls = profile[name][0]
+            calls = profile[addr].data[0]
             if calls != total:
+                name = self.addr_name_offset[addr][1]
                 self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % (name, addr, calls, total))
 
     def complete(self, profile, symbols):
@@ -481,6 +490,7 @@ class EmulatorProfile(Output):
         self.r_clock = re.compile("^Cycles/second:\t([0-9]+)$")
         # processor names, memory areas and their disassembly formats
         # are specified by subclasses with disasm argument
+        self.r_address = None
         self.r_disasm = {}
         for key in processor.keys():
             assert(processor[key]['areas'] and processor[key]['fields'])
@@ -490,9 +500,9 @@ class EmulatorProfile(Output):
         self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
 
         self.stats = None		# InstructionStats instance
-        self.address = None		# hash of (symbol:addr)
         self.profile = None		# hash of profile (symbol:data)
         self.verbose = False
+        self.linenro = 0
 
     def set_verbose(self, verbose):
         "set verbose on/off"
@@ -518,47 +528,75 @@ class EmulatorProfile(Output):
         match = self.r_clock.match(line)
         if not match:
             self.error_exit("invalid %s clock information on line 2:\n\t%s" % (processor, line))
-        hz = int(match.group(1))
-        self.stats = InstructionStats(processor, hz, self.processor[processor])
-        return (2, self.r_disasm[processor])
+        info =  self.processor[processor]
+        self.stats = InstructionStats(processor, int(match.group(1)), info)
+        self.r_address = self.r_disasm[processor]
+        return 2
 
-    def _change_function(self, newname, addr):
+    def _change_function(self, function, newname, addr):
         "store current function data and then reset to new function"
-        function = self.stats
         if function.has_data():
+            if not function.addr:
+                name, offset = self.symbols.get_preceeding_symbol(function.addr)
+                function.rename(name, offset)
+            # addresses must increase in profile
             oldaddr = function.addr
-            oldname = function.name
-            if not oldname:
-                oldname, offset = self.symbols.get_preceeding_symbol(oldaddr)
-                oldaddr -= offset
-            if oldname in self.profile:
-                info = (oldname, self.address[oldname], oldaddr, self.profile[oldname], function.data)
-                self.warning("overriding data for '%s' at 0x%x with same symbol at 0x%x:\n\t%s -> %s" % info)
-            self.address[oldname] = oldaddr
-            self.profile[oldname] = function.data
+            assert(oldaddr not in self.profile)
+            self.stats.add_callcount(function)
+            self.profile[oldaddr] = function
             if self.verbose:
                 self.message(function)
-        function.zero(newname, addr)
+        return FunctionStats(newname, addr, self.linenro, self.stats.items)
 
-    def _check_symbols(self, addr):
+    def _check_symbols(self, function, addr):
         "if address is in new symbol (=function), change function"
         name = self.symbols.get_symbol(addr)
         if name:
-            self._change_function(name, addr)
+            return self._change_function(function, name, addr)
         else:
             # as no better symbol, name it according to area where it moved to?
             name, offset = self.symbols.get_area(addr)
             addr -= offset
-            if self.stats.change_area(name, addr):
-                self._change_function(name, addr)
+            if self.stats.change_area(function, name, addr):
+                return self._change_function(function, name, addr)
+        return function
 
-    def _parse_disassembly(self, fobj, parsed, line, r_address):
+    def _parse_line(self, function, addr, counts, discontinued):
+        "parse given profile disassembly line match contents"
+        newname = function.name_for_address(addr)
+        if newname:
+            # new symbol name finally got address on this profile line,
+            # but it may need renaming due to symbol name clashes
+            newname = self.symbols.add_profile_symbol(addr, newname)
+            function.rename(newname, 0)
+        elif discontinued:
+            # continuation may skip to a function which name is not visible in profile file
+            name, offset = self.symbols.get_preceeding_symbol(addr)
+            symaddr = addr - offset
+            # if changed area, preceeding symbol can be before area start,
+            # so need to check both address, and name having changed
+            if symaddr > function.addr and name != function.name:
+                addr = symaddr
+                if self.verbose:
+                    self.message("DISCONTINUATION: %s at 0x%x -> %s at 0x%x" % (function.name, function.addr, name, addr))
+                #if newname:
+                #    self.warning("name_for_address() got name '%s' instead of '%s' from get_preceeding_symbol()" % (newname, name))
+                function = self._change_function(function, name, addr)
+                newname = name
+        if not newname:
+            function = self._check_symbols(function, addr)
+        self.stats.add(addr, counts)
+        function.add(counts)
+        return function
+
+    def _parse_disassembly(self, fobj, line):
         "parse profile disassembly"
         prev_addr = 0
         discontinued = False
+        function = FunctionStats(None, 0, 0, self.stats.items)
         while True:
             if not line:
-                return None, parsed
+                break
             line = line.strip()
             if line == "[...]":
                 # address discontinuation
@@ -567,69 +605,48 @@ class EmulatorProfile(Output):
                 # symbol
                 match = self.r_function.match(line)
                 if match:
-                    self._change_function(match.group(1), None)
+                    function = self._change_function(function, match.group(1), 0)
                 else:
-                    self.error_exit("unrecognized function line %d:\n\t'%s'" % (parsed, line))
+                    self.error_exit("unrecognized function line %d:\n\t'%s'" % (self.linenro, line))
             else:
                 # disassembly line
-                match = r_address.match(line)
+                match = self.r_address.match(line)
                 if not match:
-                    # done
-                    return line, parsed
-                addr, counts = match.groups()
-                addr = int(addr, 16)
+                    break
+                addr = int(match.group(1), 16)
                 if prev_addr > addr:
-                    self.error_exit("memory addresses are not in order on line %d" % parsed)
+                    self.error_exit("memory addresses are not in order on line %d" % self.linenro)
                 prev_addr = addr
-                newname = self.stats.name_for_address(addr)
-                if newname:
-                    # new symbol name finally got address on this profile line,
-                    # but it may need renaming due to symbol name clashes
-                    newname = self.symbols.add_profile_symbol(addr, newname)
-                    self.stats.rename(newname)
-                elif discontinued:
-                    discontinued = False
-                    # continuation may skip to a function which name is not visible in profile file
-                    name, offset = self.symbols.get_preceeding_symbol(addr)
-                    symaddr = addr - offset
-                    # if changed area, preceeding symbol can be before area start,
-                    # so need to check both address, and name having changed
-                    if symaddr > self.stats.addr and name != self.stats.name:
-                        addr = symaddr
-                        if self.verbose:
-                            self.message("DISCONTINUATION: %s at 0x%x -> %s at 0x%x" % (self.stats.name, self.stats.addr, name, addr))
-                        #if newname:
-                        #    self.warning("name_for_address() got name '%s' instead of '%s' from get_preceeding_symbol()" % (newname, name))
-                        self._change_function(name, addr)
-                        newname = name
-                if not newname:
-                    self._check_symbols(addr)
-                self.stats.add(addr, counts.split(','))
+                # counts[0] will be inferred call count
+                counts = [0] + [int(x) for x in match.group(2).split(',')]
+                function = self._parse_line(function, addr, counts, discontinued)
+                discontinued = False
             # next line
-            parsed += 1
+            self.linenro += 1
             line = fobj.readline()
+        # finish
+        self._change_function(function, None, 0)
+        return line
 
     def parse_profile(self, fobj):
         "parse profile data"
-        self.address = {}
         self.profile = {}
         # header
-        parsed, r_address = self._get_profile_type(fobj)
+        self.linenro = self._get_profile_type(fobj)
         # memory areas
-        line, parsed = self.symbols.parse_areas(fobj, parsed, self.verbose)
+        line, self.linenro = self.symbols.parse_areas(fobj, self.linenro, self.verbose)
         # instructions / memory addresses
-        line, parsed = self._parse_disassembly(fobj, parsed, line, r_address)
+        line = self._parse_disassembly(fobj, line)
         # caller information
-        line, parsed = self.callers.parse_callers(fobj, parsed, line)
+        line, self.linenro = self.callers.parse_callers(fobj, self.linenro, line)
         # unrecognized lines
         if line:
-            self.error_exit("unrecognized line %d:\n\t'%s'" % (parsed, line))
+            self.error_exit("unrecognized line %d:\n\t'%s'" % (self.linenro, line))
         # finish
-        self._change_function(None, None)
         self.stats.sum_values(self.profile.values())
         self.callers.complete(self.profile, self.symbols)
         # parsing info
-        self.message("%d lines processed with %d functions." % (parsed, len(self.profile)))
+        self.message("%d lines processed with %d functions." % (self.linenro, len(self.profile)))
         if len(self.profile) < 1:
             self.error_exit("no functions found!")
 
@@ -664,9 +681,9 @@ class HatariProfile(EmulatorProfile):
                 # $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
                 # $e5af38 :   rts           0.00% (12, 0, 12)
                 "regexp" : "^\$([0-9a-f]+) :.*% \((.*)\)$",
-                # First fields is always "Calls", them come ones from second "regexp" match group
+                # First 2 fields are always function call counts and instruction
+                # counts, then come ones from second "regexp" match group
                 "fields" : ("Calls", "Executed instructions", "Used cycles", "Instruction cache misses"),
-                "instructions_field": 1,
                 "cycles_field": 2
             },
             "DSP" : {
@@ -676,9 +693,9 @@ class HatariProfile(EmulatorProfile):
                 # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
                 # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
                 "regexp" : "^p:([0-9a-f]+) .*% \((.*)\)$",
-                # First fields is always "Calls", them come ones from second "regexp" match group
+                # First 2 fields are always function call counts and instruction
+                # counts, then come ones from second "regexp" match group
                 "fields" : ("Calls", "Executed instructions", "Used cycles", "Largest cycle differences (= code changes during profiling)"),
-                "instructions_field": 1,
                 "cycles_field": 2
             }
         }
@@ -698,7 +715,7 @@ class ProfileSorter:
     def _cmp_field(self, i, j):
         "compare currently selected field in profile data"
         field = self.field
-        return cmp(self.profile[i][field], self.profile[j][field])
+        return cmp(self.profile[i].data[field], self.profile[j].data[field])
 
     def get_combined_limit(self, field, count, limit):
         "return percentage for given profile field that satisfies both count & limit constraint"
@@ -710,7 +727,8 @@ class ProfileSorter:
         self.field = field
         keys.sort(self._cmp_field, None, True)
         total = self.profobj.stats.totals[field]
-        percentage = self.profile[keys[count]][field] * 100.0 / total
+        function = self.profile[keys[count]]
+        percentage = function.data[field] * 100.0 / total
         if percentage < limit or not limit:
             return percentage
         return limit
@@ -721,11 +739,11 @@ class ProfileSorter:
         stats = self.profobj.stats
         total = stats.totals[field]
         self.write("\n%s:\n" % stats.names[field])
-        addresses = self.profobj.address
 
         time = idx = 0
-        for key in keys:
-            value = self.profile[key][field]
+        for addr in keys:
+            function = self.profile[addr]
+            value = function.data[field]
             if not value:
                 break
 
@@ -740,19 +758,12 @@ class ProfileSorter:
                 break
             idx += 1
 
-            if addresses[key]:
-                if field == stats.cycles_field:
-                    time = stats.get_time(self.profile[key])
-                    info = "(0x%06x,%9.5fs)" % (addresses[key], time)
-                else:
-                    info = "(0x%06x)" % addresses[key]
+            if field == stats.cycles_field:
+                time = stats.get_time(function.data)
+                info = "(0x%06x,%9.5fs)" % (addr, time)
             else:
-                if field == stats.cycles_field:
-                    time = stats.get_time(self.profile[key])
-                    info = "(%.5fs)" % time
-                else:
-                    info = ""
-            self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, key, info))
+                info = "(0x%06x)" % addr
+            self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, function.name, info))
 
     def do_list(self, field, count, limit):
         "sort and show list for given profile data field"
@@ -908,23 +919,23 @@ label="%s";
         ignore_to = self.ignore_to + self.ignore
         ignore_from = self.ignore_from + self.ignore
         for addr, callers in callobj.callinfo.items():
-            name = callobj.name_offset[addr][0]
-            calls = profobj.profile[name][0]	# calls count
+            name = callobj.addr_name_offset[addr][1]
             if name in ignore_to:
                 continue
             for caddr, count in callers.items():
-                cname, offset = callobj.name_offset[caddr]
+                caddr_node, cname, dummy = callobj.addr_name_offset[caddr]
                 # no recursion
                 #if cname == name:
                 #    continue
                 if self.only and name not in self.only and cname not in self.only:
                     continue
-                nodes[name] = True
+                nodes[addr] = True
                 if cname in ignore_from:
                     continue
                 # caller can also be a node
-                nodes[cname] = True
-                edges[caddr] = (name, cname, offset, count, calls)
+                nodes[caddr_node] = True
+                calls = profobj.profile[addr].data[0]	# total calls count
+                edges[caddr] = (addr, name, count, calls)
         if not nodes:
             return False
         self.profobj = profobj
@@ -934,12 +945,13 @@ label="%s";
 
     def _output_nodes(self, field, sorter):
         "output graph nodes from filtered nodes dict"
-        profile = self.profobj.profile
         stats = self.profobj.stats
         total = stats.totals[field]
         limit = sorter.get_combined_limit(field, self.count, self.limit)
-        for name in self.nodes.keys():
-            values = profile[name]
+        for addr in self.nodes.keys():
+            function = self.profobj.profile[addr]
+            name = function.name
+            values = function.data
             count = values[field]
             percentage = 100.0 * count / total
             if percentage >= limit:
@@ -949,24 +961,26 @@ label="%s";
             calls = values[0]
             if field == stats.cycles_field:
                 time = stats.get_time(values)
-                self.write("N%s [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s];\n" % (name, percentage, time, name, calls, style))
+                self.write("N_%X [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s];\n" % (addr, percentage, time, name, calls, style))
             elif field:
-                self.write("N%s [label=\"%.2f%%\\n%d\\n%s\\n(%d calls)\"%s];\n" % (name, percentage, count, name, calls, style))
+                self.write("N_%X [label=\"%.2f%%\\n%d\\n%s\\n(%d calls)\"%s];\n" % (addr, percentage, count, name, calls, style))
             else:
-                self.write("N%s [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (name, percentage, name, count, style))
+                self.write("N_%X [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (addr, percentage, name, count, style))
 
     def _output_edges(self):
         "output graph edges from filtered edges dict"
-        for addr, data in self.edges.items():
-            name, cname, offset, count, calls = data
+        addr_name_offset = self.profobj.callers.addr_name_offset
+        for caddr, data in self.edges.items():
+            addr, name, count, calls = data
+            caddr_node, cname, offset = addr_name_offset[caddr]
             if offset:
-                label = "%s+%d\\n($%x)" % (cname, offset, addr)
+                label = "%s+%d\\n($%x)" % (cname, offset, caddr)
             else:
                 label = name
             if count != calls:
                 percentage = 100.0 * count / calls
                 label = "%s\\n%d calls\\n=%.2f%%" % (label, count, percentage)
-            self.write("N%s -> N%s [label=\"%s\"];\n" % (cname, name, label))
+            self.write("N_%X -> N_%X [label=\"%s\"];\n" % (caddr_node, addr, label))
 
     def do_output(self, profobj, fname):
         "output graphs for given profile data"
