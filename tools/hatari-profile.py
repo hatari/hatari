@@ -36,6 +36,7 @@ Options:
         -t		list top functions for all profile items
         -f <count>	list at least first <count> items
         -l <limit>      list at least items which percentage >= limit
+        -p		propagate costs up in call hierarchy
 	-o <file name>	statistics output file name (default is stdout)
         -g              write <profile>.dot callgraph files
         -v		verbose parsing output
@@ -47,6 +48,7 @@ Long options for above are:
         --top
         --first
         --limit
+        --propagate
         --output
         --graph
         --verbose
@@ -65,10 +67,27 @@ For each given profile file, output is:
 
 
 When both -l and -f options are specified, they're combined.  Produced
-lists contain at least number of items specified for -f, and more if
-there are additional items which percentage of total is larger than
-one given for -l.  In callgraphs these options affect which nodes are
-highlighted.
+lists contain at least the number of items specified for -f, and more
+if there are additional items which percentage of the total value is
+larger than one given for -l.  In callgraphs these options just affect
+which nodes are highlighted.
+
+
+With the -p option, costs for a function include also costs for
+everything else it calls.  Nodes which (propagated) cost percentages
+of the total are below -l limit, are removed from the callgraphs.
+
+NOTE: Because caller information in profile file has only call counts
+between functions, other costs can be propagated correctly to callers
+only when there's a single parent.  If there are multiple parents,
+other costs are estimated based on call counts.  Don't trust the
+estimated values:
+- callgraphs nodes with them are diamond shaped
+- in lists they're marked with '*'
+
+
+Nodes with costs that exceed the highlight limit have red outline.
+If node's own cost exceeds the limit, it has also gray background.
 
 
 Callgraph filtering options to remove nodes and edges from the graph:
@@ -81,9 +100,10 @@ Callgraph filtering options to remove nodes and edges from the graph:
 	--ignore-to _int_timerc,_int_vbl
 
 Typically interrupt handler symbols are good to give for '--ignore-to'
-option, as they can get called at any point.  Leaf or intermediate
-functions which are called from everywhere (like malloc) can be good
-candinates to give for '--ignore' option.
+option, as they can get called at any point.  Functions which are
+called from everywhere (like malloc), may be good candinates for
+'--ignore' option when one wants a more readable graph.  One can
+then investigate them separately with the --only option.
 
 
 To convert dot files e.g. to SVG, use:
@@ -132,8 +152,12 @@ class FunctionStats:
         self.addr = addr
         # profile line on which function starts
         self.line = line
+        # function costs items
         # field 0 is ALWAYS calls count and field 1 instructions count!
         self.data = [0] * items
+        # propagated cost (from children)
+        self.estimated = False	# whether totals are estimated
+        self.total = None
         # calltree information
         self.parent = {}
         self.children = 0
@@ -168,7 +192,15 @@ class FunctionStats:
 
     def __repr__(self):
         "return printable current function instruction state"
-        return "0x%x = %s: %s" % (self.addr, self.name, repr(self.data))
+        ret = "0x%x = %s: %s" % (self.addr, self.name, self.data)
+        if self.total:
+            if self.estimated:
+                ret = "%s, total: %s (estimated)" % (ret, self.total)
+            else:
+                ret = "%s, total: %s" % (ret, self.total)
+        if self.parent or self.children:
+            return "%s, %d parents, %d children" % (ret, len(self.parent), self.children)
+        return ret
 
 
 class InstructionStats:
@@ -419,6 +451,8 @@ class ProfileCallers(Output):
         # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
         # 0x<hex> = <count>
         self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
+        # whether there is any caller info
+        self.present = False
         # address dicts
         self.callinfo = None	# callee : caller dict
 
@@ -457,11 +491,15 @@ class ProfileCallers(Output):
             line = fobj.readline()
         return line, parsed
 
-    def _construct_graph(self, profile, symbols):
+    def complete(self, profile, symbols):
         "resolve caller functions and add child/parent info to profile data"
+        if not self.callinfo:
+            self.present = False
+            return
+        self.present = True
         # go through called functions
         for addr, caller in self.callinfo.items():
-            called_func = profile[addr]
+            child = profile[addr]
             # and their callers
             total = 0
             for item in caller.items():
@@ -469,26 +507,83 @@ class ProfileCallers(Output):
                 cname, offset = symbols.get_preceeding_symbol(caddr)
                 # function address for the caller
                 cfaddr = caddr - offset
-                caller_func = profile[cfaddr]
-                assert(cname == caller_func.name)
+                parent = profile[cfaddr]
+                assert(cname == parent.name)
                 # link parent and child function together
-                if cfaddr in called_func.parent:
-                    called_func.parent[cfaddr].append(item)
+                if cfaddr in child.parent:
+                    child.parent[cfaddr] += (item,)
                 else:
-                    called_func.parent[cfaddr] = [item]
-                called_func.children += 1
+                    child.parent[cfaddr] = (item,)
+                parent.children += 1
                 total += count
             # validate call count
-            calls = called_func.data[0]
+            calls = child.data[0]
             if calls != total:
-                info = (called_func.name, addr, calls, total)
+                info = (child.name, addr, calls, total)
                 self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % info)
-
-    def complete(self, profile, symbols):
-        "validate and post-process caller information"
-        self._construct_graph(profile, symbols)
-        # empty callinfo after its data has been processed
         self.callinfo = {}
+
+    def _propagate_leaf_cost(self, profile, caddr, cost, track):
+        """Propagate costs to function parents.  In case of call
+	counts that can be done accurately based on existing call
+	count information.  For other costs propagation can be done
+	correctly only when there's a single parent."""
+        child = profile[caddr]
+        #self.message("processing '%s'" % child.name)
+        parents = len(child.parent)
+        if not parents:
+            return
+        # calls from all parents of this child,
+        # float so that divisions don't lose info
+        calls = float(child.data[0])
+
+        for paddr, info in child.parent.items():
+            if paddr == caddr:
+                # loop within function or recursion
+                continue
+            parent = profile[paddr]
+            if child.estimated or parents > 1:
+                parent.estimated = True
+            total = 0
+            # add together calls from this particular parent
+            for dummy, count in info:
+                total += count
+            if parents == 1 and total != calls:
+                self.error_exit("%s -> %s, single parent, %d != %d" % (parent.name, child.name, total, calls))
+            # parent's share of current propagated child costs
+            ccost = [total * x / calls for x in cost]
+            if parent.total:
+                pcost = [sum(x) for x in zip(parent.total, ccost)]
+            else:
+                pcost = [sum(x) for x in zip(parent.data, ccost)]
+                # propogate parent cost up only ones
+                ccost = pcost
+            parent.total = pcost
+            if paddr not in track:
+                track[paddr] = True
+                self._propagate_leaf_cost(profile, paddr, ccost, track)
+                del track[paddr]
+
+    def propagate_costs(self, profile):
+        "Identify leaf nodes and propagate costs from them to parents."
+        leafs = {}
+        for addr, function in profile.items():
+            if function.children == 0:
+                leafs[addr] = True
+        # propagate leaf costs
+        for addr in leafs.keys():
+            function = profile[addr]
+            self._propagate_leaf_cost(profile, addr, function.data, {})
+        # verify that everything was visited and
+        # convert values back to ints with rounding
+        for addr, function in profile.items():
+            if function.total:
+                function.total = [int(round(x)) for x in function.total]
+            elif function.children:
+                for paddr, dummy in function.parent.items():
+                    # other children than it itself?
+                    if paddr != addr:
+                        self.warning("didn't propagate cost to:\n\t%s\n\tParents:" % function)
 
 
 class EmulatorProfile(Output):
@@ -661,13 +756,13 @@ class EmulatorProfile(Output):
         # unrecognized lines
         if line:
             self.error_exit("unrecognized line %d:\n\t'%s'" % (self.linenro, line))
-        # finish
-        self.stats.sum_values(self.profile.values())
-        self.callers.complete(self.profile, self.symbols)
         # parsing info
         self.message("%d lines processed with %d functions." % (self.linenro, len(self.profile)))
         if len(self.profile) < 1:
             self.error_exit("no functions found!")
+        # finish
+        self.stats.sum_values(self.profile.values())
+        self.callers.complete(self.profile, self.symbols)
 
 
 class HatariProfile(EmulatorProfile):
@@ -725,11 +820,12 @@ class HatariProfile(EmulatorProfile):
 class ProfileSorter:
     "profile information sorting and list output class"
 
-    def __init__(self, profobj, write):
-        self.profobj = profobj
-        self.profile = profobj.profile
+    def __init__(self, profile, stats, write, propagated):
+        self.profile = profile
+        self.stats = stats
         self.write = write
         self.field = None
+        self.show_propagated = propagated
 
     def _cmp_field(self, i, j):
         "compare currently selected field in profile data"
@@ -745,7 +841,7 @@ class ProfileSorter:
             return 0.0
         self.field = field
         keys.sort(self._cmp_field, None, True)
-        total = self.profobj.stats.totals[field]
+        total = self.stats.totals[field]
         function = self.profile[keys[count]]
         percentage = function.data[field] * 100.0 / total
         if percentage < limit or not limit:
@@ -755,14 +851,20 @@ class ProfileSorter:
     def _output_list(self, keys, count, limit):
         "output list for currently selected field"
         field = self.field
-        stats = self.profobj.stats
+        stats = self.stats
         total = stats.totals[field]
         self.write("\n%s:\n" % stats.names[field])
 
         time = idx = 0
         for addr in keys:
+            mark = ""
             function = self.profile[addr]
-            value = function.data[field]
+            if self.show_propagated and function.total:
+                value = function.total[field]
+                if function.estimated and field != 0:
+                    mark = "*"
+            else:
+                value = function.data[field]
             if not value:
                 break
 
@@ -782,11 +884,11 @@ class ProfileSorter:
                 info = "(0x%06x,%9.5fs)" % (addr, time)
             else:
                 info = "(0x%06x)" % addr
-            self.write("%6.2f%% %9s %-28s%s\n" % (percentage, value, function.name, info))
+            self.write("%6.2f%% %9s%2s %-28s%s\n" % (percentage, value, mark, function.name, info))
 
     def do_list(self, field, count, limit):
         "sort and show list for given profile data field"
-        if self.profobj.stats.totals[field] == 0:
+        if self.stats.totals[field] == 0:
             return
         self.field = field
         keys = self.profile.keys()
@@ -800,8 +902,13 @@ class ProfileOutput(Output):
     def __init__(self):
         Output.__init__(self)
         # both unset so that subclasses can set defaults reasonable for them
+        self.show_propagated = False
         self.limit = 0.0
         self.count = 0
+
+    def enable_propagated(self):
+        "enable showing propagated costs instead of just own costs"
+        self.show_propagated = True
 
     def set_count(self, count):
         "set how many items to show or highlight at minimum, 0 = all/unset"
@@ -834,13 +941,13 @@ class ProfileStats(ProfileOutput):
         "enable showing listing for top items"
         self.show_top = True
 
-    def output_totals(self, profile):
+    def output_totals(self, profobj):
         "output profile statistics"
-        stats = profile.stats
+        stats = profobj.stats
         time = stats.get_time(stats.totals)
         self.write("\nTime spent in profile = %.5fs.\n\n" % time)
 
-        symbols = profile.symbols
+        symbols = profobj.symbols
         items = len(stats.totals)
         for i in range(items):
             if not stats.totals[i]:
@@ -857,15 +964,17 @@ class ProfileStats(ProfileOutput):
             self.write("- max = %d,%s at 0x%x, on line %d\n" % info)
             self.write("- %d in total\n" % stats.totals[i])
 
-    def do_output(self, profile):
+    def do_output(self, profobj):
         "output enabled lists"
         if self.show_totals:
-            self.output_totals(profile)
+            self.output_totals(profobj)
         if self.show_top:
-            sorter = ProfileSorter(profile, self.write)
-            items = range(profile.stats.items)
-            for item in items:
-                sorter.do_list(item, self.count, self.limit)
+            if self.show_propagated:
+                self.write("\nPropagated costs which could only be estimated\n(i.e. are unreliable) are marked with '*'.\n")
+            sorter = ProfileSorter(profobj.profile, profobj.stats, self.write, self.show_propagated)
+            fields = range(profobj.stats.items)
+            for field in fields:
+                sorter.do_list(field, self.count, self.limit)
 
 
 class ProfileGraph(ProfileOutput):
@@ -900,6 +1009,7 @@ label="%s";
         self.count = 8
         self.nodes = None
         self.edges = None
+        self.highlight = None
         self.output_enabled = False
         self.only = []
         self.ignore = []
@@ -926,11 +1036,11 @@ label="%s";
         "set list of symbols to ignore calls to"
         self.ignore_to = lst
 
-    def _filter_profile(self, profobj):
+    def _filter_profile(self, profobj, field):
         "filter profile content to nodes and edges members"
+        profile = profobj.profile
         self.nodes = {}
         self.edges = {}
-        profile = profobj.profile
         ignore_to = self.ignore_to + self.ignore
         ignore_from = self.ignore_from + self.ignore
         for caddr, child in profile.items():
@@ -939,7 +1049,7 @@ label="%s";
             for paddr, info in child.parent.items():
                 parent = profile[paddr]
                 # no recursion
-                # if child.name == parent.name:
+                # if caddr == paddr:
                 #    continue
                 if self.only:
                     if not (child.name in self.only or parent.name in self.only):
@@ -956,40 +1066,51 @@ label="%s";
                 for laddr, count in info:
                     self.edges[laddr] = (paddr, caddr, count, calls)
         if self.nodes:
-            return True
-        return False
+            return profile
+        return None
 
-    def _output_nodes(self, profobj, field, sorter):
+    def _output_nodes(self, profile, stats, field, limit):
         "output graph nodes from filtered nodes dict"
-        stats = profobj.stats
+        self.highlight = {}
         total = stats.totals[field]
-        limit = sorter.get_combined_limit(field, self.count, self.limit)
         for addr in self.nodes.keys():
-            function = profobj.profile[addr]
-            values = function.data
+            shape = style = ""
+            function = profile[addr]
+            if self.show_propagated and function.total:
+                values = function.total
+                if function.estimated:
+                    shape = " shape=diamond"
+            else:
+                values = function.data
             count = values[field]
             percentage = 100.0 * count / total
             if percentage >= limit:
-                style = " color=red style=filled fillcolor=lightgray" # shape=diamond
-            else:
-                style = ""
-            calls = values[0]
+                self.highlight[addr] = True
+                style = " color=red"
+            ownpercentage = 100.0 * function.data[field] / total
+            if ownpercentage >= limit:
+                style = "%s style=filled fillcolor=lightgray" % style
             name = function.name
+            if field == 0:
+                # calls aren't estimated so they don't need different shapes
+                self.write("N_%X [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (addr, percentage, name, count, style))
+                continue
+            calls = values[0]
             if field == stats.cycles_field:
                 time = stats.get_time(values)
-                self.write("N_%X [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s];\n" % (addr, percentage, time, name, calls, style))
-            elif field > 0:
-                self.write("N_%X [label=\"%.2f%%\\n%d\\n%s\\n(%d calls)\"%s];\n" % (addr, percentage, count, name, calls, style))
+                self.write("N_%X [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, percentage, time, name, calls, style, shape))
             else:
-                self.write("N_%X [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (addr, percentage, name, count, style))
+                self.write("N_%X [label=\"%.2f%%\\n%d\\n%s\\n(%d calls)\"%s%s];\n" % (addr, percentage, count, name, calls, style, shape))
 
-    def _output_edges(self, profobj):
-        "output graph edges from filtered edges dict"
-        profile = profobj.profile
+    def _output_edges(self, profile):
+        "output graph edges from filtered edges dict, after nodes is called"
         for laddr, data in self.edges.items():
             paddr, caddr, count, calls = data
             pname = profile[paddr].name
             offset = laddr - paddr
+            style = ""
+            if caddr in self.highlight or paddr in self.highlight:
+                style = " color=red"
             if offset:
                 label = "%s+%d\\n($%x)" % (pname, offset, laddr)
             else:
@@ -997,16 +1118,19 @@ label="%s";
             if count != calls:
                 percentage = 100.0 * count / calls
                 label = "%s\\n%d calls\\n=%.2f%%" % (label, count, percentage)
-            self.write("N_%X -> N_%X [label=\"%s\"];\n" % (paddr, caddr, label))
+            self.write("N_%X -> N_%X [label=\"%s\"%s];\n" % (paddr, caddr, label, style))
 
     def do_output(self, profobj, fname):
         "output graphs for given profile data"
-        if not (self.output_enabled and self._filter_profile(profobj)):
+        if not (self.output_enabled and profobj.callers.present):
             return
-        sorter = ProfileSorter(profobj, None)
+        stats = profobj.stats
         basename = os.path.splitext(fname)[0]
         for field in range(profobj.stats.items):
-            if not profobj.stats.totals[field]:
+            if not stats.totals[field]:
+                continue
+            profile = self._filter_profile(profobj, field)
+            if not profile:
                 continue
             dotname = "%s-%d.dot" % (basename, field)
             self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
@@ -1015,11 +1139,15 @@ label="%s";
             except IOError, err:
                 self.warning(err)
                 continue
-            name = profobj.stats.names[field]
+            name = stats.names[field]
             title = "%s, for %s" % (name, fname)
+            if self.show_propagated:
+                title += "\\n(Nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape)"
             self.write(self.header % title)
-            self._output_nodes(profobj, field, sorter)
-            self._output_edges(profobj)
+            sorter = ProfileSorter(profile, stats, None, False)
+            limit = sorter.get_combined_limit(field, self.count, self.limit)
+            self._output_nodes(profile, stats, field, limit)
+            self._output_edges(profile)
             self.write(self.footer)
 
 
@@ -1035,6 +1163,7 @@ class Main(Output):
         "limit=",
         "only=",
         "output=",
+        "propagate",
         "relative=",
         "stats",
         "top",
@@ -1052,21 +1181,24 @@ class Main(Output):
     def parse_args(self):
         "parse & handle program arguments"
         try:
-            opts, rest = getopt.getopt(self.args, "a:f:gl:o:r:stv", self.longopts)
+            opts, rest = getopt.getopt(self.args, "a:e:f:gl:o:pr:stv", self.longopts)
         except getopt.GetoptError as err:
             self.usage(err)
 
+        propagate = False
         prof = HatariProfile()
         graph = ProfileGraph()
         stats = ProfileStats()
         for opt, arg in opts:
             #self.message("%s: %s" % (opt, arg))
+            # options for profile symbol parsing
             if opt in ("-a", "--absolute"):
                 self.message("\nParsing absolute symbol address information from %s..." % arg)
                 prof.parse_symbols(self.open_file(arg, "r"), False)
             elif opt in ("-r", "--relative"):
                 self.message("\nParsing TEXT relative symbol address information from %s..." % arg)
                 prof.parse_symbols(self.open_file(arg, "r"), True)
+            # options for both graphs & statistics
             elif opt in ("-f", "--first"):
                 count = self.get_value(opt, arg, False)
                 graph.set_count(count)
@@ -1075,6 +1207,11 @@ class Main(Output):
                 limit = self.get_value(opt, arg, True)
                 graph.set_limit(limit)
                 stats.set_limit(limit)
+            elif opt in ("-p", "--propagate"):
+                graph.enable_propagated()
+                stats.enable_propagated()
+                propagate = True
+            # options specific to graphs
             elif opt in ("-g", "--graph"):
                 graph.enable_output()
             elif opt == "--ignore":
@@ -1085,16 +1222,19 @@ class Main(Output):
                 graph.set_ignore_to(arg.split(','))
             elif opt == "--only":
                 graph.set_only(arg.split(','))
+            # options specific to statistics
+            elif opt in ("-s", "--stats"):
+                stats.enable_totals()
+            elif opt in ("-t", "--top"):
+                stats.enable_top()
+            # options for every class
             elif opt in ("-o", "--output"):
                 out = self.open_file(arg, "w")
                 self.message("\nSet output to go to '%s'." % arg)
                 self.set_output(out)
                 prof.set_output(out)
                 stats.set_output(out)
-            elif opt in ("-s", "--stats"):
-                stats.enable_totals()
-            elif opt in ("-t", "--top"):
-                stats.enable_top()
+            # options specific for profile parsing
             elif opt in ("-v", "--verbose"):
                 prof.set_verbose(True)
             else:
@@ -1102,6 +1242,11 @@ class Main(Output):
         for arg in rest:
             self.message("\nParsing profile information from %s..." % arg)
             prof.parse_profile(self.open_file(arg, "r"))
+            if propagate:
+                # TODO: do this step automatically in callers.complete()
+                # after this functionality is rewritten faster
+                self.message("Propagating costs in call tree (SLOW, takes exponential time)...")
+                prof.callers.propagate_costs(prof.profile)
             self.write("\nProfile information from '%s':\n" % arg)
             stats.do_output(prof)
             graph.do_output(prof, arg)
