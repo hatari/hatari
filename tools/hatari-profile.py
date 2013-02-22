@@ -122,7 +122,9 @@ class Output:
 
 
 class FunctionStats:
-    "current function (instructions) state"
+    """Function (instructions) state. State is updated while profile
+    data is being parsed and when function changes, instance is stored
+    for later use."""
 
     def __init__(self, name, addr, line, items):
         "start collecting new 'name' function instructions information"
@@ -132,6 +134,9 @@ class FunctionStats:
         self.line = line
         # field 0 is ALWAYS calls count and field 1 instructions count!
         self.data = [0] * items
+        # calltree information
+        self.parent = {}
+        self.children = 0
 
     def has_data(self):
         "return whether function has valid data yet"
@@ -414,8 +419,8 @@ class ProfileCallers(Output):
         # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
         # 0x<hex> = <count>
         self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
-        self.callinfo = None
-        self.addr_name_offset = None
+        # address dicts
+        self.callinfo = None	# callee : caller dict
 
     def parse_callers(self, fobj, parsed, line):
         "parse callee: caller call count information"
@@ -452,31 +457,38 @@ class ProfileCallers(Output):
             line = fobj.readline()
         return line, parsed
 
-    def _resolve(self, symbols):
-        "resolve caller symbols and add them name_addr_offset dict"
-        addr_name_offset = {}
+    def _construct_graph(self, profile, symbols):
+        "resolve caller functions and add child/parent info to profile data"
+        # go through called functions
         for addr, caller in self.callinfo.items():
-            addr_name_offset[addr] = (addr, symbols.get_symbol(addr), 0)
-            for caddr in caller.keys():
-                name, offset = symbols.get_preceeding_symbol(caddr)
-                addr_name_offset[caddr] = (caddr-offset, name, offset)
-        self.addr_name_offset = addr_name_offset
-
-    def _validate(self, profile):
-        "validate callinfo against profile data"
-        for addr, caller in self.callinfo.items():
+            called_func = profile[addr]
+            # and their callers
             total = 0
-            for count in caller.values():
+            for item in caller.items():
+                caddr, count = item
+                cname, offset = symbols.get_preceeding_symbol(caddr)
+                # function address for the caller
+                cfaddr = caddr - offset
+                caller_func = profile[cfaddr]
+                assert(cname == caller_func.name)
+                # link parent and child function together
+                if cfaddr in called_func.parent:
+                    called_func.parent[cfaddr].append(item)
+                else:
+                    called_func.parent[cfaddr] = [item]
+                called_func.children += 1
                 total += count
-            calls = profile[addr].data[0]
+            # validate call count
+            calls = called_func.data[0]
             if calls != total:
-                name = self.addr_name_offset[addr][1]
-                self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % (name, addr, calls, total))
+                info = (called_func.name, addr, calls, total)
+                self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % info)
 
     def complete(self, profile, symbols):
         "validate and post-process caller information"
-        self._resolve(symbols)
-        self._validate(profile)
+        self._construct_graph(profile, symbols)
+        # empty callinfo after its data has been processed
+        self.callinfo = {}
 
 
 class EmulatorProfile(Output):
@@ -886,7 +898,6 @@ label="%s";
     def __init__(self):
         ProfileOutput.__init__(self)
         self.count = 8
-        self.profobj = None
         self.nodes = None
         self.edges = None
         self.output_enabled = False
@@ -917,48 +928,44 @@ label="%s";
 
     def _filter_profile(self, profobj):
         "filter profile content to nodes and edges members"
-        self.profobj = None
-        callobj = profobj.callers
-        if not callobj.callinfo:
-            self.message("INFO: callee/caller information missing")
-            return False
-        nodes = {}
-        edges = {}
+        self.nodes = {}
+        self.edges = {}
+        profile = profobj.profile
         ignore_to = self.ignore_to + self.ignore
         ignore_from = self.ignore_from + self.ignore
-        for addr, callers in callobj.callinfo.items():
-            name = callobj.addr_name_offset[addr][1]
-            if name in ignore_to:
+        for caddr, child in profile.items():
+            if child.name in ignore_to:
                 continue
-            for caddr, count in callers.items():
-                caddr_node, cname, dummy = callobj.addr_name_offset[caddr]
+            for paddr, info in child.parent.items():
+                parent = profile[paddr]
                 # no recursion
-                #if cname == name:
+                # if child.name == parent.name:
                 #    continue
-                if self.only and name not in self.only and cname not in self.only:
+                if self.only:
+                    if not (child.name in self.only or parent.name in self.only):
+                        continue
+                # child end for edges
+                self.nodes[caddr] = True
+                if parent.name in ignore_from:
                     continue
-                nodes[addr] = True
-                if cname in ignore_from:
-                    continue
-                # caller can also be a node
-                nodes[caddr_node] = True
-                calls = profobj.profile[addr].data[0]	# total calls count
-                edges[caddr] = (addr, name, count, calls)
-        if not nodes:
-            return False
-        self.profobj = profobj
-        self.nodes = nodes
-        self.edges = edges
-        return True
+                # parent end for edges
+                self.nodes[paddr] = True
+                # total calls count for child
+                calls = profile[caddr].data[0]
+                # calls to child done from different locations in parent
+                for laddr, count in info:
+                    self.edges[laddr] = (paddr, caddr, count, calls)
+        if self.nodes:
+            return True
+        return False
 
-    def _output_nodes(self, field, sorter):
+    def _output_nodes(self, profobj, field, sorter):
         "output graph nodes from filtered nodes dict"
-        stats = self.profobj.stats
+        stats = profobj.stats
         total = stats.totals[field]
         limit = sorter.get_combined_limit(field, self.count, self.limit)
         for addr in self.nodes.keys():
-            function = self.profobj.profile[addr]
-            name = function.name
+            function = profobj.profile[addr]
             values = function.data
             count = values[field]
             percentage = 100.0 * count / total
@@ -967,34 +974,36 @@ label="%s";
             else:
                 style = ""
             calls = values[0]
+            name = function.name
             if field == stats.cycles_field:
                 time = stats.get_time(values)
                 self.write("N_%X [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s];\n" % (addr, percentage, time, name, calls, style))
-            elif field:
+            elif field > 0:
                 self.write("N_%X [label=\"%.2f%%\\n%d\\n%s\\n(%d calls)\"%s];\n" % (addr, percentage, count, name, calls, style))
             else:
                 self.write("N_%X [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (addr, percentage, name, count, style))
 
-    def _output_edges(self):
+    def _output_edges(self, profobj):
         "output graph edges from filtered edges dict"
-        addr_name_offset = self.profobj.callers.addr_name_offset
-        for caddr, data in self.edges.items():
-            addr, name, count, calls = data
-            caddr_node, cname, offset = addr_name_offset[caddr]
+        profile = profobj.profile
+        for laddr, data in self.edges.items():
+            paddr, caddr, count, calls = data
+            pname = profile[paddr].name
+            offset = laddr - paddr
             if offset:
-                label = "%s+%d\\n($%x)" % (cname, offset, caddr)
+                label = "%s+%d\\n($%x)" % (pname, offset, laddr)
             else:
-                label = name
+                label = pname
             if count != calls:
                 percentage = 100.0 * count / calls
                 label = "%s\\n%d calls\\n=%.2f%%" % (label, count, percentage)
-            self.write("N_%X -> N_%X [label=\"%s\"];\n" % (caddr_node, addr, label))
+            self.write("N_%X -> N_%X [label=\"%s\"];\n" % (paddr, caddr, label))
 
     def do_output(self, profobj, fname):
         "output graphs for given profile data"
         if not (self.output_enabled and self._filter_profile(profobj)):
             return
-        sorter = ProfileSorter(self.profobj, None)
+        sorter = ProfileSorter(profobj, None)
         basename = os.path.splitext(fname)[0]
         for field in range(profobj.stats.items):
             if not profobj.stats.totals[field]:
@@ -1009,8 +1018,8 @@ label="%s";
             name = profobj.stats.names[field]
             title = "%s, for %s" % (name, fname)
             self.write(self.header % title)
-            self._output_nodes(field, sorter)
-            self._output_edges()
+            self._output_nodes(profobj, field, sorter)
+            self._output_edges(profobj)
             self.write(self.footer)
 
 
