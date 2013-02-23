@@ -1140,7 +1140,7 @@ bool Profile_DspStart(void)
 		item->min_cycle = 0xFFFF;
 	}
 
-	cpu_profile.sites = alloc_caller_info("DSP", dsp_profile.sites, Symbols_DspCount(), &(dsp_profile.callsite));
+	dsp_profile.sites = alloc_caller_info("DSP", dsp_profile.sites, Symbols_DspCount(), &(dsp_profile.callsite));
 
 	dsp_profile.prev_pc = DSP_GetPC();
 
