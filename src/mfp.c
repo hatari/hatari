@@ -365,8 +365,9 @@ void	MFP_InterruptHandler_DelayException ( void )
  * is to be checked) so we only have one compare during the decode
  * instruction loop.
  */
-static void MFP_UpdateFlags(void)
+static void MFP_UpdateIRQ(void)
 {
+#if 0
 	if (MFP_IPRA|MFP_IPRB)
 	{
 		M68000_SetSpecial(SPCFLAG_MFP);
@@ -375,6 +376,16 @@ static void MFP_UpdateFlags(void)
 	{
 		M68000_UnsetSpecial(SPCFLAG_MFP);
 	}
+#else
+
+	if ( ( MFP_IPRA & MFP_IMRA ) | ( MFP_IPRB & MFP_IMRB ) )
+	{
+		if ( MFP_CheckPendingInterrupts () > 0 )
+			MFP_IRQ = 1;
+	}
+	else
+		MFP_IRQ = 0;
+#endif
 }
 
 
@@ -399,7 +410,7 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
 			if (regs.intmask < 6)
 			{
 				*pPendingReg &= ~Bit;           /* Clear pending bit */
-				MFP_UpdateFlags();
+//				MFP_UpdateIRQ();	// FIXME, remove
 
 				/* Are we in 'auto' interrupt or 'manual'? */
 				if (MFP_VR&0x08)                /* Software End-of-Interrupt (SEI) */
@@ -511,7 +522,7 @@ void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
 		*pPendingReg |= Bit;           /* Set bit */
 	else
 		*pPendingReg &= ~Bit;          /* Clear bit */
-	MFP_UpdateFlags();
+	MFP_UpdateIRQ();
 }
 
 
@@ -1451,7 +1462,7 @@ void MFP_EnableA_WriteByte(void)
 
 	MFP_IERA = IoMem[0xfffa07];
 	MFP_IPRA &= MFP_IERA;
-	MFP_UpdateFlags();
+	MFP_UpdateIRQ();
 	/* We may have enabled Timer A or B, check */
 	/* [NP] No check, restarting the timer is wrong */
 //	MFP_StartTimerA();
@@ -1468,7 +1479,7 @@ void MFP_EnableB_WriteByte(void)
 
 	MFP_IERB = IoMem[0xfffa09];
 	MFP_IPRB &= MFP_IERB;
-	MFP_UpdateFlags();
+	MFP_UpdateIRQ();
 	/* We may have enabled Timer C or D, check */
 	/* [NP] No check, restarting the timer is wrong */
 //	MFP_StartTimerC();
@@ -1483,8 +1494,8 @@ void MFP_PendingA_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	MFP_IPRA &= IoMem[0xfffa0b];        /* Cannot set pending bits - only clear via software */
-	MFP_UpdateFlags();                  /* Check if any interrupts pending */
+	MFP_IPRA &= IoMem[0xfffa0b];		/* Cannot set pending bits - only clear via software */
+	MFP_UpdateIRQ();			/* Check if any interrupts pending */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1496,7 +1507,7 @@ void MFP_PendingB_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IPRB &= IoMem[0xfffa0d];
-	MFP_UpdateFlags();                  /* Check if any interrupts pending */
+	MFP_UpdateIRQ();			/* Check if any interrupts pending */
 }
 
 /*-----------------------------------------------------------------------*/
