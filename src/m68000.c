@@ -485,6 +485,7 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 		 * of higher priority! */
 		if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
 		{
+			// FIXME : this test is useless, per design mfp.c will always give an address in the correct range
 			Uint32 MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
 			if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x3c)) )
 				SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
