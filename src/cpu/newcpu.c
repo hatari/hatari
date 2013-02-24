@@ -2728,7 +2728,7 @@ static bool do_specialties_interrupt (int Pending)
 {
     /* Check for MFP ints first (level 6) */
     if (regs.spcflags & SPCFLAG_MFP) {
-       if (MFP_CheckPendingInterrupts() == true)
+       if (MFP_CheckPendingInterrupts() >= 0)
          return true;					/* MFP exception was generated, no higher interrupt can happen */
     }
 
