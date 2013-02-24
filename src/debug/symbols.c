@@ -438,7 +438,7 @@ const char* Symbols_GetByDspAddress(Uint16 addr)
 	if (idx < 0) {
 		return NULL;
 	}
-	return CpuSymbolsList->addresses[idx].name;
+	return DspSymbolsList->addresses[idx].name;
 }
 
 /**
@@ -456,7 +456,7 @@ int Symbols_GetCpuAddressIndex(Uint32 addr)
  */
 int Symbols_GetDspAddressIndex(Uint16 addr)
 {
-	return Symbols_SearchByAddress(CpuSymbolsList, addr);	
+	return Symbols_SearchByAddress(DspSymbolsList, addr);	
 }
 
 /**
