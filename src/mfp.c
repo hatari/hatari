@@ -95,6 +95,13 @@
 /*			clear bit 3 to emulate it as in delay mode. This is not		*/
 /*			completly correct as we should also emulate GPIO 3/4, but it	*/
 /*			helps running some programs (fix the game Erik).		*/
+/* 2013/02/24	[NP]	- In MFP_CheckPendingInterrupts, don't check all the MFP ints,	*/
+/*			stop as soon as the highest interrupt is found (simultaneous	*/
+/*			interrupts could be processed during the same cycle and were	*/
+/*			stacked/executed in the reverse order, from lowest to highest	*/
+/*			priority, which was wrong).					*/
+/*			- Use MFP_ProcessIRQ to separate the MFP's IRQ signal handling	*/
+/*			and the	exception processing at the CPU level.			*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
@@ -200,6 +207,17 @@ static const Uint16 MFPDiv[] =
 /* (we round to the closest higher integer) */
 #define MFP_CYCLE_TO_REG(cyc,ctrl)	( ( cyc + MFPDiv[ ctrl&0x7 ] - 1 ) / MFPDiv[ ctrl&0x7 ] )
 //#define MFP_CYCLE_TO_REG(cyc,ctrl)	( cyc / MFPDiv[ ctrl&0x7 ] )
+
+
+
+
+/*--------------------------------------------------------------*/
+/* Local functions prototypes					*/
+/*--------------------------------------------------------------*/
+
+static void	MFP_UpdateIRQ ( void );
+
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -358,12 +376,66 @@ void	MFP_InterruptHandler_DelayException ( void )
 }
 #endif
 
+
+
+
 /*-----------------------------------------------------------------------*/
 /**
- * This is called whenever the MFP_IPRA or MFP_IPRB registers are modified.
+ * This function is called from the CPU emulation part when SPCFLAG_MFP is set.
+ * If the MFP's IRQ signal is set, we check that SR allows a level 6 interrupt,
+ * and if so, we call MFP_Exception.
+ * If SR doesn't allow an MFP interrupt, MFP's pending requests will be
+ * processed later when SR allows it.
+ */
+bool	MFP_ProcessIRQ ( void )
+{
+	Uint8	*pPendingReg;
+	Uint8	*pInServiceReg;
+	int	Bit;
+
+	
+	if ( MFP_IRQ == 1 )
+	{
+		if (regs.intmask < 6)
+		{
+			if ( MFP_Current_Interrupt > 7 )
+			{
+				Bit = 1 << ( MFP_Current_Interrupt - 8 );
+				pPendingReg = &MFP_IPRA;
+				pInServiceReg = &MFP_ISRA;
+			}
+			else
+			{
+				Bit = 1 << MFP_Current_Interrupt;
+				pPendingReg = &MFP_IPRB;
+				pInServiceReg = &MFP_ISRB;
+			}
+
+			*pPendingReg &= ~Bit;           /* Clear pending bit */
+
+			/* Are we in 'auto' interrupt or 'manual'? */
+			if (MFP_VR&0x08)                /* Software End-of-Interrupt (SEI) */
+				*pInServiceReg |= Bit;      /* Set interrupt in service register */
+			else
+				*pInServiceReg &= ~Bit;     /* Clear interrupt in service register */
+
+			MFP_Exception ( MFP_Current_Interrupt );
+			MFP_UpdateIRQ ();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Update the MFP IRQ signal when IERx, IPRx, ISRx or IMRx are modified.
  * We set the special flag SPCFLAG_MFP accordingly (to say if an MFP interrupt
- * is to be checked) so we only have one compare during the decode
- * instruction loop.
+ * is to be processed) so we only have one compare to call MFP_ProcessIRQ
+ * during the CPU's decode instruction loop..
  */
 static void MFP_UpdateIRQ(void)
 {
@@ -377,22 +449,35 @@ static void MFP_UpdateIRQ(void)
 		M68000_UnsetSpecial(SPCFLAG_MFP);
 	}
 #else
+	int	NewInt;
 
 	if ( ( MFP_IPRA & MFP_IMRA ) | ( MFP_IPRB & MFP_IMRB ) )
 	{
-		if ( MFP_CheckPendingInterrupts () > 0 )
+		NewInt = MFP_CheckPendingInterrupts ();
+		
+		if ( NewInt > 0 )
+		{
 			MFP_IRQ = 1;
+			MFP_Current_Interrupt = NewInt;
+		}
 	}
 	else
+	{
 		MFP_IRQ = 0;
+	}
+
+	if ( MFP_IRQ == 1 )
+		M68000_SetSpecial(SPCFLAG_MFP);
+	else
+		M68000_UnsetSpecial(SPCFLAG_MFP);
 #endif
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Test interrupt request to see if can cause exception.
- * @return true if pass vector
+ * Test interrupt request to see if MFP IRQ should be set
+ * @return true if the MFP interrupt request is allowed
  */
 static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
                                  Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
@@ -400,12 +485,13 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
   static int cnt;
   fprintf ( stderr , "mfp int req %d %d\n" , nMfpException , cnt++ );
 
-	/* Are any higher priority interupts in service? */
+	/* Are any higher priority interrupts in service? */
 	if (((MFP_ISRA&PriorityMaskLow) == 0) && ((MFP_ISRB&PriorityMaskHigh) == 0))
 	{
 		/* Is masked? */
 		if (MaskRegister&Bit)
 		{
+#if 0
 			/* CPU allows interrupt of an MFP level? */
 			if (regs.intmask < 6)
 			{
@@ -422,6 +508,9 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
 				MFP_Exception(nMfpException);
 				return true;
 			}
+#else
+			return true;
+#endif
 		}
 	}
 

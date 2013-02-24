@@ -2728,7 +2728,7 @@ static bool do_specialties_interrupt (int Pending)
 {
     /* Check for MFP ints first (level 6) */
     if (regs.spcflags & SPCFLAG_MFP) {
-       if (MFP_CheckPendingInterrupts() >= 0)
+       if (MFP_ProcessIRQ() == true)
          return true;					/* MFP exception was generated, no higher interrupt can happen */
     }
 
@@ -2835,7 +2835,7 @@ STATIC_INLINE int do_specialties (int cycles)
 
 			/* Then we check if this handler triggered an MFP int to process */
 			if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
-				MFP_CheckPendingInterrupts();
+				MFP_ProcessIRQ();
 			}
 
 #if AMIGA_ONLY
