@@ -451,14 +451,6 @@ int	MFP_CheckPendingInterrupts ( void )
 		return 255;
 	}
 
-	if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xfb) == 0)
-	{
-		/* Should never get here, but if do just clear flag (see 'MFP_UpdateFlags') */
-		M68000_UnsetSpecial(SPCFLAG_MFP);
-		return -1;
-	}
-
-
 	if (MFP_IPRA & MFP_TIMER_GPIP7_BIT)   /* Check MFP GPIP7 interrupt (bit 7) */
 		if ( MFP_InterruptRequest(MFP_EXCEPT_GPIP7, MFP_TIMER_GPIP7_BIT, &MFP_IPRA, MFP_IMRA, 0x80, 0x00, &MFP_ISRA) )
 			return MFP_EXCEPT_GPIP7;
