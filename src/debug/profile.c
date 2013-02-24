@@ -201,7 +201,7 @@ static void show_caller_info(FILE *fp, unsigned int sites, callee_t *callsite, b
 		}
 		fputs("\n", fp);
 		if (total) {
-			fprintf(fp, "-> WARNING: callcount mismatch with address instruction count! (%lld != 0)", total);
+			fprintf(fp, "-> WARNING: callcount mismatch with address instruction count! (%lld != 0)\n", total);
 		}
 	}
 }
