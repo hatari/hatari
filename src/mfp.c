@@ -1519,6 +1519,7 @@ void MFP_InServiceA_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_ISRA &= IoMem[0xfffa0f];        /* Cannot set in-service bits - only clear via software */
+	MFP_UpdateIRQ();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1530,6 +1531,7 @@ void MFP_InServiceB_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_ISRB &= IoMem[0xfffa11];        /* Cannot set in-service bits - only clear via software */
+	MFP_UpdateIRQ();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1541,6 +1543,7 @@ void MFP_MaskA_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IMRA = IoMem[0xfffa13];
+	MFP_UpdateIRQ();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1552,6 +1555,7 @@ void MFP_MaskB_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IMRB = IoMem[0xfffa15];
+	MFP_UpdateIRQ();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1575,6 +1579,7 @@ void MFP_VectorReg_WriteByte(void)
 			/* We are now in automatic mode, so clear all in-service bits! */
 			MFP_ISRA = 0;
 			MFP_ISRB = 0;
+			MFP_UpdateIRQ();
 		}
 	}
 
