@@ -319,13 +319,15 @@ class ProfileSymbols(Output):
     def parse_areas(self, fobj, parsed):
         "parse memory area lines from data"
         while True:
+            parsed += 1
             line = fobj.readline()
             if not line:
                 break
+            if line.startswith('#'):
+                continue
             match = self.r_area.match(line.strip())
             if not match:
                 break
-            parsed += 1
             name, start, end = match.groups()
             end = int(end, 16)
             start = int(start, 16)
@@ -338,7 +340,7 @@ class ProfileSymbols(Output):
             elif self.verbose:
                 self.message("memory area '%s': 0x%x-0x%x" % (name, start, end))
         self._relocate_symbols()
-        return line, parsed
+        return line, parsed-1
 
     def get_area(self, addr):
         "return memory area name + offset (used if no symbol matches)"
@@ -475,7 +477,7 @@ class ProfileCallers(Output):
         # caller info in callee line:
         # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
         # 0x<hex> = <count>
-        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)$")
+        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)( [a-z]+)?$")
         # whether there is any caller info
         self.present = False
         # address dicts
@@ -486,8 +488,12 @@ class ProfileCallers(Output):
         #0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
         self.callinfo = {}
         while True:
+            parsed += 1
             if not line:
                 break
+            if line.startswith('#'):
+                line = fobj.readline()
+                continue
             if not line.startswith("0x"):
                 break
             callers = line.split(',')
@@ -505,16 +511,15 @@ class ProfileCallers(Output):
                 caller = caller.strip()
                 match = self.r_caller.match(caller)
                 if match:
-                    caddr, count = match.groups()
+                    caddr, count, flags = match.groups()
                     caddr = int(caddr, 16)
                     count = int(count, 10)
                     callinfo[caddr] = count
                 else:
                     self.error_exit("unrecognized caller info '%s' on callee line %d\n\t'%s'" % (caller, parsed, line))
             self.callinfo[int(addr, 16)] = callinfo
-            parsed += 1
             line = fobj.readline()
-        return line, parsed
+        return line, parsed-1
 
     def complete(self, profile, symbols):
         "resolve caller functions and add child/parent info to profile data"
@@ -738,6 +743,8 @@ class EmulatorProfile(Output):
             if not line:
                 break
             line = line.strip()
+            if line.startswith('#'):
+                pass
             if line == "[...]":
                 # address discontinuation
                 discontinued = True

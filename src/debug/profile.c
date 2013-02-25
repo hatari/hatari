@@ -28,15 +28,41 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 /* if non-zero, output warnings on syspicious cycle values */
 #define DEBUG 0
 
+typedef enum {
+	CALL_UNKNOWN	= 1,
+	CALL_NEXT	= 2,
+	CALL_BRANCH	= 4,
+	CALL_SUBROUTINE	= 8,
+	CALL_SUBRETURN	= 16,
+	CALL_EXCEPTION	= 32,
+	CALL_EXCRETURN	= 64,
+	CALL_INTERRUPT	= 128
+} calltype_t;
+
+static const struct {
+	char chr;
+	calltype_t bit;
+	const char *info;
+} flaginfo[] = {
+	{ 'u', CALL_UNKNOWN,	"unknown PC change" },
+	{ 'n', CALL_NEXT,	"PC moved to next instruction", },
+	{ 'b', CALL_BRANCH,	"branch/jump" },
+	{ 's', CALL_SUBROUTINE,	"subroutine call" },
+	{ 'r', CALL_SUBRETURN,	"return from subroutine" },
+	{ 'e', CALL_EXCEPTION,	"exception" },
+	{ 'x', CALL_EXCRETURN,	"return from exception" }
+};
+
 typedef struct {
-	Uint32 addr;		/* number of calls */
-	Uint32 count;
+	calltype_t   flags:8;	/* what kind of call it was */
+	unsigned int addr:24;	/* address for the caller */
+	Uint32 count;		/* number of calls */
 } caller_t;
 
 typedef struct {
-	Uint32 addr;
+	Uint32 addr;		/* called address */
 	unsigned int count;	/* number of callers */
-	caller_t *callers;
+	caller_t *callers;	/* who called this address */
 } callee_t;
 
 
@@ -166,12 +192,21 @@ static Uint32 index2address(Uint32 idx)
  */
 static void show_caller_info(FILE *fp, unsigned int sites, callee_t *callsite, bool forDsp)
 {
-	unsigned int i, j;
+	unsigned int typecount, countissues;
+	unsigned int i, j, k;
 	const char *name;
 	caller_t *info;
 	Uint64 total;
-	Uint32 addr;
+	Uint32 addr, typeaddr;
 
+	/* legend */
+	fputs("# ", fp);
+	for (k = 0; k < ARRAYSIZE(flaginfo); k++) {
+		fprintf(fp, "%c = %s, ", flaginfo[k].chr, flaginfo[k].info);
+	}
+	fputs("\n", fp);
+
+	countissues = 0;
 	for (i = 0; i < sites; i++, callsite++) {
 		addr = callsite->addr;
 		if (!addr) {
@@ -187,22 +222,41 @@ static void show_caller_info(FILE *fp, unsigned int sites, callee_t *callsite, b
 		}
 		fprintf(fp, "0x%x: ", callsite->addr);
 
+		typeaddr = 0;
 		info = callsite->callers;
-		/* TODO: sort the information before output */
+		/* TODO: sort the information before output? */
 		for (j = 0; j < callsite->count; j++, info++) {
 			if (!info->addr) {
 				break;
 			}
-			fprintf(fp, "0x%x = %d, ", info->addr, info->count);
+			fprintf(fp, "0x%x = %d ", info->addr, info->count);
 			total -= info->count;
+			typecount = 0;
+			for (k = 0; k < ARRAYSIZE(flaginfo); k++) {
+				if (info->flags & flaginfo[k].bit) {
+					fputc(flaginfo[k].chr, fp);
+					typecount++;
+				}
+			}
+			if (typecount > 1) {
+				typeaddr = info->addr;
+			}
+			fputs(", ", fp);
 		}
 		if (name) {
 			fprintf(fp, "(%s)", name);
 		}
 		fputs("\n", fp);
 		if (total) {
-			fprintf(fp, "-> WARNING: callcount mismatch with address instruction count! (%lld != 0)\n", total);
+			countissues++;
 		}
+		if (typeaddr) {
+			fprintf(fp, "WARNING: different types of calls (at least) from 0x%x,\thas its code changed during profiling?\n", typeaddr);
+		}
+	}
+	if (countissues) {
+		/* profiler bug: some (address?) mismatch in recording instruction counts and call counts */
+		fprintf(fp, "ERROR: callcount mismatches with address instruction counts detected in %d cases!\n", countissues);
 	}
 }
 
@@ -217,17 +271,14 @@ static void Profile_DspShowCallers(FILE *fp)
 }
 
 /**
- * Update CPU/DSP callee / caller information, if called
- * address contains symbol address (= is function)
+ * Update CPU/DSP callee / caller information, if called address contains
+ * symbol address (= function, or other interesting place in code)
  */
-static void update_caller_info(bool forDsp, Uint32 pc, int sites, callee_t *callsite, Uint32 caller)
+static void update_caller_info(bool forDsp, Uint32 pc, int sites, callee_t *callsite, Uint32 caller, calltype_t flag)
 {
 	int i, idx, count;
 	caller_t *info;
 
-	if (!sites) {
-		return;
-	}
 	if (forDsp) {
 		idx = Symbols_GetDspAddressIndex(pc);
 	} else {
@@ -242,7 +293,9 @@ static void update_caller_info(bool forDsp, Uint32 pc, int sites, callee_t *call
 	}
 	callsite += idx;
 
-	/* needed after profiling as symbols can then change */
+	/* need to store real call addresses as symbols can change
+	 * after profiling has been stopped
+	 */
 	info = callsite->callers;
 	if (!info) {
 		info = calloc(1, sizeof(*info));
@@ -250,25 +303,29 @@ static void update_caller_info(bool forDsp, Uint32 pc, int sites, callee_t *call
 			fprintf(stderr, "ERROR: caller info alloc failed!\n");
 			return;
 		}
+		/* first call to this address, save address */
 		callsite->addr = pc;
 		callsite->callers = info;
 		callsite->count = 1;
 	}
+	/* how many caller slots are currently allocated? */
 	count = callsite->count;
 	for (;;) {
 		for (i = 0; i < count; i++, info++) {
 			if (info->addr == caller) {
+				info->flags |= flag;
 				info->count++;
 				return;
 			}
 			if (!info->addr) {
 				/* empty slot */
 				info->addr = caller;
+				info->flags |= flag;
 				info->count = 1;
 				return;
 			}
 		}
-		/* not enough, double caller space */
+		/* not enough, double caller slots */
 		count *= 2;
 		info = realloc(callsite->callers, count * sizeof(*info));
 		if (!info) {
@@ -668,6 +725,47 @@ bool Profile_CpuStart(void)
 	return cpu_profile.enabled;
 }
 
+static calltype_t cpu_opcode_type(Uint16 opcode, Uint32 prev_pc, Uint32 pc)
+{
+	/* JSR, BSR (should be most common) */
+	if ((opcode & 0xffc0) == 0x4e80 ||
+	    (opcode & 0xff00) == 0x6100) {
+		return CALL_SUBROUTINE;
+	}
+	/* RTS, RTR, RTD */
+	if (opcode == 0x4e75 ||
+	    opcode == 0x4e77 ||
+	    opcode == 0x4e74) {
+		return CALL_SUBRETURN;
+	}
+	/* TRAP, TRAPV, STOP, ILLEGAL, CHK, BKPT */
+	if ((opcode & 0xfff0) == 0x4e40 ||
+	     opcode == 0x4e76 ||
+	     opcode == 0x4afc ||
+	     opcode == 0x4e72 ||
+	    (opcode & 0xf1c0) == 0x4180 ||
+	    (opcode & 0xfff8) == 0x4848) {
+		return CALL_EXCEPTION;
+	}
+	/* RTE */
+	if (opcode == 0x4e73) {
+		return CALL_EXCRETURN;
+	}
+	/* JMP (potentially static functions), DBCC, BRA, BCC (loop labels) */
+	if ((opcode & 0xffc0) == 0x4ec0 ||
+	    (opcode & 0xf0f8) == 0x50c8 ||
+	    (opcode & 0xff00) == 0x6000 ||
+	   ((opcode & 0xf000) == 0x6000 && (opcode & 0xf00) > 0x100)) {
+		return CALL_BRANCH;
+	}
+	/* just moved to next instruction? */
+	if (prev_pc < pc && (pc - prev_pc) <= 10) {
+		return CALL_NEXT;
+	}
+	return CALL_UNKNOWN;
+}
+
+
 /**
  * Update CPU cycle and count statistics for PC address.
  *
@@ -681,10 +779,15 @@ void Profile_CpuUpdate(void)
 #endif
 	Uint32 pc, prev_pc, idx, cycles;
 	cpu_profile_item_t *prev;
+	Uint16 opcode;
 
 	prev_pc = cpu_profile.prev_pc;
 	cpu_profile.prev_pc = pc = M68000_GetPC();
-	update_caller_info(false, pc, cpu_profile.sites, cpu_profile.callsite, prev_pc);
+	opcode = STMemory_ReadWord(prev_pc);
+	if (cpu_profile.sites) {
+		calltype_t flag = cpu_opcode_type(opcode, prev_pc, pc);
+		update_caller_info(false, pc, cpu_profile.sites, cpu_profile.callsite, prev_pc, flag);
+	}
 
 	idx = address2index(prev_pc);
 	assert(idx <= cpu_profile.size);
@@ -709,7 +812,7 @@ void Profile_CpuUpdate(void)
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
 	/* catch too large (and negative) cycles, ignore STOP instruction */
-	if (cycles > 256 && STMemory_ReadWord(prev_pc) != 0x4e72) {
+	if (cycles > 256 && opcode != 0x4e72) {
 		fprintf(stderr, "WARNING: cycles %d > 512 at 0x%x\n",
 			cycles, prev_pc);
 	}
@@ -1161,8 +1264,9 @@ void Profile_DspUpdate(void)
 
 	prev_pc = dsp_profile.prev_pc;
 	dsp_profile.prev_pc = pc = DSP_GetPC();
-	update_caller_info(true, pc, dsp_profile.sites, dsp_profile.callsite, prev_pc);
-
+	if (dsp_profile.sites) {
+		update_caller_info(true, pc, dsp_profile.sites, dsp_profile.callsite, prev_pc, CALL_UNKNOWN);
+	}
 	prev = dsp_profile.data + prev_pc;
 	if (likely(prev->count < MAX_DSP_PROFILE_VALUE)) {
 		prev->count++;
