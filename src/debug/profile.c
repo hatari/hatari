@@ -28,6 +28,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 /* if non-zero, output warnings on syspicious cycle values */
 #define DEBUG 0
 
+#define CALL_UNDEFINED	0	/* = call type information not supported */
 typedef enum {
 	CALL_UNKNOWN	= 1,
 	CALL_NEXT	= 2,
@@ -229,17 +230,20 @@ static void show_caller_info(FILE *fp, unsigned int sites, callee_t *callsite, b
 			if (!info->addr) {
 				break;
 			}
-			fprintf(fp, "0x%x = %d ", info->addr, info->count);
+			fprintf(fp, "0x%x = %d", info->addr, info->count);
 			total -= info->count;
-			typecount = 0;
-			for (k = 0; k < ARRAYSIZE(flaginfo); k++) {
-				if (info->flags & flaginfo[k].bit) {
-					fputc(flaginfo[k].chr, fp);
-					typecount++;
+			if (info->flags) {	/* calltypes supported? */
+				fputs(" ", fp);
+				typecount = 0;
+				for (k = 0; k < ARRAYSIZE(flaginfo); k++) {
+					if (info->flags & flaginfo[k].bit) {
+						fputc(flaginfo[k].chr, fp);
+						typecount++;
+					}
 				}
-			}
-			if (typecount > 1) {
-				typeaddr = info->addr;
+				if (typecount > 1) {
+					typeaddr = info->addr;
+				}
 			}
 			fputs(", ", fp);
 		}
@@ -479,6 +483,8 @@ static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
 	Disasm_GetColumns(oldcols);
 	Disasm_DisableColumn(DISASM_COLUMN_HEXDUMP, oldcols, newcols);
 	Disasm_SetColumns(newcols);
+
+	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <sum of i-cache misses)\n", out);
 
 	nextpc = 0;
 	for (shown = idx = 0; shown < show && idx < size; idx++) {
@@ -1055,6 +1061,8 @@ static void Profile_DspShowAddresses(unsigned int show, FILE *out)
 		show = active;
 	}
 
+	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <max cycle difference>)\n", out);
+
 	nextpc = 0;
 	for (shown = addr = 0; shown < show && addr < size; addr++) {
 		if (!data[addr].count) {
@@ -1265,7 +1273,7 @@ void Profile_DspUpdate(void)
 	prev_pc = dsp_profile.prev_pc;
 	dsp_profile.prev_pc = pc = DSP_GetPC();
 	if (dsp_profile.sites) {
-		update_caller_info(true, pc, dsp_profile.sites, dsp_profile.callsite, prev_pc, CALL_UNKNOWN);
+		update_caller_info(true, pc, dsp_profile.sites, dsp_profile.callsite, prev_pc, CALL_UNDEFINED);
 	}
 	prev = dsp_profile.data + prev_pc;
 	if (likely(prev->count < MAX_DSP_PROFILE_VALUE)) {
