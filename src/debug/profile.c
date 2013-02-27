@@ -185,6 +185,22 @@ static Uint32 index2address(Uint32 idx)
 
 /* ------------------ CPU/DSP caller information handling ----------------- */
 
+/**
+ * compare function for qsort() to sort caller data by calls
+ */
+static int cmp_callers(const void *c1, const void *c2)
+{
+	Uint32 count1 = ((const caller_t*)c1)->count;
+	Uint32 count2 = ((const caller_t*)c2)->count;
+	if (count1 > count2) {
+		return -1;
+	}
+	if (count1 < count2) {
+		return 1;
+	}
+	return 0;
+}
+
 /*
  * Show collected CPU/DSP callee/caller information.
  *
@@ -225,7 +241,7 @@ static void show_caller_info(FILE *fp, unsigned int sites, callee_t *callsite, b
 
 		typeaddr = 0;
 		info = callsite->callers;
-		/* TODO: sort the information before output? */
+		qsort(info, callsite->count, sizeof(*info), cmp_callers);
 		for (j = 0; j < callsite->count; j++, info++) {
 			if (!info->addr) {
 				break;
@@ -523,7 +539,7 @@ static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
 /**
  * compare function for qsort() to sort CPU profile data by instruction cache misses.
  */
-static int profile_by_cpu_misses(const void *p1, const void *p2)
+static int cmp_cpu_misses(const void *p1, const void *p2)
 {
 	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].misses;
 	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].misses;
@@ -554,7 +570,7 @@ static void Profile_CpuShowMisses(unsigned int show)
 
 	active = cpu_profile.active;
 	sort_arr = cpu_profile.sort_arr;
-	qsort(sort_arr, active, sizeof(*sort_arr), profile_by_cpu_misses);
+	qsort(sort_arr, active, sizeof(*sort_arr), cmp_cpu_misses);
 
 	printf("addr:\t\tmisses:\n");
 	show = (show < active ? show : active);
@@ -571,7 +587,7 @@ static void Profile_CpuShowMisses(unsigned int show)
 /**
  * compare function for qsort() to sort CPU profile data by cycles counts.
  */
-static int profile_by_cpu_cycles(const void *p1, const void *p2)
+static int cmp_cpu_cycles(const void *p1, const void *p2)
 {
 	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].cycles;
 	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].cycles;
@@ -602,7 +618,7 @@ static void Profile_CpuShowCycles(unsigned int show)
 
 	active = cpu_profile.active;
 	sort_arr = cpu_profile.sort_arr;
-	qsort(sort_arr, active, sizeof(*sort_arr), profile_by_cpu_cycles);
+	qsort(sort_arr, active, sizeof(*sort_arr), cmp_cpu_cycles);
 
 	printf("addr:\t\tcycles:\n");
 	show = (show < active ? show : active);
@@ -620,7 +636,7 @@ static void Profile_CpuShowCycles(unsigned int show)
  * compare function for qsort() to sort CPU profile data by descending
  * address access counts.
  */
-static int profile_by_cpu_count(const void *p1, const void *p2)
+static int cmp_cpu_count(const void *p1, const void *p2)
 {
 	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].count;
 	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].count;
@@ -655,7 +671,7 @@ static void Profile_CpuShowCounts(unsigned int show, bool only_symbols)
 	show = (show < active ? show : active);
 
 	sort_arr = cpu_profile.sort_arr;
-	qsort(sort_arr, active, sizeof(*sort_arr), profile_by_cpu_count);
+	qsort(sort_arr, active, sizeof(*sort_arr), cmp_cpu_count);
 
 	if (!only_symbols) {
 		printf("addr:\t\tcount:\n");
@@ -1095,7 +1111,7 @@ static void Profile_DspShowAddresses(unsigned int show, FILE *out)
  * compare function for qsort() to sort DSP profile data by descdending
  * address cycles counts.
  */
-static int profile_by_dsp_cycles(const void *p1, const void *p2)
+static int cmp_dsp_cycles(const void *p1, const void *p2)
 {
 	Uint64 count1 = dsp_profile.data[*(const Uint16*)p1].cycles;
 	Uint64 count2 = dsp_profile.data[*(const Uint16*)p2].cycles;
@@ -1126,7 +1142,7 @@ static void Profile_DspShowCycles(unsigned int show)
 
 	active = dsp_profile.ram.active;
 	sort_arr = dsp_profile.sort_arr;
-	qsort(sort_arr, active, sizeof(*sort_arr), profile_by_dsp_cycles);
+	qsort(sort_arr, active, sizeof(*sort_arr), cmp_dsp_cycles);
 
 	printf("addr:\tcycles:\n");
 	show = (show < active ? show : active);
@@ -1145,7 +1161,7 @@ static void Profile_DspShowCycles(unsigned int show)
  * compare function for qsort() to sort DSP profile data by descdending
  * address access counts.
  */
-static int profile_by_dsp_count(const void *p1, const void *p2)
+static int cmp_dsp_count(const void *p1, const void *p2)
 {
 	Uint64 count1 = dsp_profile.data[*(const Uint16*)p1].count;
 	Uint64 count2 = dsp_profile.data[*(const Uint16*)p2].count;
@@ -1180,7 +1196,7 @@ static void Profile_DspShowCounts(unsigned int show, bool only_symbols)
 	show = (show < active ? show : active);
 
 	sort_arr = dsp_profile.sort_arr;
-	qsort(sort_arr, active, sizeof(*sort_arr), profile_by_dsp_count);
+	qsort(sort_arr, active, sizeof(*sort_arr), cmp_dsp_count);
 
 	if (!only_symbols) {
 		printf("addr:\tcount:\n");
