@@ -25,7 +25,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "file.h"
 
-/* if non-zero, output warnings on syspicious cycle values */
+/* if non-zero, output (more) warnings on syspicious cycle/instruction counts */
 #define DEBUG 0
 
 #define CALL_UNDEFINED	0	/* = call type information not supported */
@@ -197,7 +197,7 @@ static void show_caller_info(FILE *fp, unsigned int sites, callee_t *callsite, b
 	unsigned int i, j, k;
 	const char *name;
 	caller_t *info;
-	Uint64 total;
+	Uint64 total, countdiff;
 	Uint32 addr, typeaddr;
 
 	/* legend */
@@ -207,14 +207,14 @@ static void show_caller_info(FILE *fp, unsigned int sites, callee_t *callsite, b
 	}
 	fputs("\n", fp);
 
-	countissues = 0;
+	countdiff = countissues = 0;
 	for (i = 0; i < sites; i++, callsite++) {
 		addr = callsite->addr;
 		if (!addr) {
 			continue;
 		}
 		if (forDsp) {
-			total = cpu_profile.data[addr].count;
+			total = dsp_profile.data[addr].count;
 			name = Symbols_GetByDspAddress(addr);
 		} else {
 			Uint32 idx = address2index(addr);
@@ -252,15 +252,25 @@ static void show_caller_info(FILE *fp, unsigned int sites, callee_t *callsite, b
 		}
 		fputs("\n", fp);
 		if (total) {
+#if DEBUG
+			fprintf(stderr, "WARNING: %llu differences in call and instruction counts for '%s'!\n", total, name);
+#endif
+			countdiff += total;
 			countissues++;
 		}
 		if (typeaddr) {
-			fprintf(fp, "WARNING: different types of calls (at least) from 0x%x,\thas its code changed during profiling?\n", typeaddr);
+			fprintf(stderr, "WARNING: different types of calls (at least) from 0x%x,\n\t has its codechanged during profiling?\n", typeaddr);
 		}
 	}
 	if (countissues) {
-		/* profiler bug: some (address?) mismatch in recording instruction counts and call counts */
-		fprintf(fp, "ERROR: callcount mismatches with address instruction counts detected in %d cases!\n", countissues);
+		if (countdiff <= 2 && countissues == countdiff) {
+			fprintf(stderr, "WARNING: callcount mismatches (%lld calls) with address instruction\n\t counts in %d cases, most likely profile start & end.\n",
+				(Sint64)countdiff, countissues);
+		} else {
+			/* profiler bug: some (address?) mismatch in recording instruction counts and call counts */
+			fprintf(stderr, "ERROR: callcount mismatches with address instruction counts\n\t(%lld in total) detected in %d cases!\n",
+				(Sint64)countdiff, countissues);
+		}
 	}
 }
 
@@ -818,12 +828,12 @@ void Profile_CpuUpdate(void)
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
 	/* catch too large (and negative) cycles, ignore STOP instruction */
-	if (cycles > 256 && opcode != 0x4e72) {
+	if (unlikely(cycles > 256 && opcode != 0x4e72)) {
 		fprintf(stderr, "WARNING: cycles %d > 512 at 0x%x\n",
 			cycles, prev_pc);
 	}
 #if DEBUG
-	if (cycles == 0) {
+	if (unlikely(cycles == 0)) {
 		Uint32 nextpc;
 		Disasm(debugOutput, prev_pc, &nextpc, 1);
 	}
