@@ -1,7 +1,7 @@
 # hconsole input file to build disk/minimal.prg with AHCC
 # (see ahcc-gemdos file for more info on commands below)
 setopt --fast-forward yes --fastfdc on --conout 2
-sleep 1
+sleep 2
 keydown 29
 keypress Z
 keyup 29
