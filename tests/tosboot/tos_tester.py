@@ -1,10 +1,6 @@
 #!/usr/bin/env python
-#
-# This script tests that all given TOS image files boot under
-# Hatari with several different HW configurations and saves
-# verification screenshots into current directory.
 # 
-# Copyright (C) 2012 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2013 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,12 +11,34 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+"""
+Tester boots the given TOS versions under Hatari with all the possible
+combinations of the given machine HW configuration options, that are
+supported by the tested TOS version.
+
+Verification screenshot is taken at the end of each boot before
+proceeding to testing of the next combination.  Screenshot name
+indicates the used combination, for example:
+        etos512k-falcon-rgb-gemdos-14M.png
+        etos512k-st-mono-floppy-1M.png
+
+
+NOTE: If you want to test the latest, uninstalled version of Hatari,
+you need to set PATH to point to your Hatari binary directory, like
+this:
+	PATH=../../build/src:$PATH tos_tester.py <TOS images>
+
+If hconsole isn't installed to one of the standard locations (under
+/usr or /usr/local), or you don't run this from within Hatari sources,
+you also need to specify hconsole.py location with:
+	export PYTHONPATH=/path/to/hconsole
+"""
 
 import getopt, os, signal, select, sys, time
 
-# add most likely hconsole locations to module import path,
-# prefer the devel version in Hatari sources, if it's found
 def add_hconsole_paths():
+    "add most likely hconsole locations to module import path"
+    # prefer the devel version in Hatari sources, if it's found
     subdirs = len(os.path.abspath(os.curdir).split(os.path.sep))-1
     for level in range(subdirs):
         f = level*(".." + os.path.sep) + "tools/hconsole/hconsole.py"
@@ -37,15 +55,17 @@ import hconsole
 
 
 def warning(msg):
+    "output warning message"
     sys.stderr.write("WARNING: %s\n" % msg)
 
 
 # -----------------------------------------------
 class TOS:
+    "class for TOS image information"
     # objects have members:
     # - path (string),  given TOS image file path/name
     # - name (string),  filename with path and extension stripped
-    # - size (int),     image file size
+    # - size (int),     image file size, in kB
     # - etos (bool),    is EmuTOS?
     # - version (int),  TOS version
     # - memwait (int),  how many secs to wait before memcheck key press
@@ -70,7 +90,7 @@ class TOS:
         
         name = os.path.basename(img)
         name = name[:name.rfind('.')]
-        return (img, size, name)
+        return (img, size/1024, name)
     
     
     def _add_version(self):
@@ -91,13 +111,15 @@ class TOS:
         
         if self.etos:
             # EmuTOS 512k, 256k and 192k versions have different machine support
-            if version > 0x200:
+            if self.size == 512:
                 # startup screen on falcon 14MB is really slow
                 info = (5, 10, ("st", "ste", "tt", "falcon"))
-            elif version > 0x160:
+            elif self.size == 256:
                 info = (2, 8, ("st", "ste", "tt"))
-            else:
+            elif self.size == 192:
                 info = (0, 5, ("st",))
+            else:
+                raise AssertionError("'%s' image size %dkB isn't valid for EmuTOS" % (name, size))
         elif version <= 0x100:
             # boots up really slow with 4MB
             info = (0, 16, ("st",))
@@ -106,7 +128,7 @@ class TOS:
         elif version < 0x200:
             info = (0, 6, ("ste",))
         elif version < 0x300:
-            info = (0, 6, ("st", "ste", "tt"))
+            info = (1, 6, ("st", "ste", "tt"))
         elif version < 0x400:
             # memcheck comes up fast, but boot takes time
             info = (2, 8, ("tt",))
@@ -117,7 +139,7 @@ class TOS:
             raise AssertionError("'%s' TOS version 0x%x isn't valid" % (name, version))
         
         if self.etos:
-            print "%s is EmuTOS v%x" % (name, version)
+            print "%s is EmuTOS v%x %dkB" % (name, version, self.size)
         else:
             print "%s is normal TOS v%x" % (name, version)
         # 0: whether / how long to wait to dismiss memory test
@@ -125,8 +147,43 @@ class TOS:
         # 2: list of machines supported by this TOS version
         return info
     
-    def supports_gemdos(self):
+    def supports_gemdos_hd(self):
+        "whether TOS version supports Hatari's GEMDOS HD emulation"
         return (self.version >= 0x0104)
+
+    def supports_hdinterface(self, hdinterface):
+        "whether TOS version supports monitor that is valid for given machine"
+        # EmuTOS doesn't require drivers to access DOS formatted disks
+        if self.etos:
+            # NOTE: IDE support is in EmuTOS since 0.9.0
+            if hdinterface == "ide" and self.size == 192:
+                return False
+            return True
+        # As ACSI (big endian) and IDE (little endian) images would require
+        # diffent binary drivers on them and it's not possible to generate
+        # such images automatically, testing ACSI & IDE images for normal
+        # TOS isn't support.
+        #
+        # (And even with a driver, only TOS 4.x supports IDE.)
+        return False
+
+    def supports_monitor(self, monitortype, machine):
+        "whether TOS version supports monitor that is valid for given machine"
+        # other monitor types valid for the machine are
+        # valid also for TOS that works on it
+        if monitortype.startswith("vdi"):
+            # sensible sized VDI modes don't work with TOS4
+            # (nor make sense with its Videl expander support)
+            if self.version >= 0x400:
+                return False
+            if self.etos:
+                # smallest EmuTOS image doesn't have any Falcon support
+                if machine == "falcon" and self.size == 192:
+                    return False
+            # 2-plane modes don't work properly with real TOS
+            elif monitortype.endswith("2"):
+                return False
+        return True
 
 
 # -----------------------------------------------
@@ -135,12 +192,13 @@ def validate(args, full):
     return (set(args).difference(full), args)
 
 class Config:
+    "Test configuration and validator class"
     # full set of possible options
-    all_disks = ("acsi", "floppy", "gemdos", "ide")
-    all_graphics = ("mono", "rgb", "tv", "vdi1", "vdi2", "vdi4")
+    all_disks = ("floppy", "gemdos", "acsi", "ide")
+    all_graphics = ("mono", "rgb", "vga", "tv", "vdi1", "vdi2", "vdi4")
     all_machines = ("st", "ste", "tt", "falcon")
     all_memsizes = (0, 1, 2, 4, 6, 8, 10, 12, 14)
-    
+
     # defaults
     fast = False
     bools = []
@@ -148,7 +206,7 @@ class Config:
     graphics = ("mono", "rgb", "vdi1")
     machines = ("st", "ste", "tt", "falcon")
     memsizes = (0, 4, 14)
-    
+
     def __init__(self, argv):
         longopts = ["bool=", "disks=", "fast", "graphics=", "help", "machines=", "memsizes="]
         try:
@@ -161,6 +219,7 @@ class Config:
 
     
     def check_images(self, paths):
+        "validate given TOS images"
         images = []
         for img in paths:
             try:
@@ -173,6 +232,7 @@ class Config:
     
     
     def handle_options(self, opts):
+        "parse command line options"
         unknown = None
         for opt, arg in opts:
             args = arg.split(",")
@@ -195,23 +255,14 @@ class Config:
                     self.usage("non-numeric memory sizes: %s" % arg)
                 unknown, self.memsizes = validate(args, self.all_memsizes)
             if unknown:
-                self.usage("%s are invalid values for %s" % (unknown, opt))
+                self.usage("%s are invalid values for %s" % (list(unknown), opt))
     
     
     def usage(self, msg=None):
+        "output program usage information"
         name = os.path.basename(sys.argv[0])
+        print __doc__
         print("""
-Test program that boots the given TOS versions under Hatari with all
-the possible combinations of the given machine configuration options
-that are supported by the tested TOS version.
-
-Verification screenshot is taken at the end of each boot before
-proceeding to testing of the next combination.  Screenshot name
-indicates the used combination, for example:
-        etos512k-falcon-rgb-gemdos-14M.png
-        etos512k-st-mono-floppy-1M.png
-
-
 Usage: %s [options] <TOS image files>
 
 Options:
@@ -233,58 +284,46 @@ For example:
 \t--memsizes 0,4,14 \\
 \t--graphics mono,rgb \\
 \t-bool --compatible,--rtc
-
-
-NOTE: If you want to test the latest, uninstalled version of Hatari,
-you need to set PATH to point to your Hatari binary directory, like
-this:
-	PATH=../../build/src:$PATH %s <TOS images>
-
-If hconsole isn't installed to one of the standard locations (under
-/usr or /usr/local), or you don't run this from within Hatari sources,
-you also need to specify hconsole.py location with:
-	export PYTHONPATH=/path/to/hconsole
-""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, name, name))
+""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, name))
         if msg:
             print("ERROR: %s\n" % msg)
         sys.exit(1)
     
     
     def valid_disktype(self, machine, tos, disktype):
-        "return whether given disk type is valid for given machine"
+        "return whether given disk type is valid for given machine / TOS version"
+        if disktype == "floppy":
+            return True
+        if disktype == "gemdos":
+            return tos.supports_gemdos_hd()
+
         if machine in ("st", "ste"):
-            disks = ("floppy", "gemdos", "acsi")
+            hdinterface = "acsi"
         elif machine == "tt":
             # TODO: according to todo.txt, Hatari ACSI emulation
             # doesn't currently work for TT
-            disks = ("floppy", "gemdos")
+            hdinterface = "acsi"
         elif machine == "falcon":
-            disks = ("floppy", "gemdos", "ide")
+            hdinterface = "ide"
         else:
             raise AssertionError("unknown machine %s" % machine)
-        if disktype in disks:
-            if disktype == "gemdos":
-                return tos.supports_gemdos()
-            elif disktype != "floppy":
-                # ASCI/IDE HD driver / TOS version checks...?
-                print "TODO: support disktype '%s'" % disktype
-                return False
-            return True
+
+        if disktype in hdinterface:
+            return tos.supports_hdinterface(hdinterface)
         return False
     
-    def valid_monitortype(self, machine, monitortype):
-        "return whether given monitor type is valid for given machine"
+    def valid_monitortype(self, machine, tos, monitortype):
+        "return whether given monitor type is valid for given machine / TOS version"
         if machine in ("st", "ste"):
             monitors = ("mono", "rgb", "tv", "vdi1", "vdi2", "vdi4")
         elif machine == "tt":
-            monitors = ("mono", "vdi1", "vdi2", "vdi4", "vga")
+            monitors = ("mono", "vga", "vdi1", "vdi2", "vdi4")
         elif machine == "falcon":
-            # VDI modes don't work with TOS4 (nor make sense with Videl)
-            monitors = ("mono", "rgb", "vga")
+            monitors = ("mono", "rgb", "vga", "vdi1", "vdi2", "vdi4")
         else:
             raise AssertionError("unknown machine %s" % machine)
         if monitortype in monitors:
-            return True
+            return tos.supports_monitor(monitortype, machine)
         return False
 
     def valid_memsize(self, machine, memsize):
@@ -303,6 +342,7 @@ you also need to specify hconsole.py location with:
 
 # -----------------------------------------------
 def verify_match(srcfile, dstfile):
+    "return error string if given files are not identical"
     if not os.path.exists(dstfile):
         return "file '%s' missing" % dstfile
     i = 0
@@ -313,6 +353,7 @@ def verify_match(srcfile, dstfile):
             return "file '%s' line %d doesn't match file '%s'" % (dstfile, i, srcfile)
 
 def verify_empty(srcfile):
+    "return error string if given file isn't empty"
     if not os.path.exists(srcfile):
         return "file '%s' missing" % srcfile
     lines = len(open(srcfile).readlines())
@@ -320,6 +361,7 @@ def verify_empty(srcfile):
         return "file '%s' isn't empty (%d lines)" % (srcfile, lines)
 
 class Tester:
+    "test driver class"
     output = "output" + os.path.sep
     report = output + "report.txt"
     # dummy Hatari config file to force suitable default options
@@ -334,7 +376,8 @@ class Tester:
     bootauto  = "bootauto.st.gz" # TOS old not to support GEMDOS HD either
     bootdesk  = "bootdesk.st.gz"
     hdimage   = "hd.img"
-    ideimage  = "ide.img"
+    ideimage  = "hd.img"	 # for now use the same image as for ACSI
+    results   = None
     
     def __init__(self):
         "test setup initialization"
@@ -343,7 +386,8 @@ class Tester:
         self.create_files()
         signal.signal(signal.SIGALRM, self.alarm_handler)
     
-    def alarm_handler(self, signum, frame):
+    def alarm_handler(self, signum, dummy):
+        "output error if (timer) signal came before passing current test stage"
         if signum == signal.SIGALRM:
             print "ERROR: timeout triggered -> test FAILED"
         else:
@@ -351,6 +395,7 @@ class Tester:
             raise AssertionError
     
     def create_config(self):
+        "create Hatari configuration file for testing"
         # write specific configuration to:
         # - avoid user's own config
         # - get rid of the dialogs
@@ -373,19 +418,21 @@ class Tester:
         dummy.close()
 
     def cleanup_all_files(self):
-        # left overs from last run
+        "clean out any files left over from last run"
         for path in (self.fifofile, "grab0001.png", "grab0001.bmp"):
             if os.path.exists(path):
                 os.remove(path)
         self.cleanup_test_files()
     
     def create_files(self):
+        "create files needed during testing"
         if not os.path.exists(self.output):
             os.mkdir(self.output)
         if not os.path.exists(self.fifofile):
             os.mkfifo(self.fifofile)
     
     def get_screenshot(self, instance, identity):
+        "save screenshot of test end result"
         instance.run("screenshot")
         if os.path.isfile("grab0001.png"):
             os.rename("grab0001.png", self.output + identity + ".png")
@@ -395,11 +442,13 @@ class Tester:
             warning("failed to locate screenshot grab0001.{png,bmp}")
 
     def cleanup_test_files(self):
+        "remove unnecessary files at end of test"
         for path in (self.serialout, self.printout):
             if os.path.exists(path):
                 os.remove(path)
 
     def verify_output(self, identity, tos, memory):
+        "do verification on all test output"
         # both tos version and amount of memory affect what
         # GEMDOS operations work properly...
         ok = True
@@ -452,6 +501,7 @@ class Tester:
     
     
     def open_fifo(self, timeout):
+        "open fifo for test program output"
         try:
             signal.alarm(timeout)
             # open returns after Hatari has opened the other
@@ -510,13 +560,15 @@ class Tester:
             identity += "-%s%s" % (extra[0].replace("-", ""), extra[1])
             testargs += extra
 
-        if monitor[:3] == "vdi":
+        if monitor.startswith("vdi"):
             planes = monitor[-1]
             testargs +=  ["--vdi-planes", planes]
             if planes == "1":
+                testargs += ["--vdi-width", "800", "--vdi-height", "600"]
+            elif planes == "2":
                 testargs += ["--vdi-width", "640", "--vdi-height", "480"]
             else:
-                testargs += ["--vdi-width", "320", "--vdi-height", "240"]
+                testargs += ["--vdi-width", "640", "--vdi-height", "400"]
         else:
             testargs += ["--monitor", monitor]
         
@@ -527,7 +579,8 @@ class Tester:
             # use Hatari autostart, must be last thing added to testargs!
             testargs += [self.testprg]
         elif disk == "floppy":
-            if tos.supports_gemdos():
+            if tos.supports_gemdos_hd():
+                # GEMDOS HD supporting TOSes support also INF file autostart
                 testargs += ["--disk-a", self.bootdesk]
             else:
                 testargs += ["--disk-a", self.bootauto]
@@ -554,7 +607,7 @@ class Tester:
                 if machine not in tos.machines:
                     continue
                 for monitor in config.graphics:
-                    if not config.valid_monitortype(machine, monitor):
+                    if not config.valid_monitortype(machine, tos, monitor):
                         continue
                     for memory in config.memsizes:
                         if not config.valid_memsize(machine, memory):
@@ -601,14 +654,14 @@ class Tester:
         report.write("\nSummary of FAIL/pass values:\n")
         idx = 0
         for line in ("Hatari init", "Test program running", "Test program test-cases", "Test program output"):
-            passes, all = passed[idx], cases[idx]
-            if passes < all:
+            passes, total = passed[idx], cases[idx]
+            if passes < total:
                 if not passes:
-                    result = "all %d FAILED" % all
+                    result = "all %d FAILED" % total
                 else:
-                    result = "%d/%d passed" % (passes, all)
+                    result = "%d/%d passed" % (passes, total)
             else:
-                result = "all %d passed" % all
+                result = "all %d passed" % total
             report.write("- %s: %s\n" % (line, result))
             idx += 1
         report.write("\n")
@@ -622,6 +675,9 @@ class Tester:
 
 # -----------------------------------------------
 def main():
+    "tester main function"
+    info = "Hatari TOS bootup tester"
+    print "\n%s\n%s\n" % (info, "-"*len(info))
     config = Config(sys.argv)
     tester = Tester()
     tester.run(config)
