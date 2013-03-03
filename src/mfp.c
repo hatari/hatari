@@ -410,8 +410,8 @@ bool	MFP_ProcessIRQ ( void )
 	{
 		if ( MFP_DelayIRQ == true )
 		{
-			MFP_DelayIRQ = false;		/* Process the IRQ on the next call */
-			return false;			/* For now, return without calling an exception */
+			MFP_DelayIRQ = false;			/* Process the IRQ on the next call */
+			return false;				/* For now, return without calling an exception */
 		}
 
 		if (regs.intmask < 6)
@@ -429,13 +429,13 @@ bool	MFP_ProcessIRQ ( void )
 				pInServiceReg = &MFP_ISRB;
 			}
 
-			*pPendingReg &= ~Bit;           /* Clear pending bit */
+			*pPendingReg &= ~Bit;			/* Clear pending bit */
 
 			/* Are we in 'auto' interrupt or 'manual'? */
-			if (MFP_VR&0x08)                /* Software End-of-Interrupt (SEI) */
-				*pInServiceReg |= Bit;      /* Set interrupt in service register */
+			if (MFP_VR&0x08)			/* Software End-of-Interrupt (SEI) */
+				*pInServiceReg |= Bit;		/* Set interrupt in service register */
 			else
-				*pInServiceReg &= ~Bit;     /* Clear interrupt in service register */
+				*pInServiceReg &= ~Bit;		/* Clear interrupt in service register */
 
 //fprintf ( stderr , "process 1 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 			MFP_Exception ( MFP_Current_Interrupt );
@@ -630,9 +630,9 @@ void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
 {
 	/* Input has occurred on MFP channel, set interrupt pending to request interrupt when able */
 	if (EnableBit&Bit)
-		*pPendingReg |= Bit;           /* Set bit */
+		*pPendingReg |= Bit;			/* Set bit */
 	else
-		*pPendingReg &= ~Bit;          /* Clear bit */
+		*pPendingReg &= ~Bit;			/* Clear bit */
 	MFP_UpdateIRQ();
 }
 
