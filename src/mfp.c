@@ -1544,10 +1544,6 @@ void MFP_EnableA_WriteByte(void)
 	MFP_IERA = IoMem[0xfffa07];
 	MFP_IPRA &= MFP_IERA;
 	MFP_UpdateIRQ();
-	/* We may have enabled Timer A or B, check */
-	/* [NP] No check, restarting the timer is wrong */
-//	MFP_StartTimerA();
-//	MFP_StartTimerB();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1561,10 +1557,6 @@ void MFP_EnableB_WriteByte(void)
 	MFP_IERB = IoMem[0xfffa09];
 	MFP_IPRB &= MFP_IERB;
 	MFP_UpdateIRQ();
-	/* We may have enabled Timer C or D, check */
-	/* [NP] No check, restarting the timer is wrong */
-//	MFP_StartTimerC();
-//	MFP_StartTimerD();
 }
 
 /*-----------------------------------------------------------------------*/
