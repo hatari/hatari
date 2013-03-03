@@ -12,11 +12,13 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include "main.h"
+#include "debugui.h"
 #include "debug_priv.h"
 #include "debugInfo.h"
 #include "dsp.h"
 #include "configuration.h"
 #include "clocks_timings.h"
+#include "evaluate.h"
 #include "m68000.h"
 #include "profile.h"
 #include "stMemory.h"
@@ -107,6 +109,7 @@ static struct {
 	Uint32 *sort_arr;     /* data indexes used for sorting */
 	Uint32 prev_cycles;   /* previous instruction cycles counter */
 	Uint32 prev_pc;       /* previous instruction address */
+	Uint32 disasm_addr;   /* 'addresses' command start address */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
@@ -129,6 +132,7 @@ static struct {
 	callee_t *callsite;   /* symbol specific caller information */
 	Uint16 *sort_arr;     /* data indexes used for sorting */
 	Uint16 prev_pc;       /* previous PC for which the cycles are for */
+	Uint16 disasm_addr;   /* 'dspaddresses' command start address */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } dsp_profile;
@@ -481,28 +485,38 @@ static void Profile_CpuShowStats(void)
 }
 
 /**
- * Show first 'show' CPU instructions which execution was profiled,
- * in the address order.
+ * Show CPU instructions which execution was profiled, in the address order,
+ * starting from the given address.  Return next disassembly address.
  */
-static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
+static Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 {
 	int oldcols[DISASM_COLUMNS], newcols[DISASM_COLUMNS];
-	unsigned int shown, idx;
+	unsigned int idx, show, shown;
 	const char *symbol;
 	cpu_profile_item_t *data;
+	Uint32 size, end, active;
 	uaecptr nextpc, addr;
-	Uint32 size, active;
 
 	data = cpu_profile.data;
 	if (!data) {
 		fprintf(stderr, "ERROR: no CPU profiling data available!\n");
-		return;
+		return 0;
 	}
 
 	size = cpu_profile.size;
 	active = cpu_profile.active;
-	if (!show || show > active) {
+	if (upper) {
+		end = address2index(upper);
 		show = active;
+		if (end > size) {
+			end = size;
+		}
+	} else {
+		end = size;
+		show = ConfigureParams.Debugger.nDisasmLines;
+		if (!show || show > active) {
+			show = active;
+		}
 	}
 
 	/* get/change columns */
@@ -513,7 +527,8 @@ static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
 	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <sum of i-cache misses)\n", out);
 
 	nextpc = 0;
-	for (shown = idx = 0; shown < show && idx < size; idx++) {
+	idx = address2index(lower);
+	for (shown = 0; shown < show && idx < end; idx++) {
 		if (!data[idx].count) {
 			continue;
 		}
@@ -529,10 +544,11 @@ static void Profile_CpuShowAddresses(unsigned int show, FILE *out)
 		Disasm(out, addr, &nextpc, 1);
 		shown++;
 	}
-	printf("Disassembled %d (of active %d) CPU addresses.\n", show, active);
+	printf("Disassembled %d (of active %d) CPU addresses.\n", shown, active);
 
 	/* restore disassembly columns */
 	Disasm_SetColumns(oldcols);
+	return nextpc;
 }
 
 
@@ -753,6 +769,7 @@ bool Profile_CpuStart(void)
 	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
 	cpu_profile.prev_pc = M68000_GetPC();
 
+	cpu_profile.disasm_addr = 0;
 	cpu_profile.processed = false;
 	return cpu_profile.enabled;
 }
@@ -1064,33 +1081,42 @@ static void Profile_DspShowStats(void)
 }
 
 /**
- * Show first 'show' DSP instructions which execution was profiled,
- * in the address order.
+ * Show DSP instructions which execution was profiled, in the address order,
+ * starting from the given address.  Return next disassembly address.
  */
-static void Profile_DspShowAddresses(unsigned int show, FILE *out)
+static Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out)
 {
-	unsigned int shown;
+	unsigned int show, shown;
 	dsp_profile_item_t *data;
-	Uint16 addr, nextpc;
-	Uint32 size, active;
+	Uint16 nextpc;
+	Uint32 end, active;
 	const char *symbol;
 
 	data = dsp_profile.data;
 	if (!data) {
 		fprintf(stderr, "ERROR: no DSP profiling data available!\n");
-		return;
+		return 0;
 	}
 
-	size = DSP_PROFILE_ARR_SIZE;
+	end = DSP_PROFILE_ARR_SIZE;
 	active = dsp_profile.ram.active;
-	if (!show || show > active) {
+	show = ConfigureParams.Debugger.nDisasmLines;
+	if (upper) {
+		if (upper < end) {
+			end = upper;
+		}
 		show = active;
+	} else {
+		show = ConfigureParams.Debugger.nDisasmLines;
+		if (!show || show > active) {
+			show = active;
+		}
 	}
 
 	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <max cycle difference>)\n", out);
 
 	nextpc = 0;
-	for (shown = addr = 0; shown < show && addr < size; addr++) {
+	for (shown = 0; shown < show && addr < end; addr++) {
 		if (!data[addr].count) {
 			continue;
 		}
@@ -1104,7 +1130,8 @@ static void Profile_DspShowAddresses(unsigned int show, FILE *out)
 		nextpc = DSP_DisasmAddress(out, addr, addr);
 		shown++;
 	}
-	printf("Disassembled %d (of active %d) DSP addresses.\n", show, active);
+	printf("Disassembled %d (of active %d) DSP addresses.\n", shown, active);
+	return nextpc;
 }
 
 /**
@@ -1281,6 +1308,7 @@ bool Profile_DspStart(void)
 
 	dsp_profile.prev_pc = DSP_GetPC();
 
+	dsp_profile.disasm_addr = 0;
 	dsp_profile.processed = false;
 	return dsp_profile.enabled;
 }
@@ -1414,7 +1442,7 @@ void Profile_DspStop(void)
 char *Profile_Match(const char *text, int state)
 {
 	static const char *names[] = {
-		"addresses", "callers", "counts", "cycles", "misses", "off", "on", "stats", "symbols"
+		"addresses", "callers", "counts", "cycles", "misses", "off", "on", "save", "stats", "symbols"
 	};
 	static int i, len;
 	
@@ -1433,58 +1461,116 @@ char *Profile_Match(const char *text, int state)
 }
 
 const char Profile_Description[] =
-	  "<on|off|stats|counts|cycles|misses|symbols|callers|addresses> [show count] [file]\n"
+	  "<on|off|stats|counts|cycles|misses|symbols|callers|addresses|save> [count|address|file]\n"
 	  "\t'on' & 'off' enable and disable profiling.  Data is collected\n"
 	  "\tuntil debugger is entered again at which point you get profiling\n"
 	  "\tstatistics ('stats') summary.\n"
 	  "\n"
 	  "\tThen you can ask for list of the PC addresses, sorted either by\n"
 	  "\texecution 'counts', used 'cycles' or cache 'misses'. First can\n"
-	  "\tbe limited just to named addresses with 'symbols'.\n"
+	  "\tbe limited just to named addresses with 'symbols'.  Optional\n"
+	  "\tcount will limit how many items will be shown.\n"
 	  "\n"
 	  "\t'addresses' lists the profiled addresses in order, with the\n"
-	  "\tinstructions (currently) residing at them.  'callers' shows\n"
-	  "\t(raw) caller information for addresses which had symbol(s)\n"
-	  "\tassociated with them.\n"
+	  "\tinstructions (currently) residing at them.  By default this\n"
+	  "\tstarts from the first executed instruction, or you can\n"
+	  "\tspecify the starting address.\n"
 	  "\n"
-	  "\tOptional count will limit how many items will be shown.\n"
-	  "\tFor 'addresses' you can also give optional output file name.";
+	  "\t'callers' shows (raw) caller information for addresses which\n"
+	  "\thad symbol(s) associated with them.\n"
+	  "\n"
+	  "\tProfile information can be saved with 'save'.";
 
+
+/**
+ * Save profiling information for CPU or DSP.
+ */
+static bool Profile_Save(const char *fname, bool bForDsp)
+{
+	FILE *out;
+	Uint32 freq;
+	const char *proc;
+	if (!(out = fopen(fname, "w"))) {
+		fprintf(stderr, "ERROR: opening '%s' for writing failed!\n", fname);
+		perror(NULL);
+		return false;
+	}
+	if (bForDsp) {
+		freq = MachineClocks.DSP_Freq;
+		proc = "DSP";
+	} else {
+		freq = MachineClocks.CPU_Freq;
+		proc = "CPU";
+	}
+	fprintf(out, "Hatari %s profile\n", proc);
+	fprintf(out, "Cycles/second:\t%u\n", freq);
+	if (bForDsp) {
+		Profile_DspShowAddresses(0, DSP_PROFILE_ARR_SIZE, out);
+		Profile_DspShowCallers(out);
+	} else {
+		Uint32 text;
+		/* some information for interpreting the addresses */
+		fprintf(out, "ROM_TOS:\t0x%06x-0x%06x\n", TosAddress, TosAddress + TosSize);
+		text = DebugInfo_GetTEXT();
+		if (text < TosAddress) {
+			fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
+		}
+		fprintf(out, "CARTRIDGE:\t0xfa0000-0xfc0000\n");
+		Profile_CpuShowAddresses(0, 0xFC0000, out);
+		Profile_CpuShowCallers(out);
+	}
+	fclose(out);
+	return true;
+}
 
 /**
  * Command: CPU/DSP profiling enabling, exec stats, cycle and call stats.
  * Return for succesful command and false for incorrect ones.
  */
-bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
+int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 {
 	static int show = 16;
 	bool *enabled;
-	
-	if (nArgc < 2) {
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return true;
-	}
+
 	if (nArgc > 2) {
 		show = atoi(psArgs[2]);
-	}
-	
+	}	
 	if (bForDsp) {
 		enabled = &dsp_profile.enabled;
 	} else {
 		enabled = &cpu_profile.enabled;
 	}
-	if (strcmp(psArgs[1], "on") == 0) {
+
+	/* continue or explicit addresses command? */
+	if (nArgc < 2 || strcmp(psArgs[1], "addresses") == 0) {
+		Uint32 lower, upper = 0;
+		if (nArgc > 2) {
+			if (Eval_Range(psArgs[2], &lower, &upper, false) < 0) {
+				return DEBUGGER_CMDDONE;
+			}
+		} else {
+			if (bForDsp) {
+				lower = dsp_profile.disasm_addr;
+			} else {
+				lower = cpu_profile.disasm_addr;
+			}
+		}
+		if (bForDsp) {
+			dsp_profile.disasm_addr = Profile_DspShowAddresses(lower, upper, stdout);
+		} else {
+			cpu_profile.disasm_addr = Profile_CpuShowAddresses(lower, upper, stdout);
+		}
+		return DEBUGGER_CMDCONT;
+
+	} else if (strcmp(psArgs[1], "on") == 0) {
 		*enabled = true;
 		fprintf(stderr, "Profiling enabled.\n");
-		return true;
-	}
-	if (strcmp(psArgs[1], "off") == 0) {
+
+	} else if (strcmp(psArgs[1], "off") == 0) {
 		*enabled = false;
 		fprintf(stderr, "Profiling disabled.\n");
-		return true;
-	}
 	
-	if (strcmp(psArgs[1], "stats") == 0) {
+	} else if (strcmp(psArgs[1], "stats") == 0) {
 		if (bForDsp) {
 			Profile_DspShowStats();
 		} else {
@@ -1493,7 +1579,6 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 	} else if (strcmp(psArgs[1], "misses") == 0) {
 		if (bForDsp) {
 			fprintf(stderr, "Cache misses are recorded only for CPU, not DSP.\n");
-			return false;
 		} else {
 			Profile_CpuShowMisses(show);
 		}
@@ -1521,57 +1606,10 @@ bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 		} else {
 			Profile_CpuShowCallers(stdout);
 		}
-	} else if (strcmp(psArgs[1], "addresses") == 0) {
-		FILE *out;
-		if (nArgc > 3) {
-			Uint32 freq;
-			const char *proc;
-			if (!(out = fopen(psArgs[3], "w"))) {
-				fprintf(stderr, "ERROR: opening '%s' for writing failed!\n", psArgs[3]);
-				perror(NULL);
-				return false;
-			}
-			if (bForDsp) {
-				freq = MachineClocks.DSP_Freq;
-				proc = "DSP";
-			} else {
-				freq = MachineClocks.CPU_Freq;
-				proc = "CPU";
-			}
-			fprintf(out, "Hatari %s profile\n", proc);
-			fprintf(out, "Cycles/second:\t%u\n", freq);
-		} else {
-			out = stdout;
-		}
-		if (bForDsp) {
-			if (out == stdout) {
-				Profile_DspShowAddresses(show, out);
-			} else {
-				Profile_DspShowAddresses(show, out);
-				Profile_DspShowCallers(out);
-			}
-		} else {
-			if (out == stdout) {
-				Profile_CpuShowAddresses(show, out);
-			} else {
-				Uint32 text;
-				/* some information for interpreting the addresses */
-				fprintf(out, "ROM_TOS:\t0x%06x-0x%06x\n", TosAddress, TosAddress + TosSize);
-				text = DebugInfo_GetTEXT();
-				if (text < TosAddress) {
-					fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
-				}
-				fprintf(out, "CARTRIDGE:\t0xfa0000-0xfc0000\n");
-				Profile_CpuShowAddresses(show, out);
-				Profile_CpuShowCallers(out);
-			}
-		}
-		if (out != stdout) {
-			fclose(out);
-		}
+	} else if (strcmp(psArgs[1], "save") == 0) {
+		Profile_Save(psArgs[2], bForDsp);
 	} else {
 		DebugUI_PrintCmdHelp(psArgs[0]);
-		return false;
 	}
-	return true;
+	return DEBUGGER_CMDDONE;
 }

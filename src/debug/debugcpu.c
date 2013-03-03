@@ -369,8 +369,7 @@ static int DebugCpu_BreakCond(int nArgc, char *psArgs[])
  */
 static int DebugCpu_Profile(int nArgc, char *psArgs[])
 {
-	Profile_Command(nArgc, psArgs, false);
-	return DEBUGGER_CMDDONE;
+	return Profile_Command(nArgc, psArgs, false);
 }
 
 

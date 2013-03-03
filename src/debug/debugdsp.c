@@ -342,8 +342,7 @@ static int DebugDsp_BreakCond(int nArgc, char *psArgs[])
  */
 static int DebugDsp_Profile(int nArgc, char *psArgs[])
 {
-	Profile_Command(nArgc, psArgs, true);
-	return DEBUGGER_CMDDONE;
+	return Profile_Command(nArgc, psArgs, true);
 }
 
 
