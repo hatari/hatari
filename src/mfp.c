@@ -292,6 +292,9 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&TimerBCanResume, sizeof(TimerBCanResume));
 	MemorySnapShot_Store(&TimerCCanResume, sizeof(TimerCCanResume));
 	MemorySnapShot_Store(&TimerDCanResume, sizeof(TimerDCanResume));
+	MemorySnapShot_Store(&MFP_Current_Interrupt, sizeof(MFP_Current_Interrupt));
+	MemorySnapShot_Store(&MFP_IRQ, sizeof(MFP_IRQ));
+	MemorySnapShot_Store(&MFP_DelayIRQ, sizeof(MFP_DelayIRQ));
 }
 
 
