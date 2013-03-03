@@ -11,7 +11,7 @@
 /* profile command parsing */
 extern const char Profile_Description[];
 extern char *Profile_Match(const char *text, int state);
-extern bool Profile_Command(int nArgc, char *psArgs[], bool bForDsp);
+extern int Profile_Command(int nArgc, char *psArgs[], bool bForDsp);
 
 /* CPU profile control */
 extern bool Profile_CpuStart(void);
