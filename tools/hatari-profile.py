@@ -64,7 +64,7 @@ For each given profile file, output is:
 - profile statistics
 - a sorted list of functions, for each of the profile data items
   (calls, instructions, cycles...)
-- callgraph in "dot" format, for each of the profile data items,
+- callgraph in DOT format, for each of the profile data items,
   for each profile file, saved to <name>-<itemindex>.dot files
   (prof1-0.dot, prof1-2.dot etc)
 
@@ -90,6 +90,22 @@ Don't trust the estimated values:
 - callgraphs nodes with estimated totals are diamond shaped
 
 
+Call information filtering options:
+        --no-calls <[bersux]+>	remove calls of given types, default = 'ux'
+	--ignore-to <list>	ignore calls to these symbols
+
+<list> is a comma separate list of symbol names, like this:
+	--ignore-to _int_timerc,_int_vbl
+
+These options affect the number of calls reported for functions and
+the values that are propagated upwards from them with the -p option.
+
+Typically interrupt handler symbols are good to give for --ignore-to
+option as switching to them gets recorded as a call by the profiler,
+and that can happen at any time.  In callgraphs, one can investigate
+them separately using "no-calls '' --only <handler>" options.
+
+
 Callgraph visualization options:
         -e, --emph-limit <limit>  percentage limit for highlighted nodes
 
@@ -101,12 +117,12 @@ If node's own cost exceeds the limit, it has also gray background.
 
 
 Callgraph filtering options to remove nodes and edges from the graph:
+	--compact		only 1 arrow between same nodes
 	--no-intermediate	remove nodes with single parent & child
 	--no-leafs		remove nodes which have either:
 				- one parent and no children, or
 				- one child and no parents
 	--ignore <list>         no nodes for these symbols
-	--ignore-to <list>	no arrows to these symbols
 	--ignore-from <list>	no arrows from these symbols
         --only <list>           only these symbols and their callers
 
@@ -115,14 +131,10 @@ nodes which fall below -l option limit. But with -p option, they
 remove all leaf and intermdiate nodes as their costs are propagated
 to their parents, i.e. visible in rest of the graph.
 
-<list> is a comma separate list of symbol names, like this:
-	--ignore-to _int_timerc,_int_vbl
-
-Typically interrupt handler symbols are good to give for '--ignore-to'
-option, as they can get called at any point.  Functions which are
-called from everywhere (like malloc), may be good candinates for
-'--ignore' option when one wants a more readable graph.  One can
-then investigate them separately with the --only option.
+Functions which are called from everywhere (like malloc), may be good
+candinates for '--ignore' option when one wants a more readable graph.
+One can then investigate them separately with the '--only <function>'
+option.
 
 
 To convert dot files e.g. to SVG, use:
@@ -482,6 +494,36 @@ class ProfileCallers(Output):
         self.present = False
         # address dicts
         self.callinfo = None	# callee : caller dict
+        # parsing options
+        self.removable_calltypes = "ux"
+        self.ignore_to = []
+        self.compact = False
+
+    def set_ignore_to(self, lst):
+        "set list of symbols to ignore calls to"
+        self.ignore_to = lst
+
+    def enable_compact(self):
+        "enable: single entry between two functions"
+        self.compact = True
+
+    def remove_calls(self, types):
+        "ignore calls of given type"
+        alltypes = {
+            'b': "branches/jumps",	# could be calls
+            's': "subroutine calls",	# are calls
+            'r': "subroutine returns",	# shouldn't be calls
+            'e': "exceptions",		# are calls
+            'x': "exception returns",	# shouldn't be calls
+            'u': "unknown"		# shouldn't be calls
+        }
+        for letter in types:
+            if letter not in alltypes:
+                self.message("Valid call types are:")
+                for item in alltypes.items():
+                    self.message("  %c -- %s" % item)
+                self.error_exit("invalid call type")
+        self.removable_calltypes = types
 
     def parse_callers(self, fobj, parsed, line):
         "parse callee: caller call count information"
@@ -514,7 +556,11 @@ class ProfileCallers(Output):
                     caddr, count, flags = match.groups()
                     caddr = int(caddr, 16)
                     count = int(count, 10)
-                    callinfo[caddr] = count
+                    if flags:
+                        flags = flags.strip()
+                    else:
+                        flags = '-'
+                    callinfo[caddr] = (count, flags)
                 else:
                     self.error_exit("unrecognized caller info '%s' on callee line %d\n\t'%s'" % (caller, parsed, line))
             self.callinfo[int(addr, 16)] = callinfo
@@ -527,26 +573,43 @@ class ProfileCallers(Output):
             self.present = False
             return
         self.present = True
-        # go through called functions
+        # go through called functions...
         for caddr, caller in self.callinfo.items():
             child = profile[caddr]
-            # and their callers
-            total = 0
+            if child.name in self.ignore_to:
+                continue
+            # ...and their callers
+            ignore = total = 0
             for item in caller.items():
-                laddr, count = item
-                cname, offset = symbols.get_preceeding_symbol(laddr)
+                laddr, info = item
+                count, flags = info
+                pname, offset = symbols.get_preceeding_symbol(laddr)
+                if len(flags) > 1:
+                    self.warning("Caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (flags, pname))
+                elif flags in self.removable_calltypes:
+                    ignore += count
+                    continue
                 # function address for the caller
                 paddr = laddr - offset
                 parent = profile[paddr]
-                assert(cname == parent.name)
+                assert(pname == parent.name)
                 # link parent and child function together
+                item = (laddr, count)
                 if paddr in child.parent:
-                    child.parent[paddr] += (item,)
+                    if self.compact:
+                        oldcount = child.parent[paddr][0][1]
+                        child.parent[paddr] = ((paddr, oldcount + count),)
+                    else:
+                        child.parent[paddr] += (item,)
                 else:
                     child.parent[paddr] = (item,)
                 parent.child[caddr] = True
                 total += count
             # validate call count
+            if ignore:
+                self.message("Ignoring %d call(s) to '%s'" % (ignore, child.name))
+                #total += ignore
+                child.data[0] -= ignore
             calls = child.data[0]
             if calls != total:
                 info = (child.name, caddr, calls, total)
@@ -579,7 +642,7 @@ class ProfileCallers(Output):
             for dummy, count in info:
                 total += count
             if parents == 1 and total != calls:
-                self.error_exit("%s -> %s, single parent, %d != %d" % (parent.name, child.name, total, calls))
+                self.error_exit("%s -> %s, single parent, but callcounts don't match: %d != %d" % (parent.name, child.name, total, calls))
             # parent's share of current propagated child costs
             ccost = [total * x / calls for x in cost]
             if parent.total:
@@ -604,16 +667,16 @@ class ProfileCallers(Output):
         for addr in leafs.keys():
             function = profile[addr]
             self._propagate_leaf_cost(profile, addr, function.data, {})
-        # verify that everything was visited and
-        # convert values back to ints with rounding
+        # convert values back to ints with rounding, and
+        # verify that every non-leaf node with parents was visited
         for addr, function in profile.items():
             if function.total:
                 function.total = [int(round(x)) for x in function.total]
-            elif function.parent:
+            elif function.child and function.parent:
                 for paddr, dummy in function.parent.items():
                     # other parent than it itself?
                     if paddr != addr:
-                        self.warning("didn't propagate cost to:\n\t%s\n\tParents:" % function)
+                        self.warning("didn't propagate cost to:\n\t%s\n" % function)
 
 
 class EmulatorProfile(Output):
@@ -652,6 +715,15 @@ class EmulatorProfile(Output):
         Output.enable_verbose(self)
         self.symbols.enable_verbose()
         self.callers.enable_verbose()
+
+    def remove_calls(self, types):
+        self.callers.remove_calls(types)
+
+    def set_ignore_to(self, lst):
+        self.callers.set_ignore_to(lst)
+
+    def enable_compact(self):
+        self.callers.enable_compact()
 
     def parse_symbols(self, fobj, is_relative):
         "parse symbols from given file object"
@@ -915,7 +987,8 @@ class ProfileSorter:
             if self.show_propagated:
                 if function.total:
                     ppercent = 100.0 * function.total[field] / total
-                    if function.estimated:
+                    # first field (=call) counts are always
+                    if field > 0 and function.estimated:
                         propagated = " ~%6.2f%%" % ppercent
                     else:
                         propagated = "  %6.2f%%" % ppercent
@@ -1066,7 +1139,6 @@ label="%s";
         self.only = []
         self.ignore = []
         self.ignore_from = []
-        self.ignore_to = []
         self.emph_limit = 0
 
     def enable_output(self):
@@ -1094,10 +1166,6 @@ label="%s";
         "set list of symbols to ignore calls from"
         self.ignore_from = lst
 
-    def set_ignore_to(self, lst):
-        "set list of symbols to ignore calls to"
-        self.ignore_to = lst
-
     def set_emph_limit(self, limit):
         "set emphatize percentage limit"
         self.emph_limit = limit
@@ -1107,14 +1175,33 @@ label="%s";
         profile = self.profile
         function = profile[addr]
         if self.verbose:
-            self.message("removing leaf/intermediate node '%s'" % function.name)
-        # remove it from items linking it
-        for paddr in list(function.parent.keys()):
+            self.message("removing leaf/intermediate node %s" % function)
+        parents = list(function.parent.keys())
+        children = list(function.child.keys())
+       # remove it from items linking it
+        for paddr in parents:
             if paddr != addr:
-                del profile[paddr].child[addr]
-        for caddr in list(function.child.keys()):
+                parent = profile[paddr]
+                # link parent directly to its grandchildren
+                for  caddr in children:
+                    if caddr != addr:
+                        parent.child[caddr] = True
+                # remove its parent's linkage
+                del parent.child[addr]
+        for caddr in children:
             if caddr != addr:
-                del profile[caddr].parent[addr]
+                child = profile[caddr]
+                info = child.parent[addr]
+                # link child directly to its grandparents
+                for  paddr in parents:
+                    if paddr != addr:
+                        #self.message("%s: %s" % (parent.name, info))
+                        if paddr in child.parent:
+                            child.parent[paddr] += info
+                        else:
+                            child.parent[paddr] = info
+                # remove its child's linkage
+                del child.parent[addr]
         # remove it itself
         del profile[addr]
 
@@ -1122,6 +1209,7 @@ label="%s";
         "get relinked copy of profile data with requested items removed from it"
         if not (self.remove_leafs or self.remove_intermediate):
             self.profile = profobj.profile
+            return
         # need our own copy so that it can be manipulated freely
         self.profile = deepcopy(profobj.profile)
         while True:
@@ -1129,12 +1217,11 @@ label="%s";
             for addr, function in self.profile.items():
                 parents = len(function.parent)
                 children = len(function.child)
-                if self.remove_leafs and (parents == 0 or children == 0):
+                if self.remove_leafs and (parents + children) == 1:
                     to_remove[addr] = True
-                    continue
-                if self.remove_intermediate and parents == 1 and children == 1:
+                elif self.remove_intermediate and parents == 1 and children == 1:
                     to_remove[addr] = True
-                    continue
+
             if not to_remove:
                 break
             for addr in to_remove.keys():
@@ -1145,10 +1232,9 @@ label="%s";
         profile = self.profile
         self.nodes = {}
         self.edges = {}
-        ignore_to = self.ignore_to + self.ignore
         ignore_from = self.ignore_from + self.ignore
         for caddr, child in profile.items():
-            if child.name in ignore_to:
+            if child.name in self.ignore:
                 continue
             for paddr, info in child.parent.items():
                 parent = profile[paddr]
@@ -1264,6 +1350,7 @@ class Main(Output):
     "program main loop & args parsing"
     longopts = [
         "absolute=",
+        "compact",
         "emph-limit=",
         "first",
         "graph",
@@ -1272,6 +1359,7 @@ class Main(Output):
         "ignore-from=",
         "info"
         "limit=",
+        "no-calls=",
         "no-intermediate",
         "no-leafs",
         "only=",
@@ -1311,6 +1399,13 @@ class Main(Output):
             elif opt in ("-r", "--relative"):
                 self.message("\nParsing TEXT relative symbol address information from %s..." % arg)
                 prof.parse_symbols(self.open_file(arg, "r"), True)
+            # options for profile caller information parsing
+            elif opt == "--compact":
+                prof.enable_compact()
+            elif opt == "--no-calls":
+                prof.remove_calls(arg)
+            elif opt == "--ignore-to":
+                prof.set_ignore_to(arg.split(','))
             # options for both graphs & statistics
             elif opt in ("-f", "--first"):
                 count = self.get_value(opt, arg, False)
@@ -1333,8 +1428,6 @@ class Main(Output):
                 graph.set_ignore(arg.split(','))
             elif opt == "--ignore-from":
                 graph.set_ignore_from(arg.split(','))
-            elif opt == "--ignore-to":
-                graph.set_ignore_to(arg.split(','))
             elif opt == "--only":
                 graph.set_only(arg.split(','))
             elif opt == "--no-leafs":
