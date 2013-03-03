@@ -1814,7 +1814,7 @@ static void m68k_run_1 (void)
 		  }
 #endif
 	  }
-       if ( n>1 ) fprintf ( stderr , "run int %d\n" , n );
+//       if ( n>1 ) fprintf ( stderr , "run int %d\n" , n );
 //        do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
     }
 
