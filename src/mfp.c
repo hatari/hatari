@@ -251,6 +251,11 @@ void MFP_Reset(void)
 	/* Clear counters */
 	TimerAClockCycles = TimerBClockCycles = 0;
 	TimerCClockCycles = TimerDClockCycles = 0;
+
+	/* Clear IRQ */
+	MFP_Current_Interrupt = -1;
+	MFP_IRQ = 0;
+	MFP_DelayIRQ = false;
 }
 
 
