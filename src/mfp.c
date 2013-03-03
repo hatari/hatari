@@ -506,42 +506,24 @@ static void MFP_UpdateIRQ(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Test interrupt request to see if MFP IRQ should be set
+ * Test if interrupt 'Bit' is set in pending and mask register.
+ * Also check that no higher priority interrupt is in service.
+ * Depending on the interrupt, we check either IPRA/IMRA or IPRB/IMRB
  * @return true if the MFP interrupt request is allowed
  */
-static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
-                                 Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
+//static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
+//                                 Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
+
+static bool MFP_InterruptRequest ( Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB )
 {
 //  static int cnt;
 //  fprintf ( stderr , "mfp int req %d %d\n" , nMfpException , cnt++ );
 
-	/* Are any higher priority interrupts in service? */
-	if (((MFP_ISRA&PriorityMaskLow) == 0) && ((MFP_ISRB&PriorityMaskHigh) == 0))
+	if ( IPRx & IMRx & Bit )				/* Interrupt is pending and not masked */
 	{
-		/* Is masked? */
-		if (MaskRegister&Bit)
-		{
-#if 0
-			/* CPU allows interrupt of an MFP level? */
-			if (regs.intmask < 6)
-			{
-				*pPendingReg &= ~Bit;           /* Clear pending bit */
-//				MFP_UpdateIRQ();	// FIXME, remove
-
-				/* Are we in 'auto' interrupt or 'manual'? */
-				if (MFP_VR&0x08)                /* Software End-of-Interrupt (SEI) */
-					*pInServiceReg |= Bit;      /* Set interrupt in service register */
-				else
-					*pInServiceReg &= ~Bit;     /* Clear interrupt in service register */
-
-				/* Call interrupt, adds in base (default 0x100) */
-				MFP_Exception(nMfpException);
-				return true;
-			}
-#else
-			return true;
-#endif
-		}
+		/* Are any higher priority interrupts in service? */
+		if ( ( ( MFP_ISRA & PriorityMaskA ) == 0 ) && ( ( MFP_ISRB & PriorityMaskB ) == 0 ) )
+			return true;				/* No higher int in service */
 	}
 
 	return false;
@@ -550,9 +532,8 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check 'pending' registers to see if any MFP interrupts need servicing.
- * Request interrupt if necessary.
- * @return MFP interrupt number if one interrupt was allowed, else return -1.
+ * Check if any MFP interrupts can be serviced.
+ * @return MFP interrupt number for the highest interrupt allowed, else return -1.
  */
 int	MFP_CheckPendingInterrupts ( void )
 {
@@ -570,55 +551,44 @@ int	MFP_CheckPendingInterrupts ( void )
 		return 255;
 	}
 
-	if (MFP_IPRA & MFP_TIMER_GPIP7_BIT)   /* Check MFP GPIP7 interrupt (bit 7) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_GPIP7, MFP_TIMER_GPIP7_BIT, &MFP_IPRA, MFP_IMRA, 0x80, 0x00, &MFP_ISRA) )
-			return MFP_EXCEPT_GPIP7;
+	
+	if ( MFP_InterruptRequest ( MFP_TIMER_GPIP7_BIT, MFP_IPRA, MFP_IMRA, 0x80, 0x00 ) )	/* Check MFP GPIP7 interrupt (bit 7) */
+		return MFP_EXCEPT_GPIP7;
+	
+	if ( MFP_InterruptRequest ( MFP_TIMER_A_BIT, MFP_IPRA, MFP_IMRA, 0xe0, 0x00 ) )		/* Check Timer A (bit 5) */
+		return MFP_EXCEPT_TIMERA;
 
-	if (MFP_IPRA & MFP_TIMER_A_BIT)       /* Check Timer A (bit 5) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_TIMERA, MFP_TIMER_A_BIT, &MFP_IPRA, MFP_IMRA, 0xe0, 0x00, &MFP_ISRA) )
-			return MFP_EXCEPT_TIMERA;
+	if ( MFP_InterruptRequest ( MFP_RCVBUFFULL_BIT, MFP_IPRA, MFP_IMRA, 0xf0, 0x00 ) )	/* Check Receive buffer full (bit 4) */
+		return MFP_EXCEPT_RECBUFFULL;
 
-	if (MFP_IPRA & MFP_RCVBUFFULL_BIT)    /* Check Receive buffer full (bit 4) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_RECBUFFULL, MFP_RCVBUFFULL_BIT, &MFP_IPRA, MFP_IMRA, 0xf0, 0x00, &MFP_ISRA) )
-			return MFP_EXCEPT_RECBUFFULL;
+	if ( MFP_InterruptRequest ( MFP_TRNBUFEMPTY_BIT, MFP_IPRA, MFP_IMRA, 0xfc, 0x00 ) )	/* Check transmit buffer empty (bit 2) */
+		return MFP_EXCEPT_TRANSBUFFEMPTY;
 
-	if (MFP_IPRA & MFP_TRNBUFEMPTY_BIT)   /* Check transmit buffer empty (bit 2) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_TRANSBUFFEMPTY, MFP_TRNBUFEMPTY_BIT, &MFP_IPRA, MFP_IMRA, 0xfc, 0x00, &MFP_ISRA) )
-			return MFP_EXCEPT_TRANSBUFFEMPTY;
+	if ( MFP_InterruptRequest ( MFP_TIMER_B_BIT, MFP_IPRA, MFP_IMRA, 0xff, 0x00 ) )		/* Check Timer B (bit 0) */
+		return MFP_EXCEPT_TIMERB;
 
-	if (MFP_IPRA & MFP_TIMER_B_BIT)       /* Check Timer B (bit 0) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_TIMERB, MFP_TIMER_B_BIT, &MFP_IPRA, MFP_IMRA, 0xff, 0x00, &MFP_ISRA) )
-			return MFP_EXCEPT_TIMERB;
+	if ( MFP_InterruptRequest ( MFP_FDCHDC_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0x80 ) )		/* Check FDC (bit 7) */
+		return MFP_EXCEPT_GPIP5;
 
-	if (MFP_IPRB & MFP_FDCHDC_BIT)        /* Check FDC (bit 7) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_GPIP5, MFP_FDCHDC_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0x80, &MFP_ISRB) )
-			return MFP_EXCEPT_GPIP5;
+	if ( MFP_InterruptRequest ( MFP_ACIA_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xc0 ) )		/* Check ACIA (Keyboard or MIDI) (bit 6) */
+		return MFP_EXCEPT_ACIA;
 
-	if (MFP_IPRB & MFP_ACIA_BIT)          /* Check ACIA (Keyboard or MIDI) (bit 6) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_ACIA, MFP_ACIA_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xc0, &MFP_ISRB) )
-			return MFP_EXCEPT_ACIA;
+	if ( MFP_InterruptRequest ( MFP_TIMER_C_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xe0 ) )		/* Check Timer C (bit 5) */
+		return MFP_EXCEPT_TIMERC;
 
-	if (MFP_IPRB & MFP_TIMER_C_BIT)       /* Check Timer C (bit 5) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_TIMERC, MFP_TIMER_C_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xe0, &MFP_ISRB) )
-			return MFP_EXCEPT_TIMERC;
+	if ( MFP_InterruptRequest ( MFP_TIMER_D_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf0 ) )		/* Check Timer D (bit 4) */
+		return MFP_EXCEPT_TIMERD;
 
-	if (MFP_IPRB & MFP_TIMER_D_BIT)       /* Check Timer D (bit 4) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_TIMERD, MFP_TIMER_D_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xf0, &MFP_ISRB) )
-			return MFP_EXCEPT_TIMERD;
+	if ( MFP_InterruptRequest ( MFP_GPU_DONE_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf8 ) )	/* Check GPU done (bit 3) */
+		return MFP_EXCEPT_GPIP3;
 
-	if (MFP_IPRB & MFP_GPU_DONE_BIT)      /* Check GPU done (bit 3) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_GPIP3, MFP_GPU_DONE_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xf8, &MFP_ISRB) )
-			return MFP_EXCEPT_GPIP3;
+	if ( MFP_InterruptRequest ( MFP_GPIP_1_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xfe ) )		/* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
+		return MFP_EXCEPT_GPIP1;
 
-	if (MFP_IPRB & MFP_GPIP_1_BIT)        /* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_GPIP1, MFP_GPIP_1_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xfe, &MFP_ISRB) )
-			return MFP_EXCEPT_GPIP1;
+	if ( MFP_InterruptRequest ( MFP_GPIP_0_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xff ) )		/* Check Centronics BUSY (bit 0) */
+		return MFP_EXCEPT_GPIP0;
 
-	if (MFP_IPRB & MFP_GPIP_0_BIT)        /* Check Centronics BUSY (bit 0) */
-		if ( MFP_InterruptRequest(MFP_EXCEPT_GPIP0, MFP_GPIP_0_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xff, &MFP_ISRB) )
-			return MFP_EXCEPT_GPIP0;
-
-	return -1;
+	return -1;						/* No pending interrupt */
 }
 
 
