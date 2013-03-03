@@ -205,6 +205,9 @@ static bool XBios_HatariControl(Uint32 Params)
 #if ENABLE_TRACING
 /**
  * Map XBIOS call opcode to XBIOS function name
+ *
+ * Mapping is based on TOSHYP information:
+ * 	http://toshyp.atari.org/en/004014.html
  */
 static const char* XBios_Call2Name(Uint16 opcode)
 {
@@ -301,10 +304,10 @@ static const char* XBios_Call2Name(Uint16 opcode)
 		"VgetMonitor",
 		"VsetSync",
 		"VgetSize",
-		NULL,	/* 92 */
+		"VsetVars",	/* TOS4 internal */
 		"VsetRGB",
 		"VgetRGB",
-		NULL,	/* 95 */
+		"VcheckMode",	/* TOS4 internal (ValidMode()) */
 		"Dsp_DoBlock",
 		"Dsp_BlkHandShake",
 		"Dsp_BlkUnpacked",
@@ -355,12 +358,12 @@ static const char* XBios_Call2Name(Uint16 opcode)
 		NULL,
 		NULL,
 		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,	/* 149 */
 		"VsetMask",
-		NULL,	/* 147 */
-		NULL,
-		NULL,
-		NULL,
-		NULL,
+		NULL,	/* 151 */
 		NULL,
 		NULL,
 		NULL,
@@ -558,7 +561,7 @@ bool XBios(void)
 	case 109:	/* Dsp_ExecProg */
 	case 110:	/* Dsp_ExecBoot */
 	case 116:	/* Dsp_LoadSubroutine */
-	case 146:	/* VsetMask */
+	case 150:	/* VsetMask */
 		/* ones taking two longs/pointers and a word */
 		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X, 0x%hX)\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),

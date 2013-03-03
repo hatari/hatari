@@ -2632,6 +2632,9 @@ static bool GemDOS_GSDToF(Uint32 Params)
 /*-----------------------------------------------------------------------*/
 /**
  * Map GEMDOS call opcodes to their names
+ * 
+ * Mapping is based on TOSHYP information:
+ *	http://toshyp.atari.org/en/005013.html
  */
 static const char* GemDOS_Opcode2Name(Uint16 opcode)
 {
@@ -2657,7 +2660,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 		"Cauxis",
 		"Cauxos",
 		"Maddalt",
-		"-", /* 15 */
+		"Srealloc", /* TOS4 */
 		"-", /* 16 */
 		"-", /* 17 */
 		"-", /* 18 */
