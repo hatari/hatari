@@ -102,6 +102,9 @@
 /*			priority, which was wrong).					*/
 /*			- Use MFP_ProcessIRQ to separate the MFP's IRQ signal handling	*/
 /*			and the	exception processing at the CPU level.			*/
+/* 2013/03/01	[NP]	When MFP_IRQ goes from 0 to 1, the resulting signal is visible	*/
+/*			to the CPU only 4 cycles later (fix Audio Artistic Demo by	*/
+/*			Big Alec and the games Super Hang On, Super Monaco GP, Bolo).	*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
@@ -186,8 +189,10 @@ static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer
 
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
 
-static int MFP_Current_Interrupt = -1;
+static int	MFP_Current_Interrupt = -1;
 static Uint8	MFP_IRQ = 0;
+static bool	MFP_DelayIRQ = false;
+
 
 static const Uint16 MFPDiv[] =
 {
@@ -386,6 +391,13 @@ void	MFP_InterruptHandler_DelayException ( void )
  * and if so, we call MFP_Exception.
  * If SR doesn't allow an MFP interrupt, MFP's pending requests will be
  * processed later when SR allows it.
+ *
+ * Important timing note : when the MFP's IRQ signal is set, it's visible to
+ * the CPU only 4 cycles later.
+ * Instead of using CycInt_AddRelativeInterrupt to simulate this 4 cycles delay,
+ * we use MFP_DelayIRQ to delay the exception processing after the next instruction
+ * instead of the current one (as an instruction takes at least 4 cycles, we get the
+ * expected result without using an additional internal timer).
  */
 bool	MFP_ProcessIRQ ( void )
 {
@@ -396,6 +408,12 @@ bool	MFP_ProcessIRQ ( void )
 	
 	if ( MFP_IRQ == 1 )
 	{
+		if ( MFP_DelayIRQ == true )
+		{
+			MFP_DelayIRQ = false;		/* Process the IRQ on the next call */
+			return false;			/* For now, return without calling an exception */
+		}
+
 		if (regs.intmask < 6)
 		{
 			if ( MFP_Current_Interrupt > 7 )
@@ -419,8 +437,10 @@ bool	MFP_ProcessIRQ ( void )
 			else
 				*pInServiceReg &= ~Bit;     /* Clear interrupt in service register */
 
+//fprintf ( stderr , "process 1 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 			MFP_Exception ( MFP_Current_Interrupt );
 			MFP_UpdateIRQ ();
+//fprintf ( stderr , "process 2 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 			return true;
 		}
 	}
@@ -451,23 +471,33 @@ static void MFP_UpdateIRQ(void)
 #else
 	int	NewInt;
 
+//fprintf ( stderr , "updirq0 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+
 	if ( ( MFP_IPRA & MFP_IMRA ) | ( MFP_IPRB & MFP_IMRB ) )
 	{
 		NewInt = MFP_CheckPendingInterrupts ();
 		
 		if ( NewInt > 0 )
 		{
+			if ( MFP_IRQ == 0 )			/* MFP IRQ goes from 0 to 1 */
+				MFP_DelayIRQ = true;
+
 			MFP_IRQ = 1;
 			MFP_Current_Interrupt = NewInt;
 		}
+		else
+			MFP_IRQ = 0;				/* Pending interrupts are blocked by in-service interrupts */
 	}
 	else
 	{
 		MFP_IRQ = 0;
 	}
 
+//fprintf ( stderr , "updirq1 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 	if ( MFP_IRQ == 1 )
+	{
 		M68000_SetSpecial(SPCFLAG_MFP);
+	}
 	else
 		M68000_UnsetSpecial(SPCFLAG_MFP);
 #endif
@@ -482,8 +512,8 @@ static void MFP_UpdateIRQ(void)
 static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
                                  Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
 {
-  static int cnt;
-  fprintf ( stderr , "mfp int req %d %d\n" , nMfpException , cnt++ );
+//  static int cnt;
+//  fprintf ( stderr , "mfp int req %d %d\n" , nMfpException , cnt++ );
 
 	/* Are any higher priority interrupts in service? */
 	if (((MFP_ISRA&PriorityMaskLow) == 0) && ((MFP_ISRB&PriorityMaskHigh) == 0))
@@ -526,8 +556,8 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
  */
 int	MFP_CheckPendingInterrupts ( void )
 {
-  static int cnt;
-  fprintf ( stderr , "mfp check pend int %d\n" , cnt++ );
+//  static int cnt;
+//  fprintf ( stderr , "mfp check pend int %d\n" , cnt++ );
 
 
 	/* Handle Falcon DSP interrupt. Note: This interrupt is not wired to
