@@ -300,14 +300,13 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Call MFP interrupt - NOTE when the MFP is in Auto interrupt (AEI), the MFP
- * puts the interrupt number on the data bus and then the 68000 reads it, multiplies
- * it by 4 and adds in a base(usually 0x100) to give the vector. Some programs
- * change this offset, eg RoboCod. This offset is stored in the top 4 bits of register
- * 0xfffa17(0x40 is the default=0x100)
- * Many thanks to Steve Bak for that one!
+ * Call the MFP exception associated to the current MFP interrupt.
+ * When the MFP sets its IRQ signal, it will put the interrupt vector number
+ * on the data bus ; the 68000 will read it during the IACK cycle
+ * and multiply it by 4 to get the address of the exception handler.
+ * The upper 4 bits of the vector number are stored in the VR register 0xfffa17
+ * (default value is 0x40, which gives exceptions' handlers located at 0x100 in RAM)
  */
-#if 1
 static void MFP_Exception(int Interrupt)
 {
 	unsigned int Vec;
@@ -325,64 +324,6 @@ static void MFP_Exception(int Interrupt)
 
 	M68000_Exception(Vec, M68000_EXC_SRC_INT_MFP);
 }
-
-
-void	MFP_InterruptHandler_DelayException ( void )
-{
-}
-
-#else
-
-static void MFP_Exception(int Interrupt)
-{
-	unsigned int Vec;
-
-	if ( MFP_Current_Interrupt >= 0 )
-	{
-		fprintf ( stderr , "multiple mfp int %d\n" , Interrupt );
-		return;					/* Already processing an interrupt */
-	}
-
-	MFP_Current_Interrupt = Interrupt;
-
-	Vec = (unsigned int)(MFP_VR&0xf0)<<2;
-	Vec += MFP_Current_Interrupt<<2;
-
-	if (LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION))
-	{
-		int FrameCycles, HblCounterVideo, LineCycles;
-		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-		LOG_TRACE_PRINT("mfp excep prepare int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
-			MFP_Current_Interrupt, Vec, STMemory_ReadLong ( Vec ), FrameCycles, LineCycles, HblCounterVideo );
-	}
-
-	/* Delay the exception to happen 4 cycles later */
-	CycInt_AddRelativeInterrupt ( 4 , INT_CPU_CYCLE , INTERRUPT_MFP_DELAY_EXCEPTION );
-}
-
-
-void	MFP_InterruptHandler_DelayException ( void )
-{
-	unsigned int Vec;
-
-	Vec = (unsigned int)(MFP_VR&0xf0)<<2;
-	Vec += MFP_Current_Interrupt<<2;
-
-	if (LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION))
-	{
-		int FrameCycles, HblCounterVideo, LineCycles;
-		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-		LOG_TRACE_PRINT("mfp excep int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
-			MFP_Current_Interrupt, Vec, STMemory_ReadLong ( Vec ), FrameCycles, LineCycles, HblCounterVideo );
-	}
-
-	MFP_Current_Interrupt = -1;
-	/* Remove this interrupt from list and re-order */
-	CycInt_AcknowledgeInterrupt();
-
-	M68000_Exception(Vec, M68000_EXC_SRC_INT_MFP);
-}
-#endif
 
 
 
