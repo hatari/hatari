@@ -1586,13 +1586,13 @@ static int do_specialties (void)
 
     /* Handle the STOP instruction */
     if ( regs.spcflags & SPCFLAG_STOP ) {
-fprintf ( stderr , "test stop %d\n" , nCyclesMainCounter );
+//fprintf ( stderr , "test stop %d\n" , nCyclesMainCounter );
         /* We first test if there's a pending interrupt that would */
         /* allow to immediatly leave the STOP state */
         if ( do_specialties_interrupt(true) ) {		/* test if there's an interrupt and add pending jitter */
             regs.stopped = 0;
             unset_special (SPCFLAG_STOP);
-fprintf ( stderr , "exit stop %d\n" , nCyclesMainCounter );
+//fprintf ( stderr , "exit stop %d\n" , nCyclesMainCounter );
         }
 #if 0
 	if (regs.spcflags & SPCFLAG_MFP)			/* MFP int */
