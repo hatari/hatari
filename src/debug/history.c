@@ -172,7 +172,7 @@ void History_Show(Uint32 count)
 
 		if (History.item[i].for_dsp) {
 			Uint16 pc = History.item[i].pc.dsp;
-			DSP_DisasmAddress(pc, pc);
+			DSP_DisasmAddress(stderr, pc, pc);
 		} else {
 			Uint32 dummy;
 			Disasm(stderr, History.item[i].pc.cpu, &dummy, 1);

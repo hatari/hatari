@@ -3394,7 +3394,6 @@ static void m68k_run_mmu040 (void)
 static void m68k_run_2ce (void)
 {
 	struct regstruct *r = &regs;
-	int sav_tail = 0;
 	int curr_cycles = 0;
 
 	struct falcon_cycles_t falcon_instr_cycle;
@@ -3425,18 +3424,18 @@ static void m68k_run_2ce (void)
 		uae_u32 opcode = x_prefetch (0);
 		(*cpufunctbl[opcode])(opcode);
 
-		/* Laurent : if 68030 instr cache is on, cycles are computed with head / tail / and cache_cycles
+		/* Laurent : if 68030 instr cache is on, not frozen and nohitcache miss, cycles are computed with head / tail / and cache_cycles
 		 *           else, cycles are equal to non cache cycles.
 		 */
 		falcon_instr_cycle = regs.ce030_instr_cycles;
 
-		if ((currprefs.cpu_model == 68030) && ((r->cacr & 3) == 1)) { // not frozen and enabled
-			if (falcon_instr_cycle.head < sav_tail)
+		if ((currprefs.cpu_model == 68030) && ((r->cacr & 3) == 1) && (CpuInstruction.iCacheMisses == 0)) { // not frozen and enabled
+			if (falcon_instr_cycle.head < CpuInstruction.iSave_instr_tail)
 				curr_cycles = (falcon_instr_cycle.cache_cycles - falcon_instr_cycle.head);
 			else
-				curr_cycles = (falcon_instr_cycle.cache_cycles - sav_tail);
+				curr_cycles = (falcon_instr_cycle.cache_cycles - CpuInstruction.iSave_instr_tail);
 
-			sav_tail = falcon_instr_cycle.tail;
+			CpuInstruction.iSave_instr_tail = falcon_instr_cycle.tail;
 		}
 		else {
 			curr_cycles = falcon_instr_cycle.noncache_cycles;
@@ -4703,6 +4702,7 @@ STATIC_INLINE void fill_icache020 (uae_u32 addr, int idx)
 		return;
 	}
 	// cache miss
+	CpuInstruction.iCacheMisses++;
 	data = mem_access_delay_longi_read_ce020 (addr);
 	if (!(regs.cacr & 2)) {
 		c->tag = tag;
@@ -4718,6 +4718,7 @@ uae_u32 get_word_ce020_prefetch (int o)
 	int i;
 	uae_u32 pc = m68k_getpc () + o;
 
+	CpuInstruction.iCacheMisses = 0;
 	for (;;) {
 		for (i = 0; i < 2; i++) {
 			if (pc == regs.prefetch020addr[0]) {
@@ -4787,6 +4788,7 @@ STATIC_INLINE void fill_icache030 (uae_u32 addr, int idx)
 		return;
 	}
 	// cache miss
+	CpuInstruction.iCacheMisses++;
 	data = mem_access_delay_longi_read_ce020 (addr);
 	if ((regs.cacr & 3) == 1) { // not frozen and enabled
 		update_cache030 (c, data, tag, lws);
@@ -4954,6 +4956,7 @@ uae_u32 get_word_ce030_prefetch (int o)
 	int i;
 	uae_u32 pc = m68k_getpc () + o;
 
+	CpuInstruction.iCacheMisses = 0;
 	for (;;) {
 		for (i = 0; i < 2; i++) {
 			if (pc == regs.prefetch020addr[0]) {

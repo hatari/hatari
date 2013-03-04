@@ -10,7 +10,7 @@
 setopt --fast-forward yes --fastfdc on --conout 2
 
 # wait for EmuTOS to boot
-sleep 1
+sleep 2
 
 # Invoke EmuCON with ^Z: Control down, press Z, Control up
 keydown 29

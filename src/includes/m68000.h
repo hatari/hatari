@@ -138,6 +138,16 @@ static inline void M68000_SetSR(Uint16 v)
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
 
+/* information about current CPU instruction */
+typedef struct {
+	/* these are provided only by WinUAE CPU core */
+	int iCacheMisses;
+	int iSave_instr_tail;
+
+	/* TODO: move other instruction specific Hatari variables here */
+} cpu_instruction_t;
+
+extern cpu_instruction_t CpuInstruction;
 
 extern Uint32 BusErrorAddress;
 extern Uint32 BusErrorPC;

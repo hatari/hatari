@@ -1729,20 +1729,15 @@ TOS 1.0x supports up to 256MB partitions and TOS 4.0x up to 1GB ones.
 <h3>GEMDOS based hard disk emulation</h3>
 <p>
 With the GEMDOS based drive emulation, you can easily "mount" a
-folder from the host file system to a drive of the emulated Atari. To
-use the GEMDOS based drive emulation, you should use a folder on your
-hard disk that only contains files and folders with valid TOS
-filenames i.e. file and folders names shouldn't contain invalid GEMDOS
-filename characters and their length shouldn't exceed the 8+3 file name
-length limit.
+folder from the host file system to a drive of the emulated Atari.
 </p>
 <p>
-If you provide <span class="commandline">--harddisk</span> option
-a directory containing only single letter (C-Z) subdirectories, each
-of these subdirectories will be treated as a separate partition,
-otherwise the given directory itself will be assigned to drive "C:".
-In the multiple partition case, the letters used as the subdirectory
-names will determine to which drives/partitions they're assigned.
+If you provide Hatari a directory containing only single letter (C-Z)
+subdirectories, each of these subdirectories will be treated as a
+separate partition, otherwise the given directory itself will be
+assigned to drive "C:". In the multiple partition case, the letters
+used as the subdirectory names will determine to which
+drives/partitions they're assigned.
 </p>
 <p>
 GEMDOS drive emulation is an easy way to share files between the
@@ -1755,6 +1750,9 @@ implemented:
 order, for consistency.  E.g. moving files to a different directory and
 back (without changing their names) like AUTOSORT does, doesn't change
 that order. You need to rename the files.</li>
+<li>Names which aren't valid TOS directory or file names, are converted
+to a valid format, but if there are multiple files which converted
+names are identical in TOS-format, you see only one of those.</li>
 <li>It is not possible to use a cartridge image at the same time
 with the GEMDOS drive emulation (Hatari has it's own cartridge code
 that is used for GEMDOS emulation).</li>

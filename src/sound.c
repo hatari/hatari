@@ -36,7 +36,7 @@
 /* 2008/07/27	[NP]	Better separation between accesses to the YM hardware registers	*/
 /*			and the sound rendering routines. Use Sound_WriteReg() to pass	*/
 /*			all writes to the sound rendering functions. This allows to	*/
-/*			have sound.c independant of psg.c (to ease replacement of	*/
+/*			have sound.c independent of psg.c (to ease replacement of	*/
 /*			sound.c	by another rendering method).				*/
 /* 2008/08/02	[NP]	Initial convert of Ym2149Ex.cpp from C++ to C.			*/
 /*			Remove unused part of the code (StSound specific).		*/
@@ -467,7 +467,7 @@ static void	YM2149_BuildLinearVolumeTable(ymu16 volumetable[32][32][32])
  * developed across the 1K resistor is the output voltage which
  * I call Vout.
  *
- * The output of the YM2149 is modeled well as pullup resistors.
+ * The output of the YM2149 is modelled well as pullup resistors.
  * Thus, the three sound pins are seen as three parallel
  * computer-controlled, adjustable pull-up resistors.
  * To emulate the output of the YM2149, one must determine the

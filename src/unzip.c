@@ -141,7 +141,7 @@ typedef struct
 /**
  *  Read a byte from a gz_stream; update next_in and avail_in. Return EOF
  *  for end of file.
- *  IN assertion: the stream s has been sucessfully opened for reading.
+ *  IN assertion: the stream s has been successfully opened for reading.
  */
 local int unzlocal_getByte(FILE *fin, int *pi)
 {
@@ -223,8 +223,8 @@ local int unzlocal_getLong (FILE* fin, uLong *pX)
 
 /** 
  *  Compare two filename (fileName1,fileName2).
- *  If iCaseSenisivity = 1, comparision is case sensitivity (like strcmp)
- *  If iCaseSenisivity = 2, comparision is not case sensitivity (like strcmpi
+ *  If iCaseSenisivity = 1, comparison is case sensitivity (like strcmp)
+ *  If iCaseSenisivity = 2, comparison is not case sensitivity (like strcmpi
  *                                                               or strcasecmp)
  *  If iCaseSenisivity = 0, case sensitivity is defaut of your operating system
  *       (like 1 on Unix, 2 on Windows)

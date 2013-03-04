@@ -35,13 +35,7 @@ const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "nvram.h"
 #include "paths.h"
-
-#define DEBUG 0
-#if DEBUG
-#define Dprintf(a) printf a
-#else
-#define Dprintf(a)
-#endif
+#include "vdi.h"
 
 
 // Defs for checksum
@@ -60,17 +54,6 @@ static Uint8 nvram[64] = { 48,255,21,255,23,255,1,25,3,33,42,14,112,128,
 
 static Uint8 nvram_index;
 static char nvram_filename[FILENAME_MAX];
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * NvRam_Reset: Called during init and reset, used for resetting the
- * emulated chip.
- */
-void NvRam_Reset(void)
-{
-	nvram_index = 0;
-}
 
 
 /*-----------------------------------------------------------------------*/
@@ -142,6 +125,59 @@ static void NvRam_SetChecksum(void)
 	nvram[NVRAM_CHKSUM2] = sum;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * NvRam_Reset: Called during init and reset, used for resetting the
+ * emulated chip.
+ */
+void NvRam_Reset(void)
+{
+	if (bUseVDIRes)
+	{
+		/* The objective is to start the TOS with a video mode similar
+		 * to the requested one. This is important for the TOS to initialize
+		 * the right font height and palette. */
+		if (VDIHeight < 400)
+		{
+			/* This will select the 8x8 system font */
+			switch(VDIPlanes)
+			{
+			/* The case 1 is not handled, because that would result in 0x0000
+			 * which is an invalide video mode. This does not matter,
+			 * since any color palette is good for monochrome, anyway. */
+			case 2:	/* set 320x200x4 colors */
+				nvram[NVRAM_VMODE1] = 0x00;
+				nvram[NVRAM_VMODE2] = 0x01;
+				break;
+			case 4:	/* set 320x200x16 colors */
+			default:
+				nvram[NVRAM_VMODE1] = 0x00;
+				nvram[NVRAM_VMODE2] = 0x02;
+			}
+		}
+		else
+		{
+			/* This will select the 8x16 system font */
+			switch(VDIPlanes)
+			{
+			case 4:	/* set 640x400x16 colors */
+				nvram[NVRAM_VMODE1] = 0x01;
+				nvram[NVRAM_VMODE2] = 0x0a;
+				break;
+			case 2:	/* set 640x400x4 colors */
+				nvram[NVRAM_VMODE1] = 0x01;
+				nvram[NVRAM_VMODE2] = 0x09;
+				break;
+			case 1:	/* set 640x400x2 colors */
+			default:
+				nvram[NVRAM_VMODE1] = 0x01;
+				nvram[NVRAM_VMODE2] = 0x08;
+			}
+		}
+		NvRam_SetChecksum();
+	}
+	nvram_index = 0;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -262,8 +298,8 @@ void NvRam_Data_ReadByte(void)
 	{
 		value = nvram[nvram_index];
 	}
-	Dprintf(("Reading NVRAM data at %d = %d ($%02x)\n", nvram_index, value, value));
 
+	LOG_TRACE(TRACE_NVRAM, "NVRAM : read data at %d = %d ($%02x)\n", nvram_index, value, value);
 	IoMem_WriteByte(0xff8963, value);
 }
 
@@ -276,6 +312,6 @@ void NvRam_Data_ReadByte(void)
 void NvRam_Data_WriteByte(void)
 {
 	Uint8 value = IoMem_ReadByte(0xff8963);
-	Dprintf(("Writing NVRAM data at %d = %d ($%02x)\n", nvram_index, value, value));
+	LOG_TRACE(TRACE_NVRAM, "NVRAM : write data at %d = %d ($%02x)\n", nvram_index, value, value);
 	nvram[nvram_index] = value;
 }

@@ -26,7 +26,7 @@
 /* 2008/07/27	[NP]	Better separation between accesses to the YM hardware registers	*/
 /*			and the sound rendering routines. Use Sound_WriteReg() to pass	*/
 /*			all writes to the sound rendering functions. This allows to	*/
-/*			have sound.c independant of psg.c (to ease replacement of	*/
+/*			have sound.c independent of psg.c (to ease replacement of	*/
 /*			sound.c	by another rendering method).				*/
 /* 2008/08/11	[NP]	Set drive leds.							*/
 /* 2008/10/16	[NP]	When writing to $ff8800, register select should not be masked	*/

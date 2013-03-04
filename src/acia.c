@@ -1,7 +1,7 @@
 /*
   Hatari - acia.c
 
-  Copyright (C) 2012 by Nicolas Pomarède
+  Copyright (C) 2012 by Nicolas PomarÃ¨de
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
@@ -369,7 +369,7 @@ static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 
 /**
  * Start MFP interrupt a few cycles atfer the irq bit was set in the ACIA.
- * NOTE/FIXME : from the hardware point of view, the ACIA's irq signal is immediatly propagated
+ * NOTE/FIXME : from the hardware point of view, the ACIA's irq signal is immediately propagated
  * to the MFP and the MFP will then add a delay before generating a 68000 interrupt.
  * As the MFP emulation doesn't support this yet, we handle the delay in the ACIA's emulation.
  */
@@ -866,7 +866,7 @@ static Uint8	ACIA_Read_RDR ( ACIA_STRUCT *pACIA )
 /**
  * Write to TDR.
  * If the TX process is idle, we should not prepare a new transfer
- * immediatly, to ensure that BIT_TDRE remains clear until the next bit
+ * immediately, to ensure that BIT_TDRE remains clear until the next bit
  * is sent (BIT_TDRE will be set again in ACIA_Clock_TX).
  */
 static void	ACIA_Write_TDR ( ACIA_STRUCT *pACIA , Uint8 TDR )

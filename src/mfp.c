@@ -68,7 +68,7 @@
 /* 2008/04/20	[NP]	In the TRACE call in 'MFP_Exception', replace 'get_long' by	*/
 /*			'STMemory_ReadLong' because 'get_long' produced a bus error	*/
 /*			if we were not already in supervisor mode when the mfp exception*/
-/*			occured. This could cause bus error when restoring snapshot	*/
+/*			occurred. This could cause bus error when restoring snapshot	*/
 /*			of a gemdos program for example if trace mode was activated.	*/
 /* 2008/07/12	[NP]	When stopping an active timer just when the internal data	*/
 /*			counter is going from 1 to 0, the internal data counter will be	*/
@@ -1149,7 +1149,7 @@ void MFP_DataDirection_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle read from interupt enable register A (0xfffa07).
+ * Handle read from interrupt enable register A (0xfffa07).
  */
 void MFP_EnableA_ReadByte(void)
 {
@@ -1160,7 +1160,7 @@ void MFP_EnableA_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle read from interupt enable register B (0xfffa09).
+ * Handle read from interrupt enable register B (0xfffa09).
  */
 void MFP_EnableB_ReadByte(void)
 {
@@ -1171,7 +1171,7 @@ void MFP_EnableB_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle read from interupt pending register A (0xfffa0b).
+ * Handle read from interrupt pending register A (0xfffa0b).
  */
 void MFP_PendingA_ReadByte(void)
 {
@@ -1182,7 +1182,7 @@ void MFP_PendingA_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle read from interupt pending register A (0xfffa0d).
+ * Handle read from interrupt pending register A (0xfffa0d).
  */
 void MFP_PendingB_ReadByte(void)
 {
@@ -1193,7 +1193,7 @@ void MFP_PendingB_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle read from interupt in service register A (0xfffa0f).
+ * Handle read from interrupt in service register A (0xfffa0f).
  */
 void MFP_InServiceA_ReadByte(void)
 {
@@ -1204,7 +1204,7 @@ void MFP_InServiceA_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle read from interupt in service register B (0xfffa11).
+ * Handle read from interrupt in service register B (0xfffa11).
  */
 void MFP_InServiceB_ReadByte(void)
 {
@@ -1215,7 +1215,7 @@ void MFP_InServiceB_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle read from interupt mask register A (0xfffa13).
+ * Handle read from interrupt mask register A (0xfffa13).
  */
 void MFP_MaskA_ReadByte(void)
 {
@@ -1226,7 +1226,7 @@ void MFP_MaskA_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle read from interupt mask register B (0xfffa15).
+ * Handle read from interrupt mask register B (0xfffa15).
  */
 void MFP_MaskB_ReadByte(void)
 {

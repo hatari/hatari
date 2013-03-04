@@ -32,7 +32,7 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
   operation interrupts the current operation. The DRQ status can
   be polled non-destructively in GPIP.
 
-  (For simplicity, the operation is finished immediatly,
+  (For simplicity, the operation is finished immediately,
   this is a potential bug, but I doubt it is significant,
   we just appear to have a very fast hard drive.)
 

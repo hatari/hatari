@@ -344,7 +344,7 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pDi
 		return -1;
 	}
 
-	/* check for a .msa or .st extention */
+	/* check for a .msa or .st extension */
 	if (MSA_FileNameIsMSA(filename, false))
 	{
 		*pDiskType = ZIP_FILE_MSA;

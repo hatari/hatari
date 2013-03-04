@@ -380,7 +380,7 @@ static void Screen_SetResolution(void)
 		/* Statusbar height for doubled screen size */
 		SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
-		Resolution_GetLimits(&maxW, &maxH, &BitCount);
+		Resolution_GetLimits(&maxW, &maxH, &BitCount, ConfigureParams.Screen.bKeepResolutionST);
 		
 		/* Zoom if necessary, factors used for scaling mouse motions */
 		if (STRes == ST_LOW_RES &&
@@ -502,7 +502,7 @@ static void Screen_SetResolution(void)
 		if (sdlscrn->format->BitsPerPixel == 8)
 			Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
 		else
-			Screen_SetupRGBTable();         /* Create color convertion table */
+			Screen_SetupRGBTable();         /* Create color conversion table */
 
 		Statusbar_Init(sdlscrn);
 		
@@ -536,8 +536,8 @@ void Screen_Init(void)
 	/* Allocate previous screen check workspace. We are going to double-buffer a double-buffered screen. Oh. */
 	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
 	{
-		FrameBuffers[i].pSTScreen = malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
-		FrameBuffers[i].pSTScreenCopy = malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
+		FrameBuffers[i].pSTScreen = malloc(MAX_VDI_BYTES);
+		FrameBuffers[i].pSTScreenCopy = malloc(MAX_VDI_BYTES);
 		if (!FrameBuffers[i].pSTScreen || !FrameBuffers[i].pSTScreenCopy)
 		{
 			fprintf(stderr, "Failed to allocate frame buffer memory.\n");

@@ -72,7 +72,7 @@ EMULATEDDRIVE **emudrives = NULL;
 #define  ISHARDDRIVE(Drive)  (Drive!=-1)
 
 /*
-  Disk Tranfer Address (DTA)
+  Disk Transfer Address (DTA)
 */
 #define TOS_NAMELEN  14
 
@@ -591,7 +591,7 @@ void GemDOS_InitDrives(void)
 	/* Now initialize all available drives */
 	for(i = 0; i < nMaxDrives; i++)
 	{
-		// Create the letter equivilent string identifier for this drive
+		// Create the letter equivalent string identifier for this drive
 		char sDriveLetter[] = { PATHSEP, (char)('C' + i), '\0' };
 
 		/* If single partition mode, skip to the right entry */
@@ -1097,7 +1097,7 @@ static void check_tos_len(const char *path, const char *fullpath)
  * 
  * TODO: currently there are many callers which give this dest buffer of
  * MAX_GEMDOS_PATH size i.e. don't take into account that host filenames
- * can be upto FILENAME_MAX long.  Plain GEMDOS paths themselves may be
+ * can be up to FILENAME_MAX long.  Plain GEMDOS paths themselves may be
  * MAX_GEMDOS_PATH long even before host dir is prepended to it!
  * Way forward: allocate the host path here as FILENAME_MAX so that
  * it's always long enough and let callers free it. Assert if alloc
@@ -2632,6 +2632,9 @@ static bool GemDOS_GSDToF(Uint32 Params)
 /*-----------------------------------------------------------------------*/
 /**
  * Map GEMDOS call opcodes to their names
+ * 
+ * Mapping is based on TOSHYP information:
+ *	http://toshyp.atari.org/en/005013.html
  */
 static const char* GemDOS_Opcode2Name(Uint16 opcode)
 {
@@ -2657,7 +2660,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
 		"Cauxis",
 		"Cauxos",
 		"Maddalt",
-		"-", /* 15 */
+		"Srealloc", /* TOS4 */
 		"-", /* 16 */
 		"-", /* 17 */
 		"-", /* 18 */
@@ -2816,14 +2819,13 @@ void GemDOS_Info(Uint32 bShowOpcodes)
 #endif /* !ENABLE_TRACING */
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Run GEMDos call, and re-direct if need to. Used to handle hard disk emulation etc...
  * This sets the condition codes (in SR), which are used in the 'cart_asm.s' program to
  * decide if we need to run old GEM vector, or PExec or nothing.
  *
- * This method keeps the stack and other states consistant with the original ST which is very important
- * for the PExec call and maximum compatibility through-out
+ * This method keeps the stack and other states consistent with the original ST
+ * which is very important for the PExec call and maximum compatibility through-out
  */
 void GemDOS_OpCode(void)
 {
@@ -3011,7 +3013,7 @@ void GemDOS_OpCode(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * GemDOS_Boot - routine called on the first occurence of the gemdos opcode.
+ * GemDOS_Boot - routine called on the first occurrence of the gemdos opcode.
  * (this should be in the cartridge bootrom)
  * Sets up our gemdos handler (or, if we don't need one, just turn off keyclicks)
  */
@@ -3039,7 +3041,7 @@ void GemDOS_Boot(void)
 		act_pd = STMemory_ReadLong(TosAddress + 0x28);
 	}
 
-	/* Save old GEMDOS handler adress */
+	/* Save old GEMDOS handler address */
 	STMemory_WriteLong(CART_OLDGEMDOS, STMemory_ReadLong(0x0084));
 	/* Setup new GEMDOS handler, see "cart_asm.s" */
 	STMemory_WriteLong(0x0084, CART_GEMDOS);

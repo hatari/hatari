@@ -991,7 +991,7 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	/* Is the transfer finished ? */
 	if (microwire.mwTransferSteps > 0)
 	{
-		/* No ==> start a new internal interrupt to continue to tranfer the data */
+		/* No ==> start a new internal interrupt to continue to transfer the data */
 		microwire.pendingCyclesOver = 8 - microwire.pendingCyclesOver;
 		CycInt_AddRelativeInterrupt(microwire.pendingCyclesOver, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}

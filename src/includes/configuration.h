@@ -17,6 +17,7 @@ typedef struct
   int nAlertDlgLogLevel;
   bool bConfirmQuit;
   bool bNatFeats;
+  bool bConsoleWindow;	/* for now, used just for Windows */
 } CNF_LOG;
 
 

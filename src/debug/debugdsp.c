@@ -186,7 +186,7 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 	printf("DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	while (dsp_disasm_addr < dsp_disasm_upper) {
 		DebugDsp_ShowAddressInfo(dsp_disasm_addr);
-		dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_addr);
+		dsp_disasm_addr = DSP_DisasmAddress(stderr, dsp_disasm_addr, dsp_disasm_addr);
 	}
 
 	return DEBUGGER_CMDCONT;
@@ -310,7 +310,7 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 {
 	char command[32];
 	Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
-	sprintf(command, "pc=$%x :once\n", nextpc);
+	sprintf(command, "pc=$%x :once :quiet\n", nextpc);
 	if (BreakCond_Command(command, true)) {
 		nDspSteps = 0;		/* using breakpoint, not steps */
 		return DEBUGGER_END;
@@ -342,8 +342,7 @@ static int DebugDsp_BreakCond(int nArgc, char *psArgs[])
  */
 static int DebugDsp_Profile(int nArgc, char *psArgs[])
 {
-	Profile_Command(nArgc, psArgs, true);
-	return DEBUGGER_CMDDONE;
+	return Profile_Command(nArgc, psArgs, true);
 }
 
 

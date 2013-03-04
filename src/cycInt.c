@@ -286,7 +286,7 @@ static void CycInt_UpdateInterrupt(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Adjust all interrupt timings as 'ActiveInterrupt' has occured, and
+ * Adjust all interrupt timings as 'ActiveInterrupt' has occurred, and
  * remove from active list.
  */
 void CycInt_AcknowledgeInterrupt(void)
@@ -294,7 +294,7 @@ void CycInt_AcknowledgeInterrupt(void)
 	/* Update list cycle counts */
 	CycInt_UpdateInterrupt();
 
-	/* Disable interrupt entry which has just occured */
+	/* Disable interrupt entry which has just occurred */
 	InterruptHandlers[ActiveInterrupt].bUsed = false;
 
 	/* Set new */

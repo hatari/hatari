@@ -131,22 +131,29 @@ static inline unsigned short	Disass68kGetWord(long addr)
 static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 {
 	long	index;
-
+	long	fileLength;
+	int	lineCount;
+	char	*fbuf;
+	FILE	*f;
+	
 	if(filebuf)
 		*filebuf = NULL;
-	FILE	*f = fopen(filename, "r");
+	f = fopen(filename, "r");
 	if(!f) return 0;
 	if(fseek(f, 0, SEEK_END))
 		return 0;
-	long	fileLength = ftell(f);
-	if(!fileLength) return 0;
+	fileLength = ftell(f);
+	if(fileLength <= 0) return 0;
 	if(fseek(f, 0, SEEK_SET))
 		return 0;
-	char	*fbuf = malloc(fileLength);
+	fbuf = malloc(fileLength);
 	if(!fbuf) return 0;
 	if((size_t)fileLength != fread(fbuf, sizeof(char), fileLength, f))
+	{
+		free(fbuf);
 		return 0;
-	int	lineCount = 0;
+	}
+	lineCount = 0;
 	for(index=0; index<fileLength; ++index)
 	{
 		if(fbuf[index] == '\r')	// convert potential CR into a space (which we ignore at the end of the line anyway)
@@ -164,15 +171,16 @@ static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 
 static void			Disass68kLoadStructInfo(const char *filename)
 {
+	int	i,j;
+	char	*nextLine;
+	char	*line;
 	char	*fbuf = NULL;
 	int		lineCount = Disass68kLoadTextFile(filename, &fbuf);
-	if(!lineCount) { if(fbuf) free(fbuf); return; }
+	if(!lineCount) return;
 	disStructEntry	*se = NULL;
 	disStructEntries = realloc(disStructEntries, sizeof(disStructEntry) * (disStructCounts + lineCount));
 	if(!disStructEntries) { free(fbuf); return; }
-	char	*line = fbuf;
-	char	*nextLine;
-	int	i,j;
+	line = fbuf;
 
 	for(i=0; i<lineCount; line = nextLine, ++i)
 	{
@@ -238,14 +246,15 @@ static void			Disass68kLoadStructInfo(const char *filename)
 
 static void			Disass68kLoadSymbols(const char *filename)
 {
+	int	i,j;
+	char	*nextLine;
+	char	*line;
 	char	*fbuf = NULL;
 	int		lineCount = Disass68kLoadTextFile(filename, &fbuf);
-	if(!lineCount) { if(fbuf) free(fbuf); return; }
+	if(!lineCount) return;
 	disSymbolEntries = realloc(disSymbolEntries, sizeof(disSymbolEntry) * (disSymbolCounts + lineCount));
 	if(!disSymbolEntries) { free(fbuf); return; }
-	char	*line = fbuf;
-	char	*nextLine;
-	int	i,j;
+	line = fbuf;
 
 	for(i=0; i<lineCount; line = nextLine, ++i)
 	{
@@ -1696,7 +1705,6 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 {
 	long	baseAddr = addr;
 	int		val;
-	const char	*sp;
 	labelBuffer[0] = 0;
 	opcodeBuffer[0] = 0;
 	operandBuffer[0] = 0;
@@ -1824,6 +1832,8 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 
 	case dtPointer:
 	case dtFunctionPointer:
+				{
+				const char	*sp;
 				val = (Disass68kGetWord(addr) << 16) | Disass68kGetWord(addr+2);
 				sp = Disass68kSymbolName(val, 2);
 				strcpy(opcodeBuffer,"DC.L");
@@ -1832,6 +1842,7 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 				else
 					sprintf(operandBuffer,"$%6.6x", val);
 				return 4;
+				}
 
 	default:	break;
 	}
@@ -1919,6 +1930,7 @@ more:
 				static const char	*sccCond[16]  = {  "T",  "F", "HI", "LS",  "CC", "CS", "NE", "EQ",  "VC", "VS", "PL", "MI",  "GE", "LT", "GT", "LE" };
 				static const char	*dbCond[16]   = {  "T", "RA", "HI", "LS",  "CC", "CS", "NE", "EQ",  "VC", "VS", "PL", "MI",  "GE", "LT", "GT", "LE" };
 				static const char	*fpuCond[64]  = { "F", "EQ", "OGT", "OGE", "OLT", "OLE", "OGL", "OR", "UN", "UEQ", "UGT", "UGE", "ULT", "ULE", "NE", "T", "SF", "SEQ", "GT", "GE", "LT", "LE", "GL", "GLE", "NGLE", "NGL", "NLE", "NLT", "NGE", "NGT", "SNE", "ST" };
+				char	buf[8];
 
 				const char	*sp = NULL;
 				switch(ots->opcodeName[++i])
@@ -1946,7 +1958,6 @@ more:
 				{
 					if(options & doptOpcodesSmall)
 					{
-						char	buf[8];
 						strcpy(buf, sp);
 						sp = buf;
 						char	*bp = buf;
@@ -2395,7 +2406,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 
     while (cnt-- > 0) {
-		int		addrWidth = 6;		// 6 on an ST, 8 on a TT
+		const int	addrWidth = 6;		// 6 on an ST, 8 on a TT
 		char	lineBuffer[1024];
 
 		char	addressBuffer[32];
@@ -2454,10 +2465,10 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		{
 			/* assume comments are for things which aren't profiled */
 			float percentage;
-			Uint32 count, cycles;
-			if (Profile_CpuAddressData(addr, &percentage, &count, &cycles))
+			Uint32 count, cycles, misses;
+			if (Profile_CpuAddressData(addr, &percentage, &count, &cycles, &misses))
 			{
-				sprintf(commentBuffer, "%5.2f%% (%d, %d)", percentage, count, cycles);
+				sprintf(commentBuffer, "%5.2f%% (%u, %u, %u)", percentage, count, cycles, misses);
 				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+1, 0);
 			}
 		}
@@ -2537,23 +2548,26 @@ void Disasm_SetColumns(int *pos)
  */
 void Disasm_DisableColumn(int column, int *oldcols, int *newcols)
 {
-	int i, diff;
+	int i, diff = 0;
 
-	/* verify columns are in numeric order */
 	assert(column >= 0 && column < DISASM_COLUMNS);
-	for (i = 1; i < DISASM_COLUMNS; i++)
+	if (column+1 < DISASM_COLUMNS)
+		diff = oldcols[column+1] - oldcols[column];
+
+	for (i = 0; i < DISASM_COLUMNS; i++)
 	{
-		if (oldcols[i-1] > oldcols[i])
+		if (i && oldcols[i-1] > oldcols[i])
 		{
 			printf("WARNING: disassembly columns aren't in the expected order!\n");
 			return;
 		}
+		if (i < column)
+			newcols[i] = oldcols[i];
+		else if (i > column)
+			newcols[i] = oldcols[i] - diff;
+		else
+			newcols[column] = DISASM_COLUMN_DISABLE;
 	}
-	/* disable given column from disassembly and move rest of cols left */
-	newcols[column] = DISASM_COLUMN_DISABLE;
-	diff = oldcols[column+1] - oldcols[column];
-	for (i = column+1; i < DISASM_COLUMNS; i++)
-		newcols[i] = oldcols[i] - diff;
 }
 
 /**

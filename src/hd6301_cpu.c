@@ -906,7 +906,7 @@ static void hd6301_sei(void)
 }
 
 /**
- * SBA : substract accumulator B from accumulator A : A=A-B
+ * SBA : subtract accumulator B from accumulator A : A=A-B
  *
  * HINZVC
  * ..****
@@ -2619,7 +2619,7 @@ static void hd6301_clr_ext(void)
 }
 
 /**
- * SUBA_IMM : substract immediate value from accumulator A : A=A-M
+ * SUBA_IMM : subtract immediate value from accumulator A : A=A-M
  *
  * HINZVC
  * ..****
@@ -2657,7 +2657,7 @@ static void hd6301_cmpa_imm(void)
 }
 
 /**
- * SBCA_IMM : substract with carry immediate value from accumulator A : A=A-M-C
+ * SBCA_IMM : subtract with carry immediate value from accumulator A : A=A-M-C
  *
  * HINZVC
  * ..****
@@ -2678,7 +2678,7 @@ static void hd6301_sbca_imm(void)
 }
 
 /**
- * SUBD_IMM : substract immediate value from accumulator D : D=D-MM
+ * SUBD_IMM : subtract immediate value from accumulator D : D=D-MM
  *
  * HINZVC
  * ..****
@@ -2870,7 +2870,7 @@ static void hd6301_lds_imm(void)
 }
 
 /**
- * SUBA_DIR : substract direct memory address value from accumulator A : A=A-M
+ * SUBA_DIR : subtract direct memory address value from accumulator A : A=A-M
  *
  * HINZVC
  * ..****
@@ -2910,7 +2910,7 @@ static void hd6301_cmpa_dir(void)
 }
 
 /**
- * SBCA_DIR : substract with carry direct memory address value from accumulator A : A=A-M-C
+ * SBCA_DIR : subtract with carry direct memory address value from accumulator A : A=A-M-C
  *
  * HINZVC
  * ..****
@@ -2932,7 +2932,7 @@ static void hd6301_sbca_dir(void)
 }
 
 /**
- * SUBD_DIR : substract direct memory address value from accumulator D : D=D-MM
+ * SUBD_DIR : subtract direct memory address value from accumulator D : D=D-MM
  *
  * HINZVC
  * ..****
@@ -3177,7 +3177,7 @@ static void hd6301_sts_dir(void)
 }
 
 /**
- * SUBA_IND : substract indexed memory address value from accumulator A : A=A-M
+ * SUBA_IND : subtract indexed memory address value from accumulator A : A=A-M
  *
  * HINZVC
  * ..****
@@ -3217,7 +3217,7 @@ static void hd6301_cmpa_ind(void)
 }
 
 /**
- * SBCA_IND : substract with carry indexed memory address value from accumulator A : A=A-M-C
+ * SBCA_IND : subtract with carry indexed memory address value from accumulator A : A=A-M-C
  *
  * HINZVC
  * ..****
@@ -3239,7 +3239,7 @@ static void hd6301_sbca_ind(void)
 }
 
 /**
- * SUBD_IND : substract indexed memory address value from accumulator D : D=D-MM
+ * SUBD_IND : subtract indexed memory address value from accumulator D : D=D-MM
  *
  * HINZVC
  * ..****
@@ -3484,7 +3484,7 @@ static void hd6301_sts_ind(void)
 }
 
 /**
- * SUBA_EXT : substract extented memory address value from accumulator A : A=A-M
+ * SUBA_EXT : subtract extented memory address value from accumulator A : A=A-M
  *
  * HINZVC
  * ..****
@@ -3524,7 +3524,7 @@ static void hd6301_cmpa_ext(void)
 }
 
 /**
- * SBCA_EXT : substract with carry extented memory address value from accumulator A : A=A-M-C
+ * SBCA_EXT : subtract with carry extented memory address value from accumulator A : A=A-M-C
  *
  * HINZVC
  * ..****
@@ -3546,7 +3546,7 @@ static void hd6301_sbca_ext(void)
 }
 
 /**
- * SUBD_EXT : substract extented memory address value from accumulator D : D=D-MM
+ * SUBD_EXT : subtract extented memory address value from accumulator D : D=D-MM
  *
  * HINZVC
  * ..****
@@ -3791,7 +3791,7 @@ static void hd6301_sts_ext(void)
 }
 
 /**
- * SUBB_IMM : substract immediate value from accumulator B : B=B-M
+ * SUBB_IMM : subtract immediate value from accumulator B : B=B-M
  *
  * HINZVC
  * ..****
@@ -3829,7 +3829,7 @@ static void hd6301_cmpb_imm(void)
 }
 
 /**
- * SBCB_IMM : substract with carry immediate value from accumulator B : B=B-M-C
+ * SBCB_IMM : subtract with carry immediate value from accumulator B : B=B-M-C
  *
  * HINZVC
  * ..****
@@ -4022,7 +4022,7 @@ static void hd6301_ldx_imm(void)
 }
 
 /**
- * SUBB_DIR : substract direct memory address value from accumulator B : B=B-M
+ * SUBB_DIR : subtract direct memory address value from accumulator B : B=B-M
  *
  * HINZVC
  * ..****
@@ -4062,7 +4062,7 @@ static void hd6301_cmpb_dir(void)
 }
 
 /**
- * SBCB_DIR : substract with carry direct memory address value from accumulator B : B=B-M-C
+ * SBCB_DIR : subtract with carry direct memory address value from accumulator B : B=B-M-C
  *
  * HINZVC
  * ..****
@@ -4334,7 +4334,7 @@ static void hd6301_stx_dir(void)
 }
 
 /**
- * SUBB_IND : substract indexed memory address value from accumulator B : B=B-M
+ * SUBB_IND : subtract indexed memory address value from accumulator B : B=B-M
  *
  * HINZVC
  * ..****
@@ -4374,7 +4374,7 @@ static void hd6301_cmpb_ind(void)
 }
 
 /**
- * SBCB_IND : substract with carry indexed memory address value from accumulator B : B=B-M-C
+ * SBCB_IND : subtract with carry indexed memory address value from accumulator B : B=B-M-C
  *
  * HINZVC
  * ..****
@@ -4646,7 +4646,7 @@ static void hd6301_stx_ind(void)
 }
 
 /**
- * SUBB_EXT : substract extended memory address value from accumulator B : B=B-M
+ * SUBB_EXT : subtract extended memory address value from accumulator B : B=B-M
  *
  * HINZVC
  * ..****
@@ -4686,7 +4686,7 @@ static void hd6301_cmpb_ext(void)
 }
 
 /**
- * SBCB_EXT : substract with carry extended memory address value from accumulator B : B=B-M-C
+ * SBCB_EXT : subtract with carry extended memory address value from accumulator B : B=B-M-C
  *
  * HINZVC
  * ..****

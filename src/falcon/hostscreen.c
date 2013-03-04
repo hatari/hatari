@@ -122,7 +122,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 		height /= scaley;
 	}
 
-	Resolution_GetLimits(&maxw, &maxh, &bpp);
+	Resolution_GetLimits(&maxw, &maxh, &bpp, ConfigureParams.Screen.bKeepResolution);
 	nScreenZoomX = nScreenZoomY = 1;
 	
 	if (ConfigureParams.Screen.bAspectCorrect) {
