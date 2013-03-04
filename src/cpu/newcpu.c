@@ -2726,7 +2726,15 @@ STATIC_INLINE void InterruptAddJitter (int Level , int Pending)
 
 static bool do_specialties_interrupt (int Pending)
 {
-    /* Check for MFP ints first (level 6) */
+#if ENABLE_DSP_EMU
+    /* Check for DSP int first (if enabled) (level 6) */
+    if (regs.spcflags & SPCFLAG_DSP) {
+       if (DSP_ProcessIRQ() == true)
+         return true;
+    }
+#endif
+
+    /* Check for MFP ints (level 6) */
     if (regs.spcflags & SPCFLAG_MFP) {
        if (MFP_ProcessIRQ() == true)
          return true;					/* MFP exception was generated, no higher interrupt can happen */

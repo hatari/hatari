@@ -39,6 +39,7 @@
 #define SPCFLAG_MFP 0x200
 #define SPCFLAG_EXEC 0x400
 #define SPCFLAG_MODE_CHANGE 0x800
+#define SPCFLAG_DSP 0x1000
 
 
 #ifndef SET_CFLG

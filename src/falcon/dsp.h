@@ -33,6 +33,7 @@ extern bool bDspEnabled;
 extern bool bDspHostInterruptPending;
 
 /* Dsp commands */
+extern bool DSP_ProcessIRQ(void);
 extern void DSP_Init(void);
 extern void DSP_UnInit(void);
 extern void DSP_Reset(void);

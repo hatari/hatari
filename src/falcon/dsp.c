@@ -72,12 +72,28 @@ static const char* x_ext_memory_addr_name[] = {
 static void DSP_TriggerHostInterrupt(void)
 {
 	bDspHostInterruptPending = true;
+	M68000_SetSpecial(SPCFLAG_DSP);
+}
+#endif
 
-	/* Note: The DSP interrupt is not wired to the MFP on a real Falcon
-	 * (but to the COMBEL chip). But in Hatari we still handle it with
-	 * the SPCFLAG_MFP to avoid taking care of another special flag in
-	 * the CPU core! */
-	M68000_SetSpecial(SPCFLAG_MFP);
+
+/**
+ * This function is called from the CPU emulation part when SPCFLAG_DSP is set.
+ * If the DSP's IRQ signal is set, we check that SR allows a level 6 interrupt,
+ * and if so, we call M68000_Exception.
+ */
+#if ENABLE_DSP_EMU
+bool	DSP_ProcessIRQ(void)
+{
+	if (bDspHostInterruptPending && regs.intmask < 6)
+	{
+		M68000_Exception(IoMem_ReadByte(0xffa203)*4, M68000_EXC_SRC_INT_DSP);
+		bDspHostInterruptPending = false;
+		M68000_UnsetSpecial(SPCFLAG_DSP);
+		return true;
+	}
+
+	return false;
 }
 #endif
 
