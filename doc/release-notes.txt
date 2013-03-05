@@ -20,6 +20,10 @@ Emulation:
   - Full implementation of the MC6850 ACIA, giving much more robust
     IKBD emulation
   - Better timings for all IKBD commands (measured on a real STF)
+- MFP changes :
+  - Fixed priority errors when simultaneous interrupts happened
+  - MFP's IRQ should be delayed by 4 cycles before reaching the CPU
+  - MFP's IRQ signal was not correctly updated in some cases
 - Other changes :
   - Fix: GEMDOS HD emulation overwrote last 28 bytes of basepage space
     for the started process command line (with with program header)
@@ -106,8 +110,13 @@ Other changes:
   and to clean 'nm' output of GCC & VBCC built a.out binaries for it
 
 Fixed Games:
-- Captain Blood (IKBD, fixed problem when setting the clock)
-- Fokker and Downfall (ACIA/IKBD, had regressed in Hatari v1.6.x)
+  Bolo (MFP, couldn't start a game)
+  Captain Blood (IKBD, fixed problem when setting the clock)
+  Fokker and Downfall (ACIA/IKBD, had regressed in Hatari v1.6.x)
+  Super Hang On and Super Monaco GP (MFP, flickering rasters)
+
+Fixed demos :
+  Audio Artistic Demo by Big Alec (MFP, bad sample speed at start)
 
 
  Version 1.6.2 (2012-06-24):
