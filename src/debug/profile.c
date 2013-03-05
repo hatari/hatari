@@ -1516,7 +1516,7 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 			fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
 		}
 		fprintf(out, "CARTRIDGE:\t0xfa0000-0xfc0000\n");
-		Profile_CpuShowAddresses(0, 0xFC0000, out);
+		Profile_CpuShowAddresses(0, 0xFC0000-2, out);
 		Profile_CpuShowCallers(out);
 	}
 	fclose(out);
