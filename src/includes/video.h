@@ -101,7 +101,7 @@
 #define VBL_VIDEO_CYCLE_OFFSET_STE	(64+4)			/* 4 cycles difference on STE */
 
 #define HBL_VIDEO_CYCLE_OFFSET		0			/* cycles after end of current line (ie on every 512 cycles in 50 Hz) */
-#define TIMERB_VIDEO_CYCLE_OFFSET	28			/* cycles after last displayed pixels : 376+28 in 50 Hz or 372+28 in 60 Hz */
+#define TIMERB_VIDEO_CYCLE_OFFSET	24			/* cycles after last displayed pixels : 376+24 in 50 Hz or 372+24 in 60 Hz */
 
 /* This is when ff8205/07/09 are reloaded with the content of ff8201/03 (on line 310 in 50 Hz) */
 #define RESTART_VIDEO_COUNTER_CYCLE_STF	( (SCANLINES_PER_FRAME_50HZ-3) * CYCLES_PER_LINE_50HZ + 48 )

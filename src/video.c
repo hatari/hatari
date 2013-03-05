@@ -312,6 +312,9 @@
 /* 2012/05/19	[NP]	Allow bottom border to be removed when switch back to 50 Hz is made at	*/
 /*			cycle 504 and more (instead of 508 and more). Same for top border	*/
 /*			(fix 'Musical Wonders 1990' by Offbeat).				*/
+/* 2013/03/05	[NP]	An extra 4 cycle delay is added by the MFP to set IRQ when the timer B	*/
+/*			expires in event count mode. Update TIMERB_VIDEO_CYCLE_OFFSET to 24	*/
+/*			cycles instead of 28 to compensate for this and keep the same position.	*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1382,7 +1385,7 @@ void Video_Sync_WriteByte ( void )
 
 
 	/* If the frequence changed, we need to update the EndLine interrupt */
-	/* so that it happens 28 cycles after the current DisplayEndCycle.*/
+	/* so that it happens TIMERB_VIDEO_CYCLE_OFFSET cycles after the current DisplayEndCycle.*/
 	/* We check if the change affects the current line or the next one. */
 	/* We also need to check if the HBL interrupt and nCyclesPerLine need */
 	/* to be updated first. */
@@ -1783,10 +1786,10 @@ static void Video_StartHBL(void)
  * End Of Line interrupt
  * This interrupt is started on cycle position 404 in 50 Hz and on cycle
  * position 400 in 60 Hz. 50 Hz display ends at cycle 376 and 60 Hz displays
- * ends at cycle 372. This means the EndLine interrupt happens 28 cycles
+ * ends at cycle 372. This means the EndLine interrupt happens 24 cycles
  * after DisplayEndCycle.
  * Note that if bit 3 of MFP AER is 1, then timer B will count start of line
- * instead of end of line (at cycle 52+28 or 56+28)
+ * instead of end of line (at cycle 52+24 or 56+24)
  */
 void Video_InterruptHandler_EndLine(void)
 {
@@ -1808,7 +1811,7 @@ void Video_InterruptHandler_EndLine(void)
 	/* Generate new Endline, if need to - there are 313 HBLs per frame */
 	if (nHBL < nScanlinesPerFrame-1)
 	{
-		/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
+		/* By default, next EndLine's int will be on line nHBL+1 at pos 376+24 or 372+24 */
 		if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )		/* count end of line */
 		{
 			/* If EndLine int is delayed too much (more than 100 cycles), nLineCycles will */
