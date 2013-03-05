@@ -585,14 +585,16 @@ class ProfileCallers(Output):
                 count, flags = info
                 pname, offset = symbols.get_preceeding_symbol(laddr)
                 if len(flags) > 1:
-                    self.warning("Caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (flags, pname))
+                    self.warning("caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (flags, pname))
                 elif flags in self.removable_calltypes:
                     ignore += count
                     continue
                 # function address for the caller
                 paddr = laddr - offset
                 parent = profile[paddr]
-                assert(pname == parent.name)
+                if pname != parent.name:
+                    self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
+                    parent.name = pname
                 # link parent and child function together
                 item = (laddr, count)
                 if paddr in child.parent:
