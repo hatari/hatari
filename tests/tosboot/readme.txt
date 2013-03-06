@@ -80,6 +80,8 @@ supports:
   test program which doesn't change the floppy content (to avoid its
   repository file update).
 
+* ACSI and IDE interface testing with EmuTOS
+
 * Arbitrary boolean Hatari command line options specified
   with the "--bool" option
 
@@ -111,7 +113,7 @@ Memory configurations:
   TT:     2 & 10 MB
   Falcon: 4 & 14 MB
 
-And both with GEMDOS HD and just floppy.
+And both with GEMDOS HD and just floppy.  For EmuTOS, also IDE & ACSI.
 
 Testing should be done both for old UAE CPU core and the new WinUAE
 one.  This should give good enough coverage of all the possible bootup
@@ -133,8 +135,8 @@ But only if all TOS versions support that properly.
 
 -
 
-Add testing of ASCI and IDE drives in addition to the GEMDOS HD and
-floppy tests.
+Add testing of ASCI and IDE drives with normal TOS in addition to the
+GEMDOS HD and floppy tests.
 
 This isn't very straightforward because both need different drivers
 and therefore different disk images and the drivers either have issues
@@ -142,9 +144,13 @@ with e.g. EmuTOS, or don't support all machines.  Formatting and
 installing the drivers requires using interactive Atari programs,
 so these images cannot be automatically (re-)generated.
 
-EmuTOS supports directly HDs with DOS (not Atari) partition table,
-but only for ASCI.  Maybe that could be tested first, possibly with
-a disk having also MiNT (= WinUAE / MMU testing at the same time).
+(EmuTOS supports IDE and ACSI directly, without any need for drivers.
+Both HDs with DOS (not Atari) partition table, and ones without
+partition table at all.  That's why it can be already tested.)
+
+-
+
+Testing a HD disk having also MiNT (= WinUAE / MMU testing at the same time).
 
 -
 
