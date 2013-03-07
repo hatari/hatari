@@ -33,8 +33,6 @@ int VDIRes = 0;                    /* 0,1 or 2 (low, medium, high) */
 int VDIWidth = 640;                /* 640x480, 800x600 or 1024x768 */
 int VDIHeight = 480;
 int VDIPlanes = 4;
-static int VDIColors = 16;
-static int VDICharHeight = 8;
 
 static Uint32 LineABase;           /* Line-A structure */
 static Uint32 FontBase;            /* Font base, used for 16-pixel high font */
@@ -227,28 +225,23 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 	 case GEMCOLOR_2:
 		VDIRes = 2;
 		VDIPlanes = 1;
-		VDIColors = 2;
 		break;
 	 case GEMCOLOR_4:
 		VDIRes = 1;
 		VDIPlanes = 2;
-		VDIColors = 4;
 		break;
 	 case GEMCOLOR_16:
 		VDIRes = 0;
 		VDIPlanes = 4;
-		VDIColors = 16;
 		break;
 	}
-	VDICharHeight = HeightRequest < 400 ? 8 : 16;
-
 	/* screen size in bytes needs to be below limit */
 	VDI_ByteLimit(&w, &h, VDIPlanes);
 
 	/* width needs to be aligned to 16 bytes */
 	VDIWidth = VDI_Limit(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-	/* height needs to be multiple of cell height */
-	VDIHeight = VDI_Limit(h, VDICharHeight, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+	/* height needs to be multiple of cell height (either 8 or 16) */
+	VDIHeight = VDI_Limit(h, 16, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 
 	printf("VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
 	       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
@@ -867,10 +860,10 @@ void VDI_LineA(Uint32 linea, Uint32 fontbase)
 {
 	if (bUseVDIRes)
 	{
-		STMemory_WriteWord(linea-46, VDICharHeight);          /* v_cel_ht */
+		int cel_ht = STMemory_ReadWord(linea-46);             /* v_cel_ht */
 		STMemory_WriteWord(linea-44, (VDIWidth/8)-1);         /* v_cel_mx (cols-1) */
-		STMemory_WriteWord(linea-42, (VDIHeight/VDICharHeight)-1);  /* v_cel_my (rows-1) */
-		STMemory_WriteWord(linea-40, VDICharHeight*((VDIWidth*VDIPlanes)/8));  /* v_cel_wr */
+		STMemory_WriteWord(linea-42, (VDIHeight/cel_ht)-1);   /* v_cel_my (rows-1) */
+		STMemory_WriteWord(linea-40, cel_ht*((VDIWidth*VDIPlanes)/8));  /* v_cel_wr */
 
 		STMemory_WriteWord(linea-12, VDIWidth);               /* v_rez_hz */
 		STMemory_WriteWord(linea-4, VDIHeight);               /* v_rez_vt */
@@ -897,7 +890,7 @@ void VDI_Complete(void)
 
 	STMemory_WriteWord(VDIIntout, VDIWidth-1);           /* IntOut[0] Width-1 */
 	STMemory_WriteWord(VDIIntout+1*2, VDIHeight-1);      /* IntOut[1] Height-1 */
-	STMemory_WriteWord(VDIIntout+13*2, VDIColors);       /* IntOut[13] #colors */
+	STMemory_WriteWord(VDIIntout+13*2, 1 << VDIPlanes);  /* IntOut[13] #colors */
 	STMemory_WriteWord(VDIIntout+39*2, 512);             /* IntOut[39] #available colors */
 
 	STMemory_WriteWord(LineABase-0x15a*2, VDIWidth-1);   /* WKXRez */
