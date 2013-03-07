@@ -1505,10 +1505,25 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 	fprintf(out, "Hatari %s profile\n", proc);
 	fprintf(out, "Cycles/second:\t%u\n", freq);
 	if (bForDsp) {
+		/* Comma separated descriptions for the profile disassembly data fields.
+		 * Instructions and cycles need to be first two fields!
+		 */
+		fputs("Field names:\tExecuted instructions, Used cycles, Largest cycle differences (= code changes during profiling)\n", out);
+		/* (Python) pegexp that matches address and all describled fields from disassembly:
+		 * <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
+                 * p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
+		 */
+                fputs("Field regexp:\t^p:([0-9a-f]+) .*% \\((.*)\\)$\n", out);
 		Profile_DspShowAddresses(0, DSP_PROFILE_ARR_SIZE, out);
 		Profile_DspShowCallers(out);
 	} else {
 		Uint32 text;
+		fputs("Field names:\tExecuted instructions, Used cycles, Instruction cache misses\n", out);
+		/* (Python) pegexp that matches address and all describled fields from disassembly:
+		 * $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
+		 * $e5af38 :   rts           0.00% (12, 0, 12)
+		 */
+                fputs("Field regexp:\t^\\$([0-9a-f]+) :.*% \\((.*)\\)$\n", out);
 		/* some information for interpreting the addresses */
 		fprintf(out, "ROM_TOS:\t0x%06x-0x%06x\n", TosAddress, TosAddress + TosSize);
 		text = DebugInfo_GetTEXT();

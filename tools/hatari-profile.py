@@ -263,18 +263,19 @@ class InstructionStats:
     # in this, FunctionStats, ProfileCallers and ProfileGraph classes
     callcount_field = 0
     instructions_field = 1
+    cycles_field = 2
 
-    def __init__(self, processor, hz, info):
-        "function name, processor name, its speed, processor info dict"
-        self.cycles_field = info["cycles_field"]
-        self.names = info["fields"]
+    def __init__(self, processor, clock, fields):
+        "processor name, its speed and profile field names"
+        # Calls item will be deducted from instruction values
+        self.names = ["Calls"] + fields
         self.items = len(self.names)
         self.max_line = [0] * self.items
         self.max_addr = [0] * self.items
         self.max_val = [0] * self.items
         self.totals = [0] * self.items
         self.processor = processor
-        self.hz = hz
+        self.clock = clock	# in Hz
         self.areas = {}		# which memory area boundaries have been passed
 
     def change_area(self, function, name, addr):
@@ -303,7 +304,7 @@ class InstructionStats:
 
     def get_time(self, data):
         "return time (in seconds) spent by given data item"
-        return float(data[self.cycles_field])/self.hz
+        return float(data[self.cycles_field])/self.clock
 
     def sum_values(self, functions):
         "calculate totals for given functions data"
@@ -317,8 +318,12 @@ class InstructionStats:
 
 class ProfileSymbols(Output):
     "class for handling parsing and matching symbols, memory areas and their addresses"
+    # profile file field name for program text/code address range
+    text_area = "PROGRAM_TEXT"
+    # default emulation memory address range name
+    default_area = "RAM"
 
-    def __init__(self, text_area):
+    def __init__(self):
         Output.__init__(self)
         self.names = None
         self.symbols = None	# (addr:symbol) dict for resolving
@@ -326,24 +331,16 @@ class ProfileSymbols(Output):
         self.relative = {}	# (addr:symbol) dict of relative symbols
         self.symbols_need_sort = False
         self.symbols_sorted = None	# sorted list of symbol addresses
-        self.areas = None
-        # default emulation memory address range name
-        # (for processor for which current data is for)
-        self.default_area = None
-        # TEXT area name
-        self.text_area = text_area
-        # memory areas:
+        # Non-overlapping memory areas that may be specified in profile file
+        # (checked if instruction is before any of the symbol addresses)
+        self.areas = {}		# (name:(start,end))
+        # memory area format:
         # <area>: 0x<hex>-0x<hex>
         # TOS:	0xe00000-0xe80000
         self.r_area = re.compile("^([^:]+):[^0]*0x([0-9a-f]+)-0x([0-9a-f]+)$")
         # symbol file format:
         # [0x]<hex> [tTbBdD] <symbol/objectfile name>
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
-
-    def set_areas(self, areas, default):
-        "set areas dict and default (zero-started) RAM area name"
-        self.default_area = default
-        self.areas = areas
 
     def parse_areas(self, fobj, parsed):
         "parse memory area lines from data"
@@ -360,9 +357,6 @@ class ProfileSymbols(Output):
             name, start, end = match.groups()
             end = int(end, 16)
             start = int(start, 16)
-            if name not in self.areas:
-                self.warning("unrecognized memory area '%s' on line %d" % (name, parsed))
-                continue
             self.areas[name] = (start, end)
             if end < start:
                 self.error_exit("invalid memory area '%s': 0x%x-0x%x on line %d" % (name, start, end, parsed))
@@ -701,26 +695,26 @@ class ProfileCallers(Output):
 class EmulatorProfile(Output):
     "Emulator profile data file parsing and profile information"
 
-    def __init__(self, emuid, processor, symbols):
+    def __init__(self):
         Output.__init__(self)
-        self.symbols = symbols		# ProfileSymbols instance
-        self.processor = processor	# processor information dict
+        self.symbols = ProfileSymbols()
         self.callers = ProfileCallers()
 
         # profile data format
         #
         # emulator ID line:
-        # <ID> <processor name> profile
-        self.emuid = emuid
+        # <Emulator> <processor name> profile
+        #
         # processor clock speed
         self.r_clock = re.compile("^Cycles/second:\t([0-9]+)$")
-        # processor names, memory areas and their disassembly formats
-        # are specified by subclasses with disasm argument
+        # field names
+        self.r_fields = re.compile("^Field names:\t(.*)$")
+        # processor disassembly format regexp is gotten from profile file
+        self.r_regexp = re.compile("Field regexp:\t(.*)$")
         self.r_address = None
-        self.r_disasm = {}
-        for key in processor.keys():
-            assert(processor[key]['areas'] and processor[key]['fields'])
-            self.r_disasm[key] = re.compile(processor[key]['regexp'])
+        # memory address information is parsed by ProfileSymbols
+        #
+        # this class parses symbols from disassembly itself:
         # <symbol/objectfile name>: (in disassembly)
         # _biostrap:
         self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
@@ -752,22 +746,30 @@ class EmulatorProfile(Output):
         "get profile processor type and speed information or exit if it's unknown"
         line = fobj.readline()
         field = line.split()
-        if len(field) != 3 or field[0] != self.emuid:
-            self.error_exit("unrecognized file, line 1:\n\t%smisses %s profiler identification" % (line, self.emuid))
-
+        if len(field) != 3 or field[2] != "profile":
+            self.error_exit("unrecognized file, line 1\n\t%s\nnot in format:\n\t<emulator> <processor> profile" % (line))
         processor = field[1]
-        if processor not in self.processor:
-            self.error_exit("unrecognized profile processor type '%s' on line 1:\n\t%s" % (processor, line))
-        self.symbols.set_areas(self.processor[processor]["areas"], "%s_RAM" % processor)
 
         line = fobj.readline()
         match = self.r_clock.match(line)
         if not match:
-            self.error_exit("invalid %s clock information on line 2:\n\t%s" % (processor, line))
-        info =  self.processor[processor]
-        self.stats = InstructionStats(processor, int(match.group(1)), info)
-        self.r_address = self.r_disasm[processor]
-        return 2
+            self.error_exit("invalid %s clock HZ information on line 2:\n\t%s" % (processor, line))
+        clock = int(match.group(1))
+
+        line = fobj.readline()
+        match = self.r_fields.match(line)
+        if not match:
+            self.error_exit("invalid %s profile disassembly field descriptions on line 3:\n\t%s" % (processor, line))
+        fields = [x.strip() for x in match.group(1).split(',')]
+        self.stats = InstructionStats(processor, clock, fields)
+
+        line = fobj.readline()
+        match = self.r_regexp.match(line)
+        try:
+            self.r_address = re.compile(match.group(1))
+        except (AttributeError, re.error) as error:
+            self.error_exit("invalid %s profile disassembly regexp on line 4:\n\t%s\n%s" % (processor, line, error))
+        return 4
 
     def _change_function(self, function, newname, addr):
         "store current function data and then reset to new function"
@@ -887,58 +889,6 @@ class EmulatorProfile(Output):
         # finish
         self.stats.sum_values(self.profile.values())
         self.callers.complete(self.profile, self.symbols)
-
-
-class HatariProfile(EmulatorProfile):
-    "EmulatorProfile subclass for Hatari with suitable data parsing regexps and processor information"
-    def __init__(self):
-        # Emulator name used as first word in profile file
-        name = "Hatari"
-
-        # name used for program code section in "areas" dicts below
-        text_area = "PROGRAM_TEXT"
-
-        # information on emulated processors
-        #
-        # * Non-overlapping memory areas that may be specified in profile,
-        #   and their default values (zero = undefined at this stage).
-        #   (Checked if instruction are before any of the symbol addresses)
-        #
-        # * Regexp for the processor disassembly information,
-        #   its match contains 2 items:
-        #   - instruction address
-        #   - 3 comma separated performance values
-        # 
-        processors = {
-            "CPU" : {
-                "areas" : {
-                    text_area	: (0, 0),
-                    "ROM_TOS"	: (0xe00000, 0xe80000),
-                    "CARTRIDGE"	: (0xfa0000, 0xfc0000)
-                },
-                # $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
-                # $e5af38 :   rts           0.00% (12, 0, 12)
-                "regexp" : "^\$([0-9a-f]+) :.*% \((.*)\)$",
-                # First 2 fields are always function call counts and instruction
-                # counts, then come ones from second "regexp" match group
-                "fields" : ("Calls", "Executed instructions", "Used cycles", "Instruction cache misses"),
-                "cycles_field": 2
-            },
-            "DSP" : {
-                "areas" : {
-                    text_area	: (0, 0),
-                },
-                # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
-                # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
-                "regexp" : "^p:([0-9a-f]+) .*% \((.*)\)$",
-                # First 2 fields are always function call counts and instruction
-                # counts, then come ones from second "regexp" match group
-                "fields" : ("Calls", "Executed instructions", "Used cycles", "Largest cycle differences (= code changes during profiling)"),
-                "cycles_field": 2
-            }
-        }
-        symbols = ProfileSymbols(text_area)
-        EmulatorProfile.__init__(self, name, processors, symbols)
 
 
 class ProfileSorter:
@@ -1406,7 +1356,7 @@ class Main(Output):
             self.usage(err)
 
         propagate = False
-        prof = HatariProfile()
+        prof = EmulatorProfile()
         graph = ProfileGraph()
         stats = ProfileStats()
         for opt, arg in opts:
