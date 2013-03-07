@@ -9,22 +9,33 @@
 # for KCachegrind:
 #       http://kcachegrind.sourceforge.net/
 """
-A tool for post-processing Hatari debugger profiling information
-produced with the following debugger command:
-	profile addresses 0 <file name>
+A tool for post-processing emulator HW profiling data.
 
-It sums profiling information given for code addresses, to functions
-where those addresses/instruction belong to.  All addresses between
-two function names (in profile file) or symbol addresses (in symbols
-file) are assumed to belong to the first function/symbol.
+In Hatari debugger you get (CPU) profiling data with the following
+commands (for Falcon DSP data, prefix commands with 'dsp'):
+	profile on
+        continue
+        ...
+	profile save <file name>
 
-Supported (Hatari CPU and DSP) profile items are instruction counts,
-used cycles and (CPU instruction) cache misses.
+Profiling information for code addresses is summed together and
+assigned to functions where those addresses belong to. All addresses
+between two function names (in profile file) or symbol addresses
+(read from symbols files) are assumed to belong to the preceeding
+function/symbol.
+
+Tool output will contain at least:
+- (deduced) call counts,
+- executed instruction counts, and
+- spent processor cycles.
+
+If profile data contains other information (e.g. cache misses),
+that is also shown.
 
 Provided symbol information should be in same format as for Hatari
-debugger 'symbols' command.  If addresses are within ROM area, they're
-interpreted as absolute, otherwise, as relative to program TEXT (code)
-section start address start given in the profile data file.
+debugger 'symbols' command.  Note that files containing absolute
+addresses and ones containing relatives addresses need to be given
+with different options!
 
 
 Usage: hatari-profile [options] <profile files>
@@ -32,7 +43,7 @@ Usage: hatari-profile [options] <profile files>
 Options:
 	-a <symbols>	absolute symbol address information file
         -r <symbols>	TEXT (code section) relative symbols file
-        -s		list profile statistics
+        -s		output profile statistics
         -t		list top functions for all profile items
         -i		add address and time information to lists
         -f <count>	list at least first <count> items
@@ -64,21 +75,23 @@ For each given profile file, output is:
 - profile statistics
 - a sorted list of functions, for each of the profile data items
   (calls, instructions, cycles...)
-- callgraph in DOT format, for each of the profile data items,
-  for each profile file, saved to <name>-<itemindex>.dot files
+- callgraph in DOT format for each of the profile data items, in
+  each profile file, saved to <filename>-<itemindex>.dot files
   (prof1-0.dot, prof1-2.dot etc)
 
 
 When both -l and -f options are specified, they're combined.  Produced
-lists contain at least the number of items specified for -f, and more
-if there are additional items which percentage of the total value is
-larger than one given for -l.  In callgraphs these options just affect
-which nodes are highlighted unless -p option is used.
+lists contain at least the number of items specified for -f option,
+and more if there are additional items which percentage of the total
+value is larger than one given for -l option.  In callgraphs these
+options just affect which nodes are highlighted unless -p option is
+used.
 
 
-With the -p option, costs for a function include also costs for
-everything else it calls.  Nodes which (propagated) cost percentages
-of the total are below -l limit, are removed from the callgraphs.
+With the -p option, costs for a function include also (estimated)
+costs for everything else it calls.  Nodes which (propagated) cost
+percentages of the total are below -l limit, are removed from the
+callgraphs.
 
 NOTE: Because caller information in profile file has only call counts
 between functions, other costs can be propagated correctly to callers
@@ -94,16 +107,19 @@ Call information filtering options:
         --no-calls <[bersux]+>	remove calls of given types, default = 'ux'
 	--ignore-to <list>	ignore calls to these symbols
 
+(Give --no-calls option an unknown type to see type descriptions.)
+
 <list> is a comma separate list of symbol names, like this:
 	--ignore-to _int_timerc,_int_vbl
 
 These options affect the number of calls reported for functions and
 the values that are propagated upwards from them with the -p option.
 
-Typically interrupt handler symbols are good to give for --ignore-to
-option as switching to them gets recorded as a call by the profiler,
-and that can happen at any time.  In callgraphs, one can investigate
-them separately using "no-calls '' --only <handler>" options.
+If default --no-calls type removal doesn't remove all interrupt
+handler switches (switching to them gets recorded as a call by the
+profiler, and those switches can happen at any time), give handler
+names to --ignore-to option.  In callgraphs, one can then investigate
+them separately using "no-calls '' --only <name>" options.
 
 
 Callgraph visualization options:
@@ -117,7 +133,8 @@ If node's own cost exceeds the limit, it has also gray background.
 
 
 Callgraph filtering options to remove nodes and edges from the graph:
-	--compact		only 1 arrow between same nodes
+	--compact		only 1 arrow between nodes, instead of
+        			arrow for each call site within function
 	--no-intermediate	remove nodes with single parent & child
 	--no-leafs		remove nodes which have either:
 				- one parent and no children, or
