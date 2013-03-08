@@ -131,14 +131,15 @@ Callgraph filtering options to remove nodes and edges from the graph:
         			arrow for each call site within function
 	--no-intermediate	remove nodes with single parent & child
 	--no-leafs		remove nodes which have either:
-				- one parent and no children, or
-				- one child and no parents
+				- one parent and no children,
+				- one child and no parents, or
+				- no children nor parents
 	--ignore <list>         no nodes for these symbols
 	--ignore-from <list>	no arrows from these symbols
         --only <list>           only these symbols and their callers
 
 Leaf and intermediate node removal options remove only nodes which
-own costs falls below limit given for -l option.
+own costs fall below limit given with the -l option.
 
 Functions which are called from everywhere (like malloc), may be good
 candinates for '--ignore' option when one wants a more readable graph.
@@ -683,8 +684,8 @@ class ProfileCallers(Output):
         for addr in leafs.keys():
             function = profile[addr]
             self._propagate_leaf_cost(profile, addr, function.data, {})
-        # convert values back to ints with rounding, and
-        # verify that every non-leaf node with parents was visited
+        # convert values back to ints with rounding, and verify
+        # that propagation handled every node with children
         for addr, function in profile.items():
             if function.total:
                 function.total = [int(round(x)) for x in function.total]
@@ -693,7 +694,7 @@ class ProfileCallers(Output):
                     # other children than it itself?
                     if caddr != addr:
                         self.warning("didn't propagate cost to:\n\t%s\n" % function)
-                        continue
+                        break
 
 
 class EmulatorProfile(Output):
@@ -1182,10 +1183,11 @@ label="%s";
         "get relinked copy of profile data with requested items removed from it"
         if not (self.remove_leafs or self.remove_intermediate):
             self.profile = profobj.profile
-            return
+            return 0
         # need our own copy so that it can be manipulated freely
         self.profile = deepcopy(profobj.profile)
         total = totals[field]
+        removed = 0
         while True:
             to_remove = {}
             for addr, function in self.profile.items():
@@ -1196,15 +1198,38 @@ label="%s";
                     continue
                 parents = len(function.parent)
                 children = len(function.child)
-                if self.remove_leafs and (parents + children) == 1:
-                    to_remove[addr] = True
-                elif self.remove_intermediate and parents == 1 and children == 1:
-                    to_remove[addr] = True
-
+                if self.remove_leafs:
+                    if (parents + children) <= 1:
+                        to_remove[addr] = True
+                        continue
+                    # refers just to itself?
+                    if children == 1 and addr == function.child.keys()[0]:
+                        to_remove[addr] = True
+                        continue
+                    if parents == 1 and addr == function.parent.keys()[0]:
+                        to_remove[addr] = True
+                        continue
+                if self.remove_intermediate:
+                    if parents == 1 and children == 1:
+                        to_remove[addr] = True
+                        continue
+                    # refers also to itself?
+                    if children == 2:
+                        for caddr in function.child.keys():
+                            if caddr == addr:
+                                to_remove[addr] = True
+                                break
+                    if parents == 2:
+                        for paddr in function.parent.keys():
+                            if paddr == addr:
+                                to_remove[addr] = True
+                                break
             if not to_remove:
                 break
             for addr in to_remove.keys():
                 self._remove_from_profile(addr)
+            removed += len(to_remove)
+        return removed
 
     def _filter_profile(self):
         "filter profile content to nodes and edges members based on ignore options"
@@ -1214,6 +1239,9 @@ label="%s";
         ignore_from = self.ignore_from + self.ignore
         for caddr, child in profile.items():
             if child.name in self.ignore:
+                continue
+            if not child.parent:
+                self.nodes[caddr] = True
                 continue
             for paddr, info in child.parent.items():
                 parent = profile[paddr]
@@ -1234,9 +1262,7 @@ label="%s";
                 # calls to child done from different locations in parent
                 for laddr, count in info:
                     self.edges[(laddr, caddr)] = (paddr, count, calls)
-        if self.nodes:
-            return True
-        return False
+        return (len(profile) - len(self.nodes))
 
     def _output_nodes(self, stats, field, limit):
         "output graph nodes from filtered nodes dict"
@@ -1300,8 +1326,9 @@ label="%s";
             if not stats.totals[field]:
                 continue
             # get potentially reduced instance copy of profile data
-            self._set_reduced_profile(profobj, stats.totals, field)
-            if not self._filter_profile():
+            removed = self._set_reduced_profile(profobj, stats.totals, field)
+            filtered = self._filter_profile()
+            if not self.nodes:
                 continue
             dotname = "%s-%d.dot" % (basename, field)
             self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
@@ -1310,17 +1337,23 @@ label="%s";
             except IOError, err:
                 self.warning(err)
                 continue
-            name = stats.names[field]
-            title = "%s, for %s" % (name, fname)
-            if field != 0 and self.show_propagated:
-                title += "\\n(Nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape)"
-            self.write(self.header % title)
             # limits are taken from full profile, not potentially reduced one
             sorter = ProfileSorter(profobj.profile, stats, None, False)
             if self.emph_limit:
                 limit = sorter.get_combined_limit(field, self.count, self.emph_limit)
             else:
                 limit = sorter.get_combined_limit(field, self.count, self.limit)
+            name = stats.names[field]
+            title = "%s\\nfor %s\\n\\n" % (name, fname)
+            title += "own cost emphasis (gray bg) limit = %.2f%%\\n" % self.limit
+            title += "(potentially propagated) cost emphasis (red) limit = %.2f%%\\n" % limit
+            if field != 0 and self.show_propagated:
+                title += "nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape\\n"
+            if removed:
+                title += "%d leaf and/or intermediate nodes below %.2f%% were removed\\n" % (removed, self.limit)
+            if filtered:
+                title += "%d nodes were filtered out\\n" % filtered
+            self.write(self.header % title)
             self._output_nodes(stats, field, limit)
             self._output_edges()
             self.write(self.footer)
