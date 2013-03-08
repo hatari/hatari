@@ -835,6 +835,7 @@ class EmulatorProfile(Output):
         while True:
             if not line:
                 break
+            self.linenro += 1
             line = line.strip()
             if line.startswith('#'):
                 pass
@@ -862,7 +863,6 @@ class EmulatorProfile(Output):
                 function = self._parse_line(function, addr, counts, discontinued)
                 discontinued = False
             # next line
-            self.linenro += 1
             line = fobj.readline()
         # finish
         self._change_function(function, None, 0)
