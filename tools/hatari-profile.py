@@ -1370,7 +1370,7 @@ class Main(Output):
         "ignore=",
         "ignore-to=",
         "ignore-from=",
-        "info"
+        "info",
         "limit=",
         "no-calls=",
         "no-intermediate",
