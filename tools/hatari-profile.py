@@ -1223,7 +1223,7 @@ label="%s";
                 calls = profile[caddr].data[0]
                 # calls to child done from different locations in parent
                 for laddr, count in info:
-                    self.edges[laddr] = (paddr, caddr, count, calls)
+                    self.edges[(laddr,caddr)] = (paddr, count, calls)
         if self.nodes:
             return True
         return False
@@ -1263,8 +1263,9 @@ label="%s";
 
     def _output_edges(self):
         "output graph edges from filtered edges dict, after nodes is called"
-        for laddr, data in self.edges.items():
-            paddr, caddr, count, calls = data
+        for linkage, data in self.edges.items():
+            laddr, caddr = linkage
+            paddr, count, calls = data
             pname = self.profile[paddr].name
             offset = laddr - paddr
             style = ""
