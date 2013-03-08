@@ -66,7 +66,7 @@ Long options for above are:
         --graph
         --verbose
 
-(Time info is shown only for cycles list.)
+(Timing --info is shown only for cycles list.)
 
 For example:
 	hatari-profile -a etos512k.sym -st -g -f 10 prof1.txt prof2.txt
@@ -75,8 +75,8 @@ For each given profile file, output is:
 - profile statistics
 - a sorted list of functions, for each of the profile data items
   (calls, instructions, cycles...)
-- callgraph in DOT format for each of the profile data items, in
-  each profile file, saved to <filename>-<itemindex>.dot files
+- callgraph in DOT format for each of the profile data items, for
+  each of the profile files, saved to <filename>-<itemindex>.dot file
   (prof1-0.dot, prof1-2.dot etc)
 
 
@@ -84,14 +84,11 @@ When both -l and -f options are specified, they're combined.  Produced
 lists contain at least the number of items specified for -f option,
 and more if there are additional items which percentage of the total
 value is larger than one given for -l option.  In callgraphs these
-options just affect which nodes are highlighted unless -p option is
-used.
+options mainly affect which nodes are highlighted.
 
 
 With the -p option, costs for a function include also (estimated)
-costs for everything else it calls.  Nodes which (propagated) cost
-percentages of the total are below -l limit, are removed from the
-callgraphs.
+costs for everything else it calls.
 
 NOTE: Because caller information in profile file has only call counts
 between functions, other costs can be propagated correctly to callers
@@ -112,21 +109,18 @@ Call information filtering options:
 <list> is a comma separate list of symbol names, like this:
 	--ignore-to _int_timerc,_int_vbl
 
-These options affect the number of calls reported for functions and
-the values that are propagated upwards from them with the -p option.
+These options change which calls are reported for functions, and
+therefore also the values that are propagated upwards from them with
+the -p option (as it changes call counts).
 
 If default --no-calls type removal doesn't remove all interrupt
-handler switches (switching to them gets recorded as a call by the
-profiler, and those switches can happen at any time), give handler
-names to --ignore-to option.  In callgraphs, one can then investigate
-them separately using "no-calls '' --only <name>" options.
+handling switches [1], give handler names to --ignore-to option.
+In callgraphs, one can then investigate them separately using
+"no-calls '' --only <name>" options.
 
+[1] Switching to interrupt handler gets recorded as "a call" to it
+    by the profiler, and such "calls" can happen at any time.
 
-Callgraph visualization options:
-        -e, --emph-limit <limit>  percentage limit for highlighted nodes
-
-When -e limit is given, -f & -e options are used for deciding which
-nodes to highlight, not -f & -l options.
 
 Nodes with costs that exceed the highlight limit have red outline.
 If node's own cost exceeds the limit, it has also gray background.
@@ -143,15 +137,20 @@ Callgraph filtering options to remove nodes and edges from the graph:
 	--ignore-from <list>	no arrows from these symbols
         --only <list>           only these symbols and their callers
 
-By default, leaf and intermediate node removal options remove only
-nodes which fall below -l option limit. But with -p option, they
-remove all leaf and intermdiate nodes as their costs are propagated
-to their parents, i.e. visible in rest of the graph.
+Leaf and intermediate node removal options remove only nodes which
+own costs falls below limit given for -l option.
 
 Functions which are called from everywhere (like malloc), may be good
 candinates for '--ignore' option when one wants a more readable graph.
 One can then investigate them separately with the '--only <function>'
 option.
+
+
+Callgraph visualization options:
+        -e, --emph-limit <limit>  percentage limit for highlighted nodes
+
+When -e limit is given, -f & -e options are used for deciding which
+nodes to highlight, not -f & -l options.
 
 
 To convert dot files e.g. to SVG, use:
@@ -584,6 +583,7 @@ class ProfileCallers(Output):
             self.present = False
             return
         self.present = True
+        all_ignored = 0
         # go through called functions...
         for caddr, caller in self.callinfo.items():
             child = profile[caddr]
@@ -620,7 +620,8 @@ class ProfileCallers(Output):
                 total += count
             # validate call count
             if ignore:
-                self.message("Ignoring %d call(s) to '%s'" % (ignore, child.name))
+                all_ignored += ignore
+                self.message("Ignoring %d switches to %s" % (ignore, child.name))
                 #total += ignore
                 child.data[0] -= ignore
             calls = child.data[0]
@@ -628,6 +629,8 @@ class ProfileCallers(Output):
                 info = (child.name, caddr, calls, total)
                 self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % info)
         self.callinfo = {}
+        if all_ignored:
+            self.message("In total, ignored %d switches of type(s) %s." % (all_ignored, list(self.removable_calltypes)))
 
     def _propagate_leaf_cost(self, profile, caddr, cost, track):
         """Propagate costs to function parents.  In case of call
@@ -685,11 +688,12 @@ class ProfileCallers(Output):
         for addr, function in profile.items():
             if function.total:
                 function.total = [int(round(x)) for x in function.total]
-            elif function.child and function.parent:
-                for paddr, dummy in function.parent.items():
-                    # other parent than it itself?
-                    if paddr != addr:
+            elif function.child:
+                for caddr in function.child.keys():
+                    # other children than it itself?
+                    if caddr != addr:
                         self.warning("didn't propagate cost to:\n\t%s\n" % function)
+                        continue
 
 
 class EmulatorProfile(Output):
@@ -1174,16 +1178,22 @@ label="%s";
         # remove it itself
         del profile[addr]
 
-    def _set_reduced_profile(self, profobj):
+    def _set_reduced_profile(self, profobj, totals, field):
         "get relinked copy of profile data with requested items removed from it"
         if not (self.remove_leafs or self.remove_intermediate):
             self.profile = profobj.profile
             return
         # need our own copy so that it can be manipulated freely
         self.profile = deepcopy(profobj.profile)
+        total = totals[field]
         while True:
             to_remove = {}
             for addr, function in self.profile.items():
+                count = function.data[field]
+                percentage = 100.0 * count / total
+                # don't remove functions which own costs are over the limit
+                if percentage > self.limit:
+                    continue
                 parents = len(function.parent)
                 children = len(function.child)
                 if self.remove_leafs and (parents + children) == 1:
@@ -1223,7 +1233,7 @@ label="%s";
                 calls = profile[caddr].data[0]
                 # calls to child done from different locations in parent
                 for laddr, count in info:
-                    self.edges[(laddr,caddr)] = (paddr, count, calls)
+                    self.edges[(laddr, caddr)] = (paddr, count, calls)
         if self.nodes:
             return True
         return False
@@ -1290,7 +1300,7 @@ label="%s";
             if not stats.totals[field]:
                 continue
             # get potentially reduced instance copy of profile data
-            self._set_reduced_profile(profobj)
+            self._set_reduced_profile(profobj, stats.totals, field)
             if not self._filter_profile():
                 continue
             dotname = "%s-%d.dot" % (basename, field)
@@ -1302,7 +1312,7 @@ label="%s";
                 continue
             name = stats.names[field]
             title = "%s, for %s" % (name, fname)
-            if self.show_propagated:
+            if field != 0 and self.show_propagated:
                 title += "\\n(Nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape)"
             self.write(self.header % title)
             # limits are taken from full profile, not potentially reduced one
