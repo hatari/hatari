@@ -9,6 +9,7 @@
 #define HATARI_CYCLES_H
 
 #include <stdbool.h>
+#include <SDL_endian.h>
 
 enum
 {
@@ -20,10 +21,11 @@ enum
 };
 
 
-extern int nCyclesMainCounter;
+extern int	nCyclesMainCounter;
+extern Sint64	CyclesGlobalClockCounter;
 
-extern int CurrentInstrCycles;
-extern int MovepByteNbr;
+extern int	CurrentInstrCycles;
+extern int	MovepByteNbr;
 
 
 extern void Cycles_MemorySnapShot_Capture(bool bSave);

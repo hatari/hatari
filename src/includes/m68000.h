@@ -175,6 +175,7 @@ static inline void M68000_AddCycles(int cycles)
 
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cycles, INT_CPU_CYCLE);
 	nCyclesMainCounter += cycles;
+	CyclesGlobalClockCounter += cycles;
 }
 
 
@@ -268,6 +269,7 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
 
 	nCyclesMainCounter += cycles;
+	CyclesGlobalClockCounter += cycles;
 	BusCyclePenalty = 0;
 }
 

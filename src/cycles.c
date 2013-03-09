@@ -33,12 +33,14 @@ const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
 #include "cycles.h"
 
 
-int nCyclesMainCounter;				/* Main cycles counter */
+int	nCyclesMainCounter;			/* Main cycles counter since previous Cycles_UpdateCounters() */
 
 static int nCyclesCounter[CYCLES_COUNTER_MAX];	/* Array with all counters */
 
-int CurrentInstrCycles;
-int MovepByteNbr = 0;				/* Number of the byte currently transferred in a movep (1..2 or 1..4) */
+Sint64	CyclesGlobalClockCounter = 0;		/* Global clock counter since starting Hatari (it's never reset afterwards) */
+
+int	CurrentInstrCycles;
+int	MovepByteNbr = 0;			/* Number of the byte currently transferred in a movep (1..2 or 1..4) */
 						/* 0 means current instruction is not a movep */
 
 
@@ -53,6 +55,7 @@ void Cycles_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	MemorySnapShot_Store(&nCyclesMainCounter, sizeof(nCyclesMainCounter));
 	MemorySnapShot_Store(nCyclesCounter, sizeof(nCyclesCounter));
+	MemorySnapShot_Store(&CyclesGlobalClockCounter, sizeof(CyclesGlobalClockCounter));
 	MemorySnapShot_Store(&CurrentInstrCycles, sizeof(CurrentInstrCycles));
 }
 
