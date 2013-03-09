@@ -1270,10 +1270,12 @@ label="%s";
         total = stats.totals[field]
         for addr in self.nodes.keys():
             shape = style = ""
+            estimated = False
             function = self.profile[addr]
             if self.show_propagated and function.total:
                 values = function.total
                 if function.estimated:
+                    estimated = True
                     shape = " shape=diamond"
             else:
                 values = function.data
@@ -1290,12 +1292,16 @@ label="%s";
                 # calls aren't estimated so they don't need different shapes
                 self.write("N_%X [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (addr, percentage, name, count, style))
                 continue
+            if estimated:
+                valuestr = "%.2f%%\\n(own: %.2f%%)" % (percentage, ownpercentage)
+            else:
+                valuestr = "%.2f%%" % percentage
             calls = values[0]
             if field == stats.cycles_field:
                 time = stats.get_time(values)
-                self.write("N_%X [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, percentage, time, name, calls, style, shape))
+                self.write("N_%X [label=\"%s\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, valuestr, time, name, calls, style, shape))
             else:
-                self.write("N_%X [label=\"%.2f%%\\n%d\\n%s\\n(%d calls)\"%s%s];\n" % (addr, percentage, count, name, calls, style, shape))
+                self.write("N_%X [label=\"%s\\n%d\\n%s\\n(%d calls)\"%s%s];\n" % (addr, valuestr, count, name, calls, style, shape))
 
     def _output_edges(self):
         "output graph edges from filtered edges dict, after nodes is called"
@@ -1305,7 +1311,7 @@ label="%s";
             pname = self.profile[paddr].name
             offset = laddr - paddr
             style = ""
-            if caddr in self.highlight or paddr in self.highlight:
+            if caddr in self.highlight:
                 style = " color=red"
             if offset:
                 label = "%s+%d\\n($%x)" % (pname, offset, laddr)
