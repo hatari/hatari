@@ -134,12 +134,14 @@ Callgraph filtering options to remove nodes and edges from the graph:
 				- one parent and no children,
 				- one child and no parents, or
 				- no children nor parents
+        --no-limited		remove _all_ nodes below -l limit
 	--ignore <list>         no nodes for these symbols
 	--ignore-from <list>	no arrows from these symbols
         --only <list>           only these symbols and their callers
 
 Leaf and intermediate node removal options remove only nodes which
-own costs fall below limit given with the -l option.
+own costs fall below limit given with the -l option.  Remember to
+give -l option with them as -l defaults to 0.0 on callgraphs!
 
 Functions which are called from everywhere (like malloc), may be good
 candinates for '--ignore' option when one wants a more readable graph.
@@ -148,6 +150,8 @@ option.
 
 
 Callgraph visualization options:
+	--mark <list>	  	  mark nodes which names contain any
+        			  of the listed string(s)
         -e, --emph-limit <limit>  percentage limit for highlighted nodes
 
 When -e limit is given, -f & -e options are used for deciding which
@@ -1128,7 +1132,9 @@ label="%s";
         self.output_enabled = False
         self.remove_intermediate = False
         self.remove_leafs = False
+        self.remove_limited = False
         self.only = []
+        self.mark = []
         self.ignore = []
         self.ignore_from = []
         self.emph_limit = 0
@@ -1146,9 +1152,17 @@ label="%s";
         "disable showing nodes which don't have children"
         self.remove_leafs = True
 
+    def disable_limited(self):
+        "disable showing all nodes which are below limit"
+        self.remove_limited = True
+
     def set_only(self, lst):
         "set list of only symbols to include"
         self.only = lst
+
+    def set_marked(self, lst):
+        "set list of substrings for symbols to mark in graphs"
+        self.mark = lst
 
     def set_ignore(self, lst):
         "set list of symbols to ignore"
@@ -1199,7 +1213,7 @@ label="%s";
 
     def _set_reduced_profile(self, profobj, totals, field):
         "get relinked copy of profile data with requested items removed from it"
-        if not (self.remove_leafs or self.remove_intermediate):
+        if not (self.remove_limited or self.remove_leafs or self.remove_intermediate):
             self.profile = profobj.profile
             return 0
         # need our own copy so that it can be manipulated freely
@@ -1212,7 +1226,10 @@ label="%s";
                 count = function.data[field]
                 percentage = 100.0 * count / total
                 # don't remove functions which own costs are over the limit
-                if percentage > self.limit:
+                if percentage >= self.limit:
+                    continue
+                if self.remove_limited:
+                    to_remove[addr] = True
                     continue
                 parents = len(function.parent)
                 children = len(function.child)
@@ -1306,6 +1323,10 @@ label="%s";
             if ownpercentage >= limit:
                 style = "%s style=filled fillcolor=lightgray" % style
             name = function.name
+            for substr in self.mark:
+                if substr in name:
+                    style = "%s style=filled fillcolor=green shape=square" % style
+                    break
             if field == 0:
                 # calls aren't estimated so they don't need different shapes
                 self.write("N_%X [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (addr, percentage, name, count, style))
@@ -1398,9 +1419,11 @@ class Main(Output):
         "ignore-from=",
         "info",
         "limit=",
+        "mark=",
         "no-calls=",
         "no-intermediate",
         "no-leafs",
+        "no-limited",
         "only=",
         "output=",
         "propagate",
@@ -1469,10 +1492,14 @@ class Main(Output):
                 graph.set_ignore_from(arg.split(','))
             elif opt == "--only":
                 graph.set_only(arg.split(','))
-            elif opt == "--no-leafs":
-                graph.disable_leafs()
+            elif opt == "--mark":
+                graph.set_marked(arg.split(','))
             elif opt == "--no-intermediate":
                 graph.disable_intermediate()
+            elif opt == "--no-leafs":
+                graph.disable_leafs()
+            elif opt == "--no-limited":
+                graph.disable_limited()
             # options specific to statistics
             elif opt in ("-i", "--info"):
                 stats.enable_info()
