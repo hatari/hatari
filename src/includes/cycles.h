@@ -22,7 +22,7 @@ enum
 
 
 extern int	nCyclesMainCounter;
-extern Sint64	CyclesGlobalClockCounter;
+extern Uint64	CyclesGlobalClockCounter;
 
 extern int	CurrentInstrCycles;
 extern int	MovepByteNbr;
