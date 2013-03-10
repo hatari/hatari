@@ -171,29 +171,29 @@ void STMemory_SetDefaultConfig(void)
 	{
 		/* Set the Falcon memory and monitor configuration register:
 
-         $ffff8006.b [R]  76543210  Monitor-memory
-                          ||||||||
-                          |||||||+- RAM Wait Status
-                          |||||||   0 =  1 Wait (default)
-                          |||||||   1 =  0 Wait
-                          ||||||+-- Video Bus size ???
-                          ||||||    0 = 16 Bit
-                          ||||||    1 = 32 Bit (default)
-                          ||||++--- ROM Wait Status
-                          ||||      00 = Reserved
-                          ||||      01 =  2 Wait (default)
-                          ||||      10 =  1 Wait
-                          ||||      11 =  0 Wait
-                          ||++----- Falcon Memory
-                          ||        00 =  1 MB
-                          ||        01 =  4 MB
-                          ||        10 = 14 MB
-                          ||        11 = no boot !
-                          ++------- Monitor-Typ
-                                    00 - Monochrome (SM124)
-                                    01 - Color (SC1224)
-                                    10 - VGA Color
-                                    11 - Television
+		         $ffff8006.b [R]  76543210  Monitor-memory
+		                          ||||||||
+		                          |||||||+- RAM Wait Status
+		                          |||||||   0 =  1 Wait (default)
+		                          |||||||   1 =  0 Wait
+		                          ||||||+-- Video Bus size ???
+		                          ||||||    0 = 16 Bit
+		                          ||||||    1 = 32 Bit (default)
+		                          ||||++--- ROM Wait Status
+		                          ||||      00 = Reserved
+		                          ||||      01 =  2 Wait (default)
+		                          ||||      10 =  1 Wait
+		                          ||||      11 =  0 Wait
+		                          ||++----- Falcon Memory
+		                          ||        00 =  1 MB
+		                          ||        01 =  4 MB
+		                          ||        10 = 14 MB
+		                          ||        11 = no boot !
+		                          ++------- Monitor-Typ
+		                                    00 - Monochrome (SM124)
+		                                    01 - Color (SC1224)
+		                                    10 - VGA Color
+		                                    11 - Television
 
 		Bit 1 seems not to be well documented. It's used by TOS at bootup to compute the memory size.
 		After some tests, I get the following RAM values (Bits 5, 4, 1 are involved) :
