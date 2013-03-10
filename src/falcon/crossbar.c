@@ -46,7 +46,7 @@
     $FF8937 (byte) : Codec Input Source
     $FF8938 (byte) : Codec ADC Input
     $FF8939 (byte) : Gain Settings Per Channel
-    $FF893A (byte) : Attenuation Settings Per Channel
+    $FF893A (word) : Attenuation Settings Per Channel
     $FF893C (word) : Codec Status
     $FF8940 (word) : GPIO Data Direction
     $FF8942 (word) : GPIO Data
@@ -1080,17 +1080,17 @@ void Crossbar_InputAmp_WriteByte(void)
 
 /**
  * Write byte to channel reduction register (attenuation for DAC device) (0xff893a).
- * 	Bits LLLLRRRR
+ * 	Bits XXXXLLLL RRRRXXXX
  * 	Reduction is in -1.5 dB steps
  */
-void Crossbar_OutputReduct_WriteByte(void)
+void Crossbar_OutputReduct_WriteWord(void)
 {
-	Uint8 reduction = IoMem_ReadByte(0xff893a);
+	Uint16 reduction = IoMem_ReadWord(0xff893a);
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) write: 0x%02x\n", IoMem_ReadByte(0xff893a));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a (CODEC channel attenuation) write: 0x%04x\n", reduction);
 
-	crossbar.attenuationSettingLeft = Crossbar_DAC_volume_table[reduction >> 4];
-	crossbar.attenuationSettingRight = Crossbar_DAC_volume_table[reduction & 0xf];
+	crossbar.attenuationSettingLeft = Crossbar_DAC_volume_table[(reduction >> 8) & 0x0f];
+	crossbar.attenuationSettingRight = Crossbar_DAC_volume_table[(reduction >> 4) & 0x0f];
 }
 
 /**

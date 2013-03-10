@@ -62,7 +62,7 @@ extern void Crossbar_TrackRecSelect_WriteByte(void);
 extern void Crossbar_CodecInput_WriteByte(void);
 extern void Crossbar_AdcInput_WriteByte(void);
 extern void Crossbar_InputAmp_WriteByte(void);
-extern void Crossbar_OutputReduct_WriteByte(void);
+extern void Crossbar_OutputReduct_WriteWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
 extern void Crossbar_Microwire_WriteWord(void);
 

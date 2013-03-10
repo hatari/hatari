@@ -236,8 +236,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8937, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_CodecInput_WriteByte },     /* CODEC input source from 16 bits adder */
 	{ 0xff8938, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_AdcInput_WriteByte },       /* ADC converter input for L+R channel */
 	{ 0xff8939, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_InputAmp_WriteByte },       /* Input amplifier (+1.5 dB step) */
-	{ 0xff893a, SIZE_BYTE, IoMem_ReadWithoutInterception, Crossbar_OutputReduct_WriteByte },   /* Output reduction (-1.5 dB step) */
-	{ 0xff893b, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },    /* No bus error here */
+	{ 0xff893a, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_OutputReduct_WriteWord },   /* Output reduction (-1.5 dB step) */
 	{ 0xff893c, SIZE_WORD, IoMem_ReadWithoutInterception, Crossbar_CodecStatus_WriteWord },    /* CODEC status */
 	{ 0xff893e, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },    /* No bus error here */
 	{ 0xff8940, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },    /* GPx direction */
