@@ -1122,7 +1122,7 @@ static inline void ide_set_irq(IDEState *s)
 	if (!(s->cmd & IDE_CMD_DISABLE_IRQ))
 	{
 		/* raise IRQ */
-		MFP_InputOnChannel(MFP_FDCHDC_BIT, MFP_IERB, &MFP_IPRB);
+		MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
 		MFP_GPIP &= ~0x20;
 	}
 }

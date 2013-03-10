@@ -1519,7 +1519,7 @@ static void Crossbar_Process_DMAPlay_Transfer(void)
 	{		
 		/* Send a MFP15_Int (I7) at end of replay buffer if enabled */
 		if (dmaPlay.mfp15_int) {
-			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
+			MFP_InputOnChannel ( MFP_INT_GPIP7 , 0 );
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA play\n");
 		}
 
@@ -1615,7 +1615,7 @@ void Crossbar_SendDataToDmaRecord(Sint16 value)
 	{
 		/* Send a MFP15_Int (I7) at end of record buffer if enabled */
 		if (dmaRecord.mfp15_int) {
-			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
+			MFP_InputOnChannel ( MFP_INT_GPIP7 , 0 );
 			LOG_TRACE(TRACE_CROSSBAR, "Crossbar : MFP15 (IT7) interrupt from DMA record\n");
 		}
 	

@@ -146,7 +146,7 @@ void Midi_Control_WriteByte(void)
 		Dprintf(("WriteControl: Transfer interrupt!\n"));
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
-		MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+		MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
 
 		MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 	}
@@ -227,7 +227,7 @@ void Midi_InterruptHandler_Update(void)
 		{
 			Dprintf(("WriteData: Transfer interrupt!\n"));
 			/* Acknowledge in MFP circuit, pass bit,enable,pending */
-			MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+			MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
 			MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 		}
 
@@ -251,7 +251,7 @@ void Midi_InterruptHandler_Update(void)
 			{
 				Dprintf(("WriteData: Receive interrupt!\n"));
 				/* Acknowledge in MFP circuit */
-				MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+				MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
 				MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 			}
 			MidiStatusRegister |= ACIA_SR_RX_FULL;

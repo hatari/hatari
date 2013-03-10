@@ -555,7 +555,7 @@ static void Blitter_Start(void)
 		BlitterRegs.ctrl &= ~0x80;
 
 		/* Blitter done interrupt */
-		MFP_InputOnChannel(MFP_GPU_DONE_BIT, MFP_IERB, &MFP_IPRB);
+		MFP_InputOnChannel ( MFP_INT_GPU_DONE , 0 );
 	}
 	else
 	{

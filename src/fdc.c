@@ -762,7 +762,7 @@ static int FDC_GetSidesPerDisk ( int Track )
 void FDC_AcknowledgeInterrupt ( void )
 {
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
-	MFP_InputOnChannel(MFP_FDCHDC_BIT,MFP_IERB,&MFP_IPRB);
+	MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
 	MFP_GPIP &= ~0x20;
 }
 

@@ -510,20 +510,20 @@ int	MFP_CheckPendingInterrupts ( void )
 //  static int cnt;
 //  fprintf ( stderr , "mfp check pend int %d\n" , cnt++ );
 
-	if ( MFP_InterruptRequest ( MFP_TIMER_GPIP7_BIT, MFP_IPRA, MFP_IMRA, 0x80, 0x00 ) )	/* Check MFP GPIP7 interrupt (bit 7) */
+	if ( MFP_InterruptRequest ( MFP_GPIP7_BIT, MFP_IPRA, MFP_IMRA, 0x80, 0x00 ) )		/* Check MFP GPIP7 interrupt (bit 7) */
 		return MFP_INT_GPIP7;
 	
 	if ( MFP_InterruptRequest ( MFP_TIMER_A_BIT, MFP_IPRA, MFP_IMRA, 0xe0, 0x00 ) )		/* Check Timer A (bit 5) */
-		return MFP_INT_TIMERA;
+		return MFP_INT_TIMER_A;
 
-	if ( MFP_InterruptRequest ( MFP_RCVBUFFULL_BIT, MFP_IPRA, MFP_IMRA, 0xf0, 0x00 ) )	/* Check Receive buffer full (bit 4) */
-		return MFP_INT_RECBUFFULL;
+	if ( MFP_InterruptRequest ( MFP_RCV_BUF_FULL_BIT, MFP_IPRA, MFP_IMRA, 0xf0, 0x00 ) )	/* Check Receive buffer full (bit 4) */
+		return MFP_INT_RCV_BUF_FULL;
 
-	if ( MFP_InterruptRequest ( MFP_TRNBUFEMPTY_BIT, MFP_IPRA, MFP_IMRA, 0xfc, 0x00 ) )	/* Check transmit buffer empty (bit 2) */
-		return MFP_INT_TRANSBUFFEMPTY;
+	if ( MFP_InterruptRequest ( MFP_TRN_BUF_EMPTY_BIT, MFP_IPRA, MFP_IMRA, 0xfc, 0x00 ) )	/* Check transmit buffer empty (bit 2) */
+		return MFP_INT_TRN_BUF_EMPTY;
 
 	if ( MFP_InterruptRequest ( MFP_TIMER_B_BIT, MFP_IPRA, MFP_IMRA, 0xff, 0x00 ) )		/* Check Timer B (bit 0) */
-		return MFP_INT_TIMERB;
+		return MFP_INT_TIMER_B;
 
 	if ( MFP_InterruptRequest ( MFP_FDCHDC_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0x80 ) )		/* Check FDC (bit 7) */
 		return MFP_INT_GPIP5;
@@ -532,18 +532,18 @@ int	MFP_CheckPendingInterrupts ( void )
 		return MFP_INT_ACIA;
 
 	if ( MFP_InterruptRequest ( MFP_TIMER_C_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xe0 ) )		/* Check Timer C (bit 5) */
-		return MFP_INT_TIMERC;
+		return MFP_INT_TIMER_C;
 
 	if ( MFP_InterruptRequest ( MFP_TIMER_D_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf0 ) )		/* Check Timer D (bit 4) */
-		return MFP_INT_TIMERD;
+		return MFP_INT_TIMER_D;
 
 	if ( MFP_InterruptRequest ( MFP_GPU_DONE_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf8 ) )	/* Check GPU done (bit 3) */
-		return MFP_INT_GPIP3;
+		return MFP_INT_GPU_DONE;
 
-	if ( MFP_InterruptRequest ( MFP_GPIP_1_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xfe ) )		/* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
+	if ( MFP_InterruptRequest ( MFP_GPIP1_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xfe ) )		/* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
 		return MFP_INT_GPIP1;
 
-	if ( MFP_InterruptRequest ( MFP_GPIP_0_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xff ) )		/* Check Centronics BUSY (bit 0) */
+	if ( MFP_InterruptRequest ( MFP_GPIP0_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xff ) )		/* Check Centronics BUSY (bit 0) */
 		return MFP_INT_GPIP0;
 
 	return -1;						/* No pending interrupt */
@@ -552,15 +552,24 @@ int	MFP_CheckPendingInterrupts ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Interrupt Channel is active, set pending bit so can be serviced
+ * If interrupt channel is active, set pending bit so it can be serviced
+ * later.
  */
-void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
+//void MFP_InputOnChannel ( Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
+void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 {
-	/* Input has occurred on MFP channel, set interrupt pending to request interrupt when able */
-	if (EnableBit&Bit)
+	Uint8	*pEnableReg;
+	Uint8	*pPendingReg;
+	Uint8	Bit;
+
+	Bit = MFP_ConvertIntNumber ( Interrupt , &pEnableReg , &pPendingReg , NULL , NULL );
+
+	/* Input has occurred on MFP channel, set interrupt pending to request service when able */
+	if ( *pEnableReg & Bit )
 		*pPendingReg |= Bit;			/* Set bit */
 	else
 		*pPendingReg &= ~Bit;			/* Clear bit */
+
 	MFP_UpdateIRQ();
 }
 
@@ -576,7 +585,7 @@ void MFP_TimerA_EventCount_Interrupt(void)
 		MFP_TA_MAINCOUNTER = MFP_TADR;		/* Reload timer from data register */
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
-		MFP_InputOnChannel(MFP_TIMER_A_BIT,MFP_IERA,&MFP_IPRA);
+		MFP_InputOnChannel ( MFP_INT_TIMER_A , 0 );
 	}
 	else
 	{
@@ -604,7 +613,7 @@ void MFP_TimerB_EventCount_Interrupt(void)
 		MFP_TB_MAINCOUNTER = MFP_TBDR;		/* Reload timer from data register */
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
-		MFP_InputOnChannel(MFP_TIMER_B_BIT,MFP_IERA,&MFP_IPRA);
+		MFP_InputOnChannel ( MFP_INT_TIMER_B , 0 );
 	}
 	else
 	{
@@ -1014,7 +1023,7 @@ void MFP_InterruptHandler_TimerA(void)
 
 	/* Acknowledge in MFP circuit, pass bit,enable,pending */
 	if ((MFP_TACR&0xf) != 0)            /* Is timer OK? */
-		MFP_InputOnChannel(MFP_TIMER_A_BIT, MFP_IERA, &MFP_IPRA);
+		MFP_InputOnChannel ( MFP_INT_TIMER_A , 0 );
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR, MFP_TADR, INTERRUPT_MFP_TIMERA, false, &TimerACanResume);
@@ -1036,7 +1045,7 @@ void MFP_InterruptHandler_TimerB(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TBCR&0xf) != 0)            /* Is timer OK? */
-		MFP_InputOnChannel(MFP_TIMER_B_BIT, MFP_IERA, &MFP_IPRA);
+		MFP_InputOnChannel ( MFP_INT_TIMER_B , 0 );
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR, MFP_TBDR, INTERRUPT_MFP_TIMERB, false, &TimerBCanResume);
@@ -1058,7 +1067,7 @@ void MFP_InterruptHandler_TimerC(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x70) != 0)          /* Is timer OK? */
-		MFP_InputOnChannel(MFP_TIMER_C_BIT, MFP_IERB, &MFP_IPRB);
+		MFP_InputOnChannel ( MFP_INT_TIMER_C , 0 );
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerCClockCycles = MFP_StartTimer_CD((MFP_TCDCR>>4)&7, MFP_TCDR, INTERRUPT_MFP_TIMERC, false, &TimerCCanResume);
@@ -1080,7 +1089,7 @@ void MFP_InterruptHandler_TimerD(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x07) != 0)          /* Is timer OK? */
-		MFP_InputOnChannel(MFP_TIMER_D_BIT, MFP_IERB, &MFP_IPRB);
+		MFP_InputOnChannel ( MFP_INT_TIMER_D , 0 );
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR&7, MFP_TDDR, INTERRUPT_MFP_TIMERD, false, &TimerDCanResume);

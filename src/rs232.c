@@ -316,7 +316,7 @@ static int RS232_ThreadFunc(void *pData)
 				cInChar = iInChar;
 				RS232_AddBytesToInputBuffer(&cInChar, 1);
 				/* FIXME: Use semaphores to lock MFP variables? */
-				MFP_InputOnChannel(MFP_RCVBUFFULL_BIT, MFP_IERA, &MFP_IPRA);
+				MFP_InputOnChannel ( MFP_INT_RCV_BUF_FULL , 0 );
 				Dprintf(("RS232: Read character $%x\n", iInChar));
 				/* Sleep for a while */
 				SDL_Delay(2);
@@ -628,7 +628,7 @@ bool RS232_TransferBytesTo(Uint8 *pBytes, int nBytes)
 		if (fwrite(pBytes, 1, nBytes, hComOut))
 		{
 			Dprintf(("RS232: Sent %i bytes ($%x ...)\n", nBytes, *pBytes));
-			MFP_InputOnChannel(MFP_TRNBUFEMPTY_BIT, MFP_IERA, &MFP_IPRA);
+			MFP_InputOnChannel ( MFP_INT_TRN_BUF_EMPTY , 0 );
 
 			return true;   /* OK */
 		}
@@ -803,7 +803,7 @@ void RS232_UDR_ReadByte(void)
 	if (RS232_GetStatus())              /* More data waiting? */
 	{
 		/* Yes, generate another interrupt. */
-		MFP_InputOnChannel(MFP_RCVBUFFULL_BIT, MFP_IERA, &MFP_IPRA);
+		MFP_InputOnChannel ( MFP_INT_RCV_BUF_FULL , 0 );
 	}
 }
 

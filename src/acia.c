@@ -380,7 +380,7 @@ void	ACIA_InterruptHandler_MFP ( void )
 	CycInt_AcknowledgeInterrupt();
 
 	/* Acknowledge in MFP circuit, pass bit,enable,pending */
-	MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+	MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
 }
 
 
