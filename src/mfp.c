@@ -489,40 +489,40 @@ int	MFP_CheckPendingInterrupts ( void )
 //  fprintf ( stderr , "mfp check pend int %d\n" , cnt++ );
 
 	if ( MFP_InterruptRequest ( MFP_TIMER_GPIP7_BIT, MFP_IPRA, MFP_IMRA, 0x80, 0x00 ) )	/* Check MFP GPIP7 interrupt (bit 7) */
-		return MFP_EXCEPT_GPIP7;
+		return MFP_INT_GPIP7;
 	
 	if ( MFP_InterruptRequest ( MFP_TIMER_A_BIT, MFP_IPRA, MFP_IMRA, 0xe0, 0x00 ) )		/* Check Timer A (bit 5) */
-		return MFP_EXCEPT_TIMERA;
+		return MFP_INT_TIMERA;
 
 	if ( MFP_InterruptRequest ( MFP_RCVBUFFULL_BIT, MFP_IPRA, MFP_IMRA, 0xf0, 0x00 ) )	/* Check Receive buffer full (bit 4) */
-		return MFP_EXCEPT_RECBUFFULL;
+		return MFP_INT_RECBUFFULL;
 
 	if ( MFP_InterruptRequest ( MFP_TRNBUFEMPTY_BIT, MFP_IPRA, MFP_IMRA, 0xfc, 0x00 ) )	/* Check transmit buffer empty (bit 2) */
-		return MFP_EXCEPT_TRANSBUFFEMPTY;
+		return MFP_INT_TRANSBUFFEMPTY;
 
 	if ( MFP_InterruptRequest ( MFP_TIMER_B_BIT, MFP_IPRA, MFP_IMRA, 0xff, 0x00 ) )		/* Check Timer B (bit 0) */
-		return MFP_EXCEPT_TIMERB;
+		return MFP_INT_TIMERB;
 
 	if ( MFP_InterruptRequest ( MFP_FDCHDC_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0x80 ) )		/* Check FDC (bit 7) */
-		return MFP_EXCEPT_GPIP5;
+		return MFP_INT_GPIP5;
 
 	if ( MFP_InterruptRequest ( MFP_ACIA_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xc0 ) )		/* Check ACIA (Keyboard or MIDI) (bit 6) */
-		return MFP_EXCEPT_ACIA;
+		return MFP_INT_ACIA;
 
 	if ( MFP_InterruptRequest ( MFP_TIMER_C_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xe0 ) )		/* Check Timer C (bit 5) */
-		return MFP_EXCEPT_TIMERC;
+		return MFP_INT_TIMERC;
 
 	if ( MFP_InterruptRequest ( MFP_TIMER_D_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf0 ) )		/* Check Timer D (bit 4) */
-		return MFP_EXCEPT_TIMERD;
+		return MFP_INT_TIMERD;
 
 	if ( MFP_InterruptRequest ( MFP_GPU_DONE_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf8 ) )	/* Check GPU done (bit 3) */
-		return MFP_EXCEPT_GPIP3;
+		return MFP_INT_GPIP3;
 
 	if ( MFP_InterruptRequest ( MFP_GPIP_1_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xfe ) )		/* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
-		return MFP_EXCEPT_GPIP1;
+		return MFP_INT_GPIP1;
 
 	if ( MFP_InterruptRequest ( MFP_GPIP_0_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xff ) )		/* Check Centronics BUSY (bit 0) */
-		return MFP_EXCEPT_GPIP0;
+		return MFP_INT_GPIP0;
 
 	return -1;						/* No pending interrupt */
 }

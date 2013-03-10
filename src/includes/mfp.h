@@ -9,23 +9,23 @@
 #define HATARI_MFP_H
 
 /* List of MFP interrupts (GPIP is General Purpose I/O Interrupt Port) */
-#define  MFP_EXCEPT_GPIP7           15  /* Highest Priority */
-#define  MFP_EXCEPT_GPIP6           14
-#define  MFP_EXCEPT_TIMERA          13
-#define  MFP_EXCEPT_RECBUFFULL      12
-#define  MFP_EXCEPT_RECERR          11
-#define  MFP_EXCEPT_TRANSBUFFEMPTY  10
-#define  MFP_EXCEPT_TRANSERR        9
-#define  MFP_EXCEPT_TIMERB          8
+#define  MFP_INT_GPIP7			15		/* Highest Priority */
+#define  MFP_INT_GPIP6			14
+#define  MFP_INT_TIMERA			13
+#define  MFP_INT_RECBUFFULL		12
+#define  MFP_INT_RECERR			11
+#define  MFP_INT_TRANSBUFFEMPTY		10
+#define  MFP_INT_TRANSERR		9
+#define  MFP_INT_TIMERB			8
 
-#define  MFP_EXCEPT_GPIP5      7
-#define  MFP_EXCEPT_ACIA       6
-#define  MFP_EXCEPT_TIMERC     5
-#define  MFP_EXCEPT_TIMERD     4
-#define  MFP_EXCEPT_GPIP3      3
-#define  MFP_EXCEPT_GPIP2      2
-#define  MFP_EXCEPT_GPIP1      1
-#define  MFP_EXCEPT_GPIP0      0  /* Lowest Priority */
+#define  MFP_INT_GPIP5			7
+#define  MFP_INT_ACIA			6
+#define  MFP_INT_TIMERC			5
+#define  MFP_INT_TIMERD			4
+#define  MFP_INT_GPIP3			3
+#define  MFP_INT_GPIP2			2
+#define  MFP_INT_GPIP1			1
+#define  MFP_INT_GPIP0			0		/* Lowest Priority */
 
 /* MFP register defines */
 #define  MFP_TIMER_GPIP7_BIT  0x80
