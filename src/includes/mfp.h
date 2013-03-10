@@ -69,7 +69,7 @@ extern int  MFP_CheckPendingInterrupts(void);
 //extern void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg);
 extern void MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles );
 extern void MFP_TimerA_EventCount_Interrupt(void);
-extern void MFP_TimerB_EventCount_Interrupt(void);
+extern void MFP_TimerB_EventCount_Interrupt( int Delayed_Cycles );
 extern void MFP_InterruptHandler_TimerA(void);
 extern void MFP_InterruptHandler_TimerB(void);
 extern void MFP_InterruptHandler_TimerC(void);

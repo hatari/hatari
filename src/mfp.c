@@ -621,16 +621,16 @@ void MFP_TimerA_EventCount_Interrupt(void)
 /**
  * Generate Timer B Interrupt when in Event Count mode
  */
-void MFP_TimerB_EventCount_Interrupt(void)
+void MFP_TimerB_EventCount_Interrupt ( int Delayed_Cycles )
 {
-	LOG_TRACE(TRACE_VIDEO_HBL , "mfp/video timer B new event count %d\n" , MFP_TB_MAINCOUNTER-1 );
+	LOG_TRACE(TRACE_VIDEO_HBL , "mfp/video timer B new event count %d, delay=%d\n" , MFP_TB_MAINCOUNTER-1 , Delayed_Cycles );
 
 	if (MFP_TB_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */
 	{
 		MFP_TB_MAINCOUNTER = MFP_TBDR;		/* Reload timer from data register */
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
-		MFP_InputOnChannel ( MFP_INT_TIMER_B , 0 );
+		MFP_InputOnChannel ( MFP_INT_TIMER_B , Delayed_Cycles );
 	}
 	else
 	{

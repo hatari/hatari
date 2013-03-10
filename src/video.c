@@ -1846,7 +1846,7 @@ void Video_InterruptHandler_EndLine(void)
 		if ( (MFP_TBCR == 0x08)						/* Is timer in Event Count mode ? */
 			&& ( ( TimerBEventCountCycleStart == -1 )		/* timer B was started during a previous VBL */
 			  || ( TimerBEventCountCycleStart < FrameCycles-PendingCycles ) ) )	/* timer B was started before this possible interrupt */
-			MFP_TimerB_EventCount_Interrupt();			/* we have a valid timer B interrupt */
+			MFP_TimerB_EventCount_Interrupt ( PendingCycles );	/* we have a valid timer B interrupt */
 	}
 }
 
