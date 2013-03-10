@@ -1828,7 +1828,7 @@ static void m68k_run_1 (void)
 
 #endif
 
-#endif pom
+#endif /* pom */
 
 	if (regs.spcflags) {
 	    if (do_specialties ())
