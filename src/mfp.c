@@ -105,6 +105,9 @@
 /* 2013/03/01	[NP]	When MFP_IRQ goes from 0 to 1, the resulting signal is visible	*/
 /*			to the CPU only 4 cycles later (fix Audio Artistic Demo by	*/
 /*			Big Alec and the games Super Hang On, Super Monaco GP, Bolo).	*/
+/* 2013/03/10	[NP]	Improve the MFP_IRQ 4 cycle delay by taking into account the	*/
+/*			time at which the timer expired during the CPU instruction	*/
+/*			(fix Reset part in Decade Demo, High Fidelity Dreams by Aura).	*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
@@ -381,11 +384,13 @@ static void MFP_Exception(int Interrupt)
  * processed later when SR allows it.
  *
  * Important timing note : when the MFP's IRQ signal is set, it's visible to
- * the CPU only 4 cycles later.
+ * the CPU only 4 cycles later. Depending if the signal happens during a CPU
+ * instruction or just before processing a new instruction, this delay will
+ * not always be necessary.
+ *
  * Instead of using CycInt_AddRelativeInterrupt to simulate this 4 cycles delay,
- * we use MFP_DelayIRQ to delay the exception processing after the next instruction
- * instead of the current one (as an instruction takes at least 4 cycles, we get the
- * expected result without using an additional internal timer).
+ * we use MFP_IRQ_Time to delay the exception processing until 4 cycles have
+ * passed.
  */
 bool	MFP_ProcessIRQ ( void )
 {
@@ -393,11 +398,11 @@ bool	MFP_ProcessIRQ ( void )
 	Uint8	*pInServiceReg;
 	Uint8	Bit;
 
-	
+
 	if ( MFP_IRQ == 1 )
 	{
 //		if ( MFP_DelayIRQ == true )
-		if ( CyclesGlobalClockCounter - MFP_IRQ_Time < MFP_IRQ_DELAY_TO_CPU )	// TODO
+		if ( CyclesGlobalClockCounter - MFP_IRQ_Time < MFP_IRQ_DELAY_TO_CPU )
 		{
 			MFP_DelayIRQ = false;			/* Process the IRQ on the next call */
 			return false;				/* For now, return without calling an exception */

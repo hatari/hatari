@@ -114,9 +114,12 @@ Fixed Games:
   Captain Blood (IKBD, fixed problem when setting the clock)
   Fokker and Downfall (ACIA/IKBD, had regressed in Hatari v1.6.x)
   Super Hang On and Super Monaco GP (MFP, flickering rasters)
+  Zuul 100/101 Menu (MFP, flickering top border)
 
 Fixed demos :
   Audio Artistic Demo by Big Alec (MFP, bad sample speed at start)
+  Decade Demo - Reset (MFP, flickering bottom border)
+  High Fidelity Dreams by Aura (MFP, flickering left rasters)
 
 
  Version 1.6.2 (2012-06-24):
