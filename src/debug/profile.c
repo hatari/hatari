@@ -12,6 +12,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include "main.h"
+#include "version.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "debugInfo.h"
@@ -1489,7 +1490,7 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 {
 	FILE *out;
 	Uint32 freq;
-	const char *proc;
+	const char *proc, *core;
 	if (!(out = fopen(fname, "w"))) {
 		fprintf(stderr, "ERROR: opening '%s' for writing failed!\n", fname);
 		perror(NULL);
@@ -1502,7 +1503,12 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 		freq = MachineClocks.CPU_Freq;
 		proc = "CPU";
 	}
-	fprintf(out, "Hatari %s profile\n", proc);
+#if ENABLE_WINUAE_CPU
+	core = "WinUAE";
+#else
+	core = "OldUAE";
+#endif
+	fprintf(out, "Hatari %s profile (%s, %s CPU core)\n", proc, PROG_NAME, core);
 	fprintf(out, "Cycles/second:\t%u\n", freq);
 	if (bForDsp) {
 		/* Comma separated descriptions for the profile disassembly data fields.

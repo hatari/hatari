@@ -708,8 +708,10 @@ class EmulatorProfile(Output):
         # profile data format
         #
         # emulator ID line:
-        # <Emulator> <processor name> profile
+        # <Emulator> <processor name> profile [(info)]
         #
+        self.emuinfo = None
+        self.r_info = re.compile("^.* profile \((.*)\)$")
         # processor clock speed
         self.r_clock = re.compile("^Cycles/second:\t([0-9]+)$")
         # field names
@@ -747,13 +749,29 @@ class EmulatorProfile(Output):
         "parse symbols from given file object"
         self.symbols.parse_symbols(fobj, is_relative)
 
+    def output_info(self, fname):
+        "show profile file information"
+        if self.emuinfo:
+            info = "- %s\n" % self.emuinfo
+        else:
+            info = ""
+        self.write("\n%s profile information from '%s':\n%s" % (self.stats.processor, fname, info))
+
     def _get_profile_type(self, fobj):
         "get profile processor type and speed information or exit if it's unknown"
         line = fobj.readline()
         field = line.split()
-        if len(field) != 3 or field[2] != "profile":
-            self.error_exit("unrecognized file, line 1\n\t%s\nnot in format:\n\t<emulator> <processor> profile" % (line))
+        fields = len(field)
+        if fields < 3 or field[2] != "profile":
+            self.error_exit("unrecognized file, line 1\n\t%s\nnot in format:\n\t<emulator> <processor> profile [(info)]" % line)
         processor = field[1]
+        if fields > 3:
+            match = self.r_info.match(line)
+            if not match:
+                self.error_exit("invalid (optional) emulator information format on line 1:\n\t%s" % line)
+            self.emuinfo = match.group(1)
+        else:
+            self.emuinfo = None
 
         line = fobj.readline()
         match = self.r_clock.match(line)
@@ -1350,8 +1368,10 @@ label="%s";
             else:
                 limit = sorter.get_combined_limit(field, self.count, self.limit)
             name = stats.names[field]
-            title = "%s\\nfor %s\\n\\n" % (name, fname)
-            title += "own cost emphasis (gray bg) limit = %.2f%%\\n" % self.limit
+            title = "%s\\nfor %s" % (name, fname)
+            if profobj.emuinfo:
+                title += "\\n(%s)" % profobj.emuinfo
+            title += "\\n\\nown cost emphasis (gray bg) limit = %.2f%%\\n" % self.limit
             title += "(potentially propagated) cost emphasis (red) limit = %.2f%%\\n" % limit
             if field != 0 and self.show_propagated:
                 title += "nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape\\n"
@@ -1482,7 +1502,7 @@ class Main(Output):
                 self.message("Propagating costs in call tree (SLOW, takes exponential time)...")
                 prof.callers.propagate_costs(prof.profile)
             graph.do_output(prof, arg)
-            self.write("\nProfile information from '%s':\n" % arg)
+            prof.output_info(arg)
             stats.do_output(prof)
 
     def open_file(self, path, mode):
