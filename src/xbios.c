@@ -112,7 +112,7 @@ static bool XBios_Devconnect(Uint32 Params)
 	prescale = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	protocol = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x8B Devconnect(%d, 0x%x, %d, %d, %d)\n",
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x8B Devconnect(%hd, 0x%hx, %hd, %hd, %hd)\n",
 		  src, dst, clk, prescale, protocol);
 	return false;
 }
