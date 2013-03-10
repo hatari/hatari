@@ -8,11 +8,6 @@
 #ifndef HATARI_MAIN_H
 #define HATARI_MAIN_H
 
-
-/* Name and version for window title: */
-//#define PROG_NAME "Hatari devel (" __DATE__ ")"
-#define PROG_NAME "Hatari v1.6.2"
-
 #include "config.h"
 
 #include <stdio.h>

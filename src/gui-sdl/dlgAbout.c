@@ -9,6 +9,7 @@
 const char DlgAbout_fileid[] = "Hatari dlgAbout.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
+#include "version.h"
 #include "dialog.h"
 #include "sdlgui.h"
 

@@ -15,6 +15,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include "main.h"
+#include "version.h"
 #include "configuration.h"
 #include "stMemory.h"
 #include "m68000.h"
