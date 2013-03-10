@@ -59,6 +59,7 @@ const char AVIRecord_fileid[] = "Hatari avi_record.c : " __DATE__ " " __TIME__;
 #include <SDL_endian.h>
 
 #include "main.h"
+#include "version.h"
 #include "audio.h"
 #include "configuration.h"
 #include "log.h"

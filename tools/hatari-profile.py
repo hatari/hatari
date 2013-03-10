@@ -9,22 +9,33 @@
 # for KCachegrind:
 #       http://kcachegrind.sourceforge.net/
 """
-A tool for post-processing Hatari debugger profiling information
-produced with the following debugger command:
-	profile addresses 0 <file name>
+A tool for post-processing emulator HW profiling data.
 
-It sums profiling information given for code addresses, to functions
-where those addresses/instruction belong to.  All addresses between
-two function names (in profile file) or symbol addresses (in symbols
-file) are assumed to belong to the first function/symbol.
+In Hatari debugger you get (CPU) profiling data with the following
+commands (for Falcon DSP data, prefix commands with 'dsp'):
+	profile on
+        continue
+        ...
+	profile save <file name>
 
-Supported (Hatari CPU and DSP) profile items are instruction counts,
-used cycles and (CPU instruction) cache misses.
+Profiling information for code addresses is summed together and
+assigned to functions where those addresses belong to. All addresses
+between two function names (in profile file) or symbol addresses
+(read from symbols files) are assumed to belong to the preceeding
+function/symbol.
+
+Tool output will contain at least:
+- (deduced) call counts,
+- executed instruction counts, and
+- spent processor cycles.
+
+If profile data contains other information (e.g. cache misses),
+that is also shown.
 
 Provided symbol information should be in same format as for Hatari
-debugger 'symbols' command.  If addresses are within ROM area, they're
-interpreted as absolute, otherwise, as relative to program TEXT (code)
-section start address start given in the profile data file.
+debugger 'symbols' command.  Note that files containing absolute
+addresses and ones containing relatives addresses need to be given
+with different options!
 
 
 Usage: hatari-profile [options] <profile files>
@@ -32,7 +43,7 @@ Usage: hatari-profile [options] <profile files>
 Options:
 	-a <symbols>	absolute symbol address information file
         -r <symbols>	TEXT (code section) relative symbols file
-        -s		list profile statistics
+        -s		output profile statistics
         -t		list top functions for all profile items
         -i		add address and time information to lists
         -f <count>	list at least first <count> items
@@ -55,7 +66,7 @@ Long options for above are:
         --graph
         --verbose
 
-(Time info is shown only for cycles list.)
+(Timing --info is shown only for cycles list.)
 
 For example:
 	hatari-profile -a etos512k.sym -st -g -f 10 prof1.txt prof2.txt
@@ -64,21 +75,20 @@ For each given profile file, output is:
 - profile statistics
 - a sorted list of functions, for each of the profile data items
   (calls, instructions, cycles...)
-- callgraph in DOT format, for each of the profile data items,
-  for each profile file, saved to <name>-<itemindex>.dot files
+- callgraph in DOT format for each of the profile data items, for
+  each of the profile files, saved to <filename>-<itemindex>.dot file
   (prof1-0.dot, prof1-2.dot etc)
 
 
 When both -l and -f options are specified, they're combined.  Produced
-lists contain at least the number of items specified for -f, and more
-if there are additional items which percentage of the total value is
-larger than one given for -l.  In callgraphs these options just affect
-which nodes are highlighted unless -p option is used.
+lists contain at least the number of items specified for -f option,
+and more if there are additional items which percentage of the total
+value is larger than one given for -l option.  In callgraphs these
+options mainly affect which nodes are highlighted.
 
 
-With the -p option, costs for a function include also costs for
-everything else it calls.  Nodes which (propagated) cost percentages
-of the total are below -l limit, are removed from the callgraphs.
+With the -p option, costs for a function include also (estimated)
+costs for everything else it calls.
 
 NOTE: Because caller information in profile file has only call counts
 between functions, other costs can be propagated correctly to callers
@@ -94,47 +104,58 @@ Call information filtering options:
         --no-calls <[bersux]+>	remove calls of given types, default = 'ux'
 	--ignore-to <list>	ignore calls to these symbols
 
+(Give --no-calls option an unknown type to see type descriptions.)
+
 <list> is a comma separate list of symbol names, like this:
 	--ignore-to _int_timerc,_int_vbl
 
-These options affect the number of calls reported for functions and
-the values that are propagated upwards from them with the -p option.
+These options change which calls are reported for functions, and
+therefore also the values that are propagated upwards from them with
+the -p option (as it changes call counts).
 
-Typically interrupt handler symbols are good to give for --ignore-to
-option as switching to them gets recorded as a call by the profiler,
-and that can happen at any time.  In callgraphs, one can investigate
-them separately using "no-calls '' --only <handler>" options.
+If default --no-calls type removal doesn't remove all interrupt
+handling switches [1], give handler names to --ignore-to option.
+In callgraphs, one can then investigate them separately using
+"no-calls '' --only <name>" options.
 
+[1] Switching to interrupt handler gets recorded as "a call" to it
+    by the profiler, and such "calls" can happen at any time.
 
-Callgraph visualization options:
-        -e, --emph-limit <limit>  percentage limit for highlighted nodes
-
-When -e limit is given, -f & -e options are used for deciding which
-nodes to highlight, not -f & -l options.
 
 Nodes with costs that exceed the highlight limit have red outline.
 If node's own cost exceeds the limit, it has also gray background.
 
 
 Callgraph filtering options to remove nodes and edges from the graph:
-	--compact		only 1 arrow between same nodes
+	--compact		only 1 arrow between nodes, instead of
+        			arrow for each call site within function
 	--no-intermediate	remove nodes with single parent & child
 	--no-leafs		remove nodes which have either:
-				- one parent and no children, or
-				- one child and no parents
+				- one parent and no children,
+				- one child and no parents, or
+				- no children nor parents
+        --no-limited		remove _all_ nodes below -l limit
 	--ignore <list>         no nodes for these symbols
 	--ignore-from <list>	no arrows from these symbols
         --only <list>           only these symbols and their callers
 
-By default, leaf and intermediate node removal options remove only
-nodes which fall below -l option limit. But with -p option, they
-remove all leaf and intermdiate nodes as their costs are propagated
-to their parents, i.e. visible in rest of the graph.
+Leaf and intermediate node removal options remove only nodes which
+own costs fall below limit given with the -l option.  Remember to
+give -l option with them as -l defaults to 0.0 on callgraphs!
 
 Functions which are called from everywhere (like malloc), may be good
 candinates for '--ignore' option when one wants a more readable graph.
 One can then investigate them separately with the '--only <function>'
 option.
+
+
+Callgraph visualization options:
+	--mark <list>	  	  mark nodes which names contain any
+        			  of the listed string(s)
+        -e, --emph-limit <limit>  percentage limit for highlighted nodes
+
+When -e limit is given, -f & -e options are used for deciding which
+nodes to highlight, not -f & -l options.
 
 
 To convert dot files e.g. to SVG, use:
@@ -246,18 +267,19 @@ class InstructionStats:
     # in this, FunctionStats, ProfileCallers and ProfileGraph classes
     callcount_field = 0
     instructions_field = 1
+    cycles_field = 2
 
-    def __init__(self, processor, hz, info):
-        "function name, processor name, its speed, processor info dict"
-        self.cycles_field = info["cycles_field"]
-        self.names = info["fields"]
+    def __init__(self, processor, clock, fields):
+        "processor name, its speed and profile field names"
+        # Calls item will be deducted from instruction values
+        self.names = ["Calls"] + fields
         self.items = len(self.names)
         self.max_line = [0] * self.items
         self.max_addr = [0] * self.items
         self.max_val = [0] * self.items
         self.totals = [0] * self.items
         self.processor = processor
-        self.hz = hz
+        self.clock = clock	# in Hz
         self.areas = {}		# which memory area boundaries have been passed
 
     def change_area(self, function, name, addr):
@@ -286,7 +308,7 @@ class InstructionStats:
 
     def get_time(self, data):
         "return time (in seconds) spent by given data item"
-        return float(data[self.cycles_field])/self.hz
+        return float(data[self.cycles_field])/self.clock
 
     def sum_values(self, functions):
         "calculate totals for given functions data"
@@ -300,8 +322,12 @@ class InstructionStats:
 
 class ProfileSymbols(Output):
     "class for handling parsing and matching symbols, memory areas and their addresses"
+    # profile file field name for program text/code address range
+    text_area = "PROGRAM_TEXT"
+    # default emulation memory address range name
+    default_area = "RAM"
 
-    def __init__(self, text_area):
+    def __init__(self):
         Output.__init__(self)
         self.names = None
         self.symbols = None	# (addr:symbol) dict for resolving
@@ -309,24 +335,16 @@ class ProfileSymbols(Output):
         self.relative = {}	# (addr:symbol) dict of relative symbols
         self.symbols_need_sort = False
         self.symbols_sorted = None	# sorted list of symbol addresses
-        self.areas = None
-        # default emulation memory address range name
-        # (for processor for which current data is for)
-        self.default_area = None
-        # TEXT area name
-        self.text_area = text_area
-        # memory areas:
+        # Non-overlapping memory areas that may be specified in profile file
+        # (checked if instruction is before any of the symbol addresses)
+        self.areas = {}		# (name:(start,end))
+        # memory area format:
         # <area>: 0x<hex>-0x<hex>
         # TOS:	0xe00000-0xe80000
         self.r_area = re.compile("^([^:]+):[^0]*0x([0-9a-f]+)-0x([0-9a-f]+)$")
         # symbol file format:
         # [0x]<hex> [tTbBdD] <symbol/objectfile name>
         self.r_symbol = re.compile("^(0x)?([a-fA-F0-9]+) ([bBdDtT]) ([$]?[-_.a-zA-Z0-9]+)$")
-
-    def set_areas(self, areas, default):
-        "set areas dict and default (zero-started) RAM area name"
-        self.default_area = default
-        self.areas = areas
 
     def parse_areas(self, fobj, parsed):
         "parse memory area lines from data"
@@ -343,9 +361,6 @@ class ProfileSymbols(Output):
             name, start, end = match.groups()
             end = int(end, 16)
             start = int(start, 16)
-            if name not in self.areas:
-                self.warning("unrecognized memory area '%s' on line %d" % (name, parsed))
-                continue
             self.areas[name] = (start, end)
             if end < start:
                 self.error_exit("invalid memory area '%s': 0x%x-0x%x on line %d" % (name, start, end, parsed))
@@ -573,6 +588,7 @@ class ProfileCallers(Output):
             self.present = False
             return
         self.present = True
+        all_ignored = 0
         # go through called functions...
         for caddr, caller in self.callinfo.items():
             child = profile[caddr]
@@ -585,14 +601,16 @@ class ProfileCallers(Output):
                 count, flags = info
                 pname, offset = symbols.get_preceeding_symbol(laddr)
                 if len(flags) > 1:
-                    self.warning("Caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (flags, pname))
+                    self.warning("caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (flags, pname))
                 elif flags in self.removable_calltypes:
                     ignore += count
                     continue
                 # function address for the caller
                 paddr = laddr - offset
                 parent = profile[paddr]
-                assert(pname == parent.name)
+                if pname != parent.name:
+                    self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
+                    parent.name = pname
                 # link parent and child function together
                 item = (laddr, count)
                 if paddr in child.parent:
@@ -607,7 +625,8 @@ class ProfileCallers(Output):
                 total += count
             # validate call count
             if ignore:
-                self.message("Ignoring %d call(s) to '%s'" % (ignore, child.name))
+                all_ignored += ignore
+                self.message("Ignoring %d switches to %s" % (ignore, child.name))
                 #total += ignore
                 child.data[0] -= ignore
             calls = child.data[0]
@@ -615,6 +634,8 @@ class ProfileCallers(Output):
                 info = (child.name, caddr, calls, total)
                 self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % info)
         self.callinfo = {}
+        if all_ignored:
+            self.message("In total, ignored %d switches of type(s) %s." % (all_ignored, list(self.removable_calltypes)))
 
     def _propagate_leaf_cost(self, profile, caddr, cost, track):
         """Propagate costs to function parents.  In case of call
@@ -667,41 +688,44 @@ class ProfileCallers(Output):
         for addr in leafs.keys():
             function = profile[addr]
             self._propagate_leaf_cost(profile, addr, function.data, {})
-        # convert values back to ints with rounding, and
-        # verify that every non-leaf node with parents was visited
+        # convert values back to ints with rounding, and verify
+        # that propagation handled every node with children
         for addr, function in profile.items():
             if function.total:
                 function.total = [int(round(x)) for x in function.total]
-            elif function.child and function.parent:
-                for paddr, dummy in function.parent.items():
-                    # other parent than it itself?
-                    if paddr != addr:
+            elif function.child:
+                for caddr in function.child.keys():
+                    # other children than it itself?
+                    if caddr != addr:
                         self.warning("didn't propagate cost to:\n\t%s\n" % function)
+                        break
 
 
 class EmulatorProfile(Output):
     "Emulator profile data file parsing and profile information"
 
-    def __init__(self, emuid, processor, symbols):
+    def __init__(self):
         Output.__init__(self)
-        self.symbols = symbols		# ProfileSymbols instance
-        self.processor = processor	# processor information dict
+        self.symbols = ProfileSymbols()
         self.callers = ProfileCallers()
 
         # profile data format
         #
         # emulator ID line:
-        # <ID> <processor name> profile
-        self.emuid = emuid
+        # <Emulator> <processor name> profile [(info)]
+        #
+        self.emuinfo = None
+        self.r_info = re.compile("^.* profile \((.*)\)$")
         # processor clock speed
         self.r_clock = re.compile("^Cycles/second:\t([0-9]+)$")
-        # processor names, memory areas and their disassembly formats
-        # are specified by subclasses with disasm argument
+        # field names
+        self.r_fields = re.compile("^Field names:\t(.*)$")
+        # processor disassembly format regexp is gotten from profile file
+        self.r_regexp = re.compile("Field regexp:\t(.*)$")
         self.r_address = None
-        self.r_disasm = {}
-        for key in processor.keys():
-            assert(processor[key]['areas'] and processor[key]['fields'])
-            self.r_disasm[key] = re.compile(processor[key]['regexp'])
+        # memory address information is parsed by ProfileSymbols
+        #
+        # this class parses symbols from disassembly itself:
         # <symbol/objectfile name>: (in disassembly)
         # _biostrap:
         self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
@@ -729,26 +753,50 @@ class EmulatorProfile(Output):
         "parse symbols from given file object"
         self.symbols.parse_symbols(fobj, is_relative)
 
+    def output_info(self, fname):
+        "show profile file information"
+        if self.emuinfo:
+            info = "- %s\n" % self.emuinfo
+        else:
+            info = ""
+        self.write("\n%s profile information from '%s':\n%s" % (self.stats.processor, fname, info))
+
     def _get_profile_type(self, fobj):
         "get profile processor type and speed information or exit if it's unknown"
         line = fobj.readline()
         field = line.split()
-        if len(field) != 3 or field[0] != self.emuid:
-            self.error_exit("unrecognized file, line 1:\n\t%smisses %s profiler identification" % (line, self.emuid))
-
+        fields = len(field)
+        if fields < 3 or field[2] != "profile":
+            self.error_exit("unrecognized file, line 1\n\t%s\nnot in format:\n\t<emulator> <processor> profile [(info)]" % line)
         processor = field[1]
-        if processor not in self.processor:
-            self.error_exit("unrecognized profile processor type '%s' on line 1:\n\t%s" % (processor, line))
-        self.symbols.set_areas(self.processor[processor]["areas"], "%s_RAM" % processor)
+        if fields > 3:
+            match = self.r_info.match(line)
+            if not match:
+                self.error_exit("invalid (optional) emulator information format on line 1:\n\t%s" % line)
+            self.emuinfo = match.group(1)
+        else:
+            self.emuinfo = None
 
         line = fobj.readline()
         match = self.r_clock.match(line)
         if not match:
-            self.error_exit("invalid %s clock information on line 2:\n\t%s" % (processor, line))
-        info =  self.processor[processor]
-        self.stats = InstructionStats(processor, int(match.group(1)), info)
-        self.r_address = self.r_disasm[processor]
-        return 2
+            self.error_exit("invalid %s clock HZ information on line 2:\n\t%s" % (processor, line))
+        clock = int(match.group(1))
+
+        line = fobj.readline()
+        match = self.r_fields.match(line)
+        if not match:
+            self.error_exit("invalid %s profile disassembly field descriptions on line 3:\n\t%s" % (processor, line))
+        fields = [x.strip() for x in match.group(1).split(',')]
+        self.stats = InstructionStats(processor, clock, fields)
+
+        line = fobj.readline()
+        match = self.r_regexp.match(line)
+        try:
+            self.r_address = re.compile(match.group(1))
+        except (AttributeError, re.error) as error:
+            self.error_exit("invalid %s profile disassembly regexp on line 4:\n\t%s\n%s" % (processor, line, error))
+        return 4
 
     def _change_function(self, function, newname, addr):
         "store current function data and then reset to new function"
@@ -814,6 +862,7 @@ class EmulatorProfile(Output):
         while True:
             if not line:
                 break
+            self.linenro += 1
             line = line.strip()
             if line.startswith('#'):
                 pass
@@ -841,7 +890,6 @@ class EmulatorProfile(Output):
                 function = self._parse_line(function, addr, counts, discontinued)
                 discontinued = False
             # next line
-            self.linenro += 1
             line = fobj.readline()
         # finish
         self._change_function(function, None, 0)
@@ -868,58 +916,6 @@ class EmulatorProfile(Output):
         # finish
         self.stats.sum_values(self.profile.values())
         self.callers.complete(self.profile, self.symbols)
-
-
-class HatariProfile(EmulatorProfile):
-    "EmulatorProfile subclass for Hatari with suitable data parsing regexps and processor information"
-    def __init__(self):
-        # Emulator name used as first word in profile file
-        name = "Hatari"
-
-        # name used for program code section in "areas" dicts below
-        text_area = "PROGRAM_TEXT"
-
-        # information on emulated processors
-        #
-        # * Non-overlapping memory areas that may be specified in profile,
-        #   and their default values (zero = undefined at this stage).
-        #   (Checked if instruction are before any of the symbol addresses)
-        #
-        # * Regexp for the processor disassembly information,
-        #   its match contains 2 items:
-        #   - instruction address
-        #   - 3 comma separated performance values
-        # 
-        processors = {
-            "CPU" : {
-                "areas" : {
-                    text_area	: (0, 0),
-                    "ROM_TOS"	: (0xe00000, 0xe80000),
-                    "CARTRIDGE"	: (0xfa0000, 0xfc0000)
-                },
-                # $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
-                # $e5af38 :   rts           0.00% (12, 0, 12)
-                "regexp" : "^\$([0-9a-f]+) :.*% \((.*)\)$",
-                # First 2 fields are always function call counts and instruction
-                # counts, then come ones from second "regexp" match group
-                "fields" : ("Calls", "Executed instructions", "Used cycles", "Instruction cache misses"),
-                "cycles_field": 2
-            },
-            "DSP" : {
-                "areas" : {
-                    text_area	: (0, 0),
-                },
-                # <space>:<address> <opcodes> (<instr cycles>) <instr> <count>% (<count>, <cycles>)
-                # p:0202  0aa980 000200  (07 cyc)  jclr #0,x:$ffe9,p:$0200  0.00% (6, 42)
-                "regexp" : "^p:([0-9a-f]+) .*% \((.*)\)$",
-                # First 2 fields are always function call counts and instruction
-                # counts, then come ones from second "regexp" match group
-                "fields" : ("Calls", "Executed instructions", "Used cycles", "Largest cycle differences (= code changes during profiling)"),
-                "cycles_field": 2
-            }
-        }
-        symbols = ProfileSymbols(text_area)
-        EmulatorProfile.__init__(self, name, processors, symbols)
 
 
 class ProfileSorter:
@@ -1136,7 +1132,9 @@ label="%s";
         self.output_enabled = False
         self.remove_intermediate = False
         self.remove_leafs = False
+        self.remove_limited = False
         self.only = []
+        self.mark = []
         self.ignore = []
         self.ignore_from = []
         self.emph_limit = 0
@@ -1154,9 +1152,17 @@ label="%s";
         "disable showing nodes which don't have children"
         self.remove_leafs = True
 
+    def disable_limited(self):
+        "disable showing all nodes which are below limit"
+        self.remove_limited = True
+
     def set_only(self, lst):
         "set list of only symbols to include"
         self.only = lst
+
+    def set_marked(self, lst):
+        "set list of substrings for symbols to mark in graphs"
+        self.mark = lst
 
     def set_ignore(self, lst):
         "set list of symbols to ignore"
@@ -1205,27 +1211,60 @@ label="%s";
         # remove it itself
         del profile[addr]
 
-    def _set_reduced_profile(self, profobj):
+    def _set_reduced_profile(self, profobj, totals, field):
         "get relinked copy of profile data with requested items removed from it"
-        if not (self.remove_leafs or self.remove_intermediate):
+        if not (self.remove_limited or self.remove_leafs or self.remove_intermediate):
             self.profile = profobj.profile
-            return
+            return 0
         # need our own copy so that it can be manipulated freely
         self.profile = deepcopy(profobj.profile)
+        total = totals[field]
+        removed = 0
         while True:
             to_remove = {}
             for addr, function in self.profile.items():
+                count = function.data[field]
+                percentage = 100.0 * count / total
+                # don't remove functions which own costs are over the limit
+                if percentage >= self.limit:
+                    continue
+                if self.remove_limited:
+                    to_remove[addr] = True
+                    continue
                 parents = len(function.parent)
                 children = len(function.child)
-                if self.remove_leafs and (parents + children) == 1:
-                    to_remove[addr] = True
-                elif self.remove_intermediate and parents == 1 and children == 1:
-                    to_remove[addr] = True
-
+                if self.remove_leafs:
+                    if (parents + children) <= 1:
+                        to_remove[addr] = True
+                        continue
+                    # refers just to itself?
+                    if children == 1 and addr == function.child.keys()[0]:
+                        to_remove[addr] = True
+                        continue
+                    if parents == 1 and addr == function.parent.keys()[0]:
+                        to_remove[addr] = True
+                        continue
+                if self.remove_intermediate:
+                    if parents == 1 and children == 1:
+                        to_remove[addr] = True
+                        continue
+                    # refers also to itself?
+                    if children == 2:
+                        for caddr in function.child.keys():
+                            if caddr == addr:
+                                to_remove[addr] = True
+                                break
+                    if parents == 2:
+                        for paddr in function.parent.keys():
+                            if paddr == addr:
+                                to_remove[addr] = True
+                                break
             if not to_remove:
                 break
             for addr in to_remove.keys():
                 self._remove_from_profile(addr)
+            removed += len(to_remove)
+        return removed
 
     def _filter_profile(self):
         "filter profile content to nodes and edges members based on ignore options"
@@ -1235,6 +1274,9 @@ label="%s";
         ignore_from = self.ignore_from + self.ignore
         for caddr, child in profile.items():
             if child.name in self.ignore:
+                continue
+            if not child.parent:
+                self.nodes[caddr] = True
                 continue
             for paddr, info in child.parent.items():
                 parent = profile[paddr]
@@ -1254,10 +1296,8 @@ label="%s";
                 calls = profile[caddr].data[0]
                 # calls to child done from different locations in parent
                 for laddr, count in info:
-                    self.edges[laddr] = (paddr, caddr, count, calls)
-        if self.nodes:
-            return True
-        return False
+                    self.edges[(laddr, caddr)] = (paddr, count, calls)
+        return (len(profile) - len(self.nodes))
 
     def _output_nodes(self, stats, field, limit):
         "output graph nodes from filtered nodes dict"
@@ -1265,10 +1305,12 @@ label="%s";
         total = stats.totals[field]
         for addr in self.nodes.keys():
             shape = style = ""
+            estimated = False
             function = self.profile[addr]
             if self.show_propagated and function.total:
                 values = function.total
                 if function.estimated:
+                    estimated = True
                     shape = " shape=diamond"
             else:
                 values = function.data
@@ -1281,25 +1323,34 @@ label="%s";
             if ownpercentage >= limit:
                 style = "%s style=filled fillcolor=lightgray" % style
             name = function.name
+            for substr in self.mark:
+                if substr in name:
+                    style = "%s style=filled fillcolor=green shape=square" % style
+                    break
             if field == 0:
                 # calls aren't estimated so they don't need different shapes
                 self.write("N_%X [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (addr, percentage, name, count, style))
                 continue
+            if estimated:
+                valuestr = "%.2f%%\\n(own: %.2f%%)" % (percentage, ownpercentage)
+            else:
+                valuestr = "%.2f%%" % percentage
             calls = values[0]
             if field == stats.cycles_field:
                 time = stats.get_time(values)
-                self.write("N_%X [label=\"%.2f%%\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, percentage, time, name, calls, style, shape))
+                self.write("N_%X [label=\"%s\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, valuestr, time, name, calls, style, shape))
             else:
-                self.write("N_%X [label=\"%.2f%%\\n%d\\n%s\\n(%d calls)\"%s%s];\n" % (addr, percentage, count, name, calls, style, shape))
+                self.write("N_%X [label=\"%s\\n%d\\n%s\\n(%d calls)\"%s%s];\n" % (addr, valuestr, count, name, calls, style, shape))
 
     def _output_edges(self):
         "output graph edges from filtered edges dict, after nodes is called"
-        for laddr, data in self.edges.items():
-            paddr, caddr, count, calls = data
+        for linkage, data in self.edges.items():
+            laddr, caddr = linkage
+            paddr, count, calls = data
             pname = self.profile[paddr].name
             offset = laddr - paddr
             style = ""
-            if caddr in self.highlight or paddr in self.highlight:
+            if caddr in self.highlight:
                 style = " color=red"
             if offset:
                 label = "%s+%d\\n($%x)" % (pname, offset, laddr)
@@ -1320,8 +1371,9 @@ label="%s";
             if not stats.totals[field]:
                 continue
             # get potentially reduced instance copy of profile data
-            self._set_reduced_profile(profobj)
-            if not self._filter_profile():
+            removed = self._set_reduced_profile(profobj, stats.totals, field)
+            filtered = self._filter_profile()
+            if not self.nodes:
                 continue
             dotname = "%s-%d.dot" % (basename, field)
             self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
@@ -1330,17 +1382,25 @@ label="%s";
             except IOError, err:
                 self.warning(err)
                 continue
-            name = stats.names[field]
-            title = "%s, for %s" % (name, fname)
-            if self.show_propagated:
-                title += "\\n(Nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape)"
-            self.write(self.header % title)
             # limits are taken from full profile, not potentially reduced one
             sorter = ProfileSorter(profobj.profile, stats, None, False)
             if self.emph_limit:
                 limit = sorter.get_combined_limit(field, self.count, self.emph_limit)
             else:
                 limit = sorter.get_combined_limit(field, self.count, self.limit)
+            name = stats.names[field]
+            title = "%s\\nfor %s" % (name, fname)
+            if profobj.emuinfo:
+                title += "\\n(%s)" % profobj.emuinfo
+            title += "\\n\\nown cost emphasis (gray bg) limit = %.2f%%\\n" % self.limit
+            title += "(potentially propagated) cost emphasis (red) limit = %.2f%%\\n" % limit
+            if field != 0 and self.show_propagated:
+                title += "nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape\\n"
+            if removed:
+                title += "%d leaf and/or intermediate nodes below %.2f%% were removed\\n" % (removed, self.limit)
+            if filtered:
+                title += "%d nodes were filtered out\\n" % filtered
+            self.write(self.header % title)
             self._output_nodes(stats, field, limit)
             self._output_edges()
             self.write(self.footer)
@@ -1357,11 +1417,13 @@ class Main(Output):
         "ignore=",
         "ignore-to=",
         "ignore-from=",
-        "info"
+        "info",
         "limit=",
+        "mark=",
         "no-calls=",
         "no-intermediate",
         "no-leafs",
+        "no-limited",
         "only=",
         "output=",
         "propagate",
@@ -1387,7 +1449,7 @@ class Main(Output):
             self.usage(err)
 
         propagate = False
-        prof = HatariProfile()
+        prof = EmulatorProfile()
         graph = ProfileGraph()
         stats = ProfileStats()
         for opt, arg in opts:
@@ -1430,10 +1492,14 @@ class Main(Output):
                 graph.set_ignore_from(arg.split(','))
             elif opt == "--only":
                 graph.set_only(arg.split(','))
-            elif opt == "--no-leafs":
-                graph.disable_leafs()
+            elif opt == "--mark":
+                graph.set_marked(arg.split(','))
             elif opt == "--no-intermediate":
                 graph.disable_intermediate()
+            elif opt == "--no-leafs":
+                graph.disable_leafs()
+            elif opt == "--no-limited":
+                graph.disable_limited()
             # options specific to statistics
             elif opt in ("-i", "--info"):
                 stats.enable_info()
@@ -1463,7 +1529,7 @@ class Main(Output):
                 self.message("Propagating costs in call tree (SLOW, takes exponential time)...")
                 prof.callers.propagate_costs(prof.profile)
             graph.do_output(prof, arg)
-            self.write("\nProfile information from '%s':\n" % arg)
+            prof.output_info(arg)
             stats.do_output(prof)
 
     def open_file(self, path, mode):

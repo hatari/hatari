@@ -21,6 +21,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include <SDL.h>
 
 #include "main.h"
+#include "version.h"
 #include "options.h"
 #include "configuration.h"
 #include "control.h"

@@ -13,6 +13,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include <SDL.h>
 
 #include "main.h"
+#include "version.h"
 #include "configuration.h"
 #include "control.h"
 #include "options.h"
