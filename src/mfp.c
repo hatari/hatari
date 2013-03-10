@@ -302,6 +302,39 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Given an MFP interrupt number, return a pointer to the corresponding
+ * registers handling this interrupt, as well as the binary value
+ * to set/clear these registers.
+ * If an input pointer is NULL, we don't return the corresponding register.
+ */
+static Uint8 MFP_ConvertIntNumber ( int Interrupt , Uint8 **pMFP_IER , Uint8 **pMFP_IPR , Uint8 **pMFP_ISR , Uint8 **pMFP_IMR )
+{
+	Uint8	Bit;
+
+	if ( Interrupt > 7 )
+	{
+		Bit = 1 << ( Interrupt - 8 );
+		if ( pMFP_IER )		*pMFP_IER = &MFP_IERA;
+		if ( pMFP_IPR )		*pMFP_IPR = &MFP_IPRA;
+		if ( pMFP_ISR )		*pMFP_ISR = &MFP_ISRA;
+		if ( pMFP_IMR )		*pMFP_IMR = &MFP_IMRA;
+	}
+	else
+	{
+		Bit = 1 << Interrupt;
+		if ( pMFP_IER ) 	*pMFP_IER = &MFP_IERB;
+		if ( pMFP_IPR )		*pMFP_IPR = &MFP_IPRB;
+		if ( pMFP_ISR )		*pMFP_ISR = &MFP_ISRB;
+		if ( pMFP_IMR )		*pMFP_IMR = &MFP_IMRB;
+	}
+
+	return Bit;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Call the MFP exception associated to the current MFP interrupt.
@@ -351,7 +384,7 @@ bool	MFP_ProcessIRQ ( void )
 {
 	Uint8	*pPendingReg;
 	Uint8	*pInServiceReg;
-	int	Bit;
+	Uint8	Bit;
 
 	
 	if ( MFP_IRQ == 1 )
@@ -364,22 +397,11 @@ bool	MFP_ProcessIRQ ( void )
 
 		if (regs.intmask < 6)
 		{
-			if ( MFP_Current_Interrupt > 7 )
-			{
-				Bit = 1 << ( MFP_Current_Interrupt - 8 );
-				pPendingReg = &MFP_IPRA;
-				pInServiceReg = &MFP_ISRA;
-			}
-			else
-			{
-				Bit = 1 << MFP_Current_Interrupt;
-				pPendingReg = &MFP_IPRB;
-				pInServiceReg = &MFP_ISRB;
-			}
+			Bit = MFP_ConvertIntNumber ( MFP_Current_Interrupt , NULL , &pPendingReg , &pInServiceReg , NULL );
 
 			*pPendingReg &= ~Bit;			/* Clear pending bit */
 
-			/* Are we in 'auto' interrupt or 'manual'? */
+			/* Are we in 'auto' interrupt or 'manual' ? */
 			if (MFP_VR&0x08)			/* Software End-of-Interrupt (SEI) */
 				*pInServiceReg |= Bit;		/* Set interrupt in service register */
 			else
@@ -469,7 +491,7 @@ static bool MFP_InterruptRequest ( Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 P
 
 	if ( IPRx & IMRx & Bit )				/* Interrupt is pending and not masked */
 	{
-		/* Are any higher priority interrupts in service? */
+		/* Are any higher priority interrupts in service ? */
 		if ( ( ( MFP_ISRA & PriorityMaskA ) == 0 ) && ( ( MFP_ISRB & PriorityMaskB ) == 0 ) )
 			return true;				/* No higher int in service */
 	}
