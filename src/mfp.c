@@ -188,9 +188,14 @@ static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer
 
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
 
+
+#define	MFP_IRQ_DELAY_TO_CPU		4	/* When MFP_IRQ is set, it takes 4 CPU cycles before */
+						/* it's visible to the CPU. */
+
 static int	MFP_Current_Interrupt = -1;
 static Uint8	MFP_IRQ = 0;
 static bool	MFP_DelayIRQ = false;
+static Uint64	MFP_IRQ_Time = 0;
 
 
 static const Uint16 MFPDiv[] =
@@ -219,7 +224,7 @@ static const Uint16 MFPDiv[] =
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static void	MFP_UpdateIRQ ( void );
+static void	MFP_UpdateIRQ ( Uint64 Event_Time );
 
 
 
@@ -255,6 +260,7 @@ void MFP_Reset(void)
 	MFP_Current_Interrupt = -1;
 	MFP_IRQ = 0;
 	MFP_DelayIRQ = false;
+	MFP_IRQ_Time = 0;
 }
 
 
@@ -299,6 +305,7 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MFP_Current_Interrupt, sizeof(MFP_Current_Interrupt));
 	MemorySnapShot_Store(&MFP_IRQ, sizeof(MFP_IRQ));
 	MemorySnapShot_Store(&MFP_DelayIRQ, sizeof(MFP_DelayIRQ));
+	MemorySnapShot_Store(&MFP_IRQ_Time, sizeof(MFP_IRQ_Time));
 }
 
 
@@ -389,7 +396,8 @@ bool	MFP_ProcessIRQ ( void )
 	
 	if ( MFP_IRQ == 1 )
 	{
-		if ( MFP_DelayIRQ == true )
+//		if ( MFP_DelayIRQ == true )
+		if ( CyclesGlobalClockCounter - MFP_IRQ_Time < MFP_IRQ_DELAY_TO_CPU )	// TODO
 		{
 			MFP_DelayIRQ = false;			/* Process the IRQ on the next call */
 			return false;				/* For now, return without calling an exception */
@@ -409,7 +417,7 @@ bool	MFP_ProcessIRQ ( void )
 
 //fprintf ( stderr , "process 1 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 			MFP_Exception ( MFP_Current_Interrupt );
-			MFP_UpdateIRQ ();
+			MFP_UpdateIRQ ( CyclesGlobalClockCounter );
 //fprintf ( stderr , "process 2 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 			return true;
 		}
@@ -425,9 +433,11 @@ bool	MFP_ProcessIRQ ( void )
  * Update the MFP IRQ signal when IERx, IPRx, ISRx or IMRx are modified.
  * We set the special flag SPCFLAG_MFP accordingly (to say if an MFP interrupt
  * is to be processed) so we only have one compare to call MFP_ProcessIRQ
- * during the CPU's decode instruction loop..
+ * during the CPU's decode instruction loop.
+ * If MFP_IRQ goes from 0 to 1, we update MFP_IRQ_Time to correctly emulate
+ * the 4 cycle delay before MFP_IRQ is visible to the CPU.
  */
-static void MFP_UpdateIRQ(void)
+static void MFP_UpdateIRQ ( Uint64 Event_Time )
 {
 #if 0
 	if (MFP_IPRA|MFP_IPRB)
@@ -450,7 +460,10 @@ static void MFP_UpdateIRQ(void)
 		if ( NewInt > 0 )
 		{
 			if ( MFP_IRQ == 0 )			/* MFP IRQ goes from 0 to 1 */
+			{
 				MFP_DelayIRQ = true;
+				MFP_IRQ_Time = Event_Time;
+			}
 
 			MFP_IRQ = 1;
 			MFP_Current_Interrupt = NewInt;
@@ -554,6 +567,10 @@ int	MFP_CheckPendingInterrupts ( void )
 /**
  * If interrupt channel is active, set pending bit so it can be serviced
  * later.
+ * As internal timers are processed after the current CPU instruction was
+ * emulated, we use Interrupt_Delayed_Cycles to compute the precise time
+ * at which the timer expired (it could be during the previous instruction).
+ * This allows to correctly handle the 4 cycle MFP_IRQ delay in MFP_ProcessIRQ().
  */
 //void MFP_InputOnChannel ( Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
 void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
@@ -570,7 +587,7 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 	else
 		*pPendingReg &= ~Bit;			/* Clear bit */
 
-	MFP_UpdateIRQ();
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter - Interrupt_Delayed_Cycles );
 }
 
 
@@ -1510,7 +1527,7 @@ void MFP_EnableA_WriteByte(void)
 
 	MFP_IERA = IoMem[0xfffa07];
 	MFP_IPRA &= MFP_IERA;
-	MFP_UpdateIRQ();
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1523,7 +1540,7 @@ void MFP_EnableB_WriteByte(void)
 
 	MFP_IERB = IoMem[0xfffa09];
 	MFP_IPRB &= MFP_IERB;
-	MFP_UpdateIRQ();
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1534,8 +1551,8 @@ void MFP_PendingA_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	MFP_IPRA &= IoMem[0xfffa0b];		/* Cannot set pending bits - only clear via software */
-	MFP_UpdateIRQ();			/* Check if any interrupts pending */
+	MFP_IPRA &= IoMem[0xfffa0b];				/* Cannot set pending bits - only clear via software */
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1546,8 +1563,8 @@ void MFP_PendingB_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	MFP_IPRB &= IoMem[0xfffa0d];
-	MFP_UpdateIRQ();			/* Check if any interrupts pending */
+	MFP_IPRB &= IoMem[0xfffa0d];				/* Cannot set pending bits - only clear via software */
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1558,8 +1575,8 @@ void MFP_InServiceA_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	MFP_ISRA &= IoMem[0xfffa0f];        /* Cannot set in-service bits - only clear via software */
-	MFP_UpdateIRQ();
+	MFP_ISRA &= IoMem[0xfffa0f];        			/* Cannot set in-service bits - only clear via software */
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1570,8 +1587,8 @@ void MFP_InServiceB_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	MFP_ISRB &= IoMem[0xfffa11];        /* Cannot set in-service bits - only clear via software */
-	MFP_UpdateIRQ();
+	MFP_ISRB &= IoMem[0xfffa11];        			/* Cannot set in-service bits - only clear via software */
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1583,7 +1600,7 @@ void MFP_MaskA_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IMRA = IoMem[0xfffa13];
-	MFP_UpdateIRQ();
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1595,7 +1612,7 @@ void MFP_MaskB_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IMRB = IoMem[0xfffa15];
-	MFP_UpdateIRQ();
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1619,7 +1636,7 @@ void MFP_VectorReg_WriteByte(void)
 			/* We are now in automatic mode, so clear all in-service bits! */
 			MFP_ISRA = 0;
 			MFP_ISRB = 0;
-			MFP_UpdateIRQ();
+			MFP_UpdateIRQ ( CyclesGlobalClockCounter );	/* TODO : take write cycle into account in the current CPU instruction */
 		}
 	}
 
