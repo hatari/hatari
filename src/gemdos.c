@@ -1921,6 +1921,7 @@ static bool GemDOS_Write(Uint32 Params)
 	Uint32 Addr;
 	Sint32 Size;
 	int Handle;
+	FILE *fp;
 
 	/* Read details from stack */
 	Handle = STMemory_ReadWord(Params);
@@ -1956,8 +1957,9 @@ static bool GemDOS_Write(Uint32 Params)
 		return true;
 	}
 
-	nBytesWritten = fwrite(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
-	if (ferror(FileHandles[Handle].FileHandle))
+	fp = FileHandles[Handle].FileHandle;
+	nBytesWritten = fwrite(pBuffer, 1, Size, fp);
+	if (ferror(fp))
 	{
 		Log_Printf(LOG_WARN, "GEMDOS failed to write to '%s'\n",
 			   FileHandles[Handle].szActualName );
@@ -1965,6 +1967,7 @@ static bool GemDOS_Write(Uint32 Params)
 	}
 	else
 	{
+		fflush(fp);
 		Regs[REG_D0] = nBytesWritten;      /* OK */
 	}
 	return true;
