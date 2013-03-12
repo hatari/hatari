@@ -1397,7 +1397,10 @@ label="%s";
             if field != 0 and self.show_propagated:
                 title += "nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape\\n"
             if removed:
-                title += "%d leaf and/or intermediate nodes below %.2f%% were removed\\n" % (removed, self.limit)
+                if self.remove_limited:
+                    title += "%d nodes below %.2f%% were removed\\n" % (removed, self.limit)
+                else:
+                    title += "%d leaf and/or intermediate nodes below %.2f%% were removed\\n" % (removed, self.limit)
             if filtered:
                 title += "%d nodes were filtered out\\n" % filtered
             self.write(self.header % title)
