@@ -4,10 +4,6 @@
 #
 # 2013 (C) Eero Tamminen, licensed under GPL v2+
 #
-# TODO: Output in Valgrind callgrind format:
-#       http://valgrind.org/docs/manual/cl-format.html
-# for KCachegrind:
-#       http://kcachegrind.sourceforge.net/
 """
 A tool for post-processing emulator HW profiling data.
 
@@ -51,6 +47,8 @@ Options:
         -p		propagate costs up in call hierarchy
 	-o <file name>	statistics output file name (default is stdout)
         -g              write <profile>.dot callgraph files
+        -k		write <profile>.cg Callgrind format output
+        		(for Kcachegrind GUI)
         -v		verbose output
 
 Long options for above are:
@@ -64,6 +62,7 @@ Long options for above are:
         --propagate
         --output
         --graph
+        --callgrind
         --verbose
 
 (Timing --info is shown only for cycles list.)
@@ -168,6 +167,7 @@ from bisect import bisect_right
 import getopt, os, re, sys
 
 
+# ---------------------------------------------------------------------
 class Output:
     "base class for error and file outputs"
 
@@ -184,6 +184,17 @@ class Output:
         "set normal output data file"
         self.write = out.write
 
+    def set_output_file_ext(self, fname, extension):
+        "open output file name with extension replacement, on success return name"
+        basename = os.path.splitext(fname)[0]
+        fname = "%s%s" % (basename, extension)
+        try:
+            self.set_output(open(fname, "w"))
+            return fname
+        except IOError, err:
+            self.warning(err)
+        return None
+
     # rest are independent of output file
     def message(self, msg):
         "show message to user"
@@ -199,6 +210,7 @@ class Output:
         sys.exit(1)
 
 
+# ---------------------------------------------------------------------
 class FunctionStats:
     """Function (instructions) state. State is updated while profile
     data is being parsed and when function changes, instance is stored
@@ -261,6 +273,7 @@ class FunctionStats:
         return ret
 
 
+# ---------------------------------------------------------------------
 class InstructionStats:
     "statistics on all instructions"
     # not changable, these are expectatations about the data fields
@@ -320,6 +333,7 @@ class InstructionStats:
             self.totals = sums
 
 
+# ---------------------------------------------------------------------
 class ProfileSymbols(Output):
     "class for handling parsing and matching symbols, memory areas and their addresses"
     # profile file field name for program text/code address range
@@ -496,6 +510,7 @@ class ProfileSymbols(Output):
         return self.get_area(addr)
 
 
+# ---------------------------------------------------------------------
 class ProfileCallers(Output):
     "profile data callee/caller information parser & handler"
 
@@ -701,6 +716,104 @@ class ProfileCallers(Output):
                         break
 
 
+# ---------------------------------------------------------------------
+class ProfileCallgrind(Output):
+    "profile output in callgrind format"
+    # Output in Valgrind callgrind format:
+    #       http://valgrind.org/docs/manual/cl-format.html
+    # for KCachegrind:
+    #       http://kcachegrind.sourceforge.net/
+
+    def __init__(self):
+        Output.__init__(self)
+        self.function = None
+        self.profname = None
+        self.tmpname = None
+        self.items = 0
+
+    def start_output(self, fname, emuinfo, names):
+        "create callgraph file and write header to it"
+        self.profname = fname
+        self.tmpname = self.set_output_file_ext(fname, ".cgtmp")
+        if not self.tmpname:
+            self.error_exit("Temporary callgrind file '%s' creation failed" % self.tmpname)
+        if emuinfo:
+            self.write("creator: %s\n" % emuinfo)
+        idx = 0
+        shortnames = []
+        for name in names:
+            abr = "%s_%d" % (name.split()[-1], idx)
+            self.write("event: %s %s\n" % (abr, name))
+            shortnames.append(abr)
+            idx += 1
+        self.write("events: %s\n" % ' '.join(shortnames))
+        self.write("fl=%s\n" % fname)
+        self.items = len(names)
+
+    def output_line(self, function, counts, linenro):
+        "output given function line information"
+        # this needs to be done while data is parsed because
+        # line specific data isn't stored after parsing
+        if function != self.function:
+            self.function = function
+            # first line in function, output function info
+            self.write("fn=%s\n" % function.name)
+            # only first function line gets the call count
+            counts = [function.data[0]] + counts[1:]
+        self.write("%d %s\n" % (linenro, ' '.join([str(x) for x in counts])))
+
+    def _output_calls(self, profile, paddr):
+        # TODO: find the line in profile corresponding
+        # to the caller and use that as line number,
+        # instead of parent line number
+        missing = 0
+        parent = profile[paddr]
+        for caddr in parent.child.keys():
+            child = profile[caddr]
+            info = child.parent[paddr]
+            total = 0
+            for dummy, count in info:
+                total += count
+            self.write("cfn=%s\n" % child.name)
+            self.write("calls=%d %d\n" % (total, child.line))
+            if child.total:
+                data = child.total
+            else:
+                data = child.data
+                missing += 1
+            all_calls = child.data[0]
+            if all_calls < total:
+                self.warning("calls from %s to %s: %d > %d" % (parent.name, child.name, total, all_calls))
+            data = [int(round(float(x)*total/all_calls)) for x in data]
+            counts = ' '.join([str(x) for x in data])
+            self.write("%d %s\n" % (parent.line, counts))
+        return missing
+
+    def output_callinfo(self, profile, names):
+        "output function calling information"
+        # this can be done only after profile is parsed because
+        # before that we don't have function inclusive cost counts,
+        # but it requires going through the files again
+        fname = self.set_output_file_ext(self.tmpname, ".cg")
+        self.message("\nGenerating callgrind file '%s'..." % fname)
+        tmpfile = open(self.tmpname, 'r')
+        os.remove(self.tmpname)
+
+        missing = 0
+        for line in tmpfile.readlines():
+            self.write(line)
+            if not line.startswith("fn="):
+                continue
+            name = line.strip().split('=')[1]
+            paddr = names[name]
+            if not profile[paddr].child:
+                continue
+            missing += self._output_calls(profile, paddr)
+        if missing:
+            self.warning("%d child nodes missing propagated total values for callgrind data (nodes own value used instead)!" % missing)
+
+
+# ---------------------------------------------------------------------
 class EmulatorProfile(Output):
     "Emulator profile data file parsing and profile information"
 
@@ -731,6 +844,8 @@ class EmulatorProfile(Output):
         self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
 
         self.stats = None		# InstructionStats instance
+        self.propagate = False
+        self.callgrind = None		# ProfileCallgrind instance
         self.profile = None		# hash of profile (symbol:data)
         self.linenro = 0
 
@@ -748,6 +863,12 @@ class EmulatorProfile(Output):
 
     def enable_compact(self):
         self.callers.enable_compact()
+
+    def enable_propagating(self):
+        self.propagate = True
+
+    def enable_callgrind(self):
+        self.callgrind = ProfileCallgrind()
 
     def parse_symbols(self, fobj, is_relative):
         "parse symbols from given file object"
@@ -888,6 +1009,8 @@ class EmulatorProfile(Output):
                 # counts[0] will be inferred call count
                 counts = [0] + [int(x) for x in match.group(2).split(',')]
                 function = self._parse_line(function, addr, counts, discontinued)
+                if self.callgrind:
+                    self.callgrind.output_line(function, counts, self.linenro)
                 discontinued = False
             # next line
             line = fobj.readline()
@@ -895,11 +1018,13 @@ class EmulatorProfile(Output):
         self._change_function(function, None, 0)
         return line
 
-    def parse_profile(self, fobj):
+    def parse_profile(self, fobj, fname):
         "parse profile data"
         self.profile = {}
         # header
         self.linenro = self._get_profile_type(fobj)
+        if self.callgrind:
+            self.callgrind.start_output(fname, self.emuinfo, self.stats.names)
         # memory areas
         line, self.linenro = self.symbols.parse_areas(fobj, self.linenro)
         # instructions / memory addresses
@@ -916,8 +1041,13 @@ class EmulatorProfile(Output):
         # finish
         self.stats.sum_values(self.profile.values())
         self.callers.complete(self.profile, self.symbols)
+        if self.propagate:
+            self.callers.propagate_costs(self.profile)
+        if self.callgrind:
+            self.callgrind.output_callinfo(self.profile, self.symbols.names)
 
 
+# ---------------------------------------------------------------------
 class ProfileSorter:
     "profile information sorting and list output class"
 
@@ -1011,6 +1141,7 @@ class ProfileSorter:
         self._output_list(keys, count, limit, show_info)
 
 
+# ---------------------------------------------------------------------
 class ProfileOutput(Output):
     "base class for profile output options"
 
@@ -1038,6 +1169,7 @@ class ProfileOutput(Output):
         self.limit = limit
 
 
+# ---------------------------------------------------------------------
 class ProfileStats(ProfileOutput):
     "profile information statistics output"
 
@@ -1095,6 +1227,7 @@ class ProfileStats(ProfileOutput):
                 sorter.do_list(field, self.count, self.limit, self.show_info)
 
 
+# ---------------------------------------------------------------------
 class ProfileGraph(ProfileOutput):
     "profile callgraph output"
 
@@ -1375,13 +1508,10 @@ label="%s";
             filtered = self._filter_profile()
             if not self.nodes:
                 continue
-            dotname = "%s-%d.dot" % (basename, field)
-            self.message("\nGenerating '%s' callgraph DOT file..." % dotname)
-            try:
-                self.set_output(open(dotname, "w"))
-            except IOError, err:
-                self.warning(err)
+            dotname = self.set_output_file_ext(fname, "-%d.dot" % field)
+            if not dotname:
                 continue
+            self.message("\nGenerating '%s' DOT callgraph file..." % dotname)
             # limits are taken from full profile, not potentially reduced one
             sorter = ProfileSorter(profobj.profile, stats, None, False)
             if self.emph_limit:
@@ -1409,10 +1539,12 @@ label="%s";
             self.write(self.footer)
 
 
+# ---------------------------------------------------------------------
 class Main(Output):
     "program main loop & args parsing"
     longopts = [
         "absolute=",
+        "callgrind",
         "compact",
         "emph-limit=",
         "first",
@@ -1447,11 +1579,10 @@ class Main(Output):
     def parse_args(self):
         "parse & handle program arguments"
         try:
-            opts, rest = getopt.getopt(self.args, "a:e:f:gil:o:pr:stv", self.longopts)
+            opts, rest = getopt.getopt(self.args, "a:e:f:gikl:o:pr:stv", self.longopts)
         except getopt.GetoptError as err:
             self.usage(err)
 
-        propagate = False
         prof = EmulatorProfile()
         graph = ProfileGraph()
         stats = ProfileStats()
@@ -1471,6 +1602,9 @@ class Main(Output):
                 prof.remove_calls(arg)
             elif opt == "--ignore-to":
                 prof.set_ignore_to(arg.split(','))
+            # options for profile Callgraph info generation
+            elif opt in ("-k", "--calgrind"):
+                prof.enable_callgrind()
             # options for both graphs & statistics
             elif opt in ("-f", "--first"):
                 count = self.get_value(opt, arg, False)
@@ -1481,9 +1615,9 @@ class Main(Output):
                 graph.set_limit(limit)
                 stats.set_limit(limit)
             elif opt in ("-p", "--propagate"):
+                prof.enable_propagating()
                 graph.enable_propagated()
                 stats.enable_propagated()
-                propagate = True
             # options specific to graphs
             elif opt in ("-e", "--emph-limit"):
                 graph.set_emph_limit(self.get_value(opt, arg, True))
@@ -1525,12 +1659,7 @@ class Main(Output):
                 self.usage("unknown option '%s' with value '%s'" % (opt, arg))
         for arg in rest:
             self.message("\nParsing profile information from %s..." % arg)
-            prof.parse_profile(self.open_file(arg, "r"))
-            if propagate:
-                # TODO: do this step automatically in callers.complete()
-                # after this functionality is rewritten faster
-                self.message("Propagating costs in call tree (SLOW, takes exponential time)...")
-                prof.callers.propagate_costs(prof.profile)
+            prof.parse_profile(self.open_file(arg, "r"), arg)
             graph.do_output(prof, arg)
             prof.output_info(arg)
             stats.do_output(prof)
@@ -1559,5 +1688,6 @@ class Main(Output):
         sys.exit(1)
 
 
+# ---------------------------------------------------------------------
 if __name__ == "__main__":
     Main(sys.argv).parse_args()
