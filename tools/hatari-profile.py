@@ -1113,8 +1113,7 @@ class ProfileSorter:
             if self.show_propagated:
                 if function.total:
                     ppercent = 100.0 * function.total[field] / total
-                    # first field (=call) counts are always
-                    if field > 0 and function.estimated:
+                    if function.estimated:
                         propagated = " ~%6.2f%%" % ppercent
                     else:
                         propagated = "  %6.2f%%" % ppercent
@@ -1460,16 +1459,14 @@ label="%s";
                 if substr in name:
                     style = "%s style=filled fillcolor=green shape=square" % style
                     break
-            if field == 0:
-                # calls aren't estimated so they don't need different shapes
-                self.write("N_%X [label=\"%.2f%%\\n%s\\n%d calls\"%s];\n" % (addr, percentage, name, count, style))
-                continue
             if estimated:
                 valuestr = "%.2f%%\\n(own: %.2f%%)" % (percentage, ownpercentage)
             else:
                 valuestr = "%.2f%%" % percentage
             calls = values[0]
-            if field == stats.cycles_field:
+            if field == 0:
+                self.write("N_%X [label=\"%s\\n%s\\n%d calls\"%s%s];\n" % (addr, valuestr, name, count, style, shape))
+            elif field == stats.cycles_field:
                 time = stats.get_time(values)
                 self.write("N_%X [label=\"%s\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, valuestr, time, name, calls, style, shape))
             else:
@@ -1524,7 +1521,7 @@ label="%s";
                 title += "\\n(%s)" % profobj.emuinfo
             title += "\\n\\nown cost emphasis (gray bg) limit = %.2f%%\\n" % self.limit
             title += "(potentially propagated) cost emphasis (red) limit = %.2f%%\\n" % limit
-            if field != 0 and self.show_propagated:
+            if self.show_propagated:
                 title += "nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape\\n"
             if removed:
                 if self.remove_limited:
