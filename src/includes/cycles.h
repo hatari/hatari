@@ -33,5 +33,7 @@ extern void Cycles_SetCounter(int nId, int nValue);
 extern int Cycles_GetCounter(int nId);
 extern int Cycles_GetCounterOnReadAccess(int nId);
 extern int Cycles_GetCounterOnWriteAccess(int nId);
+extern Uint64 Cycles_GetClockCounterOnReadAccess(void);
+extern Uint64 Cycles_GetClockCounterOnWriteAccess(void);
 
 #endif  /* HATARI_CYCLES_H */
