@@ -416,7 +416,7 @@ void GemDOS_Init(void)
 	/* Clear handles structure */
 	memset(FileHandles, 0, sizeof(FileHandles));
 	/* Clear DTAs */
-	for(i=0; i<MAX_DTAS_FILES; i++)
+	for(i = 0; i < MAX_DTAS_FILES; i++)
 	{
 		InternalDTAs[i].bUsed = false;
 		InternalDTAs[i].nentries = 0;
@@ -435,7 +435,7 @@ void GemDOS_Reset(void)
 	int i;
 
 	/* Init file handles table */
-	for (i=0; i<MAX_FILE_HANDLES; i++)
+	for (i = 0; i < MAX_FILE_HANDLES; i++)
 	{
 		/* Was file open? If so close it */
 		if (FileHandles[i].bUsed)
@@ -659,11 +659,11 @@ void GemDOS_UnInitDrives(void)
 {
 	int i;
 
-	GemDOS_Reset();        /* Close all open files on emulated drive*/
+	GemDOS_Reset();        /* Close all open files on emulated drive */
 
 	if (GEMDOS_EMU_ON)
 	{
-		for(i=0; i<MAX_HARDDRIVES; i++)
+		for(i = 0; i < MAX_HARDDRIVES; i++)
 		{
 			if (emudrives[i])
 			{
@@ -703,7 +703,7 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 			GemDOS_InitDrives();
 		}
 
-		for(i=0; i<MAX_HARDDRIVES; i++)
+		for(i = 0; i < MAX_HARDDRIVES; i++)
 		{
 			int bDummyDrive = false;
 			if (!emudrives[i])
@@ -752,7 +752,7 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 	if (!bSave)
 	{
 		/* Clear file handles  */
-		for(i=0; i<MAX_FILE_HANDLES; i++)
+		for(i = 0; i < MAX_FILE_HANDLES; i++)
 		{
 			FileHandles[i].FileHandle = NULL;
 			FileHandles[i].bUsed = false;
@@ -770,7 +770,7 @@ static int GemDOS_FindFreeFileHandle(void)
 	int i;
 
 	/* Scan our file list for free slot */
-	for(i=0; i<MAX_FILE_HANDLES; i++)
+	for(i = 0; i < MAX_FILE_HANDLES; i++)
 	{
 		if (!FileHandles[i].bUsed)
 			return i;
@@ -1973,6 +1973,7 @@ static bool GemDOS_Write(Uint32 Params)
 	return true;
 }
 
+
 /*-----------------------------------------------------------------------*/
 /**
  * GEMDOS Delete file
@@ -2024,6 +2025,7 @@ static bool GemDOS_FDelete(Uint32 Params)
 	free(psActualFileName);
 	return true;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2506,8 +2508,8 @@ static bool GemDOS_SFirst(Uint32 Params)
 	GemDOS_SNext();
 	/* increment DTA index */
 	DTAIndex++;
-	DTAIndex&=(MAX_DTAS_FILES-1);
-	
+	DTAIndex &= (MAX_DTAS_FILES-1);
+
 	return true;
 }
 
@@ -2769,7 +2771,7 @@ void GemDOS_Info(Uint32 bShowOpcodes)
 
 	fprintf(stderr, "Connected drives mask: 0x%x\n\n", ConnectedDriveMask);
 	fputs("GEMDOS HDD emulation drives:\n", stderr);
-	for(i = 0; i<MAX_HARDDRIVES; i++)
+	for(i = 0; i < MAX_HARDDRIVES; i++)
 	{
 		if (!emudrives[i])
 			continue;
