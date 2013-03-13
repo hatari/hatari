@@ -37,7 +37,7 @@ Uint32 STRamEnd;            /* End of ST Ram, above this address is no-mans-land
 /**
  * Clear section of ST's memory space.
  */
-void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
+static void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
 {
 	memset(&STRam[StartAddress], 0, EndAddress-StartAddress);
 }
