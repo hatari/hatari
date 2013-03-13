@@ -108,6 +108,8 @@
 /* 2013/03/10	[NP]	Improve the MFP_IRQ 4 cycle delay by taking into account the	*/
 /*			time at which the timer expired during the CPU instruction	*/
 /*			(fix Reset part in Decade Demo, High Fidelity Dreams by Aura).	*/
+/* 2013/03/14	[NP]	When writing to the MFP's registers, take the write cycles into	*/
+/*			account when updating MFP_IRQ_Time (properly fix Super Hang On).*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
@@ -1532,7 +1534,7 @@ void MFP_EnableA_WriteByte(void)
 
 	MFP_IERA = IoMem[0xfffa07];
 	MFP_IPRA &= MFP_IERA;
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
+	MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1545,7 +1547,7 @@ void MFP_EnableB_WriteByte(void)
 
 	MFP_IERB = IoMem[0xfffa09];
 	MFP_IPRB &= MFP_IERB;
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
+	MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1557,7 +1559,7 @@ void MFP_PendingA_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IPRA &= IoMem[0xfffa0b];				/* Cannot set pending bits - only clear via software */
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
+	MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1569,7 +1571,7 @@ void MFP_PendingB_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IPRB &= IoMem[0xfffa0d];				/* Cannot set pending bits - only clear via software */
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
+	MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1581,7 +1583,7 @@ void MFP_InServiceA_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_ISRA &= IoMem[0xfffa0f];        			/* Cannot set in-service bits - only clear via software */
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
+	MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1593,7 +1595,7 @@ void MFP_InServiceB_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_ISRB &= IoMem[0xfffa11];        			/* Cannot set in-service bits - only clear via software */
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
+	MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1605,7 +1607,7 @@ void MFP_MaskA_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IMRA = IoMem[0xfffa13];
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
+	MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1617,7 +1619,7 @@ void MFP_MaskB_WriteByte(void)
 	M68000_WaitState(4);
 
 	MFP_IMRB = IoMem[0xfffa15];
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter );		/* TODO : take write cycle into account in the current CPU instruction */
+	MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1641,7 +1643,7 @@ void MFP_VectorReg_WriteByte(void)
 			/* We are now in automatic mode, so clear all in-service bits! */
 			MFP_ISRA = 0;
 			MFP_ISRB = 0;
-			MFP_UpdateIRQ ( CyclesGlobalClockCounter );	/* TODO : take write cycle into account in the current CPU instruction */
+			MFP_UpdateIRQ ( Cycles_GetClockCounterOnWriteAccess() );
 		}
 	}
 
