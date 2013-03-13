@@ -1586,7 +1586,7 @@ static bool GemDOS_Create(Uint32 Params)
 	/* TODO: host filenames might not fit into this */
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
-	int Drive,Index,Mode;
+	int Drive,Index, Mode;
 
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
@@ -1624,7 +1624,7 @@ static bool GemDOS_Create(Uint32 Params)
 
 	/* Find slot to store file handle, as need to return WORD handle for ST */
 	Index = GemDOS_FindFreeFileHandle();
-	if (Index==-1)
+	if (Index == -1)
 	{
 		/* No free handles, return error code */
 		Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
@@ -1656,7 +1656,7 @@ static bool GemDOS_Create(Uint32 Params)
 
 		/* Return valid ST file handle from our range (from BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
-		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n", Index,
+		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n", Regs[REG_D0],
 			  Mode & GEMDOS_FILE_ATTRIB_READONLY ? "read-only":"read/write");
 		return true;
 	}
@@ -1762,7 +1762,7 @@ static bool GemDOS_Open(Uint32 Params)
 		 *   Fixing this requires using open() and file descriptors instead
 		 *   of fopen() and FILE* pointers, but Windows doesn't support that.
 		 */
-		FileHandles[Index].FileHandle =  fopen(szActualFileName, ModeStr);
+		FileHandles[Index].FileHandle = fopen(szActualFileName, ModeStr);
 	}
 
 	if (FileHandles[Index].FileHandle != NULL)
@@ -1776,7 +1776,7 @@ static bool GemDOS_Open(Uint32 Params)
 		/* Return valid ST file handle from our range (BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
 		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n",
-			  Index, Modes[Mode&0x03].desc);
+			  Regs[REG_D0], Modes[Mode&0x03].desc);
 		return true;
 	}
 
@@ -2925,6 +2925,8 @@ void GemDOS_OpCode(void)
 		Finished = GemDOS_GSDToF(Params);
 		break;
 
+	/* print args for other calls */
+
 	case 0x01:	/* Conin */
 	case 0x03:	/* Cauxin */
 	case 0x12:	/* Cauxis */
@@ -2945,7 +2947,6 @@ void GemDOS_OpCode(void)
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
 		break;
 		
-		/* print args for other calls */
 	case 0x02:	/* Cconout */
 	case 0x04:	/* Cauxout */
 	case 0x05:	/* Cprnout */
