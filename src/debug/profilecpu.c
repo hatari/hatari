@@ -616,6 +616,9 @@ void Profile_CpuUpdate(void)
 #else
 	cycles = CurrentInstrCycles + nWaitStateCycles;
 #endif
+	/* cycles are based on 8Mhz clock, change them to correct one */
+	cycles <<= nCpuFreqShift;
+
 	/* catch too large (and negative) cycles, ignore STOP instruction */
 	if (unlikely(cycles > 256 && opcode != 0x4e72)) {
 		fprintf(stderr, "WARNING: cycles %d > 512 at 0x%x\n",
@@ -624,7 +627,7 @@ void Profile_CpuUpdate(void)
 #if DEBUG
 	if (unlikely(cycles == 0)) {
 		Uint32 nextpc;
-		Disasm(debugOutput, prev_pc, &nextpc, 1);
+		Disasm(stderr, prev_pc, &nextpc, 1);
 	}
 #endif
 	if (likely(prev->cycles < MAX_CPU_PROFILE_VALUE - cycles)) {
