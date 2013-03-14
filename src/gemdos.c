@@ -748,7 +748,8 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 	}
 	MemorySnapShot_Store(&CurrentDrive,sizeof(CurrentDrive));
 	/* Don't save file handles as files may have changed which makes
-	   it impossible to get a valid handle back */
+	 * it impossible to get a valid handle back
+	 */
 	if (!bSave)
 	{
 		/* Clear file handles  */
@@ -782,18 +783,21 @@ static int GemDOS_FindFreeFileHandle(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check ST handle is within our table range, return TRUE if not
+ * Check whether TOS handle is within our table range,
+ * return (positive) internal Handle if yes, (negative) -1 for error.
  */
-static bool GemDOS_IsInvalidFileHandle(int Handle)
+static int GemDOS_GetValidFileHandle(int Handle)
 {
-	/* Check handle was valid with our handle table */
+	Handle -= BASE_FILEHANDLE;
+
+	/* handle is valid for current program and in our handle table? */
 	if (Handle >= 0 && Handle < MAX_FILE_HANDLES
 	    && FileHandles[Handle].bUsed)
 	{
-		return false;
+		return Handle;
 	}
 	/* invalid handle */
-	return true;
+	return -1;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1684,6 +1688,7 @@ static bool GemDOS_Create(Uint32 Params)
 	return true;
 }
 
+
 /*-----------------------------------------------------------------------*/
 /**
  * GEMDOS Open file
@@ -1813,10 +1818,8 @@ static bool GemDOS_Close(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3E Fclose(%i)\n", Handle);
 
-	Handle -= BASE_FILEHANDLE;
-
-	/* Check handle was valid */
-	if (GemDOS_IsInvalidFileHandle(Handle))
+	/* Get internal handle */
+	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
 	{
 		/* no, assume it was TOS one -> redirect */
 		return false;
@@ -1856,10 +1859,8 @@ static bool GemDOS_Read(Uint32 Params)
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3F Fread(%i, %i, 0x%x)\n", 
 	          Handle, Size, Addr);
 
-	Handle -= BASE_FILEHANDLE;
-
-	/* Check handle was valid */
-	if (GemDOS_IsInvalidFileHandle(Handle))
+	/* Get internal handle */
+	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
 	{
 		/* assume it was TOS one -> redirect */
 		return false;
@@ -1932,10 +1933,8 @@ static bool GemDOS_Write(Uint32 Params)
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x40 Fwrite(%i, %i, 0x%x)\n", 
 	          Handle, Size, Addr);
 
-	Handle -= BASE_FILEHANDLE;
-
-	/* Check handle was valid */
-	if (GemDOS_IsInvalidFileHandle(Handle))
+	/* Get internal handle */
+	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
 	{
 		/* assume it was TOS one -> redirect */
 		return false;
@@ -2047,10 +2046,8 @@ static bool GemDOS_LSeek(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x42 Fseek(%li, %i, %i)\n", Offset, Handle, Mode);
 
-	Handle -= BASE_FILEHANDLE;
-
-	/* Check handle was valid */
-	if (GemDOS_IsInvalidFileHandle(Handle))
+	/* get internal handle */
+	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
 	{
 		/* assume it was TOS one -> redirect */
 		return false;
@@ -2583,10 +2580,8 @@ static bool GemDOS_GSDToF(Uint32 Params)
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x57 Fdatime(0x%x, %i, %i)\n", pBuffer,
 	          Handle, Flag);
 
-	Handle -= BASE_FILEHANDLE;
-
-	/* Check handle was valid */
-	if (GemDOS_IsInvalidFileHandle(Handle))
+	/* get internal handle */
+	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
 	{
 		/* No, assume was TOS -> redirect */
 		return false;
@@ -2809,7 +2804,8 @@ void GemDOS_Info(Uint32 bShowOpcodes)
 	{
 		if (!FileHandles[i].bUsed)
 			continue;
-		fprintf(stderr, "- %d: %s\n", i, FileHandles[i].szActualName);
+		fprintf(stderr, "- %d: %s\n", i + BASE_FILEHANDLE,
+			FileHandles[i].szActualName);
 		used++;
 	}
 	if (!used)
