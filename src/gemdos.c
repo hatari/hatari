@@ -2200,6 +2200,44 @@ static bool GemDOS_Fattrib(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * GEMDOS Force (file handle aliasing)
+ * Call 0x46
+ */
+static bool GemDOS_Force(Uint32 Params)
+{
+	int std, own;
+
+	/* Read details from stack */
+	std = STMemory_ReadWord(Params);
+        own = STMemory_ReadWord(Params+SIZE_WORD);
+
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x46 Fforce(%d, %d)\n", std, own);
+
+	/* Get internal handle */
+	if (std > own)
+	{
+		int tmp = std;
+		std = own;
+		own = tmp;
+	}
+	if ((own = GemDOS_GetValidFileHandle(own)) < 0)
+	{
+		/* assume it was TOS one -> let TOS handle it */
+		return false;
+	}
+	/* implementation not possible because GEMDOS emulation doesn't
+	 * know when aliasing should be removed as it doesn't have any
+	 * way to track to which program aliasing belonged to AND
+	 * when that particular process terminates (at which point
+	 * aliasing should be also removed, not only at Fclose()).
+	 */
+	Log_Printf(LOG_WARN, "Warning: Fforce() not implemented for GEMDOS emulation!\n");
+	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * GEMDOS Get Directory
  * Call 0x47
  */
@@ -2628,6 +2666,59 @@ static bool GemDOS_GSDToF(Uint32 Params)
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * GEMDOS program termination checker
+ */
+static void GemDOS_TerminateCheck(void)
+{
+	int i, inuse = 0;
+	for (i = 0; i < MAX_FILE_HANDLES; i++)
+	{
+		if (FileHandles[i].bUsed)
+			inuse++;
+	}
+	if (!inuse)
+		return;
+	Log_Printf(LOG_WARN, "%d GEMDOS emulation file handle(s) left open at program termination.\n", inuse);
+}
+
+/**
+ * GEMDOS Pterm0
+ * Call 0x00
+ */
+static bool GemDOS_Pterm0(Uint32 Params)
+{
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x00 Pterm0()\n");
+	GemDOS_TerminateCheck();
+	return false;
+}
+
+/**
+ * GEMDOS Ptermres
+ * Call 0x31
+ */
+static bool GemDOS_Ptermres(Uint32 Params)
+{
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x31 Ptermres(0x%X, %d)\n",
+		  STMemory_ReadLong(Params), STMemory_ReadWord(Params+SIZE_WORD));
+	GemDOS_TerminateCheck();
+	return false;
+}
+
+/**
+ * GEMDOS Pterm
+ * Call 0x4c
+ */
+static bool GemDOS_Pterm(Uint32 Params)
+{
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4C Pterm(%d)\n",
+		  STMemory_ReadWord(Params));
+	GemDOS_TerminateCheck();
+	return false;
+}
+
+
 #if ENABLE_TRACING
 /*-----------------------------------------------------------------------*/
 /**
@@ -2861,11 +2952,17 @@ void GemDOS_OpCode(void)
 	/* Intercept call */
 	switch(GemDOSCall)
 	{
+	 case 0x00:
+		Finished = GemDOS_Pterm0(Params);
+		break;
 	 case 0x0e:
 		Finished = GemDOS_SetDrv(Params);
 		break;
 	 case 0x1a:
 		Finished = GemDOS_SetDTA(Params);
+		break;
+	 case 0x31:
+		Finished = GemDOS_Ptermres(Params);
 		break;
 	 case 0x36:
 		Finished = GemDOS_DFree(Params);
@@ -2903,12 +3000,18 @@ void GemDOS_OpCode(void)
 	 case 0x43:
 		Finished = GemDOS_Fattrib(Params);
 		break;
+	 case 0x46:
+		Finished = GemDOS_Force(Params);
+		break;
 	 case 0x47:
 		Finished = GemDOS_GetDir(Params);
 		break;
 	 case 0x4b:
 		/* Either false or CALL_PEXEC_ROUTINE */
 		Finished = GemDOS_Pexec(Params);
+		break;
+	 case 0x4c:
+		Finished = GemDOS_Pterm(Params);
 		break;
 	 case 0x4e:
 		Finished = GemDOS_SFirst(Params);
@@ -2936,7 +3039,6 @@ void GemDOS_OpCode(void)
 	case 0x07:	/* Crawcin */
 	case 0x19:	/* Dgetdrv */
 	case 0x2F:	/* Fgetdta */
-	case 0x00:	/* Pterm0 */
 	case 0x30:	/* Sversion */
 	case 0x2A:	/* Tgetdate */
 	case 0x2C:	/* Tgettime */
@@ -2952,7 +3054,6 @@ void GemDOS_OpCode(void)
 	case 0x2b:	/* Tsetdate */
 	case 0x2d:	/* Tsettime */
 	case 0x45:	/* Fdup */
-	case 0x4c:	/* Pterm */
 		/* commands taking single word */
 		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%hX)\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
