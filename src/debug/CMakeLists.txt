@@ -8,6 +8,7 @@ if(ENABLE_DSP_EMU)
 endif(ENABLE_DSP_EMU)
 
 add_library(Debug
-            log.c debugui.c breakcond.c debugcpu.c debugInfo.c
-            ${DSPDBG_C} evaluate.c history.c profile.c symbols.c
+	    log.c debugui.c breakcond.c debugcpu.c debugInfo.c
+	    ${DSPDBG_C} evaluate.c history.c symbols.c
+	    profile.c profilecpu.c profiledsp.c
 	    natfeats.c console.c 68kDisass.c)
