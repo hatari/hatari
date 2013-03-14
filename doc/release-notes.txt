@@ -20,20 +20,27 @@ Emulation:
   - Full implementation of the MC6850 ACIA, giving much more robust
     IKBD emulation
   - Better timings for all IKBD commands (measured on a real STF)
+  - Timings are handler internally in IKBD, host date/time is used
+    only to initialize RTC at boot.  I.e. pausing emulation doesn't
+    cause time skips when unpausing
 - MFP changes :
   - Fixed priority errors when simultaneous interrupts happened
   - MFP's IRQ should be delayed by 4 cycles before reaching the CPU
   - MFP's IRQ signal was not correctly updated in some cases
-- Other changes :
-  - Fix: GEMDOS HD emulation overwrote last 28 bytes of basepage space
-    for the started process command line (with with program header)
+- GEMDOS emulation fixes :
+  - GEMDOS HD emulation overwrote last 28 bytes of basepage space
+    for the started process command line (with the program header)
+  - Fwrite() content wasn't flushed to disk on each write, so later
+    Fopen() + Fread()s calls on such files (if they were not closed
+    in the meanwhile) could get data that was out of date.
 
 Emulator:
 - Fix: problems with run-time CPU type changing
 - Much improved console redirection functionality and a separate --conout
   option for it (--bios-intercept doesn't anymore imply console redirection)
 - Display handling:
-  - Fix: max resolution limit wasn't handled properly for ST mode
+  - Fix: max resolution limit wasn't handled properly for ST mode.
+  - Don't change TOS-calculated font size for VDI mode.
   - Setup NVRAM video mode based on VDI mode, when in VDI mode.
     This makes VDI mode work with EmuTOS also under Falcon emulation
     which is useful as EmuTOS doesn't support native VIDEL expanders
@@ -41,6 +48,9 @@ Emulator:
     monochrome and 1024x600/800x768 16-color VDI screens
 - GEMDOS HD emulation:
   - Give warning if GEMDOS dir/file path exceeds 8+3 characters
+    (as those won't work with real TOS)
+  - Give warning about unimplemented Fforce() call and file handles
+    left open at process termination
   - New --gemdos-case option to specify whether new dir/filenames
     are forced to be created in upper (default) or lower case
 - SDL GUI:
@@ -55,19 +65,24 @@ Emulator:
     CPU instruction cycles
   - Profiler provides timing information, based on used cycles
   - Profiler provides CPU instruction cache misses information when using
-    cycle-exact WinUAE CPU core (Falcon emu default)
+    cycle-exact WinUAE CPU core (which is Falcon emu default)
   - For DSP, profiler adds min/max cycle difference info to disassembly
-    (shown by post-processor under "Cache misses" heading)
-  - "profile addresses" can be used to see addresses through which
+  - New "addresses" subcommand can be used to see addresses through which
     code passed during profiling (e.g. while program seems frozen, this
     gives much better overview of code that is being run, than cpu trace)
-    and to save that data to a file for post-processing
-  - hatari-profiler.py script for post-processing output from the profiler
-    CPU and DSP profiling commands:
-	profile addresses <count> <file>
-	dspprofile addresses <count> <file>
+  - New "callers" subcommand lists all addresses from which loaded
+    symbols' addresses were "called" from.  This way one can e.g. find
+    in which contexts interrupt handlers were called and it can be
+    used to construction program execution callgraph
+  - New "save" subcommand saves profile address and caller information
+    to given file, with extra information needed for post-processing
+  - New hatari-profiler.py script for post-processing output from
+    profiler's CPU and DSP profiling "save" commands:
+	profile save <filename>
+	dspprofile save <filename>
     - With symbol address information it can provide function level
-      instruction, processor cycle and cache miss statistics.
+      instruction, processor cycle & i-cache miss statistics, and
+      function call callgraphs
 - Debugger:
   - "dsp" subcommand added to "info" command, to show e.g. DSP stack content
   - "step" and "next" commands added for single stepping CPU and DSP code
@@ -100,7 +115,7 @@ Windows specific changes:
   "-D" will now just toggle CPU exception handling
 - Fix: console stderr redirection fixed (used invalid "wr" mode)
 - Fix: Windows localtime() not supporting dates before 1970 causes IKBD
-  emulation crashes (not a problem with Cygwin, just Mingw)
+  emulation crashes (wasn't problem with Cygwin, just with Mingw builds)
 
 Other changes:
 - HTML documentation indeces generated dynamically with JS
