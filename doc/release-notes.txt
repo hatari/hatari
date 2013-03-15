@@ -27,10 +27,12 @@ Emulation:
   - Fixed priority errors when simultaneous interrupts happened
   - MFP's IRQ should be delayed by 4 cycles before reaching the CPU
   - MFP's IRQ signal was not correctly updated in some cases
-- GEMDOS emulation fixes :
-  - GEMDOS HD emulation overwrote last 28 bytes of basepage space
+- GEMDOS emulation changes :
+  - Support Fforce() for GEMDOS HD emulated files and close at Pterm*()
+    all internal handles to emulated files program had left open
+  - Fix: GEMDOS HD emulation overwrote last 28 bytes of basepage space
     for the started process command line (with the program header)
-  - Fwrite() content wasn't flushed to disk on each write, so later
+  - Fix: Fwrite() content wasn't flushed to disk on each write, so later
     Fopen() + Fread()s calls on such files (if they were not closed
     in the meanwhile) could get data that was out of date.
 
@@ -49,8 +51,6 @@ Emulator:
 - GEMDOS HD emulation:
   - Give warning if GEMDOS dir/file path exceeds 8+3 characters
     (as those won't work with real TOS)
-  - Give warning about unimplemented Fforce() call and file handles
-    left open at process termination
   - New --gemdos-case option to specify whether new dir/filenames
     are forced to be created in upper (default) or lower case
 - SDL GUI:

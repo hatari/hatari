@@ -1753,15 +1753,6 @@ that order. You need to rename the files.</li>
 <li>Names which aren't valid TOS directory or file names, are converted
 to a valid format.  If there are multiple files which converted
 names are identical in TOS-format, you see only one of those.</li>
-<li>Fforce() doesn't work for GEMDOS emulated files (as GEMDOS emulation
-doesn't known to which programs which files belong to, it couldn't unalias
-such file handles on program termination).  Programs calling Fforce()
-need to be use files that reside on floppy or HD images.</li>
-<li>All GEMDOS emulation file handles are global, not program specific.
-If program doesn't close a file handle before termination, it's still
-reserved within GEMDOS emulation.  Running enough of such programs will
-exhaust GEMDOS emulation file handles, although that wouldn't be a problem
-on real TOS (which closes all handles on program termination).</li>
 <li>It is not possible to use a cartridge image at the same time
 with the GEMDOS drive emulation (Hatari has it's own cartridge code
 that is used for GEMDOS emulation).</li>
