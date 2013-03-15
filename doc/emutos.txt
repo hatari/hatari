@@ -510,7 +510,7 @@ Mono games:
 - Pacballs      (line-A bitblit + panic)
 - Pipeline*	(line-A line and filled rectangle)
 - Pling II	(line-A bitblit and draw/clear sprite)
-- Ramses*       (panic after invalid IO write)
+- Ramses*       (causes panic as it tries to do crazy things with v_hide_c)
 - Roll X	(line-A bitblit and get pixel)
 - Take2*        (line-A bitblit)
 
