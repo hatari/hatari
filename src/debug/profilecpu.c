@@ -528,38 +528,40 @@ bool Profile_CpuStart(void)
 	return cpu_profile.enabled;
 }
 
-static calltype_t cpu_opcode_type(Uint16 opcode, Uint32 prev_pc, Uint32 pc)
+/* return branch type based on caller instruction type */
+static calltype_t cpu_opcode_type(int prev_family, Uint32 prev_pc, Uint32 pc)
 {
-	/* JSR, BSR (should be most common) */
-	if ((opcode & 0xffc0) == 0x4e80 ||
-	    (opcode & 0xff00) == 0x6100) {
+	switch (prev_family) {
+
+	case i_JSR:
+	case i_BSR:
 		return CALL_SUBROUTINE;
-	}
-	/* RTS, RTR, RTD */
-	if (opcode == 0x4e75 ||
-	    opcode == 0x4e77 ||
-	    opcode == 0x4e74) {
+
+	case i_RTS:
+	case i_RTR:
+	case i_RTD:
 		return CALL_SUBRETURN;
-	}
-	/* TRAP, TRAPV, STOP, ILLEGAL, CHK, BKPT */
-	if ((opcode & 0xfff0) == 0x4e40 ||
-	     opcode == 0x4e76 ||
-	     opcode == 0x4afc ||
-	     opcode == 0x4e72 ||
-	    (opcode & 0xf1c0) == 0x4180 ||
-	    (opcode & 0xfff8) == 0x4848) {
-		return CALL_EXCEPTION;
-	}
-	/* RTE */
-	if (opcode == 0x4e73) {
-		return CALL_EXCRETURN;
-	}
-	/* JMP (potentially static functions), DBCC, BRA, BCC (loop labels) */
-	if ((opcode & 0xffc0) == 0x4ec0 ||
-	    (opcode & 0xf0f8) == 0x50c8 ||
-	    (opcode & 0xff00) == 0x6000 ||
-	   ((opcode & 0xf000) == 0x6000 && (opcode & 0xf00) > 0x100)) {
+
+	case i_JMP:	/* often used also for "inlined" function calls... */
+	case i_Bcc:	/* both BRA & BCC */
+	case i_FBcc:
+	case i_DBcc:
+	case i_FDBcc:
 		return CALL_BRANCH;
+
+	case i_TRAP:
+	case i_TRAPV:
+	case i_TRAPcc:
+	case i_FTRAPcc:
+	case i_STOP:
+	case i_ILLG:
+	case i_CHK:
+	case i_CHK2:
+	case i_BKPT:
+		return CALL_EXCEPTION;
+
+	case i_RTE:
+		return CALL_EXCRETURN;
 	}
 	/* just moved to next instruction? */
 	if (prev_pc < pc && (pc - prev_pc) <= 10) {
@@ -582,13 +584,11 @@ void Profile_CpuUpdate(void)
 #endif
 	Uint32 pc, prev_pc, idx, cycles;
 	cpu_profile_item_t *prev;
-	Uint16 opcode;
 
 	prev_pc = cpu_profile.prev_pc;
 	cpu_profile.prev_pc = pc = M68000_GetPC();
-	opcode = STMemory_ReadWord(prev_pc);
 	if (cpu_profile.sites) {
-		calltype_t flag = cpu_opcode_type(opcode, prev_pc, pc);
+		calltype_t flag = cpu_opcode_type(LastOpcodeFamily, prev_pc, pc);
 		Profile_UpdateCaller(Symbols_GetCpuAddressIndex(pc),
 				     cpu_profile.sites, cpu_profile.callsite,
 				     pc, prev_pc, flag);
@@ -619,17 +619,6 @@ void Profile_CpuUpdate(void)
 	/* cycles are based on 8Mhz clock, change them to correct one */
 	cycles <<= nCpuFreqShift;
 
-	/* catch too large (and negative) cycles, ignore STOP instruction */
-	if (unlikely(cycles > 256 && opcode != 0x4e72)) {
-		fprintf(stderr, "WARNING: cycles %d > 512 at 0x%x\n",
-			cycles, prev_pc);
-	}
-#if DEBUG
-	if (unlikely(cycles == 0)) {
-		Uint32 nextpc;
-		Disasm(stderr, prev_pc, &nextpc, 1);
-	}
-#endif
 	if (likely(prev->cycles < MAX_CPU_PROFILE_VALUE - cycles)) {
 		prev->cycles += cycles;
 	} else {
@@ -644,6 +633,25 @@ void Profile_CpuUpdate(void)
 		prev->misses += misses;
 	} else {
 		prev->misses = MAX_CPU_PROFILE_VALUE;
+	}
+#endif
+
+#if DEBUG
+	if (unlikely(LastOpcodeFamily == 0)) {
+		Uint32 nextpc;
+		fputs("WARNING: LastOpcodeFamily is zero (=i_ILLG) for instruction:\n", stderr);
+		Disasm(stderr, prev_pc, &nextpc, 1);
+	}
+	/* catch too large (and negative) cycles for other than STOP instruction */
+	if (unlikely(cycles > 512 && LastOpcodeFamily != i_STOP)) {
+		Uint32 nextpc;
+		fprintf(stderr, "WARNING: cycles %d > 512:\n", cycles);
+		Disasm(stderr, prev_pc, &nextpc, 1);
+	}
+	if (unlikely(cycles == 0)) {
+		Uint32 nextpc;
+		fputs("WARNING: Zero cycles for an opcode:\n", stderr);
+		Disasm(stderr, prev_pc, &nextpc, 1);
 	}
 #endif
 }
