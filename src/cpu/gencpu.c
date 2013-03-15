@@ -1626,10 +1626,13 @@ static void gen_opcode (unsigned long int opcode)
 
 	insn_n_cycles = using_prefetch ? 0 : 4;
 
-	/* Store the family of the instruction (used to check for pairing on ST)
-	* and leave some space for patching in the current cycles later */
+	/* Store the family of the instruction (used to check for pairing on ST,
+	 * for non-CPU cycles calculation and profiling)
+	 */
+	printf ("\tOpcodeFamily = %d;\n", curi->mnemo);
+	/* leave some space for patching in the current cycles later */
 	if (!using_ce020) {
-		printf ("\tOpcodeFamily = %d; CurrentInstrCycles =     \n", curi->mnemo);
+		printf("\tCurrentInstrCycles =     \n");
 		nCurInstrCycPos = ftell(stdout) - 5;
 	}
 	else if (using_ce020 == 2) {
