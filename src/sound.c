@@ -581,6 +581,7 @@ static void	YM2149_BuildModelVolumeTable(ymu16 volumetable[32][32][32])
  * Possible values are :
  *	Level=65535 and DoCenter=TRUE -> [-32768,32767]
  *	Level=32767 and DoCenter=false -> [0,32767]
+ *	Level=16383 and DoCenter=false -> [0,16383] (to avoid overflow with DMA sound on STe)
  */
 
 static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsigned int Level, bool DoCenter)
@@ -589,7 +590,7 @@ static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsign
 	{
 		int h;
 		int Max = in_5bit[0x7fff];
-		int Center = Level>>1;
+		int Center = (Level+1)>>1;
 		//fprintf ( stderr , "level %d max %d center %d\n" , Level, Max, Center );
 
 		/* Change the amplitude of the signal to 'level' : [0,max] -> [0,level] */
@@ -665,7 +666,12 @@ static void	Ym2149_BuildVolumeTable(void)
 		YM2149_BuildLinearVolumeTable(ymout5_u16);	/* combine the 32 possible volumes */
 
 	/* Normalise/center the values (convert from u16 to s16) */
-	YM2149_Normalise_5bit_Table ( ymout5_u16[0][0] , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );
+	/* On STE/TT, we use YM_OUTPUT_LEVEL>>1 to avoid overflow with DMA sound */
+	if ( (ConfigureParams.System.nMachineType == MACHINE_STE) || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE)
+		|| (ConfigureParams.System.nMachineType == MACHINE_TT) )
+		YM2149_Normalise_5bit_Table ( ymout5_u16[0][0] , ymout5 , (YM_OUTPUT_LEVEL>>1) , YM_OUTPUT_CENTERED );
+	else
+		YM2149_Normalise_5bit_Table ( ymout5_u16[0][0] , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );
 }
 
 
