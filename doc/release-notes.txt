@@ -20,7 +20,7 @@ Emulation:
   - Full implementation of the MC6850 ACIA, giving much more robust
     IKBD emulation
   - Better timings for all IKBD commands (measured on a real STF)
-  - Timings are handler internally in IKBD, host date/time is used
+  - Clock is handled internally in IKBD, host date/time is used
     only to initialize RTC at boot.  I.e. pausing emulation doesn't
     cause time skips when unpausing
 - MFP changes :
