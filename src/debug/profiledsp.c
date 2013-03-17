@@ -368,6 +368,13 @@ bool Profile_DspStart(void)
 	return dsp_profile.enabled;
 }
 
+/* return branch type based on caller instruction type */
+static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
+{
+	/* not supported (yet) */
+	return CALL_UNDEFINED;
+}
+
 /**
  * Update DSP cycle and count statistics for PC address.
  *
@@ -382,9 +389,12 @@ void Profile_DspUpdate(void)
 	prev_pc = dsp_profile.prev_pc;
 	dsp_profile.prev_pc = pc = DSP_GetPC();
 	if (dsp_profile.sites) {
-		Profile_UpdateCaller(Symbols_GetDspAddressIndex(pc),
-				     dsp_profile.sites, dsp_profile.callsite,
-				     pc, prev_pc, CALL_UNDEFINED);
+		int idx = Symbols_GetDspAddressIndex(pc);
+		if (unlikely(idx >= 0 && idx < (signed)dsp_profile.sites)) {
+			calltype_t flag = dsp_opcode_type(prev_pc, pc);
+			Profile_UpdateCaller(dsp_profile.callsite + idx,
+					     pc, prev_pc, flag);
+		}
 	}
 	prev = dsp_profile.data + prev_pc;
 	if (likely(prev->count < MAX_DSP_PROFILE_VALUE)) {

@@ -529,9 +529,9 @@ bool Profile_CpuStart(void)
 }
 
 /* return branch type based on caller instruction type */
-static calltype_t cpu_opcode_type(int prev_family, Uint32 prev_pc, Uint32 pc)
+static calltype_t cpu_opcode_type(Uint32 prev_pc, Uint32 pc)
 {
-	switch (prev_family) {
+	switch (OpcodeFamily) {
 
 	case i_JSR:
 	case i_BSR:
@@ -587,11 +587,14 @@ void Profile_CpuUpdate(void)
 
 	prev_pc = cpu_profile.prev_pc;
 	cpu_profile.prev_pc = pc = M68000_GetPC();
+
 	if (cpu_profile.sites) {
-		calltype_t flag = cpu_opcode_type(LastOpcodeFamily, prev_pc, pc);
-		Profile_UpdateCaller(Symbols_GetCpuAddressIndex(pc),
-				     cpu_profile.sites, cpu_profile.callsite,
-				     pc, prev_pc, flag);
+		int idx = Symbols_GetCpuAddressIndex(pc);
+		if (unlikely(idx >= 0 && idx < (signed)cpu_profile.sites)) {
+			calltype_t flag = cpu_opcode_type(prev_pc, pc);
+			Profile_UpdateCaller(cpu_profile.callsite + idx,
+					     pc, prev_pc, flag);
+		}
 	}
 
 	idx = address2index(prev_pc);
@@ -637,13 +640,13 @@ void Profile_CpuUpdate(void)
 #endif
 
 #if DEBUG
-	if (unlikely(LastOpcodeFamily == 0)) {
+	if (unlikely(OpcodeFamily == 0)) {
 		Uint32 nextpc;
-		fputs("WARNING: LastOpcodeFamily is zero (=i_ILLG) for instruction:\n", stderr);
+		fputs("WARNING: instruction opcode family is zero (=i_ILLG) for instruction:\n", stderr);
 		Disasm(stderr, prev_pc, &nextpc, 1);
 	}
 	/* catch too large (and negative) cycles for other than STOP instruction */
-	if (unlikely(cycles > 512 && LastOpcodeFamily != i_STOP)) {
+	if (unlikely(cycles > 512 && OpcodeFamily != i_STOP)) {
 		Uint32 nextpc;
 		fprintf(stderr, "WARNING: cycles %d > 512:\n", cycles);
 		Disasm(stderr, prev_pc, &nextpc, 1);

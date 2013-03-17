@@ -45,8 +45,8 @@ typedef struct {
 
 /* generic profile caller functions */
 extern void Profile_ShowCallers(FILE *fp, unsigned int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *));
-extern void Profile_UpdateCaller(int idx, int sites, callee_t *callsite, Uint32 pc, Uint32 caller, calltype_t flag);
 extern unsigned int Profile_AllocCallerInfo(const char *info, unsigned int oldcount, unsigned int count, callee_t **callsite);
+extern void Profile_UpdateCaller(callee_t *callsite, Uint32 pc, Uint32 caller, calltype_t flag);
 
 /* parser helpers */
 extern void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr);

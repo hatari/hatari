@@ -141,19 +141,10 @@ void Profile_ShowCallers(FILE *fp, unsigned int sites, callee_t *callsite, const
  * Update CPU/DSP callee / caller information, if called address contains
  * symbol address (= function, or other interesting place in code)
  */
-void Profile_UpdateCaller(int idx, int sites, callee_t *callsite, Uint32 pc, Uint32 caller, calltype_t flag)
+void Profile_UpdateCaller(callee_t *callsite, Uint32 pc, Uint32 caller, calltype_t flag)
 {
 	int i, count;
 	caller_t *info;
-
-	if (idx < 0) {
-		return;
-	}
-	if (idx >= sites) {
-		fprintf(stderr, "ERROR: number of symbols grew during profiling (%d -> %d)!\n", sites, idx);
-		return;
-	}
-	callsite += idx;
 
 	/* need to store real call addresses as symbols can change
 	 * after profiling has been stopped
