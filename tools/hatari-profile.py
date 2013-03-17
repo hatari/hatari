@@ -166,6 +166,24 @@ from copy import deepcopy
 from bisect import bisect_right
 import getopt, os, re, sys
 
+# call type identifiers and their information
+CALL_SUBROUTINE = 's'
+CALL_SUBRETURN = 'r'
+CALL_EXCEPTION = 'e'
+CALL_EXCRETURN = 'x'
+CALL_BRANCH = 'b'
+CALL_NEXT = 'n'
+CALL_UNKNOWN = 'u'
+CALLTYPES = {
+    CALL_SUBROUTINE: "subroutine call",		# is calls
+    CALL_SUBRETURN:  "subroutine return",	# shouldn't be call
+    CALL_EXCEPTION:  "exception",		# is call
+    CALL_EXCRETURN:  "exception return",	# shouldn't be call
+    CALL_BRANCH:     "branch/jump",		# could be call
+    CALL_NEXT:       "next instruction",	# most likely loop etc label
+    CALL_UNKNOWN:    "unknown"			# shouldn't be call
+}
+
 
 # ---------------------------------------------------------------------
 class Output:
@@ -525,7 +543,7 @@ class ProfileCallers(Output):
         # address dicts
         self.callinfo = None	# callee : caller dict
         # parsing options
-        self.removable_calltypes = "ux"
+        self.removable_calltypes = "rux"
         self.ignore_to = []
         self.compact = False
 
@@ -539,18 +557,10 @@ class ProfileCallers(Output):
 
     def remove_calls(self, types):
         "ignore calls of given type"
-        alltypes = {
-            'b': "branches/jumps",	# could be calls
-            's': "subroutine calls",	# are calls
-            'r': "subroutine returns",	# shouldn't be calls
-            'e': "exceptions",		# are calls
-            'x': "exception returns",	# shouldn't be calls
-            'u': "unknown"		# shouldn't be calls
-        }
         for letter in types:
-            if letter not in alltypes:
+            if letter not in CALLTYPES:
                 self.message("Valid call types are:")
-                for item in alltypes.items():
+                for item in CALLTYPES.items():
                     self.message("  %c -- %s" % item)
                 self.error_exit("invalid call type")
         self.removable_calltypes = types
@@ -603,7 +613,7 @@ class ProfileCallers(Output):
             self.present = False
             return
         self.present = True
-        all_ignored = 0
+        all_total = all_ignored = 0
         # go through called functions...
         for caddr, caller in self.callinfo.items():
             child = profile[caddr]
@@ -627,11 +637,11 @@ class ProfileCallers(Output):
                     self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
                     parent.name = pname
                 # link parent and child function together
-                item = (laddr, count)
+                item = (laddr, count, flags)
                 if paddr in child.parent:
                     if self.compact:
                         oldcount = child.parent[paddr][0][1]
-                        child.parent[paddr] = ((paddr, oldcount + count),)
+                        child.parent[paddr] = ((paddr, oldcount + count, flags),)
                     else:
                         child.parent[paddr] += (item,)
                 else:
@@ -648,9 +658,10 @@ class ProfileCallers(Output):
             if calls != total:
                 info = (child.name, caddr, calls, total)
                 self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % info)
+            all_total += total + ignore
         self.callinfo = {}
         if all_ignored:
-            self.message("In total, ignored %d switches of type(s) %s." % (all_ignored, list(self.removable_calltypes)))
+            self.message("Of all %d switches, ignored %d for type(s) %s." % (all_total, all_ignored, list(self.removable_calltypes)))
 
     def _propagate_leaf_cost(self, profile, caddr, cost, track):
         """Propagate costs to function parents.  In case of call
@@ -675,8 +686,8 @@ class ProfileCallers(Output):
                 parent.estimated = True
             total = 0
             # add together calls from this particular parent
-            for dummy, count in info:
-                total += count
+            for item in info:
+                total += item[1] # count
             if parents == 1 and total != calls:
                 self.error_exit("%s -> %s, single parent, but callcounts don't match: %d != %d" % (parent.name, child.name, total, calls))
             # parent's share of current propagated child costs
@@ -772,8 +783,8 @@ class ProfileCallgrind(Output):
             child = profile[caddr]
             info = child.parent[paddr]
             total = 0
-            for dummy, count in info:
-                total += count
+            for item in info:
+                total += item[1] # count
             self.write("cfn=%s\n" % child.name)
             self.write("calls=%d %d\n" % (total, child.line))
             if child.total:
@@ -1427,8 +1438,8 @@ label="%s";
                 # total calls count for child
                 calls = profile[caddr].data[0]
                 # calls to child done from different locations in parent
-                for laddr, count in info:
-                    self.edges[(laddr, caddr)] = (paddr, count, calls)
+                for laddr, count, flags in info:
+                    self.edges[(laddr, caddr)] = (paddr, count, calls, flags)
         return (len(profile) - len(self.nodes))
 
     def _output_nodes(self, stats, field, limit):
@@ -1474,14 +1485,29 @@ label="%s";
 
     def _output_edges(self):
         "output graph edges from filtered edges dict, after nodes is called"
-        for linkage, data in self.edges.items():
+        for linkage, info in self.edges.items():
             laddr, caddr = linkage
-            paddr, count, calls = data
+            paddr, count, calls, flags = info
             pname = self.profile[paddr].name
             offset = laddr - paddr
             style = ""
             if caddr in self.highlight:
                 style = " color=red"
+            # arrowhead/tail styles:
+            #   none, normal, inv, dot, odot, invdot, invodot, tee, empty,
+            #   invempty, open, halfopen, diamond, odiamond, box, obox, crow
+            if flags == CALL_NEXT or flags == CALL_BRANCH:
+                style += " arrowhead=dot"
+            elif flags == CALL_SUBROUTINE:
+                pass	# use default arrow
+            elif flags == CALL_SUBRETURN:
+                style += " arrowhead=inv"
+            elif flags == CALL_EXCEPTION:
+                style += " style=dashed"
+            elif flags == CALL_EXCRETURN:
+                style += " arrowhead=inv style=dashed"
+            elif flags == CALL_UNKNOWN:
+                style += " arrowhead=diamond style=dotted"
             if offset:
                 label = "%s+%d\\n($%x)" % (pname, offset, laddr)
             else:
@@ -1519,8 +1545,7 @@ label="%s";
             title = "%s\\nfor %s" % (name, fname)
             if profobj.emuinfo:
                 title += "\\n(%s)" % profobj.emuinfo
-            title += "\\n\\nown cost emphasis (gray bg) limit = %.2f%%\\n" % self.limit
-            title += "(potentially propagated) cost emphasis (red) limit = %.2f%%\\n" % limit
+            title += "\\n\\nown cost emphasis (gray bg) & (propagated) cost emphasis (red) limit = %.2f%%\\n" % limit
             if self.show_propagated:
                 title += "nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape\\n"
             if removed:
