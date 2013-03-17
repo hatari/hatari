@@ -112,6 +112,9 @@
 /*			exception if it's the case.							*/
 /* 2012/09/01	[NP]	Add a special case to correct the stacked PC when a bus error happens during	*/
 /*			a movem (fix the game Blood Money).						*/
+/* 2013/03/16	[NP]	In refill_prefetch(), reload only one new word in regs.prefetch if low word is	*/
+/*			still valid : low word goes to high word and we reload only low word		*/
+/*			(fix EOR/ADD self modified code in the protection for the game Damocles).	*/
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -1711,6 +1714,7 @@ static void m68k_run_1 (void)
 
     for (;;) {
 	int cycles;
+//fprintf (stderr, "ir in  %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);
 	uae_u32 opcode = get_iword_prefetch (0);
 
 #ifdef DEBUG_PREFETCH
@@ -1751,6 +1755,7 @@ static void m68k_run_1 (void)
 	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
 
 	cycles = (*cpufunctbl[opcode])(opcode);
+//fprintf (stderr, "ir out %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);
 
 #ifdef DEBUG_PREFETCH
 	if (memcmp (saved_bytes, oldpcp, 20) != 0) {

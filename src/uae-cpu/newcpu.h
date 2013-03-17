@@ -172,13 +172,27 @@ STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
     uae_u8 *ptr = regs.pc_p + pc_p_offs;
     uae_u32 r;
 #ifdef UNALIGNED_PROFITABLE
-    r = *(uae_u32 *)ptr;
+    if ( t - regs.prefetch_pc == 2 )				/* keep 1 word and read 1 new word */
+    {
+        r = regs.prefetch;
+        r <<= 16;
+        r |= *(uae_u16 *)(ptr + 2);
+    }
+    else
+        r = *(uae_u32 *)ptr;					/* read 2 new words */
     regs.prefetch = r;
 #else
-    r = do_get_mem_long (ptr);
+    if ( t - regs.prefetch_pc == 2 )				/* keep 1 word and read 1 new word */
+    {
+        r = do_get_mem_word (((uae_u8 *)&regs.prefetch) + 2);
+        r <<= 16;
+        r |= do_get_mem_word (ptr+2);
+    }
+    else
+        r = do_get_mem_long (ptr);				/* read 2 new words */
     do_put_mem_long (&regs.prefetch, r);
 #endif
-    /* printf ("PC %lx T %lx PCPOFFS %d R %lx\n", currpc, t, pc_p_offs, r); */
+//fprintf (stderr,"PC %lx T %lx PCPOFFS %d R %lx\n", currpc, t, pc_p_offs, r);
     regs.prefetch_pc = t;
 }
 
@@ -204,6 +218,7 @@ STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
     uae_u32 addr = currpc + o;
     uae_u32 offs = addr - regs.prefetch_pc;
     uae_u32 v;
+//fprintf (stderr,"get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v);
     if (offs > 3) {
 	refill_prefetch (currpc, o);
 	offs = addr - regs.prefetch_pc;
@@ -211,6 +226,7 @@ STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
     v = do_get_mem_word (((uae_u8 *)&regs.prefetch) + offs);
     if (offs >= 2)
 	refill_prefetch (currpc, 2);
+//fprintf (stderr,"get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v);
     /* printf ("get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */
     return v;
 }
