@@ -35,8 +35,8 @@ extern const char* Symbols_GetByDspAddress(Uint16 addr);
 extern int Symbols_GetCpuAddressIndex(Uint32 addr);
 extern int Symbols_GetDspAddressIndex(Uint16 addr);
 /* how many symbols are loaded */
-extern unsigned int Symbols_CpuCount(void);
-extern unsigned int Symbols_DspCount(void);
+extern int Symbols_CpuCount(void);
+extern int Symbols_DspCount(void);
 /* symbols/dspsymbols command parsing */
 extern int Symbols_Command(int nArgc, char *psArgs[]);
 

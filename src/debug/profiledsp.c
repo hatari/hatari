@@ -32,7 +32,7 @@ typedef struct {
 static struct {
 	dsp_profile_item_t *data; /* profile data */
 	profile_area_t ram;   /* normal RAM stats */
-	unsigned int sites;   /* number of symbol callsites */
+	int sites;            /* number of symbol callsites */
 	callee_t *callsite;   /* symbol specific caller information */
 	Uint16 *sort_arr;     /* data indexes used for sorting */
 	Uint16 prev_pc;       /* previous PC for which the cycles are for */
@@ -109,10 +109,10 @@ void Profile_DspShowStats(void)
  */
 Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out)
 {
-	unsigned int show, shown;
+	int show, shown, active;
 	dsp_profile_item_t *data;
 	Uint16 nextpc;
-	Uint32 end, active;
+	Uint32 end;
 	const char *symbol;
 
 	data = dsp_profile.data;
@@ -177,9 +177,9 @@ static int cmp_dsp_cycles(const void *p1, const void *p2)
 /**
  * Sort DSP profile data addresses by cycle counts and show the results.
  */
-void Profile_DspShowCycles(unsigned int show)
+void Profile_DspShowCycles(int show)
 {
-	unsigned int active;
+	int active;
 	Uint16 *sort_arr, *end, addr;
 	dsp_profile_item_t *data = dsp_profile.data;
 	float percentage;
@@ -229,10 +229,10 @@ static int cmp_dsp_count(const void *p1, const void *p2)
  * If symbols are requested and symbols are loaded, show (only) addresses
  * matching a symbol.
  */
-void Profile_DspShowCounts(unsigned int show, bool only_symbols)
+void Profile_DspShowCounts(int show, bool only_symbols)
 {
 	dsp_profile_item_t *data = dsp_profile.data;
-	unsigned int symbols, matched, active;
+	int symbols, matched, active;
 	Uint16 *sort_arr, *end, addr;
 	const char *name;
 	float percentage;
@@ -332,7 +332,7 @@ void Profile_DspSave(FILE *out)
 bool Profile_DspStart(void)
 {
 	dsp_profile_item_t *item;
-	unsigned int i;
+	int i;
 
 	if (dsp_profile.sort_arr) {
 		/* remove previous results */
@@ -390,7 +390,7 @@ void Profile_DspUpdate(void)
 	dsp_profile.prev_pc = pc = DSP_GetPC();
 	if (dsp_profile.sites) {
 		int idx = Symbols_GetDspAddressIndex(pc);
-		if (unlikely(idx >= 0 && idx < (signed)dsp_profile.sites)) {
+		if (unlikely(idx >= 0 && idx < dsp_profile.sites)) {
 			calltype_t flag = dsp_opcode_type(prev_pc, pc);
 			Profile_UpdateCaller(dsp_profile.callsite + idx,
 					     pc, prev_pc, flag);

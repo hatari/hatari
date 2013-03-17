@@ -61,13 +61,13 @@ static int cmp_callers(const void *c1, const void *c2)
  * Hint: As caller info list is based on number of loaded symbols,
  * load only text symbols to save memory & make things faster...
  */
-void Profile_ShowCallers(FILE *fp, unsigned int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *))
+void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *))
 {
-	unsigned int typecount, countissues;
-	unsigned int i, j, k;
+	int typecount, countissues, countdiff;
+	int i, j, k;
 	const char *name;
 	caller_t *info;
-	Uint64 total, countdiff;
+	Uint64 total;
 	Uint32 addr, typeaddr;
 
 	/* legend */
@@ -77,7 +77,8 @@ void Profile_ShowCallers(FILE *fp, unsigned int sites, callee_t *callsite, const
 	}
 	fputs("\n", fp);
 
-	countdiff = countissues = 0;
+	countdiff = 0;
+	countissues = 0;
 	for (i = 0; i < sites; i++, callsite++) {
 		addr = callsite->addr;
 		if (!addr) {
@@ -127,12 +128,12 @@ void Profile_ShowCallers(FILE *fp, unsigned int sites, callee_t *callsite, const
 	}
 	if (countissues) {
 		if (countdiff <= 2 && countissues == countdiff) {
-			fprintf(stderr, "WARNING: callcount mismatches (%lld calls) with address instruction\n\t counts in %d cases, most likely profile start & end.\n",
-				(Sint64)countdiff, countissues);
+			fprintf(stderr, "WARNING: callcount mismatches (%d calls) with address instruction\n\t counts in %d cases, most likely profile start & end.\n",
+				countdiff, countissues);
 		} else {
 			/* profiler bug: some (address?) mismatch in recording instruction counts and call counts */
-			fprintf(stderr, "ERROR: callcount mismatches with address instruction counts\n\t(%lld in total) detected in %d cases!\n",
-				(Sint64)countdiff, countissues);
+			fprintf(stderr, "ERROR: callcount mismatches with address instruction counts\n\t(%d in total) detected in %d cases!\n",
+				countdiff, countissues);
 		}
 	}
 }
@@ -191,11 +192,11 @@ void Profile_UpdateCaller(callee_t *callsite, Uint32 pc, Uint32 caller, calltype
 	}
 }
 
-unsigned int Profile_AllocCallerInfo(const char *info, unsigned int oldcount, unsigned int count, callee_t **callsite)
+int Profile_AllocCallerInfo(const char *info, int oldcount, int count, callee_t **callsite)
 {
 	if (*callsite) {
 		/* free old data */
-		unsigned int i;
+		int i;
 		callee_t *site = *callsite;
 		for (i = 0; i < oldcount; i++, site++) {
 			if (site->callers) {

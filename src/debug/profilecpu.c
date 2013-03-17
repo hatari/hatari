@@ -52,8 +52,8 @@ static struct {
 	profile_area_t ram;   /* normal RAM stats */
 	profile_area_t rom;   /* cartridge ROM stats */
 	profile_area_t tos;   /* ROM TOS stats */
-	Uint32 active;        /* number of active data items in all areas */
-	unsigned int sites;   /* number of symbol callsites */
+	int active;           /* number of active data items in all areas */
+	int sites;            /* number of symbol callsites */
 	callee_t *callsite;   /* symbol specific caller information */
 	Uint32 *sort_arr;     /* data indexes used for sorting */
 	Uint32 prev_cycles;   /* previous instruction cycles counter */
@@ -207,10 +207,10 @@ void Profile_CpuShowStats(void)
 Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 {
 	int oldcols[DISASM_COLUMNS], newcols[DISASM_COLUMNS];
-	unsigned int idx, show, shown;
+	int show, shown, active;
 	const char *symbol;
 	cpu_profile_item_t *data;
-	Uint32 size, end, active;
+	Uint32 idx, end, size;
 	uaecptr nextpc, addr;
 
 	data = cpu_profile.data;
@@ -287,9 +287,9 @@ static int cmp_cpu_misses(const void *p1, const void *p2)
 /**
  * Sort CPU profile data addresses by instruction cache misses and show the results.
  */
-void Profile_CpuShowMisses(unsigned int show)
+void Profile_CpuShowMisses(int show)
 {
-	unsigned int active;
+	int active;
 	Uint32 *sort_arr, *end, addr;
 	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
@@ -335,9 +335,9 @@ static int cmp_cpu_cycles(const void *p1, const void *p2)
 /**
  * Sort CPU profile data addresses by cycle counts and show the results.
  */
-void Profile_CpuShowCycles(unsigned int show)
+void Profile_CpuShowCycles(int show)
 {
-	unsigned int active;
+	int active;
 	Uint32 *sort_arr, *end, addr;
 	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
@@ -386,10 +386,10 @@ static int cmp_cpu_count(const void *p1, const void *p2)
  * If symbols are requested and symbols are loaded, show (only) addresses
  * matching a symbol.
  */
-void Profile_CpuShowCounts(unsigned int show, bool only_symbols)
+void Profile_CpuShowCounts(int show, bool only_symbols)
 {
 	cpu_profile_item_t *data = cpu_profile.data;
-	unsigned int symbols, matched, active;
+	int symbols, matched, active;
 	Uint32 *sort_arr, *end, addr;
 	const char *name;
 	float percentage;
@@ -590,7 +590,7 @@ void Profile_CpuUpdate(void)
 
 	if (cpu_profile.sites) {
 		int idx = Symbols_GetCpuAddressIndex(pc);
-		if (unlikely(idx >= 0 && idx < (signed)cpu_profile.sites)) {
+		if (unlikely(idx >= 0 && idx < cpu_profile.sites)) {
 			calltype_t flag = cpu_opcode_type(prev_pc, pc);
 			Profile_UpdateCaller(cpu_profile.callsite + idx,
 					     pc, prev_pc, flag);
@@ -697,7 +697,8 @@ void Profile_CpuStop(void)
 	cpu_profile_item_t *item;
 	profile_area_t *area;
 	Uint32 *sort_arr;
-	Uint32 i, active;
+	int active;
+	Uint32 i;
 
 	if (cpu_profile.processed || !cpu_profile.enabled) {
 		return;

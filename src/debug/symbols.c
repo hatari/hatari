@@ -35,7 +35,7 @@ typedef struct {
 } symbol_t;
 
 typedef struct {
-	unsigned int count;
+	int count;
 	symbol_t *addresses;	/* items sorted by address */
 	symbol_t *names;	/* items sorted by symbol name */
 } symbol_list_t;
@@ -222,7 +222,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
  */
 static void Symbols_Free(symbol_list_t* list)
 {
-	unsigned int i;
+	int i;
 
 	if (!list) {
 		return;
@@ -251,7 +251,7 @@ static void Symbols_Free(symbol_list_t* list)
  */
 static char* Symbols_MatchByName(symbol_list_t* list, symtype_t symtype, const char *text, int state)
 {
-	static unsigned int i, len;
+	static int i, len;
 	const symbol_t *entry;
 	
 	if (!list) {
@@ -462,11 +462,11 @@ int Symbols_GetDspAddressIndex(Uint16 addr)
 /**
  * Return how many symbols are loaded/available
  */
-unsigned int Symbols_CpuCount(void)
+int Symbols_CpuCount(void)
 {
 	return (CpuSymbolsList ? CpuSymbolsList->count : 0);
 }
-unsigned int Symbols_DspCount(void)
+int Symbols_DspCount(void)
 {
 	return (DspSymbolsList ? DspSymbolsList->count : 0);
 }
@@ -479,8 +479,8 @@ unsigned int Symbols_DspCount(void)
 static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 {
 	symbol_t *entry, *entries;
-	unsigned int i;
 	char symchar;
+	int i;
 	
 	if (!list) {
 		fprintf(stderr, "No symbols!\n");
