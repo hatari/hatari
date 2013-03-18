@@ -21,11 +21,26 @@ typedef enum {
 	CALL_INTERRUPT	= 128
 } calltype_t;
 
+typedef struct {
+	Uint64 calls, count, cycles, misses;
+} counters_t;
+
+typedef struct {
+	int callee_idx;		/* index of called function */
+	Uint32 ret_addr;	/* address after returning from call */
+	Uint32 caller_addr;	/* remove informational caller address */
+	Uint32 callee_addr;	/* remove informational callee address */
+	counters_t all;		/* totals including everything called code does */
+	counters_t out;		/* totals for subcalls done from callee */
+} callstack_t;
+
 /* callee/caller information */
 typedef struct {
 	calltype_t   flags:8;	/* what kind of call it was */
 	unsigned int addr:24;	/* address for the caller */
-	Uint32 count;		/* number of calls */
+	Uint32 calls;		/* number of calls, exclusive */
+	counters_t all;		/* totals including everything called code does */
+	counters_t own;		/* totals excluding called code (=sum(all-out)) */
 } caller_t;
 
 typedef struct {
@@ -34,19 +49,29 @@ typedef struct {
 	caller_t *callers;	/* who called this address */
 } callee_t;
 
+typedef struct {
+	int sites;		/* number of symbol callsites */
+	int depth;		/* how many callstack calls haven't yet returned */
+	int count;		/* number of items allocated for stack */
+	callee_t *site;		/* symbol specific caller information */
+	callstack_t *stack;	/* calls that will return */
+} callinfo_t;
+
 
 /* CPU/DSP memory area statistics */
 typedef struct {
-	Uint64 all_cycles, all_count, all_misses;
-	Uint64 max_cycles;	/* for overflow check (cycles > count or misses) */
+	counters_t counters;	/* counters for this area */
 	Uint32 lowest, highest;	/* active address range within memory area */
 	int active;             /* number of active addresses */
+	bool overflow;		/* whether counters overflowed */
 } profile_area_t;
+
 
 /* generic profile caller functions */
 extern void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *));
-extern int Profile_AllocCallerInfo(const char *info, int oldcount, int count, callee_t **callsite);
-extern void Profile_UpdateCaller(callee_t *callsite, Uint32 pc, Uint32 caller, calltype_t flag);
+extern void Profile_UpdateCallinfo(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, Uint32 ret_pc, counters_t *runcounts);
+extern int  Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *info);
+extern void Profile_FreeCallinfo(callinfo_t *callinfo);
 
 /* parser helpers */
 extern void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr);

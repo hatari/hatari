@@ -27,6 +27,8 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 /* if non-zero, output (more) warnings on syspicious cycle/instruction counts */
 #define DEBUG 0
 
+static callinfo_t cpu_callinfo;
+
 /* This is relevant with WinUAE CPU core:
  * - the default cycle exact variant needs this define to be non-zero
  * - non-cycle exact and MMU variants need this define to be 0
@@ -37,7 +39,7 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #define MAX_CPU_PROFILE_VALUE 0xFFFFFFFF
 
 typedef struct {
-	Uint32 count;	/* how many times this address is used */
+	Uint32 count;	/* how many times this address instrcution is executed */
 	Uint32 cycles;	/* how many CPU cycles was taken at this address */
 	Uint32 misses;  /* how many CPU cache misses happened at this address */
 } cpu_profile_item_t;
@@ -45,16 +47,14 @@ typedef struct {
 #define MAX_MISS 4
 
 static struct {
-	Uint64 all_cycles, all_count, all_misses;
-	Uint32 miss_counts[MAX_MISS];
+	counters_t all;       /* total counts for all areas */
+	Uint32 miss_counts[MAX_MISS];  /* cache miss counts */
 	cpu_profile_item_t *data; /* profile data items */
 	Uint32 size;          /* number of allocated profile data items */
 	profile_area_t ram;   /* normal RAM stats */
 	profile_area_t rom;   /* cartridge ROM stats */
 	profile_area_t tos;   /* ROM TOS stats */
 	int active;           /* number of active data items in all areas */
-	int sites;            /* number of symbol callsites */
-	callee_t *callsite;   /* symbol specific caller information */
 	Uint32 *sort_arr;     /* data indexes used for sorting */
 	Uint32 prev_cycles;   /* previous instruction cycles counter */
 	Uint32 prev_pc;       /* previous instruction address */
@@ -129,8 +129,8 @@ bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint3
 	*misses = cpu_profile.data[idx].misses;
 	*cycles = cpu_profile.data[idx].cycles;
 	*count = cpu_profile.data[idx].count;
-	if (cpu_profile.all_count) {
-		*percentage = 100.0*(*count)/cpu_profile.all_count;
+	if (cpu_profile.all.count) {
+		*percentage = 100.0*(*count)/cpu_profile.all.count;
 	} else {
 		*percentage = 0.0;
 	}
@@ -153,20 +153,20 @@ static void show_cpu_area_stats(profile_area_t *area)
 		area->active,
 		100.0 * area->active / cpu_profile.active);
 	fprintf(stderr, "- executed instructions:\n  %llu (%.2f%% of all)\n",
-		area->all_count,
-		100.0 * area->all_count / cpu_profile.all_count);
+		area->counters.count,
+		100.0 * area->counters.count / cpu_profile.all.count);
 #if ENABLE_WINUAE_CPU
-	if (cpu_profile.all_misses) {	/* CPU cache in use? */
+	if (cpu_profile.all.misses) {	/* CPU cache in use? */
 		fprintf(stderr, "- instruction cache misses:\n  %llu (%.2f%% of all)\n",
-			area->all_misses,
-			100.0 * area->all_misses / cpu_profile.all_misses);
+			area->counters.misses,
+			100.0 * area->counters.misses / cpu_profile.all.misses);
 	}
 #endif
 	fprintf(stderr, "- used cycles:\n  %llu (%.2f%% of all)\n  = %.5fs\n",
-		area->all_cycles,
-		100.0 * area->all_cycles / cpu_profile.all_cycles,
-		(double)area->all_cycles / MachineClocks.CPU_Freq);
-	if (area->max_cycles == MAX_CPU_PROFILE_VALUE) {
+		area->counters.cycles,
+		100.0 * area->counters.cycles / cpu_profile.all.cycles,
+		(double)area->counters.cycles / MachineClocks.CPU_Freq);
+	if (area->overflow) {
 		fprintf(stderr, "  *** COUNTER OVERFLOW! ***\n");
 	}
 }
@@ -187,10 +187,10 @@ void Profile_CpuShowStats(void)
 	show_cpu_area_stats(&cpu_profile.rom);
 
 	fprintf(stderr, "\n= %.5fs\n",
-		(double)cpu_profile.all_cycles / MachineClocks.CPU_Freq);
+		(double)cpu_profile.all.cycles / MachineClocks.CPU_Freq);
 
 #if ENABLE_WINUAE_CPU
-	if (cpu_profile.all_misses) {	/* CPU cache in use? */
+	if (cpu_profile.all.misses) {	/* CPU cache in use? */
 		int i;
 		fprintf(stderr, "\nCache misses per instruction, number of occurrences:\n");
 		for (i = 0; i < MAX_MISS; i++) {
@@ -309,7 +309,7 @@ void Profile_CpuShowMisses(int show)
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].misses;
-		percentage = 100.0*count/cpu_profile.all_misses;
+		percentage = 100.0*count/cpu_profile.all.misses;
 		printf("0x%06x\t%.2f%%\t%d%s\n", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
 	}
@@ -357,7 +357,7 @@ void Profile_CpuShowCycles(int show)
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].cycles;
-		percentage = 100.0*count/cpu_profile.all_cycles;
+		percentage = 100.0*count/cpu_profile.all.cycles;
 		printf("0x%06x\t%.2f%%\t%d%s\n", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
 	}
@@ -410,7 +410,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 			addr = index2address(*sort_arr);
 			count = data[*sort_arr].count;
-			percentage = 100.0*count/cpu_profile.all_count;
+			percentage = 100.0*count/cpu_profile.all.count;
 			printf("0x%06x\t%.2f%%\t%d%s\n",
 			       addr, percentage, count,
 			       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
@@ -435,7 +435,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 			continue;
 		}
 		count = data[*sort_arr].count;
-		percentage = 100.0*count/cpu_profile.all_count;
+		percentage = 100.0*count/cpu_profile.all.count;
 		printf("0x%06x\t%.2f%%\t%d\t%s%s\n",
 		       addr, percentage, count, name,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
@@ -461,7 +461,7 @@ static const char * addr2name(Uint32 addr, Uint64 *total)
  */
 void Profile_CpuShowCallers(FILE *fp)
 {
-	Profile_ShowCallers(fp, cpu_profile.sites, cpu_profile.callsite, addr2name);
+	Profile_ShowCallers(fp, cpu_callinfo.sites, cpu_callinfo.site, addr2name);
 }
 
 /**
@@ -494,6 +494,9 @@ void Profile_CpuSave(FILE *out)
  */
 bool Profile_CpuStart(void)
 {
+	int size;
+
+	Profile_FreeCallinfo(&(cpu_callinfo));
 	if (cpu_profile.sort_arr) {
 		/* remove previous results */
 		free(cpu_profile.sort_arr);
@@ -505,30 +508,36 @@ bool Profile_CpuStart(void)
 	if (!cpu_profile.enabled) {
 		return false;
 	}
+	/* zero everything */
+	memset(&cpu_profile, 0, sizeof(cpu_profile));
+
 	/* Shouldn't change within same debug session */
-	cpu_profile.size = (STRamEnd + 0x20000 + TosSize) / 2;
+	size = (STRamEnd + 0x20000 + TosSize) / 2;
 
 	/* Add one entry for catching invalid PC values */
-	cpu_profile.data = calloc(cpu_profile.size+1, sizeof(*cpu_profile.data));
-	if (cpu_profile.data) {
-		printf("Allocated CPU profile buffer (%d MB).\n",
-		       (int)sizeof(*cpu_profile.data)*cpu_profile.size/(1024*1024));
-	} else {
+	cpu_profile.data = calloc(size + 1, sizeof(*cpu_profile.data));
+	if (!cpu_profile.data) {
 		perror("ERROR, new CPU profile buffer alloc failed");
-		cpu_profile.enabled = false;
+		return false;
 	}
-	cpu_profile.sites = Profile_AllocCallerInfo("CPU", cpu_profile.sites, Symbols_CpuCount(), &(cpu_profile.callsite));
+	printf("Allocated CPU profile buffer (%d MB).\n",
+	       (int)sizeof(*cpu_profile.data)*size/(1024*1024));
+	cpu_profile.size = size;
 
-	memset(cpu_profile.miss_counts, 0, sizeof(cpu_profile.miss_counts));
+	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuCount(), "CPU");
+
 	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
 	cpu_profile.prev_pc = M68000_GetPC();
 
 	cpu_profile.disasm_addr = 0;
 	cpu_profile.processed = false;
+	cpu_profile.enabled = true;
 	return cpu_profile.enabled;
 }
 
-/* return branch type based on caller instruction type */
+/**
+ * return caller instruction type classification
+ */
 static calltype_t cpu_opcode_type(Uint32 prev_pc, Uint32 pc)
 {
 	switch (OpcodeFamily) {
@@ -570,7 +579,6 @@ static calltype_t cpu_opcode_type(Uint32 prev_pc, Uint32 pc)
 	return CALL_UNKNOWN;
 }
 
-
 /**
  * Update CPU cycle and count statistics for PC address.
  *
@@ -588,15 +596,6 @@ void Profile_CpuUpdate(void)
 	prev_pc = cpu_profile.prev_pc;
 	cpu_profile.prev_pc = pc = M68000_GetPC();
 
-	if (cpu_profile.sites) {
-		int idx = Symbols_GetCpuAddressIndex(pc);
-		if (unlikely(idx >= 0 && idx < cpu_profile.sites)) {
-			calltype_t flag = cpu_opcode_type(prev_pc, pc);
-			Profile_UpdateCaller(cpu_profile.callsite + idx,
-					     pc, prev_pc, flag);
-		}
-	}
-
 	idx = address2index(prev_pc);
 	assert(idx <= cpu_profile.size);
 	prev = cpu_profile.data + idx;
@@ -604,6 +603,7 @@ void Profile_CpuUpdate(void)
 	if (likely(prev->count < MAX_CPU_PROFILE_VALUE)) {
 		prev->count++;
 	}
+	cpu_profile.all.count++;
 
 #if USE_CYCLES_COUNTER
 	/* Confusingly, with DSP enabled, cycle counter is for this instruction,
@@ -627,6 +627,7 @@ void Profile_CpuUpdate(void)
 	} else {
 		prev->cycles = MAX_CPU_PROFILE_VALUE;
 	}
+	cpu_profile.all.cycles += cycles;
 
 #if ENABLE_WINUAE_CPU
 	misses = CpuInstruction.iCacheMisses;
@@ -637,6 +638,7 @@ void Profile_CpuUpdate(void)
 	} else {
 		prev->misses = MAX_CPU_PROFILE_VALUE;
 	}
+	cpu_profile.all.misses += misses;
 #endif
 
 #if DEBUG
@@ -657,13 +659,27 @@ void Profile_CpuUpdate(void)
 		Disasm(stderr, prev_pc, &nextpc, 1);
 	}
 #endif
+
+	if (cpu_callinfo.sites) {
+		int symidx;
+		Uint32 ret_pc;
+		calltype_t flag = cpu_opcode_type(prev_pc, pc);
+		if (flag == CALL_SUBROUTINE) {
+			/* slow, so needs to be checked only when needed */
+			ret_pc = Disasm_GetNextPC(prev_pc);
+		} else {
+			ret_pc = 0;
+		}
+		symidx = Symbols_GetCpuAddressIndex(pc);
+		Profile_UpdateCallinfo(symidx, &cpu_callinfo, prev_pc, flag, pc, ret_pc, &(cpu_profile.all));
+	}
 }
 
 
 /**
- * Helper for collecting CPU profile area statistics.
+ * Helper for accounting CPU profile area item.
  */
-static void update_cpu_area(Uint32 addr, cpu_profile_item_t *item, profile_area_t *area)
+static void update_area_item(profile_area_t *area, Uint32 addr, cpu_profile_item_t *item)
 {
 	Uint32 cycles = item->cycles;
 	Uint32 count = item->count;
@@ -671,14 +687,13 @@ static void update_cpu_area(Uint32 addr, cpu_profile_item_t *item, profile_area_
 	if (!count) {
 		return;
 	}
-	area->all_count += count;
-	area->all_misses += item->misses;
-	area->all_cycles += cycles;
+	area->counters.count += count;
+	area->counters.misses += item->misses;
+	area->counters.cycles += cycles;
 
-	if (cycles > area->max_cycles) {
-		area->max_cycles = cycles;
+	if (cycles == MAX_CPU_PROFILE_VALUE) {
+		area->overflow = true;
 	}
-
 	if (addr < area->lowest) {
 		area->lowest = addr;
 	}
@@ -687,6 +702,40 @@ static void update_cpu_area(Uint32 addr, cpu_profile_item_t *item, profile_area_
 	area->active++;
 }
 
+/**
+ * Helper for collecting CPU profile area statistics.
+ */
+static Uint32 update_area(profile_area_t *area, Uint32 start, Uint32 end)
+{
+	cpu_profile_item_t *item;
+	Uint32 addr;
+
+	memset(area, 0, sizeof(profile_area_t));
+	area->lowest = cpu_profile.size;
+
+	item = &(cpu_profile.data[start]);
+	for (addr = start; addr < end; addr++, item++) {
+		update_area_item(area, addr, item);
+	}
+	return addr;
+}
+
+/**
+ * Helper for initializing CPU profile area sorting indexes.
+ */
+static Uint32* index_area(profile_area_t *area, Uint32 *sort_arr)
+{
+	cpu_profile_item_t *item;
+	Uint32 addr;
+
+	item = &(cpu_profile.data[area->lowest]);
+	for (addr = area->lowest; addr <= area->highest; addr++, item++) {
+		if (item->count) {
+			*sort_arr++ = addr;
+		}
+	}
+	return sort_arr;
+}
 
 /**
  * Stop and process the CPU profiling data; collect stats and
@@ -694,11 +743,8 @@ static void update_cpu_area(Uint32 addr, cpu_profile_item_t *item, profile_area_
  */
 void Profile_CpuStop(void)
 {
-	cpu_profile_item_t *item;
-	profile_area_t *area;
-	Uint32 *sort_arr;
+	Uint32 *sort_arr, next;
 	int active;
-	Uint32 i;
 
 	if (cpu_profile.processed || !cpu_profile.enabled) {
 		return;
@@ -706,39 +752,15 @@ void Profile_CpuStop(void)
 	/* user didn't change RAM or TOS size in the meanwhile? */
 	assert(cpu_profile.size == (STRamEnd + 0x20000 + TosSize) / 2);
 
-	/* find lowest and highest addresses executed... */
-	item = cpu_profile.data;
+	/* find lowest and highest addresses executed etc */
+	next = update_area(&cpu_profile.ram, 0, STRamEnd/2);
+	next = update_area(&cpu_profile.tos, next, (STRamEnd + TosSize)/2);
+	next = update_area(&cpu_profile.ram, next, cpu_profile.size);
+	assert(next == cpu_profile.size);
 
-	/* ...for normal RAM */
-	area = &cpu_profile.ram;
-	memset(area, 0, sizeof(profile_area_t));
-	area->lowest = cpu_profile.size;
-
-	for (i = 0; i < STRamEnd/2; i++, item++) {
-		update_cpu_area(i, item, area);
-	}
-
-	/* ...for ROM TOS */
-	area = &cpu_profile.tos;
-	memset(area, 0, sizeof(profile_area_t));
-	area->lowest = cpu_profile.size;
-
-	for (; i < (STRamEnd + TosSize)/2; i++, item++) {
-		update_cpu_area(i, item, area);
-	}
-
-	/* ... for Cartridge ROM */
-	area = &cpu_profile.rom;
-	memset(area, 0, sizeof(profile_area_t));
-	area->lowest = cpu_profile.size;
-
-	for (; i < cpu_profile.size; i++, item++) {
-		update_cpu_area(i, item, area);
-	}
-
-	cpu_profile.all_misses = cpu_profile.ram.all_misses + cpu_profile.rom.all_misses + cpu_profile.tos.all_misses;
-	cpu_profile.all_cycles = cpu_profile.ram.all_cycles + cpu_profile.rom.all_cycles + cpu_profile.tos.all_cycles;
-	cpu_profile.all_count = cpu_profile.ram.all_count + cpu_profile.rom.all_count + cpu_profile.tos.all_count;
+	assert(cpu_profile.all.misses == cpu_profile.ram.counters.misses + cpu_profile.rom.counters.misses + cpu_profile.tos.counters.misses);
+	assert(cpu_profile.all.cycles == cpu_profile.ram.counters.cycles + cpu_profile.rom.counters.cycles + cpu_profile.tos.counters.cycles);
+	assert(cpu_profile.all.count = cpu_profile.ram.counters.count + cpu_profile.rom.counters.count + cpu_profile.tos.counters.count);
 
 	/* allocate address array for sorting */
 	active = cpu_profile.ram.active + cpu_profile.rom.active + cpu_profile.tos.active;
@@ -756,33 +778,10 @@ void Profile_CpuStop(void)
 	cpu_profile.active = active;
 
 	/* and fill addresses for used instructions... */
-	
-	/* ...for normal RAM */
-	area = &cpu_profile.ram;
-	item = cpu_profile.data + area->lowest;
-	for (i = area->lowest; i <= area->highest; i++, item++) {
-		if (item->count) {
-			*sort_arr++ = i;
-		}
-	}
-
-	/* ...for TOS ROM */
-	area = &cpu_profile.tos;
-	item = cpu_profile.data + area->lowest;
-	for (i = area->lowest; i <= area->highest; i++, item++) {
-		if (item->count) {
-			*sort_arr++ = i;
-		}
-	}
-
-	/* ...for Cartridge ROM */
-	area = &cpu_profile.rom;
-	item = cpu_profile.data + area->lowest;
-	for (i = area->lowest; i <= area->highest; i++, item++) {
-		if (item->count) {
-			*sort_arr++ = i;
-		}
-	}
+	sort_arr = index_area(&cpu_profile.ram, sort_arr);
+	sort_arr = index_area(&cpu_profile.tos, sort_arr);
+	sort_arr = index_area(&cpu_profile.rom, sort_arr);
+	assert(sort_arr == cpu_profile.sort_arr + cpu_profile.active);
 	//printf("%d/%d/%d\n", area->active, sort_arr-cpu_profile.sort_arr, active);
 
 	Profile_CpuShowStats();

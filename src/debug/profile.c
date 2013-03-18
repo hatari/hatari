@@ -11,6 +11,7 @@
 const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
+#include <assert.h>
 #include "main.h"
 #include "version.h"
 #include "debugui.h"
@@ -44,15 +45,58 @@ static const struct {
  */
 static int cmp_callers(const void *c1, const void *c2)
 {
-	Uint32 count1 = ((const caller_t*)c1)->count;
-	Uint32 count2 = ((const caller_t*)c2)->count;
-	if (count1 > count2) {
+	Uint32 calls1 = ((const caller_t*)c1)->calls;
+	Uint32 calls2 = ((const caller_t*)c2)->calls;
+	if (calls1 > calls2) {
 		return -1;
 	}
-	if (count1 < count2) {
+	if (calls1 < calls2) {
 		return 1;
 	}
 	return 0;
+}
+
+/**
+ * output caller counter information
+ */
+static bool output_counter_info(FILE *fp, counters_t *counter)
+{
+	if (!counter->count) {
+		return false;
+	}
+	fprintf(fp, " %lld/%lld/%lld", counter->calls, counter->count, counter->cycles);
+	if (counter->misses) {
+		/* these are only with specific WinUAE CPU core */
+		fprintf(fp, "/%lld", counter->misses);
+	}
+	return true;
+}
+
+/**
+ * output caller call counts, call type(s) and costs
+ */
+static void output_caller_info(FILE *fp, caller_t *info, Uint32 *typeaddr)
+{
+	int k, typecount;
+
+	fprintf(fp, "0x%x = %d", info->addr, info->calls);
+	if (info->flags) {	/* calltypes supported? */
+		fputc(' ', fp);
+		typecount = 0;
+		for (k = 0; k < ARRAYSIZE(flaginfo); k++) {
+			if (info->flags & flaginfo[k].bit) {
+				fputc(flaginfo[k].chr, fp);
+				typecount++;
+			}
+		}
+		if (typecount > 1) {
+			*typeaddr = info->addr;
+		}
+	}
+	if (output_counter_info(fp, &(info->all))) {
+		output_counter_info(fp, &(info->own));
+	}
+	fputs(", ", fp);
 }
 
 /*
@@ -63,19 +107,19 @@ static int cmp_callers(const void *c1, const void *c2)
  */
 void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *))
 {
-	int typecount, countissues, countdiff;
-	int i, j, k;
+	int i, j, countissues, countdiff;
 	const char *name;
 	caller_t *info;
 	Uint64 total;
 	Uint32 addr, typeaddr;
 
 	/* legend */
-	fputs("# ", fp);
-	for (k = 0; k < ARRAYSIZE(flaginfo); k++) {
-		fprintf(fp, "%c = %s, ", flaginfo[k].chr, flaginfo[k].info);
+	fputs("# <callee>: <caller1> = <calls> <types>[ <inclusive/totals>[ <exclusive/totals>]], <caller2> ..., <callee name>", fp);
+	fputs("\n# types: ", fp);
+	for (i = 0; i < ARRAYSIZE(flaginfo); i++) {
+		fprintf(fp, "%c = %s, ", flaginfo[i].chr, flaginfo[i].info);
 	}
-	fputs("\n", fp);
+	fputs("- = info missing\n# totals: calls/instructions/cycles/misses\n", fp);
 
 	countdiff = 0;
 	countissues = 0;
@@ -94,25 +138,11 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 			if (!info->addr) {
 				break;
 			}
-			fprintf(fp, "0x%x = %d", info->addr, info->count);
-			total -= info->count;
-			if (info->flags) {	/* calltypes supported? */
-				fputs(" ", fp);
-				typecount = 0;
-				for (k = 0; k < ARRAYSIZE(flaginfo); k++) {
-					if (info->flags & flaginfo[k].bit) {
-						fputc(flaginfo[k].chr, fp);
-						typecount++;
-					}
-				}
-				if (typecount > 1) {
-					typeaddr = info->addr;
-				}
-			}
-			fputs(", ", fp);
+			total -= info->calls;
+			output_caller_info(fp, info, &typeaddr);
 		}
 		if (name) {
-			fprintf(fp, "(%s)", name);
+			fprintf(fp, "%s", name);
 		}
 		fputs("\n", fp);
 		if (total) {
@@ -138,14 +168,61 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 	}
 }
 
+
 /**
- * Update CPU/DSP callee / caller information, if called address contains
- * symbol address (= function, or other interesting place in code)
+ * add second counter values to first counters
  */
-void Profile_UpdateCaller(callee_t *callsite, Uint32 pc, Uint32 caller, calltype_t flag)
+static void add_counter_costs(counters_t *dst, counters_t *src)
 {
-	int i, count;
+	dst->calls += src->calls;
+	dst->count += src->count;
+	dst->cycles += src->cycles;
+	dst->misses += src->misses;
+}
+
+/**
+ * set first counter values to their difference from a reference value
+ */
+static void set_counter_diff(counters_t *dst, counters_t *ref)
+{
+	dst->calls = ref->calls - dst->calls;
+	dst->count = ref->count - dst->count;
+	dst->cycles = ref->cycles - dst->cycles;
+	dst->misses = ref->misses - dst->misses;
+}
+
+/**
+ * add called (callee) function costs to caller information
+ */
+static void add_callee_cost(callee_t *callsite, callstack_t *stack)
+{
+	caller_t *info = callsite->callers;
+	counters_t owncost;
+	int i;
+
+	for (i = 0; i < callsite->count; i++, info++) {
+		if (info->addr == stack->caller_addr) {
+			/* own cost for callee is its child (out) costs
+			 * deducted from full (all) costs
+			 */
+			owncost = stack->out;
+			set_counter_diff(&owncost, &(stack->all));
+			add_counter_costs(&(info->own), &owncost);
+			add_counter_costs(&(info->all), &(stack->all));
+			return;
+		}
+	}
+	/* cost is only added for updated callers,
+	 * so they should always exist
+	 */
+	assert(0);
+}
+
+
+static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t flag)
+{
 	caller_t *info;
+	int i, count;
 
 	/* need to store real call addresses as symbols can change
 	 * after profiling has been stopped
@@ -166,16 +243,16 @@ void Profile_UpdateCaller(callee_t *callsite, Uint32 pc, Uint32 caller, calltype
 	count = callsite->count;
 	for (;;) {
 		for (i = 0; i < count; i++, info++) {
-			if (info->addr == caller) {
+			if (info->addr == prev_pc) {
 				info->flags |= flag;
-				info->count++;
+				info->calls++;
 				return;
 			}
 			if (!info->addr) {
 				/* empty slot */
-				info->addr = caller;
+				info->addr = prev_pc;
 				info->flags |= flag;
-				info->count = 1;
+				info->calls = 1;
 				return;
 			}
 		}
@@ -192,29 +269,151 @@ void Profile_UpdateCaller(callee_t *callsite, Uint32 pc, Uint32 caller, calltype
 	}
 }
 
-int Profile_AllocCallerInfo(const char *info, int oldcount, int count, callee_t **callsite)
+static void subcall_start_check(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, Uint32 ret_pc, counters_t *runcounts)
 {
-	if (*callsite) {
-		/* free old data */
-		int i;
-		callee_t *site = *callsite;
-		for (i = 0; i < oldcount; i++, site++) {
+	callstack_t *stack;
+	int count;
+
+	if (flag != CALL_SUBROUTINE) {
+		return;
+	}
+	runcounts->calls++;
+
+	if (unlikely(!callinfo->count)) {
+		/* initial stack alloc, can be a bit larger */
+		count = 8;
+		stack = calloc(count, sizeof(*stack));
+		if (!stack) {
+			fputs("ERROR: callstack alloc failed!\n", stderr);
+			return;
+		}
+		callinfo->stack = stack;
+		callinfo->count = count;
+
+	} else if (unlikely(callinfo->depth+1 >= callinfo->count)) {
+		/* need to alloc more stack space for new call? */
+		count = callinfo->count * 2;
+		stack = realloc(callinfo->stack, count * sizeof(*stack));
+		if (!stack) {
+			fputs("ERROR: callstack alloc failed!\n", stderr);
+			return;
+		}
+		memset(stack + callinfo->count, 0, callinfo->count * sizeof(*stack));
+		callinfo->stack = stack;
+		callinfo->count = count;
+	}
+
+	/* called function */
+	stack = &(callinfo->stack[callinfo->depth++]);
+
+	/* store current running totals & zero subcall costs */
+	stack->all = *runcounts;
+	memset(&(stack->out), 0, sizeof(stack->out));
+
+	/* set subroutine call information */
+	assert(ret_pc);
+	stack->ret_addr = ret_pc;
+	stack->callee_idx = idx;
+	stack->caller_addr = prev_pc;
+	stack->callee_addr = pc;
+}
+
+static void subcall_end_check(callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, Uint32 ret_pc, counters_t *runcounts)
+{
+	callstack_t *stack;
+
+	if (!callinfo->depth) {
+		/* no calls yet */
+		return;
+	}
+	stack = &(callinfo->stack[callinfo->depth-1]);
+
+	if (likely(pc != stack->ret_addr)) {
+		/* not return address */
+		return;
+	}
+	if (unlikely(flag == CALL_SUBROUTINE)) {
+		/* return address, but not return
+		 * (EmuTOS perversity: JSR back from JSR)
+		 */
+		return;
+	}
+	/* remove call info from stack */
+	callinfo->depth--;
+
+	if (flag != CALL_SUBRETURN) {
+		/* wasn't a real subroutine call... */
+		if (flag == CALL_EXCRETURN) {
+			/* back from interrupt handler, ignore whole call */
+			return;
+		}
+		/* ...but a mystery to debug */
+		fprintf(stderr, "WARNING: subroutine call from 0x%x -> 0x%x returned 0x%x -> 0x%x!\n",
+			stack->caller_addr, stack->callee_addr, prev_pc, pc);
+		DebugUI(REASON_USER);
+		return;
+	}
+
+	/* full cost is orignal global cost (in ->all)
+	 * deducted from current global (runcost) cost
+	 */
+	set_counter_diff(&(stack->all), runcounts);
+	add_callee_cost(callinfo->site + stack->callee_idx, stack);
+
+	/* add full cost of this to parent caller's outside costs */
+	if (callinfo->depth) {
+		callstack_t *pstack = stack - 1;
+		add_counter_costs(&(pstack->out), &(stack->all));
+	}
+}
+
+/**
+ * Update CPU/DSP callee / caller information, if called address contains
+ * symbol address (= function, or other interesting place in code)
+ */
+void Profile_UpdateCallinfo(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, Uint32 ret_pc, counters_t *runcounts)
+{
+	if (unlikely(idx >= 0 && idx < callinfo->sites)) {
+		subcall_start_check(idx, callinfo, prev_pc, flag, pc, ret_pc, runcounts);
+		add_caller(callinfo->site + idx, pc, prev_pc, flag);
+
+	} else {
+		subcall_end_check(callinfo, prev_pc, flag, pc, ret_pc, runcounts);
+	}
+}
+
+int Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *name)
+{
+	callinfo->sites = count;
+	if (count) {
+		/* alloc & clear new data */
+		callinfo->site = calloc(count, sizeof(callee_t));
+		if (callinfo->site) {
+			printf("Allocated %s profile callsite buffer for %d symbols.\n", name, count);
+		} else {
+			fprintf(stderr, "ERROR: callesite buffer alloc failed!\n");
+			callinfo->sites = 0;
+		}
+	}
+	return callinfo->sites;
+}
+
+void Profile_FreeCallinfo(callinfo_t *callinfo)
+{
+	int i;
+	if (callinfo->sites) {
+		callee_t *site = callinfo->site;
+		for (i = 0; i < callinfo->sites; i++, site++) {
 			if (site->callers) {
 				free(site->callers);
 			}
 		}
-		free(*callsite);
-		*callsite = NULL;
-	}
-	if (count) {
-		/* alloc & clear new data */
-		*callsite = calloc(count, sizeof(callee_t));
-		if (*callsite) {
-			printf("Allocated %s profile callsite buffer for %d symbols.\n", info, count);
-			return count;
+		free(callinfo->site);
+		if (callinfo->stack) {
+			free(callinfo->stack);
 		}
+		memset(callinfo, 0, sizeof(*callinfo));
 	}
-	return 0;
 }
 
 

@@ -528,6 +528,46 @@ class ProfileSymbols(Output):
         return self.get_area(addr)
 
 
+
+# ---------------------------------------------------------------------
+class Callinfo:
+    "class representing parsed profile data caller/callee linkage information"
+
+    def __init__(self, addr, calls, flags, intotal, extotal):
+        self.addr = addr
+        # how many times this caller called the destination
+        self.calls = int(calls, 10)
+        # what kind of "call" it was?
+        if flags:
+            self.flags = flags.strip()
+        else:
+            self.flags = "-"
+        self.total = [None, None]
+        # cost of these calls including further function calls
+        self._parse_totals(0, intotal)
+        # costs exclusing further function calls
+        self._parse_totals(1, extotal)
+
+    def _parse_totals(self, idx, totalstr):
+        "parse '/' separate totals string into integer sequence, or None"
+        if totalstr:
+            self.total[idx] = [int(x, 10) for x in totalstr.strip().split('/')]
+
+    def _add_total(self, idx, newtotal):
+        "add given totals to own totals"
+        mytotal = self.total[idx]
+        if mytotal and newtotal:
+            self.total[idx] = [x + y for x, y in zip(mytotal, newtotal)]
+        if newtotal:
+            self.total[idx] = newtotal
+
+    def add(self, newinfo):
+        "add counts and totals from other item to this one"
+        self.calls += newinfo.calls
+        for i in range(len(self.total)):
+            self._add_total(i, newinfo.total[i])
+
+
 # ---------------------------------------------------------------------
 class ProfileCallers(Output):
     "profile data callee/caller information parser & handler"
@@ -535,9 +575,8 @@ class ProfileCallers(Output):
     def __init__(self):
         Output.__init__(self)
         # caller info in callee line:
-        # 0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
-        # 0x<hex> = <count>
-        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)( [a-z]+)?$")
+        # 0x<hex> = <count> <typeletter>[ inclusive/totals][ exclusive/totals]
+        self.r_caller = re.compile("^0x([0-9a-f]+) = ([0-9]+)( [a-z]+)?( [0-9/]+)?( [0-9/]+)?$")
         # whether there is any caller info
         self.present = False
         # address dicts
@@ -567,7 +606,7 @@ class ProfileCallers(Output):
 
     def parse_callers(self, fobj, parsed, line):
         "parse callee: caller call count information"
-        #0x<hex>: 0x<hex> = <count>, N*[0x<hex> = <count>,][ (<symbol>)
+        #0x<hex>: 0x<hex> = <count>[ <flags>][, <inclusive/totals>[, <exclusive/totals>]]; N*[0x<hex> = <count>...;][ <symbol>]
         self.callinfo = {}
         while True:
             parsed += 1
@@ -583,24 +622,19 @@ class ProfileCallers(Output):
                 self.error_exit("caller info missing on callee line %d\n\t'%s'" % (parsed, line))
             if ':' not in callers[0]:
                 self.error_exit("callee/caller separator ':' missing on callee line %d\n\t'%s'" % (parsed, line))
+            addr, callers[0] = callers[0].split(':')
             last = callers[-1].strip()
-            if len(last) and last[-1] != ')':
+            if last.startswith('0x'):
                 self.error_exit("last item isn't empty or symbol name on callee line %d\n\t'%s'" % (parsed, line))
 
-            addr, callers[0] = callers[0].split(':')
             callinfo = {}
             for caller in callers[:-1]:
                 caller = caller.strip()
                 match = self.r_caller.match(caller)
                 if match:
-                    caddr, count, flags = match.groups()
-                    caddr = int(caddr, 16)
-                    count = int(count, 10)
-                    if flags:
-                        flags = flags.strip()
-                    else:
-                        flags = '-'
-                    callinfo[caddr] = (count, flags)
+                    items = match.groups()
+                    caddr = int(items[0], 16)
+                    callinfo[caddr] = Callinfo(caddr, *items[1:])
                 else:
                     self.error_exit("unrecognized caller info '%s' on callee line %d\n\t'%s'" % (caller, parsed, line))
             self.callinfo[int(addr, 16)] = callinfo
@@ -621,14 +655,12 @@ class ProfileCallers(Output):
                 continue
             # ...and their callers
             ignore = total = 0
-            for item in caller.items():
-                laddr, info = item
-                count, flags = info
+            for laddr, info in caller.items():
                 pname, offset = symbols.get_preceeding_symbol(laddr)
-                if len(flags) > 1:
-                    self.warning("caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (flags, pname))
-                elif flags in self.removable_calltypes:
-                    ignore += count
+                if len(info.flags) > 1:
+                    self.warning("caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (info.flags, pname))
+                elif info.flags in self.removable_calltypes:
+                    ignore += info.calls
                     continue
                 # function address for the caller
                 paddr = laddr - offset
@@ -637,17 +669,15 @@ class ProfileCallers(Output):
                     self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
                     parent.name = pname
                 # link parent and child function together
-                item = (laddr, count, flags)
                 if paddr in child.parent:
                     if self.compact:
-                        oldcount = child.parent[paddr][0][1]
-                        child.parent[paddr] = ((paddr, oldcount + count, flags),)
+                        child.parent[paddr][0].add(info)
                     else:
-                        child.parent[paddr] += (item,)
+                        child.parent[paddr] += (info,)
                 else:
-                    child.parent[paddr] = (item,)
+                    child.parent[paddr] = (info,)
                 parent.child[caddr] = True
-                total += count
+                total += info.calls
             # validate call count
             if ignore:
                 all_ignored += ignore
@@ -687,7 +717,7 @@ class ProfileCallers(Output):
             total = 0
             # add together calls from this particular parent
             for item in info:
-                total += item[1] # count
+                total += item.calls
             if parents == 1 and total != calls:
                 self.error_exit("%s -> %s, single parent, but callcounts don't match: %d != %d" % (parent.name, child.name, total, calls))
             # parent's share of current propagated child costs
@@ -784,7 +814,7 @@ class ProfileCallgrind(Output):
             info = child.parent[paddr]
             total = 0
             for item in info:
-                total += item[1] # count
+                total += item.calls
             self.write("cfn=%s\n" % child.name)
             self.write("calls=%d %d\n" % (total, child.line))
             if child.total:
@@ -1438,8 +1468,8 @@ label="%s";
                 # total calls count for child
                 calls = profile[caddr].data[0]
                 # calls to child done from different locations in parent
-                for laddr, count, flags in info:
-                    self.edges[(laddr, caddr)] = (paddr, count, calls, flags)
+                for edge in info:
+                    self.edges[(edge.addr, caddr)] = (paddr, calls, edge)
         return (len(profile) - len(self.nodes))
 
     def _output_nodes(self, stats, field, limit):
@@ -1487,7 +1517,7 @@ label="%s";
         "output graph edges from filtered edges dict, after nodes is called"
         for linkage, info in self.edges.items():
             laddr, caddr = linkage
-            paddr, count, calls, flags = info
+            paddr, calls, edge = info
             pname = self.profile[paddr].name
             offset = laddr - paddr
             style = ""
@@ -1496,6 +1526,7 @@ label="%s";
             # arrowhead/tail styles:
             #   none, normal, inv, dot, odot, invdot, invodot, tee, empty,
             #   invempty, open, halfopen, diamond, odiamond, box, obox, crow
+            flags = edge.flags
             if flags == CALL_NEXT or flags == CALL_BRANCH:
                 style += " arrowhead=dot"
             elif flags == CALL_SUBROUTINE:
@@ -1512,9 +1543,9 @@ label="%s";
                 label = "%s+%d\\n($%x)" % (pname, offset, laddr)
             else:
                 label = pname
-            if count != calls:
-                percentage = 100.0 * count / calls
-                label = "%s\\n%d calls\\n=%.2f%%" % (label, count, percentage)
+            if edge.calls != calls:
+                percentage = 100.0 * edge.calls / calls
+                label = "%s\\n%d calls\\n=%.2f%%" % (label, edge.calls, percentage)
             self.write("N_%X -> N_%X [label=\"%s\"%s];\n" % (paddr, caddr, label, style))
 
     def do_output(self, profobj, fname):
@@ -1522,7 +1553,6 @@ label="%s";
         if not (self.output_enabled and profobj.callers.present):
             return
         stats = profobj.stats
-        basename = os.path.splitext(fname)[0]
         for field in range(profobj.stats.items):
             if not stats.totals[field]:
                 continue

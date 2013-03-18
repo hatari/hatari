@@ -19,6 +19,8 @@ const char Profiledsp_fileid[] = "Hatari profiledsp.c : " __DATE__ " " __TIME__;
 #include "profile_priv.h"
 #include "symbols.h"
 
+static callinfo_t dsp_callinfo;
+
 #define DSP_PROFILE_ARR_SIZE 0x10000
 #define MAX_DSP_PROFILE_VALUE 0xFFFFFFFFFFFFFFFFLL
 
@@ -31,9 +33,7 @@ typedef struct {
 
 static struct {
 	dsp_profile_item_t *data; /* profile data */
-	profile_area_t ram;   /* normal RAM stats */
-	int sites;            /* number of symbol callsites */
-	callee_t *callsite;   /* symbol specific caller information */
+	profile_area_t ram;   /* statistics for whole memory */
 	Uint16 *sort_arr;     /* data indexes used for sorting */
 	Uint16 prev_pc;       /* previous PC for which the cycles are for */
 	Uint32 disasm_addr;   /* 'dspaddresses' command start address */
@@ -63,8 +63,8 @@ bool Profile_DspAddressData(Uint16 addr, float *percentage, Uint64 *count, Uint6
 	} else {
 		*cycle_diff = 0;
 	}
-	if (dsp_profile.ram.all_count) {
-		*percentage = 100.0*(*count)/dsp_profile.ram.all_count;
+	if (dsp_profile.ram.counters.count) {
+		*percentage = 100.0*(*count)/dsp_profile.ram.counters.count;
 	} else {
 		*percentage = 0.0;
 	}
@@ -87,20 +87,20 @@ void Profile_DspShowStats(void)
 	fprintf(stderr, "- active instruction addresses:\n  %d\n",
 		area->active);
 	fprintf(stderr, "- executed instructions:\n  %llu\n",
-		area->all_count);
+		area->counters.count);
 	/* indicates either instruction(s) that address different memory areas
 	 * (they can have different access costs), or more significantly,
 	 * DSP code that has changed during profiling.
 	 */
 	fprintf(stderr, "- sum of per instruction cycle changes\n  (can indicate code change during profiling):\n  %llu\n",
-		area->all_misses);
+		area->counters.misses);
 
 	fprintf(stderr, "- used cycles:\n  %llu\n",
-		area->all_cycles);
-	if (area->max_cycles == MAX_DSP_PROFILE_VALUE) {
+		area->counters.cycles);
+	if (area->overflow) {
 		fprintf(stderr, "  *** COUNTERS OVERFLOW! ***\n");
 	}
-	fprintf(stderr, "\n= %.5fs\n", (double)(area->all_cycles) / MachineClocks.DSP_Freq);
+	fprintf(stderr, "\n= %.5fs\n", (double)(area->counters.cycles) / MachineClocks.DSP_Freq);
 }
 
 /**
@@ -199,7 +199,7 @@ void Profile_DspShowCycles(int show)
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = *sort_arr;
 		count = data[addr].cycles;
-		percentage = 100.0*count/dsp_profile.ram.all_cycles;
+		percentage = 100.0*count/dsp_profile.ram.counters.cycles;
 		printf("0x%04x\t%.2f%%\t%lld%s\n", addr, percentage, count,
 		       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
 	}
@@ -253,7 +253,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 		for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 			addr = *sort_arr;
 			count = data[addr].count;
-			percentage = 100.0*count/dsp_profile.ram.all_count;
+			percentage = 100.0*count/dsp_profile.ram.counters.count;
 			printf("0x%04x\t%.2f%%\t%lld%s\n",
 			       addr, percentage, count,
 			       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
@@ -278,7 +278,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 			continue;
 		}
 		count = data[addr].count;
-		percentage = 100.0*count/dsp_profile.ram.all_count;
+		percentage = 100.0*count/dsp_profile.ram.counters.count;
 		printf("0x%04x\t%.2f%%\t%lld\t%s%s\n",
 		       addr, percentage, count, name,
 		       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
@@ -303,7 +303,7 @@ static const char * addr2name(Uint32 addr, Uint64 *total)
  */
 void Profile_DspShowCallers(FILE *fp)
 {
-	Profile_ShowCallers(fp, dsp_profile.sites, dsp_profile.callsite, addr2name);
+	Profile_ShowCallers(fp, dsp_callinfo.sites, dsp_callinfo.site, addr2name);
 }
 
 /**
@@ -334,6 +334,7 @@ bool Profile_DspStart(void)
 	dsp_profile_item_t *item;
 	int i;
 
+	Profile_FreeCallinfo(&(dsp_callinfo));
 	if (dsp_profile.sort_arr) {
 		/* remove previous results */
 		free(dsp_profile.sort_arr);
@@ -345,33 +346,34 @@ bool Profile_DspStart(void)
 	if (!dsp_profile.enabled) {
 		return false;
 	}
+	/* zero everything */
+	memset(&dsp_profile, 0, sizeof(dsp_profile));
 
 	dsp_profile.data = calloc(DSP_PROFILE_ARR_SIZE, sizeof(*dsp_profile.data));
-	if (dsp_profile.data) {
-		printf("Allocated DSP profile buffer (%d KB).\n",
-		       (int)sizeof(*dsp_profile.data)*DSP_PROFILE_ARR_SIZE/1024);
-	} else {
+	if (!dsp_profile.data) {
 		perror("ERROR, new DSP profile buffer alloc failed");
-		dsp_profile.enabled = false;
+		return false;
 	}
+	printf("Allocated DSP profile buffer (%d KB).\n",
+	       (int)sizeof(*dsp_profile.data)*DSP_PROFILE_ARR_SIZE/1024);
+
+	Profile_AllocCallinfo(&(dsp_callinfo), Symbols_DspCount(), "DSP");
+
 	item = dsp_profile.data;
 	for (i = 0; i < DSP_PROFILE_ARR_SIZE; i++, item++) {
 		item->min_cycle = 0xFFFF;
 	}
-
-	dsp_profile.sites = Profile_AllocCallerInfo("DSP", dsp_profile.sites, Symbols_DspCount(), &(dsp_profile.callsite));
-
 	dsp_profile.prev_pc = DSP_GetPC();
 
 	dsp_profile.disasm_addr = 0;
 	dsp_profile.processed = false;
+	dsp_profile.enabled = true;
 	return dsp_profile.enabled;
 }
 
 /* return branch type based on caller instruction type */
 static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 {
-	/* not supported (yet) */
 	return CALL_UNDEFINED;
 }
 
@@ -388,18 +390,12 @@ void Profile_DspUpdate(void)
 
 	prev_pc = dsp_profile.prev_pc;
 	dsp_profile.prev_pc = pc = DSP_GetPC();
-	if (dsp_profile.sites) {
-		int idx = Symbols_GetDspAddressIndex(pc);
-		if (unlikely(idx >= 0 && idx < dsp_profile.sites)) {
-			calltype_t flag = dsp_opcode_type(prev_pc, pc);
-			Profile_UpdateCaller(dsp_profile.callsite + idx,
-					     pc, prev_pc, flag);
-		}
-	}
 	prev = dsp_profile.data + prev_pc;
+
 	if (likely(prev->count < MAX_DSP_PROFILE_VALUE)) {
 		prev->count++;
 	}
+	dsp_profile.ram.counters.count++;
 
 	cycles = DSP_GetInstrCycles();
 	if (likely(prev->cycles < MAX_DSP_PROFILE_VALUE - cycles)) {
@@ -407,18 +403,34 @@ void Profile_DspUpdate(void)
 	} else {
 		prev->cycles = MAX_DSP_PROFILE_VALUE;
 	}
+	dsp_profile.ram.counters.cycles += cycles;
+
 	if (unlikely(cycles < prev->min_cycle)) {
 		prev->min_cycle = cycles;
 	}
 	if (unlikely(cycles > prev->max_cycle)) {
 		prev->max_cycle = cycles;
 	}
+
+	if (dsp_callinfo.sites) {
+		int symidx;
+		Uint16 ret_pc;
+		calltype_t flag = dsp_opcode_type(prev_pc, pc);
+		if (flag == CALL_SUBROUTINE) {
+			/* slow, so needs to be checked only when needed */
+			ret_pc = DSP_GetNextPC(prev_pc);
+		} else {
+			ret_pc = 0;
+		}
+		symidx = Symbols_GetDspAddressIndex(pc);
+		Profile_UpdateCallinfo(symidx, &dsp_callinfo, prev_pc, flag, pc, ret_pc, &(dsp_profile.ram.counters));
+	}
 }
 
 /**
  * Helper for collecting DSP profile area statistics.
  */
-static void update_dsp_area(Uint16 addr, dsp_profile_item_t *item, profile_area_t *area)
+static void update_area_item(profile_area_t *area, Uint16 addr, dsp_profile_item_t *item)
 {
 	Uint64 cycles = item->cycles;
 	Uint64 count = item->count;
@@ -427,17 +439,15 @@ static void update_dsp_area(Uint16 addr, dsp_profile_item_t *item, profile_area_
 	if (!count) {
 		return;
 	}
-	area->all_count += count;
-	area->all_cycles += cycles;
-	if (cycles > area->max_cycles) {
-		area->max_cycles = cycles;
+	if (cycles == MAX_DSP_PROFILE_VALUE) {
+		area->overflow = true;
 	}
 	if (item->max_cycle) {
 		diff = item->max_cycle - item->min_cycle;
 	} else {
 		diff = 0;
 	}
-	area->all_misses += diff;
+	area->counters.misses += diff;
 
 	if (addr < area->lowest) {
 		area->lowest = addr;
@@ -456,19 +466,19 @@ void Profile_DspStop(void)
 	dsp_profile_item_t *item;
 	profile_area_t *area;
 	Uint16 *sort_arr;
-	Uint32 i;
+	Uint32 addr;
 
 	if (dsp_profile.processed || !dsp_profile.enabled) {
 		return;
 	}
 	/* find lowest and highest  addresses executed */
-	item = dsp_profile.data;
 	area = &dsp_profile.ram;
+	item = dsp_profile.data;
 	memset(area, 0, sizeof(profile_area_t));
 	area->lowest = DSP_PROFILE_ARR_SIZE;
 
-	for (i = 0; i < DSP_PROFILE_ARR_SIZE; i++, item++) {
-		update_dsp_area(i, item, area);
+	for (addr = 0; addr < DSP_PROFILE_ARR_SIZE; addr++, item++) {
+		update_area_item(area, addr, item);
 	}
 
 	/* allocate address array for sorting */
@@ -486,10 +496,10 @@ void Profile_DspStop(void)
 
 	/* ...and fill addresses for used instructions... */
 	area = &dsp_profile.ram;
-	item = dsp_profile.data + area->lowest;
-	for (i = area->lowest; i <= area->highest; i++, item++) {
+	item = &(dsp_profile.data[area->lowest]);
+	for (addr = area->lowest; addr <= area->highest; addr++, item++) {
 		if (item->count) {
-			*sort_arr++ = i;
+			*sort_arr++ = addr;
 		}
 	}
 	//printf("%d/%d/%d\n", area->active, sort_arr-dsp_profile.sort_arr, active);
