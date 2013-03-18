@@ -28,6 +28,7 @@ const char Cart_fileid[] = "Hatari cart.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "m68000.h"
 #include "stMemory.h"
+#include "tos.h"
 #include "vdi.h"
 #include "hatari-glue.h"
 #include "newcpu.h"
@@ -112,8 +113,10 @@ void Cart_ResetImage(void)
 			Log_Printf(LOG_WARN, "Cartridge can't be used together with GEMDOS hard disk emulation!\n");
 	}
 
-	/* Use internal cartridge when user wants extended VDI resolution or GEMDOS HD. */
-	if (bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories)
+	/* Use internal cartridge when user wants extended VDI resolution or
+	 * GEMDOS HD. But don't use it on TOS 0.00, it does not work there. */
+	if ((bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories)
+	    && TosVersion >= 0x100)
 	{
 		/* Copy built-in cartridge data into the cartridge memory of the ST */
 		memcpy(&RomMem[0xfa0000], Cart_data, sizeof(Cart_data));
