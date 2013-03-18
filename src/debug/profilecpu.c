@@ -755,12 +755,12 @@ void Profile_CpuStop(void)
 	/* find lowest and highest addresses executed etc */
 	next = update_area(&cpu_profile.ram, 0, STRamEnd/2);
 	next = update_area(&cpu_profile.tos, next, (STRamEnd + TosSize)/2);
-	next = update_area(&cpu_profile.ram, next, cpu_profile.size);
+	next = update_area(&cpu_profile.rom, next, cpu_profile.size);
 	assert(next == cpu_profile.size);
 
-	assert(cpu_profile.all.misses == cpu_profile.ram.counters.misses + cpu_profile.rom.counters.misses + cpu_profile.tos.counters.misses);
-	assert(cpu_profile.all.cycles == cpu_profile.ram.counters.cycles + cpu_profile.rom.counters.cycles + cpu_profile.tos.counters.cycles);
-	assert(cpu_profile.all.count = cpu_profile.ram.counters.count + cpu_profile.rom.counters.count + cpu_profile.tos.counters.count);
+	assert(cpu_profile.all.misses == cpu_profile.ram.counters.misses + cpu_profile.tos.counters.misses + cpu_profile.rom.counters.misses);
+	assert(cpu_profile.all.cycles == cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
+	assert(cpu_profile.all.count == cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count);
 
 	/* allocate address array for sorting */
 	active = cpu_profile.ram.active + cpu_profile.rom.active + cpu_profile.tos.active;
