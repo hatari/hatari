@@ -507,6 +507,9 @@ static void update_area_item(profile_area_t *area, Uint16 addr, dsp_profile_item
 	} else {
 		diff = 0;
 	}
+
+	area->counters.count += count;
+	area->counters.cycles += cycles;
 	area->counters.misses += diff;
 
 	if (addr < area->lowest) {
@@ -525,7 +528,6 @@ void Profile_DspStop(void)
 {
 	dsp_profile_item_t *item;
 	profile_area_t *area;
-	counters_t counters;
 	Uint16 *sort_arr;
 	Uint32 addr;
 
@@ -534,9 +536,7 @@ void Profile_DspStop(void)
 	}
 	/* find lowest and highest  addresses executed */
 	area = &dsp_profile.ram;
-	counters = area->counters;
 	memset(area, 0, sizeof(profile_area_t));
-	area->counters = counters;
 	area->lowest = DSP_PROFILE_ARR_SIZE;
 
 	item = dsp_profile.data;
