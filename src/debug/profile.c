@@ -269,14 +269,27 @@ static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t
 	}
 }
 
-static void subcall_start_check(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, Uint32 ret_pc, counters_t *runcounts)
+/**
+ * Add information about called symbol, and if it was subroutine
+ * call, add it to stack of functions which total costs are tracked.
+ */
+void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *runcounts)
 {
 	callstack_t *stack;
 	int count;
 
-	if (flag != CALL_SUBROUTINE) {
+	if (unlikely(idx >= callinfo->sites)) {
+		fprintf(stderr, "ERROR: number of symbols increased during profiling (%d > %d)!\n", idx, callinfo->sites);
 		return;
 	}
+
+	add_caller(callinfo->site + idx, pc, prev_pc, flag);
+	if (flag != CALL_SUBROUTINE) {
+		/* some other call type */
+		return;
+	}
+
+	/* subroutine call, add it to call stack... */
 	runcounts->calls++;
 
 	if (unlikely(!callinfo->count)) {
@@ -311,46 +324,39 @@ static void subcall_start_check(int idx, callinfo_t *callinfo, Uint32 prev_pc, c
 	memset(&(stack->out), 0, sizeof(stack->out));
 
 	/* set subroutine call information */
-	assert(ret_pc);
-	stack->ret_addr = ret_pc;
+	assert(callinfo->return_pc);
+	stack->ret_addr = callinfo->return_pc;
 	stack->callee_idx = idx;
 	stack->caller_addr = prev_pc;
 	stack->callee_addr = pc;
 }
 
-static void subcall_end_check(callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, Uint32 ret_pc, counters_t *runcounts)
+/**
+ * If it really was subcall (function) return, store returned function
+ * costs and update callinfo->return_pc value.
+ */
+void Profile_CallEnd(callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *runcounts)
 {
-	callstack_t *stack;
+	callstack_t *parent, *stack;
 
-	if (!callinfo->depth) {
-		/* no calls yet */
-		return;
-	}
+	assert(callinfo->depth);
 	stack = &(callinfo->stack[callinfo->depth-1]);
 
-	if (likely(pc != stack->ret_addr)) {
-		/* not return address */
-		return;
-	}
-	if (unlikely(flag == CALL_SUBROUTINE)) {
-		/* return address, but not return
-		 * (EmuTOS perversity: JSR back from JSR)
-		 */
-		return;
-	}
 	/* remove call info from stack */
+	parent = stack - 1;
+	callinfo->return_pc = parent->ret_addr;
 	callinfo->depth--;
 
-	if (flag != CALL_SUBRETURN) {
+	if (unlikely(flag != CALL_SUBRETURN)) {
 		/* wasn't a real subroutine call... */
-		if (flag == CALL_EXCRETURN) {
+		if (likely(flag == CALL_EXCRETURN)) {
 			/* back from interrupt handler, ignore whole call */
 			return;
 		}
 		/* ...but a mystery to debug */
 		fprintf(stderr, "WARNING: subroutine call from 0x%x -> 0x%x returned 0x%x -> 0x%x!\n",
 			stack->caller_addr, stack->callee_addr, prev_pc, pc);
-		DebugUI(REASON_USER);
+		DebugUI(REASON_USER);	/* TODO: comment this out before release */
 		return;
 	}
 
@@ -362,23 +368,7 @@ static void subcall_end_check(callinfo_t *callinfo, Uint32 prev_pc, calltype_t f
 
 	/* add full cost of this to parent caller's outside costs */
 	if (callinfo->depth) {
-		callstack_t *pstack = stack - 1;
-		add_counter_costs(&(pstack->out), &(stack->all));
-	}
-}
-
-/**
- * Update CPU/DSP callee / caller information, if called address contains
- * symbol address (= function, or other interesting place in code)
- */
-void Profile_UpdateCallinfo(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, Uint32 ret_pc, counters_t *runcounts)
-{
-	if (unlikely(idx >= 0 && idx < callinfo->sites)) {
-		subcall_start_check(idx, callinfo, prev_pc, flag, pc, ret_pc, runcounts);
-		add_caller(callinfo->site + idx, pc, prev_pc, flag);
-
-	} else {
-		subcall_end_check(callinfo, prev_pc, flag, pc, ret_pc, runcounts);
+		add_counter_costs(&(parent->out), &(stack->all));
 	}
 }
 

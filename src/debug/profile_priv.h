@@ -51,8 +51,9 @@ typedef struct {
 
 typedef struct {
 	int sites;		/* number of symbol callsites */
-	int depth;		/* how many callstack calls haven't yet returned */
 	int count;		/* number of items allocated for stack */
+	int depth;		/* how many callstack calls haven't yet returned */
+	Uint32 return_pc;	/* address for last call return address (speedup) */
 	callee_t *site;		/* symbol specific caller information */
 	callstack_t *stack;	/* calls that will return */
 } callinfo_t;
@@ -69,7 +70,8 @@ typedef struct {
 
 /* generic profile caller functions */
 extern void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *));
-extern void Profile_UpdateCallinfo(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, Uint32 ret_pc, counters_t *runcounts);
+extern void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *runcounts);
+extern void Profile_CallEnd(callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *runcounts);
 extern int  Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *info);
 extern void Profile_FreeCallinfo(callinfo_t *callinfo);
 

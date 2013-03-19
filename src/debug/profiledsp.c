@@ -438,6 +438,33 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 }
 
 /**
+ * If call tracking is enabled (there are symbols), collect
+ * information about subroutine and other calls, and their costs.
+ */
+static void collect_calls(Uint16 pc, Uint16 prev_pc, counters_t *counters)
+{
+	calltype_t flag;
+	int idx;
+
+	idx = Symbols_GetDspAddressIndex(pc);
+	if (unlikely(idx >= 0)) {
+
+		/* address is one which we're tracking */
+		flag = dsp_opcode_type(prev_pc, pc);
+		if (flag == CALL_SUBROUTINE) {
+			dsp_callinfo.return_pc = DSP_GetNextPC(prev_pc);  /* slow! */
+		}
+		Profile_CallStart(idx, &dsp_callinfo, prev_pc, flag, pc, counters);
+
+	} else if (unlikely(pc == dsp_callinfo.return_pc) && likely(dsp_callinfo.depth)) {
+
+		/* address was return address for last subroutine call */
+		flag = dsp_opcode_type(prev_pc, pc);
+		Profile_CallEnd(&dsp_callinfo, prev_pc, flag, pc, counters);
+	}
+}
+
+/**
  * Update DSP cycle and count statistics for PC address.
  *
  * This is called after instruction is executed and PC points
@@ -447,6 +474,7 @@ void Profile_DspUpdate(void)
 {
 	dsp_profile_item_t *prev;
 	Uint16 pc, prev_pc, cycles;
+	counters_t *counters;
 
 	prev_pc = dsp_profile.prev_pc;
 	dsp_profile.prev_pc = pc = DSP_GetPC();
@@ -455,7 +483,6 @@ void Profile_DspUpdate(void)
 	if (likely(prev->count < MAX_DSP_PROFILE_VALUE)) {
 		prev->count++;
 	}
-	dsp_profile.ram.counters.count++;
 
 	cycles = DSP_GetInstrCycles();
 	if (likely(prev->cycles < MAX_DSP_PROFILE_VALUE - cycles)) {
@@ -463,7 +490,6 @@ void Profile_DspUpdate(void)
 	} else {
 		prev->cycles = MAX_DSP_PROFILE_VALUE;
 	}
-	dsp_profile.ram.counters.cycles += cycles;
 
 	if (unlikely(cycles < prev->min_cycle)) {
 		prev->min_cycle = cycles;
@@ -472,18 +498,11 @@ void Profile_DspUpdate(void)
 		prev->max_cycle = cycles;
 	}
 
+	counters = &(dsp_profile.ram.counters);
+	counters->count++;
+	counters->cycles += cycles;
 	if (dsp_callinfo.sites) {
-		int symidx;
-		Uint16 ret_pc;
-		calltype_t flag = dsp_opcode_type(prev_pc, pc);
-		if (flag == CALL_SUBROUTINE) {
-			/* slow, so needs to be checked only when needed */
-			ret_pc = DSP_GetNextPC(prev_pc);
-		} else {
-			ret_pc = 0;
-		}
-		symidx = Symbols_GetDspAddressIndex(pc);
-		Profile_UpdateCallinfo(symidx, &dsp_callinfo, prev_pc, flag, pc, ret_pc, &(dsp_profile.ram.counters));
+		collect_calls(pc, prev_pc, counters);
 	}
 }
 

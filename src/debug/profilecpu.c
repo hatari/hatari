@@ -580,6 +580,39 @@ static calltype_t cpu_opcode_type(Uint32 prev_pc, Uint32 pc)
 }
 
 /**
+ * If call tracking is enabled (there are symbols), collect
+ * information about subroutine and other calls, and their costs.
+ */
+static void collect_calls(Uint32 pc, Uint32 prev_pc, counters_t *counters)
+{
+	calltype_t flag;
+	int idx;
+
+	idx = Symbols_GetCpuAddressIndex(pc);
+	if (unlikely(idx >= 0)) {
+
+		/* address is one which we're tracking */
+		flag = cpu_opcode_type(prev_pc, pc);
+		if (flag == CALL_SUBROUTINE) {
+			cpu_callinfo.return_pc = Disasm_GetNextPC(prev_pc);  /* slow! */
+		}
+		Profile_CallStart(idx, &cpu_callinfo, prev_pc, flag, pc, counters);
+
+	} else if (unlikely(pc == cpu_callinfo.return_pc) && likely(cpu_callinfo.depth)) {
+
+		/* address was return address for last subroutine call */
+		flag = cpu_opcode_type(prev_pc, pc);
+		if (unlikely(flag == CALL_SUBROUTINE)) {
+			/* right return address, but not return
+			 * (EmuTOS perversity: JSR back from JSR)
+			 */
+			return;
+		}
+		Profile_CallEnd(&cpu_callinfo, prev_pc, flag, pc, counters);
+	}
+}
+
+/**
  * Update CPU cycle and count statistics for PC address.
  *
  * This gets called after instruction has executed and PC
@@ -590,6 +623,7 @@ void Profile_CpuUpdate(void)
 #if ENABLE_WINUAE_CPU
 	Uint32 misses;
 #endif
+	counters_t *counters = &(cpu_profile.all);
 	Uint32 pc, prev_pc, idx, cycles;
 	cpu_profile_item_t *prev;
 
@@ -603,7 +637,6 @@ void Profile_CpuUpdate(void)
 	if (likely(prev->count < MAX_CPU_PROFILE_VALUE)) {
 		prev->count++;
 	}
-	cpu_profile.all.count++;
 
 #if USE_CYCLES_COUNTER
 	/* Confusingly, with DSP enabled, cycle counter is for this instruction,
@@ -627,7 +660,6 @@ void Profile_CpuUpdate(void)
 	} else {
 		prev->cycles = MAX_CPU_PROFILE_VALUE;
 	}
-	cpu_profile.all.cycles += cycles;
 
 #if ENABLE_WINUAE_CPU
 	misses = CpuInstruction.iCacheMisses;
@@ -638,8 +670,13 @@ void Profile_CpuUpdate(void)
 	} else {
 		prev->misses = MAX_CPU_PROFILE_VALUE;
 	}
-	cpu_profile.all.misses += misses;
+	counters->misses += misses;
 #endif
+	counters->count++;
+	counters->cycles += cycles;
+	if (cpu_callinfo.sites) {
+		collect_calls(pc, prev_pc, counters);
+	}
 
 #if DEBUG
 	if (unlikely(OpcodeFamily == 0)) {
@@ -659,20 +696,6 @@ void Profile_CpuUpdate(void)
 		Disasm(stderr, prev_pc, &nextpc, 1);
 	}
 #endif
-
-	if (cpu_callinfo.sites) {
-		int symidx;
-		Uint32 ret_pc;
-		calltype_t flag = cpu_opcode_type(prev_pc, pc);
-		if (flag == CALL_SUBROUTINE) {
-			/* slow, so needs to be checked only when needed */
-			ret_pc = Disasm_GetNextPC(prev_pc);
-		} else {
-			ret_pc = 0;
-		}
-		symidx = Symbols_GetCpuAddressIndex(pc);
-		Profile_UpdateCallinfo(symidx, &cpu_callinfo, prev_pc, flag, pc, ret_pc, &(cpu_profile.all));
-	}
 }
 
 
