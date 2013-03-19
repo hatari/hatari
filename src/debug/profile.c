@@ -119,7 +119,7 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 	for (i = 0; i < ARRAYSIZE(flaginfo); i++) {
 		fprintf(fp, "%c = %s, ", flaginfo[i].chr, flaginfo[i].info);
 	}
-	fputs("- = info missing\n# totals: calls/instructions/cycles/misses\n", fp);
+	fputs("\n# totals: calls/instructions/cycles/misses\n", fp);
 
 	countdiff = 0;
 	countissues = 0;
@@ -135,7 +135,7 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 		info = callsite->callers;
 		qsort(info, callsite->count, sizeof(*info), cmp_callers);
 		for (j = 0; j < callsite->count; j++, info++) {
-			if (!info->addr) {
+			if (!info->calls) {
 				break;
 			}
 			total -= info->calls;
