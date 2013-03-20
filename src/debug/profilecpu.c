@@ -24,7 +24,10 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #include "symbols.h"
 #include "tos.h"
 
-/* if non-zero, output (more) warnings on syspicious cycle/instruction counts */
+/* if non-zero, output (more) warnings on suspicious:
+ * - cycle/instruction counts
+ * - PC switches
+ */
 #define DEBUG 0
 
 static callinfo_t cpu_callinfo;
@@ -62,6 +65,9 @@ static struct {
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
+
+/* special hack for EmuTOS */
+static Uint32 etos_switcher;
 
 
 /* ------------------ CPU profile address mapping ----------------- */
@@ -526,6 +532,13 @@ bool Profile_CpuStart(void)
 
 	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuCount(), "CPU");
 
+	/* special hack for EmuTOS */
+	etos_switcher = 0xFFFFFFFF;
+	if (cpu_callinfo.sites && bIsEmuTOS &&
+	    (!Symbols_GetCpuAddress(SYMTYPE_TEXT, "_switchto", &etos_switcher) || etos_switcher < TosAddress)) {
+		etos_switcher = 0xFFFFFFFF;
+	}
+
 	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
 	cpu_profile.prev_pc = M68000_GetPC();
 
@@ -594,7 +607,21 @@ static void collect_calls(Uint32 pc, Uint32 prev_pc, counters_t *counters)
 		/* address is one which we're tracking */
 		flag = cpu_opcode_type(prev_pc, pc);
 		if (flag == CALL_SUBROUTINE) {
-			cpu_callinfo.return_pc = Disasm_GetNextPC(prev_pc);  /* slow! */
+			/* special HACK for for EmuTOS AES switcher which
+			 * changes stack content to remove itself from call
+			 * stack and uses RTS for subroutine *calls*, not
+			 * for returning from them.
+			 *
+			 * It wouldn't be reliable to detect calls from it,
+			 * so I'm making call *to* it show up as branch, to
+			 * keep callstack depth correct.
+			 */
+			if (pc == etos_switcher) {
+				flag = CALL_BRANCH;
+			} else {
+				/* slow! */
+				cpu_callinfo.return_pc = Disasm_GetNextPC(prev_pc);
+			}
 		}
 		Profile_CallStart(idx, &cpu_callinfo, prev_pc, flag, pc, counters);
 
@@ -602,13 +629,21 @@ static void collect_calls(Uint32 pc, Uint32 prev_pc, counters_t *counters)
 
 		/* address was return address for last subroutine call */
 		flag = cpu_opcode_type(prev_pc, pc);
-		if (unlikely(flag == CALL_SUBROUTINE)) {
-			/* right return address, but not return
-			 * (EmuTOS perversity: JSR back from JSR)
+		/* previous address can be exception return (RTE) if exception
+		 * occurred right after returning from subroutine call (RTS)
+		 */
+		if (unlikely(flag != CALL_SUBRETURN && flag != CALL_EXCRETURN)) {
+			/* although at return address, it didn't return yet,
+			 * e.g. because there was a jsr or jump to return address
 			 */
+#if DEBUG
+			Uint32 nextpc;
+			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not though RTS!\n", prev_pc, pc);
+			Disasm(stderr, prev_pc, &nextpc, 1);
+#endif
 			return;
 		}
-		Profile_CallEnd(&cpu_callinfo, prev_pc, flag, pc, counters);
+		Profile_CallEnd(&cpu_callinfo, counters);
 	}
 }
 
@@ -774,6 +809,8 @@ void Profile_CpuStop(void)
 	}
 	/* user didn't change RAM or TOS size in the meanwhile? */
 	assert(cpu_profile.size == (STRamEnd + 0x20000 + TosSize) / 2);
+
+	Profile_FinalizeCalls(&(cpu_callinfo), &(cpu_profile.all), Symbols_GetByCpuAddress);
 
 	/* find lowest and highest addresses executed etc */
 	next = update_area(&cpu_profile.ram, 0, STRamEnd/2);

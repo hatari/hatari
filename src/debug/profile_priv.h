@@ -68,10 +68,11 @@ typedef struct {
 } profile_area_t;
 
 
-/* generic profile caller functions */
+/* generic profile caller/callee info functions */
 extern void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (*addr2name)(Uint32, Uint64 *));
-extern void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *runcounts);
-extern void Profile_CallEnd(callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *runcounts);
+extern void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *totalcost);
+extern void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const char* (get_symbol)(Uint32 addr));
+extern void Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost);
 extern int  Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *info);
 extern void Profile_FreeCallinfo(callinfo_t *callinfo);
 

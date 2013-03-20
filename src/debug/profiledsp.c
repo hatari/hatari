@@ -384,10 +384,6 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 	if (opcode == 0xC) {	/* (just) RTS */
 		return CALL_SUBRETURN;
 	}
-	/* exception handler returns */
-	if (opcode == 0x4) {	/* (just) RTI */
-		return CALL_EXCRETURN;
-	}
 	/* subroutine calls */
 	if ((opcode & 0xFFF000) == 0xD0000 ||	/* JSR   00001101 0000aaaa aaaaaaaa */
 	    (opcode & 0xFFC0FF) == 0xBC080 ||	/* JSR   00001011 11MMMRRR 10000000 */
@@ -403,7 +399,21 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 	    (opcode & 0xFFC0E0) == 0xAC020) {	/* JSSET 00001010 11DDDDDD 001bbbbb */
 		return CALL_SUBROUTINE;
 	}
-	/* exception invocation */
+	/* exception handler returns */
+	if (opcode == 0x4) {	/* (just) RTI */
+		return CALL_EXCRETURN;
+	}
+
+	/* Besides CALL_UNKNOWN, rest isn't used by subroutine call
+	 * cost collection.  However, it may be useful info when
+	 * reading full callgraphs because optimized code uses also
+	 * jumps/branches for subroutine calls.
+	 */
+
+	/* TODO: exception invocation.
+	 * Could be detected by PC going through low interrupt vector adresses,
+	 * but fast-calls using JSR/RTS would need separate handling.
+	 */
 	if (0) {	/* TODO */
 		return CALL_EXCEPTION;
 	}
@@ -460,7 +470,11 @@ static void collect_calls(Uint16 pc, Uint16 prev_pc, counters_t *counters)
 
 		/* address was return address for last subroutine call */
 		flag = dsp_opcode_type(prev_pc, pc);
-		Profile_CallEnd(&dsp_callinfo, prev_pc, flag, pc, counters);
+		if (unlikely(flag != CALL_SUBRETURN && flag != CALL_EXCRETURN)) {
+			/* ...but not a real return */
+			return;
+		}
+		Profile_CallEnd(&dsp_callinfo, counters);
 	}
 }
 
@@ -553,6 +567,9 @@ void Profile_DspStop(void)
 	if (dsp_profile.processed || !dsp_profile.enabled) {
 		return;
 	}
+
+	Profile_FinalizeCalls(&(dsp_callinfo), &(dsp_profile.ram.counters), Symbols_GetByDspAddress);
+
 	/* find lowest and highest  addresses executed */
 	area = &dsp_profile.ram;
 	memset(area, 0, sizeof(profile_area_t));

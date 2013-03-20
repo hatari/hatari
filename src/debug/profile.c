@@ -273,7 +273,7 @@ static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t
  * Add information about called symbol, and if it was subroutine
  * call, add it to stack of functions which total costs are tracked.
  */
-void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *runcounts)
+void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *totalcost)
 {
 	callstack_t *stack;
 	int count;
@@ -290,7 +290,7 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 	}
 
 	/* subroutine call, add it to call stack... */
-	runcounts->calls++;
+	totalcost->calls++;
 
 	if (unlikely(!callinfo->count)) {
 		/* initial stack alloc, can be a bit larger */
@@ -320,7 +320,7 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 	stack = &(callinfo->stack[callinfo->depth++]);
 
 	/* store current running totals & zero subcall costs */
-	stack->all = *runcounts;
+	stack->all = *totalcost;
 	memset(&(stack->out), 0, sizeof(stack->out));
 
 	/* set subroutine call information */
@@ -335,43 +335,56 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
  * If it really was subcall (function) return, store returned function
  * costs and update callinfo->return_pc value.
  */
-void Profile_CallEnd(callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *runcounts)
+void Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 {
-	callstack_t *parent, *stack;
+	callstack_t *stack;
 
 	assert(callinfo->depth);
 	stack = &(callinfo->stack[callinfo->depth-1]);
 
 	/* remove call info from stack */
-	parent = stack - 1;
-	callinfo->return_pc = parent->ret_addr;
 	callinfo->depth--;
-
-	if (unlikely(flag != CALL_SUBRETURN)) {
-		/* wasn't a real subroutine call... */
-		if (likely(flag == CALL_EXCRETURN)) {
-			/* back from interrupt handler, ignore whole call */
-			return;
-		}
-		/* ...but a mystery to debug */
-		fprintf(stderr, "WARNING: subroutine call from 0x%x -> 0x%x returned 0x%x -> 0x%x!\n",
-			stack->caller_addr, stack->callee_addr, prev_pc, pc);
-		DebugUI(REASON_USER);	/* TODO: comment this out before release */
-		return;
-	}
 
 	/* full cost is orignal global cost (in ->all)
 	 * deducted from current global (runcost) cost
 	 */
-	set_counter_diff(&(stack->all), runcounts);
+	set_counter_diff(&(stack->all), totalcost);
 	add_callee_cost(callinfo->site + stack->callee_idx, stack);
 
-	/* add full cost of this to parent caller's outside costs */
+	/* if current function had a parent:
+	 * - start tracking that
+	 * - add full cost of current function to parent's outside costs
+	 */
 	if (callinfo->depth) {
+		callstack_t *parent = stack - 1;
+		callinfo->return_pc = parent->ret_addr;
 		add_counter_costs(&(parent->out), &(stack->all));
+	} else {
+		callinfo->return_pc = 0;
 	}
 }
 
+/**
+ * Add costs to all functions still in call stack
+ */
+void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const char* (*get_symbol)(Uint32 addr))
+{
+	if (!callinfo->depth) {
+		return;
+	}
+	fprintf(stderr, "Finalizing costs for %d non-returned functions:\n", callinfo->depth);
+	while (callinfo->depth > 0) {
+		Profile_CallEnd(callinfo, totalcost);
+		fprintf(stderr, " %s%s",
+			get_symbol(callinfo->stack[callinfo->depth].callee_addr),
+			callinfo->depth ? " <=" : "");
+	}
+	fputs("\n", stderr);
+}
+
+/**
+ * Allocate initial callinfo structure information
+ */
 int Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *name)
 {
 	callinfo->sites = count;
@@ -388,6 +401,9 @@ int Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *name)
 	return callinfo->sites;
 }
 
+/**
+ * Free all callinfo structure information
+ */
 void Profile_FreeCallinfo(callinfo_t *callinfo)
 {
 	int i;
