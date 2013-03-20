@@ -64,6 +64,9 @@ static bool output_counter_info(FILE *fp, counters_t *counter)
 	if (!counter->count) {
 		return false;
 	}
+	/* number of calls needs to be first and rest must be in the same order as
+	 * they're in the profile disassembly (count of instructions, etc...).
+	 */
 	fprintf(fp, " %lld/%lld/%lld", counter->calls, counter->count, counter->cycles);
 	if (counter->misses) {
 		/* these are only with specific WinUAE CPU core */
@@ -95,6 +98,10 @@ static void output_caller_info(FILE *fp, caller_t *info, Uint32 *typeaddr)
 	}
 	if (output_counter_info(fp, &(info->all))) {
 		output_counter_info(fp, &(info->own));
+		if (info->calls != info->own.calls) {
+			fprintf(stderr, "WARNING: mismatch between function call count %d and own call cost %lld!\n",
+			       info->calls, info->own.calls);
+		}
 	}
 	fputs(", ", fp);
 }
@@ -284,13 +291,13 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 	}
 
 	add_caller(callinfo->site + idx, pc, prev_pc, flag);
+
+	/* subroutine call which will return? */
 	if (flag != CALL_SUBROUTINE) {
-		/* some other call type */
+		/* no, some other call type */
 		return;
 	}
-
-	/* subroutine call, add it to call stack... */
-	totalcost->calls++;
+	/* yes, add it to call stack */
 
 	if (unlikely(!callinfo->count)) {
 		/* initial stack alloc, can be a bit larger */
@@ -329,6 +336,9 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 	stack->callee_idx = idx;
 	stack->caller_addr = prev_pc;
 	stack->callee_addr = pc;
+
+	/* record call to this into costs... */
+	totalcost->calls++;
 }
 
 /**
@@ -346,7 +356,7 @@ void Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 	callinfo->depth--;
 
 	/* full cost is orignal global cost (in ->all)
-	 * deducted from current global (runcost) cost
+	 * deducted from current global (total) cost
 	 */
 	set_counter_diff(&(stack->all), totalcost);
 	add_callee_cost(callinfo->site + stack->callee_idx, stack);
@@ -369,17 +379,17 @@ void Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
  */
 void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const char* (*get_symbol)(Uint32 addr))
 {
+	Uint32 addr;
 	if (!callinfo->depth) {
 		return;
 	}
 	fprintf(stderr, "Finalizing costs for %d non-returned functions:\n", callinfo->depth);
 	while (callinfo->depth > 0) {
 		Profile_CallEnd(callinfo, totalcost);
-		fprintf(stderr, " %s%s",
-			get_symbol(callinfo->stack[callinfo->depth].callee_addr),
-			callinfo->depth ? " <=" : "");
+		addr = callinfo->stack[callinfo->depth].callee_addr;
+		fprintf(stderr, "- 0x%x: %s (return = 0x%x)\n", addr, get_symbol(addr),
+			callinfo->stack[callinfo->depth].ret_addr);
 	}
-	fputs("\n", stderr);
 }
 
 /**
