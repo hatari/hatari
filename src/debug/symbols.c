@@ -432,7 +432,7 @@ const char* Symbols_GetByCpuAddress(Uint32 addr)
  * Return symbol name if address matches, NULL otherwise.
  * Returned name is valid only until next Symbols_* function call.
  */
-const char* Symbols_GetByDspAddress(Uint16 addr)
+const char* Symbols_GetByDspAddress(Uint32 addr)
 {
 	int idx = Symbols_SearchByAddress(DspSymbolsList, addr);
 	if (idx < 0) {
@@ -454,7 +454,7 @@ int Symbols_GetCpuAddressIndex(Uint32 addr)
  * Search DSP symbol by address.
  * Return symbol index if address matches, -1 otherwise.
  */
-int Symbols_GetDspAddressIndex(Uint16 addr)
+int Symbols_GetDspAddressIndex(Uint32 addr)
 {
 	return Symbols_SearchByAddress(DspSymbolsList, addr);	
 }
