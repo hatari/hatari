@@ -711,6 +711,7 @@ class TraceDialog(HatariUIDialog):
         "cpu_exception",
         "int",
         "fdc",
+        "acia",
         "ikbd_cmds",
         "ikbd_acia",
         "ikbd_exec",
@@ -730,7 +731,12 @@ class TraceDialog(HatariUIDialog):
         "dsp_host_ssi",
         "dsp_interrupt",
         "dsp_disasm",
-        "dsp_state"
+        "dsp_disasm_reg",
+        "dsp_disasm_mem",
+        "dsp_state",
+        "dsp_symbols",
+        "cpu_symbols",
+        "nvram"
     ]
     def __init__(self, parent):
         self.savedpoints = None
@@ -934,3 +940,4 @@ class MachineDialog(HatariUIDialog):
             self._set_config(config)
             return True
         return False
+
