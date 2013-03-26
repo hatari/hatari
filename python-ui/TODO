@@ -14,8 +14,10 @@ sources.
 
 * Add more Hatari debugger features to the debug UI:
   - DSP support
+  - History support
+  - Profiling support
   - DSP and CPU symbols loading
-  - Support for stepping the emulation
+  - Support for stepping the emulation (both step & next commands)
   - multiple views to memory (refreshed whenever emulation is stopped)
     - supporting also register relative views (register values
       parsing should move to common functionality first)
@@ -43,14 +45,14 @@ sources.
     - needs support also to Hatari src/screenSnapShot.c
 
 * Supporting other, less important Hatari configuration options:
-  - HD booting, toggling disk-b autoinsertion
+  - HD booting, GEMDOS filename case, toggling disk-b autoinsertion
   - something for multiple GEMDOS partition directories
   - separate A/B disk paths for images that are within ZIP archives
   - joystick autofire toggling, defining the keys for joyemu
   - keyboard repeat, key mapping type and file, mouse grabbing
   - vdi planes and size, SDL bpp forcing, spec512 threshold, ST blitter
   - cartridge image (where? it has many limitations)
-  - log file and levels, bios intercept, run-VBLs
+  - log file and levels, console output, bios intercept, run-VBLs
 (Many of these aren't supported by the internal Hatari UI either,
 are missing corresponding command line options so they will require
 additional support on the Hatari control.c side too or they can
