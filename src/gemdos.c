@@ -992,6 +992,41 @@ static int to_same(int ch)
 	return ch;
 }
 
+/**
+ * Clip given file name to 8+3 length like TOS does,
+ * return resulting name lenght.
+ */
+static int clip_to_83(char *name)
+{
+	int diff, len;
+	char *dot;
+	
+	dot = strrchr(name, '.');
+	if (dot) {
+		diff = strlen(dot) - 4;
+		if (diff > 0)
+		{
+			Log_Printf(LOG_WARN, "WARNING: have to clip %d chars from '%s' extension!\n", diff, name);
+			dot[4] = '\0';
+		}
+		diff = dot - name - 8;
+		if (diff > 0)
+		{
+			Log_Printf(LOG_WARN, "WARNING: have to clip %d chars from '%s' base!\n", diff, name);
+			memmove(name + 8, dot, strlen(dot) + 1);
+		}
+		return strlen(name);
+	}
+	len = strlen(name);
+	if (len > 8)
+	{
+		Log_Printf(LOG_WARN, "WARNING: have to clip %d chars from '%s'!\n", len - 8, name);
+		name[8] = '\0';
+		len = 8;
+	}
+	return len;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Check whether given TOS file/dir exists in given host path.
@@ -1008,16 +1043,17 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	int (*chr_conv)(int);
 	bool modified;
 
-	strcpy(name, origname);
-	namelen = strlen(name);
-	pathlen = strlen(path);
-
 	/* append separator */
+	pathlen = strlen(path);
 	if (pathlen >= maxlen)
 		return false;
 	path[pathlen++] = PATHSEP;
 	path[pathlen] = '\0';
-	
+
+	/* TOS clips names to 8+3 lenght */
+	strcpy(name, origname);
+	namelen = clip_to_83(name);
+
 	/* first try exact (case insensitive) match */
 	match = match_host_dir_entry(path, name, false);
 	if (match)
@@ -1147,27 +1183,6 @@ static void add_remaining_path(const char *src, char *dstpath, int dstlen)
 	*dst = '\0';
 }
 
-/**
- * Give warning if dir/filename exceeds 8+3 as that wouldn't be
- * valid for TOS.
- */
-static void check_tos_len(const char *path, const char *fullpath)
-{
-	char *dot;
-
-	dot = strchr(path, '.');
-	if (dot)
-	{
-		if (dot-path <= 8 && strlen(dot+1) <= 3)
-			return;
-	}
-	else
-	{
-		if (strlen(path) <= 8)
-			return;
-	}
-	Log_Printf(LOG_WARN, "GEMDOS path component '%s' doesn't fit to 8+3 chars in\n\t%s !\n", path, fullpath);
-}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -1288,8 +1303,6 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 			/* and advance filename */
 			filename = s;
 
-			check_tos_len(dirname, pszFileName);
-
 			if (strchr(dirname, '?') || strchr(dirname, '*'))
 				Log_Printf(LOG_WARN, "GEMDOS dir name '%s' with wildcards in %s!\n", dirname, pszFileName);
 
@@ -1309,8 +1322,6 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 
 	if (*filename)
 	{
-		check_tos_len(filename, pszFileName);
-
 		/* a wildcard instead of a complete file name? */
 		if (strchr(filename,'?') || strchr(filename,'*'))
 		{

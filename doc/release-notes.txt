@@ -27,9 +27,10 @@ Emulation:
   - Fixed priority errors when simultaneous interrupts happened
   - MFP's IRQ should be delayed by 4 cycles before reaching the CPU
   - MFP's IRQ signal was not correctly updated in some cases
-- GEMDOS emulation changes :
+- GEMDOS HD emulation changes :
   - Support Fforce() for GEMDOS HD emulated files and close at Pterm*()
     all internal handles to emulated files program had left open
+  - Fix: cut file and dir names to 8+3 chars like all TOS versions do
   - Fix: GEMDOS HD emulation overwrote last 28 bytes of basepage space
     for the started process command line (with the program header)
   - Fix: Fwrite() content wasn't flushed to disk on each write, so later
@@ -135,6 +136,9 @@ Fixed demos :
   Audio Artistic Demo by Big Alec (MFP, bad sample speed at start)
   Decade Demo - Reset (MFP, flickering bottom border)
   High Fidelity Dreams by Aura (MFP, flickering left rasters)
+
+Fixed apps :
+  Monst v1.x
 
 
  Version 1.6.2 (2012-06-24):
