@@ -344,7 +344,7 @@ static void DmaSnd_FIFO_Refill(void)
  * remaining bytes.
  * If the FIFO is empty, return 0 (empty sample)
  * Note : on a real STE, the 8 bytes FIFO is refilled on each HBL, which gives
- * a total of 313*8=125326 bytes per sec read by the DMA. As the max freq
+ * a total of 313*8*VBL_PER_SEC=125326 bytes per sec read by the DMA. As the max freq
  * is 50066 Hz, the STE can play 100132 bytes per sec in stereo ; so on a real STE
  * the FIFO can never be empty while DMA is ON.
  * But on Hatari, if the user chooses an audio's output frequency that is much
