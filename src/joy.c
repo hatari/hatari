@@ -76,9 +76,9 @@ void Joy_Init(void)
 	/* FIXME: Read those settings from a configuration file and make them tunable from the GUI. */
 	static const JOYAXISMAPPING AxisMappingTable [] =
 	{
-       		/* USB game pad with ID ID 0079:0011, sold by Speedlink*/
+       		/* USB game pad with ID ID 0079:0011, sold by Speedlink */
 		{"USB Gamepad" , 3, 4},
-		/* default entry, is used if no other SDL joystick name does match */
+		/* Default entry used if no other SDL joystick name does match (should be last of this list) */
 		{"*DEFAULT*" , 0, 1},
 	};
 
@@ -110,8 +110,9 @@ void Joy_Init(void)
 					break;
 			}
 
-			sdlJoystickMapping[i] = &(AxisMappingTable[i]);
-			Log_Printf(LOG_DEBUG, "Joystick %i maps axis %d and %d\n", i, sdlJoystickMapping[i]->XAxisID, sdlJoystickMapping[i]->YAxisID);
+			sdlJoystickMapping[i] = &(AxisMappingTable[j]);
+			Log_Printf(LOG_DEBUG, "Joystick %i maps axis %d and %d (%s)\n", i, sdlJoystickMapping[i]->XAxisID, sdlJoystickMapping[i]->YAxisID,
+					sdlJoystickMapping[i]->SDLJoystickName );
 		}
 	}
 
