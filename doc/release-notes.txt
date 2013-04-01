@@ -41,6 +41,7 @@ Emulator:
 - Fix: problems with run-time CPU type changing
 - Much improved console redirection functionality and a separate --conout
   option for it (--bios-intercept doesn't anymore imply console redirection)
+- Fixed a bug with the axes' mapping in the joystick's detection
 - Display handling:
   - Fix: max resolution limit wasn't handled properly for ST mode.
   - Don't change TOS-calculated font size for VDI mode.
