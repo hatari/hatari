@@ -456,25 +456,27 @@ static void collect_calls(Uint16 pc, Uint16 prev_pc, counters_t *counters)
 	calltype_t flag;
 	int idx;
 
-	idx = Symbols_GetDspAddressIndex(pc);
-	if (unlikely(idx >= 0)) {
+	/* address is return address for last subroutine call? */
+	if (unlikely(pc == dsp_callinfo.return_pc) && likely(dsp_callinfo.depth)) {
 
-		/* address is one which we're tracking */
-		flag = dsp_opcode_type(prev_pc, pc);
-		if (flag == CALL_SUBROUTINE) {
-			dsp_callinfo.return_pc = DSP_GetNextPC(prev_pc);  /* slow! */
-		}
-		Profile_CallStart(idx, &dsp_callinfo, prev_pc, flag, pc, counters);
-
-	} else if (unlikely(pc == dsp_callinfo.return_pc) && likely(dsp_callinfo.depth)) {
-
-		/* address was return address for last subroutine call */
 		flag = dsp_opcode_type(prev_pc, pc);
 		if (unlikely(flag != CALL_SUBRETURN && flag != CALL_EXCRETURN)) {
 			/* ...but not a real return */
 			return;
 		}
 		Profile_CallEnd(&dsp_callinfo, counters);
+	}
+
+	/* address is one which we're tracking? */
+	idx = Symbols_GetDspAddressIndex(pc);
+	if (unlikely(idx >= 0)) {
+
+		flag = dsp_opcode_type(prev_pc, pc);
+		if (flag == CALL_SUBROUTINE) {
+			dsp_callinfo.return_pc = DSP_GetNextPC(prev_pc);  /* slow! */
+		}
+		Profile_CallStart(idx, &dsp_callinfo, prev_pc, flag, pc, counters);
+
 	}
 }
 

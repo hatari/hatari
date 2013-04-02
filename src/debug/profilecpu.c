@@ -601,10 +601,32 @@ static void collect_calls(Uint32 pc, Uint32 prev_pc, counters_t *counters)
 	calltype_t flag;
 	int idx;
 
+	/* address is return address for last subroutine call? */
+	if (unlikely(pc == cpu_callinfo.return_pc) && likely(cpu_callinfo.depth)) {
+
+		flag = cpu_opcode_type(prev_pc, pc);
+		/* previous address can be exception return (RTE) if exception
+		 * occurred right after returning from subroutine call (RTS)
+		 */
+		if (unlikely(flag != CALL_SUBRETURN && flag != CALL_EXCRETURN)) {
+			/* although at return address, it didn't return yet,
+			 * e.g. because there was a jsr or jump to return address
+			 */
+#if DEBUG
+			Uint32 nextpc;
+			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not though RTS!\n", prev_pc, pc);
+			Disasm(stderr, prev_pc, &nextpc, 1);
+#endif
+		} else {
+			Profile_CallEnd(&cpu_callinfo, counters);
+		}
+		/* next address might be another function, so need to fall through */
+	}
+
+	/* address is one which we're tracking? */
 	idx = Symbols_GetCpuAddressIndex(pc);
 	if (unlikely(idx >= 0)) {
 
-		/* address is one which we're tracking */
 		flag = cpu_opcode_type(prev_pc, pc);
 		if (flag == CALL_SUBROUTINE) {
 			/* special HACK for for EmuTOS AES switcher which
@@ -624,26 +646,6 @@ static void collect_calls(Uint32 pc, Uint32 prev_pc, counters_t *counters)
 			}
 		}
 		Profile_CallStart(idx, &cpu_callinfo, prev_pc, flag, pc, counters);
-
-	} else if (unlikely(pc == cpu_callinfo.return_pc) && likely(cpu_callinfo.depth)) {
-
-		/* address was return address for last subroutine call */
-		flag = cpu_opcode_type(prev_pc, pc);
-		/* previous address can be exception return (RTE) if exception
-		 * occurred right after returning from subroutine call (RTS)
-		 */
-		if (unlikely(flag != CALL_SUBRETURN && flag != CALL_EXCRETURN)) {
-			/* although at return address, it didn't return yet,
-			 * e.g. because there was a jsr or jump to return address
-			 */
-#if DEBUG
-			Uint32 nextpc;
-			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not though RTS!\n", prev_pc, pc);
-			Disasm(stderr, prev_pc, &nextpc, 1);
-#endif
-			return;
-		}
-		Profile_CallEnd(&cpu_callinfo, counters);
 	}
 }
 
