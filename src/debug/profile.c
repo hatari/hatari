@@ -99,8 +99,8 @@ static void output_caller_info(FILE *fp, caller_t *info, Uint32 *typeaddr)
 	if (output_counter_info(fp, &(info->all))) {
 		output_counter_info(fp, &(info->own));
 		if (info->calls != info->own.calls) {
-			fprintf(stderr, "WARNING: mismatch between function call count %d and own call cost %lld!\n",
-			       info->calls, info->own.calls);
+			fprintf(stderr, "WARNING: mismatch between function 0x%x call count %d and own call cost %lld!\n",
+			       info->addr, info->calls, info->own.calls);
 		}
 	}
 	fputs(", ", fp);
@@ -160,7 +160,8 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 			countissues++;
 		}
 		if (typeaddr) {
-			fprintf(stderr, "WARNING: different types of calls (at least) from 0x%x,\n\t has its codechanged during profiling?\n", typeaddr);
+			fprintf(stderr, "WARNING: different types of calls (at least) from 0x%x (to 0x%x),\n\t has its codechanged during profiling?\n",
+				typeaddr, callsite->addr);
 		}
 	}
 	if (countissues) {
