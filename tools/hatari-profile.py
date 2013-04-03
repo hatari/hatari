@@ -15,10 +15,10 @@ commands (for Falcon DSP data, prefix commands with 'dsp'):
 	profile save <file name>
 
 Profiling information for code addresses is summed together and
-assigned to functions where those addresses belong to. All addresses
-between two function names (in profile file) or symbol addresses
-(read from symbols files) are assumed to belong to the preceeding
-function/symbol.
+assigned to (function) symbols to which those addresses belong to.
+All addresses between two symbol names (in profile file) or symbol
+addresses (read from symbols files) are assumed to belong to the
+preceeding function/symbol.
 
 Tool output will contain at least:
 - (deduced) call counts,
@@ -44,7 +44,7 @@ Options:
         -i		add address and time information to lists
         -f <count>	list at least first <count> items
         -l <limit>      list at least items which percentage >= limit
-        -p		propagate costs up in call hierarchy
+        -p		show costs propagated up in the call hierarchy
 	-o <file name>	statistics output file name (default is stdout)
         -g              write <profile>.dot callgraph files
         -k		write <profile>.cg Callgrind format output
@@ -86,21 +86,37 @@ value is larger than one given for -l option.  In callgraphs these
 options mainly affect which nodes are highlighted.
 
 
-With the -p option, costs for a function include also (estimated)
-costs for everything else it calls.
+If profile includes "caller" information, -p option can be used to see:
+- costs also for everything else that a subroutine calls,
+- subroutine's "own" cost, which exclude costs for any further
+  subroutine calls that it does.
 
-NOTE: Because caller information in profile file has only call counts
-between functions, other costs can be propagated correctly to callers
-only when there's a single parent.  If there are multiple parents,
-other costs are estimated based on call counts.
+Often the subroutine costs shown with the -p option don't match the
+symbol costs shown without the -p option (i.e. when cost sums between
+successive symbol addresses, are being assigned to first symbol):
+- Subbroutine call count total can smaller than call count for the same
+  symbol, if there are more jumps/branches to that address than there
+  are subroutine calls to it.
+- Other cost totals can be smaller if symbols are missing for frequently
+  executed instructions that are after given symbol, i.e. between-symbols
+  costs include costs for the preceeding symbol that aren't relevant for
+  it.
+- Own costs for subroutines are larger than between-symbols sums when
+  the symbols used as limits are just (e.g. loop) labels, not function
+  names.
 
-Don't trust the estimated values:
-- estimated total costs in lists are prefixed with '~'
-- callgraphs nodes with estimated totals are diamond shaped
+While subroutine costs should be more accurate and relevant, due to
+code optimizations many of the functions are not called as subroutines
+(on m68k, using JSR/BSR), but just jumped or branced to.  Because of
+this, it's useful to compare both subroutine and between-symbols
+costs.  One should be able to see from the profile disassembly which
+of the above cases is cause for the discrepancy in the values.
+
+Nodes with subroutine costs are shown as diamonds in the callgraphs.
 
 
 Call information filtering options:
-        --no-calls <[bersux]+>	remove calls of given types, default = 'ux'
+        --no-calls <[bersux]+>	remove calls of given types, default = 'rux'
 	--ignore-to <list>	ignore calls to these symbols
 
 (Give --no-calls option an unknown type to see type descriptions.)
@@ -108,9 +124,10 @@ Call information filtering options:
 <list> is a comma separate list of symbol names, like this:
 	--ignore-to _int_timerc,_int_vbl
 
-These options change which calls are reported for functions, and
-therefore also the values that are propagated upwards from them with
-the -p option (as it changes call counts).
+These options change which calls are reported for functions and affect
+the shape & complexity of the graph a lot.  If you e.g. want to see
+just nodes with costs specific to -p option, use "--no-calls berux"
+option.
 
 If default --no-calls type removal doesn't remove all interrupt
 handling switches [1], give handler names to --ignore-to option.
@@ -120,9 +137,10 @@ In callgraphs, one can then investigate them separately using
 [1] Switching to interrupt handler gets recorded as "a call" to it
     by the profiler, and such "calls" can happen at any time.
 
-
-Nodes with costs that exceed the highlight limit have red outline.
-If node's own cost exceeds the limit, it has also gray background.
+NOTE: costs shown with -p option include costs of exception handling
+code that interrupts the function calls.  Normally effect of this
+should be minimal, but by providing symbol addresses for interrupt
+handlers their costs will be visible in output.
 
 
 Callgraph filtering options to remove nodes and edges from the graph:
@@ -155,6 +173,9 @@ Callgraph visualization options:
 
 When -e limit is given, -f & -e options are used for deciding which
 nodes to highlight, not -f & -l options.
+
+Nodes with costs that exceed the highlight limit have red outline.
+If node's own cost exceeds the limit, it has also gray background.
 
 
 To convert dot files e.g. to SVG, use:
@@ -240,20 +261,22 @@ class FunctionStats:
         self.addr = addr
         # profile line on which function starts
         self.line = line
-        # function costs items
+        # cost items summed from profile for given symbol
         # field 0 is ALWAYS calls count and field 1 instructions count!
-        self.data = [0] * items
-        # propagated cost (from children)
-        self.estimated = False	# whether totals are estimated
-        self.total = None
+        self.cost = [0] * items
+        # if this object represents a function invoked with
+        # a subroutine call, it has separately calculated
+        # total and "own" costs
+        self.subcost = None
+        self.subtotal = None
         # calltree linkage
         self.parent = {}
         self.child = {}
 
-    def has_data(self):
+    def has_cost(self):
         "return whether function has valid data yet"
         # other values are valid only if there are instructions
-        return (self.data[1] != 0)
+        return (self.cost[1] != 0)
 
     def name_for_address(self, addr):
         "if name but no address, use given address and return name, otherwise None"
@@ -270,22 +293,21 @@ class FunctionStats:
     def add(self, values):
         "add list of values to current state"
         # first instruction in a function?
-        data = self.data
-        if not data[1]:
+        cost = self.cost
+        if not cost[1]:
             # function call count is same as instruction
             # count for its first instruction
-            data[0] = values[1]
-        for i in range(1, len(data)):
-            data[i] += values[i]
+            cost[0] = values[1]
+        for i in range(1, len(cost)):
+            cost[i] += values[i]
 
     def __repr__(self):
         "return printable current function instruction state"
-        ret = "0x%x = %s: %s" % (self.addr, self.name, self.data)
-        if self.total:
-            if self.estimated:
-                ret = "%s, total: %s (estimated)" % (ret, self.total)
-            else:
-                ret = "%s, total: %s" % (ret, self.total)
+        ret = "0x%x = %s:" % (self.addr, self.name)
+        if self.subtotal:
+            ret = "%s %s, total: %s (subroutine)" % (ret, self.subcost, self.subtotal)
+        else:
+            ret = "%s %s" % (ret, self.cost)
         if self.parent or self.child:
             return "%s, %d parents, %d children" % (ret, len(self.parent), len(self.child))
         return ret
@@ -331,15 +353,15 @@ class InstructionStats:
 
     def add_callcount(self, function):
         "add given function call count to statistics"
-        value = function.data[0]
+        value = function.cost[0]
         if value > self.max_val[0]:
             self.max_val[0] = value
             self.max_addr[0] = function.addr
             self.max_line[0] = function.line
 
-    def get_time(self, data):
-        "return time (in seconds) spent by given data item"
-        return float(data[self.cycles_field])/self.clock
+    def get_time(self, cost):
+        "return time (in seconds) spent by given cost item"
+        return float(cost[self.cycles_field])/self.clock
 
     def sum_values(self, functions):
         "calculate totals for given functions data"
@@ -347,7 +369,7 @@ class InstructionStats:
             sums = [0] * self.items
             for fun in functions:
                 for i in range(self.items):
-                    sums[i] += fun.data[i]
+                    sums[i] += fun.cost[i]
             self.totals = sums
 
 
@@ -513,6 +535,14 @@ class ProfileSymbols(Output):
             return self.symbols[addr]
         return None
 
+    def get_addr(self, name):
+        "return symbol address for given name, or None"
+        if name in self.names:
+            return self.names[name]
+        if name in self.areas:
+            return self.areas[name][0]
+        return None
+
     def get_preceeding_symbol(self, addr):
         "resolve non-function addresses to preceeding function name+offset"
         # should be called only after profile addresses has started
@@ -533,23 +563,26 @@ class ProfileSymbols(Output):
 class Callinfo:
     "class representing parsed profile data caller/callee linkage information"
 
-    def __init__(self, addr, calls, flags, intotal, extotal):
+    def __init__(self, addr):
         self.addr = addr
+        self.calls = 0
+        self.flags = "-"
+        self.total = [None, None]
+
+    def set(self, calls, flags, intotal, extotal):
+        "parse & set given string arguments"
         # how many times this caller called the destination
         self.calls = int(calls, 10)
         # what kind of "call" it was?
         if flags:
             self.flags = flags.strip()
-        else:
-            self.flags = "-"
-        self.total = [None, None]
         # cost of these calls including further function calls
         self._parse_totals(0, intotal)
         # costs exclusing further function calls
         self._parse_totals(1, extotal)
 
     def _parse_totals(self, idx, totalstr):
-        "parse '/' separate totals string into integer sequence, or None"
+        "parse '/' separate totals string into integer sequence, or leave it None"
         if totalstr:
             self.total[idx] = [int(x, 10) for x in totalstr.strip().split('/')]
 
@@ -558,7 +591,7 @@ class Callinfo:
         mytotal = self.total[idx]
         if mytotal and newtotal:
             self.total[idx] = [x + y for x, y in zip(mytotal, newtotal)]
-        if newtotal:
+        elif newtotal:
             self.total[idx] = newtotal
 
     def add(self, newinfo):
@@ -566,6 +599,12 @@ class Callinfo:
         self.calls += newinfo.calls
         for i in range(len(self.total)):
             self._add_total(i, newinfo.total[i])
+
+    def get_full_costs(self):
+        return self.total[0]
+
+    def get_own_costs(self):
+        return self.total[1]
 
 
 # ---------------------------------------------------------------------
@@ -580,7 +619,9 @@ class ProfileCallers(Output):
         # whether there is any caller info
         self.present = False
         # address dicts
-        self.callinfo = None	# callee : caller dict
+        self.callinfo = None	# callee:caller dict of callee:callinfo dicts
+        # temporary during completion
+        self.symbols = None
         # parsing options
         self.removable_calltypes = "rux"
         self.ignore_to = []
@@ -622,24 +663,61 @@ class ProfileCallers(Output):
                 self.error_exit("caller info missing on callee line %d\n\t'%s'" % (parsed, line))
             if ':' not in callers[0]:
                 self.error_exit("callee/caller separator ':' missing on callee line %d\n\t'%s'" % (parsed, line))
-            addr, callers[0] = callers[0].split(':')
+            caddr, callers[0] = callers[0].split(':')
             last = callers[-1].strip()
             if last.startswith('0x'):
                 self.error_exit("last item isn't empty or symbol name on callee line %d\n\t'%s'" % (parsed, line))
 
             callinfo = {}
-            for caller in callers[:-1]:
-                caller = caller.strip()
-                match = self.r_caller.match(caller)
+            for callstr in callers[:-1]:
+                callstr = callstr.strip()
+                match = self.r_caller.match(callstr)
                 if match:
                     items = match.groups()
-                    caddr = int(items[0], 16)
-                    callinfo[caddr] = Callinfo(caddr, *items[1:])
+                    paddr = int(items[0], 16)
+                    # caller/parent specific callinfo for this child/callee
+                    tmp = Callinfo(paddr)
+                    tmp.set(*items[1:])
+                    callinfo[paddr] = tmp
                 else:
-                    self.error_exit("unrecognized caller info '%s' on callee line %d\n\t'%s'" % (caller, parsed, line))
-            self.callinfo[int(addr, 16)] = callinfo
+                    self.error_exit("unrecognized caller info '%s' on callee line %d\n\t'%s'" % (callstr, parsed, line))
+            self.callinfo[int(caddr, 16)] = callinfo
             line = fobj.readline()
         return line, parsed-1
+
+    def _complete_child(self, profile, linkage, child, caddr):
+        "link parents with child based on caller info"
+        ignored = switches = 0
+        callinfo = Callinfo(caddr)
+        for laddr, info in linkage.items():
+            callinfo.add(info)
+            pname, offset = self.symbols.get_preceeding_symbol(laddr)
+            if len(info.flags) > 1:
+                self.warning("caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (info.flags, pname))
+            elif info.flags in self.removable_calltypes:
+                ignored += info.calls
+                continue
+            # function address for the caller
+            paddr = laddr - offset
+            parent = profile[paddr]
+            if pname != parent.name:
+                self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
+                parent.name = pname
+            # link parent and child function together
+            if paddr in child.parent:
+                if self.compact:
+                    child.parent[paddr][0].add(info)
+                else:
+                    child.parent[paddr] += (info,)
+            else:
+                child.parent[paddr] = (info,)
+            parent.child[caddr] = True
+            switches += info.calls
+        if child.subcost:
+            self.warning("cost already for child: %s" % child)
+        child.subcost = callinfo.get_own_costs()
+        child.subtotal = callinfo.get_full_costs()
+        return switches, ignored
 
     def complete(self, profile, symbols):
         "resolve caller functions and add child/parent info to profile data"
@@ -647,114 +725,35 @@ class ProfileCallers(Output):
             self.present = False
             return
         self.present = True
-        all_total = all_ignored = 0
-        # go through called functions...
-        for caddr, caller in self.callinfo.items():
+        self.symbols = symbols
+        all_switches = all_ignored = 0
+        # go through called (child) functions...
+        for caddr, callinfo in self.callinfo.items():
             child = profile[caddr]
             if child.name in self.ignore_to:
                 continue
-            # ...and their callers
-            ignore = total = 0
-            for laddr, info in caller.items():
-                pname, offset = symbols.get_preceeding_symbol(laddr)
-                if len(info.flags) > 1:
-                    self.warning("caller instruction change ('%s') detected for '%s', did its code change during profiling?" % (info.flags, pname))
-                elif info.flags in self.removable_calltypes:
-                    ignore += info.calls
-                    continue
-                # function address for the caller
-                paddr = laddr - offset
-                parent = profile[paddr]
-                if pname != parent.name:
-                    self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
-                    parent.name = pname
-                # link parent and child function together
-                if paddr in child.parent:
-                    if self.compact:
-                        child.parent[paddr][0].add(info)
-                    else:
-                        child.parent[paddr] += (info,)
-                else:
-                    child.parent[paddr] = (info,)
-                parent.child[caddr] = True
-                total += info.calls
-            # validate call count
-            if ignore:
-                all_ignored += ignore
-                self.message("Ignoring %d switches to %s" % (ignore, child.name))
-                #total += ignore
-                child.data[0] -= ignore
-            calls = child.data[0]
-            if calls != total:
-                info = (child.name, caddr, calls, total)
-                self.warning("call count mismatch for '%s' at 0x%x, %d != %d" % info)
-            all_total += total + ignore
-        self.callinfo = {}
-        if all_ignored:
-            self.message("Of all %d switches, ignored %d for type(s) %s." % (all_total, all_ignored, list(self.removable_calltypes)))
-
-    def _propagate_leaf_cost(self, profile, caddr, cost, track):
-        """Propagate costs to function parents.  In case of call
-	counts that can be done accurately based on existing call
-	count information.  For other costs propagation can be done
-	correctly only when there's a single parent."""
-        child = profile[caddr]
-        #self.message("processing '%s'" % child.name)
-        parents = len(child.parent)
-        if not parents:
-            return
-        # calls from all parents of this child,
-        # float so that divisions don't lose info
-        calls = float(child.data[0])
-
-        for paddr, info in child.parent.items():
-            if paddr == caddr:
-                # loop within function or recursion
+            # ...and their callers (parents)
+            switches, ignored = self._complete_child(profile, callinfo, child, caddr)
+            all_switches += switches
+            all_ignored += ignored
+            # was subroutine call
+            if child.subtotal:
                 continue
-            parent = profile[paddr]
-            if child.estimated or parents > 1:
-                parent.estimated = True
-            total = 0
-            # add together calls from this particular parent
-            for item in info:
-                total += item.calls
-            if parents == 1 and total != calls:
-                self.error_exit("%s -> %s, single parent, but callcounts don't match: %d != %d" % (parent.name, child.name, total, calls))
-            # parent's share of current propagated child costs
-            ccost = [total * x / calls for x in cost]
-            if parent.total:
-                pcost = [sum(x) for x in zip(parent.total, ccost)]
-            else:
-                pcost = [sum(x) for x in zip(parent.data, ccost)]
-                # propogate parent cost up only ones
-                ccost = pcost
-            parent.total = pcost
-            if paddr not in track:
-                track[paddr] = True
-                self._propagate_leaf_cost(profile, paddr, ccost, track)
-                del track[paddr]
-
-    def propagate_costs(self, profile):
-        "Identify leaf nodes and propagate costs from them to parents."
-        leafs = {}
-        for addr, function in profile.items():
-            if not function.child:
-                leafs[addr] = True
-        # propagate leaf costs
-        for addr in leafs.keys():
-            function = profile[addr]
-            self._propagate_leaf_cost(profile, addr, function.data, {})
-        # convert values back to ints with rounding, and verify
-        # that propagation handled every node with children
-        for addr, function in profile.items():
-            if function.total:
-                function.total = [int(round(x)) for x in function.total]
-            elif function.child:
-                for caddr in function.child.keys():
-                    # other children than it itself?
-                    if caddr != addr:
-                        self.warning("didn't propagate cost to:\n\t%s\n" % function)
-                        break
+            # validate non-subroutine call counts
+            if ignored:
+                self.message("Ignoring %d switches to %s" % (ignored, child.name))
+                #switches += ignored
+                child.cost[0] -= ignored
+            calls = child.cost[0]
+            if calls != switches:
+                info = (child.name, caddr, calls, switches, ignored)
+                self.warning("call count mismatch for '%s' at 0x%x, %d != %d (%d ignored)" % info)
+        self.callinfo = None
+        self.symbols = None
+        if all_ignored:
+            all_switches += all_ignored
+            info = (all_switches, all_ignored, list(self.removable_calltypes))
+            self.message("Of all %d switches, ignored %d for type(s) %s." % info)
 
 
 # ---------------------------------------------------------------------
@@ -770,7 +769,7 @@ class ProfileCallgrind(Output):
         self.function = None
         self.profname = None
         self.tmpname = None
-        self.items = 0
+        self.missing = None
 
     def start_output(self, fname, emuinfo, names):
         "create callgraph file and write header to it"
@@ -789,7 +788,6 @@ class ProfileCallgrind(Output):
             idx += 1
         self.write("events: %s\n" % ' '.join(shortnames))
         self.write("fl=%s\n" % fname)
-        self.items = len(names)
 
     def output_line(self, function, counts, linenro):
         "output given function line information"
@@ -800,58 +798,57 @@ class ProfileCallgrind(Output):
             # first line in function, output function info
             self.write("fn=%s\n" % function.name)
             # only first function line gets the call count
-            counts = [function.data[0]] + counts[1:]
+            counts = [function.cost[0]] + counts[1:]
         self.write("%d %s\n" % (linenro, ' '.join([str(x) for x in counts])))
 
     def _output_calls(self, profile, paddr):
         # TODO: find the line in profile corresponding
         # to the caller and use that as line number,
-        # instead of parent line number
-        missing = 0
+        # instead of caller function beginning line number
         parent = profile[paddr]
         for caddr in parent.child.keys():
             child = profile[caddr]
-            info = child.parent[paddr]
+            if not child.subtotal:
+                # costs missing, no sense in adding dep
+                self.missing[caddr] = True
+                continue
             total = 0
-            for item in info:
+            for item in child.parent[paddr]:
                 total += item.calls
             self.write("cfn=%s\n" % child.name)
             self.write("calls=%d %d\n" % (total, child.line))
-            if child.total:
-                data = child.total
-            else:
-                data = child.data
-                missing += 1
-            all_calls = child.data[0]
+            all_calls = child.cost[0]
+            cost = [int(round(float(x)*total/all_calls)) for x in child.subtotal]
+            counts = ' '.join([str(x) for x in cost])
+            self.write("%d %s\n" % (parent.line, counts))
             if all_calls < total:
                 self.warning("calls from %s to %s: %d > %d" % (parent.name, child.name, total, all_calls))
-            data = [int(round(float(x)*total/all_calls)) for x in data]
-            counts = ' '.join([str(x) for x in data])
-            self.write("%d %s\n" % (parent.line, counts))
-        return missing
 
-    def output_callinfo(self, profile, names):
+    def output_callinfo(self, profile, symbols):
         "output function calling information"
         # this can be done only after profile is parsed because
         # before that we don't have function inclusive cost counts,
-        # but it requires going through the files again
+        # i.e. we need to post-process the generated callgrind file
+        # to add the calls and their costs
         fname = self.set_output_file_ext(self.tmpname, ".cg")
         self.message("\nGenerating callgrind file '%s'..." % fname)
         tmpfile = open(self.tmpname, 'r')
         os.remove(self.tmpname)
 
-        missing = 0
+        items = 0
+        self.missing = {}
         for line in tmpfile.readlines():
             self.write(line)
             if not line.startswith("fn="):
                 continue
             name = line.strip().split('=')[1]
-            paddr = names[name]
-            if not profile[paddr].child:
-                continue
-            missing += self._output_calls(profile, paddr)
-        if missing:
-            self.warning("%d child nodes missing propagated total values for callgrind data (nodes own value used instead)!" % missing)
+            paddr = symbols.get_addr(name)
+            if profile[paddr].child:
+                self._output_calls(profile, paddr)
+            items += 1
+        if self.missing:
+            self.warning("%d / %d nodes missing caller information (for callgrind data)!" % (len(self.missing), items))
+            self.missing = None
 
 
 # ---------------------------------------------------------------------
@@ -885,9 +882,8 @@ class EmulatorProfile(Output):
         self.r_function = re.compile("^([-_.a-zA-Z0-9]+):$")
 
         self.stats = None		# InstructionStats instance
-        self.propagate = False
         self.callgrind = None		# ProfileCallgrind instance
-        self.profile = None		# hash of profile (symbol:data)
+        self.profile = None		# hash of profile (addr:data)
         self.linenro = 0
 
     def enable_verbose(self):
@@ -904,9 +900,6 @@ class EmulatorProfile(Output):
 
     def enable_compact(self):
         self.callers.enable_compact()
-
-    def enable_propagating(self):
-        self.propagate = True
 
     def enable_callgrind(self):
         self.callgrind = ProfileCallgrind()
@@ -962,7 +955,7 @@ class EmulatorProfile(Output):
 
     def _change_function(self, function, newname, addr):
         "store current function data and then reset to new function"
-        if function.has_data():
+        if function.has_cost():
             if not function.addr:
                 name, offset = self.symbols.get_preceeding_symbol(function.addr)
                 function.rename(name, offset)
@@ -1082,27 +1075,25 @@ class EmulatorProfile(Output):
         # finish
         self.stats.sum_values(self.profile.values())
         self.callers.complete(self.profile, self.symbols)
-        if self.propagate:
-            self.callers.propagate_costs(self.profile)
         if self.callgrind:
-            self.callgrind.output_callinfo(self.profile, self.symbols.names)
+            self.callgrind.output_callinfo(self.profile, self.symbols)
 
 
 # ---------------------------------------------------------------------
 class ProfileSorter:
     "profile information sorting and list output class"
 
-    def __init__(self, profile, stats, write, propagated):
+    def __init__(self, profile, stats, write, subcosts):
         self.profile = profile
         self.stats = stats
         self.write = write
         self.field = None
-        self.show_propagated = propagated
+        self.show_subcosts = subcosts
 
     def _cmp_field(self, i, j):
         "compare currently selected field in profile data"
         field = self.field
-        return cmp(self.profile[i].data[field], self.profile[j].data[field])
+        return cmp(self.profile[i].cost[field], self.profile[j].cost[field])
 
     def get_combined_limit(self, field, count, limit):
         "return percentage for given profile field that satisfies both count & limit constraint"
@@ -1115,10 +1106,10 @@ class ProfileSorter:
         keys.sort(self._cmp_field, None, True)
         total = self.stats.totals[field]
         function = self.profile[keys[count]]
-        if self.show_propagated and function.total:
-            value = function.total[field]
+        if self.show_subcosts and function.subtotal:
+            value = function.subtotal[field]
         else:
-            value = function.data[field]
+            value = function.cost[field]
         percentage = value * 100.0 / total
         if percentage < limit or not limit:
             return percentage
@@ -1134,7 +1125,7 @@ class ProfileSorter:
         time = idx = 0
         for addr in keys:
             function = self.profile[addr]
-            value = function.data[field]
+            value = function.cost[field]
             if not value:
                 break
 
@@ -1149,27 +1140,24 @@ class ProfileSorter:
                 break
             idx += 1
 
-            # show also propagated cost?
-            propagated = ""
-            if self.show_propagated:
-                if function.total:
-                    ppercent = 100.0 * function.total[field] / total
-                    if function.estimated:
-                        propagated = " ~%6.2f%%" % ppercent
-                    else:
-                        propagated = "  %6.2f%%" % ppercent
+            # show also subroutine call cost?
+            subcosts = ""
+            if self.show_subcosts:
+                if function.subtotal:
+                    subpercent = 100.0 * function.subtotal[field] / total
+                    subcosts = "  %6.2f%%" % subpercent
                 else:
-                    propagated = " " * 9
+                    subcosts = " " * 9
 
             if show_info:
                 if field == stats.cycles_field:
-                    time = stats.get_time(function.data)
+                    time = stats.get_time(function.cost)
                     info = "(0x%06x,%9.5fs)" % (addr, time)
                 else:
                     info = "(0x%06x)" % addr
-                self.write("%6.2f%%%s %9d  %-28s%s\n" % (percentage, propagated, value, function.name, info))
+                self.write("%6.2f%%%s %9d  %-28s%s\n" % (percentage, subcosts, value, function.name, info))
             else:
-                self.write("%6.2f%%%s %9d  %s\n" % (percentage, propagated, value, function.name))
+                self.write("%6.2f%%%s %9d  %s\n" % (percentage, subcosts, value, function.name))
 
     def do_list(self, field, count, limit, show_info):
         "sort and show list for given profile data field"
@@ -1188,13 +1176,13 @@ class ProfileOutput(Output):
     def __init__(self):
         Output.__init__(self)
         # both unset so that subclasses can set defaults reasonable for them
-        self.show_propagated = False
+        self.show_subcosts = False
         self.limit = 0.0
         self.count = 0
 
-    def enable_propagated(self):
-        "enable showing propagated costs instead of just own costs"
-        self.show_propagated = True
+    def enable_subcosts(self):
+        "enable showing subroutine call costs instead of just own costs"
+        self.show_subcosts = True
 
     def set_count(self, count):
         "set how many items to show or highlight at minimum, 0 = all/unset"
@@ -1261,7 +1249,7 @@ class ProfileStats(ProfileOutput):
         if self.show_totals:
             self.output_totals(profobj)
         if self.show_top:
-            sorter = ProfileSorter(profobj.profile, profobj.stats, self.write, self.show_propagated)
+            sorter = ProfileSorter(profobj.profile, profobj.stats, self.write, self.show_subcosts)
             fields = range(profobj.stats.items)
             for field in fields:
                 sorter.do_list(field, self.count, self.limit, self.show_info)
@@ -1396,7 +1384,10 @@ label="%s";
         while True:
             to_remove = {}
             for addr, function in self.profile.items():
-                count = function.data[field]
+                if self.show_subcosts and function.subcost and len(function.subcost) > field:
+                    count = function.subcost[field]
+                else:
+                    count = function.cost[field]
                 percentage = 100.0 * count / total
                 # don't remove functions which own costs are over the limit
                 if percentage >= self.limit:
@@ -1466,7 +1457,7 @@ label="%s";
                 # parent end for edges
                 self.nodes[paddr] = True
                 # total calls count for child
-                calls = profile[caddr].data[0]
+                calls = profile[caddr].cost[0]
                 # calls to child done from different locations in parent
                 for edge in info:
                     self.edges[(edge.addr, caddr)] = (paddr, calls, edge)
@@ -1478,21 +1469,21 @@ label="%s";
         total = stats.totals[field]
         for addr in self.nodes.keys():
             shape = style = ""
-            estimated = False
             function = self.profile[addr]
-            if self.show_propagated and function.total:
-                values = function.total
-                if function.estimated:
-                    estimated = True
-                    shape = " shape=diamond"
+            calls = function.cost[0]
+            if self.show_subcosts and function.subtotal and len(function.subtotal) > field:
+                shape = " shape=diamond"
+                cost = function.subtotal
+                owncount = function.subcost[field]
             else:
-                values = function.data
-            count = values[field]
+                cost = function.cost
+                owncount = cost[field]
+            count = cost[field]
             percentage = 100.0 * count / total
             if percentage >= limit:
                 self.highlight[addr] = True
-                style = " color=red"
-            ownpercentage = 100.0 * function.data[field] / total
+                style = " color=red style=bold"
+            ownpercentage = 100.0 * owncount / total
             if ownpercentage >= limit:
                 style = "%s style=filled fillcolor=lightgray" % style
             name = function.name
@@ -1500,18 +1491,17 @@ label="%s";
                 if substr in name:
                     style = "%s style=filled fillcolor=green shape=square" % style
                     break
-            if estimated:
-                valuestr = "%.2f%%\\n(own: %.2f%%)" % (percentage, ownpercentage)
+            if count != owncount:
+                coststr = "%.2f%%\\n(own: %.2f%%)" % (percentage, ownpercentage)
             else:
-                valuestr = "%.2f%%" % percentage
-            calls = values[0]
+                coststr = "%.2f%%" % percentage
             if field == 0:
-                self.write("N_%X [label=\"%s\\n%s\\n%d calls\"%s%s];\n" % (addr, valuestr, name, count, style, shape))
+                self.write("N_%X [label=\"%s\\n%s\\n%d calls\"%s%s];\n" % (addr, coststr, name, count, style, shape))
             elif field == stats.cycles_field:
-                time = stats.get_time(values)
-                self.write("N_%X [label=\"%s\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, valuestr, time, name, calls, style, shape))
+                time = stats.get_time(cost)
+                self.write("N_%X [label=\"%s\\n%.5fs\\n%s\\n(%d calls)\"%s%s];\n" % (addr, coststr, time, name, calls, style, shape))
             else:
-                self.write("N_%X [label=\"%s\\n%d\\n%s\\n(%d calls)\"%s%s];\n" % (addr, valuestr, count, name, calls, style, shape))
+                self.write("N_%X [label=\"%s\\n%d\\n%s\\n(%d calls)\"%s%s];\n" % (addr, coststr, count, name, calls, style, shape))
 
     def _output_edges(self):
         "output graph edges from filtered edges dict, after nodes is called"
@@ -1522,7 +1512,7 @@ label="%s";
             offset = laddr - paddr
             style = ""
             if caddr in self.highlight:
-                style = " color=red"
+                style = " color=red style=bold"
             # arrowhead/tail styles:
             #   none, normal, inv, dot, odot, invdot, invodot, tee, empty,
             #   invempty, open, halfopen, diamond, odiamond, box, obox, crow
@@ -1575,9 +1565,9 @@ label="%s";
             title = "%s\\nfor %s" % (name, fname)
             if profobj.emuinfo:
                 title += "\\n(%s)" % profobj.emuinfo
-            title += "\\n\\nown cost emphasis (gray bg) & (propagated) cost emphasis (red) limit = %.2f%%\\n" % limit
-            if self.show_propagated:
-                title += "nodes which propagated costs could only be estimated (i.e. are unreliable) have diamond shape\\n"
+            title += "\\n\\nown cost emphasis (gray bg) & total cost emphasis (red) limit = %.2f%%\\n" % limit
+            if self.show_subcosts:
+                title += "nodes which are subroutines and have accurate total costs, have diamond shape\\n"
             if removed:
                 if self.remove_limited:
                     title += "%d nodes below %.2f%% were removed\\n" % (removed, self.limit)
@@ -1667,9 +1657,8 @@ class Main(Output):
                 graph.set_limit(limit)
                 stats.set_limit(limit)
             elif opt in ("-p", "--propagate"):
-                prof.enable_propagating()
-                graph.enable_propagated()
-                stats.enable_propagated()
+                graph.enable_subcosts()
+                stats.enable_subcosts()
             # options specific to graphs
             elif opt in ("-e", "--emph-limit"):
                 graph.set_emph_limit(self.get_value(opt, arg, True))
