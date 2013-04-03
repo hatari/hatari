@@ -68,6 +68,8 @@ Emulator:
   - Profiler provides timing information, based on used cycles
   - Profiler provides CPU instruction cache misses information when using
     cycle-exact WinUAE CPU core (which is Falcon emu default)
+  - Profiler top instruction count/cycles/misses lists show
+    the related instructions
   - For DSP, profiler adds min/max cycle difference info to disassembly
   - New "addresses" subcommand can be used to see addresses through which
     code passed during profiling (e.g. while program seems frozen, this

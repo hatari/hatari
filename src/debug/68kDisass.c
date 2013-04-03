@@ -2543,8 +2543,9 @@ void Disasm_SetColumns(int *pos)
 
 /**
  * function to disable given disassembly output 'column'.
- * input is current column positions in 'oldcols' and output
- * is new column positions/values in 'newcols'.
+ * input is current column positions in 'oldcols' array and
+ * output is new column positions/values in 'newcols' array.
+ * It's safe to use same array for both.
  */
 void Disasm_DisableColumn(int column, int *oldcols, int *newcols)
 {

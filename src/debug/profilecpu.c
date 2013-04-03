@@ -262,7 +262,7 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 		if (symbol) {
 			fprintf(out, "%s:\n", symbol);
 		}
-		/* NOTE: column setup works only with UAE disasm engine! */
+		/* NOTE: column setup works only with 68kDisass disasm engine! */
 		Disasm(out, addr, &nextpc, 1);
 		shown++;
 	}
@@ -273,7 +273,26 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 	return nextpc;
 }
 
+/**
+ * remove all disassembly columns except instruction ones.
+ * data needed to restore columns is stored to "oldcols"
+ */
+static void leave_instruction_column(int *oldcols)
+{
+	int i, newcols[DISASM_COLUMNS];
 
+	Disasm_GetColumns(oldcols);
+	for (i = 0; i < DISASM_COLUMNS; i++) {
+		if (i == DISASM_COLUMN_OPCODE || i == DISASM_COLUMN_OPERAND) {
+			continue;
+		}
+		Disasm_DisableColumn(i, oldcols, newcols);
+		oldcols = newcols;
+	}
+	Disasm_SetColumns(newcols);
+}
+
+#if ENABLE_WINUAE_CPU
 /**
  * compare function for qsort() to sort CPU profile data by instruction cache misses.
  */
@@ -296,13 +315,14 @@ static int cmp_cpu_misses(const void *p1, const void *p2)
 void Profile_CpuShowMisses(int show)
 {
 	int active;
-	Uint32 *sort_arr, *end, addr;
+	int oldcols[DISASM_COLUMNS];
+	Uint32 *sort_arr, *end, addr, nextpc;
 	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
 	Uint32 count;
 
-	if (!data) {
-		fprintf(stderr, "ERROR: no CPU profiling data available!\n");
+	if (!cpu_profile.all.misses) {
+		fprintf(stderr, "No CPU cache miss information available.\n");
 		return;
 	}
 
@@ -310,17 +330,28 @@ void Profile_CpuShowMisses(int show)
 	sort_arr = cpu_profile.sort_arr;
 	qsort(sort_arr, active, sizeof(*sort_arr), cmp_cpu_misses);
 
+	leave_instruction_column(oldcols);
+
 	printf("addr:\t\tmisses:\n");
 	show = (show < active ? show : active);
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].misses;
 		percentage = 100.0*count/cpu_profile.all.misses;
-		printf("0x%06x\t%.2f%%\t%d%s\n", addr, percentage, count,
+		printf("0x%06x\t%.2f%%\t%d%s\t", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
+		Disasm(stdout, addr, &nextpc, 1);
 	}
 	printf("%d CPU addresses listed.\n", show);
+
+	Disasm_SetColumns(oldcols);
 }
+#else
+void Profile_CpuShowMisses(int show) {
+	fprintf(stderr, "Cache misses are recorded only with WinUAE CPU.\n");
+}
+#endif
+
 
 /**
  * compare function for qsort() to sort CPU profile data by cycles counts.
@@ -344,7 +375,8 @@ static int cmp_cpu_cycles(const void *p1, const void *p2)
 void Profile_CpuShowCycles(int show)
 {
 	int active;
-	Uint32 *sort_arr, *end, addr;
+	int oldcols[DISASM_COLUMNS];
+	Uint32 *sort_arr, *end, addr, nextpc;
 	cpu_profile_item_t *data = cpu_profile.data;
 	float percentage;
 	Uint32 count;
@@ -358,16 +390,21 @@ void Profile_CpuShowCycles(int show)
 	sort_arr = cpu_profile.sort_arr;
 	qsort(sort_arr, active, sizeof(*sort_arr), cmp_cpu_cycles);
 
+	leave_instruction_column(oldcols);
+
 	printf("addr:\t\tcycles:\n");
 	show = (show < active ? show : active);
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].cycles;
 		percentage = 100.0*count/cpu_profile.all.cycles;
-		printf("0x%06x\t%.2f%%\t%d%s\n", addr, percentage, count,
+		printf("0x%06x\t%.2f%%\t%d%s\t", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
+		Disasm(stdout, addr, &nextpc, 1);
 	}
 	printf("%d CPU addresses listed.\n", show);
+
+	Disasm_SetColumns(oldcols);
 }
 
 /**
@@ -396,7 +433,8 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 {
 	cpu_profile_item_t *data = cpu_profile.data;
 	int symbols, matched, active;
-	Uint32 *sort_arr, *end, addr;
+	int oldcols[DISASM_COLUMNS];
+	Uint32 *sort_arr, *end, addr, nextpc;
 	const char *name;
 	float percentage;
 	Uint32 count;
@@ -412,16 +450,19 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 	qsort(sort_arr, active, sizeof(*sort_arr), cmp_cpu_count);
 
 	if (!only_symbols) {
+		leave_instruction_column(oldcols);
 		printf("addr:\t\tcount:\n");
 		for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 			addr = index2address(*sort_arr);
 			count = data[*sort_arr].count;
 			percentage = 100.0*count/cpu_profile.all.count;
-			printf("0x%06x\t%.2f%%\t%d%s\n",
+			printf("0x%06x\t%.2f%%\t%d%s\t",
 			       addr, percentage, count,
 			       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
+			Disasm(stdout, addr, &nextpc, 1);
 		}
 		printf("%d CPU addresses listed.\n", show);
+		Disasm_SetColumns(oldcols);
 		return;
 	}
 
@@ -431,6 +472,8 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		return;
 	}
 	matched = 0;	
+
+	leave_instruction_column(oldcols);
 
 	printf("addr:\t\tcount:\t\tsymbol:\n");
 	for (end = sort_arr + active; sort_arr < end; sort_arr++) {
@@ -442,9 +485,10 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		}
 		count = data[*sort_arr].count;
 		percentage = 100.0*count/cpu_profile.all.count;
-		printf("0x%06x\t%.2f%%\t%d\t%s%s\n",
+		printf("0x%06x\t%.2f%%\t%d\t%s%s\t",
 		       addr, percentage, count, name,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
+		Disasm(stdout, addr, &nextpc, 1);
 
 		matched++;
 		if (matched >= show || matched >= symbols) {
@@ -452,6 +496,8 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		}
 	}
 	printf("%d CPU symbols listed.\n", matched);
+
+	Disasm_SetColumns(oldcols);
 }
 
 
