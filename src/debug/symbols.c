@@ -45,6 +45,11 @@ typedef struct {
 	symbol_t *names;	/* items sorted by symbol name */
 } symbol_list_t;
 
+typedef struct {
+	Uint32 offset;
+	Uint32 end;
+} prg_section_t;
+
 
 /* how many characters the symbol name can have.
  * NOTE: change also sscanf width arg if you change this!!!
@@ -137,12 +142,12 @@ static void symbol_list_free(symbol_list_t *list)
  *	http://toshyp.atari.org/en/005005.html
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_dri(FILE *fp, Uint32 *offsets, symtype_t gettype, Uint32 tablesize)
+static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize)
 {
 	int i, count, symbols;
+	prg_section_t *section;
 	symbol_list_t *list;
 	symtype_t symtype;
-	Uint32 offset;
 #define DRI_ENTRY_SIZE	14
 	char name[23];
 	Uint16 symid;
@@ -184,15 +189,15 @@ static symbol_list_t* symbols_load_dri(FILE *fp, Uint32 *offsets, symtype_t gett
 		switch (symid & 0xf00) {
 		case 0x0200:
 			symtype = SYMTYPE_TEXT;
-			offset = offsets[0];
+			section = &(sections[0]);
 			break;
 		case 0x0400:
 			symtype = SYMTYPE_DATA;
-			offset = offsets[1];
+			section = &(sections[1]);
 			break;
 		case 0x0100:
 			symtype = SYMTYPE_BSS;
-			offset = offsets[2];
+			section = &(sections[2]);
 			break;
 		default:
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d of unknown type 0x%x.\n", name, i, symid);
@@ -201,8 +206,12 @@ static symbol_list_t* symbols_load_dri(FILE *fp, Uint32 *offsets, symtype_t gett
 		if (!(gettype & symtype)) {
 			continue;
 		}
-
-		list->names[count].address = address + offset;
+		address += section->offset;
+		if (address >= section->end) {
+			fprintf(stderr, "WARNING: ignoring symbol '%s' with invalid offset 0x%x (>= 0x%x).\n", name, address, section->end);
+			continue;
+		}
+		list->names[count].address = address;
 		list->names[count].type = symtype;
 		list->names[count].name = strdup(name);
 		assert(list->names[count].name);
@@ -225,17 +234,17 @@ static symbol_list_t* symbols_load_dri(FILE *fp, Uint32 *offsets, symtype_t gett
  */
 static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 {
-	Uint32 textlen, datalen, tablesize, tabletype, offsets[3];
+	Uint32 textlen, datalen, bsslen, start, tablesize, tabletype;
+	prg_section_t sections[3];
 	int offset;
 
-	/* get TEXT and DATA section sizes */
+	/* get TEXT, DATA & BSS section sizes */
 	fread(&textlen, sizeof(textlen), 1, fp);
 	textlen = SDL_SwapBE32(textlen);
 	fread(&datalen, sizeof(datalen), 1, fp);
 	datalen = SDL_SwapBE32(datalen);
-
-	/* skip BSS section size */
-	fseek(fp, 4, SEEK_CUR);
+	fread(&bsslen, sizeof(bsslen), 1, fp);
+	bsslen = SDL_SwapBE32(bsslen);
 
 	/* get symbol table size and type */
 	fread(&tablesize, sizeof(tablesize), 1, fp);
@@ -248,21 +257,30 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	tabletype = SDL_SwapBE32(tabletype);
 
 	/* go to start of symbol table */
-	if (fseek(fp, 0x1C + textlen + datalen, SEEK_SET) < 0) {
+	offset = 0x1C + textlen + datalen;
+	if (fseek(fp, offset, SEEK_SET) < 0) {
 		perror("ERROR: seeking to symbol table failed");
 		return NULL;
 	}
-	/* offsets for running program TEXT/DATA/BSS section symbols */
-	offsets[0] = DebugInfo_GetTEXT();
-	offsets[1] = DebugInfo_GetDATA() - textlen;
-	offsets[2] = DebugInfo_GetBSS() - textlen - datalen;
+	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
+	start = DebugInfo_GetTEXT();
+	sections[0].offset = start;
+	sections[0].end = start + textlen;
+
+	start = DebugInfo_GetDATA();
+	sections[1].offset = start - textlen;
+	sections[1].end = start + datalen;
+
+	start = DebugInfo_GetBSS();
+	sections[2].offset = start - textlen - datalen;
+	sections[2].end = start + bsslen;
 
 	switch (tabletype) {
 	case 0x4D694E54:	/* "MiNT" */
 		fprintf(stderr, "ERROR: MiNT / a.out format symbol table isn't supported!\n");
 	case 0x0:
 		fprintf(stderr, "Using DRI / GST format symbol table at offset 0x%x.\n", offset);
-		return symbols_load_dri(fp, offsets, gettype, tablesize);
+		return symbols_load_dri(fp, sections, gettype, tablesize);
 	default:
 		fprintf(stderr, "ERROR: unknown symbol type 0x%x at offset 0x%x!\n", tabletype, offset);
 	}
@@ -378,7 +396,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	}
 
 	if (SDL_SwapBE16(magic) == 0x601A) {
-		fprintf(stderr, "Reading TEXT symbols from program '%s' symbol table...\n", filename);
+		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 		list = symbols_load_binary(fp, SYMTYPE_ALL);
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
