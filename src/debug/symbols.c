@@ -31,6 +31,7 @@ const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 #include "debug_priv.h"
 #include "debugInfo.h"
 #include "evaluate.h"
+#include "gemdos.h"
 
 typedef struct {
 	char *name;
@@ -401,7 +402,11 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	}
 
 	if (SDL_SwapBE16(magic) == 0x601A) {
+		const char *last = GemDOS_GetLastProgramPath();
 		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
+		if (strcmp(last, filename) != 0) {
+			fprintf(stderr, "WARNING: given program doesn't match last program executed by GEMDOS HD emulation:\n\t%s", last);
+		}
 		list = symbols_load_binary(fp, SYMTYPE_ALL);
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
@@ -744,16 +749,21 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 }
 
 const char Symbols_Description[] =
-	"<filename|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
+	"<filename|prg|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
 	"\tLoads symbol names and their addresses from the given file.\n"
-	"\tIf one base address/offset is given, its added to all addresses.\n"
-	"\tIf three offsets are given (and non-zero), they're applied to\n"
-	"\t text (T), data (D) and BSS (B) symbols. If there were previously\n"
-	"\tloaded symbols, they're replaced.\n"
+	"\tIf there were previously loaded symbols, they're replaced.\n"
+	"\n"
+	"\tGiving 'prg' instead of a file name, loads DRI/GST symbol table\n"
+	"\tfrom the last program executed through the GEMDOS HD emulation.\n"
 	"\n"
 	"\tGiving either 'name' or 'addr' instead of a file name, will\n"
 	"\tlist the currently loaded symbols.  Giving 'free' will remove\n"
-	"\tthe loaded symbols.";
+	"\tthe loaded symbols.\n"
+	"\n"
+	"\tIf one base address/offset is given, its added to all addresses.\n"
+	"\tIf three offsets are given (and non-zero), they're applied to\n"
+	"\ttext (T), data (D) and BSS (B) symbols.  Given offsets are used\n"
+	"\tonly when loading ASCII symbol files.";
 
 /**
  * Handle debugger 'symbols' command and its arguments
@@ -811,6 +821,13 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		}
 	}
 
+	if (strcmp(file, "prg") == 0) {
+		file = GemDOS_GetLastProgramPath();
+		if (!file) {
+			fprintf(stderr, "ERROR: no program loaded (through GEMDOS HD emu)!\n");
+			return DEBUGGER_CMDDONE;
+		}
+	}
 	list = Symbols_Load(file, offsets, maxaddr);
 	if (list) {
 		if (listtype == TYPE_CPU) {
