@@ -264,6 +264,10 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	}
 	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
 	start = DebugInfo_GetTEXT();
+	if (!start) {
+		fprintf(stderr, "ERROR: no valid program basepage!\n");
+		return NULL;
+	}
 	sections[0].offset = start;
 	sections[0].end = start + textlen;
 
@@ -392,6 +396,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	}
 	if (fread(&magic, sizeof(magic), 1, fp) != 1) {
 		fprintf(stderr, "ERROR: reading file '%s' failed.\n", filename);
+		fclose(fp);
 		return NULL;
 	}
 
