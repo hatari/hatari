@@ -208,7 +208,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 			continue;
 		}
 		address += section->offset;
-		if (address >= section->end) {
+		if (address > section->end) {
 			fprintf(stderr, "WARNING: ignoring symbol '%s' with invalid offset 0x%x (>= 0x%x).\n", name, address, section->end);
 			continue;
 		}
@@ -270,15 +270,19 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 		return NULL;
 	}
 	sections[0].offset = start;
-	sections[0].end = start + textlen;
+	sections[0].end = start + textlen - 1;
+	if (DebugInfo_GetTEXTEnd() != sections[0].end) {
+		fprintf(stderr, "ERROR: given program TEXT section size differs from one in RAM!\n");
+		return NULL;
+	}
 
 	start = DebugInfo_GetDATA();
 	sections[1].offset = start - textlen;
-	sections[1].end = start + datalen;
+	sections[1].end = start + datalen - 1;
 
 	start = DebugInfo_GetBSS();
 	sections[2].offset = start - textlen - datalen;
-	sections[2].end = start + bsslen;
+	sections[2].end = start + bsslen - 1;
 
 	switch (tabletype) {
 	case 0x4D694E54:	/* "MiNT" */
