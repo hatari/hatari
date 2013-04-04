@@ -401,6 +401,8 @@ bool	MFP_ProcessIRQ ( void )
 	Uint8	Bit;
 
 
+//fprintf ( stderr , "process irq %d %d - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_DelayIRQ ,  MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+
 	if ( MFP_IRQ == 1 )
 	{
 //		if ( MFP_DelayIRQ == true )
@@ -458,7 +460,7 @@ static void MFP_UpdateIRQ ( Uint64 Event_Time )
 #else
 	int	NewInt;
 
-//fprintf ( stderr , "updirq0 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+//fprintf ( stderr , "updirq0 %d - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 
 	if ( ( MFP_IPRA & MFP_IMRA ) | ( MFP_IPRB & MFP_IMRB ) )
 	{
@@ -483,7 +485,7 @@ static void MFP_UpdateIRQ ( Uint64 Event_Time )
 		MFP_IRQ = 0;
 	}
 
-//fprintf ( stderr , "updirq1 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+//fprintf ( stderr , "updirq1 %d - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 	if ( MFP_IRQ == 1 )
 	{
 		M68000_SetSpecial(SPCFLAG_MFP);
