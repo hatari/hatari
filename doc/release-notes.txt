@@ -80,15 +80,10 @@ Emulator:
     used to construction program execution callgraph
   - New "save" subcommand saves profile address and caller information
     to given file, with extra information needed for post-processing
-  - New hatari-profiler.py script for post-processing output from
-    profiler's CPU and DSP profiling "save" commands:
-	profile save <filename>
-	dspprofile save <filename>
-    - With symbol address information it can provide function level
-      instruction, processor cycle & i-cache miss statistics, and
-      function call callgraphs
 - Debugger:
   - "dsp" subcommand added to "info" command, to show e.g. DSP stack content
+  - "prg" subcommand added to "symbols" command, for loading debug
+    symbols from DRI/GST symbol table in last started program
   - "step" and "next" commands added for single stepping CPU and DSP code
     -> 's' shortcut is now for "step", not "save"
   - "--disasm" option for selecting between UAE core and external CPU
@@ -121,12 +116,22 @@ Windows specific changes:
 - Fix: Windows localtime() not supporting dates before 1970 causes IKBD
   emulation crashes (wasn't problem with Cygwin, just with Mingw builds)
 
-Other changes:
-- HTML documentation indeces generated dynamically with JS
-- Debugger tests building fixed
+Tool updates:
+- New hatari-profiler.py script for post-processing output from
+  profiler's CPU and DSP profiling "save" commands:
+	profile save <filename>
+	dspprofile save <filename>
+  - With symbol address information it can provide function level
+    instruction, processor cycle & i-cache miss statistics
+  - With callers information it can create function call callgraphs
+    and create callgrind format files for Kcachegrind GUI
 - Added scripts for converting symbol tables in Devpac 3 listings and DSP LOD
   files to a format understood by Hatari debugger 'symbols' command,
   and to clean 'nm' output of GCC & VBCC built a.out binaries for it
+
+Other changes:
+- HTML documentation indeces generated dynamically with JS
+- Debugger tests building fixed
 
 Fixed Games:
   Bolo (MFP, couldn't start a game)
