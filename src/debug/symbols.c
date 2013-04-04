@@ -9,11 +9,13 @@
  * symbols.c - Hatari debugger symbol/address handling; parsing, sorting,
  * matching, TAB completion support etc.
  * 
- * Symbol/address file contents are identical to "nm" output i.e. composed
- * of a hexadecimal addresses followed by a space, letter indicating symbol
- * type (T = text/code, D = data, B = BSS), space and the symbol name.
- * Empty lines and lines starting with '#' are ignored.  AHCC SYM output
- * compatible.
+ * Symbol/address information is read either from:
+ * - A program file's DRI/GST format symbol table, or
+ * - ASCII file which contents are subset of "nm" output i.e. composed of
+ *   a hexadecimal addresses followed by a space, letter indicating symbol
+ *   type (T = text/code, D = data, B = BSS), space and the symbol name.
+ *   Empty lines and lines starting with '#' are ignored.  It's AHCC SYM
+ *   output compatible.
  */
 const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 
@@ -22,10 +24,12 @@ const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 #include <string.h>
 #include <assert.h>
 #include <SDL_types.h>
+#include <SDL_endian.h>
 #include "main.h"
 #include "symbols.h"
 #include "debugui.h"
 #include "debug_priv.h"
+#include "debugInfo.h"
 #include "evaluate.h"
 
 typedef struct {
@@ -35,7 +39,8 @@ typedef struct {
 } symbol_t;
 
 typedef struct {
-	int count;
+	int count;		/* final symbol count */
+	int symbols;		/* intial symbol count */
 	symbol_t *addresses;	/* items sorted by address */
 	symbol_t *names;	/* items sorted by symbol name */
 } symbol_list_t;
@@ -92,23 +97,190 @@ static int symbols_by_name(const void *s1, const void *s2)
 
 
 /**
+ * Allocate symbol list & names for given number of items.
+ * Return allocated list or NULL on failure.
+ */
+static symbol_list_t* symbol_list_alloc(int symbols)
+{
+	symbol_list_t *list;
+
+	if (!symbols) {
+		return NULL;
+	}
+	list = calloc(1, sizeof(symbol_list_t));
+	if (list) {
+		list->names = malloc(symbols * sizeof(symbol_t));
+		if (!list->names) {
+			free(list);
+			list = NULL;
+		}
+	}
+	return list;
+}
+
+/**
+ * Free symbol list & names.
+ */
+static void symbol_list_free(symbol_list_t *list)
+{
+	if (list) {
+		if (list->names) {
+			free(list->names);
+		}
+		free(list);
+	}
+}
+
+/**
  * Load symbols of given type and the symbol address addresses from
- * the given file and add given offsets to the addresses.
+ * DRI/GST format symbol table, and add given offsets to the addresses:
+ *	http://toshyp.atari.org/en/005005.html
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32 maxaddr, symtype_t gettype)
+static symbol_list_t* symbols_load_dri(FILE *fp, Uint32 *offsets, symtype_t gettype, Uint32 tablesize)
+{
+	int i, count, symbols;
+	symbol_list_t *list;
+	symtype_t symtype;
+	Uint32 offset;
+#define DRI_ENTRY_SIZE	14
+	char name[23];
+	Uint16 symid;
+	Uint32 address;
+
+	if (tablesize % DRI_ENTRY_SIZE) {
+		fprintf(stderr, "ERROR: invalid DRI symbol table size %d!\n", tablesize);
+		return NULL;
+	}
+	symbols = tablesize / DRI_ENTRY_SIZE;
+	if (!(list = symbol_list_alloc(symbols))) {
+		return NULL;
+	}
+
+	count = 0;
+	for (i = 1; i <= symbols; i++) {
+		/* read DRI symbol table slot */
+		if (fread(name, 8, 1, fp) != 1 ||
+		    fread(&symid, sizeof(symid), 1, fp) != 1 ||
+		    fread(&address, sizeof(address), 1, fp) != 1) {
+			break;
+		}
+		address = SDL_SwapBE32(address);
+		symid = SDL_SwapBE16(symid);
+
+		/* GST extended DRI symbol format? */
+		if ((symid & 0xff) == 0x48) {
+			/* next slot is rest of name */
+			i += 1;
+			if (fread(name+8, 14, 1, fp) != 1) {
+				break;
+			}
+			name[22] = '\0';
+		} else {
+			name[8] = '\0';
+		}
+
+		/* check section */
+		switch (symid & 0xf00) {
+		case 0x0200:
+			symtype = SYMTYPE_TEXT;
+			offset = offsets[0];
+			break;
+		case 0x0400:
+			symtype = SYMTYPE_DATA;
+			offset = offsets[1];
+			break;
+		case 0x0100:
+			symtype = SYMTYPE_BSS;
+			offset = offsets[2];
+			break;
+		default:
+			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d of unknown type 0x%x.\n", name, i, symid);
+			continue;
+		}
+		if (!(gettype & symtype)) {
+			continue;
+		}
+
+		list->names[count].address = address + offset;
+		list->names[count].type = symtype;
+		list->names[count].name = strdup(name);
+		assert(list->names[count].name);
+		count++;
+	}
+	if (i <= symbols) {
+		perror("ERROR: reading symbol failed");
+		symbol_list_free(list);
+		return NULL;
+	}
+	list->symbols = symbols;
+	list->count = count;
+	return list;
+}
+
+/**
+ * Parse program header and use symbol table format specific loader
+ * loader function to load the symbols.
+ * Return symbols list or NULL for failure.
+ */
+static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
+{
+	Uint32 textlen, datalen, tablesize, tabletype, offsets[3];
+	int offset;
+
+	/* get TEXT and DATA section sizes */
+	fread(&textlen, sizeof(textlen), 1, fp);
+	textlen = SDL_SwapBE32(textlen);
+	fread(&datalen, sizeof(datalen), 1, fp);
+	datalen = SDL_SwapBE32(datalen);
+
+	/* skip BSS section size */
+	fseek(fp, 4, SEEK_CUR);
+
+	/* get symbol table size and type */
+	fread(&tablesize, sizeof(tablesize), 1, fp);
+	tablesize = SDL_SwapBE32(tablesize);
+	if (!tablesize) {
+		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
+		return NULL;
+	}
+	fread(&tabletype, sizeof(tabletype), 1, fp);
+	tabletype = SDL_SwapBE32(tabletype);
+
+	/* go to start of symbol table */
+	if (fseek(fp, 0x1C + textlen + datalen, SEEK_SET) < 0) {
+		perror("ERROR: seeking to symbol table failed");
+		return NULL;
+	}
+	/* offsets for running program TEXT/DATA/BSS section symbols */
+	offsets[0] = DebugInfo_GetTEXT();
+	offsets[1] = DebugInfo_GetDATA() - textlen;
+	offsets[2] = DebugInfo_GetBSS() - textlen - datalen;
+
+	switch (tabletype) {
+	case 0x4D694E54:	/* "MiNT" */
+		fprintf(stderr, "ERROR: MiNT / a.out format symbol table isn't supported!\n");
+	case 0x0:
+		fprintf(stderr, "Using DRI / GST format symbol table at offset 0x%x.\n", offset);
+		return symbols_load_dri(fp, offsets, gettype, tablesize);
+	default:
+		fprintf(stderr, "ERROR: unknown symbol type 0x%x at offset 0x%x!\n", tabletype, offset);
+	}
+	return NULL;
+}
+
+/**
+ * Load symbols of given type and the symbol address addresses from
+ * the given ASCII file and add given offsets to the addresses.
+ * Return symbols list or NULL for failure.
+ */
+static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxaddr, symtype_t gettype)
 {
 	symbol_list_t *list;
 	char symchar, buffer[128], name[MAX_SYM_SIZE+1], *buf;
 	int count, line, symbols;
 	Uint32 address, offset;
 	symtype_t symtype;
-	FILE *fp;
-	
-	if (!(fp = fopen(filename, "r"))) {
-		fprintf(stderr, "ERROR: opening '%s' failed!\n", filename);
-		return NULL;
-	}
 
 	/* count content lines */
 	symbols = 0;
@@ -126,17 +298,10 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	}
 	fseek(fp, 0, SEEK_SET);
 
-	if (!symbols) {
-		fprintf(stderr, "ERROR: no symbols/addresses in '%s'!\n", filename);
-		fclose(fp);
+	/* allocate space for symbol list & names */
+	if (!(list = symbol_list_alloc(symbols))) {
 		return NULL;
 	}
-
-	/* allocate space for symbol list */
-	list = malloc(sizeof(symbol_list_t));
-	assert(list);
-	list->names = malloc(symbols * sizeof(symbol_t));
-	assert(list->names);
 
 	/* read symbols */
 	count = 0;
@@ -152,7 +317,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		}
 		assert(count < symbols); /* file not modified in meanwhile? */
 		if (sscanf(buffer, "%x %c %32[0-9A-Za-z_.-]s", &address, &symchar, name) != 3) {
-			fprintf(stderr, "WARNING: syntax error in '%s' on line %d, skipping.\n", filename, line);
+			fprintf(stderr, "WARNING: syntax error on line %d, skipping.\n", line);
 			continue;
 		}
 		switch (toupper(symchar)) {
@@ -170,7 +335,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 			offset = offsets[2];
 			break;
 		default:
-			fprintf(stderr, "WARNING: unrecognized symbol type '%c' on line %d in '%s', skipping.\n", symchar, line, filename);
+			fprintf(stderr, "WARNING: unrecognized symbol type '%c' on line %d, skipping.\n", symchar, line);
 			continue;
 		}
 		if (!(gettype & symtype)) {
@@ -178,7 +343,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		}
 		address += offset;
 		if (address > maxaddr) {
-			fprintf(stderr, "WARNING: invalid address 0x%x in '%s' on line %d, skipping.\n", address, filename, line);
+			fprintf(stderr, "WARNING: invalid address 0x%x on line %d, skipping.\n", address, line);
 			continue;
 		}
 		list->names[count].address = address;
@@ -187,32 +352,67 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		assert(list->names[count].name);
 		count++;
 	}
+	list->symbols = symbols;
+	list->count = count;
+	return list;
+}
 
-	if (count < symbols) {
-		if (!count) {
+/**
+ * Load symbols of given type and the symbol address addresses from
+ * the given file and add given offsets to the addresses.
+ * Return symbols list or NULL for failure.
+ */
+static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32 maxaddr)
+{
+	symbol_list_t *list;
+	Uint16 magic;
+	FILE *fp;
+
+	if (!(fp = fopen(filename, "r"))) {
+		fprintf(stderr, "ERROR: opening '%s' failed!\n", filename);
+		return NULL;
+	}
+	if (fread(&magic, sizeof(magic), 1, fp) != 1) {
+		fprintf(stderr, "ERROR: reading file '%s' failed.\n", filename);
+		return NULL;
+	}
+
+	if (SDL_SwapBE16(magic) == 0x601A) {
+		fprintf(stderr, "Reading TEXT symbols from program '%s' symbol table...\n", filename);
+		list = symbols_load_binary(fp, SYMTYPE_ALL);
+	} else {
+		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
+		list = symbols_load_ascii(fp, offsets, maxaddr, SYMTYPE_ALL);
+	}
+	if (!list) {
+		fprintf(stderr, "ERROR: no symbols, or reading them from '%s' failed!\n", filename);
+		fclose(fp);
+		return NULL;
+	}
+
+	if (list->count < list->symbols) {
+		if (!list->count) {
 			fprintf(stderr, "ERROR: no valid symbols in '%s', loading failed!\n", filename);
-			free(list->names);
-			free(list);
+			symbol_list_free(list);
 			fclose(fp);
 			return NULL;
 		}
 		/* parsed less than there were "content" lines */
-		list->names = realloc(list->names, count * sizeof(symbol_t));
+		list->names = realloc(list->names, list->count * sizeof(symbol_t));
 		assert(list->names);
 	}
-	list->count = count;
 
 	/* copy name list to address list */
-	list->addresses = malloc(count * sizeof(symbol_t));
+	list->addresses = malloc(list->count * sizeof(symbol_t));
 	assert(list->addresses);
-	memcpy(list->addresses, list->names, count * sizeof(symbol_t));
+	memcpy(list->addresses, list->names, list->count * sizeof(symbol_t));
 
 	/* sort both lists, with different criteria */
-	qsort(list->addresses, count, sizeof(symbol_t), symbols_by_address);
-	qsort(list->names, count, sizeof(symbol_t), symbols_by_name);
+	qsort(list->addresses, list->count, sizeof(symbol_t), symbols_by_address);
+	qsort(list->names, list->count, sizeof(symbol_t), symbols_by_name);
 
 	fclose(fp);
-	fprintf(stderr, "Loaded %d symbols from '%s'.\n", count, filename);
+	fprintf(stderr, "Loaded %d symbols from '%s'.\n", list->count, filename);
 	return list;
 }
 
@@ -588,7 +788,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		}
 	}
 
-	list = Symbols_Load(file, offsets, maxaddr, SYMTYPE_ALL);
+	list = Symbols_Load(file, offsets, maxaddr);
 	if (list) {
 		if (listtype == TYPE_CPU) {
 			Symbols_Free(CpuSymbolsList);
