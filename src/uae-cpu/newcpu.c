@@ -1627,17 +1627,16 @@ static int do_specialties (void)
 	    M68000_AddCycles(4);
 	
 	    /* It is possible one or more ints happen at the same time */
-	    /* We must process them during the same cpu cycle until the special INT flag is set */
+	    /* We must process them during the same cpu cycle then choose the highest priority one */
 	    while (PendingInterruptCount<=0 && PendingInterruptFunction) {
-		/* 1st, we call the interrupt handler */
 		CALL_VAR(PendingInterruptFunction);
+	    }
 		
-		/* Then we check if this handler triggered an interrupt to process */
-	        if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
-		    regs.stopped = 0;
-		    unset_special (SPCFLAG_STOP);
-		    break;
-		}
+	    /* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
+	    if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
+		regs.stopped = 0;
+		unset_special (SPCFLAG_STOP);
+	    }
 #if 0		
 		/* Then we check if this handler triggered an MFP int to process */
 		if (regs.spcflags & SPCFLAG_MFP)
@@ -1654,7 +1653,6 @@ static int do_specialties (void)
 		    }
 		}
 #endif
-	    }
 	}
     }
 
