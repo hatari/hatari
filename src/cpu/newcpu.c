@@ -2829,67 +2829,60 @@ STATIC_INLINE int do_specialties (int cycles)
 		M68000_AddCycles(4);
 
 		/* It is possible one or more ints happen at the same time */
-		/* We must process them during the same cpu cycle until the special INT flag is set */
+		/* We must process them during the same cpu cycle then choose the highest priority one */
 		while (PendingInterruptCount<=0 && PendingInterruptFunction) {
-			/* 1st, we call the interrupt handler */
-			CALL_VAR(PendingInterruptFunction);
+		    CALL_VAR(PendingInterruptFunction);
+		}
 
-			/* Then we check if this handler triggered an interrupt to process */
-			if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
-				regs.stopped = 0;
-				unset_special (SPCFLAG_STOP);
-				break;
-			}
-
-			/* Then we check if this handler triggered an MFP int to process */
-			if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
-				MFP_ProcessIRQ();
-			}
+		/* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
+		if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
+		    regs.stopped = 0;
+		    unset_special (SPCFLAG_STOP);
+		}
 
 #if AMIGA_ONLY
-			if (regs.spcflags & SPCFLAG_COPPER)
-				do_copper ();
+		if (regs.spcflags & SPCFLAG_COPPER)
+			do_copper ();
 #endif
 
-			if (currprefs.cpu_cycle_exact) {
-				ipl_fetch ();
-				if (time_for_interrupt ()) {
-					do_interrupt (regs.ipl, true);
-				}
-			} else {
+		if (currprefs.cpu_cycle_exact) {
+			ipl_fetch ();
+			if (time_for_interrupt ()) {
+				do_interrupt (regs.ipl, true);
+			}
+		} else {
 #if 0
-				if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-					int intr = intlev ();
-					unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-					if (intr > 0 && intr > regs.intmask)
-						do_interrupt (intr, true);
-				}
+		if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+			int intr = intlev ();
+			unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+			if (intr > 0 && intr > regs.intmask)
+				do_interrupt (intr, true);
+		}
 #endif
-			}
-			if ((regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE))) {
-				unset_special (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
-				// SPCFLAG_BRK breaks STOP condition, need to prefetch
-				m68k_resumestopped ();
-				return 1;
-			}
+		}
+		if ((regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE))) {
+			unset_special (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
+			// SPCFLAG_BRK breaks STOP condition, need to prefetch
+			m68k_resumestopped ();
+			return 1;
+		}
 
-			if (currprefs.cpu_idle && currprefs.m68k_speed != 0 && ((regs.spcflags & SPCFLAG_STOP)) == SPCFLAG_STOP) {
-				/* sleep 1ms if STOP-instruction is executed */
-				if (1) {
-					static int sleepcnt, lvpos, zerocnt;
-						if (vpos != lvpos) {
-							sleepcnt--;
+		if (currprefs.cpu_idle && currprefs.m68k_speed != 0 && ((regs.spcflags & SPCFLAG_STOP)) == SPCFLAG_STOP) {
+			/* sleep 1ms if STOP-instruction is executed */
+			if (1) {
+				static int sleepcnt, lvpos, zerocnt;
+					if (vpos != lvpos) {
+						sleepcnt--;
 #ifdef JIT
-						if (pissoff == 0 && currprefs.cachesize && --zerocnt < 0) {
-							sleepcnt = -1;
-							zerocnt = IDLETIME / 4;
-						}
+					if (pissoff == 0 && currprefs.cachesize && --zerocnt < 0) {
+						sleepcnt = -1;
+						zerocnt = IDLETIME / 4;
+					}
 #endif
-						lvpos = vpos;
-						if (sleepcnt < 0) {
-							/*sleepcnt = IDLETIME / 2; */  /* Laurent : badly removed for now */
-							sleep_millis (1);
-						}
+					lvpos = vpos;
+					if (sleepcnt < 0) {
+						/*sleepcnt = IDLETIME / 2; */  /* Laurent : badly removed for now */
+						sleep_millis (1);
 					}
 				}
 			}
@@ -3071,10 +3064,10 @@ static void m68k_run_1 (void)
 		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
 
 		if (r->spcflags) {
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 			if (do_specialties (cpu_cycles / CYCLE_UNIT))
 				return;
 		}
@@ -3127,10 +3120,10 @@ static void m68k_run_1_ce (void)
 		M68000_AddCyclesWithPairing(currcycle * 2 / CYCLE_UNIT);
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
 
 		if (r->spcflags) {
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 			if (do_specialties (0))
 				return;
 		}
@@ -3346,10 +3339,10 @@ static void m68k_run_mmu040 (void)
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
 			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
 				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 			}
 
 			if (regs.spcflags) {
+				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 				if (do_specialties (cpu_cycles / CYCLE_UNIT))
 					return;
 			}
@@ -3459,10 +3452,10 @@ static void m68k_run_2ce (void)
 		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
 
 		if (r->spcflags) {
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 			if (do_specialties (0))
 				return;
 		}
@@ -3536,10 +3529,10 @@ static void m68k_run_2p (void)
 		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
 
 		if (r->spcflags) {
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 			if (do_specialties (cpu_cycles / CYCLE_UNIT))
 				return;
 		}
@@ -3603,10 +3596,10 @@ static void m68k_run_2 (void)
 		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
 			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 		}
 
 		if (r->spcflags) {
+			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 			if (do_specialties (cpu_cycles / CYCLE_UNIT))
 				return;
 		}
