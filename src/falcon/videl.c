@@ -648,6 +648,10 @@ static Uint16 VIDEL_getScreenBpp(void)
  */
 static int VIDEL_getScreenWidth(void)
 {
+	Uint16 hbb, hbe, hdb, hde, vdm, hht;
+	Uint16 cycPerPixel, divider;
+	Sint16 hdb_offset, hde_offset;
+	Sint16 leftBorder, rightBorder;
 	Uint16 bpp = VIDEL_getScreenBpp();
 
 	/* X Size of the Display area */
@@ -669,16 +673,12 @@ static int VIDEL_getScreenWidth(void)
 		return videl.XSize;
 	}
 
-	Uint16 hbb = IoMem_ReadWord(0xff8284) & 0x01ff;
-	Uint16 hbe = IoMem_ReadWord(0xff8286) & 0x01ff;  
-	Uint16 hdb = IoMem_ReadWord(0xff8288) & 0x01ff;
-	Uint16 hde = IoMem_ReadWord(0xff828a) & 0x01ff;
-	Uint16 vdm = IoMem_ReadWord(0xff82c2) & 0xc;
-	Uint16 hht = IoMem_ReadWord(0xff8282) & 0x1ff;
-
-	Uint16 cycPerPixel, divider;
-	Sint16 hdb_offset, hde_offset;
-	Sint16 leftBorder, rightBorder;
+	hbb = IoMem_ReadWord(0xff8284) & 0x01ff;
+	hbe = IoMem_ReadWord(0xff8286) & 0x01ff;
+	hdb = IoMem_ReadWord(0xff8288) & 0x01ff;
+	hde = IoMem_ReadWord(0xff828a) & 0x01ff;
+	vdm = IoMem_ReadWord(0xff82c2) & 0xc;
+	hht = IoMem_ReadWord(0xff8282) & 0x1ff;
 
 	/* Compute cycles per pixel */
 	if (vdm == 0)
@@ -914,8 +914,6 @@ void VIDEL_ZoomModeChanged(void)
 
 bool VIDEL_renderScreen(void)
 {
-	videl.videoBaseAddr = VIDEL_getVideoramAddress(); // Todo: to be removed when all code is in Videl
-
 	/* Atari screen infos */
 	int vw	 = VIDEL_getScreenWidth();
 	int vh	 = VIDEL_getScreenHeight();
@@ -923,8 +921,11 @@ bool VIDEL_renderScreen(void)
 
 	int lineoffset = IoMem_ReadWord(0xff820e) & 0x01ff; /* 9 bits */
 	int linewidth = IoMem_ReadWord(0xff8210) & 0x03ff;  /* 10 bits */
+	int nextline;
 
 	bool change = false;
+
+	videl.videoBaseAddr = VIDEL_getVideoramAddress(); // Todo: to be removed when all code is in Videl
 
 	if (vw > 0 && vw != videl.save_scrWidth) {
 		LOG_TRACE(TRACE_VIDEL, "Videl : width change from %d to %d\n", videl.save_scrWidth, vw);
@@ -965,7 +966,7 @@ bool VIDEL_renderScreen(void)
 	   for me at the moment (and my experiments on the Falcon don't help
 	   me).
 	*/
-	int nextline = linewidth + lineoffset;
+	nextline = linewidth + lineoffset;
 
 	if ((vw<32) || (vh<32))
 		return false;
@@ -1124,10 +1125,13 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	int h, w, j;
 
 	Uint16 *fvram = (Uint16 *) Atari2HostAddr(videl.videoBaseAddr);
+	Uint16 *fvram_line;
 	Uint8 *hvram = HostScreen_getVideoramAddress();
 	SDL_PixelFormat *scrfmt = HostScreen_getFormat();
 
 	Uint16 lowBorderSize, rightBorderSize;
+	int scrwidth, scrheight;
+	int vw_clip, vh_clip;
 
 	int hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
 
@@ -1149,10 +1153,10 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	}
 
 	/* Clip to SDL_Surface dimensions */
-	int scrwidth = HostScreen_getWidth();
-	int scrheight = HostScreen_getHeight();
-	int vw_clip = vw;
-	int vh_clip = vh;
+	scrwidth = HostScreen_getWidth();
+	scrheight = HostScreen_getHeight();
+	vw_clip = vw;
+	vh_clip = vh;
 	if (vw>scrwidth) vw_clip = scrwidth;
 	if (vh>scrheight) vh_clip = scrheight;	
 
@@ -1198,7 +1202,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	hvram += ((scrheight-vh_clip)>>1)*scrpitch;
 	hvram += ((scrwidth-vw_clip)>>1)*HostScreen_getBpp();
 
-	Uint16 *fvram_line = fvram;
+	fvram_line = fvram;
 	scrwidth = videl.leftBorderSize + vw + videl.rightBorderSize;
 
 	/* render the graphic area */
@@ -1438,7 +1442,9 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 				/* Render the graphical area */
 				for (h = 0; h < vh; h++) {
 					Uint16 *hvram_column = hvram_line;
-
+#if SDL_BYTEORDER != SDL_BIG_ENDIAN
+					Uint16 *fvram_column;
+#endif
 					/* Left border first */
 					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), videl.leftBorderSize);
 					hvram_column += videl.leftBorderSize;
@@ -1450,7 +1456,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 					memcpy(hvram_column, fvram_line, vw<<1);
 					hvram_column += vw<<1;
 #else
-					Uint16 *fvram_column = fvram_line;
+					fvram_column = fvram_line;
 					/* Graphical area */
 					for (w = 0; w < vw; w++)
 						*hvram_column ++ = SDL_SwapBE16(*fvram_column++);
@@ -1524,6 +1530,9 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 
 	int coefx = 1;
 	int coefy = 1;
+	int scrpitch, scrwidth, scrheight, scrbpp, hscrolloffset;
+	Uint8 *hvram;
+	SDL_PixelFormat *scrfmt;
 
 	/* If emulated computer is the TT, we use the same rendering for display, but without the borders */
 	if (ConfigureParams.System.nMachineType == MACHINE_TT) {
@@ -1539,14 +1548,14 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 	}
 
 	/* Host screen infos */
-	int scrpitch = HostScreen_getPitch();
-	int scrwidth = HostScreen_getWidth();
-	int scrheight = HostScreen_getHeight();
-	int scrbpp = HostScreen_getBpp();
-	SDL_PixelFormat *scrfmt = HostScreen_getFormat();
-	Uint8 *hvram = (Uint8 *) HostScreen_getVideoramAddress();
+	scrpitch = HostScreen_getPitch();
+	scrwidth = HostScreen_getWidth();
+	scrheight = HostScreen_getHeight();
+	scrbpp = HostScreen_getBpp();
+	scrfmt = HostScreen_getFormat();
+	hvram = (Uint8 *) HostScreen_getVideoramAddress();
 
-	int hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
+	hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
 
 	/* Horizontal scroll register set? */
 	if (hscrolloffset) {

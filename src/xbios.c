@@ -131,12 +131,14 @@ static bool XBios_Devconnect(Uint32 Params)
 static bool XBios_Rsconf(Uint32 Params)
 {
 	Sint16 Baud,Ctrl,Ucr;
+#if ENABLE_TRACING
+	Sint16 Rsr,Tsr,Scr;
+#endif
 
 	Baud = STMemory_ReadWord(Params);
 	Ctrl = STMemory_ReadWord(Params+SIZE_WORD);
 	Ucr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
 #if ENABLE_TRACING
-	Sint16 Rsr,Tsr,Scr;
 	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);

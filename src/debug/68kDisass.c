@@ -175,11 +175,15 @@ static void			Disass68kLoadStructInfo(const char *filename)
 	char	*nextLine;
 	char	*line;
 	char	*fbuf = NULL;
-	int		lineCount = Disass68kLoadTextFile(filename, &fbuf);
-	if(!lineCount) return;
+	int	lineCount = Disass68kLoadTextFile(filename, &fbuf);
 	disStructEntry	*se = NULL;
-	disStructEntries = realloc(disStructEntries, sizeof(disStructEntry) * (disStructCounts + lineCount));
+
+	if(!lineCount) return;
+
+	disStructEntries = realloc(disStructEntries, sizeof(disStructEntry)
+	                           * (disStructCounts + lineCount));
 	if(!disStructEntries) { free(fbuf); return; }
+
 	line = fbuf;
 
 	for(i=0; i<lineCount; line = nextLine, ++i)
@@ -258,8 +262,15 @@ static void			Disass68kLoadSymbols(const char *filename)
 
 	for(i=0; i<lineCount; line = nextLine, ++i)
 	{
-		// strip spaces at the end of the line, remember the ptr to the next line
+		long	addr;
 		char	*sp = line;
+		char	*parameterPtr[10];
+		int	parameterCount = 0;
+		char	*str;
+		long	size = 0;
+		int	type = 0;
+
+		// strip spaces at the end of the line, remember the ptr to the next line
 		while(*sp++)
 			;
 		nextLine = sp--;
@@ -270,14 +281,11 @@ static void			Disass68kLoadSymbols(const char *filename)
 		if(line[0] == 0)
 			continue;
 
-		long	addr;
 		sscanf(line, "%lx",&addr);
 		disSymbolEntries[disSymbolCounts].addr = addr;
 		disSymbolEntries[disSymbolCounts].structIndex = -1;
 
-		char	*parameterPtr[10];
-		int		parameterCount = 0;
-		char	*str = line;
+		str = line;
 		do {
 			str = strchr(str, ',');
 			if(str)
@@ -295,8 +303,6 @@ static void			Disass68kLoadSymbols(const char *filename)
 		if(parameterCount != 3 && parameterCount != 4)
 			continue;	// ignore line
 
-		long	size = 0;
-		int		type = 0;
 		if(strlen(parameterPtr[0]) == 1)
 		{
 			switch(parameterPtr[0][0])
@@ -364,8 +370,10 @@ static Disass68kDataType	Disass68kType(long addr, char *addressLabel, char *comm
 	commentBuffer[0] = 0;
 	for(i=0; i<disSymbolCounts; ++i)
 	{
+		const disStructEntry	*se;
 		const disSymbolEntry	*dse = &disSymbolEntries[i];
 		int		offset = addr - dse->addr;
+
 		if(offset < 0 || offset >= dse->count * dse->size)
 			continue;
 
@@ -384,7 +392,7 @@ static Disass68kDataType	Disass68kType(long addr, char *addressLabel, char *comm
 		}
 
 		*count = 1;
-		const disStructEntry	*se = &disStructEntries[dse->structIndex];
+		se = &disStructEntries[dse->structIndex];
 		for(j=0; j<se->count; ++j)
 		{
 			const disStructElement	*e = &se->elements[j];
@@ -416,18 +424,20 @@ static const char	*Disass68kSymbolName(long addr, int size)
 
 	for(i=0; i<disSymbolCounts; ++i)
 	{
+		static char	symbolName[128];
 		const disSymbolEntry	*dse = &disSymbolEntries[i];
-		int		offset = addr - dse->addr;
+		int	offset = addr - dse->addr;
+		int	reminder;
+
 		if(offset < 0 || offset >= dse->count * dse->size)
 			continue;
 
 		if(dse->name[0] == 0)
 			return NULL;
 
-		int		reminder = offset % dse->size;
+		reminder = offset % dse->size;
 		offset /= dse->size;
 
-		static char		symbolName[128];
 		strcpy(symbolName, dse->name);
 		if(offset)
 			sprintf(symbolName+strlen(symbolName), "+%d*%d", dse->size, offset);
@@ -575,9 +585,9 @@ static const char *Disass68kSpecialRegister(int reg)
 
 	if(options & doptRegisterSmall)
 	{
+		char	*bp;
 		strcpy(buf, sp);
-		char	*bp = buf;
-		for(; *bp; ++bp)
+		for (bp = buf; *bp; ++bp)
 			*bp = tolower(*bp);
 		return buf;
 	}
@@ -620,6 +630,9 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 	int				reg = ea & 7;
 	const char		*sp;
 	long			val;
+	char	regName[3];
+	signed long	pcoffset;
+
 	val = 0;
 
 	disassbuf[0] = 0;
@@ -701,7 +714,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 		xn = (eWord1 >> 12) & 0x0F;				// Register D0..D7/A0..A7
 		c = ((eWord1 >> 11) & 1) ? 'l' : 'w';	// Word/Long-Word Index Size 0 = Sign-Extended Word 1 = Long Word
 		scale = (eWord1 >> 9) & 3;				// Scale Factor 00 = 1 01 = 2 10 = 4 11 = 8
-		char	regName[3];
+
 		if(ea == 0x3B)
 		{
 			sp = Disass68kSpecialRegister(REG_PC);
@@ -713,6 +726,8 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 
 		if((eWord1 & 0x0100) == 0)
 		{
+			const char	*numStr;
+
 			// BRIEF EXTENSION WORD FORMAT
 			if(ea == 0x3B)
 			{
@@ -725,7 +740,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 
 			// Address Register Indirect with Index (8-Bit Displacement) Mode
 			// (d8 ,An, Xn.SIZE*SCALE)
-			const char	*numStr = Disass68kNumber(eWord1 & 0xFF);
+			numStr = Disass68kNumber(eWord1 & 0xFF);
 			if(numStr[0] == '0' && numStr[1] == 0)
 				numStr = "";
 
@@ -771,11 +786,12 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 		} else {
 			// FULL EXTENSION WORD FORMAT
 
-			int		bs = (eWord1 >> 7) & 1;		// Base Register Suppress 0 = Base Register Added 1 = Base Register Suppressed
-			int		is = (eWord1 >> 6) & 1;		// Index Suppress 0 = Evaluate and Add Index Operand 1 = Suppress Index Operand
-			int		bdSize = (eWord1 >> 4) & 3;	// Base Displacement Size 00 = Reserved 01 = Null Displacement 10 = Word Displacement 11 = Long Displacement
-			int		iis = eWord1 & 7;			// Index/Indirect Selection Indirect and Indexing Operand Determined in Conjunction with Bit 6, Index Suppress
+			int	bs = (eWord1 >> 7) & 1;		// Base Register Suppress 0 = Base Register Added 1 = Base Register Suppressed
+			int	is = (eWord1 >> 6) & 1;		// Index Suppress 0 = Evaluate and Add Index Operand 1 = Suppress Index Operand
+			int	bdSize = (eWord1 >> 4) & 3;	// Base Displacement Size 00 = Reserved 01 = Null Displacement 10 = Word Displacement 11 = Long Displacement
+			int	iis = eWord1 & 7;		// Index/Indirect Selection Indirect and Indexing Operand Determined in Conjunction with Bit 6, Index Suppress
 			bool	prefixComma;
+			long	bd, od;
 
 			// reserved, has to be 0
 			if((eWord1 & 8) != 0 || bdSize == 0 || (is && iis > 3) || iis == 4)
@@ -794,7 +810,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 					break;
 			}
 
-			long	bd = 0;
+			bd = 0;
 			switch(bdSize)
 			{
 			case 3: 
@@ -864,7 +880,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 				strcat(disassbuf, "]");
 				prefixComma = true;
 			}
-			long od = 0;
+			od = 0;
 			switch(iis & 3)
 			{
 			case 3:
@@ -1040,7 +1056,7 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 	case 0x0102:	// PC relative jump, like for BRA and friends
 		if((allowedEAs & EA_PCDisplacement) != EA_PCDisplacement)
 			break;
-		signed long	pcoffset = 0;
+		pcoffset = 0;
 		switch(size)
 		{
 		case 1: pcoffset = (signed char)parameterValue;
@@ -1698,157 +1714,168 @@ static const OpcodeTableStruct	OpcodeTable[] = {
 	{ MC68040|MC68060|MC_FPU, {0xffc0, 0xf100|(FPU_COPROC_ID<<9)}, {0}, {ofEa}, "FSAVE", {EA_Dn|EA_An|EA_piAn|EA_Immed} },
 	{ MC68040|MC68060|MC_FPU, {0xffc0, 0xf140|(FPU_COPROC_ID<<9)}, {0}, {ofEa}, "FRESTORE", {EA_Dn|EA_An|EA_piAn|EA_Immed} },
 
-	{ }
+	{ 0 }
 };
 
 static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *operandBuffer, char *commentBuffer)
 {
 	long	baseAddr = addr;
 	int		val;
+	int		i;
+	int		count = 0;
+	char	addressLabel[256];
+	char	cmtBuffer[256];
+	Disass68kDataType	type;
+	int	index;
+	long	opcodeAddr;
+
 	labelBuffer[0] = 0;
 	opcodeBuffer[0] = 0;
 	operandBuffer[0] = 0;
 	commentBuffer[0] = 0;
-	int		i;
 
-	int		count = 0;
-	char	addressLabel[256];
-	char	cmtBuffer[256];
-	Disass68kDataType	type = Disass68kType(baseAddr, addressLabel, cmtBuffer, &count);
+	type = Disass68kType(baseAddr, addressLabel, cmtBuffer, &count);
 	if(addressLabel[0])
 		sprintf(labelBuffer, "%s:", addressLabel);
 	sprintf(commentBuffer, "%s", cmtBuffer);
 	switch(type)
 	{
-	case dtByte:if(count > 8)
-					count = 8;
-				strcpy(opcodeBuffer,"DC.B");
-				for(i=0; i<count; ++i)
-				{
-					if((i & 7) > 0)
-						strcat(operandBuffer, ",");
-					char	hbuf[16];
-					unsigned short	val = Disass68kGetWord(addr+(i & ~1));
-					if(i & 1)
-						val &= 0xFF;
-					else
-						val = val >> 8;
-					sprintf(hbuf,"$%2.2x", val);
-					strcat(operandBuffer, hbuf);
-				}
-				return count;
+	case dtByte:
+		if(count > 8)
+			count = 8;
+		strcpy(opcodeBuffer,"DC.B");
+		for (i = 0; i < count; ++i)
+		{
+			char	hbuf[16];
+			unsigned short	val;
 
-	case dtWord:if(count > 4)
-					count = 4;
-				strcpy(opcodeBuffer,"DC.W");
-				for(i=0; i<count; ++i)
-				{
-					if((i & 3) > 0)
-						strcat(operandBuffer, ",");
-					char	hbuf[16];
-					sprintf(hbuf,"$%4.4x", Disass68kGetWord(addr+i*2));
-					strcat(operandBuffer, hbuf);
-				}
-				return count * 2;
+			if((i & 7) > 0)
+				strcat(operandBuffer, ",");
+			val = Disass68kGetWord(addr+(i & ~1));
+			if(i & 1)
+				val &= 0xFF;
+			else
+				val = val >> 8;
+			sprintf(hbuf,"$%2.2x", val);
+			strcat(operandBuffer, hbuf);
+		}
+		return count;
 
-	case dtLong:if(count > 2)
-					count = 2;
-				strcpy(opcodeBuffer,"DC.L");
-				for(i=0; i<count; ++i)
-				{
-					if((i & 1) > 0)
-						strcat(operandBuffer, ",");
-					char	hbuf[16];
-					sprintf(hbuf,"$%8.8x", (Disass68kGetWord(addr+i*4) << 16) | Disass68kGetWord(addr+i*4+2));
-					strcat(operandBuffer, hbuf);
-				}
-				return count * 4;
+	case dtWord:
+		if(count > 4)
+			count = 4;
+		strcpy(opcodeBuffer,"DC.W");
+		for (i = 0; i < count; ++i)
+		{
+			char	hbuf[16];
+			if((i & 3) > 0)
+				strcat(operandBuffer, ",");
+			sprintf(hbuf,"$%4.4x", Disass68kGetWord(addr+i*2));
+			strcat(operandBuffer, hbuf);
+		}
+		return count * 2;
+
+	case dtLong:
+		if(count > 2)
+			count = 2;
+		strcpy(opcodeBuffer,"DC.L");
+		for (i = 0; i < count; ++i)
+		{
+			char	hbuf[16];
+			if((i & 1) > 0)
+				strcat(operandBuffer, ",");
+			sprintf(hbuf,"$%8.8x", (Disass68kGetWord(addr+i*4) << 16) | Disass68kGetWord(addr+i*4+2));
+			strcat(operandBuffer, hbuf);
+		}
+		return count * 4;
 
 	case dtStringArray:
-				{
-				strcpy(opcodeBuffer,"DC.B");
-				strcat(operandBuffer, "'");
-				char	*sp = operandBuffer + strlen(operandBuffer);
-				for(i=0; i < count; ++i)
-				{
-					unsigned short	val = Disass68kGetWord(addr+(i & ~1));
-					if(i & 1)
-						val &= 0xFF;
-					else
-						val = val >> 8;
-					if(val == 0)
-						break;
-					switch(val)
-					{
-					case 9: *sp++ = '\\'; *sp++ = 't'; break;
-					case 10: *sp++ = '\\'; *sp++ = 'n'; break;
-					case 13: *sp++ = '\\'; *sp++ = 'r'; break;
-					default:
-						if(val >= 0x20 && val <= 0x7E)
-							*sp++ = val;
-					}
-				}
-				*sp = 0;
-				strcat(sp, "'");
-				return count;
-				}
+	{
+		char	*sp;
+		strcpy(opcodeBuffer,"DC.B");
+		strcat(operandBuffer, "'");
+		sp = operandBuffer + strlen(operandBuffer);
+		for (i = 0; i < count; ++i)
+		{
+			unsigned short	val = Disass68kGetWord(addr+(i & ~1));
+			if(i & 1)
+				val &= 0xFF;
+			else
+				val = val >> 8;
+			if(val == 0)
+				break;
+			switch(val)
+			{
+			case 9: *sp++ = '\\'; *sp++ = 't'; break;
+			case 10: *sp++ = '\\'; *sp++ = 'n'; break;
+			case 13: *sp++ = '\\'; *sp++ = 'r'; break;
+			default:
+				if(val >= 0x20 && val <= 0x7E)
+					*sp++ = val;
+			}
+		}
+		*sp = 0;
+		strcat(sp, "'");
+		return count;
+	}
 
 	case dtASCString:
+	{
+		int	count = 1;
+		unsigned short	val = Disass68kGetWord(addr+0);
+		strcpy(opcodeBuffer,"DC.B");
+		if((val >> 8) == 0)
+		{
+			strcat(operandBuffer, "0");
+		} else {
+			char *sp;
+			strcat(operandBuffer, "'");
+			sp = operandBuffer + strlen(operandBuffer);
+			for(i=0; ; ++i)
+			{
+				unsigned short	val = Disass68kGetWord(addr+(i & ~1));
+				if(i & 1)
+					val &= 0xFF;
+				else
+					val = val >> 8;
+				if(val == 0)
+					break;
+				switch(val)
 				{
-				int	count = 1;
-				unsigned short	val = Disass68kGetWord(addr+0);
-				strcpy(opcodeBuffer,"DC.B");
-				if((val >> 8) == 0)
-				{
-					strcat(operandBuffer, "0");
-				} else {
-					strcat(operandBuffer, "'");
-					char	*sp = operandBuffer + strlen(operandBuffer);
-					for(i=0; ; ++i)
-					{
-						unsigned short	val = Disass68kGetWord(addr+(i & ~1));
-						if(i & 1)
-							val &= 0xFF;
-						else
-							val = val >> 8;
-						if(val == 0)
-							break;
-						switch(val)
-						{
-						case 9: *sp++ = '\\'; *sp++ = 't'; break;
-						case 10: *sp++ = '\\'; *sp++ = 'n'; break;
-						case 13: *sp++ = '\\'; *sp++ = 'r'; break;
-						default:
-							if(val >= 0x20 && val <= 0x7E)
-								*sp++ = val;
-						}
-						++count;
-					}
-					*sp = 0;
-					strcat(sp, "',0");
+				case 9: *sp++ = '\\'; *sp++ = 't'; break;
+				case 10: *sp++ = '\\'; *sp++ = 'n'; break;
+				case 13: *sp++ = '\\'; *sp++ = 'r'; break;
+				default:
+					if(val >= 0x20 && val <= 0x7E)
+						*sp++ = val;
 				}
-				return (count + 1) & ~1;
-				}
+				++count;
+			}
+			*sp = 0;
+			strcat(sp, "',0");
+		}
+		return (count + 1) & ~1;
+	}
 
 	case dtPointer:
 	case dtFunctionPointer:
-				{
-				const char	*sp;
-				val = (Disass68kGetWord(addr) << 16) | Disass68kGetWord(addr+2);
-				sp = Disass68kSymbolName(val, 2);
-				strcpy(opcodeBuffer,"DC.L");
-				if(sp)
-					sprintf(operandBuffer,"%s", sp);
-				else
-					sprintf(operandBuffer,"$%6.6x", val);
-				return 4;
-				}
+	{
+		const char	*sp;
+		val = (Disass68kGetWord(addr) << 16) | Disass68kGetWord(addr+2);
+		sp = Disass68kSymbolName(val, 2);
+		strcpy(opcodeBuffer,"DC.L");
+		if(sp)
+			sprintf(operandBuffer,"%s", sp);
+		else
+			sprintf(operandBuffer,"$%6.6x", val);
+		return 4;
+	}
 
 	default:	break;
 	}
 
-	int		index = 0;
-	long	opcodeAddr = addr;
+	index = 0;
+	opcodeAddr = addr;
 more:
 	addr = opcodeAddr;
 
@@ -1861,19 +1888,27 @@ more:
 
 	while(1)
 	{
+		unsigned short	opcode[5];
+		unsigned int	i;
 		OpcodeTableStruct	*ots = &OpcodeTable[index++];
+		int	size;
+		char	sizeChar = 0;
+		char	*dbuf;
+		int	ea;
+
 		if(ots->opcodeName == NULL)
 			break;
 		if((ots->cpuMask & optionCPUTypeMask) == 0)	// CPU doesn't match?
 			continue;
 
 		// search for the opcode plus up to 2 extension words
-		unsigned short	opcode[5] = {};
-		unsigned int	i;
 		for(i=0; i<5; ++i)
 		{
 			if(!ots->opcodeMask[i*2])
+			{
+				opcode[i] = 0;
 				break;
+			}
 			opcode[i] = Disass68kGetWord(addr);
 			if(((ots->opcodeMask[i*2] & 0xFFFF) & opcode[i]) != ots->opcodeMask[i*2+1])
 				goto more;
@@ -1881,8 +1916,7 @@ more:
 		}
 
 		// find out the size of the opcode operand
-		int		size = ots->operationSize[0];
-		char	sizeChar = 0;
+		size = ots->operationSize[0];
 		if(size < 0)	// custom size?
 		{
 			int	opcodeOffset = ots->operationSize[1] >> 4;
@@ -1919,7 +1953,7 @@ more:
 		}
 
 		// copy the opcode plus a necessary TAB for the operand
-		char	*dbuf = opcodeBuffer;
+		dbuf = opcodeBuffer;
 		for(i=0; ots->opcodeName[i]; ++i)
 		{
 			char	c = ots->opcodeName[i];
@@ -1958,10 +1992,10 @@ more:
 				{
 					if(options & doptOpcodesSmall)
 					{
+						char	*bp;
 						strcpy(buf, sp);
 						sp = buf;
-						char	*bp = buf;
-						for(; *bp; ++bp)
+						for (bp = buf; *bp; ++bp)
 							*bp = tolower(*bp);
 					}
 					strcpy(dbuf, sp);
@@ -1979,10 +2013,12 @@ more:
 		*dbuf = 0;
 
 		// Parse the EAs for all operands
-		int	ea = opcode[0] & 0x3F;
+		ea = opcode[0] & 0x3F;
 		dbuf = operandBuffer;
 		for(i=0; i<(sizeof(ots->op)/sizeof(ots->op[0])); ++i)
 		{
+			int reg;
+
 			switch(ots->op[i])
 			{
 			case ofNone:		// nothing
@@ -2172,7 +2208,7 @@ more:
 					char	regFP2 = options & doptRegisterSmall ? 'p' : 'P';
 					dbuf = Disass68kEA(dbuf, commentBuffer, &addr, opcodeAddr, 0x0100, 1, EA_ImmedParameter, opcode[1] & 0x7F, ots->disassFlag);
 					if(!dbuf) goto more;
-					int	reg = (opcode[1] >> 7) & 7;
+					reg = (opcode[1] >> 7) & 7;
 					*dbuf++ = ',';
 					*dbuf++ = regFP1; *dbuf++ = regFP2; *dbuf++ = '0'+reg;
 					*dbuf = 0;
@@ -2341,7 +2377,6 @@ more:
 			case ofLineA:
 					{
 					int	lineAVal = opcode[0] & 0xFFF;
-					dbuf = Disass68kEA(dbuf, commentBuffer, &addr, opcodeAddr, 0x0100, 2, EA_ImmedParameter, lineAVal, ots->disassFlag);
 					const char	*lineAStr[16] = { "Line-A Initialization",
 												  "Put pixel",
 												  "Get pixel",
@@ -2359,6 +2394,7 @@ more:
 												  "Copy raster form",
 												  "Seedfill"
 												  };
+					dbuf = Disass68kEA(dbuf, commentBuffer, &addr, opcodeAddr, 0x0100, 2, EA_ImmedParameter, lineAVal, ots->disassFlag);
 					if(lineAVal < 16)
 						strcat(commentBuffer, lineAStr[lineAVal]);
 					}
@@ -2405,7 +2441,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		isInit = true;
 	}
 
-    while (cnt-- > 0) {
+	while (cnt-- > 0) {
 		const int	addrWidth = 6;		// 6 on an ST, 8 on a TT
 		char	lineBuffer[1024];
 
@@ -2415,16 +2451,18 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		char	opcodeBuffer[64];
 		char	operandBuffer[256];
 		char	commentBuffer[256];
-		int	len = Disass68k(addr, labelBuffer, opcodeBuffer, operandBuffer, commentBuffer);
+		int	plen, len, j;
+
+		len = Disass68k(addr, labelBuffer, opcodeBuffer, operandBuffer, commentBuffer);
 		if(!len) break;
 
 		sprintf(addressBuffer, "$%*.*x :", addrWidth,addrWidth, addr);
 
 		hexdumpBuffer[0] = 0;
-		int	plen = len;
+		plen = len;
 		if(plen > 80 && (!strncmp(opcodeBuffer, "DC.", 3) || !strncmp(opcodeBuffer, "dc.", 3)))
 			plen = ((optionPosLabel - optionPosHexdump) / 5) * 2;
-		int j;
+
 		for(j=0; j<plen; j += 2)
 		{
 			if(j > 0)

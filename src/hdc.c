@@ -859,12 +859,14 @@ short int HDC_GetSectorCount(void)
  */
 void HDC_WriteCommandPacket(void)
 {
+	unsigned char b;
+
 	/* is HDC emulation enabled? */
 	if (!bAcsiEmuOn)
 		return;
 
 	/* command byte sent */
-	unsigned char b = IoMem_ReadByte(0xff8605);
+	b = IoMem_ReadByte(0xff8605);
 
 	/* Extract target and extended mode early, read acsi opcode */
 	if (HDCCommand.readCount == 0)
