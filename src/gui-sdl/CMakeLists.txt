@@ -1,7 +1,9 @@
 
 include_directories(. ../.. ../debug ../includes ${SDL_INCLUDE_DIR}) 
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-write-strings")
+if(CMAKE_COMPILER_IS_GNUCC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-write-strings")
+endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_library(GuiSdl
 	dlgAbout.c dlgAlert.c dlgDevice.c dlgFileSelect.c dlgFloppy.c
