@@ -237,25 +237,29 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 {
 	Uint32 textlen, datalen, bsslen, start, tablesize, tabletype;
 	prg_section_t sections[3];
-	int offset;
+	int offset, reads = 0;
 
 	/* get TEXT, DATA & BSS section sizes */
-	fread(&textlen, sizeof(textlen), 1, fp);
+	reads += fread(&textlen, sizeof(textlen), 1, fp);
 	textlen = SDL_SwapBE32(textlen);
-	fread(&datalen, sizeof(datalen), 1, fp);
+	reads += fread(&datalen, sizeof(datalen), 1, fp);
 	datalen = SDL_SwapBE32(datalen);
-	fread(&bsslen, sizeof(bsslen), 1, fp);
+	reads += fread(&bsslen, sizeof(bsslen), 1, fp);
 	bsslen = SDL_SwapBE32(bsslen);
 
-	/* get symbol table size and type */
-	fread(&tablesize, sizeof(tablesize), 1, fp);
+	/* get symbol table size & type and check that all reads succeeded */
+	reads += fread(&tablesize, sizeof(tablesize), 1, fp);
 	tablesize = SDL_SwapBE32(tablesize);
 	if (!tablesize) {
 		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
-	fread(&tabletype, sizeof(tabletype), 1, fp);
+	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
 	tabletype = SDL_SwapBE32(tabletype);
+	if (reads != 5) {
+		fprintf(stderr, "ERROR: program header reading failed!\n");
+		return NULL;
+	}
 
 	/* go to start of symbol table */
 	offset = 0x1C + textlen + datalen;

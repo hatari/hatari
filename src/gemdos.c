@@ -474,7 +474,7 @@ static void GemDOS_UpdateLastProgram(int Handle)
 	fp = FileHandles[Handle].FileHandle;
 	oldpos = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	fread(&magic, sizeof(magic), 1, fp);
+	(void)fread(&magic, sizeof(magic), 1, fp);
 	fseek(fp, oldpos, SEEK_SET);
 	if (SDL_SwapBE16(magic) != 0x601A)
 		return;
