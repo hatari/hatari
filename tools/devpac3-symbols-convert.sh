@@ -30,7 +30,16 @@ if [ \! -f $1 ]; then
 fi
 
 # parse symbol information at the end of the file
-awk '/^[0-9A-F]+  [BDT]  R  / { print $1, $2, $4 }' $1 | sort
+awk '
+/^[0-9A-F]+  [BDT]  R  / { print $1, $2, $4; next }
+/^[0-9A-F]+  F[DEF].R  / {
+	if ($2 == "FD.R") type = "D";
+	else if ($2 == "FE.R") type = "B";
+	else if ($2 == "FF.R") type = "T";
+	print $1, type, $3;
+	next
+}
+' $1 | sort
 
 # parse code listing
 # - has problem that in Devpac output the offsets in
