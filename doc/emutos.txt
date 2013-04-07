@@ -581,6 +581,7 @@ Demos:
 - Blue Period (by Paradox)
 - CD-player (by Light)
 - Cernit Trandafir (by DHS)
+- Circus BackSTage (by BlaBLa)
 - Core Flakes (by New Core)
 - Devotion (by Excellence in Art)
 - Dynamite (by Unit 17)
