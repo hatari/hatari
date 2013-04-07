@@ -11,6 +11,7 @@
 const char Profiledsp_fileid[] = "Hatari profiledsp.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "main.h"
 #include "configuration.h"
 #include "clocks_timings.h"
@@ -200,7 +201,7 @@ void Profile_DspShowCycles(int show)
 		addr = *sort_arr;
 		count = data[addr].cycles;
 		percentage = 100.0*count/dsp_profile.ram.counters.cycles;
-		printf("0x%04x\t%.2f%%\t%lld%s\n", addr, percentage, count,
+		printf("0x%04x\t%.2f%%\t%"PRIu64"%s\n", addr, percentage, count,
 		       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
 	}
 	printf("%d DSP addresses listed.\n", show);
@@ -254,7 +255,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 			addr = *sort_arr;
 			count = data[addr].count;
 			percentage = 100.0*count/dsp_profile.ram.counters.count;
-			printf("0x%04x\t%.2f%%\t%lld%s\n",
+			printf("0x%04x\t%.2f%%\t%"PRIu64"%s\n",
 			       addr, percentage, count,
 			       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
 		}
@@ -279,7 +280,7 @@ void Profile_DspShowCounts(int show, bool only_symbols)
 		}
 		count = data[addr].count;
 		percentage = 100.0*count/dsp_profile.ram.counters.count;
-		printf("0x%04x\t%.2f%%\t%lld\t%s%s\n",
+		printf("0x%04x\t%.2f%%\t%"PRIu64"\t%s%s\n",
 		       addr, percentage, count, name,
 		       count == MAX_DSP_PROFILE_VALUE ? " (OVERFLOW)" : "");
 

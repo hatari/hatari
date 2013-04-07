@@ -12,6 +12,7 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <assert.h>
+#include <inttypes.h>
 #include "main.h"
 #include "version.h"
 #include "debugui.h"
@@ -67,10 +68,11 @@ static bool output_counter_info(FILE *fp, counters_t *counter)
 	/* number of calls needs to be first and rest must be in the same order as
 	 * they're in the profile disassembly (count of instructions, etc...).
 	 */
-	fprintf(fp, " %lld/%lld/%lld", counter->calls, counter->count, counter->cycles);
+	fprintf(fp, " %"PRIu64"/%"PRIu64"/%"PRIu64"",
+		counter->calls, counter->count, counter->cycles);
 	if (counter->misses) {
 		/* these are only with specific WinUAE CPU core */
-		fprintf(fp, "/%lld", counter->misses);
+		fprintf(fp, "/%"PRIu64"", counter->misses);
 	}
 	return true;
 }
@@ -99,7 +101,7 @@ static void output_caller_info(FILE *fp, caller_t *info, Uint32 *typeaddr)
 	if (output_counter_info(fp, &(info->all))) {
 		output_counter_info(fp, &(info->own));
 		if (info->calls != info->own.calls) {
-			fprintf(stderr, "WARNING: mismatch between function 0x%x call count %d and own call cost %lld!\n",
+			fprintf(stderr, "WARNING: mismatch between function 0x%x call count %d and own call cost %"PRIu64"!\n",
 			       info->addr, info->calls, info->own.calls);
 		}
 	}

@@ -11,6 +11,7 @@
 const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "main.h"
 #include "configuration.h"
 #include "clocks_timings.h"
@@ -158,17 +159,17 @@ static void show_cpu_area_stats(profile_area_t *area)
 	fprintf(stderr, "- active instruction addresses:\n  %d (%.2f%% of all)\n",
 		area->active,
 		100.0 * area->active / cpu_profile.active);
-	fprintf(stderr, "- executed instructions:\n  %llu (%.2f%% of all)\n",
+	fprintf(stderr, "- executed instructions:\n  %"PRIu64" (%.2f%% of all)\n",
 		area->counters.count,
 		100.0 * area->counters.count / cpu_profile.all.count);
 #if ENABLE_WINUAE_CPU
 	if (cpu_profile.all.misses) {	/* CPU cache in use? */
-		fprintf(stderr, "- instruction cache misses:\n  %llu (%.2f%% of all)\n",
+		fprintf(stderr, "- instruction cache misses:\n  %"PRIu64" (%.2f%% of all)\n",
 			area->counters.misses,
 			100.0 * area->counters.misses / cpu_profile.all.misses);
 	}
 #endif
-	fprintf(stderr, "- used cycles:\n  %llu (%.2f%% of all)\n  = %.5fs\n",
+	fprintf(stderr, "- used cycles:\n  %"PRIu64" (%.2f%% of all)\n  = %.5fs\n",
 		area->counters.cycles,
 		100.0 * area->counters.cycles / cpu_profile.all.cycles,
 		(double)area->counters.cycles / MachineClocks.CPU_Freq);
