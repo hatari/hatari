@@ -473,21 +473,31 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 /**
  * If call tracking is enabled (there are symbols), collect
  * information about subroutine and other calls, and their costs.
+ * 
+ * Like with profile data, caller info checks need to be for previous
+ * instruction, that's why "pc" argument for this function actually
+ * needs to be previous PC.
  */
-static void collect_calls(Uint16 pc, Uint16 prev_pc, counters_t *counters)
+static void collect_calls(Uint16 pc, counters_t *counters)
 {
 	calltype_t flag;
+	Uint16 prev_pc;
 	int idx;
+
+	prev_pc = dsp_callinfo.prev_pc;
+	dsp_callinfo.prev_pc = pc;
 
 	/* address is return address for last subroutine call? */
 	if (unlikely(pc == dsp_callinfo.return_pc) && likely(dsp_callinfo.depth)) {
 
 		flag = dsp_opcode_type(prev_pc, pc);
-		if (unlikely(flag != CALL_SUBRETURN && flag != CALL_EXCRETURN)) {
-			/* ...but not a real return */
-			return;
+		/* return address is entered either by subroutine return,
+		 * or by returning from exception that interrupted
+		 * the instruction at return address.
+		 */
+		if (likely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
+			Profile_CallEnd(&dsp_callinfo, counters);
 		}
-		Profile_CallEnd(&dsp_callinfo, counters);
 	}
 
 	/* address is one which we're tracking? */
@@ -538,11 +548,15 @@ void Profile_DspUpdate(void)
 	}
 
 	counters = &(dsp_profile.ram.counters);
-	counters->count++;
-	counters->cycles += cycles;
 	if (dsp_callinfo.sites) {
-		collect_calls(pc, prev_pc, counters);
+		collect_calls(prev_pc, counters);
 	}
+	/* counters are increased after caller info is processed,
+	 * otherwise cost for the instruction calling the callee
+	 * doesn't get accounted to caller (but callee).
+	 */
+	counters->cycles += cycles;
+	counters->count++;
 }
 
 /**

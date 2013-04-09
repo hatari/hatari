@@ -49,10 +49,14 @@ typedef struct {
 	caller_t *callers;	/* who called this address */
 } callee_t;
 
+/* impossible PC value, for unitialized PC values */
+#define PC_UNDEFINED 0xFFFFFFFF
+
 typedef struct {
 	int sites;		/* number of symbol callsites */
 	int count;		/* number of items allocated for stack */
 	int depth;		/* how many callstack calls haven't yet returned */
+	Uint32 prev_pc;		/* stored previous PC value */
 	Uint32 return_pc;	/* address for last call return address (speedup) */
 	callee_t *site;		/* symbol specific caller information */
 	callstack_t *stack;	/* calls that will return */

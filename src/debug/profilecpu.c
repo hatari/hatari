@@ -62,6 +62,7 @@ static struct {
 	Uint32 *sort_arr;     /* data indexes used for sorting */
 	Uint32 prev_cycles;   /* previous instruction cycles counter */
 	Uint32 prev_pc;       /* previous instruction address */
+	int prev_family;      /* previous instruction opcode family */
 	Uint32 disasm_addr;   /* 'addresses' command start address */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
@@ -580,13 +581,14 @@ bool Profile_CpuStart(void)
 	Profile_AllocCallinfo(&(cpu_callinfo), Symbols_CpuCount(), "CPU");
 
 	/* special hack for EmuTOS */
-	etos_switcher = 0xFFFFFFFF;
+	etos_switcher = PC_UNDEFINED;
 	if (cpu_callinfo.sites && bIsEmuTOS &&
 	    (!Symbols_GetCpuAddress(SYMTYPE_TEXT, "_switchto", &etos_switcher) || etos_switcher < TosAddress)) {
-		etos_switcher = 0xFFFFFFFF;
+		etos_switcher = PC_UNDEFINED;
 	}
 
 	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
+	cpu_profile.prev_family = OpcodeFamily;
 	cpu_profile.prev_pc = M68000_GetPC();
 
 	cpu_profile.disasm_addr = 0;
@@ -598,9 +600,9 @@ bool Profile_CpuStart(void)
 /**
  * return caller instruction type classification
  */
-static calltype_t cpu_opcode_type(Uint32 prev_pc, Uint32 pc)
+static calltype_t cpu_opcode_type(int family, Uint32 prev_pc, Uint32 pc)
 {
-	switch (OpcodeFamily) {
+	switch (family) {
 
 	case i_JSR:
 	case i_BSR:
@@ -642,30 +644,41 @@ static calltype_t cpu_opcode_type(Uint32 prev_pc, Uint32 pc)
 /**
  * If call tracking is enabled (there are symbols), collect
  * information about subroutine and other calls, and their costs.
+ * 
+ * Like with profile data, caller info checks need to be for previous
+ * instruction, that's why "pc" argument for this function actually
+ * needs to be previous PC.
  */
-static void collect_calls(Uint32 pc, Uint32 prev_pc, counters_t *counters)
+static void collect_calls(Uint32 pc, counters_t *counters)
 {
 	calltype_t flag;
-	int idx;
+	int idx, family;
+	Uint32 prev_pc;
+
+	family = cpu_profile.prev_family;
+	cpu_profile.prev_family = OpcodeFamily;
+
+	prev_pc = cpu_callinfo.prev_pc;
+	cpu_callinfo.prev_pc = pc;
 
 	/* address is return address for last subroutine call? */
 	if (unlikely(pc == cpu_callinfo.return_pc) && likely(cpu_callinfo.depth)) {
 
-		flag = cpu_opcode_type(prev_pc, pc);
+		flag = cpu_opcode_type(family, prev_pc, pc);
 		/* previous address can be exception return (RTE) if exception
 		 * occurred right after returning from subroutine call (RTS)
 		 */
-		if (unlikely(flag != CALL_SUBRETURN && flag != CALL_EXCRETURN)) {
+		if (likely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
+			Profile_CallEnd(&cpu_callinfo, counters);
+		} else {
+#if DEBUG
 			/* although at return address, it didn't return yet,
 			 * e.g. because there was a jsr or jump to return address
 			 */
-#if DEBUG
 			Uint32 nextpc;
 			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not though RTS!\n", prev_pc, pc);
 			Disasm(stderr, prev_pc, &nextpc, 1);
 #endif
-		} else {
-			Profile_CallEnd(&cpu_callinfo, counters);
 		}
 		/* next address might be another function, so need to fall through */
 	}
@@ -674,7 +687,7 @@ static void collect_calls(Uint32 pc, Uint32 prev_pc, counters_t *counters)
 	idx = Symbols_GetCpuAddressIndex(pc);
 	if (unlikely(idx >= 0)) {
 
-		flag = cpu_opcode_type(prev_pc, pc);
+		flag = cpu_opcode_type(family, prev_pc, pc);
 		if (flag == CALL_SUBROUTINE) {
 			/* special HACK for for EmuTOS AES switcher which
 			 * changes stack content to remove itself from call
@@ -704,11 +717,8 @@ static void collect_calls(Uint32 pc, Uint32 prev_pc, counters_t *counters)
  */
 void Profile_CpuUpdate(void)
 {
-#if ENABLE_WINUAE_CPU
-	Uint32 misses;
-#endif
 	counters_t *counters = &(cpu_profile.all);
-	Uint32 pc, prev_pc, idx, cycles;
+	Uint32 pc, prev_pc, idx, cycles, misses;
 	cpu_profile_item_t *prev;
 
 	prev_pc = cpu_profile.prev_pc;
@@ -754,13 +764,19 @@ void Profile_CpuUpdate(void)
 	} else {
 		prev->misses = MAX_CPU_PROFILE_VALUE;
 	}
-	counters->misses += misses;
+#else
+	misses = 0;
 #endif
-	counters->count++;
-	counters->cycles += cycles;
 	if (cpu_callinfo.sites) {
-		collect_calls(pc, prev_pc, counters);
+		collect_calls(prev_pc, counters);
 	}
+	/* counters are increased after caller info is processed,
+	 * otherwise cost for the instruction calling the callee
+	 * doesn't get accounted to caller (but callee).
+	 */
+	counters->misses += misses;
+	counters->cycles += cycles;
+	counters->count++;
 
 #if DEBUG
 	if (unlikely(OpcodeFamily == 0)) {

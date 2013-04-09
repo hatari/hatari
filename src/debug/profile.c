@@ -282,6 +282,8 @@ static void add_caller(callee_t *callsite, Uint32 pc, Uint32 prev_pc, calltype_t
 /**
  * Add information about called symbol, and if it was subroutine
  * call, add it to stack of functions which total costs are tracked.
+ * callinfo.return_pc needs to be set before invoking this if the call
+ * is of type CALL_SUBROUTINE.
  */
 void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t flag, Uint32 pc, counters_t *totalcost)
 {
@@ -334,7 +336,7 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 	memset(&(stack->out), 0, sizeof(stack->out));
 
 	/* set subroutine call information */
-	assert(callinfo->return_pc);
+	assert(callinfo->return_pc != PC_UNDEFINED);
 	stack->ret_addr = callinfo->return_pc;
 	stack->callee_idx = idx;
 	stack->caller_addr = prev_pc;
@@ -373,7 +375,7 @@ void Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 		callinfo->return_pc = parent->ret_addr;
 		add_counter_costs(&(parent->out), &(stack->all));
 	} else {
-		callinfo->return_pc = 0;
+		callinfo->return_pc = PC_UNDEFINED;
 	}
 }
 
@@ -396,7 +398,7 @@ void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const ch
 }
 
 /**
- * Allocate initial callinfo structure information
+ * Allocate & set initial callinfo structure information
  */
 int Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *name)
 {
@@ -406,6 +408,7 @@ int Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *name)
 		callinfo->site = calloc(count, sizeof(callee_t));
 		if (callinfo->site) {
 			printf("Allocated %s profile callsite buffer for %d symbols.\n", name, count);
+			callinfo->prev_pc = callinfo->return_pc = PC_UNDEFINED;
 		} else {
 			fprintf(stderr, "ERROR: callesite buffer alloc failed!\n");
 			callinfo->sites = 0;
