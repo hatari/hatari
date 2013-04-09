@@ -152,6 +152,7 @@ Callgraph filtering options to remove nodes and edges from the graph:
 				- one child and no parents, or
 				- no children nor parents
         --no-limited		remove _all_ nodes below -l limit
+        --only-subroutines      remove non-subroutine nodes below -l limit
 	--ignore <list>         no nodes for these symbols
 	--ignore-from <list>	no arrows from these symbols
         --only <list>           only these symbols and their callers
@@ -187,7 +188,12 @@ from copy import deepcopy
 from bisect import bisect_right
 import getopt, os, re, sys
 
+# PC address that was undefined during profiling,
+# signifies first called symbol in data
+PC_UNDEFINED = 0xffffff
+
 # call type identifiers and their information
+CALL_STARTUP = '0'	# first called symbol, special calse
 CALL_SUBROUTINE = 's'
 CALL_SUBRETURN = 'r'
 CALL_EXCEPTION = 'e'
@@ -269,9 +275,16 @@ class FunctionStats:
         # total and "own" costs
         self.subcost = None
         self.subtotal = None
+        self.callflags = ()
         # calltree linkage
         self.parent = {}
         self.child = {}
+
+    def is_subroutine(self):
+        for flag in (CALL_SUBROUTINE, CALL_STARTUP):
+            if flag in self.callflags:
+                return true
+        return false
 
     def has_cost(self):
         "return whether function has valid data yet"
@@ -687,6 +700,7 @@ class ProfileCallers(Output):
 
     def _complete_child(self, profile, linkage, child, caddr):
         "link parents with child based on caller info"
+        flags = {}
         ignored = switches = 0
         callinfo = Callinfo(caddr)
         for laddr, info in linkage.items():
@@ -697,8 +711,14 @@ class ProfileCallers(Output):
             elif info.flags in self.removable_calltypes:
                 ignored += info.calls
                 continue
+            if laddr == PC_UNDEFINED:
+                flags[CALL_STARTUP] = True
+                continue
+            flags[info.flags] = True
             # function address for the caller
             paddr = laddr - offset
+            if paddr not in profile:
+                self.error_exit("parent caller 0x%x for '%s' not in profile" % (laddr, child.name))
             parent = profile[paddr]
             if pname != parent.name:
                 self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
@@ -717,6 +737,7 @@ class ProfileCallers(Output):
             self.warning("cost already for child: %s" % child)
         child.subcost = callinfo.get_own_costs()
         child.subtotal = callinfo.get_full_costs()
+        child.callflags = tuple(flags.keys())
         return switches, ignored
 
     def complete(self, profile, symbols):
@@ -1294,6 +1315,7 @@ label="%s";
         self.remove_intermediate = False
         self.remove_leafs = False
         self.remove_limited = False
+        self.remove_nonsubs = False
         self.only = []
         self.mark = []
         self.ignore = []
@@ -1316,6 +1338,10 @@ label="%s";
     def disable_limited(self):
         "disable showing all nodes which are below limit"
         self.remove_limited = True
+
+    def only_subroutines(self):
+        "disable showing nodes that aren't above limit or subroutines"
+        self.remove_nonsubs = True
 
     def set_only(self, lst):
         "set list of only symbols to include"
@@ -1374,7 +1400,7 @@ label="%s";
 
     def _set_reduced_profile(self, profobj, totals, field):
         "get relinked copy of profile data with requested items removed from it"
-        if not (self.remove_limited or self.remove_leafs or self.remove_intermediate):
+        if not (self.remove_limited or self.remove_leafs or self.remove_intermediate or self.remove_nonsubs):
             self.profile = profobj.profile
             return 0
         # need our own copy so that it can be manipulated freely
@@ -1395,6 +1421,10 @@ label="%s";
                 if self.remove_limited:
                     to_remove[addr] = True
                     continue
+                if self.remove_nonsubs:
+                    if not function.is_subroutine():
+                        to_remove[addr] = True
+                        continue
                 parents = len(function.parent)
                 children = len(function.child)
                 if self.remove_leafs:
@@ -1491,6 +1521,8 @@ label="%s";
                 if substr in name:
                     style = "%s style=filled fillcolor=green shape=square" % style
                     break
+            if CALL_STARTUP in function.callflags:
+                style = "%s style=filled fillcolor=green shape=square" % style
             if count != owncount:
                 coststr = "%.2f%%\\n(own: %.2f%%)" % (percentage, ownpercentage)
             else:
@@ -1602,6 +1634,7 @@ class Main(Output):
         "no-leafs",
         "no-limited",
         "only=",
+        "only-subroutines",
         "output=",
         "propagate",
         "relative=",
@@ -1678,6 +1711,8 @@ class Main(Output):
                 graph.disable_leafs()
             elif opt == "--no-limited":
                 graph.disable_limited()
+            elif opt == "--only-subroutines":
+                graph.only_subroutines()
             # options specific to statistics
             elif opt in ("-i", "--info"):
                 stats.enable_info()
