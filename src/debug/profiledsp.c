@@ -372,6 +372,16 @@ bool Profile_DspStart(void)
 	return dsp_profile.enabled;
 }
 
+/* return true if pc is next instruction for previous pc */
+static bool is_prev_instr(Uint16 prev_pc, Uint16 pc)
+{
+	/* just moved to next instruction (1-2 words)? */
+	if (prev_pc < pc && (pc - prev_pc) <= 4) {
+		return true;
+	}
+	return false;
+}
+
 /* return branch type based on caller instruction type */
 static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 {
@@ -385,10 +395,13 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 	if (opcode == 0xC) {	/* (just) RTS */
 		return CALL_SUBRETURN;
 	}
-	/* subroutine calls */
+	/* unconditional subroutine calls */
 	if ((opcode & 0xFFF000) == 0xD0000 ||	/* JSR   00001101 0000aaaa aaaaaaaa */
-	    (opcode & 0xFFC0FF) == 0xBC080 ||	/* JSR   00001011 11MMMRRR 10000000 */
-	    (opcode & 0xFF0000) == 0xF0000 ||	/* JSCC  00001111 CCCCaaaa aaaaaaaa */
+	    (opcode & 0xFFC0FF) == 0xBC080) {	/* JSR   00001011 11MMMRRR 10000000 */
+		return CALL_SUBROUTINE;
+	}
+	/* conditional subroutine calls */
+	if ((opcode & 0xFF0000) == 0xF0000 ||	/* JSCC  00001111 CCCCaaaa aaaaaaaa */
 	    (opcode & 0xFFC0F0) == 0xBC0A0 ||	/* JSCC  00001011 11MMMRRR 1010CCCC */
 	    (opcode & 0xFFC0A0) == 0xB4080 ||	/* JSCLR 00001011 01MMMRRR 1S0bbbbb */
 	    (opcode & 0xFFC0A0) == 0xB0080 ||	/* JSCLR 00001011 00aaaaaa 1S0bbbbb */
@@ -398,6 +411,16 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 	    (opcode & 0xFFC0A0) == 0xB00A0 ||	/* JSSET 00001011 00aaaaaa 1S1bbbbb */
 	    (opcode & 0xFFC0A0) == 0xB80A0 ||	/* JSSET 00001011 10pppppp 1S1bbbbb */
 	    (opcode & 0xFFC0E0) == 0xAC020) {	/* JSSET 00001010 11DDDDDD 001bbbbb */
+		/* hopefully fairly safe heuristic:
+		 * if previously executed instruction
+		 * was one before current one, no
+		 * subroutine call was made to next
+		 * instruction, the condition just
+		 * wasn't met.
+		 */
+		if (is_prev_instr(prev_pc, pc)) {
+			return CALL_NEXT;
+		}
 		return CALL_SUBROUTINE;
 	}
 	/* exception handler returns */
@@ -406,9 +429,9 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 	}
 
 	/* Besides CALL_UNKNOWN, rest isn't used by subroutine call
-	 * cost collection.  However, it may be useful info when
-	 * reading full callgraphs because optimized code uses also
-	 * jumps/branches for subroutine calls.
+	 * cost collection.  However, it's useful info when debugging
+	 * code or reading full callgraphs (because optimized code uses
+	 * also jumps/branches for subroutine calls).
 	 */
 
 	/* TODO: exception invocation.
@@ -441,8 +464,7 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 	    (opcode & 0xFFC0BF) == 0x60000) {	/* DO/ENDO 00000110 00aaaaaa 0S000000 */
 		return CALL_BRANCH;
 	}
-	/* just moved to next instruction (1-2 words)? */
-	if (prev_pc < pc && (pc - prev_pc) <= 4) {
+	if (is_prev_instr(prev_pc, pc)) {
 		return CALL_NEXT;
 	}
 	return CALL_UNKNOWN;
