@@ -718,6 +718,7 @@ class ProfileCallers(Output):
                 continue
             if laddr == PC_UNDEFINED:
                 flags[CALL_STARTUP] = True
+                switches += 1
                 continue
             flags[info.flags] = True
             # function address for the caller
