@@ -348,19 +348,22 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 
 /**
  * If it really was subcall (function) return, store returned function
- * costs and update callinfo->return_pc value.
+ * costs and update callinfo->return_pc value.  Return address of
+ * the instruction which did the returned call.
  */
-void Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
+Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 {
 	callstack_t *stack;
 
 	assert(callinfo->depth);
-	stack = &(callinfo->stack[callinfo->depth-1]);
 
 	/* remove call info from stack */
 	callinfo->depth--;
 
-	/* full cost is orignal global cost (in ->all)
+	/* callinfo->depth points now to to-be removed item */
+	stack = &(callinfo->stack[callinfo->depth]);
+
+	/* full cost is original global cost (in ->all)
 	 * deducted from current global (total) cost
 	 */
 	set_counter_diff(&(stack->all), totalcost);
@@ -377,6 +380,9 @@ void Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 	} else {
 		callinfo->return_pc = PC_UNDEFINED;
 	}
+
+	/* where the returned function was called from */
+	return stack->caller_addr;
 }
 
 /**

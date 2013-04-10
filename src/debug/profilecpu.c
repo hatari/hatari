@@ -12,6 +12,7 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <assert.h>
 #include "main.h"
 #include "configuration.h"
 #include "clocks_timings.h"
@@ -598,6 +599,18 @@ bool Profile_CpuStart(void)
 }
 
 /**
+ * return true if pc could be next instruction for previous pc
+ */
+static bool is_prev_instr(Uint32 prev_pc, Uint32 pc)
+{
+	/* just moved to next instruction (1-2 words)? */
+	if (prev_pc < pc && (pc - prev_pc) <= 10) {
+		return true;
+	}
+	return false;
+}
+
+/**
  * return caller instruction type classification
  */
 static calltype_t cpu_opcode_type(int family, Uint32 prev_pc, Uint32 pc)
@@ -635,7 +648,7 @@ static calltype_t cpu_opcode_type(int family, Uint32 prev_pc, Uint32 pc)
 		return CALL_EXCRETURN;
 	}
 	/* just moved to next instruction? */
-	if (prev_pc < pc && (pc - prev_pc) <= 10) {
+	if (is_prev_instr(prev_pc, pc)) {
 		return CALL_NEXT;
 	}
 	return CALL_UNKNOWN;
@@ -653,13 +666,14 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 {
 	calltype_t flag;
 	int idx, family;
-	Uint32 prev_pc;
+	Uint32 prev_pc, caller_pc;
 
 	family = cpu_profile.prev_family;
 	cpu_profile.prev_family = OpcodeFamily;
 
 	prev_pc = cpu_callinfo.prev_pc;
 	cpu_callinfo.prev_pc = pc;
+	caller_pc = PC_UNDEFINED;
 
 	/* address is return address for last subroutine call? */
 	if (unlikely(pc == cpu_callinfo.return_pc) && likely(cpu_callinfo.depth)) {
@@ -669,7 +683,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 		 * occurred right after returning from subroutine call (RTS)
 		 */
 		if (likely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
-			Profile_CallEnd(&cpu_callinfo, counters);
+			caller_pc = Profile_CallEnd(&cpu_callinfo, counters);
 		} else {
 #if DEBUG
 			/* although at return address, it didn't return yet,
@@ -704,6 +718,17 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				/* slow! */
 				cpu_callinfo.return_pc = Disasm_GetNextPC(prev_pc);
 			}
+		} else if (caller_pc != PC_UNDEFINED) {
+			/* returned from function to first instrction of another symbol:
+			 *	0xf384	jsr some_function
+			 *	other_symbol:
+			 *	0f3x8a	some_instruction
+			 * -> change return instruction address to
+			 *    address of what did the returned call.
+			 */
+			prev_pc = caller_pc;
+			assert(is_prev_instr(prev_pc, pc));
+			flag = CALL_NEXT;
 		}
 		Profile_CallStart(idx, &cpu_callinfo, prev_pc, flag, pc, counters);
 	}

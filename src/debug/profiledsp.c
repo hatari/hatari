@@ -12,6 +12,7 @@ const char Profiledsp_fileid[] = "Hatari profiledsp.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <assert.h>
 #include "main.h"
 #include "configuration.h"
 #include "clocks_timings.h"
@@ -482,10 +483,12 @@ static void collect_calls(Uint16 pc, counters_t *counters)
 {
 	calltype_t flag;
 	Uint16 prev_pc;
+	Uint32 caller_pc;
 	int idx;
 
 	prev_pc = dsp_callinfo.prev_pc;
 	dsp_callinfo.prev_pc = pc;
+	caller_pc = PC_UNDEFINED;
 
 	/* address is return address for last subroutine call? */
 	if (unlikely(pc == dsp_callinfo.return_pc) && likely(dsp_callinfo.depth)) {
@@ -496,7 +499,7 @@ static void collect_calls(Uint16 pc, counters_t *counters)
 		 * the instruction at return address.
 		 */
 		if (likely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
-			Profile_CallEnd(&dsp_callinfo, counters);
+			caller_pc = Profile_CallEnd(&dsp_callinfo, counters);
 		}
 	}
 
@@ -507,6 +510,14 @@ static void collect_calls(Uint16 pc, counters_t *counters)
 		flag = dsp_opcode_type(prev_pc, pc);
 		if (flag == CALL_SUBROUTINE) {
 			dsp_callinfo.return_pc = DSP_GetNextPC(prev_pc);  /* slow! */
+		} else if (caller_pc != PC_UNDEFINED) {
+			/* returned from function, change return
+			 * instruction address to address of
+			 * what did the returned call.
+			 */
+			prev_pc = caller_pc;
+			assert(is_prev_instr(prev_pc, pc));
+			flag = CALL_NEXT;
 		}
 		Profile_CallStart(idx, &dsp_callinfo, prev_pc, flag, pc, counters);
 
