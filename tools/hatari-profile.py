@@ -118,16 +118,18 @@ Nodes with subroutine costs are shown as diamonds in the callgraphs.
 Call information filtering options:
         --no-calls <[bersux]+>	remove calls of given types, default = 'rux'
 	--ignore-to <list>	ignore calls to these symbols
+	--compact		leave only single connection for symbols
+        			that are directly connected
 
 (Give --no-calls option an unknown type to see type descriptions.)
 
 <list> is a comma separate list of symbol names, like this:
 	--ignore-to _int_timerc,_int_vbl
 
-These options change which calls are reported for functions and affect
-the shape & complexity of the graph a lot.  If you e.g. want to see
-just nodes with costs specific to -p option, use "--no-calls berux"
-option.
+These options change which calls are reported for functions and can
+affect the shape & complexity of the graph a lot.  If you e.g. want
+to see just nodes with costs specific to -p option, use "--no-calls
+berux" option.
 
 If default --no-calls type removal doesn't remove all interrupt
 handling switches [1], give handler names to --ignore-to option.
@@ -144,8 +146,6 @@ handlers their costs will be visible in output.
 
 
 Callgraph filtering options to remove nodes and edges from the graph:
-	--compact		only 1 arrow between nodes, instead of
-        			arrow for each call site within function
 	--no-intermediate	remove nodes with single parent & child
 	--no-leafs		remove nodes which have either:
 				- one parent and no children,
@@ -166,14 +166,19 @@ candinates for '--ignore' option when one wants a more readable graph.
 One can then investigate them separately with the '--only <function>'
 option.
 
+NOTE: Only directly connected symbols are compacted.  You can still
+see multiple arrows between nodes in callgraphs with --compact option
+if intermediate nodes have been removed with above options.
+
 
 Callgraph visualization options:
 	--mark <list>	  	  mark nodes which names contain any
         			  of the listed string(s)
         -e, --emph-limit <limit>  percentage limit for highlighted nodes
 
-When -e limit is given, -f & -e options are used for deciding which
-nodes to highlight, not -f & -l options.
+When -e limit is given, it is used for deciding which nodes to
+highlight, not -f & -l options.  Normally it should be larger than -l
+option value.
 
 Nodes with costs that exceed the highlight limit have red outline.
 If node's own cost exceeds the limit, it has also gray background.
@@ -1400,31 +1405,37 @@ label="%s";
 
     def _set_reduced_profile(self, profobj, totals, field):
         "get relinked copy of profile data with requested items removed from it"
-        if not (self.remove_limited or self.remove_leafs or self.remove_intermediate or self.remove_nonsubs):
-            self.profile = profobj.profile
-            return 0
         # need our own copy so that it can be manipulated freely
         self.profile = deepcopy(profobj.profile)
         total = totals[field]
+        to_remove = {}
         removed = 0
+        if self.ignore:
+            for addr, function in self.profile.items():
+                if function.name in self.ignore:
+                    to_remove[addr] = True
         while True:
+            for addr in to_remove.keys():
+                self._remove_from_profile(addr)
+            removed += len(to_remove)
             to_remove = {}
             for addr, function in self.profile.items():
+                # remove everything except subroutines?
+                if self.remove_nonsubs and not function.is_subroutine():
+                    to_remove[addr] = True
+                    continue
+                # don't remove symbols which own costs are over the limit
                 if self.show_subcosts and function.subcost and len(function.subcost) > field:
                     count = function.subcost[field]
                 else:
                     count = function.cost[field]
                 percentage = 100.0 * count / total
-                # don't remove functions which own costs are over the limit
                 if percentage >= self.limit:
                     continue
                 if self.remove_limited:
                     to_remove[addr] = True
                     continue
-                if self.remove_nonsubs:
-                    if not function.is_subroutine():
-                        to_remove[addr] = True
-                        continue
+                # remove leafs & intermediates
                 parents = len(function.parent)
                 children = len(function.child)
                 if self.remove_leafs:
@@ -1455,20 +1466,15 @@ label="%s";
                                 break
             if not to_remove:
                 break
-            for addr in to_remove.keys():
-                self._remove_from_profile(addr)
-            removed += len(to_remove)
         return removed
 
     def _filter_profile(self):
-        "filter profile content to nodes and edges members based on ignore options"
+        "filter remaining profile content to nodes and edges members based on only & ignore-from options"
         profile = self.profile
         self.nodes = {}
         self.edges = {}
-        ignore_from = self.ignore_from + self.ignore
+        ignore_from = self.ignore_from
         for caddr, child in profile.items():
-            if child.name in self.ignore:
-                continue
             if not child.parent:
                 self.nodes[caddr] = True
                 continue
@@ -1487,10 +1493,10 @@ label="%s";
                 # parent end for edges
                 self.nodes[paddr] = True
                 # total calls count for child
-                calls = profile[caddr].cost[0]
+                all_calls = profile[caddr].cost[0]
                 # calls to child done from different locations in parent
                 for edge in info:
-                    self.edges[(edge.addr, caddr)] = (paddr, calls, edge)
+                    self.edges[(edge.addr, caddr)] = (paddr, all_calls, edge)
         return (len(profile) - len(self.nodes))
 
     def _output_nodes(self, stats, field, limit):
@@ -1587,11 +1593,12 @@ label="%s";
             if not dotname:
                 continue
             self.message("\nGenerating '%s' DOT callgraph file..." % dotname)
-            # limits are taken from full profile, not potentially reduced one
-            sorter = ProfileSorter(profobj.profile, stats, None, False)
             if self.emph_limit:
-                limit = sorter.get_combined_limit(field, self.count, self.emph_limit)
+                limit = self.emph_limit
             else:
+                # otherwise combine both "-f" and "-l" limits
+                # limits are taken from full profile, not potentially reduced one
+                sorter = ProfileSorter(profobj.profile, stats, None, False)
                 limit = sorter.get_combined_limit(field, self.count, self.limit)
             name = stats.names[field]
             title = "%s\\nfor %s" % (name, fname)
