@@ -110,6 +110,9 @@
 /*			(fix Reset part in Decade Demo, High Fidelity Dreams by Aura).	*/
 /* 2013/03/14	[NP]	When writing to the MFP's registers, take the write cycles into	*/
 /*			account when updating MFP_IRQ_Time (properly fix Super Hang On).*/
+/* 2013/04/11	[NP]	Handle the IACK cycles, interrupts can change during the first	*/
+/*			12 cycles of an MFP exception (fix Anomaly Demo Menu by Oxygene	*/
+/*			and sample intro in the game The Final Conflict).		*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
@@ -201,6 +204,7 @@ static int	MFP_Current_Interrupt = -1;
 static Uint8	MFP_IRQ = 0;
 static bool	MFP_DelayIRQ = false;
 static Uint64	MFP_IRQ_Time = 0;
+bool		MFP_IACK = false;
 
 
 static const Uint16 MFPDiv[] =
@@ -266,6 +270,7 @@ void MFP_Reset(void)
 	MFP_IRQ = 0;
 	MFP_DelayIRQ = false;
 	MFP_IRQ_Time = 0;
+	MFP_IACK = false;
 }
 
 
@@ -311,6 +316,7 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MFP_IRQ, sizeof(MFP_IRQ));
 	MemorySnapShot_Store(&MFP_DelayIRQ, sizeof(MFP_DelayIRQ));
 	MemorySnapShot_Store(&MFP_IRQ_Time, sizeof(MFP_IRQ_Time));
+//	MemorySnapShot_Store(&MFP_IACK, sizeof(MFP_IACK));
 }
 
 
@@ -379,6 +385,57 @@ static void MFP_Exception(int Interrupt)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the vector number associated to the current MFP interrupt.
+ * MFP_IACK is called 12 cycles after the start of the 68000 exception.
+ * We must call MFP_UpdateIRQ just before the IACK cycles to update
+ * MFP_Current_Interrupt in case a higher MFP interrupt happened
+ * or pending bit was set twice for the same interrupt during those 12 cycles (rare case)
+ */
+int	MFP_ProcessIACK ( int OldVecNr )
+{
+	Uint8	*pPendingReg;
+	Uint8	*pInServiceReg;
+	Uint8	Bit;
+	int	OldInt;
+	int	Vec;
+
+
+	/* Check if MFP interrupt number changed before IACK */
+	OldInt = MFP_Current_Interrupt;
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );
+
+	Vec = (unsigned int)( MFP_VR & 0xf0 ) << 2;
+	Vec += MFP_Current_Interrupt << 2;
+
+	/* Print traces if VecNr changed just before IACK */
+	if ( LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION) && ( OldVecNr * 4 != Vec ) )
+	{
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE_PRINT("mfp iack change old_vec=0x%x new_vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
+			OldVecNr * 4, Vec, STMemory_ReadLong ( Vec ) , FrameCycles, LineCycles, HblCounterVideo );
+	}
+ 
+	Bit = MFP_ConvertIntNumber ( MFP_Current_Interrupt , NULL , &pPendingReg , &pInServiceReg , NULL );
+
+	*pPendingReg &= ~Bit;			/* Clear pending bit */
+
+	/* Are we in 'auto' interrupt or 'manual' ? */
+	if ( MFP_VR & 0x08 )			/* Software End-of-Interrupt (SEI) */
+		*pInServiceReg |= Bit;		/* Set interrupt in service register */
+	else
+		*pInServiceReg &= ~Bit;		/* Clear interrupt in service register */
+
+	MFP_UpdateIRQ ( CyclesGlobalClockCounter );
+
+	return Vec / 4;				/* vector number */
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function is called from the CPU emulation part when SPCFLAG_MFP is set.
  * If the MFP's IRQ signal is set, we check that SR allows a level 6 interrupt,
  * and if so, we call MFP_Exception.
@@ -414,6 +471,7 @@ bool	MFP_ProcessIRQ ( void )
 
 		if (regs.intmask < 6)
 		{
+#ifdef iack
 			Bit = MFP_ConvertIntNumber ( MFP_Current_Interrupt , NULL , &pPendingReg , &pInServiceReg , NULL );
 
 			*pPendingReg &= ~Bit;			/* Clear pending bit */
@@ -429,6 +487,14 @@ bool	MFP_ProcessIRQ ( void )
 			MFP_UpdateIRQ ( CyclesGlobalClockCounter );
 //fprintf ( stderr , "process 2 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 			return true;
+
+#else
+//fprintf ( stderr , "process 1 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+			MFP_Exception ( MFP_Current_Interrupt );
+//			MFP_UpdateIRQ ( CyclesGlobalClockCounter );
+//fprintf ( stderr , "process 2 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+			return true;
+#endif
 		}
 	}
 
@@ -581,7 +647,6 @@ int	MFP_CheckPendingInterrupts ( void )
  * at which the timer expired (it could be during the previous instruction).
  * This allows to correctly handle the 4 cycle MFP_IRQ delay in MFP_ProcessIRQ().
  */
-//void MFP_InputOnChannel ( Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
 void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 {
 	Uint8	*pEnableReg;
@@ -592,7 +657,22 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 
 	/* Input has occurred on MFP channel, set interrupt pending to request service when able */
 	if ( *pEnableReg & Bit )
+	{
+		/* Print traces if pending bits changed just before IACK */
+		if ( LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION) && ( MFP_IACK == true ) )
+		{
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+			if ( *pPendingReg & Bit )
+				LOG_TRACE_PRINT("mfp input, pending set again during iack for int=%d, skip one interrupt video_cyc=%d %d@%d\n" ,
+					Interrupt , FrameCycles, LineCycles, HblCounterVideo );
+			else
+				LOG_TRACE_PRINT("mfp input, new pending set during iack for int=%d video_cyc=%d %d@%d\n" ,
+					Interrupt , FrameCycles, LineCycles, HblCounterVideo );
+		}
+
 		*pPendingReg |= Bit;			/* Set bit */
+	}
 	else
 		*pPendingReg &= ~Bit;			/* Clear bit */
 

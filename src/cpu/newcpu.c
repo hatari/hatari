@@ -1677,6 +1677,16 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int sv = regs.s;
 
+	if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
+	{
+		M68000_AddCycles ( 12 );
+		MFP_IACK = true;
+		while (PendingInterruptCount<=0 && PendingInterruptFunction)
+			CALL_VAR(PendingInterruptFunction);
+		nr = MFP_ProcessIACK ( nr );
+		MFP_IACK = false;
+	}
+
 	if (ExceptionSource == M68000_EXC_SRC_CPU) {
 		if (bVdiAesIntercept && nr == 0x22) {
 			/* Intercept VDI & AES exceptions (Trap #2) */
@@ -1895,7 +1905,7 @@ kludge_me_do:
 
 	/* Handle exception cycles (special case for MFP) */
 	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
-		M68000_AddCycles(44+12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+		M68000_AddCycles(44+12-12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
 	}
 	else if (nr >= 24 && nr <= 31) {
 		if ( nr == 26 ) {				/* HBL */

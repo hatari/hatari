@@ -110,6 +110,8 @@
 /*			'while' condition (PendingInterruptCount <= 0 is true less often than STOP==0)	*/
 /* 2011/04/29	[NP]	In Exception(), check the new PC is not on odd address ; raise an address error	*/
 /*			exception if it's the case.							*/
+/* 2013/04/11	[NP]	In Exception(), call MFP_ProcessIACK after 12 cycles to update the MFP's vector	*/
+/*			number used for the exception (see mfp.c).					*/
 
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
@@ -846,6 +848,16 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
+    if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
+    {
+        M68000_AddCycles ( 12 );
+	MFP_IACK = true;
+        while (PendingInterruptCount<=0 && PendingInterruptFunction)
+            CALL_VAR(PendingInterruptFunction);
+        nr = MFP_ProcessIACK ( nr );
+	MFP_IACK = false;
+    }
+
     if (ExceptionSource == M68000_EXC_SRC_CPU)
       {
         if (bVdiAesIntercept && nr == 0x22)
@@ -1020,7 +1032,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* Handle exception cycles (special case for MFP) */
     if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
     {
-      M68000_AddCycles(44+12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+      M68000_AddCycles(44+12-12);		/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
     }
     else if (nr >= 24 && nr <= 31)
     {

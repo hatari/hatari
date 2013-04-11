@@ -61,9 +61,11 @@ extern Uint8 MFP_IERA,MFP_IERB;
 extern Uint8 MFP_IPRA,MFP_IPRB;
 extern Uint8 MFP_TACR,MFP_TBCR;
 extern Uint8 MFP_VR;
+extern bool  MFP_IACK;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(bool bSave);
+extern int  MFP_ProcessIACK ( int OldVecNr );
 extern bool MFP_ProcessIRQ ( void );
 extern int  MFP_CheckPendingInterrupts(void);
 //extern void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg);
