@@ -111,7 +111,7 @@
 /* 2013/03/14	[NP]	When writing to the MFP's registers, take the write cycles into	*/
 /*			account when updating MFP_IRQ_Time (properly fix Super Hang On).*/
 /* 2013/04/11	[NP]	Handle the IACK cycles, interrupts can change during the first	*/
-/*			12 cycles of an MFP exception (fix Anomaly Demo Menu by Oxygene	*/
+/*			12 cycles of an MFP exception (fix Anomaly Demo Menu by MJJ Prod*/
 /*			and sample intro in the game The Final Conflict).		*/
 
 
