@@ -247,9 +247,31 @@ static Uint32 BreakCond_GetValue(const bc_value_t *bc_value)
 
 
 /**
+ * Show & update rvalue for a tracked breakpoint condition to lvalue
+ */
+static void BreakCond_UpdateTracked(bc_condition_t *condition, Uint32 value)
+{
+	Uint32 addr;
+
+	/* next monitor changes to this new value */
+	condition->rvalue.value.number = value;
+
+	if (condition->lvalue.is_indirect &&
+	    condition->lvalue.valuetype == VALUE_TYPE_NUMBER) {
+		/* simple memory address */
+		addr = condition->lvalue.value.number;
+		fprintf(stderr, "  $%x = $%x\n", addr, value);
+	} else {
+		/* register tms. */
+		fprintf(stderr, "  $%x", value);
+	}
+}
+
+
+/**
  * Return true if all of the given breakpoint's conditions match
  */
-static bool BreakCond_MatchConditions(const bc_condition_t *condition, int count)
+static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
 {
 	Uint32 lvalue, rvalue;
 	bool hit = false;
@@ -272,6 +294,9 @@ static bool BreakCond_MatchConditions(const bc_condition_t *condition, int count
 			break;
 		case '!':
 			hit = (lvalue != rvalue);
+			if (hit && condition->track) {
+				BreakCond_UpdateTracked(condition, lvalue);
+			}
 			break;
 		default:
 			fprintf(stderr, "ERROR: Unknown breakpoint value comparison operator '%c'!\n",
@@ -284,41 +309,6 @@ static bool BreakCond_MatchConditions(const bc_condition_t *condition, int count
 	}
 	/* all conditions matched */
 	return true;
-}
-
-
-/**
- * Show values for the tracked breakpoint conditions
- */
-static void BreakCond_ShowTracked(bc_condition_t *condition, int count)
-{
-	Uint32 addr, value;
-	char sep;
-	int i;
-	
-	sep = ' ';
-	for (i = 0; i < count; condition++, i++) {
-		if (!condition->track) {
-			continue;
-		}
-
-		/* get the new value in address */
-		value = BreakCond_GetValue(&(condition->lvalue));
-		/* next monitor changes to this new value */
-		condition->rvalue.value.number = value;
-		
-		if (condition->lvalue.is_indirect &&
-		    condition->lvalue.valuetype == VALUE_TYPE_NUMBER) {
-			/* simple memory address */
-			addr = condition->lvalue.value.number;
-			fprintf(stderr, "%c $%x = $%x", sep, addr, value);
-		} else {
-			/* register tms. */
-			fprintf(stderr, "%c $%x", sep, value);
-		}
-		sep = ',';
-	}
-	fprintf(stderr, "\n");
 }
 
 
@@ -348,8 +338,6 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 					i+1, name, bp->hits);			
 				BreakCond_Print(bp);
 			}
-			BreakCond_ShowTracked(bp->conditions, bp->ccount);
-
 			for_dsp = (bp-i == BreakPointsDsp);
 			if (for_dsp) {
 				History_Mark(REASON_DSP_BREAKPOINT);

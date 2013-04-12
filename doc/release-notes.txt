@@ -92,6 +92,8 @@ Emulator:
   - Fix: when several breakpoints should have triggered
          on the same address, only first was handled
   - Fix: after breakpoint, 'c <n>' continues one instruction too little
+  - Fix: tracking breakpoint values were updated only when all conditions
+    matched, now they can be also used together with other conditions
   - Fix: info command crash (triggered on NetBSD)
   - Fix: disassember output bug on NetBSD (usigned char < -1 test)
   - Fix: info osheader and basebase subcommands under MiNT
