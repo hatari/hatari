@@ -82,7 +82,8 @@ Emulator:
   - New "save" subcommand saves profile address and caller information
     to given file, with extra information needed for post-processing
 - Debugger:
-  - "dsp" subcommand added to "info" command, to show e.g. DSP stack content
+  - "blitter" and "dsp" subcommand added to "info" command, to show
+    blitter register values and DSP state (e.g. stack content)
   - "prg" subcommand added to "symbols" command, for loading debug
     symbols from DRI/GST symbol table in last started program
   - "step" and "next" commands added for single stepping CPU and DSP code

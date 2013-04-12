@@ -525,8 +525,7 @@ static void Blitter_Start(void)
 	/* setup vars */
 	BlitterVars.pass_cycles = 0;
 	BlitterVars.op_cycles = 0;
-	BlitterVars.src_words_reset = BlitterVars.dst_words_reset +
-									BlitterVars.fxsr - BlitterVars.nfsr;
+	BlitterVars.src_words_reset = BlitterVars.dst_words_reset + BlitterVars.fxsr - BlitterVars.nfsr;
 
 	/* bus arbitration */
 	BusMode = BUS_MODE_BLITTER;		/* bus is now owned by the blitter */
@@ -979,4 +978,31 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&BlitterRegs, sizeof(BlitterRegs));
 	MemorySnapShot_Store(&BlitterVars, sizeof(BlitterVars));
 	MemorySnapShot_Store(&BlitterHalftone, sizeof(BlitterHalftone));
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Show Blitter register values.
+ */
+void Blitter_Info(Uint32 dummy)
+{
+	BLITTERREGS *regs = &BlitterRegs;
+	FILE *fp = stderr;
+
+	fprintf(fp, "src addr:  0x%06x\n", regs->src_addr);
+	fprintf(fp, "dst addr:  0x%06x\n", regs->dst_addr);
+	fprintf(fp, "words:     %u\n", regs->words);
+	fprintf(fp, "lines:     %u\n", regs->lines);
+	fprintf(fp, "src X-inc: %hd\n", regs->src_x_incr);
+	fprintf(fp, "src Y-inc: %hd\n", regs->src_y_incr);
+	fprintf(fp, "dst X-inc: %hd\n", regs->dst_x_incr);
+	fprintf(fp, "dst Y-inc: %hd\n", regs->dst_y_incr);
+	fprintf(fp, "end mask1: 0x%04x\n", regs->end_mask_1);
+	fprintf(fp, "end mask2: 0x%04x\n", regs->end_mask_2);
+	fprintf(fp, "end mask3: 0x%04x\n", regs->end_mask_3);
+	fprintf(fp, "HOP:       0x%02x\n", regs->hop);
+	fprintf(fp, "LOP:       0x%02x\n", regs->lop);
+	fprintf(fp, "control:   0x%02x\n", regs->ctrl);
+	fprintf(fp, "skew:      0x%02x\n", regs->skew);
+	fprintf(fp, "Note: internally changed register values aren't visible to breakpoints or in memdump output until emulated code reads or writes them!)\n");
 }

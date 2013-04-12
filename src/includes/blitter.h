@@ -76,5 +76,6 @@ extern void Blitter_Skew_WriteByte(void);
 
 extern void Blitter_MemorySnapShot_Capture(bool bSave);
 extern void Blitter_InterruptHandler(void);
+extern void Blitter_Info(Uint32 arg);
 
 #endif /* BLITTER_H */

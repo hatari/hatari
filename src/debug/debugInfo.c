@@ -13,6 +13,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include <assert.h>
 #include "main.h"
 #include "bios.h"
+#include "blitter.h"
 #include "configuration.h"
 #include "debugInfo.h"
 #include "debugcpu.h"
@@ -865,6 +866,7 @@ static const struct {
 	{ false,"aes",       AES_Info,             NULL, "Show AES vector contents (with <value>, show opcodes)" },
 	{ false,"basepage",  DebugInfo_Basepage,   NULL, "Show program basepage info at given <address>" },
 	{ false,"bios",      Bios_Info,            NULL, "Show BIOS opcodes" },
+	{ false,"blitter",   Blitter_Info,         NULL, "Show Blitter register values" },
 	{ false,"cookiejar", DebugInfo_Cookiejar,  NULL, "Show TOS Cookiejar contents" },
 	{ false,"crossbar",  DebugInfo_Crossbar,   NULL, "Show Falcon crossbar HW register values" },
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
@@ -888,7 +890,7 @@ static const struct {
 	{ false,"xbios",     XBios_Info,           NULL, "Show XBIOS opcodes" }
 };
 
-static int LockedFunction = 5; /* index for the "default" function */
+static int LockedFunction = 6; /* index for the "default" function */
 static Uint32 LockedArgument;
 
 /**
