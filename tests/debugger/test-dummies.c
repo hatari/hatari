@@ -93,6 +93,19 @@ Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
 int ConOutDevice;
 void Console_Check(void) { }
 
+/* fake gemdos stuff */
+#include "gemdos.h"
+const char *GemDOS_GetLastProgramPath(void) { return NULL; }
+
+/* fake profiler stuff */
+#include "profile.h"
+const char Profile_Description[] = "";
+int Profile_Command(int nArgc, char *psArgs[], bool bForDsp) { return DEBUGGER_CMDDONE; }
+char *Profile_Match(const char *text, int state) { return NULL; }
+bool Profile_CpuStart(void) { return false; }
+void Profile_CpuUpdate(void) { }
+void Profile_CpuStop(void) { }
+
 /* fake Hatari video variables */
 #include "screen.h"
 #include "video.h"
