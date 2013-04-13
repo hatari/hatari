@@ -138,6 +138,7 @@ Other changes:
 - Debugger tests building fixed
 
 Fixed Games:
+  Atomix (MFP, flickering bottom of the screen during samples)
   Bolo (MFP, couldn't start a game)
   Captain Blood (IKBD, fixed problem when setting the clock)
   Fokker and Downfall (ACIA/IKBD, had regressed in Hatari v1.6.x)
