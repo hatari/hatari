@@ -15,7 +15,7 @@
 
   Byte:    Description:
 
-  14-15    Prefered operating system (TOS, Unix)
+  14-15    Preferred operating system (TOS, Unix)
    20      Language
    21      Keyboard layout
    22      Format of date/time

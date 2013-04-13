@@ -243,7 +243,7 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 	LastInstrCycles = cycles + BusCyclePenalty;
 	LastOpcodeFamily = OpcodeFamily;
 
-	/* If pairing is true, we need to substract 2 cycles for the	*/
+	/* If pairing is true, we need to subtract 2 cycles for the	*/
 	/* previous instr which was rounded to 4 cycles while it wasn't */
 	/* needed (and we don't round the current one)			*/
 	/* -> both instr will take 4 cycles less on the ST than if ran	*/

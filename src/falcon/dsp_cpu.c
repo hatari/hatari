@@ -4125,7 +4125,7 @@ static Uint16 dsp_sub56(Uint32 *source, Uint32 *dest)
 
 	dest_save = dest[0];
 
-	/* Substract source from dest: D = D-S */
+	/* Subtract source from dest: D = D-S */
 	dest[2] -= source[2];
 	dest[1] -= source[1]+((dest[2]>>24) & 1);
 	dest[0] -= source[0]+((dest[1]>>24) & 1);

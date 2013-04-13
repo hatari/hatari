@@ -533,7 +533,7 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 
 /**
  * Command: CPU/DSP profiling enabling, exec stats, cycle and call stats.
- * Return for succesful command and false for incorrect ones.
+ * Returns DEBUGGER_CMDDONE or DEBUGGER_CMDCONT.
  */
 int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 {

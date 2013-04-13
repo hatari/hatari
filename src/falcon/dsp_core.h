@@ -258,7 +258,7 @@ extern void dsp_core_hostport_dspread(void);
 extern void dsp_core_hostport_dspwrite(void);
 
 /* dsp_cpu call these to read/write/configure SSI port */
-extern void dsp_core_ssi_configure(Uint32 adress, Uint32 value);
+extern void dsp_core_ssi_configure(Uint32 address, Uint32 value);
 extern void dsp_core_ssi_writeTX(Uint32 value);
 extern void dsp_core_ssi_writeTSR(void);
 extern Uint32 dsp_core_ssi_readRX(void);

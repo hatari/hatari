@@ -46,7 +46,7 @@
 /*			YEAH! Hatari is now the first emulator to pass the Transbeauce 2 protection :)	*/
 /* 2007/12/18	[NP]	More precise timings for HBL, VBL and MFP interrupts. On ST, these interrupts	*/
 /*			are taking 56 cycles instead of the 44 cycles in the 68000's documentation.	*/
-/* 2007/12/24	[NP]	If an interrupt (HBL, VBL) is pending after intruction 'n' was processed, the	*/
+/* 2007/12/24	[NP]	If an interrupt (HBL, VBL) is pending after instruction 'n' was processed, the	*/
 /*			exception should be called before instr. 'n+1' is processed, not after (else the*/
 /*			interrupt's handler is delayed by one 68000's instruction, which could break	*/
 /*			some demos with too strict timings) (ACF's Demo Main Menu).			*/
@@ -80,7 +80,7 @@
 /*			expires very often). Such precision is required for very recent hardscroll	*/
 /*			techniques that use 'stop' to stay in sync with the video shifter.		*/
 /* 2008/11/23	[NP]	In 'do_specialties()', when in STOP state, we must first test for a pending	*/
-/*			interrupt that would exit the STOP state immediatly, without doing a 'while'	*/
+/*			interrupt that would exit the STOP state immediately, without doing a 'while'	*/
 /*			loop until 'SPCFLAG_INT' or 'SPCFLAG_DOINT' are set.				*/
 /* 2008/11/29	[NP]	Call 'InterruptAddJitter()' when a video interrupt happens to precisely emulate */
 /*			the jitter happening on the Atari (see video.c for the jitter patterns).	*/
@@ -1608,7 +1608,7 @@ static int do_specialties (void)
     if ( regs.spcflags & SPCFLAG_STOP ) {
 //fprintf ( stderr , "test stop %d\n" , nCyclesMainCounter );
         /* We first test if there's a pending interrupt that would */
-        /* allow to immediatly leave the STOP state */
+        /* allow to immediately leave the STOP state */
         if ( do_specialties_interrupt(true) ) {		/* test if there's an interrupt and add pending jitter */
             regs.stopped = 0;
             unset_special (SPCFLAG_STOP);

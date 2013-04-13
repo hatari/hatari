@@ -720,7 +720,7 @@ static char *DebugUI_FreeCommand(char *input)
  * The string will be stored into command history buffer.
  * @return	Pointer to the string which should be given back to this
  *              function or DebugUI_FreeCommand() for re-use/history.
- *              Returns NULL when error occured.
+ *              Returns NULL when error occurred.
  */
 static char *DebugUI_GetCommand(char *input)
 {
@@ -751,7 +751,7 @@ static char *DebugUI_FreeCommand(char *input)
  * Only string returned by this function can be given for it as argument!
  * @return	Pointer to the string which should be given back to this
  *              function or DebugUI_FreeCommand() for re-use/freeing.
- *              Returns NULL when error occured.
+ *              Returns NULL when error occurred.
  */
 static char *DebugUI_GetCommand(char *input)
 {

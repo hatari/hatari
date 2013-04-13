@@ -1047,7 +1047,7 @@ static int to_same(int ch)
 
 /**
  * Clip given file name to 8+3 length like TOS does,
- * return resulting name lenght.
+ * return resulting name length.
  */
 static int clip_to_83(char *name)
 {
@@ -1103,7 +1103,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	path[pathlen++] = PATHSEP;
 	path[pathlen] = '\0';
 
-	/* TOS clips names to 8+3 lenght */
+	/* TOS clips names to 8+3 length */
 	strcpy(name, origname);
 	namelen = clip_to_83(name);
 

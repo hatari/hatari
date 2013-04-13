@@ -366,7 +366,7 @@ void Dialog_SystemDlg(void)
 	else
 		systemdlg[DLGSYS_TIMERD].state &= ~SG_SELECTED;
 
-	/* Adress space 24 bits */
+	/* Address space 24 bits */
 	if (ConfigureParams.System.bAddressSpace24)
 		systemdlg[DLGSYS_24BITS].state |= SG_SELECTED;
 	else

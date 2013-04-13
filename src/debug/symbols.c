@@ -41,7 +41,7 @@ typedef struct {
 
 typedef struct {
 	int count;		/* final symbol count */
-	int symbols;		/* intial symbol count */
+	int symbols;		/* initial symbol count */
 	symbol_t *addresses;	/* items sorted by address */
 	symbol_t *names;	/* items sorted by symbol name */
 } symbol_list_t;

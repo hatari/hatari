@@ -1984,7 +1984,7 @@ static const struct falcon_cycles_t table_falcon_cycles_CHK_W [] = {
 
 /** 
   Cycles table for CAS.BW  instruction. 
-  First column is for succesful compare case, 2nd column is for unsuccesful compare case
+  First column is for successful compare case, 2nd column is for unsuccessful compare case
   */
 static const struct falcon_cycles_t table_falcon_cycles_CAS_BW [] = {
 	{4,	0,	19,1,0,1,	23,1,2,1}, {4,	0,	15,1,0,0,	19,1,2,0},	// CAS.BW #<data>.W,(An)
@@ -1998,7 +1998,7 @@ static const struct falcon_cycles_t table_falcon_cycles_CAS_BW [] = {
 
 /** 
   Cycles table for CAS.L  instruction. 
-  First column is for succesful compare case, 2nd column is for unsuccesful compare case
+  First column is for successful compare case, 2nd column is for unsuccessful compare case
   */
 static const struct falcon_cycles_t table_falcon_cycles_CAS_L [] = {
 	{6,	0,	29,1,0,1,	33,1,2,1}, {6,	0,	21,1,0,0,	25,1,2,0},	// CAS.L #<data>.W,(An)
@@ -2015,8 +2015,8 @@ static const struct falcon_cycles_t table_falcon_cycles_CAS_L [] = {
   The table indicates Maximum time.
   */
 static const struct falcon_cycles_t table_falcon_cycles_CAS2_W [] = {
-	{2,	0,	32,2,0,2,	38,2,2,2},	// CAS2.W #<data>.L (succesful compare)
-	{2,	0,	28,2,0,0,	32,2,2,0}	// CAS2.W #<data>.L (unsuccesful compare)
+	{2,	0,	32,2,0,2,	38,2,2,2},	// CAS2.W #<data>.L (successful compare)
+	{2,	0,	28,2,0,0,	32,2,2,0}	// CAS2.W #<data>.L (unsuccessful compare)
 };
 
 /** 
@@ -2024,8 +2024,8 @@ static const struct falcon_cycles_t table_falcon_cycles_CAS2_W [] = {
   The table indicates Maximum time.
   */
 static const struct falcon_cycles_t table_falcon_cycles_CAS2_L [] = {
-	{2,	0,	48,2,0,2,	54,2,2,2},	// CAS2.L #<data>.L (succesful compare)
-	{2,	0,	36,2,0,0,	40,2,2,0}	// CAS2.L #<data>.L (unsuccesful compare)
+	{2,	0,	48,2,0,2,	54,2,2,2},	// CAS2.L #<data>.L (successful compare)
+	{2,	0,	36,2,0,0,	40,2,2,0}	// CAS2.L #<data>.L (unsuccessful compare)
 };
 
 /** 

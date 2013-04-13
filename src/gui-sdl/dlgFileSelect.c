@@ -863,7 +863,7 @@ clean_exit:
  * If no file is selected, or there's some problem with the file,
  * return false and clear dlgname & confname.
  * Otherwise return true, set dlgname & confname to the new file name
- * (dlgname is shrinked & limited to maxlen and confname is assumed
+ * (dlgname is shrunken & limited to maxlen and confname is assumed
  * to have FILENAME_MAX amount of space).
  */
 bool SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, bool bAllowNew)

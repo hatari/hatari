@@ -410,11 +410,11 @@ void dsp_core_ssi_Receive_SCK(void)
 
 
 /* SSI initialisations and state management */
-void dsp_core_ssi_configure(Uint32 adress, Uint32 value)
+void dsp_core_ssi_configure(Uint32 address, Uint32 value)
 {
 	Uint32 crb_te, crb_re;
 
-	switch (adress) {
+	switch (address) {
 		case DSP_SSI_CRA:
 			dsp_core.periph[DSP_SPACE_X][DSP_SSI_CRA] = value;
 			/* get word size for transfers */
