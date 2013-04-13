@@ -88,16 +88,17 @@ void Profile_DspShowStats(void)
 		area->lowest, area->highest);
 	fprintf(stderr, "- active instruction addresses:\n  %d\n",
 		area->active);
-	fprintf(stderr, "- executed instructions:\n  %llu\n",
+	fprintf(stderr, "- executed instructions:\n  %"PRIu64"\n",
 		area->counters.count);
 	/* indicates either instruction(s) that address different memory areas
 	 * (they can have different access costs), or more significantly,
 	 * DSP code that has changed during profiling.
 	 */
-	fprintf(stderr, "- sum of per instruction cycle changes\n  (can indicate code change during profiling):\n  %llu\n",
+	fprintf(stderr, "- sum of per instruction cycle changes\n"
+		"  (can indicate code change during profiling):\n  %"PRIu64"\n",
 		area->counters.misses);
 
-	fprintf(stderr, "- used cycles:\n  %llu\n",
+	fprintf(stderr, "- used cycles:\n  %"PRIu64"\n",
 		area->counters.cycles);
 	if (area->overflow) {
 		fprintf(stderr, "  *** COUNTERS OVERFLOW! ***\n");

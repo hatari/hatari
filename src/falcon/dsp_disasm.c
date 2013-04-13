@@ -24,6 +24,7 @@
 #endif
 
 #include <string.h>
+#include <inttypes.h>
 #include <stdbool.h>
 
 #include "dsp_core.h"
@@ -555,7 +556,8 @@ const char* dsp56k_getInstructionText(void)
 	}
 	if (offset > 2 && Profile_DspAddressData(prev_inst_pc, &percentage, &count, &cycles, &cycle_diff)) {
 		offset -= 2;
-		sprintf(str_instr2+offset, "%5.2f%% (%lld, %lld, %d)\n", percentage, count, cycles, cycle_diff);
+		sprintf(str_instr2+offset, "%5.2f%% (%"PRId64", %"PRId64", %d)\n",
+		        percentage, count, cycles, cycle_diff);
 	}
 	return str_instr2;
 } 
