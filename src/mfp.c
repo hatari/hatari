@@ -458,7 +458,7 @@ bool	MFP_ProcessIRQ ( void )
 	Uint8	Bit;
 
 
-//fprintf ( stderr , "process irq %d %d - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_DelayIRQ ,  MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+//fprintf ( stderr , "process irq %d %d %lld %lld - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_DelayIRQ , CyclesGlobalClockCounter , MFP_IRQ_Time ,  MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 
 	if ( MFP_IRQ == 1 )
 	{
@@ -569,9 +569,6 @@ static void MFP_UpdateIRQ ( Uint64 Event_Time )
  * Depending on the interrupt, we check either IPRA/IMRA or IPRB/IMRB
  * @return true if the MFP interrupt request is allowed
  */
-//static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
-//                                 Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
-
 static bool MFP_InterruptRequest ( Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB )
 {
 //  static int cnt;
@@ -653,6 +650,7 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 	Uint8	*pPendingReg;
 	Uint8	Bit;
 
+//fprintf ( stderr , "mfp input %d delay %d clock %lld\n" , Interrupt , Interrupt_Delayed_Cycles , CyclesGlobalClockCounter );
 	Bit = MFP_ConvertIntNumber ( Interrupt , &pEnableReg , &pPendingReg , NULL , NULL );
 
 	/* Input has occurred on MFP channel, set interrupt pending to request service when able */
