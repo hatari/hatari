@@ -2205,15 +2205,77 @@ Without arguments "lock" command will show the available options
 <h3>Debug symbols</h3>
 
 <p>
-You can load symbol name/address information from a file to the
-debugger with the "symbols" command (and with "dspsymbols" for DSP).
-These symbolic names can be used in arithmetic expressions and
-conditional breakpoint expressions.  They also show up in the "disasm"
-command output and you can trace calls to them with "trace cpu_symbols"
-(and DSP symbols with "trace dsp_symbols").
+You can load debugging symbols to the debugger with the "symbols"
+command (and with "dspsymbols" for DSP). These symbolic names can be
+used in arithmetic expressions and conditional breakpoint expressions.
+They also show up in the "disasm" command output and you can trace
+calls to them with "trace cpu_symbols" (and DSP symbols with "trace
+dsp_symbols").
 </p>
 
-<p>The symbols file format is following:</p>
+
+<h4>For a program under GEMDOS HD emulation</h4>
+
+<p>
+If you're using GEMDOS HD emulation, and your program contains symbol
+table in DRI/GST format, you can load its symbol names/addresses to
+the debugger with the following command, after program has been loaded
+to the memory by TOS (see <a href="#Breakpoint_variables">setting
+breakpoint at program startup</a>):
+</p>
+<pre>
+symbols prg
+</pre>
+<p>
+
+<p>
+The options you need to add suitable symbol table to your programs,
+depend on which toolchain you use to build it:
+</p>
+<dl>
+<dt><em>Devpac</em>:</dt>
+<dd>"OPT D+,X+"</dd>
+<dt><em>AHCC</em>:</dt>
+<dd>"-g", and "-l" option for local symbols, both for linking</dd>
+<dt><em>GCC</em>:</dt>
+<dd>"-Wl,--traditional-format" option for linking,
+    and "-g" for compilation to get local symbols</dd>
+<dt><em>VBCC</em>:</dt>
+<dd>"-g" (can only be used at linking phase), <em>when VBCC
+    configuration file uses "-bataritos" option for
+    the linker</em></dd>
+</dl>
+
+
+<h4>For a program on a (disk) image</h4>
+
+<p>
+If the program isn't run from a GEMDOS HD emulated drive, but from a
+cartridge, floppy or HD image, you need to have the corresponding
+program also as normal host file which location you can give to the
+debugger:
+</p>
+<pre>
+symbols /path/to/the/program.tos
+</pre>
+
+
+<h4>ASCII debug symbol files</h4>
+
+<p>
+If Hatari complains that your program doesn't have DRI/GST format
+symbol table, or its symbols are in some other format, and you
+cannot re-compile it to have them, you have two options:
+</p>
+<ul>
+<li>Convert the symbols to ASCII format understood by the Hatari debugger.
+    Writing converters for other ASCII formats is easy, and Hatari already
+    contains covertors for DSP LOD files, <tt>nm</tt> output for MiNT/a.out
+    binaries and AHCC map files.
+<li>Create the ASCII symbols file by hand as you're debugging a program.
+</ul>
+
+<p>ASCII symbols file format is following:</p>
 <pre>
 e01034 T random
 e01076 T kbdvbase
@@ -2227,24 +2289,19 @@ starting with '#' (comments) are ignored.
 </p>
 
 <p>
-AHCC C-compiler can provide a symbol file suitable for this with its
-"-n" 'nm' list option (not enabled by default). If you're reverse
-engineering some code, you could just create your own symbols file to
-help in debugging it later.
-</p>
-
-<p>
-If you're debugging normal TOS/GEM programs instead of code loaded
-into a fixed address (like e.g. EmuTOS is), after the program has been
-loaded, load the symbols with the program text segment address offset:
+Debugger will automatically "relocate" the symbol addresses when it
+loads them from a program binary, but with ASCII symbol files you need
+to give the relocation offset(s) separately, unless the symbol names
+are for fixed adresses (like is the case e.g. with EmuTOS):
 </p>
 <pre>
-symbols calc.sym "TEXT"
+symbols program.sym TEXT DATA BSS
 </pre>
 <p>
-(The value of the above virtual "TEXT" debugger variable comes from a
-program basepage, it's set after the program is loaded by TOS, see
-"info basepage" output.)
+If you're interested only about code symbols, you can leave DATA and
+BSS offsets out (the values of the above virtual debugger variables
+like TEXT come from the currently loaded program's basepage, they're
+set after the program is loaded by TOS, see "info basepage" output).
 </p>
 
 
@@ -2423,6 +2480,9 @@ which indicates inequality ("is not") comparison.  For example:
 b d0 &gt; $20  &amp;&amp;  d0 &lt; $40  &amp;&amp;  d0 ! $30
 </pre>
 
+
+<h5>Tracking breakpoint conditions</h5>
+
 <p>
 As a convenience, if the both sides of the comparison are exactly the
 same (i.e. condition is redundant as it's always either true or
@@ -2448,9 +2508,42 @@ like this:
 b ($ffff9202).w ! ($ffff9202).w :trace
 </pre>
 <p>
-Typically with this one would use the breakpoint "trace" option like
-above.
+Because tracking breakpoint conditions will print the evaluated
+value when it changes, they're typically used with the trace option
+to track changes e.g. to some IO register.
 </p>
+
+
+<h5>Breakpoint condition notes</h5>
+
+<ul>
+<li>
+Any '!' condition should be given as the first condition. Because
+breakpoint evaluation is stopped ("short-circuited") when any of the
+conditions fails, the tracked value would not be updated correctly
+unless tracking condition is given as the first one.
+</li>
+
+<li>
+Hatari will internally update some register values without immediately
+updating the corresponding IO address range memory addresses.  For
+example the Busy bit for the internal Blitter control register is
+(internally) cleared when Blitter activity stops, but the actual IO
+address for that control register gets updated only when something
+actually writes or reads that IO address.  Many HW registers behave
+(status registers in FDC, ACIA, MFP, Blitter...).
+<br>
+For breakpoints that track just a single IO register memory address, or
+multiple ones of which <strong>none</strong> are modified by Hatari,
+only by emulated code, this is not a problem, they get triggered as
+expected.
+<br>
+However, if you have a breakpoint that tracks multiple IO registers
+where some of them are updated by Hatari, for example to check that
+other Blitter registers aren't updated while control register
+indicates Blitter to be active (busy), things don't work as expected!
+</li>
+</ul>
 
 
 <h4>Breakpoint variables</h4>
@@ -2471,10 +2564,10 @@ Note1: It's better to trigger it only once because if you'd leave it on,
 during reboot you would get a warning for every instruction until TOS sets
 a valid basepage.
 <br />
-Note2: you cannot use an address breakpoint for this because value of a
-variable given to it is evaluated when the breakpoint is set, not at
-run-time, so it cannot get the new value that the TEXT variable gets
-when you start a program.
+Note2: you cannot use an address breakpoint for this because value of
+a variable given to address breakpoint is evaluated when it's set, not
+at run-time, so it cannot get the new value that the TEXT variable
+gets when you start a program.
 </li>
 <li>To find out current program DATA and BSS segment contents,
     use the corresponding variables:
@@ -2524,12 +2617,18 @@ another one is set.
 <ul>
 <li>"break.ini":
 <pre>
-b GemdosOpcode = 0x3D :trace :file trace.ini
+b GemdosOpcode = 0x3D :trace :file program.ini
+</pre>
+</li>
+<li>"program.ini":
+<pre>
+b pc = TEXT :trace :file trace.ini
 </pre>
 </li>
 <li>"trace.ini":
 <pre>
-setopt --bios-intercept --trace gemdos,xbios,fdc,io_all
+symbols prg
+trace gemdos,cpu_symbols
 b VBL = "VBL+4" :trace :file disable.ini
 </pre>
 </li>
@@ -2546,18 +2645,20 @@ And then start Hatari with the first debugger input file and a GEMDOS
 harddisk directory containing "desktop.inf" file:
 </p>
 <pre>
-hatari --parse break.ini -d testdir
+hatari --parse break.ini /path/to/your/program.tos
 </pre>
 
 <ol>
 <li>"break.ini" input file will break when TOS opens
     the "desktop.inf" file (it's the first Fopen() i.e. GEMDOS call
     0x3D done by TOS at boot) and the breakpoint will run
-    the debugger commands from the "trace.ini" file
-<li>"trace.ini" input file sets Hatari to trace several things
-    (see <a href="#Tracing">Tracing</a> section below) in the
-    emulated system for few VBLs until breakpoint runs commands
-    from the "disable.ini" file
+    the debugger commands from the "symbols.ini" file
+<li>"program.ini" will setup breakpoint to program startup
+    (because TEXT variable cannot be used before TOS has booted)
+<li>"trace.ini" input file loads symbols for the run program, sets Hatari
+    to trace several things (see <a href="#Tracing">Tracing</a> section
+    below) in the emulated system for few VBLs until breakpoint runs
+    commands from the "disable.ini" file
 <li>"disable.ini" input file will disable tracing and remove
     all (remaining) breakpoints
 </ol>
@@ -2615,11 +2716,11 @@ which tell it to intercept this higher level functionality:
     (which doesn't work under MiNT because it re-implements GEMDOS)</li>
 </ul>
 <p>
-Unlike with AES and VDI tracing, BIOS, GEMDOS and XBIOS traces show
-arguments for most of the calls.
+Unlike with VDI tracing, AES, BIOS, GEMDOS and XBIOS traces show arguments
+for most of the calls.
 </p>
 <p>
-Tracing options can be set even from a program within the emulation
+Tracing options can be set even from a program within the emulation,
 if you enable the Hatari "--bios-intercept" option and call XBios 255
 from the program with a suitable Hatari command line string.
 </p>
