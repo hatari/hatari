@@ -4,6 +4,7 @@ add_subdirectory(hmsa)
 include(FindPythonInterp)
 if(PYTHONINTERP_FOUND)
 	add_subdirectory(hconsole)
+	add_subdirectory(debugger)
 endif(PYTHONINTERP_FOUND)
 
 install(PROGRAMS atari-hd-image.sh DESTINATION ${BINDIR} RENAME atari-hd-image)
