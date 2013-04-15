@@ -249,7 +249,7 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 	Disasm_DisableColumn(DISASM_COLUMN_HEXDUMP, oldcols, newcols);
 	Disasm_SetColumns(newcols);
 
-	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <sum of i-cache misses)\n", out);
+	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <sum of i-cache misses>)\n", out);
 
 	nextpc = 0;
 	idx = address2index(lower);
@@ -341,7 +341,7 @@ void Profile_CpuShowMisses(int show)
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].misses;
 		percentage = 100.0*count/cpu_profile.all.misses;
-		printf("0x%06x\t%.2f%%\t%d%s\t", addr, percentage, count,
+		printf("0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
 		Disasm(stdout, addr, &nextpc, 1);
 	}
@@ -401,7 +401,7 @@ void Profile_CpuShowCycles(int show)
 		addr = index2address(*sort_arr);
 		count = data[*sort_arr].cycles;
 		percentage = 100.0*count/cpu_profile.all.cycles;
-		printf("0x%06x\t%.2f%%\t%d%s\t", addr, percentage, count,
+		printf("0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
 		Disasm(stdout, addr, &nextpc, 1);
 	}
@@ -459,7 +459,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 			addr = index2address(*sort_arr);
 			count = data[*sort_arr].count;
 			percentage = 100.0*count/cpu_profile.all.count;
-			printf("0x%06x\t%.2f%%\t%d%s\t",
+			printf("0x%06x\t%5.2f%%\t%d%s\t",
 			       addr, percentage, count,
 			       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
 			Disasm(stdout, addr, &nextpc, 1);
@@ -488,7 +488,7 @@ void Profile_CpuShowCounts(int show, bool only_symbols)
 		}
 		count = data[*sort_arr].count;
 		percentage = 100.0*count/cpu_profile.all.count;
-		printf("0x%06x\t%.2f%%\t%d\t%s%s\t",
+		printf("0x%06x\t%5.2f%%\t%d\t%s%s\t",
 		       addr, percentage, count, name,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
 		Disasm(stdout, addr, &nextpc, 1);
