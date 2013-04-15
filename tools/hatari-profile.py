@@ -288,8 +288,8 @@ class FunctionStats:
     def is_subroutine(self):
         for flag in (CALL_SUBROUTINE, CALL_STARTUP):
             if flag in self.callflags:
-                return true
-        return false
+                return True
+        return False
 
     def has_cost(self):
         "return whether function has valid data yet"
