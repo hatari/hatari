@@ -1,0 +1,152 @@
+.\" Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH "HATARI_PROFILE" "1" "2013-04-15" "Hatari" "Hatari utilities"
+.SH "NAME"
+hatari_profile \- Post-processor for Hatari profiler data
+.SH "SYNOPSIS"
+.B hatari_profile.py
+.IR [options]
+.IR <profile data files>
+.SH "DESCRIPTION"
+A Python script to post-process data produced by Hatari profiler
+"save" commands, both for CPU and DSP:
+.nf
+	profile save <filename>
+	dspprofile save <filename>
+.fi
+.PP
+It can provide function level (CPU and DSP) processor usage
+information for anything Hatari profiler records: instruction counts,
+processor cycles and depending on processor, also instruction cache
+misses or cycle differences.
+.PP
+This information can be provided as ASCII list of heaviest functions,
+as callgraphs (if profile data includes caller information), or as
+callgrind format export which can be viewed in (Linux) Kcachegrind
+GUI.
+.SH "OPTIONS"
+Invoking
+.I hatari_profile
+without arguments lists all of its options.
+.SH "USAGE EXAMPLES"
+Regardless of whether profile data contains some symbol information,
+you should always give script all relevant debug symbols, otherwise
+costs might not get correctly assigned to symbols preceeding those
+costs.
+.PP
+This post-processes profile data for EmuTOS (ROM), with symbol file
+having fixed/absolute addresses (-a), shows statistics (-s) and top
+lists (-t), but limits list output to anything taking over 2% (-l 2)
+and includes "propagated" subroutine call costs (-p):
+.nf
+-------------------------------------------------------------
+$ hatari_profile.py -a etos512k.sym -st -l 2 -p etos-boot.txt
+
+Hatari profile data processor
+
+Parsing absolute symbol address information from etos512k.sym...
+1538 lines with 1236 code symbols/addresses parsed, 0 unknown.
+
+Parsing profile information from etos-boot.txt...
+16993 lines processed with 465 functions.
+
+CPU profile information from 'etos-boot.txt':
+- Hatari v1.6.2+ (Apr 15 2013), OldUAE CPU core
+
+Time spent in profile = 4.60740s.
+
+Calls:
+- max = 1800, in ___mulsi3 at 0xe60790, on line 16477
+- 16659 in total
+Executed instructions:
+- max = 315254, in _timeout_gpip+38 at 0xe06fd8, on line 3237
+- 3074165 in total
+Used cycles:
+- max = 6311628, in _timeout_gpip+38 at 0xe06fd8, on line 3237
+- 36957124 in total
+
+Calls:
+ 10.80%   10.88%      1800  ___mulsi3
+  8.04%    8.16%      1339  _memcpy
+  5.20%    0.26%       866  _int_timerc
+  4.61%                768  _call_user_wheel
+  3.86%    3.86%       643  _min
+  3.76%    3.82%       627  _sti
+  3.76%    3.76%       627  _cli
+  3.30%    3.30%       550  _bcostat4
+
+Executed instructions:
+ 61.58%   61.79%   1892940  _timeout_gpip
+  8.62%    9.33%    264918  _draw_rect
+  4.96%    4.98%    152582  _run_calibration
+  4.06%    4.09%    124944  _blank_out
+  3.22%              99134  meminit
+
+Used cycles:
+ 61.58%   62.01%  22759756  _timeout_gpip
+  5.69%    6.85%   2104464  _draw_rect
+  4.29%            1586108  meminit
+  4.19%    4.22%   1547768  _run_calibration
+  3.04%    3.07%   1122816  _blank_out
+  2.88%    2.98%   1065272  _stop_until_interrupt
+-------------------------------------------------------------
+.fi
+.PP
+This creates GraphViz callgraph files (-g) and Kcachegrind callgrind
+data file (-k) from Bad Mood (Doom BSP viewer) profile.  Symbols for
+the program are TEXT section relative (-r), calls to some interrupt
+routines in the program are ignored as they aren't real calls,
+callgraph nodes using over 2% are highlighted, and there are some
+options to limit and simplify the graph:
+.nf
+-------------------------------------------------------------
+$ hatari_profile.py -r bmsym.sym \\
+  -k -g -p --emph-limit 2.0 --limit 0.5 \\
+  --ignore-to framecounter,new_vbi,stabilizer_b \\
+  --compact --no-leafs --no-intermediate \\
+  badmood-profile.txt
+
+Hatari profile data processor
+
+Parsing TEXT relative symbol address information from bmsym.sym...
+1023 lines with 392 code symbols/addresses parsed, 0 unknown.
+
+Parsing profile information from badmood-profile.txt...
+1420 lines processed with 63 functions.
+Ignoring 29 switches to framecounter
+Ignoring 9 switches to stabilizer_b
+Ignoring 8 switches to new_vbi
+Of all 1562 switches, ignored 56 for type(s) ['r', 'u', 'x'].
+
+Generating callgrind file 'badmood-profile.cg'...
+
+Generating 'badmood-profile-0.dot' DOT callgraph file...
+
+Generating 'badmood-profile-1.dot' DOT callgraph file...
+
+Generating 'badmood-profile-2.dot' DOT callgraph file...
+
+Generating 'badmood-profile-3.dot' DOT callgraph file...
+
+CPU profile information from 'badmood-profile.txt':
+- Hatari v1.6.2+ (Apr 10 2013), WinUAE CPU core
+-------------------------------------------------------------
+.fi
+.SH "SEE ALSO"
+.IR hatari (1),
+.IR hconsole (1)
+.IR hatariui (1)
+.SH "AUTHOR"
+Written by Eero Tamminen <oak at helsinkinet fi>.
+.SH "LICENSE"
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.SH "NO WARRANTY"
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
