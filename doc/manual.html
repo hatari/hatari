@@ -2740,8 +2740,10 @@ breakpoint option.
 <p>
 Profiling tells where the emulated code spends most of its (emulated)
 time.  It can be used to find out where a program is (apparently)
-stuck or what are the largest performance bottlenecks for a program.
+stuck, or what are the largest performance bottlenecks for a program.
 </p>
+
+<h4>Collecting the profile data</h4>
 
 <p>
 Profiling is used by first enabling the profiler (use "dp" for DSP):
@@ -2756,95 +2758,175 @@ And profiling will start once you continue the emulation:
 <pre>
 &gt; c
 Returning to emulation...
-Allocated CPU profile buffer (18 MB).
+Allocated CPU profile buffer (27 MB).
 </pre>
 
 <p>
 When you get back to the debugger, the collected profiling information
-is processed and a summary of in which parts of the RAM the execution
-happened is shown:
+is processed and a summary of in which parts of memory the execution
+happened, and how long it took, is shown:
 </p>
 <pre>
-Allocated CPU profile address buffer (19 KB).
-Normal RAM (0-0x400000):
-- no activity
-Cartridge ROM (0xFA0000-0xFC0000):
-- no activity
-ROM TOS (0xFC0000-0xFF0000):
+Allocated CPU profile address buffer (57 KB).
+ROM TOS (0xE00000-0xE80000):
 - active address range:
-  0xfc0652-0xfe75de
+  0xe00030-0xe611a4
 - active instruction addresses:
-  4540 (99.41% of all)
+  14240 (100.00% of all)
 - executed instructions:
-  3021736 (89.48% of all)
+  4589668 (100.00% of all)
 - used cycles:
-  16419190 (90.12% of all)
+  56898472 (100.00% of all)
+  = 7.09347s
+Cartridge ROM (0xFA0000-0xFC0000):
+  - no activity
+
+= 7.09347s
 </pre>
 <p>
 (DSP RAM will be shown only as single area in profile information.)
 </p>
 
+
+<h4>Investigating the profile data</h4>
+
 <p>
-After this you can request more detailed profiling information:
+When you're back in debugger, you can inspect the collected profile data:
 </p>
 <pre>
-&gt; profile
+&gt; h profile
 'profile' - profile CPU code
-Usage:  profile &lt;on|off|stats|counts|cycles|symbols|addresses&gt; [show count]
-        'on' &amp; 'off' enable and disable profiling.  Data is collected
+Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|addresses|save&gt; [count|address|file]
+        'on' & 'off' enable and disable profiling.  Data is collected
 	until debugger is entered again at which point you get profiling
-        statistics ('stats') summary.  Then you can ask for list of the
-	PC addresses, sorted either by execution 'counts' or 'cycles'
-	they used. Former can be limited just to addresses with 'symbols'.
-        'addresses' lists the profiled addresses in order, with
-	the instructions (currently) residing at them.
-	You can also give optional limit on how many will be shown.
+        statistics ('stats') summary.
+
+	Then you can ask for list of the PC addresses, sorted either by
+        execution 'counts', used 'cycles' or cache 'misses'.  First can
+	be limited just to named addresses with 'symbols'.  Optional
+	count will limit how many items will be shown.
+
+	'addresses' lists the profiled addresses in order, with the
+        instructions (currently) residing at them.  By default this
+	starts from the first executed instruction, or you can
+	specify the starting address.
+
+	'callers' shows (raw) caller information for addresses which
+        had symbol(s) associated with them.
+
+	Profile information can be saved with 'save'.
 </pre>
 
-<p>For example:</p>
+<p>For example, to see which memory addresses were executed most
+and what instructions those have at the end of profiling, use:</p>
 <pre>
 &gt; profile counts 8
 addr:           count:
-0xe004a4        0.78%   4900
-0xe004b6        0.78%   4896
-0xe0dcbc        0.55%   3448
-0xe0dcc6        0.55%   3448
-0xe0f59e        0.55%   3446
-0xe0dcce        0.55%   3445
-0xe0dcd6        0.55%   3445
+0xe06f10        12.11%  555724  move.l    $4ba,d1
+0xe06f16        12.11%  555724  cmp.l     d1,d0
+0xe06f18        12.11%  555724  bgt.s     $e06f06
+0xe06f06        12.11%  555708  move.b    $fffffa01.w,d1
+0xe06f0a        12.11%  555708  btst      #5,d1
+0xe06f0e        12.11%  555708  beq.s     $e06f1e
+0xe00ed8         1.66%  76001   subq.l    #1,d0
+0xe00eda         1.66%  76001   bpl.s     $e00ed8
 8 CPU addresses listed.
 </pre>
 
 <p>
-If profiling revealed that code only run in e.g. few hundred different
-addresses, you could ask for address-sorted profiling information on
-all of them:
+Then, to see what the executed code and its costs look like
+around top addresses:
 <pre>
-&gt; profile addresses 255
-$00aa92 :             addq.l    #4,sp                      0.18% (6096, 24384)
-$00aa94 :             movem.l   (sp)+,d6-d7/a5             0.18% (6096, 24384)
-$00aa98 :             move      d2,sr                      0.18% (6137, 24712)
-$00aa9a :             unlk      a6                         0.18% (6137, 49096)
-$00aa9c :             rts                                  0.18% (6137, 24560)
-[...]
-$fc0652 :             rts                                  0.01% (331, 2648)
-[...]
-$fc06c0 :             addq.l    #1,$466                    0.01% (331, 1796)
-$fc06c6 :             subq.w    #1,$452                    0.01% (331, 1324)
-$fc06cc :             bmi       $fc079a                    0.01% (331, 1324)
+&gt; profile addresses 0xe06f04
+# disassembly with profile data:
+# &lt;instructions percentage&gt;% (&lt;sum of instructions&gt;, &lt;sum of cycles&gt;, &lt;sum of i-cache misses&gt;)
+$e06f04 :             bra.s     $e06f10                    0.00% (48, 576, 0)
+$e06f06 :             move.b    $fffffa01.w,d1            12.11% (555708, 8902068, 0)
+$e06f0a :             btst      #5,d1                     12.11% (555708, 6685268, 0)
+$e06f0e :             beq.s     $e06f1e                   12.11% (555708, 4457312, 0)
+$e06f10 :             move.l    $4ba,d1                   12.11% (555724, 11125668, 0)
+$e06f16 :             cmp.l     d1,d0                     12.11% (555724, 4461708, 0)
+$e06f18 :             bgt.s     $e06f06                   12.11% (555724, 4455040, 0)
+$e06f1a :             moveq     #1,d0                      0.00% (16, 64, 0)
+Disassembled 8 (of active 14240) CPU addresses.
+</pre>
+<p>
+Unlike normal disassembly, "profile addresses" command shows only
+memory addresses which instructions were executed during profiling.
+You get instruction cache misses only when using cycle-accurate 030
+emulation with a Hatari version configured to use WinUAE CPU core.
+<p>
+If you have loaded symbol information, symbol names are shown above
+the corresponding addresses.  With the "profile symbols" command you
+get a list of how many times the code execution passed through the
+defined symbol addresses.
+</p>
+
+
+<h4>Caller information</h4>
+
+<p>
+If you have loaded symbols (see <a href="#Debug_symbols">Debug symbols</a>)
+before continuing emulation, additional caller information will be
+collected for all the code symbol addresses.  This information
+includes call counts, calling instruction type (subroutine call,
+branch, return etc), and costs for those calls, both including costs
+for further subroutine calls and without them:
+</p>
+<pre>
+&gt; profile callers
+# &lt;callee&gt;: &lt;caller1&gt; = &lt;calls&gt; &lt;types&gt;[ &lt;inclusive/totals&gt;[ &lt;exclusive/totals&gt;]], &lt;caller2&gt; ..., &lt;callee name&gt;
+# types: s = subroutine call, r = return from subroutine, e = exception, x = return from exception,
+#        b = branch/jump, n = PC moved to next instruction, u = unknown PC change
+# totals: calls/instructions/cycles/misses
+0xe00030: 0xffffff = 1 e, _main
+0xe000fe: 0xe00a0c = 1 b, memdone
+0xe0010a: 0xe04e34 = 1 s 1/5/72 1/5/72, _run_cartridge_applications
+0xe00144: 0xe04dbe = 1 s 4/118/1512 1/27/444, _init_acia_vecs
+0xe001ea: 0xe00ec6 = 1 b, _int_acia
+0xe0038c: 0xe04c28 = 1 s 1/191/2052 1/191/2052, _init_exc_vec
+0xe003a6: 0xe04c2e = 1 s 1/388/4656 1/388/4656, _init_user_vec
 ...
 </pre>
 
 <p>
-If you have loaded symbol information for code addresses, it's shown
-with above addresses.  With the "profile symbols" command you get a
-list of how many times the code execution passed through the defined
-symbol addresses.
+For example, if you don't know all the places from which a certain
+function is called, or in what context a certain interrupt handler can
+be called during the period you're profiling, profile caller
+information will tell you:
+</p>
+<pre>
+callee: caller: calls: calltype:
+  |       |       |   /
+0x379:  0x155 = 144 r, 0x283 = 112 b, 0x2ef = 112 b, 0x378 = 72 s
+583236/359708265/1631189180 72/4419020/19123430, dsp_interrupt
+           |                       |                 |
+    inclusive costs         exclusive costs     callee name
+  (of calls from 0x378)
+
+Calltypes:
+- b: jump/branch
+- n: PC  just moved to next address
+- r: subroutine return
+- s: subroutine call
+</pre>
+<p>
+(Most "calls" to "dsp_interrupt" were subroutine call returns (=r)
+to it from address 0x155.)
 </p>
 
 <p>
-After the profiling information has been post-processed, it will
-also be shown in the normal disassembly output.
+With the execution counts in normal profiling data, caller information
+can actually be used to have complete picture of what exactly the code
+did during profiling.  Main/overview work for this analysis is best done
+automatically, by the profiler data post-processor.
+</p>
+
+
+<h4>Profile data post-processing</h4>
+
+<p>
+TODO
 </p>
 
 
@@ -2986,9 +3068,9 @@ c
 <dd>
 <pre>
 lock registers
-c 1
+s
 [new register values]
-c 1
+s
 [new register values]
 ...
 </pre>
@@ -3020,6 +3102,7 @@ c
 [after a while, use AltGr+Pause to get back to debugger]
 profile  counts
 </pre>
+Please see <a href="#Profiling">Profiling</a> section for more info.
 </dd>
 
 </dl>
@@ -3105,7 +3188,7 @@ can be slower despite optimizations.
 Emulation options have the largest impact on performance.
 These options can be changed from the Hatari GUI System dialog and
 the emulation needs to be rebooted for any of these changes to take
-an effect!
+an effect!  They're enabled by default.
 </p>
 
 <h4>DSP</h4>
@@ -3128,6 +3211,14 @@ significantly reduces the number of interrupts generated by the emulated
 Atari machine. Using this has adverse effect only for very rare programs.
 </p>
 
+<h4>FDC</h4>
+<p>
+While accurate FDC emulation doesn't take that much CPU, it slows down
+floppy image accesses (and Hatari startup) a lot.  Only <em>very</em>
+few demos and games require accurate FDC emulation for their copy protection,
+so enabling fast floppy access is fairly safe.
+</p>
+
 <h4>Compatible CPU</h4>
 <p>
 After the DSP and  interrupts, m68k emulation takes most time.
@@ -3147,11 +3238,11 @@ machine.
 </p>
 
 <p>
-NOTE: Above options may cause some programs not to work correctly.
+<strong>NOTE</strong>: Above options may cause some programs to work in correctly.
 The <a href="compatibility.html">Hatari Software Compatibility List</a>
-lists programs known to need real real Falcon DSP emulation or Timer-D
-frequency.  Disabling "Compatible CPU" option is recommended only as
-a last resort.
+lists programs known to need real real Falcon DSP emulation, Timer-D
+frequency or accurate FDC timings.  Disabling "Compatible CPU" option
+is recommended only as a last resort.
 </p>
 
 
