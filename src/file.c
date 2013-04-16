@@ -184,7 +184,12 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 			do
 			{
 				/* Seek through the file until we hit the end... */
-				gzseek(hGzFile, 1024, SEEK_CUR);
+				char tmp[1024];
+				if (gzread(hGzFile, tmp, sizeof(tmp)) < 0)
+				{
+					fprintf(stderr, "Failed to read gzip file!\n");
+					return NULL;
+				}
 			}
 			while (!gzeof(hGzFile));
 			FileSize = gztell(hGzFile);
