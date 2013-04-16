@@ -175,7 +175,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		symid = SDL_SwapBE16(symid);
 
 		/* GST extended DRI symbol format? */
-		if ((symid & 0xff) == 0x48) {
+		if ((symid & 0x0048)) {
 			/* next slot is rest of name */
 			i += 1;
 			if (fread(name+8, 14, 1, fp) != 1) {
