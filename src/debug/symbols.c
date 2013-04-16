@@ -145,7 +145,7 @@ static void symbol_list_free(symbol_list_t *list)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize)
 {
-	int i, count, symbols, locals;
+	int i, count, symbols, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
 	symtype_t symtype;
@@ -163,7 +163,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		return NULL;
 	}
 
-	locals = count = 0;
+	ofiles = locals = count = 0;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -211,6 +211,10 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 			locals++;
 			continue;
 		}
+		if (strchr(name, '/')) {
+			ofiles++;
+			continue;
+		}
 		address += section->offset;
 		if (address > section->end) {
 			fprintf(stderr, "WARNING: ignoring symbol '%s' with invalid offset 0x%x (>= 0x%x).\n", name, address, section->end);
@@ -229,6 +233,14 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	}
 	if (locals) {
 		fprintf(stderr, "NOTE: ignored %d unnamed/local symbols (= name starts with '.L').\n", locals);
+	}
+	if (ofiles) {
+		/* object file path names most likely get truncated and
+		 * as result cause unnecessary symbol name conflicts in
+		 * addition to addresses conflicting with first symbol
+		 * in the object file.
+		 */
+		fprintf(stderr, "NOTE: ignored %d (object) path name symbols ('/' in name).\n", ofiles);
 	}
 	list->symbols = symbols;
 	list->count = count;
