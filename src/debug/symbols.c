@@ -309,12 +309,13 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 
 	switch (tabletype) {
 	case 0x4D694E54:	/* "MiNT" */
-		fprintf(stderr, "ERROR: MiNT / a.out format symbol table isn't supported!\n");
+		fprintf(stderr, "MiNT executable, trying to load GST symbol table at offset 0x%x...\n", offset);
+		return symbols_load_dri(fp, sections, gettype, tablesize);
 	case 0x0:
-		fprintf(stderr, "Using DRI / GST format symbol table at offset 0x%x.\n", offset);
+		fprintf(stderr, "Old style excutable, loading DRI / GST symbol table at offset 0x%x.\n", offset);
 		return symbols_load_dri(fp, sections, gettype, tablesize);
 	default:
-		fprintf(stderr, "ERROR: unknown symbol type 0x%x at offset 0x%x!\n", tabletype, offset);
+		fprintf(stderr, "ERROR: unknown executable type 0x%x at offset 0x%x!\n", tabletype, offset);
 	}
 	return NULL;
 }
