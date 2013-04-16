@@ -155,7 +155,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	Uint32 address;
 
 	if (tablesize % DRI_ENTRY_SIZE) {
-		fprintf(stderr, "ERROR: invalid DRI symbol table size %d!\n", tablesize);
+		fprintf(stderr, "ERROR: invalid DRI/GST symbol table size %d!\n", tablesize);
 		return NULL;
 	}
 	symbols = tablesize / DRI_ENTRY_SIZE;
@@ -218,7 +218,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		}
 		address += section->offset;
 		if (address > section->end) {
-			fprintf(stderr, "WARNING: ignoring symbol '%s' with invalid offset 0x%x (>= 0x%x).\n", name, address, section->end);
+			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d with invalid offset 0x%x (>= 0x%x).\n", name, i, address, section->end);
 			continue;
 		}
 		list->names[count].address = address;
@@ -233,7 +233,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		return NULL;
 	}
 	if (locals) {
-		fprintf(stderr, "NOTE: ignored %d unnamed/local symbols (= name starts with '.L').\n", locals);
+		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols (= name starts with '.L').\n", locals);
 	}
 	if (ofiles) {
 		/* object file path names most likely get truncated and
@@ -294,8 +294,8 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 		return NULL;
 	}
 	sections[0].offset = start;
-	sections[0].end = start + textlen - 1;
-	if (DebugInfo_GetTEXTEnd() != sections[0].end) {
+	sections[0].end = start + textlen;
+	if (DebugInfo_GetTEXTEnd() != sections[0].end - 1) {
 		fprintf(stderr, "ERROR: given program TEXT section size differs from one in RAM!\n");
 		return NULL;
 	}
