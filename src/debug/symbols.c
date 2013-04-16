@@ -145,7 +145,7 @@ static void symbol_list_free(symbol_list_t *list)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize)
 {
-	int i, count, symbols, locals, ofiles;
+	int i, count, symbols, locals, ofiles, len;
 	prg_section_t *section;
 	symbol_list_t *list;
 	symtype_t symtype;
@@ -211,7 +211,8 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 			locals++;
 			continue;
 		}
-		if (strchr(name, '/')) {
+		len = strlen(name);
+		if (strchr(name, '/') || (len > 2 && name[len-2] == '.' && name[len-1] == 'o')) {
 			ofiles++;
 			continue;
 		}
@@ -237,10 +238,10 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	if (ofiles) {
 		/* object file path names most likely get truncated and
 		 * as result cause unnecessary symbol name conflicts in
-		 * addition to addresses conflicting with first symbol
-		 * in the object file.
+		 * addition to object file addresses conflicting with
+		 * first symbol in the object file.
 		 */
-		fprintf(stderr, "NOTE: ignored %d (object) path name symbols ('/' in name).\n", ofiles);
+		fprintf(stderr, "NOTE: ignored %d object file names (= name has '/' or ends in '.o').\n", ofiles);
 	}
 	list->symbols = symbols;
 	list->count = count;
