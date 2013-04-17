@@ -560,6 +560,14 @@ bool XBios(void)
 		return false;
 
 	case 5:		/* Setscreen */
+		if (STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG) == 3) {
+			/* actually VSetscreen with extra parameter */
+			LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX VsetScreen(0x%X, 0x%X, 3, 0x%hX)\n",
+				  XBiosCall, STMemory_ReadLong(Params),
+				  STMemory_ReadLong(Params+SIZE_LONG),
+				  STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD));
+			return false;			
+		}
 	case 109:	/* Dsp_ExecProg */
 	case 110:	/* Dsp_ExecBoot */
 	case 116:	/* Dsp_LoadSubroutine */
