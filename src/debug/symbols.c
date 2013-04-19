@@ -441,9 +441,10 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
 		list = symbols_load_ascii(fp, offsets, maxaddr, SYMTYPE_ALL);
 	}
+	fclose(fp);
+
 	if (!list) {
 		fprintf(stderr, "ERROR: no symbols, or reading them from '%s' failed!\n", filename);
-		fclose(fp);
 		return NULL;
 	}
 
@@ -451,7 +452,6 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		if (!list->count) {
 			fprintf(stderr, "ERROR: no valid symbols in '%s', loading failed!\n", filename);
 			symbol_list_free(list);
-			fclose(fp);
 			return NULL;
 		}
 		/* parsed less than there were "content" lines */
@@ -468,7 +468,6 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	qsort(list->addresses, list->count, sizeof(symbol_t), symbols_by_address);
 	qsort(list->names, list->count, sizeof(symbol_t), symbols_by_name);
 
-	fclose(fp);
 	fprintf(stderr, "Loaded %d symbols from '%s'.\n", list->count, filename);
 	return list;
 }
