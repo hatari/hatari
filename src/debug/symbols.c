@@ -145,7 +145,8 @@ static void symbol_list_free(symbol_list_t *list)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize)
 {
-	int i, count, symbols, locals, ofiles, len;
+	int i, count, symbols, len;
+	int dtypes, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
 	symtype_t symtype;
@@ -163,7 +164,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		return NULL;
 	}
 
-	ofiles = locals = count = 0;
+	dtypes = ofiles = locals = count = 0;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -201,6 +202,10 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 			section = &(sections[2]);
 			break;
 		default:
+			if ((symid & 0xe000) == 0xe000) {
+				dtypes++;
+				continue;
+			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d of unknown type 0x%x.\n", name, i, symid);
 			continue;
 		}
@@ -231,6 +236,9 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		perror("ERROR: reading symbol failed");
 		symbol_list_free(list);
 		return NULL;
+	}
+	if (dtypes) {
+		fprintf(stderr, "NOTE: ignored %d globally defined equated values.\n", dtypes);
 	}
 	if (locals) {
 		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols (= name starts with '.L').\n", locals);
