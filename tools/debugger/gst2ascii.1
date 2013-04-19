@@ -1,0 +1,60 @@
+.\" Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH "GST2ASCII" "1" "2013-04-19" "Hatari" "Hatari utilities"
+.SH "NAME"
+gst2ascii \- Output Atari program DRI/GST format symbol table
+.SH "SYNOPSIS"
+.B gst2ascii
+.RI  [options]
+.RI  <program>
+.SH "DESCRIPTION"
+\fIgst2ascii\fP reads DRI/GST symbol table from given Atari program and
+outputs it in the ASCII format understood by Hatari debugger and its
+profiler data post-processor (which doesn't accept any other format). 
+.PP
+There are some options to filter the symbol table content and the
+resulting ASCII output is easy to edit also by hand, if other symbols
+(for e.g. loop labels) need to be removed or missing function symbols
+need to be added.
+.SH "OPTIONS"
+.TP
+\fB-n\fP
+Sort symbol output by symbol name, not by their addresses.
+.TP
+\fB-b\fP
+Filter BSS symbols out from the output.
+.TP
+\fB-b\fP
+Filter DATA symbols out from the output.
+.TP
+\fB-t\fP
+Filter TEXT symbols out from the output.
+.TP
+\fB-l\fP
+Filter local (.L*) symbols out.  Usually they're useless because
+they don't have names, just numbers.
+.TP
+\fB-o\fP
+Filter symbols for object files (*.o) out.
+.SH "EXAMPLES"
+Save 'program.prg' symbol table in ASCII format with
+local symbols filtered out:
+.br
+	gst2ascii -l program.prg > program.sym
+.SH "SEE ALSO"
+.IR hatari (1),
+.IR hatari_profile (1)
+.SH "AUTHOR"
+Written by Eero Tamminen <oak at helsinkinet fi>.
+.SH "LICENSE"
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.SH "NO WARRANTY"
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.

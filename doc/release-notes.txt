@@ -129,6 +129,8 @@ Tool updates:
     instruction, processor cycle & i-cache miss statistics
   - With callers information it can create function call callgraphs
     and create callgrind format files for Kcachegrind GUI
+- New gst2ascii tool to extract DRI/GST symbol table from Atari program,
+  for use with the profile data post-processor
 - Added scripts for converting symbol tables in Devpac 3 listings and DSP LOD
   files to a format understood by Hatari debugger 'symbols' command,
   and to clean 'nm' output of GCC & VBCC built a.out binaries for it
