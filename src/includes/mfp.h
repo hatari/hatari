@@ -9,6 +9,8 @@
 #define HATARI_MFP_H
 
 /* List of MFP interrupts (GPIP is General Purpose I/O Interrupt Port) */
+#define	MFP_INT_MAX			15		/* We have 16 ints from 0 to 15 */
+
 #define	MFP_INT_GPIP7			15		/* Highest Priority */
 #define	MFP_INT_GPIP6			14
 #define	MFP_INT_TIMER_A			13
@@ -62,13 +64,13 @@ extern Uint8 MFP_IPRA,MFP_IPRB;
 extern Uint8 MFP_TACR,MFP_TBCR;
 extern Uint8 MFP_VR;
 extern bool  MFP_IACK;
+extern bool  MFP_UpdateNeeded;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(bool bSave);
 extern int  MFP_ProcessIACK ( int OldVecNr );
 extern bool MFP_ProcessIRQ ( void );
-extern int  MFP_CheckPendingInterrupts(void);
-//extern void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg);
+extern void MFP_UpdateIRQ ( Uint64 Event_Time );
 extern void MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles );
 extern void MFP_TimerA_EventCount_Interrupt(void);
 extern void MFP_TimerB_EventCount_Interrupt( int Delayed_Cycles );

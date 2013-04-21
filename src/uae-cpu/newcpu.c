@@ -1640,10 +1640,11 @@ static int do_specialties (void)
 	
 	    /* It is possible one or more ints happen at the same time */
 	    /* We must process them during the same cpu cycle then choose the highest priority one */
-	    while (PendingInterruptCount<=0 && PendingInterruptFunction) {
+	    while (PendingInterruptCount<=0 && PendingInterruptFunction)
 		CALL_VAR(PendingInterruptFunction);
-	    }
-		
+	    if ( MFP_UpdateNeeded == true )
+	        MFP_UpdateIRQ ( 0 );
+
 	    /* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
 	    if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
 		regs.stopped = 0;
@@ -1834,6 +1835,8 @@ static void m68k_run_1 (void)
 	  }
 //       if ( n>1 ) fprintf ( stderr , "run int %d\n" , n );
 //        do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+      if ( MFP_UpdateNeeded == true )
+        MFP_UpdateIRQ ( 0 );
     }
 
 #endif
@@ -1897,8 +1900,13 @@ static void m68k_run_2 (void)
 	  nWaitStateCycles = 0;
 	}
 
-	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-	  CALL_VAR(PendingInterruptFunction);
+        if ( PendingInterruptCount <= 0 )
+	{
+	  while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+	    CALL_VAR(PendingInterruptFunction);
+	  if ( MFP_UpdateNeeded == true )
+	    MFP_UpdateIRQ ( 0 );
+	}
 
 	if (regs.spcflags) {
 	    if (do_specialties ())

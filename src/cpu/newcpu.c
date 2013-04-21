@@ -2840,9 +2840,10 @@ STATIC_INLINE int do_specialties (int cycles)
 
 		/* It is possible one or more ints happen at the same time */
 		/* We must process them during the same cpu cycle then choose the highest priority one */
-		while (PendingInterruptCount<=0 && PendingInterruptFunction) {
+		while (PendingInterruptCount<=0 && PendingInterruptFunction)
 		    CALL_VAR(PendingInterruptFunction);
-		}
+		if ( MFP_UpdateNeeded == true )
+		    MFP_UpdateIRQ ( 0 );
 
 		/* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
 		if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
@@ -3072,8 +3073,12 @@ static void m68k_run_1 (void)
 		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 		/* and prevent exiting the STOP state when calling do_specialties() after. */
 		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
-			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+	        if ( PendingInterruptCount <= 0 )
+		{
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 		}
 
 		if (r->spcflags) {
@@ -3128,8 +3133,12 @@ static void m68k_run_1_ce (void)
 		 * we're really there, this helps to get this mode running at
 		 * at least to a basic extend! */
 		M68000_AddCyclesWithPairing(currcycle * 2 / CYCLE_UNIT);
-		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
-			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+	        if ( PendingInterruptCount <= 0 )
+		{
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 		}
 
 		if (r->spcflags) {
@@ -3347,8 +3356,12 @@ static void m68k_run_mmu040 (void)
 			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 			/* and prevent exiting the STOP state when calling do_specialties() after. */
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
-				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+	        	if ( PendingInterruptCount <= 0 )
+			{
+				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+				if ( MFP_UpdateNeeded == true )
+					MFP_UpdateIRQ ( 0 );
 			}
 
 			if (regs.spcflags) {
@@ -3460,8 +3473,12 @@ static void m68k_run_2ce (void)
 		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 		/* and prevent exiting the STOP state when calling do_specialties() after. */
 		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
-			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+	        if ( PendingInterruptCount <= 0 )
+		{
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 		}
 
 		if (r->spcflags) {
@@ -3537,8 +3554,12 @@ static void m68k_run_2p (void)
 		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 		/* and prevent exiting the STOP state when calling do_specialties() after. */
 		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
-			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+	        if ( PendingInterruptCount <= 0 )
+		{
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 		}
 
 		if (r->spcflags) {
@@ -3604,8 +3625,12 @@ static void m68k_run_2 (void)
 		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 		/* and prevent exiting the STOP state when calling do_specialties() after. */
 		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) ) {
-			CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+	        if ( PendingInterruptCount <= 0 )
+		{
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 		}
 
 		if (r->spcflags) {

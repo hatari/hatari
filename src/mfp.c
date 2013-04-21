@@ -93,7 +93,7 @@
 /* 2009/03/28	[NP]	Handle bit 3 of AER for timer B (fix Seven Gates Of Jambala).	*/
 /* 2010/07/26	[NP]	In MFP_StartTimer_AB, when ctrl reg is in pulse width mode,	*/
 /*			clear bit 3 to emulate it as in delay mode. This is not		*/
-/*			completly correct as we should also emulate GPIO 3/4, but it	*/
+/*			completely correct as we should also emulate GPIO 3/4, but it	*/
 /*			helps running some programs (fix the game Erik).		*/
 /* 2013/02/24	[NP]	- In MFP_CheckPendingInterrupts, don't check all the MFP ints,	*/
 /*			stop as soon as the highest interrupt is found (simultaneous	*/
@@ -113,6 +113,10 @@
 /* 2013/04/11	[NP]	Handle the IACK cycles, interrupts can change during the first	*/
 /*			12 cycles of an MFP exception (fix Anomaly Demo Menu by MJJ Prod*/
 /*			and sample intro in the game The Final Conflict).		*/
+/* 2013/04/21	[NP]	Handle the case where several MFP interrupts happen during the	*/
+/*			same CPU instruction but at different sub-cycles. We must take	*/
+/*			into account only the oldest interrupts to choose the highest	*/
+/*			one (fix Fuzion CD Menus 77, 78, 84).				*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
@@ -157,6 +161,24 @@ Input -----/             |         ------------------------              |      
 */
 
 
+/*
+  Emulation Note :
+  - MFP emulation doesn't run in parallel with the CPU emulation as it would take too much resources.
+    Instead, MFP emulation is called each time a CPU instruction is completely processed.
+    The drawback is that several MFP interrupts can happen during a single CPU instruction (especially
+    for long ones like MOVEM or DIV). In that case, we should not choose the highest priority interrupt
+    among all the interrupts, but we should keep only the interrupts that chronologicaly happened first
+    during this CPU instruction (and ignore the other interrupts' requests for this CPU instruction).
+  - When the MFP's main IRQ signal goes from 0 to 1, the signal is not immediatly visible to the CPU, but only
+    4 cycles later. This 4 cycle delay should be taken into account, depending at what time the signal
+    went to 1 in the corresponding CPU instruction (the 4 cycle delay can be "included" in the CPU instruction
+    in some cases)
+  - When an interrupt happen in the MFP, an exception will be started in the CPU. Then after 12 cycles an IACK
+    sequence will be started by the CPU to request the interrupt vector from the MFP. During those 12 cycles,
+    it is possible that a new higher priority MFP interrupt happen and in that case we must replace the MFP
+    vector number that was initially computed at the start of the exception with the new one.
+*/
+
 /*-----------------------------------------------------------------------*/
 
 /* MFP Registers */
@@ -197,15 +219,17 @@ static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
 
 
-#define	MFP_IRQ_DELAY_TO_CPU		4	/* When MFP_IRQ is set, it takes 4 CPU cycles before */
-						/* it's visible to the CPU. */
+#define	MFP_IRQ_DELAY_TO_CPU		4		/* When MFP_IRQ is set, it takes 4 CPU cycles before */
+							/* it's visible to the CPU. */
 
 static int	MFP_Current_Interrupt = -1;
 static Uint8	MFP_IRQ = 0;
-static bool	MFP_DelayIRQ = false;
+static bool	MFP_DelayIRQ = false;			/* Not used anymore */
 static Uint64	MFP_IRQ_Time = 0;
 bool		MFP_IACK = false;
-
+bool		MFP_UpdateNeeded = false;		/* When set to true, main CPU loop should call MFP_UpdateIRQ() */
+static Uint64	MFP_Pending_Time_Min;			/* Clock value of the oldest pending int since last MFP_UpdateIRQ() */
+static Uint64	MFP_Pending_Time[ MFP_INT_MAX+1 ];	/* Clock value when pending is set to 1 for each non-masked int */
 
 static const Uint16 MFPDiv[] =
 {
@@ -233,8 +257,10 @@ static const Uint16 MFPDiv[] =
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static void	MFP_UpdateIRQ ( Uint64 Event_Time );
-
+static Uint8	MFP_ConvertIntNumber ( int Interrupt , Uint8 **pMFP_IER , Uint8 **pMFP_IPR , Uint8 **pMFP_ISR , Uint8 **pMFP_IMR );
+static void	MFP_Exception ( int Interrupt );
+static bool	MFP_InterruptRequest ( int Int , Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB );
+static int	MFP_CheckPendingInterrupts ( void );
 
 
 
@@ -244,6 +270,8 @@ static void	MFP_UpdateIRQ ( Uint64 Event_Time );
  */
 void MFP_Reset(void)
 {
+	int	i;
+
 	/* Reset MFP internal variables */
 
 	bAppliedTimerDPatch = false;
@@ -271,6 +299,10 @@ void MFP_Reset(void)
 	MFP_DelayIRQ = false;
 	MFP_IRQ_Time = 0;
 	MFP_IACK = false;
+	MFP_UpdateNeeded = false;
+	MFP_Pending_Time_Min = UINT64_MAX;
+	for ( i=0 ; i<=MFP_INT_MAX ; i++ )
+		MFP_Pending_Time[ i ] = UINT64_MAX;
 }
 
 
@@ -314,9 +346,11 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&TimerDCanResume, sizeof(TimerDCanResume));
 	MemorySnapShot_Store(&MFP_Current_Interrupt, sizeof(MFP_Current_Interrupt));
 	MemorySnapShot_Store(&MFP_IRQ, sizeof(MFP_IRQ));
-	MemorySnapShot_Store(&MFP_DelayIRQ, sizeof(MFP_DelayIRQ));
 	MemorySnapShot_Store(&MFP_IRQ_Time, sizeof(MFP_IRQ_Time));
-//	MemorySnapShot_Store(&MFP_IACK, sizeof(MFP_IACK));
+	MemorySnapShot_Store(&MFP_IACK, sizeof(MFP_IACK));
+	MemorySnapShot_Store(&MFP_UpdateNeeded, sizeof(MFP_UpdateNeeded));
+	MemorySnapShot_Store(&MFP_Pending_Time_Min, sizeof(MFP_Pending_Time_Min));
+	MemorySnapShot_Store(&MFP_Pending_Time, sizeof(MFP_Pending_Time));
 }
 
 
@@ -362,7 +396,7 @@ static Uint8 MFP_ConvertIntNumber ( int Interrupt , Uint8 **pMFP_IER , Uint8 **p
  * The upper 4 bits of the vector number are stored in the VR register 0xfffa17
  * (default value is 0x40, which gives exceptions' handlers located at 0x100 in RAM)
  */
-static void MFP_Exception(int Interrupt)
+static void MFP_Exception ( int Interrupt )
 {
 	unsigned int Vec;
 
@@ -511,8 +545,14 @@ bool	MFP_ProcessIRQ ( void )
  * during the CPU's decode instruction loop.
  * If MFP_IRQ goes from 0 to 1, we update MFP_IRQ_Time to correctly emulate
  * the 4 cycle delay before MFP_IRQ is visible to the CPU.
+ *
+ * When MFP_UpdateIRQ() is called after writing to an MFP's register, Event_Time
+ * will be the time of the write cycle.
+ * When MFP_UpdateIRQ is called from the main CPU loop after processing the
+ * internal timers, Event_Time will be 0 and we must use MFP_Pending_Time[ NewInt ].
+ * This way, MFP_IRQ_Time should always be correct to check the delay in MFP_ProcessIRQ().
  */
-static void MFP_UpdateIRQ ( Uint64 Event_Time )
+void MFP_UpdateIRQ ( Uint64 Event_Time )
 {
 #if 0
 	if (MFP_IPRA|MFP_IPRB)
@@ -537,7 +577,10 @@ static void MFP_UpdateIRQ ( Uint64 Event_Time )
 			if ( MFP_IRQ == 0 )			/* MFP IRQ goes from 0 to 1 */
 			{
 				MFP_DelayIRQ = true;
-				MFP_IRQ_Time = Event_Time;
+				if ( Event_Time != 0 )
+					MFP_IRQ_Time = Event_Time;
+				else
+					MFP_IRQ_Time = MFP_Pending_Time[ NewInt ];
 			}
 
 			MFP_IRQ = 1;
@@ -558,6 +601,10 @@ static void MFP_UpdateIRQ ( Uint64 Event_Time )
 	}
 	else
 		M68000_UnsetSpecial(SPCFLAG_MFP);
+
+	/* Update IRQ is done, reset Time_Min and UpdateNeeded */
+	MFP_Pending_Time_Min = UINT64_MAX;
+	MFP_UpdateNeeded = false;
 #endif
 }
 
@@ -569,12 +616,13 @@ static void MFP_UpdateIRQ ( Uint64 Event_Time )
  * Depending on the interrupt, we check either IPRA/IMRA or IPRB/IMRB
  * @return true if the MFP interrupt request is allowed
  */
-static bool MFP_InterruptRequest ( Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB )
+static bool MFP_InterruptRequest ( int Int , Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB )
 {
 //  static int cnt;
 //  fprintf ( stderr , "mfp int req %d %d\n" , nMfpException , cnt++ );
 
-	if ( IPRx & IMRx & Bit )				/* Interrupt is pending and not masked */
+	if ( ( IPRx & IMRx & Bit ) 					/* Interrupt is pending and not masked */
+	    && ( MFP_Pending_Time[ Int ] <= MFP_Pending_Time_Min ) )	/* Process pending requests in chronological time */
 	{
 		/* Are any higher priority interrupts in service ? */
 		if ( ( ( MFP_ISRA & PriorityMaskA ) == 0 ) && ( ( MFP_ISRB & PriorityMaskB ) == 0 ) )
@@ -590,45 +638,45 @@ static bool MFP_InterruptRequest ( Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 P
  * Check if any MFP interrupts can be serviced.
  * @return MFP interrupt number for the highest interrupt allowed, else return -1.
  */
-int	MFP_CheckPendingInterrupts ( void )
+static int MFP_CheckPendingInterrupts ( void )
 {
 //  static int cnt;
 //  fprintf ( stderr , "mfp check pend int %d\n" , cnt++ );
 
-	if ( MFP_InterruptRequest ( MFP_GPIP7_BIT, MFP_IPRA, MFP_IMRA, 0x80, 0x00 ) )		/* Check MFP GPIP7 interrupt (bit 7) */
+	if ( MFP_InterruptRequest ( MFP_INT_GPIP7 , MFP_GPIP7_BIT, MFP_IPRA, MFP_IMRA, 0x80, 0x00 ) )		/* Check MFP GPIP7 interrupt (bit 7) */
 		return MFP_INT_GPIP7;
 	
-	if ( MFP_InterruptRequest ( MFP_TIMER_A_BIT, MFP_IPRA, MFP_IMRA, 0xe0, 0x00 ) )		/* Check Timer A (bit 5) */
+	if ( MFP_InterruptRequest ( MFP_INT_TIMER_A , MFP_TIMER_A_BIT, MFP_IPRA, MFP_IMRA, 0xe0, 0x00 ) )	/* Check Timer A (bit 5) */
 		return MFP_INT_TIMER_A;
 
-	if ( MFP_InterruptRequest ( MFP_RCV_BUF_FULL_BIT, MFP_IPRA, MFP_IMRA, 0xf0, 0x00 ) )	/* Check Receive buffer full (bit 4) */
+	if ( MFP_InterruptRequest ( MFP_INT_RCV_BUF_FULL , MFP_RCV_BUF_FULL_BIT, MFP_IPRA, MFP_IMRA, 0xf0, 0x00 ) )	/* Check Receive buffer full (bit 4) */
 		return MFP_INT_RCV_BUF_FULL;
 
-	if ( MFP_InterruptRequest ( MFP_TRN_BUF_EMPTY_BIT, MFP_IPRA, MFP_IMRA, 0xfc, 0x00 ) )	/* Check transmit buffer empty (bit 2) */
+	if ( MFP_InterruptRequest ( MFP_INT_TRN_BUF_EMPTY , MFP_TRN_BUF_EMPTY_BIT, MFP_IPRA, MFP_IMRA, 0xfc, 0x00 ) )	/* Check transmit buffer empty (bit 2) */
 		return MFP_INT_TRN_BUF_EMPTY;
 
-	if ( MFP_InterruptRequest ( MFP_TIMER_B_BIT, MFP_IPRA, MFP_IMRA, 0xff, 0x00 ) )		/* Check Timer B (bit 0) */
+	if ( MFP_InterruptRequest ( MFP_INT_TIMER_B , MFP_TIMER_B_BIT, MFP_IPRA, MFP_IMRA, 0xff, 0x00 ) )	/* Check Timer B (bit 0) */
 		return MFP_INT_TIMER_B;
 
-	if ( MFP_InterruptRequest ( MFP_FDCHDC_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0x80 ) )		/* Check FDC (bit 7) */
+	if ( MFP_InterruptRequest ( MFP_INT_GPIP5 , MFP_FDCHDC_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0x80 ) )		/* Check FDC (bit 7) */
 		return MFP_INT_GPIP5;
 
-	if ( MFP_InterruptRequest ( MFP_ACIA_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xc0 ) )		/* Check ACIA (Keyboard or MIDI) (bit 6) */
+	if ( MFP_InterruptRequest ( MFP_INT_ACIA , MFP_ACIA_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xc0 ) )		/* Check ACIA (Keyboard or MIDI) (bit 6) */
 		return MFP_INT_ACIA;
 
-	if ( MFP_InterruptRequest ( MFP_TIMER_C_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xe0 ) )		/* Check Timer C (bit 5) */
+	if ( MFP_InterruptRequest ( MFP_INT_TIMER_C , MFP_TIMER_C_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xe0 ) )	/* Check Timer C (bit 5) */
 		return MFP_INT_TIMER_C;
 
-	if ( MFP_InterruptRequest ( MFP_TIMER_D_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf0 ) )		/* Check Timer D (bit 4) */
+	if ( MFP_InterruptRequest ( MFP_INT_TIMER_D , MFP_TIMER_D_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf0 ) )	/* Check Timer D (bit 4) */
 		return MFP_INT_TIMER_D;
 
-	if ( MFP_InterruptRequest ( MFP_GPU_DONE_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf8 ) )	/* Check GPU done (bit 3) */
+	if ( MFP_InterruptRequest ( MFP_INT_GPU_DONE , MFP_GPU_DONE_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf8 ) )	/* Check GPU done (bit 3) */
 		return MFP_INT_GPU_DONE;
 
-	if ( MFP_InterruptRequest ( MFP_GPIP1_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xfe ) )		/* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
+	if ( MFP_InterruptRequest ( MFP_INT_GPIP1 , MFP_GPIP1_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xfe ) )		/* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
 		return MFP_INT_GPIP1;
 
-	if ( MFP_InterruptRequest ( MFP_GPIP0_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xff ) )		/* Check Centronics BUSY (bit 0) */
+	if ( MFP_InterruptRequest ( MFP_INT_GPIP0 , MFP_GPIP0_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xff ) )		/* Check Centronics BUSY (bit 0) */
 		return MFP_INT_GPIP0;
 
 	return -1;						/* No pending interrupt */
@@ -643,15 +691,21 @@ int	MFP_CheckPendingInterrupts ( void )
  * emulated, we use Interrupt_Delayed_Cycles to compute the precise time
  * at which the timer expired (it could be during the previous instruction).
  * This allows to correctly handle the 4 cycle MFP_IRQ delay in MFP_ProcessIRQ().
+ *
+ * As we can have several inputs during one CPU instruction, not necessarily
+ * sorted by Interrupt_Delayed_Cycles, we must call MFP_UpdateIRQ() only later
+ * in the main CPU loop, when all inputs were received, to choose the oldest
+ * input's event time.
  */
 void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 {
 	Uint8	*pEnableReg;
 	Uint8	*pPendingReg;
+	Uint8	*pMaskReg;
 	Uint8	Bit;
 
 //fprintf ( stderr , "mfp input %d delay %d clock %lld\n" , Interrupt , Interrupt_Delayed_Cycles , CyclesGlobalClockCounter );
-	Bit = MFP_ConvertIntNumber ( Interrupt , &pEnableReg , &pPendingReg , NULL , NULL );
+	Bit = MFP_ConvertIntNumber ( Interrupt , &pEnableReg , &pPendingReg , NULL , &pMaskReg );
 
 	/* Input has occurred on MFP channel, set interrupt pending to request service when able */
 	if ( *pEnableReg & Bit )
@@ -669,12 +723,19 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 					Interrupt , FrameCycles, LineCycles, HblCounterVideo );
 		}
 
-		*pPendingReg |= Bit;			/* Set bit */
+		/* Set pending bit and event's time */
+		*pPendingReg |= Bit;
+		MFP_Pending_Time[ Interrupt ] = CyclesGlobalClockCounter - Interrupt_Delayed_Cycles;
+
+		/* Store the time of the most ancient non-masked pending=1 event */
+		if ( ( *pMaskReg & Bit ) && ( MFP_Pending_Time[ Interrupt ] < MFP_Pending_Time_Min ) )
+			MFP_Pending_Time_Min = MFP_Pending_Time[ Interrupt ];
 	}
 	else
-		*pPendingReg &= ~Bit;			/* Clear bit */
+		*pPendingReg &= ~Bit;				/* Clear bit */
 
-	MFP_UpdateIRQ ( CyclesGlobalClockCounter - Interrupt_Delayed_Cycles );
+//	MFP_UpdateIRQ ( CyclesGlobalClockCounter - Interrupt_Delayed_Cycles );
+	MFP_UpdateNeeded = true;
 }
 
 
@@ -743,7 +804,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 
 
 	/* When in pulse width mode, handle as in delay mode */
-	/* (this is not completly correct, as we should also handle GPIO 3/4 in pulse mode) */
+	/* (this is not completely correct, as we should also handle GPIO 3/4 in pulse mode) */
 	if ( TimerControl > 8 )
 	{
 		if (LOG_TRACE_LEVEL(TRACE_MFP_START))
