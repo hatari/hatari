@@ -381,6 +381,10 @@ class InstructionStats:
         "return time (in seconds) spent by given cost item"
         return float(cost[self.cycles_field])/self.clock
 
+    def get_time_call(self, cost, callitem):
+        "return time (in seconds) spent by given cost item per call"
+        return float(cost[self.cycles_field])/callitem[self.callcount_field]/self.clock
+
     def sum_values(self, functions):
         "calculate totals for given functions data"
         if functions:
@@ -763,9 +767,6 @@ class ProfileCallers(Output):
             switches, ignored = self._complete_child(profile, callinfo, child, caddr)
             all_switches += switches
             all_ignored += ignored
-            # was subroutine call
-            if child.subtotal:
-                continue
             # validate non-subroutine call counts
             if ignored:
                 self.message("Ignoring %d switches to %s" % (ignored, child.name))
@@ -1167,24 +1168,53 @@ class ProfileSorter:
                 break
             idx += 1
 
-            # show also subroutine call cost?
-            subcosts = ""
+            times = ""
+            values = ""
+            percentages = ""
             if self.show_subcosts:
-                if function.subtotal:
-                    subpercent = 100.0 * function.subtotal[field] / total
-                    subcosts = "  %6.2f%%" % subpercent
+                # show also subroutine call cost
+                if field > 0:
+                    totals = (function.cost, function.subcost, function.subtotal)
                 else:
-                    subcosts = " " * 9
+                    # subfunction and symbol call counts are same
+                    totals = (function.cost, function.subtotal,)
+            else:
+                totals = (function.cost,)
+
+            showtime = False
+            if show_info and field == stats.cycles_field:
+                showtime = True
+
+            for cost in totals:
+                if cost:
+                    percentage = 100.0 * cost[field] / total
+                    percentages += "%7.2f%%" % percentage
+                    if showtime:
+                        time = stats.get_time(cost)
+                        times += "%9.5fs" % time
+                    values += "%9d" % cost[field]
+                else:
+                    percentages += " " * 8
+                    values += " " * 9
+                    if showtime:
+                        times += " " * 10
+            self.write("%s %s %s" % (percentages, times, values))
 
             if show_info:
-                if field == stats.cycles_field:
-                    time = stats.get_time(function.cost)
-                    info = "(0x%06x,%9.5fs)" % (addr, time)
-                else:
-                    info = "(0x%06x)" % addr
-                self.write("%6.2f%%%s %9d  %-28s%s\n" % (percentage, subcosts, value, function.name, info))
+                costinfo = ""
+                for cost in totals:
+                    if cost:
+                        if showtime:
+                            time = stats.get_time_call(cost, function.cost)
+                            costinfo += ",%8.5fs" % time
+                        elif field:
+                            costinfo += ", %d" % (cost[field] / function.cost[0])
+                if costinfo:
+                    costinfo += " / call"
+                addrinfo = "0x%06x" % addr
+                self.write("  %-28s (%s%s)\n" % (function.name, addrinfo, costinfo))
             else:
-                self.write("%6.2f%%%s %9d  %s\n" % (percentage, subcosts, value, function.name))
+                self.write("  %s\n" % function.name)
 
     def do_list(self, field, count, limit, show_info):
         "sort and show list for given profile data field"
