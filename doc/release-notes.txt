@@ -144,6 +144,7 @@ Fixed Games:
   Bolo (MFP, couldn't start a game)
   Captain Blood (IKBD, fixed problem when setting the clock)
   Fokker and Downfall (ACIA/IKBD, had regressed in Hatari v1.6.x)
+  Fuzion CD 77/78/84 Menu (MFP, random crash with digidrums in STF mode)
   Super Hang On and Super Monaco GP (MFP, flickering rasters)
   The Final Conflict (MFP, locked during the sampled intro music)
   Zuul 100/101 Menu (MFP, flickering top border)
