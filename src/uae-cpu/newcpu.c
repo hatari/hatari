@@ -1518,7 +1518,7 @@ static void do_trace (void)
 	m68k_setpc (m68k_getpc ());
 	fill_prefetch_0 ();
 	opcode = get_word (regs.pc);
-	if (opcode == 0x4e72 		/* RTE */
+	if (opcode == 0x4e73 		/* RTE */
 	    || opcode == 0x4e74 		/* RTD */
 	    || opcode == 0x4e75 		/* RTS */
 	    || opcode == 0x4e77 		/* RTR */
