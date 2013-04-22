@@ -1192,10 +1192,10 @@ class ProfileSorter:
                     if showtime:
                         time = stats.get_time(cost)
                         times += "%9.5fs" % time
-                    values += "%9d" % cost[field]
+                    values += "%10d" % cost[field]
                 else:
                     percentages += " " * 8
-                    values += " " * 9
+                    values += " " * 10
                     if showtime:
                         times += " " * 10
             self.write("%s %s %s" % (percentages, times, values))
