@@ -852,7 +852,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     {
         M68000_AddCycles ( 12 );
 	MFP_IACK = true;
-        while (PendingInterruptCount<=0 && PendingInterruptFunction)
+        while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
             CALL_VAR(PendingInterruptFunction);
         nr = MFP_ProcessIACK ( nr );
 	MFP_IACK = false;
@@ -1560,14 +1560,12 @@ static bool do_specialties_interrupt (int Pending)
 
     /* Check for MFP ints (level 6) */
     if (regs.spcflags & SPCFLAG_MFP) {
-//    if (1) {
        if (MFP_ProcessIRQ() == true)
          return true;					/* MFP exception was generated, no higher interrupt can happen */
     }
 
     /* No MFP int, check for VBL/HBL ints (levels 4/2) */
     if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-//    if (1) {
 	int intr = intlev ();
 	/* SPCFLAG_DOINT will be enabled again in MakeFromSR to handle pending interrupts! */
 //	unset_special (SPCFLAG_DOINT);
@@ -1614,20 +1612,6 @@ static int do_specialties (void)
             unset_special (SPCFLAG_STOP);
 //fprintf ( stderr , "exit stop %d\n" , nCyclesMainCounter );
         }
-#if 0
-	if (regs.spcflags & SPCFLAG_MFP)			/* MFP int */
-	    MFP_CheckPendingInterrupts();
-	
-	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {	/* VBL/HBL ints */
-	    int intr = intlev ();
-	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-	    if (intr != -1 && intr > regs.intmask) {
-	        Interrupt (intr , true);		/* process the interrupt and add pending jitter */
-		regs.stopped = 0;
-		unset_special (SPCFLAG_STOP);
-	    }
-	}
-#endif
 
 	/* No pending int, we have to wait for the next matching int */
 	while (regs.spcflags & SPCFLAG_STOP) {
@@ -1640,7 +1624,7 @@ static int do_specialties (void)
 	
 	    /* It is possible one or more ints happen at the same time */
 	    /* We must process them during the same cpu cycle then choose the highest priority one */
-	    while (PendingInterruptCount<=0 && PendingInterruptFunction)
+	    while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 		CALL_VAR(PendingInterruptFunction);
 	    if ( MFP_UpdateNeeded == true )
 	        MFP_UpdateIRQ ( 0 );
@@ -1650,22 +1634,6 @@ static int do_specialties (void)
 		regs.stopped = 0;
 		unset_special (SPCFLAG_STOP);
 	    }
-#if 0		
-		/* Then we check if this handler triggered an MFP int to process */
-		if (regs.spcflags & SPCFLAG_MFP)
-		    MFP_CheckPendingInterrupts();
-	
-		if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-		    int intr = intlev ();
-		    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-		    if (intr != -1 && intr > regs.intmask) {
-			Interrupt (intr , false);	/* process the interrupt and add non pending jitter */
-			regs.stopped = 0;
-			unset_special (SPCFLAG_STOP);
-			break;
-		    }
-		}
-#endif
 	}
     }
 
@@ -1684,26 +1652,6 @@ static int do_specialties (void)
 	unset_special (SPCFLAG_INT);
 	set_special (SPCFLAG_DOINT);
     }
-#if 0
-    if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-	int intr = intlev ();
-	/* SPCFLAG_DOINT will be enabled again in MakeFromSR to handle pending interrupts! */
-//	unset_special (SPCFLAG_DOINT);
-	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-	if (intr != -1 && intr > regs.intmask) {
-	    Interrupt (intr , false);		/* call Interrupt() with Pending=false, not necessarily true but harmless */
-	    regs.stopped = 0;			/* [NP] useless ? */
-	}
-    }
-    if (regs.spcflags & SPCFLAG_INT) {
-	unset_special (SPCFLAG_INT);
-	set_special (SPCFLAG_DOINT);
-    }
-
-    if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
-	MFP_CheckPendingInterrupts();
-    }
-#endif
 
     if (regs.spcflags & SPCFLAG_DEBUGGER)
 	DebugCpu_Check();
@@ -1785,63 +1733,18 @@ static void m68k_run_1 (void)
 	  nWaitStateCycles = 0;
 	}
 
-#ifdef pom
-#if 0
-	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-	  CALL_VAR(PendingInterruptFunction);
-#else
 	/* We can have several interrupts at the same time before the next CPU instruction */
 	/* We must check for pending interrupt and call do_specialties_interrupt() only */
 	/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 	/* and prevent exiting the STOP state when calling do_specialties() after. */
 	/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-	  {
-	    CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-	    do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#if 0
-		  if ( regs.spcflags & ( SPCFLAG_MFP | SPCFLAG_INT ) ) {	/* only check mfp/video interrupts */
-		    if (do_specialties ())			/* check if this latest int has higher priority */
-			return;
-		  }
-#endif
-	  }
-#endif
-
-#else
-
-#if 0
-	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-	  CALL_VAR(PendingInterruptFunction);
-#else
-	/* We can have several interrupts at the same time before the next CPU instruction */
-	/* We must check for pending interrupt and call do_specialties_interrupt() only */
-	/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
-	/* and prevent exiting the STOP state when calling do_specialties() after. */
-	/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-  if ( PendingInterruptCount <= 0 )
-    {
-     int n=0;
-	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-	  {
-	    CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-	n++;
-#if 0
-		  if ( regs.spcflags & ( SPCFLAG_MFP | SPCFLAG_INT ) ) {	/* only check mfp/video interrupts */
-		    if (do_specialties ())			/* check if this latest int has higher priority */
-			return;
-		  }
-#endif
-	  }
-//       if ( n>1 ) fprintf ( stderr , "run int %d\n" , n );
-//        do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-      if ( MFP_UpdateNeeded == true )
-        MFP_UpdateIRQ ( 0 );
-    }
-
-#endif
-
-#endif /* pom */
+	if ( PendingInterruptCount <= 0 )
+	{
+	    while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+		CALL_VAR ( PendingInterruptFunction );		/* call the interrupt's handler */
+	    if ( MFP_UpdateNeeded == true )
+		MFP_UpdateIRQ ( 0 );				/* update MFP's state if some internal timers related to MFP expired */
+	}
 
 	if (regs.spcflags) {
 	    if (do_specialties ())
@@ -1902,10 +1805,10 @@ static void m68k_run_2 (void)
 
         if ( PendingInterruptCount <= 0 )
 	{
-	  while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-	    CALL_VAR(PendingInterruptFunction);
-	  if ( MFP_UpdateNeeded == true )
-	    MFP_UpdateIRQ ( 0 );
+	    while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+		CALL_VAR(PendingInterruptFunction);
+	    if ( MFP_UpdateNeeded == true )
+		MFP_UpdateIRQ ( 0 );
 	}
 
 	if (regs.spcflags) {

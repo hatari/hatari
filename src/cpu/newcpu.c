@@ -1681,7 +1681,7 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 	{
 		M68000_AddCycles ( 12 );
 		MFP_IACK = true;
-		while (PendingInterruptCount<=0 && PendingInterruptFunction)
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 			CALL_VAR(PendingInterruptFunction);
 		nr = MFP_ProcessIACK ( nr );
 		MFP_IACK = false;
@@ -2819,20 +2819,6 @@ STATIC_INLINE int do_specialties (int cycles)
 	        regs.stopped = 0;
 	        unset_special (SPCFLAG_STOP);
 	    }
-#if 0
-	    if (regs.spcflags & SPCFLAG_MFP)			/* MFP int */
-	        MFP_CheckPendingInterrupts();
-
-	    if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {	/* VBL/HBL ints */
-		int intr = intlev ();
-		unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-		if (intr != -1 && intr > regs.intmask) {
-		    Interrupt (intr , true);	/* process the interrupt and add pending jitter */
-		    regs.stopped = 0;
-		    unset_special (SPCFLAG_STOP);
-		}
-	    }
-#endif
 
 	    while (regs.spcflags & SPCFLAG_STOP) {
 		do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
@@ -2840,7 +2826,7 @@ STATIC_INLINE int do_specialties (int cycles)
 
 		/* It is possible one or more ints happen at the same time */
 		/* We must process them during the same cpu cycle then choose the highest priority one */
-		while (PendingInterruptCount<=0 && PendingInterruptFunction)
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 		    CALL_VAR(PendingInterruptFunction);
 		if ( MFP_UpdateNeeded == true )
 		    MFP_UpdateIRQ ( 0 );
@@ -2927,7 +2913,7 @@ STATIC_INLINE int do_specialties (int cycles)
 		regs.stopped = 0;
 	}
 
-    if (regs.spcflags & SPCFLAG_DEBUGGER)
+	if (regs.spcflags & SPCFLAG_DEBUGGER)
 		DebugCpu_Check();
 
 	if ((regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE))) {
@@ -3130,7 +3116,7 @@ static void m68k_run_1_ce (void)
 
 		/* HACK for Hatari: Adding cycles should of course not be done
 		 * here in CE mode (so this should be removed later), but until
-		 * we're really there, this helps to get this mode running at
+		 * we're really there, this helps to get this mode running
 		 * at least to a basic extend! */
 		M68000_AddCyclesWithPairing(currcycle * 2 / CYCLE_UNIT);
 	        if ( PendingInterruptCount <= 0 )
