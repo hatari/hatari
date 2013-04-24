@@ -17,6 +17,8 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 /*			stop and parity bits).								*/
 /* 2012/12/21	[NP]	Add accurate cycles delays when accessing an ACIA register, taking E Clock	*/
 /*			into account.									*/
+/* 2013/04/24	[NP]	Remove INTERRUPT_ACIA_MFP used to add a 4 cycle delay when IRQ is set, as this	*/
+/*			delay is now correctly handled directly in the MFP since 2013/03/01.		*/
 
 
 
@@ -124,6 +126,10 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 	movep.w (a0),d2 : 28 cycles = 16 + 6 + 6 + n
 	movep.l (a0),d2 : 48 cycles = 24 + 6 + 6 + 6 + 6 + n
     (on ST, those values might be rounded to the next multiple of 4 cycles)
+
+    When the ACIA's IRQ signal goes low, the resulting bit in the MFP is visible to the CPU only 4 cycles later.
+    From the hardware point of view, the ACIA's irq signal is immediately propagated to the MFP,
+    but the MFP will then add a 4 cycle delay before generating a 68000 interrupt.
 
 */
 
@@ -351,36 +357,17 @@ static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 	{
 		/* There's a small delay on a real ST between the point in time
 		* the irq bit is set and the MFP interrupt is triggered - for example
-		* the "V8 music system" demo depends on this behaviour. To emulate
-		* this, we simply start another Int which triggers the MFP interrupt later. */
-		CycInt_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_ACIA_MFP);
+		* the "V8 music system" demo depends on this behaviour.
+		* This 4 cycle delay is handled in mfp.c */
 
 		MFP_GPIP &= ~0x10;				/* set IRQ signal for GPIP P4 */
+		MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
 	}
 	else
 	{
 		/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
 		MFP_GPIP |= 0x10;				/* IRQ bit was reset */
 	}
-}
-
-
-
-
-/**
- * Start MFP interrupt a few cycles atfer the irq bit was set in the ACIA.
- * NOTE/FIXME : from the hardware point of view, the ACIA's irq signal is immediately propagated
- * to the MFP and the MFP will then add a delay before generating a 68000 interrupt.
- * As the MFP emulation doesn't support this yet, we handle the delay in the ACIA's emulation.
- */
-void	ACIA_InterruptHandler_MFP ( void )
-{
-//fprintf ( stderr , "acia int mfp\n" );
-	/* Remove this interrupt from list and re-order */
-	CycInt_AcknowledgeInterrupt();
-
-	/* Acknowledge in MFP circuit, pass bit,enable,pending */
-	MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
 }
 
 

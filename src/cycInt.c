@@ -84,7 +84,6 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	MFP_InterruptHandler_TimerC,
 	MFP_InterruptHandler_TimerD,
 	ACIA_InterruptHandler_IKBD,
-	ACIA_InterruptHandler_MFP,
 	IKBD_InterruptHandler_ResetTimer,
 	IKBD_InterruptHandler_AutoSend,
 	DmaSnd_InterruptHandler_Microwire, /* Used for both STE and Falcon Microwire emulation */
