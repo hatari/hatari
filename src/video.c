@@ -315,6 +315,8 @@
 /* 2013/03/05	[NP]	An extra 4 cycle delay is added by the MFP to set IRQ when the timer B	*/
 /*			expires in event count mode. Update TIMERB_VIDEO_CYCLE_OFFSET to 24	*/
 /*			cycles instead of 28 to compensate for this and keep the same position.	*/
+/* 2013/04/26	[NP]	Cancel changes from 2012/05/19, 'Musical Wonders 1990' is really broken	*/
+/*			on a real STF and bottom border is not removed.				*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1629,7 +1631,7 @@ static void Video_EndHBL(void)
 		&& (   ( ShifterFrame.FreqPos50.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos50.FrameCycles < ShifterFrame.FreqPos60.FrameCycles )
 		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
-		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles >= LineRemoveTopCycle ) ) ) )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > LineRemoveTopCycle ) ) ) )
 	{
 		/* Top border */
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove top\n" );
@@ -1649,7 +1651,7 @@ static void Video_EndHBL(void)
 		&& (   ( ShifterFrame.FreqPos60.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos60.FrameCycles < ShifterFrame.FreqPos50.FrameCycles )
 		    || ( ShifterFrame.FreqPos60.HBL > nHBL )
-		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles >= LineRemoveBottomCycle ) ) ) )
+		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles > LineRemoveBottomCycle ) ) ) )
 	{
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
@@ -1665,7 +1667,7 @@ static void Video_EndHBL(void)
 		&& (   ( ShifterFrame.FreqPos50.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos50.FrameCycles < ShifterFrame.FreqPos60.FrameCycles )
 		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
-		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles >= LineRemoveBottomCycle ) ) ) )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > LineRemoveBottomCycle ) ) ) )
 	{
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
