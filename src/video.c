@@ -1248,7 +1248,7 @@ static void	Video_Sync_SetDefaultStartEnd ( Uint8 Freq , int HblCounterVideo , i
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_60;
 	}
 
-//fprintf ( stderr , "sync default pos %d %d\n", ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+//fprintf ( stderr , "sync default pos %d %d %d\n", HblCounterVideo , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 }
 
 
@@ -1780,6 +1780,7 @@ static void Video_StartHBL(void)
 			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = LINE_END_CYCLE_60;
 		}
 	}
+//fprintf (stderr , "Video_StartHBL %d %d %d\n", nHBL , ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 }
 
 
