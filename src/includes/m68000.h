@@ -155,6 +155,7 @@ extern bool bBusErrorReadWrite;
 extern int nCpuFreqShift;
 extern int nWaitStateCycles;
 extern int BusMode;
+extern bool	CPU_IACK;
 
 extern int	LastOpcodeFamily;
 extern int	LastInstrCycles;

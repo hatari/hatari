@@ -167,7 +167,7 @@ Input -----/             |         ------------------------              |      
     Instead, MFP emulation is called each time a CPU instruction is completely processed.
     The drawback is that several MFP interrupts can happen during a single CPU instruction (especially
     for long ones like MOVEM or DIV). In that case, we should not choose the highest priority interrupt
-    among all the interrupts, but we should keep only the interrupts that chronologicaly happened first
+    among all the interrupts, but we should keep only the interrupts that chronologically happened first
     during this CPU instruction (and ignore the other interrupts' requests for this CPU instruction).
   - When the MFP's main IRQ signal goes from 0 to 1, the signal is not immediatly visible to the CPU, but only
     4 cycles later. This 4 cycle delay should be taken into account, depending at what time the signal
@@ -226,7 +226,7 @@ static int	MFP_Current_Interrupt = -1;
 static Uint8	MFP_IRQ = 0;
 static bool	MFP_DelayIRQ = false;			/* Not used anymore */
 static Uint64	MFP_IRQ_Time = 0;
-bool		MFP_IACK = false;
+bool		MFP_IACK = false;			/* REMOVE */
 bool		MFP_UpdateNeeded = false;		/* When set to true, main CPU loop should call MFP_UpdateIRQ() */
 static Uint64	MFP_Pending_Time_Min;			/* Clock value of the oldest pending int since last MFP_UpdateIRQ() */
 static Uint64	MFP_Pending_Time[ MFP_INT_MAX+1 ];	/* Clock value when pending is set to 1 for each non-masked int */
@@ -298,7 +298,6 @@ void MFP_Reset(void)
 	MFP_IRQ = 0;
 	MFP_DelayIRQ = false;
 	MFP_IRQ_Time = 0;
-	MFP_IACK = false;
 	MFP_UpdateNeeded = false;
 	MFP_Pending_Time_Min = UINT64_MAX;
 	for ( i=0 ; i<=MFP_INT_MAX ; i++ )
@@ -347,7 +346,7 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MFP_Current_Interrupt, sizeof(MFP_Current_Interrupt));
 	MemorySnapShot_Store(&MFP_IRQ, sizeof(MFP_IRQ));
 	MemorySnapShot_Store(&MFP_IRQ_Time, sizeof(MFP_IRQ_Time));
-	MemorySnapShot_Store(&MFP_IACK, sizeof(MFP_IACK));
+	MemorySnapShot_Store(&MFP_IACK, sizeof(MFP_IACK));			/* REMOVE */
 	MemorySnapShot_Store(&MFP_UpdateNeeded, sizeof(MFP_UpdateNeeded));
 	MemorySnapShot_Store(&MFP_Pending_Time_Min, sizeof(MFP_Pending_Time_Min));
 	MemorySnapShot_Store(&MFP_Pending_Time, sizeof(MFP_Pending_Time));
@@ -420,7 +419,7 @@ static void MFP_Exception ( int Interrupt )
 /*-----------------------------------------------------------------------*/
 /**
  * Return the vector number associated to the current MFP interrupt.
- * MFP_IACK is called 12 cycles after the start of the 68000 exception.
+ * MFP_ProcessIACK is called 12 cycles after the start of the 68000 exception.
  * We must call MFP_UpdateIRQ just before the IACK cycles to update
  * MFP_Current_Interrupt in case a higher MFP interrupt happened
  * or pending bit was set twice for the same interrupt during those 12 cycles (rare case)
@@ -711,7 +710,7 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 	if ( *pEnableReg & Bit )
 	{
 		/* Print traces if pending bits changed just before IACK */
-		if ( LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION) && ( MFP_IACK == true ) )
+		if ( LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION) && ( CPU_IACK == true ) )
 		{
 			int FrameCycles, HblCounterVideo, LineCycles;
 			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );

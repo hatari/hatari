@@ -1680,11 +1680,11 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 	if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
 	{
 		M68000_AddCycles ( 12 );
-		MFP_IACK = true;
+		CPU_IACK = true;
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 			CALL_VAR(PendingInterruptFunction);
 		nr = MFP_ProcessIACK ( nr );
-		MFP_IACK = false;
+		CPU_IACK = false;
 	}
 
 	if (ExceptionSource == M68000_EXC_SRC_CPU) {
