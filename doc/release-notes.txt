@@ -16,6 +16,7 @@ Emulation:
   - Slightly better volume table (measured by Paulo Simoes on a real ST)
 - CPU changes :
   - Added experimental MMU emulation for the 68030 mode
+  - Handle the IACK cycles during an exception for HBL/VBL
 - ACIA/IKBD changes :
   - Full implementation of the MC6850 ACIA, giving much more robust
     IKBD emulation
@@ -141,6 +142,7 @@ Other changes:
 
 Fixed Games:
   Atomix (MFP, flickering bottom of the screen during samples)
+  BBC 52 Menu (Video/CPU, top border not removed)
   Bolo (MFP, couldn't start a game)
   Captain Blood (IKBD, fixed problem when setting the clock)
   Fokker and Downfall (ACIA/IKBD, had regressed in Hatari v1.6.x)
