@@ -1677,15 +1677,27 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int sv = regs.s;
 
+	/* Pending bits / vector number can change before the end of the IACK sequence. */
+	/* We need to handle MFP and HBL/VBL cases for this. */
 	if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
 	{
-		M68000_AddCycles ( 12 );
+        	M68000_AddCycles ( CPU_IACK_CYCLES_MFP );
 		CPU_IACK = true;
-		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
-			CALL_VAR(PendingInterruptFunction);
-		nr = MFP_ProcessIACK ( nr );
+        	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+        	    CALL_VAR(PendingInterruptFunction);
+        	nr = MFP_ProcessIACK ( nr );
 		CPU_IACK = false;
 	}
+	else if ( 1 && ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) && ( ( nr == 26 ) || ( nr == 28 ) ) )
+	{
+        	M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
+		CPU_IACK = true;
+        	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+        	    CALL_VAR(PendingInterruptFunction);
+        	pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
+		CPU_IACK = false;
+	}
+
 
 	if (ExceptionSource == M68000_EXC_SRC_CPU) {
 		if (bVdiAesIntercept && nr == 0x22) {
@@ -1905,16 +1917,16 @@ kludge_me_do:
 
 	/* Handle exception cycles (special case for MFP) */
 	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
-		M68000_AddCycles(44+12-12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+		M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
 	}
 	else if (nr >= 24 && nr <= 31) {
 		if ( nr == 26 ) {				/* HBL */
 			/* store current cycle pos when then interrupt was received (see video.c) */
 			LastCycleHblException = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-			M68000_AddCycles(44+12);		/* Video Interrupt */
+			M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
 		}
 		else if ( nr == 28 ) 				/* VBL */
-			M68000_AddCycles(44+12);		/* Video Interrupt */
+			M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
 		else
 			M68000_AddCycles(44+4);			/* Other Interrupts */
 		}

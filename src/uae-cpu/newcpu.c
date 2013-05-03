@@ -112,6 +112,9 @@
 /*			exception if it's the case.							*/
 /* 2013/04/11	[NP]	In Exception(), call MFP_ProcessIACK after 12 cycles to update the MFP's vector	*/
 /*			number used for the exception (see mfp.c).					*/
+/* 2013/05/03	[NP]	In Exception(), handle IACK for HBL and VBL interrupts too, allowing pending bit*/
+/*			to be set twice during an active video interrupt (correct fix for Super Monaco	*/
+/*			GP, Super Hang On, Monster Business, European Demo's Intro, BBC Menu 52).	*/
 
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
@@ -848,15 +851,27 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
+    /* Pending bits / vector number can change before the end of the IACK sequence. */
+    /* We need to handle MFP and HBL/VBL cases for this. */
     if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
     {
-        M68000_AddCycles ( 12 );
+        M68000_AddCycles ( CPU_IACK_CYCLES_MFP );
 	CPU_IACK = true;
         while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
             CALL_VAR(PendingInterruptFunction);
         nr = MFP_ProcessIACK ( nr );
 	CPU_IACK = false;
     }
+    else if ( 1 && ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) && ( ( nr == 26 ) || ( nr == 28 ) ) )
+    {
+        M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
+	CPU_IACK = true;
+        while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+            CALL_VAR(PendingInterruptFunction);
+        pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
+	CPU_IACK = false;
+    }
+
 
     if (ExceptionSource == M68000_EXC_SRC_CPU)
       {
@@ -1032,20 +1047,20 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* Handle exception cycles (special case for MFP) */
     if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
     {
-      M68000_AddCycles(44+12-12);		/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+      M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
     }
     else if (nr >= 24 && nr <= 31)
     {
-      if ( nr == 26 )				/* HBL */
+      if ( nr == 26 )					/* HBL */
       {
         /* store current cycle pos when then interrupt was received (see video.c) */
         LastCycleHblException = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-        M68000_AddCycles(44+12);		/* Video Interrupt */
+        M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
       }
-      else if ( nr == 28 ) 			/* VBL */
-        M68000_AddCycles(44+12);		/* Video Interrupt */
+      else if ( nr == 28 ) 				/* VBL */
+        M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
       else
-        M68000_AddCycles(44+4);			/* Other Interrupts */
+        M68000_AddCycles(44+4);				/* Other Interrupts */
     }
     else if(nr >= 32 && nr <= 47)
     {

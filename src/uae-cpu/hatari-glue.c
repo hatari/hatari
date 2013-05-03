@@ -77,6 +77,7 @@ int intlev(void)
 	/* There are only VBL and HBL autovector interrupts in the ST... */
 	assert((pendingInterrupts & ~((1<<4)|(1<<2))) == 0);
 
+#if 0
 	if (pendingInterrupts & (1 << 4))         /* VBL interrupt? */
 	{
 		if (regs.intmask < 4)
@@ -89,6 +90,12 @@ int intlev(void)
 			pendingInterrupts &= ~(1 << 2);
 		return 2;
 	}
+#else
+	if ( pendingInterrupts & (1 << 4) )		/* VBL interrupt ? */
+		return 4;
+	else if ( pendingInterrupts & (1 << 2) )	/* HBL interrupt ? */
+		return 2;
+#endif
 
 	return -1;
 }

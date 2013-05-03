@@ -317,6 +317,10 @@
 /*			cycles instead of 28 to compensate for this and keep the same position.	*/
 /* 2013/04/26	[NP]	Cancel changes from 2012/05/19, 'Musical Wonders 1990' is really broken	*/
 /*			on a real STF and bottom border is not removed.				*/
+/* 2013/05/03	[NP]	Add support for IACK sequence when handling HBL/VBL exceptions. Allow	*/
+/*			to handle the case where interrupt pending bit is set twice (correct	*/
+/*			fix for Super Monaco GP, Super Hang On, Monster Business, European	*/
+/*			Demo's Intro, BBC Menu 52).						*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -331,6 +335,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "ioMem.h"
 #include "keymap.h"
 #include "m68000.h"
+#include "hatari-glue.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "printer.h"
@@ -1565,6 +1570,20 @@ void Video_InterruptHandler_HBL ( void )
 	if (nHBL < nScanlinesPerFrame-1)
 		Video_AddInterruptHBL ( NewHBLPos );
 
+	/* Print traces if pending HBL bit changed just before IACK when HBL interrupt is allowed */
+	if ( ( CPU_IACK == true ) && ( regs.intmask < 2 ) )
+	{
+		if ( pendingInterrupts & ( 1 << 2 ) )
+		{
+			LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d, pending set again just before iack, skip one HBL interrupt VBL=%d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+				nHBL , nVBLs , FrameCycles , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
+		}
+		else
+		{
+			LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d, new pending HBL set just before iack VBL=%d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+				nHBL , nVBLs , FrameCycles , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
+		}
+	}
 
 	/* We must handle a very special case : if we had a pending HBL that becomes active */
 	/* because SR is now <= $2100, then we must process an exception for this pending HBL. */
@@ -1572,7 +1591,7 @@ void Video_InterruptHandler_HBL ( void )
 	/* CPU to prepare the exception, we must ignore this HBL signal (instead of considering */
 	/* this new HBL should be put in pending state to be processed later) */
         /* -> any HBL occurring between LastCycleHblException and LastCycleHblException+56 should be ignored */
-	if ( ( LastCycleHblException != -1 )
+	if ( 0 && ( LastCycleHblException != -1 )
 	  && ( ( FrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 )
 	  && ( ( M68000_GetPC() < 0x8280 ) || ( M68000_GetPC() > 0x82b0 ) ) )	/* FIXME : except for European Demos intro where 8280<pc<82b0 */
 	{
@@ -1584,7 +1603,7 @@ void Video_InterruptHandler_HBL ( void )
 	else
 	{
 		/* "normal" case, this HBL doesn't occur during the processing of a pending HBL */
-		M68000_Exception(EXCEPTION_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2! */
+		M68000_Exception(EXCEPTION_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
 	}
 
 
@@ -2937,7 +2956,22 @@ void Video_InterruptHandler_VBL ( void )
 	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
 
-	M68000_Exception(EXCEPTION_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4! */
+	/* Print traces if pending VBL bit changed just before IACK when VBL interrupt is allowed */
+	if ( ( CPU_IACK == true ) && ( regs.intmask < 4 ) )
+	{
+		if ( pendingInterrupts & ( 1 << 4 ) )
+		{
+			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, pending set again just before iack, skip one VBL interrupt video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+				nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
+		}
+		else
+		{
+			LOG_TRACE ( TRACE_VIDEO_VBL , "VBL %d, new pending VBL set just before iack video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+				nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
+		}
+	}
+
+	M68000_Exception(EXCEPTION_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4 */
 
 	Main_WaitOnVbl();
 }

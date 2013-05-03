@@ -138,6 +138,21 @@ static inline void M68000_SetSR(Uint16 v)
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
 
+
+/* Notes on IACK :
+ * When an interrupt happens, it's possible a similar interrupt happens again
+ * between the start of the exception and the IACK sequence. In that case, we
+ * might have to set pending bit twice and change the interrupt vector.
+ * From the 68000's doc, IACK start after 12 cycles. Then in an Atari STF, it takes
+ * 12 extra cycles to fetch the vector number.
+ * This means we have at max 24 cycles at the start of the exception where some
+ * changes can happen. The values we use were not measured on real hardware, they
+ * were adjusted to get the correct behaviour in some games/demos relying on this.
+ */
+#define CPU_IACK_CYCLES_MFP	12			/* vector sent by the MFP */
+#define CPU_IACK_CYCLES_VIDEO	20			/* auto vectored */
+
+
 /* information about current CPU instruction */
 typedef struct {
 	/* these are provided only by WinUAE CPU core */
