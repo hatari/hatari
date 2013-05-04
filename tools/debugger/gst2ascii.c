@@ -79,7 +79,7 @@ static symbol_list_t* usage(const char *msg)
 		{ 'd', "no DATA symbols" },
 		{ 't', "no TEXT symbols" },
 		{ 'l', "no local (.L*) symbols" },
-		{ 'o', "no object file name (*.o) symbols" }
+		{ 'o', "no object symbols (filenames or GCC internals)" },
 	};
 	const char *name;
 	int i;
@@ -188,7 +188,7 @@ static void symbol_list_free(symbol_list_t *list)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32_t tablesize)
 {
-	int i, count, symbols, len;
+	int i, count, symbols;
 	int notypes, dtypes, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
@@ -263,9 +263,25 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 			}
 		}
 		if (Options.no_obj) {
-			len = strlen(name);
-			if (strchr(name, '/') || (len > 2 && name[len-2] == '.' && name[len-1] == 'o')) {
+			const char *gcc_sym[] = {
+				"___gnu_compiled_c",
+				"gcc2_compiled."
+			};
+			int j, len = strlen(name);
+			/* object / file name? */
+			if (len > 2 && ((name[len-2] == '.' && name[len-1] == 'o') || strchr(name, '/'))) {
 				ofiles++;
+				continue;
+			}
+			/* useless symbols GCC (v2) seems to add to every object? */
+			for (j = 0; j < ARRAYSIZE(gcc_sym); j++) {
+				if (strcmp(name, gcc_sym[j]) == 0) {
+					ofiles++;
+					j = -1;
+					break;
+				}
+			}
+			if (j < 0) {
 				continue;
 			}
 		}
