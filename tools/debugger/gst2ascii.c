@@ -15,10 +15,11 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+#include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
-#include <SDL_types.h>
-#include <SDL_endian.h>
+#include <netinet/in.h>
+#include <assert.h>
 
 typedef enum {
 	SYMTYPE_TEXT = 1,
@@ -28,7 +29,7 @@ typedef enum {
 
 typedef struct {
 	char *name;
-	Uint32 address;
+	uint32_t address;
 	symtype_t type;
 } symbol_t;
 
@@ -40,8 +41,8 @@ typedef struct {
 } symbol_list_t;
 
 typedef struct {
-	Uint32 offset;
-	Uint32 end;
+	uint32_t offset;
+	uint32_t end;
 } prg_section_t;
 
 /* ------------------ options & usage ------------------ */
@@ -113,8 +114,8 @@ static symbol_list_t* usage(const char *msg)
  */
 static int symbols_by_address(const void *s1, const void *s2)
 {
-	Uint32 addr1 = ((const symbol_t*)s1)->address;
-	Uint32 addr2 = ((const symbol_t*)s2)->address;
+	uint32_t addr1 = ((const symbol_t*)s1)->address;
+	uint32_t addr2 = ((const symbol_t*)s2)->address;
 
 	if (addr1 < addr2) {
 		return -1;
@@ -185,7 +186,7 @@ static void symbol_list_free(symbol_list_t *list)
  *	http://toshyp.atari.org/en/005005.html
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, Uint32 tablesize)
+static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32_t tablesize)
 {
 	int i, count, symbols, len;
 	int notypes, dtypes, locals, ofiles;
@@ -194,8 +195,8 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, Uint32
 	symtype_t symtype;
 #define DRI_ENTRY_SIZE	14
 	char name[23];
-	Uint16 symid;
-	Uint32 address;
+	uint16_t symid;
+	uint32_t address;
 
 	if (tablesize % DRI_ENTRY_SIZE) {
 		fprintf(stderr, "ERROR: invalid DRI/GST symbol table size %d!\n", tablesize);
@@ -214,8 +215,8 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, Uint32
 		    fread(&address, sizeof(address), 1, fp) != 1) {
 			break;
 		}
-		address = SDL_SwapBE32(address);
-		symid = SDL_SwapBE16(symid);
+		address = ntohl(address);
+		symid = ntohs(symid);
 
 		/* GST extended DRI symbol format? */
 		if ((symid & 0x0048)) {
@@ -313,27 +314,27 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, Uint32
  */
 static symbol_list_t* symbols_load_binary(FILE *fp)
 {
-	Uint32 textlen, datalen, bsslen, tablesize, tabletype;
+	uint32_t textlen, datalen, bsslen, tablesize, tabletype;
 	prg_section_t sections[3];
 	int offset, reads = 0;
 
 	/* get TEXT, DATA & BSS section sizes */
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
-	textlen = SDL_SwapBE32(textlen);
+	textlen = ntohl(textlen);
 	reads += fread(&datalen, sizeof(datalen), 1, fp);
-	datalen = SDL_SwapBE32(datalen);
+	datalen = ntohl(datalen);
 	reads += fread(&bsslen, sizeof(bsslen), 1, fp);
-	bsslen = SDL_SwapBE32(bsslen);
+	bsslen = ntohl(bsslen);
 
 	/* get symbol table size & type and check that all reads succeeded */
 	reads += fread(&tablesize, sizeof(tablesize), 1, fp);
-	tablesize = SDL_SwapBE32(tablesize);
+	tablesize = ntohl(tablesize);
 	if (!tablesize) {
 		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
 	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
-	tabletype = SDL_SwapBE32(tabletype);
+	tabletype = ntohl(tabletype);
 	if (reads != 5) {
 		fprintf(stderr, "ERROR: program header reading failed!\n");
 		return NULL;
@@ -374,7 +375,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 static symbol_list_t* symbols_load(const char *filename)
 {
 	symbol_list_t *list;
-	Uint16 magic;
+	uint16_t magic;
 	FILE *fp;
 
 	fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
@@ -385,7 +386,7 @@ static symbol_list_t* symbols_load(const char *filename)
 		return usage("reading program file failed");
 	}
 
-	if (SDL_SwapBE16(magic) != 0x601A) {
+	if (ntohs(magic) != 0x601A) {
 		return usage("file isn't an Atari program file");
 	}
 	list = symbols_load_binary(fp);
@@ -412,8 +413,6 @@ static symbol_list_t* symbols_load(const char *filename)
 	/* sort both lists, with different criteria */
 	qsort(list->addresses, list->count, sizeof(symbol_t), symbols_by_address);
 	qsort(list->names, list->count, sizeof(symbol_t), symbols_by_name);
-
-	fprintf(stderr, "Loaded %d symbols from '%s'.\n", list->count, filename);
 	return list;
 }
 
@@ -455,6 +454,8 @@ static int symbols_show(symbol_list_t* list)
 		fprintf(stdout, "0x%08x %c %s\n",
 			entry->address, symchar, entry->name);
 	}
+
+	fprintf(stderr, "%d symbols processed.\n", list->count);
 	return 0;
 }
 
