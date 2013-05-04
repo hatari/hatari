@@ -29,8 +29,13 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 /* if non-zero, output (more) warnings on suspicious:
  * - cycle/instruction counts
  * - PC switches
+ * And drop to debugger on invalid PC addresses.
  */
 #define DEBUG 0
+#if DEBUG
+#include "debugui.h"
+static bool skip_assert;
+#endif
 
 static callinfo_t cpu_callinfo;
 
@@ -82,6 +87,10 @@ static inline Uint32 address2index(Uint32 pc)
 {
 	if (unlikely(pc & 1)) {
 		fprintf(stderr, "WARNING: odd CPU profile instruction address 0x%x!\n", pc);
+#if DEBUG
+		skip_assert = true;
+		DebugUI(REASON_CPU_EXCEPTION);
+#endif
 	}
 	if (pc >= TosAddress && pc < TosAddress + TosSize) {
 		/* TOS, put it after RAM data */
@@ -97,6 +106,10 @@ static inline Uint32 address2index(Uint32 pc)
 			fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
 			/* extra entry at end is reserved for invalid PC values */
 			pc = STRamEnd + TosSize + 0x20000;
+#if DEBUG
+			skip_assert = true;
+			DebugUI(REASON_CPU_EXCEPTION);
+#endif
 		}
 	}
 	/* CPU instructions are at even addresses, save space by halving */
@@ -908,9 +921,16 @@ void Profile_CpuStop(void)
 	next = update_area(&cpu_profile.rom, next, cpu_profile.size);
 	assert(next == cpu_profile.size);
 
-	assert(cpu_profile.all.misses == cpu_profile.ram.counters.misses + cpu_profile.tos.counters.misses + cpu_profile.rom.counters.misses);
-	assert(cpu_profile.all.cycles == cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
-	assert(cpu_profile.all.count == cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count);
+#if DEBUG
+	if (skip_assert) {
+		skip_assert = false;
+	} else
+#endif
+	{
+		assert(cpu_profile.all.misses == cpu_profile.ram.counters.misses + cpu_profile.tos.counters.misses + cpu_profile.rom.counters.misses);
+		assert(cpu_profile.all.cycles == cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
+		assert(cpu_profile.all.count == cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count);
+	}
 
 	/* allocate address array for sorting */
 	active = cpu_profile.ram.active + cpu_profile.rom.active + cpu_profile.tos.active;
