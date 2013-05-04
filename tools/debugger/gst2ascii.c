@@ -316,7 +316,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 		 * addition to object file addresses conflicting with
 		 * first symbol in the object file.
 		 */
-		fprintf(stderr, "NOTE: ignored %d object file names (= name has '/' or ends in '.o').\n", ofiles);
+		fprintf(stderr, "NOTE: ignored %d object symbols (= name has '/', ends in '.o' or is GCC internal).\n", ofiles);
 	}
 	list->symbols = symbols;
 	list->count = count;
