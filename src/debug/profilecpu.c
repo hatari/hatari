@@ -725,8 +725,19 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 			 * so I'm making call *to* it show up as branch, to
 			 * keep callstack depth correct.
 			 */
-			if (pc == etos_switcher) {
+			if (unlikely(pc == etos_switcher)) {
 				flag = CALL_BRANCH;
+			} else if (unlikely(prev_pc == PC_UNDEFINED)) {
+				/* if first profiled instruction
+				 * is subroutine call, it doesn't have
+				 * valid prev_pc value stored
+				 */
+				cpu_callinfo.return_pc = PC_UNDEFINED;
+				fprintf(stderr, "WARNING: previous PC from callinfo for 0x%d is undefined!\n", pc);
+#if DEBUG
+				skip_assert = true;
+				DebugUI(REASON_CPU_EXCEPTION);
+#endif
 			} else {
 				/* slow! */
 				cpu_callinfo.return_pc = Disasm_GetNextPC(prev_pc);

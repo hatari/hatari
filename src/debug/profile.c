@@ -330,6 +330,9 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 		callinfo->count = count;
 	}
 
+	/* only first instruction can be undefined */
+	assert(callinfo->return_pc != PC_UNDEFINED || !callinfo->depth);
+
 	/* called function */
 	stack = &(callinfo->stack[callinfo->depth++]);
 
@@ -338,7 +341,6 @@ void Profile_CallStart(int idx, callinfo_t *callinfo, Uint32 prev_pc, calltype_t
 	memset(&(stack->out), 0, sizeof(stack->out));
 
 	/* set subroutine call information */
-	assert(callinfo->return_pc != PC_UNDEFINED);
 	stack->ret_addr = callinfo->return_pc;
 	stack->callee_idx = idx;
 	stack->caller_addr = prev_pc;
