@@ -536,7 +536,7 @@ class ProfileSymbols(Output):
             addr += area[0]
             # -1 used because compiler can add TEXT symbol right after end of TEXT section
             if addr < area[0] or addr-1 > area[1]:
-                self.error_exit("relative symbol '%s' address 0x%x is outside of TEXT area: 0x%x-0x%x" % (name, addr, area[0], area[1]))
+                self.error_exit("relative symbol '%s' address 0x%x is outside of TEXT area: 0x%x-0x%x!\nDo symbols match the profiled binary?" % (name, addr, area[0], area[1]))
             if self._check_symbol(addr, name, self.symbols):
                 name = self._rename_symbol(addr, name)
                 self.symbols[addr] = name
@@ -728,7 +728,7 @@ class ProfileCallers(Output):
             # function address for the caller
             paddr = laddr - offset
             if paddr not in profile:
-                self.error_exit("parent caller 0x%x for '%s' not in profile" % (laddr, child.name))
+                self.error_exit("parent caller 0x%x for '%s' not in profile!\nDo symbols match the profiled binary?" % (laddr, child.name))
             parent = profile[paddr]
             if pname != parent.name:
                 self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
@@ -1186,7 +1186,7 @@ class ProfileSorter:
                 showtime = True
 
             for cost in totals:
-                if cost:
+                if cost and len(cost) > field:
                     percentage = 100.0 * cost[field] / total
                     percentages += "%7.2f%%" % percentage
                     if showtime:
@@ -1203,7 +1203,7 @@ class ProfileSorter:
             if show_info:
                 costinfo = ""
                 for cost in totals:
-                    if cost:
+                    if cost and len(cost) > field:
                         if showtime:
                             time = stats.get_time_call(cost, function.cost)
                             costinfo += ",%8.5fs" % time
@@ -1541,7 +1541,10 @@ label="%s";
             if self.show_subcosts and function.subtotal and len(function.subtotal) > field:
                 shape = " shape=diamond"
                 cost = function.subtotal
-                owncount = function.subcost[field]
+                if len(function.subcost) > field:
+                    owncount = function.subcost[field]
+                else:
+                    owncount = 0
             else:
                 cost = function.cost
                 owncount = cost[field]
