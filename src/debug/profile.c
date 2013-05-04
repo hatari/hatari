@@ -225,6 +225,8 @@ static void add_callee_cost(callee_t *callsite, callstack_t *stack)
 	/* cost is only added for updated callers,
 	 * so they should always exist
 	 */
+	fprintf(stderr, "ERROR: trying to add costs to non-existing 0x%x caller of 0x%x!\n",
+		stack->caller_addr, callsite->addr);
 	assert(0);
 }
 
@@ -363,11 +365,19 @@ Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost)
 	/* callinfo->depth points now to to-be removed item */
 	stack = &(callinfo->stack[callinfo->depth]);
 
-	/* full cost is original global cost (in ->all)
-	 * deducted from current global (total) cost
-	 */
-	set_counter_diff(&(stack->all), totalcost);
-	add_callee_cost(callinfo->site + stack->callee_idx, stack);
+	if (unlikely(stack->caller_addr == PC_UNDEFINED)) {
+		/* return address can be undefined only for
+		 * first profiled instruction, i.e. only for
+		 * function at top of stack
+		 */
+		assert(!callinfo->depth);
+	} else {
+		/* full cost is original global cost (in ->all)
+		 * deducted from current global (total) cost
+		 */
+		set_counter_diff(&(stack->all), totalcost);
+		add_callee_cost(callinfo->site + stack->callee_idx, stack);
+	}
 
 	/* if current function had a parent:
 	 * - start tracking that
