@@ -108,6 +108,11 @@ Other potential Hatari functionality improvements
 
 - Support harddisk write protection also for IDE & ACSI drives?
 
+- Fix GST symbol table detection in debugger & gst2ascii.  Currently
+  it will just process whatever it thinks the symbol table to
+  contain (which output can mess the console).  MiNT binaries can
+  contain GST symbol tables, so checking that isn't enough.
+
 - Preliminary debugger work for the other features + cleanup:
 	- Eval_Number() could take DSP/CPU flag like Eval_Range()
 	  does so that all commands taking numeric args can accept
