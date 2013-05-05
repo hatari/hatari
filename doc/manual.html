@@ -2863,6 +2863,26 @@ defined symbol addresses.
 </p>
 
 
+<h4>Profile data accuracy</h4>
+
+<p>Profile data accuracy depends on Hatari emulation accuracy.
+Profile data accuracy from most to least accurate when Hatari's
+default emulation options are used is following:</p>
+<ul>
+<li>Executed CPU and DSP instruction counts are accurate.</li>
+<li>DSP cycles counts (and their variance information) should be accurate.
+    </li>
+<li>030 CPU instruction cache miss information (provided by WinUAE CPU core)
+    is assumed to be accurate.</li>
+<li>Cycles used by a given CPU instruction depend to some extent on what
+    instruction(s), and data in case of 030, was processed before it.
+    While Hatari has some (instruction pairing) heuristics to take
+    that into account for 68000, in general instruction cycles are
+    averages.  For 68000, cycles (provided by OldUAE CPU core) should
+    be fairly accurate, for 68030 they aren't (yet) not very accurate.</li>
+</ul>
+
+
 <h4>Caller information</h4>
 
 <p>
@@ -2923,11 +2943,442 @@ automatically, by the profiler data post-processor.
 </p>
 
 
-<h4>Profile data post-processing</h4>
+<h4>Caller data accuracy</h4>
 
-<p>
-TODO
+<p>Everything about profile data accuracy applies also to caller costs,
+but there are additional things to take into account, mainly because
+profiler cannot determine when exceptions are being handling:</p>
+<ul>
+<li>If there are exception(s) during a subroutine call, costs for
+    the exception handling will also be accounted for that subroutine.
+    This shouldn't be a problem unless those costs are very large,
+    i.e. check how much CPU your exception handlers take.</li>
+<li>Indicated exception handler call type can be incorrect.</li>
+<li>Profiled code doing return address related stack manipulations
+    confuses call tracking and produces incorrect results (profiler
+    has special code to handle EmuTOS AES switcher because of this).
+    Typically this produces large list of functions that are finalized
+    at profile end, so it should be easy to detect.</li>
+<li>Compilicated recursive calls seem to sometimes cause inclusive
+    costs (ones including costs of further subroutine calls) to be
+    incorrect.  Sometimes this can be noticed by them being even
+    &gt;100%.</li>
+<li>On DSP, profiler heuristics assume (for speed reasons) that
+    <em>conditional</em> subroutine calls never call the very next
+    instruction (as that would be very bad/inefficient code).</li>
+</ul>
+
+
+<h4>Saving profile data to a file</h4>
+
+<p>It's useful to save the profile data to a file:
+<pre>
+&gt; profile save program-profile.txt
+</pre>
+
+<p>With the saved profile disassembly (and optional caller information)
+you can more easily investigate what your program did during
+profiling, search symbols &amp; addresses in it, and compare the
+results to profiles you've saved from earlier versions of your code.</p>
+
+<p>You may even create your own post-processing tools for
+investigating the profiling data more closely, e.g. to
+<a href="http://www.atari-forum.com/viewtopic.php?f=68&t=24561&start=75#p226505">find
+CPU/DSP communication bottlenecks</a>.</p>
+
+
+<h3>Profile data post-processing</h3>
+
+<p>Saved profile data can be post-processed with (Python) script
+installed by Hatari, to:</p>
+<ul>
+<li>Get lists of functions/symbols with highest costs.</li>
+<li>Get callgraphs of what functions/symbols causes those
+    costs and what kind of call hiearchy the profiled code
+    has.</li>
+<li>Export profile data in Valgrind's
+    <a href="http://valgrind.org/docs/manual/cl-format.html">Callgrind format</a>
+    for viewing it in
+    <a href="http://kcachegrind.sourceforge.net/">Kcachegrind</a>
+    GUI.</li>
+</ul>
+
+
+<h4>Providing symbols for the post-processor</h4>
+
+<p>When the data is post-processed, you should always provide
+the post-processor symbols for the profile code!  Relying just on the
+symbol in the profile data can cause costs to be asssigned to wrong
+symbol, if symbol's code wasn't called through symbol's own address,
+but by jumping inside its code.</p>
+
+<p>If your code is in fixed location, you should tell
+post-processor to handle symbol addresses as absolute (-a):</p>
+<pre>
+$ hatari_profile.py <b>-a</b> etos512k.sym emutos-profile.txt
+</pre>
+
+<p>Normal programs are relocated and you should instead give
+the symbols as TEXT (code) section relative ones (-r):</p>
+<pre>
+$ hatari_profile.py <b>-r</b> program.sym program-profile.txt
+</pre>
+
+<p>If symbols are included to your binary in DRI/GST format, first they
+need to be extracted to <a href="#Debug_symbols">the ASCII format</a>
+understood by the post-processor (-l and -o options exclude useless
+symbols from its output):</p>
+<pre>
+$ gst2ascii -l -o program.prg &gt; program.sym
+</pre>
+
+<p>If there are some extra symbols that you don't want to see
+separately in profiles, because they aren't real functions,
+but e.g. loop labels, you can either remove them manually
+from the ASCII *.sym file, or filter them out with grep:
 </p>
+<pre>
+$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 | &gt; program.sym
+</pre>
+
+<p>Above post-processor examples just parse + verify the given data
+and produce output like this:</p>
+<pre>
+Hatari profile data processor
+
+Parsing TEXT relative symbol address information from program.sym...
+[...]
+3237 lines with 1550 code symbols/addresses parsed, 0 unknown.
+
+Parsing profile information from program-profile.txt...
+[...]
+9575 lines processed with 368 functions.
+
+CPU profile information from 'program-profile.txt':
+- Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
+</pre>
+
+
+<h4>Post-processor provided statistics</h4>
+
+<p>To get statistics (-s) and list of top (-t) CPU users in profile,
+add "-st" option:</p>
+<pre>
+$ hatari_profile.py <b>-st</b> -r program.sym program-profile.txt
+[...]
+CPU profile information from 'program-profile.txt':
+- Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
+
+Time spent in profile = 34.49539s.
+
+Calls:
+- max = 187738, in __toupper at 0x52b88, on line 8286
+- 1585901 in total
+Executed instructions:
+- max = 1900544, in flat_remap_mips+14 at 0x47654, on line 7020
+- 64499351 in total
+Used cycles:
+- max = 15224620, in flat_remap_mips+18 at 0x47658, on line 7022
+- 553392132 in total
+Instruction cache misses:
+- max = 184308, in _BM_T_GetTicks at 0x43b90, on line 4772
+- 4941307 in total
+
+Calls:
+  11.84%      187698  __toupper
+  11.48%      182105  _BM_T_GetTicks
+  11.48%      182019  _I_GetTime
+[...]
+Executed instructions:
+  34.83%    22462729  flat_generate_mips
+  14.08%     9080215  flat_remap_mips
+   8.55%     5515945  render_patch_direct
+   5.09%     3283328  _TryRunTics
+[...]
+Used cycles:
+  23.62%   130702768  flat_generate_mips
+  12.42%    68735832  flat_remap_mips
+   9.77%    54041148  _TryRunTics
+   5.80%    32111536  correct_element
+[...]
+Instruction cache misses:
+  37.03%     1829764  _TryRunTics
+  11.20%      553314  _BM_T_GetTicks
+   9.44%      466319  _NetUpdate
+   9.27%      457899  _HGetPacket
+[...]
+</pre>
+
+<p>If you want to see also symbol addresses and what is per call
+cost, add -i option:<p>
+<pre>
+$ hatari_profile.py -st <b>-i</b> -r program.sym program-profile.txt
+[...]
+Executed instructions:
+  34.83%    22462729  flat_generate_mips   (0x04778a, 774576 / call)
+  14.08%     9080215  flat_remap_mips      (0x047646, 313110 / call)
+   8.55%     5515945  render_patch_direct  (0x047382, 29977 / call)
+   5.09%     3283328  _TryRunTics          (0x042356, 19660 / call)
+[...]
+Used cycles:
+  23.62%   8.14728s  130702768  flat_generate_mips  (0x04778a, 0.28094s / call)
+  12.42%   4.28461s   68735832  flat_remap_mips     (0x047646, 0.14775s / call)
+   9.77%   3.36863s   54041148  _TryRunTics         (0x042356, 0.02017s / call)
+   5.80%   2.00165s   32111536  correct_element     (0x04a658, 0.00001s / call)
+[...]
+Instruction cache misses:
+  37.03%     1829764  _TryRunTics          (0x042356, 10956 / call)
+  11.20%      553314  _BM_T_GetTicks       (0x043b90, 3 / call)
+   9.44%      466319  _NetUpdate           (0x041bcc, 5 / call)
+   9.27%      457899  _HGetPacket          (0x041754, 5 / call)
+[...]
+</pre>
+
+<p>(For cycles the "per call" information is in seconds, not as
+a cost count.)</p>
+
+<p>If your profile file contains caller information, you should
+add -p option to see it, as that will also help in detecting symbol
+issues (see <a href="#Interpreting_the_numbers">Interpreting
+the numbers</a>):<p>
+<pre>
+$ hatari_profile.py -st <b>-p</b> -r program.sym program-profile.txt
+[...]
+9575 lines processed with 368 functions.
+[...]
+Of all 1570498 switches, ignored 581 for type(s) ['r', 'u', 'x'].
+
+CPU profile information from 'badmood-level-load-CPU.txt':
+- Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
+[...]
+Calls:
+  11.84%  11.84%      187698    187698  __toupper
+  11.48%  11.48%      182105    182105  _BM_T_GetTicks
+  11.48%  22.95%      182019    364038  _I_GetTime
+[...]
+Executed instructions:
+  34.83%  34.86%  34.86%    22462729  22484024  22484024  flat_generate_mips
+  14.08%  14.10%  14.10%     9080215   9091270   9091676  flat_remap_mips
+   8.55%                     5515945                      render_patch_direct
+   5.09%   5.11%  94.96%     3283328   3294022  61247717  _TryRunTics
+[...]
+Used cycles:
+  23.62%  23.69%  23.69%   130702768 131100604 131100604  flat_generate_mips
+  12.42%  12.46%  12.46%    68735832  68928816  68930904  flat_remap_mips
+   9.77%   9.80%  95.66%    54041148  54238744 529368824  _TryRunTics
+   5.80%   5.82%   5.82%    32111536  32193664  32193664  correct_element
+[...]
+Instruction cache misses:
+  37.03%  37.14%  98.57%     1829764   1835261   4870573  _TryRunTics
+  11.20%  11.24%  11.24%      553314    555191    555191  _BM_T_GetTicks
+   9.44%   9.49%  29.13%      466319    468782   1439340  _NetUpdate
+   9.27%   9.29%   9.37%      457899    459197    463217  _HGetPacket
+[...]
+</pre>
+
+<p>Now there's a message telling that some of the calls were ignored as
+based on "call type" they were determined to be actually returns from
+exceptions, not real calls (this is mainly important for callgraph
+generation, discussed below).</p>
+
+
+<h4>Interpreting the results</h4>
+
+<p>In addition to accuracy issues mentioned in previous Profiling
+sections, function/symbol level costs have gotchas of their own.</p>
+
+<p>The first cost percentage and count columns are <em>sums for all
+the instructions</em> that were in profile data file <em>between
+the indicated symbol's address and the address of the next symbol</em>
+(= "between-symbols" cost).</p>
+
+<p><strong>NOTE:</strong> if your symbol file doesn't contain addresses
+for all the relevant symbols, results from this can be misleading because
+instructions costs get assigned to <em>whatever</em> symbol's address
+happened to preceed those instructions.  And you don't see which
+caller is causing it from caller info or callgraph either, as entry
+point for that time sink lacking a symbol means profiler hadn't
+tracked calls to it...</p>
+
+<p>The next two cost percentage and count columns are for <em>subroutine
+calls costs</em>, first one for exclusive and latter for inclusive cost
+i.e. including costs for further subroutine calls.  Values are based on
+caller information documented above.</p>
+
+<p>Reasons why between-symbol costs, and subroutine call costs can
+differ are following:</p>
+<ul>
+<li>Subroutine terminates before next symbol address: exclusive
+    cost is smaller <em>because of missing symbol information</em>
+    (these are indicated with '*' in statistics).</li>
+<li>Subroutine is called more through jumps/branches than through
+    subroutine calls: inclusive call count may be smaller.</li>
+<li>Subroutine jumps/branches to another function instead of
+    using subroutine call, or function contains additional
+    (non-function) labels: exclusive cost is larger.</li>
+<li>Exception happening during subroutine call: exclusive cost is
+    (slightly) larger.</li>
+</ul>
+
+<p>In the first case, you should check the profile data to find out
+whether there are missing symbols for executed function entry points.
+You can notice function entry points as address gap and/or code
+retrieving arguments from stack, and exit points from RTS instruction.</p>
+
+<p>While subroutine costs should be more accurate and relevant, due to
+code optimizations many of the functions are not called as subroutines
+(on m68k, using JSR/BSR), but just jumped or branced to.  Because of
+this, it's useful to compare both subroutine and between-symbols
+costs.  One should be able to see from the profile disassembly which
+of the above cases is cause for the discrepancy in the values.</p>
+
+<p><strong>NOTE:</strong>Before starting to change/optimize C-level sources,
+you should <em>always</em> verify from profile data where exactly the costs
+are in a function, to make sure your optimization efforts can actually
+help the performance.</p>
+
+
+<h4>Generating and viewing callgraphs</h4>
+
+<p>Callgraphs require saved profile data to contain caller information,
+i.e. symbols should have been loaded before starting profiling (normally
+done with "symbols prg" command in Hatari debugger).</p>
+
+<p>Separate callgraphs will be created for each of the costs
+(0=calls, 1=instructions, 2=cycles) with the -g option:</p>
+<pre>
+$ hatari_profile.py <b>-p -g</b> -r program.sym program-profile.txt
+[...]
+Generating 'program-profile-0.dot' DOT callgraph file...
+
+Generating 'program-profile-1.dot' DOT callgraph file...
+
+Generating 'program-profile-2.dot' DOT callgraph file...
+[...]
+</pre>
+
+<p>Callgraphs are saved in <a href="http://www.graphviz.org/">GraphViz</a>
+"dot" format.  Dot files can be viewed:</p>
+<ul>
+<li>With "dotty" program included with GraphViz</li>
+<li>With <a href="http://code.google.com/p/jrfonseca/wiki/XDot">XDot</a>
+    Python GUI (best option on Linux), or some platform specific viewer</li>
+<li>By converting dot file to PostScript or SVG format before
+    viewing it with viewers for those:
+<pre>
+$ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
+</pre>
+    (problem with most PS/PDF and SVG viewers is that either they
+    don't allow zooming large callgraphs enough or they use huge
+    amounts of memory and get very slow)
+    </li>
+</ul>
+
+<p>Produced callgraph will look like this:</p>
+<div align="center">
+<a href="images/callgraph.svg" alt="Full callgraph"><img
+src="images/callgraph.png" alt="Part of callgraph"></a>
+</div>
+
+<p>Interpreting the callgraph:</p>
+<ul>
+<li>Diamond shaped nodes are symbols called as subroutines.
+    Values listed in them are subroutine call costs; inclusive
+    (total) cost with exclusive (own) cost in parenthesis,
+    followed by inclusive cost count.  Exclusive cost is
+    shown only if it differs from inclusive one.</li>
+<li>Ellipse shaped nodes are for other symbols (functions
+    called using jumps/branches, loop labels etc).  Values
+    listed in them are between-symbols costs, i.e. normally
+    they're included to inclusive (total) costs shown in
+    subroutine call node somewhere higher in call hierarchy.</li>
+<li>Nodes which exclusive (own) or between-symbols costs
+    exceed default or explicitly given threshold value,
+    have gray background.</li>
+<li>Both nodes which inclusive or between-symbols cost exceeds
+    the threshold value, and the arrows to &amp; from them
+    are marked red.
+<li>Arrow types indicate call types; normal arrows subroutine
+    calls, circles branches/jumps, backarrows returns.
+    Exception calls and returns are indicated with dashed lines,
+    unknown calls with dotted lines.</li>
+<li>Arrow text tells from which address the call orignated
+    (inside the calling function).  If symbol had multiple
+    callers, text includes count of calls from that particular
+    address, and its percentage of all calls done to that
+    symbol.</li>
+</ul>
+
+
+<h4>Making large callgraphs readable</h4>
+
+<p>If profile is for larger and more varied amount of code
+(e.g. program startup), the resulting callgraph can be so
+huge it's unreadable.</p>
+
+<p>If your code has interrupt handlers, they can get called
+at any point, which can show in callgraph as "explicit" calls
+from the interrupted functions.  To get rid of such incorrect
+calls, give interrupt handler names to --ignore-to option:</p>
+<pre>
+$ hatari_profile.py -p -g <b>--ignore-to handler1,handle2</b> -r program.sym program-profile.txt
+</pre>
+
+<p>In large callgraph most of the functions aren't really interesting,
+because their contribution to the cost is insignificant. You can
+remove large number of them with --no-leafs and --no-intermediate
+options, they act <em>only</em> on on nodes which costs are below
+given threshold.  Leaf nodes are ones which don't have any parents
+and/or children and intermediate ones which have only single parent
+and children (node calling itself is not taken into account).
+
+<p>Threshold for this is given with the --limit (-l) option.  With
+that it typically makes also sense to change the node emphasis
+threshold with --emph-limit (-e) option:</p>
+<pre>
+$ hatari_profile.py -p -g <b>-l 0.5 -e 2.0</b> -r program.sym program-profile.txt
+</pre>
+
+<p>If you're not interested in from how many different addresses
+a given function calls another function, use --compact option.  If you
+still see multiple calls between two nodes with it, the reason is that
+they happened through different call paths which were removed from
+the callgraph after --compact option was applied:</p>
+<pre>
+$ hatari_profile.py -p -g -l 1.0 -e 2.0 <b>--no-leafs --no-intermediate --compact</b> -r program.sym program-profile.txt
+</pre>
+
+<p>If even this doesn't help, you can remove all nodes below
+the given cost threshold limit with --no-limited option, but this
+often doesn't leave much of a call hiararchy.  Instead you may
+consider removing all nodes except for subroutine call ones with
+--only-subroutines option.</p>
+
+<p>If you have trouble locating nodes you're specially interested
+about, you can either color them differently with the --mark option,
+or exclude everything else from the callgraph except those nodes and
+their immediate callers &amp; callees, with the --only option:</p>
+<pre>
+$ hatari_profile.py -p -g <b>--only func1,func2</b> -r program.sym program-profile.txt
+</pre>
+
+<p>Last option for reading the callgraph is using -k option to
+export the data for use in (Linux) Kcachegrind UI.  It generates
+callgraphs on the fly, and just for the area around the function
+you selected, so navigating in callgraph may be easier.  It also
+shows the related profile disassembly, which can make verifying
+matters easier:</p>
+<pre>
+$ hatari_profile.py <b>-p -k</b> -r program.sym program-profile.txt
+[...]
+Generating callgrind file 'program-profile.cg'...
+[...]
+$ kcachegrind program-profile.cg
+</pre>
+<div align="center">
+  <img src="images/kcachegrind.png" width="887" height="442"
+       alt="Kcachegrind screenshot" />
+</div>
 
 
 <h3>Usage examples</h3>

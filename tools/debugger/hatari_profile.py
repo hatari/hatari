@@ -90,27 +90,8 @@ If profile includes "caller" information, -p option can be used to see:
 - costs also for everything else that a subroutine calls,
 - subroutine's "own" cost, which exclude costs for any further
   subroutine calls that it does.
-
-Often the subroutine costs shown with the -p option don't match the
-symbol costs shown without the -p option (i.e. when cost sums between
-successive symbol addresses, are being assigned to first symbol):
-- Subbroutine call count total can smaller than call count for the same
-  symbol, if there are more jumps/branches to that address than there
-  are subroutine calls to it.
-- Other cost totals can be smaller if symbols are missing for frequently
-  executed instructions that are after given symbol, i.e. between-symbols
-  costs include costs for the preceeding symbol that aren't relevant for
-  it.
-- Own costs for subroutines are larger than between-symbols sums when
-  the symbols used as limits are just (e.g. loop) labels, not function
-  names.
-
-While subroutine costs should be more accurate and relevant, due to
-code optimizations many of the functions are not called as subroutines
-(on m68k, using JSR/BSR), but just jumped or branced to.  Because of
-this, it's useful to compare both subroutine and between-symbols
-costs.  One should be able to see from the profile disassembly which
-of the above cases is cause for the discrepancy in the values.
+(For more information on how these differ from normally shown costs,
+see Profiling section in Hatari manual.)
 
 Nodes with subroutine costs are shown as diamonds in the callgraphs.
 
