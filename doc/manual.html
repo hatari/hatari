@@ -66,7 +66,7 @@
 <h1 class="pageheader">Hatari User's Manual</h1>
 
 <p class="pageheader">
-Version 1.6.2
+Version 1.7
 </p>
 <p class="pageheader">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
@@ -2246,6 +2246,13 @@ depend on which toolchain you use to build it:
     the linker</em></dd>
 </dl>
 
+<p>You can view the generated symbols (and convert them to debugger
+ASCII format) with tool installed with Hatari:</p>
+<pre>
+$ gst2ascii -l -o program.tos &gt; program.sym
+</pre>
+(Options -l and -o are used to exclude useless symbols from the output.)
+
 
 <h4>For a program on a (disk) image</h4>
 
@@ -2270,8 +2277,8 @@ cannot re-compile it to have them, you have two options:
 <ul>
 <li>Convert the symbols to ASCII format understood by the Hatari debugger.
     Writing converters for other ASCII formats is easy, and Hatari already
-    contains covertors for DSP LOD files, <tt>nm</tt> output for MiNT/a.out
-    binaries and AHCC map files.
+    contains covertors for DSP LOD files, <span class="commandline">nm</span>
+    output for MiNT/a.out binaries and AHCC map files.
 <li>Create the ASCII symbols file by hand as you're debugging a program.
 </ul>
 
@@ -2983,7 +2990,7 @@ results to profiles you've saved from earlier versions of your code.</p>
 
 <p>You may even create your own post-processing tools for
 investigating the profiling data more closely, e.g. to
-<a href="http://www.atari-forum.com/viewtopic.php?f=68&t=24561&start=75#p226505">find
+<a href="http://www.atari-forum.com/viewtopic.php?f=68&amp;t=24561&amp;start=75#p226505">find
 CPU/DSP communication bottlenecks</a>.</p>
 
 
@@ -3026,8 +3033,7 @@ $ hatari_profile.py <b>-r</b> program.sym program-profile.txt
 
 <p>If symbols are included to your binary in DRI/GST format, first they
 need to be extracted to <a href="#Debug_symbols">the ASCII format</a>
-understood by the post-processor (-l and -o options exclude useless
-symbols from its output):</p>
+understood by the post-processor:</p>
 <pre>
 $ gst2ascii -l -o program.prg &gt; program.sym
 </pre>
@@ -3275,9 +3281,11 @@ $ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
 </ul>
 
 <p>Produced callgraph will look like this:</p>
-<div align="center">
-<a href="images/callgraph.svg" alt="Full callgraph"><img
-src="images/callgraph.png" alt="Part of callgraph"></a>
+<div style="text-align:center">
+  <a href="images/callgraph.svg">
+    <img src="images/callgraph.png" width="953" height="589"
+         alt="Part of callgraph" />
+  </a>
 </div>
 
 <p>Interpreting the callgraph:</p>
@@ -3375,7 +3383,7 @@ Generating callgrind file 'program-profile.cg'...
 [...]
 $ kcachegrind program-profile.cg
 </pre>
-<div align="center">
+<div style="text-align:center">
   <img src="images/kcachegrind.png" width="887" height="442"
        alt="Kcachegrind screenshot" />
 </div>
@@ -3880,7 +3888,7 @@ parts of the emulated system is much trickier.
 </div>
 
 <div class="bottomdate">
-  January 2013
+  May 2013
 </div>
 
 </body>
