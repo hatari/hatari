@@ -1168,6 +1168,7 @@ class ProfileSorter:
                 break
             idx += 1
 
+            mark = " "
             times = ""
             values = ""
             percentages = ""
@@ -1175,6 +1176,10 @@ class ProfileSorter:
                 # show also subroutine call cost
                 if field > 0:
                     totals = (function.cost, function.subcost, function.subtotal)
+                    if function.subcost and (
+                      len(function.subcost) > field and (
+                      function.cost[field] > function.subcost[field])):
+                        mark = "*"
                 else:
                     # subfunction and symbol call counts are same
                     totals = (function.cost, function.subtotal,)
@@ -1198,7 +1203,7 @@ class ProfileSorter:
                     values += " " * 10
                     if showtime:
                         times += " " * 10
-            self.write("%s %s %s" % (percentages, times, values))
+            self.write("%s %s %s %s" % (percentages, times, values, mark))
 
             if show_info:
                 costinfo = ""
@@ -1212,9 +1217,9 @@ class ProfileSorter:
                 if costinfo:
                     costinfo += " / call"
                 addrinfo = "0x%06x" % addr
-                self.write("  %-28s (%s%s)\n" % (function.name, addrinfo, costinfo))
+                self.write(" %-23s (%s%s)\n" % (function.name, addrinfo, costinfo))
             else:
-                self.write("  %s\n" % function.name)
+                self.write(" %s\n" % function.name)
 
     def do_list(self, field, count, limit, show_info):
         "sort and show list for given profile data field"
