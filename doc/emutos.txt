@@ -723,12 +723,17 @@ Falcon free/shareware demos, games and applications
 Falcon emulation requires 512kB version of EmuTOS
 (the one shipped with Hatari).
 
-EmuTOS missing:
-- VDI 256-color & HiColor support
-- Falcon sound matrix & DSP XBios functions
+Latest EmuTOS missing:
+- HiColor support
+- DSP XBios functions
 
-probably explain why graphics in many of the demos & games look
-broken, their sound or music doesn't work or they freeze at startup.
+probably explains partly why graphics in many of the demos & games
+look broken, their sound or music doesn't work or they freeze at
+startup.
+
+(Latest EmuTOS release, v0.9.0, misses also 256-color and Falcon
+sound matrix support.)
+
 
 Following Falcon only demos, games and apps work (mostly) fine though.
 
@@ -812,11 +817,9 @@ but don't work with EmuTOS at all:
   M68000 Bus Error reading at address $3b4.
 
 
-Working games:
+Games working games in EmuTOS v0.9.0:
 - Aces High (preview)
 - Blum
-- GEM breakout
-  - problems with clicks
 - Cavemania (demo version)
 - Corsair
 - DB 4K
@@ -828,15 +831,12 @@ Working games:
 - Hexogan (use number pad)
 - Impulse (Breakout clone)*
 - Lamemine
-- Landmine (GEM minesweeper)
 - Les Dinosaures (demo)
 - LlamaZap free version (requires joypad, not joystick)
 - Madtris
 - Nibe
-- Pac Them*, needs EmuTOS > v0.9.0
 - Running (demo)*
 - Radical Race (demo)*
-- Santarun (GEM, slowish)
 - Spice (Defender clone)*
 - Static (Patience by Reservoir Gods), disable DSP
 - Steinbruch
@@ -844,13 +844,23 @@ Working games:
 - Tank Blaster
 - Tautology (by Reservoir Gods)
 - Tautology II* (by Reservoir Gods)
-- The Ultimate Minesweeper (16-color GEM game)
-  - Problems with clicks
 - Toy Man
-- Vertical Mayhem(+) (Columns clone)*, needs EmuTOS >= v0.9.0
 - Willie's Adventure (preview1), disable DSP
 - Willie's Adventure* (preview2)
-- Zodiax (Falcon "R-type"), needs EmuTOS > v0.9.0
+
+Games working in EmuTOS >0.9.0 CVS snapshot(s):
+- GEM breakout
+  - problems with clicks
+- Jeu de Poker, needs 256-color VGA
+- Landmine (GEM minesweeper)
+- Manga Puzzle: needs 256 colors
+- Pac Them*
+- Santarun (GEM, slowish)
+- The Ultimate Minesweeper (16-color GEM game)
+  - Problems with clicks
+- Vertical Mayhem(+) (Columns clone)*
+  - in v0.9.0 works without sounds
+- Zodiax (Falcon "R-type")
 
 Games regressed in EmuTOS v0.8.x:
 - Columns by Deadheart* (demo)
@@ -878,8 +888,6 @@ show something and/or don't use DSP/sound matrix):
 - Conquest of Elysium: screen with garbage
 - Des Lazers & des Hommes: game area graphics are missing
   (they're rendered with DSP)
-- Jeu de Poker: colors wrong, freezes at menu, needs 640x480x256 VGA
-- Manga Puzzle: needs 256 colors
 - Masters of Chaos: starts, but then doesn't react to input
 - Multibriques: colors are wrong
 - Neurobot: just exits
@@ -939,8 +947,8 @@ Broken applications:
   - For JPG images, requires running jpegd.prg first
   - Says "Ce fichier n'a pu etre ouvert"
 - Delmpaint (GFA)
-   - screen wrong, freezes
-   - needs 256-colors not supported by EmuTOS
+   - screen white after start, freezes
+   - needs 256-colors
 - DSPdit (by .tscc)
   - panic with bus error
 - FalcAMP (GEM)
