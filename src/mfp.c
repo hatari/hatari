@@ -388,7 +388,7 @@ static Uint8 MFP_ConvertIntNumber ( int Interrupt , Uint8 **pMFP_IER , Uint8 **p
 
 /*-----------------------------------------------------------------------*/
 /**
- * Call the MFP exception associated to the current MFP interrupt.
+ * Call the MFP exception associated to the current MFP interrupt 0-15.
  * When the MFP sets its IRQ signal, it will put the interrupt vector number
  * on the data bus ; the 68000 will read it during the IACK cycle
  * and multiply it by 4 to get the address of the exception handler.
@@ -397,20 +397,19 @@ static Uint8 MFP_ConvertIntNumber ( int Interrupt , Uint8 **pMFP_IER , Uint8 **p
  */
 static void MFP_Exception ( int Interrupt )
 {
-	unsigned int Vec;
+	unsigned int VecNr;
 
-	Vec = (unsigned int)(MFP_VR&0xf0)<<2;
-	Vec += Interrupt<<2;
+	VecNr = ( MFP_VR & 0xf0 ) + Interrupt;
 
 	if (LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION))
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("mfp excep int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
-			Interrupt, Vec, STMemory_ReadLong ( Vec ), FrameCycles, LineCycles, HblCounterVideo );
+			Interrupt, VecNr * 4, STMemory_ReadLong ( VecNr * 4 ), FrameCycles, LineCycles, HblCounterVideo );
 	}
 
-	M68000_Exception(Vec, M68000_EXC_SRC_INT_MFP);
+	M68000_Exception(VecNr * 4, M68000_EXC_SRC_INT_MFP);
 }
 
 
@@ -429,24 +428,21 @@ int	MFP_ProcessIACK ( int OldVecNr )
 	Uint8	*pPendingReg;
 	Uint8	*pInServiceReg;
 	Uint8	Bit;
-	int	OldInt;
-	int	Vec;
+	int	NewVecNr;
 
 
-	/* Check if MFP interrupt number changed before IACK */
-	OldInt = MFP_Current_Interrupt;
+	/* Check if MFP interrupt vector number changed before IACK */
 	MFP_UpdateIRQ ( CyclesGlobalClockCounter );
 
-	Vec = (unsigned int)( MFP_VR & 0xf0 ) << 2;
-	Vec += MFP_Current_Interrupt << 2;
+	NewVecNr = ( MFP_VR & 0xf0 ) + MFP_Current_Interrupt;
 
 	/* Print traces if VecNr changed just before IACK */
-	if ( LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION) && ( OldVecNr * 4 != Vec ) )
+	if ( LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION) && ( OldVecNr != NewVecNr ) )
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("mfp iack change old_vec=0x%x new_vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
-			OldVecNr * 4, Vec, STMemory_ReadLong ( Vec ) , FrameCycles, LineCycles, HblCounterVideo );
+			OldVecNr * 4, NewVecNr * 4, STMemory_ReadLong ( NewVecNr * 4 ) , FrameCycles, LineCycles, HblCounterVideo );
 	}
  
 	Bit = MFP_ConvertIntNumber ( MFP_Current_Interrupt , NULL , &pPendingReg , &pInServiceReg , NULL );
@@ -461,7 +457,7 @@ int	MFP_ProcessIACK ( int OldVecNr )
 
 	MFP_UpdateIRQ ( CyclesGlobalClockCounter );
 
-	return Vec / 4;				/* vector number */
+	return NewVecNr;			/* Vector number */
 }
 
 
