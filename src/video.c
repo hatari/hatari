@@ -428,8 +428,6 @@ static int LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
 static int RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
 static int VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 
-int	LastCycleHblException;			/* value of Cycles_GetCounter last time a level 2 interrupt was executed by the CPU */
-
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
 
@@ -1585,26 +1583,8 @@ void Video_InterruptHandler_HBL ( void )
 		}
 	}
 
-	/* We must handle a very special case : if we had a pending HBL that becomes active */
-	/* because SR is now <= $2100, then we must process an exception for this pending HBL. */
-	/* But if a "real" (non pending) HBL occurs during the first 56 cycles needed by the */
-	/* CPU to prepare the exception, we must ignore this HBL signal (instead of considering */
-	/* this new HBL should be put in pending state to be processed later) */
-        /* -> any HBL occurring between LastCycleHblException and LastCycleHblException+56 should be ignored */
-	if ( 0 && ( LastCycleHblException != -1 )
-	  && ( ( FrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 )
-	  && ( ( M68000_GetPC() < 0x8280 ) || ( M68000_GetPC() > 0x82b0 ) ) )	/* FIXME : except for European Demos intro where 8280<pc<82b0 */
-	{
-		/* simultaneous case, don't call M68000_Exception */
-		LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
-			nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , LastCycleHblException );
-		LastCycleHblException = -1;
-	}
-	else
-	{
-		/* "normal" case, this HBL doesn't occur during the processing of a pending HBL */
-		M68000_Exception(EXCEPTION_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
-	}
+	/* Set pending bit for HBL interrupt in the CPU IPL */
+	M68000_Exception(EXCEPTION_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
 
 
 	Video_EndHBL();					/* Check some borders removal and copy line to display buffer */
@@ -2543,8 +2523,6 @@ static void Video_ResetShifterTimings(void)
 
 	TimerBEventCountCycleStart = -1;		/* reset timer B activation cycle for this VBL */
 
-	LastCycleHblException = -1;
-
 	BlankLines = 0;
 }
 
@@ -2971,6 +2949,7 @@ void Video_InterruptHandler_VBL ( void )
 		}
 	}
 
+	/* Set pending bit for VBL interrupt in the CPU IPL */
 	M68000_Exception(EXCEPTION_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4 */
 
 	Main_WaitOnVbl();

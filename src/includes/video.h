@@ -132,8 +132,6 @@ extern int nCyclesPerLine;
 extern int LineTimerBCycle;
 extern int TimerBEventCountCycleStart;
 
-extern int LastCycleHblException;
-
 #define HBL_JITTER_ARRAY_SIZE 5
 extern int HblJitterIndex;
 extern const int HblJitterArray[HBL_JITTER_ARRAY_SIZE];

@@ -1920,11 +1920,8 @@ kludge_me_do:
 		M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
 	}
 	else if (nr >= 24 && nr <= 31) {
-		if ( nr == 26 ) {				/* HBL */
-			/* store current cycle pos when then interrupt was received (see video.c) */
-			LastCycleHblException = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		if ( nr == 26 )					/* HBL */
 			M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
-		}
 		else if ( nr == 28 ) 				/* VBL */
 			M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
 		else
