@@ -412,7 +412,7 @@ static calltype_t dsp_opcode_type(Uint16 prev_pc, Uint16 pc)
 	    (opcode & 0xFFC0A0) == 0xB40A0 ||	/* JSSET 00001011 01MMMRRR 1S1bbbbb */
 	    (opcode & 0xFFC0A0) == 0xB00A0 ||	/* JSSET 00001011 00aaaaaa 1S1bbbbb */
 	    (opcode & 0xFFC0A0) == 0xB80A0 ||	/* JSSET 00001011 10pppppp 1S1bbbbb */
-	    (opcode & 0xFFC0E0) == 0xAC020) {	/* JSSET 00001010 11DDDDDD 001bbbbb */
+	    (opcode & 0xFFC0E0) == 0xBC020) {	/* JSSET 00001011 11DDDDDD 001bbbbb */
 		/* hopefully fairly safe heuristic:
 		 * if previously executed instruction
 		 * was one before current one, no
