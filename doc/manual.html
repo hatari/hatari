@@ -3000,7 +3000,7 @@ CPU/DSP communication bottlenecks</a>.</p>
 installed by Hatari, to:</p>
 <ul>
 <li>Get lists of functions/symbols with highest costs.</li>
-<li>Get callgraphs of what functions/symbols causes those
+<li>Get callgraphs of what functions/symbols cause those
     costs and what kind of call hiearchy the profiled code
     has.</li>
 <li>Export profile data in Valgrind's
@@ -3215,21 +3215,28 @@ caller information documented above.</p>
 differ are following:</p>
 <ul>
 <li>Subroutine terminates before next symbol address: exclusive
-    cost is smaller <em>because of missing symbol information</em>
+    cost is smaller than in-between cost <em>because of missing
+    symbol information</em>
     (these are indicated with '*' in statistics).</li>
 <li>Subroutine is called more through jumps/branches than through
-    subroutine calls: inclusive call count may be smaller.</li>
+    subroutine calls: inclusive call count may be smaller than
+    in-between call count which includes branches/jumps.</li>
 <li>Subroutine jumps/branches to another function instead of
     using subroutine call, or function contains additional
-    (non-function) labels: exclusive cost is larger.</li>
+    (non-function) labels: exclusive cost is larger than
+    in-between cost.</li>
 <li>Exception happening during subroutine call: exclusive cost is
-    (slightly) larger.</li>
+    (slightly) larger than in-between cost.</li>
 </ul>
 
 <p>In the first case, you should check the profile data to find out
 whether there are missing symbols for executed function entry points.
 You can notice function entry points as address gap and/or code
 retrieving arguments from stack, and exit points from RTS instruction.</p>
+
+<p>Second case can also be seen from the profile data.  Call count
+is same as count for how many times first instruction is executed
+(worst case: large loop on subroutine's first instruction).</p>
 
 <p>While subroutine costs should be more accurate and relevant, due to
 code optimizations many of the functions are not called as subroutines
@@ -3238,10 +3245,10 @@ this, it's useful to compare both subroutine and between-symbols
 costs.  One should be able to see from the profile disassembly which
 of the above cases is cause for the discrepancy in the values.</p>
 
-<p><strong>NOTE:</strong>Before starting to change/optimize C-level sources,
-you should <em>always</em> verify from profile data where exactly the costs
-are in a function, to make sure your optimization efforts can actually
-help the performance.</p>
+<p><strong>NOTE:</strong>Before starting to do any serious source
+level optimizations, you should <em>always</em> verify from profile
+data (disassembly) where exactly the costs are in a function, to make
+sure your optimization efforts can actually help the performance.</p>
 
 
 <h4>Generating and viewing callgraphs</h4>
