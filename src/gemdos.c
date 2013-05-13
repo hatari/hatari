@@ -158,7 +158,7 @@ static char *LastProgramPath;
  * Routine to convert time and date to GEMDOS format.
  * Originally from the STonX emulator. (cheers!)
  */
-static bool GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime)
+static void GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime, const char *fname)
 {
 	struct tm *x;
 
@@ -166,15 +166,18 @@ static bool GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime)
 	x = localtime(&t);
 
 	if (x == NULL)
-		return false;
-
+	{
+		Log_Printf(LOG_WARN, "WARNING: '%s' timestamp is invalid for (Windows?) localtime(), defaulting to TOS epoch!",  fname);
+		DateTime->dateword = 1|(1<<5);	/* 1980-01-01 */
+		DateTime->timeword = 0;
+		return;
+	}
 	/* Bits: 0-4 = secs/2, 5-10 = mins, 11-15 = hours (24-hour format) */
 	DateTime->timeword = (x->tm_sec>>1)|(x->tm_min<<5)|(x->tm_hour<<11);
 	
 	/* Bits: 0-4 = day (1-31), 5-8 = month (1-12), 9-15 = years (since 1980) */
 	DateTime->dateword = x->tm_mday | ((x->tm_mon+1)<<5)
 		| (((x->tm_year-80 > 0) ? x->tm_year-80 : 0) << 9);
-	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -184,12 +187,15 @@ static bool GemDOS_DateTime2Tos(time_t t, DATETIME *DateTime)
  */
 static bool GemDOS_GetFileInformation(int Handle, DATETIME *DateTime)
 {
-	struct stat filestat;
+	const char *fname = FileHandles[Handle].szActualName;
+	struct stat fstat;
 
-	if (stat(FileHandles[Handle].szActualName, &filestat) != 0)
-		return false;
-
-	return GemDOS_DateTime2Tos(filestat.st_mtime, DateTime);
+	if (stat(fname, &fstat) == 0)
+	{
+		GemDOS_DateTime2Tos(fstat.st_mtime, DateTime, fname);
+		return true;
+	}
+	return false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -291,8 +297,7 @@ static int PopulateDTA(char *path, struct dirent *file)
 	if (nFileAttr != 0 && !(nAttrMask & nFileAttr))
 		return 1;
 
-	if (!GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime))
-		return -3;
+	GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime, tempstr);
 
 	/* convert to atari-style uppercase */
 	Str_Filename2TOSname(file->d_name, pDTA->dta_name);

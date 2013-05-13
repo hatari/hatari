@@ -117,9 +117,11 @@ Emulator:
 Windows specific changes:
 - "-W" option added for opening a console window.  Like on all other platforms,
   "-D" will now just toggle CPU exception handling
-- Fix: console stderr redirection fixed (used invalid "wr" mode)
-- Fix: Windows localtime() not supporting dates before 1970 causes IKBD
-  emulation crashes (wasn't problem with Cygwin, just with Mingw builds)
+- Fix: console stderr redirection (used invalid "wr" mode)
+- Fix Windows localtime() not supporting dates before 1970:
+  - TOS not being able to access files with such dates, or further files
+  - causing IKBD emulation crashes (wasn't problem with Cygwin,
+    just with Mingw builds)
 
 Tool updates:
 - New hatari-profiler.py script for post-processing output from
