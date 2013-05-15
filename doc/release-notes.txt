@@ -91,6 +91,8 @@ Emulator:
     -> 's' shortcut is now for "step", not "save"
   - "--disasm" option for selecting between UAE core and external CPU
     code dissassembler and setting output option flags for latter
+  - When -D option is used, also undefined/illegal DSP instructions and
+    DSP stack under/overflows invoke debugger, not just CPU issues
   - Fix: when several breakpoints should have triggered
          on the same address, only first was handled
   - Fix: after breakpoint, 'c <n>' continues one instruction too little

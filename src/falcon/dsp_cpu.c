@@ -78,8 +78,8 @@
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
 #include "log.h"
-# include "main.h"
-
+#include "main.h"
+#include "debugui.h"
 
 #define DSP_COUNT_IPS 0		/* Count instruction per seconds */
 
@@ -1422,9 +1422,11 @@ static void dsp_write_reg(Uint32 numreg, Uint32 value)
 			if ((stack_error==0) && (value & (3<<DSP_SP_SE))) {
 				/* Stack underflow or overflow detected, raise interrupt */
 				dsp_add_interrupt(DSP_INTER_STACK_ERROR);
+				dsp_core.registers[DSP_REG_SP] = value & (3<<DSP_SP_SE);
 				if (!isDsp_in_disasm_mode)
 					fprintf(stderr,"Dsp: Stack Overflow or Underflow\n");
-				dsp_core.registers[DSP_REG_SP] = value & (3<<DSP_SP_SE);
+				if (bExceptionDebugging)
+					DebugUI(REASON_DSP_EXCEPTION);
 			}
 			else
 				dsp_core.registers[DSP_REG_SP] = value & BITMASK(6); 
@@ -1466,6 +1468,8 @@ static void dsp_stack_push(Uint32 curpc, Uint32 cursr, Uint16 sshOnly)
 		dsp_add_interrupt(DSP_INTER_STACK_ERROR);
 		if (!isDsp_in_disasm_mode)
 			fprintf(stderr,"Dsp: Stack Overflow\n");
+		if (bExceptionDebugging)
+			DebugUI(REASON_DSP_EXCEPTION);
 	}
 	
 	dsp_core.registers[DSP_REG_SP] = (underflow | stack_error | stack) & BITMASK(6);
@@ -1501,6 +1505,8 @@ static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 		dsp_add_interrupt(DSP_INTER_STACK_ERROR);
 		if (!isDsp_in_disasm_mode)
 			fprintf(stderr,"Dsp: Stack underflow\n");
+		if (bExceptionDebugging)
+			DebugUI(REASON_DSP_EXCEPTION);
 	}
 
 	dsp_core.registers[DSP_REG_SP] = (underflow | stack_error | stack) & BITMASK(6);
@@ -1813,6 +1819,9 @@ static void dsp_undefined(void)
 	else {
 		cur_inst_len = 1;
 		dsp_core.instr_cycle = 0;
+	}
+	if (bExceptionDebugging) {
+		DebugUI(REASON_DSP_EXCEPTION);
 	}
 }
 
@@ -2356,6 +2365,9 @@ static void dsp_illegal(void)
 {
 	/* Raise interrupt p:0x003e */
 	dsp_add_interrupt(DSP_INTER_ILLEGAL);
+        if (bExceptionDebugging) {
+		DebugUI(REASON_DSP_EXCEPTION);
+	}
 }
 
 static void dsp_jcc_imm(void)
