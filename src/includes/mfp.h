@@ -63,7 +63,6 @@ extern Uint8 MFP_IERA,MFP_IERB;
 extern Uint8 MFP_IPRA,MFP_IPRB;
 extern Uint8 MFP_TACR,MFP_TBCR;
 extern Uint8 MFP_VR;
-extern bool  MFP_IACK;
 extern bool  MFP_UpdateNeeded;
 
 extern void MFP_Reset(void);

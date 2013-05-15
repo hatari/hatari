@@ -173,10 +173,11 @@ Input -----/             |         ------------------------              |      
     4 cycles later. This 4 cycle delay should be taken into account, depending at what time the signal
     went to 1 in the corresponding CPU instruction (the 4 cycle delay can be "included" in the CPU instruction
     in some cases)
-  - When an interrupt happen in the MFP, an exception will be started in the CPU. Then after 12 cycles an IACK
+  - When an interrupt happens in the MFP, an exception will be started in the CPU. Then after 12 cycles an IACK
     sequence will be started by the CPU to request the interrupt vector from the MFP. During those 12 cycles,
     it is possible that a new higher priority MFP interrupt happen and in that case we must replace the MFP
     vector number that was initially computed at the start of the exception with the new one.
+    This is also after the IACK sequence that in service / pending bits must be handled for this MFP's interrupt.
 */
 
 /*-----------------------------------------------------------------------*/
@@ -219,14 +220,11 @@ static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
 
 
-#define	MFP_IRQ_DELAY_TO_CPU		4		/* When MFP_IRQ is set, it takes 4 CPU cycles before */
-							/* it's visible to the CPU. */
+#define	MFP_IRQ_DELAY_TO_CPU		4		/* When MFP_IRQ is set, it takes 4 CPU cycles before it's visible to the CPU */
 
 static int	MFP_Current_Interrupt = -1;
 static Uint8	MFP_IRQ = 0;
-static bool	MFP_DelayIRQ = false;			/* Not used anymore */
 static Uint64	MFP_IRQ_Time = 0;
-bool		MFP_IACK = false;			/* REMOVE */
 bool		MFP_UpdateNeeded = false;		/* When set to true, main CPU loop should call MFP_UpdateIRQ() */
 static Uint64	MFP_Pending_Time_Min;			/* Clock value of the oldest pending int since last MFP_UpdateIRQ() */
 static Uint64	MFP_Pending_Time[ MFP_INT_MAX+1 ];	/* Clock value when pending is set to 1 for each non-masked int */
@@ -296,7 +294,6 @@ void MFP_Reset(void)
 	/* Clear IRQ */
 	MFP_Current_Interrupt = -1;
 	MFP_IRQ = 0;
-	MFP_DelayIRQ = false;
 	MFP_IRQ_Time = 0;
 	MFP_UpdateNeeded = false;
 	MFP_Pending_Time_Min = UINT64_MAX;
@@ -346,7 +343,6 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MFP_Current_Interrupt, sizeof(MFP_Current_Interrupt));
 	MemorySnapShot_Store(&MFP_IRQ, sizeof(MFP_IRQ));
 	MemorySnapShot_Store(&MFP_IRQ_Time, sizeof(MFP_IRQ_Time));
-	MemorySnapShot_Store(&MFP_IACK, sizeof(MFP_IACK));			/* REMOVE */
 	MemorySnapShot_Store(&MFP_UpdateNeeded, sizeof(MFP_UpdateNeeded));
 	MemorySnapShot_Store(&MFP_Pending_Time_Min, sizeof(MFP_Pending_Time_Min));
 	MemorySnapShot_Store(&MFP_Pending_Time, sizeof(MFP_Pending_Time));
@@ -482,48 +478,20 @@ int	MFP_ProcessIACK ( int OldVecNr )
  */
 bool	MFP_ProcessIRQ ( void )
 {
-	Uint8	*pPendingReg;
-	Uint8	*pInServiceReg;
-	Uint8	Bit;
-
-
-//fprintf ( stderr , "process irq %d %d %lld %lld - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_DelayIRQ , CyclesGlobalClockCounter , MFP_IRQ_Time ,  MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+//fprintf ( stderr , "process irq %d %lld %lld - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , CyclesGlobalClockCounter , MFP_IRQ_Time ,  MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 
 	if ( MFP_IRQ == 1 )
 	{
-//		if ( MFP_DelayIRQ == true )
-		if ( CyclesGlobalClockCounter - MFP_IRQ_Time < MFP_IRQ_DELAY_TO_CPU )
+		if ( CyclesGlobalClockCounter - MFP_IRQ_Time < MFP_IRQ_DELAY_TO_CPU )	/* Is it time to trigger the exception ? */
 		{
-			MFP_DelayIRQ = false;			/* Process the IRQ on the next call */
-			return false;				/* For now, return without calling an exception */
+			return false;				/* For now, return without calling an exception (and try again later) */
 		}
 
 		if (regs.intmask < 6)
 		{
-#ifdef iack
-			Bit = MFP_ConvertIntNumber ( MFP_Current_Interrupt , NULL , &pPendingReg , &pInServiceReg , NULL );
-
-			*pPendingReg &= ~Bit;			/* Clear pending bit */
-
-			/* Are we in 'auto' interrupt or 'manual' ? */
-			if (MFP_VR&0x08)			/* Software End-of-Interrupt (SEI) */
-				*pInServiceReg |= Bit;		/* Set interrupt in service register */
-			else
-				*pInServiceReg &= ~Bit;		/* Clear interrupt in service register */
-
-//fprintf ( stderr , "process 1 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+			/* The exception is possible ; pending / in service bits will be handled in MFP_ProcessIACK() */
 			MFP_Exception ( MFP_Current_Interrupt );
-			MFP_UpdateIRQ ( CyclesGlobalClockCounter );
-//fprintf ( stderr , "process 2 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
 			return true;
-
-#else
-//fprintf ( stderr , "process 1 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
-			MFP_Exception ( MFP_Current_Interrupt );
-//			MFP_UpdateIRQ ( CyclesGlobalClockCounter );
-//fprintf ( stderr , "process 2 - ipr %x %x imr %x %x isr %x %x\n" , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
-			return true;
-#endif
 		}
 	}
 
@@ -549,16 +517,6 @@ bool	MFP_ProcessIRQ ( void )
  */
 void MFP_UpdateIRQ ( Uint64 Event_Time )
 {
-#if 0
-	if (MFP_IPRA|MFP_IPRB)
-	{
-		M68000_SetSpecial(SPCFLAG_MFP);
-	}
-	else
-	{
-		M68000_UnsetSpecial(SPCFLAG_MFP);
-	}
-#else
 	int	NewInt;
 
 //fprintf ( stderr , "updirq0 %d - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
@@ -571,7 +529,6 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
 		{
 			if ( MFP_IRQ == 0 )			/* MFP IRQ goes from 0 to 1 */
 			{
-				MFP_DelayIRQ = true;
 				if ( Event_Time != 0 )
 					MFP_IRQ_Time = Event_Time;
 				else
@@ -600,7 +557,6 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
 	/* Update IRQ is done, reset Time_Min and UpdateNeeded */
 	MFP_Pending_Time_Min = UINT64_MAX;
 	MFP_UpdateNeeded = false;
-#endif
 }
 
 
@@ -729,8 +685,7 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 	else
 		*pPendingReg &= ~Bit;				/* Clear bit */
 
-//	MFP_UpdateIRQ ( CyclesGlobalClockCounter - Interrupt_Delayed_Cycles );
-	MFP_UpdateNeeded = true;
+	MFP_UpdateNeeded = true;				/* Tell main CPU loop to call MFP_UpdateIRQ() */
 }
 
 
