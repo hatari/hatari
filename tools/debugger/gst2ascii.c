@@ -18,7 +18,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <netinet/in.h>
+#include <endian.h>
+#if defined(__MINT__)	/* assume MiNT/lib is always big-endian */
+# define SDL_SwapBE16(x) x
+# define SDL_SwapBE32(x) x
+#else
+# include <SDL_endian.h>
+#endif
 #include <assert.h>
 
 typedef enum {
@@ -215,8 +221,8 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 		    fread(&address, sizeof(address), 1, fp) != 1) {
 			break;
 		}
-		address = ntohl(address);
-		symid = ntohs(symid);
+		address = SDL_SwapBE32(address);
+		symid = SDL_SwapBE16(symid);
 
 		/* GST extended DRI symbol format? */
 		if ((symid & 0x0048)) {
@@ -336,21 +342,21 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 
 	/* get TEXT, DATA & BSS section sizes */
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
-	textlen = ntohl(textlen);
+	textlen = SDL_SwapBE32(textlen);
 	reads += fread(&datalen, sizeof(datalen), 1, fp);
-	datalen = ntohl(datalen);
+	datalen = SDL_SwapBE32(datalen);
 	reads += fread(&bsslen, sizeof(bsslen), 1, fp);
-	bsslen = ntohl(bsslen);
+	bsslen = SDL_SwapBE32(bsslen);
 
 	/* get symbol table size & type and check that all reads succeeded */
 	reads += fread(&tablesize, sizeof(tablesize), 1, fp);
-	tablesize = ntohl(tablesize);
+	tablesize = SDL_SwapBE32(tablesize);
 	if (!tablesize) {
 		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
 	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
-	tabletype = ntohl(tabletype);
+	tabletype = SDL_SwapBE32(tabletype);
 	if (reads != 5) {
 		fprintf(stderr, "ERROR: program header reading failed!\n");
 		return NULL;
@@ -402,7 +408,7 @@ static symbol_list_t* symbols_load(const char *filename)
 		return usage("reading program file failed");
 	}
 
-	if (ntohs(magic) != 0x601A) {
+	if (SDL_SwapBE16(magic) != 0x601A) {
 		return usage("file isn't an Atari program file");
 	}
 	list = symbols_load_binary(fp);
