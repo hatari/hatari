@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <endian.h>
 #if defined(__MINT__)	/* assume MiNT/lib is always big-endian */
 # define SDL_SwapBE16(x) x
 # define SDL_SwapBE32(x) x
