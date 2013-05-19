@@ -234,13 +234,15 @@ enum
 	/* Read Sector */
 	FDCEMU_RUN_READSECTORS_READDATA,
 	FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER,
-	FDCEMU_RUN_READSECTORS_READDATA_DMA,
+	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START,
+	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP,
 	FDCEMU_RUN_READSECTORS_RNF,
 	FDCEMU_RUN_READSECTORS_COMPLETE,
 	/* Write Sector */
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER,
-	FDCEMU_RUN_WRITESECTORS_WRITEDATA_DMA,
+	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START,
+	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP,
 	FDCEMU_RUN_WRITESECTORS_RNF,
 	FDCEMU_RUN_WRITESECTORS_COMPLETE,
 	/* Read Address */
@@ -1135,24 +1137,35 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
+#if 1
 		/* TODO : for better FDC's emulation , we should measure the time it takes to spin the disk */
 		/* until we reach the next sector header. In the best case, the head would be just at the start */
 		/* of the sector header, which would mean 6 bytes to be read. */
 		/* So, the delay will be at least 6 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
-			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
-#if 1
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 6  );	/* Min delay to read 3xA1, FE, TR, SR */
+		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
+		Delay_micro = FDC_TRANSFER_BYTES_US ( 6  );		/* Min delay to read 3xA1, FE, TR, SR */
+
 #else
-			if ( FDC.ID_FieldLastSector == FDC.SR-1 )
-				//Delay_micro = FDC_TRANSFER_BYTES_US ( 6  + 12+3+22+12+3+1+2+40 );	/* Min delay to read 3xA1, FE, TR, SR */
-				Delay_micro = FDC_TRANSFER_BYTES_US ( 6  + 600 );	/* Min delay to read 3xA1, FE, TR, SR */
+		/* Read bytes to reach the next sector's ID field and skip 6 more bytes to reach SR in this ID field */
+		Delay_micro = FDC_Delay_NextSectorID () + FDC_TRANSFER_BYTES_US ( 6  );	/* Add delay to read 3xA1, FE, TR, SR */
+		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
 #endif
 		break;
+
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
 		/* TODO : on a real FDC we should compare the sector header at the current */
 		/* spin's position to see if it's the same as FDC.SR. If not, we should wait */
 		/* for the next sector header and check again. After 5 revolutions, set RNF */
 
+		if ( 1 )
+		{
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START;
+			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
+			Delay_micro = FDC_TRANSFER_BYTES_US ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1  );
+		}
+		break;
+
+	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START:
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_DMA_InitTransfer ();				/* Update FDC_DMA.PosInBuffer */
 		if ( FDC_ReadSectorFromFloppy ( DMADiskWorkSpace + FDC_DMA.PosInBuffer , FDC.SR , &SectorSize ) )
@@ -1160,8 +1173,8 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			FDC_DMA.BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
 			FDC_DMA.PosInBuffer += SectorSize;
 			FDC.ID_FieldLastSector = FDC.SR;
-				
-			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_DMA;
+
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP;
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just read */
 		}
 		else							/* Sector FDC.SR was not found */
@@ -1170,7 +1183,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			Delay_micro = FDC_DELAY_RNF;
 		}
 		break;
-	 case FDCEMU_RUN_READSECTORS_READDATA_DMA:
+	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP:
 		if ( ! FDC_DMA_ReadFromFloppy () )
 		{
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Continue transferring blocks of 16 bytes */
@@ -1234,18 +1247,35 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA:
+#if 1
 		/* TODO : for better FDC's emulation , we should measure the time it takes to spin the disk */
 		/* until we reach the next sector header. In the best case, the head would be just at the start */
 		/* of the sector header, which would mean 6 bytes to be read. */
 		/* So, the delay will be at least 6 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
-			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 6 );	/* Min delay to read 3xA1, FE, TR, SR */
+		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
+		Delay_micro = FDC_TRANSFER_BYTES_US ( 6 );	/* Min delay to read 3xA1, FE, TR, SR */
+
+#else
+		/* Read bytes to reach the next sector's ID field and skip 6 more bytes to reach SR in this ID field */
+		Delay_micro = FDC_Delay_NextSectorID () + FDC_TRANSFER_BYTES_US ( 6  );	/* Add delay to read 3xA1, FE, TR, SR */
+		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
+#endif
 		break;
+
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER:
 		/* TODO : on a real FDC we should compare the sector header at the current */
 		/* spin's position to see if it's the same as FDC.SR. If not, we should wait */
 		/* for the next sector header and check again. After 5 revolutions, set RNF */
 
+		if ( 1 )
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START;
+			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
+			Delay_micro = FDC_TRANSFER_BYTES_US ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1  );
+		}
+		break;
+
+	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START:
 		/* Write a single sector from RAM (512 bytes for ST/MSA) */
 		FDC_DMA_InitTransfer ();				/* Update FDC_DMA.PosInBuffer */
 		if ( FDC_WriteSectorToFloppy ( FDC_DMA.SectorCount , FDC.SR , &SectorSize ) )
@@ -1254,7 +1284,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			FDC_DMA.PosInBuffer += SectorSize;
 			FDC.ID_FieldLastSector = FDC.SR;
 				
-			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_DMA;
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP;
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just wrote */
 		}
 		else							/* Sector FDC.SR was not found */
@@ -1263,7 +1293,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			Delay_micro = FDC_DELAY_RNF;
 		}
 		break;
-	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_DMA:
+	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP:
 		if ( ! FDC_DMA_WriteToFloppy () )
 		{
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Continue transferring blocks of 16 bytes */
