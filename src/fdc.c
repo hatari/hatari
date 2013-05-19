@@ -314,6 +314,19 @@ static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 
 #define	FDC_SECTOR_SIZE_1024			3
 
 
+/* These are some standard GAP values to format a track with 9 or 10 sectors */
+/* When handling ST/MSA disk images, those values are required to get accurate */
+/* timings when emulating disk's spin and index's position. */
+
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP1		60		/* Track Pre GAP : 0x4e */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP2		12		/* Sector ID Pre GAP : 0x00 */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP3a		22		/* Sector ID Post GAP : 0x4e */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP3b		12		/* Sector DATA Pre GAP : 0x00 */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP4		40		/* Sector DATA Pre GAP : 0x4e */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP5		0		/* Track Post GAP : 0x4e (to fill the rest of the track, value is variable) */
+								/* GAP5 is 664 bytes for 9 sectors or 50 bytes for 10 sectors */
+
+
 #define	FDC_FAST_FDC_FACTOR			10		/* Divide all delays by this value when --fastfdc is used */
 
 
@@ -1127,7 +1140,13 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		/* of the sector header, which would mean 6 bytes to be read. */
 		/* So, the delay will be at least 6 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 6 );	/* Min delay to read 3xA1, FE, TR, SR */
+#if 1
+			Delay_micro = FDC_TRANSFER_BYTES_US ( 6  );	/* Min delay to read 3xA1, FE, TR, SR */
+#else
+			if ( FDC.ID_FieldLastSector == FDC.SR-1 )
+				//Delay_micro = FDC_TRANSFER_BYTES_US ( 6  + 12+3+22+12+3+1+2+40 );	/* Min delay to read 3xA1, FE, TR, SR */
+				Delay_micro = FDC_TRANSFER_BYTES_US ( 6  + 600 );	/* Min delay to read 3xA1, FE, TR, SR */
+#endif
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
 		/* TODO : on a real FDC we should compare the sector header at the current */
@@ -1399,11 +1418,13 @@ static int FDC_UpdateReadTrackCmd ( void )
 		
 		else								/* Track/side available in the disk image */
 		{
-			for ( i=0 ; i<60 ; i++ )		*buf++ = 0x4e;		/* GAP1 */
+			for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP1 ; i++ )		/* GAP1 */
+				*buf++ = 0x4e;
 
 			for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) ; Sector++ )
 			{
-				for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP2 */
+				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP2 ; i++ )	/* GAP2 */
+					*buf++ = 0x00;
 
 				buf_crc = buf;
 				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
@@ -1417,8 +1438,10 @@ static int FDC_UpdateReadTrackCmd ( void )
 				*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
 				*buf++ = CRC & 0xff;					/* CRC2 */
 
-				for ( i=0 ; i<22 ; i++ )	*buf++ = 0x4e;		/* GAP3a */
-				for ( i=0 ; i<12 ; i++ )	*buf++ = 0x00;		/* GAP3b */
+				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP3a ; i++ )	/* GAP3a */
+					*buf++ = 0x4e;
+				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP3b ; i++ )	/* GAP3b */
+					*buf++ = 0x00;
 
 				buf_crc = buf;
 				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
@@ -1435,7 +1458,8 @@ static int FDC_UpdateReadTrackCmd ( void )
 				*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
 				*buf++ = CRC & 0xff;					/* CRC2 */
 
-				for ( i=0 ; i<40 ; i++ )	*buf++ = 0x4e;		/* GAP4 */
+				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP4 ; i++ )	/* GAP4 */
+					*buf++ = 0x4e;
 			}
 
 			while ( buf < DMADiskWorkSpace + FDC_DMA.PosInBuffer + FDC_TRACK_BYTES_STANDARD )	/* Complete the track buffer */
