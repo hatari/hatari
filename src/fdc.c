@@ -278,7 +278,7 @@ enum
 #define	FDC_DELAY_MOTOR_ON			( 1000000.L * 6 / ( FDC_RPM_STANDARD / 60 ) )	/* 6 spins to reach correct speed */
 #define	FDC_DELAY_MOTOR_OFF			( 1000000.L * 9 / ( FDC_RPM_STANDARD / 60 ) )	/* Turn off motor 9 spins after the last command */
 
-#define	FDC_DELAY_HEAD_LOAD			( 30 * 1000 )	/* Additionnal 30 ms delay to load the head in type II/III */
+#define	FDC_DELAY_HEAD_LOAD			( 15 * 1000 )	/* Additionnal 15 ms delay to load the head in type II/III */
 
 #define	FDC_DELAY_RNF				( 1000000.L * 5 / ( FDC_RPM_STANDARD / 60 ) )	/* 5 spins to set RNF */
 
