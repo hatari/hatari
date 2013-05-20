@@ -1548,7 +1548,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		return FDC_CmdCompleteCommon( true );
 	}
 
 	/* Which command is running? */
@@ -1673,7 +1673,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* [NP] Should we return random bytes instead ? */
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		return FDC_CmdCompleteCommon( true );
 	}
 
 
