@@ -1541,6 +1541,9 @@ static int FDC_UpdateReadAddressCmd ( void )
 	Uint8	buf[ 4+6 ];
 	Uint8	*p;
 	int	Sector;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
 	{
@@ -1548,10 +1551,10 @@ static int FDC_UpdateReadAddressCmd ( void )
 		Delay_micro = FDC_CmdCompleteCommon( true );
 	}
 
-	
 	/* Which command is running? */
 	switch (FDC.CommandState)
 	{
+#ifdef old_read_addr
 	 case FDCEMU_RUN_READADDRESS:
 		Sector = FDC.ID_FieldLastSector + 1;		/* Increase sector from latest ID Field */
 		if ( Sector > FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) )
@@ -1601,6 +1604,49 @@ static int FDC_UpdateReadAddressCmd ( void )
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
 		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		break;
+
+#else
+	 case FDCEMU_RUN_READADDRESS:
+		/* Read bytes to reach the next sector's ID field and add 10 more bytes to read this ID field */
+		Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+		FDC.CommandState = FDCEMU_RUN_READADDRESS_DMA;
+		break;
+
+	 case FDCEMU_RUN_READADDRESS_DMA:
+		/* In the case of Hatari, only ST/MSA images are supported, so we build */
+		/* a standard ID field with a valid CRC based on current track/sector/side */
+		p = buf;
+		*p++ = 0xa1;					/* SYNC bytes and IAM byte are included in the CRC */
+		*p++ = 0xa1;
+		*p++ = 0xa1;
+		*p++ = 0xfe;
+		*p++ = HeadTrack[ FDC_DRIVE ];
+		FDC.SR = HeadTrack[ FDC_DRIVE ];		/* The 1st byte of the ID field is also copied into Sector Register */
+		*p++ = FDC_SIDE;
+		*p++ = FDC.NextSector_ID_Field_SR;
+		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
+
+		FDC_CRC16 ( buf , 8 , &CRC );
+
+		*p++ = CRC >> 8;
+		*p++ = CRC & 0xff;
+
+		LOG_TRACE(TRACE_FDC, "fdc read address 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			buf[4] , buf[5] , buf[6] , buf[7] , buf[8] , buf[9] ,
+			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+		FDC_DMA_InitTransfer ();			/* Update FDC_DMA.PosInBuffer */
+		memcpy ( DMADiskWorkSpace + FDC_DMA.PosInBuffer , buf + 4 , 6 );	/* Don't return the 3 x $A1 and $FE in the Address Field */
+		FDC_DMA.BytesToTransfer += 6;			/* 6 bytes per ID field */
+		FDC_DMA.PosInBuffer += 6;
+
+		FDC_DMA_ReadFromFloppy ();			/* Transfer bytes if 16 bytes or more are in the DMA buffer */
+
+		FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
+		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		break;
+#endif
+
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
 		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
@@ -1978,7 +2024,7 @@ static int FDC_TypeIII_ReadTrack ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III read spinup=%s settle=%s track tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type III read track spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
@@ -2005,7 +2051,7 @@ static int FDC_TypeIII_WriteTrack ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type III write spinup=%s settle=%s track tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type III write track spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
