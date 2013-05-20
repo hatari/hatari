@@ -251,10 +251,12 @@ enum
 	FDCEMU_RUN_READADDRESS_COMPLETE,
 	/* Read Track */
 	FDCEMU_RUN_READTRACK,
+	FDCEMU_RUN_READTRACK_INDEX,
 	FDCEMU_RUN_READTRACK_DMA,
 	FDCEMU_RUN_READTRACK_COMPLETE,
 	/* Write Track */
 	FDCEMU_RUN_WRITETRACK,
+	FDCEMU_RUN_WRITETRACK_INDEX,
 	FDCEMU_RUN_WRITETRACK_DMA,
 	FDCEMU_RUN_WRITETRACK_COMPLETE
 };
@@ -1633,7 +1635,10 @@ static int FDC_UpdateReadTrackCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READTRACK:
-
+		FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
+		Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextIndexPulse_NbBytes () );	/* Wait for the next index pulse */
+		break;
+	 case FDCEMU_RUN_READTRACK_INDEX:
 		/* Build the track data */
 		FDC_DMA_InitTransfer ();					/* Update FDC_DMA.PosInBuffer */
 		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
