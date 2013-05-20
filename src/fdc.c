@@ -658,7 +658,10 @@ static bool FDC_DMA_ReadFromFloppy ( void )
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
 		FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
 		FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
-		return false;						/* FDC DMA is off but we still need to read all bytes from the floppy */
+		if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+			return true;					/* There should be at least 16 bytes to start a new DMA transfer */
+		else
+			return false;					/* FDC DMA is off but we still need to read all bytes from the floppy */
 	}
 
 	/* Transfer data and update DMA address */
@@ -676,7 +679,10 @@ static bool FDC_DMA_ReadFromFloppy ( void )
 		FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
 	}
 
-	return false;							/* Transfer is not complete */
+	if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+		return true;						/* There should be at least 16 bytes to start a new DMA transfer */
+	else
+		return false;						/* Transfer is not complete */
 }
 
 
@@ -707,7 +713,10 @@ static bool FDC_DMA_WriteToFloppy ( void )
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
 		FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
 		FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
-		return false;						/* FDC DMA is off but we still need to process the whole sector */
+		if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+			return true;					/* There should be at least 16 bytes to start a new DMA transfer */
+		else
+			return false;					/* FDC DMA is off but we still need to read all bytes from the floppy */
 	}
 
 	/* Transfer data and update DMA address */
@@ -725,8 +734,10 @@ static bool FDC_DMA_WriteToFloppy ( void )
 		FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
 	}
 
-	return false;							/* Transfer is not complete */
-
+	if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+		return true;						/* There should be at least 16 bytes to start a new DMA transfer */
+	else
+		return false;						/* Transfer is not complete */
 }
 
 
