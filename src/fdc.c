@@ -328,6 +328,12 @@ static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 
 #define	FDC_TRACK_LAYOUT_STANDARD_GAP5		0		/* Track Post GAP : 0x4e (to fill the rest of the track, value is variable) */
 								/* GAP5 is 664 bytes for 9 sectors or 50 bytes for 10 sectors */
 
+/* Size of a raw standard 512 byte sector in a track, including ID field and all GAPs : 614 bytes */
+/* (this must be the same as the data returned in FDC_UpdateReadTrackCmd() ) */
+#define	FDC_TRACK_LAYOUT_STANDARD_RAW_SECTOR_512	( FDC_TRACK_LAYOUT_STANDARD_GAP2 \
+				+ 3 + 1 + 6 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b \
+				+ 3 + 1 + 512 + 2 + FDC_TRACK_LAYOUT_STANDARD_GAP4 )
+
 
 #define	FDC_FAST_FDC_FACTOR			10		/* Divide all delays by this value when --fastfdc is used */
 
@@ -349,6 +355,10 @@ typedef struct {
 								/* ([NP] FIXME : only possible during prepare+spinup phases ?) */
 
 	Uint8		ID_FieldLastSector;			/* Last sector number returned by Read Address (to simulate a spinning disk) */
+	bool		UpdateIndexPulse;			/* true if motor was stopped and we're starting a spin up sequence */
+	Uint64		IndexPulse_Time;			/* Clock value last time we had an index pulse with motor ON */
+	Uint64		CommandExpire_Time;			/* Clock value to abort a command if it didn't complete before */
+	Uint8		NextSector_ID_Field_SR;			/* Sector Register from the ID Field after a call to FDC_NextSectorID_NbBytes() */
 } FDC_STRUCT;
 
 
@@ -380,6 +390,7 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace use
 /*--------------------------------------------------------------*/
 
 static int	FDC_DelayToCpuCycles ( int Delay_micro );
+static void	FDC_StartTimer_micro ( int Delay_micro );
 static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
 static void	FDC_ResetDMA ( void );
@@ -391,6 +402,11 @@ static bool	FDC_ValidFloppyDrive ( void );
 static int	FDC_FindFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Track );
+
+static void	FDC_IndexPulse_Init ( void );
+static int	FDC_IndexPulse_GetCurrentPos ( void );
+static int	FDC_NextIndexPulse_NbBytes ( void );
+static int	FDC_NextSectorID_NbBytes ( void );
 
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
 static int	FDC_CmdCompleteCommon ( bool DoInt );
@@ -452,7 +468,7 @@ void FDC_MemorySnapShot_Capture(bool bSave)
  * Convert a delay in micro seconds to its equivalent of cpu cycles
  * (FIXME [NP] : for now we use a fixed 8 MHz clock, because cycInt.c requires it)
  */
-static int FDC_DelayToCpuCycles ( int Delay_micro )
+static int	FDC_DelayToCpuCycles ( int Delay_micro )
 {
 	int	Delay;
 
@@ -464,11 +480,23 @@ static int FDC_DelayToCpuCycles ( int Delay_micro )
 	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
 		Delay /= 2;					/* correct delays for a 8 MHz clock instead of 16 */
 
-	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( Delay > FDC_FAST_FDC_FACTOR ) )
-		Delay /= FDC_FAST_FDC_FACTOR;
-
 //  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
 	return Delay;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Start an internal timer to handle the FDC's events.
+ * If "fast floppy" mode is used, we speed up the timer by dividing
+ * the number of cycles by a fixed number.
+ */
+static void	FDC_StartTimer_micro ( int Delay_micro )
+{
+	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( Delay_micro > FDC_FAST_FDC_FACTOR ) )
+		Delay_micro /= FDC_FAST_FDC_FACTOR;
+
+	CycInt_AddAbsoluteInterrupt ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC );
 }
 
 
@@ -770,6 +798,110 @@ static int FDC_GetSidesPerDisk ( int Track )
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Store the time of the most recent index pulse.
+ * This is called when motor reaches its peak speed and is used
+ * to compute the position relative to the start of the track when we need
+ * to wait for the next track index or the next sector header while the
+ * floppy is spinning.
+ * We compute a random position inside the track as there's no fixed
+ * relation between the time when speed is reached and the position
+ * of the index pulse.
+ */
+static void	FDC_IndexPulse_Init ( void )
+{
+	int	RandomPos;
+
+	RandomPos = rand() % FDC_TRACK_BYTES_STANDARD;
+	FDC.IndexPulse_Time = CyclesGlobalClockCounter - FDC_DelayToCpuCycles ( FDC_TRANSFER_BYTES_US ( RandomPos ) );
+//fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the current position in the track relative to the index pulse.
+ * For standard floppy, this is a number of bytes in the range [0,6250[
+ */
+static int	FDC_IndexPulse_GetCurrentPos ( void )
+{
+	Uint64	BytesSinceIndex;
+
+	/* Transform the current number of cycles since the reference index into a number of bytes */
+	BytesSinceIndex = ( CyclesGlobalClockCounter - FDC.IndexPulse_Time ) / FDC_DelayToCpuCycles ( FDC_TRANSFER_BYTES_US ( 1 ) );
+
+//fprintf ( stderr , "fdc index pulse pos cur=%lld ref=%lld bytes=%lld pos=%d\n" ,  CyclesGlobalClockCounter , FDC.IndexPulse_Time , BytesSinceIndex , (int)(BytesSinceIndex % FDC_TRACK_BYTES_STANDARD) );
+	/* Ignore the total number of spins, only keep the position relative to the index pulse */
+	return ( BytesSinceIndex % FDC_TRACK_BYTES_STANDARD );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the number of bytes to read from the track before reaching the
+ * next index pulse signal.
+ */
+static int	FDC_NextIndexPulse_NbBytes ( void )
+{
+	return FDC_TRACK_BYTES_STANDARD - FDC_IndexPulse_GetCurrentPos ();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the number of bytes to read from the track before reaching the
+ * next sector's ID Field ($A1 $A1 $A1 $FE TR SIDE SR LEN CRC1 CRC2)
+ * If no ID Field is found before the end of the track, we use the 1st
+ * ID Field of the track (which simulates a full spin of the floppy).
+ * We also store the next sector's number into NextSector_ID_Field_SR.
+ * This function assumes some 512 byte sectors stored in ascending
+ * order (for ST/MSA)
+ */
+static int	FDC_NextSectorID_NbBytes ( void )
+{
+	int	CurrentPos;
+	int	MaxSector;
+	int	TrackPos;
+	int	i;
+	int	NextSector;
+	int	NbBytes;
+
+	CurrentPos = FDC_IndexPulse_GetCurrentPos ();
+
+	MaxSector = FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE );
+	TrackPos = FDC_TRACK_LAYOUT_STANDARD_GAP1;			/* Position of 1st raw sector */
+	TrackPos += FDC_TRACK_LAYOUT_STANDARD_GAP2;			/* Position of ID Field in 1st raw sector */
+
+	/* Compare CurrentPos with each sector's position in ascending order */
+	for ( i=0 ; i<MaxSector ; i++ )
+	{
+		if ( CurrentPos < TrackPos )
+			break;						/* We found the next sector */
+		else
+			TrackPos += FDC_TRACK_LAYOUT_STANDARD_RAW_SECTOR_512;
+	}
+
+	if ( i == MaxSector )						/* CurrentPos is after the last ID Field of this track */
+	{
+		/* Reach end of track (new index pulse), then go to sector 1 */
+		NbBytes = FDC_TRACK_BYTES_STANDARD - CurrentPos + FDC_TRACK_LAYOUT_STANDARD_GAP1 + FDC_TRACK_LAYOUT_STANDARD_GAP2;
+		NextSector = 1;
+	}
+	else								/* There's an ID Field before end of track */
+	{
+		NbBytes = TrackPos - CurrentPos;
+		NextSector = i+1;
+	}
+	
+//fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, NextSector );
+	FDC.NextSector_ID_Field_SR = NextSector;
+	return NbBytes;
+}
+
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Acknowledge FDC interrupt
@@ -806,8 +938,16 @@ void FDC_InterruptHandler_Update ( void )
 	if (FDC.Command!=FDCEMU_CMD_NULL)
 	{
 		FDC.ReplaceCommandPossible = false;
-	
-		/* Which command are we running? */
+
+		/* If the command needed to restart the motor, the motor is now ON */
+		/* so we must compute a new random index position */
+		if ( FDC.UpdateIndexPulse == true )
+		{
+			FDC_IndexPulse_Init ();
+			FDC.UpdateIndexPulse = false;
+		}
+
+		/* Which command are we running ? */
 		switch(FDC.Command)
 		{
 		 case FDCEMU_CMD_RESTORE:
@@ -843,7 +983,7 @@ void FDC_InterruptHandler_Update ( void )
 
 	if (FDC.Command != FDCEMU_CMD_NULL)
 	{
-		CycInt_AddAbsoluteInterrupt ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC );
+		FDC_StartTimer_micro ( Delay_micro );
 	}
 }
 
@@ -1137,17 +1277,20 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
-#if 1
+#ifdef no_spin
 		/* TODO : for better FDC's emulation , we should measure the time it takes to spin the disk */
 		/* until we reach the next sector header. In the best case, the head would be just at the start */
-		/* of the sector header, which would mean 6 bytes to be read. */
-		/* So, the delay will be at least 6 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
+		/* of the sector header, which would mean 7 bytes to be read. */
+		/* So, the delay will be at least 7 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
 		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
-		Delay_micro = FDC_TRANSFER_BYTES_US ( 6  );		/* Min delay to read 3xA1, FE, TR, SR */
+		Delay_micro = FDC_TRANSFER_BYTES_US ( 7  );		/* Min delay to read 3xA1, FE, TR, SIDE, SR */
 
 #else
-		/* Read bytes to reach the next sector's ID field and skip 6 more bytes to reach SR in this ID field */
-		Delay_micro = FDC_Delay_NextSectorID () + FDC_TRANSFER_BYTES_US ( 6  );	/* Add delay to read 3xA1, FE, TR, SR */
+		/* We search the sector FDC.SR during 5 revolutions max */
+		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_RNF );
+
+		/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
+		Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
 		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
 #endif
 		break;
@@ -1157,11 +1300,32 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		/* spin's position to see if it's the same as FDC.SR. If not, we should wait */
 		/* for the next sector header and check again. After 5 revolutions, set RNF */
 
+#ifndef no_spin
+		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
+		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
+		{
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			break;
+		}
+#endif
+
+		/* Check if the current ID Field is the one we're looking for */
+#ifdef no_spin
 		if ( 1 )
+#else
+		if ( FDC.NextSector_ID_Field_SR == FDC.SR )
+#endif
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
 			Delay_micro = FDC_TRANSFER_BYTES_US ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1  );
+		}
+		else
+		{
+			/* This is not the ID field we're looking for ; check the next one */
+			Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 7 );
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
 		}
 		break;
 
@@ -1180,7 +1344,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		else							/* Sector FDC.SR was not found */
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
-			Delay_micro = FDC_DELAY_RNF;
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP:
@@ -1247,17 +1411,20 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA:
-#if 1
+#ifdef no_spin
 		/* TODO : for better FDC's emulation , we should measure the time it takes to spin the disk */
 		/* until we reach the next sector header. In the best case, the head would be just at the start */
-		/* of the sector header, which would mean 6 bytes to be read. */
-		/* So, the delay will be at least 6 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
+		/* of the sector header, which would mean 7 bytes to be read. */
+		/* So, the delay will be at least 7 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
 		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
-		Delay_micro = FDC_TRANSFER_BYTES_US ( 6 );	/* Min delay to read 3xA1, FE, TR, SR */
+		Delay_micro = FDC_TRANSFER_BYTES_US ( 7 );	/* Min delay to read 3xA1, FE, TR, SIDE, SR */
 
 #else
-		/* Read bytes to reach the next sector's ID field and skip 6 more bytes to reach SR in this ID field */
-		Delay_micro = FDC_Delay_NextSectorID () + FDC_TRANSFER_BYTES_US ( 6  );	/* Add delay to read 3xA1, FE, TR, SR */
+		/* We search the sector FDC.SR during 5 revolutions max */
+		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_RNF );
+
+		/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
+		Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
 		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
 #endif
 		break;
@@ -1267,11 +1434,32 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		/* spin's position to see if it's the same as FDC.SR. If not, we should wait */
 		/* for the next sector header and check again. After 5 revolutions, set RNF */
 
+#ifndef no_spin
+		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
+		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
+		{
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			break;
+		}
+#endif
+
+		/* Check if the current ID Field is the one we're looking for */
+#ifdef no_spin
 		if ( 1 )
+#else
+		if ( FDC.NextSector_ID_Field_SR == FDC.SR )
+#endif
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
 			Delay_micro = FDC_TRANSFER_BYTES_US ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1  );
+		}
+		else
+		{
+			/* This is not the ID field we're looking for ; check the next one */
+			Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 7 );
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
 		}
 		break;
 
@@ -1289,8 +1477,8 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		else							/* Sector FDC.SR was not found */
 		{
-			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
-			Delay_micro = FDC_DELAY_RNF;
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_RNF;
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP:
@@ -1542,6 +1730,7 @@ static int FDC_Check_MotorON ( Uint8 FDC_CR )
 		LOG_TRACE(TRACE_FDC, "fdc start motor VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 		FDC_Update_STR ( FDC_STR_BIT_SPIN_UP , FDC_STR_BIT_MOTOR_ON );	/* Unset spin up bit and set motor bit */
+		FDC.UpdateIndexPulse = true;
 		return FDC_DELAY_MOTOR_ON;					/* Motor's delay */
 	}
 
@@ -2005,7 +2194,7 @@ static void FDC_ExecuteCommand ( void )
 		Delay_micro = FDC_ExecuteTypeIVCommands();
 
 	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the Delay_micro phase */
-	CycInt_AddAbsoluteInterrupt ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC );
+	FDC_StartTimer_micro ( Delay_micro );
 }
 
 
