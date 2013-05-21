@@ -38,6 +38,7 @@ Emulation:
   - Fix: Fwrite() content wasn't flushed to disk on each write, so later
     Fopen() + Fread()s calls on such files (if they were not closed
     in the meanwhile) could get data that was out of date.
+  - Fix: Dfree() return value
 
 Emulator:
 - Fix: problems with run-time CPU type changing

@@ -1531,6 +1531,7 @@ static bool GemDOS_DFree(Uint32 Params)
 
 	STMemory_WriteLong(Address+SIZE_LONG*2, 512);   /* bytes per sector */
 	STMemory_WriteLong(Address+SIZE_LONG*3, 2);     /* sectors per cluster (cluster = 1KB) */
+	Regs[REG_D0] = GEMDOS_EOK;
 	return true;
 }
 
