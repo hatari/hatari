@@ -341,7 +341,7 @@ static void ClearInternalDTA(void)
  */
 static bool fsfirst_match(const char *pat, const char *name)
 {
-	const char *p=pat, *n=name;
+	const char *dot, *p=pat, *n=name;
 
 	if (name[0] == '.')
 		return false;           /* skip .* files */
@@ -350,11 +350,12 @@ static bool fsfirst_match(const char *pat, const char *name)
 	if (strcasecmp(pat,name)==0)
 		return true;            /* exact case insensitive match */
 
+	dot = strrchr(name, '.');	/* '*' matches everything except _last_ '.' */
 	while (*n)
 	{
 		if (*p=='*')
 		{
-			while (*n && *n != '.')
+			while (*n && n != dot)
 				n++;
 			p++;
 		}
