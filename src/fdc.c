@@ -236,6 +236,7 @@ enum
 	FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER,
 	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START,
 	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP,
+	FDCEMU_RUN_READSECTORS_CRC,
 	FDCEMU_RUN_READSECTORS_RNF,
 	FDCEMU_RUN_READSECTORS_COMPLETE,
 	/* Write Sector */
@@ -243,6 +244,7 @@ enum
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP,
+	FDCEMU_RUN_WRITESECTORS_CRC,
 	FDCEMU_RUN_WRITESECTORS_RNF,
 	FDCEMU_RUN_WRITESECTORS_COMPLETE,
 	/* Read Address */
@@ -475,6 +477,7 @@ static int	FDC_DelayToCpuCycles ( int Delay_micro )
 	int	Delay;
 
 	Delay = (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
+//Delay = Delay_micro*8;
 
 	/* Our conversion expect FDC_Freq to be the same as CPU_Freq (8 Mhz) */
 	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
@@ -1371,23 +1374,29 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP:
+		/* Transfer the sector as blocks of 16 bytes using DMA */
 		if ( ! FDC_DMA_ReadFromFloppy () )
 		{
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Continue transferring blocks of 16 bytes */
 		}
-		else							/* Sector completly transferred, check for multi bit */
+		else							/* Sector transferred, check the CRC */
 		{
-			if ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
-			{
-				FDC.SR++;				/* Try to read next sector and set RNF if not possible */
-				FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA;
-				Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
-			}
-			else						/* Multi=0, stop here with no error */
-			{
-				FDC.CommandState = FDCEMU_RUN_READSECTORS_COMPLETE;
-				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
-			}
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_CRC;
+			Delay_micro = FDC_TRANSFER_BYTES_US ( 2 );	/* Read 2 bytes for CRC */
+		}
+		break;
+	 case FDCEMU_RUN_READSECTORS_CRC:
+		/* Sector completely transferred, CRC is always good for ST/MSA. Check for multi bit */
+		if ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
+		{
+			FDC.SR++;					/* Try to read next sector and set RNF if not possible */
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA;
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+		}
+		else							/* Multi=0, stop here with no error */
+		{
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_COMPLETE;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_RNF:
@@ -1505,23 +1514,29 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP:
+		/* Transfer the sector as blocks of 16 bytes using DMA */
 		if ( ! FDC_DMA_WriteToFloppy () )
 		{
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Continue transferring blocks of 16 bytes */
 		}
-		else							/* Sector completly transferred, check for multi bit */
+		else							/* Sector transferred, check the CRC */
 		{
-			if ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
-			{
-				FDC.SR++;				/* Try to write next sector and set RNF if not possible */
-				FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
-				Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
-			}
-			else						/* Multi=0, stop here with no error */
-			{
-				FDC.CommandState = FDCEMU_RUN_WRITESECTORS_COMPLETE;
-				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
-			}
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_CRC;
+			Delay_micro = FDC_TRANSFER_BYTES_US ( 2 );	/* Write 2 bytes for CRC */
+		}
+		break;
+	 case FDCEMU_RUN_WRITESECTORS_CRC:
+		/* Sector completely transferred, CRC is always good for ST/MSA. Check for multi bit */
+		if ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
+		{
+			FDC.SR++;					/* Try to write next sector and set RNF if not possible */
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+		}
+		else							/* Multi=0, stop here with no error */
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_COMPLETE;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_RNF:
@@ -1768,7 +1783,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		{
 			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;		/* Continue transferring blocks of 16 bytes */
 		}
-		else								/* Track completly transferred */
+		else								/* Track completely transferred */
 		{
 			FDC.CommandState = FDCEMU_RUN_READTRACK_COMPLETE;
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
