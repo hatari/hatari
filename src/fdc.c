@@ -392,7 +392,7 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace use
 /*--------------------------------------------------------------*/
 
 static int	FDC_DelayToCpuCycles ( int Delay_micro );
-static void	FDC_StartTimer_micro ( int Delay_micro );
+static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset );
 static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
 static void	FDC_ResetDMA ( void );
@@ -482,7 +482,8 @@ static int	FDC_DelayToCpuCycles ( int Delay_micro )
 	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
 		Delay /= 2;					/* correct delays for a 8 MHz clock instead of 16 */
 
-//  fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
+//fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
+//if ( Delay==4104) Delay=4166;		// 4166 : decade demo
 	return Delay;
 }
 
@@ -493,12 +494,14 @@ static int	FDC_DelayToCpuCycles ( int Delay_micro )
  * If "fast floppy" mode is used, we speed up the timer by dividing
  * the number of cycles by a fixed number.
  */
-static void	FDC_StartTimer_micro ( int Delay_micro )
+static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset )
 {
+//fprintf ( stderr , "fdc start timer %d us\n" , Delay_micro );
+
 	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( Delay_micro > FDC_FAST_FDC_FACTOR ) )
 		Delay_micro /= FDC_FAST_FDC_FACTOR;
 
-	CycInt_AddAbsoluteInterrupt ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC );
+	CycInt_AddRelativeInterruptWithOffset ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC , InternalCycleOffset );
 }
 
 
@@ -944,6 +947,13 @@ void FDC_AcknowledgeInterrupt ( void )
 void FDC_InterruptHandler_Update ( void )
 {
 	int	Delay_micro = 0;
+	int	PendingCyclesOver;
+
+	/* Number of internal cycles we went over for this timer ( <= 0 ) */
+	/* Used to restart the next timer and keep a constant rate (important for DMA transfers) */
+	PendingCyclesOver = -PendingInterruptCount;			/* >= 0 */
+
+//fprintf ( stderr , "fdc int handler %lld delay %d\n" , CyclesGlobalClockCounter, PendingCyclesOver );
 
 	CycInt_AcknowledgeInterrupt();
 
@@ -996,7 +1006,7 @@ void FDC_InterruptHandler_Update ( void )
 
 	if (FDC.Command != FDCEMU_CMD_NULL)
 	{
-		FDC_StartTimer_micro ( Delay_micro );
+		FDC_StartTimer_micro ( Delay_micro , -PendingCyclesOver );
 	}
 }
 
@@ -2268,7 +2278,7 @@ static void FDC_ExecuteCommand ( void )
 		Delay_micro = FDC_ExecuteTypeIVCommands();
 
 	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the Delay_micro phase */
-	FDC_StartTimer_micro ( Delay_micro );
+	FDC_StartTimer_micro ( Delay_micro , 0 );
 }
 
 
