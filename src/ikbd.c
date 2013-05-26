@@ -1153,13 +1153,19 @@ static void IKBD_UpdateInternalMousePosition(void)
 
 	/* Update internal mouse coords - Y axis moves according to YAxis setting(up/down) */
 	/* Limit to Max X/Y(inclusive) */
-	KeyboardProcessor.Abs.X += KeyboardProcessor.Mouse.DeltaX;
+	if ( KeyboardProcessor.Mouse.XScale > 1 )
+		KeyboardProcessor.Abs.X += KeyboardProcessor.Mouse.DeltaX * KeyboardProcessor.Mouse.XScale;
+	else
+		KeyboardProcessor.Abs.X += KeyboardProcessor.Mouse.DeltaX;
 	if (KeyboardProcessor.Abs.X < 0)
 		KeyboardProcessor.Abs.X = 0;
 	if (KeyboardProcessor.Abs.X > KeyboardProcessor.Abs.MaxX)
 		KeyboardProcessor.Abs.X = KeyboardProcessor.Abs.MaxX;
 
-	KeyboardProcessor.Abs.Y += KeyboardProcessor.Mouse.DeltaY*KeyboardProcessor.Mouse.YAxis;  /* Needed '+' for Falcon... */
+	if ( KeyboardProcessor.Mouse.YScale > 1 )
+		KeyboardProcessor.Abs.Y += KeyboardProcessor.Mouse.DeltaY*KeyboardProcessor.Mouse.YAxis * KeyboardProcessor.Mouse.YScale;
+	else
+		KeyboardProcessor.Abs.Y += KeyboardProcessor.Mouse.DeltaY*KeyboardProcessor.Mouse.YAxis;
 	if (KeyboardProcessor.Abs.Y < 0)
 		KeyboardProcessor.Abs.Y = 0;
 	if (KeyboardProcessor.Abs.Y > KeyboardProcessor.Abs.MaxY)
