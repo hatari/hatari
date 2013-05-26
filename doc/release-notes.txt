@@ -24,6 +24,7 @@ Emulation:
   - Clock is handled internally in IKBD, host date/time is used
     only to initialize RTC at boot.  I.e. pausing emulation doesn't
     cause time skips when unpausing
+  - Fix slow mouse when absolute mode is used with scale values
 - MFP changes :
   - Fixed priority errors when simultaneous interrupts happened
   - MFP's IRQ should be delayed by 4 cycles before reaching the CPU
@@ -154,6 +155,7 @@ Fixed Games:
   Microprose Golf (FDC, crash during the intro)
   Super Hang On and Super Monaco GP (MFP, flickering rasters)
   The Final Conflict (MFP, locked during the sampled intro music)
+  The Sentinel (IKBD, mouse much too slow)
   Zuul 100/101 Menu (MFP, flickering top border)
 
 Fixed demos :
@@ -164,6 +166,7 @@ Fixed demos :
 
 Fixed apps :
   Monst v1.x
+  Spectrum 512 (IKBD, mouse too slow)
 
 
  Version 1.6.2 (2012-06-24):
