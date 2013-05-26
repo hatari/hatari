@@ -468,6 +468,7 @@ static void GemDOS_RemoveLastProgram(void)
 static void GemDOS_UpdateLastProgram(int Handle)
 {
 	Uint16 magic = 0;
+	size_t items;
 	long oldpos;
 	FILE *fp;
 
@@ -480,9 +481,9 @@ static void GemDOS_UpdateLastProgram(int Handle)
 	fp = FileHandles[Handle].FileHandle;
 	oldpos = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	(void)fread(&magic, sizeof(magic), 1, fp);
+	items = fread(&magic, sizeof(magic), 1, fp);
 	fseek(fp, oldpos, SEEK_SET);
-	if (SDL_SwapBE16(magic) != 0x601A)
+	if (items != 1 || SDL_SwapBE16(magic) != 0x601A)
 		return;
 
 	/* store program path */
