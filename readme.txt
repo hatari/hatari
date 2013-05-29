@@ -72,7 +72,7 @@ Hatari (some Linux distributions use separate development packages for these
 header files)!
 
 For compiling Hatari, you need a C compiler (preferably GNU C), and a working
-CMake installation (see http://www.cmake.org/ for details).
+CMake (v2.8 or newer) installation, see http://www.cmake.org/ for details.
 
 CMake can generate makefiles for various flavours of "Make" (like GNU-Make)
 and various IDEs like Xcode on Mac OS X. To run CMake, you've got to pass the
