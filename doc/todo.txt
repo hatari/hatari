@@ -73,6 +73,11 @@ Emulation improvements
 	- Dsp SSI internal clock (is it used on falcon ?)
 	- Verify DSP instructions cycle count, especially with external RAM
 
+- FPU 80-bit precision mode (selected with FPUCW instruction, and
+  extra instructions on 040), if there are programs depending on it.
+  UAE core implements only support for 64-bit precision.  See "m68k
+  FPU precision issue" thread on debian-68k mailing list for details.
+
 - The "memvalid" system variables currently have to be patched in most cases.
   For improved compatibility (e.g. the game "Yolanda") it would be better to
   skip this step, but we then run into multiple other problems, see:
