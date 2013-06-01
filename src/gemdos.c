@@ -3166,7 +3166,7 @@ void GemDOS_OpCode(void)
 	 case 0x3a:
 		Finished = GemDOS_RmDir(Params);
 		break;
-	 case 0x3b:
+	 case 0x3b:	/* Dsetpath */
 		Finished = GemDOS_ChDir(Params);
 		break;
 	 case 0x3c:
@@ -3196,7 +3196,7 @@ void GemDOS_OpCode(void)
 	 case 0x46:
 		Finished = GemDOS_Force(Params);
 		break;
-	 case 0x47:
+	 case 0x47:	/* Dgetpath */
 		Finished = GemDOS_GetDir(Params);
 		break;
 	 case 0x4b:
@@ -3258,10 +3258,27 @@ void GemDOS_OpCode(void)
 	case 0x20:	/* Super */
 	case 0x48:	/* Malloc */
 	case 0x49:	/* Mfree */
-		/* commands taking longs or pointers */
+		/* commands taking long/pointer */
 		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X)\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 			  STMemory_ReadLong(Params));
+		break;
+
+	case 0x44:	/* Mxalloc */
+		/* commands taking long/pointer + word */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X, 0x%hX)\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadWord(Params+SIZE_LONG));
+		break;
+
+	case 0x14:	/* Maddalt */
+	case 0x4A:	/* Mshrink */
+		/* commands taking 2 longs/pointers */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X, 0x%X)\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadLong(Params+SIZE_LONG));
 		break;
 
 	default:
