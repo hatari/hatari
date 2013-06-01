@@ -667,3 +667,12 @@ void Profile_DspGetPointers(bool **enabled, Uint32 **disasm_addr)
 	*disasm_addr = &dsp_profile.disasm_addr;
 	*enabled = &dsp_profile.enabled;
 }
+
+/**
+ * Get callinfo & symbol search pointers for stack walking.
+ */
+void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32))
+{
+	*callinfo = &(dsp_callinfo);
+	*get_symbol = Symbols_GetByDspAddress;
+}

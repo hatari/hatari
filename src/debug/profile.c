@@ -416,6 +416,33 @@ void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, const ch
 }
 
 /**
+ * Show current profile stack
+ */
+static void Profile_ShowStack(bool forDsp)
+{
+	int i;
+	Uint32 addr;
+	callinfo_t *callinfo;
+	const char* (*get_symbol)(Uint32 addr);
+
+	if (forDsp) {
+		Profile_DspGetCallinfo(&callinfo, &get_symbol);
+	} else {
+		Profile_CpuGetCallinfo(&callinfo, &get_symbol);
+	}
+	if (!callinfo->depth) {
+		fprintf(stderr, "Empty stack.\n");
+		return;
+	}
+
+	for (i = 0; i < callinfo->depth; i++) {
+		addr = callinfo->stack[i].callee_addr;
+		fprintf(stderr, "- 0x%x: %s (return = 0x%x)\n", addr,
+			get_symbol(addr), callinfo->stack[i].ret_addr);
+	}
+}
+
+/**
  * Allocate & set initial callinfo structure information
  */
 int Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *name)
@@ -467,7 +494,8 @@ void Profile_FreeCallinfo(callinfo_t *callinfo)
 char *Profile_Match(const char *text, int state)
 {
 	static const char *names[] = {
-		"addresses", "callers", "counts", "cycles", "misses", "off", "on", "save", "stats", "symbols"
+		"addresses", "callers", "counts", "cycles", "misses",
+		"off", "on", "save", "stack", "stats", "symbols"
 	};
 	static int i, len;
 	
@@ -486,25 +514,26 @@ char *Profile_Match(const char *text, int state)
 }
 
 const char Profile_Description[] =
-	  "<on|off|stats|counts|cycles|misses|symbols|callers|addresses|save> [count|address|file]\n"
-	  "\t'on' & 'off' enable and disable profiling.  Data is collected\n"
-	  "\tuntil debugger is entered again at which point you get profiling\n"
-	  "\tstatistics ('stats') summary.\n"
-	  "\n"
-	  "\tThen you can ask for list of the PC addresses, sorted either by\n"
-	  "\texecution 'counts', used 'cycles' or cache 'misses'. First can\n"
-	  "\tbe limited just to named addresses with 'symbols'.  Optional\n"
-	  "\tcount will limit how many items will be shown.\n"
-	  "\n"
-	  "\t'addresses' lists the profiled addresses in order, with the\n"
-	  "\tinstructions (currently) residing at them.  By default this\n"
-	  "\tstarts from the first executed instruction, or you can\n"
-	  "\tspecify the starting address.\n"
-	  "\n"
-	  "\t'callers' shows (raw) caller information for addresses which\n"
-	  "\thad symbol(s) associated with them.\n"
-	  "\n"
-	  "\tProfile information can be saved with 'save'.";
+	"<on|off|stats|counts|cycles|misses|symbols|callers|stack|addresses|save> [count|address|file]\n"
+	"\t'on' & 'off' enable and disable profiling.  Data is collected\n"
+	"\tuntil debugger is entered again at which point you get profiling\n"
+	"\tstatistics ('stats') summary.\n"
+	"\n"
+	"\tThen you can ask for list of the PC addresses, sorted either by\n"
+	"\texecution 'counts', used 'cycles' or cache 'misses'. First can\n"
+	"\tbe limited just to named addresses with 'symbols'.  Optional\n"
+	"\tcount will limit how many items will be shown.\n"
+	"\n"
+	"\t'addresses' lists the profiled addresses in order, with the\n"
+	"\tinstructions (currently) residing at them.  By default this\n"
+	"\tstarts from the first executed instruction, or you can\n"
+	"\tspecify the starting address.\n"
+	"\n"
+	"\t'callers' shows (raw) caller information for addresses which\n"
+	"\thad symbol(s) associated with them.  'stack' shows the currect\n"
+	"\tprofile stack, this is useful only with :noinit breakpoints.\n"
+	"\n"
+	"\tProfile information can be saved with 'save'.";
 
 
 /**
@@ -623,6 +652,8 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 		} else {
 			Profile_CpuShowCallers(stdout);
 		}
+	} else if (strcmp(psArgs[1], "stack") == 0) {
+		Profile_ShowStack(bForDsp);
 	} else if (strcmp(psArgs[1], "save") == 0) {
 		Profile_Save(psArgs[2], bForDsp);
 	} else {

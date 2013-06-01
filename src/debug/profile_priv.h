@@ -83,6 +83,8 @@ extern void Profile_FreeCallinfo(callinfo_t *callinfo);
 /* parser helpers */
 extern void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr);
 extern void Profile_DspGetPointers(bool **enabled, Uint32 **disasm_addr);
+extern void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32));
+extern void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32));
 
 /* internal CPU profile results */
 extern Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out);

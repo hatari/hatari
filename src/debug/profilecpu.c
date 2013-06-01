@@ -978,3 +978,12 @@ void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr)
 	*disasm_addr = &cpu_profile.disasm_addr;
 	*enabled = &cpu_profile.enabled;
 }
+
+/**
+ * Get callinfo & symbol search pointers for stack walking.
+ */
+void Profile_CpuGetCallinfo(callinfo_t **callinfo, const char* (**get_symbol)(Uint32))
+{
+	*callinfo = &(cpu_callinfo);
+	*get_symbol = Symbols_GetByCpuAddress;
+}
