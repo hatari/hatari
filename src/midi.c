@@ -110,9 +110,9 @@ void Midi_Reset(void)
 	nRxDataByte = 1;
 
 	if (ConfigureParams.Midi.bEnableMidi)
-	{
 		CycInt_AddRelativeInterrupt(2050, INT_CPU_CYCLE, INTERRUPT_MIDI);
-	}
+	else
+		CycInt_RemovePendingInterrupt (INTERRUPT_MIDI);
 }
 
 

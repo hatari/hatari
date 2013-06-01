@@ -145,6 +145,10 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	if (current->Memory.nMemorySize != changed->Memory.nMemorySize)
 		return true;
 
+	/* MIDI related IRQs start/stop needs reset */
+	if (current->Midi.bEnableMidi != changed->Midi.bEnableMidi)
+		return true;
+
 	return false;
 }
 
