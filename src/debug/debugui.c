@@ -84,7 +84,7 @@ void DebugUI_MemorySnapShot_Capture(const char *path, bool bSave)
 		if (File_Exists(filename))
 		{
 			/* and parse back the saved breakpoints */
-			DebugUI_ParseFile(filename);
+			DebugUI_ParseFile(filename, true);
 		}
 	}
 	free(filename);
@@ -405,7 +405,7 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
 static int DebugUI_CommandsFromFile(int argc, char *argv[])
 {
 	if (argc == 2)
-		DebugUI_ParseFile(argv[1]);
+		DebugUI_ParseFile(argv[1], true);
 	else
 		DebugUI_PrintCmdHelp(argv[0]);
 	return DEBUGGER_CMDDONE;
@@ -909,7 +909,7 @@ void DebugUI_Init(void)
 	debugCommands += dspcmds;
 
 	if (parseFileName)
-		DebugUI_ParseFile(parseFileName);
+		DebugUI_ParseFile(parseFileName, true);
 }
 
 
@@ -999,10 +999,11 @@ void DebugUI(debug_reason_t reason)
 
 
 /**
- * Read debugger commands from a file.
- * return false for error, true for success.
+ * Read debugger commands from a file.  If 'reinit' is set
+ * (as it normally should), reinitialize breakpoints etc.
+ * afterwards. return false for error, true for success.
  */
-bool DebugUI_ParseFile(const char *path)
+bool DebugUI_ParseFile(const char *path, bool reinit)
 {
 	char *olddir, *dir, *cmd, *input, *expanded, *slash;
 	FILE *fp;
@@ -1076,8 +1077,11 @@ bool DebugUI_ParseFile(const char *path)
 		free(olddir);
 	}
 
-	DebugCpu_SetDebugging();
-	DebugDsp_SetDebugging();
+	if (reinit)
+	{
+		DebugCpu_SetDebugging();
+		DebugDsp_SetDebugging();
+	}
 	return true;
 }
 

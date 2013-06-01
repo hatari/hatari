@@ -29,6 +29,8 @@ extern void DebugUI_PrintCmdHelp(const char *psCmd);
 extern int DebugCpu_Init(const dbgcommand_t **table);
 extern void DebugCpu_InitSession(void);
 
+extern bool DebugUI_ParseFile(const char *path, bool reinit);
+
 #ifdef ENABLE_DSP_EMU
 extern int DebugDsp_Init(const dbgcommand_t **table);
 extern void DebugDsp_InitSession(void);
