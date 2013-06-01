@@ -2421,6 +2421,17 @@ explained in
 etc.  Use this if "lock" option isn't enough or you want different
 information show on breakpoints and when entering the debugger.
 </dd>
+
+<dt><em>noinit</em></dt>
+<dd>
+Hitting breakpoint doesn't re-initialize debugger which would e.g.
+cause profiling data to be reset.  This implies trace option as
+entering debugger would also re-initialize debugger state. This option
+is mainly intended for breakpoints that use :file option to show
+backtraces with "profile stack" command during
+<a href="#Profiling">profiling</a>.  See
+<a href="#Usage_examples">Usage examples</a> section for an example.
+</dd>
 </dl>
 
 <p>
@@ -2803,7 +2814,7 @@ When you're back in debugger, you can inspect the collected profile data:
 <pre>
 &gt; h profile
 'profile' - profile CPU code
-Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|addresses|save&gt; [count|address|file]
+Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|stack|addresses|save&gt; [count|address|file]
         'on' & 'off' enable and disable profiling.  Data is collected
 	until debugger is entered again at which point you get profiling
         statistics ('stats') summary.
@@ -2818,8 +2829,9 @@ Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|addresses|
 	starts from the first executed instruction, or you can
 	specify the starting address.
 
-	'callers' shows (raw) caller information for addresses which
-        had symbol(s) associated with them.
+        'callers' shows (raw) caller information for addresses which
+	had symbol(s) associated with them.  'stack' shows the currect
+	profile stack, this is useful only with :noinit breakpoints.
 
 	Profile information can be saved with 'save'.
 </pre>
@@ -2926,6 +2938,9 @@ Finalizing costs for 12 non-returned functions:
 - 0x24d7a: _D_DoomMain (return = 0x44346)
 ...
 </pre>
+
+<p>("profile stack" command can be used in breakpoints with :noinit
+option to show backtraces during caller profiling.)</p>
 
 <p>Other information collected during profiling is shown with
 following command:</p>
@@ -3605,6 +3620,23 @@ Please see <a href="#Profiling">Profiling</a> section for more info.
 <dt><em>Seeing program callstack when breakpoint is hit</em></dt>
 <dd><a href="#Caller_information">Profiler caller data</a> includes
 callstack information (with some limitations).
+</dd>
+
+<dt><em>Seeing call backtraces whenever given function is called</em></dt>
+<dd>Enable profiling, load symbols for the program and set breakpoint
+for the function you're interested about, in the following way:
+<pre>
+profile on
+symbols prg
+b  pc = _my_function  :quiet :noinit :file showstack.ini
+</pre>
+I.e. whenever 'my_function' address is called, quietly trigger a
+breakpoint without reseting profiling (callstack) information and run
+debugger command(s) from the 'showstack.ini' debugger script file,
+which contains following command:
+<pre>
+profile stack
+</pre>
 </dd>
 
 <dt><em>Seeing how program functions/symbols call each other</em></dt>
