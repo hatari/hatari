@@ -42,6 +42,8 @@ Emulation:
 
 Emulator:
 - Fix: problems with run-time CPU type changing
+- Fix: enabling/disabling MIDI triggers emulation reset so that MIDI
+  IRQs are enabled when MIDI is enabled
 - Much improved console redirection functionality and a separate --conout
   option for it (--bios-intercept doesn't anymore imply console redirection)
 - Fixed a bug with the axes' mapping in the joystick's detection
@@ -54,6 +56,8 @@ Emulator:
   - Limit VDI screen memory usage to 300kB, this allows upto 2048x1200
     monochrome and 1024x600/800x768 16-color VDI screens
 - GEMDOS HD emulation:
+  - Fix: to DTA host filename cutting to 8+3 chars when whole filename
+    was < 12 chars (caused EmuTOS crash)
   - Give warning if GEMDOS dir/file path exceeds 8+3 characters
     (as those won't work with real TOS)
   - New --gemdos-case option to specify whether new dir/filenames
@@ -83,7 +87,13 @@ Emulator:
     used to construction program execution callgraph
   - New "save" subcommand saves profile address and caller information
     to given file, with extra information needed for post-processing
+  - New "stack" subcommand that can be used to get backtraces during
+    profiling with symbols, for ':noinit' backtraces
 - Debugger:
+  - New ':noinit' and ':quiet' breakpoint options.  Quiet option
+    removes most of breakpoint matching "noise" and ':noinit' breakpoints
+    can be used with "profile stack" command, to prevent profile data and
+    related callstack information from being reseted on breakpoint match
   - "blitter" and "dsp" subcommand added to "info" command, to show
     blitter register values and DSP state (e.g. stack content)
   - "prg" subcommand added to "symbols" command, for loading debug
@@ -105,7 +115,6 @@ Emulator:
   - Fix: debugger history duplicates removal
   - Fix: expression expanding CPU "pc" for DSP shortcut commands
   - Fix: expression expansion messing lines in command line history
-  - Add ':quiet' option to breakpoints
   - Remote API debugger commands can also use expression expansion
   - Both single and double quotes can be used to mark expressions
   - In addition to text section offset, data and bss section offsets
@@ -164,6 +173,7 @@ Fixed demos :
 
 Fixed apps :
   Monst v1.x
+  Cubase (when MIDI was enabled after Hatari startup)
 
 
  Version 1.6.2 (2012-06-24):
