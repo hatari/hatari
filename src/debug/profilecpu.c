@@ -603,7 +603,7 @@ bool Profile_CpuStart(void)
 
 	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
 	cpu_profile.prev_family = OpcodeFamily;
-	cpu_profile.prev_pc = M68000_GetPC();
+	cpu_profile.prev_pc = M68000_GetPC() & 0xffffff;
 
 	cpu_profile.disasm_addr = 0;
 	cpu_profile.processed = false;
@@ -771,7 +771,10 @@ void Profile_CpuUpdate(void)
 	cpu_profile_item_t *prev;
 
 	prev_pc = cpu_profile.prev_pc;
-	cpu_profile.prev_pc = pc = M68000_GetPC();
+	/* PC may have extra bits, they need to be masked away as
+	 * emulation itself does that too when PC value is used
+	 */
+	cpu_profile.prev_pc = pc = M68000_GetPC() & 0xffffff;
 
 	idx = address2index(prev_pc);
 	assert(idx <= cpu_profile.size);
