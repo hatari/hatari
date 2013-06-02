@@ -3266,19 +3266,22 @@ void GemDOS_OpCode(void)
 
 	case 0x44:	/* Mxalloc */
 		/* commands taking long/pointer + word */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X, 0x%hX)\n",
-			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x44 Mxalloc(0x%X, 0x%hX)\n",
 			  STMemory_ReadLong(Params),
 			  STMemory_ReadWord(Params+SIZE_LONG));
 		break;
-
 	case 0x14:	/* Maddalt */
-	case 0x4A:	/* Mshrink */
 		/* commands taking 2 longs/pointers */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X, 0x%X)\n",
-			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x14 Maddalt(0x%X, 0x%X)\n",
 			  STMemory_ReadLong(Params),
 			  STMemory_ReadLong(Params+SIZE_LONG));
+	case 0x4A:	/* Mshrink */
+		/* Mshrink's two pointers are prefixed by reserved zero word:
+		 * http://toshyp.atari.org/en/00500c.html#Bindings_20for_20Mshrink
+		 */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4A Mshrink(0x%X, 0x%X)\n",
+			  STMemory_ReadLong(Params+SIZE_WORD),
+			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG));
 		break;
 
 	default:
