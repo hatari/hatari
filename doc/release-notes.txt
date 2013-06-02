@@ -120,8 +120,9 @@ Emulator:
   - In addition to text section offset, data and bss section offsets
     can be given when loading symbols (useful for Devpac symbols)
   - Output what value was set by options if it's not otherwise shown by UI
-  - Show function arguments for GEMDOS Pexec() call and AES calls
-    (for AES call values in intin array and strings in addrin array)
+  - Function arguments are shown in traces for all non-MiNT GEMDOS calls
+    and subset of arguments are now shown also for AES calls (values in
+    intin array and strings in addrin array)
   - Add NVRAM read & write tracing
   - Support for the basic Native Features and --natfeats option to control it:
     http://wiki.aranym.org/natfeats/proposal
