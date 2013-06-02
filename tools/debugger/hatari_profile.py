@@ -709,7 +709,9 @@ class ProfileCallers(Output):
             # function address for the caller
             paddr = laddr - offset
             if paddr not in profile:
-                self.error_exit("parent caller 0x%x for '%s' not in profile!\nDo symbols match the profiled binary?" % (laddr, child.name))
+                # this can be either a mismatch in symbols, or few first instructions without symbol
+                self.warning("parent caller 0x%x for '%s' not in profile!\nDo symbols match the profiled binary?" % (laddr, child.name))
+                continue
             parent = profile[paddr]
             if pname != parent.name:
                 self.warning("overriding parsed function 0x%x name '%s' with resolved caller 0x%x name '%s'" % (parent.addr, parent.name, paddr, pname))
