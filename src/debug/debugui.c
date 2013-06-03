@@ -1034,6 +1034,7 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 			if (olddir)
 				free(olddir);
 			free(dir);
+			fclose(fp);
 			return false;
 		}
 		fprintf(stderr, "Changed to input file dir '%s'.\n", dir);
@@ -1068,6 +1069,8 @@ bool DebugUI_ParseFile(const char *path, bool reinit)
 	}
 
 	free(input);
+	fclose(fp);
+
 	if (olddir)
 	{
 		if (chdir(olddir) != 0)
