@@ -275,6 +275,7 @@ enum
 #define	FDC_BITRATE_STANDARD			250000		/* read/write speed of the WD1772 in bits per sec */
 #define	FDC_RPM_STANDARD			300		/* 300 RPM or 5 spins per sec */
 #define	FDC_TRACK_BYTES_STANDARD		( ( FDC_BITRATE_STANDARD / 8 ) / ( FDC_RPM_STANDARD / 60 ) )	/* 6250 bytes */
+//#define FDC_TRACK_BYTES_STANDARD	6272
 
 #define FDC_TRANSFER_BYTES_US( n )		(  ( n ) * 8 * 1000000.L / FDC_BITRATE_STANDARD )	/* micro sec to read/write 'n' bytes in the WD1772 */
 
@@ -289,7 +290,7 @@ enum
 #define	FDC_DELAY_TYPE_I_PREPARE		100		/* Types I commands take at least 0.1 ms to execute */
 								/* (~800 cpu cycles @ 8 Mhz). FIXME [NP] : this was not measured, it's */
 								/* to avoid returning immediately when command has no effect */
-#define	FDC_DELAY_TYPE_II_PREPARE		1		/* Start Type II commands immediately */
+#define	FDC_DELAY_TYPE_II_PREPARE		1 // 65		/* Start Type II commands immediately */
 #define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediately */
 #define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME [NP] : this was not measured */
 								
@@ -385,7 +386,8 @@ static FDC_DMA_STRUCT	FDC_DMA;				/* All variables related to the DMA transfer *
 
 static Uint8 HeadTrack[ MAX_FLOPPYDRIVES ];			/* A: and B: */
 
-static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace used to transfer bytes between floppy and DMA */
+//static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace used to transfer bytes between floppy and DMA */
+static Uint8 DMADiskWorkSpace[ 6275+1000 ];	/* Workspace used to transfer bytes between floppy and DMA */
 								/* It should be large enough to contain a whole track */
 
 
@@ -477,7 +479,8 @@ static int	FDC_DelayToCpuCycles ( int Delay_micro )
 	int	Delay;
 
 	Delay = (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
-//Delay = Delay_micro*8;
+Delay = Delay_micro*8;
+//if ( Delay_micro==32 ) Delay=255;
 
 	/* Our conversion expect FDC_Freq to be the same as CPU_Freq (8 Mhz) */
 	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
@@ -485,7 +488,7 @@ static int	FDC_DelayToCpuCycles ( int Delay_micro )
 	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
 		Delay /= 2;					/* correct delays for a 8 MHz clock instead of 16 */
 
-//fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
+fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
 //if ( Delay==4104) Delay=4166;		// 4166 : decade demo
 	return Delay;
 }
@@ -499,7 +502,7 @@ static int	FDC_DelayToCpuCycles ( int Delay_micro )
  */
 static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset )
 {
-//fprintf ( stderr , "fdc start timer %d us\n" , Delay_micro );
+fprintf ( stderr , "fdc start timer %d us\n" , Delay_micro );
 
 	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( Delay_micro > FDC_FAST_FDC_FACTOR ) )
 		Delay_micro /= FDC_FAST_FDC_FACTOR;
@@ -835,7 +838,8 @@ static void	FDC_IndexPulse_Init ( void )
 
 	RandomPos = rand() % FDC_TRACK_BYTES_STANDARD;
 	FDC.IndexPulse_Time = CyclesGlobalClockCounter - FDC_DelayToCpuCycles ( FDC_TRANSFER_BYTES_US ( RandomPos ) );
-//fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
+FDC.IndexPulse_Time = CyclesGlobalClockCounter;
+fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
 }
 
 
@@ -913,8 +917,8 @@ static int	FDC_NextSectorID_NbBytes ( void )
 		NbBytes = TrackPos - CurrentPos;
 		NextSector = i+1;
 	}
-	
-//fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, NextSector );
+
+fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, NextSector );
 	FDC.NextSector_ID_Field_SR = NextSector;
 	return NbBytes;
 }
