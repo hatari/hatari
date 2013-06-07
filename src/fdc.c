@@ -187,7 +187,7 @@ ACSI DMA and Floppy Disk Controller(FDC)
 #define	FDC_STR_BIT_MOTOR_ON			0x80
 
 
-#define	FDC_COMMAND_BIT_VERIFY			(1<<2)		/* 0=verify after type I, 1=no verify after type I */
+#define	FDC_COMMAND_BIT_VERIFY			(1<<2)		/* 0=no verify after type I, 1=verify after type I */
 #define	FDC_COMMAND_BIT_HEAD_LOAD		(1<<2)		/* for type II/III 0=no extra delay, 1=add 30 ms delay to set the head */
 #define	FDC_COMMAND_BIT_MOTOR_ON		(1<<3)		/* 0=enable motor test, 1=disable motor test */
 #define	FDC_COMMAND_BIT_UPDATE_TRACK		(1<<4)		/* 0=don't update TR after type I, 1=update TR after type I */
@@ -1848,7 +1848,10 @@ static int FDC_TypeI_Restore(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I restore drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type I restore spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
 		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
@@ -1868,8 +1871,12 @@ static int FDC_TypeI_Seek ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I seek dest_track=0x%x drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC.DR, FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type I seek dest_track=0x%x spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.DR,
+		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
+		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to chosen track */
 	FDC.Command = FDCEMU_CMD_SEEK;
@@ -1888,8 +1895,12 @@ static int FDC_TypeI_Step ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step %d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  FDC.StepDirection, FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	LOG_TRACE(TRACE_FDC, "fdc type I step %d spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  FDC.StepDirection,
+		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
+		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step (using same direction as latest seek executed, ie 'FDC.StepDirection') */
 	FDC.Command = FDCEMU_CMD_STEP;
@@ -1908,7 +1919,10 @@ static int FDC_TypeI_StepIn(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step in drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type I step in spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
 		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step in (direction = +1) */
@@ -1929,7 +1943,10 @@ static int FDC_TypeI_StepOut ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type I step out drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type I step out spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
+		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
 		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step out (direction = -1) */
