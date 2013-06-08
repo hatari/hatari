@@ -224,12 +224,18 @@ enum
 	/* Restore */
 	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO,
 	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP,
+	FDCEMU_RUN_RESTORE_VERIFY,
+	FDCEMU_RUN_RESTORE_VERIFY_LOOP,
 	FDCEMU_RUN_RESTORE_COMPLETE,
 	/* Seek */
 	FDCEMU_RUN_SEEK_TOTRACK,
+	FDCEMU_RUN_SEEK_VERIFY,
+	FDCEMU_RUN_SEEK_VERIFY_LOOP,
 	FDCEMU_RUN_SEEK_COMPLETE,
 	/* Step / Step In / Step Out */
 	FDCEMU_RUN_STEP_ONCE,
+	FDCEMU_RUN_STEP_VERIFY,
+	FDCEMU_RUN_STEP_VERIFY_LOOP,
 	FDCEMU_RUN_STEP_COMPLETE,
 	/* Read Sector */
 	FDCEMU_RUN_READSECTORS_READDATA,
@@ -1164,13 +1170,29 @@ static int FDC_UpdateRestoreCmd ( void )
 		{
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 			FDC.TR = 0;					/* Update Track Register to 0 */
+			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY;
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+		}
+		break;
+	 case FDCEMU_RUN_RESTORE_VERIFY:
+		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
+		{
+			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_LOOP;
+			Delay_micro = FDC_DELAY_HEAD_LOAD		/* Head settle delay */
+				+ FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+		}
+		else
+		{
 			FDC.CommandState = FDCEMU_RUN_RESTORE_COMPLETE;
 			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		}
 		break;
+	 case FDCEMU_RUN_RESTORE_VERIFY_LOOP:
+		FDC_VerifyTrack();
+		FDC.CommandState = FDCEMU_RUN_RESTORE_COMPLETE;
+		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		break;
 	 case FDCEMU_RUN_RESTORE_COMPLETE:
-		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
-			FDC_VerifyTrack();
 		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
@@ -1195,8 +1217,8 @@ static int FDC_UpdateSeekCmd ( void )
 	 case FDCEMU_RUN_SEEK_TOTRACK:
 		if ( FDC.TR == FDC.DR )					/* Are we at the selected track ? */
 		{
-			FDC.CommandState = FDCEMU_RUN_SEEK_COMPLETE;
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
 		}
 		else
 		{
@@ -1209,13 +1231,16 @@ static int FDC_UpdateSeekCmd ( void )
 			FDC.TR += FDC.StepDirection;
 
 			if ( ( HeadTrack[ FDC_DRIVE ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
-				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go after max track */
+			{
+				FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
+				Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
+			}
 
 			else if ( ( HeadTrack[ FDC_DRIVE ] == 0 ) && ( FDC.StepDirection == -1 ) )
 			{
 				FDC.TR = 0;				/* If we reach track 0, we stop there */
-				FDC.CommandState = FDCEMU_RUN_SEEK_COMPLETE;
-				Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+				FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
+				Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
 			}
 
 			else
@@ -1231,9 +1256,25 @@ static int FDC_UpdateSeekCmd ( void )
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 
 		break;
-	 case FDCEMU_RUN_SEEK_COMPLETE:
+	 case FDCEMU_RUN_SEEK_VERIFY:
 		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
-			FDC_VerifyTrack();
+		{
+			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_LOOP;
+			Delay_micro = FDC_DELAY_HEAD_LOAD		/* Head settle delay */
+				+ FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_SEEK_COMPLETE;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		}
+		break;
+	 case FDCEMU_RUN_SEEK_VERIFY_LOOP:
+		FDC_VerifyTrack();
+		FDC.CommandState = FDCEMU_RUN_SEEK_COMPLETE;
+		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		break;
+	 case FDCEMU_RUN_SEEK_COMPLETE:
 		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
@@ -1261,10 +1302,10 @@ static int FDC_UpdateStepCmd ( void )
 			FDC.TR += FDC.StepDirection;			/* Update Track Register */
 
 		if ( ( HeadTrack[ FDC_DRIVE ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go after max track */
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
 
 		else if ( ( HeadTrack[ FDC_DRIVE ] == 0 ) && ( FDC.StepDirection == -1 ) )
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;	/* No delay if trying to go before track 0 */
+			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;	/* No delay if trying to go before track 0 */
 
 		else
 		{
@@ -1277,11 +1318,27 @@ static int FDC_UpdateStepCmd ( void )
 		else
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 
+		FDC.CommandState = FDCEMU_RUN_STEP_VERIFY;
+		break;
+	 case FDCEMU_RUN_STEP_VERIFY:
+		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
+		{
+			FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_LOOP;
+			Delay_micro = FDC_DELAY_HEAD_LOAD		/* Head settle delay */
+				+ FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
+			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		}
+		break;
+	 case FDCEMU_RUN_STEP_VERIFY_LOOP:
+		FDC_VerifyTrack();
 		FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
+		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
 		break;
 	 case FDCEMU_RUN_STEP_COMPLETE:
-		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
-			FDC_VerifyTrack();
 		Delay_micro = FDC_CmdCompleteCommon( true );
 		break;
 	}
@@ -1569,7 +1626,6 @@ static int FDC_UpdateReadAddressCmd ( void )
 	Uint16	CRC;
 	Uint8	buf[ 4+6 ];
 	Uint8	*p;
-	int	Sector;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -1584,6 +1640,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 	switch (FDC.CommandState)
 	{
 #ifdef old_read_addr
+	int	Sector;
 	 case FDCEMU_RUN_READADDRESS:
 		Sector = FDC.ID_FieldLastSector + 1;		/* Increase sector from latest ID Field */
 		if ( Sector > FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) )
