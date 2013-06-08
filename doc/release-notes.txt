@@ -30,6 +30,12 @@ Emulation:
   - MFP's IRQ should be delayed by 4 cycles before reaching the CPU
   - MFP's IRQ signal was not correctly updated in some cases
   - Handle the IACK cycles between CPU and MFP during an exception
+- FDC changes :
+  - Better delays for all the GAPs inside a track
+  - Emulate the disk's rotation and its angular position to get
+    accurate delays when accessing a sector header
+  - Internal timer for FDC was wrong and sometimes slower than expected
+  - Correct delay for type I commands with "verify" bit=1
 - GEMDOS HD emulation changes :
   - Support Fforce() for GEMDOS HD emulated files and close at Pterm*()
     all internal handles to emulated files program had left open
@@ -163,6 +169,7 @@ Fixed demos :
   Audio Artistic Demo by Big Alec (MFP, bad sample speed at start)
   Decade Demo - Reset (MFP, flickering bottom border)
   High Fidelity Dreams by Aura (MFP, flickering left rasters)
+  ST-NICCC 2000 Demo by Oxygene (FDC, demo ran slower than expected)
 
 Fixed apps :
   Monst v1.x
