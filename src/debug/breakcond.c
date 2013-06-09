@@ -96,6 +96,7 @@ typedef struct {
 	bool once;	/* remove after hit&break */
 	bool quiet;	/* no output from setting & hitting */
 	bool trace;	/* trace mode, don't break */
+	bool noinit;	/* prevent debugger inits on break */
 	bool lock;	/* tracing + show locked info */
 } bc_options_t;
 
@@ -346,14 +347,18 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			}
 
 			if (bp->options.lock || bp->options.filename) {
-				DebugCpu_InitSession();
-				DebugDsp_InitSession();
+				bool reinit = !bp->options.noinit;
+
+				if (reinit) {
+					DebugCpu_InitSession();
+					DebugDsp_InitSession();
+				}
 
 				if (bp->options.lock) {
 					DebugInfo_ShowSessionInfo();
 				}
 				if (bp->options.filename) {
-					DebugUI_ParseFile(bp->options.filename);
+					DebugUI_ParseFile(bp->options.filename, reinit);
 				}
 			}
 			if (bp->options.once) {
@@ -525,6 +530,11 @@ static Uint32 GetVdiOpcode(void)
 	return INVALID_OPCODE;
 }
 
+static Uint32 GetNextPC(void)
+{
+	return Disasm_GetNextPC(M68000_GetPC());
+}
+
 /* sorted by variable name so that this can be bisected */
 static const var_addr_t hatari_vars[] = {
 	{ "AesOpcode", (Uint32*)GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
@@ -537,6 +547,7 @@ static const var_addr_t hatari_vars[] = {
 	{ "LineAOpcode", (Uint32*)GetLineAOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "LineCycles", (Uint32*)GetLineCycles, VALUE_TYPE_FUNCTION32, 0, "is always divisable by 4" },
 	{ "LineFOpcode", (Uint32*)GetLineFOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
+	{ "NextPC", (Uint32*)GetNextPC, VALUE_TYPE_FUNCTION32, 0, NULL },
 	{ "TEXT", (Uint32*)DebugInfo_GetTEXT, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "TEXTEnd", (Uint32*)DebugInfo_GetTEXTEnd, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8, NULL },
@@ -1395,7 +1406,10 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 				fprintf(stderr, "-> Trace instead of breaking, but show still hits.\n");
 				if (options->lock) {
 					fprintf(stderr, "-> Show also info selected with lock command.\n");
-				}
+				}				
+				if (options->noinit) {
+					fprintf(stderr, "-> Skip debugger inits on hit.\n");
+				}				
 			}
 			if (options->filename) {
 				fprintf(stderr, "-> Execute debugger commands from '%s' file on hit.\n", options->filename);
@@ -1408,6 +1422,7 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 		bp->options.once = options->once;
 		bp->options.trace = options->trace;
 		bp->options.lock = options->lock;
+		bp->options.noinit = options->noinit;
 		if (options->filename) {
 			bp->options.filename = strdup(options->filename);
 		}
@@ -1457,6 +1472,9 @@ static void BreakCond_Print(bc_breakpoint_t *bp)
 				fprintf(stderr, " :lock");
 			} else {
 				fprintf(stderr, " :trace");
+			}
+			if (bp->options.noinit) {
+				fprintf(stderr, " :noinit");
 			}
 		}
 		if (bp->options.filename) {
@@ -1626,6 +1644,7 @@ const char BreakCond_Description[] =
 	"\tthe breakpoint condition(s):\n"
 	"\t- 'trace', print the breakpoint match without stopping\n"
 	"\t- 'lock', print the debugger entry info without stopping\n"
+	"\t- 'noinit', no debugger inits on hit, useful for stack tracing\n"
 	"\t- 'file <file>', execute debugger commands from given <file>\n"
 	"\t- 'once', delete the breakpoint after it's hit\n"
 	"\t- 'quiet', no output from setting & hitting breakpoint\n"
@@ -1666,6 +1685,9 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 		} else if (strcmp(option, "lock") == 0) {
 			options->trace = true;
 			options->lock = true;
+		} else if (strcmp(option, "noinit") == 0) {
+			options->trace = true;
+			options->noinit = true;
 		} else if (strncmp(option, "file ", 5) == 0) {
 			filename = Str_Trim(option+4);
 			if (!File_Exists(filename)) {

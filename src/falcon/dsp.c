@@ -29,9 +29,9 @@
 #include "crossbar.h"
 #include "configuration.h"
 #include "cycInt.h"
+#include "m68000.h"
 
 #if ENABLE_DSP_EMU
-#include "m68000.h"
 #include "debugdsp.h"
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
@@ -48,21 +48,22 @@
 
 
 #if ENABLE_DSP_EMU
-static Sint32 save_cycles;
-#endif
-static bool bDspDebugging;
-
-bool bDspEnabled = false;
-bool bDspHostInterruptPending = false;
-
 static const char* x_ext_memory_addr_name[] = {
 	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
 	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
 	"PBC", "PCC", "PBDDR", "PCDDR", "PBD", "PCD", "", "",
 	"HCR", "HSR", "", "HRX/HTX", "CRA", "CRB", "SSISR/TSR", "RX/TX",
 	"SCR", "SSR", "SCCR", "STXA", "SRX/STX", "SRX/STX", "SRX/STX", "",
-	"", "", "", "", "", "", "BCR", "IPR"	
+	"", "", "", "", "", "", "BCR", "IPR"
 };
+
+static Sint32 save_cycles;
+#endif
+
+static bool bDspDebugging;
+
+bool bDspEnabled = false;
+bool bDspHostInterruptPending = false;
 
 
 /**
@@ -759,13 +760,13 @@ void DSP_HandleReadAccess(void)
 	{
 #if ENABLE_DSP_EMU
 		value = dsp_core_read_host(addr-DSP_HW_OFFSET);
-		if (multi_access == true)
-			M68000_AddCycles(4);
-		multi_access = true;
 #else
 		/* this value prevents TOS from hanging in the DSP init code */
 		value = 0xff;
 #endif
+		if (multi_access == true)
+			M68000_AddCycles(4);
+		multi_access = true;
 
 		Dprintf(("HWget_b(0x%08x)=0x%02x at 0x%08x\n", addr, value, m68k_getpc()));
 		IoMem_WriteByte(addr, value);
@@ -780,18 +781,17 @@ void DSP_HandleReadAccess(void)
 void DSP_HandleWriteAccess(void)
 {
 	Uint32 addr;
-	Uint8 value;
 	bool multi_access = false; 
 
 	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
-		value = IoMem_ReadByte(addr);
-		Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
 #if ENABLE_DSP_EMU
+		Uint8 value = IoMem_ReadByte(addr);
+		Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
 		dsp_core_write_host(addr-DSP_HW_OFFSET, value);
+#endif
 		if (multi_access == true)
 			M68000_AddCycles(4);
 		multi_access = true;
-#endif
 	}
 }

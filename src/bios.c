@@ -28,6 +28,7 @@ const char Bios__fileid[] = "Hatari bios.c : " __DATE__ " " __TIME__;
  */
 static void Bios_RWabs(Uint32 Params)
 {
+#if ENABLE_TRACING
 	Uint32 pBuffer;
 	Uint16 RWFlag, Number, RecNo, Dev;
 
@@ -40,6 +41,7 @@ static void Bios_RWabs(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x04 Rwabs(%d,0x%lX,%d,%d,%i)\n",
 	          RWFlag, STRAM_ADDR(pBuffer), Number, RecNo, Dev);
+#endif
 }
 
 /*-----------------------------------------------------------------------*/
@@ -49,6 +51,7 @@ static void Bios_RWabs(Uint32 Params)
  */
 static void Bios_Setexe(Uint32 Params)
 {
+#if ENABLE_TRACING
 	Uint16 vec = STMemory_ReadWord(Params);
 	Uint32 addr = STMemory_ReadLong(Params+SIZE_WORD);
 	struct {
@@ -71,6 +74,7 @@ static void Bios_Setexe(Uint32 Params)
 	for (vecname = &(vecnames[0]); vecname->vec && vec != vecname->vec; vecname++)
 		;
 	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x05 Setexc(0x%hX VEC_%s, 0x%X)\n", vec, vecname->name, addr);
+#endif
 }
 
 

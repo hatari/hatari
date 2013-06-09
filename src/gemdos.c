@@ -341,7 +341,7 @@ static void ClearInternalDTA(void)
  */
 static bool fsfirst_match(const char *pat, const char *name)
 {
-	const char *p=pat, *n=name;
+	const char *dot, *p=pat, *n=name;
 
 	if (name[0] == '.')
 		return false;           /* skip .* files */
@@ -350,11 +350,12 @@ static bool fsfirst_match(const char *pat, const char *name)
 	if (strcasecmp(pat,name)==0)
 		return true;            /* exact case insensitive match */
 
+	dot = strrchr(name, '.');	/* '*' matches everything except _last_ '.' */
 	while (*n)
 	{
 		if (*p=='*')
 		{
-			while (*n && *n != '.')
+			while (*n && n != dot)
 				n++;
 			p++;
 		}
@@ -467,6 +468,7 @@ static void GemDOS_RemoveLastProgram(void)
 static void GemDOS_UpdateLastProgram(int Handle)
 {
 	Uint16 magic = 0;
+	size_t items;
 	long oldpos;
 	FILE *fp;
 
@@ -479,9 +481,9 @@ static void GemDOS_UpdateLastProgram(int Handle)
 	fp = FileHandles[Handle].FileHandle;
 	oldpos = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	(void)fread(&magic, sizeof(magic), 1, fp);
+	items = fread(&magic, sizeof(magic), 1, fp);
 	fseek(fp, oldpos, SEEK_SET);
-	if (SDL_SwapBE16(magic) != 0x601A)
+	if (items != 1 || SDL_SwapBE16(magic) != 0x601A)
 		return;
 
 	/* store program path */
@@ -1531,6 +1533,7 @@ static bool GemDOS_DFree(Uint32 Params)
 
 	STMemory_WriteLong(Address+SIZE_LONG*2, 512);   /* bytes per sector */
 	STMemory_WriteLong(Address+SIZE_LONG*3, 2);     /* sectors per cluster (cluster = 1KB) */
+	Regs[REG_D0] = GEMDOS_EOK;
 	return true;
 }
 
@@ -3163,7 +3166,7 @@ void GemDOS_OpCode(void)
 	 case 0x3a:
 		Finished = GemDOS_RmDir(Params);
 		break;
-	 case 0x3b:
+	 case 0x3b:	/* Dsetpath */
 		Finished = GemDOS_ChDir(Params);
 		break;
 	 case 0x3c:
@@ -3193,7 +3196,7 @@ void GemDOS_OpCode(void)
 	 case 0x46:
 		Finished = GemDOS_Force(Params);
 		break;
-	 case 0x47:
+	 case 0x47:	/* Dgetpath */
 		Finished = GemDOS_GetDir(Params);
 		break;
 	 case 0x4b:
@@ -3255,10 +3258,30 @@ void GemDOS_OpCode(void)
 	case 0x20:	/* Super */
 	case 0x48:	/* Malloc */
 	case 0x49:	/* Mfree */
-		/* commands taking longs or pointers */
+		/* commands taking long/pointer */
 		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X)\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 			  STMemory_ReadLong(Params));
+		break;
+
+	case 0x44:	/* Mxalloc */
+		/* commands taking long/pointer + word */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x44 Mxalloc(0x%X, 0x%hX)\n",
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadWord(Params+SIZE_LONG));
+		break;
+	case 0x14:	/* Maddalt */
+		/* commands taking 2 longs/pointers */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x14 Maddalt(0x%X, 0x%X)\n",
+			  STMemory_ReadLong(Params),
+			  STMemory_ReadLong(Params+SIZE_LONG));
+	case 0x4A:	/* Mshrink */
+		/* Mshrink's two pointers are prefixed by reserved zero word:
+		 * http://toshyp.atari.org/en/00500c.html#Bindings_20for_20Mshrink
+		 */
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4A Mshrink(0x%X, 0x%X)\n",
+			  STMemory_ReadLong(Params+SIZE_WORD),
+			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG));
 		break;
 
 	default:

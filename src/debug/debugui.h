@@ -34,7 +34,6 @@ extern int bExceptionDebugging;
 extern void DebugUI_Init(void);
 extern void DebugUI(debug_reason_t reason);
 extern bool DebugUI_ParseLine(const char *input);
-extern bool DebugUI_ParseFile(const char *path);
 extern bool DebugUI_SetParseFile(const char *input);
 extern void DebugUI_MemorySnapShot_Capture(const char *path, bool bSave);
 

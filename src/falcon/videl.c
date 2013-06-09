@@ -250,9 +250,8 @@ void VIDEL_ScreenCounter_WriteByte(void)
  */
 void VIDEL_LineOffset_WriteWord(void)
 {
-	Uint16 lineOffset = IoMem_ReadWord(0xff820e);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff820e Line Offset write: 0x%04x\n", lineOffset);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff820e Line Offset write: 0x%04x\n",
+	          IoMem_ReadWord(0xff820e));
 }
 
 /**
@@ -262,9 +261,8 @@ void VIDEL_LineOffset_WriteWord(void)
  */
 void VIDEL_Line_Width_WriteWord(void)
 {
-	Uint16 lineWidth = IoMem_ReadWord(0xff8210);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8210 Line Width write: 0x%04x\n", lineWidth);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8210 Line Width write: 0x%04x\n",
+	          IoMem_ReadWord(0xff8210));
 }
 
 /**
@@ -274,17 +272,14 @@ void VIDEL_Line_Width_WriteWord(void)
  */
 void VIDEL_ScreenBase_WriteByte(void)
 {
-	Uint32 screenBase;
-	
 	if ((IoAccessCurrentAddress == 0xff8201) || (IoAccessCurrentAddress == 0xff8203)) {
 		/* Reset screen base low register */
 		IoMem[0xff820d] = 0;
 	}
-	
-	screenBase = (IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8)+IoMem[0xff820d];
 
-	LOG_TRACE(TRACE_VIDEL, "Videl : $%04x Screen base write: 0x%02x\t (screen: 0x%04x)\n", 
-						IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress], screenBase);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $%04x Screen base write: 0x%02x\t (screen: 0x%04x)\n",
+	          IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+	          (IoMem[0xff8201]<<16) + (IoMem[0xff8203]<<8) + IoMem[0xff820d]);
 }
 
 /**
@@ -361,8 +356,8 @@ void VIDEL_ST_ShiftModeWriteByte(void)
  */
 void VIDEL_HorScroll64_WriteByte(void)
 {
-	Uint8 horScroll64 = IoMem_ReadWord(0xff8264);
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8264 Horizontal scroll 64 write: 0x%02x\n", horScroll64);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8264 Horizontal scroll 64 write: 0x%02x\n",
+	          IoMem_ReadByte(0xff8264));
 }
 
 /**
@@ -374,8 +369,8 @@ void VIDEL_HorScroll64_WriteByte(void)
  */
 void VIDEL_HorScroll65_WriteByte(void)
 {
-	Uint8 horScroll65 = IoMem_ReadWord(0xff8265);
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8265 Horizontal scroll 65 write: 0x%02x\n", horScroll65);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8265 Horizontal scroll 65 write: 0x%02x\n",
+	          IoMem_ReadByte(0xff8265));
 }
 
 /**
@@ -400,9 +395,8 @@ void VIDEL_HorScroll65_WriteByte(void)
  */
 void VIDEL_Falcon_ShiftMode_WriteWord(void)
 {
-	Uint16 falc_shiftMode = IoMem_ReadWord(0xff8266);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8266 Falcon Shift Mode (SPSHIFT) write: 0x%04x\n", falc_shiftMode);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8266 Falcon Shift Mode (SPSHIFT) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff8266));
 
 	videl.bUseSTShifter = false;
 }
@@ -412,9 +406,8 @@ void VIDEL_Falcon_ShiftMode_WriteWord(void)
  */
 void VIDEL_HHC_WriteWord(void)
 {
-	Uint16 hhc = IoMem_ReadWord(0xff8280);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8280 Horizontal Hold Counter (HHC) write: 0x%04x\n", hhc);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8280 Horizontal Hold Counter (HHC) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff8280));
 }
 
 /**
@@ -422,9 +415,8 @@ void VIDEL_HHC_WriteWord(void)
  */
 void VIDEL_HHT_WriteWord(void)
 {
-	Uint16 hht = IoMem_ReadWord(0xff8282);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8282 Horizontal Hold Timer (HHT) write: 0x%04x\n", hht);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8282 Horizontal Hold Timer (HHT) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff8282));
 }
 
 /**
@@ -432,9 +424,8 @@ void VIDEL_HHT_WriteWord(void)
  */
 void VIDEL_HBB_WriteWord(void)
 {
-	Uint16 hbb = IoMem_ReadWord(0xff8284);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8284 Horizontal Border Begin (HBB) write: 0x%04x\n", hbb);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8284 Horizontal Border Begin (HBB) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff8284));
 }
 
 /**
@@ -442,9 +433,8 @@ void VIDEL_HBB_WriteWord(void)
  */
 void VIDEL_HBE_WriteWord(void)
 {
-	Uint16 hbe = IoMem_ReadWord(0xff8286);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8286 Horizontal Border End (HBE) write: 0x%04x\n", hbe);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8286 Horizontal Border End (HBE) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff8286));
 }
 
 /**
@@ -455,9 +445,8 @@ void VIDEL_HBE_WriteWord(void)
  */
 void VIDEL_HDB_WriteWord(void)
 {
-	Uint16 hdb = IoMem_ReadWord(0xff8288);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8288 Horizontal Display Begin (HDB) write: 0x%04x\n", hdb);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8288 Horizontal Display Begin (HDB) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff8288));
 }
 
 /**
@@ -465,9 +454,8 @@ void VIDEL_HDB_WriteWord(void)
  */
 void VIDEL_HDE_WriteWord(void)
 {
-	Uint16 hde = IoMem_ReadWord(0xff828a);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff828a Horizontal Display End (HDE) write: 0x%04x\n", hde);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff828a Horizontal Display End (HDE) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff828a));
 }
 
 /**
@@ -475,9 +463,8 @@ void VIDEL_HDE_WriteWord(void)
  */
 void VIDEL_HSS_WriteWord(void)
 {
-	Uint16 hss = IoMem_ReadWord(0xff828c);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff828c Horizontal SS (HSS) write: 0x%04x\n", hss);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff828c Horizontal SS (HSS) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff828c));
 }
 
 /**
@@ -485,9 +472,8 @@ void VIDEL_HSS_WriteWord(void)
  */
 void VIDEL_HFS_WriteWord(void)
 {
-	Uint16 hfs = IoMem_ReadWord(0xff828e);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff828e Horizontal FS (HFS) write: 0x%04x\n", hfs);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff828e Horizontal FS (HFS) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff828e));
 }
 
 /**
@@ -495,9 +481,8 @@ void VIDEL_HFS_WriteWord(void)
  */
 void VIDEL_HEE_WriteWord(void)
 {
-	Uint16 hee = IoMem_ReadWord(0xff8290);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8290 Horizontal EE (HEE) write: 0x%04x\n", hee);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff8290 Horizontal EE (HEE) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff8290));
 }
 
 /**
@@ -514,9 +499,8 @@ void VIDEL_VFC_ReadWord(void)
  */
 void VIDEL_VFT_WriteWord(void)
 {
-	Uint16 vft = IoMem_ReadWord(0xff82a2);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a2 Vertical Frequency Timer (VFT) write: 0x%04x\n", vft);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a2 Vertical Frequency Timer (VFT) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff82a2));
 }
 
 /**
@@ -524,9 +508,8 @@ void VIDEL_VFT_WriteWord(void)
  */
 void VIDEL_VBB_WriteWord(void)
 {
-	Uint16 vbb = IoMem_ReadWord(0xff82a4);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a4 Vertical Border Begin (VBB) write: 0x%04x\n", vbb);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a4 Vertical Border Begin (VBB) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff82a4));
 }
 
 /**
@@ -534,9 +517,8 @@ void VIDEL_VBB_WriteWord(void)
  */
 void VIDEL_VBE_WriteWord(void)
 {
-	Uint16 vbe = IoMem_ReadWord(0xff82a6);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a6 Vertical Border End (VBE) write: 0x%04x\n", vbe);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a6 Vertical Border End (VBE) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff82a6));
 }
 
 /**
@@ -544,9 +526,8 @@ void VIDEL_VBE_WriteWord(void)
  */
 void VIDEL_VDB_WriteWord(void)
 {
-	Uint16 vdb = IoMem_ReadWord(0xff82a8);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a8 Vertical Display Begin (VDB) write: 0x%04x\n", vdb);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82a8 Vertical Display Begin (VDB) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff82a8));
 }
 
 /**
@@ -554,9 +535,8 @@ void VIDEL_VDB_WriteWord(void)
  */
 void VIDEL_VDE_WriteWord(void)
 {
-	Uint16 vde = IoMem_ReadWord(0xff82aa);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82aa Vertical Display End (VDE) write: 0x%04x\n", vde);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82aa Vertical Display End (VDE) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff82aa));
 }
 
 /**
@@ -564,9 +544,8 @@ void VIDEL_VDE_WriteWord(void)
  */
 void VIDEL_VSS_WriteWord(void)
 {
-	Uint16 vss = IoMem_ReadWord(0xff82ac);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82ac Vertical SS (VSS) write: 0x%04x\n", vss);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82ac Vertical SS (VSS) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff82ac));
 }
 
 /**
@@ -574,9 +553,8 @@ void VIDEL_VSS_WriteWord(void)
  */
 void VIDEL_VCO_WriteWord(void)
 {
-	Uint16 vco = IoMem_ReadWord(0xff82c0);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82c0 Video control (VCO) write: 0x%04x\n", vco);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82c0 Video control (VCO) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff82c0));
 }
 
 /**
@@ -584,9 +562,8 @@ void VIDEL_VCO_WriteWord(void)
  */
 void VIDEL_VMD_WriteWord(void)
 {
-	Uint16 vdm = IoMem_ReadWord(0xff82c2);
-
-	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82c2 Video Mode (VDM) write: 0x%04x\n", vdm);
+	LOG_TRACE(TRACE_VIDEL, "Videl : $ff82c2 Video Mode (VDM) write: 0x%04x\n",
+	          IoMem_ReadWord(0xff82c2));
 }
 
 

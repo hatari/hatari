@@ -149,23 +149,18 @@ void Str_Filename2TOSname(const char *source, char *dst)
 		for (tmp = src; tmp < dot; tmp++)
 			if (*tmp == '.')
 				*tmp = INVALID_CHAR;
-	}
 
-	/* does name now fit to 8 (+3) chars? */
-	if (len <= 8 || (dot && len <= 12))
-		strcpy(dst, src);
-	else
-	{
-		/* name (still) too long, cut part before extension */
-		strncpy(dst, src, 8);
-		if (dot)
-			strcpy(dst+8, dot);
-		else
-			dst[8] = '\0';
+		/* limit part before extension to 8 chars */
+		if (dot - src > 8)
+			memmove(src + 8, dot, strlen(dot) + 1);
 	}
+	else if (len > 8)
+		src[8] = '\0';
+
+	strcpy(dst, src);
 	free(src);
 
-	/* replace other invalid chars than '.' in filename */
+	/* upcase and replace rest of invalid characters */
 	for (tmp = dst; *tmp; tmp++)
 	{
 		if (*tmp < 33 || *tmp > 126)
@@ -182,8 +177,10 @@ void Str_Filename2TOSname(const char *source, char *dst)
 				case '{':
 				case '}':
 					*tmp = INVALID_CHAR;
+					break;
+				default:
+					*tmp = toupper(*tmp);
 			}
 		}
 	}
-	Str_ToUpper(dst);
 }
