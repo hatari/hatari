@@ -62,6 +62,7 @@ Emulator:
     (as those won't work with real TOS)
   - New --gemdos-case option to specify whether new dir/filenames
     are forced to be created in upper (default) or lower case
+  - Giving empty string as GEMDOS HD dir disables GEMDOS HD emulation
 - SDL GUI:
   - Fileselector has "CWD" button for changing to Hatari's work directory
   - Fileselector remembers previous position which is nicer with

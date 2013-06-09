@@ -1284,9 +1284,15 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ok = Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 					argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
 					&ConfigureParams.HardDisk.bUseHardDiskDirectories);
-			if (ok && ConfigureParams.HardDisk.bUseHardDiskDirectories)
+			if (ok && ConfigureParams.HardDisk.bUseHardDiskDirectories &&
+			    ConfigureParams.HardDisk.szHardDiskDirectories[0][0])
 			{
 				ConfigureParams.HardDisk.bBootFromHardDisk = true;
+			}
+			else
+			{
+				ConfigureParams.HardDisk.bUseHardDiskDirectories = false;
+				ConfigureParams.HardDisk.bBootFromHardDisk = false;
 			}
 			bLoadAutoSave = false;
 			break;
