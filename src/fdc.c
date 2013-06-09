@@ -2665,7 +2665,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
  * $80 - Selects command/status register
  * $82 - Selects track register
  * $84 - Selects sector register
- * $86 - Selects data regsiter
+ * $86 - Selects data register
  * NOTE - OR above values with $100 is transfer from memory to floppy
  * Also if bit 4 is set, write to DMA sector count register
  */
