@@ -494,7 +494,7 @@ Delay = Delay_micro*8;
 	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
 		Delay /= 2;					/* correct delays for a 8 MHz clock instead of 16 */
 
-fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
+//fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
 //if ( Delay==4104) Delay=4166;		// 4166 : decade demo
 	return Delay;
 }
@@ -508,7 +508,7 @@ fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_
  */
 static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset )
 {
-fprintf ( stderr , "fdc start timer %d us\n" , Delay_micro );
+//fprintf ( stderr , "fdc start timer %d us\n" , Delay_micro );
 
 	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( Delay_micro > FDC_FAST_FDC_FACTOR ) )
 		Delay_micro /= FDC_FAST_FDC_FACTOR;
@@ -845,7 +845,7 @@ static void	FDC_IndexPulse_Init ( void )
 	RandomPos = rand() % FDC_TRACK_BYTES_STANDARD;
 	FDC.IndexPulse_Time = CyclesGlobalClockCounter - FDC_DelayToCpuCycles ( FDC_TRANSFER_BYTES_US ( RandomPos ) );
 FDC.IndexPulse_Time = CyclesGlobalClockCounter;
-fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
+//fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
 }
 
 
@@ -924,7 +924,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 		NextSector = i+1;
 	}
 
-fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, NextSector );
+//fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, NextSector );
 	FDC.NextSector_ID_Field_SR = NextSector;
 	return NbBytes;
 }
