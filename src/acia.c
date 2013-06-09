@@ -249,6 +249,11 @@ static void		ACIA_Clock_RX ( ACIA_STRUCT *pACIA );
  * Init the 2 ACIAs in an Atari ST.
  * Both ACIAs have a 500 MHZ TX/RX clock.
  * This is called only once, when the emulator starts.
+ * NOTE : when testing EmuTos on real hardware, it seems the tx/rx is working
+ * after a cold reset (ST switched on), even if Clock_Divider was not initialized yet.
+ * The default behaviour is not described in the ACIA's ref doc, but bits
+ * seem to be transmitted (maybe with errors ?). So we default
+ * to 9600 bauds to avoid a lock if a program uses tx/rx after a reset.
  */
 void	ACIA_Init ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 {
@@ -269,6 +274,9 @@ void	ACIA_Init ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 
 	/* Set the default common callback functions + other pointers */
 	ACIA_Init_Pointers ( pAllACIA );
+
+	/* Special case for IKBD, init the divider with a default value after a reset */
+	pAllACIA[ 0 ].Clock_Divider = ACIA_Counter_Divide[ 2 ];		/* 9600 bauds */
 }
 
 
