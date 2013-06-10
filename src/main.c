@@ -601,7 +601,6 @@ static void Main_Init(void)
 	Floppy_Init();
 	M68000_Init();                /* Init CPU emulation */
 	Audio_Init();
-	DmaSnd_Init();
 	Keymap_Init();
 
 	/* Init HD emulation */

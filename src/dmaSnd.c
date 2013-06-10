@@ -229,15 +229,6 @@ static void	DmaSnd_StartNewFrame(void);
 static inline int DmaSnd_EndOfFrameReached(void);
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Init DMA sound variables.
- */
-void DmaSnd_Init(void)
-{
-	DmaSnd_Reset(1);
-}
-
 /**
  * Reset DMA sound variables.
  */
