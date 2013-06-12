@@ -293,6 +293,8 @@ enum
 
 #define	FDC_DELAY_RNF				( 1000000.L * 5 / ( FDC_RPM_STANDARD / 60 ) )	/* 5 spins to set RNF */
 
+#define	FDC_DELAY_INDEX_PULSE_LENGTH		1500		/* Index pulse signal remain high during 1.5 ms on each rotation */
+
 #define	FDC_DELAY_TYPE_I_PREPARE		100		/* Types I commands take at least 0.1 ms to execute */
 								/* (~800 cpu cycles @ 8 Mhz). FIXME [NP] : this was not measured, it's */
 								/* to avoid returning immediately when command has no effect */
@@ -417,6 +419,7 @@ static int	FDC_GetSidesPerDisk ( int Track );
 
 static void	FDC_IndexPulse_Init ( void );
 static int	FDC_IndexPulse_GetCurrentPos ( void );
+static int	FDC_IndexPulse_GetState ( void );
 static int	FDC_NextIndexPulse_NbBytes ( void );
 static int	FDC_NextSectorID_NbBytes ( void );
 
@@ -864,6 +867,29 @@ static int	FDC_IndexPulse_GetCurrentPos ( void )
 //fprintf ( stderr , "fdc index pulse pos cur=%lld ref=%lld bytes=%lld pos=%d\n" ,  CyclesGlobalClockCounter , FDC.IndexPulse_Time , BytesSinceIndex , (int)(BytesSinceIndex % FDC_TRACK_BYTES_STANDARD) );
 	/* Ignore the total number of spins, only keep the position relative to the index pulse */
 	return ( BytesSinceIndex % FDC_TRACK_BYTES_STANDARD );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the current state of the index pulse signal.
+ * The signal goes to 1 when reaching the index pulse location and remain
+ * to 1 during 1.5 ms (approx 46 bytes).
+ * During the rest of the track, the signal will be 0.
+ */
+static int	FDC_IndexPulse_GetState ( void )
+{
+	int	CurrentPos;
+	int	state;
+
+	CurrentPos = FDC_IndexPulse_GetCurrentPos ();
+
+	state = 0;
+	if ( CurrentPos <  FDC_DELAY_INDEX_PULSE_LENGTH / FDC_TRANSFER_BYTES_US ( 1 ) )
+		state = 1;
+
+//fprintf ( stderr , "fdc index state pos pos=%d state=%d\n" , CurrentPos , state );
+	return state;
 }
 
 
@@ -2207,6 +2233,11 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );		/* Set Motor ON */
+
+		if ( FDC_IndexPulse_GetState () )
+			FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit */
+		else
+			FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
 	}
 
 	/* Remove busy bit, ack int and stop the motor */
@@ -2613,6 +2644,11 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 					FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
 				else
 					FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
+
+				if ( FDC_IndexPulse_GetState () )
+					FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit */
+				else
+					FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
 			}
 
 			/* When there's no disk in drive, the floppy drive hardware can't see */
