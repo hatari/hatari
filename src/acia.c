@@ -226,7 +226,7 @@ static void		ACIA_Set_Line_RTS_Dummy ( int bit );
 static void		ACIA_Set_Timers_IKBD ( void *pACIA );
 static void		ACIA_Start_InterruptHandler_IKBD ( ACIA_STRUCT *pACIA , int InternalCycleOffset );
 
-static void		ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR );
+static Uint8		ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR );
 
 static void		ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA );
 
@@ -642,8 +642,10 @@ void	ACIA_IKBD_Write_TDR ( void )
  * is to set bit 0 an 1 to 0x03 in the CR to force a master reset.
  * This will clear SR (except CTS and DCD) and halt/initialize both the
  * receiver and transmitter.
+ * This also returns the new state of the RTS bit, that must be updated
+ * in ACIA_Write_CR.
  */
-static void	ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR )
+static Uint8	ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR )
 {
 	Uint8		dcd_bit;
 	Uint8		cts_bit;
@@ -678,7 +680,7 @@ static void	ACIA_MasterReset ( ACIA_STRUCT *pACIA , Uint8 CR )
 	else
 		rts_bit = ( ACIA_CR_TRANSMITTER_CONTROL ( CR ) == 0x02 ) ? 1 : 0;
 
-	pACIA->Set_Line_RTS ( rts_bit );
+	return rts_bit;
 }
 
 
@@ -761,7 +763,8 @@ static Uint8	ACIA_Read_SR ( ACIA_STRUCT *pACIA )
 static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 {
 	int	Divide;
-
+	int	Force_rts_bit;
+	Uint8	rts_bit;
 
 	LOG_TRACE ( TRACE_ACIA, "acia %s write cr data=0x%02x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , CR , nVBLs , nHBL );
 
@@ -769,7 +772,7 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 	Divide = ACIA_CR_COUNTER_DIVIDE ( CR );
 	if ( Divide == 0x03 )
 	{
-		ACIA_MasterReset ( pACIA , CR );
+		Force_rts_bit = ACIA_MasterReset ( pACIA , CR );	/* Special behaviour for RTS after a master reset */
 	}
 	else
 	{
@@ -778,7 +781,7 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 			pACIA->Clock_Divider = ACIA_Counter_Divide[ Divide ];
 			pACIA->Set_Timers ( pACIA );			/* Set a timer at the baud rate computed from Clock_Divider */
 		}
-		
+		Force_rts_bit = -1;					/* Don't force RTS bit, use bit 5/6 in CR */
 	}
 
 	/* Bits 2, 3 and 4 : word select */
@@ -790,20 +793,24 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 	switch ( ACIA_CR_TRANSMITTER_CONTROL ( CR ) )
 	{
 	  case 0x00 :
-		pACIA->Set_Line_RTS ( 0 );
+		rts_bit = 0;
 		break;
 	  case 0x01 :
-		pACIA->Set_Line_RTS ( 0 );
+		rts_bit = 0;
 		pACIA->TX_EnableInt = 1;
 		break;
 	  case 0x02 :
-		pACIA->Set_Line_RTS ( 1 );
+		rts_bit = 1;
 		break;
 	  case 0x03 :
-		pACIA->Set_Line_RTS ( 0 );
+		rts_bit = 0;
 		pACIA->TX_SendBrk = 1;					/* We will send break bit until CR is changed */
 		break;
 	}
+
+	if ( Force_rts_bit >= 0 )
+		rts_bit = Force_rts_bit;				/* Use the value from ACIA_MasterReset */
+	pACIA->Set_Line_RTS ( rts_bit );
 
 	/* Bits 7 : receive interrupt enable, see ACIA_UpdateIRQ */
 
