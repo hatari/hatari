@@ -976,9 +976,19 @@ static void	IKBD_Cmd_Return_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles )
 {
 //fprintf ( stderr , "send byte=0x%02x delay=%d\n" , Data , Delay_Cycles );
-	/* Is keyboard initialised yet? Ignore any bytes until it is */
+	/* Is keyboard initialised yet ? Ignore any bytes until it is */
 	if ( bDuringResetCriticalTime )
+	{
+		LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd is resetting, can't send byte=0x%02x VBL=%d HBL=%d\n" , Data, nVBLs , nHBL );
 		return;
+	}
+
+	/* Is ACIA's serial line initialised yet ? Ignore any bytes until it is */
+	if ( pACIA_IKBD->Clock_Divider == 0 )
+	{
+		LOG_TRACE ( TRACE_IKBD_ACIA, "ikbd acia not initialized, can't send byte=0x%02x VBL=%d HBL=%d\n" , Data, nVBLs , nHBL );
+		return;
+	}
 
 	if ( Delay_Cycles > 0 )
 		pIKBD->SCI_TX_Delay = Delay_Cycles / 1024;	/* 1 bit at 7812.5 baud = 1024 cpu cycles at 8 MHz */

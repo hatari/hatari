@@ -274,9 +274,6 @@ void	ACIA_Init ( ACIA_STRUCT *pAllACIA , Uint32 TX_Clock , Uint32 RX_Clock )
 
 	/* Set the default common callback functions + other pointers */
 	ACIA_Init_Pointers ( pAllACIA );
-
-	/* Special case for IKBD, init the divider with a default value after a reset */
-	pAllACIA[ 0 ].Clock_Divider = ACIA_Counter_Divide[ 2 ];		/* 9600 bauds */
 }
 
 
