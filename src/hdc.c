@@ -630,7 +630,7 @@ static void HDC_EmulateCommandPacket(void)
 	}
 
 	/* Update the led each time a command is processed */
-	Statusbar_EnableHDLed();
+	Statusbar_EnableHDLed( LED_STATE_ON );
 }
 
 

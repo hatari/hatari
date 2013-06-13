@@ -33,6 +33,7 @@ const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "clocks_timings.h"
 #include "utils.h"
+#include "statusbar.h"
 
 
 /*
@@ -403,6 +404,8 @@ static Uint8 DMADiskWorkSpace[ 6275+1000 ];	/* Workspace used to transfer bytes 
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
+static void	FDC_SetDriveLedBusy ( void );
+
 static int	FDC_DelayToCpuCycles ( int Delay_micro );
 static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset );
 static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
@@ -475,6 +478,31 @@ void FDC_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(HeadTrack, sizeof(HeadTrack));
 
 	MemorySnapShot_Store(DMADiskWorkSpace, sizeof(DMADiskWorkSpace));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Change the color of the drive's led color in the statusbar, depending
+ * on the state of the busy bit in SR
+ */
+static void	FDC_SetDriveLedBusy ( void )
+{
+	int	ActiveDrive;
+
+	/* Check Drive A first */
+	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x2)==0)
+		ActiveDrive = 0;
+	/* If off, check Drive B */
+	else if ((PSGRegisters[PSG_REG_IO_PORTA]&0x4)==0)
+		ActiveDrive = 1;
+	else
+		return;
+	
+	if ( FDC.SR & FDC_STR_BIT_BUSY )
+		Statusbar_SetFloppyLed ( ActiveDrive , LED_STATE_ON_BUSY );
+	else
+		Statusbar_SetFloppyLed ( ActiveDrive , LED_STATE_ON );
 }
 
 
@@ -1060,6 +1088,8 @@ static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 {
 	FDC.STR &= (~DisableBits);					/* Clear bits in DisableBits */
 	FDC.STR |= EnableBits;						/* Set bits in EnableBits */
+
+	FDC_SetDriveLedBusy ();
 //fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
 }
 
