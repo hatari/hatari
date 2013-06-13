@@ -57,11 +57,12 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 
 /* whether drive leds should be ON and their previous shown state */
 static struct {
-	bool state;
-	bool oldstate;
+	drive_led_t state;
+	drive_led_t oldstate;
 	Uint32 expire;	/* when to disable led, valid only if >0 && state=TRUE */
 	int offset;	/* led x-pos on screen */
 } Led[MAX_DRIVE_LEDS];
+
 
 /* drive leds size & y-pos */
 static SDL_Rect LedRect;
@@ -82,7 +83,8 @@ static SDL_Rect RecLedRect;
 static bool bOldRecording;
 
 /* led colors */
-static Uint32 LedColorOn, LedColorOff, RecColorOn, RecColorOff;
+static Uint32 LedColor[ MAX_LED_STATE ];
+static Uint32 RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
 
@@ -168,11 +170,11 @@ int Statusbar_GetHeight(void)
 /**
  * Enable HD drive led, it will be automatically disabled after a while.
  */
-void Statusbar_EnableHDLed(void)
+void Statusbar_EnableHDLed(drive_led_t state)
 {
 	/* leds are shown for 1/2 sec after enabling */
 	Led[DRIVE_LED_HD].expire = SDL_GetTicks() + 1000/2;
-	Led[DRIVE_LED_HD].state = true;
+	Led[DRIVE_LED_HD].state = state;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -180,7 +182,7 @@ void Statusbar_EnableHDLed(void)
  * Set given floppy drive led state, anything enabling led with this
  * needs also to take care of disabling it.
  */
-void Statusbar_SetFloppyLed(drive_index_t drive, bool state)
+void Statusbar_SetFloppyLed(drive_index_t drive, drive_led_t state)
 {
 	assert(drive == DRIVE_LED_A || drive == DRIVE_LED_B);
 	Led[drive].state = state;
@@ -229,8 +231,9 @@ void Statusbar_Init(SDL_Surface *surf)
 	assert(surf);
 
 	/* dark green and light green for leds themselves */
-	LedColorOff = SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
-	LedColorOn  = SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
+	LedColor[ LED_STATE_OFF ]	= SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
+	LedColor[ LED_STATE_ON ]	= SDL_MapRGB(surf->format, 0x00, 0xc0, 0x00);
+	LedColor[ LED_STATE_ON_BUSY ]	= SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
 	LedColorBg  = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
 	RecColorOff = SDL_MapRGB(surf->format, 0x40, 0x00, 0x00);
 	RecColorOn  = SDL_MapRGB(surf->format, 0xe0, 0x00, 0x00);
@@ -238,7 +241,7 @@ void Statusbar_Init(SDL_Surface *surf)
 
 	/* disable leds */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		Led[i].state = Led[i].oldstate = false;
+		Led[i].state = Led[i].oldstate = LED_STATE_OFF;
 		Led[i].expire = 0;
 	}
 	Statusbar_OverlayInit(surf);
@@ -296,7 +299,7 @@ void Statusbar_Init(SDL_Surface *surf)
 		SDL_FillRect(surf, &ledbox, LedColorBg);
 
 		LedRect.x = offset;
-		SDL_FillRect(surf, &LedRect, LedColorOff);
+		SDL_FillRect(surf, &LedRect, LedColor[ LED_STATE_OFF ]);
 
 		Led[i].offset = offset;
 		offset += LedRect.w + fontw;
@@ -597,10 +600,10 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		if (Led[i].state) {
 			if (Led[i].expire && Led[i].expire < currentticks) {
-				Led[i].state = false;
+				Led[i].state = LED_STATE_OFF;
 				continue;
 			}
-			Statusbar_OverlayDrawLed(surf, LedColorOn);
+			Statusbar_OverlayDrawLed(surf, LedColor[ Led[i].state ]);
 			break;
 		}
 	}
@@ -653,21 +656,17 @@ void Statusbar_Update(SDL_Surface *surf)
 	currentticks = SDL_GetTicks();
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		if (Led[i].expire && Led[i].expire < currentticks) {
-			Led[i].state = false;
+			Led[i].state = LED_STATE_OFF;
 		}
 		if (Led[i].state == Led[i].oldstate) {
 			continue;
 		}
 		Led[i].oldstate = Led[i].state;
-		if (Led[i].state) {
-			color = LedColorOn;
-		} else {
-			color = LedColorOff;
-		}
+		color = LedColor[ Led[i].state ];
 		rect.x = Led[i].offset;
 		SDL_FillRect(surf, &rect, color);
 		SDL_UpdateRects(surf, 1, &rect);
-		DEBUGPRINT(("LED[%d] = %s\n", i, Led[i].state?"ON":"OFF"));
+		DEBUGPRINT(("LED[%d] = %d\n", i, Led[i].state));
 	}
 
 	Statusbar_ShowMessage(surf, currentticks);

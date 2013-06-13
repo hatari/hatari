@@ -3314,7 +3314,7 @@ void GemDOS_OpCode(void)
 		 case 0x4e:
 		 case 0x4f:
 		 case 0x56:
-			Statusbar_EnableHDLed();
+			Statusbar_EnableHDLed( LED_STATE_ON );
 		}
 		break;
 	 case CALL_PEXEC_ROUTINE:
