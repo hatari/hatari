@@ -74,6 +74,8 @@ Emulator:
   - Fileselector has "CWD" button for changing to Hatari's work directory
   - Fileselector remembers previous position which is nicer with
     large directories
+  - Make the drive leds blink with a brighter green when the FDC is executing
+    a command
 - Profiler:
   - Fix: profiler assert on invalid PC register values
   - Fix: profiler usage in debugger files invoked by breakpoints
