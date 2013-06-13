@@ -44,7 +44,7 @@ enum {
   REG_A4,
   REG_A5,
   REG_A6,
-  REG_A7,    /* ..A7 (also SP) */
+  REG_A7    /* ..A7 (also SP) */
 };
 
 /* 68000 Condition code's */

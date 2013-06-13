@@ -22,7 +22,7 @@ enum
 	JOYID_STEPADA,
 	JOYID_STEPADB,
 	JOYID_PARPORT1,
-	JOYID_PARPORT2,
+	JOYID_PARPORT2
 };
 
 #define JOYRANGE_UP_VALUE     -16384     /* Joystick ranges in XY */
