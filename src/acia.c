@@ -764,7 +764,7 @@ static void	ACIA_Write_CR ( ACIA_STRUCT *pACIA , Uint8 CR )
 {
 	int	Divide;
 	int	Force_rts_bit;
-	Uint8	rts_bit;
+	Uint8	rts_bit=0;
 
 	LOG_TRACE ( TRACE_ACIA, "acia %s write cr data=0x%02x VBL=%d HBL=%d\n" , pACIA->ACIA_Name , CR , nVBLs , nHBL );
 
