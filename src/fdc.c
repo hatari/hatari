@@ -296,9 +296,9 @@ enum
 
 #define	FDC_DELAY_INDEX_PULSE_LENGTH		1500		/* Index pulse signal remain high during 1.5 ms on each rotation */
 
-#define	FDC_DELAY_TYPE_I_PREPARE		100		/* Types I commands take at least 0.1 ms to execute */
-								/* (~800 cpu cycles @ 8 Mhz). FIXME [NP] : this was not measured, it's */
-								/* to avoid returning immediately when command has no effect */
+#define	FDC_DELAY_TYPE_I_PREPARE		90		/* Types I commands take at least 0.09 ms to execute */
+								/* (~740 cpu cycles @ 8 Mhz). [NP] : this was measured on a 520 STF */
+								/* and avoid returning immediately when command has no effect */
 #define	FDC_DELAY_TYPE_II_PREPARE		1 // 65		/* Start Type II commands immediately */
 #define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediately */
 #define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME [NP] : this was not measured */
@@ -861,21 +861,19 @@ static int FDC_GetSidesPerDisk ( int Track )
 /*-----------------------------------------------------------------------*/
 /**
  * Store the time of the most recent index pulse.
- * This is called when motor reaches its peak speed and is used
+ * This is called when motor was off and reaches its peak speed, and is used
  * to compute the position relative to the start of the track when we need
  * to wait for the next track index or the next sector header while the
  * floppy is spinning.
- * We compute a random position inside the track as there's no fixed
- * relation between the time when speed is reached and the position
- * of the index pulse.
+ * As the FDC waits 6 index pulses during the spin up phase, this means
+ * that when motor reaches its desired speed an index pulse was just
+ * encountered.
+ * So, the position after peak speed is reached is not random, it will always
+ * be 0 and we set the index pulse time to "now".
  */
 static void	FDC_IndexPulse_Init ( void )
 {
-	int	RandomPos;
-
-	RandomPos = rand() % FDC_TRACK_BYTES_STANDARD;
-	FDC.IndexPulse_Time = CyclesGlobalClockCounter - FDC_DelayToCpuCycles ( FDC_TRANSFER_BYTES_US ( RandomPos ) );
-FDC.IndexPulse_Time = CyclesGlobalClockCounter;
+	FDC.IndexPulse_Time = CyclesGlobalClockCounter;
 //fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
 }
 
