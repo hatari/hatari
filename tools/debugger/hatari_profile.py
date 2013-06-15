@@ -1191,7 +1191,7 @@ class ProfileSorter:
             if show_info:
                 costinfo = ""
                 for cost in totals:
-                    if cost and len(cost) > field:
+                    if cost and len(cost) > field and function.cost[0]:
                         if showtime:
                             time = stats.get_time_call(cost, function.cost)
                             costinfo += ",%8.5fs" % time
