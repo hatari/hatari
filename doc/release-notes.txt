@@ -49,8 +49,8 @@ Emulation:
 
 Emulator:
 - Fix: problems with run-time CPU type changing
-- Fix: enabling/disabling MIDI triggers emulation reset so that MIDI
-  IRQs are enabled when MIDI is enabled
+- Fix: MIDI IRQs were not enabled if MIDI was enabled at run-time.
+  MIDI toggling will now imply reset
 - Much improved console redirection functionality and a separate --conout
   option for it (--bios-intercept doesn't anymore imply console redirection)
 - Fixed a bug with the axes' mapping in the joystick's detection
