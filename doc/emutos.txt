@@ -188,13 +188,17 @@ Returning to emulation...
 
 Then when the debugger is invoked at program startup, you can ask it to:
 - collect CPU instruction history,
-- break on exceptions that trigger the panic, and
+- break on exceptions that trigger the panic,
+- load symbols and profile what happens as this will
+  provide EmuTOS callstack when debugger is entered, and
 - trace all OS calls and line-A opcodes leading to the panic
 with:
 -----------
 > history on
 > setopt -D
 Exception debugging enabled.
+> symbols etos512k.sym
+> profile on
 > trace os_all
 > b LineAOpcode ! LineAOpcode :trace
 CPU condition breakpoint 2 with 1 condition(s) added:
@@ -206,8 +210,9 @@ Returning to emulation...
 -----------
 
 So that when the exception causing the panic triggers the debug, you
-see the OS calls and line-A opcodes leading to it, and have a panic
-message on console from which you can copy&paste relevant parts.
+see EmuTOS callstack and the OS calls & line-A opcodes leading to it,
+and have a panic message on console from which you can copy&paste
+relevant parts.
 
 You can then ask what the register values are at that point and what
 are the CPU instructions leading to it with the "r" and "history"
