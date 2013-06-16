@@ -22,7 +22,8 @@ const char History_fileid[] = "Hatari history.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "68kDisass.h"
 
-bool bHistoryEnabled;
+
+history_type_t HistoryTracking;
 
 #define HISTORY_ITEMS	256
 
@@ -48,7 +49,7 @@ static struct {
 /**
  * Convert debugger entry/breakpoint entry reason to a string
  */
-const char* History_ReasonStr(debug_reason_t reason)
+static const char* History_ReasonStr(debug_reason_t reason)
 {
 	switch(reason) {
 	case REASON_CPU_EXCEPTION:
@@ -70,16 +71,34 @@ const char* History_ReasonStr(debug_reason_t reason)
 
 
 /**
- * Enable/disable history collecting.
- * Clear history on disabling as data wouldn't
- * then be anymore valid.
+ * Set what kind of history is collected.
+ * Clear history if tracking type changes as rest of
+ * data wouldn't then be anymore valid.
  */
-void History_Enable(bool enable)
+static void History_Enable(history_type_t track)
 {
-	if (!enable) {
+	const char *msg;
+	if (track != HistoryTracking) {
 		memset(&History, 0, sizeof(History));
 	}
-	bHistoryEnabled = enable;
+	switch (track) {
+	case HISTORY_TRACK_NONE:
+		msg = "disabled";
+		break;
+	case HISTORY_TRACK_CPU:
+		msg = "enabled for CPU";
+		break;
+	case HISTORY_TRACK_DSP:
+		msg = "enabled for DSP";
+		break;
+	case HISTORY_TRACK_ALL:
+		msg = "enabled for CPU & DSP";
+		break;
+	default:
+		msg = "error";
+	}
+	HistoryTracking = track;
+	fprintf(stderr, "History tracking %s.\n", msg);
 }
 
 /**
@@ -199,11 +218,19 @@ int History_Parse(int nArgc, char *psArgs[])
 	if (count <= 0 || count > HISTORY_ITEMS) {
 		/* no count -> enable or disable? */
 		if (strcmp(psArgs[1], "on") == 0) {
-			History_Enable(true);
+			History_Enable(HISTORY_TRACK_ALL);
 			return DEBUGGER_CMDDONE;
 		}
 		if (strcmp(psArgs[1], "off") == 0) {
-			History_Enable(false);
+			History_Enable(HISTORY_TRACK_NONE);
+			return DEBUGGER_CMDDONE;
+		}
+		if (strcmp(psArgs[1], "cpu") == 0) {
+			History_Enable(HISTORY_TRACK_CPU);
+			return DEBUGGER_CMDDONE;
+		}
+		if (strcmp(psArgs[1], "dsp") == 0) {
+			History_Enable(HISTORY_TRACK_DSP);
 			return DEBUGGER_CMDDONE;
 		}
 		fprintf(stderr,  "History range is 1-%d!\n", HISTORY_ITEMS);

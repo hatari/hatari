@@ -130,6 +130,8 @@ Emulator:
   - In addition to text section offset, data and bss section offsets
     can be given when loading symbols (useful for Devpac symbols)
   - Output what value was set by options if it's not otherwise shown by UI
+  - New 'cpu' and 'dsp' options to 'history' command for tracing just
+    one of these processors on Falcon
   - Function arguments are shown in traces for all non-MiNT GEMDOS calls
     and subset of arguments are now shown also for AES calls (values in
     intin array and strings in addrin array)

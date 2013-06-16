@@ -551,7 +551,7 @@ void DebugCpu_Check(void)
 		if (nCpuSteps == 0)
 			DebugUI(REASON_CPU_STEPS);
 	}
-	if (bHistoryEnabled)
+	if (History_TrackCpu())
 	{
 		History_AddCpu();
 	}
@@ -571,7 +571,7 @@ void DebugCpu_SetDebugging(void)
 	bCpuProfiling = Profile_CpuStart();
 	nCpuActiveCBs = BreakCond_BreakPointCount(false);
 
-	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || bHistoryEnabled
+	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || History_TrackCpu()
 	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS))
 	    || ConOutDevice != CONOUT_DEVICE_NONE)
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);

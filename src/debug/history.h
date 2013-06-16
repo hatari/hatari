@@ -8,16 +8,28 @@
 #ifndef HATARI_HISTORY_H
 #define HATARI_HISTORY_H
 
-/* couldn't think of better place for this */
-extern const char* History_ReasonStr(debug_reason_t reason);
+/* what processors are tracked */
+typedef enum {
+	HISTORY_TRACK_NONE = 0,
+	HISTORY_TRACK_CPU = 1,
+	HISTORY_TRACK_DSP = 2,
+	HISTORY_TRACK_ALL = 3,
+} history_type_t;
+
+extern history_type_t HistoryTracking;
+
+static inline bool History_TrackCpu(void)
+{
+	return HistoryTracking & HISTORY_TRACK_CPU;
+}
+static inline bool History_TrackDsp(void)
+{
+	return HistoryTracking & HISTORY_TRACK_DSP;
+}
 
 /* for debugcpu/dsp.c */
-extern bool bHistoryEnabled;
 extern void History_AddCpu(void);
 extern void History_AddDsp(void);
-
-/* for debugInfo.c & breakcond.c */
-extern void History_Enable(bool enable);
 
 /* for debugInfo.c */
 extern void History_Show(Uint32 count);

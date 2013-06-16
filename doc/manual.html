@@ -3553,12 +3553,12 @@ GEMDOS 0x3D Fopen("TEST.TXT", read-only)
 </dd>
 
 <dt><em>Seeing code leading to a breakpoint</em></dt>
-<dd>To see the instructions executed before debugger was entered,
-you need to enabled history tracking beforehand and then whenever the
-debugger is entered, you can request given number (here 16) of past
-instructions to be shown:
+<dd>To see CPU instructions executed before debugger was entered,
+you need to enabled history tracking <em>before</em> it. Whenever
+debugger is entered, you can then request given number (here 16) of
+past instructions to be shown:
 <pre>
-history  on
+history  cpu
 c
 [breakpoint is hit and debugger entered]
 history  16
@@ -3567,8 +3567,8 @@ history  16
 
 <dt><em>Getting instruction execution history for every breakpoint</em></dt>
 <dd>
-To see last 16 instructions whenever (a normal or tracing) breakpoint
-is hit:
+To see last 16 instructions for both CPU and DSP whenever
+(a normal or tracing) breakpoint is hit:
 <pre>
 history  on
 lock  history 16

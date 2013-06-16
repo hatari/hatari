@@ -808,10 +808,11 @@ static const dbgcommand_t uicommand[] =
 	  false },
 	{ History_Parse, NULL,
 	  "history", "hi",
-	  "show last CPU & DSP PC values & executed instructions",
-	  "on|off|<count>\n"
-	  "\t'on' and 'off' can be used to enabled & disable history,\n"
-	  "\tcount will show (at max) given number of last saved PC values\n"
+	  "show last CPU/DSP PC values & executed instructions",
+	  "cpu|dsp|on|off|<count>\n"
+	  "\t'cpu' and 'dsp' tracks instruction history for just given\n"
+	  "\t processor, 'on' tracks them both, 'off' will disable history.\n"
+	  "\tCount will show (at max) given number of last saved PC values\n"
 	  "\tand instructions at corresponding RAM addresses.",
 	  false },
 	{ DebugInfo_Command, DebugInfo_MatchInfo,

@@ -377,7 +377,7 @@ void DebugDsp_Check(void)
 		if (nDspSteps == 0)
 			DebugUI(REASON_DSP_STEPS);
 	}
-	if (bHistoryEnabled)
+	if (History_TrackDsp())
 	{
 		History_AddDsp();
 	}
@@ -394,7 +394,7 @@ void DebugDsp_SetDebugging(void)
 	bDspProfiling = Profile_DspStart();
 	nDspActiveCBs = BreakCond_BreakPointCount(true);
 
-	if (nDspActiveCBs || nDspSteps || bDspProfiling || bHistoryEnabled
+	if (nDspActiveCBs || nDspSteps || bDspProfiling || History_TrackDsp()
 	    || LOG_TRACE_LEVEL((TRACE_DSP_DISASM|TRACE_DSP_SYMBOLS)))
 		DSP_SetDebugging(true);
 	else
