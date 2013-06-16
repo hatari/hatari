@@ -324,7 +324,7 @@ class InstructionStats:
     def __init__(self, processor, clock, fields):
         "processor name, its speed and profile field names"
         # Calls item will be deducted from instruction values
-        self.names = ["Calls"] + fields
+        self.names = ["Visits/calls"] + fields
         self.items = len(self.names)
         self.max_line = [0] * self.items
         self.max_addr = [0] * self.items
