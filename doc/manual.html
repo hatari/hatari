@@ -3471,6 +3471,24 @@ a  $12345 :6
 </pre>
 </dd>
 
+<dt><em>Stopping when specific exception happens</em></dt>
+<dd>Hatari's -D option doesn't invoke debugger on all exceptions and
+doesn't allow invoking debugger just for specific exceptions.  To
+stop at specific exception, one can check when it's called.
+At the start of memory is the CPU exception table for exception
+handler addresses, so to stop e.g. at bus error with some extra
+information, one can use following:
+<pre>
+history  on
+b  pc=($8)
+</pre>
+After bus error invokes debugger, 'history' command can then be used
+to see (executed memory addresses with their current) instructions
+leading to the error.  The most interesting vector addresses are:
+$8 (Bus error), $C (Address error), $10 (Illegal instruction),
+$14 (Division by zero).
+</dd>
+
 <dt><em>Stopping when register has a specific value</em></dt>
 <dd>To stop when e.g. D1 register contains value 5, set a breakpoint on:
 <pre>
@@ -3576,7 +3594,7 @@ c
 </pre>
 </dd>
 
-<dt><em>Single step so that new register values are shown after each step</em></dt>
+<dt><em>Single stepping so that new register values are shown after each step</em></dt>
 <dd>
 <pre>
 lock  registers
@@ -3648,7 +3666,7 @@ post-processing</a> can provide execution callgraphs.
 
 <p>
 Hint: for most of the above commands, one just needs to prefix them with
-"d" (or "dsp" if using full command names) to do similar operation on
+"d" (or "dsp" when using full command names) to do similar operation on
 the DSP.
 </p>
 
