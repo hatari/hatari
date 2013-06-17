@@ -174,6 +174,7 @@ Fixed Games:
   Captain Blood (IKBD, fixed problem when setting the clock)
   Fokker and Downfall (ACIA/IKBD, had regressed in Hatari v1.6.x)
   Fuzion CD 77/78/84 Menu (MFP, random crash with digidrums in STF mode)
+  James Pond (Fuzion CD 25) (FDC, game stuck during the intro)
   Microprose Golf (FDC, crash during the intro)
   Super Hang On and Super Monaco GP (MFP, flickering rasters)
   The Final Conflict (MFP, locked during the sampled intro music)
