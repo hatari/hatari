@@ -176,6 +176,7 @@ Fixed Games:
   Fuzion CD 77/78/84 Menu (MFP, random crash with digidrums in STF mode)
   James Pond (Fuzion CD 25) (FDC, game stuck during the intro)
   Microprose Golf (FDC, crash during the intro)
+  Spidertronic (Zuul CD 84) (crashed before 50/60 Hz screen)
   Super Hang On and Super Monaco GP (MFP, flickering rasters)
   The Final Conflict (MFP, locked during the sampled intro music)
   The Sentinel (IKBD, mouse much too slow)
