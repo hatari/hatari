@@ -127,6 +127,15 @@ is missing here, please remind me!):
 - Gilles Fetis: fixes to MMU emulation (from NeXT emulator project
   using Hatari code).
 
+- Peter Putnik (Petari): for helping with tracking the cause of the crash
+  in Microprose Golf (FDC emulation). Also wrote some useful tools
+  to handle floppies (flofor, floimg).
+
+- Jean Louis Guerin (DrCoolZic): for the 'Panzer' program, very useful to test
+  some FDC behaviours and timings on real hardware and to compare them
+  with the emulated system. Also wrote some nice docs on WD1772
+  and methods commonly used for games' protections.
+
 
  Code from other projects
  ------------------------
