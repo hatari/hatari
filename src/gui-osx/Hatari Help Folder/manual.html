@@ -1,15 +1,13 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
 <head>
   <title>Hatari User's Manual</title>
   <meta name="description"
- content="User's manual for the Atari ST emulator Hatari">
-  <meta name="author" content="Hatari development team">
-  <meta name="keywords" content="hatari, documentation, manual, linux">
-  <meta name="resource-type" content="document">
-  <meta name="distribution" content="global">
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
-  <meta http-equiv="Content-Style-Type" content="text/css">
+        content="User's manual for the Atari ST emulator Hatari" />
+  <meta name="author" content="Hatari development team" />
+  <meta name="keywords" content="hatari, documentation, manual, linux" />
+  <meta name="viewport" content="width=device-width; initial-scale=1.0;" />
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
   <style type="text/css">
   <!--
 	body {  background:#FFFFFF;
@@ -22,6 +20,7 @@
 	h2 { border-bottom:solid thin black;}
 	h4.gui { clear:right }
 	h5 { margin-bottom:2px; margin-left:1em; }
+	hr { width: 100%; height: 2px; margin-top:4ex; margin-bottom: 2ex; }
 
 	pre {	color: black;
 		background:#eeeeee;
@@ -30,6 +29,7 @@
 		border: solid thin #ccaa88;
 		}
 
+	th { text-align:center; }
 	td { font-family:Verdana,Arial,Helvetica,sans-serif; }
 
 	a:link { color:#000099; background:#ffffff; text-decoration:none; }
@@ -45,9 +45,20 @@
 	.backdropped { background:#ffffee; }
 	.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
 	.floatimage { clear:right; float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
+	.validhtml { border-width:3px; float:left; }
+	.bottomdate { float:right; }
+	.clearboth { clear:both; }
 
+	table.keytable { border:1px solid; }
+	table.keytable tbody { text-align:center; }
+	table.keytable th { border:1px solid; padding:3px; }
+	table.keytable td { border:1px solid; padding:3px; }
+
+	p.parameter { margin: 1px 1em 1px 11%; font-weight:bold; }
+	p.paramdesc { margin: 1px 1em 1px 22%; }
   -->
   </style>
+  <script type="text/javascript" src="toc.js"></script>
 </head>
 
 <body>
@@ -55,105 +66,31 @@
 <h1 class="pageheader">Hatari User's Manual</h1>
 
 <p class="pageheader">
-Version 1.4
+Version 1.7
 </p>
 <p class="pageheader">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
  &amp; <strong>Eero Tamminen</strong>
 </p>
 <p class="pageheader">
-Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
- target="_blank">http://hatari.berlios.de/</a></strong>
+Hatari on the WWW:
+<strong>
+<a href="http://hatari.tuxfamily.org/">http://hatari.tuxfamily.org/</a>
+</strong>
 </p>
 
-<h2>Index</h2>
-<ul>
-  <li><a href="#Introduction">Introduction</a>
-  <ul>
-    <li><a href="#General description">General description</a>
-    <li><a href="#Features">Features</a>
-    <li><a href="#STE hardware emulation">STE hardware emulation</a>
-    <li><a href="#TT hardware emulation">Experimental TT hardware emulation</a>
-    <li><a href="#Falcon hardware emulation">Falcon hardware emulation</a>
-    <li><a href="#System requirements">System requirements</a>
-  </ul>
-  <li><a href="#Compiling and running">Compiling and running</a>
-  <ul>
-    <li><a href="#Compiling Hatari">Compiling Hatari</a>
-    <li><a href="#Installation of a TOS ROM">Installation of a TOS ROM</a>
-    <li><a href="#Installation of the binary">Installation of the binary</a>
-    <li><a href="#Running Hatari for the first time">Running Hatari for the first time</a>
-  </ul>
-  <li><a href="#Command line options">Command line options and arguments</a>
-  <li><a href="#Using the emulated system">Using the emulated system</a>
-  <ul>
-    <li><a href="#The GUI">The GUI</a>
-    <ul>
-      <li><a href="#The Main Menu">The Main Menu</a>
-      <li><a href="#The File Selector Dialog">The File Selector Dialog</a>
-      <li><a href="#The System Dialog">The System Dialog</a>
-      <li><a href="#The Floppy Disks Dialog">The Floppy Disks Dialog</a>
-      <li><a href="#The Hard Disks Dialog">The Hard Disks Dialog</a>
-      <li><a href="#The Memory Dialog">The Memory Dialog</a>
-      <li><a href="#The ROM Dialog">The ROM Dialog</a>
-      <li><a href="#The Joystick Dialog">The Joystick Dialog</a>
-      <li><a href="#The Atari Monitor Dialog">The Atari Monitor Dialog</a>
-      <li><a href="#The Hatari Screen Dialog">The Hatari Screen Dialog</a>
-      <li><a href="#The Keyboard Dialog">The Keyboard Dialog</a>
-      <li><a href="#The Sound Dialog">The Sound Dialog</a>
-      <li><a href="#The Devices Dialog">The Devices Dialog</a>
-    </ul>
-    <li><a href="#Keyboard shortcuts">Keyboard shortcuts</a>
-    <li><a href="#Emulated Atari ST keyboard">Emulated Atari ST keyboard</a>
-    <li><a href="#Emulated mouse">Emulated mouse</a>
-    <li><a href="#Emulated joystick">Emulated joystick</a>
-    <li><a href="#Emulated video">Emulated video</a>
-    <li><a href="#Emulated printer">Emulated printer</a>
-    <li><a href="#Emulated RS232">Emulated RS232</a>
-  </ul>
-  <li><a href="#Floppy disk images">Floppy disk images</a>
-  <li><a href="#Hard disk support">Hard disk support</a>
-  <ul>
-    <li><a href="#GEMDOS based hard disk emulation">GEMDOS based hard disk emulation</a></li>
-    <li><a href="#ACSI hard disk emulation">ACSI hard disk emulation</a></li>
-    <li><a href="#IDE hard disk emulation">IDE hard disk emulation</a></li>
-  </ul>
-  <li><a href="#Moving files to/from hard disk images">Moving files to/from hard disk images</a>
-  <ul>
-    <li><a href="#Using HD Driver with GEMDOS partitions">Using HD Driver with GEMDOS partitions</a></li>
-    <li><a href="#Accessing HDD image partitions outside of Hatari">Accessing HDD image partitions outside of Hatari</a></li>
-  </ul>
-  <li><a href="#The debugger">The debugger</a>
-  <ul>
-    <li><a href="#General debugger use">General debugger use</a>
-    <li><a href="#Inspecting emulation state">Inspecting emulation state</a>
-    <li><a href="#Debug symbols">Debug symbols</a>
-    <li><a href="#Breakpoints">Breakpoints</a>
-    <li><a href="#Tracing">Tracing</a>
-    <li><a href="#Profiling">Profiling</a>
-    <li><a href="#Build notes">Build notes</a>
-  </ul>
-  <li><a href="#Performance">Performance</a>
-  <ul>
-    <li><a href="#Improving Hatari performance">Improving Hatari performance</a>
-    <li><a href="#Emulation options">Emulation options</a>
-    <li><a href="#Emulator options">Emulator options</a>
-    <li><a href="#Measuring the performance">Measuring the performance</a>
-  </ul>
-  <li><a href="#Appendix">Appendix</a>
-  <ul>
-    <li><a href="#Copying">Copying</a>
-    <li><a href="#Introduction to Emulation">Introduction to Emulation</a>
-  </ul>
-</ul>
+<h2 class="no-TOC">Index</h2>
 
+<div id="generated-toc">
+<!-- The TOC is generated automatically via JavaScript -->
+</div>
 
-<a name="Introduction"></a><h2>Introduction</h2>
+<h2>Introduction</h2>
 
-<a name="General description"></a><h3>General description</h3>
+<h3>General description</h3>
 <p>
-Hatari is an Atari ST, STE, TT and Falcon emulator for Linux, FreeBSD, BeOS and
-other Systems which are supported by the SDL library.
+Hatari is an Atari ST, STE, TT and Falcon emulator for Linux, OSX,
+Windows and other Systems which are supported by the SDL library.
 The emulator is open source software and is distributed under the terms of the
 <a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU General
 Public License (GPL)</a>.
@@ -169,18 +106,20 @@ Unlike many other Atari ST emulators which try to give you a good
 environment for running GEM applications, Hatari tries to emulate the hardware
 of a ST as close as possible so that it is able to run most of the old ST games
 and demos. Of course you can run normal GEM applications with Hatari, too.
-Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
+Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
 </p>
 
-<a name="Features"></a><h3>Features</h3>
+<h3>Features</h3>
 <ul>
-  <li>68000 - 68040 emulation via the UAE CPU core (no PMMU support though)</li>
+  <li>68000 - 68040 emulation via the UAE CPU core
+      (MMU emulation only with the WinUAE CPU core)</li>
   <li>ST RAM size variable (from 512kiB up to 14MiB are possible)</li>
   <li>optional cartridge images for the ST ROM port</li>
   <li>most of the ST specific hardware</li>
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
     overscan effects for all borders in color resolutions</li>
   <li>512 color ST palette</li>
+  <li>Spec512 mode support for low and medium resolutions</li>
   <li>many raster effects </li>
   <li>scaling of low resolutions by factor two</li>
   <li>interleaved lines rendering of ST-medium and (scaled) ST-low
@@ -210,23 +149,21 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
   <li>TOS versions 1.00, 1.02, 1.04 and 2.06 (and EmuTOS) can be used in ST mode.</li>
 </ul>
 
-<a name="STE hardware emulation"></a>
 <h4>STE hardware emulation</h4>
-There is support for following additional STE features:
+<p>There is support for following additional STE features:</p>
 <ul>
   <li>horizontal and vertical hardware fine scrolling</li>
   <li>split screen techniques / in-screen video address manipulations</li>
   <li>(STE specific) left border opening</li>
   <li>4096 colors STE palette</li>
   <li>Stereo DMA sample sound</li>
-  <li>Experimental Microwire/LMC1992 emulation</li>
+  <li>Microwire/LMC1992 emulation</li>
   <li>STE joypads</li>
   <li>TOS versions 1.06, 1.62, 2.05 and 2.06 (and EmuTOS) can be used in STE mode.</li>
 </ul>
 
-<a name="TT hardware emulation"></a>
 <h4>Experimental TT hardware emulation</h4>
-There is support for following additional TT features:
+<p>There is support for following additional TT features:</p>
 <ul>
   <li>TT low/med/high resolution support</li>
   <li>ST/TT palette switching and video shifter</li>
@@ -234,11 +171,10 @@ There is support for following additional TT features:
   <li>Only TOS version 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
 
-<a name="Falcon hardware emulation"></a>
 <h4>Falcon hardware emulation</h4>
-There is support for following additional Falcon features:
+<p>There is support for following additional Falcon features:</p>
 <ul>
-  <li>Partial Videl emulation for all Falcon screen modes</li>
+  <li>Partial Videl and Videl borders emulation for all Falcon screen modes</li>
   <li>Aspect correction and scaling of small resolutions by an integer factor</li>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
@@ -258,9 +194,9 @@ Software Compatibility List</a> for which Atari programs are known
 to be affected by them.</p>
 
 
-<a name="System requirements"></a><h3>System requirements</h3>
+<h3>System requirements</h3>
 
-<p> Hatari currently has the following system requirements: </p>
+<p> Hatari currently has the following minimum system requirements:</p>
 <ul>
   <li>a fast PC (&gt;500MHz, for Falcon and TT emulation
       <a href="#Performance">even faster</a>)</li>
@@ -272,73 +208,87 @@ to be affected by them.</p>
 </ul>
 
 <p>
-Certain versions of Hatari have successfully been tested by various people on
+In the course of time Hatari has successfully been tested by various people on
 the following systems:
 </p>
 <ul>
   <li>Linux/i86 with Kernel 2.4.x and 2.6.x</li>
   <li>Linux/PPC with Kernel 2.4.x and 2.6.x</li>
-  <li>BeOS/i86 </li>
-  <li>Apple PowerMac with Mac OS X </li>
-  <li>NetBSD 1.6 </li>
+  <li>BeOS/i86</li>
+  <li>Apple Mac OS X on PowerPC and i86</li>
+  <li>NetBSD 1.6 on i86</li>
   <li>NetBSD on a Digital Alpha</li>
   <li>FreeBSD 4.1 on an i486, FreeBSD 4.8 on a Pentium 4 and FreeBSD 5.1</li>
-  <li>OpenBSD 3.5 </li>
+  <li>OpenBSD 3.5 and 5.0</li>
   <li>Solaris 8 on a SUN UltraSparc 1</li>
   <li>Linux/ARM (oabi) on Sharp Zaurus SL-C760 PDA</li>
   <li>Linux/ARM (eabi) on Nokia Maemo Internet Tablets and N900 phone</li>
+  <li>Windows XP</li>
 </ul>
 
-<a name="Compiling and running"></a><h2>Compiling and running</h2>
+<h2>Compiling and running</h2>
 
-<a name="Compiling Hatari"></a><h3>Compiling Hatari</h3>
+<h3>Compiling Hatari</h3>
 
-<p> First, you need the SDL library, you can get it at:
-<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>. Most
-distributions already ship a suitable version.
-Make sure to install the appropriate header files as well often called
-"libsdl-dev" or the like.
-</p>
-<p> Second, you need the zLib compression library. You can get it from <a
- href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>
-but the version shipped with your distribution will be sufficient in
-most cases. Make sure to have the header files
-for it installed as well.
-</p>
+<p>Required:</p>
+<ul>
+<li>A C compiler. Preferably GCC, but others have worked too.</li>
+<li>A working CMake installation. See
+<a href="http://www.cmake.org/">http://www.cmake.org/</a> for details.
+<li>The SDL library v1.2.10 or newer. You can get it from
+<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>.
+</li>
+<li>The zLib compression library. You can get it from
+<a href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>.
+</li>
+</ul>
+
+<p>Optional:</p>
+<ul>
+<li>The PNG image library for PNG format screenshots and to
+decrease AVI video recording file sizes. You can get it from
+<a href="http://www.libpng.org/">http://www.libpng.org/</a>.</li>
+<li>The GNU Readline library for Hatari debugger command line editing.</li>
+<li>The Xlib library to support Hatari Python UI window embedding
+on systems with the X window system (Linux and other unixes).</li>
+<li>The portaudio library for Falcon microphone recording support</li>
+</ul>
 <p>
-For optional features like PNG format screenshots and Hatari window
-embedding, you need to have the header files for libpng and libX11.
-For Falcon microphone recording support portaudio library is needed.
+The versions available in your Linux distribution will be sufficient
+in most cases, but make sure you have also the header files installed
+for the libraries as well! Typically they're in a corresponding -dev
+package.
 </p>
+
 <p>
-Of course, you need the GNU C compiler and (GNU) Make, too!
-</p>
-<p> Change to the <span class="file">hatari/</span> directory, copy
-<span class="file">Makefile-default.cnf</span> to
-<span class="file">Makefile.cnf</span> and adapt the configuration file
-to suite your system. Alternatively, you can use the supplied configure
-script to auto-detect all parameters (type
-"<span class="commandline">./configure --help</span>"
-to see the options of the script).
-Don't forget to use some good CFLAGS for the compiler optimizations, e.g.
-run <span class="commandline">configure</span> in the following way:
-</p>
+After you've verified that you have the required libraries and their
+development files, change to the <span class="file">hatari/</span>
+directory.  Create a <span class="file">build/</span> directory under
+it and configure the build system for your environment:
 <pre>
-CFLAGS="-O3 -fomit-frame-pointer" ./configure
+mkdir -p build
+cd build
+cmake ..
 </pre>
 <p>
 Then compile Hatari by typing <span class="commandline">make</span>.
-If all
-works fine, you'll get the executable <span class="commandline">hatari</span>
+If all works fine, you'll get the executable <span class="commandline">hatari</span>
 in the src/ subdirectory.
 </p>
+<p>
+Note: Instead of calling CMake directly, you can also use the supplied
+configure script to run CMake and to give the arguments (like install
+prefix) in a format familiar from GNU Autotools using programs.  Type
+"<span class="commandline">./configure --help</span>"
+to see all the options supported by this script.
+</p>
 
-<a name="Installation of a TOS ROM"></a><h3>Installation of a TOS ROM</h3>
+<h3>Installation of a TOS ROM</h3>
 
 <p>
 Before you can start Hatari, you have to copy a TOS ROM image to the data
-directory (the data directory is specified
-in the configuration file <span class="file">Makefile.cnf</span>) and
+directory (<span class="file">&lt;prefix&gt;/share/hatari/</span>, by
+default <span class="file">/usr/local/share/hatari/</span>) and
 rename it to <span class="commandline">tos.img</span>, or use the
 <span class="commandline">--tos</span> command line option to tell
 Hatari where to find a TOS ROM.
@@ -364,19 +314,18 @@ more details), but it's free and compatible with Hatari.</p>
 find a suitable TOS image in the default dir, you'll get the chance to
 select a TOS image file from the GUI. </p>
 
-<a name="Installation of the binary"></a><h3>Installation of the binary</h3>
+<h3>Installation of the binary</h3>
 
-<p> Type <span class="commandline">make install</span> as root to do a
-systemwide installation. In this case it is recommended
-to set the DATADIR variable in Makefile.cnf to a proper value. <tt>/usr/local/share/hatari</tt>
-is a good value in that case.</p>
-<p>The Hatari executable should now be in your PATH and accessible from
-anywhere.</p>
+<p> Type <span class="commandline">make install</span> as "root" user to
+do a systemwide installation.</p>
+<p>Assuming you didn't change the default installation prefix and that
+<span class="file">/usr/local/bin/</span> is in your PATH, you should
+be now able to start the Hatari executable from anywhere.</p>
 <p> When you finally have got a TOS image, try starting Hatari with the
 option <span class="commandline">--help</span> to find out more about
 its command line parameters. </p>
 
-<a name="Running Hatari for the first time"></a><h3>Running Hatari for the first time</h3>
+<h3>Running Hatari for the first time</h3>
 
 <p> Now type <span class="commandline">hatari</span> to run the
 emulator for the first time. If all goes
@@ -387,8 +336,28 @@ to turn on the GUI to
 configure Hatari to suit your needs, press <span class="key">F11</span>
 to toggle windowed and fullscreen mode. </p>
 
-<a name="Command line options"></a><h2>Command line options
-and arguments</h2>
+<h3>Configuration options precedence</h3>
+
+<p>Hatari settings can come from several sources, with later ones
+overriding the earlier given ones:
+<ul>
+<li>Builtin Hatari default options (which are different for old UAE and WinUAE
+    CPU core builds, former defaults to ST, latter to Falcon)</li>
+<li>Global <span class="commandline">/etc/hatari.cfg</span>
+    (or <span class="commandline">/usr/local/etc/hatari.cfg</span>)
+    configuration file</li>
+<li>User specific <span class="commandline">~/.hatari/hatari.cfg</span>
+    configuration file</li>
+<li>Command line arguments
+<li>Option changes done at run-time in Hatari options GUI, with debugger "setopt"
+    command or through the (optionally enabled) Hatari control socket.
+</ul>
+
+<p>Some of the run-time changes require emulation to be reseted for them
+to take effect.</p>
+
+
+<h2>Command line options and arguments</h2>
 
 <p>Usage:</p>
 <pre>
@@ -401,7 +370,11 @@ and arguments</h2>
 <li>A directory that should be emulated as a virtual GEMDOS hard disk, or</li>
 <li>An Atari program that should be autostarted.  In this case
     the program's directory will be used as the C: drive from
-    where this program will be started.</li>
+    where this program will be started.
+    (Note that autostarting a program might not work if you've also
+    specified a floppy image for drive A: on command line or in config
+    file which contains a desktop.inf/newdesk.inf/emutos.inf file on
+    it.)</li>
 </ul>
 
 <p>Booting will be done from the disk image or directory that's given
@@ -413,1131 +386,437 @@ corresponds to A: or C:).</p>
 <!--
 Generated from hatari.1 options section by changing subheaders to h3
 and removing extra paragraphs:
-  groff -man -Thtml hatari.1 | awk '
-  /OPTIONS<\/h/ { out = 1; next }
-  /INDENTATION/ { next }
+  groff -man -Thtml hatari.1 | tidy | awk '
+  /h2.OPTIONS/ { out = 1; next }
   /COMMANDS/ { out = 0; next }
-  { if(out) print }' | sed -e 's/h2/h3/g' -e 's/<\/*p>//g'
+  { if(out) print }' \
+  | sed -e 's/h2/h3/g' -e 's/<b>//' -e 's/<\/b>//' \
+        -e 's/style="margin-left:11%;[^"]*"/class="parameter"/g' \
+        -e 's/style="margin-left:22%;"/class="paramdesc"/g'
 -->
 
-<a name="General options"></a>
 <h3>General options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-h, --help</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Print command line options and terminate
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-v, --version</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Print version information and terminate
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--confirm-quit &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Whether Hatari confirms quitting
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-c, --configfile
-&lt;filename&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-use the given file as configuration file instead of
-~/.hatari/hatari.cfg
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--fast-forward &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-On fast machine helps skipping (fast forwarding) Hatari
-output
-</td>
-</table>
-<a name="Display options"></a>
-<h3>Display options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-m, --mono</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Start in monochrome mode instead of color
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--monitor &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Select monitor type (x = mono/rgb/vga/tv)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-f, --fullscreen</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Start the emulator in fullscreen mode
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-w, --window</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Start the emulator in window mode
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--grab</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Grab mouse (also) in window mode
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-z, --zoom &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Zoom low resolution (1=no, 2=yes)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--max-width &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Maximum window width for zooming (Falcon/TT only)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--max-height &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Maximum window height for zooming (Falcon/TT only)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--aspect &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Whether to do monitor aspect ratio correction (Falcon/TT only)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--borders &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Show ST/STE screen borders (for low/med resolution overscan demos)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--frameskips &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Skip &lt;x&gt; frames after each displayed frame to
-accelerate emulation (0=disabled, &gt;4 uses automatic
-frameskip with given value as maximum)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--statusbar &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Show statusbar (with floppy leds etc etc)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--drive-led &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Show overlay drive led when statusbar isn&rsquo;t
-shown
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--spec512 &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Hatari uses this threshold to decide when to render a
-screen with the slower but more accurate Spectrum512 screen
-conversion functions (0 &lt;= x &lt;= 512, 0=disable)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--bpp &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Force internal bitdepth (x = 8/15/16/32, 0=disable)
-</td>
-</table>
-<a name="VDI options"></a>
+<p class="parameter">&minus;h,
+&minus;&minus;help</p>
+<p class="paramdesc">Print command line options and
+terminate</p>
+<p class="parameter">&minus;v,
+&minus;&minus;version</p>
+<p class="paramdesc">Print version information and
+terminate</p>
+<p class="parameter">&minus;&minus;confirm-quit
+&lt;bool&gt;</p>
+<p class="paramdesc">Whether Hatari confirms quitting</p>
+<p class="parameter">&minus;c, &minus;&minus;configfile
+&lt;filename&gt;</p>
+<p class="paramdesc">Read additional configuration values from
+&lt;file&gt;, these override values read from the global and
+user configuration files
+</p>
+<p class="parameter">&minus;k, &minus;&minus;keymap
+&lt;file&gt;</p>
+<p class="paramdesc">load keyboard mapping from
+&lt;file&gt;</p>
+<p class="parameter">&minus;&minus;fast-forward
+&lt;bool&gt;</p>
+<p class="paramdesc">On fast machine helps skipping (fast
+forwarding) Hatari output</p>
+
+<h3>Common display options</h3>
+<p class="parameter">&minus;m,
+&minus;&minus;mono</p>
+<p class="paramdesc">Start in monochrome mode instead of
+color</p>
+<p class="parameter">&minus;&minus;monitor
+&lt;x&gt;</p>
+<p class="paramdesc">Select monitor type (x =
+mono/rgb/vga/tv)</p>
+<p class="parameter">&minus;f,
+&minus;&minus;fullscreen</p>
+<p class="paramdesc">Start the emulator in fullscreen
+mode</p>
+<p class="parameter">&minus;w,
+&minus;&minus;window</p>
+<p class="paramdesc">Start the emulator in window mode</p>
+<p class="parameter">&minus;&minus;grab</p>
+<p class="paramdesc">Grab mouse (also) in window mode</p>
+<p class="parameter">&minus;&minus;frameskips
+&lt;x&gt;</p>
+<p class="paramdesc">Skip &lt;x&gt; frames after each
+displayed frame to accelerate emulation (0=disabled, &gt;4 uses
+automatic frameskip with given value as maximum)</p>
+<p class="parameter">&minus;&minus;statusbar
+&lt;bool&gt;</p>
+<p class="paramdesc">Show statusbar (with floppy leds etc
+etc)</p>
+<p class="parameter">&minus;&minus;drive-led
+&lt;bool&gt;</p>
+<p class="paramdesc">Show overlay drive led when statusbar
+isn&rsquo;t shown</p>
+<p class="parameter">&minus;&minus;bpp
+&lt;bool&gt;</p>
+<p class="paramdesc">Force internal bitdepth (x =
+8/15/16/32, 0=disable)</p>
+
+<h3>ST/STE specific display options</h3>
+<p class="parameter">
+&minus;&minus;borders &lt;bool&gt;</p>
+<p class="paramdesc">Show ST/STE screen borders (for low/med
+resolution overscan demos)</p>
+<p class="parameter">&minus;&minus;desktop-st
+&lt;bool&gt;</p>
+<p class="paramdesc">Whether fullscreen mode uses desktop
+resolution to avoid: messing multi-screen setups, several seconds
+delay needed by LCD monitors resolution switching and the resulting
+sound break. As Hatari ST/E display code doesn&rsquo;t support
+zooming (except low-rez doubling), it doesn&rsquo;t get scaled (by
+Hatari or monitor) when this is enabled. Therefore this is mainly
+useful only if you suffer from the described effects, but still
+want to grab mouse and remove other distractions from the screen
+just by toggling fullscreen mode. (disabled by default)</p>
+<p class="parameter">&minus;&minus;spec512
+&lt;x&gt;</p>
+<p class="paramdesc">Hatari uses this threshold to decide
+when to render a screen with the slower but more accurate
+Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
+0=disable)</p>
+<p class="parameter">&minus;z, &minus;&minus;zoom
+&lt;x&gt;</p>
+<p class="paramdesc">Zoom (double) low resolution (1=no,
+2=yes)</p>
+
+<h3>Falcon/TT specific display options</h3>
+<p class="parameter">Zooming to sizes
+specified below is internally done using integer scaling factors.
+This means that different Atari resolutions may show up with
+different sizes, but they are never blurry. <br />
+&minus;&minus;desktop &lt;bool&gt;</p>
+<p class="paramdesc">Whether to use desktop resolution on
+fullscreen to avoid issues related to resolution switching.
+Otherwise fullscreen will use a resolution that is closest to the
+Hatari window size. (enabled by default)</p>
+<p class="parameter">&minus;&minus;max-width
+&lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum window width</p>
+<p class="parameter">&minus;&minus;max-height
+&lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum window height</p>
+<p class="parameter">&minus;&minus;force-max
+&lt;bool&gt;</p>
+<p class="paramdesc">Hatari window size is forced to
+specified maximum size and black borders used when Atari resolution
+doesn&rsquo;t scale evenly to it. This is most useful when
+recording videos of Falcon demos that change their resolution.
+(disabled by default)</p>
+<p class="parameter">&minus;&minus;aspect
+&lt;bool&gt;</p>
+<p class="paramdesc">Whether to do monitor aspect ratio
+correction (enabled by default)</p>
+
 <h3>VDI options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--vdi &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Whether to use VDI screen mode
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--vdi-planes &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Use extended VDI resolution with bit depth &lt;x&gt; (x = 1, 2 or 4)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--vdi-width &lt;w&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Use extended VDI resolution with width &lt;w&gt; (320 &lt; w &lt;= 1280)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--vdi-height &lt;h&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Use extended VDI resolution with height &lt;h&gt; (200 &lt; h &lt;= 960)
-</td>
-</table>
-<a name="Screen capture options"></a>
+<p class="parameter">&minus;&minus;vdi
+&lt;bool&gt;</p>
+<p class="paramdesc">Whether to use VDI screen mode</p>
+<p class="parameter">&minus;&minus;vdi&minus;planes
+&lt;x&gt;</p>
+<p class="paramdesc">Use extended VDI resolution with bit
+depth &lt;x&gt; (x = 1, 2 or 4)</p>
+<p class="parameter">&minus;&minus;vdi&minus;width
+&lt;w&gt;</p>
+<p class="paramdesc">Use extended VDI resolution with width
+&lt;w&gt; (320 &lt; w &lt;= 1280)</p>
+<p class="parameter">&minus;&minus;vdi&minus;height
+&lt;h&gt;</p>
+<p class="paramdesc">Use extended VDI resolution with height
+&lt;h&gt; (200 &lt; h &lt;= 960)</p>
+
 <h3>Screen capture options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--crop &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Remove statusbar from the screen captures
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--avirecord</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Start AVI recording
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--avi-vcodec &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Select avi video codec (x = bmp/png)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--avi-fps &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Force avi frame rate (x = 50/60/71/...)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--avi-file &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Use &lt;file&gt; to record avi
-</td>
-</table>
-<a name="Devices options"></a>
+<p class="parameter">&minus;&minus;crop
+&lt;bool&gt;</p>
+<p class="paramdesc">Remove statusbar from the screen
+captures</p>
+<p class="parameter">&minus;&minus;avirecord</p>
+<p class="paramdesc">Start AVI recording</p>
+<p class="parameter">&minus;&minus;avi-vcodec
+&lt;x&gt;</p>
+<p class="paramdesc">Select avi video codec (x =
+bmp/png)</p>
+<p class="parameter">&minus;&minus;avi-fps
+&lt;x&gt;</p>
+<p class="paramdesc">Force avi frame rate (x =
+50/60/71/...)</p>
+<p class="parameter">&minus;&minus;avi-file
+&lt;file&gt;</p>
+<p class="paramdesc">Use &lt;file&gt; to record avi</p>
+
 <h3>Devices options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-j, --joystick
-&lt;port&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Emulate joystick with cursor keys in given port (0-5)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--joy&lt;port&gt;
-&lt;type&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Set joystick type (none/keys/real) for given port
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--printer &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Enable printer support and write data to &lt;file&gt;
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--midi-in &lt;filename&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Enable MIDI support and write MIDI data to &lt;file&gt;
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--midi-out &lt;filename&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Enable MIDI support and read MIDI data from &lt;file&gt;
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--rs232-in &lt;filename&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Enable serial port support and use &lt;file&gt; as the input device
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--rs232-out &lt;filename&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Enable serial port support and use &lt;file&gt; as the output device
-</td>
-</table>
-<a name="Disk options"></a>
+<p class="parameter">&minus;j,
+&minus;&minus;joystick &lt;port&gt;</p>
+<p class="paramdesc">Emulate joystick with cursor keys in
+given port (0-5)</p>
+<p class="parameter">&minus;&minus;joy&lt;port&gt;
+&lt;type&gt;</p>
+<p class="paramdesc">Set joystick type (none/keys/real) for
+given port</p>
+<p class="parameter">&minus;&minus;printer
+&lt;file&gt;</p>
+<p class="paramdesc">Enable printer support and write data
+to &lt;file&gt;</p>
+<p class="parameter">&minus;&minus;midi-in
+&lt;filename&gt;</p>
+<p class="paramdesc">Enable MIDI support and write MIDI data
+to &lt;file&gt;</p>
+<p class="parameter">&minus;&minus;midi-out
+&lt;filename&gt;</p>
+<p class="paramdesc">Enable MIDI support and read MIDI data
+from &lt;file&gt;</p>
+<p class="parameter">&minus;&minus;rs232-in
+&lt;filename&gt;</p>
+<p class="paramdesc">Enable serial port support and use
+&lt;file&gt; as the input device</p>
+<p class="parameter">&minus;&minus;rs232-out
+&lt;filename&gt;</p>
+<p class="paramdesc">Enable serial port support and use
+&lt;file&gt; as the output device</p>
+
 <h3>Disk options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--disk-a &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Set disk image for floppy drive A
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--disk-b &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Set disk image for floppy drive B
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--protect-floppy &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Write protect floppy image contents (on/off/auto). With "auto" option
-write protection is according to the disk image file attributes.
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--protect-hd &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Write protect harddrive &lt;dir&gt; contents (on/off/auto). With "auto"
-option the protection can be controlled by setting individual files
-attributes as it disables the file attribute modifications for
-the GEMDOS hard disk emulation.
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-d, --harddrive &lt;dir&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Emulate harddrive partition(s) with &lt;dir&gt; contents
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--acsi &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Emulate an ACSI hard disk with an image &lt;file&gt;
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--ide-master &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Emulate an IDE master hard disk with an image &lt;file&gt;
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--ide-slave &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Emulate an IDE slave hard disk with an image &lt;file&gt;
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--slowfdc &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-slow down FDC emulation (deprecated)
-</td>
-</table>
-<a name="Memory options"></a>
+<p class="parameter">&minus;&minus;disk-a
+&lt;file&gt;</p>
+<p class="paramdesc">Set disk image for floppy drive A</p>
+<p class="parameter">&minus;&minus;disk-b
+&lt;file&gt;</p>
+<p class="paramdesc">Set disk image for floppy drive B</p>
+<p class="parameter">&minus;&minus;protect-floppy
+&lt;x&gt;</p>
+<p class="paramdesc">Write protect floppy image contents
+(on/off/auto). With "auto" option write protection is according to
+the disk image file attributes.</p>
+<p class="parameter">&minus;&minus;protect-hd
+&lt;x&gt;</p>
+<p class="paramdesc">Write protect harddrive &lt;dir&gt;
+contents (on/off/auto). With "auto" option the protection can be
+controlled by setting individual files attributes as it disables
+the file attribute modifications for the GEMDOS hard disk
+emulation.</p>
+<p class="parameter">&minus;&minus;gemdos-case &lt;x&gt;</p>
+<p class="paramdesc">Specify whether new dir/filenames are forced to be
+in upper or lower case with the GEMDOS HD emulation. Off by default.
+</p>
+<p class="parameter">&minus;d, &minus;&minus;harddrive
+&lt;dir&gt;</p>
+<p class="paramdesc">Emulate harddrive partition(s) with
+&lt;dir&gt; contents. If directory contains only single letter
+(C-Z) subdirectories, each of these subdirectories will be treated
+as a separate partition, otherwise the given directory itself will
+be assigned to drive "C:". In the multiple partition case, the
+letters used as the subdirectory names will determine to which
+drives/partitions they&rsquo;re assigned.</p>
+<p class="parameter">&minus;&minus;acsi
+&lt;file&gt;</p>
+<p class="paramdesc">Emulate an ACSI hard disk with an image
+&lt;file&gt;</p>
+<p class="parameter">&minus;&minus;ide&minus;master
+&lt;file&gt;</p>
+<p class="paramdesc">Emulate an IDE master hard disk with an
+image &lt;file&gt;</p>
+<p class="parameter">&minus;&minus;ide&minus;slave
+&lt;file&gt;</p>
+<p class="paramdesc">Emulate an IDE slave hard disk with an
+image &lt;file&gt;</p>
+<p class="parameter">&minus;&minus;fastfdc
+&lt;bool&gt;</p>
+<p class="paramdesc">speed up FDC emulation (can cause
+incompatibilities)</p>
+
 <h3>Memory options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-s, --memsize &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512
-KiB
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-t, --tos
-&lt;imagefile&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Specify TOS ROM image to use
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--cartridge &lt;imagefile&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Use ROM cartridge image &lt;file&gt; (only works if
-GEMDOS HD emulation and extended VDI resolution are
-disabled)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--memstate &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Load memory snap-shot &lt;file&gt;
-</td>
-</table>
-<a name="CPU options"></a>
+<p class="parameter">
+&minus;&minus;memstate &lt;file&gt;</p>
+<p class="paramdesc">Load memory snap-shot &lt;file&gt;</p>
+<p class="parameter">&minus;s, &minus;&minus;memsize
+&lt;x&gt;</p>
+<p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
+MiB, or 0 for 512 KiB</p>
+
+<h3>ROM options</h3>
+<p class="parameter">&minus;t,
+&minus;&minus;tos &lt;imagefile&gt;</p>
+<p class="paramdesc">Specify TOS ROM image to use</p>
+<p class="parameter">&minus;&minus;patch-tos
+&lt;bool&gt;</p>
+<p class="paramdesc">Use this option to enable/disable TOS
+ROM patching. Experts only! Leave this enabled unless you know what
+you are doing!</p>
+<p class="parameter">&minus;&minus;cartridge
+&lt;imagefile&gt;</p>
+<p class="paramdesc">Use ROM cartridge image &lt;file&gt;
+(only works if GEMDOS HD emulation and extended VDI resolution are
+disabled)</p>
+
 <h3>CPU options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--cpulevel &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Specify CPU (680x0) to use (use x &gt;= 1 with EmuTOS or
-TOS &gt;= 2.06 only!)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--cpuclock &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Set the CPU clock (8, 16 or 32 Mhz)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--compatible &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Use a more compatible but slower 68000 CPU mode
-</td>
-</table>
-<a name="Misc system options"></a>
+<p class="parameter">
+&minus;&minus;cpulevel &lt;x&gt;</p>
+<p class="paramdesc">Specify CPU (680x0) to use (use x &gt;=
+1 with EmuTOS or TOS &gt;= 2.06 only!)</p>
+<p class="parameter">&minus;&minus;cpuclock
+&lt;x&gt;</p>
+<p class="paramdesc">Set the CPU clock (8, 16 or 32 Mhz)</p>
+<p class="parameter">&minus;&minus;compatible
+&lt;bool&gt;</p>
+<p class="paramdesc">Use a more compatible, but slower 68000
+CPU mode with better prefetch accuracy and cycle counting</p>
+
 <h3>Misc system options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--machine &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-select machine type (x = st, ste, tt or falcon)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--blitter &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Enable blitter emulation (ST only)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--timer-d &lt;bool&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Patch redundantly high Timer-D frequency set by TOS.  This about doubles
-Hatari speed as the original Timer-D frequency causes most of the
-interrupts.
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--dsp &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Falcon DSP emulation (x = none, dummy or emu, Falcon
-only)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--sound &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Sound frequency: 6000-50066. "off" disables the sound and speeds up
-the emulation. To prevent extra sound artifacts, the frequency should be
-selected so that it either matches evenly with the STE/TT/Falcon sound
-DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
-(11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
-supports.
-</td>
-</table>
+<p class="parameter">
+&minus;&minus;machine &lt;x&gt;</p>
+<p class="paramdesc">Select machine type (x = st, ste, tt or
+falcon)</p>
+<p class="parameter">&minus;&minus;blitter
+&lt;bool&gt;</p>
+<p class="paramdesc">Enable blitter emulation (ST only)</p>
+<p class="parameter">&minus;&minus;dsp &lt;x&gt;</p>
+<p class="paramdesc">Falcon DSP emulation (x = none, dummy
+or emu, Falcon only)</p>
+<p class="parameter">&minus;&minus;timer-d
+&lt;bool&gt;</p>
+<p class="paramdesc">Patch redundantly high Timer-D
+frequency set by TOS. This about doubles Hatari speed (for ST/e
+emulation) as the original Timer-D frequency causes most of the
+interrupts.</p>
+<p class="parameter">&minus;&minus;fast-boot
+&lt;bool&gt;</p>
+<p class="paramdesc">Patch TOS and initialize the so-called
+"memvalid" system variables to by-pass the memory test of TOS, so
+that the system boots faster.</p>
+<p class="parameter">&minus;&minus;rtc
+&lt;bool&gt;</p>
+<p class="paramdesc">Enable real-time clock</p>
 
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--sound-buffer-size &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-SDL's sound buffer size : 10-100, or 0 to use default buffer size.
-By default Hatari uses an SDL buffer size of 1024 samples, which
-gives approximatively 20-30 ms of sound depending on the chosen sound
-frequency. Under some OS or with not fully supported sound card, this
-default setting can cause a bigger delay at lower frequency (nearly 0.5 sec).
-In that case, you can use this option to force the size of the sound
-buffer to a fixed number of milliseconds of sound (using 20 is often
-a good choice if you have such problems). Most users will not need this option.
-</td>
-</table>
+<h3>Sound options</h3>
+<p class="parameter">&minus;&minus;mic
+&lt;bool&gt;</p>
+<p class="paramdesc">Enable/disable (Falcon only)
+microphone</p>
+<p class="parameter">&minus;&minus;sound
+&lt;x&gt;</p>
+<p class="paramdesc">Sound frequency: 6000-50066. "off"
+disables the sound and speeds up the emulation. To prevent extra
+sound artifacts, the frequency should be selected so that it either
+matches evenly with the STE/TT/Falcon sound DMA (6258, 12517,
+250033, 50066 Hz) or your sound card frequencies (11025, 22050,
+44100 or 6000...48000 Hz). Check what your sound card supports.</p>
+<p class="parameter">&minus;&minus;sound-buffer-size
+&lt;x&gt;</p>
+<p class="paramdesc">SDL&rsquo;s sound buffer size: 10-100,
+or 0 to use default buffer size. By default Hatari uses an SDL
+buffer size of 1024 samples, which gives approximatively 20-30 ms
+of sound depending on the chosen sound frequency. Under some OS or
+with not fully supported sound card, this default setting can cause
+a bigger delay at lower frequency (nearly 0.5 sec). In that case,
+you can use this option to force the size of the sound buffer to a
+fixed number of milliseconds of sound (using 20 is often a good
+choice if you have such problems). Most users will not need this
+option.</p>
+<p class="parameter">&minus;&minus;sound-sync
+&lt;bool&gt;</p>
+<p class="paramdesc">The emulation rate is nudged by +100 or
+0 or -100 micro-seconds on occasion. This prevents the sound buffer
+from overflowing (long latency and lost samples) or underflowing
+(short latency and repeated samples). The emulation rate smoothly
+deviates by a maximum of 0.58% until synchronized, while the
+emulator continuously generates every sound sample and the crystal
+controlled sound system consumes every sample.<br />
+(on|off, off=default)</p>
+<p class="parameter">&minus;&minus;ym-mixing
+&lt;x&gt;</p>
+<p class="paramdesc">Select a method for mixing the three
+YM2149 voice volumes together. "model" uses a mathematical model of
+the YM voices, "table" uses a lookup table of audio output voltage
+values measured on STF and "linear" just averages the 3 YM
+voices.</p>
 
-
-
-
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-k, --keymap
-&lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-load keyboard mapping from &lt;file&gt;
-</td>
-</table>
-<a name="Debug options"></a>
 <h3>Debug options</h3>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>-D, --debug</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Toggle whether CPU exceptions invoke the debugger
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--bios-intercept</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Toggle Bios/XBios call interception and BIOS CON: output
-(e.g. EmuTOS console) redidirection to host terminal.
-Needed for Bios/XBios call tracing. Allows Atari programs
-to modify Hatari state through XBios 255 calls.
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--trace &lt;trace1,...&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Activate debug traces, see <b>--trace help</b> for available tracing options
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--trace-file &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Save trace output to &lt;file&gt; (default=stderr)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--parse &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Parse/execute debugger commands from &lt;file&gt;
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--control-socket &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Hatari reads options from given socket at run-time
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--log-file &lt;file&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Save log output to &lt;file&gt; (default=stderr)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--log-level &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Log output level (x=debug/todo/info/warn/error/fatal)
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--alert-level &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Show dialog for log messages above given level
-</td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="89%">
-<b>--run-vbls &lt;x&gt;</b></td>
-</table>
-<table width="100%" border=0 rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="21%"></td>
-<td width="77%">
-Exit after X VBLs
-</td>
-</table>
-
+<p class="parameter">&minus;D,
+&minus;&minus;debug</p>
+<p class="paramdesc">Toggle whether CPU exceptions invoke
+the debugger</p>
+<p class="parameter">&minus;&minus;bios-intercept</p>
+<p class="paramdesc">Toggle Bios/XBios call interception needed for
+Bios/XBios call tracing.  Allows Atari programs to modify Hatari state
+through XBios 255 calls which are processed as Hatari commandline
+arguments.  Atari printscreen call takes also Hatari screenshot.</p>
+<p class="parameter">&minus;&minus;conout &lt;device&gt;</p>
+<p class="paramdesc">Enable console (xconout vector functions) output
+redirection for given &lt;device&gt; to host terminal.  Device 2 is for
+the (CON:) VT52 console, which vector function catches also EmuTOS panic
+messages and MiNT console output, not just normal BIOS console output.</p>
+<p class="parameter">&minus;&minus;disasm &lt;x&gt;</p>
+<p class="paramdesc">Set disassembly options.  'uae' and 'ext' select
+the dissasembly engine to use, bitmask sets output options for the
+external disassembly engine and 'help' lists them.</p>
+<p class="parameter">&minus;&minus;natfeats &lt;bool&gt;</p>
+<p class="paramdesc">Enable/disable (basic) Native Features support.
+E.g. EmuTOS uses it for debug output.</p>
+<p class="parameter">&minus;&minus;trace
+&lt;trace1,...&gt;</p>
+<p class="paramdesc">Activate debug traces, see
+&minus;&minus;trace help for available tracing options</p>
+<p class="parameter">&minus;&minus;trace-file
+&lt;file&gt;</p>
+<p class="paramdesc">Save trace output to &lt;file&gt;
+(default=stderr)</p>
+<p class="parameter">&minus;&minus;parse
+&lt;file&gt;</p>
+<p class="paramdesc">Parse/execute debugger commands from
+&lt;file&gt;</p>
+<p class="parameter">&minus;&minus;saveconfig</p>
+<p class="paramdesc">Save Hatari configuration and exit.
+Hatari UI needs Hatari configuration file to start, this can be
+used to create it automatically.</p>
+<p class="parameter">&minus;&minus;no-parachute</p>
+<p class="paramdesc">Disable SDL parachute to get Hatari
+core dumps. SDL parachute is enabled by default to restore video
+mode in case Hatari terminates abnormally while using non-standard
+screen resolution.</p>
+<p class="parameter">&minus;&minus;control-socket
+&lt;file&gt;</p>
+<p class="paramdesc">Hatari reads options from given socket
+at run-time</p>
+<p class="parameter">&minus;&minus;log-file
+&lt;file&gt;</p>
+<p class="paramdesc">Save log output to &lt;file&gt;
+(default=stderr)</p>
+<p class="parameter">&minus;&minus;log-level
+&lt;x&gt;</p>
+<p class="paramdesc">Log output level
+(x=debug/todo/info/warn/error/fatal)</p>
+<p class="parameter">&minus;&minus;alert-level
+&lt;x&gt;</p>
+<p class="paramdesc">Show dialog for log messages above
+given level</p>
+<p class="parameter">&minus;&minus;run-vbls
+&lt;x&gt;</p>
+<p class="paramdesc">Exit after X VBLs</p>
 
 <p>Type <span class="commandline">hatari --help</span> to list all
 the command line options supported by a given version of Hatari.</p>
 
-<a name="Using the emulated system"></a><h2>Using the emulated system</h2>
+
+<h2>Using the emulated system</h2>
 
 <p> Once you've started Hatari succesfully, you can use the emulator as
 an almost complete Atari ST computer system. </p>
 
-<a name="The GUI"></a><h3>The GUI</h3>
+<h3>The GUI</h3>
 
 <p>Press <span class="key">F12</span> to enter the GUI. Navigate it
 with the mouse.
 The GUI is rather self explanatory.</p>
 
-<a name="The Main Menu"></a><h4 class="gui">The Main Menu</h4>
+<h4 class="gui">The Main Menu</h4>
 
 <div class="floatimage">
-<img src="images/main.png" width="500" height="304" alt="Hatari's GUI - the main menu">
+  <img src="images/main.png" width="500" height="304"
+       alt="Hatari's GUI - the main menu" />
 </div>
 
 <p>
@@ -1569,10 +848,11 @@ changes that you have made.
 </p>
 
 
-<a name="The File Selector Dialog"></a><h4 class="gui">The File Selector Dialog</h4>
+<h4 class="gui">The File Selector Dialog</h4>
 
 <div class="floatimage">
-<img src="images/fileselector.png" width="640" height="399" alt="Hatari's GUI - the fileselector">
+  <img src="images/fileselector.png" width="640" height="399"
+       alt="Hatari's GUI - the fileselector" />
 </div>
 
 <p>
@@ -1580,23 +860,25 @@ changes that you have made.
  or folder.
 </p>
 <p>
- To enter a folder or choose a file, simply click on the entry in the main box
- of the dialog. You can use the arrows at the right, the cursor up and down
- keys and the page up and down keys to navigate through the list.
+ To enter a folder or choose a file, simply click on the entry in the
+ main box of the dialog. To navigate in the file list, you can use the
+ scrollbar on the right with mouse, or use keyboard up + down arrow,
+ page up + down, Home and End keys.
 </p>
 <p>
  You can use the three buttons in the upper right corner for additional folder
- navigation. Use the <span class="button">..</span> button to go up one level
- in the directory tree. Use the <span class="button">~</span> button to return
- to your home directory. The <span class="button">/</span> button can be used
+ navigation. Click the <span class="button">..</span> button to go up one level
+ in the directory tree. Click the <span class="button">~</span> button to return
+ to your home directory. The <span class="button">/</span> button can be clicked
  to go to the root directory of the file system.
 </p>
 
 
-<a name="The System Dialog"></a><h4 class="gui">The System Dialog</h4>
+<h4 class="gui">The System Dialog</h4>
 
 <div class="floatimage">
-<img src="images/system.png" width="360" height="384" alt="Hatari's GUI - the system dialog">
+  <img src="images/system.png" width="360" height="384"
+       alt="Hatari's GUI - the system dialog" />
 </div>
 
 <p>
@@ -1630,7 +912,7 @@ changes that you have made.
  some more advanced hardware features. There are not that many demos or
  games that really require an STE but since most normal ST games/demos also
  work with an STE, it's normally safe to always work in STE mode.
- <br>
+ <br />
  TT and Falcon are more advanced, but they are not as compatible to the ST as
  the STE was. Therefore many old games and demos do not work with these machine
  types anymore. There were only very few programs that were made for the TT
@@ -1681,17 +963,18 @@ changes that you have made.
  <span class="commandline">--machine</span> command line option.</p>
 
 
-<a name="The Floppy Disks Dialog"></a><h4 class="gui">The Floppy Disks Dialog</h4>
+<h4 class="gui">The Floppy Disks Dialog</h4>
 
 <div class="floatimage">
-<img src="images/floppydisks.png" width="640" height="320" alt="Hatari's GUI - the floppy disks dialog">
+  <img src="images/floppydisks.png" width="640" height="320"
+       alt="Hatari's GUI - the floppy disks dialog" />
 </div>
 
 <p>
  This dialog can be used to choose which floppy disks should be emulated
  in the disk drives. You can use most standard Atari ST disk image files.
  You may select and browse also zipped disk images. See the chapter
- <a href="#Floppy disk images">"Floppy disk images"</a> for details.
+ <a href="#Floppy_disk_images">"Floppy disk images"</a> for details.
 </p>
 <p>
  Click on the button <span class="button">Browse</span> next to the
@@ -1709,15 +992,16 @@ insert the second disk of a two disk game automatically.
 Some games then use the second drive automatically.
 In the case that a game is not able to find the disk in the second drive,
 you have to insert the second disk in drive A: manually when prompted.
-<br>
+<br />
 <em>NOTE:</em> This option only works properly if the file name of the
 first disks ends with an 'a' before the extension and the second disk name
 ends with a 'b'.
 </p>
 <p>
- Select if you want to use slow FDC (Floppy Disk Controller) emulation.
- "Slow floppy access" is normally not required, except for some few
- slideshows / intros which run too fast without this option.
+ Select if you want to use fast FDC (Floppy Disk Controller) emulation.
+ "Fast floppy access" will speed up disk accesses, but this could give
+  some incompatibilities with some programs that expect correct delays.
+  (some games/demos don't expect data to be read too fast from the disk)
 </p>
 <p>
  You can choose if you want Hatari to write-protect your disks. Atari ST virii
@@ -1727,7 +1011,8 @@ ends with a 'b'.
 </p>
 
 <div class="floatimage">
-<img src="images/newfloppy.png" width="290" height="224" alt="Hatari's GUI - the new floppy dialog">
+  <img src="images/newfloppy.png" width="290" height="224"
+       alt="Hatari's GUI - the new floppy dialog" />
 </div>
 
 <p>
@@ -1752,10 +1037,11 @@ ends with a 'b'.
 </p>
 
 
-<a name="The Hard Disks Dialog"></a><h4 class="gui">The Hard Disks Dialog</h4>
+<h4 class="gui">The Hard Disks Dialog</h4>
 
 <div class="floatimage">
-<img src="images/harddisks.png" width="640" height="304" alt="Hatari's GUI - the hard disks dialog">
+  <img src="images/harddisks.png" width="640" height="304"
+       alt="Hatari's GUI - the hard disks dialog" />
 </div>
 
 <p>
@@ -1783,10 +1069,11 @@ ends with a 'b'.
 </p>
 
 
-<a name="The Memory Dialog"></a><h4 class="gui">The Memory Dialog</h4>
+<h4 class="gui">The Memory Dialog</h4>
 
 <div class="floatimage">
-<img src="images/memory.png" width="398" height="349" alt="Hatari's GUI - the memory dialog">
+  <img src="images/memory.png" width="398" height="349"
+       alt="Hatari's GUI - the memory dialog" />
 </div>
 
 <p>You can select the amount of RAM for the emulated ST here. Only
@@ -1805,10 +1092,11 @@ different versions of Hatari. E.q. if you compile a newer Hatari, you
 cannot load your old memory snapshots back.</p>
 
 
-<a name="The ROM Dialog"></a><h4 class="gui">The ROM Dialog</h4>
+<h4 class="gui">The ROM Dialog</h4>
 
 <div class="floatimage">
-<img src="images/tos.png" width="519" height="367" alt="Hatari's GUI - the ROM dialog">
+  <img src="images/tos.png" width="519" height="367"
+       alt="Hatari's GUI - the ROM dialog" />
 </div>
 
 <p>Here you can select the TOS image to use. Click on <span
@@ -1839,10 +1127,11 @@ when changing one of these option.
 </p>
 
 
-<a name="The Joystick Dialog"></a><h4 class="gui">The Joystick Dialog</h4>
+<h4 class="gui">The Joystick Dialog</h4>
 
 <div class="floatimage">
-<img src="images/joystick.png" width="320" height="288" alt="Hatari's GUI - the joystick dialog">
+  <img src="images/joystick.png" width="320" height="288"
+       alt="Hatari's GUI - the joystick dialog" />
 </div>
 
 <p>In this dialog, you can configure the emulated joysticks.
@@ -1872,11 +1161,11 @@ certain games. In some other games, it gets worse if you enable this option.</p>
 <p>See also the chapter "Emulated Joystick" for details.</p>
 
 
-<a name="The Atari Monitor Dialog"></a><h4 class="gui">The Atari Monitor Dialog</h4>
+<h4 class="gui">The Atari Monitor Dialog</h4>
 
 <div class="floatimage">
-<img src="images/monitor.png" width="340" height="304" alt="Hatari's
-GUI - the Atari monitor dialog">
+  <img src="images/monitor.png" width="340" height="304"
+       alt="Hatari's GUI - the Atari monitor dialog" />
 </div>
 
 <p>
@@ -1891,7 +1180,7 @@ GUI - the Atari monitor dialog">
  switch to ST medium resolution, you will get a TV-like screen rendering
  which is a little bit faster but darker compared to the normal "RGB"
  monitor mode. Switching between mono and a color monitor acts like a monitor
- switch on a real ST - so beware, this will reboot your emulated system!<br>
+ switch on a real ST - so beware, this will reboot your emulated system!<br />
  In TT mode, you can only choose between TT-high resolution ("Mono")
  and normal modes (select one of the other monitor types).
  Finally the Falcon mode supports all four types of monitors. Note that most
@@ -1910,19 +1199,18 @@ Extended VDI resolutions will emulate a sort of extended graphics
 card in the emulated ST which give you larger resolutions with a higher
 colordepth for GEM. Select a resolution and color depth. Check to
 activate. It will disable all other video options mentioned above.
-Uncheck to get back to a normal ST behaviour.<br>
+Uncheck to get back to a normal ST behaviour.<br />
 <em>Note:</em> Using an extended resolution will only work with GEM
 conformant applications. 99% of all games and demos will not run if you
 activate any extended resolution here.
 </p>
 
 
-<a name="The Hatari Screen Dialog"></a><h4 class="gui">The Hatari
-Screen Dialog</h4>
+<h4 class="gui">The Hatari Screen Dialog</h4>
 
 <div class="floatimage">
-<img src="images/screen.png" width="350" height="336" alt="Hatari's
-GUI - the Hatari screen dialog">
+  <img src="images/screen.png" width="520" height="320"
+       alt="Hatari's GUI - the Hatari screen dialog" />
 </div>
 
 <p>
@@ -1940,29 +1228,43 @@ on your screen.
  a fast computer. When selecting 1, 2 or 4, drawing of corresponding number
  of frames will be skipped after each frame actually shown by Hatari.
  Select "Auto" to let the emulator to decide whether, and
- how many frames will be skipped.<br>
+ how many frames will be skipped.<br />
  <em>Note:</em> The frameskip option also affects the frame rate of the
  screen animation recording!
 </p>
 <p>
- "Statusbar" toggles the statusbar at the bottom of the screen.
- The statusbar shows the floppy drive LEDs, the current frameskip value,
- the machine type including TOS version and memory size, and whether
- recording is currently active.
+Indicators that you can have on the Hatari window:
 </p>
+<ul>
+<li>"Statusbar" at the bottom of the screen.
+The statusbar shows the floppy drive LEDs, the current frameskip value,
+the machine type including TOS version and memory size, and whether
+recording is currently active.</li>
+<li>"Drive led" is a colored rectangle shown on top of the Hatari window
+contents. It will show any disk (floppy or hard disk) activity.</li>
+<li>"None" turns both of above options off.</li>
+</ul>
 <p>
-"Max zoomed" option controls up to which size Hatari tries to scale
+"Keep desktop resolution" option will use your desktop resolution
+for fullscreen to avoid issues related to resolution switching,
+especially on LCD monitors (they're slow).  If this isn't enabled,
+values from the "Max zoomed win" option are used in selecting
+a suitable resolution.
+<p>
+"Max zoomed win" option controls up to which size Hatari tries to scale
 the Atari resolutions and how much of the borders (enabled in Atari
-Monitor dialog) will be shown.  There are several limitations in
-this:
+Monitor dialog) will be shown.  Note that there are several limitations
+in this and the "Keep desktop resolution" option, partly because Hatari
+has different implementations for different video modes:
 </p>
 <ul>
 <li>VDI resolutions (selectable in Atari Monitor dialog) aren't scaled.</li>
 <li>ST and STE video emulation supports only doubling of the ST-low
     resolution.</li>
 <li>Hatari doesn't support downscaling. If the original Atari resolution
-    is larger (for example TT-high), the Hatari screen size will also be
-    larger than requested.</li>
+    is larger than the specified size (e.g. TT-high), the Hatari screen
+    size will also be larger than requested.  Hatari Falcon/TT window size
+    will be limited to the Desktop size though.</li>
 <li>TT and Falcon resolutions support only <em>integer</em> scaling ratios.
     If the scaling ratio cannot match the requested size exactly, Hatari
     will use a ratio that will produce smaller size closest to the
@@ -1972,7 +1274,7 @@ this:
 You should set these values to a size that suits best your monitor
 resolution. It's intended to help in getting Hatari to best use your
 monitor space on a windowed mode and in fullscreen avoiding "fuzzy"
-scaling either by Hatari or your LCD monitor.
+scaling done by your LCD monitor.
 </p>
 <p>
 Giving "-z 2" option on command line will reset max zoomed size to
@@ -1983,16 +1285,18 @@ not be enabled on very slow computers.
 <p>Click the <span class="button">Screenshot</span> button to create
 a screenshot in PNG (or BMP) format to the current working directory
 or click the <span class="button">Record&nbsp;AVI</span> button to
-record an AVI format video of Hatari screen (and audio) output.  You
-can opt to record new movie frames only when the screen content really
-changed.
+record an AVI format video of Hatari screen (and audio) output.
+</p>
+<p>
+Selecting "Crop statusbar" option will leave statusbar out from
+the screenshots and recorded videos.
 </p>
 
-
-<a name="The Keyboard Dialog"></a><h4 class="gui">The Keyboard Dialog</h4>
+<h4 class="gui">The Keyboard Dialog</h4>
 
 <div class="floatimage">
-<img src="images/keyboard.png" width="459" height="223" alt="Hatari's GUI - the keyboard dialog">
+  <img src="images/keyboard.png" width="459" height="223"
+       alt="Hatari's GUI - the keyboard dialog" />
 </div>
 
 <p>Here you can select the keyboard mapping to use. Two different mappings
@@ -2021,15 +1325,19 @@ changed.
 </p>
 
 
-<a name="The Sound Dialog"></a><h4 class="gui">The Sound Dialog</h4>
+<h4 class="gui">The Sound Dialog</h4>
 
 <div class="floatimage">
-<img src="images/sound.png" width="380" height="384" alt="Hatari's GUI - the sound dialog">
+  <img src="images/sound.png" width="400" height="400"
+       alt="Hatari's GUI - the sound dialog" />
 </div>
 
 <p>Here you can control the sound subsystem.</p>
-<p>Check if you want emulated sound at all. Emulation is faster if
+<p>Check "Enabled" if you want emulated sound at all. Emulation is faster if
 sound emulation is turned off.</p>
+<p>If you experiment latency issues with your OS audio's output, you
+can check the "Synchronize" option to adjust Hatari's video emulation to match
+your OS audio.</p>
 <p>
  Nine frequencies from low to high quality are available. Experiment a
  little bit to find out which fits best for your setup.
@@ -2037,6 +1345,12 @@ sound emulation is turned off.</p>
  For older or slower host systems, you should use a lower frequency.
  12517, 250033 and 50066 Hz are frequencies supported by
  the STE/TT/Falcon sound DMA.
+</p>
+<p>
+YM voices volume mixing "ST table" method uses a lookup table of audio output
+voltage values measured on STF, "Math model" uses a complex model to mix the
+3 YM voices and "Linear" just averages the 3 YM voices. Use "ST table" or "Math model"
+for accurate sound's emulation.
 </p>
 <p>
  You can select to record a piece of sound here.
@@ -2048,20 +1362,21 @@ sound emulation is turned off.</p>
 </p>
 
 
-<a name="The Devices Dialog"></a><h4 class="gui">The Devices Dialog</h4>
+<h4 class="gui">The Devices Dialog</h4>
 
 <div class="floatimage">
-<img src="images/devices.png" width="520" height="383" alt="Hatari's GUI - the device dialog">
+  <img src="images/devices.png" width="520" height="383"
+       alt="Hatari's GUI - the device dialog" />
 </div>
 
-<p>Check the first checkmark to enable experimental printer support.
-See the <a href="#Emulated printer">Emulated printer</a> section for
+<p>Check the first checkmark to enable printer support.
+See the <a href="#Emulated_printer">Emulated printer</a> section for
 details.</p>
 
 <p>As Hatari currently only supports printing to file, click on <span
  class="button">Browse</span> to select the file to print to. You can
 enter a new filename as well.</p>
-<p>Check the second checkmark to enable experimental RS232 support.
+<p>Check the second checkmark to enable RS232 support.
 The RS232 device is configured according to the settings of
 the emulated RS232 of the Atari ST. This means Hatari will
 automatically use baudrate and handshaking as configured for the
@@ -2070,7 +1385,7 @@ emulated ST.</p>
 device files for serial input and output.  On Linux a good choice is
 /dev/ttyS0 or /dev/ttyS1.
 </p>
-<p>Check the third checkmark to enable experimental MIDI support.
+<p>Check the third checkmark to enable MIDI support.
 Click on <span class="button">Browse</span> to select a suitable
 MIDI device files for MIDI input and output.</p>
 <p><span class="file">midi-linux.txt</span> file explains how to
@@ -2081,91 +1396,92 @@ Hatari instances.
 </p>
 
 
-<a name="Keyboard shortcuts"></a><h3 style="clear:both;">Keyboard shortcuts</h3>
+<h3 class="clearboth">Keyboard shortcuts</h3>
 
 <p> While the emulator is running, you can activate or toggle various
 features via Hatari keyboard shortcuts. Below are listed the default
 shortcut key bindings:</p>
-<table border="1" cellpadding="3">
-  <tbody>
+<table border="1" class="keytable">
+  <thead>
     <tr class="backdropped">
-      <td align="center">Shortcut</td>
-      <td align="center">Purpose</td>
+      <th>Shortcut</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="key">ALTGR+a</span></td>
+      <td>record animation</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+a</span></td>
-      <td align="center">record animation</td>
+      <td><span class="key">ALTGR+g</span></td>
+      <td>grab a screenshot</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+g</span></td>
-      <td align="center">grab a screenshot</td>
+      <td><span class="key">ALTGR+i</span></td>
+      <td>boss key: leave full screen mode, pause Hatari
+          and iconify its window</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+i</span></td>
-      <td align="center">boss key: leave full screen mode, pause Hatari
-and iconify its window</td>
+      <td><span class="key">ALTGR+j</span></td>
+      <td>toggle joystick emulation via cursor keys
+          on/off between ports 0 and 1</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+j</span></td>
-      <td align="center">toggle joystick emulation via cursor keys
-on/off between ports 0 and 1</td>
+      <td><span class="key">ALTGR+m</span></td>
+      <td>(un-)lock the mouse into the window</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+m</span></td>
-      <td align="center">(un-)lock the mouse into the window</td>
+      <td><span class="key">ALTGR+r</span></td>
+      <td>(warm) reset the ST</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+r</span></td>
-      <td align="center">(warm) reset the ST</td>
+      <td><span class="key">ALTGR+c</span></td>
+      <td>coldreset the ST (same as the original power switch)</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+c</span></td>
-      <td align="center">coldreset the ST (same as the original power
-switch)</td>
+      <td><span class="key">ALTGR+d</span></td>
+      <td>open dialog to select/change disk A</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+d</span></td>
-      <td align="center">open dialog to select/change disk A</td>
+      <td><span class="key">ALTGR+s</span></td>
+      <td>enable/disable sound</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+s</span></td>
-      <td align="center">enable/disable sound</td>
+      <td><span class="key">ALTGR+q</span></td>
+      <td>quit the emulator</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+q</span></td>
-      <td align="center">quit the emulator</td>
+      <td><span class="key">ALTGR+x</span></td>
+      <td>toggle normal speed/fast forward</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+x</span></td>
-      <td align="center">toggle normal speed/fast forward</td>
+      <td><span class="key">ALTGR+y</span></td>
+      <td>enable/disable sound recording</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+y</span></td>
-      <td align="center">enable/disable sound recording</td>
+      <td><span class="key">ALTGR+k</span></td>
+      <td>save memory snapshot</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+k</span></td>
-      <td align="center">save memory snapshot</td>
+      <td><span class="key">ALTGR+l</span></td>
+      <td>load memory snapshot</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+l</span></td>
-      <td align="center">load memory snapshot</td>
+      <td><span class="key">ALTGR+f or F11</span></td>
+      <td>toggle between fullscreen and windowed mode</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+f or F11</span></td>
-      <td align="center">toggle between fullscreen and windowed mode</td>
+      <td><span class="key">ALTGR+o or F12</span></td>
+      <td>activate the options GUI</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">ALTGR+o or F12</span></td>
-      <td align="center">activate the options GUI</td>
+      <td><span class="key">PAUSE</span></td>
+      <td>pause emulation</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">PAUSE</span></td>
-      <td align="center">pause emulation</td>
-    </tr>
-    <tr>
-      <td align="center"><span class="key">AltGr+PAUSE</span></td>
-      <td align="center">invoke the internal Hatari debugger</td>
+      <td><span class="key">AltGr+PAUSE</span></td>
+      <td>invoke the internal Hatari debugger</td>
     </tr>
   </tbody>
 </table>
@@ -2175,40 +1491,43 @@ The required key values can be seen in the SDL_keysym.h include file
 (usually in /usr/include/SDL/).</p>
 
 
-<a name="Emulated Atari ST keyboard"></a><h3>Emulated Atari ST keyboard</h3>
+<h3>Emulated Atari ST keyboard</h3>
 
 <p> All other keys on the keyboard act as the normal Atari ST keys so
 pressing SPACE on your PC will result in an emulated press of the SPACE
 key on the ST. The following keys have special meanings: </p>
-<table border="1" cellpadding="3">
-  <tbody>
+
+<table class="keytable">
+  <thead>
     <tr class="backdropped">
-      <td align="center">Key</td>
-      <td align="center">Meaning</td>
+      <th>Key</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="key">Alt</span></td>
+      <td>will act as the ST's ALTERNATE key</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">Alt</span></td>
-      <td align="center">will act as the ST's ALTERNATE key</td>
+      <td><span class="key">left CTRL</span></td>
+      <td>will act as the ST's CONTROL key</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">left CTRL</span></td>
-      <td align="center">will act as the ST's CONTROL key</td>
+      <td><span class="key">Print Screen</span></td>
+      <td>will emulate the ST's HELP key</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">Print Screen</span></td>
-      <td align="center">will emulate the ST's HELP key</td>
+      <td><span class="key">Scroll Lock</span></td>
+      <td>will emulate the ST's UNDO key</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">Scroll Lock</span></td>
-      <td align="center">will emulate the ST's UNDO key</td>
+      <td><span class="key">Page Up</span></td>
+      <td>will emulate the ST's ( key in the keypad</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">Page Up</span></td>
-      <td align="center">will emulate the ST's ( key in the keypad</td>
-    </tr>
-    <tr>
-      <td align="center"><span class="key">Page Down</span></td>
-      <td align="center">will emulate the ST's ) in the keypad</td>
+      <td><span class="key">Page Down</span></td>
+      <td>will emulate the ST's ) in the keypad</td>
     </tr>
   </tbody>
 </table>
@@ -2224,23 +1543,25 @@ simultenous key presses (or even just two depending on which keys
 are in question).  Expensive gaming keyboards support more.</p>
 
 
-<a name="Emulated mouse"></a><h3>Emulated mouse</h3>
+<h3>Emulated mouse</h3>
 
 <p>For obvious reasons your PC mouse will act as the emulated Atari ST
 mouse. In fullscreen mode it will act as expected, directly controlling
 the ST mouse pointer. </p>
-<p>However it is a little bit different in windowed mode. To make the
-mouse work there as expected you need to grab it first or lock it into
-the Hatari window. Do this by pressing the <span class="key">ALTGR+m</span>
+<p>However it is a little bit different in windowed mode as
+mouse cursor positions between host and emulated Atari can get
+out of sync. This can be worked around by constraining the mouse
+to the Hatari window. Pressing the <span class="key">ALTGR+m</span>
 hotkey combination or starting Hatari with the
-<span class="commandline">--grab</span> command line option.
+<span class="commandline">--grab</span> command line option
+grabs the mouse i.e. locks its movements to the Hatari window.
 Press the shortcut key (again) to go back to normal mouse behaviour
 which allows you to move mouse outside outside the Hatari window while
 Hatari is up and running. Note: pausing the emulation will also
 (temporarily) release the mouse grab.</p>
 <p>Mouse scrollwheel will act as cursor up and down keys. </p>
 
-<a name="Emulated joystick"></a><h3>Emulated joystick</h3>
+<h3>Emulated joystick</h3>
 
 <p>The Atari ST joysticks are emulated ofcourse allowing you to play
 your favourite games with Hatari. </p>
@@ -2265,7 +1586,7 @@ cursorkeys in this mode as long as you press <span class="key">SHIFT</span>
 along with the cursorkeys.  You can also configure these keys from the
 joystick options.</p>
 
-<a name="Emulated video"></a><h3>Emulated video</h3>
+<h3>Emulated video</h3>
 
 <p>Hatari emulates all screen modes of the original machine.</p>
 <p>
@@ -2282,11 +1603,11 @@ into your Mega ST.</p>
 <p>Make sure to disable extended VDI modes for playing games as 99% of
 all ST games will not be able to make use of higher resolutions.</p>
 
-<a name="Emulated printer"></a><h3>Emulated printer</h3>
+<h3 id="Emulated_printer">Emulated printer</h3>
 
-<p>Due to the fact that printer handling is very different between Unix
-style machines and the Atari ST, emulation
-of the printer is achieved by writing all printer output to a file.</p>
+<p>Due to the fact that printer handling is different on Atari and
+current machines, emulation of the printer is achieved by writing all
+printer output to a file.</p>
 <p>The file will contain a sequence of data, the same that would appear
 on the data pins of the Atari ST printer port.
 That would include control characters and commands for graphic
@@ -2296,13 +1617,13 @@ in a messy data dump in the printer output.</p>
 do not format the output for a specific printer.
 The file contents can be used with your favourite text editor for
 further processing and printing to a real printer.</p>
-<p>To get real direct printing out of Hatari on a PostScript printer,
-you may set up a GDOS printer with a PostScript driver on the emulated
-Atari and set your printer device file as Hatari's printer output.<br>
-<em>NOTE:</em> This has not been tested yet and the Hatari team cannot
-guarantee that it will work.</p>
+<p>To get real direct printing out of Hatari you may set up a suitable
+(e.g. PostScript) GDOS or NVDI printer driver on the emulated Atari and
+set your printer device file as Hatari's printer output.<br />
+<em>NOTE:</em>If the driver doesn't match or there's some other problem,
+this can cause your printer to print out hundreds of pages of garbage.</p>
 
-<a name="Emulated RS232"></a><h3>Emulated RS232</h3>
+<h3>Emulated RS232</h3>
 
 <p>Serial communications in Hatari is designed to directly use a serial
 port on your PC.</p>
@@ -2312,7 +1633,7 @@ the communication parameters like baudrate from your ST communications
 software. Hatari will do the rest and handle
 the serial input and output for you.</p>
 
-<a name="Floppy disk images"></a><h2>Floppy disk images</h2>
+<h2 id="Floppy_disk_images">Floppy disk images</h2>
 
 <p>Hatari does not use floppy disks directly but disk images due to
 differences between the floppy disk controllers of the ST and the PC.
@@ -2383,7 +1704,7 @@ your highscores and savegames are lost if you load the game from such
 a zipped disk image.</p>
 
 
-<a name="Hard disk support"></a><h2>Hard disk support</h2>
+<h2>Hard disk support</h2>
 
 <p>
 Hatari supports three ways of emulating Atari hard drives: The low-level
@@ -2398,28 +1719,25 @@ while the emulator is running.
 </p>
 <p>
 On a 32-bit host system, the size of a hard disk image is limited to 2 GB.
-On 64-bit host systems, bigger images might be possible but the support for
-bigger images is not tested very well yet.
+On 64-bit host systems, bigger images might be possible but the support
+for bigger images is not tested very well yet.  How large partition sizes
+are supported inside the hard disk (images) depends on the TOS version.
+TOS 1.0x supports up to 256MB partitions and TOS 4.0x up to 1GB ones.
 </p>
 
 
-<a name="GEMDOS based hard disk emulation"></a><h3>GEMDOS based hard disk emulation</h3>
+<h3>GEMDOS based hard disk emulation</h3>
 <p>
 With the GEMDOS based drive emulation, you can easily "mount" a
-folder from the host file system to a drive of the emulated Atari. To
-use the GEMDOS based drive emulation, you should use a folder on your
-hard disk that only contains files and folders with valid TOS
-filenames i.e. file and folders names shouldn't contain invalid GEMDOS
-filename characters and their length shouldn't exceed the 8+3 file name
-length limit.
+folder from the host file system to a drive of the emulated Atari.
 </p>
 <p>
-If you provide <span class="commandline">--harddisk</span> option
-a directory containing only single letter subdirectories, each of
-these subdirectories will be treated as a separate partition, otherwise
-the given directory itself will be assigned to drive "C:". In the
-multiple partition case, the letters used as the subdirectory names
-will determine to which drives/partitions they're assigned.
+If you provide Hatari a directory containing only single letter (C-Z)
+subdirectories, each of these subdirectories will be treated as a
+separate partition, otherwise the given directory itself will be
+assigned to drive "C:". In the multiple partition case, the letters
+used as the subdirectory names will determine to which
+drives/partitions they're assigned.
 </p>
 <p>
 GEMDOS drive emulation is an easy way to share files between the
@@ -2428,18 +1746,25 @@ limitations which are due to the way the GEMDOS drive emulation is
 implemented:
 </p>
 <ul>
+<li>Directory entries are returned in a (case-insensitively) sorted
+order, for consistency.  E.g. moving files to a different directory and
+back (without changing their names) like AUTOSORT does, doesn't change
+that order. You need to rename the files.</li>
+<li>Names which aren't valid TOS directory or file names, are converted
+to a valid format.  If there are multiple files which converted
+names are identical in TOS-format, you see only one of those.</li>
 <li>It is not possible to use a cartridge image at the same time
 with the GEMDOS drive emulation (Hatari has it's own cartridge code
 that is used for GEMDOS emulation).</li>
-<li>As MiNT installs its own GEMDOS handler, it doesn't work with
-the GEMDOS drive emulation.  MiNT needs to be booted from a real hard
-disk image.</li>
+<li>Anything that installs its own GEMDOS handler, like MiNT, doesn't work
+with the GEMDOS drive emulation.  Such things need to be run from a real
+hard disk image.</li>
 <li>GEMDOS drive emulation conflicts with the ACSI and IDE harddisk images.
 If you want to use GEMDOS HD emulation and ACSI/IDE disk images together,
 use a multiple partition GEMDOS emulation setup and select the partition
 subdirectories (letters) so that they don't conflict with the ACSI/IDE
 drive partitions (letters).  With HD Driver you have also another option,
-see <a href="#Using HD Driver with GEMDOS partitions">Using HD Driver
+see <a href="#Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver
 with GEMDOS partitions</a>.</li>
 <li><em>The GEMDOS drive emulation does not work (very well) with TOS
 1.00 and 1.02</em>.  Use at least TOS 1.04 if you want the GEMDOS drive
@@ -2451,7 +1776,7 @@ files on the GEMDOS emulated drive, you should try to copy them to a
 floppy disk image or a real hard disk image!
 </p>
 
-<a name="ACSI hard disk emulation"></a><h3>ACSI hard disk emulation</h3>
+<h3 id="ACSI_hard_disk_emulation">ACSI hard disk emulation</h3>
 <p>
 To use the ACSI hard disk emulation, you need a hard disk image file
 with a pre-installed HD driver in it. You can try to get an image of
@@ -2478,7 +1803,7 @@ After installing the hard disk driver to the fresh HD image with
 HINSTALL.PRG, you can boot directly from the hard disk image.
 </p>
 
-<a name="IDE hard disk emulation"></a><h3>IDE hard disk emulation</h3>
+<h3>IDE hard disk emulation</h3>
 <p>
 <p>
 As the IDE disk format (little endian) differs from the ACSI disk format
@@ -2510,7 +1835,7 @@ the Cecile hard disk driver to the image from the Cecile CC_TOOLS.APP:
 Click the "Installer" button and save the Cecile driver to the
 1st partition on "Hatari IDE disk". If you want to also use your HD
 image in ST/STE mode, you need to get and install AHDI 6 driver on it
-instead (see <a href="ACSI hard disk emulation">ASCI hard disk
+instead (see <a href="#ACSI_hard_disk_emulation">ASCI hard disk
 emulation</a> section).
 </p>
 <p>
@@ -2519,8 +1844,7 @@ with the <span class="commandline">--ide-master</span> parameter.
 </p>
 
 
-<a name="Moving files to/from hard disk images"></a><h2>Moving files
-to/from hard disk images</h2>
+<h2>Moving files to/from hard disk images</h2>
 
 <p>Moving files to and from Atari hard disk images can be done
 either through GEMDOS partitions (host directories mounted inside
@@ -2534,8 +1858,7 @@ a GEMDOS partition i.e. such to be before hard disk image partitions,
 and still to be able to access all the IDE/ACSI partitions, you need to
 use HD Driver.</p>
 
-<a name="Using HD Driver with GEMDOS partitions"></a><h3>Using HD Driver
-with GEMDOS partitions</h3>
+<h3 id="Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver with GEMDOS partitions</h3>
 
 <p>Uwe Seimet's <a href="http://www.seimet.de/atari/en/hddriver.html">HD
 Driver</a> works fine with both the Hatari GEMDOS partitions and normal
@@ -2570,8 +1893,7 @@ its AUTO folder, like this: "<span class="commandline">hatari
 </p>
 
 
-<a name="Accessing HDD image partitions outside of Hatari"></a><h3>Accessing
-HDD image partitions outside of Hatari</h3>
+<h3>Accessing HDD image partitions outside of Hatari</h3>
 
 <p>
 If you want to access the harddisk image partitions also outside
@@ -2653,7 +1975,8 @@ the disk image from Hatari:
 # losetup -d $loop
 </pre>
 
-<a name="The debugger"></a><h2>The debugger</h2>
+
+<h2 id="The_debugger">The debugger</h2>
 
 <p>
 Hatari has a built-in debugging interface which can be used for
@@ -2663,8 +1986,8 @@ key combination.
 </p>
 
 <p>
-If you start Hatari with the "-D" command line option, m68k
-exceptions will automatically invoke the debugger. You can
+If you start Hatari with the "-D" command line option, certain m68k
+exceptions will automatically drop Hatari into the debugger. You can
 toggle this also later from the debugger with the "setopt -D"
 command.
 </p>
@@ -2688,7 +2011,7 @@ xterm -T "Hatari debug window" -e hatari
 </pre>
 
 
-<a name="General debugger use"></a><h3>General debugger use</h3>
+<h3>General debugger use</h3>
 
 <p>
 At the debugger prompt, type "help" to get a list of all
@@ -2699,8 +2022,9 @@ Generic commands:
            cd (  ) : change directory
      evaluate ( e) : evaluate an expression
          help ( h) : print help
+      history (hi) : show last CPU & DSP PC values & executed instructions
          info ( i) : show machine/OS information
-         lock (  ) : lock info to show on entering debugger
+         lock (  ) : specify information to show on entering the debugger
       logfile ( f) : open or close log file
         parse ( p) : get debugger commands from file
        setopt ( o) : set Hatari command line and debugger options
@@ -2718,8 +2042,10 @@ CPU commands:
       memdump ( m) : dump memory
      memwrite ( w) : write bytes to memory
       loadbin ( l) : load a file into memory
-      savebin ( s) : save memory to a file
+      savebin (  ) : save memory to a file
       symbols (  ) : load CPU symbols & their addresses
+         step ( s) : single-step CPU
+         next ( n) : step CPU, proceeding through subroutine calls
          cont ( c) : continue emulation / CPU single-stepping
 
 DSP commands:
@@ -2730,14 +2056,17 @@ DSP commands:
    dspsymbols (  ) : load DSP symbols & their addresses
    dspprofile (dp) : profile DSP code
        dspreg (dr) : read/write DSP registers
+      dspstep (ds) : single-step DSP
+      dspnext (dn) : step DSP, proceeding through subroutine calls
       dspcont (dc) : continue emulation / DSP single-stepping
 </pre>
 
-<h4>Entering arguments to debugger commands</h4>
+
+<h4 id="Entering_arguments_to_debugger_commands">Entering arguments to debugger commands</h4>
 
 <p>
 After writing (with TAB completion) one of the above command names,
-pressing TAB will show all the available subcommands for that command.
+pressing TAB will (for most commands) show all the available subcommands.
 </p>
 
 <p>
@@ -2757,36 +2086,44 @@ names (a0-7, d0-7)!</em>  Otherwise results from expressions and
 conditional breakpoints can be unexpected.
 </p>
 
+
+<h4>Calculations and immediate evaluation</h4>
+
 <p>
-Instead of a number, you can also use an expression, by surrounding
-it with quotes ("").  An expression can contain calculations with
-register and symbol values in addition to numbers.  For example to
-give a sum of A0 and D0 register values to a command, use "a0+d0".
+Instead of a number, you can also use an arithmetic expression, by
+surrounding it with quotes ("").  An expression can contain
+calculations with CPU and DSP register, symbol and Hatari variable
+values in addition to numbers. For example to give a sum of A0 and
+D0 register values to a command, use "a0+d0".
 </p>
 
 <p>
-Within expressions parenthesis are used both to change the order
-of precendence <em>and</em> to indicate indirect addressing.
-Unlike with conditional breakpoints (explained below), you cannot
-give size for the indirect addressing, a long value is always read
-from the RAM address given within parenthesis.  For example to get
-long pointed by stack pointer + 2, use "(a7+2)".
+Within arithmetic expressions parenthesis are used both to change
+the order of precendence <em>and</em> to indicate indirect addressing.
+Unlike with conditional breakpoint expressions (explained below), you
+cannot give size for the indirect addressing, a long value is always
+read from the RAM address given within parenthesis.  For example to
+get a long value pointed by stack pointer + 2, use "(a7+2)".
 </p>
 
 <p>
-Expressions are always evaluated before being given to a command.
-Expressions don't need to be quoted for the "evaluate" or "address"
-commands as those always interpret their results as expressions.
+Values of arithmetic expressions are always evaluated before being
+given to a command.  Except for "evaluate" and "address" commands,
+they always need to be marked with quotes (""). Besides arithmetics,
+this can be used also to give symbol/register/variable values to
+commands that don't otherwise interpret them.  If command complains
+that it didn't recognize e.g. a register name, just put it to quotes
+and it will be "evaluated" before being given to the command.
 </p>
 
 <p>
-With command argument completion (see <a href="#Build notes">build
+With command argument completion (see <a href="#Build_notes">build
 notes</a>), result from the last "evaluate" command can be inserted
 by typing '$' and pressing TAB.
 </p>
 
 
-<a name="Inspecting emulation state"></a><h3>Inspecting emulation state</h3>
+<h3 id="Inspecting_emulation_state">Inspecting emulation state</h3>
 
 <p>
 In the beginning, probably the most interesting commands are "m" and "d"
@@ -2807,18 +2144,25 @@ Usage:  d [start address-[end address]]
         position or from current PC if no last position is available.
 </pre>
 <pre>
-&gt; disasm
-0000aa6e: 2f08 0241 0fff 207c 00fe MOVE.L A0,-(A7)
-0000aa70: 0241 0fff 207c 00fe 78c0 AND.W #$0fff,D1
-0000aa74: 207c 00fe 78c0 2070 1000 MOVEA.L #$00fe78c0,A0
-0000aa7a: 2070 1000 4ed0 0241 0ffe MOVEA.L (A0, D1.W*1, $00) == $00fe34ae,A0
-0000aa7e: 4ed0 0241 0ffe 6712 e549 JMP.L (A0)
+&gt; disasm pc
+$00aa6e : 2f08                                 move.l    a0,-(sp)
+$00aa70 : 0241 0fff                            andi.w    #$fff,d1
+$00aa74 : 207c 00fe 78c0                       movea.l   #$fe78c0,a0
+$00aa7a : 2070 1000                            movea.l   (a0,d1.w),a0
+$00aa7e : 4ed0                                 jmp       (a0)
 </pre>
 
 <p>
-Each time you enter the debugger, "disasm" command will disassemble
-from the current PC address unless you give it another address (range)
-and on further invocations it continues showing successive addresses.
+Both commands accept in addition to numeric addresses also register
+and symbol names, like in above example.  If you don't specify an
+address, the commands continue showing from an address that comes
+after the previously shown data.  "disasm" command default address
+will be reseted to PC address everytime you re-enter the debugger.
+</p>
+
+<p>
+Use "setopt --disasm help" if you want to set options controlling
+the disassembly output.
 </p>
 
 <p>
@@ -2826,13 +2170,13 @@ You can use the "info" command to see state of specific sets of HW
 registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 </p>
 
+
 <h4>Selecting what information is shown on entering the debugger</h4>
 
 <p>
 By using the "lock" command, you can ask Hatari to show specific
-information whenever you enter the debugger. For example to see
-disassembly from current PC address, use "lock disasm". To disable
-showing of this extra information, use "lock default".
+information whenever you enter the debugger / hit a breakpoint. For
+example to see disassembly from current PC address, use "lock disasm".
 </p>
 
 <p>
@@ -2844,70 +2188,131 @@ subcommand.
 
 <p>
 "file" subcommand can be used to get (arbitrary number of) commands
-parsed and executed from a given debugger input file.  With breakpoints
-this can be used to almost anything (see below).
+parsed and executed from a given debugger input file whenever debugger
+is entered.  With this you can output any information you need:
 </p>
+<pre>
+lock file debugger.ini
+</pre>
 
 <p>
+To disable showing of this extra information, use "lock default".
+Without arguments "lock" command will show the available options
+(like the "info" command does).
 </p>
 
-<a name="Debug symbols"></a><h3>Debug symbols</h3>
+
+<h3>Debug symbols</h3>
 
 <p>
-You can load symbol name/address information from a file to the
-debugger with the "symbols" command (and with "dspsymbols" for DSP).
-These symbolic names can be used in expressions and all breakpoints.
-They also show up in the "disasm" command output.
+You can load debugging symbols to the debugger with the "symbols"
+command (and with "dspsymbols" for DSP). These symbolic names can be
+used in arithmetic expressions and conditional breakpoint expressions.
+They also show up in the "disasm" command output and you can trace
+calls to them with "trace cpu_symbols" (and DSP symbols with "trace
+dsp_symbols").
 </p>
 
-<p>The symbols file format is following:</p>
+
+<h4>For a program under GEMDOS HD emulation</h4>
+
+<p>
+If you're using GEMDOS HD emulation, and your program contains symbol
+table in DRI/GST format, you can load its symbol names/addresses to
+the debugger with the following command, after program has been loaded
+to the memory by TOS (see <a href="#Breakpoint_variables">setting
+breakpoint at program startup</a>):
+</p>
+<pre>
+symbols prg
+</pre>
+<p>
+
+<p>
+The options you need to add suitable symbol table to your programs,
+depend on which toolchain you use to build it:
+</p>
+<dl>
+<dt><em>Devpac</em>:</dt>
+<dd>"OPT D+,X+"</dd>
+<dt><em>AHCC</em>:</dt>
+<dd>"-g", and "-l" option for local symbols, both for linking</dd>
+<dt><em>GCC</em>:</dt>
+<dd>"-Wl,--traditional-format" option for linking,
+    and "-g" for compilation to get local symbols</dd>
+<dt><em>VBCC</em>:</dt>
+<dd>"-g" (can only be used at linking phase), <em>when VBCC
+    configuration file uses "-bataritos" option for
+    the linker</em></dd>
+</dl>
+
+<p>You can view the generated symbols (and convert them to debugger
+ASCII format) with tool installed with Hatari:</p>
+<pre>
+$ gst2ascii -l -o program.tos &gt; program.sym
+</pre>
+(Options -l and -o are used to exclude useless symbols from the output.)
+
+
+<h4>For a program on a (disk) image</h4>
+
+<p>
+If the program isn't run from a GEMDOS HD emulated drive, but from a
+cartridge, floppy or HD image, you need to have the corresponding
+program also as normal host file which location you can give to the
+debugger:
+</p>
+<pre>
+symbols /path/to/the/program.tos
+</pre>
+
+
+<h4>ASCII debug symbol files</h4>
+
+<p>
+If Hatari complains that your program doesn't have DRI/GST format
+symbol table, or its symbols are in some other format, and you
+cannot re-compile it to have them, you have two options:
+</p>
+<ul>
+<li>Convert the symbols to ASCII format understood by the Hatari debugger.
+    Writing converters for other ASCII formats is easy, and Hatari already
+    contains covertors for DSP LOD files, <span class="commandline">nm</span>
+    output for MiNT/a.out binaries and AHCC map files.
+<li>Create the ASCII symbols file by hand as you're debugging a program.
+</ul>
+
+<p>ASCII symbols file format is following:</p>
 <pre>
 e01034 T random
 e01076 T kbdvbase
 e0107e T supexec
 </pre>
 <p>
-Where 'T' means text (code), 'D' means data and 'B' BSS section type
-of address.  The symbol hexadecimal address, type letter and name are
-separated by white space.  Empty lines and lines starting with '#'
-(comments) are ignored.
+Where 'T' means text (code), 'D' means data and 'B' means BSS section
+type of address.  The hexadecimal address, address type letter and the
+symbol name are separated by white space.  Empty lines and lines
+starting with '#' (comments) are ignored.
 </p>
 
 <p>
-AHCC C-compiler can provide a symbol file suitable for this with its
-"-n 'nm' list" option (not enabled by default). If you're reverse
-engineering some code, you could just create your own symbols file to
-help in debugging it later.
-</p>
-
-<p>
-If you're debugging normal TOS/GEM programs instead of code loaded
-into fixed address (like EmuTOS), you can use the "info basepage"
-command to find out the text segment address to which the program code
-has been loaded into, and then load symbols so that their addresses
-are offset by the text segment address:
+Debugger will automatically "relocate" the symbol addresses when it
+loads them from a program binary, but with ASCII symbol files you need
+to give the relocation offset(s) separately, unless the symbol names
+are for fixed adresses (like is the case e.g. with EmuTOS):
 </p>
 <pre>
-&gt; info basepage
-Process basepage information:
-- TPA start      : 0x01a1bc
-- TPA end +1     : 0x7da700
-- Text segment   : 0x01a2bc
-- Text size      : 0xe1e0
-- Data segment   : 0x02849c
-- Data size      : 0x1b76
-- BSS segment    : 0x02a012
-- BSS size       : 0x3750
-- Process DTA    : 0x01a23c
-- Parent basepage: 0x00e91c
-- Environment    : 0x01a1ae
-'PATH='
-'C:\'
-- Command argslen: 0
-&gt; symbols calc.sym 0x01a2bc
+symbols program.sym TEXT DATA BSS
 </pre>
+<p>
+If you're interested only about code symbols, you can leave DATA and
+BSS offsets out (the values of the above virtual debugger variables
+like TEXT come from the currently loaded program's basepage, they're
+set after the program is loaded by TOS, see "info basepage" output).
+</p>
 
-<a name="Breakpoints"></a><h3>Breakpoints</h3>
+
+<h3>Breakpoints</h3>
 
 <p>
 There are two ways to specify breakpoints for Hatari. First, there are
@@ -2916,106 +2321,250 @@ program counter hits a given address. Use "a" (or "da" for the DSP)
 to create them, for example:
 </p>
 <pre>
-&gt; a $e01034
-&gt; a some_symbol
+a $e01034
+a some_symbol
 </pre>
 
 <p>
-(Address breakpoints are just wrappers for conditional breakpoints so
-you need to use "b" command to remove or list them.)
+Note that address breakpoints are just wrappers for conditional
+breakpoints so you need to use "b" command to remove or list them.
 </p>
 
 <p>
 Then there are the conditional breakpoints which can handle much more
-complex break conditions; they can track changes to register and
-memory values with bitmasks, include multiple conditions for
-triggering a breakpoint and so on.  Use "b" (or "db" for the DSP) 
-to manage them. "b help" explains the syntax:
+complex break condition expressions; they can track changes to
+register and memory values with bitmasks, include multiple conditions
+for triggering a breakpoint and so on.  Use "b" (or "db" for the DSP) 
+to manage them.
 </p>
 
+<p>Help explains the general syntax:</p>
 <pre>
-breakpoint = &lt;condition&gt; [ &amp;&amp; &lt;condition&gt; ... ] [option]
-condition = &lt;value&gt;[.mode] [&amp; &lt;number&gt;] &lt;comparison&gt; &lt;value&gt;[.mode]
+&gt; help b
+'breakpoint' or 'b' - set/remove/list conditional CPU breakpoints
+Usage:  b &lt;condition&gt; [&amp;&amp; &lt;condition&gt; ...] [:&lt;option&gt;] | &lt;index&gt; | help | all
+
+Set breakpoint with given &lt;conditions&gt;, remove breakpoint with
+given &lt;index&gt;, remove all breakpoints with 'all' or output
+breakpoint condition syntax with 'help'.  Without arguments,
+lists currently active breakpoints.
+</pre>
+
+<p>
+Unless you give breakpoint one of the pre-defined subcommands ('all',
+'help'), index for a breakpoint to remove or no arguments (to list
+breakpoints), the arguments are interpreted as a new breakpoint
+definition.
+</p>
+
+<p>
+Each conditional breakpoint can have (currently up to 4) conditions
+which are separated by "&amp;&amp;".  All of the breakpoint's
+conditions need to be true for a breakpoint to trigger.
+</p>
+
+
+<h4 id="Breakpoint_options">Breakpoint options</h4>
+
+<p>
+Normally when a breakpoint is triggered, emulation is stopped and you
+get to the debugger. Breakpoint options can be used to affect what
+happens when a breakpoint is triggered.  These options are given after
+the conditions and are prefixed with ':'. 
+</p>
+
+<dl>
+<dt><em>&lt;count&gt;</em></dt>
+<dd>Break only on every &lt;count&gt; hit. For example, to stop
+on every other time PC is at given address, use:
+<pre>
+a $1234 :2
+</pre>
+</dd>
+
+<dt><em>once</em></dt>
+<dd>
+Delete the breakpoint when it's hit i.e. trigger it only once. It may
+be useful if you just want to get a specific address. Or if you're on
+an instruction that jumps back to a start of the loop and you want to
+finish the loop, you could use:
+<pre>
+b pc &gt; "pc" :once
+continue
+</pre>
+</dd>
+
+<dt><em>trace</em></dt>
+<dd>
+Continue emulation without stopping after printing the value that
+triggered the breakpoint and doing other possible option actions.
+This is most useful when investigating memory or register value
+changes (explained below).
+</dd>
+
+<dt><em>lock</em></dt>
+<dd>
+Show the same information on breakpoint hit as you see when entering
+the debugger (see the "lock" command in
+<a href="#Inspecting_emulation_state">Inspecting emulation state</a>
+above).  This enables also trace option as you would anyway see this
+information if debugger would be entered.
+</dd>
+
+<dt><em>file &lt;file&gt;</em></dt>
+<dd>
+Execute debugger commands from given &lt;file&gt; when this breakpoint
+is hit.  With this you have complete control over what information is
+show when the debugger is hit, you can even chain breakpoints (as
+explained in
+<a href="#Chaining_breakpoints">Chaining breakpoints</a> later on)
+etc.  Use this if "lock" option isn't enough or you want different
+information show on breakpoints and when entering the debugger.
+</dd>
+
+<dt><em>noinit</em></dt>
+<dd>
+Hitting breakpoint doesn't re-initialize debugger which would e.g.
+cause profiling data to be reset.  This implies trace option as
+entering debugger would also re-initialize debugger state. This option
+is mainly intended for breakpoints that use :file option to show
+backtraces with "profile stack" command during
+<a href="#Profiling">profiling</a>.  See
+<a href="#Usage_examples">Usage examples</a> section for an example.
+</dd>
+</dl>
+
+<p>
+Note: you can give multiple options for conditional breakpoints, but
+for address breakpoints you can give only one these options.  And
+"file" option is supported only for conditional breakpoints.
+</p>
+
+
+<h4>Breakpoint conditions</h4>
+
+<p>
+"b help" explains very briefly the breakpoint condition syntax:
+</p>
+<pre>
+&gt; b help
+condition = &lt;value&gt;[.mode] [&amp; &lt;mask&gt;] &lt;comparison&gt; &lt;value&gt;[.mode]
 
 where:
         value = [(] &lt;register/symbol/variable name | number&gt; [)]
-        number = [#|$|%]&lt;digits&gt;
+        number/mask = [#|$|%]&lt;digits&gt;
         comparison = '&lt;' | '&gt;' | '=' | '!'
         addressing mode (width) = 'b' | 'w' | 'l'
         addressing mode (space) = 'p' | 'x' | 'y'
-        option = : &lt;count&gt; | 'once' | 'trace'
+</pre>
+
+<p>
+For CPU breakpoints, mode is the address width; it can be byte ("b"),
+word ("w") or long ("l", default).  For DSP breakpoints, mode specifies
+the address space: "P", "X" or "Y". Note that on DSP only R0-R7
+registers can be used for memory addressing.  For example;
+<pre>
+db (r0).x = 1 &amp;&amp; (r0).y = 2
 </pre>
 
 <p>
 If the value is in parenthesis like in '($ff820)' or '(a0)', then the
 used value will be read from the memory address pointed by it.  Note
-that this value is checked at run-time whereas quoted expressions
-(mentioned above, please read!) are evaluated already when adding a
-breakpoint.  For example, to break when value in adress pointed by A0
-matches the value currently in D0, one would use:
+that this conditional breakpoint expression value is checked at
+run-time whereas quoted arithmetic expressions (mentioned in
+<a href="#Entering_arguments_to_debugger_commands">Entering arguments
+to debugger commands</a> above) are evaluated already when
+adding a breakpoint.  For example, to break when a value in an address
+(later) pointed by A0 matches the value <em>currently</em> in D0, one
+would use:
 </p>
 <pre>
-&gt; b (a0) = "d0"
+b (a0) = "d0"
 </pre>
 
 <p>
-M68k addresses can have byte ("b"), word ("w") or long ("l", default)
-width. DSP addresses belong to different address spaces: "P", "X" or
-"Y". Note that on DSP only R0-R7 registers can be used for memory
-addressing.
-</p>
-
-<p>Examples:</p>
+If you're interested only on certain bits in the value, you can use
+'&amp;' and a numeric mask on either side of comparison operator to
+mask the coresponding value, like this:
 <pre>
-b (r0).x = 1 &amp;&amp; (r0).y = 2
-b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
+b ($ff820).w &amp; 3 = (a0)  &amp;&amp;  (a1) = d0 &amp; %1100
 </pre>
 
 <p>
-As a convenience, if the value expressions on both sides of the
-comparison are exactly the same, right side is replaced with its
-current value. For inequality ('!') comparison, conditional breakpoint
-tracks all further changes for the given address/register expression,
-this can be used for example to find out all value changes in a given
-memory address (see examples below).
-</p>
-
-<p>
-There are also several options that you can use with both breakpoint
-types. ":trace" option will make breakpoint to print out the tracked
-value instead of breaking.  This can be useful e.g. when tracking
-changes to some register, like this:
+Comparison operators should be familiar and obvious, except for '!'
+which indicates inequality ("is not") comparison.  For example:
 </p>
 <pre>
-&gt; b ($ffff9202).w ! ($ffff9202).w :trace
+b d0 &gt; $20  &amp;&amp;  d0 &lt; $40  &amp;&amp;  d0 ! $30
+</pre>
+
+
+<h5>Tracking breakpoint conditions</h5>
+
+<p>
+As a convenience, if the both sides of the comparison are exactly the
+same (i.e. condition is redundant as it's always either true or
+false), the <em>right side</em> of the comparison is replaced with
+its current value.  This way you can give something like this:
+</p>
+<pre>
+b pc &gt; "pc"
+</pre>
+<p>As:</p>
+<pre>
+b pc &gt; pc
 </pre>
 
 <p>
-If you want to see more information than just the changed value,
-use ":info" option instead of ":trace".  This will do the command
-selected with the "lock" command (see <a href="#Inspecting emulation
-state">Inspecting emulation state</a> above).  That can be used
-to chain/toggle additional breakpoints and to show any information
-supported by the debugger.
-</p>
-
-<p>
-":once" option that removes breakpoint after hit can be useful when one
-wants to get out of a loop (when at the instruction that branches back
-to loop start) or just to get to a specific point in code:
+That in itself isn't so useful, but for inequality ('!') comparison,
+conditional breakpoint will additionally track and output all further
+changes for the given address/register expression. This can be used
+for example to find out all value changes in a given memory address,
+like this:
 </p>
 <pre>
-&gt; b pc &gt; pc :once
-&gt; a some_symbol :once
+b ($ffff9202).w ! ($ffff9202).w :trace
 </pre>
-
 <p>
-Whereas giving count (like ":2") as option will break only on every
-&lt;count&gt; hit.
+Because tracking breakpoint conditions will print the evaluated
+value when it changes, they're typically used with the trace option
+to track changes e.g. to some IO register.
 </p>
 
 
-<h4>Breakpoint helper variables</h4>
+<h5>Breakpoint condition notes</h5>
+
+<ul>
+<li>
+Any '!' condition should be given as the first condition. Because
+breakpoint evaluation is stopped ("short-circuited") when any of the
+conditions fails, the tracked value would not be updated correctly
+unless tracking condition is given as the first one.
+</li>
+
+<li>
+Hatari will internally update some register values without immediately
+updating the corresponding IO address range memory addresses.  For
+example the Busy bit for the internal Blitter control register is
+(internally) cleared when Blitter activity stops, but the actual IO
+address for that control register gets updated only when something
+actually writes or reads that IO address.  Many HW registers behave
+(status registers in FDC, ACIA, MFP, Blitter...).
+<br>
+For breakpoints that track just a single IO register memory address, or
+multiple ones of which <strong>none</strong> are modified by Hatari,
+only by emulated code, this is not a problem, they get triggered as
+expected.
+<br>
+However, if you have a breakpoint that tracks multiple IO registers
+where some of them are updated by Hatari, for example to check that
+other Blitter registers aren't updated while control register
+indicates Blitter to be active (busy), things don't work as expected!
+</li>
+</ul>
+
+
+<h4>Breakpoint variables</h4>
 
 <p>
 In addition to loaded symbols, the debugger supports also setting
@@ -3023,78 +2572,196 @@ conditional breakpoints on values of some "virtual" variables listed
 by "b help". For example:
 </p>
 <ul>
-<li>If you want to stop at a specific cycle within a frame (that is,
-PC relative to the current VBL/HBL in cycles), set breakpoints to
-specific "HBL" and "LineCycles" variable values.  The "e" command
-can be used to calculate suitable register and variable values.</li>
-<li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
-to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
-By default they contain the 0xffff value, so to trace e.g. AES calls,
-one needs to use something like this:
+<li>If you want the emulation to stop on the first instruction of
+    next program; after TOS desktop is up, set a breakpoint on
+    the TEXT segment address given in a program basepage:
 <pre>
-b  AesOpcode ! AesOpcode  &&  AesOpcode &lt 0xffff  :trace
+b  pc = TEXT :once
+</pre>
+Note1: It's better to trigger it only once because if you'd leave it on,
+during reboot you would get a warning for every instruction until TOS sets
+a valid basepage.
+<br />
+Note2: you cannot use an address breakpoint for this because value of
+a variable given to address breakpoint is evaluated when it's set, not
+at run-time, so it cannot get the new value that the TEXT variable
+gets when you start a program.
+</li>
+<li>To find out current program DATA and BSS segment contents,
+    use the corresponding variables:
+<pre>
+m  DATA
+m  BSS
 </pre>
 </li>
-<li>"OSExitPC" variable can be used to catch exit from an OS call.
+<li>If you want to stop at a specific cycle within a frame (that is,
+    PC relative to the current VBL/HBL in cycles), set breakpoints to
+    specific "HBL" and "FrameCycles" variable values.  If you for
+    example want to break after 20 HBLs, use:
 <pre>
-b pc = OSExitPC :once
+b  HBL = "HBL+20"
 </pre>
-It's valid after OS call breakpoint is triggered and before
-that call has finished.</li>
+</li>
+<li>Aes/Bios/Gemdos/LineA/LineF/Vdi/XbiosOpcode variables can be used
+    to catch AES, BIOS, GEMDOS, Line-A, Line-F, VDI and XBIOS OS-calls.
+    By default they contain the 0xffff value, so to trace e.g. all AES
+    calls, instead of a specific one, one needs to use something like this:
+<pre>
+b  AesOpcode ! AesOpcode  &amp;&amp;  AesOpcode &lt; 0xffff  :trace
+</pre>
+</li>
 </ul>
 
+<p>
+Hint: "info" command "aes", "bios", "gemdos", "vdi" and "xbios"
+subcommands for can be used to list the corresponding OS-call opcodes.
+For example, to see the GEMDOS opcodes, use:</p>
+<pre>
+info gemdos 1
+</pre>
 
-<a name="Tracing"></a><h3>Tracing</h3>
+
+<h4 id="Chaining_breakpoints">Chaining breakpoints and other actions</h4>
 
 <p>
-After analyzing and/or setting new breakpoints, you can continue the
-emulation with the "c" command. You can continue for a given number of
-CPU instructions (or DSP instructions when "dc" is used), or you can
-continue forever (until a non-tracing breakpoint triggers) if you omit
-the instruction count.
+As the file pointed by the breakpoint ":file" option (see
+<a href="#Breakpoint_options">Breakpoint options</a>) can contain any
+debugger commands, it can also be used to do automatic "chaining" of
+debugger and breakpoint actions so that after one breakpoint is hit,
+another one is set.
+</p>
+
+<p>For example if you have these input files:</p>
+<ul>
+<li>"break.ini":
+<pre>
+b GemdosOpcode = 0x3D :trace :file program.ini
+</pre>
+</li>
+<li>"program.ini":
+<pre>
+b pc = TEXT :trace :file trace.ini
+</pre>
+</li>
+<li>"trace.ini":
+<pre>
+symbols prg
+trace gemdos,cpu_symbols
+b VBL = "VBL+4" :trace :file disable.ini
+</pre>
+</li>
+<li>"disable.ini":
+<pre>
+trace none
+b all
+</pre>
+</li>
+</ul>
+
+<p>
+And then start Hatari with the first debugger input file and a GEMDOS
+harddisk directory containing "desktop.inf" file:
+</p>
+<pre>
+hatari --parse break.ini /path/to/your/program.tos
+</pre>
+
+<ol>
+<li>"break.ini" input file will break when TOS opens
+    the "desktop.inf" file (it's the first Fopen() i.e. GEMDOS call
+    0x3D done by TOS at boot) and the breakpoint will run
+    the debugger commands from the "symbols.ini" file
+<li>"program.ini" will setup breakpoint to program startup
+    (because TEXT variable cannot be used before TOS has booted)
+<li>"trace.ini" input file loads symbols for the run program, sets Hatari
+    to trace several things (see <a href="#Tracing">Tracing</a> section
+    below) in the emulated system for few VBLs until breakpoint runs
+    commands from the "disable.ini" file
+<li>"disable.ini" input file will disable tracing and remove
+    all (remaining) breakpoints
+</ol>
+
+<p>
+<em>Note:</em> because debugger input files cannot "continue"
+emulation, ":trace" option needs to be used for the breakpoint(s)
+if you want emulation to continue after the breakpoint action(s).
 </p>
 
 <p>
-If you want to continue with real-time disassembling, you can enable it
-with "trace cpu_disasm" at the debugger prompt before continuing.
+Hint: It's better to test each input file separate before testing the
+whole chain.  Besides the ":file" breakpoint option, these debugger
+input files can be also read with the debugger "file" command, "lock"
+command "file" option and with the Hatari "--parse" command line
+option.
+</p>
+
+
+<h3>Tracing</h3>
+
+<p>
+After analyzing the emulation state and/or setting new breakpoints,
+you can continue the emulation with the "c" command. You can continue
+for a given number of CPU instructions (or DSP instructions when "dc"
+is used), or you can continue forever (until a non-tracing breakpoint
+triggers) if you omit the instruction count.
+</p>
+
+<p>
+If you want to continue just to the next instruction, use "s" (step)
+command to continue for exactly one instruction, or "n" (next), if you
+want to skip subroutine calls.
+</p>
+
+<p>
+If you want to continue with real-time disassembling, you can enable
+it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at the
+debugger prompt before continuing.
 </p>
 <p>
 Disable tracing with "trace none" when you enter the debugger again.
-"trace help" (or TAB) can be used to list all the (over 30) supported
+"trace help" (or TAB) can be used to list all the (over 40) supported
 traceable things, from HW events to OS functions.
 </p>
 <p>
 Because Hatari normally emulates things at the hardware level, tracing
-certain Atari OS Traps requires setting additional Hatari options which
-tell it to intercept this higher level functionality:
+certain Atari OS Traps requires setting additional Hatari options
+which tell it to intercept this higher level functionality:
 <ul>
-<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting</li>
-<li>GEMDOS tracing use of the GEMDOS harddisk emulation</li>
+<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting with
+    the "--bios-intercept" option (which has also some other side-effects)
+</li>
+<li>GEMDOS tracing requires enabling the GEMDOS harddisk emulation
+    (which doesn't work under MiNT because it re-implements GEMDOS)</li>
 </ul>
 <p>
-If use of above isn't possible for the things you'd like to track, you can
-use the OS call opcode breakpoints explained above with the ":trace" option.
+Unlike with VDI tracing, AES, BIOS, GEMDOS and XBIOS traces show arguments
+for most of the calls.
 </p>
 <p>
-Tracing options can be set even from a program within the emulation
+Tracing options can be set even from a program within the emulation,
 if you enable the Hatari "--bios-intercept" option and call XBios 255
-from the program with a suitable Hatari command line string.  Bios
-interception will also show the (Bios level) CON: output on the host
-console.
+from the program with a suitable Hatari command line string.
 </p>
 <p>
 Note that the trace output file can be set only when Hatari starts,
 it cannot be changed from within the debugger (or emulation).
 </p>
+<p>
+If tracing isn't possible for the things you'd like to track, you can
+use the OS call opcode breakpoints explained above with the ":trace"
+breakpoint option.
+</p>
 
 
-<a name="Profiling"></a><h3>Profiling</h3>
+<h3>Profiling</h3>
 
 <p>
 Profiling tells where the emulated code spends most of its (emulated)
 time.  It can be used to find out where a program is (apparently)
-stuck or what are the largest performance bottlenecks for a program.
+stuck, or what are the largest performance bottlenecks for a program.
 </p>
+
+<h4>Collecting the profile data</h4>
 
 <p>
 Profiling is used by first enabling the profiler (use "dp" for DSP):
@@ -3109,96 +2776,921 @@ And profiling will start once you continue the emulation:
 <pre>
 &gt; c
 Returning to emulation...
-Allocated CPU profile buffer (18 MB).
+Allocated CPU profile buffer (27 MB).
 </pre>
 
 <p>
 When you get back to the debugger, the collected profiling information
-is processed and a summary of in which parts of the RAM the execution
-happened is shown:
+is processed and a summary of in which parts of memory the execution
+happened, and how long it took, is shown:
 </p>
 <pre>
-Allocated CPU profile address buffer (4 KB).
-Normal RAM (0-0x400000):
-- no activity
-Cartridge ROM (0xFA0000-0xFC0000):
-- no activity
+Allocated CPU profile address buffer (57 KB).
 ROM TOS (0xE00000-0xE80000):
 - active address range:
-  0xe0014c-0xe23f02
+  0xe00030-0xe611a4
 - active instruction addresses:
-  707 (100.00% of all)
+  14240 (100.00% of all)
 - executed instructions:
-  629144 (100.00% of all)
+  4589668 (100.00% of all)
 - used cycles:
-  9408503 (100.00% of all)
-- address with most cycles:
-  0xe0dcca, 402628 cycles (4.28% of all in area)
-- address with most hits:
-  0xe004a4, 4900 hits (0.78% of all in area)
+  56898472 (100.00% of all)
+  = 7.09347s
+Cartridge ROM (0xFA0000-0xFC0000):
+  - no activity
+
+= 7.09347s
 </pre>
 <p>
 (DSP RAM will be shown only as single area in profile information.)
 </p>
 
+
+<h4>Investigating the profile data</h4>
+
 <p>
-After this you can request more detailed profiling information:
+When you're back in debugger, you can inspect the collected profile data:
 </p>
 <pre>
-&gt; profile
+&gt; h profile
 'profile' - profile CPU code
-Usage:  profile <on|off|counts|cycles|symbols|stats> [show count]
-	on & off enable and disable profiling.  Data is collected
-	until debugger is entered again after which you can view
-	statistics about the data or view PC addresses that took
-	most cycles or functions/symbols called most often.
-	You can specify how many items are shown at most.
+Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|stack|addresses|save&gt; [count|address|file]
+        'on' & 'off' enable and disable profiling.  Data is collected
+	until debugger is entered again at which point you get profiling
+        statistics ('stats') summary.
+
+	Then you can ask for list of the PC addresses, sorted either by
+        execution 'counts', used 'cycles' or cache 'misses'.  First can
+	be limited just to named addresses with 'symbols'.  Optional
+	count will limit how many items will be shown.
+
+	'addresses' lists the profiled addresses in order, with the
+        instructions (currently) residing at them.  By default this
+	starts from the first executed instruction, or you can
+	specify the starting address.
+
+        'callers' shows (raw) caller information for addresses which
+	had symbol(s) associated with them.  'stack' shows the currect
+	profile stack, this is useful only with :noinit breakpoints.
+
+	Profile information can be saved with 'save'.
 </pre>
 
-<p>For example:</p>
+<p>For example, to see which memory addresses were executed most
+and what instructions those have at the end of profiling, use:</p>
 <pre>
 &gt; profile counts 8
 addr:           count:
-0xe004a4        0.78%   4900
-0xe004b6        0.78%   4896
-0xe0dcbc        0.55%   3448
-0xe0dcc6        0.55%   3448
-0xe0f59e        0.55%   3446
-0xe0dcce        0.55%   3445
-0xe0dcd6        0.55%   3445
+0xe06f10        12.11%  555724  move.l    $4ba,d1
+0xe06f16        12.11%  555724  cmp.l     d1,d0
+0xe06f18        12.11%  555724  bgt.s     $e06f06
+0xe06f06        12.11%  555708  move.b    $fffffa01.w,d1
+0xe06f0a        12.11%  555708  btst      #5,d1
+0xe06f0e        12.11%  555708  beq.s     $e06f1e
+0xe00ed8         1.66%  76001   subq.l    #1,d0
+0xe00eda         1.66%  76001   bpl.s     $e00ed8
 8 CPU addresses listed.
 </pre>
+
 <p>
-If you have symbol information for code addresses loaded, you can ask
-also for profiling counts on how many times the code execution passed
-through them with "profile symbols".
+Then, to see what the executed code and its costs look like
+around top addresses:
+<pre>
+&gt; profile addresses 0xe06f04
+# disassembly with profile data:
+# &lt;instructions percentage&gt;% (&lt;sum of instructions&gt;, &lt;sum of cycles&gt;, &lt;sum of i-cache misses&gt;)
+$e06f04 :             bra.s     $e06f10                    0.00% (48, 576, 0)
+$e06f06 :             move.b    $fffffa01.w,d1            12.11% (555708, 8902068, 0)
+$e06f0a :             btst      #5,d1                     12.11% (555708, 6685268, 0)
+$e06f0e :             beq.s     $e06f1e                   12.11% (555708, 4457312, 0)
+$e06f10 :             move.l    $4ba,d1                   12.11% (555724, 11125668, 0)
+$e06f16 :             cmp.l     d1,d0                     12.11% (555724, 4461708, 0)
+$e06f18 :             bgt.s     $e06f06                   12.11% (555724, 4455040, 0)
+$e06f1a :             moveq     #1,d0                      0.00% (16, 64, 0)
+Disassembled 8 (of active 14240) CPU addresses.
+</pre>
+<p>
+Unlike normal disassembly, "profile addresses" command shows only
+memory addresses which instructions were executed during profiling.
+You get instruction cache misses only when using cycle-accurate 030
+emulation with a Hatari version configured to use WinUAE CPU core.
+<p>
+If you have loaded symbol information, symbol names are shown above
+the corresponding addresses.  With the "profile symbols" command you
+get a list of how many times the code execution passed through the
+defined symbol addresses.
+</p>
+
+
+<h4>Profile data accuracy</h4>
+
+<p>Profile data accuracy depends on Hatari emulation accuracy.
+Profile data accuracy from most to least accurate when Hatari's
+default emulation options are used is following:</p>
+<ul>
+<li>Executed CPU and DSP instruction counts are accurate.</li>
+<li>DSP cycles counts (and their variance information) should be accurate.
+    </li>
+<li>030 CPU instruction cache miss information (provided by WinUAE CPU core)
+    is assumed to be accurate.</li>
+<li>Cycles used by a given CPU instruction depend to some extent on what
+    instruction(s), and data in case of 030, was processed before it.
+    While Hatari has some (instruction pairing) heuristics to take
+    that into account for 68000, in general instruction cycles are
+    averages.  For 68000, cycles (provided by OldUAE CPU core) should
+    be fairly accurate, for 68030 they aren't (yet) not very accurate.</li>
+</ul>
+
+
+<h4>Caller information</h4>
+
+<p>
+If you have loaded symbols (see <a href="#Debug_symbols">Debug symbols</a>)
+before continuing emulation/profiling, additional caller information
+will be collected for all the code symbol addresses which are called
+as subroutines.  This information includes callstack, call counts,
+calling instruction type (subroutine call, branch, return etc), and
+costs for those calls, both including costs for further subroutine
+calls and without them.
+</p>
+
+<p>When debugger is re-entered, current callstack is output before
+profiling information:</p>
+<pre>
+&gt; a <em>_P_LineAttack</em>
+CPU condition breakpoint 1 with 1 condition(s) added:
+        pc = $30f44
+$030f44 : 48e7 3820                            movem.l   d2-d4/a2,-(sp)
+&gt; c
+...
+CPU breakpoint condition(s) matched 1 times.
+        pc = $30f44
+Finalizing costs for 12 non-returned functions:
+- 0x32a3c: _P_GunShot (return = 0x32b7e)
+- 0x32b18: _A_FireShotgun (return = 0x3229a)
+- 0x3223a: _P_SetPsprite (return = 0x32e86)
+- 0x32e4e: _P_MovePsprites (return = 0x38070)
+- 0x37f44: _P_PlayerThink (return = 0x36ea0)
+- 0x36e44: _P_Ticker (return = 0x260e0)
+- 0x25dcc: _G_Ticker (return = 0x1e4c6)
+- 0x1e29e: _TryRunTics (return = 0x239fa)
+- 0x238e8: _D_DoomLoop (return = 0x2556a)
+- 0x24d7a: _D_DoomMain (return = 0x44346)
+...
+</pre>
+
+<p>("profile stack" command can be used in breakpoints with :noinit
+option to show backtraces during caller profiling.)</p>
+
+<p>Other information collected during profiling is shown with
+following command:</p>
+<pre>
+&gt; profile callers
+# &lt;callee&gt;: &lt;caller1&gt; = &lt;calls&gt; &lt;types&gt;[ &lt;inclusive/totals&gt;[ &lt;exclusive/totals&gt;]], &lt;caller2&gt; ..., &lt;callee name&gt;
+# types: s = subroutine call, r = return from subroutine, e = exception, x = return from exception,
+#        b = branch/jump, n = PC moved to next instruction, u = unknown PC change
+# totals: calls/instructions/cycles/misses
+0xe00030: 0xffffff = 1 e, _main
+0xe000fe: 0xe00a0c = 1 b, memdone
+0xe0010a: 0xe04e34 = 1 s 1/5/72 1/5/72, _run_cartridge_applications
+0xe00144: 0xe04dbe = 1 s 4/118/1512 1/27/444, _init_acia_vecs
+0xe001ea: 0xe00ec6 = 1 b, _int_acia
+0xe0038c: 0xe04c28 = 1 s 1/191/2052 1/191/2052, _init_exc_vec
+0xe003a6: 0xe04c2e = 1 s 1/388/4656 1/388/4656, _init_user_vec
+...
+</pre>
+
+<p>
+For example, if you don't know all the places from which a certain
+function is called, or in what context a certain interrupt handler can
+be called during the period you're profiling, profile caller
+information will tell you:
+</p>
+<pre>
+callee: caller: calls: calltype:
+  |       |       |   /
+0x379:  0x155 = 144 r, 0x283 = 112 b, 0x2ef = 112 b, 0x378 = 72 s
+583236/359708265/1631189180 72/4419020/19123430, dsp_interrupt
+           |                       |                 |
+    inclusive costs         exclusive costs     callee name
+  (of calls from 0x378)
+
+Calltypes:
+- b: jump/branch
+- n: PC  just moved to next address
+- r: subroutine return
+- s: subroutine call
+</pre>
+<p>
+(Most "calls" to "dsp_interrupt" were subroutine call returns (=r)
+to it from address 0x155.)
 </p>
 
 <p>
-After the profiling information has been post-processed, it will
-also be shown in the disassemby output.
+With the execution counts in normal profiling data, caller information
+can actually be used to have complete picture of what exactly the code
+did during profiling.  Main/overview work for this analysis is best done
+automatically, by the profiler data post-processor (documented below).</a>.
 </p>
 
 
-<a name="Build notes"></a><h3>Build notes</h3>
+<h4>Caller data accuracy</h4>
+
+<p>Everything about profile data accuracy applies also to caller costs,
+but there are additional things to take into account, mainly because
+profiler cannot determine when exceptions are being handling:</p>
+<ul>
+<li>If there are exception(s) during a subroutine call, costs for
+    the exception handling will also be accounted for that subroutine.
+    This shouldn't be a problem unless those costs are very large,
+    i.e. check how much CPU your exception handlers take.</li>
+<li>Indicated exception handler call type can be incorrect.</li>
+<li>Profiled code doing return address related stack manipulations
+    confuses call tracking and produces incorrect results (profiler
+    has special code to handle EmuTOS AES switcher because of this).
+    Typically this produces large list of functions that are finalized
+    at profile end, so it should be easy to detect.</li>
+<li>Compilicated recursive calls seem to sometimes cause inclusive
+    costs (ones including costs of further subroutine calls) to be
+    incorrect.  Sometimes this can be noticed by them being even
+    &gt;100%.</li>
+<li>On DSP, profiler heuristics assume (for speed reasons) that
+    <em>conditional</em> subroutine calls never call the very next
+    instruction (as that would be very bad/inefficient code).</li>
+</ul>
+
+
+<h4>Saving profile data to a file</h4>
+
+<p>It's useful to save the profile data to a file:
+<pre>
+&gt; profile save program-profile.txt
+</pre>
+
+<p>With the saved profile disassembly (and optional caller information)
+you can more easily investigate what your program did during
+profiling, search symbols &amp; addresses in it, and compare the
+results to profiles you've saved from earlier versions of your code.</p>
+
+<p>You may even create your own post-processing tools for
+investigating the profiling data more closely, e.g. to
+<a href="http://www.atari-forum.com/viewtopic.php?f=68&amp;t=24561&amp;start=75#p226505">find
+CPU/DSP communication bottlenecks</a>.</p>
+
+
+<h3>Profile data post-processing</h3>
+
+<p>Saved profile data can be post-processed with (Python) script
+installed by Hatari, to:</p>
+<ul>
+<li>Get lists of functions/symbols with highest costs.</li>
+<li>Get callgraphs of what functions/symbols cause those
+    costs and what kind of call hiearchy the profiled code
+    has.</li>
+<li>Export profile data in Valgrind's
+    <a href="http://valgrind.org/docs/manual/cl-format.html">Callgrind format</a>
+    for viewing it in
+    <a href="http://kcachegrind.sourceforge.net/">Kcachegrind</a>
+    GUI.</li>
+</ul>
+
+
+<h4>Providing symbols for the post-processor</h4>
+
+<p>When the data is post-processed, you should always provide
+the post-processor symbols for the profile code!  Relying just on the
+symbol in the profile data can cause costs to be asssigned to wrong
+symbol, if symbol's code wasn't called through symbol's own address,
+but by jumping inside its code.</p>
+
+<p>If your code is in fixed location, you should tell
+post-processor to handle symbol addresses as absolute (-a):</p>
+<pre>
+$ hatari_profile.py <b>-a</b> etos512k.sym emutos-profile.txt
+</pre>
+
+<p>Normal programs are relocated and you should instead give
+the symbols as TEXT (code) section relative ones (-r):</p>
+<pre>
+$ hatari_profile.py <b>-r</b> program.sym program-profile.txt
+</pre>
+
+<p>If symbols are included to your binary in DRI/GST format, first they
+need to be extracted to <a href="#Debug_symbols">the ASCII format</a>
+understood by the post-processor:</p>
+<pre>
+$ gst2ascii -l -o program.prg &gt; program.sym
+</pre>
+
+<p>If there are some extra symbols that you don't want to see
+separately in profiles, because they aren't real functions,
+but e.g. loop labels, you can either remove them manually
+from the ASCII *.sym file, or filter them out with grep:
+</p>
+<pre>
+$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 | &gt; program.sym
+</pre>
+
+<p>Above post-processor examples just parse + verify the given data
+and produce output like this:</p>
+<pre>
+Hatari profile data processor
+
+Parsing TEXT relative symbol address information from program.sym...
+[...]
+3237 lines with 1550 code symbols/addresses parsed, 0 unknown.
+
+Parsing profile information from program-profile.txt...
+[...]
+9575 lines processed with 368 functions.
+
+CPU profile information from 'program-profile.txt':
+- Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
+</pre>
+
+
+<h4>Post-processor provided statistics</h4>
+
+<p>To get statistics (-s) and list of top (-t) CPU users in profile,
+add "-st" option:</p>
+<pre>
+$ hatari_profile.py <b>-st</b> -r program.sym program-profile.txt
+[...]
+CPU profile information from 'program-profile.txt':
+- Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
+
+Time spent in profile = 34.49539s.
+
+Calls:
+- max = 187738, in __toupper at 0x52b88, on line 8286
+- 1585901 in total
+Executed instructions:
+- max = 1900544, in flat_remap_mips+14 at 0x47654, on line 7020
+- 64499351 in total
+Used cycles:
+- max = 15224620, in flat_remap_mips+18 at 0x47658, on line 7022
+- 553392132 in total
+Instruction cache misses:
+- max = 184308, in _BM_T_GetTicks at 0x43b90, on line 4772
+- 4941307 in total
+
+Calls:
+  11.84%      187698  __toupper
+  11.48%      182105  _BM_T_GetTicks
+  11.48%      182019  _I_GetTime
+[...]
+Executed instructions:
+  34.83%    22462729  flat_generate_mips
+  14.08%     9080215  flat_remap_mips
+   8.55%     5515945  render_patch_direct
+   5.09%     3283328  _TryRunTics
+[...]
+Used cycles:
+  23.62%   130702768  flat_generate_mips
+  12.42%    68735832  flat_remap_mips
+   9.77%    54041148  _TryRunTics
+   5.80%    32111536  correct_element
+[...]
+Instruction cache misses:
+  37.03%     1829764  _TryRunTics
+  11.20%      553314  _BM_T_GetTicks
+   9.44%      466319  _NetUpdate
+   9.27%      457899  _HGetPacket
+[...]
+</pre>
+
+<p>If you want to see also symbol addresses and what is per call
+cost, add -i option:<p>
+<pre>
+$ hatari_profile.py -st <b>-i</b> -r program.sym program-profile.txt
+[...]
+Executed instructions:
+  34.83%    22462729  flat_generate_mips   (0x04778a, 774576 / call)
+  14.08%     9080215  flat_remap_mips      (0x047646, 313110 / call)
+   8.55%     5515945  render_patch_direct  (0x047382, 29977 / call)
+   5.09%     3283328  _TryRunTics          (0x042356, 19660 / call)
+[...]
+Used cycles:
+  23.62%   8.14728s  130702768  flat_generate_mips  (0x04778a, 0.28094s / call)
+  12.42%   4.28461s   68735832  flat_remap_mips     (0x047646, 0.14775s / call)
+   9.77%   3.36863s   54041148  _TryRunTics         (0x042356, 0.02017s / call)
+   5.80%   2.00165s   32111536  correct_element     (0x04a658, 0.00001s / call)
+[...]
+Instruction cache misses:
+  37.03%     1829764  _TryRunTics          (0x042356, 10956 / call)
+  11.20%      553314  _BM_T_GetTicks       (0x043b90, 3 / call)
+   9.44%      466319  _NetUpdate           (0x041bcc, 5 / call)
+   9.27%      457899  _HGetPacket          (0x041754, 5 / call)
+[...]
+</pre>
+
+<p>(For cycles the "per call" information is in seconds, not as
+a cost count.)</p>
+
+<p>If your profile file contains caller information, you should
+add -p option to see it, as that will also help in detecting symbol
+issues (see <a href="#Interpreting_the_numbers">Interpreting
+the numbers</a>):<p>
+<pre>
+$ hatari_profile.py -st <b>-p</b> -r program.sym program-profile.txt
+[...]
+9575 lines processed with 368 functions.
+[...]
+Of all 1570498 switches, ignored 581 for type(s) ['r', 'u', 'x'].
+
+CPU profile information from 'badmood-level-load-CPU.txt':
+- Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
+[...]
+Calls:
+  11.84%  11.84%      187698    187698  __toupper
+  11.48%  11.48%      182105    182105  _BM_T_GetTicks
+  11.48%  22.95%      182019    364038  _I_GetTime
+[...]
+Executed instructions:
+  34.83%  34.86%  34.86%    22462729  22484024  22484024  flat_generate_mips
+  14.08%  14.10%  14.10%     9080215   9091270   9091676  flat_remap_mips
+   8.55%                     5515945                      render_patch_direct
+   5.09%   5.11%  94.96%     3283328   3294022  61247717  _TryRunTics
+[...]
+Used cycles:
+  23.62%  23.69%  23.69%   130702768 131100604 131100604  flat_generate_mips
+  12.42%  12.46%  12.46%    68735832  68928816  68930904  flat_remap_mips
+   9.77%   9.80%  95.66%    54041148  54238744 529368824  _TryRunTics
+   5.80%   5.82%   5.82%    32111536  32193664  32193664  correct_element
+[...]
+Instruction cache misses:
+  37.03%  37.14%  98.57%     1829764   1835261   4870573  _TryRunTics
+  11.20%  11.24%  11.24%      553314    555191    555191  _BM_T_GetTicks
+   9.44%   9.49%  29.13%      466319    468782   1439340  _NetUpdate
+   9.27%   9.29%   9.37%      457899    459197    463217  _HGetPacket
+[...]
+</pre>
+
+<p>Now there's a message telling that some of the calls were ignored as
+based on "call type" they were determined to be actually returns from
+exceptions, not real calls (this is mainly important for callgraph
+generation, discussed below).</p>
+
+
+<h4>Interpreting the results</h4>
+
+<p>In addition to accuracy issues mentioned in previous Profiling
+sections, function/symbol level costs have gotchas of their own.</p>
+
+<p>The first cost percentage and count columns are <em>sums for all
+the instructions</em> that were in profile data file <em>between
+the indicated symbol's address and the address of the next symbol</em>
+(= "between-symbols" cost).</p>
+
+<p><strong>NOTE:</strong> if your symbol file doesn't contain addresses
+for all the relevant symbols, results from this can be misleading because
+instructions costs get assigned to <em>whatever</em> symbol's address
+happened to preceed those instructions.  And you don't see which
+caller is causing it from caller info or callgraph either, as entry
+point for that time sink lacking a symbol means profiler hadn't
+tracked calls to it...</p>
+
+<p>The next two cost percentage and count columns are for <em>subroutine
+calls costs</em>, first one for exclusive and latter for inclusive cost
+i.e. including costs for further subroutine calls.  Values are based on
+caller information documented above.</p>
+
+<p>Reasons why between-symbol costs, and subroutine call costs can
+differ are following:</p>
+<ul>
+<li>Subroutine terminates before next symbol address: exclusive
+    cost is smaller than in-between cost <em>because of missing
+    symbol information</em>
+    (these are indicated with '*' in statistics).</li>
+<li>Subroutine is called more through jumps/branches than through
+    subroutine calls: inclusive call count may be smaller than
+    in-between call count which includes branches/jumps.</li>
+<li>Subroutine jumps/branches to another function instead of
+    using subroutine call, or function contains additional
+    (non-function) labels: exclusive cost is larger than
+    in-between cost.</li>
+<li>Exception happening during subroutine call: exclusive cost is
+    (slightly) larger than in-between cost.</li>
+</ul>
+
+<p>In the first case, you should check the profile data to find out
+whether there are missing symbols for executed function entry points.
+You can notice function entry points as address gap and/or code
+retrieving arguments from stack, and exit points from RTS instruction.</p>
+
+<p>Second case can also be seen from the profile data.  Call count
+is same as count for how many times first instruction is executed
+(worst case: large loop on subroutine's first instruction).</p>
+
+<p>While subroutine costs should be more accurate and relevant, due to
+code optimizations many of the functions are not called as subroutines
+(on m68k, using JSR/BSR), but just jumped or branced to.  Because of
+this, it's useful to compare both subroutine and between-symbols
+costs.  One should be able to see from the profile disassembly which
+of the above cases is cause for the discrepancy in the values.</p>
+
+<p><strong>NOTE:</strong>Before starting to do any serious source
+level optimizations, you should <em>always</em> verify from profile
+data (disassembly) where exactly the costs are in a function, to make
+sure your optimization efforts can actually help the performance.</p>
+
+
+<h4>Generating and viewing callgraphs</h4>
+
+<p>Callgraphs require saved profile data to contain caller information,
+i.e. symbols should have been loaded before starting profiling (normally
+done with "symbols prg" command in Hatari debugger).</p>
+
+<p>Separate callgraphs will be created for each of the costs
+(0=calls, 1=instructions, 2=cycles) with the -g option:</p>
+<pre>
+$ hatari_profile.py <b>-p -g</b> -r program.sym program-profile.txt
+[...]
+Generating 'program-profile-0.dot' DOT callgraph file...
+
+Generating 'program-profile-1.dot' DOT callgraph file...
+
+Generating 'program-profile-2.dot' DOT callgraph file...
+[...]
+</pre>
+
+<p>Callgraphs are saved in <a href="http://www.graphviz.org/">GraphViz</a>
+"dot" format.  Dot files can be viewed:</p>
+<ul>
+<li>With "dotty" program included with GraphViz</li>
+<li>With <a href="http://code.google.com/p/jrfonseca/wiki/XDot">XDot</a>
+    Python GUI (best option on Linux), or some platform specific viewer</li>
+<li>By converting dot file to PostScript or SVG format before
+    viewing it with viewers for those:
+<pre>
+$ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
+</pre>
+    (problem with most PS/PDF and SVG viewers is that either they
+    don't allow zooming large callgraphs enough or they use huge
+    amounts of memory and get very slow)
+    </li>
+</ul>
+
+<p>Produced callgraph will look like this:</p>
+<div style="text-align:center">
+  <a href="images/callgraph.svg">
+    <img src="images/callgraph.png" width="953" height="589"
+         alt="Part of callgraph" />
+  </a>
+</div>
+
+<p>Interpreting the callgraph:</p>
+<ul>
+<li>Diamond shaped nodes are symbols called as subroutines.
+    Values listed in them are subroutine call costs; inclusive
+    (total) cost with exclusive (own) cost in parenthesis,
+    followed by inclusive cost count.  Exclusive cost is
+    shown only if it differs from inclusive one.</li>
+<li>Ellipse shaped nodes are for other symbols (functions
+    called using jumps/branches, loop labels etc).  Values
+    listed in them are between-symbols costs, i.e. normally
+    they're included to inclusive (total) costs shown in
+    subroutine call node somewhere higher in call hierarchy.</li>
+<li>Nodes which exclusive (own) or between-symbols costs
+    exceed default or explicitly given threshold value,
+    have gray background.</li>
+<li>Both nodes which inclusive or between-symbols cost exceeds
+    the threshold value, and the arrows to &amp; from them
+    are marked red.
+<li>Arrow types indicate call types; normal arrows subroutine
+    calls, circles branches/jumps, backarrows returns.
+    Exception calls and returns are indicated with dashed lines,
+    unknown calls with dotted lines.</li>
+<li>Arrow text tells from which address the call orignated
+    (inside the calling function).  If symbol had multiple
+    callers, text includes count of calls from that particular
+    address, and its percentage of all calls done to that
+    symbol.</li>
+</ul>
+
+
+<h4>Making large callgraphs readable</h4>
+
+<p>If profile is for larger and more varied amount of code
+(e.g. program startup), the resulting callgraph can be so
+huge it's unreadable.</p>
+
+<p>If your code has interrupt handlers, they can get called
+at any point, which can show in callgraph as "explicit" calls
+from the interrupted functions.  To get rid of such incorrect
+calls, give interrupt handler names to --ignore-to option:</p>
+<pre>
+$ hatari_profile.py -p -g <b>--ignore-to handler1,handle2</b> -r program.sym program-profile.txt
+</pre>
+
+<p>In large callgraph most of the functions aren't really interesting,
+because their contribution to the cost is insignificant. You can
+remove large number of them with --no-leafs and --no-intermediate
+options, they act <em>only</em> on on nodes which costs are below
+given threshold.  Leaf nodes are ones which don't have any parents
+and/or children and intermediate ones which have only single parent
+and children (node calling itself is not taken into account).
+
+<p>Threshold for this is given with the --limit (-l) option.  With
+that it typically makes also sense to change the node emphasis
+threshold with --emph-limit (-e) option:</p>
+<pre>
+$ hatari_profile.py -p -g <b>-l 0.5 -e 2.0</b> -r program.sym program-profile.txt
+</pre>
+
+<p>If you're not interested in from how many different addresses
+a given function calls another function, use --compact option.  If you
+still see multiple calls between two nodes with it, the reason is that
+they happened through different call paths which were removed from
+the callgraph after --compact option was applied:</p>
+<pre>
+$ hatari_profile.py -p -g -l 1.0 -e 2.0 <b>--no-leafs --no-intermediate --compact</b> -r program.sym program-profile.txt
+</pre>
+
+<p>If even this doesn't help, you can remove all nodes below
+the given cost threshold limit with --no-limited option, but this
+often doesn't leave much of a call hiararchy.  Instead you may
+consider removing all nodes except for subroutine call ones with
+--only-subroutines option.</p>
+
+<p>If you have trouble locating nodes you're specially interested
+about, you can either color them differently with the --mark option,
+or exclude everything else from the callgraph except those nodes and
+their immediate callers &amp; callees, with the --only option:</p>
+<pre>
+$ hatari_profile.py -p -g <b>--only func1,func2</b> -r program.sym program-profile.txt
+</pre>
+
+<p>Last option for reading the callgraph is using -k option to
+export the data for use in (Linux) Kcachegrind UI.  It generates
+callgraphs on the fly, and just for the area around the function
+you selected, so navigating in callgraph may be easier.  It also
+shows the related profile disassembly, which can make verifying
+matters easier:</p>
+<pre>
+$ hatari_profile.py <b>-p -k</b> -r program.sym program-profile.txt
+[...]
+Generating callgrind file 'program-profile.cg'...
+[...]
+$ kcachegrind program-profile.cg
+</pre>
+<div style="text-align:center">
+  <img src="images/kcachegrind.png" width="887" height="442"
+       alt="Kcachegrind screenshot" />
+</div>
+
+
+<h3>Usage examples</h3>
+
+<p>
+Here's a list of some common debugging tasks and how to do them
+with the Hatari debugger:
+</p>
+
+<dl>
+<dt><em>Stopping on program startup and examining its data</em></dt>
+<dd>Please see <a href="#Breakpoint_variables">Breakpoint variables</a>
+and <a href="#Inspecting_emulation_state">Inspecting emulation state</a>
+sections.
+</dd>
+
+<dt><em>Tracing specific things in the system</em></dt>
+<dd>To trace e.g. all GEMDOS calls and IO operations, use:
+<pre>
+trace  gemdos,io_all
+</pre>
+Please see <a href="#Tracing">Tracing</a> section for more information
+on tracing, what's possible with it and what are its limitations.
+</dd>
+
+<dt><em>Stopping when certain PC address is passed Nth time</em></dt>
+<dd>To stop e.g. after function/subroutine at $12345 is called for
+the 6th time:
+<pre>
+a  $12345 :6
+</pre>
+</dd>
+
+<dt><em>Stopping when specific exception happens</em></dt>
+<dd>Hatari's -D option doesn't invoke debugger on all exceptions and
+doesn't allow invoking debugger just for specific exceptions.  To
+stop at specific exception, one can check when it's called.
+At the start of memory is the CPU exception table for exception
+handler addresses, so to stop e.g. at bus error with some extra
+information, one can use following:
+<pre>
+history  on
+b  pc=($8)
+</pre>
+After bus error invokes debugger, 'history' command can then be used
+to see (executed memory addresses with their current) instructions
+leading to the error.  The most interesting vector addresses are:
+$8 (Bus error), $C (Address error), $10 (Illegal instruction),
+$14 (Division by zero).
+</dd>
+
+<dt><em>Stopping when register has a specific value</em></dt>
+<dd>To stop when e.g. D1 register contains value 5, set a breakpoint on:
+<pre>
+b  d1 = 5
+</pre>
+</dd>
+
+<dt><em>Stopping when a register value changes</em></dt>
+<dd>To stop when e.g. D1 register value changes, set a breakpoint on:
+<pre>
+b  d1 ! d1
+</pre>
+</dd>
+
+<dt><em>Stopping when register value is within some range</em></dt>
+<dd>To stop when e.g. D1 register value is within range of 10-30,
+set a breakpoint on:
+<pre>
+b  d1 &gt; 9  &amp;&amp;  d1 &lt; 31
+</pre>
+</dd>
+
+<dt><em>Stopping when memory location has a specific value</em></dt>
+<dd>To stop when e.g. bit 1 of the Video Shifter Sync Mode byte at
+IO address $ff820a is set i.e. video frequency is 60Hz, set
+a breakpoint on:
+<pre>
+b  ($ff820a).b & 2 = 2
+</pre>
+</dd>
+
+<dt><em>Stopping when a memory value changes</em></dt>
+<dd>To stop when above bit changes, set a breakpoint on its value
+being different from the current value ('!' compares for inequality):
+<pre>
+b  ($ff820a).b & 2 ! ($ff820a).b & 2
+</pre>
+</dd>
+
+<dt><em>Tracing all changes in specific memory location</em></dt>
+<dd>To see the new values and continue without stopping, add
+the ":trace" breakpoint option:
+<pre>
+b  ($ff820a).b & 2 ! ($ff820a).b & 2  :trace
+</pre>
+</dd>
+
+<dt><em>Stopping at specific screen position</em></dt>
+<dd>To stop e.g. when VBL is 100, HBL is 40 and line cycles is 5,
+use the corresponding debugger variables:
+<pre>
+b  VBL = 100  &amp;&amp;  HBL = 40  &amp;&amp;  FrameCycles = 5
+</pre>
+</dd>
+
+<dt><em>Stopping after value increases/decreases by certain amount</em></dt>
+<dd>To stop e.g. after D0 value has increased by 10, set breakpoint on:
+<pre>
+b  d0 = "d0 + 10"
+</pre>
+</dd>
+
+<dt><em>Examining specific system call return value</em></dt>
+<dd>To check e.g. what's the Fopen() GEMDOS call return value,
+check with "info gemdos 1" its opcode, set a breakpoint for that
+and step to next (n) instruction from the trap call when breakpoint
+is hit. GEMDOS call return value is then in register D0:
+<pre>
+&gt; trace  gemdos
+&gt; b  GemdosOpcode = $3D
+&gt; c
+[...continue until breakpoint...]
+1. CPU breakpoint condition(s) matched 1 times.
+        GemdosOpcode = $3D
+&gt; n
+GEMDOS 0x3D Fopen("TEST.TXT", read-only)
+&gt; e  d0
+= %1000000 (bin), #64 (dec), $40 (hex)
+</pre>
+</dd>
+
+<dt><em>Seeing code leading to a breakpoint</em></dt>
+<dd>To see CPU instructions executed before debugger was entered,
+you need to enabled history tracking <em>before</em> it. Whenever
+debugger is entered, you can then request given number (here 16) of
+past instructions to be shown:
+<pre>
+history  cpu
+c
+[breakpoint is hit and debugger entered]
+history  16
+</pre>
+</dd>
+
+<dt><em>Getting instruction execution history for every breakpoint</em></dt>
+<dd>
+To see last 16 instructions for both CPU and DSP whenever
+(a normal or tracing) breakpoint is hit:
+<pre>
+history  on
+lock  history 16
+c
+</pre>
+</dd>
+
+<dt><em>Single stepping so that new register values are shown after each step</em></dt>
+<dd>
+<pre>
+lock  registers
+s
+[new register values]
+s
+[new register values]
+...
+</pre>
+</dd>
+
+<dt><em>Showing current stack contents</em></dt>
+<dd>To see first 64 bytes on top of the stack, use:
+<pre>
+m  "a7-64"-a7
+</pre>
+</dd>
+
+<dt><em>Seeing specific information each time debugger is entered</em></dt>
+<dd>To see above information whenever some breakpoint is hit,
+you enter debugger manually etc, write that command to e.g.
+<span class="file">stack.ini</span> file and then use:
+<pre>
+lock  file stack.ini
+</pre>
+Please see also <a href="#Chaining_breakpoints">Chaining breakpoints</a>
+section for more examples on what you can do with the debugger input files.
+</dd>
+
+<dt><em>Finding where a program or the OS is stuck</em></dt>
+<dd>Profiling tells from which addresses CPU is executing the instructions:
+<pre>
+profile  on
+c
+[after a while, use AltGr+Pause to get back to debugger]
+profile  counts
+</pre>
+Please see <a href="#Profiling">Profiling</a> section for more info.
+</dd>
+
+<dt><em>Seeing program callstack when breakpoint is hit</em></dt>
+<dd><a href="#Caller_information">Profiler caller data</a> includes
+callstack information (with some limitations).
+</dd>
+
+<dt><em>Seeing call backtraces whenever given function is called</em></dt>
+<dd>Enable profiling, load symbols for the program and set breakpoint
+for the function you're interested about, in the following way:
+<pre>
+profile on
+symbols prg
+b  pc = _my_function  :quiet :noinit :file showstack.ini
+</pre>
+I.e. whenever 'my_function' address is called, quietly trigger a
+breakpoint without reseting profiling (callstack) information and run
+debugger command(s) from the 'showstack.ini' debugger script file,
+which contains following command:
+<pre>
+profile stack
+</pre>
+</dd>
+
+<dt><em>Seeing how program functions/symbols call each other</em></dt>
+<dd><a href="#Profile_data_post-processing">Profile data
+post-processing</a> can provide execution callgraphs.
+</dd>
+
+</dl>
+
+<p>
+Hint: for most of the above commands, one just needs to prefix them with
+"d" (or "dsp" when using full command names) to do similar operation on
+the DSP.
+</p>
+
+
+<h3 id="Build_notes">Build notes</h3>
 
 <p>
 Lastly, the debugger is much nicer to use with the command line
-history, editing and especially with the command, command argument and
-symbol name completion support. If you're building Hatari yourself,
-please make sure that you have the GNU readline development files
-installed (on Debian / Ubuntu these come from the libreadline5-dev
-package). Otherwise this doesn't get enabled when you configure
-Hatari.
+history, editing and especially the completion support for the
+command, command argument and symbol names.
 </p>
-
+<p>
+If you're building Hatari yourself, please make sure that you have the
+GNU readline development files installed (on Debian / Ubuntu these
+come from the libreadline5-dev package). Otherwise the name completion
+and other features don't get enabled when you configure Hatari.
+</p>
 <p>
 ENABLE_TRACING define needs to be set for tracing to work.
 By default it should be enabled.
 </p>
 
 
-<a name="Performance"></a><h2>Performance</h2>
+<h2 id="Performance">Performance</h2>
 
 <p>Hatari performance varies between Atari programs, depending on what
 features Hatari needs to emulate for them.  Less accurate Atari
@@ -3209,7 +3701,7 @@ overhead.</p>
 have a noticeable effect on performance.</p>
 
 
-<a name="Improving Hatari performance"></a><h3>Improving Hatari performance</h3>
+<h3>Improving Hatari performance</h3>
 
 <p>
 Hatari currently runs best in 16 or 32 bits per pixel color depth
@@ -3247,27 +3739,27 @@ can be slower despite optimizations.
 </p>
 
 
-<a name="Emulation options"></a><h3>Emulation options</h3>
+<h3>Emulation options</h3>
 
 <p>
 Emulation options have the largest impact on performance.
 These options can be changed from the Hatari GUI System dialog and
 the emulation needs to be rebooted for any of these changes to take
-an effect!
+an effect!  They're enabled by default.
 </p>
 
-<h5>DSP</h5>
+<h4>DSP</h4>
 <p>
 Emulating the Falcon DSP is performance-wise several times more demanding
 than emulating the m68k; DSP runs at higher frequency, executes many
 instructions for each m68k instruction and emulation isn't as mature
-and optimized.  Unless some program needs DSP, <em>none</em> or
+and optimized.  Unless some Falcon program needs DSP, <em>none</em> or
 <em>dummy</em> DSP emulation mode could be used.  Even of the programs
 that do use DSP, many use it only for background music and work
 fine without the real DSP emulation.
 </p>
 
-<h5>Timer-D</h5>
+<h4>Timer-D</h4>
 <p>
 The single largest factor contributing to general Hatari emulation
 performance is the handling of interrupts.  Enabling Timer-D patching
@@ -3276,7 +3768,15 @@ significantly reduces the number of interrupts generated by the emulated
 Atari machine. Using this has adverse effect only for very rare programs.
 </p>
 
-<h5>Compatible CPU</h5>
+<h4>FDC</h4>
+<p>
+While accurate FDC emulation doesn't take that much CPU, it slows down
+floppy image accesses (and Hatari startup) a lot.  Only <em>very</em>
+few demos and games require accurate FDC emulation for their copy protection,
+so enabling fast floppy access is fairly safe.
+</p>
+
+<h4>Compatible CPU</h4>
 <p>
 After the DSP and  interrupts, m68k emulation takes most time.
 Disabling the "Slower but more compatible CPU" option will speed up
@@ -3295,15 +3795,15 @@ machine.
 </p>
 
 <p>
-NOTE: Above options may cause some programs not to work correctly.
+<strong>NOTE</strong>: Above options may cause some programs to work in correctly.
 The <a href="compatibility.html">Hatari Software Compatibility List</a>
-lists programs known to need real real Falcon DSP emulation or Timer-D
-frequency.  Disabling "Compatible CPU" option is recommended only as
-a last resort.
+lists programs known to need real real Falcon DSP emulation, Timer-D
+frequency or accurate FDC timings.  Disabling "Compatible CPU" option
+is recommended only as a last resort.
 </p>
 
 
-<a name="Emulator options"></a><h3>Emulator options</h3>
+<h3>Emulator options</h3>
 
 <p>
 Emulator options don't usually have as large effect on performance as
@@ -3312,7 +3812,7 @@ just the quality of the emulation "output". These options can also
 be toggled at run-time without rebooting the emulation.
 </p>
 
-<h5>Sound</h5>
+<h4>Sound</h4>
 <p>
 Internal Hatari sound handling and the SDL_mixer sound thread
 libALSA sound processing can account up to 1/3 of the Hatari CPU usage
@@ -3323,7 +3823,7 @@ in Hatari as this can significantly reduce the number of generated
 interrupts.
 </p>
 
-<h5>Frame skipping</h5>
+<h4>Frame skipping</h4>
 <p>
 Screen rendering can take noticeable amount of CPU time. The default
 Hatari "auto" frame skipping should be used unless there's a good
@@ -3340,7 +3840,7 @@ emulation to run slower than a real Atari.  If SDL doesn't use VSync,
 Hatari does redundant work to convert frames you can't see.
 </p>
 
-<h5>Zooming</h5>
+<h4>Zooming</h4>
 <p>
 If you are not using frame skip, disabling zooming can have
 noticeable improvement on performance.  You can do this by specifying
@@ -3351,30 +3851,25 @@ mode-lines (e.g. "320x200") to your xorg.conf file.  If you still want
 to use zooming, disabling borders may help a bit.
 </p>
 
-<h5>Spec512 color handling</h5>
+<h4>Spec512 color handling</h4>
 <p>
 Handling Spec512 color modes which change the ST/e palette constantly
 takes some extra CPU.  If you have problems with CPU usage in such
 screens and you care more e.g. from the sound quality than visuals, you
-can disable the Spec512 mode handling by zeroing the threshold for that
-with the <span class="commandline">--spec512 0</span> option.
+can either increase the threshold or disable the Spec512 mode handling
+completely by zeroing the threshold for that with the
+<span class="commandline">--spec512 0</span> option.
 </p>
 
-<h5>Statusbar and drive LED</h5>
+<h4>Statusbar and drive LED</h4>
 <p>
-If your version of libSDL uses VSync to synchronize the screen
-output, drawing of the statusbar or the drive LED (when statusbar is
-disabled) may have some minor impact on performance too.  Normally
-they shouldn't.
-</p>
-<p>
-To also the drive LED shown when statusbar is disabled, you need to
-start Hatari with <span class="commandline">--drive-led off</span>.
-Then just save the Hatari configuration to make that option permanent.
+If your version of the SDL library uses VSync to synchronize the screen
+output, drawing of the statusbar or the drive LED may have some minor
+impact on performance too.  Normally they shouldn't.
 </p>
 
 
-<a name="Measuring the performance"></a><h3>Measuring the performance</h3>
+<h3>Measuring the performance</h3>
 
 <p>
 There are a couple of ways to monitor and measure Hatari performance.
@@ -3399,13 +3894,13 @@ It depends on what you want to measure, but usually it's best to
 disable sound and set high frame skip like
 <span class="commandline">--sound off --frameskips 60</span> so that
 the associated external overheads are minimized.  E.g. video output
-can on some platforms do VSync and measurements would then show
-your monitor refresh frequency instead of actual Hatari performance.
+can on some platforms do VSync and measurements would then show your
+monitor refresh frequency instead of the actual Hatari performance.
 </p>
 <p>
 On Unix systems with <span class="commandline">times()</span> function
 call, only the time spent by the Hatari process itself is measured.
-On other systems much less accurate SDL "wall clock" timings are
+On other systems, much less accurate SDL "wall clock" timings are
 used.  To make latter more accurate you could use also
 <span class="commandline">--run-vbls</span> option to specify how many
 VBLs Hatari should run before it exits.  In this case it's best to
@@ -3414,7 +3909,7 @@ given as memory snapshot to Hatari with the frame skip set equal to
 the VBL count.
 </p>
 <p>
-Note that the numbers can fluctuate quite a bit, <em>especially</em>
+Note that these numbers can fluctuate quite a bit, <em>especially</em>
 when the SDL timings are used, so for (statistically) reliable numbers
 you may need to repeat the measurement several times.  You should of
 course make also sure that the system doesn't have any other activity
@@ -3422,9 +3917,9 @@ at the same time you're making the measurements.
 </p>
 
 
-<a name="Appendix"></a><h2>Appendix</h2>
+<h2>Appendix</h2>
 
-<a name="Copying"></a><h3>Copying</h3>
+<h3>Copying</h3>
 
 <div class="backdropped">
 <p>This program is free software; you can redistribute it and/or modify
@@ -3446,7 +3941,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 Foundation</a> | <a href="http://www.fsf.org/licenses/gpl.html">The
 GNU General Public License</a></p>
 
-<a name="Introduction to Emulation"></a><h3>Introduction to Emulation</h3>
+<h3>Introduction to Emulation</h3>
 
 <p>Emulation via software is an art and Hatari is an example of this.</p>
 <p>Emulation is to make a computer behave like a (probably) completely
@@ -3482,20 +3977,17 @@ emulation of the various custom chips and hardware
 parts of the emulated system is much trickier.
 </p>
 
-<br>
+<hr />
 
-<hr style="width: 100%; height: 2px;">
-<table border="0" width="100%">
-  <tbody>
-    <tr>
-      <td align="left"><a href="http://validator.w3.org/check/referer"><img
- src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
- border="0" height="31" width="88"></a></td>
-      <td align="right">
-      October 2010
-      </td>
-    </tr>
-  </tbody>
-</table>
+<div class="validhtml">
+  <a href="http://validator.w3.org/check/referer"><img
+    src="http://www.w3.org/html/logo/downloads/HTML5_Badge_32.png"
+    alt="Valid HTML!" height="32" width="32" /></a>
+</div>
+
+<div class="bottomdate">
+  May 2013
+</div>
+
 </body>
 </html>

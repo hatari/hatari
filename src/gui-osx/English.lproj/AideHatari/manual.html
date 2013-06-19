@@ -2421,6 +2421,17 @@ explained in
 etc.  Use this if "lock" option isn't enough or you want different
 information show on breakpoints and when entering the debugger.
 </dd>
+
+<dt><em>noinit</em></dt>
+<dd>
+Hitting breakpoint doesn't re-initialize debugger which would e.g.
+cause profiling data to be reset.  This implies trace option as
+entering debugger would also re-initialize debugger state. This option
+is mainly intended for breakpoints that use :file option to show
+backtraces with "profile stack" command during
+<a href="#Profiling">profiling</a>.  See
+<a href="#Usage_examples">Usage examples</a> section for an example.
+</dd>
 </dl>
 
 <p>
@@ -2803,7 +2814,7 @@ When you're back in debugger, you can inspect the collected profile data:
 <pre>
 &gt; h profile
 'profile' - profile CPU code
-Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|addresses|save&gt; [count|address|file]
+Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|stack|addresses|save&gt; [count|address|file]
         'on' & 'off' enable and disable profiling.  Data is collected
 	until debugger is entered again at which point you get profiling
         statistics ('stats') summary.
@@ -2818,8 +2829,9 @@ Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|addresses|
 	starts from the first executed instruction, or you can
 	specify the starting address.
 
-	'callers' shows (raw) caller information for addresses which
-        had symbol(s) associated with them.
+        'callers' shows (raw) caller information for addresses which
+	had symbol(s) associated with them.  'stack' shows the currect
+	profile stack, this is useful only with :noinit breakpoints.
 
 	Profile information can be saved with 'save'.
 </pre>
@@ -2894,12 +2906,44 @@ default emulation options are used is following:</p>
 
 <p>
 If you have loaded symbols (see <a href="#Debug_symbols">Debug symbols</a>)
-before continuing emulation, additional caller information will be
-collected for all the code symbol addresses.  This information
-includes call counts, calling instruction type (subroutine call,
-branch, return etc), and costs for those calls, both including costs
-for further subroutine calls and without them:
+before continuing emulation/profiling, additional caller information
+will be collected for all the code symbol addresses which are called
+as subroutines.  This information includes callstack, call counts,
+calling instruction type (subroutine call, branch, return etc), and
+costs for those calls, both including costs for further subroutine
+calls and without them.
 </p>
+
+<p>When debugger is re-entered, current callstack is output before
+profiling information:</p>
+<pre>
+&gt; a <em>_P_LineAttack</em>
+CPU condition breakpoint 1 with 1 condition(s) added:
+        pc = $30f44
+$030f44 : 48e7 3820                            movem.l   d2-d4/a2,-(sp)
+&gt; c
+...
+CPU breakpoint condition(s) matched 1 times.
+        pc = $30f44
+Finalizing costs for 12 non-returned functions:
+- 0x32a3c: _P_GunShot (return = 0x32b7e)
+- 0x32b18: _A_FireShotgun (return = 0x3229a)
+- 0x3223a: _P_SetPsprite (return = 0x32e86)
+- 0x32e4e: _P_MovePsprites (return = 0x38070)
+- 0x37f44: _P_PlayerThink (return = 0x36ea0)
+- 0x36e44: _P_Ticker (return = 0x260e0)
+- 0x25dcc: _G_Ticker (return = 0x1e4c6)
+- 0x1e29e: _TryRunTics (return = 0x239fa)
+- 0x238e8: _D_DoomLoop (return = 0x2556a)
+- 0x24d7a: _D_DoomMain (return = 0x44346)
+...
+</pre>
+
+<p>("profile stack" command can be used in breakpoints with :noinit
+option to show backtraces during caller profiling.)</p>
+
+<p>Other information collected during profiling is shown with
+following command:</p>
 <pre>
 &gt; profile callers
 # &lt;callee&gt;: &lt;caller1&gt; = &lt;calls&gt; &lt;types&gt;[ &lt;inclusive/totals&gt;[ &lt;exclusive/totals&gt;]], &lt;caller2&gt; ..., &lt;callee name&gt;
@@ -2946,7 +2990,7 @@ to it from address 0x155.)
 With the execution counts in normal profiling data, caller information
 can actually be used to have complete picture of what exactly the code
 did during profiling.  Main/overview work for this analysis is best done
-automatically, by the profiler data post-processor.
+automatically, by the profiler data post-processor (documented below).</a>.
 </p>
 
 
@@ -3000,7 +3044,7 @@ CPU/DSP communication bottlenecks</a>.</p>
 installed by Hatari, to:</p>
 <ul>
 <li>Get lists of functions/symbols with highest costs.</li>
-<li>Get callgraphs of what functions/symbols causes those
+<li>Get callgraphs of what functions/symbols cause those
     costs and what kind of call hiearchy the profiled code
     has.</li>
 <li>Export profile data in Valgrind's
@@ -3215,21 +3259,28 @@ caller information documented above.</p>
 differ are following:</p>
 <ul>
 <li>Subroutine terminates before next symbol address: exclusive
-    cost is smaller <em>because of missing symbol information</em>
+    cost is smaller than in-between cost <em>because of missing
+    symbol information</em>
     (these are indicated with '*' in statistics).</li>
 <li>Subroutine is called more through jumps/branches than through
-    subroutine calls: inclusive call count may be smaller.</li>
+    subroutine calls: inclusive call count may be smaller than
+    in-between call count which includes branches/jumps.</li>
 <li>Subroutine jumps/branches to another function instead of
     using subroutine call, or function contains additional
-    (non-function) labels: exclusive cost is larger.</li>
+    (non-function) labels: exclusive cost is larger than
+    in-between cost.</li>
 <li>Exception happening during subroutine call: exclusive cost is
-    (slightly) larger.</li>
+    (slightly) larger than in-between cost.</li>
 </ul>
 
 <p>In the first case, you should check the profile data to find out
 whether there are missing symbols for executed function entry points.
 You can notice function entry points as address gap and/or code
 retrieving arguments from stack, and exit points from RTS instruction.</p>
+
+<p>Second case can also be seen from the profile data.  Call count
+is same as count for how many times first instruction is executed
+(worst case: large loop on subroutine's first instruction).</p>
 
 <p>While subroutine costs should be more accurate and relevant, due to
 code optimizations many of the functions are not called as subroutines
@@ -3238,10 +3289,10 @@ this, it's useful to compare both subroutine and between-symbols
 costs.  One should be able to see from the profile disassembly which
 of the above cases is cause for the discrepancy in the values.</p>
 
-<p><strong>NOTE:</strong>Before starting to change/optimize C-level sources,
-you should <em>always</em> verify from profile data where exactly the costs
-are in a function, to make sure your optimization efforts can actually
-help the performance.</p>
+<p><strong>NOTE:</strong>Before starting to do any serious source
+level optimizations, you should <em>always</em> verify from profile
+data (disassembly) where exactly the costs are in a function, to make
+sure your optimization efforts can actually help the performance.</p>
 
 
 <h4>Generating and viewing callgraphs</h4>
@@ -3420,6 +3471,24 @@ a  $12345 :6
 </pre>
 </dd>
 
+<dt><em>Stopping when specific exception happens</em></dt>
+<dd>Hatari's -D option doesn't invoke debugger on all exceptions and
+doesn't allow invoking debugger just for specific exceptions.  To
+stop at specific exception, one can check when it's called.
+At the start of memory is the CPU exception table for exception
+handler addresses, so to stop e.g. at bus error with some extra
+information, one can use following:
+<pre>
+history  on
+b  pc=($8)
+</pre>
+After bus error invokes debugger, 'history' command can then be used
+to see (executed memory addresses with their current) instructions
+leading to the error.  The most interesting vector addresses are:
+$8 (Bus error), $C (Address error), $10 (Illegal instruction),
+$14 (Division by zero).
+</dd>
+
 <dt><em>Stopping when register has a specific value</em></dt>
 <dd>To stop when e.g. D1 register contains value 5, set a breakpoint on:
 <pre>
@@ -3460,7 +3529,7 @@ b  ($ff820a).b & 2 ! ($ff820a).b & 2
 </dd>
 
 <dt><em>Tracing all changes in specific memory location</em></dt>
-<dd>To see the new values and continue without stopping, use
+<dd>To see the new values and continue without stopping, add
 the ":trace" breakpoint option:
 <pre>
 b  ($ff820a).b & 2 ! ($ff820a).b & 2  :trace
@@ -3484,49 +3553,51 @@ b  d0 = "d0 + 10"
 
 <dt><em>Examining specific system call return value</em></dt>
 <dd>To check e.g. what's the Fopen() GEMDOS call return value,
-check with "info gemdos 1" it's code and then do:
+check with "info gemdos 1" its opcode, set a breakpoint for that
+and step to next (n) instruction from the trap call when breakpoint
+is hit. GEMDOS call return value is then in register D0:
 <pre>
-&gt; trace gemdos
-&gt; b GemdosOpcode = $3D
+&gt; trace  gemdos
+&gt; b  GemdosOpcode = $3D
 &gt; c
 [...continue until breakpoint...]
 1. CPU breakpoint condition(s) matched 1 times.
         GemdosOpcode = $3D
 &gt; n
 GEMDOS 0x3D Fopen("TEST.TXT", read-only)
-&gt; e d0
+&gt; e  d0
 = %1000000 (bin), #64 (dec), $40 (hex)
 </pre>
 </dd>
 
 <dt><em>Seeing code leading to a breakpoint</em></dt>
-<dd>To see the instructions executed before debugger was entered,
-you need to enabled history tracking beforehand and then whenever the
-debugger is entered, you can request given number (here 16) of past
-instructions to be shown:
+<dd>To see CPU instructions executed before debugger was entered,
+you need to enabled history tracking <em>before</em> it. Whenever
+debugger is entered, you can then request given number (here 16) of
+past instructions to be shown:
 <pre>
-history on
+history  cpu
 c
 [breakpoint is hit and debugger entered]
-history 16
+history  16
 </pre>
 </dd>
 
 <dt><em>Getting instruction execution history for every breakpoint</em></dt>
 <dd>
-To see last 16 instructions whenever (a normal or tracing) breakpoint
-is hit:
+To see last 16 instructions for both CPU and DSP whenever
+(a normal or tracing) breakpoint is hit:
 <pre>
-history on
-lock history 16
+history  on
+lock  history 16
 c
 </pre>
 </dd>
 
-<dt><em>Single step so that new register values are shown after each step</em></dt>
+<dt><em>Single stepping so that new register values are shown after each step</em></dt>
 <dd>
 <pre>
-lock registers
+lock  registers
 s
 [new register values]
 s
@@ -3564,11 +3635,38 @@ profile  counts
 Please see <a href="#Profiling">Profiling</a> section for more info.
 </dd>
 
+<dt><em>Seeing program callstack when breakpoint is hit</em></dt>
+<dd><a href="#Caller_information">Profiler caller data</a> includes
+callstack information (with some limitations).
+</dd>
+
+<dt><em>Seeing call backtraces whenever given function is called</em></dt>
+<dd>Enable profiling, load symbols for the program and set breakpoint
+for the function you're interested about, in the following way:
+<pre>
+profile on
+symbols prg
+b  pc = _my_function  :quiet :noinit :file showstack.ini
+</pre>
+I.e. whenever 'my_function' address is called, quietly trigger a
+breakpoint without reseting profiling (callstack) information and run
+debugger command(s) from the 'showstack.ini' debugger script file,
+which contains following command:
+<pre>
+profile stack
+</pre>
+</dd>
+
+<dt><em>Seeing how program functions/symbols call each other</em></dt>
+<dd><a href="#Profile_data_post-processing">Profile data
+post-processing</a> can provide execution callgraphs.
+</dd>
+
 </dl>
 
 <p>
 Hint: for most of the above commands, one just needs to prefix them with
-"d" (or "dsp" if using full command names) to do similar operation on
+"d" (or "dsp" when using full command names) to do similar operation on
 the DSP.
 </p>
 
