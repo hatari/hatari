@@ -175,7 +175,7 @@ Input -----/             |         ------------------------              |      
     in some cases)
   - When an interrupt happens in the MFP, an exception will be started in the CPU. Then after 12 cycles an IACK
     sequence will be started by the CPU to request the interrupt vector from the MFP. During those 12 cycles,
-    it is possible that a new higher priority MFP interrupt happen and in that case we must replace the MFP
+    it is possible that a new higher priority MFP interrupt happens and in that case we must replace the MFP
     vector number that was initially computed at the start of the exception with the new one.
     This is also after the IACK sequence that in service / pending bits must be handled for this MFP's interrupt.
 */
@@ -569,8 +569,7 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
  */
 static bool MFP_InterruptRequest ( int Int , Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB )
 {
-//  static int cnt;
-//  fprintf ( stderr , "mfp int req %d %d\n" , nMfpException , cnt++ );
+//fprintf ( stderr , "mfp int req %d %x %x %X %x %x\n" , Int , Bit , IPRx , IMRx , PriorityMaskA , PriorityMaskB );
 
 	if ( ( IPRx & IMRx & Bit ) 					/* Interrupt is pending and not masked */
 	    && ( MFP_Pending_Time[ Int ] <= MFP_Pending_Time_Min ) )	/* Process pending requests in chronological time */
@@ -591,9 +590,6 @@ static bool MFP_InterruptRequest ( int Int , Uint8 Bit , Uint8 IPRx , Uint8 IMRx
  */
 static int MFP_CheckPendingInterrupts ( void )
 {
-//  static int cnt;
-//  fprintf ( stderr , "mfp check pend int %d\n" , cnt++ );
-
 	if ( MFP_InterruptRequest ( MFP_INT_GPIP7 , MFP_GPIP7_BIT, MFP_IPRA, MFP_IMRA, 0x80, 0x00 ) )		/* Check MFP GPIP7 interrupt (bit 7) */
 		return MFP_INT_GPIP7;
 	
