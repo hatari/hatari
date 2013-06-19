@@ -525,7 +525,7 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
 	{
 		NewInt = MFP_CheckPendingInterrupts ();
 		
-		if ( NewInt > 0 )
+		if ( NewInt >= 0 )
 		{
 			if ( MFP_IRQ == 0 )			/* MFP IRQ goes from 0 to 1 */
 			{
