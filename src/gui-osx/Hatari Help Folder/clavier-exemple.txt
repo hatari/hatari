@@ -1,0 +1,36 @@
+# This is an example for a keyboard mapping file that can be used in Hatari
+# by loading it from the keyboard setup dialog.
+#
+# Lines starting with a '#' or with a ';' are comments.
+# All other lines should contain exactly two numbers separated by a comma.
+# The first number is the symbolic PC key code (see the SDL_keysym.h file
+# from the SDL library header files usually in /usr/include/SDL/).
+# The corresponding key will be mapped to the ST key which is specified by
+# second number - the ST scan code of the key (see src/keymap.c in the Hatari
+# sources).
+#
+# Here is an example for a french keymap for the MacBook:
+97,16
+122,17
+113,30
+109,39
+119,44
+38,2
+160,3
+34,4
+39,5
+40,6
+161,7
+163,8
+33,9
+162,10
+164,11
+29,12
+45,13
+94,26
+36,27
+165,40
+44,50
+59,51
+58,52
+61,53

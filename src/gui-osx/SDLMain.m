@@ -25,6 +25,7 @@
 #include "avi_record.h"
 #include "../debug/debugui.h"
 #include "clocks_timings.h"
+#include "change.h"
 
 // for Hatari
 
@@ -358,7 +359,7 @@ static void CustomApplicationMain (int argc, char **argv)
 	//printf("b=%i\n",b);
 	if (b == 1)
 		Reset_Warm();
-}
+} 
 
 - (IBAction)coldReset:(id)sender
 {
@@ -610,9 +611,25 @@ static void CustomApplicationMain (int argc, char **argv)
 
 - (IBAction)help:(id)sender
 {
-	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://hatari.tuxfamily.org/docs.html"]];
+NSString *l_aide ;
+	
+	l_aide = [[NSBundle mainBundle] pathForResource:@"manual" ofType:@"html" inDirectory:@"AideHatari"] ;
+	
+	if (![[NSWorkspace sharedWorkspace] openFile:l_aide withApplication:@"HelpViewer"])
+		if (![[NSWorkspace sharedWorkspace] openFile:l_aide withApplication:@"Help Viewer"])
+             [[NSWorkspace sharedWorkspace] openFile:l_aide] ;
 }
 
+- (IBAction)compat:(id)sender
+{
+NSString *C_aide ;
+	
+	C_aide = [[NSBundle mainBundle] pathForResource:@"compatibility" ofType:@"html" inDirectory:@"AideHatari"] ;
+	
+	if (![[NSWorkspace sharedWorkspace] openFile:C_aide withApplication:@"HelpViewer"])
+		if (![[NSWorkspace sharedWorkspace] openFile:C_aide withApplication:@"Help Viewer"])
+             [[NSWorkspace sharedWorkspace] openFile:C_aide] ;
+}
 
 - (IBAction)openConfig:(id)sender 
 {
@@ -665,7 +682,7 @@ static void CustomApplicationMain (int argc, char **argv)
 		// Commit the new configuration
 		if (applyChanges)
 		{
-			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, false);
+			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true);
 		}
 		else
 		{

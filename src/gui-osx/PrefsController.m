@@ -26,6 +26,7 @@
 #include "screen.h"
 #include "sdlgui.h"
 
+
 // Macros to transfer data between Cocoa controls and Hatari data structures
 #define EXPORT_TEXTFIELD(nstextfield, target) GuiOsx_ExportPathString([nstextfield stringValue], target, sizeof((target)))
 #define EXPORT_NTEXTFIELD(nstextfield, target) target = [nstextfield intValue]
@@ -502,7 +503,7 @@ static const int nSoundFreqs[] =
 	// Commit the new configuration
 	if (applyChanges)
 	{
-		Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, false);
+		Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true);
 	}
 	else
 	{
