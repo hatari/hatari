@@ -2469,10 +2469,10 @@ static int GemDOS_Pexec(Uint32 Params)
 
 	if (LOG_TRACE_LEVEL(TRACE_OS_GEMDOS))
 	{
-		Uint32 fname, cmdline, environ;
+		Uint32 fname, cmdline, env_string;
 		fname = STMemory_ReadLong(Params+SIZE_WORD);
 		cmdline = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
-		environ = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
+		env_string = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
 		if (Mode == 0 || Mode == 3)
 		{
 			int cmdlen;
@@ -2480,11 +2480,11 @@ static int GemDOS_Pexec(Uint32 Params)
 			name = (const char *)STRAM_ADDR(fname);
 			cmd = (const char *)STRAM_ADDR(cmdline);
 			cmdlen = *cmd++;
-			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x)\n", Mode, name, cmdlen, cmdlen?cmd:"", environ);
+			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x)\n", Mode, name, cmdlen, cmdlen?cmd:"", env_string);
 		}
 		else
 		{
-			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x)\n", Mode, fname, cmdline, environ);
+			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x)\n", Mode, fname, cmdline, env_string);
 		}
 	}
 
