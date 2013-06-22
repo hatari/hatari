@@ -33,10 +33,11 @@
 /* Should be removed when newcpu.c 'll be relooked for hatari only*/
 
 // Laurent : I don't know what to do with these variables, so, for now, I've put them here !!!
-int kickstart_rom, cloanto_rom;
-int config_changed;
-int vpos;
-int quit_program;  // declared as "int quit_program = 0;" in main.c 
+// Nicolas : don't define variables in .h files, this gives warning when compiling. Only declare them.
+extern int kickstart_rom, cloanto_rom;
+extern int config_changed;
+extern int vpos;
+extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 //WinUae ChangeLog: Improve quitting/resetting behaviour: Move quit_program from GUI
 //WinUae ChangeLog: quit_program is now handled in vsync_handler() and m68k_go().
 

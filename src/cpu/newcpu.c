@@ -89,6 +89,14 @@ cpuop_func *cpufunctbl[65536];
 int OpcodeFamily;
 int BusCyclePenalty = 0;
 
+
+/* Amiga's specific variables, required to compile until all Amiga stuffs are ignored */
+int kickstart_rom, cloanto_rom;
+int config_changed;
+int vpos;
+int quit_program;  // declared as "int quit_program = 0;" in main.c
+
+
 struct mmufixup mmufixup[2];
 
 #define COUNT_INSTRS 0
