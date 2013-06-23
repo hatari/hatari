@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 1.6.2
+                                  Version 1.7
 
                           http://hatari.tuxfamily.org/
 
@@ -89,7 +89,7 @@ the (non-CMake) Makefiles coming with Hatari:
 
 Have a look at the manual of CMake for other options. Alternatively, you can
 use the "cmake-gui" program to configure the sources with a graphical
-application.
+application or "ccmake" to configure them with ncurses UI.
 
 For your convenience we also ship an old-fashioned configure script which can
 be used as a wrapper for running cmake. Type "./configure --help" to see the
