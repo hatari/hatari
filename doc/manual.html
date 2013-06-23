@@ -1618,7 +1618,7 @@ further processing and printing to a real printer.</p>
 <p>To get real direct printing out of Hatari you may set up a suitable
 (e.g. PostScript) GDOS or NVDI printer driver on the emulated Atari and
 set your printer device file as Hatari's printer output.<br />
-<em>NOTE:</em>If the driver doesn't match or there's some other problem,
+<em>NOTE:</em> If the driver doesn't match or there's some other problem,
 this can cause your printer to print out hundreds of pages of garbage.</p>
 
 <h3>Emulated RS232</h3>
@@ -3240,7 +3240,7 @@ the instructions</em> that were in profile data file <em>between
 the indicated symbol's address and the address of the next symbol</em>
 (= "between-symbols" cost).</p>
 
-<p><strong>NOTE:</strong> if your symbol file doesn't contain addresses
+<p><strong>NOTE:</strong> If your symbol file doesn't contain addresses
 for all the relevant symbols, results from this can be misleading because
 instructions costs get assigned to <em>whatever</em> symbol's address
 happened to preceed those instructions.  And you don't see which
@@ -3287,7 +3287,7 @@ this, it's useful to compare both subroutine and between-symbols
 costs.  One should be able to see from the profile disassembly which
 of the above cases is cause for the discrepancy in the values.</p>
 
-<p><strong>NOTE:</strong>Before starting to do any serious source
+<p><strong>NOTE:</strong> Before starting to do any serious source
 level optimizations, you should <em>always</em> verify from profile
 data (disassembly) where exactly the costs are in a function, to make
 sure your optimization efforts can actually help the performance.</p>
@@ -3378,7 +3378,7 @@ at any point, which can show in callgraph as "explicit" calls
 from the interrupted functions.  To get rid of such incorrect
 calls, give interrupt handler names to --ignore-to option:</p>
 <pre>
-$ hatari_profile.py -p -g <b>--ignore-to handler1,handle2</b> -r program.sym program-profile.txt
+$ hatari_profile.py -p -g <b>--ignore-to handler1,handler2</b> -r program.sym program-profile.txt
 </pre>
 
 <p>In large callgraph most of the functions aren't really interesting,
