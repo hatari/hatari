@@ -45,8 +45,6 @@
 	.backdropped { background:#ffffee; }
 	.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
 	.floatimage { clear:right; float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
-	.validhtml { border-width:3px; float:left; }
-	.bottomdate { float:right; }
 	.clearboth { clear:both; }
 
 	table.keytable { border:1px solid; }
@@ -66,7 +64,7 @@
 <h1 class="pageheader">Hatari User's Manual</h1>
 
 <p class="pageheader">
-Version 1.7
+Version 1.7, June 2013
 </p>
 <p class="pageheader">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
@@ -1620,7 +1618,7 @@ further processing and printing to a real printer.</p>
 <p>To get real direct printing out of Hatari you may set up a suitable
 (e.g. PostScript) GDOS or NVDI printer driver on the emulated Atari and
 set your printer device file as Hatari's printer output.<br />
-<em>NOTE:</em>If the driver doesn't match or there's some other problem,
+<em>NOTE:</em> If the driver doesn't match or there's some other problem,
 this can cause your printer to print out hundreds of pages of garbage.</p>
 
 <h3>Emulated RS232</h3>
@@ -2990,7 +2988,7 @@ to it from address 0x155.)
 With the execution counts in normal profiling data, caller information
 can actually be used to have complete picture of what exactly the code
 did during profiling.  Main/overview work for this analysis is best done
-automatically, by the profiler data post-processor (documented below).</a>.
+automatically, by the profiler data post-processor (documented below).
 </p>
 
 
@@ -3242,7 +3240,7 @@ the instructions</em> that were in profile data file <em>between
 the indicated symbol's address and the address of the next symbol</em>
 (= "between-symbols" cost).</p>
 
-<p><strong>NOTE:</strong> if your symbol file doesn't contain addresses
+<p><strong>NOTE:</strong> If your symbol file doesn't contain addresses
 for all the relevant symbols, results from this can be misleading because
 instructions costs get assigned to <em>whatever</em> symbol's address
 happened to preceed those instructions.  And you don't see which
@@ -3289,7 +3287,7 @@ this, it's useful to compare both subroutine and between-symbols
 costs.  One should be able to see from the profile disassembly which
 of the above cases is cause for the discrepancy in the values.</p>
 
-<p><strong>NOTE:</strong>Before starting to do any serious source
+<p><strong>NOTE:</strong> Before starting to do any serious source
 level optimizations, you should <em>always</em> verify from profile
 data (disassembly) where exactly the costs are in a function, to make
 sure your optimization efforts can actually help the performance.</p>
@@ -3380,7 +3378,7 @@ at any point, which can show in callgraph as "explicit" calls
 from the interrupted functions.  To get rid of such incorrect
 calls, give interrupt handler names to --ignore-to option:</p>
 <pre>
-$ hatari_profile.py -p -g <b>--ignore-to handler1,handle2</b> -r program.sym program-profile.txt
+$ hatari_profile.py -p -g <b>--ignore-to handler1,handler2</b> -r program.sym program-profile.txt
 </pre>
 
 <p>In large callgraph most of the functions aren't really interesting,
@@ -3977,17 +3975,7 @@ emulation of the various custom chips and hardware
 parts of the emulated system is much trickier.
 </p>
 
-<hr />
-
-<div class="validhtml">
-  <a href="http://validator.w3.org/check/referer"><img
-    src="http://www.w3.org/html/logo/downloads/HTML5_Badge_32.png"
-    alt="Valid HTML!" height="32" width="32" /></a>
-</div>
-
-<div class="bottomdate">
-  May 2013
-</div>
+<hr>
 
 </body>
 </html>
