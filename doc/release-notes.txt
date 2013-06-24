@@ -3,8 +3,8 @@
                                    --------
                                 Release Notes
 
- Development version:
- --------------------
+ Version 1.7.0 (2013-06-24):
+ ---------------------------
 
 Emulation:
 - TT video emulation :

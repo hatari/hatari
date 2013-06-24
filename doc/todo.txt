@@ -95,13 +95,11 @@ Demos :
 	Ventura - Ultimate Dist, Syntax Terror - TCB, ICE - Kryos,
 	ICE - Intruding, ICE - Jamcols, Extreme Rage, Paradox - XMas 2004,
 	ICE - Space Tale, ICE - The Wave Of The Future, Snork - DNT Screen 1
-  - cpu/timers : Pandemonium Demos - Mega 3D, Audio Art, UMD Intro
-  - ikbd : Dragonnels - Unlimited Bobs
+  - cpu/timers : UMD Intro
 
 Games :
-  - cpu/timers : FOF 42 - Subbuteo, Bolo, Final Conflict, The Ultimate Ride,
-	Treasure Trap
-  - ikbd : F29, Superior 109 - Special Forces, Warlock's Quest
+  - cpu/timers : FOF 42 - Subbuteo, The Ultimate Ride, Treasure Trap
+  - ikbd : Superior 109 - Special Forces
 
 
 Other potential Hatari functionality improvements
