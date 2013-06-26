@@ -3,6 +3,17 @@
                                    --------
                                 Release Notes
 
+ Development version:
+ --------------------
+
+Emulation:
+- ST video changes :
+  - Handle 0 byte line by switching freq in STE mode
+
+Fixed demos :
+  Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
+
+
  Version 1.7.0 (2013-06-24):
  ---------------------------
 
