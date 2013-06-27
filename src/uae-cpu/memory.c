@@ -380,6 +380,10 @@ static void SysMem_bput(uaecptr addr, uae_u32 b)
  * **** Void memory ****
  * Between the ST-RAM end and the 4 MB barrier, there is a void memory space:
  * Reading always returns the same value and writing does nothing at all.
+ * [NP] : this is not correct, reading does not always return 0, when there's
+ * no memory, it will return the latest data that was read on the bus.
+ * In many cases, this will return the word that was just read in the 68000's
+ * prefetch register to decode the next opcode (tested on a real STF)
  */
 
 static uae_u32 VoidMem_lget(uaecptr addr)
