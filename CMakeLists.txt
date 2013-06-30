@@ -232,7 +232,14 @@ if(NOT ETCDIR)
 		set(ETCDIR /etc)
 	endif()
 endif()
-add_definitions(-DCONFDIR=\"${ETCDIR}\")
+
+if(ENABLE_OSX_BUNDLE)
+	# Use OSX native alert windows and put the config files in the app's bundle
+	add_definitions(-DALERT_HOOKS=1)
+	add_definitions(-DCONFDIR=\"../Resources\")
+else()
+	add_definitions(-DCONFDIR=\"${ETCDIR}\")
+endif()
 
 # #########################################
 # Create config.h and recurse into subdirs:
