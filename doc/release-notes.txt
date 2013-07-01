@@ -10,6 +10,11 @@ Emulation:
 - ST video changes :
   - Handle 0 byte line by switching freq in STE mode
 
+Emulator:
+- SDL GUI:
+  - Update clock speed in the status bar when changing bus speed
+    in Falcon mode
+
 Fixed demos :
   Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
 
