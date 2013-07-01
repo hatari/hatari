@@ -25,6 +25,8 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __T
 #include "blitter.h"
 #include "crossbar.h"
 #include "falcon/videl.h"
+#include "configuration.h"
+#include "statusbar.h"
 #if ENABLE_DSP_EMU
 #include "falcon/dsp.h"
 #endif
@@ -120,11 +122,14 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 	if ((busCtrl & 0x1) == 1) {
 		/* 16 Mhz bus for 68030 */
 		nCpuFreqShift = 1;
+		ConfigureParams.System.nCpuFreq = 16;
 	}
 	else {
 		/* 8 Mhz bus for 68030 */
 		nCpuFreqShift = 0;
+		ConfigureParams.System.nCpuFreq = 8;
 	}
+	Statusbar_UpdateInfo();							/* Update clock speed in the status bar */
 }
 
 
