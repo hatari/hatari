@@ -1696,7 +1696,7 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
         	nr = MFP_ProcessIACK ( nr );
 		CPU_IACK = false;
 	}
-	else if ( 1 && ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) && ( ( nr == 26 ) || ( nr == 28 ) ) )
+	else if ( ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) && ( ( nr == 26 ) || ( nr == 28 ) ) )
 	{
         	M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
 		CPU_IACK = true;
