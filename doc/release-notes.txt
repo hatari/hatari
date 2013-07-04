@@ -9,6 +9,8 @@
 Emulation:
 - ST video changes :
   - Handle 0 byte line by switching freq in STE mode
+- CPU changes :
+  - Fix a case when MFP's interrupt happens during the IACK sequence for HBL/VBL
 
 Emulator:
 - SDL GUI:
@@ -17,6 +19,7 @@ Emulator:
 
 Fixed demos :
   Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
+  Sommarhack 2011 Invitro by DHS (CPU/MFP, top border not removed)
 
 
  Version 1.7.0 (2013-06-24):
