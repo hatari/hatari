@@ -1702,6 +1702,8 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 		CPU_IACK = true;
         	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
         	    CALL_VAR(PendingInterruptFunction);
+                if ( MFP_UpdateNeeded == true )
+                    MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
         	pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
 		CPU_IACK = false;
 	}
