@@ -202,22 +202,38 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 {
 	Uint32 lower, upper;
 	Uint16 dsp_memdump_upper = 0;
-	char space;
+	char *range, space;
 
 	if (!bDspEnabled)
 	{
 		fprintf(stderr, "DSP isn't present or initialized.\n");
 		return DEBUGGER_CMDDONE;
 	}
-	if (nArgc != 1 && nArgc != 3)
+
+	switch (nArgc)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		case 1:
+			break;
+		case 3:	/* "x $200" */
+			space = psArgs[1][0];
+			range = psArgs[2];
+			break;
+		case 2: /* "x:$200" */
+			if (psArgs[1][1] == ':')
+			{
+				space = psArgs[1][0];
+				range = psArgs[1] + 2;
+				break;
+			}
+			/* pass-through */
+		default:
+			DebugUI_PrintCmdHelp(psArgs[0]);
+			return DEBUGGER_CMDDONE;
 	}
 
-	if (nArgc == 3)
+	if (nArgc > 1)
 	{
-		space = toupper(psArgs[1][0]);
+		space = toupper(space);
 		switch (space)
 		{
 		case 'X':
@@ -228,7 +244,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
 			return DEBUGGER_CMDDONE;
 		}
-		switch (Eval_Range(psArgs[2], &lower, &upper, true))
+		switch (Eval_Range(range, &lower, &upper, true))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -253,7 +269,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 		}
 		dsp_memdump_addr = lower;
 		dsp_mem_space = space;
-	} /* continue */
+	}
 
 	if (!dsp_memdump_upper)
 	{
