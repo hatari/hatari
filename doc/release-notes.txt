@@ -16,6 +16,9 @@ Emulator:
 - SDL GUI:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
+- Debugger:
+  - Address space in 'dm' command can be given like in DSP dissembly,
+    "dm x:$100", in addition to earlier "dm x $100".
 
 Fixed demos :
   Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
