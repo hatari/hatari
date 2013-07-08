@@ -19,6 +19,10 @@ Emulator:
 - Debugger:
   - "CpuInstr" and "DspInstr" variables for count of instructions
     executed since emulation was last continued from debugger.
+  - In addition to "!" condition, also "<" and ">" conditions can store
+    the checked value (when both sides of conditions are identical).
+    With above change, this can be e.g. used to detect and profile
+    what are worst frames in games and why.
   - Address space in 'dm' command can be given like in DSP disassembly,
     "dm x:$100", in addition to earlier "dm x $100".
 

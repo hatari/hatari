@@ -296,9 +296,6 @@ static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
 			break;
 		case '!':
 			hit = (lvalue != rvalue);
-			if (hit && condition->track) {
-				BreakCond_UpdateTracked(condition, lvalue);
-			}
 			break;
 		default:
 			fprintf(stderr, "ERROR: Unknown breakpoint value comparison operator '%c'!\n",
@@ -307,6 +304,9 @@ static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
 		}
 		if (!hit) {
 			return false;
+		}
+		if (condition->track) {
+			BreakCond_UpdateTracked(condition, lvalue);
 		}
 	}
 	/* all conditions matched */
@@ -1345,8 +1345,8 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 			condition->rvalue.value.number = value;
 			condition->rvalue.valuetype = VALUE_TYPE_NUMBER;
 			condition->rvalue.is_indirect = false;
-			if (condition->comparison == '!') {
-				/* which changes will be traced */
+			/* track those changes */
+			if (condition->comparison != '=') {
 				condition->track = true;
 				track = true;
 			} else {
