@@ -363,10 +363,20 @@ static int DebugDsp_Profile(int nArgc, char *psArgs[])
 
 
 /**
+ * DSP instructions since continuing emulation
+ */
+static Uint32 nDspInstructions;
+Uint32 DebugDsp_InstrCount(void)
+{
+	return nDspInstructions;
+}
+
+/**
  * This function is called after each DSP instruction when debugging is enabled.
  */
 void DebugDsp_Check(void)
 {
+	nDspInstructions++;
 	if (bDspProfiling)
 	{
 		Profile_DspUpdate();
@@ -412,7 +422,10 @@ void DebugDsp_SetDebugging(void)
 
 	if (nDspActiveCBs || nDspSteps || bDspProfiling || History_TrackDsp()
 	    || LOG_TRACE_LEVEL((TRACE_DSP_DISASM|TRACE_DSP_SYMBOLS)))
+	{
 		DSP_SetDebugging(true);
+		nDspInstructions = 0;
+	}
 	else
 		DSP_SetDebugging(false);
 }

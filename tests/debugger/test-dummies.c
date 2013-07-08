@@ -66,9 +66,10 @@ Uint32 DebugInfo_GetTEXTEnd(void) { return 0x1234; }
 Uint32 DebugInfo_GetDATA(void) { return 0x12f4; }
 Uint32 DebugInfo_GetBSS(void)  { return 0x1f34; }
 
-/* fake debugdsp. stuff */
+/* fake debugdsp.c stuff */
 #include "debugdsp.h"
 void DebugDsp_InitSession(void) { }
+Uint32 DebugDsp_InstrCount(void) { return 0; }
 
 /* use fake dsp.c stuff in case config.h is configured with DSP emu */
 #include "dsp.h"

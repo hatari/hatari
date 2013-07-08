@@ -17,7 +17,9 @@ Emulator:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
 - Debugger:
-  - Address space in 'dm' command can be given like in DSP dissembly,
+  - "CpuInstr" and "DspInstr" variables for count of instructions
+    executed since emulation was last continued from debugger.
+  - Address space in 'dm' command can be given like in DSP disassembly,
     "dm x:$100", in addition to earlier "dm x $100".
 
 Fixed demos :

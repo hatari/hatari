@@ -521,10 +521,20 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 
 
 /**
+ * CPU instructions since continuing emulation
+ */
+static Uint32 nCpuInstructions;
+Uint32 DebugCpu_InstrCount(void)
+{
+	return nCpuInstructions;
+}
+
+/**
  * This function is called after each CPU instruction when debugging is enabled.
  */
 void DebugCpu_Check(void)
 {
+	nCpuInstructions++;
 	if (bCpuProfiling)
 	{
 		Profile_CpuUpdate();
@@ -574,7 +584,10 @@ void DebugCpu_SetDebugging(void)
 	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || History_TrackCpu()
 	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS))
 	    || ConOutDevice != CONOUT_DEVICE_NONE)
+	{
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
+		nCpuInstructions = 0;
+	}	
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
 }
