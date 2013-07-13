@@ -13,6 +13,8 @@
 #endif
 
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <SDL.h>
 
 #include "hd6301_cpu.h"

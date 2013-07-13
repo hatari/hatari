@@ -10,6 +10,7 @@
 const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
+#include <ctype.h>
 
 #include "config.h"
 

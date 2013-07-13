@@ -59,7 +59,7 @@
 
 const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
 
-#include <SDL_byteorder.h>
+#include <SDL_endian.h>
 
 #include "main.h"
 #include "cycles.h"

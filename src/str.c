@@ -11,6 +11,7 @@ const char Str_fileid[] = "Hatari str.c : " __DATE__ " " __TIME__;
 #include <stdio.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <SDL_types.h>
 #include "configuration.h"
 #include "str.h"

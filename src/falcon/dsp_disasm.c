@@ -26,6 +26,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "dsp_core.h"
 #include "dsp_cpu.h"

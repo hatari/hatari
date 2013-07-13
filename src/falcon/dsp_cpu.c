@@ -74,11 +74,11 @@
 
 #include <stdbool.h>
 
+#include "main.h"
 #include "dsp_core.h"
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
 #include "log.h"
-#include "main.h"
 #include "debugui.h"
 
 #define DSP_COUNT_IPS 0		/* Count instruction per seconds */
