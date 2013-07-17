@@ -321,6 +321,7 @@
 /*			to handle the case where interrupt pending bit is set twice (correct	*/
 /*			fix for Super Monaco GP, Super Hang On, Monster Business, European	*/
 /*			Demo's Intro, BBC Menu 52).						*/
+/* 2013/07/17	[NP]	Handle a special case when writing only in lower byte of a color reg.	*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -3204,9 +3205,10 @@ void Video_LineWidth_WriteByte(void)
  * of the color reg (instead of writing 16 bits at once with .W/.L).
  * In that case, the byte written to address x is automatically written
  * to address x+1 too (but we shouldn't copy x in x+1 after masking x ; we apply the mask at the end)
+ * Similarly, when writing a byte to address x+1, it's also written to address x
  * So :	move.w #0,$ff8240	-> color 0 is now $000
  *	move.b #7,$ff8240	-> color 0 is now $707 !
- *	move.b #$55,$ff8241	-> color 0 is now $755 ($ff8240 remains unchanged)
+ *	move.b #$55,$ff8241	-> color 0 is now $555 !
  *	move.b #$71,$ff8240	-> color 0 is now $171 (bytes are first copied, then masked)
  */
 static void Video_ColorReg_WriteWord(Uint32 addr)
@@ -3215,17 +3217,26 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 	{
 		int idx;
 		Uint16 col;
+		addr = IoAccessCurrentAddress;
 		Video_SetHBLPaletteMaskPointers();     /* Set 'pHBLPalettes' etc.. according cycles into frame */
-		col = IoMem_ReadWord(addr);
 
 		/* Handle special case when writing only to the upper byte of the color reg */
 		if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 0 ) )
 			col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy upper byte into lower byte */
+		/* Same when writing only to the lower byte of the color reg */
+		else if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 1 ) )
+			col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy lower byte into upper byte */
+		/* Usual case, writing a word or a long (2 words) */
+		else
+			col = IoMem_ReadWord(addr);
 
 		if (ConfigureParams.System.nMachineType == MACHINE_ST)
 			col &= 0x777;                      /* Mask off to ST 512 palette */
 		else
 			col &= 0xfff;                      /* Mask off to STe 4096 palette */
+
+		addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
+			
 		IoMem_WriteWord(addr, col);            /* (some games write 0xFFFF and read back to see if STe) */
 		Spec512_StoreCyclePalette(col, addr);  /* Store colour into CyclePalettes[] */
 		idx = (addr-0xff8240)/2;               /* words */
@@ -3239,7 +3250,7 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 			Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 			LOG_TRACE_PRINT ( "write col addr=%x col=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
-				addr, col,
+				IoAccessCurrentAddress, col,
 				FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 		}
 
