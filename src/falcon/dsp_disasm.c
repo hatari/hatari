@@ -678,6 +678,9 @@ static void opcode8h_0(void)
 		case 0x00008c:
 			dsp_enddo();
 			break;
+		default:
+			dsp_undefined();
+			break;
 	}
 }
 
