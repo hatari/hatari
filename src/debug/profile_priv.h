@@ -8,19 +8,6 @@
 #ifndef HATARI_PROFILE_PRIV_H
 #define HATARI_PROFILE_PRIV_H
 
-/* caller types */
-#define CALL_UNDEFINED	0	/* = call type information not supported */
-typedef enum {
-	CALL_UNKNOWN	= 1,
-	CALL_NEXT	= 2,
-	CALL_BRANCH	= 4,
-	CALL_SUBROUTINE	= 8,
-	CALL_SUBRETURN	= 16,
-	CALL_EXCEPTION	= 32,
-	CALL_EXCRETURN	= 64,
-	CALL_INTERRUPT	= 128
-} calltype_t;
-
 typedef struct {
 	Uint64 calls, count, cycles, misses;
 } counters_t;

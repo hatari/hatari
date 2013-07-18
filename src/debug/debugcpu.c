@@ -489,20 +489,97 @@ static int DebugCpu_Step(int nArgc, char *psArgv[])
 	return DEBUGGER_END;
 }
 
+
+/**
+ * Readline match callback to list next command opcode types.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+static char *DebugCpu_MatchNext(const char *text, int state)
+{
+	static const char* ntypes[] = {
+		"branch", "exception", "exreturn", "subcall", "subreturn"
+	};
+	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
+}
+
 /**
  * Command: Step CPU, but proceed through subroutines
  * Does this by temporary conditional breakpoint
  */
 static int DebugCpu_Next(int nArgc, char *psArgv[])
 {
-	char command[32];
-	Uint32 nextpc = Disasm_GetNextPC(M68000_GetPC());
-	sprintf(command, "pc=$%x :once :quiet\n", nextpc);
-	if (BreakCond_Command(command, false)) {
+	char command[40];
+	if (nArgc > 1)
+	{
+		int optype;
+		if(strcmp(psArgv[1], "branch") == 0)
+			optype = CALL_BRANCH;
+		else if(strcmp(psArgv[1], "exception") == 0)
+			optype = CALL_EXCEPTION;
+		else if(strcmp(psArgv[1], "exreturn") == 0)
+			optype = CALL_EXCRETURN;
+		else if(strcmp(psArgv[1], "subcall") == 0)
+			optype = CALL_SUBROUTINE;
+		else if (strcmp(psArgv[1], "subreturn") == 0)
+			optype = CALL_SUBRETURN;
+		else
+		{
+			fprintf(stderr, "Unrecognized opcode type given!\n");
+			return DEBUGGER_CMDDONE;
+		}
+		sprintf(command, "CpuOpcodeType=%d :once :quiet\n", optype);
+	}
+	else
+	{
+		Uint32 nextpc = Disasm_GetNextPC(M68000_GetPC());
+		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
+	}
+	if (BreakCond_Command(command, false))
+	{
 		nCpuSteps = 0;		/* using breakpoint, not steps */
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
+}
+
+/* helper to get instruction type */
+Uint32 DebugCpu_OpcodeType(void)
+{
+	/* cannot use OpcodeFamily like profiler does,
+	 * as that's for previous instructions
+	 */
+	Uint16 opcode = STMemory_ReadWord(M68000_GetPC());
+
+	if (opcode == 0x4e74 ||			/* RTD */
+	    opcode == 0x4e75 ||			/* RTS */
+	    opcode == 0x4e77)			/* RTR */
+		return CALL_SUBRETURN;
+
+	if (opcode == 0x4e73)			/* RTE */
+		return CALL_EXCRETURN;
+
+	/* NOTE: BSR needs to be matched before BRA/BCC! */
+	if ((opcode & 0xff00) == 0x6100 ||	/* BSR */
+	    (opcode & 0xffc0) == 0x4e80)	/* JSR */
+		return CALL_SUBROUTINE;
+
+	/* TODO: ftrapcc, chk2? */
+	if (opcode == 0x4e72 ||			/* STOP */
+	    opcode == 0x4afc ||			/* ILLEGAL */
+	    opcode == 0x4e76 ||			/* TRAPV */
+	    (opcode & 0xfff0) == 0x4e40 ||	/* TRAP */
+	    (opcode & 0xf1c0) == 0x4180 ||	/* CHK */
+	    (opcode & 0xfff8) == 0x4848)	/* BKPT */
+		return CALL_EXCEPTION;
+
+	/* TODO: fbcc, fdbcc */
+	if ((opcode & 0xf000) == 0x6000 ||	/* BRA / BCC */
+	    (opcode & 0xffc0) == 0x4ec0 ||	/* JMP */
+	    (opcode & 0xf080) == 0x50c8)	/* DBCC */
+		return CALL_BRANCH;
+
+	return CALL_UNKNOWN;
 }
 
 
@@ -649,7 +726,7 @@ static const dbgcommand_t cpucommands[] =
 	  "\n"
 	  "\tExecute next CPU instruction (equals 'c 1')",
 	  false },
-	{ DebugCpu_Next, NULL,
+	{ DebugCpu_Next, DebugCpu_MatchNext,
 	  "next", "n",
 	  "step CPU, proceeding through subroutine calls",
 	  "\n"
