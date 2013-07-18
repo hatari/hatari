@@ -497,20 +497,7 @@ char *Profile_Match(const char *text, int state)
 		"addresses", "callers", "counts", "cycles", "misses",
 		"off", "on", "save", "stack", "stats", "symbols"
 	};
-	static int i, len;
-	
-	if (!state)
-	{
-		/* first match */
-		i = 0;
-		len = strlen(text);
-	}
-	/* next match */
-	while (i < ARRAYSIZE(names)) {
-		if (strncasecmp(names[i++], text, len) == 0)
-			return (strdup(names[i-1]));
-	}
-	return NULL;
+	return DebugUI_MatchHelper(names, ARRAYSIZE(names), text, state);
 }
 
 const char Profile_Description[] =

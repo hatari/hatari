@@ -212,27 +212,12 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
  */
 static char *DebugCpu_MatchRegister(const char *text, int state)
 {
-	static const char regs[][3] = {
+	static const char* regs[] = {
 		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
 		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
 		"pc", "sr"
 	};
-	static int i, len;
-	
-	if (!state)
-	{
-		/* first match */
-		i = 0;
-		len = strlen(text);
-		if (len > 2)
-			return NULL;
-	}
-	/* next match */
-	while (i < ARRAYSIZE(regs)) {
-		if (strncasecmp(regs[i++], text, len) == 0)
-			return (strdup(regs[i-1]));
-	}
-	return NULL;
+	return DebugUI_MatchHelper(regs, ARRAYSIZE(regs), text, state);
 }
 
 

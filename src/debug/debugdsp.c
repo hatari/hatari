@@ -45,7 +45,7 @@ static int nDspSteps = 0;         /* Amount of steps for DSP single-stepping */
  */
 static char *DebugDsp_MatchRegister(const char *text, int state)
 {
-	static const char regs[][4] = {
+	static const char* regs[] = {
 		"a0", "a1", "a2", "b0", "b1", "b2", "la", "lc",
 		"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7",
 		"n0", "n1", "n2", "n3", "n4", "n5", "n6", "n7",
@@ -53,22 +53,7 @@ static char *DebugDsp_MatchRegister(const char *text, int state)
 		"omr", "pc", "sp", "sr", "ssh", "ssl",
 		"x0", "x1", "y0", "y1",
 	};
-	static int i, len;
-	
-	if (!state)
-	{
-		/* first match */
-		i = 0;
-		len = strlen(text);
-		if (len > 2)
-			return NULL;
-	}
-	/* next match */
-	while (i < ARRAYSIZE(regs)) {
-		if (strncasecmp(regs[i++], text, len) == 0)
-			return (strdup(regs[i-1]));
-	}
-	return NULL;
+	return DebugUI_MatchHelper(regs, ARRAYSIZE(regs), text, state);
 }
 
 /**

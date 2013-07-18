@@ -586,6 +586,29 @@ static int DebugUI_ParseCommand(const char *input_orig)
 /* See "info:readline" e.g. in Konqueror for readline usage. */
 
 /**
+ * Generic readline match callback helper.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state)
+{
+	static int i, len;
+	
+	if (!state)
+	{
+		/* first match */
+		len = strlen(text);
+		i = 0;
+	}
+	/* next match */
+	while (i < items) {
+		if (strncasecmp(strings[i++], text, len) == 0)
+			return (strdup(strings[i-1]));
+	}
+	return NULL;
+}
+
+/**
  * Readline match callback for long command name completion.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
