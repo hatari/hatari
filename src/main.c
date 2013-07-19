@@ -22,6 +22,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "joy.h"
 #include "floppy.h"
 #include "gemdos.h"
+#include "fdc.h"
 #include "hdc.h"
 #include "ide.h"
 #include "acia.h"
@@ -599,6 +600,7 @@ static void Main_Init(void)
 
 	DSP_Init();
 	Floppy_Init();
+	FDC_Init();
 	M68000_Init();                /* Init CPU emulation */
 	Audio_Init();
 	Keymap_Init();

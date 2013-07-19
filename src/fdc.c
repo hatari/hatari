@@ -390,8 +390,16 @@ typedef struct {
 } FDC_DMA_STRUCT;
 
 
+typedef struct {
+	bool		Enabled;
+	int		RPM;					/* Rotation Per Minutes * 1000 */
+	Uint8		HeadTrack;				/* Current position of the head */
+} FDC_DRIVE_STRUCT;
+
+
 static FDC_STRUCT	FDC;					/* All variables related to the WD1772 emulation */
 static FDC_DMA_STRUCT	FDC_DMA;				/* All variables related to the DMA transfer */
+static FDC_DRIVE_STRUCT	FDC_DRIVES[ MAX_FLOPPYDRIVES ];		/* A: and B: */
 
 static Uint8 HeadTrack[ MAX_FLOPPYDRIVES ];			/* A: and B: */
 
@@ -563,6 +571,23 @@ static void FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC )
 		crc16_add_byte ( pCRC , buf[ i ] );
 	}
 //	fprintf ( stderr , "fdc crc16 0x%x 0x%x\n" , *pCRC>>8 , *pCRC & 0xff );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Init variables used in FDC and DMA emulation
+ */
+void FDC_Init ( void )
+{
+	int	i;
+
+	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
+	{
+		FDC_DRIVES[ i ].Enabled = true;
+		FDC_DRIVES[ i ].RPM = FDC_RPM_STANDARD * 1000;
+		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
+	}
 }
 
 

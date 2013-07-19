@@ -10,6 +10,7 @@
 
 
 extern void	FDC_MemorySnapShot_Capture ( bool bSave );
+extern void	FDC_Init ( void );
 extern void	FDC_Reset ( void );
 extern void	FDC_SetDMAStatus ( bool bError );
 
