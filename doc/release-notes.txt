@@ -17,6 +17,9 @@ Emulator:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
 - Debugger:
+  - "next" command supports optional "instruction type" argument,
+    which can be used for example to continue emulation until
+    subroutine returns.
   - "CpuInstr" and "DspInstr" variables for count of instructions
     executed since emulation was last continued from debugger.
   - In addition to "!" condition, also "<" and ">" conditions can store
