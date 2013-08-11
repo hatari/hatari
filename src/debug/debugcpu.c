@@ -728,10 +728,12 @@ static const dbgcommand_t cpucommands[] =
 	  false },
 	{ DebugCpu_Next, DebugCpu_MatchNext,
 	  "next", "n",
-	  "step CPU, proceeding through subroutine calls",
-	  "\n"
-	  "\tLike the 'step' command as long as subroutine calls do not\n"
-          "\thappen. When they do, the call is treated as one instruction.",
+	  "step CPU through subroutine calls / to given instruction type",
+	  "[instruction type]\n"
+	  "\tSame as 'step' command if there are no subroutine calls.\n"
+          "\tWhen there are, those calls are treated as one instruction.\n"
+	  "\tIf argument is given, continues until instruction of given\n"
+	  "\ttype is encountered.",
 	  false },
 	{ DebugCpu_Continue, NULL,
 	  "cont", "c",

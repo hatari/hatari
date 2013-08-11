@@ -564,10 +564,12 @@ static const dbgcommand_t dspcommands[] =
 	  false },
 	{ DebugDsp_Next, DebugDsp_MatchNext,
 	  "dspnext", "dn",
-	  "step DSP, proceeding through subroutine calls",
-	  "\n"
-	  "\tLike the 'dspstep' command as long as subroutine calls do not\n"
-          "\thappen. When they do, the call is treated as one instruction.",
+	  "step DSP through subroutine calls / to given instruction type",
+	  "[instruction type]\n"
+	  "\tSame as 'dspstep' command if there are no subroutine calls.\n"
+          "\tWhen there are, those calls are treated as one instruction.\n"
+	  "\tIf argument is given, continues until instruction of given\n"
+	  "\ttype is encountered.",
 	  false },
 	{ DebugDsp_Continue, NULL,
 	  "dspcont", "dc",
