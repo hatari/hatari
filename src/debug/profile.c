@@ -24,6 +24,8 @@ const char Profile_fileid[] = "Hatari profile.c : " __DATE__ " " __TIME__;
 #include "profile_priv.h"
 #include "symbols.h"
 
+profile_loop_t profile_loop;
+
 
 /* ------------------ CPU/DSP caller information handling ----------------- */
 
@@ -494,14 +496,29 @@ void Profile_FreeCallinfo(callinfo_t *callinfo)
 char *Profile_Match(const char *text, int state)
 {
 	static const char *names[] = {
-		"addresses", "callers", "counts", "cycles", "misses",
+		"addresses", "callers", "counts", "cycles", "loops", "misses",
 		"off", "on", "save", "stack", "stats", "symbols"
 	};
 	return DebugUI_MatchHelper(names, ARRAYSIZE(names), text, state);
 }
 
 const char Profile_Description[] =
-	"<on|off|stats|counts|cycles|misses|symbols|callers|stack|addresses|save> [count|address|file]\n"
+	"<subcommand> [parameter]\n"
+	"\n"
+	"\tSubcommands:\n"
+	"\t- on\n"
+	"\t- off\n"
+	"\t- counts [count]\n"
+	"\t- cycles [count]\n"
+	"\t- misses [count]\n"
+	"\t- symbols [count]\n"
+	"\t- addresses [address]\n"
+	"\t- callers\n"
+	"\t- stack\n"
+	"\t- stats\n"
+	"\t- save <file>\n"
+	"\t- loops <file> [CPU limit] [DSP limit]\n"
+	"\n"
 	"\t'on' & 'off' enable and disable profiling.  Data is collected\n"
 	"\tuntil debugger is entered again at which point you get profiling\n"
 	"\tstatistics ('stats') summary.\n"
@@ -520,7 +537,11 @@ const char Profile_Description[] =
 	"\thad symbol(s) associated with them.  'stack' shows the currect\n"
 	"\tprofile stack, this is useful only with :noinit breakpoints.\n"
 	"\n"
-	"\tProfile information can be saved with 'save'.";
+	"\tProfile address and callers information can be saved with 'save'\n"
+	"\tcommand.  Detailed (spin) looping information can be collected\n"
+	"\tby specifying towhich file it should be saved, with optional\n"
+	"\tlimit(s) on how many bytes the loop first and last instruction\n"
+	"\taddress can differ (0 = no limit).";
 
 
 /**
@@ -560,6 +581,65 @@ static bool Profile_Save(const char *fname, bool bForDsp)
 }
 
 /**
+ * function CPU & DSP profiling functionality can call to
+ * reset loop information log by truncating it.  Only portable
+ * way to do that is re-opening it again.
+ */
+bool Profile_LoopReset(void)
+{
+	if (!profile_loop.filename) {
+		return false;
+	}
+	if (profile_loop.fp) {
+		fclose(profile_loop.fp);
+	}
+	profile_loop.fp = fopen(profile_loop.filename, "w");
+	if (!profile_loop.fp) {
+		return false;
+	}
+	fprintf(profile_loop.fp, "# <processor> <VBLs from boot> <address> <size> <loops>\n");
+	return true;
+}
+
+/**
+ * Open file common to both CPU and DSP profiling.
+ */
+static bool Profile_Loops(int nArgc, char *psArgs[])
+{
+	if (nArgc > 2) {
+		/* check that the given file can be opened for writing */
+		if (profile_loop.filename) {
+			free(profile_loop.filename);
+		}
+		profile_loop.filename = strdup(psArgs[2]);
+		if (Profile_LoopReset()) {
+			if (nArgc > 3) {
+				profile_loop.cpu_limit = atoi(psArgs[3]);
+				if (nArgc > 4) {
+					profile_loop.dsp_limit = atoi(psArgs[4]);
+				}
+			}
+			fprintf(stderr, "Additional max %d (CPU) & %d (DSP) byte loop profiling enabled to:\n\t%s\n",
+				profile_loop.cpu_limit, profile_loop.cpu_limit, psArgs[2]);
+		} else {
+			free(profile_loop.filename);
+			profile_loop.filename = NULL;
+			perror("ERROR: opening profile loop output file failed, disabling!");
+			return false;
+		}
+	} else {
+		if (profile_loop.fp) {
+			fprintf(stderr, "Disabling loop profiling.\n");
+			free(profile_loop.filename);
+			profile_loop.filename = NULL;
+			fclose(profile_loop.fp);
+			profile_loop.fp = NULL;
+		}
+	}
+	return true;
+}
+
+/**
  * Command: CPU/DSP profiling enabling, exec stats, cycle and call stats.
  * Returns DEBUGGER_CMDDONE or DEBUGGER_CMDCONT.
  */
@@ -571,7 +651,7 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 
 	if (nArgc > 2) {
 		show = atoi(psArgs[2]);
-	}	
+	}
 	if (bForDsp) {
 		Profile_DspGetPointers(&enabled, &disasm_addr);
 	} else {
@@ -641,8 +721,13 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 		}
 	} else if (strcmp(psArgs[1], "stack") == 0) {
 		Profile_ShowStack(bForDsp);
+
 	} else if (strcmp(psArgs[1], "save") == 0) {
 		Profile_Save(psArgs[2], bForDsp);
+
+	} else if (strcmp(psArgs[1], "loops") == 0) {
+		Profile_Loops(nArgc, psArgs);
+
 	} else {
 		DebugUI_PrintCmdHelp(psArgs[0]);
 	}

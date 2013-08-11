@@ -9,6 +9,15 @@
 #define HATARI_PROFILE_PRIV_H
 
 typedef struct {
+	char *filename;		/* where to write loop info */
+	FILE *fp;		/* pointer modified by CPU & DSP code */
+	Uint32 cpu_limit;	/* max limit for profiled CPU loop size */
+	Uint32 dsp_limit;	/* max limit for profiled DSP loop size */
+} profile_loop_t;
+
+extern profile_loop_t profile_loop;
+
+typedef struct {
 	Uint64 calls, count, cycles, misses;
 } counters_t;
 
@@ -66,6 +75,7 @@ extern void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, c
 extern Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost);
 extern int  Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *info);
 extern void Profile_FreeCallinfo(callinfo_t *callinfo);
+extern bool Profile_LoopReset(void);
 
 /* parser helpers */
 extern void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr);
