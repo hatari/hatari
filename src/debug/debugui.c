@@ -398,6 +398,21 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
 	return DEBUGGER_CMDDONE;
 }
 
+/**
+ * Command: Rename file
+ */
+static int DebugUI_Rename(int argc, char *argv[])
+{
+	if (argc == 3)
+	{
+		if (rename(argv[1], argv[2]) == 0)
+			return DEBUGGER_CMDDONE;
+		perror("ERROR");
+	}
+	DebugUI_PrintCmdHelp(argv[0]);
+	return DEBUGGER_CMDDONE;
+}
+
 
 /**
  * Command: Read debugger commands from a file
@@ -864,6 +879,12 @@ static const dbgcommand_t uicommand[] =
 	  "get debugger commands from file",
 	  "[filename]\n"
 	  "\tRead debugger commands from given file and do them.",
+	  false },
+	{ DebugUI_Rename, NULL,
+	  "rename", "",
+	  "rename given file",
+	  "old new\n"
+	  "\tRenames file with 'old' name to 'new'.",
 	  false },
 	{ DebugUI_SetOptions, Opt_MatchOption,
 	  "setopt", "o",
