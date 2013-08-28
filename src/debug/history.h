@@ -36,6 +36,7 @@ extern void History_Show(Uint32 count);
 
 /* for debugui */
 extern void History_Mark(debug_reason_t reason);
+extern char *History_Match(const char *text, int state);
 extern int History_Parse(int nArgc, char *psArgv[]);
 
 #endif
