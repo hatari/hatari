@@ -714,11 +714,11 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 			 * e.g. because there was a jsr or jump to return address
 			 */
 			Uint32 nextpc;
-			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not though RTS!\n", prev_pc, pc);
+			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not through RTS!\n", prev_pc, pc);
 			Disasm(stderr, prev_pc, &nextpc, 1);
 #endif
 		}
-		/* next address might be another function, so need to fall through */
+		/* next address might be another symbol, so need to fall through */
 	}
 
 	/* address is one which we're tracking? */
@@ -754,7 +754,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				cpu_callinfo.return_pc = Disasm_GetNextPC(prev_pc);
 			}
 		} else if (caller_pc != PC_UNDEFINED) {
-			/* returned from function to first instrction of another symbol:
+			/* returned from function to first instruction of another symbol:
 			 *	0xf384	jsr some_function
 			 *	other_symbol:
 			 *	0f3x8a	some_instruction
