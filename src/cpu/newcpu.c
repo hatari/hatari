@@ -1677,37 +1677,11 @@ kludge_me_do:
 	exception_trace (nr);
 }
 
-/* Handle exceptions. We need a special case to handle MFP exceptions */
-/* on Atari ST, because it's possible to change the MFP's vector base */
-/* and get a conflict with 'normal' cpu exceptions. */
+/* Handle exceptions - non-MMU mode */
 static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 {
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int sv = regs.s;
-
-	/* Pending bits / vector number can change before the end of the IACK sequence. */
-	/* We need to handle MFP and HBL/VBL cases for this. */
-	if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
-	{
-        	M68000_AddCycles ( CPU_IACK_CYCLES_MFP );
-		CPU_IACK = true;
-        	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
-        	    CALL_VAR(PendingInterruptFunction);
-        	nr = MFP_ProcessIACK ( nr );
-		CPU_IACK = false;
-	}
-	else if ( ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) && ( ( nr == 26 ) || ( nr == 28 ) ) )
-	{
-        	M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
-		CPU_IACK = true;
-        	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
-        	    CALL_VAR(PendingInterruptFunction);
-                if ( MFP_UpdateNeeded == true )
-                    MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
-        	pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
-		CPU_IACK = false;
-	}
-
 
 	if (ExceptionSource == M68000_EXC_SRC_CPU) {
 		if (bVdiAesIntercept && nr == 0x22) {
@@ -1967,6 +1941,29 @@ kludge_me_do:
 /* and get a conflict with 'normal' cpu exceptions. */
 void REGPARAM2 Exception (int nr, uaecptr oldpc, int ExceptionSource)
 {
+	/* Pending bits / vector number can change before the end of the IACK sequence. */
+	/* We need to handle MFP and HBL/VBL cases for this. */
+	if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
+	{
+		M68000_AddCycles(CPU_IACK_CYCLES_MFP);
+		CPU_IACK = true;
+		while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+			CALL_VAR(PendingInterruptFunction);
+		nr = MFP_ProcessIACK(nr);
+		CPU_IACK = false;
+	}
+	else if (ExceptionSource == M68000_EXC_SRC_AUTOVEC && (nr == 26 || nr == 28))
+	{
+		M68000_AddCycles(CPU_IACK_CYCLES_VIDEO);
+		CPU_IACK = true;
+		while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+			CALL_VAR(PendingInterruptFunction);
+		if (MFP_UpdateNeeded == true)
+			MFP_UpdateIRQ(0);			/* update MFP's state if some internal timers related to MFP expired */
+		pendingInterrupts &= ~(1 << (nr - 24));		/* clear HBL or VBL pending bit */
+		CPU_IACK = false;
+	}
+
 #ifdef CPUEMU_12
 	if (currprefs.cpu_cycle_exact && currprefs.cpu_model == 68000)
 		Exception_ce000 (nr, oldpc);
