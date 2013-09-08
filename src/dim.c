@@ -108,11 +108,15 @@ bool DIM_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_DIM_IMAGES
 
-	Uint8 *pDimFile;
-	gzFile hGzFile;
 	unsigned short int nSectorsPerTrack, nSides;
+	Uint8 *pDimFile;
 	int nTracks;
 	bool bRet;
+#if HAVE_LIBZ
+	gzFile hGzFile;
+#else
+	FILE *fhdl;
+#endif
 
 	/* Allocate memory for the whole DIM image: */
 	pDimFile = malloc(ImageSize + 32);
@@ -122,17 +126,23 @@ bool DIM_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 		return false;
 	}
 
+	memset(pDimFile, 0, 32);
 	/* Try to load the old header data to preserve the header fields that are unknown yet: */
-    hGzFile = gzopen(pszFileName, "rb");
-    if (hGzFile != NULL)
-    {
+#if HAVE_LIBZ
+	hGzFile = gzopen(pszFileName, "rb");
+	if (hGzFile != NULL)
+	{
 		gzread(hGzFile, pDimFile, 32);
 		gzclose(hGzFile);
 	}
-	else
+#else
+	fhdl = fopen(pszFileName, "rb");
+	if (fhndl != NULL)
 	{
-		memset(pDimFile, 0, 32);
+		fread(pDimFile, 32, 1, fhndl);
+		fclose(fhndl);
 	}
+#endif
 
 	/* Now fill in the new header information: */
 	Floppy_FindDiskDetails(pBuffer, ImageSize, &nSectorsPerTrack, &nSides);
