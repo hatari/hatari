@@ -438,7 +438,7 @@ static void Screen_SetResolution(void)
 			Height = maxH;
 			Width = maxW;
 		}
-		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
+		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN/*|SDL_DOUBLEBUF*/;
 		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
 		 * but it doesn't work with partial screen updates done by the ST screen
 		 * update code or the Hatari GUI, so double buffering is disabled.
@@ -446,7 +446,11 @@ static void Screen_SetResolution(void)
 	}
 	else
 	{
-		sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
+		sdlVideoFlags  = SDL_SWSURFACE;
+	}
+	if (BitCount <= 8)
+	{
+		sdlVideoFlags |= SDL_HWPALETTE;
 	}
 
 	/* Check if we really have to change the video mode: */
