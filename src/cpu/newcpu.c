@@ -1546,7 +1546,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 
 	if (nr == 2 && currprefs.cpu_model <= 68030) {
 		// Bus error for 68030 mode
-		write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
+		// write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
 		m68k_areg (regs, 7) -= 4;
 		x_put_long (m68k_areg (regs, 7), 0);  // Internal register
 		m68k_areg (regs, 7) -= 4;
@@ -1574,7 +1574,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 
 	} else if (nr == 2) {
 		// Bus error / access error for 68040
-		write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
+		// write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
 		for (i = 0 ; i < 7 ; i++) {
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), 0);
