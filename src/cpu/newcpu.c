@@ -91,8 +91,6 @@ int BusCyclePenalty = 0;
 
 
 /* Amiga's specific variables, required to compile until all Amiga stuffs are ignored */
-int kickstart_rom, cloanto_rom;
-int config_changed;
 int vpos;
 int quit_program;  // declared as "int quit_program = 0;" in main.c
 
@@ -488,7 +486,6 @@ static void update_68k_cycles (void)
 		cpucycleunit = 1;
 	if (currprefs.cpu_cycle_exact)
 		write_log ("CPU cycleunit: %d (%.3f)\n", cpucycleunit, (float)cpucycleunit / CYCLE_UNIT);
-	config_changed = 1;
 }
 
 static void prefs_changed_cpu (void)
@@ -506,8 +503,6 @@ void check_prefs_changed_cpu (void)
 {
 	bool changed = 0;
 
-	if (!config_changed)
-		return;
 #ifdef JIT
 	changed = check_prefs_changed_comp ();
 #endif
@@ -2505,8 +2500,6 @@ void m68k_reset (int hardreset)
 	if (currprefs.cpu_model == 68060) {
 		regs.pcr = currprefs.fpu_model == 68060 ? MC68060_PCR : MC68EC060_PCR;
 		regs.pcr |= (currprefs.cpu060_revision & 0xff) << 8;
-		if (kickstart_rom)
-			regs.pcr |= 2; /* disable FPU */
 	}
 	fill_prefetch_slow ();
 }
