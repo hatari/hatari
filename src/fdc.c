@@ -437,7 +437,6 @@ static int	FDC_DelayToFdcCycles ( int Delay_micro );
 static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles );
 static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset );
 static int	FDC_DelayToCpuCycles ( int Delay_micro );
-static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset );
 static int	FDC_TransferByte_FdcCycles ( int NbBytes );
 static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
@@ -622,23 +621,6 @@ Delay = Delay_micro*8;
 //fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
 //if ( Delay==4104) Delay=4166;		// 4166 : decade demo
 	return Delay;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Start an internal timer to handle the FDC's events.
- * If "fast floppy" mode is used, we speed up the timer by dividing
- * the number of cycles by a fixed number.
- */
-static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset )
-{
-//fprintf ( stderr , "fdc start timer %d us\n" , Delay_micro );
-
-	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( Delay_micro > FDC_FAST_FDC_FACTOR ) )
-		Delay_micro /= FDC_FAST_FDC_FACTOR;
-
-	CycInt_AddRelativeInterruptWithOffset ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC , InternalCycleOffset );
 }
 
 
@@ -1193,7 +1175,6 @@ void FDC_InterruptHandler_Update ( void )
 
 	if (FDC.Command != FDCEMU_CMD_NULL)
 	{
-//		FDC_StartTimer_micro ( Delay_micro , -PendingCyclesOver );
 		FDC_StartTimer_FdcCycles ( FdcCycles , -PendingCyclesOver );
 	}
 }
@@ -2553,7 +2534,6 @@ static void FDC_ExecuteCommand ( void )
 		FdcCycles = FDC_ExecuteTypeIVCommands();
 
 	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the Delay_micro phase */
-//	FDC_StartTimer_micro ( FdcCycles , 0 );
 	FDC_StartTimer_FdcCycles ( FdcCycles , 0 );
 }
 
