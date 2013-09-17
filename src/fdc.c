@@ -450,6 +450,7 @@ static int	FDC_FindFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Track );
 
+static int	FDC_GetBytesPerTrack ( void );
 static void	FDC_IndexPulse_Init ( void );
 static int	FDC_IndexPulse_GetCurrentPos ( void );
 static int	FDC_IndexPulse_GetState ( void );
@@ -964,6 +965,32 @@ static int FDC_GetSidesPerDisk ( int Track )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the number of bytes in a track when using the read/write track
+ * type III command.
+ * A DD track is usually FDC_TRACK_BYTES_STANDARD, but to handle HD or ED
+ * ST/MSA disk images, we simulate a bigger track size if we have more
+ * than 18 or 36 sectors.
+ */
+static int	FDC_GetBytesPerTrack ( void )
+{
+	int	TrackSize;
+	int	MaxSector;
+
+	TrackSize = FDC_TRACK_BYTES_STANDARD;				/* For a standard DD disk */
+
+	MaxSector = FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE );
+
+	if ( MaxSector >= 36 )
+		TrackSize *= 4;						/* Simulate a ED disk, 36 sectors or more */
+	else if ( MaxSector >= 18 )
+		TrackSize *= 2;						/* Simulate a HD disk, between 18 and 36 sectors */
+
+	return TrackSize;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Store the time of the most recent index pulse.
  * This is called when motor was off and reaches its peak speed, and is used
  * to compute the position relative to the start of the track when we need
@@ -994,9 +1021,9 @@ static int	FDC_IndexPulse_GetCurrentPos ( void )
 	/* Transform the current number of cycles since the reference index into a number of bytes */
 	BytesSinceIndex = ( CyclesGlobalClockCounter - FDC.IndexPulse_Time ) / FDC_FdcCyclesToCpuCycles ( FDC_TransferByte_FdcCycles ( 1 ) );
 
-//fprintf ( stderr , "fdc index pulse pos cur=%lld ref=%lld bytes=%lld pos=%d\n" ,  CyclesGlobalClockCounter , FDC.IndexPulse_Time , BytesSinceIndex , (int)(BytesSinceIndex % FDC_TRACK_BYTES_STANDARD) );
+//fprintf ( stderr , "fdc index pulse pos cur=%lld ref=%lld bytes=%lld pos=%d\n" ,  CyclesGlobalClockCounter , FDC.IndexPulse_Time , BytesSinceIndex , (int)(BytesSinceIndex % FDC_GetBytesPerTrack () ) );
 	/* Ignore the total number of spins, only keep the position relative to the index pulse */
-	return ( BytesSinceIndex % FDC_TRACK_BYTES_STANDARD );
+	return ( BytesSinceIndex % FDC_GetBytesPerTrack ()  );
 }
 
 
@@ -1030,7 +1057,7 @@ static int	FDC_IndexPulse_GetState ( void )
  */
 static int	FDC_NextIndexPulse_NbBytes ( void )
 {
-	return FDC_TRACK_BYTES_STANDARD - FDC_IndexPulse_GetCurrentPos ();
+	return FDC_GetBytesPerTrack () - FDC_IndexPulse_GetCurrentPos ();
 }
 
 
@@ -1071,7 +1098,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 	if ( i == MaxSector )						/* CurrentPos is after the last ID Field of this track */
 	{
 		/* Reach end of track (new index pulse), then go to sector 1 */
-		NbBytes = FDC_TRACK_BYTES_STANDARD - CurrentPos + FDC_TRACK_LAYOUT_STANDARD_GAP1 + FDC_TRACK_LAYOUT_STANDARD_GAP2;
+		NbBytes = FDC_GetBytesPerTrack () - CurrentPos + FDC_TRACK_LAYOUT_STANDARD_GAP1 + FDC_TRACK_LAYOUT_STANDARD_GAP2;
 		NextSector = 1;
 	}
 	else								/* There's an ID Field before end of track */
@@ -1936,7 +1963,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		if ( ( FDC_SIDE == 1 )						/* Try to read side 1 on a disk that doesn't have 2 sides */
 			&& ( FDC_GetSidesPerDisk ( HeadTrack[ FDC_DRIVE ] ) != 2 ) )
 		{
-			for ( i=0 ; i<FDC_TRACK_BYTES_STANDARD ; i++ )
+			for ( i=0 ; i<FDC_GetBytesPerTrack () ; i++ )
 				*buf++ = rand() & 0xff;				/* Fill the track buffer with random bytes */
 		}
 		
@@ -1986,13 +2013,13 @@ static int FDC_UpdateReadTrackCmd ( void )
 					*buf++ = 0x4e;
 			}
 
-			while ( buf < DMADiskWorkSpace + FDC_DMA.PosInBuffer + FDC_TRACK_BYTES_STANDARD )	/* Complete the track buffer */
+			while ( buf < DMADiskWorkSpace + FDC_DMA.PosInBuffer + FDC_GetBytesPerTrack () )	/* Complete the track buffer */
 			      *buf++ = 0x4e;						/* GAP5 */
 		}
 
 		/* Transfer Track data to RAM using DMA */
-		FDC_DMA.BytesToTransfer += FDC_TRACK_BYTES_STANDARD;
-		FDC_DMA.PosInBuffer += FDC_TRACK_BYTES_STANDARD;
+		FDC_DMA.BytesToTransfer += FDC_GetBytesPerTrack ();
+		FDC_DMA.PosInBuffer += FDC_GetBytesPerTrack ();
 
 		FDC.CommandState = FDCEMU_RUN_READTRACK_DMA;
 		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );			/* Transfer blocks of 16 bytes from the track we just read */
