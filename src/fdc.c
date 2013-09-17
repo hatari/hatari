@@ -272,42 +272,56 @@ enum
 
 
 
-/* Standard hardware values for the FDC. This should allow to get good timings estimation */
-/* when dealing with non protected disks that require a correct speed (MSA or ST images) */
-/* FIXME [NP] : Those timings could be improved by taking into account the time */
-/* it takes to reach the track index/sector/address field before really reading it, but this level */
-/* of accuracy is not necessary for ST/MSA disk images (it would be required to emulate protections */
-/* in Pasti disk images) */
+/*
+ * Standard hardware values for the FDC. This should allow to get very good timings' emulation
+ * when dealing with non protected disks that still require a correct speed (MSA or ST images)
+ *
+ * - WD1772's datasheet is based on a reference clock of 8 MHz, so delays expressed in milli-seconds
+ *   will be slightly different for the Atari ST, whose FDC's clock is around 8.021247 MHz (but this is
+ *   not really noticeable in practice, less than 0.3 %)
+ * - DD MFM encoding defines a standard signal of 4 micro sec per bit (a possible variation of +/- 10 %
+ *   should still be possible). This means the WD1772 will read/write at 250 kbits/sec.
+ *   Taking 4 us per bit means 32 us for a full byte, and with a 8 MHz clock, 256 cycles per byte.
+ * - The floppy drives used in the Atari ST are spinning at 300 RPM. Variations are possible, as long
+ *   as it keeps the duration of an MFM bit in the required 4 us +/- 10 % (in practice, ST drives are often
+ *   at 299-301 RPM)
+ * - When FDC runs at 8 MHz, the 250 kbits/s and 300 RPM give 6250 bytes for a standard track
+ * - When FDC runs at 8.021247 MHz (Atari ST), the 250.664 kbit/s and 300 RPM give 6267 bytes per track
+ */
 
+
+#define	FDC_CLOCK_STANDARD			(8000000.L)	/* In the WD1772's datasheet, all timings are related to a reference clock of 8 MHz */
+#define FDC_DELAY_CYCLE_MFM_BYTE		( 4 * 8 * 8 )	/* 4 us per bit, 8 bits per byte, 8 MHz clock -> 256 cycles */
 #define	FDC_BITRATE_STANDARD			250000		/* read/write speed of the WD1772 in bits per sec */
 #define	FDC_RPM_STANDARD			300		/* 300 RPM or 5 spins per sec */
-#define	FDC_TRACK_BYTES_STANDARD		( ( FDC_BITRATE_STANDARD / 8 ) / ( FDC_RPM_STANDARD / 60 ) )	/* 6250 bytes */
+//#define	FDC_TRACK_BYTES_STANDARD		( ( FDC_BITRATE_STANDARD / 8 ) / ( FDC_RPM_STANDARD / 60 ) )	/* 6250 bytes */
+#define FDC_TRACK_BYTES_STANDARD	6268
 //#define FDC_TRACK_BYTES_STANDARD	6272
 
 #define FDC_TRANSFER_BYTES_US( n )		(  ( n ) * 8 * 1000000.L / FDC_BITRATE_STANDARD )	/* micro sec to read/write 'n' bytes in the WD1772 */
 
 /* Delays are in micro sec */
-#define	FDC_DELAY_MOTOR_ON			( 1000000.L * 6 / ( FDC_RPM_STANDARD / 60 ) )	/* 6 spins to reach correct speed */
-#define	FDC_DELAY_MOTOR_OFF			( 1000000.L * 9 / ( FDC_RPM_STANDARD / 60 ) )	/* Turn off motor 9 spins after the last command */
+#define	FDC_DELAY_US_MOTOR_ON			( 1000000.L * 6 / ( FDC_RPM_STANDARD / 60 ) )	/* 6 spins to reach correct speed */
+#define	FDC_DELAY_US_MOTOR_OFF			( 1000000.L * 9 / ( FDC_RPM_STANDARD / 60 ) )	/* Turn off motor 9 spins after the last command */
 
-#define	FDC_DELAY_HEAD_LOAD			( 15 * 1000 )	/* Additionnal 15 ms delay to load the head in type II/III */
+#define	FDC_DELAY_US_HEAD_LOAD			( 15 * 1000 )	/* Additionnal 15 ms delay to load the head in type II/III */
 
-#define	FDC_DELAY_RNF				( 1000000.L * 5 / ( FDC_RPM_STANDARD / 60 ) )	/* 5 spins to set RNF */
+#define	FDC_DELAY_US_RNF			( 1000000.L * 5 / ( FDC_RPM_STANDARD / 60 ) )	/* 5 spins to set RNF */
 
-#define	FDC_DELAY_INDEX_PULSE_LENGTH		1500		/* Index pulse signal remain high during 1.5 ms on each rotation */
+#define	FDC_DELAY_US_INDEX_PULSE_LENGTH		( 1.5 * 1000 )	/* Index pulse signal remain high during 1.5 ms on each rotation */
 
-#define	FDC_DELAY_TYPE_I_PREPARE		90		/* Types I commands take at least 0.09 ms to execute */
+
+/* Internal delays to process commands are in fdc cycles for a 8 MHz clock */
+#define	FDC_DELAY_CYCLE_TYPE_I_PREPARE		(90*8)		/* Types I commands take at least 0.09 ms to execute */
 								/* (~740 cpu cycles @ 8 Mhz). [NP] : this was measured on a 520 STF */
 								/* and avoid returning immediately when command has no effect */
-#define	FDC_DELAY_TYPE_II_PREPARE		1 // 65		/* Start Type II commands immediately */
-#define	FDC_DELAY_TYPE_III_PREPARE		1		/* Start Type III commands immediately */
-#define	FDC_DELAY_TYPE_IV_PREPARE		100		/* FIXME [NP] : this was not measured */
-								
+#define	FDC_DELAY_CYCLE_TYPE_II_PREPARE		(1*8) // 65	/* Start Type II commands immediately */
+#define	FDC_DELAY_CYCLE_TYPE_III_PREPARE	(1*8)		/* Start Type III commands immediately */
+#define	FDC_DELAY_CYCLE_TYPE_IV_PREPARE		(100*8)		/* FIXME [NP] : this was not measured */
+#define	FDC_DELAY_CYCLE_COMMAND_COMPLETE	(1*8)		/* Number of cycles before going to the _COMPLETE state (~8 cpu cycles) */
+#define	FDC_DELAY_CYCLE_COMMAND_IMMEDIATE	(1*8)		/* Number of cycles to go immediately to another state */
+
 #define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
-
-#define	FDC_DELAY_COMMAND_COMPLETE		1		/* Number of us before going to the _COMPLETE state (~8 cpu cycles) */
-
-#define	FDC_DELAY_COMMAND_IMMEDIATE		1		/* Number of us to go immediately to another state */
 
 
 #define	DMA_DISK_SECTOR_SIZE			512		/* Sector count at $ff8606 is for 512 bytes blocks */
@@ -361,6 +375,9 @@ typedef struct {
 	Uint8		STR;					/* Status Register */
 	int		StepDirection;				/* +1 (Step In) or -1 (Step Out) */
 
+//	Uint8		MotorSignal;				/* 0=OFF 1=ON */
+
+	
 	/* Other variables */
 	int		Command;				/* FDC emulation command currently being exceuted */
 	int		CommandState;				/* Current state for the running command */
@@ -392,8 +409,10 @@ typedef struct {
 
 typedef struct {
 	bool		Enabled;
+	bool		DiskInserted;
 	int		RPM;					/* Rotation Per Minutes * 1000 */
 	Uint8		HeadTrack;				/* Current position of the head */
+//	Uint8		Motor;					/* State of the drive's motor : 0=OFF 1=ON */
 } FDC_DRIVE_STRUCT;
 
 
@@ -414,8 +433,12 @@ static Uint8 DMADiskWorkSpace[ 6275+1000 ];	/* Workspace used to transfer bytes 
 
 static void	FDC_SetDriveLedBusy ( void );
 
+static int	FDC_DelayToFdcCycles ( int Delay_micro );
+static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles );
+static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset );
 static int	FDC_DelayToCpuCycles ( int Delay_micro );
 static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset );
+static int	FDC_TransferByte_FdcCycles ( int NbBytes );
 static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
 static void	FDC_ResetDMA ( void );
@@ -514,6 +537,69 @@ static void	FDC_SetDriveLedBusy ( void )
 }
 
 
+//*-----------------------------------------------------------------------*/
+/**
+ * Convert a delay in micro seconds to its equivalent of fdc cycles
+ * (delays in the WD1772 specs are relative to a 8 MHz reference clock)
+ */
+static int	FDC_DelayToFdcCycles ( int Delay_micro )
+{
+	int	FdcCycles;
+
+	FdcCycles = (int) ( ( (Sint64) FDC_CLOCK_STANDARD * Delay_micro ) / 1000000 );
+
+//fprintf ( stderr , "fdc state %d delay %d us %d fdc cycles\n" , FDC.Command , Delay_micro , FdcCycles );
+	return FdcCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Convert a number of fdc cycles at freq FDC_CLOCK_STANDARD to a number
+ * of cpu cycles at freq MachineClocks.CPU_Freq
+ * TODO : we use a fixed 8 MHz clock and nCpuFreqShift to convert cycles for our
+ * internal timers in cycInt.c. This should be replaced some days by using
+ * MachineClocks.CPU_Freq and not using nCpuFreqShift anymore.
+ * (for Falcon, we divide by 2 to keep a freq in the 8 MHz range)
+ */
+static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles )
+{
+	int	CpuCycles;
+
+	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */
+	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
+	/* FIXME : as stated above, this should be handled better, without involving 8 MHz CPU_Freq */
+	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
+		FdcCycles *= 2;					/* correct delays for a 8 MHz FDC_Freq clock instead of 16 */
+
+//	CpuCycles = rint ( ( (Sint64)MachineClocks.CPU_Freq * FdcCycles ) / MachineClocks.FDC_Freq );
+	CpuCycles = rint ( ( (Sint64)8021247 * FdcCycles ) / MachineClocks.FDC_Freq );
+	CpuCycles &= -4;					/* Multiple of 4 */
+	CpuCycles <<= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
+
+//fprintf ( stderr , "fdc state %d delay %d fdc cycles %d cpu cycles\n" , FDC.Command , FdcCycles , CpuCycles );
+//if ( Delay==4104) Delay=4166;		// 4166 : decade demo
+	return CpuCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Start an internal timer to handle the FDC's events.
+ * If "fast floppy" mode is used, we speed up the timer by dividing
+ * the number of cycles by a fixed number.
+ */
+static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset )
+{
+//fprintf ( stderr , "fdc start timer %d cycles\n" , FdcCycles );
+
+	if ( ( ConfigureParams.DiskImage.FastFloppy ) && ( FdcCycles > FDC_FAST_FDC_FACTOR ) )
+		FdcCycles /= FDC_FAST_FDC_FACTOR;
+
+	CycInt_AddRelativeInterruptWithOffset ( FDC_FdcCyclesToCpuCycles ( FdcCycles ) , INT_CPU_CYCLE , INTERRUPT_FDC , InternalCycleOffset );
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Convert a delay in micro seconds to its equivalent of cpu cycles
@@ -553,6 +639,17 @@ static void	FDC_StartTimer_micro ( int Delay_micro , int InternalCycleOffset )
 		Delay_micro /= FDC_FAST_FDC_FACTOR;
 
 	CycInt_AddRelativeInterruptWithOffset ( FDC_DelayToCpuCycles ( Delay_micro ) , INT_CPU_CYCLE , INTERRUPT_FDC , InternalCycleOffset );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the number of FDC cycles required to read/write 'nb' bytes
+ */
+static int	FDC_TransferByte_FdcCycles ( int NbBytes )
+{
+//fprintf ( stderr , "fdc state %d transfer %d bytes\n" , FDC.Command , NbBytes );
+	return NbBytes * FDC_DELAY_CYCLE_MFM_BYTE;
 }
 
 
@@ -913,7 +1010,7 @@ static int	FDC_IndexPulse_GetCurrentPos ( void )
 	Uint64	BytesSinceIndex;
 
 	/* Transform the current number of cycles since the reference index into a number of bytes */
-	BytesSinceIndex = ( CyclesGlobalClockCounter - FDC.IndexPulse_Time ) / FDC_DelayToCpuCycles ( FDC_TRANSFER_BYTES_US ( 1 ) );
+	BytesSinceIndex = ( CyclesGlobalClockCounter - FDC.IndexPulse_Time ) / FDC_FdcCyclesToCpuCycles ( FDC_TransferByte_FdcCycles ( 1 ) );
 
 //fprintf ( stderr , "fdc index pulse pos cur=%lld ref=%lld bytes=%lld pos=%d\n" ,  CyclesGlobalClockCounter , FDC.IndexPulse_Time , BytesSinceIndex , (int)(BytesSinceIndex % FDC_TRACK_BYTES_STANDARD) );
 	/* Ignore the total number of spins, only keep the position relative to the index pulse */
@@ -936,7 +1033,7 @@ static int	FDC_IndexPulse_GetState ( void )
 	CurrentPos = FDC_IndexPulse_GetCurrentPos ();
 
 	state = 0;
-	if ( CurrentPos <  FDC_DELAY_INDEX_PULSE_LENGTH / FDC_TRANSFER_BYTES_US ( 1 ) )
+	if ( CurrentPos <  FDC_DelayToFdcCycles ( FDC_DELAY_US_INDEX_PULSE_LENGTH ) / FDC_TransferByte_FdcCycles ( 1 ) )
 		state = 1;
 
 //fprintf ( stderr , "fdc index state pos pos=%d state=%d\n" , CurrentPos , state );
@@ -1036,7 +1133,7 @@ void FDC_AcknowledgeInterrupt ( void )
  */
 void FDC_InterruptHandler_Update ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	int	PendingCyclesOver;
 
 	/* Number of internal cycles we went over for this timer ( <= 0 ) */
@@ -1064,39 +1161,40 @@ void FDC_InterruptHandler_Update ( void )
 		switch(FDC.Command)
 		{
 		 case FDCEMU_CMD_RESTORE:
-			Delay_micro = FDC_UpdateRestoreCmd();
+			FdcCycles = FDC_UpdateRestoreCmd();
 			break;
 		 case FDCEMU_CMD_SEEK:
-			Delay_micro = FDC_UpdateSeekCmd();
+			FdcCycles = FDC_UpdateSeekCmd();
 			break;
 		 case FDCEMU_CMD_STEP:
-			Delay_micro = FDC_UpdateStepCmd();
+			FdcCycles = FDC_UpdateStepCmd();
 			break;
 
 		 case FDCEMU_CMD_READSECTORS:
-			Delay_micro = FDC_UpdateReadSectorsCmd();
+			FdcCycles = FDC_UpdateReadSectorsCmd();
 			break;
 		 case FDCEMU_CMD_WRITESECTORS:
-			Delay_micro = FDC_UpdateWriteSectorsCmd();
+			FdcCycles = FDC_UpdateWriteSectorsCmd();
 			break;
 
 		 case FDCEMU_CMD_READADDRESS:
-			Delay_micro = FDC_UpdateReadAddressCmd();
+			FdcCycles = FDC_UpdateReadAddressCmd();
 			break;
 
 		 case FDCEMU_CMD_READTRACK:
-			Delay_micro = FDC_UpdateReadTrackCmd();
+			FdcCycles = FDC_UpdateReadTrackCmd();
 			break;
 
 		 case FDCEMU_CMD_MOTOR_STOP:
-			Delay_micro = FDC_UpdateMotorStop();
+			FdcCycles = FDC_UpdateMotorStop();
 			break;
 		}
 	}
 
 	if (FDC.Command != FDCEMU_CMD_NULL)
 	{
-		FDC_StartTimer_micro ( Delay_micro , -PendingCyclesOver );
+//		FDC_StartTimer_micro ( Delay_micro , -PendingCyclesOver );
+		FDC_StartTimer_FdcCycles ( FdcCycles , -PendingCyclesOver );
 	}
 }
 
@@ -1138,7 +1236,7 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
 		FDC_AcknowledgeInterrupt();
 
 	FDC.Command = FDCEMU_CMD_MOTOR_STOP;				/* Fake command to stop the motor */
-	return FDC_DELAY_MOTOR_OFF;
+	return FDC_DelayToFdcCycles ( FDC_DELAY_US_MOTOR_OFF );
 }
 
 
@@ -1212,7 +1310,7 @@ static int FDC_UpdateMotorStop ( void )
  */
 static int FDC_UpdateRestoreCmd ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 
 	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
 
@@ -1235,7 +1333,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		{							/* (this should never happen in the case of Hatari) */
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
-			Delay_micro = FDC_CmdCompleteCommon( true );
+			FdcCycles = FDC_CmdCompleteCommon( true );
 		}
 
 		if ( HeadTrack[ FDC_DRIVE ] != 0 )			/* Are we at track zero ? */
@@ -1243,40 +1341,40 @@ static int FDC_UpdateRestoreCmd ( void )
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			FDC.TR--;					/* One less attempt */
 			HeadTrack[ FDC_DRIVE ]--;			/* Move physical head */
-			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
 		}
 		else
 		{
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 			FDC.TR = 0;					/* Update Track Register to 0 */
 			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY;
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY:
 		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 		{
 			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_LOOP;
-			Delay_micro = FDC_DELAY_HEAD_LOAD		/* Head settle delay */
-				+ FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD )			/* Head settle delay */
+				+ FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
 		}
 		else
 		{
 			FDC.CommandState = FDCEMU_RUN_RESTORE_COMPLETE;
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_LOOP:
 		FDC_VerifyTrack();
 		FDC.CommandState = FDCEMU_RUN_RESTORE_COMPLETE;
-		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		break;
 	 case FDCEMU_RUN_RESTORE_COMPLETE:
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -1286,7 +1384,7 @@ static int FDC_UpdateRestoreCmd ( void )
  */
 static int FDC_UpdateSeekCmd ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 
 	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
 
@@ -1297,7 +1395,7 @@ static int FDC_UpdateSeekCmd ( void )
 		if ( FDC.TR == FDC.DR )					/* Are we at the selected track ? */
 		{
 			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		else
 		{
@@ -1312,20 +1410,20 @@ static int FDC_UpdateSeekCmd ( void )
 			if ( ( HeadTrack[ FDC_DRIVE ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
 			{
 				FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
-				Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
 			}
 
 			else if ( ( HeadTrack[ FDC_DRIVE ] == 0 ) && ( FDC.StepDirection == -1 ) )
 			{
 				FDC.TR = 0;				/* If we reach track 0, we stop there */
 				FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
-				Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 			}
 
 			else
 			{
 				HeadTrack[ FDC_DRIVE ] += FDC.StepDirection;	/* Move physical head */
-				Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
+				FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
 			}
 		}
 
@@ -1339,26 +1437,26 @@ static int FDC_UpdateSeekCmd ( void )
 		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 		{
 			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_LOOP;
-			Delay_micro = FDC_DELAY_HEAD_LOAD		/* Head settle delay */
-				+ FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD )			/* Head settle delay */
+				+ FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
 		}
 		else
 		{
 			FDC.CommandState = FDCEMU_RUN_SEEK_COMPLETE;
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_LOOP:
 		FDC_VerifyTrack();
 		FDC.CommandState = FDCEMU_RUN_SEEK_COMPLETE;
-		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		break;
 	 case FDCEMU_RUN_SEEK_COMPLETE:
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -1368,7 +1466,7 @@ static int FDC_UpdateSeekCmd ( void )
  */
 static int FDC_UpdateStepCmd ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 
 	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
 
@@ -1381,15 +1479,15 @@ static int FDC_UpdateStepCmd ( void )
 			FDC.TR += FDC.StepDirection;			/* Update Track Register */
 
 		if ( ( HeadTrack[ FDC_DRIVE ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
 
 		else if ( ( HeadTrack[ FDC_DRIVE ] == 0 ) && ( FDC.StepDirection == -1 ) )
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;	/* No delay if trying to go before track 0 */
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go before track 0 */
 
 		else
 		{
 			HeadTrack[ FDC_DRIVE ] += FDC.StepDirection;	/* Move physical head */
-			Delay_micro = FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
 		}
 
 		if ( HeadTrack[ FDC_DRIVE ] == 0 )
@@ -1403,26 +1501,26 @@ static int FDC_UpdateStepCmd ( void )
 		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 		{
 			FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_LOOP;
-			Delay_micro = FDC_DELAY_HEAD_LOAD		/* Head settle delay */
-				+ FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD	)		/* Head settle delay */
+				+ FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
 		}
 		else
 		{
 			FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_LOOP:
 		FDC_VerifyTrack();
 		FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
-		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		break;
 	 case FDCEMU_RUN_STEP_COMPLETE:
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -1432,7 +1530,7 @@ static int FDC_UpdateStepCmd ( void )
  */
 static int FDC_UpdateReadSectorsCmd ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	int	SectorSize;
 
@@ -1449,14 +1547,14 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		/* of the sector header, which would mean 7 bytes to be read. */
 		/* So, the delay will be at least 7 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
 		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
-		Delay_micro = FDC_TRANSFER_BYTES_US ( 7  );		/* Min delay to read 3xA1, FE, TR, SIDE, SR */
+		FdcCycles = FDC_TransferByte_FdcCycles ( 7 );		/* Min delay to read 3xA1, FE, TR, SIDE, SR */
 
 #else
 		/* We search the sector FDC.SR during 5 revolutions max */
-		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_RNF );
+		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_RNF );
 
 		/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
-		Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
+		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
 		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
 #endif
 		break;
@@ -1471,7 +1569,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 			break;
 		}
 #endif
@@ -1485,12 +1583,12 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1  );
+			FdcCycles = FDC_TransferByte_FdcCycles ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1  );
 		}
 		else
 		{
 			/* This is not the ID field we're looking for ; check the next one */
-			Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 7 );
+			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
 		}
 		break;
@@ -1505,24 +1603,24 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			FDC.ID_FieldLastSector = FDC.SR;
 
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP;
-			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just read */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Transfer blocks of 16 bytes from the sector we just read */
 		}
 		else							/* Sector FDC.SR was not found */
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP:
 		/* Transfer the sector as blocks of 16 bytes using DMA */
 		if ( ! FDC_DMA_ReadFromFloppy () )
 		{
-			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Continue transferring blocks of 16 bytes */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Continue transferring blocks of 16 bytes */
 		}
 		else							/* Sector transferred, check the CRC */
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_CRC;
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 2 );	/* Read 2 bytes for CRC */
+			FdcCycles = FDC_TransferByte_FdcCycles ( 2 );	/* Read 2 bytes for CRC */
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_CRC:
@@ -1531,12 +1629,12 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		{
 			FDC.SR++;					/* Try to read next sector and set RNF if not possible */
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA;
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		else							/* Multi=0, stop here with no error */
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_COMPLETE;
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_RNF:
@@ -1544,14 +1642,14 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			  FDC.SR , HeadTrack[ FDC_DRIVE ] , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	 case FDCEMU_RUN_READSECTORS_COMPLETE:
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -1561,7 +1659,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
  */
 static int FDC_UpdateWriteSectorsCmd ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	int	SectorSize;
 
@@ -1573,7 +1671,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			  FDC.SR , HeadTrack[ FDC_DRIVE ] , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );		/* Set WPRT bit */
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 	}
 	else
 		FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );		/* Unset WPRT bit */
@@ -1589,14 +1687,14 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		/* of the sector header, which would mean 7 bytes to be read. */
 		/* So, the delay will be at least 7 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
 		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
-		Delay_micro = FDC_TRANSFER_BYTES_US ( 7 );	/* Min delay to read 3xA1, FE, TR, SIDE, SR */
+		FdcCycles = FDC_TransferByte_FdcCycles ( 7 );		/* Min delay to read 3xA1, FE, TR, SIDE, SR */
 
 #else
 		/* We search the sector FDC.SR during 5 revolutions max */
-		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_RNF );
+		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_RNF );
 
 		/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
-		Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
+		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
 		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
 #endif
 		break;
@@ -1611,7 +1709,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 			break;
 		}
 #endif
@@ -1625,12 +1723,12 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1  );
+			FdcCycles = FDC_TransferByte_FdcCycles ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1 );
 		}
 		else
 		{
 			/* This is not the ID field we're looking for ; check the next one */
-			Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 7 );
+			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
 		}
 		break;
@@ -1645,24 +1743,24 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			FDC.ID_FieldLastSector = FDC.SR;
 				
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP;
-			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Transfer blocks of 16 bytes from the sector we just wrote */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Transfer blocks of 16 bytes from the sector we just wrote */
 		}
 		else							/* Sector FDC.SR was not found */
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_RNF;
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP:
 		/* Transfer the sector as blocks of 16 bytes using DMA */
 		if ( ! FDC_DMA_WriteToFloppy () )
 		{
-			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;	/* Continue transferring blocks of 16 bytes */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Continue transferring blocks of 16 bytes */
 		}
 		else							/* Sector transferred, check the CRC */
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_CRC;
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 2 );	/* Write 2 bytes for CRC */
+			FdcCycles = FDC_TransferByte_FdcCycles ( 2 );	/* Write 2 bytes for CRC */
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_CRC:
@@ -1671,12 +1769,12 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		{
 			FDC.SR++;					/* Try to write next sector and set RNF if not possible */
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
-			Delay_micro = FDC_DELAY_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		else							/* Multi=0, stop here with no error */
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_COMPLETE;
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_RNF:
@@ -1684,14 +1782,14 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			  FDC.SR , HeadTrack[ FDC_DRIVE ] , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_COMPLETE:
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -1701,7 +1799,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
  */
 static int FDC_UpdateReadAddressCmd ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	Uint16	CRC;
 	Uint8	buf[ 4+6 ];
 	Uint8	*p;
@@ -1757,9 +1855,9 @@ static int FDC_UpdateReadAddressCmd ( void )
 		/* The number of bytes to skip should be exactly the same as the GAPs used in ReadTrack */
 		/* (allow Procopy to analyze an ST/MSA disk with the correct timings) */
 		if ( FDC.ID_FieldLastSector == 0 )				/* First Read Address just after an index pulse */
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 72 + 3 + 1 + 6 );	/* Skip 72+3+1 bytes then read 6 bytes */
+			FdcCycles = FDC_TransferByte_FdcCycles ( 72 + 3 + 1 + 6 );	/* Skip 72+3+1 bytes then read 6 bytes */
 		else								/* Read Address after a previous sector was just read */
-			Delay_micro = FDC_TRANSFER_BYTES_US ( 614 + 6 );	/* Skip 614 bytes then read 6 bytes */
+			FdcCycles = FDC_TransferByte_FdcCycles ( 614 + 6 );	/* Skip 614 bytes then read 6 bytes */
 
 		FDC.ID_FieldLastSector = Sector;
 		break;
@@ -1767,13 +1865,13 @@ static int FDC_UpdateReadAddressCmd ( void )
 		FDC_DMA_ReadFromFloppy ();			/* Transfer bytes if 16 bytes or more are in the DMA buffer */
 
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
-		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		break;
 
 #else
 	 case FDCEMU_RUN_READADDRESS:
 		/* Read bytes to reach the next sector's ID field and add 10 more bytes to read this ID field */
-		Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_DMA;
 		break;
 
@@ -1808,16 +1906,16 @@ static int FDC_UpdateReadAddressCmd ( void )
 		FDC_DMA_ReadFromFloppy ();			/* Transfer bytes if 16 bytes or more are in the DMA buffer */
 
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
-		Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		break;
 #endif
 
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -1827,7 +1925,7 @@ static int FDC_UpdateReadAddressCmd ( void )
  */
 static int FDC_UpdateReadTrackCmd ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	Uint16	CRC;
 	Uint8	*buf;
 	Uint8	*buf_crc;
@@ -1847,7 +1945,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 	{
 	 case FDCEMU_RUN_READTRACK:
 		FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
-		Delay_micro = FDC_TRANSFER_BYTES_US ( FDC_NextIndexPulse_NbBytes () );	/* Wait for the next index pulse */
+		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextIndexPulse_NbBytes () );	/* Wait for the next index pulse */
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
 		/* Build the track data */
@@ -1916,25 +2014,25 @@ static int FDC_UpdateReadTrackCmd ( void )
 		FDC_DMA.PosInBuffer += FDC_TRACK_BYTES_STANDARD;
 
 		FDC.CommandState = FDCEMU_RUN_READTRACK_DMA;
-		Delay_micro = FDC_DELAY_TRANSFER_DMA_16;			/* Transfer blocks of 16 bytes from the track we just read */
+		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );			/* Transfer blocks of 16 bytes from the track we just read */
 		break;
 	 case FDCEMU_RUN_READTRACK_DMA:
 		if ( ! FDC_DMA_ReadFromFloppy () )
 		{
-			Delay_micro = FDC_DELAY_TRANSFER_DMA_16;		/* Continue transferring blocks of 16 bytes */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );		/* Continue transferring blocks of 16 bytes */
 		}
 		else								/* Track completely transferred */
 		{
 			FDC.CommandState = FDCEMU_RUN_READTRACK_COMPLETE;
-			Delay_micro = FDC_DELAY_COMMAND_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
 		break;
 	 case FDCEMU_RUN_READTRACK_COMPLETE:
-		Delay_micro = FDC_CmdCompleteCommon( true );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	}
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -1958,7 +2056,7 @@ static int FDC_Check_MotorON ( Uint8 FDC_CR )
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 		FDC_Update_STR ( FDC_STR_BIT_SPIN_UP , FDC_STR_BIT_MOTOR_ON );	/* Unset spin up bit and set motor bit */
 		FDC.UpdateIndexPulse = true;
-		return FDC_DELAY_MOTOR_ON;					/* Motor's delay */
+		return FDC_DelayToFdcCycles ( FDC_DELAY_US_MOTOR_ON );		/* Motor's delay */
 	}
 
 	/* Other cases : set bit in STR and don't add delay */
@@ -1996,7 +2094,7 @@ static int FDC_TypeI_Restore(void)
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_TYPE_I_PREPARE;
+	return FDC_DELAY_CYCLE_TYPE_I_PREPARE;
 }
 
 
@@ -2020,7 +2118,7 @@ static int FDC_TypeI_Seek ( void )
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_TYPE_I_PREPARE;
+	return FDC_DELAY_CYCLE_TYPE_I_PREPARE;
 }
 
 
@@ -2044,7 +2142,7 @@ static int FDC_TypeI_Step ( void )
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_TYPE_I_PREPARE;
+	return FDC_DELAY_CYCLE_TYPE_I_PREPARE;
 }
 
 
@@ -2068,7 +2166,7 @@ static int FDC_TypeI_StepIn(void)
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_TYPE_I_PREPARE;
+	return FDC_DELAY_CYCLE_TYPE_I_PREPARE;
 }
 
 
@@ -2092,7 +2190,7 @@ static int FDC_TypeI_StepOut ( void )
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_TYPE_I_PREPARE;
+	return FDC_DELAY_CYCLE_TYPE_I_PREPARE;
 }
 
 
@@ -2107,7 +2205,7 @@ static int FDC_TypeI_StepOut ( void )
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeII_ReadSector ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -2127,16 +2225,16 @@ static int FDC_TypeII_ReadSector ( void )
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
-		Delay_micro = FDC_DELAY_HEAD_LOAD;
+		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );
 	
-	return FDC_DELAY_TYPE_II_PREPARE + Delay_micro;
+	return FDC_DELAY_CYCLE_TYPE_II_PREPARE + FdcCycles;
 }
 
 
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeII_WriteSector ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -2156,9 +2254,9 @@ static int FDC_TypeII_WriteSector ( void )
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
 
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
-		Delay_micro = FDC_DELAY_HEAD_LOAD;
+		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );
 	
-	return FDC_DELAY_TYPE_II_PREPARE + Delay_micro;
+	return FDC_DELAY_CYCLE_TYPE_II_PREPARE + FdcCycles;
 }
 
 
@@ -2173,7 +2271,7 @@ static int FDC_TypeII_WriteSector ( void )
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeIII_ReadAddress ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -2192,16 +2290,16 @@ static int FDC_TypeIII_ReadAddress ( void )
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
-		Delay_micro = FDC_DELAY_HEAD_LOAD;
+		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );
 	
-	return FDC_DELAY_TYPE_III_PREPARE + Delay_micro;
+	return FDC_DELAY_CYCLE_TYPE_III_PREPARE + FdcCycles;
 }
 
 
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeIII_ReadTrack ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -2220,9 +2318,9 @@ static int FDC_TypeIII_ReadTrack ( void )
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
 	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
-		Delay_micro = FDC_DELAY_HEAD_LOAD;
+		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );
 
-	return FDC_DELAY_TYPE_III_PREPARE + Delay_micro;
+	return FDC_DELAY_CYCLE_TYPE_III_PREPARE + FdcCycles;
 }
 
 
@@ -2248,7 +2346,7 @@ static int FDC_TypeIII_WriteTrack ( void )
 	FDC.Command = FDCEMU_CMD_NULL;
 	FDC.CommandState = FDCEMU_RUN_NULL;
 
-	return FDC_DELAY_TYPE_III_PREPARE;
+	return FDC_DELAY_CYCLE_TYPE_III_PREPARE;
 }
 
 
@@ -2263,7 +2361,7 @@ static int FDC_TypeIII_WriteTrack ( void )
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 {
-	int	Delay_micro;
+	int	FdcCycles;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -2294,9 +2392,9 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 	}
 
 	/* Remove busy bit, ack int and stop the motor */
-	Delay_micro = FDC_CmdCompleteCommon( bCauseCPUInterrupt );
+	FdcCycles = FDC_CmdCompleteCommon( bCauseCPUInterrupt );
 
-	return FDC_DELAY_TYPE_IV_PREPARE + Delay_micro;
+	return FDC_DELAY_CYCLE_TYPE_IV_PREPARE + FdcCycles;
 }
 
 
@@ -2306,7 +2404,7 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
  */
 static int FDC_ExecuteTypeICommands ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 
 	FDC.CommandType = 1;
 	MFP_GPIP |= 0x20;
@@ -2315,29 +2413,29 @@ static int FDC_ExecuteTypeICommands ( void )
 	switch ( FDC.CR & 0xf0 )
 	{
 	 case 0x00:             /* Restore */
-		Delay_micro = FDC_TypeI_Restore();
+		FdcCycles = FDC_TypeI_Restore();
 		break;
 	 case 0x10:             /* Seek */
-		Delay_micro = FDC_TypeI_Seek();
+		FdcCycles = FDC_TypeI_Seek();
 		break;
 	 case 0x20:             /* Step */
 	 case 0x30:
-		Delay_micro = FDC_TypeI_Step();
+		FdcCycles = FDC_TypeI_Step();
 		break;
 	 case 0x40:             /* Step-In */
 	 case 0x50:
-		Delay_micro = FDC_TypeI_StepIn();
+		FdcCycles = FDC_TypeI_StepIn();
 		break;
 	 case 0x60:             /* Step-Out */
 	 case 0x70:
-		Delay_micro = FDC_TypeI_StepOut();
+		FdcCycles = FDC_TypeI_StepOut();
 		break;
 	}
 
 	/* Check if motor needs to be started and add possible delay */
-	Delay_micro += FDC_Check_MotorON ( FDC.CR );
+	FdcCycles += FDC_Check_MotorON ( FDC.CR );
 	
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -2347,7 +2445,7 @@ static int FDC_ExecuteTypeICommands ( void )
  */
 static int FDC_ExecuteTypeIICommands ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 
 	FDC.CommandType = 2;
 	MFP_GPIP |= 0x20;
@@ -2357,18 +2455,18 @@ static int FDC_ExecuteTypeIICommands ( void )
 	{
 	 case 0x80:             /* Read Sector multi=0*/
 	 case 0x90:             /* Read Sectors multi=1 */
-		Delay_micro = FDC_TypeII_ReadSector();
+		FdcCycles = FDC_TypeII_ReadSector();
 		break;
 	 case 0xa0:             /* Write Sector multi=0 */
 	 case 0xb0:             /* Write Sectors multi=1 */
-		Delay_micro = FDC_TypeII_WriteSector();
+		FdcCycles = FDC_TypeII_WriteSector();
 		break;
 	}
 
 	/* Check if motor needs to be started and add possible delay */
-	Delay_micro += FDC_Check_MotorON ( FDC.CR );
+	FdcCycles += FDC_Check_MotorON ( FDC.CR );
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -2378,7 +2476,7 @@ static int FDC_ExecuteTypeIICommands ( void )
  */
 static int FDC_ExecuteTypeIIICommands ( void )
 {
-	int	Delay_micro = 0;
+	int	FdcCycles = 0;
 
 	FDC.CommandType = 3;
 	MFP_GPIP |= 0x20;
@@ -2387,20 +2485,20 @@ static int FDC_ExecuteTypeIIICommands ( void )
 	switch ( FDC.CR & 0xf0 )
 	{
 	 case 0xc0:             /* Read Address */
-		Delay_micro = FDC_TypeIII_ReadAddress();
+		FdcCycles = FDC_TypeIII_ReadAddress();
 		break;
 	 case 0xe0:             /* Read Track */
-		Delay_micro = FDC_TypeIII_ReadTrack();
+		FdcCycles = FDC_TypeIII_ReadTrack();
 		break;
 	 case 0xf0:             /* Write Track */
-		Delay_micro = FDC_TypeIII_WriteTrack();
+		FdcCycles = FDC_TypeIII_WriteTrack();
 		break;
 	}
 
 	/* Check if motor need to be started and add possible delay */
-	Delay_micro += FDC_Check_MotorON ( FDC.CR );
+	FdcCycles += FDC_Check_MotorON ( FDC.CR );
 
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -2410,29 +2508,29 @@ static int FDC_ExecuteTypeIIICommands ( void )
  */
 static int FDC_ExecuteTypeIVCommands ( void )
 {
-	int	Delay_micro;
+	int	FdcCycles;
 
 	/* Check Type IV command */
 	/* Most of the time a 0xD8 command is followed by a 0xD0 command to clear the IRQ signal */
 	if ( FDC.CR & 0x8 )						/* I3 set (0xD8) : immediate interrupt with IRQ */
-		Delay_micro = FDC_TypeIV_ForceInterrupt ( true );
+		FdcCycles = FDC_TypeIV_ForceInterrupt ( true );
 
 	else if ( FDC.CR & 0x4 )					/* I2 set (0xD4) : IRQ on next index pulse */
 	{
 		/* FIXME [NP] This is not complete, we should report */
 		/* an interrupt each time the FDC sees an index pulse, not just once */
 		FDC.ID_FieldLastSector = 0;				/* We simulate an index pulse now */
-		Delay_micro = FDC_TypeIV_ForceInterrupt ( true );
+		FdcCycles = FDC_TypeIV_ForceInterrupt ( true );
 	}
 
 	else								/* I3-I2 clear (0xD0) : stop command without IRQ */
 	{
 		MFP_GPIP |= 0x20;					/* reset IRQ signal */
-		Delay_micro = FDC_TypeIV_ForceInterrupt ( false );
+		FdcCycles = FDC_TypeIV_ForceInterrupt ( false );
 	}
 		
 	FDC.CommandType = 4;						/* Change CommandType after interrupting the current command */
-	return Delay_micro;
+	return FdcCycles;
 }
 
 
@@ -2442,20 +2540,21 @@ static int FDC_ExecuteTypeIVCommands ( void )
  */
 static void FDC_ExecuteCommand ( void )
 {
-	int	Delay_micro;
+	int	FdcCycles;
 
 	/* Check type of command and execute */
 	if ( ( FDC.CR & 0x80 ) == 0 )					/* Type I - Restore, Seek, Step, Step-In, Step-Out */
-		Delay_micro = FDC_ExecuteTypeICommands();
+		FdcCycles = FDC_ExecuteTypeICommands();
 	else if ( ( FDC.CR & 0x40 ) == 0 )				/* Type II - Read Sector, Write Sector */
-		Delay_micro = FDC_ExecuteTypeIICommands();
+		FdcCycles = FDC_ExecuteTypeIICommands();
 	else if ( ( FDC.CR & 0xf0 ) != 0xd0 )				/* Type III - Read Address, Read Track, Write Track */
-		Delay_micro = FDC_ExecuteTypeIIICommands();
+		FdcCycles = FDC_ExecuteTypeIIICommands();
 	else								/* Type IV - Force Interrupt */
-		Delay_micro = FDC_ExecuteTypeIVCommands();
+		FdcCycles = FDC_ExecuteTypeIVCommands();
 
 	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the Delay_micro phase */
-	FDC_StartTimer_micro ( Delay_micro , 0 );
+//	FDC_StartTimer_micro ( FdcCycles , 0 );
+	FDC_StartTimer_FdcCycles ( FdcCycles , 0 );
 }
 
 
