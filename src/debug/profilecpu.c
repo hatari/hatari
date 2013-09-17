@@ -25,6 +25,9 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "symbols.h"
 #include "tos.h"
+#include "screen.h"
+#include "video.h"
+
 
 /* if non-zero, output (more) warnings on suspicious:
  * - cycle/instruction counts
@@ -66,9 +69,12 @@ static struct {
 	profile_area_t tos;   /* ROM TOS stats */
 	int active;           /* number of active data items in all areas */
 	Uint32 *sort_arr;     /* data indexes used for sorting */
+	int prev_family;      /* previous instruction opcode family */
 	Uint32 prev_cycles;   /* previous instruction cycles counter */
 	Uint32 prev_pc;       /* previous instruction address */
-	int prev_family;      /* previous instruction opcode family */
+	Uint32 loop_start;    /* address of last loop start */
+	Uint32 loop_end;      /* address of last loop end */
+	Uint32 loop_count;    /* how many times it was looped */
 	Uint32 disasm_addr;   /* 'addresses' command start address */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
@@ -605,6 +611,11 @@ bool Profile_CpuStart(void)
 	cpu_profile.prev_family = OpcodeFamily;
 	cpu_profile.prev_pc = M68000_GetPC() & 0xffffff;
 
+	cpu_profile.loop_start = PC_UNDEFINED;
+	cpu_profile.loop_end = PC_UNDEFINED;
+	cpu_profile.loop_count = 0;
+	Profile_LoopReset();
+
 	cpu_profile.disasm_addr = 0;
 	cpu_profile.processed = false;
 	cpu_profile.enabled = true;
@@ -703,11 +714,11 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 			 * e.g. because there was a jsr or jump to return address
 			 */
 			Uint32 nextpc;
-			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not though RTS!\n", prev_pc, pc);
+			fprintf(stderr, "WARNING: subroutine call returned 0x%x -> 0x%x, not through RTS!\n", prev_pc, pc);
 			Disasm(stderr, prev_pc, &nextpc, 1);
 #endif
 		}
-		/* next address might be another function, so need to fall through */
+		/* next address might be another symbol, so need to fall through */
 	}
 
 	/* address is one which we're tracking? */
@@ -743,7 +754,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				cpu_callinfo.return_pc = Disasm_GetNextPC(prev_pc);
 			}
 		} else if (caller_pc != PC_UNDEFINED) {
-			/* returned from function to first instrction of another symbol:
+			/* returned from function to first instruction of another symbol:
 			 *	0xf384	jsr some_function
 			 *	other_symbol:
 			 *	0f3x8a	some_instruction
@@ -755,6 +766,18 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 			flag = CALL_NEXT;
 		}
 		Profile_CallStart(idx, &cpu_callinfo, prev_pc, flag, pc, counters);
+	}
+}
+
+/**
+ * log last loop info, if there's suitable data for one
+ */
+static void log_last_loop(void)
+{
+	unsigned len = cpu_profile.loop_end - cpu_profile.loop_start;
+	if (cpu_profile.loop_count > 1 && (len < profile_loop.cpu_limit || !profile_loop.cpu_limit)) {
+		fprintf(profile_loop.fp, "CPU %d 0x%06x %d %d\n", nVBLs,
+			cpu_profile.loop_start, len, cpu_profile.loop_count);
 	}
 }
 
@@ -775,6 +798,24 @@ void Profile_CpuUpdate(void)
 	 * emulation itself does that too when PC value is used
 	 */
 	cpu_profile.prev_pc = pc = M68000_GetPC() & 0xffffff;
+
+	if (unlikely(profile_loop.fp)) {
+		if (pc < prev_pc) {
+			if (pc == cpu_profile.loop_start && prev_pc == cpu_profile.loop_end) {
+				cpu_profile.loop_count++;
+			} else {
+				cpu_profile.loop_start = pc;
+				cpu_profile.loop_end = prev_pc;
+				cpu_profile.loop_count = 1;
+			}
+		} else {
+			if (pc > cpu_profile.loop_end) {
+				log_last_loop();
+				cpu_profile.loop_end = 0xffffffff;			
+				cpu_profile.loop_count = 0;
+			}
+		}
+	}
 
 	idx = address2index(prev_pc);
 	assert(idx <= cpu_profile.size);
@@ -924,6 +965,12 @@ void Profile_CpuStop(void)
 	if (cpu_profile.processed || !cpu_profile.enabled) {
 		return;
 	}
+
+	log_last_loop();
+	if (profile_loop.fp) {
+		fflush(profile_loop.fp);
+	}
+
 	/* user didn't change RAM or TOS size in the meanwhile? */
 	assert(cpu_profile.size == (STRamEnd + 0x20000 + TosSize) / 2);
 

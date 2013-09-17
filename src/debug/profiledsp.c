@@ -20,6 +20,9 @@ const char Profiledsp_fileid[] = "Hatari profiledsp.c : " __DATE__ " " __TIME__;
 #include "profile.h"
 #include "profile_priv.h"
 #include "symbols.h"
+/* for VBL info */
+#include "screen.h"
+#include "video.h"
 
 static callinfo_t dsp_callinfo;
 
@@ -38,6 +41,9 @@ static struct {
 	profile_area_t ram;   /* statistics for whole memory */
 	Uint16 *sort_arr;     /* data indexes used for sorting */
 	Uint16 prev_pc;       /* previous PC for which the cycles are for */
+	Uint16 loop_start;    /* address of last loop start */
+	Uint16 loop_end;      /* address of last loop end */
+	Uint32 loop_count;    /* how many times it was looped */
 	Uint32 disasm_addr;   /* 'dspaddresses' command start address */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
@@ -368,6 +374,11 @@ bool Profile_DspStart(void)
 	}
 	dsp_profile.prev_pc = DSP_GetPC();
 
+	dsp_profile.loop_start = 0xFFFF;
+	dsp_profile.loop_end = 0xFFFF;
+	dsp_profile.loop_count = 0;
+	Profile_LoopReset();
+
 	dsp_profile.disasm_addr = 0;
 	dsp_profile.processed = false;
 	dsp_profile.enabled = true;
@@ -526,6 +537,19 @@ static void collect_calls(Uint16 pc, counters_t *counters)
 }
 
 /**
+ * log last loop info, if there's suitable data for one
+ */
+static void log_last_loop(void)
+{
+	unsigned len = dsp_profile.loop_end - dsp_profile.loop_start;
+	if (dsp_profile.loop_count > 1 && (len < profile_loop.dsp_limit || !profile_loop.dsp_limit)) {
+		fprintf(profile_loop.fp, "DSP %d 0x%04x %d %d\n", nVBLs,
+			dsp_profile.loop_start, len, dsp_profile.loop_count);
+		fflush(profile_loop.fp);
+	}
+}
+
+/**
  * Update DSP cycle and count statistics for PC address.
  *
  * This is called after instruction is executed and PC points
@@ -539,6 +563,25 @@ void Profile_DspUpdate(void)
 
 	prev_pc = dsp_profile.prev_pc;
 	dsp_profile.prev_pc = pc = DSP_GetPC();
+
+	if (unlikely(profile_loop.fp)) {
+		if (pc < prev_pc) {
+			if (pc == dsp_profile.loop_start && prev_pc == dsp_profile.loop_end) {
+				dsp_profile.loop_count++;
+			} else {
+				dsp_profile.loop_start = pc;
+				dsp_profile.loop_end = prev_pc;
+				dsp_profile.loop_count = 1;
+			}
+		} else {
+			if (pc > dsp_profile.loop_end) {
+				log_last_loop();
+				dsp_profile.loop_end = 0xFFFF;
+				dsp_profile.loop_count = 0;
+			}
+		}
+	}
+
 	prev = dsp_profile.data + prev_pc;
 
 	if (likely(prev->count < MAX_DSP_PROFILE_VALUE)) {
@@ -617,6 +660,11 @@ void Profile_DspStop(void)
 
 	if (dsp_profile.processed || !dsp_profile.enabled) {
 		return;
+	}
+
+	log_last_loop();
+	if (profile_loop.fp) {
+		fflush(profile_loop.fp);
 	}
 
 	Profile_FinalizeCalls(&(dsp_callinfo), &(dsp_profile.ram.counters), Symbols_GetByDspAddress);

@@ -2880,8 +2880,8 @@ static bool GemDOS_Pterm0(Uint32 Params)
  */
 static bool GemDOS_Ptermres(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x31 Ptermres(0x%X, %d)\n",
-		  STMemory_ReadLong(Params), STMemory_ReadWord(Params+SIZE_WORD));
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x31 Ptermres(0x%X, %hd)\n",
+		  STMemory_ReadLong(Params), (Sint16)STMemory_ReadWord(Params+SIZE_WORD));
 	GemDOS_TerminateClose();
 	return false;
 }
@@ -2892,8 +2892,8 @@ static bool GemDOS_Ptermres(Uint32 Params)
  */
 static bool GemDOS_Pterm(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4C Pterm(%d)\n",
-		  STMemory_ReadWord(Params));
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4C Pterm(%hd)\n",
+		  (Sint16)STMemory_ReadWord(Params));
 	GemDOS_TerminateClose();
 	GemDOS_RemoveLastProgram();
 	return false;

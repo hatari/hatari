@@ -173,13 +173,14 @@ static void read_counts (void)
 	unsigned long opcode, count, total;
 	char name[20];
 	int nr = 0;
-	int ret;
 	memset (counts, 0, 65536 * sizeof *counts);
 
 	count = 0;
 	file = fopen ("frequent.68k", "r");
 	if (file) {
-		ret = fscanf (file, "Total: %lu\n", &total);
+		if (fscanf (file, "Total: %lu\n", &total) == EOF) {
+			perror("read_counts");
+		}
 		while (fscanf (file, "%lx: %lu %s\n", &opcode, &count, name) == 3) {
 			opcode_next_clev[nr] = 5;
 			opcode_last_postfix[nr] = -1;

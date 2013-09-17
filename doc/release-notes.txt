@@ -17,14 +17,31 @@ Emulator:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
 - Debugger:
+  - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly.
+  - Fix: "symbols" command crash when it was used during bootup.
+  - "next" and "dspnext" commands support optional "instruction type"
+    argument, which can be used (for example) to continue emulation
+    until subroutine returns.
+  - "history" command takes optional parameter specifying how many
+    instructions of history will be tracked.
+  - CPU & DSP profile commands have now subcommand for profiling loops.
   - "CpuInstr" and "DspInstr" variables for count of instructions
     executed since emulation was last continued from debugger.
   - In addition to "!" condition, also "<" and ">" conditions can store
     the checked value (when both sides of conditions are identical).
     With above change, this can be e.g. used to detect and profile
     what are worst frames in games and why.
+  - New "rename" command to rename files.  Useful for scripted
+    worst frame and spinloop profiling.
   - Address space in 'dm' command can be given like in DSP disassembly,
-    "dm x:$100", in addition to earlier "dm x $100".
+    "dm x:$100", in addition to earlier "dm x $100" syntax.
+
+Tools:
+- New hatari_spinloop.py script for post-processing loop profile data.
+  It can tell how many times loops were executed, how many times they
+  spinned at minimum and maximum, at which VBL those happened, and what
+  was the standard deviation of that.
+
 
 Fixed demos :
   Shforstv.exe by Paulo Simoes (video, did not work in STE mode)

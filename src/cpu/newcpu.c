@@ -91,8 +91,6 @@ int BusCyclePenalty = 0;
 
 
 /* Amiga's specific variables, required to compile until all Amiga stuffs are ignored */
-int kickstart_rom, cloanto_rom;
-int config_changed;
 int vpos;
 int quit_program;  // declared as "int quit_program = 0;" in main.c
 
@@ -488,7 +486,6 @@ static void update_68k_cycles (void)
 		cpucycleunit = 1;
 	if (currprefs.cpu_cycle_exact)
 		write_log ("CPU cycleunit: %d (%.3f)\n", cpucycleunit, (float)cpucycleunit / CYCLE_UNIT);
-	config_changed = 1;
 }
 
 static void prefs_changed_cpu (void)
@@ -506,8 +503,6 @@ void check_prefs_changed_cpu (void)
 {
 	bool changed = 0;
 
-	if (!config_changed)
-		return;
 #ifdef JIT
 	changed = check_prefs_changed_comp ();
 #endif
@@ -1546,7 +1541,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 
 	if (nr == 2 && currprefs.cpu_model <= 68030) {
 		// Bus error for 68030 mode
-		write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
+		// write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
 		m68k_areg (regs, 7) -= 4;
 		x_put_long (m68k_areg (regs, 7), 0);  // Internal register
 		m68k_areg (regs, 7) -= 4;
@@ -1574,7 +1569,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 
 	} else if (nr == 2) {
 		// Bus error / access error for 68040
-		write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
+		// write_log ("Exception_mmu %08x %08x %08x\n", currpc, oldpc, regs.mmu_fault_addr);
 		for (i = 0 ; i < 7 ; i++) {
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), 0);
@@ -1677,37 +1672,11 @@ kludge_me_do:
 	exception_trace (nr);
 }
 
-/* Handle exceptions. We need a special case to handle MFP exceptions */
-/* on Atari ST, because it's possible to change the MFP's vector base */
-/* and get a conflict with 'normal' cpu exceptions. */
+/* Handle exceptions - non-MMU mode */
 static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 {
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int sv = regs.s;
-
-	/* Pending bits / vector number can change before the end of the IACK sequence. */
-	/* We need to handle MFP and HBL/VBL cases for this. */
-	if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
-	{
-        	M68000_AddCycles ( CPU_IACK_CYCLES_MFP );
-		CPU_IACK = true;
-        	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
-        	    CALL_VAR(PendingInterruptFunction);
-        	nr = MFP_ProcessIACK ( nr );
-		CPU_IACK = false;
-	}
-	else if ( ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) && ( ( nr == 26 ) || ( nr == 28 ) ) )
-	{
-        	M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
-		CPU_IACK = true;
-        	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
-        	    CALL_VAR(PendingInterruptFunction);
-                if ( MFP_UpdateNeeded == true )
-                    MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
-        	pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
-		CPU_IACK = false;
-	}
-
 
 	if (ExceptionSource == M68000_EXC_SRC_CPU) {
 		if (bVdiAesIntercept && nr == 0x22) {
@@ -1967,6 +1936,29 @@ kludge_me_do:
 /* and get a conflict with 'normal' cpu exceptions. */
 void REGPARAM2 Exception (int nr, uaecptr oldpc, int ExceptionSource)
 {
+	/* Pending bits / vector number can change before the end of the IACK sequence. */
+	/* We need to handle MFP and HBL/VBL cases for this. */
+	if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
+	{
+		M68000_AddCycles(CPU_IACK_CYCLES_MFP);
+		CPU_IACK = true;
+		while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+			CALL_VAR(PendingInterruptFunction);
+		nr = MFP_ProcessIACK(nr);
+		CPU_IACK = false;
+	}
+	else if (ExceptionSource == M68000_EXC_SRC_AUTOVEC && (nr == 26 || nr == 28))
+	{
+		M68000_AddCycles(CPU_IACK_CYCLES_VIDEO);
+		CPU_IACK = true;
+		while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+			CALL_VAR(PendingInterruptFunction);
+		if (MFP_UpdateNeeded == true)
+			MFP_UpdateIRQ(0);			/* update MFP's state if some internal timers related to MFP expired */
+		pendingInterrupts &= ~(1 << (nr - 24));		/* clear HBL or VBL pending bit */
+		CPU_IACK = false;
+	}
+
 #ifdef CPUEMU_12
 	if (currprefs.cpu_cycle_exact && currprefs.cpu_model == 68000)
 		Exception_ce000 (nr, oldpc);
@@ -2508,8 +2500,6 @@ void m68k_reset (int hardreset)
 	if (currprefs.cpu_model == 68060) {
 		regs.pcr = currprefs.fpu_model == 68060 ? MC68060_PCR : MC68EC060_PCR;
 		regs.pcr |= (currprefs.cpu060_revision & 0xff) << 8;
-		if (kickstart_rom)
-			regs.pcr |= 2; /* disable FPU */
 	}
 	fill_prefetch_slow ();
 }

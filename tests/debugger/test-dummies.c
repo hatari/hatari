@@ -57,6 +57,9 @@ Uint32 TosAddress, TosSize;
 FILE *debugOutput;
 void DebugUI(debug_reason_t reason) { }
 void DebugUI_PrintCmdHelp(const char *psCmd) { }
+char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state) {
+	return NULL;
+}
 
 /* fake debugInfo.c stuff */
 #include "debugInfo.h"
@@ -70,6 +73,7 @@ Uint32 DebugInfo_GetBSS(void)  { return 0x1f34; }
 #include "debugdsp.h"
 void DebugDsp_InitSession(void) { }
 Uint32 DebugDsp_InstrCount(void) { return 0; }
+Uint32 DebugDsp_OpcodeType(void) { return 0; }
 
 /* use fake dsp.c stuff in case config.h is configured with DSP emu */
 #include "dsp.h"

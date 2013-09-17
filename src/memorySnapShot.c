@@ -55,7 +55,9 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 
 #define VERSION_STRING      "1.7.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 
+#if HAVE_LIBZ
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
+#endif
 
 #ifdef COMPRESS_MEMORYSNAPSHOT
 

@@ -304,20 +304,117 @@ static int DebugDsp_Step(int nArgc, char *psArgv[])
 	return DEBUGGER_END;
 }
 
+
+/**
+ * Readline match callback to list next command opcode types.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+static char *DebugDsp_MatchNext(const char *text, int state)
+{
+	static const char* ntypes[] = {
+		"branch", "exreturn", "subcall", "subreturn"
+	};
+	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
+}
+
 /**
  * Command: Step DSP, but proceed through subroutines
  * Does this by temporary conditional breakpoint
  */
 static int DebugDsp_Next(int nArgc, char *psArgv[])
 {
-	char command[32];
-	Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
-	sprintf(command, "pc=$%x :once :quiet\n", nextpc);
+	char command[40];
+	if (nArgc > 1)
+	{
+		int optype;
+		if(strcmp(psArgv[1], "branch") == 0)
+			optype = CALL_BRANCH;
+		else if(strcmp(psArgv[1], "exreturn") == 0)
+			optype = CALL_EXCRETURN;
+		else if(strcmp(psArgv[1], "subcall") == 0)
+			optype = CALL_SUBROUTINE;
+		else if (strcmp(psArgv[1], "subreturn") == 0)
+			optype = CALL_SUBRETURN;
+		else
+		{
+			fprintf(stderr, "Unrecognized opcode type given!\n");
+			return DEBUGGER_CMDDONE;
+		}
+		sprintf(command, "DspOpcodeType=%d :once :quiet\n", optype);
+	}
+	else
+	{
+		Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
+		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
+	}
 	if (BreakCond_Command(command, true)) {
 		nDspSteps = 0;		/* using breakpoint, not steps */
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
+}
+
+/* helper to get instruction type, slightly simpler
+ * version from one in profiledsp.c
+ */
+Uint32 DebugDsp_OpcodeType(void)
+{
+	const char *dummy;
+	Uint32 opcode;
+
+	/* 24-bit instruction opcode */
+	opcode = DSP_ReadMemory(DSP_GetPC(), 'P', &dummy) & 0xFFFFFF;
+
+	/* subroutine returns */
+	if (opcode == 0xC) {	/* (just) RTS */
+		return CALL_SUBRETURN;
+	}
+	if (
+	    /* unconditional subroutine calls */
+	    (opcode & 0xFFF000) == 0xD0000 ||	/* JSR   00001101 0000aaaa aaaaaaaa */
+	    (opcode & 0xFFC0FF) == 0xBC080 ||	/* JSR   00001011 11MMMRRR 10000000 */
+	    /* conditional subroutine calls */
+	    (opcode & 0xFF0000) == 0xF0000 ||	/* JSCC  00001111 CCCCaaaa aaaaaaaa */
+	    (opcode & 0xFFC0F0) == 0xBC0A0 ||	/* JSCC  00001011 11MMMRRR 1010CCCC */
+	    (opcode & 0xFFC0A0) == 0xB4080 ||	/* JSCLR 00001011 01MMMRRR 1S0bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB0080 ||	/* JSCLR 00001011 00aaaaaa 1S0bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB8080 ||	/* JSCLR 00001011 10pppppp 1S0bbbbb */
+	    (opcode & 0xFFC0E0) == 0xBC000 ||	/* JSCLR 00001011 11DDDDDD 000bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB40A0 ||	/* JSSET 00001011 01MMMRRR 1S1bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB00A0 ||	/* JSSET 00001011 00aaaaaa 1S1bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB80A0 ||	/* JSSET 00001011 10pppppp 1S1bbbbb */
+	    (opcode & 0xFFC0E0) == 0xBC020) {	/* JSSET 00001011 11DDDDDD 001bbbbb */
+		return CALL_SUBROUTINE;
+	}
+	/* exception handler returns */
+	if (opcode == 0x4) {	/* (just) RTI */
+		return CALL_EXCRETURN;
+	}
+	/* branches */
+	if ((opcode & 0xFFF000) == 0xC0000 ||	/* JMP  00001100 0000aaaa aaaaaaaa */
+	    (opcode & 0xFFC0FF) == 0xAC080 ||	/* JMP  00001010 11MMMRRR 10000000 */
+	    (opcode & 0xFF0000) == 0xE0000 ||	/* JCC  00001110 CCCCaaaa aaaaaaaa */
+	    (opcode & 0xFFC0F0) == 0xAC0A0 ||	/* JCC  00001010 11MMMRRR 1010CCCC */
+	    (opcode & 0xFFC0A0) == 0xA8080 ||	/* JCLR 00001010 10pppppp 1S0bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA4080 ||	/* JCLR 00001010 01MMMRRR 1S0bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA0080 ||	/* JCLR 00001010 00aaaaaa 1S0bbbbb */
+	    (opcode & 0xFFC0E0) == 0xAC000 ||	/* JCLR 00001010 11dddddd 000bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA80A0 ||	/* JSET 00001010 10pppppp 1S1bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA40A0 ||	/* JSET 00001010 01MMMRRR 1S1bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA00A0 ||	/* JSET 00001010 00aaaaaa 1S1bbbbb */
+	    (opcode & 0xFFC0E0) == 0xAC020 ||	/* JSET 00001010 11dddddd 001bbbbb */
+	    (opcode & 0xFF00F0) == 0x600A0 ||	/* REP  00000110 iiiiiiii 1010hhhh */
+	    (opcode & 0xFFC0FF) == 0x6C020 ||	/* REP  00000110 11dddddd 00100000 */
+	    (opcode & 0xFFC0BF) == 0x64020 ||	/* REP  00000110 01MMMRRR 0s100000 */
+	    (opcode & 0xFFC0BF) == 0x60020 ||	/* REP  00000110 00aaaaaa 0s100000 */
+	    (opcode & 0xFF00F0) == 0x60080 ||	/* DO/ENDO 00000110 iiiiiiii 1000hhhh */
+	    (opcode & 0xFFC0FF) == 0x6C000 ||	/* DO/ENDO 00000110 11DDDDDD 00000000 */
+	    (opcode & 0xFFC0BF) == 0x64000 ||	/* DO/ENDO 00000110 01MMMRRR 0S000000 */
+	    (opcode & 0xFFC0BF) == 0x60000) {	/* DO/ENDO 00000110 00aaaaaa 0S000000 */
+		return CALL_BRANCH;
+	}
+	return CALL_UNKNOWN;
 }
 
 
@@ -465,12 +562,14 @@ static const dbgcommand_t dspcommands[] =
 	  "\n"
 	  "\tExecute next DSP instruction (equals 'dc 1')",
 	  false },
-	{ DebugDsp_Next, NULL,
+	{ DebugDsp_Next, DebugDsp_MatchNext,
 	  "dspnext", "dn",
-	  "step DSP, proceeding through subroutine calls",
-	  "\n"
-	  "\tLike the 'dspstep' command as long as subroutine calls do not\n"
-          "\thappen. When they do, the call is treated as one instruction.",
+	  "step DSP through subroutine calls / to given instruction type",
+	  "[instruction type]\n"
+	  "\tSame as 'dspstep' command if there are no subroutine calls.\n"
+          "\tWhen there are, those calls are treated as one instruction.\n"
+	  "\tIf argument is given, continues until instruction of given\n"
+	  "\ttype is encountered.",
 	  false },
 	{ DebugDsp_Continue, NULL,
 	  "dspcont", "dc",

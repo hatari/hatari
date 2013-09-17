@@ -23,6 +23,7 @@ src/uae-cpu/gencpu
 tools/hmsa/hmsa
 tools/hmsa/*.o
 tools/hmsa/hmsa.1.gz
+tools/debugger/gst2ascii
 
 python-ui/*.pyc
 python-ui/hatariui.1.gz

@@ -168,8 +168,19 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 /**
  * Monitor write access to ST/E color palette registers
  */
-void VIDEL_ColorRegsWrite(void)
+void VIDEL_StColorRegsWrite(void)
 {
+	videl.hostColorsSync = false;
+}
+
+/**
+ * Monitor write access to Falcon color palette registers
+ */
+void VIDEL_FalconColorRegsWrite(void)
+{
+	uint32_t color = IoMem_ReadLong(IoAccessBaseAddress & ~3);
+	color &= 0xfcfc00fc;	/* Unused bits have to be set to 0 */
+	IoMem_WriteLong(IoAccessBaseAddress & ~3, color);
 	videl.hostColorsSync = false;
 }
 

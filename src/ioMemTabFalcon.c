@@ -163,7 +163,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff820e, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_LineOffset_WriteWord },     /* Falcon line offset */
 	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_Line_Width_WriteWord },     /* Falcon line width */
 	{ 0xff8212, 46       , IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8240, 32       , IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },           /* ST color regs */
+	{ 0xff8240, 32       , IoMem_ReadWithoutInterception, VIDEL_StColorRegsWrite },         /* ST color regs */
 	{ 0xff8260, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_ST_ShiftModeWriteByte },
 	{ 0xff8261, 3        , IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_HorScroll64_WriteByte },    /* Falcon horizontal fine scrolling high ? */
@@ -301,7 +301,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff9220, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Lightpen X position */
 	{ 0xff9222, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Lightpen Y position */
 
-	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },            /* Falcon Videl palette */
+	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, VIDEL_FalconColorRegsWrite },   /* Falcon Videl palette */
 
 	{ 0xfffa00, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },

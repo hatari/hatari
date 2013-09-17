@@ -1098,7 +1098,9 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
             descr_type = descr[0]&DESCR_TYPE_MASK;
             switch (descr_type) {
                 case DESCR_TYPE_INVALID:
+#if MMU030_REG_DBG_MSG
                     write_log("Invalid descriptor!\n");
+#endif
                     /* stop table walk */
                     mmu030.status |= MMUSR_INVALID;
                     goto stop_search;
@@ -1188,7 +1190,9 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
             descr_type = descr[0]&DESCR_TYPE_MASK;
             switch (descr_type) {
                 case DESCR_TYPE_INVALID:
+#if MMU030_REG_DBG_MSG
                     write_log("Invalid descriptor!\n");
+#endif
                     /* stop table walk */
                     mmu030.status |= MMUSR_INVALID;
                     goto stop_search;
@@ -1495,7 +1499,9 @@ uae_u32 mmu030_ptest_table_search(uaecptr logical_addr, uae_u32 fc, bool write, 
 #define ATC030_PHYS_BE  0x08000000
 
 void mmu030_page_fault(uaecptr addr, bool read) {
+#if MMU030_ATC_DBG_MSG
     write_log("MMU: page fault (logical addr = %08X)\n", addr);
+#endif
     regs.mmu_fault_addr = addr;
     bBusErrorReadWrite = read;
     THROW(2);

@@ -440,10 +440,13 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 
 	if (SDL_SwapBE16(magic) == 0x601A) {
 		const char *last = GemDOS_GetLastProgramPath();
-		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
-		if (strcmp(last, filename) != 0) {
-			fprintf(stderr, "WARNING: given program doesn't match last program executed by GEMDOS HD emulation:\n\t%s", last);
+		if (!last) {
+			/* "pc=text" breakpoint used as point for loading program symbols gives false hits during bootup */
+			fprintf(stderr, "WARNING: no program loaded yet (through GEMDOS HD emu)!\n");
+		} else if (strcmp(last, filename) != 0) {
+			fprintf(stderr, "WARNING: given program doesn't match last program executed by GEMDOS HD emulation:\n\t%s\n", last);
 		}
+		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 		list = symbols_load_binary(fp, SYMTYPE_ALL);
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);

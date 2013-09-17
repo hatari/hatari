@@ -398,6 +398,21 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
 	return DEBUGGER_CMDDONE;
 }
 
+/**
+ * Command: Rename file
+ */
+static int DebugUI_Rename(int argc, char *argv[])
+{
+	if (argc == 3)
+	{
+		if (rename(argv[1], argv[2]) == 0)
+			return DEBUGGER_CMDDONE;
+		perror("ERROR");
+	}
+	DebugUI_PrintCmdHelp(argv[0]);
+	return DEBUGGER_CMDDONE;
+}
+
 
 /**
  * Command: Read debugger commands from a file
@@ -829,14 +844,15 @@ static const dbgcommand_t uicommand[] =
 	  "[command]\n"
 	  "\tPrint help text for available commands.",
 	  false },
-	{ History_Parse, NULL,
+	{ History_Parse, History_Match,
 	  "history", "hi",
 	  "show last CPU/DSP PC values & executed instructions",
-	  "cpu|dsp|on|off|<count>\n"
-	  "\t'cpu' and 'dsp' tracks instruction history for just given\n"
-	  "\t processor, 'on' tracks them both, 'off' will disable history.\n"
-	  "\tCount will show (at max) given number of last saved PC values\n"
-	  "\tand instructions at corresponding RAM addresses.",
+	  "cpu|dsp|on|off|<count> [limit]\n"
+	  "\t'cpu' and 'dsp' enable instruction history tracking for just given\n"
+	  "\tprocessor, 'on' tracks them both, 'off' will disable history.\n"
+	  "\tOptional 'limit' will set how many past instructions are tracked.\n"
+	  "\tGiving just count will show (at max) given number of last saved PC\n"
+	  "\tvalues and instructions currently at corresponding RAM addresses.",
 	  false },
 	{ DebugInfo_Command, DebugInfo_MatchInfo,
 	  "info", "i",
@@ -864,6 +880,12 @@ static const dbgcommand_t uicommand[] =
 	  "get debugger commands from file",
 	  "[filename]\n"
 	  "\tRead debugger commands from given file and do them.",
+	  false },
+	{ DebugUI_Rename, NULL,
+	  "rename", "",
+	  "rename given file",
+	  "old new\n"
+	  "\tRenames file with 'old' name to 'new'.",
 	  false },
 	{ DebugUI_SetOptions, Opt_MatchOption,
 	  "setopt", "o",

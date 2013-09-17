@@ -172,6 +172,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 	if (!filepath)
 		filepath = strdup(pszFileName);
 
+#if HAVE_LIBZ
 	/* Is it a gzipped file? */
 	if (File_DoesFileExtensionMatch(filepath, ".gz"))
 	{
@@ -208,6 +209,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 		pFile = ZIP_ReadFirstFile(filepath, &FileSize, ppszExts);
 	}
 	else          /* It is a normal file */
+#endif  /* HAVE_LIBZ */
 	{
 		FILE *hDiskFile;
 		/* Open and read normal file */
@@ -252,6 +254,7 @@ bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool
 			return false;
 	}
 
+#if HAVE_LIBZ
 	/* Normal file or gzipped file? */
 	if (File_DoesFileExtensionMatch(pszFileName, ".gz"))
 	{
@@ -268,6 +271,7 @@ bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool
 		}
 	}
 	else
+#endif  /* HAVE_LIBZ */
 	{
 		FILE *hDiskFile;
 		/* Create a normal file: */
