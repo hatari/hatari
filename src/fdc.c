@@ -559,7 +559,7 @@ static int	FDC_DelayToFdcCycles ( int Delay_micro )
  * TODO : we use a fixed 8 MHz clock and nCpuFreqShift to convert cycles for our
  * internal timers in cycInt.c. This should be replaced some days by using
  * MachineClocks.CPU_Freq and not using nCpuFreqShift anymore.
- * (for Falcon, we divide by 2 to keep a freq in the 8 MHz range)
+ * (for Falcon, we multiply cycles by 2 to simulate a freq in the 8 MHz range)
  */
 static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles )
 {
@@ -1689,7 +1689,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
 		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
 		{
-			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_RNF;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 			break;
 		}
