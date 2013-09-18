@@ -663,6 +663,9 @@ void FDC_Init ( void )
 	int	i;
 
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
+		HeadTrack[ i ] = 0;			/* Set all drives to track 0 */
+
+	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
 		FDC_DRIVES[ i ].Enabled = true;
 		FDC_DRIVES[ i ].RPM = FDC_RPM_STANDARD * 1000;
@@ -697,9 +700,6 @@ void FDC_Reset ( void )
 	FDC_DMA.Mode = 0;
 	FDC_DMA.SectorCount = 0;
 	FDC_ResetDMA();
-
-	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
-		HeadTrack[ i ] = 0;			/* Set all drives to track 0 */
 }
 
 
