@@ -21,6 +21,7 @@ EXECUTE_PROCESS(
 # bin/, include/, lib/ and share/ are often in "mingw/"
 # You might need to adjust the path for your system
 SET(CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH}/mingw)
+get_filename_component ( CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH} ABSOLUTE )
 
 # Uncomment this line with your own values if above doesn't work
 #SET(CMAKE_FIND_ROOT_PATH /usr/i586-pc-mingw32/sys-root/mingw )
