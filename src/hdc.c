@@ -67,7 +67,7 @@ typedef struct {
 /* HDC globals */
 HDCOMMAND HDCCommand;
 int nPartitions = 0;
-unsigned long hdSize = 0;
+unsigned long hdSize = 0;    /* Size of the hard disk in sectors */
 short int HDCSectorCount;
 bool bAcsiEmuOn = false;
 
@@ -401,7 +401,7 @@ static void HDC_Cmd_ReadCapacity(void)
 	/* seek to the position */
 	if (STMemory_ValidArea(nDmaAddr, 8))
 	{
-		int nSectors = hdSize / 512;
+		int nSectors = hdSize - 1;
 		STRam[nDmaAddr++] = (nSectors >> 24) & 0xFF;
 		STRam[nDmaAddr++] = (nSectors >> 16) & 0xFF;
 		STRam[nDmaAddr++] = (nSectors >> 8) & 0xFF;
