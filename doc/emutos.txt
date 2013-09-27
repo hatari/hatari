@@ -107,7 +107,7 @@ TOS ROM images:
 EmuTOS compatibility
 ====================
 
-These comments apply to EmuTOS v0.8.x.
+These comments apply to EmuTOS v0.9.x.
 
 Many commercial games and applications work fine with EmuTOS. This is
 because games (like Bombjack, Nebulus, Oids, Super Hang-On, Turrican,
@@ -116,25 +116,21 @@ and applications use the correct higher level APIs (AES/VDI) for which
 EmuTOS has implementations.
 
 EmuTOS AES support is somewhat buggy (mouse clicks and dragging
-doesn't always work properly) and VDI support is slowish. Anybody
-wanting proper AES/VDI support should install replacement for these,
-either the free XaAES + fVDI, or the earlier commercial solutions like
-NVDI.
+doesn't always work properly) and VDI & line-A support is slowish.
+Anybody wanting proper AES/VDI support should install replacement for
+these, either the free XaAES + fVDI, or the earlier commercial
+solutions like NVDI.
 
-Free games have the issue that some of them use the Line-A functionality
-which is not supported by EmuTOS[1] unlike AES/VDI.  This is partly a
-problem with the tools that they've been done with (for example older
-STOS and GFA basic version liked to use Line-A for graphics). There
-are also many old demos which use it for convenience.
-
-[1] EmuTOS has some old/partial implementations for some of the Line-A
-    functionality, but these are so buggy that they aren't enabled in
-    EmuTOS releases except for mouse on/off functionality.
+Support for large part of additional TT and Falcon features is missing.
 
 Joystick doesn't work in some (STOS) games that access it through
 other means than XBIOS function Kbdvbase() or by hooking into the IKBD
 interrupt vector.  They probably use some unofficial system variables
 which location depends on the TOS version.
+
+Additionally, EmuTOS v0.9.1 and earlier versions lack support for
+the (deprecated) line-A graphics functions which are used in many
+free/shareware games, done with GFA basic etc.
 
 
 Debugging issues with EmuTOS
@@ -143,17 +139,20 @@ Debugging issues with EmuTOS
 EmuTOS debug output and debug symbols
 -------------------------------------
 
-To get extra debug output from EmuTOS, or add your own debug
+To get extra debug output from EmuTOS, or to add your own debug
 statements, you need to recompile it from the source after enabling
 the MIDI debug output in its config.h header file. Then start Hatari
 with the "--midi-out /dev/stderr" option and you will see there the
-EmuTOS debug output (such as calls to missing Line-A functions).
+EmuTOS debug output (such as calls to missing OS functions).
+
+Some debug output can be gotten also from the pre-built 512k
+EmuTOS images by using Hatari "--natfeats on" option.
 
 By loading the etos512k.sym EmuTOS debug symbols file coming with the
 512k EmuTOS image, you can also ask debugger to "trace cpu_symbols" to
 get trace of all the function calls EmuTOS does.
 
-For other EmuTOS versions, there's a script[1] you can use to convert
+For smaller EmuTOS versions, there's a script[1] you can use to convert
 the emutos2.map file (produced during EmuTOS build) to a format you
 can load to Hatari debugger with its "symbols" command[2].
 
@@ -264,8 +263,8 @@ non-working ones "Panic" EmuTOS.
 For best compatibility with ST emulation, one should use 192kB
 or 256kB version of EmuTOS.
 
-Additionally, several of the demos below (on floppy images) need
-EmuTOS v0.8.7 or newer.
+Several of the demos below (on floppy images) need EmuTOS v0.8.7 or
+newer.  Programs marked to use line-A, need EmuTOS >v0.9.1.
 
 
 Demos:
@@ -357,6 +356,7 @@ Color games:
 - LLamasoft games
   http://minotaurproject.co.uk/lc-16bit.php
 - Master Breakout
+- Mem (line-A bitblits)
 - Missile Alert
 - Monkeys and Balloons
 - Nibe 2
@@ -371,6 +371,7 @@ Color games:
 - Snowball Fight
 - Spacewar
 - Starball* (shareware)
+- Super Pac-Man*
 - Sweeper
 - Tanx*
 - Teserae*
@@ -442,29 +443,43 @@ GEM games:
 - zSudoku
 
 Monochrome games:
+- Backgammon    (line-A bitblits under GEM menu)
+- Big Blow      (line-A bitblit)
 - Balloons
 - Bouncing boubles
-- Columns* (needs EmuTOS >= 0.8.6, some text issues)
+- Columns*      (needs EmuTOS >= 0.8.6, some text issues)
+- CW Puzzle     (line-A bitblit + line & point draw in start)
 - Delta patrol
 - Diamond miner
-- Emperor (v1.0 & v1.5)
-- Fun Face (playable demo)
+- Domino	(line-A bitblit)
+- Emperor       (v1.0 & v1.5)
+- Fishes        (line-A line and filled rectangle, works also in color)
+- Fun Face      (playable demo)
+- Gluckrad      (line-A bitblit)
 - Go UP
 - HASCS
-- Lasermon (laser "chess", there's also color version)
+- Lasermon      (laser "chess", there's also color version)
+- Lokomotive	(line-A bitblit)
+- MacPan*	(line-A draw/clear sprite)
 - Mandala
-- MiniGolf* (GFA basic)
+- MineFeld	(line-A draw/clear sprite)
+- Minigolf*     (line-A draw/clear sprite)
 - Monkey Business
 - Mr Dash
+- Pipeline*	(line-A line and filled rectangle)
+- Pling II	(line-A bitblit, draw/clear sprite and filled rectangle)
 - Poolmono*
 - Punssi
 - Puzzlepuzzle
 - Pyro
 - Qix
-- Sbreak* (by Mark Overmars)
+- Roll X	(line-A bitblit and set/get pixel)
+- Sbreak*       (by Mark Overmars)
+- Sherlock*     (texts overlap slightly)
 - Skull diggery
-- Sherlock* (needs EmuTOS >= 0.8.6, some text issues)
-- Space war (bug: score missing)
+- Slither       (line-A draw/clear sprite, works also in color)
+- Space war     (bug: score missing)
+- Take2*        (line-A bitblit)
 - Wallball
 
 Text games:
@@ -498,28 +513,14 @@ GEM games:
 - Yukon*    (dragging doesn't work)
 
 Games that mix GEM UI and non-VDI drawing:
-- Backgam   (line-A bitblit)
-- Fishes    (line-A line and filled rectangle)
-- Robugs*   (line-A filled rectangle and draw sprite)
+- Robugs*   (line-A filled rectangle and draw sprite, buggy pattern draw)
 
 Mono games:
-- Big Blow      (line-A bitblit)
-- Crystal Caves* (line-A bitblit and draw/clear sprite)
-- CW Puzzle     (line-A bitblit + line & point draw in start)
-- Domino	(line-A bitblit)
-- Gluckrad      (line-A bitblit)
-- Lokomotive	(line-A bitblit)
-- MacPan*	(line-A draw/clear sprite)
-- Macrowar	(line-A bitblit)
+- Crystal Caves* (line-A bitblit and draw/clear sprite, input doesn't work)
+- Macrowar	(line-A bitblit, joystick doesn't work)
 - Midimaze*	(joystick doesn't work)
-- MineFeld	(line-A draw/clear sprite)
-- Minigolf*     (line-A draw/clear sprite)
 - Pacballs      (line-A bitblit + panic)
-- Pipeline*	(line-A line and filled rectangle)
-- Pling II	(line-A bitblit and draw/clear sprite)
 - Ramses*       (causes panic as it tries to do crazy things with v_hide_c)
-- Roll X	(line-A bitblit and get pixel)
-- Take2*        (line-A bitblit)
 
 
 Atari ST drawing programs / image viewers
@@ -529,10 +530,10 @@ Working:
 - iffcnv, IFF convertor/viewer
 - spslide, Spec512 viewer
 - ImCon v1.1, image converter/viewer
+- Neochrome master (uses most of line-A functions)
 - Photochrome v4 (all buttons don't work)
 
 Not working:
-- Neochrome master (uses most of line-A functions)
 - Speed of Light v3.8 (complains of not supporting TrueColor and exits)
 
 
@@ -546,12 +547,12 @@ Working:
 - EZ-Score
 - Henry Cosh's Accompanist
 - Ludwig
+- Music Mouse (uses line-A hline for cursor)
 - Sequencer One
 
 Not working:
 - Cubase lite (guesses etv_timer vector wrong -> panic)
 - FinalCut Pro demo (panic on MIDI play)
-- Music Mouse (uses line-A hline for cursor)
 
 MIDI programs are available from Tim's MIDI world:
 	http://tamw.atari-users.net/
@@ -636,18 +637,29 @@ Color games:
 - 4K Pacman (bug: background not cleared to black)
 - Aerial Combat 3
 - Alien Blast (demo)
+- Alien Thing preview
+- Atari Scene Card Battle (line-A bitblit)
+- AttackWave (line-A bitblit)
 - Astrodia
 - Battletris+
+- Blat (line-A bitblit)
 - Boom (screen flashes during scrolling messages)
 - ChuChu Rocket* (full version)
 - Dynaplus*
 - Frantick
+- H Mec 2 (line-A bitblit)
+- Kolmik (line-A bitblit)
 - Micromachines preview (by .tscc)
+- Mr Boomer (Line-A bitblit)
 - No Limit II (shareware pinball)
 - Obsession* (demo of commercial pinball)
 - Operation Garfield
 - Pacman on E
+- Poker Square (line-A bitblit)
+- Pooz (line-A bitblit)
 - Power Up
+- R0x (line-A bitblit, screen sync issue)
+- Roger (line-A bitblit)
 - Skulls (shareware "minesweeper")
 - Spy 4k
 - Stardust* (tunnel sequence demo)
@@ -660,6 +672,10 @@ Color games:
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
 - Zero-5 (demo)
+
+Several of these (and Falcon) games are by Paradize:
+	http://paradize.final-memory.org/games.shtml
+
 
 STE (enhanced) color music applications:
 - Blipp Blopper
@@ -684,25 +700,10 @@ work perfectly, but some part of the graphics just don't show.  They
 are listed in case someone, someday, starts to fix the EmuTOS line-A
 things (mainly bitblt), or fixes the games to use e.g. VDI.
 
-- Alien Thing preview (no-line A functions, but all sprites are missing,
-  in EmuTOS v0.9.0, fire doesn't start the game anymore)
 - Art for Kids (line-A sprite enable function -> cursor doesn't show;
   rectangle drawing -> screen corruption + panic)
-- Atari Scene Card Battle (card images missing due to line-A bitblit)
-- AttackWave (most graphics missing due to line-A bitblit)
-- Blat (main graphics missing due to line-A bitblit)
 - Breakdance (another scene game, game freezes when playing)
-- Cameleon (all graphics missing due to line-A bitblit) 
-- Mr Boomer (graphics missing due to Line-A bitblit and no music)
-- H Mec 2 (no graphics due to line-A bitblit)
-- Kolmik (tiles don't show due to line-A bitblit)
-- Poker Square (graphics don't show due to line-A bitblit)
-- Pooz (graphics don't show due to line-A bitblit)
-- R0x (main menu graphics don't show due to line-A bitblit)
-- Roger (no graphics except bg show, line-A bitblits)
-
-Several of these (and Falcon) games are by Paradize:
-	http://paradize.final-memory.org/games.shtml
+- Cameleon (line-A bitblit, exits when starting game)
 
 
 Atari TT programs
@@ -824,7 +825,7 @@ but don't work with EmuTOS at all:
   M68000 Bus Error reading at address $3b4.
 
 
-Games working games in EmuTOS v0.9.0:
+Games working in EmuTOS v0.9.0:
 - Aces High (preview)
 - Blum
 - Cavemania (demo version)
@@ -855,11 +856,12 @@ Games working games in EmuTOS v0.9.0:
 - Willie's Adventure (preview1), disable DSP
 - Willie's Adventure* (preview2)
 
-Games working in EmuTOS >0.9.0 CVS snapshot(s):
+Games working in EmuTOS >v0.9.0:
 - GEM breakout
   - problems with clicks
 - Jeu de Poker, needs 256-color VGA
 - Landmine (GEM minesweeper)
+- Let's play Shanghai: needs 640x400@256
 - Manga Puzzle: needs 256 colors
 - Pac Them*
 - Santarun (GEM, slowish)
@@ -888,31 +890,27 @@ Games working with extra hacks:
   - with EmuTOS, enabling DSP freezes the games right at startup
     (with normal TOS4, DSP is used for background music)
 
-Games that might be possible to get working (they
-show something and/or don't use DSP/sound matrix):
+Games that might be possible to get working (they show something
+and/or don't use DSP XBios calls or DSP sound matrix):
 - Block Blizzard preview: stops when loading
 - Bomb Squad: crashes to bus error wget at 00fc0002
+- Confusion (demos 1 & 2): title screen doesn't come up
 - Conquest of Elysium: screen with garbage
+- Gold island (demo, vga only), parts of blits are missing
 - Des Lazers & des Hommes: game area graphics are missing
   (they're rendered with DSP)
+- It's Great (start from st-med rez): mouse doesn't work
+- Jewelz (vga, hatari mode): mouse is constrained to top left area
+- Sweety Things: mouse is constrained to top left area
 - Masters of Chaos: starts, but then doesn't react to input
+- Men at War: freezes at startup
 - Multibriques: colors are wrong
 - Neurobot: just exits
 - Painium: Intro works, but game itself exits to corrupted desktop
 - Tetrhex: panics after trying to set 256 color mode
+- Tron 2: M68000 Bus Error reading at address $4.
 - TsccTron: M68000 Bus Error reading at address $0.
-
-Games using Line-A bitblit not supported by EmuTOS:
-- Chainz
-- Confusion (demos 1 & 2)
-- Gold island (demo)
-- It's Great, needs to be started in ST-med rez
-- Jewelz
-- Let's play Shanghai (demo)
-- Men at War
-- Tron 2
-- Ultimate Arena Falcon edition
-- Sweety Things
+- Ultimate Arena Falcon edition: doesn't recognize it's on Falcon
 
 
 Working applications:
