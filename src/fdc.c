@@ -680,8 +680,6 @@ void FDC_Init ( void )
  */
 void FDC_Reset ( void )
 {
-	int	i;
-
 	/* Clear out FDC registers */
 
 	FDC.CR = 0;
