@@ -581,12 +581,16 @@ Demos:
 - AltParty 2008 intro (by Paradox)
 - Amiga Demo 2 (by Oxygene), music disk
 - Antiques (by Dune & Sector Oen)
+- An Cool on STE
+- Another kid story (MMJ prod 2009)
+- Appendix (by DHS)
 - Armada is dead (by Aggression)
 - Azed/Jungle demo (by Atari)
 - Beat Demo (by Frontline)
 - Bird Mad Girl Show (by Fraggle's)
 - Birdie (by Zeal)
 - Blue Period (by Paradox)
+- BoingSTE
 - CD-player (by Light)
 - Cernit Trandafir (by DHS)
 - Circus BackSTage (by BlaBLa)
@@ -594,6 +598,7 @@ Demos:
 - Devotion (by Excellence in Art)
 - Dynamite (by Unit 17)
 - E605 (by Light)
+- Ecstacy (by ICE)
 - Ecstacy A (by ICE), breaks at the end
 - French Kiss (by DHS)
 - Gobi Toons (by Dune)
@@ -604,9 +609,11 @@ Demos:
 - Jam-Cols (by ICE)
 - Just Musix 2 (by DHS)
 - Kick my assembler (by Orion), start doesn't look right
+- Lavalamp (by Tobe)
 - Madness (by Cream)
 - Mathematica (by Aura)
 - More or Less Zero (by DHS)
+- Massacre (by DHS)
 - Maxymizer compo 2006 (by gwEm)
 - Meshake (by Spice Boys)
 - Mind Rewind (by Reservoir Gods)
@@ -619,6 +626,7 @@ Demos:
 - Power Rise (by Light)
 - Reanimation (by Syntax)
 - Realtime (by MJJ Prod)
+- Riverside (by DHS)
 - RGBeast (by Aggression)
 - Save the Earth (by Defence Force)
 - Sinfull Sinuses (by Chronicle)
@@ -627,9 +635,13 @@ Demos:
 - Songs Of The Unexpected (by OUCH)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
+- STePS (by XiA/CPT)
 - Summer Delights (by DHS)
 - Sventure intro (by Paradox)
+- TalkTalk2 (by XiA)
 - Techno drugs (by NLC)
+- Tribute to Rainbow TOS
+- Tyranny (by DHS)
 - Vision (by POV)
 - XiTEC Presentation (by Omega)
 
@@ -695,10 +707,8 @@ the 512kB EmuTOS version.
 "Almost" working color Atari STE programs
 -----------------------------------------
 
-There are some STE (enhanced) programs that would appear otherwise to
-work perfectly, but some part of the graphics just don't show.  They
-are listed in case someone, someday, starts to fix the EmuTOS line-A
-things (mainly bitblt), or fixes the games to use e.g. VDI.
+There are some STE (enhanced) programs that work to an extent. They're
+listed here in case someone, someday, starts to fix (EmuTOS for) them.
 
 - Art for Kids (line-A sprite enable function -> cursor doesn't show;
   rectangle drawing -> screen corruption + panic)
