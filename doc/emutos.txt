@@ -527,14 +527,13 @@ Atari ST drawing programs / image viewers
 -----------------------------------------
 
 Working:
-- iffcnv, IFF convertor/viewer
-- spslide, Spec512 viewer
+- Degas Elite, see http://www.youtube.com/watch?v=G4st-x4-BJg (at 16:30)
+- Iffcnv, IFF convertor/viewer
 - ImCon v1.1, image converter/viewer
 - Neochrome master (uses most of line-A functions)
 - Photochrome v4 (all buttons don't work)
-
-Not working:
-- Speed of Light v3.8 (complains of not supporting TrueColor and exits)
+- Speed of Light v3.8
+- Spslide, Spec512 viewer
 
 
 Atari ST MIDI programs
