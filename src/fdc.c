@@ -211,6 +211,8 @@ enum
 	FDCEMU_CMD_READADDRESS,
 	FDCEMU_CMD_READTRACK,
 	FDCEMU_CMD_WRITETRACK,
+	/* Type IV */
+	FDCEMU_CMD_FORCEINT,
 
 	/* Other fake commands used internally */
 	FDCEMU_CMD_MOTOR_STOP
@@ -267,7 +269,11 @@ enum
 	FDCEMU_RUN_WRITETRACK,
 	FDCEMU_RUN_WRITETRACK_INDEX,
 	FDCEMU_RUN_WRITETRACK_DMA,
-	FDCEMU_RUN_WRITETRACK_COMPLETE
+	FDCEMU_RUN_WRITETRACK_COMPLETE,
+	/* Force Int */
+	FDCEMU_RUN_FORCEINT,
+	FDCEMU_RUN_FORCEINT_LOOP,
+	FDCEMU_RUN_FORCEINT_COMPLETE
 };
 
 
@@ -472,6 +478,7 @@ static int	FDC_UpdateReadSectorsCmd ( void );
 static int	FDC_UpdateWriteSectorsCmd ( void );
 static int	FDC_UpdateReadAddressCmd ( void );
 static int	FDC_UpdateReadTrackCmd ( void );
+static int	FDC_UpdateForceIntCmd ( void );
 
 static int	FDC_Check_MotorON ( Uint8 FDC_CR );
 static int	FDC_TypeI_Restore ( void );
@@ -705,6 +712,9 @@ void FDC_Init ( void )
 		FDC_DRIVES[ i ].RPM = FDC_RPM_STANDARD * 1000;
 		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
 	}
+
+FDC_IndexPulse_GetCurrentPos();		// REMOVE : avoid gcc warning on unused function
+FDC_NextIndexPulse_NbBytes();		// REMOVE : avoid gcc warning on unused function
 }
 
 
@@ -1138,12 +1148,21 @@ static int	FDC_NextIndexPulse_FdcCycles ( void )
 {
 	int	FdcCyclesPerRev;
 	int	FdcCyclesSinceIndex;
+	int	res;
 
 	FdcCyclesSinceIndex = FDC_IndexPulse_GetCurrentPos_FdcCycles ( &FdcCyclesPerRev );
 
-//fprintf ( stderr , "fdc next index current pos old=%d new=%d\n" , FDC_NextIndexPulse_NbBytes() * FDC_DELAY_CYCLE_MFM_BYTE , FdcCyclesPerRev - FdcCyclesSinceIndex );
+	res = FdcCyclesPerRev - FdcCyclesSinceIndex;
 
-	return FdcCyclesPerRev - FdcCyclesSinceIndex;
+	/* If the next IP is in 0 or 1 cycle, we consider this is a rounding error */
+	/* and we wait for one full revolution (this can happen in Force Int on Index Pulse */
+	/* when we call FDC_NextIndexPulse_FdcCycles in a loop) */
+	if ( res <= 1 )
+		res = FdcCyclesPerRev;
+	
+//fprintf ( stderr , "fdc next index current pos old=%d new=%d\n" , FDC_NextIndexPulse_NbBytes() * FDC_DELAY_CYCLE_MFM_BYTE , res );
+
+	return res;
 }
 
 
@@ -1259,7 +1278,7 @@ void FDC_InterruptHandler_Update ( void )
 		FDC.ReplaceCommandPossible = false;
 
 		/* If the command needed to restart the motor, the motor is now ON */
-		/* so we must compute a new random index position */
+		/* so we must init a new index position */
 		if ( FDC.UpdateIndexPulse == true )
 		{
 			FDC_IndexPulse_Init ();
@@ -1292,6 +1311,10 @@ void FDC_InterruptHandler_Update ( void )
 
 		 case FDCEMU_CMD_READTRACK:
 			FdcCycles = FDC_UpdateReadTrackCmd();
+			break;
+
+		 case FDCEMU_CMD_FORCEINT:
+			FdcCycles = FDC_UpdateForceIntCmd();
 			break;
 
 		 case FDCEMU_CMD_MOTOR_STOP:
@@ -2060,6 +2083,8 @@ static int FDC_UpdateReadTrackCmd ( void )
 #endif
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
+		FDC.IndexPulse_Time = CyclesGlobalClockCounter;			/* We're on an index pulse */
+
 		/* Build the track data */
 		FDC_DMA_InitTransfer ();					/* Update FDC_DMA.PosInBuffer */
 		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
@@ -2141,6 +2166,67 @@ static int FDC_UpdateReadTrackCmd ( void )
 		break;
 	 case FDCEMU_RUN_READTRACK_COMPLETE:
 		FdcCycles = FDC_CmdCompleteCommon( true );
+		break;
+	}
+
+	return FdcCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Run 'FORCE INT ON INDEX' command
+ */
+static int FDC_UpdateForceIntCmd ( void )
+{
+	int	FdcCycles = 0;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	/* Which command is running? */
+	switch (FDC.CommandState)
+	{
+	 case FDCEMU_RUN_FORCEINT:
+		if ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 )		/* Motor is already OFF, we won't get any index */
+		{
+			FDC.CommandState = FDCEMU_RUN_FORCEINT_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+			break;
+		}
+
+		/* At the same time as we check for indexes, we must also stop the motor when necessary */
+		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_MOTOR_OFF );
+
+		FDC.CommandState = FDCEMU_RUN_FORCEINT_LOOP;
+		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
+
+		LOG_TRACE(TRACE_FDC, "fdc type IV force int on index, first index in %d cycles VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			FdcCycles , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		break;
+	 case FDCEMU_RUN_FORCEINT_LOOP:
+		/* If we reach the time where motor turns off, disk won't spin anymore */
+		/* and we won't get more indexes either */
+		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
+		{
+			FDC.CommandState = FDCEMU_RUN_FORCEINT_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+			break;
+		}
+
+		FDC.IndexPulse_Time = CyclesGlobalClockCounter;		/* We're on an index pulse */
+		FDC_AcknowledgeInterrupt();
+
+		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
+
+		LOG_TRACE(TRACE_FDC, "fdc type IV force int on index, next index in %d cycles VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			FdcCycles , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		break;
+	 case FDCEMU_RUN_FORCEINT_COMPLETE:
+		/* We reach this state only when the motor stops, because we won't get index pulse anymore */
+		/* The WD1772 doesn't really stop the Force Int command in that case, but as the FDC's state */
+		/* won't change anymore we go to the FDCEMU_CMD_NULL state to save cpu in the case of the emulation */
+		FdcCycles = FDC_UpdateMotorStop ();
 		break;
 	}
 
@@ -2503,8 +2589,19 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 			FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
 	}
 
-	/* Remove busy bit, ack int and stop the motor */
-	FdcCycles = FDC_CmdCompleteCommon( bCauseCPUInterrupt );
+	if ( ( FDC.CR & 0x4 ) == 0 )					/* Force Int immediate */
+	{
+		/* Remove busy bit, ack int and stop the motor */
+		FdcCycles = FDC_CmdCompleteCommon( bCauseCPUInterrupt );
+	}
+	else								/* Force Int on index pulse */
+	{
+		FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );		/* Remove busy bit */
+		FdcCycles = 0;
+
+		FDC.Command = FDCEMU_CMD_FORCEINT;
+		FDC.CommandState = FDCEMU_RUN_FORCEINT;
+	}
 
 	return FDC_DELAY_CYCLE_TYPE_IV_PREPARE + FdcCycles;
 }
@@ -2629,10 +2726,8 @@ static int FDC_ExecuteTypeIVCommands ( void )
 
 	else if ( FDC.CR & 0x4 )					/* I2 set (0xD4) : IRQ on next index pulse */
 	{
-		/* FIXME [NP] This is not complete, we should report */
-		/* an interrupt each time the FDC sees an index pulse, not just once */
 		FDC.ID_FieldLastSector = 0;				/* We simulate an index pulse now */
-		FdcCycles = FDC_TypeIV_ForceInterrupt ( true );
+		FdcCycles = FDC_TypeIV_ForceInterrupt ( false );
 	}
 
 	else								/* I3-I2 clear (0xD0) : stop command without IRQ */
@@ -2902,6 +2997,8 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 			/* is updated after a Type I command */
 			/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
 			if ( FDC.CommandType == 1 )
+//			if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
+//			  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
 			{
 				if ( Floppy_IsWriteProtected ( FDC_DRIVE ) )
 					FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
