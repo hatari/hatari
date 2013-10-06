@@ -2996,9 +2996,8 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 			/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
 			/* is updated after a Type I command */
 			/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
-			if ( FDC.CommandType == 1 )
-//			if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
-//			  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
+			if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
+			  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
 			{
 				if ( Floppy_IsWriteProtected ( FDC_DRIVE ) )
 					FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
