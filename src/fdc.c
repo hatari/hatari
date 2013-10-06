@@ -435,6 +435,7 @@ static void	FDC_SetDriveLedBusy ( void );
 
 static int	FDC_DelayToFdcCycles ( int Delay_micro );
 static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles );
+static int	FDC_CpuCyclesToFdcCycles ( int CpuCycles );
 static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset );
 static int	FDC_DelayToCpuCycles ( int Delay_micro );
 static int	FDC_TransferByte_FdcCycles ( int NbBytes );
@@ -453,7 +454,10 @@ static int	FDC_GetSidesPerDisk ( int Track );
 static int	FDC_GetBytesPerTrack ( void );
 static void	FDC_IndexPulse_Init ( void );
 static int	FDC_IndexPulse_GetCurrentPos ( void );
+static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev );
+static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
 static int	FDC_IndexPulse_GetState ( void );
+static int	FDC_NextIndexPulse_FdcCycles ( void );
 static int	FDC_NextIndexPulse_NbBytes ( void );
 static int	FDC_NextSectorID_NbBytes ( void );
 
@@ -555,7 +559,7 @@ static int	FDC_DelayToFdcCycles ( int Delay_micro )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Convert a number of fdc cycles at freq FDC_CLOCK_STANDARD to a number
+ * Convert a number of fdc cycles at freq MachineClocks.FDC_Freq to a number
  * of cpu cycles at freq MachineClocks.CPU_Freq
  * TODO : we use a fixed 8 MHz clock and nCpuFreqShift to convert cycles for our
  * internal timers in cycInt.c. This should be replaced some days by using
@@ -572,14 +576,44 @@ static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles )
 	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
 		FdcCycles *= 2;					/* correct delays for a 8 MHz FDC_Freq clock instead of 16 */
 
-//	CpuCycles = rint ( ( (Sint64)MachineClocks.CPU_Freq * FdcCycles ) / MachineClocks.FDC_Freq );
-	CpuCycles = rint ( ( (Sint64)8021247 * FdcCycles ) / MachineClocks.FDC_Freq );
+//	CpuCycles = rint ( ( (Sint64)FdcCycles * MachineClocks.CPU_Freq ) / MachineClocks.FDC_Freq );
+	CpuCycles = rint ( ( (Sint64)FdcCycles * 8021247.L ) / MachineClocks.FDC_Freq );
 	CpuCycles &= -4;					/* Multiple of 4 */
 	CpuCycles <<= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
 
 //fprintf ( stderr , "fdc state %d delay %d fdc cycles %d cpu cycles\n" , FDC.Command , FdcCycles , CpuCycles );
 //if ( Delay==4104) Delay=4166;		// 4166 : decade demo
 	return CpuCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Convert a number of cpu cycles at freq MachineClocks.CPU_Freq to a number
+ * of fdc cycles at freq MachineClocks.FDC_Freq (this is the opposite
+ * of FDC_FdcCyclesToCpuCycles)
+ * TODO : we use a fixed 8 MHz clock and nCpuFreqShift to convert cycles for our
+ * internal timers in cycInt.c. This should be replaced some days by using
+ * MachineClocks.CPU_Freq and not using nCpuFreqShift anymore.
+ */
+static int	FDC_CpuCyclesToFdcCycles ( int CpuCycles )
+{
+	int	FdcCycles;
+
+
+	CpuCycles >>= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
+
+//	FdcCycles = rint ( ( (Sint64)CpuCycles * MachineClocks.FDC_Freq ) / MachineClocks.CPU_Freq );
+	FdcCycles = rint ( ( (Sint64)CpuCycles * MachineClocks.FDC_Freq ) / 8021247.L );
+
+	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */
+	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
+	/* FIXME : as stated above, this should be handled better, without involving 8 MHz CPU_Freq */
+	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
+		FdcCycles /= 2;					/* correct delays for a 8 MHz FDC_Freq clock instead of 16 */
+
+//fprintf ( stderr , "fdc state %d delay %d cpu cycles %d fdc cycles\n" , FDC.Command , CpuCycles , FdcCycles );
+	return FdcCycles;
 }
 
 
@@ -680,8 +714,6 @@ void FDC_Init ( void )
  */
 void FDC_Reset ( void )
 {
-	int	i;
-
 	/* Clear out FDC registers */
 
 	FDC.CR = 0;
@@ -1014,7 +1046,7 @@ static void	FDC_IndexPulse_Init ( void )
  * Return the current position in the track relative to the index pulse.
  * For standard floppy, this is a number of bytes in the range [0,6250[
  */
-static int	FDC_IndexPulse_GetCurrentPos ( void )
+static int	FDC_IndexPulse_GetCurrentPos ()
 {
 	Uint64	BytesSinceIndex;
 
@@ -1027,6 +1059,35 @@ static int	FDC_IndexPulse_GetCurrentPos ( void )
 }
 
 
+static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev )
+{
+	int	CpuCyclesPerRev;
+	int	CpuCyclesSinceIndex;
+
+	/* Get the number of CPU cycles for one revolution of the floppy */
+	/* RPM is already multiplied by 1000 to simulate non-integer values */
+	CpuCyclesPerRev = ( (Sint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC_DRIVE ].RPM / 60 ) );
+	CpuCyclesSinceIndex = ( CyclesGlobalClockCounter - FDC.IndexPulse_Time ) % CpuCyclesPerRev;
+
+	if ( pFdcCyclesPerRev )
+		*pFdcCyclesPerRev = FDC_CpuCyclesToFdcCycles ( CpuCyclesPerRev );
+
+	return FDC_CpuCyclesToFdcCycles ( CpuCyclesSinceIndex );
+}
+
+
+static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void )
+{
+	int	FdcCyclesSinceIndex;
+
+	FdcCyclesSinceIndex = FDC_IndexPulse_GetCurrentPos_FdcCycles ( NULL );
+//fprintf ( stderr , "fdc index current pos old=%d new=%d\n" , FDC_IndexPulse_GetCurrentPos() , FdcCyclesSinceIndex / FDC_DELAY_CYCLE_MFM_BYTE );
+
+	return FdcCyclesSinceIndex / FDC_DELAY_CYCLE_MFM_BYTE;
+}
+
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Return the current state of the index pulse signal.
@@ -1036,6 +1097,7 @@ static int	FDC_IndexPulse_GetCurrentPos ( void )
  */
 static int	FDC_IndexPulse_GetState ( void )
 {
+#ifdef old_index
 	int	CurrentPos;
 	int	state;
 
@@ -1045,8 +1107,23 @@ static int	FDC_IndexPulse_GetState ( void )
 	if ( CurrentPos <  FDC_DelayToFdcCycles ( FDC_DELAY_US_INDEX_PULSE_LENGTH ) / FDC_TransferByte_FdcCycles ( 1 ) )
 		state = 1;
 
-//fprintf ( stderr , "fdc index state pos pos=%d state=%d\n" , CurrentPos , state );
+//fprintf ( stderr , "fdc index state 1 pos pos=%d state=%d\n" , CurrentPos , state );
 	return state;
+
+#else
+	int	state;
+	int	FdcCyclesSinceIndex;
+
+	FdcCyclesSinceIndex = FDC_IndexPulse_GetCurrentPos_FdcCycles ( NULL );
+
+	state = 0;
+	if ( FdcCyclesSinceIndex < FDC_DelayToFdcCycles ( FDC_DELAY_US_INDEX_PULSE_LENGTH ) )
+		state = 1;
+
+//fprintf ( stderr , "fdc index state 2 pos pos=%d state=%d\n" , FdcCyclesSinceIndex , state );
+	
+	return state;
+#endif
 }
 
 
@@ -1055,9 +1132,28 @@ static int	FDC_IndexPulse_GetState ( void )
  * Return the number of bytes to read from the track before reaching the
  * next index pulse signal.
  */
+
+
+static int	FDC_NextIndexPulse_FdcCycles ( void )
+{
+	int	FdcCyclesPerRev;
+	int	FdcCyclesSinceIndex;
+
+	FdcCyclesSinceIndex = FDC_IndexPulse_GetCurrentPos_FdcCycles ( &FdcCyclesPerRev );
+
+//fprintf ( stderr , "fdc next index current pos old=%d new=%d\n" , FDC_NextIndexPulse_NbBytes() * FDC_DELAY_CYCLE_MFM_BYTE , FdcCyclesPerRev - FdcCyclesSinceIndex );
+
+	return FdcCyclesPerRev - FdcCyclesSinceIndex;
+}
+
+
 static int	FDC_NextIndexPulse_NbBytes ( void )
 {
+#ifdef old_index
 	return FDC_GetBytesPerTrack () - FDC_IndexPulse_GetCurrentPos ();
+#else
+	return FDC_GetBytesPerTrack () - FDC_IndexPulse_GetCurrentPos_NbBytes ();
+#endif
 }
 
 
@@ -1080,7 +1176,11 @@ static int	FDC_NextSectorID_NbBytes ( void )
 	int	NextSector;
 	int	NbBytes;
 
+#ifdef old_index
 	CurrentPos = FDC_IndexPulse_GetCurrentPos ();
+#else
+	CurrentPos = FDC_IndexPulse_GetCurrentPos_NbBytes ();
+#endif
 
 	MaxSector = FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE );
 	TrackPos = FDC_TRACK_LAYOUT_STANDARD_GAP1;			/* Position of 1st raw sector */
@@ -1953,7 +2053,11 @@ static int FDC_UpdateReadTrackCmd ( void )
 	{
 	 case FDCEMU_RUN_READTRACK:
 		FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
+#ifdef old_index
 		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextIndexPulse_NbBytes () );	/* Wait for the next index pulse */
+#else
+		FdcCycles = FDC_NextIndexPulse_FdcCycles ();			/* Wait for the next index pulse */
+#endif
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
 		/* Build the track data */
