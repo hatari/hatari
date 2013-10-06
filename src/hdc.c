@@ -837,41 +837,22 @@ void HDC_ResetCommandStatus(void)
 }
 
 
-/**
- * Get command status.
- */
-short int HDC_GetCommandStatus(void)
-{
-	return HDCCommand.returnCode;
-}
-
-
 /*---------------------------------------------------------------------*/
 /**
  * Get sector count.
  */
 short int HDC_GetSectorCount(void)
 {
+	// fprintf(stderr,"HDC: Get sector count = %04x\n", HDCSectorCount);
 	return HDCSectorCount;
 }
 
 
-/*---------------------------------------------------------------------*/
 /**
- * Process HDC command packets, called when bytes are 
- * written to $FFFF8606 and the HDC (not the FDC) is selected.
+ * Process HDC command packets (SCSI/ACSI) bytes.
  */
-void HDC_WriteCommandPacket(void)
+static void HDC_WriteCommandPacket(Uint8 b)
 {
-	unsigned char b;
-
-	/* is HDC emulation enabled? */
-	if (!bAcsiEmuOn)
-		return;
-
-	/* command byte sent */
-	b = IoMem_ReadByte(0xff8605);
-
 	/* Extract target and extended mode early, read acsi opcode */
 	if (HDCCommand.readCount == 0)
 	{
@@ -941,4 +922,122 @@ void HDC_WriteCommandPacket(void)
 		FDC_SetDMAStatus(false);
 		HDCCommand.returnCode = HD_STATUS_OK;
 	}
+}
+
+/*---------------------------------------------------------------------*/
+
+static struct ncr5380_regs
+{
+	Uint8 initiator_cmd;
+	Uint8 current_bus_status;
+	Uint8 bus_and_status;
+} ncr_regs;
+
+/**
+ * Emulate external reset "pin": Clear registers etc.
+ */
+void Ncr5380_Reset(void)
+{
+	ncr_regs.initiator_cmd &= 0x7f;
+}
+
+/**
+ * Write a command byte to the NCR 5380 SCSI controller
+ */
+static void Ncr5380_WriteByte(int addr, Uint8 byte)
+{
+	switch (addr)
+	{
+	case 0:			/* Output Data register */
+		ncr_regs.current_bus_status |= 0x40;
+		break;
+	case 1:			/* Initiator Command register */
+		ncr_regs.initiator_cmd = byte;
+		break;
+	case 2:			/* Mode register */
+		break;
+	case 3:			/* Target Command register */
+		break;
+	case 4:			/* Select Enable register */
+		break;
+	case 5:			/* Start DMA Send register */
+		break;
+	case 6:			/* Start DMA Target Receive register */
+		break;
+	case 7:			/* Start DMA Initiator Receive register */
+		break;
+	default:
+		fprintf(stderr, "Unexpected NCR5380 address\n");
+	}
+}
+
+/**
+ * Read a command byte from the NCR 5380 SCSI controller
+ */
+static Uint8 Ncr5380_ReadByte(int addr)
+{
+	switch (addr)
+	{
+	case 0:			/* Current SCSI Data register */
+		break;
+	case 1:			/* Initiator Command register */
+		return ncr_regs.initiator_cmd & 0x9f;
+	case 2:			/* Mode register */
+		break;
+	case 3:			/* Target Command register */
+		break;
+	case 4:			/* Current SCSI Bus Status register */
+		if (ncr_regs.current_bus_status & 0x40)	/* BUSY? */
+			ncr_regs.current_bus_status |= 0x20;
+		else
+			ncr_regs.current_bus_status &= ~0x20;
+		if (ncr_regs.initiator_cmd & 0x80)	/* ASSERT RST? */
+			ncr_regs.current_bus_status |= 0x80;
+		else
+			ncr_regs.current_bus_status &= ~0x80;
+		if (ncr_regs.initiator_cmd & 0x04)	/* ASSERT BUSY? */
+			ncr_regs.current_bus_status |= 0x40;
+		else
+			ncr_regs.current_bus_status &= ~0x40;
+		return ncr_regs.current_bus_status;
+	case 5:			/* Bus and Status register */
+		return ncr_regs.bus_and_status;
+	case 6:			/* Input Data register */
+		break;
+	case 7:			/* Reset Parity/Interrupts register */
+		/* Reset PARITY ERROR, IRQ REQUEST and BUSY ERROR bits */
+		ncr_regs.bus_and_status &= 0xcb;
+		return 0;  /* TODO: Is this return value ok? */
+	default:
+		fprintf(stderr, "Unexpected NCR5380 address\n");
+	}
+
+	return 0;
+}
+
+/**
+ * Called when command bytes have been written to $FFFF8606 and
+ * the HDC (not the FDC) is selected.
+ */
+void HDC_WriteCommandByte(int addr, Uint8 byte)
+{
+	// fprintf(stderr, "HDC: Write cmd byte addr=%i, byte=%02x\n", addr, byte);
+
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		Ncr5380_WriteByte(addr, byte);
+	else if (bAcsiEmuOn)
+		HDC_WriteCommandPacket(byte);
+}
+
+/**
+ * Get command byte.
+ */
+short int HDC_ReadCommandByte(int addr)
+{
+	Uint16 ret;
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		ret = Ncr5380_ReadByte(addr);
+	else
+		ret = HDCCommand.returnCode;	/* ACSI status */
+	return ret;
 }

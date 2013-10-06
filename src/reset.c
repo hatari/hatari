@@ -16,6 +16,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"
+#include "hdc.h"
 #include "acia.h"
 #include "ikbd.h"
 #include "cycInt.h"
@@ -68,7 +69,14 @@ static int Reset_ST(bool bCold)
 	}
 	Floppy_Reset();			/* Reset Floppy */
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
+	    || ConfigureParams.System.nMachineType == MACHINE_TT)
+	{
+		Ncr5380_Reset();
+	}
+
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	{
 		DSP_Reset();                  /* Reset the DSP */
 		Crossbar_Reset(bCold);        /* Reset Crossbar sound */
 	}

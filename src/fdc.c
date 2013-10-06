@@ -2826,11 +2826,11 @@ void FDC_DiskController_WriteWord ( void )
 	LOG_TRACE(TRACE_FDC, "fdc write 8604 data=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		IoMem_ReadWord(0xff8604), nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
-	/* Is it an ASCII HD command? */
+	/* Is it an ACSI (or Falcon SCSI) HD command? */
 	if ( ( FDC_DMA.Mode & 0x0018 ) == 8 )
 	{
 		/*  Handle HDC functions */
-		HDC_WriteCommandPacket();
+		HDC_WriteCommandByte(FDC_DMA.Mode & 0x7, IoMem_ReadByte(0xff8605));
 		return;
 	}
 
@@ -2880,8 +2880,8 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 
 	if ((FDC_DMA.Mode & 0x18) == 0x08)				/* HDC status reg selected? */
 	{
-		/* return the HDC status reg */
-		DiskControllerByte = HDC_GetCommandStatus();
+		/* return the HDC status byte */
+		DiskControllerByte = HDC_ReadCommandByte(FDC_DMA.Mode & 0x7);
 	}
 	else if ((FDC_DMA.Mode & 0x18) == 0x18)				/* HDC sector counter??? */
 	{
