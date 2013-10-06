@@ -703,8 +703,8 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 	if (unlikely(pc == cpu_callinfo.return_pc) && likely(cpu_callinfo.depth)) {
 
 		flag = cpu_opcode_type(family, prev_pc, pc);
-		/* previous address can be exception return (RTE) if exception
-		 * occurred right after returning from subroutine call (RTS)
+		/* previous address can be exception return (e.g. RTE) instead of RTS,
+		 * if exception occurred right after returning from subroutine call.
 		 */
 		if (likely(flag == CALL_SUBRETURN || flag == CALL_EXCRETURN)) {
 			caller_pc = Profile_CallEnd(&cpu_callinfo, counters);
@@ -726,7 +726,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 	if (unlikely(idx >= 0)) {
 
 		flag = cpu_opcode_type(family, prev_pc, pc);
-		if (flag == CALL_SUBROUTINE) {
+		if (flag == CALL_SUBROUTINE || flag == CALL_EXCEPTION) {
 			/* special HACK for for EmuTOS AES switcher which
 			 * changes stack content to remove itself from call
 			 * stack and uses RTS for subroutine *calls*, not

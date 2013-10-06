@@ -11,6 +11,7 @@ Emulation:
   - Handle 0 byte line by switching freq in STE mode
 - CPU changes :
   - Fix a case when MFP's interrupt happens during the IACK sequence for HBL/VBL
+- Fix READ CAPACITY command result for ACSI hard disk images
 
 Emulator:
 - SDL GUI:
@@ -41,7 +42,7 @@ Tools:
   It can tell how many times loops were executed, how many times they
   spinned at minimum and maximum, at which VBL those happened, and what
   was the standard deviation of that.
-
+-Improved mingw cross-compilation support
 
 Fixed demos :
   Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
