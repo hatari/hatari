@@ -12,6 +12,9 @@ Emulation:
 - CPU changes :
   - Fix a case when MFP's interrupt happens during the IACK sequence for HBL/VBL
 - Fix READ CAPACITY command result for ACSI hard disk images
+- FDC changes :
+  - Add configurable RPM speed for each floppy drive
+  - Add support for the "Force Int on Index Pulse" command
 
 Emulator:
 - SDL GUI:
