@@ -391,7 +391,7 @@ typedef struct {
 	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one */
 								/* ([NP] FIXME : only possible during prepare+spinup phases ?) */
 
-	Uint8		ID_FieldLastSector;			/* Last sector number returned by Read Address (to simulate a spinning disk) */
+	Uint8		ID_FieldLastSector;			/* [REMOVE] Last sector number returned by Read Address (to simulate a spinning disk) */
 	bool		UpdateIndexPulse;			/* true if motor was stopped and we're starting a spin up sequence */
 	Uint64		IndexPulse_Time;			/* Clock value last time we had an index pulse with motor ON */
 	Uint64		CommandExpire_Time;			/* Clock value to abort a command if it didn't complete before */
@@ -1672,30 +1672,14 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
-#ifdef no_spin
-		/* TODO : for better FDC's emulation , we should measure the time it takes to spin the disk */
-		/* until we reach the next sector header. In the best case, the head would be just at the start */
-		/* of the sector header, which would mean 7 bytes to be read. */
-		/* So, the delay will be at least 7 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
-		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
-		FdcCycles = FDC_TransferByte_FdcCycles ( 7 );		/* Min delay to read 3xA1, FE, TR, SIDE, SR */
-
-#else
 		/* We search the sector FDC.SR during 5 revolutions max */
 		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_RNF );
 
 		/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
 		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
 		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
-#endif
 		break;
-
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
-		/* TODO : on a real FDC we should compare the sector header at the current */
-		/* spin's position to see if it's the same as FDC.SR. If not, we should wait */
-		/* for the next sector header and check again. After 5 revolutions, set RNF */
-
-#ifndef no_spin
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
 		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
 		{
@@ -1703,14 +1687,9 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 			break;
 		}
-#endif
 
 		/* Check if the current ID Field is the one we're looking for */
-#ifdef no_spin
-		if ( 1 )
-#else
 		if ( FDC.NextSector_ID_Field_SR == FDC.SR )
-#endif
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
@@ -1723,7 +1702,6 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
 		}
 		break;
-
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START:
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_DMA_InitTransfer ();				/* Update FDC_DMA.PosInBuffer */
@@ -1812,30 +1790,14 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA:
-#ifdef no_spin
-		/* TODO : for better FDC's emulation , we should measure the time it takes to spin the disk */
-		/* until we reach the next sector header. In the best case, the head would be just at the start */
-		/* of the sector header, which would mean 7 bytes to be read. */
-		/* So, the delay will be at least 7 bytes; during that time, FDC.SR can be changed (Delirious Demo 4) */
-		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
-		FdcCycles = FDC_TransferByte_FdcCycles ( 7 );		/* Min delay to read 3xA1, FE, TR, SIDE, SR */
-
-#else
 		/* We search the sector FDC.SR during 5 revolutions max */
 		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_RNF );
 
 		/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
 		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
 		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
-#endif
 		break;
-
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER:
-		/* TODO : on a real FDC we should compare the sector header at the current */
-		/* spin's position to see if it's the same as FDC.SR. If not, we should wait */
-		/* for the next sector header and check again. After 5 revolutions, set RNF */
-
-#ifndef no_spin
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
 		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
 		{
@@ -1843,14 +1805,9 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 			break;
 		}
-#endif
 
 		/* Check if the current ID Field is the one we're looking for */
-#ifdef no_spin
-		if ( 1 )
-#else
 		if ( FDC.NextSector_ID_Field_SR == FDC.SR )
-#endif
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
@@ -1947,65 +1904,11 @@ static int FDC_UpdateReadAddressCmd ( void )
 	/* Which command is running? */
 	switch (FDC.CommandState)
 	{
-#ifdef old_read_addr
-	int	Sector;
-	 case FDCEMU_RUN_READADDRESS:
-		Sector = FDC.ID_FieldLastSector + 1;		/* Increase sector from latest ID Field */
-		if ( Sector > FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) )
-			Sector = 1;
-
-		/* In the case of Hatari, only ST/MSA images are supported, so we build */
-		/* a simplified ID field based on current track/sector/side */
-		p = buf;
-		*p++ = 0xa1;					/* SYNC bytes and IAM byte are included in the CRC */
-		*p++ = 0xa1;
-		*p++ = 0xa1;
-		*p++ = 0xfe;
-		*p++ = HeadTrack[ FDC_DRIVE ];
-		FDC.SR = HeadTrack[ FDC_DRIVE ];		/* The 1st byte of the ID field is also copied into Sector Register */
-		*p++ = FDC_SIDE;
-		*p++ = Sector;
-		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
-
-		FDC_CRC16 ( buf , 8 , &CRC );
-
-		*p++ = CRC >> 8;
-		*p++ = CRC & 0xff;
-
-		FDC_DMA_InitTransfer ();			/* Update FDC_DMA.PosInBuffer */
-		memcpy ( DMADiskWorkSpace + FDC_DMA.PosInBuffer , buf + 4 , 6 );	/* Don't return the 3 x $A1 and $FE in the Address Field */
-		FDC_DMA.BytesToTransfer += 6;			/* 6 bytes per ID field */
-		FDC_DMA.PosInBuffer += 6;
-
-		FDC.CommandState = FDCEMU_RUN_READADDRESS_DMA;
-
-		/* Very simplified method to get correct timings when doing a Read Address just after an index pulse */
-		/* or after a previous Read Address. The right method is to use a timer to count bytes since the */
-		/* latest index pulse, but this would add too much complexity just to handle ST/MSA disk images. */
-		/* So we use a simpler method where ID_FieldLastSector is set to 0 when we simulate an index pulse. */
-		/* The number of bytes to skip should be exactly the same as the GAPs used in ReadTrack */
-		/* (allow Procopy to analyze an ST/MSA disk with the correct timings) */
-		if ( FDC.ID_FieldLastSector == 0 )				/* First Read Address just after an index pulse */
-			FdcCycles = FDC_TransferByte_FdcCycles ( 72 + 3 + 1 + 6 );	/* Skip 72+3+1 bytes then read 6 bytes */
-		else								/* Read Address after a previous sector was just read */
-			FdcCycles = FDC_TransferByte_FdcCycles ( 614 + 6 );	/* Skip 614 bytes then read 6 bytes */
-
-		FDC.ID_FieldLastSector = Sector;
-		break;
-	 case FDCEMU_RUN_READADDRESS_DMA:
-		FDC_DMA_ReadFromFloppy ();			/* Transfer bytes if 16 bytes or more are in the DMA buffer */
-
-		FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
-		FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
-		break;
-
-#else
 	 case FDCEMU_RUN_READADDRESS:
 		/* Read bytes to reach the next sector's ID field and add 10 more bytes to read this ID field */
 		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_DMA;
 		break;
-
 	 case FDCEMU_RUN_READADDRESS_DMA:
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
 		/* a standard ID field with a valid CRC based on current track/sector/side */
@@ -2039,8 +1942,6 @@ static int FDC_UpdateReadAddressCmd ( void )
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
 		FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		break;
-#endif
-
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
 		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
