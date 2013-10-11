@@ -19,6 +19,7 @@ const char Control_fileid[] = "Hatari control.c : " __DATE__ " " __TIME__;
 #include <sys/time.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include "main.h"
 #include "change.h"
@@ -292,13 +293,19 @@ static bool Control_Usage(const char *cmd)
 /*-----------------------------------------------------------------------*/
 /**
  * Parse Hatari debug/event/option/toggle/path/shortcut command buffer.
- * Given buffer is modified in-place.
  */
-void Control_ProcessBuffer(char *buffer)
+void Control_ProcessBuffer(const char *orig)
 {
-	char *cmd, *cmdend, *arg;
+	char *cmd, *cmdend, *arg, *buffer;
 	int ok = true;
-	
+
+	/* this is called from several different places,
+	 * so take a copy of the original buffer so
+	 * that it can be sliced & diced
+	 */
+	buffer = strdup(orig);
+	assert(buffer);
+
 	cmd = buffer;
 	do {
 		/* command terminator? */
@@ -350,6 +357,7 @@ void Control_ProcessBuffer(char *buffer)
 			cmd = cmdend + 1;
 		}
 	} while (ok && cmdend && *cmd);
+	free(buffer);
 }
 
 

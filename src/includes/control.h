@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-extern void Control_ProcessBuffer(char *buffer);
+extern void Control_ProcessBuffer(const char *buffer);
 
 /* supported only on BSD compatible / POSIX compliant systems */
 #if HAVE_UNIX_DOMAIN_SOCKETS
