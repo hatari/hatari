@@ -271,7 +271,7 @@ static bool Control_SetPath(char *name)
  */
 static bool Control_Usage(const char *cmd)
 {
-	fprintf(stderr, "ERROR: unrecognized hatari command: '%s'", cmd);
+	fprintf(stderr, "ERROR: unrecognized hatari command: '%s'!\n", cmd);
 	fprintf(stderr,
 		"Supported commands are:\n"
 		"- hatari-debug <Debug UI command>\n"
