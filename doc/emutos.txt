@@ -688,11 +688,13 @@ Several of these (and Falcon) games are by Paradize:
 	http://paradize.final-memory.org/games.shtml
 
 
-STE (enhanced) color music applications:
+STE (enhanced) music applications:
 - Blipp Blopper
+- EPSS
 - DeskTracker MT
 - Hextracker
 - MaxYMizer
+- MusicPlayer
 - Octalyzer
 - Paula
 - Protracker 2 STE
@@ -713,6 +715,7 @@ listed here in case someone, someday, starts to fix (EmuTOS for) them.
   rectangle drawing -> screen corruption + panic)
 - Breakdance (another scene game, game freezes when playing)
 - Cameleon (line-A bitblit, exits when starting game)
+- Protracker STE, Equinox version, NULL pointer crash on disk ops
 
 
 Atari TT programs
