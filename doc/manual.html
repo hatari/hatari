@@ -2633,19 +2633,19 @@ another one is set.
 <ul>
 <li>"break.ini":
 <pre>
-b GemdosOpcode = 0x3D :trace :file program.ini
+b GemdosOpcode = 0x3D :trace :once :file program.ini
 </pre>
 </li>
 <li>"program.ini":
 <pre>
-b pc = TEXT :trace :file trace.ini
+b pc = TEXT :trace :once :file trace.ini
 </pre>
 </li>
 <li>"trace.ini":
 <pre>
 symbols prg
 trace gemdos,cpu_symbols
-b VBL = "VBL+4" :trace :file disable.ini
+b VBL = "VBL+4" :trace :once :file disable.ini
 </pre>
 </li>
 <li>"disable.ini":
@@ -2679,11 +2679,16 @@ hatari --parse break.ini /path/to/your/program.tos
     all (remaining) breakpoints
 </ol>
 
-<p>
-<em>Note:</em> because debugger input files cannot "continue"
+<p><em>Note:</em></p>
+<ul>
+<li>Because debugger input files cannot "continue"
 emulation, ":trace" option needs to be used for the breakpoint(s)
-if you want emulation to continue after the breakpoint action(s).
-</p>
+if you want emulation to continue after the breakpoint action(s).</li>
+<li>In simpler breakpoint chain (like above), new breakpoint just
+replaces the previous one, ":once" option tells that breakpoint
+isn't needed after it's hit.
+</li>
+</ul>
 
 <p>
 Hint: It's better to test each input file separate before testing the
