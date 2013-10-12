@@ -22,6 +22,7 @@ Emulator:
 - SDL GUI:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
+- Fix: Xbios(255) modified the given argument string
 - Debugger:
   - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly.
   - Fix: "symbols" command crash when it was used during bootup.
@@ -54,7 +55,7 @@ Fixed demos :
   Sommarhack 2011 Invitro by DHS (CPU/MFP, top border not removed)
 
 Fixed games :
-  Reeking rumber (by nature), Falcon game
+  Reeking Rubber (by Nature), Falcon game
 
 
  Version 1.7.0 (2013-06-24):
