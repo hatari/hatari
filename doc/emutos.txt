@@ -610,13 +610,14 @@ Demos:
 - Kick my assembler (by Orion), start doesn't look right
 - Lavalamp (by Tobe)
 - Madness (by Cream)
-- Mathematica (by Aura)
-- More or Less Zero (by DHS)
 - Massacre (by DHS)
+- Mathematica (by Aura)
 - Maxymizer compo 2006 (by gwEm)
 - Meshake (by Spice Boys)
 - Mind Rewind (by Reservoir Gods)
+- More or Less Zero (by DHS)
 - MovieSTE (by Tony Barker)
+- Muda (by Live!)
 - Necrosys (by Hemoroids)
 - New Year -94 Intro (by Extream)
 - No Monkey (by Tomchi), some extra pixels in first text scroller
@@ -641,6 +642,7 @@ Demos:
 - Techno drugs (by NLC)
 - Tribute to Rainbow TOS
 - Tyranny (by DHS)
+- UFO (by Dune & Sector1)
 - Vision (by POV)
 - XiTEC Presentation (by Omega)
 
