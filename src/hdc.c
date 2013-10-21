@@ -906,7 +906,7 @@ void HDC_WriteCommandPacket(void)
 
 	/* have we received a complete 6-byte class 0 or 10-byte class 1 packet yet? */
 	if ((HDCCommand.opcode < 0x20 && HDCCommand.byteCount >= 6) ||
-		(HDCCommand.opcode < 0x40 && HDCCommand.byteCount >= 10))
+	    (HDCCommand.opcode < 0x60 && HDCCommand.byteCount >= 10))
 	{
 #ifdef HDC_REALLY_VERBOSE
 		HDC_DebugCommandPacket(stderr);
@@ -925,6 +925,15 @@ void HDC_WriteCommandPacket(void)
 
 		HDCCommand.readCount = 0;
 		HDCCommand.byteCount = 0;
+	}
+	else if (HDCCommand.opcode >= 0x60)
+	{
+		/* Commands >= 0x60 are not supported right now */
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+		nLastError = HD_REQSENS_OPCODE;
+		bSetLastBlockAddr = false;
+		FDC_AcknowledgeInterrupt();
+		HDCCommand.readCount = HDCCommand.byteCount = 0;
 	}
 	else
 	{
