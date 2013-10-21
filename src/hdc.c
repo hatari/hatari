@@ -416,7 +416,7 @@ static void HDC_Cmd_ReadCapacity(void)
 		STRam[nDmaAddr++] = 0x00;
 
 		/* Update DMA counter */
-		FDC_WriteDMAAddress(nDmaAddr + 8);
+		FDC_WriteDMAAddress(nDmaAddr);
 
 		HDCCommand.returnCode = HD_STATUS_OK;
 		nLastError = HD_REQSENS_OK;
