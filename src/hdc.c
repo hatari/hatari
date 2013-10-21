@@ -192,6 +192,10 @@ static void HDC_Cmd_Inquiry(void)
 	if (count > (int)sizeof(inquiry_bytes))
 		count = sizeof(inquiry_bytes);
 
+	/* For unsupported LUNs set the Peripheral Qualifier and the
+	 * Peripheral Device Type according to the SCSI standard */
+	inquiry_bytes[0] = HDC_GetDevice() == 0 ? 0 : 0x7F;
+
 	inquiry_bytes[4] = count - 8;
 
 	if (STMemory_SafeCopy(nDmaAddr, inquiry_bytes, count, "HDC DMA inquiry"))
@@ -907,8 +911,9 @@ void HDC_WriteCommandPacket(void)
 #ifdef HDC_REALLY_VERBOSE
 		HDC_DebugCommandPacket(stderr);
 #endif
-		/* If it's aimed for our drive, emulate it! */
-		if (HDC_GetDevice() == 0)
+		/* If it's aimed for our drive, emulate it!
+		 * INQUIRY must always be handled, see SCSI standard */
+		if (HDC_GetDevice() == 0 || HDCCommand.opcode == 0x12)
 		{
 			HDC_EmulateCommandPacket();
 		}
