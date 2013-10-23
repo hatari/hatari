@@ -519,6 +519,7 @@ void FDC_MemorySnapShot_Capture(bool bSave)
 {
 	MemorySnapShot_Store(&FDC, sizeof(FDC));
 	MemorySnapShot_Store(&FDC_DMA, sizeof(FDC_DMA));
+	MemorySnapShot_Store(&FDC_DRIVES, sizeof(FDC_DRIVE_STRUCT));
 	MemorySnapShot_Store(HeadTrack, sizeof(HeadTrack));
 
 	MemorySnapShot_Store(DMADiskWorkSpace, sizeof(DMADiskWorkSpace));
