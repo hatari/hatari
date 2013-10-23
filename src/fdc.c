@@ -336,7 +336,7 @@ enum
 #define	FDC_PHYSICAL_MAX_TRACK			90		/* Head can't go beyond 90 tracks */
 
 
-#define FDC_SIDE				( (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01 )	/* Side 0 or 1 */
+#define FDC_SIDE				( FDC.SideSignal )	/* Side 0 or 1 */
 #define	FDC_DRIVE				FDC_FindFloppyDrive()
 
 #define	FDC_STEP_RATE				( FDC.CR & 0x03 )	/* Bits 0 and 1 of the current type I command */
