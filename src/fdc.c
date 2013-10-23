@@ -393,7 +393,6 @@ typedef struct {
 	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one */
 								/* ([NP] FIXME : only possible during prepare+spinup phases ?) */
 
-	Uint8		ID_FieldLastSector;			/* [REMOVE] Last sector number returned by Read Address (to simulate a spinning disk) */
 	bool		UpdateIndexPulse;			/* true if motor was stopped and we're starting a spin up sequence */
 	Uint64		IndexPulse_Time;			/* Clock value last time we had an index pulse with motor ON */
 	Uint64		CommandExpire_Time;			/* Clock value to abort a command if it didn't complete before */
@@ -734,7 +733,6 @@ void FDC_Reset ( void )
 	FDC.DR = 0;
 	FDC.STR = 0;
 	FDC.StepDirection = 1;
-	FDC.ID_FieldLastSector = 1;
 
 	FDC.Command = FDCEMU_CMD_NULL;			/* FDC emulation command currently being executed */
 	FDC.CommandState = FDCEMU_RUN_NULL;
@@ -1748,7 +1746,6 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		{
 			FDC_DMA.BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
 			FDC_DMA.PosInBuffer += SectorSize;
-			FDC.ID_FieldLastSector = FDC.SR;
 
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP;
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Transfer blocks of 16 bytes from the sector we just read */
@@ -1867,7 +1864,6 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		{
 			FDC_DMA.BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
 			FDC_DMA.PosInBuffer += SectorSize;
-			FDC.ID_FieldLastSector = FDC.SR;
 				
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP;
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Transfer blocks of 16 bytes from the sector we just wrote */
@@ -2052,7 +2048,6 @@ static int FDC_UpdateReadTrackCmd ( void )
 				*buf++ = HeadTrack[ FDC_DRIVE ];			/* Track */
 				*buf++ = FDC_SIDE;					/* Side */
 				*buf++ = Sector;					/* Sector */
-				FDC.ID_FieldLastSector = Sector;
 				*buf++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
 				FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
 				*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
@@ -2666,7 +2661,6 @@ static int FDC_ExecuteTypeIVCommands ( void )
 
 	else if ( FDC.CR & 0x4 )					/* I2 set (0xD4) : IRQ on next index pulse */
 	{
-		FDC.ID_FieldLastSector = 0;				/* We simulate an index pulse now */
 		FdcCycles = FDC_TypeIV_ForceInterrupt ( false );
 	}
 
