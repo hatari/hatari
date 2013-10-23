@@ -533,21 +533,13 @@ void FDC_MemorySnapShot_Capture(bool bSave)
  */
 static void	FDC_SetDriveLedBusy ( void )
 {
-	int	ActiveDrive;
+	if ( FDC.DriveSelSignal < 0 )
+		return;						/* no drive selected */
 
-	/* Check Drive A first */
-	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x2)==0)
-		ActiveDrive = 0;
-	/* If off, check Drive B */
-	else if ((PSGRegisters[PSG_REG_IO_PORTA]&0x4)==0)
-		ActiveDrive = 1;
-	else
-		return;
-	
 	if ( FDC.SR & FDC_STR_BIT_BUSY )
-		Statusbar_SetFloppyLed ( ActiveDrive , LED_STATE_ON_BUSY );
+		Statusbar_SetFloppyLed ( FDC.DriveSelSignal , LED_STATE_ON_BUSY );
 	else
-		Statusbar_SetFloppyLed ( ActiveDrive , LED_STATE_ON );
+		Statusbar_SetFloppyLed ( FDC.DriveSelSignal , LED_STATE_ON );
 }
 
 
