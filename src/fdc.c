@@ -982,10 +982,10 @@ void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
  */
 static bool FDC_ValidFloppyDrive ( void )
 {
-	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x6)==0x6)
-		return false;						/* neither A: not B: are selected */
-	else
+	if ( FDC.DriveSelSignal >= 0 )
 		return true;
+	else
+		return false;						/* neither A: not B: are selected */
 }
 
 
