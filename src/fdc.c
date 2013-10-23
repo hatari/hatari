@@ -418,6 +418,7 @@ typedef struct {
 	bool		Enabled;
 	bool		DiskInserted;
 	int		RPM;					/* Rotation Per Minutes * 1000 */
+	int		Density;				/* 1 for DD (720 kB), 2 for HD (1.4 MB), 4 for ED (2.8 MB) */
 	Uint8		HeadTrack;				/* Current position of the head */
 //	Uint8		Motor;					/* State of the drive's motor : 0=OFF 1=ON */
 } FDC_DRIVE_STRUCT;
