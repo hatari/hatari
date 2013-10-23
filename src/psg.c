@@ -127,6 +127,7 @@ const char PSG_fileid[] = "Hatari psg.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "statusbar.h"
 #include "mfp.h"
+#include "fdc.h"
 
 
 Uint8 PSGRegisterSelect;        /* Write to 0xff8800 sets the register number used in read/write accesses */
@@ -255,6 +256,8 @@ Uint8 PSG_Get_DataRegister(void)
  */
 void PSG_Set_DataRegister(Uint8 val)
 {
+	Uint8	val_old;
+
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -274,6 +277,9 @@ void PSG_Set_DataRegister(Uint8 val)
 	/* When a read is made from $ff8800 without changing PSGRegisterSelect, we should return */
 	/* the non masked value. */
 	PSGRegisterReadData = val;			/* store non masked value for PSG_Get_DataRegister */
+
+	/* Read previous content */
+	val_old = PSGRegisters[PSGRegisterSelect];
 
 	/* Copy value to PSGRegisters[] */
 	PSGRegisters[PSGRegisterSelect] = val;
@@ -341,6 +347,9 @@ void PSG_Set_DataRegister(Uint8 val)
 		{
 			Statusbar_SetFloppyLed(DRIVE_LED_B, LED_STATE_OFF);
 		}
+
+		/* Report a possible drive/side change */
+		FDC_SetDriveSide ( val_old & 7 , PSGRegisters[PSG_REG_IO_PORTA] & 7 );
 
 		/* Bit 3 - Centronics as input */
 		if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<3))

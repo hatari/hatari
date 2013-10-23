@@ -382,6 +382,8 @@ typedef struct {
 	int		StepDirection;				/* +1 (Step In) or -1 (Step Out) */
 
 //	Uint8		MotorSignal;				/* 0=OFF 1=ON */
+	Uint8		SideSignal;				/* Side 0 or 1 */
+	int		DriveSelSignal;				/* 0 or 1 for drive A or B ; or -1 if no drive selected */
 
 	
 	/* Other variables */
@@ -938,6 +940,43 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Handle a write in the IO_PORTA register $E through $ff8802. Only bits
+ * 0-2 are available here, others are masked to 0.
+ * bit 0 : side select
+ * bit 1-2 : drive select
+ *
+ * If both drives are selected, we keep only drive 0
+ */
+void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
+{
+	int	Side;
+	int	Drive;
+
+	if ( io_porta_old == io_porta_new )
+		return;							/* No change */
+
+	Side = ( (~io_porta_new) & 0x01 );				/* Side 0 or 1 */
+
+	Drive = -1;							/* By default, don't select any drive */
+
+	/* Check drive 1 first */
+	if ( ( io_porta_new & 0x04 ) == 0 )
+		Drive = 1;						/* Select drive 1 */
+
+	/* If both drive 0 and drive 1 are enabled, we keep only drive 0 as newdrive */
+	if ( ( io_porta_new & 0x02 ) == 0 )
+		Drive = 0;						/* Select drive 0 (and un-select drive 1 if set above) */
+
+	LOG_TRACE(TRACE_FDC, "fdc change drive/side io_porta_old=0x%x io_porta_new=0x%x side %d->%d drive %d->%d VBL=%d HBL=%d\n" ,
+		  io_porta_old , io_porta_new , FDC.SideSignal , Side , FDC.DriveSelSignal , Drive , nVBLs , nHBL );
+
+	FDC.SideSignal = Side;
+	FDC.DriveSelSignal = Drive;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Check if a floppy drive is selected
  * If not, we should ignore the corresponding FDC commands
  */
@@ -1226,7 +1265,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 		NextSector = i+1;
 	}
 
-//fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, NextSector );
+//fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d maxsr=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, MaxSector, NextSector );
 	FDC.NextSector_ID_Field_SR = NextSector;
 	return NbBytes;
 }
