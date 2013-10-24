@@ -371,6 +371,10 @@ static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 
 
 #define	FDC_FAST_FDC_FACTOR			10		/* Divide all delays by this value when --fastfdc is used */
 
+#define	FDC_DENSITY_FACTOR_DD			1
+#define	FDC_DENSITY_FACTOR_HD			2		/* For a HD disk, we get x2 bytes than DD */
+#define	FDC_DENSITY_FACTOR_ED			4		/* For a ED disk, we get x4 bytes than DD */
+
 
 typedef struct {
 	/* WD1772 internal registers */
@@ -458,6 +462,7 @@ static bool	FDC_ValidFloppyDrive ( void );
 static int	FDC_FindFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Track );
+static int	FDC_GetDensity ( int Drive );
 
 static int	FDC_GetBytesPerTrack ( void );
 static void	FDC_IndexPulse_Init ( void );
@@ -704,7 +709,9 @@ void FDC_Init ( void )
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
 		FDC_DRIVES[ i ].Enabled = true;
+		FDC_DRIVES[ i ].DiskInserted = false;
 		FDC_DRIVES[ i ].RPM = FDC_RPM_STANDARD * 1000;
+		FDC_DRIVES[ i ].Density = FDC_DENSITY_FACTOR_DD;
 		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
 	}
 
@@ -938,7 +945,10 @@ static bool FDC_DMA_WriteToFloppy ( void )
 void	FDC_InsertFloppy ( int Drive )
 {
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
+	{
 		FDC_DRIVES[ Drive ].DiskInserted = true;
+		FDC_DRIVES[ Drive ].Density = FDC_GetDensity ( Drive );
+	}
 }
 
 
@@ -1058,6 +1068,29 @@ static int FDC_GetSidesPerDisk ( int Track )
 		return 0;
 }
 
+
+/*
+ * A DD track is usually 9 or 10 sectors, but to handle HD or ED
+ * ST/MSA disk images, we check if we have more than 18 or 36 sectors.
+ * In that case, we use a x2 or x4 factor for theses disks.
+ */
+static int FDC_GetDensity ( int Drive )
+{
+	Uint16	SectorsPerTrack;
+
+	if ( EmulationDrives[ Drive ].bDiskInserted )
+	{
+		Floppy_FindDiskDetails ( EmulationDrives[ Drive ].pBuffer , EmulationDrives[ Drive ].nImageBytes , &SectorsPerTrack , NULL );
+		if ( SectorsPerTrack >= 36 )
+			return FDC_DENSITY_FACTOR_ED;			/* Simulate a ED disk, 36 sectors or more */
+		else if ( SectorsPerTrack >= 18 )
+			return FDC_DENSITY_FACTOR_HD;			/* Simulate a HD disk, between 18 and 36 sectors */
+		else
+			return FDC_DENSITY_FACTOR_DD;			/* Normal DD disk */
+	}
+	else
+		return FDC_DENSITY_FACTOR_DD;				/* No disk, default to Double Density */
+}
 
 
 /*-----------------------------------------------------------------------*/
