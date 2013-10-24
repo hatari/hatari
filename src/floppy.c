@@ -41,6 +41,7 @@ const char Floppy_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
 #include "zip.h"
 #include "screen.h"
 #include "video.h"
+#include "fdc.h"
 
 
 /* Emulation drive details, eg FileName, Inserted, Changed etc... */
@@ -532,6 +533,8 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	EmulationDrives[Drive].bContentsChanged = false;
 	EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
 	Floppy_DriveTransitionSetState ( Drive , FLOPPY_DRIVE_TRANSITION_STATE_INSERT );
+	FDC_InsertFloppy ( Drive );
+
 	Log_Printf(LOG_INFO, "Inserted disk '%s' to drive %c:.",
 		   filename, 'A'+Drive);
 	return true;
@@ -582,6 +585,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			   'A'+Drive);
 
 		Floppy_DriveTransitionSetState ( Drive , FLOPPY_DRIVE_TRANSITION_STATE_EJECT );
+		FDC_EjectFloppy ( Drive );
 		bEjected = true;
 	}
 

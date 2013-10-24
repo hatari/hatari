@@ -932,6 +932,30 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * This function is called when a floppy is inserted in a drive
+ * using the UI or command line parameters
+ */
+void	FDC_InsertFloppy ( int Drive )
+{
+	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
+		FDC_DRIVES[ Drive ].DiskInserted = true;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * This function is called when a floppy is ejected from a drive
+ * using the UI or command line parameters
+ */
+void	FDC_EjectFloppy ( int Drive )
+{
+	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
+		FDC_DRIVES[ Drive ].DiskInserted = false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Handle a write in the IO_PORTA register $E through $ff8802. Only bits
  * 0-2 are available here, others are masked to 0.
  * bit 0 : side select
