@@ -87,14 +87,14 @@ static unsigned char inquiry_bytes[] =
 {
 	0,                /* device type 0 = direct access device */
 	0,                /* device type qualifier (nonremovable) */
-	1,                /* ANSI version */
+	1,                /* ACSI/SCSI version */
 	0,                /* reserved */
-	26,               /* length of the following data */
-	' ', ' ', ' ',                         /* Vendor specific data */
-	'H','a','t','a','r','i',' ',' ',       /* Vendor */
-	'E','m','u','l','a','t','e','d',       /* Model */
-	' ',' ',' ',' ',                       /* Revision */
-	0,0,0,0,0,0,0,0,0,0                    /* ?? */
+	31,               /* length of the following data */
+	0, 0, 0,          /* Vendor specific data */
+	'H','a','t','a','r','i',' ',' ',    /* Vendor ID */
+	'E','m','u','l','a','t','e','d',    /* Product ID 1 */
+	'H','a','r','d','d','i','s','k',    /* Product ID 2 */
+	'0','1','8','0',                    /* Revision */
 };
 
 
@@ -196,7 +196,7 @@ static void HDC_Cmd_Inquiry(void)
 	 * Peripheral Device Type according to the SCSI standard */
 	inquiry_bytes[0] = HDC_GetDevice() == 0 ? 0 : 0x7F;
 
-	inquiry_bytes[4] = count - 8;
+	inquiry_bytes[4] = count - 5;
 
 	if (STMemory_SafeCopy(nDmaAddr, inquiry_bytes, count, "HDC DMA inquiry"))
 		HDCCommand.returnCode = HD_STATUS_OK;
