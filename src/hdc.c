@@ -72,7 +72,7 @@ short int HDCSectorCount;
 bool bAcsiEmuOn = false;
 
 static FILE *hd_image_file = NULL;
-static Uint32 nLastBlockAddr;
+static Uint32 nLastBlockAddr;         /* The specified sector number */
 static bool bSetLastBlockAddr;
 static Uint8 nLastError;
 
@@ -108,16 +108,16 @@ static unsigned char HDC_GetDevice(void)
 }
 
 /**
- * Return the file offset of the sector specified in the current ACSI command block.
+ * Return the start sector (logical block address) specified in the
+ * current ACSI/SCSI command block.
  */
-static unsigned long HDC_GetOffset(void)
+static unsigned long HDC_GetLBA(void)
 {
 	/* offset = logical block address * 512 */
-	return HDCCommand.opcode < 0x20?
-		// class 0
-		(HDC_ReadInt24(HDCCommand.command, 1) & 0x1FFFFF) << 9 :
-		// class 1
-		HDC_ReadInt32(HDCCommand.command, 2) << 9;
+	if (HDCCommand.opcode < 0x20)				/* Class 0? */
+		return HDC_ReadInt24(HDCCommand.command, 1) & 0x1FFFFF;
+	else
+		return HDC_ReadInt32(HDCCommand.command, 2);	/* Class 1 */
 }
 
 /**
@@ -153,9 +153,9 @@ static unsigned char HDC_GetControl(void)
  */
 static void HDC_Cmd_Seek(void)
 {
-	nLastBlockAddr = HDC_GetOffset();
+	nLastBlockAddr = HDC_GetLBA();
 
-	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) == 0)
+	if (fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) == 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_OK;
 		nLastError = HD_REQSENS_OK;
@@ -443,10 +443,10 @@ static void HDC_Cmd_WriteSector(void)
 {
 	int n = 0;
 
-	nLastBlockAddr = HDC_GetOffset();
+	nLastBlockAddr = HDC_GetLBA();
 
 	/* seek to the position */
-	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) != 0)
+	if (fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) != 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_INVADDR;
@@ -497,15 +497,15 @@ static void HDC_Cmd_ReadSector(void)
 {
 	int n;
 
-	nLastBlockAddr = HDC_GetOffset();
+	nLastBlockAddr = HDC_GetLBA();
 
 #ifdef HDC_VERBOSE
-	fprintf(stderr,"Reading %i sectors from 0x%x to addr: 0x%x\n",
+	fprintf(stderr,"Reading %i sectors starting from 0x%x to addr: 0x%x\n",
 	        HDC_GetCount(), nLastBlockAddr, FDC_GetDMAAddress());
 #endif
 
 	/* seek to the position */
-	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) != 0)
+	if (fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) != 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_INVADDR;
@@ -708,7 +708,7 @@ static void HDC_DebugCommandPacket(FILE *hdlogFile)
 
 	fprintf(hdlogFile, "Target: %i\n", HDCCommand.target);
 	fprintf(hdlogFile, "Device: %i\n", HDC_GetDevice());
-	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetOffset()/512);
+	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetLBA());
 
 	fprintf(hdlogFile, "Sector count: 0x%x\n", HDC_GetCount());
 	fprintf(hdlogFile, "HDC sector count: 0x%x\n", HDCSectorCount);
