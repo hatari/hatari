@@ -66,6 +66,12 @@
 /* Define to 1 if you have the 'statvfs' function. */
 #cmakedefine HAVE_STATVFS 1
 
+/* Define to 1 if you have the 'fseeko' function. */
+#cmakedefine HAVE_FSEEKO 1
+
+/* Define to 1 if you have the 'ftello' function. */
+#cmakedefine HAVE_FTELLO 1
+
 
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "@BIN2DATADIR@"
