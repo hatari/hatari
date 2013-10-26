@@ -18,8 +18,9 @@
   in the sound and it simply doesn't work. If the emulator cannot keep the
   speed, users will have to turn off the sound - that's it.
 
-  The new version of the sound core uses some code/ideas from the following GPL projects :
+  The new version of the sound core uses/used some code/ideas from the following GPL projects :
     - tone and noise steps computations are from StSound 1.2 by Arnaud Carré (Leonard/Oxygene)
+      (not used since Hatari 1.1.0)
     - 5 bits volume table and 16*16*16 combinations of all volume are from Sc68 by Benjamin Gerard
     - 4 bits to 5 bits volume interpolation from 16*16*16 to 32*32*32 from YM blep synthesis by Antti Lankila
 
