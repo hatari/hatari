@@ -1028,7 +1028,16 @@ void HDC_WriteCommandByte(int addr, Uint8 byte)
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 		Ncr5380_WriteByte(addr, byte);
 	else if (bAcsiEmuOn)
+	{
+		if ((addr & 2) == 0)
+		{
+			/* When the HD driver pulls the A1 pin to zero,
+			 * it wants to start a new command */
+			HDCCommand.readCount = 0;
+			HDCCommand.byteCount = 0;
+		}
 		HDC_WriteCommandPacket(byte);
+	}
 }
 
 /**
