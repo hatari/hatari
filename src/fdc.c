@@ -703,6 +703,8 @@ void FDC_Init ( void )
 {
 	int	i;
 
+        LOG_TRACE ( TRACE_FDC , "fdc init\n" );
+
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 		HeadTrack[ i ] = 0;			/* Set all drives to track 0 */
 
@@ -724,15 +726,30 @@ FDC_NextIndexPulse_NbBytes();		// REMOVE : avoid gcc warning on unused function
 /**
  * Reset variables used in FDC and DMA emulation
  */
-void FDC_Reset ( void )
-{
-	/* Clear out FDC registers */
 
+/* This function is called after a hardware reset of the FDC.
+ * Cold reset is when the computer is turned off/on.
+ * Warm reset is when the reset button is pressed or the 68000
+ * RESET instruction is used.
+ * On warm reset, TR and DR should not be reset.
+ * STR is set to 0 and SR is set to 1 (verified on a real STF)
+ */
+void FDC_Reset ( bool bCold )
+{
+        LOG_TRACE ( TRACE_FDC , "fdc reset mode=%s\n" , bCold?"cold":"warm" );
+
+	/* Clear out FDC registers */
 	FDC.CR = 0;
-	FDC.TR = 0;
-	FDC.SR = 1;
-	FDC.DR = 0;
 	FDC.STR = 0;
+	FDC.SR = 1;
+
+	/* On cold reset, TR and DR should be reset */
+	/* On warm reset, TR and DR value should be kept */
+	if ( bCold )
+	{
+		FDC.TR = 0;
+		FDC.DR = 0;
+	}
 	FDC.StepDirection = 1;
 
 	FDC.Command = FDCEMU_CMD_NULL;			/* FDC emulation command currently being executed */

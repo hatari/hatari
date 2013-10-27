@@ -64,7 +64,7 @@ void customreset(void)
 	MFP_Reset ();
 
 	/* Reset the FDC */
-	FDC_Reset ();
+	FDC_Reset ( false );
 }
 
 

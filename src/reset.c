@@ -65,7 +65,7 @@ static int Reset_ST(bool bCold)
 	GemDOS_Reset();               /* Reset GEMDOS emulation */
 	if (bCold)
 	{
-		FDC_Reset();                /* Reset FDC */
+		FDC_Reset( bCold );	/* Reset FDC */
 	}
 	Floppy_Reset();			/* Reset Floppy */
 
