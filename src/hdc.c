@@ -883,10 +883,13 @@ static void HDC_WriteCommandPacket(Uint8 b)
 		return;
 	}
 
-	/* Successfully received one byte, so increase the byte-count, but in extended mode skip the first byte */
+	/* Successfully received one byte, so increase the byte-count
+	 * (but in extended mode skip the first byte) */
 	if (!HDCCommand.extended || HDCCommand.readCount != 0)
 	{
-		HDCCommand.command[HDCCommand.byteCount++] = b;
+		if (HDCCommand.byteCount < (int)sizeof(HDCCommand.command))
+			HDCCommand.command[HDCCommand.byteCount] = b;
+		HDCCommand.byteCount += 1;
 	}
 	++HDCCommand.readCount;
 
@@ -919,7 +922,12 @@ static void HDC_WriteCommandPacket(Uint8 b)
 		nLastError = HD_REQSENS_OPCODE;
 		bSetLastBlockAddr = false;
 		FDC_AcknowledgeInterrupt();
-		HDCCommand.readCount = HDCCommand.byteCount = 0;
+		FDC_SetDMAStatus(false);
+#ifdef HDC_VERBOSE
+		if (HDCCommand.byteCount == 10)
+			Log_Printf(LOG_WARN, "HDC: Unsupported command 0x%02x\n",
+			           HDCCommand.opcode);
+#endif
 	}
 	else
 	{
