@@ -565,6 +565,17 @@ void Main_SetTitle(const char *title)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Initialise emulation for some hardware components
+ * It is required to init those parts before parsing the parameters,
+ * (for example, we should init FDC before inserting a disk)
+ */
+static void Main_Init_HW(void)
+{
+	FDC_Init();
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Initialise emulation
  */
 static void Main_Init(void)
@@ -600,7 +611,7 @@ static void Main_Init(void)
 
 	DSP_Init();
 	Floppy_Init();
-	FDC_Init();
+//	FDC_Init();
 	M68000_Init();                /* Init CPU emulation */
 	Audio_Init();
 	Keymap_Init();
@@ -742,7 +753,10 @@ int main(int argc, char *argv[])
 	/* Initialize directory strings */
 	Paths_Init(argv[0]);
 
-	/* Set default configuration values: */
+	/* Init some HW components before parsing the configuration / parameters */
+	Main_Init_HW();
+
+	/* Set default configuration values */
 	Configuration_SetDefault();
 
 	/* Now load the values from the configuration file */
