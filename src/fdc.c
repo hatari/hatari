@@ -955,6 +955,8 @@ static bool FDC_DMA_WriteToFloppy ( void )
  */
 void	FDC_InsertFloppy ( int Drive )
 {
+        LOG_TRACE ( TRACE_FDC , "fdc insert drive=%d\n" , Drive );
+
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 	{
 		FDC_DRIVES[ Drive ].DiskInserted = true;
@@ -970,6 +972,8 @@ void	FDC_InsertFloppy ( int Drive )
  */
 void	FDC_EjectFloppy ( int Drive )
 {
+        LOG_TRACE ( TRACE_FDC , "fdc eject drive=%d\n" , Drive );
+
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 		FDC_DRIVES[ Drive ].DiskInserted = false;
 }
@@ -1488,28 +1492,30 @@ static void FDC_VerifyTrack ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )		/* Set RNF bit if no disk is inserted */
+	/* Set RNF if no drive selected, or drive not enabled, or no disk in drive */
+	if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+		|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
 	{
-		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed no disk in drive=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed disabled/empty drive=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
 		return;
 	}
 
-	/* In the case of Hatari when using ST/MSA images, the physical track and the track register */
-	/* should always be the same. Else, it means TR was not correctly set before running the type I command */
-	if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack != FDC.TR )
+	/* Most of time, the physical track and the track register should be the same. */
+	/* Else, it means TR was not correctly set before running the type I command */
+	if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack != FDC.TR )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed TR=0x%x head=0x%x drive=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_DRIVE ,
+			FDC.TR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal ,
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
 		return;
 	}
 
-	/* In the case of Hatari when using ST/MSA images, the track is always the correct one */
+	/* The track is the correct one */
 	FDC_Update_STR ( FDC_STR_BIT_RNF , 0 );				/* remove RNF bit */
 }
 
@@ -1551,8 +1557,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		/* The FDC will try 255 times to reach track 0 using step out signals */
 		/* If track 0 signal is not detected after 255 attempts, the command is interrupted */
 		/* and FDC_STR_BIT_RNF is set in the Status Register. */
-		/* This will never happen in the case of Hatari, because the physical track can't go */
-		/* beyond track FDC_PHYSICAL_MAX_TRACK (=90) */
+		/* This can happen if no drive is selected or if the selected drive is disabled */
 		/* TR should be set to 255 once the spin-up sequence is made and the command */
 		/* can't be interrupted anymore by another command (else TR value will be wrong */
 		/* for other type I commands) */
@@ -1560,20 +1565,22 @@ static int FDC_UpdateRestoreCmd ( void )
 		FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP;	/* continue in the _LOOP state */
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP:
 		if ( FDC.TR == 0 )					/* Track 0 not reached after 255 attempts ? */
-		{							/* (this should never happen in the case of Hatari) */
+		{							/* (this can happen if the drive is disabled) */
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			FdcCycles = FDC_CmdCompleteCommon( true );
 		}
 
-		if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack != 0 )		/* Are we at track zero ? */
+		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+			|| ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack != 0 ) )	/* Are we at track zero ? */
 		{
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			FDC.TR--;					/* One less attempt */
-			FDC_DRIVES[ FDC_DRIVE ].HeadTrack--;		/* Move physical head */
+			if ( ( FDC.DriveSelSignal >= 0 ) && ( FDC_DRIVES[ FDC.DriveSelSignal ].Enabled ) )
+				FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack--;	/* Move physical head only if an enabled drive is selected */
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
 		}
-		else
+		else							/* Drive is enabled and head is at track 0 */
 		{
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 			FDC.TR = 0;					/* Update Track Register to 0 */
@@ -1637,30 +1644,32 @@ static int FDC_UpdateSeekCmd ( void )
 			/* Move head by one track depending on FDC.StepDirection and update Track Register */
 			FDC.TR += FDC.StepDirection;
 
-			if ( ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
-			{
-				FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
-				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
-			}
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
+			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* By default, unset bit TR00 */
 
-			else if ( ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 ) && ( FDC.StepDirection == -1 ) )
+			/* Check / move physical head only if an enabled drive is selected */
+			if ( ( FDC.DriveSelSignal >= 0 ) && ( FDC_DRIVES[ FDC.DriveSelSignal ].Enabled ) )
 			{
-				FDC.TR = 0;				/* If we reach track 0, we stop there */
-				FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
-				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
-			}
+				if ( ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
+				{
+					FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
+					FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
+				}
 
-			else
-			{
-				FDC_DRIVES[ FDC_DRIVE ].HeadTrack += FDC.StepDirection;	/* Move physical head */
-				FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
+				else if ( ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == 0 ) && ( FDC.StepDirection == -1 ) )
+				{
+					FDC.TR = 0;			/* If we reach track 0, we stop there */
+					FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
+					FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+				}
+
+				else
+					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack += FDC.StepDirection;	/* Move physical head */
+
+				if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == 0 )
+					FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 			}
 		}
-
-		if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 )
-			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
-		else
-			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY:
@@ -1708,22 +1717,24 @@ static int FDC_UpdateStepCmd ( void )
 		if ( FDC.CR & FDC_COMMAND_BIT_UPDATE_TRACK )
 			FDC.TR += FDC.StepDirection;			/* Update Track Register */
 
-		if ( ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
-			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
+		FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
+		FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );		/* By default, unset bit TR00 */
 
-		else if ( ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 ) && ( FDC.StepDirection == -1 ) )
-			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go before track 0 */
-
-		else
+		/* Check / move physical head only if an enabled drive is selected */
+		if ( ( FDC.DriveSelSignal >= 0 ) && ( FDC_DRIVES[ FDC.DriveSelSignal ].Enabled ) )
 		{
-			FDC_DRIVES[ FDC_DRIVE ].HeadTrack += FDC.StepDirection;	/* Move physical head */
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
-		}
+			if ( ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
 
-		if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 )
-			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
-		else
-			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
+			else if ( ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == 0 ) && ( FDC.StepDirection == -1 ) )
+				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go before track 0 */
+
+			else
+				FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack += FDC.StepDirection;	/* Move physical head */
+
+			if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == 0 )
+				FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+		}
 
 		FDC.CommandState = FDCEMU_RUN_STEP_VERIFY;
 		break;
@@ -1731,7 +1742,7 @@ static int FDC_UpdateStepCmd ( void )
 		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 		{
 			FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_LOOP;
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD	)		/* Head settle delay */
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD )			/* Head settle delay */
 				+ FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
 		}
 		else
