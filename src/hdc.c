@@ -155,7 +155,8 @@ static void HDC_Cmd_Seek(void)
 {
 	nLastBlockAddr = HDC_GetLBA();
 
-	if (fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) == 0)
+	if (nLastBlockAddr < hdSize &&
+	    fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) == 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_OK;
 		nLastError = HD_REQSENS_OK;
@@ -446,7 +447,8 @@ static void HDC_Cmd_WriteSector(void)
 	nLastBlockAddr = HDC_GetLBA();
 
 	/* seek to the position */
-	if (fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) != 0)
+	if (nLastBlockAddr >= hdSize ||
+	    fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) != 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_INVADDR;
@@ -505,7 +507,8 @@ static void HDC_Cmd_ReadSector(void)
 #endif
 
 	/* seek to the position */
-	if (fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) != 0)
+	if (nLastBlockAddr >= hdSize ||
+	    fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) != 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_INVADDR;
