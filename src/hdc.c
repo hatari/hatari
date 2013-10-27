@@ -100,9 +100,10 @@ static unsigned char inquiry_bytes[] =
 
 /*---------------------------------------------------------------------*/
 /**
- * Return the device specified in the current ACSI command block.
+ * Return the LUN (logical unit number) specified in the current
+ * ACSI/SCSI command block.
  */
-static unsigned char HDC_GetDevice(void)
+static unsigned char HDC_GetLUN(void)
 {
 	return (HDCCommand.command[1] & 0xE0) >> 5;
 }
@@ -195,7 +196,7 @@ static void HDC_Cmd_Inquiry(void)
 
 	/* For unsupported LUNs set the Peripheral Qualifier and the
 	 * Peripheral Device Type according to the SCSI standard */
-	inquiry_bytes[0] = HDC_GetDevice() == 0 ? 0 : 0x7F;
+	inquiry_bytes[0] = HDC_GetLUN() == 0 ? 0 : 0x7F;
 
 	inquiry_bytes[4] = count - 5;
 
@@ -224,11 +225,11 @@ static void HDC_Cmd_RequestSense(void)
 	int nRetLen;
 	Uint8 retbuf[22];
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr,"HDC: Request Sense.\n");
-#endif
-
 	nRetLen = HDC_GetCount();
+
+#ifdef HDC_VERBOSE
+	fprintf(stderr,"HDC: Request Sense with length = %i.\n", nRetLen);
+#endif
 
 	if ((nRetLen < 4 && nRetLen != 0) || nRetLen > 22)
 	{
@@ -276,7 +277,7 @@ static void HDC_Cmd_RequestSense(void)
 		 case HD_REQSENS_OPCODE:  retbuf[2] = 5; break;
 		 case HD_REQSENS_INVADDR:  retbuf[2] = 5; break;
 		 case HD_REQSENS_INVARG:  retbuf[2] = 5; break;
-		 case HD_REQSENS_NODRIVE:  retbuf[2] = 2; break;
+		 case HD_REQSENS_INVLUN:  retbuf[2] = 5; break;
 		 default: retbuf[2] = 4; break;
 		}
 		retbuf[7] = 14;
@@ -710,11 +711,11 @@ static void HDC_DebugCommandPacket(FILE *hdlogFile)
 	}
 
 	fprintf(hdlogFile, "Target: %i\n", HDCCommand.target);
-	fprintf(hdlogFile, "Device: %i\n", HDC_GetDevice());
+	fprintf(hdlogFile, "LUN: %i\n", HDC_GetLUN());
 	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetLBA());
 
 	fprintf(hdlogFile, "Sector count: 0x%x\n", HDC_GetCount());
-	fprintf(hdlogFile, "HDC sector count: 0x%x\n", HDCSectorCount);
+	//fprintf(hdlogFile, "HDC sector count: 0x%x\n", HDCSectorCount);
 	//fprintf(hdlogFile, "FDC sector count: 0x%x\n", FDCSectorCountRegister);
 	fprintf(hdlogFile, "Control byte: 0x%x\n", HDC_GetControl());
 }
@@ -900,16 +901,22 @@ static void HDC_WriteCommandPacket(Uint8 b)
 #ifdef HDC_REALLY_VERBOSE
 		HDC_DebugCommandPacket(stderr);
 #endif
-		/* If it's aimed for our drive, emulate it!
-		 * INQUIRY must always be handled, see SCSI standard */
-		if (HDC_GetDevice() == 0 || HDCCommand.opcode == 0x12)
+		/* We currently only support LUN 0, however INQUIRY must
+		 * always be handled, see SCSI standard */
+		if (HDC_GetLUN() == 0 || HDCCommand.opcode == HD_INQUIRY)
 		{
 			HDC_EmulateCommandPacket();
 		}
 		else
 		{
-			Log_Printf(LOG_WARN, "HDC: Access to non-existing drive.\n");
-			HDCCommand.returnCode = HD_STATUS_ERROR;
+			Log_Printf(LOG_WARN, "HDC: Access to non-existing LUN."
+				   " Command = 0x%02x\n", HDCCommand.opcode);
+			nLastError = HD_REQSENS_INVLUN;
+			/* REQUEST SENSE is still handled for invalid LUNs */
+			if (HDCCommand.opcode == HD_REQ_SENSE)
+				HDC_Cmd_RequestSense();
+			else
+				HDCCommand.returnCode = HD_STATUS_ERROR;
 		}
 
 		HDCCommand.readCount = 0;
