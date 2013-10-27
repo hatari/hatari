@@ -748,10 +748,9 @@ static void HDC_GetInfo(void)
 		return;
 	}
 
-	hdSize = HDC_ReadInt32(hdinfo, 0);
-
 #ifdef HDC_VERBOSE
-	fprintf(stderr, "Total disk size %li Mb\n", hdSize>>11);
+	fprintf(stderr, "Total disk size according to MBR: %i Mb\n",
+		HDC_ReadInt32(hdinfo, 0) >> 11);
 	/* flags for each partition entry are zero if they are not valid */
 	fprintf(stderr, "Partition 0 exists?: %s\n", (hdinfo[4] != 0)?"Yes":"No");
 	fprintf(stderr, "Partition 1 exists?: %s\n", (hdinfo[4+12] != 0)?"Yes":"No");
@@ -775,17 +774,20 @@ bool HDC_Init(void)
 {
 	char *filename;
 	bAcsiEmuOn = false;
+	off_t filesize;
 
 	if (!ConfigureParams.HardDisk.bUseHardDiskImage)
 		return false;
 	filename = ConfigureParams.HardDisk.szHardDiskImage;
 
-	/* Sanity check - is file length a multiple of 512? */
-	if (File_Length(filename) & 0x1ff)
+	/* Get size and do a sanity check - is file length a multiple of 512? */
+	filesize = File_Length(filename);
+	if (filesize <= 0 || (filesize & 0x1ff) != 0)
 	{
 		Log_Printf(LOG_ERROR, "HD file '%s' has strange size!\n", filename);
 		return false;
 	}
+	hdSize = filesize / 512;
 
 	if ((hd_image_file = fopen(filename, "rb+")) == NULL)
 	{
