@@ -1523,6 +1523,7 @@ static void FDC_VerifyTrack ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * When the motor really stops (2 secs after the last command), clear all related bits in SR
+ * We clear motor bit, but spinup bit remains to 1 (verified on a real STF)
  */
 static int FDC_UpdateMotorStop ( void )
 {
@@ -1532,8 +1533,7 @@ static int FDC_UpdateMotorStop ( void )
 	LOG_TRACE(TRACE_FDC, "fdc motor stopped VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON | FDC_STR_BIT_SPIN_UP , 0 );	/* Unset motor and spinup bits */
-						/* [NP] FIXME should we clear spin up here or only when the motor is started again ? */
+	FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON , 0 );			/* Unset motor bit and keep spinup bit */
 
 	FDC.Command = FDCEMU_CMD_NULL;					/* Motor stopped, this is the last state */
 	return 0;
