@@ -432,11 +432,9 @@ static FDC_STRUCT	FDC;					/* All variables related to the WD1772 emulation */
 static FDC_DMA_STRUCT	FDC_DMA;				/* All variables related to the DMA transfer */
 static FDC_DRIVE_STRUCT	FDC_DRIVES[ MAX_FLOPPYDRIVES ];		/* A: and B: */
 
-static Uint8 HeadTrack[ MAX_FLOPPYDRIVES ];			/* A: and B: */
-
-//static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD+1000 ];	/* Workspace used to transfer bytes between floppy and DMA */
-static Uint8 DMADiskWorkSpace[ 6275+1000 ];	/* Workspace used to transfer bytes between floppy and DMA */
+static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace used to transfer bytes between floppy and DMA */
 								/* It should be large enough to contain a whole track */
+								/* We use a x4 factor when we need to simulate HD and ED too */
 
 
 /*--------------------------------------------------------------*/
@@ -525,7 +523,6 @@ void FDC_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&FDC, sizeof(FDC));
 	MemorySnapShot_Store(&FDC_DMA, sizeof(FDC_DMA));
 	MemorySnapShot_Store(&FDC_DRIVES, sizeof(FDC_DRIVE_STRUCT));
-	MemorySnapShot_Store(HeadTrack, sizeof(HeadTrack));
 
 	MemorySnapShot_Store(DMADiskWorkSpace, sizeof(DMADiskWorkSpace));
 }
@@ -704,9 +701,6 @@ void FDC_Init ( void )
 	int	i;
 
         LOG_TRACE ( TRACE_FDC , "fdc init\n" );
-
-	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
-		HeadTrack[ i ] = 0;			/* Set all drives to track 0 */
 
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
@@ -1125,7 +1119,7 @@ static int	FDC_GetBytesPerTrack ( void )
 
 	TrackSize = FDC_TRACK_BYTES_STANDARD;				/* For a standard DD disk */
 
-	MaxSector = FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE );
+	MaxSector = FDC_GetSectorsPerTrack ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE );
 
 	if ( MaxSector >= 36 )
 		TrackSize *= 4;						/* Simulate a ED disk, 36 sectors or more */
@@ -1306,7 +1300,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 	CurrentPos = FDC_IndexPulse_GetCurrentPos_NbBytes ();
 #endif
 
-	MaxSector = FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE );
+	MaxSector = FDC_GetSectorsPerTrack ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE );
 	TrackPos = FDC_TRACK_LAYOUT_STANDARD_GAP1;			/* Position of 1st raw sector */
 	TrackPos += FDC_TRACK_LAYOUT_STANDARD_GAP2;			/* Position of ID Field in 1st raw sector */
 
@@ -1505,10 +1499,10 @@ static void FDC_VerifyTrack ( void )
 
 	/* In the case of Hatari when using ST/MSA images, the physical track and the track register */
 	/* should always be the same. Else, it means TR was not correctly set before running the type I command */
-	if ( HeadTrack[ FDC_DRIVE ] != FDC.TR )
+	if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack != FDC.TR )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed TR=0x%x head=0x%x drive=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			FDC.TR , HeadTrack[ FDC_DRIVE ] , FDC_DRIVE ,
+			FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_DRIVE ,
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );			/* Set RNF bit */
@@ -1572,11 +1566,11 @@ static int FDC_UpdateRestoreCmd ( void )
 			FdcCycles = FDC_CmdCompleteCommon( true );
 		}
 
-		if ( HeadTrack[ FDC_DRIVE ] != 0 )			/* Are we at track zero ? */
+		if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack != 0 )		/* Are we at track zero ? */
 		{
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			FDC.TR--;					/* One less attempt */
-			HeadTrack[ FDC_DRIVE ]--;			/* Move physical head */
+			FDC_DRIVES[ FDC_DRIVE ].HeadTrack--;		/* Move physical head */
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
 		}
 		else
@@ -1643,13 +1637,13 @@ static int FDC_UpdateSeekCmd ( void )
 			/* Move head by one track depending on FDC.StepDirection and update Track Register */
 			FDC.TR += FDC.StepDirection;
 
-			if ( ( HeadTrack[ FDC_DRIVE ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
+			if ( ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
 			{
 				FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
 				FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
 			}
 
-			else if ( ( HeadTrack[ FDC_DRIVE ] == 0 ) && ( FDC.StepDirection == -1 ) )
+			else if ( ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 ) && ( FDC.StepDirection == -1 ) )
 			{
 				FDC.TR = 0;				/* If we reach track 0, we stop there */
 				FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
@@ -1658,12 +1652,12 @@ static int FDC_UpdateSeekCmd ( void )
 
 			else
 			{
-				HeadTrack[ FDC_DRIVE ] += FDC.StepDirection;	/* Move physical head */
+				FDC_DRIVES[ FDC_DRIVE ].HeadTrack += FDC.StepDirection;	/* Move physical head */
 				FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
 			}
 		}
 
-		if ( HeadTrack[ FDC_DRIVE ] == 0 )
+		if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 )
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 		else
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
@@ -1714,19 +1708,19 @@ static int FDC_UpdateStepCmd ( void )
 		if ( FDC.CR & FDC_COMMAND_BIT_UPDATE_TRACK )
 			FDC.TR += FDC.StepDirection;			/* Update Track Register */
 
-		if ( ( HeadTrack[ FDC_DRIVE ] == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
+		if ( ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == FDC_PHYSICAL_MAX_TRACK ) && ( FDC.StepDirection == 1 ) )
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go after max track */
 
-		else if ( ( HeadTrack[ FDC_DRIVE ] == 0 ) && ( FDC.StepDirection == -1 ) )
+		else if ( ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 ) && ( FDC.StepDirection == -1 ) )
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;	/* No delay if trying to go before track 0 */
 
 		else
 		{
-			HeadTrack[ FDC_DRIVE ] += FDC.StepDirection;	/* Move physical head */
+			FDC_DRIVES[ FDC_DRIVE ].HeadTrack += FDC.StepDirection;	/* Move physical head */
 			FdcCycles = FDC_DelayToFdcCycles ( FDC_StepRate_ms[ FDC_STEP_RATE ] * 1000 );
 		}
 
-		if ( HeadTrack[ FDC_DRIVE ] == 0 )
+		if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 )
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 		else
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
@@ -1852,7 +1846,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_READSECTORS_RNF:
 		LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=%d drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			  FDC.SR , HeadTrack[ FDC_DRIVE ] , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+			  FDC.SR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 		FdcCycles = FDC_CmdCompleteCommon( true );
@@ -1881,7 +1875,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	if ( Floppy_IsWriteProtected ( FDC_DRIVE ) )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc type II write sector=%d track=%d drive=%d WPRT VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			  FDC.SR , HeadTrack[ FDC_DRIVE ] , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+			  FDC.SR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );		/* Set WPRT bit */
 		FdcCycles = FDC_CmdCompleteCommon( true );
@@ -1970,7 +1964,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_RNF:
 		LOG_TRACE(TRACE_FDC, "fdc type II write sector=%d track=%d drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			  FDC.SR , HeadTrack[ FDC_DRIVE ] , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+			  FDC.SR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 		FdcCycles = FDC_CmdCompleteCommon( true );
@@ -2020,8 +2014,8 @@ static int FDC_UpdateReadAddressCmd ( void )
 		*p++ = 0xa1;
 		*p++ = 0xa1;
 		*p++ = 0xfe;
-		*p++ = HeadTrack[ FDC_DRIVE ];
-		FDC.SR = HeadTrack[ FDC_DRIVE ];		/* The 1st byte of the ID field is also copied into Sector Register */
+		*p++ = FDC_DRIVES[ FDC_DRIVE ].HeadTrack;
+		FDC.SR = FDC_DRIVES[ FDC_DRIVE ].HeadTrack;	/* The 1st byte of the ID field is also copied into Sector Register */
 		*p++ = FDC_SIDE;
 		*p++ = FDC.NextSector_ID_Field_SR;
 		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
@@ -2094,7 +2088,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
 
 		if ( ( FDC_SIDE == 1 )						/* Try to read side 1 on a disk that doesn't have 2 sides */
-			&& ( FDC_GetSidesPerDisk ( HeadTrack[ FDC_DRIVE ] ) != 2 ) )
+			&& ( FDC_GetSidesPerDisk ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack ) != 2 ) )
 		{
 			for ( i=0 ; i<FDC_GetBytesPerTrack () ; i++ )
 				*buf++ = rand() & 0xff;				/* Fill the track buffer with random bytes */
@@ -2105,7 +2099,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 			for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP1 ; i++ )		/* GAP1 */
 				*buf++ = 0x4e;
 
-			for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( HeadTrack[ FDC_DRIVE ] , FDC_SIDE ) ; Sector++ )
+			for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE ) ; Sector++ )
 			{
 				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP2 ; i++ )	/* GAP2 */
 					*buf++ = 0x00;
@@ -2113,7 +2107,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 				buf_crc = buf;
 				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
 				*buf++ = 0xfe;						/* Index Address Mark */
-				*buf++ = HeadTrack[ FDC_DRIVE ];			/* Track */
+				*buf++ = FDC_DRIVES[ FDC_DRIVE ].HeadTrack;		/* Track */
 				*buf++ = FDC_SIDE;					/* Side */
 				*buf++ = Sector;					/* Sector */
 				*buf++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
@@ -2287,7 +2281,7 @@ static int FDC_TypeI_Restore(void)
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
-		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
 	FDC.Command = FDCEMU_CMD_RESTORE;
@@ -2311,7 +2305,7 @@ static int FDC_TypeI_Seek ( void )
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
-		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to chosen track */
 	FDC.Command = FDCEMU_CMD_SEEK;
@@ -2335,7 +2329,7 @@ static int FDC_TypeI_Step ( void )
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
-		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step (using same direction as latest seek executed, ie 'FDC.StepDirection') */
 	FDC.Command = FDCEMU_CMD_STEP;
@@ -2358,7 +2352,7 @@ static int FDC_TypeI_StepIn(void)
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
-		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step in (direction = +1) */
 	FDC.Command = FDCEMU_CMD_STEP;
@@ -2382,7 +2376,7 @@ static int FDC_TypeI_StepOut ( void )
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
-		  FDC_DRIVE , FDC.TR , HeadTrack[ FDC_DRIVE ] , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step out (direction = -1) */
 	FDC.Command = FDCEMU_CMD_STEP;
@@ -2415,7 +2409,7 @@ static int FDC_TypeII_ReadSector ( void )
 		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
-		  FDC.TR , HeadTrack[ FDC_DRIVE ] , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount ,
+		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount ,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read sector(s) */
@@ -2444,7 +2438,7 @@ static int FDC_TypeII_WriteSector ( void )
 		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
-		  FDC.TR , HeadTrack[ FDC_DRIVE ] , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount,
+		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to write a sector(s) */
@@ -2480,7 +2474,7 @@ static int FDC_TypeIII_ReadAddress ( void )
 	LOG_TRACE(TRACE_FDC, "fdc type III read address spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
-		  FDC.TR , HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
+		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
@@ -2508,7 +2502,7 @@ static int FDC_TypeIII_ReadTrack ( void )
 	LOG_TRACE(TRACE_FDC, "fdc type III read track spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
-		  FDC.TR , HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
+		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read a single track */
@@ -2535,7 +2529,7 @@ static int FDC_TypeIII_WriteTrack ( void )
 	LOG_TRACE(TRACE_FDC, "fdc type III write track spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
-		  FDC.TR , HeadTrack[ FDC_DRIVE ], FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
+		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	Log_Printf(LOG_TODO, "FDC type III command 'write track' does not work yet!\n");
@@ -2581,7 +2575,7 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 	if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
 	  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
 	{
-		if ( HeadTrack[ FDC_DRIVE ] == 0 )
+		if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 )
 			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );		/* Set Motor ON */
@@ -3202,11 +3196,11 @@ static bool FDC_ReadSectorFromFloppy ( Uint8 *buf , Uint8 Sector , int *pSectorS
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc read sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_GetDMAAddress(), FDC_DRIVE, Sector, HeadTrack[ FDC_DRIVE ], FDC_SIDE,
+		FDC_GetDMAAddress(), FDC_DRIVE, Sector, FDC_DRIVES[ FDC_DRIVE ].HeadTrack, FDC_SIDE,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* Copy 1 sector to our workspace */
-	if ( Floppy_ReadSectors ( FDC_DRIVE, buf, Sector, HeadTrack[ FDC_DRIVE ], FDC_SIDE, 1, NULL, pSectorSize ) )
+	if ( Floppy_ReadSectors ( FDC_DRIVE, buf, Sector, FDC_DRIVES[ FDC_DRIVE ].HeadTrack, FDC_SIDE, 1, NULL, pSectorSize ) )
 		return true;
 
 	/* Failed */
@@ -3230,7 +3224,7 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc write sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_GetDMAAddress(), FDC_DRIVE, Sector, HeadTrack[ FDC_DRIVE ], FDC_SIDE,
+		FDC_GetDMAAddress(), FDC_DRIVE, Sector, FDC_DRIVES[ FDC_DRIVE ].HeadTrack, FDC_SIDE,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	if ( DMASectorsCount > 0 )
@@ -3242,7 +3236,7 @@ static bool FDC_WriteSectorToFloppy ( int DMASectorsCount , Uint8 Sector , int *
 	}
 	
 	/* Write 1 sector from our workspace */
-	if ( Floppy_WriteSectors ( FDC_DRIVE, pBuffer, Sector, HeadTrack[ FDC_DRIVE ], FDC_SIDE, 1, NULL, pSectorSize ) )
+	if ( Floppy_WriteSectors ( FDC_DRIVE, pBuffer, Sector, FDC_DRIVES[ FDC_DRIVE ].HeadTrack, FDC_SIDE, 1, NULL, pSectorSize ) )
 		return true;
 
 	/* Failed */
