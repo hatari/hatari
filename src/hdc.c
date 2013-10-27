@@ -72,7 +72,7 @@ short int HDCSectorCount;
 bool bAcsiEmuOn = false;
 
 static FILE *hd_image_file = NULL;
-static Uint32 nLastBlockAddr;
+static Uint32 nLastBlockAddr;         /* The specified sector number */
 static bool bSetLastBlockAddr;
 static Uint8 nLastError;
 
@@ -100,24 +100,25 @@ static unsigned char inquiry_bytes[] =
 
 /*---------------------------------------------------------------------*/
 /**
- * Return the device specified in the current ACSI command block.
+ * Return the LUN (logical unit number) specified in the current
+ * ACSI/SCSI command block.
  */
-static unsigned char HDC_GetDevice(void)
+static unsigned char HDC_GetLUN(void)
 {
 	return (HDCCommand.command[1] & 0xE0) >> 5;
 }
 
 /**
- * Return the file offset of the sector specified in the current ACSI command block.
+ * Return the start sector (logical block address) specified in the
+ * current ACSI/SCSI command block.
  */
-static unsigned long HDC_GetOffset(void)
+static unsigned long HDC_GetLBA(void)
 {
 	/* offset = logical block address * 512 */
-	return HDCCommand.opcode < 0x20?
-		// class 0
-		(HDC_ReadInt24(HDCCommand.command, 1) & 0x1FFFFF) << 9 :
-		// class 1
-		HDC_ReadInt32(HDCCommand.command, 2) << 9;
+	if (HDCCommand.opcode < 0x20)				/* Class 0? */
+		return HDC_ReadInt24(HDCCommand.command, 1) & 0x1FFFFF;
+	else
+		return HDC_ReadInt32(HDCCommand.command, 2);	/* Class 1 */
 }
 
 /**
@@ -153,9 +154,10 @@ static unsigned char HDC_GetControl(void)
  */
 static void HDC_Cmd_Seek(void)
 {
-	nLastBlockAddr = HDC_GetOffset();
+	nLastBlockAddr = HDC_GetLBA();
 
-	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) == 0)
+	if (nLastBlockAddr < hdSize &&
+	    fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) == 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_OK;
 		nLastError = HD_REQSENS_OK;
@@ -194,7 +196,7 @@ static void HDC_Cmd_Inquiry(void)
 
 	/* For unsupported LUNs set the Peripheral Qualifier and the
 	 * Peripheral Device Type according to the SCSI standard */
-	inquiry_bytes[0] = HDC_GetDevice() == 0 ? 0 : 0x7F;
+	inquiry_bytes[0] = HDC_GetLUN() == 0 ? 0 : 0x7F;
 
 	inquiry_bytes[4] = count - 5;
 
@@ -223,11 +225,11 @@ static void HDC_Cmd_RequestSense(void)
 	int nRetLen;
 	Uint8 retbuf[22];
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr,"HDC: Request Sense.\n");
-#endif
-
 	nRetLen = HDC_GetCount();
+
+#ifdef HDC_VERBOSE
+	fprintf(stderr,"HDC: Request Sense with length = %i.\n", nRetLen);
+#endif
 
 	if ((nRetLen < 4 && nRetLen != 0) || nRetLen > 22)
 	{
@@ -275,7 +277,7 @@ static void HDC_Cmd_RequestSense(void)
 		 case HD_REQSENS_OPCODE:  retbuf[2] = 5; break;
 		 case HD_REQSENS_INVADDR:  retbuf[2] = 5; break;
 		 case HD_REQSENS_INVARG:  retbuf[2] = 5; break;
-		 case HD_REQSENS_NODRIVE:  retbuf[2] = 2; break;
+		 case HD_REQSENS_INVLUN:  retbuf[2] = 5; break;
 		 default: retbuf[2] = 4; break;
 		}
 		retbuf[7] = 14;
@@ -443,10 +445,11 @@ static void HDC_Cmd_WriteSector(void)
 {
 	int n = 0;
 
-	nLastBlockAddr = HDC_GetOffset();
+	nLastBlockAddr = HDC_GetLBA();
 
 	/* seek to the position */
-	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) != 0)
+	if (nLastBlockAddr >= hdSize ||
+	    fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) != 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_INVADDR;
@@ -497,15 +500,16 @@ static void HDC_Cmd_ReadSector(void)
 {
 	int n;
 
-	nLastBlockAddr = HDC_GetOffset();
+	nLastBlockAddr = HDC_GetLBA();
 
 #ifdef HDC_VERBOSE
-	fprintf(stderr,"Reading %i sectors from 0x%x to addr: 0x%x\n",
+	fprintf(stderr,"Reading %i sectors starting from 0x%x to addr: 0x%x\n",
 	        HDC_GetCount(), nLastBlockAddr, FDC_GetDMAAddress());
 #endif
 
 	/* seek to the position */
-	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) != 0)
+	if (nLastBlockAddr >= hdSize ||
+	    fseeko(hd_image_file, (off_t)nLastBlockAddr * 512L, SEEK_SET) != 0)
 	{
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_INVADDR;
@@ -707,11 +711,11 @@ static void HDC_DebugCommandPacket(FILE *hdlogFile)
 	}
 
 	fprintf(hdlogFile, "Target: %i\n", HDCCommand.target);
-	fprintf(hdlogFile, "Device: %i\n", HDC_GetDevice());
-	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetOffset()/512);
+	fprintf(hdlogFile, "LUN: %i\n", HDC_GetLUN());
+	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetLBA());
 
 	fprintf(hdlogFile, "Sector count: 0x%x\n", HDC_GetCount());
-	fprintf(hdlogFile, "HDC sector count: 0x%x\n", HDCSectorCount);
+	//fprintf(hdlogFile, "HDC sector count: 0x%x\n", HDCSectorCount);
 	//fprintf(hdlogFile, "FDC sector count: 0x%x\n", FDCSectorCountRegister);
 	fprintf(hdlogFile, "Control byte: 0x%x\n", HDC_GetControl());
 }
@@ -748,10 +752,9 @@ static void HDC_GetInfo(void)
 		return;
 	}
 
-	hdSize = HDC_ReadInt32(hdinfo, 0);
-
 #ifdef HDC_VERBOSE
-	fprintf(stderr, "Total disk size %li Mb\n", hdSize>>11);
+	fprintf(stderr, "Total disk size according to MBR: %i Mb\n",
+		HDC_ReadInt32(hdinfo, 0) >> 11);
 	/* flags for each partition entry are zero if they are not valid */
 	fprintf(stderr, "Partition 0 exists?: %s\n", (hdinfo[4] != 0)?"Yes":"No");
 	fprintf(stderr, "Partition 1 exists?: %s\n", (hdinfo[4+12] != 0)?"Yes":"No");
@@ -775,17 +778,20 @@ bool HDC_Init(void)
 {
 	char *filename;
 	bAcsiEmuOn = false;
+	off_t filesize;
 
 	if (!ConfigureParams.HardDisk.bUseHardDiskImage)
 		return false;
 	filename = ConfigureParams.HardDisk.szHardDiskImage;
 
-	/* Sanity check - is file length a multiple of 512? */
-	if (File_Length(filename) & 0x1ff)
+	/* Get size and do a sanity check - is file length a multiple of 512? */
+	filesize = File_Length(filename);
+	if (filesize <= 0 || (filesize & 0x1ff) != 0)
 	{
 		Log_Printf(LOG_ERROR, "HD file '%s' has strange size!\n", filename);
 		return false;
 	}
+	hdSize = filesize / 512;
 
 	if ((hd_image_file = fopen(filename, "rb+")) == NULL)
 	{
@@ -878,10 +884,13 @@ static void HDC_WriteCommandPacket(Uint8 b)
 		return;
 	}
 
-	/* Successfully received one byte, so increase the byte-count, but in extended mode skip the first byte */
+	/* Successfully received one byte, so increase the byte-count
+	 * (but in extended mode skip the first byte) */
 	if (!HDCCommand.extended || HDCCommand.readCount != 0)
 	{
-		HDCCommand.command[HDCCommand.byteCount++] = b;
+		if (HDCCommand.byteCount < (int)sizeof(HDCCommand.command))
+			HDCCommand.command[HDCCommand.byteCount] = b;
+		HDCCommand.byteCount += 1;
 	}
 	++HDCCommand.readCount;
 
@@ -892,16 +901,22 @@ static void HDC_WriteCommandPacket(Uint8 b)
 #ifdef HDC_REALLY_VERBOSE
 		HDC_DebugCommandPacket(stderr);
 #endif
-		/* If it's aimed for our drive, emulate it!
-		 * INQUIRY must always be handled, see SCSI standard */
-		if (HDC_GetDevice() == 0 || HDCCommand.opcode == 0x12)
+		/* We currently only support LUN 0, however INQUIRY must
+		 * always be handled, see SCSI standard */
+		if (HDC_GetLUN() == 0 || HDCCommand.opcode == HD_INQUIRY)
 		{
 			HDC_EmulateCommandPacket();
 		}
 		else
 		{
-			Log_Printf(LOG_WARN, "HDC: Access to non-existing drive.\n");
-			HDCCommand.returnCode = HD_STATUS_ERROR;
+			Log_Printf(LOG_WARN, "HDC: Access to non-existing LUN."
+				   " Command = 0x%02x\n", HDCCommand.opcode);
+			nLastError = HD_REQSENS_INVLUN;
+			/* REQUEST SENSE is still handled for invalid LUNs */
+			if (HDCCommand.opcode == HD_REQ_SENSE)
+				HDC_Cmd_RequestSense();
+			else
+				HDCCommand.returnCode = HD_STATUS_ERROR;
 		}
 
 		HDCCommand.readCount = 0;
@@ -914,7 +929,12 @@ static void HDC_WriteCommandPacket(Uint8 b)
 		nLastError = HD_REQSENS_OPCODE;
 		bSetLastBlockAddr = false;
 		FDC_AcknowledgeInterrupt();
-		HDCCommand.readCount = HDCCommand.byteCount = 0;
+		FDC_SetDMAStatus(false);
+#ifdef HDC_VERBOSE
+		if (HDCCommand.byteCount == 10)
+			Log_Printf(LOG_WARN, "HDC: Unsupported command 0x%02x\n",
+			           HDCCommand.opcode);
+#endif
 	}
 	else
 	{
@@ -1026,7 +1046,16 @@ void HDC_WriteCommandByte(int addr, Uint8 byte)
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 		Ncr5380_WriteByte(addr, byte);
 	else if (bAcsiEmuOn)
+	{
+		if ((addr & 2) == 0)
+		{
+			/* When the HD driver pulls the A1 pin to zero,
+			 * it wants to start a new command */
+			HDCCommand.readCount = 0;
+			HDCCommand.byteCount = 0;
+		}
 		HDC_WriteCommandPacket(byte);
+	}
 }
 
 /**

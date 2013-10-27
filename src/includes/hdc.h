@@ -45,7 +45,7 @@
 #define HD_REQSENS_OPCODE   0x20              /* Opcode not supported */
 #define HD_REQSENS_INVADDR  0x21              /* Invalid block address */
 #define HD_REQSENS_INVARG   0x24              /* Invalid argument */
-#define HD_REQSENS_NODRIVE  0x25              /* Invalid drive */
+#define HD_REQSENS_INVLUN   0x25              /* Invalid LUN */
 
 #define ACSI_EMU_ON        bAcsiEmuOn         /* Do we have HDC emulation? */
 

@@ -28,7 +28,7 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "zip.h"
 
-#if defined(WIN32)
+#ifndef HAVE_FTELLO
 #define ftello ftell
 #endif
 

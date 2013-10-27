@@ -166,6 +166,8 @@ check_function_exists(nanosleep HAVE_NANOSLEEP)
 check_function_exists(alphasort HAVE_ALPHASORT)
 check_function_exists(scandir HAVE_SCANDIR)
 check_function_exists(statvfs HAVE_STATVFS)
+check_function_exists(fseeko HAVE_FSEEKO)
+check_function_exists(ftello HAVE_FTELLO)
 
 # #############
 # Other CFLAGS:

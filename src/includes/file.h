@@ -8,6 +8,12 @@
 #ifndef HATARI_FILE_H
 #define HATARI_FILE_H
 
+#include "config.h"
+
+#ifndef HAVE_FSEEKO
+#define fseeko fseek
+#endif
+
 extern void File_CleanFileName(char *pszFileName);
 extern void File_AddSlashToEndFileName(char *pszFileName);
 extern bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension);

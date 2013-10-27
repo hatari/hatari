@@ -506,7 +506,7 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 
 	len = nb_sectors * 512;
 
-	fseek(bs->fhndl, sector_num*512, SEEK_SET);
+	fseeko(bs->fhndl, sector_num*512, SEEK_SET);
 	ret = fread(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
@@ -540,7 +540,7 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 
 	len = nb_sectors * 512;
 
-	fseek(bs->fhndl, sector_num*512, SEEK_SET);
+	fseeko(bs->fhndl, sector_num*512, SEEK_SET);
 	ret = fwrite(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
