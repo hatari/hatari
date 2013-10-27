@@ -17,6 +17,10 @@ Emulation:
   - Add support for the "Force Int on Index Pulse" command
 - Videl change :
   - correct masking of the true color palette registers
+- ACSI hard disk changes:
+  - Fixed/improved READ CAPACITY and INQUIRY commands
+  - Unsupported commands are now handled correctly
+  - Now using fseeko() instead of fseek() for supporting large images
 
 Emulator:
 - SDL GUI:
