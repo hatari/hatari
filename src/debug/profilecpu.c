@@ -29,6 +29,12 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #include "video.h"
 
 
+/* cartridge area */
+#define CART_START	0xFA0000
+#define CART_END	0xFC0000
+#define CART_SIZE	(CART_END - CART_START)
+
+
 /* if non-zero, output (more) warnings on suspicious:
  * - cycle/instruction counts
  * - PC switches
@@ -98,25 +104,31 @@ static inline Uint32 address2index(Uint32 pc)
 		DebugUI(REASON_CPU_EXCEPTION);
 #endif
 	}
-	if (pc >= TosAddress && pc < TosAddress + TosSize) {
+	if (pc < STRamEnd) {
+		/* most likely case, use RAM address as-is */
+
+	} else if (pc >= TosAddress && pc < TosAddress + TosSize) {
 		/* TOS, put it after RAM data */
 		pc = pc - TosAddress + STRamEnd;
-
-	} else if (pc >= 0xFA0000 && pc < 0xFC0000) {
-		/* ROM, put it after RAM & TOS data */
-		pc = pc - 0xFA0000 + STRamEnd + TosSize;
-
-	} else {
-		/* if in RAM, use as-is */
-		if (unlikely(pc >= STRamEnd)) {
-			fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
-			/* extra entry at end is reserved for invalid PC values */
-			pc = STRamEnd + TosSize + 0x20000;
-#if DEBUG
-			skip_assert = true;
-			DebugUI(REASON_CPU_EXCEPTION);
-#endif
+		if (TosAddress >= CART_END) {
+			/* and after cartridge data as it's higher */
+			pc += CART_SIZE;
 		}
+	} else if (pc >= CART_START && pc < CART_END) {
+		/* ROM, put it after RAM data */
+		pc = pc - CART_START + STRamEnd;
+		if (TosAddress < CART_START) {
+			/* and after TOS as it's higher */
+			pc += TosSize;
+		}
+	} else {
+		fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
+		/* extra entry at end is reserved for invalid PC values */
+		pc = STRamEnd + TosSize + 0x20000;
+#if DEBUG
+		skip_assert = true;
+		DebugUI(REASON_CPU_EXCEPTION);
+#endif
 	}
 	/* CPU instructions are at even addresses, save space by halving */
 	return (pc >> 1);
@@ -132,13 +144,25 @@ static Uint32 index2address(Uint32 idx)
 	if (idx < STRamEnd) {
 		return idx;
 	}
-	/* TOS */
 	idx -= STRamEnd;
-	if (idx < TosSize) {
+	/* TOS before cartridge area? */
+	if (TosAddress < CART_START) {
+		/* TOS */
+		if (idx < TosSize) {
+			return idx + TosAddress;
+		}
+		idx -= TosSize;
+		/* ROM */
+		return idx + CART_START;
+	} else {
+		/* ROM */
+		if (idx < CART_SIZE) {
+			return idx + CART_START;
+		}
+		idx -= CART_SIZE;
+		/* TOS */
 		return idx + TosAddress;
 	}
-	/* ROM */
-	return idx - TosSize + 0xFA0000;
 }
 
 /* ------------------ CPU profile results ----------------- */
@@ -211,7 +235,7 @@ void Profile_CpuShowStats(void)
 	fprintf(stderr, "ROM TOS (0x%X-0x%X):\n", TosAddress, TosAddress + TosSize);
 	show_cpu_area_stats(&cpu_profile.tos);
 
-	fprintf(stderr, "Cartridge ROM (0xFA0000-0xFC0000):\n");
+	fprintf(stderr, "Cartridge ROM (0x%X-%X):\n", CART_START, CART_END);
 	show_cpu_area_stats(&cpu_profile.rom);
 
 	fprintf(stderr, "\n= %.5fs\n",
@@ -556,8 +580,8 @@ void Profile_CpuSave(FILE *out)
 	if (text < TosAddress) {
 		fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
 	}
-	fprintf(out, "CARTRIDGE:\t0xfa0000-0xfc0000\n");
-	Profile_CpuShowAddresses(0, 0xFC0000-2, out);
+	fprintf(out, "CARTRIDGE:\t0x%06x-0x%06x\n", CART_START, CART_END);
+	Profile_CpuShowAddresses(0, CART_END-2, out);
 	Profile_CpuShowCallers(out);
 }
 
