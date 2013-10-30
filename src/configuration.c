@@ -393,7 +393,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
 	ConfigureParams.DiskImage.FastFloppy = false;
 	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
-	for (i = 0; i < 2; i++)
+	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
 		ConfigureParams.DiskImage.szDiskZipPath[i][0] = '\0';
 		ConfigureParams.DiskImage.szDiskFileName[i][0] = '\0';
