@@ -27,6 +27,7 @@ Emulator:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
 - Fix: Xbios(255) modified the given argument string
+- Giving empty string as a disk's image disables the corresponding drive
 - Debugger:
   - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly.
   - Fix: "symbols" command crash when it was used during bootup.

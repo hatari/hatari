@@ -28,6 +28,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "file.h"
 #include "floppy.h"
+#include "fdc.h"
 #include "screen.h"
 #include "sound.h"
 #include "video.h"
@@ -1217,6 +1218,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			/* disk options */
 		case OPT_DISKA:
 			i += 1;
+			if ( argv[i][0] == '\0' )				/* empty disk image -> disable drive A */
+			{
+				FDC_EnableDrive ( 0 , false );
+				break;
+			}
+			FDC_EnableDrive ( 0 , true );
 			if (Floppy_SetDiskFileName(0, argv[i], NULL))
 			{
 				ConfigureParams.HardDisk.bBootFromHardDisk = false;
@@ -1228,6 +1235,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_DISKB:
 			i += 1;
+			if ( argv[i][0] == '\0' )				/* empty disk image -> disable drive B */
+			{
+				FDC_EnableDrive ( 1 , false );
+				break;
+			}
+			FDC_EnableDrive ( 1 , true );
 			if (Floppy_SetDiskFileName(1, argv[i], NULL))
 				bLoadAutoSave = false;
 			else

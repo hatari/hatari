@@ -17,6 +17,7 @@ extern void	FDC_SetDMAStatus ( bool bError );
 extern void	FDC_AcknowledgeInterrupt ( void );
 extern void	FDC_InterruptHandler_Update ( void );
 
+extern void	FDC_EnableDrive ( int Drive , bool value );
 extern void	FDC_InsertFloppy ( int Drive );
 extern void	FDC_EjectFloppy ( int Drive );
 extern void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );

@@ -950,12 +950,26 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * This function is used to enable/disable a drive when
+ * using the UI or command line parameters
+ */
+void	FDC_EnableDrive ( int Drive , bool value )
+{
+	LOG_TRACE ( TRACE_FDC , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
+
+	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
+		FDC_DRIVES[ Drive ].Enabled = value;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function is called when a floppy is inserted in a drive
  * using the UI or command line parameters
  */
 void	FDC_InsertFloppy ( int Drive )
 {
-        LOG_TRACE ( TRACE_FDC , "fdc insert drive=%d\n" , Drive );
+	LOG_TRACE ( TRACE_FDC , "fdc insert drive=%d\n" , Drive );
 
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 	{
@@ -972,7 +986,7 @@ void	FDC_InsertFloppy ( int Drive )
  */
 void	FDC_EjectFloppy ( int Drive )
 {
-        LOG_TRACE ( TRACE_FDC , "fdc eject drive=%d\n" , Drive );
+	LOG_TRACE ( TRACE_FDC , "fdc eject drive=%d\n" , Drive );
 
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 		FDC_DRIVES[ Drive ].DiskInserted = false;
@@ -1503,7 +1517,7 @@ static void FDC_VerifyTrack ( void )
 		return;
 	}
 
-	/* Most of time, the physical track and the track register should be the same. */
+	/* Most of the time, the physical track and the track register should be the same. */
 	/* Else, it means TR was not correctly set before running the type I command */
 	if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack != FDC.TR )
 	{
