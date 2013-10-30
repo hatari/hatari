@@ -26,6 +26,7 @@ Emulator:
 - SDL GUI:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
+  - In the floppy dialog, use a checkbox to enable/disable drives A and B
 - Fix: Xbios(255) modified the given argument string
 - Giving empty string as a disk's image disables the corresponding drive
 - Debugger:

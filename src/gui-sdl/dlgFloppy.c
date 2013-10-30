@@ -15,9 +15,11 @@ const char DlgFloppy_fileid[] = "Hatari dlgFloppy.c : " __DATE__ " " __TIME__;
 #include "floppy.h"
 
 
+#define FLOPPYDLG_ENABLE_A    2
 #define FLOPPYDLG_EJECTA      3
 #define FLOPPYDLG_BROWSEA     4
 #define FLOPPYDLG_DISKA       5
+#define FLOPPYDLG_ENABLE_B    6
 #define FLOPPYDLG_EJECTB      7
 #define FLOPPYDLG_BROWSEB     8
 #define FLOPPYDLG_DISKB       9
@@ -37,11 +39,11 @@ static SGOBJ floppydlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 64,20, NULL },
 	{ SGTEXT, 0, 0, 25,1, 12,1, "Floppy disks" },
-	{ SGTEXT, 0, 0, 2,3, 8,1, "Drive A:" },
+	{ SGCHECKBOX, 0, 0, 2,3, 8,1, "Drive A:" },
 	{ SGBUTTON, 0, 0, 46,3, 7,1, "Eject" },
 	{ SGBUTTON, 0, 0, 54,3, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 3,4, 58,1, NULL },
-	{ SGTEXT, 0, 0, 2,6, 8,1, "Drive B:" },
+	{ SGCHECKBOX, 0, 0, 2,6, 8,1, "Drive B:" },
 	{ SGBUTTON, 0, 0, 46,6, 7,1, "Eject" },
 	{ SGBUTTON, 0, 0, 54,6, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 3,7, 58,1, NULL },
@@ -218,6 +220,18 @@ void DlgFloppy_Main(void)
 	else
 		floppydlg[FLOPPYDLG_FASTFLOPPY].state &= ~SG_SELECTED;
 
+	/* Enable/disable drives A: and B: */
+	if (ConfigureParams.DiskImage.EnableDriveA)
+		floppydlg[FLOPPYDLG_ENABLE_A].state |= SG_SELECTED;
+	else
+		floppydlg[FLOPPYDLG_ENABLE_A].state &= ~SG_SELECTED;
+
+	if (ConfigureParams.DiskImage.EnableDriveB)
+		floppydlg[FLOPPYDLG_ENABLE_B].state |= SG_SELECTED;
+	else
+		floppydlg[FLOPPYDLG_ENABLE_B].state &= ~SG_SELECTED;
+
+
 	/* Draw and process the dialog */
 	do
 	{
@@ -271,4 +285,6 @@ void DlgFloppy_Main(void)
 
 	ConfigureParams.DiskImage.bAutoInsertDiskB = (floppydlg[FLOPPYDLG_AUTOB].state & SG_SELECTED);
 	ConfigureParams.DiskImage.FastFloppy = (floppydlg[FLOPPYDLG_FASTFLOPPY].state & SG_SELECTED);
+	ConfigureParams.DiskImage.EnableDriveA = (floppydlg[FLOPPYDLG_ENABLE_A].state & SG_SELECTED);
+	ConfigureParams.DiskImage.EnableDriveB = (floppydlg[FLOPPYDLG_ENABLE_B].state & SG_SELECTED);
 }

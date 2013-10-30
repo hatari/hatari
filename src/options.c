@@ -1220,10 +1220,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			i += 1;
 			if ( argv[i][0] == '\0' )				/* empty disk image -> disable drive A */
 			{
-				FDC_EnableDrive ( 0 , false );
+				ConfigureParams.DiskImage.EnableDriveA = false;
 				break;
 			}
-			FDC_EnableDrive ( 0 , true );
+			ConfigureParams.DiskImage.EnableDriveA = true;
 			if (Floppy_SetDiskFileName(0, argv[i], NULL))
 			{
 				ConfigureParams.HardDisk.bBootFromHardDisk = false;
@@ -1237,10 +1237,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			i += 1;
 			if ( argv[i][0] == '\0' )				/* empty disk image -> disable drive B */
 			{
-				FDC_EnableDrive ( 1 , false );
+				ConfigureParams.DiskImage.EnableDriveB = false;
 				break;
 			}
-			FDC_EnableDrive ( 1 , true );
+			ConfigureParams.DiskImage.EnableDriveB = true;
 			if (Floppy_SetDiskFileName(1, argv[i], NULL))
 				bLoadAutoSave = false;
 			else

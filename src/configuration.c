@@ -29,6 +29,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "avi_record.h"
 #include "clocks_timings.h"
 #include "68kDisass.h"
+#include "fdc.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -261,6 +262,8 @@ static const struct Config_Tag configs_Floppy[] =
 {
 	{ "bAutoInsertDiskB", Bool_Tag, &ConfigureParams.DiskImage.bAutoInsertDiskB },
 	{ "FastFloppy", Bool_Tag, &ConfigureParams.DiskImage.FastFloppy },
+	{ "EnableDriveA", Bool_Tag, &ConfigureParams.DiskImage.EnableDriveA },
+	{ "EnableDriveB", Bool_Tag, &ConfigureParams.DiskImage.EnableDriveB },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.DiskImage.nWriteProtection },
 	{ "szDiskAZipPath", String_Tag, ConfigureParams.DiskImage.szDiskZipPath[0] },
 	{ "szDiskAFileName", String_Tag, ConfigureParams.DiskImage.szDiskFileName[0] },
@@ -393,6 +396,10 @@ void Configuration_SetDefault(void)
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
 	ConfigureParams.DiskImage.FastFloppy = false;
 	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
+	ConfigureParams.DiskImage.EnableDriveA = true;
+	FDC_EnableDrive ( 0 , true );
+	ConfigureParams.DiskImage.EnableDriveB = true;
+	FDC_EnableDrive ( 1 , true );
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
 		ConfigureParams.DiskImage.szDiskZipPath[i][0] = '\0';
@@ -782,8 +789,10 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[0], sizeof(ConfigureParams.DiskImage.szDiskFileName[0]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[0], sizeof(ConfigureParams.DiskImage.szDiskZipPath[0]));
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.EnableDriveA, sizeof(ConfigureParams.DiskImage.EnableDriveA));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[1], sizeof(ConfigureParams.DiskImage.szDiskFileName[1]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[1], sizeof(ConfigureParams.DiskImage.szDiskZipPath[1]));
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.EnableDriveB, sizeof(ConfigureParams.DiskImage.EnableDriveB));
 
 	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskDirectories, sizeof(ConfigureParams.HardDisk.bUseHardDiskDirectories));
 	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C]));

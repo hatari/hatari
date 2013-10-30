@@ -19,6 +19,7 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 #include "change.h"
 #include "dialog.h"
 #include "floppy.h"
+#include "fdc.h"
 #include "gemdos.h"
 #include "hdc.h"
 #include "ide.h"
@@ -235,6 +236,11 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		else
 			bFloppyInsert[i] = false;
 	}
+
+	if ( changed->DiskImage.EnableDriveA != current->DiskImage.EnableDriveA )
+		FDC_EnableDrive ( 0 , changed->DiskImage.EnableDriveA );
+	if ( changed->DiskImage.EnableDriveB != current->DiskImage.EnableDriveB )
+		FDC_EnableDrive ( 1 , changed->DiskImage.EnableDriveB );
 
 	/* Did change GEMDOS drive? */
 	if (changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
