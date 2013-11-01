@@ -327,6 +327,12 @@ enum
 #define	FDC_DELAY_CYCLE_COMMAND_COMPLETE	(1*8)		/* Number of cycles before going to the _COMPLETE state (~8 cpu cycles) */
 #define	FDC_DELAY_CYCLE_COMMAND_IMMEDIATE	(1*8)		/* Number of cycles to go immediately to another state */
 
+/* When the drive is switched off or if there's no floppy, some commands will wait forever */
+/* as they can't find the next index pulse. Instead of continuously testing if a valid drive */
+/* or floppy becomes available (which would slow down emulation), we only test every 50000 FDC cycles, */
+/* which shouldn't give any noticeable emulation error */
+#define	FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY	50000
+
 #define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
 
 
@@ -1796,12 +1802,20 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
-		/* We search the sector FDC.SR during 5 revolutions max */
-		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_RNF );
+		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+		}
+		else
+		{
+			/* We search the sector FDC.SR during 5 revolutions max */
+			FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_RNF );
 
-		/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
-		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
-		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
+			/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
+			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
+		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
@@ -1913,12 +1927,20 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA:
-		/* We search the sector FDC.SR during 5 revolutions max */
-		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_RNF );
+		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+		}
+		else
+		{
+			/* We search the sector FDC.SR during 5 revolutions max */
+			FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_RNF );
 
-		/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
-		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
-		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
+			/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
+			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 7 );	/* Add delay to read 3xA1, FE, TR, SIDE, SR */
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
+		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER:
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
@@ -1943,7 +1965,6 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
 		}
 		break;
-
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START:
 		/* Write a single sector from RAM (512 bytes for ST/MSA) */
 		FDC_DMA_InitTransfer ();				/* Update FDC_DMA.PosInBuffer */
@@ -2017,19 +2038,21 @@ static int FDC_UpdateReadAddressCmd ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
-	{
-		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
-		return FDC_CmdCompleteCommon( true );
-	}
-
 	/* Which command is running? */
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READADDRESS:
-		/* Read bytes to reach the next sector's ID field and add 10 more bytes to read this ID field */
-		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
-		FDC.CommandState = FDCEMU_RUN_READADDRESS_DMA;
+		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+		}
+		else
+		{
+			/* Read bytes to reach the next sector's ID field and add 10 more bytes to read this ID field */
+			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+			FDC.CommandState = FDCEMU_RUN_READADDRESS_DMA;
+		}
 		break;
 	 case FDCEMU_RUN_READADDRESS_DMA:
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
@@ -2087,23 +2110,24 @@ static int FDC_UpdateReadTrackCmd ( void )
 	int	SectorSize;
 	int	i;
 
-	if ( ! EmulationDrives[FDC_DRIVE].bDiskInserted )	/* Set RNF bit if no disk is inserted */
-	{
-		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );		/* [NP] Should we return random bytes instead ? */
-		return FDC_CmdCompleteCommon( true );
-	}
-
-
 	/* Which command is running? */
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READTRACK:
-		FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
+		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
 #ifdef old_index
-		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextIndexPulse_NbBytes () );	/* Wait for the next index pulse */
+			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextIndexPulse_NbBytes () );	/* Wait for the next index pulse */
 #else
-		FdcCycles = FDC_NextIndexPulse_FdcCycles ();			/* Wait for the next index pulse */
+			FdcCycles = FDC_NextIndexPulse_FdcCycles ();			/* Wait for the next index pulse */
 #endif
+		}
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
 		FDC.IndexPulse_Time = CyclesGlobalClockCounter;			/* We're on an index pulse */
