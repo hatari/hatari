@@ -276,7 +276,7 @@ void Main_SetRunVBLs(Uint32 vbls)
 void Main_WaitOnVbl(void)
 {
 	Sint64 CurrentTicks;
-	static Sint64 DestTicks = 0;
+	static Sint64 DestTicks = -1;
 	Sint64 FrameDuration_micro;
 	Sint64 nDelay;
 
@@ -292,10 +292,10 @@ void Main_WaitOnVbl(void)
 	FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
 	CurrentTicks = Time_GetTicks();
 
-	if ( DestTicks == 0 )					/* first call, init DestTicks */
+	if ( DestTicks < 0 )			/* on first call or overflow, init DestTicks */
 		DestTicks = CurrentTicks + FrameDuration_micro;
 
-	DestTicks += pulse_swallowing_count; /* audio.c - Audio_CallBack() */
+	DestTicks += pulse_swallowing_count;	/* audio.c - Audio_CallBack() */
 
 	nDelay = DestTicks - CurrentTicks;
 
