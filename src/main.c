@@ -276,7 +276,7 @@ void Main_SetRunVBLs(Uint32 vbls)
 void Main_WaitOnVbl(void)
 {
 	Sint64 CurrentTicks;
-	static Sint64 DestTicks = -1;
+	static Sint64 DestTicks = 0;
 	Sint64 FrameDuration_micro;
 	Sint64 nDelay;
 
@@ -292,8 +292,10 @@ void Main_WaitOnVbl(void)
 	FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
 	CurrentTicks = Time_GetTicks();
 
-	if ( DestTicks < 0 )			/* on first call or overflow, init DestTicks */
+	if (DestTicks == 0)			/* on first call, init DestTicks */
+	{
 		DestTicks = CurrentTicks + FrameDuration_micro;
+	}
 
 	DestTicks += pulse_swallowing_count;	/* audio.c - Audio_CallBack() */
 
@@ -301,7 +303,7 @@ void Main_WaitOnVbl(void)
 
 	/* Do not wait if we are in fast forward mode or if we are totally out of sync */
 	if (ConfigureParams.System.bFastForward == true
-	        || nDelay < -4*FrameDuration_micro)
+	    || nDelay < -4*FrameDuration_micro || nDelay > 50*FrameDuration_micro)
 	{
 		if (ConfigureParams.System.bFastForward == true)
 		{
@@ -346,6 +348,10 @@ void Main_WaitOnVbl(void)
 	{
 		CurrentTicks = Time_GetTicks();
 		nDelay = DestTicks - CurrentTicks;
+		/* If the delay is still bigger than one frame, somebody
+		 * played tricks with the system clock and we have to abort */
+		if (nDelay > FrameDuration_micro)
+			break;
 	}
 
 //printf ( "tick %lld\n" , CurrentTicks );
