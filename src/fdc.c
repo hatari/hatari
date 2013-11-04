@@ -249,6 +249,7 @@ enum
 	/* Read Sector */
 	FDCEMU_RUN_READSECTORS_READDATA,
 	FDCEMU_RUN_READSECTORS_READDATA_SPIN_UP,
+	FDCEMU_RUN_READSECTORS_READDATA_HEAD_LOAD,
 	FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON,
 	FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER,
 	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START,
@@ -259,6 +260,7 @@ enum
 	/* Write Sector */
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_SPIN_UP,
+	FDCEMU_RUN_WRITESECTORS_WRITEDATA_HEAD_LOAD,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START,
@@ -269,12 +271,14 @@ enum
 	/* Read Address */
 	FDCEMU_RUN_READADDRESS,
 	FDCEMU_RUN_READADDRESS_SPIN_UP,
+	FDCEMU_RUN_READADDRESS_HEAD_LOAD,
 	FDCEMU_RUN_READADDRESS_MOTOR_ON,
 	FDCEMU_RUN_READADDRESS_DMA,
 	FDCEMU_RUN_READADDRESS_COMPLETE,
 	/* Read Track */
 	FDCEMU_RUN_READTRACK,
 	FDCEMU_RUN_READTRACK_SPIN_UP,
+	FDCEMU_RUN_READTRACK_HEAD_LOAD,
 	FDCEMU_RUN_READTRACK_MOTOR_ON,
 	FDCEMU_RUN_READTRACK_INDEX,
 	FDCEMU_RUN_READTRACK_DMA,
@@ -282,6 +286,7 @@ enum
 	/* Write Track */
 	FDCEMU_RUN_WRITETRACK,
 	FDCEMU_RUN_WRITETRACK_SPIN_UP,
+	FDCEMU_RUN_WRITETRACK_HEAD_LOAD,
 	FDCEMU_RUN_WRITETRACK_MOTOR_ON,
 	FDCEMU_RUN_WRITETRACK_INDEX,
 	FDCEMU_RUN_WRITETRACK_DMA,
@@ -1982,7 +1987,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		else
 		{
-			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON;
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_HEAD_LOAD;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
 		}
 		break;
@@ -1992,7 +1997,15 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+	 case FDCEMU_RUN_READSECTORS_READDATA_HEAD_LOAD:
+		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
+		{
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
+			break;
+		}
+		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON:
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
@@ -2126,7 +2139,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		else
 		{
-			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON;
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_HEAD_LOAD;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
 		}
 		break;
@@ -2136,7 +2149,15 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_HEAD_LOAD:
+		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
+			break;
+		}
+		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON:
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
@@ -2260,7 +2281,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 		}
 		else
 		{
-			FDC.CommandState = FDCEMU_RUN_READADDRESS_MOTOR_ON;
+			FDC.CommandState = FDCEMU_RUN_READADDRESS_HEAD_LOAD;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
 		}
 		break;
@@ -2270,7 +2291,15 @@ static int FDC_UpdateReadAddressCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+	 case FDCEMU_RUN_READADDRESS_HEAD_LOAD:
+		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
+		{
+			FDC.CommandState = FDCEMU_RUN_READADDRESS_MOTOR_ON;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
+			break;
+		}
+		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READADDRESS_MOTOR_ON:
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
@@ -2351,7 +2380,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		else
 		{
-			FDC.CommandState = FDCEMU_RUN_READTRACK_MOTOR_ON;
+			FDC.CommandState = FDCEMU_RUN_READTRACK_HEAD_LOAD;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
 		}
 		break;
@@ -2361,7 +2390,15 @@ static int FDC_UpdateReadTrackCmd ( void )
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
-		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+	 case FDCEMU_RUN_READTRACK_HEAD_LOAD:
+		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
+		{
+			FDC.CommandState = FDCEMU_RUN_READTRACK_MOTOR_ON;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
+			break;
+		}
+		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READTRACK_MOTOR_ON:
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
@@ -2761,9 +2798,6 @@ static int FDC_TypeII_ReadSector ( void )
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
-	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
-		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );
-	
 	return FDC_DELAY_CYCLE_TYPE_II_PREPARE + FdcCycles;
 }
 
@@ -2790,9 +2824,6 @@ static int FDC_TypeII_WriteSector ( void )
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
 
-	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
-		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );
-	
 	return FDC_DELAY_CYCLE_TYPE_II_PREPARE + FdcCycles;
 }
 
@@ -2826,9 +2857,6 @@ static int FDC_TypeIII_ReadAddress ( void )
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
-	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
-		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );
-	
 	return FDC_DELAY_CYCLE_TYPE_III_PREPARE + FdcCycles;
 }
 
@@ -2853,9 +2881,6 @@ static int FDC_TypeIII_ReadTrack ( void )
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
-
-	if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
-		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );
 
 	return FDC_DELAY_CYCLE_TYPE_III_PREPARE + FdcCycles;
 }
