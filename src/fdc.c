@@ -190,7 +190,7 @@ ACSI DMA and Floppy Disk Controller(FDC)
 
 #define	FDC_COMMAND_BIT_VERIFY			(1<<2)		/* 0=no verify after type I, 1=verify after type I */
 #define	FDC_COMMAND_BIT_HEAD_LOAD		(1<<2)		/* for type II/III 0=no extra delay, 1=add 30 ms delay to set the head */
-#define	FDC_COMMAND_BIT_MOTOR_ON		(1<<3)		/* 0=enable motor test, 1=disable motor test */
+#define	FDC_COMMAND_BIT_SPIN_UP			(1<<3)		/* 0=enable motor's spin up, 1=disable motor's spin up */
 #define	FDC_COMMAND_BIT_UPDATE_TRACK		(1<<4)		/* 0=don't update TR after type I, 1=update TR after type I */
 #define	FDC_COMMAND_BIT_MULTIPLE_SECTOR		(1<<4)		/* 0=read/write only 1 sector, 1=read/write many sectors */
 
@@ -226,22 +226,30 @@ enum
 
 	/* Restore */
 	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO,
+	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_SPIN_UP,
+	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_MOTOR_ON,
 	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP,
 	FDCEMU_RUN_RESTORE_VERIFY,
 	FDCEMU_RUN_RESTORE_VERIFY_LOOP,
 	FDCEMU_RUN_RESTORE_COMPLETE,
 	/* Seek */
 	FDCEMU_RUN_SEEK_TOTRACK,
+	FDCEMU_RUN_SEEK_TOTRACK_SPIN_UP,
+	FDCEMU_RUN_SEEK_TOTRACK_MOTOR_ON,
 	FDCEMU_RUN_SEEK_VERIFY,
 	FDCEMU_RUN_SEEK_VERIFY_LOOP,
 	FDCEMU_RUN_SEEK_COMPLETE,
 	/* Step / Step In / Step Out */
 	FDCEMU_RUN_STEP_ONCE,
+	FDCEMU_RUN_STEP_ONCE_SPIN_UP,
+	FDCEMU_RUN_STEP_ONCE_MOTOR_ON,
 	FDCEMU_RUN_STEP_VERIFY,
 	FDCEMU_RUN_STEP_VERIFY_LOOP,
 	FDCEMU_RUN_STEP_COMPLETE,
 	/* Read Sector */
 	FDCEMU_RUN_READSECTORS_READDATA,
+	FDCEMU_RUN_READSECTORS_READDATA_SPIN_UP,
+	FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON,
 	FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER,
 	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START,
 	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP,
@@ -250,6 +258,8 @@ enum
 	FDCEMU_RUN_READSECTORS_COMPLETE,
 	/* Write Sector */
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA,
+	FDCEMU_RUN_WRITESECTORS_WRITEDATA_SPIN_UP,
+	FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP,
@@ -258,15 +268,21 @@ enum
 	FDCEMU_RUN_WRITESECTORS_COMPLETE,
 	/* Read Address */
 	FDCEMU_RUN_READADDRESS,
+	FDCEMU_RUN_READADDRESS_SPIN_UP,
+	FDCEMU_RUN_READADDRESS_MOTOR_ON,
 	FDCEMU_RUN_READADDRESS_DMA,
 	FDCEMU_RUN_READADDRESS_COMPLETE,
 	/* Read Track */
 	FDCEMU_RUN_READTRACK,
+	FDCEMU_RUN_READTRACK_SPIN_UP,
+	FDCEMU_RUN_READTRACK_MOTOR_ON,
 	FDCEMU_RUN_READTRACK_INDEX,
 	FDCEMU_RUN_READTRACK_DMA,
 	FDCEMU_RUN_READTRACK_COMPLETE,
 	/* Write Track */
 	FDCEMU_RUN_WRITETRACK,
+	FDCEMU_RUN_WRITETRACK_SPIN_UP,
+	FDCEMU_RUN_WRITETRACK_MOTOR_ON,
 	FDCEMU_RUN_WRITETRACK_INDEX,
 	FDCEMU_RUN_WRITETRACK_DMA,
 	FDCEMU_RUN_WRITETRACK_COMPLETE,
@@ -306,6 +322,10 @@ enum
 
 #define FDC_TRANSFER_BYTES_US( n )		(  ( n ) * 8 * 1000000.L / FDC_BITRATE_STANDARD )	/* micro sec to read/write 'n' bytes in the WD1772 */
 
+#define	FDC_DELAY_IP_SPIN_UP			6		/* 6 index pulses to reach correct speed during spin up */
+#define	FDC_DELAY_IP_MOTOR_OFF			9		/* Turn off motor 9 index pulses after the last command */
+
+
 /* Delays are in micro sec */
 #define	FDC_DELAY_US_MOTOR_ON			( 1000000.L * 6 / ( FDC_RPM_STANDARD / 60 ) )	/* 6 spins to reach correct speed */
 #define	FDC_DELAY_US_MOTOR_OFF			( 1000000.L * 9 / ( FDC_RPM_STANDARD / 60 ) )	/* Turn off motor 9 spins after the last command */
@@ -332,6 +352,8 @@ enum
 /* or floppy becomes available (which would slow down emulation), we only test every 50000 FDC cycles, */
 /* which shouldn't give any noticeable emulation error */
 #define	FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY	50000
+
+#define	FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE	500
 
 #define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
 
@@ -403,6 +425,7 @@ typedef struct {
 	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one */
 								/* ([NP] FIXME : only possible during prepare+spinup phases ?) */
 
+	int		IndexPulse_Counter;				/* To count the number of rotations when motor is ON */
 	bool		UpdateIndexPulse;			/* true if motor was stopped and we're starting a spin up sequence */
 	Uint64		IndexPulse_Time;			/* Clock value last time we had an index pulse with motor ON */
 	Uint64		CommandExpire_Time;			/* Clock value to abort a command if it didn't complete before */
@@ -431,6 +454,8 @@ typedef struct {
 	int		Density;				/* 1 for DD (720 kB), 2 for HD (1.4 MB), 4 for ED (2.8 MB) */
 	Uint8		HeadTrack;				/* Current position of the head */
 //	Uint8		Motor;					/* State of the drive's motor : 0=OFF 1=ON */
+
+	Uint64		IndexPulse_Time;			/* Clock value last time we had an index pulse with motor ON */
 } FDC_DRIVE_STRUCT;
 
 
@@ -462,14 +487,17 @@ static void	FDC_DMA_InitTransfer ( void );
 static bool	FDC_DMA_ReadFromFloppy ( void );
 static bool	FDC_DMA_WriteToFloppy ( void );
 
+static void	FDC_UpdateAll ( void );
 static bool	FDC_ValidFloppyDrive ( void );
 static int	FDC_FindFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Track );
 static int	FDC_GetDensity ( int Drive );
-
 static int	FDC_GetBytesPerTrack ( void );
-static void	FDC_IndexPulse_Init ( void );
+
+static void	FDC_IndexPulse_Update ( void );
+static void	FDC_IndexPulse_Init ( int Drive );
+static void	FDC_IndexPulse_Init_old ( void );
 static int	FDC_IndexPulse_GetCurrentPos ( void );
 static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev );
 static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
@@ -491,6 +519,7 @@ static int	FDC_UpdateReadAddressCmd ( void );
 static int	FDC_UpdateReadTrackCmd ( void );
 static int	FDC_UpdateForceIntCmd ( void );
 
+static bool	FDC_Set_MotorON ( Uint8 FDC_CR );
 static int	FDC_Check_MotorON ( Uint8 FDC_CR );
 static int	FDC_TypeI_Restore ( void );
 static int	FDC_TypeI_Seek ( void );
@@ -560,7 +589,7 @@ static int	FDC_DelayToFdcCycles ( int Delay_micro )
 {
 	int	FdcCycles;
 
-	FdcCycles = (int) ( ( (Sint64) FDC_CLOCK_STANDARD * Delay_micro ) / 1000000 );
+	FdcCycles = (int) ( ( (Uint64) FDC_CLOCK_STANDARD * Delay_micro ) / 1000000 );
 
 //fprintf ( stderr , "fdc state %d delay %d us %d fdc cycles\n" , FDC.Command , Delay_micro , FdcCycles );
 	return FdcCycles;
@@ -586,8 +615,8 @@ static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles )
 	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
 		FdcCycles *= 2;					/* correct delays for a 8 MHz FDC_Freq clock instead of 16 */
 
-//	CpuCycles = rint ( ( (Sint64)FdcCycles * MachineClocks.CPU_Freq ) / MachineClocks.FDC_Freq );
-	CpuCycles = rint ( ( (Sint64)FdcCycles * 8021247.L ) / MachineClocks.FDC_Freq );
+//	CpuCycles = rint ( ( (Uint64)FdcCycles * MachineClocks.CPU_Freq ) / MachineClocks.FDC_Freq );
+	CpuCycles = rint ( ( (Uint64)FdcCycles * 8021247.L ) / MachineClocks.FDC_Freq );
 	CpuCycles &= -4;					/* Multiple of 4 */
 	CpuCycles <<= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
 
@@ -613,8 +642,8 @@ static int	FDC_CpuCyclesToFdcCycles ( int CpuCycles )
 
 	CpuCycles >>= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
 
-//	FdcCycles = rint ( ( (Sint64)CpuCycles * MachineClocks.FDC_Freq ) / MachineClocks.CPU_Freq );
-	FdcCycles = rint ( ( (Sint64)CpuCycles * MachineClocks.FDC_Freq ) / 8021247.L );
+//	FdcCycles = rint ( ( (Uint64)CpuCycles * MachineClocks.FDC_Freq ) / MachineClocks.CPU_Freq );
+	FdcCycles = rint ( ( (Uint64)CpuCycles * MachineClocks.FDC_Freq ) / 8021247.L );
 
 	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */
 	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
@@ -653,7 +682,7 @@ static int	FDC_DelayToCpuCycles ( int Delay_micro )
 {
 	int	Delay;
 
-	Delay = (int) ( ( (Sint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
+	Delay = (int) ( ( (Uint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
 Delay = Delay_micro*8;
 //if ( Delay_micro==32 ) Delay=255;
 
@@ -715,6 +744,7 @@ void FDC_Init ( void )
 		FDC_DRIVES[ i ].RPM = FDC_RPM_STANDARD * 1000;
 		FDC_DRIVES[ i ].Density = FDC_DENSITY_FACTOR_DD;
 		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
+		FDC_DRIVES[ i ].IndexPulse_Time = 0;
 	}
 
 FDC_IndexPulse_GetCurrentPos();		// REMOVE : avoid gcc warning on unused function
@@ -755,6 +785,8 @@ void FDC_Reset ( bool bCold )
 	FDC.Command = FDCEMU_CMD_NULL;			/* FDC emulation command currently being executed */
 	FDC.CommandState = FDCEMU_RUN_NULL;
 	FDC.CommandType = 0;
+
+	FDC.IndexPulse_Counter = 0;
 
 	FDC_DMA.Status = 1;				/* no DMA error and SectorCount=0 */
 	FDC_DMA.Mode = 0;
@@ -956,6 +988,19 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Update the FDC's internal variables on a regular basis.
+ * To get correct accuracy, this should be called every 200-500 FDC cycles
+ * So far, we only need to update the index position for the valid
+ * drive/floppy ; updating every 500 cycles is enough for this case.
+ */
+void	FDC_UpdateAll ( void )
+{
+	FDC_IndexPulse_Update ();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function is used to enable/disable a drive when
  * using the UI or command line parameters
  */
@@ -980,6 +1025,10 @@ void	FDC_InsertFloppy ( int Drive )
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 	{
 		FDC_DRIVES[ Drive ].DiskInserted = true;
+		if ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) != 0 )		/* If we insert a floppy while motor is already on, we must */
+			FDC_IndexPulse_Init ( Drive );			/* init the index pulse's position */
+		else
+			FDC_DRIVES[ Drive ].IndexPulse_Time = 0;	/* Index pulse's position not known yet */
 		FDC_DRIVES[ Drive ].Density = FDC_GetDensity ( Drive );
 	}
 }
@@ -995,7 +1044,10 @@ void	FDC_EjectFloppy ( int Drive )
 	LOG_TRACE ( TRACE_FDC , "fdc eject drive=%d\n" , Drive );
 
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
+	{
 		FDC_DRIVES[ Drive ].DiskInserted = false;
+		FDC_DRIVES[ Drive ].IndexPulse_Time = 0;		/* Stop counting index pulses on an empty drive */
+	}
 }
 
 
@@ -1031,6 +1083,15 @@ void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 	LOG_TRACE(TRACE_FDC, "fdc change drive/side io_porta_old=0x%x io_porta_new=0x%x side %d->%d drive %d->%d VBL=%d HBL=%d\n" ,
 		  io_porta_old , io_porta_new , FDC.SideSignal , Side , FDC.DriveSelSignal , Drive , nVBLs , nHBL );
 
+	if ( FDC.DriveSelSignal != Drive )
+	{
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time = 0;	/* Stop counting index pulse on the previous drive */
+		if ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) != 0 )		/* If we change drive while motor is already on, we must */
+			FDC_IndexPulse_Init ( Drive );			/* init the index pulse's position on the new drive */
+		else
+			FDC_DRIVES[ Drive ].IndexPulse_Time = 0;	/* Index pulse's position not known yet */
+	}
+	
 	FDC.SideSignal = Side;
 	FDC.DriveSelSignal = Drive;
 }
@@ -1156,18 +1217,69 @@ static int	FDC_GetBytesPerTrack ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Store the time of the most recent index pulse.
- * This is called when motor was off and reaches its peak speed, and is used
- * to compute the position relative to the start of the track when we need
- * to wait for the next track index or the next sector header while the
- * floppy is spinning.
- * As the FDC waits 6 index pulses during the spin up phase, this means
- * that when motor reaches its desired speed an index pulse was just
- * encountered.
- * So, the position after peak speed is reached is not random, it will always
- * be 0 and we set the index pulse time to "now".
+ * If some valid drive/floppy are available and the motor signal is on,
+ * update the current angular position for the drive and check if
+ * a new index pulse was reached. Increase Index Pulse counter in that case.
+ *
+ * This function should be called at least every 500 FDC cycles when motor
+ * is ON to get good accuracy.
+ *
+ * [NP] TODO : should we have 2 different Index Pulses for each side or do they
+ * happen at the same time ?
  */
-static void	FDC_IndexPulse_Init ( void )
+void	FDC_IndexPulse_Update ( void )
+{
+	Uint32	CpuCyclesPerRev;
+
+//fprintf ( stderr , "update index drive=%d side=%d counter=%d VBL=%d HBL=%d\n" , FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter , nVBLs , nHBL );
+
+	if ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 )
+		return;							/* Motor is OFF, nothing to update */
+
+	if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+		|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
+		return;							/* No valid drive/floppy, nothing to update */
+
+	if ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 )	/* No reference Index Pulse for this drive */
+		FDC_IndexPulse_Init ( FDC.DriveSelSignal );
+
+	CpuCyclesPerRev = ( (Uint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC.DriveSelSignal ].RPM / 60 ) );
+
+	if ( CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time >= CpuCyclesPerRev )
+	{
+		  FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time += CpuCyclesPerRev;	/* Position of the most recent Index Pulse */
+		  FDC.IndexPulse_Counter++;
+		  LOG_TRACE(TRACE_FDC, "fdc update index drive=%d side=%d counter=%d VBL=%d HBL=%d\n" ,
+			  FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter , nVBLs , nHBL );
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * When motor is started, the position of the next index pulse will be random,
+ * as we don't know how much the floppy rotated when the motor was stopped or
+ * the floppy was inserted.
+ * We compute a random position in the "past" (less than one revolution)
+ * and use it as a reference to detect the next index pulse.
+ *
+ */
+static void	FDC_IndexPulse_Init ( int Drive )
+{
+	int	CpuCyclesPerRev;
+	Uint64	IndexPulse_Time;
+
+	CpuCyclesPerRev = ( (Uint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC_DRIVE ].RPM / 60 ) );
+	IndexPulse_Time = CyclesGlobalClockCounter - rand () % CpuCyclesPerRev;
+	if ( IndexPulse_Time <= 0 )					/* Should not happen (only if FDC_IndexPulse_Init is */
+		IndexPulse_Time = 1;					/* called just after emulation starts) */
+	FDC_DRIVES[ Drive ].IndexPulse_Time = IndexPulse_Time;
+
+//fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
+}
+
+
+static void	FDC_IndexPulse_Init_old ( void )
 {
 	FDC.IndexPulse_Time = CyclesGlobalClockCounter;
 //fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
@@ -1199,7 +1311,7 @@ static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev )
 
 	/* Get the number of CPU cycles for one revolution of the floppy */
 	/* RPM is already multiplied by 1000 to simulate non-integer values */
-	CpuCyclesPerRev = ( (Sint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC_DRIVE ].RPM / 60 ) );
+	CpuCyclesPerRev = ( (Uint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC_DRIVE ].RPM / 60 ) );
 	CpuCyclesSinceIndex = ( CyclesGlobalClockCounter - FDC.IndexPulse_Time ) % CpuCyclesPerRev;
 
 	if ( pFdcCyclesPerRev )
@@ -1395,6 +1507,9 @@ void FDC_InterruptHandler_Update ( void )
 
 	CycInt_AcknowledgeInterrupt();
 
+	/* Update FDC's internal variables */
+	FDC_UpdateAll ();
+
 	/* Is FDC active? */
 	if (FDC.Command!=FDCEMU_CMD_NULL)
 	{
@@ -1404,7 +1519,7 @@ void FDC_InterruptHandler_Update ( void )
 		/* so we must init a new index position */
 		if ( FDC.UpdateIndexPulse == true )
 		{
-			FDC_IndexPulse_Init ();
+			FDC_IndexPulse_Init_old ();
 			FDC.UpdateIndexPulse = false;
 		}
 
@@ -1568,12 +1683,32 @@ static int FDC_UpdateRestoreCmd ( void )
 {
 	int	FdcCycles = 0;
 
-	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
 
 	/* Which command is running? */
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO:
+		if ( FDC_Set_MotorON ( FDC.CR ) )
+		{
+			FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_SPIN_UP;
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Spin up needed */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_MOTOR_ON;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
+		}
+		break;
+	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_SPIN_UP:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_SPIN_UP )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_MOTOR_ON:
+		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
+
 		/* The FDC will try 255 times to reach track 0 using step out signals */
 		/* If track 0 signal is not detected after 255 attempts, the command is interrupted */
 		/* and FDC_STR_BIT_RNF is set in the Status Register. */
@@ -1643,12 +1778,31 @@ static int FDC_UpdateSeekCmd ( void )
 {
 	int	FdcCycles = 0;
 
-	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
-
 	/* Which command is running? */
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_SEEK_TOTRACK:
+		if ( FDC_Set_MotorON ( FDC.CR ) )
+		{
+			FDC.CommandState = FDCEMU_RUN_SEEK_TOTRACK_SPIN_UP;
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Spin up needed */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_SEEK_TOTRACK_MOTOR_ON;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
+		}
+		break;
+	 case FDCEMU_RUN_SEEK_TOTRACK_SPIN_UP:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_SPIN_UP )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+	 case FDCEMU_RUN_SEEK_TOTRACK_MOTOR_ON:
+		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
+
 		if ( FDC.TR == FDC.DR )					/* Are we at the selected track ? */
 		{
 			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY;
@@ -1727,12 +1881,31 @@ static int FDC_UpdateStepCmd ( void )
 {
 	int	FdcCycles = 0;
 
-	FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );			/* at this point, spin up sequence is ok */
-
 	/* Which command is running? */
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_STEP_ONCE:
+		if ( FDC_Set_MotorON ( FDC.CR ) )
+		{
+			FDC.CommandState = FDCEMU_RUN_STEP_ONCE_SPIN_UP;
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Spin up needed */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_STEP_ONCE_MOTOR_ON;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
+		}
+		break;
+	 case FDCEMU_RUN_STEP_ONCE_SPIN_UP:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_SPIN_UP )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+	 case FDCEMU_RUN_STEP_ONCE_MOTOR_ON:
+		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
+
 		/* Move head by one track depending on FDC.StepDirection */
 		if ( FDC.CR & FDC_COMMAND_BIT_UPDATE_TRACK )
 			FDC.TR += FDC.StepDirection;			/* Update Track Register */
@@ -1802,6 +1975,25 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READSECTORS_READDATA:
+		if ( FDC_Set_MotorON ( FDC.CR ) )
+		{
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_SPIN_UP;
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Spin up needed */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
+		}
+		break;
+	 case FDCEMU_RUN_READSECTORS_READDATA_SPIN_UP:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_SPIN_UP )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+	 case FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON:
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
 		{
@@ -1927,6 +2119,25 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA:
+		if ( FDC_Set_MotorON ( FDC.CR ) )
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_SPIN_UP;
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Spin up needed */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
+		}
+		break;
+	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_SPIN_UP:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_SPIN_UP )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON:
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
 		{
@@ -2042,6 +2253,25 @@ static int FDC_UpdateReadAddressCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READADDRESS:
+		if ( FDC_Set_MotorON ( FDC.CR ) )
+		{
+			FDC.CommandState = FDCEMU_RUN_READADDRESS_SPIN_UP;
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Spin up needed */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_READADDRESS_MOTOR_ON;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
+		}
+		break;
+	 case FDCEMU_RUN_READADDRESS_SPIN_UP:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_SPIN_UP )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+	 case FDCEMU_RUN_READADDRESS_MOTOR_ON:
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
 		{
@@ -2114,6 +2344,25 @@ static int FDC_UpdateReadTrackCmd ( void )
 	switch (FDC.CommandState)
 	{
 	 case FDCEMU_RUN_READTRACK:
+		if ( FDC_Set_MotorON ( FDC.CR ) )
+		{
+			FDC.CommandState = FDCEMU_RUN_READTRACK_SPIN_UP;
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Spin up needed */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_READTRACK_MOTOR_ON;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
+		}
+		break;
+	 case FDCEMU_RUN_READTRACK_SPIN_UP:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_SPIN_UP )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
+	 case FDCEMU_RUN_READTRACK_MOTOR_ON:
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
 			|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
 		{
@@ -2125,7 +2374,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 #ifdef old_index
 			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextIndexPulse_NbBytes () );	/* Wait for the next index pulse */
 #else
-			FdcCycles = FDC_NextIndexPulse_FdcCycles ();			/* Wait for the next index pulse */
+			FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
 #endif
 		}
 		break;
@@ -2285,15 +2534,59 @@ static int FDC_UpdateForceIntCmd ( void )
  * Common to types I, II and III
  *
  * Start motor / spin up sequence if needed
+ * Return true if spin up sequence is needed, else false
  */
+
+static bool FDC_Set_MotorON ( Uint8 FDC_CR )
+{
+	int	FrameCycles, HblCounterVideo, LineCycles;
+	bool	SpinUp;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	if ( ( ( FDC_CR & FDC_COMMAND_BIT_SPIN_UP ) == 0 )		/* Command wants motor's spin up */
+	  && ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 ) )		/* Motor on not enabled yet */
+	{
+		LOG_TRACE(TRACE_FDC, "fdc start motor with spinup VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+		FDC_Update_STR ( FDC_STR_BIT_SPIN_UP , 0 );		/* Unset spin up bit */
+		FDC.UpdateIndexPulse = true;
+		FDC.IndexPulse_Counter = 0;				/* Reset counter to measure the spin up sequence */
+		SpinUp = true;
+	}
+	else								/* No spin up : don't add delay to start the motor */
+	{
+		LOG_TRACE(TRACE_FDC, "fdc start motor without spinup VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+		SpinUp = false;
+	}
+
+	FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );			/* Start motor */
+
+	if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+		|| ( !FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted ) )
+	{
+		LOG_TRACE(TRACE_FDC, "fdc start motor : no disk/drive VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+	}
+	else if ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 )
+		FDC_IndexPulse_Init ( FDC.DriveSelSignal );		/* Index Pulse's position is random when motor starts */
+	
+	return SpinUp;
+}
+
 
 static int FDC_Check_MotorON ( Uint8 FDC_CR )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
+return 0;
+
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	if ( ( ( FDC_CR & FDC_COMMAND_BIT_MOTOR_ON ) == 0 )			/* Command wants motor on / spin up */
+	if ( ( ( FDC_CR & FDC_COMMAND_BIT_SPIN_UP ) == 0 )			/* Command wants motor on / spin up */
 	  && ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 ) )			/* Motor on not enabled yet */
 	{
 		LOG_TRACE(TRACE_FDC, "fdc start motor VBL=%d video_cyc=%d %d@%d pc=%x\n",
@@ -2327,7 +2620,7 @@ static int FDC_TypeI_Restore(void)
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type I restore spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
 		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2351,7 +2644,7 @@ static int FDC_TypeI_Seek ( void )
 
 	LOG_TRACE(TRACE_FDC, "fdc type I seek dest_track=0x%x spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.DR,
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
 		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2375,7 +2668,7 @@ static int FDC_TypeI_Step ( void )
 
 	LOG_TRACE(TRACE_FDC, "fdc type I step %d spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.StepDirection,
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
 		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2398,7 +2691,7 @@ static int FDC_TypeI_StepIn(void)
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type I step in spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
 		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2422,7 +2715,7 @@ static int FDC_TypeI_StepOut ( void )
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type I step out spinup=%s verify=%s steprate=%d drive=%d tr=0x%x head_track=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_VERIFY ) ? "on" : "off" ,
 		  FDC_StepRate_ms[ FDC_STEP_RATE ] ,
 		  FDC_DRIVE , FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2456,7 +2749,7 @@ static int FDC_TypeII_ReadSector ( void )
 
 	LOG_TRACE(TRACE_FDC, "fdc type II read sector sector=0x%x multi=%s spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" ,
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount ,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2485,7 +2778,7 @@ static int FDC_TypeII_WriteSector ( void )
 
 	LOG_TRACE(TRACE_FDC, "fdc type II write sector sector=0x%x multi=%s spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d dmasector=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.SR, ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR ) ? "on" : "off" ,
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_DMA.SectorCount,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2521,7 +2814,7 @@ static int FDC_TypeIII_ReadAddress ( void )
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type III read address spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2549,7 +2842,7 @@ static int FDC_TypeIII_ReadTrack ( void )
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type III read track spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2576,7 +2869,7 @@ static int FDC_TypeIII_WriteTrack ( void )
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc type III write track spinup=%s settle=%s tr=0x%x head_track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  ( FDC.CR & FDC_COMMAND_BIT_MOTOR_ON ) ? "off" : "on" ,
+		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE, FDC_DRIVE , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
@@ -2983,6 +3276,9 @@ void FDC_DiskController_WriteWord ( void )
 		FDC_WriteSectorCountRegister();
 	else
 	{
+		/* Update FDC's internal variables */
+		FDC_UpdateAll ();
+
 		/* Write to FDC registers */
 		switch ( FDC_DMA.Mode & 0x6 )
 		{   /* Bits 1,2 (A1,A0) */
@@ -3034,7 +3330,10 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	}
 	else
 	{
-		/* FDC code */
+		/* Update FDC's internal variables */
+		FDC_UpdateAll ();
+
+		/* Read FDC registers */
 		switch (FDC_DMA.Mode & 0x6)				/* Bits 1,2 (A1,A0) */
 		{
 		 case 0x0:						/* 0 0 - Status register */
