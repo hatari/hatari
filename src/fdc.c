@@ -230,6 +230,7 @@ enum
 	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_MOTOR_ON,
 	FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_LOOP,
 	FDCEMU_RUN_RESTORE_VERIFY,
+	FDCEMU_RUN_RESTORE_VERIFY_HEAD_OK,
 	FDCEMU_RUN_RESTORE_VERIFY_LOOP,
 	FDCEMU_RUN_RESTORE_COMPLETE,
 	/* Seek */
@@ -237,6 +238,7 @@ enum
 	FDCEMU_RUN_SEEK_TOTRACK_SPIN_UP,
 	FDCEMU_RUN_SEEK_TOTRACK_MOTOR_ON,
 	FDCEMU_RUN_SEEK_VERIFY,
+	FDCEMU_RUN_SEEK_VERIFY_HEAD_OK,
 	FDCEMU_RUN_SEEK_VERIFY_LOOP,
 	FDCEMU_RUN_SEEK_COMPLETE,
 	/* Step / Step In / Step Out */
@@ -244,6 +246,7 @@ enum
 	FDCEMU_RUN_STEP_ONCE_SPIN_UP,
 	FDCEMU_RUN_STEP_ONCE_MOTOR_ON,
 	FDCEMU_RUN_STEP_VERIFY,
+	FDCEMU_RUN_STEP_VERIFY_HEAD_OK,
 	FDCEMU_RUN_STEP_VERIFY_LOOP,
 	FDCEMU_RUN_STEP_COMPLETE,
 	/* Read Sector */
@@ -1751,15 +1754,18 @@ static int FDC_UpdateRestoreCmd ( void )
 	 case FDCEMU_RUN_RESTORE_VERIFY:
 		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 		{
-			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_LOOP;
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD )			/* Head settle delay */
-				+ FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_HEAD_OK;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
 		}
 		else
 		{
 			FDC.CommandState = FDCEMU_RUN_RESTORE_COMPLETE;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
+		break;
+	 case FDCEMU_RUN_RESTORE_VERIFY_HEAD_OK:
+		FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_LOOP;
+		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Delay to read 3xA1, FE, ID field */
 		break;
 	 case FDCEMU_RUN_RESTORE_VERIFY_LOOP:
 		FDC_VerifyTrack();
@@ -1854,15 +1860,18 @@ static int FDC_UpdateSeekCmd ( void )
 	 case FDCEMU_RUN_SEEK_VERIFY:
 		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 		{
-			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_LOOP;
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD )			/* Head settle delay */
-				+ FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_HEAD_OK;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
 		}
 		else
 		{
 			FDC.CommandState = FDCEMU_RUN_SEEK_COMPLETE;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
+		break;
+	 case FDCEMU_RUN_SEEK_VERIFY_HEAD_OK:
+		FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_LOOP;
+		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Delay to read 3xA1, FE, ID field */
 		break;
 	 case FDCEMU_RUN_SEEK_VERIFY_LOOP:
 		FDC_VerifyTrack();
@@ -1939,15 +1948,18 @@ static int FDC_UpdateStepCmd ( void )
 	 case FDCEMU_RUN_STEP_VERIFY:
 		if ( FDC.CR & FDC_COMMAND_BIT_VERIFY )
 		{
-			FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_LOOP;
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD )			/* Head settle delay */
-				+ FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Add delay to read 3xA1, FE, ID field */
+			FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_HEAD_OK;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
 		}
 		else
 		{
 			FDC.CommandState = FDCEMU_RUN_STEP_COMPLETE;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
+		break;
+	 case FDCEMU_RUN_STEP_VERIFY_HEAD_OK:
+		FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_LOOP;
+		FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextSectorID_NbBytes () + 10 );	/* Delay to read 3xA1, FE, ID field */
 		break;
 	 case FDCEMU_RUN_STEP_VERIFY_LOOP:
 		FDC_VerifyTrack();
