@@ -297,7 +297,12 @@ enum
 	/* Force Int */
 	FDCEMU_RUN_FORCEINT,
 	FDCEMU_RUN_FORCEINT_LOOP,
-	FDCEMU_RUN_FORCEINT_COMPLETE
+	FDCEMU_RUN_FORCEINT_COMPLETE,
+
+	/*  Motor Stop */
+	FDCEMU_RUN_MOTOR_STOP,
+	FDCEMU_RUN_MOTOR_STOP_WAIT,
+	FDCEMU_RUN_MOTOR_STOP_COMPLETE
 };
 
 
@@ -517,6 +522,7 @@ static int	FDC_NextSectorID_NbBytes ( void );
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
 static int	FDC_CmdCompleteCommon ( bool DoInt );
 static void	FDC_VerifyTrack ( void );
+static int	FDC_UpdateMotorStop_old ( void );
 static int	FDC_UpdateMotorStop ( void );
 static int	FDC_UpdateRestoreCmd ( void );
 static int	FDC_UpdateSeekCmd ( void );
@@ -1613,7 +1619,9 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
 		FDC_AcknowledgeInterrupt();
 
 	FDC.Command = FDCEMU_CMD_MOTOR_STOP;				/* Fake command to stop the motor */
-	return FDC_DelayToFdcCycles ( FDC_DELAY_US_MOTOR_OFF );
+	FDC.CommandState = FDCEMU_RUN_MOTOR_STOP;
+//	return FDC_DelayToFdcCycles ( FDC_DELAY_US_MOTOR_OFF );
+	return FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 }
 
 
@@ -1668,7 +1676,7 @@ static void FDC_VerifyTrack ( void )
  * When the motor really stops (2 secs after the last command), clear all related bits in SR
  * We clear motor bit, but spinup bit remains to 1 (verified on a real STF)
  */
-static int FDC_UpdateMotorStop ( void )
+static int FDC_UpdateMotorStop_old ( void )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -1685,12 +1693,49 @@ static int FDC_UpdateMotorStop ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Run the 'motor stop' sequence : wait for 9 revolutions (1.8 sec)
+ * and stop the motor.
+ * We clear motor bit, but spinup bit remains to 1 (verified on a real STF)
+ */
+static int FDC_UpdateMotorStop ( void )
+{
+	int	FdcCycles = 0;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	/* Which command is running? */
+	switch (FDC.CommandState)
+	{
+	 case FDCEMU_RUN_MOTOR_STOP:
+		FDC.IndexPulse_Counter = 0;
+		FDC.CommandState = FDCEMU_RUN_MOTOR_STOP_WAIT;
+	 case FDCEMU_RUN_MOTOR_STOP_WAIT:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_MOTOR_OFF )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _COMPLETE state */
+	 case FDCEMU_RUN_MOTOR_STOP_COMPLETE:
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+		LOG_TRACE(TRACE_FDC, "fdc motor stopped VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+		FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON , 0 );		/* Unset motor bit and keep spin up bit */
+		FDC.Command = FDCEMU_CMD_NULL;				/* Motor stopped, this is the last state */
+		FdcCycles = 0;
+		break;
+	}
+	return FdcCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Run 'RESTORE' command
  */
 static int FDC_UpdateRestoreCmd ( void )
 {
 	int	FdcCycles = 0;
-
 
 	/* Which command is running? */
 	switch (FDC.CommandState)
@@ -2570,7 +2615,7 @@ static int FDC_UpdateForceIntCmd ( void )
 		/* We reach this state only when the motor stops, because we won't get index pulse anymore */
 		/* The WD1772 doesn't really stop the Force Int command in that case, but as the FDC's state */
 		/* won't change anymore we go to the FDCEMU_CMD_NULL state to save cpu in the case of the emulation */
-		FdcCycles = FDC_UpdateMotorStop ();
+		FdcCycles = FDC_UpdateMotorStop_old ();
 		break;
 	}
 
