@@ -438,7 +438,8 @@ typedef struct {
 	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one */
 								/* ([NP] FIXME : only possible during prepare+spinup phases ?) */
 
-	int		IndexPulse_Counter;				/* To count the number of rotations when motor is ON */
+	bool		StatusTypeI;				/* When true, STR will report the status of a type I command */
+	int		IndexPulse_Counter;			/* To count the number of rotations when motor is ON */
 	bool		UpdateIndexPulse;			/* true if motor was stopped and we're starting a spin up sequence */
 	Uint64		IndexPulse_Time;			/* Clock value last time we had an index pulse with motor ON */
 	Uint64		CommandExpire_Time;			/* Clock value to abort a command if it didn't complete before */
@@ -786,6 +787,7 @@ void FDC_Reset ( bool bCold )
 	FDC.CR = 0;
 	FDC.STR = 0;
 	FDC.SR = 1;
+	FDC.StatusTypeI = false;
 
 	/* On cold reset, TR and DR should be reset */
 	/* On warm reset, TR and DR value should be kept */
@@ -2989,6 +2991,7 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 		  FDC.CR , ( FDC.CR & 0x8 ) >> 3 , ( FDC.CR & 0x4 ) >> 2 ,
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
+#ifdef old_str
 	/* For Type II/III commands, LOST DATA bit is never set (DRQ is always handled by the DMA) */
 	/* (eg Super Monaco GP on Superior 65 : loader fails if LOST DATA is set when there're not enough DMA sectors to transfer bytes) */
 	FDC_Update_STR ( FDC_STR_BIT_LOST_DATA , 0 );			/* Remove LOST DATA / TR00 bit */
@@ -3009,6 +3012,12 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 		else
 			FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
 	}
+#else
+	/* If a command was running, just remove busy bit and keep the current content of Status reg */
+	/* If FDC was idle, the content of Status reg is forced to type I */
+	if ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			
+		FDC.StatusTypeI = true;
+#endif
 
 	if ( ( FDC.CR & 0x4 ) == 0 )					/* Force Int immediate */
 	{
@@ -3037,6 +3046,7 @@ static int FDC_ExecuteTypeICommands ( void )
 	int	FdcCycles = 0;
 
 	FDC.CommandType = 1;
+	FDC.StatusTypeI = true;
 	MFP_GPIP |= 0x20;
 
 	/* Check Type I Command */
@@ -3078,6 +3088,7 @@ static int FDC_ExecuteTypeIICommands ( void )
 	int	FdcCycles = 0;
 
 	FDC.CommandType = 2;
+	FDC.StatusTypeI = false;
 	MFP_GPIP |= 0x20;
 
 	/* Check Type II Command */
@@ -3109,6 +3120,7 @@ static int FDC_ExecuteTypeIIICommands ( void )
 	int	FdcCycles = 0;
 
 	FDC.CommandType = 3;
+	FDC.StatusTypeI = false;
 	MFP_GPIP |= 0x20;
 
 	/* Check Type III Command */
@@ -3422,6 +3434,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 			/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
 			/* is updated after a Type I command */
 			/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
+#ifdef old_str
 			if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
 			  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
 			{
@@ -3454,6 +3467,52 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 			if ( ForceWPRT != 0 )
 				LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n", ForceWPRT==1?1:0, nVBLs, FDC_DRIVE, DiskControllerByte );
 
+#else
+			/* If we report a type I status, some bits are updated in real time */
+			/* depending on the corresponding signals. If this is not a type I, we return STR unmodified */
+			if ( FDC.StatusTypeI )
+			{
+				/* If no drive available, FDC's input signals TR00, INDEX and WPRT are off */
+				if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled ) )
+					FDC_Update_STR ( FDC_STR_BIT_TR00 | FDC_STR_BIT_INDEX | FDC_STR_BIT_WPRT , 0 );
+
+				else
+				{
+					if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == 0 )
+						FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+					else
+						FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
+
+					if ( FDC_IndexPulse_GetState () )
+						FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit */
+					else
+						FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
+
+					/* When there's no disk in drive, the floppy drive hardware can't see */
+					/* the difference with an inserted disk that would be write protected */
+					if ( ! FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted )
+						FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+					else if ( Floppy_IsWriteProtected ( FDC.DriveSelSignal ) )
+						FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+					else
+						FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
+
+					/* Temporarily change the WPRT bit if we're in a transition phase */
+					/* regarding the disk in the drive (inserting or ejecting) */
+					ForceWPRT = Floppy_DriveTransitionUpdateState ( FDC.DriveSelSignal );
+					if ( ForceWPRT == 1 )
+						FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Force setting WPRT */
+					else if ( ForceWPRT == -1 )
+						FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Force clearing WPRT */
+
+					if ( ForceWPRT != 0 )
+						LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n",
+							  ForceWPRT==1?1:0, nVBLs, FDC.DriveSelSignal, FDC.STR );
+				}
+			}
+
+			DiskControllerByte = FDC.STR;
+#endif
 			/* When Status Register is read, FDC's INTRQ is reset */
 			MFP_GPIP |= 0x20;
 			break;
