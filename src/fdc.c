@@ -512,12 +512,10 @@ static int	FDC_GetBytesPerTrack ( void );
 static void	FDC_IndexPulse_Update ( void );
 static void	FDC_IndexPulse_Init ( int Drive );
 static void	FDC_IndexPulse_Init_old ( void );
-static int	FDC_IndexPulse_GetCurrentPos ( void );
 static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev );
 static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
 static int	FDC_IndexPulse_GetState ( void );
 static int	FDC_NextIndexPulse_FdcCycles ( void );
-static int	FDC_NextIndexPulse_NbBytes ( void );
 static int	FDC_NextSectorID_NbBytes ( void );
 
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
@@ -761,9 +759,6 @@ void FDC_Init ( void )
 		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;
 	}
-
-FDC_IndexPulse_GetCurrentPos();		// REMOVE : avoid gcc warning on unused function
-FDC_NextIndexPulse_NbBytes();		// REMOVE : avoid gcc warning on unused function
 }
 
 
@@ -1307,17 +1302,6 @@ static void	FDC_IndexPulse_Init_old ( void )
  * Return the current position in the track relative to the index pulse.
  * For standard floppy, this is a number of bytes in the range [0,6250[
  */
-static int	FDC_IndexPulse_GetCurrentPos ()
-{
-	Uint64	BytesSinceIndex;
-
-	/* Transform the current number of cycles since the reference index into a number of bytes */
-	BytesSinceIndex = ( CyclesGlobalClockCounter - FDC.IndexPulse_Time ) / FDC_FdcCyclesToCpuCycles ( FDC_TransferByte_FdcCycles ( 1 ) );
-
-//fprintf ( stderr , "fdc index pulse pos cur=%lld ref=%lld bytes=%lld pos=%d\n" ,  CyclesGlobalClockCounter , FDC.IndexPulse_Time , BytesSinceIndex , (int)(BytesSinceIndex % FDC_GetBytesPerTrack () ) );
-	/* Ignore the total number of spins, only keep the position relative to the index pulse */
-	return ( BytesSinceIndex % FDC_GetBytesPerTrack ()  );
-}
 
 
 static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev )
@@ -1342,7 +1326,7 @@ static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void )
 	int	FdcCyclesSinceIndex;
 
 	FdcCyclesSinceIndex = FDC_IndexPulse_GetCurrentPos_FdcCycles ( NULL );
-//fprintf ( stderr , "fdc index current pos old=%d new=%d\n" , FDC_IndexPulse_GetCurrentPos() , FdcCyclesSinceIndex / FDC_DELAY_CYCLE_MFM_BYTE );
+//fprintf ( stderr , "fdc index current pos new=%d\n" , FdcCyclesSinceIndex / FDC_DELAY_CYCLE_MFM_BYTE );
 
 	return FdcCyclesSinceIndex / FDC_DELAY_CYCLE_MFM_BYTE;
 }
@@ -1358,20 +1342,6 @@ static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void )
  */
 static int	FDC_IndexPulse_GetState ( void )
 {
-#ifdef old_index
-	int	CurrentPos;
-	int	state;
-
-	CurrentPos = FDC_IndexPulse_GetCurrentPos ();
-
-	state = 0;
-	if ( CurrentPos <  FDC_DelayToFdcCycles ( FDC_DELAY_US_INDEX_PULSE_LENGTH ) / FDC_TransferByte_FdcCycles ( 1 ) )
-		state = 1;
-
-//fprintf ( stderr , "fdc index state 1 pos pos=%d state=%d\n" , CurrentPos , state );
-	return state;
-
-#else
 	int	state;
 	int	FdcCyclesSinceIndex;
 
@@ -1384,7 +1354,6 @@ static int	FDC_IndexPulse_GetState ( void )
 //fprintf ( stderr , "fdc index state 2 pos pos=%d state=%d\n" , FdcCyclesSinceIndex , state );
 	
 	return state;
-#endif
 }
 
 
@@ -1411,19 +1380,9 @@ static int	FDC_NextIndexPulse_FdcCycles ( void )
 	if ( res <= 1 )
 		res = FdcCyclesPerRev;
 	
-//fprintf ( stderr , "fdc next index current pos old=%d new=%d\n" , FDC_NextIndexPulse_NbBytes() * FDC_DELAY_CYCLE_MFM_BYTE , res );
+//fprintf ( stderr , "fdc next index current pos new=%d\n" , res );
 
 	return res;
-}
-
-
-static int	FDC_NextIndexPulse_NbBytes ( void )
-{
-#ifdef old_index
-	return FDC_GetBytesPerTrack () - FDC_IndexPulse_GetCurrentPos ();
-#else
-	return FDC_GetBytesPerTrack () - FDC_IndexPulse_GetCurrentPos_NbBytes ();
-#endif
 }
 
 
@@ -1446,11 +1405,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 	int	NextSector;
 	int	NbBytes;
 
-#ifdef old_index
-	CurrentPos = FDC_IndexPulse_GetCurrentPos ();
-#else
 	CurrentPos = FDC_IndexPulse_GetCurrentPos_NbBytes ();
-#endif
 
 	MaxSector = FDC_GetSectorsPerTrack ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE );
 	TrackPos = FDC_TRACK_LAYOUT_STANDARD_GAP1;			/* Position of 1st raw sector */
@@ -2467,11 +2422,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		else
 		{
 			FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
-#ifdef old_index
-			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_NextIndexPulse_NbBytes () );	/* Wait for the next index pulse */
-#else
 			FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
-#endif
 		}
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
