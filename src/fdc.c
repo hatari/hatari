@@ -363,7 +363,8 @@ enum
 
 #define	FDC_DELAY_US_RNF			( 1000000.L * 5 / ( FDC_RPM_STANDARD / 60 ) )	/* 5 spins to set RNF */
 
-#define	FDC_DELAY_US_INDEX_PULSE_LENGTH		( 1.5 * 1000 )	/* Index pulse signal remain high during 1.5 ms on each rotation */
+/* Index pulse signal remains high during 3.71 ms on each rotation (tested on my STF, can vary between 1.5 and 4 ms depending on the drive) */
+#define	FDC_DELAY_US_INDEX_PULSE_LENGTH		( 3.71 * 1000 )
 
 
 /* Internal delays to process commands are in fdc cycles for a 8 MHz clock */
@@ -528,7 +529,7 @@ static int	FDC_GetBytesPerTrack ( void );
 static void	FDC_IndexPulse_Update ( void );
 static void	FDC_IndexPulse_Init ( int Drive );
 static void	FDC_IndexPulse_Init_old ( void );
-static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev );
+static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev );
 static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
 static int	FDC_IndexPulse_GetState ( void );
 static int	FDC_NextIndexPulse_FdcCycles ( void );
@@ -1306,7 +1307,7 @@ void	FDC_IndexPulse_Update ( void )
  */
 static void	FDC_IndexPulse_Init ( int Drive )
 {
-	int	CpuCyclesPerRev;
+	Uint32	CpuCyclesPerRev;
 	Uint64	IndexPulse_Time;
 
 	CpuCyclesPerRev = ( (Uint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC_DRIVE ].RPM / 60 ) );
@@ -1334,9 +1335,9 @@ static void	FDC_IndexPulse_Init_old ( void )
  * for the current drive.
  * If there's no available drive/floppy (i.e. no index), we return -1
  */
-static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev )
+static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
 {
-	int	CpuCyclesPerRev;
+	Uint32	CpuCyclesPerRev;
 	int	CpuCyclesSinceIndex;
 
 	if ( ( FDC.DriveSelSignal < 0 ) || ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 ) )
@@ -1345,7 +1346,7 @@ static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( int *pFdcCyclesPerRev )
 	/* Get the number of CPU cycles for one revolution of the floppy */
 	/* RPM is already multiplied by 1000 to simulate non-integer values */
 	CpuCyclesPerRev = ( (Uint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC_DRIVE ].RPM / 60 ) );
-	CpuCyclesSinceIndex = ( CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time ) % CpuCyclesPerRev;
+	CpuCyclesSinceIndex = CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time;
 
 	if ( pFdcCyclesPerRev )
 		*pFdcCyclesPerRev = FDC_CpuCyclesToFdcCycles ( CpuCyclesPerRev );
@@ -1410,7 +1411,7 @@ static int	FDC_IndexPulse_GetState ( void )
  */
 static int	FDC_NextIndexPulse_FdcCycles ( void )
 {
-	int	FdcCyclesPerRev;
+	Uint32	FdcCyclesPerRev;
 	int	FdcCyclesSinceIndex;
 	int	res;
 
