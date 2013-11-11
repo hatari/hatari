@@ -124,11 +124,6 @@ ACSI DMA and Floppy Disk Controller(FDC)
     1  1    Data Register    Data Register
 
 
-  According to the documentation INTRQ is generated at the completion of each
-  command (causes an interrupt in the MFP). INTRQ is reset by reading the status
-  register OR by loading a new command. So, does this mean the GPIP? Or does it
-  actually CANCEL the interrupt? Can this be done?
-
   NOTE [NP] : The DMA is connected to the FDC and its Data Register, each time a DRQ
   is made by the FDC, it's handled by the DMA through its internal 16 bytes buffer.
   This means that in the case of the Atari ST the LOST_DATA bit will never be set
@@ -204,6 +199,9 @@ ACSI DMA and Floppy Disk Controller(FDC)
 #define	FDC_COMMAND_BIT_UPDATE_TRACK		(1<<4)		/* 0=don't update TR after type I, 1=update TR after type I */
 #define	FDC_COMMAND_BIT_MULTIPLE_SECTOR		(1<<4)		/* 0=read/write only 1 sector, 1=read/write many sectors */
 
+
+#define FDC_INTERRUPT_COND_IP			(1<<2)		/* Force interrupt on Index Pulse */
+#define FDC_INTERRUPT_COND_IMMEDIATE		(1<<3)		/* Force interrupt immediate */
 
 
 /* FDC Emulation commands used in FDC.Command */
@@ -461,6 +459,7 @@ typedef struct {
 	Uint64		IndexPulse_Time;			/* [REMOVE] Clock value last time we had an index pulse with motor ON */
 	Uint64		CommandExpire_Time;			/* Clock value to abort a command if it didn't complete before */
 	Uint8		NextSector_ID_Field_SR;			/* Sector Register from the ID Field after a call to FDC_NextSectorID_NbBytes() */
+	Uint8		InterruptCond;				/* For a type IV force interrupt, contains the condition on the lower 4 bits */
 } FDC_STRUCT;
 
 
@@ -561,7 +560,7 @@ static int	FDC_TypeII_WriteSector(void);
 static int	FDC_TypeIII_ReadAddress ( void );
 static int	FDC_TypeIII_ReadTrack ( void );
 static int	FDC_TypeIII_WriteTrack ( void );
-static int	FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt );
+static int	FDC_TypeIV_ForceInterrupt ( void );
 
 static int	FDC_ExecuteTypeICommands ( void );
 static int	FDC_ExecuteTypeIICommands ( void );
@@ -815,6 +814,7 @@ void FDC_Reset ( bool bCold )
 	FDC.Command = FDCEMU_CMD_NULL;			/* FDC emulation command currently being executed */
 	FDC.CommandState = FDCEMU_RUN_NULL;
 	FDC.CommandType = 0;
+	FDC.InterruptCond = 0;
 
 	FDC.IndexPulse_Counter = 0;
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
@@ -1270,6 +1270,9 @@ static int	FDC_GetBytesPerTrack ( void )
 void	FDC_IndexPulse_Update ( void )
 {
 	Uint32	CpuCyclesPerRev;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 //fprintf ( stderr , "update index drive=%d side=%d counter=%d VBL=%d HBL=%d\n" , FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter , nVBLs , nHBL );
 
@@ -1287,11 +1290,18 @@ void	FDC_IndexPulse_Update ( void )
 
 	if ( CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time >= CpuCyclesPerRev )
 	{
-		  FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time += CpuCyclesPerRev;	/* Position of the most recent Index Pulse */
-		  FDC.IndexPulse_Counter++;
-		  LOG_TRACE(TRACE_FDC, "fdc update index drive=%d side=%d counter=%d ip_time=%lld VBL=%d HBL=%d\n" ,
-			  FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter ,
-			  FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time , nVBLs , nHBL );
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time += CpuCyclesPerRev;	/* Position of the most recent Index Pulse */
+		FDC.IndexPulse_Counter++;
+		LOG_TRACE(TRACE_FDC, "fdc update index drive=%d side=%d counter=%d ip_time=%lld VBL=%d HBL=%d\n" ,
+			FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter ,
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time , nVBLs , nHBL );
+
+		if ( FDC.InterruptCond & FDC_INTERRUPT_COND_IP )	/* Do we have a "force int on index pulse" command running ? */
+		{
+			LOG_TRACE(TRACE_FDC, "fdc type IV force int on index, set irq VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+				nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+			FDC_SetIRQ ();
+		}
 	}
 }
 
@@ -1500,6 +1510,8 @@ void FDC_SetIRQ ( void )
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
 	MFP_GPIP &= ~0x20;
+
+	LOG_TRACE(TRACE_FDC, "fdc set irq VBL=%d HBL=%d\n" , nVBLs , nHBL );
 }
 
 
@@ -1509,7 +1521,11 @@ void FDC_SetIRQ ( void )
  */
 void FDC_ClearIRQ ( void )
 {
-        MFP_GPIP |= 0x20;
+	if ( ( FDC.InterruptCond & FDC_INTERRUPT_COND_IMMEDIATE ) == 0 )
+	{
+		MFP_GPIP |= 0x20;
+		LOG_TRACE(TRACE_FDC, "fdc clear irq VBL=%d HBL=%d\n" , nVBLs , nHBL );
+	}
 }
 
 
@@ -1621,7 +1637,7 @@ static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 /**
  * Common to all commands once they're completed :
  * - remove busy bit
- * - acknowledge interrupt if necessary
+ * - set interrupt if necessary
  * - stop motor after 2 sec
  */
 static int FDC_CmdCompleteCommon ( bool DoInt )
@@ -3116,7 +3132,7 @@ static int FDC_TypeIII_WriteTrack ( void )
 
 
 /*-----------------------------------------------------------------------*/
-static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
+static int FDC_TypeIV_ForceInterrupt ( void )
 {
 	int	FdcCycles;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -3155,10 +3171,23 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 		FDC.StatusTypeI = true;
 #endif
 
-	if ( ( FDC.CR & 0x4 ) == 0 )					/* Force Int immediate */
+	/* Get the interrupt's condition and set IRQ accordingly */
+	/* Most of the time a 0xD8 command is followed by a 0xD0 command to clear the IRQ signal */
+	FDC.InterruptCond = FDC.CR & 0x0f;				/* Keep the 4 lowest bits */
+
+	if ( FDC.InterruptCond & FDC_INTERRUPT_COND_IMMEDIATE )
+		FDC_SetIRQ ();
+	else
+		FDC_ClearIRQ ();
+
+	/* Remove busy bit, don't change IRQ's state and stop the motor */
+	FdcCycles = FDC_CmdCompleteCommon( false );
+
+#ifdef old_int
+	if ( ( FDC.InterruptCond & FDC_INTERRUPT_COND_IP ) == 0 )	/* Not a Force Int on index pulse */
 	{
-		/* Remove busy bit, ack int and stop the motor */
-		FdcCycles = FDC_CmdCompleteCommon( bCauseCPUInterrupt );
+		/* Remove busy bit, don't change IRQ and stop the motor */
+		FdcCycles = FDC_CmdCompleteCommon( false );
 	}
 	else								/* Force Int on index pulse */
 	{
@@ -3168,6 +3197,7 @@ static int FDC_TypeIV_ForceInterrupt ( bool bCauseCPUInterrupt )
 		FDC.Command = FDCEMU_CMD_FORCEINT;
 		FDC.CommandState = FDCEMU_RUN_FORCEINT;
 	}
+#endif
 
 	return FDC_DELAY_CYCLE_TYPE_IV_PREPARE + FdcCycles;
 }
@@ -3288,23 +3318,10 @@ static int FDC_ExecuteTypeIVCommands ( void )
 {
 	int	FdcCycles;
 
-	/* Check Type IV command */
-	/* Most of the time a 0xD8 command is followed by a 0xD0 command to clear the IRQ signal */
-	if ( FDC.CR & 0x8 )						/* I3 set (0xD8) : immediate interrupt with IRQ */
-		FdcCycles = FDC_TypeIV_ForceInterrupt ( true );
+	FDC.CommandType = 4;
 
-	else if ( FDC.CR & 0x4 )					/* I2 set (0xD4) : IRQ on next index pulse */
-	{
-		FdcCycles = FDC_TypeIV_ForceInterrupt ( false );
-	}
-
-	else								/* I3-I2 clear (0xD0) : stop command without IRQ */
-	{
-		FDC_ClearIRQ ();					/* reset IRQ signal */
-		FdcCycles = FDC_TypeIV_ForceInterrupt ( false );
-	}
-		
-	FDC.CommandType = 4;						/* Change CommandType after interrupting the current command */
+	FdcCycles = FDC_TypeIV_ForceInterrupt();
+	
 	return FdcCycles;
 }
 
