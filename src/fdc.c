@@ -219,8 +219,6 @@ enum
 	FDCEMU_CMD_READADDRESS,
 	FDCEMU_CMD_READTRACK,
 	FDCEMU_CMD_WRITETRACK,
-	/* Type IV */
-	FDCEMU_CMD_FORCEINT,
 
 	/* Other fake commands used internally */
 	FDCEMU_CMD_MOTOR_STOP
@@ -307,10 +305,6 @@ enum
 	FDCEMU_RUN_WRITETRACK_INDEX,
 	FDCEMU_RUN_WRITETRACK_DMA,
 	FDCEMU_RUN_WRITETRACK_COMPLETE,
-	/* Force Int */
-	FDCEMU_RUN_FORCEINT,
-	FDCEMU_RUN_FORCEINT_LOOP,
-	FDCEMU_RUN_FORCEINT_COMPLETE,
 
 	/*  Motor Stop */
 	FDCEMU_RUN_MOTOR_STOP,
@@ -344,7 +338,6 @@ enum
 #define	FDC_RPM_STANDARD			300		/* 300 RPM or 5 spins per sec */
 //#define	FDC_TRACK_BYTES_STANDARD		( ( FDC_BITRATE_STANDARD / 8 ) / ( FDC_RPM_STANDARD / 60 ) )	/* 6250 bytes */
 #define FDC_TRACK_BYTES_STANDARD	6268
-//#define FDC_TRACK_BYTES_STANDARD	6272
 
 #define FDC_TRANSFER_BYTES_US( n )		(  ( n ) * 8 * 1000000.L / FDC_BITRATE_STANDARD )	/* micro sec to read/write 'n' bytes in the WD1772 */
 
@@ -354,14 +347,9 @@ enum
 
 
 /* Delays are in micro sec */
-#define	FDC_DELAY_US_MOTOR_ON			( 1000000.L * 6 / ( FDC_RPM_STANDARD / 60 ) )	/* 6 spins to reach correct speed */
-#define	FDC_DELAY_US_MOTOR_OFF			( 1000000.L * 9 / ( FDC_RPM_STANDARD / 60 ) )	/* Turn off motor 9 spins after the last command */
-
 #define	FDC_DELAY_US_HEAD_LOAD			( 15 * 1000 )	/* Additionnal 15 ms delay to load the head in type II/III */
 
-#define	FDC_DELAY_US_RNF			( 1000000.L * 5 / ( FDC_RPM_STANDARD / 60 ) )	/* 5 spins to set RNF */
-
-/* Index pulse signal remains high during 3.71 ms on each rotation (tested on my STF, can vary between 1.5 and 4 ms depending on the drive) */
+/* Index pulse signal remains high during 3.71 ms on each rotation ([NP] tested on my STF, can vary between 1.5 and 4 ms depending on the drive) */
 #define	FDC_DELAY_US_INDEX_PULSE_LENGTH		( 3.71 * 1000 )
 
 
@@ -381,6 +369,7 @@ enum
 /* which shouldn't give any noticeable emulation error */
 #define	FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY	50000
 
+/* Update the floppy's angular position on a regular basis to detect the index pulses */
 #define	FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE	500
 
 #define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
@@ -441,11 +430,9 @@ typedef struct {
 	Uint8		STR;					/* Status Register */
 	int		StepDirection;				/* +1 (Step In) or -1 (Step Out) */
 
-//	Uint8		MotorSignal;				/* 0=OFF 1=ON */
 	Uint8		SideSignal;				/* Side 0 or 1 */
 	int		DriveSelSignal;				/* 0 or 1 for drive A or B ; or -1 if no drive selected */
 
-	
 	/* Other variables */
 	int		Command;				/* FDC emulation command currently being exceuted */
 	int		CommandState;				/* Current state for the running command */
@@ -455,9 +442,6 @@ typedef struct {
 
 	bool		StatusTypeI;				/* When true, STR will report the status of a type I command */
 	int		IndexPulse_Counter;			/* To count the number of rotations when motor is ON */
-	bool		UpdateIndexPulse;			/* [REMOVE] true if motor was stopped and we're starting a spin up sequence */
-	Uint64		IndexPulse_Time;			/* [REMOVE] Clock value last time we had an index pulse with motor ON */
-	Uint64		CommandExpire_Time;			/* Clock value to abort a command if it didn't complete before */
 	Uint8		NextSector_ID_Field_SR;			/* Sector Register from the ID Field after a call to FDC_NextSectorID_NbBytes() */
 	Uint8		InterruptCond;				/* For a type IV force interrupt, contains the condition on the lower 4 bits */
 } FDC_STRUCT;
@@ -508,7 +492,6 @@ static int	FDC_DelayToFdcCycles ( int Delay_micro );
 static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles );
 static int	FDC_CpuCyclesToFdcCycles ( int CpuCycles );
 static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset );
-static int	FDC_DelayToCpuCycles ( int Delay_micro );
 static int	FDC_TransferByte_FdcCycles ( int NbBytes );
 static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
@@ -527,7 +510,6 @@ static int	FDC_GetBytesPerTrack ( void );
 
 static void	FDC_IndexPulse_Update ( void );
 static void	FDC_IndexPulse_Init ( int Drive );
-static void	FDC_IndexPulse_Init_old ( void );
 static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev );
 static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
 static int	FDC_IndexPulse_GetState ( void );
@@ -537,7 +519,6 @@ static int	FDC_NextSectorID_NbBytes ( void );
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
 static int	FDC_CmdCompleteCommon ( bool DoInt );
 static bool	FDC_VerifyTrack ( void );
-static int	FDC_UpdateMotorStop_old ( void );
 static int	FDC_UpdateMotorStop ( void );
 static int	FDC_UpdateRestoreCmd ( void );
 static int	FDC_UpdateSeekCmd ( void );
@@ -546,10 +527,8 @@ static int	FDC_UpdateReadSectorsCmd ( void );
 static int	FDC_UpdateWriteSectorsCmd ( void );
 static int	FDC_UpdateReadAddressCmd ( void );
 static int	FDC_UpdateReadTrackCmd ( void );
-static int	FDC_UpdateForceIntCmd ( void );
 
 static bool	FDC_Set_MotorON ( Uint8 FDC_CR );
-static int	FDC_Check_MotorON ( Uint8 FDC_CR );
 static int	FDC_TypeI_Restore ( void );
 static int	FDC_TypeI_Seek ( void );
 static int	FDC_TypeI_Step ( void );
@@ -699,31 +678,6 @@ static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset )
 		FdcCycles /= FDC_FAST_FDC_FACTOR;
 
 	CycInt_AddRelativeInterruptWithOffset ( FDC_FdcCyclesToCpuCycles ( FdcCycles ) , INT_CPU_CYCLE , INTERRUPT_FDC , InternalCycleOffset );
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Convert a delay in micro seconds to its equivalent of cpu cycles
- * (FIXME [NP] : for now we use a fixed 8 MHz clock, because cycInt.c requires it)
- */
-static int	FDC_DelayToCpuCycles ( int Delay_micro )
-{
-	int	Delay;
-
-	Delay = (int) ( ( (Uint64)MachineClocks.FDC_Freq * Delay_micro ) / 1000000 ) & -4;
-Delay = Delay_micro*8;
-//if ( Delay_micro==32 ) Delay=255;
-
-	/* Our conversion expect FDC_Freq to be the same as CPU_Freq (8 Mhz) */
-	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
-	/* FIXME : as stated above, this should be handled better, without involving 8 MHz CPU_Freq */
-	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
-		Delay /= 2;					/* correct delays for a 8 MHz clock instead of 16 */
-
-//fprintf ( stderr , "fdc state %d delay %d us %d cycles\n" , FDC.Command , Delay_micro , Delay );
-//if ( Delay==4104) Delay=4166;		// 4166 : decade demo
-	return Delay;
 }
 
 
@@ -1332,13 +1286,6 @@ static void	FDC_IndexPulse_Init ( int Drive )
 }
 
 
-static void	FDC_IndexPulse_Init_old ( void )
-{
-	FDC.IndexPulse_Time = CyclesGlobalClockCounter;
-//fprintf ( stderr , "fdc index pulse init %lld\n" ,  FDC.IndexPulse_Time );
-}
-
-
 /*-----------------------------------------------------------------------*/
 /**
  * Return the number of FDC cycles since the previous index pulse signal
@@ -1409,7 +1356,6 @@ static int	FDC_IndexPulse_GetState ( void )
 		state = 1;
 
 //fprintf ( stderr , "fdc index state 2 pos pos=%d state=%d\n" , FdcCyclesSinceIndex , state );
-	
 	return state;
 }
 
@@ -1435,10 +1381,9 @@ static int	FDC_NextIndexPulse_FdcCycles ( void )
 	/* and we wait for one full revolution (this can happen in Force Int on Index Pulse */
 	/* when we call FDC_NextIndexPulse_FdcCycles in a loop) */
 	if ( res <= 1 )
-		res = FdcCyclesPerRev;
+		res = FdcCyclesPerRev;					// TODO : 0 should be allowed
 	
 //fprintf ( stderr , "fdc next index current pos new=%d\n" , res );
-
 	return res;
 }
 
@@ -1564,14 +1509,6 @@ void FDC_InterruptHandler_Update ( void )
 	{
 		FDC.ReplaceCommandPossible = false;
 
-		/* If the command needed to restart the motor, the motor is now ON */
-		/* so we must init a new index position */
-		if ( FDC.UpdateIndexPulse == true )
-		{
-			FDC_IndexPulse_Init_old ();
-			FDC.UpdateIndexPulse = false;
-		}
-
 		/* Which command are we running ? */
 		switch(FDC.Command)
 		{
@@ -1598,10 +1535,6 @@ void FDC_InterruptHandler_Update ( void )
 
 		 case FDCEMU_CMD_READTRACK:
 			FdcCycles = FDC_UpdateReadTrackCmd();
-			break;
-
-		 case FDCEMU_CMD_FORCEINT:
-			FdcCycles = FDC_UpdateForceIntCmd();
 			break;
 
 		 case FDCEMU_CMD_MOTOR_STOP:
@@ -1655,7 +1588,6 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
 
 	FDC.Command = FDCEMU_CMD_MOTOR_STOP;				/* Fake command to stop the motor */
 	FDC.CommandState = FDCEMU_RUN_MOTOR_STOP;
-//	return FDC_DelayToFdcCycles ( FDC_DELAY_US_MOTOR_OFF );
 	return FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 }
 
@@ -1711,26 +1643,6 @@ static bool FDC_VerifyTrack ( void )
 
 	/* The track is the correct one */
 	return true;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * When the motor really stops (2 secs after the last command), clear all related bits in SR
- * We clear motor bit, but spinup bit remains to 1 (verified on a real STF)
- */
-static int FDC_UpdateMotorStop_old ( void )
-{
-	int	FrameCycles, HblCounterVideo, LineCycles;
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-	LOG_TRACE(TRACE_FDC, "fdc motor stopped VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-
-	FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON , 0 );			/* Unset motor bit and keep spinup bit */
-
-	FDC.Command = FDCEMU_CMD_NULL;					/* Motor stopped, this is the last state */
-	return 0;
 }
 
 
@@ -2623,8 +2535,6 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
-		FDC.IndexPulse_Time = CyclesGlobalClockCounter;			/* We're on an index pulse */
-
 		/* Build the track data */
 		FDC_DMA_InitTransfer ();					/* Update FDC_DMA.PosInBuffer */
 		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
@@ -2714,71 +2624,6 @@ static int FDC_UpdateReadTrackCmd ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Run 'FORCE INT ON INDEX' command
- */
-static int FDC_UpdateForceIntCmd ( void )
-{
-	int	FdcCycles = 0;
-	int	FrameCycles, HblCounterVideo, LineCycles;
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-	/* Which command is running? */
-	switch (FDC.CommandState)
-	{
-	 case FDCEMU_RUN_FORCEINT:
-		if ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 )		/* Motor is already OFF, we won't get any index */
-		{
-			FDC.CommandState = FDCEMU_RUN_FORCEINT_COMPLETE;
-			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
-			break;
-		}
-
-		/* At the same time as we check for indexes, we must also stop the motor when necessary */
-		FDC.CommandExpire_Time = CyclesGlobalClockCounter + FDC_DelayToCpuCycles ( FDC_DELAY_US_MOTOR_OFF );
-
-		FDC.CommandState = FDCEMU_RUN_FORCEINT_LOOP;
-		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
-// TODO		if ( FdcCycles < 0 )					/* No drive/floppy available at the moment */
-// TODO			return -1;
-
-		LOG_TRACE(TRACE_FDC, "fdc type IV force int on index, first index in %d cycles VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			FdcCycles , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		break;
-	 case FDCEMU_RUN_FORCEINT_LOOP:
-		/* If we reach the time where motor turns off, disk won't spin anymore */
-		/* and we won't get more indexes either */
-		if ( CyclesGlobalClockCounter > FDC.CommandExpire_Time )
-		{
-			FDC.CommandState = FDCEMU_RUN_FORCEINT_COMPLETE;
-			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
-			break;
-		}
-
-		FDC.IndexPulse_Time = CyclesGlobalClockCounter;		/* We're on an index pulse */
-		FDC_SetIRQ ();
-
-		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
-// TODO		if ( FdcCycles < 0 )					/* No drive/floppy available at the moment */
-// TODO			return -1;
-
-		LOG_TRACE(TRACE_FDC, "fdc type IV force int on index, next index in %d cycles VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			FdcCycles , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		break;
-	 case FDCEMU_RUN_FORCEINT_COMPLETE:
-		/* We reach this state only when the motor stops, because we won't get index pulse anymore */
-		/* The WD1772 doesn't really stop the Force Int command in that case, but as the FDC's state */
-		/* won't change anymore we go to the FDCEMU_CMD_NULL state to save cpu in the case of the emulation */
-		FdcCycles = FDC_UpdateMotorStop_old ();
-		break;
-	}
-
-	return FdcCycles;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Common to types I, II and III
  *
  * Start motor / spin up sequence if needed
@@ -2799,7 +2644,6 @@ static bool FDC_Set_MotorON ( Uint8 FDC_CR )
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( FDC_STR_BIT_SPIN_UP , 0 );		/* Unset spin up bit */
-		FDC.UpdateIndexPulse = true;
 		FDC.IndexPulse_Counter = 0;				/* Reset counter to measure the spin up sequence */
 		SpinUp = true;
 	}
@@ -2823,32 +2667,6 @@ static bool FDC_Set_MotorON ( Uint8 FDC_CR )
 		FDC_IndexPulse_Init ( FDC.DriveSelSignal );		/* Index Pulse's position is random when motor starts */
 	
 	return SpinUp;
-}
-
-
-static int FDC_Check_MotorON ( Uint8 FDC_CR )
-{
-	int	FrameCycles, HblCounterVideo, LineCycles;
-
-return 0;
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-	if ( ( ( FDC_CR & FDC_COMMAND_BIT_SPIN_UP ) == 0 )			/* Command wants motor on / spin up */
-	  && ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) == 0 ) )			/* Motor on not enabled yet */
-	{
-		LOG_TRACE(TRACE_FDC, "fdc start motor VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		FDC_Update_STR ( FDC_STR_BIT_SPIN_UP , FDC_STR_BIT_MOTOR_ON );	/* Unset spin up bit and set motor bit */
-		FDC.UpdateIndexPulse = true;
-		return FDC_DelayToFdcCycles ( FDC_DELAY_US_MOTOR_ON );		/* Motor's delay */
-	}
-
-	/* Other cases : set bit in STR and don't add delay */
-	LOG_TRACE(TRACE_FDC, "fdc motor already on VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-	FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );
-	return 0;
 }
 
 
@@ -3143,33 +2961,10 @@ static int FDC_TypeIV_ForceInterrupt ( void )
 		  FDC.CR , ( FDC.CR & 0x8 ) >> 3 , ( FDC.CR & 0x4 ) >> 2 ,
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-#ifdef old_str
-	/* For Type II/III commands, LOST DATA bit is never set (DRQ is always handled by the DMA) */
-	/* (eg Super Monaco GP on Superior 65 : loader fails if LOST DATA is set when there're not enough DMA sectors to transfer bytes) */
-	FDC_Update_STR ( FDC_STR_BIT_LOST_DATA , 0 );			/* Remove LOST DATA / TR00 bit */
-
-	/* TR00 is updated when a type I command is interrupted or when no command was running */
-	/* MOTOR ON is also set when a type I command is interrupted or when no command was running */
-	/* (eg Knightmare on DBUG 24 : loader fails if motor is off because of the added delay to start it) */
-	if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
-	  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
-	{
-		if ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack == 0 )
-			FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
-
-		FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );		/* Set Motor ON */
-
-		if ( FDC_IndexPulse_GetState () )
-			FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit */
-		else
-			FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
-	}
-#else
 	/* If a command was running, just remove busy bit and keep the current content of Status reg */
 	/* If FDC was idle, the content of Status reg is forced to type I */
 	if ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			
 		FDC.StatusTypeI = true;
-#endif
 
 	/* Get the interrupt's condition and set IRQ accordingly */
 	/* Most of the time a 0xD8 command is followed by a 0xD0 command to clear the IRQ signal */
@@ -3182,22 +2977,6 @@ static int FDC_TypeIV_ForceInterrupt ( void )
 
 	/* Remove busy bit, don't change IRQ's state and stop the motor */
 	FdcCycles = FDC_CmdCompleteCommon( false );
-
-#ifdef old_int
-	if ( ( FDC.InterruptCond & FDC_INTERRUPT_COND_IP ) == 0 )	/* Not a Force Int on index pulse */
-	{
-		/* Remove busy bit, don't change IRQ and stop the motor */
-		FdcCycles = FDC_CmdCompleteCommon( false );
-	}
-	else								/* Force Int on index pulse */
-	{
-		FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );		/* Remove busy bit */
-		FdcCycles = 0;
-
-		FDC.Command = FDCEMU_CMD_FORCEINT;
-		FDC.CommandState = FDCEMU_RUN_FORCEINT;
-	}
-#endif
 
 	return FDC_DELAY_CYCLE_TYPE_IV_PREPARE + FdcCycles;
 }
@@ -3238,9 +3017,6 @@ static int FDC_ExecuteTypeICommands ( void )
 		break;
 	}
 
-	/* Check if motor needs to be started and add possible delay */
-	FdcCycles += FDC_Check_MotorON ( FDC.CR );
-	
 	return FdcCycles;
 }
 
@@ -3269,9 +3045,6 @@ static int FDC_ExecuteTypeIICommands ( void )
 		FdcCycles = FDC_TypeII_WriteSector();
 		break;
 	}
-
-	/* Check if motor needs to be started and add possible delay */
-	FdcCycles += FDC_Check_MotorON ( FDC.CR );
 
 	return FdcCycles;
 }
@@ -3302,9 +3075,6 @@ static int FDC_ExecuteTypeIIICommands ( void )
 		FdcCycles = FDC_TypeIII_WriteTrack();
 		break;
 	}
-
-	/* Check if motor need to be started and add possible delay */
-	FdcCycles += FDC_Check_MotorON ( FDC.CR );
 
 	return FdcCycles;
 }
@@ -3584,45 +3354,11 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 		switch (FDC_DMA.Mode & 0x6)				/* Bits 1,2 (A1,A0) */
 		{
 		 case 0x0:						/* 0 0 - Status register */
+			/* If we report a type I status, some bits are updated in real time */
+			/* depending on the corresponding signals. If this is not a type I, we return STR unmodified */
 			/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
 			/* is updated after a Type I command */
 			/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
-#ifdef old_str
-			if ( ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			/* No command running */
-			  || ( FDC.CommandType == 1 ) )					/* Or busy command is Type I */
-			{
-				if ( Floppy_IsWriteProtected ( FDC_DRIVE ) )
-					FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
-				else
-					FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
-
-				if ( FDC_IndexPulse_GetState () )
-					FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit */
-				else
-					FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
-			}
-
-			/* When there's no disk in drive, the floppy drive hardware can't see */
-			/* the difference with an inserted disk that would be write protected */
-			if ( ! EmulationDrives[ FDC_DRIVE ].bDiskInserted )
-				FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );                /* Set WPRT bit */
-
-			DiskControllerByte = FDC.STR;
-
-			/* Temporarily change the WPRT bit if we're in a transition phase */
-			/* regarding the disk in the drive (inserting or ejecting) */
-			ForceWPRT = Floppy_DriveTransitionUpdateState ( FDC_DRIVE );
-			if ( ForceWPRT == 1 )
-				DiskControllerByte |= FDC_STR_BIT_WPRT;		/* Force setting WPRT */
-			if ( ForceWPRT == -1 )
-				DiskControllerByte &= ~FDC_STR_BIT_WPRT;	/* Force clearing WPRT */
-
-			if ( ForceWPRT != 0 )
-				LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n", ForceWPRT==1?1:0, nVBLs, FDC_DRIVE, DiskControllerByte );
-
-#else
-			/* If we report a type I status, some bits are updated in real time */
-			/* depending on the corresponding signals. If this is not a type I, we return STR unmodified */
 			if ( FDC.StatusTypeI )
 			{
 				/* If no drive available, FDC's input signals TR00, INDEX and WPRT are off */
@@ -3665,7 +3401,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 			}
 
 			DiskControllerByte = FDC.STR;
-#endif
+
 			/* When Status Register is read, FDC's INTRQ is reset (except if "force interrupt immediate" is running) */
 			FDC_ClearIRQ ();
 			break;
