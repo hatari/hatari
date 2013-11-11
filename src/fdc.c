@@ -1507,8 +1507,6 @@ void FDC_InterruptHandler_Update ( void )
 	/* Is FDC active? */
 	if (FDC.Command!=FDCEMU_CMD_NULL)
 	{
-		FDC.ReplaceCommandPossible = false;
-
 		/* Which command are we running ? */
 		switch(FDC.Command)
 		{
@@ -1720,6 +1718,7 @@ static int FDC_UpdateRestoreCmd ( void )
 		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO_MOTOR_ON:
 		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
+		FDC.ReplaceCommandPossible = false;
 
 		/* The FDC will try 255 times to reach track 0 using step out signals */
 		/* If track 0 signal is not detected after 255 attempts, the command is interrupted */
@@ -1854,6 +1853,7 @@ static int FDC_UpdateSeekCmd ( void )
 		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_SEEK_TOTRACK_MOTOR_ON:
 		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
+		FDC.ReplaceCommandPossible = false;
 
 		if ( FDC.TR == FDC.DR )					/* Are we at the selected track ? */
 		{
@@ -1997,6 +1997,7 @@ static int FDC_UpdateStepCmd ( void )
 		/* If IndexPulse_Counter reached, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_STEP_ONCE_MOTOR_ON:
 		FDC_Update_STR ( 0 , FDC_STR_BIT_SPIN_UP );		/* At this point, spin up sequence is ok */
+		FDC.ReplaceCommandPossible = false;
 
 		/* Move head by one track depending on FDC.StepDirection */
 		if ( FDC.CR & FDC_COMMAND_BIT_UPDATE_TRACK )
@@ -2123,6 +2124,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_READSECTORS_READDATA_HEAD_LOAD:
+		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON;
@@ -2275,6 +2277,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_HEAD_LOAD:
+		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON;
@@ -2417,6 +2420,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 		}
 		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_READADDRESS_HEAD_LOAD:
+		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		{
 			FDC.CommandState = FDCEMU_RUN_READADDRESS_MOTOR_ON;
@@ -2516,6 +2520,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_READTRACK_HEAD_LOAD:
+		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		{
 			FDC.CommandState = FDCEMU_RUN_READTRACK_MOTOR_ON;
@@ -3114,7 +3119,7 @@ static void FDC_ExecuteCommand ( void )
 	else								/* Type IV - Force Interrupt */
 		FdcCycles = FDC_ExecuteTypeIVCommands();
 
-	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the Delay_micro phase */
+	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the prepare+spinup phase */
 	FDC_StartTimer_FdcCycles ( FdcCycles , 0 );
 }
 
