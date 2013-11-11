@@ -1491,13 +1491,25 @@ static int	FDC_NextSectorID_NbBytes ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Acknowledge FDC interrupt
+ * Set the IRQ signal
+ * This is called either on command completion, or when the "force interrupt"
+ * command is used.
  */
-void FDC_AcknowledgeInterrupt ( void )
+void FDC_SetIRQ ( void )
 {
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
 	MFP_GPIP &= ~0x20;
+}
+
+
+/**
+ * Reset the IRQ signal ; in case the source of the interrupt is
+ * a "force interrupt immediate" command, the IRQ signal should not be cleared.
+ */
+void FDC_ClearIRQ ( void )
+{
+        MFP_GPIP |= 0x20;
 }
 
 
@@ -1623,7 +1635,7 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
 	FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* Remove busy bit */
 
 	if ( DoInt )
-		FDC_AcknowledgeInterrupt();
+		FDC_SetIRQ ();
 
 	FDC.Command = FDCEMU_CMD_MOTOR_STOP;				/* Fake command to stop the motor */
 	FDC.CommandState = FDCEMU_RUN_MOTOR_STOP;
@@ -2728,7 +2740,7 @@ static int FDC_UpdateForceIntCmd ( void )
 		}
 
 		FDC.IndexPulse_Time = CyclesGlobalClockCounter;		/* We're on an index pulse */
-		FDC_AcknowledgeInterrupt();
+		FDC_SetIRQ ();
 
 		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
 // TODO		if ( FdcCycles < 0 )					/* No drive/floppy available at the moment */
@@ -3171,7 +3183,7 @@ static int FDC_ExecuteTypeICommands ( void )
 
 	FDC.CommandType = 1;
 	FDC.StatusTypeI = true;
-	MFP_GPIP |= 0x20;
+	FDC_ClearIRQ ();
 
 	/* Check Type I Command */
 	switch ( FDC.CR & 0xf0 )
@@ -3213,7 +3225,7 @@ static int FDC_ExecuteTypeIICommands ( void )
 
 	FDC.CommandType = 2;
 	FDC.StatusTypeI = false;
-	MFP_GPIP |= 0x20;
+	FDC_ClearIRQ ();
 
 	/* Check Type II Command */
 	switch ( FDC.CR & 0xf0 )
@@ -3245,7 +3257,7 @@ static int FDC_ExecuteTypeIIICommands ( void )
 
 	FDC.CommandType = 3;
 	FDC.StatusTypeI = false;
-	MFP_GPIP |= 0x20;
+	FDC_ClearIRQ ();
 
 	/* Check Type III Command */
 	switch ( FDC.CR & 0xf0 )
@@ -3288,7 +3300,7 @@ static int FDC_ExecuteTypeIVCommands ( void )
 
 	else								/* I3-I2 clear (0xD0) : stop command without IRQ */
 	{
-		MFP_GPIP |= 0x20;					/* reset IRQ signal */
+		FDC_ClearIRQ ();					/* reset IRQ signal */
 		FdcCycles = FDC_TypeIV_ForceInterrupt ( false );
 	}
 		
@@ -3637,8 +3649,8 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 
 			DiskControllerByte = FDC.STR;
 #endif
-			/* When Status Register is read, FDC's INTRQ is reset */
-			MFP_GPIP |= 0x20;
+			/* When Status Register is read, FDC's INTRQ is reset (except if "force interrupt immediate" is running) */
+			FDC_ClearIRQ ();
 			break;
 		 case 0x2:						/* 0 1 - Track register */
 			DiskControllerByte = FDC.TR;

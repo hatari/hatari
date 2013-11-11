@@ -169,7 +169,7 @@ static void HDC_Cmd_Seek(void)
 	}
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	bSetLastBlockAddr = true;
 	//FDCSectorCountRegister = 0;
 }
@@ -208,7 +208,7 @@ static void HDC_Cmd_Inquiry(void)
 	FDC_WriteDMAAddress(nDmaAddr + count);
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	nLastError = HD_REQSENS_OK;
 	bSetLastBlockAddr = false;
 	//FDCSectorCountRegister = 0;
@@ -302,7 +302,7 @@ static void HDC_Cmd_RequestSense(void)
 	FDC_WriteDMAAddress(nDmaAddr + nRetLen);
 
 	FDC_SetDMAStatus(false);            /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	//FDCSectorCountRegister = 0;
 }
 
@@ -366,7 +366,7 @@ static void HDC_Cmd_ModeSense(void)
 	}
 
 	FDC_SetDMAStatus(false);            /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	bSetLastBlockAddr = false;
 	//FDCSectorCountRegister = 0;
 }
@@ -385,7 +385,7 @@ static void HDC_Cmd_FormatDrive(void)
 	/* Should erase the whole image file here... */
 
 	FDC_SetDMAStatus(false);            /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	HDCCommand.returnCode = HD_STATUS_OK;
 	nLastError = HD_REQSENS_OK;
 	bSetLastBlockAddr = false;
@@ -431,7 +431,7 @@ static void HDC_Cmd_ReadCapacity(void)
 	}
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	bSetLastBlockAddr = false;
 	//FDCSectorCountRegister = 0;
 }
@@ -486,7 +486,7 @@ static void HDC_Cmd_WriteSector(void)
 	}
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	bSetLastBlockAddr = true;
 	//FDCSectorCountRegister = 0;
 }
@@ -544,7 +544,7 @@ static void HDC_Cmd_ReadSector(void)
 	}
 
 	FDC_SetDMAStatus(false);              /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	bSetLastBlockAddr = true;
 	//FDCSectorCountRegister = 0;
 }
@@ -557,7 +557,7 @@ static void HDC_Cmd_ReadSector(void)
 static void HDC_Cmd_TestUnitReady(void)
 {
 	FDC_SetDMAStatus(false);            /* no DMA error */
-	FDC_AcknowledgeInterrupt();
+	FDC_SetIRQ();
 	HDCCommand.returnCode = HD_STATUS_OK;
 }
 
@@ -600,7 +600,7 @@ static void HDC_EmulateCommandPacket(void)
 
 	 case HD_SHIP:
 		HDCCommand.returnCode = 0xFF;
-		FDC_AcknowledgeInterrupt();
+		FDC_SetIRQ();
 		break;
 
 	 case HD_REQ_SENSE:
@@ -613,7 +613,7 @@ static void HDC_EmulateCommandPacket(void)
 		nLastError = HD_REQSENS_OK;
 		bSetLastBlockAddr = false;
 		FDC_SetDMAStatus(false);
-		FDC_AcknowledgeInterrupt();
+		FDC_SetIRQ();
 		break;
 
 	 case HD_MODESENSE:
@@ -633,7 +633,7 @@ static void HDC_EmulateCommandPacket(void)
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_OPCODE;
 		bSetLastBlockAddr = false;
-		FDC_AcknowledgeInterrupt();
+		FDC_SetIRQ();
 		break;
 	}
 
@@ -876,7 +876,7 @@ static void HDC_WriteCommandPacket(Uint8 b)
 	if (HDCCommand.target != 0)
 	{
 		//FDC_SetDMAStatus(true);
-		//FDC_AcknowledgeInterrupt();
+		//FDC_SetIRQ();
 		//FDCSectorCountRegister = 0;
 		/* If there's no controller, the interrupt line stays high */
 		HDCCommand.returnCode = HD_STATUS_ERROR;
@@ -928,7 +928,7 @@ static void HDC_WriteCommandPacket(Uint8 b)
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_OPCODE;
 		bSetLastBlockAddr = false;
-		FDC_AcknowledgeInterrupt();
+		FDC_SetIRQ();
 		FDC_SetDMAStatus(false);
 #ifdef HDC_VERBOSE
 		if (HDCCommand.byteCount == 10)
@@ -938,7 +938,7 @@ static void HDC_WriteCommandPacket(Uint8 b)
 	}
 	else
 	{
-		FDC_AcknowledgeInterrupt();
+		FDC_SetIRQ();
 		FDC_SetDMAStatus(false);
 		HDCCommand.returnCode = HD_STATUS_OK;
 	}

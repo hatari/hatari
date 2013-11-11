@@ -14,7 +14,8 @@ extern void	FDC_Init ( void );
 extern void	FDC_Reset ( bool bCold );
 extern void	FDC_SetDMAStatus ( bool bError );
 
-extern void	FDC_AcknowledgeInterrupt ( void );
+extern void	FDC_SetIRQ ( void );
+extern void	FDC_ClearIRQ ( void );
 extern void	FDC_InterruptHandler_Update ( void );
 
 extern void	FDC_EnableDrive ( int Drive , bool value );
