@@ -140,6 +140,16 @@ ACSI DMA and Floppy Disk Controller(FDC)
   wait forever until the drive is enabled again or a floppy is inserted ; at this point
   the command will complete as usual, even after several seconds/minutes of delay.
 
+  NOTE [NP] : Although the doc says a new type I/II/III command can't be started while
+  the busy bit is set, it's in fact possible to do it under certain conditions. As seen
+  in the loader of 'The Overdrive Demos' by Phalanx, the 'restore' command should be
+  replaced by a 'seek' command when it occurs in less than 900 cycles.
+  A possible explanation from this could be seen in the WD1772's documentation, where
+  the specific type I command is in fact checked after the 'prepare + spinup' sequence
+  in the state machine diagram.
+  Similarly, we can guess that a type II command can be replaced by another type II as long
+  as the 'prepare + spinup + head settle' sequence is not over (this was not tested on real HW)
+
 
   Detecting disk changes :
   ------------------------
@@ -437,8 +447,7 @@ typedef struct {
 	int		Command;				/* FDC emulation command currently being exceuted */
 	int		CommandState;				/* Current state for the running command */
 	Uint8		CommandType;				/* Type of latest FDC command (1,2,3 or 4) */
-	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one */
-								/* ([NP] FIXME : only possible during prepare+spinup phases ?) */
+	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one (see notes) */
 
 	bool		StatusTypeI;				/* When true, STR will report the status of a type I command */
 	int		IndexPulse_Counter;			/* To count the number of rotations when motor is ON */
@@ -516,6 +525,7 @@ static int	FDC_IndexPulse_GetState ( void );
 static int	FDC_NextIndexPulse_FdcCycles ( void );
 static int	FDC_NextSectorID_NbBytes ( void );
 
+static Uint8	FDC_GetCmdType ( Uint8 CR );
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
 static int	FDC_CmdCompleteCommon ( bool DoInt );
 static bool	FDC_VerifyTrack ( void );
@@ -1554,6 +1564,23 @@ void FDC_InterruptHandler_Update ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the type of a command, based on the upper bits of CR
+ */
+static Uint8 FDC_GetCmdType ( Uint8 CR )
+{
+	if ( ( FDC.CR & 0x80 ) == 0 )					/* Type I - Restore, Seek, Step, Step-In, Step-Out */
+		return 1;
+	else if ( ( FDC.CR & 0x40 ) == 0 )				/* Type II - Read Sector, Write Sector */
+		return 2;
+	else if ( ( FDC.CR & 0xf0 ) != 0xd0 )				/* Type III - Read Address, Read Track, Write Track */
+		return 3;
+	else								/* Type IV - Force Interrupt */
+		return 4;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Update the FDC's Status Register.
  * All bits in DisableBits are cleared in STR, then all bits in EnableBits
  * are set in STR.
@@ -2128,7 +2155,6 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_READSECTORS_READDATA_HEAD_LOAD:
-		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON;
@@ -2137,6 +2163,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON:
+		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
 	 case FDCEMU_RUN_READSECTORS_READDATA_NEXT_SECTOR_HEADER:
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
@@ -2281,7 +2308,6 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_HEAD_LOAD:
-		FDC.ReplaceCommandPossible = false;
 		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON;
@@ -2290,6 +2316,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON:
+		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_NEXT_SECTOR_HEADER:
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
@@ -3112,13 +3139,15 @@ static int FDC_ExecuteTypeIVCommands ( void )
 static void FDC_ExecuteCommand ( void )
 {
 	int	FdcCycles;
+	Uint8	Type;
 
 	/* Check type of command and execute */
-	if ( ( FDC.CR & 0x80 ) == 0 )					/* Type I - Restore, Seek, Step, Step-In, Step-Out */
+	Type = FDC_GetCmdType ( FDC.CR );
+	if ( Type == 1 )						/* Type I - Restore, Seek, Step, Step-In, Step-Out */
 		FdcCycles = FDC_ExecuteTypeICommands();
-	else if ( ( FDC.CR & 0x40 ) == 0 )				/* Type II - Read Sector, Write Sector */
+	else if ( Type == 2 )						/* Type II - Read Sector, Write Sector */
 		FdcCycles = FDC_ExecuteTypeIICommands();
-	else if ( ( FDC.CR & 0xf0 ) != 0xd0 )				/* Type III - Read Address, Read Track, Write Track */
+	else if ( Type == 3 )						/* Type III - Read Address, Read Track, Write Track */
 		FdcCycles = FDC_ExecuteTypeIIICommands();
 	else								/* Type IV - Force Interrupt */
 		FdcCycles = FDC_ExecuteTypeIVCommands();
@@ -3152,6 +3181,7 @@ static void FDC_WriteSectorCountRegister ( void )
 static void FDC_WriteCommandRegister ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
+	Uint8 Type_new;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -3160,18 +3190,19 @@ static void FDC_WriteCommandRegister ( void )
 
 	/* If fdc is busy, only 'Force Interrupt' is possible */
 	/* [NP] : it's also possible to start a new command just after another command */
-	/* was started and spinup phase was not completed yet (or is this only possible during the 'prepare' delay ?) */
-	/* FIXME : this delay was not measured, it should be at least 880 cycles for Overdrive Demos by Phalanx */
-	/* For now, we allow to cancel the current command if we're in the prepare+spinup delay */
+	/* was started and spinup phase was not completed yet (eg Overdrive Demos by Phalanx) (see notes at the top of the file)*/
 	if ( FDC.STR & FDC_STR_BIT_BUSY )
 	{
-		if ( ( IoMem_ReadByte(0xff8605) & 0xf0 ) == 0xd0 )		/* 'Force Interrupt' command */
+		Type_new = FDC_GetCmdType ( IoMem_ReadByte(0xff8605) );
+		if ( Type_new == 4 )					/* 'Force Interrupt' command */
 		{
 			LOG_TRACE(TRACE_FDC, "fdc write 8604 while fdc busy, current command=0x%x interrupted by command=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 				FDC.CR , IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 		}
 
-		else if ( FDC.ReplaceCommandPossible )
+		else if ( FDC.ReplaceCommandPossible
+			&& ( ( ( Type_new == 1 ) && ( FDC.CommandType == Type_new ) )		/* Replace a type I command with a type I */
+			  || ( ( Type_new == 2 ) && ( FDC.CommandType == Type_new ) ) ) )	/* Replace a type II command with a type II */
 		{
 			LOG_TRACE(TRACE_FDC, "fdc write 8604 while fdc busy in prepare+spinup, current command=0x%x replaced by command=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
 				FDC.CR , IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
