@@ -361,7 +361,7 @@ enum
 #define	FDC_DELAY_CYCLE_TYPE_III_PREPARE	(1*8)		/* Start Type III commands immediately */
 #define	FDC_DELAY_CYCLE_TYPE_IV_PREPARE		(100*8)		/* FIXME [NP] : this was not measured */
 #define	FDC_DELAY_CYCLE_COMMAND_COMPLETE	(1*8)		/* Number of cycles before going to the _COMPLETE state (~8 cpu cycles) */
-#define	FDC_DELAY_CYCLE_COMMAND_IMMEDIATE	(1*8)		/* Number of cycles to go immediately to another state */
+#define	FDC_DELAY_CYCLE_COMMAND_IMMEDIATE	(0)		/* Number of cycles to go immediately to another state */
 
 /* When the drive is switched off or if there's no floppy, some commands will wait forever */
 /* as they can't find the next index pulse. Instead of continuously testing if a valid drive */
@@ -1501,47 +1501,51 @@ void FDC_InterruptHandler_Update ( void )
 
 	CycInt_AcknowledgeInterrupt();
 
-	/* Update FDC's internal variables */
-	FDC_UpdateAll ();
-
-	/* Is FDC active? */
-	if (FDC.Command!=FDCEMU_CMD_NULL)
+	do
 	{
-		/* Which command are we running ? */
-		switch(FDC.Command)
+		/* Update FDC's internal variables */
+		FDC_UpdateAll ();
+
+		/* Is FDC active? */
+		if (FDC.Command!=FDCEMU_CMD_NULL)
 		{
-		 case FDCEMU_CMD_RESTORE:
-			FdcCycles = FDC_UpdateRestoreCmd();
-			break;
-		 case FDCEMU_CMD_SEEK:
-			FdcCycles = FDC_UpdateSeekCmd();
-			break;
-		 case FDCEMU_CMD_STEP:
-			FdcCycles = FDC_UpdateStepCmd();
-			break;
+			/* Which command are we running ? */
+			switch(FDC.Command)
+			{
+			case FDCEMU_CMD_RESTORE:
+				FdcCycles = FDC_UpdateRestoreCmd();
+				break;
+			case FDCEMU_CMD_SEEK:
+				FdcCycles = FDC_UpdateSeekCmd();
+				break;
+			case FDCEMU_CMD_STEP:
+				FdcCycles = FDC_UpdateStepCmd();
+				break;
 
-		 case FDCEMU_CMD_READSECTORS:
-			FdcCycles = FDC_UpdateReadSectorsCmd();
-			break;
-		 case FDCEMU_CMD_WRITESECTORS:
-			FdcCycles = FDC_UpdateWriteSectorsCmd();
-			break;
+			case FDCEMU_CMD_READSECTORS:
+				FdcCycles = FDC_UpdateReadSectorsCmd();
+				break;
+			case FDCEMU_CMD_WRITESECTORS:
+				FdcCycles = FDC_UpdateWriteSectorsCmd();
+				break;
 
-		 case FDCEMU_CMD_READADDRESS:
-			FdcCycles = FDC_UpdateReadAddressCmd();
-			break;
+			case FDCEMU_CMD_READADDRESS:
+				FdcCycles = FDC_UpdateReadAddressCmd();
+				break;
 
-		 case FDCEMU_CMD_READTRACK:
-			FdcCycles = FDC_UpdateReadTrackCmd();
-			break;
+			case FDCEMU_CMD_READTRACK:
+				FdcCycles = FDC_UpdateReadTrackCmd();
+				break;
 
-		 case FDCEMU_CMD_MOTOR_STOP:
-			FdcCycles = FDC_UpdateMotorStop();
-			break;
+			case FDCEMU_CMD_MOTOR_STOP:
+				FdcCycles = FDC_UpdateMotorStop();
+				break;
+			}
 		}
 	}
+	while ( ( FDC.Command != FDCEMU_CMD_NULL ) && ( FdcCycles == 0 ) );
 
-	if (FDC.Command != FDCEMU_CMD_NULL)
+	if ( FDC.Command != FDCEMU_CMD_NULL )
 	{
 		FDC_StartTimer_FdcCycles ( FdcCycles , -PendingCyclesOver );
 	}
