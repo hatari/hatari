@@ -512,10 +512,10 @@ static bool	FDC_DMA_WriteToFloppy ( void );
 static void	FDC_UpdateAll ( void );
 static bool	FDC_ValidFloppyDrive ( void );
 static int	FDC_FindFloppyDrive ( void );
-static int	FDC_GetSectorsPerTrack ( int Track , int Side );
-static int	FDC_GetSidesPerDisk ( int Track );
+static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
+static int	FDC_GetSidesPerDisk ( int Drive , int Track );
 static int	FDC_GetDensity ( int Drive );
-static int	FDC_GetBytesPerTrack ( void );
+static int	FDC_GetBytesPerTrack ( int Drive );
 
 static void	FDC_IndexPulse_Update ( void );
 static void	FDC_IndexPulse_Init ( int Drive );
@@ -1136,18 +1136,19 @@ static int FDC_FindFloppyDrive ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return number of sectors for track/side of current drive
+ * Return the number of sectors for track/side for the current floppy in a drive
  * TODO [NP] : this function calls Floppy_FindDiskDetails which handles only ST/MSA
- * disk image so far, so this implies all tracks have in fact the same number
+ * disk images so far, so this implies all tracks have in fact the same number
  * of sectors (we don't use Track and Side for now)
+ * Drive should be a valid drive (0 or 1)
  */
-static int FDC_GetSectorsPerTrack ( int Track , int Side )
+static int FDC_GetSectorsPerTrack ( int Drive , int Track , int Side )
 {
 	Uint16	SectorsPerTrack;
 
-	if (EmulationDrives[ FDC_DRIVE ].bDiskInserted)
+	if (EmulationDrives[ Drive ].bDiskInserted)
 	{
-		Floppy_FindDiskDetails ( EmulationDrives[ FDC_DRIVE ].pBuffer , EmulationDrives[ FDC_DRIVE ].nImageBytes , &SectorsPerTrack , NULL );
+		Floppy_FindDiskDetails ( EmulationDrives[ Drive ].pBuffer , EmulationDrives[ Drive ].nImageBytes , &SectorsPerTrack , NULL );
 		return SectorsPerTrack;
 	}
 	else
@@ -1155,13 +1156,18 @@ static int FDC_GetSectorsPerTrack ( int Track , int Side )
 }
 
 
-static int FDC_GetSidesPerDisk ( int Track )
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the number of sides for a track for the current floppy in a drive
+ * Drive should be a valid drive (0 or 1)
+ */
+static int FDC_GetSidesPerDisk ( int Drive , int Track )
 {
 	Uint16	SidesPerDisk;
 
-	if (EmulationDrives[ FDC_DRIVE ].bDiskInserted)
+	if (EmulationDrives[ Drive ].bDiskInserted)
 	{
-		Floppy_FindDiskDetails ( EmulationDrives[ FDC_DRIVE ].pBuffer , EmulationDrives[ FDC_DRIVE ].nImageBytes , NULL , &SidesPerDisk );
+		Floppy_FindDiskDetails ( EmulationDrives[ Drive ].pBuffer , EmulationDrives[ Drive ].nImageBytes , NULL , &SidesPerDisk );
 		return SidesPerDisk;					/* 1 or 2 */
 	}
 	else
@@ -1169,10 +1175,15 @@ static int FDC_GetSidesPerDisk ( int Track )
 }
 
 
+/*-----------------------------------------------------------------------*/
 /*
- * A DD track is usually 9 or 10 sectors, but to handle HD or ED
- * ST/MSA disk images, we check if we have more than 18 or 36 sectors.
- * In that case, we use a x2 or x4 factor for theses disks.
+ * Return a density factor for the current floppy in a drive
+ * A DD track is usually 9 or 10 sectors and has a x1 factor,
+ * but to handle HD or ED ST/MSA disk images, we check if we
+ * have more than 18 or 36 sectors.
+ * In that case, we use a x2 or x4 factor for theses disks,
+ * to simulate more bytes per FDC cycles.
+ * Drive should be a valid drive (0 or 1)
  */
 static int FDC_GetDensity ( int Drive )
 {
@@ -1180,7 +1191,7 @@ static int FDC_GetDensity ( int Drive )
 
 	if ( EmulationDrives[ Drive ].bDiskInserted )
 	{
-		Floppy_FindDiskDetails ( EmulationDrives[ Drive ].pBuffer , EmulationDrives[ Drive ].nImageBytes , &SectorsPerTrack , NULL );
+		SectorsPerTrack = FDC_GetSectorsPerTrack ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC_SIDE );
 		if ( SectorsPerTrack >= 36 )
 			return FDC_DENSITY_FACTOR_ED;			/* Simulate a ED disk, 36 sectors or more */
 		else if ( SectorsPerTrack >= 18 )
@@ -1195,27 +1206,18 @@ static int FDC_GetDensity ( int Drive )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return the number of bytes in a track when using the read/write track
- * type III command.
- * A DD track is usually FDC_TRACK_BYTES_STANDARD, but to handle HD or ED
- * ST/MSA disk images, we simulate a bigger track size if we have more
- * than 18 or 36 sectors.
+ * Return the number of bytes in a raw track
+ * For ST/MSA disk images, we consider all the tracks have the same size.
+ * To simulate HD/ED floppies, we multiply the size by a density factor.
+ * Drive should be a valid drive (0 or 1)
  */
-static int	FDC_GetBytesPerTrack ( void )
+static int	FDC_GetBytesPerTrack ( int Drive )
 {
 	int	TrackSize;
-	int	MaxSector;
 
 	TrackSize = FDC_TRACK_BYTES_STANDARD;				/* For a standard DD disk */
 
-	MaxSector = FDC_GetSectorsPerTrack ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE );
-
-	if ( MaxSector >= 36 )
-		TrackSize *= 4;						/* Simulate a ED disk, 36 sectors or more */
-	else if ( MaxSector >= 18 )
-		TrackSize *= 2;						/* Simulate a HD disk, between 18 and 36 sectors */
-
-	return TrackSize;
+	return TrackSize * FDC_GetDensity ( Drive );			/* Take density into account for HD/ED floppy */
 }
 
 
@@ -1422,7 +1424,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 	if ( CurrentPos < 0 )						/* No drive/floppy available at the moment */
 		return -1;
 
-	MaxSector = FDC_GetSectorsPerTrack ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE );
+	MaxSector = FDC_GetSectorsPerTrack ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC_SIDE );
 	TrackPos = FDC_TRACK_LAYOUT_STANDARD_GAP1;			/* Position of 1st raw sector */
 	TrackPos += FDC_TRACK_LAYOUT_STANDARD_GAP2;			/* Position of ID Field in 1st raw sector */
 
@@ -1438,7 +1440,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 	if ( i == MaxSector )						/* CurrentPos is after the last ID Field of this track */
 	{
 		/* Reach end of track (new index pulse), then go to sector 1 */
-		NbBytes = FDC_GetBytesPerTrack () - CurrentPos + FDC_TRACK_LAYOUT_STANDARD_GAP1 + FDC_TRACK_LAYOUT_STANDARD_GAP2;
+		NbBytes = FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) - CurrentPos + FDC_TRACK_LAYOUT_STANDARD_GAP1 + FDC_TRACK_LAYOUT_STANDARD_GAP2;
 		NextSector = 1;
 	}
 	else								/* There's an ID Field before end of track */
@@ -1661,7 +1663,7 @@ static bool FDC_VerifyTrack ( void )
 	}
 
 	/* If disk image has only one side and we're trying to verify on 2nd side, then return false */
-	if ( ( FDC.SideSignal == 1  ) && ( FDC_GetSidesPerDisk ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) == 1 ) )
+	if ( ( FDC.SideSignal == 1  ) && ( FDC_GetSidesPerDisk ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) == 1 ) )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc type I verify track failed TR=0x%x head=0x%x side=1 doesn't exist drive=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			FDC.TR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal ,
@@ -2571,14 +2573,14 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
-		/* Build the track data */
+		/* At this point, we have a valid drive/floppy, build the track data */
 		FDC_DMA_InitTransfer ();					/* Update FDC_DMA.PosInBuffer */
 		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
 
 		if ( ( FDC_SIDE == 1 )						/* Try to read side 1 on a disk that doesn't have 2 sides */
-			&& ( FDC_GetSidesPerDisk ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack ) != 2 ) )
+			&& ( FDC_GetSidesPerDisk ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) != 2 ) )
 		{
-			for ( i=0 ; i<FDC_GetBytesPerTrack () ; i++ )
+			for ( i=0 ; i<FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) ; i++ )
 				*buf++ = rand() & 0xff;				/* Fill the track buffer with random bytes */
 		}
 		
@@ -2587,7 +2589,8 @@ static int FDC_UpdateReadTrackCmd ( void )
 			for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP1 ; i++ )		/* GAP1 */
 				*buf++ = 0x4e;
 
-			for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_SIDE ) ; Sector++ )
+			for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC_SIDE ) ; Sector++ )
 			{
 				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP2 ; i++ )	/* GAP2 */
 					*buf++ = 0x00;
@@ -2627,13 +2630,13 @@ static int FDC_UpdateReadTrackCmd ( void )
 					*buf++ = 0x4e;
 			}
 
-			while ( buf < DMADiskWorkSpace + FDC_DMA.PosInBuffer + FDC_GetBytesPerTrack () )	/* Complete the track buffer */
+			while ( buf < DMADiskWorkSpace + FDC_DMA.PosInBuffer + FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) )	/* Complete the track buffer */
 			      *buf++ = 0x4e;						/* GAP5 */
 		}
 
 		/* Transfer Track data to RAM using DMA */
-		FDC_DMA.BytesToTransfer += FDC_GetBytesPerTrack ();
-		FDC_DMA.PosInBuffer += FDC_GetBytesPerTrack ();
+		FDC_DMA.BytesToTransfer += FDC_GetBytesPerTrack ( FDC.DriveSelSignal );
+		FDC_DMA.PosInBuffer += FDC_GetBytesPerTrack ( FDC.DriveSelSignal );
 
 		FDC.CommandState = FDCEMU_RUN_READTRACK_DMA;
 		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );			/* Transfer blocks of 16 bytes from the track we just read */
