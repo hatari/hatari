@@ -993,6 +993,12 @@ void DebugUI(debug_reason_t reason)
 	if (bInFullScreen)
 		Screen_ReturnFromFullScreen();
 
+	/* Make sure mouse isn't grabbed regardless of where
+	 * this is invoked from.  E.g. returning from fullscreen
+	 * enables grab if that was enabled on windowed mode.
+	 */
+	SDL_WM_GrabInput(SDL_GRAB_OFF);
+
 	DebugUI_Init();
 
 	if (welcome)
