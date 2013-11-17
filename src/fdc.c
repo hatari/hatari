@@ -392,7 +392,6 @@ enum
 
 
 #define FDC_SIDE				( FDC.SideSignal )	/* Side 0 or 1 */
-#define	FDC_DRIVE				FDC_FindFloppyDrive()
 
 #define	FDC_STEP_RATE				( FDC.CR & 0x03 )	/* Bits 0 and 1 of the current type I command */
 
@@ -511,7 +510,6 @@ static bool	FDC_DMA_WriteToFloppy ( void );
 
 static void	FDC_UpdateAll ( void );
 static bool	FDC_ValidFloppyDrive ( void );
-static int	FDC_FindFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Drive , int Track );
 static int	FDC_GetDensity ( int Drive );
@@ -1112,25 +1110,6 @@ static bool FDC_ValidFloppyDrive ( void )
 		return true;
 	else
 		return false;						/* neither A: not B: are selected */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Return device for FDC, check PORTA bits 1,2 (0=on,1=off)
- */
-static int FDC_FindFloppyDrive ( void )
-{
-	/* Check Drive A first */
-	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x2)==0)
-		return 0;						/* Device 0 (A:) */
-	/* If off, check Drive B */
-	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x4)==0)
-		return 1;						/* Device 1 (B:) */
-
-	/* None appear to be selected so default to Drive A */
-	/* [NP] 2012/03/04 : this is certainly wrong, we should ignore commands, not default to A: (see FDC_ValidFloppyDrive()) */
-	return 0;							/* Device 0 (A:) */
 }
 
 
@@ -2275,10 +2254,13 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	if ( Floppy_IsWriteProtected ( FDC_DRIVE ) )
+	/* Stop now if disk is write protected */
+	if ( ( FDC.DriveSelSignal >= 0 ) && ( FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
+		&& ( FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted )
+		&& ( Floppy_IsWriteProtected ( FDC.DriveSelSignal ) ) )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc type II write sector=%d track=%d drive=%d WPRT VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			  FDC.SR , FDC_DRIVES[ FDC_DRIVE ].HeadTrack , FDC_DRIVE , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+			  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );		/* Set WPRT bit */
 		FdcCycles = FDC_CmdCompleteCommon( true );
