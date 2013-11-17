@@ -509,7 +509,6 @@ static bool	FDC_DMA_ReadFromFloppy ( void );
 static bool	FDC_DMA_WriteToFloppy ( void );
 
 static void	FDC_UpdateAll ( void );
-static bool	FDC_ValidFloppyDrive ( void );
 static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Drive , int Track );
 static int	FDC_GetDensity ( int Drive );
@@ -1096,20 +1095,6 @@ void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 
 	FDC.SideSignal = Side;
 	FDC.DriveSelSignal = Drive;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Check if a floppy drive is selected
- * If not, we should ignore the corresponding FDC commands
- */
-static bool FDC_ValidFloppyDrive ( void )
-{
-	if ( FDC.DriveSelSignal >= 0 )
-		return true;
-	else
-		return false;						/* neither A: not B: are selected */
 }
 
 
@@ -3209,15 +3194,6 @@ static void FDC_WriteCommandRegister ( void )
 				IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 			return;
 		}
-	}
-
-
-	if ( ( ( IoMem_ReadByte(0xff8605) & 0xf0 ) != 0xd0 )			/* Type I, II and III commands */
-	  && ( !FDC_ValidFloppyDrive() ) )
-	{
-		LOG_TRACE(TRACE_FDC, "fdc write 8604 no drive selected, command=0x%x ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-		return;
 	}
 
 	FDC.CR = IoMem_ReadByte(0xff8605);
