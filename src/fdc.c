@@ -691,11 +691,14 @@ static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset )
 /*-----------------------------------------------------------------------*/
 /**
  * Return the number of FDC cycles required to read/write 'nb' bytes
+ * This function will always be called when FDC.DriveSelSignal >= 0, as
+ * there's no case where we transfer bytes if no drive is enabled. This
+ * means we can safely call FDC_GetDensity() here to simulate HD/ED floppies.
  */
 static int	FDC_TransferByte_FdcCycles ( int NbBytes )
 {
 //fprintf ( stderr , "fdc state %d transfer %d bytes\n" , FDC.Command , NbBytes );
-	return NbBytes * FDC_DELAY_CYCLE_MFM_BYTE;
+	return ( NbBytes * FDC_DELAY_CYCLE_MFM_BYTE ) / FDC_DRIVES[ FDC.DriveSelSignal ].Density;
 }
 
 
@@ -1180,8 +1183,7 @@ static int	FDC_GetBytesPerTrack ( int Drive )
 	int	TrackSize;
 
 	TrackSize = FDC_TRACK_BYTES_STANDARD;				/* For a standard DD disk */
-
-	return TrackSize * FDC_GetDensity ( Drive );			/* Take density into account for HD/ED floppy */
+	return TrackSize * FDC_DRIVES[ Drive ].Density;			/* Take density into account for HD/ED floppies */
 }
 
 
@@ -1296,6 +1298,7 @@ static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
  * Return the current position in the track relative to the index pulse.
  * For standard floppy, this is a number of bytes in the range [0,6250[
  * If there's no available drive/floppy and no index, we return -1
+ * To simulate HD/ED floppies, we multiply the number of bytes by a density factor.
  */
 static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void )
 {
@@ -1306,7 +1309,7 @@ static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void )
 		return -1;
 //fprintf ( stderr , "fdc index current pos new=%d\n" , FdcCyclesSinceIndex / FDC_DELAY_CYCLE_MFM_BYTE );
 
-	return FdcCyclesSinceIndex / FDC_DELAY_CYCLE_MFM_BYTE;
+	return FdcCyclesSinceIndex * FDC_DRIVES[ FDC.DriveSelSignal ].Density / FDC_DELAY_CYCLE_MFM_BYTE;
 }
 
 
