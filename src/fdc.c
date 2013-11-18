@@ -391,8 +391,6 @@ enum
 #define	FDC_PHYSICAL_MAX_TRACK			90		/* Head can't go beyond 90 tracks */
 
 
-#define FDC_SIDE				( FDC.SideSignal )	/* Side 0 or 1 */
-
 #define	FDC_STEP_RATE				( FDC.CR & 0x03 )	/* Bits 0 and 1 of the current type I command */
 
 static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 0 (r1/r0) in type I commands */
@@ -425,6 +423,8 @@ static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 
 
 #define	FDC_FAST_FDC_FACTOR			10		/* Divide all delays by this value when --fastfdc is used */
 
+/* Standard ST floppies are double density ; to simulate HD or ED floppies, we use */
+/* a density factor to have x2 or x4 bytes more during 1 FDC cycle */
 #define	FDC_DENSITY_FACTOR_DD			1
 #define	FDC_DENSITY_FACTOR_HD			2		/* For a HD disk, we get x2 bytes than DD */
 #define	FDC_DENSITY_FACTOR_ED			4		/* For a ED disk, we get x4 bytes than DD */
@@ -1158,7 +1158,7 @@ static int FDC_GetDensity ( int Drive )
 
 	if ( EmulationDrives[ Drive ].bDiskInserted )
 	{
-		SectorsPerTrack = FDC_GetSectorsPerTrack ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC_SIDE );
+		SectorsPerTrack = FDC_GetSectorsPerTrack ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 		if ( SectorsPerTrack >= 36 )
 			return FDC_DENSITY_FACTOR_ED;			/* Simulate a ED disk, 36 sectors or more */
 		else if ( SectorsPerTrack >= 18 )
@@ -1391,7 +1391,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 	if ( CurrentPos < 0 )						/* No drive/floppy available at the moment */
 		return -1;
 
-	MaxSector = FDC_GetSectorsPerTrack ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC_SIDE );
+	MaxSector = FDC_GetSectorsPerTrack ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 	TrackPos = FDC_TRACK_LAYOUT_STANDARD_GAP1;			/* Position of 1st raw sector */
 	TrackPos += FDC_TRACK_LAYOUT_STANDARD_GAP2;			/* Position of ID Field in 1st raw sector */
 
@@ -2454,7 +2454,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 		*p++ = 0xfe;
 		*p++ = FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack;
 		FDC.SR = FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack;	/* The 1st byte of the ID field is also copied into Sector Register */
-		*p++ = FDC_SIDE;
+		*p++ = FDC.SideSignal;
 		*p++ = FDC.NextSector_ID_Field_SR;
 		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
 
@@ -2547,7 +2547,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		FDC_DMA_InitTransfer ();					/* Update FDC_DMA.PosInBuffer */
 		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
 
-		if ( ( FDC_SIDE == 1 )						/* Try to read side 1 on a disk that doesn't have 2 sides */
+		if ( ( FDC.SideSignal == 1 )					/* Try to read side 1 on a disk that doesn't have 2 sides */
 			&& ( FDC_GetSidesPerDisk ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) != 2 ) )
 		{
 			for ( i=0 ; i<FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) ; i++ )
@@ -2560,7 +2560,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 				*buf++ = 0x4e;
 
 			for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
-				FDC_SIDE ) ; Sector++ )
+				FDC.SideSignal ) ; Sector++ )
 			{
 				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP2 ; i++ )	/* GAP2 */
 					*buf++ = 0x00;
@@ -2569,7 +2569,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
 				*buf++ = 0xfe;						/* Index Address Mark */
 				*buf++ = FDC_DRIVES[ FDC.DriveSelSignal].HeadTrack;	/* Track */
-				*buf++ = FDC_SIDE;					/* Side */
+				*buf++ = FDC.SideSignal;				/* Side */
 				*buf++ = Sector;					/* Sector */
 				*buf++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
 				FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
@@ -2832,7 +2832,7 @@ static int FDC_TypeII_ReadSector ( void )
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC.DriveSelSignal >= 0 ? FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack : -1 ,
-		  FDC_SIDE , FDC.DriveSelSignal , FDC_DMA.SectorCount ,
+		  FDC.SideSignal , FDC.DriveSelSignal , FDC_DMA.SectorCount ,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read sector(s) */
@@ -2859,7 +2859,7 @@ static int FDC_TypeII_WriteSector ( void )
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC.DriveSelSignal >= 0 ? FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack : -1 ,
-		  FDC_SIDE , FDC.DriveSelSignal , FDC_DMA.SectorCount,
+		  FDC.SideSignal , FDC.DriveSelSignal , FDC_DMA.SectorCount,
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to write a sector(s) */
@@ -2893,7 +2893,7 @@ static int FDC_TypeIII_ReadAddress ( void )
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC.DriveSelSignal >= 0 ? FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack : -1 ,
-		  FDC_SIDE , FDC.DriveSelSignal , FDC_GetDMAAddress(),
+		  FDC.SideSignal , FDC.DriveSelSignal , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
@@ -2919,7 +2919,7 @@ static int FDC_TypeIII_ReadTrack ( void )
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC.DriveSelSignal >= 0 ? FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack : -1 ,
-		  FDC_SIDE , FDC.DriveSelSignal , FDC_GetDMAAddress(),
+		  FDC.SideSignal , FDC.DriveSelSignal , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read a single track */
@@ -2944,7 +2944,7 @@ static int FDC_TypeIII_WriteTrack ( void )
 		  ( FDC.CR & FDC_COMMAND_BIT_SPIN_UP ) ? "off" : "on" ,
 		  ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD ) ? "on" : "off" ,
 		  FDC.TR , FDC.DriveSelSignal >= 0 ? FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack : -1 ,
-		  FDC_SIDE , FDC.DriveSelSignal , FDC_GetDMAAddress(),
+		  FDC.SideSignal , FDC.DriveSelSignal , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	Log_Printf(LOG_TODO, "FDC type III command 'write track' does not work yet!\n");
@@ -3589,11 +3589,11 @@ static bool FDC_ReadSectorFromFloppy ( int Drive , Uint8 *buf , Uint8 Sector , i
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc read sector addr=0x%x drive=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_GetDMAAddress(), Drive, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC_SIDE,
+		FDC_GetDMAAddress(), Drive, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC.SideSignal,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* Copy 1 sector to our workspace */
-	if ( Floppy_ReadSectors ( Drive, buf, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC_SIDE, 1, NULL, pSectorSize ) )
+	if ( Floppy_ReadSectors ( Drive, buf, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC.SideSignal, 1, NULL, pSectorSize ) )
 		return true;
 
 	/* Failed */
@@ -3618,7 +3618,7 @@ static bool FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Se
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	LOG_TRACE(TRACE_FDC, "fdc write sector addr=0x%x drive=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_GetDMAAddress(), Drive, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC_SIDE,
+		FDC_GetDMAAddress(), Drive, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC.SideSignal,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	if ( DMASectorsCount > 0 )
@@ -3630,7 +3630,7 @@ static bool FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Se
 	}
 	
 	/* Write 1 sector from our workspace */
-	if ( Floppy_WriteSectors ( Drive, pBuffer, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC_SIDE, 1, NULL, pSectorSize ) )
+	if ( Floppy_WriteSectors ( Drive, pBuffer, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC.SideSignal, 1, NULL, pSectorSize ) )
 		return true;
 
 	/* Failed */
