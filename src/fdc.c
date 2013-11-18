@@ -1143,7 +1143,7 @@ static int FDC_GetSidesPerDisk ( int Drive , int Track )
 
 
 /*-----------------------------------------------------------------------*/
-/*
+/**
  * Return a density factor for the current floppy in a drive
  * A DD track is usually 9 or 10 sectors and has a x1 factor,
  * but to handle HD or ED ST/MSA disk images, we check if we
@@ -1439,9 +1439,11 @@ void FDC_SetIRQ ( void )
 }
 
 
+/*-----------------------------------------------------------------------*/
 /**
- * Reset the IRQ signal ; in case the source of the interrupt is
- * a "force interrupt immediate" command, the IRQ signal should not be cleared.
+ * Reset the IRQ signal ; in case the source of the interrupt is also
+ * a "force interrupt immediate" command, the IRQ signal should not be cleared
+ * (only command 0xD0 can clear the immediate condition)
  */
 void FDC_ClearIRQ ( void )
 {
@@ -1480,7 +1482,7 @@ void FDC_InterruptHandler_Update ( void )
 
 	CycInt_AcknowledgeInterrupt();
 
-	do
+	do								/* We loop as long as FdcCycles == 0 (immediate change of state) */
 	{
 		/* Update FDC's internal variables */
 		FDC_UpdateAll ();
@@ -3218,7 +3220,8 @@ static void FDC_WriteTrackRegister ( void )
 		IoMem_ReadByte(0xff8605) , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* [NP] Contrary to what is written in the WD1772 doc, Track Register can be changed */
-	/* while the fdc is busy */
+	/* while the fdc is busy (the change will be ignored or not, depending on the current sub-state */
+	/* in the state machine) */
 	if ( FDC.STR & FDC_STR_BIT_BUSY )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, track=0x%x may be ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
