@@ -878,90 +878,153 @@ changes that you have made.
 <h4 class="gui">The System Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/system.png" width="360" height="384"
+  <img src="images/system.png" width="600" height="400"
        alt="Hatari's GUI - the system dialog" />
 </div>
 
 <p>
- First you can select the CPU type here. Here are some important hints for
- choosing the correct CPU type:
+ The system dialog can be used to define the basic hardware attributes of
+ the machine that should be emulated.
 </p>
-<ul>
- <li>
-  Atari ST and STE have only been shipped with a 68000 CPU, so for best
-  compatibility with old programs, choose this CPU type.
- </li>
- <li>
-  Atari TT and Falcon computers were using the 68030 CPU, so you should switch
-  use 68EC030+FPU (Hatari doesn't support 030 with MMU and some programs don't
-  work with 68020 so this is the best choice).
- </li>
- <li>
-  TOS 1.0x only works with 68000, while TOS 3.0x and 4.0x work only with a CPU
-  &gt;= 68020.
- </li>
- <li>
-  68010 and 68040 have never been used in official Atari computers, so don't
-  use these CPU types unless you've got some good reasons.
- </li>
-</ul>
-
 <p>
- Beside the CPU type, you can also choose the machine type to emulate.
- The ST was the very first 16/32-bit computer from Atari. Most older games
- and demos require an ST. The STE was introduced some years later and had
- some more advanced hardware features. There are not that many demos or
- games that really require an STE but since most normal ST games/demos also
- work with an STE, it's normally safe to always work in STE mode.
+ The machine type option is used to select the type of Atari computer to
+ be emulated. The ST was the very first 16/32-bit computer from Atari.
+ Most older games and demos require an ST. The STE was introduced some years
+ later and had some more advanced hardware features. There are not that many
+ demos or games that really require an STE but since most normal ST games/demos
+ also work with an STE, it's normally safe to always work in STE mode.
  <br />
  TT and Falcon are more advanced, but they are not as compatible to the ST as
  the STE was. Therefore many old games and demos do not work with these machine
  types anymore. There were only very few programs that were made for the TT
  exclusively, while there were some interesting games and demos specially made
  for the Falcon.
- <em>Note:</em> TT and Falcon emulation are incomplete. They may not work
- very well.
+ <br />
+ <em>Note:</em> Falcon and especially TT emulation are still considered as
+ experimental and incomplete.
+ Quite a bunch of programs do not work very well yet.
 </p>
 <p>
  For STE emulation a STE compatible TOS image, e.q. version 1.06, 1.62 or
  2.x, is strongly recommended. For TT emulation you need TOS 3.0x and for Falcon
  emulation you need TOS 4.0x. EmuTOS can be used on all machine types.
 </p>
+
 <p>
- Select the CPU clock you want to use. 8Mhz is ST standard and the most
- compatible. Use 16MHz for Mega STE and Falcon emulation.
+ The CPU type option can be used to select the level of the central processing
+ unit. If you are not sure what to use, simply select 68000 for ST and STE
+ machines and 68030 for TT and Falcon emulation, since this were the original
+ configurations used in the Atari computers. In case you want to vary
+ the CPU type, you have got to be aware of some constraints:
+</p>
+<ul>
+ <li>
+  Atari ST and STE have only been shipped with a 68000 CPU, so for best
+  compatibility with old programs, you should choose this CPU type.
+ </li>
+ <li>
+  If you are going to use TOS 1.0x, you also have to select the 68000 CPU,
+  since these TOS versions are not aware of the higher CPU levels yet.
+  If you want to use a higher CPU level with the ST or STE machine type,
+  you've got to use TOS 2.0x instead.
+ </li>
+ <li>
+  Atari TT and Falcon computers were using the 68030 CPU, so you should select
+  the 68030 CPU type for these machines.
+ </li>
+ <li>
+  TOS 3.0x and 4.0x also only work with a CPU &gt;= 68020.
+ </li>
+ <li>
+  68010 and 68040, 68060 have never been used in official Atari computers,
+  so don't use these CPU types unless you've got some good reasons.
+ </li>
+ <li>
+  The 68060 option is only available in the &quot;WinUAE&quot; builds of
+  Hatari, and is currently also considered as experimental, so do not use
+  this option unless you know what you are doing.
+ </li>
+</ul>
+
+<p>
+ The CPU clock option can be used to select the frequency that is used
+ to clock the CPU. 8 Mhz is the standard for ST and STE and the most
+ compatible frequency for old software.
+ Use 16 MHz for Mega STE and Falcon emulation.
  The CPU in the TT was clocked with 32 MHz.
 </p>
-<p>With the "Slower but more compatible CPU" option, you can enable
- the emulation of 68k address errors and the CPU prefetch buffer. This is needed
- for best compatibility, but it slows down emulation a little bit so you can
- disable it if you don't need it.</p>
 <p>
- For Falcon mode, you can choose whether you want to enable DSP emulation,
- fake it or completely disable it. Most Falcon programs only play sound or work
+ For Falcon mode, you can choose whether you want to disable DSP emulation,
+ fake it or enable full emulation. Most Falcon programs only play sound or work
  correctly when you enable the DSP emulation, but it needs a lot of host CPU
- power (more than 2 GHz). So if you have a slow host CPU, you can try if your
- Falcon program also runs with DSP disabled or in "dummy" mode.
+ power (more than 2 GHz) for full emulation. So if you have a slow host CPU,
+ you can try if your Falcon program also runs with DSP disabled or in
+ the &quot;dummy&quot; fake mode.
  Note that you can not change this option while the DSP based program already
  runs.
 </p>
-<p>You can also enable/disable Blitter emulation here. The Blitter is a custom
- chip that accelerates some graphical operations. This switch only toggles the
- Blitter in plain ST mode. In STE mode, the Blitter is always enabled (since all
- STEs have been sold with a Blitter chip).</p>
-<p>If you enable the "Real time clock emulation" switch, a RTC will
- be emulated based on the time of the host computer. Note that you need at least
- TOS 1.02 for proper RTC emulation, TOS 1.00 does not support this.</p>
-<p>The Timer-D patch changes the Timer-D initialization from TOS. TOS uses
- the MFP timer D as a baudrate generator for RS232. However, the TOS default
- value slows down the emulation. The patch gives you a better performance.
- It is normally safe to enable the patch, but if you encounter a program that
- does not work, you can try to disable the patch to see if it works then.</p>
-<p><em>NOTE:</em> The emulated Atari is very very sensitive to these options
- and it is strongly recommended to reset the emulation after changing
- them (for most things that's done automatically).   The correct
- CPU type and clock are automatically selected when one uses the
- <span class="commandline">--machine</span> command line option.</p>
+<p>
+ The check boxes in the &quot;CPU and system parameters&quot; section can
+ be used to fine-tune the machine and CPU types.
+</p>
+<p>
+ If you enable the "Real time clock emulation" switch, a RTC (like the ones
+ that could be found in the Mega-ST and Mega-STE computers) will be emulated
+ based on the time of the host computer.
+ This option is only affects the emulation of ST and STE machines. TT and
+ Falcon used a different kind of RTC (which is not optional and thus always
+ enabled in Hatari).
+ Note: You need at least TOS 1.02 for proper RTC emulation, TOS 1.00 does
+ not support this.
+</p>
+<p>
+ The next check box can be used to enable/disable Blitter emulation.
+ The Blitter is a custom chip that accelerates some graphical operations.
+ This switch only toggles the Blitter in plain ST mode. In STE and Falcon mode,
+ the Blitter is always enabled (since these machines have always been sold
+ with a Blitter chip). The TT was always shipped without the Blitter chip.
+</p>
+<p>
+ The &quot;Patch Timer-D&quot; option changes the Timer-D initialization from
+ TOS. TOS uses the MFP timer D as a baudrate generator for RS232. However, the
+ TOS default value slows down the emulation. The patch gives you a better
+ performance.  It is normally safe to enable the patch, but if you encounter a
+ program that does not work, you can try to disable the patch to see if it
+ works better.
+</p>
+<p>
+ With the &quot;Boot faster&quot; option, Hatari patches the TOS ROM and some
+ system variables, to speed up the boot process of the emulated system, e.g.
+ by simulating a warm reset. This is a convenient option, but some very few old
+ programs rely on an unmodified boot process, so in rare cases this option has
+ to be switched off to get those programs running.
+</p>
+<p>
+ The &quot;Prefetch mode&quot; option is used to enable the emulation of 68k
+ address errors and the so-called CPU prefetch buffer. This is needed for best
+ compatibility, but it slows down emulation a little bit so you can disable it
+ if you don't need it and if you have a slow host system.
+</p>
+<p>
+ The &quot;Cycle exact&quot;, the &quot;MMU emulation&quot; and
+ &quot;24-bit addressing&quot; option are only available in the
+ &quot;WinUAE&quot; builds
+ of Hatari. They are considered as experimental and should be switched off
+ unless you know what you are doing.
+</p>
+<p>
+ The FPU settings are also only available with the &quot;WinUAE&quot; builds
+ of Hatari. They can be used to select the type of floating point unit of CPUs
+ &gt;= 68020. In the normal builds of Hatari, the FPU is always enabled for
+ 68030 and 68040 CPUs.
+</p>
+<p>
+ <em>NOTE:</em> The emulated Atari system is very very sensitive to all of
+ these options and it is strongly recommended to reset the emulation after
+ changing them (for most things that's done automatically).
+ The correct CPU type and clock are automatically selected when one uses the
+ <span class="commandline">--machine</span> command line option.
+</p>
 
 
 <h4 class="gui">The Floppy Disks Dialog</h4>
