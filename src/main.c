@@ -118,12 +118,12 @@ static Uint32 Main_GetTicks(void)
 
 static Sint64	Time_GetTicks ( void )
 {
-        Sint64		ticks_micro;
+	Sint64	ticks_micro;
 
 #if HAVE_GETTIMEOFDAY
-        struct timeval	now;
-        gettimeofday ( &now , NULL );
-        ticks_micro = (Sint64)now.tv_sec * 1000000 + now.tv_usec;
+	struct timeval	now;
+	gettimeofday ( &now , NULL );
+	ticks_micro = (Sint64)now.tv_sec * 1000000 + now.tv_usec;
 #else
 	ticks_micro = (Sint64)SDL_GetTicks() * 1000;		/* milli sec -> micro sec */
 #endif
@@ -292,16 +292,18 @@ void Main_WaitOnVbl(void)
 	FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
 	CurrentTicks = Time_GetTicks();
 
-	if ( DestTicks == 0 )					/* first call, init DestTicks */
+	if (DestTicks == 0)			/* on first call, init DestTicks */
+	{
 		DestTicks = CurrentTicks + FrameDuration_micro;
+	}
 
-	DestTicks += pulse_swallowing_count; /* audio.c - Audio_CallBack() */
+	DestTicks += pulse_swallowing_count;	/* audio.c - Audio_CallBack() */
 
 	nDelay = DestTicks - CurrentTicks;
 
 	/* Do not wait if we are in fast forward mode or if we are totally out of sync */
 	if (ConfigureParams.System.bFastForward == true
-	        || nDelay < -4*FrameDuration_micro)
+	    || nDelay < -4*FrameDuration_micro || nDelay > 50*FrameDuration_micro)
 	{
 		if (ConfigureParams.System.bFastForward == true)
 		{
@@ -346,6 +348,10 @@ void Main_WaitOnVbl(void)
 	{
 		CurrentTicks = Time_GetTicks();
 		nDelay = DestTicks - CurrentTicks;
+		/* If the delay is still bigger than one frame, somebody
+		 * played tricks with the system clock and we have to abort */
+		if (nDelay > FrameDuration_micro)
+			break;
 	}
 
 //printf ( "tick %lld\n" , CurrentTicks );

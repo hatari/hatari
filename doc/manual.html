@@ -384,7 +384,7 @@ corresponds to A: or C:).</p>
 <!--
 Generated from hatari.1 options section by changing subheaders to h3
 and removing extra paragraphs:
-  groff -man -Thtml hatari.1 | tidy | awk '
+  groff -man -Thtml hatari.1 | sed -e 's/&minus;/-/g' | tidy | awk '
   /h2.OPTIONS/ { out = 1; next }
   /COMMANDS/ { out = 0; next }
   { if(out) print }' \
@@ -394,74 +394,74 @@ and removing extra paragraphs:
 -->
 
 <h3>General options</h3>
-<p class="parameter">&minus;h,
-&minus;&minus;help</p>
+<p class="parameter">-h,
+--help</p>
 <p class="paramdesc">Print command line options and
 terminate</p>
-<p class="parameter">&minus;v,
-&minus;&minus;version</p>
+<p class="parameter">-v,
+--version</p>
 <p class="paramdesc">Print version information and
 terminate</p>
-<p class="parameter">&minus;&minus;confirm-quit
+<p class="parameter">--confirm-quit
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether Hatari confirms quitting</p>
-<p class="parameter">&minus;c, &minus;&minus;configfile
+<p class="parameter">-c, --configfile
 &lt;filename&gt;</p>
 <p class="paramdesc">Read additional configuration values from
 &lt;file&gt;, these override values read from the global and
 user configuration files
 </p>
-<p class="parameter">&minus;k, &minus;&minus;keymap
+<p class="parameter">-k, --keymap
 &lt;file&gt;</p>
 <p class="paramdesc">load keyboard mapping from
 &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;fast-forward
+<p class="parameter">--fast-forward
 &lt;bool&gt;</p>
 <p class="paramdesc">On fast machine helps skipping (fast
 forwarding) Hatari output</p>
 
 <h3>Common display options</h3>
-<p class="parameter">&minus;m,
-&minus;&minus;mono</p>
+<p class="parameter">-m,
+--mono</p>
 <p class="paramdesc">Start in monochrome mode instead of
 color</p>
-<p class="parameter">&minus;&minus;monitor
+<p class="parameter">--monitor
 &lt;x&gt;</p>
 <p class="paramdesc">Select monitor type (x =
 mono/rgb/vga/tv)</p>
-<p class="parameter">&minus;f,
-&minus;&minus;fullscreen</p>
+<p class="parameter">-f,
+--fullscreen</p>
 <p class="paramdesc">Start the emulator in fullscreen
 mode</p>
-<p class="parameter">&minus;w,
-&minus;&minus;window</p>
+<p class="parameter">-w,
+--window</p>
 <p class="paramdesc">Start the emulator in window mode</p>
-<p class="parameter">&minus;&minus;grab</p>
+<p class="parameter">--grab</p>
 <p class="paramdesc">Grab mouse (also) in window mode</p>
-<p class="parameter">&minus;&minus;frameskips
+<p class="parameter">--frameskips
 &lt;x&gt;</p>
 <p class="paramdesc">Skip &lt;x&gt; frames after each
 displayed frame to accelerate emulation (0=disabled, &gt;4 uses
 automatic frameskip with given value as maximum)</p>
-<p class="parameter">&minus;&minus;statusbar
+<p class="parameter">--statusbar
 &lt;bool&gt;</p>
 <p class="paramdesc">Show statusbar (with floppy leds etc
 etc)</p>
-<p class="parameter">&minus;&minus;drive-led
+<p class="parameter">--drive-led
 &lt;bool&gt;</p>
 <p class="paramdesc">Show overlay drive led when statusbar
 isn&rsquo;t shown</p>
-<p class="parameter">&minus;&minus;bpp
+<p class="parameter">--bpp
 &lt;bool&gt;</p>
 <p class="paramdesc">Force internal bitdepth (x =
 8/15/16/32, 0=disable)</p>
 
 <h3>ST/STE specific display options</h3>
 <p class="parameter">
-&minus;&minus;borders &lt;bool&gt;</p>
+--borders &lt;bool&gt;</p>
 <p class="paramdesc">Show ST/STE screen borders (for low/med
 resolution overscan demos)</p>
-<p class="parameter">&minus;&minus;desktop-st
+<p class="parameter">--desktop-st
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether fullscreen mode uses desktop
 resolution to avoid: messing multi-screen setups, several seconds
@@ -472,13 +472,13 @@ Hatari or monitor) when this is enabled. Therefore this is mainly
 useful only if you suffer from the described effects, but still
 want to grab mouse and remove other distractions from the screen
 just by toggling fullscreen mode. (disabled by default)</p>
-<p class="parameter">&minus;&minus;spec512
+<p class="parameter">--spec512
 &lt;x&gt;</p>
 <p class="paramdesc">Hatari uses this threshold to decide
 when to render a screen with the slower but more accurate
 Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
 0=disable)</p>
-<p class="parameter">&minus;z, &minus;&minus;zoom
+<p class="parameter">-z, --zoom
 &lt;x&gt;</p>
 <p class="paramdesc">Zoom (double) low resolution (1=no,
 2=yes)</p>
@@ -488,119 +488,119 @@ Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
 specified below is internally done using integer scaling factors.
 This means that different Atari resolutions may show up with
 different sizes, but they are never blurry. <br />
-&minus;&minus;desktop &lt;bool&gt;</p>
+--desktop &lt;bool&gt;</p>
 <p class="paramdesc">Whether to use desktop resolution on
 fullscreen to avoid issues related to resolution switching.
 Otherwise fullscreen will use a resolution that is closest to the
 Hatari window size. (enabled by default)</p>
-<p class="parameter">&minus;&minus;max-width
+<p class="parameter">--max-width
 &lt;x&gt;</p>
 <p class="paramdesc">Preferred / maximum window width</p>
-<p class="parameter">&minus;&minus;max-height
+<p class="parameter">--max-height
 &lt;x&gt;</p>
 <p class="paramdesc">Preferred / maximum window height</p>
-<p class="parameter">&minus;&minus;force-max
+<p class="parameter">--force-max
 &lt;bool&gt;</p>
 <p class="paramdesc">Hatari window size is forced to
 specified maximum size and black borders used when Atari resolution
 doesn&rsquo;t scale evenly to it. This is most useful when
 recording videos of Falcon demos that change their resolution.
 (disabled by default)</p>
-<p class="parameter">&minus;&minus;aspect
+<p class="parameter">--aspect
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether to do monitor aspect ratio
 correction (enabled by default)</p>
 
 <h3>VDI options</h3>
-<p class="parameter">&minus;&minus;vdi
+<p class="parameter">--vdi
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether to use VDI screen mode</p>
-<p class="parameter">&minus;&minus;vdi&minus;planes
+<p class="parameter">--vdi-planes
 &lt;x&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with bit
 depth &lt;x&gt; (x = 1, 2 or 4)</p>
-<p class="parameter">&minus;&minus;vdi&minus;width
+<p class="parameter">--vdi-width
 &lt;w&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with width
 &lt;w&gt; (320 &lt; w &lt;= 1280)</p>
-<p class="parameter">&minus;&minus;vdi&minus;height
+<p class="parameter">--vdi-height
 &lt;h&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with height
 &lt;h&gt; (200 &lt; h &lt;= 960)</p>
 
 <h3>Screen capture options</h3>
-<p class="parameter">&minus;&minus;crop
+<p class="parameter">--crop
 &lt;bool&gt;</p>
 <p class="paramdesc">Remove statusbar from the screen
 captures</p>
-<p class="parameter">&minus;&minus;avirecord</p>
+<p class="parameter">--avirecord</p>
 <p class="paramdesc">Start AVI recording</p>
-<p class="parameter">&minus;&minus;avi-vcodec
+<p class="parameter">--avi-vcodec
 &lt;x&gt;</p>
 <p class="paramdesc">Select avi video codec (x =
 bmp/png)</p>
-<p class="parameter">&minus;&minus;avi-fps
+<p class="parameter">--avi-fps
 &lt;x&gt;</p>
 <p class="paramdesc">Force avi frame rate (x =
 50/60/71/...)</p>
-<p class="parameter">&minus;&minus;avi-file
+<p class="parameter">--avi-file
 &lt;file&gt;</p>
 <p class="paramdesc">Use &lt;file&gt; to record avi</p>
 
 <h3>Devices options</h3>
-<p class="parameter">&minus;j,
-&minus;&minus;joystick &lt;port&gt;</p>
+<p class="parameter">-j,
+--joystick &lt;port&gt;</p>
 <p class="paramdesc">Emulate joystick with cursor keys in
 given port (0-5)</p>
-<p class="parameter">&minus;&minus;joy&lt;port&gt;
+<p class="parameter">--joy&lt;port&gt;
 &lt;type&gt;</p>
 <p class="paramdesc">Set joystick type (none/keys/real) for
 given port</p>
-<p class="parameter">&minus;&minus;printer
+<p class="parameter">--printer
 &lt;file&gt;</p>
 <p class="paramdesc">Enable printer support and write data
 to &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;midi-in
+<p class="parameter">--midi-in
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable MIDI support and write MIDI data
 to &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;midi-out
+<p class="parameter">--midi-out
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable MIDI support and read MIDI data
 from &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;rs232-in
+<p class="parameter">--rs232-in
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable serial port support and use
 &lt;file&gt; as the input device</p>
-<p class="parameter">&minus;&minus;rs232-out
+<p class="parameter">--rs232-out
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable serial port support and use
 &lt;file&gt; as the output device</p>
 
 <h3>Disk options</h3>
-<p class="parameter">&minus;&minus;disk-a
+<p class="parameter">--disk-a
 &lt;file&gt;</p>
 <p class="paramdesc">Set disk image for floppy drive A</p>
-<p class="parameter">&minus;&minus;disk-b
+<p class="parameter">--disk-b
 &lt;file&gt;</p>
 <p class="paramdesc">Set disk image for floppy drive B</p>
-<p class="parameter">&minus;&minus;protect-floppy
+<p class="parameter">--protect-floppy
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect floppy image contents
 (on/off/auto). With "auto" option write protection is according to
 the disk image file attributes.</p>
-<p class="parameter">&minus;&minus;protect-hd
+<p class="parameter">--protect-hd
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect harddrive &lt;dir&gt;
 contents (on/off/auto). With "auto" option the protection can be
 controlled by setting individual files attributes as it disables
 the file attribute modifications for the GEMDOS hard disk
 emulation.</p>
-<p class="parameter">&minus;&minus;gemdos-case &lt;x&gt;</p>
+<p class="parameter">--gemdos-case &lt;x&gt;</p>
 <p class="paramdesc">Specify whether new dir/filenames are forced to be
 in upper or lower case with the GEMDOS HD emulation. Off by default.
 </p>
-<p class="parameter">&minus;d, &minus;&minus;harddrive
+<p class="parameter">-d, --harddrive
 &lt;dir&gt;</p>
 <p class="paramdesc">Emulate harddrive partition(s) with
 &lt;dir&gt; contents. If directory contains only single letter
@@ -609,42 +609,42 @@ as a separate partition, otherwise the given directory itself will
 be assigned to drive "C:". In the multiple partition case, the
 letters used as the subdirectory names will determine to which
 drives/partitions they&rsquo;re assigned.</p>
-<p class="parameter">&minus;&minus;acsi
+<p class="parameter">--acsi
 &lt;file&gt;</p>
 <p class="paramdesc">Emulate an ACSI hard disk with an image
 &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;ide&minus;master
+<p class="parameter">--ide-master
 &lt;file&gt;</p>
 <p class="paramdesc">Emulate an IDE master hard disk with an
 image &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;ide&minus;slave
+<p class="parameter">--ide-slave
 &lt;file&gt;</p>
 <p class="paramdesc">Emulate an IDE slave hard disk with an
 image &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;fastfdc
+<p class="parameter">--fastfdc
 &lt;bool&gt;</p>
 <p class="paramdesc">speed up FDC emulation (can cause
 incompatibilities)</p>
 
 <h3>Memory options</h3>
 <p class="parameter">
-&minus;&minus;memstate &lt;file&gt;</p>
+--memstate &lt;file&gt;</p>
 <p class="paramdesc">Load memory snap-shot &lt;file&gt;</p>
-<p class="parameter">&minus;s, &minus;&minus;memsize
+<p class="parameter">-s, --memsize
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
 MiB, or 0 for 512 KiB</p>
 
 <h3>ROM options</h3>
-<p class="parameter">&minus;t,
-&minus;&minus;tos &lt;imagefile&gt;</p>
+<p class="parameter">-t,
+--tos &lt;imagefile&gt;</p>
 <p class="paramdesc">Specify TOS ROM image to use</p>
-<p class="parameter">&minus;&minus;patch-tos
+<p class="parameter">--patch-tos
 &lt;bool&gt;</p>
 <p class="paramdesc">Use this option to enable/disable TOS
 ROM patching. Experts only! Leave this enabled unless you know what
 you are doing!</p>
-<p class="parameter">&minus;&minus;cartridge
+<p class="parameter">--cartridge
 &lt;imagefile&gt;</p>
 <p class="paramdesc">Use ROM cartridge image &lt;file&gt;
 (only works if GEMDOS HD emulation and extended VDI resolution are
@@ -652,49 +652,49 @@ disabled)</p>
 
 <h3>CPU options</h3>
 <p class="parameter">
-&minus;&minus;cpulevel &lt;x&gt;</p>
+--cpulevel &lt;x&gt;</p>
 <p class="paramdesc">Specify CPU (680x0) to use (use x &gt;=
 1 with EmuTOS or TOS &gt;= 2.06 only!)</p>
-<p class="parameter">&minus;&minus;cpuclock
+<p class="parameter">--cpuclock
 &lt;x&gt;</p>
 <p class="paramdesc">Set the CPU clock (8, 16 or 32 Mhz)</p>
-<p class="parameter">&minus;&minus;compatible
+<p class="parameter">--compatible
 &lt;bool&gt;</p>
 <p class="paramdesc">Use a more compatible, but slower 68000
 CPU mode with better prefetch accuracy and cycle counting</p>
 
 <h3>Misc system options</h3>
 <p class="parameter">
-&minus;&minus;machine &lt;x&gt;</p>
+--machine &lt;x&gt;</p>
 <p class="paramdesc">Select machine type (x = st, ste, tt or
 falcon)</p>
-<p class="parameter">&minus;&minus;blitter
+<p class="parameter">--blitter
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable blitter emulation (ST only)</p>
-<p class="parameter">&minus;&minus;dsp &lt;x&gt;</p>
+<p class="parameter">--dsp &lt;x&gt;</p>
 <p class="paramdesc">Falcon DSP emulation (x = none, dummy
 or emu, Falcon only)</p>
-<p class="parameter">&minus;&minus;timer-d
+<p class="parameter">--timer-d
 &lt;bool&gt;</p>
 <p class="paramdesc">Patch redundantly high Timer-D
 frequency set by TOS. This about doubles Hatari speed (for ST/e
 emulation) as the original Timer-D frequency causes most of the
 interrupts.</p>
-<p class="parameter">&minus;&minus;fast-boot
+<p class="parameter">--fast-boot
 &lt;bool&gt;</p>
 <p class="paramdesc">Patch TOS and initialize the so-called
 "memvalid" system variables to by-pass the memory test of TOS, so
 that the system boots faster.</p>
-<p class="parameter">&minus;&minus;rtc
+<p class="parameter">--rtc
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable real-time clock</p>
 
 <h3>Sound options</h3>
-<p class="parameter">&minus;&minus;mic
+<p class="parameter">--mic
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable/disable (Falcon only)
 microphone</p>
-<p class="parameter">&minus;&minus;sound
+<p class="parameter">--sound
 &lt;x&gt;</p>
 <p class="paramdesc">Sound frequency: 6000-50066. "off"
 disables the sound and speeds up the emulation. To prevent extra
@@ -702,7 +702,7 @@ sound artifacts, the frequency should be selected so that it either
 matches evenly with the STE/TT/Falcon sound DMA (6258, 12517,
 250033, 50066 Hz) or your sound card frequencies (11025, 22050,
 44100 or 6000...48000 Hz). Check what your sound card supports.</p>
-<p class="parameter">&minus;&minus;sound-buffer-size
+<p class="parameter">--sound-buffer-size
 &lt;x&gt;</p>
 <p class="paramdesc">SDL&rsquo;s sound buffer size: 10-100,
 or 0 to use default buffer size. By default Hatari uses an SDL
@@ -714,7 +714,7 @@ you can use this option to force the size of the sound buffer to a
 fixed number of milliseconds of sound (using 20 is often a good
 choice if you have such problems). Most users will not need this
 option.</p>
-<p class="parameter">&minus;&minus;sound-sync
+<p class="parameter">--sound-sync
 &lt;bool&gt;</p>
 <p class="paramdesc">The emulation rate is nudged by +100 or
 0 or -100 micro-seconds on occasion. This prevents the sound buffer
@@ -724,7 +724,7 @@ deviates by a maximum of 0.58% until synchronized, while the
 emulator continuously generates every sound sample and the crystal
 controlled sound system consumes every sample.<br />
 (on|off, off=default)</p>
-<p class="parameter">&minus;&minus;ym-mixing
+<p class="parameter">--ym-mixing
 &lt;x&gt;</p>
 <p class="paramdesc">Select a method for mixing the three
 YM2149 voice volumes together. "model" uses a mathematical model of
@@ -733,65 +733,65 @@ values measured on STF and "linear" just averages the 3 YM
 voices.</p>
 
 <h3>Debug options</h3>
-<p class="parameter">&minus;D,
-&minus;&minus;debug</p>
+<p class="parameter">-D,
+--debug</p>
 <p class="paramdesc">Toggle whether CPU exceptions invoke
 the debugger</p>
-<p class="parameter">&minus;&minus;bios-intercept</p>
+<p class="parameter">--bios-intercept</p>
 <p class="paramdesc">Toggle Bios/XBios call interception needed for
 Bios/XBios call tracing.  Allows Atari programs to modify Hatari state
 through XBios 255 calls which are processed as Hatari commandline
 arguments.  Atari printscreen call takes also Hatari screenshot.</p>
-<p class="parameter">&minus;&minus;conout &lt;device&gt;</p>
+<p class="parameter">--conout &lt;device&gt;</p>
 <p class="paramdesc">Enable console (xconout vector functions) output
 redirection for given &lt;device&gt; to host terminal.  Device 2 is for
 the (CON:) VT52 console, which vector function catches also EmuTOS panic
 messages and MiNT console output, not just normal BIOS console output.</p>
-<p class="parameter">&minus;&minus;disasm &lt;x&gt;</p>
+<p class="parameter">--disasm &lt;x&gt;</p>
 <p class="paramdesc">Set disassembly options.  'uae' and 'ext' select
 the dissasembly engine to use, bitmask sets output options for the
 external disassembly engine and 'help' lists them.</p>
-<p class="parameter">&minus;&minus;natfeats &lt;bool&gt;</p>
+<p class="parameter">--natfeats &lt;bool&gt;</p>
 <p class="paramdesc">Enable/disable (basic) Native Features support.
 E.g. EmuTOS uses it for debug output.</p>
-<p class="parameter">&minus;&minus;trace
+<p class="parameter">--trace
 &lt;trace1,...&gt;</p>
 <p class="paramdesc">Activate debug traces, see
-&minus;&minus;trace help for available tracing options</p>
-<p class="parameter">&minus;&minus;trace-file
+--trace help for available tracing options</p>
+<p class="parameter">--trace-file
 &lt;file&gt;</p>
 <p class="paramdesc">Save trace output to &lt;file&gt;
 (default=stderr)</p>
-<p class="parameter">&minus;&minus;parse
+<p class="parameter">--parse
 &lt;file&gt;</p>
 <p class="paramdesc">Parse/execute debugger commands from
 &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;saveconfig</p>
+<p class="parameter">--saveconfig</p>
 <p class="paramdesc">Save Hatari configuration and exit.
 Hatari UI needs Hatari configuration file to start, this can be
 used to create it automatically.</p>
-<p class="parameter">&minus;&minus;no-parachute</p>
+<p class="parameter">--no-parachute</p>
 <p class="paramdesc">Disable SDL parachute to get Hatari
 core dumps. SDL parachute is enabled by default to restore video
 mode in case Hatari terminates abnormally while using non-standard
 screen resolution.</p>
-<p class="parameter">&minus;&minus;control-socket
+<p class="parameter">--control-socket
 &lt;file&gt;</p>
 <p class="paramdesc">Hatari reads options from given socket
 at run-time</p>
-<p class="parameter">&minus;&minus;log-file
+<p class="parameter">--log-file
 &lt;file&gt;</p>
 <p class="paramdesc">Save log output to &lt;file&gt;
 (default=stderr)</p>
-<p class="parameter">&minus;&minus;log-level
+<p class="parameter">--log-level
 &lt;x&gt;</p>
 <p class="paramdesc">Log output level
 (x=debug/todo/info/warn/error/fatal)</p>
-<p class="parameter">&minus;&minus;alert-level
+<p class="parameter">--alert-level
 &lt;x&gt;</p>
 <p class="paramdesc">Show dialog for log messages above
 given level</p>
-<p class="parameter">&minus;&minus;run-vbls
+<p class="parameter">--run-vbls
 &lt;x&gt;</p>
 <p class="paramdesc">Exit after X VBLs</p>
 
