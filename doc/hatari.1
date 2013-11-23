@@ -192,10 +192,12 @@ Enable serial port support and use <file> as the output device
 .SH "Disk options"
 .TP
 .B \-\-disk\-a <file>
-Set disk image for floppy drive A
+Set disk image for floppy drive A. If <file> is an empty string,
+then drive A is disabled (switched off).
 .TP
 .B \-\-disk\-b <file>
-Set disk image for floppy drive B
+Set disk image for floppy drive B. If <file> is an empty string,
+then drive B is disabled (switched off).
 .TP
 .B \-\-protect\-floppy <x>
 Write protect floppy image contents (on/off/auto). With "auto" option
@@ -217,7 +219,8 @@ contains only single letter (C-Z) subdirectories, each of these
 subdirectories will be treated as a separate partition, otherwise the
 given directory itself will be assigned to drive "C:". In the multiple
 partition case, the letters used as the subdirectory names will
-determine to which drives/partitions they're assigned.
+determine to which drives/partitions they're assigned. If <dir> is
+an empty string, then harddrive's emulation is disabled.
 .TP
 .B \-\-acsi <file>
 Emulate an ACSI hard disk with an image <file>

@@ -580,10 +580,12 @@ from &lt;file&gt;</p>
 <h3>Disk options</h3>
 <p class="parameter">--disk-a
 &lt;file&gt;</p>
-<p class="paramdesc">Set disk image for floppy drive A</p>
+<p class="paramdesc">Set disk image for floppy drive A. If &lt;file&gt;
+is an empty string, then drive A is disabled (switched off).</p>
 <p class="parameter">--disk-b
 &lt;file&gt;</p>
-<p class="paramdesc">Set disk image for floppy drive B</p>
+<p class="paramdesc">Set disk image for floppy drive B.If &lt;file&gt;
+is an empty string, then drive B is disabled (switched off).</p>
 <p class="parameter">--protect-floppy
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect floppy image contents
@@ -608,7 +610,8 @@ in upper or lower case with the GEMDOS HD emulation. Off by default.
 as a separate partition, otherwise the given directory itself will
 be assigned to drive "C:". In the multiple partition case, the
 letters used as the subdirectory names will determine to which
-drives/partitions they&rsquo;re assigned.</p>
+drives/partitions they&rsquo;re assigned. If &lt;dir&gt; is
+an empty string, then harddrive's emulation is disabled.</p>
 <p class="parameter">--acsi
 &lt;file&gt;</p>
 <p class="paramdesc">Emulate an ACSI hard disk with an image
