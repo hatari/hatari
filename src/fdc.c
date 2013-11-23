@@ -1539,11 +1539,11 @@ void FDC_InterruptHandler_Update ( void )
  */
 static Uint8 FDC_GetCmdType ( Uint8 CR )
 {
-	if ( ( FDC.CR & 0x80 ) == 0 )					/* Type I - Restore, Seek, Step, Step-In, Step-Out */
+	if ( ( CR & 0x80 ) == 0 )					/* Type I - Restore, Seek, Step, Step-In, Step-Out */
 		return 1;
-	else if ( ( FDC.CR & 0x40 ) == 0 )				/* Type II - Read Sector, Write Sector */
+	else if ( ( CR & 0x40 ) == 0 )					/* Type II - Read Sector, Write Sector */
 		return 2;
-	else if ( ( FDC.CR & 0xf0 ) != 0xd0 )				/* Type III - Read Address, Read Track, Write Track */
+	else if ( ( CR & 0xf0 ) != 0xd0 )				/* Type III - Read Address, Read Track, Write Track */
 		return 3;
 	else								/* Type IV - Force Interrupt */
 		return 4;
@@ -2978,7 +2978,7 @@ static int FDC_TypeIV_ForceInterrupt ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	LOG_TRACE(TRACE_FDC, "fdc type IV force int 0x%x irq=%d index=%d VBL=%d video_cyc=%d %d@%dpc=%x\n",
+	LOG_TRACE(TRACE_FDC, "fdc type IV force int 0x%x irq=%d index=%d VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  FDC.CR , ( FDC.CR & 0x8 ) >> 3 , ( FDC.CR & 0x4 ) >> 2 ,
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
