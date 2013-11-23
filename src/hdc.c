@@ -1024,7 +1024,7 @@ static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 		}
 		else
 		{
-			FDC_AcknowledgeInterrupt();
+			FDC_SetIRQ();
 			FDC_SetDMAStatus(false);
 			AcsiBus.returnCode = HD_STATUS_OK;
 		}
