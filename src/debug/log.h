@@ -126,6 +126,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_NVRAM		 (1ll<<45)
 
+#define TRACE_SCSI_CMD		 (1ll<<46)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

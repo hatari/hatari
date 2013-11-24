@@ -44,7 +44,6 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 
 // #define DISALLOW_HDC_WRITE
 // #define HDC_VERBOSE           /* display operations */
-// #define HDC_REALLY_VERBOSE    /* display command packets */
 
 #define HDC_ReadInt16(a, i) (((unsigned) a[i] << 8) | a[i + 1])
 #define HDC_ReadInt24(a, i) (((unsigned) a[i] << 16) | ((unsigned) a[i + 1] << 8) | a[i + 2])
@@ -133,15 +132,27 @@ static int HDC_GetCount(SCSI_CTRLR *ctr)
 /**
  * Return the control byte specified in the current ACSI command block.
  */
-#ifdef HDC_REALLY_VERBOSE
-static unsigned char HDC_GetControl(SCSI_CTRLR *ctr)
+static inline Uint8 HDC_GetControl(SCSI_CTRLR *ctr)
 {
 	if (ctr->opcode < 0x20)
 		return ctr->command[5];			/* Class 0 */
 	else
 		return ctr->command[9];			/* Class 1 */
 }
-#endif
+
+/**
+ * Get info string for SCSI/ACSI command packets.
+ */
+static char *HDC_CmdInfoStr(SCSI_CTRLR *ctr)
+{
+	static char str[80];
+
+	snprintf(str, sizeof(str), "t=%i, lun=%i, opc=%i, cnt=0x%x, ctrl=0x%x",
+	         ctr->target, HDC_GetLUN(ctr), ctr->opcode, HDC_GetCount(ctr),
+	         HDC_GetControl(ctr));
+
+	return str;
+}
 
 
 /**
@@ -152,6 +163,9 @@ static void HDC_Cmd_Seek(SCSI_CTRLR *ctr)
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
 
 	dev->nLastBlockAddr = HDC_GetLBA(ctr);
+
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: SEEK (%s), LBA=%i.\n",
+	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr);
 
 	if (dev->nLastBlockAddr < dev->hdSize &&
 	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * 512L, SEEK_SET) == 0)
@@ -183,9 +197,8 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 	nDmaAddr = FDC_GetDMAAddress();
 	count = HDC_GetCount(ctr);
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr,"HDC: Inquiry, %i bytes to 0x%x.\n", count, nDmaAddr);
-#endif
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: INQUIRY (%s) to 0x%x.\n",
+	          HDC_CmdInfoStr(ctr), nDmaAddr);
 
 	if (count > (int)sizeof(inquiry_bytes))
 		count = sizeof(inquiry_bytes);
@@ -222,9 +235,7 @@ static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
 
 	nRetLen = HDC_GetCount(ctr);
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr,"HDC: Request Sense with length = %i.\n", nRetLen);
-#endif
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: REQUEST SENSE (%s).\n", HDC_CmdInfoStr(ctr));
 
 	if ((nRetLen < 4 && nRetLen != 0) || nRetLen > 22)
 	{
@@ -310,9 +321,7 @@ static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
 	Uint32 nDmaAddr;
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr,"HDC: Mode Sense.\n");
-#endif
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: MODE SENSE (%s).\n", HDC_CmdInfoStr(ctr));
 
 	nDmaAddr = FDC_GetDMAAddress();
 
@@ -372,9 +381,7 @@ static void HDC_Cmd_FormatDrive(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr,"HDC: Format drive!\n");
-#endif
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: FORMAT DRIVE (%s).\n", HDC_CmdInfoStr(ctr));
 
 	/* Should erase the whole image file here... */
 
@@ -394,9 +401,8 @@ static void HDC_Cmd_ReadCapacity(SCSI_CTRLR *ctr)
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
 	Uint32 nDmaAddr = FDC_GetDMAAddress();
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr,"Reading 8 bytes capacity data to addr: 0x%x\n", nDmaAddr);
-#endif
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: READ CAPACITY (%s) to 0x%x.\n",
+	          HDC_CmdInfoStr(ctr), nDmaAddr);
 
 	/* seek to the position */
 	if (STMemory_ValidArea(nDmaAddr, 8))
@@ -436,9 +442,13 @@ static void HDC_Cmd_ReadCapacity(SCSI_CTRLR *ctr)
 static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
+	Uint32 nDmaAddr = FDC_GetDMAAddress();
 	int n = 0;
 
 	dev->nLastBlockAddr = HDC_GetLBA(ctr);
+
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: WRITE SECTOR (%s) with LBA 0x%x from 0x%x.\n",
+	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr, nDmaAddr);
 
 	/* seek to the position */
 	if (dev->nLastBlockAddr >= dev->hdSize ||
@@ -450,7 +460,6 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 	else
 	{
 		/* write - if allowed */
-		Uint32 nDmaAddr = FDC_GetDMAAddress();
 #ifndef DISALLOW_HDC_WRITE
 		if (STMemory_ValidArea(nDmaAddr, 512 * HDC_GetCount(ctr)))
 		{
@@ -490,14 +499,13 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
+	Uint32 nDmaAddr = FDC_GetDMAAddress();
 	int n;
 
 	dev->nLastBlockAddr = HDC_GetLBA(ctr);
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr,"Reading %i sectors starting from 0x%x to addr: 0x%x\n",
-	        HDC_GetCount(ctr), dev->nLastBlockAddr, FDC_GetDMAAddress());
-#endif
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: READ SECTOR (%s) with LBA 0x%x to 0x%x.\n",
+	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr, FDC_GetDMAAddress());
 
 	/* seek to the position */
 	if (dev->nLastBlockAddr >= dev->hdSize ||
@@ -508,7 +516,6 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 	}
 	else
 	{
-		Uint32 nDmaAddr = FDC_GetDMAAddress();
 		if (STMemory_ValidArea(nDmaAddr, 512 * HDC_GetCount(ctr)))
 		{
 			n = fread(&STRam[nDmaAddr], 512,
@@ -546,6 +553,7 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
  */
 static void HDC_Cmd_TestUnitReady(SCSI_CTRLR *ctr)
 {
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: TEST UNIT READY (%s).\n", HDC_CmdInfoStr(ctr));
 	FDC_SetDMAStatus(false);            /* no DMA error */
 	FDC_SetIRQ();
 	ctr->returnCode = HD_STATUS_OK;
@@ -588,6 +596,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 		break;
 
 	 case HD_SHIP:
+		LOG_TRACE(TRACE_SCSI_CMD, "HDC: SHIP (%s).\n", HDC_CmdInfoStr(ctr));
 		ctr->returnCode = 0xFF;
 		FDC_SetIRQ();
 		break;
@@ -597,7 +606,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 		break;
 
 	 case HD_MODESELECT:
-		Log_Printf(LOG_TODO, "HDC: MODE SELECT call not implemented yet.\n");
+		LOG_TRACE(TRACE_SCSI_CMD, "HDC: MODE SELECT (%s) TODO!\n", HDC_CmdInfoStr(ctr));
 		ctr->returnCode = HD_STATUS_OK;
 		dev->nLastError = HD_REQSENS_OK;
 		dev->bSetLastBlockAddr = false;
@@ -619,6 +628,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 	 case HD_CORRECTION:
 
 	 default:
+		LOG_TRACE(TRACE_SCSI_CMD, "HDC: Unsupported command (%s)!\n", HDC_CmdInfoStr(ctr));
 		ctr->returnCode = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_OPCODE;
 		dev->bSetLastBlockAddr = false;
@@ -629,84 +639,6 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 	/* Update the led each time a command is processed */
 	Statusbar_EnableHDLed( LED_STATE_ON );
 }
-
-
-/*---------------------------------------------------------------------*/
-/**
- * Debug routine for HDC command packets.
- */
-#ifdef HDC_REALLY_VERBOSE
-static void HDC_DebugCommandPacket(FILE *hdlogFile, SCSI_CTRLR *ctr)
-{
-	int opcode;
-	static const char *psComNames[] =
-	{
-		"TEST UNIT READY",         // 0x00
-		"REZERO",                  // 0x01
-		"???",                     // 0x02
-		"REQUEST SENSE",           // 0x03
-		"FORMAT DRIVE",            // 0x04
-		"VERIFY TRACK (?)",        // 0x05
-		"FORMAT TRACK (?)",        // 0x06
-		"REASSIGN BLOCK",          // 0x07
-		"READ SECTOR(S)",          // 0x08
-		"???",                     // 0x09
-		"WRITE SECTOR(S)",         // 0x0A
-		"SEEK",                    // 0x0B
-		"???",                     // 0x0C
-		"CORRECTION",              // 0x0D
-		"???",                     // 0x0E
-		"TRANSLATE",               // 0x0F
-		"SET ERROR THRESHOLD",     // 0x10
-		"USAGE COUNTERS",          // 0x11
-		"INQUIRY",                 // 0x12
-		"WRITE DATA BUFFER",       // 0x13
-		"READ DATA BUFFER",        // 0x14
-		"MODE SELECT",             // 0x15
-		"???",                     // 0x16
-		"???",                     // 0x17
-		"EXTENDED READ",           // 0x18
-		"READ TOC",                // 0x19
-		"MODE SENSE",              // 0x1A
-		"SHIP",                    // 0x1B
-		"RECEIVE DIAGNOSTICS",     // 0x1C
-		"SEND DIAGNOSTICS",        // 0x1D
-		"???",                     // 0x1E
-		"SET TARGET (EXTENDED)",   // 0x1F
-		"???",                     // 0x20
-		"???",                     // 0x21
-		"???",                     // 0x22
-		"???",                     // 0x23
-		"???",                     // 0x24
-		"READ CAPACITY",           // 0x25
-		"???",                     // 0x26
-		"???",                     // 0x27
-		"READ SECTOR(S)",          // 0x28
-		"???",                     // 0x29
-		"WRITE SECTOR(S)",         // 0x2A
-	};
-
-	opcode = ctr->opcode;
-
-	fprintf(hdlogFile,"----\n");
-
-	if (opcode >= 0 && opcode <= (int)(sizeof(psComNames)/sizeof(psComNames[0])))
-	{
-		fprintf(hdlogFile, "HDC opcode 0x%x : %s\n",opcode,psComNames[opcode]);
-	}
-	else
-	{
-		fprintf(hdlogFile, "Unknown HDC opcode!! Value = 0x%x\n", opcode);
-	}
-
-	fprintf(hdlogFile, "Target: %i\n", ctr->target);
-	fprintf(hdlogFile, "LUN: %i\n", HDC_GetLUN(ctr));
-	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetLBA(ctr));
-
-	fprintf(hdlogFile, "Sector count: 0x%x\n", HDC_GetCount(ctr));
-	fprintf(hdlogFile, "Control byte: 0x%x\n", HDC_GetControl(ctr));
-}
-#endif
 
 
 /*---------------------------------------------------------------------*/
@@ -872,9 +804,6 @@ static void HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 	if ((ctr->opcode < 0x20 && ctr->byteCount >= 6) ||
 	    (ctr->opcode < 0x60 && ctr->byteCount >= 10))
 	{
-#ifdef HDC_REALLY_VERBOSE
-		HDC_DebugCommandPacket(stderr, ctr);
-#endif
 		/* We currently only support LUN 0, however INQUIRY must
 		 * always be handled, see SCSI standard */
 		if (HDC_GetLUN(ctr) == 0 || ctr->opcode == HD_INQUIRY)
@@ -903,11 +832,11 @@ static void HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 		dev->bSetLastBlockAddr = false;
 		FDC_SetIRQ();
 		FDC_SetDMAStatus(false);
-#ifdef HDC_VERBOSE
 		if (ctr->byteCount == 10)
-			Log_Printf(LOG_WARN, "HDC: Unsupported command 0x%02x\n",
-			           ctr->opcode);
-#endif
+		{
+			LOG_TRACE(TRACE_SCSI_CMD, "HDC: Unsupported command (%s).\n",
+			          HDC_CmdInfoStr(ctr));
+		}
 	}
 	else
 	{
