@@ -477,7 +477,7 @@ typedef struct {
 	Uint8		HeadTrack;				/* Current position of the head */
 //	Uint8		Motor;					/* State of the drive's motor : 0=OFF 1=ON */
 
-	Uint64		IndexPulse_Time;			/* Clock value last time we had an index pulse with motor ON */
+	Uint64		IndexPulse_Time;			/* CyclesGlobalClockCounter value last time we had an index pulse with motor ON */
 } FDC_DRIVE_STRUCT;
 
 
@@ -1201,7 +1201,7 @@ static int	FDC_GetBytesPerTrack ( int Drive )
  */
 void	FDC_IndexPulse_Update ( void )
 {
-	Uint32	CpuCyclesPerRev;
+	Uint32	FdcCyclesPerRev;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -1218,11 +1218,12 @@ void	FDC_IndexPulse_Update ( void )
 	if ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 )	/* No reference Index Pulse for this drive */
 		FDC_IndexPulse_Init ( FDC.DriveSelSignal );		/* (could be the case after a 'reset') */
 
-	CpuCyclesPerRev = ( (Uint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC.DriveSelSignal ].RPM / 60 ) );
+	FdcCyclesPerRev = ( (Uint64)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ FDC.DriveSelSignal ].RPM / 60 ) );
 
-	if ( CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time >= CpuCyclesPerRev )
+	if ( CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time >= FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev ) )
 	{
-		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time += CpuCyclesPerRev;	/* Position of the most recent Index Pulse */
+		/* Store new position of the most recent Index Pulse */
+		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time += FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev );
 		FDC.IndexPulse_Counter++;
 		LOG_TRACE(TRACE_FDC, "fdc update index drive=%d side=%d counter=%d ip_time=%lld VBL=%d HBL=%d\n" ,
 			FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter ,
@@ -1249,11 +1250,11 @@ void	FDC_IndexPulse_Update ( void )
  */
 static void	FDC_IndexPulse_Init ( int Drive )
 {
-	Uint32	CpuCyclesPerRev;
+	Uint32	FdcCyclesPerRev;
 	Uint64	IndexPulse_Time;
 
-	CpuCyclesPerRev = ( (Uint64)(8021247.L*1000) / ( FDC_DRIVES[ Drive].RPM / 60 ) );
-	IndexPulse_Time = CyclesGlobalClockCounter - rand () % CpuCyclesPerRev;
+	FdcCyclesPerRev = ( (Uint64)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ Drive ].RPM / 60 ) );
+	IndexPulse_Time = CyclesGlobalClockCounter - rand () % FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev );
 	if ( IndexPulse_Time <= 0 )					/* Should not happen (only if FDC_IndexPulse_Init is */
 		IndexPulse_Time = 1;					/* called just after emulation starts) */
 	FDC_DRIVES[ Drive ].IndexPulse_Time = IndexPulse_Time;
@@ -1272,7 +1273,7 @@ static void	FDC_IndexPulse_Init ( int Drive )
  */
 static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
 {
-	Uint32	CpuCyclesPerRev;
+	Uint32	FdcCyclesPerRev;
 	int	CpuCyclesSinceIndex;
 
 	if ( ( FDC.DriveSelSignal < 0 ) || ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 ) )
@@ -1280,14 +1281,14 @@ static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
 
 	/* Get the number of CPU cycles for one revolution of the floppy */
 	/* RPM is already multiplied by 1000 to simulate non-integer values */
-	CpuCyclesPerRev = ( (Uint64)(8021247.L*1000) / ( FDC_DRIVES[ FDC.DriveSelSignal ].RPM / 60 ) );
+	FdcCyclesPerRev = ( (Uint64)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ FDC.DriveSelSignal ].RPM / 60 ) );
 	CpuCyclesSinceIndex = CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time;
 
 	if ( pFdcCyclesPerRev )
-		*pFdcCyclesPerRev = FDC_CpuCyclesToFdcCycles ( CpuCyclesPerRev );
+		*pFdcCyclesPerRev = FdcCyclesPerRev;
 
 //fprintf ( stderr , "current pos %d %lld %d %lld\n" , FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time ,
-//      CpuCyclesPerRev , CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time );
+//      FdcCyclesPerRev , CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time );
 
 	return FDC_CpuCyclesToFdcCycles ( CpuCyclesSinceIndex );
 }
