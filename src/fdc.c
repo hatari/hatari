@@ -496,9 +496,9 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace us
 
 static void	FDC_SetDriveLedBusy ( void );
 
-static int	FDC_DelayToFdcCycles ( int Delay_micro );
-static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles );
-static int	FDC_CpuCyclesToFdcCycles ( int CpuCycles );
+static Uint32	FDC_DelayToFdcCycles ( Uint32 Delay_micro );
+static Uint32	FDC_FdcCyclesToCpuCycles ( Uint32 FdcCycles );
+static Uint32	FDC_CpuCyclesToFdcCycles ( Uint32 CpuCycles );
 static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset );
 static int	FDC_TransferByte_FdcCycles ( int NbBytes );
 static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
@@ -600,11 +600,11 @@ static void	FDC_SetDriveLedBusy ( void )
  * Convert a delay in micro seconds to its equivalent of fdc cycles
  * (delays in the WD1772 specs are relative to a 8 MHz reference clock)
  */
-static int	FDC_DelayToFdcCycles ( int Delay_micro )
+static Uint32	FDC_DelayToFdcCycles ( Uint32 Delay_micro )
 {
-	int	FdcCycles;
+	Uint32	FdcCycles;
 
-	FdcCycles = (int) ( ( (Uint64) FDC_CLOCK_STANDARD * Delay_micro ) / 1000000 );
+	FdcCycles = (Uint32) ( ( (Uint64) FDC_CLOCK_STANDARD * Delay_micro ) / 1000000 );
 
 //fprintf ( stderr , "fdc state %d delay %d us %d fdc cycles\n" , FDC.Command , Delay_micro , FdcCycles );
 	return FdcCycles;
@@ -620,9 +620,9 @@ static int	FDC_DelayToFdcCycles ( int Delay_micro )
  * MachineClocks.CPU_Freq and not using nCpuFreqShift anymore.
  * (for Falcon, we multiply cycles by 2 to simulate a freq in the 8 MHz range)
  */
-static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles )
+static Uint32	FDC_FdcCyclesToCpuCycles ( Uint32 FdcCycles )
 {
-	int	CpuCycles;
+	Uint32	CpuCycles;
 
 	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */
 	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
@@ -650,7 +650,7 @@ static int	FDC_FdcCyclesToCpuCycles ( int FdcCycles )
  * internal timers in cycInt.c. This should be replaced some days by using
  * MachineClocks.CPU_Freq and not using nCpuFreqShift anymore.
  */
-static int	FDC_CpuCyclesToFdcCycles ( int CpuCycles )
+static Uint32	FDC_CpuCyclesToFdcCycles ( Uint32 CpuCycles )
 {
 	int	FdcCycles;
 
@@ -1274,7 +1274,7 @@ static void	FDC_IndexPulse_Init ( int Drive )
 static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
 {
 	Uint32	FdcCyclesPerRev;
-	int	CpuCyclesSinceIndex;
+	Uint32	CpuCyclesSinceIndex;
 
 	if ( ( FDC.DriveSelSignal < 0 ) || ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 ) )
 		return -1;
@@ -1332,7 +1332,7 @@ static int	FDC_IndexPulse_GetState ( void )
 
 	state = 0;
 	if ( ( FdcCyclesSinceIndex >= 0 )				/* We have a valid drive/floppy */
-	  && ( FdcCyclesSinceIndex < FDC_DelayToFdcCycles ( FDC_DELAY_US_INDEX_PULSE_LENGTH ) ) )
+	  && ( (Uint32)FdcCyclesSinceIndex < FDC_DelayToFdcCycles ( FDC_DELAY_US_INDEX_PULSE_LENGTH ) ) )
 		state = 1;
 
 //fprintf ( stderr , "fdc index state 2 pos pos=%d state=%d\n" , FdcCyclesSinceIndex , state );
