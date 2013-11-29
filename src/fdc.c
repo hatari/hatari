@@ -1003,7 +1003,8 @@ void	FDC_UpdateAll ( void )
  */
 void	FDC_EnableDrive ( int Drive , bool value )
 {
-	LOG_TRACE ( TRACE_FDC , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
+	//LOG_TRACE ( TRACE_FDC , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
+fprintf ( stderr , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
 
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 		FDC_DRIVES[ Drive ].Enabled = value;
