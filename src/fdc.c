@@ -514,6 +514,7 @@ static int	FDC_GetSidesPerDisk ( int Drive , int Track );
 static int	FDC_GetDensity ( int Drive );
 static int	FDC_GetBytesPerTrack ( int Drive );
 
+static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive );
 static void	FDC_IndexPulse_Update ( void );
 static void	FDC_IndexPulse_Init ( int Drive );
 static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev );
@@ -634,7 +635,7 @@ static Uint32	FDC_FdcCyclesToCpuCycles ( Uint32 FdcCycles )
 	CpuCycles = rint ( ( (Uint64)FdcCycles * 8021247.L ) / MachineClocks.FDC_Freq );
 	CpuCycles >>= nCpuFreqShift;				/* Compensate for x2 or x4 cpu speed */
 
-//fprintf ( stderr , "fdc state %d delay %d fdc cycles %d cpu cycles\n" , FDC.Command , FdcCycles , CpuCycles );
+//fprintf ( stderr , "fdc command %d machine %d fdc cycles %d cpu cycles %d\n" , FDC.Command , ConfigureParams.System.nMachineType , FdcCycles , CpuCycles );
 //if ( Delay==4104) Delay=4166;		// 4166 : decade demo
 	return CpuCycles;
 }
@@ -1187,6 +1188,30 @@ static int	FDC_GetBytesPerTrack ( int Drive )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Get the number of FDC cycles for one revolution of the floppy
+ * RPM is already multiplied by 1000 to simulate non-integer values
+ * (for Falcon, we divide cycles by 2 to simulate a FDC freq in the 8 MHz range)
+ * Drive should be a valid drive (0 or 1)
+ */
+static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
+{
+	Uint32	FdcCyclesPerRev;
+
+	FdcCyclesPerRev = (Uint64)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ Drive ].RPM / 60 );
+
+	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */
+	/* but the Falcon uses a 16 MHz clock for the Ajax FDC */
+	/* FIXME : this should be handled better, without involving 8 MHz CPU_Freq */
+	if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
+		FdcCyclesPerRev /= 2;					/* correct delays for a 8 MHz FDC_Freq clock instead of 16 */
+
+	return FdcCyclesPerRev;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * If some valid drive/floppy are available and the motor signal is on,
  * update the current angular position for the drive and check if
  * a new index pulse was reached. Increase Index Pulse counter in that case.
@@ -1216,7 +1241,7 @@ void	FDC_IndexPulse_Update ( void )
 	if ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 )	/* No reference Index Pulse for this drive */
 		FDC_IndexPulse_Init ( FDC.DriveSelSignal );		/* (could be the case after a 'reset') */
 
-	FdcCyclesPerRev = ( (Uint64)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ FDC.DriveSelSignal ].RPM / 60 ) );
+	FdcCyclesPerRev = FDC_GetCyclesPerRev_FdcCycles ( FDC.DriveSelSignal );
 
 	if ( CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time >= FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev ) )
 	{
@@ -1251,7 +1276,7 @@ static void	FDC_IndexPulse_Init ( int Drive )
 	Uint32	FdcCyclesPerRev;
 	Uint64	IndexPulse_Time;
 
-	FdcCyclesPerRev = ( (Uint64)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ Drive ].RPM / 60 ) );
+	FdcCyclesPerRev = FDC_GetCyclesPerRev_FdcCycles ( Drive );
 	IndexPulse_Time = CyclesGlobalClockCounter - rand () % FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev );
 	if ( IndexPulse_Time <= 0 )					/* Should not happen (only if FDC_IndexPulse_Init is */
 		IndexPulse_Time = 1;					/* called just after emulation starts) */
@@ -1277,9 +1302,7 @@ static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
 	if ( ( FDC.DriveSelSignal < 0 ) || ( FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time == 0 ) )
 		return -1;
 
-	/* Get the number of CPU cycles for one revolution of the floppy */
-	/* RPM is already multiplied by 1000 to simulate non-integer values */
-	FdcCyclesPerRev = ( (Uint64)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ FDC.DriveSelSignal ].RPM / 60 ) );
+	FdcCyclesPerRev = FDC_GetCyclesPerRev_FdcCycles ( FDC.DriveSelSignal );
 	CpuCyclesSinceIndex = CyclesGlobalClockCounter - FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time;
 
 	if ( pFdcCyclesPerRev )
