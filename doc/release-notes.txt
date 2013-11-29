@@ -13,7 +13,11 @@ Emulation:
   - Fix a case when MFP's interrupt happens during the IACK sequence for HBL/VBL
 - Fix READ CAPACITY command result for ACSI hard disk images
 - FDC changes :
-  - Add configurable RPM speed for each floppy drive
+  - Add configurable RPM speed for each floppy drive and the possibility
+    to turn each drive ON/OFF.
+  - Correct timings, behaviour and status register for all commands
+    when a drive is OFF or empty.
+  - Rewrite the index pulse part and all the delays expressed as disk's revolution
   - Add support for the "Force Int on Index Pulse" command
 - Videl change :
   - correct masking of the true color palette registers
