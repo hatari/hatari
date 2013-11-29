@@ -397,9 +397,9 @@ void Configuration_SetDefault(void)
 	ConfigureParams.DiskImage.FastFloppy = false;
 	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
 	ConfigureParams.DiskImage.EnableDriveA = true;
-	FDC_EnableDrive ( 0 , true );
+	FDC_EnableDrive ( 0 , ConfigureParams.DiskImage.EnableDriveA );
 	ConfigureParams.DiskImage.EnableDriveB = true;
-	FDC_EnableDrive ( 1 , true );
+	FDC_EnableDrive ( 1 , ConfigureParams.DiskImage.EnableDriveB );
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
 		ConfigureParams.DiskImage.szDiskZipPath[i][0] = '\0';
@@ -661,6 +661,10 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);
+
+	/* Enable/disable floppy drives */
+	FDC_EnableDrive ( 0 , ConfigureParams.DiskImage.EnableDriveA );
+	FDC_EnableDrive ( 1 , ConfigureParams.DiskImage.EnableDriveB );
 }
 
 
