@@ -9,6 +9,7 @@
 Emulation:
 - ST video changes :
   - Handle 0 byte line by switching freq in STE mode
+  - Use high res when ff8260 is set to 3
 - CPU changes :
   - Fix a case when MFP's interrupt happens during the IACK sequence for HBL/VBL
 - Fix READ CAPACITY command result for ACSI hard disk images
@@ -63,6 +64,7 @@ Tools:
 Fixed demos :
   Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
   Sommarhack 2011 Invitro by DHS (CPU/MFP, top border not removed)
+  The World Is My Oyster - Convention Report Part by Aura (video, res=3)
 
 Fixed games :
   Reeking Rubber (by Nature), Falcon game
