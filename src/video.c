@@ -322,6 +322,9 @@
 /*			fix for Super Monaco GP, Super Hang On, Monster Business, European	*/
 /*			Demo's Intro, BBC Menu 52).						*/
 /* 2013/07/17	[NP]	Handle a special case when writing only in lower byte of a color reg.	*/
+/* 2013/12/02	[NP]	If $ff8260==3 (which is not a valid resolution mode), we use 2 instead	*/
+/*			(high res) (cancel wrong change from 2008/07/19 and fix 'The World Is	*/
+/*			My Oyster - Convention Report Part' by Aura).				*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -3359,11 +3362,11 @@ void Video_ShifterMode_WriteByte(void)
 	{
 		/* We only care for lower 2-bits */
 		VideoShifterByte = IoMem[0xff8260] & 3;
-		/* 3 is not a valid resolution, use low res instead */
+		/* 3 is not a valid resolution, use high res instead */
 		if ( VideoShifterByte == 3 )
 		{
-			VideoShifterByte = 0;
-			IoMem_WriteByte(0xff8260,0);
+			VideoShifterByte = 2;
+			IoMem_WriteByte(0xff8260,2);
 		}
 
 		Video_WriteToShifter(VideoShifterByte);
