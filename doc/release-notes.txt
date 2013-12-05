@@ -33,7 +33,7 @@ Emulator:
     in Falcon mode
   - In the floppy dialog, use a checkbox to enable/disable drives A and B
 - Fix: Xbios(255) modified the given argument string
-- Giving empty string as a disk's image disables the corresponding drive
+- New options --drive-a and --drive-b to enable/disable drives A and B
 - Debugger:
   - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly.
   - Fix: "symbols" command crash when it was used during bootup.

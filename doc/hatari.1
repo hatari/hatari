@@ -191,27 +191,31 @@ Enable serial port support and use <file> as the input device
 Enable serial port support and use <file> as the output device
 .SH "Disk options"
 .TP
+.B \-\-drive\-a <bool>
+Enable/disable drive A (default is on)
+.TP
+.B \-\-drive\-b <bool>
+Enable/disable drive B (default is on)
+.TP
 .B \-\-disk\-a <file>
-Set disk image for floppy drive A. If <file> is an empty string,
-then drive A is disabled (switched off).
+Set disk image for floppy drive A
 .TP
 .B \-\-disk\-b <file>
-Set disk image for floppy drive B. If <file> is an empty string,
-then drive B is disabled (switched off).
+Set disk image for floppy drive B
 .TP
 .B \-\-protect\-floppy <x>
 Write protect floppy image contents (on/off/auto). With "auto" option
-write protection is according to the disk image file attributes.
+write protection is according to the disk image file attributes
 .TP
 .B \-\-protect\-hd <x>
 Write protect harddrive <dir> contents (on/off/auto). With "auto" option
 the protection can be controlled by setting individual files attributes
 as it disables the file attribute modifications for the GEMDOS hard disk
-emulation.
+emulation
 .TP
 .B \-\-gemdos\-case <x>
 Specify whether new dir/filenames are forced to be in upper or lower case
-with the GEMDOS HD emulation. Off by default.
+with the GEMDOS HD emulation. Off by default
 .TP 
 .B \-d, \-\-harddrive <dir>
 Emulate harddrive partition(s) with <dir> contents.  If directory
@@ -220,7 +224,7 @@ subdirectories will be treated as a separate partition, otherwise the
 given directory itself will be assigned to drive "C:". In the multiple
 partition case, the letters used as the subdirectory names will
 determine to which drives/partitions they're assigned. If <dir> is
-an empty string, then harddrive's emulation is disabled.
+an empty string, then harddrive's emulation is disabled
 .TP
 .B \-\-acsi <file>
 Emulate an ACSI hard disk with an image <file>

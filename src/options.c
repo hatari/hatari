@@ -99,7 +99,9 @@ enum {
 	OPT_MIDI_OUT,
 	OPT_RS232_IN,
 	OPT_RS232_OUT,
-	OPT_DISKA,		/* disk options */
+	OPT_DRIVEA,		/* disk options */
+	OPT_DRIVEB,
+	OPT_DISKA,
 	OPT_DISKB,
 	OPT_SLOWFLOPPY,
 	OPT_FASTFLOPPY,
@@ -279,6 +281,10 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable serial port and use <file> as the output device" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Disk" },
+	{ OPT_DRIVEA, NULL, "--drive-a",
+	  "<bool>", "Enable/disable drive A" },
+	{ OPT_DRIVEB, NULL, "--drive-b",
+	  "<bool>", "Enable/disable drive B" },
 	{ OPT_DISKA, NULL, "--disk-a",
 	  "<file>", "Set disk image for floppy drive A" },
 	{ OPT_DISKB, NULL, "--disk-b",
@@ -1216,14 +1222,16 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 			/* disk options */
+		case OPT_DRIVEA:
+			ok = Opt_Bool(argv[++i], OPT_DRIVEA, &ConfigureParams.DiskImage.EnableDriveA);
+			break;
+
+		case OPT_DRIVEB:
+			ok = Opt_Bool(argv[++i], OPT_DRIVEB, &ConfigureParams.DiskImage.EnableDriveB);
+			break;
+
 		case OPT_DISKA:
 			i += 1;
-			if ( argv[i][0] == '\0' )				/* empty disk image -> disable drive A */
-			{
-				ConfigureParams.DiskImage.EnableDriveA = false;
-				break;
-			}
-			ConfigureParams.DiskImage.EnableDriveA = true;
 			if (Floppy_SetDiskFileName(0, argv[i], NULL))
 			{
 				ConfigureParams.HardDisk.bBootFromHardDisk = false;
@@ -1235,12 +1243,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_DISKB:
 			i += 1;
-			if ( argv[i][0] == '\0' )				/* empty disk image -> disable drive B */
-			{
-				ConfigureParams.DiskImage.EnableDriveB = false;
-				break;
-			}
-			ConfigureParams.DiskImage.EnableDriveB = true;
 			if (Floppy_SetDiskFileName(1, argv[i], NULL))
 				bLoadAutoSave = false;
 			else

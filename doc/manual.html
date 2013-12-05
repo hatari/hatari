@@ -578,29 +578,33 @@ from &lt;file&gt;</p>
 &lt;file&gt; as the output device</p>
 
 <h3>Disk options</h3>
+<p class="parameter">--drive-a
+&lt;bool&gt;</p>
+<p class="paramdesc">Enable/disable drive A (default is on)</p>
+<p class="parameter">--drive-b
+&lt;bool&gt;</p>
+<p class="paramdesc">Enable/disable drive B (default is on)</p>
 <p class="parameter">--disk-a
 &lt;file&gt;</p>
-<p class="paramdesc">Set disk image for floppy drive A. If &lt;file&gt;
-is an empty string, then drive A is disabled (switched off).</p>
+<p class="paramdesc">Set disk image for floppy drive A</p>
 <p class="parameter">--disk-b
 &lt;file&gt;</p>
-<p class="paramdesc">Set disk image for floppy drive B.If &lt;file&gt;
-is an empty string, then drive B is disabled (switched off).</p>
+<p class="paramdesc">Set disk image for floppy drive B</p>
 <p class="parameter">--protect-floppy
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect floppy image contents
 (on/off/auto). With "auto" option write protection is according to
-the disk image file attributes.</p>
+the disk image file attributes</p>
 <p class="parameter">--protect-hd
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect harddrive &lt;dir&gt;
 contents (on/off/auto). With "auto" option the protection can be
 controlled by setting individual files attributes as it disables
 the file attribute modifications for the GEMDOS hard disk
-emulation.</p>
+emulation</p>
 <p class="parameter">--gemdos-case &lt;x&gt;</p>
 <p class="paramdesc">Specify whether new dir/filenames are forced to be
-in upper or lower case with the GEMDOS HD emulation. Off by default.
+in upper or lower case with the GEMDOS HD emulation. Off by default
 </p>
 <p class="parameter">-d, --harddrive
 &lt;dir&gt;</p>
@@ -611,7 +615,7 @@ as a separate partition, otherwise the given directory itself will
 be assigned to drive "C:". In the multiple partition case, the
 letters used as the subdirectory names will determine to which
 drives/partitions they&rsquo;re assigned. If &lt;dir&gt; is
-an empty string, then harddrive's emulation is disabled.</p>
+an empty string, then harddrive's emulation is disabled</p>
 <p class="parameter">--acsi
 &lt;file&gt;</p>
 <p class="paramdesc">Emulate an ACSI hard disk with an image
@@ -626,7 +630,7 @@ image &lt;file&gt;</p>
 image &lt;file&gt;</p>
 <p class="parameter">--fastfdc
 &lt;bool&gt;</p>
-<p class="paramdesc">speed up FDC emulation (can cause
+<p class="paramdesc">Speed up FDC emulation (can cause
 incompatibilities)</p>
 
 <h3>Memory options</h3>
