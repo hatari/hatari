@@ -19,6 +19,7 @@ const char ZIP_fileid[] = "Hatari zip.c : " __DATE__ " " __TIME__;
 #include "dim.h"
 #include "file.h"
 #include "floppy.h"
+#include "floppy_ipf.h"
 #include "log.h"
 #include "msa.h"
 #include "st.h"
@@ -35,19 +36,16 @@ const char ZIP_fileid[] = "Hatari zip.c : " __DATE__ " " __TIME__;
 
 #define ZIP_PATH_MAX  256
 
-#define ZIP_FILE_ST   1
-#define ZIP_FILE_MSA  2
-#define ZIP_FILE_DIM  3
-
 #if HAVE_LIBZ
 
 /* Possible disk image extensions to scan for */
 static const char * const pszDiskNameExts[] =
 {
-  ".msa",
-  ".st",
-  ".dim",
-  NULL
+	".msa",
+	".st",
+	".dim",
+	".ipf",
+	NULL
 };
 
 
@@ -329,7 +327,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 /**
  * Check an image file in the archive, return the uncompressed length
  */
-static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pDiskType)
+static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pImageType)
 {
 	unz_file_info file_info;
 
@@ -345,22 +343,28 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pDi
 		return -1;
 	}
 
-	/* check for a .msa or .st extension */
+	/* check for .ipf, .msa, .dim or .st extension */
+	if (IPF_FileNameIsIPF(filename, false))
+	{
+		*pImageType = FLOPPY_IMAGE_TYPE_IPF;
+		return file_info.uncompressed_size;
+	}
+
 	if (MSA_FileNameIsMSA(filename, false))
 	{
-		*pDiskType = ZIP_FILE_MSA;
+		*pImageType = FLOPPY_IMAGE_TYPE_MSA;
 		return file_info.uncompressed_size;
 	}
 
 	if (ST_FileNameIsST(filename, false))
 	{
-		*pDiskType = ZIP_FILE_ST;
+		*pImageType = FLOPPY_IMAGE_TYPE_ST;
 		return file_info.uncompressed_size;
 	}
 
 	if (DIM_FileNameIsDIM(filename, false))
 	{
-		*pDiskType = ZIP_FILE_DIM;
+		*pImageType = FLOPPY_IMAGE_TYPE_DIM;
 		return file_info.uncompressed_size;
 	}
 
@@ -486,16 +490,16 @@ static void *ZIP_ExtractFile(unzFile uf, const char *filename, uLong size)
  * Load disk image from a .ZIP archive into memory, set  the number
  * of bytes loaded into pImageSize and return the data or NULL on error.
  */
-Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImageSize)
+Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImageSize, int *pImageType)
 {
 	uLong ImageSize=0;
 	unzFile uf=NULL;
 	Uint8 *buf;
 	char *path;
-	int nDiskType = -1;
 	Uint8 *pDiskBuffer = NULL;
 
 	*pImageSize = 0;
+	*pImageType = FLOPPY_IMAGE_TYPE_NONE;
 
 	uf = unzOpen(pszFileName);
 	if (uf == NULL)
@@ -527,7 +531,7 @@ Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImag
 		path[ZIP_PATH_MAX-1] = '\0';
 	}
 
-	ImageSize = ZIP_CheckImageFile(uf, path, ZIP_PATH_MAX, &nDiskType);
+	ImageSize = ZIP_CheckImageFile(uf, path, ZIP_PATH_MAX, pImageType);
 	if (ImageSize <= 0)
 	{
 		unzClose(uf);
@@ -548,19 +552,30 @@ Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImag
 		return NULL;  /* failed extraction, return error */
 	}
 
-	switch(nDiskType) {
-	case ZIP_FILE_MSA:
+	switch(*pImageType) {
+	case FLOPPY_IMAGE_TYPE_IPF:
+#ifndef HAVE_CAPSIMAGE
+		Log_AlertDlg(LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled.");
+		return NULL;
+#else
+		/* return buffer */
+		pDiskBuffer = buf;
+		break;
+#endif
+	case FLOPPY_IMAGE_TYPE_MSA:
 		/* uncompress the MSA file */
 		pDiskBuffer = MSA_UnCompress(buf, (long *)&ImageSize);
 		free(buf);
 		buf = NULL;
 		break;
-	case ZIP_FILE_DIM:
+	case FLOPPY_IMAGE_TYPE_DIM:
 		/* Skip DIM header */
 		ImageSize -= 32;
 		memmove(buf, buf+32, ImageSize);
-		/* ...and passthrough */
-	case ZIP_FILE_ST:
+		/* return buffer */
+		pDiskBuffer = buf;
+		break;
+	case FLOPPY_IMAGE_TYPE_ST:
 		/* ST image => return buffer directly */
 		pDiskBuffer = buf;
 		break;

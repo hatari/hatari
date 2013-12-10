@@ -19,9 +19,16 @@
 #define	FLOPPY_DRIVE_TRANSITION_STATE_EJECT		2
 #define	FLOPPY_DRIVE_TRANSITION_DELAY_VBL		18	/* min of 16 VBLs */
 
+#define	FLOPPY_IMAGE_TYPE_NONE			0		/* no recognized image inserted */
+#define	FLOPPY_IMAGE_TYPE_ST			1
+#define	FLOPPY_IMAGE_TYPE_MSA			2
+#define	FLOPPY_IMAGE_TYPE_DIM			3
+#define	FLOPPY_IMAGE_TYPE_IPF			4
+
 /* Structure for each drive connected as emulation */
 typedef struct
 {
+	int ImageType;
 	Uint8 *pBuffer;
 	char sFileName[FILENAME_MAX];
 	int nImageBytes;

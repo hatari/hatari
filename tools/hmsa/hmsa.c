@@ -76,6 +76,19 @@ int DlgAlert_Query(const char *text)
 	return TRUE;
 }
 
+
+/**
+ * ../src/file.c requires zip.c, which calls IPF_FileNameIsIPF
+ * We create an empty function to replace it, as we don't use IPF here
+ * and don't want to compile with all the IPF related files.
+ */
+extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);		/* function prototype */
+extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
+{
+	return FALSE;
+}
+
+
 /**
  * Create MSA or ST image of requested size.
  * return error string or NULL for success.
@@ -141,6 +154,7 @@ int main(int argc, char *argv[])
 	unsigned char *diskbuf;
 	const char *srcfile, *srcdot;
 	char *dstfile, *dstdot;
+	int ImageType;
 
 	if(argc < 2 || argv[1][0] == '-') {
 		usage(argv[0]);
@@ -205,7 +219,7 @@ int main(int argc, char *argv[])
 	
 	if (isMsa) {
 		/* Read the source disk image */
-		diskbuf = MSA_ReadDisk(srcfile, &disksize);
+		diskbuf = MSA_ReadDisk(srcfile, &disksize, &ImageType);
 		if (!diskbuf || disksize < 512*8) {
 			fprintf(stderr, "ERROR: could not read MSA disk %s!\n", srcfile);
 			retval = -1;

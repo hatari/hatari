@@ -21,6 +21,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "audio.h"
 #include "joy.h"
 #include "floppy.h"
+#include "floppy_ipf.h"
 #include "gemdos.h"
 #include "fdc.h"
 #include "hdc.h"
@@ -60,6 +61,10 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 
 #if HAVE_GETTIMEOFDAY
 #include <sys/time.h>
+#endif
+
+#ifdef HAVE_CAPSIMAGE
+#include <caps/capsimage.h>
 #endif
 
 
@@ -601,6 +606,13 @@ static void Main_Init(void)
 		fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
 		exit(-1);
 	}
+
+	if ( IPF_Init() != true )
+	{
+		fprintf(stderr, "Could not initialize the IPF support\n" );
+		exit(-1);
+	}
+
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 	Resolution_Init();
 	SDLGui_Init();
@@ -680,6 +692,10 @@ static void Main_UnInit(void)
 	HostScreen_UnInit();
 	Screen_UnInit();
 	Exit680x0();
+
+#ifdef HAVE_CAPSIMAGE
+	CAPSExit();
+#endif
 
 	/* SDL uninit: */
 	SDL_Quit();

@@ -110,12 +110,16 @@
 /*			'while' condition (PendingInterruptCount <= 0 is true less often than STOP==0)	*/
 /* 2011/04/29	[NP]	In Exception(), check the new PC is not on odd address ; raise an address error	*/
 /*			exception if it's the case.							*/
+/* 2012/09/01	[NP]	Add a special case to correct the stacked PC when a bus error happens during	*/
+/*			a movem (fix the game Blood Money).						*/
+/* 2013/03/16	[NP]	In refill_prefetch(), reload only one new word in regs.prefetch if low word is	*/
+/*			still valid : low word goes to high word and we reload only low word		*/
+/*			(fix EOR/ADD self modified code in the protection for the game Damocles).	*/
 /* 2013/04/11	[NP]	In Exception(), call MFP_ProcessIACK after 12 cycles to update the MFP's vector	*/
 /*			number used for the exception (see mfp.c).					*/
 /* 2013/05/03	[NP]	In Exception(), handle IACK for HBL and VBL interrupts too, allowing pending bit*/
 /*			to be set twice during an active video interrupt (correct fix for Super Monaco	*/
 /*			GP, Super Hang On, Monster Business, European Demo's Intro, BBC Menu 52).	*/
-
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -998,8 +1002,13 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
 	    /* [NP] PC stored in the stack frame is not necessarily pointing to the next instruction ! */
 	    /* FIXME : we should have a proper model for this, in the meantime we handle specific cases */
-	    if ( get_word(BusErrorPC) == 0x21f8 )			/* move.l $0.w,$24.w (Transbeauce 2 loader) */
-	      put_long (m68k_areg(regs, 7)+10, currpc-2);		/* correct PC is 2 bytes less than usual value */
+	    if ( get_word(BusErrorPC) == 0x21f8 )					/* move.l $0.w,$24.w (Transbeauce 2 loader) */
+	      put_long (m68k_areg(regs, 7)+10, currpc-2);				/* correct PC is 2 bytes less than usual value */
+
+	    else if ( ( BusErrorPC=0xccc ) && ( get_word(BusErrorPC) == 0x48d6 ) )	/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
+	      put_long (m68k_areg(regs, 7)+10, currpc+2);				/* correct PC is 2 bytes more than usual value */
+	    //fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , get_word(BusErrorPC));
+
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n",
@@ -1689,6 +1698,7 @@ static void m68k_run_1 (void)
 
     for (;;) {
 	int cycles;
+//fprintf (stderr, "ir in  %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);
 	uae_u32 opcode = get_iword_prefetch (0);
 
 #ifdef DEBUG_PREFETCH
@@ -1729,6 +1739,7 @@ static void m68k_run_1 (void)
 	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
 
 	cycles = (*cpufunctbl[opcode])(opcode);
+//fprintf (stderr, "ir out %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);
 
 #ifdef DEBUG_PREFETCH
 	if (memcmp (saved_bytes, oldpcp, 20) != 0) {

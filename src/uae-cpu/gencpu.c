@@ -67,6 +67,7 @@
 /*			Ugly hack, we need better prefetch emulation (switch to winuae gencpu.c)	*/
 /* 2012/05/05	[NP]	In i_JMP, in case of address error, last_addr_for_exception_3 should not always	*/
 /*			be pc+6, (Sherman Cracktro in No Extra V2 compilation) (e.g. 'jmp (a2)' : pc+2)	*/
+/* 2013/03/17	[NP]	Add refill_prefetch for i_SUB, i_NEG, i_NEGX, i_NOT (similar to i_ADD/i_EOR)	*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -1014,6 +1015,7 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0);
 	start_brace ();
+	printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] similar to i_ADD, need better prefetch emulation
 	genflags (flag_sub, curi->size, "newv", "src", "dst");
 	genastore ("newv", curi->dmode, "dstreg", curi->size, "dst");
         if(curi->size==sz_long && curi->dmode==Dreg)
@@ -1137,6 +1139,7 @@ static void gen_opcode (unsigned long int opcode)
     case i_NEG:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	start_brace ();
+	printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] similar to i_ADD/i_EOR, need better prefetch emulation
 	genflags (flag_sub, curi->size, "dst", "src", "0");
 	genastore ("dst", curi->smode, "srcreg", curi->size, "src");
         if(curi->size==sz_long && curi->smode==Dreg)  insn_n_cycles += 2;
@@ -1144,6 +1147,7 @@ static void gen_opcode (unsigned long int opcode)
     case i_NEGX:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	start_brace ();
+	printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] similar to i_ADD/i_EOR, need better prefetch emulation
 	printf ("\tuae_u32 newv = 0 - src - (GET_XFLG ? 1 : 0);\n");
 	genflags (flag_subx, curi->size, "newv", "src", "0");
 	genflags (flag_zn, curi->size, "newv", "", "");
@@ -1197,6 +1201,7 @@ static void gen_opcode (unsigned long int opcode)
     case i_NOT:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	start_brace ();
+	printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] similar to i_ADD/i_EOR, need better prefetch emulation
 	printf ("\tuae_u32 dst = ~src;\n");
 	genflags (flag_logical, curi->size, "dst", "", "");
 	genastore ("dst", curi->smode, "srcreg", curi->size, "src");

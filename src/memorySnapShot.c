@@ -29,6 +29,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "fdc.h"
 #include "file.h"
 #include "floppy.h"
+#include "floppy_ipf.h"
 #include "gemdos.h"
 #include "acia.h"
 #include "ikbd.h"
@@ -135,6 +136,20 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Seek into file from current position
+ */
+static int MemorySnapShot_fseek(MSS_File fhndl, int pos)
+{
+#ifdef COMPRESS_MEMORYSNAPSHOT
+	return (int)gzseek(fhndl, pos, SEEK_CUR);	/* return -1 if error, new position >=0 if OK */
+#else
+	return seek(fhndl, pos, SEEK_CUR);		/* return -1 if error, 0 if OK */
+#endif
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
  * how to handle data.
  */
@@ -209,6 +224,26 @@ static void MemorySnapShot_CloseFile(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Skip Nb bytes when reading from/writing to file.
+ */
+void MemorySnapShot_Skip(int Nb)
+{
+	int res;
+
+	/* Check no file errors */
+	if (CaptureFile != NULL)
+	{
+		res = MemorySnapShot_fseek(CaptureFile, Nb);
+
+		/* Did seek OK? */
+		if (res < 0)
+			bCaptureError = true;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Save/Restore data to/from file.
  */
 void MemorySnapShot_Store(void *pData, int Size)
@@ -246,6 +281,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		STMemory_MemorySnapShot_Capture(true);
 		FDC_MemorySnapShot_Capture(true);
 		Floppy_MemorySnapShot_Capture(true);
+		IPF_MemorySnapShot_Capture(true);			/* After fdc/floppy are saved */
 		GemDOS_MemorySnapShot_Capture(true);
 		ACIA_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
@@ -299,6 +335,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		STMemory_MemorySnapShot_Capture(false);
 		FDC_MemorySnapShot_Capture(false);
 		Floppy_MemorySnapShot_Capture(false);
+		IPF_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as IPF depend on them */
 		GemDOS_MemorySnapShot_Capture(false);
 		ACIA_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */

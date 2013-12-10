@@ -22,6 +22,7 @@ const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
 #include "fdc.h"
 #include "hdc.h"
 #include "floppy.h"
+#include "floppy_ipf.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
@@ -339,6 +340,13 @@ enum
  *   at 299-301 RPM)
  * - When FDC runs at 8 MHz, the 250 kbits/s and 300 RPM give 6250 bytes for a standard track
  * - When FDC runs at 8.021247 MHz (Atari ST), the 250.664 kbit/s and 300 RPM give 6267 bytes per track
+ *
+ * Notes on timings required for precise emulation :
+ * For a standard floppy recorded with a constant speed, the FDC will take 32 microsec
+ * to read/write 1 byte on the floppy. On STF with a 8 MHz CPU clock, this means one byte can be
+ * transferred every 256 cpu cycles. So, to get some correct timings as required by some games' protection
+ * we must update the emulated FDC's state every 256 cycles (it could be less frequently and still work,
+ * due to the 16 bytes DMA FIFO that will transfer data only 16 bytes at a time, every 256*16=4096 cycles)
  */
 
 
@@ -382,11 +390,11 @@ enum
 /* Update the floppy's angular position on a regular basis to detect the index pulses */
 #define	FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE	500
 
-#define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( DMA_DISK_TRANSFER_SIZE )
+#define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( FDC_DMA_FIFO_SIZE )
 
 
-#define	DMA_DISK_SECTOR_SIZE			512		/* Sector count at $ff8606 is for 512 bytes blocks */
-#define	DMA_DISK_TRANSFER_SIZE			16		/* DMA transfers blocks of 16 bytes at a time */
+#define	FDC_DMA_SECTOR_SIZE			512		/* Sector count at $ff8606 is for 512 bytes blocks */
+#define	FDC_DMA_FIFO_SIZE			16		/* DMA transfers blocks of 16 bytes at a time */
 
 #define	FDC_PHYSICAL_MAX_TRACK			90		/* Head can't go beyond 90 tracks */
 
@@ -430,6 +438,10 @@ static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 
 #define	FDC_DENSITY_FACTOR_ED			4		/* For a ED disk, we get x4 bytes than DD */
 
 
+#define	FDC_EMULATION_MODE_INTERNAL		1		/* Use fdc.c to handle emulation (ST, MSA and DIM images) */
+#define	FDC_EMULATION_MODE_IPF			2		/* Use floppy_ipf.c to handle emulation (IPF images ) */
+
+
 typedef struct {
 	/* WD1772 internal registers */
 	Uint8		DR;					/* Data Register */
@@ -441,7 +453,6 @@ typedef struct {
 
 	Uint8		SideSignal;				/* Side 0 or 1 */
 	int		DriveSelSignal;				/* 0 or 1 for drive A or B ; or -1 if no drive selected */
-
 	/* Other variables */
 	int		Command;				/* FDC emulation command currently being exceuted */
 	int		CommandState;				/* Current state for the running command */
@@ -461,6 +472,9 @@ typedef struct {
 	Uint16		Mode;
 	Uint16		SectorCount;
 	Uint16		BytesInSector;
+
+	Uint8		FIFO[ FDC_DMA_FIFO_SIZE ];
+	int		FIFO_Size;				/* Between 0 and FDC_DMA_FIFO_SIZE */
 
 	/* Variables to handle our DMA buffer */
 	int		PosInBuffer;
@@ -508,6 +522,7 @@ static void	FDC_DMA_InitTransfer ( void );
 static bool	FDC_DMA_ReadFromFloppy ( void );
 static bool	FDC_DMA_WriteToFloppy ( void );
 
+static int	FDC_GetEmulationMode ( void );
 static void	FDC_UpdateAll ( void );
 static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Drive , int Track );
@@ -789,6 +804,9 @@ void FDC_Reset ( bool bCold )
 	FDC_DMA.Mode = 0;
 	FDC_DMA.SectorCount = 0;
 	FDC_ResetDMA();
+
+	/* Also reset IPF emulation */
+	IPF_Reset();
 }
 
 
@@ -806,8 +824,12 @@ static void FDC_ResetDMA ( void )
 	LOG_TRACE(TRACE_FDC, "fdc reset dma VBL=%d video_cyc=%d %d@%d pc=%x\n",
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
+	/* Empty FIFO */
+	FDC_DMA.FIFO_Size = 0;
+
 	/* Reset bytes count for current DMA sector */
-	FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
+	FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
+	FDC_DMA.SectorCount = 0;
 
 	/* Reset variables used to handle DMA transfer */
 	FDC_DMA.PosInBuffer = 0;
@@ -823,7 +845,7 @@ static void FDC_ResetDMA ( void )
 /**
  * Set DMA Status at $ff8606
  *
- * Bit 0 - _Error Status (0=Error 1=No erroe)
+ * Bit 0 - _Error Status (0=Error 1=No error)
  * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
  * Bit 2 - _Data Request Inactive Status
  *
@@ -855,7 +877,7 @@ static void FDC_DMA_InitTransfer ( void )
 
 	/* How many bytes remain in the current 16 bytes DMA buffer ? */
 	if ( ( FDC_DMA.BytesToTransfer == 0 )				/* DMA buffer is empty */
-	  || ( FDC_DMA.BytesToTransfer > DMA_DISK_TRANSFER_SIZE ) )	/* Previous DMA transfer did not finish (FDC errror or Force Int command) */
+	  || ( FDC_DMA.BytesToTransfer > FDC_DMA_FIFO_SIZE ) )		/* Previous DMA transfer did not finish (FDC errror or Force Int command) */
 	{
 		FDC_DMA.PosInBuffer = 0;				/* Add new data at the start of DMADiskWorkSpace */
 		FDC_DMA.PosInBufferTransfer = 0;
@@ -869,6 +891,91 @@ static void FDC_DMA_InitTransfer ( void )
 		FDC_DMA.PosInBuffer = FDC_DMA.BytesToTransfer;		/* Add new data after the latest bytes stored in the 16 bytes buffer */
 		FDC_DMA.PosInBufferTransfer = 0;
 	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of bit 8 in the FDC's DMA mode control register.
+ * 0=dma read  0x100=dma write
+ */
+int	FDC_DMA_GetModeControl_R_WR ( void )
+{
+	return FDC_DMA.Mode & 0x100;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Add a byte to the DMA's FIFO buffer (read from disk).
+ * If the buffer is full and DMA is ON, write the FIFO's 16 bytes to DMA's address.
+ */
+void	FDC_DMA_FIFO_Push ( Uint8 Byte )
+{
+	Uint32	Address;
+
+	if ( FDC_DMA.SectorCount == 0 )
+	{
+		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
+		/* TODO : clear error bit 0 in DMA status ? */
+		return;
+	}
+
+	FDC_DMA.FIFO [ FDC_DMA.FIFO_Size++ ] = Byte;
+
+	if ( FDC_DMA.FIFO_Size < FDC_DMA_FIFO_SIZE )			/* FIFO is not full yet */
+		return;
+
+	/* FIFO full : transfer data and update DMA address */
+	Address = FDC_GetDMAAddress();
+	STMemory_SafeCopy ( Address , FDC_DMA.FIFO , FDC_DMA_FIFO_SIZE , "FDC DMA push to fifo" );
+	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
+	FDC_DMA.FIFO_Size = 0;						/* FIFO is now empty again */
+
+	/* Update Sector Count */
+	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
+	if ( FDC_DMA.BytesInSector <= 0 )
+	{
+		FDC_DMA.SectorCount--;
+		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Get a byte from the DMA's FIFO buffer (write to disk).
+ * If the buffer is empty and DMA is ON, load 16 bytes in the FIFO from DMA's address.
+ */
+Uint8	FDC_DMA_FIFO_Pull ( void )
+{
+	Uint32	Address;
+
+	if ( FDC_DMA.SectorCount == 0 )
+	{
+		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
+		/* TODO : clear error bit 0 in DMA status ? */
+		return 0;						/* Write a '0' byte when dma is off */
+	}
+
+	if ( FDC_DMA.FIFO_Size > 0 )					/* FIFO is not empty yet */
+		return FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE - ( FDC_DMA.FIFO_Size-- ) ];	/* return byte at pos 0, 1, .., 15 */
+	
+	/* FIFO empty : transfer data and update DMA address */
+	Address = FDC_GetDMAAddress();
+	memcpy ( FDC_DMA.FIFO , &STRam[ Address ] , FDC_DMA_FIFO_SIZE );/* TODO : check we read from a valid RAM location ? */
+	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
+	FDC_DMA.FIFO_Size = FDC_DMA_FIFO_SIZE - 1;			/* FIFO is now full again (minus the byte we will return below) */
+
+	/* Update Sector Count */
+	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
+	if ( FDC_DMA.BytesInSector <= 0 )
+	{
+		FDC_DMA.SectorCount--;
+		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
+	}
+
+	return FDC_DMA.FIFO [ 0 ];					/* return the 1st byte we just transfered in the FIFO */
 }
 
 
@@ -892,15 +999,15 @@ static bool FDC_DMA_ReadFromFloppy ( void )
 	Uint32	Address;
 //fprintf ( stderr , "dma transfer read count=%d bytes=%d pos=%d\n" , FDC_DMA.SectorCount, FDC_DMA.BytesToTransfer, FDC_DMA.PosInBufferTransfer );
 
-	if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
 		return true;						/* There should be at least 16 bytes to start a DMA transfer */
 
 	if ( FDC_DMA.SectorCount == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
-		FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
-		FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
-		if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+		FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
+		FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
+		if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
 			return true;					/* There should be at least 16 bytes to start a new DMA transfer */
 		else
 			return false;					/* FDC DMA is off but we still need to read all bytes from the floppy */
@@ -908,20 +1015,20 @@ static bool FDC_DMA_ReadFromFloppy ( void )
 
 	/* Transfer data and update DMA address */
 	Address = FDC_GetDMAAddress();
-	STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
-	FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
-	FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
-	FDC_WriteDMAAddress ( Address + DMA_DISK_TRANSFER_SIZE );
+	STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , FDC_DMA_FIFO_SIZE , "FDC DMA data read" );
+	FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
+	FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
+	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
 
 	/* Update Sector Count */
-	FDC_DMA.BytesInSector -= DMA_DISK_TRANSFER_SIZE;
+	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
 	if ( FDC_DMA.BytesInSector <= 0 )
 	{
 		FDC_DMA.SectorCount--;
-		FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
+		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
 	}
 
-	if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
 		return true;						/* There should be at least 16 bytes to start a new DMA transfer */
 	else
 		return false;						/* Transfer is not complete */
@@ -947,15 +1054,15 @@ static bool FDC_DMA_WriteToFloppy ( void )
 	Uint32	Address;
 //fprintf ( stderr , "dma transfer write count=%d bytes=%d pos=%d\n" , FDC_DMA.SectorCount, FDC_DMA.BytesToTransfer, FDC_DMA.PosInBufferTransfer );
 
-	if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
 		return true;						/* There should be at least 16 bytes to start a DMA transfer */
 
 	if ( FDC_DMA.SectorCount == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
-		FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
-		FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
-		if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+		FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
+		FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
+		if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
 			return true;					/* There should be at least 16 bytes to start a new DMA transfer */
 		else
 			return false;					/* FDC DMA is off but we still need to read all bytes from the floppy */
@@ -963,23 +1070,71 @@ static bool FDC_DMA_WriteToFloppy ( void )
 
 	/* Transfer data and update DMA address */
 	Address = FDC_GetDMAAddress();
-	//STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , DMA_DISK_TRANSFER_SIZE , "FDC DMA data read" );
-	FDC_DMA.PosInBufferTransfer += DMA_DISK_TRANSFER_SIZE;
-	FDC_DMA.BytesToTransfer -= DMA_DISK_TRANSFER_SIZE;
-	FDC_WriteDMAAddress ( Address + DMA_DISK_TRANSFER_SIZE );
+	//STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , FDC_DMA_FIFO_SIZE , "FDC DMA data read" );
+	FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
+	FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
+	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
 
 	/* Update Sector Count */
-	FDC_DMA.BytesInSector -= DMA_DISK_TRANSFER_SIZE;
+	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
 	if ( FDC_DMA.BytesInSector <= 0 )
 	{
 		FDC_DMA.SectorCount--;
-		FDC_DMA.BytesInSector = DMA_DISK_SECTOR_SIZE;
+		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
 	}
 
-	if ( FDC_DMA.BytesToTransfer < DMA_DISK_TRANSFER_SIZE )
+	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
 		return true;						/* There should be at least 16 bytes to start a new DMA transfer */
 	else
 		return false;						/* Transfer is not complete */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the mode to handle a read/write in $ff86xx
+ * Depending on the images inserted in each floppy drive and on the
+ * selected drive, we must choose which fdc emulation should be used.
+ * Possible emulation methods are 'internal' or 'ipf'.
+ * To avoid mixing emulation methods on both drives when possible (which
+ * could lead to inconstancies when precise timings are required), we also
+ * use the IPF mode for an empty drive if the other drive contains an IPF
+ * image.
+ */
+static int FDC_GetEmulationMode ( void )
+{
+	int	Mode;
+
+	Mode = FDC_EMULATION_MODE_INTERNAL;				/* Default if no drive is selected */
+
+	/* Check drive 1 first */
+	if ( ( PSGRegisters[PSG_REG_IO_PORTA] & 0x04 ) == 0 )
+	{
+		if ( EmulationDrives[ 1 ].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+			Mode = FDC_EMULATION_MODE_IPF;
+		else if ( ( EmulationDrives[ 1 ].ImageType == FLOPPY_IMAGE_TYPE_NONE )		/* Drive 1 is empty */
+			&& ( EmulationDrives[ 0 ].ImageType == FLOPPY_IMAGE_TYPE_IPF ) )	/* Drive 0 is an IPF image */
+			Mode = FDC_EMULATION_MODE_IPF;						/* Use IPF for drive 1 too */
+		else
+			Mode = FDC_EMULATION_MODE_INTERNAL;
+	}
+
+	/* If both drive 0 and drive 1 are enabled, we keep only drive 0 to choose emulation's mode */
+	if ( ( PSGRegisters[PSG_REG_IO_PORTA] & 0x02 ) == 0 )
+	{
+		if ( EmulationDrives[ 0 ].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+			Mode = FDC_EMULATION_MODE_IPF;
+		else if ( ( EmulationDrives[ 0 ].ImageType == FLOPPY_IMAGE_TYPE_NONE )		/* Drive 0 is empty */
+			&& ( EmulationDrives[ 1 ].ImageType == FLOPPY_IMAGE_TYPE_IPF ) )	/* Drive 1 is an IPF image */
+			Mode = FDC_EMULATION_MODE_IPF;						/* Use IPF for drive 0 too */
+		else
+			Mode = FDC_EMULATION_MODE_INTERNAL;
+	}
+
+//fprintf ( stderr , "emul mode %x %d\n" , PSGRegisters[PSG_REG_IO_PORTA] & 0x06 , Mode );
+//	return FDC_EMULATION_MODE_INTERNAL;
+//	return FDC_EMULATION_MODE_IPF;
+	return Mode;
 }
 
 
@@ -1056,6 +1211,11 @@ void	FDC_EjectFloppy ( int Drive )
  * bit 0 : side select
  * bit 1-2 : drive select
  *
+ * - For internal FDC emulation, we init index pulse if the active drive
+ *   changed
+ * - We also forward the change to IPF emulation, as it doesn't have direct access
+ *   to this IO_PORTA register.
+ *
  * If both drives are selected, we keep only drive 0
  */
 void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
@@ -1098,6 +1258,10 @@ void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new )
 
 	FDC.SideSignal = Side;
 	FDC.DriveSelSignal = Drive;
+
+
+	/* Also forward change to IPF emulation */
+	IPF_SetDriveSide ( io_porta_old , io_porta_new );
 }
 
 
@@ -3305,6 +3469,8 @@ static void FDC_WriteDataRegister ( void )
 void FDC_DiskController_WriteWord ( void )
 {
 	int FrameCycles, HblCounterVideo, LineCycles;
+	int EmulationMode;
+	int FDC_reg;
 
 	if ( nIoMemAccessSize == SIZE_BYTE )
 	{
@@ -3333,24 +3499,34 @@ void FDC_DiskController_WriteWord ( void )
 		FDC_WriteSectorCountRegister();
 	else
 	{
-		/* Update FDC's internal variables */
-		FDC_UpdateAll ();
+		FDC_reg = ( FDC_DMA.Mode & 0x6 ) >> 1;			/* Bits 1,2 (A0,A1) */
 
-		/* Write to FDC registers */
-		switch ( FDC_DMA.Mode & 0x6 )
-		{   /* Bits 1,2 (A1,A0) */
-		 case 0x0:						/* 0 0 - Command register */
-			FDC_WriteCommandRegister();
-			break;
-		 case 0x2:						/* 0 1 - Track register */
-			FDC_WriteTrackRegister();
-			break;
-		 case 0x4:						/* 1 0 - Sector register */
-			FDC_WriteSectorRegister();
-			break;
-		 case 0x6:						/* 1 1 - Data register */
-			FDC_WriteDataRegister();
-			break;
+		EmulationMode = FDC_GetEmulationMode();
+		if ( EmulationMode == FDC_EMULATION_MODE_INTERNAL )
+		{
+			/* Update FDC's internal variables */
+			FDC_UpdateAll ();
+
+			/* Write to FDC registers */
+			switch ( FDC_reg )
+			{
+			 case 0x0:					/* 0 0 - Command register */
+				FDC_WriteCommandRegister();
+				break;
+			 case 0x1:					/* 0 1 - Track register */
+				FDC_WriteTrackRegister();
+				break;
+			 case 0x2:					/* 1 0 - Sector register */
+				FDC_WriteSectorRegister();
+				break;
+			 case 0x3:					/* 1 1 - Data register */
+				FDC_WriteDataRegister();
+				break;
+			}
+		}
+		else if ( EmulationMode == FDC_EMULATION_MODE_IPF )
+		{
+			IPF_FDC_WriteReg ( FDC_reg , IoMem_ReadByte(0xff8605) );
 		}
 	}
 }
@@ -3365,6 +3541,8 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	Uint16 DiskControllerByte = 0;					/* Used to pass back the parameter */
 	int FrameCycles, HblCounterVideo, LineCycles;
 	int ForceWPRT;
+	int EmulationMode;
+	int FDC_reg;
 
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
@@ -3387,73 +3565,96 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	}
 	else
 	{
-		/* Update FDC's internal variables */
-		FDC_UpdateAll ();
+		FDC_reg = ( FDC_DMA.Mode & 0x6 ) >> 1;			/* Bits 1,2 (A0,A1) */
 
-		/* Read FDC registers */
-		switch (FDC_DMA.Mode & 0x6)				/* Bits 1,2 (A1,A0) */
+		EmulationMode = FDC_GetEmulationMode();
+		if ( EmulationMode == FDC_EMULATION_MODE_INTERNAL )
 		{
-		 case 0x0:						/* 0 0 - Status register */
-			/* If we report a type I status, some bits are updated in real time */
-			/* depending on the corresponding signals. If this is not a type I, we return STR unmodified */
-			/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
-			/* is updated after a Type I command */
-			/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
-			if ( FDC.StatusTypeI )
+			/* Update FDC's internal variables */
+			FDC_UpdateAll ();
+
+			/* Read FDC registers */
+			switch ( FDC_reg )
 			{
-				/* If no drive available, FDC's input signals TR00, INDEX and WPRT are off */
-				if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled ) )
-					FDC_Update_STR ( FDC_STR_BIT_TR00 | FDC_STR_BIT_INDEX | FDC_STR_BIT_WPRT , 0 );
-
-				else
+			 case 0x0:						/* 0 0 - Status register */
+				/* If we report a type I status, some bits are updated in real time */
+				/* depending on the corresponding signals. If this is not a type I, we return STR unmodified */
+				/* [NP] Contrary to what is written in the WD1772 doc, the WPRT bit */
+				/* is updated after a Type I command */
+				/* (eg : Procopy or Terminators Copy 1.68 do a Restore/Seek to test WPRT) */
+				if ( FDC.StatusTypeI )
 				{
-					if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == 0 )
-						FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+					/* If no drive available, FDC's input signals TR00, INDEX and WPRT are off */
+					if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled ) )
+						FDC_Update_STR ( FDC_STR_BIT_TR00 | FDC_STR_BIT_INDEX | FDC_STR_BIT_WPRT , 0 );
+
 					else
-						FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
+					{
+						if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == 0 )
+							FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+						else
+							FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 
-					if ( FDC_IndexPulse_GetState () )
-						FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit */
-					else
-						FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
+						if ( FDC_IndexPulse_GetState () )
+							FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit */
+						else
+							FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
 
-					/* When there's no disk in drive, the floppy drive hardware can't see */
-					/* the difference with an inserted disk that would be write protected */
-					if ( ! FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted )
-						FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
-					else if ( Floppy_IsWriteProtected ( FDC.DriveSelSignal ) )
-						FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
-					else
-						FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
+						/* When there's no disk in drive, the floppy drive hardware can't see */
+						/* the difference with an inserted disk that would be write protected */
+						if ( ! FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted )
+							FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+						else if ( Floppy_IsWriteProtected ( FDC.DriveSelSignal ) )
+							FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+						else
+							FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
 
-					/* Temporarily change the WPRT bit if we're in a transition phase */
-					/* regarding the disk in the drive (inserting or ejecting) */
-					ForceWPRT = Floppy_DriveTransitionUpdateState ( FDC.DriveSelSignal );
-					if ( ForceWPRT == 1 )
-						FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Force setting WPRT */
-					else if ( ForceWPRT == -1 )
-						FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Force clearing WPRT */
+						/* Temporarily change the WPRT bit if we're in a transition phase */
+						/* regarding the disk in the drive (inserting or ejecting) */
+						ForceWPRT = Floppy_DriveTransitionUpdateState ( FDC.DriveSelSignal );
+						if ( ForceWPRT == 1 )
+							FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Force setting WPRT */
+						else if ( ForceWPRT == -1 )
+							FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Force clearing WPRT */
 
-					if ( ForceWPRT != 0 )
-						LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n",
+						if ( ForceWPRT != 0 )
+							LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n",
 							  ForceWPRT==1?1:0, nVBLs, FDC.DriveSelSignal, FDC.STR );
+					}
 				}
+
+				DiskControllerByte = FDC.STR;
+
+				/* When Status Register is read, FDC's INTRQ is reset (except if "force interrupt immediate" is running) */
+				FDC_ClearIRQ ();
+				break;
+			 case 0x1:						/* 0 1 - Track register */
+				DiskControllerByte = FDC.TR;
+				break;
+			 case 0x2:						/* 1 0 - Sector register */
+				DiskControllerByte = FDC.SR;
+				break;
+			 case 0x3:						/* 1 1 - Data register */
+				DiskControllerByte = FDC.DR;
+				break;
 			}
+		}
+		else if ( EmulationMode == FDC_EMULATION_MODE_IPF )
+		{
+			DiskControllerByte = IPF_FDC_ReadReg ( FDC_reg );
+			if ( ( FDC_reg == 0x0 ) && ( FDC.DriveSelSignal >= 0 ) )	/* 0 0 - Status register */
+			{
+				/* Temporarily change the WPRT bit if we're in a transition phase */
+				/* regarding the disk in the drive (inserting or ejecting) */
+				ForceWPRT = Floppy_DriveTransitionUpdateState ( FDC.DriveSelSignal );
+				if ( ForceWPRT == 1 )
+					DiskControllerByte |= FDC_STR_BIT_WPRT;		/* Force setting WPRT */
+				if ( ForceWPRT == -1 )
+					DiskControllerByte &= ~FDC_STR_BIT_WPRT;	/* Force clearing WPRT */
 
-			DiskControllerByte = FDC.STR;
-
-			/* When Status Register is read, FDC's INTRQ is reset (except if "force interrupt immediate" is running) */
-			FDC_ClearIRQ ();
-			break;
-		 case 0x2:						/* 0 1 - Track register */
-			DiskControllerByte = FDC.TR;
-			break;
-		 case 0x4:						/* 1 0 - Sector register */
-			DiskControllerByte = FDC.SR;
-			break;
-		 case 0x6:						/* 1 1 - Data register */
-			DiskControllerByte = FDC.DR;
-			break;
+				if ( ForceWPRT != 0 )
+					LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n", ForceWPRT==1?1:0, nVBLs, FDC.DriveSelSignal, DiskControllerByte );
+			}
 		}
 	}
 
@@ -3652,7 +3853,7 @@ static bool FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Se
 	else
 	{
 		pBuffer = DMADiskWorkSpace;				/* If DMA can't transfer data, we write '0' bytes */
-		memset ( pBuffer , 0 , DMA_DISK_SECTOR_SIZE );
+		memset ( pBuffer , 0 , FDC_DMA_SECTOR_SIZE );
 	}
 	
 	/* Write 1 sector from our workspace */

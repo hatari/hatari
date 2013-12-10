@@ -383,7 +383,7 @@ void PSG_Set_DataRegister(Uint8 val)
 				/* FIXME: add code to handle IDE reset */
 			}
 		}
-	
+
 	}
 }
 

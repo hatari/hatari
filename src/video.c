@@ -357,6 +357,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "falcon/hostscreen.h"
 #include "avi_record.h"
 #include "ikbd.h"
+#include "floppy_ipf.h"
 
 
 /* The border's mask allows to keep track of all the border tricks		*/
@@ -1613,6 +1614,10 @@ void Video_InterruptHandler_HBL ( void )
 	Video_EndHBL();					/* Check some borders removal and copy line to display buffer */
 
 	DmaSnd_STE_HBL_Update();			/* Update STE DMA sound if needed */
+
+	/* TEMP IPF */
+	IPF_Emulate();
+	/* TEMP IPF */
 
 	nHBL++;						/* Increase HBL count */
 
