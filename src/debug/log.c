@@ -106,7 +106,9 @@ TraceOptions[] = {
 	{ TRACE_DSP_SYMBOLS	 , "dsp_symbols" },
 	{ TRACE_CPU_SYMBOLS	 , "cpu_symbols" },
 
-	{ TRACE_NVRAM  	         , "nvram" } ,
+	{ TRACE_NVRAM		 , "nvram" } ,
+
+	{ TRACE_SCSI_CMD	 , "scsi_cmd" } ,
 
 	{ TRACE_ALL		 , "all" }
 };
