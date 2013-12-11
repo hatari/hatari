@@ -268,3 +268,47 @@ endif(PYTHONINTERP_FOUND)
 
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/Uninstall.cmake)
+
+
+# ###################################################################
+# Print a summary of the optional libraries with a short explanation:
+# ###################################################################
+
+message( "
+Optional libraries summary :
+----------------------------
+")
+
+if(READLINE_FOUND)
+  message( "  - readline : found, enable history/completion in the debugger" )
+else()
+  message( "  - readline : not found, install it if you wish to enable history/completion in the debugger" )
+endif(READLINE_FOUND)
+
+if(ZLIB_FOUND)
+  message( "  - zlib : found, allow to use zip/gz files directly" )
+else()
+  message( "  - zlib : not found, install it if you wish to use zip/gz files" )
+endif(ZLIB_FOUND)
+
+if(PNG_FOUND)
+  message( "  - png : found, allow to compress screenshot/avi files using png" )
+else()
+  message( "  - png : not found, install it if you wish to compress screenshot/avi files using png" )
+endif(PNG_FOUND)
+
+if(PORTAUDIO_FOUND)
+  message( "  - portaudio : found, enable the microphone input in Falcon mode" )
+else()
+  message( "  - portaudio : not found, install it if you wish to enable the microphone input in Falcon mode" )
+endif(PORTAUDIO_FOUND)
+
+if(CAPSIMAGE_FOUND)
+  message( "  - libcapsimage : found, allow to use .IPF disk images" )
+else()
+  message( "  - libcapsimage : not found, install it if you wish to use .IPF disk images" )
+endif(CAPSIMAGE_FOUND)
+
+message( "" )
+
+
