@@ -59,7 +59,6 @@ extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
 extern void HDC_ResetCommandStatus(void);
 extern short int HDC_ReadCommandByte(int addr);
-extern short int HDC_GetSectorCount(void);
 extern void HDC_WriteCommandByte(int addr, Uint8 byte);
 
 void Ncr5380_Reset(void);

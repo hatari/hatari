@@ -151,6 +151,11 @@ ACSI DMA and Floppy Disk Controller(FDC)
   Similarly, we can guess that a type II command can be replaced by another type II as long
   as the 'prepare + spinup + head settle' sequence is not over (this was not tested on real HW)
 
+  NOTE [NP] : As verified on a real STF, when reading DMA status at $ff8606 or DMA sector
+  count at $ff8604, the unused bits are not set to 0, but they contain the value from the latest
+  read/write made at $ff8604 when accessing FDC or HDC registers. Moreover, it's not possible to
+  read DMA sector count, so we return the lowest 8 bits from the latest access at $ff8604.
+
 
   Detecting disk changes :
   ------------------------
@@ -476,6 +481,8 @@ typedef struct {
 	Uint8		FIFO[ FDC_DMA_FIFO_SIZE ];
 	int		FIFO_Size;				/* Between 0 and FDC_DMA_FIFO_SIZE */
 
+	Uint16		ff8604_recent_val;			/* Most recent value read/written at $ff8604 in fdc/hdc mode (bit4=0 in $ff8606) */
+
 	/* Variables to handle our DMA buffer */
 	int		PosInBuffer;
 	int		PosInBufferTransfer;
@@ -786,6 +793,7 @@ void FDC_Reset ( bool bCold )
 	{
 		FDC.TR = 0;
 		FDC.DR = 0;
+		FDC_DMA.ff8604_recent_val = 0;		/* Only set to 0 on cold reset */
 	}
 	FDC.StepDirection = 1;
 
@@ -802,7 +810,7 @@ void FDC_Reset ( bool bCold )
 
 	FDC_DMA.Status = 1;				/* no DMA error and SectorCount=0 */
 	FDC_DMA.Mode = 0;
-	FDC_DMA.SectorCount = 0;
+
 	FDC_ResetDMA();
 
 	/* Also reset IPF emulation */
@@ -815,6 +823,7 @@ void FDC_Reset ( bool bCold )
  * Reset DMA (clear internal 16 bytes buffer)
  *
  * This is done by 'toggling' bit 8 of the DMA Mode Control register
+ * This will empty the FIFOs and reset Sector Count to 0
  */
 static void FDC_ResetDMA ( void )
 {
@@ -829,9 +838,9 @@ static void FDC_ResetDMA ( void )
 
 	/* Reset bytes count for current DMA sector */
 	FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
-	FDC_DMA.SectorCount = 0;
+	FDC_DMA.SectorCount = 0;			/* After a reset, sector count is 0 (verified on a real STF) */
 
-	/* Reset variables used to handle DMA transfer */
+	/* Reset internal variables used to handle DMA transfer */
 	FDC_DMA.PosInBuffer = 0;
 	FDC_DMA.PosInBufferTransfer = 0;
 	FDC_DMA.BytesToTransfer = 0;
@@ -3464,7 +3473,9 @@ static void FDC_WriteDataRegister ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Store byte in FDC registers or DMA sector count, when writing to $ff8604
+ * Store byte in FDC/HDC registers or DMA sector count, when writing to $ff8604
+ * When accessing FDC/HDC registers, a copy of $ff8604 should be kept in ff8604_recent_val
+ * to be used later when reading unused bits at $ff8604/$ff8606
  */
 void FDC_DiskController_WriteWord ( void )
 {
@@ -3486,18 +3497,28 @@ void FDC_DiskController_WriteWord ( void )
 	LOG_TRACE(TRACE_FDC, "fdc write 8604 data=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		IoMem_ReadWord(0xff8604), nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
-	/* Is it an ACSI (or Falcon SCSI) HD command? */
-	if ( ( FDC_DMA.Mode & 0x0018 ) == 8 )
+
+	/* Are we trying to set the DMA SectorCount ? */
+	if ( FDC_DMA.Mode & 0x10 )					/* Bit 4 */
 	{
-		/*  Handle HDC functions */
+		FDC_WriteSectorCountRegister();
+		return;
+	}
+
+	/* Store the value that was just accessed by this write */
+	FDC_DMA.ff8604_recent_val = IoMem_ReadWord(0xff8604);
+	
+	if ( ( FDC_DMA.Mode & 0x0008 ) == 0x0008 )			/* Is it an ACSI (or Falcon SCSI) HDC command access ? */
+	{
+		/*  Handle HDC access */
+		LOG_TRACE(TRACE_FDC, "fdc write 8604 hdc command addr=%x command=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			  FDC_DMA.Mode & 0x7 , IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
 		HDC_WriteCommandByte(FDC_DMA.Mode & 0x7, IoMem_ReadByte(0xff8605));
 		return;
 	}
 
-	/* Are we trying to set the SectorCount ? */
-	if ( FDC_DMA.Mode & 0x10 )					/* Bit 4 */
-		FDC_WriteSectorCountRegister();
-	else
+	else								/* It's a FDC register access */
 	{
 		FDC_reg = ( FDC_DMA.Mode & 0x6 ) >> 1;			/* Bits 1,2 (A0,A1) */
 
@@ -3534,7 +3555,10 @@ void FDC_DiskController_WriteWord ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return Status/FDC register when reading from $ff8604
+ * Return FDC/HDC registers or DMA sector count when reading from $ff8604
+ * - When accessing FDC/HDC registers, a copy of $ff8604 should be kept in ff8604_recent_val
+ *   to be used later when reading unused bits at $ff8604/$ff8606
+ * - DMA sector count can't be read, this will return lower byte from ff8604_recent_val (verified on a real STF)
  */
 void FDC_DiskControllerStatus_ReadWord ( void )
 {
@@ -3553,17 +3577,19 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 
 	M68000_WaitState(4);
 
-	if ((FDC_DMA.Mode & 0x18) == 0x08)				/* HDC status reg selected? */
+	/* Are we trying to read the DMA SectorCount ? */
+	if ( FDC_DMA.Mode & 0x10 )					/* Bit 4 */
 	{
-		/* return the HDC status byte */
+		DiskControllerByte = FDC_DMA.ff8604_recent_val & 0xff;	/* As verified on real STF, DMA sector count can't be read back */
+	}
+
+	else if ( ( FDC_DMA.Mode & 0x0008) == 0x0008)			/* HDC status reg selected ? */
+	{
+		/* Return the HDC status byte */
 		DiskControllerByte = HDC_ReadCommandByte(FDC_DMA.Mode & 0x7);
 	}
-	else if ((FDC_DMA.Mode & 0x18) == 0x18)				/* HDC sector counter??? */
-	{
-		Log_Printf(LOG_DEBUG, "*** Read HDC sector counter???\n");
-		DiskControllerByte = HDC_GetSectorCount();
-	}
-	else
+
+	else								/* It's a FDC register access */
 	{
 		FDC_reg = ( FDC_DMA.Mode & 0x6 ) >> 1;			/* Bits 1,2 (A0,A1) */
 
@@ -3658,6 +3684,11 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 		}
 	}
 
+
+	/* Store the value that was just returned by this read if we accessed fdc/hdc regs */
+	if ( ( FDC_DMA.Mode & 0x10 ) == 0 )				/* Bit 4 */
+		FDC_DMA.ff8604_recent_val = DiskControllerByte;
+
 	IoMem_WriteWord(0xff8604, DiskControllerByte);
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -3710,9 +3741,13 @@ void FDC_DmaModeControl_WriteWord ( void )
 /**
  * Read DMA Status at $ff8606
  *
- * Bit 0 - Error Status (0=Error)
- * Bit 1 - Sector Count Zero Status (0=Sector Count Zero)
- * Bit 2 - Data Request Inactive Status
+ * Only bits 0-2 are used :
+ *   Bit 0 - Error Status (0=Error)
+ *   Bit 1 - Sector Count Zero Status (0=Sector Count Zero)
+ *   Bit 2 - Data Request Inactive Status
+ *
+ * NOTE : unused bits 8-15 are 0, but unused bits 3-7 are the ones from the
+ * latest $ff8604 access (verified on real STF)
  */
 void FDC_DmaStatus_ReadWord ( void )
 {
@@ -3723,16 +3758,16 @@ void FDC_DmaStatus_ReadWord ( void )
 		return;
 	}
 
-	/* Set zero sector count */
-	FDC_DMA.Status &= ~0x2;						/* Clear bit 1 */
-	if ( FDC_DMA.Mode & 0x08 )					/* Get which sector count ? */
-		FDC_DMA.Status |= (HDC_GetSectorCount())?0x2:0;		/* HDC */
+	/* Update Bit1 for zero sector count */
+	if ( FDC_DMA.SectorCount != 0 )
+		FDC_DMA.Status |= 0x02;
 	else
-		FDC_DMA.Status |= (FDC_DMA.SectorCount)?0x2:0;		/* FDC */
+		FDC_DMA.Status &= ~0x02;
 
-	/* In the case of the ST, DRQ is always 0 because it's handled by the DMA and its 16 bytes buffer */
+	/* In the case of the ST, Bit2 / DRQ is always 0 because it's handled by the DMA and its 16 bytes buffer */
 
-	IoMem_WriteWord(0xff8606, FDC_DMA.Status);
+	/* Return Status with unused bits replaced by latest bits from $ff8604 */
+	IoMem_WriteWord( 0xff8606 , FDC_DMA.Status | ( FDC_DMA.ff8604_recent_val & 0x00f8 ) );
 }
 
 

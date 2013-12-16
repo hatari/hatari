@@ -756,16 +756,6 @@ void HDC_ResetCommandStatus(void)
 
 
 /**
- * Get sector count -- FIXME: seems not available for HDC?
- */
-short int HDC_GetSectorCount(void)
-{
-	// fprintf(stderr,"HDC: Get sector count?\n");
-	return 0;
-}
-
-
-/**
  * Process HDC command packets (SCSI/ACSI) bytes.
  */
 static void HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
