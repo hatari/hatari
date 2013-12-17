@@ -45,9 +45,9 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 
 #define DEBUG 0
 #if DEBUG
-#define Dprintf(a) printf(a)
+#define Dprintf(a...) printf(a)
 #else
-#define Dprintf(a)
+#define Dprintf(a...)
 #endif
 
 /*-----------------------------------------------------------------------*/
@@ -57,6 +57,8 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
  */
 bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 {
+	int i;
+
 	/* Did we change monitor type? If so, must reset */
 	if (current->Screen.nMonitorType != changed->Screen.nMonitorType
 	    && (changed->System.nMachineType == MACHINE_FALCON
@@ -80,10 +82,13 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 		return true;
 
 	/* Did change ACSI hard disk image? */
-	if (changed->HardDisk.bUseHardDiskImage != current->HardDisk.bUseHardDiskImage
-	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
-	        && changed->HardDisk.bUseHardDiskImage))
-		return true;
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	{
+		if (changed->Acsi[i].bUseDevice != current->Acsi[i].bUseDevice
+		    || (strcmp(changed->Acsi[i].sDeviceFile, current->Acsi[i].sDeviceFile)
+		        && changed->Acsi[i].bUseDevice))
+			return true;
+	}
 
 	/* Did change IDE master hard disk image? */
 	if (changed->HardDisk.bUseIdeMasterHardDiskImage != current->HardDisk.bUseIdeMasterHardDiskImage
@@ -252,16 +257,20 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		bReInitGemdosDrive = true;
 	}
 
-	/* Did change HD image? */
-	if (changed->HardDisk.bUseHardDiskImage != current->HardDisk.bUseHardDiskImage
-	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
-	        && changed->HardDisk.bUseHardDiskImage))
+	/* Did change ACSI image? */
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
-		Dprintf("- HD image>\n");
-		HDC_UnInit();
-		bReInitAcsiEmu = true;
+		if (changed->Acsi[i].bUseDevice != current->Acsi[i].bUseDevice
+		    || (strcmp(changed->Acsi[i].sDeviceFile, current->Acsi[i].sDeviceFile)
+		        && changed->Acsi[i].bUseDevice))
+		{
+			Dprintf("- ACSI image %i>\n", i);
+			bReInitAcsiEmu = true;
+		}
 	}
-	
+	if (bReInitAcsiEmu)
+		HDC_UnInit();
+
 	/* Did change IDE HD master image? */
 	if (changed->HardDisk.bUseIdeMasterHardDiskImage != current->HardDisk.bUseIdeMasterHardDiskImage
 	    || (strcmp(changed->HardDisk.szIdeMasterHardDiskImage, current->HardDisk.szIdeMasterHardDiskImage)
@@ -344,7 +353,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 
 	/* Mount a new HD image: */
-	if (bReInitAcsiEmu && ConfigureParams.HardDisk.bUseHardDiskImage)
+	if (bReInitAcsiEmu)
 	{
 		Dprintf("- HD<\n");
 		HDC_Init();

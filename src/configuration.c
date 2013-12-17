@@ -281,12 +281,34 @@ static const struct Config_Tag configs_HardDisk[] =
 	{ "szHardDiskDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
 	{ "nGemdosCase", Int_Tag, &ConfigureParams.HardDisk.nGemdosCase },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.HardDisk.nWriteProtection },
-	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
-	{ "szHardDiskImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
+	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
+	{ "szHardDiskImage", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
 	{ "bUseIdeMasterHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage },
 	{ "bUseIdeSlaveHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage },
 	{ "szIdeMasterHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeMasterHardDiskImage },
 	{ "szIdeSlaveHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save ACSI options */
+static const struct Config_Tag configs_Acsi[] =
+{
+	// { "bUseDevice0", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
+	// { "sDeviceFile0", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
+	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Acsi[1].bUseDevice },
+	{ "sDeviceFile1", String_Tag, ConfigureParams.Acsi[1].sDeviceFile },
+	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Acsi[2].bUseDevice },
+	{ "sDeviceFile2", String_Tag, ConfigureParams.Acsi[2].sDeviceFile },
+	{ "bUseDevice3", Bool_Tag, &ConfigureParams.Acsi[3].bUseDevice },
+	{ "sDeviceFile3", String_Tag, ConfigureParams.Acsi[3].sDeviceFile },
+	{ "bUseDevice4", Bool_Tag, &ConfigureParams.Acsi[4].bUseDevice },
+	{ "sDeviceFile4", String_Tag, ConfigureParams.Acsi[4].sDeviceFile },
+	{ "bUseDevice5", Bool_Tag, &ConfigureParams.Acsi[5].bUseDevice },
+	{ "sDeviceFile5", String_Tag, ConfigureParams.Acsi[5].sDeviceFile },
+	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Acsi[6].bUseDevice },
+	{ "sDeviceFile6", String_Tag, ConfigureParams.Acsi[6].sDeviceFile },
+	{ "bUseDevice7", Bool_Tag, &ConfigureParams.Acsi[7].bUseDevice },
+	{ "sDeviceFile7", String_Tag, ConfigureParams.Acsi[7].sDeviceFile },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -419,12 +441,17 @@ void Configuration_SetDefault(void)
 		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], psWorkingDir);
 		File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[i]);
 	}
-	ConfigureParams.HardDisk.bUseHardDiskImage = false;
-	strcpy(ConfigureParams.HardDisk.szHardDiskImage, psWorkingDir);
 	ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
 	strcpy(ConfigureParams.HardDisk.szIdeMasterHardDiskImage, psWorkingDir);
 	ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = false;
 	strcpy(ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, psWorkingDir);
+
+	/* ACSI */
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	{
+		ConfigureParams.Acsi[i].bUseDevice = false;
+		strcpy(ConfigureParams.Acsi[i].sDeviceFile, psWorkingDir);
+	}
 
 	/* Set defaults for Joysticks */
 	for (i = 0; i < JOYSTICK_COUNT; i++)
@@ -587,6 +614,8 @@ void Configuration_SetDefault(void)
  */
 void Configuration_Apply(bool bReset)
 {
+	int i;
+
 	if (bReset)
 	{
 		/* Set resolution change */
@@ -644,7 +673,6 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
 	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
-	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskImage);
 	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.Memory.szMemoryCaptureFileName);
@@ -652,7 +680,11 @@ void Configuration_Apply(bool bReset)
 	if (strlen(ConfigureParams.Keyboard.szMappingFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Keyboard.szMappingFileName);
 	File_MakeAbsoluteName(ConfigureParams.Video.AviRecordFile);
-	
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	{
+		File_MakeAbsoluteName(ConfigureParams.Acsi[i].sDeviceFile);
+	}
+
 	/* make path names absolute, but handle special file names */
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
@@ -718,6 +750,7 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Memory, "[Memory]");
 	Configuration_LoadSection(psFileName, configs_Floppy, "[Floppy]");
 	Configuration_LoadSection(psFileName, configs_HardDisk, "[HardDisk]");
+	Configuration_LoadSection(psFileName, configs_Acsi, "[ACSI]");
 	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
 	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
@@ -770,6 +803,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
 	Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
 	Configuration_SaveSection(sConfigFileName, configs_HardDisk, "[HardDisk]");
+	Configuration_SaveSection(sConfigFileName, configs_Acsi, "[ACSI]");
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
@@ -786,6 +820,8 @@ void Configuration_Save(void)
  */
 void Configuration_MemorySnapShot_Capture(bool bSave)
 {
+	int i;
+
 	MemorySnapShot_Store(ConfigureParams.Rom.szTosImageFileName, sizeof(ConfigureParams.Rom.szTosImageFileName));
 	MemorySnapShot_Store(ConfigureParams.Rom.szCartridgeImageFileName, sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
 
@@ -800,8 +836,11 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskDirectories, sizeof(ConfigureParams.HardDisk.bUseHardDiskDirectories));
 	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C]));
-	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskImage, sizeof(ConfigureParams.HardDisk.bUseHardDiskImage));
-	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskImage, sizeof(ConfigureParams.HardDisk.szHardDiskImage));
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	{
+		MemorySnapShot_Store(&ConfigureParams.Acsi[i].bUseDevice, sizeof(ConfigureParams.Acsi[i].bUseDevice));
+		MemorySnapShot_Store(ConfigureParams.Acsi[i].sDeviceFile, sizeof(ConfigureParams.Acsi[i].sDeviceFile));
+	}
 
 	MemorySnapShot_Store(&ConfigureParams.Screen.nMonitorType, sizeof(ConfigureParams.Screen.nMonitorType));
 	MemorySnapShot_Store(&ConfigureParams.Screen.bUseExtVdiResolutions, sizeof(ConfigureParams.Screen.bUseExtVdiResolutions));

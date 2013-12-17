@@ -651,7 +651,6 @@ static void HDC_GetInfo(SCSI_DEV *dev)
 	unsigned char hdinfo[HD_PARTITIONTABLE_SIZE];
 	int i;
 
-	nPartitions = 0;
 	if (dev->image_file == NULL)
 		return;
 	offset = ftell(dev->image_file);
@@ -686,41 +685,49 @@ static void HDC_GetInfo(SCSI_DEV *dev)
  */
 bool HDC_Init(void)
 {
-	char *filename;
-	bAcsiEmuOn = false;
 	off_t filesize;
+	int i;
 
 	memset(&AcsiBus, 0, sizeof(AcsiBus));
+	nPartitions = 0;
+	bAcsiEmuOn = false;
 
-	if (!ConfigureParams.HardDisk.bUseHardDiskImage)
-		return false;
-	filename = ConfigureParams.HardDisk.szHardDiskImage;
-
-	/* Get size and do a sanity check - is file length a multiple of 512? */
-	filesize = File_Length(filename);
-	if (filesize <= 0 || (filesize & 0x1ff) != 0)
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
-		Log_Printf(LOG_ERROR, "HD file '%s' has strange size!\n", filename);
-		return false;
-	}
-	AcsiBus.devs[0].hdSize = filesize / 512;
+		char *filename;
 
-	if ((AcsiBus.devs[0].image_file = fopen(filename, "rb+")) == NULL)
-	{
-		Log_Printf(LOG_ERROR, "Can not open HD file '%s'!\n", filename);
-		return false;
-	}
-	AcsiBus.devs[0].enabled = true;
+		if (!ConfigureParams.Acsi[i].bUseDevice)
+			continue;
+		filename = ConfigureParams.Acsi[i].sDeviceFile;
 
-	HDC_GetInfo(&AcsiBus.devs[0]);
+		/* Check size for sanity - is the length a multiple of 512? */
+		filesize = File_Length(filename);
+		if (filesize <= 0 || (filesize & 0x1ff) != 0)
+		{
+			Log_Printf(LOG_ERROR, "HD file '%s' has strange size!\n",
+			           filename);
+			continue;
+		}
+		AcsiBus.devs[i].hdSize = filesize / 512;
+
+		AcsiBus.devs[i].image_file = fopen(filename, "rb+");
+		if (AcsiBus.devs[i].image_file == NULL)
+		{
+			Log_Printf(LOG_ERROR, "Can not open HD file '%s'!\n",
+			           filename);
+			continue;
+		}
+
+		HDC_GetInfo(&AcsiBus.devs[i]);
+		Log_Printf(LOG_INFO, "Hard drive image %s mounted.\n", filename);
+		AcsiBus.devs[i].enabled = true;
+		bAcsiEmuOn = true;
+	}
 
 	/* set number of partitions */
 	nNumDrives += nPartitions;
 
-	bAcsiEmuOn = true;
-
-	printf("Hard drive image %s mounted.\n", filename);
-	return true;
+	return bAcsiEmuOn;
 }
 
 
@@ -731,12 +738,19 @@ bool HDC_Init(void)
  */
 void HDC_UnInit(void)
 {
+	int i;
+
 	if (!bAcsiEmuOn)
 		return;
 
-	fclose(AcsiBus.devs[0].image_file);
-	AcsiBus.devs[0].image_file = NULL;
-	AcsiBus.devs[0].enabled = false;
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	{
+		if (!AcsiBus.devs[i].enabled)
+			continue;
+		fclose(AcsiBus.devs[i].image_file);
+		AcsiBus.devs[i].image_file = NULL;
+		AcsiBus.devs[i].enabled = false;
+	}
 
 	nNumDrives -= nPartitions;
 	nPartitions = 0;

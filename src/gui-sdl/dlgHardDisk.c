@@ -116,8 +116,8 @@ void DlgHardDisk_Main(void)
 		diskdlg[DISKDLG_BOOTHD].state &= ~SG_SELECTED;
 
 	/* ACSI hard disk image: */
-	if (ConfigureParams.HardDisk.bUseHardDiskImage)
-		File_ShrinkName(dlgname_acsi, ConfigureParams.HardDisk.szHardDiskImage,
+	if (ConfigureParams.Acsi[0].bUseDevice)
+		File_ShrinkName(dlgname_acsi, ConfigureParams.Acsi[0].sDeviceFile,
 		                diskdlg[DISKDLG_ACSINAME].w);
 	else
 		dlgname_acsi[0] = '\0';
@@ -161,14 +161,14 @@ void DlgHardDisk_Main(void)
 		switch (but)
 		{
 		 case DISKDLG_ACSIEJECT:
-			ConfigureParams.HardDisk.bUseHardDiskImage = false;
+			ConfigureParams.Acsi[0].bUseDevice = false;
 			dlgname_acsi[0] = '\0';
 			break;
 		 case DISKDLG_ACSIBROWSE:
 			if (SDLGui_FileConfSelect(dlgname_acsi,
-			                          ConfigureParams.HardDisk.szHardDiskImage,
+			                          ConfigureParams.Acsi[0].sDeviceFile,
 			                          diskdlg[DISKDLG_ACSINAME].w, false))
-				ConfigureParams.HardDisk.bUseHardDiskImage = true;
+				ConfigureParams.Acsi[0].bUseDevice = true;
 			break;
 		 case DISKDLG_IDEMASTEREJECT:
 			ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;

@@ -1314,9 +1314,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_ACSIHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, true, ConfigureParams.HardDisk.szHardDiskImage,
-					argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskImage),
-					&ConfigureParams.HardDisk.bUseHardDiskImage);
+			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, true, ConfigureParams.Acsi[0].sDeviceFile,
+					argv[i], sizeof(ConfigureParams.Acsi[0].sDeviceFile),
+					&ConfigureParams.Acsi[0].bUseDevice);
 			if (ok)
 			{
 				bLoadAutoSave = false;
