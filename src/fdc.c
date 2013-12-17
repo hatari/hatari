@@ -515,8 +515,6 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace us
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static void	FDC_SetDriveLedBusy ( void );
-
 static Uint32	FDC_DelayToFdcCycles ( Uint32 Delay_micro );
 static Uint32	FDC_FdcCyclesToCpuCycles ( Uint32 FdcCycles );
 static Uint32	FDC_CpuCyclesToFdcCycles ( Uint32 CpuCycles );
@@ -591,7 +589,7 @@ static bool	FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Se
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void FDC_MemorySnapShot_Capture(bool bSave)
+void	FDC_MemorySnapShot_Capture(bool bSave)
 {
 	MemorySnapShot_Store(&FDC, sizeof(FDC));
 	MemorySnapShot_Store(&FDC_DMA, sizeof(FDC_DMA));
@@ -606,12 +604,12 @@ void FDC_MemorySnapShot_Capture(bool bSave)
  * Change the color of the drive's led color in the statusbar, depending
  * on the state of the busy bit in SR
  */
-static void	FDC_SetDriveLedBusy ( void )
+void	FDC_SetDriveLedBusy ( Uint8 SR )
 {
 	if ( FDC.DriveSelSignal < 0 )
 		return;						/* no drive selected */
 
-	if ( FDC.SR & FDC_STR_BIT_BUSY )
+	if ( SR & FDC_STR_BIT_BUSY )
 		Statusbar_SetFloppyLed ( FDC.DriveSelSignal , LED_STATE_ON_BUSY );
 	else
 		Statusbar_SetFloppyLed ( FDC.DriveSelSignal , LED_STATE_ON );
@@ -1757,7 +1755,7 @@ static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 	FDC.STR &= (~DisableBits);					/* Clear bits in DisableBits */
 	FDC.STR |= EnableBits;						/* Set bits in EnableBits */
 
-	FDC_SetDriveLedBusy ();
+	FDC_SetDriveLedBusy ( FDC.SR );
 //fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
 }
 

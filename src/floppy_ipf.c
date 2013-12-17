@@ -529,7 +529,7 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 
 /*
  * Read the content of one of the FDC registers
- * 0=command   1=track   2=sector   3=data
+ * 0=status   1=track   2=sector   3=data
  */
 Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
 {
@@ -559,7 +559,7 @@ void	IPF_Emulate ( void )
 	return;
 
 #else
-	int NbCycles;
+	int	NbCycles;
 
 	NbCycles = CyclesGlobalClockCounter - IPF_State.FdcClock;	/* Number of cycles since last emulation */
 	if ( NbCycles < 0 )
@@ -569,6 +569,9 @@ void	IPF_Emulate ( void )
 
 	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );			/* Process at max NbCycles */
 	IPF_State.FdcClock += IPF_State.Fdc.clockact;			/* clockact can be < NbCycle in some cases */
+
+	/* Update UI's LEDs depending on Status Register */
+	FDC_SetDriveLedBusy ( (IPF_State.Fdc.r_st0 & ~IPF_State.Fdc.r_stm) | (IPF_State.Fdc.r_st1 & IPF_State.Fdc.r_stm) );
 #endif
 }
 

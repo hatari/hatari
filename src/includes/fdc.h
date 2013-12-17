@@ -18,6 +18,7 @@ extern void	FDC_SetIRQ ( void );
 extern void	FDC_ClearIRQ ( void );
 extern void	FDC_InterruptHandler_Update ( void );
 
+extern void	FDC_SetDriveLedBusy ( Uint8 SR );
 extern void	FDC_EnableDrive ( int Drive , bool value );
 extern void	FDC_InsertFloppy ( int Drive );
 extern void	FDC_EjectFloppy ( int Drive );
