@@ -301,6 +301,12 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 				if (cii.platform[i] != ciipNA)
 					printf ( " %s" , CAPSGetPlatformName(cii.platform[i]) );
 			printf("\n");
+
+			/* Some IPF disks are not correctly supported yet : display a warning */
+			if ( (int)cii.release == 3222 ) 				/* Sundog */
+                		Log_AlertDlg ( LOG_INFO , "'Sundog' is not correctly supported yet, it requires write access." );
+			else if ( (int)cii.release == 3058 ) 				/* Sundog */
+                		Log_AlertDlg ( LOG_INFO , "'Lethal Xcess' is not correctly supported yet, protection will fail" );
 		}
 	}
 	else
