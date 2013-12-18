@@ -699,9 +699,9 @@ static const int nSoundFreqs[] =
 		[resolution selectCellWithTag:(0)];
 
 	// If the HD flag is set, load the HD path, otherwise make it blank
-	if (ConfigureParams.HardDisk.bUseHardDiskImage)
+	if (ConfigureParams.Acsi[0].bUseDevice)
 	{
-		IMPORT_TEXTFIELD(hdImage, ConfigureParams.HardDisk.szHardDiskImage);	
+		IMPORT_TEXTFIELD(hdImage, ConfigureParams.Acsi[0].sDeviceFile);
 	}
 	else
 	{
@@ -906,12 +906,12 @@ static const int nSoundFreqs[] =
 	// Define the HD flag, and export the HD path if one is selected
 	if ([[hdImage stringValue] length] > 0)
 	{
-		EXPORT_TEXTFIELD(hdImage, ConfigureParams.HardDisk.szHardDiskImage);
-		ConfigureParams.HardDisk.bUseHardDiskImage = true;
+		EXPORT_TEXTFIELD(hdImage, ConfigureParams.Acsi[0].sDeviceFile);
+		ConfigureParams.Acsi[0].bUseDevice = true;
 	}
 	else
 	{
-		ConfigureParams.HardDisk.bUseHardDiskImage = false;
+		ConfigureParams.Acsi[0].bUseDevice = false;
 	}
 	
 	// Define the IDE HD flag, and export the IDE HD path if one is selected
