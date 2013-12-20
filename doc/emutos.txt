@@ -210,9 +210,9 @@ LineAOpcode ! LineAOpcode
 Returning to emulation...
 -----------
 
-So that when the exception causing the panic triggers the debug, you
-see EmuTOS callstack and the OS calls & line-A opcodes leading to it,
-and have a panic message on console from which you can copy&paste
+With above, when the exception causing the panic triggers the debugger,
+you see EmuTOS callstack and the OS calls & line-A opcodes leading to it,
+and have a panic message on console from which you can copy & paste
 relevant parts.
 
 You can then ask what the register values are at that point and what
@@ -324,6 +324,10 @@ Demos:
 - Vodka demo (by Equinox)
 - YmRockerz musicdisks from "Wave upon Wave" to "Seven"
 - Xmas2000 (by Paranoid)
+
+Color toys:
+- Fplanet
+- Schnapfl
 
 Color games:
 - Archon 4KB
@@ -491,6 +495,14 @@ Text games:
 - Omega
 - Quix
 
+Mono/GEM toys:
+- Big life
+- Fishes
+- Mandala
+- ST life
+- Wator
+- Worm farm
+
 
 Non-working free/shareware GEM/mono Atari ST games
 --------------------------------------------------
@@ -650,7 +662,7 @@ Demos:
 - XiTEC Presentation (by Omega)
 
 Color games:
-- 4K Pacman (bug: background not cleared to black)
+- 4K Pacman
 - Aerial Combat 3
 - Alien Blast (demo)
 - Alien Thing preview
@@ -725,6 +737,9 @@ listed here in case someone, someday, starts to fix (EmuTOS for) them.
 
 Atari TT programs
 -----------------
+
+Working applications:
+- Mandelbrot playtime (fracplay, uses FPU)
 
 Broken applications:
 - PixArt4, clicks to windows don't work
@@ -832,6 +847,8 @@ Partly working demos:
   - Music is bad
   - Colors are wrong
   - Input doesn't work to advance next screen
+- Yepyha (by Toons)
+  - Music is missing (needs DSP?)
 
 Demos that with normal TOS work without DSP,
 but don't work with EmuTOS at all:
