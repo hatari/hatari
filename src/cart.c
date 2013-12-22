@@ -111,11 +111,15 @@ void Cart_ResetImage(void)
 			Log_Printf(LOG_WARN, "Cartridge can't be used together with extended VDI resolution!\n");
 		if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
 			Log_Printf(LOG_WARN, "Cartridge can't be used together with GEMDOS hard disk emulation!\n");
+		if (LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_VDI | TRACE_OS_AES))
+			Log_Printf(LOG_WARN, "Cartridge can't be used together with GEMDOS/VDI/AES tracing!\n");
 	}
 
-	/* Use internal cartridge when user wants extended VDI resolution or
-	 * GEMDOS HD. But don't use it on TOS 0.00, it does not work there. */
-	if ((bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories)
+	/* Use internal cartridge trampoline code when user wants extended VDI
+	 * resolution, GEMDOS HD emulation or to trace GEMDOS, VDI or AES.
+	 * But don't use it on TOS 0.00, it does not work there. */
+	if ((bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories ||
+	    LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_VDI | TRACE_OS_AES))
 	    && TosVersion >= 0x100)
 	{
 		/* Copy built-in cartridge data into the cartridge memory of the ST */
