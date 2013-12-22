@@ -602,14 +602,15 @@ void	FDC_MemorySnapShot_Capture(bool bSave)
 /*-----------------------------------------------------------------------*/
 /**
  * Change the color of the drive's led color in the statusbar, depending
- * on the state of the busy bit in SR
+ * on the state of the busy bit in STR
  */
-void	FDC_SetDriveLedBusy ( Uint8 SR )
+void	FDC_SetDriveLedBusy ( Uint8 STR )
 {
+//fprintf ( stderr ,"fdc led %d %x\n" , FDC.DriveSelSignal , STR );
 	if ( FDC.DriveSelSignal < 0 )
 		return;						/* no drive selected */
 
-	if ( SR & FDC_STR_BIT_BUSY )
+	if ( STR & FDC_STR_BIT_BUSY )
 		Statusbar_SetFloppyLed ( FDC.DriveSelSignal , LED_STATE_ON_BUSY );
 	else
 		Statusbar_SetFloppyLed ( FDC.DriveSelSignal , LED_STATE_ON );
@@ -1755,7 +1756,7 @@ static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 	FDC.STR &= (~DisableBits);					/* Clear bits in DisableBits */
 	FDC.STR |= EnableBits;						/* Set bits in EnableBits */
 
-	FDC_SetDriveLedBusy ( FDC.SR );
+	FDC_SetDriveLedBusy ( FDC.STR );
 //fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
 }
 
