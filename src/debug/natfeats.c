@@ -1,7 +1,7 @@
 /*
  * Hatari - natfeats.c
  * 
- * Copyright (C) 2012 by Eero Tamminen
+ * Copyright (C) 2012-2013 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -20,6 +20,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "m68000.h"
 #include "natfeats.h"
+#include "control.h"
 
 #define NF_DEBUG 1
 #if NF_DEBUG
@@ -33,6 +34,10 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
  * - clipboard and hostfs native features?
  */
 
+
+/*
+ * Native Features shared with Aranym
+ */
 
 static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
@@ -91,6 +96,20 @@ static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 	return true;
 }
 
+/*
+ * Native Features specific to Hatari
+ */
+
+/**
+ * invoke debugger
+ */
+static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
+{
+	Dprintf(("NF debugger()\n"));
+	M68000_SetSpecial(SPCFLAG_DEBUGGER);
+	return true;
+}
+
 /* ---------------------------- */
 
 #define FEATNAME_MAX 16
@@ -103,7 +122,8 @@ static const struct {
 	{ "NF_NAME",     false, nf_name },
 	{ "NF_VERSION",  false, nf_version },
 	{ "NF_STDERR",   false, nf_stderr },
-	{ "NF_SHUTDOWN", true,  nf_shutdown }
+	{ "NF_SHUTDOWN", true,  nf_shutdown },
+	{ "NF_DEBUGGER", false, nf_debugger }
 };
 
 /* macros from Aranym */
