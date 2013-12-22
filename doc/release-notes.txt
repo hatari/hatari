@@ -34,9 +34,15 @@ Emulator:
   - In the floppy dialog, use a checkbox to enable/disable drives A and B
 - Fix: Xbios(255) modified the given argument string
 - New options --drive-a and --drive-b to enable/disable drives A and B
+- New NatFeats command to invoke Hatari debugger from native program
+- Allow GEMDOS, VDI and AES tracing to enabled without enabling
+  also GEMDOS HD emulation or extended VDI mode
 - Debugger:
+  - Fix: release mouse in all cases where debugger can be invoked
   - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly.
   - Fix: "symbols" command crash when it was used during bootup.
+  - Fix: TOS and cartridge addresses weren't (with all TOS versions)
+    in address order which asserted in profile data post-processor
   - "next" and "dspnext" commands support optional "instruction type"
     argument, which can be used (for example) to continue emulation
     until subroutine returns.
