@@ -37,6 +37,20 @@ this program; if not, write to the
  51 Franklin Street, Fifth Floor, Boston,
  MA  02110-1301, USA
 
+Linking Hatari statically or dynamically with other modules is making a
+combined work based on Hatari. Thus, the terms and conditions of the GNU
+General Public License cover the whole combination.
+
+In addition, as a special exception, the copyright holders of Hatari give you
+permission to combine Hatari with free software programs or libraries that are
+released under the GNU LGPL and with code included in the standard release
+of the IPF support library (a.k.a. libcapsimage, see http://www.softpres.org/
+for more information) under the Software Preservation Society Licence Agreement
+as it has been defined for IPF library version 4.2 (linking against modified
+versions of the library is also allowed as long as the license did not change).
+You may copy and distribute such a system following the terms of the GNU GPL
+for Hatari and the licenses of the other code concerned.
+
 
  2) What is Hatari?
  ------------------
@@ -66,6 +80,7 @@ Optional:
 - The Xlib library to support Hatari Python UI window embedding on
   systems with the X window system (Linux and other unixes) 
 - The portaudio library for Falcon microphone handling
+- The IPF support library (http://www.softpres.org/download)
 
 Don't forget to also install the header files of these libraries for compiling
 Hatari (some Linux distributions use separate development packages for these
