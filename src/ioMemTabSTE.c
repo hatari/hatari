@@ -51,22 +51,22 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, Video_ScreenBaseSTE_WriteByte },
 	{ 0xff820e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, Video_LineWidth_WriteByte },
-	{ 0xff8240, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color0_WriteWord },         /* COLOR 0 */
-	{ 0xff8242, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color1_WriteWord },         /* COLOR 1 */
-	{ 0xff8244, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color2_WriteWord },         /* COLOR 2 */
-	{ 0xff8246, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color3_WriteWord },         /* COLOR 3 */
-	{ 0xff8248, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color4_WriteWord },         /* COLOR 4 */
-	{ 0xff824a, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color5_WriteWord },         /* COLOR 5 */
-	{ 0xff824c, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color6_WriteWord },         /* COLOR 6 */
-	{ 0xff824e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color7_WriteWord },         /* COLOR 7 */
-	{ 0xff8250, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color8_WriteWord },         /* COLOR 8 */
-	{ 0xff8252, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color9_WriteWord },         /* COLOR 9 */
-	{ 0xff8254, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color10_WriteWord },        /* COLOR 10 */
-	{ 0xff8256, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color11_WriteWord },        /* COLOR 11 */
-	{ 0xff8258, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color12_WriteWord },        /* COLOR 12 */
-	{ 0xff825a, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color13_WriteWord },        /* COLOR 13 */
-	{ 0xff825c, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color14_WriteWord },        /* COLOR 14 */
-	{ 0xff825e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color15_WriteWord },        /* COLOR 15 */
+	{ 0xff8240, SIZE_WORD, Video_Color0_ReadWord, Video_Color0_WriteWord },			/* COLOR 0 */
+	{ 0xff8242, SIZE_WORD, Video_Color1_ReadWord, Video_Color1_WriteWord },			/* COLOR 1 */
+	{ 0xff8244, SIZE_WORD, Video_Color2_ReadWord, Video_Color2_WriteWord },			/* COLOR 2 */
+	{ 0xff8246, SIZE_WORD, Video_Color3_ReadWord, Video_Color3_WriteWord },			/* COLOR 3 */
+	{ 0xff8248, SIZE_WORD, Video_Color4_ReadWord, Video_Color4_WriteWord },			/* COLOR 4 */
+	{ 0xff824a, SIZE_WORD, Video_Color5_ReadWord, Video_Color5_WriteWord },			/* COLOR 5 */
+	{ 0xff824c, SIZE_WORD, Video_Color6_ReadWord, Video_Color6_WriteWord },			/* COLOR 6 */
+	{ 0xff824e, SIZE_WORD, Video_Color7_ReadWord, Video_Color7_WriteWord },			/* COLOR 7 */
+	{ 0xff8250, SIZE_WORD, Video_Color8_ReadWord, Video_Color8_WriteWord },			/* COLOR 8 */
+	{ 0xff8252, SIZE_WORD, Video_Color9_ReadWord, Video_Color9_WriteWord },			/* COLOR 9 */
+	{ 0xff8254, SIZE_WORD, Video_Color10_ReadWord, Video_Color10_WriteWord },		/* COLOR 10 */
+	{ 0xff8256, SIZE_WORD, Video_Color11_ReadWord, Video_Color11_WriteWord },		/* COLOR 11 */
+	{ 0xff8258, SIZE_WORD, Video_Color12_ReadWord, Video_Color12_WriteWord },		/* COLOR 12 */
+	{ 0xff825a, SIZE_WORD, Video_Color13_ReadWord, Video_Color13_WriteWord },		/* COLOR 13 */
+	{ 0xff825c, SIZE_WORD, Video_Color14_ReadWord, Video_Color14_WriteWord },		/* COLOR 14 */
+	{ 0xff825e, SIZE_WORD, Video_Color15_ReadWord, Video_Color15_WriteWord },		/* COLOR 15 */
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
 	{ 0xff8261, 3,         IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, Video_HorScroll_Write_8264 },	/* STE horizontal fine scrolling (no prefetch) */

@@ -536,7 +536,8 @@ static void	Video_ClearOnVBL(void);
 static void	Video_AddInterrupt ( int Pos , interrupt_id Handler );
 static void	Video_AddInterruptHBL ( int Pos );
 
-static void	Video_ColorReg_WriteWord(Uint32 addr);
+static void	Video_ColorReg_WriteWord(void);
+static void	Video_ColorReg_ReadWord(void);
 
 
 /*-----------------------------------------------------------------------*/
@@ -3219,13 +3220,15 @@ void Video_LineWidth_WriteByte(void)
  *	move.b #$55,$ff8241	-> color 0 is now $555 !
  *	move.b #$71,$ff8240	-> color 0 is now $171 (bytes are first copied, then masked)
  */
-static void Video_ColorReg_WriteWord(Uint32 addr)
+void Video_ColorReg_WriteWord(void)
 {
 	if (!bUseHighRes && !bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
 	{
 		int idx;
 		Uint16 col;
+		Uint32 addr;
 		addr = IoAccessCurrentAddress;
+
 		Video_SetHBLPaletteMaskPointers();     /* Set 'pHBLPalettes' etc.. according cycles into frame */
 
 		/* Handle special case when writing only to the upper byte of the color reg */
@@ -3265,84 +3268,192 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 	}
 }
 
+void Video_ColorReg_ReadWord(void)
+{
+	Uint16 col;
+	Uint32 addr;
+	addr = IoAccessCurrentAddress;
+
+	col = IoMem_ReadWord(addr);
+
+	if (LOG_TRACE_LEVEL(TRACE_VIDEO_COLOR))
+	{
+		int FrameCycles, HblCounterVideo, LineCycles;
+
+		Video_GetPosition_OnReadAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+		LOG_TRACE_PRINT ( "read col addr=%x col=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+			IoAccessCurrentAddress, col,
+			FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+	}
+}
+
+/*
+ * [NP] TODO : due to how .L accesses are handled in ioMem.c, we can't call directly
+ * Video_ColorReg_WriteWord from ioMemTabST.c / ioMemTabSTE.c, we must use an intermediate
+ * function, else .L accesses will not change 2 .W color regs, but only one.
+ * This should be changed in ioMem.c to do 2 separate .W accesses, as would do a real 68000
+ */
+
 void Video_Color0_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8240);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color1_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8242);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color2_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8244);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color3_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8246);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color4_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8248);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color5_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff824a);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color6_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff824c);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color7_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff824e);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color8_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8250);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color9_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8252);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color10_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8254);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color11_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8256);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color12_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff8258);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color13_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff825a);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color14_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff825c);
+	Video_ColorReg_WriteWord();
 }
 
 void Video_Color15_WriteWord(void)
 {
-	Video_ColorReg_WriteWord(0xff825e);
+	Video_ColorReg_WriteWord();
+}
+
+
+void Video_Color0_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color1_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color2_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color3_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color4_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color5_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color6_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color7_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color8_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color9_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color10_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color11_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color12_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color13_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color14_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
+}
+
+void Video_Color15_ReadWord(void)
+{
+	Video_ColorReg_ReadWord();
 }
 
 
