@@ -10,6 +10,7 @@ Emulation:
 - ST video changes :
   - Handle 0 byte line by switching freq in STE mode
   - Use high res when ff8260 is set to 3
+  - Randomly return 0 or 1 when reading unused bits 3,7 and 11 of color registers
 - CPU changes :
   - Fix a case when MFP's interrupt happens during the IACK sequence for HBL/VBL
 - Fix READ CAPACITY command result for ACSI hard disk images
@@ -71,6 +72,7 @@ Fixed demos :
   Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
   Sommarhack 2011 Invitro by DHS (CPU/MFP, top border not removed)
   The World Is My Oyster - Convention Report Part by Aura (video, res=3)
+  UMD 8730 by PHF (video, unused bits in STF color registers)
 
 Fixed games :
   Reeking Rubber (by Nature), Falcon game

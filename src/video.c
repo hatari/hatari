@@ -325,6 +325,8 @@
 /* 2013/12/02	[NP]	If $ff8260==3 (which is not a valid resolution mode), we use 2 instead	*/
 /*			(high res) (cancel wrong change from 2008/07/19 and fix 'The World Is	*/
 /*			My Oyster - Convention Report Part' by Aura).				*/
+/* 2013/12/24	[NP]	In Video_ColorReg_ReadWord, randomly return 0 or 1 for unused bits	*/
+/*			in STF's color registers (fix 'UMD 8730' by PHF in STF mode)		*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
