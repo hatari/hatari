@@ -3268,6 +3268,15 @@ void Video_ColorReg_WriteWord(void)
 	}
 }
 
+/*
+ * Read from video shifter palette registers (0xff8240-0xff825e)
+ *
+ * NOTE [NP] : On STF, only 3 bits are used for RGB (instead of 4 on STE) ;
+ * the content of bits 3, 7 and 11 is not defined and will be 0 or 1
+ * depending on the latest activity on the BUS (last word access by the CPU or
+ * the shifter). As precisely emulating these bits is quite complicated,
+ * we use random values for now.
+ */
 void Video_ColorReg_ReadWord(void)
 {
 	Uint16 col;
@@ -3275,6 +3284,12 @@ void Video_ColorReg_ReadWord(void)
 	addr = IoAccessCurrentAddress;
 
 	col = IoMem_ReadWord(addr);
+
+	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+	{
+		col = ( col & 0x777 ) | ( rand() & 0x888 );
+		IoMem_WriteWord ( addr , col );
+	}
 
 	if (LOG_TRACE_LEVEL(TRACE_VIDEO_COLOR))
 	{
