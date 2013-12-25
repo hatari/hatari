@@ -883,9 +883,14 @@ int	FDC_DMA_GetModeControl_R_WR ( void )
  * Add a byte to the DMA's FIFO buffer (read from disk).
  * If the buffer is full and DMA is ON, write the FIFO's 16 bytes to DMA's address.
  *
- * NOTE [NP] : The DMA is connected to the FDC, each time a DRQ is made by the FDC,
+ * NOTE [NP] : the DMA is connected to the FDC, each time a DRQ is made by the FDC,
  * it's handled by the DMA and stored in the DMA's 16 bytes buffer. This means
  * FDC_STR_BIT_LOST_DATA will never be set (but data can be lost if FDC_DMA.SectorCount==0)
+ *
+ * NOTE [NP] : as seen on a real STF, the unused bits when reading DMA Status at $ff8606
+ * are also changed by the DMA operations (this might not be complete, but seems quite reproducible) :
+ *  - reading a byte from the FDC to the DMA will change unused bits in the lowest byte at $ff8604
+ *  - transferring the 16 byte DMA buffer to RAM will change the unused in the 2 bytes at $ff8604
  */
 void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 {
@@ -902,14 +907,20 @@ void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 
 	FDC_DMA.FIFO [ FDC_DMA.FIFO_Size++ ] = Byte;
 
+	/* Store the byte that was just read from FDC's Data Register */
+	FDC_DMA.ff8604_recent_val = ( FDC_DMA.ff8604_recent_val & 0xff00 ) | Byte;
+
 	if ( FDC_DMA.FIFO_Size < FDC_DMA_FIFO_SIZE )			/* FIFO is not full yet */
 		return;
 
-	/* FIFO full : transfer data and update DMA address */
+	/* FIFO full : transfer data from FIFO to RAM and update DMA address */
 	Address = FDC_GetDMAAddress();
 	STMemory_SafeCopy ( Address , FDC_DMA.FIFO , FDC_DMA_FIFO_SIZE , "FDC DMA push to fifo" );
 	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
 	FDC_DMA.FIFO_Size = 0;						/* FIFO is now empty again */
+
+	/* Store the last word that was just transferred by the DMA */
+	FDC_DMA.ff8604_recent_val = ( FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-2 ] << 8 ) | FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-1 ];
 
 	/* Update Sector Count */
 	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
@@ -930,10 +941,13 @@ void	FDC_DMA_FIFO_Push ( Uint8 Byte )
  * to the disk image and this function is just used to increment
  * DMA address at the correct pace to simulate that bytes are written from
  * blocks of 16 bytes handled by the DMA.
+ *
+ * NOTE [NP] : as with FDC_DMA_FIFO_Push, this also change the unused bits at $ff8606
  */
 Uint8	FDC_DMA_FIFO_Pull ( void )
 {
 	Uint32	Address;
+	Uint8	Byte;
 
 	if ( FDC_DMA.SectorCount == 0 )
 	{
@@ -943,23 +957,34 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 	}
 
 	if ( FDC_DMA.FIFO_Size > 0 )					/* FIFO is not empty yet */
-		return FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE - ( FDC_DMA.FIFO_Size-- ) ];	/* return byte at pos 0, 1, .., 15 */
-	
-	/* FIFO empty : transfer data and update DMA address */
-	Address = FDC_GetDMAAddress();
-	memcpy ( FDC_DMA.FIFO , &STRam[ Address ] , FDC_DMA_FIFO_SIZE );/* TODO : check we read from a valid RAM location ? */
-	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
-	FDC_DMA.FIFO_Size = FDC_DMA_FIFO_SIZE - 1;			/* FIFO is now full again (minus the byte we will return below) */
+		Byte = FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE - ( FDC_DMA.FIFO_Size-- ) ];	/* return byte at pos 0, 1, .., 15 */
 
-	/* Update Sector Count */
-	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
-	if ( FDC_DMA.BytesInSector <= 0 )
+	else
 	{
-		FDC_DMA.SectorCount--;
-		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
+		/* FIFO empty : transfer data from RAM to FIFO and update DMA address */
+		Address = FDC_GetDMAAddress();
+		memcpy ( FDC_DMA.FIFO , &STRam[ Address ] , FDC_DMA_FIFO_SIZE );/* TODO : check we read from a valid RAM location ? */
+		FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
+		FDC_DMA.FIFO_Size = FDC_DMA_FIFO_SIZE - 1;			/* FIFO is now full again (minus the byte we will return below) */
+
+		/* Store the last word that was just transferred by the DMA */
+		FDC_DMA.ff8604_recent_val = ( FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-2 ] << 8 ) | FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE-1 ];
+
+		/* Update Sector Count */
+		FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
+		if ( FDC_DMA.BytesInSector <= 0 )
+		{
+			FDC_DMA.SectorCount--;
+			FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
+		}
+
+		Byte = FDC_DMA.FIFO [ 0 ];				/* return the 1st byte we just transfered in the FIFO */
 	}
 
-	return FDC_DMA.FIFO [ 0 ];					/* return the 1st byte we just transfered in the FIFO */
+	/* Store the byte that will be written to FDC's Data Register */
+	FDC_DMA.ff8604_recent_val = ( FDC_DMA.ff8604_recent_val & 0xff00 ) | Byte;
+
+	return Byte;
 }
 
 
@@ -3382,8 +3407,8 @@ void FDC_DiskController_WriteWord ( void )
 		return;
 	}
 
-	/* Store the value that was just accessed by this write */
-	FDC_DMA.ff8604_recent_val = IoMem_ReadWord(0xff8604);
+	/* Store the byte that was just accessed by this write */
+	FDC_DMA.ff8604_recent_val = ( FDC_DMA.ff8604_recent_val & 0xff00 ) | IoMem_ReadByte(0xff8605);
 	
 	if ( ( FDC_DMA.Mode & 0x0008 ) == 0x0008 )			/* Is it an ACSI (or Falcon SCSI) HDC command access ? */
 	{
@@ -3435,7 +3460,7 @@ void FDC_DiskController_WriteWord ( void )
  * Return FDC/HDC registers or DMA sector count when reading from $ff8604
  * - When accessing FDC/HDC registers, a copy of $ff8604 should be kept in ff8604_recent_val
  *   to be used later when reading unused bits at $ff8604/$ff8606
- * - DMA sector count can't be read, this will return lower byte from ff8604_recent_val (verified on a real STF)
+ * - DMA sector count can't be read, this will return ff8604_recent_val (verified on a real STF)
  */
 void FDC_DiskControllerStatus_ReadWord ( void )
 {
@@ -3457,7 +3482,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	/* Are we trying to read the DMA SectorCount ? */
 	if ( FDC_DMA.Mode & 0x10 )					/* Bit 4 */
 	{
-		DiskControllerByte = FDC_DMA.ff8604_recent_val & 0xff;	/* As verified on real STF, DMA sector count can't be read back */
+		DiskControllerByte = FDC_DMA.ff8604_recent_val;		/* As verified on real STF, DMA sector count can't be read back */
 	}
 
 	else if ( ( FDC_DMA.Mode & 0x0008) == 0x0008)			/* HDC status reg selected ? */
@@ -3562,9 +3587,9 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	}
 
 
-	/* Store the value that was just returned by this read if we accessed fdc/hdc regs */
+	/* Store the byte that was just returned by this read if we accessed fdc/hdc regs */
 	if ( ( FDC_DMA.Mode & 0x10 ) == 0 )				/* Bit 4 */
-		FDC_DMA.ff8604_recent_val = DiskControllerByte;
+		FDC_DMA.ff8604_recent_val = ( FDC_DMA.ff8604_recent_val & 0xff00 ) | ( DiskControllerByte & 0xff );
 
 	IoMem_WriteWord(0xff8604, DiskControllerByte);
 
@@ -3644,7 +3669,7 @@ void FDC_DmaStatus_ReadWord ( void )
 	/* In the case of the ST, Bit2 / DRQ is always 0 because it's handled by the DMA and its 16 bytes buffer */
 
 	/* Return Status with unused bits replaced by latest bits from $ff8604 */
-	IoMem_WriteWord( 0xff8606 , FDC_DMA.Status | ( FDC_DMA.ff8604_recent_val & 0x00f8 ) );
+	IoMem_WriteWord( 0xff8606 , FDC_DMA.Status | ( FDC_DMA.ff8604_recent_val & 0xfff8 ) );
 }
 
 
