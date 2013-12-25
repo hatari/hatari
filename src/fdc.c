@@ -891,7 +891,7 @@ int	FDC_DMA_GetModeControl_R_WR ( void )
  * NOTE [NP] : as seen on a real STF, the unused bits when reading DMA Status at $ff8606
  * are also changed by the DMA operations (this might not be complete, but seems quite reproducible) :
  *  - reading a byte from the FDC to the DMA will change unused bits in the lowest byte at $ff8604
- *  - transferring the 16 byte DMA buffer to RAM will change the unused in the 2 bytes at $ff8604
+ *  - transferring the 16 byte DMA buffer to RAM will change the unused bits in the 2 bytes at $ff8604
  */
 void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 {
@@ -945,7 +945,7 @@ void	FDC_DMA_FIFO_Push ( Uint8 Byte )
  * DMA address at the correct pace to simulate that bytes are written from
  * blocks of 16 bytes handled by the DMA.
  *
- * NOTE [NP] : as with FDC_DMA_FIFO_Push, this also change the unused bits at $ff8606
+ * NOTE [NP] : as with FDC_DMA_FIFO_Push, this also changes the unused bits at $ff8606
  */
 Uint8	FDC_DMA_FIFO_Pull ( void )
 {
