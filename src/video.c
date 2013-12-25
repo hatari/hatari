@@ -1897,7 +1897,11 @@ static void Video_StoreFirstLinePalette(void)
 
 	pp2 = (Uint16 *)&IoMem[0xff8240];
 	for (i = 0; i < 16; i++)
+	{
 		HBLPalettes[i] = SDL_SwapBE16(*pp2++);
+		if ( ConfigureParams.System.nMachineType == MACHINE_ST)
+			HBLPalettes[i] &= 0x777;			/* Force unused "random" bits to 0 */
+	}
 
 	/* And set mask flag with palette and resolution */
 //	FIXME ; enlever PALETTEMASK_RESOLUTION
@@ -3244,9 +3248,9 @@ void Video_ColorReg_WriteWord(void)
 			col = IoMem_ReadWord(addr);
 
 		if (ConfigureParams.System.nMachineType == MACHINE_ST)
-			col &= 0x777;                      /* Mask off to ST 512 palette */
+			col &= 0x777;			/* Mask off to ST 512 palette */
 		else
-			col &= 0xfff;                      /* Mask off to STe 4096 palette */
+			col &= 0xfff;			/* Mask off to STe 4096 palette */
 
 		addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
 			
