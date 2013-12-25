@@ -303,7 +303,8 @@ enum
 	FDCEMU_RUN_READADDRESS_SPIN_UP,
 	FDCEMU_RUN_READADDRESS_HEAD_LOAD,
 	FDCEMU_RUN_READADDRESS_MOTOR_ON,
-	FDCEMU_RUN_READADDRESS_DMA,
+	FDCEMU_RUN_READADDRESS_TRANSFER_START,
+	FDCEMU_RUN_READADDRESS_TRANSFER_LOOP,
 	FDCEMU_RUN_READADDRESS_COMPLETE,
 	/* Read Track */
 	FDCEMU_RUN_READTRACK,
@@ -311,7 +312,7 @@ enum
 	FDCEMU_RUN_READTRACK_HEAD_LOAD,
 	FDCEMU_RUN_READTRACK_MOTOR_ON,
 	FDCEMU_RUN_READTRACK_INDEX,
-	FDCEMU_RUN_READTRACK_DMA,
+	FDCEMU_RUN_READTRACK_TRANSFER_LOOP,
 	FDCEMU_RUN_READTRACK_COMPLETE,
 	/* Write Track */
 	FDCEMU_RUN_WRITETRACK,
@@ -319,7 +320,7 @@ enum
 	FDCEMU_RUN_WRITETRACK_HEAD_LOAD,
 	FDCEMU_RUN_WRITETRACK_MOTOR_ON,
 	FDCEMU_RUN_WRITETRACK_INDEX,
-	FDCEMU_RUN_WRITETRACK_DMA,
+	FDCEMU_RUN_WRITETRACK_TRANSFER_LOOP,
 	FDCEMU_RUN_WRITETRACK_COMPLETE,
 
 	/*  Motor Stop */
@@ -523,9 +524,6 @@ static int	FDC_TransferByte_FdcCycles ( int NbBytes );
 static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 
 static void	FDC_ResetDMA ( void );
-static void	FDC_DMA_InitTransfer ( void );
-static bool	FDC_DMA_ReadFromFloppy ( void );
-static bool	FDC_DMA_WriteToFloppy ( void );
 
 static int	FDC_GetEmulationMode ( void );
 static void	FDC_UpdateAll ( void );
@@ -871,39 +869,6 @@ void FDC_SetDMAStatus ( bool bError )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Init some variables before starting a new DMA transfer.
- * We must store new data just after the most recent bytes that
- * were not yet transferred by the DMA (16 bytes buffer).
- * To avoid writing above the limit of DMADiskWorkSpace, we move
- * the current 16 bytes buffer at the start of DMADiskWorkSpace
- * if some bytes remain to be transferred, this way we never use
- * more than FDC_TRACK_BYTES_STANDARD in DMADiskWorkSpace.
- */
-static void FDC_DMA_InitTransfer ( void )
-{
-	int	i;
-
-	/* How many bytes remain in the current 16 bytes DMA buffer ? */
-	if ( ( FDC_DMA.BytesToTransfer == 0 )				/* DMA buffer is empty */
-	  || ( FDC_DMA.BytesToTransfer > FDC_DMA_FIFO_SIZE ) )		/* Previous DMA transfer did not finish (FDC errror or Force Int command) */
-	{
-		FDC_DMA.PosInBuffer = 0;				/* Add new data at the start of DMADiskWorkSpace */
-		FDC_DMA.PosInBufferTransfer = 0;
-		FDC_DMA.BytesToTransfer = 0;				/* No more data to transfer from the previous DMA buffer */
-	}
-	else								/* 16 bytes buffer partially filled */
-	{
-		for ( i=0 ; i<FDC_DMA.BytesToTransfer ; i++ )		/* Move these bytes at the start of the buffer */
-			DMADiskWorkSpace[ i ] = DMADiskWorkSpace[ FDC_DMA.PosInBufferTransfer + i ];
-
-		FDC_DMA.PosInBuffer = FDC_DMA.BytesToTransfer;		/* Add new data after the latest bytes stored in the 16 bytes buffer */
-		FDC_DMA.PosInBufferTransfer = 0;
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Return the value of bit 8 in the FDC's DMA mode control register.
  * 0=dma read  0x100=dma write
  */
@@ -917,10 +882,16 @@ int	FDC_DMA_GetModeControl_R_WR ( void )
 /**
  * Add a byte to the DMA's FIFO buffer (read from disk).
  * If the buffer is full and DMA is ON, write the FIFO's 16 bytes to DMA's address.
+ *
+ * NOTE [NP] : The DMA is connected to the FDC, each time a DRQ is made by the FDC,
+ * it's handled by the DMA and stored in the DMA's 16 bytes buffer. This means
+ * FDC_STR_BIT_LOST_DATA will never be set (but data can be lost if FDC_DMA.SectorCount==0)
  */
 void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 {
 	Uint32	Address;
+
+//fprintf ( stderr , "dma push pos=%d byte=%x %lld\n" , FDC_DMA.FIFO_Size , Byte , CyclesGlobalClockCounter );
 
 	if ( FDC_DMA.SectorCount == 0 )
 	{
@@ -954,6 +925,11 @@ void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 /**
  * Get a byte from the DMA's FIFO buffer (write to disk).
  * If the buffer is empty and DMA is ON, load 16 bytes in the FIFO from DMA's address.
+ *
+ * NOTE [NP] : in the case of the emulation in Hatari, the sector is first written
+ * to the disk image and this function is just used to increment
+ * DMA address at the correct pace to simulate that bytes are written from
+ * blocks of 16 bytes handled by the DMA.
  */
 Uint8	FDC_DMA_FIFO_Pull ( void )
 {
@@ -984,117 +960,6 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 	}
 
 	return FDC_DMA.FIFO [ 0 ];					/* return the 1st byte we just transfered in the FIFO */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Transfer 16 bytes from the DMA workspace to the RAM.
- * Instead of handling a real 16 bytes buffer, this implementation moves
- * a 16 bytes window in DMADiskWorkSpace. The current position of this window
- * is stored in FDC_DMA.PosInBufferTransfer and contains the equivalent of the
- * DMA's internal 16 bytes buffer.
- *
- * Return true if there're no more bytes to transfer or false if some
- * bytes can still be tranfered by the DMA.
- *
- * NOTE [NP] : The DMA is connected to the FDC, each time a DRQ is made by the FDC,
- * it's handled by the DMA and stored in the DMA 16 bytes buffer. This means
- * FDC_STR_BIT_LOST_DATA will never be set (but data can be lost if FDC_DMA.SectorCount==0)
- */
-static bool FDC_DMA_ReadFromFloppy ( void )
-{
-	Uint32	Address;
-//fprintf ( stderr , "dma transfer read count=%d bytes=%d pos=%d\n" , FDC_DMA.SectorCount, FDC_DMA.BytesToTransfer, FDC_DMA.PosInBufferTransfer );
-
-	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
-		return true;						/* There should be at least 16 bytes to start a DMA transfer */
-
-	if ( FDC_DMA.SectorCount == 0 )
-	{
-		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
-		FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
-		FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
-		if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
-			return true;					/* There should be at least 16 bytes to start a new DMA transfer */
-		else
-			return false;					/* FDC DMA is off but we still need to read all bytes from the floppy */
-	}
-
-	/* Transfer data and update DMA address */
-	Address = FDC_GetDMAAddress();
-	STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , FDC_DMA_FIFO_SIZE , "FDC DMA data read" );
-	FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
-	FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
-	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
-
-	/* Update Sector Count */
-	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
-	if ( FDC_DMA.BytesInSector <= 0 )
-	{
-		FDC_DMA.SectorCount--;
-		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
-	}
-
-	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
-		return true;						/* There should be at least 16 bytes to start a new DMA transfer */
-	else
-		return false;						/* Transfer is not complete */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Transfer 16 bytes from the RAM to disk using DMA.
- * This is used to write data to the disk with correct timings
- * by writing blocks of 16 bytes at a time.
- *
- * Return true if there're no more bytes to transfer or false if some
- * bytes can still be tranfered by the DMA.
- *
- * NOTE [NP] : in the case of the emulation in Hatari, the sector is first written
- * to the disk image and this function is just used to increment
- * DMA address at the correct pace to simulate that bytes are written from
- * blocks of 16 bytes handled by the DMA.
- */
-static bool FDC_DMA_WriteToFloppy ( void )
-{
-	Uint32	Address;
-//fprintf ( stderr , "dma transfer write count=%d bytes=%d pos=%d\n" , FDC_DMA.SectorCount, FDC_DMA.BytesToTransfer, FDC_DMA.PosInBufferTransfer );
-
-	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
-		return true;						/* There should be at least 16 bytes to start a DMA transfer */
-
-	if ( FDC_DMA.SectorCount == 0 )
-	{
-		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
-		FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
-		FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
-		if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
-			return true;					/* There should be at least 16 bytes to start a new DMA transfer */
-		else
-			return false;					/* FDC DMA is off but we still need to read all bytes from the floppy */
-	}
-
-	/* Transfer data and update DMA address */
-	Address = FDC_GetDMAAddress();
-	//STMemory_SafeCopy ( Address , DMADiskWorkSpace + FDC_DMA.PosInBufferTransfer , FDC_DMA_FIFO_SIZE , "FDC DMA data read" );
-	FDC_DMA.PosInBufferTransfer += FDC_DMA_FIFO_SIZE;
-	FDC_DMA.BytesToTransfer -= FDC_DMA_FIFO_SIZE;
-	FDC_WriteDMAAddress ( Address + FDC_DMA_FIFO_SIZE );
-
-	/* Update Sector Count */
-	FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
-	if ( FDC_DMA.BytesInSector <= 0 )
-	{
-		FDC_DMA.SectorCount--;
-		FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
-	}
-
-	if ( FDC_DMA.BytesToTransfer < FDC_DMA_FIFO_SIZE )
-		return true;						/* There should be at least 16 bytes to start a new DMA transfer */
-	else
-		return false;						/* Transfer is not complete */
 }
 
 
@@ -2369,14 +2234,13 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START:
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
-		FDC_DMA_InitTransfer ();				/* Update FDC_DMA.PosInBuffer */
-		if ( FDC_ReadSectorFromFloppy ( FDC.DriveSelSignal , DMADiskWorkSpace + FDC_DMA.PosInBuffer , FDC.SR , &SectorSize ) )
+		if ( FDC_ReadSectorFromFloppy ( FDC.DriveSelSignal , DMADiskWorkSpace , FDC.SR , &SectorSize ) )
 		{
-			FDC_DMA.BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
-			FDC_DMA.PosInBuffer += SectorSize;
+			FDC_DMA.BytesToTransfer = SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
+			FDC_DMA.PosInBuffer = 0;
 
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP;
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Transfer blocks of 16 bytes from the sector we just read */
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		else							/* Sector FDC.SR was not found */
 		{
@@ -2385,10 +2249,11 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP:
-		/* Transfer the sector as blocks of 16 bytes using DMA */
-		if ( ! FDC_DMA_ReadFromFloppy () )
+		/* Transfer the sector 1 byte at a time using DMA */
+		if ( FDC_DMA.BytesToTransfer-- > 0 )
 		{
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Continue transferring blocks of 16 bytes */
+			FDC_DMA_FIFO_Push ( DMADiskWorkSpace [ FDC_DMA.PosInBuffer++ ] );	/* Add 1 byte to the DMA FIFO */
+			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
 		}
 		else							/* Sector transferred, check the CRC */
 		{
@@ -2525,14 +2390,13 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START:
 		/* Write a single sector from RAM (512 bytes for ST/MSA) */
-		FDC_DMA_InitTransfer ();				/* Update FDC_DMA.PosInBuffer */
 		if ( FDC_WriteSectorToFloppy ( FDC.DriveSelSignal , FDC_DMA.SectorCount , FDC.SR , &SectorSize ) )
 		{
-			FDC_DMA.BytesToTransfer += SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
-			FDC_DMA.PosInBuffer += SectorSize;
+			FDC_DMA.BytesToTransfer = SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
+			FDC_DMA.PosInBuffer = 0;
 				
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP;
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Transfer blocks of 16 bytes from the sector we just wrote */
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		else							/* Sector FDC.SR was not found */
 		{
@@ -2541,12 +2405,14 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP:
-		/* Transfer the sector as blocks of 16 bytes using DMA */
-		if ( ! FDC_DMA_WriteToFloppy () )
+		/* Transfer the sector 1 byte at a time using DMA */
+		if ( FDC_DMA.BytesToTransfer-- > 0 )
 		{
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );	/* Continue transferring blocks of 16 bytes */
+			FDC_DMA_FIFO_Pull ();				/* Get 1 byte from the DMA FIFO (we ignore it, as the whole */
+									/* sector was already written to disk above) */
+			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
 		}
-		else							/* Sector transferred, check the CRC */
+		else							/* Sector transferred, add the CRC */
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_CRC;
 			FdcCycles = FDC_TransferByte_FdcCycles ( 2 );	/* Write 2 bytes for CRC */
@@ -2590,7 +2456,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 {
 	int	FdcCycles = 0;
 	Uint16	CRC;
-	Uint8	buf[ 4+6 ];
+	Uint8	*p_start;
 	Uint8	*p;
 	int	NextSectorID_NbBytes;
 	int	FrameCycles, HblCounterVideo, LineCycles;
@@ -2636,15 +2502,17 @@ static int FDC_UpdateReadAddressCmd ( void )
 		}
 		else
 		{
-			/* Read bytes to reach the next sector's ID field and add 10 more bytes to read this ID field */
-			FdcCycles = FDC_TransferByte_FdcCycles ( NextSectorID_NbBytes + 10 );	/* Add delay to read 3xA1, FE, ID field */
-			FDC.CommandState = FDCEMU_RUN_READADDRESS_DMA;
+			/* Read bytes to reach the next sector's ID field */
+			FdcCycles = FDC_TransferByte_FdcCycles ( NextSectorID_NbBytes + 4 );	/* Add delay to read 3xA1, FE */
+			FDC.CommandState = FDCEMU_RUN_READADDRESS_TRANSFER_START;
 		}
 		break;
-	 case FDCEMU_RUN_READADDRESS_DMA:
+	 case FDCEMU_RUN_READADDRESS_TRANSFER_START:
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
 		/* a standard ID field with a valid CRC based on current track/sector/side */
-		p = buf;
+		p_start = DMADiskWorkSpace;
+		p = p_start;
+
 		*p++ = 0xa1;					/* SYNC bytes and IAM byte are included in the CRC */
 		*p++ = 0xa1;
 		*p++ = 0xa1;
@@ -2655,24 +2523,33 @@ static int FDC_UpdateReadAddressCmd ( void )
 		*p++ = FDC.NextSector_ID_Field_SR;
 		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
 
-		FDC_CRC16 ( buf , 8 , &CRC );
+		FDC_CRC16 ( p_start , 8 , &CRC );
 
 		*p++ = CRC >> 8;
 		*p++ = CRC & 0xff;
 
 		LOG_TRACE(TRACE_FDC, "fdc read address 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			buf[4] , buf[5] , buf[6] , buf[7] , buf[8] , buf[9] ,
+			p_start[4] , p_start[5] , p_start[6] , p_start[7] , p_start[8] , p_start[9] ,
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-		FDC_DMA_InitTransfer ();			/* Update FDC_DMA.PosInBuffer */
-		memcpy ( DMADiskWorkSpace + FDC_DMA.PosInBuffer , buf + 4 , 6 );	/* Don't return the 3 x $A1 and $FE in the Address Field */
-		FDC_DMA.BytesToTransfer += 6;			/* 6 bytes per ID field */
-		FDC_DMA.PosInBuffer += 6;
+		FDC_DMA.BytesToTransfer = 6;			/* 6 bytes per ID field */
+		FDC_DMA.PosInBuffer = 4;			/* Don't return the 3 x $A1 and $FE in the Address Field */
 
-		FDC_DMA_ReadFromFloppy ();			/* Transfer bytes if 16 bytes or more are in the DMA buffer */
-
-		FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
-		FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
+		FDC.CommandState = FDCEMU_RUN_READADDRESS_TRANSFER_LOOP;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		break;
+	 case FDCEMU_RUN_READADDRESS_TRANSFER_LOOP:
+		/* Transfer the ID field 1 byte at a time using DMA */
+		if ( FDC_DMA.BytesToTransfer-- > 0 )
+		{
+			FDC_DMA_FIFO_Push ( DMADiskWorkSpace [ FDC_DMA.PosInBuffer++ ] );	/* Add 1 byte to the DMA FIFO */
+			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
+		}
 		break;
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
 		FdcCycles = FDC_CmdCompleteCommon( true );
@@ -2741,8 +2618,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
 		/* At this point, we have a valid drive/floppy, build the track data */
-		FDC_DMA_InitTransfer ();					/* Update FDC_DMA.PosInBuffer */
-		buf = DMADiskWorkSpace + FDC_DMA.PosInBuffer;
+		buf = DMADiskWorkSpace;
 
 		if ( ( FDC.SideSignal == 1 )					/* Try to read side 1 on a disk that doesn't have 2 sides */
 			&& ( FDC_GetSidesPerDisk ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) != 2 ) )
@@ -2797,21 +2673,23 @@ static int FDC_UpdateReadTrackCmd ( void )
 					*buf++ = 0x4e;
 			}
 
-			while ( buf < DMADiskWorkSpace + FDC_DMA.PosInBuffer + FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) )	/* Complete the track buffer */
+			while ( buf < DMADiskWorkSpace + FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) )	/* Complete the track buffer */
 			      *buf++ = 0x4e;						/* GAP5 */
 		}
 
 		/* Transfer Track data to RAM using DMA */
-		FDC_DMA.BytesToTransfer += FDC_GetBytesPerTrack ( FDC.DriveSelSignal );
-		FDC_DMA.PosInBuffer += FDC_GetBytesPerTrack ( FDC.DriveSelSignal );
+		FDC_DMA.BytesToTransfer = FDC_GetBytesPerTrack ( FDC.DriveSelSignal );
+		FDC_DMA.PosInBuffer = 0;
 
-		FDC.CommandState = FDCEMU_RUN_READTRACK_DMA;
+		FDC.CommandState = FDCEMU_RUN_READTRACK_TRANSFER_LOOP;
 		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );			/* Transfer blocks of 16 bytes from the track we just read */
 		break;
-	 case FDCEMU_RUN_READTRACK_DMA:
-		if ( ! FDC_DMA_ReadFromFloppy () )
+	 case FDCEMU_RUN_READTRACK_TRANSFER_LOOP:
+		/* Transfer the track 1 byte at a time using DMA */
+		if ( FDC_DMA.BytesToTransfer-- > 0 )
 		{
-			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );		/* Continue transferring blocks of 16 bytes */
+			FDC_DMA_FIFO_Push ( DMADiskWorkSpace [ FDC_DMA.PosInBuffer++ ] );	/* Add 1 byte to the DMA FIFO */
+			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
 		}
 		else								/* Track completely transferred */
 		{
