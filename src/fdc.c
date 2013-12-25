@@ -855,7 +855,8 @@ static void FDC_ResetDMA ( void )
  * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
  * Bit 2 - _Data Request Inactive Status
  *
- * FIXME [NP] : is bit 0 really used on ST ? It seems it's always 1 (no DMA error)
+ * As verified on STF, bit 0 will be cleared (=error) if DMA sector count is 0
+ * when we get some DRQ to process.
  */
 void FDC_SetDMAStatus ( bool bError )
 {
@@ -901,9 +902,11 @@ void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 	if ( FDC_DMA.SectorCount == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
-		/* TODO : clear error bit 0 in DMA status ? */
+		FDC_SetDMAStatus ( true );				/* Set DMA error (bit 0) */
 		return;
 	}
+
+	FDC_SetDMAStatus ( false );					/* No DMA error (bit 0) */
 
 	FDC_DMA.FIFO [ FDC_DMA.FIFO_Size++ ] = Byte;
 
@@ -952,9 +955,11 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 	if ( FDC_DMA.SectorCount == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
-		/* TODO : clear error bit 0 in DMA status ? */
+		FDC_SetDMAStatus ( true );				/* Set DMA error (bit 0) */
 		return 0;						/* Write a '0' byte when dma is off */
 	}
+
+	FDC_SetDMAStatus ( false );					/* No DMA error (bit 0) */
 
 	if ( FDC_DMA.FIFO_Size > 0 )					/* FIFO is not empty yet */
 		Byte = FDC_DMA.FIFO [ FDC_DMA_FIFO_SIZE - ( FDC_DMA.FIFO_Size-- ) ];	/* return byte at pos 0, 1, .., 15 */
