@@ -826,7 +826,7 @@ static void FDC_ResetDMA ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	LOG_TRACE(TRACE_FDC, "fdc reset dma VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Empty FIFO */
 	FDC_DMA.FIFO_Size = 0;
@@ -849,12 +849,9 @@ static void FDC_ResetDMA ( void )
 /**
  * Set DMA Status at $ff8606
  *
- * Bit 0 - _Error Status (0=Error 1=No error)
- * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
- * Bit 2 - _Data Request Inactive Status
- *
- * As verified on STF, bit 0 will be cleared (=error) if DMA sector count is 0
- * when we get some DRQ to process.
+ * Bit 0 - Error Status (0=Error 1=No error)
+ * Bit 1 - Sector Count Zero Status (0=Sector Count Zero)
+ * Bit 2 - Data Request signal from the FDC
  */
 void FDC_SetDMAStatus ( bool bError )
 {
@@ -890,12 +887,20 @@ int	FDC_DMA_GetModeControl_R_WR ( void )
  * are also changed by the DMA operations (this might not be complete, but seems quite reproducible) :
  *  - reading a byte from the FDC to the DMA will change unused bits in the lowest byte at $ff8604
  *  - transferring the 16 byte DMA buffer to RAM will change the unused bits in the 2 bytes at $ff8604
+ *
+ * In all cases, the byte read from the FDC is transferred to the DMA, even if DMA sector count is 0, so
+ * we must always update lowest byte of ff8604_recent_val.
+ * DMA FIFO is transferred only when DMA sector count is >0, so high byte of ff8604_recent_val will be
+ * updated only in that case.
  */
 void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 {
 	Uint32	Address;
 
 //fprintf ( stderr , "dma push pos=%d byte=%x %lld\n" , FDC_DMA.FIFO_Size , Byte , CyclesGlobalClockCounter );
+
+	/* Store the byte that was just read from FDC's Data Register */
+	FDC_DMA.ff8604_recent_val = ( FDC_DMA.ff8604_recent_val & 0xff00 ) | Byte;
 
 	if ( FDC_DMA.SectorCount == 0 )
 	{
@@ -907,9 +912,6 @@ void	FDC_DMA_FIFO_Push ( Uint8 Byte )
 	FDC_SetDMAStatus ( false );					/* No DMA error (bit 0) */
 
 	FDC_DMA.FIFO [ FDC_DMA.FIFO_Size++ ] = Byte;
-
-	/* Store the byte that was just read from FDC's Data Register */
-	FDC_DMA.ff8604_recent_val = ( FDC_DMA.ff8604_recent_val & 0xff00 ) | Byte;
 
 	if ( FDC_DMA.FIFO_Size < FDC_DMA_FIFO_SIZE )			/* FIFO is not full yet */
 		return;
@@ -1687,7 +1689,8 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
  * compare the track number in this ID field with the current Track Register.
  * If they don't match, we try again with the next ID field until we
  * reach 5 revolutions, in which case we set RNF.
- * NOTE : in the case of Hatari when using ST/MSA images, the track is always the correct one,
+ *
+ * NOTE [NP] : in the case of Hatari when using ST/MSA images, the track is always the correct one,
  * so the verify will always be good (except if no disk is inserted or the physical head is
  * not on the same track as FDC.TR)
  * This function could be improved to support other images format where logical track
@@ -3649,10 +3652,18 @@ void FDC_DmaModeControl_WriteWord ( void )
  * Only bits 0-2 are used :
  *   Bit 0 - Error Status (0=Error)
  *   Bit 1 - Sector Count Zero Status (0=Sector Count Zero)
- *   Bit 2 - Data Request Inactive Status
+ *   Bit 2 - Data Request signal from the FDC
  *
- * NOTE : unused bits 8-15 are 0, but unused bits 3-7 are the ones from the
- * latest $ff8604 access (verified on real STF)
+ * NOTE [NP] : as verified on STF, bit 0 will be cleared (=error) if DMA sector count is 0
+ * when we get some DRQ to process.
+ *
+ * NOTE [NP] : on the ST, the Data Register will always be read by the DMA when the FDC's DRQ
+ * signal is set. This means bit 2 of DMA status will be '0' nearly all the time
+ * (as verified on STF by constantly reading DMA Status, bit 2 can be '1' during
+ * a few cycles, before the DMA read the Data Register, but for the emulation we
+ * consider it's always '0')
+ *
+ * NOTE [NP] : unused bits 3-15 are the ones from the latest $ff8604 access (verified on real STF)
  */
 void FDC_DmaStatus_ReadWord ( void )
 {
