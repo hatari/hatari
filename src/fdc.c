@@ -3702,6 +3702,13 @@ void	FDC_DmaAddress_WriteByte ( void )
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
+	/* On STF/STE machines limited to 4MB of RAM, DMA address is also limited to $3fffff */
+	if ( ( IoAccessCurrentAddress == 0xff8609 )
+	  && ( (ConfigureParams.System.nMachineType == MACHINE_ST)
+	    || (ConfigureParams.System.nMachineType == MACHINE_STE)
+	    || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) ) )
+		IoMem[ 0xff8609 ] &= 0x3f;
+
 	LOG_TRACE(TRACE_FDC, "fdc write dma address %x val=0x%02x address=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		IoAccessCurrentAddress , IoMem[ IoAccessCurrentAddress ] , FDC_GetDMAAddress() ,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
@@ -3726,6 +3733,10 @@ Uint32 FDC_GetDMAAddress(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Write a new address to the FDC DMA address registers at $ff8909/0b/0d
+ * As verified on real STF, DMA address high byte written at $ff8609 is masked
+ * with 0x3f :
+ *	move.b #$ff,$ff8609
+ *	move.b $ff8609,d0  -> d0=$3f
  */
 void FDC_WriteDMAAddress ( Uint32 Address )
 {
@@ -3735,6 +3746,12 @@ void FDC_WriteDMAAddress ( Uint32 Address )
 
 	LOG_TRACE(TRACE_FDC, "fdc write 0x%x to dma address VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		Address , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+
+	/* On STF/STE machines limited to 4MB of RAM, DMA address is also limited to $3fffff */
+	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
+	  || (ConfigureParams.System.nMachineType == MACHINE_STE)
+	  || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) )
+		Address &= 0x3fffff;
 
 	/* Store as 24-bit address */
 	STMemory_WriteByte(0xff8609, Address>>16);
