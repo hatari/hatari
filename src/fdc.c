@@ -396,8 +396,6 @@ enum
 /* Update the floppy's angular position on a regular basis to detect the index pulses */
 #define	FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE	500
 
-#define	FDC_DELAY_TRANSFER_DMA_16		FDC_TRANSFER_BYTES_US( FDC_DMA_FIFO_SIZE )
-
 
 #define	FDC_DMA_SECTOR_SIZE			512		/* Sector count at $ff8606 is for 512 bytes blocks */
 #define	FDC_DMA_FIFO_SIZE			16		/* DMA transfers blocks of 16 bytes at a time */
@@ -2712,7 +2710,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		FDC_DMA.PosInBuffer = 0;
 
 		FDC.CommandState = FDCEMU_RUN_READTRACK_TRANSFER_LOOP;
-		FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_TRANSFER_DMA_16 );			/* Transfer blocks of 16 bytes from the track we just read */
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		break;
 	 case FDCEMU_RUN_READTRACK_TRANSFER_LOOP:
 		/* Transfer the track 1 byte at a time using DMA */
