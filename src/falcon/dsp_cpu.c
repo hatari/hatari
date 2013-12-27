@@ -888,7 +888,7 @@ static void dsp_postexecute_update_pc(void)
 				Uint32 saved_pc, saved_sr;
 
 				dsp_stack_pop(&saved_pc, &saved_sr);
-				dsp_core.registers[DSP_REG_SR] &= 0x7f;
+				dsp_core.registers[DSP_REG_SR] &= 0x7fff;
 				dsp_core.registers[DSP_REG_SR] |= saved_sr & (1<<DSP_SR_LF);
 				dsp_stack_pop(&dsp_core.registers[DSP_REG_LA], &dsp_core.registers[DSP_REG_LC]);
 			} else {
