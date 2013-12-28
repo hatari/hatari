@@ -327,7 +327,9 @@
 /*			My Oyster - Convention Report Part' by Aura).				*/
 /* 2013/12/24	[NP]	In Video_ColorReg_ReadWord, randomly return 0 or 1 for unused bits	*/
 /*			in STF's color registers (fix 'UMD 8730' by PHF in STF mode)		*/
-
+/* 2013/12/28	[NP]	For bottom border removal on a 60 Hz screen, max position to go back	*/
+/*			to 60 Hz should be 4 cycles earlier, as a 60 Hz line starts 4 cycles	*/
+/*			earlier (fix STE demo "It's a girl 2" by Paradox).			*/
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 
@@ -1677,11 +1679,11 @@ static void Video_EndHBL(void)
 		&& ( ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* and top border was not removed : this screen is only 60 Hz */
 		&& ( ShifterFrame.FreqPos50.VBL == nVBLs )		/* switch to 50 Hz during this VBL */
 		&& ( ( ShifterFrame.FreqPos50.HBL < nHBL )
-		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles <= LineRemoveBottomCycle ) ) )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles <= LineRemoveBottomCycle-4 ) ) )
 		&& (   ( ShifterFrame.FreqPos60.VBL < nVBLs )
 		    || ( ShifterFrame.FreqPos60.FrameCycles < ShifterFrame.FreqPos50.FrameCycles )
 		    || ( ShifterFrame.FreqPos60.HBL > nHBL )
-		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles > LineRemoveBottomCycle ) ) ) )
+		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles > LineRemoveBottomCycle-4 ) ) ) )
 	{
 		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
