@@ -1895,6 +1895,7 @@ more:
 		char	sizeChar = 0;
 		char	*dbuf;
 		int	ea;
+		unsigned int	maxop;
 
 		if(ots->opcodeName == NULL)
 			break;
@@ -2015,7 +2016,9 @@ more:
 		// Parse the EAs for all operands
 		ea = opcode[0] & 0x3F;
 		dbuf = operandBuffer;
-		for(i=0; i<(sizeof(ots->op)/sizeof(ots->op[0])); ++i)
+
+		maxop=(sizeof(ots->op)/sizeof(ots->op[0]));
+		for(i=0; i<maxop; ++i)
 		{
 			int reg;
 
@@ -2406,7 +2409,7 @@ more:
 			if(!dbuf) goto more;
 
 			// does another operand follow => add separator
-			if(ots->op[i+1] != ofNone)
+			if ( (i+1<maxop) && ( ots->op[i+1] != ofNone) )
 				*dbuf++ = ',';
 		}
 		return addr-baseAddr;
