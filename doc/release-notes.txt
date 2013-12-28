@@ -11,6 +11,7 @@ Emulation:
   - Handle 0 byte line by switching freq in STE mode
   - Use high res when ff8260 is set to 3
   - Randomly return 0 or 1 when reading unused bits 3,7 and 11 of color registers
+  - Better detection of bottom border removal on a 60 Hz screen
 - CPU changes :
   - Fix a case when MFP's interrupt happens during the IACK sequence for HBL/VBL
 - Fix READ CAPACITY command result for ACSI hard disk images
@@ -21,6 +22,7 @@ Emulation:
     when a drive is OFF or empty.
   - Rewrite the index pulse part and all the delays expressed as disk's revolution
   - Add support for the "Force Int on Index Pulse" command
+  - Add support for IPF files by using the capsimage library
 - Videl change :
   - correct masking of the true color palette registers
 - ACSI hard disk changes:
@@ -66,13 +68,14 @@ Tools:
   It can tell how many times loops were executed, how many times they
   spinned at minimum and maximum, at which VBL those happened, and what
   was the standard deviation of that.
--Improved mingw cross-compilation support
+- Improved mingw cross-compilation support
 
 Fixed demos :
   Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
   Sommarhack 2011 Invitro by DHS (CPU/MFP, top border not removed)
   The World Is My Oyster - Convention Report Part by Aura (video, res=3)
   UMD 8730 by PHF (video, unused bits in STF color registers)
+  It's A Girl 2 by Paradox (video, bottom border removal on a 60 Hz screen)
 
 Fixed games :
   Reeking Rubber (by Nature), Falcon game
