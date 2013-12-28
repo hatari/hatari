@@ -1316,7 +1316,7 @@ void	FDC_IndexPulse_Update ( void )
 		/* Store new position of the most recent Index Pulse */
 		FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time += FDC_FdcCyclesToCpuCycles ( FdcCyclesPerRev );
 		FDC.IndexPulse_Counter++;
-		LOG_TRACE(TRACE_FDC, "fdc update index drive=%d side=%d counter=%d ip_time=%lld VBL=%d HBL=%d\n" ,
+		LOG_TRACE(TRACE_FDC, "fdc update index drive=%d side=%d counter=%d ip_time=%"PRIu64" VBL=%d HBL=%d\n" ,
 			FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter ,
 			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time , nVBLs , nHBL );
 
@@ -1350,7 +1350,7 @@ static void	FDC_IndexPulse_Init ( int Drive )
 		IndexPulse_Time = 1;					/* called just after emulation starts) */
 	FDC_DRIVES[ Drive ].IndexPulse_Time = IndexPulse_Time;
 
-	LOG_TRACE(TRACE_FDC, "fdc init index drive=%d side=%d counter=%d ip_time=%lld VBL=%d HBL=%d\n" ,
+	LOG_TRACE(TRACE_FDC, "fdc init index drive=%d side=%d counter=%d ip_time=%"PRIu64" VBL=%d HBL=%d\n" ,
 		  FDC.DriveSelSignal , FDC.SideSignal , FDC.IndexPulse_Counter ,
 		  FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time , nVBLs , nHBL );
 }
