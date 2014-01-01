@@ -167,9 +167,9 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 		/* (e.g. movem is not correctly handled) */
 		AddCycles = CurrentInstrCycles + nWaitStateCycles;
 
-		if ( OpcodeFamily == i_CLR )				/* should also be the case for add, sub, and, or, eor, neg, not */
+		if ( ( OpcodeFamily == i_CLR ) || ( OpcodeFamily == i_NEG ) || ( OpcodeFamily == i_NEGX ) || ( OpcodeFamily == i_NOT ) )
 			;						/* Do nothing, the write is done during the last 4 cycles */
-									/* (e.g bottom border removal in No Scroll / Delirious Demo 4) */
+									/* (e.g i_CLR for bottom border removal in No Scroll / Delirious Demo 4) */
 
 		else if ( ( OpcodeFamily == i_BCHG ) || ( OpcodeFamily == i_BCLR ) || ( OpcodeFamily == i_BSET ) )
 			;						/* Do nothing, the write is done during the last 4 cycles */
