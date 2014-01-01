@@ -175,6 +175,9 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 			;						/* Do nothing, the write is done during the last 4 cycles */
 									/* (eg 'add d1,(a0)' in rasters.prg by TOS Crew */
 
+		else if ( ( OpcodeFamily == i_AND ) || ( OpcodeFamily == i_OR ) || ( OpcodeFamily == i_EOR ) )
+			;						/* Do nothing, the write is done during the last 4 cycles */
+
 		else if ( ( OpcodeFamily == i_BCHG ) || ( OpcodeFamily == i_BCLR ) || ( OpcodeFamily == i_BSET ) )
 			;						/* Do nothing, the write is done during the last 4 cycles */
 
