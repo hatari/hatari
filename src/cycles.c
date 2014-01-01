@@ -171,6 +171,10 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 			;						/* Do nothing, the write is done during the last 4 cycles */
 									/* (e.g i_CLR for bottom border removal in No Scroll / Delirious Demo 4) */
 
+		else if ( ( OpcodeFamily == i_ADD ) || ( OpcodeFamily == i_SUB ) )
+			;						/* Do nothing, the write is done during the last 4 cycles */
+									/* (eg 'add d1,(a0)' in rasters.prg by TOS Crew */
+
 		else if ( ( OpcodeFamily == i_BCHG ) || ( OpcodeFamily == i_BCLR ) || ( OpcodeFamily == i_BSET ) )
 			;						/* Do nothing, the write is done during the last 4 cycles */
 
