@@ -55,6 +55,8 @@
 /*			Cycles_GetCounterOnWriteAccess depending on who is owning the		*/
 /*			bus (cpu, blitter).							*/
 /* 2009/07/28	[NP]	Use different timings for movem.l and movem.w				*/
+/* 2014/01/02	[NP]	In Spec512_StoreCyclePalette, write occurs during the last cycles for	*/
+/*			i_ADD and i_SUB (fix 'add d1,(a0)' in '4-pixel plasma' by TOS Crew).	*/
 
 
 const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
@@ -177,7 +179,13 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 			else					/* word access */
 				FrameCycles -= 4;
 		}
-		else
+		else if ( ( OpcodeFamily == i_ADD ) || ( OpcodeFamily == i_SUB ) )
+		{
+			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
+			              + (CurrentInstrCycles & ~3);
+			FrameCycles -= 0;			/* write is made at the end, after prefetch */
+		}
+		else						/* default case write, then prefetch (mostly for 'move') */
 		{
 			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
 			              + (CurrentInstrCycles & ~3);
