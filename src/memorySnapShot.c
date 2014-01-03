@@ -30,6 +30,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "file.h"
 #include "floppy.h"
 #include "floppy_ipf.h"
+#include "floppy_stx.h"
 #include "gemdos.h"
 #include "acia.h"
 #include "ikbd.h"
@@ -282,6 +283,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		FDC_MemorySnapShot_Capture(true);
 		Floppy_MemorySnapShot_Capture(true);
 		IPF_MemorySnapShot_Capture(true);			/* After fdc/floppy are saved */
+		STX_MemorySnapShot_Capture(true);			/* After fdc/floppy are saved */
 		GemDOS_MemorySnapShot_Capture(true);
 		ACIA_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
@@ -335,7 +337,8 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		STMemory_MemorySnapShot_Capture(false);
 		FDC_MemorySnapShot_Capture(false);
 		Floppy_MemorySnapShot_Capture(false);
-		IPF_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as IPF depend on them */
+		IPF_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as IPF depends on them */
+		STX_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as STX depends on them */
 		GemDOS_MemorySnapShot_Capture(false);
 		ACIA_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */

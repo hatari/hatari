@@ -24,6 +24,7 @@
 #define	FLOPPY_IMAGE_TYPE_MSA			2
 #define	FLOPPY_IMAGE_TYPE_DIM			3
 #define	FLOPPY_IMAGE_TYPE_IPF			4
+#define	FLOPPY_IMAGE_TYPE_STX			5
 
 /* Structure for each drive connected as emulation */
 typedef struct

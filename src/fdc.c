@@ -23,6 +23,7 @@ const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
 #include "hdc.h"
 #include "floppy.h"
 #include "floppy_ipf.h"
+#include "floppy_stx.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
