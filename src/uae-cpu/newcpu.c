@@ -1172,7 +1172,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 
 	case 0x800: regs.usp = *regp; break;
 	case 0x801: regs.vbr = *regp; break;
-	case 0x802: caar = *regp & 0xfc; break;
+	case 0x802: caar = *regp; break;
 	case 0x803: regs.msp = *regp; if (regs.m == 1) m68k_areg(regs, 7) = regs.msp; break;
 	case 0x804: regs.isp = *regp; if (regs.m == 0) m68k_areg(regs, 7) = regs.isp; break;
 	case 0x805: mmusr = *regp; break;
