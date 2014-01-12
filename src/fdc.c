@@ -409,6 +409,8 @@ enum
 static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 0 (r1/r0) in type I commands */
 
 
+#define	FDC_SECTOR_SIZE_MASK			0x03		/* Only bits 0-1 of the Sector size in the ID field are used by the WD1772 */
+
 #define	FDC_SECTOR_SIZE_128			0		/* Sector size used in the ID fields */
 #define	FDC_SECTOR_SIZE_256			1
 #define	FDC_SECTOR_SIZE_512			2
