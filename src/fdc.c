@@ -3720,6 +3720,10 @@ void	FDC_DmaAddress_WriteByte ( void )
 	    || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) ) )
 		IoMem[ 0xff8609 ] &= 0x3f;
 
+	/* DMA address must be word-aligned, bit 0 at $ff860d is always 0 */
+	if ( IoAccessCurrentAddress == 0xff860d )
+		IoMem[ 0xff860d ] &= 0xfe;
+
 	LOG_TRACE(TRACE_FDC, "fdc write dma address %x val=0x%02x address=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		IoAccessCurrentAddress , IoMem[ IoAccessCurrentAddress ] , FDC_GetDMAAddress() ,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
@@ -3748,6 +3752,9 @@ Uint32 FDC_GetDMAAddress(void)
  * with 0x3f :
  *	move.b #$ff,$ff8609
  *	move.b $ff8609,d0  -> d0=$3f
+ * DMA address must also be word-aligned, low byte at $ff860d is masked with 0xfe
+ *	move.b #$ff,$ff860d
+ *	move.b $ff860d,d0  -> d0=$fe
  */
 void FDC_WriteDMAAddress ( Uint32 Address )
 {
@@ -3763,6 +3770,8 @@ void FDC_WriteDMAAddress ( Uint32 Address )
 	  || (ConfigureParams.System.nMachineType == MACHINE_STE)
 	  || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) )
 		Address &= 0x3fffff;
+
+	Address &= 0xfffffffe;						/* Force bit 0 to 0 */
 
 	/* Store as 24-bit address */
 	STMemory_WriteByte(0xff8609, Address>>16);
