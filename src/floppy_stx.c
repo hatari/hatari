@@ -216,6 +216,9 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 	int			Track;
 	int			Sector;
 	Uint8			*pFuzzyData;
+	Uint8			*pTimingData;
+	Uint32			MaxOffsetSectorEnd;
+	int			VariableTimings;
 
 	pStxMain = malloc ( sizeof ( STX_MAIN_STRUCT ) );
 	if ( !pStxMain )
@@ -288,10 +291,10 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 		}
 
 
-		/* Start of the optionnal fuzzy bits data */
+		/* Start of the optional fuzzy bits data */
 		pStxTrack->pFuzzyData = p + pStxTrack->SectorsCount * STX_SECTOR_BLOCK_SIZE;
 
-		/* Start of the optionnal track data */
+		/* Start of the optional track data */
 		pStxTrack->pTrackData = pStxTrack->pFuzzyData + pStxTrack->FuzzySize;
 
 		if ( ( pStxTrack->Flags & STX_TRACK_FLAG_TRACK_IMAGE ) == 0 )
@@ -319,6 +322,8 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 
 		/* Parse all the sectors in this track */
 		pFuzzyData = pStxTrack->pFuzzyData;
+		VariableTimings = 0;
+		MaxOffsetSectorEnd = 0;
 		for ( Sector = 0 ; Sector < pStxTrack->SectorsCount ; Sector++ )
 		{
 			pStxSector = &(pStxTrack->pSectorsStruct[ Sector ]);
@@ -352,22 +357,56 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 					pStxSector->pFuzzyData = pFuzzyData;
 					pFuzzyData += pStxSector->SectorSize;
 				}
-// 				if ( pStxSector->FDC_Status & STX_SECTOR_FLAG_VARIABLE_TIME )
-// 					pStxSector->pTimingData = NULL;
+
+				/* Max offset of the end of all sectors image in the track */
+				if ( MaxOffsetSectorEnd < pStxSector->DataOffset + pStxSector->SectorSize )
+					MaxOffsetSectorEnd = pStxSector->DataOffset + pStxSector->SectorSize;
+
+ 				if ( pStxSector->FDC_Status & STX_SECTOR_FLAG_VARIABLE_TIME )
+					VariableTimings = 1;
 			}
 		}
 
+		/* Start of the optional timings data, after the optional sectors image data */
+		pStxTrack->pTiming = pStxTrack->pTrackData + MaxOffsetSectorEnd;
+		if ( pStxTrack->pTiming < pStxTrack->pSectorsImageData )	/* If all sectors image were inside the track image */
+			pStxTrack->pTiming = pStxTrack->pSectorsImageData;	/* then timings data are just after the track image */
+
+		if ( VariableTimings == 1 )				/* Track has at least one variable sector */
+		{
+			pStxTrack->TimingFlags = STX_ReadU16 ( pStxTrack->pTiming );		/* always '5' ? */
+			pStxTrack->TimingSize = STX_ReadU16 ( pStxTrack->pTiming + 2 );
+			pStxTrack->pTimingData = pStxTrack->pTiming + 4;	/* 2 bytes of timing for each block of 16 bytes */
+
+			/* Compute the address of the timings data for each sector with variable timings */
+			pTimingData = pStxTrack->pTimingData;
+			for ( Sector = 0 ; Sector < pStxTrack->SectorsCount ; Sector++ )
+			{
+				pStxSector = &(pStxTrack->pSectorsStruct[ Sector ]);
+				pStxSector->pTimingData = NULL;				/* No timings by default */
+
+				/* Check if sector has data + variable timings */
+				if ( ( ( pStxSector->FDC_Status & STX_SECTOR_FLAG_RNF ) == 0 )
+				    && ( pStxSector->FDC_Status & STX_SECTOR_FLAG_VARIABLE_TIME ) )
+				{
+					pStxSector->pTimingData = pTimingData;
+					pTimingData += ( pStxSector->SectorSize / 16 ) * 2;
+				}
+
+			}
+		}
 
 next_track:
 		if ( Debug )
 		{
-			fprintf ( stderr , "  track %3d BlockSize=%d FuzzySize=%d SectorsCount=%4.4x Flags=%4.4x"
-				" MFMSize=%d TrackNumber=%d TrackSide=%d RecordType=%x"
-				" TrackImage=%s (%d bytes, sync=%4.4x)\n" ,
+			fprintf ( stderr , "  track %3d BlockSize=%d FuzzySize=%d Sectors=%4.4x Flags=%4.4x"
+				" MFMSize=%d TrackNb=%d Side=%d RecordType=%x"
+				" TrackImage=%s (%d bytes, sync=%4.4x) Timings=%d,%d\n" ,
 				Track , pStxTrack->BlockSize ,
 				pStxTrack->FuzzySize , pStxTrack->SectorsCount , pStxTrack->Flags , pStxTrack->MFMSize ,
 				pStxTrack->TrackNumber & 0x7f , ( pStxTrack->TrackNumber >> 7 ) & 0x01 , pStxTrack->RecordType ,
-				pStxTrack->pTrackImageData ? "yes" : "no" , pStxTrack->TrackImageSize , pStxTrack->TrackImageSyncPosition );
+				pStxTrack->pTrackImageData ? "yes" : "no" , pStxTrack->TrackImageSize , pStxTrack->TrackImageSyncPosition ,
+				pStxTrack->TimingFlags , pStxTrack->TimingSize );
 
 			if ( pStxTrack->SectorsCount == 0 )
 				fprintf ( stderr , "    track empty / not formatted\n" );
@@ -377,11 +416,12 @@ next_track:
 					pStxSector = &(pStxTrack->pSectorsStruct[ Sector ]);
 					fprintf ( stderr , "    sector %2d DataOffset=%d BitPosition=%d ReadTime=%d"
 						" [track=%2.2x head=%2.2x sector=%2.2x size=%2.2x crc=%4.4x]"
-						" FdcStatus=%2.2x Reserved=%2.2x\n" ,
+						" FdcStatus=%2.2x Reserved=%2.2x TimingsOffset=%d\n" ,
 						Sector , pStxSector->DataOffset , pStxSector->BitPosition ,
 						pStxSector->ReadTime ,  pStxSector->ID_Track ,  pStxSector->ID_Head ,
 						pStxSector->ID_Sector , pStxSector->ID_Size , pStxSector->ID_CRC ,
-						pStxSector->FDC_Status , pStxSector->Reserved );
+						pStxSector->FDC_Status , pStxSector->Reserved ,
+						pStxSector->pTimingData ? pStxTrack->pTimingData - pStxTrack->pTrackData : 0 );
 				}
 		}
 

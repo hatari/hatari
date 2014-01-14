@@ -54,13 +54,19 @@ typedef struct {
 	/* Other internal variables */
 	STX_SECTOR_STRUCT	*pSectorsStruct;		/* All the sectors struct for this track or null */
 
+	Uint8			*pFuzzyData;			/* Fuzzy mask data for all the fuzzy sectors of the track */
+
 	Uint8			*pTrackData;			/* */
 	Uint16			TrackImageSyncPosition;
 	Uint16			TrackImageSize;			/* Number of bytes in pTrackImageData */
 	Uint8			*pTrackImageData;		/* Optionnal data as returned by the read track command */
 	Uint8			*pSectorsImageData;		/* Optionnal data for the sectors of this track */
 
-	Uint8			*pFuzzyData;			/* Fuzzy mask data for all the fuzzy sectors of the track */
+	Uint8			*pTiming;
+	Uint16			TimingFlags;			/* always '5' ? */
+	Uint16			TimingSize;
+	Uint8			*pTimingData;			/* Timing data for all the sectors of the track ; each timing */
+								/* consits of 2 bytes for 16 FDC bytes */
 } STX_TRACK_STRUCT;
 
 #define	STX_TRACK_BLOCK_SIZE		( 4+4+2+2+2+1+1 )	/* Size of the track block in an STX file = 16 bytes */
