@@ -66,7 +66,7 @@ typedef struct {
 	Uint16			TimingFlags;			/* always '5' ? */
 	Uint16			TimingSize;
 	Uint8			*pTimingData;			/* Timing data for all the sectors of the track ; each timing */
-								/* consits of 2 bytes for 16 FDC bytes */
+								/* consists of 2 bytes per 16 FDC bytes */
 } STX_TRACK_STRUCT;
 
 #define	STX_TRACK_BLOCK_SIZE		( 4+4+2+2+2+1+1 )	/* Size of the track block in an STX file = 16 bytes */

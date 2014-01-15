@@ -38,6 +38,13 @@ typedef struct
 static STX_STRUCT	STX_State;			/* All variables related to the STX support */
 
 
+Uint8	TimingDataDefault[] = {				/* Default timing table for Macrodos when revision=0 */
+	0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,
+	0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,
+	0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,
+	0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f
+	};
+
 
 
 /*--------------------------------------------------------------*/
@@ -374,9 +381,12 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 
 		if ( VariableTimings == 1 )				/* Track has at least one variable sector */
 		{
-			pStxTrack->TimingFlags = STX_ReadU16 ( pStxTrack->pTiming );		/* always '5' ? */
-			pStxTrack->TimingSize = STX_ReadU16 ( pStxTrack->pTiming + 2 );
-			pStxTrack->pTimingData = pStxTrack->pTiming + 4;	/* 2 bytes of timing for each block of 16 bytes */
+			if ( pStxMain->Revision == 2 )			/* Specific timing table  */
+			{
+				pStxTrack->TimingFlags = STX_ReadU16 ( pStxTrack->pTiming );	/* always '5' ? */
+				pStxTrack->TimingSize = STX_ReadU16 ( pStxTrack->pTiming + 2 );
+				pStxTrack->pTimingData = pStxTrack->pTiming + 4;	/* 2 bytes of timing for each block of 16 bytes */
+			}
 
 			/* Compute the address of the timings data for each sector with variable timings */
 			pTimingData = pStxTrack->pTimingData;
@@ -389,8 +399,13 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 				if ( ( ( pStxSector->FDC_Status & STX_SECTOR_FLAG_RNF ) == 0 )
 				    && ( pStxSector->FDC_Status & STX_SECTOR_FLAG_VARIABLE_TIME ) )
 				{
-					pStxSector->pTimingData = pTimingData;
-					pTimingData += ( pStxSector->SectorSize / 16 ) * 2;
+					if ( pStxMain->Revision == 2 )				/* Specific table for revision 2 */
+					{
+						pStxSector->pTimingData = pTimingData;
+						pTimingData += ( pStxSector->SectorSize / 16 ) * 2;
+					}
+					else
+						pStxSector->pTimingData = TimingDataDefault;	/* Fixed table for revision 0 */
 				}
 
 			}
