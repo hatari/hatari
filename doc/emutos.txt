@@ -335,6 +335,7 @@ Color games:
 - Atax (minor gfx issues)
 - Bellum*
 - Blaster
+- Bold (floppy only)
 - Bombs Away
 - Bombzai
 - ChuChu Rocket* (Lite version for STFM)
@@ -349,6 +350,7 @@ Color games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
 - Flip'em* (4KB puzzle)
 - Fuzzball*
+- GodPey (floppy only, by Reservoir Gods)
 - Golgafrincham (mod compile with 2-player minigame)
 - Grav*
 - Grav2*
@@ -367,6 +369,7 @@ Color games:
 - Nibe 2
 - Nova
 - Out of this Word* (typing game)
+- Picross ST* (floppy only)
 - Punt II
 - Rockfall*
 - Robert in the Fire Factory
@@ -377,6 +380,7 @@ Color games:
 - Spacewar
 - Starball* (shareware)
 - Super Pac-Man*
+- Superfly (floppy only)
 - Sweeper
 - Tanx*
 - Teserae*
@@ -395,7 +399,6 @@ GEM games:
 - 4 Gewinnt* (Connect four)
 - Awele v1.02 (in v1.01 menus close immediately after opening)
 - Ballerburg* (bug: mouse-over acts like click)
-- Biglife*
 - Centi
 - Chess* (works only from floppy)
 - Clicks* (needs wdialog)
@@ -426,7 +429,6 @@ GEM games:
 - Never Mind
 - Orb
 - Pacman
-- Planet (celectial body calculations)
 - Shanghai
 - Sixteen (puzzle)
 - Sliders
@@ -441,9 +443,7 @@ GEM games:
 - Thrust
 - Tricky yahoo
 - Verrueck (labyrinth)
-- Wator (slow)
 - WindowBall (breakout)
-- Worm farm
 - Wormania
 - zSudoku
 
@@ -451,6 +451,7 @@ Monochrome games:
 - Backgammon    (line-A bitblits under GEM menu)
 - Big Blow      (line-A bitblit)
 - Balloons
+- Bolo          (demo levels, floppy only)
 - Bouncing boubles
 - Columns*      (needs EmuTOS >= 0.8.6, some text issues)
 - CW Puzzle     (line-A bitblit + line & point draw in start)
@@ -458,7 +459,6 @@ Monochrome games:
 - Diamond miner
 - Domino	(line-A bitblit)
 - Emperor       (v1.0 & v1.5)
-- Fishes        (line-A line and filled rectangle, works also in color)
 - Fun Face      (playable demo)
 - Gluckrad      (line-A bitblit)
 - Go UP
@@ -466,17 +466,15 @@ Monochrome games:
 - Lasermon      (laser "chess", there's also color version)
 - Lokomotive	(line-A bitblit)
 - MacPan*	(line-A draw/clear sprite)
-- Mandala
 - MineFeld	(line-A draw/clear sprite)
 - Minigolf*     (line-A draw/clear sprite)
 - Monkey Business
 - Mr Dash
-- Pipeline*	(line-A line and filled rectangle)
+- Pipeline*	(line-A line and filled rectangle, works also in color)
 - Pling II	(line-A bitblit, draw/clear sprite and filled rectangle)
 - Poolmono*
 - Punssi
 - Puzzlepuzzle
-- Pyro
 - Qix
 - Roll X	(line-A bitblit and set/get pixel)
 - Sbreak*       (by Mark Overmars)
@@ -496,11 +494,13 @@ Text games:
 - Quix
 
 Mono/GEM toys:
-- Big life
-- Fishes
+- Biglife*
+- Fishes (line-A line and filled rectangle, works also in color)
 - Mandala
+- Planet (celectial body calculations)
+- Pyro
 - ST life
-- Wator
+- Wator (slow)
 - Worm farm
 
 
@@ -559,6 +559,7 @@ Working:
 - EZ-Score
 - Henry Cosh's Accompanist
 - Ludwig
+- Miditree (floppy only, press "P" to play Xmas carols)
 - Music Mouse (uses line-A hline for cursor)
 - Sequencer One
 
