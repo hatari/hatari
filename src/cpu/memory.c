@@ -32,6 +32,7 @@ const char Memory_fileid[] = "Hatari memory.c : " __DATE__ " " __TIME__;
 /* Set illegal_mem to 1 for debug output: */
 #define illegal_mem 1
 
+static int illegal_count = 50;
 
 static uae_u32 STmem_size, TTmem_size = 0;
 static uae_u32 TTmem_mask;
@@ -93,6 +94,16 @@ static uae_u8 *STmem_xlate (uaecptr addr) REGPARAM;
 uae_u8 ce_banktype[65536];
 uae_u8 ce_cachable[65536];
 
+
+static void print_illegal_counted(const char *txt, uaecptr addr)
+{
+    if (!illegal_mem || illegal_count <= 0)
+        return;
+
+    write_log("%s at %08lx\n", txt, (long)addr);
+    if (--illegal_count == 0)
+        write_log("Suppressing further messages about illegal memory accesses.\n");
+}
 
 /* A dummy bank that only contains zeros */
 
@@ -159,8 +170,7 @@ static uae_u8 *dummy_xlate(uaecptr addr)
 
 static uae_u32 BusErrMem_lget(uaecptr addr)
 {
-    if (illegal_mem)
-	write_log ("Bus error lget at %08lx\n", (long)addr);
+    print_illegal_counted("Bus error lget", addr);
 
     M68000_BusError(addr, 1);
     return 0;
@@ -168,8 +178,7 @@ static uae_u32 BusErrMem_lget(uaecptr addr)
 
 static uae_u32 BusErrMem_wget(uaecptr addr)
 {
-    if (illegal_mem)
-	write_log ("Bus error wget at %08lx\n", (long)addr);
+    print_illegal_counted("Bus error wget", addr);
 
     M68000_BusError(addr, 1);
     return 0;
@@ -177,8 +186,7 @@ static uae_u32 BusErrMem_wget(uaecptr addr)
 
 static uae_u32 BusErrMem_bget(uaecptr addr)
 {
-    if (illegal_mem)
-	write_log ("Bus error bget at %08lx\n", (long)addr);
+    print_illegal_counted("Bus error bget", addr);
 
     M68000_BusError(addr, 1);
     return 0;
@@ -186,24 +194,21 @@ static uae_u32 BusErrMem_bget(uaecptr addr)
 
 static void BusErrMem_lput(uaecptr addr, uae_u32 l)
 {
-    if (illegal_mem)
-	write_log ("Bus error lput at %08lx\n", (long)addr);
+    print_illegal_counted("Bus error lput", addr);
 
     M68000_BusError(addr, 0);
 }
 
 static void BusErrMem_wput(uaecptr addr, uae_u32 w)
 {
-    if (illegal_mem)
-	write_log ("Bus error wput at %08lx\n", (long)addr);
+    print_illegal_counted("Bus error wput", addr);
 
     M68000_BusError(addr, 0);
 }
 
 static void BusErrMem_bput(uaecptr addr, uae_u32 b)
 {
-    if (illegal_mem)
-	write_log ("Bus error bput at %08lx\n", (long)addr);
+    print_illegal_counted("Bus error bput", addr);
 
     M68000_BusError(addr, 0);
 }
@@ -520,24 +525,21 @@ static uae_u32 ROMmem_bget(uaecptr addr)
 
 static void ROMmem_lput(uaecptr addr, uae_u32 b)
 {
-    if (illegal_mem)
-	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
+    print_illegal_counted("Illegal ROMmem lput", addr);
 
     M68000_BusError(addr, 0);
 }
 
 static void ROMmem_wput(uaecptr addr, uae_u32 b)
 {
-    if (illegal_mem)
-	write_log ("Illegal ROMmem wput at %08lx\n", (long)addr);
+    print_illegal_counted("Illegal ROMmem wput", addr);
 
     M68000_BusError(addr, 0);
 }
 
 static void ROMmem_bput(uaecptr addr, uae_u32 b)
 {
-    if (illegal_mem)
-	write_log ("Illegal ROMmem bput at %08lx\n", (long)addr);
+    print_illegal_counted("Illegal ROMmem bput", addr);
 
     M68000_BusError(addr, 0);
 }
@@ -778,6 +780,8 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks(&BusErrMem_bank, 0xF10000 >> 16, 0x9);
+
+    illegal_count = 50;
 }
 
 
