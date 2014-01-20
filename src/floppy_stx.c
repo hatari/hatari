@@ -25,6 +25,14 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "video.h"
 #include "cycles.h"
+#include "str.h"
+
+
+#define	STX_DEBUG_FLAG_STRUCTURE	1
+#define	STX_DEBUG_FLAG_DATA		2
+
+#define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE )
+// #define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE | STX_DEBUG_FLAG_DATA )
 
 
 
@@ -162,7 +170,7 @@ bool	STX_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 {
 	fprintf ( stderr , "STX : STX_Insert drive=%d buf=%p size=%ld\n" , Drive , pImageBuffer , ImageSize );
 
-	STX_BuildStruct ( pImageBuffer , 1 );
+	STX_BuildStruct ( pImageBuffer , STX_DEBUG_FLAG );
 
 	return true;
 }
@@ -243,10 +251,11 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 	pStxMain->Revision	=	*p++;
 	pStxMain->Reserved_2	=	STX_ReadU32 ( p ); p += 4;
 
-	if ( Debug )	fprintf ( stderr , "STX header ID='%.4s' Version=%4.4x ImagingTool=%4.4x Reserved1=%4.4x"
-				" TrackCount=%d Revision=%2.2x Reserved2=%x\n" , pStxMain->FileID , pStxMain->Version ,
-				pStxMain->ImagingTool  , pStxMain->Reserved_1 , pStxMain->TracksCount , pStxMain->Revision ,
-				pStxMain->Reserved_2 );
+	if ( Debug & STX_DEBUG_FLAG_STRUCTURE )
+		fprintf ( stderr , "STX header ID='%.4s' Version=%4.4x ImagingTool=%4.4x Reserved1=%4.4x"
+			" TrackCount=%d Revision=%2.2x Reserved2=%x\n" , pStxMain->FileID , pStxMain->Version ,
+			pStxMain->ImagingTool  , pStxMain->Reserved_1 , pStxMain->TracksCount , pStxMain->Revision ,
+			pStxMain->Reserved_2 );
 
 
 	pStxTrack = malloc ( sizeof ( STX_TRACK_STRUCT ) * pStxMain->TracksCount );
@@ -412,7 +421,7 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 		}
 
 next_track:
-		if ( Debug )
+		if ( Debug & STX_DEBUG_FLAG_STRUCTURE )
 		{
 			fprintf ( stderr , "  track %3d BlockSize=%d FuzzySize=%d Sectors=%4.4x Flags=%4.4x"
 				" MFMSize=%d TrackNb=%d Side=%d RecordType=%x"
@@ -437,6 +446,25 @@ next_track:
 						pStxSector->ID_Sector , pStxSector->ID_Size , pStxSector->ID_CRC ,
 						pStxSector->FDC_Status , pStxSector->Reserved ,
 						pStxSector->pTimingData ? pStxTrack->pTimingData - pStxTrack->pTrackData : 0 );
+
+					if ( ( Debug & STX_DEBUG_FLAG_DATA ) && pStxSector->pData )
+					{
+						fprintf ( stderr , "      sector data :\n" );
+						Str_Dump_Hex_Ascii ( (char *)pStxSector->pData , pStxSector->SectorSize ,
+								16 , "        " , stderr );
+					}
+					if ( ( Debug & STX_DEBUG_FLAG_DATA ) && pStxSector->pFuzzyData )
+					{
+						fprintf ( stderr , "      fuzzy data :\n" );
+						Str_Dump_Hex_Ascii ( (char *)pStxSector->pFuzzyData , pStxSector->SectorSize ,
+								16 , "        " , stderr );
+					}
+					if ( ( Debug & STX_DEBUG_FLAG_DATA ) && pStxSector->pTimingData )
+					{
+						fprintf ( stderr , "      timing data :\n" );
+						Str_Dump_Hex_Ascii ( (char *)pStxSector->pTimingData , pStxSector->SectorSize / 16 ,
+								16 , "        " , stderr );
+					}
 				}
 		}
 
