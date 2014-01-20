@@ -185,3 +185,52 @@ void Str_Filename2TOSname(const char *source, char *dst)
 		}
 	}
 }
+
+
+/**
+ * Print an Hex/Ascii dump of Len bytes located at *p
+ * Each line consists of Width bytes, printed as an hexa value and as a char
+ * (non printable chars are replaced by a '.')
+ * The Suffix string is added at the beginning of each line.
+ */
+void	Str_Dump_Hex_Ascii ( char *p , int Len , int Width , const char *Suffix , FILE *pFile )
+{
+	int	nb;
+	char	buf_hex[ 200*3 ];				/* max for 200 bytes per line */
+	char	buf_ascii[ 200 ];
+	char	*p_h;
+	char	*p_a;
+	unsigned char c;
+	int	offset;
+	
+
+	nb = 0;
+	offset = 0;
+	p_h = buf_hex;
+	p_a = buf_ascii;
+	while ( Len > 0 )
+	{
+		c = *p++;
+		sprintf ( p_h , "%2.2x " , c );
+		if ( ( c < 0x20 ) || ( c >= 0x7f ) )
+			c = '.';
+		sprintf ( p_a , "%c" , c );
+
+		p_h += 3;
+		p_a += 1;
+		
+		Len--;
+		nb++;
+		if ( ( nb % Width == 0 ) || ( Len == 0 ) )
+		{
+			fprintf ( pFile , "%s%6.6x: %-*s   %-*s\n" , Suffix , offset , Width*3 , buf_hex , Width , buf_ascii );
+			offset = nb;
+			p_h = buf_hex;
+			p_a = buf_ascii;
+		}
+		
+	}
+}
+
+
+
