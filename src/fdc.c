@@ -487,7 +487,7 @@ typedef struct {
 
 	/* Variables to handle our DMA buffer */
 	int		PosInBuffer;
-	int		PosInBufferTransfer;
+	int		PosInBufferTransfer;			/* FIXME REMOVE */
 	int		BytesToTransfer;
 } FDC_DMA_STRUCT;
 
@@ -504,13 +504,33 @@ typedef struct {
 } FDC_DRIVE_STRUCT;
 
 
+/**
+ * Bytes to transfer with type II/III commands are stored in this buffer
+ * which associates a specific delay to each byte. This allows to
+ * have a common method to transfer data from ST/MSA disk images (with fixed
+ * timing), as well as data from STX disk images (with possible timing variations)
+ */
+typedef struct {
+	int		Size;
+	int		PosAdd;
+	int		PosRead;
+
+	struct {
+		Uint8		Byte;
+		Uint16		Timing;
+	} Data [ FDC_TRACK_BYTES_STANDARD*4+1000 ];
+} FDC_BUFFER_STRUCT;
+
+
 static FDC_STRUCT	FDC;					/* All variables related to the WD1772 emulation */
 static FDC_DMA_STRUCT	FDC_DMA;				/* All variables related to the DMA transfer */
 static FDC_DRIVE_STRUCT	FDC_DRIVES[ MAX_FLOPPYDRIVES ];		/* A: and B: */
+static FDC_BUFFER_STRUCT	FDC_BUFFER;			/* Buffer of Timing/Byte to transfer with the FDC */
 
 static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace used to transfer bytes between floppy and DMA */
 								/* It should be large enough to contain a whole track */
 								/* We use a x4 factor when we need to simulate HD and ED too */
+
 
 
 /*--------------------------------------------------------------*/
@@ -580,6 +600,8 @@ static void	FDC_WriteTrackRegister ( void );
 static void	FDC_WriteSectorRegister ( void );
 static void	FDC_WriteDataRegister ( void );
 
+static bool	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
+
 static bool	FDC_ReadSectorFromFloppy ( int Drive , Uint8 *buf , Uint8 Sector , int *pSectorSize );
 static bool	FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Sector , int *pSectorSize );
 
@@ -593,6 +615,7 @@ void	FDC_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&FDC, sizeof(FDC));
 	MemorySnapShot_Store(&FDC_DMA, sizeof(FDC_DMA));
 	MemorySnapShot_Store(&FDC_DRIVES, sizeof(FDC_DRIVE_STRUCT));
+	MemorySnapShot_Store(&FDC_BUFFER, sizeof(FDC_BUFFER_STRUCT));
 
 	MemorySnapShot_Store(DMADiskWorkSpace, sizeof(DMADiskWorkSpace));
 }
@@ -758,6 +781,8 @@ void FDC_Init ( void )
 		FDC_DRIVES[ i ].HeadTrack = 0;			/* Set all drives to track 0 */
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;
 	}
+
+	FDC_Buffer_Reset();
 }
 
 
@@ -810,6 +835,8 @@ void FDC_Reset ( bool bCold )
 	FDC_DMA.Mode = 0;
 
 	FDC_ResetDMA();
+
+	FDC_Buffer_Reset();
 
 	/* Also reset IPF emulation */
 	IPF_Reset();
@@ -993,6 +1020,63 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 	FDC_DMA.ff8604_recent_val = ( FDC_DMA.ff8604_recent_val & 0xff00 ) | Byte;
 
 	return Byte;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset the buffer used to transfer data between the FDC and the DMA
+ */
+void	FDC_Buffer_Reset ( void )
+{
+	FDC_BUFFER.Size = 0;
+	FDC_BUFFER.PosAdd = 0;
+	FDC_BUFFER.PosRead = 0;	
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Add a byte to the FDC transfer buffer, using a specific timing
+ */
+void	FDC_Buffer_Add_Timing ( Uint8 Byte , int Timing )
+{
+	FDC_BUFFER.Data[ FDC_BUFFER.PosAdd ].Byte = Byte;
+	FDC_BUFFER.Data[ FDC_BUFFER.PosAdd ].Timing = Timing;
+	FDC_BUFFER.PosAdd++;
+	FDC_BUFFER.Size++;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Add a byte to the FDC transfer buffer, using a default timing
+ */
+void	FDC_Buffer_Add ( Uint8 Byte )
+{
+	FDC_Buffer_Add_Timing ( Byte , FDC_TransferByte_FdcCycles ( 1 ) );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the timing needed to transfer the Byte at the current position
+ */
+Uint16	FDC_Buffer_Read_Timing ( void )
+{
+//fprintf ( stderr , "read timing %d %x\n" , FDC_BUFFER.PosRead , FDC_BUFFER.Data[ FDC_BUFFER.PosRead ].Timing );
+	return FDC_BUFFER.Data[ FDC_BUFFER.PosRead ].Timing;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the Byte at the current position and increment position
+ */
+Uint8	FDC_Buffer_Read_Byte ( void )
+{
+//fprintf ( stderr , "read byte %d %x\n" , FDC_BUFFER.PosRead , FDC_BUFFER.Data[ FDC_BUFFER.PosRead ].Byte );
+	return FDC_BUFFER.Data[ FDC_BUFFER.PosRead++ ].Byte;
 }
 
 
@@ -2268,13 +2352,12 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START:
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
-		if ( FDC_ReadSectorFromFloppy ( FDC.DriveSelSignal , DMADiskWorkSpace , FDC.SR , &SectorSize ) )
+		FDC_Buffer_Reset();
+		if ( FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,  FDC.SR , FDC.SideSignal ,
+			DMADiskWorkSpace , &SectorSize ) )
 		{
-			FDC_DMA.BytesToTransfer = SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
-			FDC_DMA.PosInBuffer = 0;
-
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP;
-			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the first byte */
 		}
 		else							/* Sector FDC.SR was not found */
 		{
@@ -2284,10 +2367,10 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP:
 		/* Transfer the sector 1 byte at a time using DMA */
-		if ( FDC_DMA.BytesToTransfer-- > 0 )
+		FDC_DMA_FIFO_Push ( FDC_Buffer_Read_Byte () );		/* Add 1 byte to the DMA FIFO */
+		if ( FDC_BUFFER.PosRead < FDC_BUFFER.Size )
 		{
-			FDC_DMA_FIFO_Push ( DMADiskWorkSpace [ FDC_DMA.PosInBuffer++ ] );	/* Add 1 byte to the DMA FIFO */
-			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
+			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the next byte */
 		}
 		else							/* Sector transferred, check the CRC */
 		{
@@ -2652,6 +2735,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		break;
 	 case FDCEMU_RUN_READTRACK_INDEX:
 		/* At this point, we have a valid drive/floppy, build the track data */
+		FDC_Buffer_Reset();
 		buf = DMADiskWorkSpace;
 
 		if ( ( FDC.SideSignal == 1 )					/* Try to read side 1 on a disk that doesn't have 2 sides */
@@ -2692,7 +2776,8 @@ static int FDC_UpdateReadTrackCmd ( void )
 				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
 				*buf++ = 0xfb;						/* Data Address Mark */
 
-				if ( ! FDC_ReadSectorFromFloppy ( FDC.DriveSelSignal , buf , Sector , &SectorSize ) )	/* Read a single 512 bytes sector into temporary buffer */
+				if ( ! FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+					Sector , FDC.SideSignal , DMADiskWorkSpace , &SectorSize ) )	/* Read a single 512 bytes sector into temporary buffer */
 				{
 					/* Do nothing in case of error, we could put some random bytes, but this case should */
 					/* not happen with ST/MSA disk images, all sectors should be present on each track. */
@@ -3771,6 +3856,38 @@ void FDC_WriteDMAAddress ( Uint32 Address )
 	STMemory_WriteByte(0xff8609, Address>>16);
 	STMemory_WriteByte(0xff860b, Address>>8);
 	STMemory_WriteByte(0xff860d, Address);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read sector from a floppy image in ST format.
+ * Each byte of the sector is added to the FDC buffer with a default timing
+ * (32 microsec)
+ * Return true if sector was read, or false if an error occurred (RNF)
+ */
+static bool FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
+{
+	int FrameCycles, HblCounterVideo, LineCycles;
+	int i;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	LOG_TRACE(TRACE_FDC, "fdc read sector addr=0x%x drive=%d track=%d sect=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+		FDC_GetDMAAddress(), Drive, Track, Sector, Side,
+		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+
+	/* Copy 1 sector to our workspace, then convert the workspace into bytes/timings */
+	if ( Floppy_ReadSectors ( Drive, buf, Sector, Track, Side, 1, NULL, pSectorSize ) )
+	{
+		for ( i=0 ; i<*pSectorSize ; i++ )
+			FDC_Buffer_Add ( buf[ i ] );
+		return true;
+	}
+
+	/* Failed */
+	LOG_TRACE(TRACE_FDC, "fdc read sector failed\n" );
+	return false;
 }
 
 

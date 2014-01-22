@@ -32,6 +32,12 @@ extern int	FDC_DMA_GetModeControl_R_WR ( void );
 extern void	FDC_DMA_FIFO_Push ( Uint8 Byte );
 extern Uint8	FDC_DMA_FIFO_Pull ( void );
 
+extern void	FDC_Buffer_Reset ( void );
+extern void	FDC_Buffer_Add_Timing ( Uint8 Byte , int Timing );
+extern void	FDC_Buffer_Add ( Uint8 Byte );
+extern Uint16	FDC_Buffer_Read_Timing ( void );
+extern Uint8	FDC_Buffer_Read_Byte ( void );
+
 extern void	FDC_DmaAddress_ReadByte ( void );
 extern void	FDC_DmaAddress_WriteByte ( void );
 extern Uint32	FDC_GetDMAAddress ( void );
