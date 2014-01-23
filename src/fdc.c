@@ -285,6 +285,7 @@ enum
 	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START,
 	FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP,
 	FDCEMU_RUN_READSECTORS_CRC,
+	FDCEMU_RUN_READSECTORS_MULTI,
 	FDCEMU_RUN_READSECTORS_RNF,
 	FDCEMU_RUN_READSECTORS_COMPLETE,
 	/* Write Sector */
@@ -297,6 +298,7 @@ enum
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START,
 	FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP,
 	FDCEMU_RUN_WRITESECTORS_CRC,
+	FDCEMU_RUN_WRITESECTORS_MULTI,
 	FDCEMU_RUN_WRITESECTORS_RNF,
 	FDCEMU_RUN_WRITESECTORS_COMPLETE,
 	/* Read Address */
@@ -2379,11 +2381,16 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_CRC:
-		/* Sector completely transferred, CRC is always good for ST/MSA. Check for multi bit */
+		/* Sector completely transferred, CRC is always good for ST/MSA */
+		FDC.CommandState = FDCEMU_RUN_READSECTORS_MULTI;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		break;
+	 case FDCEMU_RUN_READSECTORS_MULTI:
+		/* Check for multi bit */
 		if ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
 		{
 			FDC.SR++;					/* Try to read next sector and set RNF if not possible */
-			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA;
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		else							/* Multi=0, stop here with no error */
@@ -2536,11 +2543,16 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_CRC:
-		/* Sector completely transferred, CRC is always good for ST/MSA. Check for multi bit */
+		/* Sector completely transferred, CRC is always good for ST/MSA */
+		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_MULTI;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		break;
+	 case FDCEMU_RUN_WRITESECTORS_MULTI:
+		/* Check for multi bit */
 		if ( FDC.CR & FDC_COMMAND_BIT_MULTIPLE_SECTOR  )
 		{
 			FDC.SR++;					/* Try to write next sector and set RNF if not possible */
-			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		else							/* Multi=0, stop here with no error */
