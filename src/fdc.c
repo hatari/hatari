@@ -603,6 +603,7 @@ static void	FDC_WriteSectorRegister ( void );
 static void	FDC_WriteDataRegister ( void );
 
 static bool	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
+static bool	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 
 static bool	FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Sector , int *pSectorSize );
 
@@ -2583,9 +2584,6 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 static int FDC_UpdateReadAddressCmd ( void )
 {
 	int	FdcCycles = 0;
-	Uint16	CRC;
-	Uint8	*p_start;
-	Uint8	*p;
 	int	NextSectorID_NbBytes;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
@@ -2638,40 +2636,21 @@ static int FDC_UpdateReadAddressCmd ( void )
 	 case FDCEMU_RUN_READADDRESS_TRANSFER_START:
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
 		/* a standard ID field with a valid CRC based on current track/sector/side */
-		p_start = DMADiskWorkSpace;
-		p = p_start;
+		FDC_Buffer_Reset();
+		FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				     FDC.NextSector_ID_Field_SR , FDC.SideSignal );
 
-		*p++ = 0xa1;					/* SYNC bytes and IAM byte are included in the CRC */
-		*p++ = 0xa1;
-		*p++ = 0xa1;
-		*p++ = 0xfe;
-		*p++ = FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack;
-		FDC.SR = FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack;	/* The 1st byte of the ID field is also copied into Sector Register */
-		*p++ = FDC.SideSignal;
-		*p++ = FDC.NextSector_ID_Field_SR;
-		*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
-
-		FDC_CRC16 ( p_start , 8 , &CRC );
-
-		*p++ = CRC >> 8;
-		*p++ = CRC & 0xff;
-
-		LOG_TRACE(TRACE_FDC, "fdc read address 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			p_start[4] , p_start[5] , p_start[6] , p_start[7] , p_start[8] , p_start[9] ,
-			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-
-		FDC_DMA.BytesToTransfer = 6;			/* 6 bytes per ID field */
-		FDC_DMA.PosInBuffer = 4;			/* Don't return the 3 x $A1 and $FE in the Address Field */
+		FDC.SR = FDC_BUFFER.Data[ 0 ].Byte;			/* The 1st byte of the ID field is also copied into Sector Register */
 
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_TRANSFER_LOOP;
-		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		FdcCycles = FDC_Buffer_Read_Timing ();			/* Delay to transfer the first byte */
 		break;
 	 case FDCEMU_RUN_READADDRESS_TRANSFER_LOOP:
 		/* Transfer the ID field 1 byte at a time using DMA */
-		if ( FDC_DMA.BytesToTransfer-- > 0 )
+		FDC_DMA_FIFO_Push ( FDC_Buffer_Read_Byte () );		/* Add 1 byte to the DMA FIFO */
+		if ( FDC_BUFFER.PosRead < FDC_BUFFER.Size )
 		{
-			FDC_DMA_FIFO_Push ( DMADiskWorkSpace [ FDC_DMA.PosInBuffer++ ] );	/* Add 1 byte to the DMA FIFO */
-			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
+			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the next byte */
 		}
 		else
 		{
@@ -3899,6 +3878,55 @@ static bool FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc read sector failed\n" );
 	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read an address field from a floppy image in ST format.
+ * As ST images don't have address field, we compute a standard one based
+ * on the current track/sector/side.
+ * Each byte of the ID field is added to the FDC buffer with a default timing
+ * (32 microsec)
+ * Return true
+ */
+static bool FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side )
+{
+	int FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	buf[ 10 ];				/* 3 SYNC + IAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
+	Uint8	*p_start;
+	Uint8	*p;
+	Uint16	CRC;
+	int	i;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	p_start = buf;
+	p = p_start;
+
+	*p++ = 0xa1;					/* SYNC bytes and IAM byte are included in the CRC */
+	*p++ = 0xa1;
+	*p++ = 0xa1;
+	*p++ = 0xfe;
+	*p++ = Track;
+	*p++ = Side;
+	*p++ = Sector;
+	*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
+
+	FDC_CRC16 ( p_start , 8 , &CRC );
+
+	*p++ = CRC >> 8;
+	*p++ = CRC & 0xff;
+
+	/* 6 bytes per ID field,  don't return the 3 x $A1 and $FE */
+	for ( i=4 ; i<10 ; i++ )
+		FDC_Buffer_Add ( buf[ i ] );
+	
+	LOG_TRACE(TRACE_FDC, "fdc read address 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		p_start[4] , p_start[5] , p_start[6] , p_start[7] , p_start[8] , p_start[9] ,
+		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+	return true;
 }
 
 
