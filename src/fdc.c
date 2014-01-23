@@ -514,7 +514,7 @@ typedef struct {
  */
 typedef struct {
 	int		Size;
-	int		PosAdd;
+	int		PosAdd;		/* FIXME REMOVE */
 	int		PosRead;
 
 	struct {
@@ -604,6 +604,7 @@ static void	FDC_WriteDataRegister ( void );
 
 static bool	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
 static bool	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
+static bool	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
 
 static bool	FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Sector , int *pSectorSize );
 
@@ -2674,12 +2675,10 @@ static int FDC_UpdateReadAddressCmd ( void )
 static int FDC_UpdateReadTrackCmd ( void )
 {
 	int	FdcCycles = 0;
-	Uint16	CRC;
-	Uint8	*buf;
-	Uint8	*buf_crc;
-	int	Sector;
-	int	SectorSize;
 	int	i;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	/* Which command is running? */
 	switch (FDC.CommandState)
@@ -2726,64 +2725,20 @@ static int FDC_UpdateReadTrackCmd ( void )
 	 case FDCEMU_RUN_READTRACK_INDEX:
 		/* At this point, we have a valid drive/floppy, build the track data */
 		FDC_Buffer_Reset();
-		buf = DMADiskWorkSpace;
 
-		if ( ( FDC.SideSignal == 1 )					/* Try to read side 1 on a disk that doesn't have 2 sides */
+		if ( ( FDC.SideSignal == 1 )				/* Try to read side 1 on a disk that doesn't have 2 sides */
 			&& ( FDC_GetSidesPerDisk ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) != 2 ) )
 		{
+			LOG_TRACE(TRACE_FDC, "fdc type III read track drive=%d track=%d side=%d, side not found VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				  FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal ,
+				  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
 			for ( i=0 ; i<FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) ; i++ )
-				*buf++ = rand() & 0xff;				/* Fill the track buffer with random bytes */
+				FDC_Buffer_Add ( rand() & 0xff );	/* Fill the track buffer with random bytes */
 		}
-		
-		else								/* Track/side available in the disk image */
+		else							/* Track/side available in the disk image */
 		{
-			for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP1 ; i++ )		/* GAP1 */
-				*buf++ = 0x4e;
-
-			for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
-				FDC.SideSignal ) ; Sector++ )
-			{
-				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP2 ; i++ )	/* GAP2 */
-					*buf++ = 0x00;
-
-				buf_crc = buf;
-				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
-				*buf++ = 0xfe;						/* Index Address Mark */
-				*buf++ = FDC_DRIVES[ FDC.DriveSelSignal].HeadTrack;	/* Track */
-				*buf++ = FDC.SideSignal;				/* Side */
-				*buf++ = Sector;					/* Sector */
-				*buf++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
-				FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
-				*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
-				*buf++ = CRC & 0xff;					/* CRC2 */
-
-				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP3a ; i++ )	/* GAP3a */
-					*buf++ = 0x4e;
-				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP3b ; i++ )	/* GAP3b */
-					*buf++ = 0x00;
-
-				buf_crc = buf;
-				for ( i=0 ; i<3 ; i++ )		*buf++ = 0xa1;		/* SYNC (write $F5) */
-				*buf++ = 0xfb;						/* Data Address Mark */
-
-				if ( ! FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
-					Sector , FDC.SideSignal , DMADiskWorkSpace , &SectorSize ) )	/* Read a single 512 bytes sector into temporary buffer */
-				{
-					/* Do nothing in case of error, we could put some random bytes, but this case should */
-					/* not happen with ST/MSA disk images, all sectors should be present on each track. */
-				}
-				buf += SectorSize;
-
-				FDC_CRC16 ( buf_crc , buf - buf_crc , &CRC );
-				*buf++ = CRC >> 8;					/* CRC1 (write $F7) */
-				*buf++ = CRC & 0xff;					/* CRC2 */
-
-				for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP4 ; i++ )	/* GAP4 */
-					*buf++ = 0x4e;
-			}
-
-			while ( buf < DMADiskWorkSpace + FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) )	/* Complete the track buffer */
-			      *buf++ = 0x4e;						/* GAP5 */
+			FDC_ReadTrack_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		}
 
 		/* Transfer Track data to RAM using DMA */
@@ -2791,16 +2746,16 @@ static int FDC_UpdateReadTrackCmd ( void )
 		FDC_DMA.PosInBuffer = 0;
 
 		FDC.CommandState = FDCEMU_RUN_READTRACK_TRANSFER_LOOP;
-		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		FdcCycles = FDC_Buffer_Read_Timing ();			/* Delay to transfer the first byte */
 		break;
 	 case FDCEMU_RUN_READTRACK_TRANSFER_LOOP:
 		/* Transfer the track 1 byte at a time using DMA */
-		if ( FDC_DMA.BytesToTransfer-- > 0 )
+		FDC_DMA_FIFO_Push ( FDC_Buffer_Read_Byte () );		/* Add 1 byte to the DMA FIFO */
+		if ( FDC_BUFFER.PosRead < FDC_BUFFER.Size )
 		{
-			FDC_DMA_FIFO_Push ( DMADiskWorkSpace [ FDC_DMA.PosInBuffer++ ] );	/* Add 1 byte to the DMA FIFO */
-			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
+			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the next byte */
 		}
-		else								/* Track completely transferred */
+		else							/* Track completely transferred */
 		{
 			FDC.CommandState = FDCEMU_RUN_READTRACK_COMPLETE;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
@@ -3851,15 +3806,15 @@ void FDC_WriteDMAAddress ( Uint32 Address )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read sector from a floppy image in ST format.
+ * Read sector from a floppy image in ST format (used in type II command)
  * Each byte of the sector is added to the FDC buffer with a default timing
  * (32 microsec)
  * Return true if sector was read, or false if an error occurred (RNF)
  */
 static bool FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
-	int i;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+	int	i;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -3883,7 +3838,7 @@ static bool FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read an address field from a floppy image in ST format.
+ * Read an address field from a floppy image in ST format (used in type III command)
  * As ST images don't have address field, we compute a standard one based
  * on the current track/sector/side.
  * Each byte of the ID field is added to the FDC buffer with a default timing
@@ -3892,39 +3847,134 @@ static bool FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8
  */
 static bool FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side )
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
-	Uint8	buf[ 10 ];				/* 3 SYNC + IAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
-	Uint8	*p_start;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	buf_id[ 10 ];						/* 3 SYNC + IAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
 	Uint8	*p;
 	Uint16	CRC;
 	int	i;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	p_start = buf;
-	p = p_start;
+	p = buf_id;
 
-	*p++ = 0xa1;					/* SYNC bytes and IAM byte are included in the CRC */
+	*p++ = 0xa1;							/* SYNC bytes and IAM byte are included in the CRC */
 	*p++ = 0xa1;
 	*p++ = 0xa1;
 	*p++ = 0xfe;
 	*p++ = Track;
 	*p++ = Side;
 	*p++ = Sector;
-	*p++ = FDC_SECTOR_SIZE_512;			/* ST/MSA images are 512 bytes per sector */
+	*p++ = FDC_SECTOR_SIZE_512;					/* ST/MSA images are 512 bytes per sector */
 
-	FDC_CRC16 ( p_start , 8 , &CRC );
+	FDC_CRC16 ( buf_id , 8 , &CRC );
 
 	*p++ = CRC >> 8;
 	*p++ = CRC & 0xff;
 
 	/* 6 bytes per ID field,  don't return the 3 x $A1 and $FE */
 	for ( i=4 ; i<10 ; i++ )
-		FDC_Buffer_Add ( buf[ i ] );
+		FDC_Buffer_Add ( buf_id[ i ] );
 	
 	LOG_TRACE(TRACE_FDC, "fdc read address 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x VBL=%d video_cyc=%d %d@%d pc=%x\n",
-		p_start[4] , p_start[5] , p_start[6] , p_start[7] , p_start[8] , p_start[9] ,
+		buf_id[4] , buf_id[5] , buf_id[6] , buf_id[7] , buf_id[8] , buf_id[9] ,
 		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+	return true;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read a track from a floppy image in ST format (used in type III command)
+ * As ST images don't have gaps,sync,..., we compute a standard track based
+ * on the current track/side.
+ * Each byte of the track is added to the FDC buffer with a default timing
+ * (32 microsec)
+ * Return true
+ */
+static bool FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
+{
+	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	buf_id[ 10 ];						/* 3 SYNC + IAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
+	Uint8	*p;
+	Uint16	CRC;
+	int	Sector;
+	int	SectorSize;
+	int	i;
+	
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	LOG_TRACE(TRACE_FDC, "fdc type III read track drive=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+		Drive, Track, Side, nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+
+
+	for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP1 ; i++ )		/* GAP1 */
+		FDC_Buffer_Add ( 0x4e );
+
+	for ( Sector=1 ; Sector <= FDC_GetSectorsPerTrack ( Drive , Track , Side ) ; Sector++ )
+	{
+		for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP2 ; i++ )	/* GAP2 */
+			FDC_Buffer_Add ( 0x00 );
+
+		/* Add the ID field for the sector */
+		p = buf_id;
+		for ( i=0 ; i<3 ; i++ )		*p++ = 0xa1;		/* SYNC (write $F5) */
+		*p++ = 0xfe;						/* Index Address Mark */
+		*p++ = Track;						/* Track */
+		*p++ = Side;						/* Side */
+		*p++ = Sector;						/* Sector */
+		*p++ = FDC_SECTOR_SIZE_512;				/* 512 bytes/sector for ST/MSA */
+		FDC_CRC16 ( buf_id , 8 , &CRC );
+		*p++ = CRC >> 8;					/* CRC1 (write $F7) */
+		*p++ = CRC & 0xff;					/* CRC2 */
+
+		for ( i=0 ; i<10 ; i++ )				/* Add the ID field to the track data */
+			FDC_Buffer_Add ( buf_id[ i ] );
+
+		for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP3a ; i++ )	/* GAP3a */
+			FDC_Buffer_Add ( 0x4e );
+		for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP3b ; i++ )	/* GAP3b */
+			FDC_Buffer_Add ( 0x00 );
+
+		/* Add the data for the sector + build the CRC */
+		crc16_reset ( &CRC );
+		for ( i=0 ; i<3 ; i++ )
+		{
+			FDC_Buffer_Add ( 0xa1 );			/* SYNC (write $F5) */
+			crc16_add_byte ( &CRC , 0xa1 );
+		}
+
+		FDC_Buffer_Add ( 0xfb );				/* Data Address Mark */
+		crc16_add_byte ( &CRC , 0xfb );
+
+		if ( Floppy_ReadSectors ( Drive, DMADiskWorkSpace, Sector, Track, Side, 1, NULL, &SectorSize ) )
+		{
+			for ( i=0 ; i<SectorSize ; i++ )
+			{
+				FDC_Buffer_Add ( DMADiskWorkSpace[ i ] );
+				crc16_add_byte ( &CRC , DMADiskWorkSpace[ i ] );
+			}
+		}
+		else
+		{
+			/* In case of error, we put some 0x00 bytes, but this case should */
+			/* not happen with ST/MSA disk images, all sectors should be present on each track */
+			for ( i=0 ; i<512 ; i++ )
+			{
+				FDC_Buffer_Add ( 0x00 );
+				crc16_add_byte ( &CRC , 0x00 );
+			}
+		}
+
+		FDC_Buffer_Add ( CRC >> 8 );				/* CRC1 (write $F7) */
+		FDC_Buffer_Add ( CRC & 0xff );				/* CRC2 */
+
+		for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP4 ; i++ )	/* GAP4 */
+			FDC_Buffer_Add ( 0x4e );
+	}
+
+	while ( FDC_BUFFER.Size < FDC_GetBytesPerTrack ( Drive ) )	/* Complete the track buffer */
+	      FDC_Buffer_Add ( 0x4e );					/* GAP5 */
 
 	return true;
 }
