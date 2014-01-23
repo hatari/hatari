@@ -2738,10 +2738,6 @@ static int FDC_UpdateReadTrackCmd ( void )
 			FDC_ReadTrack_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		}
 
-		/* Transfer Track data to RAM using DMA */
-		FDC_DMA.BytesToTransfer = FDC_GetBytesPerTrack ( FDC.DriveSelSignal );
-		FDC_DMA.PosInBuffer = 0;
-
 		FDC.CommandState = FDCEMU_RUN_READTRACK_TRANSFER_LOOP;
 		FdcCycles = FDC_Buffer_Read_Timing ();			/* Delay to transfer the first byte */
 		break;
