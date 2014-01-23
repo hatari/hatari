@@ -604,7 +604,6 @@ static void	FDC_WriteDataRegister ( void );
 
 static bool	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
 
-static bool	FDC_ReadSectorFromFloppy ( int Drive , Uint8 *buf , Uint8 Sector , int *pSectorSize );
 static bool	FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Sector , int *pSectorSize );
 
 
@@ -3896,32 +3895,6 @@ static bool FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8
 			FDC_Buffer_Add ( buf[ i ] );
 		return true;
 	}
-
-	/* Failed */
-	LOG_TRACE(TRACE_FDC, "fdc read sector failed\n" );
-	return false;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read sector from floppy drive into workspace
- * We copy the bytes in chunks to simulate reading of the floppy using DMA
- * Drive should be a valid drive (0 or 1)
- */
-static bool FDC_ReadSectorFromFloppy ( int Drive , Uint8 *buf , Uint8 Sector , int *pSectorSize )
-{
-	int FrameCycles, HblCounterVideo, LineCycles;
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-	LOG_TRACE(TRACE_FDC, "fdc read sector addr=0x%x drive=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_GetDMAAddress(), Drive, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC.SideSignal,
-		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
-
-	/* Copy 1 sector to our workspace */
-	if ( Floppy_ReadSectors ( Drive, buf, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC.SideSignal, 1, NULL, pSectorSize ) )
-		return true;
 
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc read sector failed\n" );
