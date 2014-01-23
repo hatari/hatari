@@ -514,7 +514,6 @@ typedef struct {
  */
 typedef struct {
 	int		Size;
-	int		PosAdd;		/* FIXME REMOVE */
 	int		PosRead;
 
 	struct {
@@ -1033,7 +1032,6 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 void	FDC_Buffer_Reset ( void )
 {
 	FDC_BUFFER.Size = 0;
-	FDC_BUFFER.PosAdd = 0;
 	FDC_BUFFER.PosRead = 0;	
 }
 
@@ -1044,9 +1042,8 @@ void	FDC_Buffer_Reset ( void )
  */
 void	FDC_Buffer_Add_Timing ( Uint8 Byte , int Timing )
 {
-	FDC_BUFFER.Data[ FDC_BUFFER.PosAdd ].Byte = Byte;
-	FDC_BUFFER.Data[ FDC_BUFFER.PosAdd ].Timing = Timing;
-	FDC_BUFFER.PosAdd++;
+	FDC_BUFFER.Data[ FDC_BUFFER.Size ].Byte = Byte;
+	FDC_BUFFER.Data[ FDC_BUFFER.Size ].Timing = Timing;
 	FDC_BUFFER.Size++;
 }
 
