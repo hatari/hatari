@@ -281,31 +281,30 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 		pStxTrack->TrackNumber		=	*p++;
 		pStxTrack->RecordType		=	*p++;
 
-		if ( pStxTrack->SectorsCount == 0 )			/* Empty / non formatted track */
+		if ( pStxTrack->SectorsCount == 0 )			/* No sector (track image only, or empty / non formatted track */
 		{
 			pStxTrack->pSectorsStruct = NULL;
-			goto next_track;
 		}
-
-		/* Track contains some sectors */
-		pStxSector = malloc ( sizeof ( STX_SECTOR_STRUCT ) * pStxTrack->SectorsCount );
-		if ( !pStxSector )
+		else
 		{
-			STX_FreeStruct ( pStxMain );
-			return NULL;
+			/* Track contains some sectors */
+			pStxSector = malloc ( sizeof ( STX_SECTOR_STRUCT ) * pStxTrack->SectorsCount );
+			if ( !pStxSector )
+			{
+				STX_FreeStruct ( pStxMain );
+				return NULL;
+			}
+			memset ( pStxSector , 0 , sizeof ( STX_SECTOR_STRUCT ) * pStxTrack->SectorsCount );
+			pStxTrack->pSectorsStruct = pStxSector;
+
+			/* Do we have some sector infos after the track header or only sector data ? */
+			if ( ( pStxTrack->Flags & STX_TRACK_FLAG_SECTOR_BLOCK ) == 0 )
+			{
+				/* The track only contains SectorsCount sectors of 512 bytes */
+				STX_BuildSectorsSimple ( pStxTrack , p );
+				goto next_track;
+			}
 		}
-		memset ( pStxSector , 0 , sizeof ( STX_SECTOR_STRUCT ) * pStxTrack->SectorsCount );
-		pStxTrack->pSectorsStruct = pStxSector;
-
-
-		/* Do we have some sector infos after the track header or only sector data ? */
-		if ( ( pStxTrack->Flags & STX_TRACK_FLAG_SECTOR_BLOCK ) == 0 )
-		{
-			/* The track only contains SectorsCount sectors of 512 bytes */
-			STX_BuildSectorsSimple ( pStxTrack , p );
-			goto next_track;
-		}
-
 
 		/* Start of the optional fuzzy bits data */
 		pStxTrack->pFuzzyData = p + pStxTrack->SectorsCount * STX_SECTOR_BLOCK_SIZE;
@@ -335,6 +334,8 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 			pStxTrack->pSectorsImageData = pStxTrack->pTrackImageData + pStxTrack->TrackImageSize;
 		}
 
+		if ( pStxTrack->SectorsCount == 0 )			/* No sector (track image only, or empty / non formatted track */
+			goto next_track;
 
 		/* Parse all the sectors in this track */
 		pFuzzyData = pStxTrack->pFuzzyData;
@@ -432,8 +433,16 @@ next_track:
 				pStxTrack->pTrackImageData ? "yes" : "no" , pStxTrack->TrackImageSize , pStxTrack->TrackImageSyncPosition ,
 				pStxTrack->TimingFlags , pStxTrack->TimingSize );
 
+				if ( ( Debug & STX_DEBUG_FLAG_DATA ) && pStxTrack->pTrackImageData )
+				{
+					fprintf ( stderr , "    track image data :\n" );
+					Str_Dump_Hex_Ascii ( (char *)pStxTrack->pTrackImageData , pStxTrack->TrackImageSize ,
+							16 , "        " , stderr );
+				}
+
 			if ( pStxTrack->SectorsCount == 0 )
-				fprintf ( stderr , "    track empty / not formatted\n" );
+				fprintf ( stderr , "    no sector in this track, %s\n" ,
+				       pStxTrack->pTrackImageData ? "only track image" : "track empty / not formatted" );
 			else
 				for ( Sector = 0 ; Sector < pStxTrack->SectorsCount ; Sector++ )
 				{

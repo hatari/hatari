@@ -12,6 +12,8 @@ typedef struct {
 	/* Content of the STX sector block (16 bytes) */
 	Uint32		DataOffset;				/* Offset of sector data in the track data */
 	Uint16		BitPosition;				/* Position in bits from the start of the track */
+								/* (this seems to be the position of the start of the ID field, */
+								/* just after the IDAM, but it's not always precise) */
 	Uint16		ReadTime;				/* in ms */
 
 	Uint8		ID_Track;				/* Content of the Address Field */
