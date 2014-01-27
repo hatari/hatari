@@ -332,6 +332,11 @@ on STF and "linear" just averages the 3 YM voices.
 .B \-D, \-\-debug
 Toggle whether CPU exceptions invoke the debugger
 .TP 
+.B \-\-debug\-except <flags>
+Specify which exceptions invoke debugger, see
+.B \-\-debug\-except help
+for available (comma separated) exception flags.
+.TP 
 .B \-\-bios\-intercept
 Toggle Bios/XBios call interception needed for Bios/XBios call tracing.
 Allows Atari programs to modify Hatari state through XBios 255 calls
@@ -353,10 +358,10 @@ and 'help' lists them.
 Enable/disable (basic) Native Features support.
 E.g. EmuTOS uses it for debug output.
 .TP
-.B \-\-trace <trace1,...>
+.B \-\-trace <flags>
 Activate debug traces, see
 .B \-\-trace help
-for available tracing options
+for available (comma separated) tracing flags
 .TP
 .B \-\-trace\-file <file>
 Save trace output to <file> (default=stderr)

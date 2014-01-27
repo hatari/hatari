@@ -744,6 +744,10 @@ voices.</p>
 --debug</p>
 <p class="paramdesc">Toggle whether CPU exceptions invoke
 the debugger</p>
+<p class="parameter">--debug-except &lt;flags&gt;</p>
+<p class="paramdesc">Specify which exceptions invoke debugger, see
+"--debug-except help" for available (comma separated) exception
+flags.</p>
 <p class="parameter">--bios-intercept</p>
 <p class="paramdesc">Toggle Bios/XBios call interception needed for
 Bios/XBios call tracing.  Allows Atari programs to modify Hatari state
@@ -762,9 +766,9 @@ external disassembly engine and 'help' lists them.</p>
 <p class="paramdesc">Enable/disable (basic) Native Features support.
 E.g. EmuTOS uses it for debug output.</p>
 <p class="parameter">--trace
-&lt;trace1,...&gt;</p>
+&lt;flags&gt;</p>
 <p class="paramdesc">Activate debug traces, see
---trace help for available tracing options</p>
+"--trace help" for available tracing flags</p>
 <p class="parameter">--trace-file
 &lt;file&gt;</p>
 <p class="paramdesc">Save trace output to &lt;file&gt;
