@@ -1040,7 +1040,7 @@ void	FDC_Buffer_Reset ( void )
 /**
  * Add a byte to the FDC transfer buffer, using a specific timing
  */
-void	FDC_Buffer_Add_Timing ( Uint8 Byte , int Timing )
+void	FDC_Buffer_Add_Timing ( Uint8 Byte , Uint16 Timing )
 {
 	FDC_BUFFER.Data[ FDC_BUFFER.Size ].Byte = Byte;
 	FDC_BUFFER.Data[ FDC_BUFFER.Size ].Timing = Timing;
