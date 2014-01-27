@@ -1319,6 +1319,7 @@ static void exception_debug (int nr)
 		return;
 	console_out_f ("Exception %d, PC=%08X\n", nr, M68K_GETPC);
 #endif
+	DebugUI_Exceptions(nr, M68K_GETPC);
 }
 
 #ifdef CPUEMU_12

@@ -1165,3 +1165,29 @@ bool DebugUI_ParseLine(const char *input)
 	}
 	return (ret == DEBUGGER_CMDDONE);
 }
+
+/**
+ * Debugger invocation based on exception
+ */
+void DebugUI_Exceptions(int nr, long pc)
+{
+	static struct {
+		int flag;
+		const char *name;
+	} ex[] = {
+		{ EXCEPT_BUS,       "Bus error" },              /* 2 */
+		{ EXCEPT_ADDRESS,   "Address error" },          /* 3 */
+		{ EXCEPT_ILLEGAL,   "Illegal instruction" },	/* 4 */
+		{ EXCEPT_ZERODIV,   "Div by zero" },		/* 5 */
+		{ EXCEPT_CHK,       "CHK" },			/* 6 */
+		{ EXCEPT_TRAPV,     "TRAPV" },			/* 7 */
+		{ EXCEPT_PRIVILEGE, "Privilege violation" }	/* 8 */
+	};
+	nr -= 2;
+	if (nr < 0  || nr >= ARRAYSIZE(ex))
+		return;
+	if (!(ExceptionDebugMask & ex[nr].flag))
+		return;
+	fprintf(stderr,"%s exception at 0x%lx!\n", ex[nr].name, pc);
+	DebugUI(REASON_CPU_EXCEPTION);
+}

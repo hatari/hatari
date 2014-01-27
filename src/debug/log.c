@@ -29,12 +29,32 @@ const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "vdi.h"
 
+int ExceptionDebugMask;
+
+typedef struct {
+	Uint64 flag;
+	const char *name;
+} flagname_t;
+
+static flagname_t ExceptionFlags[] = {
+	{ EXCEPT_NONE,      "none" },
+
+	{ EXCEPT_BUS,       "bus" },
+	{ EXCEPT_ADDRESS,   "address" },
+	{ EXCEPT_ILLEGAL,   "illegal" },
+	{ EXCEPT_ZERODIV,   "zerodiv" },
+	{ EXCEPT_CHK,       "chk" },
+	{ EXCEPT_TRAPV,     "trapv" },
+	{ EXCEPT_PRIVILEGE, "privilege" },
+	{ EXCEPT_NOHANDLER, "nohandler" },
+
+	{ EXCEPT_DSP,       "dsp" },
+
+	{ EXCEPT_ALL,       "all" }
+};
+
 #if ENABLE_TRACING
-static struct {
-	Uint64 Level;
-	const char *Name;
-}
-TraceOptions[] = {
+static flagname_t TraceFlags[] = {
 	{ TRACE_NONE		 , "none" },
 
 	{ TRACE_VIDEO_SYNC	 , "video_sync" } ,
@@ -253,55 +273,49 @@ LOGTYPE Log_ParseOptions(const char *arg)
 }
 
 
-#if ENABLE_TRACING
-
 /*-----------------------------------------------------------------------*/
 /**
  * Parse a list of comma separated strings.
  * If the string is prefixed with an optional '+',
- * corresponding trace flag is turned on.
+ * corresponding mask flag is turned on.
  * If the string is prefixed with a '-',
- * corresponding trace flag is turned off.
- * Result is stored in LogTraceFlags.
+ * corresponding mask flag is turned off.
  * Return error string (""=silent 'error') or NULL for success.
  */
-const char* Log_SetTraceOptions (const char *OptionsStr)
+static const char*
+Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, Uint64 *Mask)
 {
-	char *OptionsCopy;
+	char *FlagsCopy;
 	char *cur, *sep;
 	int i;
 	int Mode;				/* 0=add, 1=del */
-	int MaxOptions;
-
-	MaxOptions = ARRAYSIZE(TraceOptions);
 	
-	/* special case for "help" : display the list of possible trace levels */
-	if (strcmp (OptionsStr, "help") == 0)
+	/* special case for "help" : display the list of possible settings */
+	if (strcmp (FlagsStr, "help") == 0)
 	{
-		fprintf(stderr, "\nList of available trace levels :\n");
+		fprintf(stderr, "\nList of available option flags :\n");
 		
-		for (i = 0; i < MaxOptions; i++)
-			fprintf(stderr, "  %s\n", TraceOptions[i].Name);
+		for (i = 0; i < MaxFlags; i++)
+			fprintf(stderr, "  %s\n", Flags[i].name);
 		
-		fprintf(stderr, "Multiple trace levels can be separated by ','\n");
-		fprintf(stderr, "Levels can be prefixed by '+' or '-' to be mixed.\n");
-		fprintf(stderr, "Giving just trace level 'none' disables all traces.\n\n");
+		fprintf(stderr, "Multiple flags can be separated by ','.\n");
+		fprintf(stderr, "They can be prefixed by '+' or '-' to be mixed.\n");
+		fprintf(stderr, "Giving just 'none' flag disables all of them.\n\n");
 		return "";
 	}
 	
-	LogTraceFlags = TRACE_NONE;
-	if (strcmp (OptionsStr, "none") == 0)
+	if (strcmp (FlagsStr, "none") == 0)
 	{
 		return NULL;
 	}
 	
-	OptionsCopy = strdup(OptionsStr);
-	if (!OptionsCopy)
+	FlagsCopy = strdup(FlagsStr);
+	if (!FlagsCopy)
 	{
-		return "strdup error in ParseTraceOptions";
+		return "strdup error in Log_OptionFlags";
 	}
 	
-	cur = OptionsCopy;
+	cur = FlagsCopy;
 	while (cur)
 	{
 		sep = strchr(cur, ',');
@@ -314,28 +328,66 @@ const char* Log_SetTraceOptions (const char *OptionsStr)
 		else if (*cur == '-')
 		{ Mode = 1; cur++; }
 		
-		for (i = 0; i < MaxOptions; i++)
+		for (i = 0; i < MaxFlags; i++)
 		{
-			if (strcmp(cur, TraceOptions[i].Name) == 0)
+			if (strcmp(cur, Flags[i].name) == 0)
 				break;
 		}
 		
-		if (i < MaxOptions)		/* option found */
+		if (i < MaxFlags)		/* option found */
 		{
 			if (Mode == 0)
-				LogTraceFlags |= TraceOptions[i].Level;
+				*Mask |= Flags[i].flag;
 			else
-				LogTraceFlags &= (~TraceOptions[i].Level);
+				*Mask &= (~Flags[i].flag);
 		}
 		else
 		{
-			fprintf(stderr, "Unknown trace type '%s'\n", cur);
-			free(OptionsCopy);
-			return "Unknown trace type.";
+			fprintf(stderr, "Unknown flag type '%s'\n", cur);
+			free(FlagsCopy);
+			return "Unknown flag type.";
 		}
 		
 		cur = sep;
 	}
+
+	//fprintf(stderr, "flags parse <%x>\n", Mask);
+	
+	free (FlagsCopy);
+	return NULL;
+}
+
+/**
+ * Parse exception flags and store results in ExceptionDebugMask.
+ * Return error string or NULL for success.
+ * 
+ * See Log_ParseOptionFlags() for details.
+ */
+const char* Log_SetExceptionDebugMask (const char *FlagsStr)
+{
+	const char *errstr;
+
+	Uint64 mask = EXCEPT_NONE;
+	errstr = Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAYSIZE(ExceptionFlags), &mask);
+	ConfigureParams.Log.nExceptionDebugMask = mask;
+	return errstr;
+}
+
+
+#if ENABLE_TRACING
+
+/**
+ * Parse trace flags and store results in LogTraceFlags.
+ * Return error string or NULL for success.
+ * 
+ * See Log_ParseOptionFlags() for details.
+ */
+const char* Log_SetTraceOptions (const char *FlagsStr)
+{
+	const char *errstr;
+
+	LogTraceFlags = TRACE_NONE;
+	errstr = Log_ParseOptionFlags(FlagsStr, TraceFlags, ARRAYSIZE(TraceFlags), &LogTraceFlags);
 
 	/* Enable Hatari flags needed for tracing selected items.
 	 * 
@@ -345,12 +397,8 @@ const char* Log_SetTraceOptions (const char *OptionsStr)
 	if (LogTraceFlags & (TRACE_OS_AES|TRACE_OS_VDI))
 		bVdiAesIntercept = true;
 
-	//fprintf(stderr, "trace parse <%x>\n", LogTraceFlags);
-	
-	free (OptionsCopy);
-	return NULL;
+	return errstr;
 }
-
 
 /**
  * Readline match callback for trace type name completion.
@@ -368,8 +416,8 @@ char *Log_MatchTrace(const char *text, int state)
 		i = 0;
 	}
 	/* next match */
-	while (i < ARRAYSIZE(TraceOptions)) {
-		name = TraceOptions[i++].Name;
+	while (i < ARRAYSIZE(TraceFlags)) {
+		name = TraceFlags[i++].name;
 		if (strncasecmp(name, text, len) == 0)
 			return (strdup(name));
 	}
@@ -379,7 +427,7 @@ char *Log_MatchTrace(const char *text, int state)
 #else	/* !ENABLE_TRACING */
 
 /** dummy */
-const char* Log_SetTraceOptions (const char *OptionsStr)
+const char* Log_SetTraceOptions (const char *FlagsStr)
 {
 	return "Hatari has been compiled without ENABLE_TRACING!";
 }

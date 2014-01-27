@@ -41,6 +41,7 @@ static const struct Config_Tag configs_Log[] =
 {
 	{ "sLogFileName", String_Tag, ConfigureParams.Log.sLogFileName },
 	{ "sTraceFileName", String_Tag, ConfigureParams.Log.sTraceFileName },
+	{ "nExceptionDebugMask", Int_Tag, &ConfigureParams.Log.nExceptionDebugMask },
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
 	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
@@ -400,6 +401,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for logging and tracing */
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
 	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
+	ConfigureParams.Log.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
 	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
 	ConfigureParams.Log.bConfirmQuit = true;

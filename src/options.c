@@ -142,6 +142,7 @@ enum {
 	OPT_WINCON,		/* debug options */
 #endif
 	OPT_DEBUG,
+	OPT_EXCEPTIONS,
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
 	OPT_DISASM,
@@ -377,6 +378,8 @@ static const opt_t HatariOptions[] = {
 #endif
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
+	{ OPT_EXCEPTIONS, NULL, "--debug-except",
+	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  NULL, "Toggle X/Bios interception & Hatari XBios 255 support" },
 	{ OPT_CONOUT,   NULL, "--conout",
@@ -386,7 +389,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_NATFEATS, NULL, "--natfeats",
 	  "<bool>", "Whether Native Features support is enabled" },
 	{ OPT_TRACE,   NULL, "--trace",
-	  "<trace1,...>", "Activate emulation tracing, see '--trace help'" },
+	  "<flags>", "Activate emulation tracing, see '--trace help'" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
 	  "<file>", "Save trace output to <file> (default=stderr)" },
 	{ OPT_PARSE, NULL, "--parse",
@@ -1644,15 +1647,29 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 #endif
 		case OPT_DEBUG:
-			if (bExceptionDebugging)
+			if (ExceptionDebugMask)
 			{
 				fprintf(stderr, "Exception debugging disabled.\n");
-				bExceptionDebugging = false;
+				ExceptionDebugMask = EXCEPT_NONE;
 			}
 			else
 			{
-				fprintf(stderr, "Exception debugging enabled.\n");
-				bExceptionDebugging = true;
+				ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask;
+				fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
+			}
+			break;
+
+		case OPT_EXCEPTIONS:
+			i += 1;
+			/* sets ConfigureParams.Log.nExceptionDebugMask */
+			errstr = Log_SetExceptionDebugMask(argv[i]);
+			if (errstr)
+			{
+				if (!errstr[0]) {
+					/* silent parsing termination */
+					return false;
+				}
+				return Opt_ShowError(OPT_EXCEPTIONS, argv[i], errstr);
 			}
 			break;
 
