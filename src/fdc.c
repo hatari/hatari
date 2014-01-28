@@ -601,7 +601,7 @@ static void	FDC_WriteSectorRegister ( void );
 static void	FDC_WriteDataRegister ( void );
 
 static Uint32	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
-static bool	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
+static int	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
 static bool	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 static bool	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
 
@@ -2294,7 +2294,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_Buffer_Reset();
 		if ( FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,  FDC.SR , FDC.SideSignal ,
-			DMADiskWorkSpace , &SectorSize ) )
+			DMADiskWorkSpace , &SectorSize ) == 0 )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP;
 			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the first byte */
@@ -3792,12 +3792,12 @@ static Uint32	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read sector from a floppy image in ST format (used in type II command)
+ * Read a sector from a floppy image in ST format (used in type II command)
  * Each byte of the sector is added to the FDC buffer with a default timing
  * (32 microsec)
- * Return true if sector was read, or false if an error occurred (RNF)
+ * Return 0 if sector was read without error, or FDC_STR_BIT_RNF if an error occurred
  */
-static bool FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
+static int FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	int	i;
@@ -3813,12 +3813,12 @@ static bool FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8
 	{
 		for ( i=0 ; i<*pSectorSize ; i++ )
 			FDC_Buffer_Add ( buf[ i ] );
-		return true;
+		return 0;
 	}
 
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc read sector failed\n" );
-	return false;
+	return FDC_STR_BIT_RNF;
 }
 
 
