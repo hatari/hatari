@@ -601,9 +601,9 @@ static void	FDC_WriteSectorRegister ( void );
 static void	FDC_WriteDataRegister ( void );
 
 static Uint32	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
-static int	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
-static bool	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
-static bool	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
+static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
+static Uint8	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
+static Uint8	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
 
 static bool	FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Sector , int *pSectorSize );
 
@@ -2217,6 +2217,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	int	FdcCycles = 0;
 	int	SectorSize;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	Status;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2293,16 +2294,22 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START:
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_Buffer_Reset();
-		if ( FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,  FDC.SR , FDC.SideSignal ,
-			DMADiskWorkSpace , &SectorSize ) == 0 )
-		{
-			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP;
-			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the first byte */
-		}
-		else							/* Sector FDC.SR was not found */
+		Status = FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,  FDC.SR , FDC.SideSignal ,
+			DMADiskWorkSpace , &SectorSize );
+		if ( Status & FDC_STR_BIT_RNF )				/* Sector FDC.SR was not found */
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		}
+		else
+		{
+			if ( Status & FDC_STR_BIT_RECORD_TYPE )
+				FDC_Update_STR ( 0 , FDC_STR_BIT_RECORD_TYPE );
+			else
+				FDC_Update_STR ( FDC_STR_BIT_RECORD_TYPE , 0 );
+
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP;
+			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the first byte */
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP:
@@ -2522,6 +2529,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 {
 	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	Status;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2573,7 +2581,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
 		/* a standard ID field with a valid CRC based on current track/sector/side */
 		FDC_Buffer_Reset();
-		FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+		Status = FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				     FDC.NextSector_ID_Field_SR , FDC.SideSignal );
 
 		FDC.SR = FDC_BUFFER.Data[ 0 ].Byte;			/* The 1st byte of the ID field is also copied into Sector Register */
@@ -2612,6 +2620,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 	int	FdcCycles = 0;
 	int	i;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	Status;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2673,7 +2682,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		else							/* Track/side available in the disk image */
 		{
-			FDC_ReadTrack_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			Status = FDC_ReadTrack_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		}
 
 		FDC.CommandState = FDCEMU_RUN_READTRACK_TRANSFER_LOOP;
@@ -3797,7 +3806,7 @@ static Uint32	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 
  * (32 microsec)
  * Return 0 if sector was read without error, or FDC_STR_BIT_RNF if an error occurred
  */
-static int FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
+static Uint8 FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	int	i;
@@ -3813,7 +3822,7 @@ static int FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 
 	{
 		for ( i=0 ; i<*pSectorSize ; i++ )
 			FDC_Buffer_Add ( buf[ i ] );
-		return 0;
+		return 0;						/* No error */
 	}
 
 	/* Failed */
@@ -3831,7 +3840,7 @@ static int FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 
  * (32 microsec)
  * Return true
  */
-static bool FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side )
+static Uint8 FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	Uint8	buf_id[ 10 ];						/* 3 SYNC + IAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
@@ -3865,7 +3874,7 @@ static bool FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint
 		buf_id[4] , buf_id[5] , buf_id[6] , buf_id[7] , buf_id[8] , buf_id[9] ,
 		nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	return true;
+	return 0;							/* No error */
 }
 
 
@@ -3878,7 +3887,7 @@ static bool FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint
  * (32 microsec)
  * Return true
  */
-static bool FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
+static Uint8 FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	Uint8	buf_id[ 10 ];						/* 3 SYNC + IAM + TR + SIDE + SECTOR + SIZE + CRC1 + CRC2 */
@@ -3962,7 +3971,7 @@ static bool FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	while ( FDC_BUFFER.Size < FDC_GetBytesPerTrack ( Drive ) )	/* Complete the track buffer */
 	      FDC_Buffer_Add ( 0x4e );					/* GAP5 */
 
-	return true;
+	return 0;							/* No error */
 }
 
 
