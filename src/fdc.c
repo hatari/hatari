@@ -463,11 +463,12 @@ typedef struct {
 	Uint8		SideSignal;				/* Side 0 or 1 */
 	int		DriveSelSignal;				/* 0 or 1 for drive A or B ; or -1 if no drive selected */
 	/* Other variables */
-	int		Command;				/* FDC emulation command currently being exceuted */
+	int		Command;				/* FDC emulation command currently being executed */
 	int		CommandState;				/* Current state for the running command */
 	Uint8		CommandType;				/* Type of latest FDC command (1,2,3 or 4) */
 	bool		ReplaceCommandPossible;			/* true if the current command can be replaced by another one (see notes) */
 
+	Uint8		Status_Temp;				/* Temporary content of the status register */
 	bool		StatusTypeI;				/* When true, STR will report the status of a type I command */
 	int		IndexPulse_Counter;			/* To count the number of rotations when motor is ON */
 	Uint8		NextSector_ID_Field_SR;			/* Sector Register from the ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
@@ -2217,7 +2218,6 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	int	FdcCycles = 0;
 	int	SectorSize;
 	int	FrameCycles, HblCounterVideo, LineCycles;
-	Uint8	Status;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2294,16 +2294,16 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START:
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_Buffer_Reset();
-		Status = FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,  FDC.SR , FDC.SideSignal ,
+		FDC.Status_Temp = FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,  FDC.SR , FDC.SideSignal ,
 			DMADiskWorkSpace , &SectorSize );
-		if ( Status & FDC_STR_BIT_RNF )				/* Sector FDC.SR was not found */
+		if ( FDC.Status_Temp & FDC_STR_BIT_RNF )		/* Sector FDC.SR was not found */
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		}
 		else
 		{
-			if ( Status & FDC_STR_BIT_RECORD_TYPE )
+			if ( FDC.Status_Temp & FDC_STR_BIT_RECORD_TYPE )
 				FDC_Update_STR ( 0 , FDC_STR_BIT_RECORD_TYPE );
 			else
 				FDC_Update_STR ( FDC_STR_BIT_RECORD_TYPE , 0 );
@@ -2326,9 +2326,20 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_CRC:
-		/* Sector completely transferred, CRC is always good for ST/MSA */
-		FDC.CommandState = FDCEMU_RUN_READSECTORS_MULTI;
-		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		/* Sector completely transferred, CRC is always good for ST/MSA, but not always for STX */
+		if ( FDC.Status_Temp & FDC_STR_BIT_CRC_ERROR )
+		{
+			LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=%d drive=%d CRC VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+			FDC_Update_STR ( 0 , FDC_STR_BIT_CRC_ERROR );
+			FdcCycles = FDC_CmdCompleteCommon( true );
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_READSECTORS_MULTI;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_MULTI:
 		/* Check for multi bit */
@@ -2529,7 +2540,6 @@ static int FDC_UpdateReadAddressCmd ( void )
 {
 	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
-	Uint8	Status;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2581,7 +2591,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 		/* In the case of Hatari, only ST/MSA images are supported, so we build */
 		/* a standard ID field with a valid CRC based on current track/sector/side */
 		FDC_Buffer_Reset();
-		Status = FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+		FDC.Status_Temp = FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				     FDC.NextSector_ID_Field_SR , FDC.SideSignal );
 
 		FDC.SR = FDC_BUFFER.Data[ 0 ].Byte;			/* The 1st byte of the ID field is also copied into Sector Register */
@@ -2620,7 +2630,6 @@ static int FDC_UpdateReadTrackCmd ( void )
 	int	FdcCycles = 0;
 	int	i;
 	int	FrameCycles, HblCounterVideo, LineCycles;
-	Uint8	Status;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2682,7 +2691,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		else							/* Track/side available in the disk image */
 		{
-			Status = FDC_ReadTrack_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+			FDC.Status_Temp = FDC_ReadTrack_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		}
 
 		FDC.CommandState = FDCEMU_RUN_READTRACK_TRANSFER_LOOP;
