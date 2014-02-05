@@ -601,7 +601,7 @@ static void	FDC_WriteTrackRegister ( void );
 static void	FDC_WriteSectorRegister ( void );
 static void	FDC_WriteDataRegister ( void );
 
-static Uint32	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
+static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
 static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
 static Uint8	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 static Uint8	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
@@ -3778,7 +3778,7 @@ void FDC_WriteDMAAddress ( Uint32 Address )
  * order (for ST/MSA)
  * If there's no available drive/floppy, we return -1
  */
-static Uint32	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
+static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 {
 	int	CurrentPos;
 	int	MaxSector;
@@ -3828,6 +3828,7 @@ static Uint32	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 
  * Each byte of the sector is added to the FDC buffer with a default timing
  * (32 microsec)
  * Return 0 if sector was read without error, or FDC_STR_BIT_RNF if an error occurred
+ * (FDC_STR_BIT_CRC_ERROR and FDC_STR_BIT_RECORD_TYPE are always set 0 for ST/MSA)
  */
 static Uint8 FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
 {
@@ -3861,7 +3862,8 @@ static Uint8 FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint
  * on the current track/sector/side.
  * Each byte of the ID field is added to the FDC buffer with a default timing
  * (32 microsec)
- * Return true
+ * Always return 0 = OK (FDC_STR_BIT_CRC_ERROR and FDC_STR_BIT_RNF are
+ * always set 0 for ST/MSA)
  */
 static Uint8 FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side )
 {
@@ -3908,7 +3910,7 @@ static Uint8 FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
  * on the current track/side.
  * Each byte of the track is added to the FDC buffer with a default timing
  * (32 microsec)
- * Return true
+ * Always return 0 = OK (we fill the track buffer in all cases)
  */
 static Uint8 FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 {
