@@ -2294,8 +2294,14 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START:
 		/* Read a single sector into temporary buffer (512 bytes for ST/MSA) */
 		FDC_Buffer_Reset();
-		FDC.Status_Temp = FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,  FDC.SR , FDC.SideSignal ,
-			DMADiskWorkSpace , &SectorSize );
+
+		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			FDC.Status_Temp = FDC_ReadSector_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SR , FDC.SideSignal , DMADiskWorkSpace , &SectorSize );
+		else
+			FDC.Status_Temp = FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SR , FDC.SideSignal , DMADiskWorkSpace , &SectorSize );
+
 		if ( FDC.Status_Temp & FDC_STR_BIT_RNF )		/* Sector FDC.SR was not found */
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_RNF;
@@ -2588,10 +2594,14 @@ static int FDC_UpdateReadAddressCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READADDRESS_TRANSFER_START:
-		/* In the case of Hatari, only ST/MSA images are supported, so we build */
-		/* a standard ID field with a valid CRC based on current track/sector/side */
+		/* Read the ID field into buffer */
 		FDC_Buffer_Reset();
-		FDC.Status_Temp = FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+
+		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			FDC.Status_Temp = FDC_ReadAddress_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				     FDC.NextSector_ID_Field_SR , FDC.SideSignal );
+		else
+			FDC.Status_Temp = FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				     FDC.NextSector_ID_Field_SR , FDC.SideSignal );
 
 		FDC.SR = FDC_BUFFER.Data[ 0 ].Byte;			/* The 1st byte of the ID field is also copied into Sector Register */
@@ -2688,6 +2698,10 @@ static int FDC_UpdateReadTrackCmd ( void )
 
 			for ( i=0 ; i<FDC_GetBytesPerTrack ( FDC.DriveSelSignal ) ; i++ )
 				FDC_Buffer_Add ( rand() & 0xff );	/* Fill the track buffer with random bytes */
+		}
+		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		{
+			FDC.Status_Temp = FDC_ReadTrack_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		}
 		else							/* Track/side available in the disk image */
 		{
