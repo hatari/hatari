@@ -558,10 +558,6 @@ static int	FDC_GetBytesPerTrack ( int Drive );
 static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive );
 static void	FDC_IndexPulse_Update ( void );
 static void	FDC_IndexPulse_Init ( int Drive );
-static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev );
-static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
-static int	FDC_IndexPulse_GetState ( void );
-static int	FDC_NextIndexPulse_FdcCycles ( void );
 
 static Uint8	FDC_GetCmdType ( Uint8 CR );
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
@@ -1450,7 +1446,7 @@ static void	FDC_IndexPulse_Init ( int Drive )
  * for the current drive.
  * If there's no available drive/floppy (i.e. no index), we return -1
  */
-static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
+int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
 {
 	Uint32	FdcCyclesPerRev;
 	Uint32	CpuCyclesSinceIndex;
@@ -1478,7 +1474,7 @@ static int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev )
  * If there's no available drive/floppy and no index, we return -1
  * To simulate HD/ED floppies, we multiply the number of bytes by a density factor.
  */
-static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void )
+int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void )
 {
 	int	FdcCyclesSinceIndex;
 
@@ -1500,7 +1496,7 @@ static int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void )
  * During the rest of the track, the signal will be 0 (it will also be 0
  * if the drive if OFF or empty)
  */
-static int	FDC_IndexPulse_GetState ( void )
+int	FDC_IndexPulse_GetState ( void )
 {
 	int	state;
 	int	FdcCyclesSinceIndex;
@@ -1522,7 +1518,7 @@ static int	FDC_IndexPulse_GetState ( void )
  * Return the number of FDC cycles before reaching the next index pulse signal.
  * If there's no available drive/floppy and no index, we return -1
  */
-static int	FDC_NextIndexPulse_FdcCycles ( void )
+int	FDC_NextIndexPulse_FdcCycles ( void )
 {
 	Uint32	FdcCyclesPerRev;
 	int	FdcCyclesSinceIndex;
@@ -3818,7 +3814,7 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Sid
 
 //fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d maxsr=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, MaxSector, NextSector );
 	FDC.NextSector_ID_Field_SR = NextSector;
-	return NbBytes;
+	return FDC_TransferByte_FdcCycles ( NbBytes );
 }
 
 

@@ -24,6 +24,11 @@ extern void	FDC_InsertFloppy ( int Drive );
 extern void	FDC_EjectFloppy ( int Drive );
 extern void	FDC_SetDriveSide ( Uint8 io_porta_old , Uint8 io_porta_new );
 
+extern int	FDC_IndexPulse_GetCurrentPos_FdcCycles ( Uint32 *pFdcCyclesPerRev );
+extern int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
+extern int	FDC_IndexPulse_GetState ( void );
+extern int	FDC_NextIndexPulse_FdcCycles ( void );
+
 extern void	FDC_DiskController_WriteWord ( void );
 extern void	FDC_DiskControllerStatus_ReadWord ( void );
 extern void	FDC_DmaModeControl_WriteWord ( void );
