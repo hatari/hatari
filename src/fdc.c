@@ -1901,7 +1901,12 @@ static int FDC_UpdateRestoreCmd ( void )
 			break;
 		}
 
-		FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+			FdcCycles = -1;
+		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else
+			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
@@ -2044,7 +2049,12 @@ static int FDC_UpdateSeekCmd ( void )
 			break;
 		}
 
-		FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+			FdcCycles = -1;
+		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else
+			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
@@ -2169,7 +2179,12 @@ static int FDC_UpdateStepCmd ( void )
 			break;
 		}
 
-		FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+			FdcCycles = -1;
+		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else
+			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
@@ -2260,7 +2275,12 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			break;
 		}
 
-		FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+			FdcCycles = -1;
+		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else
+			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
@@ -2442,7 +2462,12 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			break;
 		}
 
-		FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+			FdcCycles = -1;
+		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else
+			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
@@ -2577,7 +2602,12 @@ static int FDC_UpdateReadAddressCmd ( void )
 		}
 		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READADDRESS_MOTOR_ON:
-		FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
+			FdcCycles = -1;
+		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			FdcCycles = FDC_NextSectorID_FdcCycles_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
+		else
+			FdcCycles = FDC_NextSectorID_FdcCycles_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
