@@ -2772,8 +2772,7 @@ command "file" option and with the Hatari "--parse" command line
 option.
 </p>
 
-
-<h3>Tracing</h3>
+<h3>Stepping through code</h3>
 
 <p>
 After analyzing the emulation state and/or setting new breakpoints,
@@ -2786,13 +2785,37 @@ triggers) if you omit the instruction count.
 <p>
 If you want to continue just to the next instruction, use "s" (step)
 command to continue for exactly one instruction, or "n" (next), if you
-want to skip subroutine calls.
+want to skip subroutine calls.  "ds" and "dn" commands do the same
+for DSP.
 </p>
 
 <p>
-If you want to continue with real-time disassembling, you can enable
-it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at the
-debugger prompt before continuing.
+You can also continue with the "n" until instruction of certain
+type is encountered, by giving it the instruction type:
+<ul>
+<li>"branch" matches branch instructions: BCC, BRA, DBCC, JMP</li>
+<li>"subcall" matches subroutine calls: BSR, JSR</li>
+<li>"subreturn" matches return from subroutine: RTD, RTR, RTS</li>
+<li>"exception" matches exceptions: BPPT, ILLG, STOP, TRAP, TRAPV</li>
+<li>"exreturn" matches return from exception: RTE</li>
+</ul>
+
+<p>
+For example: "n branch", or "dn branch".
+</p>
+
+<p>
+(Note: CHK, CHK2, FBCC, FDBCC, &amp; FTRAPCC exception / branch CPU
+instructions aren't supported currently.)
+</p>
+
+
+<h3>Tracing</h3>
+
+<p>
+If you want e.g. to continue with real-time disassembling, you can
+enable it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at
+the debugger prompt before continuing.
 </p>
 <p>
 Disable tracing with "trace none" when you enter the debugger again.
