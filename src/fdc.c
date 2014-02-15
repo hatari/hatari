@@ -598,6 +598,7 @@ static void	FDC_WriteSectorRegister ( void );
 static void	FDC_WriteDataRegister ( void );
 
 static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
+static Uint8	FDC_NextSectorID_SR_ST ( void );
 static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
 static Uint8	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 static Uint8	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
@@ -2229,6 +2230,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	int	FdcCycles = 0;
 	int	SectorSize;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	Next_SR;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2294,7 +2296,11 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field is the one we're looking for */
-		if ( FDC.NextSector_ID_Field_SR == FDC.SR )
+		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			Next_SR = FDC_NextSectorID_SR_STX ();
+		else
+			Next_SR = FDC_NextSectorID_SR_ST ();
+		if ( Next_SR == FDC.SR )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
@@ -2481,7 +2487,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER:
 		/* Check if the current ID Field is the one we're looking for */
-		if ( FDC.NextSector_ID_Field_SR == FDC.SR )
+		if ( FDC_NextSectorID_SR_ST () == FDC.SR )
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
@@ -2625,10 +2631,10 @@ static int FDC_UpdateReadAddressCmd ( void )
 
 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
 			FDC.Status_Temp = FDC_ReadAddress_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
-				     FDC.NextSector_ID_Field_SR , FDC.SideSignal );
+				     FDC_NextSectorID_SR_STX () , FDC.SideSignal );
 		else
 			FDC.Status_Temp = FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
-				     FDC.NextSector_ID_Field_SR , FDC.SideSignal );
+				     FDC_NextSectorID_SR_ST () , FDC.SideSignal );
 
 		FDC.SR = FDC_BUFFER.Data[ 0 ].Byte;			/* The 1st byte of the ID field is also copied into Sector Register */
 
@@ -3845,6 +3851,17 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Sid
 //fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d maxsr=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, MaxSector, NextSector );
 	FDC.NextSector_ID_Field_SR = NextSector;
 	return FDC_TransferByte_FdcCycles ( NbBytes );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the sector number in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_ST.
+ */
+static Uint8	FDC_NextSectorID_SR_ST ( void )
+{
+	return FDC.NextSector_ID_Field_SR;
 }
 
 
