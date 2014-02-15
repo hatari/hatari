@@ -6,12 +6,13 @@
 
   STX disk image support.
 
-  STX files are created using the program 'Pasti' made by Ijor.
+  STX files are created using the program 'Pasti' made by Jorge Cwik (Ijor).
   As no official documentation exists, this file is based on the reverse
-  engineering and docs made by the following people :
+  engineering and docs made by the following people, mainly using Pasti 0.4b :
    - Markus Fritze (Sarnau)
    - P. Putnik
    - Jean Louis Guerin (Dr CoolZic)
+   - Nicolas Pomarede
 */
 const char floppy_stx_fileid[] = "Hatari floppy_stx.c : " __DATE__ " " __TIME__;
 
@@ -35,18 +36,27 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c : " __DATE__ " " __TIME__;
 // #define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE | STX_DEBUG_FLAG_DATA )
 
 
+#define FDC_DELAY_CYCLE_MFM_BIT			( 4 * 8 )	/* 4 us per bit, 8 MHz clock -> 32 cycles */
+#define FDC_DELAY_CYCLE_MFM_BYTE		( 4 * 8 * 8 )	/* 4 us per bit, 8 bits per byte, 8 MHz clock -> 256 cycles */
+
 
 typedef struct
 {
 	STX_MAIN_STRUCT		*ImageBuffer[ MAX_FLOPPYDRIVES ];	/* For the STX disk images */
 
+	Uint32			NextSectorStruct_Nbr;		/* Sector Number in pSectorsStruct after a call to FDC_NextSectorID_FdcCycles_STX() */
+	Uint8			NextSector_ID_Field_SR;		/* Sector Register from the ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
+	
 } STX_STRUCT;
 
 
 static STX_STRUCT	STX_State;			/* All variables related to the STX support */
 
 
-Uint8	TimingDataDefault[] = {				/* Default timing table for Macrodos when revision=0 */
+/* Default timing table for Macrodos when revision=0 */
+/* 1 unit of timing means 32 FDC cycles ; + 28 cycles every 16 bytes, so a standard block of 16 bytes */
+/* should have a value of 0x7f or 0x80, which gives 4092-4124 cycles */
+Uint8	TimingDataDefault[] = {
 	0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,
 	0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,
 	0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,
@@ -60,6 +70,8 @@ Uint8	TimingDataDefault[] = {				/* Default timing table for Macrodos when revis
 /*--------------------------------------------------------------*/
 
 static void	STX_BuildSectorsSimple ( STX_TRACK_STRUCT *pStxTrack , Uint8 *p );
+static STX_TRACK_STRUCT	*STX_FindTrack ( Uint8 Drive , Uint8 Track , Uint8 Side );
+static STX_SECTOR_STRUCT *STX_FindSector ( Uint8 Drive , Uint8 Track , Uint8 Side , Uint8 SectorStruct_Nb );
 
 
 
@@ -93,8 +105,6 @@ void STX_MemorySnapShot_Capture(bool bSave)
 		fprintf ( stderr , "stx load ok\n" );
 	}
 }
-
-
 
 
 /*-----------------------------------------------------------------------*/
@@ -143,8 +153,7 @@ bool STX_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 }
 
 
-
-
+/*-----------------------------------------------------------------------*/
 /*
  * Init variables used to handle STX images
  */
@@ -161,8 +170,7 @@ bool	STX_Init ( void )
 }
 
 
-
-
+/*-----------------------------------------------------------------------*/
 /*
  * Init the ressources to handle the STX image inserted into a drive (0=A: 1=B:)
  */
@@ -170,14 +178,13 @@ bool	STX_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 {
 	fprintf ( stderr , "STX : STX_Insert drive=%d buf=%p size=%ld\n" , Drive , pImageBuffer , ImageSize );
 
-	STX_BuildStruct ( pImageBuffer , STX_DEBUG_FLAG );
+	STX_State.ImageBuffer[ Drive ] = STX_BuildStruct ( pImageBuffer , STX_DEBUG_FLAG );
 
 	return true;
 }
 
 
-
-
+/*-----------------------------------------------------------------------*/
 /*
  * When ejecting a disk, free the ressources associated with an STX image
  */
@@ -185,13 +192,18 @@ bool	STX_Eject ( int Drive )
 {
 	fprintf ( stderr , "STX : STX_Eject drive=%d\n" , Drive );
 
+	if ( STX_State.ImageBuffer[ Drive ] )
+		STX_FreeStruct ( STX_State.ImageBuffer[ Drive ] );
+	STX_State.ImageBuffer[ Drive ] = NULL;
+
 	return true;
 }
 
 
-
-
-
+/*-----------------------------------------------------------------------*/
+/*
+ * Read words and longs stored in little endian order
+ */
 static Uint16	STX_ReadU16 ( Uint8 *p )
 {
 	return (p[1]<<8) +p[0];
@@ -203,6 +215,10 @@ static Uint32	STX_ReadU32 ( Uint8 *p )
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Free all the memory allocated to store an STX file
+ */
 void	STX_FreeStruct ( STX_MAIN_STRUCT *pStxMain )
 {
 	int			Track;
@@ -220,6 +236,14 @@ void	STX_FreeStruct ( STX_MAIN_STRUCT *pStxMain )
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Parse an STX file.
+ * The file is in pFileBuffer and we dynamically allocate memory to store
+ * the components (main header, tracks, sectors).
+ * Some internal variables/pointers are also computed, to speed up
+ * data access when the FDC emulates an STX file.
+ */
 STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 {
 
@@ -268,7 +292,7 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 	pStxMain->pTracksStruct = pStxTrack;
 
 	/* Parse all the track blocks */
-	for ( Track = 0 ; Track < pStxMain->TracksCount ; Track++ )
+ 	for ( Track = 0 ; Track < pStxMain->TracksCount ; Track++ )
 // 	for ( Track = 0 ; Track < 4 ; Track++ )
 	{
 		p_cur = p;
@@ -281,7 +305,7 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 		pStxTrack->TrackNumber		=	*p++;
 		pStxTrack->RecordType		=	*p++;
 
-		if ( pStxTrack->SectorsCount == 0 )			/* No sector (track image only, or empty / non formatted track */
+		if ( pStxTrack->SectorsCount == 0 )			/* No sector (track image only, or empty / non formatted track) */
 		{
 			pStxTrack->pSectorsStruct = NULL;
 		}
@@ -334,7 +358,7 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 			pStxTrack->pSectorsImageData = pStxTrack->pTrackImageData + pStxTrack->TrackImageSize;
 		}
 
-		if ( pStxTrack->SectorsCount == 0 )			/* No sector (track image only, or empty / non formatted track */
+		if ( pStxTrack->SectorsCount == 0 )			/* No sector (track image only, or empty / non formatted track) */
 			goto next_track;
 
 		/* Parse all the sectors in this track */
@@ -352,7 +376,7 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 			pStxSector->ID_Head = *p++;
 			pStxSector->ID_Sector = *p++;
 			pStxSector->ID_Size = *p++;
-			pStxSector->ID_CRC = STX_ReadU16 ( p ); p += 2;
+			pStxSector->ID_CRC = ( p[0] << 8 ) | p[1] ; p +=2;
 			pStxSector->FDC_Status = *p++;
 			pStxSector->Reserved = *p++;
 
@@ -417,7 +441,6 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 					else
 						pStxSector->pTimingData = TimingDataDefault;	/* Fixed table for revision 0 */
 				}
-
 			}
 		}
 
@@ -446,6 +469,7 @@ next_track:
 			else
 				for ( Sector = 0 ; Sector < pStxTrack->SectorsCount ; Sector++ )
 				{
+					/* If the sector use the internal timing table, we print TimingsOffset=-1 */
 					pStxSector = &(pStxTrack->pSectorsStruct[ Sector ]);
 					fprintf ( stderr , "    sector %2d DataOffset=%d BitPosition=%d ReadTime=%d"
 						" [track=%2.2x head=%2.2x sector=%2.2x size=%2.2x crc=%4.4x]"
@@ -454,7 +478,9 @@ next_track:
 						pStxSector->ReadTime ,  pStxSector->ID_Track ,  pStxSector->ID_Head ,
 						pStxSector->ID_Sector , pStxSector->ID_Size , pStxSector->ID_CRC ,
 						pStxSector->FDC_Status , pStxSector->Reserved ,
-						pStxSector->pTimingData ? pStxTrack->pTimingData - pStxTrack->pTrackData : 0 );
+						pStxSector->pTimingData ?
+							( pStxTrack->TimingSize > 0 ? pStxSector->pTimingData - pStxTrack->pTrackData : -1 )
+							: 0 );
 
 					if ( ( Debug & STX_DEBUG_FLAG_DATA ) && pStxSector->pData )
 					{
@@ -471,7 +497,7 @@ next_track:
 					if ( ( Debug & STX_DEBUG_FLAG_DATA ) && pStxSector->pTimingData )
 					{
 						fprintf ( stderr , "      timing data :\n" );
-						Str_Dump_Hex_Ascii ( (char *)pStxSector->pTimingData , pStxSector->SectorSize / 16 ,
+						Str_Dump_Hex_Ascii ( (char *)pStxSector->pTimingData , ( pStxSector->SectorSize / 16 ) * 2 ,
 								16 , "        " , stderr );
 					}
 				}
@@ -483,12 +509,10 @@ next_track:
 
 
 
-exit(0);
+//exit(0);
 
 	return pStxMain;
 }
-
-
 
 
 /*-----------------------------------------------------------------------*/
@@ -519,5 +543,302 @@ static void	STX_BuildSectorsSimple ( STX_TRACK_STRUCT *pStxTrack , Uint8 *p )
 		pStxTrack->pSectorsStruct[ Sector ].pData = p + Sector * 512;
 	}
 }
+
+
+
+
+
+static STX_TRACK_STRUCT	*STX_FindTrack ( Uint8 Drive , Uint8 Track , Uint8 Side )
+{
+	int	i;
+
+	if ( STX_State.ImageBuffer[ Drive ] == NULL )
+		return NULL;
+
+	for ( i=0 ; i<STX_State.ImageBuffer[ Drive ]->TracksCount ; i++ )
+		if ( STX_State.ImageBuffer[ Drive ]->pTracksStruct[ i ].TrackNumber == ( ( Track & 0x7f ) | ( Side << 7 ) ) )
+			return &(STX_State.ImageBuffer[ Drive ]->pTracksStruct[ i ]);
+
+	return NULL;
+}
+
+
+static STX_SECTOR_STRUCT	*STX_FindSector ( Uint8 Drive , Uint8 Track , Uint8 Side , Uint8 SectorStruct_Nb )
+{
+	STX_TRACK_STRUCT	*pStxTrack;
+
+	if ( STX_State.ImageBuffer[ Drive ] == NULL )
+		return NULL;
+
+	pStxTrack = STX_FindTrack ( Drive , Track , Side );
+	if ( pStxTrack == NULL )
+		return NULL;
+
+	if ( pStxTrack->pSectorsStruct == NULL )
+		return NULL;
+
+	return &(pStxTrack->pSectorsStruct[ SectorStruct_Nb ]);
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the number of FDC cycles to wait before reaching the next
+ * sector's ID Field in the track ($A1 $A1 $A1 $FE TR SIDE SR LEN CRC1 CRC2)
+ * If no ID Field is found before the end of the track, we use the 1st
+ * ID Field of the track (which simulates a full spin of the floppy).
+ * We also store the next sector's number into NextSectorStruct_Nbr
+ * and the next sector's number into NextSector_ID_Field_SR.
+ * This function assumes the sectors of each track are sorted in ascending order
+ * using BitPosition.
+ * If there's no available drive/floppy or no ID field in the track, we return -1
+ */
+extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
+{
+	STX_TRACK_STRUCT	*pStxTrack;
+	int			CurrentPos_FdcCycles;
+	int			i;
+	int			Delay_FdcCycles;
+	int			TrackSize;
+
+	CurrentPos_FdcCycles = FDC_IndexPulse_GetCurrentPos_FdcCycles ( NULL );
+	if ( CurrentPos_FdcCycles < 0 )					/* No drive/floppy available at the moment */
+		return -1;
+
+	pStxTrack = STX_FindTrack ( Drive , Track , Side );
+	if ( pStxTrack == NULL )					/* Track/Side don't exist in this STX image */
+		return -1;
+
+	if ( pStxTrack->SectorsCount == 0 )				/* No sector (track image only, or empty / non formatted track) */
+		return -1;
+
+	/* Compare CurrentPos_FdcCycles with each sector's position in ascending order */
+	for ( i=0 ; i<pStxTrack->SectorsCount ; i++ )
+	{
+		if ( CurrentPos_FdcCycles < (int)pStxTrack->pSectorsStruct[ i ].BitPosition*FDC_DELAY_CYCLE_MFM_BIT )	/* 1 bit = 32 cycles at 8 MHz */
+			break;						/* We found the next sector */
+	}
+
+	if ( i == pStxTrack->SectorsCount )				/* CurrentPos_FdcCycles is after the last ID Field of this track */
+	{
+		/* Reach end of track (new index pulse), then go to 1st sector from current position */
+		if ( pStxTrack->pTrackImageData )
+			TrackSize = pStxTrack->TrackImageSize;
+		else
+			TrackSize = pStxTrack->MFMSize;
+
+		Delay_FdcCycles = TrackSize * FDC_DELAY_CYCLE_MFM_BYTE - CurrentPos_FdcCycles
+				+ pStxTrack->pSectorsStruct[ 0 ].BitPosition*FDC_DELAY_CYCLE_MFM_BIT;
+		STX_State.NextSectorStruct_Nbr = 0;
+//fprintf ( stderr , "size=%d pos=%d pos0=%d delay=%d\n" , TrackSize, CurrentPos_FdcCycles, pStxTrack->pSectorsStruct[ 0 ].BitPosition , Delay_FdcCycles );
+	}
+	else								/* There's an ID Field before end of track */
+	{
+		Delay_FdcCycles = (int)pStxTrack->pSectorsStruct[ i ].BitPosition*FDC_DELAY_CYCLE_MFM_BIT - CurrentPos_FdcCycles;
+		STX_State.NextSectorStruct_Nbr = i;
+//fprintf ( stderr , "i=%d pos=%d posi=%d delay=%d\n" , i, CurrentPos_FdcCycles, pStxTrack->pSectorsStruct[ i ].BitPosition*FDC_DELAY_CYCLE_MFM_BIT , Delay_FdcCycles );
+	}
+
+	/* Store the value of the sector number in the next ID field */
+	STX_State.NextSector_ID_Field_SR = pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].ID_Sector;
+
+	/* BitPosition in STX seems to point just after the IDAM $FE ; we need to point 4 bytes earlier at the 1st $A1 */
+	Delay_FdcCycles -= 4 * FDC_DELAY_CYCLE_MFM_BYTE;		/* Correct delay to point to $A1 $A1 $A1 $FE */
+	
+//fprintf ( stderr , "fdc bytes next sector pos=%d delay=%d maxsr=%d nextsr=%d\n" , CurrentPos_FdcCycles, Delay_FdcCycles, pStxTrack->SectorsCount, STX_State.NextSectorStruct_Nbr );
+	return Delay_FdcCycles;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the sector number in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_STX.
+ */
+extern Uint8	FDC_NextSectorID_SR_STX ( void )
+{
+	return STX_State.NextSector_ID_Field_SR;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read a sector from a floppy image in STX format (used in type II command)
+ * We return the sector NextSectorStruct_Nbr, whose value was set
+ * by the latest call to FDC_NextSectorID_FdcCycles_STX
+ * Each byte of the sector is added to the FDC buffer with a default timing
+ * (32 microsec) or a variable timing, depending on the sector's flags.
+ * Some sectors can also contains "fuzzy" bits.
+ * Special care must be taken to compute the timing of each byte, which can
+ * be a decimal value and must be rounded to the best possible integer.
+ * Return RNF if sector was not found, else return CRC and RECORD_TYPE values
+ * for the status register.
+ */
+extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
+{
+	STX_SECTOR_STRUCT	*pStxSector;
+	int			i;
+	Uint8			Byte;
+	Uint16			Timing;
+	Uint32			Sector_ReadTime;
+	double			Total_cur;				/* To compute closest integer timings for each byte */
+	double			Total_prev;
+
+	pStxSector = STX_FindSector ( Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
+	if ( pStxSector == NULL )
+	{
+		fprintf ( stderr , "FDC_ReadSector_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
+				Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
+		return STX_SECTOR_FLAG_RNF;				/* Should not happen if FDC_NextSectorID_FdcCycles_STX succeeded before */
+	}
+
+	/* If RNF is set, return FDC_STR_BIT_RNF */
+	if ( pStxSector->FDC_Status & STX_SECTOR_FLAG_RNF )
+		return STX_SECTOR_FLAG_RNF;				/* RNF in FDC's status register */
+
+	*pSectorSize = pStxSector->SectorSize;
+
+	Sector_ReadTime = pStxSector->ReadTime;
+	if ( Sector_ReadTime == 0 )					/* Sector has a standard delay (32 us per byte) */
+		Sector_ReadTime = 32 * pStxSector->SectorSize;		/* Use the real standard value instead of 0 */
+	Sector_ReadTime *= 8;						/* Convert delay in us to a number of FDC cycles at 8 MHz */
+
+	Total_prev = 0;
+	for ( i=0 ; i<pStxSector->SectorSize ; i++ )
+	{
+		/* Get the value of each byte, with possible fuzzy bits */
+		Byte = pStxSector->pData[ i ];
+		if ( pStxSector->pFuzzyData )
+			Byte = ( Byte & pStxSector->pFuzzyData[ i ] ) | ( rand() & ~pStxSector->pFuzzyData[ i ] );
+
+		/* Compute the timing in FDC cycles to transfer this byte */
+		if ( pStxSector->pTimingData )				/* Specific timing for each block of 16 bytes */
+		{
+			Timing = ( pStxSector->pTimingData[ ( i>>4 ) * 2 ] << 8 )
+				+ pStxSector->pTimingData[ ( i>>4 ) * 2 + 1 ];	/* Get big endian timing for this block of 16 bytes */
+
+			/* [NP] Formula to convert timing data comes from Pasti.prg 0.4b : */
+			/* 1 unit of timing = 32 FDC cycles at 8 MHz + 28 cycles to complete each block of 16 bytes */
+			Timing = Timing * 32 + 28;
+
+			if ( i % 16 == 0 )	Total_prev = 0;		/* New block of 16 bytes */
+			Total_cur = ( (double)Timing * ( ( i % 16 ) + 1 ) ) / 16;
+			Timing = rint ( Total_cur - Total_prev );
+			Total_prev += Timing;
+		}
+		else							/* Specific timing in us for the whole sector */
+		{
+			Total_cur = ( (double)Sector_ReadTime * ( i+1 ) ) / pStxSector->SectorSize;
+			Timing = rint ( Total_cur - Total_prev );
+			Total_prev += Timing;
+		}
+
+		/* Add the Byte to the buffer, Timing should be a number of FDC cycles at 8 MHz */
+		FDC_Buffer_Add_Timing ( Byte , Timing );
+	}
+
+	/* Return only bits 3 and 5 of the FDC_Status */
+	return pStxSector->FDC_Status & ( STX_SECTOR_FLAG_CRC | STX_SECTOR_FLAG_RECORD_TYPE );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read an address field from a floppy image in STX format (used in type III command)
+ * We return the address field NextSectorStruct_Nbr, whose value was set
+ * by the latest call to FDC_NextSectorID_FdcCycles_STX
+ * Each byte of the ID field is added to the FDC buffer with a default timing
+ * (32 microsec)
+ * Return 0 if OK, or a CRC error
+ */
+extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side )
+{
+	STX_SECTOR_STRUCT	*pStxSector;
+
+	pStxSector = STX_FindSector ( Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
+	if ( pStxSector == NULL )
+	{
+		fprintf ( stderr , "FDC_ReadAddress_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
+				Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
+		return STX_SECTOR_FLAG_RNF;				/* Should not happen if FDC_NextSectorID_FdcCycles_STX succeeded before */
+	}
+
+	FDC_Buffer_Add ( pStxSector->ID_Track );
+	FDC_Buffer_Add ( pStxSector->ID_Head );
+	FDC_Buffer_Add ( pStxSector->ID_Sector );
+	FDC_Buffer_Add ( pStxSector->ID_Size );
+	FDC_Buffer_Add ( pStxSector->ID_CRC >> 8 );
+	FDC_Buffer_Add ( pStxSector->ID_CRC & 0xff );
+
+	/* If RNF is set and CRC error is set, then this ID field has a CRC error */
+	if ( ( pStxSector->FDC_Status & STX_SECTOR_FLAG_RNF ) && ( pStxSector->FDC_Status & STX_SECTOR_FLAG_CRC ) )
+		return STX_SECTOR_FLAG_CRC;
+
+	return 0;							/* No error */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read an track from a floppy image in STX format (used in type III command)
+ * This function is called after an index pulse was encountered, and it will
+ * always succeeds and fill the track buffer.
+ * If the Track/Side exist in the STX image, then the corresponding bytes are
+ * returned.
+ * If these Track/Side dosn't exist, we return some random bytes.
+ * Return 0 if OK
+ */
+extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
+{
+	STX_TRACK_STRUCT	*pStxTrack;
+	int			i;
+	Uint16			Timing;
+	Uint32			Track_ReadTime;
+	double			Total_cur;				/* To compute closest integer timings for each byte */
+	double			Total_prev;
+
+	if ( STX_State.ImageBuffer[ Drive ] == NULL )
+	{
+		fprintf ( stderr , "FDC_ReadTrack_STX drive=%d track=%d side=%d, no image buffer !\n" , Drive , Track , Side );
+		return STX_SECTOR_FLAG_RNF;				/* Should not happen, just in case of a bug */
+	}
+
+	pStxTrack = STX_FindTrack ( Drive , Track , Side );
+	if ( pStxTrack == NULL )					/* Track/Side don't exist in this STX image */
+	{
+// 		for ( i=0 ; i<FDC_GetBytesPerTrack ( Drive ) ; i++ )
+		for ( i=0 ; i<6268 ; i++ )
+			FDC_Buffer_Add ( rand() & 0xff );		/* Fill the track buffer with random bytes */
+		return 0;
+	}
+
+	/* If the Track block contains a complete dump of the track image, use it directly */
+	/* The timing for each byte is the average timing based on TrackImageSize */
+	if ( pStxTrack->pTrackImageData )
+	{
+		Track_ReadTime = 8000000 / 5;				/* 300 RPM, gives 5 RPS and 1600000 cycles per revolution at 8 MHz */
+		Total_prev = 0;
+		for ( i=0 ; i<pStxTrack->TrackImageSize ; i++ )
+		{
+			Total_cur = ( (double)Track_ReadTime * ( i+1 ) ) / pStxTrack->TrackImageSize;
+			Timing = rint ( Total_cur - Total_prev );
+			Total_prev += Timing;
+			/* Add each byte to the buffer, Timing should be a number of FDC cycles at 8 MHz */
+			FDC_Buffer_Add_Timing ( pStxTrack->pTrackImageData[ i ] , Timing );
+		}
+	}
+
+	/* If the track block doesn't contain a dump of the track image, we must build a track */
+	/* using the sector blocks and some standard GAP values */
+	else
+	{
+	}
+
+	return 0;							/* No error */
+}
+
 
 

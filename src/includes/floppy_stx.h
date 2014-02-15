@@ -34,6 +34,7 @@ typedef struct {
 
 #define	STX_SECTOR_BLOCK_SIZE		( 4+2+2+1+1+1+1+2+1+1)	/* Size of the sector block in an STX file = 16 bytes */
 
+/* NOTE : bits 3,4,5 have the same meaning as in the FDC's Status register */
 #define	STX_SECTOR_FLAG_VARIABLE_TIME	(1<<0)			/* bit 0, if set, this sector has variable bit width */
 #define	STX_SECTOR_FLAG_CRC		(1<<3)			/* bit 3, if set, there's a CRC error */
 #define	STX_SECTOR_FLAG_RNF		(1<<4)			/* bit 4, if set, there's no sector data */
@@ -58,10 +59,11 @@ typedef struct {
 
 	Uint8			*pFuzzyData;			/* Fuzzy mask data for all the fuzzy sectors of the track */
 
-	Uint8			*pTrackData;			/* */
+	Uint8			*pTrackData;			/* Track data (after sectors data and fuzzy data) */
 	Uint16			TrackImageSyncPosition;
 	Uint16			TrackImageSize;			/* Number of bytes in pTrackImageData */
 	Uint8			*pTrackImageData;		/* Optionnal data as returned by the read track command */
+
 	Uint8			*pSectorsImageData;		/* Optionnal data for the sectors of this track */
 
 	Uint8			*pTiming;
@@ -117,4 +119,11 @@ extern bool	STX_Eject ( int Drive );
 
 extern void	STX_FreeStruct ( STX_MAIN_STRUCT *pStxMain );
 extern STX_MAIN_STRUCT *STX_BuildStruct ( Uint8 *pFileBuffer , int Debug );
+
+
+extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
+extern Uint8	FDC_NextSectorID_SR_STX ( void );
+extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
+extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
+extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
 
