@@ -45,7 +45,8 @@ typedef struct
 	STX_MAIN_STRUCT		*ImageBuffer[ MAX_FLOPPYDRIVES ];	/* For the STX disk images */
 
 	Uint32			NextSectorStruct_Nbr;		/* Sector Number in pSectorsStruct after a call to FDC_NextSectorID_FdcCycles_STX() */
-	Uint8			NextSector_ID_Field_SR;		/* Sector Register from the ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
+	Uint8			NextSector_ID_Field_TR;		/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
+	Uint8			NextSector_ID_Field_SR;		/* Sector value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
 	
 } STX_STRUCT;
 
@@ -641,7 +642,8 @@ extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Si
 //fprintf ( stderr , "i=%d pos=%d posi=%d delay=%d\n" , i, CurrentPos_FdcCycles, pStxTrack->pSectorsStruct[ i ].BitPosition*FDC_DELAY_CYCLE_MFM_BIT , Delay_FdcCycles );
 	}
 
-	/* Store the value of the sector number in the next ID field */
+	/* Store the value of the track/sector numbers in the next ID field */
+	STX_State.NextSector_ID_Field_TR = pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].ID_Track;
 	STX_State.NextSector_ID_Field_SR = pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].ID_Sector;
 
 	/* BitPosition in STX seems to point just after the IDAM $FE ; we need to point 4 bytes earlier at the 1st $A1 */
@@ -651,6 +653,17 @@ extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Si
 	return Delay_FdcCycles;
 }
 
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the track number in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_STX.
+ */
+extern Uint8	FDC_NextSectorID_TR_STX ( void )
+{
+	return STX_State.NextSector_ID_Field_TR;
+}
 
 
 /*-----------------------------------------------------------------------*/

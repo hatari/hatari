@@ -598,6 +598,7 @@ static void	FDC_WriteSectorRegister ( void );
 static void	FDC_WriteDataRegister ( void );
 
 static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
+static Uint8	FDC_NextSectorID_TR_ST ( void );
 static Uint8	FDC_NextSectorID_SR_ST ( void );
 static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
 static Uint8	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
@@ -2230,6 +2231,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	int	FdcCycles = 0;
 	int	SectorSize;
 	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	Next_TR;
 	Uint8	Next_SR;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -2295,12 +2297,18 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
-		/* Check if the current ID Field is the one we're looking for */
+		/* Check if the current ID Field is the one we're looking for (same track/sector) */
 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		{
+			Next_TR = FDC_NextSectorID_TR_STX ();
 			Next_SR = FDC_NextSectorID_SR_STX ();
+		}
 		else
+		{
+			Next_TR = FDC_NextSectorID_TR_ST ();
 			Next_SR = FDC_NextSectorID_SR_ST ();
-		if ( Next_SR == FDC.SR )
+		}
+		if ( ( Next_TR == FDC.TR ) && ( Next_SR == FDC.SR ) )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
@@ -3851,6 +3859,17 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Sid
 //fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d maxsr=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, MaxSector, NextSector );
 	FDC.NextSector_ID_Field_SR = NextSector;
 	return FDC_TransferByte_FdcCycles ( NbBytes );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the track number in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_ST (for ST/MSA, it's always FDC.TR)
+ */
+static Uint8	FDC_NextSectorID_TR_ST ( void )
+{
+	return FDC.NextSector_ID_Field_SR;
 }
 
 
