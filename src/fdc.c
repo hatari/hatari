@@ -2384,6 +2384,9 @@ static int FDC_UpdateReadSectorsCmd ( void )
 			FDC.SR++;					/* Try to read next sector and set RNF if not possible */
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+			LOG_TRACE(TRACE_FDC, "fdc type II read sector with multi sector=0x%x track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				FDC.SR, FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal ,
+				FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 		}
 		else							/* Multi=0, stop here with no error */
 		{
