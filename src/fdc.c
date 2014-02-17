@@ -952,6 +952,7 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 	Uint32	Address;
 	Uint8	Byte;
 
+//fprintf ( stderr , "fifo pull %d %d %d\n" , FDC_DMA.BytesToTransfer , FDC_DMA.BytesInSector , FDC_DMA.SectorCount );
 	if ( FDC_DMA.SectorCount == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
@@ -977,7 +978,7 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 
 		/* Update Sector Count */
 		FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
-		if ( FDC_DMA.BytesInSector <= 0 )
+		if ( FDC_DMA.BytesInSector < 0 )
 		{
 			FDC_DMA.SectorCount--;
 			FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
