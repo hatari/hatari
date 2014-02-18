@@ -475,7 +475,7 @@ typedef struct {
 	Uint16		Status;
 	Uint16		Mode;
 	Uint16		SectorCount;
-	Uint16		BytesInSector;
+	Sint16		BytesInSector;
 
 	Uint8		FIFO[ FDC_DMA_FIFO_SIZE ];
 	int		FIFO_Size;				/* Between 0 and FDC_DMA_FIFO_SIZE */
