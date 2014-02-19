@@ -2718,7 +2718,8 @@ static int FDC_UpdateReadTrackCmd ( void )
 		}
 		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READTRACK_MOTOR_ON:
-		FdcCycles = FDC_NextIndexPulse_FdcCycles ();			/* Wait for the next index pulse */
+		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
+//fprintf ( stderr , "read tr idx=%d %d\n" , FDC_IndexPulse_GetState() , FdcCycles );
 		if ( FdcCycles < 0 )
 		{
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
@@ -3280,6 +3281,12 @@ static void FDC_ExecuteCommand ( void )
 	else								/* Type IV - Force Interrupt */
 		FdcCycles = FDC_ExecuteTypeIVCommands();
 
+	/* When a new command is executed, we clear InterruptCond on Index Pulse */
+	/* (in case it was set) but we don't clear InterruptCond Immediate, only */
+	/* a $D0 command can clear the immediate IRQ set by a $D8 command */
+	if ( Type != 4 )
+		FDC.InterruptCond &= FDC_INTERRUPT_COND_IMMEDIATE;	/* Clear bits 0,1,2 and keep bit 3 */
+	
 	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the prepare+spinup phase */
 	FDC_StartTimer_FdcCycles ( FdcCycles , 0 );
 }
