@@ -1,7 +1,7 @@
 /*
  * Hatari - natfeats.c
  * 
- * Copyright (C) 2012-2013 by Eero Tamminen
+ * Copyright (C) 2012-2014 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -29,6 +29,11 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 # define Dprintf(a)
 #endif
 
+/* whether to allow XBIOS(255) style
+ * Hatari command line parsing with "command" NF
+ */
+#define NF_COMMAND 0
+
 /* TODO:
  * - supervisor vs. user stack handling?
  * - clipboard and hostfs native features?
@@ -47,7 +52,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 
 	ptr = STMemory_ReadLong(stack);
 	len = STMemory_ReadLong(stack + SIZE_LONG);
-	Dprintf(("NF name[%d](0x%x, %d)\n", subid, ptr, len));
+	Dprintf(("NF_NAME[%d](0x%x, %d)\n", subid, ptr, len));
 
 	if (!STMemory_ValidArea(ptr, len)) {
 		M68000_BusError(ptr, BUS_ERROR_WRITE);
@@ -65,7 +70,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 
 static bool nf_version(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
-	Dprintf(("NF version() -> 0x00010000\n"));
+	Dprintf(("NF_VERSION() -> 0x00010000\n"));
 	*retval = 0x00010000;
 	return true;
 }
@@ -90,7 +95,7 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 
 static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
-	Dprintf(("NF shutdown()\n"));
+	Dprintf(("NF_SHUTDOWN()\n"));
 	ConfigureParams.Log.bConfirmQuit = false;
 	Main_RequestQuit();
 	return true;
@@ -105,10 +110,33 @@ static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
  */
 static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
-	Dprintf(("NF debugger()\n"));
+	Dprintf(("NF_DEBUGGER()\n"));
 	M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	return true;
 }
+
+#if NF_COMMAND
+/**
+ * execute Hatari (command line / debugger) command
+ */
+static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
+{
+	const char *buffer;
+	Uint32 ptr;
+
+	ptr = STMemory_ReadLong(stack);
+
+	if (!STMemory_ValidArea(ptr, 1)) {
+		M68000_BusError(ptr, BUS_ERROR_READ);
+		return false;
+	}
+	buffer = (const char *)STRAM_ADDR(ptr);
+	Dprintf(("NF_COMMAND(0x%x \"%s\")\n", ptr, buffer));
+
+	Control_ProcessBuffer(buffer);
+	return true;
+}
+#endif
 
 /* ---------------------------- */
 
@@ -119,6 +147,9 @@ static const struct {
 	bool super;		/* should be called only in supervisor mode */
 	bool (*cb)(Uint32 stack, Uint32 subid, Uint32 *retval);
 } features[] = {
+#if NF_COMMAND
+	{ "NF_COMMAND",  false, nf_command },
+#endif
 	{ "NF_NAME",     false, nf_name },
 	{ "NF_VERSION",  false, nf_version },
 	{ "NF_STDERR",   false, nf_stderr },
@@ -153,8 +184,7 @@ bool NatFeat_ID(Uint32 stack, Uint32 *retval)
 	}
 
 	name = (const char *)STRAM_ADDR(ptr);
-	Dprintf(("NF ID(0x%x)\n", ptr));
-	Dprintf(("   \"%s\"\n", name));
+	Dprintf(("NF ID(0x%x \"%s\")\n", ptr, name));
 
 	for (i = 0; i < ARRAYSIZE(features); i++) {
 		if (strcmp(features[i].name, name) == 0) {
