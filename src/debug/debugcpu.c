@@ -532,12 +532,23 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 	}
 	else
 	{
-		Uint32 nextpc = Disasm_GetNextPC(M68000_GetPC());
+		Uint32 optype, nextpc;
+
+		optype = DebugCpu_OpcodeType();
+		/* can this instruction be stepped normally? */
+		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
+		{
+			nCpuSteps = 1;
+			return DEBUGGER_END;
+		}
+
+		nextpc = Disasm_GetNextPC(M68000_GetPC());
 		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
 	}
+	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, false))
 	{
-		nCpuSteps = 0;		/* using breakpoint, not steps */
+		nCpuSteps = 0;
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;

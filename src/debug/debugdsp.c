@@ -345,11 +345,23 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 	}
 	else
 	{
-		Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
+		Uint32 optype;
+		Uint16 nextpc;
+
+		optype = DebugDsp_OpcodeType();
+		/* can this instruction be stepped normally? */
+		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
+		{
+			nDspSteps = 1;
+			return DEBUGGER_END;
+		}
+
+		nextpc = DSP_GetNextPC(DSP_GetPC());
 		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
 	}
+	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, true)) {
-		nDspSteps = 0;		/* using breakpoint, not steps */
+		nDspSteps = 0;
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
