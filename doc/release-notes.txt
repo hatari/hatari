@@ -52,6 +52,10 @@ Emulator:
     in address order which asserted in profile data post-processor
   - new --debug-except option to specify which exceptions invoke
     the debugger, and WinUAE CPU core support for -D toggle option
+  - "next"/"dspnext" commands works like in other debuggers, they
+    skips subroutine/exception calls, for all other instructions
+    they works like "step" command (earlier they always moved to
+    next instruction in memory)
   - "next" and "dspnext" commands support optional "instruction type"
     argument, which can be used (for example) to continue emulation
     until subroutine returns.
