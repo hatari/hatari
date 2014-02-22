@@ -1327,6 +1327,9 @@ static void gen_opcode (unsigned long int opcode)
 	if ( curi->dmode == Apdi )
 	  insn_n_cycles -= 2;			/* correct the wrong cycle count for -(An) */
 
+	if ( ( curi->smode == Dreg ) && ( curi->dmode == absl ) )	// FIXME [NP] move.w Dn,xxxx.l (Union Demo : move.w d1,$4c)
+	  printf("\trefill_prefetch (m68k_getpc(), 6);\n");		// FIXME [NP] need better prefetch emulation
+
 	genflags (flag_logical, curi->size, "src", "", "");
 	genastore ("src", curi->dmode, "dstreg", curi->size, "dst");
 	break;
