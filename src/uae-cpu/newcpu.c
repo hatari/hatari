@@ -122,6 +122,8 @@
 /*			GP, Super Hang On, Monster Business, European Demo's Intro, BBC Menu 52).	*/
 /* 2014/02/22	[NP]	In Exception(), call valid_address() before reading the opcode at BusErrorPC,	*/
 /*			else this will cause an unwanted "double bus error" ("Union Demo" loader).	*/
+/* 2014/02/22	[NP]	In refill_prefetch(), use get_word() instead of do_get_mem_word() to generate	*/
+/*			a bus error when trying to read from an invalid region.				*/
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
