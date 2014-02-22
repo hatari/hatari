@@ -120,6 +120,8 @@
 /* 2013/05/03	[NP]	In Exception(), handle IACK for HBL and VBL interrupts too, allowing pending bit*/
 /*			to be set twice during an active video interrupt (correct fix for Super Monaco	*/
 /*			GP, Super Hang On, Monster Business, European Demo's Intro, BBC Menu 52).	*/
+/* 2014/02/22	[NP]	In Exception(), call valid_address() before reading the opcode at BusErrorPC,	*/
+/*			else this will cause an unwanted "double bus error" ("Union Demo" loader).	*/
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -976,6 +978,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* 68000 bus/address errors: */
     if (currprefs.cpu_level==0 && (nr==2 || nr==3) && ExceptionSource == M68000_EXC_SRC_CPU) {
 	uae_u16 specialstatus = 1;
+	uae_u16 BusError_opcode;
 
 	/* Special status word emulation isn't perfect yet... :-( */
 	if (regs.sr & 0x2000)
@@ -993,21 +996,28 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    }
 	}
 	else {    /* Bus error */
-	    specialstatus |= ( get_word(BusErrorPC) & (~0x1f) );	/* [NP] unused bits of special status are those of the last opcode ! */
+	    /* Get the opcode that caused the bus error, to adapt the stack frame in some cases */
+	    /* (we must call get_word() only on valid region, else this will cause a double bus error) */
+	    if ( valid_address ( BusErrorPC , 2 ) )
+	      BusError_opcode = get_word(BusErrorPC);
+	    else
+	      BusError_opcode = 0;
+
+	    specialstatus |= ( BusError_opcode & (~0x1f) );		/* [NP] unused bits of special status are those of the last opcode ! */
 	    if (bBusErrorReadWrite)
 	      specialstatus |= 0x10;
 	    put_word (m68k_areg(regs, 7), specialstatus);
 	    put_long (m68k_areg(regs, 7)+2, BusErrorAddress);
-	    put_word (m68k_areg(regs, 7)+6, get_word(BusErrorPC));	/* Opcode */
+	    put_word (m68k_areg(regs, 7)+6, BusError_opcode);		/* Opcode */
 
 	    /* [NP] PC stored in the stack frame is not necessarily pointing to the next instruction ! */
 	    /* FIXME : we should have a proper model for this, in the meantime we handle specific cases */
-	    if ( get_word(BusErrorPC) == 0x21f8 )					/* move.l $0.w,$24.w (Transbeauce 2 loader) */
+	    if ( BusError_opcode == 0x21f8 )						/* move.l $0.w,$24.w (Transbeauce 2 loader) */
 	      put_long (m68k_areg(regs, 7)+10, currpc-2);				/* correct PC is 2 bytes less than usual value */
 
-	    else if ( ( BusErrorPC=0xccc ) && ( get_word(BusErrorPC) == 0x48d6 ) )	/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
+	    else if ( ( BusErrorPC=0xccc ) && ( BusError_opcode == 0x48d6 ) )		/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
 	      put_long (m68k_areg(regs, 7)+10, currpc+2);				/* correct PC is 2 bytes more than usual value */
-	    //fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , get_word(BusErrorPC));
+	    //fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , BusError_opcode);
 
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
