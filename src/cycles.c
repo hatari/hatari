@@ -129,7 +129,13 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 	{
 		/* TODO: Find proper cycles count depending on the type of the current instruction */
 		/* (e.g. movem is not correctly handled) */
-		Opcode = get_word(BusErrorPC);
+		/* We don't read the opcode if PC is located in the IO region (rare cases */
+		/* used in some games/demos protections) as this can create recursive calls */
+		/* (protection of the "Union Demo" runs at $ff8240) */
+		if ( ( ( BusErrorPC & 0xffffff ) < 0xff0000 ) || ( ( BusErrorPC & 0xffffff ) > 0xffffff ) )
+			Opcode = get_word(BusErrorPC);					/* BusErrorPC points to the current opcode */
+		else
+			Opcode = -1;
 		//fprintf ( stderr , "opcode=%x\n" , Opcode );
 
 		/* Assume we use 'move src,dst' : access cycle depends on dst mode */
