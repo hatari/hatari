@@ -330,6 +330,10 @@
 /* 2013/12/28	[NP]	For bottom border removal on a 60 Hz screen, max position to go back	*/
 /*			to 60 Hz should be 4 cycles earlier, as a 60 Hz line starts 4 cycles	*/
 /*			earlier (fix STE demo "It's a girl 2" by Paradox).			*/
+/* 2014/02/22	[NP]	In Video_ColorReg_ReadWord(), don't set unused STF bits to rand() if	*/
+/*			the PC is not executing from the RAM between 0 and 4MB (fix 'Union Demo'*/
+/*			protection code running at address $ff8240).				*/
+
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 
@@ -3284,6 +3288,9 @@ void Video_ColorReg_WriteWord(void)
  * depending on the latest activity on the BUS (last word access by the CPU or
  * the shifter). As precisely emulating these bits is quite complicated,
  * we use random values for now.
+ * NOTE [NP] : When executing code from the IO addresses between 0xff8240-0xff825e
+ * the unused bits on STF are set to '0' (used in "The Union Demo" protection).
+ * So we use rand() only if PC is located in RAM.
  */
 void Video_ColorReg_ReadWord(void)
 {
@@ -3293,7 +3300,8 @@ void Video_ColorReg_ReadWord(void)
 
 	col = IoMem_ReadWord(addr);
 
-	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
+	  && ( M68000_GetPC() < 0x400000 ) )				/* PC in RAM < 4MB */
 	{
 		col = ( col & 0x777 ) | ( rand() & 0x888 );
 		IoMem_WriteWord ( addr , col );
