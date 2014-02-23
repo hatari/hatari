@@ -68,14 +68,14 @@ enum {
 	OPT_FRAMESKIPS,
 	OPT_STATUSBAR,
 	OPT_DRIVE_LED,
+	OPT_MAXWIDTH,
+	OPT_MAXHEIGHT,
 	OPT_FORCEBPP,
 	OPT_BORDERS,		/* ST/STE display options */
 	OPT_RESOLUTION_ST,
 	OPT_SPEC512,
 	OPT_ZOOM,
-	OPT_RESOLUTION,		/* Falcon/TT display options */
-	OPT_MAXWIDTH,
-	OPT_MAXHEIGHT,
+	OPT_RESOLUTION,		/* TT/Falcon display options */
 	OPT_FORCE_MAX,
 	OPT_ASPECT,
 	OPT_VDI,		/* VDI options */
@@ -194,15 +194,19 @@ static const opt_t HatariOptions[] = {
 	{ OPT_FULLSCREEN,"-f", "--fullscreen",
 	  NULL, "Start emulator in fullscreen mode" },
 	{ OPT_WINDOW,    "-w", "--window",
-	  NULL, "Start emulator in window mode" },
+	  NULL, "Start emulator in windowed mode" },
 	{ OPT_GRAB, NULL, "--grab",
-	  NULL, "Grab mouse (also) in window mode" },
+	  NULL, "Grab mouse (also) in windowed mode" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
 	  "<bool>", "Show overlay drive led when statusbar isn't shown" },
+	{ OPT_MAXWIDTH, NULL, "--max-width",
+	  "<x>", "Maximum window width for borders & zooming" },
+	{ OPT_MAXHEIGHT, NULL, "--max-height",
+	  "<x>", "Maximum window height for borders & zooming" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force internal bitdepth (x = 8/15/16/32, 0=disable)" },
 
@@ -210,19 +214,15 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_RESOLUTION_ST, NULL, "--desktop-st",
-	  "<bool>", "Keep desktop resolution on fullscreen (no zoom)" },
+	  "<bool>", "Keep desktop resolution on fullscreen" },
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double small resolutions (1=no, 2=yes)" },
 
-	{ OPT_HEADER, NULL, NULL, NULL, "Falcon/TT specific display" },
+	{ OPT_HEADER, NULL, NULL, NULL, "TT/Falcon specific display" },
 	{ OPT_RESOLUTION, NULL, "--desktop",
 	  "<bool>", "Keep desktop resolution on fullscreen" },
-	{ OPT_MAXWIDTH, NULL, "--max-width",
-	  "<x>", "Maximum window width for zooming" },
-	{ OPT_MAXHEIGHT, NULL, "--max-height",
-	  "<x>", "Maximum window height for zooming" },
 	{ OPT_FORCE_MAX, NULL, "--force-max",
 	  "<bool>", "Resolution fixed to given max values" },
 	{ OPT_ASPECT, NULL, "--aspect",
@@ -1041,8 +1041,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			else
 			{
-				ConfigureParams.Screen.nMaxWidth = 320;
-				ConfigureParams.Screen.nMaxHeight = 200;
+				ConfigureParams.Screen.nMaxWidth = 1*(48+320+48);
+				ConfigureParams.Screen.nMaxHeight = 1*NUM_VISIBLE_LINES+12;
 			}
 			break;
 
