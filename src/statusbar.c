@@ -47,10 +47,10 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 
 #define DEBUG 0
 #if DEBUG
-#include <execinfo.h>
+# include <execinfo.h>
 # define DEBUGPRINT(x) printf x
 #else
-#define DEBUGPRINT(x)
+# define DEBUGPRINT(x)
 #endif
 
 #define MAX_DRIVE_LEDS (DRIVE_LED_HD + 1)
