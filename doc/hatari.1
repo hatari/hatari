@@ -74,10 +74,10 @@ Select monitor type (x = mono/rgb/vga/tv)
 Start the emulator in fullscreen mode
 .TP 
 .B \-w, \-\-window
-Start the emulator in window mode
+Start the emulator in windowed mode
 .TP 
 .B \-\-grab
-Grab mouse (also) in window mode
+Grab mouse (also) in windowed mode
 .TP 
 .B \-\-frameskips <x>
 Skip <x> frames after each displayed frame to accelerate emulation
@@ -88,6 +88,12 @@ Show statusbar (with floppy leds etc etc)
 .TP 
 .B \-\-drive\-led <bool>
 Show overlay drive led when statusbar isn't shown
+.TP
+.B \-\-max\-width <x>
+Preferred / maximum window width for borders / zooming
+.TP
+.B \-\-max\-height <x>
+Preferred / maximum window height for borders / zooming
 .TP
 .B \-\-bpp <bool>
 Force internal bitdepth (x = 8/15/16/32, 0=disable)
@@ -113,7 +119,7 @@ the slower but more accurate Spectrum512 screen conversion functions
 .TP 
 .B \-z, \-\-zoom <x>
 Zoom (double) low resolution (1=no, 2=yes)
-.SH "Falcon/TT specific display options"
+.SH "TT/Falcon specific display options"
 Zooming to sizes specified below is internally done using integer scaling
 factors. This means that different Atari resolutions may show up with
 different sizes, but they are never blurry.
@@ -123,12 +129,6 @@ Whether to use desktop resolution on fullscreen to avoid issues
 related to resolution switching. Otherwise fullscreen will use
 a resolution that is closest to the Hatari window size.
 (enabled by default)
-.TP
-.B \-\-max\-width <x>
-Preferred / maximum window width
-.TP
-.B \-\-max\-height <x>
-Preferred / maximum window height
 .TP
 .B \-\-force\-max <bool>
 Hatari window size is forced to specified maximum size and black borders

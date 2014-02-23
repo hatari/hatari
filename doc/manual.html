@@ -433,11 +433,10 @@ mono/rgb/vga/tv)</p>
 --fullscreen</p>
 <p class="paramdesc">Start the emulator in fullscreen
 mode</p>
-<p class="parameter">-w,
---window</p>
-<p class="paramdesc">Start the emulator in window mode</p>
+<p class="parameter">-w, --window</p>
+<p class="paramdesc">Start the emulator in windowed mode</p>
 <p class="parameter">--grab</p>
-<p class="paramdesc">Grab mouse (also) in window mode</p>
+<p class="paramdesc">Grab mouse (also) in windowed mode</p>
 <p class="parameter">--frameskips
 &lt;x&gt;</p>
 <p class="paramdesc">Skip &lt;x&gt; frames after each
@@ -451,6 +450,15 @@ etc)</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Show overlay drive led when statusbar
 isn&rsquo;t shown</p>
+</p>
+<p class="parameter">--max-width
+&lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum window width
+for borders / zooming</p>
+<p class="parameter">--max-height
+&lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum window height
+for borders / zooming</p>
 <p class="parameter">--bpp
 &lt;bool&gt;</p>
 <p class="paramdesc">Force internal bitdepth (x =
@@ -483,18 +491,11 @@ Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
 <p class="paramdesc">Zoom (double) low resolution (1=no,
 2=yes)</p>
 
-<h3>Falcon/TT specific display options</h3>
+<h3>TT/Falcon specific display options</h3>
 <p>
 Zooming to sizes specified below is internally done using integer scaling
 factors. This means that different Atari resolutions may show up with
 different sizes, but they are never blurry.
-</p>
-<p class="parameter">--max-width
-&lt;x&gt;</p>
-<p class="paramdesc">Preferred / maximum window width</p>
-<p class="parameter">--max-height
-&lt;x&gt;</p>
-<p class="paramdesc">Preferred / maximum window height</p>
 <p class="parameter">--desktop &lt;bool&gt;</p>
 <p class="paramdesc">Whether to use desktop resolution on
 fullscreen to avoid issues related to resolution switching.

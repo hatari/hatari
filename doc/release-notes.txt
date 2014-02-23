@@ -39,6 +39,7 @@ Emulator:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
   - In the floppy dialog, use a checkbox to enable/disable drives A and B
+  - In the screen dialog, add checkbox for --desktop-st option
 - Fix: Xbios(255) modified the given argument string
 - New options --drive-a and --drive-b to enable/disable drives A and B
 - New NatFeats command to invoke Hatari debugger from native program
