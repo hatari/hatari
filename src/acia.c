@@ -162,7 +162,7 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 #define	ACIA_CR_COUNTER_DIVIDE( CR )		( CR & 0x03 )		/* CR1 + CR0 : 0x03 causes a master reset */
 #define	ACIA_CR_WORD_SELECT( CR )		( ( CR >> 2 ) & 0x07 )	/* CR4 + CR3 + CR2 : size, parity, stop bits */
 #define	ACIA_CR_TRANSMITTER_CONTROL( CR )	( ( CR >> 5 ) & 0x03 )	/* CR6 + CR5 : RTS + IRQ on send */
-#define	ACIA_CR_RECEIVE_INTERRUPT_ENABLE( CR )	( ( CR >> 7 ) & 0x01 )	/* CR7 : Reveive interrupt enable */
+#define	ACIA_CR_RECEIVE_INTERRUPT_ENABLE( CR )	( ( CR >> 7 ) & 0x01 )	/* CR7 : Receive interrupt enable */
 
 
 
@@ -701,6 +701,7 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 	  && ( ( pACIA->SR & ( ACIA_SR_BIT_RDRF | ACIA_SR_BIT_DCD ) )
 	    || ( pACIA->RX_Overrun ) ) )
 	  irq_bit_new = ACIA_SR_BIT_IRQ;
+//fprintf(stderr , "acia irq %x %x %x %d\n" , pACIA->CR , pACIA->SR , pACIA->RX_Overrun , irq_bit_new);
 
 	if ( pACIA->TX_EnableInt					/* Check for TX causes of interrupt */
 	  && ( pACIA->SR & ACIA_SR_BIT_TDRE )
