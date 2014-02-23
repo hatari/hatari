@@ -88,17 +88,18 @@ static SGOBJ monitordlg[] =
 #define DLGSCRN_SKIP2       11
 #define DLGSCRN_SKIP3       12
 #define DLGSCRN_SKIP4       13
-#define DLGSCRN_KEEP_RES    15
-#define DLGSCRN_MAX_WLESS   18
-#define DLGSCRN_MAX_WTEXT   19
-#define DLGSCRN_MAX_WMORE   20
-#define DLGSCRN_MAX_HLESS   22
-#define DLGSCRN_MAX_HTEXT   23
-#define DLGSCRN_MAX_HMORE   24
-#define DLGSCRN_CROP        27
-#define DLGSCRN_CAPTURE     28
-#define DLGSCRN_RECANIM     29
-#define DLGSCRN_EXIT_WINDOW 30
+#define DLGSCRN_KEEP_RES_ST 16
+#define DLGSCRN_KEEP_RES    17
+#define DLGSCRN_MAX_WLESS   19
+#define DLGSCRN_MAX_WTEXT   20
+#define DLGSCRN_MAX_WMORE   21
+#define DLGSCRN_MAX_HLESS   23
+#define DLGSCRN_MAX_HTEXT   24
+#define DLGSCRN_MAX_HMORE   25
+#define DLGSCRN_CROP        28
+#define DLGSCRN_CAPTURE     29
+#define DLGSCRN_RECANIM     30
+#define DLGSCRN_EXIT_WINDOW 31
 
 /* needs to match Frame skip values in windowdlg[]! */
 static const int skip_frames[] = { 0, 1, 2, 4, AUTO_FRAMESKIP_LIMIT };
@@ -127,9 +128,10 @@ static SGOBJ windowdlg[] =
 	{ SGRADIOBUT, 0, 0, 21,7,  7,1, "2" },
 	{ SGRADIOBUT, 0, 0, 21,8,  7,1, "4" },
 	{ SGRADIOBUT, 0, 0, 21,9,  7,1, "Auto" },
-	{ SGTEXT,     0, 0, 33,2, 15,1, "Falcon/TT only:" },
-	{ SGCHECKBOX, 0, 0, 33,4, 14,2, "Keep desktop" },
-	{ SGTEXT,     0, 0, 35,5, 12,1, "resolution" },
+	{ SGTEXT,     0, 0, 33,2, 14,1, "Keep desktop" },
+	{ SGTEXT,     0, 0, 33,3, 14,1, "resolution:" },
+	{ SGCHECKBOX, 0, 0, 35,4, 12,2, "ST/STe" },
+	{ SGCHECKBOX, 0, 0, 35,5, 12,1, "TT/Falcon" },
 	{ SGTEXT,     0, 0, 33,7, 15,1, "Max zoomed win:" },
 	{ SGBUTTON,   0, 0, 35,8,  1,1, "\x04" },     /* Arrow left */
 	{ SGTEXT,     0, 0, 37,8,  4,1, sMaxWidth },
@@ -309,8 +311,10 @@ void Dialog_WindowDlg(void)
 		windowdlg[DLGSCRN_KEEP_RES].state |= SG_SELECTED;
 	else
 		windowdlg[DLGSCRN_KEEP_RES].state &= ~SG_SELECTED;
-
-		windowdlg[DLGSCRN_STATUSBAR].state |= SG_SELECTED;
+	if (ConfigureParams.Screen.bKeepResolutionST)
+		windowdlg[DLGSCRN_KEEP_RES_ST].state |= SG_SELECTED;
+	else
+		windowdlg[DLGSCRN_KEEP_RES_ST].state &= ~SG_SELECTED;
 
 	windowdlg[DLGSCRN_STATUSBAR].state &= ~SG_SELECTED;
 	windowdlg[DLGSCRN_DRIVELED].state &= ~SG_SELECTED;
@@ -412,6 +416,7 @@ void Dialog_WindowDlg(void)
 
 	ConfigureParams.Screen.bFullScreen = (windowdlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
 	ConfigureParams.Screen.bKeepResolution = (windowdlg[DLGSCRN_KEEP_RES].state & SG_SELECTED);
+	ConfigureParams.Screen.bKeepResolutionST = (windowdlg[DLGSCRN_KEEP_RES_ST].state & SG_SELECTED);
 
 	ConfigureParams.Screen.bShowStatusbar = false;
 	ConfigureParams.Screen.bShowDriveLed = false;
