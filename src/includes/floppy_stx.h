@@ -107,6 +107,25 @@ typedef struct {
 #define	FDC_SECTOR_SIZE_512			2
 #define	FDC_SECTOR_SIZE_1024			3
 
+/* These are some standard GAP values to format a track with 9 or 10 sectors */
+/* When handling ST/MSA disk images, those values are required to get accurate */
+/* timings when emulating disk's spin and index's position. */
+
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP1		60		/* Track Pre GAP : 0x4e */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP2		12		/* Sector ID Pre GAP : 0x00 */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP3a		22		/* Sector ID Post GAP : 0x4e */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP3b		12		/* Sector DATA Pre GAP : 0x00 */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP4		40		/* Sector DATA Pre GAP : 0x4e */
+#define	FDC_TRACK_LAYOUT_STANDARD_GAP5		0		/* Track Post GAP : 0x4e (to fill the rest of the track, value is variable) */
+								/* GAP5 is 664 bytes for 9 sectors or 50 bytes for 10 sectors */
+
+/* Size of a raw standard 512 byte sector in a track, including ID field and all GAPs : 614 bytes */
+/* (this must be the same as the data returned in FDC_UpdateReadTrackCmd() ) */
+#define	FDC_TRACK_LAYOUT_STANDARD_RAW_SECTOR_512	( FDC_TRACK_LAYOUT_STANDARD_GAP2 \
+				+ 3 + 1 + 6 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b \
+				+ 3 + 1 + 512 + 2 + FDC_TRACK_LAYOUT_STANDARD_GAP4 )
+
+
 
 extern void	STX_MemorySnapShot_Capture(bool bSave);
 extern bool	STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ);

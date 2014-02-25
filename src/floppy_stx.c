@@ -27,6 +27,7 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "cycles.h"
 #include "str.h"
+#include "utils.h"
 
 
 #define	STX_DEBUG_FLAG_STRUCTURE	1
@@ -71,6 +72,7 @@ Uint8	TimingDataDefault[] = {
 /*--------------------------------------------------------------*/
 
 static void	STX_BuildSectorsSimple ( STX_TRACK_STRUCT *pStxTrack , Uint8 *p );
+static Uint16	STX_BuildSectorID_CRC ( STX_SECTOR_STRUCT *pStxSector );
 static STX_TRACK_STRUCT	*STX_FindTrack ( Uint8 Drive , Uint8 Track , Uint8 Side );
 static STX_SECTOR_STRUCT *STX_FindSector ( Uint8 Drive , Uint8 Track , Uint8 Side , Uint8 SectorStruct_Nb );
 
@@ -294,7 +296,6 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 
 	/* Parse all the track blocks */
  	for ( Track = 0 ; Track < pStxMain->TracksCount ; Track++ )
-// 	for ( Track = 0 ; Track < 4 ; Track++ )
 	{
 		p_cur = p;
 
@@ -326,6 +327,7 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 			if ( ( pStxTrack->Flags & STX_TRACK_FLAG_SECTOR_BLOCK ) == 0 )
 			{
 				/* The track only contains SectorsCount sectors of 512 bytes */
+				/* NOTE |NP] : in that case, pStxTrack->MFMSize seems to be in bits instead of bytes */
 				STX_BuildSectorsSimple ( pStxTrack , p );
 				goto next_track;
 			}
@@ -509,9 +511,6 @@ next_track:
 	}
 
 
-
-//exit(0);
-
 	return pStxMain;
 }
 
@@ -523,29 +522,60 @@ next_track:
  * sector, as well as the position of the corresponding 512 bytes of data.
  * This is only used when storing unprotected tracks.
  */
-
 static void	STX_BuildSectorsSimple ( STX_TRACK_STRUCT *pStxTrack , Uint8 *p )
 {
 	int	Sector;
+	int	BytePosition;
+	Uint16	CRC;
 
+	BytePosition = FDC_TRACK_LAYOUT_STANDARD_GAP1 + FDC_TRACK_LAYOUT_STANDARD_GAP2;		/* Points to the 3x$A1 before the 1st IDAM $FE */
+	BytePosition += 4;						/* Pasti seems to point after the 3x$A1 and the IDAM $FE */
+	
 	for ( Sector = 0 ; Sector < pStxTrack->SectorsCount ; Sector++ )
 	{
 		pStxTrack->pSectorsStruct[ Sector ].DataOffset = 0;
-		pStxTrack->pSectorsStruct[ Sector ].BitPosition = 0;
+		pStxTrack->pSectorsStruct[ Sector ].BitPosition = BytePosition * 8;
 		pStxTrack->pSectorsStruct[ Sector ].ReadTime = 0;
+
+		/* Build the ID Field */
 		pStxTrack->pSectorsStruct[ Sector ].ID_Track = pStxTrack->TrackNumber & 0x7f;
 		pStxTrack->pSectorsStruct[ Sector ].ID_Head = ( pStxTrack->TrackNumber >> 7 ) & 0x01;
 		pStxTrack->pSectorsStruct[ Sector ].ID_Sector = Sector + 1;
 		pStxTrack->pSectorsStruct[ Sector ].ID_Size = FDC_SECTOR_SIZE_512;
-		pStxTrack->pSectorsStruct[ Sector ].ID_CRC = 0;
+		CRC = STX_BuildSectorID_CRC ( &(pStxTrack->pSectorsStruct[ Sector ]) );
+		pStxTrack->pSectorsStruct[ Sector ].ID_CRC = CRC;
+
 		pStxTrack->pSectorsStruct[ Sector ].FDC_Status = 0;
 		pStxTrack->pSectorsStruct[ Sector ].Reserved = 0;
-
 		pStxTrack->pSectorsStruct[ Sector ].pData = p + Sector * 512;
+		pStxTrack->pSectorsStruct[ Sector ].SectorSize = 128 << pStxTrack->pSectorsStruct[ Sector ].ID_Size;
+
+		BytePosition += FDC_TRACK_LAYOUT_STANDARD_RAW_SECTOR_512;
 	}
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute the CRC of the Address Field for a given sector.
+ */
+static Uint16	STX_BuildSectorID_CRC ( STX_SECTOR_STRUCT *pStxSector )
+{
+        Uint16  CRC;
+
+	crc16_reset ( &CRC );
+	crc16_add_byte ( &CRC , 0xa1 );
+	crc16_add_byte ( &CRC , 0xa1 );
+	crc16_add_byte ( &CRC , 0xa1 );
+	crc16_add_byte ( &CRC , 0xfe );
+	crc16_add_byte ( &CRC , pStxSector->ID_Track );
+	crc16_add_byte ( &CRC , pStxSector->ID_Head );
+	crc16_add_byte ( &CRC , pStxSector->ID_Sector );
+	crc16_add_byte ( &CRC , pStxSector->ID_Size );
+
+	return CRC;
+}
 
 
 
@@ -627,6 +657,8 @@ extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Si
 		/* Reach end of track (new index pulse), then go to 1st sector from current position */
 		if ( pStxTrack->pTrackImageData )
 			TrackSize = pStxTrack->TrackImageSize;
+		else if ( ( pStxTrack->Flags & STX_TRACK_FLAG_SECTOR_BLOCK ) == 0 )
+			TrackSize = pStxTrack->MFMSize / 8;		/* When the track contains only sector data, MFMSize is in bits */
 		else
 			TrackSize = pStxTrack->MFMSize;
 
@@ -796,12 +828,12 @@ extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Ui
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read an track from a floppy image in STX format (used in type III command)
+ * Read a track from a floppy image in STX format (used in type III command)
  * This function is called after an index pulse was encountered, and it will
  * always succeeds and fill the track buffer.
  * If the Track/Side exist in the STX image, then the corresponding bytes are
  * returned.
- * If these Track/Side dosn't exist, we return some random bytes.
+ * If these Track/Side don't exist, we return some random bytes.
  * Return 0 if OK
  */
 extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
