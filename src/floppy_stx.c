@@ -386,7 +386,7 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 			/* Check if sector has data */
 			if ( ( pStxSector->FDC_Status & STX_SECTOR_FLAG_RNF ) == 0 )
 			{
-				/* Check if SectorSize is valid */
+				/* Check if SectorSize is valid (this is just a warning, we keep only bits 0-1 anyway) */
 				if ( pStxSector->ID_Size & ~FDC_SECTOR_SIZE_MASK )
 				{
 					fprintf ( stderr , "STX : invalid ID_Size=%d on track %d sector %d\n" ,
@@ -854,8 +854,7 @@ extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	pStxTrack = STX_FindTrack ( Drive , Track , Side );
 	if ( pStxTrack == NULL )					/* Track/Side don't exist in this STX image */
 	{
-// 		for ( i=0 ; i<FDC_GetBytesPerTrack ( Drive ) ; i++ )
-		for ( i=0 ; i<6268 ; i++ )
+ 		for ( i=0 ; i<FDC_GetBytesPerTrack ( Drive ) ; i++ )
 			FDC_Buffer_Add ( rand() & 0xff );		/* Fill the track buffer with random bytes */
 		return 0;
 	}
@@ -880,6 +879,7 @@ extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	/* using the sector blocks and some standard GAP values */
 	else
 	{
+		/* TODO */
 	}
 
 	return 0;							/* No error */

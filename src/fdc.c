@@ -411,31 +411,6 @@ enum
 static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 0 (r1/r0) in type I commands */
 
 
-#define	FDC_SECTOR_SIZE_MASK			0x03		/* Only bits 0-1 of the Sector size in the ID field are used by the WD1772 */
-
-#define	FDC_SECTOR_SIZE_128			0		/* Sector size used in the ID fields */
-#define	FDC_SECTOR_SIZE_256			1
-#define	FDC_SECTOR_SIZE_512			2
-#define	FDC_SECTOR_SIZE_1024			3
-
-
-/* These are some standard GAP values to format a track with 9 or 10 sectors */
-/* When handling ST/MSA disk images, those values are required to get accurate */
-/* timings when emulating disk's spin and index's position. */
-
-#define	FDC_TRACK_LAYOUT_STANDARD_GAP1		60		/* Track Pre GAP : 0x4e */
-#define	FDC_TRACK_LAYOUT_STANDARD_GAP2		12		/* Sector ID Pre GAP : 0x00 */
-#define	FDC_TRACK_LAYOUT_STANDARD_GAP3a		22		/* Sector ID Post GAP : 0x4e */
-#define	FDC_TRACK_LAYOUT_STANDARD_GAP3b		12		/* Sector DATA Pre GAP : 0x00 */
-#define	FDC_TRACK_LAYOUT_STANDARD_GAP4		40		/* Sector DATA Pre GAP : 0x4e */
-#define	FDC_TRACK_LAYOUT_STANDARD_GAP5		0		/* Track Post GAP : 0x4e (to fill the rest of the track, value is variable) */
-								/* GAP5 is 664 bytes for 9 sectors or 50 bytes for 10 sectors */
-
-/* Size of a raw standard 512 byte sector in a track, including ID field and all GAPs : 614 bytes */
-/* (this must be the same as the data returned in FDC_UpdateReadTrackCmd() ) */
-#define	FDC_TRACK_LAYOUT_STANDARD_RAW_SECTOR_512	( FDC_TRACK_LAYOUT_STANDARD_GAP2 \
-				+ 3 + 1 + 6 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b \
-				+ 3 + 1 + 512 + 2 + FDC_TRACK_LAYOUT_STANDARD_GAP4 )
 
 
 #define	FDC_FAST_FDC_FACTOR			10		/* Divide all delays by this value when --fastfdc is used */
@@ -553,7 +528,6 @@ static void	FDC_UpdateAll ( void );
 static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Drive , int Track );
 static int	FDC_GetDensity ( int Drive );
-static int	FDC_GetBytesPerTrack ( int Drive );
 
 static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive );
 static void	FDC_IndexPulse_Update ( void );
@@ -1331,7 +1305,7 @@ static int FDC_GetDensity ( int Drive )
  * To simulate HD/ED floppies, we multiply the size by a density factor.
  * Drive should be a valid drive (0 or 1)
  */
-static int	FDC_GetBytesPerTrack ( int Drive )
+int	FDC_GetBytesPerTrack ( int Drive )
 {
 	int	TrackSize;
 
