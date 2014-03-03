@@ -305,7 +305,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 			/* Some IPF disks are not correctly supported yet : display a warning */
 			if ( (int)cii.release == 3222 ) 				/* Sundog */
                 		Log_AlertDlg ( LOG_INFO , "'Sundog' is not correctly supported yet, it requires write access." );
-			else if ( (int)cii.release == 3058 ) 				/* Sundog */
+			else if ( (int)cii.release == 3058 ) 				/* Lethal Xcess */
                 		Log_AlertDlg ( LOG_INFO , "'Lethal Xcess' is not correctly supported yet, protection will fail" );
 		}
 	}
@@ -328,6 +328,8 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 
 	IPF_State.Drive[ Drive ].diskattr |= ( CAPSDRIVE_DA_IN | CAPSDRIVE_DA_WP );	/* Disk inserted and write protected */
 
+	CAPSFdcInvalidateTrack ( &IPF_State.Fdc , Drive );				/* Invalidate previous buffered track data for drive, if any */
+
 	return true;
 #endif
 }
@@ -345,6 +347,8 @@ bool	IPF_Eject ( int Drive )
 
 #else
 	fprintf ( stderr , "IPF : IPF_Eject drive=%d imageid=%d\n" , Drive , IPF_State.CapsImage[ Drive ] );
+
+	CAPSFdcInvalidateTrack ( &IPF_State.Fdc , Drive );				/* Invalidate previous buffered track data for drive, if any */
 
 	if ( CAPSUnlockImage ( IPF_State.CapsImage[ Drive ] ) < 0 )
 	{
