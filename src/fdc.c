@@ -3863,7 +3863,7 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Sid
  */
 static Uint8	FDC_NextSectorID_TR_ST ( void )
 {
-	return FDC.NextSector_ID_Field_SR;
+	return FDC.TR;
 }
 
 
