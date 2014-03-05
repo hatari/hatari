@@ -1055,6 +1055,16 @@ Uint8	FDC_Buffer_Read_Byte ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the number of bytes stored in FDC_BUFFER
+ */
+int	FDC_Buffer_Get_Size ( void )
+{
+	return FDC_BUFFER.Size;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Return the mode to handle a read/write in $ff86xx
  * Depending on the images inserted in each floppy drive and on the
  * selected drive, we must choose which fdc emulation should be used.
@@ -2325,7 +2335,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	 case FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_LOOP:
 		/* Transfer the sector 1 byte at a time using DMA */
 		FDC_DMA_FIFO_Push ( FDC_Buffer_Read_Byte () );		/* Add 1 byte to the DMA FIFO */
-		if ( FDC_BUFFER.PosRead < FDC_BUFFER.Size )
+		if ( FDC_BUFFER.PosRead < FDC_Buffer_Get_Size () )
 		{
 			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the next byte */
 		}
@@ -2629,7 +2639,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 	 case FDCEMU_RUN_READADDRESS_TRANSFER_LOOP:
 		/* Transfer the ID field 1 byte at a time using DMA */
 		FDC_DMA_FIFO_Push ( FDC_Buffer_Read_Byte () );		/* Add 1 byte to the DMA FIFO */
-		if ( FDC_BUFFER.PosRead < FDC_BUFFER.Size )
+		if ( FDC_BUFFER.PosRead < FDC_Buffer_Get_Size () )
 		{
 			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the next byte */
 		}
@@ -2732,7 +2742,7 @@ static int FDC_UpdateReadTrackCmd ( void )
 	 case FDCEMU_RUN_READTRACK_TRANSFER_LOOP:
 		/* Transfer the track 1 byte at a time using DMA */
 		FDC_DMA_FIFO_Push ( FDC_Buffer_Read_Byte () );		/* Add 1 byte to the DMA FIFO */
-		if ( FDC_BUFFER.PosRead < FDC_BUFFER.Size )
+		if ( FDC_BUFFER.PosRead < FDC_Buffer_Get_Size () )
 		{
 			FdcCycles = FDC_Buffer_Read_Timing ();		/* Delay to transfer the next byte */
 		}
@@ -4039,7 +4049,7 @@ static Uint8 FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 			FDC_Buffer_Add ( 0x4e );
 	}
 
-	while ( FDC_BUFFER.Size < FDC_GetBytesPerTrack ( Drive ) )	/* Complete the track buffer */
+	while ( FDC_Buffer_Get_Size () < FDC_GetBytesPerTrack ( Drive ) )	/* Complete the track buffer */
 	      FDC_Buffer_Add ( 0x4e );					/* GAP5 */
 
 	return 0;							/* No error */
