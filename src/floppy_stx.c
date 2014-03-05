@@ -34,7 +34,7 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c : " __DATE__ " " __TIME__;
 #define	STX_DEBUG_FLAG_DATA		2
 
 #define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE )
-// #define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE | STX_DEBUG_FLAG_DATA )
+//#define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE | STX_DEBUG_FLAG_DATA )
 
 
 #define FDC_DELAY_CYCLE_MFM_BIT			( 4 * 8 )	/* 4 us per bit, 8 MHz clock -> 32 cycles */
@@ -831,20 +831,29 @@ extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Ui
  * Read a track from a floppy image in STX format (used in type III command)
  * This function is called after an index pulse was encountered, and it will
  * always succeeds and fill the track buffer.
- * If the Track/Side exist in the STX image, then the corresponding bytes are
- * returned.
- * If these Track/Side don't exist, we return some random bytes.
+ * If the Track/Side infos exist in the STX image, then the corresponding
+ * bytes from the track's image are returned.
+ * If these Track/Side infos don't exist, we return some random bytes
+ * (empty / not formatted track).
+ * If the Track/Side infos exist but there's no track's image, then we build
+ * a standard track by using the available sectors and standard GAP values.
  * Return 0 if OK
  */
 extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
+	STX_SECTOR_STRUCT	*pStxSector;
 	int			i;
 	Uint16			Timing;
 	Uint32			Track_ReadTime;
 	double			Total_cur;				/* To compute closest integer timings for each byte */
 	double			Total_prev;
-
+	int			TrackSize;
+	int			Sector;
+	int			SectorSize;
+	Uint16  		CRC;
+	Uint8			Byte;
+	
 	if ( STX_State.ImageBuffer[ Drive ] == NULL )
 	{
 		fprintf ( stderr , "FDC_ReadTrack_STX drive=%d track=%d side=%d, no image buffer !\n" , Drive , Track , Side );
@@ -854,6 +863,7 @@ extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	pStxTrack = STX_FindTrack ( Drive , Track , Side );
 	if ( pStxTrack == NULL )					/* Track/Side don't exist in this STX image */
 	{
+		fprintf ( stderr , "fdc stx : track info not found for read track drive=%d track=%d side=%d, returning random bytes\n" , Drive , Track , Side );
  		for ( i=0 ; i<FDC_GetBytesPerTrack ( Drive ) ; i++ )
 			FDC_Buffer_Add ( rand() & 0xff );		/* Fill the track buffer with random bytes */
 		return 0;
@@ -877,9 +887,95 @@ extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 
 	/* If the track block doesn't contain a dump of the track image, we must build a track */
 	/* using the sector blocks and some standard GAP values */
+	/* [NP] NOTE : we build a track of pStxTrack->MFMSize bytes, as this seems to always be != 0 */
+	/* even for empty / not formatted track */
+	/* [NP] NOTE : instead of using standard GAP values, we could compute GAP based on pStxSector->BitPosition */
+	/* but this seems unnecessary, as a track image would certainly be present if precise GAP values */
+	/* were required */
 	else
 	{
-		/* TODO */
+		TrackSize = pStxTrack->MFMSize;
+		if ( ( pStxTrack->Flags & STX_TRACK_FLAG_SECTOR_BLOCK ) == 0 )
+			TrackSize /= 8;					/* When the track contains only sector data, MFMSize is in bits */
+
+		/* If there's no image for this track, and no sector as well, then track is empty / not formatted */
+		if ( pStxTrack->SectorsCount == 0 )
+		{
+			fprintf ( stderr , "fdc stx : no track image and no sector for read track drive=%d track=%d side=%d, building an unformatted track\n" , Drive , Track , Side );
+			for ( i=0 ; i<TrackSize ; i++ )
+				FDC_Buffer_Add ( rand() & 0xff );	/* Fill the track buffer with random bytes */
+			return 0;
+		}
+
+		/* Use the available sectors and add some default GAPs to build the track */
+		fprintf ( stderr , "fdc stx : no track image for read track drive=%d track=%d side=%d, building a standard track\n" , Drive , Track , Side );
+
+		for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP1 ; i++ )	/* GAP1 */
+			FDC_Buffer_Add ( 0x4e );
+
+		for ( Sector=0 ; Sector < pStxTrack->SectorsCount ; Sector++ )
+		{
+			pStxSector = &(pStxTrack->pSectorsStruct[ Sector ]);
+			SectorSize = pStxSector->SectorSize;
+
+			/* Check that the data+GAPs for this sector will not be above track's length */
+			/* (in case we build a track with a high / non standard number of sectors) */
+			if ( FDC_Buffer_Get_Size () + SectorSize + FDC_TRACK_LAYOUT_STANDARD_GAP2 + 10 + FDC_TRACK_LAYOUT_STANDARD_GAP3a
+				+ FDC_TRACK_LAYOUT_STANDARD_GAP3b + 4 + 2 + FDC_TRACK_LAYOUT_STANDARD_GAP4 >= TrackSize )
+			{
+				fprintf ( stderr , "fdc stx : no track image for read track drive=%d track=%d side=%d, too many data sector=%d\n" , Drive , Track , Side , Sector );
+				break;					/* Exit the loop and fill the rest of the track */
+			}
+
+			for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP2 ; i++ )	/* GAP2 */
+				FDC_Buffer_Add ( 0x00 );
+
+			/* Add the ID field for the sector */
+			for ( i=0 ; i<3 ; i++ )
+				FDC_Buffer_Add ( 0xa1 );		/* SYNC (write $F5) */
+			FDC_Buffer_Add ( 0xfe );			/* Index Address Mark */
+			FDC_Buffer_Add ( pStxSector->ID_Track );
+			FDC_Buffer_Add ( pStxSector->ID_Head );
+			FDC_Buffer_Add ( pStxSector->ID_Sector );
+			FDC_Buffer_Add ( pStxSector->ID_Size );
+			FDC_Buffer_Add ( pStxSector->ID_CRC >> 8 );
+			FDC_Buffer_Add ( pStxSector->ID_CRC & 0xff );
+
+			for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP3a ; i++ )	/* GAP3a */
+				FDC_Buffer_Add ( 0x4e );
+			for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP3b ; i++ )	/* GAP3b */
+				FDC_Buffer_Add ( 0x00 );
+
+			/* Add the data for the sector + build the CRC */
+			crc16_reset ( &CRC );
+			for ( i=0 ; i<3 ; i++ )
+			{
+				FDC_Buffer_Add ( 0xa1 );		/* SYNC (write $F5) */
+				crc16_add_byte ( &CRC , 0xa1 );
+			}
+
+			FDC_Buffer_Add ( 0xfb );			/* Data Address Mark */
+			crc16_add_byte ( &CRC , 0xfb );
+
+			/* [NP] NOTE : when building the sector, we assume there's no specific timing or fuzzy bytes */
+			/* If it was not the case, there would certainly be a real track image (and STX format doesn't */
+			/* support fuzzy bytes or specific timing for a track image anyway) */
+			for ( i=0 ; i<SectorSize ; i++ )
+			{
+				Byte = pStxSector->pData[ i ];
+				FDC_Buffer_Add ( Byte );
+				crc16_add_byte ( &CRC , Byte );
+			}
+
+			FDC_Buffer_Add ( CRC >> 8 );			/* CRC1 (write $F7) */
+			FDC_Buffer_Add ( CRC & 0xff );			/* CRC2 */
+
+			for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP4 ; i++ )	/* GAP4 */
+				FDC_Buffer_Add ( 0x4e );
+		}
+
+		while ( FDC_Buffer_Get_Size () < TrackSize )		/* Complete the track buffer */
+		      FDC_Buffer_Add ( 0x4e );				/* GAP5 */
 	}
 
 	return 0;							/* No error */
