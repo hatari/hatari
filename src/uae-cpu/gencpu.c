@@ -68,6 +68,8 @@
 /* 2012/05/05	[NP]	In i_JMP, in case of address error, last_addr_for_exception_3 should not always	*/
 /*			be pc+6, (Sherman Cracktro in No Extra V2 compilation) (e.g. 'jmp (a2)' : pc+2)	*/
 /* 2013/03/17	[NP]	Add refill_prefetch for i_SUB, i_NEG, i_NEGX, i_NOT (similar to i_ADD/i_EOR)	*/
+/* 2014/03/07	[NP]	Add refill_prefetch for i_Move Dn,xxxx.l (Union Demo, Darkman, Parasol Stars)	*/
+/* 			Add refill_prefetch for i_Move #xxxx,(An) (Titan)				*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -1332,9 +1334,10 @@ static void gen_opcode (unsigned long int opcode)
 	  insn_n_cycles -= 2;			/* correct the wrong cycle count for -(An) */
 
 	if ( ( curi->smode == Dreg ) && ( curi->dmode == absl ) )				// FIXME [NP] move.x Dn,xxxx.l (Union Demo : move.w d1,$4c)
-	  printf("\trefill_prefetch (m68k_getpc(), 6);\n");					// FIXME [NP] need better prefetch emulation
+												// FIXME [NP] move.x Dn,xxxx.l (Darkman : move.w d2,$2c04)
+	  printf("\trefill_prefetch (m68k_getpc(), 4);\n");					// FIXME [NP] need better prefetch emulation
 	if ( (curi->size==sz_long) && ( curi->smode == imm ) && ( curi->dmode == Aind ) )	// FIXME [NP] move.l #$xxxx,(An) (Titan : move.l #$b0b0caca,(a4))
-	  printf("\trefill_prefetch (m68k_getpc(), 6);\n");					// FIXME [NP] need better prefetch emulation
+	  printf("\trefill_prefetch (m68k_getpc(), 4);\n");					// FIXME [NP] need better prefetch emulation
 
 	genflags (flag_logical, curi->size, "src", "", "");
 	genastore ("src", curi->dmode, "dstreg", curi->size, "dst");
