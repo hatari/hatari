@@ -973,7 +973,11 @@ static void gen_opcode (unsigned long int opcode)
         genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
         genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0);
         printf ("\tsrc %c= dst;\n", curi->mnemo == i_OR ? '|' : curi->mnemo == i_AND ? '&' : '^');
-	printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] For Operation Clean Streets - Automation 168, need better prefetch emulation
+
+	if ( ( curi->smode == Dreg ) && ( curi->dmode == absl ) )				// FIXME [NP] eor.x Dn,xxxx.l (Xenon 2 : eor.w d0,$40760)
+	  printf("\trefill_prefetch (m68k_getpc(), 6);\n");					// FIXME [NP] need better prefetch emulation
+	else
+	  printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] eor.w d0,(a2)+ (Operation Clean Streets - Automation 168, need better prefetch emulation)
         genflags (flag_logical, curi->size, "src", "", "");
         genastore ("src", curi->dmode, "dstreg", curi->size, "dst");
         if(curi->size==sz_long && curi->dmode==Dreg)
