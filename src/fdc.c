@@ -1780,6 +1780,10 @@ static int FDC_UpdateMotorStop ( void )
 		LOG_TRACE(TRACE_FDC, "fdc motor stopped VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
+		FDC.IndexPulse_Counter = 0;
+		if ( FDC.DriveSelSignal >= 0 )                                  /* A drive was previously enabled */
+			FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Time = 0;   /* Stop counting index pulses on the drive */
+
 		FDC_Update_STR ( FDC_STR_BIT_MOTOR_ON , 0 );		/* Unset motor bit and keep spin up bit */
 		FDC.Command = FDCEMU_CMD_NULL;				/* Motor stopped, this is the last state */
 		FdcCycles = 0;
