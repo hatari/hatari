@@ -1329,12 +1329,18 @@ int	FDC_GetBytesPerTrack ( int Drive )
  * Get the number of FDC cycles for one revolution of the floppy
  * RPM is already multiplied by 1000 to simulate non-integer values
  * (for Falcon, we divide cycles by 2 to simulate a FDC freq in the 8 MHz range)
+ * For STX image, the number of cycles depends on drive/track/side.
  * Drive should be a valid drive (0 or 1)
  */
 static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
 {
 	Uint32	FdcCyclesPerRev;
 
+	/* If the inserted disk is an STX, we use the supplied track length to compute cycles per rev */
+	if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		return FDC_GetCyclesPerRev_FdcCycles_STX ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
+
+	/* Assume a standard length for all tracks for ST/MSA images */
 	FdcCyclesPerRev = (Uint64)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ Drive ].RPM / 60 );
 
 	/* Our conversion expects FDC_Freq to be nearly the same as CPU_Freq (8 Mhz) */

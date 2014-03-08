@@ -34,11 +34,13 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c : " __DATE__ " " __TIME__;
 #define	STX_DEBUG_FLAG_DATA		2
 
 #define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE )
-//#define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE | STX_DEBUG_FLAG_DATA )
+// #define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE | STX_DEBUG_FLAG_DATA )
 
 
 #define FDC_DELAY_CYCLE_MFM_BIT			( 4 * 8 )	/* 4 us per bit, 8 MHz clock -> 32 cycles */
 #define FDC_DELAY_CYCLE_MFM_BYTE		( 4 * 8 * 8 )	/* 4 us per bit, 8 bits per byte, 8 MHz clock -> 256 cycles */
+
+#define FDC_TRACK_BYTES_STANDARD	6250
 
 
 typedef struct
@@ -611,6 +613,33 @@ static STX_SECTOR_STRUCT	*STX_FindSector ( Uint8 Drive , Uint8 Track , Uint8 Sid
 	return &(pStxTrack->pSectorsStruct[ SectorStruct_Nb ]);
 }
 
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the number of FDC cycles to go from one index pulse to the next
+ * one on a given drive/track/side.
+ * We take the TrackSize into account to return this delay.
+ */
+extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
+{
+	STX_TRACK_STRUCT	*pStxTrack;
+	int			TrackSize;
+
+	pStxTrack = STX_FindTrack ( Drive , Track , Side );
+	if ( pStxTrack == NULL )
+		TrackSize =  FDC_TRACK_BYTES_STANDARD;			/* Use a standard track length is track is not available */
+
+	else if ( pStxTrack->pTrackImageData )
+		TrackSize = pStxTrack->TrackImageSize;
+	else if ( ( pStxTrack->Flags & STX_TRACK_FLAG_SECTOR_BLOCK ) == 0 )
+		TrackSize = pStxTrack->MFMSize / 8;		/* When the track contains only sector data, MFMSize is in bits */
+	else
+		TrackSize = pStxTrack->MFMSize;
+
+//fprintf ( stderr , "fdc stx drive=%d track=0x%x side=%d size=%d\n" , Drive , Track, Side , TrackSize );
+	return TrackSize * FDC_DELAY_CYCLE_MFM_BYTE;
+}
 
 
 
