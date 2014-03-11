@@ -2266,6 +2266,9 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	 case FDCEMU_RUN_READSECTORS_READDATA_MOTOR_ON:
 		FDC.ReplaceCommandPossible = false;
 		FDC.IndexPulse_Counter = 0;
+		FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_NEXT_SECTOR_HEADER;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_NEXT_SECTOR_HEADER:
 		/* If we're looking for sector FDC.SR for more than 5 revolutions, we abort with RNF */
 		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
@@ -2391,7 +2394,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_RNF:
-		LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=0x%x side=% drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
+		LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=0x%x side=%d drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
