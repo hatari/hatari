@@ -306,8 +306,10 @@ enum
 	FDCEMU_RUN_READADDRESS_SPIN_UP,
 	FDCEMU_RUN_READADDRESS_HEAD_LOAD,
 	FDCEMU_RUN_READADDRESS_MOTOR_ON,
+	FDCEMU_RUN_READADDRESS_NEXT_SECTOR_HEADER,
 	FDCEMU_RUN_READADDRESS_TRANSFER_START,
 	FDCEMU_RUN_READADDRESS_TRANSFER_LOOP,
+	FDCEMU_RUN_READADDRESS_RNF,
 	FDCEMU_RUN_READADDRESS_COMPLETE,
 	/* Read Track */
 	FDCEMU_RUN_READTRACK,
@@ -2359,8 +2361,8 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		/* Sector completely transferred, CRC is always good for ST/MSA, but not always for STX */
 		if ( FDC.Status_Temp & FDC_STR_BIT_CRC_ERROR )
 		{
-			LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=%d drive=%d CRC VBL=%d video_cyc=%d %d@%d pc=%x\n",
-				  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+			LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=0x%x side=%d drive=%d CRC VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 			FDC_Update_STR ( 0 , FDC_STR_BIT_CRC_ERROR );
 			FdcCycles = FDC_CmdCompleteCommon( true );
@@ -2389,8 +2391,8 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_RNF:
-		LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=%d drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		LOG_TRACE(TRACE_FDC, "fdc type II read sector=%d track=0x%x side=% drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 		FdcCycles = FDC_CmdCompleteCommon( true );
@@ -2421,8 +2423,8 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		&& ( FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted )
 		&& ( Floppy_IsWriteProtected ( FDC.DriveSelSignal ) ) )
 	{
-		LOG_TRACE(TRACE_FDC, "fdc type II write sector=%d track=%d drive=%d WPRT VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		LOG_TRACE(TRACE_FDC, "fdc type II write sector=%d track=0x%x side=%d drive=%d WPRT VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );		/* Set WPRT bit */
 		FdcCycles = FDC_CmdCompleteCommon( true );
@@ -2555,8 +2557,8 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_RNF:
-		LOG_TRACE(TRACE_FDC, "fdc type II write sector=%d track=%d drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
-			  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+		LOG_TRACE(TRACE_FDC, "fdc type II write sector=%d track=0x%x side=%d drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			  FDC.SR , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 		FdcCycles = FDC_CmdCompleteCommon( true );
@@ -2613,6 +2615,20 @@ static int FDC_UpdateReadAddressCmd ( void )
 		}
 		/* If there's no head settle, we go directly to the _MOTOR_ON state */
 	 case FDCEMU_RUN_READADDRESS_MOTOR_ON:
+		FDC.ReplaceCommandPossible = false;
+		FDC.IndexPulse_Counter = 0;
+		FDC.CommandState = FDCEMU_RUN_READADDRESS_NEXT_SECTOR_HEADER;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		break;
+	 case FDCEMU_RUN_READADDRESS_NEXT_SECTOR_HEADER:
+		/* If we don't find a sector header after more than 5 revolutions, we abort with RNF */
+		if ( FDC.IndexPulse_Counter >= FDC_DELAY_IP_ADDRESS_ID )
+		{
+			FDC.CommandState = FDCEMU_RUN_READADDRESS_RNF;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+			break;
+		}
+
 		if ( FDC.DriveSelSignal < 0 )					/* No drive selected */
 			FdcCycles = -1;
 		else if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
@@ -2658,6 +2674,13 @@ static int FDC_UpdateReadAddressCmd ( void )
 			FDC.CommandState = FDCEMU_RUN_READADDRESS_COMPLETE;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 		}
+		break;
+	 case FDCEMU_RUN_READADDRESS_RNF:
+		LOG_TRACE(TRACE_FDC, "fdc type III read address track=0x%x side=%d drive=%d RNF VBL=%d video_cyc=%d %d@%d pc=%x\n",
+			  FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+		FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
+		FdcCycles = FDC_CmdCompleteCommon( true );
 		break;
 	 case FDCEMU_RUN_READADDRESS_COMPLETE:
 		FdcCycles = FDC_CmdCompleteCommon( true );
