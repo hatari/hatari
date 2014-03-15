@@ -52,6 +52,7 @@ typedef struct {
   Uint8 Buffer[SIZE_KEYBOARD_BUFFER];		/* Keyboard output buffer */
   int BufferHead,BufferTail;			/* Pointers into above buffer */
   int NbBytesInOutputBuffer;			/* Number of bytes in output buffer */
+  bool PauseOutput;				/* If true, don't send bytes anymore (see command 0x13) */
 
   Uint8 InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];	/* Buffer for data send from CPU to keyboard processor (commands) */
   int nBytesInInputBuffer;			/* Number of command bytes in above buffer */

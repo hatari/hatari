@@ -545,6 +545,7 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;
 	Keyboard.NbBytesInOutputBuffer = 0;
 	Keyboard.nBytesInInputBuffer = 0;
+	Keyboard.PauseOutput = false;
 
 	memset(Keyboard.KeyStates, 0, sizeof(Keyboard.KeyStates));
 	Keyboard.bLButtonDown = BUTTON_NULL;
@@ -880,7 +881,8 @@ static void	IKBD_Check_New_TDR ( void )
 {
 //  fprintf(stderr , "check new tdr %d %d\n", Keyboard.BufferHead , Keyboard.BufferTail );
 
-	if ( Keyboard.NbBytesInOutputBuffer > 0 )
+	if ( ( Keyboard.NbBytesInOutputBuffer > 0 )
+	  && ( Keyboard.PauseOutput == false ) )
 	{
 		pIKBD->TDR = Keyboard.Buffer[ Keyboard.BufferHead++ ];
 		Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
@@ -1799,10 +1801,13 @@ static void IKBD_RunKeyboardCommand(Uint8 aciabyte)
 		/* Found command? */
 		if (KeyboardCommands[i].Command==Keyboard.InputBuffer[0])
 		{
-			/* If the command is complete (with its potential parameters) we can execute it */
+			/* If the command is complete (with its possible parameters) we can execute it */
 			/* Else, we wait for the next bytes until the command is complete */
 			if (KeyboardCommands[i].NumParameters==Keyboard.nBytesInInputBuffer)
 			{
+				/* Any new valid command will unpause the output (if command 0x13 was used) */
+				Keyboard.PauseOutput = false;
+
 				CALL_VAR(KeyboardCommands[i].pCallFunction);
 				Keyboard.nBytesInInputBuffer = 0;	/* Clear input buffer after processing a command */
 			}
@@ -2078,13 +2083,17 @@ static void IKBD_Cmd_SetYAxisUp(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- *  RESUME
+ * RESUME
+ *
+ * Any command received by the IKBD will also resume the output if it was
+ * paused by command 0x13, so this command is redundant.
  *
  * 0x11
  */
 static void IKBD_Cmd_StartKeyboardTransfer(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StartKeyboardTransfer (not implemented)\n");
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StartKeyboardTransfer\n");
+	Keyboard.PauseOutput = false;
 }
 
 
@@ -2113,7 +2122,8 @@ static void IKBD_Cmd_TurnMouseOff(void)
  */
 static void IKBD_Cmd_StopKeyboardTransfer(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StopKeyboardTransfer (not implemented)\n");
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StopKeyboardTransfer\n");
+	Keyboard.PauseOutput = true;
 }
 
 
