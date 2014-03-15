@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
   Uint8 JoyData[2];               /* Joystick details */
-  Uint8 PrevJoyData[2];           /* Previous joystick details, used to check for 'IKBD_SelAutoJoysticks' */
+  Uint8 PrevJoyData[2];           /* Previous joystick details, used to check for 'IKBD_SendAutoJoysticks' */
 } JOY;
 
 typedef struct {
@@ -60,6 +60,8 @@ typedef struct {
   int bOldLButtonDown,bOldRButtonDown;
   int LButtonDblClk,RButtonDblClk;
   int LButtonHistory,RButtonHistory;
+
+  int AutoSendCycles;				/* Number of cpu cycles to call INTERRUPT_IKBD_AUTOSEND */
 } KEYBOARD;
 
 /* Button states, a bit mask so can mimick joystick/right mouse button duplication */
@@ -68,11 +70,12 @@ typedef struct {
 #define BUTTON_JOYSTICK  0x02
 
 /* Mouse/Joystick modes */
-#define AUTOMODE_OFF         0
-#define AUTOMODE_MOUSEREL    1
-#define AUTOMODE_MOUSEABS    2
-#define AUTOMODE_MOUSECURSOR 3
-#define AUTOMODE_JOYSTICK    4
+#define AUTOMODE_OFF			0
+#define AUTOMODE_MOUSEREL		1
+#define AUTOMODE_MOUSEABS		2
+#define AUTOMODE_MOUSECURSOR		3
+#define AUTOMODE_JOYSTICK		4
+#define AUTOMODE_JOYSTICK_MONITORING	5
 
 /* 0xfffc00 (read status from ACIA) */
 #define ACIA_STATUS_REGISTER__RX_BUFFER_FULL  0x01

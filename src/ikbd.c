@@ -183,7 +183,7 @@ static void IKBD_Cmd_StopKeyboardTransfer(void);
 static void IKBD_Cmd_ReturnJoystickAuto(void);
 static void IKBD_Cmd_StopJoystick(void);
 static void IKBD_Cmd_ReturnJoystick(void);
-static void IKBD_Cmd_SetJoystickDuration(void);
+static void IKBD_Cmd_SetJoystickMonitoring(void);
 static void IKBD_Cmd_SetJoystickFireDuration(void);
 static void IKBD_Cmd_SetCursorForJoystick(void);
 static void IKBD_Cmd_DisableJoysticks(void);
@@ -226,7 +226,7 @@ static const struct {
 	{ 0x14,1,  IKBD_Cmd_ReturnJoystickAuto },
 	{ 0x15,1,  IKBD_Cmd_StopJoystick },
 	{ 0x16,1,  IKBD_Cmd_ReturnJoystick },
-	{ 0x17,2,  IKBD_Cmd_SetJoystickDuration },
+	{ 0x17,2,  IKBD_Cmd_SetJoystickMonitoring },
 	{ 0x18,1,  IKBD_Cmd_SetJoystickFireDuration },
 	{ 0x19,7,  IKBD_Cmd_SetCursorForJoystick },
 	{ 0x1A,1,  IKBD_Cmd_DisableJoysticks },
@@ -582,7 +582,8 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 
 
 	/* Add auto-update function to the queue */
-	CycInt_AddRelativeInterrupt ( 150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND );
+	Keyboard.AutoSendCycles = 150000;				/* approx every VBL */
+	CycInt_AddRelativeInterrupt ( Keyboard.AutoSendCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND );
 	LOG_TRACE ( TRACE_IKBD_ALL , "ikbd reset done, starting reset timer\n" );
 }
 
@@ -1397,7 +1398,7 @@ static void IKBD_GetJoystickData(void)
 /**
  * Send 'joysticks' bit masks
  */
-static void IKBD_SelAutoJoysticks(void)
+static void IKBD_SendAutoJoysticks(void)
 {
 	Uint8 JoyData;
 
@@ -1424,6 +1425,30 @@ static void IKBD_SelAutoJoysticks(void)
 		}
 		KeyboardProcessor.Joy.PrevJoyData[1] = JoyData;
 	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Send 'joysticks' bit masks when in monitoring mode
+ *	%000000xy	; where y is JOYSTICK1 Fire button
+ *			; and x is JOYSTICK0 Fire button
+ *	%nnnnmmmm	; where m is JOYSTICK1 state
+ *			; and n is JOYSTICK0 state
+ */
+static void IKBD_SendAutoJoysticksMonitoring(void)
+{
+	Uint8 Byte1;
+	Uint8 Byte2;
+
+	Byte1 = ( ( KeyboardProcessor.Joy.JoyData[0] & 0x80 ) >> 6 )
+		|| ( ( KeyboardProcessor.Joy.JoyData[1] & 0x80 ) >> 7 );
+
+	Byte2 = ( ( KeyboardProcessor.Joy.JoyData[0] & 0x0f ) << 4 )
+		|| ( KeyboardProcessor.Joy.JoyData[1] & 0x0f );
+
+	IKBD_Cmd_Return_Byte (Byte1);
+	IKBD_Cmd_Return_Byte (Byte2);
+//fprintf ( stderr , "joystick monitoring %x %x VBL=%d HBL=%d\n" , Byte1 , Byte2 , nVBLs , nHBL );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1612,9 +1637,16 @@ static void IKBD_SendAutoKeyboardCommands(void)
 	/* Update internal mouse absolute position by find 'delta' of mouse movement */
 	IKBD_UpdateInternalMousePosition();
 
+	/* If IKBD is monitoring only joysticks, don't report other events */
+	if ( KeyboardProcessor.JoystickMode == AUTOMODE_JOYSTICK_MONITORING )
+	{
+		IKBD_SendAutoJoysticksMonitoring();
+		return;
+	}
+
 	/* Send automatic joystick packets */
 	if (KeyboardProcessor.JoystickMode==AUTOMODE_JOYSTICK)
-		IKBD_SelAutoJoysticks();
+		IKBD_SendAutoJoysticks();
 	/* Send automatic relative mouse positions(absolute are not send automatically) */
 	if (KeyboardProcessor.MouseMode==AUTOMODE_MOUSEREL)
 		IKBD_SendRelMousePacket();
@@ -1655,6 +1687,10 @@ static void IKBD_SendAutoKeyboardCommands(void)
  */
 void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
 {
+	/* If IKBD is monitoring only joysticks, don't report key */
+	if ( KeyboardProcessor.JoystickMode == AUTOMODE_JOYSTICK_MONITORING )
+		return;
+
 	/* Store the state of each ST scancode : 1=pressed 0=released */
 	if ( bPress )		ScanCodeState[ ScanCode & 0x7f ] = 1;
 	else			ScanCodeState[ ScanCode & 0x7f ] = 0;
@@ -1664,7 +1700,7 @@ void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
 
 	if ( IKBD_OutputBuffer_CheckFreeCount ( 1 ) )
 	{
-		IKBD_Cmd_Return_Byte (ScanCode);		/* And send to keyboard processor */
+		IKBD_Cmd_Return_Byte (ScanCode);		/* Add to the IKBD's output buffer */
 	}
 
 	/* If we're executing a custom IKBD program, call it to process the key event */
@@ -1701,7 +1737,7 @@ void IKBD_InterruptHandler_AutoSend(void)
 	}
 
 	/* Trigger this auto-update function again after a while */
-	CycInt_AddRelativeInterrupt(150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
+	CycInt_AddRelativeInterrupt(Keyboard.AutoSendCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
 
 	/* We don't send keyboard data automatically within the first few
 	 * VBLs to avoid that TOS gets confused during its boot time */
@@ -2122,7 +2158,7 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 	 * register first.
 	 */
 	IKBD_GetJoystickData();
-	IKBD_SelAutoJoysticks();
+	IKBD_SendAutoJoysticks();
 }
 
 
@@ -2169,10 +2205,29 @@ static void IKBD_Cmd_ReturnJoystick(void)
  *         and x is JOYSTICK0 Fire button
  *     %nnnnmmmm  where m is JOYSTICK1 state
  *         and n is JOYSTICK0 state
+ *
+ * TODO : we use a fixed 8 MHz clock to convert rate in 1/100th of sec into cycles.
+ * This should be replaced by using MachineClocks.CPU_Freq.
  */
-static void IKBD_Cmd_SetJoystickDuration(void)
+static void IKBD_Cmd_SetJoystickMonitoring(void)
 {
-	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_SetJoystickDuration\n");
+	int	Rate;
+	int	Cycles;
+
+	Rate = (unsigned int)Keyboard.InputBuffer[1];
+
+	KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK_MONITORING;
+	KeyboardProcessor.MouseMode = AUTOMODE_OFF;
+
+	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_SetJoystickMonitoring %d\n" , Rate );
+
+	if ( Rate == 0 )
+		Rate = 1;
+
+	Cycles = 8021247 * Rate / 100;
+	Cycles <<= nCpuFreqShift;					/* Compensate for x2 or x4 cpu speed */
+	CycInt_AddRelativeInterrupt ( Cycles, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND );
+	Keyboard.AutoSendCycles = Cycles;
 }
 
 
