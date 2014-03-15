@@ -391,8 +391,8 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 				/* Check if SectorSize is valid (this is just a warning, we keep only bits 0-1 anyway) */
 				if ( pStxSector->ID_Size & ~FDC_SECTOR_SIZE_MASK )
 				{
-					fprintf ( stderr , "STX : invalid ID_Size=%d on track %d sector %d\n" ,
-						  pStxSector->ID_Size , Track , Sector );
+//					fprintf ( stderr , "STX : invalid ID_Size=%d on track %d sector %d\n" ,
+//						  pStxSector->ID_Size , Track , Sector );
 				}
 
 				pStxSector->SectorSize = 128 << ( pStxSector->ID_Size & FDC_SECTOR_SIZE_MASK );
@@ -453,7 +453,7 @@ next_track:
 		if ( Debug & STX_DEBUG_FLAG_STRUCTURE )
 		{
 			fprintf ( stderr , "  track %3d BlockSize=%d FuzzySize=%d Sectors=%4.4x Flags=%4.4x"
-				" MFMSize=%d TrackNb=%d Side=%d RecordType=%x"
+				" MFMSize=%d TrackNb=%2.2x Side=%d RecordType=%x"
 				" TrackImage=%s (%d bytes, sync=%4.4x) Timings=%d,%d\n" ,
 				Track , pStxTrack->BlockSize ,
 				pStxTrack->FuzzySize , pStxTrack->SectorsCount , pStxTrack->Flags , pStxTrack->MFMSize ,

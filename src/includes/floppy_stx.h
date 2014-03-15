@@ -32,7 +32,7 @@ typedef struct {
 	Uint8		*pTimingData;				/* Data for variable bit width or null */
 } STX_SECTOR_STRUCT;
 
-#define	STX_SECTOR_BLOCK_SIZE		( 4+2+2+1+1+1+1+2+1+1)	/* Size of the sector block in an STX file = 16 bytes */
+#define	STX_SECTOR_BLOCK_SIZE		( 4+2+2+1+1+1+1+2+1+1 )	/* Size of the sector block in an STX file = 16 bytes */
 
 /* NOTE : bits 3,4,5 have the same meaning as in the FDC's Status register */
 #define	STX_SECTOR_FLAG_VARIABLE_TIME	(1<<0)			/* bit 0, if set, this sector has variable bit width */
