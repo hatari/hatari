@@ -124,6 +124,8 @@
 /*			else this will cause an unwanted "double bus error" ("Union Demo" loader).	*/
 /* 2014/02/22	[NP]	In refill_prefetch(), use get_word() instead of do_get_mem_word() to generate	*/
 /*			a bus error when trying to read from an invalid region.				*/
+/* 2014/03/18	[NP]	In Exception(), add a specific case to restore the dest part of a "move" after	*/
+/*			it was overwritten during a bus error (fix the game Dragon Flight).		*/
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -1017,9 +1019,17 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    if ( BusError_opcode == 0x21f8 )						/* move.l $0.w,$24.w (Transbeauce 2 loader) */
 	      put_long (m68k_areg(regs, 7)+10, currpc-2);				/* correct PC is 2 bytes less than usual value */
 
-	    else if ( ( BusErrorPC=0xccc ) && ( BusError_opcode == 0x48d6 ) )		/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
+	    else if ( ( BusErrorPC == 0xccc ) && ( BusError_opcode == 0x48d6 ) )	/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
 	      put_long (m68k_areg(regs, 7)+10, currpc+2);				/* correct PC is 2 bytes more than usual value */
-	    //fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , BusError_opcode);
+
+	    /* [NP] In case of a move with a bus error on the read part, uae cpu is writing to the dest part */
+	    /* then process the bus error ; on a real CPU, the bus error occurs after the read and before the */
+	    /* write, so the dest part doesn't change. For now, we restore the dest part on some specific cases */
+	    /* FIXME : the bus error should be processed just after the read, not at the end of the instruction */
+	    else if ( ( BusErrorPC == 0x62a ) && ( BusError_opcode == 0x3079 ) )	/* 3079 4ef9 0000 move.l $4ef90000,a0 (Dragon Flight) */
+	      m68k_areg(regs, 0) = 8;							/* A0 should not be changed to "0" but keep its value "8" */
+
+	    fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , BusError_opcode);
 
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
