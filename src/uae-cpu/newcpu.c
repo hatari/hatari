@@ -1029,6 +1029,9 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    else if ( ( BusErrorPC == 0x62a ) && ( BusError_opcode == 0x3079 ) )	/* 3079 4ef9 0000 move.l $4ef90000,a0 (Dragon Flight) */
 	      m68k_areg(regs, 0) = 8;							/* A0 should not be changed to "0" but keep its value "8" */
 
+	    else if ( get_long(BusErrorPC) == 0x13f88e21 )				/* 13f8 8e21 move.b $ffff8e21.w,$xxxxx (Tymewarp) */
+	      put_byte ( get_long(BusErrorPC+4) , 0x00 );				/* dest content should not be changed to "ff" but keep its value "00" */
+
 	    fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , BusError_opcode);
 
 	    /* Check for double bus errors: */
