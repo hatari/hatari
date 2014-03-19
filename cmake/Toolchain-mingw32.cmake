@@ -16,9 +16,9 @@ SET(CMAKE_SYSTEM_NAME Windows)
 # (change these depending on your system settings)
 IF(NOT MINGW_EXE_PREFIX)
   # Some default values if MINGW_EXE_PREFIX is not defined
-  SET(CMAKE_C_COMPILER i586-pc-mingw32-gcc)
-  SET(CMAKE_CXX_COMPILER i586-pc-mingw32-g++)
-  SET(CMAKE_RC_COMPILER i586-pc-mingw32-windres)
+  SET(CMAKE_C_COMPILER i686-w64-mingw32-gcc)
+  SET(CMAKE_CXX_COMPILER i686-w64-mingw32-g++)
+  SET(CMAKE_RC_COMPILER i686-w64-mingw32-windres)
 ELSE()
   # Use the value provided to set mingw's tools
   SET(CMAKE_C_COMPILER ${MINGW_EXE_PREFIX}-gcc)
@@ -49,7 +49,7 @@ ENDIF()
 get_filename_component ( CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH} ABSOLUTE )
 
 # Uncomment this line with your own values if above doesn't work
-#SET(CMAKE_FIND_ROOT_PATH /usr/i586-pc-mingw32/sys-root/mingw )
+#SET(CMAKE_FIND_ROOT_PATH /usr/i686-w64-mingw32/sys-root/mingw )
 
 # FindSDL.cmake doesn't search correctly in CMAKE_FIND_ROOT_PATH
 # so we force SDLDIR here
