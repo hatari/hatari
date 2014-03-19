@@ -153,7 +153,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "debugcpu.h"
 #include "68kDisass.h"
 
-//#define DEBUG_PREFETCH
+#define DEBUG_PREFETCH
 
 struct flag_struct regflags;
 
@@ -1724,11 +1724,11 @@ static void m68k_run_1 (void)
 	uae_u32 opcode = get_iword_prefetch (0);
 
 #ifdef DEBUG_PREFETCH
-	if (get_ilong (0) != do_get_mem_long (&regs.prefetch)) {
-	    fprintf (stderr, "Prefetch differs from memory.\n");
-	    debugging = 1;
-	    return;
-	}
+//	if (get_ilong (0) != do_get_mem_long (&regs.prefetch)) {
+//	    fprintf (stderr, "Prefetch differs from memory.\n");
+//	    debugging = 1;
+//	    return;
+//	}
 	oldpcp = regs.pc_p;
 	memcpy (saved_bytes, regs.pc_p, 20);
 #endif
@@ -1766,8 +1766,8 @@ static void m68k_run_1 (void)
 #ifdef DEBUG_PREFETCH
 	if (memcmp (saved_bytes, oldpcp, 20) != 0) {
 	    fprintf (stderr, "Self-modifying code detected %x.\n" , m68k_getpc() );
-	    set_special (SPCFLAG_BRK);
-	    debugging = 1;
+//	    set_special (SPCFLAG_BRK);
+//	    debugging = 1;
 	}
 #endif
 
