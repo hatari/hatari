@@ -376,7 +376,7 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pIm
 		return file_info.uncompressed_size;
 	}
 
-	Log_Printf(LOG_ERROR, "Not an .ST, .MSA or .DIM file.\n");
+	Log_Printf(LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF or .STX file.\n");
 	return 0;
 }
 
