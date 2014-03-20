@@ -8,6 +8,9 @@
 
   IPF files are handled using the capsimage library, which emulates the FDC
   at low level and allows to read complex protections.
+
+  RAW files made with KryoFlux board or CT RAW dumped with an Amiga are also handled
+  by the capsimage library.
 */
 const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 
@@ -137,12 +140,15 @@ fprintf ( stderr , "ipf load %d\n" , StructSize );
 
 /*-----------------------------------------------------------------------*/
 /**
- * Does filename end with a .IPF extension? If so, return true.
+ * Does filename end with a .IPF or .RAW extension ? If so, return true.
  */
 bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
-	return(File_DoesFileExtensionMatch(pszFileName,".ipf")
-	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ipf.gz")));
+	return ( File_DoesFileExtensionMatch(pszFileName,".ipf" )
+		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ipf.gz") )
+		|| File_DoesFileExtensionMatch(pszFileName,".raw" )
+		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".raw.gz") )
+		);
 }
 
 
