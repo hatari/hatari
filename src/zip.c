@@ -47,6 +47,7 @@ static const char * const pszDiskNameExts[] =
 	".dim",
 	".ipf",
 	".raw",
+	".ctr",
 	".stx",
 	NULL
 };

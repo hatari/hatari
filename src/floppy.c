@@ -60,6 +60,7 @@ static const char * const pszDiskImageNameExts[] =
 	".dim",
 	".ipf",
 	".raw",
+	".ctr",
 	".stx",
 	NULL
 };

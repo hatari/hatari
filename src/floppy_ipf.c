@@ -140,7 +140,7 @@ fprintf ( stderr , "ipf load %d\n" , StructSize );
 
 /*-----------------------------------------------------------------------*/
 /**
- * Does filename end with a .IPF or .RAW extension ? If so, return true.
+ * Does filename end with a .IPF or .RAW or .CTR extension ? If so, return true.
  */
 bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
@@ -148,6 +148,8 @@ bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ipf.gz") )
 		|| File_DoesFileExtensionMatch(pszFileName,".raw" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".raw.gz") )
+		|| File_DoesFileExtensionMatch(pszFileName,".ctr" )
+		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ctr.gz") )
 		);
 }
 
