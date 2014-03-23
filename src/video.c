@@ -330,6 +330,8 @@
 /* 2013/12/28	[NP]	For bottom border removal on a 60 Hz screen, max position to go back	*/
 /*			to 60 Hz should be 4 cycles earlier, as a 60 Hz line starts 4 cycles	*/
 /*			earlier (fix STE demo "It's a girl 2" by Paradox).			*/
+/* 2014/03/21	[NP]	For STE in med res overscan at 60 Hz, add a 3 pixels shift to have	*/
+/*			bitmaps and color changes synchronised (fix 'HighResMode' by Paradox).	*/
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 
@@ -2060,6 +2062,18 @@ static void Video_CopyScreenLineColor(void)
 	LineRes = ( HBLPaletteMasks[i] >> 16 ) & 1;		/* 0=low res  1=med res */
 
 	//fprintf(stderr , "copy line %d start %d end %d 0x%x 0x%x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
+
+	/* FIXME [NP] : when removing left border and displaying med res at 60 Hz on STE, we have a 3 pixel shift */
+	/* to correct to have bitmaps and color changes in sync. */
+	/* For now we only shift for med @ 60 Hz, but this should be measured for all */
+	/* freq and low / med res combinations on a real STE (fix "HighResMode" demo by Paradox). */
+	if ( ( ConfigureParams.System.nMachineType == MACHINE_STE )
+	  && ( LineBorderMask & BORDERMASK_LEFT_OFF_MED )
+	  && ( nCyclesPerLine == 508 )
+	  )
+	{
+		STF_PixelScroll = 3;			
+	}
 
 	/* If left border is opened, we need to compensate one missing word in low res (1 plan) */
 	/* If overscan is in med res, the offset is variable */
