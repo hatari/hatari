@@ -14,6 +14,7 @@ Emulation:
     color registers
   - Better detection of bottom border removal on a 60 Hz screen
   - support for color change during only 4 cycles
+  - better bitmap/color alignment for STE med res overscan at 60 Hz
 - CPU changes :
   - Fix a case when MFP's interrupt happens during the IACK sequence
     for HBL/VBL
@@ -88,6 +89,7 @@ Fixed demos :
   UMD 8730 by PHF (video, unused bits in STF color registers)
   It's A Girl 2 by Paradox (video, bottom border removal on a 60 Hz screen)
   4-pixel plasma screen by TOS Crew (video, color change during only 4 cyles)
+  HighResMode by Paradox (video, color changes in overscan med res at 60 Hz)
 
 Fixed games :
   Reeking Rubber (by Nature), Falcon game
