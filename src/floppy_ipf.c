@@ -278,6 +278,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 
 #else
 	CapsLong	ImageId;
+	CapsLong	ImageType;
 
 	ImageId = CAPSAddImage();
 	if ( ImageId < 0 )
@@ -286,7 +287,27 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		return false;
 	}
 
-	fprintf ( stderr , "IPF : IPF_Insert drive=%d buf=%p size=%ld imageid=%d\n" , Drive , pImageBuffer , ImageSize , ImageId );
+	ImageType = CAPSGetImageTypeMemory ( pImageBuffer , ImageSize );
+	if ( ImageType == citError )
+	{
+		fprintf ( stderr , "IPF : error CAPSGetImageTypeMemory\n" );
+		return false;
+	}
+	else if ( ImageType == citUnknown )
+	{
+		fprintf ( stderr , "IPF : unknown image type\n" );
+		return false;
+	}
+
+	fprintf ( stderr , "IPF : IPF_Insert drive=%d buf=%p size=%ld imageid=%d type=" , Drive , pImageBuffer , ImageSize , ImageId );
+	switch ( ImageType ) {
+		case citIPF:		fprintf ( stderr , "IPF\n" ); break;
+		case citCTRaw:		fprintf ( stderr , "CT RAW\n" ); break;
+		case citKFStream:	fprintf ( stderr , "KF STREAM\n" ) ; break;
+		case citDraft:		fprintf ( stderr , "DRAFT\n" ) ; break;
+		default :		fprintf ( stderr , "NOT SUPPORTED\n" );
+					return false;
+	}
 
 	if ( CAPSLockImageMemory ( ImageId , pImageBuffer , (CapsULong)ImageSize , DI_LOCK_MEMREF ) == imgeOk )
 	{
