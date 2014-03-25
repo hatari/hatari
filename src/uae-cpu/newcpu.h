@@ -178,7 +178,16 @@ STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
         r |= get_word (t+2);
     }
     else
-        r = get_long (t);					/* read 2 new words */
+    {
+	/* [NP] FIXME : when we refill with 4 bytes, we should not read one long */
+	/* but 2 words, else some bus errors are not detected if the address overlaps */
+	/* on a bus error region (eg : get_long(t=213ffffe) doesn't give a bus error, */
+	/* but it should. This should be better handled in memory.c */
+//        r = get_long (t);					/* read 2 new words */
+        r = get_word (t);
+        r <<= 16;
+        r |= get_word (t+2);
+    }
     regs.prefetch = r;
 #else
     if ( t - regs.prefetch_pc == 2 )				/* keep 1 word and read 1 new word */
@@ -188,10 +197,19 @@ STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
         r |= get_word (t+2);
     }
     else
-        r = get_long (t);					/* read 2 new words */
+    {
+	/* [NP] FIXME : when we refill with 4 bytes, we should not read one long */
+	/* but 2 words, else some bus errors are not detected if the address overlaps */
+	/* on a bus error region (eg : get_long(t=213ffffe) doesn't give a bus error, */
+	/* but it should. This should be better handled in memory.c */
+//        r = get_long (t);					/* read 2 new words */
+        r = get_word (t);
+        r <<= 16;
+        r |= get_word (t+2);
+    }
     do_put_mem_long (&regs.prefetch, r);
 #endif
-//fprintf (stderr,"PC %x T %x R %x\n", currpc, t, r);
+//fprintf (stderr,"PC %x PREFPC %x T %x R %x\n", currpc, regs.prefetch_pc, t, r);
     regs.prefetch_pc = t;
 }
 
