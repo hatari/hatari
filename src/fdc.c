@@ -448,6 +448,7 @@ typedef struct {
 	Uint8		Status_Temp;				/* Temporary content of the status register */
 	bool		StatusTypeI;				/* When true, STR will report the status of a type I command */
 	int		IndexPulse_Counter;			/* To count the number of rotations when motor is ON */
+	Uint8		NextSector_ID_Field_TR;			/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	Uint8		NextSector_ID_Field_SR;			/* Sector Register from the ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	Uint8		InterruptCond;				/* For a type IV force interrupt, contains the condition on the lower 4 bits */
 } FDC_STRUCT;
@@ -3396,6 +3397,7 @@ static void FDC_WriteTrackRegister ( void )
 	{
 		LOG_TRACE(TRACE_FDC, "fdc write 8604 fdc busy, track=0x%x may be ignored VBL=%d video_cyc=%d %d@%d pc=%x\n",
 			IoMem_ReadByte(0xff8605), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+//return;
 	}
 
 	FDC.TR = IoMem_ReadByte(0xff8605);
@@ -3843,7 +3845,8 @@ void FDC_WriteDMAAddress ( Uint32 Address )
  * sector's ID Field in the track ($A1 $A1 $A1 $FE TR SIDE SR LEN CRC1 CRC2)
  * If no ID Field is found before the end of the track, we use the 1st
  * ID Field of the track (which simulates a full spin of the floppy).
- * We also store the next sector's number into NextSector_ID_Field_SR.
+ * We also store the next sector's number into NextSector_ID_Field_SR
+ * and the next track's number into NextSector_ID_Field_TR.
  * This function assumes some 512 byte sectors stored in ascending
  * order (for ST/MSA)
  * If there's no available drive/floppy, we return -1
@@ -3887,7 +3890,9 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Sid
 	}
 
 //fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d maxsr=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, MaxSector, NextSector );
+	FDC.NextSector_ID_Field_TR = Track;
 	FDC.NextSector_ID_Field_SR = NextSector;
+
 	return FDC_TransferByte_FdcCycles ( NbBytes );
 }
 
@@ -3895,11 +3900,11 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 Track , Uint8 Sid
 /*-----------------------------------------------------------------------*/
 /**
  * Return the value of the track number in the next ID field set by
- * FDC_NextSectorID_FdcCycles_ST (for ST/MSA, it's always FDC.TR)
+ * FDC_NextSectorID_FdcCycles_ST (for ST/MSA, it's always HeadTrack value)
  */
 static Uint8	FDC_NextSectorID_TR_ST ( void )
 {
-	return FDC.TR;
+	return FDC.NextSector_ID_Field_TR;
 }
 
 
