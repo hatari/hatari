@@ -424,8 +424,8 @@ static int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };		/* Controlled by bits 1 and 
 #define	FDC_DENSITY_FACTOR_ED			4		/* For a ED disk, we get x4 bytes than DD */
 
 
-#define	FDC_EMULATION_MODE_INTERNAL		1		/* Use fdc.c to handle emulation (ST, MSA and DIM images) */
-#define	FDC_EMULATION_MODE_IPF			2		/* Use floppy_ipf.c to handle emulation (IPF images ) */
+#define	FDC_EMULATION_MODE_INTERNAL		1		/* Use fdc.c to handle emulation (ST, MSA, DIM and STX images) */
+#define	FDC_EMULATION_MODE_IPF			2		/* Use floppy_ipf.c to handle emulation (IPF, CTR images ) */
 
 
 typedef struct {
@@ -451,6 +451,8 @@ typedef struct {
 	Uint8		NextSector_ID_Field_TR;			/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	Uint8		NextSector_ID_Field_SR;			/* Sector Register from the ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	Uint8		InterruptCond;				/* For a type IV force interrupt, contains the condition on the lower 4 bits */
+
+	int		EmulationMode;				/* FDC_EMULATION_MODE_INTERNAL or FDC_EMULATION_MODE_IPF */
 } FDC_STRUCT;
 
 
@@ -761,6 +763,8 @@ void FDC_Init ( void )
 	}
 
 	FDC_Buffer_Reset();
+
+	FDC.EmulationMode = FDC_EMULATION_MODE_INTERNAL;
 }
 
 
@@ -1076,12 +1080,17 @@ int	FDC_Buffer_Get_Size ( void )
  * could lead to inconstancies when precise timings are required), we also
  * use the IPF mode for an empty drive if the other drive contains an IPF
  * image.
+ * If no drive is selected, we must use the previous mode (before drives were
+ * unselected), not the internal one : in case some commands are sent when
+ * drives are deselected and the drive was in IPF mode, we must send
+ * the command to IPF to ensure no command are lost if the drive is selected again
+ * (eg : D0 command in "Saint Dragon" IPF)
  */
 static int FDC_GetEmulationMode ( void )
 {
 	int	Mode;
 
-	Mode = FDC_EMULATION_MODE_INTERNAL;				/* Default if no drive is selected */
+	Mode = FDC.EmulationMode;				/* Default to previous mode if no drive is selected */
 
 	/* Check drive 1 first */
 	if ( ( PSGRegisters[PSG_REG_IO_PORTA] & 0x04 ) == 0 )
@@ -1107,6 +1116,7 @@ static int FDC_GetEmulationMode ( void )
 			Mode = FDC_EMULATION_MODE_INTERNAL;
 	}
 
+	FDC.EmulationMode = Mode;
 //fprintf ( stderr , "emul mode %x %d\n" , PSGRegisters[PSG_REG_IO_PORTA] & 0x06 , Mode );
 //	return FDC_EMULATION_MODE_INTERNAL;
 //	return FDC_EMULATION_MODE_IPF;
