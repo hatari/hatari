@@ -126,6 +126,8 @@
 /*			a bus error when trying to read from an invalid region.				*/
 /* 2014/03/18	[NP]	In Exception(), add a specific case to restore the dest part of a "move" after	*/
 /*			it was overwritten during a bus error (fix the game Dragon Flight).		*/
+/* 2014/04/06	[NP]	In Exception(), add a special case for last_addr_for_exception_3 stored in the	*/
+/*			stack after a bus error (fix the game Batman The Movie).			*/
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -1021,6 +1023,9 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
 	    else if ( ( BusErrorPC == 0xccc ) && ( BusError_opcode == 0x48d6 ) )	/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
 	      put_long (m68k_areg(regs, 7)+10, currpc+2);				/* correct PC is 2 bytes more than usual value */
+
+	    else if ( ( BusErrorPC == 0x1fece ) && ( BusError_opcode == 0x33d4 ) )	/* 1fece : 33d4 0001 fdca move.w (a4),$1fdca (Batman The Movie) */
+	      put_long (m68k_areg(regs, 7)+10, currpc-4);				/* correct PC is 4 bytes less than usual value */
 
 	    /* [NP] In case of a move with a bus error on the read part, uae cpu is writing to the dest part */
 	    /* then process the bus error ; on a real CPU, the bus error occurs after the read and before the */
