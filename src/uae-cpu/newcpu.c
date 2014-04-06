@@ -154,6 +154,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "debugcpu.h"
 #include "68kDisass.h"
+//#include <caps/fdc.h>
 
 #define DEBUG_PREFETCH
 
@@ -1767,6 +1768,9 @@ static void m68k_run_1 (void)
 
 	if (bDspEnabled)
 	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
+
+//if ( CAPSGetDebugRequest() )
+//  DebugUI(REASON_CPU_BREAKPOINT);
 
 	cycles = (*cpufunctbl[opcode])(opcode);
 //fprintf (stderr, "ir out %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);
