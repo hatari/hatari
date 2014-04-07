@@ -355,7 +355,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 	
 	IPF_State.CapsImage[ Drive ] = ImageId;
 
-	IPF_State.Drive[ Drive ].diskattr |= ( CAPSDRIVE_DA_IN | CAPSDRIVE_DA_WP );	/* Disk inserted and write protected */
+	IPF_State.Drive[ Drive ].diskattr |= CAPSDRIVE_DA_IN;				/* Disk inserted, keep the value for "write protect" */
 
 	CAPSFdcInvalidateTrack ( &IPF_State.Fdc , Drive );				/* Invalidate previous buffered track data for drive, if any */
 
@@ -593,12 +593,21 @@ void	IPF_Emulate ( void )
 
 #else
 	int	NbCycles;
+	int	Drive;
 
 	NbCycles = CyclesGlobalClockCounter - IPF_State.FdcClock;	/* Number of cycles since last emulation */
 	if ( NbCycles < 0 )
 		NbCycles = 0;						/* We should call CAPSFdcEmulate even when NbCycles=0 */
 
 //	LOG_TRACE(TRACE_FDC, "fdc ipf emulate cycles=%d VBL=%d HBL=%d clock=%lld\n" , NbCycles , nVBLs , nHBL , CyclesGlobalClockCounter );
+
+	/* Update Write Protect status for each drive */
+	for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
+		if ( Floppy_IsWriteProtected ( Drive ) )
+			IPF_State.Drive[ Drive ].diskattr |= CAPSDRIVE_DA_WP;		/* Disk write protected */
+		else
+			IPF_State.Drive[ Drive ].diskattr &= ~CAPSDRIVE_DA_WP;		/* Disk is not write protected */
+
 
 	CAPSFdcEmulate ( &IPF_State.Fdc , NbCycles );			/* Process at max NbCycles */
 	IPF_State.FdcClock += IPF_State.Fdc.clockact;			/* clockact can be < NbCycle in some cases */
