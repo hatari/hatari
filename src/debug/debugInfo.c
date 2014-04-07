@@ -35,6 +35,8 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "video.h"
 #include "xbios.h"
+#include "newcpu.h"
+#include "68kDisass.h"
 
 
 /* ------------------------------------------------------------------
@@ -848,13 +850,17 @@ static Uint32 DebugInfo_FileArgs(int argc, char *argv[])
 static void DebugInfo_Default(Uint32 dummy)
 {
 	int hbl, fcycles, lcycles;
+        uaecptr nextpc, pc = M68000_GetPC();
 	Video_GetPosition(&fcycles, &hbl, &lcycles);
+
 	fprintf(stderr, "\nCPU=$%x, VBL=%d, FrameCycles=%d, HBL=%d, LineCycles=%d, DSP=",
-		M68000_GetPC(), nVBLs, fcycles, hbl, lcycles);
+		pc, nVBLs, fcycles, hbl, lcycles);
 	if (bDspEnabled)
 		fprintf(stderr, "$%x\n", DSP_GetPC());
 	else
 		fprintf(stderr, "N/A\n");
+
+	Disasm(stderr, pc, &nextpc, 1);
 }
 
 static const struct {
