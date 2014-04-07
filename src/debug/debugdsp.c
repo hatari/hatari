@@ -313,7 +313,7 @@ static int DebugDsp_Step(int nArgc, char *psArgv[])
 static char *DebugDsp_MatchNext(const char *text, int state)
 {
 	static const char* ntypes[] = {
-		"branch", "exreturn", "subcall", "subreturn"
+		"branch", "exreturn", "return", "subcall", "subreturn"
 	};
 	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
 }
@@ -336,12 +336,14 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 			optype = CALL_SUBROUTINE;
 		else if (strcmp(psArgv[1], "subreturn") == 0)
 			optype = CALL_SUBRETURN;
+		else if (strcmp(psArgv[1], "return") == 0)
+			optype = CALL_SUBRETURN | CALL_EXCRETURN;
 		else
 		{
 			fprintf(stderr, "Unrecognized opcode type given!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		sprintf(command, "DspOpcodeType=%d :once :quiet\n", optype);
+		sprintf(command, "DspOpcodeType & %d > 0 :once :quiet\n", optype);
 	}
 	else
 	{

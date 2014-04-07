@@ -498,7 +498,7 @@ static int DebugCpu_Step(int nArgc, char *psArgv[])
 static char *DebugCpu_MatchNext(const char *text, int state)
 {
 	static const char* ntypes[] = {
-		"branch", "exception", "exreturn", "subcall", "subreturn"
+		"branch", "exception", "exreturn", "return", "subcall", "subreturn"
 	};
 	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
 }
@@ -523,12 +523,14 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 			optype = CALL_SUBROUTINE;
 		else if (strcmp(psArgv[1], "subreturn") == 0)
 			optype = CALL_SUBRETURN;
+		else if (strcmp(psArgv[1], "return") == 0)
+			optype = CALL_SUBRETURN | CALL_EXCRETURN;
 		else
 		{
 			fprintf(stderr, "Unrecognized opcode type given!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		sprintf(command, "CpuOpcodeType=%d :once :quiet\n", optype);
+		sprintf(command, "CpuOpcodeType & %d > 0 :once :quiet\n", optype);
 	}
 	else
 	{
