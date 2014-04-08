@@ -343,7 +343,7 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 			fprintf(stderr, "Unrecognized opcode type given!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		sprintf(command, "DspOpcodeType & %d > 0 :once :quiet\n", optype);
+		sprintf(command, "DspOpcodeType & $%x > 0 :once :quiet\n", optype);
 	}
 	else
 	{
