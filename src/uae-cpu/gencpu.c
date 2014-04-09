@@ -70,6 +70,8 @@
 /* 2013/03/17	[NP]	Add refill_prefetch for i_SUB, i_NEG, i_NEGX, i_NOT (similar to i_ADD/i_EOR)	*/
 /* 2014/03/07	[NP]	Add refill_prefetch for i_Move Dn,xxxx.l (Union Demo, Darkman, Parasol Stars)	*/
 /* 			Add refill_prefetch for i_Move #xxxx,(An) (Titan)				*/
+/* 2014/04/09	[NP]	Similar to CLR on 68000, Scc should do a read before doing the write and can	*/
+/*			give 2 wait states (sf $fffa07 in Chart Attack compilation by Gremlin)		*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -1670,6 +1672,19 @@ static void gen_opcode (unsigned long int opcode)
 	break;
     case i_Scc:
 	genamode (curi->smode, "srcreg", curi->size, "src", 2, 0);
+
+	/* [NP] Scc does a read before the write only on 68000 */
+	/* but there's no cycle penalty for doing the read */
+	if ( curi->smode != Dreg )			// only if destination is memory
+	  {
+	    if (curi->size==sz_byte)
+	      printf ("\tuae_s8 src = get_byte(srca);\n");
+	    else if (curi->size==sz_word)
+	      printf ("\tuae_s16 src = get_word(srca);\n");
+	    else if (curi->size==sz_long)
+	      printf ("\tuae_s32 src = get_long(srca);\n");
+	  }
+
 	start_brace ();
 	printf ("\tint val = cctrue(%d) ? 0xff : 0;\n", curi->cc);
 	genastore ("val", curi->smode, "srcreg", curi->size, "src");
