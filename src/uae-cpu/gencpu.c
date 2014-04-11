@@ -72,6 +72,7 @@
 /* 			Add refill_prefetch for i_Move #xxxx,(An) (Titan)				*/
 /* 2014/04/09	[NP]	Similar to CLR on 68000, Scc should do a read before doing the write and can	*/
 /*			give 2 wait states (sf $fffa07 in Chart Attack compilation by Gremlin)		*/
+/* 2014/04/11	[NP]	Add refill_prefetch for i_Move Dn,(An) (International 3D Tennis)		*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -1338,8 +1339,12 @@ static void gen_opcode (unsigned long int opcode)
 	if ( ( curi->smode == Dreg ) && ( curi->dmode == absl ) )				// FIXME [NP] move.x Dn,xxxx.l (Union Demo : move.w d1,$4c)
 												// FIXME [NP] move.x Dn,xxxx.l (Darkman : move.w d2,$2c04)
 	  printf("\trefill_prefetch (m68k_getpc(), 4);\n");					// FIXME [NP] need better prefetch emulation
-	if ( (curi->size==sz_long) && ( curi->smode == imm ) && ( curi->dmode == Aind ) )	// FIXME [NP] move.l #$xxxx,(An) (Titan : move.l #$b0b0caca,(a4))
+
+	else if ( (curi->size==sz_long) && ( curi->smode == imm ) && ( curi->dmode == Aind ) )	// FIXME [NP] move.l #$xxxx,(An) (Titan : move.l #$b0b0caca,(a4))
 	  printf("\trefill_prefetch (m68k_getpc(), 4);\n");					// FIXME [NP] need better prefetch emulation
+
+	else if ( (curi->size==sz_long) && ( curi->smode == Dreg ) && ( curi->dmode == Aind ) )	// FIXME [NP] move.l Dn,(An) (Int 3D Tennis : move.l d0,(a0))
+	  printf("\trefill_prefetch (m68k_getpc(), 0);\n");					// FIXME [NP] need better prefetch emulation
 
 	genflags (flag_logical, curi->size, "src", "", "");
 	genastore ("src", curi->dmode, "dstreg", curi->size, "dst");
