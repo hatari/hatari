@@ -655,7 +655,7 @@ extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Ui
  * using BitPosition.
  * If there's no available drive/floppy or no ID field in the track, we return -1
  */
-extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
+extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
 	int			CurrentPos_FdcCycles;
@@ -665,6 +665,9 @@ extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Si
 
 	CurrentPos_FdcCycles = FDC_IndexPulse_GetCurrentPos_FdcCycles ( NULL );
 	if ( CurrentPos_FdcCycles < 0 )					/* No drive/floppy available at the moment */
+		return -1;
+
+	if ( ( Side == 1 ) && ( NumberOfHeads == 1 ) )			/* Can't read side 1 on a single sided drive */
 		return -1;
 
 	pStxTrack = STX_FindTrack ( Drive , Track , Side );
