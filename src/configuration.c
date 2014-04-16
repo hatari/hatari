@@ -263,7 +263,9 @@ static const struct Config_Tag configs_Floppy[] =
 	{ "bAutoInsertDiskB", Bool_Tag, &ConfigureParams.DiskImage.bAutoInsertDiskB },
 	{ "FastFloppy", Bool_Tag, &ConfigureParams.DiskImage.FastFloppy },
 	{ "EnableDriveA", Bool_Tag, &ConfigureParams.DiskImage.EnableDriveA },
+	{ "DriveA_NumberOfHeads", Int_Tag, &ConfigureParams.DiskImage.DriveA_NumberOfHeads },
 	{ "EnableDriveB", Bool_Tag, &ConfigureParams.DiskImage.EnableDriveB },
+	{ "DriveB_NumberOfHeads", Int_Tag, &ConfigureParams.DiskImage.DriveB_NumberOfHeads },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.DiskImage.nWriteProtection },
 	{ "szDiskAZipPath", String_Tag, ConfigureParams.DiskImage.szDiskZipPath[0] },
 	{ "szDiskAFileName", String_Tag, ConfigureParams.DiskImage.szDiskFileName[0] },
@@ -418,10 +420,17 @@ void Configuration_SetDefault(void)
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
 	ConfigureParams.DiskImage.FastFloppy = false;
 	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
+
 	ConfigureParams.DiskImage.EnableDriveA = true;
 	FDC_Drive_Set_Enable ( 0 , ConfigureParams.DiskImage.EnableDriveA );
+	ConfigureParams.DiskImage.DriveA_NumberOfHeads = 2;
+	FDC_Drive_Set_NumberOfHeads ( 0 , ConfigureParams.DiskImage.DriveA_NumberOfHeads );
+
 	ConfigureParams.DiskImage.EnableDriveB = true;
 	FDC_Drive_Set_Enable ( 1 , ConfigureParams.DiskImage.EnableDriveB );
+	ConfigureParams.DiskImage.DriveB_NumberOfHeads = 2;
+	FDC_Drive_Set_NumberOfHeads ( 1 , ConfigureParams.DiskImage.DriveB_NumberOfHeads );
+
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
 		ConfigureParams.DiskImage.szDiskZipPath[i][0] = '\0';
@@ -697,6 +706,8 @@ void Configuration_Apply(bool bReset)
 	/* Enable/disable floppy drives */
 	FDC_Drive_Set_Enable ( 0 , ConfigureParams.DiskImage.EnableDriveA );
 	FDC_Drive_Set_Enable ( 1 , ConfigureParams.DiskImage.EnableDriveB );
+	FDC_Drive_Set_NumberOfHeads ( 0 , ConfigureParams.DiskImage.DriveA_NumberOfHeads );
+	FDC_Drive_Set_NumberOfHeads ( 1 , ConfigureParams.DiskImage.DriveB_NumberOfHeads );
 }
 
 
@@ -830,9 +841,11 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[0], sizeof(ConfigureParams.DiskImage.szDiskFileName[0]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[0], sizeof(ConfigureParams.DiskImage.szDiskZipPath[0]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.EnableDriveA, sizeof(ConfigureParams.DiskImage.EnableDriveA));
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.DriveA_NumberOfHeads, sizeof(ConfigureParams.DiskImage.DriveA_NumberOfHeads));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[1], sizeof(ConfigureParams.DiskImage.szDiskFileName[1]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[1], sizeof(ConfigureParams.DiskImage.szDiskZipPath[1]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.EnableDriveB, sizeof(ConfigureParams.DiskImage.EnableDriveB));
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.DriveB_NumberOfHeads, sizeof(ConfigureParams.DiskImage.DriveB_NumberOfHeads));
 
 	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskDirectories, sizeof(ConfigureParams.HardDisk.bUseHardDiskDirectories));
 	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C]));

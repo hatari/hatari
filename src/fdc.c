@@ -1156,6 +1156,21 @@ fprintf ( stderr , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
 
 /*-----------------------------------------------------------------------*/
 /**
+ * This function is used to choose single sided or double sided for a drive
+ * when using the UI or command line parameters
+ */
+void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads )
+{
+	//LOG_TRACE ( TRACE_FDC , "fdc set nbr heads drive=%d %d\n" , Drive , NbrHeads );
+fprintf ( stderr , "fdc set nbr heads drive=%d %d\n" , Drive , NbrHeads );
+
+	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
+		FDC_DRIVES[ Drive ].NumberOfHeads = NbrHeads;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function is called when a floppy is inserted in a drive
  * using the UI or command line parameters
  */

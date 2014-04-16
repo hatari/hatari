@@ -161,6 +161,8 @@ typedef struct
   bool FastFloppy;			/* true to speed up FDC emulation */
   bool EnableDriveA;
   bool EnableDriveB;
+  int  DriveA_NumberOfHeads;
+  int  DriveB_NumberOfHeads;
   WRITEPROTECTION nWriteProtection;
   char szDiskZipPath[MAX_FLOPPYDRIVES][FILENAME_MAX];
   char szDiskFileName[MAX_FLOPPYDRIVES][FILENAME_MAX];
