@@ -613,7 +613,7 @@ void	IPF_Emulate ( void )
 	IPF_State.FdcClock += IPF_State.Fdc.clockact;			/* clockact can be < NbCycle in some cases */
 
 	/* Update UI's LEDs depending on Status Register */
-	FDC_SetDriveLedBusy ( (IPF_State.Fdc.r_st0 & ~IPF_State.Fdc.r_stm) | (IPF_State.Fdc.r_st1 & IPF_State.Fdc.r_stm) );
+	FDC_Drive_Set_BusyLed ( (IPF_State.Fdc.r_st0 & ~IPF_State.Fdc.r_stm) | (IPF_State.Fdc.r_st1 & IPF_State.Fdc.r_stm) );
 #endif
 }
 

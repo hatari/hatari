@@ -607,7 +607,7 @@ void	FDC_MemorySnapShot_Capture(bool bSave)
  * Change the color of the drive's led color in the statusbar, depending
  * on the state of the busy bit in STR
  */
-void	FDC_SetDriveLedBusy ( Uint8 STR )
+void	FDC_Drive_Set_BusyLed ( Uint8 STR )
 {
 //fprintf ( stderr ,"fdc led %d %x\n" , FDC.DriveSelSignal , STR );
 	if ( FDC.DriveSelSignal < 0 )
@@ -1144,7 +1144,7 @@ void	FDC_UpdateAll ( void )
  * This function is used to enable/disable a drive when
  * using the UI or command line parameters
  */
-void	FDC_EnableDrive ( int Drive , bool value )
+void	FDC_Drive_Set_Enable ( int Drive , bool value )
 {
 	//LOG_TRACE ( TRACE_FDC , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
 fprintf ( stderr , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
@@ -1686,7 +1686,7 @@ static void FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits )
 	FDC.STR &= (~DisableBits);					/* Clear bits in DisableBits */
 	FDC.STR |= EnableBits;						/* Set bits in EnableBits */
 
-	FDC_SetDriveLedBusy ( FDC.STR );
+	FDC_Drive_Set_BusyLed ( FDC.STR );
 //fprintf ( stderr , "fdc str 0x%x\n" , FDC.STR );
 }
 
