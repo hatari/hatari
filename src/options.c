@@ -101,6 +101,8 @@ enum {
 	OPT_RS232_OUT,
 	OPT_DRIVEA,		/* disk options */
 	OPT_DRIVEB,
+	OPT_DRIVEA_HEADS,
+	OPT_DRIVEB_HEADS,
 	OPT_DISKA,
 	OPT_DISKB,
 	OPT_SLOWFLOPPY,
@@ -285,6 +287,10 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Enable/disable drive A" },
 	{ OPT_DRIVEB, NULL, "--drive-b",
 	  "<bool>", "Enable/disable drive B" },
+	{ OPT_DRIVEA_HEADS, NULL, "--drive-a-heads",
+	  "<x>", "Set number of heads for drive A (1=single sided, 2=double sided)" },
+	{ OPT_DRIVEB_HEADS, NULL, "--drive-b-heads",
+	  "<x>", "Set number of heads for drive B (1=single sided, 2=double sided)" },
 	{ OPT_DISKA, NULL, "--disk-a",
 	  "<file>", "Set disk image for floppy drive A" },
 	{ OPT_DISKB, NULL, "--disk-b",
@@ -1228,6 +1234,24 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_DRIVEB:
 			ok = Opt_Bool(argv[++i], OPT_DRIVEB, &ConfigureParams.DiskImage.EnableDriveB);
+			break;
+
+		case OPT_DRIVEA_HEADS:
+			val = atoi(argv[++i]);
+			if(val != 1 && val != 2)
+			{
+				return Opt_ShowError(OPT_DRIVEA_HEADS, argv[i], "Invalid number of heads");
+			}
+			ConfigureParams.DiskImage.DriveA_NumberOfHeads = val;
+			break;
+
+		case OPT_DRIVEB_HEADS:
+			val = atoi(argv[++i]);
+			if(val != 1 && val != 2)
+			{
+				return Opt_ShowError(OPT_DRIVEB_HEADS, argv[i], "Invalid number of heads");
+			}
+			ConfigureParams.DiskImage.DriveB_NumberOfHeads = val;
 			break;
 
 		case OPT_DISKA:
