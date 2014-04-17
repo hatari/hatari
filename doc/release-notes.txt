@@ -43,37 +43,40 @@ Emulator:
   - In the screen dialog, add checkbox for --desktop-st option
 - Fix: Xbios(255) modified the given argument string
 - New options --drive-a and --drive-b to enable/disable drives A and B
-- New NatFeats command to invoke Hatari debugger from native program
-- Allow GEMDOS, VDI and AES tracing to enabled without enabling
+- New NatFeats NF_DEBUGGER command to invoke Hatari debugger
+  from native program
+- Allow GEMDOS, VDI and AES tracing to be enabled without enabling
   also GEMDOS HD emulation or extended VDI mode
 - Debugger:
   - Fix: release mouse in all cases where debugger can be invoked
-  - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly.
-  - Fix: "symbols" command crash when it was used during bootup.
+  - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly
+  - Fix: "symbols" command crash when it was used during TOS bootup
   - Fix: TOS and cartridge addresses weren't (with all TOS versions)
     in address order which asserted in profile data post-processor
+  - Fix: "next" command didn't work correctly in "hex" number base
+  - removed limits on breakpoints and their conditions
   - new --debug-except option to specify which exceptions invoke
     the debugger, and WinUAE CPU core support for -D toggle option
-  - "next"/"dspnext" commands works like in other debuggers, they
-    skips subroutine/exception calls, for all other instructions
+  - "next"/"dspnext" commands work like in other debuggers, they
+    skip subroutine/exception calls, for all other instructions
     they works like "step" command (earlier they always moved to
     next instruction in memory)
   - "next" and "dspnext" commands support optional "instruction type"
     argument, which can be used (for example) to continue emulation
-    until subroutine returns.
+    until subroutine returns
   - "history" command takes optional parameter specifying how many
-    instructions of history will be tracked.
-  - CPU & DSP profile commands have now subcommand for profiling loops.
+    instructions of history will be tracked
+  - CPU & DSP profile commands have now subcommand for profiling loops
   - "CpuInstr" and "DspInstr" variables for count of instructions
-    executed since emulation was last continued from debugger.
+    executed since emulation was last continued from debugger
   - In addition to "!" condition, also "<" and ">" conditions can store
     the checked value (when both sides of conditions are identical).
     With above change, this can be e.g. used to detect and profile
-    what are worst frames in games and why.
+    what are worst frames in games and why
   - New "rename" command to rename files.  Useful for scripted
-    worst frame and spinloop profiling.
+    worst frame and spinloop profiling
   - Address space in 'dm' command can be given like in DSP disassembly,
-    "dm x:$100", in addition to earlier "dm x $100" syntax.
+    "dm x:$100", in addition to earlier "dm x $100" syntax
 
 Tools:
 - New hatari_spinloop.py script for post-processing loop profile data.
