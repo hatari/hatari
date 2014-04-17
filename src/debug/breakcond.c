@@ -44,9 +44,6 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 /* needs to go through long long to handle x=32 */
 #define BITMASK(x)      ((Uint32)(((unsigned long long)1<<(x))-1))
 
-#define BC_MAX_CONDITION_BREAKPOINTS 16
-#define BC_MAX_CONDITIONS_PER_BREAKPOINT 4
-
 #define BC_DEFAULT_DSP_SPACE 'P'
 
 typedef enum {	
@@ -104,15 +101,15 @@ typedef struct {
 typedef struct {
 	char *expression;
 	bc_options_t options;
-	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
+	bc_condition_t *conditions;
 	int ccount;	/* condition count */
 	int hits;	/* how many times breakpoint hit */
 } bc_breakpoint_t;
 
-static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
-static bc_breakpoint_t BreakPointsDsp[BC_MAX_CONDITION_BREAKPOINTS];
-static int BreakPointCpuCount;
-static int BreakPointDspCount;
+static bc_breakpoint_t *BreakPointsCpu;
+static bc_breakpoint_t *BreakPointsDsp;
+static int BreakPointCpuCount, BreakPointCpuAllocated;
+static int BreakPointDspCount, BreakPointDspAllocated;
 
 
 /* forward declarations */
@@ -1118,16 +1115,11 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
  * Return number of added conditions or zero for failure.
  */
 static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
-				    bc_condition_t *conditions, int ccount)
+				    bc_breakpoint_t *bp, int ccount)
 {
 	bc_condition_t condition;
 
 	ENTERFUNC(("BreakCond_ParseCondition(...)\n"));
-	if (ccount >= BC_MAX_CONDITIONS_PER_BREAKPOINT) {
-		pstate->error = "max number of conditions exceeded";
-		EXITFUNC(("-> 0 (no conditions free)\n"));
-		return 0;
-	}
 
 	/* setup condition */
 	memset(&condition, 0, sizeof(bc_condition_t));
@@ -1156,12 +1148,19 @@ static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 		EXITFUNC(("-> 0\n"));
 		return 0;
 	}
-	/* new condition */
-	conditions[ccount++] = condition;
+	/* copy new condition */
+	ccount += 1;
+	bp->conditions = realloc(bp->conditions, sizeof(bc_condition_t)*(ccount));
+	if (!bp->conditions) {
+		pstate->error = "failed to allocate space for breakpoint condition";
+		EXITFUNC(("-> 0\n"));
+		return 0;
+	}
+	bp->conditions[ccount-1] = condition;
 
 	/* continue with next condition? */
 	if (pstate->arg == pstate->argc) {
-		EXITFUNC(("-> %d (conditions)\n", ccount-1));
+		EXITFUNC(("-> %d conditions (all args parsed)\n", ccount));
 		return ccount;
 	}
 	if (strcmp(pstate->argv[pstate->arg], "&&") != 0) {
@@ -1172,12 +1171,12 @@ static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 	pstate->arg++;
 
 	/* recurse conditions parsing */
-	ccount = BreakCond_ParseCondition(pstate, bForDsp, conditions, ccount);
+	ccount = BreakCond_ParseCondition(pstate, bForDsp, bp, ccount);
 	if (!ccount) {
 		EXITFUNC(("-> 0\n"));
 		return 0;
 	}
-	EXITFUNC(("-> %d (conditions)\n", ccount-1));
+	EXITFUNC(("-> %d conditions (recursed)\n", ccount));
 	return ccount;
 }
 
@@ -1302,21 +1301,40 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 
 
 /**
- * Helper to set corrent breakpoint list and type name to given variables.
+ * Set corrent breakpoint list and name for given CPU type.
+ * Make sure there's always space for at least one additional breakpoint.
  * Return pointer to breakpoint list count
  */
 static int* BreakCond_GetListInfo(bc_breakpoint_t **bp,
 				  const char **name, bool bForDsp)
 {
-	int *bcount;
+	int *allocated, *bcount;
 	if (bForDsp) {
+		allocated = &BreakPointDspAllocated;
 		bcount = &BreakPointDspCount;
 		*bp = BreakPointsDsp;
 		*name = "DSP";
 	} else {
+		allocated = &BreakPointCpuAllocated;
 		bcount = &BreakPointCpuCount;
 		*bp = BreakPointsCpu;
 		*name = "CPU";
+	}
+	/* allocate (more) space for breakpoints when needed */
+	if (*bcount + 1 >= *allocated) {
+		if (!*allocated) {
+			/* initial count of available breakpoints */
+			*allocated = 16;
+		} else {
+			*allocated *= 2;
+		}
+		*bp = realloc(*bp, *allocated * sizeof(bc_breakpoint_t));
+		assert(*bp);
+		if (bForDsp) {
+			BreakPointsDsp = *bp;
+		} else {
+			BreakPointsCpu = *bp;
+		}
 	}
 	return bcount;
 }
@@ -1377,18 +1395,23 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 	int ccount;
 
 	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
-	if (*bcount >= BC_MAX_CONDITION_BREAKPOINTS) {
-		fprintf(stderr, "ERROR: no free %s condition breakpoints left.\n", name);
-		return false;
-	}
+
 	bp += *bcount;
 	memset(bp, 0, sizeof(bc_breakpoint_t));
 
 	normalized = BreakCond_TokenizeExpression(expression, &pstate);
 	if (normalized) {
 		bp->expression = normalized;
-		ccount = BreakCond_ParseCondition(&pstate, bForDsp,
-						  bp->conditions, 0);
+		ccount = BreakCond_ParseCondition(&pstate, bForDsp, bp, 0);
+		/* fail? */
+		if (!ccount) {
+			bp->expression = NULL;
+			if (bp->conditions) {
+				/* free what was allocated by ParseCondition */
+				free(bp->conditions);
+				bp->conditions = NULL;
+			}
+		}
 		bp->ccount = ccount;
 	} else {
 		ccount = 0;
@@ -1447,7 +1470,6 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 			fprintf(stderr, "ERROR in tokenized string:\n'%s'\n%*c-%s\n",
 				normalized, offset+2, '^', pstate.error);
 			free(normalized);
-			bp->expression = NULL;
 		} else {
 			/* show original string and point out the character
 			 * where the error was encountered
@@ -1535,10 +1557,13 @@ static bool BreakCond_Remove(int position, bool bForDsp)
 		BreakCond_Print(&(bp[offset]));
 	}
 	free(bp[offset].expression);
+	free(bp[offset].conditions);
+	bp[offset].expression = NULL;
+	bp[offset].conditions = NULL;
+
 	if (bp[offset].options.filename) {
 		free(bp[offset].options.filename);
 	}
-	bp[offset].expression = NULL;
 
 	if (position < *bcount) {
 		memmove(bp+offset, bp+position,
