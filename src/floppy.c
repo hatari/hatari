@@ -772,7 +772,7 @@ void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
  * Read sectors from floppy disk image, return TRUE if all OK
  * NOTE Pass -ve as Count to read whole track
  */
-bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
+bool Floppy_ReadSectors(int Drive, Uint8 **pBuffer, Uint16 Sector,
                         Uint16 Track, Uint16 Side, short Count,
                         int *pnSectorsPerTrack, int *pSectorSize)
 {
@@ -839,8 +839,8 @@ bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		Offset += (nBytesPerTrack*nSides)*Track;      /* Then seek to track */
 		Offset += (NUMBYTESPERSECTOR*(Sector-1));     /* And finally to sector */
 
-		/* Read sectors (usually 512 bytes per sector) */
-		memcpy(pBuffer, pDiskBuffer+Offset, (int)Count*NUMBYTESPERSECTOR);
+		/* Return a pointer to the sectors data (usually 512 bytes per sector) */
+		*pBuffer = pDiskBuffer+Offset;
 
 		return true;
 	}

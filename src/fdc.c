@@ -580,7 +580,7 @@ static void	FDC_WriteDataRegister ( void );
 static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side );
 static Uint8	FDC_NextSectorID_TR_ST ( void );
 static Uint8	FDC_NextSectorID_SR_ST ( void );
-static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize );
+static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize );
 static Uint8	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 static Uint8	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
 
@@ -2364,10 +2364,10 @@ static int FDC_UpdateReadSectorsCmd ( void )
 
 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
 			FDC.Status_Temp = FDC_ReadSector_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
-				FDC.SR , FDC.SideSignal , DMADiskWorkSpace , &SectorSize );
+				FDC.SR , FDC.SideSignal , &SectorSize );
 		else
 			FDC.Status_Temp = FDC_ReadSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
-				FDC.SR , FDC.SideSignal , DMADiskWorkSpace , &SectorSize );
+				FDC.SR , FDC.SideSignal , &SectorSize );
 
 		if ( FDC.Status_Temp & FDC_STR_BIT_RNF )		/* Sector FDC.SR was not found */
 		{
@@ -3972,10 +3972,11 @@ static Uint8	FDC_NextSectorID_SR_ST ( void )
  * Return 0 if sector was read without error, or FDC_STR_BIT_RNF if an error occurred
  * (FDC_STR_BIT_CRC_ERROR and FDC_STR_BIT_RECORD_TYPE are always set 0 for ST/MSA)
  */
-static Uint8 FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
+static Uint8 FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize )
 {
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	int	i;
+	Uint8	*pSectorData;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -3984,10 +3985,10 @@ static Uint8 FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
 	/* Copy 1 sector to our workspace, then convert the workspace into bytes/timings */
-	if ( Floppy_ReadSectors ( Drive, buf, Sector, Track, Side, 1, NULL, pSectorSize ) )
+	if ( Floppy_ReadSectors ( Drive, &pSectorData, Sector, Track, Side, 1, NULL, pSectorSize ) )
 	{
 		for ( i=0 ; i<*pSectorSize ; i++ )
-			FDC_Buffer_Add ( buf[ i ] );
+			FDC_Buffer_Add ( pSectorData[ i ] );
 		return 0;						/* No error */
 	}
 
@@ -4061,6 +4062,7 @@ static Uint8 FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	Uint8	*p;
 	Uint16	CRC;
 	int	Sector;
+	Uint8	*pSectorData;
 	int	SectorSize;
 	int	i;
 	
@@ -4109,12 +4111,12 @@ static Uint8 FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 		FDC_Buffer_Add ( 0xfb );				/* Data Address Mark */
 		crc16_add_byte ( &CRC , 0xfb );
 
-		if ( Floppy_ReadSectors ( Drive, DMADiskWorkSpace, Sector, Track, Side, 1, NULL, &SectorSize ) )
+		if ( Floppy_ReadSectors ( Drive, &pSectorData, Sector, Track, Side, 1, NULL, &SectorSize ) )
 		{
 			for ( i=0 ; i<SectorSize ; i++ )
 			{
-				FDC_Buffer_Add ( DMADiskWorkSpace[ i ] );
-				crc16_add_byte ( &CRC , DMADiskWorkSpace[ i ] );
+				FDC_Buffer_Add ( pSectorData[ i ] );
+				crc16_add_byte ( &CRC , pSectorData[ i ] );
 			}
 		}
 		else

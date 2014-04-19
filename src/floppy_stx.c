@@ -754,7 +754,7 @@ extern Uint8	FDC_NextSectorID_SR_STX ( void )
  * Return RNF if sector was not found, else return CRC and RECORD_TYPE values
  * for the status register.
  */
-extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , Uint8 *buf , int *pSectorSize )
+extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize )
 {
 	STX_SECTOR_STRUCT	*pStxSector;
 	int			i;
