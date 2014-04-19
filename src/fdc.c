@@ -3203,6 +3203,9 @@ static int FDC_TypeIV_ForceInterrupt ( void )
 	else
 		FDC_ClearIRQ ();
 
+	/* Starting a Force Int command should set the motor bit (verified on STF) */
+	FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );			/* Set motor bit */
+
 	/* Remove busy bit, don't change IRQ's state and stop the motor */
 	FdcCycles = FDC_CmdCompleteCommon( false );
 
