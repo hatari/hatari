@@ -26,7 +26,6 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "cycles.h"
 
 #ifdef HAVE_CAPSIMAGE
-#define CAPSIMAGE_VERSION 5
 #if CAPSIMAGE_VERSION == 4
 #include <caps/fdc.h>
 #else
@@ -269,6 +268,20 @@ bool	IPF_Init ( void )
 	CAPSFdcReset ( &IPF_State.Fdc );
 
 	return true;
+#endif
+}
+
+
+
+
+/*
+ * Exit
+ */
+void	IPF_Exit ( void )
+{
+#ifndef HAVE_CAPSIMAGE
+#else
+	CAPSExit();
 #endif
 }
 

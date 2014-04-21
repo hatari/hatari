@@ -63,10 +63,6 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include <sys/time.h>
 #endif
 
-#ifdef HAVE_CAPSIMAGE
-#include <caps/capsimage.h>
-#endif
-
 
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
 
@@ -693,9 +689,7 @@ static void Main_UnInit(void)
 	Screen_UnInit();
 	Exit680x0();
 
-#ifdef HAVE_CAPSIMAGE
-	CAPSExit();
-#endif
+	IPF_Exit();
 
 	/* SDL uninit: */
 	SDL_Quit();

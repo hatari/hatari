@@ -11,6 +11,7 @@ extern Uint8	*IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImag
 extern bool	IPF_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize);
 
 extern bool	IPF_Init ( void );
+extern void	IPF_Exit ( void );
 extern bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize );
 extern bool	IPF_Eject ( int Drive );
 
