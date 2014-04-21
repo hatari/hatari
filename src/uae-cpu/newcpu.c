@@ -154,7 +154,17 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "debugcpu.h"
 #include "68kDisass.h"
-//#include <caps/fdc.h>
+
+#ifdef HAVE_CAPSIMAGE
+#define CAPSIMAGE_VERSION 5
+#if CAPSIMAGE_VERSION == 4
+#include <caps/fdc.h>
+#else
+#include <caps/CapsAPI.h>
+#include <caps/CapsFDC.h>
+#include <caps/CapsLib.h>
+#endif
+#endif
 
 #define DEBUG_PREFETCH
 

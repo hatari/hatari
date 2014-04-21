@@ -26,7 +26,14 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "cycles.h"
 
 #ifdef HAVE_CAPSIMAGE
+#define CAPSIMAGE_VERSION 5
+#if CAPSIMAGE_VERSION == 4
 #include <caps/fdc.h>
+#else
+#include <caps/CapsAPI.h>
+#include <caps/CapsFDC.h>
+#include <caps/CapsLib.h>
+#endif
 #endif
 
 
@@ -222,7 +229,7 @@ bool	IPF_Init ( void )
 		fprintf ( stderr , "IPF : CAPSVersionInfo failed\n" );
 		return false;
         }
-	fprintf ( stderr , "IPF : capsimage library version release=%d revision=%d\n" , caps_vi.release , caps_vi.revision );
+	fprintf ( stderr , "IPF : capsimage library version release=%d revision=%d\n" , (int)caps_vi.release , (int)caps_vi.revision );
 	IPF_State.CapsLibRelease = caps_vi.release;
 	IPF_State.CapsLibRevision = caps_vi.revision;
 
@@ -434,7 +441,7 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 		return;
 
 	LOG_TRACE(TRACE_FDC, "fdc ipf callback trk drive=%d buftrack=%d bufside=%d VBL=%d HBL=%d\n" , Drive ,
-		  pd->buftrack , pd->bufside , nVBLs , nHBL );
+		  (int)pd->buftrack , (int)pd->bufside , nVBLs , nHBL );
 
 	pd->ttype	= cti.type;
 	pd->trackbuf	= cti.trackbuf;
@@ -453,7 +460,7 @@ static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State )
 #ifdef HAVE_CAPSIMAGE
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 {
-	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x VBL=%d HBL=%d\n" , State , nVBLs , nHBL );
+	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x VBL=%d HBL=%d\n" , (int)State , nVBLs , nHBL );
 
 	if ( State )
 		FDC_SetIRQ();				/* IRQ bit was set */
@@ -482,7 +489,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 		Byte = FDC_DMA_FIFO_Pull ();		/* Get a byte from the DMA FIFO */
 		CAPSFdcWrite ( &IPF_State.Fdc , 3 , Byte );	/* Write to FDC's reg 3 */
 
-		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x write byte 0x%02x VBL=%d HBL=%d\n" , State , Byte , nVBLs , nHBL );
+		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x write byte 0x%02x VBL=%d HBL=%d\n" , (int)State , Byte , nVBLs , nHBL );
 	}
 
 	else						/* DMA read mode */
@@ -490,7 +497,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 		Byte = CAPSFdcRead ( &IPF_State.Fdc , 3 );	/* Read from FDC's reg 3 */
 		FDC_DMA_FIFO_Push ( Byte );		/* Add byte to the DMA FIFO */
 
-		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x read byte 0x%02x VBL=%d HBL=%d\n" , State , Byte , nVBLs , nHBL );
+		LOG_TRACE(TRACE_FDC, "fdc ipf callback drq state=0x%x read byte 0x%02x VBL=%d HBL=%d\n" , (int)State , Byte , nVBLs , nHBL );
 	}
 }
 #endif
