@@ -1671,6 +1671,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				}
 				return Opt_ShowError(OPT_EXCEPTIONS, argv[i], errstr);
 			}
+			if (ExceptionDebugMask)
+			{
+				/* already enabled, change run-time config */
+				int oldmask = ExceptionDebugMask;
+				ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask;
+				fprintf(stderr, "Exception debugging changed (0x%x -> 0x%x).\n",
+					oldmask, ExceptionDebugMask);
+			}
 			break;
 
 		case OPT_BIOSINTERCEPT:
