@@ -29,9 +29,9 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #if CAPSIMAGE_VERSION == 4
 #include <caps/fdc.h>
 #else
-#include <caps/CapsAPI.h>
-#include <caps/CapsFDC.h>
-#include <caps/CapsLib.h>
+#include <caps5/CapsAPI.h>
+#include <caps5/CapsFDC.h>
+#include <caps5/CapsLib.h>
 #endif
 #endif
 
@@ -307,6 +307,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		return false;
 	}
 
+#if CAPSIMAGE_VERSION == 5
 	ImageType = CAPSGetImageTypeMemory ( pImageBuffer , ImageSize );
 	if ( ImageType == citError )
 	{
@@ -328,6 +329,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		default :		fprintf ( stderr , "NOT SUPPORTED\n" );
 					return false;
 	}
+#endif
 
 	if ( CAPSLockImageMemory ( ImageId , pImageBuffer , (CapsULong)ImageSize , DI_LOCK_MEMREF ) == imgeOk )
 	{
