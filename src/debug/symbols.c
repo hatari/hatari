@@ -138,6 +138,19 @@ static void symbol_list_free(symbol_list_t *list)
 }
 
 /**
+ * Return symbol type identifier char
+ */
+static char symbol_char(int type)
+{
+	switch (type) {
+	case SYMTYPE_TEXT: return 'T';
+	case SYMTYPE_DATA: return 'D';
+	case SYMTYPE_BSS:  return 'B';
+	default: return '?';
+	}
+}
+
+/**
  * Load symbols of given type and the symbol address addresses from
  * DRI/GST format symbol table, and add given offsets to the addresses:
  *	http://toshyp.atari.org/en/005005.html
@@ -763,19 +776,7 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 		(list == CpuSymbolsList ? "CPU" : "DSP"), sorttype);
 
 	for (entry = entries, i = 0; i < list->count; i++, entry++) {
-		switch (entry->type) {
-		case SYMTYPE_TEXT:
-			symchar = 'T';
-			break;
-		case SYMTYPE_DATA:
-			symchar = 'D';
-			break;
-		case SYMTYPE_BSS:
-			symchar = 'B';
-			break;
-		default:
-			symchar = '?';
-		}
+		symchar = symbol_char(entry->type);
 		fprintf(stderr, "0x%08x %c %s\n",
 			entry->address, symchar, entry->name);
 		if (i && i % 20 == 0) {
