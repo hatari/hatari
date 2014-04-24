@@ -787,6 +787,19 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 	}
 }
 
+/**
+ * Readline match callback to list symbols subcommands.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *Symbols_MatchCommand(const char *text, int state)
+{
+	static const char* subs[] = {
+		"addr", "free", "name", "prg"
+	};
+	return DebugUI_MatchHelper(subs, ARRAYSIZE(subs), text, state);
+}
+
 const char Symbols_Description[] =
 	"<filename|prg|addr|name|free> [<T offset> [<D offset> <B offset>]]\n"
 	"\tLoads symbol names and their addresses from the given file.\n"

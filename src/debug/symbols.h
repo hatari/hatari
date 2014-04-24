@@ -38,6 +38,7 @@ extern int Symbols_GetDspAddressIndex(Uint32 addr);
 extern int Symbols_CpuCount(void);
 extern int Symbols_DspCount(void);
 /* symbols/dspsymbols command parsing */
+extern char *Symbols_MatchCommand(const char *text, int state);
 extern int Symbols_Command(int nArgc, char *psArgs[]);
 
 #endif
