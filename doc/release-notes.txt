@@ -48,6 +48,8 @@ Emulator:
 - Allow GEMDOS, VDI and AES tracing to be enabled without enabling
   also GEMDOS HD emulation or extended VDI mode
 - Debugger:
+  - Fix: GCC and VBCC use different offsets for DATA & BSS symbols,
+    handle that in program binary symbol table parsing
   - Fix: release mouse in all cases where debugger can be invoked
   - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly
   - Fix: "symbols" command crash when it was used during TOS bootup
