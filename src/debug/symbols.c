@@ -236,7 +236,8 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		}
 		address += section->offset;
 		if (address > section->end) {
-			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d with invalid offset 0x%x (>= 0x%x).\n", name, i, address, section->end);
+			fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
+				name, symbol_char(symtype), i, address, section->end);
 			continue;
 		}
 		list->names[count].address = address;
@@ -276,9 +277,10 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
  */
 static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 {
-	Uint32 textlen, datalen, bsslen, start, tablesize, tabletype;
+	Uint32 textlen, datalen, bsslen, start, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
 	int offset, reads = 0;
+	Uint16 relocflag;
 
 	/* get TEXT, DATA & BSS section sizes */
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
@@ -297,17 +299,18 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	}
 	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
 	tabletype = SDL_SwapBE32(tabletype);
-	if (reads != 5) {
+
+	/* get program header and whether there's reloc table */
+	reads += fread(&prgflags, sizeof(prgflags), 1, fp);
+	prgflags = SDL_SwapBE32(prgflags);
+	reads += fread(&relocflag, sizeof(relocflag), 1, fp);
+	relocflag = SDL_SwapBE32(relocflag);
+	
+	if (reads != 7) {
 		fprintf(stderr, "ERROR: program header reading failed!\n");
 		return NULL;
 	}
 
-	/* go to start of symbol table */
-	offset = 0x1C + textlen + datalen;
-	if (fseek(fp, offset, SEEK_SET) < 0) {
-		perror("ERROR: seeking to symbol table failed");
-		return NULL;
-	}
 	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
 	start = DebugInfo_GetTEXT();
 	if (!start) {
@@ -322,24 +325,41 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	}
 
 	start = DebugInfo_GetDATA();
-	sections[1].offset = start - textlen;
+	sections[1].offset = start;
 	sections[1].end = start + datalen - 1;
 
 	start = DebugInfo_GetBSS();
-	sections[2].offset = start - textlen - datalen;
+	sections[2].offset = start;
 	sections[2].end = start + bsslen - 1;
 
+	/* go to start of symbol table */
+	offset = 0x1C + textlen + datalen;
+	if (fseek(fp, offset, SEEK_SET) < 0) {
+		perror("ERROR: seeking to symbol table failed");
+		return NULL;
+	}
 	switch (tabletype) {
 	case 0x4D694E54:	/* "MiNT" */
-		fprintf(stderr, "MiNT executable, trying to load GST symbol table at offset 0x%x...\n", offset);
-		return symbols_load_dri(fp, sections, gettype, tablesize);
+		fprintf(stderr, "GCC/MiNT executable, 0x%x program flags, reloc=%d, GST symbol table.\n",
+			prgflags, relocflag);
+		break;
 	case 0x0:
-		fprintf(stderr, "Old style excutable, loading DRI / GST symbol table at offset 0x%x.\n", offset);
-		return symbols_load_dri(fp, sections, gettype, tablesize);
+		fprintf(stderr, "VBCC/TOS excutable, 0x%x program flags, reloc=%d, DRI / GST symbol table.\n",
+			prgflags, relocflag);
+		/* NOTES / TODO:
+		 * - VBCC DATA & BSS symbols can be within text segment,
+		 *   and their offsets are therefore from text segment start.
+		 * - is it same also with GCC old style executables?
+		 */
+		sections[1].offset -= textlen;
+		sections[2].offset -= (textlen + datalen);
+		break;
 	default:
 		fprintf(stderr, "ERROR: unknown executable type 0x%x at offset 0x%x!\n", tabletype, offset);
+		return NULL;
 	}
-	return NULL;
+	fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
+	return symbols_load_dri(fp, sections, gettype, tablesize);
 }
 
 /**
