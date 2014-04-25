@@ -3638,23 +3638,26 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 					else
 					{
 						if ( FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack == 0 )
-							FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set bit TR00 */
+							FDC_Update_STR ( 0 , FDC_STR_BIT_TR00 );	/* Set TR00 bit2 */
 						else
-							FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
+							FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset TR00 bit2 */
 
 						if ( FDC_IndexPulse_GetState () )
-							FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit */
+							FDC_Update_STR ( 0 , FDC_STR_BIT_INDEX );	/* Set INDEX bit1 */
 						else
-							FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit */
+							FDC_Update_STR ( FDC_STR_BIT_INDEX , 0 );	/* Unset INDEX bit1 */
+
+						/* For Type I, always unset CRC ERROR  bit3 */
+						FDC_Update_STR ( FDC_STR_BIT_CRC_ERROR , 0 );
 
 						/* When there's no disk in drive, the floppy drive hardware can't see */
 						/* the difference with an inserted disk that would be write protected */
 						if ( ! FDC_DRIVES[ FDC.DriveSelSignal ].DiskInserted )
-							FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+							FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit6 */
 						else if ( Floppy_IsWriteProtected ( FDC.DriveSelSignal ) )
-							FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+							FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit6 */
 						else
-							FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit */
+							FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );	/* Unset WPRT bit6 */
 
 						/* Temporarily change the WPRT bit if we're in a transition phase */
 						/* regarding the disk in the drive (inserting or ejecting) */
