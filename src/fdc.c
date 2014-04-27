@@ -3192,7 +3192,12 @@ static int FDC_TypeIV_ForceInterrupt ( void )
 	/* If a command was running, just remove busy bit and keep the current content of Status reg */
 	/* If FDC was idle, the content of Status reg is forced to type I */
 	if ( ( FDC.STR & FDC_STR_BIT_BUSY ) == 0 )			
+	{
 		FDC.StatusTypeI = true;
+
+		/* Starting a Force Int command when idle should set the motor bit and clear the spinup bit (verified on STF) */
+		FDC_Update_STR ( FDC_STR_BIT_SPIN_UP , FDC_STR_BIT_MOTOR_ON );	/* Clear spinup bit and set motor bit */
+	}
 
 	/* Get the interrupt's condition and set IRQ accordingly */
 	/* Most of the time a 0xD8 command is followed by a 0xD0 command to clear the IRQ signal */
@@ -3202,9 +3207,6 @@ static int FDC_TypeIV_ForceInterrupt ( void )
 		FDC_SetIRQ ();
 	else
 		FDC_ClearIRQ ();
-
-	/* Starting a Force Int command should set the motor bit (verified on STF) */
-	FDC_Update_STR ( 0 , FDC_STR_BIT_MOTOR_ON );			/* Set motor bit */
 
 	/* Remove busy bit, don't change IRQ's state and stop the motor */
 	FdcCycles = FDC_CmdCompleteCommon( false );
