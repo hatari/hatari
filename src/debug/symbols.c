@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols.c
  * 
- * Copyright (C) 2010-2013 by Eero Tamminen
+ * Copyright (C) 2010-2014 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -271,6 +271,26 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 }
 
 /**
+ * check whether given binary file is compiled with VBCC
+ */
+static bool is_vbcc(FILE *fp)
+{
+	long offset = ftell(fp);
+	Uint32 vbcc = 0;
+
+	/* jump over program header & VBCC jump at TEXT section start */
+	fseek(fp, 30, SEEK_SET);
+
+	/* read potential VBCC identifier */
+	fread(&vbcc, sizeof(vbcc), 1, fp);
+	vbcc = SDL_SwapBE32(vbcc);
+
+	/* restore position */
+	fseek(fp, offset, SEEK_SET);
+	return vbcc == 0x56424343;  /* "VBCC" */
+}
+
+/**
  * Parse program header and use symbol table format specific loader
  * loader function to load the symbols.
  * Return symbols list or NULL for failure.
@@ -281,6 +301,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	prg_section_t sections[3];
 	int offset, reads = 0;
 	Uint16 relocflag;
+	const char *info;
 
 	/* get TEXT, DATA & BSS section sizes */
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
@@ -340,24 +361,23 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	}
 	switch (tabletype) {
 	case 0x4D694E54:	/* "MiNT" */
-		fprintf(stderr, "GCC/MiNT executable, 0x%x program flags, reloc=%d, GST symbol table.\n",
-			prgflags, relocflag);
+		info = "GCC/MiNT executable, GST symbol table.";
 		break;
 	case 0x0:
-		fprintf(stderr, "VBCC/TOS excutable, 0x%x program flags, reloc=%d, DRI / GST symbol table.\n",
-			prgflags, relocflag);
-		/* NOTES / TODO:
-		 * - VBCC DATA & BSS symbols can be within text segment,
-		 *   and their offsets are therefore from text segment start.
-		 * - is it same also with GCC old style executables?
-		 */
-		sections[1].offset -= textlen;
-		sections[2].offset -= (textlen + datalen);
+		if (is_vbcc(fp)) {
+			sections[1].offset -= textlen;
+			sections[2].offset -= (textlen + datalen);
+			info = "VBCC excutable, DRI symbol table.";
+		} else {
+			info = "TOS executable, DRI / GST symbol table.";
+		}
+		break;
 		break;
 	default:
 		fprintf(stderr, "ERROR: unknown executable type 0x%x at offset 0x%x!\n", tabletype, offset);
 		return NULL;
 	}
+	fprintf(stderr, "0x%x program flags, reloc=%d, %s\n", prgflags, relocflag, info);
 	fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
 	return symbols_load_dri(fp, sections, gettype, tablesize);
 }
