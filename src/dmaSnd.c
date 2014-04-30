@@ -501,8 +501,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 					/* mixing=0 DMA only */
 					/* mixing=2 DMA and input 2 (YM2149 LPF) -> DMA */
 					/* mixing=3 DMA and input 3 -> DMA */
-					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;	
-					MixBuffer[nBufIdx][1] = dma.FrameRight * -((256*3/4)/4)/4;	
+					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][1] = dma.FrameRight * -((256*3/4)/4)/4;
 					break;
 			}
 		}
