@@ -34,6 +34,7 @@ Emulation:
   - Fixed/improved READ CAPACITY and INQUIRY commands
   - Unsupported commands are now handled correctly
   - Now using fseeko() instead of fseek() for supporting large images
+- Fix STE sound mixing using LMC when mixer=0 (DMA sound only)
 
 Emulator:
 - SDL GUI:
