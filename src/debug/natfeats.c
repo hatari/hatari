@@ -115,6 +115,19 @@ static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
 	return true;
 }
 
+/**
+ * set fast forward 0:off >=1:on
+ */
+static bool nf_fastforward(Uint32 stack, Uint32 subid, Uint32 *retval)
+{
+	Uint32 val;
+
+	Dprintf(("NF fastforward()\n"));
+	val = STMemory_ReadLong(stack);
+	ConfigureParams.System.bFastForward = ( val ? true : false );
+	return true;
+}
+
 #if NF_COMMAND
 /**
  * execute Hatari (command line / debugger) command
@@ -154,7 +167,8 @@ static const struct {
 	{ "NF_VERSION",  false, nf_version },
 	{ "NF_STDERR",   false, nf_stderr },
 	{ "NF_SHUTDOWN", true,  nf_shutdown },
-	{ "NF_DEBUGGER", false, nf_debugger }
+	{ "NF_DEBUGGER", false, nf_debugger },
+	{ "NF_FASTFORWARD", false,  nf_fastforward }
 };
 
 /* macros from Aranym */
