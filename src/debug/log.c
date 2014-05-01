@@ -50,6 +50,8 @@ static flagname_t ExceptionFlags[] = {
 
 	{ EXCEPT_DSP,       "dsp" },
 
+	{ EXCEPT_AUTOSTART, "autostart" },
+
 	{ EXCEPT_ALL,       "all" }
 };
 

@@ -30,9 +30,12 @@
 /* DSP exception flags */
 #define EXCEPT_DSP	 (1<<8)
 
+/* whether to enable exception debugging on autostart */
+#define EXCEPT_AUTOSTART (1<<9)
+
 /* general flags */
 #define	EXCEPT_NONE	 (0)
-#define	EXCEPT_ALL	 (~0)
+#define	EXCEPT_ALL	 (~EXCEPT_AUTOSTART)
 
 /* defaults are same as with earlier -D option */
 #define DEFAULT_EXCEPTIONS (EXCEPT_BUS|EXCEPT_ADDRESS|EXCEPT_DSP)

@@ -2066,8 +2066,12 @@ key combination.
 <p>
 If you start Hatari with the "-D" command line option, certain m68k
 exceptions will automatically drop Hatari into the debugger. You can
-toggle this also later from the debugger with the "setopt -D"
-command.
+toggle this also later from the debugger with the "setopt -D" command.
+Which exceptions invoke the debugger can controlled with the
+"--debug-except" option.  Giving that an additional "autostart" flag
+(e.g. "--debug-except autostart,bus,address"), will avoid catching
+exceptions from TOS startup HW checks as it enables exception
+debugging after TOS boot, when a debugged program is autostarted.
 </p>
 
 <p>
