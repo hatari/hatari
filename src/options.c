@@ -66,6 +66,7 @@ enum {
 	OPT_WINDOW,
 	OPT_GRAB,
 	OPT_FRAMESKIPS,
+	OPT_SLOWDOWN,
 	OPT_STATUSBAR,
 	OPT_DRIVE_LED,
 	OPT_MAXWIDTH,
@@ -199,6 +200,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Grab mouse (also) in windowed mode" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
+	{ OPT_SLOWDOWN, NULL, "--slowdown",
+	  "<x>", "VBL wait time multiplier (1-8, default 1)" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
@@ -979,6 +982,13 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				Log_Printf(LOG_WARN, "Extravagant frame skip value %d!\n", skips);
 			}
 			ConfigureParams.Screen.nFrameSkips = skips;
+			break;
+
+		case OPT_SLOWDOWN:
+			if (!Main_SetVBLSlowdown(atoi(argv[++i])))
+			{
+				return Opt_ShowError(OPT_SLOWDOWN, argv[i], "Invalid VBL wait slowdown multiplier");
+			}
 			break;
 
 		case OPT_STATUSBAR:

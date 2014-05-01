@@ -73,11 +73,11 @@ bool bQuitProgram = false;                /* Flag to quit program cleanly */
 static Uint32 nRunVBLs;                   /* Whether and how many VBLS to run before exit */
 static Uint32 nFirstMilliTick;            /* Ticks when VBL counting started */
 static Uint32 nVBLCount;                  /* Frame count */
+static int nVBLSlowdown = 1;		  /* host VBL wait multiplier */
 
 static bool bEmulationActive = true;      /* Run emulation when started */
 static bool bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
 static bool bIgnoreNextMouseMotion = false;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -270,6 +270,21 @@ void Main_SetRunVBLs(Uint32 vbls)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set VBL wait slowdown factor/multiplayer
+ */
+bool Main_SetVBLSlowdown(int factor)
+{
+	if (factor < 1 || factor > 8) {
+		fprintf(stderr, "ERROR: invalid VBL slowdown factor %d, should be 1-8!\n", factor);
+		return false;
+	}
+	fprintf(stderr, "Slow down host VBL wait by factor of %d.\n", factor);
+	nVBLSlowdown = factor;
+	return true;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * This function waits on each emulated VBL to synchronize the real time
  * with the emulated ST.
  * Unfortunately SDL_Delay and other sleep functions like usleep or nanosleep
@@ -295,6 +310,7 @@ void Main_WaitOnVbl(void)
 
 //	FrameDuration_micro = (Sint64) ( 1000000.0 / nScreenRefreshRate + 0.5 );	/* round to closest integer */
 	FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
+	FrameDuration_micro *= nVBLSlowdown;
 	CurrentTicks = Time_GetTicks();
 
 	if (DestTicks == 0)			/* on first call, init DestTicks */

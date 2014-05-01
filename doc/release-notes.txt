@@ -44,6 +44,7 @@ Emulator:
   - In the screen dialog, add checkbox for --desktop-st option
 - Fix: Xbios(255) modified the given argument string
 - New options --drive-a and --drive-b to enable/disable drives A and B
+- New --slowdown option to increase (multiply) VBL wait times
 - New NatFeats commands : NF_DEBUGGER invokes Hatari debugger
   from native program and NF_FASTFORWARD toggles fast forward on/off
 - Allow GEMDOS, VDI and AES tracing to be enabled without enabling
