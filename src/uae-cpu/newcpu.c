@@ -881,10 +881,10 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
     if (ExceptionSource == M68000_EXC_SRC_CPU)
       {
-        if (bVdiAesIntercept && nr == 0x22)
+        if (nr == 0x22)
         {
           /* Intercept VDI & AES exceptions (Trap #2) */
-          if(VDI_AES_Entry())
+          if(bVdiAesIntercept && VDI_AES_Entry())
           {
             /* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
              * This will call OpCode_VDI() after completion of Trap call!
@@ -894,20 +894,15 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
             currpc = CART_VDI_OPCODE_ADDR;
           }
         }
-
-        if (bBiosIntercept)
+        else if (nr == 0x2d)
         {
-          /* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
-          if (nr == 0x2d)
-          {
-            /* Intercept BIOS calls */
-            if (Bios())  return;
-          }
-          else if (nr == 0x2e)
-          {
-            /* Intercept XBIOS calls */
-            if (XBios())  return;
-          }
+          /* Intercept BIOS (Trap #13) calls */
+          if (Bios())  return;
+        }
+        else if (nr == 0x2e)
+        {
+          /* Intercept XBIOS (Trap #14) calls */
+          if (XBios())  return;
         }
       }
 

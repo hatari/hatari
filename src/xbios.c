@@ -6,8 +6,8 @@
 
   XBios Handler (Trap #14)
 
-  We intercept and direct some XBios calls to handle the RS-232 etc.
-  and to help with debugging.
+  Intercept and direct some XBios calls to handle the RS-232 etc.
+  and to help with tracing/debugging.
 */
 const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 
@@ -25,6 +25,22 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 
 #define HATARI_CONTROL_OPCODE 255
 
+/* whether to enable XBios(20/255) */
+static bool bXBiosCommands;
+
+void XBios_ToggleCommands(void)
+{
+	if (bXBiosCommands)
+	{
+		fprintf(stderr, "XBios 15/20/255 parsing disabled.\n");
+		bXBiosCommands = false;
+	}
+	else
+	{
+		fprintf(stderr, "XBios 15/20/255 parsing enabled.\n");
+		bXBiosCommands = true;
+	}
+}
 
 /* List of Atari ST RS-232 baud rates */
 static const int BaudRates[] =
@@ -145,6 +161,9 @@ static bool XBios_Rsconf(Uint32 Params)
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0F Rsconf(%d, %d, %d, %d, %d, %d)\n",
 		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr);
 #endif
+	if (!bXBiosCommands)
+		return false;
+	
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
 	if (ConfigureParams.RS232.bEnableRS232)
 	{
@@ -180,6 +199,10 @@ static bool XBios_Rsconf(Uint32 Params)
 static bool XBios_Scrdmp(Uint32 Params)
 {
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp()\n");
+
+	if (!bXBiosCommands)
+		return false;
+
 	ScreenSnapShot_SaveScreen();
 
 	/* Correct return code? */
@@ -198,6 +221,10 @@ static bool XBios_HatariControl(Uint32 Params)
 	const char *pText;
 	pText = (const char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s)\n", HATARI_CONTROL_OPCODE, pText);
+
+	if (!bXBiosCommands)
+		return false;
+
 	Control_ProcessBuffer(pText);
 	Regs[REG_D0] = 0;
 	return true;

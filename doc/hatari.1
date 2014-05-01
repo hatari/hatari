@@ -341,11 +341,11 @@ Specify which exceptions invoke debugger, see
 for available (comma separated) exception flags.
 .TP 
 .B \-\-bios\-intercept
-Toggle Bios/XBios call interception needed for Bios/XBios call tracing.
-Allows Atari programs to modify Hatari state through XBios 255 calls
-which are processed as Hatari commandline arguments. Atari
-printscreen call takes also Hatari screenshot.
-.TP 
+Toggle XBios command parsing. Allows Atari programs to use all Hatari
+functionality and change Hatari state through Hatari specifit
+XBios(255) calls. XBios(20) printscreen calls produce also Hatari
+screenshots.
+.TP
 .B \-\-conout <device>
 Enable console (xconout vector functions) output redirection for given
 <device> to host terminal.  Device 2 is for the (CON:) VT52 console,

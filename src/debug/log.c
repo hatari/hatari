@@ -389,11 +389,7 @@ const char* Log_SetTraceOptions (const char *FlagsStr)
 	LogTraceFlags = TRACE_NONE;
 	errstr = Log_ParseOptionFlags(FlagsStr, TraceFlags, ARRAYSIZE(TraceFlags), &LogTraceFlags);
 
-	/* Enable Hatari flags needed for tracing selected items.
-	 * 
-	 * Doesn't enable bBiosInterception for X/Bios because
-	 * that implies other things in addition to tracing.
-	 */
+	/* Enable Hatari flags needed for tracing selected items */
 	if (LogTraceFlags & (TRACE_OS_AES|TRACE_OS_VDI))
 		bVdiAesIntercept = true;
 

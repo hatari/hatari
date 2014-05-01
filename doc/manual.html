@@ -754,10 +754,11 @@ the debugger</p>
 "--debug-except help" for available (comma separated) exception
 flags.</p>
 <p class="parameter">--bios-intercept</p>
-<p class="paramdesc">Toggle Bios/XBios call interception needed for
-Bios/XBios call tracing.  Allows Atari programs to modify Hatari state
-through XBios 255 calls which are processed as Hatari commandline
-arguments.  Atari printscreen call takes also Hatari screenshot.</p>
+<p class="paramdesc">
+Toggle XBios command parsing. Allows Atari programs to use all Hatari
+functionality and change Hatari state through Hatari specifit
+XBios(255) calls. XBios(20) printscreen calls produce also Hatari
+screenshots.</p>
 <p class="parameter">--conout &lt;device&gt;</p>
 <p class="paramdesc">Enable console (xconout vector functions) output
 redirection for given &lt;device&gt; to host terminal.  Device 2 is for

@@ -40,11 +40,10 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "avi_record.h"
 #include "hatari-glue.h"
 #include "68kDisass.h"
-
+#include "xbios.h"
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
 bool bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
-bool bBiosIntercept;       /* whether UAE should intercept Bios & XBios calls */
 bool AviRecordOnStartup;   /* Start avi recording at startup */
 
 int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
@@ -384,7 +383,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_EXCEPTIONS, NULL, "--debug-except",
 	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
-	  NULL, "Toggle X/Bios interception & Hatari XBios 255 support" },
+	  NULL, "Toggle XBios command parsing support" },
 	{ OPT_CONOUT,   NULL, "--conout",
 	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
 	{ OPT_DISASM,   NULL, "--disasm",
@@ -1692,16 +1691,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 
 		case OPT_BIOSINTERCEPT:
-			if (bBiosIntercept)
-			{
-				fprintf(stderr, "X/Bios interception disabled.\n");
-				bBiosIntercept = false;
-			}
-			else
-			{
-				fprintf(stderr, "X/Bios interception enabled.\n");
-				bBiosIntercept = true;
-			}
+			XBios_ToggleCommands();
 			break;
 
 		case OPT_CONOUT:

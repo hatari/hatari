@@ -9,7 +9,6 @@
 
 extern bool bLoadAutoSave;
 extern bool bLoadMemorySave;
-extern bool bBiosIntercept;
 extern bool AviRecordOnStartup;
 extern int ConOutDevice;
 
