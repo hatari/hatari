@@ -158,6 +158,27 @@ ACSI DMA and Floppy Disk Controller(FDC)
   read DMA sector count, so we return the lowest 8 bits from the latest access at $ff8604.
 
 
+  Cycles and wait states :
+  ------------------------
+  As verified on a real STF, reading or writing to $ff8604 or $ff8606 can add some 4 cycles
+  wait state.
+	lea	$ffff8604,a3
+	lea	$ffff8606,a4
+
+	move.w  (a4),d0		; dma status			motorola=8	stf=8
+
+	move.w  #$90,(a4)	; dma ctrl sector count		motorola=12	stf=12+4
+	move.w  (a3),d0		; read sector count / fdc reg	motorola=8	stf=8
+	move.w  #1,(a3)		; write sector count		motorola=12	stf=12+4
+
+	move.w  #$80,(a4)	; dma ctrl status/cmd reg	motorola=12	stf=12+4
+	move.w  (a3),d0		; read fdc reg			motorola=8	stf=8+4
+	move.w  #$d0,(a3)	; write fdc reg			motorola=12	stf=12+4
+
+  -> All accesses take 4 extra cycles, except reading DMA status and reading DMA sector count
+  (which can't really be read, see note above)
+
+
   Detecting disk changes :
   ------------------------
   3'1/2 floppy drives include a 'DSKCHG' signal on pin 34 to detect when a disk was changed.
@@ -3499,6 +3520,8 @@ static void FDC_WriteDataRegister ( void )
  * Store byte in FDC/HDC registers or DMA sector count, when writing to $ff8604
  * When accessing FDC/HDC registers, a copy of $ff8604 should be kept in ff8604_recent_val
  * to be used later when reading unused bits at $ff8604/$ff8606
+ *
+ * NOTE [NP] : add 4 cycles wait state in all cases (sector count / FDC / HDC)
  */
 void FDC_DiskController_WriteWord ( void )
 {
@@ -3582,6 +3605,8 @@ void FDC_DiskController_WriteWord ( void )
  * - When accessing FDC/HDC registers, a copy of $ff8604 should be kept in ff8604_recent_val
  *   to be used later when reading unused bits at $ff8604/$ff8606
  * - DMA sector count can't be read, this will return ff8604_recent_val (verified on a real STF)
+ *
+ * NOTE [NP] : add 4 cycles wait state in that case, except when reading DMA sector count
  */
 void FDC_DiskControllerStatus_ReadWord ( void )
 {
@@ -3598,7 +3623,6 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 		return;
 	}
 
-	M68000_WaitState(4);
 
 	/* Are we trying to read the DMA SectorCount ? */
 	if ( FDC_DMA.Mode & 0x10 )					/* Bit 4 */
@@ -3608,12 +3632,16 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 
 	else if ( ( FDC_DMA.Mode & 0x0008) == 0x0008)			/* HDC status reg selected ? */
 	{
+		M68000_WaitState(4);					/* [NP] : possible, but not tested on real HW */
+
 		/* Return the HDC status byte */
 		DiskControllerByte = HDC_ReadCommandByte(FDC_DMA.Mode & 0x7);
 	}
 
 	else								/* It's a FDC register access */
 	{
+		M68000_WaitState(4);
+
 		FDC_reg = ( FDC_DMA.Mode & 0x6 ) >> 1;			/* Bits 1,2 (A0,A1) */
 
 		EmulationMode = FDC_GetEmulationMode();
@@ -3735,6 +3763,8 @@ void FDC_DiskControllerStatus_ReadWord ( void )
  * $86 - Selects data register
  * NOTE - OR above values with $100 is transfer from memory to floppy
  * Also if bit 4 is set, write to DMA sector count register
+ *
+ * NOTE [NP] : add 4 cycles wait state in that case
  */
 void FDC_DmaModeControl_WriteWord ( void )
 {
@@ -3748,6 +3778,8 @@ void FDC_DmaModeControl_WriteWord ( void )
 		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE);
 		return;
 	}
+
+	M68000_WaitState(4);
 
 	Mode_prev = FDC_DMA.Mode;					/* Store previous to check for _read/_write toggle (DMA reset) */
 	FDC_DMA.Mode = IoMem_ReadWord(0xff8606);			/* Store to DMA Mode control */
@@ -3782,6 +3814,8 @@ void FDC_DmaModeControl_WriteWord ( void )
  * consider it's always '0')
  *
  * NOTE [NP] : unused bits 3-15 are the ones from the latest $ff8604 access (verified on real STF)
+ *
+ * NOTE [NP] : no 4 cycles wait state in that case
  */
 void FDC_DmaStatus_ReadWord ( void )
 {
