@@ -164,31 +164,29 @@ static bool XBios_Rsconf(Uint32 Params)
 	if (!bXBiosCommands)
 		return false;
 	
+	if (!ConfigureParams.RS232.bEnableRS232)
+		return false;
+
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
-	if (ConfigureParams.RS232.bEnableRS232)
+	if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
 	{
-		if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
-		{
-			/* Convert ST baud rate index to value */
-			int BaudRate = BaudRates[Baud];
-			/* And set new baud rate: */
-			RS232_SetBaudRate(BaudRate);
-		}
-
-		if (Ucr != -1)
-		{
-			RS232_HandleUCR(Ucr);
-		}
-
-		if (Ctrl != -1)
-		{
-			RS232_SetFlowControl(Ctrl);
-		}
-
-		return true;
+		/* Convert ST baud rate index to value */
+		int BaudRate = BaudRates[Baud];
+		/* And set new baud rate: */
+		RS232_SetBaudRate(BaudRate);
 	}
 
-	return false;
+	if (Ucr != -1)
+	{
+		RS232_HandleUCR(Ucr);
+	}
+
+	if (Ctrl != -1)
+	{
+		RS232_SetFlowControl(Ctrl);
+	}
+
+	return true;
 }
 
 
