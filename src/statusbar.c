@@ -44,6 +44,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 #include "wavFormat.h"
 #include "ymFormat.h"
 #include "avi_record.h"
+#include "vdi.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -88,8 +89,8 @@ static Uint32 LedColor[ MAX_LED_STATE ];
 static Uint32 RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
-
-#define MAX_MESSAGE_LEN 34
+/* needs to be enough for all message, but <= MessageRect width / font width */
+#define MAX_MESSAGE_LEN 52
 typedef struct msg_item {
 	struct msg_item *next;
 	char msg[MAX_MESSAGE_LEN+1];
@@ -396,6 +397,7 @@ static char *Statusbar_AddString(char *buffer, const char *more)
  */
 void Statusbar_UpdateInfo(void)
 {
+	int i;
 	char *end = DefaultMessage.msg;
 
 	/* CPU MHz */
@@ -412,6 +414,27 @@ void Statusbar_UpdateInfo(void)
 		*end++ = '0';
 		*end++ = '/';
 	}
+
+	/* additional WinUAE CPU/FPU info */
+#if ENABLE_WINUAE_CPU
+	switch (ConfigureParams.System.n_FPUType) {
+	case FPU_68881:
+		end = Statusbar_AddString(end, "68881");
+		break;
+	case FPU_68882:
+		end = Statusbar_AddString(end, "68882");
+		break;
+	case FPU_CPU:
+		end = Statusbar_AddString(end, "040");
+		break;
+	default:
+		*end++ = '-';
+	}
+	*end++ = '/';
+	if (ConfigureParams.System.bMMU) {
+		end = Statusbar_AddString(end, "MMU/");
+	}
+#endif
 
 	/* amount of memory */
 	if (ConfigureParams.Memory.nMemorySize > 9) {
@@ -445,18 +468,57 @@ void Statusbar_UpdateInfo(void)
 		break;
 	default:
 		end = Statusbar_AddString(end, "???");
-		break;
 	}
 
 	/* TOS type/version */
+	end = Statusbar_AddString(end, ", ");
 	if (bIsEmuTOS) {
-		end = Statusbar_AddString(end, ", EmuTOS");
+		end = Statusbar_AddString(end, "EmuTOS");
 	} else {
-		end = Statusbar_AddString(end, ", TOS v");
+		end = Statusbar_AddString(end, "TOS v");
 		*end++ = '0' + ((TosVersion & 0xf00) >> 8);
 		*end++ = '.';
 		*end++ = '0' + ((TosVersion & 0xf0) >> 4);
 		*end++ = '0' + (TosVersion & 0xf);
+	}
+
+	/* monitor type */
+	end = Statusbar_AddString(end, ", ");
+	if (bUseVDIRes) {
+		end = Statusbar_AddString(end, "VDI");
+	} else {
+		switch (ConfigureParams.Screen.nMonitorType) {
+		case MONITOR_TYPE_MONO:
+			end = Statusbar_AddString(end, "MONO");
+			break;
+		case MONITOR_TYPE_RGB:
+			end = Statusbar_AddString(end, "RGB");
+			break;
+		case MONITOR_TYPE_VGA:
+			end = Statusbar_AddString(end, "VGA");
+			break;
+		case MONITOR_TYPE_TV:
+			end = Statusbar_AddString(end, "TV");
+			break;
+		default:
+			*end++ = '?';
+		}
+	}
+
+	/* joystick type */
+	end = Statusbar_AddString(end, ", ");
+	for (i = 0; i < JOYSTICK_COUNT; i++) {
+		switch (ConfigureParams.Joysticks.Joy[i].nJoystickMode) {
+		case JOYSTICK_DISABLED:
+			*end++ = '-';
+			break;
+		case JOYSTICK_REALSTICK:
+			*end++ = 'J';
+			break;
+		case JOYSTICK_KEYBOARD:
+			*end++ = 'K';
+			break;
+		}
 	}
 	*end = '\0';
 

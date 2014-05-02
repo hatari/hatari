@@ -19,6 +19,7 @@ const char Joy_fileid[] = "Hatari joy.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "screen.h"
 #include "video.h"
+#include "statusbar.h"
 
 #define JOY_BUTTON1  1
 #define JOY_BUTTON2  2
@@ -345,6 +346,7 @@ void Joy_ToggleCursorEmulation(void)
 	default:  /* neither in port 0 or 1, enable cursor emu to port 1 */
 		ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;
 	}
+	Statusbar_UpdateInfo();
 }
 
 
