@@ -2058,27 +2058,7 @@ the disk image from Hatari:
 
 <p>
 Hatari has a built-in debugging interface which can be used for
-analyzing code that runs in the emulated system. To invoke the
-debugger, press the <span class="key">AltGr + Pause</span>
-key combination.
-</p>
-
-<p>
-If you start Hatari with the "-D" command line option, certain m68k
-exceptions will automatically drop Hatari into the debugger. You can
-toggle this also later from the debugger with the "setopt -D" command.
-Which exceptions invoke the debugger can controlled with the
-"--debug-except" option.  Giving that an additional "autostart" flag
-(e.g. "--debug-except autostart,bus,address"), will avoid catching
-exceptions from TOS startup HW checks as it enables exception
-debugging after TOS boot, when a debugged program is autostarted.
-</p>
-
-<p>
-To run debugger commands at Hatari startup, one can use the "--parse
-&lt;file&gt;" command line option.  This is useful e.g. for debugging
-TOS or some demo startup code, or if you always want to use some
-specific debugger setup (breakpoints etc).
+analyzing code that runs in the emulated system.
 </p>
 
 <p>
@@ -2091,6 +2071,41 @@ program):
 <pre>
 xterm -T "Hatari debug window" -e hatari
 </pre>
+
+<p>
+To run debugger commands at Hatari startup, one can use the "--parse
+&lt;file&gt;" command line option.  This is useful e.g. for debugging
+TOS or some demo startup code, or if you always want to use some
+specific debugger setup (breakpoints etc).
+</p>
+
+
+<h3>Invoking the debugger</h3>
+
+<p>
+You can invoke the debugger manually by pressing the
+<span class="key">AltGr + Pause</span> key combination.
+</p>
+
+<p>
+With the "-D" command line option, you can toggle whether m68k
+exceptions will also invoke the debugger.  Which exceptions cause
+this, can be controlled with the "--debug-except" option.  
+</p>
+
+<p>
+Giving "-D" option at Hatari startup is not advised because TOS HW
+checks generate some exceptions at every TOS boot.  It's better to
+toggle exception catching later from the debugger with the "setopt -D"
+command. 
+</p>
+
+<p>
+Alternatively, you can give "--debug-except" option "autostart" flag
+(e.g. "--debug-except all,autostart").  This will enable catching of
+(specified) exceptions after TOS boot, when Atari program given on
+Hatari command line is autostarted.
+</p>
 
 
 <h3>General debugger use</h3>
@@ -2311,8 +2326,9 @@ symbols prg
 <p>
 
 <p>
-Debugger loads the symbols automatically for currently running Atari
-program when entering the debugger, if no CPU symbols are yet loaded.
+<em>Debugger loads the symbols automatically for currently running
+Atari program when entering the debugger, if no CPU symbols are yet
+loaded.</em>
 </p>
 
 <p>
@@ -2636,7 +2652,7 @@ example the Busy bit for the internal Blitter control register is
 (internally) cleared when Blitter activity stops, but the actual IO
 address for that control register gets updated only when something
 actually writes or reads that IO address.  Many HW registers behave
-(status registers in FDC, ACIA, MFP, Blitter...).
+like this (status registers in FDC, ACIA, MFP, Blitter...).
 <br>
 For breakpoints that track just a single IO register memory address, or
 multiple ones of which <strong>none</strong> are modified by Hatari,
