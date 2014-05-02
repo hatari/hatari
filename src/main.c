@@ -771,7 +771,7 @@ static void Main_StatusbarSetup(void)
 		snprintf(message, sizeof(message), "Press %s for Options", keyname);
 		free(keyname);
 
-		Statusbar_AddMessage(message, 6000);
+		Statusbar_AddMessage(message, 5000);
 	}
 	/* update information loaded by Main_Init() */
 	Statusbar_UpdateInfo();
