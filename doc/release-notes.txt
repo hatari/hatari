@@ -59,6 +59,8 @@ Emulator:
     in address order which asserted in profile data post-processor
   - Fix: "next" command didn't work correctly in "hex" number base
   - removed limits on breakpoints and their conditions
+  - when entering debugger, current program's DRI/GST format debug
+    symbols are automatically read from, if such are available
   - new --debug-except option to specify which exceptions invoke
     the debugger, and WinUAE CPU core support for -D toggle option
   - "next"/"dspnext" commands work like in other debuggers, they

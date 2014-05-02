@@ -31,7 +31,6 @@ const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 #include "debug_priv.h"
 #include "debugInfo.h"
 #include "evaluate.h"
-#include "gemdos.h"
 
 typedef struct {
 	char *name;
@@ -61,6 +60,10 @@ typedef struct {
 /* TODO: add symbol name/address file names to configuration? */
 static symbol_list_t *CpuSymbolsList;
 static symbol_list_t *DspSymbolsList;
+
+/* path for last loaded program (through GEMDOS HD emulation) */
+static char *CurrentProgramPath;
+static bool SymbolsAreForProgram;
 
 
 /* ------------------ load and free functions ------------------ */
@@ -304,6 +307,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	const char *info;
 
 	/* get TEXT, DATA & BSS section sizes */
+	fseek(fp, 2, SEEK_SET);
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
 	textlen = SDL_SwapBE32(textlen);
 	reads += fread(&datalen, sizeof(datalen), 1, fp);
@@ -471,6 +475,23 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 }
 
 /**
+ * Return true if given FILE* is Atari program.
+ */
+static bool is_atari_program(FILE *fp)
+{
+	long oldpos = ftell(fp);
+	Uint16 magic;
+
+	fseek(fp, 0, SEEK_SET);
+	if (fread(&magic, sizeof(magic), 1, fp) != 1) {
+		return false;
+	}
+	fseek(fp, oldpos, SEEK_SET);
+
+	return (SDL_SwapBE16(magic) == 0x601A);
+}
+
+/**
  * Load symbols of given type and the symbol address addresses from
  * the given file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
@@ -478,21 +499,14 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32 maxaddr)
 {
 	symbol_list_t *list;
-	Uint16 magic;
 	FILE *fp;
 
 	if (!(fp = fopen(filename, "r"))) {
 		fprintf(stderr, "ERROR: opening '%s' failed!\n", filename);
 		return NULL;
 	}
-	if (fread(&magic, sizeof(magic), 1, fp) != 1) {
-		fprintf(stderr, "ERROR: reading file '%s' failed.\n", filename);
-		fclose(fp);
-		return NULL;
-	}
-
-	if (SDL_SwapBE16(magic) == 0x601A) {
-		const char *last = GemDOS_GetLastProgramPath();
+	if (is_atari_program(fp)) {
+		const char *last = CurrentProgramPath;
 		if (!last) {
 			/* "pc=text" breakpoint used as point for loading program symbols gives false hits during bootup */
 			fprintf(stderr, "WARNING: no program loaded yet (through GEMDOS HD emu)!\n");
@@ -501,9 +515,11 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 		}
 		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 		list = symbols_load_binary(fp, SYMTYPE_ALL);
+		SymbolsAreForProgram = true;
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
 		list = symbols_load_ascii(fp, offsets, maxaddr, SYMTYPE_ALL);
+		SymbolsAreForProgram = false;
 	}
 	fclose(fp);
 
@@ -791,7 +807,7 @@ int Symbols_DspCount(void)
 	return (DspSymbolsList ? DspSymbolsList->count : 0);
 }
 
-/* ---------------- symbol showing and command parsing ------------------ */
+/* ---------------- symbol showing ------------------ */
 
 /**
  * Show symbols from given list with paging.
@@ -827,6 +843,54 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 		}
 	}
 }
+
+/* ---------------- binary load handling ------------------ */
+
+
+/**
+ * Remove last opened program path.
+ */
+void Symbols_RemoveCurrentProgram(void)
+{
+	if (CurrentProgramPath) {
+		free(CurrentProgramPath);
+		CurrentProgramPath = NULL;
+
+		if (SymbolsAreForProgram) {
+			Symbols_Free(CpuSymbolsList);
+			CpuSymbolsList = NULL;
+		}
+	}
+}
+
+/**
+ * Set last opened program path.
+ */
+void Symbols_ChangeCurrentProgram(FILE *fp, const char *path)
+{
+	if (is_atari_program(fp)) {
+		Symbols_RemoveCurrentProgram();
+		CurrentProgramPath = strdup(path);
+	}
+}
+
+/**
+ * Load symbols for last opened program.
+ */
+void Symbols_LoadCurrentProgram(void)
+{
+	/* symbols already loaded or program path missing? */
+	if (CpuSymbolsList || !CurrentProgramPath) {
+		return;
+	}
+	CpuSymbolsList = Symbols_Load(CurrentProgramPath, NULL, 0);
+	if (!CpuSymbolsList) {
+		/* don't bother checking again until next program */
+		Symbols_RemoveCurrentProgram();
+	}
+}
+
+/* ---------------- command parsing ------------------ */
 
 /**
  * Readline match callback to list symbols subcommands.
@@ -915,7 +979,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	}
 
 	if (strcmp(file, "prg") == 0) {
-		file = GemDOS_GetLastProgramPath();
+		file = CurrentProgramPath;
 		if (!file) {
 			fprintf(stderr, "ERROR: no program loaded (through GEMDOS HD emu)!\n");
 			return DEBUGGER_CMDDONE;

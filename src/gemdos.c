@@ -56,7 +56,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "hatari-glue.h"
 #include "maccess.h"
-
+#include "symbols.h"
 
 /* Maximum supported length of a GEMDOS path: */
 #define MAX_GEMDOS_PATH 256
@@ -138,7 +138,6 @@ static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
 
 /* last program opened by GEMDOS emulation */
 static bool PexecCalled;
-static char *LastProgramPath;
 
 #if defined(WIN32) && !defined(mkdir)
 #define mkdir(name,mode) mkdir(name)
@@ -443,53 +442,21 @@ static void GemDOS_UnforceFileHandle(int i)
 }
 
 /*-----------------------------------------------------------------------*/
-/**
- * Return last host path used to execute a program
- * (used by debugger)
- */
-const char *GemDOS_GetLastProgramPath(void)
-{
-	return LastProgramPath;
-}
-
-static void GemDOS_RemoveLastProgram(void)
-{
-	if (LastProgramPath)
-	{
-		free(LastProgramPath);
-		LastProgramPath = NULL;
-	}
-}
 
 /**
  * If program was executed, store path to it
  * (should be called only by Fopen)
  */
-static void GemDOS_UpdateLastProgram(int Handle)
+static void GemDOS_UpdateCurrentProgram(int Handle)
 {
-	Uint16 magic = 0;
-	size_t items;
-	long oldpos;
-	FILE *fp;
-
 	/* only first Fopen after Pexec needs to be handled */
 	if (!PexecCalled)
 		return;
 	PexecCalled = false;
 
-	/* is file a TOS program? */
-	fp = FileHandles[Handle].FileHandle;
-	oldpos = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	items = fread(&magic, sizeof(magic), 1, fp);
-	fseek(fp, oldpos, SEEK_SET);
-	if (items != 1 || SDL_SwapBE16(magic) != 0x601A)
-		return;
-
 	/* store program path */
-	if (LastProgramPath)
-		free(LastProgramPath);
-	LastProgramPath = strdup(FileHandles[Handle].szActualName);
+	Symbols_ChangeCurrentProgram(FileHandles[Handle].FileHandle,
+				     FileHandles[Handle].szActualName);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -544,7 +511,7 @@ void GemDOS_Reset(void)
 	/* Reset */
 	bInitGemDOS = false;
 	CurrentDrive = nBootDrive;
-	GemDOS_RemoveLastProgram();
+	Symbols_RemoveCurrentProgram();
 	pDTA = NULL;
 }
 
@@ -1929,7 +1896,7 @@ static bool GemDOS_Open(Uint32 Params)
 			 sizeof(FileHandles[Index].szActualName),
 			 "%s", szActualFileName);
 
-		GemDOS_UpdateLastProgram(Index);
+		GemDOS_UpdateCurrentProgram(Index);
 
 		/* Return valid ST file handle from our range (BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
@@ -2870,7 +2837,7 @@ static bool GemDOS_Pterm0(Uint32 Params)
 {
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x00 Pterm0()\n");
 	GemDOS_TerminateClose();
-	GemDOS_RemoveLastProgram();
+	Symbols_RemoveCurrentProgram();
 	return false;
 }
 
@@ -2895,7 +2862,7 @@ static bool GemDOS_Pterm(Uint32 Params)
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4C Pterm(%hd)\n",
 		  (Sint16)STMemory_ReadWord(Params));
 	GemDOS_TerminateClose();
-	GemDOS_RemoveLastProgram();
+	Symbols_RemoveCurrentProgram();
 	return false;
 }
 
