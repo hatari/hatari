@@ -53,6 +53,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 # define DEBUGPRINT(x)
 #endif
 
+#define STATUSBAR_LINES 2
 #define MAX_DRIVE_LEDS (DRIVE_LED_HD + 1)
 
 /* whether drive leds should be ON and their previous shown state */
@@ -118,20 +119,19 @@ static int StatusbarHeight;
  */
 int Statusbar_GetHeightForSize(int width, int height)
 {
+	int h = 0;
+	/* Must arrive at same conclusion about font size as SDLGui_SetScreen() */
 	if (ConfigureParams.Screen.bShowStatusbar) {
-		/* Should check the same thing as SDLGui_SetScreen()
-		 * does to decide the font size.
-		 */
-		if (width >= 640 && height >= (400-24)) {
-			DEBUGPRINT(("Statusbar_GetHeightForSize(%d, %d) -> %d\n", width, height, 24));
-			return 24;
-		} else {
-			DEBUGPRINT(("Statusbar_GetHeightForSize(%d, %d) -> %d\n", width, height, 12));
-			return 12;
+		/* smaller SDL GUI font height = 8, larger = 16 */
+		h = 8;
+		if (width >= 640 && height >= (400-2*h)) {
+			h *= 2;
 		}
+		h += 1+1;
+		h *= STATUSBAR_LINES;
 	}
-	DEBUGPRINT(("Statusbar_GetHeightForSize(%d, %d) -> %d\n", width, height, 0));
-	return 0;
+	DEBUGPRINT(("Statusbar_GetHeightForSize(%d, %d) -> %d\n", width, height, h));
+	return h;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -224,7 +224,7 @@ void Statusbar_Init(SDL_Surface *surf)
 {
 	msg_item_t *item;
 	SDL_Rect ledbox, sbarbox;
-	int i, fontw, fonth, offset;
+	int i, fontw, fonth, lineh, xoffset, yoffset;
 	const char *text[MAX_DRIVE_LEDS] = { "A:", "B:", "HD:" };
 
 	DEBUGPRINT(("Statusbar_Init()\n"));
@@ -261,12 +261,13 @@ void Statusbar_Init(SDL_Surface *surf)
 	SDLGui_GetFontSize(&fontw, &fonth);
 
 	/* video mode didn't match, need to recalculate sizes */
+	lineh = 1+fonth+1;
 	if (surf->h > ScreenHeight + StatusbarHeight) {
-		StatusbarHeight = fonth + 2;
+		StatusbarHeight = STATUSBAR_LINES*lineh;
 		/* actually statusbar vertical offset */
 		ScreenHeight = surf->h - StatusbarHeight;
 	} else {
-		assert(fonth+2 < StatusbarHeight);
+		assert(STATUSBAR_LINES*lineh <= StatusbarHeight);
 	}
 
 	/* draw statusbar background gray so that text shows */
@@ -276,10 +277,19 @@ void Statusbar_Init(SDL_Surface *surf)
 	sbarbox.h = StatusbarHeight;
 	SDL_FillRect(surf, &sbarbox, GrayBg);
 
-	/* led size */
+	/* intialize messages (first row) */
+	MessageRect.x = fontw;
+	MessageRect.y = ScreenHeight + lineh/2 - fonth/2;
+	MessageRect.w = surf->w - fontw;
+	MessageRect.h = fonth;
+	for (item = MessageList; item; item = item->next) {
+		item->shown = false;
+	}
+
+	/* indicator leds size (second row) */
 	LedRect.w = fonth/2;
 	LedRect.h = fonth - 4;
-	LedRect.y = ScreenHeight + StatusbarHeight/2 - LedRect.h/2;
+	LedRect.y = ScreenHeight + lineh + lineh/2 - LedRect.h/2;
 
 	/* black box for the leds */
 	ledbox = LedRect;
@@ -287,27 +297,28 @@ void Statusbar_Init(SDL_Surface *surf)
 	ledbox.w += 2;
 	ledbox.h += 2;
 
-	offset = fontw;
-	MessageRect.y = LedRect.y - 2;
+	xoffset = fontw;
+	yoffset = ScreenHeight + lineh + lineh/2 - fonth/2;
+
 	/* draw led texts and boxes + calculate box offsets */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		SDLGui_Text(offset, MessageRect.y, text[i]);
-		offset += strlen(text[i]) * fontw;
-		offset += fontw/2;
+		SDLGui_Text(xoffset, yoffset, text[i]);
+		xoffset += strlen(text[i]) * fontw;
+		xoffset += fontw/2;
 
-		ledbox.x = offset - 1;
+		ledbox.x = xoffset - 1;
 		SDL_FillRect(surf, &ledbox, LedColorBg);
 
-		LedRect.x = offset;
+		LedRect.x = xoffset;
 		SDL_FillRect(surf, &LedRect, LedColor[ LED_STATE_OFF ]);
 
-		Led[i].offset = offset;
-		offset += LedRect.w + fontw;
+		Led[i].offset = xoffset;
+		xoffset += LedRect.w + fontw;
 	}
 
 	/* draw frameskip */
-	FrameSkipsRect.x = offset;
-	FrameSkipsRect.y = MessageRect.y;
+	FrameSkipsRect.x = xoffset;
+	FrameSkipsRect.y = yoffset;
 	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS:");
 	FrameSkipsRect.x += 3 * fontw + fontw/2;
 	FrameSkipsRect.w = 4 * fontw;
@@ -321,19 +332,11 @@ void Statusbar_Init(SDL_Surface *surf)
 
 	nOldFrameSkips = 0;
 
-	/* intialize messages */
-	MessageRect.x = FrameSkipsRect.x + FrameSkipsRect.w + fontw;
-	MessageRect.w = MAX_MESSAGE_LEN * fontw;
-	MessageRect.h = fonth;
-	for (item = MessageList; item; item = item->next) {
-		item->shown = false;
-	}
-
 	/* draw recording led box */
 	RecLedRect = LedRect;
 	RecLedRect.x = surf->w - fontw - RecLedRect.w;
 	ledbox.x = RecLedRect.x - 1;
-	SDLGui_Text(ledbox.x - 4*fontw - fontw/2, MessageRect.y, "REC:");
+	SDLGui_Text(ledbox.x - 4*fontw - fontw/2, yoffset, "REC:");
 	SDL_FillRect(surf, &ledbox, LedColorBg);
 	SDL_FillRect(surf, &RecLedRect, RecColorOff);
 	bOldRecording = false;
