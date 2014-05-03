@@ -144,7 +144,7 @@ static inline Uint8 HDC_GetControl(SCSI_CTRLR *ctr)
 /**
  * Get info string for SCSI/ACSI command packets.
  */
-static char *HDC_CmdInfoStr(SCSI_CTRLR *ctr)
+static inline char *HDC_CmdInfoStr(SCSI_CTRLR *ctr)
 {
 	static char str[80];
 

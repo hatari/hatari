@@ -5,7 +5,7 @@
 
 
 #ifndef FALCON030_CYCLES_H
-#define FALCON030_CYCLES
+#define FALCON030_CYCLES_H
 
 
 struct falcon_cycles_t {
