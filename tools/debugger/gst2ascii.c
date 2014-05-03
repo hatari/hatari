@@ -355,7 +355,8 @@ static bool is_vbcc(FILE *fp)
 	fseek(fp, 30, SEEK_SET);
 
 	/* read potential VBCC identifier */
-	fread(&vbcc, sizeof(vbcc), 1, fp);
+	if (fread(&vbcc, sizeof(vbcc), 1, fp) != 1)
+		perror("is_vbcc");
 	vbcc = SDL_SwapBE32(vbcc);
 
 	/* restore position */
