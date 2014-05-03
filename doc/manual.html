@@ -2104,7 +2104,7 @@ command.
 Alternatively, you can give "--debug-except" option "autostart" flag
 (e.g. "--debug-except all,autostart").  This will enable catching of
 (specified) exceptions after TOS boot, when Atari program given on
-Hatari command line is autostarted.
+Hatari command line is <em>autostarted</em>.
 </p>
 
 
@@ -2690,7 +2690,7 @@ a variable given to address breakpoint is evaluated when it's set, not
 at run-time, so it cannot get the new value that the TEXT variable
 gets when you start a program.
 </li>
-<li>To find out current program DATA and BSS segment contents,
+<li>To view current program DATA and BSS segment contents,
     use the corresponding variables:
 <pre>
 m  DATA
@@ -2855,34 +2855,37 @@ Disable tracing with "trace none" when you enter the debugger again.
 traceable things, from HW events to OS functions.
 </p>
 <p>
-Because Hatari normally emulates things at the hardware level, tracing
-certain Atari OS Traps requires setting additional Hatari options
-which tell it to intercept this higher level functionality:
-<ul>
-<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting with
-    the "--bios-intercept" option (which has also some other side-effects)
-</li>
-<li>GEMDOS tracing requires enabling the GEMDOS harddisk emulation
-    (which doesn't work under MiNT because it re-implements GEMDOS)</li>
-</ul>
-<p>
-Unlike with VDI tracing, AES, BIOS, GEMDOS and XBIOS traces show arguments
-for most of the calls.
+Notes:
 </p>
-<p>
+<ul>
+<li>
+If GEMDOS HD emulation isn't enabled, GEMDOS call tracing needs to be
+enabled at Hatari command line, it's not possible to enable it after
+TOS has initialized GEMDOS.
+</li>
+<li>
+AES, BIOS, GEMDOS and XBIOS traces show arguments for (most of) the
+calls, VDI trace shows only function calls (parsing the arguments
+would be too complicated).
+</li>
+<li>
 Tracing options can be set even from a program within the emulation,
 if you enable the Hatari "--bios-intercept" option and call XBios 255
-from the program with a suitable Hatari command line string.
-</p>
-<p>
+from the program with a suitable trace options string.
+</li>
+<li>
 Note that the trace output file can be set only when Hatari starts,
 it cannot be changed from within the debugger (or emulation).
-</p>
+</li>
+</ul>
 <p>
-If tracing isn't possible for the things you'd like to track, you can
-use the OS call opcode breakpoints explained above with the ":trace"
-breakpoint option.
+If there isn't a trace option for something you'd like to track,
+you may be able to use tracing breakpoints, explained above.
+For example, following tracks Line-A calls:
 </p>
+<pre>
+b  LineAOpcode ! LineAOpcode  &amp;&amp;  LineAOpcode &lt; 0xffff  :trace
+</pre>
 
 
 <h3>Profiling</h3>
