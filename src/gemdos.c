@@ -1028,7 +1028,7 @@ static int clip_to_83(char *name)
 	int diff, len;
 	char *dot;
 	
-	dot = strrchr(name, '.');
+	dot = strchr(name, '.');
 	if (dot) {
 		diff = strlen(dot) - 4;
 		if (diff > 0)
