@@ -54,6 +54,24 @@ extern void VIDEL_VSS_WriteWord(void);
 extern void VIDEL_VCO_WriteWord(void);
 extern void VIDEL_VMD_WriteWord(void);
 
+extern void Videl_Color0_WriteWord(void);
+extern void Videl_Color1_WriteWord(void);
+extern void Videl_Color2_WriteWord(void);
+extern void Videl_Color3_WriteWord(void);
+extern void Videl_Color4_WriteWord(void);
+extern void Videl_Color5_WriteWord(void);
+extern void Videl_Color6_WriteWord(void);
+extern void Videl_Color7_WriteWord(void);
+extern void Videl_Color8_WriteWord(void);
+extern void Videl_Color9_WriteWord(void);
+extern void Videl_Color10_WriteWord(void);
+extern void Videl_Color11_WriteWord(void);
+extern void Videl_Color12_WriteWord(void);
+extern void Videl_Color13_WriteWord(void);
+extern void Videl_Color14_WriteWord(void);
+extern void Videl_Color15_WriteWord(void);
+
+
 /* Called from cycint.c */
 extern void VIDEL_InterruptHandler_HalfLine(void);
 

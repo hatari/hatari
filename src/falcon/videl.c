@@ -76,7 +76,8 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "stMemory.h"
 #include "videl.h"
-
+#include "video.h"				/* for bUseHighRes variable, maybe unuseful (Laurent) */
+#include "vdi.h"				/* for bUseVDIRes variable,  maybe unuseful (Laurent) */
 
 #define Atari2HostAddr(a) (&STRam[a])
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
@@ -119,6 +120,8 @@ Uint16 vfc_counter;			/* counter for VFC register $ff82a0 (to be internalized wh
 static void VIDEL_memset_uint32(Uint32 *addr, Uint32 color, int count);
 static void VIDEL_memset_uint16(Uint16 *addr, Uint16 color, int count);
 static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count);
+static void Videl_ColorReg_WriteWord(void);
+
 
 /**
  *  Called upon startup and when CPU encounters a RESET instruction.
@@ -163,14 +166,6 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	MemorySnapShot_Store(&videl, sizeof(videl));
 	MemorySnapShot_Store(&vfc_counter, sizeof(vfc_counter));
-}
-
-/**
- * Monitor write access to ST/E color palette registers
- */
-void VIDEL_StColorRegsWrite(void)
-{
-	videl.hostColorsSync = false;
 }
 
 /**
@@ -2031,4 +2026,138 @@ static void VIDEL_memset_uint16(Uint16 *addr, Uint16 color, int count)
 static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count)
 {
 	memset(addr, color, count);
+}
+
+
+
+/**
+ * Write to videl ST palette registers (0xff8240-0xff825e)
+ *
+ * [Laurent]: The following note should be verified on Falcon before being applied.
+ * 
+ * Note that there's a special "strange" case when writing only to the upper byte
+ * of the color reg (instead of writing 16 bits at once with .W/.L).
+ * In that case, the byte written to address x is automatically written
+ * to address x+1 too (but we shouldn't copy x in x+1 after masking x ; we apply the mask at the end)
+ * Similarly, when writing a byte to address x+1, it's also written to address x
+ * So :	move.w #0,$ff8240	-> color 0 is now $000
+ *	move.b #7,$ff8240	-> color 0 is now $707 !
+ *	move.b #$55,$ff8241	-> color 0 is now $555 !
+ *	move.b #$71,$ff8240	-> color 0 is now $171 (bytes are first copied, then masked)
+ */
+void Videl_ColorReg_WriteWord(void)
+{
+	if (!bUseHighRes && !bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
+	{
+		Uint16 col;
+		Uint32 addr;
+		addr = IoAccessCurrentAddress;
+
+		videl.hostColorsSync = false;
+
+		/* Note from laurent: The following special case should be verified on the real Falcon before uncommenting */
+		
+		/* Handle special case when writing only to the upper byte of the color reg */
+	//	if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 0 ) )
+	//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy upper byte into lower byte */
+		/* Same when writing only to the lower byte of the color reg */
+	//	else if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 1 ) )
+	//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy lower byte into upper byte */
+		/* Usual case, writing a word or a long (2 words) */
+	//	else
+			col = IoMem_ReadWord(addr);
+
+		col &= 0xfff;				/* Mask off to 4096 palette */
+
+		addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
+			
+		IoMem_WriteWord(addr, col);
+	}
+}
+
+/*
+ * [NP] TODO : due to how .L accesses are handled in ioMem.c, we can't call directly
+ * Video_ColorReg_WriteWord from ioMemTabFalcon.c, we must use an intermediate
+ * function, else .L accesses will not change 2 .W color regs, but only one.
+ * This should be changed in ioMem.c to do 2 separate .W accesses, as would do a real 68000
+ */
+
+void Videl_Color0_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color1_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color2_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color3_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color4_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color5_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color6_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color7_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color8_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color9_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color10_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color11_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color12_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color13_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color14_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color15_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
 }
