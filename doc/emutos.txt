@@ -352,6 +352,7 @@ Color games:
 - Beast II demo
 - Bellum*
 - Blaster
+- Blind labyrinth (mouse input has minor issues, needs EmuTOS >v0.9.3)
 - Bloodwych demo (floppy only, needs cartridge image)
 - Bodyshop (line-A bitblits)
 - Bold (floppy only)
@@ -360,9 +361,11 @@ Color games:
 - Bombzai
 - Boom
 - Bugs* (line-A bitblits)
+- Bug-Bash demo
 - Cadaver demos 1 & 2
 - Candyman (line-A bitblits)
 - Captive demo
+- Celica GT4 Rally demo (needs EmuTOS >v0.9.3)
 - Chips Challenge demo
 - ChuChu Rocket* (Lite version for STFM)
 - Civilization demo
@@ -375,6 +378,7 @@ Color games:
 - Cybernetix
 - Dave Munsie games* (shareware)
   http://www.atarimania.com/list_games_atari-st-munsie-dave_team_950_S_G.html
+- Defender II (playable demo, needs EmuTOS >v0.9.3)
 - Donkey Island (adventure)
 - Dot 2 Dots (for kids)
 - Droid (bootsector has 0 for reserved sectors)*
@@ -392,9 +396,10 @@ Color games:
 - Grav*
 - Grav2*
 - Hackman II*
-- Hang About (4KB mountain climbing)
+- Hang About (4KB mountain climbing, joy 0)
+- Happy Worm
 - Hardcore preview
-- Haywire
+- Haywire (joy 0)
 - Hector*
 - Helter Skelter demo
 - Hero (RPG)
@@ -413,7 +418,10 @@ Color games:
 - Mad Professor demo
 - Magicboy demo (floppy only)
 - Magic Pockets demo
+- Manix preview (needs EmuTOS >v0.9.3)
 - Master Breakout
+- Maze*
+- Megalonmania demo (needs 512k version)
 - Mem* (line-A bitblits)
 - Mig29 Super Fulcrum demo
 - Missile Alert
@@ -423,6 +431,7 @@ Color games:
 - Nibe 2
 - Nitro demo
 - Nova
+- Oids demo*
 - Out of this Word* (typing game)
 - Panic
 - Paradize games (line-A bitblits):
@@ -433,6 +442,7 @@ Color games:
 - Pipemania demo
 - Populous II demo
 - Punt II
+- Pushover demo (3 playable levels, needs EmuTOS >v0.9.3)
 - Rampage demo
 - Rayoid*
 - Recoil
@@ -451,6 +461,7 @@ Color games:
 - Space Crusade demo
 - Spacewar
 - Starball* (shareware)
+- Stormball demo (needs 512k version)
 - Super Pac-Man* (use joystick 0)
 - Super Stario Land demo
 - Superfly (floppy only)
@@ -470,7 +481,7 @@ Color games:
 - Wolf3d (floppy version, Fread()s files opened as write-only)*
 - Yak (4KB gridrunner)
 - Xenon (4KB shooter)
-- Zap
+- Zap (needs 192k build, 2014-05-03 CVS or newer)
 
 Med-rez games:
 - Poker solitaire
@@ -729,6 +740,7 @@ Demos:
 - Sierpinski overdose 4K (by GGN), med-rez+blitter only
 - Sommarhack (by DHS)
 - Songs Of The Unexpected (by OUCH)
+- Steroid (Metroid remake demo)
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
 - STePS (by XiA/CPT)
@@ -756,6 +768,8 @@ Color games:
 - ChuChu Rocket* (full version)
 - Dynaplus*
 - Frantick
+- Giana Sisters STE rewrite: (needs EmuTOS >v0.9.3)
+  http://www.atari-forum.com/viewtopic.php?f=3&t=26360
 - H Mec 2 (line-A bitblit)
 - Micromachines preview (by .tscc)
 - Mr Boomer (line-A bitblit)
@@ -763,6 +777,8 @@ Color games:
 - Obsession* (demo of commercial pinball)
 - Operation Garfield
 - Pacman on E
+- Pacmania* STE/overscan rewrite:
+  http://www.atari-forum.com/viewtopic.php?f=3&t=24635
 - Power Up
 - R0x (line-A bitblit, screen sync issue)
 - Roger (line-A bitblit)
@@ -775,6 +791,7 @@ Color games:
 - Substation* (demo)
 - The chronicles of Omega
 - Tomtar
+- Ultimate Arena v1.3 light (slow with EmuTOS)
 - Utopos* (demo)
 - Wolfenstein3D v0.8a* (a bit unstable)
 - Zero-5 (demo)
@@ -810,12 +827,9 @@ listed here in case someone, someday, starts to fix (EmuTOS for) them.
 
 - Art for Kids (line-A sprite enable function -> cursor doesn't show;
   rectangle drawing -> screen corruption + panic)
-- Breakdance (another scene game, game freezes when playing)
+- Bombaman (input doesn't work)
+- Breakdance (scene game, game freezes when playing)
 - Cameleon (line-A bitblit, exits when starting game)
-- Giana Sisters STE rewrite (joystick input doesn't work):
-  http://www.atari-forum.com/viewtopic.php?f=3&t=26360
-- Pacmania STE/overscan rewrite (input doesn't work):
-  http://www.atari-forum.com/viewtopic.php?f=3&t=24635
 - Protracker STE, Equinox version, NULL pointer crash on disk ops
 
 
