@@ -443,6 +443,7 @@ Color games:
 - Populous II demo
 - Punt II
 - Pushover demo (3 playable levels, needs EmuTOS >v0.9.3)
+- Puzznic demo (needs floppy in drive A:)
 - Rampage demo
 - Rayoid*
 - Recoil
@@ -825,8 +826,7 @@ the 512kB EmuTOS version.
 There are some STE (enhanced) programs that work to an extent. They're
 listed here in case someone, someday, starts to fix (EmuTOS for) them.
 
-- Art for Kids (line-A sprite enable function -> cursor doesn't show;
-  rectangle drawing -> screen corruption + panic)
+- Art for Kids (Bus error at $6, after vro_cpyfm)
 - Bombaman (input doesn't work)
 - Breakdance (scene game, game freezes when playing)
 - Cameleon (line-A bitblit, exits when starting game)
@@ -1054,11 +1054,15 @@ Working applications:
 - ICDraw, .ICO and .IB3 GEM viewer
 - Kronos v1.91 benchmark
 - Rainbow 2 multimedia, needs WinUAE CPU core for MMU
+- Smurf (GEM image viewer)
 
 Partly working applications:
 - Centurbo benchmark:
   - DSP speed 0, with normal TOS the correct 32Mhz
    (bogus speed values for FPU & CPU as with normal TOS)
+- Delmpaint (GFA)
+   - some draw operations do black on black
+   - file selector opens too high (text size wrong)
 - Escape paint (GEM)
   - Icons don't show in image operations window, and their
     places are inverted on mouse-over, image names show in
@@ -1066,8 +1070,6 @@ Partly working applications:
     flicker
 - Fractal Playground
   - DSP needs to be disabled, keyboard input doesn't work
-- Smurf (GEM image viewer)
-  - loaded images are totally white
 - Whip! (virtual light machine)
   - Cursor is frozen unless DSP is disabled,
     non-DSP effects work
@@ -1083,9 +1085,6 @@ Broken applications:
 - Centview (GEM image viewer)
   - For JPG images, requires running jpegd.prg first
   - Says "Ce fichier n'a pu etre ouvert"
-- Delmpaint (GFA)
-   - screen white after start, freezes
-   - needs 256-colors
 - DSPdit (by .tscc)
   - panic with bus error
 - FalcAMP (GEM)
@@ -1095,8 +1094,8 @@ Broken applications:
   - says "cannot connect with DSP matrix" when playing
     (has no sound with Hatari even with real TOS)
 - Flextracker
-  - black screen after pressing space at startup
-   (With normal TOS needs WinUAE Hatari CPU core)
+  - black screen after pressing space at startup at Dsp_LoadProg()
+  - Needs WinUAE Hatari CPU core (with normal TOS)
 - Gemplay v1.49, v1.92 and v1.95
   - Says "needs Falcon 030 to run"
 - Indypaint
