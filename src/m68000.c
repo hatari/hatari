@@ -57,8 +57,10 @@
 /* 2010/11/07	[NP]	Add pairing between bit shift instr and JMP (fixes lsl.w #2,d0 + jmp 2(pc,d0)	*/
 /*			used in Fullparts by Hemoroids).						*/
 /* 2011/12/11	[NP]	Add pairing between MUL and JSR (fixes muls #52,d2 + jsr 0(a1,d2.w) used in	*/
-/*			Lemmings Compilation 40's Intro).						 */
-
+/*			Lemmings Compilation 40's Intro).						*/
+/* 2014/05/07	[NP]	In M68000_WaitEClock, use CyclesGlobalClockCounter instead of the VBL video	*/
+/*			counter (else for a given position in a VBL we would always get the same value	*/
+/*			for the E clock).								*/
 
 const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 
@@ -535,9 +537,7 @@ int	M68000_WaitEClock ( void )
 	int	CyclesToNextE;
 
 	/* We must wait for the next multiple of 10 cycles to be synchronised with E Clock */
-	/* FIXME : use video counter to simulate E Clock, but we should use */
-	/* a global cpu counter */
-	CyclesToNextE = 10 - Cycles_GetCounter(CYCLES_COUNTER_VIDEO) % 10;
+	CyclesToNextE = 10 - CyclesGlobalClockCounter % 10;
 	if ( CyclesToNextE == 10 )		/* we're already synchronised with E Clock */
 		CyclesToNextE = 0;
 	return CyclesToNextE;
