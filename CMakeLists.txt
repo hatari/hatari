@@ -304,9 +304,9 @@ else()
 endif(PORTAUDIO_FOUND)
 
 if(CAPSIMAGE_FOUND)
-  message( "  - libcapsimage : found, allow to use .IPF, .RAW and .CTR disk images" )
+  message( "  - libcapsimage : v${CAPSIMAGE_VERSION} found, allow to use .IPF, .RAW and .CTR disk images" )
 else()
-  message( "  - libcapsimage : not found, install it if you wish to use .IPF, .RAW and .CTR disk images" )
+  message( "  - libcapsimage : v${CAPSIMAGE_VERSION} not found, install it if you wish to use .IPF, .RAW and .CTR disk images" )
 endif(CAPSIMAGE_FOUND)
 
 message( "" )
