@@ -161,7 +161,7 @@ static char symbol_char(int type)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize)
 {
-	int i, count, symbols, len;
+	int i, count, symbols, len, outside;
 	int dtypes, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
@@ -180,7 +180,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		return NULL;
 	}
 
-	dtypes = ofiles = locals = count = 0;
+	outside = dtypes = ofiles = locals = count = 0;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -239,6 +239,13 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		}
 		address += section->offset;
 		if (address > section->end) {
+			/* VBCC has 1 symbol outside of its section */
+			if (++outside > 2) {
+				/* potentially buggy version of VBCC vlink used */
+				fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
+				symbol_list_free(list);
+				return NULL;
+			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
 				name, symbol_char(symtype), i, address, section->end);
 			continue;
@@ -271,27 +278,6 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	list->symbols = symbols;
 	list->count = count;
 	return list;
-}
-
-/**
- * check whether given binary file is compiled with VBCC
- */
-static bool is_vbcc(FILE *fp)
-{
-	long offset = ftell(fp);
-	Uint32 vbcc = 0;
-
-	/* jump over program header & VBCC jump at TEXT section start */
-	fseek(fp, 30, SEEK_SET);
-
-	/* read potential VBCC identifier */
-	if (fread(&vbcc, sizeof(vbcc), 1, fp) != 1)
-		perror("is_vbcc");
-	vbcc = SDL_SwapBE32(vbcc);
-
-	/* restore position */
-	fseek(fp, offset, SEEK_SET);
-	return vbcc == 0x56424343;  /* "VBCC" */
 }
 
 /**
@@ -369,14 +355,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 		info = "GCC/MiNT executable, GST symbol table.";
 		break;
 	case 0x0:
-		if (is_vbcc(fp)) {
-			sections[1].offset -= textlen;
-			sections[2].offset -= (textlen + datalen);
-			info = "VBCC excutable, DRI symbol table.";
-		} else {
-			info = "TOS executable, DRI / GST symbol table.";
-		}
-		break;
+		info = "TOS executable, DRI / GST symbol table.";
 		break;
 	default:
 		fprintf(stderr, "ERROR: unknown executable type 0x%x at offset 0x%x!\n", tabletype, offset);
