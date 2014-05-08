@@ -2948,26 +2948,47 @@ When you're back in debugger, you can inspect the collected profile data:
 <pre>
 &gt; h profile
 'profile' - profile CPU code
-Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|stack|addresses|save&gt; [count|address|file]
+Usage:  profile &lt;subcommand&gt; [parameter]
+
+        Subcommands:
+	        - on
+		- off
+		- counts [count]
+		- cycles [count]
+		- misses [count]
+		- symbols [count]
+		- addresses [address]
+		- callers
+		- stack
+		- stats
+		- save &lt;file&gt;
+		- loops &lt;file&gt; [CPU limit] [DSP limit]
+
         'on' & 'off' enable and disable profiling.  Data is collected
 	until debugger is entered again at which point you get profiling
-        statistics ('stats') summary.
+	statistics ('stats') summary.
 
 	Then you can ask for list of the PC addresses, sorted either by
-        execution 'counts', used 'cycles' or cache 'misses'.  First can
+	execution 'counts', used 'cycles' or cache 'misses'. First can
 	be limited just to named addresses with 'symbols'.  Optional
 	count will limit how many items will be shown.
 
 	'addresses' lists the profiled addresses in order, with the
-        instructions (currently) residing at them.  By default this
+	instructions (currently) residing at them.  By default this
 	starts from the first executed instruction, or you can
 	specify the starting address.
 
-        'callers' shows (raw) caller information for addresses which
-	had symbol(s) associated with them.  'stack' shows the currect
-	profile stack, this is useful only with :noinit breakpoints.
+	'callers' shows (raw) caller information for addresses which
+	had symbol(s) associated with them.  'stack' shows the current
+	profile stack (this is useful only with :noinit breakpoints).
 
-	Profile information can be saved with 'save'.
+	Profile address and callers information can be saved with
+	'save' command.
+
+	Detailed (spin) looping information can be collected by
+	specifying to which file it should be saved, with optional
+	limit(s) on how many bytes first and last instruction
+	address of the loop can differ (0 = no limit).
 </pre>
 
 <p>For example, to see which memory addresses were executed most

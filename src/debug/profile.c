@@ -534,14 +534,16 @@ const char Profile_Description[] =
 	"\tspecify the starting address.\n"
 	"\n"
 	"\t'callers' shows (raw) caller information for addresses which\n"
-	"\thad symbol(s) associated with them.  'stack' shows the currect\n"
-	"\tprofile stack, this is useful only with :noinit breakpoints.\n"
+	"\thad symbol(s) associated with them.  'stack' shows the current\n"
+	"\tprofile stack (this is useful only with :noinit breakpoints).\n"
 	"\n"
-	"\tProfile address and callers information can be saved with 'save'\n"
-	"\tcommand.  Detailed (spin) looping information can be collected\n"
-	"\tby specifying towhich file it should be saved, with optional\n"
-	"\tlimit(s) on how many bytes the loop first and last instruction\n"
-	"\taddress can differ (0 = no limit).";
+	"\tProfile address and callers information can be saved with\n"
+	"\t'save' command.\n"
+	"\n"
+	"\tDetailed (spin) looping information can be collected by\n"
+	"\tspecifying to which file it should be saved, with optional\n"
+	"\tlimit(s) on how many bytes first and last instruction\n"
+	"\taddress of the loop can differ (0 = no limit).";
 
 
 /**
