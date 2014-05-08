@@ -333,6 +333,10 @@
 /* 2014/02/22	[NP]	In Video_ColorReg_ReadWord(), don't set unused STF bits to rand() if	*/
 /*			the PC is not executing from the RAM between 0 and 4MB (fix 'Union Demo'*/
 /*			protection code running at address $ff8240).				*/
+/* 2014/05/08	[NP]	In case we're mixing 50 Hz and 60 Hz lines (512 or 508 cycles), we must	*/
+/*			update the position where the VBL interrupt will happen (fix "keyboard	*/
+/*			no jitter" test program by Nyh, with 4 lines at 60 Hz and 160240 cycles	*/
+/*			per VBL).								*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -1434,8 +1438,19 @@ void Video_Sync_WriteByte ( void )
 		/* This also changes the number of cycles per line. */
 		if ( ( LineCycles <= LINE_START_CYCLE_50 ) && ( HblCounterVideo == nHBL ) )
 		{
+			int	CyclesPerLine_old = nCyclesPerLine;
+
 			nCyclesPerLine = Video_HBL_GetPos();
 			Video_AddInterruptHBL ( nCyclesPerLine );
+
+			/* In case we're mixing 50 Hz (512 cycles) and 60 Hz (508 cycles) lines on the same screen, */
+			/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
+			/* We check if number of cycles per line changes, and if so, we update the VBL's position */
+			if ( CyclesPerLine_old != nCyclesPerLine )
+			{
+				CyclesPerVBL += ( nCyclesPerLine - CyclesPerLine_old );		/* +4 or -4 */
+				CycInt_ModifyInterrupt ( nCyclesPerLine - CyclesPerLine_old , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL );
+			}
 		}
 
 		/* Update Timer B's position */
@@ -1600,6 +1615,25 @@ void Video_InterruptHandler_HBL ( void )
 	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
 	if (nHBL < nScanlinesPerFrame-1)
 		Video_AddInterruptHBL ( NewHBLPos );
+
+
+	/* In case we're mixing 50 Hz (512 cycles) and 60 Hz (508 cycles) lines on the same screen, */
+	/* we must update the position where the next VBL will happen (instead of the initial value in CyclesPerVBL) */
+	/* During a 50 Hz screen, each 60 Hz line will make the VBL happen 4 cycles earlier */
+        if ( ( nScanlinesPerFrame == SCANLINES_PER_FRAME_50HZ )
+	  && ( NewHBLPos == CYCLES_PER_LINE_60HZ ) )
+	{
+		CyclesPerVBL -= 4;
+		CycInt_ModifyInterrupt ( -4 , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL );
+	}
+	/* During a 60 Hz screen, each 50 Hz line will make the VBL happen 4 cycles later */
+        else if ( ( nScanlinesPerFrame == SCANLINES_PER_FRAME_60HZ )
+	  && ( NewHBLPos == CYCLES_PER_LINE_50HZ ) )
+	{
+		CyclesPerVBL += 4;
+		CycInt_ModifyInterrupt ( 4 , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL );
+	}
+
 
 	/* Print traces if pending HBL bit changed just before IACK when HBL interrupt is allowed */
 	if ( ( CPU_IACK == true ) && ( regs.intmask < 2 ) )
