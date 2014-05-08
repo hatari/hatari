@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2011-12-30" "Hatari" ""
+.TH "HATARI" "1" "2014-05-08" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -31,14 +31,11 @@ Atari program that should be autostarted.  In the last case the
 program's directory will be used as the C: drive from where this
 program will be started.
 .PP
-Note that autostarting a program might not work if you've also
-specified a floppy image for drive A: (on command line or in config
-file) which contains a desktop.inf/newdesk.inf/emutos.inf file on
-it.
-.PP
 Booting will be done from the disk image or directory that's given
 last on the command line as an option or the argument (and which
-corresponds to A: or C:).
+corresponds to A: or C:). If you want to give floppy image name with
+an autostarting program name, give it with --disk-a option before the
+program name.
 .SH "OPTIONS"
 Hatari options are split into several categories:
 .SH "General options"
@@ -79,6 +76,9 @@ Start the emulator in windowed mode
 .B \-\-grab
 Grab mouse (also) in windowed mode
 .TP 
+.B \-\-borders <bool>
+Show ST/STE/Falcon screen borders (for low/med resolution overscan demos)
+.TP 
 .B \-\-frameskips <x>
 Skip <x> frames after each displayed frame to accelerate emulation
 (0=disabled, >4 uses automatic frameskip with given value as maximum)
@@ -101,9 +101,6 @@ Preferred / maximum window height for borders / zooming
 .B \-\-bpp <bool>
 Force internal bitdepth (x = 8/15/16/32, 0=disable)
 .SH "ST/STE specific display options"
-.TP 
-.B \-\-borders <bool>
-Show ST/STE screen borders (for low/med resolution overscan demos)
 .TP
 .B \-\-desktop\-st <bool>
 Whether fullscreen mode uses desktop resolution to avoid: messing
@@ -499,7 +496,9 @@ Other Hatari programs and utilities:
 .IR zip2st (1),
 .IR atari-hd-image (1),
 .IR hatariui (1),
-.IR hconsole (1)
+.IR hconsole (1),
+.IR gst2ascii (1),
+.IR hatari_profile (1)
 .SH "FILES AND DIRECTORIES"
 .TP
 /etc/hatari.cfg (or /usr/local/etc/hatari.cfg)
