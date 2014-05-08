@@ -529,7 +529,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bKeepResolutionST = false;
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = true;
-	ConfigureParams.Screen.nSpec512Threshold = 16;
+	ConfigureParams.Screen.nSpec512Threshold = 1;
 	ConfigureParams.Screen.nForceBpp = 0;
 	ConfigureParams.Screen.bAspectCorrect = true;
 	ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
