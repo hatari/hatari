@@ -3132,7 +3132,7 @@ automatically, by the profiler data post-processor (documented below).
 
 <p>Everything about profile data accuracy applies also to caller costs,
 but there are additional things to take into account, mainly because
-profiler cannot determine when exceptions are being handling:</p>
+profiler cannot determine when exceptions are being handled:</p>
 <ul>
 <li>If there are exception(s) during a subroutine call, costs for
     the exception handling will also be accounted for that subroutine.
@@ -3179,7 +3179,7 @@ installed by Hatari, to:</p>
 <ul>
 <li>Get lists of functions/symbols with highest costs.</li>
 <li>Get callgraphs of what functions/symbols cause those
-    costs and what kind of call hiearchy the profiled code
+    costs and what kind of call hierarchy the profiled code
     has.</li>
 <li>Export profile data in Valgrind's
     <a href="http://valgrind.org/docs/manual/cl-format.html">Callgrind format</a>
@@ -3222,8 +3222,11 @@ but e.g. loop labels, you can either remove them manually
 from the ASCII *.sym file, or filter them out with grep:
 </p>
 <pre>
-$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 | &gt; program.sym
+$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
 </pre>
+
+
+<h4>Post-processor provided statistics</h4>
 
 <p>Above post-processor examples just parse + verify the given data
 and produce output like this:</p>
@@ -3241,9 +3244,6 @@ Parsing profile information from program-profile.txt...
 CPU profile information from 'program-profile.txt':
 - Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
 </pre>
-
-
-<h4>Post-processor provided statistics</h4>
 
 <p>To get statistics (-s) and list of top (-t) CPU users in profile,
 add "-st" option:</p>
@@ -3360,8 +3360,8 @@ Instruction cache misses:
 [...]
 </pre>
 
-<p>Now there's a message telling that some of the calls were ignored as
-based on "call type" they were determined to be actually returns from
+<p>Now there's a message telling that some of the calls were ignored
+because according to their "call type", they were actually returns from
 exceptions, not real calls (this is mainly important for callgraph
 generation, discussed below).</p>
 
@@ -3390,7 +3390,7 @@ i.e. including costs for further subroutine calls.  Values are based on
 caller information documented above.</p>
 
 <p>Reasons why between-symbol costs, and subroutine call costs can
-differ are following:</p>
+differ, are following:</p>
 <ul>
 <li>Subroutine terminates before next symbol address: exclusive
     cost is smaller than in-between cost <em>because of missing
@@ -3410,7 +3410,8 @@ differ are following:</p>
 <p>In the first case, you should check the profile data to find out
 whether there are missing symbols for executed function entry points.
 You can notice function entry points as address gap and/or code
-retrieving arguments from stack, and exit points from RTS instruction.</p>
+retrieving arguments from stack. Exit points can be seen from RTS
+instructions.</p>
 
 <p>Second case can also be seen from the profile data.  Call count
 is same as count for how many times first instruction is executed
@@ -3431,9 +3432,10 @@ sure your optimization efforts can actually help the performance.</p>
 
 <h4>Generating and viewing callgraphs</h4>
 
-<p>Callgraphs require saved profile data to contain caller information,
-i.e. symbols should have been loaded before starting profiling (normally
-done with "symbols prg" command in Hatari debugger).</p>
+<p>Callgraphs require saved profile data to contain caller function
+address information, i.e. symbols should have been loaded before
+starting profiling (either automatically, or manually from ASCII
+symbols file).</p>
 
 <p>Separate callgraphs will be created for each of the costs
 (0=calls, 1=instructions, 2=cycles) with the -g option:</p>
@@ -3488,18 +3490,17 @@ $ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
 <li>Nodes which exclusive (own) or between-symbols costs
     exceed default or explicitly given threshold value,
     have gray background.</li>
-<li>Both nodes which inclusive or between-symbols cost exceeds
-    the threshold value, and the arrows to &amp; from them
+<li>Both nodes, which inclusive or between-symbols cost exceeds
+    the threshold value, and the arrows to &amp; from them,
     are marked red.
 <li>Arrow types indicate call types; normal arrows subroutine
     calls, circles branches/jumps, backarrows returns.
     Exception calls and returns are indicated with dashed lines,
     unknown calls with dotted lines.</li>
-<li>Arrow text tells from which address the call orignated
-    (inside the calling function).  If symbol had multiple
-    callers, text includes count of calls from that particular
-    address, and its percentage of all calls done to that
-    symbol.</li>
+<li>Arrow text tells from which address (within the caller)
+    the call originated.  If symbol had multiple callers, text
+    includes count of calls from that particular address, and its
+    percentage is of all calls done to that symbol.</li>
 </ul>
 
 
@@ -3520,10 +3521,10 @@ $ hatari_profile.py -p -g <b>--ignore-to handler1,handler2</b> -r program.sym pr
 <p>In large callgraph most of the functions aren't really interesting,
 because their contribution to the cost is insignificant. You can
 remove large number of them with --no-leafs and --no-intermediate
-options, they act <em>only</em> on on nodes which costs are below
+options, those options act <em>only</em> on on nodes which costs are below
 given threshold.  Leaf nodes are ones which don't have any parents
-and/or children and intermediate ones which have only single parent
-and children (node calling itself is not taken into account).
+and/or children. Intermediate ones have only single parent and
+children (node calling itself is not taken into account).
 
 <p>Threshold for this is given with the --limit (-l) option.  With
 that it typically makes also sense to change the node emphasis
@@ -3543,8 +3544,8 @@ $ hatari_profile.py -p -g -l 1.0 -e 2.0 <b>--no-leafs --no-intermediate --compac
 
 <p>If even this doesn't help, you can remove all nodes below
 the given cost threshold limit with --no-limited option, but this
-often doesn't leave much of a call hiararchy.  Instead you may
-consider removing all nodes except for subroutine call ones with
+often doesn't leave much of a call hierarchy.  Instead you may
+consider removing all nodes except for subroutine call ones, with the
 --only-subroutines option.</p>
 
 <p>If you have trouble locating nodes you're specially interested
@@ -3556,7 +3557,7 @@ $ hatari_profile.py -p -g <b>--only func1,func2</b> -r program.sym program-profi
 </pre>
 
 <p>Last option for reading the callgraph is using -k option to
-export the data for use in (Linux) Kcachegrind UI.  It generates
+export the data for use in (Linux) Kcachegrind UI. Kcachegrind generates
 callgraphs on the fly, and just for the area around the function
 you selected, so navigating in callgraph may be easier.  It also
 shows the related profile disassembly, which can make verifying
