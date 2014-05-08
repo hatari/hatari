@@ -30,6 +30,9 @@ Emulation:
   - Add support for IPF files by using the capsimage library
 - Videl change :
   - correct masking of the true color palette registers
+- GEMDOS HD emulation:
+  - Fix: clip filenames given through GEMDOS calls to 8+3
+    lenght using first '.'
 - ACSI hard disk changes:
   - Fixed/improved READ CAPACITY and INQUIRY commands
   - Unsupported commands are now handled correctly
@@ -50,17 +53,17 @@ Emulator:
 - Allow BIOS, XBIOS, GEMDOS, VDI and AES tracing to be enabled without
   enabling also X/BIOS interception, GEMDOS HD emulation or extended VDI mode
 - Debugger:
-  - Fix: GCC and VBCC use different offsets for DATA & BSS symbols,
-    handle that in program binary symbol table parsing
   - Fix: release mouse in all cases where debugger can be invoked
   - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly
   - Fix: "symbols" command crash when it was used during TOS bootup
   - Fix: TOS and cartridge addresses weren't (with all TOS versions)
     in address order which asserted in profile data post-processor
   - Fix: "next" command didn't work correctly in "hex" number base
+  - Fix: DATA/BSS debug symbol offsets were interpreted based on
+    (incorrect) VBCC's vlink behavior
   - removed limits on breakpoints and their conditions
   - when entering debugger, current program's DRI/GST format debug
-    symbols are automatically read from, if such are available
+    symbols are automatically read from it, if such are available
   - new --debug-except option to specify which exceptions invoke
     the debugger, and WinUAE CPU core support for -D toggle option
   - "next"/"dspnext" commands work like in other debuggers, they
@@ -89,19 +92,22 @@ Tools:
   It can tell how many times loops were executed, how many times they
   spinned at minimum and maximum, at which VBL those happened, and what
   was the standard deviation of that.
+- gst2ascii DATA/BSS debug symbol offsets are fixed while still providing
+  support for the incorrect offsets used by older VBCC vlink
 - Improved mingw cross-compilation support
 
 Fixed demos :
-  Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
-  Sommarhack 2011 Invitro by DHS (CPU/MFP, top border not removed)
-  The World Is My Oyster - Convention Report Part by Aura (video, res=3)
-  UMD 8730 by PHF (video, unused bits in STF color registers)
-  It's A Girl 2 by Paradox (video, bottom border removal on a 60 Hz screen)
-  4-pixel plasma screen by TOS Crew (video, color change during only 4 cyles)
-  HighResMode by Paradox (video, color changes in overscan med res at 60 Hz)
+- Shforstv.exe by Paulo Simoes (video, did not work in STE mode)
+- Sommarhack 2011 Invitro by DHS (CPU/MFP, top border not removed)
+- The World Is My Oyster - Convention Report Part by Aura (video, res=3)
+- UMD 8730 by PHF (video, unused bits in STF color registers)
+- It's A Girl 2 by Paradox (video, bottom border removal on a 60 Hz screen)
+- 4-pixel plasma screen by TOS Crew (video, color change during only 4 cyles)
+- HighResMode by Paradox (video, color changes in overscan med res at 60 Hz)
 
 Fixed games :
-  Reeking Rubber (by Nature), Falcon game
+- Reeking Rubber (by Nature), Falcon game
+- Maze (by Martin Dennett & John Parker)
 
 
  Version 1.7.0 (2013-06-24):
