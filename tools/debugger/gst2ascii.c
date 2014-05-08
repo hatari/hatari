@@ -206,7 +206,7 @@ static char symbol_char(int type)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32_t tablesize)
 {
-	int i, count, symbols;
+	int i, count, symbols, outside;
 	int notypes, dtypes, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
@@ -218,7 +218,6 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 
 	if (tablesize % DRI_ENTRY_SIZE) {
 		fprintf(stderr, "ERROR: invalid DRI/GST symbol table size %d!\n", tablesize);
-		fprintf(stderr, "\n*** Try with 'nm -n <program>' (Atari/cross-compiler tool) instead ***\n");
 		return NULL;
 	}
 	symbols = tablesize / DRI_ENTRY_SIZE;
@@ -226,7 +225,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 		return NULL;
 	}
 
-	dtypes = notypes = ofiles = locals = count = 0;
+	outside = dtypes = notypes = ofiles = locals = count = 0;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -306,6 +305,13 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 		}
 		address += section->offset;
 		if (address > section->end) {
+			/* VBCC has 1 symbol outside of its section */
+			if (++outside > 2) {
+				/* potentially buggy version of VBCC vlink used */
+				fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
+				symbol_list_free(list);
+				return NULL;
+			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
 				name, symbol_char(symtype), i, address, section->end);
 			continue;
@@ -376,6 +382,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 	int offset, reads = 0;
 	Uint16 relocflag;
 	const char *info;
+	symbol_list_t* symbols;
 
 	/* get TEXT, DATA & BSS section sizes */
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
@@ -426,13 +433,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 		info = "GCC/MiNT executable, GST symbol table.";
 		break;
 	case 0x0:
-		if (is_vbcc(fp)) {
-			sections[1].end += textlen;
-			sections[2].end += (textlen + datalen);
-			info = "VBCC excutable, DRI symbol table.\nNOTE: When loading, use TEXT section as offset for all symbols!";
-		} else {
-			info = "TOS executable, DRI / GST symbol table.";
-		}
+		info = "TOS executable, DRI / GST symbol table.";
 		break;
 	default:
 		fprintf(stderr, "ERROR: unknown executable type 0x%x at offset 0x%x!\n", tabletype, offset);
@@ -440,7 +441,24 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 	}
 	fprintf(stderr, "0x%x program flags, reloc=%d, %s\n", prgflags, relocflag, info);
 	fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
-	return symbols_load_dri(fp, sections, tablesize);
+	symbols = symbols_load_dri(fp, sections, tablesize);
+
+	if (symbols) {
+		fprintf(stderr, "Load symbols with 'symbols <filename> TEXT DATA BSS' after starting the program.\n");
+	} else if (is_vbcc(fp)) {
+		fseek(fp, offset, SEEK_SET);
+		sections[1].end += textlen;
+		sections[2].end += (textlen + datalen);
+		fprintf(stderr, "VBCC compiled binary, re-trying with different BSS/DATA section offsets in case buggy version of vlink was used...\n");
+		symbols = symbols_load_dri(fp, sections, tablesize);
+		if (symbols) {
+			fprintf(stderr, "Load symbols without giving separate BSS/DATA offsets (they're TEXT relative).\n");
+		}
+	}
+	if (!symbols) {
+		fprintf(stderr, "\n\n*** Try with 'nm -n <program>' (Atari/cross-compiler tool) instead ***\n\n");
+	}
+	return symbols;
 }
 
 /**
