@@ -396,6 +396,32 @@ void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interru
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Modify interrupt's Cycles to make it happen earlier or later.
+ * This will not restart the interrupt, but add CycleTime cycles to the
+ * current value of the counter.
+ */
+void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
+{
+	assert(CycleTime >= 0);
+
+	/* Update list cycle counts with current PendingInterruptCount before adding a new int, */
+	/* because CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
+	if ( ActiveInterrupt > 0 )
+		CycInt_UpdateInterrupt();
+
+	InterruptHandlers[Handler].Cycles += INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType);
+
+	/* Set new active int and compute a new value for PendingInterruptCount*/
+	CycInt_SetNewInterrupt();
+
+	LOG_TRACE(TRACE_INT, "int modify video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
+	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
+	          (long long)InterruptHandlers[Handler].Cycles, PendingInterruptCount );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Remove a pending interrupt from our table
  */
 void CycInt_RemovePendingInterrupt(interrupt_id Handler)

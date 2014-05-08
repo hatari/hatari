@@ -64,6 +64,7 @@ extern void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_
 extern void CycInt_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
 extern void CycInt_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler);
 extern void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset);
+extern void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
 extern void CycInt_RemovePendingInterrupt(interrupt_id Handler);
 extern void CycInt_ResumeStoppedInterrupt(interrupt_id Handler);
 extern bool CycInt_InterruptActive(interrupt_id Handler);
