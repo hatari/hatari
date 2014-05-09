@@ -61,6 +61,8 @@ extern int	FDC_IndexPulse_GetCurrentPos_NbBytes ( void );
 extern int	FDC_IndexPulse_GetState ( void );
 extern int	FDC_NextIndexPulse_FdcCycles ( void );
 
+extern Uint8	FDC_GetCmdType ( Uint8 CR );
+
 extern void	FDC_DiskController_WriteWord ( void );
 extern void	FDC_DiskControllerStatus_ReadWord ( void );
 extern void	FDC_DmaModeControl_WriteWord ( void );

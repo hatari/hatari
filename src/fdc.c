@@ -560,7 +560,6 @@ static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive );
 static void	FDC_IndexPulse_Update ( void );
 static void	FDC_IndexPulse_Init ( int Drive );
 
-static Uint8	FDC_GetCmdType ( Uint8 CR );
 static void	FDC_Update_STR ( Uint8 DisableBits , Uint8 EnableBits );
 static int	FDC_CmdCompleteCommon ( bool DoInt );
 static bool	FDC_VerifyTrack ( void );
@@ -1698,7 +1697,7 @@ void FDC_InterruptHandler_Update ( void )
 /**
  * Return the type of a command, based on the upper bits of CR
  */
-static Uint8 FDC_GetCmdType ( Uint8 CR )
+Uint8 FDC_GetCmdType ( Uint8 CR )
 {
 	if ( ( CR & 0x80 ) == 0 )					/* Type I - Restore, Seek, Step, Step-In, Step-Out */
 		return 1;

@@ -46,6 +46,9 @@ typedef struct
 	struct CapsDrive 	Drive[ MAX_FLOPPYDRIVES ];	/* Physical drives */
 	CapsLong		CapsImage[ MAX_FLOPPYDRIVES ];	/* For the IPF disk images */
 
+	int			Rev_Track[ MAX_FLOPPYDRIVES ];	/* Needed to handle CAPSSetRevolution for type II/III commands */
+	int			Rev_Side[ MAX_FLOPPYDRIVES ];
+	
 	Sint64			FdcClock;			/* Current value of CyclesGlobalClockCounter */
 #endif
 } IPF_STRUCT;
@@ -239,6 +242,9 @@ bool	IPF_Init ( void )
 		IPF_State.Drive[ i ].type = sizeof ( struct CapsDrive );
 		IPF_State.Drive[ i ].rpm = CAPSDRIVE_35DD_RPM;
 		IPF_State.Drive[ i ].maxtrack = CAPSDRIVE_35DD_HST;
+
+		IPF_State.Rev_Track[ i ] = -1;
+		IPF_State.Rev_Side[ i ] = -1;
 	}
 
 	/* Init FDC with 2 physical drives */
@@ -572,6 +578,30 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 
 #else
 	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
+
+	
+#if CAPSIMAGE_VERSION == 5
+	/* In the case of CTR images, we must reset the revolution counter */
+	/* when a command access data on disk and track/side changed since last access */
+	if ( Reg == 0 )
+	{
+		int	Type;
+		int	Drive;
+
+		Type = FDC_GetCmdType ( Byte );
+		if ( ( Type == 2 ) || ( Type == 3 ) )
+		{
+			Drive = IPF_State.Fdc.driveact;
+			if ( ( Drive >= 0 )
+			  && ( ( IPF_State.Drive[ Drive ].side != IPF_State.Rev_Side[ Drive ] ) || ( IPF_State.Drive[ Drive ].track != IPF_State.Rev_Track[ Drive ] ) ) )
+			{
+				IPF_State.Rev_Side[ Drive ] = IPF_State.Drive[ Drive ].side;
+				IPF_State.Rev_Track[ Drive ] = IPF_State.Drive[ Drive ].track;
+				CAPSSetRevolution ( IPF_State.CapsImage[ Drive ] , 0 );
+			}
+		}
+	}
+#endif
 
 	IPF_Emulate();					/* Update emulation's state up to this point */
 
