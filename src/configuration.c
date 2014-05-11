@@ -584,7 +584,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.bPatchTimerD = true;
 	ConfigureParams.System.bFastBoot = true;
-	ConfigureParams.System.bRealTimeClock = true;
+	ConfigureParams.System.bRealTimeClock = false;
 	ConfigureParams.System.bFastForward = false;
 
 	/* Set defaults for Video */
