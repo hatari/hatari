@@ -484,7 +484,7 @@ next_track:
 						pStxSector->ID_Sector , pStxSector->ID_Size , pStxSector->ID_CRC ,
 						pStxSector->FDC_Status , pStxSector->Reserved ,
 						pStxSector->pTimingData ?
-							( pStxTrack->TimingSize > 0 ? pStxSector->pTimingData - pStxTrack->pTrackData : -1 )
+							( pStxTrack->TimingSize > 0 ? (int)(pStxSector->pTimingData - pStxTrack->pTrackData) : -1 )
 							: 0 );
 
 					if ( ( Debug & STX_DEBUG_FLAG_DATA ) && pStxSector->pData )
