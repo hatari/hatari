@@ -156,12 +156,8 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "68kDisass.h"
 
 #ifdef HAVE_CAPSIMAGE
-#if CAPSIMAGE_VERSION == 4
-#include <caps/fdc.h>
-#else
-#include <caps5/CapsAPI.h>
-#include <caps5/CapsFDC.h>
-#include <caps5/CapsLib.h>
+#if CAPSIMAGE_VERSION == 5
+#include <caps5/CapsLibAll.h>
 #endif
 #endif
 
@@ -1778,8 +1774,9 @@ static void m68k_run_1 (void)
 	if (bDspEnabled)
 	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
 
-//if ( CAPSGetDebugRequest() )
-//  DebugUI(REASON_CPU_BREAKPOINT);
+	/* Uncomment following lines to call capslib's debugger after each instruction */
+	//if ( CAPSGetDebugRequest() )
+	//  DebugUI(REASON_CPU_BREAKPOINT);
 
 	cycles = (*cpufunctbl[opcode])(opcode);
 //fprintf (stderr, "ir out %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);

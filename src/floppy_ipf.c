@@ -26,13 +26,15 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c : " __DATE__ " " __TIME__;
 #include "cycles.h"
 
 #ifdef HAVE_CAPSIMAGE
-#if CAPSIMAGE_VERSION == 4
-#include <caps/fdc.h>
+#if CAPSIMAGE_VERSION == 5
+#include <caps5/CapsLibAll.h>
 #else
-#include <caps5/CapsAPI.h>
-#include <caps5/CapsFDC.h>
-#include <caps5/CapsLib.h>
+#include <caps/fdc.h>
+#define CAPS_LIB_RELEASE	4
+#define CAPS_LIB_REVISION	2
 #endif
+/* Macro to check release and revision */
+#define	CAPS_LIB_REL_REV	( CAPS_LIB_RELEASE * 100 + CAPS_LIB_REVISION )
 #endif
 
 
@@ -150,15 +152,18 @@ fprintf ( stderr , "ipf load %d\n" , StructSize );
 /*-----------------------------------------------------------------------*/
 /**
  * Does filename end with a .IPF or .RAW or .CTR extension ? If so, return true.
+ * .RAW and .CTR support requires caps lib >= 5.1
  */
 bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
 	return ( File_DoesFileExtensionMatch(pszFileName,".ipf" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ipf.gz") )
+#if CAPS_LIB_REL_REV >= 501
 		|| File_DoesFileExtensionMatch(pszFileName,".raw" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".raw.gz") )
 		|| File_DoesFileExtensionMatch(pszFileName,".ctr" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ctr.gz") )
+#endif
 		);
 }
 
@@ -313,7 +318,7 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 		return false;
 	}
 
-#if CAPSIMAGE_VERSION == 5
+#if CAPS_LIB_REL_REV >= 501
 	ImageType = CAPSGetImageTypeMemory ( pImageBuffer , ImageSize );
 	if ( ImageType == citError )
 	{
@@ -580,7 +585,7 @@ void	IPF_FDC_WriteReg ( Uint8 Reg , Uint8 Byte )
 	LOG_TRACE(TRACE_FDC, "fdc ipf write reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
 
 	
-#if CAPSIMAGE_VERSION == 5
+#if CAPS_LIB_REL_REV >= 501
 	/* In the case of CTR images, we must reset the revolution counter */
 	/* when a command access data on disk and track/side changed since last access */
 	if ( Reg == 0 )
