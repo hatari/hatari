@@ -392,6 +392,9 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 
 	CAPSFdcInvalidateTrack ( &IPF_State.Fdc , Drive );				/* Invalidate previous buffered track data for drive, if any */
 
+	IPF_State.Rev_Track[ Drive ] = -1;						/* Invalidate previous track/side to handle revolution's count */
+	IPF_State.Rev_Side[ Drive ] = -1;
+
 	return true;
 #endif
 }
