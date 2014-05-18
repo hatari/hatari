@@ -41,7 +41,7 @@ Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
 Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS image */
 bool bTosImageLoaded = false;           /* Successfully loaded a TOS image? */
 bool bRamTosImage;                      /* true if we loaded a RAM TOS image */
-unsigned int ConnectedDriveMask = 0x03; /* Bit mask of connected drives, eg 0x7 is A,B,C */
+unsigned int ConnectedDriveMask = 0x00; /* Bit mask of connected drives, eg 0x7 is A,B,C */
 int nNumDrives = 2;                     /* Number of drives, default is 2 for A: and B: - Strictly, this is the highest mapped drive letter, in-between drives may not be allocated */
 
 /* Possible TOS file extensions to scan for */

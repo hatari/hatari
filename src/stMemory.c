@@ -240,9 +240,8 @@ void STMemory_SetDefaultConfig(void)
 	/* Set TOS floppies */
 	STMemory_WriteWord(0x446, nBootDrive);          /* Boot up on A(0) or C(2) */
 
-	/* Create connected drives mask: */
+	/* Create connected drives mask (only for harddrives, don't change floppy drive detected by TOS) */
 	ConnectedDriveMask = STMemory_ReadLong(0x4c2);  // Get initial drive mask (see what TOS thinks)
-	ConnectedDriveMask |= 0x03;                     // Always use A: and B:
 	if (GEMDOS_EMU_ON)
 	{
 		for (i = 0; i < MAX_HARDDRIVES; i++)
