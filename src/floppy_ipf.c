@@ -533,6 +533,31 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
 
 
 
+/*
+ * This function is used to enable/disable a drive when
+ * using the UI or command line parameters
+ *
+ * NOTE : for now, IPF only supports changing drive 1, drive 0
+ * is always ON.
+ */
+void    IPF_Drive_Set_Enable ( int Drive , bool value )
+{
+#ifndef HAVE_CAPSIMAGE
+	return;
+
+#else
+	if ( Drive == 1 )
+	{
+		if ( value )
+		        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;		/* should be 2 */
+		else
+		        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES - 1;		/* should be 1 */
+	}
+#endif
+}
+
+
+
 
 /*
  * Set the drive and the side to be used for the next FDC commands

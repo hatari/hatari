@@ -1171,6 +1171,9 @@ fprintf ( stderr , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
 
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 		FDC_DRIVES[ Drive ].Enabled = value;
+
+	/* Also forward change to IPF emulation */
+	IPF_Drive_Set_Enable ( Drive , value );
 }
 
 
