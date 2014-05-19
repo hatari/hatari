@@ -39,8 +39,9 @@ static void Bios_RWabs(Uint32 Params)
 	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x04 Rwabs(%d,0x%lX,%d,%d,%i)\n",
-	          RWFlag, STRAM_ADDR(pBuffer), Number, RecNo, Dev);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x04 Rwabs(%d,0x%lX,%d,%d,%i) at PC 0x%X\n",
+	          RWFlag, STRAM_ADDR(pBuffer), Number, RecNo, Dev,
+		  M68000_GetPC());
 #endif
 }
 
@@ -73,7 +74,8 @@ static void Bios_Setexe(Uint32 Params)
 	};
 	for (vecname = &(vecnames[0]); vecname->vec && vec != vecname->vec; vecname++)
 		;
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x05 Setexc(0x%hX VEC_%s, 0x%X)\n", vec, vecname->name, addr);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x05 Setexc(0x%hX VEC_%s, 0x%X) at PC 0x%X\n", vec, vecname->name, addr,
+		  M68000_GetPC());
 #endif
 }
 
@@ -140,14 +142,16 @@ bool Bios(void)
 	switch(BiosCall)
 	{
 	case 0x0:
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x00 Getmpb(0x%X)\n",
-			  STMemory_ReadLong(Params));
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x00 Getmpb(0x%X) at PC 0x%X\n",
+			  STMemory_ReadLong(Params),
+			  M68000_GetPC());
 		break;
 
 	case 0x3:
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hX)\n",
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hX) at PC 0x%X\n",
 			  STMemory_ReadWord(Params),
-			  STMemory_ReadWord(Params+SIZE_WORD));
+			  STMemory_ReadWord(Params+SIZE_WORD),
+			  M68000_GetPC());
 		break;
 
 	case 0x4:
@@ -165,20 +169,23 @@ bool Bios(void)
 	case 0x9:
 	case 0xB:
 		/* commands taking a single word */
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s(0x%hX)\n",
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s(0x%hX) at PC 0x%X\n",
 			  BiosCall, Bios_Call2Name(BiosCall),
-			  STMemory_ReadWord(Params));
+			  STMemory_ReadWord(Params),
+			  M68000_GetPC());
 		break;
 
 	case 0x6:
 	case 0xA:
 		/* commands taking no args */
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s()\n",
-			  BiosCall, Bios_Call2Name(BiosCall));
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s() at PC 0x%X\n",
+			  BiosCall, Bios_Call2Name(BiosCall),
+			  M68000_GetPC());
 		break;
 
 	default:
-		Log_Printf(LOG_WARN, "Unknown BIOS call 0x%x!\n", BiosCall);
+		Log_Printf(LOG_WARN, "Unknown BIOS call 0x%x! at PC 0x%X\n", BiosCall,
+			   M68000_GetPC());
 		break;
 	}
 	return false;

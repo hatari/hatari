@@ -1417,7 +1417,8 @@ static bool GemDOS_SetDrv(Uint32 Params)
 	/* Read details from stack for our own use */
 	CurrentDrive = STMemory_ReadWord(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x0E Dsetdrv(0x%x)\n", (int)CurrentDrive);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x0E Dsetdrv(0x%x) at PC=0x%X\n", (int)CurrentDrive,
+		  M68000_GetPC());
 
 	/* Still re-direct to TOS */
 	return false;
@@ -1434,7 +1435,8 @@ static bool GemDOS_SetDTA(Uint32 Params)
 	/*  Look up on stack to find where DTA is */
 	Uint32 nDTA = STMemory_ReadLong(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x1A Fsetdta(0x%x)\n", nDTA);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x1A Fsetdta(0x%x) at PC 0x%X\n", nDTA,
+		  M68000_GetPC());
 
 	if (STMemory_ValidArea(nDTA, sizeof(DTA)))
 	{
@@ -1467,7 +1469,8 @@ static bool GemDOS_DFree(Uint32 Params)
 	Drive = STMemory_ReadWord(Params+SIZE_LONG);
 
 	/* Note: Drive = 0 means current drive, 1 = A:, 2 = B:, 3 = C:, etc. */
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x36 Dfree(0x%x, %i)\n", Address, Drive);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x36 Dfree(0x%x, %i) at PC 0x%X\n", Address, Drive,
+		  M68000_GetPC());
 	if (Drive == 0)
 		Drive = CurrentDrive;
 	else
@@ -1550,7 +1553,8 @@ static bool GemDOS_MkDir(Uint32 Params)
 	/* Find directory to make */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x39 Dcreate(\"%s\")\n", pDirName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x39 Dcreate(\"%s\") at PC 0x%X\n", pDirName,
+		  M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
@@ -1602,7 +1606,8 @@ static bool GemDOS_RmDir(Uint32 Params)
 	/* Find directory to make */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3A Ddelete(\"%s\")\n", pDirName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3A Ddelete(\"%s\") at PC 0x%X\n", pDirName,
+		  M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
@@ -1656,7 +1661,8 @@ static bool GemDOS_ChDir(Uint32 Params)
 	/* Find new directory */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3B Dsetpath(\"%s\")\n", pDirName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3B Dsetpath(\"%s\") at PC 0x%X\n", pDirName,
+		  M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pDirName);
 
@@ -1745,7 +1751,8 @@ static bool GemDOS_Create(Uint32 Params)
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3C Fcreate(\"%s\", 0x%x)\n", pszFileName, Mode);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3C Fcreate(\"%s\", 0x%x) at PC 0x%X\n", pszFileName, Mode,
+		  M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
@@ -1868,7 +1875,8 @@ static bool GemDOS_Open(Uint32 Params)
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3D Fopen(\"%s\", %s)\n", pszFileName, Modes[Mode&0x03].desc);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3D Fopen(\"%s\", %s) at PC=0x%X\n", pszFileName, Modes[Mode&0x03].desc,
+		  M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
@@ -1969,7 +1977,8 @@ static bool GemDOS_Close(Uint32 Params)
 	/* Find our handle - may belong to TOS */
 	Handle = STMemory_ReadWord(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3E Fclose(%i)\n", Handle);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3E Fclose(%i) at PC 0x%X\n", Handle,
+		  M68000_GetPC());
 
 	/* Get internal handle */
 	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
@@ -2015,8 +2024,9 @@ static bool GemDOS_Read(Uint32 Params)
 	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
 	pBuffer = (char *)STRAM_ADDR(Addr);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3F Fread(%i, %i, 0x%x)\n", 
-	          Handle, Size, Addr);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3F Fread(%i, %i, 0x%x) at PC 0x%X\n",
+	          Handle, Size, Addr,
+		  M68000_GetPC());
 
 	/* Get internal handle */
 	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
@@ -2089,8 +2099,9 @@ static bool GemDOS_Write(Uint32 Params)
 	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
 	pBuffer = (char *)STRAM_ADDR(Addr);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x40 Fwrite(%i, %i, 0x%x)\n", 
-	          Handle, Size, Addr);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x40 Fwrite(%i, %i, 0x%x) at PC 0x%X\n",
+	          Handle, Size, Addr,
+		  M68000_GetPC());
 
 	/* Get internal handle */
 	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
@@ -2145,7 +2156,8 @@ static bool GemDOS_FDelete(Uint32 Params)
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x41 Fdelete(\"%s\")\n", pszFileName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x41 Fdelete(\"%s\") at PC 0x%X\n", pszFileName,
+		  M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
@@ -2203,7 +2215,8 @@ static bool GemDOS_LSeek(Uint32 Params)
 	Handle = STMemory_ReadWord(Params+SIZE_LONG);
 	Mode = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x42 Fseek(%li, %i, %i)\n", Offset, Handle, Mode);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x42 Fseek(%li, %i, %i) at PC 0x%X\n", Offset, Handle, Mode,
+		  M68000_GetPC());
 
 	/* get internal handle */
 	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
@@ -2270,8 +2283,9 @@ static bool GemDOS_Fattrib(Uint32 Params)
 	nRwFlag = STMemory_ReadWord(Params+SIZE_LONG);
 	nAttrib = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x43 Fattrib(\"%s\", %d, 0x%x)\n",
-	          psFileName, nRwFlag, nAttrib);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x43 Fattrib(\"%s\", %d, 0x%x) at PC 0x%X\n",
+	          psFileName, nRwFlag, nAttrib,
+		  M68000_GetPC());
 
 	if (!ISHARDDRIVE(nDrive))
 	{
@@ -2370,7 +2384,8 @@ static bool GemDOS_Force(Uint32 Params)
 	std = STMemory_ReadWord(Params);
         own = STMemory_ReadWord(Params+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x46 Fforce(%d, %d)\n", std, own);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x46 Fforce(%d, %d) at PC 0x%X\n", std, own,
+		  M68000_GetPC());
 
 	/* Get internal handle */
 	if (std > own)
@@ -2412,7 +2427,8 @@ static bool GemDOS_GetDir(Uint32 Params)
 	Drive = STMemory_ReadWord(Params+SIZE_LONG);
 
 	/* Note: Drive = 0 means current drive, 1 = A:, 2 = B:, 3 = C:, etc. */
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x47 Dgetpath(0x%x, %i)\n", Address, (int)Drive);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x47 Dgetpath(0x%x, %i) at PC 0x%X\n", Address, (int)Drive,
+		  M68000_GetPC());
 	if (Drive == 0)
 		Drive = CurrentDrive;
 	else
@@ -2480,11 +2496,13 @@ static int GemDOS_Pexec(Uint32 Params)
 			name = (const char *)STRAM_ADDR(fname);
 			cmd = (const char *)STRAM_ADDR(cmdline);
 			cmdlen = *cmd++;
-			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x)\n", Mode, name, cmdlen, cmdlen?cmd:"", env_string);
+			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n", Mode, name, cmdlen, cmdlen?cmd:"", env_string,
+				M68000_GetPC());
 		}
 		else
 		{
-			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x)\n", Mode, fname, cmdline, env_string);
+			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x) at PC 0x%X\n", Mode, fname, cmdline, env_string,
+				M68000_GetPC());
 		}
 	}
 
@@ -2529,7 +2547,7 @@ static bool GemDOS_SNext(void)
 	int Index;
 	int ret;
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4F Fsnext()\n");
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4F Fsnext() at PC 0x%X\n" , M68000_GetPC());
 
 	/* Refresh pDTA pointer (from the current basepage) */
 	nDTA = STMemory_ReadLong(STMemory_ReadLong(act_pd)+32);
@@ -2606,7 +2624,8 @@ static bool GemDOS_SFirst(Uint32 Params)
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	nAttrSFirst = STMemory_ReadWord(Params+SIZE_LONG);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4E Fsfirst(\"%s\", 0x%x)\n", pszFileName, nAttrSFirst);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4E Fsfirst(\"%s\", 0x%x) at PC 0x%X\n", pszFileName, nAttrSFirst,
+		  M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 	if (!ISHARDDRIVE(Drive))
@@ -2729,7 +2748,8 @@ static bool GemDOS_Rename(Uint32 Params)
 	pszOldFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
 	pszNewFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG));
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x56 Frename(\"%s\", \"%s\")\n", pszOldFileName, pszNewFileName);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x56 Frename(\"%s\", \"%s\") at PC 0x%X\n", pszOldFileName, pszNewFileName,
+		  M68000_GetPC());
 
 	NewDrive = GemDOS_FileName2HardDriveID(pszNewFileName);
 	OldDrive = GemDOS_FileName2HardDriveID(pszOldFileName);
@@ -2778,8 +2798,9 @@ static bool GemDOS_GSDToF(Uint32 Params)
 	Handle = STMemory_ReadWord(Params+SIZE_LONG);
 	Flag = STMemory_ReadWord(Params+SIZE_LONG+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x57 Fdatime(0x%x, %i, %i)\n", pBuffer,
-	          Handle, Flag);
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x57 Fdatime(0x%x, %i, %i) at PC 0x%X\n", pBuffer,
+	          Handle, Flag,
+		  M68000_GetPC());
 
 	/* get internal handle */
 	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
@@ -2868,7 +2889,8 @@ static void GemDOS_TerminateClose(void)
  */
 static bool GemDOS_Pterm0(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x00 Pterm0()\n");
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x00 Pterm0() at PC 0x%X\n",
+		  M68000_GetPC());
 	GemDOS_TerminateClose();
 	GemDOS_RemoveLastProgram();
 	return false;
@@ -2880,8 +2902,9 @@ static bool GemDOS_Pterm0(Uint32 Params)
  */
 static bool GemDOS_Ptermres(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x31 Ptermres(0x%X, %hd)\n",
-		  STMemory_ReadLong(Params), (Sint16)STMemory_ReadWord(Params+SIZE_WORD));
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x31 Ptermres(0x%X, %hd) at PC 0x%X\n",
+		  STMemory_ReadLong(Params), (Sint16)STMemory_ReadWord(Params+SIZE_WORD),
+		  M68000_GetPC());
 	GemDOS_TerminateClose();
 	return false;
 }
@@ -2892,8 +2915,9 @@ static bool GemDOS_Ptermres(Uint32 Params)
  */
 static bool GemDOS_Pterm(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4C Pterm(%hd)\n",
-		  (Sint16)STMemory_ReadWord(Params));
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4C Pterm(%hd) at PC 0x%X\n",
+		  (Sint16)STMemory_ReadWord(Params),
+		  M68000_GetPC());
 	GemDOS_TerminateClose();
 	GemDOS_RemoveLastProgram();
 	return false;
@@ -3236,8 +3260,9 @@ void GemDOS_OpCode(void)
 	case 0x2A:	/* Tgetdate */
 	case 0x2C:	/* Tgettime */
 		/* commands with no args */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s()\n",
-			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s() at PC 0x%X\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+			  M68000_GetPC());
 		break;
 		
 	case 0x02:	/* Cconout */
@@ -3248,9 +3273,10 @@ void GemDOS_OpCode(void)
 	case 0x2d:	/* Tsettime */
 	case 0x45:	/* Fdup */
 		/* commands taking single word */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%hX)\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%hX) at PC 0x%X\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
-			  STMemory_ReadWord(Params));
+			  STMemory_ReadWord(Params),
+			  M68000_GetPC());
 		break;
 
 	case 0x09:	/* Cconws */
@@ -3259,35 +3285,40 @@ void GemDOS_OpCode(void)
 	case 0x48:	/* Malloc */
 	case 0x49:	/* Mfree */
 		/* commands taking long/pointer */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X)\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X) at PC 0x%X\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
-			  STMemory_ReadLong(Params));
+			  STMemory_ReadLong(Params),
+			  M68000_GetPC());
 		break;
 
 	case 0x44:	/* Mxalloc */
 		/* commands taking long/pointer + word */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x44 Mxalloc(0x%X, 0x%hX)\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x44 Mxalloc(0x%X, 0x%hX) at PC 0x%X\n",
 			  STMemory_ReadLong(Params),
-			  STMemory_ReadWord(Params+SIZE_LONG));
+			  STMemory_ReadWord(Params+SIZE_LONG),
+			  M68000_GetPC());
 		break;
 	case 0x14:	/* Maddalt */
 		/* commands taking 2 longs/pointers */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x14 Maddalt(0x%X, 0x%X)\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x14 Maddalt(0x%X, 0x%X) at PC 0x%X\n",
 			  STMemory_ReadLong(Params),
-			  STMemory_ReadLong(Params+SIZE_LONG));
+			  STMemory_ReadLong(Params+SIZE_LONG),
+			  M68000_GetPC());
 	case 0x4A:	/* Mshrink */
 		/* Mshrink's two pointers are prefixed by reserved zero word:
 		 * http://toshyp.atari.org/en/00500c.html#Bindings_20for_20Mshrink
 		 */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4A Mshrink(0x%X, 0x%X)\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4A Mshrink(0x%X, 0x%X) at PC 0x%X\n",
 			  STMemory_ReadLong(Params+SIZE_WORD),
-			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG));
+			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG),
+			  M68000_GetPC());
 		break;
 
 	default:
 		/* rest of commands */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX (%s)\n",
-			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall));
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX (%s) at PC 0x%X\n",
+			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
+			  M68000_GetPC());
 	}
 
 	switch(Finished)
@@ -3337,7 +3368,7 @@ void GemDOS_Boot(void)
 {
 	bInitGemDOS = true;
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot()\n" );
+	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot() at PC 0x%X\n", M68000_GetPC() );
 
 	/* install our gemdos handler, if -e or --harddrive option used,
 	 * or user wants to do GEMDOS tracing
