@@ -50,7 +50,9 @@ typedef struct
 
 	int			Rev_Track[ MAX_FLOPPYDRIVES ];	/* Needed to handle CAPSSetRevolution for type II/III commands */
 	int			Rev_Side[ MAX_FLOPPYDRIVES ];
-	
+
+	bool			DriveEnabled[ MAX_FLOPPYDRIVES ];/* Is drive ON or OFF */
+
 	Sint64			FdcClock;			/* Current value of CyclesGlobalClockCounter */
 #endif
 } IPF_STRUCT;
@@ -63,6 +65,7 @@ static IPF_STRUCT	IPF_State;			/* All variables related to the IPF support */
 static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
+static void	IPF_Drive_Update_Enable ( void );
 #endif
 
 
@@ -265,8 +268,10 @@ bool	IPF_Init ( void )
 		return false;
 	}
 
-	/* 2 drives */
+	/* 2 drives by default */
 	IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;
+	/* Update drives' state in case we have some drives ON or OFF in config or parameters */
+	IPF_Drive_Update_Enable ();
 
 	/* FDC clock */
 	IPF_State.Fdc.clockfrq = 8000000;
@@ -546,14 +551,22 @@ void    IPF_Drive_Set_Enable ( int Drive , bool value )
 	return;
 
 #else
-	if ( Drive == 1 )
-	{
-		if ( value )
-		        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;		/* should be 2 */
-		else
-		        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES - 1;		/* should be 1 */
-	}
+	IPF_State.DriveEnabled[ Drive ] = value;			/* Store the new state */
+
+	IPF_Drive_Update_Enable ();					/* Update IPF's internal state */
 #endif
+}
+
+
+/*
+ * Update IPF's internal state depending on which drives are ON or OFF
+ */
+static void	IPF_Drive_Update_Enable ( void )
+{
+	if ( IPF_State.DriveEnabled[ 1 ] )
+	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;		/* should be 2 */
+	else
+	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES - 1;		/* should be 1 */
 }
 
 
