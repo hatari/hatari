@@ -51,6 +51,7 @@ get_filename_component ( CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH} ABSOLUTE )
 # Uncomment this line with your own values if above doesn't work
 #SET(CMAKE_FIND_ROOT_PATH /usr/i686-w64-mingw32/sys-root/mingw )
 #SET(CMAKE_FIND_ROOT_PATH /usr/x86_64-w64-mingw32/sys-root/mingw )
+#message ( "MINGW_ROOT_PATH ${MINGW_ROOT_PATH} MINGW_EXE_PREFIX ${MINGW_EXE_PREFIX} CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH}" )
 
 # FindSDL.cmake doesn't search correctly in CMAKE_FIND_ROOT_PATH
 # so we force SDLDIR here
