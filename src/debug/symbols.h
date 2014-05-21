@@ -37,7 +37,12 @@ extern int Symbols_GetDspAddressIndex(Uint32 addr);
 /* how many symbols are loaded */
 extern int Symbols_CpuCount(void);
 extern int Symbols_DspCount(void);
+/* handlers for automatic program symbol loading */
+extern void Symbols_RemoveCurrentProgram(void);
+extern void Symbols_ChangeCurrentProgram(FILE *fp, const char *path);
+extern void Symbols_LoadCurrentProgram(void);
 /* symbols/dspsymbols command parsing */
+extern char *Symbols_MatchCommand(const char *text, int state);
 extern int Symbols_Command(int nArgc, char *psArgs[]);
 
 #endif

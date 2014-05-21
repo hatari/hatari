@@ -100,6 +100,7 @@ void HostScreen_toggleFullScreen(void)
 
 void HostScreen_setWindowSize(int width, int height, int bpp)
 {
+	const bool keep = ConfigureParams.Screen.bKeepResolution;
 	int screenwidth, screenheight, maxw, maxh;
 	int scalex, scaley, sbarheight;
 
@@ -122,7 +123,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 		height /= scaley;
 	}
 
-	Resolution_GetLimits(&maxw, &maxh, &bpp, ConfigureParams.Screen.bKeepResolution);
+	Resolution_GetLimits(&maxw, &maxh, &bpp, keep);
 	nScreenZoomX = nScreenZoomY = 1;
 	
 	if (ConfigureParams.Screen.bAspectCorrect) {
@@ -171,7 +172,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	screenwidth = width;
 
 	/* get resolution corresponding to these */
-	Resolution_Search(&screenwidth, &screenheight, &bpp);
+	Resolution_Search(&screenwidth, &screenheight, &bpp, keep);
 	/* re-calculate statusbar height for this resolution */
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 

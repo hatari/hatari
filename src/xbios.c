@@ -6,8 +6,8 @@
 
   XBios Handler (Trap #14)
 
-  We intercept and direct some XBios calls to handle the RS-232 etc.
-  and to help with debugging.
+  Intercept and direct some XBios calls to handle the RS-232 etc.
+  and to help with tracing/debugging.
 */
 const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 
@@ -25,6 +25,22 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 
 #define HATARI_CONTROL_OPCODE 255
 
+/* whether to enable XBios(20/255) */
+static bool bXBiosCommands;
+
+void XBios_ToggleCommands(void)
+{
+	if (bXBiosCommands)
+	{
+		fprintf(stderr, "XBios 15/20/255 parsing disabled.\n");
+		bXBiosCommands = false;
+	}
+	else
+	{
+		fprintf(stderr, "XBios 15/20/255 parsing enabled.\n");
+		bXBiosCommands = true;
+	}
+}
 
 /* List of Atari ST RS-232 baud rates */
 static const int BaudRates[] =
@@ -147,31 +163,32 @@ static bool XBios_Rsconf(Uint32 Params)
 		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr,
 		   M68000_GetPC());
 #endif
+	if (!bXBiosCommands)
+		return false;
+	
+	if (!ConfigureParams.RS232.bEnableRS232)
+		return false;
+
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
-	if (ConfigureParams.RS232.bEnableRS232)
+	if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
 	{
-		if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
-		{
-			/* Convert ST baud rate index to value */
-			int BaudRate = BaudRates[Baud];
-			/* And set new baud rate: */
-			RS232_SetBaudRate(BaudRate);
-		}
-
-		if (Ucr != -1)
-		{
-			RS232_HandleUCR(Ucr);
-		}
-
-		if (Ctrl != -1)
-		{
-			RS232_SetFlowControl(Ctrl);
-		}
-
-		return true;
+		/* Convert ST baud rate index to value */
+		int BaudRate = BaudRates[Baud];
+		/* And set new baud rate: */
+		RS232_SetBaudRate(BaudRate);
 	}
 
-	return false;
+	if (Ucr != -1)
+	{
+		RS232_HandleUCR(Ucr);
+	}
+
+	if (Ctrl != -1)
+	{
+		RS232_SetFlowControl(Ctrl);
+	}
+
+	return true;
 }
 
 
@@ -182,6 +199,10 @@ static bool XBios_Rsconf(Uint32 Params)
 static bool XBios_Scrdmp(Uint32 Params)
 {
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp() at PC 0x%X\n" , M68000_GetPC());
+
+	if (!bXBiosCommands)
+		return false;
+
 	ScreenSnapShot_SaveScreen();
 
 	/* Correct return code? */
@@ -200,6 +221,10 @@ static bool XBios_HatariControl(Uint32 Params)
 	const char *pText;
 	pText = (const char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n", HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
+
+	if (!bXBiosCommands)
+		return false;
+
 	Control_ProcessBuffer(pText);
 	Regs[REG_D0] = 0;
 	return true;

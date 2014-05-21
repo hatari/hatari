@@ -64,7 +64,7 @@
 <h1 class="pageheader">Hatari User's Manual</h1>
 
 <p class="pageheader">
-Version 1.7, June 2013
+Version 1.8-devel, May 2014
 </p>
 <p class="pageheader">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
@@ -433,16 +433,21 @@ mono/rgb/vga/tv)</p>
 --fullscreen</p>
 <p class="paramdesc">Start the emulator in fullscreen
 mode</p>
-<p class="parameter">-w,
---window</p>
-<p class="paramdesc">Start the emulator in window mode</p>
+<p class="parameter">-w, --window</p>
+<p class="paramdesc">Start the emulator in windowed mode</p>
 <p class="parameter">--grab</p>
-<p class="paramdesc">Grab mouse (also) in window mode</p>
+<p class="paramdesc">Grab mouse (also) in windowed mode</p>
+<p class="parameter">--borders &lt;bool&gt;</p>
+<p class="paramdesc">Show ST/STE/Falcon screen borders
+(for low/med resolution overscan demos)</p>
 <p class="parameter">--frameskips
 &lt;x&gt;</p>
 <p class="paramdesc">Skip &lt;x&gt; frames after each
 displayed frame to accelerate emulation (0=disabled, &gt;4 uses
 automatic frameskip with given value as maximum)</p>
+<p class="parameter">--slowdown &lt;x&gt;</p>
+<p class="paramdesc">Slow down emulation by factor of x
+(used as multiplier for VBL wait time)</p>
 <p class="parameter">--statusbar
 &lt;bool&gt;</p>
 <p class="paramdesc">Show statusbar (with floppy leds etc
@@ -451,16 +456,21 @@ etc)</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Show overlay drive led when statusbar
 isn&rsquo;t shown</p>
+</p>
+<p class="parameter">--max-width
+&lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum window width
+for borders / zooming</p>
+<p class="parameter">--max-height
+&lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum window height
+for borders / zooming</p>
 <p class="parameter">--bpp
 &lt;bool&gt;</p>
 <p class="paramdesc">Force internal bitdepth (x =
 8/15/16/32, 0=disable)</p>
 
 <h3>ST/STE specific display options</h3>
-<p class="parameter">
---borders &lt;bool&gt;</p>
-<p class="paramdesc">Show ST/STE screen borders (for low/med
-resolution overscan demos)</p>
 <p class="parameter">--desktop-st
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether fullscreen mode uses desktop
@@ -483,22 +493,16 @@ Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
 <p class="paramdesc">Zoom (double) low resolution (1=no,
 2=yes)</p>
 
-<h3>Falcon/TT specific display options</h3>
-<p class="parameter">Zooming to sizes
-specified below is internally done using integer scaling factors.
-This means that different Atari resolutions may show up with
-different sizes, but they are never blurry. <br />
---desktop &lt;bool&gt;</p>
+<h3>TT/Falcon specific display options</h3>
+<p>
+Zooming to sizes specified below is internally done using integer scaling
+factors. This means that different Atari resolutions may show up with
+different sizes, but they are never blurry.
+<p class="parameter">--desktop &lt;bool&gt;</p>
 <p class="paramdesc">Whether to use desktop resolution on
 fullscreen to avoid issues related to resolution switching.
 Otherwise fullscreen will use a resolution that is closest to the
 Hatari window size. (enabled by default)</p>
-<p class="parameter">--max-width
-&lt;x&gt;</p>
-<p class="paramdesc">Preferred / maximum window width</p>
-<p class="parameter">--max-height
-&lt;x&gt;</p>
-<p class="paramdesc">Preferred / maximum window height</p>
 <p class="parameter">--force-max
 &lt;bool&gt;</p>
 <p class="paramdesc">Hatari window size is forced to
@@ -744,11 +748,16 @@ voices.</p>
 --debug</p>
 <p class="paramdesc">Toggle whether CPU exceptions invoke
 the debugger</p>
+<p class="parameter">--debug-except &lt;flags&gt;</p>
+<p class="paramdesc">Specify which exceptions invoke debugger, see
+"--debug-except help" for available (comma separated) exception
+flags.</p>
 <p class="parameter">--bios-intercept</p>
-<p class="paramdesc">Toggle Bios/XBios call interception needed for
-Bios/XBios call tracing.  Allows Atari programs to modify Hatari state
-through XBios 255 calls which are processed as Hatari commandline
-arguments.  Atari printscreen call takes also Hatari screenshot.</p>
+<p class="paramdesc">
+Toggle XBios command parsing. Allows Atari programs to use all Hatari
+functionality and change Hatari state through Hatari specifit
+XBios(255) calls. XBios(20) printscreen calls produce also Hatari
+screenshots.</p>
 <p class="parameter">--conout &lt;device&gt;</p>
 <p class="paramdesc">Enable console (xconout vector functions) output
 redirection for given &lt;device&gt; to host terminal.  Device 2 is for
@@ -762,9 +771,9 @@ external disassembly engine and 'help' lists them.</p>
 <p class="paramdesc">Enable/disable (basic) Native Features support.
 E.g. EmuTOS uses it for debug output.</p>
 <p class="parameter">--trace
-&lt;trace1,...&gt;</p>
+&lt;flags&gt;</p>
 <p class="paramdesc">Activate debug traces, see
---trace help for available tracing options</p>
+"--trace help" for available tracing flags</p>
 <p class="parameter">--trace-file
 &lt;file&gt;</p>
 <p class="paramdesc">Save trace output to &lt;file&gt;
@@ -2048,23 +2057,7 @@ the disk image from Hatari:
 
 <p>
 Hatari has a built-in debugging interface which can be used for
-analyzing code that runs in the emulated system. To invoke the
-debugger, press the <span class="key">AltGr + Pause</span>
-key combination.
-</p>
-
-<p>
-If you start Hatari with the "-D" command line option, certain m68k
-exceptions will automatically drop Hatari into the debugger. You can
-toggle this also later from the debugger with the "setopt -D"
-command.
-</p>
-
-<p>
-To run debugger commands at Hatari startup, one can use the "--parse
-&lt;file&gt;" command line option.  This is useful e.g. for debugging
-TOS or some demo startup code, or if you always want to use some
-specific debugger setup (breakpoints etc).
+analyzing code that runs in the emulated system.
 </p>
 
 <p>
@@ -2077,6 +2070,41 @@ program):
 <pre>
 xterm -T "Hatari debug window" -e hatari
 </pre>
+
+<p>
+To run debugger commands at Hatari startup, one can use the "--parse
+&lt;file&gt;" command line option.  This is useful e.g. for debugging
+TOS or some demo startup code, or if you always want to use some
+specific debugger setup (breakpoints etc).
+</p>
+
+
+<h3>Invoking the debugger</h3>
+
+<p>
+You can invoke the debugger manually by pressing the
+<span class="key">AltGr + Pause</span> key combination.
+</p>
+
+<p>
+With the "-D" command line option, you can toggle whether m68k
+exceptions will also invoke the debugger.  Which exceptions cause
+this, can be controlled with the "--debug-except" option.  
+</p>
+
+<p>
+Giving "-D" option at Hatari startup is not advised because TOS HW
+checks generate some exceptions at every TOS boot.  It's better to
+toggle exception catching later from the debugger with the "setopt -D"
+command. 
+</p>
+
+<p>
+Alternatively, you can give "--debug-except" option "autostart" flag
+(e.g. "--debug-except all,autostart").  This will enable catching of
+(specified) exceptions after TOS boot, when Atari program given on
+Hatari command line is <em>autostarted</em>.
+</p>
 
 
 <h3>General debugger use</h3>
@@ -2295,6 +2323,12 @@ breakpoint at program startup</a>):
 symbols prg
 </pre>
 <p>
+
+<p>
+<em>Debugger loads the symbols automatically for currently running
+Atari program when entering the debugger, if no CPU symbols are yet
+loaded.</em>
+</p>
 
 <p>
 The options you need to add suitable symbol table to your programs,
@@ -2617,7 +2651,7 @@ example the Busy bit for the internal Blitter control register is
 (internally) cleared when Blitter activity stops, but the actual IO
 address for that control register gets updated only when something
 actually writes or reads that IO address.  Many HW registers behave
-(status registers in FDC, ACIA, MFP, Blitter...).
+like this (status registers in FDC, ACIA, MFP, Blitter...).
 <br>
 For breakpoints that track just a single IO register memory address, or
 multiple ones of which <strong>none</strong> are modified by Hatari,
@@ -2655,7 +2689,7 @@ a variable given to address breakpoint is evaluated when it's set, not
 at run-time, so it cannot get the new value that the TEXT variable
 gets when you start a program.
 </li>
-<li>To find out current program DATA and BSS segment contents,
+<li>To view current program DATA and BSS segment contents,
     use the corresponding variables:
 <pre>
 m  DATA
@@ -2768,8 +2802,7 @@ command "file" option and with the Hatari "--parse" command line
 option.
 </p>
 
-
-<h3>Tracing</h3>
+<h3>Stepping through code</h3>
 
 <p>
 After analyzing the emulation state and/or setting new breakpoints,
@@ -2782,13 +2815,38 @@ triggers) if you omit the instruction count.
 <p>
 If you want to continue just to the next instruction, use "s" (step)
 command to continue for exactly one instruction, or "n" (next), if you
-want to skip subroutine calls.
+want to skip subroutine and exception calls.  "ds" and "dn" commands
+do the same for DSP.
 </p>
 
 <p>
-If you want to continue with real-time disassembling, you can enable
-it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at the
-debugger prompt before continuing.
+You can also continue with the "n" until instruction of certain
+type is encountered, by giving it the instruction type:
+<ul>
+<li>"branch" matches branch instructions: BCC, BRA, DBCC, JMP</li>
+<li>"subcall" matches subroutine calls: BSR, JSR</li>
+<li>"subreturn" matches return from subroutine: RTD, RTR, RTS</li>
+<li>"exception" matches exceptions: BKPT, ILLG, STOP, TRAP, TRAPV</li>
+<li>"exreturn" matches return from exception: RTE</li>
+<li>"return" matches both subroutine and exception returns</li>
+</ul>
+
+<p>
+For example: "n branch", or "dn branch".
+</p>
+
+<p>
+(Note: CHK, CHK2, FBCC, FDBCC, &amp; FTRAPCC exception / branch CPU
+instructions aren't supported currently.)
+</p>
+
+
+<h3>Tracing</h3>
+
+<p>
+If you want e.g. to continue with real-time disassembling, you can
+enable it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at
+the debugger prompt before continuing.
 </p>
 <p>
 Disable tracing with "trace none" when you enter the debugger again.
@@ -2796,34 +2854,37 @@ Disable tracing with "trace none" when you enter the debugger again.
 traceable things, from HW events to OS functions.
 </p>
 <p>
-Because Hatari normally emulates things at the hardware level, tracing
-certain Atari OS Traps requires setting additional Hatari options
-which tell it to intercept this higher level functionality:
-<ul>
-<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting with
-    the "--bios-intercept" option (which has also some other side-effects)
-</li>
-<li>GEMDOS tracing requires enabling the GEMDOS harddisk emulation
-    (which doesn't work under MiNT because it re-implements GEMDOS)</li>
-</ul>
-<p>
-Unlike with VDI tracing, AES, BIOS, GEMDOS and XBIOS traces show arguments
-for most of the calls.
+Notes:
 </p>
-<p>
+<ul>
+<li>
+If GEMDOS HD emulation isn't enabled, GEMDOS call tracing needs to be
+enabled at Hatari command line, it's not possible to enable it after
+TOS has initialized GEMDOS.
+</li>
+<li>
+AES, BIOS, GEMDOS and XBIOS traces show arguments for (most of) the
+calls, VDI trace shows only function calls (parsing the arguments
+would be too complicated).
+</li>
+<li>
 Tracing options can be set even from a program within the emulation,
 if you enable the Hatari "--bios-intercept" option and call XBios 255
-from the program with a suitable Hatari command line string.
-</p>
-<p>
+from the program with a suitable trace options string.
+</li>
+<li>
 Note that the trace output file can be set only when Hatari starts,
 it cannot be changed from within the debugger (or emulation).
-</p>
+</li>
+</ul>
 <p>
-If tracing isn't possible for the things you'd like to track, you can
-use the OS call opcode breakpoints explained above with the ":trace"
-breakpoint option.
+If there isn't a trace option for something you'd like to track,
+you may be able to use tracing breakpoints, explained above.
+For example, following tracks Line-A calls:
 </p>
+<pre>
+b  LineAOpcode ! LineAOpcode  &amp;&amp;  LineAOpcode &lt; 0xffff  :trace
+</pre>
 
 
 <h3>Profiling</h3>
@@ -2887,26 +2948,47 @@ When you're back in debugger, you can inspect the collected profile data:
 <pre>
 &gt; h profile
 'profile' - profile CPU code
-Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|stack|addresses|save&gt; [count|address|file]
+Usage:  profile &lt;subcommand&gt; [parameter]
+
+        Subcommands:
+	        - on
+		- off
+		- counts [count]
+		- cycles [count]
+		- misses [count]
+		- symbols [count]
+		- addresses [address]
+		- callers
+		- stack
+		- stats
+		- save &lt;file&gt;
+		- loops &lt;file&gt; [CPU limit] [DSP limit]
+
         'on' & 'off' enable and disable profiling.  Data is collected
 	until debugger is entered again at which point you get profiling
-        statistics ('stats') summary.
+	statistics ('stats') summary.
 
 	Then you can ask for list of the PC addresses, sorted either by
-        execution 'counts', used 'cycles' or cache 'misses'.  First can
+	execution 'counts', used 'cycles' or cache 'misses'. First can
 	be limited just to named addresses with 'symbols'.  Optional
 	count will limit how many items will be shown.
 
 	'addresses' lists the profiled addresses in order, with the
-        instructions (currently) residing at them.  By default this
+	instructions (currently) residing at them.  By default this
 	starts from the first executed instruction, or you can
 	specify the starting address.
 
-        'callers' shows (raw) caller information for addresses which
-	had symbol(s) associated with them.  'stack' shows the currect
-	profile stack, this is useful only with :noinit breakpoints.
+	'callers' shows (raw) caller information for addresses which
+	had symbol(s) associated with them.  'stack' shows the current
+	profile stack (this is useful only with :noinit breakpoints).
 
-	Profile information can be saved with 'save'.
+	Profile address and callers information can be saved with
+	'save' command.
+
+	Detailed (spin) looping information can be collected by
+	specifying to which file it should be saved, with optional
+	limit(s) on how many bytes first and last instruction
+	address of the loop can differ (0 = no limit).
 </pre>
 
 <p>For example, to see which memory addresses were executed most
@@ -3071,7 +3153,7 @@ automatically, by the profiler data post-processor (documented below).
 
 <p>Everything about profile data accuracy applies also to caller costs,
 but there are additional things to take into account, mainly because
-profiler cannot determine when exceptions are being handling:</p>
+profiler cannot determine when exceptions are being handled:</p>
 <ul>
 <li>If there are exception(s) during a subroutine call, costs for
     the exception handling will also be accounted for that subroutine.
@@ -3118,7 +3200,7 @@ installed by Hatari, to:</p>
 <ul>
 <li>Get lists of functions/symbols with highest costs.</li>
 <li>Get callgraphs of what functions/symbols cause those
-    costs and what kind of call hiearchy the profiled code
+    costs and what kind of call hierarchy the profiled code
     has.</li>
 <li>Export profile data in Valgrind's
     <a href="http://valgrind.org/docs/manual/cl-format.html">Callgrind format</a>
@@ -3161,8 +3243,11 @@ but e.g. loop labels, you can either remove them manually
 from the ASCII *.sym file, or filter them out with grep:
 </p>
 <pre>
-$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 | &gt; program.sym
+$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
 </pre>
+
+
+<h4>Post-processor provided statistics</h4>
 
 <p>Above post-processor examples just parse + verify the given data
 and produce output like this:</p>
@@ -3180,9 +3265,6 @@ Parsing profile information from program-profile.txt...
 CPU profile information from 'program-profile.txt':
 - Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
 </pre>
-
-
-<h4>Post-processor provided statistics</h4>
 
 <p>To get statistics (-s) and list of top (-t) CPU users in profile,
 add "-st" option:</p>
@@ -3299,8 +3381,8 @@ Instruction cache misses:
 [...]
 </pre>
 
-<p>Now there's a message telling that some of the calls were ignored as
-based on "call type" they were determined to be actually returns from
+<p>Now there's a message telling that some of the calls were ignored
+because according to their "call type", they were actually returns from
 exceptions, not real calls (this is mainly important for callgraph
 generation, discussed below).</p>
 
@@ -3329,7 +3411,7 @@ i.e. including costs for further subroutine calls.  Values are based on
 caller information documented above.</p>
 
 <p>Reasons why between-symbol costs, and subroutine call costs can
-differ are following:</p>
+differ, are following:</p>
 <ul>
 <li>Subroutine terminates before next symbol address: exclusive
     cost is smaller than in-between cost <em>because of missing
@@ -3349,7 +3431,8 @@ differ are following:</p>
 <p>In the first case, you should check the profile data to find out
 whether there are missing symbols for executed function entry points.
 You can notice function entry points as address gap and/or code
-retrieving arguments from stack, and exit points from RTS instruction.</p>
+retrieving arguments from stack. Exit points can be seen from RTS
+instructions.</p>
 
 <p>Second case can also be seen from the profile data.  Call count
 is same as count for how many times first instruction is executed
@@ -3370,9 +3453,10 @@ sure your optimization efforts can actually help the performance.</p>
 
 <h4>Generating and viewing callgraphs</h4>
 
-<p>Callgraphs require saved profile data to contain caller information,
-i.e. symbols should have been loaded before starting profiling (normally
-done with "symbols prg" command in Hatari debugger).</p>
+<p>Callgraphs require saved profile data to contain caller function
+address information, i.e. symbols should have been loaded before
+starting profiling (either automatically, or manually from ASCII
+symbols file).</p>
 
 <p>Separate callgraphs will be created for each of the costs
 (0=calls, 1=instructions, 2=cycles) with the -g option:</p>
@@ -3427,18 +3511,17 @@ $ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
 <li>Nodes which exclusive (own) or between-symbols costs
     exceed default or explicitly given threshold value,
     have gray background.</li>
-<li>Both nodes which inclusive or between-symbols cost exceeds
-    the threshold value, and the arrows to &amp; from them
+<li>Both nodes, which inclusive or between-symbols cost exceeds
+    the threshold value, and the arrows to &amp; from them,
     are marked red.
 <li>Arrow types indicate call types; normal arrows subroutine
     calls, circles branches/jumps, backarrows returns.
     Exception calls and returns are indicated with dashed lines,
     unknown calls with dotted lines.</li>
-<li>Arrow text tells from which address the call orignated
-    (inside the calling function).  If symbol had multiple
-    callers, text includes count of calls from that particular
-    address, and its percentage of all calls done to that
-    symbol.</li>
+<li>Arrow text tells from which address (within the caller)
+    the call originated.  If symbol had multiple callers, text
+    includes count of calls from that particular address, and its
+    percentage is of all calls done to that symbol.</li>
 </ul>
 
 
@@ -3459,10 +3542,10 @@ $ hatari_profile.py -p -g <b>--ignore-to handler1,handler2</b> -r program.sym pr
 <p>In large callgraph most of the functions aren't really interesting,
 because their contribution to the cost is insignificant. You can
 remove large number of them with --no-leafs and --no-intermediate
-options, they act <em>only</em> on on nodes which costs are below
+options, those options act <em>only</em> on on nodes which costs are below
 given threshold.  Leaf nodes are ones which don't have any parents
-and/or children and intermediate ones which have only single parent
-and children (node calling itself is not taken into account).
+and/or children. Intermediate ones have only single parent and
+children (node calling itself is not taken into account).
 
 <p>Threshold for this is given with the --limit (-l) option.  With
 that it typically makes also sense to change the node emphasis
@@ -3482,8 +3565,8 @@ $ hatari_profile.py -p -g -l 1.0 -e 2.0 <b>--no-leafs --no-intermediate --compac
 
 <p>If even this doesn't help, you can remove all nodes below
 the given cost threshold limit with --no-limited option, but this
-often doesn't leave much of a call hiararchy.  Instead you may
-consider removing all nodes except for subroutine call ones with
+often doesn't leave much of a call hierarchy.  Instead you may
+consider removing all nodes except for subroutine call ones, with the
 --only-subroutines option.</p>
 
 <p>If you have trouble locating nodes you're specially interested
@@ -3495,7 +3578,7 @@ $ hatari_profile.py -p -g <b>--only func1,func2</b> -r program.sym program-profi
 </pre>
 
 <p>Last option for reading the callgraph is using -k option to
-export the data for use in (Linux) Kcachegrind UI.  It generates
+export the data for use in (Linux) Kcachegrind UI. Kcachegrind generates
 callgraphs on the fly, and just for the area around the function
 you selected, so navigating in callgraph may be easier.  It also
 shows the related profile disassembly, which can make verifying

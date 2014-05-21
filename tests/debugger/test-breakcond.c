@@ -75,14 +75,14 @@ int main(int argc, const char *argv[])
 		"20 = (a0.w)",
 		"()&=d0",
 		"d0=().w",
+		"&& pc = 2",
+		"pc = 2 &&",
 		"255 & 3 = (d0) & && 2 = 2",
 		/* missing options file */
 		"pc>pc :file no-such-file",		
 		/* size and mask mismatches with numbers */
 		"d0.w = $ffff0",
 		"(a0).b & 3 < 100",
-		/* more than BC_MAX_CONDITIONS_PER_BREAKPOINT conditions */
-		"1=1 && 2=2 && 3=3 && 4=4 && 5=5",
 		NULL
 	};
 	const char *parser_pass[] = {

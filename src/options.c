@@ -40,11 +40,10 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "avi_record.h"
 #include "hatari-glue.h"
 #include "68kDisass.h"
-
+#include "xbios.h"
 
 bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
 bool bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
-bool bBiosIntercept;       /* whether UAE should intercept Bios & XBios calls */
 bool AviRecordOnStartup;   /* Start avi recording at startup */
 
 int ConOutDevice = CONOUT_DEVICE_NONE; /* device number for xconout device to track */
@@ -66,16 +65,17 @@ enum {
 	OPT_WINDOW,
 	OPT_GRAB,
 	OPT_FRAMESKIPS,
+	OPT_SLOWDOWN,
 	OPT_STATUSBAR,
 	OPT_DRIVE_LED,
+	OPT_MAXWIDTH,
+	OPT_MAXHEIGHT,
 	OPT_FORCEBPP,
 	OPT_BORDERS,		/* ST/STE display options */
 	OPT_RESOLUTION_ST,
 	OPT_SPEC512,
 	OPT_ZOOM,
-	OPT_RESOLUTION,		/* Falcon/TT display options */
-	OPT_MAXWIDTH,
-	OPT_MAXHEIGHT,
+	OPT_RESOLUTION,		/* TT/Falcon display options */
 	OPT_FORCE_MAX,
 	OPT_ASPECT,
 	OPT_VDI,		/* VDI options */
@@ -144,6 +144,7 @@ enum {
 	OPT_WINCON,		/* debug options */
 #endif
 	OPT_DEBUG,
+	OPT_EXCEPTIONS,
 	OPT_BIOSINTERCEPT,
 	OPT_CONOUT,
 	OPT_DISASM,
@@ -195,15 +196,21 @@ static const opt_t HatariOptions[] = {
 	{ OPT_FULLSCREEN,"-f", "--fullscreen",
 	  NULL, "Start emulator in fullscreen mode" },
 	{ OPT_WINDOW,    "-w", "--window",
-	  NULL, "Start emulator in window mode" },
+	  NULL, "Start emulator in windowed mode" },
 	{ OPT_GRAB, NULL, "--grab",
-	  NULL, "Grab mouse (also) in window mode" },
+	  NULL, "Grab mouse (also) in windowed mode" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
+	{ OPT_SLOWDOWN, NULL, "--slowdown",
+	  "<x>", "VBL wait time multiplier (1-8, default 1)" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
 	  "<bool>", "Show overlay drive led when statusbar isn't shown" },
+	{ OPT_MAXWIDTH, NULL, "--max-width",
+	  "<x>", "Maximum window width for borders & zooming" },
+	{ OPT_MAXHEIGHT, NULL, "--max-height",
+	  "<x>", "Maximum window height for borders & zooming" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force internal bitdepth (x = 8/15/16/32, 0=disable)" },
 
@@ -211,19 +218,15 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_RESOLUTION_ST, NULL, "--desktop-st",
-	  "<bool>", "Keep desktop resolution on fullscreen (no zoom)" },
+	  "<bool>", "Keep desktop resolution on fullscreen" },
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double small resolutions (1=no, 2=yes)" },
 
-	{ OPT_HEADER, NULL, NULL, NULL, "Falcon/TT specific display" },
+	{ OPT_HEADER, NULL, NULL, NULL, "TT/Falcon specific display" },
 	{ OPT_RESOLUTION, NULL, "--desktop",
 	  "<bool>", "Keep desktop resolution on fullscreen" },
-	{ OPT_MAXWIDTH, NULL, "--max-width",
-	  "<x>", "Maximum window width for zooming" },
-	{ OPT_MAXHEIGHT, NULL, "--max-height",
-	  "<x>", "Maximum window height for zooming" },
 	{ OPT_FORCE_MAX, NULL, "--force-max",
 	  "<bool>", "Resolution fixed to given max values" },
 	{ OPT_ASPECT, NULL, "--aspect",
@@ -383,8 +386,10 @@ static const opt_t HatariOptions[] = {
 #endif
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Toggle whether CPU exceptions invoke debugger" },
+	{ OPT_EXCEPTIONS, NULL, "--debug-except",
+	  "<flags>", "Exceptions invoking debugger, see '--debug-except help'" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
-	  NULL, "Toggle X/Bios interception & Hatari XBios 255 support" },
+	  NULL, "Toggle XBios command parsing support" },
 	{ OPT_CONOUT,   NULL, "--conout",
 	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
 	{ OPT_DISASM,   NULL, "--disasm",
@@ -392,7 +397,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_NATFEATS, NULL, "--natfeats",
 	  "<bool>", "Whether Native Features support is enabled" },
 	{ OPT_TRACE,   NULL, "--trace",
-	  "<trace1,...>", "Activate emulation tracing, see '--trace help'" },
+	  "<flags>", "Activate emulation tracing, see '--trace help'" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
 	  "<file>", "Save trace output to <file> (default=stderr)" },
 	{ OPT_PARSE, NULL, "--parse",
@@ -984,6 +989,13 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			ConfigureParams.Screen.nFrameSkips = skips;
 			break;
 
+		case OPT_SLOWDOWN:
+			if (!Main_SetVBLSlowdown(atoi(argv[++i])))
+			{
+				return Opt_ShowError(OPT_SLOWDOWN, argv[i], "Invalid VBL wait slowdown multiplier");
+			}
+			break;
+
 		case OPT_STATUSBAR:
 			ok = Opt_Bool(argv[++i], OPT_STATUSBAR, &ConfigureParams.Screen.bShowStatusbar);
 			break;
@@ -1044,8 +1056,8 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			}
 			else
 			{
-				ConfigureParams.Screen.nMaxWidth = 320;
-				ConfigureParams.Screen.nMaxHeight = 200;
+				ConfigureParams.Screen.nMaxWidth = 1*(48+320+48);
+				ConfigureParams.Screen.nMaxHeight = 1*NUM_VISIBLE_LINES+12;
 			}
 			break;
 
@@ -1668,29 +1680,42 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			break;
 #endif
 		case OPT_DEBUG:
-			if (bExceptionDebugging)
+			if (ExceptionDebugMask)
 			{
 				fprintf(stderr, "Exception debugging disabled.\n");
-				bExceptionDebugging = false;
+				ExceptionDebugMask = EXCEPT_NONE;
 			}
 			else
 			{
-				fprintf(stderr, "Exception debugging enabled.\n");
-				bExceptionDebugging = true;
+				ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask;
+				fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
+			}
+			break;
+
+		case OPT_EXCEPTIONS:
+			i += 1;
+			/* sets ConfigureParams.Log.nExceptionDebugMask */
+			errstr = Log_SetExceptionDebugMask(argv[i]);
+			if (errstr)
+			{
+				if (!errstr[0]) {
+					/* silent parsing termination */
+					return false;
+				}
+				return Opt_ShowError(OPT_EXCEPTIONS, argv[i], errstr);
+			}
+			if (ExceptionDebugMask)
+			{
+				/* already enabled, change run-time config */
+				int oldmask = ExceptionDebugMask;
+				ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask;
+				fprintf(stderr, "Exception debugging changed (0x%x -> 0x%x).\n",
+					oldmask, ExceptionDebugMask);
 			}
 			break;
 
 		case OPT_BIOSINTERCEPT:
-			if (bBiosIntercept)
-			{
-				fprintf(stderr, "X/Bios interception disabled.\n");
-				bBiosIntercept = false;
-			}
-			else
-			{
-				fprintf(stderr, "X/Bios interception enabled.\n");
-				bBiosIntercept = true;
-			}
+			XBios_ToggleCommands();
 			break;
 
 		case OPT_CONOUT:

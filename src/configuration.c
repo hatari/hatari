@@ -41,6 +41,7 @@ static const struct Config_Tag configs_Log[] =
 {
 	{ "sLogFileName", String_Tag, ConfigureParams.Log.sLogFileName },
 	{ "sTraceFileName", String_Tag, ConfigureParams.Log.sTraceFileName },
+	{ "nExceptionDebugMask", Int_Tag, &ConfigureParams.Log.nExceptionDebugMask },
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
 	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
@@ -402,6 +403,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for logging and tracing */
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
 	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
+	ConfigureParams.Log.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
 	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
 	ConfigureParams.Log.bConfirmQuit = true;
@@ -536,7 +538,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bKeepResolutionST = false;
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = true;
-	ConfigureParams.Screen.nSpec512Threshold = 16;
+	ConfigureParams.Screen.nSpec512Threshold = 1;
 	ConfigureParams.Screen.nForceBpp = 0;
 	ConfigureParams.Screen.bAspectCorrect = true;
 	ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
@@ -591,7 +593,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.bPatchTimerD = true;
 	ConfigureParams.System.bFastBoot = true;
-	ConfigureParams.System.bRealTimeClock = true;
+	ConfigureParams.System.bRealTimeClock = false;
 	ConfigureParams.System.bFastForward = false;
 
 	/* Set defaults for Video */

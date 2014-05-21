@@ -895,10 +895,10 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
     if (ExceptionSource == M68000_EXC_SRC_CPU)
       {
-        if (bVdiAesIntercept && nr == 0x22)
+        if (nr == 0x22)
         {
           /* Intercept VDI & AES exceptions (Trap #2) */
-          if(VDI_AES_Entry())
+          if(bVdiAesIntercept && VDI_AES_Entry())
           {
             /* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
              * This will call OpCode_VDI() after completion of Trap call!
@@ -908,20 +908,15 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
             currpc = CART_VDI_OPCODE_ADDR;
           }
         }
-
-        if (bBiosIntercept)
+        else if (nr == 0x2d)
         {
-          /* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
-          if (nr == 0x2d)
-          {
-            /* Intercept BIOS calls */
-            if (Bios())  return;
-          }
-          else if (nr == 0x2e)
-          {
-            /* Intercept XBIOS calls */
-            if (XBios())  return;
-          }
+          /* Intercept BIOS (Trap #13) calls */
+          if (Bios())  return;
+        }
+        else if (nr == 0x2e)
+        {
+          /* Intercept XBIOS (Trap #14) calls */
+          if (XBios())  return;
         }
       }
 
@@ -1002,7 +997,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    put_long (m68k_areg(regs, 7)+2, last_fault_for_exception_3);
 	    put_word (m68k_areg(regs, 7)+6, last_op_for_exception_3);
 	    put_long (m68k_areg(regs, 7)+10, last_addr_for_exception_3);
-	    if (bExceptionDebugging) {
+	    if (ExceptionDebugMask & EXCEPT_ADDRESS) {
 	      fprintf(stderr,"Address Error at address $%x, PC=$%x\n",last_fault_for_exception_3,currpc);
 	      DebugUI(REASON_CPU_EXCEPTION);
 	    }
@@ -1050,7 +1045,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n",
 	              BusErrorAddress, (long)currpc);
 	      unset_special(SPCFLAG_BUSERROR);
-	      if (bExceptionDebugging)
+	      if (ExceptionDebugMask & EXCEPT_BUS)
 	        DebugUI(REASON_CPU_EXCEPTION);
 	      else
 		DlgAlert_Notice("Detected double bus error => CPU halted!\nEmulation needs to be reset.\n");
@@ -1058,7 +1053,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	      m68k_setstopped(true);
 	      return;
 	    }
-	    if (bExceptionDebugging && BusErrorAddress!=0xff8a00) {
+	    if ((ExceptionDebugMask & EXCEPT_BUS) && BusErrorAddress!=0xff8a00) {
 	      fprintf(stderr,"Bus Error at address $%x, PC=$%lx\n", BusErrorAddress, (long)currpc);
 	      DebugUI(REASON_CPU_EXCEPTION);
 	    }
@@ -1066,8 +1061,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     }
 
     /* Set PC and flags */
-    if (bExceptionDebugging && get_long (regs.vbr + 4*nr) == 0) {
-        write_log("Uninitialized exception handler #%i!\n", nr);
+    if ((ExceptionDebugMask & EXCEPT_NOHANDLER) && (regs.vbr + 4*nr) == 0) {
+        fprintf(stderr,"Uninitialized exception handler #%i!\n", nr);
 	DebugUI(REASON_CPU_EXCEPTION);
     }
     newpc = get_long (regs.vbr + 4*nr);
@@ -1075,8 +1070,11 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
       {
         if ( nr==2 || nr==3 )			/* address error during bus/address error -> stop emulation */
             {
-		fprintf(stderr,"Address Error during exception 2/3, aborting new PC=$%x\n",newpc);
-		DebugUI(REASON_CPU_EXCEPTION);
+	      fprintf(stderr,"Address Error during exception 2/3, aborting new PC=$%x\n",newpc);
+	      if (ExceptionDebugMask & (EXCEPT_BUS|EXCEPT_ADDRESS))
+	        DebugUI(REASON_CPU_EXCEPTION);
+	      else
+		DlgAlert_Notice("Address Error during exception 2/3 => CPU halted!\nEmulation needs to be reset.\n");
             }
         else
             {
@@ -1085,6 +1083,9 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
             }
         return;
       }
+    /* handle debugger invocation for rest of exceptions */
+    if (ExceptionDebugMask && nr > 3 && nr < 9)
+      DebugUI_Exceptions(nr, currpc);
 
     m68k_setpc (get_long (regs.vbr + 4*nr));
     fill_prefetch_0 ();
@@ -1208,7 +1209,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 
 	case 0x800: regs.usp = *regp; break;
 	case 0x801: regs.vbr = *regp; break;
-	case 0x802: caar = *regp & 0xfc; break;
+	case 0x802: caar = *regp; break;
 	case 0x803: regs.msp = *regp; if (regs.m == 1) m68k_areg(regs, 7) = regs.msp; break;
 	case 0x804: regs.isp = *regp; if (regs.m == 0) m68k_areg(regs, 7) = regs.isp; break;
 	case 0x805: mmusr = *regp; break;

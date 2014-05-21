@@ -245,6 +245,7 @@ static void set_x_funcs (void)
 static void set_cpu_caches (void)
 {
 	int i;
+	uae_u32 caar = regs.caar & 0xfc;
 
 	for (i = 0; i < CPU_PIPELINE_MAX; i++)
 		regs.prefetch020addr[i] = 0xffffffff;
@@ -267,7 +268,7 @@ static void set_cpu_caches (void)
 				caches020[i].valid = 0;
 		}
 		if (regs.cacr & 0x04) { // clear entry in instr cache
-			caches020[(regs.caar >> 2) & (CACHELINES020 - 1)].valid = 0;
+			caches020[(caar >> 2) & (CACHELINES020 - 1)].valid = 0;
 			regs.cacr &= ~0x04;
 		}
 	} else if (currprefs.cpu_model == 68030) {
@@ -281,7 +282,7 @@ static void set_cpu_caches (void)
 			}
 		}
 		if (regs.cacr & 0x04) { // clear entry in instr cache
-			icaches030[(regs.caar >> 4) & (CACHELINES030 - 1)].valid[(regs.caar >> 2) & 3] = 0;
+			icaches030[(caar >> 4) & (CACHELINES030 - 1)].valid[(caar >> 2) & 3] = 0;
 			regs.cacr &= ~0x04;
 		}
 		if (regs.cacr & 0x800) { // clear data cache
@@ -294,7 +295,7 @@ static void set_cpu_caches (void)
 			regs.cacr &= ~0x800;
 		}
 		if (regs.cacr & 0x400) { // clear entry in data cache
-			dcaches030[(regs.caar >> 4) & (CACHELINES030 - 1)].valid[(regs.caar >> 2) & 3] = 0;
+			dcaches030[(caar >> 4) & (CACHELINES030 - 1)].valid[(caar >> 2) & 3] = 0;
 			regs.cacr &= ~0x400;
 		}
 	} else if (currprefs.cpu_model == 68040) {
@@ -1318,6 +1319,7 @@ static void exception_debug (int nr)
 		return;
 	console_out_f ("Exception %d, PC=%08X\n", nr, M68K_GETPC);
 #endif
+	DebugUI_Exceptions(nr, M68K_GETPC);
 }
 
 #ifdef CPUEMU_12
@@ -1444,9 +1446,9 @@ static void Exception_ce000 (int nr, uaecptr oldpc)
 	MakeSR ();
 
 	/* Handle Hatari GEM and BIOS traps */
-	if (bVdiAesIntercept && nr == 0x22) {
+	if (nr == 0x22) {
 		/* Intercept VDI & AES exceptions (Trap #2) */
-		if (VDI_AES_Entry()) {
+		if (bVdiAesIntercept && VDI_AES_Entry()) {
 			/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
 			 * This will call OpCode_VDI() after completion of Trap call!
 			 * This is used to modify specific VDI return vectors contents.
@@ -1455,16 +1457,13 @@ static void Exception_ce000 (int nr, uaecptr oldpc)
 			currpc = CART_VDI_OPCODE_ADDR;
 		}
 	}
-	if (bBiosIntercept) {
-		/* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
-		if (nr == 0x2d) {
-			/* Intercept BIOS calls */
-			if (Bios())  return;
-		}
-		else if (nr == 0x2e) {
-			/* Intercept XBIOS calls */
-			if (XBios())  return;
-		}
+	else if (nr == 0x2d) {
+		/* Intercept BIOS (Trap #13) calls */
+		if (Bios())  return;
+	}
+	else if (nr == 0x2e) {
+		/* Intercept XBIOS (Trap #14) calls */
+		if (XBios())  return;
 	}
 
 	if (!regs.s) {
@@ -1679,9 +1678,9 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 	int sv = regs.s;
 
 	if (ExceptionSource == M68000_EXC_SRC_CPU) {
-		if (bVdiAesIntercept && nr == 0x22) {
+		if (nr == 0x22) {
 			/* Intercept VDI & AES exceptions (Trap #2) */
-			if (VDI_AES_Entry()) {
+			if (bVdiAesIntercept && VDI_AES_Entry()) {
 				/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
 				 * This will call OpCode_VDI() after completion of Trap call!
 				 * This is used to modify specific VDI return vectors contents.
@@ -1690,17 +1689,13 @@ static void Exception_normal (int nr, uaecptr oldpc, int ExceptionSource)
 				currpc = CART_VDI_OPCODE_ADDR;
 			}
 		}
-
-		if (bBiosIntercept) {
-			/* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
-			if (nr == 0x2d) {
-				/* Intercept BIOS calls */
-				if (Bios())  return;
-			}
-			else if (nr == 0x2e) {
-				/* Intercept XBIOS calls */
-				if (XBios())  return;
-			}
+		else if (nr == 0x2d) {
+			/* Intercept BIOS (Trap #13) calls */
+			if (Bios())  return;
+		}
+		else if (nr == 0x2e) {
+			/* Intercept XBIOS (Trap #14) calls */
+			if (XBios())  return;
 		}
 	}
 
@@ -2091,7 +2086,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 
 		case 0x800: regs.usp = *regp; break;
 		case 0x801: regs.vbr = *regp; break;
-		case 0x802: regs.caar = *regp & 0xfc; break;
+		case 0x802: regs.caar = *regp; break;
 		case 0x803: regs.msp = *regp; if (regs.m == 1) m68k_areg (regs, 7) = regs.msp; break;
 		case 0x804: regs.isp = *regp; if (regs.m == 0) m68k_areg (regs, 7) = regs.isp; break;
 			/* 68040 only */

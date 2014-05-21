@@ -1780,8 +1780,8 @@ static void Crossbar_SendDataToDAC(Sint16 value, Uint16 sample_pos)
  */
 void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
-	int i, nBufIdx;
-	unsigned n;
+	int i, j, nBufIdx;
+	int n;
 	Sint16 adc_leftData, adc_rightData, dac_LeftData, dac_RightData;
 	
 	if (crossbar.isDacMuted) {
@@ -1844,8 +1844,6 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 				/* Crossbar->DAC sound only */
 				dac_LeftData = dac.buffer_left[dac.readPosition];
 				dac_RightData = dac.buffer_right[dac.readPosition];
-				dac.buffer_left[dac.readPosition] = 0;
-				dac.buffer_right[dac.readPosition] = 0;
 				break;
 			case 3:
 				/* Mixing Direct ADC sound with Crossbar->DMA sound */
@@ -1853,8 +1851,6 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 						dac.buffer_left[dac.readPosition];
 				dac_RightData = ((adc_rightData  * crossbar.gainSettingRight) >> 14) +
 						dac.buffer_right[dac.readPosition];
-				dac.buffer_left[dac.readPosition] = 0;
-				dac.buffer_right[dac.readPosition] = 0;
 				break;
 		}
 			
@@ -1864,6 +1860,15 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		/* Upgrade dac's buffer read pointer */ 
 		dac.readPosition_float += crossbar.frequence_ratio;
 		n = dac.readPosition_float >> 32;				/* number of samples to skip */
+
+		if (n) {
+			// It becomes safe to zero old data if tail has moved
+			for (j=0; j<n; j++) {
+				dac.buffer_left[(dac.readPosition+j) % DACBUFFER_SIZE] = 0;
+				dac.buffer_right[(dac.readPosition+j) % DACBUFFER_SIZE] = 0;
+			}
+		}
+
 		dac.readPosition = (dac.readPosition + n) % DACBUFFER_SIZE;
 		dac.readPosition_float &= 0xffffffff;			/* only keep the fractional part */
 		

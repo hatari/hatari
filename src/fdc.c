@@ -482,7 +482,7 @@ typedef struct {
 	Uint16		Status;
 	Uint16		Mode;
 	Uint16		SectorCount;
-	Uint16		BytesInSector;
+	Sint16		BytesInSector;
 
 	Uint8		FIFO[ FDC_DMA_FIFO_SIZE ];
 	int		FIFO_Size;				/* Between 0 and FDC_DMA_FIFO_SIZE */
@@ -986,6 +986,7 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 	Uint32	Address;
 	Uint8	Byte;
 
+//fprintf ( stderr , "fifo pull %d %d %d\n" , FDC_DMA.BytesToTransfer , FDC_DMA.BytesInSector , FDC_DMA.SectorCount );
 	if ( FDC_DMA.SectorCount == 0 )
 	{
 		//FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );		/* If DMA is OFF, data are lost -> Not on the ST */
@@ -1011,7 +1012,7 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 
 		/* Update Sector Count */
 		FDC_DMA.BytesInSector -= FDC_DMA_FIFO_SIZE;
-		if ( FDC_DMA.BytesInSector <= 0 )
+		if ( FDC_DMA.BytesInSector < 0 )
 		{
 			FDC_DMA.SectorCount--;
 			FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
@@ -3874,6 +3875,10 @@ void	FDC_DmaAddress_WriteByte ( void )
 	    || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) ) )
 		IoMem[ 0xff8609 ] &= 0x3f;
 
+	/* DMA address must be word-aligned, bit 0 at $ff860d is always 0 */
+	if ( IoAccessCurrentAddress == 0xff860d )
+		IoMem[ 0xff860d ] &= 0xfe;
+
 	LOG_TRACE(TRACE_FDC, "fdc write dma address %x val=0x%02x address=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		IoAccessCurrentAddress , IoMem[ IoAccessCurrentAddress ] , FDC_GetDMAAddress() ,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
@@ -3902,6 +3907,9 @@ Uint32 FDC_GetDMAAddress(void)
  * with 0x3f :
  *	move.b #$ff,$ff8609
  *	move.b $ff8609,d0  -> d0=$3f
+ * DMA address must also be word-aligned, low byte at $ff860d is masked with 0xfe
+ *	move.b #$ff,$ff860d
+ *	move.b $ff860d,d0  -> d0=$fe
  */
 void FDC_WriteDMAAddress ( Uint32 Address )
 {
@@ -3917,6 +3925,8 @@ void FDC_WriteDMAAddress ( Uint32 Address )
 	  || (ConfigureParams.System.nMachineType == MACHINE_STE)
 	  || (ConfigureParams.System.nMachineType == MACHINE_MEGA_STE) )
 		Address &= 0x3fffff;
+
+	Address &= 0xfffffffe;						/* Force bit 0 to 0 */
 
 	/* Store as 24-bit address */
 	STMemory_WriteByte(0xff8609, Address>>16);

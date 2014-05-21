@@ -332,6 +332,8 @@
 /*			earlier (fix STE demo "It's a girl 2" by Paradox).			*/
 /* 2014/02/22	[NP]	In Video_ColorReg_ReadWord(), don't set unused STF bits to rand() if	*/
 /*			the PC is not executing from the RAM between 0 and 4MB (fix 'Union Demo'*/
+/* 2014/03/21	[NP]	For STE in med res overscan at 60 Hz, add a 3 pixels shift to have	*/
+/*			bitmaps and color changes synchronised (fix 'HighResMode' by Paradox).	*/
 /*			protection code running at address $ff8240).				*/
 /* 2014/05/08	[NP]	In case we're mixing 50 Hz and 60 Hz lines (512 or 508 cycles), we must	*/
 /*			update the position where the VBL interrupt will happen (fix "keyboard	*/
@@ -2098,6 +2100,18 @@ static void Video_CopyScreenLineColor(void)
 	LineRes = ( HBLPaletteMasks[i] >> 16 ) & 1;		/* 0=low res  1=med res */
 
 	//fprintf(stderr , "copy line %d start %d end %d 0x%x 0x%x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
+
+	/* FIXME [NP] : when removing left border and displaying med res at 60 Hz on STE, we have a 3 pixel shift */
+	/* to correct to have bitmaps and color changes in sync. */
+	/* For now we only shift for med @ 60 Hz, but this should be measured for all */
+	/* freq and low / med res combinations on a real STE (fix "HighResMode" demo by Paradox). */
+	if ( ( ConfigureParams.System.nMachineType == MACHINE_STE )
+	  && ( LineBorderMask & BORDERMASK_LEFT_OFF_MED )
+	  && ( nCyclesPerLine == 508 )
+	  )
+	{
+		STF_PixelScroll = 3;			
+	}
 
 	/* If left border is opened, we need to compensate one missing word in low res (1 plan) */
 	/* If overscan is in med res, the offset is variable */

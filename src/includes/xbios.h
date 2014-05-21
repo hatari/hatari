@@ -10,5 +10,6 @@
 
 extern bool XBios(void);
 extern void XBios_Info(Uint32 dummy);
+extern void XBios_ToggleCommands(void);
 
 #endif

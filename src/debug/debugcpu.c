@@ -498,7 +498,7 @@ static int DebugCpu_Step(int nArgc, char *psArgv[])
 static char *DebugCpu_MatchNext(const char *text, int state)
 {
 	static const char* ntypes[] = {
-		"branch", "exception", "exreturn", "subcall", "subreturn"
+		"branch", "exception", "exreturn", "return", "subcall", "subreturn"
 	};
 	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
 }
@@ -523,21 +523,34 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 			optype = CALL_SUBROUTINE;
 		else if (strcmp(psArgv[1], "subreturn") == 0)
 			optype = CALL_SUBRETURN;
+		else if (strcmp(psArgv[1], "return") == 0)
+			optype = CALL_SUBRETURN | CALL_EXCRETURN;
 		else
 		{
 			fprintf(stderr, "Unrecognized opcode type given!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		sprintf(command, "CpuOpcodeType=%d :once :quiet\n", optype);
+		sprintf(command, "CpuOpcodeType & $%x > 0 :once :quiet\n", optype);
 	}
 	else
 	{
-		Uint32 nextpc = Disasm_GetNextPC(M68000_GetPC());
+		Uint32 optype, nextpc;
+
+		optype = DebugCpu_OpcodeType();
+		/* can this instruction be stepped normally? */
+		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
+		{
+			nCpuSteps = 1;
+			return DEBUGGER_END;
+		}
+
+		nextpc = Disasm_GetNextPC(M68000_GetPC());
 		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
 	}
+	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, false))
 	{
-		nCpuSteps = 0;		/* using breakpoint, not steps */
+		nCpuSteps = 0;
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
@@ -715,7 +728,7 @@ static const dbgcommand_t cpucommands[] =
 	  "\tSave the memory block at <address> with given <length> to\n"
 	  "\tthe file <filename>.",
 	  false },
-	{ Symbols_Command, NULL,
+	{ Symbols_Command, Symbols_MatchCommand,
 	  "symbols", "",
 	  "load CPU symbols & their addresses",
 	  Symbols_Description,

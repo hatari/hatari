@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "GST2ASCII" "1" "2013-04-19" "Hatari" "Hatari utilities"
+.TH "GST2ASCII" "1" "2014-05-08" "Hatari" "Hatari utilities"
 .SH "NAME"
 gst2ascii \- Output Atari program DRI/GST format symbol table
 .SH "SYNOPSIS"
@@ -38,11 +38,19 @@ they don't have names, just numbers.
 .TP
 \fB-o\fP
 Filter symbols for object files (*.o) out.
+.SH "NOTES"
+If you have problems, try with 'nm -n <program>' instead
+(Atari or cross-compiler version). If \fInm\fP works,
+but \fIgst2ascii\fP doesn't, please report a bug on it.
 .SH "EXAMPLES"
 Save 'program.prg' symbol table in ASCII format with
 local symbols filtered out:
 .br
 	gst2ascii -l program.prg > program.sym
+.PP
+Load generated ASCII symbols file in Hatari debugger:
+.br
+	symbols program.sym TEXT DATA BSS
 .SH "SEE ALSO"
 .IR hatari (1),
 .IR hatari_profile (1)

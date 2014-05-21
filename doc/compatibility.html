@@ -112,6 +112,11 @@ is correct.</li>
 specified too little or too much memory.  For ST, 1MB memory size
 is usually fairly safe.</li>
 
+<li>Some games/demos can refuse to run when HD emulation is ON (as it is
+seen as an external cartridge). In STF/STE mode, it is also better to
+disable the MegaST's real time clock.
+</li>
+
 <li>TOS version.  ST demos and games may require some specific TOS
 version and not work at all with others. If you notice that this
 information is missing for some listed game or demo, please send mail
@@ -367,7 +372,7 @@ works on a real ST should work also in Hatari</b>.</p>
     </tr>
     <tr>
       <td>Treasure Trap</td>
-      <td>1.1</td>
+      <td>1.8</td>
       <td>When running on Hatari versions before 1.6, the RS232 emulation must
           be enabled for the game to work (since it writes some debug
           informations to the serial port)</td>
@@ -1149,7 +1154,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
-      <td>Bombaman</td>
+      <td><a href="http://homepage.ntlworld.com/kevcallahan/bombaman/">Bombaman</a></td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
@@ -1169,12 +1174,12 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
-      <td><a href="http://rg.atari.org/chuchu.htm">ChuChu Rocket</a></td>
+      <td><a href="http://rg.atari.org/chuchu.htm">ChuChu Rocket</a>*</td>
       <td>before 1.0</td>
       <td>needs to be run from disk image</td>
     </tr>
     <tr>
-      <td><a href="http://www.tscc.de/waitsite.html">Dynabusters+</a></td>
+      <td><a href="http://www.atarimania.com/game-atari-st-dynabusters_28670.html">Dynabusters+</a></td>
       <td>1.1</td>
       <td>Hi-score screen flickers</td>
     </tr>
@@ -1187,6 +1192,11 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>H.E.R.O. 2</td>
       <td>before 1.0</td>
       <td>Requires 4MB RAM</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atari-forum.com/viewtopic.php?f=3&t=26360">Giana Sisters STE rewrite</a></td>
+      <td>before 1.6.2</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Leavin' Teramis*</td>
@@ -1219,6 +1229,11 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
+      <td><a href="http://www.atari-forum.com/viewtopic.php?f=3&t=24635">Pacmania STE rewrite</a></td>
+      <td>1.6.2</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">Penta*</a></td>
       <td>before 1.0</td>
       <td>Blitter, DMA audio and STE fadings do work properly</td>
@@ -1235,7 +1250,7 @@ are just STE enhanced.  These are marked with '*'.</p>
 	  DMA sound and update the content of this sample with an MFP timer</td>
     </tr>
     <tr>
-      <td><a href="http://www.rgcd.co.uk/r0x/">R0X</a></td>
+      <td><a href="http://www.rgcd.co.uk/2011/04/r0x-atari-ste-2009.html">R0X</a></td>
       <td>1.3</td>
       <td>Some "DMA snd: Illegal buffer size (from 0x0 to 0x0)" messages</td>
     </tr>
@@ -1250,7 +1265,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Opens right border</td>
     </tr>
     <tr>
-      <td>Starball*</td>
+      <td><a href="http://www.atarimania.com/game-atari-st-starball_11382.html">Starball</a>*</td>
       <td>before 1.0</td>
       <td>Uses DMA sound</td>
     </tr>
@@ -1285,7 +1300,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
-      <td>Utopos</td>
+      <td><a href="http://www.atarimania.com/game-atari-st-utopos_10757.html">Utopos</a></td>
       <td>1.4</td>
       <td>Screen was flickering with previous version of Hatari</td>
     </tr>
@@ -1301,7 +1316,7 @@ are just STE enhanced.  These are marked with '*'.</p>
 	when display is already on</td>
     </tr>
     <tr>
-      <td><a href="http://freenet-homepage.de/ray.tscc/wolf3d.htm">Wolfenstein 3D*</a></td>
+      <td><a href="http://www.atarimania.com/game-atari-st-wolfenstein-3d_28676.html">Wolfenstein 3D*</a></td>
       <td>1.2</td>
       <td>Uses DMA sound on STE</td>
     </tr>
@@ -1577,7 +1592,8 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Paradox:
       <a href="http://pouet.net/prod.php?which=12237">HighResMode</a></td>
       <td>1.5</td>
-      <td>Use spec512 mode in med res</td>
+      <td>Use spec512 mode in med res. Requires Hatari &gt;=1.8 for correct
+	alignment between bitmaps and color changes</td>
     </tr>
     <tr>
       <td>POV:
@@ -1610,6 +1626,12 @@ are just STE enhanced.  These are marked with '*'.</p>
       <a href="http://pouet.net/prod.php?which=17044">Reanimation</a></td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Stax:
+      <a href="http://pouet.net/prod.php?which=23541">Compact Disk #65</a></td>
+      <td></td>
+      <td>Requires TOS &gt;= 1.06. MegaST's real time clock should be disabled</td>
     </tr>
     <tr>
       <td>T. Barker:

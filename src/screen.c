@@ -47,6 +47,13 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "falcon/videl.h"
 #include "falcon/hostscreen.h"
 
+#define DEBUG 0
+
+#if DEBUG
+# define DEBUGPRINT(x) printf x
+#else
+# define DEBUGPRINT(x)
+#endif
 
 /* extern for several purposes */
 SDL_Surface *sdlscrn = NULL;                /* The SDL screen surface */
@@ -411,8 +418,13 @@ static void Screen_SetResolution(void)
 			int leftY = maxH - (Height + Statusbar_GetHeightForSize(Width, Height));
 
 			Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
+			DEBUGPRINT(("resolution limit:\n\t%d x %d\nlimited resolution:\n\t", maxW, maxH));
+			DEBUGPRINT(("%d * (%d + %d + %d) x (%d + %d + %d)\n", nZoom,
+				    nBorderPixelsLeft, Width/nZoom, nBorderPixelsRight,
+				    nBorderPixelsTop, Height/nZoom, nBorderPixelsBottom));
 			Width += (nBorderPixelsRight + nBorderPixelsLeft)*nZoom;
 			Height += (nBorderPixelsTop + nBorderPixelsBottom)*nZoom;
+			DEBUGPRINT(("\t= %d x %d (+ statusbar)\n", Width, Height));
 		}
 	}
 	
@@ -470,9 +482,9 @@ static void Screen_SetResolution(void)
 		}
 		
 		/* Set new video mode */
-		//fprintf(stderr,"Requesting video mode %i %i %i\n", Width, Height, BitCount);
+		DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", Width, Height, BitCount, bInFullScreen?"fullscreen":"windowed"));
 		sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
-		//fprintf(stderr,"Got video mode %i %i %i\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel);
+		DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel));
 
 		/* By default ConfigureParams.Screen.nForceBpp and therefore
 		 * BitCount is zero which means "SDL color depth autodetection".

@@ -590,7 +590,10 @@ static int DebugUI_ParseCommand(const char *input_orig)
 	retval = debugCommand[i].pFunction(nArgc, psArgs);
 	/* Save commando string if it can be repeated */
 	if (retval == DEBUGGER_CMDCONT)
-		strncpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+	{
+		if (psArgs[0] != sLastCmd)
+			strncpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+	}
 	else
 		sLastCmd[0] = '\0';
 	free(input);
@@ -1008,6 +1011,7 @@ void DebugUI(debug_reason_t reason)
 	}
 	DebugCpu_InitSession();
 	DebugDsp_InitSession();
+	Symbols_LoadCurrentProgram();
 	DebugInfo_ShowSessionInfo();
 
 	/* override paused message so that user knows to look into console
@@ -1164,4 +1168,30 @@ bool DebugUI_ParseLine(const char *input)
 		DebugDsp_SetDebugging();
 	}
 	return (ret == DEBUGGER_CMDDONE);
+}
+
+/**
+ * Debugger invocation based on exception
+ */
+void DebugUI_Exceptions(int nr, long pc)
+{
+	static struct {
+		int flag;
+		const char *name;
+	} ex[] = {
+		{ EXCEPT_BUS,       "Bus error" },              /* 2 */
+		{ EXCEPT_ADDRESS,   "Address error" },          /* 3 */
+		{ EXCEPT_ILLEGAL,   "Illegal instruction" },	/* 4 */
+		{ EXCEPT_ZERODIV,   "Div by zero" },		/* 5 */
+		{ EXCEPT_CHK,       "CHK" },			/* 6 */
+		{ EXCEPT_TRAPV,     "TRAPV" },			/* 7 */
+		{ EXCEPT_PRIVILEGE, "Privilege violation" }	/* 8 */
+	};
+	nr -= 2;
+	if (nr < 0  || nr >= ARRAYSIZE(ex))
+		return;
+	if (!(ExceptionDebugMask & ex[nr].flag))
+		return;
+	fprintf(stderr,"%s exception at 0x%lx!\n", ex[nr].name, pc);
+	DebugUI(REASON_CPU_EXCEPTION);
 }

@@ -403,6 +403,12 @@ FILE *TOS_AutoStartOpen(const char *filename)
 {
 	if (TosAutoStart.file && strcmp(filename, TosAutoStart.infname) == 0)
 	{
+		/* whether to "autostart" also exception debugging? */
+		if (ConfigureParams.Log.nExceptionDebugMask & EXCEPT_AUTOSTART)
+		{
+			ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask & ~EXCEPT_AUTOSTART;
+			fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
+		}
 		Log_Printf(LOG_WARN, "Autostart file '%s' for '%s' matched.\n", filename, TosAutoStart.prgname);
 		return TosAutoStart.file;
 	}

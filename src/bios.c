@@ -6,7 +6,7 @@
 
   Bios Handler (Trap #13)
 
-  We intercept some Bios calls for debugging
+  Intercept some Bios calls for tracing/debugging
 */
 const char Bios__fileid[] = "Hatari bios.c : " __DATE__ " " __TIME__;
 

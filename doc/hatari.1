@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2011-12-30" "Hatari" ""
+.TH "HATARI" "1" "2014-05-08" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -31,14 +31,11 @@ Atari program that should be autostarted.  In the last case the
 program's directory will be used as the C: drive from where this
 program will be started.
 .PP
-Note that autostarting a program might not work if you've also
-specified a floppy image for drive A: (on command line or in config
-file) which contains a desktop.inf/newdesk.inf/emutos.inf file on
-it.
-.PP
 Booting will be done from the disk image or directory that's given
 last on the command line as an option or the argument (and which
-corresponds to A: or C:).
+corresponds to A: or C:). If you want to give floppy image name with
+an autostarting program name, give it with --disk-a option before the
+program name.
 .SH "OPTIONS"
 Hatari options are split into several categories:
 .SH "General options"
@@ -74,14 +71,20 @@ Select monitor type (x = mono/rgb/vga/tv)
 Start the emulator in fullscreen mode
 .TP 
 .B \-w, \-\-window
-Start the emulator in window mode
+Start the emulator in windowed mode
 .TP 
 .B \-\-grab
-Grab mouse (also) in window mode
+Grab mouse (also) in windowed mode
+.TP 
+.B \-\-borders <bool>
+Show ST/STE/Falcon screen borders (for low/med resolution overscan demos)
 .TP 
 .B \-\-frameskips <x>
 Skip <x> frames after each displayed frame to accelerate emulation
 (0=disabled, >4 uses automatic frameskip with given value as maximum)
+.TP
+.B \-\-slowdown <x>
+Slow down emulation by factor of x (used as multiplier for VBL wait time)
 .TP 
 .B \-\-statusbar <bool>
 Show statusbar (with floppy leds etc etc)
@@ -89,12 +92,15 @@ Show statusbar (with floppy leds etc etc)
 .B \-\-drive\-led <bool>
 Show overlay drive led when statusbar isn't shown
 .TP
+.B \-\-max\-width <x>
+Preferred / maximum window width for borders / zooming
+.TP
+.B \-\-max\-height <x>
+Preferred / maximum window height for borders / zooming
+.TP
 .B \-\-bpp <bool>
 Force internal bitdepth (x = 8/15/16/32, 0=disable)
 .SH "ST/STE specific display options"
-.TP 
-.B \-\-borders <bool>
-Show ST/STE screen borders (for low/med resolution overscan demos)
 .TP
 .B \-\-desktop\-st <bool>
 Whether fullscreen mode uses desktop resolution to avoid: messing
@@ -113,7 +119,7 @@ the slower but more accurate Spectrum512 screen conversion functions
 .TP 
 .B \-z, \-\-zoom <x>
 Zoom (double) low resolution (1=no, 2=yes)
-.SH "Falcon/TT specific display options"
+.SH "TT/Falcon specific display options"
 Zooming to sizes specified below is internally done using integer scaling
 factors. This means that different Atari resolutions may show up with
 different sizes, but they are never blurry.
@@ -123,12 +129,6 @@ Whether to use desktop resolution on fullscreen to avoid issues
 related to resolution switching. Otherwise fullscreen will use
 a resolution that is closest to the Hatari window size.
 (enabled by default)
-.TP
-.B \-\-max\-width <x>
-Preferred / maximum window width
-.TP
-.B \-\-max\-height <x>
-Preferred / maximum window height
 .TP
 .B \-\-force\-max <bool>
 Hatari window size is forced to specified maximum size and black borders
@@ -332,12 +332,17 @@ on STF and "linear" just averages the 3 YM voices.
 .B \-D, \-\-debug
 Toggle whether CPU exceptions invoke the debugger
 .TP 
-.B \-\-bios\-intercept
-Toggle Bios/XBios call interception needed for Bios/XBios call tracing.
-Allows Atari programs to modify Hatari state through XBios 255 calls
-which are processed as Hatari commandline arguments. Atari
-printscreen call takes also Hatari screenshot.
+.B \-\-debug\-except <flags>
+Specify which exceptions invoke debugger, see
+.B \-\-debug\-except help
+for available (comma separated) exception flags.
 .TP 
+.B \-\-bios\-intercept
+Toggle XBios command parsing. Allows Atari programs to use all Hatari
+functionality and change Hatari state through Hatari specifit
+XBios(255) calls. XBios(20) printscreen calls produce also Hatari
+screenshots.
+.TP
 .B \-\-conout <device>
 Enable console (xconout vector functions) output redirection for given
 <device> to host terminal.  Device 2 is for the (CON:) VT52 console,
@@ -353,10 +358,10 @@ and 'help' lists them.
 Enable/disable (basic) Native Features support.
 E.g. EmuTOS uses it for debug output.
 .TP
-.B \-\-trace <trace1,...>
+.B \-\-trace <flags>
 Activate debug traces, see
 .B \-\-trace help
-for available tracing options
+for available (comma separated) tracing flags
 .TP
 .B \-\-trace\-file <file>
 Save trace output to <file> (default=stderr)
@@ -491,7 +496,9 @@ Other Hatari programs and utilities:
 .IR zip2st (1),
 .IR atari-hd-image (1),
 .IR hatariui (1),
-.IR hconsole (1)
+.IR hconsole (1),
+.IR gst2ascii (1),
+.IR hatari_profile (1)
 .SH "FILES AND DIRECTORIES"
 .TP
 /etc/hatari.cfg (or /usr/local/etc/hatari.cfg)

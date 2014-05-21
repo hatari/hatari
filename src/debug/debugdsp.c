@@ -313,7 +313,7 @@ static int DebugDsp_Step(int nArgc, char *psArgv[])
 static char *DebugDsp_MatchNext(const char *text, int state)
 {
 	static const char* ntypes[] = {
-		"branch", "exreturn", "subcall", "subreturn"
+		"branch", "exreturn", "return", "subcall", "subreturn"
 	};
 	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
 }
@@ -336,20 +336,34 @@ static int DebugDsp_Next(int nArgc, char *psArgv[])
 			optype = CALL_SUBROUTINE;
 		else if (strcmp(psArgv[1], "subreturn") == 0)
 			optype = CALL_SUBRETURN;
+		else if (strcmp(psArgv[1], "return") == 0)
+			optype = CALL_SUBRETURN | CALL_EXCRETURN;
 		else
 		{
 			fprintf(stderr, "Unrecognized opcode type given!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		sprintf(command, "DspOpcodeType=%d :once :quiet\n", optype);
+		sprintf(command, "DspOpcodeType & $%x > 0 :once :quiet\n", optype);
 	}
 	else
 	{
-		Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
+		Uint32 optype;
+		Uint16 nextpc;
+
+		optype = DebugDsp_OpcodeType();
+		/* can this instruction be stepped normally? */
+		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
+		{
+			nDspSteps = 1;
+			return DEBUGGER_END;
+		}
+
+		nextpc = DSP_GetNextPC(DSP_GetPC());
 		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
 	}
+	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, true)) {
-		nDspSteps = 0;		/* using breakpoint, not steps */
+		nDspSteps = 0;
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
