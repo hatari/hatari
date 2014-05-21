@@ -640,7 +640,51 @@ void	FDC_Drive_Set_BusyLed ( Uint8 STR )
 }
 
 
-//*-----------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Return a small text + length with the current values of the FDC's registers
+ * This text is displayed in the statusbar and it looks like :
+ * CC:xx HH:TT:SS:s
+ *   CC=command in 2 letters
+ *   xx=command in hexa
+ *   HH=physical head's position
+ *   TT=track register
+ *   SS=sector register
+ *   s=side
+ */
+int	FDC_Get_StatusBar_Text ( char *text )
+{
+	int	Command , Head , Track , Sector , Side;
+	char	CommandText[ 3 ];
+	int	Drive;
+
+	Drive = FDC.DriveSelSignal;
+	if ( Drive < 0 )					/* If no drive enabled, use drive O for Head */
+		Drive = 0;
+
+	Command = FDC.CR;
+	Head	= FDC_DRIVES[ Drive ].HeadTrack;
+	Track	= FDC.TR;
+	Sector	= FDC.SR;
+	Side	= FDC.SideSignal;
+
+	if      ( ( Command & 0xf0 ) == 0x00 )	strcpy ( CommandText , "RE" );
+	else if ( ( Command & 0xf0 ) == 0x10 )	strcpy ( CommandText , "SE" );
+	else if ( ( Command & 0xe0 ) == 0x20 )	strcpy ( CommandText , "ST" );
+	else if ( ( Command & 0xe0 ) == 0x40 )	strcpy ( CommandText , "SI" );
+	else if ( ( Command & 0xe0 ) == 0x50 )	strcpy ( CommandText , "SO" );
+	else if ( ( Command & 0xe0 ) == 0x80 )	strcpy ( CommandText , "RS" );
+	else if ( ( Command & 0xe0 ) == 0xa0 )	strcpy ( CommandText , "WS" );
+	else if ( ( Command & 0xf0 ) == 0xc0 )	strcpy ( CommandText , "RA" );
+	else if ( ( Command & 0xf0 ) == 0xe0 )	strcpy ( CommandText , "RT" );
+	else if ( ( Command & 0xf0 ) == 0xf0 )	strcpy ( CommandText , "WT" );
+	else					strcpy ( CommandText , "FO" );
+
+	return sprintf ( text , "%s:%02X %02X:%02X:%02X:%d" , CommandText , Command , Head , Track , Sector , Side );
+}
+
+
+/*-----------------------------------------------------------------------*/
 /**
  * Convert a delay in micro seconds to its equivalent of fdc cycles
  * (delays in the WD1772 specs are relative to a 8 MHz reference clock)

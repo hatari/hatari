@@ -45,6 +45,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 #include "ymFormat.h"
 #include "avi_record.h"
 #include "vdi.h"
+#include "fdc.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -108,6 +109,7 @@ static SDL_Rect FrameSkipsRect;
 static int nOldFrameSkips;
 static int bOldFastForward;
 
+static SDL_Rect FDCTextRect;
 
 /* screen height above statusbar and height of statusbar below screen */
 static int ScreenHeight;
@@ -227,6 +229,8 @@ void Statusbar_Init(SDL_Surface *surf)
 	SDL_Rect ledbox, sbarbox;
 	int i, fontw, fonth, lineh, xoffset, yoffset;
 	const char *text[MAX_DRIVE_LEDS] = { "A:", "B:", "HD:" };
+	char FdcText[ 50 ];
+	int FdcTextLen;
 
 	DEBUGPRINT(("Statusbar_Init()\n"));
 	assert(surf);
@@ -316,6 +320,15 @@ void Statusbar_Init(SDL_Surface *surf)
 		Led[i].offset = xoffset;
 		xoffset += LedRect.w + fontw;
 	}
+
+	/* print FDC's info */
+	FDCTextRect.x = xoffset;
+	FDCTextRect.y = yoffset;
+	FdcTextLen = FDC_Get_StatusBar_Text ( FdcText );
+	SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcText);
+	FDCTextRect.w = FdcTextLen * fontw + fontw/2;
+	FDCTextRect.h = fonth;
+	xoffset += FDCTextRect.w;
 
 	/* draw frameskip */
 	FrameSkipsRect.x = xoffset;
@@ -700,6 +713,7 @@ void Statusbar_Update(SDL_Surface *surf)
 	Uint32 color, currentticks;
 	SDL_Rect rect;
 	int i;
+	char FdcText[ 50 ];
 
 	if (!(StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)) {
 		/* not enabled (anymore), show overlay led instead? */
@@ -733,6 +747,13 @@ void Statusbar_Update(SDL_Surface *surf)
 		SDL_UpdateRects(surf, 1, &rect);
 		DEBUGPRINT(("LED[%d] = %d\n", i, Led[i].state));
 	}
+
+	/* print FDC's info */
+	SDL_FillRect(surf, &FDCTextRect, GrayBg);
+	FDC_Get_StatusBar_Text ( FdcText );
+	SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcText);
+	SDL_UpdateRects(surf, 1, &FDCTextRect);
+	
 
 	Statusbar_ShowMessage(surf, currentticks);
 

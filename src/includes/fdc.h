@@ -49,6 +49,7 @@ extern void	FDC_ClearIRQ ( void );
 extern void	FDC_InterruptHandler_Update ( void );
 
 extern void	FDC_Drive_Set_BusyLed ( Uint8 SR );
+extern int	FDC_Get_StatusBar_Text ( char *text );
 extern void	FDC_Drive_Set_Enable ( int Drive , bool value );
 extern void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads );
 extern void	FDC_InsertFloppy ( int Drive );
