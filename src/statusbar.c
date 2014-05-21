@@ -330,8 +330,8 @@ void Statusbar_Init(SDL_Surface *surf)
 	FDCTextRect.h = fonth;
 	xoffset += FDCTextRect.w;
 
-	/* draw frameskip */
-	FrameSkipsRect.x = xoffset;
+	/* draw frameskip on the right */
+	FrameSkipsRect.x = surf->w - 15*fontw;
 	FrameSkipsRect.y = yoffset;
 	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS:");
 	FrameSkipsRect.x += 3 * fontw + fontw/2;
@@ -346,7 +346,7 @@ void Statusbar_Init(SDL_Surface *surf)
 
 	nOldFrameSkips = 0;
 
-	/* draw recording led box */
+	/* draw recording led box on the right */
 	RecLedRect = LedRect;
 	RecLedRect.x = surf->w - fontw - RecLedRect.w;
 	ledbox.x = RecLedRect.x - 1;
