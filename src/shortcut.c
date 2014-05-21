@@ -222,9 +222,15 @@ static void ShortCut_InsertDisk(int drive)
 {
 	char *selname, *zip_path = NULL;
 	const char *tmpname;
+	char FileNameB[ FILENAME_MAX ];
+	char ZipPathB[ FILENAME_MAX ];
 
 	if (SDLGui_SetScreen(sdlscrn))
 		return;
+
+	/* Save current names for drive 1 before checking autoinsert */
+	strcpy ( FileNameB , ConfigureParams.DiskImage.szDiskFileName[ 1 ] );
+	strcpy ( ZipPathB , ConfigureParams.DiskImage.szDiskZipPath[ 1 ] );
 
 	if (ConfigureParams.DiskImage.szDiskFileName[drive][0])
 		tmpname = ConfigureParams.DiskImage.szDiskFileName[drive];
@@ -245,6 +251,12 @@ static void ShortCut_InsertDisk(int drive)
 		free(selname);
 		
 		Floppy_InsertDiskIntoDrive(0);
+
+		/* Check if inserting into drive 0 also changed drive 1 with autoinsert */
+		if ( ( strcmp ( FileNameB , ConfigureParams.DiskImage.szDiskFileName[ 1 ] ) != 0 )
+		  || ( strcmp ( FileNameB , ConfigureParams.DiskImage.szDiskZipPath[ 1 ] ) != 0 ) )
+			Floppy_InsertDiskIntoDrive(1);
+
 	}
 	Main_UnPauseEmulation();
 }
