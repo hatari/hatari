@@ -682,6 +682,33 @@ Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
 
 
 /*
+ * Return the content of some registers to display them in the statusbar
+ * We should not call IPF_Emulate() or similar, reading should not change emulation's state
+ */
+void	IPF_FDC_StatusBar ( Uint8 *pCommand , Uint8 *pHead , Uint8 *pTrack , Uint8 *pSector , Uint8 *pSide )
+{
+#ifndef HAVE_CAPSIMAGE
+	return 0;					/* This should not be reached (an IPF image can't be inserted without capsimage) */
+#else
+	int	Drive;
+
+	Drive = IPF_State.Fdc.driveact;
+	if ( Drive < 0 )				/* If no drive enabled, use drive O for Head/Side */
+		Drive = 0;
+
+	/* We read directly in the structures, to be sure we don't change emulation's state */
+	*pCommand	= IPF_State.Fdc.r_command;
+	*pHead		= IPF_State.Drive[ Drive ].track;
+	*pTrack 	= IPF_State.Fdc.r_track;
+	*pSector	= IPF_State.Fdc.r_sector;
+	*pSide		= IPF_State.Drive[ Drive ].side;
+#endif
+}
+
+
+
+
+/*
  * Run the FDC emulation during NbCycles cycles (relative to the 8MHz FDC's clock)
  */
 void	IPF_Emulate ( void )

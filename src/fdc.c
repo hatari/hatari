@@ -654,7 +654,7 @@ void	FDC_Drive_Set_BusyLed ( Uint8 STR )
  */
 int	FDC_Get_StatusBar_Text ( char *text )
 {
-	int	Command , Head , Track , Sector , Side;
+	Uint8	Command , Head , Track , Sector , Side;
 	char	CommandText[ 3 ];
 	int	Drive;
 
@@ -662,11 +662,18 @@ int	FDC_Get_StatusBar_Text ( char *text )
 	if ( Drive < 0 )					/* If no drive enabled, use drive O for Head */
 		Drive = 0;
 
-	Command = FDC.CR;
-	Head	= FDC_DRIVES[ Drive ].HeadTrack;
-	Track	= FDC.TR;
-	Sector	= FDC.SR;
-	Side	= FDC.SideSignal;
+	if ( FDC_GetEmulationMode() == FDC_EMULATION_MODE_INTERNAL )
+	{
+		Command = FDC.CR;
+		Head	= FDC_DRIVES[ Drive ].HeadTrack;
+		Track	= FDC.TR;
+		Sector	= FDC.SR;
+		Side	= FDC.SideSignal;
+	}
+	else							/* FDC_EMULATION_MODE_IPF */
+	{
+		IPF_FDC_StatusBar ( &Command , &Head , &Track , &Sector , &Side );
+	}
 
 	if      ( ( Command & 0xf0 ) == 0x00 )	strcpy ( CommandText , "RE" );
 	else if ( ( Command & 0xf0 ) == 0x10 )	strcpy ( CommandText , "SE" );
