@@ -157,8 +157,10 @@ static int CycInt_HandlerFunctionToID(void (*pHandlerFunction)(void))
 /*-----------------------------------------------------------------------*/
 /**
  * Convert ID back into interrupt handler function, used for restoring
+ * We return a function pointer :  void (*f)(void)
+ * (we could use typedef for better readability)
  */
-static void *CycInt_IDToHandlerFunction(int ID)
+static void ( *CycInt_IDToHandlerFunction(int ID) )( void )
 {
 	/* Get function pointer */
 	return pIntHandlerFunctions[ID];
