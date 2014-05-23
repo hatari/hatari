@@ -2544,9 +2544,9 @@ Uint32 Disasm_GetNextPC(Uint32 pc)
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
 	if (ConfigureParams.Debugger.bDisasmUAE)
-		return m68k_disasm (f, addr, nextpc, cnt);
+		m68k_disasm (f, addr, nextpc, cnt);
 	else
-		return Disass68k_loop (f, addr, nextpc, cnt);
+		Disass68k_loop (f, addr, nextpc, cnt);
 }
 
 static void Disasm_CheckOptionEngine(void)
