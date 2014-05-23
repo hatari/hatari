@@ -27,7 +27,7 @@ typedef enum {
 	doptNoBrackets = 1,		// hide brackets around absolute addressing
 	doptOpcodesSmall = 2,	// opcodes are small letters
 	doptRegisterSmall = 4,	// register names are small letters
-	doptStackSP = 8,		// stack pointer is named "SP" instead of "A7" (except for MOVEM)
+	doptStackSP = 8		// stack pointer is named "SP" instead of "A7" (except for MOVEM)
 } Diss68kOptions;
 
 static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoBrackets;
@@ -88,7 +88,7 @@ typedef enum {
 	dtASCString,		// a 0-byte terminated ASCII string
 	dtPointer,			// a generic 32-bit pointer
 	dtFunctionPointer,	// a 32-bit pointer to a function
-	dtStringArray,		// a specific number of ASCII bytes
+	dtStringArray		// a specific number of ASCII bytes
 } Disass68kDataType;
 
 typedef struct {
@@ -1283,7 +1283,7 @@ typedef enum {
 	ofFPUMOVE,
 	ofFMOVECR,
 	ofFPU3Reg,
-	ofLineA,
+	ofLineA
 } Disass68kOpcodeFormat;
 
 

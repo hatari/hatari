@@ -13,7 +13,7 @@ typedef enum {
 	HISTORY_TRACK_NONE = 0,
 	HISTORY_TRACK_CPU = 1,
 	HISTORY_TRACK_DSP = 2,
-	HISTORY_TRACK_ALL = 3,
+	HISTORY_TRACK_ALL = 3
 } history_type_t;
 
 extern history_type_t HistoryTracking;
