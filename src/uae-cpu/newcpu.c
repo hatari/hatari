@@ -1730,7 +1730,7 @@ static void m68k_run_1 (void)
 {
 #ifdef DEBUG_PREFETCH
     uae_u8 saved_bytes[20];
-    uae_u16 *oldpcp;
+    uae_u8 *oldpcp;
 #endif
 
     for (;;) {
