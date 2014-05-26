@@ -20,7 +20,6 @@ print_help()
   echo "  --disable-tracing          Disable tracing messages for debugging"
   echo "  --enable-winuae-cpu        Enable WinUAE CPU core (experimental!)"
   echo "  --disable-osx-bundle       Disable application bundling on Mac OS X"
-  echo "  --cross-compile-win32      Build the 32 bit Windows version under linux using mingw32"
   echo "  --cross-compile-win64_32   Build the 32 bit Windows version under linux using mingw-w64"
   echo "  --cross-compile-win64_64   Build the 64 bit Windows version under linux using mingw-w64"
   echo
@@ -82,14 +81,11 @@ do
     --disable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=0"
     ;;
-    --cross-compile-win32)
-      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32.cmake"
-    ;;
     --cross-compile-win64_32)
-      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32.cmake -DMINGW_EXE_PREFIX=i686-w64-mingw32 -DMINGW_ROOT_PATH=mingw"
+      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_32.cmake"
     ;;
     --cross-compile-win64_64)
-      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32.cmake -DMINGW_EXE_PREFIX=x86_64-w64-mingw32 -DMINGW_ROOT_PATH=mingw"
+      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_64.cmake"
     ;;
     *)
       echo "Invalid argument: $preq"
