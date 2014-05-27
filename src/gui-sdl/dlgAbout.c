@@ -13,12 +13,13 @@ const char DlgAbout_fileid[] = "Hatari dlgAbout.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "sdlgui.h"
 
+static char aboutstr[] = PROG_NAME;
 
 /* The "About"-dialog: */
 static SGOBJ aboutdlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 40,25, NULL },
-	{ SGTEXT, 0, 0, 13,1, 12,1, PROG_NAME },
+	{ SGTEXT, 0, 0, 13,1, 12,1, aboutstr },
 	{ SGTEXT, 0, 0, 13,2, 12,1, "=============" },
 	{ SGTEXT, 0, 0, 1,4, 38,1, "Written by Thomas Huth and many other" },
 	{ SGTEXT, 0, 0, 1,5, 38,1, "people around the world." },
@@ -45,8 +46,15 @@ static SGOBJ aboutdlg[] =
  */
 void Dialog_AboutDlg(void)
 {
-	/* Center PROG_NAME title string */
-	aboutdlg[1].x = (aboutdlg[0].w - strlen(PROG_NAME)) / 2;
+	if (strlen(aboutstr) > aboutdlg[0].w)
+	{
+		/* Shorten the name if it is too long */
+		char *p = strrchr(aboutstr, '(');
+		if (p)
+			*(p-1) = 0;
+	}
+	/* Center the program name title string */
+	aboutdlg[1].x = (aboutdlg[0].w - strlen(aboutstr)) / 2;
 
 	SDLGui_CenterDlg(aboutdlg);
 	SDLGui_DoDialog(aboutdlg, NULL);
