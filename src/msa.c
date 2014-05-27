@@ -92,11 +92,11 @@ const char MSA_fileid[] = "Hatari msa.c : " __DATE__ " " __TIME__;
 
 typedef struct
 {
-	short int ID;                 /* Word  ID marker, should be $0E0F */
-	short int SectorsPerTrack;    /* Word  Sectors per track */
-	short int Sides;              /* Word  Sides (0 or 1; add 1 to this to get correct number of sides) */
-	short int StartingTrack;      /* Word  Starting track (0-based) */
-	short int EndingTrack;        /* Word  Ending track (0-based) */
+	Uint16	ID;			/* Word : ID marker, should be $0E0F */
+	Uint16	SectorsPerTrack;	/* Word : Sectors per track */
+	Uint16	Sides;			/* Word : Sides (0 or 1; add 1 to this to get correct number of sides) */
+	Uint16	StartingTrack;		/* Word : Starting track (0-based) */
+	Uint16	EndingTrack;		/* Word : Ending track (0-based) */
 } MSAHEADERSTRUCT;
 
 #define MSA_WORKSPACE_SIZE  (1024*1024)  /* Size of workspace to use when saving MSA files */
@@ -161,7 +161,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 
 				/* Uncompress MSA Track, first check if is not compressed */
 				DataLength = do_get_mem_word(pMSAImageBuffer);
-				pMSAImageBuffer += sizeof(short int);
+				pMSAImageBuffer += sizeof(Uint16);
 				if (DataLength == nBytesPerTrack)
 				{
 					/* No compression on track, simply copy and continue */
@@ -191,7 +191,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 								fprintf(stderr, "MSA_UnCompress: Illegal run length -> corrupted disk image?\n");
 								RunLength = nBytesPerTrack - NumBytesUnCompressed;
 							}
-							pMSAImageBuffer += sizeof(short int);
+							pMSAImageBuffer += sizeof(Uint16);
 							for (i = 0; i < RunLength; i++)
 								*pImageBuffer++ = Data;   /* Copy byte */
 							NumBytesUnCompressed += RunLength;
@@ -295,7 +295,7 @@ bool MSA_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 #ifdef SAVE_TO_MSA_IMAGES
 
 	MSAHEADERSTRUCT *pMSAHeader;
-	unsigned short int *pMSADataLength;
+	Uint16 *pMSADataLength;
 	Uint8 *pMSAImageBuffer, *pMSABuffer, *pImageBuffer;
 	Uint16 nSectorsPerTrack, nSides, nCompressedBytes, nBytesPerTrack;
 	bool nRet;
