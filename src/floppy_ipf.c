@@ -561,6 +561,7 @@ void    IPF_Drive_Set_Enable ( int Drive , bool value )
 /*
  * Update IPF's internal state depending on which drives are ON or OFF
  */
+#ifdef HAVE_CAPSIMAGE
 static void	IPF_Drive_Update_Enable ( void )
 {
 	if ( IPF_State.DriveEnabled[ 1 ] )
@@ -568,8 +569,7 @@ static void	IPF_Drive_Update_Enable ( void )
 	else
 	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES - 1;		/* should be 1 */
 }
-
-
+#endif
 
 
 /*
@@ -688,7 +688,7 @@ Uint8	IPF_FDC_ReadReg ( Uint8 Reg )
 void	IPF_FDC_StatusBar ( Uint8 *pCommand , Uint8 *pHead , Uint8 *pTrack , Uint8 *pSector , Uint8 *pSide )
 {
 #ifndef HAVE_CAPSIMAGE
-	return 0;					/* This should not be reached (an IPF image can't be inserted without capsimage) */
+	return;						/* This should not be reached (an IPF image can't be inserted without capsimage) */
 #else
 	int	Drive;
 
