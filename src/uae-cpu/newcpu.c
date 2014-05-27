@@ -161,7 +161,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #endif
 #endif
 
-#define DEBUG_PREFETCH
+//#define DEBUG_PREFETCH
 
 struct flag_struct regflags;
 
