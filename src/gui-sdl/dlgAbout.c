@@ -46,7 +46,7 @@ static SGOBJ aboutdlg[] =
  */
 void Dialog_AboutDlg(void)
 {
-	if (strlen(aboutstr) > aboutdlg[0].w)
+	if ((int)strlen(aboutstr) > aboutdlg[0].w)
 	{
 		/* Shorten the name if it is too long */
 		char *p = strrchr(aboutstr, '(');
