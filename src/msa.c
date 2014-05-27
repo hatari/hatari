@@ -149,7 +149,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 
 		/* Set pointers */
 		pImageBuffer = (Uint8 *)pBuffer;
-		pMSAImageBuffer = (Uint8 *)((unsigned long)pMSAFile + sizeof(MSAHEADERSTRUCT));
+		pMSAImageBuffer = pMSAFile + sizeof(MSAHEADERSTRUCT);
 
 		/* Uncompress to memory as '.ST' disk image - NOTE: assumes 512 bytes
 		 * per sector (use NUMBYTESPERSECTOR define)!!! */
@@ -202,7 +202,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 		}
 
 		/* Set size of loaded image */
-		*pImageSize = (unsigned long)pImageBuffer-(unsigned long)pBuffer;
+		*pImageSize = pImageBuffer-pBuffer;
 	}
 
 	/* Return pointer to buffer, NULL if failed */
