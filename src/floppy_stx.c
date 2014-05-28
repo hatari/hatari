@@ -50,6 +50,7 @@ typedef struct
 	Uint32			NextSectorStruct_Nbr;		/* Sector Number in pSectorsStruct after a call to FDC_NextSectorID_FdcCycles_STX() */
 	Uint8			NextSector_ID_Field_TR;		/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
 	Uint8			NextSector_ID_Field_SR;		/* Sector value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
+	Uint8			NextSector_ID_Field_CRC_OK;	/* CRC OK or not in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
 	
 } STX_STRUCT;
 
@@ -649,8 +650,9 @@ extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Ui
  * sector's ID Field in the track ($A1 $A1 $A1 $FE TR SIDE SR LEN CRC1 CRC2)
  * If no ID Field is found before the end of the track, we use the 1st
  * ID Field of the track (which simulates a full spin of the floppy).
- * We also store the next sector's number into NextSectorStruct_Nbr
- * and the next sector's number into NextSector_ID_Field_SR.
+ * We also store the next sector's number into NextSectorStruct_Nbr,
+ * the next sector's number into NextSector_ID_Field_SR and if the CRC is correct
+ * or not into NextSector_ID_Field_CRC_OK.
  * This function assumes the sectors of each track are sorted in ascending order
  * using BitPosition.
  * If there's no available drive/floppy or no ID field in the track, we return -1
@@ -710,6 +712,13 @@ extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , 
 	STX_State.NextSector_ID_Field_TR = pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].ID_Track;
 	STX_State.NextSector_ID_Field_SR = pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].ID_Sector;
 
+	/* If RNF is set and CRC error is set, then this ID field has a CRC error */
+	if ( ( pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].FDC_Status & STX_SECTOR_FLAG_RNF )
+	  && ( pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].FDC_Status & STX_SECTOR_FLAG_CRC ) )
+		STX_State.NextSector_ID_Field_CRC_OK = 0;		/* CRC bad */
+	else
+		STX_State.NextSector_ID_Field_CRC_OK = 1;		/* CRC correct */
+
 	/* BitPosition in STX seems to point just after the IDAM $FE ; we need to point 4 bytes earlier at the 1st $A1 */
 	Delay_FdcCycles -= 4 * FDC_DELAY_CYCLE_MFM_BYTE;		/* Correct delay to point to $A1 $A1 $A1 $FE */
 	
@@ -738,6 +747,18 @@ extern Uint8	FDC_NextSectorID_TR_STX ( void )
 extern Uint8	FDC_NextSectorID_SR_STX ( void )
 {
 	return STX_State.NextSector_ID_Field_SR;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the status of the CRC in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_STX.
+ * If '0', CRC is bad, else CRC is OK
+ */
+extern Uint8	FDC_NextSectorID_CRC_OK_STX ( void )
+{
+	return STX_State.NextSector_ID_Field_CRC_OK;
 }
 
 

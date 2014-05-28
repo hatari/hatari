@@ -470,7 +470,8 @@ typedef struct {
 	bool		StatusTypeI;				/* When true, STR will report the status of a type I command */
 	int		IndexPulse_Counter;			/* To count the number of rotations when motor is ON */
 	Uint8		NextSector_ID_Field_TR;			/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
-	Uint8		NextSector_ID_Field_SR;			/* Sector Register from the ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
+	Uint8		NextSector_ID_Field_SR;			/* Sector value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
+	Uint8		NextSector_ID_Field_CRC_OK;		/* CRC OK or not in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	Uint8		InterruptCond;				/* For a type IV force interrupt, contains the condition on the lower 4 bits */
 
 	int		EmulationMode;				/* FDC_EMULATION_MODE_INTERNAL or FDC_EMULATION_MODE_IPF */
@@ -600,6 +601,7 @@ static void	FDC_WriteDataRegister ( void );
 static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side );
 static Uint8	FDC_NextSectorID_TR_ST ( void );
 static Uint8	FDC_NextSectorID_SR_ST ( void );
+static Uint8	FDC_NextSectorID_CRC_OK_ST ( void );
 static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize );
 static Uint8	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 static Uint8	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
@@ -4005,8 +4007,9 @@ void FDC_WriteDMAAddress ( Uint32 Address )
  * sector's ID Field in the track ($A1 $A1 $A1 $FE TR SIDE SR LEN CRC1 CRC2)
  * If no ID Field is found before the end of the track, we use the 1st
  * ID Field of the track (which simulates a full spin of the floppy).
- * We also store the next sector's number into NextSector_ID_Field_SR
- * and the next track's number into NextSector_ID_Field_TR.
+ * We also store the next sector's number into NextSector_ID_Field_SR,
+ * the next track's number into NextSector_ID_Field_TR and if the CRC is correct
+ * or not into NextSector_ID_Field_CRC_OK
  * This function assumes some 512 byte sectors stored in ascending
  * order (for ST/MSA)
  * If there's no available drive/floppy, we return -1
@@ -4055,6 +4058,7 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 NumberOfHeads , U
 //fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d maxsr=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, MaxSector, NextSector );
 	FDC.NextSector_ID_Field_TR = Track;
 	FDC.NextSector_ID_Field_SR = NextSector;
+	FDC.NextSector_ID_Field_CRC_OK = 1;				/* CRC is always correct for ST/MSA */
 
 	return FDC_TransferByte_FdcCycles ( NbBytes );
 }
@@ -4079,6 +4083,19 @@ static Uint8	FDC_NextSectorID_TR_ST ( void )
 static Uint8	FDC_NextSectorID_SR_ST ( void )
 {
 	return FDC.NextSector_ID_Field_SR;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the status of the CRC in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_ST.
+ * If '0', CRC is bad, else CRC is OK
+ * For ST/MSA, CRC is always OK
+ */
+static Uint8	FDC_NextSectorID_CRC_OK_ST ( void )
+{
+	return FDC.NextSector_ID_Field_CRC_OK;
 }
 
 
