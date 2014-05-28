@@ -675,17 +675,17 @@ int	FDC_Get_StatusBar_Text ( char *text )
 		IPF_FDC_StatusBar ( &Command , &Head , &Track , &Sector , &Side );
 	}
 
-	if      ( ( Command & 0xf0 ) == 0x00 )	strcpy ( CommandText , "RE" );
-	else if ( ( Command & 0xf0 ) == 0x10 )	strcpy ( CommandText , "SE" );
-	else if ( ( Command & 0xe0 ) == 0x20 )	strcpy ( CommandText , "ST" );
-	else if ( ( Command & 0xe0 ) == 0x40 )	strcpy ( CommandText , "SI" );
-	else if ( ( Command & 0xe0 ) == 0x50 )	strcpy ( CommandText , "SO" );
-	else if ( ( Command & 0xe0 ) == 0x80 )	strcpy ( CommandText , "RS" );
-	else if ( ( Command & 0xe0 ) == 0xa0 )	strcpy ( CommandText , "WS" );
-	else if ( ( Command & 0xf0 ) == 0xc0 )	strcpy ( CommandText , "RA" );
-	else if ( ( Command & 0xf0 ) == 0xe0 )	strcpy ( CommandText , "RT" );
-	else if ( ( Command & 0xf0 ) == 0xf0 )	strcpy ( CommandText , "WT" );
-	else					strcpy ( CommandText , "FO" );
+	if      ( ( Command & 0xf0 ) == 0x00 )	strcpy ( CommandText , "RE" );		/* Restore */
+	else if ( ( Command & 0xf0 ) == 0x10 )	strcpy ( CommandText , "SE" );		/* Seek */
+	else if ( ( Command & 0xe0 ) == 0x20 )	strcpy ( CommandText , "ST" );		/* Step */
+	else if ( ( Command & 0xe0 ) == 0x40 )	strcpy ( CommandText , "SI" );		/* Step In */
+	else if ( ( Command & 0xe0 ) == 0x50 )	strcpy ( CommandText , "SO" );		/* Step Out */
+	else if ( ( Command & 0xe0 ) == 0x80 )	strcpy ( CommandText , "RS" );		/* Read Sector */
+	else if ( ( Command & 0xe0 ) == 0xa0 )	strcpy ( CommandText , "WS" );		/* Write Sector */
+	else if ( ( Command & 0xf0 ) == 0xc0 )	strcpy ( CommandText , "RA" );		/* Read Address */
+	else if ( ( Command & 0xf0 ) == 0xe0 )	strcpy ( CommandText , "RT" );		/* Read Track */
+	else if ( ( Command & 0xf0 ) == 0xf0 )	strcpy ( CommandText , "WT" );		/* Write Track */
+	else					strcpy ( CommandText , "FI" );		/* Force Int */
 
 	return sprintf ( text , "%s:%02X %02X:%02X:%02X:%d" , CommandText , Command , Head , Track , Sector , Side );
 }
