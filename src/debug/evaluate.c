@@ -689,7 +689,7 @@ static long long apply_op (char opcode, long long value1, long long value2)
 /* ==================================================================== */
 
 /**
- * open prenthesis, push values & operators to stack
+ * open parenthesis, push values & operators to stack
  */
 static void open_bracket (void)
 {
@@ -706,7 +706,7 @@ static void open_bracket (void)
 
 /* -------------------------------------------------------------------- */
 /**
- * close prenthesis, and evaluate / pop stacks
+ * close parenthesis, and evaluate / pop stacks
  */
 /* last parsed value, last param. flag, trigonometric mode	*/
 static long long close_bracket (long long value)
@@ -714,7 +714,7 @@ static long long close_bracket (long long value)
 	/* returns the value of the parenthesised expression	*/
 
 	if (id.valid) {			/* preceded by an operator	*/
-		if (par.idx > 0) {	/* prenthesis has a pair	*/
+		if (par.idx > 0) {	/* parenthesis has a pair	*/
 			Uint32 addr;
 
 			/* calculate the value of parenthesised exp.	*/
