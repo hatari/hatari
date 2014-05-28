@@ -50,7 +50,7 @@
 <h1 class="pageheader">Hatari Atari Software Compatibility List</h1>
 
 <p class="pageheader">
-Version 1.7, June 2013
+Version 1.8, June 2014
 </p>
 <p class="pageheader">
 This list has been written by: <strong>Thomas Huth</strong>, <strong>Eero Tamminen</strong>
@@ -117,7 +117,7 @@ seen as an external cartridge). In STF/STE mode, it is also better to
 disable the MegaST's real time clock.
 </li>
 
-<li>TOS version.  ST demos and games may require some specific TOS
+<li>TOS version : ST demos and games may require some specific TOS
 version and not work at all with others. If you notice that this
 information is missing for some listed game or demo, please send mail
 to the hatari-devel mailing list.
@@ -128,6 +128,14 @@ For more information, see emutos.txt.</li>
 </li>
 
 </ul>
+
+Also note that since Hatari 1.8, support is included for STX, IPF and CTR
+disk images. These formats allow to backup a disk in an unaltered form,
+without requiring to remove the protection with a crack. Some complex
+protections rely on precise CPU/FDC timings and on some specific TOS version.
+<br>For STF/STE protected games, it is recommended to use TOS 1.02 or 1.04 and 1MB RAM,
+as well as turning HD emulation OFF for maximum compatibility
+(but most games will run fine with different settings)
 
 <p>
 (<a href="http://www.atari-forum.com/viewtopic.php?f=86&amp;t=14839">More
@@ -153,14 +161,39 @@ works on a real ST should work also in Hatari</b>.</p>
   </thead>
   <tbody>
     <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-4-wheel-drive_21044.html">4 Wheel Drive compilation</a></td>
+      <td>1.8</td>
+      <td>Requires TOS 1.04</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com//game-atari-st-a320-airbus_10982.html">A320 Airbus</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation</td>
+    </tr>
+    <tr>
       <td>Alien World</td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-arkanoid_22998.html">Arkanoid</a></td>
+      <td>1.8</td>
+      <td>Requires TOS 1.02 for mouse input</td>
+    </tr>
+    <tr>
       <td>Armalyte</td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-baal_8642.html">Baal</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-bio-challenge_8720.html">Bio Challenge</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation</td>
     </tr>
     <tr>
       <td>Bolo</td>
@@ -182,6 +215,16 @@ works on a real ST should work also in Hatari</b>.</p>
       <td>Defenders Of The Earth</td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-bad-dudes-vs-dragon-ninja_9164.html">Dragon Ninja</a></td>
+      <td>1.8</td>
+      <td>Requires TOS &le; 1.04. Does not work with cartridge / HD emulation</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-eco_9199.html">Eco</a></td>
+      <td>1.8</td>
+      <td>Write protection should be OFF</td>
     </tr>
     <tr>
       <td>Eliminator</td>
@@ -209,15 +252,40 @@ works on a real ST should work also in Hatari</b>.</p>
       <td>Under some badly cracked versions (Pompey Pirate 38), joystick doesn't work</td>
     </tr>
     <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-fire-and-forget-ii-the-death-convoy_24239.html">Fire And Forget II</a></td>
+      <td>1.8</td>
+      <td>Requires UK or US TOS</td>
+    </tr>
+    <tr>
       <td>Fuzion CD 161</td>
       <td>1.6</td>
       <td>Menu's intro is buggy, top border is not correctly removed even on a real STF, due to timer C
 	  not correctly initialized to play digidrums. Use STE mode instead.</td>
     </tr>
     <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-garfield-winter-s-tail_9415.html">Garfield Winter's Tail</a></td>
+      <td>1.8</td>
+      <td>Requires TOS &le; 1.04 and &le; 1MB RAM. Does not work with cartridge / HD emulation</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-grimblood_9490.html">Grimblood</a></td>
+      <td>1.8</td>
+      <td>Requires TOS &le; 1.02</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-hover-sprint_9582.html">Hover Sprint</a></td>
+      <td>1.8</td>
+      <td>Write protection should be OFF</td>
+    </tr>
+    <tr>
       <td>Jaguar XJ220 (development demo)</td>
       <td>1.2</td>
       <td>Only loads correctly when &quot;Fast floppy&quot; option is disabled</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-knightmare_9760.html">Knightmare</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation</td>
     </tr>
     <tr>
       <td>Leisure Suit Larry 2</td>
@@ -237,12 +305,22 @@ works on a real ST should work also in Hatari</b>.</p>
     <tr>
       <td>Microprose Golf</td>
       <td>1.7</td>
-      <td>Requires Hatari &gt;= 1.7 to avoid a crash during the game's intro</td>
+      <td>Requires Hatari &ge; 1.7 to avoid a crash during the game's intro</td>
     </tr>
     <tr>
       <td>Metal Mutant</td>
       <td>1.0</td>
       <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-monster-business_10017.html">Monster Business</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-mr-heli_10043.html">Mr. Heli</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation</td>
     </tr>
     <tr>
       <td>Navy Seals</td>
@@ -260,14 +338,24 @@ works on a real ST should work also in Hatari</b>.</p>
       <td>Uses "0-byte" vertical sync-scrolling</td>
     </tr>
     <tr>
-      <td>Robocop II</td>
-      <td>1.1</td>
-      <td>&nbsp;</td>
+      <td><a href="http://www.atarimania.com/game-atari-st-oids_24305.html">Oids</a></td>
+      <td>1.8</td>
+      <td>Write protection should be OFF</td>
     </tr>
     <tr>
       <td>Pirates!</td>
       <td>before 1.0</td>
       <td>Game also supports <a href="#Midi_setup">MIDI music</a></td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-populous_10268.html">Populous</a></td>
+      <td>1.8</td>
+      <td>Requires TOS &le; 1.04. Does not work with cartridge / HD emulation</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-prehistoric-tale-a_10973.html">Prehistoric Tale</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation</td>
     </tr>
     <tr>
       <td>R.B.I. Baseball 2</td>
@@ -279,6 +367,11 @@ works on a real ST should work also in Hatari</b>.</p>
     <tr>
       <td>Rick Dangerous</td>
       <td>before 1.0</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Robocop II</td>
+      <td>1.1</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
@@ -310,6 +403,11 @@ works on a real ST should work also in Hatari</b>.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-spherical_11330.html">Spherical</a></td>
+      <td>1.8</td>
+      <td>Requires &le; 1MB RAM</td>
+    </tr>
+    <tr>
       <td>Spidertronic</td>
       <td>1.7</td>
       <td>Crashed before the 50/60 Hz selection screen with Hatari &lt; 1.7</td>
@@ -321,20 +419,19 @@ works on a real ST should work also in Hatari</b>.</p>
     </tr>
     <tr>
       <td>Subbuteo</td>
-      <td class="major">1.1</td>
-      <td>Because of incorrect 68000 prefech for the 'ADD' opcode,
-          the protection  will not pass</td>
+      <td>1.7</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Super Hang-On</td>
       <td>1.7</td>
-      <td>Requires Hatari &gt;= 1.7 to avoid flickering rasters</td>
+      <td>Requires Hatari &ge; 1.7 to avoid flickering rasters</td>
     </tr>
     <tr>
       <td>Super Monaco GP</td>
       <td>1.7</td>
-      <td>Requires Hatari &gt;= 1.6 for correct FDC emulation
-	  and Hatari &gt;= 1.7 to avoid flickering rasters</td>
+      <td>Requires Hatari &ge; 1.6 for correct FDC emulation
+	  and Hatari &ge; 1.7 to avoid flickering rasters</td>
     </tr>
     <tr>
       <td>Super Sprint</td>
@@ -358,7 +455,7 @@ works on a real ST should work also in Hatari</b>.</p>
     <tr>
       <td>The Final Conflict</td>
       <td>1.7</td>
-      <td>Buggy samples replay during the intro, requires Hatari &gt;= 1.7</td>
+      <td>Buggy samples replay during the intro, requires Hatari &ge; 1.7</td>
     </tr>
     <tr>
       <td>The Sentinel</td>
@@ -366,9 +463,20 @@ works on a real ST should work also in Hatari</b>.</p>
       <td>Mouse moved too slowly before Hatari 1.7</td>
     </tr>
     <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-to-be-on-top_10640.html">To Be On Top</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation. Although it works on real ST with 512 kB of RAM,
+	  current emulation requires to use &ge; 1MB RAM</td>
+    </tr>
+    <tr>
       <td>Toki</td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.atarimania.com/game-atari-st-total-eclipse_10655.html">Total Eclipse</a></td>
+      <td>1.8</td>
+      <td>Does not work with cartridge / HD emulation</td>
     </tr>
     <tr>
       <td>Treasure Trap</td>
@@ -404,7 +512,7 @@ works on a real ST should work also in Hatari</b>.</p>
       <td>1.6</td>
       <td>This game expects random data from the TOS memory test in low RAM,
           so the emulator has to be started with &quot;fast boot&quot; disabled
-          or the game will freeze after some few seconds</td>
+          or the game will freeze after a few seconds</td>
     </tr>
     <tr>
       <td>Zombi</td>
@@ -571,7 +679,7 @@ for border removal).</p>
       <td>Inner Circle:
       <a href="http://pouet.net/prod.php?which=3243">Decade Demo</a></td>
       <td>1.7</td>
-      <td>Very good demo. Reset part requires Hatari &gt;= 1.7 to avoid flickering
+      <td>Very good demo. Reset part requires Hatari &ge; 1.7 to avoid flickering
 	  bottom border</td>
     </tr>
     <tr>
@@ -592,7 +700,7 @@ for border removal).</p>
       <td>MJJ Prod:
       <a href="http://pouet.net/prod.php?which=499">Anomaly</a></td>
       <td>1.7</td>
-      <td>Requires Hatari &gt;= 1.7 to avoid glitches in the main menu
+      <td>Requires Hatari &ge; 1.7 to avoid glitches in the main menu
 	  when playing digidrums</td>
     </tr>
     <tr>
@@ -739,6 +847,12 @@ for border removal).</p>
       <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
+    <tr>
+      <td>The Union:
+      <a href="http://pouet.net/prod.php?which=11060">The Union Demo</a></td>
+      <td>1.8</td>
+      <td>One of the most famous ST demos. Does not work with cartridge / HD emulation. Although it works on real ST with 512 kB of RAM,
+	  current emulation requires to use &ge; 1MB RAM</td>
     <tr>
       <td>TNT Crew:
       <a href="http://pouet.net/prod.php?which=29414">Death of the left border</a></td>
@@ -1592,7 +1706,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Paradox:
       <a href="http://pouet.net/prod.php?which=12237">HighResMode</a></td>
       <td>1.5</td>
-      <td>Use spec512 mode in med res. Requires Hatari &gt;=1.8 for correct
+      <td>Use spec512 mode in med res. Requires Hatari &ge; 1.8 for correct
 	alignment between bitmaps and color changes</td>
     </tr>
     <tr>
@@ -1631,7 +1745,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Stax:
       <a href="http://pouet.net/prod.php?which=23541">Compact Disk #65</a></td>
       <td></td>
-      <td>Requires TOS &gt;= 1.06. MegaST's real time clock should be disabled</td>
+      <td>Requires TOS &ge; 1.06. MegaST's real time clock should be disabled</td>
     </tr>
     <tr>
       <td>T. Barker:
@@ -1645,7 +1759,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>1.5</td>
       <td>Does not work with cartridge / HD emulation. Real Time Clock should
 	  also be disabled to prevent a bug in the boot sector's loader (depends
-	  on the TOS version used). Sound requires Hatari &gt;= 1.5 to work
+	  on the TOS version used). Sound requires Hatari &ge; 1.5 to work
 	  (the routines write in the sample buffer while it's played by the dma)</td>
     </tr>
     <tr>
@@ -3527,7 +3641,7 @@ support or work only on them.</p>
       <td>Hard disk driver.  In Hatari works only with IDE emulation.
       Doesn't work with EmuTOS.  With TOS v4, CPU needs to be set to
       EC030 or better, with TOS v3 works also with 020 CPU (used by
-      earlier Hatari versions for TOS &gt;= v3)</td>
+      earlier Hatari versions for TOS &ge; v3)</td>
     </tr>
   </tbody>
 </table>
