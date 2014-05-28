@@ -11,13 +11,16 @@ Emulation:
   - Handle 0 byte line by switching freq in STE mode
   - Use high res when ff8260 is set to 3
   - Randomly return 0 or 1 when reading unused bits 3,7 and 11 of
-    color registers
+    color registers (except when running from ROM)
   - Better detection of bottom border removal on a 60 Hz screen
   - support for color change during only 4 cycles
   - better bitmap/color alignment for STE med res overscan at 60 Hz
+  - Set default value of nSpec512Threshold to "1" instead of "16"
+  - Update the position of the next VBL when 50Hz and 60Hz lines are mixed
 - CPU changes :
   - Fix a case when MFP's interrupt happens during the IACK sequence
     for HBL/VBL
+  - Many prefetch changes required by some game's protection
 - Fix READ CAPACITY command result for ACSI hard disk images
 - FDC changes :
   - Add configurable RPM speed for each floppy drive and the possibility
@@ -26,10 +29,22 @@ Emulation:
     when a drive is OFF or empty.
   - Rewrite the index pulse part and all the delays expressed as disk's
     revolution
-  - Add support for the "Force Int on Index Pulse" command
-  - Add support for IPF files by using the capsimage library
+  - Add support for the "Force Int on Index Pulse" command.
+  - Rewrite the DMA functions for better accuracy
+  - Add support for IPF/CTR files by using the capsimage library
+  - Add open source support for Pasti STX files, including random/fuzzy bits
+    and variable length bits
+  - Don't force drives A and B at $4c2, keep the values detected by TOS
+  - Many other timing / status register improvements
 - Videl change :
   - correct masking of the true color palette registers
+- Fix STE sound mixing using LMC when mixer=0 (DMA sound only)
+- Fix some crossbar's sound errors for Falcon
+- Don't enable MegaST's real time clock by default, it can cause some crashes
+  in STF/STE mode
+- Improve ACIA's wait state with E clock
+- IKBD : add support for commands 0x11 and 0x13 (resume/pause output) and
+  0x17 (joystick monitoring)
 - GEMDOS HD emulation:
   - Fix: clip filenames given through GEMDOS calls to 8+3
     lenght using first '.'
@@ -37,23 +52,24 @@ Emulation:
   - Fixed/improved READ CAPACITY and INQUIRY commands
   - Unsupported commands are now handled correctly
   - Now using fseeko() instead of fseek() for supporting large images
-- Fix STE sound mixing using LMC when mixer=0 (DMA sound only)
 
 Emulator:
 - SDL GUI:
   - Update clock speed in the status bar when changing bus speed
     in Falcon mode
   - In the floppy dialog, use a checkbox to enable/disable drives A and B
+    and another checkbox to choose single/double sided drive
   - In the screen dialog, add checkbox for --desktop-st option
+  - Add a 2nd line in the status bar, with infos on FDC, joysticks, monitor
 - Fix: Xbios(255) modified the given argument string
 - New options --drive-a and --drive-b to enable/disable drives A and B
+- New options --drive-a-heads and --drive-b-heads to select single or double
+  sided drives A and B
 - New --slowdown option to increase (multiply) VBL wait times
 - New NatFeats commands : NF_DEBUGGER invokes Hatari debugger
   from native program and NF_FASTFORWARD toggles fast forward on/off
 - Allow BIOS, XBIOS, GEMDOS, VDI and AES tracing to be enabled without
   enabling also X/BIOS interception, GEMDOS HD emulation or extended VDI mode
-- Don't enable MegaST's real time clock by default, it can cause some crashes
-  in STF/STE mode
 - Debugger:
   - Fix: release mouse in all cases where debugger can be invoked
   - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly
@@ -88,6 +104,8 @@ Emulator:
     worst frame and spinloop profiling
   - Address space in 'dm' command can be given like in DSP disassembly,
     "dm x:$100", in addition to earlier "dm x $100" syntax
+  - Fix out of bounds memory access that could result in bad disassembly
+    output when using the external disassembler (only "dc.w" were printed)
 
 Tools:
 - New hatari_spinloop.py script for post-processing loop profile data.
@@ -106,6 +124,8 @@ Fixed demos :
 - It's A Girl 2 by Paradox (video, bottom border removal on a 60 Hz screen)
 - 4-pixel plasma screen by TOS Crew (video, color change during only 4 cyles)
 - HighResMode by Paradox (video, color changes in overscan med res at 60 Hz)
+- The Union Demo (cpu, memory access, ikbd, protection)
+- IKBD no jitter by Nyh (acia/video, use a VBL of 160240 cycles)
 
 Fixed games :
 - Reeking Rubber (by Nature), Falcon game
