@@ -1,7 +1,7 @@
 /*
-  Hatari - calculate.c
+  Hatari - evaluate.c
 
-  Copyright (C) 1994, 2009-2010 by Eero Tamminen
+  Copyright (C) 1994, 2009-2014 by Eero Tamminen
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
