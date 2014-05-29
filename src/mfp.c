@@ -169,7 +169,7 @@ Input -----/             |         ------------------------              |      
     for long ones like MOVEM or DIV). In that case, we should not choose the highest priority interrupt
     among all the interrupts, but we should keep only the interrupts that chronologically happened first
     during this CPU instruction (and ignore the other interrupts' requests for this CPU instruction).
-  - When the MFP's main IRQ signal goes from 0 to 1, the signal is not immediatly visible to the CPU, but only
+  - When the MFP's main IRQ signal goes from 0 to 1, the signal is not immediately visible to the CPU, but only
     4 cycles later. This 4 cycle delay should be taken into account, depending at what time the signal
     went to 1 in the corresponding CPU instruction (the 4 cycle delay can be "included" in the CPU instruction
     in some cases)

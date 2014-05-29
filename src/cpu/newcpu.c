@@ -2818,7 +2818,7 @@ STATIC_INLINE int do_specialties (int cycles)
 	/* Handle the STOP instruction */
 	if ( regs.spcflags & SPCFLAG_STOP ) {
 	    /* We first test if there's a pending interrupt that would */
-	    /* allow to immediatly leave the STOP state */
+	    /* allow to immediately leave the STOP state */
 	    if ( do_specialties_interrupt(true) ) {		/* test if there's an interrupt and add pending jitter */
 	        regs.stopped = 0;
 	        unset_special (SPCFLAG_STOP);

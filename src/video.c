@@ -1329,7 +1329,7 @@ void Video_Sync_WriteByte ( void )
 		/* Add 2 bytes to left border : switch to 60 Hz before LINE_START_CYCLE_60 to force an early start */
 		/* of the DE signal, then go back to 50 Hz. Note that depending on where the 50 Hz switch is made */
 		/* the HBL signal will be at position 508 (60 Hz line) or 512 (50 Hz line) */
-		/* Obtaining a +2 line with 512 cycles requires a 2 cycles precision and is "wake up" state dependant : */
+		/* Obtaining a +2 line with 512 cycles requires a 2 cycles precision and is "wake up" state dependent : */
 		/*   - On STF, switch must be on cycles 36/56 or 36/54 (depending on wake up state) */
 		/*   - On STE, switch can be on cycles 36/56 or 36/54 (no wake up state in STE) */
 		/* TODO : we should change HBL signal to be on cycles 508 or 512 (it will always be 512 for now) */

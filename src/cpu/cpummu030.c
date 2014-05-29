@@ -487,7 +487,7 @@ void mmu030_flush_atc_all(void) {
 #define TT_ADDR_MASK    0x00FF0000
 #define TT_ADDR_BASE    0xFF000000
 
-/* TT comparision results */
+/* TT comparison results */
 #define TT_NO_MATCH	0x1
 #define TT_OK_MATCH	0x2
 #define TT_NO_READ  0x4
@@ -962,7 +962,7 @@ void mmu030_decode_rp(uae_u64 RP) {
  * reserved (must be 1111 110)
  *
  * -xxx xxxx xxxx xxxx ---- ---- ---- ---- | ---- ---- ---- ---- ---- ---- ---- ----
- * limit (only used with early termination page decriptor)
+ * limit (only used with early termination page descriptor)
  *
  * x--- ---- ---- ---- ---- ---- ---- ---- | ---- ---- ---- ---- ---- ---- ---- ----
  * 0 = upper limit, 1 = lower limit (only used with early termination page descriptor)
@@ -1262,7 +1262,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
                     descr[0] |= DESCR_U;
                     descr_modified = true;
                 }
-                /* write modified descriptor if neccessary */
+                /* write modified descriptor if necessary */
                 if (descr_modified) {
                     phys_put_long(descr_addr[descr_num], descr[0]);
                 }
@@ -1329,7 +1329,7 @@ uae_u32 mmu030_table_search(uaecptr addr, uae_u32 fc, bool write, int level) {
     stop_search:
         ; /* Make compiler happy */
     } CATCH(prb) {
-        /* We jump to this place, if a bus error occured during table search.
+        /* We jump to this place, if a bus error occurred during table search.
          * bBusErrorReadWrite is set in m68000.c, M68000_BusError: read = 1 */
         if (bBusErrorReadWrite) {
             descr_num--;
