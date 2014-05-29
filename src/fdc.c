@@ -654,10 +654,11 @@ void	FDC_Drive_Set_BusyLed ( Uint8 STR )
  *   SS=sector register
  *   s=side
  */
-int	FDC_Get_StatusBar_Text ( char *text )
+int	FDC_Get_Statusbar_Text ( char *text, size_t maxlen )
 {
 	Uint8	Command , Head , Track , Sector , Side;
 	char	CommandText[ 3 ];
+	size_t	written;
 	int	Drive;
 
 	Drive = FDC.DriveSelSignal;
@@ -689,7 +690,9 @@ int	FDC_Get_StatusBar_Text ( char *text )
 	else if ( ( Command & 0xf0 ) == 0xf0 )	strcpy ( CommandText , "WT" );		/* Write Track */
 	else					strcpy ( CommandText , "FI" );		/* Force Int */
 
-	return sprintf ( text , "%s:%02X %02X:%02X:%02X:%d" , CommandText , Command , Head , Track , Sector , Side );
+	written = snprintf ( text, maxlen, "%s:%02X %02X:%02X:%02X:%d" , CommandText , Command , Head , Track , Sector , Side );
+	assert(written < maxlen); /* more space needs to be allocated */
+	return written;
 }
 
 

@@ -55,6 +55,17 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 # define DEBUGPRINT(x)
 #endif
 
+/* whether each statusbar item update can have
+ * separate SDL update request (0), or whether
+ * all updates should be bundled single one (1).
+ *
+ * This is an optimization needed for OSX SDL backend.
+ */
+#define SINGLE_UPDATE 1
+
+/* space needed for FDC information */
+#define FDC_MSG_MAX_LEN 20
+
 #define STATUSBAR_LINES 2
 #define MAX_DRIVE_LEDS (DRIVE_LED_HD + 1)
 
@@ -90,7 +101,7 @@ static Uint32 LedColor[ MAX_LED_STATE ];
 static Uint32 RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
-/* needs to be enough for all message, but <= MessageRect width / font width */
+/* needs to be enough for all messages, but <= MessageRect width / font width */
 #define MAX_MESSAGE_LEN 52
 typedef struct msg_item {
 	struct msg_item *next;
@@ -229,7 +240,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	SDL_Rect ledbox, sbarbox;
 	int i, fontw, fonth, lineh, xoffset, yoffset;
 	const char *text[MAX_DRIVE_LEDS] = { "A:", "B:", "HD:" };
-	char FdcText[ 50 ];
+	char FdcText[FDC_MSG_MAX_LEN];
 	int FdcTextLen;
 
 	DEBUGPRINT(("Statusbar_Init()\n"));
@@ -324,7 +335,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	/* print FDC's info */
 	FDCTextRect.x = xoffset;
 	FDCTextRect.y = yoffset;
-	FdcTextLen = FDC_Get_StatusBar_Text ( FdcText );
+	FdcTextLen = FDC_Get_Statusbar_Text(FdcText, sizeof(FdcText));
 	SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcText);
 	FDCTextRect.w = FdcTextLen * fontw + fontw/2;
 	FDCTextRect.h = fonth;
@@ -358,6 +369,46 @@ void Statusbar_Init(SDL_Surface *surf)
 	/* and blit statusbar on screen */
 	SDL_UpdateRects(surf, 1, &sbarbox);
 	DEBUGPRINT(("Drawn <- Statusbar_Init()\n"));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Initiate statusbar area update for given rect.
+ *
+ * If rect is NULL, it's a request to make sure previous
+ * updates get on screen, otherwise it gives update area.
+ */
+static void Statusbar_UpdateRect(SDL_Surface *surf, SDL_Rect *rect)
+{
+#if SINGLE_UPDATE
+	static SDL_Rect last_rect;
+	static int updates = 0;
+	if (rect) {
+		last_rect = *rect;
+		updates++;
+	} else {
+		switch (updates) {
+		case 0:
+			break;
+		case 1:
+			DEBUGPRINT(("*** STATUSBAR UPDATE ***\n"));
+			SDL_UpdateRects(surf, 1, &last_rect);
+			break;
+		default:
+			DEBUGPRINT(("*** %d STATUSBAR UPDATES ***\n", updates));
+			/* multiple updates -> just update whole statusbar */
+			SDL_UpdateRect(surf, 0, surf->h - StatusbarHeight,
+				       surf->w, StatusbarHeight);
+		}
+		updates = 0;
+	}
+#else
+	if (rect) {
+		DEBUGPRINT(("Statusbar_UpdateRect()\n"));
+		SDL_UpdateRects(surf, 1, rect);
+	}
+#endif
 }
 
 
@@ -554,8 +605,8 @@ static void Statusbar_DrawMessage(SDL_Surface *surf, const char *msg)
 		offset = (MessageRect.w - strlen(msg) * fontw) / 2;
 		SDLGui_Text(MessageRect.x + offset, MessageRect.y, msg);
 	}
-	SDL_UpdateRects(surf, 1, &MessageRect);
 	DEBUGPRINT(("Draw message: '%s'\n", msg));
+	Statusbar_UpdateRect(surf, &MessageRect);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -693,8 +744,8 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 	case OVERLAY_RESTORED:
 		bOverlayState = OVERLAY_NONE;
 	case OVERLAY_DRAWN:
-		SDL_UpdateRects(surf, 1, &OverlayLedRect);
 		DEBUGPRINT(("Overlay LED = %s\n", bOverlayState==OVERLAY_DRAWN?"ON":"OFF"));
+		SDL_UpdateRects(surf, 1, &OverlayLedRect);
 		break;
 	case OVERLAY_NONE:
 		break;
@@ -710,10 +761,11 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
  */
 void Statusbar_Update(SDL_Surface *surf)
 {
+	static char FdcOld[FDC_MSG_MAX_LEN] = "";
+	char FdcNew[FDC_MSG_MAX_LEN];
 	Uint32 color, currentticks;
 	SDL_Rect rect;
 	int i;
-	char FdcText[ 50 ];
 
 	if (!(StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)) {
 		/* not enabled (anymore), show overlay led instead? */
@@ -744,23 +796,25 @@ void Statusbar_Update(SDL_Surface *surf)
 		color = LedColor[ Led[i].state ];
 		rect.x = Led[i].offset;
 		SDL_FillRect(surf, &rect, color);
-		SDL_UpdateRects(surf, 1, &rect);
 		DEBUGPRINT(("LED[%d] = %d\n", i, Led[i].state));
+		Statusbar_UpdateRect(surf, &rect);
 	}
 
-	/* print FDC's info */
-	SDL_FillRect(surf, &FDCTextRect, GrayBg);
-	FDC_Get_StatusBar_Text ( FdcText );
-	SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcText);
-	SDL_UpdateRects(surf, 1, &FDCTextRect);
-	
-
-	Statusbar_ShowMessage(surf, currentticks);
+	FDC_Get_Statusbar_Text(FdcNew, sizeof(FdcNew));
+	if (strcmp(FdcNew, FdcOld)) {
+		strcpy(FdcOld, FdcNew);
+		SDL_FillRect(surf, &FDCTextRect, GrayBg);
+		SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcNew);
+		Statusbar_UpdateRect(surf, &FDCTextRect);
+	}
 
 	if (nOldFrameSkips != nFrameSkips ||
 	    bOldFastForward != ConfigureParams.System.bFastForward) {
 		char fscount[5];
 		int end = 2;
+
+		nOldFrameSkips = nFrameSkips;
+		bOldFastForward = ConfigureParams.System.bFastForward;
 
 		if (nFrameSkips < 10)
 			fscount[0] = '0' + nFrameSkips;
@@ -776,10 +830,8 @@ void Statusbar_Update(SDL_Surface *surf)
 
 		SDL_FillRect(surf, &FrameSkipsRect, GrayBg);
 		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, fscount);
-		SDL_UpdateRects(surf, 1, &FrameSkipsRect);
 		DEBUGPRINT(("FS = %s\n", fscount));
-		nOldFrameSkips = nFrameSkips;
-		bOldFastForward = ConfigureParams.System.bFastForward;
+		Statusbar_UpdateRect(surf, &FrameSkipsRect);
 	}
 
 	if ((bRecordingYM || bRecordingWav || bRecordingAvi)
@@ -791,7 +843,10 @@ void Statusbar_Update(SDL_Surface *surf)
 			color = RecColorOff;
 		}
 		SDL_FillRect(surf, &RecLedRect, color);
-		SDL_UpdateRects(surf, 1, &RecLedRect);
 		DEBUGPRINT(("REC = ON\n"));
+		Statusbar_UpdateRect(surf, &RecLedRect);
 	}
+
+	Statusbar_ShowMessage(surf, currentticks);
+	Statusbar_UpdateRect(surf, NULL);	/* flush pending updates */
 }
