@@ -17,11 +17,15 @@ Emulation:
   - better bitmap/color alignment for STE med res overscan at 60 Hz
   - Set default value of nSpec512Threshold to "1" instead of "16"
   - Update the position of the next VBL when 50Hz and 60Hz lines are mixed
+- Videl changes :
+  - correct masking of the true color palette registers
 - CPU changes :
   - Fix a case when MFP's interrupt happens during the IACK sequence
     for HBL/VBL
   - Many prefetch changes required by some game's protection
-- Fix READ CAPACITY command result for ACSI hard disk images
+- Sound changes :
+  - Fix STE sound mixing using LMC when mixer=0 (DMA sound only)
+  - Fix some crossbar's sound errors for Falcon
 - FDC changes :
   - Add configurable RPM speed for each floppy drive and the possibility
     to turn each drive ON/OFF.
@@ -36,15 +40,6 @@ Emulation:
     and variable length bits
   - Don't force drives A and B at $4c2, keep the values detected by TOS
   - Many other timing / status register improvements
-- Videl change :
-  - correct masking of the true color palette registers
-- Fix STE sound mixing using LMC when mixer=0 (DMA sound only)
-- Fix some crossbar's sound errors for Falcon
-- Don't enable MegaST's real time clock by default, it can cause some crashes
-  in STF/STE mode
-- Improve ACIA's wait state with E clock
-- IKBD : add support for commands 0x11 and 0x13 (resume/pause output) and
-  0x17 (joystick monitoring)
 - GEMDOS HD emulation:
   - Fix: clip filenames given through GEMDOS calls to 8+3
     lenght using first '.'
@@ -52,6 +47,12 @@ Emulation:
   - Fixed/improved READ CAPACITY and INQUIRY commands
   - Unsupported commands are now handled correctly
   - Now using fseeko() instead of fseek() for supporting large images
+- Other changes:
+  - Don't enable MegaST's real time clock by default, it can cause some
+    crashes in STF/STE mode
+  - Improve ACIA's wait state with E clock
+  - Add support for IKBD commands 0x11 and 0x13 (resume/pause output)
+    and 0x17 (joystick monitoring)
 
 Emulator:
 - SDL GUI:
@@ -61,15 +62,20 @@ Emulator:
     and another checkbox to choose single/double sided drive
   - In the screen dialog, add checkbox for --desktop-st option
   - Add a 2nd line in the status bar, with infos on FDC, joysticks, monitor
-- Fix: Xbios(255) modified the given argument string
-- New options --drive-a and --drive-b to enable/disable drives A and B
-- New options --drive-a-heads and --drive-b-heads to select single or double
-  sided drives A and B
-- New --slowdown option to increase (multiply) VBL wait times
-- New NatFeats commands : NF_DEBUGGER invokes Hatari debugger
-  from native program and NF_FASTFORWARD toggles fast forward on/off
-- Allow BIOS, XBIOS, GEMDOS, VDI and AES tracing to be enabled without
-  enabling also X/BIOS interception, GEMDOS HD emulation or extended VDI mode
+- New command line options:
+  - Options --drive-a and --drive-b to enable/disable drives A and B
+  - Options --drive-a-heads and --drive-b-heads to select single or
+    double sided drives A and B
+  - --slowdown option to increase (multiply) VBL wait times
+- New Native Features commands:
+  - NF_DEBUGGER invokes Hatari debugger from native program
+  - NF_FASTFORWARD toggles fast forward on/off
+- Tracing improvements:
+  - Fix: Xbios(255) modified the given argument string
+  - Allow BIOS, XBIOS, GEMDOS, VDI and AES tracing to be enabled without
+    enabling also X/BIOS interception, GEMDOS HD emulation or extended
+    VDI mode
+  - Show PC value for traced Bios/XBios/GemDOS calls
 - Debugger:
   - Fix: release mouse in all cases where debugger can be invoked
   - Fix: DSP disassembler didn't in all cases show illegal opcodes correctly
