@@ -40,6 +40,13 @@ static void print_prefix(LOGTYPE nType)
 	fputs(sType, stdout);
 }
 
+/* output newline if it's missing from text */
+static void do_newline(const char *text)
+{
+	if (text[strlen(text)-1] != '\n')
+		fputs("\n", stdout);
+}
+
 /**
  * Output Hatari log string.
  */
@@ -62,9 +69,7 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	va_start(argptr, psFormat);
 	vfprintf(stdout, psFormat, argptr);
 	va_end(argptr);
-	/* Add a new-line if necessary: */
-	if (psFormat[strlen(psFormat)-1] != '\n')
-		fputs("\n", stdout);
+	do_newline(psFormat);
 }
 
 /**
@@ -73,6 +78,7 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 int DlgAlert_Query(const char *text)
 {
 	puts(text);
+	do_newline(text);
 	return TRUE;
 }
 
