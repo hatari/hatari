@@ -400,11 +400,10 @@ void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interru
  * Modify interrupt's Cycles to make it happen earlier or later.
  * This will not restart the interrupt, but add CycleTime cycles to the
  * current value of the counter.
+ * CycleTime can be <0 or >0
  */
 void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
-	assert(CycleTime >= 0);
-
 	/* Update list cycle counts with current PendingInterruptCount before adding a new int, */
 	/* because CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ActiveInterrupt > 0 )
