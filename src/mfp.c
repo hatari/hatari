@@ -783,7 +783,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 		if ( ( M68000_GetPC() == 0x14d78 ) && ( STMemory_ReadLong ( 0x14d6c ) == 0x11faff75 ) )
 		{
 //			fprintf ( stderr , "mfp add jitter %d\n" , TimerClockCycles );
-			TimerClockCycles += rand()%3-1;		/* add jitter for wod2 */
+			TimerClockCycles += rand()%5-2;		/* add jitter for wod2 */
 		}
 
 		if (LOG_TRACE_LEVEL(TRACE_MFP_START))
