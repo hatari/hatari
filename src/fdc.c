@@ -1246,6 +1246,9 @@ fprintf ( stderr , "fdc set nbr heads drive=%d %d\n" , Drive , NbrHeads );
 
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 		FDC_DRIVES[ Drive ].NumberOfHeads = NbrHeads;
+
+	/* Also forward change to IPF emulation */
+	IPF_Drive_Set_DoubleSided ( Drive , NbrHeads==2 ? true : false );
 }
 
 

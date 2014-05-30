@@ -52,6 +52,7 @@ typedef struct
 	int			Rev_Side[ MAX_FLOPPYDRIVES ];
 
 	bool			DriveEnabled[ MAX_FLOPPYDRIVES ];/* Is drive ON or OFF */
+	bool			DoubleSided[ MAX_FLOPPYDRIVES ];/* Is drive double sided or not */
 
 	Sint64			FdcClock;			/* Current value of CyclesGlobalClockCounter */
 #endif
@@ -65,7 +66,7 @@ static IPF_STRUCT	IPF_State;			/* All variables related to the IPF support */
 static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
-static void	IPF_Drive_Update_Enable ( void );
+static void	IPF_Drive_Update_Enable_Side ( void );
 #endif
 
 
@@ -253,6 +254,9 @@ bool	IPF_Init ( void )
 
 		IPF_State.Rev_Track[ i ] = -1;
 		IPF_State.Rev_Side[ i ] = -1;
+
+		IPF_State.DriveEnabled[ i ] = true;
+		IPF_State.DoubleSided[ i ] = true;
 	}
 
 	/* Init FDC with 2 physical drives */
@@ -271,7 +275,7 @@ bool	IPF_Init ( void )
 	/* 2 drives by default */
 	IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;
 	/* Update drives' state in case we have some drives ON or OFF in config or parameters */
-	IPF_Drive_Update_Enable ();
+	IPF_Drive_Update_Enable_Side ();
 
 	/* FDC clock */
 	IPF_State.Fdc.clockfrq = 8000000;
@@ -545,7 +549,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
  * NOTE : for now, IPF only supports changing drive 1, drive 0
  * is always ON.
  */
-void    IPF_Drive_Set_Enable ( int Drive , bool value )
+void	IPF_Drive_Set_Enable ( int Drive , bool value )
 {
 #ifndef HAVE_CAPSIMAGE
 	return;
@@ -553,21 +557,51 @@ void    IPF_Drive_Set_Enable ( int Drive , bool value )
 #else
 	IPF_State.DriveEnabled[ Drive ] = value;			/* Store the new state */
 
-	IPF_Drive_Update_Enable ();					/* Update IPF's internal state */
+	IPF_Drive_Update_Enable_Side ();				/* Update IPF's internal state */
+#endif
+}
+
+
+/*
+ * This function is used to configure a drive as single sided
+ * or double sided when using the UI or command line parameters
+ */
+void	IPF_Drive_Set_DoubleSided ( int Drive , bool value )
+{
+#ifndef HAVE_CAPSIMAGE
+	return;
+
+#else
+	IPF_State.DoubleSided[ Drive ] = value;				/* Store the new state */
+
+	IPF_Drive_Update_Enable_Side ();				/* Update IPF's internal state */
 #endif
 }
 
 
 /*
  * Update IPF's internal state depending on which drives are ON or OFF
+ * and if the drive is single or double sided (for capslib >= 5.1)
  */
 #ifdef HAVE_CAPSIMAGE
-static void	IPF_Drive_Update_Enable ( void )
+static void	IPF_Drive_Update_Enable_Side ( void )
 {
+	int	i;
+
 	if ( IPF_State.DriveEnabled[ 1 ] )
-	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;		/* should be 2 */
+	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;		/* Should be 2 */
 	else
-	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES - 1;		/* should be 1 */
+	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES - 1;		/* Should be 1 */
+
+#if CAPS_LIB_REL_REV >= 501
+	for ( i=0 ; i < MAX_FLOPPYDRIVES ; i++ )
+	{
+		if ( IPF_State.DoubleSided[ i ] )
+			IPF_State.Drive[ i ].diskattr &= ~CAPSDRIVE_DA_SS;	/* Double sided */
+		else
+			IPF_State.Drive[ i ].diskattr |= CAPSDRIVE_DA_SS;	/* Single sided */
+	}
+#endif
 }
 #endif
 
