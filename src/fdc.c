@@ -2345,6 +2345,7 @@ static int FDC_UpdateReadSectorsCmd ( void )
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	Uint8	Next_TR;
 	Uint8	Next_SR;
+	Uint8	Next_CRC_OK;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2414,18 +2415,20 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER:
-		/* Check if the current ID Field is the one we're looking for (same track/sector) */
+		/* Check if the current ID Field is the one we're looking for (same track/sector and correct CRC) */
 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
 		{
 			Next_TR = FDC_NextSectorID_TR_STX ();
 			Next_SR = FDC_NextSectorID_SR_STX ();
+			Next_CRC_OK = FDC_NextSectorID_CRC_OK_STX ();
 		}
 		else
 		{
 			Next_TR = FDC_NextSectorID_TR_ST ();
 			Next_SR = FDC_NextSectorID_SR_ST ();
+			Next_CRC_OK = FDC_NextSectorID_CRC_OK_ST ();
 		}
-		if ( ( Next_TR == FDC.TR ) && ( Next_SR == FDC.SR ) )
+		if ( ( Next_TR == FDC.TR ) && ( Next_SR == FDC.SR ) && ( Next_CRC_OK ) )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
@@ -2538,6 +2541,7 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	Uint8	Next_TR;
 	Uint8	Next_SR;
+	Uint8	Next_CRC_OK;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2618,19 +2622,21 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER:
-		/* Check if the current ID Field is the one we're looking for (same track/sector) */
+		/* Check if the current ID Field is the one we're looking for (same track/sector and correct CRC) */
 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
 		{
 			Next_TR = FDC_NextSectorID_TR_STX ();
 			Next_SR = FDC_NextSectorID_SR_STX ();
+			Next_CRC_OK = FDC_NextSectorID_CRC_OK_STX ();
 fprintf ( stderr, "FDC type II command 'write sector' does not work yet with STX\n");
 		}
 		else
 		{
 			Next_TR = FDC_NextSectorID_TR_ST ();
 			Next_SR = FDC_NextSectorID_SR_ST ();
+			Next_CRC_OK = FDC_NextSectorID_CRC_OK_ST ();
 		}
-		if ( ( Next_TR == FDC.TR ) && ( Next_SR == FDC.SR ) )
+		if ( ( Next_TR == FDC.TR ) && ( Next_SR == FDC.SR ) && ( Next_CRC_OK ) )
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START;
 			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
