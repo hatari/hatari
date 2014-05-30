@@ -77,8 +77,9 @@ void Joy_Init(void)
 	/* FIXME: Read those settings from a configuration file and make them tunable from the GUI. */
 	static const JOYAXISMAPPING AxisMappingTable [] =
 	{
-       		/* USB game pad with ID ID 0079:0011, sold by Speedlink */
-		{"USB Gamepad" , 3, 4},
+		/* Example entry for mapping joystick axis for a certain device: */
+		/* USB game pad with ID ID 0079:0011, sold by Speedlink with axis 3 and 4 used */
+		/*{"USB Gamepad" , 3, 4}, */
 		/* Default entry used if no other SDL joystick name does match (should be last of this list) */
 		{"*DEFAULT*" , 0, 1},
 	};
