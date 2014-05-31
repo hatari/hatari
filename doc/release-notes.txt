@@ -17,6 +17,7 @@ Emulation:
   - better bitmap/color alignment for STE med res overscan at 60 Hz
   - Set default value of nSpec512Threshold to "1" instead of "16"
   - Update the position of the next VBL when 50Hz and 60Hz lines are mixed
+  - When video address is set into IO region, keep the video pointer on 24 bits
 - Videl changes :
   - correct masking of the true color palette registers
 - CPU changes :
@@ -136,6 +137,7 @@ Fixed demos :
 Fixed games :
 - Reeking Rubber (by Nature), Falcon game
 - Maze (by Martin Dennett & John Parker)
+- Leavin' Teramis loader text (video address at $ffe100)
 
 
  Version 1.7.0 (2013-06-24):

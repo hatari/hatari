@@ -339,6 +339,11 @@
 /*			update the position where the VBL interrupt will happen (fix "keyboard	*/
 /*			no jitter" test program by Nyh, with 4 lines at 60 Hz and 160240 cycles	*/
 /*			per VBL).								*/
+/* 2014/05/31	[NP]	Ensure pVideoRaster always points into a 24 bit space region. In case	*/
+/*			video address at $ff8201/03 is set into IO space $ffxxxx, the new value	*/
+/*			for video pointer should not be >= $1000000 (fix "Leavin' Teramis"	*/
+/*			which sets video address to $ffe100 to display "loading please wait".	*/
+/*			In that case, we must display $ffe100-$ffffff then $0-$5e00)		*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -2073,6 +2078,10 @@ static void Video_CopyScreenLineMono(void)
 
 	/* Each screen line copied to buffer is always same length */
 	pSTScreen += SCREENBYTES_MONOLINE;
+
+	/* We must keep the new video address in a 24 bit space */
+	/* (in case it pointed to IO space and is now >= 0x1000000) */
+	pVideoRaster = ( ( pVideoRaster - STRam ) & 0xffffff ) + STRam;
 }
 
 
@@ -2488,6 +2497,10 @@ static void Video_CopyScreenLineColor(void)
 
 	/* Each screen line copied to buffer is always same length */
 	pSTScreen += SCREENBYTES_LINE;
+
+	/* We must keep the new video address in a 24 bit space */
+	/* (in case it pointed to IO space and is now >= 0x1000000) */
+	pVideoRaster = ( ( pVideoRaster - STRam ) & 0xffffff ) + STRam;
 }
 
 
