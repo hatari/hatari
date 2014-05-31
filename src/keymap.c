@@ -545,7 +545,7 @@ static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
 /**
  * Remap SDL Key to ST Scan code
  */
-char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
+static char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 {
 	if (pKeySym->sym >= SDLK_LAST)  return -1; /* Avoid illegal keys */
 
@@ -681,7 +681,7 @@ static bool Keymap_DebounceSTKey(char STScanCode)
 void Keymap_DebounceAllKeys(void)
 {
 	SDLKey key;
-	char STScanCode;
+	uint8_t STScanCode;
 	SDL_keysym tmpKeySym;
 
 	/* Return if we aren't in fast forward or have not disabled key repeat */
@@ -696,15 +696,14 @@ void Keymap_DebounceAllKeys(void)
 	/* Now run through each PC key looking for ones held down */
 	for (key = SDLK_FIRST; key < SDLK_LAST; key++)
 	{
-		/* Is key held? */
-		if (Keyboard.KeyStates[key])
+		/* Get scan code */
+		tmpKeySym.sym = key;
+		tmpKeySym.scancode = 0;
+		STScanCode = Keymap_RemapKeyToSTScanCode(&tmpKeySym);
+		if (STScanCode != (uint8_t)-1)
 		{
-			tmpKeySym.sym = key;
-			tmpKeySym.scancode = 0;
-
-			/* Get scan code */
-			STScanCode = Keymap_RemapKeyToSTScanCode(&tmpKeySym);
-			if (STScanCode != (char)-1)
+			/* Is key held? */
+			if (Keyboard.KeyStates[STScanCode])
 			{
 				/* Does this require de-bouncing? */
 				if (Keymap_DebounceSTKey(STScanCode))
@@ -722,8 +721,7 @@ void Keymap_DebounceAllKeys(void)
  */
 void Keymap_KeyDown(SDL_keysym *sdlkey)
 {
-	bool bPreviousKeyState;
-	char STScanCode;
+	uint8_t STScanCode;
 	int symkey = sdlkey->sym;
 	int modkey = sdlkey->mod;
 
@@ -745,15 +743,15 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 		return;
 	}
 
-	/* Set down */
-	bPreviousKeyState = Keyboard.KeyStates[symkey];
-	Keyboard.KeyStates[symkey] = true;
-
 	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
-	if (STScanCode != (char)-1)
+	if (STScanCode != (uint8_t)-1)
 	{
-		if (!bPreviousKeyState)
+		if (!Keyboard.KeyStates[STScanCode])
+		{
+			/* Set down */
+			Keyboard.KeyStates[STScanCode] = true;
 			IKBD_PressSTKey(STScanCode, true);
+		}
 	}
 }
 
@@ -764,7 +762,7 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
  */
 void Keymap_KeyUp(SDL_keysym *sdlkey)
 {
-	char STScanCode;
+	uint8_t STScanCode;
 	int symkey = sdlkey->sym;
 	int modkey = sdlkey->mod;
 
@@ -788,17 +786,16 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 		return;
 	}
 
+	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
 	/* Release key (only if was pressed) */
-	if (Keyboard.KeyStates[symkey])
+	if (STScanCode != (uint8_t)-1)
 	{
-		STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
-		if (STScanCode != (char)-1)
+		if (Keyboard.KeyStates[STScanCode])
 		{
 			IKBD_PressSTKey(STScanCode, false);
+			Keyboard.KeyStates[STScanCode] = false;
 		}
 	}
-
-	Keyboard.KeyStates[symkey] = false;
 }
 
 /*-----------------------------------------------------------------------*/

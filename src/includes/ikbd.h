@@ -8,9 +8,6 @@
 #ifndef HATARI_IKBD_H
 #define HATARI_IKBD_H
 
-#include <SDL_keysym.h>           /* Needed for SDLK_LAST */
-
-
 /* Keyboard processor details */
 
 typedef struct {
@@ -43,11 +40,12 @@ typedef struct {
 } KEYBOARD_PROCESSOR;
 
 /* Keyboard state */
+#define KBD_MAX_SCANCODE          0x72
 #define SIZE_KEYBOARD_BUFFER      1024    /* Allow this many bytes to be stored in buffer (waiting to send to ACIA) */
 #define KEYBOARD_BUFFER_MASK      (SIZE_KEYBOARD_BUFFER-1)
 #define SIZE_KEYBOARDINPUT_BUFFER 8
 typedef struct {
-  Uint8 KeyStates[SDLK_LAST];           /* State of PC's keys, TRUE is down */
+  Uint8 KeyStates[KBD_MAX_SCANCODE + 1];	/* State of ST keys, TRUE is down */
 
   Uint8 Buffer[SIZE_KEYBOARD_BUFFER];		/* Keyboard output buffer */
   int BufferHead,BufferTail;			/* Pointers into above buffer */
