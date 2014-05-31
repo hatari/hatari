@@ -2827,10 +2827,9 @@ bool Video_RenderTTScreen(void)
 	if (nScreenZoomX * nScreenZoomY != 1)
 		VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
 	else
-		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
-	HostScreen_renderEnd();
-	HostScreen_update1(false);
+		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);	
 
+	HostScreen_update1(HostScreen_renderEnd(), false);
 	return true;
 }
 

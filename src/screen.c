@@ -1086,7 +1086,7 @@ static void Screen_UnLock(void)
 /**
  * Blit our converted ST screen to window/full-screen
  */
-static void Screen_Blit(void)
+static void Screen_Blit(SDL_Rect *sbar_rect)
 {
 	unsigned char *pTmpScreen;
 
@@ -1105,7 +1105,15 @@ static void Screen_Blit(void)
 # endif
 #endif
 	{
-		SDL_UpdateRects(sdlscrn, 1, &STScreenRect);
+		int count = 1;
+		SDL_Rect rects[2];
+		rects[0] = STScreenRect;
+		if (sbar_rect)
+		{
+			rects[1] = *sbar_rect;
+			count = 2;
+		}
+		SDL_UpdateRects(sdlscrn, count, rects);
 	}
 
 	/* Swap copy/raster buffers in screen. */
@@ -1126,6 +1134,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	int new_res;
 	void (*pDrawFunction)(void);
 	static bool bPrevFrameWasSpec512 = false;
+	SDL_Rect *sbar_rect;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
@@ -1141,8 +1150,8 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	 * and saved by Statusbar_OverlayBackup()
 	 */
 	Statusbar_OverlayRestore(sdlscrn);
-	
-	/* Lock screen ready for drawing */
+
+	/* Lock screen for direct screen surface format writes */
 	if (Screen_Lock())
 	{
 		bScreenContentsChanged = false;      /* Did change (ie needs blit?) */
@@ -1196,18 +1205,18 @@ static bool Screen_DrawFrame(bool bForceFlip)
 		/* Unlock screen */
 		Screen_UnLock();
 
-		/* draw statusbar or overlay led(s) after unlock */
+		/* draw overlay led(s) or statusbar after unlock */
 		Statusbar_OverlayBackup(sdlscrn);
-		Statusbar_Update(sdlscrn);
+		sbar_rect = Statusbar_Update(sdlscrn, false);
 		
 		/* Clear flags, remember type of overscan as if change need screen full update */
 		pFrameBuffer->bFullUpdate = false;
 		pFrameBuffer->OverscanModeCopy = OverscanMode;
 
 		/* And show to user */
-		if (bScreenContentsChanged || bForceFlip)
+		if (bScreenContentsChanged || bForceFlip || sbar_rect)
 		{
-			Screen_Blit();
+			Screen_Blit(sbar_rect);
 		}
 
 		return bScreenContentsChanged;

@@ -963,9 +963,7 @@ bool VIDEL_renderScreen(void)
 		VIDEL_ConvertScreenNoZoom(vw, vh, videl.save_scrBpp, nextline);
 	}
 
-
-	HostScreen_renderEnd();
-	HostScreen_update1(false);
+	HostScreen_update1(HostScreen_renderEnd(), false);
 
 	return true;
 }

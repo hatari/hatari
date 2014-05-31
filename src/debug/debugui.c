@@ -1018,7 +1018,7 @@ void DebugUI(debug_reason_t reason)
 	 * on how to continue in case he invoked the debugger by accident.
 	 */
 	Statusbar_AddMessage("Console Debugger", 100);
-	Statusbar_Update(sdlscrn);
+	Statusbar_Update(sdlscrn, true);
 
 	/* disable normal GUI alerts while on console */
 	alertLevel = Log_SetAlertLevel(LOG_FATAL);

@@ -51,7 +51,8 @@ const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 
 /* TODO: put these hostscreen globals to some struct */
 static Uint32 sdl_videoparams;
-static int hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
+static SDL_Rect hs_rect;
+static int hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 static void HostScreen_remapPalette(void);
@@ -94,7 +95,7 @@ void HostScreen_toggleFullScreen(void)
 
 	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
 	/* force screen redraw */
-	HostScreen_update1(true);
+	HostScreen_update1(NULL, true);
 }
 
 
@@ -181,8 +182,10 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	 * in windowed mode because this uses screensize instead of using
 	 * the aspect scaled sizes directly, but it works better this way.
 	 */
-	hs_width = screenwidth;
-	hs_height = screenheight - sbarheight;
+	hs_rect.x = 0;
+	hs_rect.y = 0;
+	hs_rect.w = screenwidth;
+	hs_rect.h = screenheight - sbarheight;
 
 	if (sdlscrn && (!bpp || sdlscrn->format->BitsPerPixel == bpp) &&
 	    sdlscrn->w == (signed)screenwidth && sdlscrn->h == (signed)screenheight &&
@@ -257,12 +260,20 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 }
 
 
-void HostScreen_update1(bool forced)
+void HostScreen_update1(SDL_Rect *extra, bool forced)
 {
+	SDL_Rect rects[2];
+	int count = 1;
+
 	if ( !forced && !doUpdate ) // the HW surface is available
 		return;
 
-	SDL_UpdateRect( sdlscrn, 0, 0, hs_width, hs_height );
+	rects[0] = hs_rect;
+	if (extra) {
+		rects[1] = *extra;
+		count = 2;
+	}
+	SDL_UpdateRects(sdlscrn, count, rects);
 }
 
 
@@ -278,12 +289,12 @@ Uint32 HostScreen_getPitch(void)
 
 Uint32 HostScreen_getWidth(void)
 {
-	return hs_width;
+	return hs_rect.w;
 }
 
 Uint32 HostScreen_getHeight(void)
 {
-	return hs_height;
+	return hs_rect.h;
 }
 
 Uint8 *HostScreen_getVideoramAddress(void)
@@ -339,9 +350,14 @@ bool HostScreen_renderBegin(void)
 	return true;
 }
 
-void HostScreen_renderEnd(void)
+/**
+ * Direct surface writes done, so unlock screen,
+ * check for statusbar updates and if there were such,
+ * return which area needs update.
+ */
+SDL_Rect* HostScreen_renderEnd(void)
 {
 	if (SDL_MUSTLOCK(sdlscrn))
 		SDL_UnlockSurface(sdlscrn);
-	Statusbar_Update(sdlscrn);
+	return Statusbar_Update(sdlscrn, false);
 }

@@ -389,11 +389,11 @@ void Dialog_WindowDlg(void)
 			{
 				/* AVI indexing can take a while for larger files */
 				Statusbar_AddMessage("Finishing AVI file...", 100);
-				Statusbar_Update(sdlscrn);
+				Statusbar_Update(sdlscrn, true);
 				Avi_StopRecording();
 				windowdlg[DLGSCRN_RECANIM].txt = "Record AVI";
 				Statusbar_AddMessage("Emulation paused", 100);
-				Statusbar_Update(sdlscrn);
+				Statusbar_Update(sdlscrn, true);
 			}
 			else
 			{

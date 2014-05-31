@@ -34,7 +34,7 @@ extern void Statusbar_Init(SDL_Surface *screen);
 extern void Statusbar_UpdateInfo(void);
 extern void Statusbar_AddMessage(const char *msg, Uint32 msecs);
 extern void Statusbar_OverlayBackup(SDL_Surface *screen);
-extern void Statusbar_Update(SDL_Surface *screen);
+extern SDL_Rect* Statusbar_Update(SDL_Surface *screen, bool do_update);
 extern void Statusbar_OverlayRestore(SDL_Surface *screen);
 
 #endif /* HATARI_STATUSBAR_H */

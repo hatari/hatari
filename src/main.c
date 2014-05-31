@@ -194,7 +194,7 @@ bool Main_PauseEmulation(bool visualize)
 		
 		Statusbar_AddMessage("Emulation paused", 100);
 		/* make sure msg gets shown */
-		Statusbar_Update(sdlscrn);
+		Statusbar_Update(sdlscrn, true);
 
 		if (bGrabMouse && !bInFullScreen)
 			/* Un-grab mouse pointer in windowed mode */
@@ -843,7 +843,7 @@ int main(int argc, char *argv[])
 	{
 		/* cleanly close the avi file */
 		Statusbar_AddMessage("Finishing AVI file...", 100);
-		Statusbar_Update(sdlscrn);
+		Statusbar_Update(sdlscrn, true);
 		Avi_StopRecording();
 	}
 	/* Un-init emulation system */

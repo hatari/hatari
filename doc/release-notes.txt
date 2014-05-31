@@ -63,6 +63,8 @@ Emulator:
     and another checkbox to choose single/double sided drive
   - In the screen dialog, add checkbox for --desktop-st option
   - Add a 2nd line in the status bar, with infos on FDC, joysticks, monitor
+  - Fix OSX performance issue caused by statusbar and overlay LED
+    doing their own SDL_UpdateRects() calls
 - New command line options:
   - Options --drive-a and --drive-b to enable/disable drives A and B
   - Options --drive-a-heads and --drive-b-heads to select single or
