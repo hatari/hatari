@@ -1004,5 +1004,5 @@ void Blitter_Info(Uint32 dummy)
 	fprintf(fp, "LOP:       0x%02x\n", regs->lop);
 	fprintf(fp, "control:   0x%02x\n", regs->ctrl);
 	fprintf(fp, "skew:      0x%02x\n", regs->skew);
-	fprintf(fp, "Note: internally changed register values aren't visible to breakpoints or in memdump output until emulated code reads or writes them!)\n");
+	fprintf(fp, "Note: internally changed register values aren't visible to breakpoints\nor in memdump output until emulated code reads or writes them!\n");
 }

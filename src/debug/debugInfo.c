@@ -592,31 +592,31 @@ static const struct {
 	const char *info;
 } infotable[] = {
 	{ false,"aes",       AES_Info,             NULL, "Show AES vector contents (with <value>, show opcodes)" },
-	{ false,"basepage",  DebugInfo_Basepage,   NULL, "Show program basepage info at given <address>" },
+	{ false,"basepage",  DebugInfo_Basepage,   NULL, "Show program basepage contents at given <address>" },
 	{ false,"bios",      Bios_Info,            NULL, "Show BIOS opcodes" },
-	{ false,"blitter",   Blitter_Info,         NULL, "Show Blitter register values" },
+	{ false,"blitter",   Blitter_Info,         NULL, "Show Blitter register contents" },
 	{ false,"cookiejar", DebugInfo_Cookiejar,  NULL, "Show TOS Cookiejar contents" },
-	{ false,"crossbar",  Crossbar_Info,        NULL, "Show Falcon crossbar HW register values" },
+	{ false,"crossbar",  Crossbar_Info,        NULL, "Show Falcon Crossbar register contents" },
 	{ true, "default",   DebugInfo_Default,    NULL, "Show default debugger entry information" },
 	{ true, "disasm",    DebugInfo_CpuDisAsm,  NULL, "Disasm CPU from PC or given <address>" },
 #if ENABLE_DSP_EMU
 	{ false, "dsp",      DSP_Info,             NULL, "Show misc. DSP core info (stack etc)" },
 	{ true, "dspdisasm", DebugInfo_DspDisAsm,  NULL, "Disasm DSP from given <address>" },
 	{ true, "dspmemdump",DebugInfo_DspMemDump, DebugInfo_DspMemArgs, "Dump DSP memory from given <space> <address>" },
-	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP registers values" },
+	{ true, "dspregs",   DebugInfo_DspRegister,NULL, "Show DSP register contents" },
 #endif
 	{ true, "file",      DebugInfo_FileParse, DebugInfo_FileArgs, "Parse commands from given debugger input <file>" },
-	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu info (with <value>, show opcodes)" },
+	{ false,"gemdos",    GemDOS_Info,          NULL, "Show GEMDOS HDD emu information (with <value>, show opcodes)" },
 	{ true, "history",   History_Show,         NULL, "Show history of last <count> instructions" },
 	{ true, "memdump",   DebugInfo_CpuMemDump, NULL, "Dump CPU memory from given <address>" },
-	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header information" },
+	{ false,"osheader",  DebugInfo_OSHeader,   NULL, "Show TOS OS header contents" },
 	{ true, "regaddr",   DebugInfo_RegAddr, DebugInfo_RegAddrArgs, "Show <disasm|memdump> from CPU/DSP address pointed by <register>" },
-	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU registers values" },
+	{ true, "registers", DebugInfo_CpuRegister,NULL, "Show CPU register contents" },
 	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with <value>, show opcodes)" },
-	{ false,"videl",     Videl_Info,           NULL, "Show Falcon Videl HW registers values" },
-	{ false,"video",     Video_Info,           NULL, "Show Video related values" },
+	{ false,"videl",     Videl_Info,           NULL, "Show Falcon Videl register contents" },
+	{ false,"video",     Video_Info,           NULL, "Show Video information" },
 	{ false,"xbios",     XBios_Info,           NULL, "Show XBIOS opcodes" },
-	{ false,"ym",        PSG_Info,             NULL, "Show YM-2149 registers values" },
+	{ false,"ym",        PSG_Info,             NULL, "Show YM-2149 register contents" },
 };
 
 static int LockedFunction = 6; /* index for the "default" function */

@@ -559,8 +559,6 @@ void PSG_ff8803_WriteByte(void)
 void PSG_Info(Uint32 dummy)
 {
 	int i;
-
-	fprintf(stderr, "YM-2149 register contents:\n");
 	for(i = 0; i < ARRAYSIZE(PSGRegisters); i++)
 	{
 		fprintf(stderr, "Reg $%02X : $%02X\n", i, PSGRegisters[i]);
