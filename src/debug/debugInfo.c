@@ -30,6 +30,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "history.h"
 #include "ioMem.h"
 #include "m68000.h"
+#include "psg.h"
 #include "stMemory.h"
 #include "tos.h"
 #include "screen.h"
@@ -614,7 +615,8 @@ static const struct {
 	{ false,"vdi",       VDI_Info,             NULL, "Show VDI vector contents (with <value>, show opcodes)" },
 	{ false,"videl",     Videl_Info,           NULL, "Show Falcon Videl HW registers values" },
 	{ false,"video",     Video_Info,           NULL, "Show Video related values" },
-	{ false,"xbios",     XBios_Info,           NULL, "Show XBIOS opcodes" }
+	{ false,"xbios",     XBios_Info,           NULL, "Show XBIOS opcodes" },
+	{ false,"ym",        PSG_Info,             NULL, "Show YM-2149 registers values" },
 };
 
 static int LockedFunction = 6; /* index for the "default" function */

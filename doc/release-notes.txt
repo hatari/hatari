@@ -86,6 +86,7 @@ Emulator:
   - Fix: "next" command didn't work correctly in "hex" number base
   - Fix: DATA/BSS debug symbol offsets were interpreted based on
     (incorrect) VBCC's vlink behavior
+  - New "ym" info subcommand to show YM register values
   - removed limits on breakpoints and their conditions
   - when entering debugger, current program's DRI/GST format debug
     symbols are automatically read from it, if such are available
