@@ -3777,3 +3777,37 @@ void Video_TTColorSTRegs_WriteWord(void)
 {
 	bTTColorsSTSync = false;
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * display video related information (for debugger info command)
+ */
+void Video_Info(Uint32 dummy)
+{
+	const char *mode;
+	switch (OverscanMode) {
+	case OVERSCANMODE_NONE:
+		mode = "none";
+		break;
+	case OVERSCANMODE_TOP:
+		mode = "top";
+		break;
+	case OVERSCANMODE_BOTTOM:
+		mode = "bottom";
+		break;
+	case OVERSCANMODE_TOP|OVERSCANMODE_BOTTOM:
+		mode = "top+bottom";
+		break;
+	default:
+		mode = "unknown";
+	}
+	fprintf(stderr, "Video base   : 0x%x\n", VideoBase);
+	fprintf(stderr, "VBL counter  : %d\n", nVBLs);
+	fprintf(stderr, "HBL line     : %d\n", nHBL);
+	fprintf(stderr, "V-overscan   : %s\n", mode);
+	fprintf(stderr, "Refresh rate : %d Hz\n", nScreenRefreshRate);
+	fprintf(stderr, "Frame skips  : %d\n", nFrameSkips);
+
+	/* TODO: any other information that would be useful to show? */
+}

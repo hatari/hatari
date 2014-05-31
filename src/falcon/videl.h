@@ -78,4 +78,6 @@ extern void VIDEL_InterruptHandler_HalfLine(void);
 /* Called from memorySnapShot.c */
 extern void VIDEL_MemorySnapShot_Capture(bool bSave);
 
+extern void Videl_Info(Uint32 dummy);
+
 #endif /* _VIDEL_H */

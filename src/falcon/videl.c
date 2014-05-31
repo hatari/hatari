@@ -2161,3 +2161,59 @@ void Videl_Color15_WriteWord(void)
 {
 	Videl_ColorReg_WriteWord();
 }
+
+/**
+ * display Videl registers values (for debugger info command)
+ */
+void Videl_Info(Uint32 dummy)
+{
+	if (ConfigureParams.System.nMachineType != MACHINE_FALCON) {
+		fprintf(stderr, "Not Falcon - no Videl!\n");
+		return;
+	}
+
+	fprintf(stderr, "$FF8006.b : monitor type                     : %02x\n", IoMem_ReadByte(0xff8006));
+	fprintf(stderr, "$FF8201.b : Video Base Hi                    : %02x\n", IoMem_ReadByte(0xff8201));
+	fprintf(stderr, "$FF8203.b : Video Base Mi                    : %02x\n", IoMem_ReadByte(0xff8203));
+	fprintf(stderr, "$FF8205.b : Video Count Hi                   : %02x\n", IoMem_ReadByte(0xff8205));
+	fprintf(stderr, "$FF8207.b : Video Count Mi                   : %02x\n", IoMem_ReadByte(0xff8207));
+	fprintf(stderr, "$FF8209.b : Video Count Lo                   : %02x\n", IoMem_ReadByte(0xff8209));
+	fprintf(stderr, "$FF820A.b : Sync mode                        : %02x\n", IoMem_ReadByte(0xff820a));
+	fprintf(stderr, "$FF820D.b : Video Base Lo                    : %02x\n", IoMem_ReadByte(0xff820d));
+	fprintf(stderr, "$FF820E.w : offset to next line              : %04x\n", IoMem_ReadWord(0xff820e));
+	fprintf(stderr, "$FF8210.w : VWRAP - line width               : %04x\n", IoMem_ReadWord(0xff8210));
+	fprintf(stderr, "$FF8260.b : ST shift mode                    : %02x\n", IoMem_ReadByte(0xff8260));
+	fprintf(stderr, "$FF8264.w : Horizontal scroll register       : %04x\n", IoMem_ReadWord(0xff8264));
+	fprintf(stderr, "$FF8266.w : Falcon shift mode                : %04x\n", IoMem_ReadWord(0xff8266));
+	fprintf(stderr, "\n");
+	fprintf(stderr, "$FF8280.w : HHC - Horizontal Hold Counter    : %04x\n", IoMem_ReadWord(0xff8280));
+	fprintf(stderr, "$FF8282.w : HHT - Horizontal Hold Timer      : %04x\n", IoMem_ReadWord(0xff8282));
+	fprintf(stderr, "$FF8284.w : HBB - Horizontal Border Begin    : %04x\n", IoMem_ReadWord(0xff8284));
+	fprintf(stderr, "$FF8286.w : HBE - Horizontal Border End      : %04x\n", IoMem_ReadWord(0xff8286));
+	fprintf(stderr, "$FF8288.w : HDB - Horizontal Display Begin   : %04x\n", IoMem_ReadWord(0xff8288));
+	fprintf(stderr, "$FF828A.w : HDE - Horizontal Display End     : %04x\n", IoMem_ReadWord(0xff828a));
+	fprintf(stderr, "$FF828C.w : HSS - Horizontal SS              : %04x\n", IoMem_ReadWord(0xff828c));
+	fprintf(stderr, "$FF828E.w : HFS - Horizontal FS              : %04x\n", IoMem_ReadWord(0xff828e));
+	fprintf(stderr, "$FF8290.w : HEE - Horizontal EE              : %04x\n", IoMem_ReadWord(0xff8290));
+	fprintf(stderr, "\n");
+	fprintf(stderr, "$FF82A0.w : VFC - Vertical Frequency Counter : %04x\n", IoMem_ReadWord(0xff82a0));
+	fprintf(stderr, "$FF82A2.w : VFT - Vertical Frequency Timer   : %04x\n", IoMem_ReadWord(0xff82a2));
+	fprintf(stderr, "$FF82A4.w : VBB - Vertical Border Begin      : %04x\n", IoMem_ReadWord(0xff82a4));
+	fprintf(stderr, "$FF82A6.w : VBE - Vertical Border End        : %04x\n", IoMem_ReadWord(0xff82a6));
+	fprintf(stderr, "$FF82A8.w : VDB - Vertical Display Begin     : %04x\n", IoMem_ReadWord(0xff82a8));
+	fprintf(stderr, "$FF82AA.w : VDE - Vertical Display End       : %04x\n", IoMem_ReadWord(0xff82aa));
+	fprintf(stderr, "$FF82AC.w : VSS - Vertical SS                : %04x\n", IoMem_ReadWord(0xff82ac));
+	fprintf(stderr, "\n");
+	fprintf(stderr, "$FF82C0.w : VCO - Video control              : %04x\n", IoMem_ReadWord(0xff82c0));
+	fprintf(stderr, "$FF82C2.w : VMD - Video mode                 : %04x\n", IoMem_ReadWord(0xff82c2));
+	fprintf(stderr, "\n-------------------------\n");
+
+	fprintf(stderr, "Video base  : %08x\n",
+		(IoMem_ReadByte(0xff8201)<<16) + 
+		(IoMem_ReadByte(0xff8203)<<8)  + 
+		 IoMem_ReadByte(0xff820d));
+	fprintf(stderr, "Video count : %08x\n",
+		(IoMem_ReadByte(0xff8205)<<16) + 
+		(IoMem_ReadByte(0xff8207)<<8)  + 
+		 IoMem_ReadByte(0xff8209));
+}
