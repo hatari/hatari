@@ -891,10 +891,6 @@ Atari TT programs
 Working applications:
 - Mandelbrot playtime (fracplay, uses FPU)
 
-Broken applications:
-- PixArt4, clicks to windows don't work
-  http://www.1632systems.co.uk/www/html/Product/pixart.htm
-
 Working demos:
 - 256mbrot, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
@@ -905,6 +901,15 @@ Working demos:
 - XiTEC demos (by Omega)
   - On exiting Swing EmuTOS panics with priviledge violation
     (TOS bombs and continues)
+
+Working games:
+- Capy (by YesCREW)
+
+Broken programs:
+- GEM NetHack v3.4.3 (colors wrong, bus errors)
+- GEM Slashem v3.3.1 (based on Nethack, same issues)
+- PixArt4, clicks to windows don't work
+  http://www.1632systems.co.uk/www/html/Product/pixart.htm
 
 
 Falcon free/shareware demos, games and applications
