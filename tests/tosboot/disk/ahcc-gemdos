@@ -27,7 +27,7 @@ text ahcc_p.ttp gemdos.prj
 keypress 28
 
 # wait build to finish
-sleep 3
+sleep 5
 
 # kill hatari
 kill

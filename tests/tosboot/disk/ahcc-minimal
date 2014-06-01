@@ -7,6 +7,6 @@ keypress Z
 keyup 29
 text ahcc_p.ttp minimal.prj
 keypress 28
-sleep 3
+sleep 5
 kill
 quit
