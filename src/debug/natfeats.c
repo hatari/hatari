@@ -97,13 +97,24 @@ static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Dprintf(("NF_SHUTDOWN()\n"));
 	ConfigureParams.Log.bConfirmQuit = false;
-	Main_RequestQuit();
+	Main_RequestQuit(0);
 	return true;
 }
 
 /*
  * Native Features specific to Hatari
  */
+
+static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
+{
+	Sint32 exitval;
+
+	Dprintf(("NF_EXIT()\n"));
+	ConfigureParams.Log.bConfirmQuit = false;
+	exitval = STMemory_ReadLong(stack);
+	Main_RequestQuit(exitval);
+	return true;
+}
 
 /**
  * invoke debugger
@@ -167,6 +178,7 @@ static const struct {
 	{ "NF_VERSION",  false, nf_version },
 	{ "NF_STDERR",   false, nf_stderr },
 	{ "NF_SHUTDOWN", true,  nf_shutdown },
+	{ "NF_EXIT",     false, nf_exit },
 	{ "NF_DEBUGGER", false, nf_debugger },
 	{ "NF_FASTFORWARD", false,  nf_fastforward }
 };

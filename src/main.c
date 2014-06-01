@@ -68,6 +68,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #endif
 
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
+static int nQuitValue;                    /* exit value */
 
 static Uint32 nRunVBLs;                   /* Whether and how many VBLS to run before exit */
 static Uint32 nFirstMilliTick;            /* Ticks when VBL counting started */
@@ -231,7 +232,7 @@ bool Main_UnPauseEmulation(void)
 /**
  * Optionally ask user whether to quit and set bQuitProgram accordingly
  */
-void Main_RequestQuit(void)
+void Main_RequestQuit(int exitval)
 {
 	if (ConfigureParams.Memory.bAutoSave)
 	{
@@ -253,6 +254,7 @@ void Main_RequestQuit(void)
 		/* Assure that CPU core shuts down */
 		M68000_SetSpecial(SPCFLAG_BRK);
 	}
+	nQuitValue = exitval;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -504,7 +506,7 @@ void Main_EventHandler(void)
 		{
 
 		 case SDL_QUIT:
-			Main_RequestQuit();
+			Main_RequestQuit(0);
 			break;
 			
 		 case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
@@ -849,5 +851,5 @@ int main(int argc, char *argv[])
 	/* Un-init emulation system */
 	Main_UnInit();
 
-	return 0;
+	return nQuitValue;
 }

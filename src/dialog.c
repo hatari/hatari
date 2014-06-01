@@ -70,7 +70,7 @@ bool Dialog_DoProperty(void)
 	Main_UnPauseEmulation();
 
 	if (bQuitProgram)
-		Main_RequestQuit();
+		Main_RequestQuit(0);
 
 	return bOKDialog;
 }

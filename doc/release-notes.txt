@@ -71,6 +71,7 @@ Emulator:
     double sided drives A and B
   - --slowdown option to increase (multiply) VBL wait times
 - New Native Features commands:
+  - NF_EXIT exits emulator with given exit code
   - NF_DEBUGGER invokes Hatari debugger from native program
   - NF_FASTFORWARD toggles fast forward on/off
 - Tracing improvements:

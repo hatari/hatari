@@ -318,7 +318,7 @@ void ShortCut_ActKey(void)
 		ShortCut_Pause();              /* Invoke Pause */
 		break;
 	 case SHORTCUT_QUIT:
-		Main_RequestQuit();
+		Main_RequestQuit(0);
 		break;
 	 case SHORTCUT_LOADMEM:
 		MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, true);
