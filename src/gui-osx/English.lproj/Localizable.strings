@@ -11,3 +11,29 @@
 "OK"="Ok";
 "Cancel"="Cancel";
 "Cold reset!"="Cold reset!";
+
+"Detected double bus error => CPU halted!\nEmulation needs to be reset.\n" = "Detected double bus error => CPU halted!\nEmulation needs to be reset.\n" ;
+"The emulated system must be reset to apply these changes. Apply changes now and reset the emulator?" = "The emulated system must be reset to apply these changes. Apply changes now and reset the emulator?" ;
+"All unsaved data will be lost.\nDo you really want to quit?" = "All unsaved data will be lost.\nDo you really want to quit?" ;
+"Insert newly created disk in" = "Insert newly created disk in" ;
+"Ignore" = "Ignore" ;
+"Please specify a .%@ file" = "Please specify a .%@ file" ;
+" or a ." = " or a ." ;
+"ERROR: Cannot insert same floppy to multiple drives!" = "ERROR: Cannot insert same floppy to multiple drives!" ;
+"Error in Config structure (Contact author).\n" = "Error in Config structure (Contact author).\n" ;
+"Error, Config file not saved" = "Error, Config file not saved" ;
+
+"Can not load TOS file:" = "Can not load TOS file:\n'%@'" ;
+"Detected a RAM TOS - this will probably not work very well!\n" = "Detected a RAM TOS - this will probably not work very well!\n" ;
+"Detected RAM TOS image, skipping TOS patches.\n" = "Detected RAM TOS image, skipping TOS patches.\n" ;
+"Only TOS versions >= 1.04 support autostarting!\n" = "Only TOS versions >= 1.04 support autostarting!\n" ;
+"Autostart file removed.\n" = "Autostart file removed.\n" ;
+"TOS versions 1.06 and 1.62 are for Atari STE only.\n ==> Switching to STE mode now.\n" = "TOS versions 1.06 and 1.62 are for Atari STE only.\n ==> Switching to STE mode now.\n" ;
+"TOS versions 3.0x are for Atari TT only.\n ==> Switching to TT mode now.\n" = "TOS versions 3.0x are for Atari TT only.\n ==> Switching to TT mode now.\n" ;
+"TOS versions 4.x are for Atari Falcon only.\n ==> Switching to Falcon mode now.\n" = "TOS versions 4.x are for Atari Falcon only.\n ==> Switching to Falcon mode now.\n" ;
+"TOS versions <= 1.4 work only in\nST mode and with a 68000 CPU.\n ==> Switching to ST mode with 68000 now.\n" = "TOS versions <= 1.4 work only in\nST mode and with a 68000 CPU.\n ==> Switching to ST mode with 68000 now.\n" ;
+"This TOS version does not work in TT/Falcon mode.\n ==> Switching to STE mode now.\n" = "This TOS version does not work in TT/Falcon mode.\n ==> Switching to STE mode now.\n" ;
+"TOS versions 4.x require a CPU >= 68020.\n ==> Switching to 68020 mode now.\n" = "TOS versions 4.x require a CPU >= 68020.\n ==> Switching to 68020 mode now.\n" ;
+"TOS versions 3.0x require a CPU >= 68030.\n ==> Switching to 68030 mode now.\n" = "TOS versions 3.0x require a CPU >= 68030.\n ==> Switching to 68030 mode now.\n" ;
+"Please use at least TOS v1.04 for the HD directory emulation (all required GEMDOS functionality isn't completely emulated for this TOS version)." = "Please use at least TOS v1.04 for the HD directory emulation (all required GEMDOS functionality isn't completely emulated for this TOS version)." ;
+"To use extended VDI resolutions, you must select a TOS >= 1.02." = "To use extended VDI resolutions, you must select a TOS >= 1.02." ;

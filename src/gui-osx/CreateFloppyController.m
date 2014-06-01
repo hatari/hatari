@@ -19,59 +19,48 @@
 
 @implementation CreateFloppyController
 
+char szPath[FILENAME_MAX] ;
+
 - (IBAction)createFloppyImage:(id)sender
 {
-	BOOL cRet;
-	
-	// Create a SavePanel
-	NSSavePanel *savePanel = [NSSavePanel savePanel];
+	BOOL		cRet;
+	int			ret, cTracks, cSectors, cSides ;
+	NSString	*defaultDir ;
+	NSString	*newCnf ;
 
-	// Set its allowed file types
-	NSArray* allowedFileTypes = [NSArray arrayWithObjects: @"st", @"msa", @"dim", @"gz", nil];
-	[savePanel setAllowedFileTypes:allowedFileTypes];
-	
 	// Get the default images directory
-	NSString* defaultDir = [NSString stringWithCString:ConfigureParams.DiskImage.szDiskImageDirectory encoding:NSASCIIStringEncoding];
+	defaultDir = [NSString stringWithCString:ConfigureParams.DiskImage.szDiskImageDirectory encoding:NSASCIIStringEncoding];
 
 	// Run the SavePanel, then check if the user clicked OK
-    if ( NSOKButton == [savePanel runModalForDirectory:defaultDir file:nil] )
+	newCnf = [NSApp sauver:YES defoDir:defaultDir defoFile:nil types:[NSArray arrayWithObjects: allF, nil] ] ;
+	if ([newCnf length] != 0)
 	{
-		// Get the path to the chosen file
-		NSString *path = [savePanel filename];
-	
-		// Make a non-const C string out of it
-		const char* constSzPath = [path cStringUsingEncoding:NSASCIIStringEncoding];
-		size_t cbPath = strlen(constSzPath) + 1;
-		char szPath[cbPath];
-		strncpy(szPath, constSzPath, cbPath);
-					
+		[newCnf getCString:szPath maxLength:FILENAME_MAX-1 encoding:NSASCIIStringEncoding] ;
 		// Get the tracks, sectors and sides values
-		int cTracks = [[tracks selectedCell] tag];
-		int cSectors = [[sectors selectedCell] tag];
-		int cSides = [[sides selectedCell] tag];
-					
+		cTracks = [[tracks selectedCell] tag];
+		cSectors = [[sectors selectedCell] tag];
+		cSides = [[sides selectedCell] tag];
+
 		// Create the image
 		cRet=CreateBlankImage_CreateFile(szPath, cTracks, cSectors, cSides);
 		if(cRet==TRUE)
-		{
-			int ret = NSRunAlertPanel(@"Hatari", @"Insert newly created disk in", @"Ignore", @"A:", @"B:");
-			if (ret != NSAlertDefaultReturn)
-			{
-				printf("%d\n",ret);
-				if(ret==-1) ret=1; //0=>Drive 0, -1=>Drive 1
-				
-				Floppy_SetDiskFileName(ret, szPath, NULL);
-				Floppy_InsertDiskIntoDrive(ret);
-			}
-		}
-			
-	}
+		 {
+			ret = NSRunAlertPanel(@"Hatari", localize(@"Insert newly created disk in"), localize(@"Ignore"), @"  A:  ", @"  B:  ");
+			if (ret == NSAlertDefaultReturn)
+						return ;
+
+			printf("%d\n",ret);
+			ret = ret == NSAlertAlternateReturn ? 0 : 1 ;
+			Floppy_SetDiskFileName(ret, szPath, NULL);
+			Floppy_InsertDiskIntoDrive(ret);
+		 } ;
+	 } ;
 }
 
 - (void)awakeFromNib
 {
 	// Fill the "Tracks" dropdown
-    [tracks removeAllItems];
+	[tracks removeAllItems];
 	int i;
 	for (i = 40; i <= 85; i++)
 	{

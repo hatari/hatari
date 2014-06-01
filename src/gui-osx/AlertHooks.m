@@ -1,5 +1,5 @@
 /*
-  Hatari - AlertHooks.c
+  Hatari - AlertHooks.m
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -11,6 +11,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "AlertHooks.h"
+#import "Shared.h"
 
 #ifdef ALERT_HOOKS 
 
@@ -20,7 +21,9 @@
 */
 int HookedAlertNotice(const char* szMessage)
 {
-	return (NSAlertDefaultReturn == NSRunInformationalAlertPanel(@"Hatari", [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding], nil, nil, nil));
+//	NSLog(@"Notice: %@",  [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding] ) ;
+	return (NSAlertDefaultReturn == NSRunInformationalAlertPanel(@"Hatari", localize([NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding]), 
+															localize(@"Ok"), nil, nil));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -29,9 +32,9 @@ int HookedAlertNotice(const char* szMessage)
 */
 int HookedAlertQuery(const char* szMessage)
 {
-	return (NSAlertDefaultReturn == NSRunAlertPanel(@"Hatari", [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding],
-													NSLocalizedStringFromTable(@"Ok",@"Localizable",@"comment"), 
-													NSLocalizedStringFromTable(@"Cancel",@"Localizable",@"comment"), nil));
+//	NSLog(@"Alerte: %@",  [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding] ) ;
+	return (NSAlertDefaultReturn == NSRunAlertPanel(@"Hatari", localize([NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding]),
+															localize(@"Ok"), localize(@"Cancel"), nil));
 }
 
 #endif
