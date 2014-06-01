@@ -31,4 +31,7 @@ extern long nf_print(const char *text);
  */
 extern void nf_shutdown(void);
 
+/* terminate the execution of the emulation with exit code */
+extern void nf_exit(int exitval);
+
 #endif /* _NATFEAT_H */
