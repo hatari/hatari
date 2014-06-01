@@ -5,8 +5,13 @@ Here's example of using Native Features from VBCC:
   nf_asmv.s -- assembly helper code for VBCC / Vasm
   nf_asm.s -- assembly helper code for GCC / Gas (NOT TESTED!)
 
-As to AHCC compiler, AHCC passes arguments partly in registers,
-so for that either:
+If TEST is defined, natfeats.c includes main() and few additional
+tests, with TEST undefine, you should be able to use these files
+as-is in your own programs.
+
+
+As to using this example code with AHCC compiler, AHCC passes
+arguments partly in registers, so for that either:
 - the assembly code would need to be modified to push the args
   from regs to stacks, or
 - ASM function prototypes would need to be marked to use
