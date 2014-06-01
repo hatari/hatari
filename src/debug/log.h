@@ -161,6 +161,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_SCSI_CMD		 (1ll<<46)
 
+#define TRACE_NATFEATS		 (1ll<<47)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

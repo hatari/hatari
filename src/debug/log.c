@@ -132,6 +132,8 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_SCSI_CMD	 , "scsi_cmd" } ,
 
+	{ TRACE_NATFEATS	 , "natfeats" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */

@@ -75,6 +75,7 @@ Emulator:
   - NF_DEBUGGER invokes Hatari debugger from native program
   - NF_FASTFORWARD sets fast forward on/off
 - Tracing improvements:
+  - Add option for tracing NatFeats calls
   - Fix: Xbios(255) modified the given argument string
   - Allow BIOS, XBIOS, GEMDOS, VDI and AES tracing to be enabled without
     enabling also X/BIOS interception, GEMDOS HD emulation or extended

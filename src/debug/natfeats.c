@@ -21,13 +21,8 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "natfeats.h"
 #include "control.h"
+#include "log.h"
 
-#define NF_DEBUG 1
-#if NF_DEBUG
-# define Dprintf(a) printf a
-#else
-# define Dprintf(a)
-#endif
 
 /* whether to allow XBIOS(255) style
  * Hatari command line parsing with "command" NF
@@ -59,7 +54,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 
 	ptr = STMemory_ReadLong(stack);
 	len = STMemory_ReadLong(stack + SIZE_LONG);
-	Dprintf(("NF_NAME[%d](0x%x, %d)\n", subid, ptr, len));
+	LOG_TRACE(TRACE_NATFEATS, "NF_NAME[%d](0x%x, %d)\n", subid, ptr, len);
 
 	if (!STMemory_ValidArea(ptr, len)) {
 		M68000_BusError(ptr, BUS_ERROR_WRITE);
@@ -81,7 +76,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
  */
 static bool nf_version(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
-	Dprintf(("NF_VERSION() -> 0x00010000\n"));
+	LOG_TRACE(TRACE_NATFEATS, "NF_VERSION() -> 0x00010000\n");
 	*retval = 0x00010000;
 	return true;
 }
@@ -97,7 +92,7 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 	Uint32 ptr;
 
 	ptr = STMemory_ReadLong(stack);
-	//Dprintf(("NF stderr(0x%x)\n", ptr));
+	LOG_TRACE(TRACE_NATFEATS, "NF_STDERR(0x%x)\n", ptr);
 
 	if (!STMemory_ValidArea(ptr, 1)) {
 		M68000_BusError(ptr, BUS_ERROR_READ);
@@ -115,7 +110,7 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
  */
 static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
-	Dprintf(("NF_SHUTDOWN()\n"));
+	LOG_TRACE(TRACE_NATFEATS, "NF_SHUTDOWN()\n");
 	ConfigureParams.Log.bConfirmQuit = false;
 	Main_RequestQuit(0);
 	return true;
@@ -134,9 +129,9 @@ static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Sint32 exitval;
 
-	Dprintf(("NF_EXIT()\n"));
 	ConfigureParams.Log.bConfirmQuit = false;
 	exitval = STMemory_ReadLong(stack);
+	LOG_TRACE(TRACE_NATFEATS, "NF_EXIT(%d)\n", exitval);
 	Main_RequestQuit(exitval);
 	return true;
 }
@@ -146,7 +141,7 @@ static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
  */
 static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
-	Dprintf(("NF_DEBUGGER()\n"));
+	LOG_TRACE(TRACE_NATFEATS, "NF_DEBUGGER()\n");
 	M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	return true;
 }
@@ -160,8 +155,8 @@ static bool nf_fastforward(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Uint32 val;
 
-	Dprintf(("NF_FASTFORWARD()\n"));
 	val = STMemory_ReadLong(stack);
+	LOG_TRACE(TRACE_NATFEATS, "NF_FASTFORWARD(%d)\n", val);
 	ConfigureParams.System.bFastForward = ( val ? true : false );
 	return true;
 }
@@ -184,7 +179,7 @@ static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
 		return false;
 	}
 	buffer = (const char *)STRAM_ADDR(ptr);
-	Dprintf(("NF_COMMAND(0x%x \"%s\")\n", ptr, buffer));
+	LOG_TRACE(TRACE_NATFEATS, "NF_COMMAND(0x%x \"%s\")\n", ptr, buffer);
 
 	Control_ProcessBuffer(buffer);
 	return true;
@@ -239,7 +234,7 @@ bool NatFeat_ID(Uint32 stack, Uint32 *retval)
 	}
 
 	name = (const char *)STRAM_ADDR(ptr);
-	Dprintf(("NF ID(0x%x \"%s\")\n", ptr, name));
+	LOG_TRACE(TRACE_NATFEATS, "NF ID(0x%x \"%s\")\n", ptr, name);
 
 	for (i = 0; i < ARRAYSIZE(features); i++) {
 		if (strcmp(features[i].name, name) == 0) {
@@ -266,11 +261,11 @@ bool NatFeat_Call(Uint32 stack, bool super, Uint32 *retval)
 	subid = MASKOUTMASTERID(subid);
 
 	if (idx >= ARRAYSIZE(features)) {
-		Dprintf(("ERROR: invalid NF ID %d requested\n", idx));
+		LOG_TRACE(TRACE_NATFEATS, "ERROR: invalid NF ID %d requested\n", idx);
 		return true; /* undefined */
 	}
 	if (features[idx].super && !super) {
-		Dprintf(("ERROR: NF function %d called without supervisor mode\n", idx));
+		LOG_TRACE(TRACE_NATFEATS, "ERROR: NF function %d called without supervisor mode\n", idx);
 		Exception(8, 0, M68000_EXC_SRC_CPU);
 		return false;
 	}
