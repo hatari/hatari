@@ -19,6 +19,7 @@
 	h2 { border-bottom:solid thin black;}
 	hr { width: 100%; height: 2px; margin-top:4ex; margin-bottom: 2ex; }
 
+	table, td, th { border:1px outset; }
 	th { text-align:center; padding:3px; }
 	caption { caption-side:bottom; }
 	td { font-family:Verdana,Arial,Helvetica,sans-serif; padding:3px; }
@@ -129,13 +130,16 @@ For more information, see emutos.txt.</li>
 
 </ul>
 
+<p>
 Also note that since Hatari 1.8, support is included for STX, IPF and CTR
 disk images. These formats allow to backup a disk in an unaltered form,
 without requiring to remove the protection with a crack. Some complex
 protections rely on precise CPU/FDC timings and on some specific TOS version.
-<br>For STF/STE protected games, it is recommended to use TOS 1.02 or 1.04 and 1MB RAM,
+<br/>
+For STF/STE protected games, it is recommended to use TOS 1.02 or 1.04 and 1MB RAM,
 as well as turning HD emulation OFF for maximum compatibility
 (but most games will run fine with different settings)
+</p>
 
 <p>
 (<a href="http://www.atari-forum.com/viewtopic.php?f=86&amp;t=14839">More
@@ -150,7 +154,7 @@ works on a real ST should work also in Hatari</b>.</p>
 
 <h3>ST games</h3>
 
-<table border="1">
+<table>
   <caption>Tested ST games</caption>
   <thead>
     <tr class="backdropped">
@@ -531,7 +535,7 @@ They are marked with '*'.  Few remaining screen sync issues are related to
 hi/lo frequency switching or switching to 60 Hz for too long (used
 for border removal).</p>
 
-<table border="1">
+<table>
   <caption>Tested ST demos</caption>
   <thead>
     <tr class="backdropped">
@@ -892,7 +896,7 @@ for border removal).</p>
 <p>Note that some applications can even crash at startup if their
 configuration or data files are not writable.</p>
 
-<table border="1">
+<table>
   <caption>Tested applications</caption>
   <thead>
     <tr class="backdropped">
@@ -1217,7 +1221,7 @@ in Hatari.  Most of these games work only on STE, but here are also some
 games which work (or have a version that works) also on ST, i.e. they
 are just STE enhanced.  These are marked with '*'.</p>
 
-<table border="1">
+<table>
   <caption>Tested STE games</caption>
   <thead>
     <tr class="backdropped">
@@ -1308,7 +1312,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Requires 4MB RAM</td>
     </tr>
     <tr>
-      <td><a href="http://www.atari-forum.com/viewtopic.php?f=3&t=26360">Giana Sisters STE rewrite</a></td>
+      <td><a href="http://www.atari-forum.com/viewtopic.php?f=3&amp;t=26360">Giana Sisters STE rewrite</a></td>
       <td>before 1.6.2</td>
       <td>&nbsp;</td>
     </tr>
@@ -1343,7 +1347,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
-      <td><a href="http://www.atari-forum.com/viewtopic.php?f=3&t=24635">Pacmania STE rewrite</a></td>
+      <td><a href="http://www.atari-forum.com/viewtopic.php?f=3&amp;t=24635">Pacmania STE rewrite</a></td>
       <td>1.6.2</td>
       <td>&nbsp;</td>
     </tr>
@@ -1454,7 +1458,7 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <p>Blitter emulation cycle-accuracy is an issue for some demos.</p>
 
-<table border="1">
+<table>
   <caption>Tested STE demos</caption>
   <thead>
     <tr class="backdropped">
@@ -1794,7 +1798,7 @@ are just STE enhanced.  These are marked with '*'.</p>
 <h3>STE applications</h3>
 
 <p>Finally some STE only or STE enhanced applications.</p>
-<table border="1">
+<table>
   <caption>tested STE applications</caption>
   <thead>
     <tr class="backdropped">
@@ -1844,7 +1848,7 @@ this section lists only TT-specific games and demos.</p>
 
 <h3>TT games</h3>
 
-<table border="1">
+<table>
   <caption>TT games</caption>
   <thead>
     <tr class="backdropped">
@@ -1871,7 +1875,7 @@ this section lists only TT-specific games and demos.</p>
 
 <h3>TT demos</h3>
 
-<table border="1">
+<table>
   <caption>TT demos</caption>
   <thead>
     <tr class="backdropped">
@@ -1968,7 +1972,7 @@ Hatari readme.txt on how to enable that.</p>
 
 <h3>Falcon games</h3>
 
-<table border="1">
+<table>
   <caption>Falcon games</caption>
   <thead>
     <tr class="backdropped">
@@ -2238,9 +2242,9 @@ Hatari readme.txt on how to enable that.</p>
       <td class="major">1.6</td>
       <td>yes</td>
       <td>-</td>
-      <td>Modern version of Joust, upto 4 players.  Sound with DSP.
+      <td>Modern version of Joust, up to 4 players.  Sound with DSP.
           Game screen colors etc are all wrong.
-	  </td>
+    </td>
     </tr>
     <tr>
       <td>Kwiks.pd</td>
@@ -2722,7 +2726,7 @@ Old UAE CPU core always emulates FPU both for TT and Falcon machines.
 WinUAE CPU core does that only for TT, but but you can enable FPU
 also for Falcon if demo is stated to require that.</p>
 
-<table border="1">
+<table>
   <caption>Falcon demos</caption>
   <thead>
     <tr class="backdropped">
@@ -2736,7 +2740,7 @@ also for Falcon if demo is stated to require that.</p>
   <tbody>
     <tr>
       <td>Aggression:
-      <a href="http://www.pouet.net/prod.php?which=13699">Agressive II party info</a></td>
+      <a href="http://www.pouet.net/prod.php?which=13699">Aggressive II party info</a></td>
       <td>1.4</td>
       <td>yes</td>
       <td>emu</td>
@@ -3440,7 +3444,7 @@ site.</p>
 <h3>Falcon applications</h3>
 
 <p>Here are listed some <em>Falcon specific</em> applications:</p>
-<table border="1">
+<table>
   <caption>Falcon applications</caption>
   <thead>
     <tr class="backdropped">
@@ -3597,7 +3601,7 @@ site.</p>
 <p>Here are some utilities that either have specific TT and/or Falcon
 support or work only on them.</p>
 
-<table border="1">
+<table>
   <caption>TT/Falcon utilities</caption>
   <thead>
     <tr class="backdropped">
