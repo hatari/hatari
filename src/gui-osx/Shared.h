@@ -3,6 +3,7 @@
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
+  M. SARO 2013
 */
 
 #import <Cocoa/Cocoa.h>
@@ -11,9 +12,9 @@
 
 #define localize(laklef) [[NSBundle mainBundle] localizedStringForKey:laklef value:(laklef != nil ? laklef : @"???") table:@"Localizable"]
 
-// disquette extensions
+// disk extensions
 #define allF	@"st",@"msa",@"dim",@"gz",@"zip"
-// cartouche extensions
+// cartdridge extensions
 #define allC	@"img",@"rom",@"bin",@"cart"
 // TOS extensions
 #define allT	@"img",@"rom",@"bin"

@@ -8,6 +8,7 @@
 
   Feb-Mar 2006, Sébastien Molines - Created
   Jan 2006, Sébastien Molines - Updated for recent emulator updates
+  Miguel SARO, J. VERNET
 */
 // bOKDialog = Dialog_MainDlg(&bForceReset, &bLoadedSnapshot);   // prise des préférences
 // TODO: Set the default paths to MacOS-friendly values
@@ -230,10 +231,10 @@ char szPath[FILENAME_MAX];
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Helper method for Choose buttons
-  Returns: TRUE is the user selected a path, FALSE if he/she aborted
-*/
+/*                                                                       */
+/*  Helper method for Choose buttons                                     */
+/*  Returns: TRUE is the user selected a path, FALSE if he/she aborted   */
+/*-----------------------------------------------------------------------*/
 - (BOOL)choosePathForControl:(NSTextField*)textField chooseDirectories:(BOOL)chooseDirectories defaultInitialDir:(NSString*)defaultInitialDir 
 																					mutString:(NSMutableString *)mutString what:(NSArray *)what
 {
@@ -265,12 +266,15 @@ char szPath[FILENAME_MAX];
 //  Helper method to insert a floppy image
 //  TODO: Add code to restrict to known file types
 //
+/*-----------------------------------------------------------------------*/
+
 - (void)insertFloppyImageIntoDrive:(int)drive forTextField:(NSTextField*)floppyTextField  realPath:(NSMutableString *)realPath
 {
 	if ([self choosePathForControl:floppyTextField  chooseDirectories:NO defaultInitialDir:imgeDir
 											mutString:realPath  what:[NSArray arrayWithObjects:allF,nil]])
 		
-		Floppy_SetDiskFileName(drive, [realPath cStringUsingEncoding:NSASCIIStringEncoding], NULL);			// Insert the floppy image at this path  ????
+		Floppy_SetDiskFileName(drive, [realPath cStringUsingEncoding:NSASCIIStringEncoding], NULL);
+		// Insert the floppy image at this path  ????
 }
 
 
@@ -294,6 +298,7 @@ BOOL flag1, flag2;
 	[self choosePathForControl: cartridgeImage chooseDirectories:NO defaultInitialDir:[self initial:cartridge]			// cartridge
 												mutString:cartridge  what:[NSArray arrayWithObjects:allC,nil]];
 }
+
 
 - (IBAction)chooseDefaultImagesLocation:(id)sender
 {
@@ -374,9 +379,9 @@ BOOL flag1, flag2;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Methods for the "Eject" buttons
-*/
+/*                                                                       */
+/*  Methods for the "Eject" buttons                                      */
+/*-----------------------------------------------------------------------*/
 - (IBAction)ejectFloppyA:(id)sender
 {
 	Floppy_SetDiskFileNameNone(0);
@@ -440,16 +445,9 @@ BOOL flag1, flag2;
 	[opnPanel setCanChooseFiles: YES];
 	[opnPanel setAccessoryView:partage] ;
 
-/*	if ([NSOpenPanel instancesRespondToSelector:@selector(setDirectoryURL:)])			// sous 10.6
-	 {
-		[opnPanel setDirectoryURL:[NSURL URLWithString:ru]] ;
-		[opnPanel setNameFieldStringValue:@"hatari"] ;
-		btOk = [opnPanel runModal] == NSOKButton ;										// Ok ?
-	 }
-	else																				// */
-		btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton	;		// Ok ? sous 10.5
+	btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton	;		// Ok ? under 10.5
 
-	if (!btOk)  return ;																// annuler
+	if (!btOk)  return ;																// Cancel
 
 	lesURLs = [opnPanel URLs] ;
 	if ((lesURLs == nil) || ([lesURLs count] == 0))
@@ -783,10 +781,10 @@ NSString  *defaultDirectory ;
 }
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  Updates the enabled states of controls who depend on other controls
-*/
+/*------------------------------------------------------------------------*/
+/* Updates the enabled states of controls who depend on other controls    */
+/**************************************************************************/
+
 - (IBAction)updateEnabledStates:(id)sender
 {
 	// Joystick key controls are only enabled if "Use keyboard" is selected
@@ -813,9 +811,9 @@ NSString  *defaultDirectory ;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Updates the joystick controls to match the new joystick selection
-*/
+/* Updates the joystick controls to match the new joystick selection     */
+/*************************************************************************/
+
 - (void)setJoystickControls
 {
 	// Get and persist the ID of the newly selected joystick
@@ -849,9 +847,7 @@ NSString  *defaultDirectory ;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Saves the setting for the joystick currently being viewed
-*/
+/*   Saves the setting for the joystick currently being viewed           */
 - (void)saveJoystickControls
 {
 	EXPORT_RADIO(joystickMode, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode);	
@@ -866,9 +862,7 @@ NSString  *defaultDirectory ;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Saves the settings for all controls
-*/
+/* Saves the settings for all controls                                   */
 - (void)saveAllControls
 {
 	// Export the preference controls into their vars
@@ -996,13 +990,13 @@ NSString  *defaultDirectory ;
 
 - (IBAction) setWidth:(id)sender;
 {
-	NSLog(@"Change Max Zoom width: %ld", [sender intValue]);
+	NSLog(@"Change Max Zoom width: %d", [sender intValue]);
     [maxZoomedWidth setIntValue: [sender intValue]];
 }
 
 - (IBAction) setHeight:(id)sender;
 {
-	NSLog(@"Change Max Zoom height: %ld", [sender intValue]);
+	NSLog(@"Change Max Zoom height: %d", [sender intValue]);
     [maxZoomedHeight setIntValue: [sender intValue]];
 }
 

@@ -7,6 +7,7 @@
   Helper code used by the other Cocoa code files
 
   June 2006, Sébastien Molines - Created
+  2013, M. SARO
 */
 
 #import <Cocoa/Cocoa.h>
