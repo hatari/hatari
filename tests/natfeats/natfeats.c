@@ -86,12 +86,14 @@ static void nf_showname(void)
 {
 	long id;
 	if (nf_ok && (id = nf_id("NF_NAME"))) {
+		int len;
 		long chars;
 		char buffer[64];
 		id |= 0x0001;  /* name + version */
-		chars = nf_call(id, buffer, sizeof(buffer));
+		chars = nf_call(id, buffer, sizeof(buffer)-2);
+		buffer[chars++] = '\n';
+		buffer[chars++] = '\0';
 		nf_print(buffer);
-		nf_print("\n");
 	} else {
 		Cconws("NF_NAME unavailable!\r\n");
 	}
