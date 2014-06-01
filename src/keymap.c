@@ -680,9 +680,7 @@ static bool Keymap_DebounceSTKey(char STScanCode)
  */
 void Keymap_DebounceAllKeys(void)
 {
-	SDLKey key;
-	uint8_t STScanCode;
-	SDL_keysym tmpKeySym;
+	uint8_t nScanCode;
 
 	/* Return if we aren't in fast forward or have not disabled key repeat */
 	if ((ConfigureParams.System.bFastForward == false)
@@ -691,23 +689,17 @@ void Keymap_DebounceAllKeys(void)
 		return;
 	}
 
-	tmpKeySym.mod = KMOD_NONE;
-
-	/* Now run through each PC key looking for ones held down */
-	for (key = SDLK_FIRST; key < SDLK_LAST; key++)
+	/* Now run through each key looking for ones held down */
+	for (nScanCode = 1; nScanCode <= KBD_MAX_SCANCODE; nScanCode++)
 	{
-		/* Get scan code */
-		tmpKeySym.sym = key;
-		tmpKeySym.scancode = 0;
-		STScanCode = Keymap_RemapKeyToSTScanCode(&tmpKeySym);
-		if (STScanCode != (uint8_t)-1)
+		/* Is key held? */
+		if (Keyboard.KeyStates[nScanCode])
 		{
-			/* Is key held? */
-			if (Keyboard.KeyStates[STScanCode])
+			/* Does this require de-bouncing? */
+			if (Keymap_DebounceSTKey(nScanCode))
 			{
-				/* Does this require de-bouncing? */
-				if (Keymap_DebounceSTKey(STScanCode))
-					Keymap_KeyUp(&tmpKeySym);
+				IKBD_PressSTKey(nScanCode, false);
+				Keyboard.KeyStates[nScanCode] = false;
 			}
 		}
 	}
