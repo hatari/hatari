@@ -15,7 +15,10 @@ path = os.path.dirname(sys.argv[0])
 cwd = os.path.abspath(os.path.curdir)
 
 # shortcuts to hconsole stuff
-main = hconsole.Main()
+#
+# GEMDOS emulation dir is given because without
+# a disk, EmuTOS console invocation is ~8s
+main = hconsole.Main(sys.argv + ["."])
 code = hconsole.Scancode
 
 # execute commands from external file in current directory

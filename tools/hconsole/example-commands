@@ -8,10 +8,13 @@
 # For more fun, use also Hatari's "--conout 2". :-)
 
 # without this EmuTOS boot takes 10s more
-setopt --fastfdc on
+setopt --fastfdc on --fast-forward on
 
 # wait for EmuTOS to boot
-sleep 5
+sleep 3
+
+# boot done, back to normal
+setopt --fastfdc off --fast-forward off
 
 # Note: keypress/down/up commands take either one character or
 # a multidigit key scancode.  Scancodes need to be used for keys
