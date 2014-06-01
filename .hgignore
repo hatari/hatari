@@ -13,6 +13,13 @@ src/tos.img
 src/*/*.o
 src/*/*.a
 
+src/cpu/build68k
+src/cpu/cpudefs.c
+src/cpu/cpuemu_*.c
+src/cpu/cpustbl.c
+src/cpu/cputbl.h
+src/cpu/gencpu
+
 src/uae-cpu/build68k
 src/uae-cpu/cpudefs.c
 src/uae-cpu/cpuemu.c
