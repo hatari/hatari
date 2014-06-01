@@ -28,7 +28,7 @@ static long nfid_print;
 /* detect and initialize native features */
 int nf_init(void)
 {
-	void *sup = Super(0);
+	void *sup = (void*)Super(0);
 	nf_ok = detect_nf();
 	Super(sup);
 
@@ -57,7 +57,7 @@ void nf_shutdown(void)
 {
 	long id;
 	if(nf_ok && (id = nf_id("NF_SHUTDOWN"))) {
-		void *sup = Super(0);
+		void *sup = (void*)Super(0);
 		/* needs to be called in supervisor mode */
 		nf_call(id);
 		Super(sup);
@@ -86,7 +86,6 @@ static void nf_showname(void)
 {
 	long id;
 	if (nf_ok && (id = nf_id("NF_NAME"))) {
-		int len;
 		long chars;
 		char buffer[64];
 		id |= 0x0001;  /* name + version */
