@@ -1,0 +1,8 @@
+; AHCC project file for NatFeats tester
+.C [-iinclude -DTEST=1]
+nf_ahcc.tos
+=
+ahcstart.o
+natfeats.c (natfeats.h)
+nf_asma.s
+ahccstdi.lib

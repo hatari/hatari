@@ -11,11 +11,22 @@
 #ifndef _NATFEAT_H
 #define _NATFEAT_H
 
+/* AHCC uses registers to pass arguments, but
+ * NatFeats calls expect arguments to be in stack.
+ * "cdecl" can be used to declare that arguments
+ * should be passed in stack.
+ */
+#if __AHCC__
+#define CDECL cdecl
+#else
+#define CDECL
+#endif
+
 /* nf_asm.s ASM helper interface for natfeats.c */
-long nf_id(const char *);
-long nf_call(long ID, ...);
+long CDECL nf_id(const char *);
+long CDECL nf_call(long ID, ...);
 /* call only from Supervisor mode */
-int detect_nf(void);
+int CDECL detect_nf(void);
 
 
 /* natfeats.c public prototypes */

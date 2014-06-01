@@ -1,7 +1,7 @@
 # Generic Makefile targets
 
 all:
-	@echo "use: make -f Makefile.[vbc|gcc|ahc]"
+	@echo "Use AHCC project file, or: make -f Makefile.[vbc|gcc]"
 
 clean:
 	$(RM) *.o *.tmp *~
