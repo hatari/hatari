@@ -816,7 +816,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
 	Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
 	Configuration_SaveSection(sConfigFileName, configs_HardDisk, "[HardDisk]");
-	Configuration_SaveSection(sConfigFileName, configs_Acsi, "[ACSI]");
+	/*Configuration_SaveSection(sConfigFileName, configs_Acsi, "[ACSI]");*/
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
