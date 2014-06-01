@@ -117,7 +117,7 @@ class TOS:
             elif self.size == 256:
                 info = (2, 8, ("st", "ste", "tt"))
             elif self.size == 192:
-                info = (0, 5, ("st",))
+                info = (0, 6, ("st",))
             else:
                 raise AssertionError("'%s' image size %dkB isn't valid for EmuTOS" % (name, size))
         elif version <= 0x100:
@@ -517,9 +517,8 @@ class Tester:
     
     def test(self, identity, testargs, tos, memory):
         "run single boot test with given args and waits"
-        # overwrite argv used by hconsole constructor
-        sys.argv = self.defaults + testargs
-        instance = hconsole.Main()
+        # Hatari command line options, don't exit if Hatari exits
+        instance = hconsole.Main(self.defaults + testargs, False)
         fifo = self.open_fifo(tos.fullwait)
         if not fifo:
             print "ERROR: failed to get fifo to Hatari!"
