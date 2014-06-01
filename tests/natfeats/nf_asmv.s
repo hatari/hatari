@@ -53,7 +53,7 @@ fail_nf:
         rts
 
 
-; map native features to its ID
+; map native feature to its ID
 _nf_id:
         dc.w   $7300  ; Conflict with ColdFire instruction mvs.b d0,d1
         rts

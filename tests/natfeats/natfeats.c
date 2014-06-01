@@ -17,6 +17,8 @@
 #endif
 #include "natfeats.h"
 
+#define uint32_t unsigned long
+
 /* NatFeats available & initialized */
 static int nf_ok;
 
@@ -31,7 +33,7 @@ int nf_init(void)
 	Super(sup);
 
 	if (nf_ok) {
-		/* initialize handles */
+		/* initialize commonly used handles */
 		nfid_print = nf_id("NF_STDERR");
 	} else {
 		Cconws("Native Features initialization failed!\r\n");
@@ -61,6 +63,19 @@ void nf_shutdown(void)
 		Super(sup);
 	} else {
 		Cconws("NF_SHUTDOWN unavailable!\r\n");
+	}
+}
+
+/* terminate emulator with given exit code */
+void nf_exit(int exitval)
+{
+	long id;
+	if(nf_ok && (id = nf_id("NF_EXIT"))) {
+		nf_call(id, (uint32_t)exitval);
+	} else {
+		/* NF_EXIT is Hatari specific, NF_SHUTDOWN isn't */
+		Cconws("NF_EXIT unavailable, trying NF_SHUTDOWN...\r\n");
+		nf_shutdown();
 	}
 }
 
@@ -100,7 +115,7 @@ int main()
 	nf_print("Emulator name:\n");
 	nf_showname();
 	nf_print("Shutting down...\n");
-	nf_shutdown();
+	nf_exit(0);
 	wait_key();
 	return 0;
 }
