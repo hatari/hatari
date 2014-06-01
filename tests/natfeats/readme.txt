@@ -1,9 +1,10 @@
 
-Here's example of using Native Features from VBCC:
-  natfeats.c -- native features calling C-code
-  natfeats.h -- header for assembly & C-code
+Here are examples of using Native Features:
+  natfeats.c -- C-code for calling native features
+  natfeats.h -- header for assembly- & C-code
   nf_asmv.s -- assembly helper code for VBCC / Vasm
-  nf_asm.s -- assembly helper code for GCC / Gas (NOT TESTED!)
+  nf_asmg.s -- assembly helper code for GCC / Gas
+  Makefile* -- Makefiles for different compilers
 
 If TEST is defined, natfeats.c includes main() and few additional
 tests, with TEST undefine, you should be able to use these files
