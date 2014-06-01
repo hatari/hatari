@@ -385,7 +385,7 @@ NSString *newPath ;
 {
 NSString *l_aide ;
 	
-	l_aide = [[NSBundle mainBundle] pathForResource:@"manual" ofType:@"html" inDirectory:@"AideHatari"] ;
+	l_aide = [[NSBundle mainBundle] pathForResource:@"manual" ofType:@"html" inDirectory:@"HatariHelp"] ;
 	
 	if (![[NSWorkspace sharedWorkspace] openFile:l_aide withApplication:@"HelpViewer"])
 		if (![[NSWorkspace sharedWorkspace] openFile:l_aide withApplication:@"Help Viewer"])
@@ -396,7 +396,7 @@ NSString *l_aide ;
 {
 NSString *C_aide ;
 	
-	C_aide = [[NSBundle mainBundle] pathForResource:@"compatibility" ofType:@"html" inDirectory:@"AideHatari"] ;
+	C_aide = [[NSBundle mainBundle] pathForResource:@"compatibility" ofType:@"html" inDirectory:@"HatariHelp"] ;
 	
 	if (![[NSWorkspace sharedWorkspace] openFile:C_aide withApplication:@"HelpViewer"])
 		if (![[NSWorkspace sharedWorkspace] openFile:C_aide withApplication:@"Help Viewer"])

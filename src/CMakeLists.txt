@@ -78,7 +78,11 @@ if(ENABLE_OSX_BUNDLE)
 				   ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/${MACOSX_BUNDLE_ICON_FILE}
 			# Copy Localized .nib to Bundle
 			COMMAND cp -R ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/*.lproj ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/
-	)	
+			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/English.lproj/HatariHelp
+			COMMAND cp -R ${CMAKE_SOURCE_DIR}/doc/*.html ${CMAKE_SOURCE_DIR}/doc/images ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/English.lproj/HatariHelp/
+			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/French.lproj/HatariHelp
+			COMMAND cp -R ${CMAKE_SOURCE_DIR}/doc/*.html ${CMAKE_SOURCE_DIR}/doc/images ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/French.lproj/HatariHelp/
+	)
 	add_dependencies(hatari osx_bundle_dirs)
 	set_source_files_properties(${GUIOSX_RSRCS}
 			PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
