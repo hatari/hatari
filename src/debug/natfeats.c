@@ -7,7 +7,7 @@
  * or at your option any later version. Read the file gpl.txt for details.
  *
  * natfeats.c - Hatari Native features identification and call forwarding,
- * modeleted after similar code in Aranym (written by Petr Stehlik),
+ * modeled after similar code in Aranym (written by Petr Stehlik),
  * specified here:
  * 	http://wiki.aranym.org/natfeats/proposal
  */
@@ -40,10 +40,17 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
  */
 
 
-/*
+/* ----------------------------------
  * Native Features shared with Aranym
  */
 
+/**
+ * NF_NAME - emulator name
+ * Stack arguments are:
+ * - pointer to buffer for emulator name, and
+ * - uint32_t for its size
+ * If subid is set, emulator name includes also version information
+ */
 static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Uint32 ptr, len;
@@ -68,6 +75,10 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 	return true;
 }
 
+/**
+ * NF_VERSION - NativeFeatures version
+ * returns version number
+ */
 static bool nf_version(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Dprintf(("NF_VERSION() -> 0x00010000\n"));
@@ -75,6 +86,11 @@ static bool nf_version(Uint32 stack, Uint32 subid, Uint32 *retval)
 	return true;
 }
 
+/**
+ * NF_STDERR - print string to stderr
+ * Stack arguments are:
+ * - pointer to buffer containing the string
+ */
 static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	const char *str;
@@ -93,6 +109,10 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 	return true;
 }
 
+/**
+ * NF_SHUTDOWN - exit emulator normally
+ * Needs to be called from supervisor mode
+ */
 static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Dprintf(("NF_SHUTDOWN()\n"));
@@ -101,10 +121,15 @@ static bool nf_shutdown(Uint32 stack, Uint32 subid, Uint32 *retval)
 	return true;
 }
 
-/*
+/* ----------------------------------
  * Native Features specific to Hatari
  */
 
+/**
+ * NF_EXIT - exit emulator with given exit code
+ * Stack arguments are:
+ * - emulator's int32_t exit value
+ */
 static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Sint32 exitval;
@@ -117,7 +142,7 @@ static bool nf_exit(Uint32 stack, Uint32 subid, Uint32 *retval)
 }
 
 /**
- * invoke debugger
+ * NF_DEBUGGER - invoke debugger
  */
 static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
@@ -127,13 +152,15 @@ static bool nf_debugger(Uint32 stack, Uint32 subid, Uint32 *retval)
 }
 
 /**
- * set fast forward 0:off >=1:on
+ * NF_FASTFORWARD - set fast forward state
+ * Stack arguments are:
+ * - state 0: off, >=1: on
  */
 static bool nf_fastforward(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
 	Uint32 val;
 
-	Dprintf(("NF fastforward()\n"));
+	Dprintf(("NF_FASTFORWARD()\n"));
 	val = STMemory_ReadLong(stack);
 	ConfigureParams.System.bFastForward = ( val ? true : false );
 	return true;
@@ -141,7 +168,9 @@ static bool nf_fastforward(Uint32 stack, Uint32 subid, Uint32 *retval)
 
 #if NF_COMMAND
 /**
- * execute Hatari (command line / debugger) command
+ * NF_COMMAND - execute Hatari (cli / debugger) command
+ * Stack arguments are:
+ * - pointer to command string
  */
 static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
 {
