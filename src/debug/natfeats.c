@@ -156,7 +156,8 @@ static bool nf_fastforward(Uint32 stack, Uint32 subid, Uint32 *retval)
 	Uint32 val;
 
 	val = STMemory_ReadLong(stack);
-	LOG_TRACE(TRACE_NATFEATS, "NF_FASTFORWARD(%d)\n", val);
+	*retval = ConfigureParams.System.bFastForward;
+	LOG_TRACE(TRACE_NATFEATS, "NF_FASTFORWARD(%d -> %d)\n", *retval, val);
 	ConfigureParams.System.bFastForward = ( val ? true : false );
 	return true;
 }
