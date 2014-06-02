@@ -22,6 +22,8 @@ if(ENABLE_OSX_BUNDLE)
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
 	    gui-osx/Hatari.icns gui-osx/English.lproj gui-osx/French.lproj)
+	set(GUIOSX_DOCS
+	    ${CMAKE_SOURCE_DIR}/doc/*.html ${CMAKE_SOURCE_DIR}/doc/images)
 endif(ENABLE_OSX_BUNDLE)
 
 # When building for Windows, define specific sources for gui and resources
@@ -66,7 +68,7 @@ add_subdirectory(${CPUDIR})
 
 # When building for OSX, add specific sources
 if(ENABLE_OSX_BUNDLE)
-	add_executable(hatari MACOSX_BUNDLE ${GUIOSX_RSRCS} ${SOURCES} ${GUIOSX_SOURCES})
+	add_executable(hatari MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS} ${SOURCES} ${GUIOSX_SOURCES})
 	set_target_properties(hatari PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
 	set(MACOSX_BUNDLE_ICON_FILE Hatari.icns)
@@ -79,13 +81,15 @@ if(ENABLE_OSX_BUNDLE)
 			# Copy Localized .nib to Bundle
 			COMMAND cp -R ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/*.lproj ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/
 			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/English.lproj/HatariHelp
-			COMMAND cp -R ${CMAKE_SOURCE_DIR}/doc/*.html ${CMAKE_SOURCE_DIR}/doc/images ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/English.lproj/HatariHelp/
+			COMMAND cp -R ${GUIOSX_DOCS} ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/English.lproj/HatariHelp/
 			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/French.lproj/HatariHelp
-			COMMAND cp -R ${CMAKE_SOURCE_DIR}/doc/*.html ${CMAKE_SOURCE_DIR}/doc/images ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/French.lproj/HatariHelp/
+			COMMAND cp -R ${GUIOSX_DOCS} ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/French.lproj/HatariHelp/
 	)
 	add_dependencies(hatari osx_bundle_dirs)
-	set_source_files_properties(${GUIOSX_RSRCS}
-			PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+	set_source_files_properties(${GUIOSX_RSRCS} PROPERTIES
+				    MACOSX_PACKAGE_LOCATION Resources)
+	set_source_files_properties(${GUIOSX_DOCS} PROPERTIES
+				    MACOSX_PACKAGE_LOCATION Resources/English.lproj/HatariHelp)
 
 # When building for Windows, add specific sources + method to compile .rc files
 elseif(WIN32)
