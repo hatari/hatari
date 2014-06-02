@@ -9,5 +9,5 @@ Here are examples of using Native Features:
   nf_ahcc.prj -- AHCC project file
 
 If TEST is defined, natfeats.c includes main() and few additional
-tests, with TEST undefine, you should be able to use these files
+tests, with TEST undefined, you should be able to use these files
 as-is in your own programs.

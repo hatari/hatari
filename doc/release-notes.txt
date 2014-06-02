@@ -129,6 +129,7 @@ Tools:
 - gst2ascii DATA/BSS debug symbol offsets are fixed while still providing
   support for the incorrect offsets used by older VBCC vlink
 - hconsole.Main() takes now Hatari command line options as argument
+- AHCC/GCC/VBCC examples on using (all) Native Features APIs
 - Improved mingw cross-compilation support
 
 Fixed demos :

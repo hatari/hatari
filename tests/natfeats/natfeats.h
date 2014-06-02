@@ -2,7 +2,6 @@
  * natfeats.h - NatFeats API header file
  *
  * Copyright (c) 2014 by Eero Tamminen
- * - simplification for Hatari example
  *
  * This file is distributed under the GPL, version 2 or at your
  * option any later version.  See doc/license.txt for details.
@@ -31,18 +30,41 @@ int CDECL detect_nf(void);
 
 /* natfeats.c public prototypes */
 
-/* detect & initialize native features, returns zero for fail */
+/**
+ * detect & initialize native features
+ * returns zero for fail
+ */
 extern int nf_init(void);
 
-/* print string to emulator console, return number of chars output */
+/**
+ * print string to emulator console
+ * returns number of chars output
+ */
 extern long nf_print(const char *text);
 
-/* terminate the execution of the emulation if possible,
- * available only from supervisor mode
+/**
+ * invoke emulator debugger
+ * (Hatari specific, can be used e.g. in asserts)
+ */
+extern long nf_debugger(void);
+
+/**
+ * set emulator fastforward mode on (1) or off (0)
+ * (Hatari specific)
+ * returns previous value
+ */
+extern long nf_fastforward(long enabled);
+
+/**
+ * terminate the execution of the emulation if possible
+ * (runs in supervisor mode)
  */
 extern void nf_shutdown(void);
 
-/* terminate the execution of the emulation with exit code */
-extern void nf_exit(int exitval);
+/**
+ * terminate the execution of the emulation with exit code
+ * (Hatari specific, can be used e.g. for determining test-case success)
+ */
+extern void nf_exit(long exitval);
 
 #endif /* _NATFEAT_H */

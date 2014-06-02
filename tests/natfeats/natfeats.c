@@ -1,9 +1,9 @@
 /*
- * natfeat.c - NatFeats API example
+ * natfeat.c - NatFeats API examples
  *
  * Copyright (c) 2014 by Eero Tamminen
  * 
- * Implementation is partly based on EmuTOS,
+ * NF initialization & calling is based on EmuTOS code,
  * Copyright (c) 2001-2003 The EmuTOS development team
  * 
  * This file is distributed under the GPL, version 2 or at your
@@ -12,20 +12,21 @@
 
 #if __GNUC__
 # include <mint/osbind.h>
-#else	/* VBCC etc. */
+#else	/* VBCC/AHCC/Pure-C */
 # include <tos.h>
 #endif
 #include "natfeats.h"
 
-#define uint32_t unsigned long
 
 /* NatFeats available & initialized */
 static int nf_ok;
 
-/* handles for frequently used NF features */
-static long nfid_print;
+/* handles for NF features that may be used more frequently */
+static long nfid_print, nfid_debugger, nfid_fastforward;
 
-/* detect and initialize native features */
+
+/* API documentation is in natfeats.h header */
+
 int nf_init(void)
 {
 	void *sup = (void*)Super(0);
@@ -35,13 +36,14 @@ int nf_init(void)
 	if (nf_ok) {
 		/* initialize commonly used handles */
 		nfid_print = nf_id("NF_STDERR");
+		nfid_debugger = nf_id("NF_DEBUGGER");
+		nfid_fastforward = nf_id("NF_FASTFORWARD");
 	} else {
 		Cconws("Native Features initialization failed!\r\n");
 	}
 	return nf_ok;
 }
 
-/* show given string on emulator console */
 long nf_print(const char *text)
 {
 	if (nfid_print) {
@@ -52,7 +54,26 @@ long nf_print(const char *text)
 	}
 }
 
-/* terminate the execution of the emulation if possible */
+long nf_debugger(void)
+{
+	if (nfid_debugger) {
+		return nf_call(nfid_debugger);
+	} else {
+		Cconws("NF_DEBUGGER unavailable!\r\n");
+		return 0;
+	}
+}
+
+long nf_fastforward(long enabled)
+{
+	if (nfid_fastforward) {
+		return nf_call(nfid_fastforward, enabled);
+	} else {
+		Cconws("NF_FASTFORWARD unavailable!\r\n");
+		return 0;
+	}
+}
+
 void nf_shutdown(void)
 {
 	long id;
@@ -66,12 +87,11 @@ void nf_shutdown(void)
 	}
 }
 
-/* terminate emulator with given exit code */
-void nf_exit(int exitval)
+void nf_exit(long exitval)
 {
 	long id;
 	if(nf_ok && (id = nf_id("NF_EXIT"))) {
-		nf_call(id, (uint32_t)exitval);
+		nf_call(id, exitval);
 	} else {
 		/* NF_EXIT is Hatari specific, NF_SHUTDOWN isn't */
 		Cconws("NF_EXIT unavailable, trying NF_SHUTDOWN...\r\n");
@@ -109,13 +129,16 @@ static int wait_key(void)
 
 int main()
 {
+	long old_ff;
 	if (!nf_init()) {
 		wait_key();
 		return 1;
 	}
+	old_ff = nf_fastforward(1);
 	nf_print("Emulator name:\n");
 	nf_showname();
 	nf_print("Shutting down...\n");
+	nf_fastforward(old_ff);
 	nf_exit(0);
 	wait_key();
 	return 0;
