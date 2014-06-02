@@ -213,8 +213,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			}
 			/* pass-through */
 		default:
-			DebugUI_PrintCmdHelp(psArgs[0]);
-			return DEBUGGER_CMDDONE;
+			return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	if (nArgc > 1)

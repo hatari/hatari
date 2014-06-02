@@ -58,8 +58,7 @@ static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
 
 	if (nArgc < 3)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	if (!Eval_Number(psArgs[2], &address))
@@ -101,8 +100,7 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 
 	if (nArgc < 4)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	if (!Eval_Number(psArgs[2], &address))
@@ -423,8 +421,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 
 	if (nArgc < 3)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	/* Read address */

@@ -924,8 +924,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		maxaddr = 0;
 	}
 	if (nArgc < 2 || listtype == TYPE_NONE) {
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 	file = psArgs[1];
 

@@ -169,8 +169,7 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 
 	if (nArgc < 2)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	errstr = Eval_Expression(expression, &result, &offset, false);
@@ -324,8 +323,7 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 	
 	if (argc < 2)
 	{
-		DebugUI_PrintCmdHelp(argv[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(argv[0]);
 	}
 	arg = argv[1];
 
@@ -372,8 +370,7 @@ static int DebugUI_SetTracing(int argc, char *argv[])
 	const char *errstr;
 	if (argc != 2)
 	{
-		DebugUI_PrintCmdHelp(argv[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(argv[0]);
 	}
 	errstr = Log_SetTraceOptions(argv[1]);
 	if (errstr && errstr[0])
@@ -394,8 +391,7 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
 			return DEBUGGER_CMDDONE;
 		perror("ERROR");
 	}
-	DebugUI_PrintCmdHelp(argv[0]);
-	return DEBUGGER_CMDDONE;
+	return DebugUI_PrintCmdHelp(argv[0]);
 }
 
 /**
@@ -409,8 +405,7 @@ static int DebugUI_Rename(int argc, char *argv[])
 			return DEBUGGER_CMDDONE;
 		perror("ERROR");
 	}
-	DebugUI_PrintCmdHelp(argv[0]);
-	return DEBUGGER_CMDDONE;
+	return DebugUI_PrintCmdHelp(argv[0]);
 }
 
 
@@ -441,7 +436,7 @@ static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
 /**
  * Print help text for one command
  */
-void DebugUI_PrintCmdHelp(const char *psCmd)
+int DebugUI_PrintCmdHelp(const char *psCmd)
 {
 	dbgcommand_t *cmd;
 	int i;
@@ -472,11 +467,12 @@ void DebugUI_PrintCmdHelp(const char *psCmd)
 			fprintf(stderr, "Usage:  %s %s\n",
 				bShort ? cmd->sShortName : cmd->sLongName,
 				cmd->sUsage);
-			return;
+			return DEBUGGER_CMDDONE;
 		}
 	}
 
 	fprintf(stderr, "Unknown command '%s'\n", psCmd);
+	return DEBUGGER_CMDDONE;
 }
 
 
@@ -489,8 +485,7 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		DebugUI_PrintCmdHelp(psArgs[1]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[1]);
 	}
 
 	for (i = 0; i < debugCommands; i++)

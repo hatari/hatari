@@ -24,7 +24,7 @@ typedef struct
 /* Output file debugger output */
 extern FILE *debugOutput;
 
-extern void DebugUI_PrintCmdHelp(const char *psCmd);
+extern int DebugUI_PrintCmdHelp(const char *psCmd);
 
 extern char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state);
 

@@ -227,8 +227,7 @@ int History_Parse(int nArgc, char *psArgs[])
 	int count, limit = 0;
 
 	if (nArgc < 2) {
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 	if (nArgc > 2) {
 		limit = atoi(psArgs[2]);
@@ -261,8 +260,7 @@ int History_Parse(int nArgc, char *psArgs[])
 			return DEBUGGER_CMDDONE;
 		}
 		fprintf(stderr,  "History range is 1-<limit>\n");
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	History_Show(count);
