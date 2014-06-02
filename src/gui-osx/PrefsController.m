@@ -227,7 +227,7 @@ char szPath[FILENAME_MAX];
 
 - (IBAction)finished:(id)sender
 {
-	Main_RequestQuit() ;
+	Main_RequestQuit(0) ;
 }
 
 /*-----------------------------------------------------------------------*/
