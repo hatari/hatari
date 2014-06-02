@@ -20,6 +20,12 @@ const char Paths_fileid[] = "Hatari paths.c : " __DATE__ " " __TIME__;
 #define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
 
+#if defined(__MACOSX__)
+	#define HATARI_HOME_DIR "Library/Application Support/Hatari"
+#else
+	#define HATARI_HOME_DIR ".hatari"
+#endif
+
 static char sWorkingDir[FILENAME_MAX];    /* Working directory */
 static char sDataDir[FILENAME_MAX];       /* Directory where data files of Hatari can be found */
 static char sUserHomeDir[FILENAME_MAX];   /* User's home directory ($HOME) */
@@ -214,8 +220,8 @@ static void Paths_InitHomeDirs(void)
 		sUserHomeDir[FILENAME_MAX-1] = 0;
 
 		/* Try to use a .hatari directory in the users home directory */
-		snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c.hatari",
-		         sUserHomeDir, PATHSEP);
+		snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c%s", sUserHomeDir,
+		         PATHSEP, HATARI_HOME_DIR);
 		if (!File_DirExists(sHatariHomeDir))
 		{
 			/* Hatari home directory does not exists yet...
