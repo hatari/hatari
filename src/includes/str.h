@@ -14,10 +14,14 @@
 # include <strings.h>
 #endif
 
-/* Invalid characters in paths & filenames are replaced by this
- * (valid but very uncommon GEMDOS file name character)
+/* Invalid characters in paths & filenames are replaced by this,
+ * a valid, but uncommon GEMDOS file name character,
+ * which hopefully shouldn't cause problems in:
+ * - TOS *.INF files used for autostarting
+ * - GEM file selectors (TOS or replacement ones)
+ * - path/file handling code of common programming languages
  */
-#define INVALID_CHAR '@'
+#define INVALID_CHAR '+'
 
 extern char *Str_Trim(char *buffer);
 extern char *Str_ToUpper(char *pString);

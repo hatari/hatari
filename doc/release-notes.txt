@@ -42,8 +42,10 @@ Emulation:
   - Don't force drives A and B at $4c2, keep the values detected by TOS
   - Many other timing / status register improvements
 - GEMDOS HD emulation:
-  - Fix: clip filenames given through GEMDOS calls to 8+3
-    lenght using first '.'
+  - Fix: clip filenames given through GEMDOS calls to 8+3 lenght
+    using first '.'
+  - Fix: autostarting programs with GEMDOS-illegal host characters
+    in their names
 - ACSI hard disk changes:
   - Fixed/improved READ CAPACITY and INQUIRY commands
   - Unsupported commands are now handled correctly
