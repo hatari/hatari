@@ -91,6 +91,8 @@ Emulator:
   - Fix: DATA/BSS debug symbol offsets were interpreted based on
     (incorrect) VBCC's vlink behavior
   - New "ym" info subcommand to show YM register values
+  - "quit" command by-passes exit confirmation dialog and takes
+    an optional Hatari exit code value
   - removed limits on breakpoints and their conditions
   - when entering debugger, current program's DRI/GST format debug
     symbols are automatically read from it, if such are available

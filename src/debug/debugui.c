@@ -427,8 +427,18 @@ static int DebugUI_CommandsFromFile(int argc, char *argv[])
  */
 static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
 {
-	bQuitProgram = true;
-	M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
+	int exitval;
+
+	if (nArgc > 2)
+		return DebugUI_PrintCmdHelp(psArgv[0]);
+
+	if (nArgc == 2)
+		exitval = atoi(psArgv[1]);
+	else
+		exitval = 0;
+
+	ConfigureParams.Log.bConfirmQuit = false;
+	Main_RequestQuit(exitval);
 	return DEBUGGER_END;
 }
 
@@ -917,8 +927,8 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_QuitEmu, NULL,
 	  "quit", "q",
 	  "quit emulator",
-	  "\n"
-	  "\tLeave debugger and quit emulator.",
+	  "[exit value]\n"
+	  "\tLeave debugger and quit emulator with given exit value.",
 	  false }
 };
 
