@@ -23,7 +23,8 @@ if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_RSRCS
 	    gui-osx/Hatari.icns gui-osx/English.lproj gui-osx/French.lproj)
 	set(GUIOSX_DOCS
-	    ${CMAKE_SOURCE_DIR}/doc/*.html ${CMAKE_SOURCE_DIR}/doc/images)
+	    ${CMAKE_SOURCE_DIR}/doc/manual.html ${CMAKE_SOURCE_DIR}/doc/images
+	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html)
 endif(ENABLE_OSX_BUNDLE)
 
 # When building for Windows, define specific sources for gui and resources
