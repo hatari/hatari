@@ -73,18 +73,23 @@ if(ENABLE_OSX_BUNDLE)
 	set_target_properties(hatari PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
 	set(MACOSX_BUNDLE_ICON_FILE Hatari.icns)
+	if(CMAKE_GENERATOR MATCHES "Xcode")
+		set(BUNDLE_CONTENTS ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/Hatari.app/Contents)
+	else()
+		set(BUNDLE_CONTENTS ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents)
+	endif()
 	# Create Hatari.app bundle
 	add_custom_target(osx_bundle_dirs
-			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources
-			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/MacOS
+			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources
+			COMMAND mkdir -p ${BUNDLE_CONTENTS}/MacOS
 			COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/${MACOSX_BUNDLE_ICON_FILE}
-				   ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/${MACOSX_BUNDLE_ICON_FILE}
+				   ${BUNDLE_CONTENTS}/Resources/${MACOSX_BUNDLE_ICON_FILE}
 			# Copy Localized .nib to Bundle
-			COMMAND cp -R ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/*.lproj ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/
-			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/English.lproj/HatariHelp
-			COMMAND cp -R ${GUIOSX_DOCS} ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/English.lproj/HatariHelp/
-			COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/French.lproj/HatariHelp
-			COMMAND cp -R ${GUIOSX_DOCS} ${CMAKE_CURRENT_BINARY_DIR}/Hatari.app/Contents/Resources/French.lproj/HatariHelp/
+			COMMAND cp -R ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/*.lproj ${BUNDLE_CONTENTS}/Resources/
+			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/English.lproj/HatariHelp
+			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/English.lproj/HatariHelp/
+			COMMAND mkdir -p ${BUNDLE_CONTENTS}/Resources/French.lproj/HatariHelp
+			COMMAND cp -R ${GUIOSX_DOCS} ${BUNDLE_CONTENTS}/Resources/French.lproj/HatariHelp/
 	)
 	add_dependencies(hatari osx_bundle_dirs)
 	set_source_files_properties(${GUIOSX_RSRCS} PROPERTIES
