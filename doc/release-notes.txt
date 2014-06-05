@@ -27,6 +27,7 @@ Emulation:
 - Sound changes :
   - Fix STE sound mixing using LMC when mixer=0 (DMA sound only)
   - Fix some crossbar's sound errors for Falcon
+  - Fix Microwire's decoding of mask/data (based on official LMC1992's doc)
 - FDC changes :
   - Add configurable RPM speed for each floppy drive and the possibility
     to turn each drive ON/OFF.
@@ -140,10 +141,11 @@ Fixed demos :
 - The World Is My Oyster - Convention Report Part by Aura (video, res=3)
 - UMD 8730 by PHF (video, unused bits in STF color registers)
 - It's A Girl 2 by Paradox (video, bottom border removal on a 60 Hz screen)
-- 4-pixel plasma screen by TOS Crew (video, color change during only 4 cyles)
+- 4-pixel plasma screen by TOS Crew (video, color change during only 4 cycles)
 - HighResMode by Paradox (video, color changes in overscan med res at 60 Hz)
 - The Union Demo (cpu, memory access, ikbd, protection)
 - IKBD no jitter by Nyh (acia/video, use a VBL of 160240 cycles)
+- Pacemaker by Paradox (microwire, YM sound was muted)
 
 Fixed games :
 - Reeking Rubber (by Nature), Falcon game
