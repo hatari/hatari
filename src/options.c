@@ -287,9 +287,9 @@ static const opt_t HatariOptions[] = {
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Disk" },
 	{ OPT_DRIVEA, NULL, "--drive-a",
-	  "<bool>", "Enable/disable drive A" },
+	  "<bool>", "Enable/disable drive A (default is on)" },
 	{ OPT_DRIVEB, NULL, "--drive-b",
-	  "<bool>", "Enable/disable drive B" },
+	  "<bool>", "Enable/disable drive B (default is on)" },
 	{ OPT_DRIVEA_HEADS, NULL, "--drive-a-heads",
 	  "<x>", "Set number of heads for drive A (1=single sided, 2=double sided)" },
 	{ OPT_DRIVEB_HEADS, NULL, "--drive-b-heads",
