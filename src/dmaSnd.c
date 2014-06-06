@@ -952,6 +952,7 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
  * Handle the shifting/rotating of the microwire registers
  * The microwire regs should be done after 16 usec = 32 NOPs = 128 cycles.
  * That means we have to shift 16 times with a delay of 8 cycles.
+ * Microwire uses the MWK clock signal at 1 Mhz
  */
 void DmaSnd_InterruptHandler_Microwire(void)
 {
@@ -996,6 +997,8 @@ void DmaSnd_InterruptHandler_Microwire(void)
 		/* Yes : decode the address + command word according to the binary mask */
 		/* According to LMC1992 doc, command starts with the first '1' bit in the mask */
 		/* and ends when a '0' bits is received in the mask */
+		/* If we get a bad command, we must scan the rest of the mask in case there's a valid */
+		/* command in the remaining bits */
 		/* TODO [NP] : to be really cycle accurate, we should decode the command at the same */
 		/* time as we rotate mask/data, instead of doing it when 16 rotations were made. */
 		/* But this would not be noticeable, so leave it like this for now */
@@ -1004,7 +1007,7 @@ void DmaSnd_InterruptHandler_Microwire(void)
 		for ( i=15 ; i>=0 ; i-- )
 			if ( microwire.mask & ( 1 << i ) )
 			{
-				/* start of command found, wait for next '0' bit or end of mask */
+				/* Start of command found, wait for next '0' bit or end of mask */
 				do
 				{
 					cmd <<= 1;
@@ -1014,7 +1017,18 @@ void DmaSnd_InterruptHandler_Microwire(void)
 					i--;
 				}
 				while ( ( i >= 0 ) && ( microwire.mask & ( 1 << i ) ) );
-				break;
+
+				if ( ( cmd_len >= 11 )
+				  && ( ( cmd >> ( cmd_len-2 ) ) & 0x03 ) == 0x02 )
+					break;				/* We found a valid command */
+
+				LOG_TRACE ( TRACE_DMASND, "Microwire bad command=0x%x len=%d ignored mask=0x%x data=0x%x\n", cmd , cmd_len , microwire.mask , microwire.data );
+				if ( i < 0 )
+					return;				/* All bits were tested, stop here */
+
+				/* Check remaining bits for a possible command */
+				cmd = 0;
+				cmd_len = 0;
 			}
 //fprintf ( stderr , "mwire cmd=%x len=%d mask=%x data=%x\n" , cmd , cmd_len , microwire.mask , microwire.data );
 
@@ -1070,6 +1084,7 @@ void DmaSnd_InterruptHandler_Microwire(void)
 				break;
 			default:
 				/* Do nothing */
+				LOG_TRACE ( TRACE_DMASND, "Microwire unknown command=0x%x len=%d ignored mask=0x%x data=0x%x\n", cmd , cmd_len , microwire.mask , microwire.data );
 				break;
 		}
 	}
