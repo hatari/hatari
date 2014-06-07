@@ -150,6 +150,12 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&EmulationDrives[i].TransitionState1_VBL,sizeof(EmulationDrives[i].TransitionState1_VBL));
 		MemorySnapShot_Store(&EmulationDrives[i].TransitionState2,sizeof(EmulationDrives[i].TransitionState2));
 		MemorySnapShot_Store(&EmulationDrives[i].TransitionState2_VBL,sizeof(EmulationDrives[i].TransitionState2_VBL));
+
+		/* Because Floppy_EjectBothDrives() was called above before restoring (which cleared */
+		/* FDC_DRIVES[].DiskInserted that was restored just before), we must call FDC_InsertFloppy */
+		/* for each restored drive with an inserted disk to set FDC_DRIVES[].DiskInserted=true */
+		if ( !bSave && ( EmulationDrives[i].bDiskInserted ) )
+			FDC_InsertFloppy ( i );
 	}
 }
 
