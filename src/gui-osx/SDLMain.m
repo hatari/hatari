@@ -301,7 +301,9 @@ NSString *selectFile;
 
 - (IBAction)endCaptureAnimation:(id)sender
 {
-	//?
+	GuiOsx_Pause();
+	Avi_StopRecording();
+	GuiOsx_Resume();
 }
 
 - (IBAction)captureSound:(id)sender
