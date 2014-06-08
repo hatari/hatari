@@ -1730,9 +1730,29 @@ the serial input and output for you.</p>
 
 <p>Hatari does not use floppy disks directly but disk images due to
 differences between the floppy disk controllers of the ST and the PC.
-Three types of disk images are currently supported: The raw "ST" type,
-the similar "DIM" type and
-the compressed "MSA" (Magic-Shadow-Archiver) type. </p>
+Several types of disk images are currently supported :
+<ul>
+<li>
+the raw "ST" type
+</li>
+<li>
+the similar "DIM" type (not widely used)
+</li>
+<li>
+the compressed "MSA" (Magic-Shadow-Archiver) type
+</li>
+<li>
+the "STX" type that can store low level disk layout. This format is mainly
+used to dump original games with their protection. Those images are created
+on a real ST using pasti.prg
+</li>
+<li>
+the "IPF", "RAW" and "CTR" types require the caps library. Similar to STX, they
+record disk layout, but at a much precise level by storing MFM data. Most of
+these dumps are made with the Kryoflux board
+</li>
+</ul>
+</p>
 <p> The raw type (file suffix should be "*.st") is simply a sector by
 sector image of a real floppy disk. You can easily create such an image
 with the <span class="commandline">dd</span> program which should
@@ -1747,7 +1767,7 @@ or
 doesn't use a MSDOS compatible file system, this might fail. So be very
 careful if you are not sure about the disk format. </p>
 <p> The other possibility is to image the disk on a real Atari ST.
-There
+For non-protected disk, there
 are programs like the Magic Shadow Archiver for this task. Hatari
 supports this slightly compressed MSA disk images, too. Note that
 Hatari
@@ -1758,8 +1778,15 @@ Hatari-incompatible disk images. However, if you have got such a MSA
 disk and want to use it with Hatari, you can still run the
 corresponding
 MSA program within Hatari to extract the incompatible disk image to a
-normal floppy disk image. </p>
-<p> While *.ST and *.MSA are more or less the "standard" types of Atari
+normal floppy disk image.
+<p>
+For protected disk, the most widely used method is to run pasti.prg on
+a real Atari ST and get a .STX image.
+<br>
+For more complex protections or altered disk, one can use *.IPF or *.CTR
+which include tools to check MFM data and possible problems when dumping a disk.
+</p>
+<p> While *.ST, *.MSA and *.STX are more or less the "standard" types of Atari
 disk images, you might sometimes also find STT or ADF images on the
 internet. These currently do not work with Hatari. </p>
 <p>Hatari can now also utilize *.DIM images just as *.ST ones without
