@@ -4131,7 +4131,7 @@ static Uint8 FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint
 		FDC_GetDMAAddress(), Drive, Track, Sector, Side,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
-	/* Copy 1 sector to our workspace, then convert the workspace into bytes/timings */
+	/* Get a pointer to the sector's data and convert into bytes/timings */
 	if ( Floppy_ReadSectors ( Drive, &pSectorData, Sector, Track, Side, 1, NULL, pSectorSize ) )
 	{
 		for ( i=0 ; i<*pSectorSize ; i++ )
