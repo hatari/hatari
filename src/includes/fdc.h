@@ -77,6 +77,7 @@ extern void	FDC_Buffer_Add_Timing ( Uint8 Byte , Uint16 Timing );
 extern void	FDC_Buffer_Add ( Uint8 Byte );
 extern Uint16	FDC_Buffer_Read_Timing ( void );
 extern Uint8	FDC_Buffer_Read_Byte ( void );
+extern Uint8	FDC_Buffer_Read_Byte_pos ( int pos );
 extern int	FDC_Buffer_Get_Size ( void );
 
 extern void	FDC_DmaAddress_ReadByte ( void );

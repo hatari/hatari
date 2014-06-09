@@ -471,6 +471,7 @@ typedef struct {
 	int		IndexPulse_Counter;			/* To count the number of rotations when motor is ON */
 	Uint8		NextSector_ID_Field_TR;			/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	Uint8		NextSector_ID_Field_SR;			/* Sector value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
+	Uint8		NextSector_ID_Field_LEN;		/* Sector's length in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	Uint8		NextSector_ID_Field_CRC_OK;		/* CRC OK or not in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	Uint8		InterruptCond;				/* For a type IV force interrupt, contains the condition on the lower 4 bits */
 
@@ -601,12 +602,12 @@ static void	FDC_WriteDataRegister ( void );
 static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side );
 static Uint8	FDC_NextSectorID_TR_ST ( void );
 static Uint8	FDC_NextSectorID_SR_ST ( void );
+static Uint8	FDC_NextSectorID_LEN_ST ( void );
 static Uint8	FDC_NextSectorID_CRC_OK_ST ( void );
 static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize );
+static Uint8	FDC_WriteSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize );
 static Uint8	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 static Uint8	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
-
-static bool	FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Sector , int *pSectorSize );
 
 
 /*-----------------------------------------------------------------------*/
@@ -1030,10 +1031,10 @@ void	FDC_DMA_FIFO_Push ( Uint8 Byte )
  * Get a byte from the DMA's FIFO buffer (write to disk).
  * If the buffer is empty and DMA is ON, load 16 bytes in the FIFO from DMA's address.
  *
- * NOTE [NP] : in the case of the emulation in Hatari, the sector is first written
- * to the disk image and this function is just used to increment
- * DMA address at the correct pace to simulate that bytes are written from
- * blocks of 16 bytes handled by the DMA.
+ * NOTE [NP] : on a real ST, there're two 16 byte DMA FIFO, this allows to refill one FIFO
+ * while the other FIFO is used to transfer data to the FDC. We don't emulate this at the
+ * moment, as it doesn't cause any problem (when a DMA is set to write mode, we would need
+ * to prefill 32 bytes instead of 16 bytes as we do now)
  *
  * NOTE [NP] : as with FDC_DMA_FIFO_Push, this also changes the unused bits at $ff8606
  */
@@ -1136,6 +1137,17 @@ Uint8	FDC_Buffer_Read_Byte ( void )
 {
 //fprintf ( stderr , "read byte %d %x\n" , FDC_BUFFER.PosRead , FDC_BUFFER.Data[ FDC_BUFFER.PosRead ].Byte );
 	return FDC_BUFFER.Data[ FDC_BUFFER.PosRead++ ].Byte;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the Byte at a given position
+ */
+Uint8	FDC_Buffer_Read_Byte_pos ( int pos )
+{
+//fprintf ( stderr , "read byte pos %d %x\n" , pos , FDC_BUFFER.Data[ pos ].Byte );
+	return FDC_BUFFER.Data[ pos ].Byte;
 }
 
 
@@ -2540,11 +2552,13 @@ static int FDC_UpdateReadSectorsCmd ( void )
 static int FDC_UpdateWriteSectorsCmd ( void )
 {
 	int	FdcCycles = 0;
-	int	SectorSize;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 	Uint8	Next_TR;
 	Uint8	Next_SR;
+	Uint8	Next_LEN;
 	Uint8	Next_CRC_OK;
+	Uint8	Byte;
+	Uint8	Status;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2654,26 +2668,24 @@ fprintf ( stderr, "FDC type II command 'write sector' does not work yet with STX
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START:
 		/* Write a single sector from RAM (512 bytes for ST/MSA) */
-		if ( FDC_WriteSectorToFloppy ( FDC.DriveSelSignal , FDC_DMA.SectorCount , FDC.SR , &SectorSize ) )
-		{
-			FDC_DMA.BytesToTransfer = SectorSize;		/* 512 bytes per sector for ST/MSA disk images */
-			FDC_DMA.PosInBuffer = 0;
-				
-			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP;
-			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
-		}
-		else							/* Sector FDC.SR was not found */
-		{
-			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_RNF;
-			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
-		}
+// 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+// 			Next_LEN = FDC_NextSectorID_LEN_STX ();
+// 		else
+			Next_LEN = FDC_NextSectorID_LEN_ST ();
+
+		FDC_Buffer_Reset();
+		FDC_DMA.BytesToTransfer = 128 << ( Next_LEN & FDC_SECTOR_SIZE_MASK );
+
+		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_LOOP:
 		/* Transfer the sector 1 byte at a time using DMA */
 		if ( FDC_DMA.BytesToTransfer-- > 0 )
 		{
-			FDC_DMA_FIFO_Pull ();				/* Get 1 byte from the DMA FIFO (we ignore it, as the whole */
-									/* sector was already written to disk above) */
+			Byte = FDC_DMA_FIFO_Pull ();			/* Get 1 byte from the DMA FIFO */
+//fprintf ( stderr , "byte %d %x\n" , FDC_DMA.BytesToTransfer , Byte );
+			FDC_Buffer_Add ( Byte );
 			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
 		}
 		else							/* Sector transferred, add the CRC */
@@ -2684,8 +2696,25 @@ fprintf ( stderr, "FDC type II command 'write sector' does not work yet with STX
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_CRC:
 		/* Sector completely transferred, CRC is always good for ST/MSA */
-		FDC.CommandState = FDCEMU_RUN_WRITESECTORS_MULTI;
-		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		/* This is where we save the buffer to the disk image */
+
+// 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+// 			Status = FDC_ReadSector_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+// 				FDC.SR , FDC.SideSignal , FDC_Buffer_Get_Size () );
+// 		else
+			Status = FDC_WriteSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SR , FDC.SideSignal , FDC_Buffer_Get_Size () );
+
+		if ( Status & FDC_STR_BIT_RNF )				/* Sector FDC.SR was not correctly written */
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_RNF;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_MULTI;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		}
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_MULTI:
 		/* Check for multi bit */
@@ -2694,6 +2723,9 @@ fprintf ( stderr, "FDC type II command 'write sector' does not work yet with STX
 			FDC.SR++;					/* Try to write next sector and set RNF if not possible */
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_MOTOR_ON;
 			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+			LOG_TRACE(TRACE_FDC, "fdc type II write sector with multi sector=0x%x track=0x%x side=%d drive=%d addr=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				FDC.SR, FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , FDC.DriveSelSignal ,
+				FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 		}
 		else							/* Multi=0, stop here with no error */
 		{
@@ -4020,8 +4052,9 @@ void FDC_WriteDMAAddress ( Uint32 Address )
  * If no ID Field is found before the end of the track, we use the 1st
  * ID Field of the track (which simulates a full spin of the floppy).
  * We also store the next sector's number into NextSector_ID_Field_SR,
- * the next track's number into NextSector_ID_Field_TR and if the CRC is correct
- * or not into NextSector_ID_Field_CRC_OK
+ * the next track's number into NextSector_ID_Field_TR, the next sector's lenght
+ * into NextSector_ID_Field_LEN and if the CRC is correct or not into
+ * NextSector_ID_Field_CRC_OK.
  * This function assumes some 512 byte sectors stored in ascending
  * order (for ST/MSA)
  * If there's no available drive/floppy, we return -1
@@ -4070,6 +4103,7 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 NumberOfHeads , U
 //fprintf ( stderr , "fdc bytes next sector pos=%d trpos=%d nbbytes=%d maxsr=%d nextsr=%d\n" , CurrentPos, TrackPos, NbBytes, MaxSector, NextSector );
 	FDC.NextSector_ID_Field_TR = Track;
 	FDC.NextSector_ID_Field_SR = NextSector;
+	FDC.NextSector_ID_Field_LEN = FDC_SECTOR_SIZE_512;		/* ST/MSA have 512 bytes per sector */
 	FDC.NextSector_ID_Field_CRC_OK = 1;				/* CRC is always correct for ST/MSA */
 
 	return FDC_TransferByte_FdcCycles ( NbBytes );
@@ -4095,6 +4129,18 @@ static Uint8	FDC_NextSectorID_TR_ST ( void )
 static Uint8	FDC_NextSectorID_SR_ST ( void )
 {
 	return FDC.NextSector_ID_Field_SR;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the sector's length in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_ST.
+ * For ST/MSA, it's always 2 (512 bytes per sector)
+ */
+static Uint8	FDC_NextSectorID_LEN_ST ( void )
+{
+	return FDC.NextSector_ID_Field_LEN;
 }
 
 
@@ -4141,6 +4187,42 @@ static Uint8 FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint
 
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc read sector failed\n" );
+	return FDC_STR_BIT_RNF;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write a sector to a floppy image in ST format (used in type II command)
+ * Bytes were added to the FDC Buffer with a default timing (32 microsec) ;
+ * we copy only the bytes into a temporary buffer, and write this buffer
+ * to the floppy image.
+ * If DMASectorsCount==0, the DMA won't transfer any byte from RAM to the FDC
+ * and some '0' bytes will be written to the disk.
+ * Return 0 if sector was written without error, or FDC_STR_BIT_RNF if an error occurred
+ */
+static Uint8 FDC_WriteSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize )
+{
+	int	FrameCycles, HblCounterVideo, LineCycles;
+	int	i;
+	Uint8	SectorData[ 1024 ];					/* max sector size for WD1772 */
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	LOG_TRACE(TRACE_FDC, "fdc write sector addr=0x%x drive=%d track=%d sect=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+		FDC_GetDMAAddress(), Drive, Track, Sector, Side,
+		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+
+	/* Get the sector's data (ignore timings) */
+	for ( i=0 ; i<SectorSize ; i++ )
+		SectorData[ i ] = FDC_Buffer_Read_Byte_pos ( i );
+
+	/* Write the sector's data */
+	if ( Floppy_WriteSectors ( Drive, SectorData, Sector, Track, Side, 1, NULL, NULL ) )
+		return 0;						/* No error */
+
+	/* Failed */
+	LOG_TRACE(TRACE_FDC, "fdc write sector failed\n" );
 	return FDC_STR_BIT_RNF;
 }
 
@@ -4288,43 +4370,6 @@ static Uint8 FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	      FDC_Buffer_Add ( 0x4e );					/* GAP5 */
 
 	return 0;							/* No error */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Write sector from RAM to floppy drive
- * We copy the bytes in chunks to simulate writing of the floppy using DMA
- * If DMASectorsCount==0, the DMA won't transfer any byte from RAM to the FDC
- * and some '0' bytes will be written to the disk.
- * Drive should be a valid drive (0 or 1)
- */
-static bool FDC_WriteSectorToFloppy ( int Drive , int DMASectorsCount , Uint8 Sector , int *pSectorSize )
-{
-	Uint8 *pBuffer;
-	int FrameCycles, HblCounterVideo, LineCycles;
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
-
-	LOG_TRACE(TRACE_FDC, "fdc write sector addr=0x%x drive=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
-		FDC_GetDMAAddress(), Drive, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC.SideSignal,
-		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
-
-	if ( DMASectorsCount > 0 )
-		pBuffer = &STRam[ FDC_GetDMAAddress() ];
-	else
-	{
-		pBuffer = DMADiskWorkSpace;				/* If DMA can't transfer data, we write '0' bytes */
-		memset ( pBuffer , 0 , FDC_DMA_SECTOR_SIZE );
-	}
-	
-	/* Write 1 sector from our workspace */
-	if ( Floppy_WriteSectors ( Drive, pBuffer, Sector, FDC_DRIVES[ Drive ].HeadTrack, FDC.SideSignal, 1, NULL, pSectorSize ) )
-		return true;
-
-	/* Failed */
-	LOG_TRACE(TRACE_FDC, "fdc write sector failed\n" );
-	return false;
 }
 
 
