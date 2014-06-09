@@ -2424,8 +2424,8 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		}
 		else
 		{
-			/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
-			FdcCycles += FDC_TransferByte_FdcCycles ( 7 );		/* Add delay to read 3xA1, FE, TR, SIDE, SR */
+			/* Read bytes to reach the next sector's ID field and skip 10 more bytes to read the whole ID field */
+			FdcCycles += FDC_TransferByte_FdcCycles ( 10 );		/* Add delay to read 3xA1, FE, TR, SIDE, SR, LEN, CRC1, CRC2 */
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_CHECK_SECTOR_HEADER;
 		}
 		break;
@@ -2446,8 +2446,8 @@ static int FDC_UpdateReadSectorsCmd ( void )
 		if ( ( Next_TR == FDC.TR ) && ( Next_SR == FDC.SR ) && ( Next_CRC_OK ) )
 		{
 			FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA_TRANSFER_START;
-			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
-			FdcCycles = FDC_TransferByte_FdcCycles ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1 );
+			/* Read bytes to reach the sector's data : GAP3a + GAP3b + 3xA1 + FB */
+			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1 );
 		}
 		else
 		{
@@ -2633,8 +2633,8 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 		}
 		else
 		{
-			/* Read bytes to reach the next sector's ID field and skip 7 more bytes to reach SR in this ID field */
-			FdcCycles += FDC_TransferByte_FdcCycles ( 7 );		/* Add delay to read 3xA1, FE, TR, SIDE, SR */
+			/* Read bytes to reach the next sector's ID field and skip 10 more bytes to read the whole ID field */
+			FdcCycles += FDC_TransferByte_FdcCycles ( 10 );		/* Add delay to read 3xA1, FE, TR, SIDE, SR, LEN, CRC1, CRC2 */
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_CHECK_SECTOR_HEADER;
 		}
 		break;
@@ -2656,8 +2656,8 @@ fprintf ( stderr, "FDC type II command 'write sector' does not work yet with STX
 		if ( ( Next_TR == FDC.TR ) && ( Next_SR == FDC.SR ) && ( Next_CRC_OK ) )
 		{
 			FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START;
-			/* Read bytes to reach the sector's data : rest of ID field (length+crc) + GAP3a + GAP3b + 3xA1 + FB */
-			FdcCycles = FDC_TransferByte_FdcCycles ( 1+2 + FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1 );
+			/* Read bytes to reach the sector's data : GAP3a + GAP3b + 3xA1 + FB */
+			FdcCycles = FDC_TransferByte_FdcCycles ( FDC_TRACK_LAYOUT_STANDARD_GAP3a + FDC_TRACK_LAYOUT_STANDARD_GAP3b + 3 + 1 );
 		}
 		else
 		{
@@ -2836,7 +2836,7 @@ static int FDC_UpdateReadAddressCmd ( void )
 			FDC.Status_Temp = FDC_ReadAddress_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				     FDC_NextSectorID_SR_ST () , FDC.SideSignal );
 
-		FDC.SR = FDC_BUFFER.Data[ 0 ].Byte;			/* The 1st byte of the ID field is also copied into Sector Register */
+		FDC.SR = FDC_Buffer_Read_Byte_pos ( 0 );		/* The 1st byte of the ID field is also copied into Sector Register */
 
 		FDC.CommandState = FDCEMU_RUN_READADDRESS_TRANSFER_LOOP;
 		FdcCycles = FDC_Buffer_Read_Timing ();			/* Delay to transfer the first byte */
