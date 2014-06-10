@@ -176,8 +176,11 @@ static int DlgAlert_ShowDlg(const char *text)
  */
 int DlgAlert_Notice(const char *text)
 {
-#ifdef ALERT_HOOKS 
-	return HookedAlertNotice(text);
+#ifdef ALERT_HOOKS
+	if (!Main_UnPauseEmulation())
+		Main_PauseEmulation(true);
+	if(!bInFullScreen)
+		return HookedAlertNotice(text);
 #endif
 
 	/* Hide "cancel" button: */
@@ -200,7 +203,8 @@ int DlgAlert_Notice(const char *text)
 int DlgAlert_Query(const char *text)
 {
 #ifdef ALERT_HOOKS
-	return HookedAlertQuery(text);
+	if(!bInFullScreen)
+		return HookedAlertQuery(text);
 #endif
 
 	/* Show "cancel" button: */
