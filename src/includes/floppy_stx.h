@@ -30,6 +30,8 @@ typedef struct {
 	Uint8		*pData;					/* Bytes for this sector or null if RNF */
 	Uint8		*pFuzzyData;				/* Fuzzy mask for this sector or null if no fuzzy bits */
 	Uint8		*pTimingData;				/* Data for variable bit width or null */
+
+	Sint32		SaveSectorIndex;			/* Index in STX_SaveSectorsBuffer[].pSaveSectorsStruct or -1 if not used */
 } STX_SECTOR_STRUCT;
 
 #define	STX_SECTOR_BLOCK_SIZE		( 4+2+2+1+1+1+1+2+1+1 )	/* Size of the sector block in an STX file = 16 bytes */
@@ -94,9 +96,38 @@ typedef struct {
 
 	/* Other internal variables */
 	STX_TRACK_STRUCT	*pTracksStruct;
+
+	/* These variable are used to warn the user only one time if a write command is made */
+	bool		WarnedWriteSector;			/* True if a 'write sector' command was made and user was warned */
+	bool		WarnedWriteTrack;			/* True if a 'write track' command was made and user was warned */
 } STX_MAIN_STRUCT;
 
 #define	STX_MAIN_BLOCK_SIZE		( 4+2+2+2+1+1+4 )	/* Size of the header block in an STX file = 16 bytes */
+
+
+/* Additionnal structure used to save the data of the 'write sector' command */
+/* TODO : data are only saved in memory / snapshot and will be lost when exiting. */
+/* We should have a file format to store them with the .STX file */
+typedef struct {
+	/* Copy track/side + ID field + BitPosition to uniquely identify each sector */
+	Uint8		Track;
+	Uint8		Side;
+	Uint16		BitPosition;
+	Uint8		ID_Track;				/* Content of the Address Field */
+	Uint8		ID_Head;
+	Uint8		ID_Sector;
+	Uint8		ID_Size;
+	Uint16		ID_CRC;
+	
+	Uint16		SectorSize;				/* Number of bytes in this sector */
+	Uint8		*pData;					/* Data saved for this sector */
+} STX_SAVE_SECTOR_STRUCT;
+
+
+typedef struct {
+	Uint32			SaveSectorsCount;
+	STX_SAVE_SECTOR_STRUCT	*pSaveSectorsStruct;
+} STX_SAVE_STRUCT;
 
 
 
@@ -110,6 +141,7 @@ extern bool	STX_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize );
 extern bool	STX_Eject ( int Drive );
 
 extern void	STX_FreeStruct ( STX_MAIN_STRUCT *pStxMain );
+extern void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , Uint32 SaveSectorsCount );
 extern STX_MAIN_STRUCT *STX_BuildStruct ( Uint8 *pFileBuffer , int Debug );
 
 
@@ -117,8 +149,10 @@ extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Ui
 extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side );
 extern Uint8	FDC_NextSectorID_TR_STX ( void );
 extern Uint8	FDC_NextSectorID_SR_STX ( void );
+extern Uint8	FDC_NextSectorID_LEN_STX ( void );
 extern Uint8	FDC_NextSectorID_CRC_OK_STX ( void );
 extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize );
+extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize );
 extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
 

@@ -2645,7 +2645,6 @@ static int FDC_UpdateWriteSectorsCmd ( void )
 			Next_TR = FDC_NextSectorID_TR_STX ();
 			Next_SR = FDC_NextSectorID_SR_STX ();
 			Next_CRC_OK = FDC_NextSectorID_CRC_OK_STX ();
-fprintf ( stderr, "FDC type II command 'write sector' does not work yet with STX\n");
 		}
 		else
 		{
@@ -2668,9 +2667,9 @@ fprintf ( stderr, "FDC type II command 'write sector' does not work yet with STX
 		break;
 	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA_TRANSFER_START:
 		/* Write a single sector from RAM (512 bytes for ST/MSA) */
-// 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
-// 			Next_LEN = FDC_NextSectorID_LEN_STX ();
-// 		else
+		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			Next_LEN = FDC_NextSectorID_LEN_STX ();
+		else
 			Next_LEN = FDC_NextSectorID_LEN_ST ();
 
 		FDC_Buffer_Reset();
@@ -2698,10 +2697,10 @@ fprintf ( stderr, "FDC type II command 'write sector' does not work yet with STX
 		/* Sector completely transferred, CRC is always good for ST/MSA */
 		/* This is where we save the buffer to the disk image */
 
-// 		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
-// 			Status = FDC_ReadSector_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
-// 				FDC.SR , FDC.SideSignal , FDC_Buffer_Get_Size () );
-// 		else
+		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			Status = FDC_WriteSector_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SR , FDC.SideSignal , FDC_Buffer_Get_Size () );
+		else
 			Status = FDC_WriteSector_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
 				FDC.SR , FDC.SideSignal , FDC_Buffer_Get_Size () );
 

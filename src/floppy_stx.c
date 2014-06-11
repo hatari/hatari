@@ -50,12 +50,16 @@ typedef struct
 	Uint32			NextSectorStruct_Nbr;		/* Sector Number in pSectorsStruct after a call to FDC_NextSectorID_FdcCycles_STX() */
 	Uint8			NextSector_ID_Field_TR;		/* Track value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
 	Uint8			NextSector_ID_Field_SR;		/* Sector value in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
+	Uint8			NextSector_ID_Field_LEN;	/* Sector's length in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
 	Uint8			NextSector_ID_Field_CRC_OK;	/* CRC OK or not in the next ID Field after a call to FDC_NextSectorID_FdcCycles_STX() */
-	
+
 } STX_STRUCT;
 
 
 static STX_STRUCT	STX_State;			/* All variables related to the STX support */
+
+static STX_SAVE_STRUCT	STX_SaveStruct[ MAX_FLOPPYDRIVES ];	/* To save 'write sector' data */
+
 
 
 /* Default timing table for Macrodos when revision=0 */
@@ -78,6 +82,7 @@ static void	STX_BuildSectorsSimple ( STX_TRACK_STRUCT *pStxTrack , Uint8 *p );
 static Uint16	STX_BuildSectorID_CRC ( STX_SECTOR_STRUCT *pStxSector );
 static STX_TRACK_STRUCT	*STX_FindTrack ( Uint8 Drive , Uint8 Track , Uint8 Side );
 static STX_SECTOR_STRUCT *STX_FindSector ( Uint8 Drive , Uint8 Track , Uint8 Side , Uint8 SectorStruct_Nb );
+static STX_SECTOR_STRUCT *STX_FindSector_By_Position ( Uint8 Drive , Uint8 Track , Uint8 Side , Uint16 BitPosition );
 
 
 
@@ -88,15 +93,38 @@ static STX_SECTOR_STRUCT *STX_FindSector ( Uint8 Drive , Uint8 Track , Uint8 Sid
 void STX_MemorySnapShot_Capture(bool bSave)
 {
 	int	Drive;
+	Uint32	i;
+	STX_SECTOR_STRUCT	*pStxSector;
 
 	if ( bSave )					/* Saving snapshot */
 	{
-		MemorySnapShot_Store(&STX_State, sizeof(STX_State));
+		MemorySnapShot_Store( &STX_State , sizeof (STX_State) );
+
+		/* Also save the 'write sector' buffers */
+		for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
+		{
+			MemorySnapShot_Store ( &STX_SaveStruct[ Drive ].SaveSectorsCount , sizeof ( STX_SaveStruct[ Drive ].SaveSectorsCount ) );
+			if ( STX_SaveStruct[ Drive ].SaveSectorsCount > 0 )
+			{
+				/* Save all sectors in the memory state */
+				/* For each sector, we save the structure, then the data */
+				for ( i=0 ; i<STX_SaveStruct[ Drive ].SaveSectorsCount ; i++ )
+				{
+//Str_Dump_Hex_Ascii ( (char *) &STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ], sizeof( STX_SAVE_SECTOR_STRUCT ), 16, "" , stderr );
+					/* Save the structure */
+					MemorySnapShot_Store ( &STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ] , sizeof( STX_SAVE_SECTOR_STRUCT ) );
+					/* Save the sector's data */
+					MemorySnapShot_Store ( STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].pData ,
+							STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].SectorSize );
+				}
+			}
+//fprintf ( stderr , "stx save write buffer drive=%d count=%d buf=%p\n" , Drive , STX_SaveStruct[ Drive ].SaveSectorsCount , STX_SaveStruct[ Drive ].pSaveSectorsStruct );
+		}
 	}
 
 	else						/* Restoring snapshot */
 	{
-		MemorySnapShot_Store(&STX_State, sizeof(STX_State));
+		MemorySnapShot_Store ( &STX_State , sizeof (STX_State) );
 
 		/* Call STX_Insert to recompute STX_State */
 		for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
@@ -107,6 +135,59 @@ void STX_MemorySnapShot_Capture(bool bSave)
 						EmulationDrives[Drive].sFileName , Drive );
 					return;
 				}
+
+		/* Also restore the 'write sector' buffers */
+		for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
+		{
+			MemorySnapShot_Store ( &STX_SaveStruct[ Drive ].SaveSectorsCount , sizeof ( STX_SaveStruct[ Drive ].SaveSectorsCount ) );
+			if ( STX_SaveStruct[ Drive ].SaveSectorsCount > 0 )
+			{
+				/* Alloc a buffer for all the sectors */
+				STX_SaveStruct[ Drive ].pSaveSectorsStruct = malloc ( STX_SaveStruct[ Drive ].SaveSectorsCount * sizeof ( STX_SAVE_SECTOR_STRUCT ) );
+				if ( !STX_SaveStruct[ Drive ].pSaveSectorsStruct )
+				{
+					Log_AlertDlg(LOG_ERROR, "Error restoring STX save buffer size=%d in drive %d" ,
+						STX_SaveStruct[ Drive ].SaveSectorsCount , Drive );
+					return;
+				}
+
+				/* Load all sectors from the memory state */
+				/* For each sector, we load the structure, then the data */
+				for ( i=0 ; i<STX_SaveStruct[ Drive ].SaveSectorsCount ; i++ )
+				{
+					/* Load the structure */
+					MemorySnapShot_Store ( &STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ] , sizeof( STX_SAVE_SECTOR_STRUCT ) );
+//Str_Dump_Hex_Ascii ( (char *) &STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ], sizeof( STX_SAVE_SECTOR_STRUCT ), 16, "" , stderr );
+
+					/* Load the sector's data */
+					STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].pData = malloc ( STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].SectorSize );
+					if ( !STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].pData )
+					{
+						Log_AlertDlg(LOG_ERROR, "Error restoring STX save buffer for sector=%d in drive %d" ,
+							i , Drive );
+						return;
+					}
+					MemorySnapShot_Store ( STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].pData ,
+							STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].SectorSize );
+
+					/* Find the original sector to associate it with this saved sector */
+					pStxSector = STX_FindSector_By_Position ( Drive , STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].Track ,
+							STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].Side ,
+							STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i ].BitPosition );
+					if ( !pStxSector )
+					{
+						Log_AlertDlg(LOG_ERROR, "Error restoring STX save buffer for sector=%d in drive %d" ,
+							i , Drive );
+						return;
+					}
+					pStxSector->SaveSectorIndex = i;
+				}
+			}
+
+			else
+				STX_SaveStruct[ Drive ].pSaveSectorsStruct = NULL;
+//fprintf ( stderr , "stx load write buffer drive=%d count=%d buf=%p\n" , Drive , STX_SaveStruct[ Drive ].SaveSectorsCount , STX_SaveStruct[ Drive ].pSaveSectorsStruct );
+		}
 
 		fprintf ( stderr , "stx load ok\n" );
 	}
@@ -170,6 +251,9 @@ bool	STX_Init ( void )
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
 		STX_State.ImageBuffer[ i ] = NULL;
+
+		STX_SaveStruct[ i ].SaveSectorsCount = 0;
+		STX_SaveStruct[ i ].pSaveSectorsStruct = NULL;
 	}
 
 	return true;
@@ -199,8 +283,17 @@ bool	STX_Eject ( int Drive )
 	fprintf ( stderr , "STX : STX_Eject drive=%d\n" , Drive );
 
 	if ( STX_State.ImageBuffer[ Drive ] )
+	{
 		STX_FreeStruct ( STX_State.ImageBuffer[ Drive ] );
-	STX_State.ImageBuffer[ Drive ] = NULL;
+		STX_State.ImageBuffer[ Drive ] = NULL;
+	}
+
+	if ( STX_SaveStruct[ Drive ].pSaveSectorsStruct )
+	{
+		STX_FreeSaveSectorsStruct ( STX_SaveStruct[ Drive ].pSaveSectorsStruct , STX_SaveStruct[ Drive ].SaveSectorsCount );
+		STX_SaveStruct[ Drive ].SaveSectorsCount = 0;
+		STX_SaveStruct[ Drive ].pSaveSectorsStruct = NULL;
+	}
 
 	return true;
 }
@@ -239,6 +332,26 @@ void	STX_FreeStruct ( STX_MAIN_STRUCT *pStxMain )
 
 	free ( pStxMain->pTracksStruct );
 	free ( pStxMain );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Free all the memory allocated to store some STX_SAVE_SECTOR_STRUCT
+ */
+void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , Uint32 SaveSectorsCount )
+{
+	Uint32	i;
+
+	if ( !pSaveSectorsStruct )
+		return;
+
+	for ( i = 0 ; i < SaveSectorsCount ; i++ )
+	{
+		free ( pSaveSectorsStruct[ i ].pData );
+	}
+
+	free ( pSaveSectorsStruct );
 }
 
 
@@ -287,6 +400,8 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 			pStxMain->ImagingTool  , pStxMain->Reserved_1 , pStxMain->TracksCount , pStxMain->Revision ,
 			pStxMain->Reserved_2 );
 
+	pStxMain->WarnedWriteSector = false;
+	pStxMain->WarnedWriteTrack = false;
 
 	pStxTrack = malloc ( sizeof ( STX_TRACK_STRUCT ) * pStxMain->TracksCount );
 	if ( !pStxTrack )
@@ -412,6 +527,8 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
  				if ( pStxSector->FDC_Status & STX_SECTOR_FLAG_VARIABLE_TIME )
 					VariableTimings = 1;
 			}
+
+			pStxSector->SaveSectorIndex = -1;
 		}
 
 		/* Start of the optional timings data, after the optional sectors image data */
@@ -582,6 +699,10 @@ static Uint16	STX_BuildSectorID_CRC ( STX_SECTOR_STRUCT *pStxSector )
 
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Find a track in the floppy image inserted into a drive.
+ */
 static STX_TRACK_STRUCT	*STX_FindTrack ( Uint8 Drive , Uint8 Track , Uint8 Side )
 {
 	int	i;
@@ -597,6 +718,12 @@ static STX_TRACK_STRUCT	*STX_FindTrack ( Uint8 Drive , Uint8 Track , Uint8 Side 
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Find a sector in the floppy image inserted into a drive.
+ * SectorStruct_Nb is a value set by a previous call to FDC_NextSectorID_FdcCycles_STX()
+ */
 static STX_SECTOR_STRUCT	*STX_FindSector ( Uint8 Drive , Uint8 Track , Uint8 Side , Uint8 SectorStruct_Nb )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
@@ -612,6 +739,35 @@ static STX_SECTOR_STRUCT	*STX_FindSector ( Uint8 Drive , Uint8 Track , Uint8 Sid
 		return NULL;
 
 	return &(pStxTrack->pSectorsStruct[ SectorStruct_Nb ]);
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Find a sector in the floppy image inserted into a drive.
+ * The sector is identified by its BitPosition which is unique per track/side
+ */
+static STX_SECTOR_STRUCT	*STX_FindSector_By_Position ( Uint8 Drive , Uint8 Track , Uint8 Side , Uint16 BitPosition )
+{
+	STX_TRACK_STRUCT	*pStxTrack;
+	int			Sector;
+
+	if ( STX_State.ImageBuffer[ Drive ] == NULL )
+		return NULL;
+
+	pStxTrack = STX_FindTrack ( Drive , Track , Side );
+	if ( pStxTrack == NULL )
+		return NULL;
+
+	if ( pStxTrack->pSectorsStruct == NULL )
+		return NULL;
+
+	for ( Sector=0 ; Sector<pStxTrack->SectorsCount ; Sector++ )
+		if ( pStxTrack->pSectorsStruct[ Sector ].BitPosition == BitPosition )
+			return &(pStxTrack->pSectorsStruct[ Sector ]);
+	
+	return NULL;
 }
 
 
@@ -651,8 +807,9 @@ extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Ui
  * If no ID Field is found before the end of the track, we use the 1st
  * ID Field of the track (which simulates a full spin of the floppy).
  * We also store the next sector's number into NextSectorStruct_Nbr,
- * the next sector's number into NextSector_ID_Field_SR and if the CRC is correct
- * or not into NextSector_ID_Field_CRC_OK.
+ * the next sector's number into NextSector_ID_Field_SR, the next track's number
+ * into NextSector_ID_Field_TR, the next sector's lenght into
+ * NextSector_ID_Field_LEN and if the CRC is correct or not into NextSector_ID_Field_CRC_OK.
  * This function assumes the sectors of each track are sorted in ascending order
  * using BitPosition.
  * If there's no available drive/floppy or no ID field in the track, we return -1
@@ -711,6 +868,7 @@ extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , 
 	/* Store the value of the track/sector numbers in the next ID field */
 	STX_State.NextSector_ID_Field_TR = pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].ID_Track;
 	STX_State.NextSector_ID_Field_SR = pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].ID_Sector;
+	STX_State.NextSector_ID_Field_LEN = pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].ID_Size;
 
 	/* If RNF is set and CRC error is set, then this ID field has a CRC error */
 	if ( ( pStxTrack->pSectorsStruct[ STX_State.NextSectorStruct_Nbr ].FDC_Status & STX_SECTOR_FLAG_RNF )
@@ -752,6 +910,17 @@ extern Uint8	FDC_NextSectorID_SR_STX ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return the value of the sector's length in the next ID field set by
+ * FDC_NextSectorID_FdcCycles_STX.
+ */
+extern Uint8	FDC_NextSectorID_LEN_STX ( void )
+{
+	return STX_State.NextSector_ID_Field_LEN;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Return the status of the CRC in the next ID field set by
  * FDC_NextSectorID_FdcCycles_STX.
  * If '0', CRC is bad, else CRC is OK
@@ -772,6 +941,10 @@ extern Uint8	FDC_NextSectorID_CRC_OK_STX ( void )
  * Some sectors can also contains "fuzzy" bits.
  * Special care must be taken to compute the timing of each byte, which can
  * be a decimal value and must be rounded to the best possible integer.
+ *
+ * If the sector's data were changed by a 'write sector' command, then we assume
+ * a sector with no fuzzy byte and standard timings.
+ *
  * Return RNF if sector was not found, else return CRC and RECORD_TYPE values
  * for the status register.
  */
@@ -784,6 +957,7 @@ extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
 	Uint32			Sector_ReadTime;
 	double			Total_cur;				/* To compute closest integer timings for each byte */
 	double			Total_prev;
+	Uint8			*pSector_WriteData;
 
 	pStxSector = STX_FindSector ( Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
 	if ( pStxSector == NULL )
@@ -798,8 +972,21 @@ extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
 		return STX_SECTOR_FLAG_RNF;				/* RNF in FDC's status register */
 
 	*pSectorSize = pStxSector->SectorSize;
-
 	Sector_ReadTime = pStxSector->ReadTime;
+
+	/* Check if this sector was changed by a 'write sector' command */
+	/* If so, we use this recent buffer instead of the original STX content */
+	if ( pStxSector->SaveSectorIndex >= 0 )
+	{
+		pSector_WriteData = STX_SaveStruct[ Drive ].pSaveSectorsStruct[ pStxSector->SaveSectorIndex ].pData;
+		Sector_ReadTime = 0;					/* Standard timings */
+
+		LOG_TRACE(TRACE_FDC, "fdc stx read sector drive=%d track=%d sect=%d side=%d using saved sector=%d\n" ,
+			Drive, Track, Sector, Side , pStxSector->SaveSectorIndex );
+	}
+	else
+		pSector_WriteData = NULL;
+
 	if ( Sector_ReadTime == 0 )					/* Sector has a standard delay (32 us per byte) */
 		Sector_ReadTime = 32 * pStxSector->SectorSize;		/* Use the real standard value instead of 0 */
 	Sector_ReadTime *= 8;						/* Convert delay in us to a number of FDC cycles at 8 MHz */
@@ -808,12 +995,19 @@ extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
 	for ( i=0 ; i<pStxSector->SectorSize ; i++ )
 	{
 		/* Get the value of each byte, with possible fuzzy bits */
-		Byte = pStxSector->pData[ i ];
-		if ( pStxSector->pFuzzyData )
-			Byte = ( Byte & pStxSector->pFuzzyData[ i ] ) | ( rand() & ~pStxSector->pFuzzyData[ i ] );
+		if ( pSector_WriteData == NULL )			/* Use original STX content */
+		{
+			Byte = pStxSector->pData[ i ];
+			if ( pStxSector->pFuzzyData )
+				Byte = ( Byte & pStxSector->pFuzzyData[ i ] ) | ( rand() & ~pStxSector->pFuzzyData[ i ] );
+		}
+
+		else							/* Use data from 'write sector' */
+			Byte = pSector_WriteData[ i ];
 
 		/* Compute the timing in FDC cycles to transfer this byte */
-		if ( pStxSector->pTimingData )				/* Specific timing for each block of 16 bytes */
+		if ( ( pStxSector->pTimingData )			/* Specific timing for each block of 16 bytes */
+		  && ( pSector_WriteData == NULL ) )
 		{
 			Timing = ( pStxSector->pTimingData[ ( i>>4 ) * 2 ] << 8 )
 				+ pStxSector->pTimingData[ ( i>>4 ) * 2 + 1 ];	/* Get big endian timing for this block of 16 bytes */
@@ -840,6 +1034,121 @@ extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
 
 	/* Return only bits 3 and 5 of the FDC_Status */
 	return pStxSector->FDC_Status & ( STX_SECTOR_FLAG_CRC | STX_SECTOR_FLAG_RECORD_TYPE );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write a sector to a floppy image in STX format (used in type II command)
+ *
+ * STX format doesn't support write command. For each 'write sector' we
+ * store the sector data in a dedicated buffer STX_SaveSectorBuffer.
+ * When the sector is read later, we return the data from STX_SaveSectorBuffer
+ * instead of returning the data from the original STX file.
+ *
+ * We only allow writing for sectors whose ID field has a correct CRC and
+ * where RNF is not set.
+ * Any valid size can be written : 128, 256, 512 or 1024 bytes
+ *
+ * NOTE : as a limitation, data are only stored in RAM, not saved in a file
+ * with the .STX file. This means that any write will be lost when exiting
+ * Hatari or ejecting the floppy.
+ * Data are kept in memory snapshot though.
+ *
+ * Return RNF if sector was not found or CRC if ID field has a CRC error.
+ * Return 0 if OK.
+ */
+extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize )
+{
+	STX_SECTOR_STRUCT	*pStxSector;
+	int			i;
+	Uint8			*pSector_WriteData;
+	void			*pNewBuf;
+	STX_SAVE_SECTOR_STRUCT	*pStxSaveSector;
+
+	pStxSector = STX_FindSector ( Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
+	if ( pStxSector == NULL )
+	{
+		fprintf ( stderr , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d returns null !\n" ,
+				Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
+		return STX_SECTOR_FLAG_RNF;				/* Should not happen if FDC_NextSectorID_FdcCycles_STX succeeded before */
+	}
+
+	/* If RNF is set, return FDC_STR_BIT_RNF */
+	if ( pStxSector->FDC_Status & STX_SECTOR_FLAG_RNF )
+		return STX_SECTOR_FLAG_RNF;				/* RNF in FDC's status register */
+
+	/* If CRC is set, return FDC_STR_BIT_RNF */
+	if ( pStxSector->FDC_Status & STX_SECTOR_FLAG_CRC )
+		return STX_SECTOR_FLAG_CRC;				/* CRC in FDC's status register */
+
+
+	/* Check if this sector was already changed by a 'write sector' command */
+	/* If so, we use the same buffer. Else we alloc a new buffer for this sector */
+	if ( pStxSector->SaveSectorIndex < 0 )
+	{
+//fprintf ( stderr , "realloc\n" );
+		/* Increase save buffer by 1 */
+		pNewBuf = realloc ( STX_SaveStruct[ Drive ].pSaveSectorsStruct ,
+				    ( STX_SaveStruct[ Drive ].SaveSectorsCount + 1 ) * sizeof ( STX_SAVE_SECTOR_STRUCT ) );
+		if ( pNewBuf == NULL )
+		{
+			fprintf ( stderr , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d realloc error !\n" ,
+					Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
+			return STX_SECTOR_FLAG_RNF;
+		}
+
+		/* Save the new buffer values */
+		STX_SaveStruct[ Drive ].pSaveSectorsStruct = (STX_SAVE_SECTOR_STRUCT *) pNewBuf;;
+		STX_SaveStruct[ Drive ].SaveSectorsCount++;
+
+		/* Create the new entry in pSaveSectorsStruct */
+		pNewBuf = malloc ( SectorSize );
+		if ( pNewBuf == NULL )
+		{
+			fprintf ( stderr , "FDC_WriteSector_STX drive=%d track=%d side=%d sector=%d malloc error !\n" ,
+					Drive , Track , Side , STX_State.NextSectorStruct_Nbr );
+			return STX_SECTOR_FLAG_RNF;
+		}
+
+		pStxSector->SaveSectorIndex = STX_SaveStruct[ Drive ].SaveSectorsCount - 1;
+
+		/* Fill the new SaveSectorStruct. We copy some of the original sector's values */
+		/* in the saved sector */
+		pStxSaveSector = &STX_SaveStruct[ Drive ].pSaveSectorsStruct[ pStxSector->SaveSectorIndex ];
+
+		pStxSaveSector->Track		= Track;
+		pStxSaveSector->Side		= Side;
+		pStxSaveSector->BitPosition	= pStxSector->BitPosition;
+		pStxSaveSector->ID_Track	= pStxSector->ID_Track;
+		pStxSaveSector->ID_Head		= pStxSector->ID_Head;
+		pStxSaveSector->ID_Sector	= pStxSector->ID_Sector;
+		pStxSaveSector->ID_Size		= pStxSector->ID_Size;
+		pStxSaveSector->ID_CRC		= pStxSector->ID_CRC;
+
+		pStxSaveSector->SectorSize	= SectorSize;
+		pStxSaveSector->pData		= (Uint8 *) pNewBuf;
+	}
+
+	pSector_WriteData = STX_SaveStruct[ Drive ].pSaveSectorsStruct[ pStxSector->SaveSectorIndex ].pData;
+
+	/* Get the sector's data (ignore timings) */
+	for ( i=0 ; i<SectorSize ; i++ )
+		pSector_WriteData[ i ] = FDC_Buffer_Read_Byte_pos ( i );
+
+//fprintf ( stderr , "write drive=%d track=%d side=%d sector=%d size=%d index=%d\n", Drive, Track, Side, Sector, SectorSize , pStxSector->SaveSectorIndex );
+//Str_Dump_Hex_Ascii ( (char *) pSector_WriteData, SectorSize, 16, "" , stderr );
+
+	/* Warn that 'write sector' data will be lost on exit */
+	if ( STX_State.ImageBuffer[ Drive ]->WarnedWriteSector == false )
+	{
+		Log_AlertDlg ( LOG_INFO , "WARNING : changes made to an STX disk with 'write sector' will be lost on exit" );
+		STX_State.ImageBuffer[ Drive ]->WarnedWriteSector = true;
+	}
+
+
+	/* No error */
+	return 0;
 }
 
 
@@ -905,6 +1214,7 @@ extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	int			Sector;
 	int			SectorSize;
 	Uint16  		CRC;
+	Uint8			*pData;
 	Uint8			Byte;
 	
 	if ( STX_State.ImageBuffer[ Drive ] == NULL )
@@ -1013,9 +1323,15 @@ extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 			/* [NP] NOTE : when building the sector, we assume there's no specific timing or fuzzy bytes */
 			/* If it was not the case, there would certainly be a real track image (and STX format doesn't */
 			/* support fuzzy bytes or specific timing for a track image anyway) */
+			/* If the sector was changed by a 'write sector' command, we use the data from pSaveSectorsStruct */
+			if ( pStxSector->SaveSectorIndex < 0 )		/* Use original data from the STX */
+				pData = pStxSector->pData;
+			else						/* Use data from the 'write sector' */
+				pData = STX_SaveStruct[ Drive ].pSaveSectorsStruct[ pStxSector->SaveSectorIndex ].pData;
+
 			for ( i=0 ; i<SectorSize ; i++ )
 			{
-				Byte = pStxSector->pData[ i ];
+				Byte = pData[ i ];
 				FDC_Buffer_Add ( Byte );
 				crc16_add_byte ( &CRC , Byte );
 			}
