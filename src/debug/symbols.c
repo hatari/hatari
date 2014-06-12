@@ -64,6 +64,7 @@ static symbol_list_t *DspSymbolsList;
 /* path for last loaded program (through GEMDOS HD emulation) */
 static char *CurrentProgramPath;
 static bool SymbolsAreForProgram;
+static bool AutoLoadFailed;
 
 
 /* ------------------ load and free functions ------------------ */
@@ -171,7 +172,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	Uint16 symid;
 	Uint32 address;
 
-	if (tablesize % DRI_ENTRY_SIZE) {
+	if (tablesize % DRI_ENTRY_SIZE || !tablesize) {
 		fprintf(stderr, "ERROR: invalid DRI/GST symbol table size %d!\n", tablesize);
 		return NULL;
 	}
@@ -393,6 +394,10 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 		}
 		symbols++;
 	}
+	if (!symbols) {
+		fprintf(stderr, "ERROR: no symbols.\n");
+	}
+
 	fseek(fp, 0, SEEK_SET);
 
 	/* allocate space for symbol list & names */
@@ -504,7 +509,7 @@ static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32
 	fclose(fp);
 
 	if (!list) {
-		fprintf(stderr, "ERROR: no symbols, or reading them from '%s' failed!\n", filename);
+		fprintf(stderr, "ERROR: reading symbols from '%s' failed!\n", filename);
 		return NULL;
 	}
 
@@ -841,6 +846,7 @@ void Symbols_RemoveCurrentProgram(void)
 			CpuSymbolsList = NULL;
 		}
 	}
+	AutoLoadFailed = false;
 }
 
 /**
@@ -859,14 +865,15 @@ void Symbols_ChangeCurrentProgram(FILE *fp, const char *path)
  */
 void Symbols_LoadCurrentProgram(void)
 {
-	/* symbols already loaded or program path missing? */
-	if (CpuSymbolsList || !CurrentProgramPath) {
+	/* symbols already loaded, program path missing or previous load failed? */
+	if (CpuSymbolsList || !CurrentProgramPath || AutoLoadFailed) {
 		return;
 	}
 	CpuSymbolsList = Symbols_Load(CurrentProgramPath, NULL, 0);
 	if (!CpuSymbolsList) {
-		/* don't bother checking again until next program */
-		Symbols_RemoveCurrentProgram();
+		AutoLoadFailed = true;
+	} else {
+		AutoLoadFailed = false;
 	}
 }
 
