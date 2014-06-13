@@ -198,6 +198,8 @@ static char symbol_char(int type)
 	}
 }
 
+#define INVALID_SYMBOL_OFFSETS ((symbol_list_t*)1)
+
 /**
  * Load symbols of given type and the symbol address addresses from
  * DRI/GST format symbol table, and add given offsets to the addresses:
@@ -310,7 +312,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 				/* potentially buggy version of VBCC vlink used */
 				fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
 				symbol_list_free(list);
-				return NULL;
+				return INVALID_SYMBOL_OFFSETS;
 			}
 			fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
 				name, symbol_char(symtype), i, address, section->end);
@@ -347,27 +349,6 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 	list->symbols = symbols;
 	list->count = count;
 	return list;
-}
-
-/**
- * check whether given binary file is compiled with VBCC
- */
-static bool is_vbcc(FILE *fp)
-{
-	long offset = ftell(fp);
-	Uint32 vbcc = 0;
-
-	/* jump over program header & VBCC jump at TEXT section start */
-	fseek(fp, 30, SEEK_SET);
-
-	/* read potential VBCC identifier */
-	if (fread(&vbcc, sizeof(vbcc), 1, fp) != 1)
-		perror("is_vbcc");
-	vbcc = SDL_SwapBE32(vbcc);
-
-	/* restore position */
-	fseek(fp, offset, SEEK_SET);
-	return vbcc == 0x56424343;  /* "VBCC" */
 }
 
 /**
@@ -440,23 +421,24 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 		return NULL;
 	}
 	fprintf(stderr, "0x%x program flags, reloc=%d, %s\n", prgflags, relocflag, info);
+
 	fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
 	symbols = symbols_load_dri(fp, sections, tablesize);
 
-	if (symbols) {
-		fprintf(stderr, "Load symbols with 'symbols <filename> TEXT DATA BSS' after starting the program.\n");
-	} else if (is_vbcc(fp)) {
-		fseek(fp, offset, SEEK_SET);
+	if (symbols == INVALID_SYMBOL_OFFSETS && fseek(fp, offset, SEEK_SET) == 0) {
+		fprintf(stderr, "Re-trying with TEXT-relative BSS/DATA section offsets...\n");
 		sections[1].end += textlen;
 		sections[2].end += (textlen + datalen);
-		fprintf(stderr, "VBCC compiled binary, re-trying with different BSS/DATA section offsets in case buggy version of vlink was used...\n");
 		symbols = symbols_load_dri(fp, sections, tablesize);
 		if (symbols) {
 			fprintf(stderr, "Load symbols without giving separate BSS/DATA offsets (they're TEXT relative).\n");
 		}
+	} else {
+		fprintf(stderr, "Load symbols with 'symbols <filename> TEXT DATA BSS' after starting the program.\n");
 	}
-	if (!symbols) {
+	if (!symbols || symbols == INVALID_SYMBOL_OFFSETS) {
 		fprintf(stderr, "\n\n*** Try with 'nm -n <program>' (Atari/cross-compiler tool) instead ***\n\n");
+		return NULL;
 	}
 	return symbols;
 }
