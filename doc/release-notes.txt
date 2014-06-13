@@ -147,6 +147,7 @@ Fixed demos :
 - The Union Demo (cpu, memory access, ikbd, protection)
 - IKBD no jitter by Nyh (acia/video, use a VBL of 160240 cycles)
 - Pacemaker by Paradox (microwire, YM sound was muted)
+- Panic by Paulo Simoes (video, was broken since Hatari 1.7)
 
 Fixed games :
 - Reeking Rubber (by Nature), Falcon game
