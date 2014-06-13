@@ -1342,10 +1342,24 @@ void Video_Sync_WriteByte ( void )
 		        && ( LineCycles >= LINE_START_CYCLE_50 )	/* The line started in 60 Hz and continues in 50 Hz */
 		        && ( LineCycles <= ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle ) )	/* change when line is active */
 		{
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
-			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 %d<->%d\n" ,
+			/* [FIXME] 'Panic' by Paulo Simoes, dont' trigger left+2 (need 2 cycles precision) */
+			/* The switch to 50 Hz on line 34 cycle 56 should just start a normal 50 Hz line, not a left+2 */
+			/* For now, we detect that we're running 'Panic' and if so we don't do left+2 (ugly hack...) */
+			if ( ( STMemory_ReadLong ( M68000_GetPC() ) == 0x4e7352b8 )
+			  && ( STMemory_ReadLong ( M68000_GetPC()+4 ) == 0x04664e73 )
+			  && ( HblCounterVideo == 34 ) && ( LineCycles == 56 ) )
+			{
+				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
+			}
+
+			/* Normal case where left+2 should be made */
+			else
+			{
+			  ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
+			  ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
+			  LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+			}
 		}
 
 		/* Empty line switching freq on STF : start the line in 50 Hz, change to 60 Hz at the exact place */
