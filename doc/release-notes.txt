@@ -91,8 +91,9 @@ Emulator:
   - Fix: TOS and cartridge addresses weren't (with all TOS versions)
     in address order which asserted in profile data post-processor
   - Fix: "next" command didn't work correctly in "hex" number base
-  - Fix: DATA/BSS debug symbol offsets were interpreted based on
-    (incorrect) VBCC's vlink behavior
+  - Fix: depending on compiler/linker/assembler, DATA/BSS debug symbol
+    offsets can in programs be either relative to their own, or to TEXT
+    section start.  If former fails, try latter when loading symbols.
   - New "ym" info subcommand to show YM register values
   - "quit" command by-passes exit confirmation dialog and takes
     an optional Hatari exit code value
