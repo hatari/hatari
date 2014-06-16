@@ -159,6 +159,7 @@ Fixed games :
 - Dragon Flight (cpu, illegal instruction)
 - International 3D Tennis (cpu, prefetch)
 - Leavin' Teramis loader text (video address at $ffe100)
+- Lethal Xcess Beta (cpu, bus error, code running at $ff8800)
 - Lethal Xcess (mfp, top border not removed sometimes)
 - Maze (by Martin Dennett & John Parker)
 - Parasol Stars (cpu, prefetch)
