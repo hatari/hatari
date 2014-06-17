@@ -95,7 +95,7 @@ static bool Control_InsertKey(const char *event)
 			IKBD_PressSTKey(keycode, false);
 		}
 	} else {
-		if (!isalnum(key[0])) {
+		if (!isalnum((unsigned char)key[0])) {
 			fprintf(stderr, "ERROR: non-alphanumeric character '%c' needs to be given as keycode\n", key[0]);
 			return false;
 		}

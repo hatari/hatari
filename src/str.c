@@ -45,7 +45,7 @@ char *Str_Trim(char *buffer)
 
 	for (i = linelen; i > 0; i--)
 	{
-		if (!isspace(buffer[i-1]))
+		if (!isspace((unsigned char)buffer[i-1]))
 			break;
 	}
 
@@ -63,7 +63,7 @@ char *Str_ToUpper(char *pString)
 	char *str = pString;
 	while (*str)
 	{
-		*str = toupper(*str);
+		*str = toupper((unsigned char)*str);
 		str++;
 	}
 	return pString;
@@ -78,7 +78,7 @@ char *Str_ToLower(char *pString)
 	char *str = pString;
 	while (*str)
 	{
-		*str = tolower(*str);
+		*str = tolower((unsigned char)*str);
 		str++;
 	}
 	return pString;
@@ -180,7 +180,7 @@ void Str_Filename2TOSname(const char *source, char *dst)
 					*tmp = INVALID_CHAR;
 					break;
 				default:
-					*tmp = toupper(*tmp);
+					*tmp = toupper((unsigned char)*tmp);
 			}
 		}
 	}

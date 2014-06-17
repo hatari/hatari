@@ -405,7 +405,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			continue;
 		}
 		/* skip empty lines */
-		for (buf = buffer; isspace(*buf); buf++);
+		for (buf = buffer; isspace((unsigned char)*buf); buf++);
 		if (!*buf) {
 			continue;
 		}
@@ -430,7 +430,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			continue;
 		}
 		/* skip empty lines */
-		for (buf = buffer; isspace(*buf); buf++);
+		for (buf = buffer; isspace((unsigned char)*buf); buf++);
 		if (!*buf) {
 			continue;
 		}
@@ -439,7 +439,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			fprintf(stderr, "WARNING: syntax error on line %d, skipping.\n", line);
 			continue;
 		}
-		switch (toupper(symchar)) {
+		switch (toupper((unsigned char)symchar)) {
 		case 'T':
 			symtype = SYMTYPE_TEXT;
 			offset = offsets[0];

@@ -158,7 +158,7 @@ static int getNumber(const char *str, Uint32 *number, int *nbase)
 		}
 		str += 2;
 	}
-	else if (!isxdigit(str[0])) {
+	else if (!isxdigit((unsigned char)str[0])) {
 
 		/* doesn't start with (hex) number -> is it prefix? */
 		switch (*str++) {
@@ -206,8 +206,8 @@ static int getValue(const char *str, Uint32 *number, int *base, bool bForDsp)
 	Uint32 mask, *addr;
 	int len;
 
-	for (end = str; *end == '_' || isalnum(*end); end++);
-	
+	for (end = str; *end == '_' || isalnum((unsigned char)*end); end++);
+
 	len = end-str;
 	if (len >= (int)sizeof(name)) {
 		fprintf(stderr, "ERROR: symbol name at '%s' too long (%d chars)\n", str, len);

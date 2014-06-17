@@ -367,7 +367,7 @@ static bool fsfirst_match(const char *pat, const char *name)
 			}
 			else
 			{
-				if (toupper(*p++) != toupper(*n++))
+				if (toupper((unsigned char)*p++) != toupper((unsigned char)*n++))
 					return false;
 			}
 		}
@@ -527,7 +527,7 @@ static bool GEMDOS_DoesHostDriveFolderExist(char* lpstrPath, int iDrive)
 	{
 		/* Try lower case drive letter instead */
 		int	iIndex = strlen(lpstrPath)-1;
-		lpstrPath[iIndex] = tolower(lpstrPath[iIndex]);
+		lpstrPath[iIndex] = tolower((unsigned char)lpstrPath[iIndex]);
 	}
 
 	/* Check the file/folder is accessible (security basis) */
@@ -583,7 +583,7 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 		last = 0;
 		for (i = 0; i < count; i++)
 		{
-			letter = toupper(files[i]->d_name[0]);
+			letter = toupper((unsigned char)files[i]->d_name[0]);
 			if (!letter || letter == '.')
 			{
 				/* Ignore hidden files like "." and ".." */
@@ -915,7 +915,7 @@ static int GemDOS_FindDriveNumber(char *pszFileName)
 	/* Does have 'A:' or 'C:' etc.. at start of string? */
 	if (pszFileName[0] != '\0' && pszFileName[1] == ':')
 	{
-		char letter = toupper(pszFileName[0]);
+		char letter = toupper((unsigned char)pszFileName[0]);
 		if (letter >= 'A' && letter <= 'Z')
 			return (letter-'A');
 	}

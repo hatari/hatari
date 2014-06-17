@@ -547,7 +547,7 @@ int main(int argc, const char *argv[])
 		if (argv[i][0] != '-') {
 			break;
 		}
-		switch(tolower(argv[i][1])) {
+		switch(tolower((unsigned char)argv[i][1])) {
 		case 'n':
 			Options.sort_name = true;
 		case 'b':

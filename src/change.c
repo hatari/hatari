@@ -502,7 +502,7 @@ bool Change_ApplyCommandline(char *cmdline)
 	inarg = argc = 0;
 	for (i = 0; cmdline[i]; i++)
 	{
-		if (isspace(cmdline[i]) && cmdline[i-1] != '\\')
+		if (isspace((unsigned char)cmdline[i]) && cmdline[i-1] != '\\')
 		{
 			inarg = 0;
 			continue;
@@ -531,7 +531,7 @@ bool Change_ApplyCommandline(char *cmdline)
 	argv[argc++] = "hatari";
 	for (i = 0; cmdline[i]; i++)
 	{
-		if (isspace(cmdline[i]))
+		if (isspace((unsigned char)cmdline[i]))
 		{
 			if (cmdline[i-1] != '\\')
 			{

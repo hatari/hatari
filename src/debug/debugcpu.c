@@ -231,8 +231,8 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
 	if (!reg[0] || !reg[1] || reg[2])
 		return 0;
 	
-	r0 = toupper(reg[0]);
-	r1 = toupper(reg[1]);
+	r0 = toupper((unsigned char)reg[0]);
+	r1 = toupper((unsigned char)reg[1]);
 
 	if (r0 == 'D')  /* Data regs? */
 	{
@@ -296,8 +296,8 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	{
 		goto error_msg;
 	}
-	reg[0] = toupper(arg[0]);
-	reg[1] = toupper(arg[1]);
+	reg[0] = toupper((unsigned char)arg[0]);
+	reg[1] = toupper((unsigned char)arg[1]);
 	reg[2] = '\0';
 	
 	/* set SR and update conditional flags for the UAE CPU core. */

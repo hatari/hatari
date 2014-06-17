@@ -724,7 +724,8 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 					      &(bc_value->value.reg32),
 					      &(bc_value->mask));
 		if (regsize) {
-			if (bc_value->is_indirect && toupper(regname[0]) != 'R') {
+			if (bc_value->is_indirect
+			    && toupper((unsigned char)regname[0]) != 'R') {
 				fprintf(stderr, "ERROR: only R0-R7 DSP registers can be used for indirect addressing!\n");
 				EXITFUNC(("-> false (DSP)\n"));
 				return false;
@@ -833,7 +834,7 @@ static bool BreakCond_ParseAddressModifier(parser_state_t *pstate, bc_value_t *b
 		case 'p':
 		case 'x':
 		case 'y':
-			mode = toupper(pstate->argv[pstate->arg][0]);
+			mode = toupper((unsigned char)pstate->argv[pstate->arg][0]);
 			break;
 		default:
 			pstate->error = "invalid address space modifier";
@@ -937,7 +938,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	}
 	
 	str = pstate->argv[pstate->arg];
-	if (isalpha(*str) || *str == '_') {
+	if (isalpha((unsigned char)*str) || *str == '_') {
 		/* parse direct or indirect variable/register/symbol name */
 		if (bc_value->is_indirect) {
 			/* a valid register or data symbol name? */
@@ -1218,7 +1219,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 	has_comparison = false;
 	for (src = expression; *src; src++) {
 		/* discard white space in source */
-		if (isspace(*src)) {
+		if (isspace((unsigned char)*src)) {
 			continue;
 		}
 		/* separate tokens with single space in destination */
@@ -1246,7 +1247,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		/* validate & copy other characters */
 		if (!sep) {
 			/* variable/register/symbol or number prefix? */
-			if (!(isalnum(*src) || *src == '_' ||
+			if (!(isalnum((unsigned char)*src) || *src == '_' ||
 			      *src == '$' || *src == '#' || *src == '%')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
@@ -1728,7 +1729,7 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 				return false;
 			}
 			options->filename = filename;
-		} else if (isdigit(*option)) {
+		} else if (isdigit((unsigned char)*option)) {
 			/* :<value> */
 			skip = atoi(option);
 			if (skip < 2) {
@@ -1790,7 +1791,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 
 	/* index (for breakcond removal)? */
 	end = expression;
-	while (isdigit(*end)) {
+	while (isdigit((unsigned char)*end)) {
 		end++;
 	}
 	if (end > expression && *end == '\0' &&
