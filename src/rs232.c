@@ -48,7 +48,7 @@ static FILE *hComOut = NULL;       /* Handle to file for writing */
 
 static unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
 static int InputBuffer_Head=0, InputBuffer_Tail=0;
-
+static volatile bool bQuitThread = false;
 
 #if HAVE_TERMIOS_H
 
@@ -304,7 +304,7 @@ static int RS232_ThreadFunc(void *pData)
 	unsigned char cInChar;
 
 	/* Check for any RS-232 incoming data */
-	while (true)
+	while (!bQuitThread)
 	{
 		if (hComIn)
 		{
@@ -373,7 +373,12 @@ void RS232_Init(void)
 		/* Create thread to wait for incoming bytes over RS-232 */
 		if (!RS232Thread)
 		{
+			bQuitThread = false;
+#if WITH_SDL2
+			RS232Thread = SDL_CreateThread(RS232_ThreadFunc, "rs232", NULL);
+#else
 			RS232Thread = SDL_CreateThread(RS232_ThreadFunc, NULL);
+#endif
 			Dprintf(("RS232 thread has been created.\n"));
 		}
 	}
@@ -396,7 +401,10 @@ void RS232_UnInit(void)
 		 * on accessing/modifying hComIn.
 		 */
 		Dprintf(("Killing RS232 thread...\n"));
+		bQuitThread = true;
+#if !WITH_SDL2
 		SDL_KillThread(RS232Thread);
+#endif
 		RS232Thread = NULL;
 	}
 	RS232_CloseCOMPort();
