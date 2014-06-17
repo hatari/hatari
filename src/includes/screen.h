@@ -103,6 +103,7 @@ extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ModeChanged(void);
 extern bool Screen_Draw(void);
+extern bool Screen_SetSDLVideoSize(int width, int height, int bitdepth);
 
 extern bool bTTSampleHold;      /* TT special video mode */
 

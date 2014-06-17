@@ -50,7 +50,6 @@ const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 
 
 /* TODO: put these hostscreen globals to some struct */
-static Uint32 sdl_videoparams;
 static SDL_Rect hs_rect;
 static int hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
@@ -89,10 +88,6 @@ void HostScreen_UnInit(void)
 
 void HostScreen_toggleFullScreen(void)
 {
-	sdl_videoparams ^= SDL_FULLSCREEN;
-	Dprintf(("Fullscreen = %s, width = %d, height = %d, bpp = %d\n",
-		 sdl_videoparams&SDL_FULLSCREEN?"true":"false", hs_width_req, hs_height_req, hs_bpp));
-
 	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
 	/* force screen redraw */
 	HostScreen_update1(NULL, true);
@@ -187,9 +182,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	hs_rect.w = screenwidth;
 	hs_rect.h = screenheight - sbarheight;
 
-	if (sdlscrn && (!bpp || sdlscrn->format->BitsPerPixel == bpp) &&
-	    sdlscrn->w == (signed)screenwidth && sdlscrn->h == (signed)screenheight &&
-	    (sdlscrn->flags&SDL_FULLSCREEN) == (sdl_videoparams&SDL_FULLSCREEN))
+	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bpp))
 	{
 		/* same host screen size despite Atari resolution change,
 		 * -> no time consuming host video mode change needed
@@ -211,28 +204,6 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 		// check in case switched from VDI to Hostscreen
 		doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
 		return;
-	}
-
-	if (bInFullScreen) {
-		/* un-embed the Hatari WM window for fullscreen */
-		Control_ReparentWindow(screenwidth, screenheight, bInFullScreen);
-
-		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN;
-	} else {
-		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE;
-	}
-#ifdef _MUDFLAP
-	if (sdlscrn) {
-		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
-	}
-#endif
-	sdlscrn = SDL_SetVideoMode(screenwidth, screenheight, bpp, sdl_videoparams);
-#ifdef _MUDFLAP
-	__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
-#endif
-	if (!bInFullScreen) {
-		/* re-embed the new Hatari SDL window */
-		Control_ReparentWindow(screenwidth, screenheight, bInFullScreen);
 	}
 
 	// In case surface format changed, update SDL palette & remap the native palette

@@ -336,6 +336,84 @@ static void Screen_SetSTScreenOffsets(void)
 	}
 }
 
+/**
+ * Change the SDL video mode.
+ * @return true if mode has been changed, false if change was not necessary
+ */
+bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
+{
+	Uint32 sdlVideoFlags;
+
+	/* SDL Video attributes: */
+	if (bInFullScreen)
+	{
+		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN/*|SDL_DOUBLEBUF*/;
+		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
+		 * but it doesn't work with partial screen updates done by the ST screen
+		 * update code or the Hatari GUI, so double buffering is disabled. */
+	}
+	else
+	{
+		sdlVideoFlags  = SDL_SWSURFACE;
+	}
+	if (bitdepth <= 8)
+	{
+		sdlVideoFlags |= SDL_HWPALETTE;
+	}
+
+	/* Check if we really have to change the video mode: */
+	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
+	    && sdlscrn->format->BitsPerPixel == bitdepth
+	    && (sdlscrn->flags&SDL_FULLSCREEN) == (sdlVideoFlags&SDL_FULLSCREEN))
+		return false;
+
+#ifdef _MUDFLAP
+	if (sdlscrn)
+	{
+		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
+	}
+#endif
+	if (bInFullScreen)
+	{
+		/* unhide the Hatari WM window for fullscreen */
+		Control_ReparentWindow(width, height, bInFullScreen);
+	}
+
+	/* Set new video mode */
+	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, h, bitdepth, bInFullScreen?"fullscreen":"windowed"));
+	sdlscrn = SDL_SetVideoMode(width, height, bitdepth, sdlVideoFlags);
+	DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel));
+
+	/* By default ConfigureParams.Screen.nForceBpp and therefore
+	 * BitCount is zero which means "SDL color depth autodetection".
+	 * In this case the SDL_SetVideoMode() call might return
+	 * a 24 bpp resolution
+	 */
+	if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
+	{
+		fprintf(stderr, "Unsupported color depth 24, trying 32 bpp instead...\n");
+		sdlscrn = SDL_SetVideoMode(width, height, 32, sdlVideoFlags);
+	}
+
+	/* Exit if we can not open a screen */
+	if (!sdlscrn)
+	{
+		fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
+		SDL_Quit();
+		exit(-2);
+	}
+#ifdef _MUDFLAP
+	__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
+#endif
+
+	if (!bInFullScreen)
+	{
+		/* re-embed the new Hatari SDL window */
+		Control_ReparentWindow(width, height, bInFullScreen);
+	}
+
+	return true;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -344,7 +422,6 @@ static void Screen_SetSTScreenOffsets(void)
 static void Screen_SetResolution(void)
 {
 	int Width, Height, nZoom, SBarHeight, BitCount, maxW, maxH;
-	Uint32 sdlVideoFlags;
 	bool bDoubleLowRes = false;
 
 	/* Bits per pixel */
@@ -427,93 +504,30 @@ static void Screen_SetResolution(void)
 			DEBUGPRINT(("\t= %d x %d (+ statusbar)\n", Width, Height));
 		}
 	}
-	
+
 	Screen_SetSTScreenOffsets();  
 	Height += Statusbar_SetHeight(Width, Height);
 
 	PCScreenOffsetX = PCScreenOffsetY = 0;
 
-	/* SDL Video attributes: */
-	if (bInFullScreen)
+	/* Video attributes: */
+	if (bInFullScreen && ConfigureParams.Screen.bKeepResolutionST)
 	{
-		if (ConfigureParams.Screen.bKeepResolutionST)
-		{
-			/* use desktop resolution */
-			Resolution_GetDesktopSize(&maxW, &maxH);
-			SBarHeight = Statusbar_GetHeightForSize(maxW, maxH);
-			/* re-calculate statusbar height for this resolution */
-			Statusbar_SetHeight(maxW, maxH-SBarHeight);
-			/* center Atari screen to resolution */
-			PCScreenOffsetY = (maxH - Height)/2;
-			PCScreenOffsetX = (maxW - Width)/2;
-			/* and select desktop resolution */
-			Height = maxH;
-			Width = maxW;
-		}
-		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN/*|SDL_DOUBLEBUF*/;
-		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
-		 * but it doesn't work with partial screen updates done by the ST screen
-		 * update code or the Hatari GUI, so double buffering is disabled.
-		 */
-	}
-	else
-	{
-		sdlVideoFlags  = SDL_SWSURFACE;
-	}
-	if (BitCount <= 8)
-	{
-		sdlVideoFlags |= SDL_HWPALETTE;
+		/* use desktop resolution */
+		Resolution_GetDesktopSize(&maxW, &maxH);
+		SBarHeight = Statusbar_GetHeightForSize(maxW, maxH);
+		/* re-calculate statusbar height for this resolution */
+		Statusbar_SetHeight(maxW, maxH-SBarHeight);
+		/* center Atari screen to resolution */
+		PCScreenOffsetY = (maxH - Height)/2;
+		PCScreenOffsetX = (maxW - Width)/2;
+		/* and select desktop resolution */
+		Height = maxH;
+		Width = maxW;
 	}
 
-	/* Check if we really have to change the video mode: */
-	if (!sdlscrn || sdlscrn->w != Width || sdlscrn->h != Height
-	    || (BitCount && sdlscrn->format->BitsPerPixel != BitCount)
-	    || (sdlscrn->flags&SDL_FULLSCREEN) != (sdlVideoFlags&SDL_FULLSCREEN))
+	if (Screen_SetSDLVideoSize(Width, Height, BitCount))
 	{
-#ifdef _MUDFLAP
-		if (sdlscrn) {
-			__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
-		}
-#endif
-		if (bInFullScreen)
-		{
-			/* unhide the Hatari WM window for fullscreen */
-			Control_ReparentWindow(Width, Height, bInFullScreen);
-		}
-		
-		/* Set new video mode */
-		DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", Width, Height, BitCount, bInFullScreen?"fullscreen":"windowed"));
-		sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
-		DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel));
-
-		/* By default ConfigureParams.Screen.nForceBpp and therefore
-		 * BitCount is zero which means "SDL color depth autodetection".
-		 * In this case the SDL_SetVideoMode() call might return
-		 * a 24 bpp resolution
-		 */
-		if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
-		{
-			fprintf(stderr, "Unsupported color depth 24, trying 32 bpp instead...\n");
-			sdlscrn = SDL_SetVideoMode(Width, Height, 32, sdlVideoFlags);
-		}
-
-		/* Exit if we can not open a screen */
-		if (!sdlscrn)
-		{
-			fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
-			SDL_Quit();
-			exit(-2);
-		}
-#ifdef _MUDFLAP
-		__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
-#endif
-
-		if (!bInFullScreen)
-		{
-			/* re-embed the new Hatari SDL window */
-			Control_ReparentWindow(Width, Height, bInFullScreen);
-		}
-		
 		/* Re-init screen palette: */
 		if (sdlscrn->format->BitsPerPixel == 8)
 			Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
