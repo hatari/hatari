@@ -415,8 +415,12 @@ static void Main_CheckForAccurateDelays(void)
  */
 void Main_WarpMouse(int x, int y)
 {
-	SDL_WarpMouse(x, y);                  /* Set mouse pointer to new position */
-	bIgnoreNextMouseMotion = true;        /* Ignore mouse motion event from SDL_WarpMouse */
+#if WITH_SDL2
+	SDL_WarpMouseInWindow(sdlWindow, x, y);
+#else
+	SDL_WarpMouse(x, y);
+#endif
+	bIgnoreNextMouseMotion = true;
 }
 
 
@@ -529,6 +533,7 @@ void Main_EventHandler(void)
 				/* Start double-click sequence in emulation time */
 				Keyboard.LButtonDblClk = 1;
 			}
+#if !WITH_SDL2
 			else if (event.button.button == SDL_BUTTON_WHEELDOWN)
 			{
 				/* Simulate pressing the "cursor down" key */
@@ -539,6 +544,7 @@ void Main_EventHandler(void)
 				/* Simulate pressing the "cursor up" key */
 				IKBD_PressSTKey(0x48, true);
 			}
+#endif
 			break;
 
 		 case SDL_MOUSEBUTTONUP:
@@ -550,6 +556,7 @@ void Main_EventHandler(void)
 			{
 				Keyboard.bRButtonDown &= ~BUTTON_MOUSE;
 			}
+#if !WITH_SDL2
 			else if (event.button.button == SDL_BUTTON_WHEELDOWN)
 			{
 				/* Simulate releasing the "cursor down" key */
@@ -560,6 +567,7 @@ void Main_EventHandler(void)
 				/* Simulate releasing the "cursor up" key */
 				IKBD_PressSTKey(0x48, false);
 			}
+#endif
 			break;
 
 		 case SDL_KEYDOWN:
@@ -585,10 +593,17 @@ void Main_EventHandler(void)
  */
 void Main_SetTitle(const char *title)
 {
+#if WITH_SDL2
+	if (title)
+		SDL_SetWindowTitle(sdlWindow, title);
+	else
+		SDL_SetWindowTitle(sdlWindow, PROG_NAME);
+#else
 	if (title)
 		SDL_WM_SetCaption(title, "Hatari");
 	else
 		SDL_WM_SetCaption(PROG_NAME, "Hatari");
+#endif
 }
 
 /*-----------------------------------------------------------------------*/

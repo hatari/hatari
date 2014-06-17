@@ -16,6 +16,7 @@ const char ShortCut_fileid[] = "Hatari shortcut.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "floppy.h"
 #include "joy.h"
+#include "keymap.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "reset.h"
@@ -185,7 +186,11 @@ static void ShortCut_BossKey(void)
 	Main_PauseEmulation(true);
 
 	/* Minimize Window and give up processing to next one! */
+#if WITH_SDL2
+	SDL_MinimizeWindow(sdlWindow);
+#else
 	SDL_WM_IconifyWindow();
+#endif
 }
 
 
