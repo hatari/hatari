@@ -33,7 +33,7 @@ char *Str_Trim(char *buffer)
 
 	for (i = 0; i < linelen; i++)
 	{
-		if (!isspace(buffer[i]))
+		if (!isspace((unsigned char)buffer[i]))
 			break;
 	}
 
