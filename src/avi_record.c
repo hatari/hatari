@@ -844,7 +844,7 @@ static bool	Avi_StartRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams , char
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write info header" );
 		return false;
 	}
-	/* Write the info string + '\0' and write an optionnal extra '\0' byte to get a total multiple of 2 */
+	/* Write the info string + '\0' and write an optional extra '\0' byte to get a total multiple of 2 */
 	if ( fwrite ( InfoString , Len_rounded , 1 , pAviParams->FileOut ) != 1 )
 	{
 		perror ( "AviStartRecording" );
