@@ -55,7 +55,7 @@ bool ST_FileNameIsST(const char *pszFileName, bool bAllowGZ)
  * Load .ST file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-Uint8 *ST_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
+Uint8 *ST_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
 	Uint8 *pStFile;
 
@@ -78,7 +78,7 @@ Uint8 *ST_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 /**
  * Save .ST file from memory buffer. Returns true is all OK.
  */
-bool ST_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool ST_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_ST_IMAGES
 

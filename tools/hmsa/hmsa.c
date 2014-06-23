@@ -167,6 +167,7 @@ int main(int argc, char *argv[])
 	const char *srcfile, *srcdot;
 	char *dstfile, *dstdot;
 	int ImageType;
+	int drive;
 
 	if(argc < 2 || argv[1][0] == '-') {
 		usage(argv[0]);
@@ -228,10 +229,12 @@ int main(int argc, char *argv[])
 		free(dstfile);
 		return -1;
 	}
-	
+
+	drive = 0;                              /* drive is not used for ST/MSA/DIM, set it to 0 */
+
 	if (isMsa) {
 		/* Read the source disk image */
-		diskbuf = MSA_ReadDisk(srcfile, &disksize, &ImageType);
+		diskbuf = MSA_ReadDisk(drive, srcfile, &disksize, &ImageType);
 		if (!diskbuf || disksize < 512*8) {
 			fprintf(stderr, "ERROR: could not read MSA disk %s!\n", srcfile);
 			retval = -1;
@@ -248,7 +251,7 @@ int main(int argc, char *argv[])
 			retval = -1;
 		} else {
 			printf("Converting %s to %s (%li Bytes).\n", srcfile, dstfile, disksize);
-			retval = MSA_WriteDisk(dstfile, diskbuf, disksize);
+			retval = MSA_WriteDisk(drive, dstfile, diskbuf, disksize);
 		}
 	}
 

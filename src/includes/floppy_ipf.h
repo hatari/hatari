@@ -7,8 +7,8 @@
 
 extern void	IPF_MemorySnapShot_Capture(bool bSave);
 extern bool	IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);
-extern Uint8	*IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType);
-extern bool	IPF_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize);
+extern Uint8	*IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
+extern bool	IPF_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize);
 
 extern bool	IPF_Init ( void );
 extern void	IPF_Exit ( void );

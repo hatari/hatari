@@ -522,19 +522,19 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 
 	/* Check disk image type and read the file: */
 	if (MSA_FileNameIsMSA(filename, true))
-		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(filename, &nImageBytes, &ImageType);
+		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (ST_FileNameIsST(filename, true))
-		EmulationDrives[Drive].pBuffer = ST_ReadDisk(filename, &nImageBytes, &ImageType);
+		EmulationDrives[Drive].pBuffer = ST_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (DIM_FileNameIsDIM(filename, true))
-		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(filename, &nImageBytes, &ImageType);
+		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (IPF_FileNameIsIPF(filename, true))
-		EmulationDrives[Drive].pBuffer = IPF_ReadDisk(filename, &nImageBytes, &ImageType);
+		EmulationDrives[Drive].pBuffer = IPF_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (STX_FileNameIsSTX(filename, true))
-		EmulationDrives[Drive].pBuffer = STX_ReadDisk(filename, &nImageBytes, &ImageType);
+		EmulationDrives[Drive].pBuffer = STX_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (ZIP_FileNameIsZIP(filename))
 	{
 		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
-		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, zippath, &nImageBytes, &ImageType);
+		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(Drive, filename, zippath, &nImageBytes, &ImageType);
 	}
 
 	if ( (EmulationDrives[Drive].pBuffer == NULL) || ( ImageType == FLOPPY_IMAGE_TYPE_NONE ) )
@@ -555,7 +555,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	/* For STX, call specific function to handle the inserted image */
 	else if ( ImageType == FLOPPY_IMAGE_TYPE_STX )
 	{
-		if ( STX_Insert ( Drive , EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
+		if ( STX_Insert ( Drive , filename , EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
 		{
 			free ( EmulationDrives[Drive].pBuffer );
 			return false;
@@ -571,8 +571,13 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	EmulationDrives[Drive].bDiskInserted = true;
 	EmulationDrives[Drive].bContentsChanged = false;
 
-	if ( ( ImageType != FLOPPY_IMAGE_TYPE_IPF ) && ( ImageType != FLOPPY_IMAGE_TYPE_STX ) )
+	if ( ( ImageType == FLOPPY_IMAGE_TYPE_ST ) || ( ImageType == FLOPPY_IMAGE_TYPE_MSA )
+	  || ( ImageType == FLOPPY_IMAGE_TYPE_DIM ) )
 		EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_STX )
+		EmulationDrives[Drive].bOKToSave = true;
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_IPF )
+		EmulationDrives[Drive].bOKToSave = false;
 	else
 		EmulationDrives[Drive].bOKToSave = false;
 
@@ -609,17 +614,17 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			{
 				/* Save as .MSA, .ST, .DIM, .IPF or .STX image? */
 				if (MSA_FileNameIsMSA(psFileName, true))
-					bSaved = MSA_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = MSA_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ST_FileNameIsST(psFileName, true))
-					bSaved = ST_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = ST_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (DIM_FileNameIsDIM(psFileName, true))
-					bSaved = DIM_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = DIM_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (IPF_FileNameIsIPF(psFileName, true))
-					bSaved = IPF_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = IPF_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (STX_FileNameIsSTX(psFileName, true))
-					bSaved = STX_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = STX_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ZIP_FileNameIsZIP(psFileName))
-					bSaved = ZIP_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = ZIP_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				if (bSaved)
 					Log_Printf(LOG_INFO, "Updated the contents of floppy image '%s'.", psFileName);
 				else

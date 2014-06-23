@@ -31,7 +31,7 @@ typedef struct {
 	Uint8		*pFuzzyData;				/* Fuzzy mask for this sector or null if no fuzzy bits */
 	Uint8		*pTimingData;				/* Data for variable bit width or null */
 
-	Sint32		SaveSectorIndex;			/* Index in STX_SaveSectorsBuffer[].pSaveSectorsStruct or -1 if not used */
+	Sint32		SaveSectorIndex;			/* Index in STX_SaveStruct[].pSaveSectorsStruct or -1 if not used */
 } STX_SECTOR_STRUCT;
 
 #define	STX_SECTOR_BLOCK_SIZE		( 4+2+2+1+1+1+1+2+1+1 )	/* Size of the sector block in an STX file = 16 bytes */
@@ -64,15 +64,17 @@ typedef struct {
 	Uint8			*pTrackData;			/* Track data (after sectors data and fuzzy data) */
 	Uint16			TrackImageSyncPosition;
 	Uint16			TrackImageSize;			/* Number of bytes in pTrackImageData */
-	Uint8			*pTrackImageData;		/* Optionnal data as returned by the read track command */
+	Uint8			*pTrackImageData;		/* Optional data as returned by the read track command */
 
-	Uint8			*pSectorsImageData;		/* Optionnal data for the sectors of this track */
+	Uint8			*pSectorsImageData;		/* Optional data for the sectors of this track */
 
 	Uint8			*pTiming;
 	Uint16			TimingFlags;			/* always '5' ? */
 	Uint16			TimingSize;
 	Uint8			*pTimingData;			/* Timing data for all the sectors of the track ; each timing */
 								/* consists of 2 bytes per 16 FDC bytes */
+
+	Sint32			SaveTrackIndex;			/* Index in STX_SaveStruct[].pSaveTracksStruct or -1 if not used */
 } STX_TRACK_STRUCT;
 
 #define	STX_TRACK_BLOCK_SIZE		( 4+4+2+2+2+1+1 )	/* Size of the track block in an STX file = 16 bytes */
@@ -105,7 +107,7 @@ typedef struct {
 #define	STX_MAIN_BLOCK_SIZE		( 4+2+2+2+1+1+4 )	/* Size of the header block in an STX file = 16 bytes */
 
 
-/* Additionnal structure used to save the data of the 'write sector' command */
+/* Additionnal structures used to save the data for the 'write sector' and 'write track' commands */
 /* TODO : data are only saved in memory / snapshot and will be lost when exiting. */
 /* We should have a file format to store them with the .STX file */
 typedef struct {
@@ -125,23 +127,35 @@ typedef struct {
 
 
 typedef struct {
+	Uint8		Track;
+	Uint8		Side;
+	
+	Uint16		TrackSize;				/* Number of bytes in this track */
+								/* (can be rounded to 16 because of DMA buffering */
+	Uint8		*pData;					/* Data saved for this track */
+} STX_SAVE_TRACK_STRUCT;
+
+
+typedef struct {
 	Uint32			SaveSectorsCount;
 	STX_SAVE_SECTOR_STRUCT	*pSaveSectorsStruct;
+
+	Uint32			SaveTracksCount;
+	STX_SAVE_TRACK_STRUCT	*pSaveTracksStruct;
 } STX_SAVE_STRUCT;
 
 
 
 extern void	STX_MemorySnapShot_Capture(bool bSave);
 extern bool	STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ);
-extern Uint8	*STX_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType);
-extern bool	STX_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize);
+extern bool	STX_FileNameToSave ( const char *FilenameSTX , char *FilenameSave );
+extern Uint8	*STX_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
+extern bool	STX_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize);
 
 extern bool	STX_Init ( void );
-extern bool	STX_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize );
+extern bool	STX_Insert ( int Drive , const char *FilenameSTX , Uint8 *pImageBuffer , long ImageSize );
 extern bool	STX_Eject ( int Drive );
 
-extern void	STX_FreeStruct ( STX_MAIN_STRUCT *pStxMain );
-extern void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , Uint32 SaveSectorsCount );
 extern STX_MAIN_STRUCT *STX_BuildStruct ( Uint8 *pFileBuffer , int Debug );
 
 

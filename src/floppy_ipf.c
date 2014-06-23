@@ -177,7 +177,7 @@ bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
  * Load .IPF file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-Uint8 *IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
+Uint8 *IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
 #ifndef HAVE_CAPSIMAGE
 	Log_AlertDlg(LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled.");
@@ -206,7 +206,7 @@ Uint8 *IPF_ReadDisk(const char *pszFileName, long *pImageSize, int *pImageType)
 /**
  * Save .IPF file from memory buffer. Returns true is all OK.
  */
-bool IPF_WriteDisk(const char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool IPF_WriteDisk(int Drive, const char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 	/* saving is not supported for IPF files */
 	return false;

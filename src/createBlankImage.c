@@ -76,6 +76,7 @@ bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSect
 	unsigned long nDiskSize;
 	unsigned short int SPC, nDir, MediaByte, SPF;
 	bool bRet = false;
+	int drive;
 
 	/* HD/ED disks are all double sided */
 	if (nSectors >= 18)
@@ -156,13 +157,14 @@ bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSect
 	/* Ask if OK to overwrite, if exists? */
 	if (File_QueryOverwrite(pszFileName))
 	{
+		drive = 0;				/* drive is not used for ST/MSA/DIM, set it to 0 */
 		/* Save image to file */
 		if (MSA_FileNameIsMSA(pszFileName, true))
-			bRet = MSA_WriteDisk(pszFileName, pDiskFile, nDiskSize);
+			bRet = MSA_WriteDisk(drive, pszFileName, pDiskFile, nDiskSize);
 		else if (ST_FileNameIsST(pszFileName, true))
-			bRet = ST_WriteDisk(pszFileName, pDiskFile, nDiskSize);
+			bRet = ST_WriteDisk(drive, pszFileName, pDiskFile, nDiskSize);
 		else if (DIM_FileNameIsDIM(pszFileName, true))
-			bRet = DIM_WriteDisk(pszFileName, pDiskFile, nDiskSize);
+			bRet = DIM_WriteDisk(drive, pszFileName, pDiskFile, nDiskSize);
 		else
 			Log_AlertDlg(LOG_ERROR, "Unknown floppy image filename extension!");
 
