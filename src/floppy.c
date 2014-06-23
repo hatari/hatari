@@ -610,7 +610,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 		if (EmulationDrives[Drive].bContentsChanged)
 		{
 			/* Is OK to save image (if boot-sector is bad, don't allow a save) */
-			if (EmulationDrives[Drive].bOKToSave && !Floppy_IsWriteProtected(Drive))
+			if (EmulationDrives[Drive].bOKToSave)
 			{
 				/* Save as .MSA, .ST, .DIM, .IPF or .STX image? */
 				if (MSA_FileNameIsMSA(psFileName, true))
