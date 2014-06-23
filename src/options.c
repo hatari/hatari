@@ -621,7 +621,7 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
 	str = input;
 	while (*str)
 	{
-		*str++ = tolower(*arg++);
+		*str++ = tolower((unsigned char)*arg++);
 	}
 	for (bool_str = enablers; *bool_str; bool_str++)
 	{

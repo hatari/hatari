@@ -408,7 +408,7 @@ static Uint32 DebugInfo_DspMemArgs(int argc, char *argv[])
 	if (argc != 2) {
 		return 0;
 	}
-	space = toupper(argv[0][0]);
+	space = toupper((unsigned char)argv[0][0]);
 	if ((space != 'X' && space != 'Y' && space != 'P') || argv[0][1]) {
 		fprintf(stderr, "ERROR: invalid DSP address space '%s'!\n", argv[0]);
 		return 0;
@@ -503,7 +503,8 @@ static Uint32 DebugInfo_RegAddrArgs(int argc, char *argv[])
 
 	if (strlen(argv[1]) != 2 ||
 	    (!DebugCpu_GetRegisterAddress(argv[1], &regaddr) &&
-	     (toupper(argv[1][0]) != 'R' || !isdigit(argv[1][1]) || argv[1][2]))) {
+	     (toupper((unsigned char)argv[1][0]) != 'R'
+	      || !isdigit((unsigned char)argv[1][1]) || argv[1][2]))) {
 		/* not CPU register or Rx DSP register */
 		fprintf(stderr, "ERROR: invalid address/data register '%s'!\n", argv[1]);
 		return 0;

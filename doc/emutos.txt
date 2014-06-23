@@ -3,7 +3,7 @@ Contents:
 - Hatari and EmuTOS
 - What is EmuTOS
 - EmuTOS usage
-- EmuTOS compatibility
+- EmuTOS compatibility notes
 - Debugging issues with EmuTOS
   - EmuTOS debug output and debug symbols
   - Debugging OS calls, Line-A usage and panics
@@ -98,8 +98,9 @@ TOS ROM images:
   EmuTOS they typically alse use FreeMiNT, XaAES and fVDI as operating
   system replacements/improvements.
 
-* This includes users of new "Atari" machines like Atari ColdFire project,
-  which isn't 100% compatible at HW level to the original Atari machines:
+* This includes users of Atari FPGA clones, such as MiST:
+	http://code.google.com/p/mist-board/
+  and users of new "Atari" machines, like Atari ColdFire Project:
 	http://acp.atari.org/
 
 * EmuTOS also allows using ACSI disk images with Hatari TT/Falcon
@@ -107,8 +108,8 @@ TOS ROM images:
   Hard disk images are needed mainly for running MiNT.
 
 
-EmuTOS compatibility
-====================
+EmuTOS compatibility notes
+==========================
 
 These comments apply to EmuTOS v0.9.x.
 
@@ -120,13 +121,13 @@ which EmuTOS has implementations.
 
 EmuTOS AES support is somewhat buggy (mouse clicks and dragging
 doesn't always work properly) and VDI & line-A support is slowish.
-Anybody wanting better AES/VDI support should install replacement for
-these, either the free XaAES + fVDI, or the earlier commercial
+Anybody wanting better AES/VDI support should install replacement
+for these, either the free XaAES + fVDI, or the earlier commercial
 solutions like NVDI.
 
 Because 192k EmuTOS uses more memory than normal TOS, badly written
-(typically floppy only) games may have blindly overwritten EmuTOS
-memory and crash when calling a TOS function (often Fread()).  ST/STE
+(typically floppy only) games may blindly overwrite EmuTOS memory and
+they will crash when calling a TOS function (often Fread()).  ST/STE
 games that work from HD and/or newer TOS versions, should be fine.
 
 Input (e.g. joystick) doesn't work in some (STOS) games that access it
@@ -136,9 +137,9 @@ which location depends on the TOS version.
 
 Support for large part of additional TT and Falcon features is missing.
 
-Additionally, EmuTOS v0.9.1 and earlier versions lack support for
+Additionally, EmuTOS v0.9.1 and older versions lack support for
 the (deprecated) line-A graphics functions which are used in many
-free/shareware games, done with GFA basic etc.
+free/shareware games (ones done with GFA basic etc).
 
 
 Debugging issues with EmuTOS
@@ -264,14 +265,8 @@ and last Falcon demos, games and (mostly music) applications.
 Working free/shareware Atari ST demos and games
 -----------------------------------------------
 
-There are so many freely available color games and demos that from
-those only the ones found working with EmuTOS are listed. Often the
-non-working ones "Panic" EmuTOS.
-
 Floppy-only games and programs using Line-A need EmuTOS v0.9.3 or
-newer!
-
-For best compatibility with ST emulation, one should use 192kB
+newer.  For best compatibility with ST emulation, one should use 192kB
 or 256kB version of EmuTOS.
 
 Some old, floppy only games expect certain memory areas occupied by
@@ -280,6 +275,9 @@ blind luck) work with 512k EmuTOS or can be gotten to work by using
 EmuTOS cartridge image (as it uses less memory than normal EmuTOS),
 like this:
 	hatari --tos etos192uk.img --cartridge etoscart.img floppy.img
+
+Mostly the non-working games "Panic" EmuTOS during their startup,
+but it can happen also later on.
 
 
 Demos:
@@ -646,11 +644,6 @@ Free/shareware games:
 Non-working free/shareware GEM/mono Atari ST games
 --------------------------------------------------
 
-Although there are plenty of color demos and games, the number of
-(even remotely fun) free GEM or monochrome games and demos is so low
-that for those I list here non-working ones.  Typically the issue
-is with input.
-
 GEM games:
 - Abalone   (dragging doesn't work)
 - Anduril   ('h' and 'j' keys don't work)
@@ -716,8 +709,7 @@ MIDI programs are available from Tim's MIDI world:
 Working free/shareware Atari STE programs
 -----------------------------------------
 
-There are not that many freely available or even commercial programs
-that would be STE specific (or even STE enhanced):
+There are not that many STE specific (or even STE enhanced) programs:
     http://atari-ste.anvil-soft.com/html/archivapps.htm
 
 But following STE specific & enhanced demos, games and apps work
@@ -904,6 +896,7 @@ Working demos:
 
 Working games:
 - Capy (by YesCREW)
+- Oxyd (Falcon version)
 
 Broken programs:
 - GEM NetHack v3.4.3 (colors wrong, bus errors)
@@ -926,8 +919,8 @@ probably explains partly why graphics in many of the demos & games
 look broken, their sound or music doesn't work or they freeze at
 startup.
 
-(Latest EmuTOS release, v0.9.0, misses also 256-color and Falcon
-sound matrix support.)
+(Previous EmuTOS v0.9.0 release misses also 256-color and Falcon sound
+matrix support.)
 
 
 Following Falcon only demos, games and apps work (mostly) fine though.
@@ -975,9 +968,9 @@ Working demos:
 - Weltchmerz (by Avena)
 - ZZ 9 Plural Z Alpha (by tSCc)
 
-Demos regressed in EmuTOS v0.8.7:
+Demos regressed in EmuTOS v0.8.7, working again in EmuTOS >0.9.3:
 - Blue 4k (by New Beat)
-  - just exits
+  - Ikbdws() stack usage compared to TOS4 was issue
 
 Partly working demos:
 - Agony (by DNT crew)

@@ -218,7 +218,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		space = toupper(space);
+		space = toupper((unsigned char)space);
 		switch (space)
 		{
 		case 'X':

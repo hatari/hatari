@@ -193,7 +193,7 @@ static void			Disass68kLoadStructInfo(const char *filename)
 		while(*sp++)
 			;
 		nextLine = sp--;
-		while(isspace(*--sp))
+		while (isspace((unsigned char)*--sp))
 			*sp = 0;
 
 		if(line[0] == '{')
@@ -218,7 +218,7 @@ static void			Disass68kLoadStructInfo(const char *filename)
 			int index = 2;
 			if(line[1] == 'A' || line[1] == 'B')
 			{
-				for(; isdigit(line[index]); ++index)
+				for(; isdigit((unsigned char)line[index]); ++index)
 				{
 					val *= 10;
 					val += line[index] - '0';
@@ -274,7 +274,7 @@ static void			Disass68kLoadSymbols(const char *filename)
 		while(*sp++)
 			;
 		nextLine = sp--;
-		while(isspace(*--sp))
+		while(isspace((unsigned char)*--sp))
 			*sp = 0;
 
 		// ignore empty lines
@@ -291,10 +291,10 @@ static void			Disass68kLoadSymbols(const char *filename)
 			if(str)
 			{
 				char	*ep = str;
-				while(isspace(*--ep))
+				while(isspace((unsigned char)*--ep))
 					*ep = 0;
 				*str++ = 0;
-				while(*str && isspace(*str))
+				while(*str && isspace((unsigned char)*str))
 					++str;
 				parameterPtr[parameterCount++] = str;
 			}
@@ -485,10 +485,10 @@ static const char	*Disass68kNumber(int val)
 		sprintf(numString, "%d", val);
 	} else {
 		// 4 characters/numbers or underscore (e.g. for cookies)
-		char	c0 = (val >> 24) & 0xFF;
-		char	c1 = (val >> 16) & 0xFF;
-		char	c2 = (val >>  8) & 0xFF;
-		char	c3 = (val >>  0) & 0xFF;
+		unsigned char c0 = (val >> 24) & 0xFF;
+		unsigned char c1 = (val >> 16) & 0xFF;
+		unsigned char c2 = (val >>  8) & 0xFF;
+		unsigned char c3 = (val >>  0) & 0xFF;
 		if((isalnum(c0) || c0 == '_') && (isalnum(c1) || c1 == '_') && (isalnum(c2) || c2 == '_') && (isalnum(c3) || c3 == '_'))
 		{
 			sprintf(numString, "'%c%c%c%c'", c0, c1, c2, c3);
@@ -588,7 +588,7 @@ static const char *Disass68kSpecialRegister(int reg)
 		char	*bp;
 		strcpy(buf, sp);
 		for (bp = buf; *bp; ++bp)
-			*bp = tolower(*bp);
+			*bp = tolower((unsigned char)*bp);
 		return buf;
 	}
 	return sp;
@@ -1997,7 +1997,7 @@ more:
 						strcpy(buf, sp);
 						sp = buf;
 						for (bp = buf; *bp; ++bp)
-							*bp = tolower(*bp);
+							*bp = tolower((unsigned char)*bp);
 					}
 					strcpy(dbuf, sp);
 					dbuf += strlen(sp);
@@ -2008,7 +2008,7 @@ more:
 			if(c == '?')	// size mask
 				c = sizeChar;
 			if(options & doptOpcodesSmall)
-				c = tolower(c);
+				c = tolower((unsigned char)c);
 			*dbuf++ = c;
 		}
 		*dbuf = 0;
@@ -2669,7 +2669,7 @@ const char *Disasm_ParseOption(const char *arg)
 		ConfigureParams.Debugger.bDisasmUAE = false;
 		return NULL;
 	}
-	if (isdigit(*arg))
+	if (isdigit((unsigned char)*arg))
 	{
 		int newopt = atoi(arg);
 		if ((newopt|optionsMask) != optionsMask)

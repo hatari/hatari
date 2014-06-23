@@ -189,8 +189,9 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
  */
 static bool DebugUI_IsForDsp(const char *cmd)
 {
-	return ((cmd[0] == 'd' && isalpha(cmd[1]) && !isalpha(cmd[2]))
-		|| strncmp(cmd, "dsp", 3) == 0);
+	return ((cmd[0] == 'd' && isalpha((unsigned char)cmd[1])
+	                       && !isalpha((unsigned char)cmd[2]))
+	        || strncmp(cmd, "dsp", 3) == 0);
 }
 
 /**
@@ -680,10 +681,10 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 	size_t len;
 
 	/* check where's the first word (ignore white space) */
-	while (start < rl_point && isspace(rl_line_buffer[start]))
+	while (start < rl_point && isspace((unsigned char)rl_line_buffer[start]))
 		start++;
 	end = start;
-	while (end < rl_point && !isspace(rl_line_buffer[end]))
+	while (end < rl_point && !isspace((unsigned char)rl_line_buffer[end]))
 		end++;
 
 	if (end >= rl_point)

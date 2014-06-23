@@ -565,7 +565,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		{ "Y1",  &dsp_core.registers[DSP_REG_Y1],  32, BITMASK(24) }
 	};
 	/* left, right, middle, direction */
-        int l, r, m, dir = 0;
+	int l, r, m, dir = 0;
 	unsigned int i, len;
 	char reg[MAX_REGNAME_LEN];
 
@@ -574,7 +574,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	}
 
 	for (i = 0; i < sizeof(reg) && regname[i]; i++) {
-		reg[i] = toupper(regname[i]);
+		reg[i] = toupper((unsigned char)regname[i]);
 	}
 	if (i < 2 || regname[i]) {
 		/* too short or longer than any of the names */

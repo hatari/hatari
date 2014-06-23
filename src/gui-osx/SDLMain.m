@@ -130,16 +130,15 @@ char szPath[FILENAME_MAX] ;											// for general use
 //
 - (void) applicationDidFinishLaunching: (NSNotification *) note
 {
-int status;
+	int status;
 
-	gFinderLaunch = YES ;
 	// Set the working directory to the .app's parent directory
 	[self setupWorkingDirectory:gFinderLaunch];
-	
+
 	//setenv ("SDL_ENABLEAPPEVENTS", "1", 1) ;
-		
+
 	// Hand off to main application code
-	
+
 	gCalledAppMainline = TRUE;
 	status = SDL_main (gArgc, gArgv) ;
 

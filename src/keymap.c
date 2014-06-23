@@ -800,12 +800,12 @@ void Keymap_SimulateCharacter(char asckey, bool press)
 
 	sdlkey.mod = KMOD_NONE;
 	sdlkey.scancode = 0;
-	if (isupper(asckey)) {
+	if (isupper((unsigned char)asckey)) {
 		if (press) {
 			sdlkey.sym = SDLK_LSHIFT;
 			Keymap_KeyDown(&sdlkey);
 		}
-		sdlkey.sym = tolower(asckey);
+		sdlkey.sym = tolower((unsigned char)asckey);
 		sdlkey.mod = KMOD_LSHIFT;
 	} else {
 		sdlkey.sym = asckey;
@@ -814,7 +814,7 @@ void Keymap_SimulateCharacter(char asckey, bool press)
 		Keymap_KeyDown(&sdlkey);
 	} else {
 		Keymap_KeyUp(&sdlkey);
-		if (isupper(asckey)) {
+		if (isupper((unsigned char)asckey)) {
 			sdlkey.sym = SDLK_LSHIFT;
 			Keymap_KeyUp(&sdlkey);
 		}

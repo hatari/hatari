@@ -302,6 +302,11 @@ works on a real ST should work also in Hatari</b>.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
+      <td><a href="http://www.edv-rudolf.de/lethal-xcess/download.htm">Lethal Xcess Beta</a></td>
+      <td>1.8</td>
+      <td>The STX version requires Hatari &ge; 1.8 to handle the protection</td>
+    </tr>
+    <tr>
       <td>Lethal Xcess</td>
       <td>1.0</td>
       <td>Uses sync-scrolling in ST mode and STE HW scrolling in STE mode.</td>
@@ -1815,9 +1820,10 @@ are just STE enhanced.  These are marked with '*'.</p>
   <tbody>
     <tr>
       <td><a href="http://www.pouet.net/prod.php?which=56822">Hextracker</a></td>
-      <td>1.5</td>
-      <td>Mouse cannot traverse whole screen unless mouse grab or
-          fullscreen mode is used</td>
+      <td class="minor">1.7</td>
+      <td>Uses non-standard mouse event scaling factor.
+          Mouse cannot (vertically) traverse whole Hatari window
+          unless mouse grab or fullscreen mode is used</td>
     </tr> 
     <tr>
       <td><a href="http://www.preromanbritain.com/maxymiser/">MaxYMiser DMA</a></td>
@@ -2011,12 +2017,23 @@ Hatari readme.txt on how to enable that.</p>
       <td>Exits when joystick is used</td>
     </tr>
     <tr>
-      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood</a></td>
+      <td><a href="http://devilsdoorbell.com/">Bad Mood (game)</a></td>
+      <td class="minor">1.7</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Playable + enhanced Doom I/II port/remake.  Requires WinUAE
+      CPU core, DSP and 14 MB RAM. Statusbar doesn't show due to Videl
+      emulation omissions and some parts have clear speed differences
+      to real Falcon due to CPU (data cache) and Videl emulation
+      inaccuracies</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood (viewer)</a></td>
       <td>1.3</td>
       <td>-</td>
       <td>emu</td>
-      <td>All tested versions (v2.14a, v307a) work fine with Doom wad,
-          but look wrong with Heretic wad.</td>
+      <td>Old Doom level viewer. All tested versions (v2.14a, v307a)
+          work with Doom wad, but look wrong with Heretic wad</td>
     </tr>
     <tr>
       <td>Blackhole</td>
@@ -3563,6 +3580,12 @@ site.</p>
       <td>1.0</td>
       <td>-</td>
       <td></td>
+    </tr>
+    <tr>
+      <td><a href="http://www.pouet.net/prod.php?which=56822">Hextracker</a></td>
+      <td class="major">1.7</td>
+      <td>-</td>
+      <td>Freezes at start waiting Videl screen address counter to change</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29348">Indypaint</a></td>

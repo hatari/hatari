@@ -262,7 +262,7 @@ LOGTYPE Log_ParseOptions(const char *arg)
 	str = input;
 	while (*str)
 	{
-		*str++ = tolower(*arg++);
+		*str++ = tolower((unsigned char)*arg++);
 	}
 	for (level_str = levels; *level_str; level_str++, level++)
 	{
