@@ -72,7 +72,7 @@ void File_AddSlashToEndFileName(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Does filename extension match? If so, return TRUE
+ * Does filename's extension match? If so, return TRUE
  */
 bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension)
 {
@@ -83,6 +83,31 @@ bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtensi
 		return true;
 
 	/* No */
+	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * If filename's extension matches, replace it with a new extension and
+ * copy the result in the new filename.
+ * Return TRUE if OK
+ */
+bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_old , char *Filename_new , const char *Extension_new)
+{
+	if ( strlen ( Filename_old ) >= FILENAME_MAX - strlen ( Extension_new ) )
+		return false;					/* file name is already too long */
+
+	if ( strlen ( Filename_old ) < strlen ( Extension_old ) )
+		return false;
+
+	if ( !strcasecmp ( Filename_old + strlen(Filename_old) - strlen(Extension_old) , Extension_old ) )
+	{
+		strcpy ( Filename_new , Filename_old );
+		strcpy ( Filename_new + strlen ( Filename_new ) - strlen ( Extension_old ) , Extension_new );
+		return true;
+	}
+
 	return false;
 }
 

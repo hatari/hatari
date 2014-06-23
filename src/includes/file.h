@@ -17,6 +17,7 @@
 extern void File_CleanFileName(char *pszFileName);
 extern void File_AddSlashToEndFileName(char *pszFileName);
 extern bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension);
+extern bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_old , char *Filename_new , const char *Extension_new);
 extern const char *File_RemoveFileNameDrive(const char *pszFileName);
 extern bool File_DoesFileNameEndWithSlash(char *pszFileName);
 extern Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[]);
