@@ -122,7 +122,10 @@ typedef struct {
 	Uint16		ID_CRC;
 	
 	Uint16		SectorSize;				/* Number of bytes in this sector */
-	Uint8		*pData;					/* Data saved for this sector */
+	Uint8		*pData;					/* Data written for this sector */
+
+	Uint8		StructIsUsed;				/* >0 : this structure contains info (and must be saved) */
+								/* =0 : this structure is free and can be reused for another sector */
 } STX_SAVE_SECTOR_STRUCT;
 
 
@@ -130,9 +133,14 @@ typedef struct {
 	Uint8		Track;
 	Uint8		Side;
 	
-	Uint16		TrackSize;				/* Number of bytes in this track */
+	Uint16		TrackSizeWrite;				/* Number of bytes in this track (when writing) */
 								/* (can be rounded to 16 because of DMA buffering */
-	Uint8		*pData;					/* Data saved for this track */
+	Uint8		*pDataWrite;				/* Data written for this track */
+
+	Uint16		TrackSizeRead;				/* Number of bytes in this track (when reading) */
+								/* Due to interpreting bytes $F5-$FF, TrackSizeRead will often be > TrackSizeWrite */
+	Uint8		*pDataRead;				/* Data saved for this track as they will be read */
+								/* (after interpreting bytes $F5-$FF) */
 } STX_SAVE_TRACK_STRUCT;
 
 

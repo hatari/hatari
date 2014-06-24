@@ -159,9 +159,9 @@ void STX_MemorySnapShot_Capture(bool bSave)
 //Str_Dump_Hex_Ascii ( (char *) &STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ], sizeof( STX_SAVE_TRACK_STRUCT ), 16, "" , stderr );
 					/* Save the structure */
 					MemorySnapShot_Store ( &STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ] , sizeof( STX_SAVE_TRACK_STRUCT ) );
-					/* Save the track's data */
-					MemorySnapShot_Store ( STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pData ,
-							STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].TrackSize );
+					/* Save the track's data (as it was written, don't save the interpreted track) */
+					MemorySnapShot_Store ( STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pDataWrite ,
+							STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].TrackSizeWrite );
 				}
 			}
 		}
@@ -257,16 +257,19 @@ void STX_MemorySnapShot_Capture(bool bSave)
 					MemorySnapShot_Store ( &STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ] , sizeof( STX_SAVE_TRACK_STRUCT ) );
 //Str_Dump_Hex_Ascii ( (char *) &STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ], sizeof( STX_SAVE_TRACK_STRUCT ), 16, "" , stderr );
 
-					/* Load the track's data */
-					STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pData = malloc ( STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].TrackSize );
-					if ( !STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pData )
+					/* Load the track's data (as it was written, don't load the interpreted track) */
+					STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pDataWrite = malloc ( STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].TrackSizeWrite );
+					if ( !STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pDataWrite )
 					{
 						Log_AlertDlg(LOG_ERROR, "Error restoring STX save buffer for track=%d in drive %d" ,
 							i , Drive );
 						return;
 					}
-					MemorySnapShot_Store ( STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pData ,
-							STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].TrackSize );
+					MemorySnapShot_Store ( STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pDataWrite ,
+							STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].TrackSizeWrite );
+
+					STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].pDataRead = NULL;	/* TODO : compute interpreted track */
+					STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].TrackSizeRead = 0;	/* TODO : compute interpreted track */
 
 					/* Find the original track to associate it with this saved track */
 					pStxTrack = STX_FindTrack ( Drive , STX_SaveStruct[ Drive ].pSaveTracksStruct[ i ].Track ,
@@ -361,8 +364,10 @@ bool STX_WriteDisk ( int Drive , const char *pszFileName , Uint8 *pBuffer , int 
 	Uint32		Sector;
 	Uint32		Track;
 	Uint32		BlockLen;
+        Uint32                  SaveSectorsCount_real;
 	STX_SAVE_SECTOR_STRUCT	*pStxSaveSector;
 	STX_SAVE_TRACK_STRUCT	*pStxSaveTrack;
+	Uint32		i;
 
 fprintf ( stderr , "stx write <%s>\n" , pszFileName );
 
@@ -374,8 +379,15 @@ fprintf ( stderr , "stx write <%s>\n" , pszFileName );
 		return false;
 	}
 
+	/* Count the saved sectors that are really used */
+	SaveSectorsCount_real = 0;
+	i = 0;
+	while ( i < STX_SaveStruct[ Drive ].SaveSectorsCount )
+		if ( STX_SaveStruct[ Drive ].pSaveSectorsStruct[ i++ ].StructIsUsed != 0 )
+			SaveSectorsCount_real++;
+
 	/* Do we have data to save ? */
-	if ( ( STX_SaveStruct[ Drive ].SaveSectorsCount == 0 )
+	if ( ( SaveSectorsCount_real == 0 )
 	  && ( STX_SaveStruct[ Drive ].SaveTracksCount == 0 ) )
 		return true;
 
@@ -402,7 +414,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 	*p++ = WD1772_SAVE_VERSION;						/* +6 */
 	*p++ = WD1772_SAVE_REVISION;						/* +7 */
 
-	STX_WriteU32_BE ( p , STX_SaveStruct[ Drive ].SaveSectorsCount );	/* +8 ... +11 */
+	STX_WriteU32_BE ( p , SaveSectorsCount_real );				/* +8 ... +11 */
 	p += 4;
 	
 	STX_WriteU32_BE ( p , STX_SaveStruct[ Drive ].SaveTracksCount );	/* +12 ... +15 */
@@ -420,6 +432,12 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 	while ( Sector < STX_SaveStruct[ Drive ].SaveSectorsCount )
 	{
 		pStxSaveSector = &STX_SaveStruct[ Drive ].pSaveSectorsStruct[ Sector ];
+
+		if ( pStxSaveSector->StructIsUsed == 0 )
+		{
+			Sector++;
+			continue;						/* This structure is not used anymore, ignore it */
+		}
 
 		/* Build the sector's header : 20 bytes */
 		p = buf;
@@ -475,14 +493,14 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 		strcpy ( (char *) p , WD1772_SAVE_TRACK_ID );			/* +0 ... +3 */
 		p += strlen ( WD1772_SAVE_TRACK_ID );
 
-		BlockLen = 12-4 + pStxSaveTrack->TrackSize;
+		BlockLen = 12-4 + pStxSaveTrack->TrackSizeWrite;
 		STX_WriteU32_BE ( p , BlockLen );				/* +4 ... +7 */
 		p += 4;
 
 		*p++ = pStxSaveTrack->Track;					/* +8 */			
 		*p++ = pStxSaveTrack->Side;					/* +9 */
 
-		STX_WriteU16_BE ( p , pStxSaveTrack->TrackSize );		/* +10 ... +11 */
+		STX_WriteU16_BE ( p , pStxSaveTrack->TrackSizeWrite );		/* +10 ... +11 */
 		p += 2;
 
 		/* Write the header */
@@ -494,8 +512,8 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 		}
 
 		/* Write the data at +12 */
-//Str_Dump_Hex_Ascii ( (char *) pStxSaveTrack->pData , pStxSaveTrack->TrackSize, 16, "" , stderr );
-		if ( fwrite ( pStxSaveTrack->pData , pStxSaveTrack->TrackSize , 1 , FileOut ) != 1 )
+//Str_Dump_Hex_Ascii ( (char *) pStxSaveTrack->pDataWrite , pStxSaveTrack->TrackSizeWrite, 16, "" , stderr );
+		if ( fwrite ( pStxSaveTrack->pDataWrite , pStxSaveTrack->TrackSizeWrite , 1 , FileOut ) != 1 )
 		{
 			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite track data\n" , Drive , pszFileName );
 			return false;
@@ -709,6 +727,8 @@ static bool	STX_LoadSaveFile_SECT ( int Drive, STX_SAVE_SECTOR_STRUCT *pStxSaveS
 
 	memcpy ( pStxSaveSector->pData , p , pStxSaveSector->SectorSize );
 
+	pStxSaveSector->StructIsUsed = 1;
+
 	return true;
 }
 
@@ -723,19 +743,22 @@ static bool	STX_LoadSaveFile_TRCK ( int Drive , STX_SAVE_TRACK_STRUCT *pStxSaveT
 	pStxSaveTrack->Track = *p++;
 	pStxSaveTrack->Side = *p++;
 
-	pStxSaveTrack->TrackSize = STX_ReadU16_BE ( p );
+	pStxSaveTrack->TrackSizeWrite = STX_ReadU16_BE ( p );
 	p += 2;
 
 	/* Copy the track's data */
-	pStxSaveTrack->pData = malloc ( pStxSaveTrack->TrackSize );
-	if ( !pStxSaveTrack->pData )
+	pStxSaveTrack->pDataWrite = malloc ( pStxSaveTrack->TrackSizeWrite );
+	if ( !pStxSaveTrack->pDataWrite )
 	{
 		Log_AlertDlg(LOG_ERROR, "Error loading STX save buffer for track=%d side=%d in drive %d" ,
 			pStxSaveTrack->Track , pStxSaveTrack->Side , Drive );
 		return false;
 	}
 
-	memcpy ( pStxSaveTrack->pData , p , pStxSaveTrack->TrackSize );
+	memcpy ( pStxSaveTrack->pDataWrite , p , pStxSaveTrack->TrackSizeWrite );
+
+	pStxSaveTrack->pDataRead = NULL;	/* TODO : compute interpreted track */
+	pStxSaveTrack->TrackSizeRead = 0;	/* TODO : compute interpreted track */
 
 	return true;
 }
@@ -943,6 +966,9 @@ static void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStru
 
 	for ( i = 0 ; i < SaveSectorsCount ; i++ )
 	{
+		if ( pSaveSectorsStruct[ i ].StructIsUsed == 0 )
+			continue;				/* This structure is already free */
+
 		if ( pSaveSectorsStruct[ i ].pData )
 			free ( pSaveSectorsStruct[ i ].pData );
 	}
@@ -964,8 +990,10 @@ static void	STX_FreeSaveTracksStruct ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct 
 
 	for ( i = 0 ; i < SaveTracksCount ; i++ )
 	{
-		if ( pSaveTracksStruct[ i ].pData )
-			free ( pSaveTracksStruct[ i ].pData );
+		if ( pSaveTracksStruct[ i ].pDataWrite )
+			free ( pSaveTracksStruct[ i ].pDataWrite );
+		if ( pSaveTracksStruct[ i ].pDataRead )
+			free ( pSaveTracksStruct[ i ].pDataRead );
 	}
 
 	free ( pSaveTracksStruct );
@@ -1745,6 +1773,8 @@ extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Ui
 
 		pStxSaveSector->SectorSize	= SectorSize;
 		pStxSaveSector->pData		= (Uint8 *) pNewBuf;
+
+		pStxSaveSector->StructIsUsed	= 1;
 	}
 
 	pSector_WriteData = STX_SaveStruct[ Drive ].pSaveSectorsStruct[ pStxSector->SaveSectorIndex ].pData;
