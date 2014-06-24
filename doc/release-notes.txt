@@ -132,8 +132,8 @@ Tools:
   It can tell how many times loops were executed, how many times they
   spinned at minimum and maximum, at which VBL those happened, and what
   was the standard deviation of that.
-- gst2ascii DATA/BSS debug symbol offsets are fixed while still providing
-  support for the incorrect offsets used by older VBCC vlink
+- gst2ascii supports now both section relative and TEXT section relative
+  DATA/BSS symbol offsets
 - hconsole.Main() takes now Hatari command line options as argument
 - AHCC/GCC/VBCC examples on using (all) Native Features APIs
 - Improved mingw cross-compilation support
