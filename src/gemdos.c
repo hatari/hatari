@@ -1468,7 +1468,7 @@ static bool GemDOS_DFree(Uint32 Params)
 		Free = Free/1024 * buf.f_bsize;
 
 		/* TOS version limits based on:
-		 *   http://www.seimet.de/atari/en/hddriverfaq.html
+		 *   http://hddriver.seimet.de/en/faq.html
 		 */
 		if (TosVersion >= 0x0400)
 		{
