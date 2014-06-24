@@ -136,6 +136,11 @@ is missing here, please remind me!):
   with the emulated system. Also wrote some nice docs on WD1772
   and methods commonly used for games' protections.
 
+- Christer Solskogen: for setting up an automatic build script on his site,
+  with up to date binary versions for Linux and Windows in 32 and 64 bit mode.
+  Very useful for end users wishing to try the devel version of Hatari, and
+  lots of interesting build logs too for various cpu architectures.
+  See http://antarctica.no/~hatari/latest
 
  Code from other projects
  ------------------------
