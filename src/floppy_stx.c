@@ -1786,11 +1786,13 @@ extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Ui
 //fprintf ( stderr , "write drive=%d track=%d side=%d sector=%d size=%d index=%d\n", Drive, Track, Side, Sector, SectorSize , pStxSector->SaveSectorIndex );
 //Str_Dump_Hex_Ascii ( (char *) pSector_WriteData, SectorSize, 16, "" , stderr );
 
-	/* Warn that 'write sector' data will be lost on exit */
-	if ( ( STX_State.ImageBuffer[ Drive ]->WarnedWriteSector == false )
-	    && ( File_DoesFileExtensionMatch ( EmulationDrives[ Drive ].sFileName , ".zip" ) ) )
+	/* Warn that 'write sector' data will be lost or saved (if zipped or not) */
+	if ( STX_State.ImageBuffer[ Drive ]->WarnedWriteSector == false )
 	{
-		Log_AlertDlg ( LOG_INFO , "WARNING : can't save changes made with 'write sector' to an STX disk inside a zip file" );
+		if ( File_DoesFileExtensionMatch ( EmulationDrives[ Drive ].sFileName , ".zip" ) )
+			Log_AlertDlg ( LOG_INFO , "WARNING : can't save changes made with 'write sector' to an STX disk inside a zip file" );
+		else
+			Log_AlertDlg ( LOG_INFO , "Changes made with 'write sector' to an STX disk will be saved into an additional .wd1772 file" );
 		STX_State.ImageBuffer[ Drive ]->WarnedWriteSector = true;
 	}
 
