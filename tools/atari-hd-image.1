@@ -1,4 +1,4 @@
-.TH "atari-hd-image" "1" "2010-11-21" "Hatari" "Hatari utilities"
+.TH "atari-hd-image" "1" "2014-06-24" "Hatari" "Hatari utilities"
 .SH NAME
 atari\-hd\-image \- tool for creating a harddisk image for use with Hatari
 .SH SYNOPSIS
@@ -13,7 +13,9 @@ compatible DOS partition (using sfdisk, mkdosfs and dd).
 .SH OPTIONS
 .TP 
 .B size
-Harddisk image size in megabytes, 8-256
+Harddisk image size in megabytes, 8-512.  512MB is largest partition
+size supported by TOS versions before v4.x and by mkdosfs (for Atari
+compatible partition formatting).
 .TP
 .B filename
 Name for the harddisk image (default: hd.img)

@@ -127,6 +127,7 @@ Emulator:
     output when using the external disassembler (only "dc.w" were printed)
 
 Tools:
+- Increased max partition size in atari-hd-image script to 512MB.
 - New hatari_spinloop.py script for post-processing loop profile data.
   It can tell how many times loops were executed, how many times they
   spinned at minimum and maximum, at which VBL those happened, and what

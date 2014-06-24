@@ -14,7 +14,7 @@ if [ $# -lt 1 ] || [ \! -z "$(echo $1|tr -d 0-9)" ]; then
 	echo
 	echo "Create an ACSI/IDE harddisk image for Hatari with a single Atari"
 	echo "compatible DOS partition.  Arguments are (defaults in parenthesis):"
-	echo "- size: harddisk image size in megabytes, 8-256"
+	echo "- size: harddisk image size in megabytes, 8-512"
 	echo "- filename: name for the harddisk image ($diskfile)"
 	echo "- partition name: name for that single partition ($partname)"
 	echo "- directory: directory for initial content copied to the image"
@@ -43,8 +43,8 @@ if [ $1 -lt 5 ]; then
 	echo "ERROR: disk size needs to be at least 5 (MB) to work properly."
 	exit 1
 fi
-if [ $1 -gt 256 ]; then
-	echo "ERROR: EmuTOS supports only partitions up to 256 (MB)."
+if [ $1 -gt 512 ]; then
+	echo "ERROR: mkdosfs supports Atari compatible partitions only up to 512 MB."
 	exit 1
 fi
 
