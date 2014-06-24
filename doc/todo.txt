@@ -25,8 +25,6 @@ Emulation improvements
 - Improve disk image formats support:
 	- Add support for .STT images
 	  (created with the STEEM disk image program)
-	- Add support for Pasti .STX images
-	  (See http://pasti.fxatari.com/)
 	- Support .DIM images created with the "Get sectors: used" option
 
 - Real HD 6301 (keyboard processor of the ST) emulation.
@@ -95,10 +93,8 @@ Demos :
 	Ventura - Ultimate Dist, Syntax Terror - TCB, ICE - Kryos,
 	ICE - Intruding, ICE - Jamcols, Extreme Rage, Paradox - XMas 2004,
 	ICE - Space Tale, ICE - The Wave Of The Future, Snork - DNT Screen 1
-  - cpu/timers : UMD Intro
 
 Games :
-  - cpu/timers : FOF 42 - Subbuteo, The Ultimate Ride, Treasure Trap
   - ikbd : Superior 109 - Special Forces
 
 
