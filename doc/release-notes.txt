@@ -31,16 +31,17 @@ Emulation:
 - FDC changes :
   - Add configurable RPM speed for each floppy drive, the possibility
     to turn each drive ON/OFF and the choice between single or double
-    sided drive.
+    sided drive
   - Correct timings, behaviour and status register for all commands
     when a drive is OFF or empty.
   - Rewrite the index pulse part and all the delays expressed as disk's
     revolution
-  - Add support for the "Force Int on Index Pulse" command.
+  - Add support for the "Force Int on Index Pulse" command
   - Rewrite the DMA functions for better accuracy
   - Add support for IPF/CTR files by using the capsimage library
   - Add open source support for Pasti STX files, including random/fuzzy bits
-    and variable length bits
+    and variable length bits. Also allow to save writes to a .stx file
+    into an additional .wd1772 file
   - Don't force drives A and B at $4c2, keep the values detected by TOS
   - Many other timing / status register improvements
 - GEMDOS HD emulation:
