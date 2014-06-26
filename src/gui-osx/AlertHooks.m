@@ -21,9 +21,25 @@
 */
 int HookedAlertNotice(const char* szMessage)
 {
-//	NSLog(@"Notice: %@",  [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding] ) ;
-	return (NSAlertDefaultReturn == NSRunInformationalAlertPanel(@"Hatari", localize([NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding]), 
-															localize(@"Ok"), nil, nil));
+	NSString *message ;
+	NSRange  cantTOS, firstPv, lastPv ;
+	NSAlert  *lalerte ;
+
+	message = [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding] ;
+	//NSLog(@"Notice: %@", message ) ;
+	cantTOS = [message rangeOfString:@"Can not load TOS file:"] ;
+	firstPv = [message rangeOfString:@"'"] ;
+	lastPv = [message rangeOfString:@"'" options:NSBackwardsSearch] ;
+
+	if ((cantTOS.location == NSNotFound) || (firstPv.location==lastPv.location))
+		return (NSAlertDefaultReturn == NSRunInformationalAlertPanel(@"Hatari", localize(message), localize(@"Ok"), nil, nil));
+
+	firstPv.location++ ; firstPv.length = lastPv.location-firstPv.location ;
+	lalerte = [NSAlert alertWithMessageText:@"Hatari" defaultButton:localize(@"Ok") alternateButton:nil otherButton:nil
+	           informativeTextWithFormat:localize(@"Can not load TOS file:"), [NSApp pathUser:[message substringWithRange:firstPv]]] ;
+
+	[lalerte runModal] ;
+	return YES ;
 }
 
 /*-----------------------------------------------------------------------*/

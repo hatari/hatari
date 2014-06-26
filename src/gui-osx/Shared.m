@@ -89,27 +89,19 @@ void GuiOsx_Resume(void)
 
 @implementation NSApplication (service)
 
-// ouvrir un fichier ou dossier
+// Open file or directory
 //
-- (NSString *)ouvrir:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types
+- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types
 {
-	return [self ouvrir:chooseDir defoDir:defoDir defoFile:defoFile types:types titre:nil] ;
+	return [self hopenfile:chooseDir defoDir:defoDir defoFile:defoFile types:types titre:nil] ;
 }
 
-/* informations
-NSFileManager *gestion = [NSFileManager defaultManager] ;
 
-  if ([gestion instancesRespondToSelector:@selector(machin)])
-   {  // utilisation de  machin  }
- else
-   {  // utilisation de truc de 10.5  } ;
-*/
-
-- (NSString *)ouvrir:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre
+- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre
 {
 NSOpenPanel *openPanel ;
-NSArray  *lesURLs = nil ;
-BOOL	btOk ;
+	NSArray     *lesURLs = nil ;
+	BOOL        btOk ;
 
 	openPanel = [NSOpenPanel openPanel];
 	[openPanel	setCanChooseDirectories: chooseDir];
@@ -120,14 +112,14 @@ BOOL	btOk ;
 		[openPanel	setAllowsOtherFileTypes:YES] ;  } ;
 	if (titre != nil)  [openPanel setTitle:titre] ;
 
-/*	if ([NSOpenPanel instancesRespondToSelector:@selector(setNameFieldStringValue:)])
-	 {
-		if (defoDir!=nil)  [openPanel setDirectoryURL:[NSURL URLWithString:defoDir]] ;	// A partir de 10.6
-		if (defoFile!=nil) [openPanel setNameFieldStringValue:defoFile] ;
-		btOk = [openPanel runModal] == NSOKButton ;										// Ok ?
-	 }
-	else																				// */
-		btOk = [openPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton	;	// Ok ? deprecated en 10.6
+#if MAC_OS_X_VERSION_MAX_ALLOWED  > 1058
+
+	if (defoDir!=nil)  [openPanel setDirectoryURL:[NSURL URLWithString:defoDir]] ;      //  10.6 & newer
+	if (defoFile!=nil) [openPanel setNameFieldStringValue:defoFile] ;
+	btOk = [openPanel runModal] == NSOKButton ;                                         // Ok ?
+#else                                                                                   // */
+	btOk = [openPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton	;	// 10.5
+#endif
 
 	if (btOk)
 	 {	lesURLs = [openPanel URLs] ;
@@ -137,82 +129,82 @@ BOOL	btOk ;
 	return @"" ;
 }
 
-// sauver un fichier
+// Save file
 //
-- (NSString *)sauver:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types
+- (NSString *)hsavefile:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types
 {
-	return [self sauver:creatDir defoDir:defoDir defoFile:defoFile types:types titre:nil] ;
+	return [self hsavefile:creatDir defoDir:defoDir defoFile:defoFile types:types titre:nil] ;
 }
 
-- (NSString *)sauver:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre
+- (NSString *)hsavefile:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre
 {
-NSSavePanel *sauvPanel ;
-NSURL	*lURL ;
-BOOL	btOk ;
+	NSSavePanel *savPanel ;
+	NSURL       *lURL ;
+	BOOL        btOk ;
 
-	sauvPanel = [NSSavePanel savePanel];
-	[sauvPanel setCanCreateDirectories:creatDir];
+	savPanel = [NSSavePanel savePanel];
+	[savPanel setCanCreateDirectories:creatDir];
 	if (types != nil)
-	 {	[sauvPanel setAllowedFileTypes:types] ;
-		[sauvPanel setAllowsOtherFileTypes:YES] ; } ;
-	if (titre != nil)  [sauvPanel setTitle:titre] ;
+	 {	[savPanel setAllowedFileTypes:types] ;
+		[savPanel setAllowsOtherFileTypes:YES] ; } ;
+	if (titre != nil)  [savPanel setTitle:titre] ;
 
-/*	if ([NSSavePanel instancesRespondToSelector:@selector(setNameFieldStringValue:)])
-	 {
-		if (defoDir!=nil)  [sauvPanel setDirectoryURL:[NSURL URLWithString:defoDir]] ;	// A partir de 10.6
-		if (defoFile!=nil) [sauvPanel setNameFieldStringValue:defoFile] ;
-		btOk = [sauvPanel runModal] == NSOKButton ;										// Ok?
-	 }
-	else																				// */
-		btOk = [sauvPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton ;	// Ok ? deprecated en 10.6
-	
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1058
+
+	if (defoDir!=nil)  [savPanel setDirectoryURL:[NSURL URLWithString:defoDir]] ;	// A partir de 10.6
+	if (defoFile!=nil) [savPanel setNameFieldStringValue:defoFile] ;
+	btOk = [savPanel runModal] == NSOKButton ;										// Ok?
+
+#else																				// */
+	btOk = [savPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton ;	// Ok ? deprecated en 10.6
+#endif
 	if (btOk)
-	 {	lURL = [sauvPanel URL] ;
+	 {	lURL = [savPanel URL] ;
 		if (lURL != nil)
 			return [lURL path] ;
 	 } ;
 	return @"" ;
 }
 
-// retourne le chemin localisé
+// Returne localized path
 //
-- (NSString *)localpath:(NSString *)cuila :(NSFileManager *)gerer				// réentrante
+- (NSString *)localpath:(NSString *)thepath :(NSFileManager *)afilemanager
 {
-NSString	*lafin ;
-NSArray		*Les_composantes ;
+	NSString	*thend ;
+	NSArray		*thelist ;
 
-	if (cuila == nil) return @"" ;
-	if ([cuila length] == 0) return @"" ;
-	if (![gerer fileExistsAtPath:cuila])
-	 {	lafin = [cuila lastPathComponent] ;
-	 	return [[self localpath:[cuila stringByDeletingLastPathComponent] :gerer] stringByAppendingPathComponent:lafin] ;
+	if (thepath == nil) return @"" ;
+	if ([thepath length] == 0) return @"" ;
+	if (![afilemanager fileExistsAtPath:thepath])
+	 {	thend = [thepath lastPathComponent] ;
+	 	return [[self localpath:[thepath stringByDeletingLastPathComponent] :afilemanager] stringByAppendingPathComponent:thend] ;
 	 } ;
-	Les_composantes = [gerer componentsToDisplayForPath:cuila] ;				// convert in matrix
-	if ( [Les_composantes count] != 0)
-		return [NSString pathWithComponents:Les_composantes] ;					// return localized path
+	thelist = [afilemanager  componentsToDisplayForPath:thepath] ;				// convert in matrix
+	if ( [thelist count] != 0)
+		return [NSString pathWithComponents:thelist] ;                          // return localized path
 	else
-		return cuila ;
+		return thepath ;
 }
 
-- (NSString *)localpath:(NSString *)celuila										// retourne un chemin localisé complet
+- (NSString *)localpath:(NSString *)thepath										// return a full localized path
 {
-	NSFileManager *gestion = [NSFileManager defaultManager] ;					// call "default manager"
-	return [self localpath:celuila :gestion] ;
+	NSFileManager *afilemanager = [NSFileManager defaultManager] ;              // call "default manager"
+	return [self localpath:thepath :afilemanager] ;
 }
 
-//  retourne un chemin localisé relatif au compte utilisateur (si possible)   ~/Bureau/
+//  return a localized path related to user home directoryr   ~/
 //
-- (NSString *)pathUser:(NSString *)celuici
+- (NSString *)pathUser:(NSString *)thepath
 {
-NSString *ici ;
-NSString *chemin ;
+	NSString *here ;
+	NSString *apath ;
 
-	chemin = [self localpath:celuici] ;
-	if ([chemin length] == 0) return @"" ;
-	ici = [self localpath:[@"~/" stringByExpandingTildeInPath]] ;
-	if (([chemin rangeOfString:ici].location) != NSNotFound)
-		return [NSString stringWithFormat:@"~%@", [chemin substringFromIndex:[ici length]]] ;
-	return chemin ;
+	apath = [self localpath:thepath] ;
+	if ([apath length] == 0) return @"" ;
+	here = [self localpath:[@"~/" stringByExpandingTildeInPath]] ;
+	if (([apath rangeOfString:here].location) != NSNotFound)
+		return [NSString stringWithFormat:@"~%@", [apath substringFromIndex:[here length]]] ;
+	return apath;
 }
 
 @end

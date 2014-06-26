@@ -41,6 +41,11 @@ website/screens
 *.1.gz
 doc/doxygen/html
 
+# These are for XCode on Mac OS X:
+build/*
+Hatari.build/*
+Release/*
+
 # switch to regexp syntax.
 syntax: regexp
 

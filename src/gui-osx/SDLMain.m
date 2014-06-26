@@ -195,12 +195,12 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 - (void)insertDisk:(int)disque 
 {
-	NSString	*ceDisk ;
+	NSString	*aDisk ;
 
-	ceDisk = [NSApp ouvrir:NO defoDir:nil defoFile:@"" types:[NSArray arrayWithObjects:allF,nil]] ;
-	if ([ceDisk length] == 0) return ;                 // user canceled
+	aDisk = [NSApp hopenfile:NO defoDir:nil defoFile:@"" types:[NSArray arrayWithObjects:allF,nil]] ;
+	if ([aDisk length] == 0) return ;                 // user canceled
 
-	[ceDisk getCString:szPath maxLength:FILENAME_MAX-1 encoding:NSASCIIStringEncoding] ;
+	[aDisk getCString:szPath maxLength:FILENAME_MAX-1 encoding:NSASCIIStringEncoding] ;
 	Floppy_SetDiskFileName(disque, szPath, NULL) ;
 	Floppy_InsertDiskIntoDrive(disque) ;
 }
@@ -234,12 +234,12 @@ char szPath[FILENAME_MAX] ;											// for general use
 
 - (NSString*)displayFileSelection:(const char*)pathInParams preferredFileName:(NSString*)preferredFileName allowedExtensions:(NSArray*)allowedExtensions
 {
-BOOL test ;
-NSString *directoryToOpen;
-NSString *fileToPreselect;
-NSString *preferredPath;
-NSString *extensionText;
-NSString *selectFile;
+	// BOOL test ;
+	NSString *directoryToOpen;
+	NSString *fileToPreselect;
+	NSString *preferredPath;
+	NSString *extensionText;
+	NSString *selectFile;
 	
 	// Get the path from the user settings
 	preferredPath = [[NSString stringWithCString:pathInParams encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath];
@@ -261,7 +261,7 @@ NSString *selectFile;
 	//  SavePanel for choosing what file to write
 	extensionText = [NSString stringWithFormat:localize(@"Please specify a .%@ file"), [allowedExtensions componentsJoinedByString:localize(@" or a .")] ];
 	
-	selectFile = [NSApp sauver:YES defoDir:directoryToOpen defoFile:fileToPreselect types:allowedExtensions titre:extensionText ] ;
+	selectFile = [NSApp hsavefile:YES defoDir:directoryToOpen defoFile:fileToPreselect types:allowedExtensions titre:extensionText ] ;
 	if ([selectFile length] != 0 )
 		return selectFile ;
 	
@@ -357,7 +357,7 @@ NSString *newPath ;
 	 {	directoryToOpen = [@"~" stringByExpandingTildeInPath];			// Currently no path: we use user's directory
 		fileToPreselect = nil; } ;
 
-	newPath = [NSApp ouvrir:NO defoDir:directoryToOpen defoFile:fileToPreselect types:[NSArray arrayWithObject:@"sav"] ] ;
+	newPath = [NSApp hopenfile:NO defoDir:directoryToOpen defoFile:fileToPreselect types:[NSArray arrayWithObject:@"sav"] ] ;
 	if ([newPath length] != 0)											// Perform the memory snapshot load
 		MemorySnapShot_Restore([newPath cStringUsingEncoding:NSASCIIStringEncoding], TRUE);
 
@@ -384,13 +384,13 @@ NSString *newPath ;
 
 - (IBAction)help:(id)sender
 {
-NSString *l_aide ;
+	NSString *the_help;
 	
-	l_aide = [[NSBundle mainBundle] pathForResource:@"manual" ofType:@"html" inDirectory:@"HatariHelp"] ;
+	the_help = [[NSBundle mainBundle] pathForResource:@"manual" ofType:@"html" inDirectory:@"HatariHelp"];
 	
-	if (![[NSWorkspace sharedWorkspace] openFile:l_aide withApplication:@"HelpViewer"])
-		if (![[NSWorkspace sharedWorkspace] openFile:l_aide withApplication:@"Help Viewer"])
-             [[NSWorkspace sharedWorkspace] openFile:l_aide] ;
+	if (![[NSWorkspace sharedWorkspace] openFile:the_help withApplication:@"HelpViewer"])
+		if (![[NSWorkspace sharedWorkspace] openFile:the_help withApplication:@"Help Viewer"])
+			[[NSWorkspace sharedWorkspace] openFile:the_help];
 }
 
 - (IBAction)compat:(id)sender
@@ -419,7 +419,7 @@ CNF_PARAMS	CurrentParams;
 	
 	GuiOsx_Pause();
 	
-	newCfg = [NSApp ouvrir:NO defoDir:nil defoFile:ConfigFile types:[NSArray arrayWithObject:@"cfg"] ] ;
+	newCfg = [NSApp hopenfile:NO defoDir:nil defoFile:ConfigFile types:[NSArray arrayWithObject:@"cfg"] ] ;
 		
 	if ([newCfg length] != 0)
 	 {	
@@ -433,9 +433,9 @@ CNF_PARAMS	CurrentParams;
 								localize(@"Don't reset"), localize(@"Reset"), nil) == NSAlertAlternateReturn ;
 								
 		if (applyChanges)
-			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true) ;
+			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true); // Ok with Reset
 		else 
-			ConfigureParams = CurrentParams ;
+			ConfigureParams = CurrentParams;   //Restore previous Params.
 	 } ;
 	
 	GuiOsx_Resume();

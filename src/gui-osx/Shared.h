@@ -12,8 +12,8 @@
 
 #define localize(laklef) [[NSBundle mainBundle] localizedStringForKey:laklef value:(laklef != nil ? laklef : @"???") table:@"Localizable"]
 
-// disk extensions
-#define allF	@"st",@"msa",@"dim",@"gz",@"zip"
+// disk extensions alowed in open box
+#define allF	@"st",@"msa",@"dim",@"gz",@"zip",@"stx",@"ipf",@"raw",@"ctr"
 // cartdridge extensions
 #define allC	@"img",@"rom",@"bin",@"cart"
 // TOS extensions
@@ -46,16 +46,17 @@ void GuiOsx_Resume(void);
 //
 @interface NSApplication (service)
 
+// Some usefull tools
 // choose file to open
-- (NSString *)ouvrir:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types ;
-- (NSString *)ouvrir:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre ;
+- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types ;
+- (NSString *)hopenfile:(BOOL)chooseDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre ;
 
 // choose file to save
-- (NSString *)sauver:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types ;
-- (NSString *)sauver:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre ;
+- (NSString *)hsavefile:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types ;
+- (NSString *)hsavefile:(BOOL)creatDir defoDir:(NSString *)defoDir defoFile:(NSString *)defoFile types:(NSArray *)types titre:(NSString *)titre ;
 
 // Return localized path, Full path or partial path.
-- (NSString *)localpath:(NSString *)celuila ;		// Full
-- (NSString *)pathUser:(NSString *)celuici ;		// Partiel si possible, sinon complet.
+- (NSString *)localpath:(NSString *)thepath ;		// Full
+- (NSString *)pathUser:(NSString *)thepath ;		// Partial if possible.
 
 @end

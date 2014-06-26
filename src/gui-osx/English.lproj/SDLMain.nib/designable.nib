@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="5056" systemVersion="12F45" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
     <dependencies>
-        <deployment version="1050" identifier="macosx"/>
+        <deployment version="1050" defaultVersion="1080" identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="5056"/>
     </dependencies>
     <objects>
@@ -61,22 +61,26 @@
                 <menuItem title="File" id="306">
                     <menu key="submenu" title="File" id="312">
                         <items>
-                            <menuItem title="Insert Disk A..." keyEquivalent="A" id="309">
+                            <menuItem title="Insert Disk A..." id="wRm-ih-tK4">
+                                <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="insertDiskA:" target="194" id="4611"/>
+                                    <action selector="insertDiskA:" target="194" id="hVf-bm-N4E"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Insert Disk B..." keyEquivalent="B" id="311">
+                            <menuItem title="Insert Disk B..." id="311">
+                                <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="insertDiskB:" target="194" id="323"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Create Blank Floppy..." keyEquivalent="V" id="595">
+                            <menuItem title="Create Blank Floppy..." id="595">
+                                <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="runModal:" target="687" id="843"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Load Config..." keyEquivalent="o" id="4622">
+                            <menuItem title="Load Config..." id="4622">
+                                <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="openConfig:" target="194" id="4623"/>
                                 </connections>
@@ -87,28 +91,32 @@
                             <menuItem title="Capture" id="607">
                                 <menu key="submenu" title="Capture" id="608">
                                     <items>
-                                        <menuItem title="Screen" keyEquivalent="p" id="609">
-                                            <modifierMask key="keyEquivalentModifierMask" control="YES" option="YES" command="YES"/>
+                                        <menuItem title="Screen" id="609">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="captureScreen:" target="194" id="828"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Begin Animation Capture" id="610" userLabel="startCapture">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="captureAnimation:" target="194" id="829"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="End Animation Capture" id="834">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="endCaptureAnimation:" target="194" id="4615"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Begin Sound Capture (.ym/.wav)..." id="611">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="captureSound:" target="194" id="830"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="End Sound Capture" id="835">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="endCaptureSound:" target="194" id="841"/>
                                             </connections>
@@ -123,11 +131,13 @@
                                 <menu key="submenu" title="Memory Snapshot" id="604">
                                     <items>
                                         <menuItem title="Save..." id="605">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="saveMemorySnap:" target="194" id="848"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Restore..." id="606">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="restoreMemorySnap:" target="194" id="849"/>
                                             </connections>
@@ -169,11 +179,6 @@
                 <menuItem title="Window" id="284">
                     <menu key="submenu" title="Window" systemMenu="window" id="285">
                         <items>
-                            <menuItem title="Minimize" keyEquivalent="m" id="283">
-                                <connections>
-                                    <action selector="performMiniaturize:" target="-1" id="288"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Full Screen" offStateImage="NSEnterFullScreenTemplate" keyEquivalent="f" id="1241">
                                 <connections>
                                     <action selector="doFullScreen:" target="194" id="1246"/>
@@ -663,7 +668,7 @@
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField verticalHuggingPriority="750" id="513">
-                                            <rect key="frame" x="17" y="342" width="158" height="17"/>
+                                            <rect key="frame" x="72" y="342" width="108" height="17"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="right" id="4493">
                                                 <font key="font" metaFont="system"/>
@@ -1952,7 +1957,7 @@
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <button id="2923">
-                                            <rect key="frame" x="81" y="324" width="134" height="18"/>
+                                            <rect key="frame" x="81" y="324" width="134" height="31"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <buttonCell key="cell" type="check" title="Confirm Quit" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" imageScaling="proportionallyDown" inset="2" id="4497">
                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>

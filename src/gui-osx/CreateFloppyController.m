@@ -32,7 +32,7 @@ char szPath[FILENAME_MAX] ;
 	defaultDir = [NSString stringWithCString:ConfigureParams.DiskImage.szDiskImageDirectory encoding:NSASCIIStringEncoding];
 
 	// Run the SavePanel, then check if the user clicked OK
-	newCnf = [NSApp sauver:YES defoDir:defaultDir defoFile:nil types:[NSArray arrayWithObjects: allF, nil] ] ;
+	newCnf = [NSApp hsavefile:YES defoDir:defaultDir defoFile:nil types:[NSArray arrayWithObjects: allF, nil] ] ;
 	if ([newCnf length] != 0)
 	{
 		[newCnf getCString:szPath maxLength:FILENAME_MAX-1 encoding:NSASCIIStringEncoding] ;

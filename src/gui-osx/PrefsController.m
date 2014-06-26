@@ -249,7 +249,7 @@ char szPath[FILENAME_MAX];
 	 {	directoryToOpen = [defaultInitialDir stringByExpandingTildeInPath];			// no path: use user's directory
 		fileToPreselect = nil; } ;
 
-	newPath = [NSApp ouvrir:chooseDirectories defoDir:defaultInitialDir defoFile:nil types:what] ;
+	newPath = [NSApp hopenfile:chooseDirectories defoDir:defaultInitialDir defoFile:nil types:what] ;
 	if ([newPath length] != 0)														// user canceled if empty
 	{
 		[mutString setString:[NSString stringWithString:newPath]] ;					// save this path
@@ -445,7 +445,13 @@ BOOL flag1, flag2;
 	[opnPanel setCanChooseFiles: YES];
 	[opnPanel setAccessoryView:partage] ;
 
-	btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton	;		// Ok ? under 10.5
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1058
+	[opnPanel setDirectoryURL:[NSURL URLWithString:ru]] ;
+	[opnPanel setNameFieldStringValue:@"hatari"] ;
+	btOk = [opnPanel runModal] == NSOKButton ;										// Ok ?
+#else                                                                               // */
+	btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton	;		// Ok ? sous 10.5
+#endif
 
 	if (!btOk)  return ;																// Cancel
 
@@ -477,16 +483,18 @@ BOOL		btOk ;
 	[savPanel setAllowedFileTypes:[NSArray arrayWithObject:@"cfg"]] ;
 	[savPanel setAccessoryView:hartage] ;
 
-/*	if ([NSSavePanel instancesRespondToSelector:@selector(setDirectoryURL:)])
-	 {
-		[savPanel setDirectoryURL:[NSURL URLWithString:ru]] ;								// A partir de 10.6
-		[savPanel setNameFieldStringValue:@"hatari"] ;
-		btOk = [savPanel runModal] == NSOKButton ;											// Ok ?
-	 }
-	else   */
-		btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton ;			// Ok ?
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1058
 
-	if (!btOk)  return ;																	// Annuler
+	[savPanel setDirectoryURL:[NSURL URLWithString:ru]] ;								// A partir de 10.6
+	[savPanel setNameFieldStringValue:@"hatari"] ;
+	btOk = [savPanel runModal] == NSOKButton ;											// Ok ?
+
+#else                                                                                   // */
+	btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton ;			// Ok ?
+#endif
+
+	if (!btOk)
+		return ;                                                                        // Cancel
 
 	[configNm setString:[[savPanel URL] path]];
 
@@ -501,10 +509,11 @@ BOOL		btOk ;
 NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-/*	if ([NSOpenPanel instancesRespondToSelector:@selector(setDirectoryURL:)])
-		[opnPanel setDirectoryURL:[NSURL URLWithString:defaultDirectory]] ;
-	else																			// */
-		[opnPanel setDirectory:defaultDirectory] ;
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1058
+	[opnPanel setDirectoryURL:[NSURL URLWithString:defaultDirectory]] ;
+#else                                                                                   // */
+	[opnPanel setDirectory:defaultDirectory] ;
+#endif
 }
 
 - (IBAction)halle:(id)sender
@@ -512,10 +521,11 @@ NSString  *defaultDirectory ;
 NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-/*	if ([NSSavePanel instancesRespondToSelector:@selector(setDirectoryURL:)])
-		[savPanel setDirectoryURL:[NSURL URLWithString:defaultDirectory]] ;
-	else  */
-		[savPanel setDirectory:defaultDirectory] ;
+#if MAC_OS_X_VERSION_MAX_ALLOWED  > 1058
+	[savPanel setDirectoryURL:[NSURL URLWithString:defaultDirectory]] ;
+#else                                                                                   // */
+	[savPanel setDirectory:defaultDirectory] ;
+#endif
 }
 
 
@@ -525,20 +535,13 @@ NSString  *defaultDirectory ;
 */
 - (IBAction)commitAndClose:(id)sender
 {
-	applyChanges = true;										// applyChanges moved in interface
 
 	// The user clicked OK
 	[self saveAllControls];
 	
-	// If a reset is required, ask the user first
-	if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
-		applyChanges = NSRunAlertPanel (localize(@"Reset the emulator"), localize(@"Must be reset"),
-										localize(@"Don't reset"), localize(@"Reset"), nil) == NSAlertAlternateReturn ;
-	
-	// Close the window
 	[window close] ;
 
-	//GuiOsx_Resume();
+
 }
 
 // Populate Joystick key dropdown
@@ -604,6 +607,7 @@ NSString  *defaultDirectory ;
 	// Backup of configuration settings to CurrentParams (which we will only
 	// commit back to the configuration settings if choosing OK)
 	CurrentParams = ConfigureParams;
+	applyChanges=false;
 
 	[self setAllControls];
 
@@ -614,14 +618,28 @@ NSString  *defaultDirectory ;
 	
 	[mw release];								// */
 	
-	if (applyChanges)										// solve bug screen-reset
-		Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true) ;
-	else
-		ConfigureParams = CurrentParams;
+	// solve bug screen-reset: close and kill preference windows before
+	// M. Saro, 2013
 
-	//GuiOsx_Pause();
-	//[[NSApplication sharedApplication] runModalForWindow:window];
-
+    //if(Ok button in preferences Windows)
+    {
+        // Check if change need reset
+        if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
+        {
+            applyChanges = NSRunAlertPanel(localize(@"Reset the emulator"), localize(@"Must be reset"),
+                                       localize(@"Don't reset"), localize(@"Reset"), nil) == NSAlertAlternateReturn ;
+            if (applyChanges)							                Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true) ;
+            else
+                ConfigureParams = CurrentParams;    //Restore backup params
+        }
+        else
+            Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, false); //Apply config without reset
+    }
+    // else // not OK button
+    // {
+    //      ConfigureParams = CurrentParams; //Restore backup params
+    // }
+    
 }
 
 /*-----------------------------------------------------------------------*/
