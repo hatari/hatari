@@ -131,6 +131,11 @@ static int DlgAlert_ShowDlg(const char *text)
 	bool bOldMouseVisibility;
 	int nOldMouseX, nOldMouseY;
 
+#if WITH_SDL2
+	bool bOldMouseMode = SDL_GetRelativeMouseMode();
+	SDL_SetRelativeMouseMode(SDL_FALSE);
+#endif
+
 	strcpy(t, text);
 	lines = DlgAlert_FormatTextToBox(t, maxlen, &len);
 	offset = (maxlen-len)/2;
@@ -165,6 +170,10 @@ static int DlgAlert_ShowDlg(const char *text)
 	SDL_UpdateRect(sdlscrn, 0,0, 0,0);
 	SDL_ShowCursor(bOldMouseVisibility);
 	Main_WarpMouse(nOldMouseX, nOldMouseY);
+
+#if WITH_SDL2
+	SDL_SetRelativeMouseMode(bOldMouseMode);
+#endif
 
 	return (i == DLGALERT_OK);
 }
