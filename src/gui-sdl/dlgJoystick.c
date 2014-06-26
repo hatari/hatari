@@ -10,7 +10,7 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c : " __DATE__ " " __TIME_
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
-
+#include "joy.h"
 
 #define DLGJOY_DISABLED    3
 #define DLGJOY_USEREALJOY  4
@@ -150,11 +150,11 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 	else if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId <= nMaxId)
 	{
 		snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
-		         SDL_JoystickName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
+		         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 	}
 	else
 	{
-		snprintf(sSdlStickName, 20, "0: %s", SDL_JoystickName(0));
+		snprintf(sSdlStickName, 20, "0: %s", Joy_GetName(0));
 		/* Unavailable joystick ID -> disable it if necessary*/
 		if (ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode == JOYSTICK_REALSTICK)
 			ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_DISABLED;
@@ -223,7 +223,7 @@ void Dialog_JoyDlg(void)
 			{
 				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId -= 1;
 				snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
-				         SDL_JoystickName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
+				         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
 		 case DLGJOY_NEXTSDLJOY:        // Select the next SDL joystick
@@ -231,7 +231,7 @@ void Dialog_JoyDlg(void)
 			{
 				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId += 1;
 				snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
-				         SDL_JoystickName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
+				         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
 		 case DLGJOY_DEFINEKEYS:        // Define new keys for keyboard emulation
