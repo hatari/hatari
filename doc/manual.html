@@ -1840,11 +1840,13 @@ while the emulator is running.
 <p>
 On a 32-bit host system, the size of a hard disk image is limited to 2 GB.
 On 64-bit host systems, bigger images might be possible but the support
-for bigger images is not tested very well yet.  How large partition sizes
-are supported inside the hard disk (images) depends on the TOS version.
-TOS 1.0x supports up to 256MB partitions and TOS 4.0x up to 1GB ones.
+for bigger images is not tested very well yet.
 </p>
-
+<p>
+The maximum size of partitions inside the hard disk (images) depends on the
+TOS version. TOS 1.00 and 1.02 support up to 256 MB, TOS 1.04 to 3.06 up to
+512 MiB and TOS 4.0x supports up to 1 GB partitions.
+</p>
 
 <h3>GEMDOS based hard drive emulation</h3>
 <p>
@@ -1902,6 +1904,10 @@ To use the ACSI hard drive emulation, you need a hard disk image file
 with a pre-installed HD driver in it. You can try to get an image of
 your old ST hard disk or grab one from the internet (e.g. from the
 Hatari website).
+Please note that the size of ACSI hard drive is normally limited to 1 GB
+due to some addressing constraints of the ACSI bus. Bigger disks were only
+possible with certain host adapters &ndash; this behaviour is emulated by
+Hatari, too, but you need a hard disk driver that supports these extensions.
 </p>
 <p>
 To create a <em>new</em> ACSI hard disk image, you can start with an empty
