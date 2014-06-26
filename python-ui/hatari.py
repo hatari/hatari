@@ -474,6 +474,23 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Sound]", "YmVolumeMixing", value+1)
         self._change_option("--ym-mixing %s" % self.get_ymmixer_types()[value])
     
+    def get_bufsize(self):
+        return self.get("[Sound]", "nSdlAudioBufferSize")
+    
+    def set_bufsize(self, value):
+        value = int(value)
+        if value < 10: value = 10
+        if value > 100: value = 100
+        self.set("[Sound]", "nSdlAudioBufferSize", value)
+        self._change_option("--sound-buffer-size %d" % value)
+    
+    def get_sync(self):
+        return self.get("[Sound]", "bEnableSoundSync")
+    
+    def set_sync(self, value):
+        self.set("[Sound]", "bEnableSoundSync", value)
+        self._change_option("--sound-sync %s" % str(value))
+
     def get_mic(self):
         return self.get("[Sound]", "bEnableMicrophone")
     
@@ -505,14 +522,13 @@ class HatariConfigMapping(ConfigStore):
         joytype = ("none", "real", "keys")[value]
         self._change_option("--joy%d %s" % (port, joytype))
 
-    # ------------ floppy image dir ---------------
+    # ------------ floppy handling ---------------
     def get_floppydir(self):
         return self.get("[Floppy]", "szDiskImageDirectory")
     
     def set_floppydir(self, path):
         return self.set("[Floppy]", "szDiskImageDirectory", path)
 
-    # ------------ floppy disk images ---------------
     def get_floppy(self, drive):
         return self.get("[Floppy]", "szDisk%cFileName" % ("A", "B")[drive])
     
@@ -520,13 +536,37 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Floppy]", "szDisk%cFileName" %  ("A", "B")[drive], filename)
         self._change_option("--disk-%c" % ("a", "b")[drive], str(filename))
 
-    # ------------ fast FDC access ---------------
+    def get_floppy_drives(self):
+        return (self.get("[Floppy]", "EnableDriveA"), self.get("[Floppy]", "EnableDriveB"))
+
+    def set_floppy_drives(self, drives):
+        idx = 0
+        for drive in ("A", "B"):
+            value = drives[idx]
+            self.set("[Floppy]", "EnableDrive%c" % drive, value)
+            self._change_option("--drive-%c %s" % (drive.lower(), str(value)))
+            idx += 1
+
     def get_fastfdc(self):
         return self.get("[Floppy]", "FastFloppy")
 
     def set_fastfdc(self, value):
         self.set("[Floppy]", "FastFloppy", value)
         self._change_option("--fastfdc %s" % str(value))
+
+    def get_doublesided(self):
+        driveA = self.get("[Floppy]", "DriveA_NumberOfHeads")
+        driveB = self.get("[Floppy]", "DriveB_NumberOfHeads")
+        if driveA > 1 or driveB > 1:
+            return True
+        return False
+    
+    def set_doublesided(self, value):
+        if value: sides = 2
+        else:     sides = 1
+        for drive in ("A", "B"):
+            self.set("[Floppy]", "Drive%c_NumberOfHeads" % drive, sides)
+            self._change_option("--drive-%c-heads %d" % (drive.lower(), sides))
 
     # ------------- disk protection -------------
     def get_protection_types(self):
@@ -546,7 +586,18 @@ class HatariConfigMapping(ConfigStore):
         self.set("[HardDisk]", "nWriteProtection", value)
         self._change_option("--protect-hd %s" % self.get_protection_types()[value])
 
-    # ------------ GEMDOS HD (dir) ---------------
+    # ------------ GEMDOS HD (dir) emulation ---------------
+    def get_hd_cases(self):
+        return ("No conversion", "Upper case", "Lower case")
+
+    def get_hd_case(self):
+        return self.get("[HardDisk]", "nGemdosCase")
+
+    def set_hd_case(self, value):
+        values = ("off", "upper", "lower")
+        self.set("[HardDisk]", "nGemdosCase", value)
+        self._change_option("--gemdos-case %s" % values[value])
+
     def get_gemdos_dir(self):
         self.get("[HardDisk]", "bUseHardDiskDirectory") # for validation
         return self.get("[HardDisk]", "szHardDiskDirectory")
@@ -653,6 +704,14 @@ class HatariConfigMapping(ConfigStore):
         value = int(value) # guarantee correct type
         self.set("[Screen]", "nFrameSkips", value)
         self._change_option("--frameskips %d" % value)
+
+    # ------------ VBL slowdown ---------------
+    def get_slowdown_names(self):
+        return ("Disabled", "2x", "3x", "4x", "5x", "6x", "8x")
+    
+    def set_slowdown(self, value):
+        value = 1 + int(value)
+        self._change_option("--slowdown %d" % value)
 
     # ------------ spec512 ---------------
     def get_spec512threshold(self):

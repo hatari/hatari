@@ -34,7 +34,7 @@ import gobject
 class UInfo:
     """singleton constants for the UI windows,
     one instance is needed to initialize these properly"""
-    version = "v1.1"
+    version = "v1.2"
     name = "Hatari UI"
     logo = "hatari.png"
     icon = "hatari-icon.png"

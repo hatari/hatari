@@ -283,7 +283,7 @@ class FloppyDialog(HatariUIDialog):
         self.floppy = []
         path = config.get_floppydir()
         for drive in ("A", "B"):
-            label = "Disk %c:" % drive
+            label = "Disk %c image:" % drive
             fname = config.get_floppy(row)
             fsel, box = factory.get(label, path, fname, gtk.FILE_CHOOSER_ACTION_OPEN)
             table_add_widget_row(table, row, label, box)
@@ -296,8 +296,20 @@ class FloppyDialog(HatariUIDialog):
         protect.set_active(config.get_floppy_protection())
         protect.set_tooltip_text("Write protect floppy image contents")
         table_add_widget_row(table, row, "Write protection:", protect)
-
         row += 1
+
+        ds = gtk.CheckButton("Double sided drives")
+        ds.set_active(config.get_doublesided())
+        ds.set_tooltip_text("Whether drives are double or single sided. Can affect behavior of some games")
+        table_add_widget_row(table, row, None, ds)
+        row += 1
+        
+        driveb = gtk.CheckButton("Drive B connected")
+        driveb.set_active(config.get_floppy_drives()[1])
+        driveb.set_tooltip_text("Wheter drive B is connected. Can affect behavior of some demos & games")
+        table_add_widget_row(table, row, None, driveb)
+        row += 1
+
         fastfdc = gtk.CheckButton("Fast floppy access")
         fastfdc.set_active(config.get_fastfdc())
         fastfdc.set_tooltip_text("Can cause incompatibilities with some games/demos")
@@ -307,6 +319,8 @@ class FloppyDialog(HatariUIDialog):
 
         self.protect = protect
         self.fastfdc = fastfdc
+        self.driveb = driveb
+        self.ds = ds
     
     def run(self, config):
         "run(config), show disk image dialog"
@@ -320,7 +334,10 @@ class FloppyDialog(HatariUIDialog):
             for drive in range(2):
                 config.set_floppy(drive, self.floppy[drive].get_filename())
             config.set_floppy_protection(self.protect.get_active())
+            config.set_doublesided(self.ds.get_active())
             config.set_fastfdc(self.fastfdc.get_active())
+            drives = (config.get_floppy_drives()[0], self.driveb.get_active())
+            config.set_floppy_drives(drives)
             config.flush_updates()
 
 
@@ -364,9 +381,17 @@ class HardDiskDialog(HatariUIDialog):
         protect = gtk.combo_box_new_text()
         for text in config.get_protection_types():
             protect.append_text(text)
-        protect.set_tooltip_text("Write protect GEMDOS drive contents")
+        protect.set_tooltip_text("Whether/how to write protect (GEMDOS HD) emulation files, 'auto' means using host files' own properties")
         table_add_widget_row(table, row, "Write protection:", protect)
         self.protect = protect
+        row += 1
+        
+        lower = gtk.combo_box_new_text()
+        for text in config.get_hd_cases():
+            lower.append_text(text)
+        lower.set_tooltip_text("What to do with names of files created by Atari programs through GEMDOS HD emulation")
+        table_add_widget_row(table, row, "File names:", lower)
+        self.lower = lower
 
         table.show_all()
     
@@ -384,7 +409,8 @@ class HardDiskDialog(HatariUIDialog):
         if path:
             self.ideslave.set_filename(path)
         self.protect.set_active(config.get_hd_protection())
-        
+        self.lower.set_active(config.get_hd_case())
+
     def _set_config(self, config):
         config.lock_updates()
         config.set_gemdos_dir(self.gemdos.get_filename())
@@ -392,6 +418,7 @@ class HardDiskDialog(HatariUIDialog):
         config.set_idemaster_image(self.idemaster.get_filename())
         config.set_ideslave_image(self.ideslave.get_filename())
         config.set_hd_protection(self.protect.get_active())
+        config.set_hd_case(self.lower.get_active())
         config.flush_updates()
 
     def run(self, config):
@@ -419,7 +446,13 @@ class DisplayDialog(HatariUIDialog):
         for text in config.get_frameskip_names():
             skip.append_text(text)
         skip.set_active(config.get_frameskip())
-        skip.set_tooltip_text("Set how many frames are skipped")
+        skip.set_tooltip_text("Set how many frames are skipped to speed up emulation")
+
+        slow = gtk.combo_box_new_text()
+        for text in config.get_slowdown_names():
+            slow.append_text(text)
+        slow.set_active(0)
+        slow.set_tooltip_text("VBL wait multiplier to slow down emulation. Breaks sound and large enough slowdown causes mouse clicks not to work.")
 
         maxw, maxh = config.get_max_size()
         topw, toph = config.get_desktop_size()
@@ -465,8 +498,6 @@ class DisplayDialog(HatariUIDialog):
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
 
-        dialog.vbox.add(gtk.Label("Frameskip:"))
-        dialog.vbox.add(skip)
         dialog.vbox.add(gtk.Label("Max zoomed size:"))
         dialog.vbox.add(scalew)
         dialog.vbox.add(scaleh)
@@ -474,6 +505,10 @@ class DisplayDialog(HatariUIDialog):
         dialog.vbox.add(desktop)
         dialog.vbox.add(desktop_st)
         dialog.vbox.add(borders)
+        dialog.vbox.add(gtk.Label("Frameskip:"))
+        dialog.vbox.add(skip)
+        dialog.vbox.add(gtk.Label("Slowdown:"))
+        dialog.vbox.add(slow)
         dialog.vbox.add(statusbar)
         dialog.vbox.add(led)
         dialog.vbox.add(crop)
@@ -481,6 +516,7 @@ class DisplayDialog(HatariUIDialog):
 
         self.dialog = dialog
         self.skip = skip
+        self.slow = slow
         self.maxw = maxadjw
         self.maxh = maxadjh
         self.force_max = force_max
@@ -500,6 +536,7 @@ class DisplayDialog(HatariUIDialog):
         if response == gtk.RESPONSE_APPLY:
             config.lock_updates()
             config.set_frameskip(self.skip.get_active())
+            config.set_slowdown(self.slow.get_active())
             config.set_max_size(self.maxw.get_value(), self.maxh.get_value())
             config.set_force_max(self.force_max.get_active())
             config.set_desktop(self.desktop.get_active())
@@ -652,6 +689,16 @@ class SoundDialog(HatariUIDialog):
         ymmixer.set_active(config.get_ymmixer())
         self.ymmixer = ymmixer
 
+        adj = gtk.Adjustment(config.get_bufsize(), 0, 110, 10, 10, 10)
+        bufsize = gtk.HScale(adj)
+        bufsize.set_digits(0)
+        bufsize.set_tooltip_text("0 = use default value. In some situations, SDL default may cause large (~0.5s) sound delay at lower frequency.  If you have this problem, try with e.g. 20 ms, otherwise keep at 0.")
+        self.bufsize = bufsize
+
+        self.sync = gtk.CheckButton("Emulation speed synched to sound output")
+        self.sync.set_tooltip_text("Constantly adjust emulation screen update rate to match sound output. Can help if you suffer from sound buffer under/overflow.")
+        self.sync.set_active(config.get_sync())
+
         self.mic = gtk.CheckButton("Enable (Falcon) microphone")
         self.mic.set_active(config.get_mic())
 
@@ -664,6 +711,9 @@ class SoundDialog(HatariUIDialog):
         dialog.vbox.add(hz)
         dialog.vbox.add(gtk.Label("YM voices mixing method:"))
         dialog.vbox.add(ymmixer)
+        dialog.vbox.add(gtk.Label("SDL sound buffer size (ms):"))
+        dialog.vbox.add(bufsize)
+        dialog.vbox.add(self.sync)
         dialog.vbox.add(self.mic)
         dialog.vbox.show_all()
         self.dialog = dialog
@@ -677,6 +727,8 @@ class SoundDialog(HatariUIDialog):
         if response == gtk.RESPONSE_APPLY:
             config.lock_updates()
             config.set_mic(self.mic.get_active())
+            config.set_sync(self.sync.get_active())
+            config.set_bufsize(self.bufsize.get_value())
             config.set_ymmixer(self.ymmixer.get_active())
             enabled = self.enabled.get_active()
             hz = self.hz.get_active()
@@ -736,7 +788,9 @@ class TraceDialog(HatariUIDialog):
         "dsp_state",
         "dsp_symbols",
         "cpu_symbols",
-        "nvram"
+        "nvram",
+        "scsi_cmd",
+        "natfeats",
     ]
     def __init__(self, parent):
         self.savedpoints = None
@@ -877,6 +931,9 @@ class MachineDialog(HatariUIDialog):
         self.compatible = gtk.CheckButton("Compatible CPU")
         self.rtc = gtk.CheckButton("Real-time clock")
         self.timerd = gtk.CheckButton("Patch Timer-D")
+        self.compatible.set_tooltip_text("Needed for overscan and other timing sensitive things to work correctly")
+        self.rtc.set_tooltip_text("Some rare games and demos don't work with this")
+        self.timerd.set_tooltip_text("Improves ST/STE emulation performance, but some rare demos/games don't work with this")
         vbox.add(self.compatible)
         vbox.add(self.timerd)
         vbox.add(self.rtc)
@@ -940,4 +997,3 @@ class MachineDialog(HatariUIDialog):
             self._set_config(config)
             return True
         return False
-

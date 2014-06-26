@@ -2,6 +2,13 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2014-06:
+- Add support for --sound-sync, --sound-buffer-size,
+  --slowdown, --gemdos-case, --drive-*-heads and
+  --drive-* option features and new tracepoints
+- Improved option names & descriptions
+- update UI version to 1.2
+
 2012-05:
 - Add --desktop-st and --force-max options support
   (latter helps video recording of Falcon demos
