@@ -2045,32 +2045,30 @@ static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count)
  */
 void Videl_ColorReg_WriteWord(void)
 {
-	if (!bUseHighRes && !bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
-	{
-		Uint16 col;
-		Uint32 addr;
-		addr = IoAccessCurrentAddress;
+	Uint16 col;
+	Uint32 addr = IoAccessCurrentAddress;
 
-		videl.hostColorsSync = false;
+	videl.hostColorsSync = false;
 
-		/* Note from laurent: The following special case should be verified on the real Falcon before uncommenting */
-		
-		/* Handle special case when writing only to the upper byte of the color reg */
-	//	if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 0 ) )
-	//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy upper byte into lower byte */
-		/* Same when writing only to the lower byte of the color reg */
-	//	else if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 1 ) )
-	//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy lower byte into upper byte */
-		/* Usual case, writing a word or a long (2 words) */
-	//	else
-			col = IoMem_ReadWord(addr);
+	if (bUseHighRes || bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
+		return;
 
-		col &= 0xfff;				/* Mask off to 4096 palette */
+	/* Note from laurent: The following special case should be verified on the real Falcon before uncommenting */
+	/* Handle special case when writing only to the upper byte of the color reg */
+//	if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 0 ) )
+//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy upper byte into lower byte */
+	/* Same when writing only to the lower byte of the color reg */
+//	else if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 1 ) )
+//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy lower byte into upper byte */
+	/* Usual case, writing a word or a long (2 words) */
+//	else
+		col = IoMem_ReadWord(addr);
 
-		addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
-			
-		IoMem_WriteWord(addr, col);
-	}
+	col &= 0xfff;				/* Mask off to 4096 palette */
+
+	addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
+
+	IoMem_WriteWord(addr, col);
 }
 
 /*
