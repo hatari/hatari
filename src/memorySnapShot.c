@@ -280,6 +280,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		Configuration_MemorySnapShot_Capture(true);
 		TOS_MemorySnapShot_Capture(true);
 		STMemory_MemorySnapShot_Capture(true);
+		Cycles_MemorySnapShot_Capture(true);			/* Before fdc (for CyclesGlobalClockCounter) */
 		FDC_MemorySnapShot_Capture(true);
 		Floppy_MemorySnapShot_Capture(true);
 		IPF_MemorySnapShot_Capture(true);			/* After fdc/floppy are saved */
@@ -288,7 +289,6 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		ACIA_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
 		CycInt_MemorySnapShot_Capture(true);
-		Cycles_MemorySnapShot_Capture(true);
 		M68000_MemorySnapShot_Capture(true);
 		MFP_MemorySnapShot_Capture(true);
 		PSG_MemorySnapShot_Capture(true);
@@ -335,6 +335,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 
 		/* Capture each files details */
 		STMemory_MemorySnapShot_Capture(false);
+		Cycles_MemorySnapShot_Capture(false);			/* Before fdc (for CyclesGlobalClockCounter) */
 		FDC_MemorySnapShot_Capture(false);
 		Floppy_MemorySnapShot_Capture(false);
 		IPF_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as IPF depends on them */
@@ -343,7 +344,6 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		ACIA_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */
 		CycInt_MemorySnapShot_Capture(false);
-		Cycles_MemorySnapShot_Capture(false);
 		M68000_MemorySnapShot_Capture(false);
 		MFP_MemorySnapShot_Capture(false);
 		PSG_MemorySnapShot_Capture(false);
