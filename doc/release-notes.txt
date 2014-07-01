@@ -41,7 +41,7 @@ Emulation:
   - Add support for IPF/CTR files by using the capsimage library
   - Add open source support for Pasti STX files, including random/fuzzy bits
     and variable length bits. Also allow to save writes to a .stx file
-    into an additional .wd1772 file
+    into an additional .wd1772 file (store 'write sector' and 'write track' data)
   - Don't force drives A and B at $4c2, keep the values detected by TOS
   - Many other timing / status register improvements
 - GEMDOS HD emulation:
