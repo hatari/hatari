@@ -573,6 +573,7 @@ static int	FDC_UpdateReadSectorsCmd ( void );
 static int	FDC_UpdateWriteSectorsCmd ( void );
 static int	FDC_UpdateReadAddressCmd ( void );
 static int	FDC_UpdateReadTrackCmd ( void );
+static int	FDC_UpdateWriteTrackCmd ( void );
 
 static bool	FDC_Set_MotorON ( Uint8 FDC_CR );
 static int	FDC_TypeI_Restore ( void );
@@ -608,6 +609,7 @@ static Uint8	FDC_ReadSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint
 static Uint8	FDC_WriteSector_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize );
 static Uint8	FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 static Uint8	FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side );
+static Uint8	FDC_WriteTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize );
 
 
 /*-----------------------------------------------------------------------*/
@@ -1751,6 +1753,10 @@ void FDC_InterruptHandler_Update ( void )
 
 			case FDCEMU_CMD_READTRACK:
 				FdcCycles = FDC_UpdateReadTrackCmd();
+				break;
+
+			case FDCEMU_CMD_WRITETRACK:
+				FdcCycles = FDC_UpdateWriteTrackCmd();
 				break;
 
 			case FDCEMU_CMD_MOTOR_STOP:
@@ -2975,6 +2981,118 @@ static int FDC_UpdateReadTrackCmd ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Run 'WRITE TRACK' command
+ */
+static int FDC_UpdateWriteTrackCmd ( void )
+{
+	int	FdcCycles = 0;
+	int	FrameCycles, HblCounterVideo, LineCycles;
+	Uint8	Byte;
+	Uint8	Status;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	
+	/* Which command is running? */
+	switch (FDC.CommandState)
+	{
+	 case FDCEMU_RUN_WRITETRACK:
+		if ( FDC_Set_MotorON ( FDC.CR ) )
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITETRACK_SPIN_UP;
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Spin up needed */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITETRACK_HEAD_LOAD;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;		/* No spin up needed */
+		}
+		break;
+	 case FDCEMU_RUN_WRITETRACK_SPIN_UP:
+		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_SPIN_UP )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
+			break;
+		}
+		/* If IndexPulse_Counter reached, we go directly to the _HEAD_LOAD state */
+	 case FDCEMU_RUN_WRITETRACK_HEAD_LOAD:
+		FDC.ReplaceCommandPossible = false;
+		if ( FDC.CR & FDC_COMMAND_BIT_HEAD_LOAD )
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITETRACK_MOTOR_ON;
+			FdcCycles = FDC_DelayToFdcCycles ( FDC_DELAY_US_HEAD_LOAD );	/* Head settle delay */
+			break;
+		}
+		/* If there's no head settle, we go directly to the _MOTOR_ON state */
+	 case FDCEMU_RUN_WRITETRACK_MOTOR_ON:
+		FdcCycles = FDC_NextIndexPulse_FdcCycles ();		/* Wait for the next index pulse */
+//fprintf ( stderr , "write tr idx=%d %d\n" , FDC_IndexPulse_GetState() , FdcCycles );
+		if ( FdcCycles < 0 )
+		{
+			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
+		}
+		else
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITETRACK_INDEX;
+		}
+		break;
+	 case FDCEMU_RUN_WRITETRACK_INDEX:
+		/* At this point, we have a valid drive/floppy, check write protection and write the track data */
+		if ( Floppy_IsWriteProtected ( FDC.DriveSelSignal ) )
+		{
+			LOG_TRACE(TRACE_FDC, "fdc type III write track drive=%d track=0x%x side=%d WPRT VBL=%d video_cyc=%d %d@%d pc=%x\n",
+				  FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
+
+			FDC_Update_STR ( 0 , FDC_STR_BIT_WPRT );	/* Set WPRT bit */
+			FdcCycles = FDC_CmdCompleteCommon( true );
+			break;
+		}
+
+		FDC_Update_STR ( FDC_STR_BIT_WPRT , 0 );		/* Unset WPRT bit */
+
+		FDC_Buffer_Reset();
+		FDC_DMA.BytesToTransfer = FDC_GetBytesPerTrack ( FDC.DriveSelSignal );
+
+		FDC.CommandState = FDCEMU_RUN_WRITETRACK_TRANSFER_LOOP;
+		FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		break;
+	 case FDCEMU_RUN_WRITETRACK_TRANSFER_LOOP:
+		/* Transfer the track 1 byte at a time using DMA */
+		if ( FDC_DMA.BytesToTransfer-- > 0 )
+		{
+			Byte = FDC_DMA_FIFO_Pull ();			/* Get 1 byte from the DMA FIFO */
+//fprintf ( stderr , "byte %d %x\n" , FDC_DMA.BytesToTransfer , Byte );
+			FDC_Buffer_Add ( Byte );
+			FdcCycles = FDC_TransferByte_FdcCycles ( 1 );
+		}
+		else							/* Track written */
+		{
+			FDC.CommandState = FDCEMU_RUN_WRITETRACK_COMPLETE;
+			FdcCycles = FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
+		}
+		break;
+	 case FDCEMU_RUN_WRITETRACK_COMPLETE:
+		/* Track completely transferred */
+		/* This is where we save the buffer to the disk image */
+		if ( EmulationDrives[ FDC.DriveSelSignal ].ImageType == FLOPPY_IMAGE_TYPE_STX )
+			Status = FDC_WriteTrack_STX ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SideSignal , FDC_Buffer_Get_Size () );
+		else
+			Status = FDC_WriteTrack_ST ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ,
+				FDC.SideSignal , FDC_Buffer_Get_Size () );
+
+		if ( Status & FDC_STR_BIT_LOST_DATA )			/* Error while writing */
+			FDC_Update_STR ( 0 , FDC_STR_BIT_LOST_DATA );	/* Set LOST_DATA bit */
+
+		FdcCycles = FDC_CmdCompleteCommon( true );
+		break;
+	}
+
+	return FdcCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Common to types I, II and III
  *
  * Start motor / spin up sequence if needed
@@ -3164,7 +3282,6 @@ static int FDC_TypeI_StepOut ( void )
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeII_ReadSector ( void )
 {
-	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -3184,14 +3301,13 @@ static int FDC_TypeII_ReadSector ( void )
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_CYCLE_TYPE_II_PREPARE + FdcCycles;
+	return FDC_DELAY_CYCLE_TYPE_II_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeII_WriteSector ( void )
 {
-	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -3211,7 +3327,7 @@ static int FDC_TypeII_WriteSector ( void )
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_CYCLE_TYPE_II_PREPARE + FdcCycles;
+	return FDC_DELAY_CYCLE_TYPE_II_PREPARE;
 }
 
 
@@ -3226,7 +3342,6 @@ static int FDC_TypeII_WriteSector ( void )
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeIII_ReadAddress ( void )
 {
-	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -3245,14 +3360,13 @@ static int FDC_TypeIII_ReadAddress ( void )
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_CYCLE_TYPE_III_PREPARE + FdcCycles;
+	return FDC_DELAY_CYCLE_TYPE_III_PREPARE;
 }
 
 
 /*-----------------------------------------------------------------------*/
 static int FDC_TypeIII_ReadTrack ( void )
 {
-	int	FdcCycles = 0;
 	int	FrameCycles, HblCounterVideo, LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
@@ -3271,7 +3385,7 @@ static int FDC_TypeIII_ReadTrack ( void )
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
-	return FDC_DELAY_CYCLE_TYPE_III_PREPARE + FdcCycles;
+	return FDC_DELAY_CYCLE_TYPE_III_PREPARE;
 }
 
 
@@ -3289,14 +3403,12 @@ static int FDC_TypeIII_WriteTrack ( void )
 		  FDC.SideSignal , FDC.DriveSelSignal , FDC_GetDMAAddress(),
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
-	Log_Printf(LOG_TODO, "FDC type III command 'write track' does not work yet!\n");
-
-	/* FIXME: "Write track" should write all the sectors after extracting them from the track data */
-
 	/* Set emulation to write a single track */
-	FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );				/* FIXME : Not supported yet, set RNF bit */
-	FDC.Command = FDCEMU_CMD_NULL;
-	FDC.CommandState = FDCEMU_RUN_NULL;
+	FDC.Command = FDCEMU_CMD_WRITETRACK;
+	FDC.CommandState = FDCEMU_RUN_WRITETRACK;
+
+	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
+		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
 
 	return FDC_DELAY_CYCLE_TYPE_III_PREPARE;
 }
@@ -4369,6 +4481,34 @@ static Uint8 FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	      FDC_Buffer_Add ( 0x4e );					/* GAP5 */
 
 	return 0;							/* No error */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write a track to a floppy image in ST format (used in type III command)
+ * Bytes were added to the FDC Buffer with a default timing (32 microsec) ;
+ * we copy only the bytes into a temporary buffer, and write this buffer
+ * to the floppy image.
+ * If DMASectorsCount==0, the DMA won't transfer any byte from RAM to the FDC
+ * and some '0' bytes will be written to the disk.
+ * Return 0 if track was written without error, or FDC_STR_BIT_LOST_DATA if an error occurred
+ *
+ * TODO : this is not supported for ST/MSA at the moment, so we return FDC_STR_BIT_LOST_DATA
+ */
+static Uint8 FDC_WriteTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize )
+{
+	int	FrameCycles, HblCounterVideo, LineCycles;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+	LOG_TRACE(TRACE_FDC, "fdc write track not supported addr=0x%x drive=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
+		FDC_GetDMAAddress(), Drive, Track, Side,
+		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
+
+	/* Failed */
+	LOG_TRACE(TRACE_FDC, "fdc write track failed\n" );
+	return FDC_STR_BIT_LOST_DATA;
 }
 
 

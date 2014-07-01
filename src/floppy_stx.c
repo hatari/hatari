@@ -1070,6 +1070,8 @@ STX_MAIN_STRUCT	*STX_BuildStruct ( Uint8 *pFileBuffer , int Debug )
 		pStxTrack->TrackNumber		=	*p++;
 		pStxTrack->RecordType		=	*p++;
 
+		pStxTrack->SaveTrackIndex = -1;
+
 		if ( pStxTrack->SectorsCount == 0 )			/* No sector (track image only, or empty / non formatted track) */
 		{
 			pStxTrack->pSectorsStruct = NULL;
@@ -1687,18 +1689,16 @@ extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
  * Write a sector to a floppy image in STX format (used in type II command)
  *
  * STX format doesn't support write command. For each 'write sector' we
- * store the sector data in a dedicated buffer STX_SaveSectorBuffer.
- * When the sector is read later, we return the data from STX_SaveSectorBuffer
+ * store the sector data in a dedicated buffer STX_SaveStruct[].pSaveSectorsStruct.
+ * When the sector is read later, we return the data from STX_SaveStruct[].pSaveSectorsStruct
  * instead of returning the data from the original STX file.
  *
  * We only allow writing for sectors whose ID field has a correct CRC and
  * where RNF is not set.
  * Any valid size can be written : 128, 256, 512 or 1024 bytes
  *
- * NOTE : as a limitation, data are only stored in RAM, not saved in a file
- * with the .STX file. This means that any write will be lost when exiting
- * Hatari or ejecting the floppy.
- * Data are kept in memory snapshot though.
+ * NOTE : data will saved in memory snapshot, as well as in an additional
+ * file with the extension .wd1772.
  *
  * Return RNF if sector was not found or CRC if ID field has a CRC error.
  * Return 0 if OK.
@@ -1999,6 +1999,118 @@ extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	}
 
 	return 0;							/* No error */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write a track to a floppy image in STX format (used in type III command)
+ *
+ * STX format doesn't support write command. For each 'write track' we
+ * store the track data in a dedicated buffer STX_SaveStruct[].pSaveTracksStruct.
+ * When the track is read later, we return the data from STX_SaveStruct[].pSaveTracksStruct
+ * instead of returning the data from the original STX file.
+ *
+ * NOTE : data will saved in memory snapshot, as well as in an additional
+ * file with the extension .wd1772.
+ *
+ * Return 0 if track was written without error, or LOST_DATA if an error occurred
+ */
+extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize )
+{
+	STX_TRACK_STRUCT	*pStxTrack;
+	int			i;
+	Uint8			*pTrack_DataWrite;
+	void			*pNewBuf;
+	STX_SAVE_TRACK_STRUCT	*pStxSaveTrack;
+
+	pStxTrack = STX_FindTrack ( Drive , Track , Side );
+	if ( pStxTrack == NULL )
+	{
+		fprintf ( stderr , "FDC_WriteTrack_STX drive=%d track=%d side=%d returns null !\n" ,
+				Drive , Track , Side );
+		return STX_SECTOR_FLAG_LOST_DATA;
+	}
+
+	/* Check if this track was already changed by a 'write track' command */
+	/* If so, we use the same structure. Else we alloc a new structure for this track */
+	if ( pStxTrack->SaveTrackIndex < 0 )
+	{
+//fprintf ( stderr , "realloc\n" );
+		/* Increase save buffer by 1 */
+		pNewBuf = realloc ( STX_SaveStruct[ Drive ].pSaveTracksStruct ,
+				    ( STX_SaveStruct[ Drive ].SaveTracksCount + 1 ) * sizeof ( STX_SAVE_TRACK_STRUCT ) );
+		if ( pNewBuf == NULL )
+		{
+			fprintf ( stderr , "FDC_WriteTrack_STX drive=%d track=%d side=%d realloc error !\n" ,
+					Drive , Track , Side );
+			return STX_SECTOR_FLAG_LOST_DATA;
+		}
+
+		/* Save the new buffer values */
+		STX_SaveStruct[ Drive ].pSaveTracksStruct = (STX_SAVE_TRACK_STRUCT *) pNewBuf;;
+		STX_SaveStruct[ Drive ].SaveTracksCount++;
+
+		pStxTrack->SaveTrackIndex = STX_SaveStruct[ Drive ].SaveTracksCount - 1;
+	}
+
+	/* Use the same structure : free previous DataWrite buffer */
+	else
+	{
+		free ( STX_SaveStruct[ Drive ].pSaveTracksStruct[ pStxTrack->SaveTrackIndex ].pDataWrite );
+		STX_SaveStruct[ Drive ].pSaveTracksStruct[ pStxTrack->SaveTrackIndex ].pDataWrite = NULL;
+	}
+		
+	/* Create the new DataWrite buffer in pSaveTracksStruct */
+	pNewBuf = malloc ( TrackSize );
+	if ( pNewBuf == NULL )
+	{
+		fprintf ( stderr , "FDC_WriteTrack_STX drive=%d track=%d side=%d malloc error !\n" ,
+				Drive , Track , Side );
+		return STX_SECTOR_FLAG_LOST_DATA;
+	}
+
+	/* Fill the new SaveTrackStruct */
+	pStxSaveTrack = &STX_SaveStruct[ Drive ].pSaveTracksStruct[ pStxTrack->SaveTrackIndex ];
+
+	pStxSaveTrack->Track = Track;
+	pStxSaveTrack->Side = Side;
+
+	pStxSaveTrack->TrackSizeWrite = TrackSize;
+	pStxSaveTrack->pDataWrite = (Uint8 *) pNewBuf;
+
+
+	/* Get the track's data (ignore timings) */
+	pTrack_DataWrite = STX_SaveStruct[ Drive ].pSaveTracksStruct[ pStxTrack->SaveTrackIndex ].pDataWrite;
+
+	for ( i=0 ; i<pStxSaveTrack->TrackSizeWrite ; i++ )
+		pTrack_DataWrite[ i ] = FDC_Buffer_Read_Byte_pos ( i );
+
+//fprintf ( stderr , "write drive=%d track=%d side=%d size=%d index=%d\n", Drive, Track, Side, pStxSaveTrack->TrackSizeWrite , pStxTrack->SaveTrackIndex );
+//Str_Dump_Hex_Ascii ( (char *) pTrack_DataWrite, pStxSaveTrack->TrackSizeWrite, 16, "" , stderr );
+
+	// TODO : convert pDataWrite into pDataRead
+	pStxSaveTrack->TrackSizeRead = 0;	/* TODO : compute interpreted track */
+	pStxSaveTrack->pDataRead = NULL;	/* TODO : compute interpreted track */
+
+	
+	// TODO : free all saved sectors in that saved track
+
+
+	/* Warn that 'write track' data will be lost or saved (if zipped or not) */
+	if ( STX_State.ImageBuffer[ Drive ]->WarnedWriteTrack == false )
+	{
+		if ( File_DoesFileExtensionMatch ( EmulationDrives[ Drive ].sFileName , ".zip" ) )
+			Log_AlertDlg ( LOG_INFO , "WARNING : can't save changes made with 'write track' to an STX disk inside a zip file" );
+		else
+			Log_AlertDlg ( LOG_INFO , "Changes made with 'write track' to an STX disk will be saved into an additional .wd1772 file" );
+		STX_State.ImageBuffer[ Drive ]->WarnedWriteTrack = true;
+	}
+
+
+	/* No error */
+	EmulationDrives[Drive].bContentsChanged = true;
+	return 0;
 }
 
 

@@ -38,6 +38,7 @@ typedef struct {
 
 /* NOTE : bits 3,4,5 have the same meaning as in the FDC's Status register */
 #define	STX_SECTOR_FLAG_VARIABLE_TIME	(1<<0)			/* bit 0, if set, this sector has variable bit width */
+#define	STX_SECTOR_FLAG_LOST_DATA	(1<<3)			/* bit 3, if set, data were lost while reading/writing */
 #define	STX_SECTOR_FLAG_CRC		(1<<3)			/* bit 3, if set, there's a CRC error */
 #define	STX_SECTOR_FLAG_RNF		(1<<4)			/* bit 4, if set, there's no sector data */
 #define	STX_SECTOR_FLAG_RECORD_TYPE	(1<<5)			/* bit 5, if set, deleted data */
@@ -177,4 +178,5 @@ extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
 extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize );
 extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side );
 extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side );
+extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize );
 
