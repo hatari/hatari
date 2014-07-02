@@ -13,11 +13,15 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 #include <string.h>
 
 #include "main.h"
+#include "screen.h"
 #include "sdlgui.h"
 
 #include "font5x8.h"
 #include "font10x16.h"
 
+#if WITH_SDL2
+#define SDL_SRCCOLORKEY SDL_TRUE
+#endif
 
 static SDL_Surface *pSdlGuiScrn;            /* Pointer to the actual main SDL screen surface */
 static SDL_Surface *pSmallFontGfx = NULL;   /* The small font graphics */
@@ -78,7 +82,7 @@ static SDL_Surface *SDLGui_LoadXBM(int w, int h, const Uint8 *pXbmBits)
  */
 int SDLGui_Init(void)
 {
-	SDL_Color blackWhiteColors[2] = {{255, 255, 255, 0}, {0, 0, 0, 0}};
+	SDL_Color blackWhiteColors[2] = {{255, 255, 255, 255}, {0, 0, 0, 255}};
 
 	if (pSmallFontGfx && pBigFontGfx)
 	{
@@ -467,10 +471,12 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	SDL_Rect rect;
 	Uint32 grey, cursorCol;
 	SDL_Event event;
+#if !WITH_SDL2
 	int nOldUnicodeMode;
 
 	/* Enable unicode translation to get proper characters with SDL_PollEvent */
 	nOldUnicodeMode = SDL_EnableUNICODE(true);
+#endif
 
 	grey = SDL_MapRGB(pSdlGuiScrn->format, 192, 192, 192);
 	cursorCol = SDL_MapRGB(pSdlGuiScrn->format, 128, 128, 128);
@@ -479,6 +485,11 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	rect.y = (dlg[0].y + dlg[objnum].y) * sdlgui_fontheight;
 	rect.w = (dlg[objnum].w + 1) * sdlgui_fontwidth - 1;
 	rect.h = dlg[objnum].h * sdlgui_fontheight;
+
+#if WITH_SDL2
+	SDL_SetTextInputRect(&rect);
+	SDL_StartTextInput();
+#endif
 
 	txt = dlg[objnum].txt;
 	cursorPos = strlen(txt);
@@ -506,6 +517,17 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 				 case SDL_MOUSEBUTTONDOWN:          /* Mouse pressed -> stop editing */
 					bStopEditing = true;
 					break;
+#if WITH_SDL2
+				 case SDL_TEXTINPUT:
+					if (strlen(txt) < (size_t)dlg[objnum].w)
+					{
+						memmove(&txt[cursorPos+1], &txt[cursorPos],
+						        strlen(&txt[cursorPos])+1);
+ 						txt[cursorPos] = event.text.text[0];
+						cursorPos += 1;
+					}
+					break;
+#endif
 				 case SDL_KEYDOWN:                  /* Key pressed */
 					switch (event.key.keysym.sym)
 					{
@@ -533,6 +555,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 							memmove(&txt[cursorPos], &txt[cursorPos+1], strlen(&txt[cursorPos+1])+1);
 						break;
 					 default:
+#if !WITH_SDL2
 						/* If it is a "good" key then insert it into the text field */
 						if (event.key.keysym.unicode >= 32 && event.key.keysym.unicode < 128
 						        && event.key.keysym.unicode != PATHSEP)
@@ -544,6 +567,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 								cursorPos += 1;
 							}
 						}
+#endif
 						break;
 					}
 					break;
@@ -571,7 +595,11 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	}
 	while (!bStopEditing);
 
+#if WITH_SDL2
+	SDL_StopTextInput();
+#else
 	SDL_EnableUNICODE(nOldUnicodeMode);
+#endif
 }
 
 

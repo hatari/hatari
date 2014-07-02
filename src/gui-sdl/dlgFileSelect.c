@@ -310,7 +310,7 @@ static void DlgFileSelect_ManageScrollbar(void)
 		DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 	}
 
-	refreshentries = true;			
+	refreshentries = true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -322,13 +322,22 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 	int oldypos = ypos;
 	switch (pEvent->type)
 	{
+#if WITH_SDL2
+	 case SDL_MOUSEWHEEL:
+		if (pEvent->wheel.y>0)
+			DlgFileSelect_ScrollUp();
+		else if (pEvent->wheel.y<0)
+			DlgFileSelect_ScrollDown();
+		break;
+#else
 	 case SDL_MOUSEBUTTONDOWN:
 		if (pEvent->button.button == SDL_BUTTON_WHEELUP)
 			DlgFileSelect_ScrollUp();
 		else if (pEvent->button.button == SDL_BUTTON_WHEELDOWN)
 			DlgFileSelect_ScrollDown();
 		break;
-	 case SDL_KEYDOWN:		
+#endif
+	 case SDL_KEYDOWN:
 		switch (pEvent->key.keysym.sym)
 		{
 		 case SDLK_UP:
