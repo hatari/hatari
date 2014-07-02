@@ -96,6 +96,7 @@ Ins   Del
 
 */
 
+#if !WITH_SDL2
 
 /* SDL symbolic key to ST scan code mapping table */
 static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
@@ -318,6 +319,7 @@ static char LoadedKeyToSTScanCode[SDLK_LAST];
 /* This table is used to translate a symbolic keycode to the (SDL) scancode */
 static Uint8 SdlSymToSdlScan[SDLK_LAST];
 
+#endif
 
 /* List of ST scan codes to NOT de-bounce when running in maximum speed */
 static const char DebounceExtendedKeys[] =
@@ -338,12 +340,149 @@ static const char DebounceExtendedKeys[] =
  */
 void Keymap_Init(void)
 {
+#if !WITH_SDL2
 	memset(SdlSymToSdlScan, 0, sizeof(SdlSymToSdlScan));      /* Clear array */
 	Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
+#endif
 }
 
 
-/*-----------------------------------------------------------------------*/
+#if WITH_SDL2
+
+/**
+ * Remap SDL Key to ST Scan code - this is the version for SDL2
+ */
+static char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
+{
+	switch (pKeySym->scancode)
+	{
+	 case SDL_SCANCODE_A: return 0x1e;
+	 case SDL_SCANCODE_B: return 0x30;
+	 case SDL_SCANCODE_C: return 0x2e;
+	 case SDL_SCANCODE_D: return 0x20;
+	 case SDL_SCANCODE_E: return 0x12;
+	 case SDL_SCANCODE_F: return 0x21;
+	 case SDL_SCANCODE_G: return 0x22;
+	 case SDL_SCANCODE_H: return 0x23;
+	 case SDL_SCANCODE_I: return 0x17;
+	 case SDL_SCANCODE_J: return 0x24;
+	 case SDL_SCANCODE_K: return 0x25;
+	 case SDL_SCANCODE_L: return 0x26;
+	 case SDL_SCANCODE_M: return 0x32;
+	 case SDL_SCANCODE_N: return 0x31;
+	 case SDL_SCANCODE_O: return 0x18;
+	 case SDL_SCANCODE_P: return 0x19;
+	 case SDL_SCANCODE_Q: return 0x10;
+	 case SDL_SCANCODE_R: return 0x13;
+	 case SDL_SCANCODE_S: return 0x1f;
+	 case SDL_SCANCODE_T: return 0x14;
+	 case SDL_SCANCODE_U: return 0x16;
+	 case SDL_SCANCODE_V: return 0x2f;
+	 case SDL_SCANCODE_W: return 0x11;
+	 case SDL_SCANCODE_X: return 0x2d;
+	 case SDL_SCANCODE_Y: return 0x15;
+	 case SDL_SCANCODE_Z: return 0x2c;
+	 case SDL_SCANCODE_1: return 0x02;
+	 case SDL_SCANCODE_2: return 0x03;
+	 case SDL_SCANCODE_3: return 0x04;
+	 case SDL_SCANCODE_4: return 0x05;
+	 case SDL_SCANCODE_5: return 0x06;
+	 case SDL_SCANCODE_6: return 0x07;
+	 case SDL_SCANCODE_7: return 0x08;
+	 case SDL_SCANCODE_8: return 0x09;
+	 case SDL_SCANCODE_9: return 0x0a;
+	 case SDL_SCANCODE_0: return 0x0b;
+	 case SDL_SCANCODE_RETURN: return 0x1c;
+	 case SDL_SCANCODE_ESCAPE: return 0x01;
+	 case SDL_SCANCODE_BACKSPACE: return 0x0e;
+	 case SDL_SCANCODE_TAB: return 0x0f;
+	 case SDL_SCANCODE_SPACE: return 0x39;
+	 case SDL_SCANCODE_MINUS: return 0x0c;
+	 case SDL_SCANCODE_EQUALS: return 0x0d;
+	 case SDL_SCANCODE_LEFTBRACKET: return 0x1a;
+	 case SDL_SCANCODE_RIGHTBRACKET: return 0x1b;
+	 case SDL_SCANCODE_BACKSLASH: return 0x60;
+	 case SDL_SCANCODE_NONUSHASH: return 0x2b;
+	 case SDL_SCANCODE_SEMICOLON: return 0x27;
+	 case SDL_SCANCODE_APOSTROPHE: return 0x28;
+	 case SDL_SCANCODE_GRAVE: return 0x2b;      /* ok? */
+	 case SDL_SCANCODE_COMMA: return 0x33;
+	 case SDL_SCANCODE_PERIOD: return 0x34;
+	 case SDL_SCANCODE_SLASH: return 0x35;
+	 case SDL_SCANCODE_CAPSLOCK: return 0x3a;
+	 case SDL_SCANCODE_F1: return 0x3b;
+	 case SDL_SCANCODE_F2: return 0x3c;
+	 case SDL_SCANCODE_F3: return 0x3d;
+	 case SDL_SCANCODE_F4: return 0x3e;
+	 case SDL_SCANCODE_F5: return 0x3f;
+	 case SDL_SCANCODE_F6: return 0x40;
+	 case SDL_SCANCODE_F7: return 0x41;
+	 case SDL_SCANCODE_F8: return 0x42;
+	 case SDL_SCANCODE_F9: return 0x43;
+	 case SDL_SCANCODE_F10: return 0x44;
+	 case SDL_SCANCODE_PRINTSCREEN: return 0x62;
+	 case SDL_SCANCODE_SCROLLLOCK: return 0x61;
+	 case SDL_SCANCODE_PAUSE: return 0x61;
+	 case SDL_SCANCODE_INSERT: return 0x52;
+	 case SDL_SCANCODE_HOME: return 0x47;
+	 case SDL_SCANCODE_PAGEUP: return 0x62;
+	 case SDL_SCANCODE_DELETE: return 0x53;
+	 case SDL_SCANCODE_END: return 0x2b;
+	 case SDL_SCANCODE_PAGEDOWN: return 0x61;
+	 case SDL_SCANCODE_RIGHT: return 0x4d;
+	 case SDL_SCANCODE_LEFT: return 0x4b;
+	 case SDL_SCANCODE_DOWN: return 0x50;
+	 case SDL_SCANCODE_UP: return 0x48;
+	 case SDL_SCANCODE_NUMLOCKCLEAR: return 0x64;
+	 case SDL_SCANCODE_KP_DIVIDE: return 0x65;
+	 case SDL_SCANCODE_KP_MULTIPLY: return 0x66;
+	 case SDL_SCANCODE_KP_MINUS: return 0x4a;
+	 case SDL_SCANCODE_KP_PLUS: return 0x4e;
+	 case SDL_SCANCODE_KP_ENTER: return 0x72;
+	 case SDL_SCANCODE_KP_1: return 0x6d;
+	 case SDL_SCANCODE_KP_2: return 0x6e;
+	 case SDL_SCANCODE_KP_3: return 0x6f;
+	 case SDL_SCANCODE_KP_4: return 0x6a;
+	 case SDL_SCANCODE_KP_5: return 0x6b;
+	 case SDL_SCANCODE_KP_6: return 0x6c;
+	 case SDL_SCANCODE_KP_7: return 0x67;
+	 case SDL_SCANCODE_KP_8: return 0x68;
+	 case SDL_SCANCODE_KP_9: return 0x69;
+	 case SDL_SCANCODE_KP_0: return 0x70;
+	 case SDL_SCANCODE_KP_PERIOD: return 0x71;
+	 case SDL_SCANCODE_NONUSBACKSLASH: return 0x60;
+	 //case SDL_SCANCODE_APPLICATION: return ;
+	 case SDL_SCANCODE_KP_EQUALS: return 0x63;
+	 case SDL_SCANCODE_F13: return 0x63;
+	 case SDL_SCANCODE_F14: return 0x64;
+	 case SDL_SCANCODE_HELP: return 0x62;
+	 case SDL_SCANCODE_UNDO: return 0x61;
+	 case SDL_SCANCODE_KP_COMMA: return 0x71;
+	 case SDL_SCANCODE_CLEAR: return 0x47;
+	 case SDL_SCANCODE_RETURN2: return 0x1c;
+	 case SDL_SCANCODE_KP_LEFTPAREN: return 0x63;
+	 case SDL_SCANCODE_KP_RIGHTPAREN: return 0x64;
+	 case SDL_SCANCODE_KP_LEFTBRACE: return 0x63;
+	 case SDL_SCANCODE_KP_RIGHTBRACE: return 0x64;
+	 case SDL_SCANCODE_KP_TAB: return 0x0f;
+	 case SDL_SCANCODE_KP_BACKSPACE: return 0x0e;
+	 case SDL_SCANCODE_KP_COLON: return 0x33;
+	 case SDL_SCANCODE_KP_HASH: return 0x0c;
+	 case SDL_SCANCODE_KP_SPACE: return 0x39;
+	 case SDL_SCANCODE_KP_CLEAR: return 0x47;
+	 case SDL_SCANCODE_LCTRL: return 0x1d;
+	 case SDL_SCANCODE_LSHIFT: return 0x2a;
+	 case SDL_SCANCODE_LALT: return 0x38;
+	 case SDL_SCANCODE_RCTRL: return 0x1d;
+	 case SDL_SCANCODE_RSHIFT: return 0x36;
+	 default:
+		fprintf(stderr, "Warning: Unhandled scancode 0x%x!\n", pKeySym->scancode);
+		return -1;
+	}
+}
+
+#else
+
 /**
  * Heuristic analysis to find out the obscure scancode offset.
  * Some keys like 'z' can't be used for detection since they are on different
@@ -427,7 +566,6 @@ static int Keymap_FindScanCodeOffset(SDL_keysym* keysym)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Map PC scancode to ST scancode.
  * This code was heavily inspired by the emulator Aranym. (cheers!)
@@ -494,7 +632,6 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Remap a keypad key to ST scan code. We use a separate function for this
  * so that we can easily toggle between number and cursor mode with the
@@ -541,7 +678,6 @@ static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Remap SDL Key to ST Scan code
  */
@@ -585,6 +721,8 @@ static char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 		return SymbolicKeyToSTScanCode[pKeySym->sym];
 }
 
+#endif	/* WITH_SDL2 */
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -592,6 +730,9 @@ static char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
  */
 void Keymap_LoadRemapFile(char *pszFileName)
 {
+#if WITH_SDL2
+	fprintf(stderr,"Keymap_LoadRemapFile does not work with SDL2 yet!\n");
+#else
 	char szString[1024];
 	int STScanCode, PCKeyCode;
 	FILE *in;
@@ -638,6 +779,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
 	}
 	
 	fclose(in);
+#endif
 }
 
 

@@ -10,6 +10,16 @@
 
 #include <SDL_keyboard.h>
 
+#if WITH_SDL2
+#define SDLKey SDL_Keycode
+#define SDL_keysym SDL_Keysym
+#define KMOD_LMETA KMOD_LGUI
+#define KMOD_RMETA KMOD_RGUI
+#define SDLK_LMETA SDLK_LGUI
+#define SDLK_RMETA SDLK_RGUI
+#define SDLK_NUMLOCK SDLK_NUMLOCKCLEAR
+#endif
+
 extern void Keymap_Init(void);
 extern void Keymap_LoadRemapFile(char *pszFileName);
 extern void Keymap_DebounceAllKeys(void);
