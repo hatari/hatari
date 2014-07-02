@@ -101,8 +101,10 @@ static void	STX_WriteU32_BE ( Uint8 *p , Uint32 val );
 
 static void	STX_FreeStruct ( STX_MAIN_STRUCT *pStxMain );
 static void	STX_FreeSaveStruct ( int Drive );
-static void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , Uint32 SaveSectorsCount );
-static void	STX_FreeSaveTracksStruct ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct , Uint32 SaveTracksCount );
+static void	STX_FreeSaveSectorsStructAll ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , Uint32 SaveSectorsCount );
+static void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , int Nb );
+static void	STX_FreeSaveTracksStructAll ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct , Uint32 SaveTracksCount );
+static void	STX_FreeSaveTracksStruct ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct , int Nb );
 
 static void	STX_BuildSectorsSimple ( STX_TRACK_STRUCT *pStxTrack , Uint8 *p );
 static Uint16	STX_BuildSectorID_CRC ( STX_SECTOR_STRUCT *pStxSector );
@@ -939,14 +941,14 @@ static void	STX_FreeSaveStruct ( int Drive )
 {
 	if ( STX_SaveStruct[ Drive ].pSaveSectorsStruct )
 	{
-		STX_FreeSaveSectorsStruct ( STX_SaveStruct[ Drive ].pSaveSectorsStruct , STX_SaveStruct[ Drive ].SaveSectorsCount );
+		STX_FreeSaveSectorsStructAll ( STX_SaveStruct[ Drive ].pSaveSectorsStruct , STX_SaveStruct[ Drive ].SaveSectorsCount );
 		STX_SaveStruct[ Drive ].SaveSectorsCount = 0;
 		STX_SaveStruct[ Drive ].pSaveSectorsStruct = NULL;
 	}
 
 	if ( STX_SaveStruct[ Drive ].pSaveTracksStruct )
 	{
-		STX_FreeSaveTracksStruct ( STX_SaveStruct[ Drive ].pSaveTracksStruct , STX_SaveStruct[ Drive ].SaveTracksCount );
+		STX_FreeSaveTracksStructAll ( STX_SaveStruct[ Drive ].pSaveTracksStruct , STX_SaveStruct[ Drive ].SaveTracksCount );
 		STX_SaveStruct[ Drive ].SaveTracksCount = 0;
 		STX_SaveStruct[ Drive ].pSaveTracksStruct = NULL;
 	}
@@ -955,9 +957,9 @@ static void	STX_FreeSaveStruct ( int Drive )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Free all the memory allocated to store some STX_SAVE_SECTOR_STRUCT
+ * Free the memory allocated to store all the STX_SAVE_SECTOR_STRUCT
  */
-static void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , Uint32 SaveSectorsCount )
+static void	STX_FreeSaveSectorsStructAll ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , Uint32 SaveSectorsCount )
 {
 	Uint32	i;
 
@@ -966,11 +968,7 @@ static void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStru
 
 	for ( i = 0 ; i < SaveSectorsCount ; i++ )
 	{
-		if ( pSaveSectorsStruct[ i ].StructIsUsed == 0 )
-			continue;				/* This structure is already free */
-
-		if ( pSaveSectorsStruct[ i ].pData )
-			free ( pSaveSectorsStruct[ i ].pData );
+		STX_FreeSaveSectorsStruct ( pSaveSectorsStruct , i );
 	}
 
 	free ( pSaveSectorsStruct );
@@ -979,9 +977,25 @@ static void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStru
 
 /*-----------------------------------------------------------------------*/
 /**
- * Free all the memory allocated to store some STX_SAVE_TRACK_STRUCT
+ * Free the memory allocated to store one STX_SAVE_SECTOR_STRUCT
  */
-static void	STX_FreeSaveTracksStruct ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct , Uint32 SaveTracksCount )
+static void	STX_FreeSaveSectorsStruct ( STX_SAVE_SECTOR_STRUCT *pSaveSectorsStruct , int Nb )
+{
+	if ( pSaveSectorsStruct[ Nb ].StructIsUsed == 0 )
+		return;						/* This structure is already free */
+
+	if ( pSaveSectorsStruct[ Nb ].pData )
+		free ( pSaveSectorsStruct[ Nb ].pData );
+
+	pSaveSectorsStruct[ Nb ].StructIsUsed = 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Free the memory allocated to store all the STX_SAVE_TRACK_STRUCT
+ */
+static void	STX_FreeSaveTracksStructAll ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct , Uint32 SaveTracksCount )
 {
 	Uint32	i;
 
@@ -990,13 +1004,23 @@ static void	STX_FreeSaveTracksStruct ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct 
 
 	for ( i = 0 ; i < SaveTracksCount ; i++ )
 	{
-		if ( pSaveTracksStruct[ i ].pDataWrite )
-			free ( pSaveTracksStruct[ i ].pDataWrite );
-		if ( pSaveTracksStruct[ i ].pDataRead )
-			free ( pSaveTracksStruct[ i ].pDataRead );
+		STX_FreeSaveTracksStruct ( pSaveTracksStruct , i );
 	}
 
 	free ( pSaveTracksStruct );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Free the memory allocated to store one STX_SAVE_TRACK_STRUCT
+ */
+static void	STX_FreeSaveTracksStruct ( STX_SAVE_TRACK_STRUCT *pSaveTracksStruct , int Nb )
+{
+	if ( pSaveTracksStruct[ Nb ].pDataWrite )
+		free ( pSaveTracksStruct[ Nb ].pDataWrite );
+	if ( pSaveTracksStruct[ Nb ].pDataRead )
+		free ( pSaveTracksStruct[ Nb ].pDataRead );
 }
 
 
@@ -2023,6 +2047,7 @@ extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int T
 	Uint8			*pTrack_DataWrite;
 	void			*pNewBuf;
 	STX_SAVE_TRACK_STRUCT	*pStxSaveTrack;
+	int			Sector;
 
 	pStxTrack = STX_FindTrack ( Drive , Track , Side );
 	if ( pStxTrack == NULL )
@@ -2059,6 +2084,7 @@ extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int T
 	{
 		free ( STX_SaveStruct[ Drive ].pSaveTracksStruct[ pStxTrack->SaveTrackIndex ].pDataWrite );
 		STX_SaveStruct[ Drive ].pSaveTracksStruct[ pStxTrack->SaveTrackIndex ].pDataWrite = NULL;
+		/* TODO : also free pDataRead */
 	}
 		
 	/* Create the new DataWrite buffer in pSaveTracksStruct */
@@ -2094,7 +2120,17 @@ extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int T
 	pStxSaveTrack->pDataRead = NULL;	/* TODO : compute interpreted track */
 
 	
-	// TODO : free all saved sectors in that saved track
+	/* If some sectors were already saved for that track, we must remove them */
+	/* as the 'write track' takes precedence over the previous 'write sector' */
+	for ( Sector=0 ; Sector < pStxTrack->SectorsCount ; Sector++ )
+	{
+		if ( pStxTrack->pSectorsStruct[ Sector ].SaveSectorIndex >= 0 )
+		{
+			STX_FreeSaveSectorsStruct ( STX_SaveStruct[ Drive ].pSaveSectorsStruct ,
+					pStxTrack->pSectorsStruct[ Sector ].SaveSectorIndex );
+			pStxTrack->pSectorsStruct[ Sector ].SaveSectorIndex = -1;
+		}
+	}
 
 
 	/* Warn that 'write track' data will be lost or saved (if zipped or not) */
