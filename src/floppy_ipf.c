@@ -501,9 +501,9 @@ static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State )
 	LOG_TRACE(TRACE_FDC, "fdc ipf callback irq state=0x%x VBL=%d HBL=%d\n" , (int)State , nVBLs , nHBL );
 
 	if ( State )
-		FDC_SetIRQ();				/* IRQ bit was set */
+		FDC_SetIRQ ( FDC_IRQ_SOURCE_OTHER );	/* IRQ bit was set */
 	else
-		FDC_ClearIRQ();				/* IRQ bit was reset */
+		FDC_ClearIRQ ();			/* IRQ bit was reset */
 }
 #endif
 

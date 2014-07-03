@@ -38,13 +38,19 @@
 				+ 3 + 1 + 512 + 2 + FDC_TRACK_LAYOUT_STANDARD_GAP4 )
 
 
+#define	FDC_IRQ_SOURCE_COMPLETE			(1<<0)		/* IRQ set after completing a command */
+#define	FDC_IRQ_SOURCE_INDEX			(1<<1)		/* IRQ set when COND_IP is set and index is reached */
+#define	FDC_IRQ_SOURCE_FORCED			(1<<2)		/* IRQ was forced by a previous Dx command with COND_IMMEDIATE */
+#define	FDC_IRQ_SOURCE_HDC			(1<<3)		/* IRQ set by HDC */
+#define	FDC_IRQ_SOURCE_OTHER			(1<<4)		/* IRQ set by other parts (IPF) */
+
 
 extern void	FDC_MemorySnapShot_Capture ( bool bSave );
 extern void	FDC_Init ( void );
 extern void	FDC_Reset ( bool bCold );
 extern void	FDC_SetDMAStatus ( bool bError );
 
-extern void	FDC_SetIRQ ( void );
+extern void	FDC_SetIRQ ( Uint8 IRQ_Source );
 extern void	FDC_ClearIRQ ( void );
 extern void	FDC_InterruptHandler_Update ( void );
 

@@ -460,6 +460,8 @@ typedef struct {
 
 	Uint8		SideSignal;				/* Side 0 or 1 */
 	int		DriveSelSignal;				/* 0 or 1 for drive A or B ; or -1 if no drive selected */
+	Uint8		IRQ_Signal;				/* 0 if IRQ is not set, else value depends on the source of the IRQ */
+
 	/* Other variables */
 	int		Command;				/* FDC emulation command currently being executed */
 	int		CommandState;				/* Current state for the running command */
@@ -887,6 +889,7 @@ void FDC_Reset ( bool bCold )
 	FDC.CommandState = FDCEMU_RUN_NULL;
 	FDC.CommandType = 0;
 	FDC.InterruptCond = 0;
+	FDC.IRQ_Signal = 0;
 
 	FDC.IndexPulse_Counter = 0;
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
@@ -1527,7 +1530,7 @@ void	FDC_IndexPulse_Update ( void )
 		{
 			LOG_TRACE(TRACE_FDC, "fdc type IV force int on index, set irq VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 				nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
-			FDC_SetIRQ ();
+			FDC_SetIRQ ( FDC_IRQ_SOURCE_INDEX );
 		}
 	}
 }
@@ -1663,16 +1666,37 @@ int	FDC_NextIndexPulse_FdcCycles ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * Set the IRQ signal
- * This is called either on command completion, or when the "force interrupt"
- * command is used.
+ * This is called either on command completion, or when an index pulse
+ * is received or when the "force interrupt immediate" command is used.
  */
-void FDC_SetIRQ ( void )
+void FDC_SetIRQ ( Uint8 IRQ_Source )
 {
-	/* Acknowledge in MFP circuit, pass bit, enable, pending */
-	MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
-	MFP_GPIP &= ~0x20;
+	if ( FDC.IRQ_Signal != 0 )					/* Don't set MFP's IRQ again if already set */
+	{
+	  LOG_TRACE(TRACE_FDC, "fdc set irq, irq 0x%x already set VBL=%d HBL=%d\n" , FDC.IRQ_Signal , nVBLs , nHBL );
+	}
 
-	LOG_TRACE(TRACE_FDC, "fdc set irq VBL=%d HBL=%d\n" , nVBLs , nHBL );
+	else
+	{
+		/* Acknowledge in MFP circuit, pass bit, enable, pending */
+		MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
+		MFP_GPIP &= ~0x20;
+		LOG_TRACE(TRACE_FDC, "fdc set irq 0x%x source 0%x VBL=%d HBL=%d\n" , FDC.IRQ_Signal , IRQ_Source , nVBLs , nHBL );
+	}
+
+	/* If IRQ comes from HDC or other sources (IPF), we don't need */
+	/* to handle the forced IRQ case used in FDC */
+	if ( IRQ_Source == FDC_IRQ_SOURCE_HDC )
+		FDC.IRQ_Signal = FDC_IRQ_SOURCE_HDC;
+
+	else if ( IRQ_Source == FDC_IRQ_SOURCE_OTHER )
+		FDC.IRQ_Signal = FDC_IRQ_SOURCE_OTHER;
+
+	else								/* IRQ comes from FDC */
+	{
+		FDC.IRQ_Signal &= ~( FDC_IRQ_SOURCE_HDC | FDC_IRQ_SOURCE_OTHER );
+		FDC.IRQ_Signal |= IRQ_Source;
+	}
 }
 
 
@@ -1680,14 +1704,22 @@ void FDC_SetIRQ ( void )
 /**
  * Reset the IRQ signal ; in case the source of the interrupt is also
  * a "force interrupt immediate" command, the IRQ signal should not be cleared
- * (only command 0xD0 can clear the immediate condition)
+ * (only command 0xD0 or any new command followed by a read of status reg
+ * can clear the forced IRQ)
  */
 void FDC_ClearIRQ ( void )
 {
-	if ( ( FDC.InterruptCond & FDC_INTERRUPT_COND_IMMEDIATE ) == 0 )
+	if ( ( FDC.IRQ_Signal & FDC_IRQ_SOURCE_FORCED ) == 0 )
 	{
+		FDC.IRQ_Signal = 0;
 		MFP_GPIP |= 0x20;
 		LOG_TRACE(TRACE_FDC, "fdc clear irq VBL=%d HBL=%d\n" , nVBLs , nHBL );
+	}
+
+	else
+	{
+		FDC.IRQ_Signal &= FDC_IRQ_SOURCE_FORCED;		/* Clear all sources except 'forced irq' and keep IRQ set in MFP */
+		LOG_TRACE(TRACE_FDC, "fdc clear irq not done, irq forced VBL=%d HBL=%d\n" , nVBLs , nHBL );
 	}
 }
 
@@ -1825,7 +1857,7 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
 	FDC_Update_STR ( FDC_STR_BIT_BUSY , 0 );			/* Remove busy bit */
 
 	if ( DoInt )
-		FDC_SetIRQ ();
+		FDC_SetIRQ ( FDC_IRQ_SOURCE_COMPLETE );
 
 	FDC.Command = FDCEMU_CMD_MOTOR_STOP;				/* Fake command to stop the motor */
 	FDC.CommandState = FDCEMU_RUN_MOTOR_STOP;
@@ -3445,11 +3477,11 @@ static int FDC_TypeIV_ForceInterrupt ( void )
 	}
 
 	/* Get the interrupt's condition and set IRQ accordingly */
-	/* Most of the time a 0xD8 command is followed by a 0xD0 command to clear the IRQ signal */
+	/* Most of the time a 0xD8 command is followed by a 0xD0 command and a read STR to clear the IRQ signal */
 	FDC.InterruptCond = FDC.CR & 0x0f;				/* Keep the 4 lowest bits */
 
 	if ( FDC.InterruptCond & FDC_INTERRUPT_COND_IMMEDIATE )
-		FDC_SetIRQ ();
+		FDC_SetIRQ ( FDC_IRQ_SOURCE_FORCED );
 	else
 		FDC_ClearIRQ ();
 

@@ -957,7 +957,7 @@ static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 	if (AcsiBus.devs[AcsiBus.target].enabled)
 	{
 		FDC_SetDMAStatus(AcsiBus.bDmaError);	/* Mark DMA error */
-		FDC_SetIRQ();
+		FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
 	}
 	else
 	{
