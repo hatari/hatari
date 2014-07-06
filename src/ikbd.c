@@ -62,6 +62,10 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			can handle new bytes asynchronously using some interrupt while still processing	*/
 /*			another command. New RDR is discarded only if the input buffer is full.		*/
 /* 2013/01/13	[NP]	For hardware and software reset, share the common code in IKBD_Boot_ROM().	*/
+/* 2014/07/06	[NP]	Ignore command 0x13 IKBD_Cmd_StopKeyboardTransfer during ikbd's reset. This is	*/
+/*			required for the loader of 'Just Bugging' by ACF which sends 0x11 and 0x13 just	*/
+/*			after 0x80 0x01 (temporary fix, would need to be measured on a real STF to see	*/
+/*			if it's always ignored or just during a specific delay)				*/
 
 
 
@@ -2122,6 +2126,13 @@ static void IKBD_Cmd_TurnMouseOff(void)
  */
 static void IKBD_Cmd_StopKeyboardTransfer(void)
 {
+	if (bDuringResetCriticalTime)
+	{
+		/* Required for the loader of 'Just Bugging' by ACF */
+		LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StopKeyboardTransfer ignored during ikbd reset\n");
+		return;
+	}
+
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_StopKeyboardTransfer\n");
 	Keyboard.PauseOutput = true;
 }
