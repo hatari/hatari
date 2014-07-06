@@ -1668,6 +1668,8 @@ int	FDC_NextIndexPulse_FdcCycles ( void )
  * Set the IRQ signal
  * This is called either on command completion, or when an index pulse
  * is received or when the "force interrupt immediate" command is used.
+ * This function can also be called from the HDC emulation or from another
+ * FDC emulation module (IPF for example)
  */
 void FDC_SetIRQ ( Uint8 IRQ_Source )
 {
@@ -1681,7 +1683,7 @@ void FDC_SetIRQ ( Uint8 IRQ_Source )
 		/* Acknowledge in MFP circuit, pass bit, enable, pending */
 		MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
 		MFP_GPIP &= ~0x20;
-		LOG_TRACE(TRACE_FDC, "fdc set irq 0x%x source 0%x VBL=%d HBL=%d\n" , FDC.IRQ_Signal , IRQ_Source , nVBLs , nHBL );
+		LOG_TRACE(TRACE_FDC, "fdc set irq 0x%x source 0x%x VBL=%d HBL=%d\n" , FDC.IRQ_Signal , IRQ_Source , nVBLs , nHBL );
 	}
 
 	/* If IRQ comes from HDC or other sources (IPF), we don't need */
@@ -3502,7 +3504,6 @@ static int FDC_ExecuteTypeICommands ( void )
 
 	FDC.CommandType = 1;
 	FDC.StatusTypeI = true;
-	FDC_ClearIRQ ();
 
 	/* Check Type I Command */
 	switch ( FDC.CR & 0xf0 )
@@ -3541,7 +3542,6 @@ static int FDC_ExecuteTypeIICommands ( void )
 
 	FDC.CommandType = 2;
 	FDC.StatusTypeI = false;
-	FDC_ClearIRQ ();
 
 	/* Check Type II Command */
 	switch ( FDC.CR & 0xf0 )
@@ -3570,7 +3570,6 @@ static int FDC_ExecuteTypeIIICommands ( void )
 
 	FDC.CommandType = 3;
 	FDC.StatusTypeI = false;
-	FDC_ClearIRQ ();
 
 	/* Check Type III Command */
 	switch ( FDC.CR & 0xf0 )
@@ -3609,14 +3608,42 @@ static int FDC_ExecuteTypeIVCommands ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * Find FDC command type and execute
+ *
+ * NOTE [NP] : as verified on a real STF and contrary to what is written
+ * in the WD1772 doc, any new command will reset the InterruptCond set by
+ * a previous Dx command, not just a D0.
+ * This means that a D8 command (force int) can be cancelled by a D0 command
+ * or by any other command ; but in any case, IRQ will remain set until
+ * status register is read or another new command is started.
+ * -> 1st command clears force IRQ condition, 2nd command clears IRQ
  */
 static void FDC_ExecuteCommand ( void )
 {
 	int	FdcCycles;
 	Uint8	Type;
 
-	/* Check type of command and execute */
 	Type = FDC_GetCmdType ( FDC.CR );
+
+	/* When a new command is started, FDC's IRQ is reset (except if "force interrupt immediate" is set) */
+
+	/* If IRQ is forced but FDC_INTERRUPT_COND_IMMEDIATE is not set anymore, this means */
+	/* the D8 command was stopped and we can clear the forced IRQ when starting a new command */
+	if ( ( FDC.IRQ_Signal & FDC_IRQ_SOURCE_FORCED )
+	  && ( ( FDC.InterruptCond & FDC_INTERRUPT_COND_IMMEDIATE ) == 0 ) )
+		FDC.IRQ_Signal &= ~FDC_IRQ_SOURCE_FORCED;	/* Really stop the forced IRQ */
+
+	/* Starting a new type I/II/III should clear the IRQ (except when IRQ is forced) */
+	/* For type IV, this is handled in FDC_TypeIV_ForceInterrupt() */
+	if ( Type != 4 )
+		FDC_ClearIRQ ();
+	
+	/* When a new command is executed, we clear InterruptCond */
+	/* (not just when the new command is D0) */
+	/* InterruptCond is cleared here, but it might be set again just after */
+	/* when we call FDC_ExecuteTypeIVCommands() */
+	FDC.InterruptCond = 0;
+
+	/* Check type of command and execute */
 	if ( Type == 1 )						/* Type I - Restore, Seek, Step, Step-In, Step-Out */
 		FdcCycles = FDC_ExecuteTypeICommands();
 	else if ( Type == 2 )						/* Type II - Read Sector, Write Sector */
@@ -3626,12 +3653,6 @@ static void FDC_ExecuteCommand ( void )
 	else								/* Type IV - Force Interrupt */
 		FdcCycles = FDC_ExecuteTypeIVCommands();
 
-	/* When a new command is executed, we clear InterruptCond on Index Pulse */
-	/* (in case it was set) but we don't clear InterruptCond Immediate, only */
-	/* a $D0 command can clear the immediate IRQ set by a $D8 command */
-	if ( Type != 4 )
-		FDC.InterruptCond &= FDC_INTERRUPT_COND_IMMEDIATE;	/* Clear bits 0,1,2 and keep bit 3 */
-	
 	FDC.ReplaceCommandPossible = true;				/* This new command can be replaced during the prepare+spinup phase */
 	FDC_StartTimer_FdcCycles ( FdcCycles , 0 );
 }
@@ -3961,7 +3982,14 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 
 				DiskControllerByte = FDC.STR;
 
-				/* When Status Register is read, FDC's INTRQ is reset (except if "force interrupt immediate" is running) */
+				/* When Status Register is read, FDC's IRQ is reset (except if "force interrupt immediate" is set) */
+
+				/* If IRQ is forced but FDC_INTERRUPT_COND_IMMEDIATE is not set anymore, this means */
+				/* the D8 command was stopped and we can clear the forced IRQ while reading status register */
+				if ( ( FDC.IRQ_Signal & FDC_IRQ_SOURCE_FORCED )
+				  && ( ( FDC.InterruptCond & FDC_INTERRUPT_COND_IMMEDIATE ) == 0 ) )
+					FDC.IRQ_Signal &= ~FDC_IRQ_SOURCE_FORCED;	/* Really stop the forced IRQ */
+
 				FDC_ClearIRQ ();
 				break;
 			 case 0x1:						/* 0 1 - Track register */
