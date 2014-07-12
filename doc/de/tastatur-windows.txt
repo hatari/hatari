@@ -1,0 +1,8 @@
+# Below is a keymap file for Hatari running on Windows, which maps the SDL
+# keys of a German PC keyboard to the corresponding Atari ST scancodes.
+
+45,12     # ß
+91,26     # Ü
+93,27     # +
+92,41     # #
+96,43     # ~
