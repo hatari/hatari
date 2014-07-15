@@ -6963,12 +6963,12 @@ static void dsp_macr_p_x1_y0_b(void)
 
 	dsp_mul56(dsp_core.registers[DSP_REG_X1], dsp_core.registers[DSP_REG_Y0], source, SIGN_PLUS);
 
-	dsp_rnd56(dest);
-
 	dest[0] = dsp_core.registers[DSP_REG_B2];
 	dest[1] = dsp_core.registers[DSP_REG_B1];
 	dest[2] = dsp_core.registers[DSP_REG_B0];
 	newsr = dsp_add56(source, dest);
+
+	dsp_rnd56(dest);
 
 	dsp_core.registers[DSP_REG_B2] = dest[0];
 	dsp_core.registers[DSP_REG_B1] = dest[1];
