@@ -1325,6 +1325,7 @@ static void	STX_BuildSectorsSimple ( STX_TRACK_STRUCT *pStxTrack , Uint8 *p )
 	
 	for ( Sector = 0 ; Sector < pStxTrack->SectorsCount ; Sector++ )
 	{
+		pStxTrack->pSectorsStruct[ Sector ].SaveSectorIndex = -1;
 		pStxTrack->pSectorsStruct[ Sector ].DataOffset = 0;
 		pStxTrack->pSectorsStruct[ Sector ].BitPosition = BytePosition * 8;
 		pStxTrack->pSectorsStruct[ Sector ].ReadTime = 0;
@@ -1648,7 +1649,7 @@ extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
 
 	/* Check if this sector was changed by a 'write sector' command */
 	/* If so, we use this recent buffer instead of the original STX content */
-	if ( pStxSector->SaveSectorIndex >= 0 )
+	if (STX_SaveStruct[Drive].SaveSectorsCount > 0 && pStxSector->SaveSectorIndex >= 0)
 	{
 		pSector_WriteData = STX_SaveStruct[ Drive ].pSaveSectorsStruct[ pStxSector->SaveSectorIndex ].pData;
 		Sector_ReadTime = 0;					/* Standard timings */
