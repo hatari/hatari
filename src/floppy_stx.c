@@ -33,7 +33,8 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c : " __DATE__ " " __TIME__;
 #define	STX_DEBUG_FLAG_STRUCTURE	1
 #define	STX_DEBUG_FLAG_DATA		2
 
-#define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE )
+#define	STX_DEBUG_FLAG			0
+// #define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE )
 // #define	STX_DEBUG_FLAG			( STX_DEBUG_FLAG_STRUCTURE | STX_DEBUG_FLAG_DATA )
 
 
@@ -2148,6 +2149,3 @@ extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int T
 	EmulationDrives[Drive].bContentsChanged = true;
 	return 0;
 }
-
-
-
