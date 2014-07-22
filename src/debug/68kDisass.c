@@ -633,8 +633,6 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 	char	regName[3];
 	signed long	pcoffset;
 
-	val = 0;
-
 	disassbuf[0] = 0;
 	switch(ea)
 	{

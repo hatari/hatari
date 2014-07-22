@@ -22,13 +22,10 @@ static void ConvertLowRes_320x32Bit_Spec(void)
 
 	Spec512_StartFrame();            /* Start frame, track palettes */
 
-	edx = 0;                         /* Clear index for loop */
-
 	for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++)
 	{
 
 		Spec512_StartScanLine();        /* Build up palettes for every 4 pixels, store in 'ScanLinePalettes' */
-		edx = 0;                        /* Clear index for loop */
 
 		/* Get screen addresses, 'edi'-ST screen, 'ebp'-Previous ST screen, 'esi'-PC screen */
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */

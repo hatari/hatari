@@ -336,7 +336,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	SDLGui_Text(FDCTextRect.x, FDCTextRect.y, FdcText);
 	FDCTextRect.w = FdcTextLen * fontw + fontw/2;
 	FDCTextRect.h = fonth;
-	xoffset += FDCTextRect.w;
+	// xoffset += FDCTextRect.w;
 
 	/* draw frameskip on the right */
 	FrameSkipsRect.x = surf->w - 15*fontw;

@@ -132,7 +132,6 @@ Uint16 Profile_DspShowAddresses(Uint32 addr, Uint32 upper, FILE *out)
 
 	end = DSP_PROFILE_ARR_SIZE;
 	active = dsp_profile.ram.active;
-	show = ConfigureParams.Debugger.nDisasmLines;
 	if (upper) {
 		if (upper < end) {
 			end = upper;

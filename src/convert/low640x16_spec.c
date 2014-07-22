@@ -45,7 +45,6 @@ static void Line_ConvertLowRes_640x16Bit_Spec(Uint32 *edi, Uint32 *ebp, Uint32 *
 	pixelspace[4] = 0;
 
 	Spec512_StartScanLine();        /* Build up palettes for every 4 pixels, store in 'ScanLinePalettes' */
-	edx = 0;                        /* Clear index for loop */
 
 	x = STScreenWidthBytes >> 3;   /* Amount to draw across in 16-pixels (8 bytes) */
 	Screen4BytesPerLine = PCScreenBytesPerLine/4;
