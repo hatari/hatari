@@ -4567,6 +4567,10 @@ static Uint8 FDC_WriteTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side , int Tr
 		FDC_GetDMAAddress(), Drive, Track, Side,
 		nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
+	Log_Printf(LOG_TODO, "FDC type III command 'write track' is not supported with ST/MSA files\n");
+
+	/* TODO : "Write track" should write all the sectors after extracting them from the track data ? */
+
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc write track failed\n" );
 	return FDC_STR_BIT_LOST_DATA;
