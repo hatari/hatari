@@ -2018,6 +2018,7 @@ static int FDC_UpdateRestoreCmd ( void )
 			FDC_Update_STR ( 0 , FDC_STR_BIT_RNF );
 			FDC_Update_STR ( FDC_STR_BIT_TR00 , 0 );	/* Unset bit TR00 */
 			FdcCycles = FDC_CmdCompleteCommon( true );
+			break;
 		}
 
 		if ( ( FDC.DriveSelSignal < 0 ) || ( !FDC_DRIVES[ FDC.DriveSelSignal ].Enabled )
