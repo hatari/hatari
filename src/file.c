@@ -214,6 +214,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 				if (gzread(hGzFile, tmp, sizeof(tmp)) < 0)
 				{
 					fprintf(stderr, "Failed to read gzip file!\n");
+					free(filepath);
 					return NULL;
 				}
 			}

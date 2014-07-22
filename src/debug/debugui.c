@@ -229,6 +229,7 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 		if (!end)
 		{
 			fprintf(stderr, "ERROR: matching '%c' missing from '%s'!\n", *start, start);
+			free(input);
 			return NULL;
 		}
 		
@@ -245,6 +246,7 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 			*end = *start; /* restore expression mark */
 			fprintf(stderr, "Expression ERROR:\n'%s'\n%*c-%s\n",
 				input, (int)(start-input)+offset+3, '^', errstr);
+			free(input);
 			return NULL;
 		}
 		end++;
@@ -266,6 +268,7 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 			if (!tmp)
 			{
 				perror("ERROR: Input string alloc failed\n");
+				free(input);
 				return NULL;
 			}
 
@@ -744,9 +747,8 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 /**
  * Add non-repeated command to readline history
  * and free the given string
- *  @return	its new value
  */
-static char *DebugUI_FreeCommand(char *input)
+static void DebugUI_FreeCommand(char *input)
 {
 	if (input && *input)
 	{
@@ -758,7 +760,6 @@ static char *DebugUI_FreeCommand(char *input)
 		}
 		free(input);
 	}
-	return NULL;
 }
 
 /**
@@ -776,7 +777,7 @@ static char *DebugUI_GetCommand(char *input)
 	
 	/* Tell the completer that we want a crack first. */
 	rl_attempted_completion_function = DebugUI_Completion;
-	input = DebugUI_FreeCommand(input);
+	DebugUI_FreeCommand(input);
 	return Str_Trim(readline("> "));
 }
 
@@ -784,13 +785,11 @@ static char *DebugUI_GetCommand(char *input)
 
 /**
  * Free Command input string
- *  @return	its new value
  */
-static char *DebugUI_FreeCommand(char *input)
+static void DebugUI_FreeCommand(char *input)
 {
 	if (input)
 		free(input);
-	return NULL;
 }
 
 /**
@@ -1050,7 +1049,7 @@ void DebugUI(debug_reason_t reason)
 	while (cmdret != DEBUGGER_END);
 
 	/* free exit command */
-	psCmd = DebugUI_FreeCommand(psCmd);
+	DebugUI_FreeCommand(psCmd);
 
 	Log_SetAlertLevel(alertLevel);
 	DebugUI_SetLogDefault();

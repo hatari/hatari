@@ -314,7 +314,10 @@ bool Eval_Number(const char *str, Uint32 *number)
 	 * addition to numbers.
 	 */
 	offset = getNumber(str, number, &base);
-	return isNumberOK(str, offset, base);
+	if (!offset)
+		return false;
+	else
+		return isNumberOK(str, offset, base);
 }
 
 
@@ -343,7 +346,7 @@ int Eval_Range(char *str1, Uint32 *lower, Uint32 *upper, bool fordsp)
 	}
 
 	offset = getValue(str1, lower, &base, fordsp);
-	if (!isNumberOK(str1, offset, base)) {
+	if (offset == 0 || !isNumberOK(str1, offset, base)) {
 		/* first number not OK */
 		fprintf(stderr,"Invalid address value '%s'!\n", str1);
 		ret = -1;
@@ -353,7 +356,7 @@ int Eval_Range(char *str1, Uint32 *lower, Uint32 *upper, bool fordsp)
 	}
 	if (fDash) {
 		offset = getValue(str2, upper, &base, fordsp);
-		if (!isNumberOK(str2, offset, base)) {
+		if (offset == 0 || !isNumberOK(str2, offset, base)) {
 			/* second number not OK */
 			fprintf(stderr, "Invalid address value '%s'!\n", str2);
 			ret = -1;

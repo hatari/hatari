@@ -241,8 +241,8 @@ static void DlgFileSelect_ManageScrollbar(void)
 	int b, x, y;
 	int scrollY, scrollYmin, scrollYmax, scrollH_half;
 	float scrollMove;
-	
-	b = SDL_GetMouseState(&x, &y);
+
+	SDL_GetMouseState(&x, &y);
 
 	/* If mouse is down on the scrollbar for the first time */
 	if (fsdlg[SGFSDLG_SCROLLBAR].state & SG_MOUSEDOWN) {
@@ -627,6 +627,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 						   zipdir, files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name))
 				{
 					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
+					free(tempstr);
 					goto clean_exit;
 				}
 				/* directory? */
@@ -681,6 +682,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 						   path, files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name))
 				{
 					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
+					free(tempstr);
 					goto clean_exit;
 				}
 				if (File_DirExists(tempstr))

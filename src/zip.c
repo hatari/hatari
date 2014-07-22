@@ -316,6 +316,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 		{
 			perror("ZIP_GetFilesDir");
 			ZIP_FreeFentries(fentries, i+1);
+			ZIP_FreeZipDir(files);
 			return NULL;
 		}
 		strcpy(fentries[i]->d_name, files->names[i]);
@@ -401,6 +402,7 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 	if (!name)
 	{
 		perror("ZIP_FirstFile");
+		ZIP_FreeZipDir(files);
 		return NULL;
 	}
 
@@ -430,7 +432,11 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 	ZIP_FreeZipDir(files);
 
 	if (name[0] == '\0')
+	{
+		free(name);
 		return NULL;
+	}
+
 	return name;
 }
 
