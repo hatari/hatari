@@ -32,14 +32,16 @@ else()	# Rules for normal build follow
 
 	add_executable(build68k build68k.c)
 
+	get_target_property(BUILD68K_EXE build68k LOCATION)
 	add_custom_command(OUTPUT cpudefs.c
-		COMMAND $<TARGET_FILE:build68k> < ${CMAKE_CURRENT_SOURCE_DIR}/table68k >cpudefs.c
+		COMMAND ${BUILD68K_EXE} < ${CMAKE_CURRENT_SOURCE_DIR}/table68k >cpudefs.c
 		DEPENDS table68k build68k)
 
 	add_executable(gencpu gencpu.c readcpu.c cpudefs.c)
 
+	get_target_property(GENCPU_EXE gencpu LOCATION)
 	add_custom_command(OUTPUT cpuemu.c cpustbl.c
-		COMMAND $<TARGET_FILE:gencpu> DEPENDS gencpu)
+		COMMAND ${GENCPU_EXE}  DEPENDS gencpu)
 
 endif(CMAKE_CROSSCOMPILING)
 
