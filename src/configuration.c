@@ -325,6 +325,26 @@ static const struct Config_Tag configs_Acsi[] =
 	{ NULL , Error_Tag, NULL }
 };
 
+/* Used to load/save SCSI options */
+static const struct Config_Tag configs_Scsi[] =
+{
+	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Scsi[1].bUseDevice },
+	{ "sDeviceFile1", String_Tag, ConfigureParams.Scsi[1].sDeviceFile },
+	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Scsi[2].bUseDevice },
+	{ "sDeviceFile2", String_Tag, ConfigureParams.Scsi[2].sDeviceFile },
+	{ "bUseDevice3", Bool_Tag, &ConfigureParams.Scsi[3].bUseDevice },
+	{ "sDeviceFile3", String_Tag, ConfigureParams.Scsi[3].sDeviceFile },
+	{ "bUseDevice4", Bool_Tag, &ConfigureParams.Scsi[4].bUseDevice },
+	{ "sDeviceFile4", String_Tag, ConfigureParams.Scsi[4].sDeviceFile },
+	{ "bUseDevice5", Bool_Tag, &ConfigureParams.Scsi[5].bUseDevice },
+	{ "sDeviceFile5", String_Tag, ConfigureParams.Scsi[5].sDeviceFile },
+	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Scsi[6].bUseDevice },
+	{ "sDeviceFile6", String_Tag, ConfigureParams.Scsi[6].sDeviceFile },
+	{ "bUseDevice7", Bool_Tag, &ConfigureParams.Scsi[7].bUseDevice },
+	{ "sDeviceFile7", String_Tag, ConfigureParams.Scsi[7].sDeviceFile },
+	{ NULL , Error_Tag, NULL }
+};
+
 /* Used to load/save ROM options */
 static const struct Config_Tag configs_Rom[] =
 {
@@ -472,6 +492,13 @@ void Configuration_SetDefault(void)
 	{
 		ConfigureParams.Acsi[i].bUseDevice = false;
 		strcpy(ConfigureParams.Acsi[i].sDeviceFile, psWorkingDir);
+	}
+
+	/* SCSI */
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		ConfigureParams.Scsi[i].bUseDevice = false;
+		strcpy(ConfigureParams.Scsi[i].sDeviceFile, psWorkingDir);
 	}
 
 	/* Set defaults for Joysticks */
@@ -709,6 +736,10 @@ void Configuration_Apply(bool bReset)
 	{
 		File_MakeAbsoluteName(ConfigureParams.Acsi[i].sDeviceFile);
 	}
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		File_MakeAbsoluteName(ConfigureParams.Scsi[i].sDeviceFile);
+	}
 
 	/* make path names absolute, but handle special file names */
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
@@ -791,6 +822,7 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Floppy, "[Floppy]");
 	Configuration_LoadSection(psFileName, configs_HardDisk, "[HardDisk]");
 	Configuration_LoadSection(psFileName, configs_Acsi, "[ACSI]");
+	Configuration_LoadSection(psFileName, configs_Scsi, "[SCSI]");
 	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
 	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
@@ -849,6 +881,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
 	Configuration_SaveSection(sConfigFileName, configs_HardDisk, "[HardDisk]");
 	/*Configuration_SaveSection(sConfigFileName, configs_Acsi, "[ACSI]");*/
+	/*Configuration_SaveSection(sConfigFileName, configs_Scsi, "[SCSI]");*/
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
@@ -888,6 +921,11 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&ConfigureParams.Acsi[i].bUseDevice, sizeof(ConfigureParams.Acsi[i].bUseDevice));
 		MemorySnapShot_Store(ConfigureParams.Acsi[i].sDeviceFile, sizeof(ConfigureParams.Acsi[i].sDeviceFile));
 	}
+	/* for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		MemorySnapShot_Store(&ConfigureParams.Scsi[i].bUseDevice, sizeof(ConfigureParams.Scsi[i].bUseDevice));
+		MemorySnapShot_Store(ConfigureParams.Scsi[i].sDeviceFile, sizeof(ConfigureParams.Scsi[i].sDeviceFile));
+	}*/
 
 	MemorySnapShot_Store(&ConfigureParams.Screen.nMonitorType, sizeof(ConfigureParams.Screen.nMonitorType));
 	MemorySnapShot_Store(&ConfigureParams.Screen.bUseExtVdiResolutions, sizeof(ConfigureParams.Screen.bUseExtVdiResolutions));

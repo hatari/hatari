@@ -213,6 +213,7 @@ typedef struct
 
 /* SCSI/ACSI configuration */
 #define MAX_ACSI_DEVS 8
+#define MAX_SCSI_DEVS 8
 
 typedef struct
 {
@@ -353,6 +354,7 @@ typedef struct
   CNF_DISKIMAGE DiskImage;
   CNF_HARDDISK HardDisk;
   CNF_SCSIDEV Acsi[MAX_ACSI_DEVS];
+  CNF_SCSIDEV Scsi[MAX_SCSI_DEVS];
   CNF_ROM Rom;
   CNF_RS232 RS232;
   CNF_PRINTER Printer;
