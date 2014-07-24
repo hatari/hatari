@@ -201,8 +201,12 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 			 */
 			Statusbar_Init(sdlscrn);
 		}
+#if WITH_SDL2
+		doUpdate = true;
+#else
 		// check in case switched from VDI to Hostscreen
 		doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
+#endif
 		return;
 	}
 
@@ -216,8 +220,12 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	Dprintf(("Surface Pitch = %d, width = %d, height = %d\n", sdlscrn->pitch, sdlscrn->w, sdlscrn->h));
 	Dprintf(("Must Lock? %s\n", SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
 
+#if WITH_SDL2
+	doUpdate = true;
+#else
 	// is the SDL_update needed?
 	doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
+#endif
 
 	Dprintf(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
 			", tshifts r=%d g=%d b=%d"

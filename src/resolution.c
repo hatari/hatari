@@ -30,6 +30,10 @@ static int DesktopWidth, DesktopHeight;
  */
 void Resolution_Init(void)
 {
+#if WITH_SDL2
+	DesktopWidth = 2*(48+320+48);
+	DesktopHeight = 2*NUM_VISIBLE_LINES+24;
+#else
 	/* Needs to be called after SDL video and configuration
 	 * initialization, but before Hatari Screen init is called
 	 * for the first time!
@@ -53,6 +57,7 @@ void Resolution_Init(void)
 	}
 	DEBUGPRINT(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
 	fprintf(stderr, "Configured max Hatari resolution = %dx%d.\n", ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight);
+#endif
 }
 
 /**
@@ -82,7 +87,7 @@ static void Resolution_GetMaxSize(int *width, int *height)
  * - Otherwise select the largest available mode
  * return true for success and false if no matching mode was found.
  */
-static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
+static inline bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 {
 #define TOO_LARGE 0x7fff
 	int i, bestw, besth;
@@ -130,6 +135,13 @@ static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
  */
 bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 {
+#if WITH_SDL2
+	if (bInFullScreen)
+		Resolution_GetDesktopSize(width, height);
+	else
+		Resolution_GetMaxSize(width, height);
+	return true;
+#else
 	SDL_Rect **modes;
 	SDL_PixelFormat pixelformat;
 	Uint32 modeflags;
@@ -193,6 +205,7 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 	DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
 		 *width, *height, *bpp));
 	return false;
+#endif
 }
 
 

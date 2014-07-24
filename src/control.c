@@ -496,7 +496,7 @@ const char *Control_SetSocket(const char *socketpath)
 #endif
 
 /* X11 available and SDL_config.h states that SDL supports X11 */
-#if HAVE_X11 && SDL_VIDEO_DRIVER_X11
+#if HAVE_X11 && SDL_VIDEO_DRIVER_X11 && !WITH_SDL2
 #include <SDL_syswm.h>
 
 /**

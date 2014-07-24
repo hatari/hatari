@@ -103,6 +103,41 @@ static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 static bool Screen_DrawFrame(bool bForceFlip);
 
+#if WITH_SDL2
+
+SDL_Window *sdlWindow;
+static SDL_Renderer *sdlRenderer;
+static SDL_Texture *sdlTexture;
+
+void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
+{
+	if (sdlscrn->format->BitsPerPixel == 8)
+	{
+		sdlTexture = SDL_CreateTextureFromSurface(sdlRenderer, screen);
+	}
+	else
+	{
+		SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
+	}
+
+	SDL_RenderClear(sdlRenderer);
+	SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+	SDL_RenderPresent(sdlRenderer);
+
+	if (sdlscrn->format->BitsPerPixel == 8)
+	{
+		SDL_DestroyTexture(sdlTexture);
+		sdlTexture = NULL;
+	}
+}
+
+void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
+{
+	SDL_Rect rect = { x, y, w, h };
+	SDL_UpdateRects(screen, 1, &rect);
+}
+
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -342,7 +377,114 @@ static void Screen_SetSTScreenOffsets(void)
  */
 bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 {
+	static bool bWasInFullScreen = false;
 	Uint32 sdlVideoFlags;
+
+#if WITH_SDL2
+	if (bitdepth == 0)
+		bitdepth = 32;
+#endif
+
+	/* Check if we really have to change the video mode: */
+	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
+	    && sdlscrn->format->BitsPerPixel == bitdepth
+	    && bInFullScreen == bWasInFullScreen)
+		return false;
+
+#ifdef _MUDFLAP
+	if (sdlscrn)
+	{
+		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
+	}
+#endif
+	if (bInFullScreen)
+	{
+		/* unhide the Hatari WM window for fullscreen */
+		Control_ReparentWindow(width, height, bInFullScreen);
+	}
+
+	bWasInFullScreen = bInFullScreen;
+
+#if WITH_SDL2
+
+	/* SDL Video attributes: */
+	if (bInFullScreen)
+	{
+		sdlVideoFlags  = SDL_WINDOW_FULLSCREEN_DESKTOP;
+	}
+	else
+	{
+		sdlVideoFlags  = 0;
+	}
+
+	if (sdlTexture)
+		SDL_DestroyTexture(sdlTexture);
+	if (sdlscrn)
+		SDL_FreeSurface(sdlscrn);
+	if (sdlRenderer)
+		SDL_DestroyRenderer(sdlRenderer);
+	if (sdlWindow)
+		SDL_DestroyWindow(sdlWindow);
+
+	/* Set new video mode */
+	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height,
+	        bitdepth, bInFullScreen?"fullscreen":"windowed"));
+
+	sdlWindow = SDL_CreateWindow("Hatari", SDL_WINDOWPOS_UNDEFINED,
+	                             SDL_WINDOWPOS_UNDEFINED, width, height,
+	                             sdlVideoFlags);
+	sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
+	if (!sdlWindow || !sdlRenderer)
+	{
+		fprintf(stderr,"Failed to create window or renderer!\n");
+		exit(-1);
+	}
+	SDL_RenderSetLogicalSize(sdlRenderer, width, height);
+	if (bitdepth == 8)
+	{
+		SDL_Color cols[] = {	/* Colors for the sdl-gui */
+			{ 0, 0, 0, 255 }, { 64, 64, 64, 255 },
+			{ 128, 128, 128, 255 }, { 160, 160, 160, 255 },
+			{ 196, 196, 196, 255 }, { 255, 255, 255, 255 },
+			{ 0x00, 0x40, 0x00, 255 }, { 0x00, 0xc0, 0x00, 255 },
+			{ 0x00, 0xe0, 0x00, 255 }
+		};
+		sdlscrn = SDL_CreateRGBSurface(0, width, height, bitdepth,
+		                               0, 0, 0, 0);
+		if (sdlscrn)
+			SDL_SetPaletteColors(sdlscrn->format->palette, cols,
+			                     128, ARRAYSIZE(cols));
+	}
+	else
+	{
+		int rm, bm, gm, pfmt;
+		if (bitdepth == 16)
+		{
+			rm = 0xF800;
+			gm = 0x07E0;
+			bm = 0x001F;
+			pfmt = SDL_PIXELFORMAT_RGB565;
+		}
+		else
+		{
+			rm = 0x00FF0000;
+			gm = 0x0000FF00;
+			bm = 0x000000FF;
+			pfmt = SDL_PIXELFORMAT_RGB888;
+		}
+		sdlscrn = SDL_CreateRGBSurface(0, width, height, bitdepth,
+		                               rm, gm, bm, 0);
+		sdlTexture = SDL_CreateTexture(sdlRenderer, pfmt,
+		                               SDL_TEXTUREACCESS_STREAMING,
+		                               width, height);
+		if (!sdlTexture)
+		{
+			fprintf(stderr,"Failed to create texture!\n");
+			exit(-3);
+		}
+	}
+
+#else	/* WITH_SDL2 */
 
 	/* SDL Video attributes: */
 	if (bInFullScreen)
@@ -361,28 +503,9 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 		sdlVideoFlags |= SDL_HWPALETTE;
 	}
 
-	/* Check if we really have to change the video mode: */
-	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
-	    && sdlscrn->format->BitsPerPixel == bitdepth
-	    && (sdlscrn->flags&SDL_FULLSCREEN) == (sdlVideoFlags&SDL_FULLSCREEN))
-		return false;
-
-#ifdef _MUDFLAP
-	if (sdlscrn)
-	{
-		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
-	}
-#endif
-	if (bInFullScreen)
-	{
-		/* unhide the Hatari WM window for fullscreen */
-		Control_ReparentWindow(width, height, bInFullScreen);
-	}
-
 	/* Set new video mode */
 	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, h, bitdepth, bInFullScreen?"fullscreen":"windowed"));
 	sdlscrn = SDL_SetVideoMode(width, height, bitdepth, sdlVideoFlags);
-	DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel));
 
 	/* By default ConfigureParams.Screen.nForceBpp and therefore
 	 * BitCount is zero which means "SDL color depth autodetection".
@@ -395,6 +518,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 		sdlscrn = SDL_SetVideoMode(width, height, 32, sdlVideoFlags);
 	}
 
+#endif	/* WITH_SDL2 */
+
 	/* Exit if we can not open a screen */
 	if (!sdlscrn)
 	{
@@ -402,6 +527,10 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 		SDL_Quit();
 		exit(-2);
 	}
+
+	DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h,
+	            sdlscrn->format->BitsPerPixel));
+
 #ifdef _MUDFLAP
 	__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
 #endif
@@ -582,8 +711,13 @@ void Screen_Init(void)
 	pIconSurf = SDL_LoadBMP(sIconFileName);
 	if (pIconSurf)
 	{
+#if WITH_SDL2
+		SDL_SetColorKey(pIconSurf, SDL_TRUE, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
+		SDL_SetWindowIcon(sdlWindow, pIconSurf);
+#else
 		SDL_SetColorKey(pIconSurf, SDL_SRCCOLORKEY, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
 		SDL_WM_SetIcon(pIconSurf, NULL);
+#endif
 		SDL_FreeSurface(pIconSurf);
 	}
 
