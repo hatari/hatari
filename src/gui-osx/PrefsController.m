@@ -249,7 +249,7 @@ char szPath[FILENAME_MAX];
 	 {	directoryToOpen = [defaultInitialDir stringByExpandingTildeInPath];			// no path: use user's directory
 		fileToPreselect = nil; } ;
 
-	newPath = [NSApp hopenfile:chooseDirectories defoDir:defaultInitialDir defoFile:nil types:what] ;
+	newPath = [NSApp hopenfile:chooseDirectories defoDir:directoryToOpen defoFile:fileToPreselect types:what];
 	if ([newPath length] != 0)														// user canceled if empty
 	{
 		[mutString setString:[NSString stringWithString:newPath]] ;					// save this path
