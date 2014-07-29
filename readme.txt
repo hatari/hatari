@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                             Version 1.7, June 2013
+                             Version 1.8, July 2014
 
                           http://hatari.tuxfamily.org/
 
