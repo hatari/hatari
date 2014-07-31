@@ -1128,6 +1128,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	for (dot = 0; name[dot] && name[dot] != '.'; dot++);
 	if (namelen - dot > 3)
 	{
+		dot++;
 		/* "emulated.too" -> "emulated.too*" */
 		name[namelen++] = '*';
 		name[namelen] = '\0';
@@ -1136,13 +1137,15 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	/* catch potentially too long part before extension */
 	if (namelen > 8 && name[8] == '.')
 	{
+		dot++;
 		/* "emulated.too*" -> "emulated*.too*" */
 		memmove(name+9, name+8, namelen-7);
 		namelen++;
 		name[8] = '*';
 		modified = true;
 	}
-	else if (namelen == 8)
+	/* catch potentially too long part without extension */
+	else if (namelen == 8 && !name[dot])
 	{
 		/* "emulated" -> "emulated*" */
 		name[8] = '*';
