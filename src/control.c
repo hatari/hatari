@@ -491,7 +491,7 @@ const char *Control_SetSocket(const char *socketpath)
  * SDL_syswm.h automatically includes everything else needed.
  */
 
-#if HAVE_SDL_SDL_CONFIG_H
+#if HAVE_SDL_CONFIG_H
 #include <SDL_config.h>
 #endif
 

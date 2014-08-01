@@ -31,8 +31,8 @@
 /* Define to 1 if you have the <strings.h> header file. */
 #cmakedefine HAVE_STRINGS_H 1
 
-/* Define to 1 if you have the <SDL/SDL_config.h> header file. */
-#cmakedefine HAVE_SDL_SDL_CONFIG_H 1
+/* Define to 1 if you have the <SDL_config.h> header file. */
+#cmakedefine HAVE_SDL_CONFIG_H 1
 
 /* Define to 1 if you have the <sys/times.h> header file. */
 #cmakedefine HAVE_SYS_TIMES_H 1

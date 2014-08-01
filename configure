@@ -20,6 +20,7 @@ print_help()
   echo "  --disable-tracing          Disable tracing messages for debugging"
   echo "  --enable-winuae-cpu        Enable WinUAE CPU core (experimental!)"
   echo "  --disable-osx-bundle       Disable application bundling on Mac OS X"
+  echo "  --enable-sdl2              Compile with libsdl 2.0 instead of 1.2"
   echo "  --cross-compile-win64_32   Build the 32 bit Windows version under linux using mingw-w64"
   echo "  --cross-compile-win64_64   Build the 64 bit Windows version under linux using mingw-w64"
   echo
@@ -80,6 +81,12 @@ do
     ;;
     --disable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=0"
+    ;;
+    --enable-sdl2)
+      cmake_args="$cmake_args -DENABLE_SDL2:BOOL=1"
+    ;;
+    --disable-sdl2)
+      cmake_args="$cmake_args -DENABLE_SDL2:BOOL=0"
     ;;
     --cross-compile-win64_32)
       cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_32.cmake"
