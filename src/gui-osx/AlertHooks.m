@@ -23,7 +23,6 @@ int HookedAlertNotice(const char* szMessage)
 {
 	NSString *message ;
 	NSRange  cantTOS, firstPv, lastPv ;
-	NSAlert  *lalerte ;
 
 	message = [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding] ;
 	//NSLog(@"Notice: %@", message ) ;
@@ -31,15 +30,12 @@ int HookedAlertNotice(const char* szMessage)
 	firstPv = [message rangeOfString:@"'"] ;
 	lastPv = [message rangeOfString:@"'" options:NSBackwardsSearch] ;
 
-	if ((cantTOS.location == NSNotFound) || (firstPv.location==lastPv.location))
-		return (NSAlertDefaultReturn == NSRunInformationalAlertPanel(@"Hatari", localize(message), localize(@"Ok"), nil, nil));
-
-	firstPv.location++ ; firstPv.length = lastPv.location-firstPv.location ;
-	lalerte = [NSAlert alertWithMessageText:@"Hatari" defaultButton:localize(@"Ok") alternateButton:nil otherButton:nil
-	           informativeTextWithFormat:localize(@"Can not load TOS file:"), [NSApp pathUser:[message substringWithRange:firstPv]]] ;
-
-	[lalerte runModal] ;
-	return YES ;
+	if ((cantTOS.location == NSNotFound) || (firstPv.location==lastPv.location))                    // traitement normal
+		return ([NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:localize(@"Cancel")
+												otherB:nil informativeTxt:message ] == NSAlertDefaultReturn );
+	else																							// traitement can not load
+		return ([NSApp myAlerte:NSCriticalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:nil otherB:nil
+									informativeTxt:localize(@"Can not load TOS file:") ]  == NSAlertDefaultReturn) ;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -48,9 +44,11 @@ int HookedAlertNotice(const char* szMessage)
 */
 int HookedAlertQuery(const char* szMessage)
 {
-//	NSLog(@"Alerte: %@",  [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding] ) ;
-	return (NSAlertDefaultReturn == NSRunAlertPanel(@"Hatari", localize([NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding]),
-															localize(@"Ok"), localize(@"Cancel"), nil));
+	NSString *message ;
+
+	message = localize([NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding]) ;
+	return  [NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:localize(@"Cancel")
+														otherB:nil informativeTxt:message ] ;
 }
 
 #endif

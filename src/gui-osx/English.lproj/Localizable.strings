@@ -10,6 +10,7 @@
 "Really reset the emulator?"="Really reset the emulator? All current work will be lost. Click Cancel to continue without reset.";
 "OK"="Ok";
 "Cancel"="Cancel";
+"Quit" = "Quit" ;
 "Cold reset!"="Cold reset!";
 
 "Detected double bus error => CPU halted!\nEmulation needs to be reset.\n" = "Detected double bus error => CPU halted!\nEmulation needs to be reset.\n" ;
@@ -23,7 +24,7 @@
 "Error in Config structure (Contact author).\n" = "Error in Config structure (Contact author).\n" ;
 "Error, Config file not saved" = "Error, Config file not saved" ;
 
-"Can not load TOS file:" = "Can not load TOS file:\n'%@'" ;
+"Can not load TOS file:" = "Can not load TOS file!\n Choose TOS File." ;
 "Detected a RAM TOS - this will probably not work very well!\n" = "Detected a RAM TOS - this will probably not work very well!\n" ;
 "Detected RAM TOS image, skipping TOS patches.\n" = "Detected RAM TOS image, skipping TOS patches.\n" ;
 "Only TOS versions >= 1.04 support autostarting!\n" = "Only TOS versions >= 1.04 support autostarting!\n" ;

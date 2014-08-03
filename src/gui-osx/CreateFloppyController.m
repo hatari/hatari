@@ -44,8 +44,8 @@ char szPath[FILENAME_MAX] ;
 		// Create the image
 		cRet=CreateBlankImage_CreateFile(szPath, cTracks, cSectors, cSides);
 		if(cRet==TRUE)
-		 {
-			ret = NSRunAlertPanel(@"Hatari", localize(@"Insert newly created disk in"), localize(@"Ignore"), @"  A:  ", @"  B:  ");
+		 {	ret = [NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ignore") alternateB:@"  A:  "
+															otherB:@"  B:  " informativeTxt:@""] ;
 			if (ret == NSAlertDefaultReturn)
 						return ;
 

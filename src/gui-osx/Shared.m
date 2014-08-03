@@ -207,6 +207,27 @@ NSOpenPanel *openPanel ;
 	return apath;
 }
 
+// NSAlert available 10.3 to 10.9
+//
+- (NSInteger)myAlerte:(NSUInteger)style Txt:(NSString *)Txt firstB:(NSString *)firstB alternateB:(NSString *)alternateB
+										otherB:(NSString *)otherB informativeTxt:(NSString *)informativeT
+{
+	NSAlert		*lalerte ;
+	NSInteger	ret ;
+
+	lalerte = [[NSAlert alloc] init] ;
+	[lalerte setAlertStyle:style] ;
+	if (Txt == nil)
+		[lalerte setMessageText:@"Hatari"] ;
+	else
+		[lalerte setMessageText:Txt] ;
+	if (firstB != nil)		[lalerte addButtonWithTitle:firstB] ;
+	if (alternateB != nil)	[lalerte addButtonWithTitle:alternateB] ;
+	if (otherB != nil)		[lalerte addButtonWithTitle:otherB] ;
+	if (informativeT!= nil) [lalerte setInformativeText:informativeT] ;
+	ret = [lalerte runModal] ;
+	[lalerte release] ;
+	return ret ;
+}
+
 @end
-
-

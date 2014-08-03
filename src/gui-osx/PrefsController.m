@@ -626,9 +626,10 @@ NSString  *defaultDirectory ;
         // Check if change need reset
         if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
         {
-            applyChanges = NSRunAlertPanel(localize(@"Reset the emulator"), localize(@"Must be reset"),
-                                       localize(@"Don't reset"), localize(@"Reset"), nil) == NSAlertAlternateReturn ;
-            if (applyChanges)							                Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true) ;
+            applyChanges = [NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Don't reset") alternateB:localize(@"Reset")
+											otherB:nil informativeTxt:localize(@"Must be reset") ] == NSAlertAlternateReturn ;
+			if (applyChanges)
+				Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true) ;
             else
                 ConfigureParams = CurrentParams;    //Restore backup params
         }
