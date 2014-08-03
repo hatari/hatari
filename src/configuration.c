@@ -757,8 +757,13 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Joystick4, "[Joystick4]");
 	Configuration_LoadSection(psFileName, configs_Joystick5, "[Joystick5]");
 	Configuration_LoadSection(psFileName, configs_Keyboard, "[Keyboard]");
+#if WITH_SDL2
+	Configuration_LoadSection(psFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers2]");
+	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers2]");
+#else
 	Configuration_LoadSection(psFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers]");
 	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers]");
+#endif
 	Configuration_LoadSection(psFileName, configs_Sound, "[Sound]");
 	Configuration_LoadSection(psFileName, configs_Memory, "[Memory]");
 	Configuration_LoadSection(psFileName, configs_Floppy, "[Floppy]");
@@ -810,8 +815,13 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Joystick4, "[Joystick4]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick5, "[Joystick5]");
 	Configuration_SaveSection(sConfigFileName, configs_Keyboard, "[Keyboard]");
+#if WITH_SDL2
+	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers2]");
+	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers2]");
+#else
 	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers]");
 	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers]");
+#endif
 	Configuration_SaveSection(sConfigFileName, configs_Sound, "[Sound]");
 	Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
 	Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
