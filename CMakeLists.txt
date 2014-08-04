@@ -290,9 +290,19 @@ add_custom_target(uninstall
 # ###################################################################
 
 message( "
-Optional libraries summary :
-----------------------------
+Libraries summary :
+-------------------
 ")
+
+if(SDL2_FOUND)
+  message("  - sdl :\tusing SDL2 v${SDL2_VERSION_STRING}")
+else()
+  if(SDL_VERSION_STRING)
+    message("  - sdl :\tusing SDL v${SDL_VERSION_STRING}")
+  else()
+    message("  - sdl :\tusing SDL1")
+  endif(SDL_VERSION_STRING)
+endif(SDL2_FOUND)
 
 if(READLINE_FOUND)
   message( "  - readline :\tfound, enables history/completion in the debugger" )
