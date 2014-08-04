@@ -65,6 +65,66 @@ const char CfgOpts_fileid[] = "Hatari cfgopts.c : " __DATE__ " " __TIME__;
 #include "str.h"
 
 
+static int parse_input_config_entry(const struct Config_Tag *ptr)
+{
+	const char *next;
+	int type = ptr->type;
+
+	/* get actual config value */
+	next = Str_Trim(strtok(NULL, "="));
+	if (next == NULL)
+	{
+		if (type == String_Tag)
+			next = ""; /* field with empty string */
+		else
+			type = Error_Tag;
+	}
+
+	switch (type)      /* check type */
+	{
+	 case Bool_Tag:
+		if (!strcasecmp(next,"FALSE"))
+			*(bool *)ptr->buf = false;
+		else if (!strcasecmp(next,"TRUE"))
+			*(bool *)ptr->buf = true;
+		break;
+
+	 case Char_Tag:
+		sscanf(next, "%c", (char *)ptr->buf);
+		break;
+
+	 case Short_Tag:
+		sscanf(next, "%hd", (short *)ptr->buf);
+		break;
+
+	 case Int_Tag:
+		sscanf(next, "%d", (int *)ptr->buf);
+		break;
+
+	 case Long_Tag:
+		sscanf(next, "%ld", (long *)ptr->buf);
+		break;
+
+	 case Float_Tag:
+		sscanf(next, "%g", (float *)ptr->buf);
+		break;
+
+	 case Double_Tag:
+		sscanf(next, "%lg", (double *)ptr->buf);
+		break;
+
+	 case String_Tag:
+		strcpy((char *)ptr->buf, next);
+		break;
+
+	 case Error_Tag:
+	 default:
+		return -1;
+	}
+
+	return 0;
+}
+
 /**
  * ---------------------------------------------------------------------/
  * /   reads from an input configuration (INI) file.
@@ -81,10 +141,9 @@ const char CfgOpts_fileid[] = "Hatari cfgopts.c : " __DATE__ " " __TIME__;
 int input_config(const char *filename, const struct Config_Tag configs[], const char *header)
 {
 	const struct Config_Tag *ptr;
-	int count=0, lineno=0, type;
+	int count = 0, lineno = 0;
 	FILE *file;
 	char *fptr,*tok;
-	const char *next;
 	char line[1024];
 
 	file = fopen(filename,"r");
@@ -120,60 +179,11 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 			{
 				if (!strcmp(tok, ptr->code))    /* got a match? */
 				{
-					type = ptr->type;
-					/* get actual config value */
-					next = Str_Trim(strtok(NULL, "="));
-					if (next == NULL)
-					{
-						if (type == String_Tag)
-							next = ""; /* field with empty string */
-						else
-							type = Error_Tag;
-					}
-					count++;
-					switch (type)      /* check type */
-					{
-					case Bool_Tag:
-						if (!strcasecmp(next,"FALSE"))
-							*((bool *)(ptr->buf)) = false;
-						else if (!strcasecmp(next,"TRUE"))
-							*((bool *)(ptr->buf)) = true;
-						break;
-						
-					case Char_Tag:
-						sscanf(next, "%c", (char *)(ptr->buf));
-						break;
-						
-					case Short_Tag:
-						sscanf(next, "%hd", (short *)(ptr->buf));
-						break;
-						
-					case Int_Tag:
-						sscanf(next, "%d", (int *)(ptr->buf));
-						break;
-						
-					case Long_Tag:
-						sscanf(next, "%ld", (long *)(ptr->buf));
-						break;
-						
-					case Float_Tag:
-						sscanf(next, "%g", (float *)ptr->buf);
-						break;
-						
-					case Double_Tag:
-						sscanf(next, "%lg", (double *)ptr->buf);
-						break;
-						
-					case String_Tag:
-						strcpy((char *)ptr->buf, next);
-						break;
-						
-					case Error_Tag:
-					default:
-						count--;
-						printf("Error in Config file %s on line %d\n", filename, lineno);
-						break;
-					}
+					if (parse_input_config_entry(ptr) == 0)
+						count++;
+					else
+						printf("Error in Config file %s on line %d\n",
+						       filename, lineno);
 				}
 			}
 		}
