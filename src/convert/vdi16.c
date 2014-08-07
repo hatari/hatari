@@ -11,11 +11,9 @@ static void ConvertVDIRes_16Colour(void)
 {
 	Uint32 *edi, *ebp;
 	Uint32 *esi;
-	Uint32 eax, edx;
+	Uint32 eax, edx;	/* set & used by macros */
 	Uint32 ebx, ecx;
 	int y, x, update;
-
-	edx = eax = 0;
 
 	/* Get screen addresses, 'edi'-ST screen, 'ebp'-Previous ST screen,
 	 * 'esi'-PC screen */

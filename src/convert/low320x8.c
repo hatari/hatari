@@ -11,11 +11,9 @@ static void ConvertLowRes_320x8Bit(void)
 {
 	Uint32 *edi, *ebp;
 	Uint32 *esi;
-	Uint32 eax, edx;
+	Uint32 eax, edx;	/* set & used by macros */
 	Uint32 ebx, ecx;
 	int y, x, update;
-
-	edx = 0;
 
 	Convert_StartFrame();             /* Start frame, track palettes */
 
