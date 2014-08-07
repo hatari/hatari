@@ -236,7 +236,7 @@ Emulator:
   - Setup NVRAM video mode based on VDI mode, when in VDI mode.
     This makes VDI mode work with EmuTOS also under Falcon emulation
     which is useful as EmuTOS doesn't support native VIDEL expanders
-  - Limit VDI screen memory usage to 300kB, this allows upto 2048x1200
+  - Limit VDI screen memory usage to 300kB, this allows up to 2048x1200
     monochrome and 1024x600/800x768 16-color VDI screens
 - GEMDOS HD emulation:
   - Fix: to DTA host filename cutting to 8+3 chars when whole filename
@@ -1143,7 +1143,7 @@ Emulator:
 - Some parts of the code accessed the SR directly to read the IPL -
   however the UAE CPU core only updates the SR when doing a MakeSR() first.
   So this is done in the affected code parts now, too.
-- The IPL wasn't raised when a MFP interrupt occured - fixed now.
+- The IPL wasn't raised when a MFP interrupt occurred - fixed now.
 - Full screen resolution for ST-Low can now be selected from the screen setup
   dialog.
 - The IKBD emulation does not longer duplicate joystick fire buttons when
