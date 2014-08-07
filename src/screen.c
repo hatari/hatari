@@ -371,6 +371,32 @@ static void Screen_SetSTScreenOffsets(void)
 	}
 }
 
+#if WITH_SDL2
+static void Screen_FreeSDL2Resources(void)
+{
+	if (sdlTexture)
+	{
+		SDL_DestroyTexture(sdlTexture);
+		sdlTexture = NULL;
+	}
+	if (sdlscrn)
+	{
+		SDL_FreeSurface(sdlscrn);
+		sdlscrn = NULL;
+	}
+	if (sdlRenderer)
+	{
+		SDL_DestroyRenderer(sdlRenderer);
+		sdlRenderer = NULL;
+	}
+	if (sdlWindow)
+	{
+		SDL_DestroyWindow(sdlWindow);
+		sdlWindow = NULL;
+	}
+}
+#endif
+
 /**
  * Change the SDL video mode.
  * @return true if mode has been changed, false if change was not necessary
@@ -417,14 +443,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 		sdlVideoFlags  = 0;
 	}
 
-	if (sdlTexture)
-		SDL_DestroyTexture(sdlTexture);
-	if (sdlscrn)
-		SDL_FreeSurface(sdlscrn);
-	if (sdlRenderer)
-		SDL_DestroyRenderer(sdlRenderer);
-	if (sdlWindow)
-		SDL_DestroyWindow(sdlWindow);
+	Screen_FreeSDL2Resources();
 
 	/* Set new video mode */
 	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height,
@@ -749,6 +768,10 @@ void Screen_UnInit(void)
 		free(FrameBuffers[i].pSTScreen);
 		free(FrameBuffers[i].pSTScreenCopy);
 	}
+
+#if WITH_SDL2
+	Screen_FreeSDL2Resources();
+#endif
 }
 
 
