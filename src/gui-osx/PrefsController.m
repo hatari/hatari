@@ -27,7 +27,7 @@
 #include "screen.h"
 #include "sdlgui.h"
 #include "paths.h"
-
+#include "keymap.h"
 
 // Macros to transfer data between Cocoa controls and Hatari data structures
 
