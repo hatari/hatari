@@ -47,6 +47,9 @@ void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
 /* Number of visible screen lines including top/bottom borders */
 #define NUM_VISIBLE_LINES  (OVERSCAN_TOP+200+MAX_OVERSCAN_BOTTOM)
 
+/* Number of visible pixels on each screen line including left/right borders */
+#define NUM_VISIBLE_LINE_PIXELS (48+320+48)
+
 /* 1x16 colour palette per screen line, +1 line as may write after line 200 */
 #define HBL_PALETTE_LINES ((NUM_VISIBLE_LINES+1 +3 )*16)	/* [NP] FIXME we need to handle 313 hbl, not 310 ; palette code is a mess it should be removed */
 /* Bit mask of palette colours changes, top bit set is resolution change */

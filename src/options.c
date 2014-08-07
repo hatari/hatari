@@ -30,6 +30,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "floppy.h"
 #include "fdc.h"
 #include "screen.h"
+#include "statusbar.h"
 #include "sound.h"
 #include "video.h"
 #include "vdi.h"
@@ -1049,16 +1050,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_ZOOM, argv[i], "Invalid zoom value");
 			}
+			ConfigureParams.Screen.nMaxWidth = NUM_VISIBLE_LINE_PIXELS;
+			ConfigureParams.Screen.nMaxHeight = NUM_VISIBLE_LINES;
 			if (zoom > 1)
 			{
-				ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
-				ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
+				ConfigureParams.Screen.nMaxWidth *= 2;
+				ConfigureParams.Screen.nMaxHeight *= 2;
 			}
-			else
-			{
-				ConfigureParams.Screen.nMaxWidth = 1*(48+320+48);
-				ConfigureParams.Screen.nMaxHeight = 1*NUM_VISIBLE_LINES+12;
-			}
+			ConfigureParams.Screen.nMaxHeight += STATUSBAR_MAX_HEIGHT;
 			break;
 
 			/* Falcon/TT display options */

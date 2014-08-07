@@ -24,6 +24,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "memorySnapShot.h"
 #include "paths.h"
 #include "screen.h"
+#include "statusbar.h"
 #include "vdi.h"
 #include "video.h"
 #include "avi_record.h"
@@ -550,8 +551,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCrop = false;
 	/* gives zoomed Falcon/TT windows about same size as ST/STE windows */
-	ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
-	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
+	ConfigureParams.Screen.nMaxWidth = 2*NUM_VISIBLE_LINE_PIXELS;
+	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	ConfigureParams.Screen.bForceMax = false;
 
 	/* Set defaults for Sound */

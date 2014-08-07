@@ -12,6 +12,7 @@ const char Resolution_fileid[] = "Hatari resolution.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "configuration.h"
 #include "resolution.h"
+#include "statusbar.h"
 #include "screen.h"
 
 #define DEBUG 0
@@ -31,8 +32,8 @@ static int DesktopWidth, DesktopHeight;
 void Resolution_Init(void)
 {
 #if WITH_SDL2
-	DesktopWidth = 2*(48+320+48);
-	DesktopHeight = 2*NUM_VISIBLE_LINES+24;
+	DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
+	DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 #else
 	/* Needs to be called after SDL video and configuration
 	 * initialization, but before Hatari Screen init is called
@@ -44,8 +45,8 @@ void Resolution_Init(void)
 		DesktopHeight = info->current_h;
 	} else {
 		/* target 800x600 screen with statusbar out of screen */
-		DesktopWidth = 2*(48+320+48);
-		DesktopHeight = 2*NUM_VISIBLE_LINES+24;
+		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
+		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 		fprintf(stderr, "WARNING: invalid desktop size %dx%d, defaulting to %dx%d!\n",
 			info->current_w, info->current_h, DesktopWidth, DesktopHeight);
 	}
@@ -56,7 +57,9 @@ void Resolution_Init(void)
 		ConfigureParams.Screen.nMaxHeight = DesktopHeight;
 	}
 	DEBUGPRINT(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
-	fprintf(stderr, "Configured max Hatari resolution = %dx%d.\n", ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight);
+	fprintf(stderr, "Configured max Hatari resolution = %dx%d, optimal for ST = %dx%d\n",
+		ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight,
+		2*NUM_VISIBLE_LINE_PIXELS, 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT);
 #endif
 }
 

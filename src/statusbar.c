@@ -131,7 +131,9 @@ static int StatusbarHeight;
 int Statusbar_GetHeightForSize(int width, int height)
 {
 	int h = 0;
-	/* Must arrive at same conclusion about font size as SDLGui_SetScreen() */
+	/* Must arrive at same conclusion about font size as SDLGui_SetScreen(),
+	 * and max size returned by this must correspond to STATUSBAR_MAX_HEIGHT
+	 */
 	if (ConfigureParams.Screen.bShowStatusbar) {
 		/* smaller SDL GUI font height = 8, larger = 16 */
 		h = 8;
