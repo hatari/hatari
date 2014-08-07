@@ -33,7 +33,7 @@ downloading other versions or the source code of EmuTOS, please visit
 the EmuTOS website.
 
 The tos.img file included with the latest Hatari releases is
-the etos512k.img[1] from a preceeding EmuTOS release:
+the etos512k.img[1] from a preceding EmuTOS release:
 - Hatari v1.8.0:
   http://sourceforge.net/projects/emutos/files/emutos/0.9.3/
 - Hatari v1.7.0:
@@ -95,7 +95,7 @@ TOS ROM images:
 
 * Users who want to continue using Atari compatible operating systems
   and need an open source replacement of TOS for modifications. Beside
-  EmuTOS they typically alse use FreeMiNT, XaAES and fVDI as operating
+  EmuTOS they typically also use FreeMiNT, XaAES and fVDI as operating
   system replacements/improvements.
 
 * This includes users of Atari FPGA clones, such as MiST:
@@ -891,7 +891,7 @@ Working demos:
 - TT highres slideshow (by .tSCc)
 - Shiny Bubbles TT (by Xanth FX)
 - XiTEC demos (by Omega)
-  - On exiting Swing EmuTOS panics with priviledge violation
+  - On exiting Swing EmuTOS panics with privilege violation
     (TOS bombs and continues)
 
 Working games:
