@@ -24,7 +24,7 @@
 "Error in Config structure (Contact author).\n" = "Erreur dans la structure de configuration (contacter les auteurs).\n" ;
 "Error, Config file not saved" = "Erreur, fichier de configuration non sauvé." ;
 
-"Can not load TOS file:" = "Impossible de charger le fichier TOS:\n'%@'" ;
+"Can not load TOS file:" = "Impossible de charger le fichier TOS\nChoisir un fichier TOS" ;
 "Detected a RAM TOS - this will probably not work very well!\n" = "Le TOS RAM détecté ne fonctionnera probablement pas très bien!\n" ;
 "Detected RAM TOS image, skipping TOS patches.\n" = "Une image de TOS RAM détectée -> pas de correction du TOS.\n" ;
 "Only TOS versions >= 1.04 support autostarting!\n" = "seuls les versions de TOS >= 1.04 supportent l'auto-démarrage!\n" ;
