@@ -445,13 +445,14 @@ BOOL flag1, flag2;
 	[opnPanel setCanChooseFiles: YES];
 	[opnPanel setAccessoryView:partage] ;
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED > 1058
-	[opnPanel setDirectoryURL:[NSURL URLWithString:ru]] ;
+	if ([opnPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+	 {
+		[opnPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;
 	[opnPanel setNameFieldStringValue:@"hatari"] ;
 	btOk = [opnPanel runModal] == NSOKButton ;										// Ok ?
-#else                                                                               // */
-	btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton	;		// Ok ? sous 10.5
-#endif
+	 }
+	else
+		btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton	;
 
 	if (!btOk)  return ;																// Cancel
 
@@ -483,15 +484,14 @@ BOOL		btOk ;
 	[savPanel setAllowedFileTypes:[NSArray arrayWithObject:@"cfg"]] ;
 	[savPanel setAccessoryView:hartage] ;
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED > 1058
-
-	[savPanel setDirectoryURL:[NSURL URLWithString:ru]] ;								// A partir de 10.6
+	if ([savPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+	 {
+		[savPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;			// A partir de 10.6
 	[savPanel setNameFieldStringValue:@"hatari"] ;
 	btOk = [savPanel runModal] == NSOKButton ;											// Ok ?
-
-#else                                                                                   // */
-	btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton ;			// Ok ?
-#endif
+	 }
+	else
+		btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton ;		// avant 10.6
 
 	if (!btOk)
 		return ;                                                                        // Cancel
@@ -509,11 +509,10 @@ BOOL		btOk ;
 NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-#if MAC_OS_X_VERSION_MAX_ALLOWED > 1058
-	[opnPanel setDirectoryURL:[NSURL URLWithString:defaultDirectory]] ;
-#else                                                                                   // */
+	if ([opnPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+		[opnPanel setDirectoryURL:[NSURL fileURLWithPath:defaultDirectory isDirectory:YES]] ;
+	else
 	[opnPanel setDirectory:defaultDirectory] ;
-#endif
 }
 
 - (IBAction)halle:(id)sender
@@ -521,11 +520,10 @@ NSString  *defaultDirectory ;
 NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-#if MAC_OS_X_VERSION_MAX_ALLOWED  > 1058
-	[savPanel setDirectoryURL:[NSURL URLWithString:defaultDirectory]] ;
-#else                                                                                   // */
+	if ([savPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+		[savPanel setDirectoryURL:[NSURL fileURLWithPath:defaultDirectory isDirectory:YES]] ;
+	else 
 	[savPanel setDirectory:defaultDirectory] ;
-#endif
 }
 
 

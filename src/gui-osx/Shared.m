@@ -112,14 +112,13 @@ NSOpenPanel *openPanel ;
 		[openPanel	setAllowsOtherFileTypes:YES] ;  } ;
 	if (titre != nil)  [openPanel setTitle:titre] ;
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED  > 1058
-
-	if (defoDir!=nil)  [openPanel setDirectoryURL:[NSURL URLWithString:defoDir]] ;      //  10.6 & newer
+	if ([openPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+	 {	if (defoDir!=nil)  [openPanel setDirectoryURL:[NSURL fileURLWithPath:defoDir isDirectory:YES]] ;	// A partir de 10.6
 	if (defoFile!=nil) [openPanel setNameFieldStringValue:defoFile] ;
 	btOk = [openPanel runModal] == NSOKButton ;                                         // Ok ?
-#else                                                                                   // */
-	btOk = [openPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton	;	// 10.5
-#endif
+	 }
+	else
+	 	btOk = [openPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton	;	// avant 10.6
 
 	if (btOk)
 	 {	lesURLs = [openPanel URLs] ;
@@ -149,15 +148,14 @@ NSOpenPanel *openPanel ;
 		[savPanel setAllowsOtherFileTypes:YES] ; } ;
 	if (titre != nil)  [savPanel setTitle:titre] ;
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED > 1058
-
-	if (defoDir!=nil)  [savPanel setDirectoryURL:[NSURL URLWithString:defoDir]] ;	// A partir de 10.6
+	if ([savPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+	 {	if (defoDir!=nil)  [savPanel setDirectoryURL:[NSURL fileURLWithPath:defoDir isDirectory:YES]] ;	// A partir de 10.6
 	if (defoFile!=nil) [savPanel setNameFieldStringValue:defoFile] ;
 	btOk = [savPanel runModal] == NSOKButton ;										// Ok?
+	 }
+	else
+		btOk = [savPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton ;	// Ok ? deprecated en 10.6
 
-#else																				// */
-	btOk = [savPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton ;	// Ok ? deprecated en 10.6
-#endif
 	if (btOk)
 	 {	lURL = [savPanel URL] ;
 		if (lURL != nil)
@@ -221,13 +219,19 @@ NSOpenPanel *openPanel ;
 		[lalerte setMessageText:@"Hatari"] ;
 	else
 		[lalerte setMessageText:Txt] ;
-	if (firstB != nil)		[lalerte addButtonWithTitle:firstB] ;
+	[lalerte addButtonWithTitle:firstB] ;
 	if (alternateB != nil)	[lalerte addButtonWithTitle:alternateB] ;
 	if (otherB != nil)		[lalerte addButtonWithTitle:otherB] ;
 	if (informativeT!= nil) [lalerte setInformativeText:informativeT] ;
 	ret = [lalerte runModal] ;
 	[lalerte release] ;
-	return ret ;
+	switch (ret) {
+	case NSAlertFirstButtonReturn : return NSAlertDefaultReturn ;
+									break ;
+	case NSAlertSecondButtonReturn: return NSAlertAlternateReturn ;
+									break ;
+	default :						return NSAlertOtherReturn ;
+	} ;
 }
 
 @end
