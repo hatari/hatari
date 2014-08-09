@@ -194,21 +194,37 @@ void SDLGui_CenterDlg(SGOBJ *dlg)
  */
 void SDLGui_Text(int x, int y, const char *txt)
 {
-	int i;
+	int i, offset;
 	unsigned char c;
 	SDL_Rect sr, dr;
 
+	/* underline offset needs to go outside the box for smaller font */
+	if (sdlgui_fontheight < 16)
+		offset = sdlgui_fontheight + 1;
+	else
+		offset = sdlgui_fontheight - 2;
+
 	for (i=0; txt[i]!=0; i++)
 	{
+		dr.x=x;
+		dr.y=y;
+		dr.w=sdlgui_fontwidth;
+		dr.h=sdlgui_fontheight;
+
 		c = txt[i];
+		if (c == '_')
+		{
+			dr.h = 1;
+			dr.y += offset;
+			SDL_FillRect(pSdlGuiScrn, &dr, SDL_MapRGB(pSdlGuiScrn->format,0,0,255));
+			continue;
+		}
+		x += sdlgui_fontwidth;
+
 		sr.x=sdlgui_fontwidth*(c%16);
 		sr.y=sdlgui_fontheight*(c/16);
 		sr.w=sdlgui_fontwidth;
 		sr.h=sdlgui_fontheight;
-		dr.x=x+i*sdlgui_fontwidth;
-		dr.y=y;
-		dr.w=sdlgui_fontwidth;
-		dr.h=sdlgui_fontheight;
 		SDL_BlitSurface(pFontGfx, &sr, pSdlGuiScrn, &dr);
 	}
 }
@@ -691,13 +707,13 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 /**
  * Search a button with a special flag (e.g. SG_DEFAULT or SG_CANCEL).
  */
-static int SDLGui_SearchFlaggedButton(const SGOBJ *dlg, int flag)
+static int SDLGui_SearchFlaggedButton(const SGOBJ *dlg, int mask, int value)
 {
 	int i = 0;
 
 	while (dlg[i].type != -1)
 	{
-		if (dlg[i].flags & flag)
+		if ((dlg[i].flags & mask) == value)
 			return i;
 		i++;
 	}
@@ -943,15 +959,19 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 				if (sdlEvent.key.keysym.sym == SDLK_RETURN
 				    || sdlEvent.key.keysym.sym == SDLK_KP_ENTER)
 				{
-					retbutton = SDLGui_SearchFlaggedButton(dlg, SG_DEFAULT);
+					retbutton = SDLGui_SearchFlaggedButton(dlg, SG_DEFAULT, SG_DEFAULT);
 				}
 				else if (sdlEvent.key.keysym.sym == SDLK_ESCAPE)
 				{
-					retbutton = SDLGui_SearchFlaggedButton(dlg, SG_CANCEL);
+					retbutton = SDLGui_SearchFlaggedButton(dlg, SG_CANCEL, SG_CANCEL);
 				}
-				else if (pEventOut)
+				else
 				{
-					retbutton = SDLGUI_UNKNOWNEVENT;
+					int key = toupper(sdlEvent.key.keysym.sym);
+					if (key >= 'A' && key <= 'Z')
+						retbutton = SDLGui_SearchFlaggedButton(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
+					if (!retbutton && pEventOut)
+						retbutton = SDLGUI_UNKNOWNEVENT;
 				}
 				break;
 
