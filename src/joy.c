@@ -490,7 +490,7 @@ void Joy_StePadButtons_ReadWord(void)
 		}
 		else if (!(nSteJoySelect & 0x8))
 		{
-			if (nButtons & 0x01)  /* Fire button OPTION pressed? */
+			if (nButtons & 0x08)  /* Fire button OPTION pressed? */
 				nData &= ~2;
 		}
 	}
