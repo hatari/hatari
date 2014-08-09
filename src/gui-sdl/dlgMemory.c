@@ -112,7 +112,7 @@ bool Dialog_MemDlg(void)
 		switch (but)
 		{
 		 case DLGMEM_SAVE:              /* Save memory snap-shot */
-			if (SDLGui_FileConfSelect(dlgSnapShotName,
+			if (SDLGui_FileConfSelect("Save memory snapshot:", dlgSnapShotName,
 			                          ConfigureParams.Memory.szMemoryCaptureFileName,
 			                          memorydlg[DLGMEM_FILENAME].w, true))
 			{
@@ -120,7 +120,7 @@ bool Dialog_MemDlg(void)
 			}
 			break;
 		 case DLGMEM_RESTORE:           /* Load memory snap-shot */
-			if (SDLGui_FileConfSelect(dlgSnapShotName,
+			if (SDLGui_FileConfSelect("Load memory snapshot:", dlgSnapShotName,
 			                          ConfigureParams.Memory.szMemoryCaptureFileName,
 			                          memorydlg[DLGMEM_FILENAME].w, false))
 			{

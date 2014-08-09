@@ -77,7 +77,7 @@ void Dialog_KeyboardDlg(void)
 
 		if (but == DLGKEY_MAPBROWSE)
 		{
-			SDLGui_FileConfSelect(dlgmapfile,
+			SDLGui_FileConfSelect("Keyboard mapping file:", dlgmapfile,
 			                      ConfigureParams.Keyboard.szMappingFileName,
 			                      keyboarddlg[DLGKEY_MAPNAME].w, false);
 		}

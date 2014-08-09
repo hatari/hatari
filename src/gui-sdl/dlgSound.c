@@ -147,7 +147,7 @@ void Dialog_SoundDlg(void)
 		switch (but)
 		{
 		 case DLGSOUND_RECBROWSE:                    /* Choose a new record file */
-			SDLGui_FileConfSelect(dlgRecordName,
+			SDLGui_FileConfSelect("Capture file:", dlgRecordName,
 			                      ConfigureParams.Sound.szYMCaptureFileName,
 			                      sounddlg[DLGSOUND_RECNAME].w,
 			                      true);

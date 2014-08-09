@@ -67,7 +67,7 @@ void DlgRom_Main(void)
 		{
 		 case DLGROM_TOSBROWSE:
 			/* Show and process the file selection dlg */
-			SDLGui_FileConfSelect(szDlgTosName,
+			SDLGui_FileConfSelect("TOS ROM image:", szDlgTosName,
 					      ConfigureParams.Rom.szTosImageFileName,
 					      sizeof(szDlgTosName)-1,
 					      false);
@@ -80,7 +80,7 @@ void DlgRom_Main(void)
 
 		 case DLGROM_CARTBROWSE:
 			/* Show and process the file selection dlg */
-			SDLGui_FileConfSelect(szDlgCartName,
+			SDLGui_FileConfSelect("Cartridge image:", szDlgCartName,
 					      ConfigureParams.Rom.szCartridgeImageFileName,
 					       sizeof(szDlgCartName)-1,
 					      false);

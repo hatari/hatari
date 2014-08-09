@@ -77,7 +77,7 @@ extern void SDLGui_Text(int x, int y, const char *txt);
 extern void SDLGui_DrawDialog(const SGOBJ *dlg);
 extern int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut);
 extern void SDLGui_CenterDlg(SGOBJ *dlg);
-extern char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowNew);
-extern bool SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, bool bAllowNew);
+extern char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip_path, bool bAllowNew);
+extern bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int maxlen, bool bAllowNew);
 
 #endif

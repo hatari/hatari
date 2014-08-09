@@ -103,7 +103,7 @@ static void DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 	else
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
-	selname = SDLGui_FileSelect(tmpname, &zip_path, false);
+	selname = SDLGui_FileSelect("Floppy image:", tmpname, &zip_path, false);
 	if (!selname)
 		return;
 
@@ -131,7 +131,7 @@ static void DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
 	char *str, *selname;
 
-	selname = SDLGui_FileSelect(confname, NULL, false);
+	selname = SDLGui_FileSelect("Floppy image directory:", confname, NULL, false);
 	if (!selname)
 		return;
 

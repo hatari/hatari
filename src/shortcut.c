@@ -243,7 +243,7 @@ static void ShortCut_InsertDisk(int drive)
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
 	Main_PauseEmulation(true);
-	selname = SDLGui_FileSelect(tmpname, &zip_path, false);
+	selname = SDLGui_FileSelect("Floppy image:", tmpname, &zip_path, false);
 	if (selname)
 	{
 		if (File_Exists(selname))

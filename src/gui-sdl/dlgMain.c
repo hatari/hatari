@@ -138,7 +138,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			Dialog_SoundDlg();
 			break;
 		 case MAINDLG_LOADCFG:
-			psNewCfg = SDLGui_FileSelect(sConfigFileName, NULL, false);
+			psNewCfg = SDLGui_FileSelect("Load configuration:", sConfigFileName, NULL, false);
 			if (psNewCfg)
 			{
 				strcpy(sConfigFileName, psNewCfg);
@@ -147,7 +147,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			}
 			break;
 		 case MAINDLG_SAVECFG:
-			psNewCfg = SDLGui_FileSelect(sConfigFileName, NULL, true);
+			psNewCfg = SDLGui_FileSelect("Save configuration:", sConfigFileName, NULL, true);
 			if (psNewCfg)
 			{
 				strcpy(sConfigFileName, psNewCfg);

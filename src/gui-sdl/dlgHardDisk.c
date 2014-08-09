@@ -79,7 +79,7 @@ static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
 	char *str, *selname;
 
-	selname = SDLGui_FileSelect(confname, NULL, false);
+	selname = SDLGui_FileSelect("GEMDOS drive directory:", confname, NULL, false);
 	if (selname)
 	{
 		strcpy(confname, selname);
@@ -165,7 +165,7 @@ void DlgHardDisk_Main(void)
 			dlgname_acsi[0] = '\0';
 			break;
 		 case DISKDLG_ACSIBROWSE:
-			if (SDLGui_FileConfSelect(dlgname_acsi,
+			if (SDLGui_FileConfSelect("ACSI HD image:", dlgname_acsi,
 			                          ConfigureParams.Acsi[0].sDeviceFile,
 			                          diskdlg[DISKDLG_ACSINAME].w, false))
 				ConfigureParams.Acsi[0].bUseDevice = true;
@@ -175,7 +175,7 @@ void DlgHardDisk_Main(void)
 			dlgname_ide_master[0] = '\0';
 			break;
 		 case DISKDLG_IDEMASTERBROWSE:
-			if (SDLGui_FileConfSelect(dlgname_ide_master,
+			if (SDLGui_FileConfSelect("IDE HD master image:", dlgname_ide_master,
 			                          ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
 			                          diskdlg[DISKDLG_IDEMASTERNAME].w, false))
 				ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = true;
@@ -185,7 +185,7 @@ void DlgHardDisk_Main(void)
 			dlgname_ide_slave[0] = '\0';
 			break;
 		 case DISKDLG_IDESLAVEBROWSE:
-			if (SDLGui_FileConfSelect(dlgname_ide_slave,
+			if (SDLGui_FileConfSelect("IDE HD slave image:", dlgname_ide_slave,
 			                          ConfigureParams.HardDisk.szIdeSlaveHardDiskImage,
 			                          diskdlg[DISKDLG_IDESLAVENAME].w, false))
 				ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = true;

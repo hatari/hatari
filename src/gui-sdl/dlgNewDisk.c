@@ -130,7 +130,7 @@ char *DlgNewDisk_Main(void)
 			sprintf(szTracks, "%i", nTracks);
 			break;
 		 case DLGNEWDISK_SAVE:
-			tmpname = SDLGui_FileSelect(szNewDiskName, NULL, true);
+			tmpname = SDLGui_FileSelect("New floppy image:", szNewDiskName, NULL, true);
 			if (tmpname)
 			{
 				if (DlgNewDisk_CreateDisk(tmpname))

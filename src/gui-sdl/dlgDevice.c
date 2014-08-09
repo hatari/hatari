@@ -114,31 +114,31 @@ void Dialog_DeviceDlg(void)
 		switch(but)
 		{
 		 case DEVDLG_PRNBROWSE:                 /* Choose a new printer file */
-			SDLGui_FileConfSelect(dlgPrinterName,
+			SDLGui_FileConfSelect("Printer output:", dlgPrinterName,
                                               ConfigureParams.Printer.szPrintToFileName,
                                               devicedlg[DEVDLG_PRNFILENAME].w,
                                               true);
 			break;
 		 case DEVDLG_RS232OUTBROWSE:            /* Choose a new RS232 output file */
-			SDLGui_FileConfSelect(dlgRs232OutName,
+			SDLGui_FileConfSelect("RS232 output:", dlgRs232OutName,
                                               ConfigureParams.RS232.szOutFileName,
                                               devicedlg[DEVDLG_RS232OUTNAME].w,
                                               true);
 			break;
 		 case DEVDLG_RS232INBROWSE:             /* Choose a new RS232 input file */
-			SDLGui_FileConfSelect(dlgRs232InName,
+			SDLGui_FileConfSelect("RS232 input:", dlgRs232InName,
                                               ConfigureParams.RS232.szInFileName,
                                               devicedlg[DEVDLG_RS232INNAME].w,
                                               true);
 			break;
 		 case DEVDLG_MIDIINBROWSE:              /* Choose a new MIDI file */
-			SDLGui_FileConfSelect(dlgMidiInName,
+			SDLGui_FileConfSelect("MIDI input:", dlgMidiInName,
                                               ConfigureParams.Midi.sMidiInFileName,
                                               devicedlg[DEVDLG_MIDIINNAME].w,
                                               true);
 			break;
 		 case DEVDLG_MIDIOUTBROWSE:             /* Choose a new MIDI file */
-			SDLGui_FileConfSelect(dlgMidiOutName,
+			SDLGui_FileConfSelect("MIDI output:", dlgMidiOutName,
                                               ConfigureParams.Midi.sMidiOutFileName,
                                               devicedlg[DEVDLG_MIDIOUTNAME].w,
                                               true);

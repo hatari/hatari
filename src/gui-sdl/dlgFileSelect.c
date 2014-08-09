@@ -22,7 +22,7 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c : " __DATE__ " " __T
 
 #define SGFS_NUMENTRIES   16            /* How many entries are displayed at once */
 
-
+#define SGFSDLG_TITLE       1
 #define SGFSDLG_FILENAME    5
 #define SGFSDLG_UPDIR       6
 #define SGFSDLG_CWD         7
@@ -51,11 +51,14 @@ static char dlgfilenames[SGFS_NUMENTRIES][DLGFILENAMES_SIZE+1];  /* Visible file
 
 #define SCROLLBAR_MIN_HEIGHT 4		/* Min value for yScrollbar_size */
 
+#define TITLE_OFFSET 1
+#define TITLE_MAXLEN 40
+
 /* The dialog data: */
 static SGOBJ fsdlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 64,25, NULL },
-	{ SGTEXT, 0, 0, 25,1, 13,1, "Choose a file" },
+	{ SGTEXT, 0, 0, 1,1, 13,1, NULL, },
 	{ SGTEXT, 0, 0, 1,2, 7,1, "Folder:" },
 	{ SGTEXT, 0, 0, 1,3, DLGPATH_SIZE,1, dlgpath },
 	{ SGTEXT, 0, 0, 1,4, 6,1, "File:" },
@@ -468,7 +471,7 @@ static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void)
  * within a selected zip file, or NULL if browsing zip files is disallowed.
  * bAllowNew: true if the user is allowed to insert new file names.
  */
-char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowNew)
+char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip_path, bool bAllowNew)
 {
 	struct dirent **files = NULL;
 	char *pStringMem;
@@ -476,7 +479,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	const char *home;
 	char *path, *fname;                 /* The actual file and path names */
 	bool reloaddir = true;              /* Do we have to reload the directory file list? */
-	int retbut;
+	int retbut, len;
 	bool bOldMouseVisibility;
 	int selection;                      /* The selection index */
 	char *zipfilename;                  /* Filename in zip file */
@@ -507,6 +510,11 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	zipfilename[0] = 0;
 	fname[0] = 0;
 	path[0] = 0;
+
+	len = strlen(title);
+	fsdlg[SGFSDLG_TITLE].txt = (char *)title;
+	fsdlg[SGFSDLG_TITLE].x = TITLE_OFFSET + (TITLE_MAXLEN-len)/2;
+	fsdlg[SGFSDLG_TITLE].w = len;
 
 	/* Save mouse state and enable cursor */
 	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
@@ -877,11 +885,11 @@ clean_exit:
  * (dlgname is shrunken & limited to maxlen and confname is assumed
  * to have FILENAME_MAX amount of space).
  */
-bool SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, bool bAllowNew)
+bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int maxlen, bool bAllowNew)
 {
 	char *selname;
-	
-	selname = SDLGui_FileSelect(confname, NULL, bAllowNew);
+
+	selname = SDLGui_FileSelect(title, confname, NULL, bAllowNew);
 	if (selname)
 	{
 		if (!File_DoesFileNameEndWithSlash(selname) &&
