@@ -855,7 +855,7 @@ static const dbgcommand_t uicommand[] =
 	{ History_Parse, History_Match,
 	  "history", "hi",
 	  "show last CPU/DSP PC values & executed instructions",
-	  "cpu|dsp|on|off|<count> [limit]\n"
+	  "cpu|dsp|on|off|<count> [limit]|save <file>\n"
 	  "\t'cpu' and 'dsp' enable instruction history tracking for just given\n"
 	  "\tprocessor, 'on' tracks them both, 'off' will disable history.\n"
 	  "\tOptional 'limit' will set how many past instructions are tracked.\n"
