@@ -21,6 +21,13 @@ const char Joy_fileid[] = "Hatari joy.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "statusbar.h"
 
+#define JOY_DEBUG 0
+#if JOY_DEBUG
+#define Dprintf(a) printf a
+#else
+#define Dprintf(a)
+#endif
+
 #define JOY_BUTTON1  1
 #define JOY_BUTTON2  2
 
@@ -523,6 +530,7 @@ void Joy_StePadButtons_ReadWord(void)
 		}
 	}
 
+	Dprintf(("0xff9200 -> 0x%04x\n", nData));
 	IoMem_WriteWord(0xff9200, nData);
 }
 
@@ -530,10 +538,12 @@ void Joy_StePadButtons_ReadWord(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Read from STE joypad direction/buttons register (0xff9202)
+ *
+ * This is used e.g. by Reservoir Gods' Tautology II
  */
 void Joy_StePadMulti_ReadWord(void)
 {
-	Uint8 nData = 0xff;
+	Uint16 nData = 0xff;
 
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
@@ -579,7 +589,9 @@ void Joy_StePadMulti_ReadWord(void)
 		}
 	}
 
-	IoMem_WriteWord(0xff9202, (nData << 8) | 0x0ff);
+	nData = (nData << 8) | 0x0ff;
+	Dprintf(("0xff9202 -> 0x%04x\n", nData));
+	IoMem_WriteWord(0xff9202, nData);
 }
 
 
@@ -590,4 +602,5 @@ void Joy_StePadMulti_ReadWord(void)
 void Joy_StePadMulti_WriteWord(void)
 {
 	nSteJoySelect = IoMem_ReadWord(0xff9202);
+	Dprintf(("0xff9202 <- 0x%04x\n", nSteJoySelect));
 }
