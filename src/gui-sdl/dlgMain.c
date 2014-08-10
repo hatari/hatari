@@ -58,7 +58,7 @@ static SGOBJ maindlg[] =
 	{ SGRADIOBUT, 0, 0, 3,15, 15,1, "No Reset" },
 	{ SGRADIOBUT, 0, 0, 3,17, 15,1, "Reset machine" },
 	{ SGBUTTON, SG_DEFAULT, 0, 21,15, 8,3, "OK" },
-	{ SGBUTTON, 0, 0, 36,15, 10,1, "Quit" },
+	{ SGBUTTON, SG_SHORTCUT_KEY('Q'), 0, 36,15, 10,1, "Quit" },
 	{ SGBUTTON, SG_CANCEL, 0, 36,17, 10,1, "Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
