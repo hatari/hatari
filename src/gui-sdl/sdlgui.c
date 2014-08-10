@@ -1110,8 +1110,10 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 				 default:
 					key = toupper(sdlEvent.key.keysym.sym);
 					if (key >= 'A' && key <= 'Z')
+					{
 						retbutton = SDLGui_SearchFlags(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
-
+						retbutton = SDLGui_HandleSelection(dlg, retbutton, retbutton);
+					}
 					if (!retbutton && pEventOut)
 						retbutton = SDLGUI_UNKNOWNEVENT;
 					break;
