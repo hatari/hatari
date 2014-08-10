@@ -511,26 +511,28 @@ Pauses the emulation
 Invokes the internal Hatari debugger
 
 .SH "Keyboard shortcuts for SDL GUI"
-Following keys can be used within SDL GUI:
-.TP
-.B General
-Cursor keys change focus between buttons and checkboxes.
-Space selects the focused item.
+There are multiple ways to interact with the SDL GUI.
+.PP
+Cursor keys change focus between UI elements.  Initially focus is on
+default UI element (which can be invoked with Enter), but focus
+changes are remembered between dialog invocations. Space invokes
+focused item. Underlined shortcut letter can be used to invoke given
+UI element directly.
+.PP
+Most importantly:
 .TP
 .B Options GUI main view
-Underlined letters invoke indicated buttons.
 Enter accepts configuration, ESC cancels it.
 .TP
 .B Options GUI dialogs
-Underlined letter invokes indicated button.
 Enter returns back to main view.
 .TP
 .B Fileselector
-Page up and down, cursor up and down keys scroll the file list.
-Enter accepts selection, ESC cancels it.
+Page up and down keys scroll the file list.
+Enter accepts the selected file, ESC cancels it.
 .TP
 .B Alert dialogs
-Enter accepts and ESC cancels the dialog (both dismiss it).
+Enter accepts and ESC cancels the dialog.
 
 .SH "SEE ALSO"
 The main program documentation, usually in /usr/share/doc/.
