@@ -922,7 +922,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	int oldbutton=0;
 	int retbutton=0;
 	int i, j, b, key;
-	int focused, defocus;
+	int focused;
 	SDL_Event sdlEvent;
 	SDL_Surface *pBgSurface;
 	SDL_Rect dlgrect, bgrect;
@@ -959,14 +959,17 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 		fprintf(stderr, "SDLGUI_DoDialog: CreateRGBSurface failed: %s\n", SDL_GetError());
 	}
 
-	/* move focus to default button, if it exists */
+	/* focus default button if nothing else is focused */
 	focused = SDLGui_SearchState(dlg, SG_FOCUSED);
-	defocus = SDLGui_SearchFlags(dlg, SG_DEFAULT, SG_DEFAULT);
-	if (defocus)
+	if (!focused)
 	{
-		dlg[focused].state &= ~SG_FOCUSED;
-		dlg[defocus].state |= SG_FOCUSED;
-		focused = defocus;
+		int defocus = SDLGui_SearchFlags(dlg, SG_DEFAULT, SG_DEFAULT);
+		if (defocus)
+		{
+			dlg[focused].state &= ~SG_FOCUSED;
+			dlg[defocus].state |= SG_FOCUSED;
+			focused = defocus;
+		}
 	}
 
 	/* (Re-)draw the dialog */
