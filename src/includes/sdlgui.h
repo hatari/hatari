@@ -30,17 +30,17 @@ enum
 #define SG_EXIT        2   /* Exit when mouse button has been pressed (and released) */
 #define SG_DEFAULT     4   /* Marks a default button, selectable with Enter & Return keys */
 #define SG_CANCEL      8   /* Marks a cancel button, selectable with ESC key */
-#define SG_FOCUSED    16   /* Marks a button that has selection focus */
-#define SG_SHORTCUT   32   /* Marks a shortcut button, selectable with masked letter */
+#define SG_SHORTCUT   16   /* Marks a shortcut button, selectable with masked letter */
 
 /* key given to macro should be uppercase ASCII one */
-#define SG_SHORTCUT_KEY(x) (SG_SHORTCUT | (x << 6))
-#define SG_SHORTCUT_MASK   ~(SG_TOUCHEXIT|SG_EXIT|SG_DEFAULT|SG_CANCEL|SG_FOCUSED)
+#define SG_SHORTCUT_KEY(x) (SG_SHORTCUT | (x << 5))
+#define SG_SHORTCUT_MASK   ~(SG_TOUCHEXIT|SG_EXIT|SG_DEFAULT|SG_CANCEL)
 
 /* Object states: */
 #define SG_SELECTED    1
-#define SG_MOUSEDOWN   16
-#define SG_MOUSEUP     (((int)-1) - SG_MOUSEDOWN)
+#define SG_MOUSEDOWN   2
+#define SG_FOCUSED     4   /* Marks an object that has selection focus */
+#define SG_WASFOCUSED  8   /* Marks an object that had selection focus & its bg needs redraw */
 
 /* Special characters: */
 #define SGRADIOBUTTON_NORMAL    12

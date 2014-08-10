@@ -294,7 +294,7 @@ static void SDLGui_DrawBox(const SGOBJ *bdlg, int objnum)
 	int x, y, w, h, offset;
 	Uint32 color, upleftc, downrightc;
 
-	if (bdlg[objnum].flags & SG_FOCUSED)
+	if (bdlg[objnum].state & SG_FOCUSED)
 		color = colors.focus;
 	else
 		color = colors.midgrey;
@@ -385,6 +385,29 @@ static void SDLGui_DrawButton(const SGOBJ *bdlg, int objnum)
 	SDLGui_Text(x, y, bdlg[objnum].txt);
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * If object is focused, draw a focused background to it
+ */
+static void SDLGui_DrawFocusBg(const SGOBJ *obj, int x, int y)
+{
+	SDL_Rect rect;
+	Uint32 color;
+
+	if (obj->state & SG_WASFOCUSED)
+		color = colors.midgrey;
+	else if (obj->state & SG_FOCUSED)
+		color = colors.focus;
+	else
+		return;
+
+	rect.x = x;
+	rect.y = y;
+	rect.w = obj->w * sdlgui_fontwidth;
+	rect.h = obj->h * sdlgui_fontheight;
+
+	SDL_FillRect(pSdlGuiScrn, &rect, color);
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -397,6 +420,7 @@ static void SDLGui_DrawRadioButton(const SGOBJ *rdlg, int objnum)
 
 	x = (rdlg[0].x + rdlg[objnum].x) * sdlgui_fontwidth;
 	y = (rdlg[0].y + rdlg[objnum].y) * sdlgui_fontheight;
+	SDLGui_DrawFocusBg(&(rdlg[objnum]), x, y);
 
 	if (rdlg[objnum].state & SG_SELECTED)
 		str[0]=SGRADIOBUTTON_SELECTED;
@@ -420,6 +444,7 @@ static void SDLGui_DrawCheckBox(const SGOBJ *cdlg, int objnum)
 
 	x = (cdlg[0].x + cdlg[objnum].x) * sdlgui_fontwidth;
 	y = (cdlg[0].y + cdlg[objnum].y) * sdlgui_fontheight;
+	SDLGui_DrawFocusBg(&(cdlg[objnum]), x, y);
 
 	if ( cdlg[objnum].state&SG_SELECTED )
 		str[0]=SGCHECKBOX_SELECTED;
@@ -637,6 +662,41 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Draw single object based on its type
+ */
+static void SDLGui_DrawObj(const SGOBJ *dlg, int i)
+{
+	switch (dlg[i].type)
+	{
+	case SGBOX:
+		SDLGui_DrawBox(dlg, i);
+		break;
+	case SGTEXT:
+		SDLGui_DrawText(dlg, i);
+		break;
+	case SGEDITFIELD:
+		SDLGui_DrawEditField(dlg, i);
+		break;
+	case SGBUTTON:
+		SDLGui_DrawButton(dlg, i);
+		break;
+	case SGRADIOBUT:
+		SDLGui_DrawRadioButton(dlg, i);
+		break;
+	case SGCHECKBOX:
+		SDLGui_DrawCheckBox(dlg, i);
+		break;
+	case SGPOPUP:
+		SDLGui_DrawPopupButton(dlg, i);
+		break;
+	case SGSCROLLBAR:
+		SDLGui_DrawScrollbar(dlg, i);
+		break;
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Draw a whole dialog.
  */
 void SDLGui_DrawDialog(const SGOBJ *dlg)
@@ -645,33 +705,7 @@ void SDLGui_DrawDialog(const SGOBJ *dlg)
 
 	for (i = 0; dlg[i].type != -1; i++)
 	{
-		switch (dlg[i].type)
-		{
-		 case SGBOX:
-			SDLGui_DrawBox(dlg, i);
-			break;
-		 case SGTEXT:
-			SDLGui_DrawText(dlg, i);
-			break;
-		 case SGEDITFIELD:
-			SDLGui_DrawEditField(dlg, i);
-			break;
-		 case SGBUTTON:
-			SDLGui_DrawButton(dlg, i);
-			break;
-		 case SGRADIOBUT:
-			SDLGui_DrawRadioButton(dlg, i);
-			break;
-		 case SGCHECKBOX:
-			SDLGui_DrawCheckBox(dlg, i);
-			break;
-		 case SGPOPUP:
-			SDLGui_DrawPopupButton(dlg, i);
-			break;
-		 case SGSCROLLBAR:
-			SDLGui_DrawScrollbar(dlg, i);
-			break;
-		}
+		SDLGui_DrawObj(dlg, i);
 	}
 	SDL_UpdateRect(pSdlGuiScrn, 0,0,0,0);
 }
@@ -721,9 +755,9 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Search a button with a special flag (e.g. SG_DEFAULT or SG_CANCEL).
+ * Search an object with a special flag (e.g. SG_DEFAULT or SG_CANCEL).
  */
-static int SDLGui_SearchFlaggedButton(const SGOBJ *dlg, int mask, int value)
+static int SDLGui_SearchFlags(const SGOBJ *dlg, int mask, int value)
 {
 	int i = 0;
 
@@ -733,7 +767,22 @@ static int SDLGui_SearchFlaggedButton(const SGOBJ *dlg, int mask, int value)
 			return i;
 		i++;
 	}
+	return 0;
+}
+/*-----------------------------------------------------------------------*/
+/**
+ * Search an object with a special state (e.g. SG_FOCUSED).
+ */
+static int SDLGui_SearchState(const SGOBJ *dlg, int state)
+{
+	int i = 0;
 
+	while (dlg[i].type != -1)
+	{
+		if (dlg[i].state & state)
+			return i;
+		i++;
+	}
 	return 0;
 }
 
@@ -743,11 +792,10 @@ static int SDLGui_SearchFlaggedButton(const SGOBJ *dlg, int mask, int value)
  */
 static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 {
-	int old = i;
+	int kind, old = i;
 	if (!i)
 		return i;
 
-	old = i;
 	for (;;)
 	{
 		i += inc;
@@ -766,12 +814,15 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 			i--;
 		}
 		/* change focus */
-		if (dlg[i].type == SGBUTTON)
+		kind = dlg[i].type;
+		if (kind == SGBUTTON || kind == SGRADIOBUT || kind == SGCHECKBOX)
 		{
-			dlg[old].flags &= ~SG_FOCUSED;
-			dlg[i].flags |= SG_FOCUSED;
-			SDLGui_DrawButton(dlg, old);
-			SDLGui_DrawButton(dlg, i);
+			dlg[old].state ^= SG_FOCUSED;
+			dlg[old].state |= SG_WASFOCUSED;
+			SDLGui_DrawObj(dlg, old);
+			dlg[old].state ^= SG_WASFOCUSED;
+			dlg[i].state |= SG_FOCUSED;
+			SDLGui_DrawObj(dlg, i);
 			SDL_UpdateRect(pSdlGuiScrn, 0,0,0,0);
 			return i;
 		}
@@ -779,6 +830,85 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 	return old;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle button selection, either with mouse or keyboard
+ */
+static int SDLGui_HandleSelection(SGOBJ *dlg, int obj, int oldbutton)
+{
+	SDL_Rect rct;
+	int i, retbutton = 0;
+
+	switch (dlg[obj].type)
+	{
+	case SGBUTTON:
+		if (oldbutton==obj)
+			retbutton=obj;
+		break;
+	case SGSCROLLBAR:
+		dlg[obj].state &= ~SG_MOUSEDOWN;
+
+		if (oldbutton==obj)
+			retbutton=obj;
+		break;
+	case SGEDITFIELD:
+		SDLGui_EditField(dlg, obj);
+		break;
+	case SGRADIOBUT:
+		for (i = obj-1; i > 0 && dlg[i].type == SGRADIOBUT; i--)
+		{
+			dlg[i].state &= ~SG_SELECTED;  /* Deselect all radio buttons in this group */
+			rct.x = (dlg[0].x+dlg[i].x)*sdlgui_fontwidth;
+			rct.y = (dlg[0].y+dlg[i].y)*sdlgui_fontheight;
+			rct.w = sdlgui_fontwidth;
+			rct.h = sdlgui_fontheight;
+			SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
+			SDLGui_DrawRadioButton(dlg, i);
+			SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
+		}
+		for (i = obj+1; dlg[i].type == SGRADIOBUT; i++)
+		{
+			dlg[i].state &= ~SG_SELECTED;  /* Deselect all radio buttons in this group */
+			rct.x = (dlg[0].x+dlg[i].x)*sdlgui_fontwidth;
+			rct.y = (dlg[0].y+dlg[i].y)*sdlgui_fontheight;
+			rct.w = sdlgui_fontwidth;
+			rct.h = sdlgui_fontheight;
+			SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
+			SDLGui_DrawRadioButton(dlg, i);
+			SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
+		}
+		dlg[obj].state |= SG_SELECTED;  /* Select this radio button */
+		rct.x = (dlg[0].x+dlg[obj].x)*sdlgui_fontwidth;
+		rct.y = (dlg[0].y+dlg[obj].y)*sdlgui_fontheight;
+		rct.w = sdlgui_fontwidth;
+		rct.h = sdlgui_fontheight;
+		SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
+		SDLGui_DrawRadioButton(dlg, obj);
+		SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
+		break;
+	case SGCHECKBOX:
+		dlg[obj].state ^= SG_SELECTED;
+		rct.x = (dlg[0].x+dlg[obj].x)*sdlgui_fontwidth;
+		rct.y = (dlg[0].y+dlg[obj].y)*sdlgui_fontheight;
+		rct.w = sdlgui_fontwidth;
+		rct.h = sdlgui_fontheight;
+		SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
+		SDLGui_DrawCheckBox(dlg, obj);
+		SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
+		break;
+	case SGPOPUP:
+		dlg[obj].state |= SG_SELECTED;
+		SDLGui_DrawPopupButton(dlg, obj);
+		SDL_UpdateRect(pSdlGuiScrn,
+			       (dlg[0].x+dlg[obj].x)*sdlgui_fontwidth-2,
+			       (dlg[0].y+dlg[obj].y)*sdlgui_fontheight-2,
+			       dlg[obj].w*sdlgui_fontwidth+4,
+			       dlg[obj].h*sdlgui_fontheight+4);
+		retbutton=obj;
+		break;
+	}
+	return retbutton;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -794,7 +924,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	int i, j, b, key;
 	int focused, defocus;
 	SDL_Event sdlEvent;
-	SDL_Rect rct;
 	SDL_Surface *pBgSurface;
 	SDL_Rect dlgrect, bgrect;
 
@@ -831,12 +960,12 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	}
 
 	/* move focus to default button, if it exists */
-	focused = SDLGui_SearchFlaggedButton(dlg, SG_FOCUSED, SG_FOCUSED);
-	defocus = SDLGui_SearchFlaggedButton(dlg, SG_DEFAULT, SG_DEFAULT);
+	focused = SDLGui_SearchState(dlg, SG_FOCUSED);
+	defocus = SDLGui_SearchFlags(dlg, SG_DEFAULT, SG_DEFAULT);
 	if (defocus)
 	{
-		dlg[focused].flags &= ~SG_FOCUSED;
-		dlg[defocus].flags |= SG_FOCUSED;
+		dlg[focused].state &= ~SG_FOCUSED;
+		dlg[defocus].state |= SG_FOCUSED;
 		focused = defocus;
 	}
 
@@ -859,7 +988,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 		else {
 			obj = current_object;
 			current_object = 0;
-			dlg[obj].state &= SG_MOUSEUP;
+			dlg[obj].state &= ~SG_MOUSEDOWN;
 			retbutton = obj;
 			oldbutton = obj;
 		}
@@ -935,71 +1064,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 				obj = SDLGui_FindObj(dlg, sdlEvent.button.x, sdlEvent.button.y);
 				if (obj>0)
 				{
-					switch (dlg[obj].type)
-					{
-					 case SGBUTTON:
-						if (oldbutton==obj)
-							retbutton=obj;
-						break;
-					 case SGSCROLLBAR:
- 						dlg[obj].state &= SG_MOUSEUP;
-
-						if (oldbutton==obj)
-							retbutton=obj;
-						break;
-					case SGEDITFIELD:
-						SDLGui_EditField(dlg, obj);
-						break;
-					 case SGRADIOBUT:
-						for (i = obj-1; i > 0 && dlg[i].type == SGRADIOBUT; i--)
-						{
-							dlg[i].state &= ~SG_SELECTED;  /* Deselect all radio buttons in this group */
-							rct.x = (dlg[0].x+dlg[i].x)*sdlgui_fontwidth;
-							rct.y = (dlg[0].y+dlg[i].y)*sdlgui_fontheight;
-							rct.w = sdlgui_fontwidth;
-							rct.h = sdlgui_fontheight;
-							SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
-							SDLGui_DrawRadioButton(dlg, i);
-							SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
-						}
-						for (i = obj+1; dlg[i].type == SGRADIOBUT; i++)
-						{
-							dlg[i].state &= ~SG_SELECTED;  /* Deselect all radio buttons in this group */
-							rct.x = (dlg[0].x+dlg[i].x)*sdlgui_fontwidth;
-							rct.y = (dlg[0].y+dlg[i].y)*sdlgui_fontheight;
-							rct.w = sdlgui_fontwidth;
-							rct.h = sdlgui_fontheight;
-							SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
-							SDLGui_DrawRadioButton(dlg, i);
-							SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
-						}
-						dlg[obj].state |= SG_SELECTED;  /* Select this radio button */
-						rct.x = (dlg[0].x+dlg[obj].x)*sdlgui_fontwidth;
-						rct.y = (dlg[0].y+dlg[obj].y)*sdlgui_fontheight;
-						rct.w = sdlgui_fontwidth;
-						rct.h = sdlgui_fontheight;
-						SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
-						SDLGui_DrawRadioButton(dlg, obj);
-						SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
-						break;
-					 case SGCHECKBOX:
-						dlg[obj].state ^= SG_SELECTED;
-						rct.x = (dlg[0].x+dlg[obj].x)*sdlgui_fontwidth;
-						rct.y = (dlg[0].y+dlg[obj].y)*sdlgui_fontheight;
-						rct.w = sdlgui_fontwidth;
-						rct.h = sdlgui_fontheight;
-						SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
-						SDLGui_DrawCheckBox(dlg, obj);
-						SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
-						break;
-					 case SGPOPUP:
-						dlg[obj].state |= SG_SELECTED;
-						SDLGui_DrawPopupButton(dlg, obj);
-						SDL_UpdateRect(pSdlGuiScrn, (dlg[0].x+dlg[obj].x)*sdlgui_fontwidth-2, (dlg[0].y+dlg[obj].y)*sdlgui_fontheight-2,
-						               dlg[obj].w*sdlgui_fontwidth+4, dlg[obj].h*sdlgui_fontheight+4);
-						retbutton=obj;
-						break;
-					}
+					retbutton = SDLGui_HandleSelection(dlg, obj, oldbutton);
 				}
 				if (oldbutton > 0 && dlg[oldbutton].type == SGBUTTON)
 				{
@@ -1033,21 +1098,19 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 						focused = SDLGui_FocusNext(dlg, focused, +1);
 						break;
 					case SDLK_SPACE:
-						retbutton = SDLGui_SearchFlaggedButton(dlg, SG_FOCUSED, SG_FOCUSED);
+						retbutton = SDLGui_HandleSelection(dlg, focused, focused);
 						break;
 					case SDLK_RETURN:
 					case SDLK_KP_ENTER:
-						retbutton = SDLGui_SearchFlaggedButton(dlg, SG_FOCUSED, SG_FOCUSED);
-						if (!retbutton)
-							retbutton = SDLGui_SearchFlaggedButton(dlg, SG_DEFAULT, SG_DEFAULT);
+						retbutton = SDLGui_SearchFlags(dlg, SG_DEFAULT, SG_DEFAULT);
 						break;
 					case SDLK_ESCAPE:
-						retbutton = SDLGui_SearchFlaggedButton(dlg, SG_CANCEL, SG_CANCEL);
+						retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL, SG_CANCEL);
 						break;
 					default:
 						key = toupper(sdlEvent.key.keysym.sym);
 						if (key >= 'A' && key <= 'Z')
-							retbutton = SDLGui_SearchFlaggedButton(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
+							retbutton = SDLGui_SearchFlags(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
 						if (!retbutton && pEventOut)
 							retbutton = SDLGUI_UNKNOWNEVENT;
 						break;
