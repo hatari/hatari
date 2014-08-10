@@ -1089,31 +1089,32 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 			 case SDL_KEYDOWN:                     /* Key pressed */
 				switch (sdlEvent.key.keysym.sym)
 				{
-					case SDLK_UP:
-					case SDLK_LEFT:
-						focused = SDLGui_FocusNext(dlg, focused, -1);
-						break;
-					case SDLK_DOWN:
-					case SDLK_RIGHT:
-						focused = SDLGui_FocusNext(dlg, focused, +1);
-						break;
-					case SDLK_SPACE:
-						retbutton = SDLGui_HandleSelection(dlg, focused, focused);
-						break;
-					case SDLK_RETURN:
-					case SDLK_KP_ENTER:
-						retbutton = SDLGui_SearchFlags(dlg, SG_DEFAULT, SG_DEFAULT);
-						break;
-					case SDLK_ESCAPE:
-						retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL, SG_CANCEL);
-						break;
-					default:
-						key = toupper(sdlEvent.key.keysym.sym);
-						if (key >= 'A' && key <= 'Z')
-							retbutton = SDLGui_SearchFlags(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
-						if (!retbutton && pEventOut)
-							retbutton = SDLGUI_UNKNOWNEVENT;
-						break;
+				 case SDLK_UP:
+				 case SDLK_LEFT:
+					focused = SDLGui_FocusNext(dlg, focused, -1);
+					break;
+				 case SDLK_DOWN:
+				 case SDLK_RIGHT:
+					focused = SDLGui_FocusNext(dlg, focused, +1);
+					break;
+				 case SDLK_SPACE:
+					retbutton = SDLGui_HandleSelection(dlg, focused, focused);
+					break;
+				 case SDLK_RETURN:
+				 case SDLK_KP_ENTER:
+					retbutton = SDLGui_SearchFlags(dlg, SG_DEFAULT, SG_DEFAULT);
+					break;
+				 case SDLK_ESCAPE:
+					retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL, SG_CANCEL);
+					break;
+				 default:
+					key = toupper(sdlEvent.key.keysym.sym);
+					if (key >= 'A' && key <= 'Z')
+						retbutton = SDLGui_SearchFlags(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
+
+					if (!retbutton && pEventOut)
+						retbutton = SDLGUI_UNKNOWNEVENT;
+					break;
 				}
 				break;
 
