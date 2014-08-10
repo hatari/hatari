@@ -7,10 +7,12 @@
 
 .SH "NAME"
 hatari \- Atari ST/STE/TT/Falcon emulator
+
 .SH "SYNOPSIS"
 .B hatari
 .RI  [options]
 .RI  [directory|diskimage|program]
+
 .SH "DESCRIPTION"
 Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, BeOS and
 other Systems which are supported by the SDL library.
@@ -36,8 +38,10 @@ last on the command line as an option or the argument (and which
 corresponds to A: or C:). If you want to give floppy image name with
 an autostarting program name, give it with --disk-a option before the
 program name.
+
 .SH "OPTIONS"
 Hatari options are split into several categories:
+
 .SH "General options"
 .TP 
 .B \-h, \-\-help
@@ -59,6 +63,7 @@ Load keyboard mapping from <file>
 .TP 
 .B \-\-fast\-forward <bool>
 On fast machine helps skipping (fast forwarding) Hatari output
+
 .SH "Common display options"
 .TP 
 .B \-m, \-\-mono
@@ -100,6 +105,7 @@ Preferred / maximum window height for borders / zooming
 .TP
 .B \-\-bpp <bool>
 Force internal bitdepth (x = 8/15/16/32, 0=disable)
+
 .SH "ST/STE specific display options"
 .TP
 .B \-\-desktop\-st <bool>
@@ -119,6 +125,7 @@ the slower but more accurate Spectrum512 screen conversion functions
 .TP 
 .B \-z, \-\-zoom <x>
 Zoom (double) low resolution (1=no, 2=yes)
+
 .SH "TT/Falcon specific display options"
 Zooming to sizes specified below is internally done using integer scaling
 factors. This means that different Atari resolutions may show up with
@@ -138,6 +145,7 @@ resolution. (disabled by default)
 .TP
 .B \-\-aspect <bool>
 Whether to do monitor aspect ratio correction (enabled by default)
+
 .SH "VDI options"
 .TP
 .B \-\-vdi <bool>
@@ -151,6 +159,7 @@ Use extended VDI resolution with width <w> (320 < w <= 1280)
 .TP
 .B \-\-vdi\-height <h>
 Use extended VDI resolution with height <h> (200 < h <= 960)
+
 .SH "Screen capture options"
 .TP
 .B \-\-crop <bool>
@@ -167,6 +176,7 @@ Force avi frame rate (x = 50/60/71/...)
 .TP
 .B \-\-avi\-file <file>
 Use <file> to record avi
+
 .SH "Devices options"
 .TP 
 .B \-j, \-\-joystick <port>
@@ -189,6 +199,7 @@ Enable serial port support and use <file> as the input device
 .TP 
 .B \-\-rs232\-out <filename>
 Enable serial port support and use <file> as the output device
+
 .SH "Disk options"
 .TP
 .B \-\-drive\-a <bool>
@@ -243,6 +254,7 @@ Emulate an IDE slave hard disk with an image <file>
 .TP 
 .B \-\-fastfdc <bool>
 speed up FDC emulation (can cause incompatibilities)
+
 .SH "Memory options"
 .TP 
 .B \-\-memstate <file>
@@ -250,6 +262,7 @@ Load memory snap-shot <file>
 .TP 
 .B \-s, \-\-memsize <x>
 Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
+
 .SH "ROM options"
 .TP 
 .B \-t, \-\-tos <imagefile>
@@ -262,6 +275,7 @@ this enabled unless you know what you are doing!
 .B \-\-cartridge <imagefile>
 Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
+
 .SH "CPU options"
 .TP 
 .B \-\-cpulevel <x>
@@ -273,6 +287,7 @@ Set the CPU clock (8, 16 or 32 Mhz)
 .B \-\-compatible <bool>
 Use a more compatible, but slower 68000 CPU mode with
 better prefetch accuracy and cycle counting
+
 .SH "Misc system options"
 .TP 
 .B \-\-machine <x>
@@ -295,6 +310,7 @@ the memory test of TOS, so that the system boots faster.
 .TP
 .B \-\-rtc <bool>
 Enable real-time clock
+
 .SH "Sound options"
 .TP 
 .B \-\-mic <bool>
@@ -333,6 +349,7 @@ Select a method for mixing the three YM2149 voice volumes together.
 "model" uses a mathematical model of the YM voices,
 "table" uses a lookup table of audio output voltage values measured
 on STF and "linear" just averages the 3 YM voices.
+
 .SH "Debug options"
 .TP 
 .B \-D, \-\-debug
@@ -398,7 +415,42 @@ Show dialog for log messages above given level
 .TP
 .B \-\-run\-vbls <x>
 Exit after X VBLs
-.SH "COMMANDS"
+
+.SH "KEYBOARD HANDLING"
+Hatari provides special keys for different purposes.
+
+.SH "Emulated Atari ST keyboard"
+All other keys on the keyboard act as the normal Atari ST keys so
+pressing SPACE on your PC will result in an emulated press of the
+SPACE key on the ST. The following keys have special meanings:
+.TP
+.B  Alt
+will act as the ST's ALTERNATE key
+.TP
+.B  left Ctrl
+will act as the ST's CONTROL key
+.TP
+.B  Page Up
+will emulate the ST's HELP key
+.TP
+.B  Page Down
+will emulate the ST's UNDO key
+.PP
+.B AltGr
+will act as
+.B Alternate
+as well as long as you do not press it together with a Hatari hotkey
+combination.
+.PP
+The 
+.B right Ctrl
+key is used as the fire button of the emulated joystick when you turn
+on joystick emulation via keyboard. 
+.PP
+The cursor keys will act as the cursor keys on the Atari ST as long as
+joystick emulation via keyboard has been turned off.
+
+.SH "Keyboard shortcuts during emulation"
 The shortcut keys can be configured in the configuration file.
 The default settings are:
 .TP
@@ -458,36 +510,22 @@ Pauses the emulation
 .B AltGr + Pause
 Invokes the internal Hatari debugger
 
-.SH Emulated Atari ST keyboard
-All other keys on the keyboard act as the normal Atari ST keys so
-pressing SPACE on your PC will result in an emulated press of the
-SPACE key on the ST. The following keys have special meanings:
+.SH "Keyboard shortcuts for SDL GUI"
+Following keys can be used within SDL GUI:
 .TP
-.B  Alt
-will act as the ST's ALTERNATE key
+.B Options GUI main view
+Underlined letters invoke indicated buttons.
+Enter accepts configuration, ESC cancels it.
 .TP
-.B  left Ctrl
-will act as the ST's CONTROL key
+.B Options GUI dialogs
+Underlined letter invokes indicated button.
+Enter returns back to main view.
+.B Fileselector
+Page up and down, cursor up and down keys scroll the file list.
+Enter accepts selection, ESC cancels it.
 .TP
-.B  Page Up
-will emulate the ST's HELP key
-.TP
-.B  Page Down
-will emulate the ST's UNDO key
-.PP
-.B AltGr
-will act as
-.B Alternate
-as well as long as you do not press it together with a Hatari hotkey
-combination. 
-
-The 
-.B right Ctrl
-key is used as the fire button of the emulated joystick when you turn
-on joystick emulation via keyboard. 
-
-The cursor keys will act as the cursor keys on the Atari ST as long as
-joystick emulation via keyboard has been turned off.
+.B Alert dialogs
+Enter and ESC dismiss the dialog.
 
 .SH "SEE ALSO"
 The main program documentation, usually in /usr/share/doc/.
@@ -505,6 +543,7 @@ Other Hatari programs and utilities:
 .IR hconsole (1),
 .IR gst2ascii (1),
 .IR hatari_profile (1)
+
 .SH "FILES AND DIRECTORIES"
 .TP
 /etc/hatari.cfg (or /usr/local/etc/hatari.cfg)
