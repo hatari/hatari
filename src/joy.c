@@ -577,15 +577,15 @@ void Joy_StePadMulti_ReadWord(void)
 		}
 		else if (!(nSteJoySelect & 0x20))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 13) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (13-4)) & 0xf0;
 		}
 		else if (!(nSteJoySelect & 0x40))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 9) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (9-4)) & 0xf0;
 		}
 		else if (!(nSteJoySelect & 0x80))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 5) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (5-4)) & 0xf0;
 		}
 	}
 
