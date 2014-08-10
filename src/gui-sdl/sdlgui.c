@@ -210,9 +210,9 @@ void SDLGui_CenterDlg(SGOBJ *dlg)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Draw a text string.
+ * Draw a text string (internal version).
  */
-void SDLGui_Text(int x, int y, const char *txt)
+static void SDLGui_TextInt(int x, int y, const char *txt, bool underline)
 {
 	int i, offset;
 	unsigned char c;
@@ -232,7 +232,7 @@ void SDLGui_Text(int x, int y, const char *txt)
 		dr.h=sdlgui_fontheight;
 
 		c = txt[i];
-		if (c == '_')
+		if (c == '_' && underline)
 		{
 			dr.h = 1;
 			dr.y += offset;
@@ -249,6 +249,14 @@ void SDLGui_Text(int x, int y, const char *txt)
 	}
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Draw a text string (generic).
+ */
+void SDLGui_Text(int x, int y, const char *txt)
+{
+	SDLGui_TextInt(x, y, txt, false);
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -382,7 +390,7 @@ static void SDLGui_DrawButton(const SGOBJ *bdlg, int objnum)
 		x+=1;
 		y+=1;
 	}
-	SDLGui_Text(x, y, bdlg[objnum].txt);
+	SDLGui_TextInt(x, y, bdlg[objnum].txt, true);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -429,7 +437,7 @@ static void SDLGui_DrawRadioButton(const SGOBJ *rdlg, int objnum)
 	str[1]=' ';
 	strcpy(&str[2], rdlg[objnum].txt);
 
-	SDLGui_Text(x, y, str);
+	SDLGui_TextInt(x, y, str, true);
 }
 
 
@@ -453,7 +461,7 @@ static void SDLGui_DrawCheckBox(const SGOBJ *cdlg, int objnum)
 	str[1]=' ';
 	strcpy(&str[2], cdlg[objnum].txt);
 
-	SDLGui_Text(x, y, str);
+	SDLGui_TextInt(x, y, str, true);
 }
 
 
@@ -512,7 +520,7 @@ static void SDLGui_DrawPopupButton(const SGOBJ *pdlg, int objnum)
 	y = (pdlg[0].y + pdlg[objnum].y) * sdlgui_fontheight;
 	w = pdlg[objnum].w * sdlgui_fontwidth;
 
-	SDLGui_Text(x, y, pdlg[objnum].txt);
+	SDLGui_TextInt(x, y, pdlg[objnum].txt, true);
 	SDLGui_Text(x+w-sdlgui_fontwidth, y, downstr);
 }
 
