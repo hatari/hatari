@@ -55,7 +55,7 @@ static SGOBJ maindlg[] =
 	{ SGBUTTON, SG_SHORTCUT_KEY('O'), 0, 35,10, 13,1, "S_ound" },
 	{ SGBUTTON, SG_SHORTCUT_KEY('L'), 0,  7,13, 16,1, "_Load config." },
 	{ SGBUTTON, SG_SHORTCUT_KEY('S'), 0, 27,13, 16,1, "_Save config." },
-	{ SGRADIOBUT, 0, 0, 3,15, 15,1, "No Reset" },
+	{ SGRADIOBUT, 0, 0, 3,15, 10,1, "No Reset" },
 	{ SGRADIOBUT, 0, 0, 3,17, 15,1, "Reset machine" },
 	{ SGBUTTON, SG_DEFAULT, 0, 21,15, 8,3, "OK" },
 	{ SGBUTTON, SG_SHORTCUT_KEY('Q'), 0, 36,15, 10,1, "Quit" },

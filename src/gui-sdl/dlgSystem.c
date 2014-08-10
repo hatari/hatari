@@ -57,9 +57,9 @@ static SGOBJ systemdlg[] =
 
 	{ SGBOX, 0, 0, 2,3, 14,8, NULL },
 	{ SGTEXT, 0, 0, 3,3, 13,1, "Machine type" },
-	{ SGRADIOBUT, 0, 0, 3,5, 8,1, "ST" },
-	{ SGRADIOBUT, 0, 0, 3,6, 8,1, "STE" },
-	{ SGRADIOBUT, 0, 0, 3,7, 8,1, "TT" },
+	{ SGRADIOBUT, 0, 0, 3,5, 4,1, "ST" },
+	{ SGRADIOBUT, 0, 0, 3,6, 5,1, "STE" },
+	{ SGRADIOBUT, 0, 0, 3,7, 4,1, "TT" },
 	{ SGRADIOBUT, 0, 0, 3,8, 8,1, "Falcon" },
 
 	{ SGBOX, 0, 0, 17,3, 13,8, NULL },
@@ -72,7 +72,7 @@ static SGOBJ systemdlg[] =
 	{ SGRADIOBUT, 0, 0, 19,9, 7,1, "68040" },
 	{ SGRADIOBUT, 0, 0, 19,10, 7,1, "68060" },
 #else
-	{ SGRADIOBUT, 0, 0, 19,8, 13,1, "68030+FPU" },
+	{ SGRADIOBUT, 0, 0, 19,8, 11,1, "68030+FPU" },
 	{ SGRADIOBUT, 0, 0, 19,9, 7,1, "68040" },
 	{ SGTEXT, 0, 0, 19,10, 7,1, "" },
 #endif
@@ -96,10 +96,10 @@ static SGOBJ systemdlg[] =
 #endif
 	{ SGTEXT, 0, 0, 3,12, 11,1, "CPU & system parameters" },
 	{ SGCHECKBOX, 0, 0, 3,14, 27,1, "Real time clock emulation" },
-	{ SGCHECKBOX, 0, 0, 3,15, 20,1, "Blitter emulation" },
+	{ SGCHECKBOX, 0, 0, 3,15, 19,1, "Blitter emulation" },
 	{ SGCHECKBOX, 0, 0, 3,16, 15,1, "Patch Timer-D" },
 	{ SGCHECKBOX, 0, 0, 3,17, 39,1, "Boot faster by patching TOS & sysvars" },
-	{ SGCHECKBOX, 0, 0, 3,18, 25,1, "Prefetch mode, slower" },
+	{ SGCHECKBOX, 0, 0, 3,18, 23,1, "Prefetch mode, slower" },
 #ifdef ENABLE_WINUAE_CPU
 	{ SGCHECKBOX, 0, 0, 3,19, 22,1, "Cycle exact, slower" },
 	{ SGCHECKBOX, 0, 0, 3,20, 15,1, "MMU emulation" },

@@ -61,7 +61,7 @@ static SGOBJ diskdlg[] =
 
 	{ SGTEXT, 0, 0, 2,12, 31,1, "GEMDOS drive write protection:" },
 	{ SGRADIOBUT, 0, 0, 33,12, 5,1, "Off" },
-	{ SGRADIOBUT, 0, 0, 40,12, 5,1, "On" },
+	{ SGRADIOBUT, 0, 0, 40,12, 4,1, "On" },
 	{ SGRADIOBUT, 0, 0, 46,12, 6,1, "Auto" },
 
 	{ SGCHECKBOX, 0, 0, 2,14, 14,1, "Boot from HD" },

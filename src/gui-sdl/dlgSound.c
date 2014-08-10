@@ -42,11 +42,11 @@ static SGOBJ sounddlg[] =
 {
 	{ SGBOX,      0,0,  0, 0, 40,25, NULL },
 	{ SGBOX,      0,0,  1, 1, 38,13, NULL },
-	{ SGTEXT,     0,0,  4, 2, 13,1, "SOUND" },
-	{ SGCHECKBOX, 0,0, 13, 2, 14,1, "Enabled" },
-	{ SGCHECKBOX, 0,0, 25, 2, 14,1, "Synchronize" },
+	{ SGTEXT,     0,0,  4, 2,  5,1, "SOUND" },
+	{ SGCHECKBOX, 0,0, 13, 2,  9,1, "Enabled" },
+	{ SGCHECKBOX, 0,0, 25, 2, 13,1, "Synchronize" },
 
-	{ SGTEXT,     0,0,  4, 4, 14,1, "Playback quality:" },
+	{ SGTEXT,     0,0,  4, 4, 17,1, "Playback quality:" },
 	{ SGRADIOBUT, 0,0,  2, 6, 10,1, "11025 Hz" },
 	{ SGRADIOBUT, 0,0,  2, 7, 10,1, "12517 Hz" },
 	{ SGRADIOBUT, 0,0,  2, 8, 10,1, "16000 Hz" },
@@ -58,9 +58,9 @@ static SGOBJ sounddlg[] =
 	{ SGRADIOBUT, 0,0, 28, 8, 10,1, "50066 Hz" },
 
 	{ SGTEXT,     0,0,  4,10, 10,1, "YM voices mixing:" },
-	{ SGRADIOBUT, 0,0,  2,12, 10,1, "Math model" },
+	{ SGRADIOBUT, 0,0,  2,12, 12,1, "Math model" },
 	{ SGRADIOBUT, 0,0, 15,12, 10,1, "ST table" },
-	{ SGRADIOBUT, 0,0, 28,12, 10,1, "Linear" },
+	{ SGRADIOBUT, 0,0, 28,12,  8,1, "Linear" },
 
 	{ SGBOX,      0,0,  1,15, 38,7, NULL },
 	{ SGTEXT,     0,0, 13,16, 14,1, "Capture YM/WAV" },

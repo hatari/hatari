@@ -51,7 +51,7 @@ static SGOBJ memorydlg[] =
 	{ SGTEXT, 0, 0, 2,13, 36,1, dlgSnapShotName },
 	{ SGBUTTON, 0, 0, 8,15, 10,1, "Save" },
 	{ SGBUTTON, 0, 0, 22,15, 10,1, "Restore" },
-	{ SGCHECKBOX, 0, 0, 2,17, 37,1, "Load/save state at start-up/exit" },
+	{ SGCHECKBOX, 0, 0, 2,17, 34,1, "Load/save state at start-up/exit" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 10,20, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }

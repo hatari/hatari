@@ -46,13 +46,13 @@ static SGOBJ devicedlg[] =
 	{ SGTEXT, 0, 0, 20,1, 13,1, "Devices setup" },
 
 	{ SGBOX, 0, 0, 1,3, 50,4, NULL },
- 	{ SGCHECKBOX, 0, 0, 2,3, 28,1, "Enable printer emulation" },
+ 	{ SGCHECKBOX, 0, 0, 2,3, 26,1, "Enable printer emulation" },
  	{ SGTEXT, 0, 0, 2,5, 10,1, "Print to file:" },
  	{ SGBUTTON, 0, 0, 42,5, 8,1, "Browse" },
  	{ SGTEXT, 0, 0, 3,6, 46,1, dlgPrinterName },
 
 	{ SGBOX, 0, 0, 1,8, 50,6, NULL },
- 	{ SGCHECKBOX, 0, 0, 2,8, 28,1, "Enable RS232 emulation" },
+ 	{ SGCHECKBOX, 0, 0, 2,8, 24,1, "Enable RS232 emulation" },
  	{ SGTEXT, 0, 0, 2,10, 10,1, "Write RS232 output to file:" },
  	{ SGBUTTON, 0, 0, 42,10, 8,1, "Browse" },
  	{ SGTEXT, 0, 0, 3,11, 46,1, dlgRs232OutName },
@@ -61,7 +61,7 @@ static SGOBJ devicedlg[] =
  	{ SGTEXT, 0, 0, 3,13, 46,1, dlgRs232InName },
 
 	{ SGBOX, 0, 0, 1,15, 50,6, NULL },
- 	{ SGCHECKBOX, 0, 0, 2,15, 28,1, "Enable MIDI emulation" },
+ 	{ SGCHECKBOX, 0, 0, 2,15, 23,1, "Enable MIDI emulation" },
  	{ SGTEXT, 0, 0, 2,17, 26,1, "Read MIDI input from file:" },
  	{ SGBUTTON, 0, 0, 42,17, 8,1, "Browse" },
  	{ SGTEXT, 0, 0, 3,18, 46,1, dlgMidiInName },
