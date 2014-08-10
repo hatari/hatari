@@ -12,19 +12,18 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c : " __DATE__ " " __TIME_
 #include "sdlgui.h"
 #include "joy.h"
 
-#define DLGJOY_DISABLED    3
-#define DLGJOY_USEREALJOY  4
-#define DLGJOY_USEKEYS     5
-#define DLGJOY_DEFINEKEYS  6
-#define DLGJOY_SDLJOYNAME  8
-#define DLGJOY_PREVSDLJOY  9
-#define DLGJOY_NEXTSDLJOY 10
-#define DLGJOY_AUTOFIRE   11
-#define DLGJOY_STJOYNAME  13
-#define DLGJOY_PREVSTJOY  14  
-#define DLGJOY_NEXTSTJOY  15
+#define DLGJOY_STJOYNAME   3
+#define DLGJOY_PREVSTJOY   4
+#define DLGJOY_NEXTSTJOY   5
+#define DLGJOY_DISABLED    7
+#define DLGJOY_USEKEYS     8
+#define DLGJOY_DEFINEKEYS  9
+#define DLGJOY_USEREALJOY 10
+#define DLGJOY_SDLJOYNAME 12
+#define DLGJOY_PREVSDLJOY 13
+#define DLGJOY_NEXTSDLJOY 14
+#define DLGJOY_AUTOFIRE   15
 #define DLGJOY_EXIT       16
-
 
 /* The joysticks dialog: */
 
@@ -35,23 +34,23 @@ static SGOBJ joydlg[] =
 	{ SGBOX, 0, 0, 0,0, 32,18, NULL },
 	{ SGTEXT, 0, 0, 8,1, 15,1, "Joysticks setup" },
 
+	{ SGBOX, 0, 0, 4,3, 24,1, NULL },
+	{ SGTEXT, 0, 0, 5,3, 22,1, NULL },
+	{ SGBUTTON, 0, 0, 1,3, 3,1, "\x04" },         /* Arrow left */
+	{ SGBUTTON, 0, 0, 28,3, 3,1, "\x03" },        /* Arrow right */
+
 	{ SGBOX, 0, 0, 1,4, 30,11, NULL },
 	{ SGRADIOBUT, 0, 0, 2,5, 10,1, "disabled" },
-	{ SGRADIOBUT, 0, 0, 2,9, 20,1, "use real joystick:" },
 	{ SGRADIOBUT, 0, 0, 2,7, 14,1, "use keyboard" },
-
 	{ SGBUTTON, 0, 0, 19,7, 11,1, "Define keys" },
+
+	{ SGRADIOBUT, 0, 0, 2,9, 20,1, "use real joystick:" },
 	{ SGBOX, 0, 0, 5,11, 22,1, NULL },
 	{ SGTEXT, 0, 0, 6,11, 20,1, sSdlStickName },
 	{ SGBUTTON, 0, 0, 4,11, 1,1, "\x04" },         /* Arrow left */
 	{ SGBUTTON, 0, 0, 27,11, 1,1, "\x03" },        /* Arrow right */
 
 	{ SGCHECKBOX, 0, 0, 2,13, 17,1, "Enable autofire" },
-
-	{ SGBOX, 0, 0, 4,3, 24,1, NULL },
-	{ SGTEXT, 0, 0, 5,3, 22,1, NULL },
-	{ SGBUTTON, 0, 0, 1,3, 3,1, "\x04" },         /* Arrow left */
-	{ SGBUTTON, 0, 0, 28,3, 3,1, "\x03" },        /* Arrow right */
 
 	{ SGBUTTON, SG_DEFAULT, 0, 6,16, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
