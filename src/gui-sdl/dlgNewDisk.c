@@ -46,10 +46,10 @@ static SGOBJ newdiskdlg[] =
 	{ SGRADIOBUT, 0, 0, 12,6, 9,1, "18 (HD)" },
 	{ SGRADIOBUT, 0, 0, 12,7, 9,1, "36 (ED)" },
 	{ SGTEXT, 0, 0, 2,9, 6,1, "Sides:" },
-	{ SGRADIOBUT, 0, 0, 12,9, 4,1, "1" },
-	{ SGRADIOBUT, 0, SG_SELECTED, 17,9, 4,1, "2" },
-	{ SGBUTTON, 0, 0, 4,12, 8,1, "Create" },
-	{ SGBUTTON, 0, 0, 18,12, 6,1, "Back" },
+	{ SGRADIOBUT, 0, 0, 12,9, 3,1, "1" },
+	{ SGRADIOBUT, 0, SG_SELECTED, 17,9, 3,1, "2" },
+	{ SGBUTTON, SG_DEFAULT, 0, 4,12, 8,1, "Create" },
+	{ SGBUTTON, SG_CANCEL, 0, 18,12, 6,1, "Back" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
