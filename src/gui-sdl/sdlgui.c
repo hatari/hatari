@@ -29,6 +29,12 @@ static SDL_Surface *pBigFontGfx = NULL;     /* The big font graphics */
 static SDL_Surface *pFontGfx = NULL;        /* The actual font graphics */
 static int current_object = 0;				/* Current selected object */
 
+static struct {
+	Uint32 darkbar, midbar, lightbar;
+	Uint32 darkgrey, midgrey, lightgrey;
+	Uint32 cursor, underline, editfield;
+} colors;
+
 int sdlgui_fontwidth;			/* Width of the actual font */
 int sdlgui_fontheight;			/* Height of the actual font */
 
@@ -162,6 +168,19 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 	sdlgui_fontwidth = pFontGfx->w/16;
 	sdlgui_fontheight = pFontGfx->h/16;
 
+	/* scrollbar */
+	colors.darkbar   = SDL_MapRGB(pSdlGuiScrn->format, 64, 64, 64);
+	colors.midbar    = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
+	colors.lightbar  = SDL_MapRGB(pSdlGuiScrn->format,196,196,196);
+	/* buttons, midgray is also normal bg color */
+	colors.darkgrey  = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
+	colors.midgrey   = SDL_MapRGB(pSdlGuiScrn->format,192,192,192);
+	colors.lightgrey = SDL_MapRGB(pSdlGuiScrn->format,255,255,255);
+	/* others */
+	colors.cursor    = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
+	colors.underline = SDL_MapRGB(pSdlGuiScrn->format,  0,  0,255);
+	colors.editfield = SDL_MapRGB(pSdlGuiScrn->format,160,160,160);
+
 	return 0;
 }
 
@@ -216,7 +235,7 @@ void SDLGui_Text(int x, int y, const char *txt)
 		{
 			dr.h = 1;
 			dr.y += offset;
-			SDL_FillRect(pSdlGuiScrn, &dr, SDL_MapRGB(pSdlGuiScrn->format,0,0,255));
+			SDL_FillRect(pSdlGuiScrn, &dr, colors.underline);
 			continue;
 		}
 		x += sdlgui_fontwidth;
@@ -260,7 +279,7 @@ static void SDLGui_DrawEditField(const SGOBJ *edlg, int objnum)
 	rect.y = y + edlg[objnum].h * sdlgui_fontheight;
 	rect.w = edlg[objnum].w * sdlgui_fontwidth;
 	rect.h = 1;
-	SDL_FillRect(pSdlGuiScrn, &rect, SDL_MapRGB(pSdlGuiScrn->format,160,160,160));
+	SDL_FillRect(pSdlGuiScrn, &rect, colors.editfield);
 }
 
 
@@ -272,8 +291,9 @@ static void SDLGui_DrawBox(const SGOBJ *bdlg, int objnum)
 {
 	SDL_Rect rect;
 	int x, y, w, h, offset;
-	Uint32 grey = SDL_MapRGB(pSdlGuiScrn->format,192,192,192);
-	Uint32 upleftc, downrightc;
+	Uint32 color, upleftc, downrightc;
+
+	color = colors.midgrey;
 
 	x = bdlg[objnum].x*sdlgui_fontwidth;
 	y = bdlg[objnum].y*sdlgui_fontheight;
@@ -288,13 +308,13 @@ static void SDLGui_DrawBox(const SGOBJ *bdlg, int objnum)
 
 	if (bdlg[objnum].state & SG_SELECTED)
 	{
-		upleftc = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
-		downrightc = SDL_MapRGB(pSdlGuiScrn->format,255,255,255);
+		upleftc = colors.darkgrey;
+		downrightc = colors.lightgrey;
 	}
 	else
 	{
-		upleftc = SDL_MapRGB(pSdlGuiScrn->format,255,255,255);
-		downrightc = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
+		upleftc = colors.lightgrey;
+		downrightc = colors.darkgrey;
 	}
 
 	/* The root box should be bigger than the screen, so we disable the offset there: */
@@ -308,7 +328,7 @@ static void SDLGui_DrawBox(const SGOBJ *bdlg, int objnum)
 	rect.y = y;
 	rect.w = w;
 	rect.h = h;
-	SDL_FillRect(pSdlGuiScrn, &rect, grey);
+	SDL_FillRect(pSdlGuiScrn, &rect, color);
 
 	/* Draw upper border: */
 	rect.x = x;
@@ -416,9 +436,6 @@ static void SDLGui_DrawScrollbar(const SGOBJ *bdlg, int objnum)
 {
 	SDL_Rect rect;
 	int x, y, w, h;
-	Uint32 grey0 = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
-	Uint32 grey1 = SDL_MapRGB(pSdlGuiScrn->format,196,196,196);
-	Uint32 grey2 = SDL_MapRGB(pSdlGuiScrn->format, 64, 64, 64);
 
 	x = bdlg[objnum].x * sdlgui_fontwidth;
 	y = bdlg[objnum].y * sdlgui_fontheight + bdlg[objnum].h;
@@ -434,22 +451,21 @@ static void SDLGui_DrawScrollbar(const SGOBJ *bdlg, int objnum)
 	rect.y = y;
 	rect.w = w;
 	rect.h = h;
-	SDL_FillRect(pSdlGuiScrn, &rect, grey0);
+	SDL_FillRect(pSdlGuiScrn, &rect, colors.midbar);
 
 	/* Draw upper border: */
 	rect.x = x;
 	rect.y = y;
 	rect.w = w;
 	rect.h = 1;
-	SDL_FillRect(pSdlGuiScrn, &rect, grey1);
+	SDL_FillRect(pSdlGuiScrn, &rect, colors.lightbar);
 
 	/* Draw bottom border: */
 	rect.x = x;
 	rect.y = y + h - 1;
 	rect.w = w;
 	rect.h = 1;
-	SDL_FillRect(pSdlGuiScrn, &rect, grey2);
-	
+	SDL_FillRect(pSdlGuiScrn, &rect, colors.darkbar);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -485,7 +501,6 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	int bStopEditing = false;           /* true if user wants to exit the edit field */
 	char *txt;                          /* Shortcut for dlg[objnum].txt */
 	SDL_Rect rect;
-	Uint32 grey, cursorCol;
 	SDL_Event event;
 #if !WITH_SDL2
 	int nOldUnicodeMode;
@@ -493,9 +508,6 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	/* Enable unicode translation to get proper characters with SDL_PollEvent */
 	nOldUnicodeMode = SDL_EnableUNICODE(true);
 #endif
-
-	grey = SDL_MapRGB(pSdlGuiScrn->format, 192, 192, 192);
-	cursorCol = SDL_MapRGB(pSdlGuiScrn->format, 128, 128, 128);
 
 	rect.x = (dlg[0].x + dlg[objnum].x) * sdlgui_fontwidth;
 	rect.y = (dlg[0].y + dlg[objnum].y) * sdlgui_fontheight;
@@ -595,7 +607,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 		}
 
 		/* Redraw the text field: */
-		SDL_FillRect(pSdlGuiScrn, &rect, grey);  /* Draw background */
+		SDL_FillRect(pSdlGuiScrn, &rect, colors.midgrey);  /* Draw background */
 		/* Draw the cursor: */
 		if (blinkState && !bStopEditing)
 		{
@@ -604,7 +616,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 			cursorrect.y = rect.y;
 			cursorrect.w = sdlgui_fontwidth;
 			cursorrect.h = rect.h;
-			SDL_FillRect(pSdlGuiScrn, &cursorrect, cursorCol);
+			SDL_FillRect(pSdlGuiScrn, &cursorrect, colors.cursor);
 		}
 		SDLGui_Text(rect.x, rect.y, dlg[objnum].txt);  /* Draw text */
 		SDL_UpdateRects(pSdlGuiScrn, 1, &rect);
@@ -736,7 +748,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	int i, j, b;
 	SDL_Event sdlEvent;
 	SDL_Rect rct;
-	Uint32 grey;
 	SDL_Surface *pBgSurface;
 	SDL_Rect dlgrect, bgrect;
 
@@ -745,8 +756,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 		fprintf(stderr, "Screen size too small for dialog!\n");
 		return SDLGUI_ERROR;
 	}
-
-	grey = SDL_MapRGB(pSdlGuiScrn->format,192,192,192);
 
 	dlgrect.x = dlg[0].x * sdlgui_fontwidth;
 	dlgrect.y = dlg[0].y * sdlgui_fontheight;
@@ -892,7 +901,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 							rct.y = (dlg[0].y+dlg[i].y)*sdlgui_fontheight;
 							rct.w = sdlgui_fontwidth;
 							rct.h = sdlgui_fontheight;
-							SDL_FillRect(pSdlGuiScrn, &rct, grey); /* Clear old */
+							SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
 							SDLGui_DrawRadioButton(dlg, i);
 							SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
 						}
@@ -903,7 +912,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 							rct.y = (dlg[0].y+dlg[i].y)*sdlgui_fontheight;
 							rct.w = sdlgui_fontwidth;
 							rct.h = sdlgui_fontheight;
-							SDL_FillRect(pSdlGuiScrn, &rct, grey); /* Clear old */
+							SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
 							SDLGui_DrawRadioButton(dlg, i);
 							SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
 						}
@@ -912,7 +921,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 						rct.y = (dlg[0].y+dlg[obj].y)*sdlgui_fontheight;
 						rct.w = sdlgui_fontwidth;
 						rct.h = sdlgui_fontheight;
-						SDL_FillRect(pSdlGuiScrn, &rct, grey); /* Clear old */
+						SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
 						SDLGui_DrawRadioButton(dlg, obj);
 						SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
 						break;
@@ -922,7 +931,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 						rct.y = (dlg[0].y+dlg[obj].y)*sdlgui_fontheight;
 						rct.w = sdlgui_fontwidth;
 						rct.h = sdlgui_fontheight;
-						SDL_FillRect(pSdlGuiScrn, &rct, grey); /* Clear old */
+						SDL_FillRect(pSdlGuiScrn, &rct, colors.midgrey); /* Clear old */
 						SDLGui_DrawCheckBox(dlg, obj);
 						SDL_UpdateRects(pSdlGuiScrn, 1, &rct);
 						break;
