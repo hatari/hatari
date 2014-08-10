@@ -32,7 +32,7 @@ static int current_object = 0;				/* Current selected object */
 static struct {
 	Uint32 darkbar, midbar, lightbar;
 	Uint32 darkgrey, midgrey, lightgrey;
-	Uint32 cursor, underline, editfield;
+	Uint32 focus, cursor, underline, editfield;
 } colors;
 
 int sdlgui_fontwidth;			/* Width of the actual font */
@@ -177,6 +177,7 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 	colors.midgrey   = SDL_MapRGB(pSdlGuiScrn->format,192,192,192);
 	colors.lightgrey = SDL_MapRGB(pSdlGuiScrn->format,255,255,255);
 	/* others */
+	colors.focus     = SDL_MapRGB(pSdlGuiScrn->format,  0,196,196);
 	colors.cursor    = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
 	colors.underline = SDL_MapRGB(pSdlGuiScrn->format,  0,  0,255);
 	colors.editfield = SDL_MapRGB(pSdlGuiScrn->format,160,160,160);
@@ -293,7 +294,10 @@ static void SDLGui_DrawBox(const SGOBJ *bdlg, int objnum)
 	int x, y, w, h, offset;
 	Uint32 color, upleftc, downrightc;
 
-	color = colors.midgrey;
+	if (bdlg[objnum].flags & SG_FOCUSED)
+		color = colors.focus;
+	else
+		color = colors.midgrey;
 
 	x = bdlg[objnum].x*sdlgui_fontwidth;
 	y = bdlg[objnum].y*sdlgui_fontheight;
@@ -733,6 +737,48 @@ static int SDLGui_SearchFlaggedButton(const SGOBJ *dlg, int mask, int value)
 	return 0;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Search a next button to focus and focus it
+ */
+static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
+{
+	int old = i;
+	if (!i)
+		return i;
+
+	old = i;
+	for (;;)
+	{
+		i += inc;
+		if (i == old)
+			return i;
+
+		/* wrap */
+		if (dlg[i].type == -1)
+		{
+			i = 0;
+		}
+		else if (i == 0)
+		{
+			while (dlg[i].type != -1)
+				i++;
+			i--;
+		}
+		/* change focus */
+		if (dlg[i].type == SGBUTTON)
+		{
+			dlg[old].flags &= ~SG_FOCUSED;
+			dlg[i].flags |= SG_FOCUSED;
+			SDLGui_DrawButton(dlg, old);
+			SDLGui_DrawButton(dlg, i);
+			SDL_UpdateRect(pSdlGuiScrn, 0,0,0,0);
+			return i;
+		}
+	}
+	return old;
+}
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -745,7 +791,8 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	int obj=0;
 	int oldbutton=0;
 	int retbutton=0;
-	int i, j, b;
+	int i, j, b, key;
+	int focused, defocus;
 	SDL_Event sdlEvent;
 	SDL_Rect rct;
 	SDL_Surface *pBgSurface;
@@ -781,6 +828,16 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	else
 	{
 		fprintf(stderr, "SDLGUI_DoDialog: CreateRGBSurface failed: %s\n", SDL_GetError());
+	}
+
+	/* move focus to default button, if it exists */
+	focused = SDLGui_SearchFlaggedButton(dlg, SG_FOCUSED, SG_FOCUSED);
+	defocus = SDLGui_SearchFlaggedButton(dlg, SG_DEFAULT, SG_DEFAULT);
+	if (defocus)
+	{
+		dlg[focused].flags &= ~SG_FOCUSED;
+		dlg[defocus].flags |= SG_FOCUSED;
+		focused = defocus;
 	}
 
 	/* (Re-)draw the dialog */
@@ -965,22 +1022,35 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 				break;
 
 			 case SDL_KEYDOWN:                     /* Key pressed */
-				if (sdlEvent.key.keysym.sym == SDLK_RETURN
-				    || sdlEvent.key.keysym.sym == SDLK_KP_ENTER)
+				switch (sdlEvent.key.keysym.sym)
 				{
-					retbutton = SDLGui_SearchFlaggedButton(dlg, SG_DEFAULT, SG_DEFAULT);
-				}
-				else if (sdlEvent.key.keysym.sym == SDLK_ESCAPE)
-				{
-					retbutton = SDLGui_SearchFlaggedButton(dlg, SG_CANCEL, SG_CANCEL);
-				}
-				else
-				{
-					int key = toupper(sdlEvent.key.keysym.sym);
-					if (key >= 'A' && key <= 'Z')
-						retbutton = SDLGui_SearchFlaggedButton(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
-					if (!retbutton && pEventOut)
-						retbutton = SDLGUI_UNKNOWNEVENT;
+					case SDLK_UP:
+					case SDLK_LEFT:
+						focused = SDLGui_FocusNext(dlg, focused, -1);
+						break;
+					case SDLK_DOWN:
+					case SDLK_RIGHT:
+						focused = SDLGui_FocusNext(dlg, focused, +1);
+						break;
+					case SDLK_SPACE:
+						retbutton = SDLGui_SearchFlaggedButton(dlg, SG_FOCUSED, SG_FOCUSED);
+						break;
+					case SDLK_RETURN:
+					case SDLK_KP_ENTER:
+						retbutton = SDLGui_SearchFlaggedButton(dlg, SG_FOCUSED, SG_FOCUSED);
+						if (!retbutton)
+							retbutton = SDLGui_SearchFlaggedButton(dlg, SG_DEFAULT, SG_DEFAULT);
+						break;
+					case SDLK_ESCAPE:
+						retbutton = SDLGui_SearchFlaggedButton(dlg, SG_CANCEL, SG_CANCEL);
+						break;
+					default:
+						key = toupper(sdlEvent.key.keysym.sym);
+						if (key >= 'A' && key <= 'Z')
+							retbutton = SDLGui_SearchFlaggedButton(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
+						if (!retbutton && pEventOut)
+							retbutton = SDLGUI_UNKNOWNEVENT;
+						break;
 				}
 				break;
 
