@@ -72,7 +72,7 @@
 0000 0110 zzdd dDDD:00:XNZVC:-----:13: ADD.z   #z,d[!Areg]
 0000 0110 11ss sSSS:20:?????:?????:10: CALLM   s[!Dreg,Areg,Aipi,Apdi,Immd]
 0000 0110 11ss sSSS:20:?????:?????:10: RTM     s[Dreg,Areg]
-0000 1000 00ss sSSS:00:--Z--:-----:11: BTST    #1,s[!Areg]
+0000 1000 00ss sSSS:00:--Z--:-----:11: BTST    #1,s[!Areg,Immd]
 0000 1000 01ss sSSS:00:--Z--:-----:13: BCHG    #1,s[!Areg,Immd,PC8r,PC16]
 0000 1000 10ss sSSS:00:--Z--:-----:13: BCLR    #1,s[!Areg,Immd,PC8r,PC16]
 0000 1000 11ss sSSS:00:--Z--:-----:13: BSET    #1,s[!Areg,Immd,PC8r,PC16]
