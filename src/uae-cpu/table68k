@@ -74,7 +74,8 @@
 0000 1010 0011 1100:00:XNZVC:XNZVC:10: EORSR.B #1
 0000 1010 0111 1100:02:?????:?????:10: EORSR.W #1
 0000 1010 zzdd dDDD:00:-NZ00:-----:13: EOR.z   #z,d[!Areg]
-0000 1100 zzss sSSS:00:-NZVC:-----:11: CMP.z   #z,s[!Areg,Immd]
+0000 1100 zzss sSSS:00:-NZVC:-----:11: CMP.z   #z,s[!Areg,Immd,PC8r,PC16]
+0000 1100 zzss sSSS:20:-NZVC:-----:11: CMP.z   #z,s[PC8r,PC16]
 
 0000 1010 11ss sSSS:20:?????:?????:13: CAS.B   #1,s[!Dreg,Areg,Immd,PC8r,PC16]
 0000 1100 11ss sSSS:20:?????:?????:13: CAS.W   #1,s[!Dreg,Areg,Immd,PC8r,PC16]
