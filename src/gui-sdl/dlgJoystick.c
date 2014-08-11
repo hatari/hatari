@@ -170,7 +170,18 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 
 	for (i = DLGJOY_DISABLED; i <= DLGJOY_USEKEYS; i++)
 		joydlg[i].state &= ~SG_SELECTED;
-	joydlg[DLGJOY_DISABLED + ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode].state |= SG_SELECTED;
+	switch (ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode)
+	{
+	 case JOYSTICK_DISABLED:
+		joydlg[DLGJOY_DISABLED].state |= SG_SELECTED;
+		break;
+	 case JOYSTICK_KEYBOARD:
+		joydlg[DLGJOY_USEKEYS].state |= SG_SELECTED;
+		break;
+	 case JOYSTICK_REALSTICK:
+		joydlg[DLGJOY_USEREALJOY].state |= SG_SELECTED;
+		break;
+	}
 
 	if (ConfigureParams.Joysticks.Joy[nActJoy].bEnableAutoFire)
 		joydlg[DLGJOY_AUTOFIRE].state |= SG_SELECTED;
@@ -185,15 +196,12 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
  */
 static void DlgJoystick_WriteValuesToConf(int nActJoy)
 {
-	JOYSTICKMODE jmi;
-	for (jmi = JOYSTICK_DISABLED; jmi <= JOYSTICK_KEYBOARD; jmi++)
-	{
-		if (joydlg[jmi + DLGJOY_DISABLED].state & SG_SELECTED)
-		{
-			ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = jmi;
-			break;
-		}
-	}
+	if (joydlg[DLGJOY_DISABLED].state & SG_SELECTED)
+		ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_DISABLED;
+	else if (joydlg[DLGJOY_USEKEYS].state & SG_SELECTED)
+		ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_KEYBOARD;
+	else
+		ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_REALSTICK;
 
 	ConfigureParams.Joysticks.Joy[nActJoy].bEnableAutoFire = (joydlg[DLGJOY_AUTOFIRE].state & SG_SELECTED);
 	ConfigureParams.Joysticks.Joy[nActJoy].nJoyId = joydlg[DLGJOY_SDLJOYNAME].txt[0] - '0';
