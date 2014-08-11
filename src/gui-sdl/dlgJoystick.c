@@ -15,9 +15,9 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c : " __DATE__ " " __TIME_
 #define DLGJOY_STJOYNAME   3
 #define DLGJOY_PREVSTJOY   4
 #define DLGJOY_NEXTSTJOY   5
-#define DLGJOY_DISABLED    7
-#define DLGJOY_USEKEYS     8
-#define DLGJOY_DEFINEKEYS  9
+#define DLGJOY_DEFINEKEYS  7
+#define DLGJOY_DISABLED    8
+#define DLGJOY_USEKEYS     9
 #define DLGJOY_USEREALJOY 10
 #define DLGJOY_SDLJOYNAME 12
 #define DLGJOY_PREVSDLJOY 13
@@ -40,11 +40,12 @@ static SGOBJ joydlg[] =
 	{ SGBUTTON, 0, 0, 28,3, 3,1, "\x03" },        /* Arrow right */
 
 	{ SGBOX, 0, 0, 1,4, 30,11, NULL },
-	{ SGRADIOBUT, 0, 0, 2,5, 10,1, "disabled" },
-	{ SGRADIOBUT, 0, 0, 2,7, 14,1, "use keyboard" },
 	{ SGBUTTON, 0, 0, 19,7, 11,1, "Define keys" },
 
+	{ SGRADIOBUT, 0, 0, 2,5, 10,1, "disabled" },
+	{ SGRADIOBUT, 0, 0, 2,7, 14,1, "use keyboard" },
 	{ SGRADIOBUT, 0, 0, 2,9, 20,1, "use real joystick:" },
+
 	{ SGBOX, 0, 0, 5,11, 22,1, NULL },
 	{ SGTEXT, 0, 0, 6,11, 20,1, sSdlStickName },
 	{ SGBUTTON, 0, 0, 4,11, 1,1, "\x04" },         /* Arrow left */
@@ -98,6 +99,15 @@ static void DlgJoystick_DefineOneKey(char *pType, int *pKey)
 
 	SDLGui_DrawDialog(joykeysdlg);
 
+	/* drain buffered key events */
+	SDL_Delay(200);
+	while (SDL_PollEvent(&sdlEvent))
+	{
+		if (sdlEvent.type == SDL_KEYUP || sdlEvent.type == SDL_KEYDOWN)
+			break;
+	}
+
+	/* get the real key */
 	do
 	{
 		SDL_WaitEvent(&sdlEvent);
@@ -113,7 +123,6 @@ static void DlgJoystick_DefineOneKey(char *pType, int *pKey)
 			return;
 		}
 	} while (sdlEvent.type != SDL_KEYUP);
-	SDL_Delay(200);
 }
 
 
