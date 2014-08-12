@@ -105,7 +105,7 @@ static int mouseIsOut = 0;			/* used to keep info that mouse if above or under t
 static float scrollbar_Ypos = 0.0;		/* scrollbar heigth */
 
 static char *dirpath;				/* for get_dtype() */
-#if NO_DIRENT_DTYPE
+#ifndef HAVE_DIRENT_D_TYPE
 enum {
 	DT_UNKNOWN,
 	DT_LNK,
@@ -460,7 +460,7 @@ static int filesort(const struct dirent **d1, const struct dirent **d2)
 {
 	const char *name1 = (*d1)->d_name;
 	const char *name2 = (*d2)->d_name;
-#if NO_DIRENT_DTYPE
+#ifndef HAVE_DIRENT_D_TYPE
 	int type1 = DT_UNKNOWN;
 	int type2 = DT_UNKNOWN;
 #else

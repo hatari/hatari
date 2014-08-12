@@ -14,6 +14,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
+include(CheckStructHasMember)
 include(CheckCCompilerFlag)
 include(DistClean)
 
@@ -188,6 +189,7 @@ check_function_exists(scandir HAVE_SCANDIR)
 check_function_exists(statvfs HAVE_STATVFS)
 check_function_exists(fseeko HAVE_FSEEKO)
 check_function_exists(ftello HAVE_FTELLO)
+check_struct_has_member("struct dirent" d_type dirent.h HAVE_DIRENT_D_TYPE)
 
 # #############
 # Other CFLAGS:
