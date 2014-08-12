@@ -64,7 +64,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 // Set the working directory to the .app's parent directory
 - (void) setupWorkingDirectory:(BOOL)shouldChdir
 {
-    if (shouldChdir)
+	if (shouldChdir)
 		chdir([[[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent] cStringUsingEncoding:NSASCIIStringEncoding]) ;
 }
 
@@ -86,35 +86,35 @@ char szPath[FILENAME_MAX] ;											// for general use
  */
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename
 {
-    const char *temparg;
-    size_t arglen;
-    char *arg;
-    char **newargv;
+	const char *temparg;
+	size_t arglen;
+	char *arg;
+	char **newargv;
 
-    if (!gFinderLaunch)			// MacOS is passing command line args.
-        return FALSE;
+	if (!gFinderLaunch)			// MacOS is passing command line args.
+		return FALSE;
 
-    if (gCalledAppMainline)		// app has started, ignore this document.
-        return FALSE;
+	if (gCalledAppMainline)		// app has started, ignore this document.
+		return FALSE;
 
-    temparg = [filename UTF8String] ;
-    arglen = SDL_strlen(temparg) + 1 ;
-    arg = (char *) SDL_malloc(arglen) ;
-    if (arg == NULL)
-        return FALSE;
+	temparg = [filename UTF8String] ;
+	arglen = SDL_strlen(temparg) + 1 ;
+	arg = (char *) SDL_malloc(arglen) ;
+	if (arg == NULL)
+		return FALSE;
 
-    newargv = (char **) realloc(gArgv, sizeof (char *) * (gArgc + 2)) ;
-    if (newargv == NULL)
-    {
-        SDL_free(arg);
-        return FALSE;
-    }
-    gArgv = newargv ;
+	newargv = (char **) realloc(gArgv, sizeof (char *) * (gArgc + 2)) ;
+	if (newargv == NULL)
+	{
+		SDL_free(arg);
+		return FALSE;
+	}
+	gArgv = newargv ;
 
-    SDL_strlcpy(arg, temparg, arglen) ;
-    gArgv[gArgc++] = arg ;
-    gArgv[gArgc] = NULL ;
-    return TRUE;
+	SDL_strlcpy(arg, temparg, arglen) ;
+	gArgv[gArgc++] = arg ;
+	gArgv[gArgc] = NULL ;
+	return TRUE;
 }
 
 
@@ -232,11 +232,10 @@ char szPath[FILENAME_MAX] ;											// for general use
 	NSString *preferredPath;
 	NSString *extensionText;
 	NSString *selectFile;
-	
+
 	// Get the path from the user settings
 	preferredPath = [[NSString stringWithCString:pathInParams encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath];
 
-	
 	if ((preferredPath != nil) && ([preferredPath length] > 0))					// Determine the directory and filename
 	 {
 		directoryToOpen = [preferredPath stringByDeletingLastPathComponent];	// Existing path: we use it
@@ -247,16 +246,16 @@ char szPath[FILENAME_MAX] ;											// for general use
 		directoryToOpen = [@"~" stringByExpandingTildeInPath];					// No path: we use the user's directory
 		fileToPreselect = preferredFileName;
 	 }	;
-	
+
 	if(bInFullScreen)
 		Screen_ReturnFromFullScreen();
 	//  SavePanel for choosing what file to write
 	extensionText = [NSString stringWithFormat:localize(@"Please specify a .%@ file"), [allowedExtensions componentsJoinedByString:localize(@" or a .")] ];
-	
+
 	selectFile = [NSApp hsavefile:YES defoDir:directoryToOpen defoFile:fileToPreselect types:allowedExtensions titre:extensionText ] ;
 	if ([selectFile length] != 0 )
 		return selectFile ;
-	
+
 	return nil;
 }
 
@@ -271,9 +270,9 @@ char szPath[FILENAME_MAX] ;											// for general use
 {
 	GuiOsx_Pause();
 	if(!Avi_AreWeRecording()) {
-		NSString* path = [self displayFileSelection:ConfigureParams.Video.AviRecordFile preferredFileName:@"hatari.avi" 
+		NSString* path = [self displayFileSelection:ConfigureParams.Video.AviRecordFile preferredFileName:@"hatari.avi"
 									 allowedExtensions:[NSArray arrayWithObject:@"avi"]];
-		
+
 		if(path) {
 			GuiOsx_ExportPathString(path, ConfigureParams.Video.AviRecordFile, sizeof(ConfigureParams.Video.AviRecordFile));
 			Avi_StartRecording ( ConfigureParams.Video.AviRecordFile , ConfigureParams.Screen.bCrop ,
@@ -283,7 +282,6 @@ char szPath[FILENAME_MAX] ;											// for general use
 				1 << CLOCKS_TIMINGS_SHIFT_VBL ,
 				ConfigureParams.Video.AviRecordVcodec );
 		}
-		
 	} else {
 		Avi_StopRecording();
 	}
@@ -300,7 +298,7 @@ char szPath[FILENAME_MAX] ;											// for general use
 - (IBAction)captureSound:(id)sender
 {
 	GuiOsx_Pause();
-	NSString* path = [self displayFileSelection:ConfigureParams.Sound.szYMCaptureFileName preferredFileName:@"hatari.wav" 
+	NSString* path = [self displayFileSelection:ConfigureParams.Sound.szYMCaptureFileName preferredFileName:@"hatari.wav"
 								 allowedExtensions:[NSArray arrayWithObjects:@"ym", @"wav", nil]];
 	if(path) {
 		GuiOsx_ExportPathString(path, ConfigureParams.Sound.szYMCaptureFileName, sizeof(ConfigureParams.Sound.szYMCaptureFileName));
@@ -320,28 +318,28 @@ char szPath[FILENAME_MAX] ;											// for general use
 {
 	GuiOsx_Pause();
 
-	NSString* path = [self displayFileSelection:ConfigureParams.Memory.szMemoryCaptureFileName preferredFileName:@"hatari.sav" 
+	NSString* path = [self displayFileSelection:ConfigureParams.Memory.szMemoryCaptureFileName preferredFileName:@"hatari.sav"
 								 allowedExtensions:[NSArray arrayWithObject:@"sav"]];
 	if(path) {
 		GuiOsx_ExportPathString(path, ConfigureParams.Memory.szMemoryCaptureFileName, sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
 		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
 	}
-	
+
 	GuiOsx_Resume();
 }
 
 - (IBAction)restoreMemorySnap:(id)sender
 {
-NSString *directoryToOpen;
-NSString *fileToPreselect;
-NSString *oldPath ;
-NSString *newPath ;
+	NSString *directoryToOpen;
+	NSString *fileToPreselect;
+	NSString *oldPath ;
+	NSString *newPath ;
 
 	GuiOsx_Pause();
 
 	// Get the path from the user settings
 	oldPath = [NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName) encoding:NSASCIIStringEncoding];
-	
+
 	if ((oldPath != nil) && ([oldPath length] > 0))						// Determine directory and filename
 	 {	directoryToOpen = [oldPath stringByDeletingLastPathComponent];	// existing path: we use it.
 		fileToPreselect = [oldPath lastPathComponent]; }
@@ -358,10 +356,10 @@ NSString *newPath ;
 
 - (IBAction)doFullScreen:(id)sender
 {
-	// A call to Screen_EnterFullScreen() would be required, but this causes a crash when using 
+	// A call to Screen_EnterFullScreen() would be required, but this causes a crash when using
 	// SDL runtime 1.2.11, probably due to conflicts between Cocoa and SDL.
 	// Therefore we simulate the fullscreen key press instead
-	
+
 	SDL_KeyboardEvent event;
 	event.type = SDL_KEYDOWN;
 	event.which = 0;
@@ -377,9 +375,9 @@ NSString *newPath ;
 - (IBAction)help:(id)sender
 {
 	NSString *the_help;
-	
+
 	the_help = [[NSBundle mainBundle] pathForResource:@"manual" ofType:@"html" inDirectory:@"HatariHelp"];
-	
+
 	if (![[NSWorkspace sharedWorkspace] openFile:the_help withApplication:@"HelpViewer"])
 		if (![[NSWorkspace sharedWorkspace] openFile:the_help withApplication:@"Help Viewer"])
 			[[NSWorkspace sharedWorkspace] openFile:the_help];
@@ -387,48 +385,48 @@ NSString *newPath ;
 
 - (IBAction)compat:(id)sender
 {
-NSString *C_aide ;
-	
+	NSString *C_aide ;
+
 	C_aide = [[NSBundle mainBundle] pathForResource:@"compatibility" ofType:@"html" inDirectory:@"HatariHelp"] ;
-	
+
 	if (![[NSWorkspace sharedWorkspace] openFile:C_aide withApplication:@"HelpViewer"])
 		if (![[NSWorkspace sharedWorkspace] openFile:C_aide withApplication:@"Help Viewer"])
-             [[NSWorkspace sharedWorkspace] openFile:C_aide] ;
+			[[NSWorkspace sharedWorkspace] openFile:C_aide] ;
 }
 
-- (IBAction)openConfig:(id)sender 
+- (IBAction)openConfig:(id)sender
 {
-BOOL		applyChanges ;
-NSString	*ConfigFile, *newCfg ;	
-CNF_PARAMS	CurrentParams;
+	BOOL		applyChanges ;
+	NSString	*ConfigFile, *newCfg ;
+	CNF_PARAMS	CurrentParams;
 
 	applyChanges = true ;
-	ConfigFile = [NSString stringWithCString:(sConfigFileName) encoding:NSASCIIStringEncoding];	
-	
+	ConfigFile = [NSString stringWithCString:(sConfigFileName) encoding:NSASCIIStringEncoding];
+
 	// Backup of configuration settings to CurrentParams (which we will only
 	// commit back to the configuration settings if choosing user confirm)
 	CurrentParams = ConfigureParams;
-	
+
 	GuiOsx_Pause();
-	
+
 	newCfg = [NSApp hopenfile:NO defoDir:nil defoFile:ConfigFile types:[NSArray arrayWithObject:@"cfg"] ] ;
-		
+
 	if ([newCfg length] != 0)
-	 {	
+	{
 		[newCfg getCString:szPath maxLength:FILENAME_MAX-1 encoding:NSASCIIStringEncoding] ;	// get Cstring  szPath
 		Configuration_Load(szPath) ;															// Load the config into ConfigureParams
 		strcpy(sConfigFileName,szPath) ;
 
-		// Refresh all the controls to match ConfigureParams		
+		// Refresh all the controls to match ConfigureParams
 		if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
 		 	applyChanges = [NSApp myAlerte:NSInformationalAlertStyle Txt:localize(@"Reset the emulator") firstB:localize(@"Don't reset")
 								alternateB:localize(@"Reset") otherB:nil informativeTxt:@"" ] == NSAlertAlternateReturn ;
 		if (applyChanges)
 			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true); // Ok with Reset
-		else 
+		else
 			ConfigureParams = CurrentParams;   //Restore previous Params.
-	 } ;
-	
+	} ;
+
 	GuiOsx_Resume();
 }
 
@@ -473,29 +471,29 @@ static int IsFinderLaunch(const int argc, char **argv)
 #  undef main
 #endif
 
-// Main entry point to executable - should *not* be SDL_main! 
+// Main entry point to executable - should *not* be SDL_main!
 int main (int argc, char **argv)
 {
-	// Copy the arguments into a global variable 
+	// Copy the arguments into a global variable
 	if (IsFinderLaunch(argc, argv)) {
-        gArgv = (char **) SDL_malloc(sizeof (char *) * 2);
-        gArgv[0] = argv[0];
-        gArgv[1] = NULL;
-        gArgc = 1;
-        gFinderLaunch = YES;
-    } else {
-        int i;
-        gArgc = argc;
-        gArgv = (char **) SDL_malloc(sizeof (char *) * (argc+1));
-        for (i = 0; i <= argc; i++)
-            gArgv[i] = argv[i];
-        gFinderLaunch = NO;
-    }       					// */
+		gArgv = (char **) SDL_malloc(sizeof (char *) * 2);
+		gArgv[0] = argv[0];
+		gArgv[1] = NULL;
+		gArgc = 1;
+		gFinderLaunch = YES;
+	} else {
+		int i;
+		gArgc = argc;
+		gArgv = (char **) SDL_malloc(sizeof (char *) * (argc+1));
+		for (i = 0; i <= argc; i++)
+			gArgv[i] = argv[i];
+		gFinderLaunch = NO;
+	}
 
 #if SDL_USE_NIB_FILE
-    NSApplicationMain (argc, (const char**)argv);
+	NSApplicationMain (argc, (const char**)argv);
 #else
-    CustomApplicationMain (argc, argv);
+	CustomApplicationMain (argc, argv);
 #endif
-    return 0;
-}														// */
+	return 0;
+}
