@@ -207,6 +207,20 @@ void SDLGui_CenterDlg(SGOBJ *dlg)
 	dlg[0].y = (pSdlGuiScrn->h/sdlgui_fontheight-dlg[0].h)/2;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Return text length which ignores underlining.
+ */
+static int SDLGui_TextLen(const char *str)
+{
+	int len;
+	for (len = 0; *str; str++)
+	{
+		if (*str != '_')
+			len++;
+	}
+	return len;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -382,7 +396,7 @@ static void SDLGui_DrawButton(const SGOBJ *bdlg, int objnum)
 
 	SDLGui_DrawBox(bdlg, objnum);
 
-	x = (bdlg[0].x + bdlg[objnum].x + (bdlg[objnum].w-strlen(bdlg[objnum].txt))/2) * sdlgui_fontwidth;
+	x = (bdlg[0].x + bdlg[objnum].x + (bdlg[objnum].w-SDLGui_TextLen(bdlg[objnum].txt))/2) * sdlgui_fontwidth;
 	y = (bdlg[0].y + bdlg[objnum].y + (bdlg[objnum].h-1)/2) * sdlgui_fontheight;
 
 	if (bdlg[objnum].state & SG_SELECTED)
