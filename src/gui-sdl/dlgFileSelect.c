@@ -104,6 +104,16 @@ static int mouseClicked = 0;			/* used to know if mouse if down for the first ti
 static int mouseIsOut = 0;			/* used to keep info that mouse if above or under the scrollbar when mousebutton is down */
 static float scrollbar_Ypos = 0.0;		/* scrollbar heigth */
 
+static char *dirpath;				/* for get_dtype() */
+#if NO_DIRENT_DTYPE
+enum {
+	DT_UNKNOWN,
+	DT_LNK,
+	DT_DIR,
+	DT_REG
+};
+#endif
+
 /* Convert file position (in file list) to scrollbar y position */
 static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void);
 
@@ -426,21 +436,54 @@ static int strcat_maxlen(char *dst, int maxlen, const char *src, const char *add
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Get given file's type, directory or a file.
+ * (if name itself is symlink, stat() checks file it points to)
+ */
+static int get_dtype(const char *name)
+{
+	struct stat buf;
+	char path[FILENAME_MAX];
+	snprintf(path, sizeof(path), "%s%c%s", dirpath, PATHSEP, name);
+	stat(path, &buf);
+	if (S_ISDIR(buf.st_mode))
+		return DT_DIR;
+	else
+		return DT_REG;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Case insensitive sorting for directory entry names, so
  * that directory entries are listed first.
  */
 static int filesort(const struct dirent **d1, const struct dirent **d2)
 {
-	if ((*d1)->d_type == DT_DIR)
+	const char *name1 = (*d1)->d_name;
+	const char *name2 = (*d2)->d_name;
+#if NO_DIRENT_DTYPE
+	int type1 = DT_UNKNOWN;
+	int type2 = DT_UNKNOWN;
+#else
+	int type1 = (*d1)->d_type;
+	int type2 = (*d2)->d_type;
+#endif
+
+	/* OS / file system that doesn't support d_type field, or symlink */
+	if (type1 == DT_UNKNOWN || type1 == DT_LNK)
+		type1 = get_dtype(name1);
+	if (type2 == DT_UNKNOWN || type2 == DT_LNK)
+		type2 = get_dtype(name2);
+
+	if (type1 == DT_DIR)
 	{
-		if ((*d2)->d_type != DT_DIR)
+		if (type2 != DT_DIR)
 			return -1;
-	} else if ((*d2)->d_type == DT_DIR)
+	} else if (type2 == DT_DIR)
 	{
-		if ((*d1)->d_type != DT_DIR)
+		if (type1 != DT_DIR)
 			return 1;
 	}
-	return strcasecmp((*d1)->d_name, (*d2)->d_name);
+	return strcasecmp(name1, name2);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -589,6 +632,8 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 			}
 			else
 			{
+				/* for get_dtype() */
+				dirpath = path;
 				/* Load directory entries: */
 				entries = scandir(path, &files, 0, filesort);
 			}

@@ -1510,6 +1510,38 @@ static bool GemDOS_DFree(Uint32 Params)
 	return true;
 }
 
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Helper to map Unix errno to GEMDOS error value
+ */
+typedef enum {
+	ERROR_FILE,
+	ERROR_PATH
+} etype_t;
+
+static Uint32 errno2gemdos(const int error, const etype_t etype)
+{
+	LOG_TRACE(TRACE_OS_GEMDOS, "-> ERROR (errno = %d)\n", error);
+	switch (error)
+	{
+	case ENOENT:
+		if (etype == ERROR_FILE)
+			return GEMDOS_EFILNF;/* File not found */
+	case ENOTDIR:
+		return GEMDOS_EPTHNF;        /* Path not found */
+	case ENOTEMPTY:
+	case EEXIST:
+	case EPERM:
+	case EACCES:
+	case EROFS:
+		return GEMDOS_EACCDN;        /* Acess denied */
+	default:
+		return GEMDOS_ERROR;         /* Misc error */
+	}
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * GEMDOS MkDir
@@ -1557,8 +1589,7 @@ static bool GemDOS_MkDir(Uint32 Params)
 	if (mkdir(psDirPath, 0755) == 0)
 		Regs[REG_D0] = GEMDOS_EOK;
 	else
-		Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
-	
+		Regs[REG_D0] = errno2gemdos(errno, ERROR_PATH);
 	free(psDirPath);
 	return true;
 }
@@ -1610,8 +1641,7 @@ static bool GemDOS_RmDir(Uint32 Params)
 	if (rmdir(psDirPath) == 0)
 		Regs[REG_D0] = GEMDOS_EOK;
 	else
-		Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
-	
+		Regs[REG_D0] = errno2gemdos(errno, ERROR_PATH);
 	free(psDirPath);
 	return true;
 }
@@ -1653,7 +1683,7 @@ static bool GemDOS_ChDir(Uint32 Params)
 
 	GemDOS_CreateHardDriveFileName(Drive, pDirName, psTempDirPath, FILENAME_MAX);
 
-	// Remove trailing slashes (stat on Windows does not like that)
+	/* Remove trailing slashes (stat on Windows does not like that) */
 	File_CleanFileName(psTempDirPath);
 
 	if (stat(psTempDirPath, &buf))
@@ -1791,6 +1821,7 @@ static bool GemDOS_Create(Uint32 Params)
 			  Mode & GEMDOS_FILE_ATTRIB_READONLY ? "read-only":"read/write");
 		return true;
 	}
+	LOG_TRACE(TRACE_OS_GEMDOS, "-> ERROR (errno = %d)\n", errno);
 
 	/* We failed to create the file, did we have required access rights? */
 	if (errno == EACCES || errno == EROFS ||
@@ -1826,17 +1857,9 @@ static bool GemDOS_Open(Uint32 Params)
 	/* TODO: host filenames might not fit into this */
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
-	const char *ModeStr;
-	/* convert atari modes to stdio modes */
-	struct {
-		const char *mode;
-		const char *desc;
-	} Modes[] = {
-		{ "rb",	 "read-only" },
-		/* FIXME: is actually read/write as "wb" would truncate */
-		{ "rb+", "write-only" },
-		{ "rb+", "read/write" },
-		{ "rb+", "read/write" }
+	const char *ModeStr, *RealMode;
+	const char *Modes[] = {
+		"read-only" "write-only", "read/write", "read/write"
 	};
 	int Drive, Index, Mode;
 	FILE *AutostartHandle;
@@ -1844,9 +1867,10 @@ static bool GemDOS_Open(Uint32 Params)
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
+	Mode &= 3;
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3D Fopen(\"%s\", %s) at PC=0x%X\n", pszFileName, Modes[Mode&0x03].desc,
-		  M68000_GetPC());
+	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3D Fopen(\"%s\", %s) at PC=0x%X\n",
+		  pszFileName, Modes[Mode], M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
 
@@ -1866,35 +1890,52 @@ static bool GemDOS_Open(Uint32 Params)
 		return true;
 	}
 
-	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON)
-	{
-		/* force all accesses to be read-only */
-		ModeStr = Modes[0].mode;
-	}
-	else
-	{
-		/* GEMDOS mount can be written, try open in requested mode */
-		ModeStr = Modes[Mode&0x03].mode;
-	}
-
-	
 	if ((AutostartHandle = TOS_AutoStartOpen(pszFileName)))
 	{
 		strcpy(szActualFileName, pszFileName);
 		FileHandles[Index].FileHandle = AutostartHandle;
+		RealMode = "read-only";
 	}
 	else
 	{
+		struct stat FileStat;
+
 		/* Convert to hard drive filename */
 		GemDOS_CreateHardDriveFileName(Drive, pszFileName,
 			szActualFileName, sizeof(szActualFileName));
 
-		/* FIXME: Open file
-		 * - fopen() modes don't allow write-only mode without truncating
-		 *   which would be needed to implement mode 1 (write-only) correctly.
-		 *   Fixing this requires using open() and file descriptors instead
-		 *   of fopen() and FILE* pointers, but Windows doesn't support that.
+		/* Fread/Fwrite calls succeed in all TOS versions
+		 * regardless of access rights specified in Fopen().
+		 * Only time when things can fail is when file is
+		 * opened, if file mode doesn't allow given opening
+		 * mode.  As there's no write-only file mode, access
+		 * failures happen only when trying to open read-only
+		 * file with (read+)write mode.
+		 *
+		 * Therefore only read-only & read+write modes need
+		 * to be supported (ANSI-C fopen() doesn't even
+		 * support write-only without truncating the file).
+		 *
+		 * Read-only status is used if:
+		 * - requested by Atari program
+		 * - Hatari write protection is enabled
+		 * - File itself is read-only
+		 * Latter is done to help cases where application
+		 * needlessly requests write access, but file is
+		 * on read-only media (like CD/DVD).
 		 */
+		if (Mode == 0 ||
+		    ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON ||
+		    (stat(szActualFileName, &FileStat) == 0 && (FileStat.st_mode & S_IWUSR)))
+		{
+			ModeStr = "rb";
+			RealMode = "read-only";
+		}
+		else
+		{
+			ModeStr = "rb+";
+			RealMode = "read+write";
+		}
 		FileHandles[Index].FileHandle = fopen(szActualFileName, ModeStr);
 	}
 
@@ -1911,8 +1952,8 @@ static bool GemDOS_Open(Uint32 Params)
 
 		/* Return valid ST file handle from our range (BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
-		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s)\n",
-			  Regs[REG_D0], Modes[Mode&0x03].desc);
+		LOG_TRACE(TRACE_OS_GEMDOS, "-> FD %d (%s -> %s)\n",
+			  Regs[REG_D0], Modes[Mode], RealMode);
 		return true;
 	}
 
@@ -1920,18 +1961,20 @@ static bool GemDOS_Open(Uint32 Params)
 	    errno == EPERM || errno == EISDIR)
 	{
 		Log_Printf(LOG_WARN, "GEMDOS missing %s permission to file '%s'\n",
-			   Modes[Mode&0x03].desc, szActualFileName);
+			   Modes[Mode], szActualFileName);
 		Regs[REG_D0] = GEMDOS_EACCDN;
-		return true;
 	}
-	if (errno == ENOTDIR || GemDOS_FilePathMissing(szActualFileName))
+	else if (errno == ENOTDIR || GemDOS_FilePathMissing(szActualFileName))
 	{
 		/* Path not found */
 		Regs[REG_D0] = GEMDOS_EPTHNF;
-		return true;
 	}
-	/* File not found / error opening */
-	Regs[REG_D0] = GEMDOS_EFILNF;
+	else
+	{
+		/* File not found / error opening */
+		Regs[REG_D0] = GEMDOS_EFILNF;
+	}
+	LOG_TRACE(TRACE_OS_GEMDOS, "-> ERROR %d (errno = %d)\n", Regs[REG_D0], errno);
 	return true;
 }
 
@@ -2043,9 +2086,15 @@ static bool GemDOS_Read(Uint32 Params)
 	/* And read data in */
 	nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
 	
-	/* Return number of bytes read */
-	Regs[REG_D0] = nBytesRead;
-	
+	if (ferror(FileHandles[Handle].FileHandle))
+	{
+		Log_Printf(LOG_WARN, "GEMDOS failed to read from '%s'\n",
+			   FileHandles[Handle].szActualName );
+		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
+	} else
+		/* Return number of bytes read */
+		Regs[REG_D0] = nBytesRead;
+
 	return true;
 }
 
@@ -2102,7 +2151,7 @@ static bool GemDOS_Write(Uint32 Params)
 	{
 		Log_Printf(LOG_WARN, "GEMDOS failed to write to '%s'\n",
 			   FileHandles[Handle].szActualName );
-		Regs[REG_D0] = GEMDOS_EACCDN;      /* Access denied (ie read-only) */
+		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
 	}
 	else
 	{
@@ -2160,7 +2209,7 @@ static bool GemDOS_FDelete(Uint32 Params)
 	if (unlink(psActualFileName) == 0)
 		Regs[REG_D0] = GEMDOS_EOK;          /* OK */
 	else
-		Regs[REG_D0] = GEMDOS_EFILNF;       /* File not found */
+		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
 
 	free(psActualFileName);
 	return true;
@@ -2285,7 +2334,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 		return true;
 	}
 
-	/* write or auto protected device? */
+	/* prevent modifying access rights both on write & auto-protected devices */
 	if (ConfigureParams.HardDisk.nWriteProtection != WRITEPROT_OFF)
 	{
 		Log_Printf(LOG_WARN, "PREVENTED: GEMDOS Fattrib(\"%s\",...)\n", psFileName);
@@ -2330,13 +2379,14 @@ static bool GemDOS_Fattrib(Uint32 Params)
 			return true;
 		}
 	}
-
+	
 	/* FIXME: support hidden/system/archive flags?
 	 * System flag is from DOS, not used by TOS.
 	 * Archive bit is cleared by backup programs
 	 * and set whenever file is written to.
 	 */
-	Regs[REG_D0] = GEMDOS_EACCDN;         /* Acces denied */
+
+	Regs[REG_D0] = errno2gemdos(errno, (nAttrib & GEMDOS_FILE_ATTRIB_SUBDIRECTORY) ? ERROR_PATH : ERROR_FILE);
 	return true;
 }
 
@@ -2744,10 +2794,10 @@ static bool GemDOS_Rename(Uint32 Params)
 		              szOldActualFileName, sizeof(szOldActualFileName));
 
 	/* Rename files */
-	if ( rename(szOldActualFileName,szNewActualFileName)==0 )
+	if (rename(szOldActualFileName,szNewActualFileName) == 0)
 		Regs[REG_D0] = GEMDOS_EOK;
 	else
-		Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
+		Regs[REG_D0] = errno2gemdos(errno, ERROR_FILE);
 	return true;
 }
 
