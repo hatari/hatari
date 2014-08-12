@@ -426,6 +426,25 @@ static int strcat_maxlen(char *dst, int maxlen, const char *src, const char *add
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Case insensitive sorting for directory entry names, so
+ * that directory entries are listed first.
+ */
+static int filesort(const struct dirent **d1, const struct dirent **d2)
+{
+	if ((*d1)->d_type == DT_DIR)
+	{
+		if ((*d2)->d_type != DT_DIR)
+			return -1;
+	} else if ((*d2)->d_type == DT_DIR)
+	{
+		if ((*d1)->d_type != DT_DIR)
+			return 1;
+	}
+	return strcasecmp((*d1)->d_name, (*d2)->d_name);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Create and return suitable path into zip file
  */
 static char* zip_get_path(const char *zipdir, const char *zipfilename, int browsingzip)
@@ -571,7 +590,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 			else
 			{
 				/* Load directory entries: */
-				entries = scandir(path, &files, 0, alphasort);
+				entries = scandir(path, &files, 0, filesort);
 			}
 			
 			/* Remove hidden files from the list if necessary: */
