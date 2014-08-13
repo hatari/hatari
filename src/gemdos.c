@@ -2516,12 +2516,12 @@ static int GemDOS_Pexec(Uint32 Params)
 			name = (const char *)STRAM_ADDR(fname);
 			cmd = (const char *)STRAM_ADDR(cmdline);
 			cmdlen = *cmd++;
-			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n", Mode, name, cmdlen, cmdlen?cmd:"", env_string,
+			LOG_TRACE_PRINT ( "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n", Mode, name, cmdlen, cmdlen?cmd:"", env_string,
 				M68000_GetPC());
 		}
 		else
 		{
-			fprintf(TraceFile, "GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x) at PC 0x%X\n", Mode, fname, cmdline, env_string,
+			LOG_TRACE_PRINT ( "GEMDOS 0x4B Pexec(%i, 0x%x, 0x%x, 0x%x) at PC 0x%X\n", Mode, fname, cmdline, env_string,
 				M68000_GetPC());
 		}
 	}
