@@ -253,6 +253,7 @@ static void initCharacterMappings(void)
 #endif
 }
 
+#if !(defined(WIN32) || defined(USE_LOCALE_CHARSET))
 /**
  * Convert a 0-terminated string in the AtariST character set to a 0-terminated
  * UTF-8 encoded string. destLen is the number of available bytes in dest[].
@@ -333,6 +334,7 @@ static void Str_Utf8ToAtari(const char *source, char *dest, char replacementChar
 	*dest = 0;
 }
 
+#else
 
 /**
  * Convert a string from the AtariST character set into the host representation as
@@ -393,6 +395,7 @@ static void Str_LocalToAtari(const char *source, char *dest, char replacementCha
 	}
 	*dest = 0;
 }
+#endif
 
 
 void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
