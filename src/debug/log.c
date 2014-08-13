@@ -148,6 +148,16 @@ static LOGTYPE AlertDlgLogLevel;
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set default files to stderr (used at the very start, before parsing options)
+ */
+void Log_Default(void)
+{
+	hLogFile = stderr;
+	TraceFile = stderr;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Initialize the logging and tracing functionality (open the log files etc.).
  * 
  * Return zero if that fails.

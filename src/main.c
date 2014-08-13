@@ -802,6 +802,9 @@ int main(int argc, char *argv[])
 	/* Generate random seed */
 	srand(time(NULL));
 
+	/* Logs default to stderr at start */
+	Log_Default();
+
 	/* Initialize directory strings */
 	Paths_Init(argv[0]);
 

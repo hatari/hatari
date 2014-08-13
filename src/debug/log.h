@@ -67,6 +67,7 @@ typedef enum
 #define __attribute__(foo)
 #endif
 
+extern void Log_Default(void);
 extern int Log_Init(void);
 extern int Log_SetAlertLevel(int level);
 extern void Log_UnInit(void);
