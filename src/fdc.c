@@ -1240,8 +1240,7 @@ void	FDC_UpdateAll ( void )
  */
 void	FDC_Drive_Set_Enable ( int Drive , bool value )
 {
-	//LOG_TRACE ( TRACE_FDC , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
-fprintf ( stderr , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
+	LOG_TRACE ( TRACE_FDC , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
 
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 		FDC_DRIVES[ Drive ].Enabled = value;
@@ -1258,8 +1257,7 @@ fprintf ( stderr , "fdc enable drive=%d %s\n" , Drive , value?"on":"off" );
  */
 void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads )
 {
-	//LOG_TRACE ( TRACE_FDC , "fdc set nbr heads drive=%d %d\n" , Drive , NbrHeads );
-fprintf ( stderr , "fdc set nbr heads drive=%d %d\n" , Drive , NbrHeads );
+	LOG_TRACE ( TRACE_FDC , "fdc set nbr heads drive=%d %d\n" , Drive , NbrHeads );
 
 	if ( ( Drive >= 0 ) && ( Drive < MAX_FLOPPYDRIVES ) )
 		FDC_DRIVES[ Drive ].NumberOfHeads = NbrHeads;
