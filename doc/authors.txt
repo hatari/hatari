@@ -142,6 +142,10 @@ is missing here, please remind me!):
   lots of interesting build logs too for various cpu architectures.
   See http://antarctica.no/~hatari/latest
 
+- Max Böhm: host <-> Atari filename encoding conversion routines and
+  related changes needed to gemdos.c.
+
+
  Code from other projects
  ------------------------
 
