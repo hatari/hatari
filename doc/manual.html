@@ -2115,11 +2115,12 @@ analyzing code that runs in the emulated system.
 </p>
 
 <p>
-The debugger uses Hatari's parent console window, so make sure you run
-Hatari from the command line when you want to use the debugger. On
-Linux you can add for example an icon to your desktop that does it
-with something like this (replace "xterm" with your favorite terminal
-program):
+On Unix (Linux / OSX) debugger uses Hatari's parent console window, so
+make sure you run Hatari from the command line when you want to use
+the debugger.  On Windows you need to use "-W" option to get console
+window.  You can add an icon to your desktop that does it.  On Linux
+it should do something like this (replace "xterm" with your favorite
+terminal program):
 </p>
 <pre>
 xterm -T "Hatari debug window" -e hatari
@@ -3696,7 +3697,7 @@ After bus error invokes debugger, 'history' command can then be used
 to see (executed memory addresses with their current) instructions
 leading to the error.  The most interesting vector addresses are:
 $8 (Bus error), $C (Address error), $10 (Illegal instruction),
-$14 (Division by zero).
+$14 (Division by zero).  See also --debug-except option.
 </dd>
 
 <dt><em>Stopping when register has a specific value</em></dt>
