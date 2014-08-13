@@ -12,6 +12,7 @@ Emulation:
   - Fix: Joypad B extended buttons
 - GEMDOS HD:
   - Fix: matching 8 long file names with '.'
+  - Better mapping of host errors to GEMDOS error codes
 - CPU :
   - in 68000 mode, remove some un-allowed EA for CMPI and BTST
 
