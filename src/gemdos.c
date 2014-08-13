@@ -973,12 +973,13 @@ static int GemDOS_FileName2HardDriveID(char *pszFileName)
  */
 static char* match_host_dir_entry(const char *path, const char *name, bool pattern)
 {
+#define MAX_UTF8_NAME_LEN (3*(8+1+3)+1) /* UTF-8 can have up to 3 bytes per character */
 	struct dirent *entry;
 	char *match = NULL;
 	DIR *dir;
-	char nameHost[37];  /* name is 8+3, UTF-8 can have up to 3 bytes per character */
+	char nameHost[MAX_UTF8_NAME_LEN];
 
-	Str_AtariToHost(name, nameHost, 37, INVALID_CHAR);
+	Str_AtariToHost(name, nameHost, MAX_UTF8_NAME_LEN, INVALID_CHAR);
 	name = nameHost;
 	
 	dir = opendir(path);
@@ -1288,7 +1289,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 	/* "../" handling breaks if there are extra slashes */
 	File_CleanFileName(pszDestName);
 	
-	/* go through path directory components, advacing 'filename'
+	/* go through path directory components, advancing 'filename'
 	 * pointer while parsing them.
 	 */
 	for (;;)
