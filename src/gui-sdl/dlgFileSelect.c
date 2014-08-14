@@ -1,9 +1,9 @@
 /*
   Hatari - dlgFileSelect.c
- 
+
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
- 
+
   A file selection dialog for the graphical user interface for Hatari.
 */
 const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c : " __DATE__ " " __TIME__;
@@ -271,20 +271,20 @@ static void DlgFileSelect_ManageScrollbar(void)
 		oldMouseY = y;
 		mouseIsOut = 0;
 	}
- 	
-	/* If mouse Y position didn't change */ 
+
+	/* If mouse Y position didn't change */
 	if (oldMouseY == y)
 		return;
 
-	/* Compute scrollbar ymin and ymax values */ 
+	/* Compute scrollbar ymin and ymax values */
 
 	scrollYmin = (fsdlg[SGFSDLG_SCROLLBAR].y + fsdlg[0].y) * sdlgui_fontheight;
 	scrollYmax = (fsdlg[SGFSDLG_DOWN].y + fsdlg[0].y) * sdlgui_fontheight;
-	
+
 	scrollY = fsdlg[SGFSDLG_SCROLLBAR].y * sdlgui_fontheight + fsdlg[SGFSDLG_SCROLLBAR].h + fsdlg[0].y * sdlgui_fontheight;
 	scrollH_half = scrollY + fsdlg[SGFSDLG_SCROLLBAR].w / 2;
 	scrollMove = (float)(y-oldMouseY)/sdlgui_fontheight;
-	
+
 	/* Verify if mouse is not above the scrollbar area */
 	if (y < scrollYmin) {
 		mouseIsOut = SCROLLOUT_ABOVE;
@@ -360,11 +360,11 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 			DlgFileSelect_ScrollDown();
 			break;
 		 case SDLK_HOME:
-			ypos = 0; 
+			ypos = 0;
 			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 			break;
 		 case SDLK_END:
-		    ypos = entries-SGFS_NUMENTRIES; 
+		    ypos = entries-SGFS_NUMENTRIES;
 			DlgFileSelect_Convert_ypos_to_scrollbar_Ypos();
 		    break;
 		 case SDLK_PAGEUP:
@@ -385,12 +385,12 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 	default:
 		break;
 	}
-	
+
 	if (ypos < 0) {
 		ypos = 0;
 		scrollbar_Ypos = 0.0;
 	}
-	
+
 	if (ypos != oldypos)
 		refreshentries = true;
 }
@@ -637,7 +637,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				/* Load directory entries: */
 				entries = scandir(path, &files, 0, filesort);
 			}
-			
+
 			/* Remove hidden files from the list if necessary: */
 			if (!(fsdlg[SGFSDLG_SHOWHIDDEN].state & SG_SELECTED))
 			{
@@ -656,7 +656,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		}/* reloaddir */
 
 		/* Refresh scrollbar size */
- 		if (entries <= SGFS_NUMENTRIES)
+		if (entries <= SGFS_NUMENTRIES)
 			yScrollbar_size = (SGFS_NUMENTRIES-2) * sdlgui_fontheight;
 		else
 		{
@@ -694,7 +694,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		if (retbut>=SGFSDLG_ENTRYFIRST && retbut<=SGFSDLG_ENTRYLAST && retbut-SGFSDLG_ENTRYFIRST+ypos<entries)
 		{
 			char *tempstr;
-			
+
 			tempstr = malloc(FILENAME_MAX);
 			if (!tempstr)
 			{
@@ -898,7 +898,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				DlgFileSelect_HandleSdlEvents(&sdlEvent);
 				break;
 			} /* switch */
-      
+
 			if (reloaddir)
 			{
 				/* Remove old selection */
@@ -942,7 +942,7 @@ clean_exit:
 /**
  * Let user browse for a file, confname is used as default.
  * If bAllowNew is true, user can select new files also.
- * 
+ *
  * If no file is selected, or there's some problem with the file,
  * return false and clear dlgname & confname.
  * Otherwise return true, set dlgname & confname to the new file name
