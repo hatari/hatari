@@ -31,6 +31,7 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
+#include "avi_record.h"
 #include "ikbd.h"
 #include "log.h"
 #include "m68000.h"
@@ -416,6 +417,10 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 	    && sdlscrn->format->BitsPerPixel == bitdepth
 	    && bInFullScreen == bWasInFullScreen)
 		return false;
+
+	/* We can not continue recording with a different resolution */
+	if (Avi_AreWeRecording())
+		Avi_StopRecording();
 
 #ifdef _MUDFLAP
 	if (sdlscrn)
