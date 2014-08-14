@@ -14,6 +14,8 @@
 
 /* 2008/04/26	[NP]	Handle sz_byte for Areg as a valid srcmode if current instruction is a MOVE	*/
 /*			(e.g. move.b a1,(a0) ($1089)) (fix Blood Money on Superior 65)			*/
+/* 2014/08/15	[NP]	Cancel change from 2008/04/26, sz_byte for Areg is not valid for MOVE,		*/
+/*			'move.b a1,(a0)' should give an illegal exception				*/
 
 
 const char ReadCpu_fileid[] = "Hatari readcpu.c : " __DATE__ " " __TIME__;
@@ -527,8 +529,7 @@ static void build_insn (int insn)
 	{
 	    srcgather = 0;
 	}
-//	if (srcmode == Areg && sz == sz_byte)
-	if (srcmode == Areg && sz == sz_byte && strcmp ( mnemonic , "MOVE" ) != 0 )	// [NP] move.b is valid on 68000
+	if (srcmode == Areg && sz == sz_byte)
 	    goto nomatch;
 
 	if (opcstr[pos] != ',')

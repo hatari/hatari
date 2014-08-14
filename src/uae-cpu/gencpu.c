@@ -73,6 +73,8 @@
 /* 2014/04/09	[NP]	Similar to CLR on 68000, Scc should do a read before doing the write and can	*/
 /*			give 2 wait states (sf $fffa07 in Chart Attack compilation by Gremlin)		*/
 /* 2014/04/11	[NP]	Add refill_prefetch for i_Move Dn,(An) (International 3D Tennis)		*/
+/* 2014/08/15	[NP]	Cancel change from 2008/04/26, sz_byte for Areg is not valid for MOVE,		*/
+/*			'move.b a1,(a0)' should give an illegal exception				*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -305,9 +307,6 @@ static void genamode (amodes mode, const char *reg, wordsizes size,
 	    abort ();
 	if (getv == 1)
 	    switch (size) {
-	    case sz_byte:				// [NP] Areg with .b is possible in MOVE source */
-		printf ("\tuae_s8 %s = m68k_areg(regs, %s);\n", name, reg);
-		break;
 	    case sz_word:
 		printf ("\tuae_s16 %s = m68k_areg(regs, %s);\n", name, reg);
 		break;
