@@ -516,11 +516,11 @@ Invokes the internal Hatari debugger
 .SH "Keyboard shortcuts for SDL GUI"
 There are multiple ways to interact with the SDL GUI.
 .PP
-Cursor keys change focus between UI elements.  Initially focus is on
-default UI element (which can be invoked with Enter), but focus
-changes are remembered between dialog invocations. Space invokes
-focused item. Underlined shortcut letter can be used to invoke given
-UI element directly.
+Cursor keys change focus between UI elements.  Home key moves focus to
+first item, End key to last one.  Initially focus is on default UI
+element, but focus changes are remembered between dialog invocations.
+Enter invokes focused item. Underlined shortcut letter can be used to
+invoke given UI element directly.
 .PP
 Most importantly:
 .TP
@@ -528,7 +528,7 @@ Most importantly:
 Enter accepts configuration, ESC cancels it.
 .TP
 .B Options GUI dialogs
-Enter returns back to main view.
+Enter (or End+Enter if focus was moved) returns back to main view.
 .TP
 .B Fileselector
 Page up and down keys scroll the file list.

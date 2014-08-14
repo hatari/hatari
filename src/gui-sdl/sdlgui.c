@@ -808,6 +808,21 @@ static int SDLGui_SearchState(const SGOBJ *dlg, int state)
 	return 0;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Unfocus given button
+ */
+static void SDLGui_RemoveFocus(SGOBJ *dlg, int old)
+{
+	if (!old)
+		return;
+	dlg[old].state &= ~SG_FOCUSED;
+	dlg[old].state |= SG_WASFOCUSED;
+	SDLGui_DrawObj(dlg, old);
+	dlg[old].state ^= SG_WASFOCUSED;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Search a next button to focus and focus it
@@ -821,8 +836,6 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 	for (;;)
 	{
 		i += inc;
-		if (i == old)
-			return i;
 
 		/* wrap */
 		if (dlg[i].type == -1)
@@ -839,15 +852,14 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 		kind = dlg[i].type;
 		if (kind == SGBUTTON || kind == SGRADIOBUT || kind == SGCHECKBOX)
 		{
-			dlg[old].state ^= SG_FOCUSED;
-			dlg[old].state |= SG_WASFOCUSED;
-			SDLGui_DrawObj(dlg, old);
-			dlg[old].state ^= SG_WASFOCUSED;
 			dlg[i].state |= SG_FOCUSED;
 			SDLGui_DrawObj(dlg, i);
 			SDL_UpdateRect(pSdlGuiScrn, 0,0,0,0);
 			return i;
 		}
+		/* wrapped around without even initial one matching */
+		if (i == old)
+			return 0;
 	}
 	return old;
 }
@@ -1116,18 +1128,25 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 				{
 				 case SDLK_UP:
 				 case SDLK_LEFT:
+					SDLGui_RemoveFocus(dlg, focused);
 					focused = SDLGui_FocusNext(dlg, focused, -1);
 					break;
 				 case SDLK_DOWN:
 				 case SDLK_RIGHT:
+					SDLGui_RemoveFocus(dlg, focused);
 					focused = SDLGui_FocusNext(dlg, focused, +1);
 					break;
-				 case SDLK_SPACE:
-					retbutton = SDLGui_HandleSelection(dlg, focused, focused);
+				 case SDLK_HOME:
+					SDLGui_RemoveFocus(dlg, focused);
+					focused = SDLGui_FocusNext(dlg, 1, +1);
+					break;
+				 case SDLK_END:
+					SDLGui_RemoveFocus(dlg, focused);
+					focused = SDLGui_FocusNext(dlg, 1, -1);
 					break;
 				 case SDLK_RETURN:
 				 case SDLK_KP_ENTER:
-					retbutton = SDLGui_SearchFlags(dlg, SG_DEFAULT, SG_DEFAULT);
+					retbutton = SDLGui_HandleSelection(dlg, focused, focused);
 					break;
 				 case SDLK_ESCAPE:
 					retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL, SG_CANCEL);
