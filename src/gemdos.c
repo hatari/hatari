@@ -938,7 +938,7 @@ static bool GemDOS_IsDriveEmulated(int drive)
 	drive -= 2;
 	if (drive < 0 || drive >= MAX_HARDDRIVES)
 		return false;
-	if (!emudrives[drive])
+	if (!(emudrives && emudrives[drive]))
 		return false;
 	assert(emudrives[drive]->drive_number == drive+2);
 	return true;

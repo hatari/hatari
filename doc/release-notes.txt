@@ -27,6 +27,7 @@ Emulator:
   - sort file selector items case-insensitively with folders first
 - Debugger:
   - added "save" subcommand to "history" command
+  - fix crash when GEMDOS tracing is used without GEMDOS HD emulation
 
 Other changes:
 - Remaining Hatari OSX UI changes for Hatari v1.8.0
