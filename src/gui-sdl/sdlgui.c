@@ -1131,6 +1131,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 					SDLGui_RemoveFocus(dlg, focused);
 					focused = SDLGui_FocusNext(dlg, focused, -1);
 					break;
+				 case SDLK_TAB:
 				 case SDLK_DOWN:
 				 case SDLK_RIGHT:
 					SDLGui_RemoveFocus(dlg, focused);
