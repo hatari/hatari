@@ -16,7 +16,9 @@ Emulation:
   - Support for mapping file names with 8-bit characters
     between host and Atari encodings (umlauted chars etc)
 - CPU :
-  - in 68000 mode, remove some un-allowed EA for CMPI and BTST
+  - in 68000 mode, remove some un-allowed <ea> for CMPI, BTST and TST
+  - check for address error when new PC is set at the end of RTE, RTS and RTR
+  - fix "move.b an,<ea>", it's not allowed and should give illegal instruction
 
 Emulator:
 - Support for compiling with libSDL2 (experimental)
