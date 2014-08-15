@@ -1442,9 +1442,18 @@ static void gen_opcode (unsigned long int opcode)
 	if (cpu_level == 0) {
 	    genamode (Aipi, "7", sz_word, "sr", 1, 0);
 	    genamode (Aipi, "7", sz_long, "pc", 1, 0);
-	    printf ("\tregs.sr = sr; m68k_setpc_rte(pc);\n");
-	    fill_prefetch_0 ();
+	    printf ("\tregs.sr = sr;\n");
 	    printf ("\tMakeFromSR();\n");
+	    if (using_exception_3) {
+		printf ("\tif (pc & 1) {\n");
+		printf ("\t\tlast_addr_for_exception_3 = m68k_getpc ();\n");
+		printf ("\t\tlast_fault_for_exception_3 = pc;\n");
+		printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
+		printf ("\t}\n");
+		need_endlabel = 1;
+	    }
+	    printf ("\tm68k_setpc_rte(pc);\n");
+	    fill_prefetch_0 ();
 	} else {
 	    int old_brace_level = n_braces;
 	    if (next_cpu_level < 0)
@@ -1465,6 +1474,14 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tregs.sr = newsr; MakeFromSR();\n}\n");
 	    pop_braces (old_brace_level);
 	    printf ("\tregs.sr = newsr; MakeFromSR();\n");
+	    if (using_exception_3) {
+		printf ("\tif (newpc & 1) {\n");
+		printf ("\t\tlast_addr_for_exception_3 = m68k_getpc ();\n");
+		printf ("\t\tlast_fault_for_exception_3 = newpc;\n");
+		printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
+		printf ("\t}\n");
+		need_endlabel = 1;
+	    }
 	    printf ("\tm68k_setpc_rte(newpc);\n");
 	    fill_prefetch_0 ();
 	    need_endlabel = 1;
@@ -1477,6 +1494,14 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (Aipi, "7", sz_long, "pc", 1, 0);
 	genamode (curi->smode, "srcreg", curi->size, "offs", 1, 0);
 	printf ("\tm68k_areg(regs, 7) += offs;\n");
+	if (using_exception_3) {
+	    printf ("\tif (pc & 1) {\n");
+	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc ();\n");
+	    printf ("\t\tlast_fault_for_exception_3 = pc;\n");
+	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
+	    printf ("\t}\n");
+	    need_endlabel = 1;
+	}
 	printf ("\tm68k_setpc_rte(pc);\n");
 	fill_prefetch_0 ();
 	/* PC is set and prefetch filled. */
@@ -1497,7 +1522,16 @@ static void gen_opcode (unsigned long int opcode)
 	genastore ("old", curi->smode, "srcreg", curi->size, "src");
 	break;
     case i_RTS:
+	printf ("\tuaecptr oldpc = m68k_getpc ();\n");
 	printf ("\tm68k_do_rts();\n");
+	if (using_exception_3) {
+	    printf ("\tif (m68k_getpc () & 1) {\n");
+	    printf ("\t\tlast_addr_for_exception_3 = oldpc;\n");
+	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc ();\n");
+	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
+	    printf ("\t}\n");
+	    need_endlabel = 1;
+	}
 	fill_prefetch_0 ();
 	m68k_pc_offset = 0;
         insn_n_cycles = 16;
@@ -1512,9 +1546,18 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (Aipi, "7", sz_word, "sr", 1, 0);
 	genamode (Aipi, "7", sz_long, "pc", 1, 0);
 	printf ("\tregs.sr &= 0xFF00; sr &= 0xFF;\n");
-	printf ("\tregs.sr |= sr; m68k_setpc(pc);\n");
-	fill_prefetch_0 ();
+	printf ("\tregs.sr |= sr;\n");
 	printf ("\tMakeFromSR();\n");
+	if (using_exception_3) {
+	    printf ("\tif (pc & 1) {\n");
+	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc ();\n");
+	    printf ("\t\tlast_fault_for_exception_3 = pc;\n");
+	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
+	    printf ("\t}\n");
+	    need_endlabel = 1;
+	}
+	printf ("m68k_setpc(pc);\n");
+	fill_prefetch_0 ();
 	m68k_pc_offset = 0;
         insn_n_cycles = 20;
 	break;
