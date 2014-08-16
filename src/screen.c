@@ -408,7 +408,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 	Uint32 sdlVideoFlags;
 
 #if WITH_SDL2
-	if (bitdepth == 0)
+	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
 #endif
 
