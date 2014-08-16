@@ -32,8 +32,18 @@ static int DesktopWidth, DesktopHeight;
 void Resolution_Init(void)
 {
 #if WITH_SDL2
-	DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
-	DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
+	SDL_DisplayMode dm;
+	if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
+	{
+		DesktopWidth = dm.w;
+		DesktopHeight = dm.h;
+	}
+	else
+	{
+		fprintf(stderr, "SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
+		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
+		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
+	}
 #else
 	/* Needs to be called after SDL video and configuration
 	 * initialization, but before Hatari Screen init is called
@@ -50,6 +60,7 @@ void Resolution_Init(void)
 		fprintf(stderr, "WARNING: invalid desktop size %dx%d, defaulting to %dx%d!\n",
 			info->current_w, info->current_h, DesktopWidth, DesktopHeight);
 	}
+#endif
 	/* if user hasn't set own max zoom size, use desktop size */
 	if (!(ConfigureParams.Screen.nMaxWidth &&
 	      ConfigureParams.Screen.nMaxHeight)) {
@@ -60,7 +71,6 @@ void Resolution_Init(void)
 	fprintf(stderr, "Configured max Hatari resolution = %dx%d, optimal for ST = %dx%d\n",
 		ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight,
 		2*NUM_VISIBLE_LINE_PIXELS, 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT);
-#endif
 }
 
 /**
@@ -138,38 +148,35 @@ static inline bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
  */
 bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 {
-#if WITH_SDL2
-	if (bInFullScreen)
-		Resolution_GetDesktopSize(width, height);
-	else
-		Resolution_GetMaxSize(width, height);
-	return true;
-#else
+#if !WITH_SDL2
 	SDL_Rect **modes;
 	SDL_PixelFormat pixelformat;
-	Uint32 modeflags;
+	Uint32 modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
+#endif
 
 	/* Search in available modes the best suited */
 	DEBUGPRINT(("resolution: video mode asked: %dx%dx%d (%s)\n",
 		 *width, *height, *bpp, bInFullScreen ? "fullscreen" : "windowed"));
 
-	modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-
-	if (bInFullScreen) {
+	if (bInFullScreen)
+	{
 		/* resolution change not allowed? */
-		if (keep) {
+		if (keep)
+		{
 			Resolution_GetDesktopSize(width, height);
 			return true;
 		}
-		modeflags |= SDL_FULLSCREEN;
 	}
-	if (ConfigureParams.Screen.bForceMax) {
+	if (ConfigureParams.Screen.bForceMax)
+	{
 		/* force given max size */
 		Resolution_GetMaxSize(width, height);
 		return true;
 	}
 
-	/* Read available video modes */
+#if !WITH_SDL2
+	if (bInFullScreen)
+		modeflags |= SDL_FULLSCREEN;
 
 	/*--- Search a video mode with asked bpp ---*/
 	if (*bpp != 0) {
@@ -204,11 +211,11 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 		/* Any mode available */
 		DEBUGPRINT(("resolution: All resolutions available.\n"));
 	}
+#endif
 
 	DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
 		 *width, *height, *bpp));
 	return false;
-#endif
 }
 
 
