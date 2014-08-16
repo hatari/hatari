@@ -109,8 +109,8 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	while (width > maxw*scalex) {
 		scalex *= 2;
 	}
-	while (height > maxh*scalex) {
-		scalex *= 2;
+	while (height > maxh*scaley) {
+		scaley *= 2;
 	}
 	if (scalex * scaley > 1) {
 		fprintf(stderr, "WARNING: too large screen size %dx%d -> divided by %dx%d!\n",
