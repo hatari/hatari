@@ -570,9 +570,6 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	SDL_Event event;
 #if !WITH_SDL2
 	int nOldUnicodeMode;
-
-	/* Enable unicode translation to get proper characters with SDL_PollEvent */
-	nOldUnicodeMode = SDL_EnableUNICODE(true);
 #endif
 
 	rect.x = (dlg[0].x + dlg[objnum].x) * sdlgui_fontwidth;
@@ -583,6 +580,9 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 #if WITH_SDL2
 	SDL_SetTextInputRect(&rect);
 	SDL_StartTextInput();
+#else
+	/* Enable unicode translation to get shifted etc chars with SDL_PollEvent */
+	nOldUnicodeMode = SDL_EnableUNICODE(true);
 #endif
 
 	txt = dlg[objnum].txt;
@@ -982,6 +982,9 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	SDL_Event sdlEvent;
 	SDL_Surface *pBgSurface;
 	SDL_Rect dlgrect, bgrect;
+#if !WITH_SDL2
+	int nOldUnicodeMode;
+#endif
 
 	if (pSdlGuiScrn->h / sdlgui_fontheight < dlg[0].h)
 	{
@@ -1066,6 +1069,13 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 		}
 	}
 
+#if WITH_SDL2
+	SDL_SetTextInputRect(&rect);
+	SDL_StartTextInput();
+#else
+	/* Enable unicode translation to get shifted etc chars with SDL_PollEvent */
+	nOldUnicodeMode = SDL_EnableUNICODE(true);
+#endif
 
 	/* The main loop */
 	while (retbutton == 0 && !bQuitProgram)
@@ -1172,9 +1182,11 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 					retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL, SG_CANCEL);
 					break;
 				 default:
-					key = toupper(sdlEvent.key.keysym.sym);
-					if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'Z'))
+					/* unicode member is needed to handle shifted etc special chars */
+					key = sdlEvent.key.keysym.unicode;
+					if (key >= 33 && key <= 126)
 					{
+						key = toupper(key);
 						retbutton = SDLGui_SearchFlags(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
 						retbutton = SDLGui_HandleSelection(dlg, retbutton, retbutton);
 					}
@@ -1205,6 +1217,11 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	if (retbutton == SDLGUI_QUIT)
 		bQuitProgram = true;
 
+#if WITH_SDL2
+	SDL_StopTextInput();
+#else
+	SDL_EnableUNICODE(nOldUnicodeMode);
+#endif
 	return retbutton;
 }
 
