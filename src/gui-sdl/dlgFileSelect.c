@@ -571,7 +571,13 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	bool browsingzip = false;           /* Are we browsing an archive? */
 	zip_dir *zipfiles = NULL;
 	SDL_Event sdlEvent;
-	int yScrollbar_size;                 /* Size of the vertical scrollbar */
+	int yScrollbar_size;                /* Size of the vertical scrollbar */
+	union {
+		char *mtxt;
+		const char *ctxt;
+	} dlgtitle;                         /* A hack to silent recent GCCs warnings */
+
+	dlgtitle.ctxt = title;
 
 	/* If this is the first call to SDLGui_FileSelect, we reset scrollbar_Ypos and ypos */
 	/* Else, we keep the previous value of scrollbar_Ypos and update ypos below, to open */
@@ -596,7 +602,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	path[0] = 0;
 
 	len = strlen(title);
-	fsdlg[SGFSDLG_TITLE].txt = (char *)title;
+	fsdlg[SGFSDLG_TITLE].txt = dlgtitle.mtxt;
 	fsdlg[SGFSDLG_TITLE].x = TITLE_OFFSET + (TITLE_MAXLEN-len)/2;
 	fsdlg[SGFSDLG_TITLE].w = len;
 
