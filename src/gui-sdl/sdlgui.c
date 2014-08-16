@@ -177,7 +177,7 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 	colors.midgrey   = SDL_MapRGB(pSdlGuiScrn->format,192,192,192);
 	colors.lightgrey = SDL_MapRGB(pSdlGuiScrn->format,255,255,255);
 	/* others */
-	colors.focus     = SDL_MapRGB(pSdlGuiScrn->format,  0,196,196);
+	colors.focus     = SDL_MapRGB(pSdlGuiScrn->format,212,212,212);
 	colors.cursor    = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
 	colors.underline = SDL_MapRGB(pSdlGuiScrn->format,  0,  0,255);
 	colors.editfield = SDL_MapRGB(pSdlGuiScrn->format,160,160,160);
