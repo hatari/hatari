@@ -17,6 +17,8 @@
 
 const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
 
+#include <inttypes.h>
+
 #include "main.h"
 #include "configuration.h"
 #include "fdc.h"
