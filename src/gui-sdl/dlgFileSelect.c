@@ -161,9 +161,14 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool 
 				if (ZIP_FileNameIsZIP(tempstr) && browsingzip == false)
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark .ZIP archives as folders */
 			}
+
+			fsdlg[SGFSDLG_ENTRYFIRST+i].flags |= SG_EXIT;
 		}
 		else
+		{
 			dlgfilenames[i][0] = 0;  /* Clear entry */
+			fsdlg[SGFSDLG_ENTRYFIRST+i].flags &= ~SG_EXIT;
+		}
 	}
 
 	free(tempstr);
@@ -215,6 +220,23 @@ static void DlgFileSelect_RemoveHiddenFiles(struct dirent **files)
 	}
 }
 
+/**
+ * Reset focus to first entry if necessary.
+ */
+static void DlgFileSelect_ResetFocus(void)
+{
+	int i;
+
+	for (i = SGFSDLG_ENTRYFIRST+1; i <= SGFSDLG_ENTRYLAST; i++)
+	{
+		if (fsdlg[i].state & SG_FOCUSED)
+		{
+			fsdlg[i].state &= ~SG_FOCUSED;
+			fsdlg[SGFSDLG_ENTRYFIRST].state |= SG_FOCUSED;
+			break;
+		}
+	}
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -653,6 +675,9 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 			/* reload always implies refresh */
 			reloaddir = false;
 			refreshentries = true;
+
+			/* Check if focus was in list - if yes then reset to first entry */
+			DlgFileSelect_ResetFocus();
 		}/* reloaddir */
 
 		/* Refresh scrollbar size */

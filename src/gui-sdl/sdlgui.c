@@ -281,6 +281,21 @@ static void SDLGui_DrawText(const SGOBJ *tdlg, int objnum)
 	int x, y;
 	x = (tdlg[0].x+tdlg[objnum].x)*sdlgui_fontwidth;
 	y = (tdlg[0].y+tdlg[objnum].y)*sdlgui_fontheight;
+
+	if (tdlg[objnum].flags & SG_EXIT)
+	{
+		SDL_Rect rect;
+		/* Draw background: */
+		rect.x = x;
+		rect.y = y;
+		rect.w = tdlg[objnum].w * sdlgui_fontwidth;
+		rect.h = tdlg[objnum].h * sdlgui_fontheight;
+		if (tdlg[objnum].state & SG_FOCUSED)
+			SDL_FillRect(pSdlGuiScrn, &rect, colors.focus);
+		else
+			SDL_FillRect(pSdlGuiScrn, &rect, colors.midgrey);
+	}
+
 	SDLGui_Text(x, y, tdlg[objnum].txt);
 }
 
@@ -850,7 +865,8 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 		}
 		/* change focus */
 		kind = dlg[i].type;
-		if (kind == SGBUTTON || kind == SGRADIOBUT || kind == SGCHECKBOX)
+		if (kind == SGBUTTON || kind == SGRADIOBUT || kind == SGCHECKBOX
+		    || (dlg[i].flags & SG_EXIT) != 0)
 		{
 			dlg[i].state |= SG_FOCUSED;
 			SDLGui_DrawObj(dlg, i);
@@ -941,6 +957,12 @@ static int SDLGui_HandleSelection(SGOBJ *dlg, int obj, int oldbutton)
 		retbutton=obj;
 		break;
 	}
+
+	if (!retbutton && (dlg[obj].flags & SG_EXIT) != 0)
+	{
+		retbutton = obj;
+	}
+
 	return retbutton;
 }
 
@@ -1110,10 +1132,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 					SDL_UpdateRect(pSdlGuiScrn, (dlg[0].x+dlg[oldbutton].x)*sdlgui_fontwidth-2, (dlg[0].y+dlg[oldbutton].y)*sdlgui_fontheight-2,
 					               dlg[oldbutton].w*sdlgui_fontwidth+4, dlg[oldbutton].h*sdlgui_fontheight+4);
 					oldbutton = 0;
-				}
-				if (obj >= 0 && (dlg[obj].flags&SG_EXIT))
-				{
-					retbutton = obj;
 				}
 				break;
 
