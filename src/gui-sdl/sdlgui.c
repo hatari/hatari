@@ -1163,6 +1163,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 					SDLGui_RemoveFocus(dlg, focused);
 					focused = SDLGui_FocusNext(dlg, 1, -1);
 					break;
+				 case SDLK_SPACE:
 				 case SDLK_RETURN:
 				 case SDLK_KP_ENTER:
 					retbutton = SDLGui_HandleSelection(dlg, focused, focused);
@@ -1172,7 +1173,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 					break;
 				 default:
 					key = toupper(sdlEvent.key.keysym.sym);
-					if (key >= 'A' && key <= 'Z')
+					if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'Z'))
 					{
 						retbutton = SDLGui_SearchFlags(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
 						retbutton = SDLGui_HandleSelection(dlg, retbutton, retbutton);
