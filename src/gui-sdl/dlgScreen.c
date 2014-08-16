@@ -145,11 +145,15 @@ static SGOBJ windowdlg[] =
 	{ SGTEXT,     0, 0,  7,13, 16,1, "Screen capture" },
 	{ SGCHECKBOX, SG_SHORTCUT_KEY('C'), 0,  8,15, 16,1, "_Crop statusbar" },
 	{ SGBUTTON,   SG_SHORTCUT_KEY('S'), 0, 29,13, 14,1, " _Screenshot " },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('R'), 0, 29,15, 14,1, " _Record AVI " },
+	{ SGBUTTON,   SG_SHORTCUT_KEY('R'), 0, 29,15, 14,1, NULL },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 17,18, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
+
+/* for record button */
+#define RECORD_START "_Record AVI"
+#define RECORD_STOP "Stop _record"
 
 
 /* ---------------------------------------------------------------- */
@@ -346,9 +350,9 @@ void Dialog_WindowDlg(void)
 		windowdlg[DLGSCRN_CROP].state &= ~SG_SELECTED;
 
 	if (Avi_AreWeRecording())
-		windowdlg[DLGSCRN_RECANIM].txt = "Stop record";
+		windowdlg[DLGSCRN_RECANIM].txt = RECORD_STOP;
 	else
-		windowdlg[DLGSCRN_RECANIM].txt = "Record AVI";
+		windowdlg[DLGSCRN_RECANIM].txt = RECORD_START;
 
 	/* The window dialog main loop */
 	do
@@ -391,7 +395,7 @@ void Dialog_WindowDlg(void)
 				Statusbar_AddMessage("Finishing AVI file...", 100);
 				Statusbar_Update(sdlscrn, true);
 				Avi_StopRecording();
-				windowdlg[DLGSCRN_RECANIM].txt = "Record AVI";
+				windowdlg[DLGSCRN_RECANIM].txt = RECORD_START;
 				Statusbar_AddMessage("Emulation paused", 100);
 				Statusbar_Update(sdlscrn, true);
 			}
@@ -404,7 +408,7 @@ void Dialog_WindowDlg(void)
 						(Uint32)ConfigureParams.Video.AviRecordFps << CLOCKS_TIMINGS_SHIFT_VBL ,
 					1 << CLOCKS_TIMINGS_SHIFT_VBL ,
 					ConfigureParams.Video.AviRecordVcodec );
-				windowdlg[DLGSCRN_RECANIM].txt = "Stop record";
+				windowdlg[DLGSCRN_RECANIM].txt = RECORD_STOP;
 			}
 			break;
 		}

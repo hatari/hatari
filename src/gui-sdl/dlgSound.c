@@ -43,35 +43,38 @@ static SGOBJ sounddlg[] =
 	{ SGBOX,      0,0,  0, 0, 40,25, NULL },
 	{ SGBOX,      0,0,  1, 1, 38,13, NULL },
 	{ SGTEXT,     0,0,  4, 2,  5,1, "SOUND" },
-	{ SGCHECKBOX, 0,0, 13, 2,  9,1, "Enabled" },
-	{ SGCHECKBOX, 0,0, 25, 2, 13,1, "Synchronize" },
+	{ SGCHECKBOX, SG_SHORTCUT_KEY('E'),0, 13, 2,  9,1, "_Enabled" },
+	{ SGCHECKBOX, SG_SHORTCUT_KEY('C'),0, 25, 2, 13,1, "Syn_chronize" },
 
 	{ SGTEXT,     0,0,  4, 4, 17,1, "Playback quality:" },
-	{ SGRADIOBUT, 0,0,  2, 6, 10,1, "11025 Hz" },
-	{ SGRADIOBUT, 0,0,  2, 7, 10,1, "12517 Hz" },
-	{ SGRADIOBUT, 0,0,  2, 8, 10,1, "16000 Hz" },
-	{ SGRADIOBUT, 0,0, 15, 6, 10,1, "22050 Hz" },
-	{ SGRADIOBUT, 0,0, 15, 7, 10,1, "25033 Hz" },
-	{ SGRADIOBUT, 0,0, 15, 8, 10,1, "32000 Hz" },
-	{ SGRADIOBUT, 0,0, 28, 6, 10,1, "44100 Hz" },
-	{ SGRADIOBUT, 0,0, 28, 7, 10,1, "48000 Hz" },
-	{ SGRADIOBUT, 0,0, 28, 8, 10,1, "50066 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('0'),0,  2, 6, 10,1, "11_025 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('1'),0,  2, 7, 10,1, "_12517 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('6'),0,  2, 8, 10,1, "1_6000 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('2'),0, 15, 6, 10,1, "_22050 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('7'),0, 15, 7, 10,1, "25033 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('3'),0, 15, 8, 10,1, "_32000 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('4'),0, 28, 6, 10,1, "_44100 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('8'),0, 28, 7, 10,1, "4_8000 Hz" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('5'),0, 28, 8, 10,1, "_50066 Hz" },
 
 	{ SGTEXT,     0,0,  4,10, 10,1, "YM voices mixing:" },
-	{ SGRADIOBUT, 0,0,  2,12, 12,1, "Math model" },
-	{ SGRADIOBUT, 0,0, 15,12, 10,1, "ST table" },
-	{ SGRADIOBUT, 0,0, 28,12,  8,1, "Linear" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('M'),0,  2,12, 12,1, "_Math model" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('S'),0, 15,12, 10,1, "_ST table" },
+	{ SGRADIOBUT, SG_SHORTCUT_KEY('L'),0, 28,12,  8,1, "_Linear" },
 
 	{ SGBOX,      0,0,  1,15, 38,7, NULL },
 	{ SGTEXT,     0,0, 13,16, 14,1, "Capture YM/WAV" },
 	{ SGTEXT,     0,0,  2,17, 26,1, "File name (*.wav / *.ym):" },
 	{ SGTEXT,     0,0,  2,18, 34,1, dlgRecordName },
-	{ SGBUTTON,   0,0, 28,17,  8,1, " Browse " },
-	{ SGBUTTON,   0,0, 12,20, 16,1, NULL },
+	{ SGBUTTON,   SG_SHORTCUT_KEY('B'),0, 28,17,  8,1, " _Browse " },
+	{ SGBUTTON,   SG_SHORTCUT_KEY('R'),0, 12,20, 16,1, NULL },
+
 	{ SGBUTTON, SG_DEFAULT, 0, 10,23, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
+#define RECORD_START "_Record sound"
+#define RECORD_STOP  "Stop _recording"
 
 static const int nSoundFreqs[] =
 {
@@ -136,9 +139,9 @@ void Dialog_SoundDlg(void)
 	File_ShrinkName(dlgRecordName, ConfigureParams.Sound.szYMCaptureFileName, sounddlg[DLGSOUND_RECNAME].w);
 
 	if ( Sound_AreWeRecording() )
-		sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
+		sounddlg[DLGSOUND_RECORD].txt = RECORD_STOP;
 	else
-		sounddlg[DLGSOUND_RECORD].txt = "Record sound";
+		sounddlg[DLGSOUND_RECORD].txt = RECORD_START;
 
 	/* The sound dialog main loop */
 	do
@@ -155,7 +158,7 @@ void Dialog_SoundDlg(void)
 		 case  DLGSOUND_RECORD:
 			if (Sound_AreWeRecording())
 			{
-				sounddlg[DLGSOUND_RECORD].txt = "Record sound";
+				sounddlg[DLGSOUND_RECORD].txt = RECORD_START;
 				Sound_EndRecording();
 			}
 			else
@@ -165,7 +168,7 @@ void Dialog_SoundDlg(void)
 				{
 					strcpy(ConfigureParams.Sound.szYMCaptureFileName, "./hatari.wav");
 				}
-				sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
+				sounddlg[DLGSOUND_RECORD].txt =  RECORD_STOP;
 				Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
 			}
 			break;
