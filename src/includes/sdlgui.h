@@ -34,7 +34,7 @@ enum
 
 /* key given to macro should be uppercase ASCII one */
 #define SG_SHORTCUT_KEY(x) (SG_SHORTCUT | (x << 5))
-#define SG_SHORTCUT_MASK   ~(SG_TOUCHEXIT|SG_EXIT|SG_DEFAULT|SG_CANCEL)
+#define SG_SHORTCUT_MASK   (~(SG_TOUCHEXIT|SG_EXIT|SG_DEFAULT|SG_CANCEL))
 
 /* Object states: */
 #define SG_SELECTED    1

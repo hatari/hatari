@@ -877,7 +877,7 @@ static void SDLGui_SetShortcuts(SGOBJ *dlg)
 			{
 				/* TODO: conversion */
 				chr = toupper(*str);
-				dlg[i].flags &= SG_SHORTCUT_MASK;
+				dlg[i].flags &= ~SG_SHORTCUT_MASK;
 				dlg[i].flags |= SG_SHORTCUT_KEY(chr);
 				if (used[chr])
 				{
