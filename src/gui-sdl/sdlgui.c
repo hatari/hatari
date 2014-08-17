@@ -1070,7 +1070,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	}
 
 #if WITH_SDL2
-	SDL_SetTextInputRect(&rect);
 	SDL_StartTextInput();
 #else
 	/* Enable unicode translation to get shifted etc chars with SDL_PollEvent */
@@ -1182,6 +1181,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 					retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL, SG_CANCEL);
 					break;
 				 default:
+#if !WITH_SDL2
 					/* unicode member is needed to handle shifted etc special chars */
 					key = sdlEvent.key.keysym.unicode;
 					if (key >= 33 && key <= 126)
@@ -1190,6 +1190,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 						retbutton = SDLGui_SearchFlags(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
 						retbutton = SDLGui_HandleSelection(dlg, retbutton, retbutton);
 					}
+#endif
 					if (!retbutton && pEventOut)
 						retbutton = SDLGUI_UNKNOWNEVENT;
 					break;
