@@ -11,6 +11,7 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 #include <SDL.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "main.h"
 #include "screen.h"
@@ -37,6 +38,9 @@ static struct {
 
 int sdlgui_fontwidth;			/* Width of the actual font */
 int sdlgui_fontheight;			/* Height of the actual font */
+
+#define UNDERLINE_INDICATOR '_'
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -216,7 +220,7 @@ static int SDLGui_TextLen(const char *str)
 	int len;
 	for (len = 0; *str; str++)
 	{
-		if (*str != '_')
+		if (*str != UNDERLINE_INDICATOR)
 			len++;
 	}
 	return len;
@@ -246,7 +250,7 @@ static void SDLGui_TextInt(int x, int y, const char *txt, bool underline)
 		dr.h=sdlgui_fontheight;
 
 		c = txt[i];
-		if (c == '_' && underline)
+		if (c == UNDERLINE_INDICATOR && underline)
 		{
 			dr.h = 1;
 			dr.y += offset;
@@ -806,6 +810,7 @@ static int SDLGui_SearchFlags(const SGOBJ *dlg, int mask, int value)
 	}
 	return 0;
 }
+
 /*-----------------------------------------------------------------------*/
 /**
  * Search an object with a special state (e.g. SG_FOCUSED).
@@ -823,6 +828,53 @@ static int SDLGui_SearchState(const SGOBJ *dlg, int state)
 	return 0;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * For given dialog object type, returns whether it could have shortcut key
+ */
+static bool SDLGui_CanHaveShortcut(int kind)
+{
+	if (kind == SGBUTTON || kind == SGRADIOBUT || kind == SGCHECKBOX)
+		return true;
+	return false;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check & set dialog item shortcut values based on their text strings.
+ * Asserts if dialog has same shortcut defined multiple times.
+ */
+static void SDLGui_SetShortcuts(SGOBJ *dlg)
+{
+	unsigned chr, used[256];
+	const char *str;
+	unsigned int i;
+
+	memset(used, 0, sizeof(used));
+	for (i = 0; dlg[i].type != -1; i++)
+	{
+		if (!SDLGui_CanHaveShortcut(dlg[i].type))
+			continue;
+		if (!(str = dlg[i].txt))
+			continue;
+		while(*str)
+		{
+			if (*str++ == UNDERLINE_INDICATOR)
+			{
+				/* TODO: conversion */
+				chr = toupper(*str);
+				dlg[i].flags &= SG_SHORTCUT_MASK;
+				dlg[i].flags |= SG_SHORTCUT_KEY(chr);
+				if (used[chr])
+				{
+					fprintf(stderr, "ERROR: Duplicate Hatari SDL GUI shortcut in '%s'!\n", dlg[i].txt);
+					exit(1);
+				}
+				used[chr] = 1;
+			}
+		}
+	}
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -844,7 +896,7 @@ static void SDLGui_RemoveFocus(SGOBJ *dlg, int old)
  */
 static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 {
-	int kind, old = i;
+	int old = i;
 	if (!i)
 		return i;
 
@@ -863,10 +915,10 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 				i++;
 			i--;
 		}
-		/* change focus */
-		kind = dlg[i].type;
-		if (kind == SGBUTTON || kind == SGRADIOBUT || kind == SGCHECKBOX
-		    || (dlg[i].flags & SG_EXIT) != 0)
+		/* change focus for items that can have shortcuts
+		 * and for items in Fsel lists
+		 */
+		if (SDLGui_CanHaveShortcut(dlg[i].type) || (dlg[i].flags & SG_EXIT) != 0)
 		{
 			dlg[i].state |= SG_FOCUSED;
 			SDLGui_DrawObj(dlg, i);
@@ -1030,6 +1082,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 			focused = defocus;
 		}
 	}
+	SDLGui_SetShortcuts(dlg);
 
 	/* (Re-)draw the dialog */
 	SDLGui_DrawDialog(dlg);
