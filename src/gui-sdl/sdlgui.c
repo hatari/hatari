@@ -242,14 +242,15 @@ static void SDLGui_TextInt(int x, int y, const char *txt, bool underline)
 	else
 		offset = sdlgui_fontheight - 2;
 
-	for (i=0; txt[i]!=0; i++)
+	i = 0;
+	while (txt[i])
 	{
 		dr.x=x;
 		dr.y=y;
 		dr.w=sdlgui_fontwidth;
 		dr.h=sdlgui_fontheight;
 
-		c = txt[i];
+		c = txt[i++];
 		if (c == UNDERLINE_INDICATOR && underline)
 		{
 			dr.h = 1;
@@ -257,6 +258,19 @@ static void SDLGui_TextInt(int x, int y, const char *txt, bool underline)
 			SDL_FillRect(pSdlGuiScrn, &dr, colors.underline);
 			continue;
 		}
+		/* for now, assume (only) Linux file paths are UTF-8 */
+#if defined(__linux__)
+		/* Quick and dirty convertion for latin1 characters only... */
+		if ((c & 0xc0) == 0xc0)
+		{
+			c = c << 6;
+			c |= (txt[i++]) & 0x7f;
+		}
+		else if (c >= 0x80)
+		{
+			printf("Unsupported character '%c' (0x%x)\n", c, c);
+		}
+#endif
 		x += sdlgui_fontwidth;
 
 		sr.x=sdlgui_fontwidth*(c%16);
