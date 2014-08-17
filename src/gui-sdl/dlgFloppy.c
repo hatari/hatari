@@ -45,29 +45,29 @@ static SGOBJ floppydlg[] =
 	{ SGTEXT, 0, 0, 25,1, 12,1, "Floppy disks" },
 
 	{ SGTEXT, 0, 0, 2,3, 8,1, "Drive A:" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('A'), 0, 12,3,  9,1, "En_abled" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('D'), 0, 23,3, 14,1, "_Double Sided" },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('E'), 0, 46,3,  7,1, "_Eject" },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('R'), 0, 54,3,  8,1, "B_rowse" },
+	{ SGCHECKBOX, 0, 0, 12,3,  9,1, "En_abled" },
+	{ SGCHECKBOX, 0, 0, 23,3, 14,1, "_Double Sided" },
+	{ SGBUTTON,   0, 0, 46,3,  7,1, "_Eject" },
+	{ SGBUTTON,   0, 0, 54,3,  8,1, "B_rowse" },
 	{ SGTEXT, 0, 0, 3,4, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,6, 8,1, "Drive B:" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('B'), 0, 12,6,  9,1, "Ena_bled" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('L'), 0, 23,6, 14,1, "Doub_le Sided" },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('J'), 0, 46,6,  7,1, "E_ject" },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('W'), 0, 54,6,  8,1, "Bro_wse" },
+	{ SGCHECKBOX, 0, 0, 12,6,  9,1, "Ena_bled" },
+	{ SGCHECKBOX, 0, 0, 23,6, 14,1, "Doub_le Sided" },
+	{ SGBUTTON,   0, 0, 46,6,  7,1, "E_ject" },
+	{ SGBUTTON,   0, 0, 54,6,  8,1, "Bro_wse" },
 	{ SGTEXT, 0, 0, 3,7, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,9, 32,1, "Default floppy images directory:" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('S'), 0, 54, 9,  8,1, "Brow_se" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('I'), 0,  2,12, 15,1, "Auto _insert B" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('F'), 0,  2,14, 20,1, "_Fast floppy access" },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('C'), 0, 42,14, 20,1, "_Create blank image" },
+	{ SGBUTTON,   0, 0, 54, 9,  8,1, "Brow_se" },
+	{ SGCHECKBOX, 0, 0,  2,12, 15,1, "Auto _insert B" },
+	{ SGCHECKBOX, 0, 0,  2,14, 20,1, "_Fast floppy access" },
+	{ SGBUTTON,   0, 0, 42,14, 20,1, "_Create blank image" },
 	{ SGTEXT, 0, 0, 2,16, 17,1, "Write protection:" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('O'), 0, 21,16,  5,1, "_Off" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('N'), 0, 28,16,  4,1, "O_n" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('U'), 0, 34,16,  6,1, "A_uto" },
+	{ SGRADIOBUT, 0, 0, 21,16,  5,1, "_Off" },
+	{ SGRADIOBUT, 0, 0, 28,16,  4,1, "O_n" },
+	{ SGRADIOBUT, 0, 0, 34,16,  6,1, "A_uto" },
 	{ SGBUTTON, SG_DEFAULT, 0, 22,18, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -82,9 +82,9 @@ static SGOBJ alertdlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 40,6, NULL },
 	{ SGTEXT, 0, 0, 3,1, 30,1, "Insert last created disk to?" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('A'), 0,  3,4, 10,1, "Drive _A:" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('B'), 0, 15,4, 10,1, "Drive _B:" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('C')|SG_CANCEL, 0, 27,4, 10,1, "_Cancel" },
+	{ SGBUTTON, 0, 0,  3,4, 10,1, "Drive _A:" },
+	{ SGBUTTON, 0, 0, 15,4, 10,1, "Drive _B:" },
+	{ SGBUTTON, SG_CANCEL, 0, 27,4, 10,1, "_Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 

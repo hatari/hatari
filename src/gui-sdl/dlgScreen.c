@@ -52,14 +52,14 @@ static SGOBJ monitordlg[] =
 
 	{ SGBOX,      0, 0,  1,1, 32,6, NULL },
 	{ SGTEXT,     0, 0, 10,1, 14,1, "Atari monitor" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('M'), 0,  4,3,  6,1, "_Mono" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('R'), 0, 12,3,  5,1, "_RGB" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('V'), 0, 19,3,  5,1, "_VGA" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('T'), 0, 26,3,  4,1, "_TV" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('B'), 0, 12,5, 14,1, "Show _borders" },
+	{ SGRADIOBUT, 0, 0,  4,3,  6,1, "_Mono" },
+	{ SGRADIOBUT, 0, 0, 12,3,  5,1, "_RGB" },
+	{ SGRADIOBUT, 0, 0, 19,3,  5,1, "_VGA" },
+	{ SGRADIOBUT, 0, 0, 26,3,  4,1, "_TV" },
+	{ SGCHECKBOX, 0, 0, 12,5, 14,1, "Show _borders" },
 
 	{ SGBOX,      0, 0,  1,8, 32,7, NULL },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('E'), 0,  4,9, 25,1, "Use _extended VDI screen" },
+	{ SGCHECKBOX, 0, 0,  4,9, 25,1, "Use _extended VDI screen" },
 	{ SGTEXT,     0, 0,  4,11, 5,1, "Size:" },
 	{ SGBUTTON,   0, 0,  6,12, 1,1, "\x04" },     /* Arrow left */
 	{ SGTEXT,     0, 0,  8,12, 4,1, sVdiWidth },
@@ -69,9 +69,9 @@ static SGOBJ monitordlg[] =
 	{ SGTEXT,     0, 0,  8,13, 4,1, sVdiHeight },
 	{ SGBUTTON,   0, 0, 13,13, 1,1, "\x03" },     /* Arrow right */
 
-	{ SGRADIOBUT, SG_EXIT|SG_SHORTCUT_KEY('2'), 0, 18,11, 11,1, " _2 colors" },
-	{ SGRADIOBUT, SG_EXIT|SG_SHORTCUT_KEY('4'), 0, 18,12, 11,1, " _4 colors" },
-	{ SGRADIOBUT, SG_EXIT|SG_SHORTCUT_KEY('6'), 0, 18,13, 11,1, "1_6 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,11, 11,1, " _2 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,12, 11,1, " _4 colors" },
+	{ SGRADIOBUT, SG_EXIT, 0, 18,13, 11,1, "1_6 colors" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 7,16, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
@@ -117,21 +117,21 @@ static SGOBJ windowdlg[] =
 
 	{ SGBOX,      0, 0,  1,1, 50,10, NULL },
 	{ SGTEXT,     0, 0,  4,2, 20,1, "Hatari screen options" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('F'), 0,  4,4, 12,1, "_Fullscreen" },
+	{ SGCHECKBOX, 0, 0,  4,4, 12,1, "_Fullscreen" },
 	{ SGTEXT,     0, 0,  4,6, 12,1, "Indicators:" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('B'), 0,  6,7, 11,1, "Status_bar" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('L'), 0,  6,8, 11,1, "Drive _led" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('N'), 0,  6,9,  6,1, "_None" },
+	{ SGRADIOBUT, 0, 0,  6,7, 11,1, "Status_bar" },
+	{ SGRADIOBUT, 0, 0,  6,8, 11,1, "Drive _led" },
+	{ SGRADIOBUT, 0, 0,  6,9,  6,1, "_None" },
 	{ SGTEXT,     0, 0, 19,4, 12,1, "Frame skip:" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('O'), 0, 21,5,  5,1, "_Off" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('1'), 0, 21,6,  3,1, "_1" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('2'), 0, 21,7,  3,1, "_2" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('4'), 0, 21,8,  3,1, "_4" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('A'), 0, 21,9,  6,1, "_Auto" },
+	{ SGRADIOBUT, 0, 0, 21,5,  5,1, "_Off" },
+	{ SGRADIOBUT, 0, 0, 21,6,  3,1, "_1" },
+	{ SGRADIOBUT, 0, 0, 21,7,  3,1, "_2" },
+	{ SGRADIOBUT, 0, 0, 21,8,  3,1, "_4" },
+	{ SGRADIOBUT, 0, 0, 21,9,  6,1, "_Auto" },
 	{ SGTEXT,     0, 0, 33,2, 14,1, "Keep desktop" },
 	{ SGTEXT,     0, 0, 33,3, 14,1, "resolution:" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('E'), 0, 35,4,  8,1, "ST/ST_e" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('T'), 0, 35,5, 11,1, "_TT/Falcon" },
+	{ SGCHECKBOX, 0, 0, 35,4,  8,1, "ST/ST_e" },
+	{ SGCHECKBOX, 0, 0, 35,5, 11,1, "_TT/Falcon" },
 	{ SGTEXT,     0, 0, 33,7, 15,1, "Max zoomed win:" },
 	{ SGBUTTON,   0, 0, 35,8,  1,1, "\x04" },     /* Arrow left */
 	{ SGTEXT,     0, 0, 37,8,  4,1, sMaxWidth },
@@ -143,9 +143,9 @@ static SGOBJ windowdlg[] =
 
 	{ SGBOX,      0, 0,  1,12, 50,5, NULL },
 	{ SGTEXT,     0, 0,  7,13, 16,1, "Screen capture" },
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('C'), 0,  8,15, 16,1, "_Crop statusbar" },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('S'), 0, 29,13, 14,1, " _Screenshot " },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('R'), 0, 29,15, 14,1, NULL },
+	{ SGCHECKBOX, 0, 0,  8,15, 16,1, "_Crop statusbar" },
+	{ SGBUTTON,   0, 0, 29,13, 14,1, " _Screenshot " },
+	{ SGBUTTON,   0, 0, 29,15, 14,1, NULL },      /* Record text set later */
 
 	{ SGBUTTON, SG_DEFAULT, 0, 17,18, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }

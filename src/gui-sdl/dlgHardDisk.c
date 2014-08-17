@@ -40,31 +40,31 @@ static SGOBJ diskdlg[] =
 	{ SGTEXT, 0, 0, 27,1, 10,1, "Hard disks" },
 
 	{ SGTEXT, 0, 0, 2,3, 14,1, "ACSI HD image:" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('T'), 0, 46,3, 7,1, "Ejec_t" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('S'), 0, 54,3, 8,1, "Brow_se" },
+	{ SGBUTTON, 0, 0, 46,3, 7,1, "Ejec_t" },
+	{ SGBUTTON, 0, 0, 54,3, 8,1, "Brow_se" },
 	{ SGTEXT, 0, 0, 3,4, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,5, 20,1, "IDE HD master image:" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('C'), 0, 46,5, 7,1, "Eje_ct" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('W'), 0, 54,5, 8,1, "Bro_wse" },
+	{ SGBUTTON, 0, 0, 46,5, 7,1, "Eje_ct" },
+	{ SGBUTTON, 0, 0, 54,5, 8,1, "Bro_wse" },
 	{ SGTEXT, 0, 0, 3,6, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,7, 19,1, "IDE HD slave image:" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('J'), 0, 46,7, 7,1, "E_ject" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('O'), 0, 54,7, 8,1, "Br_owse" },
+	{ SGBUTTON, 0, 0, 46,7, 7,1, "E_ject" },
+	{ SGBUTTON, 0, 0, 54,7, 8,1, "Br_owse" },
 	{ SGTEXT, 0, 0, 3,8, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,9, 13,1, "GEMDOS drive:" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('E'), 0, 46,9, 7,1, "_Eject" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('R'), 0, 54,9, 8,1, "B_rowse" },
+	{ SGBUTTON, 0, 0, 46,9, 7,1, "_Eject" },
+	{ SGBUTTON, 0, 0, 54,9, 8,1, "B_rowse" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,12, 31,1, "GEMDOS drive write protection:" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('F'), 0, 33,12, 5,1, "O_ff" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('N'), 0, 40,12, 4,1, "O_n" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('A'), 0, 46,12, 6,1, "_Auto" },
+	{ SGRADIOBUT, 0, 0, 33,12, 5,1, "O_ff" },
+	{ SGRADIOBUT, 0, 0, 40,12, 4,1, "O_n" },
+	{ SGRADIOBUT, 0, 0, 46,12, 6,1, "_Auto" },
 
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('B'), 0, 2,14, 14,1, "_Boot from HD" },
+	{ SGCHECKBOX, 0, 0, 2,14, 14,1, "_Boot from HD" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 22,16, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }

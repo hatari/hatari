@@ -40,18 +40,18 @@ static SGOBJ joydlg[] =
 	{ SGBUTTON, SG_SHORTCUT_KEY('>'), 0, 28,3, 3,1, "\x03" },   /* Arrow right */
 
 	{ SGBOX, 0, 0, 1,4, 30,11, NULL },
-	{ SGBUTTON,   SG_SHORTCUT_KEY('E'), 0, 19,7, 11,1, "D_efine keys" },
+	{ SGBUTTON,   0, 0, 19,7, 11,1, "D_efine keys" },
 
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('D'), 0, 2,5, 10,1, "_disabled" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('K'), 0, 2,7, 14,1, "use _keyboard" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('J'), 0, 2,9, 20,1, "use real _joystick:" },
+	{ SGRADIOBUT, 0, 0, 2,5, 10,1, "_disabled" },
+	{ SGRADIOBUT, 0, 0, 2,7, 14,1, "use _keyboard" },
+	{ SGRADIOBUT, 0, 0, 2,9, 20,1, "use real _joystick:" },
 
 	{ SGBOX, 0, 0, 5,11, 22,1, NULL },
 	{ SGTEXT, 0, 0, 6,11, 20,1, sSdlStickName },
 	{ SGBUTTON, 0, 0, 4,11, 1,1, "\x04" },         /* Arrow left */
 	{ SGBUTTON, 0, 0, 27,11, 1,1, "\x03" },        /* Arrow right */
 
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('A'), 0, 2,13, 17,1, "Enable _autofire" },
+	{ SGCHECKBOX, 0, 0, 2,13, 17,1, "Enable _autofire" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 6,16, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }

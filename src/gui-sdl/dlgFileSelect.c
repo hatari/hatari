@@ -63,10 +63,10 @@ static SGOBJ fsdlg[] =
 	{ SGTEXT, 0, 0, 1,3, DLGPATH_SIZE,1, dlgpath },
 	{ SGTEXT, 0, 0, 1,4, 6,1, "File:" },
 	{ SGTEXT, 0, 0, 7,4, DLGFNAME_SIZE,1, dlgfname },
-	{ SGBUTTON, SG_SHORTCUT_KEY('.'), 0, 45,1, 4,1, "_.." },
-	{ SGBUTTON, SG_SHORTCUT_KEY('$'), 0, 50,1, 5,1, "_$CWD" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('~'), 0, 56,1, 3,1, "_~" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('/'), 0, 60,1, 3,1, "_/" },
+	{ SGBUTTON, 0, 0, 45,1, 4,1, "_.." },
+	{ SGBUTTON, 0, 0, 50,1, 5,1, "_$CWD" },
+	{ SGBUTTON, 0, 0, 56,1, 3,1, "_~" },
+	{ SGBUTTON, 0, 0, 60,1, 3,1, "_/" },
 	{ SGBOX, 0, 0, 1,6, 62,16, NULL },
 	{ SGBOX, 0, 0, 62,7, 1,14, NULL },
 	{ SGTEXT, SG_EXIT, 0, 2,6, DLGFILENAMES_SIZE,1, dlgfilenames[0] },
@@ -88,7 +88,7 @@ static SGOBJ fsdlg[] =
 	{ SGSCROLLBAR, SG_TOUCHEXIT, 0, 62, 7, 0, 0, NULL },       /* Scrollbar */
 	{ SGBUTTON,   SG_SHORTCUT_KEY('<')|SG_TOUCHEXIT, 0, 62, 6,1,1, "\x01" },          /* Arrow up */
 	{ SGBUTTON,   SG_SHORTCUT_KEY('>')|SG_TOUCHEXIT, 0, 62,21,1,1, "\x02" },          /* Arrow down */
-	{ SGCHECKBOX, SG_SHORTCUT_KEY('+')|SG_EXIT, 0, 2,23, 19,1, "Show hidden files (_+)" },
+	{ SGCHECKBOX, SG_EXIT, 0, 2,23, 19,1, "Show hidden files (_+)" },
 	{ SGBUTTON, SG_DEFAULT, 0, 32,23, 8,1, "OK" },
 	{ SGBUTTON, SG_CANCEL, 0, 50,23, 8,1, "Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }

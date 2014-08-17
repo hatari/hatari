@@ -40,16 +40,16 @@ static SGOBJ newdiskdlg[] =
 	{ SGTEXT, 0, 0, 14,3, 2,1, szTracks },
 	{ SGBUTTON, SG_SHORTCUT_KEY('>'), 0, 17,3, 1,1, "\x03" },   /* Right-arrow button */
 	{ SGTEXT, 0, 0, 2,5, 8,1, "Sectors:" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('9'), SG_SELECTED, 12,5, 4,1, " _9" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('0'), 0, 17,5, 4,1, "1_0" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('7'), 0, 22,5, 4,1, "11" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('8'), 0, 12,6, 9,1, "1_8 (HD)" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('6'), 0, 12,7, 9,1, "3_6 (ED)" },
+	{ SGRADIOBUT, 0, SG_SELECTED, 12,5, 4,1, " _9" },
+	{ SGRADIOBUT, 0, 0, 17,5, 4,1, "1_0" },
+	{ SGRADIOBUT, 0, 0, 22,5, 4,1, "11" },
+	{ SGRADIOBUT, 0, 0, 12,6, 9,1, "1_8 (HD)" },
+	{ SGRADIOBUT, 0, 0, 12,7, 9,1, "3_6 (ED)" },
 	{ SGTEXT, 0, 0, 2,9, 6,1, "Sides:" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('1'), 0, 12,9, 3,1, "_1" },
-	{ SGRADIOBUT, SG_SHORTCUT_KEY('2'), SG_SELECTED, 17,9, 3,1, "_2" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('C')|SG_DEFAULT, 0, 4,12, 8,1, "_Create" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('B')|SG_CANCEL, 0, 18,12, 6,1, "_Back" },
+	{ SGRADIOBUT, 0, 0, 12,9, 3,1, "_1" },
+	{ SGRADIOBUT, 0, SG_SELECTED, 17,9, 3,1, "_2" },
+	{ SGBUTTON, SG_DEFAULT, 0, 4,12, 8,1, "_Create" },
+	{ SGBUTTON, SG_CANCEL, 0, 18,12, 6,1, "_Back" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
