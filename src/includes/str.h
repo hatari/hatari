@@ -14,6 +14,18 @@
 # include <strings.h>
 #endif
 
+
+/* Define this only for an old Linux system which does not store
+ * pathnames in UTF-8. If this is defined, pathnames are converted
+ * to the host character set as defined by the locale.
+ * Do not define this for OSX, as the unicode pathnames then won't
+ * be converted from the decomposed to the precomposed form.
+ *
+ * TODO: this should have option / be set in CMake config.
+ */
+/* #define USE_LOCALE_CHARSET 1 */
+
+
 /* Invalid characters in paths & filenames are replaced by this,
  * a valid, but uncommon GEMDOS file name character,
  * which hopefully shouldn't cause problems in:

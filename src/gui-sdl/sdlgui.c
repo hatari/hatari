@@ -16,6 +16,7 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "screen.h"
 #include "sdlgui.h"
+#include "str.h"
 
 #include "font5x8.h"
 #include "font10x16.h"
@@ -259,7 +260,7 @@ static void SDLGui_TextInt(int x, int y, const char *txt, bool underline)
 			continue;
 		}
 		/* for now, assume (only) Linux file paths are UTF-8 */
-#if defined(__linux__)
+#if !(defined(WIN32) || defined(USE_LOCALE_CHARSET))
 		/* Quick and dirty convertion for latin1 characters only... */
 		if ((c & 0xc0) == 0xc0)
 		{

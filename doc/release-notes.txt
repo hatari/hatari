@@ -27,6 +27,7 @@ Emulator:
 - SDL GUI:
   - keyboard navigation & shortcuts for options GUI
   - sort file selector items case-insensitively with folders first
+  - Partial support for showing Latin1 chars from UTF-8 file names
 - Debugger:
   - added "save" subcommand to "history" command
   - fix crash when GEMDOS tracing is used without GEMDOS HD emulation

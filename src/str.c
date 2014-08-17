@@ -227,15 +227,6 @@ static int mapAtariToUnicode[128] =
 static char mapUnicodeToAtari[512];
 static bool characterMappingsInitialized = false;
 
-/* Define this only for an old Linux system which does not store
- * pathnames in UTF-8. If this is defined, pathnames are converted
- * to the host character set as defined by the locale.
- * Do not define this for OSX, as the unicode pathnames then won't
- * be converted from the decomposed to the precomposed form.
- */
-/* #define USE_LOCALE_CHARSET 1 */
-
-
 /**
  * This function initializes the mapUnicodeToAtari[] hashtable.
  */
