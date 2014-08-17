@@ -30,6 +30,8 @@ endif(NOT CMAKE_BUILD_TYPE)
 # Conditional build features
 # ##########################
 
+set(ENABLE_SDL2 0
+    CACHE BOOL "Enable building with libSDL2 instead of v1.2")
 set(ENABLE_DSP_EMU 1
     CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
 set(ENABLE_TRACING 1
