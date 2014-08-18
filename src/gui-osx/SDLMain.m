@@ -361,8 +361,8 @@ char szPath[FILENAME_MAX] ;											// for general use
 	// Therefore we simulate the fullscreen key press instead
 
 	SDL_KeyboardEvent event;
+	memset(&event, 0, sizeof(event));
 	event.type = SDL_KEYDOWN;
-	event.which = 0;
 	event.state = SDL_PRESSED;
 	event.keysym.sym = SDLK_F11;
 	SDL_PushEvent((SDL_Event*)&event);	// Send the F11 key press
