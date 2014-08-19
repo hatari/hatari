@@ -447,11 +447,10 @@ BOOL flag1, flag2;
 	[opnPanel setCanChooseFiles: YES];
 	[opnPanel setAccessoryView:partage] ;
 
-	if ([opnPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
-	 {
-		[opnPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;
-	[opnPanel setNameFieldStringValue:@"hatari"] ;
-	btOk = [opnPanel runModal] == NSOKButton ;										// Ok ?
+	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
+	 {	[opnPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;
+		[opnPanel setNameFieldStringValue:@"hatari"] ;
+		btOk = [opnPanel runModal] == NSOKButton ;										// Ok ?
 	 }
 	else
 		btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton	;
@@ -486,11 +485,10 @@ BOOL		btOk ;
 	[savPanel setAllowedFileTypes:[NSArray arrayWithObject:@"cfg"]] ;
 	[savPanel setAccessoryView:hartage] ;
 
-	if ([savPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
-	 {
-		[savPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;			// A partir de 10.6
-	[savPanel setNameFieldStringValue:@"hatari"] ;
-	btOk = [savPanel runModal] == NSOKButton ;											// Ok ?
+	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
+	 {	[savPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;			// Since OS X 10.6
+		[savPanel setNameFieldStringValue:@"hatari"] ;
+		btOk = [savPanel runModal] == NSOKButton ;											// Ok ?
 	 }
 	else
 		btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton ;		// avant 10.6
@@ -511,10 +509,10 @@ BOOL		btOk ;
 NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-	if ([opnPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
 		[opnPanel setDirectoryURL:[NSURL fileURLWithPath:defaultDirectory isDirectory:YES]] ;
 	else
-	[opnPanel setDirectory:defaultDirectory] ;
+		[opnPanel setDirectory:defaultDirectory] ;
 }
 
 - (IBAction)halle:(id)sender
@@ -522,10 +520,10 @@ NSString  *defaultDirectory ;
 NSString  *defaultDirectory ;
 
 	defaultDirectory = [NSString stringWithCString:(Paths_GetHatariHome()) encoding:NSASCIIStringEncoding] ;
-	if ([savPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
 		[savPanel setDirectoryURL:[NSURL fileURLWithPath:defaultDirectory isDirectory:YES]] ;
 	else 
-	[savPanel setDirectory:defaultDirectory] ;
+		[savPanel setDirectory:defaultDirectory] ;
 }
 
 

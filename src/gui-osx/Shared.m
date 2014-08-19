@@ -112,10 +112,10 @@ NSOpenPanel *openPanel ;
 		[openPanel	setAllowsOtherFileTypes:YES] ;  } ;
 	if (titre != nil)  [openPanel setTitle:titre] ;
 
-	if ([openPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+	if ([openPanel respondsToSelector:@selector(setDirectoryURL:)])
 	 {	if (defoDir!=nil)  [openPanel setDirectoryURL:[NSURL fileURLWithPath:defoDir isDirectory:YES]] ;	// A partir de 10.6
-	if (defoFile!=nil) [openPanel setNameFieldStringValue:defoFile] ;
-	btOk = [openPanel runModal] == NSOKButton ;                                         // Ok ?
+		if (defoFile!=nil) [openPanel setNameFieldStringValue:defoFile] ;
+		btOk = [openPanel runModal] == NSOKButton ;                                         // Ok ?
 	 }
 	else
 	 	btOk = [openPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton	;	// avant 10.6
@@ -148,10 +148,10 @@ NSOpenPanel *openPanel ;
 		[savPanel setAllowsOtherFileTypes:YES] ; } ;
 	if (titre != nil)  [savPanel setTitle:titre] ;
 
-	if ([savPanel respondsToSelector:@selector(fileURLWithPath:isDirectory:)])
+	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
 	 {	if (defoDir!=nil)  [savPanel setDirectoryURL:[NSURL fileURLWithPath:defoDir isDirectory:YES]] ;	// A partir de 10.6
-	if (defoFile!=nil) [savPanel setNameFieldStringValue:defoFile] ;
-	btOk = [savPanel runModal] == NSOKButton ;										// Ok?
+		if (defoFile!=nil) [savPanel setNameFieldStringValue:defoFile] ;
+		btOk = [savPanel runModal] == NSOKButton ;										// Ok?
 	 }
 	else
 		btOk = [savPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton ;	// Ok ? deprecated en 10.6
