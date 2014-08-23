@@ -31,6 +31,8 @@ Emulator:
 - Debugger:
   - added "save" subcommand to "history" command
   - fix crash when GEMDOS tracing is used without GEMDOS HD emulation
+  - update external disassembler's CPU mask when CPU type is changed
+    (it wasn't restricted to only the valid opcodes for a CPU type)
 
 Other changes:
 - Remaining Hatari OSX UI changes for Hatari v1.8.0
