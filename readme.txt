@@ -47,9 +47,9 @@ permission to combine Hatari with free software programs or libraries that are
 released under the GNU LGPL and with code included in the standard release
 of the IPF support library (a.k.a. libcapsimage, see http://www.softpres.org/
 for more information) under the Software Preservation Society Licence Agreement
-as it has been defined for IPF library version 4.2. Linking against modified
+as it has been defined for IPF library version 4.2 and 5.1. Linking against modified
 versions of the IPF library is also allowed, as long as neither the license
-nor the purpose of the library (accessing .ipf disk images) was changed.
+nor the purpose of the library (accessing .ipf or .ctr disk images) was changed.
 You may copy and distribute such a system following the terms of the GNU GPL
 for Hatari and the licenses of the other code concerned.
 
