@@ -2620,6 +2620,27 @@ int Disasm_GetOptions(void)
 }
 
 /**
+ * Set CPU and FPU mask used for disassembly (when changed from the UI or the options)
+ */
+void Disasm_SetCPUType ( int CPU , int FPU )
+{
+	optionCPUTypeMask = 0;
+
+	if ( ( FPU == 68881 ) || ( FPU == 68882 ) )
+		optionCPUTypeMask |= MC_FPU;
+
+	switch ( CPU )
+	{
+		case 0 :	optionCPUTypeMask |= MC68000 ; break;
+		case 1 :	optionCPUTypeMask |= MC68010 ; break;
+		case 2 :	optionCPUTypeMask |= MC68020 ; break;
+		case 3 :	optionCPUTypeMask |= MC68030 ; break;
+		case 4 :	optionCPUTypeMask |= MC68040 ; break;
+		default :	optionCPUTypeMask |= MC68000 ; break;
+	}	
+}
+
+/**
  * Parse disasm command line option argument
  * @return	error string (""=silent 'error') or NULL for success.
  */

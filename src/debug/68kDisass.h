@@ -28,5 +28,6 @@ extern void Disasm_DisableColumn(int column, int *oldcols, int *newcols);
 
 extern const char* Disasm_ParseOption(const char *arg);
 extern int Disasm_GetOptions(void);
+void Disasm_SetCPUType ( int CPU , int FPU );
 
 #endif		/* HATARI_68KDISASS_H */
