@@ -29,6 +29,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "options.h"
+#include "reset.h"
 #include "screen.h"
 #include "statusbar.h"
 #include "str.h"
@@ -410,6 +411,29 @@ static int DebugUI_Rename(int argc, char *argv[])
 		perror("ERROR");
 	}
 	return DebugUI_PrintCmdHelp(argv[0]);
+}
+
+
+/**
+ * Command: Reset emulation
+ */
+static char *DebugUI_MatchReset(const char *text, int state)
+{
+	static const char* types[] = {	"cold", "hard", "soft", "warm" };
+	return DebugUI_MatchHelper(types, ARRAYSIZE(types), text, state);
+}
+static int DebugUI_Reset(int argc, char *argv[])
+{
+	if (argc != 2)
+		return DebugUI_PrintCmdHelp(argv[0]);
+
+	if (strcmp(argv[1], "soft") == 0 || strcmp(argv[1], "warm") == 0)
+		Reset_Warm();
+	else if (strcmp(argv[1], "cold") == 0 || strcmp(argv[1], "hard") == 0)
+		Reset_Cold();
+	else
+		return DebugUI_PrintCmdHelp(argv[0]);
+	return DEBUGGER_END;
 }
 
 
@@ -894,6 +918,11 @@ static const dbgcommand_t uicommand[] =
 	  "rename given file",
 	  "old new\n"
 	  "\tRenames file with 'old' name to 'new'.",
+	  false },
+	{ DebugUI_Reset, DebugUI_MatchReset,
+	  "reset", "",
+	  "reset emulation",
+	  "<soft|hard>\n",
 	  false },
 	{ DebugUI_SetOptions, Opt_MatchOption,
 	  "setopt", "o",

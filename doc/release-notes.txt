@@ -29,10 +29,11 @@ Emulator:
   - sort file selector items case-insensitively with folders first
   - Partial support for showing Latin1 chars from UTF-8 file names
 - Debugger:
-  - added "save" subcommand to "history" command
-  - fix crash when GEMDOS tracing is used without GEMDOS HD emulation
-  - update external disassembler's CPU mask when CPU type is changed
+  - Fix: crash when GEMDOS tracing is used without GEMDOS HD emulation
+  - Fix: update external disassembler's CPU mask when CPU type is changed
     (it wasn't restricted to only the valid opcodes for a CPU type)
+  - Add "reset <hard|soft>" command
+  - Add "save" subcommand to "history" command
 
 Other changes:
 - Remaining Hatari OSX UI changes for Hatari v1.8.0
