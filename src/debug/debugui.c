@@ -928,10 +928,9 @@ static const dbgcommand_t uicommand[] =
 	  "setopt", "o",
 	  "set Hatari command line and debugger options",
 	  "[bin|dec|hex|<command line options>]\n"
-	  "\tSet Hatari options. For example to enable exception catching,\n"
-	  "\tuse following command line option: 'setopt --debug'. Special\n"
-	  "\t'bin', 'dec' and 'hex' arguments change the default number base\n"
-	  "\tused in debugger.",
+	  "\tSpecial 'bin', 'dec' and 'hex' arguments change the default\n"
+	  "\tnumber base used in debugger.  <TAB> lists available command\n"
+	  "\tline options, 'setopt --help' their descriptions.",
 	  false },
 	{ DebugUI_DoMemorySnap, NULL,
 	  "stateload", "",
