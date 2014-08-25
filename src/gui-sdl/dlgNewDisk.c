@@ -36,9 +36,9 @@ static SGOBJ newdiskdlg[] =
 	{ SGBOX, 0, 0, 0,0, 29,14, NULL },
 	{ SGTEXT, 0, 0, 6,1, 16,1, "New floppy image" },
 	{ SGTEXT, 0, 0, 2,3, 7,1, "Tracks:" },
-	{ SGBUTTON, SG_SHORTCUT_KEY('<'), 0, 12,3, 1,1, "\x04" },   /* Left-arrow button  */
+	{ SGBUTTON, 0, 0, 12,3, 1,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGTEXT, 0, 0, 14,3, 2,1, szTracks },
-	{ SGBUTTON, SG_SHORTCUT_KEY('>'), 0, 17,3, 1,1, "\x03" },   /* Right-arrow button */
+	{ SGBUTTON, 0, 0, 17,3, 1,1, "\x03", SG_SHORTCUT_RIGHT },
 	{ SGTEXT, 0, 0, 2,5, 8,1, "Sectors:" },
 	{ SGRADIOBUT, 0, SG_SELECTED, 12,5, 4,1, " _9" },
 	{ SGRADIOBUT, 0, 0, 17,5, 4,1, "1_0" },

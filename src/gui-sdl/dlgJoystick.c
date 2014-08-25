@@ -36,8 +36,8 @@ static SGOBJ joydlg[] =
 
 	{ SGBOX, 0, 0, 4,3, 24,1, NULL },
 	{ SGTEXT, 0, 0, 5,3, 22,1, NULL },
-	{ SGBUTTON, SG_SHORTCUT_KEY('<'), 0,  1,3, 3,1, "\x04" },   /* Arrow left */
-	{ SGBUTTON, SG_SHORTCUT_KEY('>'), 0, 28,3, 3,1, "\x03" },   /* Arrow right */
+	{ SGBUTTON, 0, 0,  1,3, 3,1, "\x04", SG_SHORTCUT_LEFT },
+	{ SGBUTTON, 0, 0, 28,3, 3,1, "\x03", SG_SHORTCUT_RIGHT },
 
 	{ SGBOX, 0, 0, 1,4, 30,11, NULL },
 	{ SGBUTTON,   0, 0, 19,7, 11,1, "D_efine keys" },
@@ -48,8 +48,8 @@ static SGOBJ joydlg[] =
 
 	{ SGBOX, 0, 0, 5,11, 22,1, NULL },
 	{ SGTEXT, 0, 0, 6,11, 20,1, sSdlStickName },
-	{ SGBUTTON, 0, 0, 4,11, 1,1, "\x04" },         /* Arrow left */
-	{ SGBUTTON, 0, 0, 27,11, 1,1, "\x03" },        /* Arrow right */
+	{ SGBUTTON, 0, 0,  4,11, 1,1, "\x04", SG_SHORTCUT_UP },
+	{ SGBUTTON, 0, 0, 27,11, 1,1, "\x03", SG_SHORTCUT_DOWN },
 
 	{ SGCHECKBOX, 0, 0, 2,13, 17,1, "Enable _autofire" },
 

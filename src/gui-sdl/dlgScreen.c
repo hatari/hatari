@@ -61,13 +61,13 @@ static SGOBJ monitordlg[] =
 	{ SGBOX,      0, 0,  1,8, 32,7, NULL },
 	{ SGCHECKBOX, 0, 0,  4,9, 25,1, "Use _extended VDI screen" },
 	{ SGTEXT,     0, 0,  4,11, 5,1, "Size:" },
-	{ SGBUTTON,   0, 0,  6,12, 1,1, "\x04" },     /* Arrow left */
+	{ SGBUTTON,   0, 0,  6,12, 1,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGTEXT,     0, 0,  8,12, 4,1, sVdiWidth },
-	{ SGBUTTON,   0, 0, 13,12, 1,1, "\x03" },     /* Arrow right */
+	{ SGBUTTON,   0, 0, 13,12, 1,1, "\x03", SG_SHORTCUT_RIGHT },
 	{ SGTEXT,     0, 0,  4,13, 1,1, "x" },
-	{ SGBUTTON,   0, 0,  6,13, 1,1, "\x04" },     /* Arrow left */
+	{ SGBUTTON,   0, 0,  6,13, 1,1, "\x04", SG_SHORTCUT_UP },
 	{ SGTEXT,     0, 0,  8,13, 4,1, sVdiHeight },
-	{ SGBUTTON,   0, 0, 13,13, 1,1, "\x03" },     /* Arrow right */
+	{ SGBUTTON,   0, 0, 13,13, 1,1, "\x03", SG_SHORTCUT_DOWN },
 
 	{ SGRADIOBUT, SG_EXIT, 0, 18,11, 11,1, " _2 colors" },
 	{ SGRADIOBUT, SG_EXIT, 0, 18,12, 11,1, " _4 colors" },
@@ -133,13 +133,13 @@ static SGOBJ windowdlg[] =
 	{ SGCHECKBOX, 0, 0, 35,4,  8,1, "ST/ST_e" },
 	{ SGCHECKBOX, 0, 0, 35,5, 11,1, "_TT/Falcon" },
 	{ SGTEXT,     0, 0, 33,7, 15,1, "Max zoomed win:" },
-	{ SGBUTTON,   0, 0, 35,8,  1,1, "\x04" },     /* Arrow left */
+	{ SGBUTTON,   0, 0, 35,8,  1,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGTEXT,     0, 0, 37,8,  4,1, sMaxWidth },
-	{ SGBUTTON,   0, 0, 43,8,  1,1, "\x03" },     /* Arrow right */
+	{ SGBUTTON,   0, 0, 43,8,  1,1, "\x03", SG_SHORTCUT_RIGHT },
 	{ SGTEXT,     0, 0, 33,9,  1,1, "x" },
-	{ SGBUTTON,   0, 0, 35,9,  1,1, "\x04" },     /* Arrow left */
+	{ SGBUTTON,   0, 0, 35,9,  1,1, "\x04", SG_SHORTCUT_UP },
 	{ SGTEXT,     0, 0, 37,9,  4,1, sMaxHeight },
-	{ SGBUTTON,   0, 0, 43,9,  1,1, "\x03" },     /* Arrow right */
+	{ SGBUTTON,   0, 0, 43,9,  1,1, "\x03", SG_SHORTCUT_DOWN },
 
 	{ SGBOX,      0, 0,  1,12, 50,5, NULL },
 	{ SGTEXT,     0, 0,  7,13, 16,1, "Screen capture" },

@@ -32,15 +32,17 @@ enum
 #define SG_CANCEL      8   /* Marks a cancel button, selectable with ESC key */
 #define SG_SHORTCUT   16   /* Marks a shortcut button, selectable with masked letter */
 
-/* key given to macro should be uppercase ASCII one */
-#define SG_SHORTCUT_KEY(x) (SG_SHORTCUT | (x << 5))
-#define SG_SHORTCUT_MASK   (~(SG_TOUCHEXIT|SG_EXIT|SG_DEFAULT|SG_CANCEL))
-
 /* Object states: */
 #define SG_SELECTED    1
 #define SG_MOUSEDOWN   2
 #define SG_FOCUSED     4   /* Marks an object that has selection focus */
 #define SG_WASFOCUSED  8   /* Marks an object that had selection focus & its bg needs redraw */
+
+/* special shortcut keys, something that won't conflict with text shortcuts */
+#define SG_SHORTCUT_LEFT	'<'
+#define SG_SHORTCUT_RIGHT	'>'
+#define SG_SHORTCUT_UP  	'^'
+#define SG_SHORTCUT_DOWN	'|'
 
 /* Special characters: */
 #define SGRADIOBUTTON_NORMAL    12
@@ -65,6 +67,7 @@ typedef struct
   int x, y;             /* The offset to the upper left corner */
   int w, h;             /* Width and height (for scrollbar : height and position) */
   char *txt;            /* Text string */
+  int shortcut;         /* shortcut key */
 }  SGOBJ;
 
 extern int sdlgui_fontwidth;	/* Width of the actual font */

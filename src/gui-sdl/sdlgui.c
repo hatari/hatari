@@ -813,13 +813,13 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 /**
  * Search an object with a special flag (e.g. SG_DEFAULT or SG_CANCEL).
  */
-static int SDLGui_SearchFlags(const SGOBJ *dlg, int mask, int value)
+static int SDLGui_SearchFlags(const SGOBJ *dlg, int flag)
 {
 	int i = 0;
 
 	while (dlg[i].type != -1)
 	{
-		if ((dlg[i].flags & mask) == value)
+		if (dlg[i].flags & flag)
 			return i;
 		i++;
 	}
@@ -878,8 +878,7 @@ static void SDLGui_SetShortcuts(SGOBJ *dlg)
 			{
 				/* TODO: conversion */
 				chr = toupper(*str);
-				dlg[i].flags &= ~SG_SHORTCUT_MASK;
-				dlg[i].flags |= SG_SHORTCUT_KEY(chr);
+				dlg[i].shortcut = chr;
 				if (used[chr])
 				{
 					fprintf(stderr, "ERROR: Duplicate Hatari SDL GUI shortcut in '%s'!\n", dlg[i].txt);
@@ -946,6 +945,7 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 	}
 	return old;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -1033,6 +1033,24 @@ static int SDLGui_HandleSelection(SGOBJ *dlg, int obj, int oldbutton)
 	return retbutton;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * If given shortcut matches item, handle that & return it's code,
+ * otherwise return zero.
+ */
+static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
+{
+	int i = 0;
+	while (dlg[i].type != -1)
+	{
+		if (dlg[i].shortcut == key)
+			return SDLGui_HandleSelection(dlg, i, i);
+		i++;
+	}
+	return 0;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Show and process a dialog. Returns the button number that has been
@@ -1044,7 +1062,9 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	int obj=0;
 	int oldbutton=0;
 	int retbutton=0;
-	int i, j, b, key;
+	int i, j, b;
+	SDLKey key;
+	SDLMod mod;
 	int focused;
 	SDL_Event sdlEvent;
 	SDL_Surface *pBgSurface;
@@ -1089,7 +1109,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	focused = SDLGui_SearchState(dlg, SG_FOCUSED);
 	if (!focused)
 	{
-		int defocus = SDLGui_SearchFlags(dlg, SG_DEFAULT, SG_DEFAULT);
+		int defocus = SDLGui_SearchFlags(dlg, SG_DEFAULT);
 		if (defocus)
 		{
 			dlg[focused].state &= ~SG_FOCUSED;
@@ -1217,7 +1237,33 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 				break;
 
 			 case SDL_KEYDOWN:                     /* Key pressed */
-				switch (sdlEvent.key.keysym.sym)
+				key = sdlEvent.key.keysym.sym;
+				mod = sdlEvent.key.keysym.mod;
+				/* keyboard shortcuts are with modifiers */
+				if (mod & KMOD_LALT || mod & KMOD_RALT)
+				{
+					if (key == SDLK_LEFT)
+						retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_LEFT);
+					else if (key == SDLK_RIGHT)
+						retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_RIGHT);
+					else if (key == SDLK_UP)
+						retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_UP);
+					else if (key == SDLK_DOWN)
+						retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_DOWN);
+					else
+					{
+#if !WITH_SDL2
+						/* unicode member is needed to handle shifted etc special chars */
+						key = sdlEvent.key.keysym.unicode;
+#endif
+						if (key >= 33 && key <= 126)
+							retbutton = SDLGui_HandleShortcut(dlg, toupper(key));
+					}
+					if (!retbutton && pEventOut)
+						retbutton = SDLGUI_UNKNOWNEVENT;
+					break;
+				}
+				switch (key)
 				{
 				 case SDLK_UP:
 				 case SDLK_LEFT:
@@ -1244,22 +1290,10 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 					retbutton = SDLGui_HandleSelection(dlg, focused, focused);
 					break;
 				 case SDLK_ESCAPE:
-					retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL, SG_CANCEL);
+					retbutton = SDLGui_SearchFlags(dlg, SG_CANCEL);
 					break;
 				 default:
-#if WITH_SDL2
-					key = sdlEvent.key.keysym.sym;
-#else
-					/* unicode member is needed to handle shifted etc special chars */
-					key = sdlEvent.key.keysym.unicode;
-#endif
-					if (key >= 33 && key <= 126)
-					{
-						key = toupper(key);
-						retbutton = SDLGui_SearchFlags(dlg, SG_SHORTCUT_MASK, SG_SHORTCUT_KEY(key));
-						retbutton = SDLGui_HandleSelection(dlg, retbutton, retbutton);
-					}
-					if (!retbutton && pEventOut)
+					if (pEventOut)
 						retbutton = SDLGUI_UNKNOWNEVENT;
 					break;
 				}
