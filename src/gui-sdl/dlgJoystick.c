@@ -168,7 +168,7 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 			ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_DISABLED;
 	}
 
-	for (i = DLGJOY_DISABLED; i <= DLGJOY_USEKEYS; i++)
+	for (i = DLGJOY_DISABLED; i <= DLGJOY_USEREALJOY; i++)
 		joydlg[i].state &= ~SG_SELECTED;
 	switch (ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode)
 	{
