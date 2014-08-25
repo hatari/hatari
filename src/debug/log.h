@@ -164,6 +164,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_NATFEATS		 (1ll<<47)
 
+#define TRACE_KEYMAP		 (1ll<<48)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

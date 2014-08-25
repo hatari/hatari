@@ -134,6 +134,8 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_NATFEATS	 , "natfeats" } ,
 
+	{ TRACE_KEYMAP		 , "keymap" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */

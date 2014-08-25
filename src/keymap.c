@@ -731,7 +731,8 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 	int symkey = sdlkey->sym;
 	int modkey = sdlkey->mod;
 
-	/*fprintf(stderr, "keydown: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
+	LOG_TRACE(TRACE_KEYMAP, "key down: sym=%i scan=%i mod=0x%x\n", symkey,
+	          sdlkey->scancode, modkey);
 
 	if (ShortCut_CheckKeys(modkey, symkey, 1))
 		return;
@@ -750,6 +751,7 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 	}
 
 	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
+	LOG_TRACE(TRACE_KEYMAP, "key map: sym=0x%x to ST-scan=0x%02x\n", symkey, STScanCode);
 	if (STScanCode != (uint8_t)-1)
 	{
 		if (!Keyboard.KeyStates[STScanCode])
@@ -772,10 +774,10 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 	int symkey = sdlkey->sym;
 	int modkey = sdlkey->mod;
 
-	/*fprintf(stderr, "keyup: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
+	LOG_TRACE(TRACE_KEYMAP, "key up: sym=%i scan=%i mod=$%x\n", symkey,
+	          sdlkey->scancode, modkey);
 
 	/* Ignore short-cut keys here */
-
 	if (ShortCut_CheckKeys(modkey, symkey, 0))
 		return;
 
