@@ -23,6 +23,8 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 
 #if WITH_SDL2
 #define SDL_SRCCOLORKEY SDL_TRUE
+#define SDLKey SDL_Keycode
+
 #endif
 
 static SDL_Surface *pSdlGuiScrn;            /* Pointer to the actual main SDL screen surface */
@@ -1064,7 +1066,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	int retbutton=0;
 	int i, j, b;
 	SDLKey key;
-	SDLMod mod;
 	int focused;
 	SDL_Event sdlEvent;
 	SDL_Surface *pBgSurface;
@@ -1238,9 +1239,9 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 
 			 case SDL_KEYDOWN:                     /* Key pressed */
 				key = sdlEvent.key.keysym.sym;
-				mod = sdlEvent.key.keysym.mod;
 				/* keyboard shortcuts are with modifiers */
-				if (mod & KMOD_LALT || mod & KMOD_RALT)
+				if (sdlEvent.key.keysym.mod & KMOD_LALT
+				    || sdlEvent.key.keysym.mod & KMOD_RALT)
 				{
 					if (key == SDLK_LEFT)
 						retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_LEFT);
