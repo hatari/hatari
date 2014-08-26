@@ -1163,6 +1163,21 @@ configuration or data files are not writable.</p>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
+      <td colspan="3" class="subheader">Benchmarks/statistics</td>
+    </tr>
+    <tr>
+      <td><a href="http://kronos.lutece.net/">Kronos</a></td>
+      <td>before 1.6</td>
+      <td>Disk speed check is really slow under GEMDOS HD emulation, use disk images instead</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.umich.edu/~archive/atari/Utilities/Benchmark/stats.lzh">Statistician</a></td>
+      <td>1.8</td>
+      <td>Program crashes if disk info is requested for GEMDOS HD
+      emulated drive, or a floppy drive without a disk, because
+      program doesn't check BIOS GetBPB() function return value</td>
+    </tr>
+    <tr class="backdropped">
       <td colspan="3" class="subheader">Utilities</td>
     </tr>
     <tr>
