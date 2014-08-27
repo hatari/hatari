@@ -1064,12 +1064,13 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 	int obj=0;
 	int oldbutton=0;
 	int retbutton=0;
-	int i, j, b;
+	int i, j, b, value;
 	SDLKey key;
 	int focused;
 	SDL_Event sdlEvent;
 	SDL_Surface *pBgSurface;
 	SDL_Rect dlgrect, bgrect;
+	SDL_Joystick *joy = NULL;
 #if !WITH_SDL2
 	int nOldUnicodeMode;
 #endif
@@ -1158,6 +1159,9 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 		}
 	}
 
+	if (SDL_NumJoysticks() > 0)
+		joy = SDL_JoystickOpen(0);
+
 #if !WITH_SDL2
 	/* Enable unicode translation to get shifted etc chars with SDL_PollEvent */
 	nOldUnicodeMode = SDL_EnableUNICODE(true);
@@ -1232,6 +1236,38 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 				break;
 
 			 case SDL_JOYAXISMOTION:
+				value = sdlEvent.jaxis.value;
+				if (value < -3200 || value > 3200)
+				{
+					if(sdlEvent.jaxis.axis == 0)
+					{
+						/* Left-right movement */
+						if (value < 0)
+							retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_LEFT);
+						else
+							retbutton = SDLGui_HandleShortcut(dlg, SG_SHORTCUT_RIGHT);
+					}
+					else if(sdlEvent.jaxis.axis == 1)
+					{
+						/* Up-Down movement */
+						if (value < 0)
+						{
+							SDLGui_RemoveFocus(dlg, focused);
+							focused = SDLGui_FocusNext(dlg, focused, -1);
+						}
+						else
+						{
+							SDLGui_RemoveFocus(dlg, focused);
+							focused = SDLGui_FocusNext(dlg, focused, +1);
+						}
+					}
+				}
+				break;
+
+			 case SDL_JOYBUTTONDOWN:
+				retbutton = SDLGui_HandleSelection(dlg, focused, focused);
+				break;
+
 			 case SDL_JOYBALLMOTION:
 			 case SDL_JOYHATMOTION:
 			 case SDL_MOUSEMOTION:
@@ -1324,6 +1360,9 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 #if !WITH_SDL2
 	SDL_EnableUNICODE(nOldUnicodeMode);
 #endif
+	if (joy)
+		SDL_JoystickClose(joy);
+
 	return retbutton;
 }
 
