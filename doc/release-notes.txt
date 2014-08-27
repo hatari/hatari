@@ -24,7 +24,10 @@ Emulator:
 - Support for compiling with libSDL2 (experimental)
 - Fix: update default max window size for 2-line statusbar
   NOTE: size would need to be updated in Hatari config files too!
+- AltGr+F<1-4> keyboard shortcuts to switch mode/type for emulated
+  joysticks and joypads
 - SDL GUI:
+  - joystick navigation to options GUI
   - keyboard navigation & shortcuts for options GUI
   - sort file selector items case-insensitively with folders first
   - Partial support for showing Latin1 chars from UTF-8 file names
