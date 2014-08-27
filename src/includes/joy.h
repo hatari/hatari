@@ -44,6 +44,7 @@ extern const char *Joy_GetName(int id);
 extern Uint8 Joy_GetStickData(int nStJoyId);
 extern bool Joy_SetCursorEmulation(int port);
 extern void Joy_ToggleCursorEmulation(void);
+extern bool Joy_SwitchMode(int port);
 extern bool Joy_KeyDown(int symkey, int modkey);
 extern bool Joy_KeyUp(int symkey, int modkey);
 extern void Joy_StePadButtons_ReadWord(void);

@@ -207,6 +207,10 @@ static const struct Config_Tag configs_ShortCutWithMod[] =
 	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] },
 	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] },
 	{ "keyInsertDiskA",Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_INSERTDISKA] },
+	{ "keySwitchJoy0", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_0] },
+	{ "keySwitchJoy1", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_1] },
+	{ "keySwitchPadA", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_A] },
+	{ "keySwitchPadB", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_B] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -231,6 +235,10 @@ static const struct Config_Tag configs_ShortCutWithoutMod[] =
 	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_LOADMEM] },
 	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SAVEMEM] },
 	{ "keyInsertDiskA",Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_INSERTDISKA] },
+	{ "keySwitchJoy0", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_JOY_0] },
+	{ "keySwitchJoy1", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_JOY_1] },
+	{ "keySwitchPadA", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAD_A] },
+	{ "keySwitchPadB", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAD_B] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -509,6 +517,10 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] = SDLK_l;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] = SDLK_k;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_INSERTDISKA] = SDLK_d;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_0] = SDLK_F1;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_1] = SDLK_F2;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_A] = SDLK_F3;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_B] = SDLK_F4;
 
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */

@@ -322,6 +322,18 @@ void ShortCut_ActKey(void)
 	 case SHORTCUT_PAUSE:
 		ShortCut_Pause();              /* Invoke Pause */
 		break;
+	 case SHORTCUT_JOY_0:
+		Joy_SwitchMode(0);
+		break;
+	 case SHORTCUT_JOY_1:
+		Joy_SwitchMode(1);
+		break;
+	 case SHORTCUT_PAD_A:
+		Joy_SwitchMode(2);
+		break;
+	 case SHORTCUT_PAD_B:
+		Joy_SwitchMode(3);
+		break;
 	 case SHORTCUT_QUIT:
 		Main_RequestQuit(0);
 		break;
