@@ -34,13 +34,6 @@ const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 #define ACIA_SR_TX_EMPTY           0x02
 #define ACIA_SR_RX_FULL            0x01
 
-#define MIDI_DEBUG 0
-#if MIDI_DEBUG
-#define Dprintf(a) printf a
-#else
-#define Dprintf(a)
-#endif
-
 
 static FILE *pMidiFhIn  = NULL;        /* File handle used for Midi input */
 static FILE *pMidiFhOut = NULL;        /* File handle used for Midi output */
@@ -68,8 +61,8 @@ void Midi_Init(void)
 			return;
 		}
 		setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
-		Dprintf(("Opened file '%s' for MIDI output.\n",
-			 ConfigureParams.Midi.sMidiOutFileName));
+		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for output\n",
+			 ConfigureParams.Midi.sMidiOutFileName);
 	}
 	if (ConfigureParams.Midi.sMidiInFileName[0])
 	{
@@ -82,8 +75,8 @@ void Midi_Init(void)
 			return;
 		}
 		setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
-		Dprintf(("Opened file '%s' for MIDI input.\n",
-			 ConfigureParams.Midi.sMidiInFileName));
+		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for input\n",
+			 ConfigureParams.Midi.sMidiInFileName);
 	}
 }
 
@@ -121,7 +114,7 @@ void Midi_Reset(void)
  */
 void Midi_Control_ReadByte(void)
 {
-	Dprintf(("Midi_ReadControl : $%x.\n", MidiStatusRegister));
+	LOG_TRACE(TRACE_MIDI, "MIDI: ReadControl -> $%x\n", MidiStatusRegister);
 
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
@@ -138,12 +131,12 @@ void Midi_Control_WriteByte(void)
 
 	MidiControlRegister = IoMem[0xfffc04];
 
-	Dprintf(("Midi_WriteControl($%x)\n", MidiControlRegister));
+	LOG_TRACE(TRACE_MIDI, "MIDI: WriteControl($%x)\n", MidiControlRegister);
 
 	/* Do we need to generate a transfer interrupt? */
 	if ((MidiControlRegister & 0xA0) == 0xA0)
 	{
-		Dprintf(("WriteControl: Transfer interrupt!\n"));
+		LOG_TRACE(TRACE_MIDI, "MIDI: WriteControl transfer interrupt!\n");
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
 		MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
@@ -158,7 +151,7 @@ void Midi_Control_WriteByte(void)
  */
 void Midi_Data_ReadByte(void)
 {
-	Dprintf(("Midi_ReadData : $%x.\n", 1));
+	LOG_TRACE(TRACE_MIDI, "MIDI: ReadData -> $%x\n", nRxDataByte);
 
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
@@ -183,7 +176,7 @@ void Midi_Data_WriteByte(void)
 
 	nTxDataByte = IoMem[0xfffc06];
 
-	Dprintf(("Midi_WriteData($%x)\n", nTxDataByte));
+	LOG_TRACE(TRACE_MIDI, "MIDI: WriteData($%x)\n", nTxDataByte);
 
 	MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
 
@@ -225,7 +218,7 @@ void Midi_InterruptHandler_Update(void)
 		/* Do we need to generate a transfer interrupt? */
 		if ((MidiControlRegister & 0xA0) == 0xA0)
 		{
-			Dprintf(("WriteData: Transfer interrupt!\n"));
+			LOG_TRACE(TRACE_MIDI, "MIDI: WriteData transfer interrupt!\n");
 			/* Acknowledge in MFP circuit, pass bit,enable,pending */
 			MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
 			MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
@@ -243,13 +236,13 @@ void Midi_InterruptHandler_Update(void)
 		nInChar = fgetc(pMidiFhIn);
 		if (nInChar != EOF)
 		{
-			Dprintf(("Midi: Read character $%x\n", nInChar));
+			LOG_TRACE(TRACE_MIDI, "MIDI: Read character -> $%x\n", nInChar);
 			/* Copy into our internal queue */
 			nRxDataByte = nInChar;
 			/* Do we need to generate a receive interrupt? */
 			if ((MidiControlRegister & 0x80) == 0x80)
 			{
-				Dprintf(("WriteData: Receive interrupt!\n"));
+				LOG_TRACE(TRACE_MIDI, "MIDI: WriteData receive interrupt!\n");
 				/* Acknowledge in MFP circuit */
 				MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
 				MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
@@ -261,7 +254,7 @@ void Midi_InterruptHandler_Update(void)
 		}
 		else
 		{
-			Dprintf(("Midi: error during read!\n"));
+			LOG_TRACE(TRACE_MIDI, "MIDI: error during read!\n");
 			clearerr(pMidiFhIn);
 		}
 	}

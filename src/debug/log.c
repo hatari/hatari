@@ -136,6 +136,8 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_KEYMAP		 , "keymap" } ,
 
+	{ TRACE_MIDI		 , "midi" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */

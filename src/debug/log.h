@@ -166,6 +166,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_KEYMAP		 (1ll<<48)
 
+#define TRACE_MIDI		 (1ll<<49)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

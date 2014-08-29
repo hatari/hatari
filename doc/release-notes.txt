@@ -35,6 +35,7 @@ Emulator:
   - Fix: crash when GEMDOS tracing is used without GEMDOS HD emulation
   - Fix: update external disassembler's CPU mask when CPU type is changed
     (it wasn't restricted to only the valid opcodes for a CPU type)
+  - Add trace support for MIDI
   - Add "reset <hard|soft>" command
   - Add "save" subcommand to "history" command
 
