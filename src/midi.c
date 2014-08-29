@@ -193,6 +193,7 @@ void Midi_Data_WriteByte(void)
 		/* If there was an error then stop the midi emulation */
 		if (ret == EOF)
 		{
+			LOG_TRACE(TRACE_MIDI, "MIDI: write error -> stop MIDI\n");
 			Midi_UnInit();
 			return;
 		}
@@ -254,7 +255,7 @@ void Midi_InterruptHandler_Update(void)
 		}
 		else
 		{
-			LOG_TRACE(TRACE_MIDI, "MIDI: error during read!\n");
+			LOG_TRACE(TRACE_MIDI, "MIDI: read error (doesn't stop MIDI)\n");
 			clearerr(pMidiFhIn);
 		}
 	}
