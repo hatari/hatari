@@ -10,6 +10,10 @@
 # open fifos
 for i in 1 2; do
 	mkfifo rs232-$i
+	if [ $? -ne 0 ]; then
+		echo "ERROR: creating FIFO 'midi$i' for RS232 communication failed!"
+		exit 1
+	fi
 done
 
 # show full path
