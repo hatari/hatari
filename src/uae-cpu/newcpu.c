@@ -1957,8 +1957,16 @@ void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	struct instr *dp;
 	fprintf (f, "%08lx: ", m68k_getpc () + m68kpc_offset);
 	for (opwords = 0; opwords < 5; opwords++){
-	    fprintf (f, "%04x ", get_iword_1 (m68kpc_offset + opwords*2));
+	    if ( valid_address ( m68k_getpc () + m68kpc_offset + opwords*2 , 2 ) )
+	        fprintf (f, "%04x ", get_iword_1 (m68kpc_offset + opwords*2));
+	    else
+	        fprintf (f, "**** " );
 	}
+	if ( ! valid_address ( m68k_getpc () + m68kpc_offset , 2 ) ) {
+	    fprintf (f , "BUS ERROR\n" );			/* If region is not valid (bus error region) */
+	    continue;
+	}
+
 	opcode = get_iword_1 (m68kpc_offset);
 	m68kpc_offset += 2;
 	if (cpufunctbl[opcode] == op_illg_1) {

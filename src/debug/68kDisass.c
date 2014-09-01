@@ -124,6 +124,9 @@ static disSymbolEntry	*disSymbolEntries;
 
 static inline unsigned short	Disass68kGetWord(long addr)
 {
+	if ( ! valid_address ( addr , 2 ) )
+		return 0;
+
 	return get_word(addr);
 }
 
