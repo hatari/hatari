@@ -427,8 +427,8 @@ void M68000_BusError(Uint32 addr, bool bRead)
 	    && addr != 0xfffa42)
 	{
 		/* Print bus error message */
-		fprintf(stderr, "M68000 Bus Error %s at address $%x.\n",
-			bRead ? "reading" : "writing", addr);
+		fprintf(stderr, "M68000 Bus Error %s at address $%x pc=%x\n",
+			bRead ? "reading" : "writing", addr, BusErrorPC);
 	}
 
 	if ((regs.spcflags & SPCFLAG_BUSERROR) == 0)	/* [NP] Check that the opcode has not already generated a read bus error */
