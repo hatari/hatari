@@ -1964,6 +1964,7 @@ void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 	if ( ! valid_address ( m68k_getpc () + m68kpc_offset , 2 ) ) {
 	    fprintf (f , "BUS ERROR\n" );			/* If region is not valid (bus error region) */
+	    m68kpc_offset += 2;
 	    continue;
 	}
 
