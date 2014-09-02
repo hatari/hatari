@@ -150,9 +150,6 @@ static void dummy_bput(uaecptr addr, uae_u32 b)
 
 static int dummy_check(uaecptr addr, uae_u32 size)
 {
-    if (illegal_mem)
-	write_log ("Illegal check at %08lx\n", (long)addr);
-
     return 0;
 }
 
@@ -214,9 +211,6 @@ static void BusErrMem_bput(uaecptr addr, uae_u32 b)
 
 static int BusErrMem_check(uaecptr addr, uae_u32 size)
 {
-    if (illegal_mem)
-	write_log ("Bus error check at %08lx\n", (long)addr);
-
     return 0;
 }
 
@@ -421,9 +415,6 @@ static void VoidMem_bput (uaecptr addr, uae_u32 b)
 
 static int VoidMem_check(uaecptr addr, uae_u32 size)
 {
-    if (illegal_mem)
-	write_log ("Void memory check at %08lx\n", (long)addr);
-
     return 0;
 }
 
