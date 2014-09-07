@@ -128,6 +128,9 @@
 /*			it was overwritten during a bus error (fix the game Dragon Flight).		*/
 /* 2014/04/06	[NP]	In Exception(), add a special case for last_addr_for_exception_3 stored in the	*/
 /*			stack after a bus error (fix the game Batman The Movie).			*/
+/* 2014/09/07	[NP]	In m68k_run_1(), if get_iword_prefetch() triggers a bus error, we must call the	*/
+/*			bus error immediately and fetch the correct opcode for the bus error handler	*/
+/*			(fix Blood Money on Superior 65, PC=4e664e66 after RTS).			*/
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -1737,6 +1740,19 @@ static void m68k_run_1 (void)
 	int cycles;
 //fprintf (stderr, "ir in  %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);
 	uae_u32 opcode = get_iword_prefetch (0);
+
+	if (regs.spcflags & SPCFLAG_BUSERROR)
+	{
+	    unset_special(SPCFLAG_BUSERROR);
+	    Exception(2,0,M68000_EXC_SRC_CPU);
+
+	    /* Get opcode for bus error handler and check other special bits */
+	    opcode = get_iword_prefetch (0);
+	    if (regs.spcflags) {
+		if (do_specialties ())
+		    return;
+	    }
+	}
 
 #ifdef DEBUG_PREFETCH
 //	if (get_ilong (0) != do_get_mem_long (&regs.prefetch)) {
