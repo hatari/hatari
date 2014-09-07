@@ -131,6 +131,9 @@
 /* 2014/09/07	[NP]	In m68k_run_1(), if get_iword_prefetch() triggers a bus error, we must call the	*/
 /*			bus error immediately and fetch the correct opcode for the bus error handler	*/
 /*			(fix Blood Money on Superior 65, PC=4e664e66 after RTS).			*/
+/* 2014/09/07	[NP]	For address error, store if the access was in cpu space or data space and fix	*/
+/*			the exception stack frame accordingly (fix Blood Money on Superior 65,		*/
+/*			PC=4e664e66 after RTS)								*/
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -174,6 +177,8 @@ uae_u16 last_op_for_exception_3;
 uaecptr last_addr_for_exception_3;
 /* Address that generated the exception */
 uaecptr last_fault_for_exception_3;
+/* instruction (1) or data (0) access */
+int last_instructionaccess_for_exception_3;
 
 const int areg_byteinc[] = { 1,1,1,1,1,1,1,2 };
 const int imm8_table[] = { 8,1,2,3,4,5,6,7 };
@@ -987,7 +992,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
     /* 68000 bus/address errors: */
     if (currprefs.cpu_level==0 && (nr==2 || nr==3) && ExceptionSource == M68000_EXC_SRC_CPU) {
-	uae_u16 specialstatus = 1;
+	uae_u16 specialstatus = last_instructionaccess_for_exception_3 ? 2 : 1;
 	uae_u16 BusError_opcode;
 
 	/* Special status word emulation isn't perfect yet... :-( */

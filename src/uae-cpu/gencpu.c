@@ -437,6 +437,7 @@ static void genamode (amodes mode, const char *reg, wordsizes size,
 	printf ("\tif ((%sa & 1) != 0) {\n", name);
 	printf ("\t\tlast_fault_for_exception_3 = %sa;\n", name);
 	printf ("\t\tlast_op_for_exception_3 = opcode;\n");
+	printf ("\t\tlast_instructionaccess_for_exception_3 = 0;\n");
 	printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + %d;\n", m68k_pc_offset);
 	printf ("\t\tException(3, 0, M68000_EXC_SRC_CPU);\n");
 	printf ("\t\tgoto %s;\n", endlabelstr);
@@ -1448,6 +1449,7 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\tif (pc & 1) {\n");
 		printf ("\t\tlast_addr_for_exception_3 = m68k_getpc ();\n");
 		printf ("\t\tlast_fault_for_exception_3 = pc;\n");
+		printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 		printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		need_endlabel = 1;
@@ -1478,6 +1480,7 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\tif (newpc & 1) {\n");
 		printf ("\t\tlast_addr_for_exception_3 = m68k_getpc ();\n");
 		printf ("\t\tlast_fault_for_exception_3 = newpc;\n");
+		printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 		printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		need_endlabel = 1;
@@ -1498,6 +1501,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (pc & 1) {\n");
 	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc ();\n");
 	    printf ("\t\tlast_fault_for_exception_3 = pc;\n");
+	    printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
@@ -1528,6 +1532,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (m68k_getpc () & 1) {\n");
 	    printf ("\t\tlast_addr_for_exception_3 = oldpc;\n");
 	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc ();\n");
+	    printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
@@ -1552,6 +1557,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (pc & 1) {\n");
 	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc ();\n");
 	    printf ("\t\tlast_fault_for_exception_3 = pc;\n");
+	    printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
@@ -1568,6 +1574,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (srca & 1) {\n");
 	    printf ("\t\tlast_addr_for_exception_3 = oldpc;\n");
 	    printf ("\t\tlast_fault_for_exception_3 = srca;\n");
+	    printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
@@ -1592,6 +1599,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (srca & 1) {\n");
 	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + %d;\n" , m68k_pc_offset);	// [NP] last_addr is not pc+6
 	    printf ("\t\tlast_fault_for_exception_3 = srca;\n");
+	    printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
@@ -1617,6 +1625,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (src & 1) {\n");
 	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");	// [NP] FIXME should be +4, not +2 (same as DBcc) ?
 	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + s;\n");
+	    printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
@@ -1633,6 +1642,7 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\tif (!cctrue(%d)) goto %s;\n", curi->cc, endlabelstr);
 		printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");
 		printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + 1;\n");
+		printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 		printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 		need_endlabel = 1;
 	    } else {
@@ -1646,6 +1656,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (src & 1) {\n");
 	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");	// [NP] FIXME should be +4, not +2 (same as DBcc) ?
 	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + 2 + (uae_s32)src;\n");
+	    printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
@@ -1698,6 +1709,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\t\t\tif (offs & 1) {\n");
 	    printf ("\t\t\tlast_addr_for_exception_3 = m68k_getpc() + 2 + 2;\n");	// [NP] last_addr is pc+4, not pc+2
 	    printf ("\t\t\tlast_fault_for_exception_3 = m68k_getpc() + 2 + (uae_s32)offs + 2;\n");
+	    printf ("\t\tlast_instructionaccess_for_exception_3 = 1;\n");
 	    printf ("\t\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXC_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t\t}\n");
 	    need_endlabel = 1;
