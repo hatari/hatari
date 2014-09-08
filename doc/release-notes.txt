@@ -19,6 +19,7 @@ Emulation:
   - in 68000 mode, remove some un-allowed <ea> for CMPI, BTST and TST
   - check for address error when new PC is set at the end of RTE, RTS and RTR
   - fix "move.b an,<ea>", it's not allowed and should give illegal instruction
+  - improve stack frame for bus error and address error
 
 Emulator:
 - Support for compiling with libSDL2 (experimental)
@@ -42,6 +43,9 @@ Emulator:
 Other changes:
 - Remaining Hatari OSX UI changes for Hatari v1.8.0
   (localization)
+
+Fixed games:
+- Superior 65 - Blood Money (cpu, exception stack and bus error)
 
 
  Version 1.8.0 (2014-07-30):
