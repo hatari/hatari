@@ -164,6 +164,14 @@ if(DETECTED_SDL_CFLAGS)
 	# message(STATUS "Additional CFLAGS of SDL: ${DETECTED_SDL_CFLAGS}")
 endif(DETECTED_SDL_CFLAGS)
 
+if(ENABLE_OSX_BUNDLE)
+	# Use OSX native alert windows
+	add_definitions(-DALERT_HOOKS=1)
+	if(ENABLE_SDL2)
+		add_definitions(-Dmain=SDL_main)
+	endif(ENDABLE_SDL2)
+endif(ENABLE_OSX_BUNDLE)
+
 # ###########################
 # Check for optional headers:
 # ###########################
@@ -262,8 +270,7 @@ if(NOT ETCDIR)
 endif()
 
 if(ENABLE_OSX_BUNDLE)
-	# Use OSX native alert windows and put the config files in the app's bundle
-	add_definitions(-DALERT_HOOKS=1)
+	# put the config files in the app's bundle
 	add_definitions(-DCONFDIR=\"../Resources\")
 else()
 	add_definitions(-DCONFDIR=\"${ETCDIR}\")

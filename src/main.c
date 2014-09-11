@@ -791,11 +791,6 @@ static void Main_StatusbarSetup(void)
 	Statusbar_UpdateInfo();
 }
 
-#if WITH_SDL2 && defined(__APPLE__)
-/* With SDL2 on Mac OS X, we still want to first use
- * the main() function from SDLMain.m instead! */
-#define main SDL_main
-#endif
 
 /**
  * Main
