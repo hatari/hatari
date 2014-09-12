@@ -169,7 +169,7 @@ if(ENABLE_OSX_BUNDLE)
 	add_definitions(-DALERT_HOOKS=1)
 	if(ENABLE_SDL2)
 		add_definitions(-Dmain=SDL_main)
-	endif(ENDABLE_SDL2)
+	endif(ENABLE_SDL2)
 endif(ENABLE_OSX_BUNDLE)
 
 # ###########################
