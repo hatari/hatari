@@ -168,7 +168,8 @@ if(ENABLE_OSX_BUNDLE)
 	# Use OSX native alert windows
 	add_definitions(-DALERT_HOOKS=1)
 	if(ENABLE_SDL2)
-		add_definitions(-Dmain=SDL_main)
+		# We still want to use our SDLMain.m with SDL2
+		add_definitions(-DSDL_MAIN_NEEDED=1)
 	endif(ENABLE_SDL2)
 endif(ENABLE_OSX_BUNDLE)
 
