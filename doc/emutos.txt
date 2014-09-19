@@ -919,11 +919,8 @@ probably explains partly why graphics in many of the demos & games
 look broken, their sound or music doesn't work or they freeze at
 startup.
 
-(Previous EmuTOS v0.9.0 release misses also 256-color and Falcon sound
-matrix support.)
-
-
 Following Falcon only demos, games and apps work (mostly) fine though.
+
 
 Working demos:
 - 1600x600
@@ -1007,6 +1004,16 @@ but don't work with EmuTOS at all:
   M68000 Bus Error reading at address $3b4.
 
 
+Games regressed in EmuTOS v0.8.x (not working anymore):
+- Columns by Deadheart* (demo)
+  -  colors/graphics are wrong
+    (in v0.8.7 screen was just black with music on background)
+- Rave*
+  - colors/graphics are wrong
+    (in v0.8.6, only at actual game lower half)
+- SBM v0.8 (Bomberman clone)*
+  - Bus error wget at 00400000
+
 Games working in EmuTOS v0.9.0:
 - Aces High (preview)
 - Blum
@@ -1053,15 +1060,13 @@ Games working in EmuTOS >v0.9.0:
   - in v0.9.0 works without sounds
 - Zodiax (Falcon "R-type")
 
-Games regressed in EmuTOS v0.8.x:
-- Columns by Deadheart* (demo)
-  -  colors/graphics are wrong
-    (in v0.8.7 screen was just black with music on background)
-- Rave*
-  - colors/graphics are wrong
-    (in v0.8.6, only at actual game lower half)
-- SBM v0.8 (Bomberman clone)*
-  - Bus error wget at 00400000
+Games working in EmuTOS >v0.9.3:
+- Chainz:
+  - vga, press space at start to disable DSP use
+- Jewelz
+  - vga, select hatari mode (F2)
+- Sweety Things
+  - mouse cannot move to bottom of screen
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1082,8 +1087,6 @@ and/or don't use DSP XBios calls or DSP sound matrix):
 - Des Lazers & des Hommes: game area graphics are missing
   (they're rendered with DSP)
 - It's Great (start from st-med rez): mouse doesn't work
-- Jewelz (vga, hatari mode): mouse is constrained to top left area
-- Sweety Things: mouse is constrained to top left area
 - Masters of Chaos: starts, but then doesn't react to input
 - Men at War: freezes at startup
 - Multibriques: colors are wrong
@@ -1112,7 +1115,8 @@ Partly working applications:
    (bogus speed values for FPU & CPU as with normal TOS)
 - Delmpaint (GFA)
    - some draw operations do black on black
-   - file selector opens too high (text size wrong)
+   - file selector in wrong size if program is started
+     from some other resolution than 320x200@256
 - Escape paint (GEM)
   - Icons don't show in image operations window, and their
     places are inverted on mouse-over, image names show in
