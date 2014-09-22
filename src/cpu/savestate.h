@@ -53,8 +53,8 @@ extern uae_u8 *save_cpu_extra (int *, uae_u8 *);
 extern uae_u8 *restore_mmu (uae_u8 *);
 extern uae_u8 *save_mmu (int *, uae_u8 *);
 
-extern uae_u8 *restore_fpu (uae_u8 *);
-extern uae_u8 *save_fpu (int *, uae_u8 *);
+extern void restore_fpu (void);
+extern void save_fpu (void);
 
 extern uae_u8 *restore_disk (int, uae_u8 *);
 extern uae_u8 *save_disk (int, int *, uae_u8 *);

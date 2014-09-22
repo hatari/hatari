@@ -319,10 +319,6 @@ void M68000_CheckCpuSettings(void)
 void M68000_MemorySnapShot_Capture(bool bSave)
 {
 	Uint32 savepc;
-#if ENABLE_WINUAE_CPU
-	int len;
-	uae_u8 *chunk = 0;
-#endif
 
 	/* For the UAE CPU core: */
 	MemorySnapShot_Store(&currprefs.address_space_24,
@@ -397,17 +393,10 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 			m68k_areg(regs, 7) = regs.usp;
 	}
 
-#if ENABLE_WINUAE_CPU
-	if (bSave)
-		save_fpu(&len,0);
-	else
-		restore_fpu(chunk);
-#else
 	if (bSave)
 		save_fpu();
 	else
 		restore_fpu();
-#endif
 }
 
 
