@@ -1864,7 +1864,15 @@ subdirectories, each of these subdirectories will be treated as a
 separate partition, otherwise the given directory itself will be
 assigned to drive "C:". In the multiple partition case, the letters
 used as the subdirectory names will determine to which
-drives/partitions they're assigned.
+drives/partitions they're assigned.  For example following
+directory setup:
+<pre>
+partitions/
+  + C/
+  + D/
+</pre>
+That is given to Hatari as "hatari -d partitions", will give you
+GEMDOS HD emulated C: and D: drives.
 </p>
 <p>
 GEMDOS HD emulation is an easy way to share files between the
@@ -1886,11 +1894,11 @@ that is used for GEMDOS HD emulation).</li>
 <li>Anything that installs its own GEMDOS handler, like MiNT, doesn't work
 with the GEMDOS HD emulation.  Such things need to be run from a real
 hard disk image.</li>
-<li>GEMDOS HD drive conflicts with the ACSI and IDE hard drives.
+<li>GEMDOS HD C: drive conflicts with the ACSI and IDE hard drives.
 If you want to use GEMDOS HD directory and ACSI/IDE disk images together,
 use a multiple partition GEMDOS HD emulation setup and select the partition
-subdirectories (letters) so that they don't conflict with the ACSI/IDE
-drive partitions (letters).  With HD Driver you have also another option,
+subdirectories (see above) so that they don't conflict with the ACSI/IDE
+partitions (drive letters).  With HD Driver you have also another option,
 see <a href="#Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver
 with GEMDOS HD partitions</a>.</li>
 <li><em>The GEMDOS HD emulation does not work (very well) with TOS
