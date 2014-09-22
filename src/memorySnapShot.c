@@ -55,7 +55,8 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "statusbar.h"
 
 
-#define VERSION_STRING      "1.8.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "1.8.1"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define SNAPSHOT_MAGIC      0xDeadBeef
 
 #if HAVE_LIBZ
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
@@ -157,6 +158,12 @@ static int MemorySnapShot_fseek(MSS_File fhndl, int pos)
 static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 {
 	char VersionString[] = VERSION_STRING;
+#if ENABLE_WINUAE_CPU
+# define CORE_VERSION 1
+#else
+# define CORE_VERSION 0
+#endif
+	Uint8 CpuCore;
 
 	/* Set error */
 	bCaptureError = false;
@@ -181,6 +188,9 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		bCaptureSave = true;
 		/* Store version string */
 		MemorySnapShot_Store(VersionString, sizeof(VersionString));
+		/* Store CPU core version */
+		CpuCore = CORE_VERSION;
+		MemorySnapShot_Store(&CpuCore, sizeof(CpuCore));
 	}
 	else
 	{
@@ -197,12 +207,24 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		/* Restore version string */
 		MemorySnapShot_Store(VersionString, sizeof(VersionString));
 		/* Does match current version? */
-		if (strcasecmp(VersionString, VERSION_STRING))
+		if (strcmp(VersionString, VERSION_STRING))
 		{
 			/* No, inform user and error */
-			Log_AlertDlg(LOG_ERROR, "Unable to restore Hatari memory state. File\n"
-			                       "is compatible only with Hatari version %s.",
-				     VersionString);
+			Log_AlertDlg(LOG_ERROR,
+				     "Unable to restore Hatari memory state.\n"
+				     "Given state file is compatible only with\n"
+				     "Hatari version " VERSION_STRING ".");
+			bCaptureError = true;
+			return false;
+		}
+		/* Check CPU core version */
+		MemorySnapShot_Store(&CpuCore, sizeof(CpuCore));
+		if (CpuCore != CORE_VERSION)
+		{
+			Log_AlertDlg(LOG_ERROR,
+				     "Unable to restore Hatari memory state.\n"
+				     "Given state file is for different Hatari\n"
+				     "CPU core version.");
 			bCaptureError = true;
 			return false;
 		}
@@ -273,6 +295,8 @@ void MemorySnapShot_Store(void *pData, int Size)
  */
 void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 {
+	Uint32 magic = SNAPSHOT_MAGIC;
+
 	/* Set to 'saving' */
 	if (MemorySnapShot_OpenFile(pszFileName, true))
 	{
@@ -301,6 +325,8 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		DSP_MemorySnapShot_Capture(true);
 		DebugUI_MemorySnapShot_Capture(pszFileName, true);
 		IoMem_MemorySnapShot_Capture(true);
+		/* end marker */
+		MemorySnapShot_Store(&magic, sizeof(magic));
 		/* And close */
 		MemorySnapShot_CloseFile();
 	} else {
@@ -323,6 +349,8 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
  */
 void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 {
+	Uint32 magic;
+
 	/* Set to 'restore' */
 	if (MemorySnapShot_OpenFile(pszFileName, false))
 	{
@@ -357,11 +385,25 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		DebugUI_MemorySnapShot_Capture(pszFileName, false);
 		IoMem_MemorySnapShot_Capture(false);
 
+		/* version string check catches release-to-release
+		 * state changes, bCaptureError catches too short
+		 * state file, this check a too long state file.
+		 */
+		MemorySnapShot_Store(&magic, sizeof(magic));
+		if (!bCaptureError && magic != SNAPSHOT_MAGIC)
+			bCaptureError = true;
+
 		/* And close */
 		MemorySnapShot_CloseFile();
 
 		/* changes may affect also info shown in statusbar */
 		Statusbar_UpdateInfo();
+
+		if (bCaptureError)
+		{
+			Log_AlertDlg(LOG_ERROR, "Full memory state restore failed!\nPlease reboot emulation.");
+			return;
+		}
 	}
 
 	/* Did error? */
