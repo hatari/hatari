@@ -1863,7 +1863,7 @@ static bool GemDOS_Open(Uint32 Params)
 	char *pszFileName;
 	const char *ModeStr, *RealMode;
 	const char *Modes[] = {
-		"read-only" "write-only", "read/write", "read/write"
+		"read-only", "write-only", "read/write", "read/write"
 	};
 	int Drive, Index, Mode;
 	FILE *AutostartHandle;
