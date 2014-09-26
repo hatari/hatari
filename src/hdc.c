@@ -165,17 +165,19 @@ static void HDC_Cmd_Seek(SCSI_CTRLR *ctr)
 
 	dev->nLastBlockAddr = HDC_GetLBA(ctr);
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: SEEK (%s), LBA=%i.\n",
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: SEEK (%s), LBA=%i",
 	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr);
 
 	if (dev->nLastBlockAddr < dev->hdSize &&
 	    fseeko(dev->image_file, (off_t)dev->nLastBlockAddr * 512L, SEEK_SET) == 0)
 	{
+		LOG_TRACE(TRACE_SCSI_CMD, " -> OK");
 		ctr->returnCode = HD_STATUS_OK;
 		dev->nLastError = HD_REQSENS_OK;
 	}
 	else
 	{
+		LOG_TRACE(TRACE_SCSI_CMD, " -> ERROR");
 		ctr->returnCode = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVADDR;
 	}
@@ -196,7 +198,7 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 	nDmaAddr = FDC_GetDMAAddress();
 	count = HDC_GetCount(ctr);
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: INQUIRY (%s) to 0x%x.\n",
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: INQUIRY (%s) to 0x%x",
 	          HDC_CmdInfoStr(ctr), nDmaAddr);
 
 	if (count > (int)sizeof(inquiry_bytes))
@@ -210,10 +212,12 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 
 	if (STMemory_SafeCopy(nDmaAddr, inquiry_bytes, count, "HDC DMA inquiry"))
 	{
+		LOG_TRACE(TRACE_SCSI_CMD, " -> OK");
 		ctr->returnCode = HD_STATUS_OK;
 	}
 	else
 	{
+		LOG_TRACE(TRACE_SCSI_CMD, " -> ERROR");
 		ctr->bDmaError = true;
 		ctr->returnCode = HD_STATUS_ERROR;
 	}
@@ -447,7 +451,7 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 
 	dev->nLastBlockAddr = HDC_GetLBA(ctr);
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: WRITE SECTOR (%s) with LBA 0x%x from 0x%x.\n",
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: WRITE SECTOR (%s) with LBA 0x%x from 0x%x\n",
 	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr, nDmaAddr);
 
 	/* seek to the position */
@@ -487,6 +491,9 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 		/* Update DMA counter */
 		FDC_WriteDMAAddress(nDmaAddr + 512*n);
 	}
+	LOG_TRACE(TRACE_SCSI_CMD, "-> %s (%d)\n",
+		  ctr->returnCode == HD_STATUS_OK ? "OK" : "ERROR",
+		  dev->nLastError);
 
 	dev->bSetLastBlockAddr = true;
 }
@@ -503,7 +510,7 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 
 	dev->nLastBlockAddr = HDC_GetLBA(ctr);
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: READ SECTOR (%s) with LBA 0x%x to 0x%x.\n",
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: READ SECTOR (%s) with LBA 0x%x to 0x%x\n",
 	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr, nDmaAddr);
 
 	/* seek to the position */
@@ -541,6 +548,9 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 		/* Update DMA counter */
 		FDC_WriteDMAAddress(nDmaAddr + 512*n);
 	}
+	LOG_TRACE(TRACE_SCSI_CMD, "-> %s (%d)\n",
+		  ctr->returnCode == HD_STATUS_OK ? "OK" : "ERROR",
+		  dev->nLastError);
 
 	dev->bSetLastBlockAddr = true;
 }
