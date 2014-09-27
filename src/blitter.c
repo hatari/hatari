@@ -163,10 +163,7 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 {
 	Uint16 value;
 
-	if (addr < 0x00ff8000)
-		value = STMemory_ReadWord(addr);
-	else
-		value = (Uint16)(IoMem_wget(addr));
+	value = (Uint16)get_word ( addr );
 
 	Blitter_AddCycles(4);
 
@@ -175,10 +172,7 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 
 static void Blitter_WriteWord(Uint32 addr, Uint16 value)
 {
-	if (addr < 0x00ff8000)
-		STMemory_WriteWord(addr, value);
-	else
-		IoMem_wput(addr, (Uint32)(value));
+	put_word ( addr , (Uint32)(value) );
 
 	Blitter_AddCycles(4);
 }
