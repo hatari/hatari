@@ -404,9 +404,15 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 /**
  * BUSERROR - Access outside valid memory range.
  * Use bRead = 0 for write errors and bRead = 1 for read errors!
+ * Only accesses made by the CPU will trigger a bus error, not thoses made
+ * by the blitter.
  */
 void M68000_BusError(Uint32 addr, bool bRead)
 {
+	/* When read or write access is made by the blitter, there's no bus error */
+	if ( BusMode == BUS_MODE_BLITTER )
+		return;
+
 	/* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
 	// BusErrorPC = M68000_GetPC();		/* [NP] We set BusErrorPC in m68k_run_1 */
 
