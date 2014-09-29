@@ -168,6 +168,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_MIDI		 (1ll<<49)
 
+#define TRACE_IDE		 (1ll<<50)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

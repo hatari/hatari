@@ -138,6 +138,8 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_MIDI		 , "midi" } ,
 
+	{ TRACE_IDE		 , "ide" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */

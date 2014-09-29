@@ -31,14 +31,6 @@
 struct IDEState;
 
 
-#define IDE_DEBUG 0
-
-#if IDE_DEBUG
-#define Dprintf(a) printf a
-#else
-#define Dprintf(a)
-#endif
-
 static struct IDEState *opaque_ide_if;
 
 static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val);
@@ -91,13 +83,12 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 	int ideport;
 	uint8_t retval;
 
-	Dprintf(("IdeMem_bget($%x)\n", addr));
-
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
+		LOG_TRACE(TRACE_IDE, "IDE: bget($%x) -> BUS ERROR\n", addr);
 		M68000_BusError(addr, BUS_ERROR_READ);
 		return -1;
 	}
@@ -117,6 +108,7 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 		retval = 0xFF;
 	}
 
+	LOG_TRACE(TRACE_IDE, "IDE: bget($%x) = $%02x\n", addr, retval);
 	return retval;
 }
 
@@ -133,9 +125,8 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
+		LOG_TRACE(TRACE_IDE, "IDE: wget($%x) -> BUS ERROR\n", addr);
 		M68000_BusError(addr, BUS_ERROR_READ);
-		if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
-			fprintf(stderr, "Illegal IDE IO memory access: IdeMem_wget($%x)\n", addr);
 		return -1;
 	}
 
@@ -148,9 +139,7 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 		retval = 0xFFFF;
 	}
 
-	Dprintf(("IdeMem_wget($%x) = $%04x\n", addr, retval));
-
-
+	LOG_TRACE(TRACE_IDE, "IDE: wget($%x) = $%04x\n", addr, retval);
 	return retval;
 }
 
@@ -167,9 +156,8 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
+		LOG_TRACE(TRACE_IDE, "IDE: lget($%x) -> BUS ERROR\n", addr);
 		M68000_BusError(addr, BUS_ERROR_READ);
-		if (ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
-			fprintf(stderr, "Illegal IDE IO memory access: IdeMem_lget($%x)\n", addr);
 		return -1;
 	}
 
@@ -185,8 +173,7 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 	/* word swap for long access to data register */
 	retval = ((retval >> 16) & 0x0000ffff) | ((retval & 0x0000ffff) << 16);
 
-	Dprintf(("IdeMem_lget($%x) = $%08x\n", addr, retval));
-
+	LOG_TRACE(TRACE_IDE, "IDE: lget($%x) = $%08x\n", addr, retval);
 	return retval;
 }
 
@@ -201,13 +188,12 @@ void Ide_Mem_bput(uaecptr addr, uae_u32 val)
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 	val &= 0x0ff;
 
-	Dprintf(("IdeMem_bput($%x, $%x)\n", addr, val));
+	LOG_TRACE(TRACE_IDE, "IDE: bput($%x, $%x)\n", addr, val);
 
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, BUS_ERROR_WRITE);
-		//fprintf(stderr, "Illegal IDE IO memory access: IdeMem_bput($%x)\n", addr);
 		return;
 	}
 
@@ -232,13 +218,12 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 	val &= 0x0ffff;
 
-	Dprintf(("IdeMem_wput($%x, $%x)\n", addr, val));
+	LOG_TRACE(TRACE_IDE, "IDE: wput($%x, $%x)\n", addr, val);
 
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, BUS_ERROR_WRITE);
-		//fprintf(stderr, "Illegal IDE IO memory access: IdeMem_wput($%x)\n", addr);
 		return;
 	}
 
@@ -256,13 +241,12 @@ void Ide_Mem_lput(uaecptr addr, uae_u32 val)
 {
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	Dprintf(("IdeMem_lput($%x, $%x)\n", addr, val));
+	LOG_TRACE(TRACE_IDE, "IDE: lput($%x, $%x)\n", addr, val);
 
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, BUS_ERROR_WRITE);
-		//fprintf(stderr, "Illegal IDE IO memory access: IdeMem_lput($%x)\n", addr);
 		return;
 	}
 
@@ -510,7 +494,7 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 	ret = fread(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
-		fprintf(stderr,"IDE bdrv_read error: (%d != %d length) at sector %lu!\n", ret, len, (unsigned long)sector_num);
+		fprintf(stderr,"IDE: bdrv_read error (%d != %d length) at sector %lu!\n", ret, len, (unsigned long)sector_num);
 		return -EINVAL;
 	}
 	else
@@ -544,7 +528,7 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 	ret = fwrite(buf, 1, len, bs->fhndl);
 	if (ret != len)
 	{
-		fprintf(stderr,"IDE bdrv_write error: (%d != %d length) at sector %lu!\n", ret, len,  (unsigned long)sector_num);
+		fprintf(stderr,"IDE: bdrv_write error (%d != %d length) at sector %lu!\n", ret, len,  (unsigned long)sector_num);
 		return -EIO;
 	}
 	else
@@ -602,10 +586,6 @@ static void bdrv_eject(BlockDriverState *bs, int eject_flag)
 		bdrv_close(bs);
 }
 
-
-/* debug IDE devices */
-// #define DEBUG_IDE
-// #define DEBUG_IDE_ATAPI
 
 // #define USE_DMA_CDROM
 
@@ -1223,9 +1203,8 @@ static void ide_sector_read(IDEState *s)
 	}
 	else
 	{
-#if defined(DEBUG_IDE)
-		printf("IDE read sector=%Ld\n", sector_num);
-#endif
+		LOG_TRACE(TRACE_IDE, "IDE: read sector=%Ld\n", sector_num);
+
 		if (n > s->req_nb_sectors)
 			n = s->req_nb_sectors;
 		ret = bdrv_read(s->bs, sector_num, s->io_buffer, n);
@@ -1250,9 +1229,8 @@ static void ide_sector_write(IDEState *s)
 
 	s->status = READY_STAT | SEEK_STAT;
 	sector_num = ide_get_sector(s);
-#if defined(DEBUG_IDE)
-	printf("IDE write sector=%Ld\n", sector_num);
-#endif
+	LOG_TRACE(TRACE_IDE, "IDE: write sector=%Ld\n", sector_num);
+
 	n = s->nsector;
 	if (n > s->req_nb_sectors)
 		n = s->req_nb_sectors;
@@ -1292,9 +1270,8 @@ static void ide_atapi_cmd_ok(IDEState *s)
 
 static void ide_atapi_cmd_error(IDEState *s, int sense_key, int asc)
 {
-#ifdef DEBUG_IDE_ATAPI
-	printf("IDE atapi_cmd_error: sense=0x%x asc=0x%x\n", sense_key, asc);
-#endif
+	LOG_TRACE(TRACE_IDE, "IDE: ATAPI cmd error sense=0x%x asc=0x%x\n", sense_key, asc);
+
 	s->error = sense_key << 4;
 	s->status = READY_STAT | ERR_STAT;
 	s->nsector = (s->nsector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
@@ -1394,12 +1371,12 @@ static void ide_atapi_io_error(IDEState *s, int ret)
 static void ide_atapi_cmd_reply_end(IDEState *s)
 {
 	int byte_count_limit, size, ret;
-#ifdef DEBUG_IDE_ATAPI
-	printf("IDE reply: tx_size=%d elem_tx_size=%d index=%d\n",
+
+	LOG_TRACE(TRACE_IDE, "IDE: ATAPI reply tx_size=%d elem_tx_size=%d index=%d\n",
 	       s->packet_transfer_size,
 	       s->elementary_transfer_size,
 	       s->io_buffer_index);
-#endif
+
 	if (s->packet_transfer_size <= 0)
 	{
 		/* end of transfer */
@@ -1407,9 +1384,7 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
 		s->status = READY_STAT;
 		s->nsector = (s->nsector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
 		ide_set_irq(s);
-#ifdef DEBUG_IDE_ATAPI
-		printf("IDE status=0x%x\n", s->status);
-#endif
+		LOG_TRACE(TRACE_IDE, "IDE: ATAPI status=0x%x\n", s->status);
 	}
 	else
 	{
@@ -1444,9 +1419,8 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
 			/* a new transfer is needed */
 			s->nsector = (s->nsector & ~7) | ATAPI_INT_REASON_IO;
 			byte_count_limit = s->lcyl | (s->hcyl << 8);
-#ifdef DEBUG_IDE_ATAPI
-			printf("IDE byte_count_limit=%d\n", byte_count_limit);
-#endif
+			LOG_TRACE(TRACE_IDE, "IDE: ATAPI byte_count_limit=%d\n", byte_count_limit);
+
 			if (byte_count_limit == 0xffff)
 				byte_count_limit--;
 			size = s->packet_transfer_size;
@@ -1472,9 +1446,8 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
 			s->elementary_transfer_size -= size;
 			s->io_buffer_index += size;
 			ide_set_irq(s);
-#ifdef DEBUG_IDE_ATAPI
-			printf("IDE status=0x%x\n", s->status);
-#endif
+
+			LOG_TRACE(TRACE_IDE, "IDE: ATAPI status=0x%x\n", s->status);
 		}
 	}
 }
@@ -1498,9 +1471,8 @@ static void ide_atapi_cmd_reply(IDEState *s, int size, int max_size)
 static void ide_atapi_cmd_read(IDEState *s, int lba, int nb_sectors,
                                int sector_size)
 {
-#ifdef DEBUG_IDE_ATAPI
-	printf("IDE read pio: LBA=%d nb_sectors=%d\n", lba, nb_sectors);
-#endif
+	LOG_TRACE(TRACE_IDE, "IDE: ATAPI read pio LBA=%d nb_sectors=%d\n", lba, nb_sectors);
+
 	s->lba = lba;
 	s->packet_transfer_size = nb_sectors * sector_size;
 	s->elementary_transfer_size = 0;
@@ -1520,17 +1492,17 @@ static void ide_atapi_cmd(IDEState *s)
 
 	packet = s->io_buffer;
 	buf = s->io_buffer;
-#ifdef DEBUG_IDE_ATAPI
+	if (LOG_TRACE_LEVEL(TRACE_IDE))
 	{
 		int i;
-		printf("IDE ATAPI limit=0x%x packet:", s->lcyl | (s->hcyl << 8));
+		LOG_TRACE_PRINT("IDE: ATAPI limit=0x%x packet", s->lcyl | (s->hcyl << 8));
 		for (i = 0; i < ATAPI_PACKET_SIZE; i++)
 		{
 			printf(" %02x", packet[i]);
 		}
 		printf("\n");
 	}
-#endif
+
 	switch (s->io_buffer[0])
 	{
 	case GPCMD_TEST_UNIT_READY:
@@ -1972,9 +1944,7 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 	int unit, n;
 	int lba48 = 0;
 
-#ifdef DEBUG_IDE
-	printf("IDE: write addr=0x%x val=0x%02x\n", addr, val);
-#endif
+	LOG_TRACE(TRACE_IDE, "IDE: write addr=0x%x val=0x%02x\n", addr, val);
 
 	addr &= 7;
 	switch (addr)
@@ -2029,9 +1999,8 @@ static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 	default:
 	case 7:
 		/* command */
-#if defined(DEBUG_IDE)
-		printf("IDE: CMD=%02x\n", val);
-#endif
+		LOG_TRACE(TRACE_IDE, "IDE: CMD=%02x\n", val);
+
 		s = ide_if->cur_drive;
 		/* ignore commands to non existent slave */
 		if (s != ide_if && !s->bs)
@@ -2376,9 +2345,7 @@ static uint32_t ide_ioport_read(void *opaque, uint32_t addr1)
 		MFP_GPIP |= 0x20;
 		break;
 	}
-#ifdef DEBUG_IDE
-	printf("IDE: read addr=0x%x val=%02x\n", addr1, ret);
-#endif
+	LOG_TRACE(TRACE_IDE, "IDE: read addr=0x%x val=%02x\n", addr1, ret);
 	return ret;
 }
 
@@ -2393,9 +2360,8 @@ static uint32_t ide_status_read(void *opaque, uint32_t addr)
 		ret = 0;
 	else
 		ret = s->status;
-#ifdef DEBUG_IDE
-	printf("IDE: read status addr=0x%x val=%02x\n", addr, ret);
-#endif
+
+	LOG_TRACE(TRACE_IDE, "IDE: read status addr=0x%x val=%02x\n", addr, ret);
 	return ret;
 }
 
@@ -2405,9 +2371,8 @@ static void ide_cmd_write(void *opaque, uint32_t addr, uint32_t val)
 	IDEState *s;
 	int i;
 
-#ifdef DEBUG_IDE
-	printf("IDE: write control addr=0x%x val=%02x\n", addr, val);
-#endif
+	LOG_TRACE(TRACE_IDE, "IDE: write control addr=0x%x val=%02x\n", addr, val);
+
 	/* common for both drives */
 	if (!(ide_if[0].cmd & IDE_CMD_RESET) &&
 	        (val & IDE_CMD_RESET))
@@ -2575,10 +2540,8 @@ static int guess_disk_lchs(IDEState *s,
 			*pheads = heads;
 			*psectors = sectors;
 			*pcylinders = cylinders;
-#if 0
-			printf("IDE guessed geometry: LCHS=%d %d %d\n",
+			LOG_TRACE(TRACE_IDE, "IDE: guessed geometry LCHS=%d %d %d\n",
 			       cylinders, heads, sectors);
-#endif
 			qemu_free(buf);
 			return 0;
 		}
