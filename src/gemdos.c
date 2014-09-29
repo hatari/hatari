@@ -42,6 +42,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "file.h"
 #include "floppy.h"
+#include "ide.h"
 #include "hdc.h"
 #include "gemdos.h"
 #include "gemdos_defines.h"
@@ -630,6 +631,7 @@ void GemDOS_InitDrives(void)
 	int i;
 	int nMaxDrives;
 	int DriveNumber;
+	int ImagePartitions;
 	bool bMultiPartitions;
 
 	/* intialize data for harddrive emulation: */
@@ -645,16 +647,16 @@ void GemDOS_InitDrives(void)
 	}
 
 	bMultiPartitions = GemDOS_DetermineMaxPartitions(&nMaxDrives);
+	ImagePartitions = nAcsiPartitions + nIDEPartitions;
 
 	/* Now initialize all available drives */
 	for(i = 0; i < nMaxDrives; i++)
 	{
-		// Create the letter equivalent string identifier for this drive
-		char sDriveLetter[] = { PATHSEP, (char)('C' + i), '\0' };
-
-		/* If single partition mode, skip to the right entry */
+		/* If single partition mode, skip to first free drive/partition */
 		if (!bMultiPartitions)
-			i += nPartitions;
+		{
+			i += ImagePartitions;
+		}
 
 		/* Allocate emudrives entry for this drive */
 		emudrives[i] = malloc(sizeof(EMULATEDDRIVE));
@@ -672,8 +674,10 @@ void GemDOS_InitDrives(void)
 
 		/* Add Requisit Folder ID */
 		if (bMultiPartitions)
+		{
+			char sDriveLetter[] = { PATHSEP, (char)('C' + i), '\0' };
 			strcat(emudrives[i]->hd_emulation_dir, sDriveLetter);
-
+		}
 		/* drive number (C: = 2, D: = 3, etc.) */
 		DriveNumber = 2 + i;
 
@@ -685,7 +689,7 @@ void GemDOS_InitDrives(void)
 			strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
 			File_AddSlashToEndFileName(emudrives[i]->fs_currpath);    /* Needs trailing slash! */
 			 /* If the GemDos Drive letter is free then */
-			if (i >= nPartitions)
+			if (i >= ImagePartitions)
 			{
 				Log_Printf(LOG_INFO, "GEMDOS HDD emulation, %c: <-> %s.\n",
 					   'A'+DriveNumber, emudrives[i]->hd_emulation_dir);

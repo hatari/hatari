@@ -10,6 +10,8 @@
 
 #include "sysdeps.h"
 
+extern int nIDEPartitions;
+
 extern void Ide_Init(void);
 extern void Ide_UnInit(void);
 extern uae_u32 Ide_Mem_bget(uaecptr addr);

@@ -18,6 +18,7 @@
 #include "configuration.h"
 #include "file.h"
 #include "ide.h"
+#include "hdc.h" /* for partition counting */
 #include "m68000.h"
 #include "mfp.h"
 #include "stMemory.h"
@@ -27,7 +28,7 @@
 # include <malloc.h>
 #endif
 
-
+int nIDEPartitions = 0;
 struct IDEState;
 
 
@@ -542,7 +543,7 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 
 static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 {
-	fprintf(stderr,"IDE: Opening %s\n", filename);
+	Log_Printf(LOG_INFO, "Mounting IDE hard drive image %s\n", filename);
 
 	strncpy(bs->filename, filename, sizeof(bs->filename));
 
@@ -2673,10 +2674,12 @@ void Ide_Init(void)
 	memset(hd_table[1], 0, sizeof(BlockDriverState));
 
 	bdrv_open(hd_table[0], ConfigureParams.HardDisk.szIdeMasterHardDiskImage, 0);
+	nIDEPartitions += HDC_PartitionCount(hd_table[0]->fhndl, TRACE_IDE);
 
 	if (ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage)
 	{
 		bdrv_open(hd_table[1], ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, 0);
+		nIDEPartitions += HDC_PartitionCount(hd_table[1]->fhndl, TRACE_IDE);
 
 		ide_init2(&opaque_ide_if[0], hd_table[0], hd_table[1]);
 	}
@@ -2720,4 +2723,6 @@ void Ide_UnInit(void)
 		free(opaque_ide_if);
 		opaque_ide_if = NULL;
 	}
+
+	nIDEPartitions = 0;
 }

@@ -76,7 +76,7 @@ typedef struct {
 
 /* HDC globals */
 SCSI_CTRLR AcsiBus;
-int nPartitions = 0;
+int nAcsiPartitions = 0;
 bool bAcsiEmuOn = false;
 
 
@@ -645,48 +645,87 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 
 /*---------------------------------------------------------------------*/
 /**
- * Print data about the hard drive image
+ * Return given image file (primary) partition count and with tracing
+ * print also partition table.
+ * Supports both DOS and Atari master boot records.
  */
-static void HDC_GetInfo(SCSI_DEV *dev)
+int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 {
-/* Partition table contains hd size + 4 partition entries
- * (composed of flag byte, 3 char ID, start offset and size),
- * this is followed by bad sector list + count and the root sector checksum.
- * Before this there's the boot code and with ICD hd driver additional 8
- * partition entries (at offset 0x156).
- */
-#define HD_PARTITIONTABLE_SIZE (4+4*12)
-#define HD_PARTITIONTABLE_OFFSET 0x1C2
+	unsigned char *pinfo, bootsector[512];
+	Uint32 start, sectors, total = 0;
+	int i, parts = 0;
 	long offset;
-	unsigned char hdinfo[HD_PARTITIONTABLE_SIZE];
-	int i;
 
-	if (dev->image_file == NULL)
-		return;
-	offset = ftell(dev->image_file);
+	if (!fp)
+		return 0;
+	offset = ftell(fp);
 
-	fseek(dev->image_file, HD_PARTITIONTABLE_OFFSET, 0);
-	if (fread(hdinfo, HD_PARTITIONTABLE_SIZE, 1, dev->image_file) != 1)
+	fseek(fp, 0, SEEK_SET);
+	if (fread(bootsector, sizeof(bootsector), 1, fp) != 1)
 	{
-		perror("HDC_GetInfo");
-		return;
+		perror("HDC_PartitionCount");
+		return 0;
 	}
 
-#ifdef HDC_VERBOSE
-	fprintf(stderr, "Total disk size according to MBR: %i Mb\n",
-		HDC_ReadInt32(hdinfo, 0) >> 11);
-	/* flags for each partition entry are zero if they are not valid */
-	fprintf(stderr, "Partition 0 exists?: %s\n", (hdinfo[4] != 0)?"Yes":"No");
-	fprintf(stderr, "Partition 1 exists?: %s\n", (hdinfo[4+12] != 0)?"Yes":"No");
-	fprintf(stderr, "Partition 2 exists?: %s\n", (hdinfo[4+24] != 0)?"Yes":"No");
-	fprintf(stderr, "Partition 3 exists?: %s\n", (hdinfo[4+36] != 0)?"Yes":"No");
-#endif
+	if (bootsector[0x1FE] == 0x55 && bootsector[0x1FF] == 0xAA)
+	{
+		int ptype, boot;
 
-	for(i=0;i<4;i++)
-		if(hdinfo[4 + 12*i])
-			nPartitions++;
+		LOG_TRACE(tracelevel, "DOS MBR:\n");
+		/* first partition table entry */
+		pinfo = bootsector + 0x1BE;
+		for (i = 0; i < 4; i++, pinfo += 16)
+		{
+			boot = pinfo[0];
+			ptype = pinfo[4];
+			start = HDC_ReadInt32(pinfo, 8);
+			sectors = HDC_ReadInt32(pinfo, 12);
+			total += sectors;
+			LOG_TRACE(tracelevel, "- Partition %d: type=0x%02x, start=0x%08x, size=%d MB %s\n",
+				  i, ptype, start, sectors/2048, boot ? "(boot)" : "");
+			if (ptype)
+				parts++;
+		}
+		LOG_TRACE(tracelevel, "- Total size: %i MB in %d partitions\n", total/2048, parts);
+	}
+	else
+	{
+		/* Partition table contains hd size + 4 partition entries
+		 * (composed of flag byte, 3 char ID, start offset
+		 * and size), this is followed by bad sector list +
+		 * count and the root sector checksum. Before this
+		 * there's the boot code and with ICD hd driver
+		 * additional 8 partition entries (at offset 0x156).
+		 */
+		char c, pid[4];
+		int j, flags;
 
-	fseek(dev->image_file, offset, 0);
+		LOG_TRACE(tracelevel, "ATARI MBR:\n");
+		pinfo = bootsector + 0x1C6;
+		for (i = 0; i < 4; i++, pinfo += 12)
+		{
+			flags = pinfo[0];
+			for (j = 0; j < 3; j++)
+			{
+				c = pinfo[j+1];
+				if (c < 32 || c >= 127)
+					c = '.';
+				pid[j] = c;
+			}
+			pid[3] = '\0';
+			start = HDC_ReadInt32(pinfo, 4);
+			sectors = HDC_ReadInt32(pinfo, 8);
+			LOG_TRACE(tracelevel, "- Partition %d: ID=%s, start=0x%08x, size=%d MB, flags=0x%x\n",
+				  i, pid, start, sectors/2048, flags);
+			if (flags)
+				parts++;
+		}
+		total = HDC_ReadInt32(bootsector, 0x1C2);
+		LOG_TRACE(tracelevel, "- Total size: %i MB in %d partitions\n", total/2048, parts);
+	}
+
+	fseek(fp, offset, SEEK_SET);
+	return parts;
 }
 
 
@@ -699,7 +738,7 @@ bool HDC_Init(void)
 	int i;
 
 	memset(&AcsiBus, 0, sizeof(AcsiBus));
-	nPartitions = 0;
+	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
 
 	for (i = 0; i < MAX_ACSI_DEVS; i++)
@@ -709,13 +748,13 @@ bool HDC_Init(void)
 		if (!ConfigureParams.Acsi[i].bUseDevice)
 			continue;
 		filename = ConfigureParams.Acsi[i].sDeviceFile;
+		Log_Printf(LOG_INFO, "Mounting ACSI hard drive image %s\n", filename);
 
 		/* Check size for sanity - is the length a multiple of 512? */
 		filesize = File_Length(filename);
 		if (filesize <= 0 || (filesize & 0x1ff) != 0)
 		{
-			Log_Printf(LOG_ERROR, "HD file '%s' has strange size!\n",
-			           filename);
+			Log_Printf(LOG_ERROR, "HD file has strange size!\n");
 			continue;
 		}
 		AcsiBus.devs[i].hdSize = filesize / 512;
@@ -723,19 +762,17 @@ bool HDC_Init(void)
 		AcsiBus.devs[i].image_file = fopen(filename, "rb+");
 		if (AcsiBus.devs[i].image_file == NULL)
 		{
-			Log_Printf(LOG_ERROR, "Can not open HD file '%s'!\n",
-			           filename);
+			Log_Printf(LOG_ERROR, "Can not open HD file!\n");
 			continue;
 		}
 
-		HDC_GetInfo(&AcsiBus.devs[i]);
-		Log_Printf(LOG_INFO, "Hard drive image %s mounted.\n", filename);
+		nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD);
 		AcsiBus.devs[i].enabled = true;
 		bAcsiEmuOn = true;
 	}
 
 	/* set number of partitions */
-	nNumDrives += nPartitions;
+	nNumDrives += nAcsiPartitions;
 
 	return bAcsiEmuOn;
 }
@@ -762,8 +799,8 @@ void HDC_UnInit(void)
 		AcsiBus.devs[i].enabled = false;
 	}
 
-	nNumDrives -= nPartitions;
-	nPartitions = 0;
+	nNumDrives -= nAcsiPartitions;
+	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
 }
 
