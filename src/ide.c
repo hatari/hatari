@@ -89,7 +89,6 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		LOG_TRACE(TRACE_IDE, "IDE: bget($%x) -> BUS ERROR\n", addr);
 		M68000_BusError(addr, BUS_ERROR_READ);
 		return -1;
 	}
@@ -126,7 +125,6 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		LOG_TRACE(TRACE_IDE, "IDE: wget($%x) -> BUS ERROR\n", addr);
 		M68000_BusError(addr, BUS_ERROR_READ);
 		return -1;
 	}
@@ -157,7 +155,6 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		LOG_TRACE(TRACE_IDE, "IDE: lget($%x) -> BUS ERROR\n", addr);
 		M68000_BusError(addr, BUS_ERROR_READ);
 		return -1;
 	}
