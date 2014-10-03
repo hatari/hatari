@@ -3813,6 +3813,14 @@ void FDC_DiskController_WriteWord ( void )
 		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE);
 		return;
 	}
+	else if (nIoMemAccessSize == SIZE_LONG)
+	{
+		/* Program tries to write to both, $ff8604 and $ff8606...
+		 * so we should update our $ff8606 settings first. */
+		FDC_DmaModeControl_WriteWord();
+		/* Signal that 2nd handler is already done: */
+		nIoMemAccessSize = SIZE_WORD;
+	}
 
 	M68000_WaitState(4);
 
@@ -3900,7 +3908,14 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ);
 		return;
 	}
-
+	else if (nIoMemAccessSize == SIZE_LONG)
+	{
+		/* Program tries to read from both, $ff8604 and $ff8606...
+		 * so we should update our $ff8606 settings first. */
+		FDC_DmaStatus_ReadWord();
+		/* Signal that 2nd handler is already done: */
+		nIoMemAccessSize = SIZE_WORD;
+	}
 
 	/* Are we trying to read the DMA SectorCount ? */
 	if ( FDC_DMA.Mode & 0x10 )					/* Bit 4 */

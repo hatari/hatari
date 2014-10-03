@@ -353,6 +353,7 @@ uae_u32 IoMem_lget(uaecptr addr)
 {
 	Uint32 idx;
 	Uint32 val;
+	int n;
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
@@ -376,22 +377,13 @@ uae_u32 IoMem_lget(uaecptr addr)
 	IoAccessCurrentAddress = addr;
 	pInterceptReadTable[idx]();                   /* Call 1st handler */
 
-	if (pInterceptReadTable[idx+1] != pInterceptReadTable[idx])
+	for (n = 1; n < nIoMemAccessSize; n++)
 	{
-		IoAccessCurrentAddress = addr + 1;
-		pInterceptReadTable[idx+1]();             /* Call 2nd handler */
-	}
-
-	if (pInterceptReadTable[idx+2] != pInterceptReadTable[idx+1])
-	{
-		IoAccessCurrentAddress = addr + 2;
-		pInterceptReadTable[idx+2]();             /* Call 3rd handler */
-	}
-
-	if (pInterceptReadTable[idx+3] != pInterceptReadTable[idx+2])
-	{
-		IoAccessCurrentAddress = addr + 3;
-		pInterceptReadTable[idx+3]();             /* Call 4th handler */
+		if (pInterceptReadTable[idx+n] != pInterceptReadTable[idx+n-1])
+		{
+			IoAccessCurrentAddress = addr + n;
+			pInterceptReadTable[idx+n]();     /* Call n-th handler */
+		}
 	}
 
 	/* Check if we completely read from a bus-error region */
@@ -498,6 +490,7 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 void IoMem_lput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
+	int n;
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
@@ -523,24 +516,15 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 	idx = addr - 0xff8000;
 
 	IoAccessCurrentAddress = addr;
-	pInterceptWriteTable[idx]();                  /* Call handler */
+	pInterceptWriteTable[idx]();                  /* Call first handler */
 
-	if (pInterceptWriteTable[idx+1] != pInterceptWriteTable[idx])
+	for (n = 1; n < nIoMemAccessSize; n++)
 	{
-		IoAccessCurrentAddress = addr + 1;
-		pInterceptWriteTable[idx+1]();            /* Call 2nd handler */
-	}
-
-	if (pInterceptWriteTable[idx+2] != pInterceptWriteTable[idx+1])
-	{
-		IoAccessCurrentAddress = addr + 2;
-		pInterceptWriteTable[idx+2]();            /* Call 3rd handler */
-	}
-
-	if (pInterceptWriteTable[idx+3] != pInterceptWriteTable[idx+2])
-	{
-		IoAccessCurrentAddress = addr + 3;
-		pInterceptWriteTable[idx+3]();            /* Call 4th handler */
+		if (pInterceptWriteTable[idx+n] != pInterceptWriteTable[idx+n-1])
+		{
+			IoAccessCurrentAddress = addr + n;
+			pInterceptWriteTable[idx+n]();   /* Call n-th handler */
+		}
 	}
 
 	/* Check if we wrote to a bus-error region */
