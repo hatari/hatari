@@ -978,8 +978,11 @@ static Uint8 Ncr5380_ReadByte(int addr)
 
 static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 {
-	/* When the A1 pin is pushed to 0, we want to start a new command */
-	if ((addr & 2) == 0)
+	/* When the A1 pin is pushed to 0, we want to start a new command.
+	 * We ignore the pin for the second byte in the packet since this
+	 * seems to happen on real hardware too (some buggy driver relies
+	 * on this behavior). */
+	if ((addr & 2) == 0 && AcsiBus.byteCount != 1)
 	{
 		AcsiBus.byteCount = 0;
 		AcsiBus.target = ((byte & 0xE0) >> 5);
