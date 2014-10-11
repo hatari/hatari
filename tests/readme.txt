@@ -14,6 +14,10 @@ keymap/
 - test programs for finding out Atari and SDL keycodes needed in
   Hatari keymap files
 
+natfeats/
+- test program and example code for different compilers / assemblers
+  on how to use Native Features emulator interface
+
 tosboot/
 - tester for automatically running all (specified) TOS versions with
   relevant Hatari configurations to afterwards verify from produced
