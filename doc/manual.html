@@ -2376,22 +2376,22 @@ dsp_symbols").
 <h4>For a program under GEMDOS HD emulation</h4>
 
 <p>
-If you're using GEMDOS HD emulation, and your program contains symbol
-table in DRI/GST format, you can load its symbol names/addresses to
-the debugger with the following command, after program has been loaded
-to the memory by TOS (see <a href="#Breakpoint_variables">setting
-breakpoint at program startup</a>):
+If currently running program contains symbol table in DRI/GST format,
+and it's started from GEMDOS HD emulated drive, its symbol names /
+addresses are automatically loaded when debugger is entered, and
+removed when program terminates.</p>
+
+<p>
+Above happens only if there are no symbols loaded when the program
+starts. If there are, you can load program symbol data manually with
+the following command, after program has been loaded to the memory by
+TOS (see <a href="#Breakpoint_variables">setting breakpoint at program
+startup</a>):
 </p>
 <pre>
 symbols prg
 </pre>
 <p>
-
-<p>
-<em>Debugger loads the symbols automatically for currently running
-Atari program when entering the debugger, if no CPU symbols are yet
-loaded.</em>
-</p>
 
 <p>
 The options you need to add suitable symbol table to your programs,
@@ -2444,7 +2444,7 @@ cannot re-compile it to have them, you have two options:
     Writing converters for other ASCII formats is easy, and Hatari already
     contains covertors for DSP LOD files, <span class="commandline">nm</span>
     output for MiNT/a.out binaries and AHCC map files.
-<li>Create the ASCII symbols file by hand as you're debugging a program.
+<li>Create the ASCII symbols file by hand while you're debugging a program.
 </ul>
 
 <p>ASCII symbols file format is following:</p>
@@ -3516,10 +3516,10 @@ sure your optimization efforts can actually help the performance.</p>
 
 <h4>Generating and viewing callgraphs</h4>
 
-<p>Callgraphs require saved profile data to contain caller function
-address information, i.e. symbols should have been loaded before
-starting profiling (either automatically, or manually from ASCII
-symbols file).</p>
+<p>Callgraphs require that saved profile data contains caller
+function address information, i.e. symbols for the code should
+be loaded before starting profiling it (see
+<a href="#Debug_symbols">loading symbol data</a>).</p>
 
 <p>Separate callgraphs will be created for each of the costs
 (0=calls, 1=instructions, 2=cycles) with the -g option:</p>
