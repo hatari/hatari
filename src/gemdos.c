@@ -1934,7 +1934,7 @@ static bool GemDOS_Open(Uint32 Params)
 		 */
 		if (Mode == 0 ||
 		    ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON ||
-		    (stat(szActualFileName, &FileStat) == 0 && (FileStat.st_mode & S_IWUSR)))
+		    (stat(szActualFileName, &FileStat) == 0 && !(FileStat.st_mode & S_IWUSR)))
 		{
 			ModeStr = "rb";
 			RealMode = "read-only";
