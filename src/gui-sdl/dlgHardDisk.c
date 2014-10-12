@@ -26,11 +26,12 @@ const char DlgHardDisk_fileid[] = "Hatari dlgHardDisk.c : " __DATE__ " " __TIME_
 #define DISKDLG_GEMDOSEJECT       15
 #define DISKDLG_GEMDOSBROWSE      16
 #define DISKDLG_GEMDOSNAME        17
-#define DISKDLG_PROTOFF           19
-#define DISKDLG_PROTON            20
-#define DISKDLG_PROTAUTO          21
-#define DISKDLG_BOOTHD            22
-#define DISKDLG_EXIT              23
+#define DISKDLG_DRIVESKIP         18
+#define DISKDLG_PROTOFF           20
+#define DISKDLG_PROTON            21
+#define DISKDLG_PROTAUTO          22
+#define DISKDLG_BOOTHD            23
+#define DISKDLG_EXIT              24
 
 
 /* The disks dialog: */
@@ -59,14 +60,16 @@ static SGOBJ diskdlg[] =
 	{ SGBUTTON, 0, 0, 54,9, 8,1, "B_rowse" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 
-	{ SGTEXT, 0, 0, 2,12, 31,1, "GEMDOS drive write protection:" },
-	{ SGRADIOBUT, 0, 0, 33,12, 5,1, "O_ff" },
-	{ SGRADIOBUT, 0, 0, 40,12, 4,1, "O_n" },
-	{ SGRADIOBUT, 0, 0, 46,12, 6,1, "_Auto" },
+	{ SGCHECKBOX, 0, 0, 8,11, 42,1, "After ACSI/IDE _partitions (experimental)" },
+
+	{ SGTEXT, 0, 0, 8,12, 31,1, "Write protection:" },
+	{ SGRADIOBUT, 0, 0, 26,12, 5,1, "O_ff" },
+	{ SGRADIOBUT, 0, 0, 32,12, 4,1, "O_n" },
+	{ SGRADIOBUT, 0, 0, 37,12, 6,1, "_Auto" },
 
 	{ SGCHECKBOX, 0, 0, 2,14, 14,1, "_Boot from HD" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 22,16, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 22,17, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -108,6 +111,13 @@ void DlgHardDisk_Main(void)
 	SDLGui_CenterDlg(diskdlg);
 
 	/* Set up dialog to actual values: */
+
+printf("skip: %d\n", ConfigureParams.HardDisk.nHardDiskDrive);
+	/* Skip ACSI/IDE partitions? */
+	if (ConfigureParams.HardDisk.nHardDiskDrive == DRIVE_SKIP)
+		diskdlg[DISKDLG_DRIVESKIP].state |= SG_SELECTED;
+	else
+		diskdlg[DISKDLG_DRIVESKIP].state &= ~SG_SELECTED;
 
 	/* Boot from harddisk? */
 	if (ConfigureParams.HardDisk.bBootFromHardDisk)
@@ -215,4 +225,9 @@ void DlgHardDisk_Main(void)
 		}
 	}
 	ConfigureParams.HardDisk.bBootFromHardDisk = (diskdlg[DISKDLG_BOOTHD].state & SG_SELECTED);
+
+	if (diskdlg[DISKDLG_DRIVESKIP].state & SG_SELECTED)
+		ConfigureParams.HardDisk.nHardDiskDrive = DRIVE_SKIP;
+	else if (ConfigureParams.HardDisk.nHardDiskDrive == DRIVE_SKIP)
+		ConfigureParams.HardDisk.nHardDiskDrive = DRIVE_C;
 }

@@ -100,8 +100,9 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	    || strcmp(changed->HardDisk.szIdeSlaveHardDiskImage, current->HardDisk.szIdeSlaveHardDiskImage))
 		return true;
 
-	/* Did change GEMDOS drive? */
-	if (changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
+	/* Did change GEMDOS drive Atari/host location or enabling? */
+	if (changed->HardDisk.nHardDiskDrive != current->HardDisk.nHardDiskDrive
+	    || changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
 	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], current->HardDisk.szHardDiskDirectories[0])
 	        && changed->HardDisk.bUseHardDiskDirectories))
 		return true;
@@ -252,8 +253,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if ( changed->DiskImage.DriveB_NumberOfHeads != current->DiskImage.DriveB_NumberOfHeads )
 		FDC_Drive_Set_NumberOfHeads ( 1 , changed->DiskImage.DriveB_NumberOfHeads );
 
-	/* Did change GEMDOS drive? */
-	if (changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
+	/* Did change GEMDOS drive Atari/host location or enabling? */
+	if (changed->HardDisk.nHardDiskDrive != current->HardDisk.nHardDiskDrive
+	    || changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
 	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], current->HardDisk.szHardDiskDirectories[0])
 	        && changed->HardDisk.bUseHardDiskDirectories))
 	{
