@@ -778,7 +778,7 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 	}
 	if (checkexist && !File_Exists(src))
 	{
-		return Opt_ShowError(optid, src, "Given file doesn't exist (or has wrong file permissions)!");
+		return Opt_ShowError(optid, src, "Given file doesn't exist or permissions prevent access to it!");
 	}
 	if (option)
 	{
