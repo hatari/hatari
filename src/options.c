@@ -110,8 +110,9 @@ enum {
 	OPT_FASTFLOPPY,
 	OPT_WRITEPROT_FLOPPY,
 	OPT_WRITEPROT_HD,
-	OPT_GEMDOS_CASE,
 	OPT_HARDDRIVE,
+	OPT_GEMDOS_CASE,
+	OPT_GEMDOS_DRIVE,
 	OPT_ACSIHDIMAGE,
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
@@ -307,10 +308,12 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Write protect floppy image contents (on/off/auto)" },
 	{ OPT_WRITEPROT_HD, NULL, "--protect-hd",
 	  "<x>", "Write protect harddrive <dir> contents (on/off/auto)" },
-	{ OPT_GEMDOS_CASE, NULL, "--gemdos-case",
-	  "<x>", "Forcibly up/lowercase new GEMDOS dir/filenames (off/upper/lower)" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate harddrive partition(s) with <dir> contents" },
+	{ OPT_GEMDOS_CASE, NULL, "--gemdos-case",
+	  "<x>", "Forcibly up/lowercase new GEMDOS dir/filenames (off/upper/lower)" },
+	{ OPT_GEMDOS_DRIVE, NULL, "--gemdos-drive",
+	  "<drive>", "Assign GEMDOS HD <dir> to drive letter <drive> (C-Z, skip)" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
@@ -1328,6 +1331,25 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			else
 				return Opt_ShowError(OPT_GEMDOS_CASE, argv[i], "Unknown option value");
 			break;
+
+		case OPT_GEMDOS_DRIVE:
+			i += 1;
+			if (strcasecmp(argv[i], "skip") == 0)
+			{
+				ConfigureParams.HardDisk.nHardDiskDrive = DRIVE_SKIP;
+				break;
+			}
+			else if (strlen(argv[i]) == 1)
+			{
+				int drive = toupper(argv[i][0]);
+				if (drive >= 'C' && drive <= 'Z')
+				{
+					drive = drive - 'C' + DRIVE_C;
+					ConfigureParams.HardDisk.nHardDiskDrive = drive;
+					break;
+				}
+			}
+			return Opt_ShowError(OPT_GEMDOS_DRIVE, argv[i], "Invalid <drive>");
 
 		case OPT_HARDDRIVE:
 			i += 1;
