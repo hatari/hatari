@@ -1244,8 +1244,13 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 	int minlen;
 
 	/* Is it a valid hard drive? */
-	if (Drive < 2)
+	if (Drive < 2 || !GemDOS_IsDriveEmulated(Drive))
+	{
+		Log_Printf(LOG_INFO, "Can not create HD file name '%s': "
+			   "Drive '%c:' is not a GEMDOS HD drive!\n",
+			   pszFileName, 'A' + Drive);
 		return;
+	}
 
 	/* Check for valid string */
 	if (filename[0] == '\0')
