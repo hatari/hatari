@@ -568,7 +568,8 @@ static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 	count = scandir(ConfigureParams.HardDisk.szHardDiskDirectories[0], &files, 0, alphasort);
 	if (count < 0)
 	{
-		perror("GemDOS_DetermineMaxPartitions");
+		Log_Printf(LOG_ERROR, "Error: GEMDOS hard disk emulation failed:\n "
+			   "Can not access '%s'.\n", ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 		return false;
 	}
 	else if (count <= 2)
@@ -634,20 +635,20 @@ void GemDOS_InitDrives(void)
 	int ImagePartitions;
 	bool bMultiPartitions;
 
+	bMultiPartitions = GemDOS_DetermineMaxPartitions(&nMaxDrives);
+	ImagePartitions = nAcsiPartitions + nIDEPartitions;
+
 	/* intialize data for harddrive emulation: */
-	if (!emudrives)
+	if (nMaxDrives > 0 && !emudrives)
 	{
 		emudrives = malloc(MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 		if (!emudrives)
 		{
 			perror("GemDOS_InitDrives");
-			abort(); /* fatal */
+			return;
 		}
 		memset(emudrives, 0, MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 	}
-
-	bMultiPartitions = GemDOS_DetermineMaxPartitions(&nMaxDrives);
-	ImagePartitions = nAcsiPartitions + nIDEPartitions;
 
 	/* Now initialize all available drives */
 	for(i = 0; i < nMaxDrives; i++)
