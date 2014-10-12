@@ -956,9 +956,10 @@ static void VDI_FixDesktopInf(void)
 {
 	char *szDesktopFileName, *szNewDeskFileName;
 
-	if (!GEMDOS_EMU_ON)
+	/* Modifying DESKTOP.INF only makes sense when we emulate the GEMDOS
+	 * hard disk 'C:' (i.e. the HD we boot from) - if not, simply return */
+	if (!emudrives || !emudrives[0] || emudrives[0]->drive_number != 2)
 	{
-		/* Can't modify DESKTOP.INF when not using GEMDOS hard disk emulation */
 		return;
 	}
 
