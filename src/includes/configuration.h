@@ -179,6 +179,7 @@ typedef struct
 /* Hard drives configuration: C: - Z: */
 #define MAX_HARDDRIVES  24
 #define DRIVE_C 0
+#define DRIVE_SKIP -1
 
 typedef enum
 {
@@ -189,7 +190,7 @@ typedef enum
 
 typedef struct
 {
-  int nHardDiskDir;
+  int nHardDiskDrive;
   bool bUseHardDiskDirectories;
   bool bUseIdeMasterHardDiskImage;
   bool bUseIdeSlaveHardDiskImage;

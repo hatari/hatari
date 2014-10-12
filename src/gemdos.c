@@ -632,11 +632,11 @@ void GemDOS_InitDrives(void)
 	int i;
 	int nMaxDrives;
 	int DriveNumber;
+	int SkipPartitions;
 	int ImagePartitions;
 	bool bMultiPartitions;
 
 	bMultiPartitions = GemDOS_DetermineMaxPartitions(&nMaxDrives);
-	ImagePartitions = nAcsiPartitions + nIDEPartitions;
 
 	/* intialize data for harddrive emulation: */
 	if (nMaxDrives > 0 && !emudrives)
@@ -650,13 +650,19 @@ void GemDOS_InitDrives(void)
 		memset(emudrives, 0, MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 	}
 
+	ImagePartitions = nAcsiPartitions + nIDEPartitions;
+	if (ConfigureParams.HardDisk.nHardDiskDrive == DRIVE_SKIP)
+		SkipPartitions = ImagePartitions;
+	else
+		SkipPartitions = ConfigureParams.HardDisk.nHardDiskDrive;
+
 	/* Now initialize all available drives */
 	for(i = 0; i < nMaxDrives; i++)
 	{
-		/* If single partition mode, skip to first free drive/partition */
+		/* If single partition mode, skip to specified / first free drive */
 		if (!bMultiPartitions)
 		{
-			i += ImagePartitions;
+			i += SkipPartitions;
 		}
 
 		/* Allocate emudrives entry for this drive */
@@ -689,21 +695,19 @@ void GemDOS_InitDrives(void)
 			/* initialize current directory string, too (initially the same as hd_emulation_dir) */
 			strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
 			File_AddSlashToEndFileName(emudrives[i]->fs_currpath);    /* Needs trailing slash! */
-			 /* If the GemDos Drive letter is free then */
-			if (i >= ImagePartitions)
-			{
-				Log_Printf(LOG_INFO, "GEMDOS HDD emulation, %c: <-> %s.\n",
-					   'A'+DriveNumber, emudrives[i]->hd_emulation_dir);
-				emudrives[i]->drive_number = DriveNumber;
-				nNumDrives = i + 3;
-			}
-			else	/* This letter has already been allocated to the one supported physical disk image */
-			{
-				Log_Printf(LOG_WARN, "Drive Letter %c is already mapped to HDD image (cannot map GEMDOS drive to %s).\n",
-					   'A'+DriveNumber, emudrives[i]->hd_emulation_dir);
-				free(emudrives[i]);
-				emudrives[i] = NULL;
-			}
+
+			/* map drive */
+			Log_Printf(LOG_INFO, "GEMDOS HDD emulation, %c: <-> %s.\n",
+				   'A'+DriveNumber, emudrives[i]->hd_emulation_dir);
+			emudrives[i]->drive_number = DriveNumber;
+			nNumDrives = i + 3;
+
+			/* This letter may already be allocated to the one supported physical disk images
+			 * (depends on how well Atari HD driver and Hatari interpretation of partition
+			 *  table(s) match each other).
+			 */
+			if (i < ImagePartitions)
+				Log_Printf(LOG_WARN, "WARNING: GEMDOS HD drive %c: (may) override ACSI/IDE image partitions!\n", 'A'+DriveNumber);
 		}
 		else
 		{
