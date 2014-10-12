@@ -348,7 +348,7 @@ bool File_Exists(const char *filename)
 {
 	struct stat buf;
 	if (stat(filename, &buf) == 0 &&
-	    (buf.st_mode & (S_IRUSR|S_IWUSR)) && !(buf.st_mode & S_IFDIR))
+	    (buf.st_mode & (S_IRUSR|S_IWUSR)) && !S_ISDIR(buf.st_mode))
 	{
 		/* file points to user readable regular file */
 		return true;
