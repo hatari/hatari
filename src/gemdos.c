@@ -1247,25 +1247,18 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 	const char *s, *filename = pszFileName;
 	int minlen;
 
+	/* make sure that more convenient strncat() can be used on the
+	 * destination string (it always null terminates unlike strncpy()) */
+	*pszDestName = 0;
+
 	/* Is it a valid hard drive? */
-	if (Drive < 2 || !GemDOS_IsDriveEmulated(Drive))
-	{
-		Log_Printf(LOG_INFO, "Can not create HD file name '%s': "
-			   "Drive '%c:' is not a GEMDOS HD drive!\n",
-			   pszFileName, 'A' + Drive);
-		return;
-	}
+	assert(GemDOS_IsDriveEmulated(Drive));
 
 	/* Check for valid string */
 	if (filename[0] == '\0')
 		return;
 
-	/* make sure that more convenient strncat() can be used
-	 * on the destination string (it always null terminates
-	 * unlike strncpy()).
-	 */
-	*pszDestName = 0;
-	/* strcat writes n+1 chars, se decrease len */
+	/* strcat writes n+1 chars, so decrease len */
 	nDestNameLen--;
 	
 	/* full filename with drive "C:\foo\bar" */
