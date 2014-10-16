@@ -1201,7 +1201,7 @@ static void ide_sector_read(IDEState *s)
 	}
 	else
 	{
-		LOG_TRACE(TRACE_IDE, "IDE: read sector=%Ld\n", sector_num);
+		LOG_TRACE(TRACE_IDE, "IDE: read sector=%"PRId64"\n", sector_num);
 
 		if (n > s->req_nb_sectors)
 			n = s->req_nb_sectors;
@@ -1227,7 +1227,7 @@ static void ide_sector_write(IDEState *s)
 
 	s->status = READY_STAT | SEEK_STAT;
 	sector_num = ide_get_sector(s);
-	LOG_TRACE(TRACE_IDE, "IDE: write sector=%Ld\n", sector_num);
+	LOG_TRACE(TRACE_IDE, "IDE: write sector=%"PRId64"\n", sector_num);
 
 	n = s->nsector;
 	if (n > s->req_nb_sectors)
