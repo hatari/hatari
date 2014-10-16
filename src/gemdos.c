@@ -942,7 +942,7 @@ static int GemDOS_FindDriveNumber(char *pszFileName)
 /**
  * Return true if drive ID (C:2, D:3 etc...) matches emulated hard-drive
  */
-static bool GemDOS_IsDriveEmulated(int drive)
+bool GemDOS_IsDriveEmulated(int drive)
 {
 	drive -= 2;
 	if (drive < 0 || drive >= MAX_HARDDRIVES)

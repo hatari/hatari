@@ -25,6 +25,7 @@ extern void GemDOS_InitDrives(void);
 extern void GemDOS_UnInitDrives(void);
 extern void GemDOS_MemorySnapShot_Capture(bool bSave);
 extern void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *pszDestName, int nDestNameLen);
+extern bool GemDOS_IsDriveEmulated(int drive);
 extern void GemDOS_Info(Uint32 bShowOpcodes);
 extern void GemDOS_OpCode(void);
 extern void GemDOS_Boot(void);
