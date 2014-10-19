@@ -115,7 +115,7 @@ These comments apply to EmuTOS v0.9.x.
 
 Many commercial games and applications work fine with EmuTOS. This is
 because games (like Bombjack, Nebulus, Oids, Super Hang-On, Turrican,
-Xenon...) use directly the hardware which Hatari emulates just fine
+Xenon...) use directly the hardware which Hatari emulates just fine,
 and GEM applications use the correct higher level APIs (AES/VDI) for
 which EmuTOS has implementations.
 
@@ -125,10 +125,11 @@ Anybody wanting better AES/VDI support should install replacement
 for these, either the free XaAES + fVDI, or the earlier commercial
 solutions like NVDI.
 
-Because 192k EmuTOS uses more memory than normal TOS, badly written
-(typically floppy only) games may blindly overwrite EmuTOS memory and
-they will crash when calling a TOS function (often Fread()).  ST/STE
-games that work from HD and/or newer TOS versions, should be fine.
+Because (even 192k version of) EmuTOS uses more memory than normal
+TOS, badly written (typically floppy-only) games may blindly overwrite
+EmuTOS memory and it will then crash when the program calls an OS
+function depending on overwritten values.  ST/STE games that work from
+HD and/or with newer TOS versions, should be fine.
 
 Input (e.g. joystick) doesn't work in some (STOS) games that access it
 through other means than XBIOS function Kbdvbase() or by hooking into
@@ -137,9 +138,10 @@ which location depends on the TOS version.
 
 Support for large part of additional TT and Falcon features is missing.
 
-Additionally, EmuTOS v0.9.1 and older versions lack support for
+Additionally, older EmuTOS versions (up to v0.9.1) lacked support for
 the (deprecated) line-A graphics functions which are used in many
-free/shareware games (ones done with GFA basic etc).
+free/shareware games (ones done with GFA basic etc).  This isn't an
+issue with new EmuTOS versions.
 
 
 Debugging issues with EmuTOS
@@ -149,17 +151,18 @@ EmuTOS debug output and debug symbols
 -------------------------------------
 
 To get extra debug output from EmuTOS, or to add your own debug
-statements, you need to recompile it from the source after enabling
+statements, you need to recompile it from the source, after enabling
 the MIDI debug output in its config.h header file. Then start Hatari
-with the "--midi-out /dev/stderr" option and you will see there the
-EmuTOS debug output (such as calls to missing OS functions).
+with the "--midi-out /dev/stderr" option and you will see EmuTOS debug
+output on Hatari's standard error (such as calls to missing OS
+functions).
 
 Some debug output can be gotten also from the pre-built 512k
 EmuTOS images by using Hatari "--natfeats on" option.
 
 By loading the etos512k.sym EmuTOS debug symbols file coming with the
-512k EmuTOS image, you can also ask debugger to "trace cpu_symbols" to
-get trace of all the function calls EmuTOS does.
+512k EmuTOS image, you can also ask debugger to "trace cpu_symbols",
+to get trace of all the function calls EmuTOS does.
 
 For smaller EmuTOS versions, there's a script[1] you can use to convert
 the emutos2.map file (produced during EmuTOS build) to a format you
@@ -169,7 +172,7 @@ can load to Hatari debugger with its "symbols" command[2].
 [2] http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/manual.html#Debug_symbols
 
 If you've compiled EmuTOS with AHCC[3] instead of GCC, you can get
-suitable symbols with its "-n" linker flag, or you can use a script
+suitable symbols with AHCC "-n" linker flag, or you can use a script
 coming with Hatari (ahcc-symbols-convert.sh) to convert AHCC *.map
 file to a format supported by the Hatari debugger.
 
@@ -180,13 +183,14 @@ problematic address should provide more clues for the problem.  Or you
 can just look up the program counter value given in the EmuTOS panic
 message from the map file.
 
+
 Debugging OS calls, Line-A usage and panics
 -------------------------------------------
 
 When debugging EmuTOS panics, the best option is to start Hatari with
-"--bios-intercept --conout 2" (to enable Bios / XBios call tracking &
-to redirect EmuTOS panic etc messages to console) and then ask Hatari
-debugger to stop when the program is started:
+"--natfeats on --conout 2" (to get extra debug output and redirect
+EmuTOS panic etc messages to console) and then ask Hatari debugger to
+stop when the program is started:
 -----------
 > b pc=TEXT
 CPU condition breakpoint 1 with 1 condition(s) added:
@@ -233,13 +237,14 @@ For more info on Hatari debugger usage, see the Hatari manual section
 on it:
 http://hg.tuxfamily.org/mercurialroot/hatari/hatari/raw-file/tip/doc/manual.html#The_debugger
 
+
 Debugging freezes
 -----------------
 
-Hatari profiling support can be used to debug OS freezes.  If EmuTOS gets
-stuck, just profile it for a while and then ask debugger for a profile
-that tells where it's looping.  Then disassemble that part with symbols
-directly in Hatari.
+Hatari profiling support can be used to debug OS freezes.  If EmuTOS
+gets stuck, just profile it for a while and then ask debugger for a
+profile that tells where it's looping.  Then disassemble that part
+with EmuTOS symbols directly in Hatari.
 
 
 EmuTOS compatibility lists
@@ -250,8 +255,9 @@ Atari HW and therefore won't have (legal) version of commercial Atari
 software and most likely lack motivation to investigate applications
 very deeply (Linux offers better alternatives nowadays for most of
 that). I.e. the lists skip commercial software and concentrate on
-EmuTOS compatibility of freely available games and demos, or commercial
-ones that have been released later on for free distribution.
+EmuTOS compatibility of freely available games and demos (including
+commercial games that have been released later on for free
+distribution).
 
 Games that are considered good quality & fun, are marked with "*".
 All the listed demos are quite OK. Most demos can be downloaded from:
@@ -259,7 +265,7 @@ All the listed demos are quite OK. Most demos can be downloaded from:
 
 First are listed ST demos, games graphics and MIDI applications,
 then STE demos, games and music applications, then TT programs
-and last Falcon demos, games and (mostly music) applications.
+and last Falcon demos, games and applications.
 
 
 Working free/shareware Atari ST demos and games
@@ -857,16 +863,16 @@ STE (enhanced) music applications:
 - Protracker 2 STE
 - Sirius Player
 
-Most of the non-GEM ST tracker & chip music composer programs
-work also with EmuTOS too (not just STe ones), most even with
-the 512kB EmuTOS version.
+Most of the non-GEM ST tracker & chip music composer programs work
+also with EmuTOS too (not just STe ones), most even with the 512kB
+EmuTOS version.
 
 
 Non-working Atari STE programs
 ------------------------------
 
-There are only very few STE (only/enhanced) games that don't
-work with EmuTOS yet:
+There are only very few STE (only/enhanced) games that don't work with
+EmuTOS yet:
 
 - Art for Kids (Bus error at $6, after vro_cpyfm)
 - Bombaman (joystick input doesn't work in game itself):
@@ -913,10 +919,10 @@ Falcon emulation requires 512kB version of EmuTOS
 
 Latest EmuTOS missing:
 - HiColor support
-- DSP XBios functions
+- XBios functions for DSP
 
 probably explains partly why graphics in many of the demos & games
-look broken, their sound or music doesn't work or they freeze at
+look broken, their sound or music doesn't work, or why they freeze at
 startup.
 
 Following Falcon only demos, games and apps work (mostly) fine though.
