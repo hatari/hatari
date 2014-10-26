@@ -229,7 +229,6 @@ unsigned long OpCode_NatFeat_ID(uae_u32 opcode)
 	Uint16 SR = M68000_GetSR();
 
 	if (NatFeat_ID(stack, &(Regs[REG_D0]))) {
-		M68000_SetSR(SR);
 		m68k_incpc(2);
 		regs.ir = regs.irc;
 		get_word_prefetch(2);
@@ -248,7 +247,6 @@ unsigned long OpCode_NatFeat_Call(uae_u32 opcode)
 
 	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);
 	if (NatFeat_Call(stack, super, &(Regs[REG_D0]))) {
-		M68000_SetSR(SR);
 		m68k_incpc(2);
 		regs.ir = regs.irc;
 		get_word_prefetch(2);
