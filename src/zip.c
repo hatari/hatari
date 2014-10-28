@@ -676,7 +676,7 @@ bool ZIP_FileNameIsZIP(const char *pszFileName)
 {
 	return false;
 }
-Uint8 *ZIP_ReadDisk(int Drive, const char *name, const char *path, long *size)
+Uint8 *ZIP_ReadDisk(int Drive, const char *name, const char *path, long *size , int *pImageType)
 {
 	return NULL;
 }

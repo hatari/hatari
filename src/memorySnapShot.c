@@ -145,7 +145,7 @@ static int MemorySnapShot_fseek(MSS_File fhndl, int pos)
 #ifdef COMPRESS_MEMORYSNAPSHOT
 	return (int)gzseek(fhndl, pos, SEEK_CUR);	/* return -1 if error, new position >=0 if OK */
 #else
-	return seek(fhndl, pos, SEEK_CUR);		/* return -1 if error, 0 if OK */
+	return fseek(fhndl, pos, SEEK_CUR);		/* return -1 if error, 0 if OK */
 #endif
 }
 
