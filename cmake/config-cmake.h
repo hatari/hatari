@@ -76,6 +76,9 @@
 /* Define to 1 if you have the 'ftello' function. */
 #cmakedefine HAVE_FTELLO 1
 
+/* Define to 1 if you have the 'flock' function. */
+#cmakedefine HAVE_FLOCK 1
+
 /* Define to 1 if you have the 'd_type' member in the 'dirent' struct */
 #cmakedefine HAVE_DIRENT_D_TYPE 1
 

@@ -36,6 +36,8 @@ Emulator:
     ACSI & IDE images when assigning drive for GEMDOS HD emulation.
     Partition count parsed by Hatari might not match count used by
     Atari HD driver due to driver differences in interpreting disk MBR
+- Refuse to mount same HD image from multiple Hatari instances
+  (on platforms supporting BSD flock()), to avoid corrupting them
 - SDL GUI:
   - joystick navigation to options GUI
   - keyboard navigation & shortcuts for options GUI

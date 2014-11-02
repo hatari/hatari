@@ -32,6 +32,8 @@ extern char* File_MakePath(const char *pDir, const char *pName, const char *pExt
 extern void File_ShrinkName(char *pDestFileName, const char *pSrcFileName, int maxlen);
 extern FILE *File_Open(const char *path, const char *mode);
 extern FILE *File_Close(FILE *fp);
+extern bool File_Lock(FILE *fp);
+extern void File_UnLock(FILE *fp);
 extern bool File_InputAvailable(FILE *fp);
 extern void File_MakeAbsoluteSpecialName(char *pszFileName);
 extern void File_MakeAbsoluteName(char *pszFileName);

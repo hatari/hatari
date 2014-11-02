@@ -28,6 +28,9 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "zip.h"
 
+#ifdef HAVE_FLOCK
+# include <sys/file.h>
+#endif
 #ifndef HAVE_FTELLO
 #define ftello ftell
 #endif
@@ -608,6 +611,56 @@ FILE *File_Close(FILE *fp)
 		fclose(fp);
 	}
 	return NULL;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Internal lock function for File_Lock() / File_UnLock().
+ * Returns true on success, otherwise false.
+ */
+static bool lock_operation(FILE *fp, int cmd)
+{
+#ifndef HAVE_FLOCK
+# define DO_LOCK	0
+# define DO_UNLOCK	0
+	return true;
+#else
+# define DO_LOCK	(LOCK_EX|LOCK_NB)
+# define DO_UNLOCK	(LOCK_UN)
+	/* Advantage of locking is only small bit of extra safety if
+	 * one runs (e.g. accidentally) multiple Hatari instances at
+	 * same time, so replacing it with no-op is no big deal.
+	 *
+	 * NOTE: this uses BSD file locking as it's a bit more usable than POSIX one:
+	 *	http://0pointer.de/blog/projects/locking.html
+	 */
+	int ret, fd = fileno(fp);
+	if (fd < 0)
+		return false;
+	ret = flock(fd, cmd);
+	return (ret >= 0);
+#endif
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Takes advisory, exclusive lock on given file (FILE *).
+ * Returns false if locking fails (e.g. another Hatari
+ * instance has already file open for writing).
+ */
+bool File_Lock(FILE *fp)
+{
+	return lock_operation(fp, DO_LOCK);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Releases advisory, exclusive lock on given file (FILE *).
+ */
+void File_UnLock(FILE *fp)
+{
+	lock_operation(fp, DO_UNLOCK);
 }
 
 

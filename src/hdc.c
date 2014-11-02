@@ -744,6 +744,7 @@ bool HDC_Init(void)
 	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
 		char *filename;
+		FILE *fp;
 
 		if (!ConfigureParams.Acsi[i].bUseDevice)
 			continue;
@@ -754,19 +755,24 @@ bool HDC_Init(void)
 		filesize = File_Length(filename);
 		if (filesize <= 0 || (filesize & 0x1ff) != 0)
 		{
-			Log_Printf(LOG_ERROR, "HD file has strange size!\n");
+			Log_Printf(LOG_ERROR, "ERROR: HD file has strange size!\n");
 			continue;
 		}
-		AcsiBus.devs[i].hdSize = filesize / 512;
 
-		AcsiBus.devs[i].image_file = fopen(filename, "rb+");
-		if (AcsiBus.devs[i].image_file == NULL)
+		fp = fopen(filename, "rb+");
+		if (fp == NULL)
 		{
-			Log_Printf(LOG_ERROR, "Can not open HD file!\n");
+			Log_Printf(LOG_ERROR, "ERROR: cannot open HD file!\n");
 			continue;
 		}
-
-		nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD);
+		if (!File_Lock(fp))
+		{
+			Log_Printf(LOG_ERROR, "ERROR: cannot lock HD file for writing!\n");
+			continue;
+		}
+		nAcsiPartitions += HDC_PartitionCount(fp, TRACE_SCSI_CMD);
+		AcsiBus.devs[i].hdSize = filesize / 512;
+		AcsiBus.devs[i].image_file = fp;
 		AcsiBus.devs[i].enabled = true;
 		bAcsiEmuOn = true;
 	}
@@ -794,6 +800,7 @@ void HDC_UnInit(void)
 	{
 		if (!AcsiBus.devs[i].enabled)
 			continue;
+		File_UnLock(AcsiBus.devs[i].image_file);
 		fclose(AcsiBus.devs[i].image_file);
 		AcsiBus.devs[i].image_file = NULL;
 		AcsiBus.devs[i].enabled = false;

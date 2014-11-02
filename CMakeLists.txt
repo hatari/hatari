@@ -200,6 +200,7 @@ check_function_exists(scandir HAVE_SCANDIR)
 check_function_exists(statvfs HAVE_STATVFS)
 check_function_exists(fseeko HAVE_FSEEKO)
 check_function_exists(ftello HAVE_FTELLO)
+check_function_exists(flock HAVE_FLOCK)
 check_struct_has_member("struct dirent" d_type dirent.h HAVE_DIRENT_D_TYPE)
 
 # #############

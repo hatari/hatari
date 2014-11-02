@@ -555,6 +555,12 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 			perror("bdrv_open");
 		bs->read_only = 1;
 	}
+	else if (!File_Lock(bs->fhndl))
+	{
+		Log_Printf(LOG_ERROR, "ERROR: cannot lock HD file for writing!\n");
+		fclose(bs->fhndl);
+		bs->fhndl = NULL;
+	}
 
 	/* call the change callback */
 	bs->media_changed = 1;
@@ -571,6 +577,7 @@ static void bdrv_flush(BlockDriverState *bs)
 
 static void bdrv_close(BlockDriverState *bs)
 {
+	File_UnLock(bs->fhndl);
 	fclose(bs->fhndl);
 	bs->fhndl = NULL;
 }
