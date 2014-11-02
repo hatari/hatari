@@ -428,6 +428,7 @@ Color games:
 - Jupiter's Masterdrive demo
 - Killing Game Show demo
 - Knightmare demo (needs <4MB RAM)
+- Laserball 2014
 - Leander demo
 - LeMans (uses line-A)
 - LLamasoft games
