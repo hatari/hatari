@@ -724,7 +724,7 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 			sectors = HDC_ReadInt32(pinfo, 8);
 			LOG_TRACE(tracelevel, "- Partition %d: ID=%s, start=0x%08x, size=%d MB, flags=0x%x\n",
 				  i, pid, start, sectors/2048, flags);
-			if (flags)
+			if (flags & 0x1)
 				parts++;
 		}
 		total = HDC_ReadInt32(bootsector, 0x1C2);
