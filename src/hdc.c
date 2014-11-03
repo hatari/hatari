@@ -647,7 +647,15 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 /**
  * Return given image file (primary) partition count and with tracing
  * print also partition table.
- * Supports both DOS and Atari master boot records.
+ *
+ * Supports both DOS and Atari master boot record partition tables
+ * (with 4 entries).
+ *
+ * TODO:
+ * - Support also Atari ICD (12 entries, at offset 0x156) and
+ *   extended partition schemes.  Linux kernel has code for those:
+ *   http://lxr.free-electrons.com/source/block/partitions/atari.c
+ * - Support partition tables with other endianess
  */
 int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 {
@@ -694,8 +702,7 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 		 * (composed of flag byte, 3 char ID, start offset
 		 * and size), this is followed by bad sector list +
 		 * count and the root sector checksum. Before this
-		 * there's the boot code and with ICD hd driver
-		 * additional 8 partition entries (at offset 0x156).
+		 * there's the boot code.
 		 */
 		char c, pid[4];
 		int j, flags;
