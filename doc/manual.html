@@ -1850,8 +1850,18 @@ for bigger images is not tested very well yet.
 <p>
 The maximum size of partitions inside the hard disk (images) depends on the
 TOS version. TOS 1.00 and 1.02 support up to 256 MB, TOS 1.04 to 3.06 up to
-512 MiB and TOS 4.0x supports up to 1 GB partitions.
+512 MB and TOS 4.0x supports up to 1 GB partitions.
 </p>
+<p>
+NOTE: you need to be careful when mounting device files.  Depending on
+the system setup (e.g. udev settings) partitions on memory cards etc.
+can be mounted automatically. When Hatari is started and uses a device
+file with partitions that are already mounted, data can be destroyed
+(when several programs independently write to the same device).
+Disable your desktop automount, or remember to manually unmount
+devices before giving them to Hatari.
+</p>
+
 
 <h3>GEMDOS based hard drive emulation</h3>
 <p>
@@ -1896,6 +1906,7 @@ with the GEMDOS HD emulation.  Such things need to be run from a real
 hard disk image.</li>
 <li>GEMDOS HD C: drive conflicts with the ACSI and IDE hard drives.
 If you want to use GEMDOS HD directory and ACSI/IDE disk images together,
+either use the GEMDOS HD option for skipping ACSI & IDE partitions, or
 use a multiple partition GEMDOS HD emulation setup and select the partition
 subdirectories (see above) so that they don't conflict with the ACSI/IDE
 partitions (drive letters).  With HD Driver you have also another option,
@@ -1910,6 +1921,25 @@ So, if your programs complain that they could not find/read/write
 files on the GEMDOS emulated drive, you should try to copy them to a
 floppy disk image or a real hard disk image!
 </p>
+
+
+<h3>ACSI & IDE hard drive emulation with EmuTOS</h3>
+
+<p>
+Accessing HD image files is easiest with EmuTOS.  It supports both
+ASCI and IDE interfaces, regardless of emulated machine type, and
+understands DOS partition tables without additional drivers.
+<span class="commandline">atari-hd-image.sh</span> script coming
+with Hatari can be used to create such image files and to copy
+initial data to them.
+</p>
+<p>
+If you have an hard drive (image) with Atari format partition table,
+that should already have hard disk driver on it and work fine.
+Partitioning/formatting them is the problem.  Creating such images
+from scratch is described in following sections.
+</p>
+
 
 <h3 id="ACSI_hard_drive_emulation">ACSI hard drive emulation</h3>
 <p>
@@ -1941,6 +1971,11 @@ the hard disk image from the emulated Atari and then run HINSTALL.PRG.
 After installing the hard disk driver to the fresh HD image with
 HINSTALL.PRG, you can boot directly from the hard disk image.
 </p>
+<p>
+CBHD and ICDPro AdSCSI drivers work on images which have been
+partitioned elsewhere.
+</p>
+
 
 <h3>IDE hard drive emulation</h3>
 <p>
@@ -1990,12 +2025,14 @@ either through GEMDOS HD partitions (host directories mounted inside
 Hatari emulation) or accessing the images directly on the host
 (outside the emulation).  Both have their own limitations.</p>
 
-<p>If it's fine for the IDE/ACSI partitions to be first, you can use
-hard disk images with AHDI or Cecile driver and a multipartition
-GEMDOS HD setup as described in above sections. If you want to boot from
-a GEMDOS HD partition i.e. such to be before hard disk image partitions,
-and still to be able to access all the IDE/ACSI partitions, you need to
-use HD Driver.</p>
+<p>If it's fine for the IDE/ACSI partitions to be first, you can
+either use ACSI/IDE partition skip option, or a multipartition GEMDOS
+HD setup as described in above sections.
+</p>
+
+<p>If you want to boot from a GEMDOS HD partition i.e. such to be
+before hard disk image partitions, and still to be able to access all
+the IDE/ACSI partitions, you need to use HD Driver.</p>
 
 <h3 id="Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver with GEMDOS partitions</h3>
 
@@ -2045,14 +2082,12 @@ Inside the Hatari emulator, EmuTOS can access partition(s) on these
 kind of images directly without any driver software.  Of the Atari HD
 drivers mentioned above, Centek's Cecile and Uwe Seimet's HD Driver
 (demo) work fine with these partitions. E.g. AHDI and CBHD don't.
+Cecile needs TT or Falcon and HD Driver doesn't work with EmuTOS.
 </p>
 <p>
-Note that plain EmuTOS supports only ACSI and the listed HD drivers
-support only IDE (emulation). Cecile needs TT or Falcon and HD Driver
-doesn't work with EmuTOS.  To summarise; if ASCI emulation and
-EmuTOS are enough, use those. Otherwise, if you want to use TT or
-Falcon emulation, use Cecile (or full HD Driver version if you have
-it), otherwise use HD Driver (demo).
+To summarise; if EmuTOS is enough, use that. Otherwise, if you want to
+use TT or Falcon emulation, use Cecile (or full HD Driver version if
+you have it), otherwise use HD Driver (demo).
 </p>
 <p>
 To access the content of the partitions on Linux host, there are two
