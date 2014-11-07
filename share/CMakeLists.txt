@@ -1,0 +1,5 @@
+
+foreach(size 32x32 48x48 128x128 256x256)
+	install(FILES icons/hicolor/${size}/apps/hatari.png
+		DESTINATION ${ICONDIR}/${size}/apps)
+endforeach()

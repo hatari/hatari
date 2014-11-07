@@ -16,9 +16,6 @@ INSTALL(FILES README TODO release-notes.txt hatari-icon.png hatari.png
 	${CMAKE_CURRENT_SOURCE_DIR}/conftypes.py
 	DESTINATION ${DATADIR}/hatariui/)
 
-INSTALL(FILES hatari-icon.png
-	DESTINATION share/icons/hicolor/32x32/apps)
-
 INSTALL(FILES hatariui.desktop
 	DESTINATION share/applications)
 

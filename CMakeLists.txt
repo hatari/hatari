@@ -271,6 +271,10 @@ if(NOT ETCDIR)
 	endif()
 endif()
 
+if(NOT ICONDIR)
+	set(ICONDIR share/icons/hicolor)
+endif()
+
 if(ENABLE_OSX_BUNDLE)
 	# put the config files in the app's bundle
 	add_definitions(-DCONFDIR=\"../Resources\")
@@ -293,6 +297,10 @@ include(FindPythonInterp)
 if(PYTHONINTERP_FOUND)
 	add_subdirectory(python-ui)
 endif(PYTHONINTERP_FOUND)
+
+if(UNIX AND NOT ENABLE_OSX_BUNDLE)
+	add_subdirectory(share)
+endif()
 
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/Uninstall.cmake)

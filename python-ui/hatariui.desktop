@@ -4,4 +4,4 @@ Version=1.0
 Type=Application
 Name=Hatari UI
 Exec=hatariui
-Icon=hatari-icon
+Icon=hatari
