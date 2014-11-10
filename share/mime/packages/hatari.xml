@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+	<mime-type type="application/x-st-disk-image">
+		<sub-class-of type="application/octet-stream"/>
+		<comment>ST disk image</comment>
+		<glob pattern="*.st"/>
+	</mime-type>
+	<mime-type type="application/x-msa-disk-image">
+		<sub-class-of type="application/octet-stream"/>
+		<comment>Magic Shadow Archiver disk image</comment>
+		<glob pattern="*.msa"/>
+		<magic priority="90">
+			<match type="big16" offset="0" value="0x0E0F"/>
+		</magic>
+	</mime-type>
+</mime-info>
