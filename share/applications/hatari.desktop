@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Hatari
+GenericName=ST emulator
+Comment=Run old ST/STE/TT/Falcon software
+Exec=hatari %f
+Icon=hatari
+MimeType=application/x-st-disk-image;application/x-msa-disk-image
+Categories=Game;Emulator;
+Terminal=false

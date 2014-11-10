@@ -6,3 +6,5 @@ endforeach()
 
 install(FILES icons/hicolor/scalable/apps/hatari.svg
 	DESTINATION ${ICONDIR}/scalable/apps)
+
+install(FILES applications/hatari.desktop DESTINATION share/applications)
