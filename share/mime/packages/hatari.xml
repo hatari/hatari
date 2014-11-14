@@ -13,4 +13,20 @@
 			<match type="big16" offset="0" value="0x0E0F"/>
 		</magic>
 	</mime-type>
+	<mime-type type="application/x-dim-disk-image">
+		<sub-class-of type="application/octet-stream"/>
+		<comment>FastCopy DIM disk image</comment>
+		<glob pattern="*.dim"/>
+		<magic priority="90">
+			<match type="big16" offset="0" value="0x4242"/>
+		</magic>
+	</mime-type>
+	<mime-type type="application/x-stx-disk-image">
+		<sub-class-of type="application/octet-stream"/>
+		<comment>Pasti STX disk image</comment>
+		<glob pattern="*.stx"/>
+		<magic priority="90">
+			<match type="big32" offset="0" value="0x52535900"/>
+		</magic>
+	</mime-type>
 </mime-info>

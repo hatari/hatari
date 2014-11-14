@@ -3,15 +3,23 @@ foreach(size 32x32 48x48 64x64 128x128 256x256)
 	install(FILES icons/hicolor/${size}/apps/hatari.png
 		DESTINATION ${ICONDIR}/${size}/apps)
 	install(FILES icons/hicolor/${size}/mimetypes/application-x-st-disk-image.png
-		      icons/hicolor/${size}/mimetypes/application-x-msa-disk-image.png
 		DESTINATION ${ICONDIR}/${size}/mimetypes)
+	foreach(type msa dim stx)
+		install(CODE "execute_process(COMMAND ln -sf application-x-st-disk-image.png
+				${CMAKE_INSTALL_PREFIX}/${ICONDIR}/${size}/mimetypes/application-x-${type}-disk-image.png)
+				")
+	endforeach()
 endforeach()
 
 install(FILES icons/hicolor/scalable/apps/hatari.svg
 	DESTINATION ${ICONDIR}/scalable/apps)
 install(FILES icons/hicolor/scalable/mimetypes/application-x-st-disk-image.svg
-	      icons/hicolor/scalable/mimetypes/application-x-msa-disk-image.svg
 	DESTINATION ${ICONDIR}/scalable/mimetypes)
+foreach(type msa dim stx)
+	install(CODE "execute_process(COMMAND ln -sf application-x-st-disk-image.svg
+			${CMAKE_INSTALL_PREFIX}/${ICONDIR}/scalable/mimetypes/application-x-${type}-disk-image.svg)
+			")
+endforeach()
 
 install(FILES mime/packages/hatari.xml DESTINATION share/mime/packages)
 

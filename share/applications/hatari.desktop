@@ -6,6 +6,6 @@ GenericName=ST emulator
 Comment=Run old ST/STE/TT/Falcon software
 Exec=hatari %f
 Icon=hatari
-MimeType=application/x-st-disk-image;application/x-msa-disk-image
+MimeType=application/x-st-disk-image;application/x-msa-disk-image;application/x-dim-disk-image;application/x-stx-disk-image
 Categories=Game;Emulator;
 Terminal=false
