@@ -77,6 +77,34 @@ const char *Joy_GetName(int id)
 #endif
 }
 
+/**
+ * Return maximum available real joystick ID
+ */
+int Joy_GetMaxId(void)
+{
+	int count = SDL_NumJoysticks();
+	if (count > JOYSTICK_COUNT)
+		count = JOYSTICK_COUNT;
+	return count - 1;
+}
+
+/**
+ * Make sure real Joystick ID is valid, and if not, disable it & return false
+ */
+bool Joy_ValidateJoyId(int i)
+{
+	/* Unavailable joystick ID -> disable it if necessary */
+	if (ConfigureParams.Joysticks.Joy[i].nJoystickMode == JOYSTICK_REALSTICK &&
+	    !bJoystickWorking[ConfigureParams.Joysticks.Joy[i].nJoyId])
+	{
+		Log_Printf(LOG_WARN, "Selected real Joystick %d unavailable, disabling ST joystick %d\n", ConfigureParams.Joysticks.Joy[i].nJoyId, i);
+		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
+		ConfigureParams.Joysticks.Joy[i].nJoyId = 0;
+		return false;
+	}
+	return true;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * This function initialises the (real) joysticks.
@@ -136,6 +164,9 @@ void Joy_Init(void)
 					sdlJoystickMapping[i]->SDLJoystickName );
 		}
 	}
+
+	for (i = 0; i < JOYSTICK_COUNT ; i++)
+		Joy_ValidateJoyId(i);
 
 	JoystickSpaceBar = false;
 }

@@ -146,7 +146,7 @@ static void DlgJoystick_DefineKeys(int nActJoy)
 /**
  * Adapt dialog using the values from the configration structure.
  */
-static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
+static void DlgJoystick_ReadValuesFromConf(int nActJoy)
 {
 	int i;
 
@@ -155,7 +155,7 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 	{
 		strcpy(sSdlStickName, "0: (none available)");
 	}
-	else if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId <= nMaxId)
+	else if (Joy_ValidateJoyId(nActJoy))
 	{
 		snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
 		         Joy_GetName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
@@ -163,9 +163,6 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 	else
 	{
 		snprintf(sSdlStickName, 20, "0: %s", Joy_GetName(0));
-		/* Unavailable joystick ID -> disable it if necessary*/
-		if (ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode == JOYSTICK_REALSTICK)
-			ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_DISABLED;
 	}
 
 	for (i = DLGJOY_DISABLED; i <= DLGJOY_USEREALJOY; i++)
@@ -216,22 +213,20 @@ void Dialog_JoyDlg(void)
 {
 	int but;
 	static int nActJoy = 1;
-	int nMaxJoyId;
+	int nMaxId;
 
 	SDLGui_CenterDlg(joydlg);
 
 	joydlg[DLGJOY_STJOYNAME].txt = sJoystickNames[nActJoy];
 
-	nMaxJoyId = SDL_NumJoysticks() - 1;
-	if (nMaxJoyId > 5)
-		nMaxJoyId = 5;
+	nMaxId = Joy_GetMaxId();
 
 	/* Set up dialog from actual values: */
-	DlgJoystick_ReadValuesFromConf(nActJoy, nMaxJoyId);
+	DlgJoystick_ReadValuesFromConf(nActJoy);
 
 	do
 	{
-    	but = SDLGui_DoDialog(joydlg, NULL);
+		but = SDLGui_DoDialog(joydlg, NULL);
 		switch (but)
 		{
 		 case DLGJOY_PREVSDLJOY:        // Select the previous SDL joystick
@@ -243,7 +238,7 @@ void Dialog_JoyDlg(void)
 			}
 			break;
 		 case DLGJOY_NEXTSDLJOY:        // Select the next SDL joystick
-			if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId < nMaxJoyId)
+			if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId < nMaxId)
 			{
 				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId += 1;
 				snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
@@ -258,7 +253,7 @@ void Dialog_JoyDlg(void)
 			{
 				DlgJoystick_WriteValuesToConf(nActJoy);
 				nActJoy -= 1;
-				DlgJoystick_ReadValuesFromConf(nActJoy, nMaxJoyId);
+				DlgJoystick_ReadValuesFromConf(nActJoy);
 				joydlg[DLGJOY_STJOYNAME].txt = sJoystickNames[nActJoy];
 			}
 			break;
@@ -267,7 +262,7 @@ void Dialog_JoyDlg(void)
 			{
 				DlgJoystick_WriteValuesToConf(nActJoy);
 				nActJoy += 1;
-				DlgJoystick_ReadValuesFromConf(nActJoy, nMaxJoyId);
+				DlgJoystick_ReadValuesFromConf(nActJoy);
 				joydlg[DLGJOY_STJOYNAME].txt = sJoystickNames[nActJoy];
 			}
 			break;

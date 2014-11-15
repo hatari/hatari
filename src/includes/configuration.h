@@ -142,7 +142,16 @@ typedef struct
   int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
 } JOYSTICK;
 
-#define JOYSTICK_COUNT 6
+enum
+{
+	JOYID_JOYSTICK0,
+	JOYID_JOYSTICK1,
+	JOYID_STEPADA,
+	JOYID_STEPADB,
+	JOYID_PARPORT1,
+	JOYID_PARPORT2,
+	JOYSTICK_COUNT
+};
 
 typedef struct
 {

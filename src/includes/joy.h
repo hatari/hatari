@@ -15,16 +15,6 @@ enum
 	JOYSTICK_SPACE_UP
 };
 
-enum
-{
-	JOYID_JOYSTICK0,
-	JOYID_JOYSTICK1,
-	JOYID_STEPADA,
-	JOYID_STEPADB,
-	JOYID_PARPORT1,
-	JOYID_PARPORT2
-};
-
 #define JOYRANGE_UP_VALUE     -16384     /* Joystick ranges in XY */
 #define JOYRANGE_DOWN_VALUE    16383
 #define JOYRANGE_LEFT_VALUE   -16384
@@ -41,6 +31,8 @@ extern int JoystickSpaceBar;
 extern void Joy_Init(void);
 extern void Joy_UnInit(void);
 extern const char *Joy_GetName(int id);
+extern int Joy_GetMaxId(void);
+extern bool Joy_ValidateJoyId(int i);
 extern Uint8 Joy_GetStickData(int nStJoyId);
 extern bool Joy_SetCursorEmulation(int port);
 extern void Joy_ToggleCursorEmulation(void);
