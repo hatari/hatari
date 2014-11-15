@@ -591,12 +591,8 @@ static SDL_Rect* Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 		assert(MessageList->next); /* last message shouldn't end here */
 		next = MessageList->next;
 		free(MessageList);
+		/* show next */
 		MessageList = next;
-		/* make sure next message gets shown */
-		MessageList->shown = false;
-	}
-	if (MessageList->shown) {
-		return NULL;
 	}
 	/* not shown yet, show */
 	MessageList->shown = true;
