@@ -564,7 +564,7 @@ Monochrome games:
 - Balloons
 - Bolo          (demo levels, floppy only)
 - Bouncing boubles
-- Columns*      (needs EmuTOS >= 0.8.6, some text issues)
+- Columns*      (needs EmuTOS >= 0.8.6, text input positioning issue)
 - CW Puzzle     (line-A bitblit + line & point draw in start)
 - Delta patrol
 - Diamond miner
@@ -644,7 +644,7 @@ Free/shareware games:
 - Downfall (fire doesn't work)
 - Entombed (doesn't show title, copyright, hiscore nor help after v0.8.6)
 - Fokker (input doesn't work)
-- Japlish (line-A polygon hline drawing not visible)
+- Japlish (no objects visible, does one line-A polygon hline)
 - Space invaders (up works as fire, no other input works)
 
 
