@@ -954,13 +954,32 @@ bool	Avi_AreWeRecording ( void )
 }
 
 
+/* PNG compression level, 0-9 */
+static int compression_level = 9;
+
+/**
+ * Set recording level from given string
+ * return true for valid, false for invalid value
+ */
+bool Avi_SetCompressionLevel(const char *str)
+{
+	char *end;
+	long level = strtol(str, &end, 10);
+	if (*end)
+		return false;
+	if (level < 0 || level > 9)
+		return false;
+	compression_level = level;
+	return true;
+}
+
 
 bool	Avi_StartRecording ( char *FileName , bool CropGui , Uint32 Fps , Uint32 Fps_scale , int VideoCodec )
 {
 	memset ( &AviParams , 0 , sizeof ( AviParams ) );
 
 	AviParams.VideoCodec = VideoCodec;
-	AviParams.VideoCodecCompressionLevel = 9;	/* png compression level */
+	AviParams.VideoCodecCompressionLevel = compression_level;
 	AviParams.AudioCodec = AVI_RECORD_AUDIO_CODEC_PCM;
 	AviParams.AudioFreq = ConfigureParams.Sound.nPlaybackFreq;
 	AviParams.Surface = sdlscrn;

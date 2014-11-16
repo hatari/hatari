@@ -86,6 +86,7 @@ enum {
 	OPT_SCREEN_CROP,        /* screen capture options */
 	OPT_AVIRECORD,
 	OPT_AVIRECORD_VCODEC,
+	OPT_AVI_PNG_LEVEL,
 	OPT_AVIRECORD_FPS,
 	OPT_AVIRECORD_FILE,
 	OPT_JOYSTICK,		/* device options */
@@ -250,11 +251,13 @@ static const opt_t HatariOptions[] = {
 	{ OPT_AVIRECORD, NULL, "--avirecord",
 	  NULL, "Start AVI recording" },
 	{ OPT_AVIRECORD_VCODEC, NULL, "--avi-vcodec",
-	  "<x>", "Select avi video codec (x = bmp/png)" },
+	  "<x>", "Select AVI video codec (x = bmp/png)" },
+	{ OPT_AVI_PNG_LEVEL, NULL, "--png-level",
+	  "<x>", "Select AVI PNG compression level (x = 0-9)" },
 	{ OPT_AVIRECORD_FPS, NULL, "--avi-fps",
-	  "<x>", "Force avi frame rate (x = 50/60/71/...)" },
+	  "<x>", "Force AVI frame rate (x = 50/60/71/...)" },
 	{ OPT_AVIRECORD_FILE, NULL, "--avi-file",
-	  "<file>", "Use <file> to record avi" },
+	  "<file>", "Use <file> to record AVI" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
@@ -1107,6 +1110,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_AVIRECORD_VCODEC, argv[i], "Unknown video codec");
 			}
+			break;
+
+		case OPT_AVI_PNG_LEVEL:
+			i += 1;
+			if (!Avi_SetCompressionLevel(argv[i]))
+				return Opt_ShowError(OPT_AVI_PNG_LEVEL, argv[i], "Invalid compression level");
 			break;
 
 		case OPT_AVIRECORD_FPS:

@@ -166,16 +166,26 @@ Use extended VDI resolution with height <h> (200 < h <= 960)
 Remove statusbar from the screen captures
 .TP
 .B \-\-avirecord
-Start AVI recording
+Start AVI recording.  Note: recording will automatically
+stop when emulation resolution changes.
 .TP
 .B \-\-avi\-vcodec <x>
-Select avi video codec (x = bmp/png)
+Select AVI video codec (x = bmp/png).  PNG compression can
+be \fImuch\fP slower than using the uncompressed BMP format,
+but uncompressed video content takes huge amount of space.
+.TP
+.B \-\-png\-level <x>
+Select PNG compression level for AVI video (x = 0-9).
+Both compression efficiency and speed depend on the compressed
+screen content. Highest compression level (9) can be \fIreally\fP
+slow with some content. Levels 3-6 should compress nearly as well
+with clearly smaller CPU overhead.
 .TP
 .B \-\-avi\-fps <x>
-Force avi frame rate (x = 50/60/71/...)
+Force AVI frame rate (x = 50/60/71/...)
 .TP
 .B \-\-avi\-file <file>
-Use <file> to record avi
+Use <file> to record AVI
 
 .SH "Devices options"
 .TP 

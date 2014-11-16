@@ -540,18 +540,22 @@ depth &lt;x&gt; (x = 1, 2 or 4)</p>
 <p class="paramdesc">Remove statusbar from the screen
 captures</p>
 <p class="parameter">--avirecord</p>
-<p class="paramdesc">Start AVI recording</p>
-<p class="parameter">--avi-vcodec
-&lt;x&gt;</p>
-<p class="paramdesc">Select avi video codec (x =
-bmp/png)</p>
-<p class="parameter">--avi-fps
-&lt;x&gt;</p>
-<p class="paramdesc">Force avi frame rate (x =
-50/60/71/...)</p>
-<p class="parameter">--avi-file
-&lt;file&gt;</p>
-<p class="paramdesc">Use &lt;file&gt; to record avi</p>
+<p class="paramdesc">Start AVI recording. Note: recording will
+automatically stop when emulation resolution changes.</p>
+<p class="parameter">--avi-vcodec &lt;x&gt;</p>
+<p class="paramdesc">Select AVI video codec (x = bmp/png).
+PNG compression can be <em>much</em> slower than using the uncompressed BMP
+format, but uncompressed video content takes huge amount of space.</p>
+<p class="parameter">--png-level &lt;x&gt;</p>
+<p class="paramdesc">Select PNG compression level for AVI video (x = 0-9).
+Both compression efficiency and speed depend on the compressed
+screen content. Highest compression level (9) can be <em>really</em>
+slow with some content. Levels 3-6 should compress nearly as well
+with clearly smaller CPU overhead.</p>
+<p class="parameter">--avi-fps &lt;x&gt;</p>
+<p class="paramdesc">Force AVI frame rate (x = 50/60/71/...)</p>
+<p class="parameter">--avi-file &lt;file&gt;</p>
+<p class="paramdesc">Use &lt;file&gt; to record AVI</p>
 
 <h3>Devices options</h3>
 <p class="parameter">-j,
