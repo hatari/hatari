@@ -2075,6 +2075,7 @@ static int FDC_UpdateRestoreCmd ( void )
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
+			FDC.CommandState = FDCEMU_RUN_RESTORE_VERIFY_NEXT_SECTOR_HEADER;
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 		}
 		else
@@ -2225,6 +2226,7 @@ static int FDC_UpdateSeekCmd ( void )
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
+			FDC.CommandState = FDCEMU_RUN_SEEK_VERIFY_NEXT_SECTOR_HEADER;
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 		}
 		else
@@ -2357,6 +2359,7 @@ static int FDC_UpdateStepCmd ( void )
 					FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal );
 		if ( FdcCycles < 0 )
 		{
+			FDC.CommandState = FDCEMU_RUN_STEP_VERIFY_NEXT_SECTOR_HEADER;
 			FdcCycles = FDC_DELAY_CYCLE_WAIT_NO_DRIVE_FLOPPY;	/* Wait for a valid drive/floppy */
 		}
 		else

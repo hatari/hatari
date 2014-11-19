@@ -23,6 +23,8 @@ Emulation:
   - check for address error when new PC is set at the end of RTE, RTS and RTR
   - fix "move.b an,<ea>", it's not allowed and should give illegal instruction
   - improve stack frame for bus error and address error
+- FDC changes:
+  - for STX disks, fix type I commands with verify bit on tracks with no sector
 
 Emulator:
 - Support for compiling with libSDL2 (experimental)
@@ -62,6 +64,7 @@ Other changes:
 Fixed games:
 - Superior 65 - Blood Money (cpu, exception stack and bus error)
   (note that this version is bugged and will crash with TOS 1.04 or 1.62)
+- Obitus (STX version) (fdc, seek+verify on a track with no sector)
 
 
  Version 1.8.0 (2014-07-30):
