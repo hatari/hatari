@@ -52,6 +52,7 @@ extern void	FDC_SetDMAStatus ( bool bError );
 
 extern void	FDC_SetIRQ ( Uint8 IRQ_Source );
 extern void	FDC_ClearIRQ ( void );
+extern void	FDC_ClearHdcIRQ(void);
 extern void	FDC_InterruptHandler_Update ( void );
 
 extern void	FDC_Drive_Set_BusyLed ( Uint8 SR );

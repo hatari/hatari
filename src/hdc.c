@@ -992,6 +992,9 @@ static Uint8 Ncr5380_ReadByte(int addr)
 
 static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 {
+	/* Clear IRQ initially (will be set again if byte has been accepted) */
+	FDC_ClearHdcIRQ();
+
 	/* When the A1 pin is pushed to 0, we want to start a new command.
 	 * We ignore the pin for the second byte in the packet since this
 	 * seems to happen on real hardware too (some buggy driver relies
@@ -1022,11 +1025,6 @@ static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 	{
 		FDC_SetDMAStatus(AcsiBus.bDmaError);	/* Mark DMA error */
 		FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
-	}
-	else
-	{
-		/* If there's no target, the interrupt line stays high */
-		MFP_GPIP |= 0x20;
 	}
 }
 

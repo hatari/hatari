@@ -1725,6 +1725,14 @@ void FDC_ClearIRQ ( void )
 	}
 }
 
+void FDC_ClearHdcIRQ(void)
+{
+	FDC.IRQ_Signal &= ~FDC_IRQ_SOURCE_HDC;
+	if (FDC.IRQ_Signal == 0)
+	{
+		MFP_GPIP |= 0x20;
+	}
+}
 
 /*-----------------------------------------------------------------------*/
 /**
