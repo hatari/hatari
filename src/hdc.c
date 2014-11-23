@@ -8,6 +8,8 @@
 */
 const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 
+#include <errno.h>
+
 #include "main.h"
 #include "configuration.h"
 #include "debugui.h"
@@ -735,13 +737,49 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 	return parts;
 }
 
+/**
+ * Open a disk image file
+ */
+static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
+{
+	off_t filesize;
+	FILE *fp;
+
+	dev->enabled = false;
+	Log_Printf(LOG_INFO, "Mounting hard drive image '%s'\n", filename);
+
+	/* Check size for sanity - is the length a multiple of 512? */
+	filesize = File_Length(filename);
+	if (filesize <= 0 || (filesize & 0x1ff) != 0)
+	{
+		Log_Printf(LOG_ERROR, "ERROR: HD file has strange size!\n");
+		return -EINVAL;
+	}
+
+	fp = fopen(filename, "rb+");
+	if (fp == NULL)
+	{
+		Log_Printf(LOG_ERROR, "ERROR: cannot open HD file!\n");
+		return -ENOENT;
+	}
+	if (!File_Lock(fp))
+	{
+		Log_Printf(LOG_ERROR, "ERROR: cannot lock HD file for writing!\n");
+		return -ENOLCK;
+	}
+
+	dev->hdSize = filesize / 512;
+	dev->image_file = fp;
+	dev->enabled = true;
+
+	return 0;
+}
 
 /**
  * Open the disk image file, set partitions.
  */
 bool HDC_Init(void)
 {
-	off_t filesize;
 	int i;
 
 	memset(&AcsiBus, 0, sizeof(AcsiBus));
@@ -750,38 +788,14 @@ bool HDC_Init(void)
 
 	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
-		char *filename;
-		FILE *fp;
-
 		if (!ConfigureParams.Acsi[i].bUseDevice)
 			continue;
-		filename = ConfigureParams.Acsi[i].sDeviceFile;
-		Log_Printf(LOG_INFO, "Mounting ACSI hard drive image %s\n", filename);
-
-		/* Check size for sanity - is the length a multiple of 512? */
-		filesize = File_Length(filename);
-		if (filesize <= 0 || (filesize & 0x1ff) != 0)
+		if (HDC_InitDevice(&AcsiBus.devs[i], ConfigureParams.Acsi[i].sDeviceFile) == 0)
 		{
-			Log_Printf(LOG_ERROR, "ERROR: HD file has strange size!\n");
-			continue;
+			bAcsiEmuOn = true;
+			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD);
 		}
 
-		fp = fopen(filename, "rb+");
-		if (fp == NULL)
-		{
-			Log_Printf(LOG_ERROR, "ERROR: cannot open HD file!\n");
-			continue;
-		}
-		if (!File_Lock(fp))
-		{
-			Log_Printf(LOG_ERROR, "ERROR: cannot lock HD file for writing!\n");
-			continue;
-		}
-		nAcsiPartitions += HDC_PartitionCount(fp, TRACE_SCSI_CMD);
-		AcsiBus.devs[i].hdSize = filesize / 512;
-		AcsiBus.devs[i].image_file = fp;
-		AcsiBus.devs[i].enabled = true;
-		bAcsiEmuOn = true;
 	}
 
 	/* set number of partitions */
