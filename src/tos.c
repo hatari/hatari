@@ -109,7 +109,8 @@ enum
 	TP_ALWAYS,            /* Patch should alway be applied */
 	TP_HDIMAGE_OFF,       /* Apply patch only if HD emulation is off */
 	TP_ANTI_STE,          /* Apply patch only if running on plain ST */
-	TP_ANTI_PMMU          /* Apply patch only if no PMMU is available */
+	TP_ANTI_PMMU,         /* Apply patch only if no PMMU is available */
+	TP_FIX_060,           /* Apply patch only if CPU is 68060 */
 };
 
 /* This structure is used for patching the TOS ROMs */
@@ -131,6 +132,7 @@ static const char pszRomCheck[] = "ROM checksum";
 static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
 static const char pszHwDisable[] = "disable hardware access";
+static const char pszFix060[] = "replace code for 68060";
 
 //static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
@@ -141,6 +143,19 @@ static const Uint8 pRomCheckOpcode206[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e
 static const Uint8 pRomCheckOpcode306[] = { 0x60, 0x00, 0x00, 0xB0 };  /* BRA $e00886 */
 static const Uint8 pRomCheckOpcode404[] = { 0x60, 0x00, 0x00, 0x94 };  /* BRA $e00746 */
 static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
+static const Uint8 p060Fix1[] = {
+	0x70, 0x0c,			/* moveq #12,d0 */
+	0x42, 0x30, 0x08, 0x00,		/* loop: clr.b 0,(d0,a0) */
+	0x55, 0x40,			/* subq  #2,d0 */
+	0x4a, 0x40,			/* tst.w d0 */
+	0x66, 0xf6,			/* bne.s loop */
+};
+static const Uint8 p060Fix2[] = {
+	0x41, 0xf8, 0xfa, 0x26,			/* lea    0xfffffa26.w,a0 */
+	0x20, 0xfc, 0x00, 0x00, 0x00, 0x88,	/* move.l #$00000088,(a0)+ */
+	0x20, 0xbc, 0x00, 0x01, 0x00, 0x05,	/* move.l #$00010005,(a0) */
+	0x4a, 0x38, 0x0a, 0x87			/* tst.b  $a87.w */
+};
 
 /* The patches for the TOS: */
 static const TOS_PATCH TosPatches[] =
@@ -211,6 +226,8 @@ static const TOS_PATCH TosPatches[] =
   { 0x404, -1, pszRomCheck, TP_ALWAYS, 0xE006B0, 0x2E3C0007, 4, pRomCheckOpcode404 },
   { 0x404, -1, pszDmaBoot, TP_ALWAYS, 0xE01C9E, 0x62FC31FC, 2, pNopOpcodes },  /* Just a delay */
   { 0x404, -1, pszDmaBoot, TP_ALWAYS, 0xE01CB2, 0x62FC31FC, 2, pNopOpcodes },  /* Just a delay */
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE025E2, 0x01C80000, 12, p060Fix1 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE02632, 0x41F8FA01, 20, p060Fix2 },
 
   { 0x492, -1, pszNoPmmu, TP_ANTI_PMMU, 0x00F946, 0xF0394000, 24, pNopOpcodes },
   { 0x492, -1, pszNoPmmu, TP_ANTI_PMMU, 0x01097A, 0xF0394C00, 32, pNopOpcodes },
@@ -284,6 +301,7 @@ static void TOS_FixRom(void)
 				    || (pPatch->Flags == TP_ANTI_STE
 				        && ConfigureParams.System.nMachineType == MACHINE_ST)
 				    || (pPatch->Flags == TP_ANTI_PMMU && !use_mmu)
+				    || (pPatch->Flags == TP_FIX_060 && ConfigureParams.System.nCpuLevel > 4)
 				   )
 				{
 					/* Now we can really apply the patch! */
