@@ -46,6 +46,7 @@ const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 
 // #define DISALLOW_HDC_WRITE
 // #define HDC_VERBOSE           /* display operations */
+#define WITH_NCR5380 0
 
 #define HDC_ReadInt16(a, i) (((unsigned) a[i] << 8) | a[i + 1])
 #define HDC_ReadInt24(a, i) (((unsigned) a[i] << 16) | ((unsigned) a[i + 1] << 8) | a[i + 2])
@@ -81,6 +82,9 @@ SCSI_CTRLR AcsiBus;
 int nAcsiPartitions = 0;
 bool bAcsiEmuOn = false;
 
+#if WITH_NCR5380
+SCSI_CTRLR ScsiBus;
+#endif
 
 /* Our dummy INQUIRY response data */
 static unsigned char inquiry_bytes[] =
@@ -786,6 +790,7 @@ bool HDC_Init(void)
 	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
 
+	/* ACSI */
 	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
 		if (!ConfigureParams.Acsi[i].bUseDevice)
@@ -795,8 +800,18 @@ bool HDC_Init(void)
 			bAcsiEmuOn = true;
 			nAcsiPartitions += HDC_PartitionCount(AcsiBus.devs[i].image_file, TRACE_SCSI_CMD);
 		}
-
 	}
+
+	/* SCSI */
+#if WITH_NCR5380
+	memset(&ScsiBus, 0, sizeof(ScsiBus));
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		if (!ConfigureParams.Scsi[i].bUseDevice)
+			continue;
+		HDC_InitDevice(&ScsiBus.devs[i], ConfigureParams.Scsi[i].sDeviceFile);
+	}
+#endif
 
 	/* set number of partitions */
 	nNumDrives += nAcsiPartitions;
@@ -826,6 +841,18 @@ void HDC_UnInit(void)
 		AcsiBus.devs[i].image_file = NULL;
 		AcsiBus.devs[i].enabled = false;
 	}
+
+#if WITH_NCR5380
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		if (!ScsiBus.devs[i].enabled)
+			continue;
+		File_UnLock(ScsiBus.devs[i].image_file);
+		fclose(ScsiBus.devs[i].image_file);
+		ScsiBus.devs[i].image_file = NULL;
+		ScsiBus.devs[i].enabled = false;
+	}
+#endif
 
 	nNumDrives -= nAcsiPartitions;
 	nAcsiPartitions = 0;
@@ -934,6 +961,7 @@ void Ncr5380_Reset(void)
  */
 static void Ncr5380_WriteByte(int addr, Uint8 byte)
 {
+#if WITH_NCR5380
 	switch (addr)
 	{
 	case 0:			/* Output Data register */
@@ -957,6 +985,7 @@ static void Ncr5380_WriteByte(int addr, Uint8 byte)
 	default:
 		fprintf(stderr, "Unexpected NCR5380 address\n");
 	}
+#endif
 }
 
 /**
@@ -964,6 +993,7 @@ static void Ncr5380_WriteByte(int addr, Uint8 byte)
  */
 static Uint8 Ncr5380_ReadByte(int addr)
 {
+#if WITH_NCR5380
 	switch (addr)
 	{
 	case 0:			/* Current SCSI Data register */
@@ -999,6 +1029,7 @@ static Uint8 Ncr5380_ReadByte(int addr)
 	default:
 		fprintf(stderr, "Unexpected NCR5380 address\n");
 	}
+#endif
 
 	return 0;
 }
