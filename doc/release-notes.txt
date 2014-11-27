@@ -65,6 +65,7 @@ Fixed games:
 - Superior 65 - Blood Money (cpu, exception stack and bus error)
   (note that this version is bugged and will crash with TOS 1.04 or 1.62)
 - Obitus (STX version) (fdc, seek+verify on a track with no sector)
+- The Teller (STX/CTR version) (cpu, exception stack and address error)
 
 
  Version 1.8.0 (2014-07-30):
