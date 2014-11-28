@@ -74,6 +74,10 @@ typedef struct {
 	Uint8 opcode;
 	bool bDmaError;
 	short int returnCode;       /* return code from the HDC operation */
+	Uint8 *resp;                /* Response buffer */
+	int respbufsize;
+	int respcnt;
+	int respidx;
 	SCSI_DEV devs[8];
 } SCSI_CTRLR;
 
@@ -148,6 +152,24 @@ static inline Uint8 HDC_GetControl(SCSI_CTRLR *ctr)
 }
 
 /**
+ * Get pointer to response buffer, set up size indicator - and allocate
+ * a new buffer if it is not big enough
+ */
+static Uint8 *HDC_PrepRespBuf(SCSI_CTRLR *ctr, int size)
+{
+	ctr->respcnt = size;
+	ctr->respidx = 0;
+
+	if (size > ctr->respbufsize)
+	{
+		ctr->respbufsize = size;
+		ctr->resp = realloc(ctr->resp, size);
+	}
+
+	return ctr->resp;
+}
+
+/**
  * Get info string for SCSI/ACSI command packets.
  */
 static inline char *HDC_CmdInfoStr(SCSI_CTRLR *ctr)
@@ -198,37 +220,26 @@ static void HDC_Cmd_Seek(SCSI_CTRLR *ctr)
 static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
-	Uint32 nDmaAddr;
+	Uint8 *buf;
 	int count;
 
-	nDmaAddr = FDC_GetDMAAddress();
 	count = HDC_GetCount(ctr);
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: INQUIRY (%s) to 0x%x",
-	          HDC_CmdInfoStr(ctr), nDmaAddr);
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: INQUIRY (%s)", HDC_CmdInfoStr(ctr));
+
+	buf = HDC_PrepRespBuf(ctr, count);
+	memcpy(buf, inquiry_bytes, count);
 
 	if (count > (int)sizeof(inquiry_bytes))
 		count = sizeof(inquiry_bytes);
 
 	/* For unsupported LUNs set the Peripheral Qualifier and the
 	 * Peripheral Device Type according to the SCSI standard */
-	inquiry_bytes[0] = HDC_GetLUN(ctr) == 0 ? 0 : 0x7F;
+	buf[0] = HDC_GetLUN(ctr) == 0 ? 0 : 0x7F;
 
-	inquiry_bytes[4] = count - 5;
+	buf[4] = count - 5;
 
-	if (STMemory_SafeCopy(nDmaAddr, inquiry_bytes, count, "HDC DMA inquiry"))
-	{
-		LOG_TRACE(TRACE_SCSI_CMD, " -> OK\n");
-		ctr->returnCode = HD_STATUS_OK;
-	}
-	else
-	{
-		LOG_TRACE(TRACE_SCSI_CMD, " -> ERROR\n");
-		ctr->bDmaError = true;
-		ctr->returnCode = HD_STATUS_ERROR;
-	}
-
-	FDC_WriteDMAAddress(nDmaAddr + count);
+	ctr->returnCode = HD_STATUS_OK;
 
 	dev->nLastError = HD_REQSENS_OK;
 	dev->bSetLastBlockAddr = false;
@@ -241,9 +252,8 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
-	Uint32 nDmaAddr;
 	int nRetLen;
-	Uint8 retbuf[22];
+	Uint8 *retbuf;
 
 	nRetLen = HDC_GetCount(ctr);
 
@@ -264,8 +274,7 @@ static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
 		nRetLen = 22;
 	}
 
-	nDmaAddr = FDC_GetDMAAddress();
-
+	retbuf = HDC_PrepRespBuf(ctr, nRetLen);
 	memset(retbuf, 0, nRetLen);
 
 	if (nRetLen <= 4)
@@ -312,17 +321,7 @@ static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
 	fprintf(stderr,"\n");
 	*/
 
-	if (STMemory_SafeCopy(nDmaAddr, retbuf, nRetLen, "HDC request sense"))
-	{
-		ctr->returnCode = HD_STATUS_OK;
-	}
-	else
-	{
-		ctr->bDmaError = true;
-		ctr->returnCode = HD_STATUS_ERROR;
-	}
-
-	FDC_WriteDMAAddress(nDmaAddr + nRetLen);
+	ctr->returnCode = HD_STATUS_OK;
 }
 
 
@@ -333,57 +332,45 @@ static void HDC_Cmd_RequestSense(SCSI_CTRLR *ctr)
 static void HDC_Cmd_ModeSense(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
-	Uint32 nDmaAddr;
+	Uint8 *buf;
 
 	LOG_TRACE(TRACE_SCSI_CMD, "HDC: MODE SENSE (%s).\n", HDC_CmdInfoStr(ctr));
 
-	nDmaAddr = FDC_GetDMAAddress();
+	dev->bSetLastBlockAddr = false;
 
-	if (!STMemory_ValidArea(nDmaAddr, 16))
-	{
-		Log_Printf(LOG_WARN, "HCD mode sense uses invalid RAM range 0x%x+%i\n", nDmaAddr, 16);
-		ctr->bDmaError = true;
-		ctr->returnCode = HD_STATUS_ERROR;
-	}
-	else if (ctr->command[2] == 0 && HDC_GetCount(ctr) == 0x10)
-	{
-		size_t blocks;
-		blocks = dev->hdSize;
-
-		STRam[nDmaAddr+0] = 0;
-		STRam[nDmaAddr+1] = 0;
-		STRam[nDmaAddr+2] = 0;
-		STRam[nDmaAddr+3] = 8;
-		STRam[nDmaAddr+4] = 0;
-
-		STRam[nDmaAddr+5] = blocks >> 16;  // Number of blocks, high (?)
-		STRam[nDmaAddr+6] = blocks >> 8;   // Number of blocks, med (?)
-		STRam[nDmaAddr+7] = blocks;        // Number of blocks, low (?)
-
-		STRam[nDmaAddr+8] = 0;
-
-		STRam[nDmaAddr+9] = 0;      // Block size in bytes, high
-		STRam[nDmaAddr+10] = 2;     // Block size in bytes, med
-		STRam[nDmaAddr+11] = 0;     // Block size in bytes, low
-
-		STRam[nDmaAddr+12] = 0;
-		STRam[nDmaAddr+13] = 0;
-		STRam[nDmaAddr+14] = 0;
-		STRam[nDmaAddr+15] = 0;
-
-		FDC_WriteDMAAddress(nDmaAddr + 16);
-
-		ctr->returnCode = HD_STATUS_OK;
-		dev->nLastError = HD_REQSENS_OK;
-	}
-	else
+	if (ctr->command[2] != 0 || HDC_GetCount(ctr) != 0x10)
 	{
 		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
 		ctr->returnCode = HD_STATUS_ERROR;
 		dev->nLastError = HD_REQSENS_INVARG;
+		return;
 	}
 
-	dev->bSetLastBlockAddr = false;
+	buf = HDC_PrepRespBuf(ctr, 16);
+
+	buf[0] = 0;
+	buf[1] = 0;
+	buf[2] = 0;
+	buf[3] = 8;
+	buf[4] = 0;
+
+	buf[5] = dev->hdSize >> 16;  // Number of blocks, high
+	buf[6] = dev->hdSize >> 8;   // Number of blocks, med
+	buf[7] = dev->hdSize;        // Number of blocks, low
+
+	buf[8] = 0;
+
+	buf[9] = 0;      // Block size in bytes, high
+	buf[10] = 2;     // Block size in bytes, med
+	buf[11] = 0;     // Block size in bytes, low
+
+	buf[12] = 0;
+	buf[13] = 0;
+	buf[14] = 0;
+	buf[15] = 0;
+
+	ctr->returnCode = HD_STATUS_OK;
+	dev->nLastError = HD_REQSENS_OK;
 }
 
 
@@ -410,38 +397,24 @@ static void HDC_Cmd_FormatDrive(SCSI_CTRLR *ctr)
 static void HDC_Cmd_ReadCapacity(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
-	Uint32 nDmaAddr = FDC_GetDMAAddress();
+	int nSectors = dev->hdSize - 1;
+	Uint8 *buf;
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: READ CAPACITY (%s) to 0x%x.\n",
-	          HDC_CmdInfoStr(ctr), nDmaAddr);
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: READ CAPACITY (%s)\n", HDC_CmdInfoStr(ctr));
 
-	/* seek to the position */
-	if (STMemory_ValidArea(nDmaAddr, 8))
-	{
-		int nSectors = dev->hdSize - 1;
-		STRam[nDmaAddr++] = (nSectors >> 24) & 0xFF;
-		STRam[nDmaAddr++] = (nSectors >> 16) & 0xFF;
-		STRam[nDmaAddr++] = (nSectors >> 8) & 0xFF;
-		STRam[nDmaAddr++] = (nSectors) & 0xFF;
-		STRam[nDmaAddr++] = 0x00;
-		STRam[nDmaAddr++] = 0x00;
-		STRam[nDmaAddr++] = 0x02;
-		STRam[nDmaAddr++] = 0x00;
+	buf = HDC_PrepRespBuf(ctr, 8);
 
-		/* Update DMA counter */
-		FDC_WriteDMAAddress(nDmaAddr);
+	buf[0] = (nSectors >> 24) & 0xFF;
+	buf[1] = (nSectors >> 16) & 0xFF;
+	buf[2] = (nSectors >> 8) & 0xFF;
+	buf[3] = (nSectors) & 0xFF;
+	buf[4] = 0x00;
+	buf[5] = 0x00;
+	buf[6] = 0x02;
+	buf[7] = 0x00;
 
-		ctr->returnCode = HD_STATUS_OK;
-		dev->nLastError = HD_REQSENS_OK;
-	}
-	else
-	{
-		Log_Printf(LOG_WARN, "HDC capacity read uses invalid RAM range 0x%x+%i\n", nDmaAddr, 8);
-		ctr->bDmaError = true;
-		ctr->returnCode = HD_STATUS_ERROR;
-		dev->nLastError = HD_REQSENS_NOSECTOR;
-	}
-
+	ctr->returnCode = HD_STATUS_OK;
+	dev->nLastError = HD_REQSENS_OK;
 	dev->bSetLastBlockAddr = false;
 }
 
@@ -511,13 +484,13 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
-	Uint32 nDmaAddr = FDC_GetDMAAddress();
+	Uint8 *buf;
 	int n;
 
 	dev->nLastBlockAddr = HDC_GetLBA(ctr);
 
-	LOG_TRACE(TRACE_SCSI_CMD, "HDC: READ SECTOR (%s) with LBA 0x%x to 0x%x",
-	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr, nDmaAddr);
+	LOG_TRACE(TRACE_SCSI_CMD, "HDC: READ SECTOR (%s) with LBA 0x%x",
+	          HDC_CmdInfoStr(ctr), dev->nLastBlockAddr);
 
 	/* seek to the position */
 	if (dev->nLastBlockAddr >= dev->hdSize ||
@@ -528,18 +501,8 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 	}
 	else
 	{
-		if (STMemory_ValidArea(nDmaAddr, 512 * HDC_GetCount(ctr)))
-		{
-			n = fread(&STRam[nDmaAddr], 512,
-				   HDC_GetCount(ctr), dev->image_file);
-		}
-		else
-		{
-			Log_Printf(LOG_WARN, "HDC sector read uses invalid RAM range 0x%x+%i\n",
-				   nDmaAddr, 512 * HDC_GetCount(ctr));
-			ctr->bDmaError = true;
-			n = 0;
-		}
+		buf = HDC_PrepRespBuf(ctr, 512 * HDC_GetCount(ctr));
+		n = fread(buf, 512, HDC_GetCount(ctr), dev->image_file);
 		if (n == HDC_GetCount(ctr))
 		{
 			ctr->returnCode = HD_STATUS_OK;
@@ -550,9 +513,6 @@ static void HDC_Cmd_ReadSector(SCSI_CTRLR *ctr)
 			ctr->returnCode = HD_STATUS_ERROR;
 			dev->nLastError = HD_REQSENS_NOSECTOR;
 		}
-
-		/* Update DMA counter */
-		FDC_WriteDMAAddress(nDmaAddr + 512*n);
 	}
 	LOG_TRACE(TRACE_SCSI_CMD, " -> %s (%d)\n",
 		  ctr->returnCode == HD_STATUS_OK ? "OK" : "ERROR",
@@ -578,6 +538,8 @@ static void HDC_Cmd_TestUnitReady(SCSI_CTRLR *ctr)
 static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 {
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
+
+	ctr->respcnt = 0;
 
 	switch (ctr->opcode)
 	{
@@ -786,11 +748,17 @@ bool HDC_Init(void)
 {
 	int i;
 
-	memset(&AcsiBus, 0, sizeof(AcsiBus));
+	/* ACSI */
 	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
-
-	/* ACSI */
+	memset(&AcsiBus, 0, sizeof(AcsiBus));
+	AcsiBus.respbufsize = 512;
+	AcsiBus.resp = malloc(AcsiBus.respbufsize);
+	if (!AcsiBus.resp)
+	{
+		perror("HDC_Init");
+		return false;
+	}
 	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
 		if (!ConfigureParams.Acsi[i].bUseDevice)
@@ -805,6 +773,13 @@ bool HDC_Init(void)
 	/* SCSI */
 #if WITH_NCR5380
 	memset(&ScsiBus, 0, sizeof(ScsiBus));
+	ScsiBus.respbufsize = 512;
+	ScsiBus.resp = malloc(ScsiBus.respbufsize);
+	if (!ScsiBus.resp)
+	{
+		perror("HDC_Init");
+		return bAcsiEmuOn;
+	}
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
 		if (!ConfigureParams.Scsi[i].bUseDevice)
@@ -841,6 +816,8 @@ void HDC_UnInit(void)
 		AcsiBus.devs[i].image_file = NULL;
 		AcsiBus.devs[i].enabled = false;
 	}
+	free(AcsiBus.resp);
+	AcsiBus.resp = NULL;
 
 #if WITH_NCR5380
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
@@ -852,6 +829,8 @@ void HDC_UnInit(void)
 		ScsiBus.devs[i].image_file = NULL;
 		ScsiBus.devs[i].enabled = false;
 	}
+	free(ScsiBus.resp);
+	ScsiBus.resp = NULL;
 #endif
 
 	nNumDrives -= nAcsiPartitions;
@@ -873,16 +852,18 @@ void HDC_ResetCommandStatus(void)
 
 /**
  * Process HDC command packets (SCSI/ACSI) bytes.
+ * @return true if command has been executed.
  */
-static void HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
+static bool HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 {
+	bool bDidCmd = false;
 	SCSI_DEV *dev = &ctr->devs[ctr->target];
 
 	/* Abort if the target device is not enabled */
 	if (!dev->enabled)
 	{
 		ctr->returnCode = HD_STATUS_ERROR;
-		return;
+		return false;
 	}
 
 	/* Extract ACSI/SCSI opcode */
@@ -906,6 +887,7 @@ static void HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 		if (HDC_GetLUN(ctr) == 0 || ctr->opcode == HD_INQUIRY)
 		{
 			HDC_EmulateCommandPacket(ctr);
+			bDidCmd = true;
 		}
 		else
 		{
@@ -914,9 +896,14 @@ static void HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 			dev->nLastError = HD_REQSENS_INVLUN;
 			/* REQUEST SENSE is still handled for invalid LUNs */
 			if (ctr->opcode == HD_REQ_SENSE)
+			{
 				HDC_Cmd_RequestSense(ctr);
+				bDidCmd = true;
+			}
 			else
+			{
 				ctr->returnCode = HD_STATUS_ERROR;
+			}
 		}
 
 		ctr->byteCount = 0;
@@ -937,6 +924,8 @@ static void HDC_WriteCommandPacket(SCSI_CTRLR *ctr, Uint8 b)
 	{
 		ctr->returnCode = HD_STATUS_OK;
 	}
+
+	return bDidCmd;
 }
 
 /*---------------------------------------------------------------------*/
@@ -1063,7 +1052,19 @@ static void Acsi_WriteCommandByte(int addr, Uint8 byte)
 	else
 	{
 		/* Process normal command byte */
-		HDC_WriteCommandPacket(&AcsiBus, byte);
+		bool bDidCmd = HDC_WriteCommandPacket(&AcsiBus, byte);
+		if (bDidCmd && AcsiBus.returnCode == HD_STATUS_OK && AcsiBus.respcnt)
+		{
+			/* DMA transfer necessary */
+			Uint32 nDmaAddr = FDC_GetDMAAddress();
+			if (!STMemory_SafeCopy(nDmaAddr, AcsiBus.resp, AcsiBus.respcnt, "ACSI DMA"))
+			{
+				AcsiBus.bDmaError = true;
+				AcsiBus.returnCode = HD_STATUS_ERROR;
+			}
+			FDC_WriteDMAAddress(nDmaAddr + AcsiBus.respcnt);
+			AcsiBus.respcnt = 0;
+		}
 	}
 
 	if (AcsiBus.devs[AcsiBus.target].enabled)
