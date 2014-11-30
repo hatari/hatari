@@ -272,7 +272,11 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	{
 		uaecptr nextpc;
 		/* use the UAE function instead */
+#ifdef WINUAE_FOR_HATARI
+		m68k_dumpstate_file(debugOutput, &nextpc);
+#else
 		m68k_dumpstate(debugOutput, &nextpc);
+#endif
 		fflush(debugOutput);
 		return DEBUGGER_CMDDONE;
 	}

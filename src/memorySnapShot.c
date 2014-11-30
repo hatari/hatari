@@ -421,20 +421,41 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
  */
 #include <savestate.h>
 
+void save_u64(uae_u64 data)
+{
+	MemorySnapShot_Store(&data, 8);
+}
+
 void save_u32(uae_u32 data)
 {
 	MemorySnapShot_Store(&data, 4);
+//printf ("s32 %x\n", data);
 }
 
 void save_u16(uae_u16 data)
 {
 	MemorySnapShot_Store(&data, 2);
+//printf ("s16 %x\n", data);
+}
+
+void save_u8(uae_u8 data)
+{
+	MemorySnapShot_Store(&data, 1);
+//printf ("s8 %x\n", data);
+}
+
+uae_u64 restore_u64(void)
+{
+	uae_u64 data;
+	MemorySnapShot_Store(&data, 8);
+	return data;
 }
 
 uae_u32 restore_u32(void)
 {
 	uae_u32 data;
 	MemorySnapShot_Store(&data, 4);
+//printf ("r32 %x\n", data);
 	return data;
 }
 
@@ -442,5 +463,15 @@ uae_u16 restore_u16(void)
 {
 	uae_u16 data;
 	MemorySnapShot_Store(&data, 2);
+//printf ("r16 %x\n", data);
 	return data;
 }
+
+uae_u8 restore_u8(void)
+{
+	uae_u8 data;
+	MemorySnapShot_Store(&data, 1);
+//printf ("r8 %x\n", data);
+	return data;
+}
+

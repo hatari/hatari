@@ -19,7 +19,7 @@
 uae_u32 get_copper_address (int copno);
 
 extern int custom_init (void);
-extern void customreset (void);
+extern void custom_reset (bool hardreset, bool keyboardreset);
 extern int intlev (void);
 extern void dumpcustom (void);
 extern void uae_reset (int hardreset);

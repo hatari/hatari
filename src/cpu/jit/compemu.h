@@ -102,7 +102,7 @@ extern void compile_block(cpu_history* pc_hist, int blocklen, int totcyles);
 extern int check_for_cache_miss(void);
 
 
-#define scaled_cycles(x) (currprefs.m68k_speed==-1?(((x)/SCALE)?(((x)/SCALE<MAXCYCLES?((x)/SCALE):MAXCYCLES)):1):(x))
+#define scaled_cycles(x) (currprefs.m68k_speed<0?(((x)/SCALE)?(((x)/SCALE<MAXCYCLES?((x)/SCALE):MAXCYCLES)):1):(x))
 
 
 extern uae_u32 needed_flags;
@@ -446,10 +446,6 @@ DECLARE(fmovs_rm(FW r, MEMR m));
 DECLARE(fmovs_mr(MEMW m, FR r));
 DECLARE(fcuts_r(FRW r));
 DECLARE(fcut_r(FRW r));
-DECLARE(fmovl_ri(FW r, IMMS i));
-DECLARE(fmovs_ri(FW r, IMM i));
-DECLARE(fmov_ri(FW r, IMM i1, IMM i2));
-DECLARE(fmov_ext_ri(FW r, IMM i1, IMM i2, IMM i3));
 DECLARE(fmov_ext_mr(MEMW m, FR r));
 DECLARE(fmov_ext_rm(FW r, MEMR m));
 DECLARE(fmov_rr(FW d, FR s));

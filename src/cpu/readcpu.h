@@ -1,6 +1,5 @@
-
-#ifndef UAE_READCPU_H
-#define UAE_READCPU_H
+#ifndef READCPU_H
+#define READCPU_H
 
 ENUMDECL {
   Dreg, Areg, Aind, Aipi, Apdi, Ad16, Ad8r,
@@ -35,7 +34,7 @@ ENUMDECL {
     i_MMUOP030, i_PFLUSHN, i_PFLUSH, i_PFLUSHAN, i_PFLUSHA,
     i_PLPAR, i_PLPAW, i_PTESTR, i_PTESTW,
     i_LPSTOP,
-    MAX_OPCODE_FAMILY				/* should always be last of the list */
+	MAX_OPCODE_FAMILY
 } ENUMNAME (instrmnem);
 
 struct mnemolookup {
@@ -47,7 +46,7 @@ struct mnemolookup {
 extern struct mnemolookup lookuptab[];
 
 ENUMDECL {
-    sz_byte, sz_word, sz_long
+    sz_byte, sz_word, sz_long, sz_single, sz_double, sz_extended, sz_packed
 } ENUMNAME (wordsizes);
 
 ENUMDECL {
@@ -70,6 +69,7 @@ struct instr_def {
     uae_u8 bitpos[16];
     unsigned int mask;
     int cpulevel;
+	int unimpcpulevel;
     int plevel;
     struct {
 	unsigned int flaguse:3;
@@ -77,6 +77,8 @@ struct instr_def {
     } flaginfo[5];
     uae_u8 sduse;
     const TCHAR *opcstr;
+	// 68020/030 timing
+	int head, tail, clocks, fetchmode;
 };
 
 extern struct instr_def defs68k[];
@@ -94,15 +96,17 @@ extern struct instr {
     unsigned int cc:4;
     unsigned int plev:2;
     unsigned int size:2;
+	unsigned int unsized:1;
     unsigned int smode:5;
     unsigned int stype:3;
     unsigned int dmode:5;
     unsigned int suse:1;
     unsigned int duse:1;
     unsigned int unused1:1;
-    unsigned int clev:3;
+    unsigned int clev:3, unimpclev:3;
     unsigned int isjmp:1;
-    unsigned int unused2:4;
+    unsigned int unused2:1;
+	char head, tail, clocks, fetchmode;
 } *table68k;
 
 extern void read_table68k (void);
@@ -110,5 +114,5 @@ extern void do_merges (void);
 extern int get_no_mismatches (void);
 extern int nr_cpuop_funcs;
 
-#endif
+#endif /* READCPU_H */
 

@@ -53,47 +53,126 @@ static uae_u32 TTmem_mask;
 #define IdeMem_mask  (IdeMem_size - 1)
 #define IOmem_mask  (IOmem_size - 1)
 
-
-#ifdef SAVE_MEMORY_BANKS
-addrbank *mem_banks[65536];
-#else
-addrbank mem_banks[65536];
-#endif
-
-#ifdef NO_INLINE_MEMORY_ACCESS
-__inline__ uae_u32 longget (uaecptr addr)
-{
-    return call_mem_get_func (get_mem_bank (addr).lget, addr);
-}
-__inline__ uae_u32 wordget (uaecptr addr)
-{
-    return call_mem_get_func (get_mem_bank (addr).wget, addr);
-}
-__inline__ uae_u32 byteget (uaecptr addr)
-{
-    return call_mem_get_func (get_mem_bank (addr).bget, addr);
-}
-__inline__ void longput (uaecptr addr, uae_u32 l)
-{
-    call_mem_put_func (get_mem_bank (addr).lput, addr, l);
-}
-__inline__ void wordput (uaecptr addr, uae_u32 w)
-{
-    call_mem_put_func (get_mem_bank (addr).wput, addr, w);
-}
-__inline__ void byteput (uaecptr addr, uae_u32 b)
-{
-    call_mem_put_func (get_mem_bank (addr).bput, addr, b);
-}
-#endif
-
-
 /* Some prototypes: */
 static int STmem_check (uaecptr addr, uae_u32 size) REGPARAM;
 static uae_u8 *STmem_xlate (uaecptr addr) REGPARAM;
 
+
+
+#ifdef WINUAE_FOR_HATARI
+#undef NATMEM_OFFSET
+#endif
+
+#ifdef NATMEM_OFFSET
+bool canbang;
+int candirect = -1;
+#endif
+
+#ifdef JIT
+/* Set by each memory handler that does not simply access real memory. */
+int special_mem;
+#endif
+
+#ifdef NATMEM_OFFSET
+static bool isdirectjit (void)
+{
+	return currprefs.cachesize && !currprefs.comptrustbyte;
+}
+
+static bool canjit (void)
+{
+	if (currprefs.cpu_model < 68020 || currprefs.address_space_24)
+		return false;
+	return true;
+}
+static bool needmman (void)
+{
+	if (!currprefs.jit_direct_compatible_memory)
+		return false;
+#ifdef _WIN32
+	return true;
+#endif
+	if (canjit ())
+		return true;
+	return false;
+}
+
+static void nocanbang (void)
+{
+	canbang = 0;
+}
+#endif
+
 uae_u8 ce_banktype[65536];
 uae_u8 ce_cachable[65536];
+
+
+/* The address space setting used during the last reset.  */
+static bool last_address_space_24;
+
+addrbank *mem_banks[MEMORY_BANKS];
+
+/* This has two functions. It either holds a host address that, when added
+to the 68k address, gives the host address corresponding to that 68k
+address (in which case the value in this array is even), OR it holds the
+same value as mem_banks, for those banks that have baseaddr==0. In that
+case, bit 0 is set (the memory access routines will take care of it).  */
+
+uae_u8 *baseaddr[MEMORY_BANKS];
+
+#ifdef NO_INLINE_MEMORY_ACCESS
+__inline__ uae_u32 longget (uaecptr addr)
+{
+	return call_mem_get_func (get_mem_bank (addr).lget, addr);
+}
+__inline__ uae_u32 wordget (uaecptr addr)
+{
+	return call_mem_get_func (get_mem_bank (addr).wget, addr);
+}
+__inline__ uae_u32 byteget (uaecptr addr)
+{
+	return call_mem_get_func (get_mem_bank (addr).bget, addr);
+}
+__inline__ void longput (uaecptr addr, uae_u32 l)
+{
+	call_mem_put_func (get_mem_bank (addr).lput, addr, l);
+}
+__inline__ void wordput (uaecptr addr, uae_u32 w)
+{
+	call_mem_put_func (get_mem_bank (addr).wput, addr, w);
+}
+__inline__ void byteput (uaecptr addr, uae_u32 b)
+{
+	call_mem_put_func (get_mem_bank (addr).bput, addr, b);
+}
+#endif
+
+int addr_valid (const TCHAR *txt, uaecptr addr, uae_u32 len)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (ab == 0 || !(ab->flags & (ABFLAG_RAM | ABFLAG_ROM)) || addr < 0x100 || len < 0 || len > 16777215 || !valid_address (addr, len)) {
+		write_log (_T("corrupt %s pointer %x (%d) detected!\n"), txt, addr, len);
+		return 0;
+	}
+	return 1;
+}
+
+static int illegal_count;
+/* A dummy bank that only contains zeros */
+
+static uae_u32 REGPARAM3 dummy_lget (uaecptr) REGPARAM;
+static uae_u32 REGPARAM3 dummy_wget (uaecptr) REGPARAM;
+static uae_u32 REGPARAM3 dummy_bget (uaecptr) REGPARAM;
+static void REGPARAM3 dummy_lput (uaecptr, uae_u32) REGPARAM;
+static void REGPARAM3 dummy_wput (uaecptr, uae_u32) REGPARAM;
+static void REGPARAM3 dummy_bput (uaecptr, uae_u32) REGPARAM;
+static int REGPARAM3 dummy_check (uaecptr addr, uae_u32 size) REGPARAM;
+
+#define	MAX_ILG 200
+#define NONEXISTINGDATA 0
+//#define NONEXISTINGDATA 0xffffffff
+
+
 
 
 static void print_illegal_counted(const char *txt, uaecptr addr)
@@ -649,7 +728,7 @@ static addrbank TTmem_bank =
     TTmem_lget, TTmem_wget, TTmem_bget,
     TTmem_lput, TTmem_wput, TTmem_bput,
     TTmem_xlate, TTmem_check, NULL, "TT memory",
-    TTmem_lget, TTmem_wget, ABFLAG_RAM
+    TTmem_lget, TTmem_wget, ABFLAG_RAM			/* NP TODO : use ABFLAG_RAM_TT for non DMA RAM */
 };
 
 static addrbank ROMmem_bank =
@@ -665,7 +744,7 @@ static addrbank IdeMem_bank =
     Ide_Mem_lget, Ide_Mem_wget, Ide_Mem_bget,
     Ide_Mem_lput, Ide_Mem_wput, Ide_Mem_bput,
     IdeMem_xlate, IdeMem_check, NULL, "IDE memory",
-    Ide_Mem_lget, Ide_Mem_wget, ABFLAG_RAM
+    Ide_Mem_lget, Ide_Mem_wget, ABFLAG_IO
 };
 
 static addrbank IOmem_bank =
@@ -673,16 +752,208 @@ static addrbank IOmem_bank =
     IoMem_lget, IoMem_wget, IoMem_bget,
     IoMem_lput, IoMem_wput, IoMem_bput,
     IOmem_xlate, IOmem_check, NULL, "IO memory",
-    IoMem_lget, IoMem_wget, ABFLAG_RAM
+    IoMem_lget, IoMem_wget, ABFLAG_IO
 };
 
 
+#ifdef WINUAE_FOR_HATARI
+#undef NATMEM_OFFSET			/* Don't use shm in Hatari */
+#endif
+
+#ifndef NATMEM_OFFSET
+//extern uae_u8 *natmem_offset, *natmem_offset_end;
+
+uae_u8 *mapped_malloc (size_t s, const TCHAR *file)
+{
+	return xmalloc (uae_u8, s);
+}
+
+void mapped_free (uae_u8 *p)
+{
+	xfree (p);
+}
+
+#else
+
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#include <sys/mman.h>
+
+shmpiece *shm_start;
+
+static void dumplist (void)
+{
+	shmpiece *x = shm_start;
+	write_log (_T("Start Dump:\n"));
+	while (x) {
+		write_log (_T("this=%p,Native %p,id %d,prev=%p,next=%p,size=0x%08x\n"),
+			x, x->native_address, x->id, x->prev, x->next, x->size);
+		x = x->next;
+	}
+	write_log (_T("End Dump:\n"));
+}
+
+static shmpiece *find_shmpiece (uae_u8 *base, bool safe)
+{
+	shmpiece *x = shm_start;
+
+	while (x && x->native_address != base)
+		x = x->next;
+	if (!x) {
+#ifndef WINUAE_FOR_HATARI
+		if (safe || bogomem_aliasing)
+#else
+		if (safe)
+#endif
+			return 0;
+		write_log (_T("NATMEM: Failure to find mapping at %08X, %p\n"), base - NATMEM_OFFSET, base);
+		nocanbang ();
+		return 0;
+	}
+	return x;
+}
+
+static void delete_shmmaps (uae_u32 start, uae_u32 size)
+{
+	if (!needmman ())
+		return;
+
+	while (size) {
+		uae_u8 *base = mem_banks[bankindex (start)]->baseaddr;
+		if (base) {
+			shmpiece *x;
+			//base = ((uae_u8*)NATMEM_OFFSET)+start;
+
+			x = find_shmpiece (base, true);
+			if (!x)
+				return;
+
+			if (x->size > size) {
+				if (isdirectjit ())
+					write_log (_T("NATMEM WARNING: size mismatch mapping at %08x (size %08x, delsize %08x)\n"),start,x->size,size);
+				size = x->size;
+			}
+#if 0
+			dumplist ();
+			nocanbang ();
+			return;
+		}
+#endif
+		shmdt (x->native_address);
+		size -= x->size;
+		start += x->size;
+		if (x->next)
+			x->next->prev = x->prev;	/* remove this one from the list */
+		if (x->prev)
+			x->prev->next = x->next;
+		else
+			shm_start = x->next;
+		xfree (x);
+	} else {
+		size -= 0x10000;
+		start += 0x10000;
+	}
+}
+}
+
+static void add_shmmaps (uae_u32 start, addrbank *what)
+{
+	shmpiece *x = shm_start;
+	shmpiece *y;
+	uae_u8 *base = what->baseaddr;
+
+	if (!needmman ())
+		return;
+
+	if (!base)
+		return;
+
+	x = find_shmpiece (base, false);
+	if (!x)
+		return;
+
+	y = xmalloc (shmpiece, 1);
+	*y = *x;
+	base = ((uae_u8 *) NATMEM_OFFSET) + start;
+	y->native_address = (uae_u8*)shmat (y->id, base, 0);
+	if (y->native_address == (void *) -1) {
+		write_log (_T("NATMEM: Failure to map existing at %08x (%p)\n"), start, base);
+		dumplist ();
+		nocanbang ();
+		return;
+	}
+	y->next = shm_start;
+	y->prev = NULL;
+	if (y->next)
+		y->next->prev = y;
+	shm_start = y;
+}
+
+uae_u8 *mapped_malloc (size_t s, const TCHAR *file)
+{
+	int id;
+	void *answer;
+	shmpiece *x;
+	static int recurse;
+
+	if (!needmman ()) {
+		nocanbang ();
+		return xcalloc (uae_u8, s + 4);
+	}
+
+	id = shmget (IPC_PRIVATE, s, 0x1ff, file);
+	if (id == -1) {
+		uae_u8 *p;
+		nocanbang ();
+		if (recurse)
+			return NULL;
+		recurse++;
+		p = mapped_malloc (s, file);
+		recurse--;
+		return p;
+	}
+	answer = shmat (id, 0, 0);
+	shmctl (id, IPC_RMID, NULL);
+	if (answer != (void *) -1) {
+		x = xmalloc (shmpiece, 1);
+		x->native_address = (uae_u8*)answer;
+		x->id = id;
+		x->size = s;
+		x->name = file;
+		x->next = shm_start;
+		x->prev = NULL;
+		if (x->next)
+			x->next->prev = x;
+		shm_start = x;
+		return (uae_u8*)answer;
+	}
+	if (recurse)
+		return NULL;
+	nocanbang ();
+	recurse++;
+	uae_u8 *r =  mapped_malloc (s, file);
+	recurse--;
+	return r;
+}
+
+#endif
 
 static void init_mem_banks (void)
 {
-    int i;
-    for (i = 0; i < 65536; i++)
-	put_mem_bank (i<<16, &dummy_bank);
+	int i;
+
+	for (i = 0; i < MEMORY_BANKS; i++)
+		put_mem_bank (i << 16, &dummy_bank, 0);
+#ifdef NATMEM_OFFSET
+	delete_shmmaps (0, 0xFFFF0000);
+#endif
+}
+
+
+static void fill_ce_banks (void)
+{
+	/* NP : TODO */
 }
 
 
@@ -691,6 +962,8 @@ static void init_mem_banks (void)
  */
 void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMemStart)
 {
+    last_address_space_24 = currprefs.address_space_24;
+
     STmem_size = (nNewSTMemSize + 65535) & 0xFFFF0000;
     TTmem_size = (nNewTTMemSize + 65535) & 0xFFFF0000;
 
@@ -736,19 +1009,19 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     init_mem_banks();
 
     /* Map the ST system RAM: */
-    map_banks(&SysMem_bank, 0x00, 1);
+    map_banks(&SysMem_bank, 0x00, 1, 0);
     /* Between STRamEnd and 4MB barrier, there is void space: */
-    map_banks(&VoidMem_bank, 0x08, 0x38);
+    map_banks(&VoidMem_bank, 0x08, 0x38, 0);
     /* Space between 4MB barrier and TOS ROM causes a bus error: */
-    map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0);
+    map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0, 0);
     /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
-    map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1);
+    map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1, 0);
 
     /* TT memory isn't really supported yet */
     if (TTmem_size > 0)
 	TTmemory = (uae_u8 *)malloc (TTmem_size);
     if (TTmemory != 0)
-	map_banks (&TTmem_bank, TTmem_start >> 16, TTmem_size >> 16);
+	map_banks (&TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0);
     else
 	TTmem_size = 0;
     TTmem_mask = TTmem_size - 1;
@@ -757,13 +1030,13 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Depending on which ROM version we are using, the other ROM region is illegal! */
     if(nNewRomMemStart == 0xFC0000)
     {
-        map_banks(&ROMmem_bank, 0xFC0000 >> 16, 0x3);
-        map_banks(&BusErrMem_bank, 0xE00000 >> 16, 0x10);
+        map_banks(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0);
+        map_banks(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0);
     }
     else if(nNewRomMemStart == 0xE00000)
     {
-        map_banks(&ROMmem_bank, 0xE00000 >> 16, 0x10);
-        map_banks(&BusErrMem_bank, 0xFC0000 >> 16, 0x3);
+        map_banks(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0);
+        map_banks(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0);
     }
     else
     {
@@ -771,16 +1044,16 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     }
 
     /* Cartridge memory: */
-    map_banks(&ROMmem_bank, 0xFA0000 >> 16, 0x2);
+    map_banks(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0);
 
     /* IO memory: */
-    map_banks(&IOmem_bank, IOmem_start>>16, 0x1);
+    map_banks(&IOmem_bank, IOmem_start>>16, 0x1, 0);
 
     /* IDE controller memory region: */
-    map_banks(&IdeMem_bank, IdeMem_start >> 16, 0x1);  /* IDE controller on the Falcon */
+    map_banks(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0);  /* IDE controller on the Falcon */
 
     /* Illegal memory regions cause a bus error on the ST: */
-    map_banks(&BusErrMem_bank, 0xF10000 >> 16, 0x9);
+    map_banks(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0);
 
     illegal_count = 50;
 }
@@ -813,23 +1086,92 @@ void memory_uninit (void)
 }
 
 
-void map_banks (addrbank *bank, int start, int size)
+static void map_banks2 (addrbank *bank, int start, int size, int realsize, int quick)
 {
-    int bnr;
-    unsigned long int hioffs = 0, endhioffs = 0x100;
+	int bnr, old;
+	unsigned long int hioffs = 0, endhioffs = 0x100;
+	addrbank *orgbank = bank;
+	uae_u32 realstart = start;
 
-    if (start >= 0x100) {
-	for (bnr = start; bnr < start + size; bnr++)
-	    put_mem_bank (bnr << 16, bank);
-	return;
-    }
-    /* Some ROMs apparently require a 24 bit address space... */
-    if (currprefs.address_space_24)
-	endhioffs = 0x10000;
-    for (hioffs = 0; hioffs < endhioffs; hioffs += 0x100)
-	for (bnr = start; bnr < start+size; bnr++)
-	    put_mem_bank ((bnr + hioffs) << 16, bank);
+#ifndef WINUAE_FOR_HATARI
+	if (!quick)
+		old = debug_bankchange (-1);
+#endif
+	flush_icache (0, 3); /* Sure don't want to keep any old mappings around! */
+#ifdef NATMEM_OFFSET
+	if (!quick)
+		delete_shmmaps (start << 16, size << 16);
+#endif
+
+	if (!realsize)
+		realsize = size << 16;
+
+	if ((size << 16) < realsize) {
+		write_log (_T("Broken mapping, size=%x, realsize=%x\nStart is %x\n"),
+			size, realsize, start);
+	}
+
+#ifndef ADDRESS_SPACE_24BIT
+	if (start >= 0x100) {
+		int real_left = 0;
+		for (bnr = start; bnr < start + size; bnr++) {
+			if (!real_left) {
+				realstart = bnr;
+				real_left = realsize >> 16;
+#ifdef NATMEM_OFFSET
+				if (!quick)
+					add_shmmaps (realstart << 16, bank);
+#endif
+			}
+			put_mem_bank (bnr << 16, bank, realstart << 16);
+			real_left--;
+		}
+#ifndef WINUAE_FOR_HATARI
+		if (!quick)
+			debug_bankchange (old);
+#endif
+		return;
+	}
+#endif
+	if (last_address_space_24)
+		endhioffs = 0x10000;
+#ifdef ADDRESS_SPACE_24BIT
+	endhioffs = 0x100;
+#endif
+	for (hioffs = 0; hioffs < endhioffs; hioffs += 0x100) {
+		int real_left = 0;
+		for (bnr = start; bnr < start + size; bnr++) {
+			if (!real_left) {
+				realstart = bnr + hioffs;
+				real_left = realsize >> 16;
+#ifdef NATMEM_OFFSET
+				if (!quick)
+					add_shmmaps (realstart << 16, bank);
+#endif
+			}
+			put_mem_bank ((bnr + hioffs) << 16, bank, realstart << 16);
+			real_left--;
+		}
+	}
+#ifndef WINUAE_FOR_HATARI
+	if (!quick)
+		debug_bankchange (old);
+#endif
+	fill_ce_banks ();
 }
+
+void map_banks (addrbank *bank, int start, int size, int realsize)
+{
+	map_banks2 (bank, start, size, realsize, 0);
+}
+void map_banks_quick (addrbank *bank, int start, int size, int realsize)
+{
+	map_banks2 (bank, start, size, realsize, 1);
+}
+
+
+
+
 
 void memory_hardreset (void)
 {

@@ -20,6 +20,10 @@
 /* It results in ' #if 0 ' code in newcpu.c code */
 #define AMIGA_ONLY 0
 
+
+#define WINUAE_FOR_HATARI
+
+
 /* this defione is here for newcpu.c compatibility.
  * In WinUae, it's defined in debug.h" */
 #ifndef MAX_LINEWIDTH
@@ -66,9 +70,14 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define _tcsncpy strncpy
 #define _tcscat strcat
 #define _stprintf sprintf
+#define strnicmp strncasecmp
+#define _T(x) x
 
 #define _vsntprintf printf
 
 #define f_out fprintf
+#define console_out printf
+#define console_out_f printf
+#define error_log printf
 
 #endif

@@ -24,8 +24,8 @@ if(CMAKE_CROSSCOMPILING)
 		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gencpu.c
 			${CMAKE_CURRENT_SOURCE_DIR}/readcpu.c cpudefs.c)
 
-	add_custom_command(OUTPUT cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_12.c
-				cpuemu_20.c cpuemu_21.c cpuemu_31.c cpuemu_32.c
+	add_custom_command(OUTPUT cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_13.c
+				cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_31.c cpuemu_32.c cpuemu_33.c
 		COMMAND ${CMAKE_CURRENT_BINARY_DIR}/gencpu
 		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gencpu)
 
@@ -41,21 +41,22 @@ else()	# Rules for normal build follow
 	add_executable(gencpu gencpu.c readcpu.c cpudefs.c)
 
 	get_target_property(GENCPU_EXE gencpu LOCATION)
-	add_custom_command(OUTPUT cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_12.c
-				cpuemu_20.c cpuemu_21.c cpuemu_31.c cpuemu_32.c
+	add_custom_command(OUTPUT cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_13.c
+				cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_31.c cpuemu_32.c cpuemu_33.c
 		COMMAND ${GENCPU_EXE}  DEPENDS gencpu)
 
 endif(CMAKE_CROSSCOMPILING)
 
 
-# Generated cpuemu.c contains a lot of warnings we don't really care about...
+# Generated cpuemu_xx.c contains a lot of warnings we don't really care about...
 if(CMAKE_COMPILER_IS_GNUCC)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare -Wno-shadow")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-unused-label")
+set_source_files_properties( cpuemu_0.c cpuemu_11.c cpuemu_13.c cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_31.c
+	cpuemu_32.c cpuemu_33.c cpudefs.c cpustbl.c
+	PROPERTIES COMPILE_FLAGS "-Wno-sign-compare -Wno-shadow -Wno-unused-variable -Wno-unused-but-set-variable" )
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_library(UaeCpu
-	cpuemu_0.c cpuemu_11.c cpuemu_12.c cpuemu_20.c cpuemu_21.c cpuemu_31.c
-	cpuemu_32.c cpudefs.c cpummu.c cpummu030.c cpustbl.c custom.c
-	hatari-glue.c memory.c newcpu.c readcpu.c fpp.c
+	cpuemu_0.c cpuemu_11.c cpuemu_13.c cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_31.c
+	cpuemu_32.c cpuemu_33.c cpudefs.c cpummu.c cpummu030.c cpustbl.c custom.c
+	debug.c events.c hatari-glue.c memory.c newcpu_common.c readcpu.c fpp.c newcpu.c
 	)

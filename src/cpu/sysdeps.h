@@ -152,7 +152,7 @@ struct utimbuf
 #define memcpy q_memcpy
 #define memset q_memset
 #define strdup my_strdup
-#define random rand
+#define random uaerand
 #define creat(x,y) open("T:creat",O_CREAT|O_RDWR|O_TRUNC,777)
 extern void* q_memset(void*,int,size_t);
 extern void* q_memcpy(void*,const void*,size_t);
@@ -225,6 +225,13 @@ typedef uae_u32 uaecptr;
 #define uae_u64 unsigned long;
 #define VAL64(a) (a ## l)
 #define UVAL64(a) (a ## ul)
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
 #endif
 
 #ifdef HAVE_STRDUP
@@ -473,12 +480,12 @@ extern void write_dlog (const TCHAR *, ...);
 extern void flush_log (void);
 extern void close_console (void);
 extern void reopen_console (void);
-extern void console_out (const TCHAR *);
-extern void console_out_f (const TCHAR *, ...);
+//extern void console_out (const TCHAR *);
+//extern void console_out_f (const TCHAR *, ...);
 extern void console_flush (void);
 extern int console_get (TCHAR *, int);
 extern TCHAR console_getch (void);
-/*extern void f_out (void *, const TCHAR *, ...);*/
+//extern void f_out (void *, const TCHAR *, ...);
 extern TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...);
 extern void gui_message (const TCHAR *,...);
 extern int gui_message_multibutton (int flags, const TCHAR *format,...);
@@ -511,9 +518,16 @@ extern void log_close (FILE *f);
 /* Every Amiga hardware clock cycle takes this many "virtual" cycles.  This
    used to be hardcoded as 1, but using higher values allows us to time some
    stuff more precisely.
+   512 is the official value from now on - it can't change, unless we want
+   _another_ config option "finegrain2_m68k_speed".
+
    We define this value here rather than in events.h so that gencpu.c sees
    it.  */
-#define CYCLE_UNIT 2
+#define CYCLE_UNIT 512
+
+/* This one is used by cfgfile.c.  We could reduce the CYCLE_UNIT back to 1,
+   I'm not 100% sure this code is bug free yet.  */
+#define OFFICIAL_CYCLE_UNIT 512
 
 /*
  * You can specify numbers from 0 to 5 here. It is possible that higher

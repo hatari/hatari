@@ -220,15 +220,20 @@ void M68000_Init(void)
 void M68000_Reset(bool bCold)
 {
 #if ENABLE_WINUAE_CPU
+	int spcFlags = regs.spcflags & (SPCFLAG_MODE_CHANGE | SPCFLAG_BRK);
 	if (bCold)
 	{
-		/* Clear registers, but we need to keep SPCFLAG_MODE_CHANGE and SPCFLAG_BRK unchanged */
-		int spcFlags = regs.spcflags & (SPCFLAG_MODE_CHANGE | SPCFLAG_BRK);
 		memset(&regs, 0, sizeof(regs));
-		regs.spcflags = spcFlags;
 	}
 	/* Now reset the WINUAE CPU core */
 	m68k_reset(bCold);
+
+        /* On Hatari, when we change cpu settings, we call m68k_reset() during m68k_run_xx(), */
+	/* so we must keep the value of bits SPCFLAG_MODE_CHANGE and SPCFLAG_BRK to exit m68k_run_xx() */
+	/* and choose a new m68k_run_xx() function */
+	/* [NP] TODO : don't force a reset when changing cpu settings and use common code with WinUAE ? */
+        regs.spcflags |= spcFlags;
+
 #else /* UAE CPU core */
 	if (bCold)
 	{
@@ -266,6 +271,22 @@ void M68000_Start(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Check whether CPU settings have been changed.
+ * Possible values for WinUAE :
+ *	cpu_model : 68000 , 68010, 68020, 68030, 68040, 68060
+ *	cpu_level : not used anymore
+ *	cpu_compatible : 0/false (no prefetch for 68000/20/30)  1/true (prefetch opcode for 68000/20/30)
+ *	cpu_cycle_exact : 0/false   1/true (most accurate, implies cpu_compatible)
+ *	address_space_24 : 1 (68000/10 and 68030 LC for Falcon), 0 (68020/30/40/60)
+ *	fpu_model : 0, 68881 (external), 68882 (external), 68040 (cpu) , 68060 (cpu)
+ *	fpu_strict : true/false (more accurate rounding)
+ *	mmu_model : 0, 68030, 68040, 68060
+ *
+ *	m68k_speed : -1=don't adjust cycle  >=0 use m68k_speed_throttle to precisely adjust cycles
+ *	m68k_speed_throttle : if not 0, used to set cycles_mult. In Hatari, set it to 0
+ *	cpu_frequency : in CE mode, fine control of cpu freq, set it to freq/2. Not used in Hatari, set it to 0.
+ *	cpu_clock_multiplier : used to speed up/slow down clock by multiple of 2 in CE mode. In Hatari
+ *			we use nCpuFreqShift, so this should always be set to 2<<8 = 512 to get the same
+ *			cpucycleunit as in non CE mode.
  */
 void M68000_CheckCpuSettings(void)
 {
@@ -305,8 +326,19 @@ void M68000_CheckCpuSettings(void)
 	changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
-	changed_prefs.mmu_model = ConfigureParams.System.bMMU;
+
+	/* Update the MMU model by taking the same value as CPU model */
+	/* MMU is only supported for CPU >=68030, this is later checked in custom.c fixup_cpu() */
+	if ( !ConfigureParams.System.bMMU )
+		changed_prefs.mmu_model = 0;				/* MMU disabled */
+	else
+		changed_prefs.mmu_model = changed_prefs.cpu_model;	/* MMU enabled */
+
+	/* Set cpu speed to default values (only use in WinUAE, not in Hatari) */
+	currprefs.m68k_speed = changed_prefs.m68k_speed = -1;
+	currprefs.cpu_clock_multiplier = changed_prefs.cpu_clock_multiplier = 2 << 8;
 #endif
+
 	if (table68k)
 		check_prefs_changed_cpu();
 }
@@ -318,6 +350,42 @@ void M68000_CheckCpuSettings(void)
  */
 void M68000_MemorySnapShot_Capture(bool bSave)
 {
+#if ENABLE_WINUAE_CPU
+	int len;
+	uae_u8 chunk[ 1000 ];
+
+	if (bSave)
+	{
+		//m68k_dumpstate_file(stderr, NULL);
+		save_cpu (&len,chunk);
+		//printf ( "save cpu done\n"  );
+		save_cpu_extra (&len,chunk);
+		//printf ( "save cpux done\n" );
+		save_fpu (&len,chunk);
+		//printf ( "save fpu done\n"  );
+		save_mmu (&len,chunk);
+		//printf ( "save mmu done\n"  );
+		//m68k_dumpstate_file(stderr, NULL);
+	}
+	else
+	{
+		//m68k_dumpstate_file(stderr, NULL);
+		restore_cpu (chunk);
+		//printf ( "restore cpu done\n" );
+		restore_cpu_extra (chunk);
+		//printf ( "restore cpux done\n" );
+		restore_fpu (chunk);
+		//printf ( "restore fpu done\n"  );
+		restore_mmu (chunk);
+		//printf ( "restore mmu done\n"  );
+
+		restore_cpu_finish ();
+		if ( regs.s )	regs.regs[15] = regs.isp;
+		else		regs.regs[15] = regs.usp;
+		//m68k_dumpstate_file(stderr, NULL);
+	}
+
+#else /* UAE CPU core */
 	Uint32 savepc;
 
 	/* For the UAE CPU core: */
@@ -371,13 +439,8 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&regs.dfc, sizeof(regs.dfc));            /* DFC */
 	MemorySnapShot_Store(&regs.sfc, sizeof(regs.sfc));            /* SFC */
 	MemorySnapShot_Store(&regs.vbr, sizeof(regs.vbr));            /* VBR */
-#if ENABLE_WINUAE_CPU
-	MemorySnapShot_Store(&regs.caar, sizeof(regs.caar));          /* CAAR */
-	MemorySnapShot_Store(&regs.cacr, sizeof(regs.cacr));          /* CACR */
-#else
 	MemorySnapShot_Store(&caar, sizeof(caar));                    /* CAAR */
 	MemorySnapShot_Store(&cacr, sizeof(cacr));                    /* CACR */
-#endif
 	MemorySnapShot_Store(&regs.msp, sizeof(regs.msp));            /* MSP */
 
 	if (!bSave)
@@ -397,6 +460,7 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 		save_fpu();
 	else
 		restore_fpu();
+#endif
 }
 
 
@@ -404,15 +468,9 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 /**
  * BUSERROR - Access outside valid memory range.
  * Use bRead = 0 for write errors and bRead = 1 for read errors!
- * Only accesses made by the CPU will trigger a bus error, not thoses made
- * by the blitter.
  */
 void M68000_BusError(Uint32 addr, bool bRead)
 {
-	/* When read or write access is made by the blitter, there's no bus error */
-	if ( BusMode == BUS_MODE_BLITTER )
-		return;
-
 	/* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
 	// BusErrorPC = M68000_GetPC();		/* [NP] We set BusErrorPC in m68k_run_1 */
 
@@ -422,8 +480,8 @@ void M68000_BusError(Uint32 addr, bool bRead)
 	    && addr != 0xfffa42)
 	{
 		/* Print bus error message */
-		fprintf(stderr, "M68000 Bus Error %s at address $%x pc=%x\n",
-			bRead ? "reading" : "writing", addr, BusErrorPC);
+		fprintf(stderr, "M68000 Bus Error %s at address $%x.\n",
+			bRead ? "reading" : "writing", addr);
 	}
 
 	if ((regs.spcflags & SPCFLAG_BUSERROR) == 0)	/* [NP] Check that the opcode has not already generated a read bus error */
@@ -473,7 +531,11 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 
 		/* 68k exceptions are handled by Exception() of the UAE CPU core */
 #if ENABLE_WINUAE_CPU
+#ifdef WINUAE_FOR_HATARI
+		Exception(exceptionNr, ExceptionSource);
+#else
 		Exception(exceptionNr, m68k_getpc(), ExceptionSource);
+#endif
 #else
 #ifdef UAE_NEWCPU_H
 		Exception(exceptionNr, m68k_getpc(), ExceptionSource);

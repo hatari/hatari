@@ -2545,7 +2545,11 @@ Uint32 Disasm_GetNextPC(Uint32 pc)
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
 	if (ConfigureParams.Debugger.bDisasmUAE)
+#ifdef WINUAE_FOR_HATARI
+		m68k_disasm_file (f, addr, nextpc, cnt);
+#else
 		m68k_disasm (f, addr, nextpc, cnt);
+#endif
 	else
 		Disass68k_loop (f, addr, nextpc, cnt);
 }

@@ -29,6 +29,7 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__
 #include "fdc.h"
 
 #include "sysdeps.h"
+#include "options_cpu.h"
 #include "maccess.h"
 #include "memory.h"
 #include "m68000.h"
@@ -123,7 +124,12 @@ int Init680x0(void)
 	currprefs.cpu_cycle_exact = changed_prefs.cpu_cycle_exact = ConfigureParams.System.bCycleExactCpu;
 	currprefs.fpu_model = changed_prefs.fpu_model = ConfigureParams.System.n_FPUType;
 	currprefs.fpu_strict = changed_prefs.fpu_strict = ConfigureParams.System.bCompatibleFPU;
-	currprefs.mmu_model = changed_prefs.mmu_model = ConfigureParams.System.bMMU;
+
+	/* Set the MMU model by taking the same value as CPU model */
+	/* MMU is only supported for CPU >=68030 */
+	currprefs.mmu_model = changed_prefs.mmu_model = 0;				/* MMU disabled by default */
+	if ( ( ConfigureParams.System.bMMU ) && ( currprefs.cpu_model >= 68030 ) )
+		currprefs.mmu_model = changed_prefs.mmu_model = currprefs.cpu_model;	/* MMU enabled */
 
 	init_m68k();
 
@@ -148,7 +154,7 @@ void Exit680x0(void)
  * The GEMDOS vector (#$84) is setup and we also initialize the connected
  * drive mask and Line-A  variables (for an extended VDI resolution) from here.
  */
-unsigned long OpCode_SysInit(uae_u32 opcode)
+uae_u32 OpCode_SysInit(uae_u32 opcode)
 {
 	/* Add any drives mapped by TOS in the interim */
 	ConnectedDriveMask |= STMemory_ReadLong(0x4c2);
@@ -166,9 +172,10 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
 		VDI_LineA(regs.regs[0], regs.regs[9]);
 	}
 
-	m68k_incpc(2);
-	regs.ir = regs.irc;
-	get_word_prefetch(2);
+//	m68k_incpc(2);
+//	regs.ir = regs.irc;
+//	get_word_prefetch(2);
+	(*cpufunctbl[0X4E71])(0x4E71);
 
 	return 4 * CYCLE_UNIT / 2;
 }
@@ -178,13 +185,14 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
  * Intercept GEMDOS calls.
  * Used for GEMDOS HD emulation (see gemdos.c).
  */
-unsigned long OpCode_GemDos(uae_u32 opcode)
+uae_u32 OpCode_GemDos(uae_u32 opcode)
 {
 	GemDOS_OpCode();    /* handler code in gemdos.c */
 
-	m68k_incpc(2);
-	regs.ir = regs.irc;
-	get_word_prefetch(2);
+//	m68k_incpc(2);
+//	regs.ir = regs.irc;
+//	get_word_prefetch(2);
+	(*cpufunctbl[0X4E71])(0x4E71);
 
 	return 4 * CYCLE_UNIT / 2;
 }
@@ -193,7 +201,7 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
 /**
  * This is called after completion of each VDI call
  */
-unsigned long OpCode_VDI(uae_u32 opcode)
+uae_u32 OpCode_VDI(uae_u32 opcode)
 {
 	Uint32 pc = M68000_GetPC();
 
@@ -212,9 +220,10 @@ unsigned long OpCode_VDI(uae_u32 opcode)
 		op_illg(opcode);
 	}
 
-	get_word_prefetch (0);
-	regs.ir = regs.irc;
-	get_word_prefetch(2);
+//	get_word_prefetch (0);
+//	regs.ir = regs.irc;
+//	get_word_prefetch(2);
+	fill_prefetch();
 
 	return 4 * CYCLE_UNIT / 2;
 }
@@ -223,15 +232,17 @@ unsigned long OpCode_VDI(uae_u32 opcode)
 /**
  * Emulator Native Features ID opcode interception.
  */
-unsigned long OpCode_NatFeat_ID(uae_u32 opcode)
+uae_u32 OpCode_NatFeat_ID(uae_u32 opcode)
 {
 	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
 	Uint16 SR = M68000_GetSR();
 
 	if (NatFeat_ID(stack, &(Regs[REG_D0]))) {
-		m68k_incpc(2);
-		regs.ir = regs.irc;
-		get_word_prefetch(2);
+		M68000_SetSR(SR);
+//		m68k_incpc(2);
+//		regs.ir = regs.irc;
+//		get_word_prefetch(2);
+		fill_prefetch();
 	}
 	return 4 * CYCLE_UNIT / 2;
 }
@@ -239,7 +250,7 @@ unsigned long OpCode_NatFeat_ID(uae_u32 opcode)
 /**
  * Emulator Native Features call opcode interception.
  */
-unsigned long OpCode_NatFeat_Call(uae_u32 opcode)
+uae_u32 OpCode_NatFeat_Call(uae_u32 opcode)
 {
 	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
 	Uint16 SR = M68000_GetSR();
@@ -247,9 +258,28 @@ unsigned long OpCode_NatFeat_Call(uae_u32 opcode)
 
 	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);
 	if (NatFeat_Call(stack, super, &(Regs[REG_D0]))) {
-		m68k_incpc(2);
-		regs.ir = regs.irc;
-		get_word_prefetch(2);
+		M68000_SetSR(SR);
+//		m68k_incpc(2);
+//		regs.ir = regs.irc;
+//		get_word_prefetch(2);
+		fill_prefetch();
 	}
 	return 4 * CYCLE_UNIT / 2;
 }
+
+
+
+
+
+TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...) {
+    va_list parms;
+    va_start (parms, format);
+    if (buffer == NULL) {
+        return 0;
+    }
+    vsnprintf (buffer, (*bufsize) - 1, format, parms);
+    va_end (parms);
+    *bufsize -= _tcslen (buffer);
+    return buffer + _tcslen (buffer);
+}
+

@@ -50,12 +50,14 @@
 #define MMUEMU /* Aranym 68040 MMU */
 #define FULLMMU /* Aranym 68040 MMU */
 #define CPUEMU_0 /* generic 680x0 emulation */
-#define CPUEMU_11 /* 68000+prefetch emulation */
-#define CPUEMU_12 /* 68000 cycle-exact cpu&blitter */
-#define CPUEMU_20 /* 68020 "cycle-exact" + blitter */
-#define CPUEMU_21 /* 68030 (040/060) "cycle-exact" + blitter */
-#define CPUEMU_31 /* 68040 Aranym MMU */
-#define CPUEMU_32 /* 68030 with MMU */
+#define CPUEMU_11 /* 68000/68010 prefetch emulation */
+#define CPUEMU_13 /* 68000/68010 cycle-exact cpu&blitter */
+#define CPUEMU_20 /* 68020 prefetch */
+#define CPUEMU_21 /* 68020 "cycle-exact" + blitter */
+#define CPUEMU_22 /* 68030 (040/060) "cycle-exact" + blitter */
+#define CPUEMU_31 /* Aranym 68040 MMU */
+#define CPUEMU_32 /* Previous 68030 MMU */
+#define CPUEMU_33 /* 68060 MMU */
 //#define ACTION_REPLAY /* Action Replay 1/2/3 support */
 #define PICASSO96 /* Picasso96 display card emulation */
 #define UAEGFX_INTERNAL /* built-in libs:picasso96/uaegfx.card */
@@ -67,7 +69,7 @@
 #define ARCADIA /* Arcadia arcade system */
 #define ARCHIVEACCESS /* ArchiveAccess decompression library */
 #define LOGITECHLCD /* Logitech G15 LCD */
-//#define SAVESTATE /* State file support */
+#define SAVESTATE /* State file support */
 #define A2091 /* A590/A2091 SCSI */
 #define A2065 /* A2065 Ethernet card */
 #define NCR /* A4000T/A4091 SCSI */
@@ -88,7 +90,7 @@
 #define OPENGL
 #endif
 #define CAPS
-#define CPUEMU_12
+#define CPUEMU_13
 #define CPUEMU_11
 
 

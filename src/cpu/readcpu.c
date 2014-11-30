@@ -16,181 +16,159 @@
 int nr_cpuop_funcs;
 
 struct mnemolookup lookuptab[] = {
-	{ i_ILLG, "ILLEGAL" , ""},
-	{ i_OR, "OR" , "" },
-	{ i_CHK, "CHK" , "" },
-	{ i_CHK2, "CHK2" , "" },
-	{ i_AND, "AND" , "" },
-	{ i_EOR, "EOR" , "" },
-	{ i_ORSR, "ORSR" , "" },
-	{ i_ANDSR, "ANDSR" , "" },
-	{ i_EORSR, "EORSR" , "" },
-	{ i_SUB, "SUB" , "" },
-	{ i_SUBA, "SUBA" , "" },
-	{ i_SUBX, "SUBX" , "" },
-	{ i_SBCD, "SBCD" , "" },
-	{ i_ADD, "ADD" , "" },
-	{ i_ADDA, "ADDA" , "" },
-	{ i_ADDX, "ADDX" , "" },
-	{ i_ABCD, "ABCD" , "" },
-	{ i_NEG, "NEG"  , ""},
-	{ i_NEGX, "NEGX" , "" },
-	{ i_NBCD, "NBCD" , "" },
-	{ i_CLR, "CLR" , "" },
-	{ i_NOT, "NOT" , "" },
-	{ i_TST, "TST" , "" },
-	{ i_BTST, "BTST" , "" },
-	{ i_BCHG, "BCHG" , "" },
-	{ i_BCLR, "BCLR"  , ""},
-	{ i_BSET, "BSET"  , ""},
-	{ i_CMP, "CMP" , "" },
-	{ i_CMPM, "CMPM"  , ""},
-	{ i_CMPA, "CMPA"  , ""},
-	{ i_MVPRM, "MVPRM" , "" },
-	{ i_MVPMR, "MVPMR" , "" },
-	{ i_MOVE, "MOVE" , "" },
-	{ i_MOVEA, "MOVEA" , "" },
-	{ i_MVSR2, "MVSR2" , "" },
-	{ i_MV2SR, "MV2SR" , "" },
-	{ i_SWAP, "SWAP" , "" },
-	{ i_EXG, "EXG" , "" },
-	{ i_EXT, "EXT"  , ""},
-	{ i_MVMEL, "MVMEL", "MOVEM" },
-	{ i_MVMLE, "MVMLE", "MOVEM" },
-	{ i_TRAP, "TRAP" , "" },
-	{ i_MVR2USP, "MVR2USP" , "" },
-	{ i_MVUSP2R, "MVUSP2R"  , ""},
-	{ i_NOP, "NOP" , "" },
-	{ i_RESET, "RESET" , "" },
-	{ i_RTE, "RTE" , "" },
-	{ i_RTD, "RTD" , "" },
-	{ i_LINK, "LINK" , "" },
-	{ i_UNLK, "UNLK" , "" },
-	{ i_RTS, "RTS" , "" },
-	{ i_STOP, "STOP" , "" },
-	{ i_TRAPV, "TRAPV"  , ""},
-	{ i_RTR, "RTR" , "" },
-	{ i_JSR, "JSR" , "" },
-	{ i_JMP, "JMP"  , ""},
-	{ i_BSR, "BSR"  , ""},
-	{ i_Bcc, "Bcc"  , ""},
-	{ i_LEA, "LEA"  , ""},
-	{ i_PEA, "PEA"  , ""},
-	{ i_DBcc, "DBcc" , "" },
-	{ i_Scc, "Scc" , "" },
-	{ i_DIVU, "DIVU" , "" },
-	{ i_DIVS, "DIVS"  , ""},
-	{ i_MULU, "MULU" , "" },
-	{ i_MULS, "MULS" , "" },
-	{ i_ASR, "ASR" , "" },
-	{ i_ASL, "ASL"  , ""},
-	{ i_LSR, "LSR"  , ""},
-	{ i_LSL, "LSL"  , ""},
-	{ i_ROL, "ROL"  , ""},
-	{ i_ROR, "ROR"  , ""},
-	{ i_ROXL, "ROXL" , "" },
-	{ i_ROXR, "ROXR"  , ""},
-	{ i_ASRW, "ASRW" , "" },
-	{ i_ASLW, "ASLW"  , ""},
-	{ i_LSRW, "LSRW" , "" },
-	{ i_LSLW, "LSLW"  , ""},
-	{ i_ROLW, "ROLW"  , ""},
-	{ i_RORW, "RORW"  , ""},
-	{ i_ROXLW, "ROXLW" , "" },
-	{ i_ROXRW, "ROXRW"  , ""},
+	{ i_ILLG, _T("ILLEGAL") },
+	{ i_OR, _T("OR") },
+	{ i_CHK, _T("CHK") },
+	{ i_CHK2, _T("CHK2") },
+	{ i_AND, _T("AND") },
+	{ i_EOR, _T("EOR") },
+	{ i_ORSR, _T("ORSR") },
+	{ i_ANDSR, _T("ANDSR") },
+	{ i_EORSR, _T("EORSR") },
+	{ i_SUB, _T("SUB") },
+	{ i_SUBA, _T("SUBA") },
+	{ i_SUBX, _T("SUBX") },
+	{ i_SBCD, _T("SBCD") },
+	{ i_ADD, _T("ADD") },
+	{ i_ADDA, _T("ADDA") },
+	{ i_ADDX, _T("ADDX") },
+	{ i_ABCD, _T("ABCD") },
+	{ i_NEG, _T("NEG") },
+	{ i_NEGX, _T("NEGX") },
+	{ i_NBCD, _T("NBCD") },
+	{ i_CLR, _T("CLR") },
+	{ i_NOT, _T("NOT") },
+	{ i_TST, _T("TST") },
+	{ i_BTST, _T("BTST") },
+	{ i_BCHG, _T("BCHG") },
+	{ i_BCLR, _T("BCLR") },
+	{ i_BSET, _T("BSET") },
+	{ i_CMP, _T("CMP") },
+	{ i_CMPM, _T("CMPM") },
+	{ i_CMPA, _T("CMPA") },
+	{ i_MVPRM, _T("MVPRM") },
+	{ i_MVPMR, _T("MVPMR") },
+	{ i_MOVE, _T("MOVE") },
+	{ i_MOVEA, _T("MOVEA") },
+	{ i_MVSR2, _T("MVSR2") },
+	{ i_MV2SR, _T("MV2SR") },
+	{ i_SWAP, _T("SWAP") },
+	{ i_EXG, _T("EXG") },
+	{ i_EXT, _T("EXT") },
+	{ i_MVMEL, _T("MVMEL"), _T("MOVEM") },
+	{ i_MVMLE, _T("MVMLE"), _T("MOVEM") },
+	{ i_TRAP, _T("TRAP") },
+	{ i_MVR2USP, _T("MVR2USP") },
+	{ i_MVUSP2R, _T("MVUSP2R") },
+	{ i_NOP, _T("NOP") },
+	{ i_RESET, _T("RESET") },
+	{ i_RTE, _T("RTE") },
+	{ i_RTD, _T("RTD") },
+	{ i_LINK, _T("LINK") },
+	{ i_UNLK, _T("UNLK") },
+	{ i_RTS, _T("RTS") },
+	{ i_STOP, _T("STOP") },
+	{ i_TRAPV, _T("TRAPV") },
+	{ i_RTR, _T("RTR") },
+	{ i_JSR, _T("JSR") },
+	{ i_JMP, _T("JMP") },
+	{ i_BSR, _T("BSR") },
+	{ i_Bcc, _T("Bcc") },
+	{ i_LEA, _T("LEA") },
+	{ i_PEA, _T("PEA") },
+	{ i_DBcc, _T("DBcc") },
+	{ i_Scc, _T("Scc") },
+	{ i_DIVU, _T("DIVU") },
+	{ i_DIVS, _T("DIVS") },
+	{ i_MULU, _T("MULU") },
+	{ i_MULS, _T("MULS") },
+	{ i_ASR, _T("ASR") },
+	{ i_ASL, _T("ASL") },
+	{ i_LSR, _T("LSR") },
+	{ i_LSL, _T("LSL") },
+	{ i_ROL, _T("ROL") },
+	{ i_ROR, _T("ROR") },
+	{ i_ROXL, _T("ROXL") },
+	{ i_ROXR, _T("ROXR") },
+	{ i_ASRW, _T("ASRW") },
+	{ i_ASLW, _T("ASLW") },
+	{ i_LSRW, _T("LSRW") },
+	{ i_LSLW, _T("LSLW") },
+	{ i_ROLW, _T("ROLW") },
+	{ i_RORW, _T("RORW") },
+	{ i_ROXLW, _T("ROXLW") },
+	{ i_ROXRW, _T("ROXRW") },
 
-	{ i_MOVE2C, "MOVE2C", "MOVEC" },
-	{ i_MOVEC2, "MOVEC2", "MOVEC" },
-	{ i_CAS, "CAS" , "" },
-	{ i_CAS2, "CAS2" , "" },
-	{ i_MULL, "MULL" , "" },
-	{ i_DIVL, "DIVL"  , ""},
-	{ i_BFTST, "BFTST"  , ""},
-	{ i_BFEXTU, "BFEXTU"  , ""},
-	{ i_BFCHG, "BFCHG" , "" },
-	{ i_BFEXTS, "BFEXTS" , "" },
-	{ i_BFCLR, "BFCLR"  , ""},
-	{ i_BFFFO, "BFFFO" , "" },
-	{ i_BFSET, "BFSET"  , ""},
-	{ i_BFINS, "BFINS"  , ""},
-	{ i_PACK, "PACK"  , ""},
-	{ i_UNPK, "UNPK"  , ""},
-	{ i_TAS, "TAS"  , ""},
-	{ i_BKPT, "BKPT"  , ""},
-	{ i_CALLM, "CALLM"  , ""},
-	{ i_RTM, "RTM"  , ""},
-	{ i_TRAPcc, "TRAPcc"  , ""},
-	{ i_MOVES, "MOVES"  , ""},
-	{ i_FPP, "FPP" , ""},
-	{ i_FDBcc, "FDBcc"  , ""},
-	{ i_FScc, "FScc" , ""},
-	{ i_FTRAPcc, "FTRAPcc" , "" },
-	{ i_FBcc, "FBcc"  , ""},
-	{ i_FBcc, "FBcc"  , ""},
-	{ i_FSAVE, "FSAVE"  , ""},
-	{ i_FRESTORE, "FRESTORE"  , ""},
+	{ i_MOVE2C, _T("MOVE2C"), _T("MOVEC") },
+	{ i_MOVEC2, _T("MOVEC2"), _T("MOVEC") },
+	{ i_CAS, _T("CAS") },
+	{ i_CAS2, _T("CAS2") },
+	{ i_MULL, _T("MULL") },
+	{ i_DIVL, _T("DIVL") },
+	{ i_BFTST, _T("BFTST") },
+	{ i_BFEXTU, _T("BFEXTU") },
+	{ i_BFCHG, _T("BFCHG") },
+	{ i_BFEXTS, _T("BFEXTS") },
+	{ i_BFCLR, _T("BFCLR") },
+	{ i_BFFFO, _T("BFFFO") },
+	{ i_BFSET, _T("BFSET") },
+	{ i_BFINS, _T("BFINS") },
+	{ i_PACK, _T("PACK") },
+	{ i_UNPK, _T("UNPK") },
+	{ i_TAS, _T("TAS") },
+	{ i_BKPT, _T("BKPT") },
+	{ i_CALLM, _T("CALLM") },
+	{ i_RTM, _T("RTM") },
+	{ i_TRAPcc, _T("TRAPcc") },
+	{ i_MOVES, _T("MOVES") },
+	{ i_FPP, _T("FPP") },
+	{ i_FDBcc, _T("FDBcc") },
+	{ i_FScc, _T("FScc") },
+	{ i_FTRAPcc, _T("FTRAPcc") },
+	{ i_FBcc, _T("FBcc") },
+	{ i_FBcc, _T("FBcc") },
+	{ i_FSAVE, _T("FSAVE") },
+	{ i_FRESTORE, _T("FRESTORE") },
 
-	{ i_CINVL, "CINVL"  , ""},
-	{ i_CINVP, "CINVP" , "" },
-	{ i_CINVA, "CINVA"  , ""},
-	{ i_CPUSHL, "CPUSHL"  , ""},
-	{ i_CPUSHP, "CPUSHP" , "" },
-	{ i_CPUSHA, "CPUSHA" , "" },
-	{ i_MOVE16, "MOVE16"  , ""},
+	{ i_CINVL, _T("CINVL") },
+	{ i_CINVP, _T("CINVP") },
+	{ i_CINVA, _T("CINVA") },
+	{ i_CPUSHL, _T("CPUSHL") },
+	{ i_CPUSHP, _T("CPUSHP") },
+	{ i_CPUSHA, _T("CPUSHA") },
+	{ i_MOVE16, _T("MOVE16") },
 
-	{ i_MMUOP030, "MMUOP030" , "" },
-	{ i_PFLUSHN, "PFLUSHN" , "" },
-	{ i_PFLUSH, "PFLUSH"  , ""},
-	{ i_PFLUSHAN, "PFLUSHAN"  , ""},
-	{ i_PFLUSHA, "PFLUSHA"  , ""},
+	{ i_MMUOP030, _T("MMUOP030") },
+	{ i_PFLUSHN, _T("PFLUSHN") },
+	{ i_PFLUSH, _T("PFLUSH") },
+	{ i_PFLUSHAN, _T("PFLUSHAN") },
+	{ i_PFLUSHA, _T("PFLUSHA") },
 
-	{ i_PLPAR, "PLPAR"  , ""},
-	{ i_PLPAW, "PLPAW"  , ""},
-	{ i_PTESTR, "PTESTR"  , ""},
-	{ i_PTESTW, "PTESTW"  , ""},
+	{ i_PLPAR, _T("PLPAR") },
+	{ i_PLPAW, _T("PLPAW") },
+	{ i_PTESTR, _T("PTESTR") },
+	{ i_PTESTW, _T("PTESTW") },
 
-	{ i_LPSTOP, "LPSTOP"  , ""},
-	{ i_ILLG, ""  , ""},
+	{ i_LPSTOP, _T("LPSTOP") },
+	{ i_ILLG, _T("") },
 };
 
 struct instr *table68k;
 
-static int specialcase (uae_u16 opcode, int cpu_lev)
-{
-	int mode = (opcode >> 3) & 7;
-	int reg = opcode & 7;
-
-	if (cpu_lev >= 2)
-		return cpu_lev;
-	/* TST.W A0, TST.L A0, TST.x (d16,PC) and TST.x (d8,PC,Xn) are 68020+ only */
-	if ((opcode & 0xff00) == 0x4a00) {
-		if (mode == 7 && (reg == 4 || reg == 2 || reg == 3))
-			return 2;
-		if (mode == 1) /* Ax */
-			return 2;
-	}
-	/* CMPI.W #x,(d16,PC) and CMPI.W #x,(d8,PC,Xn) are 68020+ only */
-	if ((opcode & 0xff00) == 0x0c00) {
-		if (mode == 7 && (reg == 2 || reg == 3))
-			return 2;
-	}
-	return cpu_lev;
-}
-
 static amodes mode_from_str (const TCHAR *str)
 {
-	if (_tcsncmp (str, "Dreg", 4) == 0) return Dreg;
-	if (_tcsncmp (str, "Areg", 4) == 0) return Areg;
-	if (_tcsncmp (str, "Aind", 4) == 0) return Aind;
-	if (_tcsncmp (str, "Apdi", 4) == 0) return Apdi;
-	if (_tcsncmp (str, "Aipi", 4) == 0) return Aipi;
-	if (_tcsncmp (str, "Ad16", 4) == 0) return Ad16;
-	if (_tcsncmp (str, "Ad8r", 4) == 0) return Ad8r;
-	if (_tcsncmp (str, "absw", 4) == 0) return absw;
-	if (_tcsncmp (str, "absl", 4) == 0) return absl;
-	if (_tcsncmp (str, "PC16", 4) == 0) return PC16;
-	if (_tcsncmp (str, "PC8r", 4) == 0) return PC8r;
-	if (_tcsncmp (str, "Immd", 4) == 0) return imm;
+	if (_tcsncmp (str, _T("Dreg"), 4) == 0) return Dreg;
+	if (_tcsncmp (str, _T("Areg"), 4) == 0) return Areg;
+	if (_tcsncmp (str, _T("Aind"), 4) == 0) return Aind;
+	if (_tcsncmp (str, _T("Apdi"), 4) == 0) return Apdi;
+	if (_tcsncmp (str, _T("Aipi"), 4) == 0) return Aipi;
+	if (_tcsncmp (str, _T("Ad16"), 4) == 0) return Ad16;
+	if (_tcsncmp (str, _T("Ad8r"), 4) == 0) return Ad8r;
+	if (_tcsncmp (str, _T("absw"), 4) == 0) return absw;
+	if (_tcsncmp (str, _T("absl"), 4) == 0) return absl;
+	if (_tcsncmp (str, _T("PC16"), 4) == 0) return PC16;
+	if (_tcsncmp (str, _T("PC8r"), 4) == 0) return PC8r;
+	if (_tcsncmp (str, _T("Immd"), 4) == 0) return imm;
 	abort ();
 	return 0;
 }
@@ -275,7 +253,9 @@ out1:
 		int pos = 0;
 		int mnp = 0;
 		int bitno = 0;
+		int unsized = 1;
 		TCHAR mnemonic[10];
+		int mnemo;
 
 		wordsizes sz = sz_long;
 		int srcgather = 0, dstgather = 0;
@@ -324,6 +304,7 @@ out1:
 		while (opcstr[pos] && !_istspace(opcstr[pos])) {
 			if (opcstr[pos] == '.') {
 				pos++;
+				unsized = 0;
 				switch (opcstr[pos]) {
 
 				case 'B': sz = sz_byte; break;
@@ -719,7 +700,7 @@ out1:
 endofline:
 		/* now, we have a match */
 		if (table68k[opc].mnemo != i_ILLG)
-			;//write_log (L"Double match: %x: %s\n", opc, opcstr);
+			;//write_log (_T("Double match: %x: %s\n"), opc, opcstr);
 		if (find == -1) {
 			for (find = 0;; find++) {
 				if (_tcscmp (mnemonic, lookuptab[find].name) == 0) {
@@ -734,14 +715,22 @@ endofline:
 			table68k[opc].mnemo = lookuptab[find].mnemo;
 		}
 		table68k[opc].cc = bitval[bitc];
-		if (table68k[opc].mnemo == i_BTST
-			|| table68k[opc].mnemo == i_BSET
-			|| table68k[opc].mnemo == i_BCLR
-			|| table68k[opc].mnemo == i_BCHG)
+		mnemo = table68k[opc].mnemo;
+		if (mnemo == i_BTST
+			|| mnemo == i_BSET
+			|| mnemo == i_BCLR
+			|| mnemo == i_BCHG)
 		{
 			sz = destmode == Dreg ? sz_long : sz_byte;
+			unsized = 0;
 		}
+		if (mnemo == i_JSR || mnemo == i_JMP) {
+			unsized = 1;
+		}
+
 		table68k[opc].size = sz;
+		table68k[opc].unsized = unsized;
+		table68k[opc].sduse = id.sduse;
 		table68k[opc].sreg = srcreg;
 		table68k[opc].dreg = destreg;
 		table68k[opc].smode = srcmode;
@@ -752,7 +741,12 @@ endofline:
 		table68k[opc].duse = usedst;
 		table68k[opc].stype = srctype;
 		table68k[opc].plev = id.plevel;
-		table68k[opc].clev = specialcase(opc, id.cpulevel);
+		table68k[opc].clev = id.cpulevel;
+		table68k[opc].unimpclev = id.unimpcpulevel;
+		table68k[opc].head = id.head;
+		table68k[opc].tail = id.tail;
+		table68k[opc].clocks = id.clocks;
+		table68k[opc].fetchmode = id.fetchmode;
 
 #if 0
 		for (i = 0; i < 5; i++) {
