@@ -85,7 +85,7 @@ typedef struct {
 #define	STX_TRACK_FLAG_TRACK_IMAGE_SYNC	(1<<7)			/* bit 7, if set, the track image has a sync position */
 
 
-
+#define	STX_HEADER_ID		"RSY\0"				/* All STX files should start with these 4 bytes */
 
 typedef struct {
 	/* Content of the STX header block (16 bytes) */

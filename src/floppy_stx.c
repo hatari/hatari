@@ -343,6 +343,15 @@ Uint8 *STX_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *p
 		*pImageSize = 0;
 		return NULL;
 	}
+
+	/* Check the file's header is "RSY\0" */
+	if ( strncmp ( STX_HEADER_ID , pSTXFile , strlen ( STX_HEADER_ID ) ) )
+	{
+		fprintf ( stderr , "Error : %s is not a valid STX image\n" , pszFileName );
+		free ( pSTXFile );
+		*pImageSize = 0;
+		return NULL;
+	}
 	
 	*pImageType = FLOPPY_IMAGE_TYPE_STX;
 	return pSTXFile;
