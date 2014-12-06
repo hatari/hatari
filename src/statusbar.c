@@ -428,18 +428,19 @@ void Statusbar_UpdateInfo(void)
 		*end++ = '0' + ConfigureParams.System.nCpuFreq / 10;
 	}
 	*end++ = '0' + ConfigureParams.System.nCpuFreq % 10;
-	end = Statusbar_AddString(end, "MHz/");
+	end = Statusbar_AddString(end, "MHz");
 
 	/* CPU type */
 	if(ConfigureParams.System.nCpuLevel > 0) {
+		*end++ = '/';
 		*end++ = '0';
 		*end++ = '0' + ConfigureParams.System.nCpuLevel % 10;
 		*end++ = '0';
-		*end++ = '/';
 	}
 
 	/* additional WinUAE CPU/FPU info */
 #if ENABLE_WINUAE_CPU
+	*end++ = '/';
 	switch (ConfigureParams.System.n_FPUType) {
 	case FPU_68881:
 		end = Statusbar_AddString(end, "68881");
@@ -453,13 +454,13 @@ void Statusbar_UpdateInfo(void)
 	default:
 		*end++ = '-';
 	}
-	*end++ = '/';
 	if (ConfigureParams.System.bMMU) {
-		end = Statusbar_AddString(end, "MMU/");
+		end = Statusbar_AddString(end, "/MMU");
 	}
 #endif
 
 	/* amount of memory */
+	*end++ = ' ';
 	if (ConfigureParams.Memory.nMemorySize > 9) {
 		*end++ = '1';
 		*end++ = '0' + ConfigureParams.Memory.nMemorySize % 10;
