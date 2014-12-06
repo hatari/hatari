@@ -99,7 +99,7 @@ static Uint32 RecColorOn, RecColorOff;
 static Uint32 GrayBg, LedColorBg;
 
 /* needs to be enough for all messages, but <= MessageRect width / font width */
-#define MAX_MESSAGE_LEN 52
+#define MAX_MESSAGE_LEN 60
 typedef struct msg_item {
 	struct msg_item *next;
 	char msg[MAX_MESSAGE_LEN+1];
