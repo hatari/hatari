@@ -36,6 +36,7 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "m68000.h"
 #include "paths.h"
+#include "options.h"
 #include "screen.h"
 #include "control.h"
 #include "convert/routines.h"
@@ -326,12 +327,8 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
  */
 static void Screen_SetBorderPixels(int leftX, int leftY)
 {
-	/* All screen widths need to be aligned to 16-bits.
-	 * 
-	 * TODO: Change VDI_Limit() to generic function and check
-	 * the limits when config values are set or changed
-	 */
-	nBorderPixelsLeft = VDI_Limit(leftX/2, 16, 0, 48);
+	/* All screen widths need to be aligned to 16-bits */
+	nBorderPixelsLeft = Opt_ValueAlignMinMax(leftX/2, 16, 0, 48);
 	nBorderPixelsRight = nBorderPixelsLeft;
 
 	/* assertain assumption of code below */

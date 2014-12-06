@@ -12,6 +12,7 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
+#include "options.h"
 #include "screen.h"
 #include "screenSnapShot.h"
 #include "resolution.h"
@@ -196,7 +197,7 @@ static void DlgMonitor_SetVdiStepping(void)
  */
 void Dialog_MonitorDlg(void)
 {
-	int but;
+	int but, vdiw, vdih;
 	unsigned int i;
 	MONITORTYPE	mti;
 
@@ -222,8 +223,11 @@ void Dialog_MonitorDlg(void)
 	for (i=0; i<3; i++)
 		monitordlg[DLGSCRN_BPP1 + i].state &= ~SG_SELECTED;
 	monitordlg[DLGSCRN_BPP1 + ConfigureParams.Screen.nVdiColors - GEMCOLOR_2].state |= SG_SELECTED;
-	sprintf(sVdiWidth, "%4i", ConfigureParams.Screen.nVdiWidth);
-	sprintf(sVdiHeight, "%4i", ConfigureParams.Screen.nVdiHeight);
+
+	vdiw = ConfigureParams.Screen.nVdiWidth;
+	vdih = ConfigureParams.Screen.nVdiHeight;
+	sprintf(sVdiWidth, "%4i", vdiw);
+	sprintf(sVdiHeight, "%4i", vdih);
 	DlgMonitor_SetVdiStepping();
 
 	/* The monitor dialog main loop */
@@ -233,25 +237,21 @@ void Dialog_MonitorDlg(void)
 		switch (but)
 		{
 		 case DLGSCRN_VDI_WLESS:
-			ConfigureParams.Screen.nVdiWidth = VDI_Limit(ConfigureParams.Screen.nVdiWidth - nVdiStepX,
-			                                nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			sprintf(sVdiWidth, "%4i", ConfigureParams.Screen.nVdiWidth);
+			vdiw = Opt_ValueAlignMinMax(vdiw - nVdiStepX, nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+			sprintf(sVdiWidth, "%4i", vdiw);
 			break;
 		 case DLGSCRN_VDI_WMORE:
-			ConfigureParams.Screen.nVdiWidth = VDI_Limit(ConfigureParams.Screen.nVdiWidth + nVdiStepX,
-			                                nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			sprintf(sVdiWidth, "%4i", ConfigureParams.Screen.nVdiWidth);
+			vdiw = Opt_ValueAlignMinMax(vdiw + nVdiStepX, nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+			sprintf(sVdiWidth, "%4i", vdiw);
 			break;
 
 		 case DLGSCRN_VDI_HLESS:
-			ConfigureParams.Screen.nVdiHeight = VDI_Limit(ConfigureParams.Screen.nVdiHeight - nVdiStepY,
-			                                 nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-			sprintf(sVdiHeight, "%4i", ConfigureParams.Screen.nVdiHeight);
+			vdih = Opt_ValueAlignMinMax(vdih - nVdiStepY, nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+			sprintf(sVdiHeight, "%4i", vdih);
 			break;
 		 case DLGSCRN_VDI_HMORE:
-			ConfigureParams.Screen.nVdiHeight = VDI_Limit(ConfigureParams.Screen.nVdiHeight + nVdiStepY,
-			                                 nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-			sprintf(sVdiHeight, "%4i", ConfigureParams.Screen.nVdiHeight);
+			vdih = Opt_ValueAlignMinMax(vdih + nVdiStepY, nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+			sprintf(sVdiHeight, "%4i", vdih);
 			break;
 
 		 case DLGSCRN_BPP1:
@@ -259,12 +259,10 @@ void Dialog_MonitorDlg(void)
 		 case DLGSCRN_BPP4:
 			DlgMonitor_SetVdiStepping();
 			/* Align resolution to actual conditions: */
-			ConfigureParams.Screen.nVdiWidth = VDI_Limit(ConfigureParams.Screen.nVdiWidth, nVdiStepX,
-			                                MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			ConfigureParams.Screen.nVdiHeight = VDI_Limit(ConfigureParams.Screen.nVdiHeight, nVdiStepY,
-			                                 MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-			sprintf(sVdiWidth, "%4i", ConfigureParams.Screen.nVdiWidth);
-			sprintf(sVdiHeight, "%4i", ConfigureParams.Screen.nVdiHeight);
+			vdiw = Opt_ValueAlignMinMax(vdiw, nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+			vdih = Opt_ValueAlignMinMax(vdih, nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+			sprintf(sVdiWidth, "%4i", vdiw);
+			sprintf(sVdiHeight, "%4i", vdih);
 			break;
 		}
 	}
@@ -283,6 +281,8 @@ void Dialog_MonitorDlg(void)
 			break;
 		}
 	}
+	ConfigureParams.Screen.nVdiWidth = vdiw;
+	ConfigureParams.Screen.nVdiHeight = vdih;
 
 	ConfigureParams.Screen.bUseExtVdiResolutions = (monitordlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
 	for (i=0; i<3; i++)
@@ -299,7 +299,7 @@ void Dialog_MonitorDlg(void)
  */
 void Dialog_WindowDlg(void)
 {
-	int deskw, deskh, but, skip = 0;
+	int maxw, maxh, deskw, deskh, but, skip = 0;
 	unsigned int i;
 
 	SDLGui_CenterDlg(windowdlg);
@@ -339,8 +339,10 @@ void Dialog_WindowDlg(void)
 	windowdlg[DLGSCRN_SKIP0+skip].state |= SG_SELECTED;
 
 	Resolution_GetDesktopSize(&deskw, &deskh);
-	sprintf(sMaxWidth, "%4i", ConfigureParams.Screen.nMaxWidth);
-	sprintf(sMaxHeight, "%4i", ConfigureParams.Screen.nMaxHeight);
+	maxw = ConfigureParams.Screen.nMaxWidth;
+	maxh = ConfigureParams.Screen.nMaxHeight;
+	sprintf(sMaxWidth, "%4i", maxw);
+	sprintf(sMaxHeight, "%4i", maxh);
 
 	/* Initialize window capture options: */
 
@@ -361,25 +363,21 @@ void Dialog_WindowDlg(void)
 		switch (but)
 		{
 		 case DLGSCRN_MAX_WLESS:
-			ConfigureParams.Screen.nMaxWidth = VDI_Limit(ConfigureParams.Screen.nMaxWidth - MAX_SIZE_STEP,
-			                                MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
-			sprintf(sMaxWidth, "%4i", ConfigureParams.Screen.nMaxWidth);
+			maxw = Opt_ValueAlignMinMax(maxw - MAX_SIZE_STEP, MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
+			sprintf(sMaxWidth, "%4i", maxw);
 			break;
 		 case DLGSCRN_MAX_WMORE:
-			ConfigureParams.Screen.nMaxWidth = VDI_Limit(ConfigureParams.Screen.nMaxWidth + MAX_SIZE_STEP,
-			                                MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
-			sprintf(sMaxWidth, "%4i", ConfigureParams.Screen.nMaxWidth);
+			maxw = Opt_ValueAlignMinMax(maxw + MAX_SIZE_STEP, MAX_SIZE_STEP, MIN_VDI_WIDTH, deskw);
+			sprintf(sMaxWidth, "%4i", maxw);
 			break;
 
 		 case DLGSCRN_MAX_HLESS:
-			ConfigureParams.Screen.nMaxHeight = VDI_Limit(ConfigureParams.Screen.nMaxHeight - MAX_SIZE_STEP,
-			                                 MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
-			sprintf(sMaxHeight, "%4i", ConfigureParams.Screen.nMaxHeight);
+			maxh = Opt_ValueAlignMinMax(maxh - MAX_SIZE_STEP, MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
+			sprintf(sMaxHeight, "%4i", maxh);
 			break;
 		 case DLGSCRN_MAX_HMORE:
-			ConfigureParams.Screen.nMaxHeight = VDI_Limit(ConfigureParams.Screen.nMaxHeight + MAX_SIZE_STEP,
-			                                 MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
-			sprintf(sMaxHeight, "%4i", ConfigureParams.Screen.nMaxHeight);
+			maxh = Opt_ValueAlignMinMax(maxh + MAX_SIZE_STEP, MAX_SIZE_STEP, MIN_VDI_HEIGHT, deskh);
+			sprintf(sMaxHeight, "%4i", maxh);
 			break;
 
 		 case DLGSCRN_CAPTURE:
@@ -421,6 +419,9 @@ void Dialog_WindowDlg(void)
 	ConfigureParams.Screen.bFullScreen = (windowdlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
 	ConfigureParams.Screen.bKeepResolution = (windowdlg[DLGSCRN_KEEP_RES].state & SG_SELECTED);
 	ConfigureParams.Screen.bKeepResolutionST = (windowdlg[DLGSCRN_KEEP_RES_ST].state & SG_SELECTED);
+
+	ConfigureParams.Screen.nMaxWidth = maxw;
+	ConfigureParams.Screen.nMaxHeight = maxh;
 
 	ConfigureParams.Screen.bShowStatusbar = false;
 	ConfigureParams.Screen.bShowDriveLed = false;

@@ -17,6 +17,7 @@ const char VDI_fileid[] = "Hatari vdi.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "gemdos.h"
 #include "m68000.h"
+#include "options.h"
 #include "screen.h"
 #include "stMemory.h"
 #include "vdi.h"
@@ -163,28 +164,6 @@ void VDI_Reset(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Returns given value after constraining it within "min" and "max" values
- * and making it evenly divisable by "align"
- */
-int VDI_Limit(int value, int align, int min, int max)
-{
-	value = (value/align)*align;
-	if (value > max)
-	{
-		/* align down */
-		return (max/align)*align;
-	}
-	if (value < min)
-	{
-		/* align up */
-		min += align-1;
-		return (min/align)*align;
-	}
-	return value;
-}
-
-/*-----------------------------------------------------------------------*/
-/**
  * Limit width and height to VDI screen size in bytes, retaining their ratio.
  * Return true if limiting was done.
  */
@@ -239,9 +218,9 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 	VDI_ByteLimit(&w, &h, VDIPlanes);
 
 	/* width needs to be aligned to 16 bytes */
-	VDIWidth = VDI_Limit(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+	VDIWidth = Opt_ValueAlignMinMax(w, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
 	/* height needs to be multiple of cell height (either 8 or 16) */
-	VDIHeight = VDI_Limit(h, 16, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+	VDIHeight = Opt_ValueAlignMinMax(h, 16, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
 
 	printf("VDI screen: request = %dx%d@%d, result = %dx%d@%d\n",
 	       WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);

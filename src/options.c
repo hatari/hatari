@@ -612,6 +612,28 @@ static bool Opt_ShowError(unsigned int optid, const char *value, const char *err
 
 
 /**
+ * Return given value after constraining it within "min" and "max" values
+ * and making it evenly divisable by "align"
+ */
+int Opt_ValueAlignMinMax(int value, int align, int min, int max)
+{
+	value = (value/align)*align;
+	if (value > max)
+	{
+		/* align down */
+		return (max/align)*align;
+	}
+	if (value < min)
+	{
+		/* align up */
+		min += align-1;
+		return (min/align)*align;
+	}
+	return value;
+}
+
+
+/**
  * If 'conf' given, set it:
  * - true if given option 'arg' is y/yes/on/true/1
  * - false if given option 'arg' is n/no/off/false/0
