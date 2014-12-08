@@ -56,9 +56,9 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define TCHAR char
 #endif
 
-#ifndef STATIC_INLINE
-#define STATIC_INLINE static inline
-#endif
+//#ifndef STATIC_INLINE
+//#define STATIC_INLINE static inline
+//#endif
 
 #define _vsnprintf vsnprintf
 #define _tcsncmp strncmp

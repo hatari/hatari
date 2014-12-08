@@ -72,6 +72,7 @@ struct uae_prefs {
 	bool comp_midopt;
 	bool comp_lowopt;
 	bool fpu_strict;
+	bool fpu_softfloat;
 
 	bool comp_hardflush;
 	bool comp_constjump;
@@ -140,6 +141,7 @@ struct uae_prefs {
 	bool uaeserial;
 	int catweasel;
 	int cpu_idle;
+	int ppc_cpu_idle;
 	bool cpu_cycle_exact;
 	int cpu_clock_multiplier;
 	int cpu_frequency;
@@ -149,6 +151,7 @@ struct uae_prefs {
 	int floppy_random_bits_min;
 	int floppy_random_bits_max;
 	int floppy_auto_ext2;
+	int cd_speed;
 	bool tod_hack;
 	uae_u32 maprom;
 	bool rom_readwrite;
@@ -157,6 +160,8 @@ struct uae_prefs {
 	int filesys_limit;
 	int filesys_max_name;
 	int filesys_max_file_size;
+	int uaescsidevmode;
+	bool reset_delay;
 
 	int cs_compatible;
 	int cs_ciaatod;
@@ -169,6 +174,8 @@ struct uae_prefs {
 	bool cs_cd32cd;
 	bool cs_cd32c2p;
 	bool cs_cd32nvram;
+	bool cs_cd32fmv;
+	int cs_cd32nvram_size;
 	bool cs_cdtvcd;
 	bool cs_cdtvram;
 	int cs_cdtvcard;
@@ -181,6 +188,7 @@ struct uae_prefs {
 	int cs_deniserev;
 	int cs_mbdmac;
 	bool cs_cdtvscsi;
+	bool cs_cdtvcr;
 	bool cs_df0idhw;
 	bool cs_slowmemisfast;
 	bool cs_resetwarning;
@@ -188,6 +196,8 @@ struct uae_prefs {
 	bool cs_dipagnus;
 	bool cs_agnusbltbusybug;
 	bool cs_ciatodbug;
+	bool cs_z3autoconfig;
+	bool cs_1mchipjumper;
 	int cs_hacks;
 
 	TCHAR romfile[MAX_DPATH];
@@ -196,12 +206,10 @@ struct uae_prefs {
 	uae_u32 romextfile2addr;
 	TCHAR romextfile2[MAX_DPATH];
 	TCHAR romextident[256];
-	TCHAR a2091romfile[MAX_DPATH];
-	TCHAR a2091romident[256];
-	bool a2091;
-	TCHAR a4091romfile[MAX_DPATH];
-	TCHAR a4091romident[256];
-	bool a4091;
+	TCHAR acceleratorromfile[MAX_DPATH];
+	TCHAR acceleratorromident[256];
+	TCHAR acceleratorextromfile[MAX_DPATH];
+	TCHAR acceleratorextromident[256];
 	TCHAR flashfile[MAX_DPATH];
 	TCHAR rtcfile[MAX_DPATH];
 	TCHAR cartfile[MAX_DPATH];
@@ -235,6 +243,8 @@ struct uae_prefs {
 	int cpu060_revision;
 	int fpu_model;
 	int fpu_revision;
+	int ppc_mode;
+	TCHAR ppc_model[32];
 	bool cpu_compatible;
 	bool int_no_unimplemented;
 	bool fpu_no_unimplemented;
@@ -242,8 +252,8 @@ struct uae_prefs {
 	bool picasso96_nocustom;
 	int picasso96_modeflags;
 
+	uae_u32 z3autoconfig_start;
 	uae_u32 z3fastmem_size, z3fastmem2_size;
-	uae_u32 z3fastmem_start;
 	uae_u32 z3chipmem_size;
 	uae_u32 z3chipmem_start;
 	uae_u32 fastmem_size, fastmem2_size;
@@ -253,6 +263,10 @@ struct uae_prefs {
 	uae_u32 mbresmem_low_size;
 	uae_u32 mbresmem_high_size;
 	uae_u32 rtgmem_size;
+	int cpuboard_type;
+	uae_u32 cpuboardmem1_size;
+	uae_u32 cpuboardmem2_size;
+	int ppc_implementation;
 	bool rtg_hardwareinterrupt;
 	bool rtg_hardwaresprite;
 	int rtgmem_type;
@@ -268,7 +282,7 @@ struct uae_prefs {
 	bool clipboard_sharing;
 	bool native_code;
 	bool uae_hide_autoconfig;
-	bool jit_direct_compatible_memory;
+	int z3_mapping_mode;
 
 	int mountitems;
 	/*
@@ -307,9 +321,11 @@ struct uae_prefs {
 	int win32_inactive_priority;
 	bool win32_inactive_pause;
 	bool win32_inactive_nosound;
+	int win32_inactive_input;
 	int win32_iconified_priority;
 	bool win32_iconified_pause;
 	bool win32_iconified_nosound;
+	int win32_iconified_input;
 
 	bool win32_rtgmatchdepth;
 	bool win32_rtgallowscaling;

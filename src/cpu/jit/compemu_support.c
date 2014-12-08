@@ -102,10 +102,6 @@ extern const struct cputbl op_smalltbl_4_nf[];
 extern const struct cputbl op_smalltbl_5_nf[];
 #endif
 
-static void flush_icache_hard(uae_u32 ptr, int n);
-
-
-
 static bigstate live;
 static smallstate empty_ss;
 static smallstate default_ss;
@@ -467,8 +463,6 @@ bool check_prefs_changed_comp (void)
 		alloc_cache();
 		changed = 1;
 	}
-	if (!candirect)
-		canbang = 0;
 
 	// Turn off illegal-mem logging when using JIT...
 	if(currprefs.cachesize)
@@ -5797,7 +5791,7 @@ void build_comp(void)
 }
 
 
-static void flush_icache_hard(uae_u32 ptr, int n)
+void flush_icache_hard(uae_u32 ptr, int n)
 {
 	blockinfo* bi;
 

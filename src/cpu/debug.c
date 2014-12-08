@@ -39,9 +39,13 @@
 //#include "inputrecord.h"
 #include "cpummu.h"
 #include "cpummu030.h"
+//#include "ppc/ppcd.h"
+//#include "uae/ppc.h"
 
+#ifdef WINUAE_FOR_HATARI
 static int debug_mmu_mode;
-#if 0
+
+#else
 int debugger_active;
 static uaecptr skipaddr_start, skipaddr_end;
 static int skipaddr_doskip;
@@ -185,7 +189,7 @@ static int debug_out (const TCHAR *format, ...)
 	return 1;
 }
 
-#endif	/* 0 */
+#endif	/* ! WINUAE_FOR_HATARI */
 
 uae_u32 get_byte_debug (uaecptr addr)
 {
@@ -688,7 +692,7 @@ static uaecptr nextaddr2 (uaecptr addr, int *next)
 		*next = -1;
 		return 0xffffffff;
 	}
-	prev = currprefs.z3fastmem_start + currprefs.z3fastmem_size;
+	prev = currprefs.z3autoconfig_start + currprefs.z3fastmem_size;
 	size = currprefs.z3fastmem2_size;
 
 	if (currprefs.z3fastmem_size) {
@@ -1912,7 +1916,7 @@ static void smc_detect_init (TCHAR **c)
 	smc_free ();
 	smc_size = 1 << 24;
 	if (currprefs.z3fastmem_size)
-		smc_size = currprefs.z3fastmem_start + currprefs.z3fastmem_size;
+		smc_size = currprefs.z3autoconfig_start + currprefs.z3fastmem_size;
 	smc_size += 4;
 	smc_table = xmalloc (struct smc_item, smc_size);
 	if (!smc_table)
@@ -2429,7 +2433,7 @@ static void memwatch_reset (void)
 	}
 	for (int i = 0; membank_stores[i].addr; i++) {
 		struct membank_store *ms = &membank_stores[i];
-		xfree (ms->newbank.name);
+		xfree ((char*)ms->newbank.name);
 		memset (ms, 0, sizeof (struct membank_store));
 		ms->addr = NULL;
 	}
@@ -2902,13 +2906,37 @@ static uae_u8 *dump_xlate (uae_u32 addr)
 	return mem_banks[addr >> 16]->xlateaddr (addr);
 }
 
-static void memory_map_dump_2 (int log)
+#if 0
+#define UAE_MEMORY_REGIONS_MAX 64
+#define UAE_MEMORY_REGION_NAME_LENGTH 64
+
+#define UAE_MEMORY_REGION_RAM (1 << 0)
+#define UAE_MEMORY_REGION_ALIAS (1 << 1)
+#define UAE_MEMORY_REGION_MIRROR (1 << 2)
+
+typedef struct UaeMemoryRegion {
+	uaecptr start;
+	int size;
+	TCHAR name[UAE_MEMORY_REGION_NAME_LENGTH];
+	TCHAR rom_name[UAE_MEMORY_REGION_NAME_LENGTH];
+	uaecptr alias;
+	int flags;
+} UaeMemoryRegion;
+
+typedef struct UaeMemoryMap {
+	UaeMemoryRegion regions[UAE_MEMORY_REGIONS_MAX];
+	int num_regions;
+} UaeMemoryMap;
+#endif
+
+static void memory_map_dump_3(UaeMemoryMap *map, int log)
 {
 	bool imold;
 	int i, j, max;
 	addrbank *a1 = mem_banks[0];
 	TCHAR txt[256];
 
+	map->num_regions = 0;
 	imold = currprefs.illegal_mem;
 	currprefs.illegal_mem = false;
 	max = currprefs.address_space_24 ? 256 : 65536;
@@ -2918,15 +2946,14 @@ static void memory_map_dump_2 (int log)
 		if (i < max)
 			a2 = mem_banks[i];
 		if (a1 != a2) {
-			int k, mirrored, size, size_out;
+			int k, mirrored, mirrored2, size, size_out;
 			TCHAR size_ext;
 			uae_u8 *caddr;
-			TCHAR *name;
 			TCHAR tmp[MAX_DPATH];
-
-			name = a1->name;
-			if (name == NULL)
-				name = _T("<none>");
+			const TCHAR *name = a1->name;
+			struct addrbank_sub *sb = a1->sub_banks;
+			int bankoffset = 0;
+			int region_size;
 
 			k = j;
 			caddr = dump_xlate (k << 16);
@@ -2937,38 +2964,102 @@ static void memory_map_dump_2 (int log)
 					mirrored++;
 				k++;
 			}
-			size = (i - j) << (16 - 10);
-			size_out = size;
-			size_ext = 'K';
-			if (j >= 256) {
-				size_out /= 1024;
-				size_ext = 'M';
-			}
-			_stprintf (txt, _T("%08X %7d%c/%d = %7d%c %s"), j << 16, size_out, size_ext,
-				mirrored, mirrored ? size_out / mirrored : size_out, size_ext, name);
+			mirrored2 = mirrored;
+			if (mirrored2 == 0)
+				mirrored2 = 1;
 
-			tmp[0] = 0;
-			if (a1->flags == ABFLAG_ROM && mirrored) {
-				TCHAR *p = txt + _tcslen (txt);
-				uae_u32 crc = get_crc32 (a1->xlateaddr(j << 16), (size * 1024) / mirrored);
-				struct romdata *rd = getromdatabycrc (crc);
-				_stprintf (p, _T(" (%08X)"), crc);
-				if (rd) {
-					tmp[0] = '=';
-					getromname (rd, tmp + 1);
-					_tcscat (tmp, _T("\n"));
+			while (bankoffset < 65536) {
+				int bankoffset2 = bankoffset;
+				if (sb) {
+					uaecptr daddr;
+					if (!sb->bank)
+						break;
+					daddr = (j << 16) | bankoffset;
+					a1 = get_sub_bank(&daddr);
+					name = a1->name;
+					for (;;) {
+						bankoffset2 += MEMORY_MIN_SUBBANK;
+						if (bankoffset2 >= 65536)
+							break;
+						daddr = (j << 16) | bankoffset2;
+						addrbank *dab = get_sub_bank(&daddr);
+						if (dab != a1)
+							break;
+					}
+					sb++;
+					size = (bankoffset2 - bankoffset) / 1024;
+					region_size = size * 1024;
+				} else {
+					size = (i - j) << (16 - 10);
+					region_size = ((i - j) << 16) / mirrored2;
 				}
-			}
-			_tcscat (txt, _T("\n"));
-			if (log)
-				write_log (txt);
-			else
-				console_out (txt);
-			if (tmp[0]) {
-				if (log)
-					write_log (tmp);
-				else
-					console_out (tmp);
+
+				if (name == NULL)
+					name = _T("<none>");
+
+				size_out = size;
+				size_ext = 'K';
+				if (j >= 256 && (size_out / mirrored2 >= 1024) && !((size_out / mirrored2) & 1023)) {
+					size_out /= 1024;
+					size_ext = 'M';
+				}
+#if 1
+				_stprintf (txt, _T("%08X %7d%c/%d = %7d%c %s"), (j << 16) | bankoffset, size_out, size_ext,
+					mirrored, mirrored ? size_out / mirrored : size_out, size_ext, name);
+#endif
+				tmp[0] = 0;
+				if ((a1->flags & ABFLAG_ROM) && mirrored) {
+					TCHAR *p = txt + _tcslen (txt);
+					uae_u32 crc = 0xffffffff;
+					if (a1->check(((j << 16) | bankoffset), (size * 1024) / mirrored))
+						crc = get_crc32 (a1->xlateaddr((j << 16) | bankoffset), (size * 1024) / mirrored);
+					struct romdata *rd = getromdatabycrc (crc);
+					_stprintf (p, _T(" (%08X)"), crc);
+					if (rd) {
+						tmp[0] = '=';
+						getromname (rd, tmp + 1);
+						_tcscat (tmp, _T("\n"));
+					}
+				}
+
+				if (a1 != &dummy_bank) {
+					for (int m = 0; m < mirrored2; m++) {
+						UaeMemoryRegion *r = &map->regions[map->num_regions];
+						r->start = (j << 16) + bankoffset + region_size * m;
+						r->size = region_size;
+						r->flags = 0;
+						r->memory = NULL;
+						r->memory = dump_xlate((j << 16) | bankoffset);
+						if (r->memory)
+							r->flags |= UAE_MEMORY_REGION_RAM;
+						/* just to make it easier to spot in debugger */
+						r->alias = 0xffffffff;
+						if (m >= 0) {
+							r->alias = j << 16;
+							r->flags |= UAE_MEMORY_REGION_ALIAS | UAE_MEMORY_REGION_MIRROR;
+						}
+						_stprintf(r->name, _T("%s"), name);
+						_stprintf(r->rom_name, _T("%s"), tmp);
+						map->num_regions += 1;
+					}
+				}
+
+#if 1
+				_tcscat (txt, _T("\n"));
+				if (log > 0)
+					write_log (txt);
+				else if (log == 0)
+					console_out (txt);
+				if (tmp[0]) {
+					if (log > 0)
+						write_log (tmp);
+					else if (log == 0)
+						console_out (tmp);
+				}
+#endif
+				if (!sb)
+					break;
+				bankoffset = bankoffset2;
 			}
 			j = i;
 			a1 = a2;
@@ -2976,9 +3067,43 @@ static void memory_map_dump_2 (int log)
 	}
 	currprefs.illegal_mem = imold;
 }
-void memory_map_dump (void)
+
+void uae_memory_map(UaeMemoryMap *map)
 {
-	memory_map_dump_2 (1);
+	memory_map_dump_3(map, -1);
+}
+
+static void memory_map_dump_2 (int log)
+{
+	UaeMemoryMap map;
+	memory_map_dump_3(&map, log);
+#if 0
+	for (int i = 0; i < map.num_regions; i++) {
+		TCHAR txt[256];
+		UaeMemoryRegion *r = &map.regions[i];
+		int size = r->size / 1024;
+		TCHAR size_ext = 'K';
+		int mirrored = 1;
+		int size_out = 0;
+		_stprintf (txt, _T("%08X %7u%c/%d = %7u%c %s\n"), r->start, size, size_ext,
+			r->flags & UAE_MEMORY_REGION_RAM, size, size_ext, r->name);
+		if (log)
+			write_log (_T("%s"), txt);
+		else
+			console_out (txt);
+		if (r->rom_name[0]) {
+			if (log)
+				write_log (_T("%s"), r->rom_name);
+			else
+				console_out (r->rom_name);
+		}
+	}
+#endif
+}
+
+void memory_map_dump (void)
+ {
+ 	memory_map_dump_2 (1);
 }
 
 STATIC_INLINE uaecptr BPTR2APTR (uaecptr addr)
@@ -3052,20 +3177,20 @@ static uaecptr get_base (const uae_char *name, int offset)
 	uaecptr v = get_long_debug (4);
 	addrbank *b = &get_mem_bank(v);
 
-	if (!b || !b->check (v, 400) || b->flags != ABFLAG_RAM)
+	if (!b || !b->check (v, 400) || !(b->flags & ABFLAG_RAM))
 		return 0;
 	v += offset;
 	while (v = get_long_debug (v)) {
 		uae_u32 v2;
 		uae_u8 *p;
 		b = &get_mem_bank (v);
-		if (!b || !b->check (v, 32) || (b->flags != ABFLAG_RAM && b->flags != ABFLAG_ROMIN))
+		if (!b || !b->check (v, 32) || (!(b->flags & ABFLAG_RAM) && !(b->flags & ABFLAG_ROMIN)))
 			goto fail;
 		v2 = get_long_debug (v + 10); // name
 		b = &get_mem_bank (v2);
 		if (!b || !b->check (v2, 20))
 			goto fail;
-		if (b->flags == ABFLAG_ROM || b->flags == ABFLAG_RAM || b->flags == ABFLAG_ROMIN) {
+		if ((b->flags & ABFLAG_ROM) || (b->flags & ABFLAG_RAM) || (b->flags & ABFLAG_ROMIN)) {
 			p = b->xlateaddr (v2);
 			if (!memcmp (p, name, strlen (name) + 1))
 				return v;
@@ -3081,6 +3206,33 @@ static TCHAR *getfrombstr(uaecptr pp)
 	uae_u8 *p = get_real_address ((uaecptr)(pp << 2));
 	TCHAR *s = xmalloc (TCHAR, p[0] + 1);
 	return au_copy (s, p[0] + 1, (char*)p + 1);
+}
+
+// read one byte from expansion autoconfig ROM
+static void copyromdata(uae_u8 bustype, uaecptr rom, int offset, uae_u8 *out, int size)
+{
+	switch (bustype & 0xc0)
+	{
+	case 0x00: // nibble
+		while (size-- > 0) {
+			*out++ = (get_byte_debug(rom + offset * 4 + 0) & 0xf0) | ((get_byte_debug(rom + offset * 4 + 2) & 0xf0) >> 4);
+			offset++;
+		}
+		break;
+	case 0x40: // byte
+		while (size-- > 0) {
+			*out++ = get_byte_debug(rom + offset * 2);
+			offset++;
+		}
+		break;
+	case 0x80: // word
+	default:
+		while (size-- > 0) {
+			*out++ = get_byte_debug(rom + offset);
+			offset++;
+		}
+		break;
+	}
 }
 
 static void show_exec_lists (TCHAR *t)
@@ -3103,10 +3255,36 @@ static void show_exec_lists (TCHAR *t)
 				TCHAR *name = getfrombstr (get_long_debug (doslist + 40));
 				console_out_f (_T("%08x: %d %08x '%s'\n"), doslist, type, msgport, name);
 				if (type == 0) {
+					uaecptr fssm = get_long_debug(doslist + 28) << 2;
 					console_out_f (_T(" - H=%08x Stack=%5d Pri=%2d Start=%08x Seg=%08x GV=%08x\n"),
 						get_long_debug (doslist + 16) << 2, get_long_debug (doslist + 20),
-						get_long_debug (doslist + 24), get_long_debug (doslist + 28),
+						get_long_debug (doslist + 24), fssm,
 						get_long_debug (doslist + 32) << 2, get_long_debug (doslist + 36));
+					if (fssm >= 0x100 && (fssm & 3) == 0) {
+						TCHAR *unitname = getfrombstr(get_long_debug(fssm + 4));
+						console_out_f (_T("   %s:%d %08x\n"), unitname, get_long_debug(fssm), get_long_debug(fssm + 8));
+						uaecptr de = get_long_debug(fssm + 8) << 2;
+						if (de) {
+							console_out_f (_T("    TableSize       %u\n"), get_long_debug(de + 0));
+							console_out_f (_T("    SizeBlock       %u\n"), get_long_debug(de + 4));
+							console_out_f (_T("    SecOrg          %u\n"), get_long_debug(de + 8));
+							console_out_f (_T("    Surfaces        %u\n"), get_long_debug(de + 12));
+							console_out_f (_T("    SectorPerBlock  %u\n"), get_long_debug(de + 16));
+							console_out_f (_T("    BlocksPerTrack  %u\n"), get_long_debug(de + 20));
+							console_out_f (_T("    Reserved        %u\n"), get_long_debug(de + 24));
+							console_out_f (_T("    PreAlloc        %u\n"), get_long_debug(de + 28));
+							console_out_f (_T("    Interleave      %u\n"), get_long_debug(de + 32));
+							console_out_f (_T("    LowCyl          %u\n"), get_long_debug(de + 36));
+							console_out_f (_T("    HighCyl         %u (Total %u)\n"), get_long_debug(de + 40), get_long_debug(de + 40) - get_long_debug(de + 36) + 1);
+							console_out_f (_T("    NumBuffers      %u\n"), get_long_debug(de + 44));
+							console_out_f (_T("    BufMemType      0x%08x\n"), get_long_debug(de + 48));
+							console_out_f (_T("    MaxTransfer     0x%08x\n"), get_long_debug(de + 52));
+							console_out_f (_T("    Mask            0x%08x\n"), get_long_debug(de + 56));
+							console_out_f (_T("    BootPri         %d\n"), get_long_debug(de + 60));
+							console_out_f (_T("    DosType         0x%08x\n"), get_long_debug(de + 64));
+						}
+						xfree(unitname);
+					}
 				}
 				xfree (name);
 				doslist = get_long_debug (doslist) << 2;
@@ -3166,15 +3344,55 @@ static void show_exec_lists (TCHAR *t)
 			list += 12;
 		}
 		return;
+	} else if (c == 'e') { // expansion
+		uaecptr expbase = get_base("expansion.library", 378);
+		if (expbase) {
+			list = get_long_debug(expbase + 60);
+			while (list && get_long_debug(list)) {
+				uae_u32 addr = get_long_debug(list + 32);
+				uae_u16 rom_vector = get_word_debug(list + 16 + 10);
+				uae_u8 type = get_byte_debug(list + 16 + 0);
+				console_out_f(_T("%02x %02x %08x %08x %04x %02x %08x %04x (%u/%u)\n"),
+					type, get_byte_debug(list + 16 + 2),
+					addr, get_long_debug(list + 36),
+					get_word_debug(list + 16 + 4), get_byte_debug(list + 16 + 1),
+					get_long_debug(list + 16 + 6), rom_vector,
+					get_word_debug(list + 16 + 4), get_byte_debug(list + 16 + 1));
+				if ((type & 0x10)) {
+					uae_u8 diagarea[32];
+					uae_u16 nameoffset;
+					uaecptr rom = addr + rom_vector;
+					uae_u8 config = get_byte_debug(rom);
+					copyromdata(config, rom, 0, diagarea, 16);
+					nameoffset = (diagarea[8] << 8) | diagarea[9];
+					console_out_f(_T(" %02x %02x Size %04x Diag %04x Boot %04x Name %04x %04x %04x\n"),
+						diagarea[0], diagarea[1],
+						(diagarea[2] << 8) | diagarea[3],
+						(diagarea[4] << 8) | diagarea[5],
+						(diagarea[6] << 8) | diagarea[7],
+						nameoffset,
+						(diagarea[10] << 8) | diagarea[11],
+						(diagarea[12] << 8) | diagarea[13]);
+					if (nameoffset != 0 && nameoffset != 0xffff) {
+						copyromdata(config, rom, nameoffset, diagarea, 32);
+						diagarea[31] = 0;
+						TCHAR *str = au((char*)diagarea);
+						console_out_f(_T(" '%s'\n"), str);
+						xfree(str);
+					}
+				}
+				list = get_long_debug(list);
+			}
+		}
 	} else if (c == 'R') { // residents
-		list = get_long (execbase + 300);
+		list = get_long_debug(execbase + 300);
 		while (list) {
 			uaecptr resident = get_long_debug (list);
 			if (!resident)
 				break;
 			if (resident & 0x80000000) {
-				write_log (_T("-> %08X\n"), resident & ~0x7fffffff);
-				list = resident & ~0x7fffffff;
+				console_out_f (_T("-> %08X\n"), resident & 0x7fffffff);
+				list = resident & 0x7fffffff;
 				continue;
 			}
 			uae_u8 *addr;
@@ -3937,7 +4155,28 @@ static void m68k_modify (TCHAR **inptr)
 	}
 }
 
+static void ppc_disasm(uaecptr addr, uaecptr *nextpc, int cnt)
+{
+	PPCD_CB disa;
+
+	while(cnt-- > 0) {
+		uae_u32 instr = get_long_debug(addr);
+		disa.pc = addr;
+		disa.instr = instr;
+		PPCDisasm(&disa);
+		TCHAR *mnemo = au(disa.mnemonic);
+		TCHAR *ops = au(disa.operands);
+		console_out_f(_T("%08X  %08X  %-12s%-30s\n"), addr, instr, mnemo, ops);
+		xfree(ops);
+		xfree(mnemo);
+		addr += 4;
+	}
+	if (nextpc)
+		*nextpc = addr;
+}
+
 static uaecptr nxdis, nxmem;
+static bool ppcmode;
 
 static BOOL debug_line (TCHAR *input)
 {
@@ -4031,6 +4270,13 @@ static BOOL debug_line (TCHAR *input)
 				} else {
 					uae_u32 daddr;
 					int count;
+					if (*inptr == 'p') {
+						ppcmode = true;
+						next_char(&inptr);
+					} else if(*inptr == 'o') {
+						ppcmode = false;
+						next_char(&inptr);
+					}
 					if (more_params (&inptr))
 						daddr = readhex (&inptr);
 					else
@@ -4039,7 +4285,11 @@ static BOOL debug_line (TCHAR *input)
 						count = readhex (&inptr);
 					else
 						count = 10;
-					m68k_disasm (daddr, &nxdis, count);
+					if (ppcmode) {
+						ppc_disasm(daddr, &nxdis, count);
+					} else {
+						m68k_disasm (daddr, &nxdis, count);
+					}
 				}
 			}
 			break;
@@ -4340,6 +4590,12 @@ static void addhistory (void)
 	}
 }
 
+static void debug_continue(void)
+{
+	set_special (SPCFLAG_BRK);
+}
+
+
 void debug (void)
 {
 	int i;
@@ -4445,7 +4701,7 @@ void debug (void)
 				}
 			}
 			if (!bp) {
-				set_special (SPCFLAG_BRK);
+				debug_continue();
 				return;
 			}
 		}
@@ -4463,12 +4719,15 @@ void debug (void)
 	if (skipaddr_doskip > 0) {
 		skipaddr_doskip--;
 		if (skipaddr_doskip > 0) {
-			set_special (SPCFLAG_BRK);
+			debug_continue();
 			return;
 		}
 	}
 
 	wasactive = ismouseactive ();
+#ifdef WITH_PPC
+	uae_ppc_pause(1);
+#endif
 	inputdevice_unacquire ();
 	pause_sound ();
 	setmouseactive (0);
@@ -4503,11 +4762,13 @@ void debug (void)
 		do_skip = 1;
 	if (do_skip) {
 		set_special (SPCFLAG_BRK);
-		m68k_resumestopped ();
-		debugging = 1;
+		debugging = -1;
 	}
 	resume_sound ();
 	inputdevice_acquire (TRUE);
+#ifdef WITH_PPC
+	uae_ppc_pause(0);
+#endif
 	setmouseactive (wasactive ? 2 : 0);
 }
 

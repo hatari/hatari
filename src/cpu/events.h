@@ -22,15 +22,19 @@ extern void reset_frame_rate_hack (void);
 extern unsigned long int vsync_cycles;
 extern unsigned long start_cycles;
 extern int event2_count;
+extern bool event_wait;
 
 extern void compute_vsynctime (void);
 extern void init_eventtab (void);
 extern void do_cycles_ce (unsigned long cycles);
+////extern void do_cycles_ce_internal (unsigned long cycles);
 #ifndef WINUAE_FOR_HATARI
 extern void do_cycles_ce020 (unsigned long cycles);
+///extern void do_cycles_ce020_internal (unsigned long cycles);
 #else
 /* [NP] avoid conflict with do_cycles_ce020( int ) in cpu_prefetch.h */
 extern void do_cycles_ce020_long (unsigned long cycles);
+///extern void do_cycles_ce020_internal_long (unsigned long cycles);
 #endif
 extern void events_schedule (void);
 extern void do_cycles_slow (unsigned long cycles_to_add);

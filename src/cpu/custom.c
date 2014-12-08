@@ -5,7 +5,7 @@
 *
 * Copyright 1995-2002 Bernd Schmidt
 * Copyright 1995 Alessandro Bissacco
-* Copyright 2000-2010 Toni Wilen
+* Copyright 2000-2014 Toni Wilen
 */
 
 #include "sysconfig.h"

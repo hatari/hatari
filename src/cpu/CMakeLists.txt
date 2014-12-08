@@ -50,13 +50,13 @@ endif(CMAKE_CROSSCOMPILING)
 
 # Generated cpuemu_xx.c contains a lot of warnings we don't really care about...
 if(CMAKE_COMPILER_IS_GNUCC)
-set_source_files_properties( cpuemu_0.c cpuemu_11.c cpuemu_13.c cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_31.c
-	cpuemu_32.c cpuemu_33.c cpudefs.c cpustbl.c
+set_source_files_properties( cpuemu_0.c cpuemu_11.c cpuemu_13.c cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_23.c cpuemu_24.c
+	cpuemu_31.c cpuemu_32.c cpuemu_33.c cpuemu_40.c cpudefs.c cpustbl.c
 	PROPERTIES COMPILE_FLAGS "-Wno-sign-compare -Wno-shadow -Wno-unused-variable -Wno-unused-but-set-variable" )
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_library(UaeCpu
-	cpuemu_0.c cpuemu_11.c cpuemu_13.c cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_31.c
-	cpuemu_32.c cpuemu_33.c cpudefs.c cpummu.c cpummu030.c cpustbl.c custom.c
+	cpuemu_0.c cpuemu_11.c cpuemu_13.c cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_23.c cpuemu_24.c cpuemu_31.c
+	cpuemu_32.c cpuemu_33.c cpuemu_40.c cpudefs.c cpummu.c cpummu030.c cpustbl.c custom.c
 	debug.c events.c hatari-glue.c memory.c newcpu_common.c readcpu.c fpp.c newcpu.c
 	)

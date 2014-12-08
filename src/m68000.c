@@ -226,7 +226,7 @@ void M68000_Reset(bool bCold)
 		memset(&regs, 0, sizeof(regs));
 	}
 	/* Now reset the WINUAE CPU core */
-	m68k_reset(bCold);
+	m68k_reset();
 
         /* On Hatari, when we change cpu settings, we call m68k_reset() during m68k_run_xx(), */
 	/* so we must keep the value of bits SPCFLAG_MODE_CHANGE and SPCFLAG_BRK to exit m68k_run_xx() */
