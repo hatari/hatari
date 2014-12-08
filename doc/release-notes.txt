@@ -14,7 +14,7 @@ Emulation:
   - Fix: image file attribute check when using device files
   - Fix: v1.8 ACSI regression with A1=0 case
 - GEMDOS HD:
-  - Fix: matching 8 long file names with '.'
+  - Fix: matching exactly 8 chars long file names containing '.'
   - Better mapping of host errors to GEMDOS error codes
   - Support for mapping file names with 8-bit characters
     between host and Atari encodings (umlauted chars etc)
@@ -32,7 +32,8 @@ Emulator:
 - Fix: chrash with VDI extended resolution emulation when
        C: isn't GEMDOS HD emulated drive
 - Fix: update default max window size for 2-line statusbar
-  NOTE: size would need to be updated in Hatari config files too!
+       NOTE: size would need to be updated in Hatari config files too!
+- Fix: statusbar assert when both FPU & MMU are enabled in WinUAE CPU core
 - GEMDOS emulation:
   - SDL GUI & cmdline option to skip drives used by partitions on
     ACSI & IDE images when assigning drive for GEMDOS HD emulation.
