@@ -345,7 +345,8 @@ Uint8 *STX_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *p
 	}
 
 	/* Check the file's header is "RSY\0" */
-	if ( strncmp ( STX_HEADER_ID , pSTXFile , strlen ( STX_HEADER_ID ) ) )
+	if ( ( *pImageSize <= (long) strlen ( STX_HEADER_ID ) )
+	  || ( memcmp ( STX_HEADER_ID , pSTXFile , strlen ( STX_HEADER_ID ) ) ) )
 	{
 		fprintf ( stderr , "Error : %s is not a valid STX image\n" , pszFileName );
 		free ( pSTXFile );
