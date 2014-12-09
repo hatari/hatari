@@ -86,6 +86,7 @@ typedef struct {
 
 
 #define	STX_HEADER_ID		"RSY\0"				/* All STX files should start with these 4 bytes */
+#define	STX_HEADER_ID_LEN	4				/* Header ID has 4 bytes */
 
 typedef struct {
 	/* Content of the STX header block (16 bytes) */
