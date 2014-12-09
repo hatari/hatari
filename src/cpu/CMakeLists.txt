@@ -25,7 +25,8 @@ if(CMAKE_CROSSCOMPILING)
 			${CMAKE_CURRENT_SOURCE_DIR}/readcpu.c cpudefs.c)
 
 	add_custom_command(OUTPUT cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_13.c
-				cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_31.c cpuemu_32.c cpuemu_33.c
+				cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_23.c cpuemu_24.c
+				cpuemu_31.c cpuemu_32.c cpuemu_33.c cpuemu_40.c
 		COMMAND ${CMAKE_CURRENT_BINARY_DIR}/gencpu
 		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gencpu)
 
@@ -42,7 +43,8 @@ else()	# Rules for normal build follow
 
 	get_target_property(GENCPU_EXE gencpu LOCATION)
 	add_custom_command(OUTPUT cpustbl.c cpuemu_0.c cpuemu_11.c cpuemu_13.c
-				cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_31.c cpuemu_32.c cpuemu_33.c
+				cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_23.c cpuemu_24.c
+				cpuemu_31.c cpuemu_32.c cpuemu_33.c cpuemu_40.c
 		COMMAND ${GENCPU_EXE}  DEPENDS gencpu)
 
 endif(CMAKE_CROSSCOMPILING)
