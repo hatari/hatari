@@ -772,7 +772,7 @@ bool VDI_AES_Entry(void)
 	/* AES call? */
 	if (call == 0xC8)
 	{
-		if (!STMemory_ValidArea(TablePtr, 24))
+		if ( !STMemory_CheckAreaType ( TablePtr, 24, ABFLAG_RAM ) )
 		{
 			Log_Printf(LOG_WARN, "AES call failed due to invalid parameter block address 0x%x+%i\n", TablePtr, 24);
 			return false;
@@ -800,7 +800,7 @@ bool VDI_AES_Entry(void)
 	/* VDI call? */
 	if (call == 0x73)
 	{
-		if (!STMemory_ValidArea(TablePtr, 20))
+		if ( !STMemory_CheckAreaType ( TablePtr, 20, ABFLAG_RAM ) )
 		{
 			Log_Printf(LOG_WARN, "VDI call failed due to invalid parameter block address 0x%x+%i\n", TablePtr, 20);
 			return false;

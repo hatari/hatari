@@ -444,7 +444,7 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 	{
 		/* write - if allowed */
 #ifndef DISALLOW_HDC_WRITE
-		if (STMemory_ValidArea(nDmaAddr, 512 * HDC_GetCount(ctr)))
+		if ( STMemory_CheckAreaType ( nDmaAddr , 512 * HDC_GetCount(ctr) , ABFLAG_RAM ) )
 		{
 			n = fwrite(&STRam[nDmaAddr], 512,
 				   HDC_GetCount(ctr), dev->image_file);

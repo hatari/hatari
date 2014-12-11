@@ -860,7 +860,7 @@ static bool GemDOS_BasepageMatches(Uint32 checkbase)
 {
 	int maxparents = 12; /* prevent basepage parent loops */
 	Uint32 basepage = STMemory_ReadLong(act_pd);
-	while (maxparents-- > 0 && STMemory_ValidArea(basepage, 0x100))
+	while (maxparents-- > 0 && STMemory_CheckAreaType ( basepage, 0x100, ABFLAG_RAM ) )
 	{
 		if (basepage == checkbase)
 			return true;
@@ -1419,7 +1419,7 @@ static bool GemDOS_SetDTA(Uint32 Params)
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x1A Fsetdta(0x%x) at PC 0x%X\n", nDTA,
 		  M68000_GetPC());
 
-	if (STMemory_ValidArea(nDTA, sizeof(DTA)))
+	if ( STMemory_CheckAreaType ( nDTA, sizeof(DTA), ABFLAG_RAM ) )
 	{
 		/* Store as PC pointer */
 		pDTA = (DTA *)STMemory_STAddrToPointer(nDTA);
@@ -1464,7 +1464,7 @@ static bool GemDOS_DFree(Uint32 Params)
 		return false;
 	}
 	/* Check that write is requested to valid memory area */
-	if (!STMemory_ValidArea(Address, 16))
+	if ( !STMemory_CheckAreaType ( Address, 16, ABFLAG_RAM ) )
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Dfree() failed due to invalid RAM range 0x%x+%i\n", Address, 16);
 		Regs[REG_D0] = GEMDOS_ERANGE;
@@ -2087,7 +2087,7 @@ static bool GemDOS_Read(Uint32 Params)
 		Size = nBytesLeft;
 
 	/* Check that read is to valid memory area */
-	if (!STMemory_ValidArea(Addr, Size))
+	if ( !STMemory_CheckAreaType ( Addr, Size, ABFLAG_RAM ) )
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Fread() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
 		Regs[REG_D0] = GEMDOS_ERANGE;
@@ -2148,7 +2148,7 @@ static bool GemDOS_Write(Uint32 Params)
 	}
 
 	/* Check that write is from valid memory area */
-	if (!STMemory_ValidArea(Addr, Size))
+	if ( !STMemory_CheckAreaType ( Addr, Size, ABFLAG_RAM ) )
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Fwrite() failed due to invalid RAM range 0x%x+%i\n", Addr, Size);
 		Regs[REG_D0] = GEMDOS_ERANGE;
@@ -2478,7 +2478,7 @@ static bool GemDOS_GetDir(Uint32 Params)
 		File_CleanFileName(path);
 		len = strlen(path);
 		/* Check that write is requested to valid memory area */
-		if (!STMemory_ValidArea(Address, len))
+		if ( !STMemory_CheckAreaType ( Address, len, ABFLAG_RAM ) )
 		{
 			Log_Printf(LOG_WARN, "GEMDOS Dgetpath() failed due to invalid RAM range 0x%x+%i\n", Address, len);
 			Regs[REG_D0] = GEMDOS_ERANGE;
@@ -2583,7 +2583,7 @@ static bool GemDOS_SNext(void)
 	/* Refresh pDTA pointer (from the current basepage) */
 	nDTA = STMemory_ReadLong(STMemory_ReadLong(act_pd)+32);
 
-	if (!STMemory_ValidArea(nDTA, sizeof(DTA)))
+	if ( !STMemory_CheckAreaType ( nDTA, sizeof(DTA), ABFLAG_RAM ) )
 	{
 		pDTA = NULL;
 		Log_Printf(LOG_WARN, "GEMDOS Fsnext() failed due to invalid DTA address 0x%x\n", nDTA);
@@ -2672,7 +2672,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	/* Refresh pDTA pointer (from the current basepage) */
 	nDTA = STMemory_ReadLong(STMemory_ReadLong(act_pd)+32);
 
-	if (!STMemory_ValidArea(nDTA, sizeof(DTA)))
+	if ( !STMemory_CheckAreaType ( nDTA, sizeof(DTA), ABFLAG_RAM ) )
 	{
 		pDTA = NULL;
 		Log_Printf(LOG_WARN, "GEMDOS Fsfirst() failed due to invalid DTA address 0x%x\n", nDTA);
@@ -2862,7 +2862,7 @@ static bool GemDOS_GSDToF(Uint32 Params)
 	if (GemDOS_GetFileInformation(Handle, &DateTime) == true)
 	{
 		/* Check that write is requested to valid memory area */
-		if (STMemory_ValidArea(pBuffer, 4))
+		if ( STMemory_CheckAreaType ( pBuffer, 4, ABFLAG_RAM ) )
 		{
 			STMemory_WriteWord(pBuffer, DateTime.timeword);
 			STMemory_WriteWord(pBuffer+SIZE_WORD, DateTime.dateword);

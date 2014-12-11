@@ -70,13 +70,13 @@ static Uint32 DebugInfo_GetSysbase(Uint32 *rombase)
 {
 	Uint32 sysbase = STMemory_ReadLong(OS_SYSBASE);
 
-	if (!STMemory_ValidArea(sysbase, OS_HEADER_SIZE)) {
+	if ( !STMemory_CheckAreaType ( sysbase, OS_HEADER_SIZE, ABFLAG_RAM ) ) {
 		fprintf(stderr, "Invalid TOS sysbase RAM address (0x%x)!\n", sysbase);
 		return 0;
 	}
 	/* under TOS, sysbase = os_beg = TosAddress, but not under MiNT -> use os_beg */
 	*rombase = STMemory_ReadLong(sysbase+0x08);
-	if (!STMemory_ValidArea(*rombase, OS_HEADER_SIZE)) {
+	if ( !STMemory_CheckAreaType ( *rombase, OS_HEADER_SIZE, ABFLAG_ROM ) ) {
 		fprintf(stderr, "Invalid TOS sysbase ROM address (0x%x)!\n", *rombase);
 		return 0;
 	}
@@ -115,7 +115,7 @@ static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase)
 			basepage = 0x602C;
 		}
 	}
-	if (STMemory_ValidArea(basepage, 4)) {
+	if ( STMemory_CheckAreaType ( basepage, 4, ABFLAG_RAM ) ) {
 		return STMemory_ReadLong(basepage);
 	}
 	fprintf(stderr, "Pointer 0x%06x to basepage address is invalid!\n", basepage);
@@ -133,7 +133,7 @@ static Uint32 GetBasepageValue(unsigned offset)
 	if (!basepage) {
 		return 0;
 	}
-	if (!STMemory_ValidArea(basepage, BASEPAGE_SIZE) ||
+	if ( !STMemory_CheckAreaType ( basepage, BASEPAGE_SIZE, ABFLAG_RAM ) ||
 	    STMemory_ReadLong(basepage) != basepage) {
 		fprintf(stderr, "Basepage address 0x%06x is invalid!\n", basepage);
 		return 0;
@@ -196,7 +196,7 @@ static void DebugInfo_Basepage(Uint32 basepage)
 		}
 	}
 	fprintf(stderr, "Process basepage information:\n");
-	if (!STMemory_ValidArea(basepage, BASEPAGE_SIZE) ||
+	if ( !STMemory_CheckAreaType ( basepage, BASEPAGE_SIZE, ABFLAG_RAM ) ||
 	    STMemory_ReadLong(basepage) != basepage) {
 		fprintf(stderr, "- address 0x%06x is invalid!\n", basepage);
 		return;
@@ -214,7 +214,7 @@ static void DebugInfo_Basepage(Uint32 basepage)
 
 	env = STMemory_ReadLong(basepage+0x2C);
 	fprintf(stderr, "- Environment    : 0x%06x\n", env);
-	if (STMemory_ValidArea(env, 4096)) {
+	if ( STMemory_CheckAreaType ( env, 4096, ABFLAG_RAM ) ) {
 		Uint32 end = env + 4096;
 		while (env < end && *(STRam+env)) {
 			fprintf(stderr, "'%s'\n", STRam+env);
@@ -257,7 +257,7 @@ static void DebugInfo_PrintOSHeader(Uint32 sysbase)
 
 	gemblock = STMemory_ReadLong(sysbase+0x14);
 	fprintf(stderr, "GEM Memory Usage Parameter Block:\n");
-	if (STMemory_ValidArea(gemblock, GEM_MUPB_SIZE)) {
+	if ( STMemory_CheckAreaType ( gemblock, GEM_MUPB_SIZE, ABFLAG_RAM ) ) {
 		fprintf(stderr, "- Block addr : 0x%06x\n", gemblock);
 		fprintf(stderr, "- GEM magic  : 0x%x (valid=0x%x)\n", STMemory_ReadLong(gemblock), GEM_MAGIC);
 		fprintf(stderr, "- GEM entry  : 0x%06x\n", STMemory_ReadLong(gemblock+4));
@@ -331,7 +331,7 @@ static void DebugInfo_Cookiejar(Uint32 dummy)
 
 	fprintf(stderr, "Cookiejar contents:\n");
 	items = 0;
-	while (STMemory_ValidArea(jar, 8) && STMemory_ReadLong(jar)) {
+	while ( STMemory_CheckAreaType (jar, 8, ABFLAG_RAM ) && STMemory_ReadLong(jar)) {
 		fprintf(stderr, "%c%c%c%c = 0x%08x\n",
 			STRam[jar], STRam[jar+1], STRam[jar+2], STRam[jar+3],
 			STMemory_ReadLong(jar+4));
