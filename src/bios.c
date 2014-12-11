@@ -39,8 +39,8 @@ static void Bios_RWabs(Uint32 Params)
 	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x04 Rwabs(%d,0x%lX,%d,%d,%i) at PC 0x%X\n",
-	          RWFlag, STRAM_ADDR(pBuffer), Number, RecNo, Dev,
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x04 Rwabs(%d,0x%x,%d,%d,%i) at PC 0x%X\n",
+	          RWFlag, pBuffer, Number, RecNo, Dev,
 		  M68000_GetPC());
 #endif
 }
