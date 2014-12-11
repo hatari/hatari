@@ -11,6 +11,8 @@
 #include "main.h"
 #include "sysdeps.h"
 #include "maccess.h"
+#include "memory.h"
+
 
 #if ENABLE_SMALL_MEM
 extern Uint8 *STRam;
@@ -27,6 +29,7 @@ extern Uint32 STRamEnd;
  * in STRAM_ADDR() and STMemory_ValidArea().
  */
 
+#if 0
 /* Offset ST address to PC pointer: */
 #if ENABLE_SMALL_MEM
 # define STRAM_ADDR(Var) \
@@ -55,6 +58,7 @@ static inline bool STMemory_ValidArea(Uint32 addr, int size)
 	}
 	return false;
 }
+#endif
 
 
 /**
@@ -166,6 +170,7 @@ static inline Uint8 STMemory_ReadByte(Uint32 Address)
 extern bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *name);
 extern void STMemory_MemorySnapShot_Capture(bool bSave);
 extern void STMemory_SetDefaultConfig(void);
+extern bool STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type );
 extern void *STMemory_STAddrToPointer ( Uint32 addr );
 
 #endif

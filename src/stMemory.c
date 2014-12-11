@@ -58,7 +58,7 @@ bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *na
 {
 	Uint32 end;
 
-	if (STMemory_ValidArea(addr, len))
+	if ( STMemory_CheckAreaType ( addr, len, ABFLAG_RAM ) )
 	{
 		memcpy(&STRam[addr], src, len);
 		return true;
@@ -67,7 +67,7 @@ bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *na
 
 	for (end = addr + len; addr < end; addr++, src++)
 	{
-		if (STMemory_ValidArea(addr, 1))
+		if ( STMemory_CheckAreaType ( addr, 1, ABFLAG_RAM ) )
 			STRam[addr] = *src;
 	}
 	return false;
@@ -255,6 +255,26 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x4c2, ConnectedDriveMask);
 }
 
+
+/**
+ * Check that the region of 'size' starting at 'addr' is entirely inside
+ * a memory bank of the same memory type
+ *
+ * [NP] TODO : for now, we only check (addr,size) is in RAM or ROM
+ */
+bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
+{
+	if ( ( mem_type & ( ABFLAG_RAM | ABFLAG_ROM ) ) == 0 )
+		return false;
+
+	if (size >= 0 && addr+size < 0xff0000 &&
+		(addr+size < STRamEnd || addr >= 0xe00000))
+	{
+		return true;
+        }
+
+	return false;
+}
 
 
 /**
