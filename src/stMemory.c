@@ -254,3 +254,32 @@ void STMemory_SetDefaultConfig(void)
 	 * NOTE: some TOS images overwrite this value, see 'OpCode_SysInit', too */
 	STMemory_WriteLong(0x4c2, ConnectedDriveMask);
 }
+
+
+
+/**
+ * Convert an address in the ST memory space to a direct pointer
+ * in the host memory.
+ */
+void	*STMemory_STAddrToPointer ( Uint32 addr )
+{
+	Uint8	*p;
+
+	if ( ConfigureParams.System.bAddressSpace24 == true )
+		addr &= 0x00ffffff;			/* Only keep the 24 lowest bits */
+
+	/* [NP] TODO : we should handle conversions from any address, not just RAM or ROM */
+	addr &= 0x00ffffff;				/* temp : always force to 24 bits for now */
+
+#if ENABLE_SMALL_MEM
+	if ( addr >= 0xe00000 )		p = RomMem + addr;
+	else				p = STRam + addr;
+#else
+	p = STRam + addr;
+#endif
+
+	return (void *)p;
+}
+
+
+

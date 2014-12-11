@@ -166,5 +166,6 @@ static inline Uint8 STMemory_ReadByte(Uint32 Address)
 extern bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const char *name);
 extern void STMemory_MemorySnapShot_Capture(bool bSave);
 extern void STMemory_SetDefaultConfig(void);
+extern void *STMemory_STAddrToPointer ( Uint32 addr );
 
 #endif

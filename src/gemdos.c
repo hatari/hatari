@@ -1422,7 +1422,7 @@ static bool GemDOS_SetDTA(Uint32 Params)
 	if (STMemory_ValidArea(nDTA, sizeof(DTA)))
 	{
 		/* Store as PC pointer */
-		pDTA = (DTA *)STRAM_ADDR(nDTA);
+		pDTA = (DTA *)STMemory_STAddrToPointer(nDTA);
 	}
 	else
 	{
@@ -1564,7 +1564,7 @@ static bool GemDOS_MkDir(Uint32 Params)
 	int Drive;
 
 	/* Find directory to make */
-	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	pDirName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x39 Dcreate(\"%s\") at PC 0x%X\n", pDirName,
 		  M68000_GetPC());
@@ -1616,7 +1616,7 @@ static bool GemDOS_RmDir(Uint32 Params)
 	int Drive;
 
 	/* Find directory to make */
-	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	pDirName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3A Ddelete(\"%s\") at PC 0x%X\n", pDirName,
 		  M68000_GetPC());
@@ -1670,7 +1670,7 @@ static bool GemDOS_ChDir(Uint32 Params)
 	int Drive;
 
 	/* Find new directory */
-	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	pDirName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3B Dsetpath(\"%s\") at PC 0x%X\n", pDirName,
 		  M68000_GetPC());
@@ -1759,7 +1759,7 @@ static bool GemDOS_Create(Uint32 Params)
 	int Drive,Index, Mode;
 
 	/* Find filename */
-	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3C Fcreate(\"%s\", 0x%x) at PC 0x%X\n", pszFileName, Mode,
@@ -1876,7 +1876,7 @@ static bool GemDOS_Open(Uint32 Params)
 	FILE *AutostartHandle;
 
 	/* Find filename */
-	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 	Mode &= 3;
 
@@ -2046,7 +2046,6 @@ static bool GemDOS_Read(Uint32 Params)
 	Handle = STMemory_ReadWord(Params);
 	Size = STMemory_ReadLong(Params+SIZE_WORD);
 	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
-	pBuffer = (char *)STRAM_ADDR(Addr);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3F Fread(%i, %i, 0x%x) at PC 0x%X\n",
 	          Handle, Size, Addr,
@@ -2095,6 +2094,7 @@ static bool GemDOS_Read(Uint32 Params)
 		return true;
 	}
 	/* And read data in */
+	pBuffer = (char *)STMemory_STAddrToPointer(Addr);
 	nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
 	
 	if (ferror(FileHandles[Handle].FileHandle))
@@ -2127,7 +2127,6 @@ static bool GemDOS_Write(Uint32 Params)
 	Handle = STMemory_ReadWord(Params);
 	Size = STMemory_ReadLong(Params+SIZE_WORD);
 	Addr = STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG);
-	pBuffer = (char *)STRAM_ADDR(Addr);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x40 Fwrite(%i, %i, 0x%x) at PC 0x%X\n",
 	          Handle, Size, Addr,
@@ -2156,6 +2155,7 @@ static bool GemDOS_Write(Uint32 Params)
 		return true;
 	}
 
+	pBuffer = (char *)STMemory_STAddrToPointer(Addr);
 	fp = FileHandles[Handle].FileHandle;
 	nBytesWritten = fwrite(pBuffer, 1, Size, fp);
 	if (ferror(fp))
@@ -2184,7 +2184,7 @@ static bool GemDOS_FDelete(Uint32 Params)
 	int Drive;
 
 	/* Find filename */
-	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x41 Fdelete(\"%s\") at PC 0x%X\n", pszFileName,
 		  M68000_GetPC());
@@ -2307,7 +2307,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 	struct stat FileStat;
 
 	/* Find filename */
-	psFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	psFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 	nDrive = GemDOS_FileName2HardDriveID(psFileName);
 
 	nRwFlag = STMemory_ReadWord(Params+SIZE_LONG);
@@ -2489,7 +2489,7 @@ static bool GemDOS_GetDir(Uint32 Params)
 			c = path[i];
 			STMemory_WriteByte(Address+i, (c==PATHSEP ? '\\' : c) );
 		}
-		LOG_TRACE(TRACE_OS_GEMDOS, "-> '%s'\n", (char *)STRAM_ADDR(Address));
+		LOG_TRACE(TRACE_OS_GEMDOS, "-> '%s'\n", (char *)STMemory_STAddrToPointer(Address));
 
 		Regs[REG_D0] = GEMDOS_EOK;          /* OK */
 
@@ -2524,8 +2524,8 @@ static int GemDOS_Pexec(Uint32 Params)
 		{
 			int cmdlen;
 			const char *name, *cmd;
-			name = (const char *)STRAM_ADDR(fname);
-			cmd = (const char *)STRAM_ADDR(cmdline);
+			name = (const char *)STMemory_STAddrToPointer(fname);
+			cmd = (const char *)STMemory_STAddrToPointer(cmdline);
 			cmdlen = *cmd++;
 			LOG_TRACE_PRINT ( "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n", Mode, name, cmdlen, cmdlen?cmd:"", env_string,
 				M68000_GetPC());
@@ -2542,7 +2542,7 @@ static int GemDOS_Pexec(Uint32 Params)
 	{
 	 case 0:      /* Load and go */
 	 case 3:      /* Load, don't go */
-		pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+		pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params+SIZE_WORD));
 		Drive = GemDOS_FileName2HardDriveID(pszFileName);
 		
 		/* If not using A: or B:, use my own routines to load */
@@ -2590,7 +2590,7 @@ static bool GemDOS_SNext(void)
 		Regs[REG_D0] = GEMDOS_EINTRN;    /* "internal error */
 		return true;
 	}
-	pDTA = (DTA *)STRAM_ADDR(nDTA);
+	pDTA = (DTA *)STMemory_STAddrToPointer(nDTA);
 
 	/* Was DTA ours or TOS? */
 	if (do_get_mem_long(pDTA->magic) != DTA_MAGIC_NUMBER)
@@ -2652,7 +2652,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 	int i,j,count;
 
 	/* Find filename to search for */
-	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	pszFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 	nAttrSFirst = STMemory_ReadWord(Params+SIZE_LONG);
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4E Fsfirst(\"%s\", 0x%x) at PC 0x%X\n", pszFileName, nAttrSFirst,
@@ -2679,7 +2679,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 		Regs[REG_D0] = GEMDOS_EINTRN;    /* "internal error */
 		return true;
 	}
-	pDTA = (DTA *)STRAM_ADDR(nDTA);
+	pDTA = (DTA *)STMemory_STAddrToPointer(nDTA);
 
 	/* Populate DTA, set index for our use */
 	do_put_mem_word(pDTA->index, DTAIndex);
@@ -2777,8 +2777,8 @@ static bool GemDOS_Rename(Uint32 Params)
 	int NewDrive, OldDrive;
 
 	/* Read details from stack, skip first (dummy) arg */
-	pszOldFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-	pszNewFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG));
+	pszOldFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params+SIZE_WORD));
+	pszNewFileName = (char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params+SIZE_WORD+SIZE_LONG));
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x56 Frename(\"%s\", \"%s\") at PC 0x%X\n", pszOldFileName, pszNewFileName,
 		  M68000_GetPC());

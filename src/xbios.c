@@ -219,7 +219,7 @@ static bool XBios_Scrdmp(Uint32 Params)
 static bool XBios_HatariControl(Uint32 Params)
 {
 	const char *pText;
-	pText = (const char *)STRAM_ADDR(STMemory_ReadLong(Params));
+	pText = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n", HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
 
 	if (!bXBiosCommands)

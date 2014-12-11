@@ -65,7 +65,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 	} else {
 		str = "Hatari";
 	}
-	buf = (char *)STRAM_ADDR(ptr);
+	buf = (char *)STMemory_STAddrToPointer(ptr);
 	*retval = snprintf(buf, len, "%s", str);
 	return true;
 }
@@ -98,7 +98,7 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 		M68000_BusError(ptr, BUS_ERROR_READ);
 		return false;
 	}
-	str = (const char *)STRAM_ADDR(ptr);
+	str = (const char *)STMemory_STAddrToPointer(ptr);
 	*retval = fprintf(stderr, "%s", str);
 	fflush(stderr);
 	return true;
@@ -179,7 +179,7 @@ static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
 		M68000_BusError(ptr, BUS_ERROR_READ);
 		return false;
 	}
-	buffer = (const char *)STRAM_ADDR(ptr);
+	buffer = (const char *)STMemory_STAddrToPointer(ptr);
 	LOG_TRACE(TRACE_NATFEATS, "NF_COMMAND(0x%x \"%s\")\n", ptr, buffer);
 
 	Control_ProcessBuffer(buffer);
@@ -234,7 +234,7 @@ bool NatFeat_ID(Uint32 stack, Uint32 *retval)
 		return false;
 	}
 
-	name = (const char *)STRAM_ADDR(ptr);
+	name = (const char *)STMemory_STAddrToPointer(ptr);
 	LOG_TRACE(TRACE_NATFEATS, "NF ID(0x%x \"%s\")\n", ptr, name);
 
 	for (i = 0; i < ARRAYSIZE(features); i++) {

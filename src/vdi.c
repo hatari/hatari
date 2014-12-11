@@ -423,7 +423,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
 					first = false;
 				else
 					fputs(", ", fp);
-				str = (const char *)STRAM_ADDR(STMemory_ReadLong(AESAddrin+SIZE_LONG*i));
+				str = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(AESAddrin+SIZE_LONG*i));
 				fprintf(fp, "\"%s\"", str);
 			}
 		}
