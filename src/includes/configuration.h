@@ -321,9 +321,9 @@ typedef struct
   bool bPatchTimerD;
   bool bFastBoot;                 /* Enable to patch TOS for fast boot */
   bool bFastForward;
+  bool bAddressSpace24;           /* Always set to true with old UAE cpu */
 
 #if ENABLE_WINUAE_CPU
-  bool bAddressSpace24;
   bool bCycleExactCpu;
   FPUTYPE n_FPUType;
   bool bCompatibleFPU;            /* More compatible FPU */

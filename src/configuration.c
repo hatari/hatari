@@ -393,9 +393,9 @@ static const struct Config_Tag configs_System[] =
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bFastBoot", Bool_Tag, &ConfigureParams.System.bFastBoot },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
+	{ "bAddressSpace24", Bool_Tag, &ConfigureParams.System.bAddressSpace24 },
 
 #if ENABLE_WINUAE_CPU
-	{ "bAddressSpace24", Bool_Tag, &ConfigureParams.System.bAddressSpace24 },
 	{ "bCycleExactCpu", Bool_Tag, &ConfigureParams.System.bCycleExactCpu },
 	{ "n_FPUType", Int_Tag, &ConfigureParams.System.n_FPUType },
 	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU },
@@ -629,6 +629,7 @@ void Configuration_SetDefault(void)
  	ConfigureParams.System.nCpuLevel = 0;
  	ConfigureParams.System.nCpuFreq = 8;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
+	ConfigureParams.System.bAddressSpace24 = true;
 #endif
 	ConfigureParams.System.bCompatibleCpu = true;
 	ConfigureParams.System.bBlitter = false;
@@ -941,9 +942,9 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.nDSPType, sizeof(ConfigureParams.System.nDSPType));
 	MemorySnapShot_Store(&ConfigureParams.System.bRealTimeClock, sizeof(ConfigureParams.System.bRealTimeClock));
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
+	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 
 #if ENABLE_WINUAE_CPU
-	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 	MemorySnapShot_Store(&ConfigureParams.System.bCycleExactCpu, sizeof(ConfigureParams.System.bCycleExactCpu));
 	MemorySnapShot_Store(&ConfigureParams.System.n_FPUType, sizeof(ConfigureParams.System.n_FPUType));
 	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleFPU, sizeof(ConfigureParams.System.bCompatibleFPU));
