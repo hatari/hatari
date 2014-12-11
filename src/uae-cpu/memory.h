@@ -37,6 +37,12 @@ typedef int (*check_func)(uaecptr, uae_u32) REGPARAM;
 extern char *address_space, *good_address_map;
 
 
+enum
+{
+	ABFLAG_UNK = 0, ABFLAG_RAM = 1, ABFLAG_ROM = 2, ABFLAG_ROMIN = 4, ABFLAG_IO = 8,
+	ABFLAG_NONE = 16, ABFLAG_SAFE = 32, ABFLAG_INDIRECT = 64, ABFLAG_NOALLOC = 128,
+	ABFLAG_RTG = 256, ABFLAG_THREADSAFE = 512, ABFLAG_DIRECTMAP = 1024
+};
 typedef struct {
     /* These ones should be self-explanatory... */
     mem_get_func lget, wget, bget;
@@ -51,6 +57,7 @@ typedef struct {
      * that the pointer points to an area of at least the specified size.
      * This is used for example to translate bitplane pointers in custom.c */
     check_func check;
+    int flags;
 } addrbank;
 
 

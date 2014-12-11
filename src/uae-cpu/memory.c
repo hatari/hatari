@@ -596,63 +596,63 @@ static addrbank dummy_bank =
 {
     dummy_lget, dummy_wget, dummy_bget,
     dummy_lput, dummy_wput, dummy_bput,
-    dummy_xlate, dummy_check
+    dummy_xlate, dummy_check, ABFLAG_NONE
 };
 
 static addrbank BusErrMem_bank =
 {
     BusErrMem_lget, BusErrMem_wget, BusErrMem_bget,
     BusErrMem_lput, BusErrMem_wput, BusErrMem_bput,
-    BusErrMem_xlate, BusErrMem_check
+    BusErrMem_xlate, BusErrMem_check, ABFLAG_NONE
 };
 
 static addrbank STmem_bank =
 {
     STmem_lget, STmem_wget, STmem_bget,
     STmem_lput, STmem_wput, STmem_bput,
-    STmem_xlate, STmem_check
+    STmem_xlate, STmem_check, ABFLAG_RAM
 };
 
 static addrbank SysMem_bank =
 {
     SysMem_lget, SysMem_wget, SysMem_bget,
     SysMem_lput, SysMem_wput, SysMem_bput,
-    STmem_xlate, STmem_check
+    STmem_xlate, STmem_check, ABFLAG_RAM
 };
 
 static addrbank VoidMem_bank =
 {
     VoidMem_lget, VoidMem_wget, VoidMem_bget,
     VoidMem_lput, VoidMem_wput, VoidMem_bput,
-    VoidMem_xlate, VoidMem_check
+    VoidMem_xlate, VoidMem_check , ABFLAG_NONE
 };
 
 static addrbank TTmem_bank =
 {
     TTmem_lget, TTmem_wget, TTmem_bget,
     TTmem_lput, TTmem_wput, TTmem_bput,
-    TTmem_xlate, TTmem_check
+    TTmem_xlate, TTmem_check, ABFLAG_RAM
 };
 
 static addrbank ROMmem_bank =
 {
     ROMmem_lget, ROMmem_wget, ROMmem_bget,
     ROMmem_lput, ROMmem_wput, ROMmem_bput,
-    ROMmem_xlate, ROMmem_check
+    ROMmem_xlate, ROMmem_check, ABFLAG_ROM
 };
 
 static addrbank IdeMem_bank =
 {
     Ide_Mem_lget, Ide_Mem_wget, Ide_Mem_bget,
     Ide_Mem_lput, Ide_Mem_wput, Ide_Mem_bput,
-    IdeMem_xlate, IdeMem_check
+    IdeMem_xlate, IdeMem_check, ABFLAG_IO
 };
 
 static addrbank IOmem_bank =
 {
     IoMem_lget, IoMem_wget, IoMem_bget,
     IoMem_lput, IoMem_wput, IoMem_bput,
-    IOmem_xlate, IOmem_check
+    IOmem_xlate, IOmem_check, ABFLAG_IO
 };
 
 

@@ -953,7 +953,7 @@ static addrbank SysMem_bank =
     SysMem_lget, SysMem_wget, SysMem_bget,
     SysMem_lput, SysMem_wput, SysMem_bput,
     STmem_xlate, STmem_check, NULL, "sys_mem" , "Sys memory",
-    SysMem_lget, SysMem_wget, ABFLAG_ROM
+    SysMem_lget, SysMem_wget, ABFLAG_RAM
 };
 
 static addrbank VoidMem_bank =
