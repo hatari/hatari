@@ -25,41 +25,6 @@ extern Uint8 STRam[16*1024*1024];
 
 extern Uint32 STRamEnd;
 
-/* TODO: when Hatari will support TT/fast-RAM, take it into account
- * in STRAM_ADDR() and STMemory_ValidArea().
- */
-
-#if 0
-/* Offset ST address to PC pointer: */
-#if ENABLE_SMALL_MEM
-# define STRAM_ADDR(Var) \
-	(((Var)>= 0xe00000) \
-		 ? ((unsigned long)RomMem+((Uint32)(Var) & 0x00ffffff)) \
-		 : ((unsigned long)STRam+((Uint32)(Var) & 0x00ffffff)))
-#else
-# define STRAM_ADDR(Var)  ((unsigned long)STRam+((Uint32)(Var) & 0x00ffffff))
-#endif
-
-
-/**
- * Check whether given memory address and size are within
- * valid ST memory area (i.e. read/write from/to there doesn't
- * overwrite Hatari's own memory & cause potential segfaults)
- * and that the size is positive.
- * 
- * If they are; return true, otherwise false.
- */
-static inline bool STMemory_ValidArea(Uint32 addr, int size)
-{
-	if (size >= 0 && addr+size < 0xff0000 &&
-	    (addr+size < STRamEnd || addr >= 0xe00000))
-	{
-		return true;
-	}
-	return false;
-}
-#endif
-
 
 /**
  * Write 32-bit word into ST memory space.

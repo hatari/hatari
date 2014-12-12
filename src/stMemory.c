@@ -259,27 +259,28 @@ void STMemory_SetDefaultConfig(void)
 /**
  * Check that the region of 'size' starting at 'addr' is entirely inside
  * a memory bank of the same memory type
- *
- * [NP] TODO : for now, we only check (addr,size) is in RAM or ROM
  */
 bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
 {
-	if ( ( mem_type & ( ABFLAG_RAM | ABFLAG_ROM ) ) == 0 )
+	addrbank	*pBank;
+
+	pBank = &get_mem_bank ( addr );
+
+	if ( ( pBank->flags & mem_type ) == 0 )
 		return false;
 
-	if (size >= 0 && addr+size < 0xff0000 &&
-		(addr+size < STRamEnd || addr >= 0xe00000))
-	{
-		return true;
-        }
-
-	return false;
+	return pBank->check ( addr , size );
 }
 
 
 /**
  * Convert an address in the ST memory space to a direct pointer
  * in the host memory.
+ *
+ * NOTE : Using this function to get a direct pointer to the memory should
+ * only be used after doing a call to valid_address or STMemory_CheckAreaType
+ * to ensure we don't try to access a non existing memory region.
+ * Basically, this function should be used only for addr in RAM or in ROM
  */
 void	*STMemory_STAddrToPointer ( Uint32 addr )
 {
@@ -288,16 +289,7 @@ void	*STMemory_STAddrToPointer ( Uint32 addr )
 	if ( ConfigureParams.System.bAddressSpace24 == true )
 		addr &= 0x00ffffff;			/* Only keep the 24 lowest bits */
 
-	/* [NP] TODO : we should handle conversions from any address, not just RAM or ROM */
-	addr &= 0x00ffffff;				/* temp : always force to 24 bits for now */
-
-#if ENABLE_SMALL_MEM
-	if ( addr >= 0xe00000 )		p = RomMem + addr;
-	else				p = STRam + addr;
-#else
-	p = STRam + addr;
-#endif
-
+	p = get_real_address ( addr );
 	return (void *)p;
 }
 
