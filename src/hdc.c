@@ -716,6 +716,11 @@ static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 
 	/* Check size for sanity - is the length a multiple of 512? */
 	filesize = File_Length(filename);
+	if (filesize < 0)
+	{
+		Log_Printf(LOG_ERROR, "ERROR: unable to access/get HD file size!\n");
+		return -EINVAL;
+	}
 	if (filesize <= 0 || (filesize & 0x1ff) != 0)
 	{
 		Log_Printf(LOG_ERROR, "ERROR: HD file has strange size!\n");
@@ -725,7 +730,7 @@ static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 	fp = fopen(filename, "rb+");
 	if (fp == NULL)
 	{
-		Log_Printf(LOG_ERROR, "ERROR: cannot open HD file!\n");
+		Log_Printf(LOG_ERROR, "ERROR: cannot open HD file read/write!\n");
 		return -ENOENT;
 	}
 	if (!File_Lock(fp))
