@@ -40,7 +40,7 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
  * - PC switches
  * And drop to debugger on invalid PC addresses.
  */
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include "debugui.h"
 static bool skip_assert;
@@ -889,10 +889,16 @@ void Profile_CpuUpdate(void)
 		fprintf(stderr, "WARNING: cycles %d > 512:\n", cycles);
 		Disasm(stderr, prev_pc, &nextpc, 1);
 	}
-	if (unlikely(cycles == 0)) {
-		Uint32 nextpc;
-		fputs("WARNING: Zero cycles for an opcode:\n", stderr);
-		Disasm(stderr, prev_pc, &nextpc, 1);
+	{
+		static Uint32 prev_cycles = 0, prev_pc2 = 0;
+		if (unlikely(cycles == 0 && prev_cycles == 0)) {
+			Uint32 nextpc;
+			fputs("WARNING: Zero cycles for successive opcodes:\n", stderr);
+			Disasm(stderr, prev_pc2, &nextpc, 1);
+			Disasm(stderr, prev_pc, &nextpc, 1);
+		}
+		prev_cycles = cycles;
+		prev_pc2 = prev_pc;
 	}
 #endif
 }
