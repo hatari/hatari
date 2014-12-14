@@ -48,13 +48,6 @@ static bool skip_assert;
 
 static callinfo_t cpu_callinfo;
 
-/* This is relevant with WinUAE CPU core:
- * - the default cycle exact variant needs this define to be non-zero
- * - non-cycle exact and MMU variants need this define to be 0
- *   for cycle counts to make any sense
- */
-#define USE_CYCLES_COUNTER 1
-
 #define MAX_CPU_PROFILE_VALUE 0xFFFFFFFF
 
 typedef struct {
@@ -76,7 +69,7 @@ static struct {
 	int active;           /* number of active data items in all areas */
 	Uint32 *sort_arr;     /* data indexes used for sorting */
 	int prev_family;      /* previous instruction opcode family */
-	Uint32 prev_cycles;   /* previous instruction cycles counter */
+	Uint64 prev_cycles;   /* previous instruction cycles counter */
 	Uint32 prev_pc;       /* previous instruction address */
 	Uint32 loop_start;    /* address of last loop start */
 	Uint32 loop_end;      /* address of last loop end */
@@ -631,7 +624,7 @@ bool Profile_CpuStart(void)
 		etos_switcher = PC_UNDEFINED;
 	}
 
-	cpu_profile.prev_cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
+	cpu_profile.prev_cycles = CyclesGlobalClockCounter;
 	cpu_profile.prev_family = OpcodeFamily;
 	cpu_profile.prev_pc = M68000_GetPC() & 0xffffff;
 
@@ -849,20 +842,9 @@ void Profile_CpuUpdate(void)
 		prev->count++;
 	}
 
-#if USE_CYCLES_COUNTER
-	/* Confusingly, with DSP enabled, cycle counter is for this instruction,
-	 * without DSP enabled, it's a monotonically increasing counter.
-	 */
-	if (bDspEnabled) {
-		cycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
-	} else {
-		Uint32 newcycles = Cycles_GetCounter(CYCLES_COUNTER_CPU);
-		cycles = newcycles - cpu_profile.prev_cycles;
-		cpu_profile.prev_cycles = newcycles;
-	}
-#else
-	cycles = CurrentInstrCycles + nWaitStateCycles;
-#endif
+	cycles = CyclesGlobalClockCounter - cpu_profile.prev_cycles;
+	cpu_profile.prev_cycles = CyclesGlobalClockCounter;
+
 	/* cycles are based on 8Mhz clock, change them to correct one */
 	cycles <<= nCpuFreqShift;
 
