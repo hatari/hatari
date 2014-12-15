@@ -689,7 +689,7 @@ int	FDC_Get_Statusbar_Text ( char *text, size_t maxlen )
 	else if ( ( Command & 0xf0 ) == 0x10 )	strcpy ( CommandText , "SE" );		/* Seek */
 	else if ( ( Command & 0xe0 ) == 0x20 )	strcpy ( CommandText , "ST" );		/* Step */
 	else if ( ( Command & 0xe0 ) == 0x40 )	strcpy ( CommandText , "SI" );		/* Step In */
-	else if ( ( Command & 0xe0 ) == 0x50 )	strcpy ( CommandText , "SO" );		/* Step Out */
+	else if ( ( Command & 0xe0 ) == 0x60 )	strcpy ( CommandText , "SO" );		/* Step Out */
 	else if ( ( Command & 0xe0 ) == 0x80 )	strcpy ( CommandText , "RS" );		/* Read Sector */
 	else if ( ( Command & 0xe0 ) == 0xa0 )	strcpy ( CommandText , "WS" );		/* Write Sector */
 	else if ( ( Command & 0xf0 ) == 0xc0 )	strcpy ( CommandText , "RA" );		/* Read Address */
