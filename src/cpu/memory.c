@@ -26,6 +26,7 @@ const char Memory_fileid[] = "Hatari memory.c : " __DATE__ " " __TIME__;
 #include "reset.h"
 #include "stMemory.h"
 #include "m68000.h"
+#include "configuration.h"
 
 #include "newcpu.h"
 
@@ -42,7 +43,8 @@ static uae_u32 TTmem_mask;
 #define ROMmem_start 0x00E00000
 #define IdeMem_start 0x00F00000
 #define IOmem_start  0x00FF0000
-#define TTmem_start  0x01000000
+#define TTmem_start  0x01000000			/* TOS 3 and TOS 4 always expect extra RAM at this address */
+#define TTmem_end    0x80000000			/* Max value for end of TT RAM, which gives 2047 MB */
 
 #define IdeMem_size  65536
 #define IOmem_size  65536
@@ -1226,6 +1228,9 @@ static void fill_ce_banks (void)
  */
 void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMemStart)
 {
+    int 	addr;
+
+    currprefs.address_space_24 = ConfigureParams.System.bAddressSpace24;	/* temp, do it in m68000.c */
     last_address_space_24 = currprefs.address_space_24;
 
     STmem_size = (nNewSTMemSize + 65535) & 0xFFFF0000;
@@ -1281,14 +1286,6 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
     map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1, 0);
 
-    /* TT memory isn't really supported yet */
-    if (TTmem_size > 0)
-	TTmemory = (uae_u8 *)malloc (TTmem_size);
-    if (TTmemory != 0)
-	map_banks (&TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0);
-    else
-	TTmem_size = 0;
-    TTmem_mask = TTmem_size - 1;
 
     /* ROM memory: */
     /* Depending on which ROM version we are using, the other ROM region is illegal! */
@@ -1319,6 +1316,23 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0);
 
+
+    /* If MMU is disabled on TT/Falcon and we use full 32 bit addressing */
+    /* then we remap memory 00xxxxxx to FFxxxxxx (as a minimal replacement */
+    /* for the MMU's tables). Else, we get some crashes when booting TOS 3 and 4 */
+    if ( ( ConfigureParams.System.bAddressSpace24 == false )
+      && ( ConfigureParams.System.bMMU == false )
+      && ( ( ConfigureParams.System.nMachineType == MACHINE_TT )
+	|| ( ConfigureParams.System.nMachineType == MACHINE_FALCON ) ) )
+    {
+      /* Copy all 256 banks 0x0000-0x00FF to banks 0xFF00-0xFFFF */
+      for ( addr=0x0 ; addr<=0x00ffffff ; addr+=0x10000 )
+	{
+	  //printf ( "put mem %x %x\n" , addr , addr|0xff000000 );
+	  put_mem_bank ( addr|0xff000000 , &get_mem_bank ( addr ) , 0 );
+	}
+    }
+
     illegal_count = 50;
 }
 
@@ -1329,7 +1343,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 void memory_uninit (void)
 {
     /* Here, we free allocated memory from memory_init */
-    if (TTmem_size > 0) {
+    if (TTmemory) {
 	free(TTmemory);
 	TTmemory = NULL;
     }
@@ -1357,6 +1371,7 @@ static void map_banks2 (addrbank *bank, int start, int size, int realsize, int q
 	addrbank *orgbank = bank;
 	uae_u32 realstart = start;
 
+//printf ( "map %x %x 24=%d\n" , start<<16 , size<<16 , currprefs.address_space_24 );
 #ifndef WINUAE_FOR_HATARI
 	if (quick <= 0)
 		old = debug_bankchange (-1);
