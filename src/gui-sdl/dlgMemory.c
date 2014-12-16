@@ -112,8 +112,11 @@ bool Dialog_MemDlg(void)
 		break;
 	}
 	memsize = ConfigureParams.Memory.nTTRamSize;
+#if ENABLE_WINUAE_CPU
 	sprintf(sTTRamSize, "%3i", memsize);
-
+#else
+	strcpy(sTTRamSize, "N/A");
+#endif
 	File_ShrinkName(dlgSnapShotName, ConfigureParams.Memory.szMemoryCaptureFileName, memorydlg[DLGMEM_FILENAME].w);
 
 
@@ -128,6 +131,7 @@ bool Dialog_MemDlg(void)
 
 		switch (but)
 		{
+#if ENABLE_WINUAE_CPU
 		 case DLGMEM_TTRAM_LESS:
 			memsize = Opt_ValueAlignMinMax(memsize - TTRAM_STEP, TTRAM_STEP, TTRAM_MIN, TTRAM_MAX);
 			sprintf(sTTRamSize, "%3i", memsize);
@@ -136,7 +140,7 @@ bool Dialog_MemDlg(void)
 			memsize = Opt_ValueAlignMinMax(memsize + TTRAM_STEP, TTRAM_STEP, TTRAM_MIN, TTRAM_MAX);
 			sprintf(sTTRamSize, "%3i", memsize);
 			break;
-
+#endif
 		 case DLGMEM_SAVE:              /* Save memory snap-shot */
 			if (SDLGui_FileConfSelect("Save memory snapshot:", dlgSnapShotName,
 			                          ConfigureParams.Memory.szMemoryCaptureFileName,
