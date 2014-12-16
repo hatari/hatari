@@ -636,7 +636,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bCompatibleCpu = true;
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.bPatchTimerD = true;
-	ConfigureParams.System.bFastBoot = true;
+	ConfigureParams.System.bFastBoot = false;
 	ConfigureParams.System.bRealTimeClock = false;
 	ConfigureParams.System.bFastForward = false;
 
