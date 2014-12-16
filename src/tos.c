@@ -664,7 +664,7 @@ int TOS_LoadImage(void)
 
 	/* (Re-)Initialize the memory banks: */
 	memory_uninit();
-	memory_init(STRamEnd, 0, TosAddress);
+	memory_init(STRamEnd, ConfigureParams.Memory.nTTRamSize*1024*1024, TosAddress);
 
 	/* Clear Upper memory (ROM and IO memory) */
 	memset(&RomMem[0xe00000], 0, 0x200000);

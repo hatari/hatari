@@ -44,7 +44,7 @@ static uae_u32 TTmem_mask;
 #define IdeMem_start 0x00F00000
 #define IOmem_start  0x00FF0000
 #define TTmem_start  0x01000000			/* TOS 3 and TOS 4 always expect extra RAM at this address */
-#define TTmem_end    0x80000000			/* Max value for end of TT RAM, which gives 2047 MB */
+#define TTmem_end    0x80000000			/* Max value for end of TT ram, which gives 2047 MB */
 
 #define IdeMem_size  65536
 #define IOmem_size  65536
@@ -1285,6 +1285,33 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0, 0);
     /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
     map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1, 0);
+
+
+    /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
+    /* This requires the CPU to use 32 bit addressing */
+    TTmemory = NULL;
+    if ( ConfigureParams.System.bAddressSpace24 == false )
+    {
+	/* If there's no extra RAM on a TT, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
+	if ( ConfigureParams.System.nMachineType == MACHINE_TT )
+	    map_banks ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0 );
+
+	if ( TTmem_size > 0 )
+	{
+	    TTmemory = (uae_u8 *)malloc ( TTmem_size );
+
+	    if ( TTmemory != NULL )
+	    {
+		map_banks ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0 );
+		TTmem_mask = 0xffffffff;
+	    }
+	    else
+	    {
+		write_log ("can't allocate %d MB for TT RAM\n" , TTmem_size / ( 1024*1024 ) );
+		TTmem_size = 0;
+	    }
+	}
+    }
 
 
     /* ROM memory: */
