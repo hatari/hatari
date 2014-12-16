@@ -118,6 +118,7 @@ enum {
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
 	OPT_MEMSIZE,		/* memory options */
+	OPT_TT_RAM,
 	OPT_MEMSTATE,
 	OPT_TOS,		/* ROM options */
 	OPT_PATCHTOS,
@@ -327,6 +328,8 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB)" },
+	{ OPT_TT_RAM,   NULL, "--ttram",
+	  "<x>", "TT RAM size (x = size in MiB from 0 to 256)" },
 	{ OPT_MEMSTATE,   NULL, "--memstate",
 	  "<file>", "Load memory snap-shot <file>" },
 
@@ -1441,6 +1444,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				return Opt_ShowError(OPT_MEMSIZE, argv[i], "Invalid memory size");
 			}
 			ConfigureParams.Memory.nMemorySize = memsize;
+			bLoadAutoSave = false;
+			break;
+
+		case OPT_TT_RAM:
+			memsize = atoi(argv[++i]);
+			ConfigureParams.Memory.nTTRamSize = Opt_ValueAlignMinMax(memsize+3, 4, 0, 256);
 			bLoadAutoSave = false;
 			break;
 

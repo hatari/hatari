@@ -471,6 +471,9 @@ void Statusbar_UpdateInfo(void)
 			end = Statusbar_AddString(end, "0.5");
 		}
 	}
+	if (ConfigureParams.Memory.nTTRamSize) {
+		end += sprintf(end, "/%i", ConfigureParams.Memory.nTTRamSize);
+	}
 	end = Statusbar_AddString(end, "MB ");
 
 	/* machine type */

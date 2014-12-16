@@ -118,6 +118,7 @@ typedef struct
 typedef struct
 {
   int nMemorySize;
+  int nTTRamSize;
   bool bAutoSave;
   char szMemoryCaptureFileName[FILENAME_MAX];
   char szAutoSaveFileName[FILENAME_MAX];

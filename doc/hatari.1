@@ -271,7 +271,10 @@ speed up FDC emulation (can cause incompatibilities)
 Load memory snap-shot <file>
 .TP 
 .B \-s, \-\-memsize <x>
-Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
+Set amount of emulated ST RAM, x = 1 to 14 MiB, or 0 for 512 KiB
+.TP
+.B \-s, \-\-ttram <x>
+Set amount of emulated TT RAM, x = 0 to 256 MiB (in 4MB steps)
 
 .SH "ROM options"
 .TP 

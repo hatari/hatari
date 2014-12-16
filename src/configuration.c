@@ -260,6 +260,7 @@ static const struct Config_Tag configs_Sound[] =
 static const struct Config_Tag configs_Memory[] =
 {
 	{ "nMemorySize", Int_Tag, &ConfigureParams.Memory.nMemorySize },
+	{ "nTTRamSize", Int_Tag, &ConfigureParams.Memory.nTTRamSize },
 	{ "bAutoSave", Bool_Tag, &ConfigureParams.Memory.bAutoSave },
 	{ "szMemoryCaptureFileName", String_Tag, ConfigureParams.Memory.szMemoryCaptureFileName },
 	{ "szAutoSaveFileName", String_Tag, ConfigureParams.Memory.szAutoSaveFileName },
@@ -552,6 +553,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
+	ConfigureParams.Memory.nTTRamSize = 0;     /* disabled */
 	ConfigureParams.Memory.bAutoSave = false;
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav",
 	        psHomeDir, PATHSEP);
@@ -905,6 +907,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(ConfigureParams.Rom.szCartridgeImageFileName, sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
 
 	MemorySnapShot_Store(&ConfigureParams.Memory.nMemorySize, sizeof(ConfigureParams.Memory.nMemorySize));
+	MemorySnapShot_Store(&ConfigureParams.Memory.nMemorySize, sizeof(ConfigureParams.Memory.nTTRamSize));
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[0], sizeof(ConfigureParams.DiskImage.szDiskFileName[0]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[0], sizeof(ConfigureParams.DiskImage.szDiskZipPath[0]));
