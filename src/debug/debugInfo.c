@@ -70,13 +70,13 @@ static Uint32 DebugInfo_GetSysbase(Uint32 *rombase)
 {
 	Uint32 sysbase = STMemory_ReadLong(OS_SYSBASE);
 
-	if ( !STMemory_CheckAreaType ( sysbase, OS_HEADER_SIZE, ABFLAG_RAM ) ) {
+	if ( !STMemory_CheckAreaType (sysbase, OS_HEADER_SIZE, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		fprintf(stderr, "Invalid TOS sysbase RAM address (0x%x)!\n", sysbase);
 		return 0;
 	}
 	/* under TOS, sysbase = os_beg = TosAddress, but not under MiNT -> use os_beg */
 	*rombase = STMemory_ReadLong(sysbase+0x08);
-	if ( !STMemory_CheckAreaType ( *rombase, OS_HEADER_SIZE, ABFLAG_ROM ) ) {
+	if ( !STMemory_CheckAreaType (*rombase, OS_HEADER_SIZE, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		fprintf(stderr, "Invalid TOS sysbase ROM address (0x%x)!\n", *rombase);
 		return 0;
 	}
@@ -257,7 +257,7 @@ static void DebugInfo_PrintOSHeader(Uint32 sysbase)
 
 	gemblock = STMemory_ReadLong(sysbase+0x14);
 	fprintf(stderr, "GEM Memory Usage Parameter Block:\n");
-	if ( STMemory_CheckAreaType ( gemblock, GEM_MUPB_SIZE, ABFLAG_RAM ) ) {
+	if ( STMemory_CheckAreaType ( gemblock, GEM_MUPB_SIZE, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		fprintf(stderr, "- Block addr : 0x%06x\n", gemblock);
 		fprintf(stderr, "- GEM magic  : 0x%x (valid=0x%x)\n", STMemory_ReadLong(gemblock), GEM_MAGIC);
 		fprintf(stderr, "- GEM entry  : 0x%06x\n", STMemory_ReadLong(gemblock+4));

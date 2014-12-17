@@ -267,7 +267,10 @@ bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
 	pBank = &get_mem_bank ( addr );
 
 	if ( ( pBank->flags & mem_type ) == 0 )
+	{
+		fprintf(stderr, "pBank flags mismatch: 0x%x & 0x%x (RAM = 0x%x)\n", pBank->flags, mem_type, ABFLAG_RAM);
 		return false;
+	}
 
 	return pBank->check ( addr , size );
 }
