@@ -655,6 +655,29 @@ int TOS_LoadImage(void)
 	if (!bIsEmuTOS)
 		TOS_CheckSysConfig();
 
+	if (ConfigureParams.Memory.nTTRamSize)
+	{
+		if (ConfigureParams.System.nMachineType == MACHINE_TT)
+		{
+			if (ConfigureParams.System.bAddressSpace24)
+			{
+				Log_AlertDlg(LOG_ERROR, "Enabling 32-bit addressing for TT-RAM access.\nThis can cause issues in some programs!\n");
+				ConfigureParams.System.bAddressSpace24 = false;
+			}
+			if (ConfigureParams.System.bFastBoot)
+			{
+				Log_Printf(LOG_WARN, "Disabling fast boot, otherwise TT-RAM isn't detected.\n");
+				ConfigureParams.System.bFastBoot = false;
+			}
+		} else {
+			Log_Printf(LOG_WARN, "Disabling TT-RAM, it would need TT / 32-bit addressing!");
+			ConfigureParams.Memory.nTTRamSize = 0;
+		}
+	} else {
+		/* enable 24-bit for better compatibility, only TT-RAM needs 32-bit addressing */
+		ConfigureParams.System.bAddressSpace24 = true;
+	}
+
 	/* Calculate end of RAM */
 	if (ConfigureParams.Memory.nMemorySize > 0
 	    && ConfigureParams.Memory.nMemorySize <= 14)
