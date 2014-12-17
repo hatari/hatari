@@ -146,12 +146,14 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	/* Did change FPU? */
 	if (changed->System.n_FPUType != current->System.n_FPUType)
 		return true;
+
+	/* Did change size of TT-RAM? */
+	if (current->Memory.nTTRamSize != changed->Memory.nTTRamSize)
+		return true;
 #endif
 
 	/* Did change size of memory? */
 	if (current->Memory.nMemorySize != changed->Memory.nMemorySize)
-		return true;
-	if (current->Memory.nTTRamSize != changed->Memory.nTTRamSize)
 		return true;
 
 	/* MIDI related IRQs start/stop needs reset */

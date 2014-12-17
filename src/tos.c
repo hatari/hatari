@@ -655,10 +655,13 @@ int TOS_LoadImage(void)
 	if (!bIsEmuTOS)
 		TOS_CheckSysConfig();
 
+#if ENABLE_WINUAE_CPU
 	if (ConfigureParams.Memory.nTTRamSize)
 	{
-		if (ConfigureParams.System.nMachineType == MACHINE_TT)
+		switch (ConfigureParams.System.nMachineType)
 		{
+		case MACHINE_TT:
+		case MACHINE_FALCON:
 			if (ConfigureParams.System.bAddressSpace24)
 			{
 				Log_AlertDlg(LOG_ERROR, "Enabling 32-bit addressing for TT-RAM access.\nThis can cause issues in some programs!\n");
@@ -669,14 +672,16 @@ int TOS_LoadImage(void)
 				Log_Printf(LOG_WARN, "Disabling fast boot, otherwise TT-RAM isn't detected.\n");
 				ConfigureParams.System.bFastBoot = false;
 			}
-		} else {
+			break;
+		default:
+			/* set to zero, otherwise statusbar shows bogus data */
 			Log_Printf(LOG_WARN, "Disabling TT-RAM, it would need TT / 32-bit addressing!");
 			ConfigureParams.Memory.nTTRamSize = 0;
 		}
-	} else {
-		/* enable 24-bit for better compatibility, only TT-RAM needs 32-bit addressing */
-		ConfigureParams.System.bAddressSpace24 = true;
 	}
+	if (ConfigureParams.System.nCpuLevel == 0)
+		ConfigureParams.System.bAddressSpace24 = true;
+#endif
 
 	/* Calculate end of RAM */
 	if (ConfigureParams.Memory.nMemorySize > 0

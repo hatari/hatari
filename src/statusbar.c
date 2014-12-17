@@ -471,9 +471,11 @@ void Statusbar_UpdateInfo(void)
 			end = Statusbar_AddString(end, "0.5");
 		}
 	}
+#if ENABLE_WINUAE_CPU
 	if (ConfigureParams.Memory.nTTRamSize) {
 		end += sprintf(end, "/%i", ConfigureParams.Memory.nTTRamSize);
 	}
+#endif
 	end = Statusbar_AddString(end, "MB ");
 
 	/* machine type */
