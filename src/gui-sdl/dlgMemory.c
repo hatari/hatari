@@ -34,9 +34,9 @@ const char DlgMemory_fileid[] = "Hatari dlgMemory.c : " __DATE__ " " __TIME__;
 /* String for TT RAM size */
 static char sTTRamSize[4];
 
-#define TTRAM_STEP	4
-#define TTRAM_MIN	0
-#define TTRAM_MAX	256
+#define DLG_TTRAM_STEP	4
+#define DLG_TTRAM_MIN	0
+#define DLG_TTRAM_MAX	256
 
 static char dlgSnapShotName[36+1];
 
@@ -133,11 +133,11 @@ bool Dialog_MemDlg(void)
 		{
 #if ENABLE_WINUAE_CPU
 		 case DLGMEM_TTRAM_LESS:
-			memsize = Opt_ValueAlignMinMax(memsize - TTRAM_STEP, TTRAM_STEP, TTRAM_MIN, TTRAM_MAX);
+			memsize = Opt_ValueAlignMinMax(memsize - DLG_TTRAM_STEP, DLG_TTRAM_STEP, DLG_TTRAM_MIN, DLG_TTRAM_MAX);
 			sprintf(sTTRamSize, "%3i", memsize);
 			break;
 		 case DLGMEM_TTRAM_MORE:
-			memsize = Opt_ValueAlignMinMax(memsize + TTRAM_STEP, TTRAM_STEP, TTRAM_MIN, TTRAM_MAX);
+			memsize = Opt_ValueAlignMinMax(memsize + DLG_TTRAM_STEP, DLG_TTRAM_STEP, DLG_TTRAM_MIN, DLG_TTRAM_MAX);
 			sprintf(sTTRamSize, "%3i", memsize);
 			break;
 #endif
