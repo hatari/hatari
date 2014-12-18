@@ -760,9 +760,9 @@ static uae_u8 *VoidMem_xlate (uaecptr addr)
 }
 
 
-/* **** TT fast memory (not yet supported) **** */
+/* **** TT fast memory **** */
 
-static uae_u8 *TTmemory;
+uae_u8 *TTmemory;
 
 static uae_u32 TTmem_lget(uaecptr addr)
 {

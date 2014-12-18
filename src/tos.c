@@ -674,9 +674,7 @@ int TOS_LoadImage(void)
 			}
 			break;
 		default:
-			/* set to zero, otherwise statusbar shows bogus data */
-			Log_Printf(LOG_WARN, "Disabling TT-RAM, it would need TT / 32-bit addressing!");
-			ConfigureParams.Memory.nTTRamSize = 0;
+			break;
 		}
 	}
 	if (ConfigureParams.System.nCpuLevel == 0)

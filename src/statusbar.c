@@ -48,6 +48,7 @@ const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 #include "avi_record.h"
 #include "vdi.h"
 #include "fdc.h"
+#include "stMemory.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -471,11 +472,9 @@ void Statusbar_UpdateInfo(void)
 			end = Statusbar_AddString(end, "0.5");
 		}
 	}
-#if ENABLE_WINUAE_CPU
-	if (ConfigureParams.Memory.nTTRamSize) {
+	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
 		end += sprintf(end, "/%i", ConfigureParams.Memory.nTTRamSize);
 	}
-#endif
 	end = Statusbar_AddString(end, "MB ");
 
 	/* machine type */

@@ -22,6 +22,7 @@ extern uae_u8 *ROMmemory;
 extern Uint8 STRam[16*1024*1024];
 #define RomMem STRam
 #endif  /* ENABLE_SMALL_MEM */
+extern uae_u8 *TTmemory;
 
 extern Uint32 STRamEnd;
 
