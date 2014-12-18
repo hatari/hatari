@@ -19,39 +19,50 @@ Emulation:
   - Support for mapping file names with 8-bit characters
     between host and Atari encodings (umlauted chars etc)
 - CPU:
+  - update WinUAE CPU core version from 2.3 -> 2.8.1 -> 3.0
+    (MMU emulation fixes etc)
   - in 68000 mode, remove some un-allowed <ea> for CMPI, BTST and TST
   - check for address error when new PC is set at the end of RTE, RTS and RTR
   - fix "move.b an,<ea>", it's not allowed and should give illegal instruction
   - improve stack frame for bus error and address error
+- Memory:
+  - support for TT-RAM under TOS v3 and EmuTOS CVS snapshot 2014-12-15 or later
 - FDC changes:
   - for STX disks, fix type I commands with verify bit on tracks with no sector
 
 Emulator:
 - Support for compiling with libSDL2 (experimental)
-- Fix: WinUAE CPU core (FPU) memory state restore
-- Fix: chrash with VDI extended resolution emulation when
-       C: isn't GEMDOS HD emulated drive
-- Fix: update default max window size for 2-line statusbar
-       NOTE: size would need to be updated in Hatari config files too!
-- Fix: statusbar assert when both FPU & MMU are enabled in WinUAE CPU core
-- GEMDOS emulation:
+  - SDL2 supports other than 2x scaling factors for ST/e emulation
+- Misc fixes:
+  - Fix: WinUAE CPU core (FPU) memory state restore
+  - Fix: chrash with VDI extended resolution emulation when
+         C: isn't GEMDOS HD emulated drive
+  - Fix: compilation when zlib is missing
+- Options:
+  - Fast boot (memory check bypass) is disabled by default
+  - New --png-level option to decrease AVI compression load
+- Hard drive emulation:
   - SDL GUI & cmdline option to skip drives used by partitions on
     ACSI & IDE images when assigning drive for GEMDOS HD emulation.
     Partition count parsed by Hatari might not match count used by
     Atari HD driver due to driver differences in interpreting disk MBR
-- Refuse to mount same HD image from multiple Hatari instances
-  (on platforms supporting BSD flock()), to avoid corrupting them
+  - Refuse to mount same HD image from multiple Hatari instances
+    (on platforms supporting BSD flock()), to avoid corrupting them
 - SDL GUI:
-  - joystick navigation to options GUI
-  - keyboard navigation & shortcuts for options GUI
+  - joystick navigation in options GUI
+  - keyboard navigation & shortcuts in options GUI
   - sort file selector items case-insensitively with folders first
   - Partial support for showing Latin1 chars from UTF-8 file names
   - AltGr+F<1-4> keyboard shortcuts to switch mode/type for emulated
     joysticks and joypads
+  - Fix: sync joystick changes with statusbar
+  - Fix: update default max window size for 2-line statusbar
+         NOTE: size would need to be updated in Hatari config files too!
+  - Fix: statusbar assert when FPU/MMU/TT-RAM are enabled in WinUAE CPU core
 - Debugger:
   - Fix: crash when GEMDOS tracing is used without GEMDOS HD emulation
   - Fix: update external disassembler's CPU mask when CPU type is changed
-         (it wasn't restricted to only the valid opcodes for a CPU type)
+         (it wasn't restricted to opcodes valid for given CPU type)
   - Add trace support for IDE, MIDI and keymaps.  ACSI (SCSI) and IDE
     trace output shows primary partition tables for ACSI & IDE images
     (both Atari and DOS MBRs are supported)
@@ -59,8 +70,8 @@ Emulator:
   - Add "save" subcommand to "history" command
 
 Other changes:
-- Remaining Hatari OSX UI changes for Hatari v1.8.0
-  (localization)
+- Hatari & disk image icons in SVG & PNG formats (multiple sizes)
+- Remaining Hatari OSX UI changes for Hatari v1.8.0 (localization)
 
 Fixed games:
 - Superior 65 - Blood Money (cpu, exception stack and bus error)
