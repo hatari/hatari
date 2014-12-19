@@ -626,7 +626,9 @@ bool Profile_CpuStart(void)
 
 	cpu_profile.prev_cycles = CyclesGlobalClockCounter;
 	cpu_profile.prev_family = OpcodeFamily;
-	cpu_profile.prev_pc = M68000_GetPC() & 0xffffff;
+	cpu_profile.prev_pc = M68000_GetPC();
+	if ( ConfigureParams.System.bAddressSpace24 )
+		cpu_profile.prev_pc &= 0xffffff;
 
 	cpu_profile.loop_start = PC_UNDEFINED;
 	cpu_profile.loop_end = PC_UNDEFINED;
@@ -811,10 +813,12 @@ void Profile_CpuUpdate(void)
 	cpu_profile_item_t *prev;
 
 	prev_pc = cpu_profile.prev_pc;
-	/* PC may have extra bits, they need to be masked away as
+	/* PC may have extra bits when using 24 bit addressing, they need to be masked away as
 	 * emulation itself does that too when PC value is used
 	 */
-	cpu_profile.prev_pc = pc = M68000_GetPC() & 0xffffff;
+	cpu_profile.prev_pc = pc = M68000_GetPC();
+	if ( ConfigureParams.System.bAddressSpace24 )
+		cpu_profile.prev_pc &= 0xffffff;
 
 	if (unlikely(profile_loop.fp)) {
 		if (pc < prev_pc) {
