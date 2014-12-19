@@ -389,7 +389,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 	while (memdump_addr < memdump_upper)
 	{
-		fprintf(debugOutput, "%6.6X: ", memdump_addr); /* print address */
+		fprintf(debugOutput, "%8.8X: ", memdump_addr);	/* print address */
 		for (i = 0; i < MEMDUMP_COLS; i++)               /* print hex data */
 			fprintf(debugOutput, "%2.2x ", STMemory_ReadByte(memdump_addr++));
 		fprintf(debugOutput, "  ");                     /* print ASCII data */

@@ -37,7 +37,7 @@ static const Diss68kOptions optionsMask = doptOpcodesSmall | doptRegisterSmall |
 
 // values <0 will hide the group
 static int			optionPosAddress = 0;	// current address
-static int			optionPosHexdump = 10;	// 16-bit words at this address
+static int			optionPosHexdump = 12;	// 16-bit words at this address
 static int			optionPosLabel = 35;	// label, if defined
 static int			optionPosOpcode = 47;	// opcode
 static int			optionPosOperand = 57;	// operands for the opcode
@@ -1868,7 +1868,7 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 		if(sp)
 			sprintf(operandBuffer,"%s", sp);
 		else
-			sprintf(operandBuffer,"$%6.6x", val);
+			sprintf(operandBuffer,"$%8.8x", val);
 		return 4;
 	}
 
@@ -2446,7 +2446,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 
 	while (cnt-- > 0) {
-		const int	addrWidth = 6;		// 6 on an ST, 8 on a TT
+		const int	addrWidth = 8;		// 6 on an ST (24 bit addressing), 8 on a TT (32 bit addressing)
 		char	lineBuffer[1024];
 
 		char	addressBuffer[32];
