@@ -3282,7 +3282,11 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 		return 4;
 	}
 	if (warned < 20) {
+#ifndef WINUAE_FOR_HATARI
 		write_log (_T("Illegal instruction: %04x at %08X -> %08X\n"), opcode, pc, get_long (regs.vbr + 0x10));
+#else
+		write_log (_T("Illegal instruction: %04x at %08X -> %08X\n"), opcode, pc, STMemory_ReadLong (regs.vbr + 0x10));
+#endif
 		warned++;
 		//activate_debugger();
 	}
