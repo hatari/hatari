@@ -66,7 +66,6 @@ static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
 		fprintf(stderr, "Invalid address!\n");
 		return DEBUGGER_CMDDONE;
 	}
-	address &= 0x00FFFFFF;
 
 	if ((fp = fopen(psArgs[1], "rb")) == NULL)
 	{
@@ -108,7 +107,6 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 		fprintf(stderr, "  Invalid address!\n");
 		return DEBUGGER_CMDDONE;
 	}
-	address &= 0x00FFFFFF;
 
 	if (!Eval_Number(psArgs[3], &bytes))
 	{
@@ -167,7 +165,6 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 			break;
 		case 1:
 			/* range */
-			disasm_upper &= 0x00FFFFFF;
 			break;
 		}
 	}
@@ -177,7 +174,6 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 		if(!disasm_addr)
 			disasm_addr = M68000_GetPC();
 	}
-	disasm_addr &= 0x00FFFFFF;
 
 	/* limit is topmost address or instruction count */
 	if (disasm_upper)
@@ -186,7 +182,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	}
 	else
 	{
-		disasm_upper = 0x00FFFFFF;
+		disasm_upper = 0xFFFFFFFF;
 		max_insts = ConfigureParams.Debugger.nDisasmLines;
 	}
 
@@ -385,13 +381,11 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 			break;
 		}
 	} /* continue */
-	memdump_addr &= 0x00FFFFFF;
 
 	if (!memdump_upper)
 	{
 		memdump_upper = memdump_addr + MEMDUMP_COLS * ConfigureParams.Debugger.nMemdumpLines;
 	}
-	memdump_upper &= 0x00FFFFFF;
 
 	while (memdump_addr < memdump_upper)
 	{
@@ -435,7 +429,6 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	write_addr &= 0x00FFFFFF;
 	numBytes = 0;
 
 	/* get bytes data */
