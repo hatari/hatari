@@ -57,7 +57,14 @@ typedef struct {
      * that the pointer points to an area of at least the specified size.
      * This is used for example to translate bitplane pointers in custom.c */
     check_func check;
+    /* For those banks that refer to real memory, we can save the whole trouble
+    of going through function calls, and instead simply grab the memory
+    ourselves. This holds the memory address where the start of memory is
+    for this particular bank. */
+    uae_u8 *baseaddr;
     int flags;
+    uae_u32 mask;
+    uae_u32 start;
 } addrbank;
 
 
