@@ -31,6 +31,7 @@ const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 #include "debug_priv.h"
 #include "debugInfo.h"
 #include "evaluate.h"
+#include "configuration.h"
 
 typedef struct {
 	char *name;
@@ -942,7 +943,10 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		maxaddr = 0xFFFF;
 	} else if (strcmp("symbols", psArgs[0]) == 0) {
 		listtype = TYPE_CPU;
-		maxaddr = 0xFFFFFF;
+		if ( ConfigureParams.System.bAddressSpace24 )
+			maxaddr = 0x00FFFFFF;
+		else
+			maxaddr = 0xFFFFFFFF;
 	} else {
 		listtype = TYPE_NONE;
 		maxaddr = 0;
