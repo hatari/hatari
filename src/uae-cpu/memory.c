@@ -26,6 +26,7 @@ const char Memory_fileid[] = "Hatari memory.c : " __DATE__ " " __TIME__;
 #include "reset.h"
 #include "stMemory.h"
 #include "m68000.h"
+#include "configuration.h"
 
 #include "newcpu.h"
 
@@ -42,7 +43,8 @@ static uae_u32 TTmem_mask;
 #define ROMmem_start 0x00E00000
 #define IdeMem_start 0x00F00000
 #define IOmem_start  0x00FF0000
-#define TTmem_start  0x01000000
+#define TTmem_start  0x01000000			/* TOS 3 and TOS 4 always expect extra RAM at this address */
+#define TTmem_end    0x80000000			/* Max value for end of TT ram, which gives 2047 MB */
 
 #define IdeMem_size  65536
 #define IOmem_size  65536
@@ -596,63 +598,63 @@ static addrbank dummy_bank =
 {
     dummy_lget, dummy_wget, dummy_bget,
     dummy_lput, dummy_wput, dummy_bput,
-    dummy_xlate, dummy_check, ABFLAG_NONE
+    dummy_xlate, dummy_check, NULL, ABFLAG_NONE
 };
 
 static addrbank BusErrMem_bank =
 {
     BusErrMem_lget, BusErrMem_wget, BusErrMem_bget,
     BusErrMem_lput, BusErrMem_wput, BusErrMem_bput,
-    BusErrMem_xlate, BusErrMem_check, ABFLAG_NONE
+    BusErrMem_xlate, BusErrMem_check, NULL, ABFLAG_NONE
 };
 
 static addrbank STmem_bank =
 {
     STmem_lget, STmem_wget, STmem_bget,
     STmem_lput, STmem_wput, STmem_bput,
-    STmem_xlate, STmem_check, ABFLAG_RAM
+    STmem_xlate, STmem_check, NULL, ABFLAG_RAM
 };
 
 static addrbank SysMem_bank =
 {
     SysMem_lget, SysMem_wget, SysMem_bget,
     SysMem_lput, SysMem_wput, SysMem_bput,
-    STmem_xlate, STmem_check, ABFLAG_RAM
+    STmem_xlate, STmem_check, NULL, ABFLAG_RAM
 };
 
 static addrbank VoidMem_bank =
 {
     VoidMem_lget, VoidMem_wget, VoidMem_bget,
     VoidMem_lput, VoidMem_wput, VoidMem_bput,
-    VoidMem_xlate, VoidMem_check , ABFLAG_NONE
+    VoidMem_xlate, VoidMem_check , NULL, ABFLAG_NONE
 };
 
 static addrbank TTmem_bank =
 {
     TTmem_lget, TTmem_wget, TTmem_bget,
     TTmem_lput, TTmem_wput, TTmem_bput,
-    TTmem_xlate, TTmem_check, ABFLAG_RAM
+    TTmem_xlate, TTmem_check, NULL, ABFLAG_RAM
 };
 
 static addrbank ROMmem_bank =
 {
     ROMmem_lget, ROMmem_wget, ROMmem_bget,
     ROMmem_lput, ROMmem_wput, ROMmem_bput,
-    ROMmem_xlate, ROMmem_check, ABFLAG_ROM
+    ROMmem_xlate, ROMmem_check, NULL, ABFLAG_ROM
 };
 
 static addrbank IdeMem_bank =
 {
     Ide_Mem_lget, Ide_Mem_wget, Ide_Mem_bget,
     Ide_Mem_lput, Ide_Mem_wput, Ide_Mem_bput,
-    IdeMem_xlate, IdeMem_check, ABFLAG_IO
+    IdeMem_xlate, IdeMem_check, NULL, ABFLAG_IO
 };
 
 static addrbank IOmem_bank =
 {
     IoMem_lget, IoMem_wget, IoMem_bget,
     IoMem_lput, IoMem_wput, IoMem_bput,
-    IOmem_xlate, IOmem_check, ABFLAG_IO
+    IOmem_xlate, IOmem_check, NULL, ABFLAG_IO
 };
 
 
@@ -678,7 +680,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
 #if ENABLE_SMALL_MEM
 
-    /* Allocate memory for ROM areas and IO memory space (0xE00000 - 0xFFFFFF) */
+    /* Allocate memory for ROM areas, IDE and IO memory space (0xE00000 - 0xFFFFFF) */
     ROMmemory = malloc(2*1024*1024);
     if (!ROMmemory) {
 	fprintf(stderr, "Out of memory (ROM/IO mem)!\n");
@@ -714,6 +716,20 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     init_mem_banks();
 
+    /* Set the infos about memory pointers for each mem bank, used for direct memory access in stMemory.c */
+    STmem_bank.baseaddr = STmemory;
+    STmem_bank.mask = STmem_mask;
+    STmem_bank.start = STmem_start;
+
+    SysMem_bank.baseaddr = STmemory;
+    SysMem_bank.mask = STmem_mask;
+    SysMem_bank.start = STmem_start;
+
+    dummy_bank.baseaddr = NULL;				/* No real memory allocated for this region */
+    VoidMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
+    BusErrMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
+
+
     /* Map the ST system RAM: */
     map_banks(&SysMem_bank, 0x00, 1);
     /* Between STRamEnd and 4MB barrier, there is void space: */
@@ -723,14 +739,38 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
     map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1);
 
-    /* TT memory isn't really supported yet */
-    if (TTmem_size > 0)
-	TTmemory = (uae_u8 *)malloc (TTmem_size);
-    if (TTmemory != 0)
-	map_banks (&TTmem_bank, TTmem_start >> 16, TTmem_size >> 16);
-    else
-	TTmem_size = 0;
-    TTmem_mask = TTmem_size - 1;
+
+    /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
+    /* This requires the CPU to use 32 bit addressing */
+    /* NOTE : code backported from cpu/memory.c, but as bAddressSpace24 is always true with old */
+    /* UAE's core, TT RAM is not supported at the moment */
+    TTmemory = NULL;
+    if ( ConfigureParams.System.bAddressSpace24 == false )
+    {
+	/* If there's no extra RAM on a TT, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
+	if ( ConfigureParams.System.nMachineType == MACHINE_TT )
+	    map_banks ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16 );
+
+	if ( TTmem_size > 0 )
+	{
+	    TTmemory = (uae_u8 *)malloc ( TTmem_size );
+
+	    if ( TTmemory != NULL )
+	    {
+		map_banks ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16 );
+		TTmem_mask = 0xffffffff;
+		TTmem_bank.baseaddr = TTmemory;
+		TTmem_bank.mask = TTmem_mask;
+		TTmem_bank.start = TTmem_start;
+	    }
+	    else
+	    {
+		write_log ("can't allocate %d MB for TT RAM\n" , TTmem_size / ( 1024*1024 ) );
+		TTmem_size = 0;
+	    }
+	}
+    }
+
 
     /* ROM memory: */
     /* Depending on which ROM version we are using, the other ROM region is illegal! */
@@ -751,12 +791,21 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     /* Cartridge memory: */
     map_banks(&ROMmem_bank, 0xFA0000 >> 16, 0x2);
+    ROMmem_bank.baseaddr = ROMmemory;
+    ROMmem_bank.mask = ROMmem_mask;
+    ROMmem_bank.start = ROMmem_start;
 
     /* IO memory: */
     map_banks(&IOmem_bank, IOmem_start>>16, 0x1);
+    IOmem_bank.baseaddr = IOmemory;
+    IOmem_bank.mask = IOmem_mask;
+    IOmem_bank.start = IOmem_start;
 
     /* IDE controller memory region: */
     map_banks(&IdeMem_bank, IdeMem_start >> 16, 0x1);  /* IDE controller on the Falcon */
+    IdeMem_bank.baseaddr = IdeMemory;
+    IdeMem_bank.mask = IdeMem_mask;
+    IdeMem_bank.start = IdeMem_start ;
 
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks(&BusErrMem_bank, 0xF10000 >> 16, 0x9);

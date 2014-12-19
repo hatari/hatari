@@ -1241,7 +1241,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
 #if ENABLE_SMALL_MEM
 
-    /* Allocate memory for ROM areas and IO memory space (0xE00000 - 0xFFFFFF) */
+    /* Allocate memory for ROM areas, IDE and IO memory space (0xE00000 - 0xFFFFFF) */
     ROMmemory = malloc(2*1024*1024);
     if (!ROMmemory) {
 	fprintf(stderr, "Out of memory (ROM/IO mem)!\n");
@@ -1277,6 +1277,20 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     init_mem_banks();
 
+    /* Set the infos about memory pointers for each mem bank, used for direct memory access in stMemory.c */
+    STmem_bank.baseaddr = STmemory;
+    STmem_bank.mask = STmem_mask;
+    STmem_bank.start = STmem_start;
+
+    SysMem_bank.baseaddr = STmemory;
+    SysMem_bank.mask = STmem_mask;
+    SysMem_bank.start = STmem_start;
+
+    dummy_bank.baseaddr = NULL;				/* No real memory allocated for this region */
+    VoidMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
+    BusErrMem_bank.baseaddr = NULL;			/* No real memory allocated for this region */
+
+
     /* Map the ST system RAM: */
     map_banks(&SysMem_bank, 0x00, 1, 0);
     /* Between STRamEnd and 4MB barrier, there is void space: */
@@ -1304,6 +1318,9 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 	    {
 		map_banks ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0 );
 		TTmem_mask = 0xffffffff;
+		TTmem_bank.baseaddr = TTmemory;
+		TTmem_bank.mask = TTmem_mask;
+		TTmem_bank.start = TTmem_start;
 	    }
 	    else
 	    {
@@ -1333,12 +1350,21 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     /* Cartridge memory: */
     map_banks(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0);
+    ROMmem_bank.baseaddr = ROMmemory;
+    ROMmem_bank.mask = ROMmem_mask;
+    ROMmem_bank.start = ROMmem_start;
 
     /* IO memory: */
     map_banks(&IOmem_bank, IOmem_start>>16, 0x1, 0);
+    IOmem_bank.baseaddr = IOmemory;
+    IOmem_bank.mask = IOmem_mask;
+    IOmem_bank.start = IOmem_start;
 
     /* IDE controller memory region: */
     map_banks(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0);  /* IDE controller on the Falcon */
+    IdeMem_bank.baseaddr = IdeMemory;
+    IdeMem_bank.mask = IdeMem_mask;
+    IdeMem_bank.start = IdeMem_start ;
 
     /* Illegal memory regions cause a bus error on the ST: */
     map_banks(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0);
