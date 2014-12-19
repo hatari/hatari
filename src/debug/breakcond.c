@@ -768,28 +768,19 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
  */
 static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 {
-	Uint32 highbyte, bit23, addr = bc_value->value.number;
+	Uint32 addr = bc_value->value.number;
+	int size = bc_value->bits >> 8;
 
 	ENTERFUNC(("BreakCond_CheckAddress(%x)\n", addr));
 	if (bc_value->dsp_space) {
-		if (addr > 0xFFFF) {
+		if (addr+size > 0xFFFF) {
 			EXITFUNC(("-> false (DSP)\n"));
 			return false;
 		}
 		EXITFUNC(("-> true (DSP)\n"));
 		return true;
 	}
-
-	bit23 = (addr >> 23) & 1;
-	highbyte = (addr >> 24) & 0xff;
-	if ((bit23 == 0 && highbyte != 0) ||
-	    (bit23 == 1 && highbyte != 0xff)) {
-		fprintf(stderr, "WARNING: address 0x%x 23th bit isn't extended to bits 24-31.\n", addr);
-	}
-	/* use a 24-bit address */
-	addr &= 0x00ffffff;
-	if ((addr > STRamEnd && addr < 0xe00000) ||
-	    (addr >= 0xff0000 && addr < 0xff8000)) {
+	if (!STMemory_CheckAreaType(addr, size, ABFLAG_RAM | ABFLAG_ROM | ABFLAG_IO)) {
 		EXITFUNC(("-> false (CPU)\n"));
 		return false;
 	}
