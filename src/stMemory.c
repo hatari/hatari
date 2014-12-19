@@ -298,3 +298,99 @@ void	*STMemory_STAddrToPointer ( Uint32 addr )
 
 
 
+/**
+ * Those functions are directly accessing the memory of the corresponding
+ * bank, without calling its dedicated access handlers (they won't generate
+ * bus errors or address errors or update IO values)
+ * They are only used for internal work of the emulation, such as debugger,
+ * log to print the content of memory, intercepting gemdos/bios calls, ...
+ *
+ * These functions are not used by the CPU emulation itself, see memory.c
+ * for the functions that emulate real memory accesses.
+ */
+
+/**
+ * Write long/word/byte into memory.
+ * NOTE - value will be converted to 68000 endian
+ */
+void	STMemory_Write ( Uint32 addr , Uint32 val , int size )
+{
+	addrbank	*pBank;
+	Uint8		*p;
+
+//printf ( "mem direct write %x %x %d\n" , addr , val , size );
+	pBank = &get_mem_bank ( addr );
+
+	if ( pBank->baseaddr == NULL )
+		return;					/* No real memory, do nothing */
+
+	addr -= pBank->start & pBank->mask;
+	addr &= pBank->mask;
+	p = pBank->baseaddr + addr;
+	
+	if ( size == 4 )
+		do_put_mem_long ( p , val );
+	else if ( size == 2 )
+		do_put_mem_word ( p , (Uint16)val );
+	else
+		*p = (Uint8)val;
+}
+
+void	STMemory_WriteLong ( Uint32 addr , Uint32 val )
+{
+	STMemory_Write ( addr , val , 4 );
+}
+
+void	STMemory_WriteWord ( Uint32 addr , Uint16 val )
+{
+	STMemory_Write ( addr , (Uint32)val , 2 );
+}
+
+void	STMemory_WriteByte ( Uint32 addr , Uint8 val )
+{
+	STMemory_Write ( addr , (Uint32)val , 1 );
+}
+
+
+/**
+ * Read long/word/byte from memory.
+ * NOTE - value will be converted to 68000 endian
+ */
+Uint32	STMemory_Read ( Uint32 addr , int size )
+{
+	addrbank	*pBank;
+	Uint8		*p;
+
+//printf ( "mem direct read %x %d\n" , addr , size );
+	pBank = &get_mem_bank ( addr );
+
+	if ( pBank->baseaddr == NULL )
+		return 0;				/* No real memory, return 0 */
+
+	addr -= pBank->start & pBank->mask;
+	addr &= pBank->mask;
+	p = pBank->baseaddr + addr;
+	
+	if ( size == 4 )
+		return do_get_mem_long ( p );
+	else if ( size == 2 )
+		return (Uint32)do_get_mem_word ( p );
+	else
+		return (Uint32)*p;
+}
+
+Uint32	STMemory_ReadLong ( Uint32 addr )
+{
+	return (Uint32) STMemory_Read ( addr , 4 );
+}
+
+Uint16	STMemory_ReadWord ( Uint32 addr )
+{
+	return (Uint16)STMemory_Read ( addr , 2 );
+}
+
+Uint8	STMemory_ReadByte ( Uint32 addr )
+{
+	return (Uint8)STMemory_Read ( addr , 1 );
+}
+
