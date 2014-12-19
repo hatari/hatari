@@ -190,11 +190,6 @@ static Uint32 BreakCond_ReadDspMemory(Uint32 addr, const bc_value_t *bc_value)
  */
 static Uint32 BreakCond_ReadSTMemory(Uint32 addr, const bc_value_t *bc_value)
 {
-	/* Mask to a 24 bit address. With this e.g. $ffff820a is also
-	 * recognized as IO mem $ff820a (which is the same in the 68000).
-	 */
-	addr &= 0x00ffffff;
-
 	switch (bc_value->bits) {
 	case 32:
 		return STMemory_ReadLong(addr);
