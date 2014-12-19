@@ -18,27 +18,50 @@ int Cycles_GetCounter(int nId) { return 0; }
 /* bring in gemdos defines (EMULATEDDRIVES) */
 #include "gemdos.h"
 
-/* fake ST RAM */
+/* fake ST RAM, only 24-bit support */
 #include "stMemory.h"
 Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd = 4*1024*1024;
-/* stuff needed by stMemory.c */
-bool bIsEmuTOS;
-bool bRamTosImage;
-bool bUseVDIRes, bVdiAesIntercept;
-int nBootDrive;
-unsigned int ConnectedDriveMask;
-EMULATEDDRIVE **emudrives;
-int VDIWidth,VDIHeight;
-int VDIRes,VDIPlanes;
-int VDIWidth,VDIHeight;
-void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
-{
-	va_list argptr;
-	va_start(argptr, psFormat);
-	vfprintf(stderr, psFormat, argptr);
-	va_end(argptr);
-	fputs("\n", stderr);
+Uint32 STMemory_ReadLong(Uint32 addr) {
+	Uint32 val;
+	if (addr >= STRamEnd) return 0;
+	val = (STRam[addr] << 24) | (STRam[addr+1] << 16) | (STRam[addr+2] << 8) | STRam[addr+3];
+	return val;
+}
+Uint16 STMemory_ReadWord(Uint32 addr) {
+	Uint16 val;
+	if (addr >= STRamEnd) return 0;
+	val = (STRam[addr] << 8) | STRam[addr+1];
+	return val;
+}
+Uint8 STMemory_ReadByte(Uint32 addr) {
+	if (addr >= STRamEnd) return 0;
+	return STRam[addr];
+}
+void STMemory_WriteByte(Uint32 addr, Uint8 val) {
+	if (addr < STRamEnd)
+		STRam[addr] = val;
+}
+void STMemory_WriteWord(Uint32 addr, Uint16 val) {
+	if (addr < STRamEnd) {
+		STRam[addr+0] = val >> 8;
+		STRam[addr+1] = val & 0xff;
+	}
+}
+void STMemory_WriteLong(Uint32 addr, Uint32 val) {
+	if (addr < STRamEnd) {
+		STRam[addr+0] = val >> 24;
+		STRam[addr+1] = val >> 16 & 0xff;
+		STRam[addr+2] = val >> 8 & 0xff;
+		STRam[addr+3] = val & 0xff;
+	}
+}
+bool STMemory_CheckAreaType(Uint32 addr, int size, int mem_type ) {
+	if ((addr > STRamEnd && addr < 0xe00000) ||
+	    (addr >= 0xff0000 && addr < 0xff8000)) {
+		return false;
+	}
+	return true;
 }
 
 /* fake memory banks */

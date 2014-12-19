@@ -44,11 +44,8 @@ int main(int argc, const char *argv[])
 	memset(Regs, 0, sizeof(Regs));
 	Regs[REG_D0] = 10;
 	memset(STRam, 0, sizeof(STRam));
-	/* expressions use long access */
-	STRam[2+5] = 0;
-	STRam[2+6] = 0;
-	STRam[2+7] = 0;
-	STRam[2+8] = 3;
+	/* expressions use long access, 3*3 -> 9 */
+	STMemory_WriteLong(2+5, 3);
 
 	fprintf(stderr, "\nExpressions that should FAIL:\n");
 

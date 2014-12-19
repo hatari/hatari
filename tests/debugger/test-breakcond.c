@@ -182,12 +182,12 @@ int main(int argc, const char *argv[])
 
 	/* fail indirect equality checks with zerod regs */
 	memset(STRam, 0, sizeof(STRam));
-	STRam[0] = 1;
+	STMemory_WriteByte(0, 1);
 	/* !match: "( $200 ) > 200"
 	 *  match: "( $200 ) . w > ( 200 ) . b"
 	 */
-	STRam[0x200] = 100;
-	STRam[200] = 0x20;
+	STMemory_WriteByte(0x200, 100);
+	STMemory_WriteByte(200, 0x20);
 	/*  match: "d0 = d1" */
 	SetCpuRegister("d0", 4);
 	SetCpuRegister("d1", 4);

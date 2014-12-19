@@ -96,10 +96,10 @@ test: $(TESTS)
 	for test in $^; do ./$$test; echo "Press <Enter>"; read proceed; done
 
 # all the real & dummy deps
-SOURCEDEPS = test-dummies.c ../../src/debug/breakcond.c \
+SOURCEDEPS = ../../src/debug/breakcond.c \
 	../../src/debug/debugcpu.c ../../src/debug/history.c \
 	../../src/debug/evaluate.c ../../src/debug/symbols.c \
-	../../src/stMemory.c ../../src/str.c
+	../../src/str.c test-dummies.c
 
 test-symbols: test-symbols.c $(SOURCEDEPS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
