@@ -15,10 +15,31 @@ CNF_PARAMS ConfigureParams;
 int CurrentInstrCycles;
 int Cycles_GetCounter(int nId) { return 0; }
 
+/* bring in gemdos defines (EMULATEDDRIVES) */
+#include "gemdos.h"
+
 /* fake ST RAM */
 #include "stMemory.h"
 Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd = 4*1024*1024;
+/* stuff needed by stMemory.c */
+bool bIsEmuTOS;
+bool bRamTosImage;
+bool bUseVDIRes, bVdiAesIntercept;
+int nBootDrive;
+unsigned int ConnectedDriveMask;
+EMULATEDDRIVE **emudrives;
+int VDIWidth,VDIHeight;
+int VDIRes,VDIPlanes;
+int VDIWidth,VDIHeight;
+void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
+{
+	va_list argptr;
+	va_start(argptr, psFormat);
+	vfprintf(stderr, psFormat, argptr);
+	va_end(argptr);
+	fputs("\n", stderr);
+}
 
 /* fake memory banks */
 #include "memory.h"
@@ -56,7 +77,7 @@ Uint32 TosAddress, TosSize;
 #include "debugui.h"
 FILE *debugOutput;
 void DebugUI(debug_reason_t reason) { }
-void DebugUI_PrintCmdHelp(const char *psCmd) { }
+int DebugUI_PrintCmdHelp(const char *psCmd) { return DEBUGGER_CMDDONE; }
 char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state) {
 	return NULL;
 }
@@ -97,10 +118,6 @@ Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
 #include "console.h"
 int ConOutDevice;
 void Console_Check(void) { }
-
-/* fake gemdos stuff */
-#include "gemdos.h"
-const char *GemDOS_GetLastProgramPath(void) { return NULL; }
 
 /* fake profiler stuff */
 #include "profile.h"
