@@ -141,6 +141,11 @@ void STMemory_SetDefaultConfig(void)
 		STMemory_WriteLong(0x420, 0x752019f3);    /* memvalid */
 		STMemory_WriteLong(0x43a, 0x237698aa);    /* memval2 */
 		STMemory_WriteLong(0x51a, 0x5555aaaa);    /* memval3 */
+
+		/* On Falcon, set bit6=1 at $ff8007 to simulate a warm start */
+		/* (else memory detection is not skipped after a cold start/reset) */
+		if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
+			STMemory_WriteByte ( 0xff8007, IoMem_ReadByte(0xff8007) | 0x40 );
 	}
 
 	/* Set memory size, adjust for extra VDI screens if needed.
