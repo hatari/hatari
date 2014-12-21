@@ -24,6 +24,8 @@ extern Uint8 STRam[16*1024*1024];
 #endif  /* ENABLE_SMALL_MEM */
 
 extern uae_u8 *TTmemory;
+extern uae_u32 TTmem_size;
+
 extern Uint32 STRamEnd;
 
 

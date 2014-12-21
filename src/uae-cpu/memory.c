@@ -36,7 +36,8 @@ const char Memory_fileid[] = "Hatari memory.c : " __DATE__ " " __TIME__;
 
 static int illegal_count = 50;
 
-static uae_u32 STmem_size, TTmem_size = 0;
+static uae_u32 STmem_size;
+uae_u32 TTmem_size = 0;
 static uae_u32 TTmem_mask;
 
 #define STmem_start  0x00000000

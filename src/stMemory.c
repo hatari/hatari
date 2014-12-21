@@ -130,17 +130,27 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x04, STMemory_ReadLong(TosAddress+4));
 
 	/* Fill in magic numbers to bypass TOS' memory tests for faster boot or
-	 * if VDI resolution is enabled or if more than 4 MB of ram are used.
+	 * if VDI resolution is enabled or if more than 4 MB of ram are used
+	 * or if TT RAM added in Falcon mode.
 	 * (for highest compatibility, those tests should not be bypassed in
 	 *  the common STF/STE cases as some programs like "Yolanda" rely on
 	 *  the RAM content after those tests) */
-	if (ConfigureParams.System.bFastBoot || bUseVDIRes
-	    || (ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS))
+	if ( ConfigureParams.System.bFastBoot
+	  || bUseVDIRes
+	  || ( ConfigureParams.Memory.nMemorySize > 4 && !bIsEmuTOS )
+	  || ( ( ConfigureParams.System.nMachineType == MACHINE_FALCON ) && TTmemory ) )
 	{
 		/* Write magic values to sysvars to signal valid config */
 		STMemory_WriteLong(0x420, 0x752019f3);    /* memvalid */
 		STMemory_WriteLong(0x43a, 0x237698aa);    /* memval2 */
 		STMemory_WriteLong(0x51a, 0x5555aaaa);    /* memval3 */
+
+		/* If ST RAM detection is bypassed, we must also force TT RAM config if enabled */
+		if ( TTmemory )
+			STMemory_WriteLong ( 0x5a4 , 0x01000000 + TTmem_size );		/* ramtop */
+		else
+			STMemory_WriteLong ( 0x5a4 , 0 );		/* ramtop */
+		STMemory_WriteLong ( 0x5a8 , 0x1357bd13 );		/* ramvalid */
 
 		/* On Falcon, set bit6=1 at $ff8007 to simulate a warm start */
 		/* (else memory detection is not skipped after a cold start/reset) */
