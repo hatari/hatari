@@ -146,6 +146,11 @@ void STMemory_SetDefaultConfig(void)
 		/* (else memory detection is not skipped after a cold start/reset) */
 		if ( ConfigureParams.System.nMachineType == MACHINE_FALCON )
 			STMemory_WriteByte ( 0xff8007, IoMem_ReadByte(0xff8007) | 0x40 );
+
+		/* On TT, set bit0=1 at $ff8e09 to simulate a warm start */
+		/* (else memory detection is not skipped after a cold start/reset) */
+		if ( ConfigureParams.System.nMachineType == MACHINE_TT )
+			STMemory_WriteByte ( 0xff8e09, IoMem_ReadByte(0xff8e09) | 0x01 );
 	}
 
 	/* Set memory size, adjust for extra VDI screens if needed.
