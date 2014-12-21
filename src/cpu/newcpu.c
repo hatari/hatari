@@ -2210,7 +2210,7 @@ static void Exception_ce000 (int nr, int ExceptionSource)
 
 #ifdef WINUAE_FOR_HATARI
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-		nr, currpc, BusErrorPC, x_get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+		nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
 	exception_debug (nr);
 	MakeSR ();
@@ -2488,7 +2488,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
 
 #ifdef WINUAE_FOR_HATARI
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-		nr, currpc, BusErrorPC, x_get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+		nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
     exception_debug (nr);
     MakeSR ();
@@ -2556,7 +2556,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 
 #ifdef WINUAE_FOR_HATARI
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-		nr, currpc, BusErrorPC, x_get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+		nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
 	exception_debug (nr);
 	MakeSR ();
