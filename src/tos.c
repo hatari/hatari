@@ -699,16 +699,19 @@ int TOS_LoadImage(void)
 		switch (ConfigureParams.System.nMachineType)
 		{
 		case MACHINE_TT:
-		case MACHINE_FALCON:
 			if (ConfigureParams.System.bAddressSpace24)
 			{
+				/* Print a message and force 32 bit addressing (keeping 24 bit with TT RAM would crash TOS) */
 				Log_AlertDlg(LOG_ERROR, "Enabling 32-bit addressing for TT-RAM access.\nThis can cause issues in some programs!\n");
 				ConfigureParams.System.bAddressSpace24 = false;
 			}
-			if (ConfigureParams.System.bFastBoot)
+			break;
+		case MACHINE_FALCON:
+			if (ConfigureParams.System.bAddressSpace24)
 			{
-				Log_Printf(LOG_WARN, "Disabling fast boot, otherwise TT-RAM isn't detected.\n");
-				ConfigureParams.System.bFastBoot = false;
+				/* Print a message, but don't force 32 bit addressing as 24 bit addressing is also possible under Falcon */
+				/* So, if Falcon is in 24 bit mode, we just don't add TT RAM */
+				Log_AlertDlg(LOG_ERROR, "You need to disable 24-bit addressing to use TT-RAM in Falcon mode.\n");
 			}
 			break;
 		default:
