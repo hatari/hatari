@@ -133,6 +133,7 @@ static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
 static const char pszHwDisable[] = "disable hardware access";
 static const char pszFix060[] = "replace code for 68060";
+static const char pszFalconExtraRAM[] = "enable extra TT RAM on Falcon";
 
 //static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
@@ -172,6 +173,22 @@ static const Uint8 p060Pmove3_2[] = {		/* replace PMOVE $28(a2),d7 */
 	0xe1, 0x4f,				/* lsl.w     #8,d7 */
 	0x1e, 0x2a, 0x00, 0x2e,			/* move.b    $2e(a2),d7 */
 	0x4e, 0x75				/* rts */
+};
+
+static const Uint8 pFalconExtraRAM_1[] = {
+	0x4e, 0xb9, 0x00, 0xe7, 0xf1, 0x00	/* jsr       $e7f100 */
+};
+static const Uint8 pFalconExtraRAM_2[] = {	/* call maddalt() to declare the extra RAM */
+	0x20, 0x38, 0x05, 0xa4,			/* move.l    $05a4.w,d0 */
+	0x67, 0x18,				/* beq.s     $ba2d2 */
+	0x04, 0x80, 0x01, 0x00, 0x00, 0x00,	/* subi.l    #$1000000,d0 */
+	0x2f, 0x00,				/* move.l    d0,-(sp) */
+	0x2f, 0x3c, 0x01, 0x00, 0x00, 0x00,	/* move.l    #$1000000,-(sp) */
+	0x3f, 0x3c, 0x00, 0x14,			/* move.w    #$14,-(sp) */
+	0x4e, 0x41,				/* trap      #1 */
+	0x4f, 0xef, 0x00, 0x0a,			/* lea       $a(sp),sp */
+	0x70, 0x03,				/* moveq     #3,d0 */
+	0x4e, 0xf9, 0x00, 0xe0, 0x0b, 0xd2	/* jmp       $e00bd2 */
 };
 
 /* The patches for the TOS: */
@@ -247,6 +264,8 @@ static const TOS_PATCH TosPatches[] =
   { 0x404, -1, pszFix060, TP_FIX_060, 0xE02632, 0x41F8FA01, 20, p060Pmove2 },
   { 0x404, -1, pszFix060, TP_FIX_060, 0xE02B1E, 0x007c0700, 8, p060Pmove3_1 },
   { 0x404, -1, pszFix060, TP_FIX_060, 0xE7F000, 0xFFFFFFFF, sizeof( p060Pmove3_2 ), p060Pmove3_2 },
+  { 0x404, -1, pszFalconExtraRAM, TP_ALWAYS, 0xE0096E, 0x70036100, 6, pFalconExtraRAM_1 },
+  { 0x404, -1, pszFalconExtraRAM, TP_ALWAYS, 0xE7F100, 0xFFFFFFFF, sizeof( pFalconExtraRAM_2 ), pFalconExtraRAM_2 },
 
   { 0x492, -1, pszNoPmmu, TP_ANTI_PMMU, 0x00F946, 0xF0394000, 24, pNopOpcodes },
   { 0x492, -1, pszNoPmmu, TP_ANTI_PMMU, 0x01097A, 0xF0394C00, 32, pNopOpcodes },
