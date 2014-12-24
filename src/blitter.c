@@ -770,7 +770,10 @@ void Blitter_SourceYInc_WriteWord(void)
  */
 void Blitter_SourceAddr_WriteLong(void)
 {
-	BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0xFFFFFE;
+	if ( ConfigureParams.System.bAddressSpace24 == true )
+		BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0x00FFFFFE;	/* Normal STF/STE */
+	else
+		BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0xFFFFFFFE;	/* Falcon with extra TT RAM */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -824,7 +827,10 @@ void Blitter_DestYInc_WriteWord(void)
  */
 void Blitter_DestAddr_WriteLong(void)
 {
-	BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0xFFFFFE;
+	if ( ConfigureParams.System.bAddressSpace24 == true )
+		BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0x00FFFFFE;	/* Normal STF/STE */
+	else
+		BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0xFFFFFFFE;	/* Falcon with extra TT RAM */
 }
 
 /*-----------------------------------------------------------------------*/
