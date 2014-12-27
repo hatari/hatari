@@ -45,6 +45,8 @@ static const char * const psCartNameExts[] =
 	NULL
 };
 
+static int PatchIllegal = false;
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -98,8 +100,6 @@ static void Cart_LoadImage(void)
  */
 void Cart_ResetImage(void)
 {
-	int PatchIllegal = false;
-
 	/* "Clear" cartridge ROM space */
 	memset(&RomMem[0xfa0000], 0xff, 0x20000);
 
@@ -131,7 +131,18 @@ void Cart_ResetImage(void)
 		/* Load external image file: */
 		Cart_LoadImage();
 	}
+}
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Patch the cpu tables to intercept some opcodes used for Gemdos HD
+ * emulation or for NatFeats.
+ * We need to split this from Cart_ResetImage(), as the patches should
+ * be applied after building the cpu opcodes tables.
+ */
+void Cart_Patch(void)
+{
 	if (PatchIllegal == true)
 	{
 		//fprintf ( stderr ," Cart_ResetImage patch\n" );

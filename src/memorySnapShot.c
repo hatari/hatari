@@ -53,6 +53,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "falcon/crossbar.h"
 #include "falcon/videl.h"
 #include "statusbar.h"
+#include "cart.h"
 
 
 #define VERSION_STRING      "1.8.1"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
@@ -395,6 +396,10 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 
 		/* And close */
 		MemorySnapShot_CloseFile();
+
+		/* Apply patches for gemdos HD if needed */
+		/* (we need to do it after cpu tables for all opcodes were rebuilt) */
+		Cart_Patch();
 
 		/* changes may affect also info shown in statusbar */
 		Statusbar_UpdateInfo();

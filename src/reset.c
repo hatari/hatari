@@ -55,6 +55,7 @@ static int Reset_ST(bool bCold)
 			return ret;               /* If we can not load a TOS image, return now! */
 
 		Cart_ResetImage();          /* Load cartridge program into ROM memory. */
+		Cart_Patch();
 	}
 	CycInt_Reset();               /* Reset interrupts */
 	MFP_Reset();                  /* Setup MFP chip */
