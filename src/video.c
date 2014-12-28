@@ -565,6 +565,8 @@ static void	Video_ColorReg_ReadWord(void);
  */
 void Video_MemorySnapShot_Capture(bool bSave)
 {
+	Uint32	addr;
+
 	/* Save/Restore details */
 	MemorySnapShot_Store(&TTRes, sizeof(TTRes));
 	MemorySnapShot_Store(&bUseHighRes, sizeof(bUseHighRes));
@@ -576,9 +578,18 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(HBLPalettes, sizeof(HBLPalettes));
 	MemorySnapShot_Store(HBLPaletteMasks, sizeof(HBLPaletteMasks));
 	MemorySnapShot_Store(&VideoBase, sizeof(VideoBase));
+	if ( bSave )
+	{
+		addr = pVideoRaster - STRam;
+		MemorySnapShot_Store(&addr, sizeof(addr));
+	}
+	else
+	{
+		MemorySnapShot_Store(&addr, sizeof(addr));
+		pVideoRaster = &STRam[VideoBase];
+	}
 	MemorySnapShot_Store(&LineWidth, sizeof(LineWidth));
 	MemorySnapShot_Store(&HWScrollCount, sizeof(HWScrollCount));
-	MemorySnapShot_Store(&pVideoRaster, sizeof(pVideoRaster));
 	MemorySnapShot_Store(&nScanlinesPerFrame, sizeof(nScanlinesPerFrame));
 	MemorySnapShot_Store(&nCyclesPerLine, sizeof(nCyclesPerLine));
 	MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
