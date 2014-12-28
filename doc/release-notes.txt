@@ -25,8 +25,11 @@ Emulation:
   - check for address error when new PC is set at the end of RTE, RTS and RTR
   - fix "move.b an,<ea>", it's not allowed and should give illegal instruction
   - improve stack frame for bus error and address error
+  - allow bus control only for 030
+    (i.e. prevent TOS forcing 16Mhz at boot with higher CPU levels)
 - Memory:
-  - support for TT-RAM under TOS v3 and EmuTOS CVS snapshot 2014-12-15 or later
+  - TT-RAM / 32-bit addressing support both for TT & Falcon emulation
+    (when using EmuTOS, this requires CVS snapshot 2014-12-15 or later)
 - FDC changes:
   - for STX disks, fix type I commands with verify bit on tracks with no sector
 
@@ -38,8 +41,13 @@ Emulator:
   - Fix: chrash with VDI extended resolution emulation when
          C: isn't GEMDOS HD emulated drive
   - Fix: compilation when zlib is missing
+- Additional TOS run-time patching:
+  - Support fast boot also with TOS v3 & v4
+  - Support 32-bit addressing also with TOS v4
+  - Replace TOS v4 instructions unsupported on 060
 - Options:
-  - Fast boot (memory check bypass) is disabled by default
+  - Fast boot (warm boot / memory check bypass) is disabled by default
+  - 68060 CPU level and --ttram support with new WinUAE CPU core
   - New --png-level option to decrease AVI compression load
 - Hard drive emulation:
   - SDL GUI & cmdline option to skip drives used by partitions on
