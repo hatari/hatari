@@ -160,7 +160,7 @@ void Dialog_SystemDlg(void)
 	systemdlg[DLGSYS_ST + ConfigureParams.System.nMachineType].state |= SG_SELECTED;
 
 	/* CPU frequency: */
-	for (i = DLGSYS_8MHZ; i <= DLGSYS_16MHZ; i++)
+	for (i = DLGSYS_8MHZ; i <= DLGSYS_32MHZ; i++)
 	{
 		systemdlg[i].state &= ~SG_SELECTED;
 	}
