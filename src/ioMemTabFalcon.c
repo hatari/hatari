@@ -119,15 +119,20 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 		IoMem_Init_FalconInSTeBuscompatibilityMode(1);
 
 	/* 68030 Frequency changed ? */
-	if ((busCtrl & 0x1) == 1) {
-		/* 16 Mhz bus for 68030 */
-		nCpuFreqShift = 1;
-		ConfigureParams.System.nCpuFreq = 16;
-	}
-	else {
-		/* 8 Mhz bus for 68030 */
-		nCpuFreqShift = 0;
-		ConfigureParams.System.nCpuFreq = 8;
+	/* We change freq only in 68030 mode for a normal Falcon, */
+	/* not if CPU is 68040 or 68060 is used */
+	if ( ConfigureParams.System.nCpuLevel == 3 )
+	{
+		if ((busCtrl & 0x1) == 1) {
+			/* 16 Mhz bus for 68030 */
+			nCpuFreqShift = 1;
+			ConfigureParams.System.nCpuFreq = 16;
+		}
+		else {
+			/* 8 Mhz bus for 68030 */
+			nCpuFreqShift = 0;
+			ConfigureParams.System.nCpuFreq = 8;
+		}
 	}
 	Statusbar_UpdateInfo();							/* Update clock speed in the status bar */
 }
