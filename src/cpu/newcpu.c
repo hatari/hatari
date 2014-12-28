@@ -5148,7 +5148,7 @@ retry:
 			cycles = adjust_cycles(cpu_cycles);
 			do_cycles(cycles);
 #ifdef WINUAE_FOR_HATARI
-			M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
+			M68000_AddCycles(cycles * 2 / CYCLE_UNIT);
 
 			if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 				/* Add some extra cycles to simulate a wait state */
@@ -5182,7 +5182,7 @@ retry:
 #ifdef WINUAE_FOR_HATARI
 			/* Run DSP 56k code if necessary */
 			if (bDspEnabled) {
-				DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+				DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
 			}
 #endif
 			if (exit)
