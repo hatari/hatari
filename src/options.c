@@ -1501,10 +1501,16 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
 			ncpu = atoi(argv[++i]);
+#if ENABLE_WINUAE_CPU
+			if(ncpu < 0 || ncpu == 5 || ncpu > 6)
+#else
 			if(ncpu < 0 || ncpu > 4)
+#endif
 			{
 				return Opt_ShowError(OPT_CPULEVEL, argv[i], "Invalid CPU level");
 			}
+			if ( ncpu == 6 )			/* Special case for 68060, nCpuLevel should be 5 */
+				ncpu = 5;
 			ConfigureParams.System.nCpuLevel = ncpu;
 			bLoadAutoSave = false;
 			break;
