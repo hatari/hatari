@@ -435,7 +435,10 @@ void Statusbar_UpdateInfo(void)
 	if(ConfigureParams.System.nCpuLevel > 0) {
 		*end++ = '/';
 		*end++ = '0';
-		*end++ = '0' + ConfigureParams.System.nCpuLevel % 10;
+		if ( ConfigureParams.System.nCpuLevel == 5 )	/* Special case : 68060 has nCpuLevel=5 */
+			*end++ = '0' + 6;
+		else
+			*end++ = '0' + ConfigureParams.System.nCpuLevel % 10;
 		*end++ = '0';
 	}
 
