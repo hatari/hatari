@@ -2016,12 +2016,15 @@ the column contains "-". The column for whether the program works and
 for whether it has (working) sound have "yes" when this is true and
 otherwise "-".</p>
 
-<p>Due to incomplete VIDEL emulation and some remaining emulation
-cycle accuracy issues, some Falcon programs don't work yet.
-<b>Note:</b> more timing critical demos (for example ones using
+<p><b>Note:</b> many timing critical demos (for example ones using
 NoCrew's DSP MP2-player) that are marked as working in the list below,
-<em>work only with the experimental WinUAE core</em>. Please see
-Hatari readme.txt on how to enable that.</p>
+<em>work only with the experimental WinUAE CPU core</em>. Please see
+Hatari readme.txt on how to enable that.  If program works only with
+old UAE core, that's noted separately.</p>
+
+<p>Due to incomplete VIDEL emulation and some remaining emulation
+cycle accuracy issues, some Falcon programs don't work yet.</p>
+
 
 <h3>Falcon games</h3>
 
@@ -2063,14 +2066,15 @@ Hatari readme.txt on how to enable that.</p>
       <td class="minor">1.7</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Playable + enhanced Doom I/II port/remake.  Requires WinUAE
+      <td>Enhanced Doom I/II port and engine rewrite.  Requires WinUAE
       CPU core, DSP and 14 MB RAM. Statusbar doesn't show due to Videl
-      emulation omissions and some parts have clear speed differences
-      to real Falcon due to CPU (data cache) and Videl emulation
-      inaccuracies</td>
+      emulation omissions, unless "--natfeats yes" is used to tell
+      game to use Hatari specific/heavier statusbar drawing mode.
+      Some parts have clear speed differences to real Falcon due to
+      CPU (data cache) and Videl emulation inaccuracies</td>
     </tr>
     <tr>
-      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood (viewer)</a></td>
+      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood (old viewer)</a></td>
       <td>1.3</td>
       <td>-</td>
       <td>emu</td>
@@ -2376,10 +2380,11 @@ Hatari readme.txt on how to enable that.</p>
     </tr>
     <tr>
       <td>Mini F1 demo</td>
-      <td class="major">1.6</td>
+      <td class="major">1.8</td>
       <td>-</td>
       <td>-</td>
-      <td>Freezes when the game would start.  Sound is just noise</td>
+      <td>Freezes when the game would start.  Sound is just noise.
+          Constant "crossbar DMA Play: Illegal buffer size" messages</td>
     </tr>
     <tr>
       <td>Moongame</td>
@@ -2390,18 +2395,19 @@ Hatari readme.txt on how to enable that.</p>
     </tr>
     <tr>
       <td>Moonspeeder (preview 2)</td>
-      <td class="major">1.6</td>
+      <td class="major">1.8</td>
       <td>-</td>
       <td>emu</td>
-      <td>Exits in the starting phase
-          (preview 1 works, but is non-interactive)</td>
+      <td>lst*.* files need to be renamed as game searches them with
+          different name (space before dot).  Pointer cannot be moved
+	  in the game menu (preview 1 works, but is non-interactive)</td>
     </tr>
     <tr>
       <td>Mouse trap</td>
-      <td class="major">1.6</td>
+      <td class="major">1.8</td>
       <td>yes</td>
       <td>-</td>
-      <td>Screen lines are doubled</td>
+      <td>Initial game screen looks OK, then suddenly screen mode gets wrong</td>
     </tr>
     <tr>
       <td>Multi Briques</td>
@@ -2425,11 +2431,11 @@ Hatari readme.txt on how to enable that.</p>
       <td>Videl emu doesn't support rasters in title screen</td>
     </tr>
     <tr>
-      <td>Offworld</td>
-      <td>1.3</td>
+      <td>Offworld Security</td>
+      <td>1.8+</td>
       <td>yes</td>
       <td>-</td>
-      <td>Press fire in black screen to start game</td>
+      <td>In earlier Hatari versions startup screen was black</td>
     </tr>
     <tr>
       <td><a href="http://logitron.atari.online.fr/skuum_english.htm">Operation Skuum</a></td>
@@ -2787,8 +2793,8 @@ Hatari readme.txt on how to enable that.</p>
 
 <p>Some demos require FPU, although normal Falcon's don't have a one.
 Old UAE CPU core always emulates FPU both for TT and Falcon machines.
-WinUAE CPU core does that only for TT, but but you can enable FPU
-also for Falcon if demo is stated to require that.</p>
+With WinUAE CPU core you need to enable FPU separately if demo is
+stated to require that.</p>
 
 <table>
   <caption>Falcon demos</caption>
@@ -2822,11 +2828,10 @@ also for Falcon if demo is stated to require that.</p>
     <tr>
       <td>An cool:
       <a href="http://pouet.net/prod.php?which=24781">The Keff demo</a></td>
-      <td class="major">1.6</td>
+      <td class="major">1.8+</td>
       <td>yes</td>
       <td>-</td>
-      <td>Sinwave scroller leaves garbage pixels on screen,
-          gets stuck after dragons pic with black screen</td>
+      <td>gets stuck after dragons pic with circle on black screen</td>
     </tr>
     <tr>
       <td>Aura:
@@ -2879,11 +2884,24 @@ also for Falcon if demo is stated to require that.</p>
     </tr>
     <tr>
       <td>Crac:
-      <a href="http://www.pouet.net/prod.php?which=23588">Bound 3</a></td>
+      <a href="http://www.pouet.net/prod.php?which=16681">Bound</a>,
+      <a href="http://www.pouet.net/prod.php?which=23587">Bound 2</a>,
+      <a href="http://www.pouet.net/prod.php?which=23588">Bound 3</a>
+      </td>
       <td>1.3</td>
       <td>yes</td>
       <td>emu</td>
       <td></td>
+    </tr>
+    <tr>
+      <td>Crac:
+      <a href="http://www.pouet.net/prod.php?which=23589">Bound 4</a>,
+      <a href="http://www.pouet.net/prod.php?which=23589">Bound 5</a>
+      </td>
+      <td class="major">1.8</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Expect Videl screen address counter to change</td>
     </tr>
     <tr>
       <td>Cream:
@@ -3084,7 +3102,7 @@ also for Falcon if demo is stated to require that.</p>
     <tr>
       <td>EXA:
       <a href="http://www.pouet.net/prod.php?which=17784">Entcarte</a></td>
-      <td class="major">1.6</td>
+      <td class="major">1.8</td>
       <td>-</td>
       <td>-</td>
       <td>Bombs immediately</td>
@@ -3099,11 +3117,27 @@ also for Falcon if demo is stated to require that.</p>
     </tr>
     <tr>
       <td>Fit:
+      <a href="http://www.pouet.net/prod.php?which=17311">Hex Pistols</a></td>
+      <td>1.8+</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>14MB + MMU + FPU, .tSCc port from Amiga</td>
+    </tr>
+    <tr>
+      <td>Fit:
       <a href="http://pouet.net/prod.php?which=990">Mahabharata</a></td>
       <td>1.3</td>
       <td>yes</td>
       <td>emu</td>
       <td>Bombay-style...</td>
+    </tr>
+    <tr>
+      <td>Fit:
+      <a href="http://www.pouet.net/prod.php?which=26083">Stercus Accidit</a></td>
+      <td>1.8+</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>8MB + FPU, .tSCc port from Amiga</td>
     </tr>
     <tr>
       <td>Fun Industries:
@@ -3237,10 +3271,18 @@ also for Falcon if demo is stated to require that.</p>
     <tr>
       <td>MJJ Prod:
       <a href="http://pouet.net/prod.php?which=28764">Bound 42</a></td>
-      <td>1.4</td>
+      <td class="minor">1.4</td>
       <td>yes</td>
       <td>emu</td>
       <td>Crashes at cyan millstone screen</td>
+    </tr>
+    <tr>
+      <td>Mugwumps:
+      <a href="http://pouet.net/prod.php?which=15917">Cycedelic knockout</a></td>
+      <td>1.8+</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Nice techno + color cycling</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -3490,11 +3532,20 @@ also for Falcon if demo is stated to require that.</p>
       <td>Requires FPU and DSP</td>
     </tr>
     <tr>
-      <td>Birdshow</td>
+      <td>Unknown:
+      <a href="http://falcdemos.atari.org/archive/unknown/1993.birdshow/">Birdshow</a></td>
       <td>1.0</td>
       <td>-</td>
       <td>-</td>
       <td>A simple FLE animation player</td>
+    </tr>
+    <tr>
+      <td>Unknown:
+      <a href="http://falcdemos.atari.org/archive/unknown/1993.rot3dbmp/">ROT3DBMP</a></td>
+      <td>1.8+</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>Streams data to DSP without synchronization</td>
     </tr>
   </tbody>
 </table>
