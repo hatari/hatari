@@ -76,8 +76,10 @@ Emulator:
     (both Atari and DOS MBRs are supported)
   - Add "reset <hard|soft>" command
   - Add "save" subcommand to "history" command
+  - Add "basepage" address variable
 
 Other changes:
+- Add hatari-prg-args script for providing arguments to autostarted programs
 - Hatari & disk image icons in SVG & PNG formats (multiple sizes)
 - Remaining Hatari OSX UI changes for Hatari v1.8.0 (localization)
 
