@@ -177,6 +177,13 @@ Uint32 DebugInfo_GetBSS(void)
 {
 	return GetBasepageValue(0x18);
 }
+/**
+ * DebugInfo_GetBASEPAGE: return current basepage address.
+ */
+Uint32 DebugInfo_GetBASEPAGE(void)
+{
+	return DebugInfo_CurrentBasepage(0);
+}
 
 
 /**
@@ -195,7 +202,7 @@ static void DebugInfo_Basepage(Uint32 basepage)
 			return;
 		}
 	}
-	fprintf(stderr, "Process basepage information:\n");
+	fprintf(stderr, "Process basepage (0x%x) information:\n", basepage);
 	if ( !STMemory_CheckAreaType ( basepage, BASEPAGE_SIZE, ABFLAG_RAM ) ||
 	    STMemory_ReadLong(basepage) != basepage) {
 		fprintf(stderr, "- address 0x%06x is invalid!\n", basepage);
