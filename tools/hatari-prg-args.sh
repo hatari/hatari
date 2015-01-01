@@ -6,7 +6,7 @@
 # startup to program startup.
 
 # path to (2015) hatari version which debugger provides "basepage" variable
-hatari=hatari
+hatari=~/work/hatari/build-gcc/src/hatari
 
 # where temporary debugger scripts will be stored
 dir=/tmp/hatari-debugger.tmp
@@ -68,6 +68,7 @@ args=$dir/args
 rm -f $args
 touch $args
 prefix=""
+drive="C:\\"
 path="${prg%/*}/"
 for arg in $*; do
 	if [ "${arg#$path}" != "$arg" ]; then
@@ -75,7 +76,7 @@ for arg in $*; do
 			usage "given file name '$arg' doesn't exits"
 		fi
 		# remove host paths, convert path separators, upper-case
-		echo -n "${prefix}C:\\${arg#$path}" | tr '/' '\\' | tr a-z A-Z >> $args
+		echo -n "${prefix}${drive}${arg}" | sed "s|$path||" | tr '/' '\\' | tr a-z A-Z >> $args
 	else
 		echo -n "${prefix}$arg" >> $args
 	fi
