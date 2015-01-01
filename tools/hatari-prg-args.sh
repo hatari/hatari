@@ -6,7 +6,7 @@
 # startup to program startup.
 
 # path to (2015) hatari version which debugger provides "basepage" variable
-hatari=~/work/hatari/build-gcc/src/hatari
+hatari=hatari
 
 # where temporary debugger scripts will be stored
 dir=/tmp/hatari-debugger.tmp
