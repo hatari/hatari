@@ -3589,7 +3589,8 @@ site.</p>
       <td><a href="http://newbeat.atari.org/main.php?page=productions">AceTracker v2</a></td>
       <td class="minor">1.8</td>
       <td>emu</td>
-      <td>Individual synthetized sounds are fine with WinUAE CPU core, but AM module playback audio quality is bad</td>
+      <td>Individual synthetized sounds are fine with WinUAE CPU core,
+          but full AM module playback audio quality is bad</td>
     </tr>
     <tr>
       <td>AFM (audio fun machine)</td>
@@ -3599,7 +3600,7 @@ site.</p>
     </tr>
     <tr>
       <td>Apex (demo)</td>
-      <td class="major">1.6</td>
+      <td class="major">1.8+</td>
       <td>-</td>
       <td>Crashes with a &quot;MOVE.W $fff20000,D0&quot; instruction.
         It's unclear why this works on a real Falcon.
@@ -3607,33 +3608,35 @@ site.</p>
     </tr>
     <tr>
       <td><a href="http://pagesperso-orange.fr/didierm/index-e.htm">Aniplayer</a></td>
-      <td class="minor">1.4</td>
+      <td class="minor">1.8+</td>
       <td>emu</td>
       <td>DSP stack underflow on switching JPG images, synchronization
           doesn't work when DSP used with DMA transfers to play MP3</td>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/s_avi030.htm">AVI 030</a></td>
-      <td class="major">1.6</td>
+      <td class="major">1.8+</td>
       <td>-</td>
-      <td>Worked with Hatari v1.1, freezes with v1.6</td>
+      <td>Worked with Hatari v1.1, freezes with v1.6, TTP exits with v1.8+</td>
     </tr>
     <tr>
       <td><a href="http://centek.free.fr/atari/softs/s_cent_1.htm">Centview</a></td>
       <td>1.3</td>
       <td>emu</td>
-      <td>The included Brainstorm DSP JPEG decoder works also fine.</td>
+      <td>Remember to run included JPEGD.PRG first (or put it to AUTO-folder)</td>
     </tr>
     <tr>
       <td><a href="http://centek.free.fr/atari/softs/s_centbe.htm">Centurbo bench</a></td>
-      <td>1.6</td>
+      <td class="minor">1.8+</td>
       <td>emu</td>
-      <td>Gives inaccurate FPS (190%) and CPU (14Mhz) speed values.
-          Without WinUAE core, numbers are off even more</td>
+      <td>New WinUAE CPU core: FPU 153 Mhz, DSP 57 Mhz, CPU 172 Mhz<br>
+          Old WinUAE CPU core: FPU 221 Mhz, DSP 32 Mhz, CPU 15 Mhz<br>
+          Old UAE CPU core: FPU 403 Mhz, DSP 32 Mhz, CPU 78 Mhz<br>
+	  (moving mouse drops FPU and CPU numbers slightly)</td>
     </tr>
     <tr>
       <td>Chronos 3D player</td>
-      <td class="major">1.6</td>
+      <td class="major">1.8+</td>
       <td>-</td>
       <td>Complains about wrong resolution, requires 15-bit</td>
     </tr>
@@ -3641,7 +3644,7 @@ site.</p>
       <td><a href="http://pouet.net/prod.php?which=29344">Delmpaint</a></td>
       <td>1.0</td>
       <td>-</td>
-      <td>Errors at exit if started in other than 256-color low rez.</td>
+      <td>Errors at exit if started in other than 256-color low rez</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=25328">Escapepaint</a></td>
@@ -3653,27 +3656,28 @@ site.</p>
       <td><a href="http://deunstg.free.fr/sct1/falcamp/">FalcAMP</a></td>
       <td class="minor">1.6</td>
       <td>emu</td>
-      <td>MODs playing works fine, MP3s have no sound / complain about DSP timeout</td>
+      <td>MOD playing works fine, MP3s have no sound / complain about DSP timeout</td>
     </tr>
     <tr>
-      <td><a href="http://deunstg.free.fr/sct1/flaysid/">FlaySID</a></td>
-      <td class="minor">1.6</td>
+      <td><a href="http://deunstg.free.fr/sct1/flaysid/">FlaySID (v3.01)</a></td>
+      <td class="minor">1.8+</td>
       <td>emu</td>
-      <td>No sound.</td>
+      <td>No sound from SID playback with DSP engine, only with YM engine</td>
     </tr>
     <tr>
       <td><a href="http://newbeat.atari.org/main.php?page=productions">FlexTrax</a></td>
-      <td class="minor">1.6</td>
+      <td class="minor">1.8+</td>
       <td>emu</td>
       <td>Freezes with old UAE core, but even with WinUAE core, sounds is noise.
-          Startup graphics look OK only in VGA mode.</td>
+          Startup graphics look OK only in VGA mode</td>
     </tr>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/index_e.htm">GemPLAY</a></td>
-      <td class="minor">1.6</td>
+      <td class="minor">1.8+</td>
       <td>emu</td>
-      <td>MOD/SND/XMS formats sound fine, AM/AON/GT2 formats sound bad.
-          Fileselector dir selection doesn't work for the latest 1.92 version</td>
+      <td>GT2 module bombs with WinUAE CPU core.  Sound quality depends on which
+          CPU core is used, AM module is complete noise with old UAE CPU core.
+          Fileselector dir selection doesn't work with v1.92 or newer (GemPlay bug)</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/utils.htm">Godpaint</a></td>
