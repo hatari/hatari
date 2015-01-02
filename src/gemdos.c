@@ -3299,7 +3299,7 @@ void GemDOS_OpCode(void)
 	case 0x2A:	/* Tgetdate */
 	case 0x2C:	/* Tgettime */
 		/* commands with no args */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s() at PC 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%02hX %s() at PC 0x%X\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 			  M68000_GetPC());
 		break;
@@ -3312,7 +3312,7 @@ void GemDOS_OpCode(void)
 	case 0x2d:	/* Tsettime */
 	case 0x45:	/* Fdup */
 		/* commands taking single word */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%hX) at PC 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%02hX %s(0x%hX) at PC 0x%X\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 			  STMemory_ReadWord(Params),
 			  M68000_GetPC());
@@ -3324,7 +3324,7 @@ void GemDOS_OpCode(void)
 	case 0x48:	/* Malloc */
 	case 0x49:	/* Mfree */
 		/* commands taking long/pointer */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX %s(0x%X) at PC 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%02hX %s(0x%X) at PC 0x%X\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 			  STMemory_ReadLong(Params),
 			  M68000_GetPC());
@@ -3355,7 +3355,7 @@ void GemDOS_OpCode(void)
 
 	default:
 		/* rest of commands */
-		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%2hX (%s) at PC 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x%02hX (%s) at PC 0x%X\n",
 			  GemDOSCall, GemDOS_Opcode2Name(GemDOSCall),
 			  M68000_GetPC());
 	}
