@@ -766,6 +766,13 @@ void Configuration_Apply(bool bReset)
         Disasm_SetCPUType ( ConfigureParams.System.nCpuLevel , 0 );
 #endif
 
+#if ENABLE_DSP_EMU
+	/* Enable DSP ? */
+	if ( ConfigureParams.System.nDSPType == DSP_TYPE_EMU )
+		DSP_Enable ();
+	else
+		DSP_Disable ();
+#endif
 }
 
 

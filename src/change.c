@@ -321,7 +321,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    changed->System.nDSPType != DSP_TYPE_EMU)
 	{
 		Dprintf("- DSP>\n");
-		DSP_UnInit();
+		DSP_Disable();
 	}
 #endif
 
@@ -352,7 +352,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    changed->System.nDSPType == DSP_TYPE_EMU)
 	{
 		Dprintf("- DSP<\n");
-		DSP_Init();
+		DSP_Enable();
 	}
 #endif
 

@@ -102,29 +102,24 @@ bool	DSP_ProcessIRQ(void)
 
 
 /**
- * Initialize the DSP emulation
+ * Initialize the DSP emulation (should be called only once at start)
  */
 void DSP_Init(void)
 {
 #if ENABLE_DSP_EMU
-	if (ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
-		return;
 	dsp_core_init(DSP_TriggerHostInterrupt);
 	dsp56k_init_cpu();
-	bDspEnabled = true;
 	save_cycles = 0;
 #endif
 }
 
 
 /**
- * Shut down the DSP emulation
+ * Shut down the DSP emulation (should be called only once at exit)
  */
 void DSP_UnInit(void)
 {
 #if ENABLE_DSP_EMU
-	if (!bDspEnabled)
-		return;
 	dsp_core_shutdown();
 	bDspEnabled = false;
 #endif
@@ -145,20 +140,41 @@ void DSP_Reset(void)
 
 
 /**
+ * Enable the DSP emulation
+ */
+void DSP_Enable(void)
+{
+#if ENABLE_DSP_EMU
+	bDspEnabled = true;
+#endif
+}
+
+
+/**
+ * Disable the DSP emulation
+ */
+void DSP_Disable(void)
+{
+#if ENABLE_DSP_EMU
+	bDspEnabled = false;
+#endif
+}
+
+
+/**
  * Save/Restore snapshot of CPU variables ('MemorySnapShot_Store' handles type)
  */
 void DSP_MemorySnapShot_Capture(bool bSave)
 {
 #if ENABLE_DSP_EMU
-	if (!bSave)
-		DSP_Reset();
-
 	MemorySnapShot_Store(&bDspEnabled, sizeof(bDspEnabled));
 	MemorySnapShot_Store(&dsp_core, sizeof(dsp_core));
 	MemorySnapShot_Store(&save_cycles, sizeof(save_cycles));
 
-	if (!bSave)
-		DSP_Init();
+	if ( bDspEnabled )
+		DSP_Enable();
+	else	
+		DSP_Disable();
 #endif
 }
 
