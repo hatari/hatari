@@ -107,7 +107,7 @@ bool	DSP_ProcessIRQ(void)
 void DSP_Init(void)
 {
 #if ENABLE_DSP_EMU
-	if (bDspEnabled || ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
+	if (ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
 		return;
 	dsp_core_init(DSP_TriggerHostInterrupt);
 	dsp56k_init_cpu();
@@ -156,6 +156,9 @@ void DSP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&bDspEnabled, sizeof(bDspEnabled));
 	MemorySnapShot_Store(&dsp_core, sizeof(dsp_core));
 	MemorySnapShot_Store(&save_cycles, sizeof(save_cycles));
+
+	if (!bSave)
+		DSP_Init();
 #endif
 }
 
