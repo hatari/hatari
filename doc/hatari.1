@@ -435,10 +435,16 @@ Exit after X VBLs
 .SH "INPUT HANDLING"
 Hatari provides special input handling for different purposes.
 
+.SH "Emulated Atari ST joystick"
+Joystick can be emulated either with keyboard or any real joystick
+supported by your kernel / SDL library.  First joystick button
+acts as FIRE, second as SPACE key.
+
 .SH "Emulated Atari ST mouse"
-Middle button mouse click is interpreted as double click.
-Double clicking in Fast Forward mode would otherwise be
-(nearly) impossible to do (at correct rate).
+Middle button mouse click is interpreted as double click, this
+is especially useful in Fast Forward mode.
+.PP
+Mouse scrollwheel will act as cursor up and down keys.
 
 .SH "Emulated Atari ST keyboard"
 Keys on the keyboard act as the normal Atari ST keys so pressing SPACE
