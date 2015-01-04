@@ -207,7 +207,11 @@ uae_u32 get_byte_debug (uaecptr addr)
 		} ENDTRY
 		regs.s = olds;
 	} else {
+#ifndef WINUAE_FOR_HATARI
 		v = get_byte (addr);
+#else
+		v = STMemory_ReadByte ( addr );
+#endif
 	}
 	return v;
 }
@@ -227,7 +231,11 @@ uae_u32 get_word_debug (uaecptr addr)
 		} ENDTRY
 		regs.s = olds;
 	} else {
+#ifndef WINUAE_FOR_HATARI
 		v = get_word (addr);
+#else
+		v = STMemory_ReadWord ( addr );
+#endif
 	}
 	return v;
 }
@@ -247,7 +255,11 @@ uae_u32 get_long_debug (uaecptr addr)
 		} ENDTRY
 		regs.s = olds;
 	} else {
+#ifndef WINUAE_FOR_HATARI
 		v = get_long (addr);
+#else
+		v = STMemory_ReadLong ( addr );
+#endif
 	}
 	return v;
 }

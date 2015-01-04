@@ -2272,11 +2272,7 @@ static void Exception_ce000 (int nr, int ExceptionSource)
 		x_put_word (m68k_areg (regs, 7) + 0, mode);
 		x_put_word (m68k_areg (regs, 7) + 2, last_fault_for_exception_3 >> 16);
 		x_do_cycles (2 * cpucycleunit);
-#ifndef WINUAE_FOR_HATARI
 		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
-#else
-		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_addr_for_exception_3, currpc, STMemory_ReadLong (4 * nr));
-#endif
 		goto kludge_me_do;
 	}
 	if (currprefs.cpu_model == 68010) {
@@ -2599,11 +2595,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 			Exception_build_stack_frame(oldpc, currpc, regs.mmu_fslw, nr, 0x4);
 	} else if (nr == 3) { // address error
         Exception_build_stack_frame(last_fault_for_exception_3, currpc, 0, nr, 0x2);
-#ifndef WINUAE_FOR_HATARI
-		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long (regs.vbr + 4 * nr));
-#else
-		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, STMemory_ReadLong (regs.vbr + 4 * nr));
-#endif
+		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4 * nr));
 	} else if (nr == 5 || nr == 6 || nr == 7 || nr == 9) {
         Exception_build_stack_frame(oldpc, currpc, regs.mmu_ssw, nr, 0x2);
 	} else if (regs.m && interrupt) { /* M + Interrupt */
@@ -2841,11 +2833,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 				m68k_areg (regs, 7) -= 2;
 				x_put_word (m68k_areg (regs, 7), 0xb000 + nr * 4);
 			}
-#ifndef WINUAE_FOR_HATARI
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, get_long_debug (regs.vbr + 4*nr));
-#else
-			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, STMemory_ReadLong (regs.vbr + 4*nr));
-#endif
 		} else if (nr ==5 || nr == 6 || nr == 7 || nr == 9) {
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), regs.instruction_pc);
@@ -2886,10 +2874,8 @@ static void Exception_normal (int nr , int ExceptionSource)
 			x_put_word (m68k_areg (regs, 7) + 6, last_op_for_exception_3);
 			x_put_word (m68k_areg (regs, 7) + 8, regs.sr);
 			x_put_long (m68k_areg (regs, 7) + 10, last_addr_for_exception_3);
-#ifndef WINUAE_FOR_HATARI
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4*nr));
-#else
-			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, STMemory_ReadLong (regs.vbr + 4*nr));
+#ifdef WINUAE_FOR_HATARI
 			// TODO [NP] remove BusError_xxx variables
 			uae_u16 BusError_opcode;
 			fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , BusError_opcode);
@@ -3292,11 +3278,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 		return 4;
 	}
 	if (warned < 20) {
-#ifndef WINUAE_FOR_HATARI
 		write_log (_T("Illegal instruction: %04x at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x10));
-#else
-		write_log (_T("Illegal instruction: %04x at %08X -> %08X\n"), opcode, pc, STMemory_ReadLong (regs.vbr + 0x10));
-#endif
 		warned++;
 		//activate_debugger();
 	}
