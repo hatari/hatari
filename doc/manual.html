@@ -1523,11 +1523,6 @@ shortcut key bindings:</p>
           and iconify its window</td>
     </tr>
     <tr>
-      <td><span class="key">ALTGR+j</span></td>
-      <td>toggle joystick emulation via cursor keys
-          on/off between ports 0 and 1</td>
-    </tr>
-    <tr>
       <td><span class="key">ALTGR+m</span></td>
       <td>(un-)lock the mouse into the window</td>
     </tr>
@@ -1568,6 +1563,27 @@ shortcut key bindings:</p>
       <td>load memory snapshot</td>
     </tr>
     <tr>
+      <td><span class="key">ALTGR+j</span></td>
+      <td>toggle joystick emulation via cursor keys
+          on/off between ports 0 and 1</td>
+    </tr>
+    <tr>
+      <td><span class="key">ALTGR+F1</span></td>
+      <td>switch joystick type on joy port 0</td>
+    </tr>
+    <tr>
+      <td><span class="key">ALTGR+F2</span></td>
+      <td>switch joystick type on joy port 1</td>
+    </tr>
+    <tr>
+      <td><span class="key">ALTGR+F3</span></td>
+      <td>switch joystick type for joypad A</td>
+    </tr>
+    <tr>
+      <td><span class="key">ALTGR+F4</span></td>
+      <td>switch joystick type for joypad B</td>
+    </tr>
+    <tr>
       <td><span class="key">ALTGR+f or F11</span></td>
       <td>toggle between fullscreen and windowed mode</td>
     </tr>
@@ -1587,8 +1603,7 @@ shortcut key bindings:</p>
 </table>
 
 <p>You can change the key bindings from the Hatari configuration file.
-The required key values can be seen in the SDL_keysym.h include file
-(usually in /usr/include/SDL/).</p>
+See keymap-sample.txt file for instructions.</p>
 
 
 <h3>Emulated Atari ST keyboard</h3>
@@ -1659,6 +1674,9 @@ Press the shortcut key (again) to go back to normal mouse behaviour
 which allows you to move mouse outside outside the Hatari window while
 Hatari is up and running. Note: pausing the emulation will also
 (temporarily) release the mouse grab.</p>
+<p>Middle button click emulates double click, which is very useful
+in Fast Forward mode (where normal double clicking is nearly
+impossible).</p>
 <p>Mouse scrollwheel will act as cursor up and down keys. </p>
 
 <h3>Emulated joystick</h3>
@@ -1666,8 +1684,8 @@ Hatari is up and running. Note: pausing the emulation will also
 <p>The Atari ST joysticks are emulated ofcourse allowing you to play
 your favourite games with Hatari. </p>
 <p>The default mode is to use a connected PC joystick. You can use any
-joystick that is supported by your kernel. If your joystick works with
-other applications, it will likely work with Hatari as well. Make sure
+joystick that is supported by your kernel / SDL library. If your joystick works
+with other applications, it will likely work with Hatari as well. Make sure
 it is calibrated and then off you go. Move the stick to point into the
 desired direction. Please note that Hatari will not detect analogue
 movement as the Atari ST only had digital joysticks. The first
