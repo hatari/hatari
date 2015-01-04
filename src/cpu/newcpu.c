@@ -2177,6 +2177,22 @@ Interrupt:
 
 */
 
+static int iack_cycle(int nr)
+{
+	int vector;
+
+	if (1) {
+		// non-autovectored
+		vector = x_get_byte(0x00fffff1 | ((nr - 24) << 1));
+		if (currprefs.cpu_cycle_exact)
+			x_do_cycles(4 * cpucycleunit);
+	} else {
+		// autovectored
+
+	}
+	return vector;
+}
+
 #ifndef WINUAE_FOR_HATARI
 static void Exception_ce000 (int nr)
 #else
@@ -2257,7 +2273,7 @@ static void Exception_ce000 (int nr, int ExceptionSource)
 		x_put_word (m68k_areg (regs, 7) + 2, last_fault_for_exception_3 >> 16);
 		x_do_cycles (2 * cpucycleunit);
 #ifndef WINUAE_FOR_HATARI
-		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_addr_for_exception_3, currpc, get_long (4 * nr));
+		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
 #else
 		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_addr_for_exception_3, currpc, STMemory_ReadLong (4 * nr));
 #endif
@@ -2269,11 +2285,8 @@ static void Exception_ce000 (int nr, int ExceptionSource)
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
 /* [NP] TODO get int vector + add cycles */
 #ifndef WINUAE_FOR_HATARI
-		if (interrupt) {
-			// fetch interrupt vector number
-			nr = x_get_byte (0x00fffff1 | ((nr - 24) << 1));
-			x_do_cycles (4 * cpucycleunit);
-		}
+		if (interrupt)
+			nr = iack_cycle(nr);
 #endif
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
@@ -2282,11 +2295,8 @@ static void Exception_ce000 (int nr, int ExceptionSource)
 		m68k_areg (regs, 7) -= 6;
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
 #ifndef WINUAE_FOR_HATARI
-		if (interrupt) {
-			// fetch interrupt vector number
-			nr = x_get_byte (0x00fffff1 | ((nr - 24) << 1));
-			x_do_cycles (4 * cpucycleunit);
-		}
+		if (interrupt)
+			nr = iack_cycle(nr);
 #endif
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
@@ -2690,7 +2700,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 /* [NP] TODO : compute int vector */
 #ifndef WINUAE_FOR_HATARI
 	if (interrupt && currprefs.cpu_model <= 68010)
-		nr = x_get_byte (0x00fffff1 | (nr << 1));
+		nr = iack_cycle(nr);
 #else
 
 #endif
@@ -2832,7 +2842,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 				x_put_word (m68k_areg (regs, 7), 0xb000 + nr * 4);
 			}
 #ifndef WINUAE_FOR_HATARI
-			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, x_get_long (regs.vbr + 4*nr));
+			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, get_long_debug (regs.vbr + 4*nr));
 #else
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, STMemory_ReadLong (regs.vbr + 4*nr));
 #endif
@@ -2877,7 +2887,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 			x_put_word (m68k_areg (regs, 7) + 8, regs.sr);
 			x_put_long (m68k_areg (regs, 7) + 10, last_addr_for_exception_3);
 #ifndef WINUAE_FOR_HATARI
-			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, x_get_long (regs.vbr + 4*nr));
+			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4*nr));
 #else
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, STMemory_ReadLong (regs.vbr + 4*nr));
 			// TODO [NP] remove BusError_xxx variables
@@ -3257,7 +3267,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 
 	if ((opcode & 0xF000) == 0xF000) {
 		if (warned < 20) {
-			write_log (_T("B-Trap %x at %x (%p)\n"), opcode, pc, regs.pc_p);
+			write_log(_T("B-Trap %04X at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x2c));
 			warned++;
 		}
 #ifndef WINUAE_FOR_HATARI
@@ -3270,7 +3280,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 	}
 	if ((opcode & 0xF000) == 0xA000) {
 		if (warned < 20) {
-			write_log (_T("A-Trap %x at %x (%p)\n"), opcode, pc, regs.pc_p);
+			write_log(_T("A-Trap %04X at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x28));
 			warned++;
 		}
 #ifndef WINUAE_FOR_HATARI
@@ -3283,7 +3293,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 	}
 	if (warned < 20) {
 #ifndef WINUAE_FOR_HATARI
-		write_log (_T("Illegal instruction: %04x at %08X -> %08X\n"), opcode, pc, get_long (regs.vbr + 0x10));
+		write_log (_T("Illegal instruction: %04x at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x10));
 #else
 		write_log (_T("Illegal instruction: %04x at %08X -> %08X\n"), opcode, pc, STMemory_ReadLong (regs.vbr + 0x10));
 #endif
@@ -4050,6 +4060,7 @@ isstopped:
 #endif
 
 #ifndef WINUAE_FOR_HATARI		/* [NP] Allow emulation to sleep during a STOP to save some CPU, we don't use it for Hatari */
+#if 0
 		if (!uae_int_requested && !uaenet_int_requested && currprefs.cpu_idle && currprefs.m68k_speed != 0 && (regs.spcflags & SPCFLAG_STOP)
 #ifdef WITH_PPC
 			&& ppc_state != PPC_STATE_ACTIVE
@@ -4079,6 +4090,7 @@ isstopped:
 				}
 			}
 		}
+#endif
 #endif
 	}
 
@@ -5782,9 +5794,10 @@ printf ( "cpu change %d\n" , cpu_prefs_changed_flag );
 
 		if (regs.halted) {
 			cpu_halt (regs.halted);
-			if (regs.halted < 0)
+			if (regs.halted < 0) {
 				haltloop();
-			continue;
+				continue;
+			}
 		}
 
 #if 0

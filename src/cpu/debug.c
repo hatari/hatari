@@ -1889,7 +1889,11 @@ static int debug_mem_off (uaecptr *addrp)
 	uaecptr addr = *addrp;
 	addrbank *ba;
 	int offset = munge24 (addr) >> 16;
+	if (!debug_mem_banks)
+		return offset;
 	ba = debug_mem_banks[offset];
+	if (!ba)
+		return offset;
 	addr = (addr & ba->mask) | ba->startmask;
 	*addrp = addr;
 	return offset;
@@ -2475,6 +2479,7 @@ static void memwatch_remap (uaecptr addr)
 		TCHAR tmp[200];
 		_stprintf (tmp, _T("%s [D]"), bank->name);
 		ms->addr = bank;
+		ms->banknr = banknr;
 		newbank = &ms->newbank;
 		memcpy (newbank, bank, sizeof addrbank);
 		newbank->bget = mode ? mmu_bget : debug_bget;
@@ -2601,6 +2606,17 @@ int debug_bankchange (int mode)
 		memwatch_setup ();
 	}
 	return -1;
+}
+
+addrbank *get_mem_bank_real(uaecptr addr)
+{
+	addrbank *ab = &get_mem_bank(addr);
+	if (!memwatch_enabled)
+		return ab;
+	addrbank *ab2 = debug_mem_banks[addr >> 16];
+	if (ab2)
+		return ab2;
+	return ab;
 }
 
 struct mw_acc

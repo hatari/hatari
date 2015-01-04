@@ -160,6 +160,10 @@ struct uae_prefs {
 	int filesys_limit;
 	int filesys_max_name;
 	int filesys_max_file_size;
+	bool filesys_inject_icons;
+	TCHAR filesys_inject_icons_tool[MAX_DPATH];
+	TCHAR filesys_inject_icons_project[MAX_DPATH];
+	TCHAR filesys_inject_icons_drawer[MAX_DPATH];
 	int uaescsidevmode;
 	bool reset_delay;
 
@@ -283,6 +287,7 @@ struct uae_prefs {
 	bool native_code;
 	bool uae_hide_autoconfig;
 	int z3_mapping_mode;
+	bool sound_toccata;
 
 	int mountitems;
 	/*
