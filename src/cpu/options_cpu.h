@@ -11,9 +11,8 @@
 #define MAX_CUSTOM_MEMORY_ADDRS 2
 
 struct uae_prefs {
-	/*
+#ifndef WINUAE_FOR_HATARI
 	struct strlist *all_lines;
-	*/
 
 	TCHAR description[256];
 	TCHAR info[256];
@@ -62,6 +61,7 @@ struct uae_prefs {
 	int sampler_freq;
 	int sampler_buffer;
 	bool sampler_stereo;
+#endif
 
 	int comptrustbyte;
 	int comptrustword;
@@ -83,7 +83,7 @@ struct uae_prefs {
 
 	bool avoid_cmov;
 
-	/*
+#ifndef WINUAE_FOR_HATARI
         int gfx_framerate, gfx_autoframerate;
         struct wh gfx_size_win;
         struct wh gfx_size_fs;
@@ -115,12 +115,13 @@ struct uae_prefs {
 
         float rtg_horiz_zoom_mult;
         float rtg_vert_zoom_mult;
-	*/
 
 	bool immediate_blits;
 	int waiting_blits;
 	unsigned int chipset_mask;
+#endif
 	bool ntscmode;
+#ifndef WINUAE_FOR_HATARI
 	bool genlock;
         int monitoremu;
         double chipset_refreshrate;
@@ -140,12 +141,14 @@ struct uae_prefs {
 	bool sana2;
 	bool uaeserial;
 	int catweasel;
+#endif
 	int cpu_idle;
 	int ppc_cpu_idle;
 	bool cpu_cycle_exact;
 	int cpu_clock_multiplier;
 	int cpu_frequency;
 	bool blitter_cycle_exact;
+#ifndef WINUAE_FOR_HATARI
 	int floppy_speed;
 	int floppy_write_length;
 	int floppy_random_bits_min;
@@ -165,8 +168,10 @@ struct uae_prefs {
 	TCHAR filesys_inject_icons_project[MAX_DPATH];
 	TCHAR filesys_inject_icons_drawer[MAX_DPATH];
 	int uaescsidevmode;
+#endif
 	bool reset_delay;
 
+#ifndef WINUAE_FOR_HATARI
 	int cs_compatible;
 	int cs_ciaatod;
 	int cs_rtc;
@@ -204,6 +209,11 @@ struct uae_prefs {
 	bool cs_1mchipjumper;
 	int cs_hacks;
 
+	struct boardromconfig a2091rom;
+	struct boardromconfig a4091rom;
+	struct boardromconfig fastlanerom;
+	struct boardromconfig oktagonrom;
+
 	TCHAR romfile[MAX_DPATH];
 	TCHAR romident[256];
 	TCHAR romextfile[MAX_DPATH];
@@ -224,20 +234,18 @@ struct uae_prefs {
 	TCHAR sername[256];
 	TCHAR amaxromfile[MAX_DPATH];
 	TCHAR a2065name[MAX_DPATH];
-	/*
+	TCHAR picassoivromfile[MAX_DPATH];
 	struct cdslot cdslots[MAX_TOTAL_SCSI_DEVICES];
-	*/
 	TCHAR quitstatefile[MAX_DPATH];
 	TCHAR statefile[MAX_DPATH];
 	TCHAR inprecfile[MAX_DPATH];
 	bool inprec_autoplay;
 
-	/*
 	struct multipath path_floppy;
 	struct multipath path_hardfile;
 	struct multipath path_rom;
 	struct multipath path_cd;
-	*/
+#endif
 
 	int m68k_speed;
 	double m68k_speed_throttle;
@@ -253,6 +261,7 @@ struct uae_prefs {
 	bool int_no_unimplemented;
 	bool fpu_no_unimplemented;
 	bool address_space_24;
+#ifndef WINUAE_FOR_HATARI
 	bool picasso96_nocustom;
 	int picasso96_modeflags;
 
@@ -290,22 +299,16 @@ struct uae_prefs {
 	bool sound_toccata;
 
 	int mountitems;
-	/*
 	struct uaedev_config_data mountconfig[MOUNT_CONFIG_SIZE];
-	*/
 
 	int nr_floppies;
-	/*
 	struct floppyslot floppyslots[4];
 	bool floppy_read_only;
 	TCHAR dfxlist[MAX_SPARE_DRIVES][MAX_DPATH];
-	*/
 	int dfxclickvolume;
 	int dfxclickchannelmask;
 
-	/*
 	TCHAR luafiles[MAX_LUA_STATES][MAX_DPATH];
-	*/
 
 	/* Target specific options */
 
@@ -367,9 +370,7 @@ struct uae_prefs {
 
 	/* input */
 
-	/*
 	struct jport jports[MAX_JPORTS];
-	*/
 	int input_selected_setting;
 	int input_joymouse_multiplier;
 	int input_joymouse_deadzone;
@@ -383,7 +384,6 @@ struct uae_prefs {
 	bool tablet_library;
 	bool input_magic_mouse;
 	int input_magic_mouse_cursor;
-	/*
 	int input_keyboard_type;
 	struct uae_input_device joystick_settings[MAX_INPUT_SETTINGS][MAX_INPUT_DEVICES];
 	struct uae_input_device mouse_settings[MAX_INPUT_SETTINGS][MAX_INPUT_DEVICES];
@@ -391,8 +391,8 @@ struct uae_prefs {
 	struct uae_input_device internalevent_settings[MAX_INPUT_SETTINGS][INTERNALEVENT_COUNT];
 	TCHAR input_config_name[GAMEPORT_INPUT_SETTINGS][256];
 	int dongle;
-	*/
 	int input_contact_bounce;
+#endif
 };
 
 extern struct uae_prefs currprefs, changed_prefs;
