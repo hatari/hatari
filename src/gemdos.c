@@ -2530,12 +2530,17 @@ static int GemDOS_Pexec(Uint32 Params)
 		if (Mode == 0 || Mode == 3)
 		{
 			int cmdlen;
+			char *str;
 			const char *name, *cmd;
 			name = (const char *)STMemory_STAddrToPointer(fname);
 			cmd = (const char *)STMemory_STAddrToPointer(cmdline);
 			cmdlen = *cmd++;
-			LOG_TRACE_PRINT ( "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n", Mode, name, cmdlen, cmdlen?cmd:"", env_string,
+			str = malloc(cmdlen+1);
+			memcpy(str, cmd, cmdlen);
+			str[cmdlen] = '\0';
+			LOG_TRACE_PRINT ( "GEMDOS 0x4B Pexec(%i, \"%s\", [%d]\"%s\", 0x%x) at PC 0x%X\n", Mode, name, cmdlen, str, env_string,
 				M68000_GetPC());
+			free(str);
 		}
 		else
 		{
