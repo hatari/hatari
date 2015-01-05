@@ -31,6 +31,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "clocks_timings.h"
 #include "68kDisass.h"
 #include "fdc.h"
+#include "dsp.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
