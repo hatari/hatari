@@ -560,7 +560,7 @@ void Profile_CpuShowCallers(FILE *fp)
  */
 void Profile_CpuSave(FILE *out)
 {
-	Uint32 text;
+	Uint32 text, end;
 	fputs("Field names:\tExecuted instructions, Used cycles, Instruction cache misses\n", out);
 	/* (Python) pegexp that matches address and all describled fields from disassembly:
 	 * $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
@@ -568,13 +568,17 @@ void Profile_CpuSave(FILE *out)
 	 */
 	fputs("Field regexp:\t^\\$([0-9a-f]+) :.*% \\((.*)\\)$\n", out);
 	/* some information for interpreting the addresses */
-	fprintf(out, "ROM_TOS:\t0x%06x-0x%06x\n", TosAddress, TosAddress + TosSize);
+	end = TosAddress + TosSize;
+	fprintf(out, "ROM_TOS:\t0x%06x-0x%06x\n", TosAddress, end);
 	text = DebugInfo_GetTEXT();
 	if (text < TosAddress) {
 		fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
 	}
 	fprintf(out, "CARTRIDGE:\t0x%06x-0x%06x\n", CART_START, CART_END);
-	Profile_CpuShowAddresses(0, CART_END-2, out);
+	if (end < CART_END) {
+		end = CART_END;
+	}
+	Profile_CpuShowAddresses(0, end-2, out);
 	Profile_CpuShowCallers(out);
 }
 
