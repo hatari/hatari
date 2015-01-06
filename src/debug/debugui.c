@@ -1023,6 +1023,15 @@ void DebugUI(debug_reason_t reason)
 	static const char *welcome =
 		"\n----------------------------------------------------------------------"
 		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
+	static bool recursing;
+
+	if (recursing)
+	{
+		fprintf(stderr, "WARNING: recursive call to DebugUI (through profiler debug option?)!\n");
+		recursing = false;
+		return;
+	}
+	recursing = true;
 
 	History_Mark(reason);
 
@@ -1084,6 +1093,8 @@ void DebugUI(debug_reason_t reason)
 
 	DebugCpu_SetDebugging();
 	DebugDsp_SetDebugging();
+
+	recursing = false;
 }
 
 
