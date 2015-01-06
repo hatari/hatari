@@ -12,6 +12,7 @@ struct uae_prefs {
     int cpu_level;
     int cpu_compatible;
     int address_space_24;
+    int cpu_cycle_exact;
 };
 
 extern struct uae_prefs currprefs, changed_prefs;

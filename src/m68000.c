@@ -337,6 +337,9 @@ void M68000_CheckCpuSettings(void)
 	/* Set cpu speed to default values (only use in WinUAE, not in Hatari) */
 	currprefs.m68k_speed = changed_prefs.m68k_speed = -1;
 	currprefs.cpu_clock_multiplier = changed_prefs.cpu_clock_multiplier = 2 << 8;
+
+#else
+	changed_prefs.cpu_cycle_exact = 0;				/* With old UAE CPU, cycle_exact is always false */
 #endif
 
 	if (table68k)
