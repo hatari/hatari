@@ -1424,8 +1424,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 				count_cycles_ea += 2;
 #else
 				/* Hatari : on 68000 ST, Ad8r causes an unaligned memory prefetch and take 2 cycles more */
-				/* JSR, JMP, LEA and PEA are handled separetely */
-				printf ("\tBusCyclePenalty += 2;\n");
+				/* JSR, JMP, LEA and PEA are handled separately */
+				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
+				if ( using_prefetch && !using_ce )
+					printf ("\tBusCyclePenalty += 2;\n");
 #endif
 			}
 			if ((flags & GF_NOREFILL) && using_prefetch) {
@@ -1467,8 +1469,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 				count_cycles_ea += 2;
 #else
 				/* Hatari : on 68000 ST, Ad8r causes an unaligned memory prefetch and take 2 cycles more */
-				/* JSR, JMP, LEA and PEA are handled separetely */
-				printf ("\tBusCyclePenalty += 2;\n");
+				/* JSR, JMP, LEA and PEA are handled separately */
+				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
+				if ( using_prefetch && !using_ce )
+					printf ("\tBusCyclePenalty += 2;\n");
 #endif
 			}
 			if ((flags & GF_NOREFILL) && using_prefetch) {
@@ -3975,7 +3979,11 @@ static void gen_opcode (unsigned int opcode)
 #else
 				/* Hatari : JSR in Ad8r and PC8r mode takes 22 cycles, but on ST it takes 24 cycles */
 				/* because of an unaligned memory prefetch in this EA mode */
-				addcycles000 (6+2);
+				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
+				if ( using_prefetch && !using_ce )
+					addcycles000 (6+2);
+				else
+					addcycles000 (6);
 #endif
 				if (cpu_level <= 1 && using_prefetch)
 					printf ("\toldpc += 2;\n");
@@ -4013,7 +4021,11 @@ static void gen_opcode (unsigned int opcode)
 #else
 			/* Hatari : JMP in Ad8r and PC8r mode takes 22 cycles, but on ST it takes 24 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
-			addcycles000 (6+2);
+			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
+			if ( using_prefetch && !using_ce )
+				addcycles000 (6+2);
+			else
+				addcycles000 (6);
 #endif
 		setpc ("srca");
 		m68k_pc_offset = 0;
@@ -4139,7 +4151,11 @@ bccl_not68020:
 #else
 			/* Hatari : LEA in Ad8r and PC8r mode takes 12 cycles, but on ST it takes 14 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
-			addcycles000 (2+2);
+			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
+			if ( using_prefetch && !using_ce )
+				addcycles000 (2+2);
+			else
+				addcycles000 (2);
 #endif
 		fill_prefetch_next ();
 		genastore ("srca", curi->dmode, "dstreg", curi->size, "dst");
@@ -4157,7 +4173,11 @@ bccl_not68020:
 #else
 			/* Hatari : PEA in Ad8r and PC8r mode takes 20 cycles, but on ST it takes 22 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
-			addcycles000 (2+2);
+			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
+			if ( using_prefetch && !using_ce )
+				addcycles000 (2+2);
+			else
+				addcycles000 (2);
 #endif
 		genastore ("srca", Apdi, "7", sz_long, "dst");
 		if ((curi->smode == absw || curi->smode == absl))
