@@ -998,8 +998,13 @@ void Profile_CpuStop(void)
 
 	/* find lowest and highest addresses executed etc */
 	next = update_area(&cpu_profile.ram, 0, STRamEnd/2);
-	next = update_area(&cpu_profile.tos, next, (STRamEnd + TosSize)/2);
-	next = update_area(&cpu_profile.rom, next, cpu_profile.size);
+	if (TosAddress < CART_START) {
+		next = update_area(&cpu_profile.tos, next, (STRamEnd + TosSize)/2);
+		next = update_area(&cpu_profile.rom, next, cpu_profile.size);
+	} else {
+		next = update_area(&cpu_profile.rom, next, (STRamEnd + CART_SIZE)/2);
+		next = update_area(&cpu_profile.tos, next, cpu_profile.size);
+	}
 	assert(next == cpu_profile.size);
 
 #if DEBUG
