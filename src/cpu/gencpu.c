@@ -1418,11 +1418,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 			printf ("\t%sa = %s (m68k_areg (regs, %s), %d);\n", name, disp020, reg, mmudisp020cnt++);
 		} else {
 			if (!(flags & GF_AD8R)) {
-#ifndef WINUAE_FOR_HATARI
 				addcycles000 (2);
 				insn_n_cycles += 2;
 				count_cycles_ea += 2;
-#else
+#ifdef WINUAE_FOR_HATARI
 				/* Hatari : on 68000 ST, Ad8r causes an unaligned memory prefetch and take 2 cycles more */
 				/* JSR, JMP, LEA and PEA are handled separately */
 				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
@@ -1463,11 +1462,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		} else {
 			printf ("\ttmppc = %s + %d;\n", getpc, m68k_pc_offset);
 			if (!(flags & GF_PC8R)) {
-#ifndef WINUAE_FOR_HATARI
 				addcycles000 (2);
 				insn_n_cycles += 2;
 				count_cycles_ea += 2;
-#else
+#ifdef WINUAE_FOR_HATARI
 				/* Hatari : on 68000 ST, Ad8r causes an unaligned memory prefetch and take 2 cycles more */
 				/* JSR, JMP, LEA and PEA are handled separately */
 				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
@@ -3974,16 +3972,13 @@ static void gen_opcode (unsigned int opcode)
 			if (curi->smode == Ad16 || curi->smode == absw || curi->smode == PC16)
 				addcycles000 (2);
 			if (curi->smode == Ad8r || curi->smode == PC8r) {
-#ifndef WINUAE_FOR_HATARI
 				addcycles000 (6);
-#else
+#ifdef WINUAE_FOR_HATARI
 				/* Hatari : JSR in Ad8r and PC8r mode takes 22 cycles, but on ST it takes 24 cycles */
 				/* because of an unaligned memory prefetch in this EA mode */
 				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
 				if ( using_prefetch && !using_ce )
-					addcycles000 (6+2);
-				else
-					addcycles000 (6);
+					addcycles000 (2);
 #endif
 				if (cpu_level <= 1 && using_prefetch)
 					printf ("\toldpc += 2;\n");
@@ -4016,16 +4011,13 @@ static void gen_opcode (unsigned int opcode)
 		if (curi->smode == Ad16 || curi->smode == absw || curi->smode == PC16)
 			addcycles000 (2);
 		if (curi->smode == Ad8r || curi->smode == PC8r)
-#ifndef WINUAE_FOR_HATARI
 			addcycles000 (6);
-#else
+#ifdef WINUAE_FOR_HATARI
 			/* Hatari : JMP in Ad8r and PC8r mode takes 22 cycles, but on ST it takes 24 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
 			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
 			if ( using_prefetch && !using_ce )
-				addcycles000 (6+2);
-			else
-				addcycles000 (6);
+				addcycles000 (2);
 #endif
 		setpc ("srca");
 		m68k_pc_offset = 0;
@@ -4145,18 +4137,16 @@ bccl_not68020:
 			curi->dmode, "dstreg", curi->size, "dst", 2, GF_AA);
 		//genamode (curi, curi->smode, "srcreg", curi->size, "src", 0, 0, GF_AA);
 		//genamode (curi, curi->dmode, "dstreg", curi->size, "dst", 2, 0, GF_AA);
-		if (curi->smode == Ad8r || curi->smode == PC8r)
-#ifndef WINUAE_FOR_HATARI
+		if (curi->smode == Ad8r || curi->smode == PC8r) {
 			addcycles000 (2);
-#else
+#ifdef WINUAE_FOR_HATARI
 			/* Hatari : LEA in Ad8r and PC8r mode takes 12 cycles, but on ST it takes 14 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
 			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
 			if ( using_prefetch && !using_ce )
-				addcycles000 (2+2);
-			else
 				addcycles000 (2);
 #endif
+		}
 		fill_prefetch_next ();
 		genastore ("srca", curi->dmode, "dstreg", curi->size, "dst");
 		break;
@@ -4167,18 +4157,16 @@ bccl_not68020:
 		genamode (NULL, Apdi, "7", sz_long, "dst", 2, 0, GF_AA);
 		if (!(curi->smode == absw || curi->smode == absl))
 			fill_prefetch_next ();
-		if (curi->smode == Ad8r || curi->smode == PC8r)
-#ifndef WINUAE_FOR_HATARI
+		if (curi->smode == Ad8r || curi->smode == PC8r) {
 			addcycles000 (2);
-#else
+#ifdef WINUAE_FOR_HATARI
 			/* Hatari : PEA in Ad8r and PC8r mode takes 20 cycles, but on ST it takes 22 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
 			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
 			if ( using_prefetch && !using_ce )
-				addcycles000 (2+2);
-			else
 				addcycles000 (2);
 #endif
+		}
 		genastore ("srca", Apdi, "7", sz_long, "dst");
 		if ((curi->smode == absw || curi->smode == absl))
 			fill_prefetch_next ();
