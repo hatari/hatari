@@ -4010,7 +4010,7 @@ static void gen_opcode (unsigned int opcode)
 		}
 		if (curi->smode == Ad16 || curi->smode == absw || curi->smode == PC16)
 			addcycles000 (2);
-		if (curi->smode == Ad8r || curi->smode == PC8r)
+		if (curi->smode == Ad8r || curi->smode == PC8r) {
 			addcycles000 (6);
 #ifdef WINUAE_FOR_HATARI
 			/* Hatari : JMP in Ad8r and PC8r mode takes 22 cycles, but on ST it takes 24 cycles */
@@ -4019,6 +4019,7 @@ static void gen_opcode (unsigned int opcode)
 			if ( using_prefetch && !using_ce )
 				addcycles000 (2);
 #endif
+		}
 		setpc ("srca");
 		m68k_pc_offset = 0;
 		fill_prefetch_full ();
