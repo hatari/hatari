@@ -60,6 +60,11 @@ if [ \! -f $prg ]; then
 	usage "given Atari program doesn't exist"
 fi
 
+# builtin shell echo can be broken, so that it interprets backlashes by default,
+# i.e. concatenating '\' path separator with dirname 't', produces TAB, not '\t'...
+# -> use separate echo binary
+echo=$(which echo)
+
 # temporary dir
 mkdir -p $dir
 
@@ -72,13 +77,15 @@ drive="C:\\"
 path="${prg%/*}/"
 for arg in $*; do
 	if [ "${arg#$path}" != "$arg" ]; then
+		# file path needing conversion
 		if [ \! -f $arg ]; then
 			usage "given file name '$arg' doesn't exits"
 		fi
-		# remove host paths, convert path separators, upper-case
-		echo -n "${prefix}${drive}${arg}" | sed "s|$path||" | tr '/' '\\' | tr a-z A-Z >> $args
+		# prefix with separator & drive letter & remove host path,
+		# upper-case, convert path separators
+		$echo -n "${prefix}${drive}${arg#$path}" | tr a-z A-Z | tr '/' '\\' >> $args
 	else
-		echo -n "${prefix}$arg" >> $args
+		$echo -n "${prefix}$arg" >> $args
 	fi
 	prefix=" "
 	shift
