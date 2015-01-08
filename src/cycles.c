@@ -144,6 +144,7 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 		else if ( OpcodeFamily == i_MVPRM )					/* eg movep.l d0,$ffc3(a1) in E605 (STE) */
 			AddCycles = 12 + MovepByteNbr * 4;				/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
 											/* something must be wrong in video.c */
+			/* FIXME : this should be : AddCycles = 4 + MovepByteNbr * 4, but this breaks e605 in video.c */
 		else
 			AddCycles = CurrentInstrCycles + nWaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
 	}

@@ -1588,11 +1588,11 @@ static void gen_opcode (unsigned long int opcode)
          {
           case Aind:  insn_n_cycles=16; break;
           case Ad16:  insn_n_cycles=18; break;
-          case Ad8r:  insn_n_cycles=22; break;
+          case Ad8r:  insn_n_cycles=22+2; break;
           case absw:  insn_n_cycles=18; break;
           case absl:  insn_n_cycles=20; break;
           case PC16:  insn_n_cycles=18; break;
-          case PC8r:  insn_n_cycles=22; break;
+          case PC8r:  insn_n_cycles=22+2; break;
          }
 	break;
     case i_JMP:
@@ -1616,11 +1616,11 @@ static void gen_opcode (unsigned long int opcode)
          {
           case Aind:  insn_n_cycles=8; break;
           case Ad16:  insn_n_cycles=10; break;
-          case Ad8r:  insn_n_cycles=14; break;
+          case Ad8r:  insn_n_cycles=14+2; break;
           case absw:  insn_n_cycles=10; break;
           case absl:  insn_n_cycles=12; break;
           case PC16:  insn_n_cycles=10; break;
-          case PC8r:  insn_n_cycles=14; break;
+          case PC8r:  insn_n_cycles=14+2; break;
          }
 	break;
     case i_BSR:

@@ -1418,11 +1418,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 			printf ("\t%sa = %s (m68k_areg (regs, %s), %d);\n", name, disp020, reg, mmudisp020cnt++);
 		} else {
 			if (!(flags & GF_AD8R)) {
-#ifndef WINUAE_FOR_HATARI
 				addcycles000 (2);
 				insn_n_cycles += 2;
 				count_cycles_ea += 2;
-#else
+#ifdef WINUAE_FOR_HATARI
 				/* Hatari : on 68000 ST, Ad8r causes an unaligned memory prefetch and take 2 cycles more */
 				/* JSR, JMP, LEA and PEA are handled separately */
 				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
@@ -1463,11 +1462,10 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		} else {
 			printf ("\ttmppc = %s + %d;\n", getpc, m68k_pc_offset);
 			if (!(flags & GF_PC8R)) {
-#ifndef WINUAE_FOR_HATARI
 				addcycles000 (2);
 				insn_n_cycles += 2;
 				count_cycles_ea += 2;
-#else
+#ifdef WINUAE_FOR_HATARI
 				/* Hatari : on 68000 ST, Ad8r causes an unaligned memory prefetch and take 2 cycles more */
 				/* JSR, JMP, LEA and PEA are handled separately */
 				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
@@ -3435,6 +3433,7 @@ static void gen_opcode (unsigned int opcode)
 	case i_MVPRM: // MOVEP R->M
 		genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 		printf ("\tuaecptr memp = m68k_areg (regs, dstreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword (0));
+#ifndef WINUAE_FOR_HATARI
 		if (curi->size == sz_word) {
 			printf ("\t%s (memp, src >> 8);\n\t%s (memp + 2, src);\n", dstb, dstb);
 			count_write += 2;
@@ -3443,11 +3442,24 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\t%s (memp + 4, src >> 8);\n\t%s (memp + 6, src);\n", dstb, dstb);
 			count_write += 4;
 		}
+#else
+		/* Hatari : Use MovepByteNbr to keep track of each individual byte access inside a movep */
+		if (curi->size == sz_word) {
+			printf ("\tMovepByteNbr=1; \t%s (memp, src >> 8);\n\tMovepByteNbr=2; \t%s (memp + 2, src);\n", dstb, dstb);
+			count_write += 2;
+		} else {
+			printf ("\tMovepByteNbr=1; \t%s (memp, src >> 24);\n\tMovepByteNbr=2; \t%s (memp + 2, src >> 16);\n", dstb, dstb);
+			printf ("\tMovepByteNbr=3; \t%s (memp + 4, src >> 8);\n\tMovepByteNbr=4; \t%s (memp + 6, src);\n", dstb, dstb);
+			count_write += 4;
+		}
+		printf ("\tMovepByteNbr=0;\n");
+#endif
 		fill_prefetch_next ();
 		break;
 	case i_MVPMR: // MOVEP M->R
 		printf ("\tuaecptr memp = m68k_areg (regs, srcreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword (0));
 		genamode (curi, curi->dmode, "dstreg", curi->size, "dst", 2, 0, 0);
+#ifndef WINUAE_FOR_HATARI
 		if (curi->size == sz_word) {
 			printf ("\tuae_u16 val = (%s (memp) << 8) + %s (memp + 2);\n", srcb, srcb);
 			count_read += 2;
@@ -3456,6 +3468,26 @@ static void gen_opcode (unsigned int opcode)
 			printf ("              + (%s (memp + 4) << 8) + %s (memp + 6);\n", srcb, srcb);
 			count_read += 4;
 		}
+#else
+		/* Hatari : Use MovepByteNbr to keep track of each individual byte access inside a movep */
+		if (curi->size == sz_word) {
+			//printf ("\tuae_u16 val = (%s (memp) << 8) + %s (memp + 2);\n", srcb, srcb);
+			printf ("\tuae_u16 val;\n");
+			printf ("\tMovepByteNbr=1; val = (%s (memp) << 8);\n", srcb);
+			printf ("\tMovepByteNbr=2; val += %s (memp + 2);\n", srcb);
+			count_read += 2;
+		} else {
+			//printf ("\tuae_u32 val = (%s (memp) << 24) + (%s (memp + 2) << 16)\n", srcb, srcb);
+			//printf ("              + (%s (memp + 4) << 8) + %s (memp + 6);\n", srcb, srcb);
+			printf ("\tuae_u32 val;\n");
+			printf ("\tMovepByteNbr=1; val = (%s (memp) << 24);\n", srcb);
+			printf ("\tMovepByteNbr=2; val += (%s (memp + 2) << 16);\n", srcb);
+			printf ("\tMovepByteNbr=3; val += (%s (memp + 4) << 8);\n", srcb);
+			printf ("\tMovepByteNbr=4; val += %s (memp + 6);\n", srcb);
+			count_read += 4;
+		}
+		printf ("\tMovepByteNbr=0;\n");
+#endif
 		fill_prefetch_next ();
 		genastore ("val", curi->dmode, "dstreg", curi->size, "dst");
 		break;
@@ -3974,16 +4006,13 @@ static void gen_opcode (unsigned int opcode)
 			if (curi->smode == Ad16 || curi->smode == absw || curi->smode == PC16)
 				addcycles000 (2);
 			if (curi->smode == Ad8r || curi->smode == PC8r) {
-#ifndef WINUAE_FOR_HATARI
 				addcycles000 (6);
-#else
+#ifdef WINUAE_FOR_HATARI
 				/* Hatari : JSR in Ad8r and PC8r mode takes 22 cycles, but on ST it takes 24 cycles */
 				/* because of an unaligned memory prefetch in this EA mode */
 				/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
 				if ( using_prefetch && !using_ce )
-					addcycles000 (6+2);
-				else
-					addcycles000 (6);
+					addcycles000 (2);
 #endif
 				if (cpu_level <= 1 && using_prefetch)
 					printf ("\toldpc += 2;\n");
@@ -4015,18 +4044,16 @@ static void gen_opcode (unsigned int opcode)
 		}
 		if (curi->smode == Ad16 || curi->smode == absw || curi->smode == PC16)
 			addcycles000 (2);
-		if (curi->smode == Ad8r || curi->smode == PC8r)
-#ifndef WINUAE_FOR_HATARI
+		if (curi->smode == Ad8r || curi->smode == PC8r) {
 			addcycles000 (6);
-#else
+#ifdef WINUAE_FOR_HATARI
 			/* Hatari : JMP in Ad8r and PC8r mode takes 22 cycles, but on ST it takes 24 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
 			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
 			if ( using_prefetch && !using_ce )
-				addcycles000 (6+2);
-			else
-				addcycles000 (6);
+				addcycles000 (2);
 #endif
+		}
 		setpc ("srca");
 		m68k_pc_offset = 0;
 		fill_prefetch_full ();
@@ -4145,18 +4172,16 @@ bccl_not68020:
 			curi->dmode, "dstreg", curi->size, "dst", 2, GF_AA);
 		//genamode (curi, curi->smode, "srcreg", curi->size, "src", 0, 0, GF_AA);
 		//genamode (curi, curi->dmode, "dstreg", curi->size, "dst", 2, 0, GF_AA);
-		if (curi->smode == Ad8r || curi->smode == PC8r)
-#ifndef WINUAE_FOR_HATARI
+		if (curi->smode == Ad8r || curi->smode == PC8r) {
 			addcycles000 (2);
-#else
+#ifdef WINUAE_FOR_HATARI
 			/* Hatari : LEA in Ad8r and PC8r mode takes 12 cycles, but on ST it takes 14 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
 			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
 			if ( using_prefetch && !using_ce )
-				addcycles000 (2+2);
-			else
 				addcycles000 (2);
 #endif
+		}
 		fill_prefetch_next ();
 		genastore ("srca", curi->dmode, "dstreg", curi->size, "dst");
 		break;
@@ -4167,18 +4192,16 @@ bccl_not68020:
 		genamode (NULL, Apdi, "7", sz_long, "dst", 2, 0, GF_AA);
 		if (!(curi->smode == absw || curi->smode == absl))
 			fill_prefetch_next ();
-		if (curi->smode == Ad8r || curi->smode == PC8r)
-#ifndef WINUAE_FOR_HATARI
+		if (curi->smode == Ad8r || curi->smode == PC8r) {
 			addcycles000 (2);
-#else
+#ifdef WINUAE_FOR_HATARI
 			/* Hatari : PEA in Ad8r and PC8r mode takes 20 cycles, but on ST it takes 22 cycles */
 			/* because of an unaligned memory prefetch in this EA mode */
 			/* We add 2 cycles only in 68000 prefetch mode, 68000 CE mode is handled at the memory access level */
 			if ( using_prefetch && !using_ce )
-				addcycles000 (2+2);
-			else
 				addcycles000 (2);
 #endif
+		}
 		genastore ("srca", Apdi, "7", sz_long, "dst");
 		if ((curi->smode == absw || curi->smode == absl))
 			fill_prefetch_next ();
