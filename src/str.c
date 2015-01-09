@@ -89,6 +89,7 @@ char *Str_ToLower(char *pString)
 /**
  * truncate string at first unprintable char (e.g. newline).
  */
+#if 0
 char *Str_Trunc(char *pString)
 {
 	int i = 0;
@@ -104,11 +105,12 @@ char *Str_Trunc(char *pString)
 	}
 	return pString;
 }
-
+#endif
 
 /**
  * check if string is valid hex number.
  */
+#if 0
 bool Str_IsHex(const char *str)
 {
 	int i = 0;
@@ -120,7 +122,7 @@ bool Str_IsHex(const char *str)
 	}
 	return true;
 }
-
+#endif
 
 /**
  * Convert potentially too long host filenames to 8.3 TOS filenames

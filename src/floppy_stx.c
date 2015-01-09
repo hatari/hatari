@@ -436,6 +436,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 	if ( fwrite ( buf , p-buf , 1 , FileOut ) != 1 )
 	{
 		fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite header\n" , Drive , pszFileName );
+		fclose(FileOut);
 		return false;
 	}
 
@@ -480,6 +481,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 		if ( fwrite ( buf , p-buf , 1 , FileOut ) != 1 )
 		{
 			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite sector header\n" , Drive , pszFileName );
+			fclose(FileOut);
 			return false;
 		}
 
@@ -488,6 +490,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 		if ( fwrite ( pStxSaveSector->pData , pStxSaveSector->SectorSize , 1 , FileOut ) != 1 )
 		{
 			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite sector data\n" , Drive , pszFileName );
+			fclose(FileOut);
 			return false;
 		}
 
@@ -521,6 +524,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 		if ( fwrite ( buf , p-buf , 1 , FileOut ) != 1 )
 		{
 			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite track header\n" , Drive , pszFileName );
+			fclose(FileOut);
 			return false;
 		}
 
@@ -529,6 +533,7 @@ fprintf ( stderr , "stx write <%s>\n" , FilenameSave );
 		if ( fwrite ( pStxSaveTrack->pDataWrite , pStxSaveTrack->TrackSizeWrite , 1 , FileOut ) != 1 )
 		{
 			fprintf ( stderr , "STX_WriteDisk drive=%d file=%s, error fwrite track data\n" , Drive , pszFileName );
+			fclose(FileOut);
 			return false;
 		}
 
