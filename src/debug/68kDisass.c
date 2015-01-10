@@ -135,28 +135,31 @@ static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 {
 	long	index;
 	long	fileLength;
-	int	lineCount;
+	int	lineCount = 0;
 	char	*fbuf;
 	FILE	*f;
 	
 	if(filebuf)
 		*filebuf = NULL;
 	f = fopen(filename, "r");
-	if(!f) return 0;
-	if(fseek(f, 0, SEEK_END))
+	if (!f)
 		return 0;
+	if (fseek(f, 0, SEEK_END))
+		goto out;
 	fileLength = ftell(f);
-	if(fileLength <= 0) return 0;
-	if(fseek(f, 0, SEEK_SET))
-		return 0;
+	if (fileLength <= 0)
+		goto out;
+	if (fseek(f, 0, SEEK_SET))
+		goto out;
 	fbuf = malloc(fileLength);
-	if(!fbuf) return 0;
+	if(!fbuf)
+		goto out;
 	if((size_t)fileLength != fread(fbuf, sizeof(char), fileLength, f))
 	{
 		free(fbuf);
-		return 0;
+		goto out;
 	}
-	lineCount = 0;
+
 	for(index=0; index<fileLength; ++index)
 	{
 		if(fbuf[index] == '\r')	// convert potential CR into a space (which we ignore at the end of the line anyway)
@@ -169,6 +172,8 @@ static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 	}
 	if(filebuf)
 		*filebuf = fbuf;
+out:
+	fclose(f);
 	return lineCount;
 }
 

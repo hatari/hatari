@@ -273,13 +273,12 @@ uae_u32 OpCode_NatFeat_Call(uae_u32 opcode)
 
 TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...) {
     va_list parms;
-    va_start (parms, format);
     if (buffer == NULL) {
         return 0;
     }
+    va_start (parms, format);
     vsnprintf (buffer, (*bufsize) - 1, format, parms);
     va_end (parms);
     *bufsize -= _tcslen (buffer);
     return buffer + _tcslen (buffer);
 }
-

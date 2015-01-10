@@ -158,16 +158,6 @@ extern int ZEXPORT unzGetGlobalInfo (unzFile file,
   return UNZ_OK if there is no problem. */
 
 
-extern int ZEXPORT unzGetGlobalComment (unzFile file,
-					char *szComment,
-					uLong uSizeBuf);
-/*
-  Get the global comment string of the ZipFile, in the szComment buffer.
-  uSizeBuf is the size of the szComment buffer.
-  return the number of byte copied or an error code <0
-*/
-
-
 /***************************************************************************/
 /* Unzip package allow you browse the directory of the zipfile */
 
@@ -258,22 +248,6 @@ extern z_off_t ZEXPORT unztell (unzFile file);
 extern int ZEXPORT unzeof (unzFile file);
 /*
   return 1 if the end of file was reached, 0 elsewhere 
-*/
-
-extern int ZEXPORT unzGetLocalExtrafield (unzFile file,
-					  voidp buf,
-					  unsigned len);
-/*
-  Read extra field from the current file (opened by unzOpenCurrentFile)
-  This is the local-header version of the extra field (sometimes, there is
-    more info in the local-header version than in the central-header)
-
-  if buf==NULL, it return the size of the local extra field
-
-  if buf!=NULL, len is the size of the buffer, the extra header is copied in
-	buf.
-  the return value is the number of bytes copied in buf, or (if <0) 
-	the error code
 */
 
 #ifdef __cplusplus
