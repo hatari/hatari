@@ -163,10 +163,7 @@ void STMemory_SetDefaultConfig(void)
 			STMemory_WriteByte ( 0xff8e09, IoMem_ReadByte(0xff8e09) | 0x01 );
 	}
 
-	/* Set memory size, adjust for extra VDI screens if needed.
-	 * Note: TOS seems to set phys_top-0x8000 as the screen base
-	 * address - so we have to move phys_top down in VDI resolution
-	 * mode, although there is more "physical" ST RAM available. */
+	/* Set memory size, adjust for extra VDI screens if needed. */
 	screensize = VDIWidth * VDIHeight / 8 * VDIPlanes;
 	/* Use 32 kiB in normal screen mode or when the screen size is smaller than 32 kiB */
 	if (!bUseVDIRes || screensize < 0x8000)
@@ -175,18 +172,30 @@ void STMemory_SetDefaultConfig(void)
 	 * memtop / phystop must be dividable by 512 or TOS crashes */
 	memtop = (STRamEnd - screensize) & 0xfffffe00;
 	STMemory_WriteLong(0x436, memtop);
-	/* phys top - This must be memtop + 32k for older machines / TOS versions
-	 * and correct for newer ones.  EmuTOS works differently depending on
-	 * machine type. */
+	/* phys top - for correct memory detection this should be
+	 * memtop + screensize, but real TOS versions crash if gap
+	 * is larger than their largest HW screen size.
+	 * EmuTOS behavior depends on machine type. */
 	switch (ConfigureParams.System.nMachineType)
 	{
 	case MACHINE_TT:
 	case MACHINE_FALCON:
-		/* TOSv4 doesn't work with either phystop value in VDI mode,
-		 * TOSv2, TOSv3 and EmuTOS work */
-		if ((TosVersion & 0x0f00) >= 0x300 || bIsEmuTOS)
+		/* Note: TOS v4 doesn't work with VDI mode (yet) */
+		if (bIsEmuTOS)
 			phystop = STRamEnd;
-		else
+		else if ((TosVersion & 0x0f00) == 0x300)
+		{
+			const int limit = 1280*960/8;
+			/* memory detection works only with
+			 * correct phystop, but TOS v3 crashes
+			 * if gap is larger than largest TT
+			 * screen size */
+			if (screensize > limit)
+				phystop = memtop + limit;
+			else
+				phystop = STRamEnd;
+		}
+		else	/* TOS v2 */
 			phystop = memtop + 0x8000;
 		break;
 	default:
