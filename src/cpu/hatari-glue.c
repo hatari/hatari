@@ -238,11 +238,12 @@ uae_u32 OpCode_NatFeat_ID(uae_u32 opcode)
 	Uint16 SR = M68000_GetSR();
 
 	if (NatFeat_ID(stack, &(Regs[REG_D0]))) {
-		M68000_SetSR(SR);
+//		M68000_SetSR(SR);
 //		m68k_incpc(2);
 //		regs.ir = regs.irc;
 //		get_word_prefetch(2);
-		fill_prefetch();
+//		fill_prefetch();
+		(*cpufunctbl[0X4E71])(0x4E71);
 	}
 	return 4 * CYCLE_UNIT / 2;
 }
@@ -258,11 +259,12 @@ uae_u32 OpCode_NatFeat_Call(uae_u32 opcode)
 
 	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);
 	if (NatFeat_Call(stack, super, &(Regs[REG_D0]))) {
-		M68000_SetSR(SR);
+//		M68000_SetSR(SR);
 //		m68k_incpc(2);
 //		regs.ir = regs.irc;
 //		get_word_prefetch(2);
-		fill_prefetch();
+//		fill_prefetch();
+		(*cpufunctbl[0X4E71])(0x4E71);
 	}
 	return 4 * CYCLE_UNIT / 2;
 }
