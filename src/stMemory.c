@@ -171,15 +171,27 @@ void STMemory_SetDefaultConfig(void)
 	/* Use 32 kiB in normal screen mode or when the screen size is smaller than 32 kiB */
 	if (!bUseVDIRes || screensize < 0x8000)
 		screensize = 0x8000;
-	/* mem top - upper end of user memory (right before the screen memory) */
-	memtop = STRamEnd - screensize;
-	/* memtop / phystop must be dividable by 512 or TOS crashes,
-	 * and it needs to be divisable by 32k, otherwise TOS v3 doesn't
-	 * recognize TT-RAM */
-	memtop -= memtop % 0x8000;
+	/* mem top - upper end of user memory (right before the screen memory)
+	 * memtop / phystop must be dividable by 512 or TOS crashes */
+	memtop = (STRamEnd - screensize) & 0xfffffe00;
 	STMemory_WriteLong(0x436, memtop);
-	/* phys top - This must be memtop + 0x8000 to make TOS happy */
-	STMemory_WriteLong(0x42e, memtop+0x8000);
+	/* phys top - This must be memtop + 32k for older machines / TOS versions
+	 * and correct for newer ones.  EmuTOS works differently depending on
+	 * machine type. */
+	switch (ConfigureParams.System.nMachineType)
+	{
+	case MACHINE_TT:
+	case MACHINE_FALCON:
+		/* TOSv4 doesn't work with either phystop value in VDI mode,
+		 * TOSv2, TOSv3 and EmuTOS work */
+		if ((TosVersion & 0x0f00) >= 0x300 || bIsEmuTOS)
+			STMemory_WriteLong(0x42e, STRamEnd);
+		else
+			STMemory_WriteLong(0x42e, memtop + 0x8000);
+		break;
+	default:
+		STMemory_WriteLong(0x42e, memtop + 0x8000);
+	}
 
 	/* Set memory controller byte according to different memory sizes */
 	/* Setting per bank: %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */
