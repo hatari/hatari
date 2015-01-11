@@ -100,7 +100,7 @@ void STMemory_SetDefaultConfig(void)
 {
 	int i;
 	int screensize;
-	int memtop;
+	int memtop, phystop;
 	Uint8 nMemControllerByte;
 	Uint8 nFalcSysCntrl;
 
@@ -185,13 +185,17 @@ void STMemory_SetDefaultConfig(void)
 		/* TOSv4 doesn't work with either phystop value in VDI mode,
 		 * TOSv2, TOSv3 and EmuTOS work */
 		if ((TosVersion & 0x0f00) >= 0x300 || bIsEmuTOS)
-			STMemory_WriteLong(0x42e, STRamEnd);
+			phystop = STRamEnd;
 		else
-			STMemory_WriteLong(0x42e, memtop + 0x8000);
+			phystop = memtop + 0x8000;
 		break;
 	default:
-		STMemory_WriteLong(0x42e, memtop + 0x8000);
+		phystop = memtop + 0x8000;
 	}
+	STMemory_WriteLong(0x42e, phystop);
+	if (bUseVDIRes)
+		fprintf(stderr, "VDI mode memtop: 0x%x, phystop: 0x%x (screensize: %d kB, memtop->phystop: %d kB)\n",
+			memtop, phystop, (screensize+511) / 1024, (phystop-memtop+511) / 1024);
 
 	/* Set memory controller byte according to different memory sizes */
 	/* Setting per bank: %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */
