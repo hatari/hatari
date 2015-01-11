@@ -616,6 +616,7 @@ void Main_SetTitle(const char *title)
 static void Main_Init_HW(void)
 {
 	FDC_Init();
+	STX_Init();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -662,7 +663,6 @@ static void Main_Init(void)
 
 	DSP_Init();
 	Floppy_Init();
-	STX_Init();
 	M68000_Init();                /* Init CPU emulation */
 	Audio_Init();
 	Keymap_Init();
