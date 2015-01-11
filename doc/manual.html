@@ -1994,8 +1994,9 @@ After installing the hard disk driver to the fresh HD image with
 HINSTALL.PRG, you can boot directly from the hard disk image.
 </p>
 <p>
-CBHD and ICDPro AdSCSI drivers work on images which have been
-partitioned elsewhere.
+HD Driver (v9) partitioning is also compatible with Hatari ACSI
+emulation. CBHD and ICDPro AdSCSI drivers work on images which have
+been partitioned elsewhere.
 </p>
 
 
@@ -2004,7 +2005,7 @@ partitioned elsewhere.
 <p>
 As the IDE disk format (little endian) differs from the ACSI disk format
 (big endian), you need separate disk images for them.  Hatari doesn't
-currently support formatting IDE disks with AHDI, but you can do it with
+currently support partitioning IDE disks with AHDI, but you can do it with
 <em>Cecile</em>.
 </p>
 <p>
@@ -2030,9 +2031,9 @@ If you only want to use your HD image in Falcon mode, you can install
 the Cecile hard disk driver to the image from the Cecile CC_TOOLS.APP:
 Click the "Installer" button and save the Cecile driver to the
 1st partition on "Hatari IDE disk". If you want to also use your HD
-image in ST/STE mode, you need to get and install AHDI 6 driver on it
-instead (see <a href="#ACSI_hard_drive_emulation">ASCI hard drive
-emulation</a> section).
+image in ST/STE mode, you need to get and install either HD Driver or
+AHDI 6 driver on it instead (see <a href="#ACSI_hard_drive_emulation">ASCI
+hard drive emulation</a> section).
 </p>
 <p>
 Then you can boot from your hard disk image by simply specifying it
@@ -2054,14 +2055,16 @@ HD setup as described in above sections.
 
 <p>If you want to boot from a GEMDOS HD partition i.e. such to be
 before hard disk image partitions, and still to be able to access all
-the IDE/ACSI partitions, you need to use HD Driver.</p>
+the IDE/ACSI partitions, you need to use HD Driver.  Note: this is the
+preferred method with EmuTOS (v0.9.x), because it doesn't run/use
+driver installed to the IDE/ACSI image directly although its own
+partition table/type support is very limited.</p>
 
 <h3 id="Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver with GEMDOS partitions</h3>
 
 <p>Uwe Seimet's <a href="http://www.seimet.de/atari/en/hddriver.html">HD
 Driver</a> works fine with both the Hatari GEMDOS HD partitions and normal
-hard disk images.  However, it doesn't work with EmuTOS so you need
-real TOS (at least version v1.04).
+hard disk images.
 </p>
 
 <p>First copy the HDDRIVER.PRG binary into your GEMDOS HD emulation
@@ -2074,12 +2077,14 @@ this GEMDOS HD directory, for example like this:
 "<span class="commandline">hatari --harddrive gemdos-hd/ --ide-master
 ide-hd.image</span>".</p>
 
-<p>If you're using the <em>demo</em> version of HD Driver, you can
-write files only to the C: partition, i.e. in above case only copy
-files from the hard disk image partition to the GEMDOS HD partition (with
-some write slowndowns included into the demo version). If you want to
-copy files to the hard disk image with the <em>demo</em> version of
-the HD Driver, you need to set the hard disk image as drive C:.</p>
+<p>If you're using
+the <a href="http://hddriver.seimet.de/en/downloads.html">demo version
+of HD Driver</a>, you can write files only to the C: partition, i.e. in
+above case only copy files from the hard disk image partition to the
+GEMDOS HD partition (with some write slowndowns included into the demo
+version). If you want to copy files to the hard disk image with
+the <em>demo</em> version of the HD Driver, you need to set the hard disk
+image as drive C:.</p>
 
 <p>To accomplish this, set the GEMDOS HD partitions to be from D: forward,
 i.e. have a directory which contains only single letter subdirectories,
@@ -2088,7 +2093,8 @@ mkdir gemdos-hd/D</span>". Then give Hatari (as the last parameter)
 a boot floppy image containing the demo version of HDDRIVER.PRG in
 its AUTO folder, like this: "<span class="commandline">hatari
 --ide-master ide-hd.image --harddrive gemdos-hd/ hd-driver-floppy.st</span>".
-</p>
+You can convert HD Driver ZIP package to floppy image with the
+<span class="commandline">zip2st</span> utility.</p>
 
 
 <h3>Accessing HDD image partitions outside of Hatari</h3>
@@ -2104,7 +2110,7 @@ Inside the Hatari emulator, EmuTOS can access partition(s) on these
 kind of images directly without any driver software.  Of the Atari HD
 drivers mentioned above, Centek's Cecile and Uwe Seimet's HD Driver
 (demo) work fine with these partitions. E.g. AHDI and CBHD don't.
-Cecile needs TT or Falcon and HD Driver doesn't work with EmuTOS.
+Cecile works only with TT or Falcon.
 </p>
 <p>
 To summarise; if EmuTOS is enough, use that. Otherwise, if you want to
