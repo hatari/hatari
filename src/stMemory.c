@@ -191,7 +191,10 @@ void STMemory_SetDefaultConfig(void)
 			 * if gap is larger than largest TT
 			 * screen size */
 			if (screensize > limit)
+			{
+				fprintf(stderr, "WARNING: too large VDI mode for TOS v3 memory detection!\n");
 				phystop = memtop + limit;
+			}
 			else
 				phystop = STRamEnd;
 		}
