@@ -171,9 +171,12 @@ void STMemory_SetDefaultConfig(void)
 	/* Use 32 kiB in normal screen mode or when the screen size is smaller than 32 kiB */
 	if (!bUseVDIRes || screensize < 0x8000)
 		screensize = 0x8000;
-	/* mem top - upper end of user memory (right before the screen memory).
-	 * Note: memtop / phystop must be dividable by 512, or TOS crashes */
-	memtop = (STRamEnd - screensize) & 0xfffffe00;
+	/* mem top - upper end of user memory (right before the screen memory) */
+	memtop = STRamEnd - screensize;
+	/* memtop / phystop must be dividable by 512 or TOS crashes,
+	 * and it needs to be divisable by 32k, otherwise TOS v3 doesn't
+	 * recognize TT-RAM */
+	memtop -= memtop % 0x8000;
 	STMemory_WriteLong(0x436, memtop);
 	/* phys top - This must be memtop + 0x8000 to make TOS happy */
 	STMemory_WriteLong(0x42e, memtop+0x8000);
