@@ -21,8 +21,10 @@
 #define CDECL
 #endif
 
-/* nf_asm.s ASM helper interface for natfeats.c */
+
+/* internal ASM helper interface for natfeats.c */
 long CDECL nf_id(const char *);
+/* it's best not to use this directly as arguments are untyped */
 long CDECL nf_call(long ID, ...);
 /* call only from Supervisor mode */
 int CDECL detect_nf(void);
