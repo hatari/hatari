@@ -129,6 +129,18 @@ void Exit680x0(void)
 
 
 /**
+ * Execute a 'NOP' opcode (increment PC by 2 bytes and take care
+ * of prefetch at the CPU level depending on the current CPU mode)
+ * This is used to return from Gemdos / Natfeats interception, by ignoring
+ * the intercepted opcode and executing a NOP instead once the work has been done.
+ */
+static void	CpuDoNOP ( void )
+{
+	(*cpufunctbl[0X4E71])(0x4E71);
+}
+
+
+/**
  * Check if the CPU type has been changed
  */
 void check_prefs_changed_cpu(void)
@@ -168,8 +180,7 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
 		VDI_LineA(regs.regs[0], regs.regs[9]);
 	}
 
-	m68k_incpc(2);
-	fill_prefetch_0();
+	CpuDoNOP ();
 	return 4;
 }
 
@@ -182,8 +193,7 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
 {
 	GemDOS_OpCode();    /* handler code in gemdos.c */
 
-	m68k_incpc(2);
-	fill_prefetch_0();
+	CpuDoNOP ();
 	return 4;
 }
 
@@ -220,11 +230,9 @@ unsigned long OpCode_VDI(uae_u32 opcode)
 unsigned long OpCode_NatFeat_ID(uae_u32 opcode)
 {
 	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
-	Uint16 SR = M68000_GetSR();
 
 	if (NatFeat_ID(stack, &(Regs[REG_D0]))) {
-		m68k_incpc(2);
-		fill_prefetch_0();
+		CpuDoNOP ();
 	}
 	return 4;
 }
@@ -240,8 +248,7 @@ unsigned long OpCode_NatFeat_Call(uae_u32 opcode)
 	
 	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);
 	if (NatFeat_Call(stack, super, &(Regs[REG_D0]))) {
-		m68k_incpc(2);
-		fill_prefetch_0();
+		CpuDoNOP ();
 	}
 	return 4;
 }

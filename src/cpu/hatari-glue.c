@@ -148,6 +148,19 @@ void Exit680x0(void)
 	table68k = NULL;
 }
 
+
+/**
+ * Execute a 'NOP' opcode (increment PC by 2 bytes and take care
+ * of prefetch at the CPU level depending on the current CPU mode)
+ * This is used to return from Gemdos / Natfeats interception, by ignoring
+ * the intercepted opcode and executing a NOP instead once the work has been done.
+ */
+static void	CpuDoNOP ( void )
+{
+	(*cpufunctbl[0X4E71])(0x4E71);
+}
+
+
 /**
  * This function will be called at system init by the cartridge routine
  * (after gemdos init, before booting floppies).
@@ -172,11 +185,7 @@ uae_u32 OpCode_SysInit(uae_u32 opcode)
 		VDI_LineA(regs.regs[0], regs.regs[9]);
 	}
 
-//	m68k_incpc(2);
-//	regs.ir = regs.irc;
-//	get_word_prefetch(2);
-	(*cpufunctbl[0X4E71])(0x4E71);
-
+	CpuDoNOP ();
 	return 4 * CYCLE_UNIT / 2;
 }
 
@@ -189,11 +198,7 @@ uae_u32 OpCode_GemDos(uae_u32 opcode)
 {
 	GemDOS_OpCode();    /* handler code in gemdos.c */
 
-//	m68k_incpc(2);
-//	regs.ir = regs.irc;
-//	get_word_prefetch(2);
-	(*cpufunctbl[0X4E71])(0x4E71);
-
+	CpuDoNOP ();
 	return 4 * CYCLE_UNIT / 2;
 }
 
@@ -220,11 +225,7 @@ uae_u32 OpCode_VDI(uae_u32 opcode)
 		op_illg(opcode);
 	}
 
-//	get_word_prefetch (0);
-//	regs.ir = regs.irc;
-//	get_word_prefetch(2);
 	fill_prefetch();
-
 	return 4 * CYCLE_UNIT / 2;
 }
 
@@ -235,15 +236,9 @@ uae_u32 OpCode_VDI(uae_u32 opcode)
 uae_u32 OpCode_NatFeat_ID(uae_u32 opcode)
 {
 	Uint32 stack = Regs[REG_A7] + SIZE_LONG;	/* skip return address */
-	Uint16 SR = M68000_GetSR();
 
 	if (NatFeat_ID(stack, &(Regs[REG_D0]))) {
-//		M68000_SetSR(SR);
-//		m68k_incpc(2);
-//		regs.ir = regs.irc;
-//		get_word_prefetch(2);
-//		fill_prefetch();
-		(*cpufunctbl[0X4E71])(0x4E71);
+		CpuDoNOP ();
 	}
 	return 4 * CYCLE_UNIT / 2;
 }
@@ -259,12 +254,7 @@ uae_u32 OpCode_NatFeat_Call(uae_u32 opcode)
 
 	super = ((SR & SR_SUPERMODE) == SR_SUPERMODE);
 	if (NatFeat_Call(stack, super, &(Regs[REG_D0]))) {
-//		M68000_SetSR(SR);
-//		m68k_incpc(2);
-//		regs.ir = regs.irc;
-//		get_word_prefetch(2);
-//		fill_prefetch();
-		(*cpufunctbl[0X4E71])(0x4E71);
+		CpuDoNOP ();
 	}
 	return 4 * CYCLE_UNIT / 2;
 }
