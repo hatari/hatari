@@ -335,7 +335,7 @@ void M68000_CheckCpuSettings(void)
 		changed_prefs.mmu_model = changed_prefs.cpu_model;	/* MMU enabled */
 
 	/* Set cpu speed to default values (only use in WinUAE, not in Hatari) */
-	currprefs.m68k_speed = changed_prefs.m68k_speed = -1;
+	currprefs.m68k_speed = changed_prefs.m68k_speed = 0;
 	currprefs.cpu_clock_multiplier = changed_prefs.cpu_clock_multiplier = 2 << 8;
 
 #else
