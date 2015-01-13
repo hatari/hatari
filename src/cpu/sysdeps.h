@@ -487,7 +487,7 @@ extern int console_get (TCHAR *, int);
 extern TCHAR console_getch (void);
 //extern void f_out (void *, const TCHAR *, ...);
 extern TCHAR* buf_out (TCHAR *buffer, int *bufsize, const TCHAR *format, ...);
-extern void gui_message (const TCHAR *,...);
+//extern void gui_message (const TCHAR *,...);
 extern int gui_message_multibutton (int flags, const TCHAR *format,...);
 #define write_log_err write_log
 extern void logging_init (void);

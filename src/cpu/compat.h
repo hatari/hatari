@@ -79,5 +79,6 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define console_out printf
 #define console_out_f printf
 #define error_log printf
+#define gui_message console_out_f
 
 #endif

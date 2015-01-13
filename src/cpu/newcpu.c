@@ -408,11 +408,7 @@ static bool get_trace (uaecptr addr, int accessmode, int size, uae_u32 *data)
 		x_do_cycles (c);
 		return false;
 	}
-#ifndef WINUAE_FOR_HATARI
 	gui_message (_T("CPU trace: GET %08x %d %d NOT FOUND!\n"), addr, accessmode, size);
-#else
-	console_out_f (_T("CPU trace: GET %08x %d %d NOT FOUND!\n"), addr, accessmode, size);
-#endif
 	check_trace ();
 	*data = 0;
 	return false;
@@ -5240,11 +5236,7 @@ retry:
 			r->instruction_pc = m68k_getpc ();
 
 			if (regs.irc == 0xfffb) {
-#ifndef WINUAE_FOR_HATARI
 				gui_message (_T("OPCODE %04X HAS FAULTY PREFETCH! PC=%08X"), prevopcode, r->instruction_pc);
-#else
-				console_out_f (_T("OPCODE %04X HAS FAULTY PREFETCH! PC=%08X"), prevopcode, r->instruction_pc);
-#endif
 			}
 
 			//write_log (_T("%x %04x\n"), r->instruction_pc, regs.irc);
