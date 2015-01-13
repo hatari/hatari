@@ -153,8 +153,8 @@ extern uae_u8 *save_cdtv_dmac (int *len, uae_u8*);
 extern uae_u8 *restore_scsi_dmac (int wdtype, uae_u8 *src);
 extern uae_u8 *save_scsi_dmac (int wdtype, int *len, uae_u8*);
 
-extern uae_u8 *save_scsi_device (int num, int *len, uae_u8 *dstptr);
-extern uae_u8 *restore_scsi_device (uae_u8 *src);
+extern uae_u8 *save_scsi_device (int wdtype, int num, int *len, uae_u8 *dstptr);
+extern uae_u8 *restore_scsi_device (int wdtype, uae_u8 *src);
 
 extern uae_u8 *save_scsidev (int num, int *len, uae_u8 *dstptr);
 extern uae_u8 *restore_scsidev (uae_u8 *src);
@@ -167,8 +167,8 @@ extern int save_filesys_cando(void);
 
 extern uae_u8 *restore_gayle(uae_u8 *src);
 extern uae_u8 *save_gayle (int *len, uae_u8*);
-extern uae_u8 *restore_ide (uae_u8 *src);
-extern uae_u8 *save_ide (int num, int *len, uae_u8*);
+extern uae_u8 *restore_gayle_ide (uae_u8 *src);
+extern uae_u8 *save_gayle_ide (int num, int *len, uae_u8*);
 
 extern uae_u8 *save_cd (int num, int *len);
 extern uae_u8 *restore_cd (int, uae_u8 *src);

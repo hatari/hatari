@@ -10,6 +10,7 @@
 
 #define MAX_CUSTOM_MEMORY_ADDRS 2
 
+#define MONITOREMU_HAM_E 4
 struct uae_prefs {
 #ifndef WINUAE_FOR_HATARI
 	struct strlist *all_lines;
@@ -39,9 +40,7 @@ struct uae_prefs {
 	bool start_debugger;
 	bool start_gui;
 
-	/*
 	KbdLang keyboard_lang;
-	*/
 
 	int produce_sound;
 	int sound_stereo;
@@ -57,6 +56,7 @@ struct uae_prefs {
 	bool sound_stereo_swap_paula;
 	bool sound_stereo_swap_ahi;
 	bool sound_auto;
+	bool sound_cdaudio;
 
 	int sampler_freq;
 	int sampler_buffer;
@@ -84,37 +84,37 @@ struct uae_prefs {
 	bool avoid_cmov;
 
 #ifndef WINUAE_FOR_HATARI
-        int gfx_framerate, gfx_autoframerate;
-        struct wh gfx_size_win;
-        struct wh gfx_size_fs;
-        struct wh gfx_size;
-        struct wh gfx_size_win_xtra[6];
-        struct wh gfx_size_fs_xtra[6];
-        bool gfx_autoresolution_vga;
-        int gfx_autoresolution;
-        int gfx_autoresolution_delay;
-        int gfx_autoresolution_minv, gfx_autoresolution_minh;
-        bool gfx_scandoubler;
-        struct apmode gfx_apmode[2];
-        int gfx_resolution;
-        int gfx_vresolution;
-        int gfx_lores_mode;
-        int gfx_pscanlines, gfx_iscanlines;
-        int gfx_xcenter, gfx_ycenter;
-        int gfx_xcenter_pos, gfx_ycenter_pos;
-        int gfx_xcenter_size, gfx_ycenter_size;
-        int gfx_max_horizontal, gfx_max_vertical;
-        int gfx_saturation, gfx_luminance, gfx_contrast, gfx_gamma;
-        bool gfx_blackerthanblack;
-        int gfx_api;
-        int color_mode;
-        int gfx_extrawidth;
-        bool lightboost_strobo;
+	int gfx_framerate, gfx_autoframerate;
+	struct wh gfx_size_win;
+	struct wh gfx_size_fs;
+	struct wh gfx_size;
+	struct wh gfx_size_win_xtra[6];
+	struct wh gfx_size_fs_xtra[6];
+	bool gfx_autoresolution_vga;
+	int gfx_autoresolution;
+	int gfx_autoresolution_delay;
+	int gfx_autoresolution_minv, gfx_autoresolution_minh;
+	bool gfx_scandoubler;
+	struct apmode gfx_apmode[2];
+	int gfx_resolution;
+	int gfx_vresolution;
+	int gfx_lores_mode;
+	int gfx_pscanlines, gfx_iscanlines;
+	int gfx_xcenter, gfx_ycenter;
+	int gfx_xcenter_pos, gfx_ycenter_pos;
+	int gfx_xcenter_size, gfx_ycenter_size;
+	int gfx_max_horizontal, gfx_max_vertical;
+	int gfx_saturation, gfx_luminance, gfx_contrast, gfx_gamma;
+	bool gfx_blackerthanblack;
+	int gfx_api;
+	int color_mode;
+	int gfx_extrawidth;
+	bool lightboost_strobo;
 
-        struct gfx_filterdata gf[2];
+	struct gfx_filterdata gf[2];
 
-        float rtg_horiz_zoom_mult;
-        float rtg_vert_zoom_mult;
+	float rtg_horiz_zoom_mult;
+	float rtg_vert_zoom_mult;
 
 	bool immediate_blits;
 	int waiting_blits;
@@ -123,18 +123,14 @@ struct uae_prefs {
 	bool ntscmode;
 #ifndef WINUAE_FOR_HATARI
 	bool genlock;
-        int monitoremu;
-        double chipset_refreshrate;
-	/*
-        struct chipset_refresh cr[MAX_CHIPSET_REFRESH + 2];
-	*/
-        int cr_selected;
+	int monitoremu;
+	double chipset_refreshrate;
+	struct chipset_refresh cr[MAX_CHIPSET_REFRESH + 2];
+	int cr_selected;
 	int collision_level;
 	int leds_on_screen;
 	int leds_on_screen_mask[2];
-	/*
 	struct wh osd_pos;
-	*/
 	int keyboard_leds[3];
 	bool keyboard_leds_in_use;
 	int scsi;
@@ -213,6 +209,7 @@ struct uae_prefs {
 	struct boardromconfig a4091rom;
 	struct boardromconfig fastlanerom;
 	struct boardromconfig oktagonrom;
+	struct boardromconfig gvprom;
 
 	TCHAR romfile[MAX_DPATH];
 	TCHAR romident[256];

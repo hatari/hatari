@@ -1065,6 +1065,7 @@ static void set_x_funcs (void)
 	}
 
 	set_x_cp_funcs();
+	mmu030_set_funcs();
 
 }
 
@@ -2265,6 +2266,8 @@ static void Exception_ce000 (int nr, int ExceptionSource)
 	if (nr == 2 || nr == 3) { /* 2=bus error, 3=address error */
 		uae_u16 mode = (sv ? 4 : 0) | (last_instructionaccess_for_exception_3 ? 2 : 1);
 		mode |= last_writeaccess_for_exception_3 ? 0 : 16;
+		// undocumented bits seem to contain opcode
+		mode |= last_op_for_exception_3 & ~31;
 		m68k_areg (regs, 7) -= 14;
 		/* fixme: bit3=I/N */
 		x_put_word (m68k_areg (regs, 7) + 12, last_addr_for_exception_3);
@@ -3461,18 +3464,18 @@ static bool mmu_op30fake_pflush (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecp
 // 68030 (68851) MMU instructions only
 bool mmu_op30 (uaecptr pc, uae_u32 opcode, uae_u16 extra, uaecptr extraa)
 {
-        if (currprefs.mmu_model) {
-                if (extra & 0x8000) {
-                        return mmu_op30_ptest (pc, opcode, extra, extraa);
-                } else if ((extra&0xE000)==0x2000 && (extra & 0x1C00)) {
-                        return mmu_op30_pflush (pc, opcode, extra, extraa);
-                } else if ((extra&0xE000)==0x2000 && !(extra & 0x1C00)) {
-                return mmu_op30_pload (pc, opcode, extra, extraa);
-                } else {
-                        return mmu_op30_pmove (pc, opcode, extra, extraa);
-                }
-                return false;
-        }
+	if (currprefs.mmu_model) {
+		if (extra & 0x8000) {
+			return mmu_op30_ptest (pc, opcode, extra, extraa);
+		} else if ((extra&0xE000)==0x2000 && (extra & 0x1C00)) {
+			return mmu_op30_pflush (pc, opcode, extra, extraa);
+		} else if ((extra&0xE000)==0x2000 && !(extra & 0x1C00)) {
+	        return mmu_op30_pload (pc, opcode, extra, extraa);
+		} else {
+			return mmu_op30_pmove (pc, opcode, extra, extraa);
+		}
+		return false;
+	}
 
 	int type = extra >> 13;
 
@@ -4044,39 +4047,6 @@ isstopped:
 		}
 #endif
 
-#ifndef WINUAE_FOR_HATARI		/* [NP] Allow emulation to sleep during a STOP to save some CPU, we don't use it for Hatari */
-#if 0
-		if (!uae_int_requested && !uaenet_int_requested && currprefs.cpu_idle && currprefs.m68k_speed != 0 && (regs.spcflags & SPCFLAG_STOP)
-#ifdef WITH_PPC
-			&& ppc_state != PPC_STATE_ACTIVE
-#endif			
-		) {
-			/* sleep 1ms if STOP-instruction is executed
-			 * but only if we have free frametime left to prevent slowdown
-			 */
-			{
-				static int sleepcnt, lvpos, zerocnt;
-				if (vpos != lvpos) {
-					lvpos = vpos;
-					frame_time_t rpt = read_processor_time ();
-					if ((int)rpt - (int)vsyncmaxtime < 0) {
-						sleepcnt--;
-#if 0
-						if (pissoff == 0 && currprefs.cachesize && --zerocnt < 0) {
-							sleepcnt = -1;
-							zerocnt = IDLETIME / 4;
-						}
-#endif
-						if (sleepcnt < 0) {
-							sleepcnt = IDLETIME / 2;
-							cpu_sleep_millis(1);
-						}
-					}
-				}
-			}
-		}
-#endif
-#endif
 	}
 
 	if (regs.spcflags & SPCFLAG_TRACE)
@@ -4903,6 +4873,7 @@ static void m68k_run_mmu030 (void)
 printf ( "run_mmu030\n" );
 
 	mmu030_opcode_stageb = -1;
+	mmu030_fake_prefetch = -1;
 retry:
 	TRY (prb) {
 		for (;;) {
@@ -4926,8 +4897,11 @@ insretry:
 
 			mmu030_state[0] = mmu030_state[1] = mmu030_state[2] = 0;
 			mmu030_opcode = -1;
-			if (mmu030_opcode_stageb < 0) {
-				regs.opcode = get_iword_mmu030 (0);
+			if (mmu030_fake_prefetch >= 0) {
+				regs.opcode = mmu030_fake_prefetch;
+				mmu030_fake_prefetch = -1;
+			} else if (mmu030_opcode_stageb < 0) {
+				regs.opcode = x_prefetch (0);
 			} else {
 				regs.opcode = mmu030_opcode_stageb;
 				mmu030_opcode_stageb = -1;
@@ -4943,6 +4917,7 @@ insretry:
 				count_instr (regs.opcode);
 				do_cycles (cpu_cycles);
 				mmu030_retry = false;
+
 				cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
 				cnt--; // so that we don't get in infinite loop if things go horribly wrong
 				if (!mmu030_retry)
@@ -5190,8 +5165,8 @@ retry:
 		goto retry;
 	} ENDTRY
 }
-/* "cycle exact" 68020/030  */
 
+/* "cycle exact" 68020/030  */
 
 static void m68k_run_2ce (void)
 {
@@ -6573,8 +6548,7 @@ void m68k_dumpstate_2 (uaecptr pc, uaecptr *nextpc)
 		console_out_f (_T("SRP: %llX CRP: %llX\n"), srp_030, crp_030);
 		console_out_f (_T("TT0: %08X TT1: %08X TC: %08X\n"), tt0_030, tt1_030, tc_030);
 	}
-//	if (currprefs.cpu_compatible && currprefs.cpu_model == 68000) {
-if(1){
+	if (currprefs.cpu_compatible && currprefs.cpu_model == 68000) {
 		struct instr *dp;
 		struct mnemolookup *lookup1, *lookup2;
 		dp = table68k + regs.irc;
