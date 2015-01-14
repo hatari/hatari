@@ -149,7 +149,9 @@ Whether to do monitor aspect ratio correction (enabled by default)
 .SH "VDI options"
 .TP
 .B \-\-vdi <bool>
-Whether to use VDI screen mode
+Whether to use VDI screen mode.  Doesn't work with TOS v4.
+TOS v3 memory detection isn't compatible with larger VDI modes
+(i.e. you need to skip the detection at boot)
 .TP
 .B \-\-vdi\-planes <x>
 Use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)

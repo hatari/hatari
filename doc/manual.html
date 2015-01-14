@@ -1284,25 +1284,40 @@ certain games. In some other games, it gets worse if you enable this option.</p>
  In TT mode, you can only choose between TT-high resolution ("Mono")
  and normal modes (select one of the other monitor types).
  Finally the Falcon mode supports all four types of monitors. Note that most
- Falcon demos/games require a RGB or TV mode and do not work with VGA.
+ Falcon demos/games require a RGB or TV mode, and do not work with
+ VGA, although there are also few VGA-only games and demos.
 </p>
 <p>
  "Show ST/STE borders" toggles the displaying of the borders around the ST /
- STE screen. Some demos and games use the screen borders for displaying
+ STE. Some demos and games use the screen borders for displaying
  additional graphics. As enabling this option increases CPU computing time,
  don't enable it if you have a very slow computer.
- This option affects only the ST and STE modes, TT and Falcon modes are
- always displayed without borders.
+ Borders are shown also in Falcon emulation, but Videl emulation doesn't
+ yet support palette effects.
+ This option doesn't affect TT screen mode or extended VDI resolutions.
 </p>
 <p>
-Extended VDI resolutions will emulate a sort of extended graphics
-card in the emulated ST which give you larger resolutions with a higher
-colordepth for GEM. Select a resolution and color depth. Check to
-activate. It will disable all other video options mentioned above.
-Uncheck to get back to a normal ST behaviour.<br />
-<em>Note:</em> Using an extended resolution will only work with GEM
-conformant applications. 99% of all games and demos will not run if you
-activate any extended resolution here.
+Extended VDI resolutions will emulate a sort of extended graphics card
+in the emulated machine, which gives you larger (2-16 color)
+resolutions for GEM. Select a resolution and color depth. Check to
+activate. This mode isn't affect by the other video options mentioned
+above. Uncheck to get back to a normal ST behaviour.<br />
+</p>
+<p><em>Note that there are several gotches with extended VDI
+resolutions:</em></p>
+<ul>
+<li>Only GEM conformant applications work with them, 99% of all games
+and demos don't.</li>
+<li>Several GEM programs accessing screen directly (like NVDI) crash
+with large enough screen sizes.</li>
+<li>Memory reserved for (larger) extended resolutions breaks TOS v3 memory
+detection, so you need to interrupt boot up memory detection.</li>
+<li>TOS v4 isn't compatible with them. In Falcon emulation you need to
+use EmuTOS with extended resolutions.</li>
+</ul>
+<p>
+Because TT and Falcon support natively larger resolutions,
+VDI mode is most useful with ST / STE emulation.
 </p>
 
 
