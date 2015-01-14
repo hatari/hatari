@@ -45,7 +45,7 @@ Emulator:
   - Support fast boot also with TOS v3 & v4
   - Support 32-bit addressing also with TOS v4
   - Replace TOS v4 instructions unsupported on 060
-  - TOS specific memtop/phystop values in VDI mode
+  - HW specific phystop value in VDI mode
 - Options:
   - Fast boot (warm boot / memory check bypass) is disabled by default
   - 68060 CPU level and --ttram support with new WinUAE CPU core

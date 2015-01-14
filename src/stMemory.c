@@ -99,7 +99,7 @@ void STMemory_MemorySnapShot_Capture(bool bSave)
 void STMemory_SetDefaultConfig(void)
 {
 	int i;
-	int screensize;
+	int screensize, limit;
 	int memtop, phystop;
 	Uint8 nMemControllerByte;
 	Uint8 nFalcSysCntrl;
@@ -172,34 +172,37 @@ void STMemory_SetDefaultConfig(void)
 	 * memtop / phystop must be dividable by 512 or TOS crashes */
 	memtop = (STRamEnd - screensize) & 0xfffffe00;
 	STMemory_WriteLong(0x436, memtop);
-	/* phys top - for correct memory detection this should be
-	 * memtop + screensize, but real TOS versions crash if gap
-	 * is larger than their largest HW screen size.
-	 * EmuTOS behavior depends on machine type. */
+	/* phys top - 32k gap causes least issues with apps & TOS
+	 * as that's the largest _common_ screen size. EmuTOS behavior
+	 * depends on machine type. */
 	switch (ConfigureParams.System.nMachineType)
 	{
-	case MACHINE_TT:
 	case MACHINE_FALCON:
-		/* Note: TOS v4 doesn't work with VDI mode (yet) */
-		if (bIsEmuTOS)
-			phystop = STRamEnd;
-		else if ((TosVersion & 0x0f00) == 0x300)
+		/* TOS v4 doesn't work with VDI mode (yet), and
+		 * EmuTOS works with correct gap, so use that */
+		phystop = STRamEnd;
+		break;
+	case MACHINE_TT:
+		/* For correct TOS v3 memory detection, phystop should be
+		 * at the end of memory.
+		 *
+		 * However:
+		 * - TOS v3 crashes/hangs if phystop-memtop gap is larger
+		 *   than largest real HW screen size (150k)
+		 * - NVDI hangs if gap is larger than 32k in any other than
+		 *   monochrome mode
+		 */
+		if (VDIPlanes == 1)
+			limit = 1280*960/8;
+		else
+			limit = 0x8000;
+		if (screensize > limit)
 		{
-			const int limit = 1280*960/8;
-			/* memory detection works only with
-			 * correct phystop, but TOS v3 crashes
-			 * if gap is larger than largest TT
-			 * screen size */
-			if (screensize > limit)
-			{
-				fprintf(stderr, "WARNING: too large VDI mode for TOS v3 memory detection!\n");
-				phystop = memtop + limit;
-			}
-			else
-				phystop = STRamEnd;
+			phystop = memtop + limit;
+			fprintf(stderr, "WARNING: too large VDI mode for TOS v3 memory detection to work correctly!\n");
 		}
-		else	/* TOS v2 */
-			phystop = memtop + 0x8000;
+		else
+			phystop = STRamEnd;
 		break;
 	default:
 		phystop = memtop + 0x8000;
