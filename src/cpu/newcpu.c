@@ -2202,6 +2202,7 @@ static void Exception_ce000 (int nr, int ExceptionSource)
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int sv = regs.s;
 	int start, interrupt;
+	int vector_nr = nr;
 
 //fprintf ( stderr , "ex in %d %ld\n" , nr , currcycle );
 currcycle=0;
@@ -2286,24 +2287,24 @@ currcycle=0;
 /* [NP] TODO get int vector + add cycles */
 #ifndef WINUAE_FOR_HATARI
 		if (interrupt)
-			nr = iack_cycle(nr);
+			vector_nr = iack_cycle(nr);
 #endif
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
-		x_put_word (m68k_areg (regs, 7) + 6, nr * 4);
+		x_put_word (m68k_areg (regs, 7) + 6, vector_nr * 4);
 	} else {
 		m68k_areg (regs, 7) -= 6;
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
 #ifndef WINUAE_FOR_HATARI
 		if (interrupt)
-			nr = iack_cycle(nr);
+			vector_nr = iack_cycle(nr);
 #endif
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
 	}
 kludge_me_do:
-	newpc = x_get_word (regs.vbr + 4 * nr) << 16; // read high address
-	newpc |= x_get_word (regs.vbr + 4 * nr + 2); // read low address
+	newpc = x_get_word (regs.vbr + 4 * vector_nr) << 16; // read high address
+	newpc |= x_get_word (regs.vbr + 4 * vector_nr + 2); // read low address
 	if (newpc & 1) {
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
@@ -2689,6 +2690,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 	uae_u32 currpc, newpc;
 	int sv = regs.s;
 	int interrupt;
+	int vector_nr = nr;
 
 	interrupt = nr >= 24 && nr < 24 + 8;
 
@@ -2720,7 +2722,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 /* [NP] TODO : compute int vector */
 #ifndef WINUAE_FOR_HATARI
 	if (interrupt && currprefs.cpu_model <= 68010)
-		nr = iack_cycle(nr);
+		vector_nr = iack_cycle(nr);
 #else
 
 #endif
@@ -2747,13 +2749,13 @@ static void Exception_normal (int nr , int ExceptionSource)
 		currpc = exception_pc (nr);
 #ifdef WINUAE_FOR_HATARI
 		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-			nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+			nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
                 /* Build additional exception stack frame for 68010 and higher */
                 /* (special case for MFP) */
 		if (ExceptionSource == M68000_EXC_SRC_INT_MFP || ExceptionSource == M68000_EXC_SRC_INT_DSP) {
 			m68k_areg(regs, 7) -= 2;
-			put_word (m68k_areg(regs, 7), nr * 4);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+			put_word (m68k_areg(regs, 7), vector_nr * 4);	/* MFP interrupt, 'vector_nr' can be in a different range depending on $fffa17 */
 		}
 		else if (nr == 2 || nr == 3) {
 			int i;
@@ -2784,12 +2786,12 @@ static void Exception_normal (int nr , int ExceptionSource)
 						x_put_long (m68k_areg (regs, 7), regs.mmu_fault_addr);
 
 						m68k_areg (regs, 7) -= 2;
-						x_put_word (m68k_areg (regs, 7), 0x7000 + nr * 4);
+						x_put_word (m68k_areg (regs, 7), 0x7000 + vector_nr * 4);
 						m68k_areg (regs, 7) -= 4;
 						x_put_long (m68k_areg (regs, 7), regs.instruction_pc);
 						m68k_areg (regs, 7) -= 2;
 						x_put_word (m68k_areg (regs, 7), regs.sr);
-						newpc = x_get_long (regs.vbr + 4 * nr);
+						newpc = x_get_long (regs.vbr + 4 * vector_nr);
 						if (newpc & 1) {
 							if (nr == 2 || nr == 3)
 								cpu_halt (2);
@@ -2824,7 +2826,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 						m68k_areg (regs, 7) -= 4;
 						x_put_long (m68k_areg (regs, 7), last_addr_for_exception_3);
 						m68k_areg (regs, 7) -= 2;
-						x_put_word (m68k_areg (regs, 7), 0x7000 + nr * 4);
+						x_put_word (m68k_areg (regs, 7), 0x7000 + vector_nr * 4);
 						m68k_areg (regs, 7) -= 4;
 						x_put_long (m68k_areg (regs, 7), regs.instruction_pc);
 						m68k_areg (regs, 7) -= 2;
@@ -2837,7 +2839,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 					m68k_areg (regs, 7) -= 4;
 					x_put_long (m68k_areg (regs, 7), last_fault_for_exception_3);
 					m68k_areg (regs, 7) -= 2;
-					x_put_word (m68k_areg (regs, 7), 0x2000 + nr * 4);
+					x_put_word (m68k_areg (regs, 7), 0x2000 + vector_nr * 4);
 				}
 			} else {
 				// 68020 address error
@@ -2859,17 +2861,17 @@ static void Exception_normal (int nr , int ExceptionSource)
 				m68k_areg (regs, 7) -= 2;
 				x_put_word (m68k_areg (regs, 7), ssw);
 				m68k_areg (regs, 7) -= 2;
-				x_put_word (m68k_areg (regs, 7), 0xb000 + nr * 4);
+				x_put_word (m68k_areg (regs, 7), 0xb000 + vector_nr * 4);
 			}
-			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, get_long_debug (regs.vbr + 4*nr));
+			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, regs.instruction_pc, currpc, get_long_debug (regs.vbr + 4 * vector_nr));
 		} else if (nr ==5 || nr == 6 || nr == 7 || nr == 9) {
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), regs.instruction_pc);
 			m68k_areg (regs, 7) -= 2;
-			x_put_word (m68k_areg (regs, 7), 0x2000 + nr * 4);
+			x_put_word (m68k_areg (regs, 7), 0x2000 + vector_nr * 4);
 		} else if (regs.m && interrupt) { /* M + Interrupt */
 			m68k_areg (regs, 7) -= 2;
-			x_put_word (m68k_areg (regs, 7), nr * 4);
+			x_put_word (m68k_areg (regs, 7), vector_nr * 4);
 			m68k_areg (regs, 7) -= 4;
 			x_put_long (m68k_areg (regs, 7), currpc);
 			m68k_areg (regs, 7) -= 2;
@@ -2879,17 +2881,17 @@ static void Exception_normal (int nr , int ExceptionSource)
 			regs.m = 0;
 			m68k_areg (regs, 7) = regs.isp;
 			m68k_areg (regs, 7) -= 2;
-			x_put_word (m68k_areg (regs, 7), 0x1000 + nr * 4);
+			x_put_word (m68k_areg (regs, 7), 0x1000 + vector_nr * 4);
 		} else {
 			m68k_areg (regs, 7) -= 2;
-			x_put_word (m68k_areg (regs, 7), nr * 4);
+			x_put_word (m68k_areg (regs, 7), vector_nr * 4);
 		}
 	} else {
 // TODO [NP]		add_approximate_exception_cycles(nr);
 		currpc = m68k_getpc ();
 #ifdef WINUAE_FOR_HATARI
 		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-			nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+			nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
 		if (nr == 2 || nr == 3) {
 			// 68000 address error
@@ -2902,7 +2904,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 			x_put_word (m68k_areg (regs, 7) + 6, last_op_for_exception_3);
 			x_put_word (m68k_areg (regs, 7) + 8, regs.sr);
 			x_put_long (m68k_areg (regs, 7) + 10, last_addr_for_exception_3);
-			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4*nr));
+			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4 * vector_nr));
 #ifdef WINUAE_FOR_HATARI
 			// TODO [NP] remove BusError_xxx variables
 			uae_u16 BusError_opcode;
@@ -2921,7 +2923,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 	m68k_areg (regs, 7) -= 2;
 	x_put_word (m68k_areg (regs, 7), regs.sr);
 kludge_me_do:
-	newpc = x_get_long (regs.vbr + 4 * nr);
+	newpc = x_get_long (regs.vbr + 4 * vector_nr);
 	if (newpc & 1) {
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
