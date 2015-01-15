@@ -2203,6 +2203,8 @@ static void Exception_ce000 (int nr, int ExceptionSource)
 	int sv = regs.s;
 	int start, interrupt;
 
+//fprintf ( stderr , "ex in %d %ld\n" , nr , currcycle );
+currcycle=0;
 	start = 6;
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
@@ -2317,6 +2319,30 @@ kludge_me_do:
 	set_special (SPCFLAG_END_COMPILE);
 #endif
 	exception_trace (nr);
+
+//fprintf ( stderr , "ex out %d %ld\n" , nr , currcycle );
+#ifdef WINUAE_FOR_HATARI
+	/* FIXME : Above code already counts 36 cycles for interrupt, add the remaining ST cycles */
+	/* This is temporary, code should be in iack_cycle() */
+	M68000_AddCycles(currcycle * 2 / CYCLE_UNIT);
+
+	/* Handle exception cycles (special case for MFP) */
+	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
+		//M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+		M68000_AddCycles(44-36);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+	}
+	else if (nr >= 24 && nr <= 31) {
+		if ( nr == 26 )					/* HBL */
+			//M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
+			M68000_AddCycles(44-36);	/* Video Interrupt */
+		else if ( nr == 28 ) 				/* VBL */
+			//M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
+			M68000_AddCycles(44-36);	/* Video Interrupt */
+		else
+			//M68000_AddCycles(44+4);			/* Other Interrupts */
+			M68000_AddCycles(44-36);			/* Other Interrupts */
+	}
+#endif
 }
 #endif
 
