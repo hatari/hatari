@@ -268,6 +268,7 @@ STATIC_INLINE void ipl_fetch (void)
 STATIC_INLINE uae_u32 mem_access_delay_word_read (uaecptr addr)
 {
 	uae_u32 v;
+#ifndef WINUAE_FOR_HATARI
 	switch (ce_banktype[addr >> 16])
 	{
 	case CE_MEMBANK_CHIP16:
@@ -283,12 +284,17 @@ STATIC_INLINE uae_u32 mem_access_delay_word_read (uaecptr addr)
 		v = get_word (addr);
 		break;
 	}
+#else
+	v = get_word (addr);
+	x_do_cycles_post (4 * cpucycleunit, v);
+#endif
 	regs.db = v;
 	return v;
 }
 STATIC_INLINE uae_u32 mem_access_delay_wordi_read (uaecptr addr)
 {
 	uae_u32 v;
+#ifndef WINUAE_FOR_HATARI
 	switch (ce_banktype[addr >> 16])
 	{
 	case CE_MEMBANK_CHIP16:
@@ -304,6 +310,10 @@ STATIC_INLINE uae_u32 mem_access_delay_wordi_read (uaecptr addr)
 		v = get_wordi (addr);
 		break;
 	}
+#else
+	v = get_wordi (addr);
+	x_do_cycles_post (4 * cpucycleunit, v);
+#endif
 	regs.db = v;
 	return v;
 }
@@ -311,6 +321,7 @@ STATIC_INLINE uae_u32 mem_access_delay_wordi_read (uaecptr addr)
 STATIC_INLINE uae_u32 mem_access_delay_byte_read (uaecptr addr)
 {
 	uae_u32  v;
+#ifndef WINUAE_FOR_HATARI
 	switch (ce_banktype[addr >> 16])
 	{
 	case CE_MEMBANK_CHIP16:
@@ -326,12 +337,17 @@ STATIC_INLINE uae_u32 mem_access_delay_byte_read (uaecptr addr)
 		v = get_byte (addr);
 		break;
 	}
+#else
+	v = get_byte (addr);
+	x_do_cycles_post (4 * cpucycleunit, v);
+#endif
 	regs.db = (v << 8) | v;
 	return v;
 }
 STATIC_INLINE void mem_access_delay_byte_write (uaecptr addr, uae_u32 v)
 {
 	regs.db = (v << 8)  | v;
+#ifndef WINUAE_FOR_HATARI
 	switch (ce_banktype[addr >> 16])
 	{
 	case CE_MEMBANK_CHIP16:
@@ -344,10 +360,14 @@ STATIC_INLINE void mem_access_delay_byte_write (uaecptr addr, uae_u32 v)
 		x_do_cycles_post (4 * cpucycleunit, v);
 		return;
 	}
+#else
 	put_byte (addr, v);
+	x_do_cycles_post (4 * cpucycleunit, v);
+#endif
 }
 STATIC_INLINE void mem_access_delay_word_write (uaecptr addr, uae_u32 v)
 {
+#ifndef WINUAE_FOR_HATARI
 	regs.db = v;
 	switch (ce_banktype[addr >> 16])
 	{
@@ -362,6 +382,10 @@ STATIC_INLINE void mem_access_delay_word_write (uaecptr addr, uae_u32 v)
 		return;
 	}
 	put_word (addr, v);
+#else
+	put_word (addr, v);
+	x_do_cycles_post (4 * cpucycleunit, v);
+#endif
 }
 
 STATIC_INLINE uae_u32 get_long_ce000 (uaecptr addr)
