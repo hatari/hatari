@@ -891,10 +891,12 @@ Working applications:
 - Mandelbrot playtime (fracplay, uses FPU)
 
 Working demos:
-- 256mbrot, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
+- 256mbrot, Bragg, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
 - 4getful (by gwEm, 4KB intro TT-version)
 - Adebug 3DTT demo (by Brainstorm)
+- CrY image viewer (by .tSCc)
 - Mandelbrot explorer (by .tSCc)
+- TC fish (by .tSCc)
 - TT highres slideshow (by .tSCc)
 - Shiny Bubbles TT (by Xanth FX)
 - XiTEC demos (by Omega)
