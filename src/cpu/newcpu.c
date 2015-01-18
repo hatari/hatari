@@ -2177,10 +2177,15 @@ Interrupt:
 
 */
 
+#ifndef WINUAE_FOR_HATARI
 static int iack_cycle(int nr)
+#else
+static int iack_cycle(int nr,int ExceptionSource)
+#endif
 {
 	int vector;
 
+#ifndef WINUAE_FOR_HATARI
 	if (1) {
 		// non-autovectored
 		vector = x_get_byte(0x00fffff1 | ((nr - 24) << 1));
@@ -2190,6 +2195,32 @@ static int iack_cycle(int nr)
 		// autovectored
 
 	}
+#else
+	/* Pending bits / vector number can change before the end of the IACK sequence. */
+	/* We need to handle MFP and HBL/VBL cases for this. */
+	vector = nr;
+//	if ( nr == 30 )								/* MFP */
+	if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
+        {
+		M68000_AddCycles ( CPU_IACK_CYCLES_MFP );
+		CPU_IACK = true;
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+			CALL_VAR(PendingInterruptFunction);
+		vector = MFP_ProcessIACK ( nr );
+		CPU_IACK = false;
+	}
+	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
+	{
+		M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
+		CPU_IACK = true;
+		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+			CALL_VAR(PendingInterruptFunction);
+		if ( MFP_UpdateNeeded == true )
+			MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
+		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
+		CPU_IACK = false;
+	}
+#endif
 	return vector;
 }
 
@@ -2284,21 +2315,16 @@ currcycle=0;
 		// 68010 creates only format 0 and 8 stack frames
 		m68k_areg (regs, 7) -= 8;
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
-/* [NP] TODO get int vector + add cycles */
-#ifndef WINUAE_FOR_HATARI
 		if (interrupt)
-			vector_nr = iack_cycle(nr);
-#endif
+			vector_nr = iack_cycle(nr,ExceptionSource);
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
 		x_put_word (m68k_areg (regs, 7) + 6, vector_nr * 4);
 	} else {
 		m68k_areg (regs, 7) -= 6;
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
-#ifndef WINUAE_FOR_HATARI
 		if (interrupt)
-			vector_nr = iack_cycle(nr);
-#endif
+			vector_nr = iack_cycle(nr,ExceptionSource);
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
 	}
@@ -2647,15 +2673,35 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 	exception_trace (nr);
 }
 
+#ifndef WINUAE_FOR_HATARI
 static void add_approximate_exception_cycles(int nr)
+#else
+static void add_approximate_exception_cycles(int nr,int ExceptionSource)
+#endif
 {
 	int cycles;
 
 	if (currprefs.cpu_model > 68000)
 		return;
+#ifndef WINUAE_FOR_HATARI
 	if (nr >= 24 && nr <= 31) {
 		/* Interrupts */
 		cycles = 44 + 4; 
+#else
+	//if (nr >= 24 && nr <= 31) {
+	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
+	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) ) {
+		/* Atari's specific interrupts */
+		//if ( nr == 30 )					/* MFP */
+		if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )					/* MFP */
+			cycles = 44+12-CPU_IACK_CYCLES_MFP;
+		else if ( nr == 28 )				/* VBL */
+			cycles = 44+12-CPU_IACK_CYCLES_VIDEO;
+		else if ( nr == 26 )				/* HBL */
+			cycles = 44+12-CPU_IACK_CYCLES_VIDEO;
+		else
+			cycles = 44+4;				/* Other interrupts */
+#endif
 	} else if (nr >= 32 && nr <= 47) {
 		/* Trap (total is 34, but cpuemux.c already adds 4) */ 
 		cycles = 34 -4;
@@ -2677,6 +2723,9 @@ static void add_approximate_exception_cycles(int nr)
 			break;
 		}
 	}
+#ifdef WINUAE_FOR_HATARI
+	M68000_AddCycles ( cycles );
+#endif
 	cycles = adjust_cycles(cycles * CYCLE_UNIT / 2);
 	x_do_cycles(cycles);
 }
@@ -2692,7 +2741,13 @@ static void Exception_normal (int nr , int ExceptionSource)
 	int interrupt;
 	int vector_nr = nr;
 
+#ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
+#else
+	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
+	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
+		interrupt = 1;
+#endif
 
 /* [NP] TODO : factorize in Hatari_Exception_Intercept() */
 #ifdef WINUAE_FOR_HATARI
@@ -2719,13 +2774,8 @@ static void Exception_normal (int nr , int ExceptionSource)
 	}
 #endif
 
-/* [NP] TODO : compute int vector */
-#ifndef WINUAE_FOR_HATARI
 	if (interrupt && currprefs.cpu_model <= 68010)
-		vector_nr = iack_cycle(nr);
-#else
-
-#endif
+		vector_nr = iack_cycle(nr,ExceptionSource);
 
 	exception_debug (nr);
 	MakeSR ();
@@ -2887,7 +2937,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 			x_put_word (m68k_areg (regs, 7), vector_nr * 4);
 		}
 	} else {
-// TODO [NP]		add_approximate_exception_cycles(nr);
+		add_approximate_exception_cycles(nr,ExceptionSource);
 		currpc = m68k_getpc ();
 #ifdef WINUAE_FOR_HATARI
 		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
@@ -2939,6 +2989,7 @@ kludge_me_do:
 	exception_trace (nr);
 
 #ifdef WINUAE_FOR_HATARI
+#if 0		// TODO remove, done in add_approximate_exception_cycles()
 	/* Handle exception cycles (special case for MFP) */
 	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
 		M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
@@ -2974,6 +3025,7 @@ kludge_me_do:
 		break;
 	}
 #endif
+#endif
 }
 
 // address = format $2 stack frame address field
@@ -2987,6 +3039,7 @@ static void ExceptionX (int nr, uaecptr address, int ExceptionSource)
 #endif
 {
 #ifdef WINUAE_FOR_HATARI
+#if 0		// TODO remove, done in iack_cycle()
 	/* Pending bits / vector number can change before the end of the IACK sequence. */
 	/* We need to handle MFP and HBL/VBL cases for this. */
 	if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
@@ -3009,6 +3062,7 @@ static void ExceptionX (int nr, uaecptr address, int ExceptionSource)
 		pendingInterrupts &= ~(1 << (nr - 24));		/* clear HBL or VBL pending bit */
 		CPU_IACK = false;
 	}
+#endif
 #endif
 
 	regs.exception = nr;
