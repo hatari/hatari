@@ -905,13 +905,14 @@ Working demos:
 
 Working games:
 - Capy (by YesCREW)
+- GEM NetHack v3.4.3 (VDI colors wrong)
+- GEM Slashem v3.3.1 (VDI colors wrong)
 - Oxyd (Falcon version)
 
 Broken programs:
-- GEM NetHack v3.4.3 (colors wrong, bus errors)
-- GEM Slashem v3.3.1 (based on Nethack, same issues)
-- PixArt4, clicks to windows don't work
-  http://www.1632systems.co.uk/www/html/Product/pixart.htm
+- PixArt4
+  - colors wrong, clicks to windows down draw anything (on Falcon colors are OK)
+  - http://www.1632systems.co.uk/www/html/Product/pixart.htm
 
 
 Falcon free/shareware demos, games and applications
