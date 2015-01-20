@@ -2540,12 +2540,27 @@ static void Exception_build_stack_frame (uae_u32 oldpc, uae_u32 currpc, uae_u32 
 
 
 // 68030 MMU
+#ifndef WINUAE_FOR_HATARI
 static void Exception_mmu030 (int nr, uaecptr oldpc)
+#else
+static void Exception_mmu030 (int nr, uaecptr oldpc, int ExceptionSource)
+#endif
 {
     uae_u32 currpc = m68k_getpc (), newpc;
 	int interrupt;
 
+#ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
+#else
+	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
+	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
+		interrupt = 1;
+#endif
+
+#ifdef WINUAE_FOR_HATARI
+	if (interrupt)
+		nr = iack_cycle(nr,ExceptionSource);
+#endif
 
 #ifdef WINUAE_FOR_HATARI
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
@@ -2608,12 +2623,27 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
 }
 
 // 68040/060 MMU
+#ifndef WINUAE_FOR_HATARI
 static void Exception_mmu (int nr, uaecptr oldpc)
+#else
+static void Exception_mmu (int nr, uaecptr oldpc, int ExceptionSource)
+#endif
 {
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int interrupt;
 
+#ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
+#else
+	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
+	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
+		interrupt = 1;
+#endif
+
+#ifdef WINUAE_FOR_HATARI
+	if (interrupt)
+		nr = iack_cycle(nr,ExceptionSource);
+#endif
 
 #ifdef WINUAE_FOR_HATARI
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
@@ -2774,7 +2804,11 @@ static void Exception_normal (int nr , int ExceptionSource)
 	}
 #endif
 
+#ifndef WINUAE_FOR_HATARI
 	if (interrupt && currprefs.cpu_model <= 68010)
+#else
+	if (interrupt)
+#endif
 		vector_nr = iack_cycle(nr,ExceptionSource);
 
 	exception_debug (nr);
@@ -3081,9 +3115,9 @@ static void ExceptionX (int nr, uaecptr address, int ExceptionSource)
 #endif
 		if (currprefs.mmu_model) {
 			if (currprefs.cpu_model == 68030)
-				Exception_mmu030 (nr, m68k_getpc ());	/* [NP] TODO : add ExceptionSource */
+				Exception_mmu030 (nr, m68k_getpc (), ExceptionSource);	/* [NP] TODO : add ExceptionSource */
 			else
-				Exception_mmu (nr, m68k_getpc ());	/* [NP] TODO : add ExceptionSource */
+				Exception_mmu (nr, m68k_getpc (), ExceptionSource);	/* [NP] TODO : add ExceptionSource */
 		} else {
 			Exception_normal (nr, ExceptionSource);
 		}
