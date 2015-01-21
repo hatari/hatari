@@ -43,6 +43,7 @@
 //#include "uae/ppc.h"
 
 #ifdef WINUAE_FOR_HATARI
+#include "stMemory.h"
 static int debug_mmu_mode;
 
 #else

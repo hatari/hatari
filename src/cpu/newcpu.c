@@ -29,6 +29,9 @@
 #include "cpu_prefetch.h"
 #include "savestate.h"
 #include "md-fpp.h"
+#ifdef WINUAE_FOR_HATARI
+#include "debug.h"
+#endif
 
 #include "m68000.h"
 #include "reset.h"
@@ -55,7 +58,9 @@
 #include <signal.h>
 #else
 /* Need to have these somewhere */
+#ifndef WINUAE_FOR_HATARI
 bool check_prefs_changed_comp (void) { return false; }
+#endif
 #endif
 /* For faster JIT cycles handling */
 signed long pissoff = 0;
@@ -1471,7 +1476,7 @@ static int check_prefs_changed_cpu2(void)
 #ifdef WINUAE_FOR_HATARI
 			/* When changing CPU prefs in Hatari we reset the emulation, */
 			/* so new cpu table should be built now, not in m68k_go() */
-			uaecptr pc = m68k_getpc();
+//			uaecptr pc = m68k_getpc();
 			prefs_changed_cpu();
 			build_cpufunctbl();
 // done in m68k_go :
@@ -7304,8 +7309,10 @@ void cpureset (void)
 {
     /* RESET hasn't increased PC yet, 1 word offset */
 	uaecptr pc;
+#ifndef WINUAE_FOR_HATARI
 	uaecptr ksboot = 0xf80002 - 2;
 	uae_u16 ins;
+#endif
 	addrbank *ab;
 
 	m68k_reset_delay = currprefs.reset_delay;

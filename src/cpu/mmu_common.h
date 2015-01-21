@@ -31,7 +31,7 @@ extern jmp_buf __exbuf;
 extern int     __exvalue;
 #define TRY(DUMMY)       __exvalue=setjmp(__exbuf);       \
                   if (__exvalue==0) { __pushtry(&__exbuf);
-#define CATCH(x)  __poptry(); } else {m68k_exception x=__exvalue;
+#define CATCH(x)  __poptry(); } else {m68k_exception x=__exvalue; x=x;
 #define ENDTRY    __poptry();}
 #define THROW(x) if (__is_catched()) {longjmp(__exbuf,x);}
 #define THROW_AGAIN(var) if (__is_catched()) longjmp(*__poptry(),__exvalue)

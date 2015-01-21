@@ -21,6 +21,9 @@
 #include "m68000.h"
 #include "debugui.h"
 #include "debugcpu.h"
+#ifdef WINUAE_FOR_HATARI
+#include "debug.h"
+#endif
 
 #define WRITE_LOG_BUF_SIZE 4096
 
@@ -41,10 +44,10 @@ uae_u16 dmacon;
 static uae_u32 mmu_struct, mmu_callback, mmu_regs;
 static uae_u32 mmu_fault_bank_addr, mmu_fault_addr;
 static int mmu_fault_size, mmu_fault_rw;
-static int mmu_slots;
+//static int mmu_slots;
 static struct regstruct mmur;
-static int userdtsc = 0;
-static int qpcdivisor = 0;
+//static int userdtsc = 0;
+//static int qpcdivisor = 0;
 
 static int extra_cycle;
 

@@ -164,5 +164,12 @@ extern void debug_draw_cycles (uae_u8 *buf, int bpp, int line, int width, int he
 #else
 
 STATIC_INLINE void activate_debugger (void) { };
+#ifdef WINUAE_FOR_HATARI
+uae_u32 get_byte_debug (uaecptr addr);
+uae_u32 get_word_debug (uaecptr addr);
+uae_u32 get_long_debug (uaecptr addr);
+uae_u32 get_ilong_debug (uaecptr addr);
+uae_u32 get_iword_debug (uaecptr addr);
+#endif
 
 #endif
