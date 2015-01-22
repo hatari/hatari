@@ -140,6 +140,7 @@ static void Blitter_AddCycles(int cycles)
 	BlitterVars.op_cycles += all_cycles;
 
 	nCyclesMainCounter += all_cycles >> nCpuFreqShift;
+	CyclesGlobalClockCounter += all_cycles >> nCpuFreqShift;
 	nWaitStateCycles = 0;
 }
 
