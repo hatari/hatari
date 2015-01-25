@@ -1691,7 +1691,7 @@ void Video_InterruptHandler_HBL ( void )
 	}
 
 	/* Set pending bit for HBL interrupt in the CPU IPL */
-	M68000_Exception(EXCEPTION_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
+	M68000_Exception(EXCEPTION_NR_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2 */
 
 
 	Video_EndHBL();					/* Check some borders removal and copy line to display buffer */
@@ -3084,7 +3084,7 @@ void Video_InterruptHandler_VBL ( void )
 	}
 
 	/* Set pending bit for VBL interrupt in the CPU IPL */
-	M68000_Exception(EXCEPTION_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4 */
+	M68000_Exception(EXCEPTION_NR_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4 */
 
 	Main_WaitOnVbl();
 }

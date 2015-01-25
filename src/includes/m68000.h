@@ -71,23 +71,24 @@ enum {
 #define SR_CLEAR_TRACEMODE  0x7fff
 #define SR_CLEAR_SUPERMODE  0xdfff
 
-/* Exception vectors */
-#define  EXCEPTION_BUSERROR   0x00000008
-#define  EXCEPTION_ADDRERROR  0x0000000c
-#define  EXCEPTION_ILLEGALINS 0x00000010
-#define  EXCEPTION_DIVZERO    0x00000014
-#define  EXCEPTION_CHK        0x00000018
-#define  EXCEPTION_TRAPV      0x0000001c
-#define  EXCEPTION_TRACE      0x00000024
-#define  EXCEPTION_LINE_A     0x00000028
-#define  EXCEPTION_LINE_F     0x0000002c
-#define  EXCEPTION_HBLANK     0x00000068
-#define  EXCEPTION_VBLANK     0x00000070
-#define  EXCEPTION_TRAP0      0x00000080
-#define  EXCEPTION_TRAP1      0x00000084
-#define  EXCEPTION_TRAP2      0x00000088
-#define  EXCEPTION_TRAP13     0x000000B4
-#define  EXCEPTION_TRAP14     0x000000B8
+/* Exception numbers most commonly used in ST */
+#define  EXCEPTION_NR_BUSERROR		2
+#define  EXCEPTION_NR_ADDRERROR		3
+#define  EXCEPTION_NR_ILLEGALINS	4
+#define  EXCEPTION_NR_DIVZERO    	5
+#define  EXCEPTION_NR_CHK        	6
+#define  EXCEPTION_NR_TRAPV      	7
+#define  EXCEPTION_NR_TRACE      	9
+#define  EXCEPTION_NR_LINE_A		10
+#define  EXCEPTION_NR_LINE_F		11
+#define  EXCEPTION_NR_HBLANK		26		/* Level 2 interrupt */
+#define  EXCEPTION_NR_VBLANK		28		/* Level 4 interrupt */
+#define  EXCEPTION_NR_MFP		30		/* Level 6 interrupt */
+#define  EXCEPTION_NR_TRAP0		32
+#define  EXCEPTION_NR_TRAP1		33
+#define  EXCEPTION_NR_TRAP2		34
+#define  EXCEPTION_NR_TRAP13		45
+#define  EXCEPTION_NR_TRAP14		46
 
 
 /* Size of 68000 instructions */
@@ -296,7 +297,7 @@ extern void M68000_Start(void);
 extern void M68000_CheckCpuSettings(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
 extern void M68000_BusError(Uint32 addr, bool bReadWrite);
-extern void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource);
+extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
 extern void M68000_WaitState(int nCycles);
 extern int M68000_WaitEClock ( void );
 

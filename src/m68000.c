@@ -506,17 +506,15 @@ void M68000_BusError(Uint32 addr, bool bRead)
 /**
  * Exception handler
  */
-void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
+void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 {
-	int exceptionNr = ExceptionVector/4;
-
 	if ((ExceptionSource == M68000_EXC_SRC_AUTOVEC)
-		&& (exceptionNr>24 && exceptionNr<32))	/* 68k autovector interrupt? */
+		&& (ExceptionNr>24 && ExceptionNr<32))	/* 68k autovector interrupt? */
 	{
 		/* Handle autovector interrupts the UAE's way
 		 * (see intlev() and do_specialties() in UAE CPU core) */
 		/* In our case, this part is only called for HBL and VBL interrupts */
-		int intnr = exceptionNr - 24;
+		int intnr = ExceptionNr - 24;
 		pendingInterrupts |= (1 << intnr);
 		M68000_SetSpecial(SPCFLAG_INT);
 	}
@@ -535,15 +533,15 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 		/* 68k exceptions are handled by Exception() of the UAE CPU core */
 #if ENABLE_WINUAE_CPU
 #ifdef WINUAE_FOR_HATARI
-		Exception(exceptionNr, ExceptionSource);
+		Exception(ExceptionNr, ExceptionSource);
 #else
-		Exception(exceptionNr, m68k_getpc(), ExceptionSource);
+		Exception(ExceptionNr, m68k_getpc(), ExceptionSource);
 #endif
 #else
 #ifdef UAE_NEWCPU_H
-		Exception(exceptionNr, m68k_getpc(), ExceptionSource);
+		Exception(ExceptionNr, m68k_getpc(), ExceptionSource);
 #else
-		Exception(exceptionNr, &regs, m68k_getpc(&regs));
+		Exception(ExceptionNr, &regs, m68k_getpc(&regs));
 #endif
 #endif
 		SR = M68000_GetSR();
@@ -552,14 +550,11 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 		 * of higher priority! */
 		if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
 		{
-			// FIXME : this test is useless, per design mfp.c will always give an address in the correct range
-			Uint32 MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
-			if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x3c)) )
-				SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
+			SR = (SR&SR_CLEAR_IPL)|0x0600;		/* MFP, level 6 */
 		}
 		else if (ExceptionSource == M68000_EXC_SRC_INT_DSP)
 		{
-			SR = (SR&SR_CLEAR_IPL)|0x0600;     /* DSP, level 6 */
+			SR = (SR&SR_CLEAR_IPL)|0x0600;		/* DSP, level 6 */
 		}
 
 		M68000_SetSR(SR);
