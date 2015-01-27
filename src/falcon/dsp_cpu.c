@@ -758,12 +758,6 @@ void dsp56k_execute_instruction(void)
 	/* Initialise the number of access to the external memory for this instruction */
 	access_to_ext_memory = 0;
 
-	/* Manage the agu ea pipeline */
-	dsp_core.agu_ea_pipeline[0][0] = dsp_core.agu_ea_pipeline[1][0];
-	dsp_core.agu_ea_pipeline[0][1] = dsp_core.agu_ea_pipeline[1][1];
-	dsp_core.agu_ea_pipeline[1][0] = 0;
-	dsp_core.agu_ea_pipeline[1][1] = 0;
-
 	/* Init the indirect AGU move instruction flag */
 	dsp_core.agu_move_indirect_instr = 0;
 
@@ -1443,12 +1437,6 @@ static void dsp_write_reg(Uint32 numreg, Uint32 value)
 		case DSP_REG_M5:
 		case DSP_REG_M6:
 		case DSP_REG_M7:
-			/* Set the current register value into the agu pipeline for an indirect move instructions only */
-			if (dsp_core.agu_move_indirect_instr == 1) {
-				dsp_core.agu_ea_pipeline[1][0] = numreg;
-				dsp_core.agu_ea_pipeline[1][1] = dsp_core.registers[numreg] & BITMASK(16);
-			}
-			/* Set the register's value */
 			dsp_core.registers[numreg] = value & BITMASK(16);
 			break;
 		case DSP_REG_OMR:
