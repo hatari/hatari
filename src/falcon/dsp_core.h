@@ -241,7 +241,6 @@ struct dsp_core_s {
 
 	/* AGU pipeline simulation for indirect move ea instructions */
 	Uint16	agu_move_indirect_instr;	/* is the current instruction an indirect move ? (LUA, MOVE, MOVEC, MOVEM, TCC) (0=no ; 1 = yes)*/
-	Sint16	agu_ea_pipeline[2][2];		/* simulates a AGU pipeline for R, N, M registers */
 };
 
 
