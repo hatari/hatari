@@ -1412,7 +1412,7 @@ static int FDC_GetSidesPerDisk ( int Drive , int Track )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return the number tracks for the current floppy in a drive
+ * Return the number of tracks for the current floppy in a drive
  * For ST/MSA, this assumes both sides have the same number of tracks
  * Drive should be a valid drive (0 or 1)
  */
