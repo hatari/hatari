@@ -192,12 +192,6 @@ void dsp_core_reset(void)
 	dsp_core.periph[DSP_SPACE_X][DSP_IPR]=0;
 	dsp_core.periph[DSP_SPACE_X][DSP_BCR]=0xffff;
 
-	/* Initialize the AGU pipeline for indirect move ea instructions */
-	dsp_core.agu_ea_pipeline[0][0] = 0;
-	dsp_core.agu_ea_pipeline[0][1] = 0;
-	dsp_core.agu_ea_pipeline[1][0] = 0;
-	dsp_core.agu_ea_pipeline[1][1] = 0;
-
 	/* Misc */
 	dsp_core.loop_rep = 0;
 
