@@ -83,7 +83,7 @@ enum {
 #define  EXCEPTION_NR_LINE_F		11
 #define  EXCEPTION_NR_HBLANK		26		/* Level 2 interrupt */
 #define  EXCEPTION_NR_VBLANK		28		/* Level 4 interrupt */
-#define  EXCEPTION_NR_MFP		30		/* Level 6 interrupt */
+#define  EXCEPTION_NR_MFP_DSP		30		/* Level 6 interrupt */
 #define  EXCEPTION_NR_TRAP0		32
 #define  EXCEPTION_NR_TRAP1		33
 #define  EXCEPTION_NR_TRAP2		34
@@ -144,14 +144,19 @@ static inline void M68000_SetSR(Uint16 v)
  * When an interrupt happens, it's possible a similar interrupt happens again
  * between the start of the exception and the IACK sequence. In that case, we
  * might have to set pending bit twice and change the interrupt vector.
- * From the 68000's doc, IACK start after 12 cycles. Then in an Atari STF, it takes
+ * From the 68000's doc, IACK starts after 10 cycles (12 cycles on STF) and is
+ * supposed to take 4 cycles if the interrupt takes a total of 44 cycles.
+ * On Atari STF, interrupts take 56 cycles instead of 44, which means it takes
  * 12 extra cycles to fetch the vector number.
- * This means we have at max 24 cycles at the start of the exception where some
- * changes can happen. The values we use were not measured on real hardware, they
- * were adjusted to get the correct behaviour in some games/demos relying on this.
+ * This means we have at max 12+12=24 cycles after the start of the exception where some
+ * changes can happen (maybe it's a little less, depending on when the interrupt
+ * vector is written on the bus).
+ * The values we use were not measured on real hardware, they were adjusted
+ * to get the correct behaviour in some games/demos relying on this.
  */
+#define CPU_IACK_CYCLES_START	12			/* number of cycles before starting the IACK */
 #define CPU_IACK_CYCLES_MFP	12			/* vector sent by the MFP */
-#define CPU_IACK_CYCLES_VIDEO	20			/* auto vectored */
+#define CPU_IACK_CYCLES_VIDEO	12			/* auto vectored for HBL/VBL */
 
 
 /* information about current CPU instruction */
@@ -298,6 +303,7 @@ extern void M68000_CheckCpuSettings(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
 extern void M68000_BusError(Uint32 addr, bool bReadWrite);
 extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
+extern void M68000_Update_intlev ( void );
 extern void M68000_WaitState(int nCycles);
 extern int M68000_WaitEClock ( void );
 

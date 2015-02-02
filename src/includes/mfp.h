@@ -67,6 +67,9 @@ extern bool  MFP_UpdateNeeded;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(bool bSave);
+
+extern Uint8 MFP_GetIRQ_CPU ( void );
+extern void MFP_DelayIRQ ( void );
 extern int  MFP_ProcessIACK ( int OldVecNr );
 extern bool MFP_ProcessIRQ ( void );
 extern void MFP_UpdateIRQ ( Uint64 Event_Time );

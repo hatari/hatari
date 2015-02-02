@@ -75,9 +75,40 @@ bool bDspHostInterruptPending = false;
 static void DSP_TriggerHostInterrupt(void)
 {
 	bDspHostInterruptPending = true;
-	M68000_SetSpecial(SPCFLAG_DSP);
+	M68000_SetSpecial(SPCFLAG_DSP);		// TODO remove, use level 6 instead and M68000_Update_intlev()
+	M68000_Update_intlev ();
 }
 #endif
+
+
+/**
+ * Return the state of HREQ
+ */
+Uint8	DSP_GetHREQ ( void )
+{
+	if ( bDspHostInterruptPending )
+		return 1;
+	else
+		return 0;
+}
+
+
+/**
+ * Return the vector number associated to the HREQ interrupt.
+ * If this function is called when HREQ=0, then we return -1 to indicate
+ * a spurious interrupt.
+ */
+int	DSP_ProcessIACK ( void )
+{
+	int	VecNr;
+
+	if ( bDspHostInterruptPending )
+		VecNr = IoMem_ReadByte ( 0xffa203 );
+	else
+		VecNr = -1;
+	
+	return VecNr;
+}
 
 
 /**
@@ -90,7 +121,7 @@ bool	DSP_ProcessIRQ(void)
 {
 	if (bDspHostInterruptPending && regs.intmask < 6)
 	{
-		M68000_Exception(IoMem_ReadByte(0xffa203)*4, M68000_EXC_SRC_INT_DSP);
+		M68000_Exception(IoMem_ReadByte(0xffa203), M68000_EXC_SRC_INT_DSP);
 		bDspHostInterruptPending = false;
 		M68000_UnsetSpecial(SPCFLAG_DSP);
 		return true;

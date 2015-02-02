@@ -2201,22 +2201,42 @@ static int iack_cycle(int nr,int ExceptionSource)
 
 	}
 #else
+	int iack_start = CPU_IACK_CYCLES_START;
+
+	/* In cycle exact mode, the cycles before reaching IACK are already counted */
+	if ( currprefs.cpu_cycle_exact )
+		iack_start = 0;
+
 	/* Pending bits / vector number can change before the end of the IACK sequence. */
-	/* We need to handle MFP and HBL/VBL cases for this. */
+	/* We need to handle MFP/DSP and HBL/VBL cases for this. */
+	/* - Level 6 (MFP/DSP) use vectored interrupts */
+	/* - Level 2 (HBL) and 4 (VBL) use auto-vectored interrupts and require sync with E-clock */
 	vector = nr;
-//	if ( nr == 30 )								/* MFP */
-	if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
+	if ( nr == 30 )								/* MFP or DSP */
+//	if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
         {
-		M68000_AddCycles ( CPU_IACK_CYCLES_MFP );
-		CPU_IACK = true;
-		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
-			CALL_VAR(PendingInterruptFunction);
-		vector = MFP_ProcessIACK ( nr );
-		CPU_IACK = false;
+		vector = -1;
+		if (bDspEnabled)						/* Check DSP first */
+		{
+			/* TODO : For DSP, we just get the vector, we don't add IACK cycles */
+			vector = DSP_ProcessIACK ();
+		}
+
+		if ( vector < 0 )						/* No DSP, check MFP */
+		{
+			M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_MFP );
+	      // TODO : add CE cycles too
+			CPU_IACK = true;
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+				CALL_VAR(PendingInterruptFunction);
+			vector = MFP_ProcessIACK ( nr );
+			CPU_IACK = false;
+		}
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
 	{
-		M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
+		M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_VIDEO );
+	// TODO : add CE cycles too
 		CPU_IACK = true;
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 			CALL_VAR(PendingInterruptFunction);
@@ -2224,6 +2244,12 @@ static int iack_cycle(int nr,int ExceptionSource)
 			MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
 		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
 		CPU_IACK = false;
+	}
+
+	/* TODO If there was no DSP and no MFP IRQ, then we have a spurious interrupt */
+	/* In that case, we use vector 24 and we jump to $60 */
+	if ( vector < 0 )
+	{
 	}
 #endif
 	return vector;
@@ -2246,8 +2272,12 @@ currcycle=0;
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
 #else
+#ifndef NEW_MFP_INT
 	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
 	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
+#else
+	if ( nr >= 24 && nr < 24 + 8 )
+#endif
 		interrupt = 1;
 #endif
 	if (!interrupt) {
@@ -2359,7 +2389,8 @@ kludge_me_do:
 	M68000_AddCycles(currcycle * 2 / CYCLE_UNIT);
 
 	/* Handle exception cycles (special case for MFP) */
-	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
+//	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
+	if ( nr == 30 ) {
 		//M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
 		M68000_AddCycles(44-36);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
 	}
@@ -2557,8 +2588,12 @@ static void Exception_mmu030 (int nr, uaecptr oldpc, int ExceptionSource)
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
 #else
+#ifndef NEW_MFP_INT
 	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
 	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
+#else
+	if ( nr >= 24 && nr < 24 + 8 )
+#endif
 		interrupt = 1;
 #endif
 
@@ -2640,8 +2675,12 @@ static void Exception_mmu (int nr, uaecptr oldpc, int ExceptionSource)
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
 #else
+#ifndef NEW_MFP_INT
 	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
 	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
+#else
+	if ( nr >= 24 && nr < 24 + 8 )
+#endif
 		interrupt = 1;
 #endif
 
@@ -2723,17 +2762,20 @@ static void add_approximate_exception_cycles(int nr,int ExceptionSource)
 		/* Interrupts */
 		cycles = 44 + 4; 
 #else
-	//if (nr >= 24 && nr <= 31) {
+#ifndef NEW_MFP_INT
 	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
 	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) ) {
+#else
+	if ( nr >= 24 && nr <= 31 ) {
+#endif
 		/* Atari's specific interrupts */
-		//if ( nr == 30 )					/* MFP */
-		if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )					/* MFP */
-			cycles = 44+12-CPU_IACK_CYCLES_MFP;
+		if ( nr == 30 )					/* MFP/DSP */
+		//if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )					/* MFP */
+			cycles = 44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_MFP;
 		else if ( nr == 28 )				/* VBL */
-			cycles = 44+12-CPU_IACK_CYCLES_VIDEO;
+			cycles = 44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO;
 		else if ( nr == 26 )				/* HBL */
-			cycles = 44+12-CPU_IACK_CYCLES_VIDEO;
+			cycles = 44+12-CPU_IACK_CYCLES_START- CPU_IACK_CYCLES_VIDEO;
 		else
 			cycles = 44+4;				/* Other interrupts */
 #endif
@@ -2779,8 +2821,12 @@ static void Exception_normal (int nr , int ExceptionSource)
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
 #else
+#ifndef NEW_MFP_INT
 	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
 	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
+#else
+	if ( nr >= 24 && nr < 24 + 8 )
+#endif
 		interrupt = 1;
 #endif
 
@@ -2837,16 +2883,21 @@ static void Exception_normal (int nr , int ExceptionSource)
 	if (currprefs.cpu_model > 68000) {
 		currpc = exception_pc (nr);
 #ifdef WINUAE_FOR_HATARI
-		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-			nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d vector %x currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
+			nr, 4*vector_nr , currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
-                /* Build additional exception stack frame for 68010 and higher */
+		
+		/* Build additional exception stack frame for 68010 and higher */
                 /* (special case for MFP) */
+#ifndef NEW_MFP_INT
 		if (ExceptionSource == M68000_EXC_SRC_INT_MFP || ExceptionSource == M68000_EXC_SRC_INT_DSP) {
 			m68k_areg(regs, 7) -= 2;
 			put_word (m68k_areg(regs, 7), vector_nr * 4);	/* MFP interrupt, 'vector_nr' can be in a different range depending on $fffa17 */
 		}
 		else if (nr == 2 || nr == 3) {
+#else
+		if (nr == 2 || nr == 3) {
+#endif
 			int i;
 			if (currprefs.cpu_model >= 68040) {
 				if (nr == 2) {
@@ -2979,8 +3030,8 @@ static void Exception_normal (int nr , int ExceptionSource)
 		add_approximate_exception_cycles(nr,ExceptionSource);
 		currpc = m68k_getpc ();
 #ifdef WINUAE_FOR_HATARI
-		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-			nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d vector %x currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
+			nr, 4*vector_nr , currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
 		if (nr == 2 || nr == 3) {
 			// 68000 address error
@@ -3184,14 +3235,19 @@ static void do_interrupt (int nr, int Pending)
 	Exception (nr + 24);
 #else
 	/* On Hatari, only video ints are using SPCFLAG_INT (see m68000.c) */
-	Exception (nr + 24, M68000_EXC_SRC_AUTOVEC);
+	if ( nr == 6 )
+		Exception (nr + 24, M68000_EXC_SRC_INT_MFP);
+	else
+		Exception (nr + 24, M68000_EXC_SRC_AUTOVEC);
 #endif
 
 	regs.intmask = nr;
 	doint ();
 
-#ifndef WINUAE_FOR_HATARI
+#ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 	set_special (SPCFLAG_INT);
+#endif
         /* Handle Atari ST's specific jitter for hbl/vbl */
         InterruptAddJitter (nr , Pending);		/* [NP] TODO : E clock jitter should be handled in Exception */
 #endif
@@ -4107,12 +4163,20 @@ isstopped:
 		if ( MFP_UpdateNeeded == true )
 			MFP_UpdateIRQ ( 0 );
 
+#ifndef NEW_MFP_INT
 		/* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
 		if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
 			regs.stopped = 0;
 			unset_special (SPCFLAG_STOP);
 			break;
 		}
+#else
+		if (regs.spcflags & SPCFLAG_MFP) {
+			MFP_DelayIRQ ();			/* Handle IRQ propagation */
+			M68000_Update_intlev ();		/* Refresh the list of pending interrupts */
+		}
+#endif
+
 #endif
 
 #ifndef WINUAE_FOR_HATARI
@@ -4168,6 +4232,15 @@ isstopped:
 
 	if (regs.spcflags & SPCFLAG_TRACE)
 		do_trace ();
+
+#ifdef WINUAE_FOR_HATARI
+#ifdef NEW_MFP_INT
+	if (regs.spcflags & SPCFLAG_MFP) {
+		MFP_DelayIRQ ();			/* Handle IRQ propagation */
+		M68000_Update_intlev ();		/* Refresh the list of pending interrupts */
+	}
+#endif
+#endif
 
 	if (m68k_interrupt_delay) {
 		if (time_for_interrupt ()) {
@@ -4379,32 +4452,31 @@ retry:
 			cpu_cycles = adjust_cycles (cpu_cycles);
 
 #ifdef WINUAE_FOR_HATARI
-		M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT);
+			M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT);
 
-		if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
-			/* Add some extra cycles to simulate a wait state */
-			unset_special(SPCFLAG_EXTRA_CYCLES);
-			M68000_AddCycles(nWaitStateCycles);
-			nWaitStateCycles = 0;
-		}
+			if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+				/* Add some extra cycles to simulate a wait state */
+				unset_special(SPCFLAG_EXTRA_CYCLES);
+				M68000_AddCycles(nWaitStateCycles);
+				nWaitStateCycles = 0;
+			}
 
-		/* We can have several interrupts at the same time before the next CPU instruction */
-		/* We must check for pending interrupt and call do_specialties_interrupt() only */
-		/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
-		/* and prevent exiting the STOP state when calling do_specialties() after. */
-		/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-	        if ( PendingInterruptCount <= 0 )
-		{
+			/* We can have several interrupts at the same time before the next CPU instruction */
+			/* We must check for pending interrupt and call do_specialties_interrupt() only */
+			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+			/* and prevent exiting the STOP state when calling do_specialties() after. */
+			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
 			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 			if ( MFP_UpdateNeeded == true )
 				MFP_UpdateIRQ ( 0 );
-		}
 #endif
 
 			if (r->spcflags) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties (cpu_cycles)) {
 					regs.ipl = regs.ipl_pin;
@@ -4551,13 +4623,10 @@ retry:
 				nWaitStateCycles = 0;
 			}
 
-			if ( PendingInterruptCount <= 0 )
-			{
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-			}
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 #endif
 
 			if (cpu_tracer) {
@@ -4574,7 +4643,9 @@ cont:
 
 			if (r->spcflags || time_for_interrupt ()) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties (0))
 					return;
@@ -4925,18 +4996,17 @@ retry:
 			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 			/* and prevent exiting the STOP state when calling do_specialties() after. */
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-	        	if ( PendingInterruptCount <= 0 )
-			{
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-			}
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 #endif
 
 			if (regs.spcflags) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties (cpu_cycles))
 					return;
@@ -5066,17 +5136,16 @@ insretry:
 			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 			/* and prevent exiting the STOP state when calling do_specialties() after. */
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-	        	if ( PendingInterruptCount <= 0 )
-			{
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-			}
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 #endif
 		if (regs.spcflags) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties (cpu_cycles))
 					return;
@@ -5170,17 +5239,16 @@ retry:
 			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 			/* and prevent exiting the STOP state when calling do_specialties() after. */
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-		        if ( PendingInterruptCount <= 0 )
-			{
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-			}
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 #endif
 			if (r->spcflags) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties (0))
 					exit = true;
@@ -5251,18 +5319,17 @@ retry:
 			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 			/* and prevent exiting the STOP state when calling do_specialties() after. */
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-        		if ( PendingInterruptCount <= 0 )
-			{
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-			}
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 #endif
 
 			if (r->spcflags) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties(0))
 					exit = true;
@@ -5435,19 +5502,18 @@ retry:
 			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 			/* and prevent exiting the STOP state when calling do_specialties() after. */
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-	        	if ( PendingInterruptCount <= 0 )
-			{
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-			}
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 #endif
 
 cont:
 			if (r->spcflags || time_for_interrupt ()) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties (0))
 					exit = true;
@@ -5526,18 +5592,17 @@ retry:
 			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 			/* and prevent exiting the STOP state when calling do_specialties() after. */
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-        		if ( PendingInterruptCount <= 0 )
-			{
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-			}
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 #endif
 
 			if (r->spcflags) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties (cpu_cycles)) {
 					ipl_fetch ();
@@ -5613,18 +5678,17 @@ retry:
 			/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 			/* and prevent exiting the STOP state when calling do_specialties() after. */
 			/* For performance, we first test PendingInterruptCount, then regs.spcflags */
-        		if ( PendingInterruptCount <= 0 )
-			{
-				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
-					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-				if ( MFP_UpdateNeeded == true )
-					MFP_UpdateIRQ ( 0 );
-			}
+			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+				CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+			if ( MFP_UpdateNeeded == true )
+				MFP_UpdateIRQ ( 0 );
 #endif
 
 			if (r->spcflags) {
 #ifdef WINUAE_FOR_HATARI
+#ifndef NEW_MFP_INT
 				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
+#endif
 #endif
 				if (do_specialties (cpu_cycles)) {
 					break;

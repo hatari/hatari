@@ -881,7 +881,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* We need to handle MFP and HBL/VBL cases for this. */
     if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
     {
-        M68000_AddCycles ( CPU_IACK_CYCLES_MFP );
+        M68000_AddCycles ( CPU_IACK_CYCLES_START+CPU_IACK_CYCLES_MFP );
 	CPU_IACK = true;
         while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
             CALL_VAR(PendingInterruptFunction);
@@ -890,7 +890,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     }
     else if ( ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) && ( ( nr == 26 ) || ( nr == 28 ) ) )
     {
-        M68000_AddCycles ( CPU_IACK_CYCLES_VIDEO );
+        M68000_AddCycles ( CPU_IACK_CYCLES_START+CPU_IACK_CYCLES_VIDEO );
 	CPU_IACK = true;
         while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
             CALL_VAR(PendingInterruptFunction);
@@ -1103,16 +1103,16 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* Handle exception cycles (special case for MFP) */
     if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
     {
-      M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+      M68000_AddCycles(44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
     }
     else if (nr >= 24 && nr <= 31)
     {
-      if ( nr == 26 )					/* HBL */
-        M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
-      else if ( nr == 28 ) 				/* VBL */
-        M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
+      if ( nr == 26 )								/* HBL */
+        M68000_AddCycles(44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
+      else if ( nr == 28 ) 							/* VBL */
+        M68000_AddCycles(44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
       else
-        M68000_AddCycles(44+4);				/* Other Interrupts */
+        M68000_AddCycles(44+4);			/* Other Interrupts */
     }
     else if(nr >= 32 && nr <= 47)
     {

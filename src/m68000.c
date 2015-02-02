@@ -61,6 +61,9 @@
 /* 2014/05/07	[NP]	In M68000_WaitEClock, use CyclesGlobalClockCounter instead of the VBL video	*/
 /*			counter (else for a given position in a VBL we would always get the same value	*/
 /*			for the E clock).								*/
+/* 2015/02/01	[NP]	When using the new WinUAE's cpu, don't handle MFP/DSP interrupts by calling	*/
+/*			directly Exception(), we must set bit 6 in pendingInterrupts and use the IACK	*/
+/*			sequence to get the exception's vector number.					*/
 
 const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 
@@ -76,6 +79,10 @@ const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 #include "savestate.h"
 #include "stMemory.h"
 #include "tos.h"
+
+#if ENABLE_DSP_EMU
+#include "dsp.h"
+#endif
 
 #if ENABLE_WINUAE_CPU
 #include "mmu_common.h"
@@ -508,6 +515,7 @@ void M68000_BusError(Uint32 addr, bool bRead)
  */
 void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 {
+#ifndef NEW_MFP_INT
 	if ((ExceptionSource == M68000_EXC_SRC_AUTOVEC)
 		&& (ExceptionNr>24 && ExceptionNr<32))	/* 68k autovector interrupt? */
 	{
@@ -518,6 +526,19 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 		pendingInterrupts |= (1 << intnr);
 		M68000_SetSpecial(SPCFLAG_INT);
 	}
+#else
+	if ( ( ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) || ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
+	       || ( ExceptionSource == M68000_EXC_SRC_INT_DSP ) )
+		&& ( ExceptionNr > 24 && ExceptionNr < 32 ) )	/* Level 1-7 interrupts */
+	{
+		/* Handle autovector interrupts the UAE's way
+		 * (see intlev() and do_specialties() in UAE CPU core) */
+		/* In our case, this part is called for HBL, VBL and MFP interrupts */
+		int intnr = ExceptionNr - 24;
+		pendingInterrupts |= (1 << intnr);
+		doint();
+	}
+#endif
 
 	else							/* MFP or direct CPU exceptions */
 	{
@@ -560,6 +581,42 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 		M68000_SetSR(SR);
 	}
 }
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Update the list of pending interrupts.
+ * Level 2 (HBL) and 4 (VBL) are only cleared when the interrupt is processed,
+ * but level 6 is shared between MFP and DSP and can be cleared by MFP or DSP
+ * before being processed.
+ * So, we need to check which IRQ are set/cleared at the same time
+ * and update level 6 accordingly : level 6 = MFP_IRQ OR DSP_IRQ
+ */
+void	M68000_Update_intlev ( void )
+{	
+#ifdef WINUAE_FOR_HATARI
+	Uint8	Level6_IRQ;
+
+#if ENABLE_DSP_EMU
+	Level6_IRQ = MFP_GetIRQ_CPU() | DSP_GetHREQ();
+#else
+	Level6_IRQ = MFP_GetIRQ_CPU();
+#endif
+	if ( Level6_IRQ == 1 )
+		pendingInterrupts |= (1 << 6);
+	else
+		pendingInterrupts &= ~(1 << 6);
+
+	if ( pendingInterrupts )
+		doint();
+	else
+		M68000_UnsetSpecial ( SPCFLAG_INT | SPCFLAG_DOINT );
+#endif
+}
+
+
 
 
 /*-----------------------------------------------------------------------*/

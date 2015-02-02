@@ -127,6 +127,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 #include "crossbar.h"
 #include "fdc.h"
 #include "ikbd.h"
+#include "hatari-glue.h"
 #include "cycInt.h"
 #include "ioMem.h"
 #include "joy.h"
@@ -225,6 +226,8 @@ static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when d
 static int	MFP_Current_Interrupt = -1;
 static Uint8	MFP_IRQ = 0;
 static Uint64	MFP_IRQ_Time = 0;
+static Uint8	MFP_IRQ_CPU = 0;			/* Value of MFP_IRQ as seen by the CPU. There's a 4 cycle delay */
+							/* between a change of MFP_IRQ and its visibility at the CPU side */
 bool		MFP_UpdateNeeded = false;		/* When set to true, main CPU loop should call MFP_UpdateIRQ() */
 static Uint64	MFP_Pending_Time_Min;			/* Clock value of the oldest pending int since last MFP_UpdateIRQ() */
 static Uint64	MFP_Pending_Time[ MFP_INT_MAX+1 ];	/* Clock value when pending is set to 1 for each non-masked int */
@@ -294,6 +297,7 @@ void MFP_Reset(void)
 	/* Clear IRQ */
 	MFP_Current_Interrupt = -1;
 	MFP_IRQ = 0;
+	MFP_IRQ_CPU = 0;
 	MFP_IRQ_Time = 0;
 	MFP_UpdateNeeded = false;
 	MFP_Pending_Time_Min = UINT64_MAX;
@@ -343,6 +347,7 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MFP_Current_Interrupt, sizeof(MFP_Current_Interrupt));
 	MemorySnapShot_Store(&MFP_IRQ, sizeof(MFP_IRQ));
 	MemorySnapShot_Store(&MFP_IRQ_Time, sizeof(MFP_IRQ_Time));
+	MemorySnapShot_Store(&MFP_IRQ_CPU, sizeof(MFP_IRQ_CPU));
 	MemorySnapShot_Store(&MFP_UpdateNeeded, sizeof(MFP_UpdateNeeded));
 	MemorySnapShot_Store(&MFP_Pending_Time_Min, sizeof(MFP_Pending_Time_Min));
 	MemorySnapShot_Store(&MFP_Pending_Time, sizeof(MFP_Pending_Time));
@@ -405,7 +410,58 @@ static void MFP_Exception ( int Interrupt )
 			Interrupt, VecNr * 4, STMemory_ReadLong ( VecNr * 4 ), FrameCycles, LineCycles, HblCounterVideo );
 	}
 
+#ifndef NEW_MFP_INT
 	M68000_Exception(VecNr * 4, M68000_EXC_SRC_INT_MFP);
+#else
+	M68000_Exception(EXCEPTION_NR_MFP_DSP, M68000_EXC_SRC_INT_MFP);
+#endif
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Get the value of the MFP IRQ signal as seen from the CPU side.
+ * When MFP_IRQ is changed in the MFP, the new value is visible on the
+ * CPU side after MFP_IRQ_DELAY_TO_CPU.
+ * MFP_IRQ_CPU hold the value seen by the CPU, it's updated with the value
+ * of MFP_IRQ when MFP_IRQ_DELAY_TO_CPU cycles passed.
+ */
+Uint8	MFP_GetIRQ_CPU ( void )
+{
+	return MFP_IRQ_CPU;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * A change in MFP_IRQ is visible to the CPU only after MFP_IRQ_DELAY_TO_CPU
+ * cycles. This function will update MFP_IRQ_CPU if the delay has expired.
+ *
+ * This function is called from the CPU emulation part when SPCFLAG_MFP is set.
+ *
+ * TODO : for now, we check the delay only when MFP_IRQ goes to 1, but this should be
+ * handled too when MFP_IRQ goes to 0 (need to be measured on STF)
+ */
+void	MFP_DelayIRQ ( void )
+{
+	if ( MFP_IRQ == 1 )
+	{
+		if ( CyclesGlobalClockCounter - MFP_IRQ_Time >= MFP_IRQ_DELAY_TO_CPU )
+		{
+			MFP_IRQ_CPU = MFP_IRQ;
+			M68000_UnsetSpecial ( SPCFLAG_MFP );	/* Update done, unset special MFP flag */
+		}
+	}
+
+	else	/* MFP_IRQ == 0, no delay for now */
+	{
+		MFP_IRQ_CPU = MFP_IRQ;
+		M68000_UnsetSpecial ( SPCFLAG_MFP );		/* Update done, unset special MFP flag */
+	}
 }
 
 
@@ -547,13 +603,16 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
 	}
 
 //fprintf ( stderr , "updirq1 %d %lld - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_IRQ_Time , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+#ifndef NEW_MFP_INT
 	if ( MFP_IRQ == 1 )
 	{
 		M68000_SetSpecial(SPCFLAG_MFP);
 	}
 	else
 		M68000_UnsetSpecial(SPCFLAG_MFP);
-
+#else
+	M68000_SetSpecial(SPCFLAG_MFP);				/* CPU part should call MFP_Delay_IRQ() */
+#endif
 	/* Update IRQ is done, reset Time_Min and UpdateNeeded */
 	MFP_Pending_Time_Min = UINT64_MAX;
 	MFP_UpdateNeeded = false;
