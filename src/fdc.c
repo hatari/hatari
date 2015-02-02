@@ -560,6 +560,7 @@ static int	FDC_GetEmulationMode ( void );
 static void	FDC_UpdateAll ( void );
 static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Drive , int Track );
+static int	FDC_GetTracksPerDisk ( int Drive );
 static int	FDC_GetDensity ( int Drive );
 
 static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive );
@@ -1403,6 +1404,27 @@ static int FDC_GetSidesPerDisk ( int Drive , int Track )
 	{
 		Floppy_FindDiskDetails ( EmulationDrives[ Drive ].pBuffer , EmulationDrives[ Drive ].nImageBytes , NULL , &SidesPerDisk );
 		return SidesPerDisk;					/* 1 or 2 */
+	}
+	else
+		return 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the number tracks for the current floppy in a drive
+ * For ST/MSA, this assumes both sides have the same number of tracks
+ * Drive should be a valid drive (0 or 1)
+ */
+static int FDC_GetTracksPerDisk ( int Drive )
+{
+	Uint16	SectorsPerTrack;
+	Uint16	SidesPerDisk;
+
+	if (EmulationDrives[ Drive ].bDiskInserted)
+	{
+		Floppy_FindDiskDetails ( EmulationDrives[ Drive ].pBuffer , EmulationDrives[ Drive ].nImageBytes , &SectorsPerTrack , &SidesPerDisk );
+		return ( ( EmulationDrives[Drive].nImageBytes / NUMBYTESPERSECTOR ) / SectorsPerTrack ) / SidesPerDisk;
 	}
 	else
 		return 0;
@@ -4257,6 +4279,9 @@ static int	FDC_NextSectorID_FdcCycles_ST ( Uint8 Drive , Uint8 NumberOfHeads , U
 	if ( ( Side == 1 ) && ( NumberOfHeads == 1 ) )			/* Can't read side 1 on a single sided drive */
 		return -1;
 
+	if ( Track >= FDC_GetTracksPerDisk ( Drive ) )			/* Try to access a non existing track */
+		return -1;
+
 	MaxSector = FDC_GetSectorsPerTrack ( Drive , Track , Side );
 	TrackPos = FDC_TRACK_LAYOUT_STANDARD_GAP1;			/* Position of 1st raw sector */
 	TrackPos += FDC_TRACK_LAYOUT_STANDARD_GAP2;			/* Position of ID Field in 1st raw sector */
@@ -4429,6 +4454,14 @@ static Uint8 FDC_ReadAddress_ST ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
+	/* If trying to access address field on a non existing track, then return RNF */
+	if ( Track >= FDC_GetTracksPerDisk ( Drive ) )
+	{
+		fprintf ( stderr , "fdc : read address drive=%d track=%d side=%d, but maxtrack=%d, return RNF\n" ,
+			Drive , Track , Side , FDC_GetTracksPerDisk ( Drive ) );
+		return STX_SECTOR_FLAG_RNF;				/* Should not happen if FDC_NextSectorID_FdcCycles_ST succeeded before */
+	}
+
 	p = buf_id;
 
 	*p++ = 0xa1;							/* SYNC bytes and IAM byte are included in the CRC */
@@ -4482,6 +4515,15 @@ static Uint8 FDC_ReadTrack_ST ( Uint8 Drive , Uint8 Track , Uint8 Side )
 	LOG_TRACE(TRACE_FDC, "fdc type III read track drive=%d track=%d side=%d VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		Drive, Track, Side, nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
+	/* If trying to access a non existing track, then return an empty / not formatted track */
+	if ( Track >= FDC_GetTracksPerDisk ( Drive ) )
+	{
+		fprintf ( stderr , "fdc : read track drive=%d track=%d side=%d, but maxtrack=%d, building an unformatted track\n" ,
+			Drive , Track , Side , FDC_GetTracksPerDisk ( Drive ) );
+		for ( i=0 ; i<FDC_GetBytesPerTrack ( Drive ) ; i++ )
+			FDC_Buffer_Add ( rand() & 0xff );		/* Fill the track buffer with random bytes */
+		return 0;
+	}
 
 	for ( i=0 ; i<FDC_TRACK_LAYOUT_STANDARD_GAP1 ; i++ )		/* GAP1 */
 		FDC_Buffer_Add ( 0x4e );

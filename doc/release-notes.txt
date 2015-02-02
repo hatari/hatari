@@ -32,6 +32,7 @@ Emulation:
     (when using EmuTOS, this requires CVS snapshot 2014-12-15 or later)
 - FDC changes:
   - for STX disks, fix type I commands with verify bit on tracks with no sector
+  - for ST/MSA, check read address and read track are not beyond max track
 
 Emulator:
 - Support for compiling with libSDL2 (experimental)
