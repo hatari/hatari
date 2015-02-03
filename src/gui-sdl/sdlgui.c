@@ -186,7 +186,10 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 	/* others */
 	colors.focus     = SDL_MapRGB(pSdlGuiScrn->format,212,212,212);
 	colors.cursor    = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
-	colors.underline = SDL_MapRGB(pSdlGuiScrn->format,  0,  0,255);
+	if (sdlgui_fontheight < 16)
+		colors.underline = SDL_MapRGB(pSdlGuiScrn->format,255,0,255);
+	else
+		colors.underline = SDL_MapRGB(pSdlGuiScrn->format,0,0,0);		
 	colors.editfield = SDL_MapRGB(pSdlGuiScrn->format,160,160,160);
 
 	return 0;
@@ -241,7 +244,7 @@ static void SDLGui_TextInt(int x, int y, const char *txt, bool underline)
 
 	/* underline offset needs to go outside the box for smaller font */
 	if (sdlgui_fontheight < 16)
-		offset = sdlgui_fontheight + 1;
+		offset = sdlgui_fontheight - 1;
 	else
 		offset = sdlgui_fontheight - 2;
 
