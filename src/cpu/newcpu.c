@@ -120,8 +120,6 @@ static struct cache040 dcaches040[CACHESETS040];
 #ifdef WINUAE_FOR_HATARI
 int OpcodeFamily;
 int BusCyclePenalty = 0;
-
-static void InterruptAddJitter (int Level , int Pending);
 #endif
 
 
@@ -2202,6 +2200,7 @@ static int iack_cycle(int nr,int ExceptionSource)
 	}
 #else
 	int iack_start = CPU_IACK_CYCLES_START;
+	int e_cycles;
 
 	/* In cycle exact mode, the cycles before reaching IACK are already counted */
 	if ( currprefs.cpu_cycle_exact )
@@ -2235,7 +2234,11 @@ static int iack_cycle(int nr,int ExceptionSource)
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
 	{
-		M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_VIDEO );
+		iack_start -= 2;			/* [NP] work in progress for e clock, TODO we need to check the complete sequence of interrupt micro code */
+		e_cycles = M68000_WaitEClock ();
+		//fprintf ( stderr , "wait e clock %d\n" , e_cycles);
+
+		M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles );
 	// TODO : add CE cycles too
 		CPU_IACK = true;
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
@@ -3248,8 +3251,6 @@ static void do_interrupt (int nr, int Pending)
 #ifndef NEW_MFP_INT
 	set_special (SPCFLAG_INT);
 #endif
-        /* Handle Atari ST's specific jitter for hbl/vbl */
-        InterruptAddJitter (nr , Pending);		/* [NP] TODO : E clock jitter should be handled in Exception */
 #endif
 }
 
@@ -3935,36 +3936,6 @@ void doint (void)
 #endif
 
 #ifdef WINUAE_FOR_HATARI
-/*
- * Compute the number of jitter cycles to add when a video interrupt occurs
- * (this is specific to the Atari ST)
- */
-STATIC_INLINE void InterruptAddJitter (int Level , int Pending)
-{
-	int cycles = 0;
-
-	if ( Level == 2 )				/* HBL */
-	{
-		if ( Pending )
-			cycles = HblJitterArrayPending[ HblJitterIndex ];
-		else
-			cycles = HblJitterArray[ HblJitterIndex ];
-	}
-	else if ( Level == 4 )			/* VBL */
-	{
-		if ( Pending )
-			cycles = VblJitterArrayPending[ VblJitterIndex ];
-		else
-			cycles = VblJitterArray[ VblJitterIndex ];
-	}
-
-	//fprintf ( stderr , "jitter %d\n" , cycles );
-	//cycles=0;
-	if ( cycles > 0 )				/* no need to call M68000_AddCycles if cycles == 0 */
-		M68000_AddCycles ( cycles );
-}
-
-
 /*
  * Handle special flags
  */
