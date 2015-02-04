@@ -311,6 +311,7 @@ Demos:
 - Hallucinations (by Reservoir Gods)
 - If pigs could fly (by Syndicate)
 - Illusion (by Dune)
+- Lots of Dots (by Acid Maker & Friends)
 - Music Disc 1 (by G. Gaubatz)
 - No Cooper (by 1984)
 - O-demo (by Oxygene)
@@ -352,6 +353,7 @@ Demos:
 - Virtual (by Equinox)
 - Visualize (by Checkpoint)
 - Vodka demo (by Equinox, needs 512k EmuTOS)
+- Yanartas (by Checkpoint)
 - YmRockerz musicdisks from "Wave upon Wave" to "Seven"
 - Xmas2000 (by Paranoid)
 
@@ -492,6 +494,7 @@ Color games:
 - Thunderstrike demo
 - Trace
 - Turrican II demo (bus errors during game)
+- Unheart
 - Video poker (shareware)
 - Videokid demo (floppy only)
 - WalZ (breakout)
@@ -764,6 +767,7 @@ Demos:
 - Just Musix 2 (by DHS)
 - Kick my assembler (by Orion), start doesn't look right
 - Lavalamp (by Tobe)
+- Lovetro (by Paradize & Sector One)
 - Madness (by Cream)
 - Massacre (by DHS)
 - Mathematica (by Aura)
@@ -784,6 +788,7 @@ Demos:
 - Realtime (by MJJ Prod)
 - Riverside (by DHS)
 - RGBeast (by Aggression)
+- SaboTagE Teaser (by Paradox)
 - Save the Earth (by Defence Force)
 - Sinfull Sinuses (by Chronicle)
 - Sierpinski overdose 4K (by GGN), med-rez+blitter only
@@ -796,11 +801,13 @@ Demos:
 - STrange RoboTS (by Blabla)
 - Summer Delights (by DHS)
 - Sventure intro (by Paradox)
+- Takeover (by Lamers)
 - TalkTalk2 (by XiA)
 - Techno drugs (by NLC)
 - Tribute to Rainbow TOS
 - Tyranny (by DHS)
 - UFO (by Dune & Sector1)
+- Unbeatable (by Masters of Electric City)
 - Vision (by POV)
 - XiTEC Presentation (by Omega)
 
@@ -960,6 +967,7 @@ Working demos:
   - plasma screen has garbage on right side,
     end screen at top & bottom
 - Mouse (animation + music)
+- Old Stuff (by Extream)
 - RGB Reine (by New Beat)
 - Rock Solid (by Paranoia)
 - Six Sievert (by tSCc)
@@ -1012,7 +1020,9 @@ but don't work with EmuTOS at all:
 - Beams (by .tscc):
   panic with bus error:
   M68000 Bus Error reading at address $3b4.
-
+- Tere Ra'I (by Cerebral Vortex / Dune / Sector One), and
+  Unexpected Fun (by Orion_)
+  - Just exits after Dsp_Lock()
 
 Games regressed in EmuTOS v0.8.x (not working anymore):
 - Columns by Deadheart* (demo)
