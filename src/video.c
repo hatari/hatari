@@ -1362,6 +1362,13 @@ void Video_Sync_WriteByte ( void )
 			{
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
 			}
+			/* Same for WinUAE's cpu core : GetPC() points to the current instr, not to the next one */
+			if ( ( STMemory_ReadLong ( M68000_GetPC()+2 ) == 0x4e7352b8 )
+			  && ( STMemory_ReadLong ( M68000_GetPC()+4+2 ) == 0x04664e73 )
+			  && ( HblCounterVideo == 34 ) && ( LineCycles == 56 ) )
+			{
+				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
+			}
 
 			/* [FIXME] 'Gen 4 Demo' by Ziggy Stardust / OVR. Same problem as 'Panic' above */
 			else if ( ( STMemory_ReadLong ( M68000_GetPC()-4 ) == 0x0002820a )
