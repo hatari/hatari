@@ -1511,7 +1511,32 @@ Hatari instances.
 </p>
 
 
-<h3 class="clearboth">Keyboard shortcuts</h3>
+<h3 class="clearboth">Keyboard shortcuts for the SDL GUI</h3>
+
+<p>There are multiple ways to interact with the SDL GUI.</p>
+
+<p>TAB and cursor keys change focus between UI elements.  Additionally
+Home key moves focus to first item, End key to last one.  Initially
+focus is on default UI element, but focus changes are remembered
+between dialog invocations. Enter and Space invoke focused item. UI
+elements with underlined characters can be invoked directly with Alt +
+key with that character.  Alt + arrow keys will act on arrow
+buttons.</p>
+
+<p>Most importantly:</p>
+<ul>
+<li><em>Options GUI main view</em>: Enter accepts configuration, ESC
+cancels it.</li>
+<li><em>Options GUI dialogs</em>: Enter (or End+Enter if focus was moved)
+returns back to main view.</li>
+<li><em>Fileselector</em>: Page up and down keys scroll the file list.
+Enter on focused file name selects it.  Enter on OK button accepts
+the selected file. ESC cancels the dialog/selection.</li>
+<li><em>Alert dialogs</em>: Enter accepts and ESC cancels the dialog.</li>
+</ul>
+
+
+<h3>Keyboard shortcuts during emulation</h3>
 
 <p> While the emulator is running, you can activate or toggle various
 features via Hatari keyboard shortcuts. Below are listed the default
