@@ -3255,19 +3255,23 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 #endif
 
 	if ((opcode & 0xF000) == 0xF000) {
+#ifndef WINUAE_FOR_HATARI
 		if (warned < 20) {
 			write_log(_T("B-Trap %04X at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x2c));
 			warned++;
 		}
+#endif
 		Exception (0xB);
 		//activate_debugger ();
 		return 4;
 	}
 	if ((opcode & 0xF000) == 0xA000) {
+#ifndef WINUAE_FOR_HATARI
 		if (warned < 20) {
 			write_log(_T("A-Trap %04X at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x28));
 			warned++;
 		}
+#endif
 		Exception (0xA);
 		//activate_debugger();
 		return 4;
