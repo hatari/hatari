@@ -22,8 +22,6 @@
 
 
 #define WINUAE_FOR_HATARI
-/* Use level 6 for MFP/DSP */
-#define NEW_MFP_INT
 
 
 /* this defione is here for newcpu.c compatibility.

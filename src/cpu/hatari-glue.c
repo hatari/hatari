@@ -76,34 +76,12 @@ void customreset(void)
  */
 int intlev(void)
 {
-#if 0
-	if (pendingInterrupts & (1 << 4))         /* VBL interrupt? */
-	{
-		if (regs.intmask < 4)
-			pendingInterrupts &= ~(1 << 4);
-		return 4;
-	}
-	else if (pendingInterrupts & (1 << 2))    /* HBL interrupt? */
-	{
-		if (regs.intmask < 2)
-			pendingInterrupts &= ~(1 << 2);
-		return 2;
-	}
-#else
-#ifndef NEW_MFP_INT
-	if ( pendingInterrupts & (1 << 4) )		/* VBL interrupt ? */
-		return 4;
-	else if ( pendingInterrupts & (1 << 2) )	/* HBL interrupt ? */
-		return 2;
-#else
 	if ( pendingInterrupts & (1 << 6) )		/* MFP/DSP interrupt ? */
 		return 6;
 	else if ( pendingInterrupts & (1 << 4) )	/* VBL interrupt ? */
 		return 4;
 	else if ( pendingInterrupts & (1 << 2) )	/* HBL interrupt ? */
 		return 2;
-#endif
-#endif
 
 	return -1;
 }

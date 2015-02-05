@@ -515,9 +515,9 @@ void M68000_BusError(Uint32 addr, bool bRead)
  */
 void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 {
-#ifndef NEW_MFP_INT
+#ifndef WINUAE_FOR_HATARI
 	if ((ExceptionSource == M68000_EXC_SRC_AUTOVEC)
-		&& (ExceptionNr>24 && ExceptionNr<32))	/* 68k autovector interrupt? */
+		&& (ExceptionNr>24 && ExceptionNr<32))		/* 68k autovector interrupt? */
 	{
 		/* Handle autovector interrupts the UAE's way
 		 * (see intlev() and do_specialties() in UAE CPU core) */
@@ -531,16 +531,15 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 	       || ( ExceptionSource == M68000_EXC_SRC_INT_DSP ) )
 		&& ( ExceptionNr > 24 && ExceptionNr < 32 ) )	/* Level 1-7 interrupts */
 	{
-		/* Handle autovector interrupts the UAE's way
-		 * (see intlev() and do_specialties() in UAE CPU core) */
-		/* In our case, this part is called for HBL, VBL and MFP interrupts */
+		/* In our case, this part is called for HBL, VBL and MFP/DSP interrupts */
+		/* (see intlev() and do_specialties() in UAE CPU core) */
 		int intnr = ExceptionNr - 24;
 		pendingInterrupts |= (1 << intnr);
 		doint();
 	}
 #endif
 
-	else							/* MFP or direct CPU exceptions */
+	else							/* direct CPU exceptions */
 	{
 		Uint16 SR;
 

@@ -410,11 +410,7 @@ static void MFP_Exception ( int Interrupt )
 			Interrupt, VecNr * 4, STMemory_ReadLong ( VecNr * 4 ), FrameCycles, LineCycles, HblCounterVideo );
 	}
 
-#ifndef NEW_MFP_INT
-	M68000_Exception(VecNr * 4, M68000_EXC_SRC_INT_MFP);
-#else
 	M68000_Exception(EXCEPTION_NR_MFP_DSP, M68000_EXC_SRC_INT_MFP);
-#endif
 }
 
 
@@ -603,16 +599,8 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
 	}
 
 //fprintf ( stderr , "updirq1 %d %lld - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_IRQ_Time , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
-#ifndef NEW_MFP_INT
-	if ( MFP_IRQ == 1 )
-	{
-		M68000_SetSpecial(SPCFLAG_MFP);
-	}
-	else
-		M68000_UnsetSpecial(SPCFLAG_MFP);
-#else
 	M68000_SetSpecial(SPCFLAG_MFP);				/* CPU part should call MFP_Delay_IRQ() */
-#endif
+
 	/* Update IRQ is done, reset Time_Min and UpdateNeeded */
 	MFP_Pending_Time_Min = UINT64_MAX;
 	MFP_UpdateNeeded = false;

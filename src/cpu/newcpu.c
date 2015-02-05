@@ -2275,12 +2275,7 @@ currcycle=0;
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
 #else
-#ifndef NEW_MFP_INT
-	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
-	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
-#else
 	if ( nr >= 24 && nr < 24 + 8 )
-#endif
 		interrupt = 1;
 #endif
 	if (!interrupt) {
@@ -2591,12 +2586,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc, int ExceptionSource)
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
 #else
-#ifndef NEW_MFP_INT
-	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
-	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
-#else
 	if ( nr >= 24 && nr < 24 + 8 )
-#endif
 		interrupt = 1;
 #endif
 
@@ -2678,12 +2668,7 @@ static void Exception_mmu (int nr, uaecptr oldpc, int ExceptionSource)
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
 #else
-#ifndef NEW_MFP_INT
-	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
-	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
-#else
 	if ( nr >= 24 && nr < 24 + 8 )
-#endif
 		interrupt = 1;
 #endif
 
@@ -2765,12 +2750,7 @@ static void add_approximate_exception_cycles(int nr,int ExceptionSource)
 		/* Interrupts */
 		cycles = 44 + 4; 
 #else
-#ifndef NEW_MFP_INT
-	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
-	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) ) {
-#else
 	if ( nr >= 24 && nr <= 31 ) {
-#endif
 		/* Atari's specific interrupts */
 		if ( nr == 30 )					/* MFP/DSP */
 		//if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )					/* MFP */
@@ -2824,12 +2804,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
 #else
-#ifndef NEW_MFP_INT
-	if ( ( ExceptionSource == M68000_EXC_SRC_INT_MFP ) || ( ExceptionSource == M68000_EXC_SRC_INT_DSP )
-	  || ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) )
-#else
 	if ( nr >= 24 && nr < 24 + 8 )
-#endif
 		interrupt = 1;
 #endif
 
@@ -2889,18 +2864,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d vector %x currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
 			nr, 4*vector_nr , currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
-		
-		/* Build additional exception stack frame for 68010 and higher */
-                /* (special case for MFP) */
-#ifndef NEW_MFP_INT
-		if (ExceptionSource == M68000_EXC_SRC_INT_MFP || ExceptionSource == M68000_EXC_SRC_INT_DSP) {
-			m68k_areg(regs, 7) -= 2;
-			put_word (m68k_areg(regs, 7), vector_nr * 4);	/* MFP interrupt, 'vector_nr' can be in a different range depending on $fffa17 */
-		}
-		else if (nr == 2 || nr == 3) {
-#else
 		if (nr == 2 || nr == 3) {
-#endif
 			int i;
 			if (currprefs.cpu_model >= 68040) {
 				if (nr == 2) {
@@ -3246,12 +3210,6 @@ static void do_interrupt (int nr, int Pending)
 
 	regs.intmask = nr;
 	doint ();
-
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-	set_special (SPCFLAG_INT);
-#endif
-#endif
 }
 
 void NMI (void)
@@ -4134,20 +4092,11 @@ isstopped:
 		if ( MFP_UpdateNeeded == true )
 			MFP_UpdateIRQ ( 0 );
 
-#ifndef NEW_MFP_INT
 		/* Check is there's an interrupt to process (could be a delayed MFP interrupt) */
-		if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
-			regs.stopped = 0;
-			unset_special (SPCFLAG_STOP);
-			break;
-		}
-#else
 		if (regs.spcflags & SPCFLAG_MFP) {
 			MFP_DelayIRQ ();			/* Handle IRQ propagation */
 			M68000_Update_intlev ();		/* Refresh the list of pending interrupts */
 		}
-#endif
-
 #endif
 
 #ifndef WINUAE_FOR_HATARI
@@ -4205,12 +4154,10 @@ isstopped:
 		do_trace ();
 
 #ifdef WINUAE_FOR_HATARI
-#ifdef NEW_MFP_INT
 	if (regs.spcflags & SPCFLAG_MFP) {
 		MFP_DelayIRQ ();			/* Handle IRQ propagation */
 		M68000_Update_intlev ();		/* Refresh the list of pending interrupts */
 	}
-#endif
 #endif
 
 	if (m68k_interrupt_delay) {
@@ -4444,11 +4391,6 @@ retry:
 #endif
 
 			if (r->spcflags) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
 				if (do_specialties (cpu_cycles)) {
 					regs.ipl = regs.ipl_pin;
 					return;
@@ -4613,11 +4555,6 @@ cont:
 			}
 
 			if (r->spcflags || time_for_interrupt ()) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-			do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
 				if (do_specialties (0))
 					return;
 			}
@@ -4974,11 +4911,6 @@ retry:
 #endif
 
 			if (regs.spcflags) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
 				if (do_specialties (cpu_cycles))
 					return;
 			}
@@ -5112,12 +5044,7 @@ insretry:
 			if ( MFP_UpdateNeeded == true )
 				MFP_UpdateIRQ ( 0 );
 #endif
-		if (regs.spcflags) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
+			if (regs.spcflags) {
 				if (do_specialties (cpu_cycles))
 					return;
 			}
@@ -5216,11 +5143,6 @@ retry:
 				MFP_UpdateIRQ ( 0 );
 #endif
 			if (r->spcflags) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
 				if (do_specialties (0))
 					exit = true;
 			}
@@ -5297,11 +5219,6 @@ retry:
 #endif
 
 			if (r->spcflags) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
 				if (do_specialties(0))
 					exit = true;
 			}
@@ -5481,11 +5398,6 @@ retry:
 
 cont:
 			if (r->spcflags || time_for_interrupt ()) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
 				if (do_specialties (0))
 					exit = true;
 			}
@@ -5570,11 +5482,6 @@ retry:
 #endif
 
 			if (r->spcflags) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
 				if (do_specialties (cpu_cycles)) {
 					ipl_fetch ();
 					return;
@@ -5656,11 +5563,6 @@ retry:
 #endif
 
 			if (r->spcflags) {
-#ifdef WINUAE_FOR_HATARI
-#ifndef NEW_MFP_INT
-				do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
-#endif
-#endif
 				if (do_specialties (cpu_cycles)) {
 					break;
 				}
