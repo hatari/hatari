@@ -599,7 +599,16 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
 	}
 
 //fprintf ( stderr , "updirq1 %d %lld - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_IRQ_Time , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+#ifndef WINUAE_FOR_HATARI
+	if ( MFP_IRQ == 1 )
+	{
+		M68000_SetSpecial(SPCFLAG_MFP);
+	}
+	else
+		M68000_UnsetSpecial(SPCFLAG_MFP);
+#else
 	M68000_SetSpecial(SPCFLAG_MFP);				/* CPU part should call MFP_Delay_IRQ() */
+#endif
 
 	/* Update IRQ is done, reset Time_Min and UpdateNeeded */
 	MFP_Pending_Time_Min = UINT64_MAX;
