@@ -529,20 +529,8 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 		pendingInterrupts |= (1 << intnr);
 		M68000_SetSpecial(SPCFLAG_INT);
 	}
-#else
-	if ( ( ( ExceptionSource == M68000_EXC_SRC_AUTOVEC ) || ( ExceptionSource == M68000_EXC_SRC_INT_MFP )
-	       || ( ExceptionSource == M68000_EXC_SRC_INT_DSP ) )
-		&& ( ExceptionNr > 24 && ExceptionNr < 32 ) )	/* Level 1-7 interrupts */
-	{
-		/* In our case, this part is called for HBL, VBL and MFP/DSP interrupts */
-		/* (see intlev() and do_specialties() in UAE CPU core) */
-		int intnr = ExceptionNr - 24;
-		pendingInterrupts |= (1 << intnr);
-		doint();
-	}
-#endif
 
-	else							/* direct CPU exceptions */
+	else							/* MFP or direct CPU exceptions */
 	{
 		Uint16 SR;
 
@@ -554,26 +542,34 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 		}
 
 		/* 68k exceptions are handled by Exception() of the UAE CPU core */
-#if ENABLE_WINUAE_CPU
-		Exception(ExceptionNr);
-#else
 		Exception(ExceptionNr, m68k_getpc(), ExceptionSource);
-#endif
-		SR = M68000_GetSR();
 
 		/* Set Status Register so interrupt can ONLY be stopped by another interrupt
-		 * of higher priority! */
-		if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
+		 * of higher priority */
+		if ( (ExceptionSource == M68000_EXC_SRC_INT_MFP)
+		  || (ExceptionSource == M68000_EXC_SRC_INT_DSP) )
 		{
-			SR = (SR&SR_CLEAR_IPL)|0x0600;		/* MFP, level 6 */
+			SR = M68000_GetSR();
+			SR = (SR&SR_CLEAR_IPL)|0x0600;		/* MFP or DSP, level 6 */
+			M68000_SetSR(SR);
 		}
-		else if (ExceptionSource == M68000_EXC_SRC_INT_DSP)
-		{
-			SR = (SR&SR_CLEAR_IPL)|0x0600;		/* DSP, level 6 */
-		}
-
-		M68000_SetSR(SR);
 	}
+
+#else
+	if ( ExceptionNr > 24 && ExceptionNr < 32 )		/* Level 1-7 interrupts */
+	{
+		/* In our case, this part is called for HBL, VBL and MFP/DSP interrupts */
+		/* (see intlev() and do_specialties() in UAE CPU core) */
+		int intnr = ExceptionNr - 24;
+		pendingInterrupts |= (1 << intnr);
+		doint();
+	}
+
+	else							/* direct CPU exceptions */
+	{
+		Exception(ExceptionNr);
+	}
+#endif
 }
 
 
