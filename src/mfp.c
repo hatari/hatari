@@ -410,7 +410,11 @@ static void MFP_Exception ( int Interrupt )
 			Interrupt, VecNr * 4, STMemory_ReadLong ( VecNr * 4 ), FrameCycles, LineCycles, HblCounterVideo );
 	}
 
+#ifndef WINUAE_FOR_HATARI
+	M68000_Exception(VecNr, M68000_EXC_SRC_INT_MFP);
+#else
 	M68000_Exception(EXCEPTION_NR_MFP_DSP, M68000_EXC_SRC_INT_MFP);
+#endif
 }
 
 
