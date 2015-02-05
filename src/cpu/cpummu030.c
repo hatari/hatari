@@ -311,11 +311,7 @@ bool mmu_op30_ptest (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecptr extra)
      */
     if (!level && a) { /* correct ? */
         write_log(_T("PTEST: Bad instruction causing F-line unimplemented instruction exception!\n"));
-#ifndef WINUAE_FOR_HATARI
         Exception(11); /* F-line unimplemented instruction exception */
-#else
-        Exception(11, M68000_EXC_SRC_CPU); /* F-line unimplemented instruction exception */
-#endif
         return true;
     }
         
@@ -773,11 +769,7 @@ bool mmu030_decode_tc(uae_u32 TC)
 	if (mmu030.translation.page.size<8) {
         write_log(_T("MMU Configuration Exception: Bad value in TC register! (bad page size: %i byte)\n"),
                   1<<mmu030.translation.page.size);
-#ifndef WINUAE_FOR_HATARI
         Exception(56); /* MMU Configuration Exception */
-#else
-        Exception(56, M68000_EXC_SRC_CPU); /* MMU Configuration Exception */
-#endif
 	return true;
     }
 	mmu030.translation.page.mask = regs.mmu_page_size - 1;
@@ -826,11 +818,7 @@ bool mmu030_decode_tc(uae_u32 TC)
      * shift has to be 32: IS + PS + TIA + TIB + TIC + TID = 32 */
     if ((shift-mmu030.translation.page.size)!=0) {
         write_log(_T("MMU Configuration Exception: Bad value in TC register! (bad sum)\n"));
-#ifndef WINUAE_FOR_HATARI
         Exception(56); /* MMU Configuration Exception */
-#else
-        Exception(56, M68000_EXC_SRC_CPU); /* MMU Configuration Exception */
-#endif
         return true;
     }
     
@@ -894,11 +882,7 @@ bool mmu030_decode_rp(uae_u64 RP) {
     uae_u8 descriptor_type = (RP & RP_DESCR_MASK) >> 32;
     if (!descriptor_type) { /* If descriptor type is invalid */
         write_log(_T("MMU Configuration Exception: Root Pointer is invalid!\n"));
-#ifndef WINUAE_FOR_HATARI
         Exception(56); /* MMU Configuration Exception */
-#else
-        Exception(56, M68000_EXC_SRC_CPU); /* MMU Configuration Exception */
-#endif
 	return true;
     }
 	return false;

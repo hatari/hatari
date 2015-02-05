@@ -3013,14 +3013,14 @@ static void gen_opcode (unsigned int opcode)
 
 		/* fall through */
 	case 2: /* priviledged */
-		printf ("if (!regs.s) { Exception (8, M68000_EXC_SRC_CPU); goto %s; }\n", endlabelstr);
+		printf ("if (!regs.s) { Exception (8); goto %s; }\n", endlabelstr);
 		need_endlabel = 1;
 		start_brace ();
 		break;
 	case 3: /* privileged if size == word */
 		if (curi->size == sz_byte)
 			break;
-		printf ("if (!regs.s) { Exception (8, M68000_EXC_SRC_CPU); goto %s; }\n", endlabelstr);
+		printf ("if (!regs.s) { Exception (8); goto %s; }\n", endlabelstr);
 		need_endlabel = 1;
 		start_brace ();
 		break;
@@ -3713,7 +3713,7 @@ static void gen_opcode (unsigned int opcode)
 		genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 		gen_set_fault_pc ();
 		sync_m68k_pc ();
-		printf ("\tException (src + 32, M68000_EXC_SRC_CPU);\n");
+		printf ("\tException (src + 32);\n");
 		did_prefetch = 1;
 		m68k_pc_offset = 0;
 		break;
@@ -3757,9 +3757,9 @@ static void gen_opcode (unsigned int opcode)
 	case i_LPSTOP: /* 68060 */
 		printf ("\tuae_u16 sw = %s (2);\n", srcwi);
 		printf ("\tuae_u16 sr;\n");
-		printf ("\tif (sw != (0x100|0x80|0x40)) { Exception (4, M68000_EXC_SRC_CPU); goto %s; }\n", endlabelstr);
+		printf ("\tif (sw != (0x100|0x80|0x40)) { Exception (4); goto %s; }\n", endlabelstr);
 		printf ("\tsr = %s (4);\n", srcwi);
-		printf ("\tif (!(sr & 0x8000)) { Exception (8, M68000_EXC_SRC_CPU); goto %s; }\n", endlabelstr);
+		printf ("\tif (!(sr & 0x8000)) { Exception (8); goto %s; }\n", endlabelstr);
 		printf ("\tregs.sr = sr;\n");
 		makefromsr ();
 		printf ("\tm68k_setstopped();\n");
@@ -3796,7 +3796,7 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\t\tnewsr = sr; newpc = pc;\n");
 		    printf ("\t\tif (frame == 0x0) { m68k_areg (regs, 7) += offset; break; }\n");
 		    printf ("\t\telse if (frame == 0x8) { m68k_areg (regs, 7) += offset + 50; break; }\n");
-		    printf ("\t\telse { m68k_areg (regs, 7) += offset; Exception (14, M68000_EXC_SRC_CPU); goto %s; }\n", endlabelstr);
+		    printf ("\t\telse { m68k_areg (regs, 7) += offset; Exception (14); goto %s; }\n", endlabelstr);
 		    printf ("\t\tregs.sr = newsr; MakeFromSR ();\n}\n");
 		    pop_braces (old_brace_level);
 		    printf ("\tregs.sr = newsr;\n");
@@ -3845,7 +3845,7 @@ static void gen_opcode (unsigned int opcode)
 				printf ("\t\telse if (frame == 0xa) { m68k_areg (regs, 7) += offset + 24; break; }\n");
 			    printf ("\t\telse if (frame == 0xb) { m68k_areg (regs, 7) += offset + 84; break; }\n");
 			}
-		    printf ("\t\telse { m68k_areg (regs, 7) += offset; Exception (14, M68000_EXC_SRC_CPU); goto %s; }\n", endlabelstr);
+		    printf ("\t\telse { m68k_areg (regs, 7) += offset; Exception (14); goto %s; }\n", endlabelstr);
 		    printf ("\t\tregs.sr = newsr;\n");
 			makefromsr ();
 			printf ("}\n");
@@ -3959,7 +3959,7 @@ static void gen_opcode (unsigned int opcode)
 		sync_m68k_pc ();
 		fill_prefetch_next ();
 		printf ("\tif (GET_VFLG ()) {\n");
-		printf ("\t\tException (7, M68000_EXC_SRC_CPU);\n");
+		printf ("\t\tException (7);\n");
 		printf ("\t\tgoto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		need_endlabel = 1;
@@ -4281,7 +4281,7 @@ bccl_not68020:
 		if (cpu_level > 1)
 			printf ("\t\tdivbyzero_special (0, dst);\n");
 		incpc ("%d", m68k_pc_offset);
-		printf ("\t\tException (5, M68000_EXC_SRC_CPU);\n");
+		printf ("\t\tException (5);\n");
 		printf ("\t\tgoto %s;\n", endlabelstr);
 		printf ("\t} else {\n");
 		printf ("\t\tuae_u32 newv = (uae_u32)dst / (uae_u32)(uae_u16)src;\n");
@@ -4325,7 +4325,7 @@ bccl_not68020:
 		if (cpu_level > 1)
 			printf ("\t\tdivbyzero_special (1, dst);\n");
 		incpc ("%d", m68k_pc_offset);
-		printf ("\t\tException (5, M68000_EXC_SRC_CPU);\n");
+		printf ("\t\tException (5);\n");
 		printf ("\t\tgoto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		printf ("\tCLEAR_CZNV ();\n");
@@ -4422,13 +4422,13 @@ bccl_not68020:
 		addcycles000 (4);
 		printf ("\tif (dst > src) {\n");
 		printf ("\t\tSET_NFLG (0);\n");
-		printf ("\t\tException (6, M68000_EXC_SRC_CPU);\n");
+		printf ("\t\tException (6);\n");
 		printf ("\t\tgoto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		addcycles000 (2);
 		printf ("\tif ((uae_s32)dst < 0) {\n");
 		printf ("\t\tSET_NFLG (1);\n");
-		printf ("\t\tException (6, M68000_EXC_SRC_CPU);\n");
+		printf ("\t\tException (6);\n");
 		printf ("\t\tgoto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		fill_prefetch_next ();
@@ -4456,7 +4456,7 @@ bccl_not68020:
 		}
 		printf ("\tSET_ZFLG (upper == reg || lower == reg);\n");
 		printf ("\tSET_CFLG_ALWAYS (lower <= upper ? reg < lower || reg > upper : reg > upper || reg < lower);\n");
-		printf ("\tif ((extra & 0x800) && GET_CFLG ()) { Exception (6, M68000_EXC_SRC_CPU); goto %s; }\n}\n", endlabelstr);
+		printf ("\tif ((extra & 0x800) && GET_CFLG ()) { Exception (6); goto %s; }\n}\n", endlabelstr);
 		need_endlabel = 1;
 		break;
 
@@ -5051,7 +5051,7 @@ bccl_not68020:
 		if (curi->smode != am_unknown && curi->smode != am_illg)
 			genamode (curi, curi->smode, "srcreg", curi->size, "dummy", 1, 0, 0);
 		fill_prefetch_0 ();
-		printf ("\tif (cctrue (%d)) { Exception (7, M68000_EXC_SRC_CPU); goto %s; }\n", curi->cc, endlabelstr);
+		printf ("\tif (cctrue (%d)) { Exception (7); goto %s; }\n", curi->cc, endlabelstr);
 		need_endlabel = 1;
 		break;
 	case i_DIVL:

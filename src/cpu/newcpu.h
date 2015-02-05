@@ -18,6 +18,7 @@
 #include "custom.h"
 
 /* Possible exceptions sources for M68000_Exception() and Exception() */
+// TODO : remove when not used anymore in m68000.c
 #define M68000_EXC_SRC_CPU	1	/* Direct CPU exception */
 #define M68000_EXC_SRC_AUTOVEC	2	/* Auto-vector exception (e.g. VBL) */
 #define M68000_EXC_SRC_INT_MFP	3	/* MFP interrupt exception */
@@ -560,13 +561,8 @@ extern void flush_cpu_caches_040(uae_u16 opcode);
 extern void REGPARAM3 MakeSR (void) REGPARAM;
 extern void SetSR (uae_u16 sr);
 extern void REGPARAM3 MakeFromSR (void) REGPARAM;
-#ifndef WINUAE_FOR_HATARI
 extern void REGPARAM3 Exception (int) REGPARAM;
 extern void REGPARAM3 ExceptionL (int, uaecptr) REGPARAM;
-#else
-extern void REGPARAM3 Exception (int, int) REGPARAM;
-extern void REGPARAM3 ExceptionL (int, uaecptr, int) REGPARAM;
-#endif
 extern void NMI (void);
 extern void NMI_delayed (void);
 extern void prepare_interrupt (uae_u32);
@@ -688,16 +684,18 @@ extern bool is_cpu_tracer (void);
 extern bool set_cpu_tracer (bool force);
 extern bool can_cpu_tracer (void);
 
+#ifdef WINUAE_FOR_HATARI
 /*** Hatari ***/
 
 /* Family of the latest instruction executed (to check for pairing) */
 extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
 
 /* How many cycles to add to the current instruction in case a "misaligned" bus acces is made */
-/* (used when addressing mode is d8(an,ix)) */
+/* (e.g. used when addressing mode is d8(an,ix)) */
 extern int BusCyclePenalty;
 
 /*** Hatari ***/
+#endif
 
 #endif
 

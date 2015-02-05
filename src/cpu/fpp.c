@@ -1954,11 +1954,7 @@ void fpuop_trapcc (uae_u32 opcode, uaecptr oldpc, uae_u16 extra)
 	if (cc < 0) {
 		fpu_op_illg (opcode, extra, oldpc);
 	} else if (cc) {
-#ifndef WINUAE_FOR_HATARI
 		Exception (7);
-#else
-		Exception (7, M68000_EXC_SRC_CPU);
-#endif
 	}
 }
 

@@ -2180,11 +2180,7 @@ Interrupt:
 
 */
 
-#ifndef WINUAE_FOR_HATARI
 static int iack_cycle(int nr)
-#else
-static int iack_cycle(int nr,int ExceptionSource)
-#endif
 {
 	int vector;
 
@@ -2212,7 +2208,6 @@ static int iack_cycle(int nr,int ExceptionSource)
 	/* - Level 2 (HBL) and 4 (VBL) use auto-vectored interrupts and require sync with E-clock */
 	vector = nr;
 	if ( nr == 30 )								/* MFP or DSP */
-//	if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
         {
 		vector = -1;
 		if (bDspEnabled)						/* Check DSP first */
@@ -2258,11 +2253,7 @@ static int iack_cycle(int nr,int ExceptionSource)
 	return vector;
 }
 
-#ifndef WINUAE_FOR_HATARI
 static void Exception_ce000 (int nr)
-#else
-static void Exception_ce000 (int nr, int ExceptionSource)
-#endif
 {
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int sv = regs.s;
@@ -2349,7 +2340,7 @@ currcycle=0;
 		m68k_areg (regs, 7) -= 8;
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
 		if (interrupt)
-			vector_nr = iack_cycle(nr,ExceptionSource);
+			vector_nr = iack_cycle(nr);
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
 		x_put_word (m68k_areg (regs, 7) + 6, vector_nr * 4);
@@ -2357,7 +2348,7 @@ currcycle=0;
 		m68k_areg (regs, 7) -= 6;
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
 		if (interrupt)
-			vector_nr = iack_cycle(nr,ExceptionSource);
+			vector_nr = iack_cycle(nr);
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
 	}
@@ -2387,7 +2378,6 @@ kludge_me_do:
 	M68000_AddCycles(currcycle * 2 / CYCLE_UNIT);
 
 	/* Handle exception cycles (special case for MFP) */
-//	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
 	if ( nr == 30 ) {
 		//M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
 		M68000_AddCycles(44-36);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
@@ -2574,11 +2564,7 @@ static void Exception_build_stack_frame (uae_u32 oldpc, uae_u32 currpc, uae_u32 
 
 
 // 68030 MMU
-#ifndef WINUAE_FOR_HATARI
 static void Exception_mmu030 (int nr, uaecptr oldpc)
-#else
-static void Exception_mmu030 (int nr, uaecptr oldpc, int ExceptionSource)
-#endif
 {
     uae_u32 currpc = m68k_getpc (), newpc;
 	int interrupt;
@@ -2592,7 +2578,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc, int ExceptionSource)
 
 #ifdef WINUAE_FOR_HATARI
 	if (interrupt)
-		nr = iack_cycle(nr,ExceptionSource);
+		nr = iack_cycle(nr);
 #endif
 
 #ifdef WINUAE_FOR_HATARI
@@ -2656,11 +2642,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc, int ExceptionSource)
 }
 
 // 68040/060 MMU
-#ifndef WINUAE_FOR_HATARI
 static void Exception_mmu (int nr, uaecptr oldpc)
-#else
-static void Exception_mmu (int nr, uaecptr oldpc, int ExceptionSource)
-#endif
 {
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int interrupt;
@@ -2674,7 +2656,7 @@ static void Exception_mmu (int nr, uaecptr oldpc, int ExceptionSource)
 
 #ifdef WINUAE_FOR_HATARI
 	if (interrupt)
-		nr = iack_cycle(nr,ExceptionSource);
+		nr = iack_cycle(nr);
 #endif
 
 #ifdef WINUAE_FOR_HATARI
@@ -2735,11 +2717,7 @@ static void Exception_mmu (int nr, uaecptr oldpc, int ExceptionSource)
 	exception_trace (nr);
 }
 
-#ifndef WINUAE_FOR_HATARI
 static void add_approximate_exception_cycles(int nr)
-#else
-static void add_approximate_exception_cycles(int nr,int ExceptionSource)
-#endif
 {
 	int cycles;
 
@@ -2753,7 +2731,6 @@ static void add_approximate_exception_cycles(int nr,int ExceptionSource)
 	if ( nr >= 24 && nr <= 31 ) {
 		/* Atari's specific interrupts */
 		if ( nr == 30 )					/* MFP/DSP */
-		//if ( ExceptionSource == M68000_EXC_SRC_INT_MFP )					/* MFP */
 			cycles = 44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_MFP;
 		else if ( nr == 28 )				/* VBL */
 			cycles = 44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO;
@@ -2790,46 +2767,35 @@ static void add_approximate_exception_cycles(int nr,int ExceptionSource)
 	x_do_cycles(cycles);
 }
 
-#ifndef WINUAE_FOR_HATARI
 static void Exception_normal (int nr)
-#else
-static void Exception_normal (int nr , int ExceptionSource)
-#endif
 {
 	uae_u32 currpc, newpc;
 	int sv = regs.s;
 	int interrupt;
 	int vector_nr = nr;
 
-#ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
-#else
-	if ( nr >= 24 && nr < 24 + 8 )
-		interrupt = 1;
-#endif
 
 /* [NP] TODO : factorize in Hatari_Exception_Intercept() */
 #ifdef WINUAE_FOR_HATARI
-	if (ExceptionSource == M68000_EXC_SRC_CPU) {
-		if (nr == 0x22) {
-			/* Intercept VDI & AES exceptions (Trap #2) */
-			if (bVdiAesIntercept && VDI_AES_Entry()) {
-				/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
-				 * This will call OpCode_VDI() after completion of Trap call!
-				 * This is used to modify specific VDI return vectors contents.
-				*/
-				VDI_OldPC = currpc;
-				currpc = CART_VDI_OPCODE_ADDR;
-			}
+	if (nr == 0x22) {
+		/* Intercept VDI & AES exceptions (Trap #2) */
+		if (bVdiAesIntercept && VDI_AES_Entry()) {
+			/* Set 'PC' to address of 'VDI_OPCODE' illegal instruction.
+			 * This will call OpCode_VDI() after completion of Trap call!
+			 * This is used to modify specific VDI return vectors contents.
+			*/
+			VDI_OldPC = currpc;
+			currpc = CART_VDI_OPCODE_ADDR;
 		}
-		else if (nr == 0x2d) {
-			/* Intercept BIOS (Trap #13) calls */
-			if (Bios())  return;
-		}
-		else if (nr == 0x2e) {
-			/* Intercept XBIOS (Trap #14) calls */
-			if (XBios())  return;
-		}
+	}
+	else if (nr == 0x2d) {
+		/* Intercept BIOS (Trap #13) calls */
+		if (Bios())  return;
+	}
+	else if (nr == 0x2e) {
+		/* Intercept XBIOS (Trap #14) calls */
+		if (XBios())  return;
 	}
 #endif
 
@@ -2838,7 +2804,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 #else
 	if (interrupt)
 #endif
-		vector_nr = iack_cycle(nr,ExceptionSource);
+		vector_nr = iack_cycle(nr);
 
 	exception_debug (nr);
 	MakeSR ();
@@ -2994,7 +2960,7 @@ static void Exception_normal (int nr , int ExceptionSource)
 			x_put_word (m68k_areg (regs, 7), vector_nr * 4);
 		}
 	} else {
-		add_approximate_exception_cycles(nr,ExceptionSource);
+		add_approximate_exception_cycles(nr);
 		currpc = m68k_getpc ();
 #ifdef WINUAE_FOR_HATARI
 		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d vector %x currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
@@ -3044,84 +3010,11 @@ kludge_me_do:
 #endif
 	fill_prefetch ();
 	exception_trace (nr);
-
-#ifdef WINUAE_FOR_HATARI
-#if 0		// TODO remove, done in add_approximate_exception_cycles()
-	/* Handle exception cycles (special case for MFP) */
-	if (ExceptionSource == M68000_EXC_SRC_INT_MFP) {
-		M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
-	}
-	else if (nr >= 24 && nr <= 31) {
-		if ( nr == 26 )					/* HBL */
-			M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
-		else if ( nr == 28 ) 				/* VBL */
-			M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
-		else
-			M68000_AddCycles(44+4);			/* Other Interrupts */
-		}
-	else if(nr >= 32 && nr <= 47) {
-		M68000_AddCycles(34-4);				/* Trap (total is 34, but cpuemu.c already adds 4) */
-	}
-	else switch(nr) {
-		case 2: M68000_AddCycles(50); break;		/* Bus error */
-		case 3: M68000_AddCycles(50); break;		/* Address error */
-		case 4: M68000_AddCycles(34); break;		/* Illegal instruction */
-		case 5: M68000_AddCycles(38); break;		/* Div by zero */
-		case 6: M68000_AddCycles(40); break;		/* CHK */
-		case 7: M68000_AddCycles(34); break;		/* TRAPV */
-		case 8: M68000_AddCycles(34); break;		/* Privilege violation */
-		case 9: M68000_AddCycles(34); break;		/* Trace */
-		case 10: M68000_AddCycles(34); break;		/* Line-A - probably wrong */
-		case 11: M68000_AddCycles(34); break;		/* Line-F - probably wrong */
-		default:
-		/* FIXME: Add right cycles value for MFP interrupts and copro exceptions ... */
-		if(nr < 64)
-			M68000_AddCycles(4);			/* Coprocessor and unassigned exceptions (???) */
-		else
-			M68000_AddCycles(44+12);		/* Must be a MFP or DSP interrupt */
-		break;
-	}
-#endif
-#endif
 }
 
 // address = format $2 stack frame address field
-#ifndef WINUAE_FOR_HATARI
 static void ExceptionX (int nr, uaecptr address)
-#else
-/* Handle exceptions. We need a special case to handle MFP exceptions */
-/* on Atari ST, because it's possible to change the MFP's vector base */
-/* and get a conflict with 'normal' cpu exceptions. */
-static void ExceptionX (int nr, uaecptr address, int ExceptionSource)
-#endif
 {
-#ifdef WINUAE_FOR_HATARI
-#if 0		// TODO remove, done in iack_cycle()
-	/* Pending bits / vector number can change before the end of the IACK sequence. */
-	/* We need to handle MFP and HBL/VBL cases for this. */
-	if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
-	{
-		M68000_AddCycles(CPU_IACK_CYCLES_MFP);
-		CPU_IACK = true;
-		while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-			CALL_VAR(PendingInterruptFunction);
-		nr = MFP_ProcessIACK(nr);
-		CPU_IACK = false;
-	}
-	else if (ExceptionSource == M68000_EXC_SRC_AUTOVEC && (nr == 26 || nr == 28))
-	{
-		M68000_AddCycles(CPU_IACK_CYCLES_VIDEO);
-		CPU_IACK = true;
-		while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-			CALL_VAR(PendingInterruptFunction);
-		if (MFP_UpdateNeeded == true)
-			MFP_UpdateIRQ(0);			/* update MFP's state if some internal timers related to MFP expired */
-		pendingInterrupts &= ~(1 << (nr - 24));		/* clear HBL or VBL pending bit */
-		CPU_IACK = false;
-	}
-#endif
-#endif
-
 	regs.exception = nr;
 	if (cpu_tracer) {
 		cputrace.state = nr;
@@ -3133,16 +3026,16 @@ static void ExceptionX (int nr, uaecptr address, int ExceptionSource)
 #endif
 #ifdef CPUEMU_13
 	if (currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010)
-		Exception_ce000 (nr, ExceptionSource);
+		Exception_ce000 (nr);
 	else
 #endif
 		if (currprefs.mmu_model) {
 			if (currprefs.cpu_model == 68030)
-				Exception_mmu030 (nr, m68k_getpc (), ExceptionSource);	/* [NP] TODO : add ExceptionSource */
+				Exception_mmu030 (nr, m68k_getpc ());
 			else
-				Exception_mmu (nr, m68k_getpc (), ExceptionSource);	/* [NP] TODO : add ExceptionSource */
+				Exception_mmu (nr, m68k_getpc ());
 		} else {
-			Exception_normal (nr, ExceptionSource);
+			Exception_normal (nr);
 		}
 
 #ifndef WINUAE_FOR_HATARI
@@ -3159,28 +3052,16 @@ static void ExceptionX (int nr, uaecptr address, int ExceptionSource)
 	}
 }
 
-#ifndef WINUAE_FOR_HATARI
 void REGPARAM2 Exception (int nr)
-#else
-void REGPARAM2 Exception (int nr, int ExceptionSource)
-#endif
 {
-	ExceptionX (nr, -1, ExceptionSource);
+	ExceptionX (nr, -1);
 }
-#ifndef WINUAE_FOR_HATARI
 void REGPARAM2 ExceptionL (int nr, uaecptr address)
-#else
-void REGPARAM2 ExceptionL (int nr, uaecptr address, int ExceptionSource)
-#endif
 {
-	ExceptionX (nr, address, ExceptionSource);
+	ExceptionX (nr, address);
 }
 
-#ifndef WINUAE_FOR_HATARI
 static void do_interrupt (int nr)
-#else
-static void do_interrupt (int nr, int Pending)
-#endif
 {
 #ifndef WINUAE_FOR_HATARI
 	if (debug_dma)
@@ -3198,15 +3079,7 @@ static void do_interrupt (int nr, int Pending)
 	unset_special (SPCFLAG_STOP);
 	assert (nr < 8 && nr >= 0);
 
-#ifndef WINUAE_FOR_HATARI
 	Exception (nr + 24);
-#else
-	/* On Hatari, only video ints are using SPCFLAG_INT (see m68000.c) */
-	if ( nr == 6 )
-		Exception (nr + 24, M68000_EXC_SRC_INT_MFP);
-	else
-		Exception (nr + 24, M68000_EXC_SRC_AUTOVEC);
-#endif
 
 	regs.intmask = nr;
 	doint ();
@@ -3214,11 +3087,7 @@ static void do_interrupt (int nr, int Pending)
 
 void NMI (void)
 {
-#ifndef WINUAE_FOR_HATARI
 	do_interrupt (7);
-#else
-	do_interrupt (7, false);
-#endif
 }
 
 static void m68k_reset_sr(void)
@@ -3342,11 +3211,7 @@ void REGPARAM2 op_unimpl (uae_u16 opcode)
 		write_log (_T("68060 unimplemented opcode %04X, PC=%08x\n"), opcode, regs.instruction_pc);
 		warned++;
 	}
-#ifndef WINUAE_FOR_HATARI
 	ExceptionL (61, regs.instruction_pc);
-#else
-	ExceptionL (61, regs.instruction_pc, M68000_EXC_SRC_CPU);
-#endif
 }
 
 uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
@@ -3394,11 +3259,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 			write_log(_T("B-Trap %04X at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x2c));
 			warned++;
 		}
-#ifndef WINUAE_FOR_HATARI
 		Exception (0xB);
-#else
-		Exception (0xB, M68000_EXC_SRC_CPU);
-#endif
 		//activate_debugger ();
 		return 4;
 	}
@@ -3407,11 +3268,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 			write_log(_T("A-Trap %04X at %08X -> %08X\n"), opcode, pc, get_long_debug(regs.vbr + 0x28));
 			warned++;
 		}
-#ifndef WINUAE_FOR_HATARI
 		Exception (0xA);
-#else
-		Exception (0xA, M68000_EXC_SRC_CPU);
-#endif
 		//activate_debugger();
 		return 4;
 	}
@@ -3421,11 +3278,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 		//activate_debugger();
 	}
 
-#ifndef WINUAE_FOR_HATARI
 	Exception (4);
-#else
-	Exception (4, M68000_EXC_SRC_CPU);
-#endif
 	return 4;
 }
 
@@ -3921,7 +3774,7 @@ static bool do_specialties_interrupt (int Pending)
 //	unset_special (SPCFLAG_DOINT);
 	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 	if (intr != -1 && intr > regs.intmask) {
-	    do_interrupt (intr , Pending);			/* process the interrupt and add pending jitter if necessary */
+	    do_interrupt (intr);			/* process the interrupt */
 	    return true;
 	}
     }
@@ -4032,24 +3885,16 @@ static int do_specialties (int cycles)
 		* functions since the PC should point to the address of the next
 		* instruction, so we're executing the bus errors here: */
 		unset_special(SPCFLAG_BUSERROR);
-		Exception(2, M68000_EXC_SRC_CPU);
+		Exception(2);
 	}
 #endif
 
 	if (regs.spcflags & SPCFLAG_DOTRACE)
-#ifndef WINUAE_FOR_HATARI
 		Exception (9);
-#else
-		Exception (9, M68000_EXC_SRC_CPU);
-#endif
 
 	if (regs.spcflags & SPCFLAG_TRAP) {
 		unset_special (SPCFLAG_TRAP);
-#ifndef WINUAE_FOR_HATARI
 		Exception (3);
-#else
-		Exception (3, M68000_EXC_SRC_CPU);
-#endif
 	}
 	while ((regs.spcflags & SPCFLAG_STOP) && !(regs.spcflags & SPCFLAG_BRK)) {
 
@@ -4107,11 +3952,7 @@ isstopped:
 		if (m68k_interrupt_delay) {
 			ipl_fetch ();
 			if (time_for_interrupt ()) {
-#ifndef WINUAE_FOR_HATARI
 				do_interrupt (regs.ipl);
-#else
-				do_interrupt (regs.ipl, true);
-#endif
 			}
 		} else {
 			if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
@@ -4125,11 +3966,7 @@ isstopped:
 				if (m68kint) {
 #endif
 					if (intr > 0 && intr > regs.intmask)
-#ifndef WINUAE_FOR_HATARI
 						do_interrupt (intr);
-#else
-						do_interrupt (intr, true);
-#endif
 #ifdef WITH_PPC
 				}
 #endif
@@ -4162,22 +3999,14 @@ isstopped:
 
 	if (m68k_interrupt_delay) {
 		if (time_for_interrupt ()) {
-#ifndef WINUAE_FOR_HATARI
 			do_interrupt (regs.ipl);
-#else
-			do_interrupt (regs.ipl, true);
-#endif
 		}
 	} else {
 		if (regs.spcflags & SPCFLAG_INT) {
 			int intr = intlev ();
 			unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 			if (intr > 0 && (intr > regs.intmask || intr == 7))
-#ifndef WINUAE_FOR_HATARI
 				do_interrupt (intr);
-#else
-				do_interrupt (intr, false);	/* call do_interrupt() with Pending=false, not necessarily true but harmless */
-#endif
 		}
 	}
 
@@ -4295,11 +4124,7 @@ static void out_cd32io (uae_u32 pc)
 static void bus_error(void)
 {
 	TRY (prb2) {
-#ifndef WINUAE_FOR_HATARI
 		Exception (2);
-#else
-		Exception (2 , M68000_EXC_SRC_CPU);
-#endif
 	} CATCH (prb2) {
 		cpu_halt (1);
 	} ENDTRY
@@ -4440,11 +4265,7 @@ retry:
 				if (!r->stopped) {
 					if (cputrace.state > 1) {
 						write_log (_T("CPU TRACE: EXCEPTION %d\n"), cputrace.state);
-#ifndef WINUAE_FOR_HATARI
 						Exception (cputrace.state);
-#else
-				Exception (cputrace.state, M68000_EXC_SRC_CPU);
-#endif
 					} else if (cputrace.state == 1) {
 						write_log (_T("CPU TRACE: %04X\n"), cputrace.opcode);
 						(*cpufunctbl[cputrace.opcode])(cputrace.opcode);
@@ -4836,11 +4657,7 @@ retry:
 		}
 
 		TRY (prb2) {
-#ifndef WINUAE_FOR_HATARI
 			Exception (prb);
-#else
-			Exception (prb, M68000_EXC_SRC_CPU);
-#endif
 		} CATCH (prb2) {
 			cpu_halt (1);
 			return;
@@ -4937,11 +4754,7 @@ retry:
 		}
 
 		TRY (prb2) {
-#ifndef WINUAE_FOR_HATARI
 			Exception (prb);
-#else
-			Exception (prb, M68000_EXC_SRC_CPU);
-#endif
 		} CATCH (prb2) {
 			cpu_halt (1);
 			return;
@@ -5073,11 +4886,7 @@ insretry:
 		}
 
 		TRY (prb2) {
-#ifndef WINUAE_FOR_HATARI
 			Exception (prb);
-#else
-			Exception (prb, M68000_EXC_SRC_CPU);
-#endif
 		} CATCH (prb2) {
 			cpu_halt (1);
 			return;
@@ -5273,11 +5082,7 @@ retry:
 				m68k_setpc (cputrace.pc);
 				if (!r->stopped) {
 					if (cputrace.state > 1)
-#ifndef WINUAE_FOR_HATARI
 						Exception (cputrace.state);
-#else
-						Exception (cputrace.state, M68000_EXC_SRC_CPU);
-#endif
 					else if (cputrace.state == 1)
 						(*cpufunctbl[cputrace.opcode])(cputrace.opcode);
 				}
@@ -5620,11 +5425,7 @@ static void exception2_handle (uaecptr addr, uaecptr fault)
 	last_fault_for_exception_3 = fault;
 	last_writeaccess_for_exception_3 = 0;
 	last_instructionaccess_for_exception_3 = 0;
-#ifndef WINUAE_FOR_HATARI
 	Exception (2);
-#else
-	Exception (2, M68000_EXC_SRC_CPU);
-#endif
 }
 
 static bool cpu_hardreset, cpu_keyboardreset;
@@ -7201,11 +7002,7 @@ static void exception3f (uae_u32 opcode, uaecptr addr, int writeaccess, int inst
 	last_op_for_exception_3 = opcode;
 	last_writeaccess_for_exception_3 = writeaccess;
 	last_instructionaccess_for_exception_3 = instructionaccess;
-#ifndef WINUAE_FOR_HATARI
 	Exception (3);
-#else
-	Exception (3, M68000_EXC_SRC_CPU);
-#endif
 #if EXCEPTION3_DEBUGGER
 	activate_debugger();
 #endif

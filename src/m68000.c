@@ -64,6 +64,9 @@
 /* 2015/02/01	[NP]	When using the new WinUAE's cpu, don't handle MFP/DSP interrupts by calling	*/
 /*			directly Exception(), we must set bit 6 in pendingInterrupts and use the IACK	*/
 /*			sequence to get the exception's vector number.					*/
+/* 2015/02/05	[NP]	For the new WinUAE's cpu, don't use ExceptionSource anymore when calling	*/
+/*			Exception().									*/
+
 
 const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 
@@ -552,17 +555,9 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 
 		/* 68k exceptions are handled by Exception() of the UAE CPU core */
 #if ENABLE_WINUAE_CPU
-#ifdef WINUAE_FOR_HATARI
-		Exception(ExceptionNr, ExceptionSource);
+		Exception(ExceptionNr);
 #else
 		Exception(ExceptionNr, m68k_getpc(), ExceptionSource);
-#endif
-#else
-#ifdef UAE_NEWCPU_H
-		Exception(ExceptionNr, m68k_getpc(), ExceptionSource);
-#else
-		Exception(ExceptionNr, &regs, m68k_getpc(&regs));
-#endif
 #endif
 		SR = M68000_GetSR();
 

@@ -267,10 +267,10 @@ bool NatFeat_Call(Uint32 stack, bool super, Uint32 *retval)
 	}
 	if (features[idx].super && !super) {
 		LOG_TRACE(TRACE_NATFEATS, "ERROR: NF function %d called without supervisor mode\n", idx);
-#ifdef WINUAE_FOR_HATARI
-		Exception(8, M68000_EXC_SRC_CPU);
+#ifndef WINUAE_FOR_HATARI
+		M68000_Exception(8, M68000_EXC_SRC_CPU);
 #else
-		Exception(8, 0, M68000_EXC_SRC_CPU);
+		M68000_Exception(8, M68000_EXC_SRC_CPU);
 #endif
 		return false;
 	}

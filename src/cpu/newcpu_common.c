@@ -807,11 +807,7 @@ bool m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra)
 		return false;
 	}
 	if (src == 0) {
-#ifndef WINUAE_FOR_HATARI
 		Exception (5);
-#else
-		Exception (5, M68000_EXC_SRC_CPU);
-#endif
 		return false;
 	}
 #if defined (uae_s64)
