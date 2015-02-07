@@ -370,6 +370,7 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 		if (strcmp(filename, ConfigureParams.DiskImage.szDiskFileName[i]) == 0)
 		{
 			Log_AlertDlg(LOG_ERROR, "ERROR: Cannot insert same floppy to multiple drives!");
+			free(filename);
 			return NULL;
 		}
 	}

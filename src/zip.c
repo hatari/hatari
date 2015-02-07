@@ -97,7 +97,7 @@ zip_dir *ZIP_GetFiles(const char *pszFileName)
 	char **filelist;
 	unz_file_info file_info;
 	char filename_inzip[ZIP_PATH_MAX];
-	zip_dir *zd;
+	zip_dir *zd = NULL;
 
 	uf = unzOpen(pszFileName);
 	if (uf == NULL)
@@ -118,6 +118,7 @@ zip_dir *ZIP_GetFiles(const char *pszFileName)
 	if (!filelist)
 	{
 		perror("ZIP_GetFiles");
+		unzClose(uf);
 		return NULL;
 	}
 
@@ -128,16 +129,15 @@ zip_dir *ZIP_GetFiles(const char *pszFileName)
 		err = unzGetCurrentFileInfo(uf, &file_info, filename_inzip, ZIP_PATH_MAX, NULL, 0, NULL, 0);
 		if (err != UNZ_OK)
 		{
-			free(filelist);
-			return NULL;
+			Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
+			goto cleanup;
 		}
 
 		filelist[i] = (char *)malloc(strlen(filename_inzip) + 1);
 		if (!filelist[i])
 		{
 			perror("ZIP_GetFiles");
-			free(filelist);
-			return NULL;
+			goto cleanup;
 		}
 
 		strcpy(filelist[i], filename_inzip);
@@ -147,26 +147,31 @@ zip_dir *ZIP_GetFiles(const char *pszFileName)
 			if (err != UNZ_OK)
 			{
 				Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
-				/* deallocate memory */
-				for (; i > 0; i--)
-					free(filelist[i]);
-				free(filelist);
-				return NULL;
+				goto cleanup;
 			}
 		}
 	}
 
-	unzClose(uf);
-
 	zd = (zip_dir *)malloc(sizeof(zip_dir));
 	if (!zd)
 	{
-		perror("ZIP_GetFiles");
-		free(filelist);
-		return NULL;
+		zd->names = filelist;
+		zd->nfiles = nfiles;
 	}
-	zd->names = filelist;
-	zd->nfiles = nfiles;
+	else
+	{
+		perror("ZIP_GetFiles");
+	}
+
+cleanup:
+	unzClose(uf);
+	if (!zd && filelist)
+	{
+		/* deallocate memory */
+		for (; i > 0; i--)
+			free(filelist[i]);
+		free(filelist);
+	}
 
 	return zd;
 }
@@ -616,8 +621,8 @@ Uint8 *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, 
  */
 Uint8 *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char * const ppszExts[])
 {
-	unzFile uf=NULL;
-	Uint8 *pBuffer;
+	unzFile uf = NULL;
+	Uint8 *pBuffer = NULL;
 	char *pszZipPath;
 	unz_file_info file_info;
 
@@ -643,29 +648,26 @@ Uint8 *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char *
 	if (unzLocateFile(uf, pszZipPath, 0) != UNZ_OK)
 	{
 		Log_Printf(LOG_ERROR, "Error: Can not locate '%s' in the archive!\n", pszZipPath);
-		free(pszZipPath);
-		return NULL;
+		goto cleanup;
 	}
 
 	/* Get file information (file size!) */
 	if (unzGetCurrentFileInfo(uf, &file_info, pszZipPath, ZIP_PATH_MAX, NULL, 0, NULL, 0) != UNZ_OK)
 	{
 		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo.\n");
-		free(pszZipPath);
-		return NULL;
+		goto cleanup;
 	}
 
 	/* Extract to buffer */
 	pBuffer = ZIP_ExtractFile(uf, pszZipPath, file_info.uncompressed_size);
+	if (pBuffer)
+		*pImageSize = file_info.uncompressed_size;
 
 	/* And close the file */
 	unzCloseCurrentFile(uf);
+cleanup:
 	unzClose(uf);
-
 	free(pszZipPath);
-
-	if (pBuffer)
-		*pImageSize = file_info.uncompressed_size;
 
 	return pBuffer;
 }

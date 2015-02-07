@@ -644,6 +644,7 @@ int TOS_LoadImage(void)
 	if (!pTosFile || nFileSize <= 0)
 	{
 		Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
+		free(pTosFile);
 		return -1;
 	}
 
@@ -694,6 +695,7 @@ int TOS_LoadImage(void)
 	{
 		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
 		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
+		free(pTosFile);
 		return -2;
 	}
 
