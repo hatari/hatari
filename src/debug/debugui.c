@@ -625,7 +625,7 @@ static int DebugUI_ParseCommand(const char *input_orig)
 	if (retval == DEBUGGER_CMDCONT)
 	{
 		if (psArgs[0] != sLastCmd)
-			strncpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+			strlcpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
 	}
 	else
 		sLastCmd[0] = '\0';

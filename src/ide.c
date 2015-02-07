@@ -22,6 +22,7 @@
 #include "m68000.h"
 #include "mfp.h"
 #include "stMemory.h"
+#include "str.h"
 #include "sysdeps.h"
 
 #if HAVE_MALLOC_H
@@ -542,7 +543,7 @@ static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 {
 	Log_Printf(LOG_INFO, "Mounting IDE hard drive image %s\n", filename);
 
-	strncpy(bs->filename, filename, sizeof(bs->filename));
+	strlcpy(bs->filename, filename, sizeof(bs->filename));
 
 	bs->read_only = 0;
 

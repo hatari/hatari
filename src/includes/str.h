@@ -14,6 +14,9 @@
 # include <strings.h>
 #endif
 
+#if !HAVE_LIBC_STRLCPY
+#define strlcpy(dst, src, len) SDL_strlcpy(dst, src, len)
+#endif
 
 /* Define this only for an old Linux system which does not store
  * pathnames in UTF-8. If this is defined, pathnames are converted

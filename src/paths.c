@@ -15,6 +15,7 @@ const char Paths_fileid[] = "Hatari paths.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "file.h"
 #include "paths.h"
+#include "str.h"
 
 #if defined(WIN32) && !defined(mkdir)
 #define mkdir(name,mode) mkdir(name)
@@ -108,8 +109,7 @@ static void Paths_GetExecDirFromPATH(const char *argv0, char *pExecDir, int nMax
 		if (File_Exists(pTmpName))
 		{
 			/* Found the executable - so use the corresponding path: */
-			strncpy(pExecDir, pAct, nMaxLen);
-			pExecDir[nMaxLen-1] = 0;
+			strlcpy(pExecDir, pAct, nMaxLen);
 			break;
 		}
 		pAct = strtok (0, pToken);
@@ -172,8 +172,7 @@ static char *Paths_InitExecDir(const char *argv0)
 			/* There was a path separator in argv[0], so let's assume a
 			 * relative or absolute path to the current directory in argv[0] */
 			char *p;
-			strncpy(psExecDir, argv0, FILENAME_MAX);
-			psExecDir[FILENAME_MAX-1] = 0;
+			strlcpy(psExecDir, argv0, FILENAME_MAX);
 			p = strrchr(psExecDir, PATHSEP);  /* Search last slash */
 			if (p)
 				*p = 0;                       /* Strip file name from path */
