@@ -630,6 +630,13 @@ int TOS_LoadImage(void)
 
 	bTosImageLoaded = false;
 
+	/* Calculate end of RAM */
+	if (ConfigureParams.Memory.nMemorySize > 0
+	    && ConfigureParams.Memory.nMemorySize <= 14)
+		STRamEnd = ConfigureParams.Memory.nMemorySize * 0x100000;
+	else
+		STRamEnd = 0x80000;   /* 512 KiB */
+
 	/* Load TOS image into memory so that we can check its version */
 	TosVersion = 0;
 	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, &nFileSize, pszTosNameExts);
@@ -680,8 +687,10 @@ int TOS_LoadImage(void)
 		 * just for fun. */
 		TosAddress = 0xfc0000;
 	}
-	else if (TosVersion<0x100 || TosVersion>=0x500 || TosSize>1024*1024L
-	    || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
+	else if (TosVersion < 0x100 || TosVersion >= 0x500 || TosSize > 1024*1024L
+	         || (TosAddress == 0xfc0000 && TosSize > 224*1024L)
+	         || (bRamTosImage && TosAddress + TosSize > STRamEnd)
+	         || (!bRamTosImage && TosAddress != 0xe00000 && TosAddress != 0xfc0000))
 	{
 		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
 		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
@@ -722,13 +731,6 @@ int TOS_LoadImage(void)
 		ConfigureParams.System.bAddressSpace24 = true;
 #endif
 
-	/* Calculate end of RAM */
-	if (ConfigureParams.Memory.nMemorySize > 0
-	    && ConfigureParams.Memory.nMemorySize <= 14)
-		STRamEnd = ConfigureParams.Memory.nMemorySize * 0x100000;
-	else
-		STRamEnd = 0x80000;   /* 512 KiB */
-
 	/* (Re-)Initialize the memory banks: */
 	memory_uninit();
 	memory_init(STRamEnd, ConfigureParams.Memory.nTTRamSize*1024*1024, TosAddress);
@@ -736,8 +738,11 @@ int TOS_LoadImage(void)
 	/* Clear Upper memory (ROM and IO memory) */
 	memset(&RomMem[0xe00000], 0, 0x200000);
 
-	/* Copy loaded image into ST memory */
-	memcpy(&RomMem[TosAddress], pTosFile, TosSize);
+	/* Copy loaded image into memory */
+	if (bRamTosImage)
+		memcpy(&STRam[TosAddress], pTosFile, TosSize);
+	else
+		memcpy(&RomMem[TosAddress], pTosFile, TosSize);
 
 	Log_Printf(LOG_DEBUG, "Loaded TOS version %i.%c%c, starting at $%x, "
 	           "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),
