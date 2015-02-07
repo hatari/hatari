@@ -111,7 +111,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 	Uint8 *src_ptr;
 	Uint8 rowbuf[3*surface->w];
 	SDL_PixelFormat *fmt = surface->format;
-	png_colorp palette_ptr = NULL;
 	png_infop info_ptr = NULL;
 	png_structp png_ptr;
 	png_text pngtext;
@@ -201,8 +200,6 @@ int ScreenSnapShot_SavePNG_ToFile(SDL_Surface *surface, FILE *fp, int png_compre
 
 	ret = ftell ( fp ) - start;				/* size of the png image */
 png_cleanup:
-	if (palette_ptr)
-		free(palette_ptr);
 	if (png_ptr)
 		png_destroy_write_struct(&png_ptr, NULL);
 	return ret;

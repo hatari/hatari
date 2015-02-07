@@ -2282,12 +2282,13 @@ static uint32_t ide_ioport_read(void *opaque, uint32_t addr1)
 	IDEState *ide_if = opaque;
 	IDEState *s = ide_if->cur_drive;
 	uint32_t addr;
-	int ret, hob;
+	int ret;
+
+	/* FIXME: HOB readback uses bit 7, but it's always set right now */
+	//int hob = s->select & (1 << 7);
+	const int hob = 0;
 
 	addr = addr1 & 7;
-	/* FIXME: HOB readback uses bit 7, but it's always set right now */
-	//hob = s->select & (1 << 7);
-	hob = 0;
 	switch (addr)
 	{
 	case 0:

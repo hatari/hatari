@@ -736,6 +736,7 @@ static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 	if (!File_Lock(fp))
 	{
 		Log_Printf(LOG_ERROR, "ERROR: cannot lock HD file for writing!\n");
+		fclose(fp);
 		return -ENOLCK;
 	}
 
