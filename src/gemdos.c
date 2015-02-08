@@ -534,16 +534,14 @@ static bool GEMDOS_DoesHostDriveFolderExist(char* lpstrPath, int iDrive)
 		lpstrPath[iIndex] = tolower((unsigned char)lpstrPath[iIndex]);
 	}
 
-	/* Check the file/folder is accessible (security basis) */
-	if (access(lpstrPath, F_OK) == 0 )
+	/* Check if it's a HDD identifier (or other emulated device)
+	 * and if the file/folder is accessible (security basis) */
+	if (iDrive > 1 && access(lpstrPath, F_OK) == 0 )
 	{
-		 /* If its a HDD identifier (or other emulated device) */
-		if (iDrive > 1)
+		struct stat status;
+		if (stat(lpstrPath, &status) == 0 && (status.st_mode & S_IFDIR) != 0)
 		{
-			struct stat status;
-			stat( lpstrPath, &status );
-			if ( status.st_mode & S_IFDIR )
-				bExist = true;
+			bExist = true;
 		}
 	}
 
@@ -2044,7 +2042,8 @@ static bool GemDOS_Close(Uint32 Params)
 static bool GemDOS_Read(Uint32 Params)
 {
 	char *pBuffer;
-	long CurrentPos, FileSize, nBytesRead, nBytesLeft;
+	off_t CurrentPos, FileSize;
+	long nBytesRead, nBytesLeft;
 	Uint32 Addr;
 	Uint32 Size;
 	int Handle;
@@ -2074,13 +2073,22 @@ static bool GemDOS_Read(Uint32 Params)
 	}
 	
 	/* To quick check to see where our file pointer is and how large the file is */
-	CurrentPos = ftell(FileHandles[Handle].FileHandle);
-	fseek(FileHandles[Handle].FileHandle, 0, SEEK_END);
-	FileSize = ftell(FileHandles[Handle].FileHandle);
-	fseek(FileHandles[Handle].FileHandle, CurrentPos, SEEK_SET);
+	CurrentPos = ftello(FileHandles[Handle].FileHandle);
+	if (fseeko(FileHandles[Handle].FileHandle, 0, SEEK_END) != 0)
+	{
+		Regs[REG_D0] = GEMDOS_E_SEEK;
+		return true;
+	}
+	FileSize = ftello(FileHandles[Handle].FileHandle);
+	if (FileSize == -1L
+	    || fseeko(FileHandles[Handle].FileHandle, CurrentPos, SEEK_SET) != 0)
+	{
+		Regs[REG_D0] = GEMDOS_E_SEEK;
+		return true;
+	}
 
 	nBytesLeft = FileSize-CurrentPos;
-	
+
 	/* Check for bad size and End Of File */
 	if (Size <= 0 || nBytesLeft <= 0)
 	{
@@ -2268,7 +2276,11 @@ static bool GemDOS_LSeek(Uint32 Params)
 	nOldPos = ftell(fhndl);
 
 	/* Determine the size of the file */
-	fseek(fhndl, 0L, SEEK_END);
+	if (fseek(fhndl, 0L, SEEK_END) != 0)
+	{
+		Regs[REG_D0] = GEMDOS_E_SEEK;
+		return true;
+	}
 	nFileSize = ftell(fhndl);
 
 	switch (Mode)
@@ -2276,23 +2288,21 @@ static bool GemDOS_LSeek(Uint32 Params)
 	 case 0: nDestPos = Offset; break; /* positive offset */
 	 case 1: nDestPos = nOldPos + Offset; break;
 	 case 2: nDestPos = nFileSize + Offset; break; /* negative offset */
-	 default:
-		/* Restore old position and return error */
-		fseek(fhndl, nOldPos, SEEK_SET);
-		Regs[REG_D0] = GEMDOS_EINVFN;
-		return true;
+	 default: nDestPos = -1;
 	}
 
 	if (nDestPos < 0 || nDestPos > nFileSize)
 	{
 		/* Restore old position and return error */
-		fseek(fhndl, nOldPos, SEEK_SET);
+		if (fseek(fhndl, nOldPos, SEEK_SET) != 0)
+			perror("GemDOS_LSeek");
 		Regs[REG_D0] = GEMDOS_ERANGE;
 		return true;
 	}
 
 	/* Seek to new position and return offset from start of file */
-	fseek(fhndl, nDestPos, SEEK_SET);
+	if (fseek(fhndl, nDestPos, SEEK_SET) != 0)
+		perror("GemDOS_LSeek");
 	Regs[REG_D0] = ftell(fhndl);
 
 	return true;

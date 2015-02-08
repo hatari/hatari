@@ -465,9 +465,9 @@ static int get_dtype(const char *name)
 {
 	struct stat buf;
 	char path[FILENAME_MAX];
+
 	snprintf(path, sizeof(path), "%s%c%s", dirpath, PATHSEP, name);
-	stat(path, &buf);
-	if (S_ISDIR(buf.st_mode))
+	if (stat(path, &buf) == 0 && S_ISDIR(buf.st_mode))
 		return DT_DIR;
 	else
 		return DT_REG;

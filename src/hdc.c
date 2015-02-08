@@ -630,14 +630,14 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 	unsigned char *pinfo, bootsector[512];
 	Uint32 start, sectors, total = 0;
 	int i, parts = 0;
-	long offset;
+	off_t offset;
 
 	if (!fp)
 		return 0;
-	offset = ftell(fp);
+	offset = ftello(fp);
 
-	fseek(fp, 0, SEEK_SET);
-	if (fread(bootsector, sizeof(bootsector), 1, fp) != 1)
+	if (fseeko(fp, 0, SEEK_SET) != 0
+	    || fread(bootsector, sizeof(bootsector), 1, fp) != 1)
 	{
 		perror("HDC_PartitionCount");
 		return 0;
@@ -699,7 +699,8 @@ int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 		LOG_TRACE(tracelevel, "- Total size: %i MB in %d partitions\n", total/2048, parts);
 	}
 
-	fseek(fp, offset, SEEK_SET);
+	if (fseeko(fp, offset, SEEK_SET) != 0)
+		perror("HDC_PartitionCount");
 	return parts;
 }
 

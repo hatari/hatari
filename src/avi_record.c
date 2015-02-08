@@ -730,7 +730,8 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 	AVI_CHUNK_INDEX	ChunkIndex;
 	Uint32		Size;
 
-	fseek ( pAviParams->FileOut , 0 , SEEK_END );				/* go to the end of the file */
+	if (fseek(pAviParams->FileOut, 0, SEEK_END) != 0)			/* go to the end of the file */
+		goto index_error;
 
 	/* Write the 'idx1' chunk header */
 	IndexChunkPosStart = ftell ( pAviParams->FileOut );
@@ -741,7 +742,8 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 	PosWrite = ftell ( pAviParams->FileOut );				/* position to start writing indexes */
 
 	/* Go to the first data chunk in the 'movi' chunk */
-	fseek ( pAviParams->FileOut , pAviParams->MoviChunkPosStart + sizeof ( AVI_STREAM_LIST_MOVI ) , SEEK_SET );
+	if (fseek(pAviParams->FileOut, pAviParams->MoviChunkPosStart + sizeof(AVI_STREAM_LIST_MOVI), SEEK_SET) != 0)
+		goto index_error;
 	Pos = ftell ( pAviParams->FileOut );
 
 	/* Build the index : we seek/read one data chunk and seek/write the */
@@ -755,7 +757,8 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 		Size = Avi_ReadU32 ( Chunk.ChunkSize );
 
 		/* Write the index infos for this chunk */
-		fseek ( pAviParams->FileOut , PosWrite , SEEK_SET );
+		if (fseek(pAviParams->FileOut, PosWrite, SEEK_SET) != 0)
+			goto index_error;
 		Avi_Store4cc ( ChunkIndex.identifier , (char *)Chunk.ChunkName );	/* 00dc, 00db, 01wb, ... */
 		Avi_StoreU32 ( ChunkIndex.flags , AVIIF_KEYFRAME );		/* AVIIF_KEYFRAME */
 		Avi_StoreU32 ( ChunkIndex.offset , Pos - pAviParams->MoviChunkPosStart - 8  );	/* pos relative to 'movi' */
@@ -766,7 +769,8 @@ static bool	Avi_BuildIndex ( RECORD_AVI_PARAMS *pAviParams )
 
 		/* Go to the next data chunk in the 'movi' chunk */
 		Pos = Pos + sizeof ( Chunk ) + Size;				/* position of the next data chunk */
-		fseek ( pAviParams->FileOut , Pos , SEEK_SET );
+		if (fseek(pAviParams->FileOut, Pos, SEEK_SET) != 0)
+			goto index_error;
 	}
 
 	/* Update the size of the 'idx1' chunk */
@@ -884,22 +888,15 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 		return true;
 
 	/* Update the size of the 'movi' chunk */
-	fseek ( pAviParams->FileOut , 0 , SEEK_END );				/* go to the end of the 'movi' chunk */
+	if (fseek(pAviParams->FileOut, 0, SEEK_END) != 0)			/* go to the end of the 'movi' chunk */
+		goto stoprec_error;
 	pAviParams->MoviChunkPosEnd = ftell ( pAviParams->FileOut );
 	Avi_StoreU32 ( TempSize , pAviParams->MoviChunkPosEnd - pAviParams->MoviChunkPosStart - 8 );
 
 	if ( fseek ( pAviParams->FileOut , pAviParams->MoviChunkPosStart+4 , SEEK_SET ) != 0 )
-	{
-		perror ( "AviStopRecording" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update movi header" );
-		return false;
-	}
+		goto stoprec_error;
 	if ( fwrite ( TempSize , sizeof ( TempSize ) , 1 , pAviParams->FileOut ) != 1 )
-	{
-		perror ( "AviStopRecording" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update movi header" );
-		return false;
-	}
+		goto stoprec_error;
 
 	/* Build the index chunk */
 	if ( ! Avi_BuildIndex ( pAviParams ) )
@@ -908,9 +905,10 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to build index" );
 		return false;
 	}
-	
+
 	/* Update the avi header (file size, number of output frames, ...) */
-	fseek ( pAviParams->FileOut , 0 , SEEK_END );				/* go to the end of the file */
+	if (fseek(pAviParams->FileOut, 0, SEEK_END) != 0)			/* go to the end of the file */
+		goto stoprec_error;
 	FileSize = ftell ( pAviParams->FileOut );
 
 	Avi_StoreU32 ( AviFileHeader.RiffHeader.filesize , FileSize - 8 );	/* 32 bits, limited to 4GB */
@@ -919,18 +917,9 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 	Avi_StoreU32 ( AviFileHeader.AudioStream.Header.data_length , pAviParams->TotalAudioSamples );	/* number of audio samples */
 
 	if ( fseek ( pAviParams->FileOut , 0 , SEEK_SET ) != 0 )
-	{
-		perror ( "AviStopRecording" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update avi header" );
-		return false;
-	}
+		goto stoprec_error;
 	if ( fwrite ( &AviFileHeader , sizeof ( AviFileHeader ) , 1 , pAviParams->FileOut ) != 1 )
-	{
-		perror ( "AviStopRecording" );
-		Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to update avi header" );
-		return false;
-	}
-
+		goto stoprec_error;
 
 	/* Close the file */
 	fclose ( pAviParams->FileOut );
@@ -939,9 +928,13 @@ static bool	Avi_StopRecording_WithParams ( RECORD_AVI_PARAMS *pAviParams )
 	bRecordingAvi = false;
 
 	return true;
+
+stoprec_error:
+	fclose (pAviParams->FileOut);
+	perror("AviStopRecording");
+	Log_AlertDlg(LOG_ERROR, "AVI recording : failed to update header");
+	return false;
 }
-
-
 
 
 /*-----------------------------------------------------------------------*/

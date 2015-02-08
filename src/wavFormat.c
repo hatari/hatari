@@ -140,9 +140,10 @@ void WAVFormat_CloseFile(void)
 
 		/* Update headers with sizes */
 		nWavFileBytes = SDL_SwapLE32((12+24+8+nWavOutputBytes)-8);  /* File length, less 8 bytes for 'RIFF' and length */
-		fseek(WavFileHndl, 4, SEEK_SET);                            /* 'Total Length Of Package' element */
-		/* Write total length of package in 'RIFF' chunk */
-		if (fwrite(&nWavFileBytes, sizeof(Uint32), 1, WavFileHndl) != 1)
+		/* Seek to 'Total Length Of Package' element and
+		 * write total length of package in 'RIFF' chunk */
+		if (fseek(WavFileHndl, 4, SEEK_SET) != 0 ||
+		    fwrite(&nWavFileBytes, sizeof(Uint32), 1, WavFileHndl) != 1)
 		{
 			perror("WAVFormat_CloseFile");
 			fclose(WavFileHndl);
@@ -150,10 +151,10 @@ void WAVFormat_CloseFile(void)
 			return;
 		}
 
-		fseek(WavFileHndl, 12+24+4, SEEK_SET);                      /* 'Length' element */
 		nWavLEOutBytes = SDL_SwapLE32(nWavOutputBytes);
-		/* Write length of data in 'DATA' chunk */
-		if (fwrite(&nWavLEOutBytes, sizeof(Uint32), 1, WavFileHndl) != 1)
+		/* Seek to 'Length' element and write length of data in 'DATA' chunk */
+		if (fseek(WavFileHndl, 12+24+4, SEEK_SET) != 0
+		    || fwrite(&nWavLEOutBytes, sizeof(Uint32), 1, WavFileHndl) != 1)
 		{
 			perror("WAVFormat_CloseFile");
 		}
