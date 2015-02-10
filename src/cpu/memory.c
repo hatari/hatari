@@ -496,7 +496,7 @@ static uae_u32 BusErrMem_lget(uaecptr addr)
 {
     print_illegal_counted("Bus error lget", addr);
 
-    M68000_BusError(addr, 1);
+    M68000_BusError(addr, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
     return 0;
 }
 
@@ -504,7 +504,7 @@ static uae_u32 BusErrMem_wget(uaecptr addr)
 {
     print_illegal_counted("Bus error wget", addr);
 
-    M68000_BusError(addr, 1);
+    M68000_BusError(addr, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
     return 0;
 }
 
@@ -512,7 +512,7 @@ static uae_u32 BusErrMem_bget(uaecptr addr)
 {
     print_illegal_counted("Bus error bget", addr);
 
-    M68000_BusError(addr, 1);
+    M68000_BusError(addr, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
     return 0;
 }
 
@@ -520,21 +520,21 @@ static void BusErrMem_lput(uaecptr addr, uae_u32 l)
 {
     print_illegal_counted("Bus error lput", addr);
 
-    M68000_BusError(addr, 0);
+    M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 }
 
 static void BusErrMem_wput(uaecptr addr, uae_u32 w)
 {
     print_illegal_counted("Bus error wput", addr);
 
-    M68000_BusError(addr, 0);
+    M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 }
 
 static void BusErrMem_bput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Bus error bput", addr);
 
-    M68000_BusError(addr, 0);
+    M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 }
 
 static int BusErrMem_check(uaecptr addr, uae_u32 size)
@@ -628,7 +628,7 @@ static uae_u32 SysMem_lget(uaecptr addr)
 {
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr, 1);
+      M68000_BusError(addr, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -642,7 +642,7 @@ static uae_u32 SysMem_wget(uaecptr addr)
 {
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr, 1);
+      M68000_BusError(addr, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -656,7 +656,7 @@ static uae_u32 SysMem_bget(uaecptr addr)
 {
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr, 1);
+      M68000_BusError(addr, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
@@ -669,7 +669,7 @@ static void SysMem_lput(uaecptr addr, uae_u32 l)
 {
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr, 0);
+      M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
@@ -683,7 +683,7 @@ static void SysMem_wput(uaecptr addr, uae_u32 w)
 {
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr, 0);
+      M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
@@ -697,7 +697,7 @@ static void SysMem_bput(uaecptr addr, uae_u32 b)
 {
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr, 0);
+      M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
@@ -851,21 +851,21 @@ static void ROMmem_lput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Illegal ROMmem lput", addr);
 
-    M68000_BusError(addr, 0);
+    M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 }
 
 static void ROMmem_wput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Illegal ROMmem wput", addr);
 
-    M68000_BusError(addr, 0);
+    M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 }
 
 static void ROMmem_bput(uaecptr addr, uae_u32 b)
 {
     print_illegal_counted("Illegal ROMmem bput", addr);
 
-    M68000_BusError(addr, 0);
+    M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 }
 
 static int ROMmem_check(uaecptr addr, uae_u32 size)

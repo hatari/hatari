@@ -2970,6 +2970,8 @@ static void Exception_normal (int nr)
 			// 68000 address error
 			uae_u16 mode = (sv ? 4 : 0) | (last_instructionaccess_for_exception_3 ? 2 : 1);
 			mode |= last_writeaccess_for_exception_3 ? 0 : 16;
+			// undocumented bits seem to contain opcode
+			mode |= last_op_for_exception_3 & ~31;
 			m68k_areg (regs, 7) -= 14;
 			/* fixme: bit3=I/N */
 			x_put_word (m68k_areg (regs, 7) + 0, mode);
@@ -4153,9 +4155,9 @@ printf ( "run_1\n" );
 retry:
 	TRY (prb) {
 		for (;;) {
-			uae_u16 opcode = r->ir;
+			r->opcode = r->ir;
 
-			count_instr (opcode);
+			count_instr (r->opcode);
 
 #ifdef WINUAE_FOR_HATARI
 		//m68k_dumpstate_file(stderr, NULL);
@@ -4183,7 +4185,7 @@ retry:
 			if (pc != pcs[0] && (pc < 0xd00000 || pc > 0x1000000)) {
 				memmove (pcs + 1, pcs, 998 * 4);
 				pcs[0] = pc;
-				//write_log (_T("%08X-%04X "), pc, opcode);
+				//write_log (_T("%08X-%04X "), pc, r->opcode);
 			}
 	#endif
 
@@ -4195,7 +4197,7 @@ retry:
 
 			do_cycles (cpu_cycles);
 			r->instruction_pc = m68k_getpc ();
-			cpu_cycles = (*cpufunctbl[opcode])(opcode);
+			cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
 			cpu_cycles = adjust_cycles (cpu_cycles);
 
 #ifdef WINUAE_FOR_HATARI
@@ -7035,6 +7037,7 @@ void exception2 (uaecptr addr, bool read, int size, uae_u32 fc)
 			mmu_bus_error (addr, fc, read == false, size, false, 0);
 		}
 	} else {
+		last_addr_for_exception_3 = m68k_getpc();		// FIXME, depends on prefetching
 		last_fault_for_exception_3 = addr;
 		last_writeaccess_for_exception_3 = read == 0;
 		last_instructionaccess_for_exception_3 = (fc & 1) == 0;

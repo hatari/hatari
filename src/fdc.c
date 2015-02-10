@@ -3842,7 +3842,7 @@ void FDC_DiskController_WriteWord ( void )
 	if ( nIoMemAccessSize == SIZE_BYTE )
 	{
 		/* This register does not like to be accessed in byte mode on a normal ST */
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE);
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -3929,7 +3929,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
 		/* This register does not like to be accessed in byte mode on a normal ST */
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ);
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -4091,7 +4091,7 @@ void FDC_DmaModeControl_WriteWord ( void )
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
 		/* This register does not like to be accessed in byte mode on a normal ST */
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE);
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -4138,7 +4138,7 @@ void FDC_DmaStatus_ReadWord ( void )
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
 		/* This register does not like to be accessed in byte mode on a normal ST */
-		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ);
+		M68000_BusError(IoAccessBaseAddress, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 

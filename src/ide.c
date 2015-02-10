@@ -90,7 +90,7 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
@@ -126,7 +126,7 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
@@ -156,7 +156,7 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
@@ -192,7 +192,7 @@ void Ide_Mem_bput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -222,7 +222,7 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -245,7 +245,7 @@ void Ide_Mem_lput(uaecptr addr, uae_u32 val)
 	if (addr >= 0xf00040 || !ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 

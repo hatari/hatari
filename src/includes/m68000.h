@@ -130,12 +130,20 @@ static inline void M68000_SetSR(Uint16 v)
 # define M68000_UnsetSpecial(flags) unset_special(flags)
 
 
-/* bus error mode */
-#define BUS_ERROR_WRITE 0
-#define BUS_ERROR_READ 1
+/* Some define's for bus error (see newcpu.c) */
+/* Bus error read/write mode */
+#define BUS_ERROR_WRITE		0
+#define BUS_ERROR_READ		1
+/* Bus error access size */
+#define BUS_ERROR_SIZE_BYTE	1
+#define BUS_ERROR_SIZE_WORD	2
+#define BUS_ERROR_SIZE_LONG	4
+/* Bus error access type */
+#define BUS_ERROR_ACCESS_INSTR	0
+#define BUS_ERROR_ACCESS_DATA	1
 
 
-/* bus access mode */
+/* Bus access mode */
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
 
@@ -301,7 +309,7 @@ extern void M68000_Reset(bool bCold);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuSettings(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
-extern void M68000_BusError(Uint32 addr, bool bReadWrite);
+extern void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType );
 extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
 extern void M68000_Update_intlev ( void );
 extern void M68000_WaitState(int nCycles);

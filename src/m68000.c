@@ -482,10 +482,9 @@ void M68000_MemorySnapShot_Capture(bool bSave)
  * BUSERROR - Access outside valid memory range.
  * Use bRead = 0 for write errors and bRead = 1 for read errors!
  */
-void M68000_BusError(Uint32 addr, bool bRead)
+void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType )
 {
-	/* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
-	// BusErrorPC = M68000_GetPC();		/* [NP] We set BusErrorPC in m68k_run_1 */
+	Uint32 BusErrorPC = M68000_GetPC();
 
 	/* Do not print message when TOS is testing for available HW or
 	 * when a program just checks for the floating point co-processor. */
@@ -493,22 +492,23 @@ void M68000_BusError(Uint32 addr, bool bRead)
 	    && addr != 0xfffa42)
 	{
 		/* Print bus error message */
-		fprintf(stderr, "M68000 Bus Error %s at address $%x.\n",
-			bRead ? "reading" : "writing", addr);
+		fprintf(stderr, "M68000 Bus Error %s at address $%x PC=$%x.\n",
+			ReadWrite ? "reading" : "writing", addr, BusErrorPC);
 	}
 
-	if ((regs.spcflags & SPCFLAG_BUSERROR) == 0)	/* [NP] Check that the opcode has not already generated a read bus error */
+#ifndef ENABLE_WINUAE_CPU
+	if ((regs.spcflags & SPCFLAG_BUSERROR) == 0)		/* [NP] Check that the opcode has not already generated a read bus error */
 	{
 		BusErrorAddress = addr;				/* Store for exception frame */
-		bBusErrorReadWrite = bRead;
-#if ENABLE_WINUAE_CPU
-		if (currprefs.mmu_model) {
-			THROW(2);
-			return;
-		}
-#endif
+		bBusErrorReadWrite = ReadWrite;
 		M68000_SetSpecial(SPCFLAG_BUSERROR);		/* The exception will be done in newcpu.c */
 	}
+
+#else
+	/* With WinUAE's cpu, instruction will be correctly aborted on a bus error, */
+	/* so we don't need to check if the opcode already generated a bus error or not */
+	exception2 ( addr , ReadWrite , Size , AccessType );
+#endif
 }
 
 

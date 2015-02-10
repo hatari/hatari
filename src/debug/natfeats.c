@@ -57,7 +57,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 	LOG_TRACE(TRACE_NATFEATS, "NF_NAME[%d](0x%x, %d)\n", subid, ptr, len);
 
 	if ( !STMemory_CheckAreaType ( ptr, len, ABFLAG_RAM ) ) {
-		M68000_BusError(ptr, BUS_ERROR_WRITE);
+		M68000_BusError(ptr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return false;
 	}
 	if (subid) {
@@ -95,7 +95,7 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 	LOG_TRACE(TRACE_NATFEATS, "NF_STDERR(0x%x)\n", ptr);
 
 	if ( !STMemory_CheckAreaType ( ptr, 1, ABFLAG_RAM ) ) {
-		M68000_BusError(ptr, BUS_ERROR_READ);
+		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return false;
 	}
 	str = (const char *)STMemory_STAddrToPointer ( ptr );
@@ -176,7 +176,7 @@ static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
 	ptr = STMemory_ReadLong(stack);
 
 	if ( !STMemory_CheckAreaType ( ptr, 1, ABFLAG_RAM ) ) {
-		M68000_BusError(ptr, BUS_ERROR_READ);
+		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return false;
 	}
 	buffer = (const char *)STMemory_STAddrToPointer ( ptr );
@@ -230,7 +230,7 @@ bool NatFeat_ID(Uint32 stack, Uint32 *retval)
 
 	ptr = STMemory_ReadLong(stack);
 	if ( !STMemory_CheckAreaType ( ptr, FEATNAME_MAX, ABFLAG_RAM ) ) {
-		M68000_BusError(ptr, BUS_ERROR_READ);
+		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return false;
 	}
 
