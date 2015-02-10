@@ -1447,10 +1447,10 @@ static void IKBD_SendAutoJoysticksMonitoring(void)
 	Uint8 Byte2;
 
 	Byte1 = ( ( KeyboardProcessor.Joy.JoyData[0] & 0x80 ) >> 6 )
-		|| ( ( KeyboardProcessor.Joy.JoyData[1] & 0x80 ) >> 7 );
+		| ( ( KeyboardProcessor.Joy.JoyData[1] & 0x80 ) >> 7 );
 
 	Byte2 = ( ( KeyboardProcessor.Joy.JoyData[0] & 0x0f ) << 4 )
-		|| ( KeyboardProcessor.Joy.JoyData[1] & 0x0f );
+		| ( KeyboardProcessor.Joy.JoyData[1] & 0x0f );
 
 	IKBD_Cmd_Return_Byte (Byte1);
 	IKBD_Cmd_Return_Byte (Byte2);
