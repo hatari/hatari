@@ -24,7 +24,7 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 
 int nAudioFrequency = 44100;			/* Sound playback frequency */
 bool bSoundWorking = false;			/* Is sound OK */
-volatile bool bPlayingBuffer = false;		/* Is playing buffer? */
+static volatile bool bPlayingBuffer = false;	/* Is playing buffer? */
 int SoundBufferSize = 1024 / 4;			/* Size of sound buffer (in samples) */
 int CompleteSndBufIdx;				/* Replay-index into MixBuffer */
 int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */

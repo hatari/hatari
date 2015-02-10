@@ -150,8 +150,8 @@ struct dma_s {
 	Sint16 FrameRight;
 };
 
-Sint64	frameCounter_float = 0;
-bool	DmaInitSample = false;
+static Sint64	frameCounter_float = 0;
+static bool	DmaInitSample = false;
 
 
 struct microwire_s {

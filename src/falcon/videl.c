@@ -120,7 +120,6 @@ Uint16 vfc_counter;			/* counter for VFC register $ff82a0 (to be internalized wh
 static void VIDEL_memset_uint32(Uint32 *addr, Uint32 color, int count);
 static void VIDEL_memset_uint16(Uint16 *addr, Uint16 color, int count);
 static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count);
-static void Videl_ColorReg_WriteWord(void);
 
 
 /**
@@ -2043,7 +2042,7 @@ static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count)
  *	move.b #$55,$ff8241	-> color 0 is now $555 !
  *	move.b #$71,$ff8240	-> color 0 is now $171 (bytes are first copied, then masked)
  */
-void Videl_ColorReg_WriteWord(void)
+static void Videl_ColorReg_WriteWord(void)
 {
 	Uint16 col;
 	Uint32 addr = IoAccessCurrentAddress;

@@ -61,7 +61,7 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 SDL_Surface *sdlscrn = NULL;                /* The SDL screen surface */
 int nScreenZoomX, nScreenZoomY;             /* Zooming factors, used for scaling mouse motions */
 int nBorderPixelsLeft, nBorderPixelsRight;  /* Pixels in left and right border */
-int nBorderPixelsTop, nBorderPixelsBottom;  /* Lines in top and bottom border */
+static int nBorderPixelsTop, nBorderPixelsBottom;  /* Lines in top and bottom border */
 
 /* extern for shortcuts and falcon/hostscreen.c */
 bool bGrabMouse = false;      /* Grab the mouse cursor in the window */

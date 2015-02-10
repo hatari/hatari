@@ -412,7 +412,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 	if (!szSrcDir)
 	{
 		perror("File_FindPossibleExtFileName");
-		return false;
+		return NULL;
 	}
 	szSrcName = szSrcDir + FILENAME_MAX;
 	szSrcExt = szSrcName + FILENAME_MAX;

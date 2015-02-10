@@ -272,7 +272,7 @@ static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
 	if (!szDir)
 	{
 		perror("Floppy_CreateDiskBFileName");
-		return false;
+		return NULL;
 	}
 	szName = szDir + FILENAME_MAX;
 	szExt = szName + FILENAME_MAX;

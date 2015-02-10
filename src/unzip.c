@@ -80,8 +80,7 @@ const char Unzip_fileid[] = "Hatari unzip.c : " __DATE__ " " __TIME__;
 #define SEEK_SET    0
 #endif
 
-const char unz_copyright[] =
-   " unzip 0.15 Copyright 1998 Gilles Vollant ";
+static const char unz_copyright[] = " unzip 0.15 Copyright 1998 Gilles Vollant";
 
 /* unz_file_info_interntal contain internal info about a file in zipfile*/
 typedef struct unz_file_info_internal_s

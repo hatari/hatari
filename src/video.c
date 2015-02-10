@@ -470,7 +470,7 @@ const int VblJitterArrayPending[] = {
 	8,8,12,8,12 /* not verified on STF, use the same as HBL */
 };
 
-int	BlankLines = 0;				/* Number of empty line with no signal (by switching hi/lo near cycles 500) */
+static int	BlankLines = 0;			/* Number of empty line with no signal (by switching hi/lo near cycles 500) */
 
 
 typedef struct
@@ -518,7 +518,7 @@ typedef struct
 } SHIFTER_FRAME;
 
 
-SHIFTER_FRAME	ShifterFrame;
+static SHIFTER_FRAME	ShifterFrame;
 
 
 
@@ -1587,7 +1587,7 @@ int Video_TimerB_GetPos ( int LineNumber )
  * In low/med res, the position depends on the video frequency (50/60 Hz)
  * In high res, the position is always the same.
  */
-int Video_TimerB_GetDefaultPos ( void )
+static int Video_TimerB_GetDefaultPos ( void )
 {
 	int Pos;
 
@@ -3332,7 +3332,7 @@ void Video_LineWidth_WriteByte(void)
  *	move.b #$55,$ff8241	-> color 0 is now $555 !
  *	move.b #$71,$ff8240	-> color 0 is now $171 (bytes are first copied, then masked)
  */
-void Video_ColorReg_WriteWord(void)
+static void Video_ColorReg_WriteWord(void)
 {
 	if (!bUseHighRes && !bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
 	{
@@ -3392,7 +3392,7 @@ void Video_ColorReg_WriteWord(void)
  * the unused bits on STF are set to '0' (used in "The Union Demo" protection).
  * So we use rand() only if PC is located in RAM.
  */
-void Video_ColorReg_ReadWord(void)
+static void Video_ColorReg_ReadWord(void)
 {
 	Uint16 col;
 	Uint32 addr;

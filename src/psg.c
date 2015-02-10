@@ -130,9 +130,9 @@ const char PSG_fileid[] = "Hatari psg.c : " __DATE__ " " __TIME__;
 #include "fdc.h"
 
 
-Uint8 PSGRegisterSelect;        /* Write to 0xff8800 sets the register number used in read/write accesses */
-Uint8 PSGRegisterReadData;	/* Value returned when reading from 0xff8800 */
-Uint8 PSGRegisters[MAX_PSG_REGISTERS]; /* Registers in PSG, see PSG_REG_xxxx */
+static Uint8 PSGRegisterSelect;		/* Write to 0xff8800 sets the register number used in read/write accesses */
+static Uint8 PSGRegisterReadData;	/* Value returned when reading from 0xff8800 */
+Uint8 PSGRegisters[MAX_PSG_REGISTERS];	/* Registers in PSG, see PSG_REG_xxxx */
 
 static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
 

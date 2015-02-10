@@ -82,12 +82,12 @@ typedef struct {
 } SCSI_CTRLR;
 
 /* HDC globals */
-SCSI_CTRLR AcsiBus;
+static SCSI_CTRLR AcsiBus;
 int nAcsiPartitions = 0;
 bool bAcsiEmuOn = false;
 
 #if WITH_NCR5380
-SCSI_CTRLR ScsiBus;
+static SCSI_CTRLR ScsiBus;
 #endif
 
 /* Our dummy INQUIRY response data */

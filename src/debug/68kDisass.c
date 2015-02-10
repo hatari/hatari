@@ -1307,7 +1307,7 @@ typedef const struct {
 	int				disassFlag;
 } OpcodeTableStruct;
 
-static const OpcodeTableStruct	OpcodeTable[] = {
+static OpcodeTableStruct	OpcodeTable[] = {
 	{ MC_ALL, {0xff00, 0x0000}, {-1,6,2,0}, {ofI,ofEa}, "ORI.?",{0,EA_Immed|EA_PCRel|EA_An}},
 	{ MC_ALL, {0xf1c0, 0x0100}, {4}, {ofDestDn,ofEa}, "BTST",{0,EA_An|EA_Immed} },
 	{ MC_ALL, {0xf1c0, 0x0140}, {4}, {ofDestDn,ofEa}, "BCHG",{0,EA_Immed|EA_PCRel|EA_An}},

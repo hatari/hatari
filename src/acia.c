@@ -165,8 +165,7 @@ const char ACIA_fileid[] = "Hatari acia.c : " __DATE__ " " __TIME__;
 #define	ACIA_CR_RECEIVE_INTERRUPT_ENABLE( CR )	( ( CR >> 7 ) & 0x01 )	/* CR7 : Receive interrupt enable */
 
 
-
-int	ACIA_Counter_Divide[ 3 ] = { 1 , 16 , 64 };		/* Used to divide txclock/rxclock to get the correct baud rate */
+static const int ACIA_Counter_Divide[3] = { 1 , 16 , 64 };	/* Used to divide txclock/rxclock to get the correct baud rate */
 
 
 /* Data size, parity and stop bits used for the transfer depending on CR_WORD_SELECT */

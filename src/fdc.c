@@ -557,7 +557,6 @@ static void	FDC_CRC16 ( Uint8 *buf , int nb , Uint16 *pCRC );
 static void	FDC_ResetDMA ( void );
 
 static int	FDC_GetEmulationMode ( void );
-static void	FDC_UpdateAll ( void );
 static int	FDC_GetSectorsPerTrack ( int Drive , int Track , int Side );
 static int	FDC_GetSidesPerDisk ( int Drive , int Track );
 static int	FDC_GetTracksPerDisk ( int Drive );
@@ -1230,7 +1229,7 @@ static int FDC_GetEmulationMode ( void )
  * So far, we only need to update the index position for the valid
  * drive/floppy ; updating every 500 cycles is enough for this case.
  */
-void	FDC_UpdateAll ( void )
+static void FDC_UpdateAll(void)
 {
 	FDC_IndexPulse_Update ();
 }
@@ -1518,7 +1517,7 @@ static Uint32	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
  * [NP] TODO : should we have 2 different Index Pulses for each side or do they
  * happen at the same time ?
  */
-void	FDC_IndexPulse_Update ( void )
+static void FDC_IndexPulse_Update(void)
 {
 	Uint32	FdcCyclesPerRev;
 	int	FrameCycles, HblCounterVideo, LineCycles;

@@ -663,7 +663,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				/* for get_dtype() */
 				dirpath = path;
 				/* Load directory entries: */
-				entries = scandir(path, &files, 0, filesort);
+				entries = scandir(path, &files, NULL, filesort);
 			}
 
 			/* Remove hidden files from the list if necessary: */

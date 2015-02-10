@@ -215,7 +215,7 @@ static bool TimerBCanResume = false;
 static bool TimerCCanResume = false;
 static bool TimerDCanResume = false;
 
-bool bAppliedTimerDPatch;           /* true if the Timer-D patch has been applied */
+static bool bAppliedTimerDPatch;    /* true if the Timer-D patch has been applied */
 static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer-D patch */
 
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
