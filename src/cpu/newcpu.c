@@ -2284,7 +2284,7 @@ currcycle=0;
 
 #ifdef WINUAE_FOR_HATARI
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-		nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+		nr, currpc, regs.instruction_pc, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
 	exception_debug (nr);
 	MakeSR ();
@@ -2583,7 +2583,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
 
 #ifdef WINUAE_FOR_HATARI
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-		nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+		nr, currpc, regs.instruction_pc, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
     exception_debug (nr);
     MakeSR ();
@@ -2661,7 +2661,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 
 #ifdef WINUAE_FOR_HATARI
 	LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-		nr, currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+		nr, currpc, regs.instruction_pc, STMemory_ReadLong (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
 	exception_debug (nr);
 	MakeSR ();
@@ -2828,7 +2828,7 @@ static void Exception_normal (int nr)
 		currpc = exception_pc (nr);
 #ifdef WINUAE_FOR_HATARI
 		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d vector %x currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-			nr, 4*vector_nr , currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+			nr, 4*vector_nr , currpc, regs.instruction_pc, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
 		if (nr == 2 || nr == 3) {
 			int i;
@@ -2964,7 +2964,7 @@ static void Exception_normal (int nr)
 		currpc = m68k_getpc ();
 #ifdef WINUAE_FOR_HATARI
 		LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d vector %x currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x SR %x\n",
-			nr, 4*vector_nr , currpc, BusErrorPC, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
+			nr, 4*vector_nr , currpc, regs.instruction_pc, STMemory_ReadLong (regs.vbr + 4*vector_nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3, regs.sr);
 #endif
 		if (nr == 2 || nr == 3) {
 			// 68000 address error
@@ -2981,9 +2981,7 @@ static void Exception_normal (int nr)
 			x_put_long (m68k_areg (regs, 7) + 10, last_addr_for_exception_3);
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4 * vector_nr));
 #ifdef WINUAE_FOR_HATARI
-			// TODO [NP] remove BusError_xxx variables
-			uae_u16 BusError_opcode;
-			fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , BusError_opcode);
+			fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", last_fault_for_exception_3, (long)currpc, last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
 			goto kludge_me_do;
 		}
@@ -4189,12 +4187,6 @@ retry:
 			}
 	#endif
 
-#ifdef WINUAE_FOR_HATARI
-		/* In case of a Bus Error, we need the PC of the instruction
-		 * that caused  the error to build the exception stack frame */
-		BusErrorPC = m68k_getpc();
-#endif
-
 			do_cycles (cpu_cycles);
 			r->instruction_pc = m68k_getpc ();
 			cpu_cycles = (*cpufunctbl[r->opcode])(r->opcode);
@@ -4336,12 +4328,7 @@ retry:
 			}
 #endif
 
-/* [NP] TODO : replace BusErrorPC with r->instruction_pc */
 #ifdef WINUAE_FOR_HATARI
-			/* In case of a Bus Error, we need the PC of the instruction
-			 * that caused  the error to build the exception stack frame */
-			BusErrorPC = m68k_getpc();
-
 			currcycle = 0;
 #endif
 
@@ -4696,8 +4683,6 @@ retry:
 				LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 				m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 			}
-
-			BusErrorPC = m68k_getpc ();
 #endif
 			f.cznv = regflags.cznv;
 			f.x = regflags.x;
@@ -4797,8 +4782,6 @@ insretry:
 				LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 				m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 			}
-
-			BusErrorPC = m68k_getpc ();
 #endif
 			pc = regs.instruction_pc = m68k_getpc ();
 			f.cznv = regflags.cznv;
@@ -4925,8 +4908,6 @@ retry:
 				LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 				m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 			}
-
-			BusErrorPC = m68k_getpc ();
 #endif
 			r->instruction_pc = m68k_getpc();
 			r->opcode = get_iword_cache_040(0);
@@ -4998,8 +4979,6 @@ retry:
 				LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 				m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 			}
-
-			BusErrorPC = m68k_getpc();
 #endif
 			r->instruction_pc = m68k_getpc();
 			r->opcode = get_iword_cache_040(0);
@@ -5112,11 +5091,6 @@ retry:
 				LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 				m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 			}
-
-			/* [NP] TODO : replace BusErrorPC with r->instruction_pc */
-			/* In case of a Bus Error, we need the PC of the instruction
-			 * that caused  the error to build the exception stack frame */
-			BusErrorPC = m68k_getpc();
 
 			currcycle = 0;
 #endif
@@ -5251,10 +5225,6 @@ retry:
 				LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 				m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 			}
-
-			/* In case of a Bus Error, we need the PC of the instruction
-			 * that caused  the error to build the exception stack frame */
-			BusErrorPC = m68k_getpc();
 #endif
 			r->instruction_pc = m68k_getpc ();
 
@@ -5337,10 +5307,6 @@ retry:
 				LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 				m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 			}
-
-			/* In case of a Bus Error, we need the PC of the instruction
-			 * that caused  the error to build the exception stack frame */
-			BusErrorPC = m68k_getpc();
 #endif
 			r->instruction_pc = m68k_getpc ();
 

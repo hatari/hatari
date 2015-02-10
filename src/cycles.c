@@ -127,6 +127,11 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 	}
 	else							/* BUS_MODE_CPU */
 	{
+#ifdef WINUAE_FOR_HATARI
+		/* Get the value of PC for the current instruction */
+		BusErrorPC = regs.instruction_pc;
+#endif
+
 		/* TODO: Find proper cycles count depending on the type of the current instruction */
 		/* (e.g. movem is not correctly handled) */
 		/* We don't read the opcode if PC is located in the IO region (rare cases */
