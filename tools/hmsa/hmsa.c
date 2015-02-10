@@ -50,7 +50,7 @@ static void do_newline(const char *text)
 /**
  * Output Hatari log string.
  */
-extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
+void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
 	print_prefix(nType);
@@ -62,7 +62,7 @@ extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 /**
  * Output Hatari Alert dialog string.
  */
-extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
+void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
 	print_prefix(nType);
@@ -90,12 +90,12 @@ int DlgAlert_Query(const char *text)
  * We do it also for STX.
  */
 extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);		/* function prototype */
-extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
+bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
 	return FALSE;
 }
 extern bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ);		/* function prototype */
-extern bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ)
+bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ)
 {
 	return FALSE;
 }

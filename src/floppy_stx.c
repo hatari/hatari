@@ -74,7 +74,7 @@ static STX_SAVE_STRUCT	STX_SaveStruct[ MAX_FLOPPYDRIVES ];	/* To save 'write sec
 /* Default timing table for Macrodos when revision=0 */
 /* 1 unit of timing means 32 FDC cycles ; + 28 cycles every 16 bytes, so a standard block of 16 bytes */
 /* should have a value of 0x7f or 0x80, which gives 4092-4124 cycles */
-Uint8	TimingDataDefault[] = {
+static Uint8	TimingDataDefault[] = {
 	0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,0x00,0x7f,
 	0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,0x00,0x85,
 	0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,0x00,0x79,
@@ -1466,7 +1466,7 @@ static STX_SECTOR_STRUCT	*STX_FindSector_By_Position ( Uint8 Drive , Uint8 Track
  * one on a given drive/track/side.
  * We take the TrackSize into account to return this delay.
  */
-extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
+Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
 	int			TrackSize;
@@ -1502,7 +1502,7 @@ extern Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Ui
  * using BitPosition.
  * If there's no available drive/floppy or no ID field in the track, we return -1
  */
-extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side )
+int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , Uint8 Track , Uint8 Side )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
 	int			CurrentPos_FdcCycles;
@@ -1579,7 +1579,7 @@ extern int	FDC_NextSectorID_FdcCycles_STX ( Uint8 Drive , Uint8 NumberOfHeads , 
  * Return the value of the track number in the next ID field set by
  * FDC_NextSectorID_FdcCycles_STX.
  */
-extern Uint8	FDC_NextSectorID_TR_STX ( void )
+Uint8	FDC_NextSectorID_TR_STX ( void )
 {
 	return STX_State.NextSector_ID_Field_TR;
 }
@@ -1590,7 +1590,7 @@ extern Uint8	FDC_NextSectorID_TR_STX ( void )
  * Return the value of the sector number in the next ID field set by
  * FDC_NextSectorID_FdcCycles_STX.
  */
-extern Uint8	FDC_NextSectorID_SR_STX ( void )
+Uint8	FDC_NextSectorID_SR_STX ( void )
 {
 	return STX_State.NextSector_ID_Field_SR;
 }
@@ -1601,7 +1601,7 @@ extern Uint8	FDC_NextSectorID_SR_STX ( void )
  * Return the value of the sector's length in the next ID field set by
  * FDC_NextSectorID_FdcCycles_STX.
  */
-extern Uint8	FDC_NextSectorID_LEN_STX ( void )
+Uint8	FDC_NextSectorID_LEN_STX ( void )
 {
 	return STX_State.NextSector_ID_Field_LEN;
 }
@@ -1613,7 +1613,7 @@ extern Uint8	FDC_NextSectorID_LEN_STX ( void )
  * FDC_NextSectorID_FdcCycles_STX.
  * If '0', CRC is bad, else CRC is OK
  */
-extern Uint8	FDC_NextSectorID_CRC_OK_STX ( void )
+Uint8	FDC_NextSectorID_CRC_OK_STX ( void )
 {
 	return STX_State.NextSector_ID_Field_CRC_OK;
 }
@@ -1636,7 +1636,7 @@ extern Uint8	FDC_NextSectorID_CRC_OK_STX ( void )
  * Return RNF if sector was not found, else return CRC and RECORD_TYPE values
  * for the status register.
  */
-extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize )
+Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int *pSectorSize )
 {
 	STX_SECTOR_STRUCT	*pStxSector;
 	int			i;
@@ -1744,7 +1744,7 @@ extern Uint8	FDC_ReadSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uin
  * Return RNF if sector was not found or CRC if ID field has a CRC error.
  * Return 0 if OK.
  */
-extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize )
+Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side , int SectorSize )
 {
 	STX_SECTOR_STRUCT	*pStxSector;
 	int			i;
@@ -1853,7 +1853,7 @@ extern Uint8	FDC_WriteSector_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Ui
  * (32 microsec)
  * Return 0 if OK, or a CRC error
  */
-extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side )
+Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Uint8 Side )
 {
 	STX_SECTOR_STRUCT	*pStxSector;
 
@@ -1893,7 +1893,7 @@ extern Uint8	FDC_ReadAddress_STX ( Uint8 Drive , Uint8 Track , Uint8 Sector , Ui
  * a standard track by using the available sectors and standard GAP values.
  * Return 0 if OK
  */
-extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
+Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
 	STX_SECTOR_STRUCT	*pStxSector;
@@ -2057,7 +2057,7 @@ extern Uint8	FDC_ReadTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side )
  *
  * Return 0 if track was written without error, or LOST_DATA if an error occurred
  */
-extern Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize )
+Uint8	FDC_WriteTrack_STX ( Uint8 Drive , Uint8 Track , Uint8 Side , int TrackSize )
 {
 	STX_TRACK_STRUCT	*pStxTrack;
 	int			i;
