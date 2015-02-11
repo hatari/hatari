@@ -153,7 +153,7 @@ zip_dir *ZIP_GetFiles(const char *pszFileName)
 	}
 
 	zd = (zip_dir *)malloc(sizeof(zip_dir));
-	if (!zd)
+	if (zd)
 	{
 		zd->names = filelist;
 		zd->nfiles = nfiles;
