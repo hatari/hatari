@@ -500,7 +500,7 @@ void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType )
 	}
 
 #else
-	/* With WinUAE's cpu, instruction will be correctly aborted on a bus error, */
+	/* With WinUAE's cpu, on a bus error instruction will be correctly aborted before completing, */
 	/* so we don't need to check if the opcode already generated a bus error or not */
 	exception2 ( addr , ReadWrite , Size , AccessType );
 #endif

@@ -1014,11 +1014,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	}
 	else {    /* Bus error */
 	    /* Get the opcode that caused the bus error, to adapt the stack frame in some cases */
-	    /* (we must call get_word() only on valid region, else this will cause a double bus error) */
-	    if ( valid_address ( regs.instruction_pc , 2 ) )
-	      BusError_opcode = get_word(regs.instruction_pc);
-	    else
-	      BusError_opcode = 0;
+	    BusError_opcode = regs.opcode;
 
 	    specialstatus |= ( BusError_opcode & (~0x1f) );		/* [NP] unused bits of special status are those of the last opcode ! */
 	    if (bBusErrorReadWrite)
@@ -1029,8 +1025,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
 	    /* [NP] PC stored in the stack frame is not necessarily pointing to the next instruction ! */
 	    /* FIXME : we should have a proper model for this, in the meantime we handle specific cases */
-	    if ( BusError_opcode == 0x21f8 )						/* move.l $0.w,$24.w (Transbeauce 2 loader) */
-	      put_long (m68k_areg(regs, 7)+10, currpc-2);				/* correct PC is 2 bytes less than usual value */
+	    if ( BusError_opcode == 0x21f8 )							/* move.l $0.w,$24.w (Transbeauce 2 loader) */
+	      put_long (m68k_areg(regs, 7)+10, currpc-2);					/* correct PC is 2 bytes less than usual value */
 
 	    else if ( ( regs.instruction_pc == 0xccc ) && ( BusError_opcode == 0x48d6 ) )	/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
 	      put_long (m68k_areg(regs, 7)+10, currpc+2);					/* correct PC is 2 bytes more than usual value */
@@ -1746,7 +1742,7 @@ static void m68k_run_1 (void)
     for (;;) {
 	int cycles;
 //fprintf (stderr, "ir in  %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);
-	uae_u32 opcode = get_iword_prefetch (0);
+	regs.opcode = get_iword_prefetch (0);
 
 	if (regs.spcflags & SPCFLAG_BUSERROR)
 	{
@@ -1754,7 +1750,7 @@ static void m68k_run_1 (void)
 	    Exception(2,0,M68000_EXC_SRC_CPU);
 
 	    /* Get opcode for bus error handler and check other special bits */
-	    opcode = get_iword_prefetch (0);
+	    regs.opcode = get_iword_prefetch (0);
 	    if (regs.spcflags) {
 		if (do_specialties ())
 		    return;
@@ -1785,10 +1781,10 @@ static void m68k_run_1 (void)
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
 #if COUNT_INSTRS == 2
-	if (table68k[opcode].handler != -1)
-	    instrcount[table68k[opcode].handler]++;
+	if (table68k[regs.opcode].handler != -1)
+	    instrcount[table68k[regs.opcode].handler]++;
 #elif COUNT_INSTRS == 1
-	instrcount[opcode]++;
+	instrcount[regs.opcode]++;
 #endif
 
 	/* In case of a Bus Error, we need the PC of the instruction that caused */
@@ -1802,7 +1798,7 @@ static void m68k_run_1 (void)
 	//if ( CAPSGetDebugRequest() )
 	//  DebugUI(REASON_CPU_BREAKPOINT);
 
-	cycles = (*cpufunctbl[opcode])(opcode);
+	cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
 //fprintf (stderr, "ir out %x %x\n",do_get_mem_long(&regs.prefetch) , regs.prefetch_pc);
 
 #ifdef DEBUG_PREFETCH
@@ -1852,7 +1848,8 @@ static void m68k_run_2 (void)
 {
     for (;;) {
 	int cycles;
-	uae_u32 opcode = get_iword (0);
+
+	regs.opcode = get_iword (0);
 
 	/*m68k_dumpstate(stderr, NULL);*/
 	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
@@ -1868,17 +1865,17 @@ static void m68k_run_2 (void)
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
 #if COUNT_INSTRS == 2
-	if (table68k[opcode].handler != -1)
-	    instrcount[table68k[opcode].handler]++;
+	if (table68k[regs.opcode].handler != -1)
+	    instrcount[table68k[regs.opcode].handler]++;
 #elif COUNT_INSTRS == 1
-	instrcount[opcode]++;
+	instrcount[regs.opcode]++;
 #endif
 
 	/* In case of a Bus Error, we need the PC of the instruction that caused */
 	/* the error to build the exception stack frame */
 	regs.instruction_pc = m68k_getpc();
 
-	cycles = (*cpufunctbl[opcode])(opcode);
+	cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
 
 	if (bDspEnabled)
 	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */

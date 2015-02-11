@@ -116,6 +116,8 @@ enum {
 # define M68000_SetPC(val)  m68k_setpc(val)
 
 # define M68000_InstrPC		regs.instruction_pc
+# define M68000_CurrentOpcode	regs.opcode
+
 
 static inline Uint16 M68000_GetSR(void)
 {
