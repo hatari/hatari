@@ -66,6 +66,7 @@
 /*			sequence to get the exception's vector number.					*/
 /* 2015/02/05	[NP]	For the new WinUAE's cpu, don't use ExceptionSource anymore when calling	*/
 /*			Exception().									*/
+/* 2015/02/11	[NP]	Replace BusErrorPC by regs.instruction_pc, to get similar code to WinUAE's cpu  */
 
 
 const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
@@ -95,7 +96,6 @@ const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 cpu_instruction_t CpuInstruction;
 
 Uint32 BusErrorAddress;         /* Stores the offending address for bus-/address errors */
-Uint32 BusErrorPC;              /* Value of the PC when bus error occurs */
 bool bBusErrorReadWrite;        /* 0 for write error, 1 for read error */
 int nCpuFreqShift;              /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
 int nWaitStateCycles;           /* Used to emulate the wait state cycles of certain IO registers */
@@ -415,17 +415,10 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 	{
 		MemorySnapShot_Store(&savepc, sizeof(savepc));            /* PC */
 		regs.pc = savepc;
-#ifdef UAE_NEWCPU_H
 		regs.prefetch_pc = regs.pc + 128;
-#endif
 	}
 
-#ifdef UAE_NEWCPU_H
 	MemorySnapShot_Store(&regs.prefetch, sizeof(regs.prefetch));  /* prefetch */
-#else
-	uae_u32 prefetch_dummy;
-	MemorySnapShot_Store(&prefetch_dummy, sizeof(prefetch_dummy));
-#endif
 
 	if (bSave)
 	{
@@ -448,6 +441,8 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&regs.isp, sizeof(regs.isp));
 		MemorySnapShot_Store(&regs.sr, sizeof(regs.sr));
 	}
+	MemorySnapShot_Store(&regs.opcode, sizeof(regs.opcode));
+	MemorySnapShot_Store(&regs.instruction_pc, sizeof(regs.instruction_pc));
 	MemorySnapShot_Store(&regs.stopped, sizeof(regs.stopped));
 	MemorySnapShot_Store(&regs.dfc, sizeof(regs.dfc));            /* DFC */
 	MemorySnapShot_Store(&regs.sfc, sizeof(regs.sfc));            /* SFC */
@@ -484,16 +479,16 @@ void M68000_MemorySnapShot_Capture(bool bSave)
  */
 void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType )
 {
-	Uint32 BusErrorPC = M68000_GetPC();
+	Uint32 InstrPC = M68000_InstrPC;
 
 	/* Do not print message when TOS is testing for available HW or
 	 * when a program just checks for the floating point co-processor. */
-	if ((BusErrorPC < TosAddress || BusErrorPC > TosAddress + TosSize)
+	if ((InstrPC < TosAddress || InstrPC > TosAddress + TosSize)
 	    && addr != 0xfffa42)
 	{
 		/* Print bus error message */
 		fprintf(stderr, "M68000 Bus Error %s at address $%x PC=$%x.\n",
-			ReadWrite ? "reading" : "writing", addr, BusErrorPC);
+			ReadWrite ? "reading" : "writing", addr, InstrPC);
 	}
 
 #ifndef ENABLE_WINUAE_CPU

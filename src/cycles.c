@@ -120,6 +120,7 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 {
 	int AddCycles;
 	int Opcode;
+	Uint32 InstrPC;
 
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
@@ -127,18 +128,16 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 	}
 	else							/* BUS_MODE_CPU */
 	{
-#ifdef WINUAE_FOR_HATARI
 		/* Get the value of PC for the current instruction */
-		BusErrorPC = regs.instruction_pc;
-#endif
+		InstrPC = M68000_InstrPC;
 
 		/* TODO: Find proper cycles count depending on the type of the current instruction */
 		/* (e.g. movem is not correctly handled) */
 		/* We don't read the opcode if PC is located in the IO region (rare cases */
 		/* used in some games/demos protections) as this can create recursive calls */
 		/* (protection of the "Union Demo" runs at $ff8240) */
-		if ( ( ( BusErrorPC & 0xffffff ) < 0xff0000 ) || ( ( BusErrorPC & 0xffffff ) > 0xffffff ) )
-			Opcode = get_word(BusErrorPC);					/* BusErrorPC points to the current opcode */
+		if ( ( ( InstrPC & 0xffffff ) < 0xff0000 ) || ( ( InstrPC & 0xffffff ) > 0xffffff ) )
+			Opcode = get_word(InstrPC);					/* InstrPC points to the current opcode */
 		else
 			Opcode = -1;
 		//fprintf ( stderr , "opcode=%x\n" , Opcode );

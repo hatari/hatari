@@ -115,6 +115,8 @@ enum {
 # define M68000_GetPC()     m68k_getpc()
 # define M68000_SetPC(val)  m68k_setpc(val)
 
+# define M68000_InstrPC		regs.instruction_pc
+
 static inline Uint16 M68000_GetSR(void)
 {
 	MakeSR();
@@ -179,7 +181,6 @@ typedef struct {
 extern cpu_instruction_t CpuInstruction;
 
 extern Uint32 BusErrorAddress;
-extern Uint32 BusErrorPC;
 extern bool bBusErrorReadWrite;
 extern int nCpuFreqShift;
 extern int nWaitStateCycles;

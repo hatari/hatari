@@ -134,6 +134,8 @@
 /* 2014/09/07	[NP]	For address error, store if the access was in cpu space or data space and fix	*/
 /*			the exception stack frame accordingly (fix Blood Money on Superior 65,		*/
 /*			PC=4e664e66 after RTS)								*/
+/* 2015/02/11	[NP]	Replace BusErrorPC by regs.instruction_pc, to get similar code to WinUAE's cpu	*/
+
 
 const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
@@ -988,7 +990,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     put_word (m68k_areg(regs, 7), regs.sr);
 
     LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x\n",
-	nr, currpc, BusErrorPC, get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3);
+	nr, currpc, regs.instruction_pc, get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3);
 
     /* 68000 bus/address errors: */
     if (currprefs.cpu_level==0 && (nr==2 || nr==3) && ExceptionSource == M68000_EXC_SRC_CPU) {
@@ -1013,8 +1015,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	else {    /* Bus error */
 	    /* Get the opcode that caused the bus error, to adapt the stack frame in some cases */
 	    /* (we must call get_word() only on valid region, else this will cause a double bus error) */
-	    if ( valid_address ( BusErrorPC , 2 ) )
-	      BusError_opcode = get_word(BusErrorPC);
+	    if ( valid_address ( regs.instruction_pc , 2 ) )
+	      BusError_opcode = get_word(regs.instruction_pc);
 	    else
 	      BusError_opcode = 0;
 
@@ -1030,23 +1032,23 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    if ( BusError_opcode == 0x21f8 )						/* move.l $0.w,$24.w (Transbeauce 2 loader) */
 	      put_long (m68k_areg(regs, 7)+10, currpc-2);				/* correct PC is 2 bytes less than usual value */
 
-	    else if ( ( BusErrorPC == 0xccc ) && ( BusError_opcode == 0x48d6 ) )	/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
-	      put_long (m68k_areg(regs, 7)+10, currpc+2);				/* correct PC is 2 bytes more than usual value */
+	    else if ( ( regs.instruction_pc == 0xccc ) && ( BusError_opcode == 0x48d6 ) )	/* 48d6 3f00 movem.l a0-a5,(a6) (Blood Money) */
+	      put_long (m68k_areg(regs, 7)+10, currpc+2);					/* correct PC is 2 bytes more than usual value */
 
-	    else if ( ( BusErrorPC == 0x1fece ) && ( BusError_opcode == 0x33d4 ) )	/* 1fece : 33d4 0001 fdca move.w (a4),$1fdca (Batman The Movie) */
-	      put_long (m68k_areg(regs, 7)+10, currpc-4);				/* correct PC is 4 bytes less than usual value */
+	    else if ( ( regs.instruction_pc == 0x1fece ) && ( BusError_opcode == 0x33d4 ) )	/* 1fece : 33d4 0001 fdca move.w (a4),$1fdca (Batman The Movie) */
+	      put_long (m68k_areg(regs, 7)+10, currpc-4);					/* correct PC is 4 bytes less than usual value */
 
 	    /* [NP] In case of a move with a bus error on the read part, uae cpu is writing to the dest part */
 	    /* then process the bus error ; on a real CPU, the bus error occurs after the read and before the */
 	    /* write, so the dest part doesn't change. For now, we restore the dest part on some specific cases */
 	    /* FIXME : the bus error should be processed just after the read, not at the end of the instruction */
-	    else if ( ( BusErrorPC == 0x62a ) && ( BusError_opcode == 0x3079 ) )	/* 3079 4ef9 0000 move.l $4ef90000,a0 (Dragon Flight) */
-	      m68k_areg(regs, 0) = 8;							/* A0 should not be changed to "0" but keep its value "8" */
+	    else if ( ( regs.instruction_pc == 0x62a ) && ( BusError_opcode == 0x3079 ) )	/* 3079 4ef9 0000 move.l $4ef90000,a0 (Dragon Flight) */
+	      m68k_areg(regs, 0) = 8;								/* A0 should not be changed to "0" but keep its value "8" */
 
-	    else if ( get_long(BusErrorPC) == 0x13f88e21 )				/* 13f8 8e21 move.b $ffff8e21.w,$xxxxx (Tymewarp) */
-	      put_byte ( get_long(BusErrorPC+4) , 0x00 );				/* dest content should not be changed to "ff" but keep its value "00" */
+	    else if ( get_long(regs.instruction_pc) == 0x13f88e21 )				/* 13f8 8e21 move.b $ffff8e21.w,$xxxxx (Tymewarp) */
+	      put_byte ( get_long(regs.instruction_pc+4) , 0x00 );				/* dest content should not be changed to "ff" but keep its value "00" */
 
-	    fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, BusErrorPC , BusError_opcode);
+	    fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, regs.instruction_pc , BusError_opcode);
 
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
@@ -1791,7 +1793,7 @@ static void m68k_run_1 (void)
 
 	/* In case of a Bus Error, we need the PC of the instruction that caused */
 	/* the error to build the exception stack frame */
-	BusErrorPC = m68k_getpc();
+	regs.instruction_pc = m68k_getpc();
 
 	if (bDspEnabled)
 	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
@@ -1874,7 +1876,7 @@ static void m68k_run_2 (void)
 
 	/* In case of a Bus Error, we need the PC of the instruction that caused */
 	/* the error to build the exception stack frame */
-	BusErrorPC = m68k_getpc();
+	regs.instruction_pc = m68k_getpc();
 
 	cycles = (*cpufunctbl[opcode])(opcode);
 
