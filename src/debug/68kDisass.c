@@ -15,6 +15,9 @@
 #include "main.h"
 #include "configuration.h"
 #include "newcpu.h"
+#ifdef WINUAE_FOR_HATARI
+#include "debug.h"
+#endif
 #include "paths.h"
 #include "profile.h"
 #include "tos.h"
@@ -127,7 +130,11 @@ static inline unsigned short	Disass68kGetWord(long addr)
 	if ( ! valid_address ( addr , 2 ) )
 		return 0;
 
+#ifndef WINUAE_FOR_HATARI
 	return get_word(addr);
+#else
+	return get_word_debug(addr);
+#endif
 }
 
 // Load a text file into memory, count the lines and replace the LF with 0-bytes.

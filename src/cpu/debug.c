@@ -269,9 +269,13 @@ uae_u32 get_iword_debug (uaecptr addr)
 	if (debug_mmu_mode) {
 		return get_word_debug (addr);
 	} else {
+#ifndef WINUAE_FOR_HATARI
 		if (valid_address (addr, 2))
 			return get_word (addr);
 		return 0xffff;
+#else
+		return get_word_debug (addr);
+#endif
 	}
 }
 uae_u32 get_ilong_debug (uaecptr addr)
@@ -279,9 +283,13 @@ uae_u32 get_ilong_debug (uaecptr addr)
 	if (debug_mmu_mode) {
 		return get_long_debug (addr);
 	} else {
+#ifndef WINUAE_FOR_HATARI
 		if (valid_address (addr, 4))
 			return get_long (addr);
 		return 0xffffffff;
+#else
+		return get_long_debug (addr);
+#endif
 	}
 }
 
