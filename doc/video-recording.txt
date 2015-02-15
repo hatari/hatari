@@ -1,0 +1,66 @@
+How to record Atari videos with Hatari
+======================================
+
+Getting best output from Hatari
+-------------------------------
+
+* Do NOT use external recorders (such as Quicktime X on OSX), as they
+  won't get perfect framerate and sound sync like Hatari itself does.
+
+* Disable (default) frame skip, either from the Hatari GUI, or with
+  following command line option:
+  	--frameskips 0
+
+* For STe you could set audio to 50066 Hz using ST table, either from
+  the Hatari GUI, or with following command line options:
+	--sound 50066 --ym-mixing table
+
+* If you have enough free disk space, ask Hatari to use uncompressed
+  AVI format for the recording with the following command line option:
+	--avi-vcodec bmp
+
+
+Hatari AVI compression notes
+----------------------------
+
+If Hatari is configured/built with PNG development installed headers
+(normal case with Linux distros and pre-built binaries), Hatari will
+use PNG compression to produce smaller AVI recordings.
+
+Additionally, by default Hatari will use the highest PNG compression
+level (same as with screenshots), but this is *really* CPU intensive.
+
+Because of the PNG compression CPU usage, it's better to use
+uncompressed BMP format.  If you don't have enough disk space for
+this, next best option is to ask Hatari to use lower compression
+level, e.g. with:
+	--png-level 4
+
+Valid compression levels are 0-9, with 9 being default/highest/slowest.
+
+
+Preparing videos for uploading
+------------------------------
+
+If the end goal is Youtube, it's recommended to run Hatari's AVI
+output through ffmpeg to do nearest neighbor upscale to 1080p. Then
+Youtube will keep the 50 FPS and you have non-fuzzy pixels in the
+recording.
+
+This ffmpeg line should do the trick for a 320x200 stream (5x scale):
+  ffmpeg -i hatari.avi -vf "scale=1600:1000, \
+    pad=1920:1080:160:40:black" -sws_flags neighbor \
+    -vcodec png -acodec copy youtube1080p.mov
+
+And for a 416x276 stream (so you get the overscan area as well, 4x scale):
+  ffmpeg -i hatari.avi -vf "crop=400:270:8:0, scale=1600:1080, \
+    pad=1920:1080:160:0:black" -sws_flags neighbor -vcodec png \
+    -acodec copy youtube1080p.mov
+
+Above adds padding to 1920*1080 size, that can be removed if you trust
+the re-encoder/player to scale properly (which has been known to
+fail). It also saves the stream as PNG so it's manageable to upload
+and store for future.
+
+(Upload information is based on atari-forum post by "evil":
+http://atari-forum.com/viewtopic.php?f=51&t=27595#p268185 )
