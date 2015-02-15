@@ -84,6 +84,7 @@ Other changes:
 - Add hatari-prg-args script for providing arguments to autostarted programs
 - Hatari & disk image icons in SVG & PNG formats (multiple sizes)
 - Remaining Hatari OSX UI changes for Hatari v1.8.0 (localization)
+- Add video-recording.txt doc on video recording/uploading best practices
 
 Fixed games:
 - Superior 65 - Blood Money (cpu, exception stack and bus error)
