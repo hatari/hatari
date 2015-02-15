@@ -973,7 +973,7 @@ Working demos:
 - Six Sievert (by tSCc)
 - Snowstorm (by Reservoir Gods), disable DSP
 - Sonolumineszenz (by Avena)
-  - No sound
+  - before v0.9.1 works without sounds
 - Terrorize Your Soul (by tSCc)
   - fonts and colors aren't right on all screens
 - Videl visions slideshow
@@ -1077,8 +1077,8 @@ Games working in EmuTOS >v0.9.0:
 - The Ultimate Minesweeper (16-color GEM game)
   - Problems with clicks
 - Vertical Mayhem(+) (Columns clone)*
-  - in v0.9.0 works without sounds
 - Zodiax (Falcon "R-type")
+  - No sound (EmuTOS doesn't enabled sound matrix on boot)
 
 Games working in EmuTOS >v0.9.3:
 - Chainz:
@@ -1087,6 +1087,9 @@ Games working in EmuTOS >v0.9.3:
   - vga, select hatari mode (F2)
 - Sweety Things
   - mouse cannot move to bottom of screen
+- Ultimate Arena Falcon edition:
+  - doesn't recognize it's on Falcon -> select "Test"
+  - crashes sometimes
 
 Games working with extra hacks:
 - Bugger, Bunion, SkyFall, Sworm games by Resorvoir Gods:
@@ -1115,7 +1118,6 @@ and/or don't use DSP XBios calls or DSP sound matrix):
 - Tetrhex: panics after trying to set 256 color mode
 - Tron 2: M68000 Bus Error reading at address $4.
 - TsccTron: M68000 Bus Error reading at address $0.
-- Ultimate Arena Falcon edition: doesn't recognize it's on Falcon
 
 
 Working applications:
