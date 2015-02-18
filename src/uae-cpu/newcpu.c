@@ -179,6 +179,8 @@ uae_u16 last_op_for_exception_3;
 uaecptr last_addr_for_exception_3;
 /* Address that generated the exception */
 uaecptr last_fault_for_exception_3;
+/* read (0) or write (1) access */
+int last_writeaccess_for_exception_3;
 /* instruction (1) or data (0) access */
 int last_instructionaccess_for_exception_3;
 
@@ -1003,12 +1005,14 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	m68k_areg(regs, 7) -= 8;
 	if (nr == 3) {    /* Address error */
 	    specialstatus |= ( last_op_for_exception_3 & (~0x1f) );	/* [NP] unused bits of specialstatus are those of the last opcode ! */
+	    if (last_writeaccess_for_exception_3==0)
+	      specialstatus |= 0x10;					/* bit 4 : 0=write 1=read */
 	    put_word (m68k_areg(regs, 7), specialstatus);
 	    put_long (m68k_areg(regs, 7)+2, last_fault_for_exception_3);
 	    put_word (m68k_areg(regs, 7)+6, last_op_for_exception_3);
 	    put_long (m68k_areg(regs, 7)+10, last_addr_for_exception_3);
+	    fprintf(stderr,"Address Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",last_fault_for_exception_3, currpc, last_addr_for_exception_3, last_op_for_exception_3);
 	    if (ExceptionDebugMask & EXCEPT_ADDRESS) {
-	      fprintf(stderr,"Address Error at address $%x, PC=$%x\n",last_fault_for_exception_3,currpc);
 	      DebugUI(REASON_CPU_EXCEPTION);
 	    }
 	}
@@ -1018,7 +1022,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
 	    specialstatus |= ( BusError_opcode & (~0x1f) );		/* [NP] unused bits of special status are those of the last opcode ! */
 	    if (bBusErrorReadWrite)
-	      specialstatus |= 0x10;
+	      specialstatus |= 0x10;					/* bit 4 : 0=write 1=read */
 	    put_word (m68k_areg(regs, 7), specialstatus);
 	    put_long (m68k_areg(regs, 7)+2, BusErrorAddress);
 	    put_word (m68k_areg(regs, 7)+6, BusError_opcode);		/* Opcode */
@@ -1044,7 +1048,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    else if ( get_long(regs.instruction_pc) == 0x13f88e21 )				/* 13f8 8e21 move.b $ffff8e21.w,$xxxxx (Tymewarp) */
 	      put_byte ( get_long(regs.instruction_pc+4) , 0x00 );				/* dest content should not be changed to "ff" but keep its value "00" */
 
-	    fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", BusErrorAddress, (long)currpc, regs.instruction_pc , BusError_opcode);
+	    fprintf(stderr,"Bus Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", BusErrorAddress, currpc, get_long(m68k_areg(regs, 7)+10) , BusError_opcode);
 
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {

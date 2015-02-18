@@ -363,6 +363,8 @@ extern uae_u16 last_op_for_exception_3;
 extern uaecptr last_addr_for_exception_3;
 /* Address that generated the exception */
 extern uaecptr last_fault_for_exception_3;
+/* read (0) or write (1) access */
+extern int last_writeaccess_for_exception_3;
 /* instruction (1) or data (0) access */
 extern int last_instructionaccess_for_exception_3;
 
