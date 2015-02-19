@@ -259,7 +259,7 @@ void Audio_SetOutputAudioFreq(int nNewFrequency)
 	}
 
 	if ((ConfigureParams.System.nMachineType == MACHINE_ST) &&
-		(nAudioFrequency == 44100 || nAudioFrequency == 48000))
+		(nAudioFrequency >= 40000))
 	{
 		/* Apply YM2149 C10 filter. */
 		UseLowPassFilter = true;
