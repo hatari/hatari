@@ -54,6 +54,7 @@ STATIC_INLINE int isinrom (void)
 	return (munge24 (m68k_getpc ()) & 0xFFF80000) == 0xF80000 && !currprefs.mmu_model;
 }
 
+#ifdef WITH_SOFTFLOAT
 static uae_u32 xhex_pi[]    ={0x2168c235, 0xc90fdaa2, 0x4000};
 uae_u32 xhex_exp_1[] ={0xa2bb4a9a, 0xadf85458, 0x4000};
 static uae_u32 xhex_l2_e[]  ={0x5c17f0bc, 0xb8aa3b29, 0x3fff};
@@ -73,6 +74,8 @@ uae_u32 xhex_1e4096[]={0x8a20979b, 0xc4605202, 0x7525};
 static uae_u32 xhex_inf[]   ={0x00000000, 0x00000000, 0x7fff};
 static uae_u32 xhex_nan[]   ={0xffffffff, 0xffffffff, 0x7fff};
 static uae_u32 xhex_snan[]  ={0xffffffff, 0xbfffffff, 0x7fff};
+#endif
+
 #if USE_LONG_DOUBLE
 static long double *fp_pi     = (long double *)xhex_pi;
 static long double *fp_exp_1  = (long double *)xhex_exp_1;
@@ -90,7 +93,7 @@ static long double *fp_1e512  = (long double *)xhex_1e512;
 static long double *fp_1e1024 = (long double *)xhex_1e1024;
 static long double *fp_1e2048 = (long double *)xhex_1e2048;
 static long double *fp_1e4096 = (long double *)xhex_1e4096;
-static long double *fp_inf    = (long double *)xhex_inf;
+//static long double *fp_inf    = (long double *)xhex_inf;
 static long double *fp_nan    = (long double *)xhex_nan;
 #else
 static uae_u32 dhex_pi[]    ={0x54442D18, 0x400921FB};
@@ -123,7 +126,7 @@ static double *fp_1e512  = (double *)dhex_inf;
 static double *fp_1e1024 = (double *)dhex_inf;
 static double *fp_1e2048 = (double *)dhex_inf;
 static double *fp_1e4096 = (double *)dhex_inf;
-static double *fp_inf    = (double *)dhex_inf;
+//static double *fp_inf    = (double *)dhex_inf;
 static double *fp_nan    = (double *)dhex_nan;
 #endif
 double fp_1e8 = 1.0e8;
@@ -585,6 +588,7 @@ typedef uae_s64 tointtype;
 typedef uae_s32 tointtype;
 #endif
 
+/*
 static void fpu_format_error (void)
 {
 	uaecptr newpc;
@@ -608,6 +612,7 @@ static void fpu_format_error (void)
 #endif
 	regs.fp_exception = true;
 }
+*/
 
 #define FPU_EXP_UNIMP_INS 0
 #define FPU_EXP_DISABLED 1
@@ -617,10 +622,6 @@ static void fpu_format_error (void)
 #define FPU_EXP_UNIMP_DATATYPE_PACKED_POST 5
 #define FPU_EXP_UNIMP_EA 6
 
-static void fpu_arithmetic_exception (uae_u16 opcode, uae_u16 extra, uae_u32 ea, uaecptr oldpc, int type, fpdata *src, int reg)
-{
-	// TODO
-}
 
 static void fpu_op_unimp (uae_u16 opcode, uae_u16 extra, uae_u32 ea, uaecptr oldpc, int type, fpdata *src, int reg, int size)
 {
@@ -1109,7 +1110,7 @@ STATIC_INLINE void set_fpsr (uae_u32 x)
 		fpset (&regs.fp_result, 1);
 }
 
-uae_u32 get_ftag (uae_u32 w1, uae_u32 w2, uae_u32 w3, int size)
+static uae_u32 get_ftag (uae_u32 w1, uae_u32 w2, uae_u32 w3, int size)
 {
 	int exp = (w1 >> 16) & 0x7fff;
 	
@@ -1189,7 +1190,7 @@ static void to_pack (fpdata *fpd, uae_u32 *wrd)
 		fpd->fp = d;
 }
 
-void from_pack (fpdata *src, uae_u32 *wrd, int kfactor)
+static void from_pack (fpdata *src, uae_u32 *wrd, int kfactor)
 {
 	int i, j, t;
 	int exp;
@@ -1370,7 +1371,7 @@ static bool fault_if_no_denormal_support_post(uae_u16 opcode, uae_u16 extra, uae
 static int get_fp_value (uae_u32 opcode, uae_u16 extra, fpdata *src, uaecptr oldpc, uae_u32 *adp)
 {
 	int size, mode, reg;
-	uae_u32 ad = 0, ad2;
+	uae_u32 ad = 0;
 	static const int sz1[8] = { 4, 4, 12, 12, 2, 8, 1, 0 };
 	static const int sz2[8] = { 4, 4, 12, 12, 2, 8, 2, 0 };
 	uae_u32 exts[3];
@@ -1490,7 +1491,6 @@ static int get_fp_value (uae_u32 opcode, uae_u16 extra, fpdata *src, uaecptr old
 	}
 
 	*adp = ad;
-	ad2 = ad;
 
 	if (currprefs.fpu_model == 68060 && fault_if_unimplemented_680x0 (opcode, extra, ad, oldpc, src, -1))
 		return -1;
@@ -2223,7 +2223,6 @@ void fpuop_save (uae_u32 opcode)
 
 void fpuop_restore (uae_u32 opcode)
 {
-	int fpu_version = get_fpu_version ();
 	uaecptr pc = m68k_getpc () - 2;
 	uae_u32 ad;
 	uae_u32 d;
@@ -2247,7 +2246,6 @@ void fpuop_restore (uae_u32 opcode)
 		return;
 	regs.fpiar = pc;
 
-	uae_u32 pad = ad;
 	if (incr < 0) {
 		ad -= 4;
 		d = x_get_long (ad);
