@@ -914,10 +914,10 @@ static int get_fpu_version (void)
 	switch (currprefs.fpu_model)
 	{
 	case 68881:
-		v = 0x1f;
+		v = 0x3f;
 		break;
 	case 68882:
-		v = 0x20;
+		v = 0x1f;
 		break;
 	case 68040:
 		if (currprefs.fpu_revision == 0x40)
