@@ -1488,7 +1488,7 @@ jmp_buf* __poptry(void) {
         if (s_try_stack_size == 0)
             return NULL;
         memcpy(&__exbuf,&s_try_stack[s_try_stack_size-1],sizeof(jmp_buf));
-        // fprintf(stderr,"pop jmpbuf=%08x\n",s_try_stack[s_try_stack_size][0]);
+        // fprintf(stderr,"pop %d jmpbuf=%08x\n",s_try_stack_size, s_try_stack[s_try_stack_size][0]);
         return &s_try_stack[s_try_stack_size-1];
     }
 	else {
@@ -1499,7 +1499,7 @@ jmp_buf* __poptry(void) {
 }
 void __pushtry(jmp_buf* j) {
 	if (s_try_stack_size<MAX_TRY_STACK) {
-		// fprintf(stderr,"push jmpbuf=%08x\n",(*j)[0]);
+		// fprintf(stderr,"push %d jmpbuf=%08x\n",s_try_stack_size, (*j)[0]);
 		memcpy(&s_try_stack[s_try_stack_size],j,sizeof(jmp_buf));
 		s_try_stack_size++;
 	} else {
