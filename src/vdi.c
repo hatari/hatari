@@ -837,9 +837,17 @@ bool VDI_AES_Entry(void)
  */
 void VDI_LineA(Uint32 linea, Uint32 fontbase)
 {
+	LineABase = linea;
+	FontBase = fontbase;
+
 	if (bUseVDIRes)
 	{
 		int cel_ht = STMemory_ReadWord(linea-46);             /* v_cel_ht */
+		if (cel_ht <= 0)
+		{
+			Log_Printf(LOG_WARN, "VDI Line-A init failed due to bad cell height!\n");
+			return;
+		}
 		STMemory_WriteWord(linea-44, (VDIWidth/8)-1);         /* v_cel_mx (cols-1) */
 		STMemory_WriteWord(linea-42, (VDIHeight/cel_ht)-1);   /* v_cel_my (rows-1) */
 		STMemory_WriteWord(linea-40, cel_ht*((VDIWidth*VDIPlanes)/8));  /* v_cel_wr */
@@ -850,8 +858,6 @@ void VDI_LineA(Uint32 linea, Uint32 fontbase)
 		STMemory_WriteWord(linea+0, VDIPlanes);               /* planes */
 		STMemory_WriteWord(linea+2, (VDIWidth*VDIPlanes)/8);  /* width */
 	}
-	LineABase = linea;
-	FontBase = fontbase;
 }
 
 

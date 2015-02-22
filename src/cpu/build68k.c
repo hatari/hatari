@@ -79,7 +79,6 @@ int main(int argc, char **argv)
 		int cpulevel, uncpulevel, plevel, sduse;
 		int i;
 
-		char patbits[16];
 		char opcstr[256];
 		int bitpos[16];
 		int flagset[5], flaguse[5];
@@ -128,7 +127,6 @@ int main(int argc, char **argv)
 			bitmask |= 1;
 			if (nextch == '1')
 			bitpattern |= 1;
-			patbits[i] = nextch;
 			getnextch();
 		}
 
