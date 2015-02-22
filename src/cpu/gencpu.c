@@ -39,6 +39,7 @@ static FILE *stblfile;
 static int using_prefetch, using_indirect, using_mmu;
 static int using_prefetch_020, using_ce020;
 static int using_exception_3;
+static int using_bus_error = 1;
 static int using_ce;
 static int using_tracer;
 static int using_waitstates;
@@ -1263,8 +1264,10 @@ static void maybeaddop_ce020 (int flags)
 static void genamode2x (amodes mode, const char *reg, wordsizes size, const char *name, int getv, int movem, int flags, int fetchmode)
 {
 	char namea[100];
-	int m68k_pc_offset_last = m68k_pc_offset;
 	bool rmw = false;
+	int pc_68000_offset = m68k_pc_offset;
+	int pc_68000_offset_fetch = 0;
+	int pc_68000_offset_store = 0;
 
 	sprintf (namea, "%sa", name);
 	if ((flags & GF_RMW) && using_mmu == 68060) {
@@ -1382,6 +1385,7 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 			addcycles000 (2);
 			insn_n_cycles += 2;
 			count_cycles_ea += 2;
+			pc_68000_offset_fetch += 2;
 		}
 		break;
 	case Ad16: // (d16,An)
@@ -1485,10 +1489,13 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		printf ("\tuaecptr %sa;\n", name);
 		add_mmu040_movem (movem);
 		printf ("\t%sa = (uae_s32)(uae_s16)%s;\n", name, gen_nextiword (flags));
+		pc_68000_offset_fetch += 2;
 		break;
 	case absl:
 		gen_nextilong2 ("uaecptr", namea, flags, movem);
 		count_read_ea += 2;
+		pc_68000_offset_fetch += 4;
+		pc_68000_offset_store += 2;
 		break;
 	case imm:
 		// fetch immediate address
@@ -1555,23 +1562,32 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 	/* We get here for all non-reg non-immediate addressing modes to
 	* actually fetch the value. */
 
-	if ((using_prefetch || using_ce) && using_exception_3 && getv != 0 && size != sz_byte) {
-		int offset = 0;
-		if (flags & GF_MOVE) {
-			offset = m68k_pc_offset;
-			if (getv == 2)
-				offset += 2;
-		} else {
-			offset = m68k_pc_offset_last;
+	int exception_pc_offset = 0;
+	if (getv == 2) {
+		// store
+		if (pc_68000_offset) {
+			exception_pc_offset = pc_68000_offset + pc_68000_offset_store + 2;
 		}
+	} else {
+		// fetch
+		pc_68000_offset_fetch += 2;
+		exception_pc_offset = pc_68000_offset_fetch;
+	}
+	
+	if ((using_prefetch || using_ce) && using_exception_3 && getv != 0 && size != sz_byte) {
 		printf ("\tif (%sa & 1) {\n", name);
-		if (offset > 2)
-			incpc ("%d", offset - 2);
-		printf ("\t\texception3 (opcode, %sa);\n", name);
+		if (exception_pc_offset)
+			incpc("%d", exception_pc_offset);
+		printf ("\t\texception3_%s(opcode, %sa);\n", getv == 2 ? "write" : "read", name);
 		printf ("\t\tgoto %s;\n", endlabelstr);
 		printf ("\t}\n");
 		need_endlabel = 1;
 		start_brace ();
+	}
+
+	if ((using_prefetch || using_ce) && using_bus_error && getv != 0) {
+		if (exception_pc_offset)
+			printf("\tbus_error_offset = %d;\n", exception_pc_offset);
 	}
 
 	if (flags & GF_PREFETCH)
@@ -2142,7 +2158,7 @@ static void genmovemel (uae_u16 opcode)
 	count_read += table68k[opcode].size == sz_long ? 2 : 1;
 	printf ("\tuae_u16 mask = %s;\n", gen_nextiword (0));
 	printf ("\tuae_u32 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
-	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, mmu040_special_movem (opcode) ? 3 : 1, 0);
+	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, mmu040_special_movem (opcode) ? 3 : 1, GF_MOVE);
 	addcycles_ce020 (8 - 2);
 	start_brace ();
 	if (using_mmu == 68030) {
@@ -2178,7 +2194,7 @@ static void genmovemel_ce (uae_u16 opcode)
 	printf ("\tuae_u32 v;\n");
 	if (table68k[opcode].dmode == Ad8r || table68k[opcode].dmode == PC8r)
 		addcycles000 (2);
-	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1, GF_AA);
+	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1, GF_AA | GF_MOVE);
 	start_brace ();
 	if (table68k[opcode].size == sz_long) {
 		printf ("\twhile (dmask) {\n");
@@ -2232,7 +2248,7 @@ static void genmovemle (uae_u16 opcode)
 	count_write += table68k[opcode].size == sz_long ? 2 : 1;
 
 	printf ("\tuae_u16 mask = %s;\n", gen_nextiword (0));
-	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, mmu040_special_movem (opcode) ? 3 : 1, 0);
+	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, mmu040_special_movem (opcode) ? 3 : 1, GF_MOVE);
 	addcycles_ce020 (4 - 2);
 	start_brace ();
 	if (using_mmu >= 68030) {
@@ -2284,7 +2300,7 @@ static void genmovemle_ce (uae_u16 opcode)
 	printf ("\tuae_u16 mask = %s;\n", gen_nextiword (0));
 	if (table68k[opcode].dmode == Ad8r || table68k[opcode].dmode == PC8r)
 		addcycles000 (2);
-	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1, GF_AA);
+	genamode (NULL, table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1, GF_AA | GF_MOVE);
 	start_brace ();
 	if (table68k[opcode].size == sz_long) {
 		if (table68k[opcode].dmode == Apdi) {
@@ -3569,7 +3585,7 @@ static void gen_opcode (unsigned int opcode)
 					else
 						subhead = gence020cycles_fea (curi->smode);
 				}
-				genamode2x (curi->smode, "srcreg", curi->size, "src", 1, 0, GF_MOVE, fea ? fetchmode_fea : -1);
+				genamode2x (curi->smode, "srcreg", curi->size, "src", 1, 0, 0, fea ? fetchmode_fea : -1);
 				genamode2 (curi->dmode, "dstreg", curi->size, "dst", 2, 0, GF_MOVE);
 				addopcycles_ce20 (h, t, c, -subhead);
 				if (curi->mnemo == i_MOVEA && curi->size == sz_word)
@@ -3582,7 +3598,7 @@ static void gen_opcode (unsigned int opcode)
 			} else {
 				int prefetch_done = 0, flags;
 				int dualprefetch = curi->dmode == absl && (curi->smode != Dreg && curi->smode != Areg && curi->smode != imm);
-				genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, GF_MOVE);
+				genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 				flags = GF_MOVE | GF_APDI;
 				//if (curi->size == sz_long && (curi->smode == Dreg || curi->smode == Areg))
 				//	flags &= ~GF_APDI;

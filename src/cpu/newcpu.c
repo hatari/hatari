@@ -77,6 +77,7 @@ static int last_writeaccess_for_exception_3;
 static int last_instructionaccess_for_exception_3;
 int mmu_enabled, mmu_triggered;
 int cpu_cycles;
+int bus_error_offset;
 #ifndef WINUAE_FOR_HATARI
 static int baseclock;
 #endif
@@ -2332,7 +2333,11 @@ currcycle=0;
 		x_put_word (m68k_areg (regs, 7) + 0, mode);
 		x_put_word (m68k_areg (regs, 7) + 2, last_fault_for_exception_3 >> 16);
 		x_do_cycles (2 * cpucycleunit);
-		write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
+		write_log (_T("Exception %d (%04x %x) at %x -> %x!\n"),
+			nr, last_op_for_exception_3, last_addr_for_exception_3, currpc, get_long_debug (4 * nr));
+#ifdef WINUAE_FOR_HATARI
+		fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address", last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
+#endif
 		goto kludge_me_do;
 	}
 	if (currprefs.cpu_model == 68010) {
@@ -2359,7 +2364,7 @@ kludge_me_do:
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
 		else
-			exception3 (regs.ir, newpc);
+			exception3_read (regs.ir, newpc);
 		return;
 	}
 	m68k_setpc (newpc);
@@ -2633,7 +2638,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
 		else
-			exception3 (regs.ir, newpc);
+			exception3_read (regs.ir, newpc);
 		return;
 	}
 	m68k_setpci (newpc);
@@ -2709,7 +2714,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
 		else
-			exception3 (regs.ir, newpc);
+			exception3_read (regs.ir, newpc);
 		return;
 	}
 	m68k_setpci (newpc);
@@ -2981,7 +2986,7 @@ static void Exception_normal (int nr)
 			x_put_long (m68k_areg (regs, 7) + 10, last_addr_for_exception_3);
 			write_log (_T("Exception %d (%x) at %x -> %x!\n"), nr, last_fault_for_exception_3, currpc, get_long_debug (regs.vbr + 4 * vector_nr));
 #ifdef WINUAE_FOR_HATARI
-			fprintf(stderr,"Bus Error at address $%x, PC=$%lx %x %x\n", last_fault_for_exception_3, (long)currpc, last_addr_for_exception_3 , last_op_for_exception_3);
+			fprintf(stderr,"%s Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n", nr==2?"Bus":"Address", last_fault_for_exception_3, currpc, last_addr_for_exception_3 , last_op_for_exception_3);
 #endif
 			goto kludge_me_do;
 		}
@@ -3001,7 +3006,7 @@ kludge_me_do:
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
 		else
-			exception3 (regs.ir, newpc);
+			exception3_read (regs.ir, newpc);
 		return;
 	}
 	m68k_setpc (newpc);
@@ -4225,8 +4230,9 @@ retry:
 		}
 	} CATCH (prb) {
 		bus_error();
-		goto retry;
+		//goto retry;
 	} ENDTRY
+	goto retry;
 }
 
 #endif /* CPUEMU_11 */
@@ -4378,8 +4384,9 @@ cont:
 		}
 	} CATCH (prb) {
 		bus_error();
-		goto retry;
+	//	goto retry;
 	} ENDTRY
+	goto retry;
 }
 
 #endif
@@ -6956,7 +6963,7 @@ uae_u8 *restore_mmu (uae_u8 *src)
 
 #endif /* SAVESTATE */
 
-static void exception3f (uae_u32 opcode, uaecptr addr, int writeaccess, int instructionaccess, uaecptr pc)
+static void exception3f (uae_u32 opcode, uaecptr addr, int writeaccess, int instructionaccess, uaecptr pc, bool plus2)
 {
 	if (currprefs.cpu_model >= 68040)
 		addr &= ~1;
@@ -6966,7 +6973,9 @@ static void exception3f (uae_u32 opcode, uaecptr addr, int writeaccess, int inst
 		else
 			last_addr_for_exception_3 = pc;
 	} else if (pc == 0xffffffff) {
-		last_addr_for_exception_3 = m68k_getpc () + 2;
+		last_addr_for_exception_3 = m68k_getpc ();
+		if (plus2)
+			last_addr_for_exception_3 += 2;
 	} else {
 		last_addr_for_exception_3 = pc;
 	}
@@ -6980,17 +6989,21 @@ static void exception3f (uae_u32 opcode, uaecptr addr, int writeaccess, int inst
 #endif
 }
 
-void exception3 (uae_u32 opcode, uaecptr addr)
+void exception3_read(uae_u32 opcode, uaecptr addr)
 {
-	exception3f (opcode, addr, 0, 0, 0xffffffff);
+	exception3f (opcode, addr, false, 0, 0xffffffff, false);
+}
+void exception3_write(uae_u32 opcode, uaecptr addr)
+{
+	exception3f (opcode, addr, true, 0, 0xffffffff, false);
 }
 void exception3i (uae_u32 opcode, uaecptr addr)
 {
-	exception3f (opcode, addr, 0, 1, 0xffffffff);
+	exception3f (opcode, addr, 0, 1, 0xffffffff, true);
 }
 void exception3b (uae_u32 opcode, uaecptr addr, bool w, bool i, uaecptr pc)
 {
-	exception3f (opcode, addr, w, i, pc);
+	exception3f (opcode, addr, w, i, pc, true);
 }
 
 void exception2 (uaecptr addr, bool read, int size, uae_u32 fc)
@@ -7003,7 +7016,7 @@ void exception2 (uaecptr addr, bool read, int size, uae_u32 fc)
 			mmu_bus_error (addr, fc, read == false, size, false, 0);
 		}
 	} else {
-		last_addr_for_exception_3 = m68k_getpc();		// FIXME, depends on prefetching
+		last_addr_for_exception_3 = m68k_getpc() + bus_error_offset;
 		last_fault_for_exception_3 = addr;
 		last_writeaccess_for_exception_3 = read == 0;
 		last_instructionaccess_for_exception_3 = (fc & 1) == 0;
