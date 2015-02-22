@@ -3905,8 +3905,8 @@ static int do_specialties (int cycles)
 		unset_special (SPCFLAG_TRAP);
 		Exception (3);
 	}
+	bool first = true;
 	while ((regs.spcflags & SPCFLAG_STOP) && !(regs.spcflags & SPCFLAG_BRK)) {
-
 isstopped:
 #ifndef WINUAE_FOR_HATARI
 		if (uae_int_requested || uaenet_int_requested) {
@@ -3931,13 +3931,17 @@ isstopped:
 			cputrace.cyclecounter = cputrace.cyclecounter_pre = cputrace.cyclecounter_post = 0;
 			cputrace.readcounter = cputrace.writecounter = 0;
 		}
-		x_do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
+		if (!first)
+			x_do_cycles (currprefs.cpu_cycle_exact ? 2 * CYCLE_UNIT : 4 * CYCLE_UNIT);
 
 #ifdef WINUAE_FOR_HATARI
-		if ( currprefs.cpu_cycle_exact )
-			M68000_AddCycles(2);
-		else						/* TODO [NP] : always do only M68000_AddCycles(2) ? */
-			M68000_AddCycles(4);
+		if (!first)
+		{
+			if ( currprefs.cpu_cycle_exact )
+				M68000_AddCycles(2);
+			else						/* TODO [NP] : always do only M68000_AddCycles(2) ? */
+				M68000_AddCycles(4);
+		}
 
 		/* It is possible one or more ints happen at the same time */
 		/* We must process them during the same cpu cycle then choose the highest priority one */
@@ -3952,7 +3956,7 @@ isstopped:
 			M68000_Update_intlev ();		/* Refresh the list of pending interrupts */
 		}
 #endif
-
+		first = false;
 #ifndef WINUAE_FOR_HATARI
 		if (regs.spcflags & SPCFLAG_COPPER)
 			do_copper ();
@@ -4024,8 +4028,10 @@ isstopped:
 		set_special (SPCFLAG_INT);
 	}
 
+#ifdef WINUAE_FOR_HATARI
         if (regs.spcflags & SPCFLAG_DEBUGGER)
 		DebugCpu_Check();
+#endif
 
 	if (regs.spcflags & SPCFLAG_BRK) {
 		unset_special(SPCFLAG_BRK);
@@ -4037,7 +4043,7 @@ isstopped:
 		}
 #endif
 #ifdef WINUAE_FOR_HATARI
-		return 1;
+		return 1;			/* Exit the upper run_xxx() function */
 #endif
 	}
 
