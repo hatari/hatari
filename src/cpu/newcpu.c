@@ -1065,6 +1065,7 @@ static void set_x_funcs (void)
 	}
 
 	set_x_cp_funcs();
+	mmu_set_funcs();
 	mmu030_set_funcs();
 
 }
@@ -2874,7 +2875,7 @@ static void Exception_normal (int nr)
 							if (nr == 2 || nr == 3)
 								cpu_halt (2);
 							else
-								exception3 (regs.ir, newpc);
+								exception3_read (regs.ir, newpc);
 							return;
 						}
 						m68k_setpc (newpc);
@@ -3118,9 +3119,16 @@ static void m68k_reset2(bool hardreset)
 {
 	uae_u32 v;
 
+	regs.halted = 0;
+#ifndef WINUAE_FOR_HATARI
+	gui_data.cpu_halted = 0;
+	gui_led (LED_CPU, 0);
+#endif
+
 	regs.spcflags = 0;
 	m68k_reset_delay = 0;
 	regs.ipl = regs.ipl_pin = 0;
+
 #ifdef SAVESTATE
 	if (isrestore ()) {
 		m68k_reset_sr();
@@ -3181,12 +3189,6 @@ static void m68k_reset2(bool hardreset)
 		}
 		fake_mmusr_030 = 0;
 	}
-
-	regs.halted = 0;
-#ifndef WINUAE_FOR_HATARI
-	gui_data.cpu_halted = 0;
-	gui_led (LED_CPU, 0);
-#endif
 
 	/* 68060 FPU is not compatible with 68040,
 	* 68060 accelerators' boot ROM disables the FPU

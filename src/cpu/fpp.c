@@ -915,8 +915,6 @@ static int get_fpu_version (void)
 	switch (currprefs.fpu_model)
 	{
 	case 68881:
-		v = 0x3f;
-		break;
 	case 68882:
 		v = 0x1f;
 		break;
@@ -2223,6 +2221,9 @@ void fpuop_save (uae_u32 opcode)
 
 void fpuop_restore (uae_u32 opcode)
 {
+#ifndef WINUAE_FOR_HATARI
+	int fpu_version = get_fpu_version (); // TODO: check version of stack frame
+#endif
 	uaecptr pc = m68k_getpc () - 2;
 	uae_u32 ad;
 	uae_u32 d;

@@ -39,7 +39,7 @@ static FILE *stblfile;
 static int using_prefetch, using_indirect, using_mmu;
 static int using_prefetch_020, using_ce020;
 static int using_exception_3;
-static int using_bus_error = 1;
+static int using_bus_error;
 static int using_ce;
 static int using_tracer;
 static int using_waitstates;
@@ -55,7 +55,9 @@ static int ipl_fetched;
 
 static int optimized_flags;
 
-long nCurInstrCycPos;	/* Hatari only : Stores where we have to patch in the current cycles value */
+#ifdef WINUAE_FOR_HATARI
+long nCurInstrCycPos;				/* Hatari only : Stores where we have to patch in the current cycles value */
+#endif
 
 #define GF_APDI 1
 #define GF_AD8R 2
@@ -387,7 +389,8 @@ static void addcycles000 (int cycles)
 	}
 	count_cycles += cycles;
 }
-/*
+
+#ifndef WINUAE_FOR_HATARI
 static void addcycles000_2 (const char *s, int cycles)
 {
 	if (using_ce) {
@@ -395,7 +398,8 @@ static void addcycles000_2 (const char *s, int cycles)
 	}
 	count_cycles += cycles;
 }
-*/
+#endif
+
 
 static void addcycles000_3 (const char *s)
 {
@@ -1575,7 +1579,7 @@ static void genamode2x (amodes mode, const char *reg, wordsizes size, const char
 		pc_68000_offset_fetch += 2;
 		exception_pc_offset = pc_68000_offset_fetch;
 	}
-	
+
 	if ((using_prefetch || using_ce) && using_exception_3 && getv != 0 && size != sz_byte) {
 		printf ("\tif (%sa & 1) {\n", name);
 		if (exception_pc_offset)
@@ -3621,7 +3625,6 @@ static void gen_opcode (unsigned int opcode)
 						single_check_ipl();
 					}
 				}
-
 				genastore ("src", curi->dmode, "dstreg", curi->size, "dst");
 				sync_m68k_pc ();
 				if (dualprefetch) {
@@ -5825,6 +5828,10 @@ static void generate_cpu (int id, int mode)
 	memory_cycle_cnt = 4;
 	mmu_postfix = "";
 	using_simple_cycles = 0;
+
+#ifdef WINUAE_FOR_HATARI
+	using_bus_error = 1;				/* Enable code to handle bus error */
+#endif
 
 	if (id == 11 || id == 12) { // 11 = 68010 prefetch, 12 = 68000 prefetch
 		cpu_level = id == 11 ? 1 : 0;

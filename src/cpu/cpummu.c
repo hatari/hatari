@@ -35,7 +35,7 @@
 #include "memory.h"
 #include "newcpu.h"
 #include "cpummu.h"
-//#include "debug.h"
+#include "debug.h"
 
 #define MMUDUMP 0
 
@@ -1091,7 +1091,7 @@ void REGPARAM2 dfc_put_byte(uaecptr addr, uae_u8 val)
 void mmu_get_move16(uaecptr addr, uae_u32 *v, bool data, int size)
 {
 	struct mmu_atc_line *cl;
-    int i;
+	int i;
 	addr &= ~15;
 	for (i = 0; i < 4; i++) {
 		uaecptr addr2 = addr + i * 4;
@@ -1108,7 +1108,7 @@ void mmu_get_move16(uaecptr addr, uae_u32 *v, bool data, int size)
 void mmu_put_move16(uaecptr addr, uae_u32 *val, bool data, int size)
 {
 	struct mmu_atc_line *cl;
-    int i;
+	int i;
 	addr &= ~15;
 	for (i = 0; i < 4; i++) {
 		uaecptr addr2 = addr + i * 4;
@@ -1248,10 +1248,10 @@ void REGPARAM2 mmu_flush_atc_all(bool global)
 	}
 }
 
-void REGPARAM2 mmu_reset(void)
+void REGPARAM2 mmu_set_funcs(void)
 {
-	mmu_flush_atc_all(true);
-
+	if (currprefs.mmu_model != 68040 && currprefs.mmu_model != 68060)
+		return;
 	if (currprefs.cpu_cycle_exact || currprefs.cpu_compatible) {
 		x_phys_get_iword = get_word_icache040;
 		x_phys_get_ilong = get_long_icache040;
@@ -1273,6 +1273,11 @@ void REGPARAM2 mmu_reset(void)
 	}
 }
 
+void REGPARAM2 mmu_reset(void)
+{
+	mmu_flush_atc_all(true);
+	mmu_set_funcs();
+}
 
 void REGPARAM2 mmu_set_tc(uae_u16 tc)
 {

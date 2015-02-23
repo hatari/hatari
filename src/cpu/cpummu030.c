@@ -724,6 +724,11 @@ static void mmu030_do_fake_prefetch(void)
 	// "enable MMU" unmaps memory under us.
 	TRY (prb) {
 		mmu030_fake_prefetch = x_prefetch(0);
+		// A26x0 ROM code switches off rom
+		// NOP
+		// JMP (a0)
+		if (mmu030_fake_prefetch == 0x4e71)
+			mmu030_fake_prefetch = x_prefetch(2);
 	} CATCH (prb) {
 		// didn't work, oh well..
 		mmu030_fake_prefetch = -1;
@@ -770,7 +775,7 @@ bool mmu030_decode_tc(uae_u32 TC)
         write_log(_T("MMU Configuration Exception: Bad value in TC register! (bad page size: %i byte)\n"),
                   1<<mmu030.translation.page.size);
         Exception(56); /* MMU Configuration Exception */
-	return true;
+        return true;
     }
 	mmu030.translation.page.mask = regs.mmu_page_size - 1;
 	mmu030.translation.page.imask = ~mmu030.translation.page.mask;
@@ -883,7 +888,7 @@ bool mmu030_decode_rp(uae_u64 RP) {
     if (!descriptor_type) { /* If descriptor type is invalid */
         write_log(_T("MMU Configuration Exception: Root Pointer is invalid!\n"));
         Exception(56); /* MMU Configuration Exception */
-	return true;
+		return true;
     }
 	return false;
 
