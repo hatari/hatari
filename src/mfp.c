@@ -1320,48 +1320,59 @@ void MFP_InterruptHandler_TimerD(void)
  * Handle read from GPIP pins register (0xfffa01).
  *
  * - Bit 0 is the BUSY signal of the printer port, it is SET if no printer
- *   is connected or on BUSY. Therefor we should assume it to be 0 in Hatari
+ *   is connected or on BUSY. Therefore we should assume it to be 0 in Hatari
  *   when a printer is emulated.
  * - Bit 1 is used for RS232: DCD
  * - Bit 2 is used for RS232: CTS
- * - Bit 3 is used by the blitter for signalling when its done.
- * - Bit 4 is used by the ACIAs.
- * - Bit 5 is used by the floppy controller / ACSI DMA
+ * - Bit 3 is used by the blitter (busy/idle state)
+ * - Bit 4 is used by the ACIAs (keyboard and midi)
+ * - Bit 5 is used by the FDC / HDC
  * - Bit 6 is used for RS232: RI
  * - Bit 7 is monochrome monitor detection signal. On STE it is also XORed with
  *   the DMA sound play bit.
+ *
+ * When reading GPIP, output lines (DDR=1) should return the last value that was written,
+ * only input lines (DDR=0) should be updated.
  */
 void MFP_GPIP_ReadByte(void)
 {
+	Uint8	gpip_new;
+
 	M68000_WaitState(4);
 
+	gpip_new = MFP_GPIP;
+
 	if (!bUseHighRes)
-		MFP_GPIP |= 0x80;   /* Color monitor -> set top bit */
+		gpip_new |= 0x80;	/* Color monitor -> set top bit */
 	else
-		MFP_GPIP &= ~0x80;
+		gpip_new &= ~0x80;
 	
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-		MFP_GPIP ^= 0x80;   /* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
+		gpip_new ^= 0x80;	/* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
 	if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
-		MFP_GPIP ^= 0x80;   /* Top bit is XORed with Falcon crossbar DMA sound control play bit (Falcon emulation mode) */
+		gpip_new ^= 0x80;	/* Top bit is XORed with Falcon crossbar DMA sound control play bit (Falcon emulation mode) */
 
 	if (ConfigureParams.Printer.bEnablePrinting)
 	{
 		/* Signal that printer is not busy */
-		MFP_GPIP &= ~1;
+		gpip_new &= ~1;
 	}
 	else
 	{
-		MFP_GPIP |= 1;
+		gpip_new |= 1;
 
 		/* Printer BUSY bit is also used by parallel port joystick adapters as fire button */
 		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
 		{
 			/* Fire pressed? */
 			if (Joy_GetStickData(JOYID_PARPORT1) & 0x80)
-				MFP_GPIP &= ~1;
+				gpip_new &= ~1;
 		}
 	}
+
+	gpip_new &= ~MFP_DDR;					/* New input bits */
+
+	MFP_GPIP = ( MFP_GPIP & MFP_DDR ) | gpip_new; 		/* Keep output bits unchanged and update input bits */
 
 	IoMem[0xfffa01] = MFP_GPIP;
 
@@ -1650,14 +1661,20 @@ void MFP_TimerDData_ReadByte(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Handle write to GPIP register (0xfffa01).
+ *
+ * Only line configured as ouput in DDR can be changed (0=input 1=output)
+ * When reading GPIP, output lines should return the last value that was written,
+ * only input lines should be updated.
  */
 void MFP_GPIP_WriteByte(void)
 {
+	Uint8	gpip_new;
+
 	M68000_WaitState(4);
 
-	/* Nothing... */
-	/*fprintf(stderr, "Write to GPIP: %x\n", (int)IoMem[0xfffa01]);*/
-	/*MFP_GPIP = IoMem[0xfffa01];*/   /* TODO: What are the GPIP pins good for? */
+	gpip_new = IoMem[0xfffa01] & MFP_DDR;			/* New output bits */
+
+	MFP_GPIP = ( MFP_GPIP & ~MFP_DDR ) | gpip_new;		/* Keep input bits unchanged and update output bits */
 }
 
 /*-----------------------------------------------------------------------*/
