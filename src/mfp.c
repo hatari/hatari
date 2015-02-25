@@ -281,7 +281,7 @@ void MFP_Reset(void)
 
 	bAppliedTimerDPatch = false;
 
-	MFP_GPIP = 0xff;
+	MFP_GPIP = 0;
 	MFP_AER = MFP_DDR = 0;
 	MFP_IERA = MFP_IERB = 0;
 	MFP_IPRA = MFP_IPRB = 0;
