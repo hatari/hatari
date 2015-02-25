@@ -252,6 +252,10 @@ static const Uint16 MFPDiv[] =
 //#define MFP_CYCLE_TO_REG(cyc,ctrl)	( cyc / MFPDiv[ ctrl&0x7 ] )
 
 
+/* Interrupt number associated to each line of the GPIP */
+static const int MFP_GPIP_LineToIntNumber[] = { MFP_INT_GPIP0 , MFP_INT_GPIP1 , MFP_INT_GPIP2 , MFP_INT_GPIP3,
+	MFP_INT_GPIP4 , MFP_INT_GPIP5 , MFP_INT_GPIP6 , MFP_INT_GPIP7 };
+
 
 
 /*--------------------------------------------------------------*/
@@ -665,11 +669,11 @@ static int MFP_CheckPendingInterrupts ( void )
 	if ( MFP_InterruptRequest ( MFP_INT_TIMER_B , MFP_TIMER_B_BIT, MFP_IPRA, MFP_IMRA, 0xff, 0x00 ) )	/* Check Timer B (bit 0) */
 		return MFP_INT_TIMER_B;
 
-	if ( MFP_InterruptRequest ( MFP_INT_GPIP5 , MFP_FDCHDC_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0x80 ) )		/* Check FDC (bit 7) */
+	if ( MFP_InterruptRequest ( MFP_INT_GPIP5 , MFP_GPIP5_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0x80 ) )		/* Check GPIP5 = FDC (bit 7) */
 		return MFP_INT_GPIP5;
 
-	if ( MFP_InterruptRequest ( MFP_INT_ACIA , MFP_ACIA_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xc0 ) )		/* Check ACIA (Keyboard or MIDI) (bit 6) */
-		return MFP_INT_ACIA;
+	if ( MFP_InterruptRequest ( MFP_INT_GPIP4 , MFP_GPIP4_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xc0 ) )		/* Check GPIP4 = ACIA (Keyboard or MIDI) (bit 6) */
+		return MFP_INT_GPIP4;
 
 	if ( MFP_InterruptRequest ( MFP_INT_TIMER_C , MFP_TIMER_C_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xe0 ) )	/* Check Timer C (bit 5) */
 		return MFP_INT_TIMER_C;
@@ -677,8 +681,8 @@ static int MFP_CheckPendingInterrupts ( void )
 	if ( MFP_InterruptRequest ( MFP_INT_TIMER_D , MFP_TIMER_D_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf0 ) )	/* Check Timer D (bit 4) */
 		return MFP_INT_TIMER_D;
 
-	if ( MFP_InterruptRequest ( MFP_INT_GPU_DONE , MFP_GPU_DONE_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf8 ) )	/* Check GPU done (bit 3) */
-		return MFP_INT_GPU_DONE;
+	if ( MFP_InterruptRequest ( MFP_INT_GPIP3 , MFP_GPIP3_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xf8 ) )		/* Check GPIP3 = GPU/Blitter (bit 3) */
+		return MFP_INT_GPIP3;
 
 	if ( MFP_InterruptRequest ( MFP_INT_GPIP1 , MFP_GPIP1_BIT, MFP_IPRB, MFP_IMRB, 0xff, 0xfe ) )		/* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
 		return MFP_INT_GPIP1;
@@ -743,6 +747,40 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 
 	MFP_UpdateNeeded = true;				/* Tell main CPU loop to call MFP_UpdateIRQ() */
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Change the state of one of the external lines connected to the GPIP.
+ * Only lines configured as input in DDR can be changed.
+ * If the new state is different from the previous one, we update GPIP and
+ * we request an interrupt on the corresponding channel.
+ */
+void	MFP_GPIP_Set_Line_Input ( Uint8 LineNr , Uint8 Bit )
+{
+	Uint8	Mask;
+
+	Mask = 1 << LineNr;
+
+	/* Check that corresponding line is defined as input in DDR (0=input 1=output) */
+	/* and that the bit is changing */
+	if ( ( ( MFP_DDR & Mask ) == 0 )
+	  && ( ( MFP_GPIP & Mask ) != ( Bit << LineNr ) ) )
+	{
+		if ( Bit )
+		{
+			MFP_GPIP |= Mask;
+		}
+		else
+		{
+			MFP_GPIP &= ~Mask;
+			/* TODO : For now, assume AER=0 and to an interrupt on 1->0 transition */
+			MFP_InputOnChannel ( MFP_GPIP_LineToIntNumber[ LineNr ] , 0 );
+		}
+	}
+
+}
+
 
 
 /*-----------------------------------------------------------------------*/

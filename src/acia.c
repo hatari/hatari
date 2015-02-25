@@ -350,8 +350,8 @@ void	ACIA_MemorySnapShot_Capture ( bool bSave )
 /**
  * Set or reset the ACIA's IRQ signal.
  * IRQ signal is inverted (0/low sets irq, 1/high resets irq)
- * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP pin,
- * so they share the same IRQ bit in the MFP.
+ * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP input,
+ * so they share the same IRQ bit in GPIP4.
  */
 static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 {
@@ -363,14 +363,11 @@ static void	ACIA_Set_Line_IRQ_MFP ( int bit )
 		* the irq bit is set and the MFP interrupt is triggered - for example
 		* the "V8 music system" demo depends on this behaviour.
 		* This 4 cycle delay is handled in mfp.c */
-
-		MFP_GPIP &= ~0x10;				/* set IRQ signal for GPIP P4 */
-		MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
 	}
 	else
 	{
-		/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
-		MFP_GPIP |= 0x10;				/* IRQ bit was reset */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
 	}
 }
 

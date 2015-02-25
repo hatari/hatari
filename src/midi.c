@@ -138,8 +138,8 @@ void Midi_Control_WriteByte(void)
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: WriteControl transfer interrupt!\n");
 
-		/* Acknowledge in MFP circuit, pass bit,enable,pending */
-		MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
+		/* Request interrupt by setting GPIP to low/0 */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
 
 		MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 	}
@@ -157,9 +157,8 @@ void Midi_Data_ReadByte(void)
 
 	MidiStatusRegister &= ~(ACIA_SR_INTERRUPT_REQUEST|ACIA_SR_RX_FULL);
 
-	/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt,
-	 * becomes high(1) again after data has been read. */
-	MFP_GPIP |= 0x10;
+	/* Clear interrupt request by setting GPIP to high/1 */
+	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
 
 	IoMem[0xfffc06] = nRxDataByte;
 }
@@ -220,8 +219,8 @@ void Midi_InterruptHandler_Update(void)
 		if ((MidiControlRegister & 0xA0) == 0xA0)
 		{
 			LOG_TRACE(TRACE_MIDI, "MIDI: WriteData transfer interrupt!\n");
-			/* Acknowledge in MFP circuit, pass bit,enable,pending */
-			MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
+			/* Request interrupt by setting GPIP to low/0 */
+			MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
 			MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 		}
 
@@ -244,14 +243,11 @@ void Midi_InterruptHandler_Update(void)
 			if ((MidiControlRegister & 0x80) == 0x80)
 			{
 				LOG_TRACE(TRACE_MIDI, "MIDI: WriteData receive interrupt!\n");
-				/* Acknowledge in MFP circuit */
-				MFP_InputOnChannel ( MFP_INT_ACIA , 0 );
+				/* Request interrupt by setting GPIP to low/0 */
+				MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
 				MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 			}
 			MidiStatusRegister |= ACIA_SR_RX_FULL;
-			/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt:
-			 * It will remain low(0) until data is read from $fffc06. */
-			MFP_GPIP &= ~0x10;
 		}
 		else
 		{

@@ -1115,9 +1115,8 @@ static inline void ide_set_irq(IDEState *s)
 {
 	if (!(s->cmd & IDE_CMD_DISABLE_IRQ))
 	{
-		/* raise IRQ */
-		MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
-		MFP_GPIP &= ~0x20;
+		/* Set IRQ (set line to low) */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_LOW );
 	}
 }
 
@@ -2356,8 +2355,9 @@ static uint32_t ide_ioport_read(void *opaque, uint32_t addr1)
 			ret = 0;
 		else
 			ret = s->status;
-		/* Lower IRQ */
-		MFP_GPIP |= 0x20;
+
+		/* Clear IRQ (set line to high) */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 		break;
 	}
 	LOG_TRACE(TRACE_IDE, "IDE: read addr=0x%x val=%02x\n", addr1, ret);

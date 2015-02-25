@@ -29,8 +29,6 @@
 #define	MFP_INT_GPIP1			1
 #define	MFP_INT_GPIP0			0		/* Lowest Priority */
 
-#define	MFP_INT_FDCHDC			MFP_INT_GPIP5
-#define	MFP_INT_ACIA			MFP_INT_GPIP4
 #define	MFP_INT_GPU_DONE		MFP_INT_GPIP3
 
 /* MFP register defines ( 1 << Int ) */
@@ -52,9 +50,23 @@
 #define	MFP_GPIP1_BIT			0x02
 #define	MFP_GPIP0_BIT			0x01
 
-#define	MFP_FDCHDC_BIT			MFP_GPIP5_BIT
-#define	MFP_ACIA_BIT			MFP_GPIP4_BIT
-#define	MFP_GPU_DONE_BIT		MFP_GPIP3_BIT
+
+/* List of the GPIP lines */
+#define	MFP_GPIP_LINE7			7			
+#define	MFP_GPIP_LINE6			6
+#define	MFP_GPIP_LINE5			5
+#define	MFP_GPIP_LINE4			4
+#define	MFP_GPIP_LINE3			3
+#define	MFP_GPIP_LINE2			2
+#define	MFP_GPIP_LINE1			1
+#define	MFP_GPIP_LINE0			0
+
+#define	MFP_GPIP_LINE_FDC_HDC		MFP_GPIP_LINE5
+#define	MFP_GPIP_LINE_ACIA		MFP_GPIP_LINE4
+#define	MFP_GPIP_LINE_GPU_DONE		MFP_GPIP_LINE3
+
+#define	MFP_GPIP_STATE_LOW		0
+#define	MFP_GPIP_STATE_HIGH		1
 
 
 /* MFP Registers */
@@ -74,6 +86,8 @@ extern int  MFP_ProcessIACK ( int OldVecNr );
 extern bool MFP_ProcessIRQ ( void );
 extern void MFP_UpdateIRQ ( Uint64 Event_Time );
 extern void MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles );
+extern void MFP_GPIP_Set_Line_Input ( Uint8 LineNr , Uint8 Bit );
+
 extern void MFP_TimerA_EventCount_Interrupt(void);
 extern void MFP_TimerB_EventCount_Interrupt( int Delayed_Cycles );
 extern void MFP_InterruptHandler_TimerA(void);

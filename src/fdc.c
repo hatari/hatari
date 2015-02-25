@@ -1691,6 +1691,10 @@ int	FDC_NextIndexPulse_FdcCycles ( void )
  * is received or when the "force interrupt immediate" command is used.
  * This function can also be called from the HDC emulation or from another
  * FDC emulation module (IPF for example)
+ *
+ * NOTE : although high/1 on the IRQ pin of the FDC means an interrupt is
+ * requested, this signal is inverted before going into MFP's GPIP5.
+ * So, we must set the line to low/0 to request an interrupt.
  */
 void FDC_SetIRQ ( Uint8 IRQ_Source )
 {
@@ -1702,8 +1706,7 @@ void FDC_SetIRQ ( Uint8 IRQ_Source )
 	else
 	{
 		/* Acknowledge in MFP circuit, pass bit, enable, pending */
-		MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
-		MFP_GPIP &= ~0x20;
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_LOW );
 		LOG_TRACE(TRACE_FDC, "fdc set irq 0x%x source 0x%x VBL=%d HBL=%d\n" , FDC.IRQ_Signal , IRQ_Source , nVBLs , nHBL );
 	}
 
@@ -1729,13 +1732,17 @@ void FDC_SetIRQ ( Uint8 IRQ_Source )
  * a "force interrupt immediate" command, the IRQ signal should not be cleared
  * (only command 0xD0 or any new command followed by a read of status reg
  * can clear the forced IRQ)
+ *
+ * NOTE : although low/0 on the IRQ pin of the FDC means interrupt is
+ * cleared, this signal is inverted before going into MFP's GPIP5.
+ * So, we must set the line to high/1 to clear interrupt request.
  */
 void FDC_ClearIRQ ( void )
 {
 	if ( ( FDC.IRQ_Signal & FDC_IRQ_SOURCE_FORCED ) == 0 )
 	{
 		FDC.IRQ_Signal = 0;
-		MFP_GPIP |= 0x20;
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 		LOG_TRACE(TRACE_FDC, "fdc clear irq VBL=%d HBL=%d\n" , nVBLs , nHBL );
 	}
 
@@ -1751,7 +1758,7 @@ void FDC_ClearHdcIRQ(void)
 	FDC.IRQ_Signal &= ~FDC_IRQ_SOURCE_HDC;
 	if (FDC.IRQ_Signal == 0)
 	{
-		MFP_GPIP |= 0x20;
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 	}
 }
 
