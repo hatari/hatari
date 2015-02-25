@@ -29,7 +29,6 @@
 #define	MFP_INT_GPIP1			1
 #define	MFP_INT_GPIP0			0		/* Lowest Priority */
 
-#define	MFP_INT_GPU_DONE		MFP_INT_GPIP3
 
 /* MFP register defines ( 1 << Int ) */
 #define	MFP_GPIP7_BIT			0x80

@@ -527,6 +527,9 @@ static void Blitter_Start(void)
 	Blitter_AddCycles(4);
 	Blitter_FlushCycles();
 
+	/* Busy=1, set line to high/1 and clear interrupt */
+	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_HIGH );
+
 	/* Now we enter the main blitting loop */
 	do
 	{
@@ -548,8 +551,8 @@ static void Blitter_Start(void)
 		/* We're done, clear busy bit */
 		BlitterRegs.ctrl &= ~0x80;
 
-		/* Blitter done interrupt */
-		MFP_InputOnChannel ( MFP_INT_GPU_DONE , 0 );
+		/* Busy=0, set line to low/0 and request interrupt */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
 	}
 	else
 	{
