@@ -117,7 +117,9 @@
 /*			same CPU instruction but at different sub-cycles. We must take	*/
 /*			into account only the oldest interrupts to choose the highest	*/
 /*			one (fix Fuzion CD Menus 77, 78, 84).				*/
-
+/* 2015/02/27	[NP]	Better support for GPIP/AER/DDR and trigerring an interrupt	*/
+/*			when AER is changed (fix the MIDI programs  Realtime and M	*/
+/*			by Eric Ameres, which toggle bit 0 in AER).			*/
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 
@@ -266,6 +268,7 @@ static Uint8	MFP_ConvertIntNumber ( int Interrupt , Uint8 **pMFP_IER , Uint8 **p
 static void	MFP_Exception ( int Interrupt );
 static bool	MFP_InterruptRequest ( int Int , Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB );
 static int	MFP_CheckPendingInterrupts ( void );
+static void	MFP_GPIP_Update_Interrupt ( Uint8 GPIP_old , Uint8 GPIP_new , Uint8 AER_old , Uint8 AER_new , Uint8 DDR_old , Uint8 DDR_new );
 
 
 
@@ -429,7 +432,7 @@ static void MFP_Exception ( int Interrupt )
  * Get the value of the MFP IRQ signal as seen from the CPU side.
  * When MFP_IRQ is changed in the MFP, the new value is visible on the
  * CPU side after MFP_IRQ_DELAY_TO_CPU.
- * MFP_IRQ_CPU hold the value seen by the CPU, it's updated with the value
+ * MFP_IRQ_CPU holds the value seen by the CPU, it's updated with the value
  * of MFP_IRQ when MFP_IRQ_DELAY_TO_CPU cycles passed.
  */
 Uint8	MFP_GetIRQ_CPU ( void )
@@ -633,7 +636,7 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
  */
 static bool MFP_InterruptRequest ( int Int , Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB )
 {
-//fprintf ( stderr , "mfp int req %d %x %x %X %x %x\n" , Int , Bit , IPRx , IMRx , PriorityMaskA , PriorityMaskB );
+//fprintf ( stderr , "mfp int req %d %x %x %X %x %x %x %x\n" , Int , Bit , IPRx , IMRx , PriorityMaskA , PriorityMaskB , MFP_ISRA , MFP_ISRB );
 
 	if ( ( IPRx & IMRx & Bit ) 					/* Interrupt is pending and not masked */
 	    && ( MFP_Pending_Time[ Int ] <= MFP_Pending_Time_Min ) )	/* Process pending requests in chronological time */
@@ -763,6 +766,49 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Update the interrupt status of the GPIP when the GPIP, AER or DDR
+ * registers are changed.
+ * Only lines defined as input in DDR can generate an interrupt.
+ * Each input line is XORed with the corresponding AER bit to choose
+ * if the interrupt should be triggered on 1->0 transition or 0->1.
+ * 
+ * NOTE : In most case, only the input line will change, but because input line
+ * and AER are XORed, this means that an interrupt can trigger too
+ * if AER is changed ! ('M' and 'Realtime' are doing bset #0,$fffa03
+ * then bclr #0,$fffa03)
+ */
+static void	MFP_GPIP_Update_Interrupt ( Uint8 GPIP_old , Uint8 GPIP_new , Uint8 AER_old , Uint8 AER_new , Uint8 DDR_old , Uint8 DDR_new )
+{
+	Uint8	State_old;
+	Uint8	State_new;
+	int	Bit;
+	Uint8	BitMask;
+
+	State_old = GPIP_old ^ AER_old;
+	State_new = GPIP_new ^ AER_new;
+
+	/* For each line, check if it's defined as input in DDR (0=input 1=output) */
+	/* and if the state is changing (0->1 or 1->0) */
+	for ( Bit=0 ; Bit<8 ; Bit++ )
+	{
+		BitMask = 1<<Bit;
+		if ( ( ( DDR_new & BitMask ) == 0 )		/* Line set as input */
+		  && ( ( State_old & BitMask ) != ( State_new & BitMask ) ) )
+		{
+			/* If AER=0, trigger on 1->0 ; if AER=1, trigger on 0->1 */
+			/* -> so, we trigger if AER=GPIP_new */
+			if ( ( GPIP_new & BitMask ) == ( AER_new & BitMask ) )
+			{
+//fprintf ( stderr , "gpip int bit=%d %d->%d\n" , Bit , (State_old & BitMask)>>Bit , (State_new & BitMask)>>Bit );
+				MFP_InputOnChannel ( MFP_GPIP_LineToIntNumber[ Bit ] , 0 );
+			}
+		}
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Change the state of one of the external lines connected to the GPIP.
  * Only lines configured as input in DDR can be changed.
  * If the new state is different from the previous one, we update GPIP and
@@ -771,6 +817,7 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
 void	MFP_GPIP_Set_Line_Input ( Uint8 LineNr , Uint8 Bit )
 {
 	Uint8	Mask;
+	Uint8	GPIP_old;
 
 	Mask = 1 << LineNr;
 
@@ -779,6 +826,8 @@ void	MFP_GPIP_Set_Line_Input ( Uint8 LineNr , Uint8 Bit )
 	if ( ( ( MFP_DDR & Mask ) == 0 )
 	  && ( ( MFP_GPIP & Mask ) != ( Bit << LineNr ) ) )
 	{
+		GPIP_old = MFP_GPIP;
+
 		if ( Bit )
 		{
 			MFP_GPIP |= Mask;
@@ -787,10 +836,12 @@ void	MFP_GPIP_Set_Line_Input ( Uint8 LineNr , Uint8 Bit )
 		{
 			MFP_GPIP &= ~Mask;
 			/* TODO : For now, assume AER=0 and to an interrupt on 1->0 transition */
-			MFP_InputOnChannel ( MFP_GPIP_LineToIntNumber[ LineNr ] , 0 );
+//			MFP_InputOnChannel ( MFP_GPIP_LineToIntNumber[ LineNr ] , 0 );
 		}
-	}
 
+		/* Update possible interrupts after changing GPIP */
+		MFP_GPIP_Update_Interrupt ( GPIP_old , MFP_GPIP , MFP_AER , MFP_AER , MFP_DDR , MFP_DDR );
+	}
 }
 
 
@@ -1680,61 +1731,79 @@ void MFP_TimerDData_ReadByte(void)
  */
 void MFP_GPIP_WriteByte(void)
 {
-	Uint8	gpip_new;
+	Uint8	GPIP_new;
+	Uint8	GPIP_old = MFP_GPIP;
 
 	M68000_WaitState(4);
 
-	gpip_new = IoMem[0xfffa01] & MFP_DDR;			/* New output bits */
+	GPIP_new = IoMem[0xfffa01] & MFP_DDR;			/* New output bits */
 
-	MFP_GPIP = ( MFP_GPIP & ~MFP_DDR ) | gpip_new;		/* Keep input bits unchanged and update output bits */
+	MFP_GPIP = ( MFP_GPIP & ~MFP_DDR ) | GPIP_new;		/* Keep input bits unchanged and update output bits */
+
+	/* Update possible interrupts after changing GPIP */
+	MFP_GPIP_Update_Interrupt ( GPIP_old , MFP_GPIP , MFP_AER , MFP_AER , MFP_DDR , MFP_DDR );
 }
 
 /*-----------------------------------------------------------------------*/
 /**
  * Handle write to AER (0xfffa03)
+ *
+ * Special case for bit 3 :
  * Bit 3 of AER is linked to timer B in event count mode.
- * If bit 3=0, timer B triggers on end of line when display goes off.
- * If bit 3=1, timer B triggers on start of line when display goes on.
+ *  - If bit 3=0, timer B triggers on end of line when display goes off.
+ *  - If bit 3=1, timer B triggers on start of line when display goes on.
  */
 void MFP_ActiveEdge_WriteByte(void)
 {
-	int FrameCycles, HblCounterVideo, LineCycles;
-	int LineTimerBCycle_old = LineTimerBCycle;
-
-	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	Uint8	AER_old;
 
 	M68000_WaitState(4);
 
-	/* 0 -> 1, timer B is now counting start of line events (cycle 56+28) */
-	if ( ( ( MFP_AER & ( 1 << 3 ) ) == 0 ) && ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) != 1 ) )
-	{
-		LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
-
-		LOG_TRACE((TRACE_VIDEO_HBL | TRACE_MFP_WRITE),
-		          "mfp/video AER bit 3 0->1, timer B triggers on start of line,"
-			  " old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
-		          LineTimerBCycle_old, LineTimerBCycle,
-		          FrameCycles, LineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
-	}
-
-	/* 1 -> 0, timer B is now counting end of line events (cycle 376+28) */
-	else if ( ( ( MFP_AER & ( 1 << 3 ) ) != 0 ) && ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 ) )
-	{
-		LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
-
-		LOG_TRACE((TRACE_VIDEO_HBL | TRACE_MFP_WRITE),
-		          "mfp/video AER bit 3 1->0, timer B triggers on end of line,"
-			  " old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
-		          LineTimerBCycle_old, LineTimerBCycle,
-		          FrameCycles, LineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
-	}
-
-	/* Timer B position changed, update the next interrupt */
-	if ( LineTimerBCycle_old != LineTimerBCycle )
-		Video_AddInterruptTimerB ( LineTimerBCycle );
-
+	AER_old = MFP_AER;
 	MFP_AER = IoMem[0xfffa03];
+
+	/* Update possible interrupts after changing AER */
+	MFP_GPIP_Update_Interrupt ( MFP_GPIP , MFP_GPIP , AER_old , MFP_AER , MFP_DDR , MFP_DDR );
+
+
+	/* Special case when changing bit 3 : we need to update the position of the timer B interrupt for 'event count' mode */
+	if ( ( AER_old & ( 1 << 3 ) ) != ( MFP_AER & ( 1 << 3 ) ) )
+	{
+		int FrameCycles, HblCounterVideo, LineCycles;
+		int LineTimerBCycle_old = LineTimerBCycle;
+
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
+		/* 0 -> 1, timer B is now counting start of line events (cycle 56+28) */
+		if ( ( AER_old & ( 1 << 3 ) ) == 0 )
+		{
+			LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
+
+			LOG_TRACE((TRACE_VIDEO_HBL | TRACE_MFP_WRITE),
+					"mfp/video AER bit 3 0->1, timer B triggers on start of line,"
+					" old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
+					LineTimerBCycle_old, LineTimerBCycle,
+					FrameCycles, LineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		}
+
+		/* 1 -> 0, timer B is now counting end of line events (cycle 376+28) */
+		else if ( ( AER_old & ( 1 << 3 ) ) != 0 )
+		{
+			LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
+
+			LOG_TRACE((TRACE_VIDEO_HBL | TRACE_MFP_WRITE),
+					"mfp/video AER bit 3 1->0, timer B triggers on end of line,"
+					" old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
+					LineTimerBCycle_old, LineTimerBCycle,
+					FrameCycles, LineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		}
+
+		/* Timer B position changed, update the next interrupt */
+		if ( LineTimerBCycle_old != LineTimerBCycle )
+			Video_AddInterruptTimerB ( LineTimerBCycle );
+	}
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -1742,10 +1811,17 @@ void MFP_ActiveEdge_WriteByte(void)
  */
 void MFP_DataDirection_WriteByte(void)
 {
+	Uint8	DDR_old;
+
 	M68000_WaitState(4);
 
+	DDR_old = MFP_DDR;
 	MFP_DDR = IoMem[0xfffa05];
+
+	/* Update possible interrupts after changing AER */
+	MFP_GPIP_Update_Interrupt ( MFP_GPIP , MFP_GPIP , MFP_AER , MFP_AER , DDR_old , MFP_DDR );
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
