@@ -179,6 +179,9 @@ void Midi_Data_WriteByte(void)
 
 	MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
 
+	/* Clear interrupt request by setting GPIP to high/1 */
+	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
+
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
 
