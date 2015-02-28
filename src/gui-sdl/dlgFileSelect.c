@@ -945,15 +945,6 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	while (retbut!=SGFSDLG_OKAY && retbut!=SGFSDLG_CANCEL
 	       && retbut!=SDLGUI_QUIT && retbut != SDLGUI_ERROR && !bQuitProgram);
 
-	files_free(files);
-
-	if (browsingzip)
-	{
-		/* free zip file entries */
-		ZIP_FreeZipDir(zipfiles);
-		zipfiles = NULL;
-	}
-
 	if (retbut == SGFSDLG_OKAY)
 	{
 		if (zip_path)
@@ -962,9 +953,19 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	}
 	else
 		retpath = NULL;
+
 clean_exit:
 	SDL_ShowCursor(bOldMouseVisibility);
+
+	if (browsingzip && zipfiles != NULL)
+	{
+		/* free zip file entries */
+		ZIP_FreeZipDir(zipfiles);
+		zipfiles = NULL;
+	}
+	files_free(files);
 	free(pStringMem);
+
 	return retpath;
 }
 
