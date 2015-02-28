@@ -83,8 +83,8 @@ static bool XBios_Floprd(Uint32 Params)
 	Count = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x08 Floprd(0x%x, %d, %d, %d, %d, %d) at PC 0x%X for: %s\n",
-		  pBuffer, Dev, Sector, Track, Side, Count,
-		  M68000_GetPC(), EmulationDrives[Dev].sFileName);
+		  pBuffer, Dev, Sector, Track, Side, Count, M68000_GetPC(),
+		  Dev < MAX_FLOPPYDRIVES ? EmulationDrives[Dev].sFileName : "n/a");
 	return false;
 }
 
@@ -107,8 +107,8 @@ static bool XBios_Flopwr(Uint32 Params)
 	Count = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x09 Flopwr(0x%x, %d, %d, %d, %d, %d) at PC 0x%X for: %s\n",
-		  pBuffer, Dev, Sector, Track, Side, Count,
-		  M68000_GetPC(), EmulationDrives[Dev].sFileName);
+		  pBuffer, Dev, Sector, Track, Side, Count, M68000_GetPC(),
+		  Dev < MAX_FLOPPYDRIVES ? EmulationDrives[Dev].sFileName : "n/a");
 	return false;
 }
 
