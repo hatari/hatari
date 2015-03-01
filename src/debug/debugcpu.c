@@ -583,7 +583,7 @@ Uint32 DebugCpu_OpcodeType(void)
 	/* TODO: fbcc, fdbcc */
 	if ((opcode & 0xf000) == 0x6000 ||	/* BRA / BCC */
 	    (opcode & 0xffc0) == 0x4ec0 ||	/* JMP */
-	    (opcode & 0xf080) == 0x50c8)	/* DBCC */
+	    (opcode & 0xf0f8) == 0x50c8)	/* DBCC */
 		return CALL_BRANCH;
 
 	return CALL_UNKNOWN;
