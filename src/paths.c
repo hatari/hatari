@@ -144,7 +144,7 @@ static char *Paths_InitExecDir(const char *argv0)
 	{
 		int i;
 		/* On Linux, we can analyze the symlink /proc/self/exe */
-		i = readlink("/proc/self/exe", psExecDir, FILENAME_MAX);
+		i = readlink("/proc/self/exe", psExecDir, FILENAME_MAX-1);
 		if (i > 0)
 		{
 			char *p;
