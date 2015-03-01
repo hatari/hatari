@@ -2074,7 +2074,8 @@ static bool GemDOS_Read(Uint32 Params)
 	
 	/* To quick check to see where our file pointer is and how large the file is */
 	CurrentPos = ftello(FileHandles[Handle].FileHandle);
-	if (fseeko(FileHandles[Handle].FileHandle, 0, SEEK_END) != 0)
+	if (CurrentPos == -1L
+	    || fseeko(FileHandles[Handle].FileHandle, 0, SEEK_END) != 0)
 	{
 		Regs[REG_D0] = GEMDOS_E_SEEK;
 		return true;
