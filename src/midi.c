@@ -11,10 +11,6 @@
 
   TODO:
    - Most bits in the ACIA's status + control registers are currently ignored.
-   - Check when we have to clear the ACIA_SR_INTERRUPT_REQUEST bit in the
-     ACIA status register (it is currently done when reading or writing to
-     the data register, but probably it should rather be done when reading the
-     status register?).
 */
 const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 
@@ -28,6 +24,8 @@ const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 #include "midi.h"
 #include "file.h"
 #include "acia.h"
+#include "screen.h"
+#include "video.h"
 
 
 #define ACIA_SR_INTERRUPT_REQUEST  0x80
@@ -109,16 +107,57 @@ void Midi_Reset(void)
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Check if the IRQ must be changed in SR.
+ * When there's a change, we must change the IRQ line too.
+ */
+static void	MIDI_UpdateIRQ ( void )
+{
+	Uint8		irq_bit_new;
+
+	irq_bit_new = 0;
+
+	if ( ( ( MidiControlRegister & 0x80 ) == 0x80 ) 		/* Check for RX causes of interrupt */
+	  && ( MidiStatusRegister & ACIA_SR_RX_FULL ) )
+	  irq_bit_new = ACIA_SR_INTERRUPT_REQUEST;
+
+	if ( ( ( MidiControlRegister & 0x60) == 0x20 )			/* Check for TX causes of interrupt */
+	  && ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) )
+	  irq_bit_new = ACIA_SR_INTERRUPT_REQUEST;
+	
+	/* Update SR and IRQ line if a change happened */
+	if ( ( MidiStatusRegister & ACIA_SR_INTERRUPT_REQUEST ) != irq_bit_new )
+	{
+		LOG_TRACE ( TRACE_MIDI, "midi update irq irq_new=%d VBL=%d HBL=%d\n" , irq_bit_new?1:0 , nVBLs , nHBL );
+
+		if ( irq_bit_new )
+		{
+			/* Request interrupt by setting GPIP to low/0 */
+			MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
+			MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
+		}
+		else
+		{
+			/* Clear interrupt request by setting GPIP to high/1 */
+			MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
+			MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
+		}
+	}
+}
+
+
+
 /**
  * Read MIDI status register ($FFFC04).
  */
 void Midi_Control_ReadByte(void)
 {
-	LOG_TRACE(TRACE_MIDI, "MIDI: ReadControl -> $%x\n", MidiStatusRegister);
-
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
 	IoMem[0xfffc04] = MidiStatusRegister;
+
+	LOG_TRACE ( TRACE_MIDI, "midi read fffc04 sr=0x%02x VBL=%d HBL=%d\n" , MidiStatusRegister , nVBLs , nHBL );
 }
 
 
@@ -131,27 +170,9 @@ void Midi_Control_WriteByte(void)
 
 	MidiControlRegister = IoMem[0xfffc04];
 
-	LOG_TRACE(TRACE_MIDI, "MIDI: WriteControl($%x)\n", MidiControlRegister);
+	LOG_TRACE ( TRACE_MIDI, "midi write fffc04 cr=0x%02x VBL=%d HBL=%d\n" , MidiControlRegister , nVBLs , nHBL );
 
-	/* Do we need to generate a transfer interrupt? */
-//fprintf ( stderr , "ctrl %x sr %x\n" , MidiControlRegister , MidiStatusRegister );
-	//if ((MidiControlRegister & 0xA0) == 0xA0)
-	if ( ((MidiControlRegister & 0x60) == 0x20) && ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) )
-	{
-		LOG_TRACE(TRACE_MIDI, "MIDI: WriteControl transfer interrupt!\n");
-
-		/* Request interrupt by setting GPIP to low/0 */
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
-
-		MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
-	}
-	else
-	{
-		MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
-
-		/* Clear interrupt request by setting GPIP to high/1 */
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
-	}
+	MIDI_UpdateIRQ ();
 }
 
 
@@ -160,17 +181,16 @@ void Midi_Control_WriteByte(void)
  */
 void Midi_Data_ReadByte(void)
 {
-	LOG_TRACE(TRACE_MIDI, "MIDI: ReadData -> $%x\n", nRxDataByte);
+	LOG_TRACE ( TRACE_MIDI, "midi read fffc06 rdr=0x%02x VBL=%d HBL=%d\n" , nRxDataByte , nVBLs , nHBL );
 //fprintf ( stderr , "midi rx %x\n" , nRxDataByte);
 
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
-	MidiStatusRegister &= ~(ACIA_SR_INTERRUPT_REQUEST|ACIA_SR_RX_FULL);
-
-	/* Clear interrupt request by setting GPIP to high/1 */
-	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
-
 	IoMem[0xfffc06] = nRxDataByte;
+
+	MidiStatusRegister &= ~ACIA_SR_RX_FULL;
+
+	MIDI_UpdateIRQ ();
 }
 
 
@@ -185,18 +205,12 @@ void Midi_Data_WriteByte(void)
 
 	nTxDataByte = IoMem[0xfffc06];
 
-	LOG_TRACE(TRACE_MIDI, "MIDI: WriteData($%x)\n", nTxDataByte);
-//fprintf ( stderr , "midi tx %x %x\n" , nTxDataByte , MidiStatusRegister );
+	LOG_TRACE ( TRACE_MIDI, "midi write fffc06 tdr=0x%02x VBL=%d HBL=%d\n" , nTxDataByte , nVBLs , nHBL );
+//fprintf ( stderr , "midi tx %x sr=%x\n" , nTxDataByte , MidiStatusRegister );
 
 	MidiStatusRegister &= ~ACIA_SR_TX_EMPTY;
 
-	if ((MidiControlRegister & 0x60) == 0x20)
-	{
-		MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
-
-		/* Clear interrupt request by setting GPIP to high/1 */
-		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
-	}
+	MIDI_UpdateIRQ ();
 
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
@@ -233,15 +247,9 @@ void Midi_InterruptHandler_Update(void)
 	if (!(MidiStatusRegister & ACIA_SR_TX_EMPTY))
 	{
 		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
+
 		/* Do we need to generate a transfer interrupt? */
-		//if ((MidiControlRegister & 0xA0) == 0xA0)
-		if ( ((MidiControlRegister & 0x60) == 0x20) && ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) )
-		{
-			LOG_TRACE(TRACE_MIDI, "MIDI: WriteData transfer interrupt!\n");
-			/* Request interrupt by setting GPIP to low/0 */
-			MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
-			MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
-		}
+		MIDI_UpdateIRQ ();
 
 		// if (pMidiFhOut)
 		//	fflush(pMidiFhOut);
@@ -256,15 +264,10 @@ void Midi_InterruptHandler_Update(void)
 			LOG_TRACE(TRACE_MIDI, "MIDI: Read character -> $%x\n", nInChar);
 			/* Copy into our internal queue */
 			nRxDataByte = nInChar;
-			/* Do we need to generate a receive interrupt? */
-			if ((MidiControlRegister & 0x80) == 0x80)
-			{
-				LOG_TRACE(TRACE_MIDI, "MIDI: WriteData receive interrupt!\n");
-				/* Request interrupt by setting GPIP to low/0 */
-				MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
-				MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
-			}
 			MidiStatusRegister |= ACIA_SR_RX_FULL;
+
+			/* Do we need to generate a receive interrupt? */
+			MIDI_UpdateIRQ ();
 		}
 		else
 		{
@@ -275,3 +278,4 @@ void Midi_InterruptHandler_Update(void)
 
 	CycInt_AddRelativeInterrupt(2050, INT_CPU_CYCLE, INTERRUPT_MIDI);
 }
+
