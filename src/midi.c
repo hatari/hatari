@@ -134,7 +134,9 @@ void Midi_Control_WriteByte(void)
 	LOG_TRACE(TRACE_MIDI, "MIDI: WriteControl($%x)\n", MidiControlRegister);
 
 	/* Do we need to generate a transfer interrupt? */
-	if ((MidiControlRegister & 0xA0) == 0xA0)
+//fprintf ( stderr , "ctrl %x sr %x\n" , MidiControlRegister , MidiStatusRegister );
+	//if ((MidiControlRegister & 0xA0) == 0xA0)
+	if ( ((MidiControlRegister & 0x60) == 0x20) && ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) )
 	{
 		LOG_TRACE(TRACE_MIDI, "MIDI: WriteControl transfer interrupt!\n");
 
@@ -142,6 +144,13 @@ void Midi_Control_WriteByte(void)
 		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
 
 		MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
+	}
+	else
+	{
+		MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
+
+		/* Clear interrupt request by setting GPIP to high/1 */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
 	}
 }
 
@@ -152,6 +161,7 @@ void Midi_Control_WriteByte(void)
 void Midi_Data_ReadByte(void)
 {
 	LOG_TRACE(TRACE_MIDI, "MIDI: ReadData -> $%x\n", nRxDataByte);
+//fprintf ( stderr , "midi rx %x\n" , nRxDataByte);
 
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
@@ -176,11 +186,17 @@ void Midi_Data_WriteByte(void)
 	nTxDataByte = IoMem[0xfffc06];
 
 	LOG_TRACE(TRACE_MIDI, "MIDI: WriteData($%x)\n", nTxDataByte);
+//fprintf ( stderr , "midi tx %x %x\n" , nTxDataByte , MidiStatusRegister );
 
-	MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
+	MidiStatusRegister &= ~ACIA_SR_TX_EMPTY;
 
-	/* Clear interrupt request by setting GPIP to high/1 */
-	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
+	if ((MidiControlRegister & 0x60) == 0x20)
+	{
+		MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
+
+		/* Clear interrupt request by setting GPIP to high/1 */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
+	}
 
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
@@ -200,8 +216,6 @@ void Midi_Data_WriteByte(void)
 			return;
 		}
 	}
-
-	MidiStatusRegister &= ~ACIA_SR_TX_EMPTY;
 }
 
 
@@ -218,8 +232,10 @@ void Midi_InterruptHandler_Update(void)
 	/* Flush outgoing data */
 	if (!(MidiStatusRegister & ACIA_SR_TX_EMPTY))
 	{
+		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
 		/* Do we need to generate a transfer interrupt? */
-		if ((MidiControlRegister & 0xA0) == 0xA0)
+		//if ((MidiControlRegister & 0xA0) == 0xA0)
+		if ( ((MidiControlRegister & 0x60) == 0x20) && ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) )
 		{
 			LOG_TRACE(TRACE_MIDI, "MIDI: WriteData transfer interrupt!\n");
 			/* Request interrupt by setting GPIP to low/0 */
@@ -229,8 +245,6 @@ void Midi_InterruptHandler_Update(void)
 
 		// if (pMidiFhOut)
 		//	fflush(pMidiFhOut);
-
-		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
 	}
 
 	/* Read the bytes in, if we have any */
