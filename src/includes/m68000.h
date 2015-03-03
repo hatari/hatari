@@ -152,19 +152,44 @@ static inline void M68000_SetSR(Uint16 v)
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
 
 
-/* Notes on IACK :
+/* [NP] Notes on IACK :
  * When an interrupt happens, it's possible a similar interrupt happens again
  * between the start of the exception and the IACK sequence. In that case, we
  * might have to set pending bit twice and change the interrupt vector.
+ *
  * From the 68000's doc, IACK starts after 10 cycles (12 cycles on STF) and is
  * supposed to take 4 cycles if the interrupt takes a total of 44 cycles.
+ *
  * On Atari STF, interrupts take 56 cycles instead of 44, which means it takes
- * 12 extra cycles to fetch the vector number.
+ * 12 extra cycles to fetch the vector number and to handle non-aligned memory accesses.
+ * From WinUAE's CE mode, we have 2 non-aligned memory accesses to wait for (ie 2+2 cycles),
+ * which leaves a total of 12 cycles to fetch the vector.
  * This means we have at max 12+12=24 cycles after the start of the exception where some
  * changes can happen (maybe it's a little less, depending on when the interrupt
  * vector is written on the bus).
- * The values we use were not measured on real hardware, they were adjusted
- * to get the correct behaviour in some games/demos relying on this.
+ *
+ * The values we use were not measured on real ST hardware, they were adjusted
+ * to get the correct behaviour in some games/demos relying on this ; since timings
+ * are rounded to 4 on ST, it's possible the interrupt takes 54 cycles and not 56.
+ *
+ * WinUAE cycles (measured on real A500 HW) :
+ *
+ *   6		idle cycles
+ *   2(*)	ST bus access penalty
+ *   4		write PC low word
+ *   12(*)	read exception number
+ *   4		idle cycles
+ *   4		write SR
+ *   4		write PC high word
+ *   4		read exception address high word
+ *   4		read exception address low word
+ *   4		prefetch
+ *   2		idle cycles
+ *   2(*)	ST bus access penalty
+ *   4		prefetch
+ *   TOTAL = 56
+ *
+ *   (*) ST specific timings
  */
 #define CPU_IACK_CYCLES_START	12			/* number of cycles before starting the IACK */
 #define CPU_IACK_CYCLES_MFP	12			/* vector sent by the MFP */

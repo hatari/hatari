@@ -2756,13 +2756,14 @@ static void add_approximate_exception_cycles(int nr)
 		cycles = 44 + 4; 
 #else
 	if ( nr >= 24 && nr <= 31 ) {
-		/* Atari's specific interrupts */
+		/* Atari's specific interrupts take 56 cycles instead of 44 */
+		/* We must subtract IACK cycles already counted into iack_cycle() */
 		if ( nr == 30 )					/* MFP/DSP */
-			cycles = 44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_MFP;
+			cycles = 56-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_MFP;
 		else if ( nr == 28 )				/* VBL */
-			cycles = 44+12-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO;
+			cycles = 56-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO;
 		else if ( nr == 26 )				/* HBL */
-			cycles = 44+12-CPU_IACK_CYCLES_START- CPU_IACK_CYCLES_VIDEO;
+			cycles = 56-CPU_IACK_CYCLES_START- CPU_IACK_CYCLES_VIDEO;
 		else
 			cycles = 44+4;				/* Other interrupts */
 #endif
