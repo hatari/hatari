@@ -20,6 +20,7 @@ const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "ioMem.h"
 #include "m68000.h"
+#include "memorySnapShot.h"
 #include "mfp.h"
 #include "midi.h"
 #include "file.h"
@@ -110,6 +111,17 @@ void Midi_Reset(void)
 		CycInt_AddRelativeInterrupt(MIDI_TRANSFER_CYCLE, INT_CPU_CYCLE, INTERRUPT_MIDI);
 	else
 		CycInt_RemovePendingInterrupt (INTERRUPT_MIDI);
+}
+
+
+/**
+ * Save/Restore snapshot of local variables
+ */
+void    MIDI_MemorySnapShot_Capture(bool bSave)
+{
+	MemorySnapShot_Store(&MidiControlRegister, sizeof(MidiControlRegister));
+	MemorySnapShot_Store(&MidiStatusRegister, sizeof(MidiStatusRegister));
+	MemorySnapShot_Store(&nRxDataByte, sizeof(nRxDataByte));
 }
 
 

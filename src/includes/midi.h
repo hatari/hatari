@@ -11,6 +11,8 @@
 extern void Midi_Init(void);
 extern void Midi_UnInit(void);
 extern void Midi_Reset(void);
+extern void MIDI_MemorySnapShot_Capture(bool bSave);
+
 extern void Midi_Control_ReadByte(void);
 extern void Midi_Data_ReadByte(void);
 extern void Midi_Control_WriteByte(void);

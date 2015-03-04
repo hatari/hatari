@@ -313,6 +313,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		GemDOS_MemorySnapShot_Capture(true);
 		ACIA_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
+		MIDI_MemorySnapShot_Capture(true);
 		CycInt_MemorySnapShot_Capture(true);
 		M68000_MemorySnapShot_Capture(true);
 		MFP_MemorySnapShot_Capture(true);
@@ -372,6 +373,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		GemDOS_MemorySnapShot_Capture(false);
 		ACIA_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */
+		MIDI_MemorySnapShot_Capture(false);
 		CycInt_MemorySnapShot_Capture(false);
 		M68000_MemorySnapShot_Capture(false);
 		MFP_MemorySnapShot_Capture(false);
