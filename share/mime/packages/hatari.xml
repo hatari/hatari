@@ -5,7 +5,7 @@
 		<comment>ST disk image</comment>
 		<glob pattern="*.st"/>
 	</mime-type>
-	<mime-type type="application/x-msa-disk-image">
+	<mime-type type="application/vnd.msa-disk-image">
 		<sub-class-of type="application/octet-stream"/>
 		<comment>Magic Shadow Archiver disk image</comment>
 		<glob pattern="*.msa"/>
@@ -13,7 +13,7 @@
 			<match type="big16" offset="0" value="0x0E0F"/>
 		</magic>
 	</mime-type>
-	<mime-type type="application/x-dim-disk-image">
+	<mime-type type="application/vnd.fastcopy-disk-image">
 		<sub-class-of type="application/octet-stream"/>
 		<comment>FastCopy DIM disk image</comment>
 		<glob pattern="*.dim"/>
