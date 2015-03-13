@@ -628,42 +628,42 @@ emulated drive, i.e. aren't hardcoded to run from a floppy.  Floppy
 only games aren't listed as main reason for them not working is larger
 memory usage of EmuTOS (which is too awkward to debug).
 
-Color STOS games (as expected):
-- Balls Up (mouse input doesn't work)
-- Color Clash* (fire doesn't work)
-- Dice II (mouse doesn't work)
-- Mr Dice* (gets spurious joy input)
-- Nostram (input doesn't work)
-- Pipetris (gets spurious joy input)
+Non-working color STOS games (as expected):
+- Balls Up          (mouse input doesn't work)
+- Color Clash*      (fire doesn't work)
+- Dice II           (mouse doesn't work)
+- Mr Dice*          (gets spurious joy input)
+- Nostram           (input doesn't work)
+- Pipetris          (gets spurious joy input)
 - Prehistorik3 demo (input doesn't work)
-- Reflection* (key input doesn't work)
-- Smash hit (input doesn't work)
-- Sudoku Universe* (mouse input doesn't work)
-- Trackball (mouse doesn't work)
+- Reflection*       (key input doesn't work)
+- Smash hit         (input doesn't work)
+- Sudoku Universe*  (mouse input doesn't work)
+- Trackball         (mouse doesn't work)
 
 Commercial color game demos:
 - Brain Blaster / The Teller demo (input doesn't work)
-- Cauldron demo (freezes at during start)
-- Gods demo (address error after Fclose() on startup, EmuTOS memory overwrite)
+- Cauldron demo     (freezes at during start)
+- Gods demo         (address error after Fclose() on startup, EmuTOS memory overwrite)
 - Flip & Magnose / Up an' Away demo (bus error panic)
-- Hudson Hawk demo (in game beginning, bus Error reading $ffc230)
-- Striker demo (input doesn't work)
+- Hudson Hawk demo  (in game beginning, bus Error reading $ffc230)
+- Striker demo      (input doesn't work)
 
 Free/shareware color games:
-- Douglas Rockmoor (joystick input doesn't work)
-- Downfall (fire doesn't work)
-- Entombed (doesn't show title, copyright, hiscore nor help after
-  v0.8.6, freezes at start in v0.9.4, freezes also with TOS v2)
-- Fokker (input doesn't work)
-- Japlish (no objects visible, does one line-A polygon hline)
-- Space invaders (up works as fire, no other input works)
+- Douglas Rockmoor  (joystick input doesn't work)
+- Downfall          (fire doesn't work)
+- Entombed          (doesn't show title, copyright, hiscore nor help after v0.8.6,
+                     freezes at start in v0.9.4, freezes also with TOS v2)
+- Fokker            (input doesn't work)
+- Japlish           (no objects visible, does one line-A polygon hline)
+- Space invaders    (up works as fire, no other input works)
 
 Mono games:
-- Crystal Caves* (line-A bitblit and draw/clear sprite, input doesn't work)
-- Macrowar	(line-A bitblit, joystick doesn't work)
-- Midimaze*	(joystick doesn't work)
-- Pacballs      (line-A bitblit + panic)
-- Ramses*       (causes panic as it tries to do crazy things with v_hide_c)
+- Crystal Caves*    (line-A bitblit and draw/clear sprite, input doesn't work)
+- Macrowar          (line-A bitblit, joystick doesn't work)
+- Midimaze*         (joystick doesn't work)
+- Pacballs          (line-A bitblit + panic)
+- Ramses*           (causes panic as it tries to do crazy things with v_hide_c)
 
 Games that mix GEM UI and non-VDI drawing:
 - Robugs*   (line-A filled rectangle and draw sprite, buggy pattern draw)
@@ -689,7 +689,7 @@ Working drawing / image viewing programs:
 - Degas Elite, see http://www.youtube.com/watch?v=G4st-x4-BJg (at 16:30)
 - Iffcnv, IFF convertor/viewer
 - ImCon v1.1, image converter/viewer
-- Neochrome master (uses most of line-A functions)
+- Neochrome master (line-A bitblk, text, line)
 - Photochrome v4 (all buttons don't work)
 - Speed of Light v3.8
 - Spslide, Spec512 viewer
