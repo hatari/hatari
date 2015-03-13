@@ -697,6 +697,9 @@ Working drawing / image viewing programs:
 Not working:
 - Spectrum512 (address error on XBios Kbdvbase() return value handling)
 
+Not working video / HD access programs:
+- STVidPlay (expects certain 2-byte HD driver sequence at hdv_rw ($476))
+
 Working MIDI programs:
 - Dr T's KCS v4
 - Dr T's Tiger Cub v2.0
