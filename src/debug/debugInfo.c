@@ -48,6 +48,7 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #define OS_SYSBASE 0x4F2
 #define OS_HEADER_SIZE 0x30
 
+#define OS_PHYSTOP 0x42E
 #define COOKIE_JAR 0x5A0
 
 #define BASEPAGE_SIZE 0x100
@@ -240,23 +241,25 @@ static void DebugInfo_Basepage(Uint32 basepage)
 	}
 }
 
+
 /**
  * DebugInfo_PrintOSHeader: output OS Header information
  */
 static void DebugInfo_PrintOSHeader(Uint32 sysbase)
 {
 	Uint32 gemblock, basepage;
-	Uint16 osversion, osconf, langbits;
+	Uint16 osversion, datespec, osconf, langbits;
 	const char *lang;
 	static const char langs[][3] = {
 		"us", "de", "fr", "uk", "es", "it", "se", "ch" /* fr */, "ch" /* de */,
 		"tr", "fi", "no", "dk", "sa", "nl", "cs", "hu"
 	};
 
+	/* first more technical info */
+
 	osversion = STMemory_ReadWord(sysbase+0x02);
 	fprintf(stderr, "OS base addr : 0x%06x\n", sysbase);
 	fprintf(stderr, "OS RAM end+1 : 0x%06x\n", STMemory_ReadLong(sysbase+0x0C));
-	fprintf(stderr, "TOS version  : 0x%x\n", osversion);
 
 	fprintf(stderr, "Reset handler: 0x%06x\n", STMemory_ReadLong(sysbase+0x04));
 	fprintf(stderr, "Reset vector : 0x%06x\n", STMemory_ReadLong(RESET_VECTOR));
@@ -273,20 +276,6 @@ static void DebugInfo_PrintOSHeader(Uint32 sysbase)
 		fprintf(stderr, "- is at INVALID 0x%06x address.\n", gemblock);
 	}
 
-	fprintf(stderr, "OS date      : 0x%x\n", STMemory_ReadLong(sysbase+0x14));
-	fprintf(stderr, "OS DOS date  : 0x%x\n", STMemory_ReadLong(sysbase+0x1E));
-
-	osconf = STMemory_ReadWord(sysbase+0x1C);
-	langbits = osconf >> 1;
-	if (langbits == 127) {
-		lang = "all";
-	} else if (langbits < ARRAYSIZE(langs)) {
-		lang = langs[langbits];
-	} else {
-		lang = "unknown";
-	}
-	fprintf(stderr, "OS Conf bits : 0x%04x (%s, %s)\n", osconf, lang, osconf&1 ? "PAL":"NTSC");
-
 	if (osversion >= 0x0102) {
 		/* last 3 OS header fields are only available as of TOS 1.02 */
 		fprintf(stderr, "Memory pool  : 0x%06x\n", STMemory_ReadLong(sysbase+0x20));
@@ -300,6 +289,27 @@ static void DebugInfo_PrintOSHeader(Uint32 sysbase)
 	if (basepage) {
 		fprintf(stderr, "Basepage     : 0x%06x\n", basepage);
 	}
+
+	/* and then basic TOS information */
+
+	fputs("\n", stderr);
+	fprintf(stderr, "TOS version  : 0x%x%s\n", osversion, bIsEmuTOS ? " (EmuTOS)" : "");
+	/* Bits: 0-4 = day (1-31), 5-8 = month (1-12), 9-15 = years (since 1980) */
+	datespec = STMemory_ReadWord(sysbase+0x1E);
+	fprintf(stderr, "Build date   : %04d-%02d-%02d\n", (datespec >> 9) + 1980,
+	       (datespec & 0x1E0) >> 5, datespec & 0x1f);
+
+	osconf = STMemory_ReadWord(sysbase+0x1C);
+	langbits = osconf >> 1;
+	if (langbits == 127) {
+		lang = "all";
+	} else if (langbits < ARRAYSIZE(langs)) {
+		lang = langs[langbits];
+	} else {
+		lang = "unknown";
+	}
+	fprintf(stderr, "OS config    : %s, %s (0x%x)\n", lang, osconf&1 ? "PAL":"NTSC", osconf);
+	fprintf(stderr, "Phystop      : %d KB\n", (STMemory_ReadLong(OS_PHYSTOP) + 511) / 1024);
 }
 
 /**
