@@ -255,8 +255,9 @@ partition case, the letters used as the subdirectory names will
 determine to which drives/partitions they're assigned. If <dir> is
 an empty string, then harddrive's emulation is disabled
 .TP
-.B \-\-acsi <file>
-Emulate an ACSI hard disk with an image <file>
+.B \-\-acsi <id>:<file>
+Emulate an ACSI hard disk with given BUS ID (0-7) using image <file>.
+If just filename is given, it's assigned to BUS ID 0.
 .TP 
 .B \-\-ide\-master <file>
 Emulate an IDE master hard disk with an image <file>

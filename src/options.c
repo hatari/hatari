@@ -321,7 +321,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_GEMDOS_DRIVE, NULL, "--gemdos-drive",
 	  "<drive>", "Assign GEMDOS HD <dir> to drive letter <drive> (C-Z, skip)" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
-	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
+	  "<id>:<file>", "Emulate an ACSI harddrive (0-7) with an image <file>" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
 	  "<file>", "Emulate an IDE master harddrive with an image <file>" },
 	{ OPT_IDESLAVEHDIMAGE,   NULL, "--ide-slave",
@@ -918,8 +918,8 @@ static bool Opt_HandleArgument(const char *path)
  */
 bool Opt_ParseParameters(int argc, const char * const argv[])
 {
-	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq, temp;
-	const char *errstr;
+	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq, temp, drive;
+	const char *errstr, *str;
 	int i, ok = true;
 	int val;
 
@@ -1409,9 +1409,21 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 
 		case OPT_ACSIHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, true, ConfigureParams.Acsi[0].sDeviceFile,
-					argv[i], sizeof(ConfigureParams.Acsi[0].sDeviceFile),
-					&ConfigureParams.Acsi[0].bUseDevice);
+			str = argv[i];
+			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == ':')
+			{
+				drive = str[0] - '0';
+				if (drive < 0 || drive > 7)
+					return Opt_ShowError(OPT_ACSIHDIMAGE, str, "Invalid ACSI drive <id>, must be 0-7");
+				str += 2;
+			}
+			else
+			{
+				drive = 0;
+			}
+			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, true, ConfigureParams.Acsi[drive].sDeviceFile,
+					str, sizeof(ConfigureParams.Acsi[drive].sDeviceFile),
+					&ConfigureParams.Acsi[drive].bUseDevice);
 			if (ok)
 			{
 				bLoadAutoSave = false;
