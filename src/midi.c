@@ -107,10 +107,7 @@ void Midi_Reset(void)
 	MidiStatusRegister = ACIA_SR_TX_EMPTY;
 	nRxDataByte = 1;
 
-	if (ConfigureParams.Midi.bEnableMidi)
-		CycInt_AddRelativeInterrupt(MIDI_TRANSFER_CYCLE, INT_CPU_CYCLE, INTERRUPT_MIDI);
-	else
-		CycInt_RemovePendingInterrupt (INTERRUPT_MIDI);
+	CycInt_AddRelativeInterrupt(MIDI_TRANSFER_CYCLE, INT_CPU_CYCLE, INTERRUPT_MIDI);
 }
 
 
