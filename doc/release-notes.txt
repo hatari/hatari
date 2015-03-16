@@ -29,7 +29,7 @@ Emulation:
     (i.e. prevent TOS forcing 16Mhz at boot with higher CPU levels)
 - Memory:
   - TT-RAM / 32-bit addressing support both for TT & Falcon emulation
-    (when using EmuTOS, this requires CVS snapshot 2014-12-15 or later)
+    (when using EmuTOS, this requires version 0.9.4 or later)
 - FDC changes:
   - for STX disks, fix type I commands with verify bit on tracks with no sector
   - for ST/MSA, check read address and read track are not beyond max track
