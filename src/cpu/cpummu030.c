@@ -716,7 +716,6 @@ int mmu030_do_match_lrmw_ttr(uae_u32 tt, TT_info comp, uaecptr addr, uae_u32 fc)
 
 static void mmu030_do_fake_prefetch(void)
 {
-	uaecptr pc = m68k_getpci();
 	// fetch next opcode before MMU state switches.
 	// There are programs that do following:
 	// - enable MMU
@@ -2289,6 +2288,7 @@ uaecptr mmu030_translate(uaecptr addr, bool super, bool data, bool write)
     }
 }
 
+#if 0
 static uae_u32 get_dcache_byte(uaecptr addr)
 {
 	return read_dcache030(addr, 0);
@@ -2313,6 +2313,7 @@ static void put_dcache_long(uaecptr addr, uae_u32 v)
 {
 	write_dcache030(addr, v, 2);
 }
+#endif
 
 /* MMU Reset */
 void mmu030_reset(int hardreset)
