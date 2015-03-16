@@ -4655,7 +4655,6 @@ void cpu_halt (int id)
 /* MMU 68060  */
 static void m68k_run_mmu060 (void)
 {
-	uaecptr pc;
 	struct flag_struct f;
 	int halt = 0;
 printf ( "run_mmu060\n" );
@@ -4665,7 +4664,7 @@ printf ( "run_mmu060\n" );
 			for (;;) {
 				f.cznv = regflags.cznv;
 				f.x = regflags.x;
-				pc = regs.instruction_pc = m68k_getpc ();
+				regs.instruction_pc = m68k_getpc ();
 
 				do_cycles (cpu_cycles);
 
@@ -4717,7 +4716,6 @@ printf ( "run_mmu060\n" );
 static void m68k_run_mmu040 (void)
 {
 	struct flag_struct f;
-	uaecptr pc;
 	int halt = 0;
 printf ( "run_mmu040\n" );
 
@@ -4737,7 +4735,7 @@ printf ( "run_mmu040\n" );
 				f.cznv = regflags.cznv;
 				f.x = regflags.x;
 				mmu_restart = true;
-				pc = regs.instruction_pc = m68k_getpc ();
+				regs.instruction_pc = m68k_getpc ();
 
 				do_cycles (cpu_cycles);
 
@@ -4811,7 +4809,6 @@ printf ( "run_mmu040\n" );
 // Previous MMU 68030
 static void m68k_run_mmu030 (void)
 {
-	uaecptr pc;
 	struct flag_struct f;
 	int halt = 0;
 printf ( "run_mmu030\n" );
@@ -4833,7 +4830,7 @@ insretry:
 					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 				}
 #endif
-				pc = regs.instruction_pc = m68k_getpc ();
+				regs.instruction_pc = m68k_getpc ();
 				f.cznv = regflags.cznv;
 				f.x = regflags.x;
 
