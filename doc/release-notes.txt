@@ -56,6 +56,7 @@ Emulator:
   - 68060 CPU level and --ttram support with new WinUAE CPU core
   - New --png-level option to decrease AVI compression load
 - Hard drive emulation:
+  - BUS ID for ACSI drive can be specified with --acsi
   - SDL GUI & cmdline option to skip drives used by partitions on
     ACSI & IDE images when assigning drive for GEMDOS HD emulation.
     Partition count parsed by Hatari might not match count used by
@@ -147,6 +148,7 @@ Emulation:
   - Fix: autostarting programs with GEMDOS-illegal host characters
     in their names
 - ACSI hard disk changes:
+  - Support multiple ACSI devices
   - Fixed/improved READ CAPACITY and INQUIRY commands
   - Unsupported commands are now handled correctly
   - Now using fseeko() instead of fseek() for supporting large images
