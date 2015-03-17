@@ -321,7 +321,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_GEMDOS_DRIVE, NULL, "--gemdos-drive",
 	  "<drive>", "Assign GEMDOS HD <dir> to drive letter <drive> (C-Z, skip)" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
-	  "<id>:<file>", "Emulate an ACSI harddrive (0-7) with an image <file>" },
+	  "<id>=<file>", "Emulate an ACSI harddrive (0-7) with an image <file>" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
 	  "<file>", "Emulate an IDE master harddrive with an image <file>" },
 	{ OPT_IDESLAVEHDIMAGE,   NULL, "--ide-slave",
@@ -1410,7 +1410,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_ACSIHDIMAGE:
 			i += 1;
 			str = argv[i];
-			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == ':')
+			if (strlen(str) > 2 && isdigit(str[0]) && str[1] == '=')
 			{
 				drive = str[0] - '0';
 				if (drive < 0 || drive > 7)
