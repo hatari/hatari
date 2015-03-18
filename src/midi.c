@@ -34,10 +34,11 @@ const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 #define ACIA_SR_RX_FULL            0x01
 
 /* Delay to send/receive 1 byte through MIDI (in cpu cycles)
- * Serial line is set to 31250 bps, 8 bits, 1 stop, no parity, which gives 256 cycles
- * per bit at 8 MHz, and 2308 cycles to transfer 9 bits
+ * Serial line is set to 31250 bps, 1 start bit, 8 bits, 1 stop, no parity, which gives 256 cycles
+ * per bit at 8 MHz, and 2560 cycles to transfer 10 bits
  */
-#define	MIDI_TRANSFER_CYCLE		2308
+#define	MIDI_TRANSFER_BIT_CYCLE		256
+#define	MIDI_TRANSFER_BYTE_CYCLE	(MIDI_TRANSFER_BIT_CYCLE * 10)
 
 
 static FILE *pMidiFhIn  = NULL;        /* File handle used for Midi input */
@@ -107,7 +108,8 @@ void Midi_Reset(void)
 	MidiStatusRegister = ACIA_SR_TX_EMPTY;
 	nRxDataByte = 1;
 
-	CycInt_AddRelativeInterrupt(MIDI_TRANSFER_CYCLE, INT_CPU_CYCLE, INTERRUPT_MIDI);
+	/* Set timer and compensate for x2 or x4 cpu speed */
+	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE >> nCpuFreqShift , INT_CPU_CYCLE , INTERRUPT_MIDI );
 }
 
 
@@ -291,6 +293,7 @@ void Midi_InterruptHandler_Update(void)
 		}
 	}
 
-	CycInt_AddRelativeInterrupt(MIDI_TRANSFER_CYCLE, INT_CPU_CYCLE, INTERRUPT_MIDI);
+	/* Set timer and compensate for x2 or x4 cpu speed */
+	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE >> nCpuFreqShift , INT_CPU_CYCLE , INTERRUPT_MIDI );
 }
 
