@@ -11,6 +11,17 @@
 
   TODO:
    - Most bits in the ACIA's status + control registers are currently ignored.
+
+  NOTE [NP] :
+    In all accuracy, we should use a complete emulation of the acia serial line,
+    as for the ikbd. But as the MIDI's baudrate is rather high and could require
+    more ressource to emulate at the bit level, we handle transfer 1 byte a time
+    instead of sending each bit one after the other.
+    This way, we only need a timer every 2560 cycles (instead of 256 cycles per bit).
+
+    We handle a special case for the TX_EMPTY bit when reading SR : this bit should be set
+    after TDR was copied into TSR, which is approximatively when the next bit should
+    be transferred (256 cycles).
 */
 const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 
@@ -46,7 +57,7 @@ static FILE *pMidiFhOut = NULL;        /* File handle used for Midi output */
 static Uint8 MidiControlRegister;
 static Uint8 MidiStatusRegister;
 static Uint8 nRxDataByte;
-
+static Uint64 TDR_Write_Time;		/* Time of the last write in TDR fffc06 */
 
 /**
  * Initialization: Open MIDI device.
@@ -172,6 +183,18 @@ void Midi_Control_ReadByte(void)
 {
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
+	/* Special case : if we wrote a byte into TDR, TX_EMPTY bit should be */
+	/* set approximatively after the first bit was transferred */
+	if ( ( ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) == 0 )
+	  && ( CyclesGlobalClockCounter - TDR_Write_Time > MIDI_TRANSFER_BIT_CYCLE ) )
+	{
+		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
+
+		/* Do we need to generate a transfer interrupt? */
+		MIDI_UpdateIRQ ();
+	}
+
+
 	IoMem[0xfffc04] = MidiStatusRegister;
 
 	LOG_TRACE ( TRACE_MIDI, "midi read fffc04 sr=0x%02x VBL=%d HBL=%d\n" , MidiStatusRegister , nVBLs , nHBL );
@@ -221,6 +244,7 @@ void Midi_Data_WriteByte(void)
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
 	nTxDataByte = IoMem[0xfffc06];
+	TDR_Write_Time = CyclesGlobalClockCounter;
 
 	LOG_TRACE ( TRACE_MIDI, "midi write fffc06 tdr=0x%02x VBL=%d HBL=%d\n" , nTxDataByte , nVBLs , nHBL );
 //fprintf ( stderr , "midi tx %x sr=%x\n" , nTxDataByte , MidiStatusRegister );
