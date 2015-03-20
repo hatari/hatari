@@ -5,9 +5,6 @@
   or at your option any later version. Read the file gpl.txt for details.
 
   MIDI communication.
-  Note that this code is far from being perfect. However, it is already
-  enough to let some ST programs (e.g. the game Pirates!) use the host's midi
-  system.
 
   TODO:
    - Most bits in the ACIA's status + control registers are currently ignored.
@@ -15,7 +12,7 @@
   NOTE [NP] :
     In all accuracy, we should use a complete emulation of the acia serial line,
     as for the ikbd. But as the MIDI's baudrate is rather high and could require
-    more ressource to emulate at the bit level, we handle transfer 1 byte a time
+    more resources to emulate at the bit level, we handle transfer 1 byte a time
     instead of sending each bit one after the other.
     This way, we only need a timer every 2560 cycles (instead of 256 cycles per bit).
 
