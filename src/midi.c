@@ -116,8 +116,8 @@ void Midi_Reset(void)
 	MidiStatusRegister = ACIA_SR_TX_EMPTY;
 	nRxDataByte = 1;
 
-	/* Set timer and compensate for x2 or x4 cpu speed */
-	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE >> nCpuFreqShift , INT_CPU_CYCLE , INTERRUPT_MIDI );
+	/* Set timer */
+	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
 }
 
 
@@ -314,7 +314,7 @@ void Midi_InterruptHandler_Update(void)
 		}
 	}
 
-	/* Set timer and compensate for x2 or x4 cpu speed */
-	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE >> nCpuFreqShift , INT_CPU_CYCLE , INTERRUPT_MIDI );
+	/* Set timer */
+	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
 }
 
