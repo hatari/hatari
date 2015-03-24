@@ -1124,6 +1124,7 @@ Games that might be possible to get working (they show something
 and/or don't use DSP XBios calls or DSP sound matrix):
 - Block Blizzard preview: stops when loading
 - Bomb Squad: crashes to bus error wget at 00fc0002
+- Chorensha: works except for joystick directions
 - Confusion (demos 1 & 2): title screen doesn't come up
 - Conquest of Elysium: screen with garbage
 - Gold island (demo, vga only), parts of blits are missing
