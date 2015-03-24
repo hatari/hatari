@@ -318,7 +318,9 @@ bool	IPF_Insert ( int Drive , Uint8 *pImageBuffer , long ImageSize )
 
 #else
 	CapsLong	ImageId;
+#if CAPS_LIB_REL_REV >= 501
 	CapsLong	ImageType;
+#endif
 
 	ImageId = CAPSAddImage();
 	if ( ImageId < 0 )
@@ -586,7 +588,9 @@ void	IPF_Drive_Set_DoubleSided ( int Drive , bool value )
 #ifdef HAVE_CAPSIMAGE
 static void	IPF_Drive_Update_Enable_Side ( void )
 {
+#if CAPS_LIB_REL_REV >= 501
 	int	i;
+#endif
 
 	if ( IPF_State.DriveEnabled[ 1 ] )
 	        IPF_State.Fdc.drivemax = MAX_FLOPPYDRIVES;		/* Should be 2 */
