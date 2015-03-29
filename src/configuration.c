@@ -85,6 +85,10 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bForceMax", Bool_Tag, &ConfigureParams.Screen.bForceMax },
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
+#if WITH_SDL2
+	{ "nRenderScaleQuality", Int_Tag, &ConfigureParams.Screen.nRenderScaleQuality },
+	{ "bUseVsync", Int_Tag, &ConfigureParams.Screen.bUseVsync },
+#endif
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -597,6 +601,10 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nMaxWidth = 2*NUM_VISIBLE_LINE_PIXELS;
 	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	ConfigureParams.Screen.bForceMax = false;
+#if WITH_SDL2
+	ConfigureParams.Screen.nRenderScaleQuality = 0;
+	ConfigureParams.Screen.bUseVsync = false;
+#endif
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;

@@ -403,8 +403,10 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 {
 	static bool bWasInFullScreen = false;
 	Uint32 sdlVideoFlags;
-
 #if WITH_SDL2
+	static int nPrevRenderScaleQuality = 0;
+	static bool bPrevUseVsync = false;
+
 	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
 #endif
@@ -446,6 +448,20 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 	}
 
 	Screen_FreeSDL2Resources();
+
+	/* Set SDL2 video hints */
+	if (nPrevRenderScaleQuality != ConfigureParams.Screen.nRenderScaleQuality)
+	{
+		char hint[2] = { '0' + ConfigureParams.Screen.nRenderScaleQuality, 0 };
+		SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, hint, SDL_HINT_OVERRIDE);
+		nPrevRenderScaleQuality = ConfigureParams.Screen.nRenderScaleQuality;
+	}
+	if (bPrevUseVsync != ConfigureParams.Screen.bUseVsync)
+	{
+		char hint[2] = { '0' + ConfigureParams.Screen.bUseVsync, 0 };
+		SDL_SetHintWithPriority(SDL_HINT_RENDER_VSYNC, hint, SDL_HINT_OVERRIDE);
+		bPrevUseVsync = ConfigureParams.Screen.bUseVsync;
+	}
 
 	/* Set new video mode */
 	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height,
@@ -685,7 +701,7 @@ static void Screen_SetResolution(void)
 			Screen_SetupRGBTable();         /* Create color conversion table */
 
 		Statusbar_Init(sdlscrn);
-		
+
 		/* screen area without the statusbar */
 		STScreenRect.x = 0;
 		STScreenRect.y = 0;

@@ -197,7 +197,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	     || changed->Screen.nMaxWidth != current->Screen.nMaxWidth
 	     || changed->Screen.nMaxHeight != current->Screen.nMaxHeight
 	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan
-	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar))
+	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar
+	     || changed->Screen.nRenderScaleQuality != current->Screen.nRenderScaleQuality
+	     || changed->Screen.bUseVsync != current->Screen.bUseVsync))
 	{
 		Dprintf("- screenmode>\n");
 		bScreenModeChange = true;

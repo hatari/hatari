@@ -263,6 +263,10 @@ typedef struct
   bool bForceMax;
   int nMaxWidth;
   int nMaxHeight;
+#if WITH_SDL2
+  int nRenderScaleQuality;
+  bool bUseVsync;
+#endif
 } CNF_SCREEN;
 
 

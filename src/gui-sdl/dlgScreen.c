@@ -82,7 +82,7 @@ static SGOBJ monitordlg[] =
 /* The window dialog: */
 #define DLGSCRN_FULLSCRN    3
 #define DLGSCRN_STATUSBAR   5
-#define DLGSCRN_DRIVELED     6
+#define DLGSCRN_DRIVELED    6
 #define DLGSCRN_NONE        7
 #define DLGSCRN_SKIP0       9
 #define DLGSCRN_SKIP1       10
@@ -100,7 +100,13 @@ static SGOBJ monitordlg[] =
 #define DLGSCRN_CROP        28
 #define DLGSCRN_CAPTURE     29
 #define DLGSCRN_RECANIM     30
+#if WITH_SDL2
+#define DLGSCRN_LINEARSCALE 33
+#define DLGSCRN_VSYNC       34
+#define DLGSCRN_EXIT_WINDOW 35
+#else
 #define DLGSCRN_EXIT_WINDOW 31
+#endif
 
 /* needs to match Frame skip values in windowdlg[]! */
 static const int skip_frames[] = { 0, 1, 2, 4, AUTO_FRAMESKIP_LIMIT };
@@ -114,8 +120,11 @@ static char sMaxHeight[5];
 /* The window dialog: */
 static SGOBJ windowdlg[] =
 {
+#if WITH_SDL2
+	{ SGBOX, 0, 0, 0,0, 52,25, NULL },
+#else
 	{ SGBOX, 0, 0, 0,0, 52,20, NULL },
-
+#endif
 	{ SGBOX,      0, 0,  1,1, 50,10, NULL },
 	{ SGTEXT,     0, 0,  4,2, 20,1, "Hatari screen options" },
 	{ SGCHECKBOX, 0, 0,  4,4, 12,1, "_Fullscreen" },
@@ -148,7 +157,15 @@ static SGOBJ windowdlg[] =
 	{ SGBUTTON,   0, 0, 29,13, 14,1, " _Screenshot " },
 	{ SGBUTTON,   0, 0, 29,15, 14,1, NULL },      /* Record text set later */
 
+#if WITH_SDL2
+	{ SGBOX,      0, 0,  1,18, 50,4, NULL },
+	{ SGTEXT,     0, 0, 20,18, 12,1, "SDL2 options" },
+	{ SGCHECKBOX, 0, 0,  4,20, 20,1, "Use linear scal_ing" },
+	{ SGCHECKBOX, 0, 0, 28,20, 11,1, "Use _VSync" },
+	{ SGBUTTON, SG_DEFAULT, 0, 17,23, 20,1, "Back to main menu" },
+#else
 	{ SGBUTTON, SG_DEFAULT, 0, 17,18, 20,1, "Back to main menu" },
+#endif
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -356,6 +373,17 @@ void Dialog_WindowDlg(void)
 	else
 		windowdlg[DLGSCRN_RECANIM].txt = RECORD_START;
 
+	/* SDL2 options */
+	if (ConfigureParams.Screen.nRenderScaleQuality)
+		windowdlg[DLGSCRN_LINEARSCALE].state |= SG_SELECTED;
+	else
+		windowdlg[DLGSCRN_LINEARSCALE].state &= ~SG_SELECTED;
+
+	if (ConfigureParams.Screen.bUseVsync)
+		windowdlg[DLGSCRN_VSYNC].state |= SG_SELECTED;
+	else
+		windowdlg[DLGSCRN_VSYNC].state &= ~SG_SELECTED;
+
 	/* The window dialog main loop */
 	do
 	{
@@ -440,4 +468,7 @@ void Dialog_WindowDlg(void)
 	}
 
 	ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
+
+	ConfigureParams.Screen.nRenderScaleQuality = (windowdlg[DLGSCRN_LINEARSCALE].state & SG_SELECTED) ? 1 : 0;
+	ConfigureParams.Screen.bUseVsync = (windowdlg[DLGSCRN_VSYNC].state & SG_SELECTED);
 }
