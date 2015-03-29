@@ -147,7 +147,7 @@ void VIDEL_reset(void)
 	videl.save_scrWidth = 640;
 	videl.save_scrHeight = 480;
 	videl.save_scrBpp = ConfigureParams.Screen.nForceBpp;
-	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
+	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp, false);
 
 	/* Reset IO register (some are not initialized by TOS) */
 	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
@@ -887,10 +887,12 @@ static void VIDEL_updateColors(void)
 }
 
 
-void VIDEL_ZoomModeChanged(void)
+void VIDEL_ZoomModeChanged(bool bForceChange)
 {
 	/* User selected another zoom mode, so set a new screen resolution now */
-	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
+	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight,
+	                         videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp,
+	                         bForceChange);
 }
 
 
@@ -926,7 +928,7 @@ bool VIDEL_renderScreen(void)
 	}
 	if (change) {
 		LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n", videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
-		HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
+		HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp, false);
 	}
 
 	if (!HostScreen_renderBegin())

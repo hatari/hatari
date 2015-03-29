@@ -2844,7 +2844,7 @@ bool Video_RenderTTScreen(void)
 	Video_GetTTRes(&width, &height, &bpp);
 	if (TTRes != nPrevTTRes)
 	{
-		HostScreen_setWindowSize(width, height, 8);
+		HostScreen_setWindowSize(width, height, 8, false);
 		nPrevTTRes = TTRes;
 		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
 			bTTColorsSync = false;
@@ -2867,7 +2867,7 @@ bool Video_RenderTTScreen(void)
 	if (nScreenZoomX * nScreenZoomY != 1)
 		VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
 	else
-		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);	
+		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
 
 	HostScreen_update1(HostScreen_renderEnd(), false);
 	return true;

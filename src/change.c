@@ -435,7 +435,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (bScreenModeChange)
 	{
 		Dprintf("- screenmode<\n");
-		Screen_ModeChanged();
+		Screen_ModeChanged(true);
 	}
 
 	/* Do we need to perform reset? */

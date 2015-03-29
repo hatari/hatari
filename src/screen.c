@@ -399,9 +399,8 @@ static void Screen_FreeSDL2Resources(void)
  * Change the SDL video mode.
  * @return true if mode has been changed, false if change was not necessary
  */
-bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
+bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange)
 {
-	static bool bWasInFullScreen = false;
 	Uint32 sdlVideoFlags;
 #if WITH_SDL2
 	static int nPrevRenderScaleQuality = 0;
@@ -413,8 +412,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 
 	/* Check if we really have to change the video mode: */
 	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
-	    && sdlscrn->format->BitsPerPixel == bitdepth
-	    && bInFullScreen == bWasInFullScreen)
+	    && sdlscrn->format->BitsPerPixel == bitdepth && !bForceChange)
 		return false;
 
 	/* We can not continue recording with a different resolution */
@@ -432,8 +430,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 		/* unhide the Hatari WM window for fullscreen */
 		Control_ReparentWindow(width, height, bInFullScreen);
 	}
-
-	bWasInFullScreen = bInFullScreen;
 
 #if WITH_SDL2
 
@@ -585,7 +581,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth)
 /**
  * Initialize SDL screen surface / set resolution.
  */
-static void Screen_SetResolution(void)
+static void Screen_SetResolution(bool bForceChange)
 {
 	int Width, Height, nZoom, SBarHeight, BitCount, maxW, maxH;
 	bool bDoubleLowRes = false;
@@ -692,7 +688,7 @@ static void Screen_SetResolution(void)
 		Width = maxW;
 	}
 
-	if (Screen_SetSDLVideoSize(Width, Height, BitCount))
+	if (Screen_SetSDLVideoSize(Width, Height, BitCount, bForceChange))
 	{
 		/* Re-init screen palette: */
 		if (sdlscrn->format->BitsPerPixel == 8)
@@ -760,7 +756,7 @@ void Screen_Init(void)
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
-	Screen_SetResolution();
+	Screen_SetResolution(false);
 
 	if (bGrabMouse)
 		SDL_WM_GrabInput(SDL_GRAB_ON);
@@ -818,7 +814,7 @@ void Screen_Reset(void)
 		}
 	}
 	/* Cause full update */
-	Screen_ModeChanged();
+	Screen_ModeChanged(false);
 }
 
 
@@ -904,7 +900,7 @@ void Screen_EnterFullScreen(void)
 		}
 		else
 		{
-			Screen_SetResolution();
+			Screen_SetResolution(true);
 			Screen_ClearScreen();       /* Black out screen bitmap as will be invalid when return */
 		}
 
@@ -944,7 +940,7 @@ void Screen_ReturnFromFullScreen(void)
 		}
 		else
 		{
-			Screen_SetResolution();
+			Screen_SetResolution(true);
 		}
 		SDL_Delay(20);                /* To give monitor time to switch resolution */
 
@@ -976,7 +972,7 @@ static void Screen_DidResolutionChange(int new_res)
 	if (new_res != STRes)
 	{
 		STRes = new_res;
-		Screen_ModeChanged();
+		Screen_ModeChanged(false);
 	}
 	else
 	{
@@ -991,7 +987,7 @@ static void Screen_DidResolutionChange(int new_res)
 /**
  * Force things associated with changing between low/medium/high res.
  */
-void Screen_ModeChanged(void)
+void Screen_ModeChanged(bool bForceChange)
 {
 	if (!sdlscrn)
 	{
@@ -1001,18 +997,18 @@ void Screen_ModeChanged(void)
 	/* Don't run this function if Videl emulation is running! */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
 	{
-		VIDEL_ZoomModeChanged();
+		VIDEL_ZoomModeChanged(bForceChange);
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
-		HostScreen_setWindowSize(width, height, 8);
+		HostScreen_setWindowSize(width, height, 8, bForceChange);
 	}
 	else
 	{
 		/* Set new display mode, if differs from current */
-		Screen_SetResolution();
+		Screen_SetResolution(bForceChange);
 		Screen_SetFullUpdate();
 	}
 	if (bInFullScreen || bGrabMouse)

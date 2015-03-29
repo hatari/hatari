@@ -88,13 +88,13 @@ void HostScreen_UnInit(void)
 
 void HostScreen_toggleFullScreen(void)
 {
-	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
+	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp, true);
 	/* force screen redraw */
 	HostScreen_update1(NULL, true);
 }
 
 
-void HostScreen_setWindowSize(int width, int height, int bpp)
+void HostScreen_setWindowSize(int width, int height, int bpp, bool bForceChange)
 {
 	const bool keep = ConfigureParams.Screen.bKeepResolution;
 	int screenwidth, screenheight, maxw, maxh;
@@ -182,7 +182,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	hs_rect.w = screenwidth;
 	hs_rect.h = screenheight - sbarheight;
 
-	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bpp))
+	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bpp, bForceChange))
 	{
 		/* same host screen size despite Atari resolution change,
 		 * -> no time consuming host video mode change needed
