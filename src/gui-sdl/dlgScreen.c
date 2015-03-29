@@ -373,6 +373,7 @@ void Dialog_WindowDlg(void)
 	else
 		windowdlg[DLGSCRN_RECANIM].txt = RECORD_START;
 
+#if WITH_SDL2
 	/* SDL2 options */
 	if (ConfigureParams.Screen.nRenderScaleQuality)
 		windowdlg[DLGSCRN_LINEARSCALE].state |= SG_SELECTED;
@@ -383,6 +384,7 @@ void Dialog_WindowDlg(void)
 		windowdlg[DLGSCRN_VSYNC].state |= SG_SELECTED;
 	else
 		windowdlg[DLGSCRN_VSYNC].state &= ~SG_SELECTED;
+#endif
 
 	/* The window dialog main loop */
 	do
@@ -469,6 +471,8 @@ void Dialog_WindowDlg(void)
 
 	ConfigureParams.Screen.bCrop = (windowdlg[DLGSCRN_CROP].state & SG_SELECTED);
 
+#if WITH_SDL2
 	ConfigureParams.Screen.nRenderScaleQuality = (windowdlg[DLGSCRN_LINEARSCALE].state & SG_SELECTED) ? 1 : 0;
 	ConfigureParams.Screen.bUseVsync = (windowdlg[DLGSCRN_VSYNC].state & SG_SELECTED);
+#endif
 }
