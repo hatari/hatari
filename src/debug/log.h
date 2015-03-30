@@ -170,6 +170,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_IDE		 (1ll<<50)
 
+#define TRACE_GEMDOS_FOPEN	 (1ll<<51)	/* just Fopen() */
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 
@@ -200,9 +202,9 @@ extern Uint64 LogTraceFlags;
 
 #ifndef _VCWIN_
 #define	LOG_TRACE(level, args...) \
-	if (unlikely(LogTraceFlags & level)) { fprintf(TraceFile, args); fflush(TraceFile); }
+	if (unlikely(LogTraceFlags & (level))) { fprintf(TraceFile, args); fflush(TraceFile); }
 #endif
-#define LOG_TRACE_LEVEL( level )	(unlikely(LogTraceFlags & level))
+#define LOG_TRACE_LEVEL( level )	(unlikely(LogTraceFlags & (level)))
 
 #else		/* ENABLE_TRACING */
 
