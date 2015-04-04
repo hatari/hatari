@@ -476,6 +476,7 @@ extern void write_log (const TCHAR *, ...) __attribute__ ((format (printf, 1, 2)
 extern void write_log (const TCHAR *, ...);
 #endif
 extern void write_dlog (const TCHAR *, ...);
+extern int read_log(void);
 
 extern void flush_log (void);
 extern void close_console (void);

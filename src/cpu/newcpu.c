@@ -347,7 +347,7 @@ static bool check_trace (void)
 		return true;
 	if (!cputrace.readcounter && !cputrace.writecounter && !cputrace.cyclecounter) {
 		if (cpu_tracer != -2) {
-			write_log (_T("CPU trace: dma_cycle() enabled. %08x %08x NOW=%08lx\n"),
+			write_log (_T("CPU trace: dma_cycle() enabled. %08x %08x NOW=%08x\n"),
 				cputrace.cyclecounter_pre, cputrace.cyclecounter_post, get_cycles ());
 			cpu_tracer = -2; // dma_cycle() allowed to work now
 		}
@@ -371,7 +371,7 @@ static bool check_trace (void)
 	x_do_cycles_pre = x2_do_cycles_pre;
 	x_do_cycles_post = x2_do_cycles_post;
 	set_x_cp_funcs();
-	write_log (_T("CPU tracer playback complete. STARTCYCLES=%08x NOWCYCLES=%08lx\n"), cputrace.startcycles, get_cycles ());
+	write_log (_T("CPU tracer playback complete. STARTCYCLES=%08x NOWCYCLES=%08x\n"), cputrace.startcycles, get_cycles ());
 	cputrace.needendcycles = 1;
 	cpu_tracer = 0;
 	return true;
@@ -385,7 +385,7 @@ static bool get_trace (uaecptr addr, int accessmode, int size, uae_u32 *data)
 		struct cputracememory *ctm = &cputrace.ctm[i];
 		if (ctm->addr == addr && ctm->mode == mode) {
 			ctm->mode = 0;
-			write_log (_T("CPU trace: GET %d: PC=%08x %08x=%08x %d %d %08x/%08x/%08x %d/%d (%08lx)\n"),
+			write_log (_T("CPU trace: GET %d: PC=%08x %08x=%08x %d %d %08x/%08x/%08x %d/%d (%08x)\n"),
 				i, cputrace.pc, addr, ctm->data, accessmode, size,
 				cputrace.cyclecounter, cputrace.cyclecounter_pre, cputrace.cyclecounter_post,
 				cputrace.readcounter, cputrace.writecounter, get_cycles ());
@@ -1545,7 +1545,7 @@ void init_m68k (void)
 			TCHAR name[20];
 			write_log (_T("Reading instruction count file...\n"));
 			fscanf (f, "Total: %lu\n", &total);
-			while (fscanf (f, "%lx: %lu %s\n", &opcode, &count, name) == 3) {
+			while (fscanf (f, "%x: %lu %s\n", &opcode, &count, name) == 3) {
 				instrcount[opcode] = count;
 			}
 			fclose (f);
@@ -1617,7 +1617,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			else
 				_stprintf (offtxt, _T("$%04x"), disp16);
 			addr = m68k_areg (regs, reg) + disp16;
-			_stprintf (buffer, _T("(A%d, %s) == $%08lx"), reg, offtxt, (unsigned long)addr);
+			_stprintf (buffer, _T("(A%d, %s) == $%08x"), reg, offtxt, (unsigned long)addr);
 		}
 		break;
 	case Ad8r:
@@ -1647,14 +1647,14 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			if (dp & 4) base += dispreg;
 
 			addr = base + outer;
-			_stprintf (buffer, _T("(%s%c%d.%c*%d+%d)+%d == $%08lx"), name,
+			_stprintf (buffer, _T("(%s%c%d.%c*%d+%d)+%d == $%08x"), name,
 				dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 				1 << ((dp >> 9) & 3),
 				disp, outer,
 				(unsigned long)addr);
 		} else {
 			addr = m68k_areg (regs, reg) + (uae_s32)((uae_s8)disp8) + dispreg;
-			_stprintf (buffer, _T("(A%d, %c%d.%c*%d, $%02x) == $%08lx"), reg,
+			_stprintf (buffer, _T("(A%d, %c%d.%c*%d, $%02x) == $%08x"), reg,
 				dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 				1 << ((dp >> 9) & 3), disp8,
 				(unsigned long)addr);
@@ -1663,7 +1663,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 	case PC16:
 		disp16 = get_iword_debug (pc); pc += 2;
 		addr += (uae_s16)disp16;
-		_stprintf (buffer, _T("(PC,$%04x) == $%08lx"), disp16 & 0xffff, (unsigned long)addr);
+		_stprintf (buffer, _T("(PC,$%04x) == $%08x"), disp16 & 0xffff, (unsigned long)addr);
 		break;
 	case PC8r:
 		dp = get_iword_debug (pc); pc += 2;
@@ -1692,26 +1692,26 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			if (dp & 4) base += dispreg;
 
 			addr = base + outer;
-			_stprintf (buffer, _T("(%s%c%d.%c*%d+%d)+%d == $%08lx"), name,
+			_stprintf (buffer, _T("(%s%c%d.%c*%d+%d)+%d == $%08x"), name,
 				dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 				1 << ((dp >> 9) & 3),
 				disp, outer,
 				(unsigned long)addr);
 		} else {
 			addr += (uae_s32)((uae_s8)disp8) + dispreg;
-			_stprintf (buffer, _T("(PC, %c%d.%c*%d, $%02x) == $%08lx"), dp & 0x8000 ? 'A' : 'D',
+			_stprintf (buffer, _T("(PC, %c%d.%c*%d, $%02x) == $%08x"), dp & 0x8000 ? 'A' : 'D',
 				(int)r, dp & 0x800 ? 'L' : 'W',  1 << ((dp >> 9) & 3),
 				disp8, (unsigned long)addr);
 		}
 		break;
 	case absw:
 		addr = (uae_s32)(uae_s16)get_iword_debug (pc);
-		_stprintf (buffer, _T("$%08lx"), (unsigned long)addr);
+		_stprintf (buffer, _T("$%08x"), addr);
 		pc += 2;
 		break;
 	case absl:
 		addr = get_ilong_debug (pc);
-		_stprintf (buffer, _T("$%08lx"), (unsigned long)addr);
+		_stprintf (buffer, _T("$%08x"), (unsigned long)addr);
 		pc += 4;
 		break;
 	case imm:
@@ -1725,7 +1725,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			pc += 2;
 			break;
 		case sz_long:
-			_stprintf(buffer, _T("#$%08lx"), (unsigned long)(get_ilong_debug(pc)));
+			_stprintf(buffer, _T("#$%08x"), (unsigned long)(get_ilong_debug(pc)));
 			pc += 4;
 			break;
 		case sz_single:
@@ -1757,7 +1757,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			break;
 		}
 		case sz_packed:
-			_stprintf(buffer, _T("#$%08lx%08lx%08lx"), (unsigned long)(get_ilong_debug(pc)), (unsigned long)(get_ilong_debug(pc + 4)), (unsigned long)(get_ilong_debug(pc + 8)));
+			_stprintf(buffer, _T("#$%08x%08x%08x"), get_ilong_debug(pc), get_ilong_debug(pc + 4), get_ilong_debug(pc + 8));
 			pc += 12;
 			break;
 		default:
@@ -1779,13 +1779,13 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 		break;
 	case imm2:
 		offset = (uae_s32)get_ilong_debug (pc);
-		_stprintf (buffer, _T("#$%08lx"), (unsigned long)offset);
+		_stprintf (buffer, _T("#$%08x"), (unsigned long)offset);
 		addr = pc + offset;
 		pc += 4;
 		break;
 	case immi:
 		offset = (uae_s32)(uae_s8)(reg & 0xff);
-		_stprintf (buffer, _T("#$%08lx"), (unsigned long)offset);
+		_stprintf (buffer, _T("#$%08x"), (unsigned long)offset);
 		addr = pc + offset;
 		break;
 	default:
@@ -1941,7 +1941,7 @@ STATIC_INLINE int in_rom (uaecptr pc)
 
 STATIC_INLINE int in_rtarea (uaecptr pc)
 {
-	return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom;
+	return (munge24 (pc) & 0xFFFF0000) == rtarea_base && uae_boot_rom_type;
 }
 #endif
 
@@ -2370,7 +2370,7 @@ currcycle=0;
 		if (m68k_areg(regs, 7) & 1) {
 			exception3_notinstruction(regs.ir, m68k_areg(regs, 7) + 4);
 			return;
-			}
+		}
 		exception_in_exception = 1;
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
 		if (interrupt)
@@ -2386,7 +2386,7 @@ kludge_me_do:
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
 		else
-			exception3_notinstruction (regs.ir, newpc);
+			exception3_notinstruction(regs.ir, newpc);
 		return;
 	}
 	m68k_setpc (newpc);
@@ -2660,7 +2660,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
 		else
-			exception3_read (regs.ir, newpc);
+			exception3_read(regs.ir, newpc);
 		return;
 	}
 	m68k_setpci (newpc);
@@ -2736,7 +2736,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
 		else
-			exception3_read (regs.ir, newpc);
+			exception3_read(regs.ir, newpc);
 		return;
 	}
 	m68k_setpci (newpc);
@@ -2859,7 +2859,7 @@ static void Exception_normal (int nr)
 		else
 			exception3_notinstruction(regs.ir, m68k_areg(regs, 7));
 		return;
-		}
+	}
 	if ((nr == 2 || nr == 3) && exception_in_exception < 0) {
 		cpu_halt (2);
 		return;
@@ -2910,7 +2910,7 @@ static void Exception_normal (int nr)
 							if (nr == 2 || nr == 3)
 								cpu_halt (2);
 							else
-								exception3_read (regs.ir, newpc);
+								exception3_read(regs.ir, newpc);
 							return;
 						}
 						m68k_setpc (newpc);
@@ -3044,7 +3044,7 @@ kludge_me_do:
 		if (nr == 2 || nr == 3)
 			cpu_halt (2);
 		else
-			exception3_notinstruction (regs.ir, newpc);
+			exception3_notinstruction(regs.ir, newpc);
 		return;
 	}
 	m68k_setpc (newpc);
@@ -3648,7 +3648,7 @@ static bool haltloop(void)
 			int rpt_scanline = read_processor_time();
 			int rpt_end = rpt_scanline + vsynctimeline;
 
-			// See expansion handling
+			// See expansion handling.
 			// Dialog must be opened from main thread.
 			if (regs.halted == -2) {
 				regs.halted = -1;
@@ -3835,7 +3835,7 @@ static int do_specialties (int cycles)
 {
 	if (regs.spcflags & SPCFLAG_MODE_CHANGE)
 		return 1;
-
+	
 #ifndef WINUAE_FOR_HATARI
 	if (regs.spcflags & SPCFLAG_CHECK) {
 		if (regs.halted) {
@@ -3880,7 +3880,7 @@ static int do_specialties (int cycles)
 
 		if (action_replay_flag == ACTION_REPLAY_ACTIVATE || action_replay_flag == ACTION_REPLAY_DORESET)
 			action_replay_enter ();
-		if (action_replay_flag == ACTION_REPLAY_HIDE && !is_ar_pc_in_rom ()) {
+		if ((action_replay_flag == ACTION_REPLAY_HIDE || action_replay_flag == ACTION_REPLAY_ACTIVE) && !is_ar_pc_in_rom ()) {
 			action_replay_hide ();
 			unset_special (SPCFLAG_ACTION_REPLAY);
 		}
@@ -4296,7 +4296,7 @@ static void m68k_run_1_ce (void)
 	bool first = true;
 printf ( "run_1_ce\n" );
 
-	for (;;) {
+	for(;;) {
 		TRY (prb) {
 			if (first) {
 				if (cpu_tracer < 0) {
@@ -4411,7 +4411,7 @@ printf ( "run_1_ce\n" );
 cont:
 				if (cputrace.needendcycles) {
 					cputrace.needendcycles = 0;
-					write_log (_T("STARTCYCLES=%08x ENDCYCLES=%08lx\n"), cputrace.startcycles, get_cycles ());
+					write_log (_T("STARTCYCLES=%08x ENDCYCLES=%08x\n"), cputrace.startcycles, get_cycles ());
 #ifndef WINUAE_FOR_HATARI
 					log_dma_record ();
 #endif
@@ -4497,7 +4497,7 @@ void exec_nostats (void)
 			ppc_interrupt(intlev());
 #endif
 #ifdef WINUAE_FOR_HATARI
-		if (end_block (r->opcode) || r->spcflags)
+		if (end_block(r->opcode) || r->spcflags)
 #else
 
 		if (end_block(r->opcode) || r->spcflags || uae_int_requested || uaenet_int_requested)
@@ -4942,7 +4942,7 @@ static void m68k_run_3ce (void)
 	bool exit = false;
 printf ( "run_3ce\n" );
 
-        for(;;) {
+	for(;;) {
 		TRY(prb) {
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
@@ -5013,7 +5013,7 @@ static void m68k_run_3p(void)
 	int cycles;
 printf ( "run_3p\n" );
 
-        for(;;)  {
+	for(;;)  {
 		TRY(prb) {
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
@@ -5087,7 +5087,7 @@ static void m68k_run_2ce (void)
 	bool first = true;
 printf ( "run_2ce\n" );
 
-        for(;;) {
+	for(;;) {
 		TRY(prb) {
 			if (first) {
 				if (cpu_tracer < 0) {
@@ -5202,7 +5202,7 @@ printf ( "run_2ce\n" );
 #endif
 
 				(*cpufunctbl[r->opcode])(r->opcode);
-			
+		
 				wait_memory_cycles();
 
 #ifdef WINUAE_FOR_HATARI
@@ -5259,7 +5259,7 @@ static void m68k_run_2p (void)
 	struct regstruct *r = &regs;
 printf ( "run_2p\n" );
 
-        for(;;) {
+	for(;;) {
 		TRY(prb) {
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
@@ -5341,7 +5341,7 @@ static void m68k_run_2 (void)
 	struct regstruct *r = &regs;
 printf ( "run_2\n" );
 
-        for(;;) {
+	for(;;) {
 		TRY(prb) {
 			for (;;) {
 #ifdef WINUAE_FOR_HATARI
@@ -5977,7 +5977,7 @@ void m68k_disasm_2 (TCHAR *buf, int bufsize, uaecptr pc, uaecptr *nextpc, int cn
 		for (lookup = lookuptab;lookup->mnemo != dp->mnemo; lookup++)
 			;
 
-		buf = buf_out (buf, &bufsize, _T("%08lX "), pc);
+		buf = buf_out (buf, &bufsize, _T("%08X "), pc);
 
 		pc += 2;
 		
@@ -6364,11 +6364,11 @@ void m68k_dumpstate_2 (uaecptr pc, uaecptr *nextpc)
 	int i, j;
 
 	for (i = 0; i < 8; i++){
-		console_out_f (_T("  D%d %08lX "), i, m68k_dreg (regs, i));
+		console_out_f (_T("  D%d %08X "), i, m68k_dreg (regs, i));
 		if ((i & 3) == 3) console_out_f (_T("\n"));
 	}
 	for (i = 0; i < 8; i++){
-		console_out_f (_T("  A%d %08lX "), i, m68k_areg (regs, i));
+		console_out_f (_T("  A%d %08X "), i, m68k_areg (regs, i));
 		if ((i & 3) == 3) console_out_f (_T("\n"));
 	}
 	if (regs.s == 0)
@@ -6430,7 +6430,7 @@ void m68k_dumpstate_2 (uaecptr pc, uaecptr *nextpc)
 	if (pc != 0xffffffff) {
 		m68k_disasm (pc, nextpc, 1);
 		if (nextpc)
-			console_out_f (_T("Next PC: %08lx\n"), *nextpc);
+			console_out_f (_T("Next PC: %08x\n"), *nextpc);
 	}
 }
 void m68k_dumpstate (uaecptr *nextpc)
@@ -7635,7 +7635,7 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 		v1 = currprefs.cpu_cycle_exact ? mem_access_delay_long_read_ce020 (addr) : get_long (addr);
 		update_cache030 (c1, v1, tag1, lws1);
 #ifndef WINUAE_FOR_HATARI
-	} else if (uae_boot_rom) {
+	} else if (uae_boot_rom_type > 0) {
 		// this check and fix is needed for UAE filesystem handler because it runs in host side and in
 		// separate thread. No way to access via cache without locking that would cause major slowdown
 		// and unneeded complexity
@@ -7673,7 +7673,7 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 		v2 = currprefs.cpu_cycle_exact ? mem_access_delay_long_read_ce020 (addr) : get_long (addr);
 		update_cache030 (c2, v2, tag2, lws2);
 #ifndef WINUAE_FOR_HATARI
-	} else if (uae_boot_rom) {
+	} else if (uae_boot_rom_type > 0) {
 		v2 = c2->data[lws2];
 		if (get_long (addr) != v2) {
 			write_log (_T("data cache mismatch %d %d %08x %08x != %08x %08x %d PC=%08x\n"),

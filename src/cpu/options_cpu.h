@@ -155,7 +155,9 @@ struct uaedev_config_info {
 	int controller_type;
 	int controller_type_unit;
 	int controller_unit;
-	// zero if default
+	int controller_media_type; // 1 = CF IDE, 0 = normal
+	int unit_feature_level;
+	bool physical_geometry; // if false: use defaults
 	int pcyls, pheads, psecs;
 	int flags;
 	int buffers;
@@ -181,7 +183,7 @@ struct uaedev_config_data
 };
 
 enum { CP_GENERIC = 1, CP_CDTV, CP_CDTVCR, CP_CD32, CP_A500, CP_A500P, CP_A600, CP_A1000,
-	CP_A1200, CP_A2000, CP_A3000, CP_A3000T, CP_A4000, CP_A4000T };
+	CP_A1200, CP_A2000, CP_A3000, CP_A3000T, CP_A4000, CP_A4000T, CP_VELVET };
 
 #define IDE_A600A1200 1
 #define IDE_A4000 2
@@ -199,7 +201,9 @@ enum { CP_GENERIC = 1, CP_CDTV, CP_CDTVCR, CP_CD32, CP_A500, CP_A500P, CP_A600, 
 #define AUTOSCALE_CENTER 6
 #define AUTOSCALE_MANUAL 7 // use gfx_xcenter_pos and gfx_ycenter_pos
 #define AUTOSCALE_INTEGER 8
-#define AUTOSCALE_INTEGER_AUTOSCALE 9
+#define AUTOSCALE_HALF_INTEGER 9
+#define AUTOSCALE_INTEGER_AUTOSCALE 10
+#define AUTOSCALE_HALF_INTEGER_AUTOSCALE 11
 
 #define MONITOREMU_NONE 0
 #define MONITOREMU_AUTO 1
@@ -267,6 +271,8 @@ struct gfx_filterdata
 	float gfx_filter_horiz_zoom, gfx_filter_vert_zoom;
 	float gfx_filter_horiz_zoom_mult, gfx_filter_vert_zoom_mult;
 	float gfx_filter_horiz_offset, gfx_filter_vert_offset;
+	int gfx_filter_left_border, gfx_filter_right_border;
+	int gfx_filter_top_border, gfx_filter_bottom_border;
 	int gfx_filter_filtermode;
 	int gfx_filter_bilinear;
 	int gfx_filter_noise, gfx_filter_blur;
@@ -277,6 +283,7 @@ struct gfx_filterdata
 	int gfx_filter_keep_autoscale_aspect;
 };
 
+#define MAX_DUPLICATE_EXPANSION_BOARDS 4
 #define MAX_EXPANSION_BOARDS 4
 struct romconfig
 {
@@ -284,7 +291,10 @@ struct romconfig
 	TCHAR romident[256];
 	uae_u32 board_ram_size;
 	bool autoboot_disabled;
+	int device_id;
+	int device_settings;
 	int subtype;
+	void *unitdata;
 };
 #define MAX_BOARD_ROMS 2
 struct boardromconfig
@@ -444,6 +454,7 @@ struct uae_prefs {
 	int cd_speed;
 	bool tod_hack;
 	uae_u32 maprom;
+	int boot_rom;
 	bool rom_readwrite;
 	int turbo_emulation;
 	bool headless;
@@ -494,6 +505,7 @@ struct uae_prefs {
 	bool cs_ciatodbug;
 	bool cs_z3autoconfig;
 	bool cs_1mchipjumper;
+	bool cs_cia6526;
 	int cs_hacks;
 
 	struct boardromconfig expansionboard[MAX_EXPANSION_BOARDS];
@@ -589,6 +601,8 @@ struct uae_prefs {
 	bool floppy_read_only;
 	TCHAR dfxlist[MAX_SPARE_DRIVES][MAX_DPATH];
 	int dfxclickvolume;
+	int dfxclickvolume_disk[4];
+	int dfxclickvolume_empty[4];
 	int dfxclickchannelmask;
 
 	TCHAR luafiles[MAX_LUA_STATES][MAX_DPATH];
@@ -752,7 +766,7 @@ extern int cfgfile_configuration_change (int);
 extern void fixup_prefs_dimensions (struct uae_prefs *prefs);
 extern void fixup_prefs (struct uae_prefs *prefs);
 extern void fixup_cpu (struct uae_prefs *prefs);
-bool cfgfile_board_enabled(struct uae_prefs *p, int romtype);
+bool cfgfile_board_enabled(struct uae_prefs *p, int romtype, int devnum);
 
 extern void check_prefs_changed_custom (void);
 extern void check_prefs_changed_cpu (void);

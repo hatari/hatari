@@ -65,6 +65,7 @@ int debug_sprite_mask = 0xff;
 int debug_illegal = 0;
 uae_u64 debug_illegal_mask;
 static int debug_mmu_mode;
+static bool break_if_enforcer;
 
 static uaecptr processptr;
 static uae_char *processname;
@@ -93,6 +94,14 @@ void activate_debugger (void)
 	set_special (SPCFLAG_BRK);
 	debugging = 1;
 	mmu_triggered = 0;
+}
+
+bool debug_enforcer(void)
+{
+	if (!break_if_enforcer)
+		return false;
+	activate_debugger();
+	return true;
 }
 
 int firsthist = 0;
@@ -831,7 +840,7 @@ uaecptr dumpmem2 (uaecptr addr, TCHAR *out, int osize)
 
 	if (osize <= (9 + cols * 5 + 1 + 2 * cols))
 		return addr;
-	_stprintf (out, _T("%08lX "), addr);
+	_stprintf (out, _T("%08X "), addr);
 	for (i = 0; i < cols; i++) {
 		uae_u8 b1, b2;
 		b1 = b2 = 0;
@@ -1389,7 +1398,7 @@ static void decode_copper_insn (FILE* file, uae_u16 mword1, uae_u16 mword2, unsi
 	if (get_copper_address (-1) >= addr && get_copper_address(-1) <= addr + 3)
 		here = '*';
 
-	console_out_f (_T("%c%08lx: %04lx %04lx%s\t;%c "), here, addr, insn >> 16, insn & 0xFFFF, record, insn != ((mword1 << 16) | mword2) ? '!' : ' ');
+	console_out_f (_T("%c%08x: %04x %04x%s\t;%c "), here, addr, insn >> 16, insn & 0xFFFF, record, insn != ((mword1 << 16) | mword2) ? '!' : ' ');
 
 	switch (insn_type) {
 	case 0x00010000: /* WAIT insn */
@@ -1417,9 +1426,9 @@ static void decode_copper_insn (FILE* file, uae_u16 mword1, uae_u16 mword2, unsi
 				i++;
 			}
 			if (custd[i].name)
-				console_out_f (_T("%s := 0x%04lx\n"), custd[i].name, insn & 0xffff);
+				console_out_f (_T("%s := 0x%04x\n"), custd[i].name, insn & 0xffff);
 			else
-				console_out_f (_T("%04x := 0x%04lx\n"), addr, insn & 0xffff);
+				console_out_f (_T("%04x := 0x%04x\n"), addr, insn & 0xffff);
 		}
 		break;
 
@@ -1856,7 +1865,7 @@ static void illg_init (void)
 	if (currprefs.cs_ksmirror_a8)
 		memset (illgdebug + 0xa80000, 1, 2 * 512 * 1024);
 #ifdef FILESYS
-	if (uae_boot_rom) /* filesys "rom" */
+	if (uae_boot_rom_type) /* filesys "rom" */
 		memset (illgdebug + rtarea_base, 1, 0x10000);
 #endif
 	if (currprefs.cs_ide > 0)
@@ -1915,7 +1924,8 @@ static int debug_mem_off (uaecptr *addrp)
 	ba = debug_mem_banks[offset];
 	if (!ba)
 		return offset;
-	addr = (addr & ba->mask) | ba->startmask;
+	if (ba->mask || ba->startmask)
+		addr = (addr & ba->mask) | ba->startmask;
 	*addrp = addr;
 	return offset;
 }
@@ -3410,7 +3420,7 @@ static void show_exec_lists (TCHAR *t)
 					get_long_debug(list + 16 + 6), rom_vector,
 					get_word_debug(list + 16 + 4), get_byte_debug(list + 16 + 1));
 				if ((type & 0x10)) {
-					uae_u8 diagarea[32];
+					uae_u8 diagarea[256];
 					uae_u16 nameoffset;
 					uaecptr rom = addr + rom_vector;
 					uae_u8 config = get_byte_debug(rom);
@@ -3425,8 +3435,8 @@ static void show_exec_lists (TCHAR *t)
 						(diagarea[10] << 8) | diagarea[11],
 						(diagarea[12] << 8) | diagarea[13]);
 					if (nameoffset != 0 && nameoffset != 0xffff) {
-						copyromdata(config, rom, nameoffset, diagarea, 32);
-						diagarea[31] = 0;
+						copyromdata(config, rom, nameoffset, diagarea, 256);
+						diagarea[sizeof diagarea - 1] = 0;
 						TCHAR *str = au((char*)diagarea);
 						console_out_f(_T(" '%s'\n"), str);
 						xfree(str);
@@ -4437,6 +4447,9 @@ static BOOL debug_line (TCHAR *input)
 			} else if (inptr[0] == 'c' || inptr[0] == 's') {
 				if (cycle_breakpoint(&inptr))
 					return true;
+			} else if (inptr[0] == 'e' && inptr[1] == 'n') {
+				break_if_enforcer = break_if_enforcer ? false : true;
+				console_out_f(_T("Break when enforcer hit: %s\n"), break_if_enforcer ? _T("enabled") : _T("disabled"));
 			} else {
 				if (instruction_breakpoint (&inptr))
 					return true;

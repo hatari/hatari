@@ -59,11 +59,12 @@ extern void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
 
 #define ROM_SIZE_512 524288
 #define ROM_SIZE_256 262144
+#define ROM_SIZE_128 131072
 
 extern bool ersatzkickfile;
 extern bool cloanto_rom, kickstart_rom;
 extern uae_u16 kickstart_version;
-extern bool uae_boot_rom;
+extern int uae_boot_rom_type;
 extern int uae_boot_rom_size;
 extern uaecptr rtarea_base;
 

@@ -2288,7 +2288,7 @@ uaecptr mmu030_translate(uaecptr addr, bool super, bool data, bool write)
     }
 }
 
-#if 0
+#ifndef WINUAE_FOR_HATARI
 static uae_u32 get_dcache_byte(uaecptr addr)
 {
 	return read_dcache030(addr, 0);
