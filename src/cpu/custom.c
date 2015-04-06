@@ -41,14 +41,6 @@ int savestate_state = 0;
 
 uae_u16 dmacon;
 
-static uae_u32 mmu_struct, mmu_callback, mmu_regs;
-static uae_u32 mmu_fault_bank_addr, mmu_fault_addr;
-static int mmu_fault_size, mmu_fault_rw;
-//static int mmu_slots;
-static struct regstruct mmur;
-//static int userdtsc = 0;
-//static int qpcdivisor = 0;
-
 static int extra_cycle;
 
 #if 0
@@ -511,62 +503,6 @@ void uae_reset (int hardreset)
 
 }
 #endif
-
-/* Code taken from debug.cpp*/
-void mmu_do_hit (void)
-{
-	int i;
-	uaecptr p;
-	uae_u32 pc;
-
-	mmu_triggered = 0;
-	pc = m68k_getpc ();
-	p = mmu_regs + 18 * 4;
-	put_long (p, pc);
-	regs = mmu_backup_regs;
-	regs.intmask = 7;
-	regs.t0 = regs.t1 = 0;
-	if (!regs.s) {
-		regs.usp = m68k_areg (regs, 7);
-		if (currprefs.cpu_model >= 68020)
-			m68k_areg (regs, 7) = regs.m ? regs.msp : regs.isp;
-		else
-			m68k_areg (regs, 7) = regs.isp;
-		regs.s = 1;
-	}
-	MakeSR ();
-	m68k_setpc (mmu_callback);
-	fill_prefetch ();
-
-	if (currprefs.cpu_model > 68000) {
-		for (i = 0 ; i < 9; i++) {
-			m68k_areg (regs, 7) -= 4;
-			put_long (m68k_areg (regs, 7), 0);
-		}
-		m68k_areg (regs, 7) -= 4;
-		put_long (m68k_areg (regs, 7), mmu_fault_addr);
-		m68k_areg (regs, 7) -= 2;
-		put_word (m68k_areg (regs, 7), 0); /* WB1S */
-		m68k_areg (regs, 7) -= 2;
-		put_word (m68k_areg (regs, 7), 0); /* WB2S */
-		m68k_areg (regs, 7) -= 2;
-		put_word (m68k_areg (regs, 7), 0); /* WB3S */
-		m68k_areg (regs, 7) -= 2;
-		put_word (m68k_areg (regs, 7),
-			(mmu_fault_rw ? 0 : 0x100) | (mmu_fault_size << 5)); /* SSW */
-		m68k_areg (regs, 7) -= 4;
-		put_long (m68k_areg (regs, 7), mmu_fault_bank_addr);
-		m68k_areg (regs, 7) -= 2;
-		put_word (m68k_areg (regs, 7), 0x7002);
-	}
-	m68k_areg (regs, 7) -= 4;
-	put_long (m68k_areg (regs, 7), get_long_debug (p - 4));
-	m68k_areg (regs, 7) -= 2;
-	put_word (m68k_areg (regs, 7), mmur.sr);
-#ifdef JIT
-	set_special(SPCFLAG_END_COMPILE);
-#endif
-}
 
 
 /* Code taken from win32.cpp*/
