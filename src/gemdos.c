@@ -3428,7 +3428,7 @@ void GemDOS_Boot(void)
 	/* install our gemdos handler, if -e or --harddrive option used,
 	 * or user wants to do GEMDOS tracing
 	 */
-	if (!GEMDOS_EMU_ON && !(LogTraceFlags & TRACE_OS_GEMDOS))
+	if (!GEMDOS_EMU_ON && !(LogTraceFlags & (TRACE_OS_GEMDOS|TRACE_GEMDOS_FOPEN)))
 		return;
 
 	/* Get the address of the p_run variable that points to the actual basepage */
