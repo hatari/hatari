@@ -120,6 +120,10 @@
 /* 2015/02/27	[NP]	Better support for GPIP/AER/DDR and trigerring an interrupt	*/
 /*			when AER is changed (fix the MIDI programs  Realtime and M	*/
 /*			by Eric Ameres, which toggle bit 0 in AER).			*/
+/* 2015/04/08	[NP]	When an interrupt happens on timers A/B/C/D, take into account	*/
+/*			PendingCyclesOver to determine if a 4 cycle delay should be	*/
+/*			added or not (depending on when it happened during the CPU	*/
+/*			instruction).							*/
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 
@@ -1304,7 +1308,7 @@ void MFP_InterruptHandler_TimerA(void)
 
 	/* Acknowledge in MFP circuit, pass bit,enable,pending */
 	if ((MFP_TACR&0xf) != 0)            /* Is timer OK? */
-		MFP_InputOnChannel ( MFP_INT_TIMER_A , 0 );
+		MFP_InputOnChannel ( MFP_INT_TIMER_A , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR, MFP_TADR, INTERRUPT_MFP_TIMERA, false, &TimerACanResume);
@@ -1326,7 +1330,7 @@ void MFP_InterruptHandler_TimerB(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TBCR&0xf) != 0)            /* Is timer OK? */
-		MFP_InputOnChannel ( MFP_INT_TIMER_B , 0 );
+		MFP_InputOnChannel ( MFP_INT_TIMER_B , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR, MFP_TBDR, INTERRUPT_MFP_TIMERB, false, &TimerBCanResume);
@@ -1348,7 +1352,7 @@ void MFP_InterruptHandler_TimerC(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x70) != 0)          /* Is timer OK? */
-		MFP_InputOnChannel ( MFP_INT_TIMER_C , 0 );
+		MFP_InputOnChannel ( MFP_INT_TIMER_C , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerCClockCycles = MFP_StartTimer_CD((MFP_TCDCR>>4)&7, MFP_TCDR, INTERRUPT_MFP_TIMERC, false, &TimerCCanResume);
@@ -1370,7 +1374,7 @@ void MFP_InterruptHandler_TimerD(void)
 
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
 	if ((MFP_TCDCR&0x07) != 0)          /* Is timer OK? */
-		MFP_InputOnChannel ( MFP_INT_TIMER_D , 0 );
+		MFP_InputOnChannel ( MFP_INT_TIMER_D , INT_CONVERT_FROM_INTERNAL ( PendingCyclesOver , INT_CPU_CYCLE ) );
 
 	/* Start next interrupt, if need one - from current cycle count */
 	TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR&7, MFP_TDDR, INTERRUPT_MFP_TIMERD, false, &TimerDCanResume);
