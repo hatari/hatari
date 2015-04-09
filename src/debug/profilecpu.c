@@ -34,6 +34,7 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 #define CART_END	0xFC0000
 #define CART_SIZE	(CART_END - CART_START)
 
+#define TTRAM_START	0x01000000
 
 /* if non-zero, output (more) warnings on suspicious:
  * - cycle/instruction counts
@@ -63,6 +64,7 @@ static struct {
 	Uint32 miss_counts[MAX_MISS];  /* cache miss counts */
 	cpu_profile_item_t *data; /* profile data items */
 	Uint32 size;          /* number of allocated profile data items */
+	profile_area_t ttram; /* TT-RAM stats */
 	profile_area_t ram;   /* normal RAM stats */
 	profile_area_t rom;   /* cartridge ROM stats */
 	profile_area_t tos;   /* ROM TOS stats */
@@ -114,10 +116,14 @@ static inline Uint32 address2index(Uint32 pc)
 			/* and after TOS as it's higher */
 			pc += TosSize;
 		}
+#if ENABLE_WINUAE_CPU
+	} else if (TTmemory && pc >= TTRAM_START && pc < TTRAM_START + 1024*1024*(unsigned)ConfigureParams.Memory.nTTRamSize) {
+		pc += STRamEnd + TosSize + CART_SIZE - TTRAM_START;
+#endif
 	} else {
 		fprintf(stderr, "WARNING: 'invalid' CPU PC profile instruction address 0x%x!\n", pc);
 		/* extra entry at end is reserved for invalid PC values */
-		pc = STRamEnd + TosSize + 0x20000;
+		pc = STRamEnd + TosSize + CART_SIZE;
 #if DEBUG
 		skip_assert = true;
 		DebugUI(REASON_CPU_EXCEPTION);
@@ -146,7 +152,10 @@ static Uint32 index2address(Uint32 idx)
 		}
 		idx -= TosSize;
 		/* ROM */
-		return idx + CART_START;
+		if (idx < CART_SIZE) {
+			return idx + CART_START;
+		}
+		idx -= CART_SIZE;
 	} else {
 		/* ROM */
 		if (idx < CART_SIZE) {
@@ -154,8 +163,12 @@ static Uint32 index2address(Uint32 idx)
 		}
 		idx -= CART_SIZE;
 		/* TOS */
-		return idx + TosAddress;
+		if (idx < TosSize) {
+			return idx + TosAddress;
+		}
+		idx -= TosSize;
 	}
+	return idx + TTRAM_START;
 }
 
 /* ------------------ CPU profile results ----------------- */
@@ -200,13 +213,11 @@ static void show_cpu_area_stats(profile_area_t *area)
 	fprintf(stderr, "- executed instructions:\n  %"PRIu64" (%.2f%% of all)\n",
 		area->counters.count,
 		100.0 * area->counters.count / cpu_profile.all.count);
-#if ENABLE_WINUAE_CPU
 	if (cpu_profile.all.misses) {	/* CPU cache in use? */
 		fprintf(stderr, "- instruction cache misses:\n  %"PRIu64" (%.2f%% of all)\n",
 			area->counters.misses,
 			100.0 * area->counters.misses / cpu_profile.all.misses);
 	}
-#endif
 	fprintf(stderr, "- used cycles:\n  %"PRIu64" (%.2f%% of all)\n  = %.5fs\n",
 		area->counters.cycles,
 		100.0 * area->counters.cycles / cpu_profile.all.cycles,
@@ -231,10 +242,14 @@ void Profile_CpuShowStats(void)
 	fprintf(stderr, "Cartridge ROM (0x%X-%X):\n", CART_START, CART_END);
 	show_cpu_area_stats(&cpu_profile.rom);
 
+	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
+		fprintf(stderr, "TT-RAM (0x%X-%X):\n", TTRAM_START, TTRAM_START + 1024*1024*ConfigureParams.Memory.nTTRamSize);
+		show_cpu_area_stats(&cpu_profile.ttram);
+	}
+
 	fprintf(stderr, "\n= %.5fs\n",
 		(double)cpu_profile.all.cycles / MachineClocks.CPU_Freq);
 
-#if ENABLE_WINUAE_CPU
 	if (cpu_profile.all.misses) {	/* CPU cache in use? */
 		int i;
 		fprintf(stderr, "\nCache misses per instruction, number of occurrences:\n");
@@ -242,7 +257,6 @@ void Profile_CpuShowStats(void)
 			fprintf(stderr, "- %d: %d\n", i, cpu_profile.miss_counts[i]);
 		}
 	}
-#endif
 }
 
 /**
@@ -568,14 +582,18 @@ void Profile_CpuSave(FILE *out)
 	 */
 	fputs("Field regexp:\t^\\$([0-9a-f]+) :.*% \\((.*)\\)$\n", out);
 	/* some information for interpreting the addresses */
+	fprintf(out, "ST_RAM:\t\t0x%06x-0x%06x\n", 0, STRamEnd);
 	end = TosAddress + TosSize;
 	fprintf(out, "ROM_TOS:\t0x%06x-0x%06x\n", TosAddress, end);
+	fprintf(out, "CARTRIDGE:\t0x%06x-0x%06x\n", CART_START, CART_END);
 	text = DebugInfo_GetTEXT();
-	if (text < TosAddress) {
+	if (text < TosAddress || text >= TTRAM_START) {
 		fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
 	}
-	fprintf(out, "CARTRIDGE:\t0x%06x-0x%06x\n", CART_START, CART_END);
-	if (end < CART_END) {
+	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
+		end = TTRAM_START + 1024*1024*ConfigureParams.Memory.nTTRamSize;
+		fprintf(out, "TT_RAM:\t\t0x%08x-0x%08x\n", TTRAM_START, end);
+	} else if (end < CART_END) {
 		end = CART_END;
 	}
 	Profile_CpuShowAddresses(0, end-2, out);
@@ -607,7 +625,10 @@ bool Profile_CpuStart(void)
 	memset(&cpu_profile, 0, sizeof(cpu_profile));
 
 	/* Shouldn't change within same debug session */
-	size = (STRamEnd + 0x20000 + TosSize) / 2;
+	size = (STRamEnd + CART_SIZE + TosSize) / 2;
+	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
+		size += ConfigureParams.Memory.nTTRamSize * 1024*1024/2;
+	}
 
 	/* Add one entry for catching invalid PC values */
 	cpu_profile.data = calloc(size + 1, sizeof(*cpu_profile.data));
@@ -980,6 +1001,7 @@ static Uint32* index_area(profile_area_t *area, Uint32 *sort_arr)
 void Profile_CpuStop(void)
 {
 	Uint32 *sort_arr, next;
+	unsigned int size, stsize;
 	int active;
 
 	if (cpu_profile.processed || !cpu_profile.enabled) {
@@ -992,7 +1014,11 @@ void Profile_CpuStop(void)
 	}
 
 	/* user didn't change RAM or TOS size in the meanwhile? */
-	assert(cpu_profile.size == (STRamEnd + 0x20000 + TosSize) / 2);
+	size = stsize = (STRamEnd + CART_SIZE + TosSize) / 2;
+	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
+		size += ConfigureParams.Memory.nTTRamSize * 1024*1024/2;
+	}
+	assert(cpu_profile.size == size);
 
 	Profile_FinalizeCalls(&(cpu_callinfo), &(cpu_profile.all), Symbols_GetByCpuAddress);
 
@@ -1000,12 +1026,13 @@ void Profile_CpuStop(void)
 	next = update_area(&cpu_profile.ram, 0, STRamEnd/2);
 	if (TosAddress < CART_START) {
 		next = update_area(&cpu_profile.tos, next, (STRamEnd + TosSize)/2);
-		next = update_area(&cpu_profile.rom, next, cpu_profile.size);
+		next = update_area(&cpu_profile.rom, next, stsize);
 	} else {
 		next = update_area(&cpu_profile.rom, next, (STRamEnd + CART_SIZE)/2);
-		next = update_area(&cpu_profile.tos, next, cpu_profile.size);
+		next = update_area(&cpu_profile.tos, next, stsize);
 	}
-	assert(next == cpu_profile.size);
+	next = update_area(&cpu_profile.ttram, next, size);
+	assert(next == size);
 
 #if DEBUG
 	if (skip_assert) {
@@ -1013,13 +1040,13 @@ void Profile_CpuStop(void)
 	} else
 #endif
 	{
-		assert(cpu_profile.all.misses == cpu_profile.ram.counters.misses + cpu_profile.tos.counters.misses + cpu_profile.rom.counters.misses);
-		assert(cpu_profile.all.cycles == cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
-		assert(cpu_profile.all.count == cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count);
+		assert(cpu_profile.all.misses == cpu_profile.ttram.counters.misses + cpu_profile.ram.counters.misses + cpu_profile.tos.counters.misses + cpu_profile.rom.counters.misses);
+		assert(cpu_profile.all.cycles == cpu_profile.ttram.counters.cycles + cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
+		assert(cpu_profile.all.count == cpu_profile.ttram.counters.count + cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count);
 	}
 
 	/* allocate address array for sorting */
-	active = cpu_profile.ram.active + cpu_profile.rom.active + cpu_profile.tos.active;
+	active = cpu_profile.ttram.active + cpu_profile.ram.active + cpu_profile.rom.active + cpu_profile.tos.active;
 	sort_arr = calloc(active, sizeof(*sort_arr));
 
 	if (!sort_arr) {
@@ -1037,6 +1064,7 @@ void Profile_CpuStop(void)
 	sort_arr = index_area(&cpu_profile.ram, sort_arr);
 	sort_arr = index_area(&cpu_profile.tos, sort_arr);
 	sort_arr = index_area(&cpu_profile.rom, sort_arr);
+	sort_arr = index_area(&cpu_profile.ttram, sort_arr);
 	assert(sort_arr == cpu_profile.sort_arr + cpu_profile.active);
 	//printf("%d/%d/%d\n", area->active, sort_arr-cpu_profile.sort_arr, active);
 

@@ -78,6 +78,7 @@ Emulator:
   - Fix: crash when GEMDOS tracing is used without GEMDOS HD emulation
   - Fix: update external disassembler's CPU mask when CPU type is changed
          (it wasn't restricted to opcodes valid for given CPU type)
+  - Profiler support for TT-RAM (uses *ton* of memory)
   - Add trace support for IDE, MIDI and keymaps.  ACSI (SCSI) and IDE
     trace output shows primary partition tables for ACSI & IDE images
     (both Atari and DOS MBRs are supported)
