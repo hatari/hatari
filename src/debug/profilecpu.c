@@ -1,7 +1,7 @@
 /*
  * Hatari - profilecpu.c
  * 
- * Copyright (C) 2010-2013 by Eero Tamminen
+ * Copyright (C) 2010-2015 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -652,9 +652,9 @@ bool Profile_CpuStart(void)
 	cpu_profile.prev_cycles = CyclesGlobalClockCounter;
 	cpu_profile.prev_family = OpcodeFamily;
 	cpu_profile.prev_pc = M68000_GetPC();
-	if ( ConfigureParams.System.bAddressSpace24 )
+	if (ConfigureParams.System.bAddressSpace24) {
 		cpu_profile.prev_pc &= 0xffffff;
-
+	}
 	cpu_profile.loop_start = PC_UNDEFINED;
 	cpu_profile.loop_end = PC_UNDEFINED;
 	cpu_profile.loop_count = 0;
@@ -842,9 +842,9 @@ void Profile_CpuUpdate(void)
 	 * emulation itself does that too when PC value is used
 	 */
 	cpu_profile.prev_pc = pc = M68000_GetPC();
-	if ( ConfigureParams.System.bAddressSpace24 )
+	if (ConfigureParams.System.bAddressSpace24) {
 		cpu_profile.prev_pc &= 0xffffff;
-
+	}
 	if (unlikely(profile_loop.fp)) {
 		if (pc < prev_pc) {
 			if (pc == cpu_profile.loop_start && prev_pc == cpu_profile.loop_end) {
@@ -857,7 +857,7 @@ void Profile_CpuUpdate(void)
 		} else {
 			if (pc > cpu_profile.loop_end) {
 				log_last_loop();
-				cpu_profile.loop_end = 0xffffffff;			
+				cpu_profile.loop_end = 0xffffffff;
 				cpu_profile.loop_count = 0;
 			}
 		}
