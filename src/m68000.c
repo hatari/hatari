@@ -578,6 +578,12 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
  * before being processed.
  * So, we need to check which IRQ are set/cleared at the same time
  * and update level 6 accordingly : level 6 = MFP_IRQ OR DSP_IRQ
+ *
+ * [NP] NOTE : temporary case for interrupts with WinUAE CPU in cycle exact mode
+ * In CE mode, interrupt state should be updated on each subcycle of every opcode
+ * then ipl_fetch() is called in each opcode.
+ * For now, Hatari with WinUAE CPU in CE mode only evaluates the interrupt state
+ * after the end of each opcode. So we need to call ipl_fetch() ourselves at the moment.
  */
 void	M68000_Update_intlev ( void )
 {	
@@ -598,6 +604,11 @@ void	M68000_Update_intlev ( void )
 		doint();
 	else
 		M68000_UnsetSpecial ( SPCFLAG_INT | SPCFLAG_DOINT );
+
+	/* Temporary case for WinUAE CPU in CE mode */
+	/* doint() will update regs.ipl_pin, so copy it into regs.ipl */
+	if ( ConfigureParams.System.bCycleExactCpu )
+		regs.ipl = regs.ipl_pin;			/* See ipl_fetch() in cpu/cpu_prefetch.h */
 #endif
 }
 
