@@ -9,13 +9,23 @@ in touch with us.
 Emulation improvements
 ----------------------
 
+- Program header flags (TT-RAM/fastload) support to GEMDOS HD emulation,
+  requires following changes to Hatari cartridge m68k assembly:
+	- If GEMDOS versions is >= 0.19, read program header's flags
+	  entry (long @ offset 0x16) from disk (+ rewind to start),
+	  otherwise default flags to zero
+	- If flags is non-zero, use Pexec7 instead of Pexec5, so
+	  that basepage gets allocated according to the flags
+	  (Pexec7 is supported only from GEMDOS v0.19 up)
+	- If PF_FASTLOAD flag is set, clear just BSS, not heap
+
 - Investigate what TOS version/functionality doesn't work for programs
   started from the DESKTOP/NEWDESK.INF and why, e.g:
 	- Printing doesn't work with TOS versions v1.02 - v2.06
 	- Colors in 2-plane VDI resolution are not set correctly
 	- Tony Benett: Virtual City demo bombs
 	- NoCrew: Aggressive Party 2 4k demo doesn't work
-	- Running 1997 shareware version doesn't work
+	- "Running" game 1997 shareware version doesn't work
   Document that in manual (page) for the Hatari "autorun" feature.
 
 - Keyboard detection sometimes fails when --fast-forward is enabled
@@ -32,14 +42,12 @@ Emulation improvements
 
 - Finish upgrading the CPU core of Hatari to the latest WinUAE
   which has better cycle accuracy needed by some programs:
-	- Finish MMU emulation support
 	- Add Exception debugging support
 	- Instead of calling Reset_Cold()/m68k_reset()/uae_reset()
 	  directly from newcpu.c, show user a notice (dialog)
 	  about what happened and let user do the reboot
 	  (see "Emulation reset, old-UAE vs. WinUAE core" mail-thread)
 	- Make WinUAE core ST/STE emulation as good as with old UAE core
-	- Update WinUAE core to its latest (a year newer) version
 	- Document cmdline options for selecting prefetch etc
 	  once they're stable
 
@@ -52,8 +60,6 @@ Emulation improvements
     never changes the register value unless it had first specifically
     been written into):
     http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2013/02/msg00155.html
-
-- TT/FastRAM support as some demos need >14MB
 
 - Add SCSI hard disk emulation for Falcon/TT mode.
 
