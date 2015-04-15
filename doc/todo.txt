@@ -14,9 +14,12 @@ Emulation improvements
 	- If GEMDOS versions is >= 0.19, read program header's flags
 	  entry (long @ offset 0x16) from disk (+ rewind to start),
 	  otherwise default flags to zero
+	  - http://toshyp.atari.org/en/005005.html
 	- If flags is non-zero, use Pexec7 instead of Pexec5, so
 	  that basepage gets allocated according to the flags
-	  (Pexec7 is supported only from GEMDOS v0.19 up)
+	  - Pexec7 is missing from GEMDOS versions earlier
+	    than v0.19, and from EmuTOS v0.9.4 or earlier
+	  - http://toshyp.atari.org/en/00500b.html#Pexec
 	- If PF_FASTLOAD flag is set, clear just BSS, not heap
 
 - Investigate what TOS version/functionality doesn't work for programs
