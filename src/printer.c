@@ -95,7 +95,7 @@ bool Printer_TransferByteTo(Uint8 Byte)
 	if (!pPrinterHandle)
 	{
 		/* open printer file... */
-		pPrinterHandle = File_Open(ConfigureParams.Printer.szPrintToFileName, "a+");
+		pPrinterHandle = File_Open(ConfigureParams.Printer.szPrintToFileName, "a+b");
 		if (!pPrinterHandle)
 		{
 			Log_AlertDlg(LOG_ERROR, "Printer output file open failed. Printing disabled.");
