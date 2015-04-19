@@ -61,6 +61,7 @@ p_ok:
 	move.l	a6,-(sp)
 	move.l	a0,a6
 	bsr.s	find_prog
+	bsr	pexec5
 	bsr	load_n_reloc
 	clr.l	2(a6)
 	clr.l	10(a6)
@@ -89,6 +90,7 @@ no_0:
 	move.l	a6,-(sp)
 	move.l	a0,a6
 	bsr.s	find_prog
+	bsr.s	pexec5
 	bsr.s	load_n_reloc
 gohome:
 	move.l	(sp)+,a6
@@ -135,63 +137,46 @@ find_prog:
 findprog_ok:
 	rts
 
+pexec5:
+	move.l	10(a6),-(sp)
+	move.l	6(a6),-(sp)
+	clr.l	-(sp)
+	move	#5,-(sp)	; Create basepage
+	move	#$4b,-(sp)	; Pexec
+	trap	#1		; Gemdos
+	lea		16(sp),sp
+	tst.l	d0
+	bmi.s	pexecerr
+	rts
+pexecerr:
+	addq	#4,sp
+	bra.s	gohome
+
 
 load_n_reloc:
 	movem.l	a3-a5/d6-d7,-(sp)
-	lea	-$1c(sp),sp	; Space for loading program header
-	move.l	sp,a3		; a3 points now to the space of program header
-
+	move.l	d0,a5		; Basepage in a5
 	clr 	-(sp)
 	move.l	2(a6),-(sp)
 	move	#$3d,-(sp)	; Fopen
 	trap	#1		; Gemdos
 	addq	#8,sp
 	move.l	d0,d6		; Keep file handle in d6
-	tst.l	d0
-	bmi	load_reloc_error
 
-	move.l	a3,-(sp)
+	pea	256(a5)
 	pea 	$1c.w
 	move	d6,-(sp)
 	move	#$3f,-(sp)	; Fread
 	trap	#1		; Gemdos
 	lea 	12(sp),sp
-	tst.l	d0
-	bmi	load_reloc_error
+
 	cmp.l	#$1c,d0
-	beq.s	lr_read_ok
-	move.l	#-66,d0
-	bra	load_reloc_error
-lr_read_ok:
+	bne	hdr_not_ok
+
+	lea	256(a5),a3	; a3 points now to the program header
 	cmp.w	#$601a,(a3)	; Check program header magic
-	beq.s	hdr_magic_ok
-	move.l	#-66,d0		; Error code: Invalid PRG format
-	bra	load_reloc_error
-hdr_magic_ok:
-	; Let's call Pexec now to create the basepage, first try
-	; Pexec(7) and if that does not work fall back to mode 5
-	move.l	10(a6),-(sp)
-	move.l	6(a6),-(sp)
-	move.l	22(a3),-(sp)	; program flags in program header
-	move.w	#7,-(sp)	; Create basepage wrt program flags
-	move.w	#$4b,-(sp)	; Pexec (mode 7)
-	trap	#1		; Gemdos
-	lea	16(sp),sp
-	tst.l	d0
-	bpl.s	pexec_ok
+	bne	hdr_not_ok
 
-	move.l	10(a6),-(sp)
-	move.l	6(a6),-(sp)
-	clr.l	-(sp)
-	move.w	#5,-(sp)	; Create basepage
-	move.w	#$4b,-(sp)	; Pexec (mode 5)
-	trap	#1		; Gemdos
-	lea	16(sp),sp
-	tst.l	d0
-	bmi	load_reloc_error
-
-pexec_ok:
-	move.l	d0,a5		; Basepage in a5
 	lea	8(a5),a4
 	move.l	a5,d0
 	add.l	#$100,d0
@@ -207,7 +192,7 @@ pexec_ok:
 
 	add.l	10(a3),d0
 	cmp.l	4(a5),d0	; is the TPA big enough?
-	bhi	tpa_not_ok
+	bhi	hdr_not_ok
 
 	move.l	a5,d0
 	add.l	#$80,d0
@@ -278,29 +263,24 @@ clear:
 	bne.s	clear
 cleardone:
 	move.l	a5,d0
-	lea	$1c(sp),sp	; Drop space for program header
 	movem.l	(sp)+,a3-a5/d6-d7
 	rts
 
-tpa_not_ok:
+hdr_not_ok:
+	move	d6,-(sp)
+	move	#$3e,-(sp)	; Fclose
+	trap	#1		; Gemdos
+	addq	#4,sp
+
 	move.l	a5,-(sp)
 	move.w	#$49,-(sp)	; Mfree
 	trap	#1		; Release "pexeced" memory
 	addq.l	#6,sp
-	move.l	#-39,d0		; Error code: Not enough memory
 
-load_reloc_error:
-	move.l	d0,d7		; Save error code
-	move.w	d6,-(sp)
-	move.w	#$3e,-(sp)	; Fclose
-	trap	#1		; Gemdos
-	addq	#4,sp
-	move.l	d7,d0		; Restore error code
-
-	lea	$1c(sp),sp	; Drop space for program header
+	move.l	#-66,d0         ; Error code: Invalid PRG format
 	movem.l	(sp)+,a3-a5/d6-d7
-	addq	#4,sp		; Drop return address
-	bra	gohome		; Abort
+	addq	#4,sp           ; Drop return address
+	bra	gohome          ; Abort
 
 
 
