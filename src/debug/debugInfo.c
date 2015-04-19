@@ -188,13 +188,25 @@ Uint32 DebugInfo_GetBASEPAGE(void)
 
 
 /**
+ * output nil-terminated string from any Atari memory type
+ */
+static Uint32 print_mem_str(Uint32 addr, Uint32 end)
+{
+	Uint8 chr;
+	while (addr < end && (chr = STMemory_ReadByte(addr++))) {
+		fputc(chr, stderr);
+	}
+	return addr;
+}
+
+/**
  * DebugInfo_Basepage: show TOS process basepage information
  * at given address.
  */
 static void DebugInfo_Basepage(Uint32 basepage)
 {
 	Uint8 cmdlen;
-	Uint32 env;
+	Uint32 addr;
 
 	if (!basepage) {
 		/* default to current process basepage */
@@ -220,24 +232,31 @@ static void DebugInfo_Basepage(Uint32 basepage)
 	fprintf(stderr, "- Process DTA    : 0x%06x\n", STMemory_ReadLong(basepage+0x20));
 	fprintf(stderr, "- Parent basepage: 0x%06x\n", STMemory_ReadLong(basepage+0x24));
 
-	env = STMemory_ReadLong(basepage+0x2C);
-	fprintf(stderr, "- Environment    : 0x%06x\n", env);
-	if ( STMemory_CheckAreaType ( env, 4096, ABFLAG_RAM ) ) {
-		Uint32 end = env + 4096;
-		while (env < end && *(STRam+env)) {
-			fprintf(stderr, "'%s'\n", STRam+env);
-			env += strlen((const char *)(STRam+env)) + 1;
+	addr = STMemory_ReadLong(basepage+0x2C);
+	fprintf(stderr, "- Environment    : 0x%06x\n", addr);
+	if ( STMemory_CheckAreaType ( addr, 4096, ABFLAG_RAM ) ) {
+		Uint32 end = addr + 4096;
+		while (addr < end && STMemory_ReadByte(addr)) {
+			fprintf(stderr, "  '");
+			addr = print_mem_str(addr, end);
+			addr = print_mem_str(addr, end);
+			fprintf(stderr, "'\n");
 		}
 	}
-	cmdlen = STMemory_ReadByte(basepage+0x80);
-	fprintf(stderr, "- Command argslen: %d\n", cmdlen);
+	addr = basepage+0x80;
+	cmdlen = STMemory_ReadByte(addr++);
+	fprintf(stderr, "- Command argslen: %d (at 0x%06x)\n", cmdlen, addr);
 	if (cmdlen) {
-		int offset = 0;
-		while (offset < cmdlen) {
-			fprintf(stderr, " '%s'", STRam+basepage+0x81+offset);
-			offset += strlen((const char *)(STRam+basepage+0x81+offset)) + 1;
+		Uint32 end = addr + cmdlen;
+		fprintf(stderr, "  '");
+		for (;;) {
+			addr = print_mem_str(addr, end);
+			if (addr >= end) {
+				break;
+			}
+			fputc(' ', stderr);
 		}
-		fprintf(stderr, "\n");
+		fprintf(stderr, "'\n");
 	}
 }
 
@@ -350,7 +369,8 @@ static void DebugInfo_Cookiejar(Uint32 dummy)
 	items = 0;
 	while ( STMemory_CheckAreaType (jar, 8, ABFLAG_RAM ) && STMemory_ReadLong(jar)) {
 		fprintf(stderr, "%c%c%c%c = 0x%08x\n",
-			STRam[jar], STRam[jar+1], STRam[jar+2], STRam[jar+3],
+			STMemory_ReadByte(jar+0), STMemory_ReadByte(jar+1),
+			STMemory_ReadByte(jar+2), STMemory_ReadByte(jar+3),
 			STMemory_ReadLong(jar+4));
 		jar += 8;
 		items++;
