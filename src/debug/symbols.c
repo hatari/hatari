@@ -284,6 +284,55 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	return list;
 }
 
+
+/**
+ * Print program header information.
+ * Return false for unrecognized symbol table type.
+ */
+static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 relocflag)
+{
+	static const struct {
+		Uint32 flag;
+		const char *name;
+	} flags[] = {
+		{ 0x0001, "FASTLOAD"   },
+		{ 0x0002, "TTRAMLOAD"  },
+		{ 0x0004, "TTRAMMEM"   },
+		{ 0x0008, "MINIMUM"    }, /* MagiC */
+		{ 0x1000, "SHAREDTEXT" }
+	};
+	const char *info;
+	int i;
+
+	switch (tabletype) {
+	case 0x4D694E54:	/* "MiNT" */
+		info = "GCC/MiNT executable, GST symbol table";
+		break;
+	case 0x0:
+		info = "TOS executable, DRI / GST symbol table";
+		break;
+	default:
+		fprintf(stderr, "ERROR: unknown executable type 0x%x!\n", tabletype);
+		return false;
+	}
+	fprintf(stderr, "%s, reloc=%d, program flags:", info, relocflag);
+	/* bit flags */
+	for (i = 0; i < ARRAYSIZE(flags); i++) {
+		if (prgflags & flags[i].flag) {
+			fprintf(stderr, " %s", flags[i].name);
+		}
+	}
+	/* memory protection flags */
+	switch((prgflags >> 4) & 3) {
+		case 0:	info = "PRIVATE";  break;
+		case 1: info = "GLOBAL";   break;
+		case 2: info = "SUPER";    break;
+		case 3: info = "READONLY"; break;
+	}
+	fprintf(stderr, " %s (0x%x)\n", info, prgflags);
+	return true;
+}
+
 /**
  * Parse program header and use symbol table format specific loader
  * loader function to load the symbols.
@@ -295,7 +344,6 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	prg_section_t sections[3];
 	int offset, reads = 0;
 	Uint16 relocflag;
-	const char *info;
 	symbol_list_t* symbols;
 
 	/* get TEXT, DATA & BSS section sizes */
@@ -310,10 +358,6 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	/* get symbol table size & type and check that all reads succeeded */
 	reads += fread(&tablesize, sizeof(tablesize), 1, fp);
 	tablesize = SDL_SwapBE32(tablesize);
-	if (!tablesize) {
-		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
-		return NULL;
-	}
 	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
 	tabletype = SDL_SwapBE32(tabletype);
 
@@ -325,6 +369,13 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	
 	if (reads != 7) {
 		fprintf(stderr, "ERROR: program header reading failed!\n");
+		return NULL;
+	}
+	if (!symbols_print_prg_info(tabletype, prgflags, relocflag)) {
+		return NULL;
+	}
+	if (!tablesize) {
+		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
 
@@ -355,18 +406,6 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 		perror("ERROR: seeking to symbol table failed");
 		return NULL;
 	}
-	switch (tabletype) {
-	case 0x4D694E54:	/* "MiNT" */
-		info = "GCC/MiNT executable, GST symbol table.";
-		break;
-	case 0x0:
-		info = "TOS executable, DRI / GST symbol table.";
-		break;
-	default:
-		fprintf(stderr, "ERROR: unknown executable type 0x%x at offset 0x%x!\n", tabletype, offset);
-		return NULL;
-	}
-	fprintf(stderr, "0x%x program flags, reloc=%d, %s\n", prgflags, relocflag, info);
 	fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
 	symbols = symbols_load_dri(fp, sections, gettype, tablesize);
 
