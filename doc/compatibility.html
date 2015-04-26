@@ -74,11 +74,7 @@ Hatari on the WWW:
 <h2>Introduction</h2>
 
 <p>Here are lists of Atari software that have been tested with
-different Hatari versions and configurations.  <em>The lists concentrate
-mainly on software that has (historically had) problems working in
-Hatari or provide good regression test-cases for some specific
-technical emulation issues</em>, but some well known other programs
-are also listed.</p>
+different Hatari versions and configurations.</p>
 
 <p>First is listed software (games, demos and applications) for normal
 STs, after them is listed STE software.  Then there are a few TT-only
@@ -113,33 +109,36 @@ is correct.</li>
 specified too little or too much memory.  For ST, 1MB memory size
 is usually fairly safe.</li>
 
-<li>Some games/demos can refuse to run when HD emulation is ON (as it is
-seen as an external cartridge). In STF/STE mode, it is also better to
-disable the MegaST's real time clock.
+<li>Some games/demos can refuse to run when GEMDOS HD emulation is
+enabled (due to presence of Hatari cartridge image needed for that).
+In STF/STE mode, it's also better to disable the MegaST's real time
+clock.
 </li>
 
-<li>TOS version : ST demos and games may require some specific TOS
-version and not work at all with others. If you notice that this
-information is missing for some listed game or demo, please send mail
-to the hatari-devel mailing list.
+<li>TOS version: ST demos and games may require a specific TOS
+version and fail to work with all other versions. If you notice that
+this information is missing for some listed game or demo, please send
+mail to the hatari-devel mailing list.
 <ul>
-<li>Note that many games and demos don't work with the free EmuTOS TOS.
-For more information, see emutos.txt.</li>
+<li>Note that many games and demos (especially floppy based ones),
+don't work with the free EmuTOS TOS. For more information, see
+<a href="emutos.txt">emutos.txt</a>.</li>
 </ul>
 </li>
 
 </ul>
 
 <p>
-Also note that since Hatari 1.8, support is included for STX, IPF and CTR
-disk images. These formats allow to backup a disk in an unaltered form,
-without requiring to remove the protection with a crack. Some complex
-protections rely on precise CPU/FDC timings and on some specific TOS version.
-<br/>
-For STF/STE protected games, it is recommended to use TOS 1.02 or 1.04 and 1MB RAM,
-as well as turning HD emulation OFF for maximum compatibility
-(but most games will run fine with different settings)
-</p>
+Also note that since Hatari 1.8, support is included also for STX, IPF and CTR
+floppy image formats. They allow storing disk contents in an unaltered form,
+without requiring a crack to remove the copy-protection. Some complex
+protections rely on precise CPU/FDC timings provided with these
+formats, and a specific TOS version.</p>
+<ul>
+<li>For STF protected games, it is recommended to use TOS 1.02 or 1.04 and
+1MB RAM, as well as turning HD emulation OFF for maximum compatibility
+(but most games will run fine with different settings).</li>
+</ul>
 
 <p>
 (<a href="http://www.atari-forum.com/viewtopic.php?f=86&amp;t=14839">More
@@ -149,8 +148,13 @@ information on games compatibility on Atari forum</a>.)
 
 <h2>ST software compatibility list</h2>
 
-<p>This is not a comprehensive list. By default <b>everything that
-works on a real ST should work also in Hatari</b>.</p>
+<p>These aren't comprehensive lists. <em>The lists concentrate
+mainly on software that has (historically had) problems working in
+Hatari or provide good regression test-cases for some specific
+technical emulation issues</em>, but some well known other programs
+are also listed.</p>
+
+<p>By default <b>everything that works on a real ST should work also in Hatari</b>.
 
 <h3>ST games</h3>
 
@@ -1564,6 +1568,12 @@ are just STE enhanced.  These are marked with '*'.</p>
 	but the reason why it happens only under Hatari was not found yet</td>
     </tr>
     <tr>
+      <td>Checkpoint:
+      <a href="http://www.pouet.net/prod.php?which=65101">ATM 10 Years</a></td>
+      <td>1.8</td>
+      <td>Streamed music, voxels</td>
+    </tr>
+    <tr>
       <td>Cream: <a href="http://www.pouet.net/prod.php?which=1030">Madness</a></td>
       <td>1.2</td>
       <td>Music demo with Amiga Paula soundchip emulation + tunes</td>
@@ -2111,7 +2121,8 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       emulation omissions, unless "--natfeats yes" is used to tell
       game to use Hatari specific/heavier statusbar drawing mode.
       Some parts have clear speed differences to real Falcon due to
-      CPU (data cache) and Videl emulation inaccuracies</td>
+      CPU (data cache not emulated), FPU (instruction too fast) and
+      Videl emulation (screen updated only at VBL) inaccuracies</td>
     </tr>
     <tr>
       <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood (old viewer)</a></td>
@@ -3853,10 +3864,9 @@ support or work only on them.</p>
     <tr>
       <td><a href="http://www.seimet.de/atari/en/hddriver.html">HD Driver</a></td>
       <td>1.4</td>
-      <td>Hard disk driver.  In Hatari works only with IDE emulation.
-      Doesn't work with EmuTOS.  With TOS v4, CPU needs to be set to
-      EC030 or better, with TOS v3 works also with 020 CPU (used by
-      earlier Hatari versions for TOS &ge; v3)</td>
+      <td>Hard disk driver.  In Hatari works only with IDE emulation. With TOS v4,
+      CPU needs to be set to EC030 or better, with TOS v3 works also with 020 CPU
+      (used by earlier Hatari versions for TOS &ge; v3)</td>
     </tr>
   </tbody>
 </table>
