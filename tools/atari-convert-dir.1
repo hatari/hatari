@@ -1,0 +1,34 @@
+.TH "atari-convert-dir" "1" "2015-04-26" "Hatari" "Hatari utilities"
+.SH NAME
+atari\-convert\-dir \- helper for creating Atari compatible disk images
+.SH SYNOPSIS
+.B atari\-convert\-dir
+.RI sourcedir
+.RI targetdir
+.SH DESCRIPTION
+Copies directories and files from source directory to target directory
+so that their names are clipped to 8+3 characters in Atari GEMDOS
+compatible way.  Files on a disk image that is created from the
+converted target directory, should work as well as with Hatari GEMDOS
+HD emulation.
+.PP
+This helper is used directly by \fIatari\-hd\-image\fP tool and its
+use is also recommended with \fIzip2st\fP tool content (because Mtools
+\fImcopy\fP doesn't convert long file names correctly for Atari).
+.SH SEE ALSO
+.IR atari\-hd\-image (1),
+.IR zip2st (1),
+.IR hatari (1),
+.IR mcopy (1)
+.SH "AUTHOR"
+Written by Eero Tamminen <oak at helsinkinet fi>.
+.SH "LICENSE"
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.SH "NO WARRANTY"
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
