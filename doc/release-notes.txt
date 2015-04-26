@@ -88,6 +88,8 @@ Emulator:
   - Add "basepage" address variable
 
 Other changes:
+- Add script to convert long host file names to Atari file names,
+  use that in atari-hd-image script
 - Add hatari-prg-args script for providing arguments to autostarted programs
 - Hatari & disk image icons in SVG & PNG formats (multiple sizes)
 - Remaining Hatari OSX UI changes for Hatari v1.8.0 (localization)

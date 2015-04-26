@@ -22,8 +22,12 @@ using dd(1) or converted to .msa disk image with hmsa(1).
 The contents of the uncompressed zip file need to be smaller than
 2.88MB (the largest floppy image size supported by Hatari).
 .PP
+If zip file has long file names, use \fIatari\-convert\-dir\fP script
+to convert them into Atari compatible ones, and zip them again.
+.PP
 .SH SEE ALSO
 .IR hmsa (1),
+.IR atari\-convert\-dir (1),
 .IR atari\-hd\-image (1),
 .IR hatari (1),
 .IR unzip (1),

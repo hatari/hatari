@@ -39,12 +39,65 @@ if [ -z $(which mkdosfs) ] || [ -z $(which python) ]; then
 fi
 
 # check disk size
-if [ $1 -lt 5 ]; then
+disksize=$1
+if [ $disksize -lt 5 ]; then
 	echo "ERROR: disk size needs to be at least 5 (MB) to work properly."
 	exit 1
 fi
-if [ $1 -gt 512 ]; then
+if [ $disksize -gt 512 ]; then
 	echo "ERROR: mkdosfs supports Atari compatible partitions only up to 512 MB."
+	exit 1
+fi
+
+# check optional arguments
+if [ \! -z $2 ]; then
+	diskfile=$2
+fi
+if [ \! -z $3 ]; then
+	partname=$3
+fi
+
+# check that there's enough space:
+# - partition + disk image (2.5x size just in case)
+freespace=$(df $diskfile | awk '/\//{print $4/1024}')
+if [ $freespace -lt $((5*$disksize/2)) ]; then
+	echo "ERROR: not enough space for partition creation!"
+	exit 1
+fi
+
+# check content
+convertdir=""
+if [ \! -z $4 ]; then
+	contentdir=${4%/}
+	if [ \! -d $contentdir ]; then
+		echo "ERROR: given content directory doesn't exist!"
+		exit 1
+	fi
+	contentsize=$(du -ks $contentdir | awk '{printf("%d", $1/1024)}')
+	if [ $contentsize -ge $disksize ]; then
+		echo "ERROR: '$contentdir' directory contents ($contentsize MB) don't fit to given image size ($disksize MB)!"
+		exit 1
+	fi
+	# name conversion script should be in same dir as this script, or in PATH
+	convert=${0%/*}/atari-convert-dir.py
+	if [ \! -x $convert ]; then
+		if [ -z $(which atari-convert-dir) ]; then
+			echo "ERROR: $convert script for file name conversion missing!"
+			exit 1
+		fi
+		convert=atari-convert-dir
+	fi
+	convertdir=$contentdir.converted
+	if [ -z $(which mcopy) ]; then
+		echo "ERROR: mcopy (from Mtools) missing!"
+		exit 1
+	fi
+fi
+
+# don't overwrite files by accident
+if [ -f $diskfile ]; then
+	echo "ERROR: given harddisk image already exits. Give another name or remove it:"
+	echo "  rm $diskfile"
 	exit 1
 fi
 
@@ -56,32 +109,12 @@ sectorsize=512
 
 # partition size in sectors:
 # 16*32*512 is 1/4MB -> multiply by 4 to get number of required sectors
-partsectors=$((4*$1*$diskheads*$tracksectors))
-
-# check optional arguments
-if [ \! -z $2 ]; then
-	diskfile=$2
-fi
-if [ \! -z $3 ]; then
-	partname=$3
-fi
-if [ \! -z $4 ]; then
-	if [ -z $(which mcopy) ]; then
-		echo "ERROR: mcopy (from Mtools) missing!"
-		exit 1
-	fi
-	contentdir=$4
-fi
-
-# don't overwrite files by accident
-if [ -f $diskfile ]; then
-	echo "ERROR: given harddisk image already exits. Give another name or remove it:"
-	echo "  rm $diskfile"
-	exit 1
-fi
+partsectors=$((4*$disksize*$diskheads*$tracksectors))
 
 # temporary files
 tmppart=$diskfile.part
+
+# ------------------------------------------------------------------
 
 error="premature script exit"
 # script exit/error handling
@@ -94,18 +127,28 @@ exit_cleanup ()
 		echo "ERROR: $error"
 		echo
 		echo "cleaning up..."
-		echo "rm -f $diskfile"
-		rm -f $diskfile
+		if [ -f $diskfile ]; then
+			echo "rm -f $diskfile"
+			rm -f $diskfile
+		fi
 	fi
-	echo "rm -f $tmppart"
-	rm -f $tmppart
+	if [ -f $tmppart ]; then
+		echo "rm -f $tmppart"
+		rm -f $tmppart
+	fi
+	if [ \! -z $convertdir ] && [ -d $convertdir ]; then
+		echo "rm -f $convertdir"
+		rm -f $convertdir
+	fi
 	echo "Done."
 }
 trap exit_cleanup EXIT
 
+# ------------------------------------------------------------------
+
 echo
 step=1
-echo "$step) Creating DOS Master Boot Record / partition table..."
+echo "$step) Create DOS Master Boot Record / partition table..."
 # See:
 # - http://en.wikipedia.org/wiki/Master_boot_record
 # - http://en.wikipedia.org/wiki/Cylinder-head-sector
@@ -191,9 +234,11 @@ EOF
 # -----------
 od -t x1 $diskfile
 
+# ------------------------------------------------------------------
+
 echo
 step=$(($step+1))
-echo "$step) Creating an Atari TOS compatible DOS partition..."
+echo "$step) Create an Atari TOS compatible DOS partition..."
 # mkdosfs keeps the sector count below 32765 when -A is used by increasing
 # the logical sector size (this is for TOS compatibility, -A guarantees
 # also 2 sectors / cluster and Atari serial number etc).  Mtools barfs
@@ -217,23 +262,39 @@ fi
 echo "mkdosfs -A -F 16 -n $partname -C $tmppart $kilobytes"
 mkdosfs -A -F 16 -n $partname -C $tmppart $kilobytes
 
+# ------------------------------------------------------------------
+
 if [ \! -z $contentdir ]; then
 	echo
 	step=$(($step+1))
+	echo "$step) Clip/convert long file names to Atari compatible 8+3 format..."
+	echo "$convert $contentdir $convertdir"
+	$convert $contentdir $convertdir
+	if [ $? -ne 0 ]; then
+		error="conversion failed."
+		exit 2
+	fi
+
+	echo
+	step=$(($step+1))
 	# copy contents of given directory to the new partition
-	echo "$step) Copying the initial content to the partition..."
-	echo "MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $contentdir/* ::"
-	MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $contentdir/* ::
+	echo "$step) Copy the initial content to the partition..."
+	echo "MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $convertdir/* ::"
+	MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $convertdir/* ::
 	if [ $? -ne 0 ]; then
 		error="mcopy failed."
 		exit 2
 	fi
+	echo "rm -rf $convertdir"
+	rm -rf $convertdir
 fi
+
+# ------------------------------------------------------------------
 
 echo
 step=$(($step+1))
 # copy the partition into disk
-echo "$step) Copying the partition to disk image..."
+echo "$step) Copy the partition to disk image..."
 echo "dd if=$tmppart of=$diskfile bs=512 seek=$((1+$skip)) count=$sectors"
 dd if=$tmppart of=$diskfile bs=512 seek=$((1+$skip)) count=$sectors
 
