@@ -171,10 +171,14 @@ void STMemory_SetDefaultConfig(void)
 	/* mem top - upper end of user memory (right before the screen memory)
 	 * memtop / phystop must be dividable by 512 or TOS crashes */
 	memtop = (STRamEnd - screensize) & 0xfffffe00;
-	STMemory_WriteLong(0x436, memtop);
 	/* phys top - 32k gap causes least issues with apps & TOS
 	 * as that's the largest _common_ screen size. EmuTOS behavior
-	 * depends on machine type. */
+	 * depends on machine type.
+	 *
+	 * TODO: what to do about _native_ TT & Videl resolutions
+	 * which size is >32k?  Should memtop be adapted also for
+	 * those?
+	 */
 	switch (ConfigureParams.System.nMachineType)
 	{
 	case MACHINE_FALCON:
@@ -184,7 +188,7 @@ void STMemory_SetDefaultConfig(void)
 		break;
 	case MACHINE_TT:
 		/* For correct TOS v3 memory detection, phystop should be
-		 * at the end of memory.
+		 * at the end of memory, not at memtop + 32k.
 		 *
 		 * However:
 		 * - TOS v3 crashes/hangs if phystop-memtop gap is larger
@@ -207,6 +211,7 @@ void STMemory_SetDefaultConfig(void)
 	default:
 		phystop = memtop + 0x8000;
 	}
+	STMemory_WriteLong(0x436, memtop);
 	STMemory_WriteLong(0x42e, phystop);
 	if (bUseVDIRes)
 		fprintf(stderr, "VDI mode memtop: 0x%x, phystop: 0x%x (screensize: %d kB, memtop->phystop: %d kB)\n",
