@@ -105,8 +105,6 @@ cpuop_func *cpufunctbl[65536];
 
 struct mmufixup mmufixup[2];
 
-extern uae_u32 get_fpsr (void);
-
 #define COUNT_INSTRS 0
 #define MC68060_PCR   0x04300000
 #define MC68EC060_PCR 0x04310000
@@ -1650,14 +1648,12 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			_stprintf (buffer, _T("(%s%c%d.%c*%d+%d)+%d == $%08x"), name,
 				dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 				1 << ((dp >> 9) & 3),
-				disp, outer,
-				addr);
+				disp, outer, addr);
 		} else {
 			addr = m68k_areg (regs, reg) + (uae_s32)((uae_s8)disp8) + dispreg;
 			_stprintf (buffer, _T("(A%d, %c%d.%c*%d, $%02x) == $%08x"), reg,
 				dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
-				1 << ((dp >> 9) & 3), disp8,
-				addr);
+				1 << ((dp >> 9) & 3), disp8, addr);
 		}
 		break;
 	case PC16:
@@ -1695,8 +1691,7 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 			_stprintf (buffer, _T("(%s%c%d.%c*%d+%d)+%d == $%08x"), name,
 				dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 				1 << ((dp >> 9) & 3),
-				disp, outer,
-				addr);
+				disp, outer, addr);
 		} else {
 			addr += (uae_s32)((uae_s8)disp8) + dispreg;
 			_stprintf (buffer, _T("(PC, %c%d.%c*%d, $%02x) == $%08x"), dp & 0x8000 ? 'A' : 'D',
@@ -1717,15 +1712,15 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 	case imm:
 		switch (size){
 		case sz_byte:
-			_stprintf (buffer, _T("#$%02x"), (unsigned int)(get_iword_debug (pc) & 0xff));
+			_stprintf (buffer, _T("#$%02x"), (get_iword_debug (pc) & 0xff));
 			pc += 2;
 			break;
 		case sz_word:
-			_stprintf (buffer, _T("#$%04x"), (unsigned int)(get_iword_debug (pc) & 0xffff));
+			_stprintf (buffer, _T("#$%04x"), (get_iword_debug (pc) & 0xffff));
 			pc += 2;
 			break;
 		case sz_long:
-			_stprintf(buffer, _T("#$%08x"), get_ilong_debug(pc));
+			_stprintf(buffer, _T("#$%08x"), (get_ilong_debug(pc)));
 			pc += 4;
 			break;
 		case sz_single:
@@ -1766,26 +1761,26 @@ static uaecptr ShowEA (void *f, uaecptr pc, uae_u16 opcode, int reg, amodes mode
 		break;
 	case imm0:
 		offset = (uae_s32)(uae_s8)get_iword_debug (pc);
-		_stprintf (buffer, _T("#$%02x"), (unsigned int)(offset & 0xff));
+		_stprintf (buffer, _T("#$%02x"), (uae_u32)(offset & 0xff));
 		addr = pc + 2 + offset;
 		pc += 2;
 		break;
 	case imm1:
 		offset = (uae_s32)(uae_s16)get_iword_debug (pc);
 		buffer[0] = 0;
-		_stprintf (buffer, _T("#$%04x"), (unsigned int)(offset & 0xffff));
+		_stprintf (buffer, _T("#$%04x"), (uae_u32)(offset & 0xffff));
 		addr = pc + offset;
 		pc += 2;
 		break;
 	case imm2:
 		offset = (uae_s32)get_ilong_debug (pc);
-		_stprintf (buffer, _T("#$%08x"), offset);
+		_stprintf (buffer, _T("#$%08x"), (uae_u32)offset);
 		addr = pc + offset;
 		pc += 4;
 		break;
 	case immi:
 		offset = (uae_s32)(uae_s8)(reg & 0xff);
-		_stprintf (buffer, _T("#$%08x"), offset);
+		_stprintf (buffer, _T("#$%08x"), (uae_u32)offset);
 		addr = pc + offset;
 		break;
 	default:
@@ -6415,7 +6410,7 @@ void m68k_dumpstate_2 (uaecptr pc, uaecptr *nextpc)
 			if ((i & 3) == 3)
 				console_out_f (_T("\n"));
 		}
-		fpsr = get_fpsr ();
+		fpsr = fpp_get_fpsr ();
 		console_out_f (_T("FPSR: %04X FPCR: %08x FPIAR: %08x N=%d Z=%d I=%d NAN=%d\n"),
 			fpsr, regs.fpcr, regs.fpiar,
 			(fpsr & 0x8000000) != 0,

@@ -73,8 +73,7 @@ static void mmu_dump_ttr(const TCHAR * label, uae_u32 ttr)
 	from_addr = ttr & MMU_TTR_LOGICAL_BASE;
 	to_addr = (ttr & MMU_TTR_LOGICAL_MASK) << 8;
 
-//#if MMUDEBUG > 0			// ifndef WINUAE_FOR_HATARI
-	write_log(_T("%s: [%08lx] %08lx - %08lx enabled=%d supervisor=%d wp=%d cm=%02d\n"),
+	write_log(_T("%s: [%08x] %08x - %08x enabled=%d supervisor=%d wp=%d cm=%02d\n"),
 			label, ttr,
 			from_addr, to_addr,
 			ttr & MMU_TTR_BIT_ENABLED ? 1 : 0,
@@ -534,7 +533,7 @@ static ALWAYS_INLINE bool mmu_fill_atc_try(uaecptr addr, bool super, bool data, 
 		if (l1->write_protect) {
 			*status |= MMU_FSLW_WP;
 #if MMUDEBUG > 0
-			write_log(_T("MMU: write protected %lx by atc \n"), addr);
+			write_log(_T("MMU: write protected %x by atc \n"), addr);
 #endif
 			mmu_dump_atc();
 			goto fail;
@@ -631,12 +630,12 @@ static uaecptr REGPARAM2 mmu_lookup_pagetable(uaecptr addr, bool super, bool wri
 	}
 	if ((desc & 1) == 0) {
 #if MMUDEBUG > 2
-		write_log(_T("MMU: invalid page descriptor log=%0lx desc=%08x @%08x\n"), addr, desc, desc_addr);
+		write_log(_T("MMU: invalid page descriptor log=%0x desc=%08x @%08x\n"), addr, desc, desc_addr);
 #endif
 		if ((desc & 3) == 2) {
 			*status |= MMU_FSLW_IL;
 #if MMUDEBUG > 1
-			write_log(_T("MMU: double indirect descriptor log=%0lx desc=%08x @%08x\n"), addr, desc, desc_addr);
+			write_log(_T("MMU: double indirect descriptor log=%0x desc=%08x @%08x\n"), addr, desc, desc_addr);
 #endif	
 		} else {
 			*status |= MMU_FSLW_PF;
