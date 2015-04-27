@@ -127,17 +127,22 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 
 	*pImageSize = 0;
 
-	/* Is an '.msa' file?? Check header */
 	pMSAHeader = (MSAHEADERSTRUCT *)pMSAFile;
-	if (pMSAHeader->ID != SDL_SwapBE16(0x0E0F))
-	{
-		return NULL;
-	}
 	/* First swap 'header' words around to PC format - easier later on */
+	pMSAHeader->ID = SDL_SwapBE16(pMSAHeader->ID);
 	pMSAHeader->SectorsPerTrack = SDL_SwapBE16(pMSAHeader->SectorsPerTrack);
 	pMSAHeader->Sides = SDL_SwapBE16(pMSAHeader->Sides);
 	pMSAHeader->StartingTrack = SDL_SwapBE16(pMSAHeader->StartingTrack);
 	pMSAHeader->EndingTrack = SDL_SwapBE16(pMSAHeader->EndingTrack);
+
+	/* Is it really an '.msa' file? Check header */
+	if (pMSAHeader->ID != 0x0E0F || pMSAHeader->EndingTrack > 86
+	    || pMSAHeader->StartingTrack > pMSAHeader->EndingTrack
+	    || pMSAHeader->SectorsPerTrack > 56|| pMSAHeader->Sides > 1)
+	{
+		fprintf(stderr, "MSA image has a bad header!\n");
+		return NULL;
+	}
 
 	/* Create buffer */
 	pBuffer = malloc((pMSAHeader->EndingTrack - pMSAHeader->StartingTrack + 1)
