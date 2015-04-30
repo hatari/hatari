@@ -117,7 +117,7 @@ bool MSA_FileNameIsMSA(const char *pszFileName, bool bAllowGZ)
 /**
  * Uncompress .MSA data into a new buffer.
  */
-Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
+Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize, long nBytesLeft)
 {
 	MSAHEADERSTRUCT *pMSAHeader;
 	Uint8 *pMSAImageBuffer, *pImageBuffer;
@@ -138,7 +138,8 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 	/* Is it really an '.msa' file? Check header */
 	if (pMSAHeader->ID != 0x0E0F || pMSAHeader->EndingTrack > 86
 	    || pMSAHeader->StartingTrack > pMSAHeader->EndingTrack
-	    || pMSAHeader->SectorsPerTrack > 56|| pMSAHeader->Sides > 1)
+	    || pMSAHeader->SectorsPerTrack > 56|| pMSAHeader->Sides > 1
+	    || nBytesLeft <= (long)sizeof(MSAHEADERSTRUCT))
 	{
 		fprintf(stderr, "MSA image has a bad header!\n");
 		return NULL;
@@ -157,6 +158,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 	/* Set pointers */
 	pImageBuffer = (Uint8 *)pBuffer;
 	pMSAImageBuffer = pMSAFile + sizeof(MSAHEADERSTRUCT);
+	nBytesLeft -= sizeof(MSAHEADERSTRUCT);
 
 	/* Uncompress to memory as '.ST' disk image - NOTE: assumes 512 bytes
 	 * per sector (use NUMBYTESPERSECTOR define)!!! */
@@ -166,11 +168,17 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 		{
 			int nBytesPerTrack = NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack;
 
+			nBytesLeft -= sizeof(Uint16);
+			if (nBytesLeft  < 0)
+				goto out;
 			/* Uncompress MSA Track, first check if is not compressed */
 			DataLength = do_get_mem_word(pMSAImageBuffer);
 			pMSAImageBuffer += sizeof(Uint16);
 			if (DataLength == nBytesPerTrack)
 			{
+				nBytesLeft -= DataLength;
+				if (nBytesLeft  < 0)
+					goto out;
 				/* No compression on track, simply copy and continue */
 				memcpy(pImageBuffer, pMSAImageBuffer, nBytesPerTrack);
 				pImageBuffer += nBytesPerTrack;
@@ -181,6 +189,8 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 			NumBytesUnCompressed = 0;
 			while (NumBytesUnCompressed < nBytesPerTrack)
 			{
+				if (--nBytesLeft  < 0)
+					goto out;
 				Byte = *pMSAImageBuffer++;
 				if (Byte != 0xE5)                   /* Compressed header? */
 				{
@@ -189,6 +199,9 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 				}
 				else
 				{
+					nBytesLeft -= 3;
+					if (nBytesLeft  < 0)
+						goto out;
 					Data = *pMSAImageBuffer++;  /* Byte to copy */
 					RunLength = do_get_mem_word(pMSAImageBuffer);  /* For length */
 					/* Limit length to size of track, incorrect images may overflow */
@@ -205,12 +218,21 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 			}
 		}
 	}
-
-	/* Set size of loaded image */
-	*pImageSize = pImageBuffer-pBuffer;
+out:
+	if (nBytesLeft < 0)
+	{
+		fprintf(stderr, "MSA error: Premature end of file!\n");
+		free(pBuffer);
+		pBuffer = NULL;
+	}
+	else
+	{
+		/* Set size of loaded image */
+		*pImageSize = pImageBuffer-pBuffer;
+	}
 
 	/* Return pointer to buffer, NULL if failed */
-	return(pBuffer);
+	return pBuffer;
 }
 
 
@@ -223,15 +245,16 @@ Uint8 *MSA_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *p
 {
 	Uint8 *pMsaFile;
 	Uint8 *pDiskBuffer = NULL;
+	long nFileSize;
 
 	*pImageSize = 0;
 
 	/* Read in file */
-	pMsaFile = File_Read(pszFileName, NULL, NULL);
+	pMsaFile = File_Read(pszFileName, &nFileSize, NULL);
 	if (pMsaFile)
 	{
 		/* Uncompress into disk buffer */
-		pDiskBuffer = MSA_UnCompress(pMsaFile, pImageSize);
+		pDiskBuffer = MSA_UnCompress(pMsaFile, pImageSize, nFileSize);
 
 		/* Free MSA file we loaded */
 		free(pMsaFile);

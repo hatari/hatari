@@ -589,7 +589,7 @@ Uint8 *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, 
 		break;
 	case FLOPPY_IMAGE_TYPE_MSA:
 		/* uncompress the MSA file */
-		pDiskBuffer = MSA_UnCompress(buf, (long *)&ImageSize);
+		pDiskBuffer = MSA_UnCompress(buf, (long *)&ImageSize, ImageSize);
 		free(buf);
 		buf = NULL;
 		break;
