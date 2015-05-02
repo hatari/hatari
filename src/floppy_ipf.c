@@ -122,12 +122,12 @@ fprintf ( stderr , "ipf load %d\n" , StructSize );
 			/* For IPF structures, we need to update some pointers in Fdc/Drive/CapsImage */
 			/* drive : PUBYTE trackbuf, PUDWORD timebuf */
 			/* fdc : PCAPSDRIVE driveprc, PCAPSDRIVE drive, CAPSFDCHOOK callback functions */
-			CAPSFdcInvalidateTrack ( &IPF_State.Fdc , 0 );	/* Invalidate buffered track data for drive 0 */
-			CAPSFdcInvalidateTrack ( &IPF_State.Fdc , 1 );	/* Invalidate buffered track data for drive 1 */
-
 			IPF_State.Fdc.drive = IPF_State.Drive;		/* Connect drives array to the FDC */
 			if ( IPF_State.Fdc.driveprc != NULL )		/* Recompute active drive's pointer */
 				IPF_State.Fdc.driveprc = IPF_State.Fdc.drive + IPF_State.Fdc.driveact;
+
+			CAPSFdcInvalidateTrack ( &IPF_State.Fdc , 0 );	/* Invalidate buffered track data for drive 0 */
+			CAPSFdcInvalidateTrack ( &IPF_State.Fdc , 1 );	/* Invalidate buffered track data for drive 1 */
 
 			/* Set callback functions */
 			IPF_State.Fdc.cbirq = IPF_CallBack_Irq;
