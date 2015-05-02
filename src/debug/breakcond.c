@@ -599,6 +599,7 @@ char *BreakCond_MatchDspVariable(const char *text, int state)
  */
 static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 {
+	const var_addr_t *hvar;
 	/* left, right, middle, direction */
         int l, r, m, dir;
 
@@ -608,11 +609,12 @@ static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 	r = ARRAYSIZE(hatari_vars) - 1;
 	do {
 		m = (l+r) >> 1;
-		dir = strcasecmp(name, hatari_vars[m].name);
+		hvar = hatari_vars + m;
+		dir = strcasecmp(name, hvar->name);
 		if (dir == 0) {
-			bc_value->value.reg32 = hatari_vars[m].addr;
-			bc_value->valuetype = hatari_vars[m].vtype;
-			bc_value->bits = hatari_vars[m].bits;
+			bc_value->value.reg32 = hvar->addr;
+			bc_value->valuetype = hvar->vtype;
+			bc_value->bits = hvar->bits;
 			assert(bc_value->bits == 32 || bc_value->valuetype !=  VALUE_TYPE_VAR32);
 			EXITFUNC(("-> true\n"));
 			return true;
@@ -1622,21 +1624,22 @@ static void BreakCond_Help(void)
 "\n"
 "  Valid Hatari variable names (and their current values) are:\n", stderr);
 	for (i = 0; i < ARRAYSIZE(hatari_vars); i++) {
-		switch (hatari_vars[i].vtype) {
+		const var_addr_t *hvar = hatari_vars + i;
+		switch (hvar->vtype) {
 		case VALUE_TYPE_FUNCTION32:
-			value = ((Uint32(*)(void))(hatari_vars[i].addr))();
+			value = ((Uint32(*)(void))(hvar->addr))();
 			break;
 		case VALUE_TYPE_VAR32:
-			value = *(hatari_vars[i].addr);
+			value = *(hvar->addr);
 			break;
 		default:
 			fprintf(stderr, "ERROR: variable '%s' has unsupported type '%d'\n",
-				hatari_vars[i].name, hatari_vars[i].vtype);
+				hvar->name, hvar->vtype);
 			continue;
 		}
-		fprintf(stderr, "  - %s ($%x)", hatari_vars[i].name, value);
-		if (hatari_vars[i].constraints) {
-			fprintf(stderr, ", %s\n", hatari_vars[i].constraints);
+		fprintf(stderr, "  - %s ($%x)", hvar->name, value);
+		if (hvar->constraints) {
+			fprintf(stderr, ", %s\n", hvar->constraints);
 		} else {
 			fprintf(stderr, "\n");
 		}
