@@ -9,11 +9,14 @@
 # "make valgrind":
 # - run tests under valgrind
 #
-# "make clean; make MUDFLAP=1 mudflap":
-# - run tests with GCC mudflap checks
+# "make clean; make CC=gcc-<version> MUDFLAP=1 mudflap":
+# - run tests with older GCC version mudflap checks
+#   (MudFlap was removed/replaced in GCC 4.9 with AddressSanitizer)
+#
+# TODO: support AddressSanitizer
 
 # Set the C compiler (e.g. gcc)
-CC = gcc
+CC ?= gcc
 
 # Directory given for 'cmake' i.e. where CMake created the config.h.
 # Could also be simply "../.." or "../../build".

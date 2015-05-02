@@ -10,6 +10,10 @@ Uint64 LogTraceFlags = 0;
 #include "configuration.h"
 CNF_PARAMS ConfigureParams;
 
+/* fake options.c */
+#include "options.h"
+bool Opt_IsAtariProgram(const char *path) { return false; }
+
 /* fake cycles stuff */
 #include "cycles.h"
 int CurrentInstrCycles;
@@ -108,10 +112,11 @@ char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int
 /* fake debugInfo.c stuff */
 #include "debugInfo.h"
 void DebugInfo_ShowSessionInfo(void) {}
-Uint32 DebugInfo_GetTEXT(void) { return 0x1234; }
-Uint32 DebugInfo_GetTEXTEnd(void) { return 0x1234; }
-Uint32 DebugInfo_GetDATA(void) { return 0x12f4; }
-Uint32 DebugInfo_GetBSS(void)  { return 0x1f34; }
+Uint32 DebugInfo_GetBASEPAGE(void) { return 0x1f34; }
+Uint32 DebugInfo_GetTEXT(void)     { return 0x1234; }
+Uint32 DebugInfo_GetTEXTEnd(void)  { return 0x1234; }
+Uint32 DebugInfo_GetDATA(void)     { return 0x12f4; }
+Uint32 DebugInfo_GetBSS(void)      { return 0x1f34; }
 
 /* fake debugdsp.c stuff */
 #include "debugdsp.h"

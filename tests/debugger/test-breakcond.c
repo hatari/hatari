@@ -221,7 +221,7 @@ int main(int argc, const char *argv[])
 		testidx[0] = '0' + i;
 		BreakCond_Command(testidx, use_dsp); /* remove given */
 	}
-	remaining_matches = BreakCond_BreakPointCount(use_dsp);
+	remaining_matches = BreakCond_CpuBreakPointCount();
 	if (remaining_matches != FAILING_BC_TEST_MATCHES) {
 		fprintf(stderr, "ERROR: wrong number of breakpoints left (%d instead of %d)!\n",
 			remaining_matches, FAILING_BC_TEST_MATCHES);
