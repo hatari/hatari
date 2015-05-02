@@ -22,7 +22,8 @@ extern const char BreakAddr_Description[];
 
 extern int BreakCond_MatchCpu(void);
 extern int BreakCond_MatchDsp(void);
-extern int BreakCond_BreakPointCount(bool bForDsp);
+extern int BreakCond_CpuBreakPointCount(void);
+extern int BreakCond_DspBreakPointCount(void);
 extern bool BreakCond_Command(const char *expression, bool bForDsp);
 extern bool BreakAddr_Command(char *expression, bool bforDsp);
 

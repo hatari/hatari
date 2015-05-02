@@ -514,7 +514,7 @@ void DebugDsp_Check(void)
 void DebugDsp_SetDebugging(void)
 {
 	bDspProfiling = Profile_DspStart();
-	nDspActiveCBs = BreakCond_BreakPointCount(true);
+	nDspActiveCBs = BreakCond_DspBreakPointCount();
 
 	if (nDspActiveCBs || nDspSteps || bDspProfiling || History_TrackDsp()
 	    || LOG_TRACE_LEVEL((TRACE_DSP_DISASM|TRACE_DSP_SYMBOLS)))

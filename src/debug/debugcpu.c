@@ -649,7 +649,7 @@ void DebugCpu_Check(void)
 void DebugCpu_SetDebugging(void)
 {
 	bCpuProfiling = Profile_CpuStart();
-	nCpuActiveCBs = BreakCond_BreakPointCount(false);
+	nCpuActiveCBs = BreakCond_CpuBreakPointCount();
 
 	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || History_TrackCpu()
 	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS))
