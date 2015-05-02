@@ -39,7 +39,7 @@ extern int Symbols_CpuCount(void);
 extern int Symbols_DspCount(void);
 /* handlers for automatic program symbol loading */
 extern void Symbols_RemoveCurrentProgram(void);
-extern void Symbols_ChangeCurrentProgram(FILE *fp, const char *path);
+extern void Symbols_ChangeCurrentProgram(const char *path);
 extern void Symbols_LoadCurrentProgram(void);
 /* symbols/dspsymbols command parsing */
 extern char *Symbols_MatchCommand(const char *text, int state);

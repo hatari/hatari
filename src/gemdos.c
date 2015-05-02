@@ -458,8 +458,7 @@ static void GemDOS_UpdateCurrentProgram(int Handle)
 	PexecCalled = false;
 
 	/* store program path */
-	Symbols_ChangeCurrentProgram(FileHandles[Handle].FileHandle,
-				     FileHandles[Handle].szActualName);
+	Symbols_ChangeCurrentProgram(FileHandles[Handle].szActualName);
 }
 
 /*-----------------------------------------------------------------------*/

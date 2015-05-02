@@ -840,6 +840,26 @@ Uint32 Opt_GetNoParachuteFlag(void)
 
 
 /**
+ * Return true if given path points to an Atari program, false otherwise.
+ */
+bool Opt_IsAtariProgram(const char *path)
+{
+	bool ret = false;
+	Uint8 test[2];
+	FILE *fp;
+
+	if (File_Exists(path) && (fp = fopen(path, "rb"))) {
+		/* file starts with GEMDOS magic? */
+		if (fread(test, 1, 2, fp) == 2 &&
+		    test[0] == 0x60 && test[1] == 0x1A) {
+			ret = true;
+		}
+		fclose(fp);
+	}
+	return ret;
+}
+
+/**
  * Handle last (non-option) argument.  It can be a path or filename.
  * Filename can be a disk image or Atari program.
  * Return false if it's none of these.
@@ -847,32 +867,23 @@ Uint32 Opt_GetNoParachuteFlag(void)
 static bool Opt_HandleArgument(const char *path)
 {
 	char *dir = NULL;
-	Uint8 test[2];
-	FILE *fp;
 
 	/* Atari program? */
-	if (File_Exists(path) && (fp = fopen(path, "rb"))) {
-
-		/* file starts with GEMDOS magic? */
-		if (fread(test, 1, 2, fp) == 2 &&
-		    test[0] == 0x60 && test[1] == 0x1A) {
-
-			const char *prgname = strrchr(path, PATHSEP);
-			if (prgname) {
-				dir = strdup(path);
-				dir[prgname-path] = '\0';
-				prgname++;
-			} else {
-				dir = strdup(Paths_GetWorkingDir());
-				prgname = path;
-			}
-			/* after above, dir should point to valid dir,
-			 * then make sure that given program from that
-			 * dir will be started.
-			 */
-			TOS_AutoStart(prgname);
+	if (Opt_IsAtariProgram(path)) {
+		const char *prgname = strrchr(path, PATHSEP);
+		if (prgname) {
+			dir = strdup(path);
+			dir[prgname-path] = '\0';
+			prgname++;
+		} else {
+			dir = strdup(Paths_GetWorkingDir());
+			prgname = path;
 		}
-		fclose(fp);
+		/* after above, dir should point to valid dir,
+		 * then make sure that given program from that
+		 * dir will be started.
+		 */
+		TOS_AutoStart(prgname);
 	}
 	if (dir) {
 		path = dir;
