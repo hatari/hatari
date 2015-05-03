@@ -18,6 +18,7 @@ Emulation:
   - Better mapping of host errors to GEMDOS error codes
   - Support for mapping file names with 8-bit characters
     between host and Atari encodings (umlauted chars etc)
+  - Program header (TT-RAM) allocate flags support
 - CPU:
   - update WinUAE CPU core version from 2.3 -> 2.8.1 -> 3.0 -> 3.1
     (MMU emulation fixes, cycle accuracy, etc)
@@ -54,13 +55,13 @@ Emulator:
 - Options:
   - Fast boot (warm boot / memory check bypass) is disabled by default
   - 68060 CPU level and --ttram support with new WinUAE CPU core
-  - New --png-level option to decrease AVI compression load
+  - New --png-level option to decrease AVI compression CPU load
 - Hard drive emulation:
   - BUS ID for ACSI drive can be specified with --acsi
   - SDL GUI & cmdline option to skip drives used by partitions on
-    ACSI & IDE images when assigning drive for GEMDOS HD emulation.
-    Partition count parsed by Hatari might not match count used by
-    Atari HD driver due to driver differences in interpreting disk MBR
+    ACSI & IDE images when assigning drive for GEMDOS HD emulation
+    - Partition count parsed by Hatari might not match count used by
+      Atari HD driver due to driver differences in interpreting disk MBR
   - Refuse to mount same HD image from multiple Hatari instances
     (on platforms supporting BSD flock()), to avoid corrupting them
 - SDL GUI:
@@ -78,6 +79,8 @@ Emulator:
   - Fix: crash when GEMDOS tracing is used without GEMDOS HD emulation
   - Fix: update external disassembler's CPU mask when CPU type is changed
          (it wasn't restricted to opcodes valid for given CPU type)
+  - Fix: breakpoint addition/removal within chained breakpoints
+  - Fix: Atari program detection on Windows for "symbols" command
   - Profiler support for TT-RAM (uses *ton* of memory)
   - Add trace support for IDE, MIDI and keymaps.  ACSI (SCSI) and IDE
     trace output shows primary partition tables for ACSI & IDE images
