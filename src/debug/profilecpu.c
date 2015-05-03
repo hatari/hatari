@@ -39,9 +39,13 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c : " __DATE__ " " __TIME__;
 /* if non-zero, output (more) warnings on suspicious:
  * - cycle/instruction counts
  * - PC switches
- * And drop to debugger on invalid PC addresses.
+ * And drop to debugger on invalid current & previous PC addresses.
+ *
+ * NOTE: DebugUI() calls that DEBUG define enables, can cause
+ * instruction count mismatch assertions because debugger invocation
+ * resets the counters AND happens in middle of data collection.
  */
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include "debugui.h"
 static bool skip_assert;
@@ -788,7 +792,7 @@ static void collect_calls(Uint32 pc, counters_t *counters)
 				 * valid prev_pc value stored
 				 */
 				cpu_callinfo.return_pc = PC_UNDEFINED;
-				fprintf(stderr, "WARNING: previous PC from callinfo for 0x%d is undefined!\n", pc);
+				fprintf(stderr, "WARNING: previous PC for tracked address 0x%d is undefined!\n", pc);
 #if DEBUG
 				skip_assert = true;
 				DebugUI(REASON_CPU_EXCEPTION);
@@ -1040,9 +1044,17 @@ void Profile_CpuStop(void)
 	} else
 #endif
 	{
-		assert(cpu_profile.all.misses == cpu_profile.ttram.counters.misses + cpu_profile.ram.counters.misses + cpu_profile.tos.counters.misses + cpu_profile.rom.counters.misses);
-		assert(cpu_profile.all.cycles == cpu_profile.ttram.counters.cycles + cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
+#if DEBUG
+		if (cpu_profile.all.count != cpu_profile.ttram.counters.count + cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count) {
+			fprintf(stderr, "ERROR, instruction count mismatch:\n\t%"PRIu64" != %"PRIu64" + %"PRIu64" + %"PRIu64" + %"PRIu64"?\n",
+				cpu_profile.all.count, cpu_profile.ttram.counters.count, cpu_profile.ram.counters.count,
+				cpu_profile.tos.counters.count, cpu_profile.rom.counters.count);
+			fprintf(stderr, "If there was debugger invocation from profiling before this, try with profiler DEBUG define disabled!!!\n");
+		}
+#endif
 		assert(cpu_profile.all.count == cpu_profile.ttram.counters.count + cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count);
+		assert(cpu_profile.all.cycles == cpu_profile.ttram.counters.cycles + cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
+		assert(cpu_profile.all.misses == cpu_profile.ttram.counters.misses + cpu_profile.ram.counters.misses + cpu_profile.tos.counters.misses + cpu_profile.rom.counters.misses);
 	}
 
 	/* allocate address array for sorting */
