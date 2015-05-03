@@ -310,7 +310,7 @@ static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
 				condition->comparison);
 			abort();
 		}
-		if (!hit) {
+		if (likely(!hit)) {
 			return false;
 		}
 		if (condition->track) {
@@ -383,7 +383,7 @@ static int BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 		}
 	}
 	bps->delayed_change = false;
-	if (changes) {
+	if (unlikely(changes)) {
 		ret = BreakCond_DoDelayedActions(bps, ret);
 	}
 	return ret;
@@ -1340,8 +1340,11 @@ static bc_breakpoints_t* BreakCond_GetListInfo(bool bForDsp)
 		}
 		if (bps->delayed_change) {
 			if(bps->breakpoint2delete) {
-				/* conrner-case not worth handling, but let's warn if somebody actually wants to create dozens of new breakpoints during chained breakpoint file parsing... */
-				fprintf(stderr, "WARNING: leaking %d byte breakpoints array on re-alloc.", bps->allocated * sizeof(bc_breakpoint_t) / 2);
+				/* getting second re-alloc within same breakpoint handler is really
+				 * unlikely, this would require adding dozens of new breakpoints.
+				 */
+				fprintf(stderr, "ERROR: too many new breakpoints added within single breakpoint hit!\n");
+				abort();
 			}
 			bps->breakpoint2delete = bps->breakpoint;
 			bps->breakpoint = malloc(bps->allocated * sizeof(bc_breakpoint_t));
