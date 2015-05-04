@@ -27,6 +27,13 @@
 # define unlikely(x)    (x)
 #endif
 
+/* avoid warnings with variables used only in asserts */
+#ifdef NDEBUG
+# define ASSERT_VARIABLE(x)
+#else
+# define ASSERT_VARIABLE(x) x
+#endif
+
 #ifdef WIN32
 #define PATHSEP '\\'
 #else
