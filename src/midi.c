@@ -56,6 +56,11 @@ static Uint8 MidiStatusRegister;
 static Uint8 nRxDataByte;
 static Uint64 TDR_Write_Time;		/* Time of the last write in TDR fffc06 */
 
+static Uint64 TDR_Empty_Time;
+static Uint64 TSR_Complete_Time;
+
+
+
 /**
  * Initialization: Open MIDI device.
  */
@@ -180,10 +185,12 @@ void Midi_Control_ReadByte(void)
 {
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
+//fprintf ( stderr , "midi read sr %x %lld %lld\n" , MidiStatusRegister , CyclesGlobalClockCounter , TDR_Write_Time );
 	/* Special case : if we wrote a byte into TDR, TX_EMPTY bit should be */
 	/* set approximatively after the first bit was transferred */
 	if ( ( ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) == 0 )
-	  && ( CyclesGlobalClockCounter - TDR_Write_Time > MIDI_TRANSFER_BIT_CYCLE ) )
+//	  && ( CyclesGlobalClockCounter - TDR_Write_Time > MIDI_TRANSFER_BIT_CYCLE*1 ) )		// BAD
+	  && ( CyclesGlobalClockCounter > TDR_Empty_Time ) )						// OK avec 11 bits et 1 bit
 	{
 		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
 
@@ -191,6 +198,7 @@ void Midi_Control_ReadByte(void)
 		MIDI_UpdateIRQ ();
 	}
 
+//fprintf ( stderr , "midi read sr %x %lld %lld\n" , MidiStatusRegister , CyclesGlobalClockCounter , TDR_Write_Time );
 
 	IoMem[0xfffc04] = MidiStatusRegister;
 
@@ -243,6 +251,21 @@ void Midi_Data_WriteByte(void)
 	nTxDataByte = IoMem[0xfffc06];
 	TDR_Write_Time = CyclesGlobalClockCounter;
 
+//	if ( MidiStatusRegister & ACIA_SR_TX_EMPTY )
+	if ( CyclesGlobalClockCounter >= TSR_Complete_Time )
+	{
+//		TDR_Empty_Time = CyclesGlobalClockCounter + MIDI_TRANSFER_BIT_CYCLE*11;		// OK1
+		TDR_Empty_Time = CyclesGlobalClockCounter + MIDI_TRANSFER_BIT_CYCLE*1;		// OK2
+		TSR_Complete_Time = CyclesGlobalClockCounter + MIDI_TRANSFER_BYTE_CYCLE;
+	}
+	else
+	{
+//fprintf ( stderr , "MIDI OVR %lld\n" , TSR_Complete_Time - CyclesGlobalClockCounter );
+//		TDR_Empty_Time = TSR_Complete_Time + MIDI_TRANSFER_BIT_CYCLE*11;		// OK1
+		TDR_Empty_Time = TSR_Complete_Time + MIDI_TRANSFER_BIT_CYCLE*1;			// OK2
+		TSR_Complete_Time += MIDI_TRANSFER_BIT_CYCLE*(10);
+	}
+
 	LOG_TRACE ( TRACE_MIDI, "midi write fffc06 tdr=0x%02x VBL=%d HBL=%d\n" , nTxDataByte , nVBLs , nHBL );
 //fprintf ( stderr , "midi tx %x sr=%x\n" , nTxDataByte , MidiStatusRegister );
 
@@ -284,7 +307,7 @@ void Midi_InterruptHandler_Update(void)
 	/* Flush outgoing data */
 	if (!(MidiStatusRegister & ACIA_SR_TX_EMPTY))
 	{
-		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
+//		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
 
 		/* Do we need to generate a transfer interrupt? */
 		MIDI_UpdateIRQ ();
