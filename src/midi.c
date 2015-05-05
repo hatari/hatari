@@ -18,7 +18,7 @@
 
     We handle a special case for the TX_EMPTY bit when reading SR : this bit should be set
     after TDR was copied into TSR, which is approximatively when the next bit should
-    be transferred (256 cycles).
+    be transferred (256 cycles) (fix the program 'Notator')
 */
 const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 
@@ -55,9 +55,8 @@ static Uint8 MidiControlRegister;
 static Uint8 MidiStatusRegister;
 static Uint8 nRxDataByte;
 static Uint64 TDR_Write_Time;		/* Time of the last write in TDR fffc06 */
-
-static Uint64 TDR_Empty_Time;
-static Uint64 TSR_Complete_Time;
+static Uint64 TDR_Empty_Time;		/* Time when TDR will be empty after a write to fffc06 (ie when TDR is transferred to TSR) */
+static Uint64 TSR_Complete_Time;	/* Time when TSR will be completely transferred */
 
 
 
@@ -117,9 +116,12 @@ void Midi_UnInit(void)
  */
 void Midi_Reset(void)
 {
+//fprintf ( stderr , "midi reset\n" );
 	MidiControlRegister = 0;
 	MidiStatusRegister = ACIA_SR_TX_EMPTY;
 	nRxDataByte = 1;
+	TDR_Empty_Time = 0;
+	TSR_Complete_Time = 0;
 
 	/* Set timer */
 	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
@@ -134,6 +136,8 @@ void    MIDI_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MidiControlRegister, sizeof(MidiControlRegister));
 	MemorySnapShot_Store(&MidiStatusRegister, sizeof(MidiStatusRegister));
 	MemorySnapShot_Store(&nRxDataByte, sizeof(nRxDataByte));
+	MemorySnapShot_Store(&TDR_Empty_Time, sizeof(TDR_Empty_Time));
+	MemorySnapShot_Store(&TSR_Complete_Time, sizeof(TSR_Complete_Time));
 }
 
 
@@ -185,11 +189,9 @@ void Midi_Control_ReadByte(void)
 {
 	ACIA_AddWaitCycles ();						/* Additional cycles when accessing the ACIA */
 
-//fprintf ( stderr , "midi read sr %x %lld %lld\n" , MidiStatusRegister , CyclesGlobalClockCounter , TDR_Write_Time );
 	/* Special case : if we wrote a byte into TDR, TX_EMPTY bit should be */
-	/* set approximatively after the first bit was transferred */
+	/* set approximatively after the first bit was transferred using TSR */
 	if ( ( ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) == 0 )
-//	  && ( CyclesGlobalClockCounter - TDR_Write_Time > MIDI_TRANSFER_BIT_CYCLE*1 ) )		// BAD
 	  && ( CyclesGlobalClockCounter > TDR_Empty_Time ) )						// OK avec 11 bits et 1 bit
 	{
 		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
@@ -241,6 +243,8 @@ void Midi_Data_ReadByte(void)
 
 /**
  * Write to MIDI data register ($FFFC06).
+ * We should determine precisely when TDR will be empty and when TSR will be transferred.
+ * This is required to accurately emulate the TDRE bit in status register (fix the program 'Notator')
  */
 void Midi_Data_WriteByte(void)
 {
@@ -251,19 +255,18 @@ void Midi_Data_WriteByte(void)
 	nTxDataByte = IoMem[0xfffc06];
 	TDR_Write_Time = CyclesGlobalClockCounter;
 
-//	if ( MidiStatusRegister & ACIA_SR_TX_EMPTY )
+	/* If TSR is already transferred, then TDR will be empty after 1 bit is transferred */
+	/* If TSR is not completely transferred, then TDR will be empty 1 bit after TSR is transferred */
 	if ( CyclesGlobalClockCounter >= TSR_Complete_Time )
 	{
-//		TDR_Empty_Time = CyclesGlobalClockCounter + MIDI_TRANSFER_BIT_CYCLE*11;		// OK1
-		TDR_Empty_Time = CyclesGlobalClockCounter + MIDI_TRANSFER_BIT_CYCLE*1;		// OK2
+		TDR_Empty_Time = CyclesGlobalClockCounter + MIDI_TRANSFER_BIT_CYCLE;
 		TSR_Complete_Time = CyclesGlobalClockCounter + MIDI_TRANSFER_BYTE_CYCLE;
 	}
 	else
 	{
 //fprintf ( stderr , "MIDI OVR %lld\n" , TSR_Complete_Time - CyclesGlobalClockCounter );
-//		TDR_Empty_Time = TSR_Complete_Time + MIDI_TRANSFER_BIT_CYCLE*11;		// OK1
-		TDR_Empty_Time = TSR_Complete_Time + MIDI_TRANSFER_BIT_CYCLE*1;			// OK2
-		TSR_Complete_Time += MIDI_TRANSFER_BIT_CYCLE*(10);
+		TDR_Empty_Time = TSR_Complete_Time + MIDI_TRANSFER_BIT_CYCLE;
+		TSR_Complete_Time += MIDI_TRANSFER_BYTE_CYCLE;
 	}
 
 	LOG_TRACE ( TRACE_MIDI, "midi write fffc06 tdr=0x%02x VBL=%d HBL=%d\n" , nTxDataByte , nVBLs , nHBL );
@@ -304,14 +307,17 @@ void Midi_InterruptHandler_Update(void)
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
 
-	/* Flush outgoing data */
-	if (!(MidiStatusRegister & ACIA_SR_TX_EMPTY))
+	/* Special case : if we wrote a byte into TDR, TX_EMPTY bit should be */
+	/* set when reaching TDR_Empty_Time */
+	if ( ( ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) == 0 )
+	  && ( CyclesGlobalClockCounter > TDR_Empty_Time ) )
 	{
-//		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
+		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
 
 		/* Do we need to generate a transfer interrupt? */
 		MIDI_UpdateIRQ ();
 
+		/* Flush outgoing data (not necessary ?) */
 		// if (pMidiFhOut)
 		//	fflush(pMidiFhOut);
 	}
