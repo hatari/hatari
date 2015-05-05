@@ -1612,7 +1612,8 @@ static void BreakCond_RemoveAll(bc_breakpoints_t *bps)
  */
 static int BreakCond_DoDelayedActions(bc_breakpoints_t *bps, int triggered)
 {
-	ASSERT_VARIABLE(bool removed);
+//	ASSERT_VARIABLE(bool removed);
+	bool removed;
 	bc_options_t *options;
 	int i;
 
