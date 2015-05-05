@@ -38,6 +38,7 @@ Emulation:
   - better emulation of GPIP, AER and DDR
 - MIDI:
   - some RX/TX interrupt conditions were not correctly handled
+  - TDRE bit is status register more accurately handled
 
 Emulator:
 - Support for compiling with libSDL2 (experimental)
@@ -106,6 +107,7 @@ Fixed games:
 
 Fixed programs:
 - Realtime and M by Eric Ameres (midi + mfp, toggle bit 0 of AER)
+- Notator (midi, more precise TDRE bit in status register)
 
 
  Version 1.8.0 (2014-07-30):
