@@ -718,6 +718,10 @@ static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
 	{
 		return OPT_CONTINUE;
 	}
+	if (str[offset+1])
+	{
+		return OPT_CONTINUE;
+	}
 	optstr = opt->str;
 	for (i = 0; opt->str == optstr; opt++, i++)
 	{
@@ -1234,7 +1238,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 		case OPT_JOYSTICK4:
 		case OPT_JOYSTICK5:
 			port = argv[i][strlen(argv[i])-1] - '0';
-			assert(port >= 0 && port < JOYSTICK_COUNT);
+			if (port < 0 || port >= JOYSTICK_COUNT)
+			{
+				return Opt_ShowError(OPT_JOYSTICK0, argv[i], "Invalid joystick port");
+			}
 			i += 1;
 			if (strcasecmp(argv[i], "none") == 0)
 			{
