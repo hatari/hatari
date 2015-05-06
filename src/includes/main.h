@@ -29,9 +29,9 @@
 
 /* avoid warnings with variables used only in asserts */
 #ifdef NDEBUG
-# define ASSERT_VARIABLE(x)
+# define ASSERT_VARIABLE(x) (void)(x)
 #else
-# define ASSERT_VARIABLE(x) x
+# define ASSERT_VARIABLE(x) assert(x)
 #endif
 
 #ifdef WIN32

@@ -1596,9 +1596,12 @@ static bool BreakCond_Remove(bc_breakpoints_t *bps, int position)
  */
 static void BreakCond_RemoveAll(bc_breakpoints_t *bps)
 {
+	bool removed;
 	int i;
+
 	for (i = bps->count; i > 0; i--) {
-		BreakCond_Remove(bps, i);
+		removed = BreakCond_Remove(bps, i);
+		ASSERT_VARIABLE(removed);
 	}
 	fprintf(stderr, "%s breakpoints: %d\n", bps->name, bps->count);
 }
@@ -1612,9 +1615,8 @@ static void BreakCond_RemoveAll(bc_breakpoints_t *bps)
  */
 static int BreakCond_DoDelayedActions(bc_breakpoints_t *bps, int triggered)
 {
-//	ASSERT_VARIABLE(bool removed);
-	bool removed;
 	bc_options_t *options;
+	bool removed;
 	int i;
 
 	assert(!bps->delayed_change);
@@ -1627,10 +1629,10 @@ static int BreakCond_DoDelayedActions(bc_breakpoints_t *bps, int triggered)
 		if (options->deleted) {
 			options->deleted = false;
 			removed = BreakCond_Remove(bps, i);
+			ASSERT_VARIABLE(removed);
 			if (triggered >= i) {
 				triggered--;
 			}
-			assert(removed);
 		}
 	}
 	return triggered;
