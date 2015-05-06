@@ -360,10 +360,10 @@ static int Joy_GetFireButtons(int nStJoyId)
 bool Joy_SetCursorEmulation(int port)
 {
 	if (port < 0 || port >= JOYSTICK_COUNT) {
-		return 0;
+		return false;
 	}
 	ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_KEYBOARD;
-	return 1;
+	return true;
 }
 
 
@@ -409,12 +409,12 @@ bool Joy_SwitchMode(int port)
 {
 	int mode;
 	if (port < 0 || port >= JOYSTICK_COUNT) {
-		return 0;
+		return false;
 	}
 	mode = (ConfigureParams.Joysticks.Joy[port].nJoystickMode + 1) % JOYSTICK_MODES;
 	ConfigureParams.Joysticks.Joy[port].nJoystickMode = mode;
 	Statusbar_UpdateInfo();
-	return 1;
+	return true;
 }
 
 
