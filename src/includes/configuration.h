@@ -8,6 +8,9 @@
 #ifndef HATARI_CONFIGURATION_H
 #define HATARI_CONFIGURATION_H
 
+/* if header's struct contents depend on configuration options, header must include config.h */
+#include "config.h"
+
 /* Logging and tracing */
 typedef struct
 {
