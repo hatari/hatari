@@ -48,6 +48,9 @@ Emulator:
   - Fix: chrash with VDI extended resolution emulation when
          C: isn't GEMDOS HD emulated drive
   - Fix: compilation when zlib is missing
+  - Fix: bugs from Debian bug tracker:
+	 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=716536
+	 https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=688594
 - Additional TOS run-time patching:
   - Support fast boot also with TOS v3 & v4
   - Support 32-bit addressing also with TOS v4
