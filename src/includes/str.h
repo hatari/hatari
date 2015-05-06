@@ -8,8 +8,8 @@
 #ifndef HATARI_STR_H
 #define HATARI_STR_H
 
+#include "config.h"
 #include <string.h>
-#include <config.h>
 #if HAVE_STRINGS_H
 # include <strings.h>
 #endif
