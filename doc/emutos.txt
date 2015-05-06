@@ -735,6 +735,7 @@ playback issues with demos and games.
 Demos:
 - 1st Step (by Tobe/MJJ Prod)
 - 32768 colors showdown (by Tronic of Effect)
+- 3D full (by Oxygene)
 - Again (by Paradox)
 - AltParty 2008 intro (by Paradox)
 - Amiga Demo 2 (by Oxygene), music disk
@@ -856,7 +857,8 @@ Color games:
 - Zool (demo)
 
 Additionally, also all STe enhanced Paradize games work
-(they all use line-A bitblits):
+(attackwave, kolmik, mangapuzzle, nwdump, pairs, penta, pokersq,
+pooz, snax, spacebattle), and they all use line-A bitblits:
 	http://paradize.final-memory.org/games.shtml
 
 
@@ -927,6 +929,10 @@ Broken programs:
 - PixArt4
   - colors wrong, clicks to windows down draw anything (on Falcon colors are OK)
   - http://www.1632systems.co.uk/www/html/Product/pixart.htm
+- OpenTTD:
+  - Needs lots of TT-RAM
+  - EmuTOS doesn't support TT 256 color mode yet
+ (- works on Falcon with FPU)
 
 
 Falcon programs
