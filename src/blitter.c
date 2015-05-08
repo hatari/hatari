@@ -189,7 +189,7 @@ static void Blitter_BusArbitration ( int RequestBusMode )
 
 		/* Different timing for some specific cases */
 
-		/* 'Relapse - Graphics Sound 2' by Cybernetic (overscan plama using blitter) */
+		/* 'Relapse - Graphix Sound 2' by Cybernetics (overscan plasma using blitter) */
 		/* $e764 : move.b  d5,(a4) + dbra d1,$fff2 : 4 cycles of the dbra can be executed while blitter starts */
 		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x188551c9 )	/* PC = E764 */
 			cycles = 4-4;			/* 4 cycles less than default case */
