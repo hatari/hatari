@@ -156,6 +156,60 @@ static void Blitter_FlushCycles(void)
 		CALL_VAR(PendingInterruptFunction);
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle bus arbitration when switching between CPU and Blitter
+ * When a write is made to FF8A3C to start the blitter, it will take a few cycles
+ * before doing the bus arbitration. During this time the CPU will be able to
+ * partially execute the next instruction in parallel to the blitter
+ * (until an access to the BUS is needed by the CPU).
+ *
+ * NOTE [NP] : this is mostly handled with hardcoded cases for now, as it
+ * requires cycle exact emulation to exactly know when bus is accessed
+ * by the CPU to prefetch the next word.
+ * More tests are needed on a real STE to have a proper model of this.
+ *
+ * Based on several exemples, possible sequence when starting the blitter seems to be :
+ *  - t+0 : write to FF8A3C
+ *  - t+0 : CPU can still run during 4 cycles and access bus
+ *  - t+4 : bus arbitration takes 4 cycles (no access for cpu and blitter during this time)
+ *  - t+8 : blitter owns the bus and starts tranferring data
+ *
+ * When blitter stops owning the bus in favor of the cpu, this seems to always take 4 cycles
+ */
+static void Blitter_BusArbitration ( int RequestBusMode )
+{
+	int	cycles;
+
+	if ( RequestBusMode == BUS_MODE_BLITTER )	/* Bus is requested by the blitter */
+	{
+//fprintf ( stderr , "blitter start pc %x %x\n" , M68000_GetPC() , M68000_InstrPC );
+		cycles = 4;				/* Default case : take 4 cycles when going from cpu to blitter */
+
+		/* Different timing for some specific cases */
+
+		/* 'Relapse - Graphics Sound 2' by Cybernetic (overscan plama using blitter) */
+		/* $e764 : move.b  d5,(a4) + dbra d1,$fff2 : 4 cycles of the dbra can be executed while blitter starts */
+		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x188551c9 )	/* PC = E764 */
+			cycles = 4-4;			/* 4 cycles less than default case */
+	}
+
+	else						/* Bus is requested by the cpu */
+	{
+		cycles = 4;				/* Always 4 cycles ? */
+	}
+
+	/* Add arbitration cycles and update BusMode */
+	if ( cycles > 0 )
+	{
+		Blitter_AddCycles(cycles);
+		Blitter_FlushCycles();
+	}	
+	BusMode = RequestBusMode;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Read & Write operations
@@ -523,9 +577,7 @@ static void Blitter_Start(void)
 	BlitterVars.src_words_reset = BlitterVars.dst_words_reset + BlitterVars.fxsr - BlitterVars.nfsr;
 
 	/* bus arbitration */
-	BusMode = BUS_MODE_BLITTER;		/* bus is now owned by the blitter */
-	Blitter_AddCycles(4);
-	Blitter_FlushCycles();
+	Blitter_BusArbitration ( BUS_MODE_BLITTER );
 
 	/* Busy=1, set line to high/1 and clear interrupt */
 	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_HIGH );
@@ -540,9 +592,7 @@ static void Blitter_Start(void)
 	       && (BlitterVars.hog || BlitterVars.pass_cycles < NONHOG_CYCLES));
 
 	/* bus arbitration */
-	Blitter_AddCycles(4);
-	Blitter_FlushCycles();
-	BusMode = BUS_MODE_CPU;			/* bus is now owned by the cpu again */
+	Blitter_BusArbitration ( BUS_MODE_CPU );
 
 	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
 
