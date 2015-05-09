@@ -170,7 +170,7 @@ static void Blitter_FlushCycles(void)
  * by the CPU to prefetch the next word.
  * More tests are needed on a real STE to have a proper model of this.
  *
- * Based on several exemples, possible sequence when starting the blitter seems to be :
+ * Based on several examples, possible sequence when starting the blitter seems to be :
  *  - t+0 : write to FF8A3C
  *  - t+0 : CPU can still run during 4 cycles and access bus
  *  - t+4 : bus arbitration takes 4 cycles (no access for cpu and blitter during this time)
