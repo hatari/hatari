@@ -7,7 +7,7 @@ if(PYTHONINTERP_FOUND)
 	add_subdirectory(debugger)
 endif(PYTHONINTERP_FOUND)
 
-install(PROGRAMS atari-conver-dir.py DESTINATION ${BINDIR} RENAME atari-convert-dir)
+install(PROGRAMS atari-convert-dir.py DESTINATION ${BINDIR} RENAME atari-convert-dir)
 install(PROGRAMS atari-hd-image.sh DESTINATION ${BINDIR} RENAME atari-hd-image)
 install(PROGRAMS zip2st.sh DESTINATION ${BINDIR} RENAME zip2st)
 

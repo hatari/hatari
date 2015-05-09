@@ -383,7 +383,7 @@ Emulator:
   - New ':noinit' and ':quiet' breakpoint options.  Quiet option
     removes most of breakpoint matching "noise" and ':noinit' breakpoints
     can be used with "profile stack" command, to prevent profile data and
-    related callstack information from being reseted on breakpoint match
+    related callstack information from being reset on breakpoint match
   - "blitter" and "dsp" subcommand added to "info" command, to show
     blitter register values and DSP state (e.g. stack content)
   - "prg" subcommand added to "symbols" command, for loading debug
