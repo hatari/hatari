@@ -102,6 +102,10 @@ Other changes:
 - Remaining Hatari OSX UI changes for Hatari v1.8.0 (localization)
 - Add video-recording.txt doc on video recording/uploading best practices
 
+Fixed demos:
+- Graphix Sound 2 in Relapse by Cybernetics (blitter+cpu, bus arbitration)
+- RGBeast by Aggression (video, writing to video counter during active display)
+
 Fixed games:
 - Superior 65 - Blood Money (cpu, exception stack and bus error)
   (note that this version is bugged and will crash with TOS 1.04 or 1.62)
