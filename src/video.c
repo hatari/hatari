@@ -3181,6 +3181,8 @@ void Video_ScreenCounter_WriteByte(void)
 	else if ( IoAccessCurrentAddress == 0xff8209 )
 		addr_new = ( addr_new & 0xffff00 ) | ( AddrByte );
 
+	addr_new &= ~1;						/* clear bit 0 */
+
 	MMUStartCycle = Video_GetMMUStartCycle ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle );
 
 	/* If display has not started, we can still modify pVideoRaster */
@@ -3188,7 +3190,7 @@ void Video_ScreenCounter_WriteByte(void)
 	if ( ( ( LineCycles <= MMUStartCycle ) && ( nHBL == HblCounterVideo ) )
 		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL + BlankLines ) )
 	{
-		pVideoRaster = &STRam[addr_new & ~1];		/* set new video address */
+		pVideoRaster = &STRam[addr_new];		/* set new video address */
 		VideoCounterDelayedOffset = 0;
 		pVideoRasterDelayed = NULL;
 		Delayed = false;
@@ -3200,7 +3202,7 @@ void Video_ScreenCounter_WriteByte(void)
 		  || ( HblCounterVideo == nHBL+1 ) ) )		/* or the write overlaps the next line and Video_EndHBL was not called yet */
 	{
 		VideoCounterDelayedOffset = 0;
-		pVideoRasterDelayed = &STRam[addr_new & ~1];	/* new value for pVideoRaster at the end of Video_CopyScreenLineColor */
+		pVideoRasterDelayed = &STRam[addr_new];		/* new value for pVideoRaster at the end of Video_CopyScreenLineColor */
 		Delayed = true;
 	}
 
@@ -3211,6 +3213,11 @@ void Video_ScreenCounter_WriteByte(void)
 		VideoCounterDelayedOffset = addr_new - addr_cur;
 		pVideoRasterDelayed = NULL;
 		Delayed = true;
+
+		/* [FIXME] 'RGBeast' by Aggression : write to FF8209 on STE while display is on, */
+		/* in that case video counter is not correct */
+		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x03cafffb )	/* movep.l d1,$fffb(a2) */
+			VideoCounterDelayedOffset += 2;
 	}
 
 	LOG_TRACE(TRACE_VIDEO_STE , "write ste video %x val=0x%x video_old=%x video_new=%x offset=%x delayed=%s"
