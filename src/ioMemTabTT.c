@@ -5,6 +5,15 @@
   or at your option any later version. Read the file gpl.txt for details.
 
   Table with hardware IO handlers for the TT.
+
+  NOTE [NP] : contrary to some unofficial documentations, the TT doesn't have
+  hardware scrolling similar to the STE. As such, registers FF820E,
+  FF820F, FF8264 and FF8265 are not available and seem to return undefined values
+  based on the data last seen on the bus (this would need more tests on a TT)
+	move.b $ff820e,d0  -> FF
+	move.b $ff820f,d0  -> 01
+	move.b $ff8264,d0  -> 82
+	move.b $ff8265,d0  -> 65
 */
 const char IoMemTabTT_fileid[] = "Hatari ioMemTabTT.c : " __DATE__ " " __TIME__;
 
@@ -52,13 +61,13 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff820c, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus error here : return 0 not ff */
 	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, Video_ScreenBaseSTE_WriteByte },
 	{ 0xff820e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, Video_LineWidth_WriteByte },
+	{ 0xff820f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8240, 32, IoMem_ReadWithoutInterception, Video_TTColorSTRegs_WriteWord },         /* 16 TT ST-palette entries */
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
 	{ 0xff8261, SIZE_BYTE, IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 	{ 0xff8262, SIZE_WORD, IoMem_ReadWithoutInterception, Video_TTShiftMode_WriteWord },    /* TT screen mode */
-	{ 0xff8264, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here : FIXME should be same as STE ? */
-	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read, Video_HorScroll_Write },                   /* horizontal fine scrolling */
+	{ 0xff8264, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8265, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 	{ 0xff8266, 26,        IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 
 	{ 0xff8400, 512,       IoMem_ReadWithoutInterception, Video_TTColorRegs_WriteWord },    /* 256 TT palette entries */
