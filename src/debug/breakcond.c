@@ -1534,7 +1534,7 @@ static void BreakCond_Print(bc_breakpoint_t *bp)
  */
 static void BreakCond_List(bc_breakpoints_t *bps)
 {
-	bc_breakpoint_t *bp = bps->breakpoint;
+	bc_breakpoint_t *bp;
 	int i;
 
 	if (!bps->count) {
@@ -1542,6 +1542,7 @@ static void BreakCond_List(bc_breakpoints_t *bps)
 		return;
 	}
 	fprintf(stderr, "%d conditional %s breakpoints:\n", bps->count, bps->name);
+	bp = bps->breakpoint;
 	for (i = 1; i <= bps->count; bp++, i++) {
 		fprintf(stderr, "%4d:", i);
 		BreakCond_Print(bp);
@@ -1583,8 +1584,7 @@ static bool BreakCond_Remove(bc_breakpoints_t *bps, int position)
 	}
 
 	if (position < bps->count) {
-		memmove(bp + position - 1, bp + position,
-			(bps->count - position) * sizeof(bc_breakpoint_t));
+		memmove(bp, bp + 1, (bps->count - position) * sizeof(bc_breakpoint_t));
 	}
 	bps->count--;
 	return true;
