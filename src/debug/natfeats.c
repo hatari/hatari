@@ -56,7 +56,7 @@ static bool nf_name(Uint32 stack, Uint32 subid, Uint32 *retval)
 	len = STMemory_ReadLong(stack + SIZE_LONG);
 	LOG_TRACE(TRACE_NATFEATS, "NF_NAME[%d](0x%x, %d)\n", subid, ptr, len);
 
-	if ( !STMemory_CheckAreaType ( ptr, len, ABFLAG_RAM ) ) {
+	if ( !STMemory_CheckAreaType ( ptr, len, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		M68000_BusError(ptr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return false;
 	}
@@ -94,7 +94,7 @@ static bool nf_stderr(Uint32 stack, Uint32 subid, Uint32 *retval)
 	ptr = STMemory_ReadLong(stack);
 	LOG_TRACE(TRACE_NATFEATS, "NF_STDERR(0x%x)\n", ptr);
 
-	if ( !STMemory_CheckAreaType ( ptr, 1, ABFLAG_RAM ) ) {
+	if ( !STMemory_CheckAreaType ( ptr, 1, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return false;
 	}
@@ -175,7 +175,7 @@ static bool nf_command(Uint32 stack, Uint32 subid, Uint32 *retval)
 
 	ptr = STMemory_ReadLong(stack);
 
-	if ( !STMemory_CheckAreaType ( ptr, 1, ABFLAG_RAM ) ) {
+	if ( !STMemory_CheckAreaType ( ptr, 1, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return false;
 	}
@@ -229,7 +229,7 @@ bool NatFeat_ID(Uint32 stack, Uint32 *retval)
 	int i;
 
 	ptr = STMemory_ReadLong(stack);
-	if ( !STMemory_CheckAreaType ( ptr, FEATNAME_MAX, ABFLAG_RAM ) ) {
+	if ( !STMemory_CheckAreaType ( ptr, FEATNAME_MAX, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return false;
 	}
