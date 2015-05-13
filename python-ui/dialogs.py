@@ -2,7 +2,7 @@
 #
 # Classes for the Hatari UI dialogs
 #
-# Copyright (C) 2008-2012 by Eero Tamminen
+# Copyright (C) 2008-2015 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -937,6 +937,13 @@ class MachineDialog(HatariUIDialog):
             combo.append_text(text)
         self.memory = table_add_widget_row(table, row, "Memory:", combo, fullspan)
         row += 1
+
+        self.ttram = gtk.Adjustment(config.get_ttram(), 0, 260, 4, 4, 4)
+        ttram = gtk.HScale(self.ttram)
+        ttram.set_digits(0)
+        ttram.set_tooltip_text("TT-RAM needs Falcon/TT with WinUAE CPU core and implies 32-bit addressing.  0 = disabled, 24-bit addressing.")
+        table_add_widget_row(table, row, "TT-RAM", ttram, fullspan)
+        row += 1
         
         label = "TOS image:"
         fsel = self._fsel(label, gtk.FILE_CHOOSER_ACTION_OPEN)
@@ -973,6 +980,7 @@ class MachineDialog(HatariUIDialog):
         self.dsps[config.get_dsp()].set_active(True)
         self.cpulevel.set_active(config.get_cpulevel())
         self.memory.set_active(config.get_memory())
+        self.ttram.set_value(config.get_ttram())
         tos = config.get_tos()
         if tos:
             self.tos.set_filename(tos)
@@ -995,6 +1003,7 @@ class MachineDialog(HatariUIDialog):
         config.set_dsp(self._get_active_radio(self.dsps))
         config.set_cpulevel(self.cpulevel.get_active())
         config.set_memory(self.memory.get_active())
+        config.set_ttram(self.ttram.get_value())
         config.set_tos(self.tos.get_filename())
         config.set_compatible(self.compatible.get_active())
         config.set_timerd(self.timerd.get_active())

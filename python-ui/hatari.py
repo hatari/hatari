@@ -686,6 +686,23 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Memory]", "nMemorySize", memsize)
         self._change_option("--memsize %d" % memsize)
 
+    def get_ttram(self):
+        return self.get("[Memory]", "nTTRamSize")
+
+    def set_ttram(self, memsize):
+        # guarantee correct type (Gtk float -> config int)
+        memsize = int(memsize)
+        self.set("[Memory]", "nTTRamSize", memsize)
+        self._change_option("--ttram %d" % memsize)
+        if memsize:
+            # TT-RAM need 32-bit addressing (i.e. disable 24-bit)
+            self.set("[System]", "bAddressSpace24", False)
+            self._change_option("--addr24 off")
+        else:
+            # switch 24-bit addressing back for compatibility
+            self.set("[System]", "bAddressSpace24", True)
+            self._change_option("--addr24 on", False)
+
     # ------------ monitor ---------------
     def get_monitor_types(self):
         return ("Mono", "RGB", "VGA", "TV")
