@@ -651,10 +651,10 @@ void GemDOS_InitDrives(void)
 	}
 
 	ImagePartitions = nAcsiPartitions + nIDEPartitions;
-	if (ConfigureParams.HardDisk.nHardDiskDrive == DRIVE_SKIP)
+	if (ConfigureParams.HardDisk.nGemdosDrive == DRIVE_SKIP)
 		SkipPartitions = ImagePartitions;
 	else
-		SkipPartitions = ConfigureParams.HardDisk.nHardDiskDrive;
+		SkipPartitions = ConfigureParams.HardDisk.nGemdosDrive;
 
 	/* Now initialize all available drives */
 	for(i = 0; i < nMaxDrives; i++)

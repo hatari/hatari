@@ -203,7 +203,7 @@ typedef enum
 
 typedef struct
 {
-  int nHardDiskDrive;
+  int nGemdosDrive;
   bool bUseHardDiskDirectories;
   bool bUseIdeMasterHardDiskImage;
   bool bUseIdeSlaveHardDiskImage;

@@ -1392,7 +1392,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			i += 1;
 			if (strcasecmp(argv[i], "skip") == 0)
 			{
-				ConfigureParams.HardDisk.nHardDiskDrive = DRIVE_SKIP;
+				ConfigureParams.HardDisk.nGemdosDrive = DRIVE_SKIP;
 				break;
 			}
 			else if (strlen(argv[i]) == 1)
@@ -1401,7 +1401,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				if (drive >= 'C' && drive <= 'Z')
 				{
 					drive = drive - 'C' + DRIVE_C;
-					ConfigureParams.HardDisk.nHardDiskDrive = drive;
+					ConfigureParams.HardDisk.nGemdosDrive = drive;
 					break;
 				}
 			}

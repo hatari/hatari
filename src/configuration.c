@@ -294,7 +294,7 @@ static const struct Config_Tag configs_Floppy[] =
 /* Used to load/save HD options */
 static const struct Config_Tag configs_HardDisk[] =
 {
-	{ "nHardDiskDrive", Int_Tag, &ConfigureParams.HardDisk.nHardDiskDrive },
+	{ "nGemdosDrive", Int_Tag, &ConfigureParams.HardDisk.nGemdosDrive },
 	{ "bBootFromHardDisk", Bool_Tag, &ConfigureParams.HardDisk.bBootFromHardDisk },
 	{ "bUseHardDiskDirectory", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskDirectories },
 	{ "szHardDiskDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
@@ -481,7 +481,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.HardDisk.bBootFromHardDisk = false;
 	ConfigureParams.HardDisk.nGemdosCase = GEMDOS_NOP;
 	ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_OFF;
-	ConfigureParams.HardDisk.nHardDiskDrive = DRIVE_C;
+	ConfigureParams.HardDisk.nGemdosDrive = DRIVE_C;
 	ConfigureParams.HardDisk.bUseHardDiskDirectories = false;
 	for (i = 0; i < MAX_HARDDRIVES; i++)
 	{
