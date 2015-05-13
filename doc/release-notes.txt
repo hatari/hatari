@@ -62,8 +62,9 @@ Emulator:
   - New --png-level option to decrease AVI compression CPU load
 - Hard drive emulation:
   - BUS ID for ACSI drive can be specified with --acsi
-  - SDL GUI & cmdline option to skip drives used by partitions on
-    ACSI & IDE images when assigning drive for GEMDOS HD emulation
+  - GUI and command line options to specify GEMDOS HD emulation drive
+    (default = C:), or to skip recognized drives used by partitions
+    on ACSI & IDE images
     - Partition count parsed by Hatari might not match count used by
       Atari HD driver due to driver differences in interpreting disk MBR
   - Refuse to mount same HD image from multiple Hatari instances
