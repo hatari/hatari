@@ -804,6 +804,9 @@ class TraceDialog(HatariUIDialog):
         "nvram",
         "scsi_cmd",
         "natfeats",
+        "keymap",
+        "midi",
+        "ide",
     ]
     def __init__(self, parent):
         self.savedpoints = None
