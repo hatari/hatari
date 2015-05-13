@@ -370,12 +370,23 @@ class HardDiskDialog(HatariUIDialog):
         table_add_widget_row(table, row, label, box, True)
         self.ideslave = fsel
         row += 1
-        
+
+        table_add_widget_row(table, row, " ", gtk.HSeparator(), True)
+        row += 1
+
         label = "GEMDOS drive directory:"
-        path = config.get_gemdos_dir()
+        path = config.get_hd_dir()
         fsel, box = factory.get(label, None, path, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
         table_add_widget_row(table, row, label, box, True)
-        self.gemdos = fsel
+        self.hddir = fsel
+        row += 1
+
+        hddrive = gtk.combo_box_new_text()
+        for text in config.get_hd_drives():
+            hddrive.append_text(text)
+        hddrive.set_tooltip_text("Whether GEMDOS HD emulation uses fixed drive letter, or first free drive letter after ASCI & IDE drives (detection unreliable)")
+        table_add_widget_row(table, row, "GEMDOS HD drive:", hddrive)
+        self.hddrive = hddrive
         row += 1
 
         protect = gtk.combo_box_new_text()
@@ -396,9 +407,6 @@ class HardDiskDialog(HatariUIDialog):
         table.show_all()
     
     def _get_config(self, config):
-        path = config.get_gemdos_dir()
-        if path:
-            self.gemdos.set_filename(path)
         path = config.get_acsi_image()
         if path:
             self.acsi.set_filename(path)
@@ -408,15 +416,20 @@ class HardDiskDialog(HatariUIDialog):
         path = config.get_ideslave_image()
         if path:
             self.ideslave.set_filename(path)
+        path = config.get_hd_dir()
+        if path:
+            self.hddir.set_filename(path)
+        self.hddrive.set_active(config.get_hd_drive())
         self.protect.set_active(config.get_hd_protection())
         self.lower.set_active(config.get_hd_case())
 
     def _set_config(self, config):
         config.lock_updates()
-        config.set_gemdos_dir(self.gemdos.get_filename())
         config.set_acsi_image(self.acsi.get_filename())
         config.set_idemaster_image(self.idemaster.get_filename())
         config.set_ideslave_image(self.ideslave.get_filename())
+        config.set_hd_dir(self.hddir.get_filename())
+        config.set_hd_drive(self.hddrive.get_active())
         config.set_hd_protection(self.protect.get_active())
         config.set_hd_case(self.lower.get_active())
         config.flush_updates()
