@@ -146,6 +146,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "newcpu.h"
 #include "main.h"
 #include "m68000.h"
+#include "reset.h"
 #include "cycInt.h"
 #include "mfp.h"
 #include "tos.h"
@@ -251,6 +252,19 @@ void dump_counts (void)
 {
 }
 #endif
+
+static void cpu_halt ( void )
+{
+    int res;
+
+    res = DlgAlert_Query ( "Detected double bus/address error => CPU halted !\n\n      Press OK to reset or CANCEL for debugger\n");
+
+    if ( res )
+	Reset_Warm();				/* Reset to exit 'halt' state (reset cpu and regs.spcflags) */
+    else
+	DebugUI(REASON_CPU_EXCEPTION);		/* Call the debugger */
+}
+
 
 
 static unsigned long op_illg_1 (uae_u32 opcode) REGPARAM;
@@ -1052,15 +1066,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
-	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n",
-	              BusErrorAddress, (long)currpc);
-	      unset_special(SPCFLAG_BUSERROR);
-	      if (ExceptionDebugMask & EXCEPT_BUS)
-	        DebugUI(REASON_CPU_EXCEPTION);
-	      else
-		DlgAlert_Notice("Detected double bus error => CPU halted!\nEmulation needs to be reset.\n");
-	      regs.intmask = 7;
-	      m68k_setstopped(true);
+	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n", BusErrorAddress, (long)currpc);
+	      cpu_halt();
 	      return;
 	    }
 	    if ((ExceptionDebugMask & EXCEPT_BUS) && BusErrorAddress!=0xff8a00) {
@@ -1080,11 +1087,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
       {
         if ( nr==2 || nr==3 )			/* address error during bus/address error -> stop emulation */
             {
-	      fprintf(stderr,"Address Error during exception 2/3, aborting new PC=$%x\n",newpc);
-	      if (ExceptionDebugMask & (EXCEPT_BUS|EXCEPT_ADDRESS))
-	        DebugUI(REASON_CPU_EXCEPTION);
-	      else
-		DlgAlert_Notice("Address Error during exception 2/3 => CPU halted!\nEmulation needs to be reset.\n");
+	      fprintf(stderr,"Address Error during exception 2/3, new PC=$%x => CPU halted\n",newpc);
+	      cpu_halt();
             }
         else
             {

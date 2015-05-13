@@ -80,6 +80,8 @@ Emulator:
   - Fix: update default max window size for 2-line statusbar
          NOTE: size would need to be updated in Hatari config files too!
   - Fix: statusbar assert when FPU/MMU/TT-RAM are enabled in WinUAE CPU core
+  - When cpu enters 'halt' state in case of double bus/address errors,
+    show a dialog window to reset or call the debugger
 - Debugger:
   - Fix: crash when GEMDOS tracing is used without GEMDOS HD emulation
   - Fix: update external disassembler's CPU mask when CPU type is changed
