@@ -124,6 +124,8 @@ static struct cache040 dcaches040[CACHESETS040];
 #ifdef WINUAE_FOR_HATARI
 int OpcodeFamily;
 int BusCyclePenalty = 0;
+
+FILE *console_out_FILE = NULL;
 #endif
 
 
@@ -6290,9 +6292,11 @@ void m68k_disasm_file (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	buf = xmalloc (TCHAR, (MAX_LINEWIDTH + 1) * cnt);
 	if (!buf)
 		return;
+	console_out_FILE = f;
 	m68k_disasm_2 (buf, (MAX_LINEWIDTH + 1) * cnt, addr, nextpc, cnt, NULL, NULL, 0);
 	f_out (f, _T("%s"), buf);
 	xfree (buf);
+	console_out_FILE = NULL;
 }
 
 /*************************************************************
@@ -6453,7 +6457,9 @@ void m68k_dumpstate (uaecptr *nextpc)
 #ifdef WINUAE_FOR_HATARI
 void m68k_dumpstate_file (FILE *f, uaecptr *nextpc)
 {
+	console_out_FILE = f;
 	m68k_dumpstate_2 (m68k_getpc (), nextpc);
+	console_out_FILE = NULL;
 }
 #endif
 void m68k_dumpcache (void)

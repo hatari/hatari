@@ -699,6 +699,9 @@ extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
 /* (e.g. used when addressing mode is d8(an,ix)) */
 extern int BusCyclePenalty;
 
+/* To redirect WinUAE's prints to our own file */
+extern FILE *console_out_FILE;
+
 /*** Hatari ***/
 #endif
 
