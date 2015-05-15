@@ -626,83 +626,85 @@ static uae_u8 *STmem_xlate(uaecptr addr)
  */
 static uae_u32 SysMem_lget(uaecptr addr)
 {
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
     if(addr < 0x800 && !regs.s)
     {
       M68000_BusError(addr, 1, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-
     return do_get_mem_long(STmemory + addr);
 }
 
 static uae_u32 SysMem_wget(uaecptr addr)
 {
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
     if(addr < 0x800 && !regs.s)
     {
       M68000_BusError(addr, 1, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-
     return do_get_mem_word(STmemory + addr);
 }
 
 static uae_u32 SysMem_bget(uaecptr addr)
 {
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
     if(addr < 0x800 && !regs.s)
     {
       M68000_BusError(addr, 1, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
       return 0;
     }
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
     return STmemory[addr];
 }
 
 static void SysMem_lput(uaecptr addr, uae_u32 l)
 {
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
       M68000_BusError(addr, 0, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-
     do_put_mem_long(STmemory + addr, l);
 }
 
 static void SysMem_wput(uaecptr addr, uae_u32 w)
 {
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
       M68000_BusError(addr, 0, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-
     do_put_mem_word(STmemory + addr, w);
 }
 
 static void SysMem_bput(uaecptr addr, uae_u32 b)
 {
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
       M68000_BusError(addr, 0, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
       return;
     }
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
     STmemory[addr] = b;
 }
 
