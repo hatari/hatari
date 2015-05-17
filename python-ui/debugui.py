@@ -268,9 +268,17 @@ class MemoryAddress:
         self.hatari.debug_command("r")
         output = self.hatari.get_lines(self.debug_output)
         if not self.first:
-            # second last line has first PC, last line next PC in next column
-            self.first  = int(output[-2][:output[-2].find(":")], 16)
+            # 2nd last line has first PC in 1st column, last line next PC in 2nd column
             self.second = int(output[-1][output[-1].find(":")+2:], 16)
+            # OldUAE CPU core has ':' in both
+            offset = output[-2].find(":")
+            if offset < 0:
+                # WinUAE CPU core only in one
+                offset = output[-2].find(" ")
+            if offset < 0:
+                print("ERROR: unable to parse register dump line:\n\t'%s'", output[-2])
+                return output
+            self.first = int(output[-2][:offset], 16)
             self.reset_entry()
         return output
 
