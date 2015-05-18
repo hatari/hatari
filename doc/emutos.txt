@@ -615,6 +615,7 @@ Mono/GEM toys:
 - Mandala
 - Planet (celectial body calculations)
 - Pyro
+- Robugs* (GEM UI, line-A fillrect + spritedraw)
 - ST life
 - Wator (slow)
 - Worm farm
@@ -653,9 +654,9 @@ Free/shareware color games:
 - Douglas Rockmoor  (joystick input doesn't work)
 - Downfall          (fire doesn't work)
 - Entombed          (doesn't show title, copyright, hiscore nor help after v0.8.6,
-                     freezes at start in v0.9.4, freezes also with TOS v2)
+                     TOS v2 shows title but not others and sound is wrong)
 - Fokker            (input doesn't work)
-- Japlish           (no objects visible, does one line-A polygon hline)
+- Japlish           (line-A polygon lines, joystick input doesn't work)
 - Space invaders    (up works as fire, no other input works)
 
 Mono games:
@@ -664,9 +665,6 @@ Mono games:
 - Midimaze*         (joystick doesn't work)
 - Pacballs          (line-A bitblit + panic)
 - Ramses*           (causes panic as it tries to do crazy things with v_hide_c)
-
-Games that mix GEM UI and non-VDI drawing:
-- Robugs*   (line-A filled rectangle and draw sprite, buggy pattern draw)
 
 GEM games:
 - Abalone   (dragging doesn't work)
