@@ -519,7 +519,7 @@ class UIActions:
 
     def list_actions(self):
         yield ("|", "Separator between controls")
-        yield (">", "Next toolbar in panel windows")
+        yield (">", "Start next toolbar row in panel windows")
         # generate the list from action information
         for act in self.actions.list_actions():
             note = act.get_property("tooltip")

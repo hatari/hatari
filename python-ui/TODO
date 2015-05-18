@@ -10,13 +10,15 @@ sources.
 
 * Features for Help menu:
   - Create empty floppy images (+ convert directories to hard disks?)
-  - MSA converter
+  - MSA<->ST converter
+  - ZIP->ST converter
 
 * Add more Hatari debugger features to the debug UI:
   - DSP support
   - History support
   - Profiling support
-  - DSP and CPU symbols loading
+  - DSP symbols loading
+    (CPU symbols are loaded automatically from programs)
   - Support for stepping the emulation (both step & next commands)
   - multiple views to memory (refreshed whenever emulation is stopped)
     - supporting also register relative views (register values

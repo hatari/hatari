@@ -2,6 +2,12 @@
 User visible changes in Hatari (Python Gtk) UI
 ----------------------------------------------
 
+2015-05:
+- Add support for --gemdos-drive, --ttram option features
+  and new tracepoints
+- Debugger window supports WinUAE CPU core
+- Updated UI version to 1.3
+
 2014-06:
 - Add support for --sound-sync, --sound-buffer-size,
   --slowdown, --gemdos-case, --drive-*-heads and
