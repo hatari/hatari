@@ -41,7 +41,6 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 #include "newcpu.h"
 #include "68kDisass.h"
 
-
 /* ------------------------------------------------------------------
  * TOS information
  */
@@ -65,25 +64,32 @@ const char DebugInfo_fileid[] = "Hatari debuginfo.c : " __DATE__ " " __TIME__;
 
 /**
  * DebugInfo_GetSysbase: get and validate system base
+ * If warnings is set, output warnings if no valid system base
  * return on success sysbase address (+ set rombase), on failure return zero
  */
-static Uint32 DebugInfo_GetSysbase(Uint32 *rombase)
+static Uint32 DebugInfo_GetSysbase(Uint32 *rombase, bool warnings)
 {
 	Uint32 sysbase = STMemory_ReadLong(OS_SYSBASE);
 
 	if ( !STMemory_CheckAreaType (sysbase, OS_HEADER_SIZE, ABFLAG_RAM | ABFLAG_ROM ) ) {
-		fprintf(stderr, "Invalid TOS sysbase RAM address (0x%x)!\n", sysbase);
+		if (warnings) {
+			fprintf(stderr, "Invalid TOS sysbase RAM address (0x%x)!\n", sysbase);
+		}
 		return 0;
 	}
 	/* under TOS, sysbase = os_beg = TosAddress, but not under MiNT -> use os_beg */
 	*rombase = STMemory_ReadLong(sysbase+0x08);
 	if ( !STMemory_CheckAreaType (*rombase, OS_HEADER_SIZE, ABFLAG_RAM | ABFLAG_ROM ) ) {
-		fprintf(stderr, "Invalid TOS sysbase ROM address (0x%x)!\n", *rombase);
+		if (warnings) {
+			fprintf(stderr, "Invalid TOS sysbase ROM address (0x%x)!\n", *rombase);
+		}
 		return 0;
 	}
 	if (*rombase != TosAddress) {
-		fprintf(stderr, "os_beg (0x%x) != TOS address (0x%x), header in RAM not set up yet?\n",
-			*rombase, TosAddress);
+		if (warnings) {
+			fprintf(stderr, "os_beg (0x%x) != TOS address (0x%x), header in RAM not set up yet?\n",
+				*rombase, TosAddress);
+		}
 		return 0;
 	}
 	return sysbase;
@@ -92,15 +98,17 @@ static Uint32 DebugInfo_GetSysbase(Uint32 *rombase)
 /**
  * DebugInfo_CurrentBasepage: get and validate currently running program basepage.
  * if given sysbase is zero, use system sysbase.
+ * If warnings is set, output warnings if no valid basepage
+ * return on success basepage address, on failure return zero
  */
-static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase)
+static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase, bool warnings)
 {
 	Uint32 basepage;
 	Uint16 osversion, osconf;
 
 	if (!sysbase) {
 		Uint32 rombase;
-		sysbase = DebugInfo_GetSysbase(&rombase);
+		sysbase = DebugInfo_GetSysbase(&rombase, warnings);
 		if (!sysbase) {
 			return 0;
 		}
@@ -119,7 +127,9 @@ static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase)
 	if ( STMemory_CheckAreaType ( basepage, 4, ABFLAG_RAM ) ) {
 		return STMemory_ReadLong(basepage);
 	}
-	fprintf(stderr, "Pointer 0x%06x to basepage address is invalid!\n", basepage);
+	if (warnings) {
+		fprintf(stderr, "Pointer 0x%06x to basepage address is invalid!\n", basepage);
+	}
 	return 0;
 }
 
@@ -130,13 +140,12 @@ static Uint32 DebugInfo_CurrentBasepage(Uint32 sysbase)
  */
 static Uint32 GetBasepageValue(unsigned offset)
 {
-	Uint32 basepage = DebugInfo_CurrentBasepage(0);
+	Uint32 basepage = DebugInfo_CurrentBasepage(0, false);
 	if (!basepage) {
 		return 0;
 	}
 	if ( !STMemory_CheckAreaType ( basepage, BASEPAGE_SIZE, ABFLAG_RAM ) ||
 	    STMemory_ReadLong(basepage) != basepage) {
-		fprintf(stderr, "Basepage address 0x%06x is invalid!\n", basepage);
 		return 0;
 	}
 	return STMemory_ReadLong(basepage+offset);
@@ -183,7 +192,7 @@ Uint32 DebugInfo_GetBSS(void)
  */
 Uint32 DebugInfo_GetBASEPAGE(void)
 {
-	return DebugInfo_CurrentBasepage(0);
+	return DebugInfo_CurrentBasepage(0, false);
 }
 
 
@@ -210,7 +219,7 @@ static void DebugInfo_Basepage(Uint32 basepage)
 
 	if (!basepage) {
 		/* default to current process basepage */
-		basepage = DebugInfo_CurrentBasepage(0);
+		basepage = DebugInfo_CurrentBasepage(0, true);
 		if (!basepage) {
 			return;
 		}
@@ -304,7 +313,7 @@ static void DebugInfo_PrintOSHeader(Uint32 sysbase)
 		fprintf(stderr, "Memory pool  : 0x0056FA\n");
 		fprintf(stderr, "Kbshift addr : 0x000E1B\n");
 	}
-	basepage = DebugInfo_CurrentBasepage(sysbase);
+	basepage = DebugInfo_CurrentBasepage(sysbase, true);
 	if (basepage) {
 		fprintf(stderr, "Basepage     : 0x%06x\n", basepage);
 	}
@@ -339,7 +348,7 @@ static void DebugInfo_OSHeader(Uint32 dummy)
 {
 	Uint32 sysbase, rombase;
 
-	sysbase = DebugInfo_GetSysbase(&rombase);
+	sysbase = DebugInfo_GetSysbase(&rombase, false);
 	if (!sysbase) {
 		return;
 	}

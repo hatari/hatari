@@ -591,7 +591,7 @@ void Profile_CpuSave(FILE *out)
 	fprintf(out, "ROM_TOS:\t0x%06x-0x%06x\n", TosAddress, end);
 	fprintf(out, "CARTRIDGE:\t0x%06x-0x%06x\n", CART_START, CART_END);
 	text = DebugInfo_GetTEXT();
-	if (text < TosAddress || text >= TTRAM_START) {
+	if (text && (text < TosAddress || text >= TTRAM_START)) {
 		fprintf(out, "PROGRAM_TEXT:\t0x%06x-0x%06x\n", text, DebugInfo_GetTEXTEnd());
 	}
 	if (TTmemory && ConfigureParams.Memory.nTTRamSize) {
@@ -922,6 +922,7 @@ void Profile_CpuUpdate(void)
 		fprintf(stderr, "WARNING: cycles %d > 512:\n", cycles);
 		Disasm(stderr, prev_pc, &nextpc, 1);
 	}
+# if !ENABLE_WINUAE_CPU
 	{
 		static Uint32 prev_cycles = 0, prev_pc2 = 0;
 		if (unlikely(cycles == 0 && prev_cycles == 0)) {
@@ -933,6 +934,7 @@ void Profile_CpuUpdate(void)
 		prev_cycles = cycles;
 		prev_pc2 = prev_pc;
 	}
+# endif
 #endif
 }
 

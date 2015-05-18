@@ -21,6 +21,7 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include <stdbool.h>
 #include <SDL_types.h>
+#include <inttypes.h>
 #include "breakcond.h"
 #include "configuration.h"
 #include "dsp.h"
@@ -725,7 +726,8 @@ static long long close_bracket (long long value)
 			/* fetch the indirect ST RAM value */
 			addr = val.buf[val.idx];
 			value = STMemory_ReadLong(addr);
-			fprintf(stderr, "  value in RAM at ($%x).l = $%"PRIx64"\n", addr, value);
+			fprintf(stderr, "  value in RAM at ($%x).l = $%"PRIx64"\n",
+				addr, (uint64_t)value);
 			/* restore state before parenthesis */
 			op.idx = par.opx[par.idx] - 1;
 			val.idx = par.vax[par.idx] - 1;
