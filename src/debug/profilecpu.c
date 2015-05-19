@@ -888,7 +888,14 @@ void Profile_CpuUpdate(void)
 	}
 
 #if ENABLE_WINUAE_CPU
-	misses = CpuInstruction.iCacheMisses;
+	misses = CpuInstruction.I_Cache_miss;
+
+	/* reset cache stats after reading them (for the next instruction) */
+	CpuInstruction.I_Cache_miss = 0;
+	CpuInstruction.I_Cache_hit = 0;
+	CpuInstruction.D_Cache_miss = 0;
+	CpuInstruction.D_Cache_hit = 0;
+
 	assert(misses < MAX_MISS);
 	cpu_profile.miss_counts[misses]++;
 	if (likely(prev->misses < MAX_CPU_PROFILE_VALUE - misses)) {

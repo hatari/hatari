@@ -7211,6 +7211,9 @@ static void fill_icache020 (uae_u32 addr, uae_u32 (*fetch)(uaecptr))
 		// cache hit
 		regs.cacheholdingaddr020 = addr;
 		regs.cacheholdingdata020 = c->data;
+#ifndef WINUAE_FOR_HATARI
+		CpuInstruction.I_Cache_hit++;
+#endif
 		return;
 	}
 	// cache miss
@@ -7233,6 +7236,9 @@ static void fill_icache020 (uae_u32 addr, uae_u32 (*fetch)(uaecptr))
 	}
 	regs.cacheholdingaddr020 = addr;
 	regs.cacheholdingdata020 = data;
+#ifndef WINUAE_FOR_HATARI
+	CpuInstruction.I_Cache_miss++;
+#endif
 }
 
 uae_u32 get_word_ce020_prefetch (int o)
@@ -7539,6 +7545,9 @@ static void fill_icache030 (uae_u32 addr)
 		// cache hit
 		regs.cacheholdingaddr020 = addr;
 		regs.cacheholdingdata020 = c->data[lws];
+#ifndef WINUAE_FOR_HATARI
+		CpuInstruction.I_Cache_hit++;
+#endif
 		return;
 	}
 
@@ -7569,6 +7578,9 @@ static void fill_icache030 (uae_u32 addr)
 	}
 	regs.cacheholdingaddr020 = addr;
 	regs.cacheholdingdata020 = data;
+#ifndef WINUAE_FOR_HATARI
+	CpuInstruction.I_Cache_miss++;
+#endif
 }
 
 STATIC_INLINE bool cancache030 (uaecptr addr)
@@ -7690,6 +7702,10 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 				size, aligned, addr, tv, v1, tag1, lws1, M68K_GETPC);
 			v1 = get_long (addr);
 		}
+#else
+		CpuInstruction.D_Cache_miss++;
+	} else {
+		CpuInstruction.D_Cache_hit++;
 #endif
 	}
 	// only one long fetch needed?
@@ -7724,6 +7740,10 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 				size, aligned, addr, get_long (addr), v2, tag2, lws2, M68K_GETPC);
 			v2 = get_long (addr);
 		}
+#else
+		CpuInstruction.D_Cache_miss++;
+	} else {
+		CpuInstruction.D_Cache_hit++;
 #endif
 	}
 	if (size == 1 && aligned == 3)
@@ -7812,6 +7832,9 @@ uae_u32 fill_icache040(uae_u32 addr)
 			// cache hit
 			icachelinecnt++;
 			x_do_cycles(1 * cpucycleunit);
+#ifndef WINUAE_FOR_HATARI
+			CpuInstruction.I_Cache_hit++;
+#endif
 			return c->data[i][lws];
 		}
 	}
@@ -7839,6 +7862,9 @@ uae_u32 fill_icache040(uae_u32 addr)
 		c->data[line][3] = get_longi(addr + 12);
 		x_do_cycles(4 * cpucycleunit);
 	}
+#ifndef WINUAE_FOR_HATARI
+	CpuInstruction.I_Cache_miss++;
+#endif
 	return c->data[line][lws];
 }
 

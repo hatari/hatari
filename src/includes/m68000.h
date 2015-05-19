@@ -196,11 +196,13 @@ static inline void M68000_SetSR(Uint16 v)
 #define CPU_IACK_CYCLES_VIDEO	12			/* auto vectored for HBL/VBL */
 
 
-/* information about current CPU instruction */
+/* Informations about current CPU instruction */
 typedef struct {
-	/* these are provided only by WinUAE CPU core */
-	int iCacheMisses;
-	int iSave_instr_tail;
+	/* These are provided only by WinUAE CPU core */
+	int	I_Cache_miss;				/* Instruction cache for 68020/30/40/60 */
+	int	I_Cache_hit;
+	int	D_Cache_miss;				/* Data cache for 68030/40/60 */
+	int	D_Cache_hit;
 
 	/* TODO: move other instruction specific Hatari variables here */
 } cpu_instruction_t;
