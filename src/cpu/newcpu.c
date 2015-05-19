@@ -4206,11 +4206,12 @@ This version emulates 68000's prefetch "cache" */
 static void m68k_run_1 (void)
 {
 	struct regstruct *r = &regs;
+	bool exit = false;
 printf ( "run_1\n" );
 
-	for (;;) {
+	while (!exit) {
 		TRY (prb) {
-			for (;;) {
+			while (!exit) {
 				r->opcode = r->ir;
 
 				count_instr (r->opcode);
@@ -4271,17 +4272,20 @@ printf ( "run_1\n" );
 #endif
 
 				if (r->spcflags) {
-					if (do_specialties (cpu_cycles)) {
-						regs.ipl = regs.ipl_pin;
-						return;
-					}
+					if (do_specialties (cpu_cycles))
+						exit = true;
 				}
 				regs.ipl = regs.ipl_pin;
 				if (!currprefs.cpu_compatible || (currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68000))
-					return;
+					exit = true;
 			}
 		} CATCH (prb) {
 			bus_error();
+			if (r->spcflags) {
+				if (do_specialties(cpu_cycles))
+					exit = true;
+			}
+			regs.ipl = regs.ipl_pin;
 		} ENDTRY
 	}
 }
@@ -4302,9 +4306,10 @@ static void m68k_run_1_ce (void)
 {
 	struct regstruct *r = &regs;
 	bool first = true;
+	bool exit = false;
 printf ( "run_1_ce\n" );
 
-	for(;;) {
+	while (!exit) {
 		TRY (prb) {
 			if (first) {
 				if (cpu_tracer < 0) {
@@ -4337,7 +4342,7 @@ printf ( "run_1_ce\n" );
 				first = false;
 			}
 
-			for (;;) {
+			while (!exit) {
 				r->opcode = r->ir;
 
 #ifdef WINUAE_FOR_HATARI
@@ -4427,14 +4432,18 @@ cont:
 
 				if (r->spcflags || time_for_interrupt ()) {
 					if (do_specialties (0))
-						return;
+						exit = true;
 				}
 
 				if (!currprefs.cpu_cycle_exact || currprefs.cpu_model > 68000)
-					return;
+					exit = true;
 			}
 		} CATCH (prb) {
 			bus_error();
+			if (r->spcflags || time_for_interrupt()) {
+				if (do_specialties(0))
+					exit = true;
+			}
 		} ENDTRY
 	}
 }
@@ -4957,9 +4966,9 @@ static void m68k_run_3ce (void)
 	bool exit = false;
 printf ( "run_3ce\n" );
 
-	for(;;) {
+	while (!exit) {
 		TRY(prb) {
-			for (;;) {
+			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
@@ -5010,11 +5019,13 @@ printf ( "run_3ce\n" );
 					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
 				}
 #endif
-				if (exit)
-					return;
 			}
 		} CATCH(prb) {
 			bus_error();
+			if (r->spcflags) {
+				if (do_specialties(0))
+					exit = true;
+			}
 		} ENDTRY
 	}
 }
@@ -5028,9 +5039,9 @@ static void m68k_run_3p(void)
 	int cycles;
 printf ( "run_3p\n" );
 
-	for(;;)  {
+	while (!exit)  {
 		TRY(prb) {
-			for (;;) {
+			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
@@ -5084,11 +5095,13 @@ printf ( "run_3p\n" );
 					DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
 				}
 #endif
-				if (exit)
-					return;
 			}
 		} CATCH(prb) {
 			bus_error();
+			if (r->spcflags) {
+				if (do_specialties(0))
+					exit = true;
+			}
 		} ENDTRY
 	}
 }
@@ -5102,7 +5115,7 @@ static void m68k_run_2ce (void)
 	bool first = true;
 printf ( "run_2ce\n" );
 
-	for(;;) {
+	while (!exit) {
 		TRY(prb) {
 			if (first) {
 				if (cpu_tracer < 0) {
@@ -5141,7 +5154,7 @@ printf ( "run_2ce\n" );
 				first = false;
 			}
 
-			for (;;) {
+			while (!exit) {
 				static int prevopcode;
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL);
@@ -5257,11 +5270,15 @@ cont:
 
 				regs.ipl = regs.ipl_pin;
 
-				if (exit)
-					return;
 			}
 		} CATCH(prb) {
 			bus_error();
+			if (r->spcflags || time_for_interrupt()) {
+				if (do_specialties(0)) {
+					exit = true;
+					regs.ipl = regs.ipl_pin;
+				}
+			}
 		} ENDTRY
 	}
 }
@@ -5272,11 +5289,12 @@ cont:
 static void m68k_run_2p (void)
 {
 	struct regstruct *r = &regs;
+	bool exit = false;
 printf ( "run_2p\n" );
 
-	for(;;) {
+	while (!exit) {
 		TRY(prb) {
-			for (;;) {
+			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
@@ -5324,10 +5342,8 @@ printf ( "run_2p\n" );
 #endif
 
 				if (r->spcflags) {
-					if (do_specialties (cpu_cycles)) {
-						ipl_fetch ();
-						return;
-					}
+					if (do_specialties (cpu_cycles))
+						exit = true;
 				}
 
 #ifdef WINUAE_FOR_HATARI
@@ -5341,6 +5357,11 @@ printf ( "run_2p\n" );
 			}
 		} CATCH(prb) {
 			bus_error();
+			if (r->spcflags) {
+				if (do_specialties(cpu_cycles))
+					exit = true;;
+			}
+			ipl_fetch();
 		} ENDTRY
 	}
 }
@@ -5354,11 +5375,12 @@ static void m68k_run_2 (void)
 {
 //	static int done;
 	struct regstruct *r = &regs;
+	bool exit = false;
 printf ( "run_2\n" );
 
-	for(;;) {
+	while (!exit) {
 		TRY(prb) {
-			for (;;) {
+			while (!exit) {
 #ifdef WINUAE_FOR_HATARI
 				//m68k_dumpstate_file(stderr, NULL);
 				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
@@ -5401,9 +5423,8 @@ printf ( "run_2\n" );
 #endif
 
 				if (r->spcflags) {
-					if (do_specialties (cpu_cycles)) {
-						return;
-					}
+					if (do_specialties (cpu_cycles))
+						exit = true;
 				}
 
 #ifdef WINUAE_FOR_HATARI
@@ -5415,6 +5436,10 @@ printf ( "run_2\n" );
 			}
 		} CATCH(prb) {
 			bus_error();
+			if (r->spcflags) {
+				if (do_specialties(cpu_cycles))
+					exit = true;
+			}
 		} ENDTRY
 	}
 }
