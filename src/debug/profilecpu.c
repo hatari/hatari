@@ -655,9 +655,9 @@ void Profile_CpuShowCallers(FILE *fp)
 void Profile_CpuSave(FILE *out)
 {
 	Uint32 text, end;
-	fputs("Field names:\tExecuted instructions, Used cycles, Instruction cache misses\n", out);
-	/* (Python) pegexp that matches address and all describled fields from disassembly:
-	 * $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <misses>)
+	fputs("Field names:\tExecuted instructions, Used cycles, Instruction cache misses, Data cache misses\n", out);
+	/* (Python) regexp that matches address and all describled fields from disassembly:
+	 * $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <i-misses>, <d-misses>)
 	 * $e5af38 :   rts           0.00% (12, 0, 12)
 	 */
 	fputs("Field regexp:\t^\\$([0-9a-f]+) :.*% \\((.*)\\)$\n", out);
