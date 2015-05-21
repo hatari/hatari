@@ -2513,10 +2513,10 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		if (optionPosComment >= 0)
 		{
 			float percentage;
-			Uint32 count, cycles, misses;
-			if (Profile_CpuAddressData(addr, &percentage, &count, &cycles, &misses))
+			Uint32 count, cycles, i_misses, d_misses;
+			if (Profile_CpuAddressData(addr, &percentage, &count, &cycles, &i_misses, &d_misses))
 			{
-				sprintf(commentBuffer, "%5.2f%% (%u, %u, %u)", percentage, count, cycles, misses);
+				sprintf(commentBuffer, "%5.2f%% (%u, %u, %u, %u)", percentage, count, cycles, i_misses, d_misses);
 				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+1, 0);
 			}
 			/* show comments only if profile data is missing */

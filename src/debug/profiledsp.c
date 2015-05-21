@@ -102,7 +102,7 @@ void Profile_DspShowStats(void)
 	 */
 	fprintf(stderr, "- sum of per instruction cycle changes\n"
 		"  (can indicate code change during profiling):\n  %"PRIu64"\n",
-		area->counters.misses);
+		area->counters.i_misses);
 
 	fprintf(stderr, "- used cycles:\n  %"PRIu64"\n",
 		area->counters.cycles);
@@ -636,7 +636,7 @@ static void update_area_item(profile_area_t *area, Uint16 addr, dsp_profile_item
 
 	area->counters.count += count;
 	area->counters.cycles += cycles;
-	area->counters.misses += diff;
+	area->counters.i_misses += diff;
 
 	if (addr < area->lowest) {
 		area->lowest = addr;

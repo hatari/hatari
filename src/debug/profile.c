@@ -72,9 +72,10 @@ static bool output_counter_info(FILE *fp, counters_t *counter)
 	 */
 	fprintf(fp, " %"PRIu64"/%"PRIu64"/%"PRIu64"",
 		counter->calls, counter->count, counter->cycles);
-	if (counter->misses) {
+	if (counter->i_misses) {
 		/* these are only with specific WinUAE CPU core */
-		fprintf(fp, "/%"PRIu64"", counter->misses);
+		fprintf(fp, "/%"PRIu64"/%"PRIu64"",
+			counter->i_misses, counter->d_misses);
 	}
 	return true;
 }
@@ -130,7 +131,7 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 	for (i = 0; i < ARRAYSIZE(flaginfo); i++) {
 		fprintf(fp, "%c = %s, ", flaginfo[i].chr, flaginfo[i].info);
 	}
-	fputs("\n# totals: calls/instructions/cycles/misses\n", fp);
+	fputs("\n# totals: calls/instructions/cycles/i-misses/d-misses\n", fp);
 
 	countdiff = 0;
 	countissues = 0;
@@ -189,7 +190,8 @@ static void add_counter_costs(counters_t *dst, counters_t *src)
 	dst->calls += src->calls;
 	dst->count += src->count;
 	dst->cycles += src->cycles;
-	dst->misses += src->misses;
+	dst->i_misses += src->i_misses;
+	dst->d_misses += src->d_misses;
 }
 
 /**
@@ -200,7 +202,8 @@ static void set_counter_diff(counters_t *dst, counters_t *ref)
 	dst->calls = ref->calls - dst->calls;
 	dst->count = ref->count - dst->count;
 	dst->cycles = ref->cycles - dst->cycles;
-	dst->misses = ref->misses - dst->misses;
+	dst->i_misses = ref->i_misses - dst->i_misses;
+	dst->d_misses = ref->d_misses - dst->d_misses;
 }
 
 /**
@@ -496,8 +499,8 @@ void Profile_FreeCallinfo(callinfo_t *callinfo)
 char *Profile_Match(const char *text, int state)
 {
 	static const char *names[] = {
-		"addresses", "callers", "counts", "cycles", "loops", "misses",
-		"off", "on", "save", "stack", "stats", "symbols"
+		"addresses", "callers", "counts", "cycles", "d-misses", "i-misses",
+		"loops", "off", "on", "save", "stack", "stats", "symbols"
 	};
 	return DebugUI_MatchHelper(names, ARRAYSIZE(names), text, state);
 }
@@ -510,7 +513,8 @@ const char Profile_Description[] =
 	"\t- off\n"
 	"\t- counts [count]\n"
 	"\t- cycles [count]\n"
-	"\t- misses [count]\n"
+	"\t- i-misses [count]\n"
+	"\t- d-misses [count]\n"
 	"\t- symbols [count]\n"
 	"\t- addresses [address]\n"
 	"\t- callers\n"
@@ -524,7 +528,7 @@ const char Profile_Description[] =
 	"\tstatistics ('stats') summary.\n"
 	"\n"
 	"\tThen you can ask for list of the PC addresses, sorted either by\n"
-	"\texecution 'counts', used 'cycles' or cache 'misses'. First can\n"
+	"\texecution 'counts', used 'cycles' or cache i/d-misses. First can\n"
 	"\tbe limited just to named addresses with 'symbols'.  Optional\n"
 	"\tcount will limit how many items will be shown.\n"
 	"\n"
@@ -691,11 +695,17 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 		} else {
 			Profile_CpuShowStats();
 		}
-	} else if (strcmp(psArgs[1], "misses") == 0) {
+	} else if (strcmp(psArgs[1], "i-misses") == 0) {
 		if (bForDsp) {
 			fprintf(stderr, "Cache misses are recorded only for CPU, not DSP.\n");
 		} else {
-			Profile_CpuShowMisses(show);
+			Profile_CpuShowIMisses(show);
+		}
+	} else if (strcmp(psArgs[1], "d-misses") == 0) {
+		if (bForDsp) {
+			fprintf(stderr, "Cache misses are recorded only for CPU, not DSP.\n");
+		} else {
+			Profile_CpuShowDMisses(show);
 		}
 	} else if (strcmp(psArgs[1], "cycles") == 0) {
 		if (bForDsp) {
