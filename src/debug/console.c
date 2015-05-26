@@ -1,7 +1,7 @@
 /*
  * Hatari - console.c
  * 
- * Copyright (C) 2012 by Eero Tamminen
+ * Copyright (C) 2012-2015 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -55,11 +55,11 @@ static void map_character(Uint8 value)
 	};
 	/* map normal characters to host console */
 	if (value < 32) {
-		fputc(map_0_31[value], stderr);
+		fputc(map_0_31[value], stdout);
 	} else if (value > 127) {
-		fputc(map_128_255[value-128], stderr);
+		fputc(map_128_255[value-128], stdout);
 	} else {
-		fputc(value, stderr);
+		fputc(value, stdout);
 	}
 }
 
@@ -90,7 +90,7 @@ static void vt52_emu(Uint8 value)
 			/* VT52 escape sequences */
 			switch(value) {
 			case 'E':	/* clear screen+home -> newline */
-				fputs("\n", stderr);
+				fputs("\n", stdout);
 				hpos_host = 0;
 				break;
 			/* sequences with arguments */
@@ -115,7 +115,7 @@ static void vt52_emu(Uint8 value)
 				hpos_tos = 0;
 			}
 			if (hpos_tos > hpos_host) {
-				fprintf(stderr, "%*s", hpos_tos - hpos_host, "");
+				fprintf(stdout, "%*s", hpos_tos - hpos_host, "");
 				hpos_host = hpos_tos;
 			} else if (hpos_tos < hpos_host) {
 				need_nl = true;
@@ -151,9 +151,9 @@ static void vt52_emu(Uint8 value)
 			hpos_tos = 0;
 			break;
 		}
-		fputs("\n", stderr);
+		fputs("\n", stdout);
 		if (hpos_tos > 0 && hpos_tos < 80) {
-			fprintf(stderr, "%*s", hpos_tos, "");
+			fprintf(stdout, "%*s", hpos_tos, "");
 			hpos_host = hpos_tos;
 		} else {
 			hpos_host = 0;
