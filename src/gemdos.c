@@ -1884,7 +1884,8 @@ static bool GemDOS_Open(Uint32 Params)
 	Mode = STMemory_ReadWord(Params+SIZE_LONG);
 	Mode &= 3;
 
-	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_GEMDOS_FOPEN, "GEMDOS 0x3D Fopen(\"%s\", %s) at PC=0x%X\n",
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE,
+		  "GEMDOS 0x3D Fopen(\"%s\", %s) at PC=0x%X\n",
 		  pszFileName, Modes[Mode], M68000_GetPC());
 
 	Drive = GemDOS_FileName2HardDriveID(pszFileName);
@@ -1892,7 +1893,7 @@ static bool GemDOS_Open(Uint32 Params)
 	if (!ISHARDDRIVE(Drive))
 	{
 		/* redirect to TOS */
-		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_GEMDOS_FOPEN, "-> to TOS\n");
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> to TOS\n");
 		return false;
 	}
 
@@ -1967,7 +1968,7 @@ static bool GemDOS_Open(Uint32 Params)
 
 		/* Return valid ST file handle from our range (BASE_FILEHANDLE upwards) */
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;
-		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_GEMDOS_FOPEN, "-> FD %d (%s -> %s)\n",
+		LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> FD %d (%s -> %s)\n",
 			  Regs[REG_D0], Modes[Mode], RealMode);
 		return true;
 	}
@@ -1989,7 +1990,7 @@ static bool GemDOS_Open(Uint32 Params)
 		/* File not found / error opening */
 		Regs[REG_D0] = GEMDOS_EFILNF;
 	}
-	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_GEMDOS_FOPEN, "-> ERROR %d (errno = %d)\n", Regs[REG_D0], errno);
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "-> ERROR %d (errno = %d)\n", Regs[REG_D0], errno);
 	return true;
 }
 
@@ -3427,7 +3428,7 @@ void GemDOS_Boot(void)
 	/* install our gemdos handler, if -e or --harddrive option used,
 	 * or user wants to do GEMDOS tracing
 	 */
-	if (!GEMDOS_EMU_ON && !(LogTraceFlags & (TRACE_OS_GEMDOS|TRACE_GEMDOS_FOPEN)))
+	if (!GEMDOS_EMU_ON && !(LogTraceFlags & (TRACE_OS_GEMDOS|TRACE_OS_BASE)))
 		return;
 
 	/* Get the address of the p_run variable that points to the actual basepage */

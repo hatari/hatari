@@ -140,7 +140,7 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_IDE		 , "ide" } ,
 
-	{ TRACE_GEMDOS_FOPEN	 , "fopen" } ,
+	{ TRACE_OS_BASE		 , "os_base" } ,
 
 	{ TRACE_ALL		 , "all" }
 };

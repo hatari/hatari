@@ -170,7 +170,7 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_IDE		 (1ll<<50)
 
-#define TRACE_GEMDOS_FOPEN	 (1ll<<51)	/* just Fopen() */
+#define TRACE_OS_BASE		 (1ll<<51)
 
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
@@ -188,7 +188,7 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define	TRACE_IKBD_ALL		( TRACE_IKBD_CMDS | TRACE_IKBD_ACIA | TRACE_IKBD_EXEC )
 
-#define	TRACE_OS_ALL		( TRACE_OS_BIOS | TRACE_OS_XBIOS | TRACE_OS_GEMDOS | TRACE_OS_AES | TRACE_OS_VDI )
+#define	TRACE_OS_ALL		( TRACE_OS_BASE | TRACE_OS_BIOS | TRACE_OS_XBIOS | TRACE_OS_GEMDOS | TRACE_OS_AES | TRACE_OS_VDI )
 
 #define	TRACE_IOMEM_ALL		( TRACE_IOMEM_RD | TRACE_IOMEM_WR )
 
