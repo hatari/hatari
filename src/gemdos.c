@@ -2006,8 +2006,9 @@ static bool GemDOS_Close(Uint32 Params)
 	/* Find our handle - may belong to TOS */
 	Handle = STMemory_ReadWord(Params);
 
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x3E Fclose(%i) at PC 0x%X\n", Handle,
-		  M68000_GetPC());
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE,
+		  "GEMDOS 0x3E Fclose(%i) at PC 0x%X\n",
+		  Handle, M68000_GetPC());
 
 	/* Get internal handle */
 	if ((Handle = GemDOS_GetValidFileHandle(Handle)) < 0)
@@ -2532,7 +2533,7 @@ static int GemDOS_Pexec(Uint32 Params)
 	/* Find PExec mode */
 	Mode = STMemory_ReadWord(Params);
 
-	if (LOG_TRACE_LEVEL(TRACE_OS_GEMDOS))
+	if (LOG_TRACE_LEVEL(TRACE_OS_GEMDOS|TRACE_OS_BASE))
 	{
 		Uint32 fname, cmdline, env_string;
 		fname = STMemory_ReadLong(Params+SIZE_WORD);
@@ -2944,7 +2945,7 @@ static void GemDOS_TerminateClose(void)
  */
 static bool GemDOS_Pterm0(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x00 Pterm0() at PC 0x%X\n",
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x00 Pterm0() at PC 0x%X\n",
 		  M68000_GetPC());
 	GemDOS_TerminateClose();
 	Symbols_RemoveCurrentProgram();
@@ -2957,7 +2958,7 @@ static bool GemDOS_Pterm0(Uint32 Params)
  */
 static bool GemDOS_Ptermres(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x31 Ptermres(0x%X, %hd) at PC 0x%X\n",
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x31 Ptermres(0x%X, %hd) at PC 0x%X\n",
 		  STMemory_ReadLong(Params), (Sint16)STMemory_ReadWord(Params+SIZE_WORD),
 		  M68000_GetPC());
 	GemDOS_TerminateClose();
@@ -2970,7 +2971,7 @@ static bool GemDOS_Ptermres(Uint32 Params)
  */
 static bool GemDOS_Pterm(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4C Pterm(%hd) at PC 0x%X\n",
+	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x4C Pterm(%hd) at PC 0x%X\n",
 		  (Sint16)STMemory_ReadWord(Params),
 		  M68000_GetPC());
 	GemDOS_TerminateClose();
