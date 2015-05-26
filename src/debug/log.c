@@ -28,6 +28,7 @@ const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "file.h"
 #include "vdi.h"
+#include "options.h"
 
 int ExceptionDebugMask;
 
@@ -414,6 +415,9 @@ const char* Log_SetTraceOptions (const char *FlagsStr)
 	/* Enable Hatari flags needed for tracing selected items */
 	if (LogTraceFlags & (TRACE_OS_AES|TRACE_OS_VDI))
 		bVdiAesIntercept = true;
+
+	if ((LogTraceFlags & TRACE_OS_BASE) && ConOutDevice == CONOUT_DEVICE_NONE)
+		ConOutDevice = 2;
 
 	return errstr;
 }
