@@ -215,9 +215,9 @@ static Uint32 History_Output(Uint32 count, FILE *fp)
 }
 
 /* History_Output() helper for "info" & "lock" commands */
-void History_Show(Uint32 count)
+void History_Show(FILE *fp, Uint32 count)
 {
-	History_Output(count, stderr);
+	History_Output(count, fp);
 }
 
 /*
@@ -297,6 +297,6 @@ int History_Parse(int nArgc, char *psArgs[])
 		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
-	History_Show(count);
+	History_Show(stderr, count);
 	return DEBUGGER_CMDDONE;
 }

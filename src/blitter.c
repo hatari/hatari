@@ -1038,10 +1038,9 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 /**
  * Show Blitter register values.
  */
-void Blitter_Info(Uint32 dummy)
+void Blitter_Info(FILE *fp, Uint32 dummy)
 {
 	BLITTERREGS *regs = &BlitterRegs;
-	FILE *fp = stderr;
 
 	fprintf(fp, "src addr:  0x%06x\n", regs->src_addr);
 	fprintf(fp, "dst addr:  0x%06x\n", regs->dst_addr);

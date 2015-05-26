@@ -414,21 +414,21 @@ static const char* XBios_Call2Name(Uint16 opcode)
 	return "???";
 }
 
-void XBios_Info(Uint32 dummy)
+void XBios_Info(FILE *fp, Uint32 dummy)
 {
 	Uint16 opcode;
 	for (opcode = 0; opcode < 168; ) {
-		fprintf(stderr, "%02x %-21s", opcode,
+		fprintf(fp, "%02x %-21s", opcode,
 			XBios_Call2Name(opcode));
 		if (++opcode % 3 == 0) {
-			fputs("\n", stderr);
+			fputs("\n", fp);
 		}
 	}
 }
 #else /* !ENABLE_TRACING */
-void XBios_Info(Uint32 bShowOpcodes)
+void XBios_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	        fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+	        fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
 #endif /* !ENABLE_TRACING */
 

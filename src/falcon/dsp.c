@@ -462,39 +462,39 @@ Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char 
  * Show information on DSP core state which isn't
  * shown by any of the other commands (dd, dm, dr).
  */
-void DSP_Info(Uint32 dummy)
+void DSP_Info(FILE *fp, Uint32 dummy)
 {
 #if ENABLE_DSP_EMU
 	int i, j;
 	const char *stackname[] = { "SSH", "SSL" };
 
-	fputs("DSP core information:\n", stderr);
+	fputs("DSP core information:\n", fp);
 
 	for (i = 0; i < ARRAYSIZE(stackname); i++) {
-		fprintf(stderr, "- %s stack:", stackname[i]);
+		fprintf(fp, "- %s stack:", stackname[i]);
 		for (j = 0; j < ARRAYSIZE(dsp_core.stack[0]); j++) {
-			fprintf(stderr, " %04hx", dsp_core.stack[i][j]);
+			fprintf(fp, " %04hx", dsp_core.stack[i][j]);
 		}
-		fputs("\n", stderr);
+		fputs("\n", fp);
 	}
 
-	fprintf(stderr, "- Interrupt IPL:");
+	fprintf(fp, "- Interrupt IPL:");
 	for (i = 0; i < ARRAYSIZE(dsp_core.interrupt_ipl); i++) {
-		fprintf(stderr, " %04hx", dsp_core.interrupt_ipl[i]);
+		fprintf(fp, " %04hx", dsp_core.interrupt_ipl[i]);
 	}
-	fputs("\n", stderr);
+	fputs("\n", fp);
 
-	fprintf(stderr, "- Pending ints: ");
+	fprintf(fp, "- Pending ints: ");
 	for (i = 0; i < ARRAYSIZE(dsp_core.interrupt_isPending); i++) {
-		fprintf(stderr, " %04hx", dsp_core.interrupt_isPending[i]);
+		fprintf(fp, " %04hx", dsp_core.interrupt_isPending[i]);
 	}
-	fputs("\n", stderr);
+	fputs("\n", fp);
 
-	fprintf(stderr, "- Hostport:");
+	fprintf(fp, "- Hostport:");
 	for (i = 0; i < ARRAYSIZE(dsp_core.hostport); i++) {
-		fprintf(stderr, " %02x", dsp_core.hostport[i]);
+		fprintf(fp, " %02x", dsp_core.hostport[i]);
 	}
-	fputs("\n", stderr);
+	fputs("\n", fp);
 #endif
 }
 

@@ -457,7 +457,7 @@ static void AES_OpcodeInfo(FILE *fp, Uint16 opcode)
  * If opcodes argument is set, show AES opcode/function name table,
  * otherwise AES vectors information.
  */
-void AES_Info(Uint32 bShowOpcodes)
+void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 {
 	Uint16 opcode;
 	
@@ -465,42 +465,42 @@ void AES_Info(Uint32 bShowOpcodes)
 	{
 		for (opcode = 10; opcode < 0x86; opcode++)
 		{
-			fprintf(stderr, "%02x %-16s", opcode, AES_Opcode2Name(opcode));
-			if ((opcode-9) % 4 == 0) fputs("\n", stderr);
+			fprintf(fp, "%02x %-16s", opcode, AES_Opcode2Name(opcode));
+			if ((opcode-9) % 4 == 0) fputs("\n", fp);
 		}
 		return;
 	}
 	if (!bVdiAesIntercept)
 	{
-		fputs("VDI/AES interception isn't enabled!\n", stderr);
+		fputs("VDI/AES interception isn't enabled!\n", fp);
 		return;
 	}
 	if (!AESControl)
 	{
-		fputs("No traced AES calls!\n", stderr);
+		fputs("No traced AES calls!\n", fp);
 		return;
 	}
 	opcode = STMemory_ReadWord(AESControl);
 	if (opcode != AESOpCode)
 	{
-		fputs("AES parameter block contents changed since last call!\n", stderr);
+		fputs("AES parameter block contents changed since last call!\n", fp);
 		return;
 	}
 
-	fputs("Latest AES Parameter block:\n", stderr);
-	fprintf(stderr, "- Opcode: %3hd (%s)\n",
+	fputs("Latest AES Parameter block:\n", fp);
+	fprintf(fp, "- Opcode: %3hd (%s)\n",
 		opcode, AES_Opcode2Name(opcode));
 
-	fprintf(stderr, "- Control: %#8x\n", AESControl);
-	fprintf(stderr, "- Global:  %#8x, %d bytes\n",
+	fprintf(fp, "- Control: %#8x\n", AESControl);
+	fprintf(fp, "- Global:  %#8x, %d bytes\n",
 		AESGlobal, 2+2+2+4+4+4+4+4+4);
-	fprintf(stderr, "- Intin:   %#8x, %d words\n",
+	fprintf(fp, "- Intin:   %#8x, %d words\n",
 		AESIntin, STMemory_ReadWord(AESControl+2*1));
-	fprintf(stderr, "- Intout:  %#8x, %d words\n",
+	fprintf(fp, "- Intout:  %#8x, %d words\n",
 		AESIntout, STMemory_ReadWord(AESControl+2*2));
-	fprintf(stderr, "- Addrin:  %#8x, %d longs\n",
+	fprintf(fp, "- Addrin:  %#8x, %d longs\n",
 		AESAddrin, STMemory_ReadWord(AESControl+2*3));
-	fprintf(stderr, "- Addrout: %#8x, %d longs\n",
+	fprintf(fp, "- Addrout: %#8x, %d longs\n",
 		AESAddrout, STMemory_ReadWord(AESControl+2*4));
 }
 
@@ -677,7 +677,7 @@ static const char* VDI_Opcode2Name(Uint16 opcode, Uint16 subcode)
  * If opcodes argument is set, show VDI opcode/function name table,
  * otherwise VDI vectors information.
  */
-void VDI_Info(Uint32 bShowOpcodes)
+void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 {
 	Uint16 opcode, subcode;
 
@@ -688,57 +688,57 @@ void VDI_Info(Uint32 bShowOpcodes)
 		{
 			if (opcode == 0x28)
 			{
-				fputs("--- GDOS calls? ---\n", stderr);
+				fputs("--- GDOS calls? ---\n", fp);
 				opcode = 0x64;
 			}
-			fprintf(stderr, "%02x %-16s",
+			fprintf(fp, "%02x %-16s",
 				opcode, VDI_Opcode2Name(opcode, 0));
-			if (++opcode % 4 == 0) fputs("\n", stderr);
+			if (++opcode % 4 == 0) fputs("\n", fp);
 		}
 		return;
 	}
 	if (!bVdiAesIntercept)
 	{
-		fputs("VDI/AES interception isn't enabled!\n", stderr);
+		fputs("VDI/AES interception isn't enabled!\n", fp);
 		return;
 	}
 	if (!VDIControl)
 	{
-		fputs("No traced VDI calls!\n", stderr);
+		fputs("No traced VDI calls!\n", fp);
 		return;
 	}
 	opcode = STMemory_ReadWord(VDIControl);
 	if (opcode != VDIOpCode)
 	{
-		fputs("VDI parameter block contents changed since last call!\n", stderr);
+		fputs("VDI parameter block contents changed since last call!\n", fp);
 		return;
 	}
 
-	fputs("Latest VDI Parameter block:\n", stderr);
+	fputs("Latest VDI Parameter block:\n", fp);
 	subcode = STMemory_ReadWord(VDIControl+2*5);
-	fprintf(stderr, "- Opcode/Subcode: %hd/%hd (%s)\n",
+	fprintf(fp, "- Opcode/Subcode: %hd/%hd (%s)\n",
 		opcode, subcode, VDI_Opcode2Name(opcode, subcode));
-	fprintf(stderr, "- Device handle: %d\n",
+	fprintf(fp, "- Device handle: %d\n",
 		STMemory_ReadWord(VDIControl+2*6));
-	fprintf(stderr, "- Control: %#8x\n", VDIControl);
-	fprintf(stderr, "- Ptsin:   %#8x, %d co-ordinate word pairs\n",
+	fprintf(fp, "- Control: %#8x\n", VDIControl);
+	fprintf(fp, "- Ptsin:   %#8x, %d co-ordinate word pairs\n",
 		VDIPtsin, STMemory_ReadWord(VDIControl+2*1));
-	fprintf(stderr, "- Ptsout:  %#8x, %d co-ordinate word pairs\n",
+	fprintf(fp, "- Ptsout:  %#8x, %d co-ordinate word pairs\n",
 		VDIPtsout, STMemory_ReadWord(VDIControl+2*2));
-	fprintf(stderr, "- Intin:   %#8x, %d words\n",
+	fprintf(fp, "- Intin:   %#8x, %d words\n",
 		VDIIntin, STMemory_ReadWord(VDIControl+2*3));
-	fprintf(stderr, "- Intout:  %#8x, %d words\n",
+	fprintf(fp, "- Intout:  %#8x, %d words\n",
 		VDIIntout, STMemory_ReadWord(VDIControl+2*4));
 }
 
 #else /* !ENABLE_TRACING */
-void AES_Info(Uint32 bShowOpcodes)
+void AES_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
-void VDI_Info(Uint32 bShowOpcodes)
+void VDI_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
 #endif /* !ENABLE_TRACING */
 

@@ -47,6 +47,6 @@ extern void PSG_ff8801_WriteByte(void);
 extern void PSG_ff8802_WriteByte(void);
 extern void PSG_ff8803_WriteByte(void);
 
-extern void PSG_Info(Uint32 dummy);
+extern void PSG_Info(FILE *fp, Uint32 dummy);
 
 #endif  /* HATARI_PSG_H */

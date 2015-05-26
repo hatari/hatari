@@ -103,21 +103,21 @@ static const char* Bios_Call2Name(Uint16 opcode)
 	return "???";
 }
 
-void Bios_Info(Uint32 dummy)
+void Bios_Info(FILE *fp, Uint32 dummy)
 {
 	Uint16 opcode;
 	for (opcode = 0; opcode <= 0xB; ) {
-		fprintf(stderr, "%02x %-9s", opcode,
+		fprintf(fp, "%02x %-9s", opcode,
 			Bios_Call2Name(opcode));
 		if (++opcode % 6 == 0) {
-			fputs("\n", stderr);
+			fputs("\n", fp);
 		}
 	}
 }
 #else /* !ENABLE_TRACING */
-void Bios_Info(Uint32 bShowOpcodes)
+void Bios_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	        fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+	        fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
 #endif /* !ENABLE_TRACING */
 

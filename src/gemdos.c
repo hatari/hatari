@@ -3089,7 +3089,7 @@ static const char* GemDOS_Opcode2Name(Uint16 opcode)
  * If bShowOpcodes is true, show GEMDOS call opcode/function name table,
  * otherwise GEMDOS HDD emulation information.
  */
-void GemDOS_Info(Uint32 bShowOpcodes)
+void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 {
 	int i, used;
 
@@ -3098,36 +3098,36 @@ void GemDOS_Info(Uint32 bShowOpcodes)
 		Uint16 opcode;
 		for (opcode = 0; opcode < 0x5A; )
 		{
-			fprintf(stderr, "%02x %-9s",
+			fprintf(fp, "%02x %-9s",
 				opcode, GemDOS_Opcode2Name(opcode));
 			if (++opcode % 6 == 0)
-				fputs("\n", stderr);
+				fputs("\n", fp);
 		}
 		return;
 	}
 
 	if (!GEMDOS_EMU_ON)
 	{
-		fputs("GEMDOS HDD emulation isn't enabled!\n", stderr);
+		fputs("GEMDOS HDD emulation isn't enabled!\n", fp);
 		return;
 	}
 
 	/* GEMDOS vector set by Hatari can be overwritten e.g. MiNT */
-	fprintf(stderr, "Current GEMDOS handler: (0x84) = 0x%x, emu one = 0x%x\n", STMemory_ReadLong(0x0084), CART_GEMDOS);
-	fprintf(stderr, "Stored GEMDOS handler: (0x%x) = 0x%x\n\n", CART_OLDGEMDOS, STMemory_ReadLong(CART_OLDGEMDOS));
+	fprintf(fp, "Current GEMDOS handler: (0x84) = 0x%x, emu one = 0x%x\n", STMemory_ReadLong(0x0084), CART_GEMDOS);
+	fprintf(fp, "Stored GEMDOS handler: (0x%x) = 0x%x\n\n", CART_OLDGEMDOS, STMemory_ReadLong(CART_OLDGEMDOS));
 
-	fprintf(stderr, "Connected drives mask: 0x%x\n\n", ConnectedDriveMask);
-	fputs("GEMDOS HDD emulation drives:\n", stderr);
+	fprintf(fp, "Connected drives mask: 0x%x\n\n", ConnectedDriveMask);
+	fputs("GEMDOS HDD emulation drives:\n", fp);
 	for(i = 0; i < MAX_HARDDRIVES; i++)
 	{
 		if (!emudrives[i])
 			continue;
-		fprintf(stderr, "- %c: %s\n",
+		fprintf(fp, "- %c: %s\n",
 			'A' + emudrives[i]->drive_number,
 			emudrives[i]->hd_emulation_dir);
 	}
 
-	fputs("\nInternal Fsfirst() DTAs:\n", stderr);
+	fputs("\nInternal Fsfirst() DTAs:\n", fp);
 	for(used = i = 0; i < ARRAYSIZE(InternalDTAs); i++)
 	{
 		int j, centry, entries;
@@ -3135,51 +3135,51 @@ void GemDOS_Info(Uint32 bShowOpcodes)
 		if (!InternalDTAs[i].bUsed)
 			continue;
 
-		fprintf(stderr, "+ %d: %s\n", i, InternalDTAs[i].path);
+		fprintf(fp, "+ %d: %s\n", i, InternalDTAs[i].path);
 		
 		centry = InternalDTAs[i].centry;
 		entries = InternalDTAs[i].nentries;
 		for (j = 0; j < entries; j++)
 		{
-			fprintf(stderr, "  - %d: %s%s\n",
+			fprintf(fp, "  - %d: %s%s\n",
 				j, InternalDTAs[i].found[j]->d_name,
 				j == centry ? " *" : "");
 		}
-		fprintf(stderr, "  Fsnext entry = %d.\n", centry);
+		fprintf(fp, "  Fsnext entry = %d.\n", centry);
 		used++;
 	}
 	if (!used)
-		fputs("- None in use.\n", stderr);
+		fputs("- None in use.\n", fp);
 
-	fputs("\nOpen GEMDOS HDD file handles:\n", stderr);
+	fputs("\nOpen GEMDOS HDD file handles:\n", fp);
 	for (used = i = 0; i < ARRAYSIZE(FileHandles); i++)
 	{
 		if (!FileHandles[i].bUsed)
 			continue;
-		fprintf(stderr, "- %d (0x%x): %s\n", i + BASE_FILEHANDLE,
+		fprintf(fp, "- %d (0x%x): %s\n", i + BASE_FILEHANDLE,
 			FileHandles[i].Basepage, FileHandles[i].szActualName);
 		used++;
 	}
 	if (!used)
-		fputs("- None.\n", stderr);
-	fputs("\nForced GEMDOS HDD file handles:\n", stderr);
+		fputs("- None.\n", fp);
+	fputs("\nForced GEMDOS HDD file handles:\n", fp);
 	for (used = i = 0; i < ARRAYSIZE(ForcedHandles); i++)
 	{
 		if (ForcedHandles[i].Handle == UNFORCED_HANDLE)
 			continue;
-		fprintf(stderr, "- %d -> %d (0x%x)\n", i,
+		fprintf(fp, "- %d -> %d (0x%x)\n", i,
 			ForcedHandles[i].Handle + BASE_FILEHANDLE,
 			ForcedHandles[i].Basepage);
 		used++;
 	}
 	if (!used)
-		fputs("- None.\n", stderr);
+		fputs("- None.\n", fp);
 }
 
 #else /* !ENABLE_TRACING */
-void GemDOS_Info(Uint32 bShowOpcodes)
+void GemDOS_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+	fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
 #endif /* !ENABLE_TRACING */
 

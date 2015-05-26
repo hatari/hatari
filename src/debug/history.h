@@ -32,7 +32,7 @@ extern void History_AddCpu(void);
 extern void History_AddDsp(void);
 
 /* for debugInfo.c */
-extern void History_Show(Uint32 count);
+extern void History_Show(FILE *fp, Uint32 count);
 
 /* for debugui */
 extern void History_Mark(debug_reason_t reason);

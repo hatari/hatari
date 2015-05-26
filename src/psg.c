@@ -556,11 +556,11 @@ void PSG_ff8803_WriteByte(void)
 /* ------------------------------------------------------------------
  * YM-2149 register content dump (for debugger info command)
  */
-void PSG_Info(Uint32 dummy)
+void PSG_Info(FILE *fp, Uint32 dummy)
 {
 	int i;
 	for(i = 0; i < ARRAYSIZE(PSGRegisters); i++)
 	{
-		fprintf(stderr, "Reg $%02X : $%02X\n", i, PSGRegisters[i]);
+		fprintf(fp, "Reg $%02X : $%02X\n", i, PSGRegisters[i]);
 	}
 }

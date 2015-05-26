@@ -47,8 +47,8 @@ extern int VDIWidth,VDIHeight;
 extern int VDIRes,VDIPlanes;
 
 extern void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest);
-extern void AES_Info(Uint32 bShowOpcodes);
-extern void VDI_Info(Uint32 bShowOpcodes);
+extern void AES_Info(FILE *fp, Uint32 bShowOpcodes);
+extern void VDI_Info(FILE *fp, Uint32 bShowOpcodes);
 extern bool VDI_AES_Entry(void);
 extern void VDI_LineA(Uint32 LineABase, Uint32 FontBase);
 extern void VDI_Complete(void);

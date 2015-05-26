@@ -3829,7 +3829,7 @@ void Video_TTColorSTRegs_WriteWord(void)
 /**
  * display video related information (for debugger info command)
  */
-void Video_Info(Uint32 dummy)
+void Video_Info(FILE *fp, Uint32 dummy)
 {
 	const char *mode;
 	switch (OverscanMode) {
@@ -3848,12 +3848,12 @@ void Video_Info(Uint32 dummy)
 	default:
 		mode = "unknown";
 	}
-	fprintf(stderr, "Video base   : 0x%x\n", VideoBase);
-	fprintf(stderr, "VBL counter  : %d\n", nVBLs);
-	fprintf(stderr, "HBL line     : %d\n", nHBL);
-	fprintf(stderr, "V-overscan   : %s\n", mode);
-	fprintf(stderr, "Refresh rate : %d Hz\n", nScreenRefreshRate);
-	fprintf(stderr, "Frame skips  : %d\n", nFrameSkips);
+	fprintf(fp, "Video base   : 0x%x\n", VideoBase);
+	fprintf(fp, "VBL counter  : %d\n", nVBLs);
+	fprintf(fp, "HBL line     : %d\n", nHBL);
+	fprintf(fp, "V-overscan   : %s\n", mode);
+	fprintf(fp, "Refresh rate : %d Hz\n", nScreenRefreshRate);
+	fprintf(fp, "Frame skips  : %d\n", nFrameSkips);
 
 	/* TODO: any other information that would be useful to show? */
 }
