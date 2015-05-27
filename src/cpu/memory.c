@@ -399,6 +399,7 @@ static uae_u8 *dummy_xlate(uaecptr addr)
 }
 
 
+#ifndef WINUAE_FOR_HATARI
 static void REGPARAM2 none_put (uaecptr addr, uae_u32 v)
 {
 #ifdef JIT
@@ -413,7 +414,6 @@ static uae_u32 REGPARAM2 ones_get (uaecptr addr)
 	return 0xffffffff;
 }
 
-#ifndef WINUAE_FOR_HATARI
 addrbank *get_sub_bank(uaecptr *paddr)
 {
 	int i;
@@ -1220,9 +1220,44 @@ static void init_mem_banks (void)
 }
 
 
-static void fill_ce_banks (void)
+/*
+ * Initialize some extra parameters for the memory banks in CE mode
+ * By default, we set all banks to CHIP16 and not cachable
+ *
+ * Possible values for ce_banktype :
+ *  CE_MEMBANK_CHIP16	shared between CPU and DMA, bus width = 16 bits
+ *  CE_MEMBANK_CHIP32	shared between CPU and DMA, bus width = 16 bits (AGA chipset)
+ *  CE_MEMBANK_FAST16	accessible only to the CPU,  bus width = 16 bits
+ *  CE_MEMBANK_FAST32 	accessible only to the CPU,  bus width = 32 bits
+ *  CE_MEMBANK_CIA	Amiga only, for CIA chips
+ *
+ * Possible values for ce_cachable :
+ *  bit 0 : cachable yes/no (for 68030 data cache)
+ *  bit 1 : burst mode allowed when caching yes/no (for 68030 data cache)
+ *	(not used, check for CE_MEMBANK_FAST32 instead)
+ */
+static void init_ce_banks (void)
 {
-	/* NP : TODO */
+	/* Default to CHIP16 */
+	memset (ce_banktype, CE_MEMBANK_CHIP16, sizeof ce_banktype);
+
+	/* Default to not cachable */
+	memset (ce_cachable, 0, sizeof ce_cachable);
+}
+
+
+/*
+ * For CE mode, set banktype and cachable for a memory region
+ */
+static void fill_ce_banks (int start, int size, int banktype, int cachable )
+{
+	int i;
+
+	for ( i=start ; i<start+size ; i++ )
+	{
+		ce_banktype[ i ] = banktype;
+		ce_cachable[ i ] = cachable;
+	}
 }
 
 
@@ -1279,6 +1314,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 #endif
 
     init_mem_banks();
+    init_ce_banks();
 
     /* Set the infos about memory pointers for each mem bank, used for direct memory access in stMemory.c */
     STmem_bank.baseaddr = STmemory;
@@ -1303,6 +1339,8 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
     map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1, 0);
 
+    fill_ce_banks ( 0x00 , STmem_size >> 16 , CE_MEMBANK_CHIP16 , 1 );
+
 
     /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
     /* This requires the CPU to use 32 bit addressing */
@@ -1320,6 +1358,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 	    if ( TTmemory != NULL )
 	    {
 		map_banks ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0 );
+		fill_ce_banks ( TTmem_start >> 16, TTmem_size >> 16 , CE_MEMBANK_FAST32, 1+2 );		/* 32 bit RAM for CPU only + cache/burst allowed */
 		TTmem_mask = 0xffffffff;
 		TTmem_bank.baseaddr = TTmemory;
 		TTmem_bank.mask = TTmem_mask;
@@ -1340,11 +1379,13 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     {
         map_banks(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0);
         map_banks(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0);
+	fill_ce_banks ( 0xFC0000 >> 16, 0x3 , CE_MEMBANK_CHIP16, 1 );		/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
     }
     else if(nNewRomMemStart == 0xE00000)
     {
         map_banks(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0);
         map_banks(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0);
+	fill_ce_banks ( 0xE00000 >> 16, 0x10 , CE_MEMBANK_CHIP16, 1 );		/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
     }
     else
     {
@@ -1353,18 +1394,21 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     /* Cartridge memory: */
     map_banks(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0);
+    fill_ce_banks ( 0xFA0000 >> 16, 0x2 , CE_MEMBANK_CHIP16, 1 );		/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
     ROMmem_bank.baseaddr = ROMmemory;
     ROMmem_bank.mask = ROMmem_mask;
     ROMmem_bank.start = ROMmem_start;
 
     /* IO memory: */
     map_banks(&IOmem_bank, IOmem_start>>16, 0x1, 0);
+    fill_ce_banks ( IOmem_start >> 16, 0x1 , CE_MEMBANK_CHIP16, 1 );
     IOmem_bank.baseaddr = IOmemory;
     IOmem_bank.mask = IOmem_mask;
     IOmem_bank.start = IOmem_start;
 
     /* IDE controller memory region: */
     map_banks(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0);  /* IDE controller on the Falcon */
+    fill_ce_banks ( IdeMem_start >> 16, 0x1 , CE_MEMBANK_CHIP16, 1 );
     IdeMem_bank.baseaddr = IdeMemory;
     IdeMem_bank.mask = IdeMem_mask;
     IdeMem_bank.start = IdeMem_start ;
@@ -1385,7 +1429,11 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
       for ( addr=0x0 ; addr<=0x00ffffff ; addr+=0x10000 )
 	{
 	  //printf ( "put mem %x %x\n" , addr , addr|0xff000000 );
-	  put_mem_bank ( addr|0xff000000 , &get_mem_bank ( addr ) , 0 );
+	  put_mem_bank ( 0xff000000|addr , &get_mem_bank ( addr ) , 0 );
+
+	  /* Copy the CE parameters */
+	  ce_banktype[ (0xff000000|addr)>>16 ] = ce_banktype[ addr>>16 ];
+	  ce_cachable[ (0xff000000|addr)>>16 ] = ce_cachable[ addr>>16 ];
 	}
     }
 
@@ -1422,10 +1470,16 @@ void memory_uninit (void)
 
 static void map_banks2 (addrbank *bank, int start, int size, int realsize, int quick)
 {
+#ifndef WINUAE_FOR_HATARI
 	int bnr, old;
 	unsigned long int hioffs = 0, endhioffs = 0x100;
 	addrbank *orgbank = bank;
 	uae_u32 realstart = start;
+#else
+	int bnr;
+	unsigned long int hioffs = 0, endhioffs = 0x100;
+	uae_u32 realstart = start;
+#endif
 
 //printf ( "map %x %x 24=%d\n" , start<<16 , size<<16 , currprefs.address_space_24 );
 #ifndef WINUAE_FOR_HATARI
@@ -1491,8 +1545,8 @@ static void map_banks2 (addrbank *bank, int start, int size, int realsize, int q
 #ifndef WINUAE_FOR_HATARI
 	if (quick <= 0)
 		debug_bankchange (old);
-#endif
 	fill_ce_banks ();
+#endif
 }
 
 void map_banks (addrbank *bank, int start, int size, int realsize)

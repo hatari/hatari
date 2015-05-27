@@ -7668,6 +7668,7 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 	int aligned = addr & 3;
 	uae_u32 v1, v2;
 
+fprintf ( stderr, "0 cache 030 %x %d %d\n" , addr, CpuInstruction.D_Cache_miss , CpuInstruction.D_Cache_hit );
 	if (!(regs.cacr & 0x100) || !cancache030 (addr)) { // data cache disabled?
 		if (currprefs.cpu_cycle_exact) {
 			if (size == 2)
@@ -7687,9 +7688,28 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 	}
 	c1 = getcache030 (dcaches030, addr, &tag1, &lws1);
 	addr &= ~3;
+fprintf ( stderr, "0b cache 030 %x %d %d %x %x %x\n" , addr, CpuInstruction.D_Cache_miss , CpuInstruction.D_Cache_hit , c1->valid[lws1] , c1->tag , tag1 );
 	if (!c1->valid[lws1] || c1->tag != tag1) {
 		v1 = currprefs.cpu_cycle_exact ? mem_access_delay_long_read_ce020 (addr) : get_long (addr);
 		update_cache030 (c1, v1, tag1, lws1);
+	} else {
+		uae_u32 tv = get_long(addr);
+		v1 = c1->data[lws1];
+		CpuInstruction.D_Cache_hit++;
+#ifndef WINUAE_FOR_HATARI
+		if (uae_boot_rom_type > 0) {
+			// this check and fix is needed for UAE filesystem handler because it runs in host side and in
+			// separate thread. No way to access via cache without locking that would cause major slowdown
+			// and unneeded complexity
+			if (tv != v1) {
+				write_log(_T("data cache mismatch %d %d %08x %08x != %08x %08x %d PC=%08x\n"),
+					size, aligned, addr, tv, v1, tag1, lws1, M68K_GETPC);
+				v1 = get_long(addr);
+			}
+		}
+#endif
+	}
+#if 0
 #ifndef WINUAE_FOR_HATARI
 	} else if (uae_boot_rom_type > 0) {
 		// this check and fix is needed for UAE filesystem handler because it runs in host side and in
@@ -7708,6 +7728,9 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 		CpuInstruction.D_Cache_hit++;
 #endif
 	}
+#endif
+
+fprintf ( stderr, "1 cache 030 %x %d %d %x\n" , addr, CpuInstruction.D_Cache_miss , CpuInstruction.D_Cache_hit , v1 );
 	// only one long fetch needed?
 	if (size == 0) {
 		v1 >>= (3 - aligned) * 8;
@@ -7732,6 +7755,20 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 	if (!c2->valid[lws2] || c2->tag != tag2) {
 		v2 = currprefs.cpu_cycle_exact ? mem_access_delay_long_read_ce020 (addr) : get_long (addr);
 		update_cache030 (c2, v2, tag2, lws2);
+	} else {
+		v2 = c2->data[lws2];
+		CpuInstruction.D_Cache_hit++;
+#ifndef WINUAE_FOR_HATARI
+		if (uae_boot_rom_type > 0) {
+			if (get_long (addr) != v2) {
+				write_log (_T("data cache mismatch %d %d %08x %08x != %08x %08x %d PC=%08x\n"),
+					size, aligned, addr, get_long (addr), v2, tag2, lws2, M68K_GETPC);
+				v2 = get_long (addr);
+			}
+		}
+#endif
+	} 
+#if 0
 #ifndef WINUAE_FOR_HATARI
 	} else if (uae_boot_rom_type > 0) {
 		v2 = c2->data[lws2];
@@ -7746,6 +7783,9 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 		CpuInstruction.D_Cache_hit++;
 #endif
 	}
+#endif
+
+fprintf ( stderr, "2 cache 030 %x %d %d %x\n" , addr, CpuInstruction.D_Cache_miss , CpuInstruction.D_Cache_hit , v2 );
 	if (size == 1 && aligned == 3)
 		return (v1 << 8) | (v2 >> 24);
 	else if (size == 2 && aligned == 1)
