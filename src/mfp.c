@@ -1253,10 +1253,10 @@ static void MFP_ReadTimerB(bool TimerIsStopping)
 /**
  * Start Timer C
  */
-static void MFP_StartTimerC( bool FirstTimer )
+static void MFP_StartTimerC(void)
 {
 	TimerCClockCycles = MFP_StartTimer_CD((MFP_TCDCR>>4)&7, MFP_TC_MAINCOUNTER,
-	                                      INTERRUPT_MFP_TIMERC , FirstTimer, &TimerCCanResume);
+	                                      INTERRUPT_MFP_TIMERC , true, &TimerCCanResume);
 }
 
 
@@ -2020,7 +2020,6 @@ void MFP_TimerCDCtrl_WriteByte(void)
 {
 	Uint8 new_tcdcr;
 	Uint8 old_tcdcr;
-	bool FirstTimer;
 
 	M68000_WaitState(4);
 
@@ -2037,22 +2036,8 @@ void MFP_TimerCDCtrl_WriteByte(void)
 		if ((new_tcdcr & 0x70) == 0)
 			MFP_ReadTimerC(true);		/* Store result in 'MFP_TC_MAINCOUNTER' */
 
-		/* Special case when control reg is changed while timer is enabled */
-		/* We must update the timer using new control reg and current value of the counter */
-#if 1
-		if ( ((new_tcdcr & 0x70) != 0) && ((old_tcdcr & 0x70) != 0 ) )
-		{
-//fprintf ( stderr , "change timer C\n" );
-			MFP_ReadTimerC(false);		/* Store result in 'MFP_TC_MAINCOUNTER' */
-//			MFP_TC_MAINCOUNTER = MFP_TCDR;
-			FirstTimer = false;
-		}
-		else
-#endif
-			FirstTimer = true;
-
 		MFP_TCDCR = ( new_tcdcr & 0x70 ) | ( old_tcdcr & 0x07 );	/* we set TCCR and keep old TDDR in case we need to read it below */
-		MFP_StartTimerC( FirstTimer );		/* start/stop timer depending on control reg */
+		MFP_StartTimerC();			/* start/stop timer depending on control reg */
 	}
 
 	if ((old_tcdcr & 0x07) != (new_tcdcr & 0x07))	/* Timer D control changed */
