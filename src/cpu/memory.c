@@ -1331,15 +1331,13 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
 
     /* Map the ST system RAM: */
-    map_banks(&SysMem_bank, 0x00, 1, 0);
+    map_banks_ce(&SysMem_bank, 0x00, 1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
     /* Between STRamEnd and 4MB barrier, there is void space: */
-    map_banks(&VoidMem_bank, 0x08, 0x38, 0);
+    map_banks_ce(&VoidMem_bank, 0x08, 0x38, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     /* Space between 4MB barrier and TOS ROM causes a bus error: */
-    map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0, 0);
+    map_banks_ce(&BusErrMem_bank, 0x400000 >> 16, 0xA0, 0 , CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
-    map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1, 0);
-
-    fill_ce_banks ( 0x00 , STmem_size >> 16 , CE_MEMBANK_CHIP16 , 1 );
+    map_banks_ce(&STmem_bank, 0x01, (STmem_size >> 16) - 1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);
 
 
     /* Handle extra RAM on TT and Falcon starting at 0x1000000 and up to 0x80000000 */
@@ -1349,7 +1347,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     {
 	/* If there's no extra RAM on a TT, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
 	if ( ConfigureParams.System.nMachineType == MACHINE_TT )
-	    map_banks ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0 );
+	    map_banks_ce ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
 	if ( TTmem_size > 0 )
 	{
@@ -1357,8 +1355,8 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
 	    if ( TTmemory != NULL )
 	    {
-		map_banks ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0 );
-		fill_ce_banks ( TTmem_start >> 16, TTmem_size >> 16 , CE_MEMBANK_FAST32, 1+2 );		/* 32 bit RAM for CPU only + cache/burst allowed */
+		/* 32 bit RAM for CPU only + cache/burst allowed */
+		map_banks_ce ( &TTmem_bank, TTmem_start >> 16, TTmem_size >> 16, 0, CE_MEMBANK_FAST32, CE_MEMBANK_CACHABLE_BURST );
 		TTmem_mask = 0xffffffff;
 		TTmem_bank.baseaddr = TTmemory;
 		TTmem_bank.mask = TTmem_mask;
@@ -1377,15 +1375,13 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Depending on which ROM version we are using, the other ROM region is illegal! */
     if(nNewRomMemStart == 0xFC0000)
     {
-        map_banks(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0);
-        map_banks(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0);
-	fill_ce_banks ( 0xFC0000 >> 16, 0x3 , CE_MEMBANK_CHIP16, 1 );		/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
+        map_banks_ce(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);	/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
+        map_banks_ce(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     }
     else if(nNewRomMemStart == 0xE00000)
     {
-        map_banks(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0);
-        map_banks(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0);
-	fill_ce_banks ( 0xE00000 >> 16, 0x10 , CE_MEMBANK_CHIP16, 1 );		/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
+        map_banks_ce(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);	/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
+        map_banks_ce(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     }
     else
     {
@@ -1393,28 +1389,26 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     }
 
     /* Cartridge memory: */
-    map_banks(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0);
-    fill_ce_banks ( 0xFA0000 >> 16, 0x2 , CE_MEMBANK_CHIP16, 1 );		/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
+    map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);		/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
     ROMmem_bank.baseaddr = ROMmemory;
     ROMmem_bank.mask = ROMmem_mask;
     ROMmem_bank.start = ROMmem_start;
 
     /* IO memory: */
-    map_banks(&IOmem_bank, IOmem_start>>16, 0x1, 0);
+    map_banks_ce(&IOmem_bank, IOmem_start>>16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     fill_ce_banks ( IOmem_start >> 16, 0x1 , CE_MEMBANK_CHIP16, 1 );
     IOmem_bank.baseaddr = IOmemory;
     IOmem_bank.mask = IOmem_mask;
     IOmem_bank.start = IOmem_start;
 
     /* IDE controller memory region: */
-    map_banks(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0);  /* IDE controller on the Falcon */
-    fill_ce_banks ( IdeMem_start >> 16, 0x1 , CE_MEMBANK_CHIP16, 1 );
+    map_banks_ce(&IdeMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);	/* IDE controller on the Falcon */
     IdeMem_bank.baseaddr = IdeMemory;
     IdeMem_bank.mask = IdeMem_mask;
     IdeMem_bank.start = IdeMem_start ;
 
     /* Illegal memory regions cause a bus error on the ST: */
-    map_banks(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0);
+    map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
 
     /* If MMU is disabled on TT/Falcon and we use full 32 bit addressing */
@@ -1562,6 +1556,11 @@ void map_banks_nojitdirect (addrbank *bank, int start, int size, int realsize)
 	map_banks2 (bank, start, size, realsize, -1);
 }
 
+void map_banks_ce (addrbank *bank, int start, int size, int realsize , int banktype, int cachable )
+{
+	map_banks2 (bank, start, size, realsize, 0);
+	fill_ce_banks (start, size, banktype, cachable );
+}
 
 
 

@@ -122,6 +122,11 @@ struct addrbank_sub
 #define CE_MEMBANK_CHIP32 2
 #define CE_MEMBANK_CIA 3
 #define CE_MEMBANK_FAST16 4
+#ifdef WINUAE_FOR_HATARI
+#define CE_MEMBANK_NOT_CACHABLE		0
+#define CE_MEMBANK_CACHABLE		(1)
+#define CE_MEMBANK_CACHABLE_BURST	(1|2)
+#endif
 extern uae_u8 ce_banktype[65536], ce_cachable[65536];
 
 #ifdef JIT
@@ -384,6 +389,9 @@ extern void map_banks (addrbank *bank, int first, int count, int realsize);
 extern void map_banks_quick (addrbank *bank, int first, int count, int realsize);
 extern void map_banks_nojitdirect (addrbank *bank, int first, int count, int realsize);
 extern void map_banks_cond (addrbank *bank, int first, int count, int realsize);
+#ifdef WINUAE_FOR_HATARI
+extern void map_banks_ce (addrbank *bank, int first, int count, int realsize, int banktype, int cachable);
+#endif
 extern void memory_hardreset (void);
 extern void memory_clear (void);
 extern void free_fastmemory (int);
