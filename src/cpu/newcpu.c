@@ -4862,6 +4862,19 @@ insretry:
 				mmu030_opcode = -1;
 				if (mmu030_fake_prefetch >= 0) {
 					regs.opcode = mmu030_fake_prefetch;
+					// use fake prefetch opcode only if mapping changed
+					uaecptr new_addr = mmu030_translate(regs.instruction_pc, regs.s != 0, false, false);
+					if (mmu030_fake_prefetch_addr != new_addr) {
+						regs.opcode = mmu030_fake_prefetch;
+						write_log(_T("MMU030 fake prefetch remap: %04x, %08x -> %08x\n"), mmu030_fake_prefetch, mmu030_fake_prefetch_addr, new_addr);
+					} else {
+						if (mmu030_opcode_stageb < 0) {
+							regs.opcode = x_prefetch (0);
+						} else {
+							regs.opcode = mmu030_opcode_stageb;
+							mmu030_opcode_stageb = -1;
+						}
+					}
 					mmu030_fake_prefetch = -1;
 				} else if (mmu030_opcode_stageb < 0) {
 					regs.opcode = x_prefetch (0);
