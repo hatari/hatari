@@ -1,7 +1,7 @@
 /*
  * Hatari - profiledsp.c
  * 
- * Copyright (C) 2010-2013 by Eero Tamminen
+ * Copyright (C) 2010-2015 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -102,7 +102,7 @@ void Profile_DspShowStats(void)
 	 */
 	fprintf(stderr, "- sum of per instruction cycle changes\n"
 		"  (can indicate code change during profiling):\n  %"PRIu64"\n",
-		area->counters.i_misses);
+		area->counters.cycles_diffs);
 
 	fprintf(stderr, "- used cycles:\n  %"PRIu64"\n",
 		area->counters.cycles);
@@ -636,7 +636,7 @@ static void update_area_item(profile_area_t *area, Uint16 addr, dsp_profile_item
 
 	area->counters.count += count;
 	area->counters.cycles += cycles;
-	area->counters.i_misses += diff;
+	area->counters.cycles_diffs += diff;
 
 	if (addr < area->lowest) {
 		area->lowest = addr;

@@ -18,7 +18,9 @@ typedef struct {
 extern profile_loop_t profile_loop;
 
 typedef struct {
-	Uint64 calls, count, cycles, i_misses, d_hits;
+	Uint64 calls, count, cycles; /* common counters between CPU & DSP */
+	Uint64 i_misses, d_hits;     /* CPU specific counters */
+	Uint64 cycles_diffs;         /* DSP specific counter, not updated at run-time */
 } counters_t;
 
 typedef struct {
