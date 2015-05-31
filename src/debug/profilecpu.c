@@ -63,8 +63,10 @@ typedef struct {
 	Uint32 d_hits;  /* how many CPU data cache hits happened at this address */
 } cpu_profile_item_t;
 
+#define MAX_I_HITS   8
 #define MAX_I_MISSES 8
-#define MAX_D_HITS 26
+#define MAX_D_HITS   56
+#define MAX_D_MISSES 20
 
 static struct {
 	counters_t all;       /* total counts for all areas */
@@ -83,8 +85,12 @@ static struct {
 	Uint32 loop_end;      /* address of last loop end */
 	Uint32 loop_count;    /* how many times it was looped */
 	Uint32 disasm_addr;   /* 'addresses' command start address */
-	Uint32 i_miss_counts[MAX_I_MISSES];  /* I cache miss counts */
-	Uint32 d_hit_counts[MAX_D_HITS];  /* even D cache hit counts */
+#if ENABLE_WINUAE_CPU
+	Uint32 i_hit_counts[MAX_I_HITS];    /* I-cache hit counts */
+	Uint32 d_hit_counts[MAX_D_HITS];    /* D-cache hit counts */
+	Uint32 i_miss_counts[MAX_I_MISSES]; /* I-cache miss counts */
+	Uint32 d_miss_counts[MAX_D_MISSES]; /* D-cache miss counts */
+#endif
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
@@ -264,23 +270,59 @@ void Profile_CpuShowStats(void)
 
 	fprintf(stderr, "\n= %.5fs\n",
 		(double)cpu_profile.all.cycles / MachineClocks.CPU_Freq);
+}
 
-	/* CPU cache in use? */
-	if (cpu_profile.all.i_misses) {
-		int i;
-		fprintf(stderr, "\nInstruction cache misses per instruction, number of occurrences:\n");
-		for (i = 0; i < MAX_I_MISSES; i++) {
-			fprintf(stderr, "- %d: %d\n", i, cpu_profile.i_miss_counts[i]);
-		}
+#if ENABLE_WINUAE_CPU
+/**
+ * show percentage histogram of given array items
+ */
+static void show_histogram(const char *title, int count, Uint32 *items)
+{
+	Uint64 maxval;
+	Uint32 value;
+	int i;
+
+	fprintf(stderr, "\n%s, number of occurrencies:\n", title);
+	maxval = 0;
+	for (i = 0; i < count; i++) {
+		maxval += items[i];
 	}
-	if (cpu_profile.all.d_hits) {
-		int i;
-		fprintf(stderr, "\nData cache hits per instruction, number of occurrences:\n");
-		for (i = 0; i < MAX_D_HITS; i++) {
-			fprintf(stderr, "- %d: %d\n", 2*i, cpu_profile.d_hit_counts[i]);
+	for (i = 0; i < count; i++) {
+		value = items[i];
+		if (value) {
+			int w, width = 50 * value / maxval+1;
+			fprintf(stderr, " %2d: ", i);
+			for (w = 0; w < width; w++) {
+				fputc('#', stderr);
+			}
+			fprintf(stderr, " %.3f%%\n", 100.0 * value / maxval);
 		}
 	}
 }
+
+/**
+ * show CPU cache usage histograms
+ */
+void Profile_CpuShowCaches(void)
+{
+	if (!(cpu_profile.all.i_misses || cpu_profile.all.d_hits)) {
+		fprintf(stderr, "No instruction/data cache information.");
+		return;
+	}
+	show_histogram("Instruction cache hits per instruction",
+		       ARRAYSIZE(cpu_profile.i_hit_counts), cpu_profile.i_hit_counts);
+	show_histogram("Instruction cache misses per instruction",
+		       ARRAYSIZE(cpu_profile.i_miss_counts), cpu_profile.i_miss_counts);
+	show_histogram("Data cache hits per instruction",
+		       ARRAYSIZE(cpu_profile.d_hit_counts), cpu_profile.d_hit_counts);
+	show_histogram("Data cache misses per instruction",
+		       ARRAYSIZE(cpu_profile.d_miss_counts), cpu_profile.d_miss_counts);
+}
+#else
+void Profile_CpuShowCaches(void) {
+	fprintf(stderr, "Cache information is recorded only with WinUAE CPU.\n");
+}
+#endif
 
 /**
  * Show CPU instructions which execution was profiled, in the address order,
@@ -482,7 +524,7 @@ void Profile_CpuShowInstrMisses(int show) {
 	fprintf(stderr, "Cache information is recorded only with WinUAE CPU.\n");
 }
 void Profile_CpuShowDataHits(int show) {
-	fprintf(stderr, "Cache information are recorded only with WinUAE CPU.\n");
+	fprintf(stderr, "Cache information is recorded only with WinUAE CPU.\n");
 }
 #endif
 
@@ -731,8 +773,10 @@ bool Profile_CpuStart(void)
 	}
 
 	/* reset cache stats (CPU emulation doesn't do that) */
-	CpuInstruction.I_Cache_miss = 0;
 	CpuInstruction.D_Cache_hit = 0;
+	CpuInstruction.I_Cache_hit = 0;
+	CpuInstruction.I_Cache_miss = 0;
+	CpuInstruction.D_Cache_miss = 0;
 
 	cpu_profile.prev_cycles = CyclesGlobalClockCounter;
 	cpu_profile.prev_family = OpcodeFamily;
@@ -911,6 +955,22 @@ static void log_last_loop(void)
 }
 
 /**
+ * Warning for values going out of expected range
+ */
+static Uint32 warn_too_large(const char *name, const int value, const int limit, const Uint32 prev_pc, const Uint32 pc)
+{
+	Uint32 nextpc;
+	fprintf(stderr, "WARNING: unexpected (%d > %d) %s at 0x%x:\n", value, limit - 1, name, pc);
+	Disasm(stderr, prev_pc, &nextpc, 1);
+	Disasm(stderr, pc, &nextpc, 1);
+#if DEBUG
+	skip_assert = true;
+	DebugUI(REASON_CPU_EXCEPTION);
+#endif
+	return limit - 1;
+}
+
+/**
  * Update CPU cycle and count statistics for PC address.
  *
  * This gets called after instruction has executed and PC
@@ -919,8 +979,13 @@ static void log_last_loop(void)
 void Profile_CpuUpdate(void)
 {
 	counters_t *counters = &(cpu_profile.all);
-	Uint32 pc, prev_pc, idx, cycles, i_misses, d_hits;
+	Uint32 pc, prev_pc, idx, cycles;
 	cpu_profile_item_t *prev;
+#if ENABLE_WINUAE_CPU
+	Uint32 i_hits, d_hits, i_misses, d_misses;
+#else
+	const Uint32 i_misses = 0, d_hits = 0;
+#endif
 
 	prev_pc = cpu_profile.prev_pc;
 	/* PC may have extra bits when using 24 bit addressing, they need to be masked away as
@@ -969,55 +1034,52 @@ void Profile_CpuUpdate(void)
 	}
 
 #if ENABLE_WINUAE_CPU
-	i_misses = CpuInstruction.I_Cache_miss;
+	/* only WinUAE CPU core provides cache information */
+	i_hits = CpuInstruction.I_Cache_hit;
 	d_hits = CpuInstruction.D_Cache_hit;
+	i_misses = CpuInstruction.I_Cache_miss;
+	d_misses = CpuInstruction.D_Cache_miss;
 
 	/* reset cache stats after reading them (for the next instruction) */
-	CpuInstruction.I_Cache_miss = 0;
+	CpuInstruction.I_Cache_hit = 0;
 	CpuInstruction.D_Cache_hit = 0;
+	CpuInstruction.I_Cache_miss = 0;
+	CpuInstruction.D_Cache_miss = 0;
 
-	if (unlikely(i_misses >= MAX_I_MISSES)) {
-		Uint32 nextpc;
-		fprintf(stderr, "WARNING: %d CPU instruction cache misses > %d at 0x%x:\n", i_misses, MAX_I_MISSES-1, pc);
-		Disasm(stderr, prev_pc, &nextpc, 1);
-		Disasm(stderr, pc, &nextpc, 1);
-		i_misses = MAX_I_MISSES-1;
-#if DEBUG
-		skip_assert = true;
-		DebugUI(REASON_CPU_EXCEPTION);
-#endif
-	}
-	if (unlikely(d_hits & 0x1)) {
-		fprintf(stderr, "WARNING: odd (%d) number of CPU data cache hits at 0x%x:\n", d_hits, pc);
-	}
-	d_hits >>= 1;
-	if (unlikely(d_hits >= MAX_D_HITS)) {
-		Uint32 nextpc;
-		fprintf(stderr, "WARNING: %d CPU data cache hits > %d at 0x%x:\n", 2*d_hits, 2*(MAX_D_HITS-1), pc);
-		Disasm(stderr, prev_pc, &nextpc, 1);
-		Disasm(stderr, pc, &nextpc, 1);
-		d_hits = MAX_D_HITS-1;
-#if DEBUG
-		skip_assert = true;
-		DebugUI(REASON_CPU_EXCEPTION);
-#endif
-	}
-	cpu_profile.i_miss_counts[i_misses]++;
+	/* tracked for every address */
 	if (likely(prev->i_misses < MAX_CPU_PROFILE_VALUE - i_misses)) {
 		prev->i_misses += i_misses;
 	} else {
 		prev->i_misses = MAX_CPU_PROFILE_VALUE;
 	}
-	cpu_profile.d_hit_counts[d_hits]++;
 	if (likely(prev->d_hits < MAX_CPU_PROFILE_VALUE - d_hits)) {
 		prev->d_hits += d_hits;
 	} else {
 		prev->d_hits = MAX_CPU_PROFILE_VALUE;
 	}
-#else
-	i_misses = 0;
-	d_hits = 0;
+
+	/* tracking for histogram, check for array overflows */
+	if (unlikely(i_hits >= MAX_I_HITS)) {
+		i_hits = warn_too_large("number of CPU instruction cache hits", i_hits, MAX_I_HITS, prev_pc, pc);
+	}
+	cpu_profile.i_hit_counts[i_hits]++;
+
+	if (unlikely(i_misses >= MAX_I_MISSES)) {
+		i_misses = warn_too_large("number of CPU instruction cache misses", i_misses, MAX_I_MISSES, prev_pc, pc);
+	}
+	cpu_profile.i_miss_counts[i_misses]++;
+
+	if (unlikely(d_hits >= MAX_D_HITS)) {
+		d_hits = warn_too_large("number of CPU data cache hits", d_hits, MAX_D_HITS, prev_pc, pc);
+	}
+	cpu_profile.d_hit_counts[d_hits]++;
+
+	if (unlikely(d_misses >= MAX_D_MISSES)) {
+		d_misses = warn_too_large("number of CPU data cache misses", d_misses, MAX_D_MISSES, prev_pc, pc);
+	}
+	cpu_profile.d_miss_counts[d_misses]++;
 #endif
+
 	if (cpu_callinfo.sites) {
 		collect_calls(prev_pc, counters);
 	}
@@ -1038,9 +1100,7 @@ void Profile_CpuUpdate(void)
 	}
 	/* catch too large (and negative) cycles for other than STOP instruction */
 	if (unlikely(cycles > 512 && OpcodeFamily != i_STOP)) {
-		Uint32 nextpc;
-		fprintf(stderr, "WARNING: cycles %d > 512:\n", cycles);
-		Disasm(stderr, prev_pc, &nextpc, 1);
+		warn_too_large("cycles", cycles, 512, prev_pc, pc);
 	}
 # if !ENABLE_WINUAE_CPU
 	{

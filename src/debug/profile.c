@@ -1,7 +1,7 @@
 /*
  * Hatari - profile.c
  * 
- * Copyright (C) 2010-2013 by Eero Tamminen
+ * Copyright (C) 2010-2015 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -499,7 +499,7 @@ void Profile_FreeCallinfo(callinfo_t *callinfo)
 char *Profile_Match(const char *text, int state)
 {
 	static const char *names[] = {
-		"addresses", "callers", "counts", "cycles", "d-hits", "i-misses",
+		"addresses", "callers", "caches", "counts", "cycles", "d-hits", "i-misses",
 		"loops", "off", "on", "save", "stack", "stats", "symbols"
 	};
 	return DebugUI_MatchHelper(names, ARRAYSIZE(names), text, state);
@@ -518,6 +518,7 @@ const char Profile_Description[] =
 	"\t- symbols [count]\n"
 	"\t- addresses [address]\n"
 	"\t- callers\n"
+	"\t- caches\n"
 	"\t- stack\n"
 	"\t- stats\n"
 	"\t- save <file>\n"
@@ -531,6 +532,8 @@ const char Profile_Description[] =
 	"\texecution 'counts', used 'cycles', i-cache misses or d-cache hits.\n"
 	"\tFirst can be limited just to named addresses with 'symbols'.\n"
 	"\tOptional count will limit how many items will be shown.\n"
+	"\n"
+	"'caches' shows histogram of CPU cache usage.\n"
 	"\n"
 	"\t'addresses' lists the profiled addresses in order, with the\n"
 	"\tinstructions (currently) residing at them.  By default this\n"
@@ -697,15 +700,21 @@ int Profile_Command(int nArgc, char *psArgs[], bool bForDsp)
 		}
 	} else if (strcmp(psArgs[1], "i-misses") == 0) {
 		if (bForDsp) {
-			fprintf(stderr, "Instruction cache misses are recorded only for CPU, not DSP.\n");
+			fprintf(stderr, "Cache information is recorded only for CPU, not DSP.\n");
 		} else {
 			Profile_CpuShowInstrMisses(show);
 		}
 	} else if (strcmp(psArgs[1], "d-hits") == 0) {
 		if (bForDsp) {
-			fprintf(stderr, "Data cache hits are recorded only for CPU, not DSP.\n");
+			fprintf(stderr, "Cache information is recorded only for CPU, not DSP.\n");
 		} else {
 			Profile_CpuShowDataHits(show);
+		}
+	} else if (strcmp(psArgs[1], "caches") == 0) {
+		if (bForDsp) {
+			fprintf(stderr, "Cache information is recorded only for CPU, not DSP.\n");
+		} else {
+			Profile_CpuShowCaches();
 		}
 	} else if (strcmp(psArgs[1], "cycles") == 0) {
 		if (bForDsp) {

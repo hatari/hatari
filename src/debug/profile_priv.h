@@ -89,6 +89,7 @@ extern void Profile_CpuShowCounts(int show, bool only_symbols);
 extern void Profile_CpuShowCycles(int show);
 extern void Profile_CpuShowInstrMisses(int show);
 extern void Profile_CpuShowDataHits(int show);
+extern void Profile_CpuShowCaches(void);
 extern void Profile_CpuShowStats(void);
 extern void Profile_CpuShowCallers(FILE *fp);
 extern void Profile_CpuSave(FILE *out);
