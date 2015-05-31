@@ -311,6 +311,7 @@ static int PopulateDTA(char *path, struct dirent *file)
 	do_put_mem_word(pDTA->dta_time, DateTime.timeword);
 	do_put_mem_word(pDTA->dta_date, DateTime.dateword);
 	pDTA->dta_attrib = nFileAttr;
+	M68000_Flush_DCache ( DTA_Gemdos , sizeof ( DTA ) );		/* We modify the memory, so we flush the data cache */
 
 	return 0;
 }
@@ -2704,6 +2705,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 		return true;
 	}
 	pDTA = (DTA *)STMemory_STAddrToPointer(DTA_Gemdos);
+	M68000_Flush_DCache ( DTA_Gemdos , sizeof ( DTA ) );		/* We modify the memory, so we flush the data cache */
 
 	/* Populate DTA, set index for our use */
 	do_put_mem_word(pDTA->index, DTAIndex);

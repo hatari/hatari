@@ -639,7 +639,6 @@ void M68000_WaitState(int nCycles)
  * E Clock's frequency is 1/10th of the CPU, ie 0.8 MHz in an STF/STE
  * This delay is a multiple of 2 and will follow the pattern [ 0 8 6 4 2 ]
  */
-
 int	M68000_WaitEClock ( void )
 {
 	int	CyclesToNextE;
@@ -649,6 +648,24 @@ int	M68000_WaitEClock ( void )
 	if ( CyclesToNextE == 10 )		/* we're already synchronised with E Clock */
 		CyclesToNextE = 0;
 	return CyclesToNextE;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * In case we modified the memory by accessing it directly (and bypassing
+ * the CPU's cache mechanism), we need to flush the data cache to force an
+ * update of the cache on the next accesses.
+ *
+ * [NP] NOTE : for now, flush_dcache flushes the whole cache, not just 'addr'
+ */
+void	M68000_Flush_DCache ( uaecptr addr , int size )
+{
+#ifdef WINUAE_FOR_HATARI
+	flush_dcache ( addr , size );		/* cache for cpu >= 68030 is only emulated with WinUAE */
+#endif
 }
 
 

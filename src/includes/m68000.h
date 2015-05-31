@@ -344,5 +344,6 @@ extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
 extern void M68000_Update_intlev ( void );
 extern void M68000_WaitState(int nCycles);
 extern int M68000_WaitEClock ( void );
+extern void M68000_Flush_DCache ( uaecptr addr , int size );
 
 #endif
