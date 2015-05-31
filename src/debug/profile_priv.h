@@ -18,7 +18,7 @@ typedef struct {
 extern profile_loop_t profile_loop;
 
 typedef struct {
-	Uint64 calls, count, cycles, i_misses, d_misses;
+	Uint64 calls, count, cycles, i_misses, d_hits;
 } counters_t;
 
 typedef struct {
@@ -87,8 +87,8 @@ extern void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_sym
 extern Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out);
 extern void Profile_CpuShowCounts(int show, bool only_symbols);
 extern void Profile_CpuShowCycles(int show);
-extern void Profile_CpuShowIMisses(int show);
-extern void Profile_CpuShowDMisses(int show);
+extern void Profile_CpuShowInstrMisses(int show);
+extern void Profile_CpuShowDataHits(int show);
 extern void Profile_CpuShowStats(void);
 extern void Profile_CpuShowCallers(FILE *fp);
 extern void Profile_CpuSave(FILE *out);

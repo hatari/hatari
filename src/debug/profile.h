@@ -32,7 +32,7 @@ extern void Profile_CpuUpdate(void);
 extern void Profile_CpuStop(void);
 
 /* CPU profile results */
-extern bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint32 *i_misses, Uint32 *d_misses);
+extern bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint32 *i_misses, Uint32 *d_hits);
 
 /* DSP profile control */
 extern bool Profile_DspStart(void);

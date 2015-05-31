@@ -60,10 +60,11 @@ typedef struct {
 	Uint32 count;	/* how many times this address instrcution is executed */
 	Uint32 cycles;	/* how many CPU cycles was taken at this address */
 	Uint32 i_misses;  /* how many CPU instruction cache misses happened at this address */
-	Uint32 d_misses;  /* how many CPU data cache misses happened at this address */
+	Uint32 d_hits;  /* how many CPU data cache hits happened at this address */
 } cpu_profile_item_t;
 
-#define MAX_MISS 6
+#define MAX_I_MISSES 8
+#define MAX_D_HITS 26
 
 static struct {
 	counters_t all;       /* total counts for all areas */
@@ -82,8 +83,8 @@ static struct {
 	Uint32 loop_end;      /* address of last loop end */
 	Uint32 loop_count;    /* how many times it was looped */
 	Uint32 disasm_addr;   /* 'addresses' command start address */
-	Uint32 i_miss_counts[MAX_MISS];  /* I cache miss counts */
-	Uint32 d_miss_counts[MAX_MISS];  /* D cache miss counts */
+	Uint32 i_miss_counts[MAX_I_MISSES];  /* I cache miss counts */
+	Uint32 d_hit_counts[MAX_D_HITS];  /* even D cache hit counts */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
 } cpu_profile;
@@ -184,7 +185,7 @@ static Uint32 index2address(Uint32 idx)
  * Get CPU cycles, count and count percentage for given address.
  * Return true if data was available and non-zero, false otherwise.
  */
-bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint32 *i_misses, Uint32 *d_misses)
+bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint32 *cycles, Uint32 *i_misses, Uint32 *d_hits)
 {
 	Uint32 idx;
 	if (!cpu_profile.data) {
@@ -192,7 +193,7 @@ bool Profile_CpuAddressData(Uint32 addr, float *percentage, Uint32 *count, Uint3
 	}
 	idx = address2index(addr);
 	*i_misses = cpu_profile.data[idx].i_misses;
-	*d_misses = cpu_profile.data[idx].d_misses;
+	*d_hits = cpu_profile.data[idx].d_hits;
 	*cycles = cpu_profile.data[idx].cycles;
 	*count = cpu_profile.data[idx].count;
 	if (cpu_profile.all.count) {
@@ -227,10 +228,10 @@ static void show_cpu_area_stats(profile_area_t *area)
 			area->counters.i_misses,
 			100.0 * area->counters.i_misses / cpu_profile.all.i_misses);
 	}
-	if (cpu_profile.all.d_misses) {
-		fprintf(stderr, "- data cache misses:\n  %"PRIu64" (%.2f%% of all)\n",
-			area->counters.d_misses,
-			100.0 * area->counters.d_misses / cpu_profile.all.d_misses);
+	if (cpu_profile.all.d_hits) {
+		fprintf(stderr, "- data cache hits:\n  %"PRIu64" (%.2f%% of all)\n",
+			area->counters.d_hits,
+			100.0 * area->counters.d_hits / cpu_profile.all.d_hits);
 	}
 	fprintf(stderr, "- used cycles:\n  %"PRIu64" (%.2f%% of all)\n  = %.5fs\n",
 		area->counters.cycles,
@@ -268,15 +269,15 @@ void Profile_CpuShowStats(void)
 	if (cpu_profile.all.i_misses) {
 		int i;
 		fprintf(stderr, "\nInstruction cache misses per instruction, number of occurrences:\n");
-		for (i = 0; i < MAX_MISS; i++) {
+		for (i = 0; i < MAX_I_MISSES; i++) {
 			fprintf(stderr, "- %d: %d\n", i, cpu_profile.i_miss_counts[i]);
 		}
 	}
-	if (cpu_profile.all.d_misses) {
+	if (cpu_profile.all.d_hits) {
 		int i;
-		fprintf(stderr, "\nData cache misses per instruction, number of occurrences:\n");
-		for (i = 0; i < MAX_MISS; i++) {
-			fprintf(stderr, "- %d: %d\n", i, cpu_profile.d_miss_counts[i]);
+		fprintf(stderr, "\nData cache hits per instruction, number of occurrences:\n");
+		for (i = 0; i < MAX_D_HITS; i++) {
+			fprintf(stderr, "- %d: %d\n", 2*i, cpu_profile.d_hit_counts[i]);
 		}
 	}
 }
@@ -321,7 +322,7 @@ Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out)
 	Disasm_DisableColumn(DISASM_COLUMN_HEXDUMP, oldcols, newcols);
 	Disasm_SetColumns(newcols);
 
-	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <sum of i-cache misses>, <sum of d-cache misses>)\n", out);
+	fputs("# disassembly with profile data: <instructions percentage>% (<sum of instructions>, <sum of cycles>, <sum of i-cache misses>, <sum of d-cache hits>)\n", out);
 
 	nextpc = 0;
 	idx = address2index(lower);
@@ -387,7 +388,7 @@ static int cmp_cpu_i_misses(const void *p1, const void *p2)
 /**
  * Sort CPU profile data addresses by instruction cache misses and show the results.
  */
-void Profile_CpuShowIMisses(int show)
+void Profile_CpuShowInstrMisses(int show)
 {
 	int active;
 	int oldcols[DISASM_COLUMNS];
@@ -397,7 +398,7 @@ void Profile_CpuShowIMisses(int show)
 	Uint32 count;
 
 	if (!cpu_profile.all.i_misses) {
-		fprintf(stderr, "No CPU cache miss information available.\n");
+		fprintf(stderr, "No CPU instruction cache miss information available.\n");
 		return;
 	}
 
@@ -423,12 +424,12 @@ void Profile_CpuShowIMisses(int show)
 }
 
 /**
- * compare function for qsort() to sort CPU profile data by data cache misses.
+ * compare function for qsort() to sort CPU profile data by data cache hits.
  */
-static int cmp_cpu_d_misses(const void *p1, const void *p2)
+static int cmp_cpu_d_hits(const void *p1, const void *p2)
 {
-	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].d_misses;
-	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].d_misses;
+	Uint32 count1 = cpu_profile.data[*(const Uint32*)p1].d_hits;
+	Uint32 count2 = cpu_profile.data[*(const Uint32*)p2].d_hits;
 	if (count1 > count2) {
 		return -1;
 	}
@@ -439,9 +440,9 @@ static int cmp_cpu_d_misses(const void *p1, const void *p2)
 }
 
 /**
- * Sort CPU profile data addresses by data cache misses and show the results.
+ * Sort CPU profile data addresses by data cache hits and show the results.
  */
-void Profile_CpuShowDMisses(int show)
+void Profile_CpuShowDataHits(int show)
 {
 	int active;
 	int oldcols[DISASM_COLUMNS];
@@ -450,23 +451,23 @@ void Profile_CpuShowDMisses(int show)
 	float percentage;
 	Uint32 count;
 
-	if (!cpu_profile.all.d_misses) {
-		fprintf(stderr, "No CPU cache miss information available.\n");
+	if (!cpu_profile.all.d_hits) {
+		fprintf(stderr, "No CPU data cache hit information available.\n");
 		return;
 	}
 
 	active = cpu_profile.active;
 	sort_arr = cpu_profile.sort_arr;
-	qsort(sort_arr, active, sizeof(*sort_arr), cmp_cpu_d_misses);
+	qsort(sort_arr, active, sizeof(*sort_arr), cmp_cpu_d_hits);
 
 	leave_instruction_column(oldcols);
 
-	printf("addr:\t\td-cache misses:\n");
+	printf("addr:\t\td-cache hits:\n");
 	show = (show < active ? show : active);
 	for (end = sort_arr + show; sort_arr < end; sort_arr++) {
 		addr = index2address(*sort_arr);
-		count = data[*sort_arr].d_misses;
-		percentage = 100.0*count/cpu_profile.all.d_misses;
+		count = data[*sort_arr].d_hits;
+		percentage = 100.0*count/cpu_profile.all.d_hits;
 		printf("0x%06x\t%5.2f%%\t%d%s\t", addr, percentage, count,
 		       count == MAX_CPU_PROFILE_VALUE ? " (OVERFLOW)" : "");
 		Disasm(stdout, addr, &nextpc, 1);
@@ -477,11 +478,11 @@ void Profile_CpuShowDMisses(int show)
 }
 
 #else
-void Profile_CpuShowIMisses(int show) {
-	fprintf(stderr, "Cache misses are recorded only with WinUAE CPU.\n");
+void Profile_CpuShowInstrMisses(int show) {
+	fprintf(stderr, "Cache information is recorded only with WinUAE CPU.\n");
 }
-void Profile_CpuShowDMisses(int show) {
-	fprintf(stderr, "Cache misses are recorded only with WinUAE CPU.\n");
+void Profile_CpuShowDataHits(int show) {
+	fprintf(stderr, "Cache information are recorded only with WinUAE CPU.\n");
 }
 #endif
 
@@ -655,10 +656,10 @@ void Profile_CpuShowCallers(FILE *fp)
 void Profile_CpuSave(FILE *out)
 {
 	Uint32 text, end;
-	fputs("Field names:\tExecuted instructions, Used cycles, Instruction cache misses, Data cache misses\n", out);
-	/* (Python) regexp that matches address and all describled fields from disassembly:
-	 * $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <i-misses>, <d-misses>)
-	 * $e5af38 :   rts           0.00% (12, 0, 12)
+	fputs("Field names:\tExecuted instructions, Used cycles, Instruction cache misses, Data cache hits\n", out);
+	/* (Python) regexp that matches address and all described fields from disassembly:
+	 * $<hex>  :  <ASM>  <percentage>% (<count>, <cycles>, <i-misses>, <d-hits>)
+	 * $e5af38 :   rts           0.00% (12, 0, 12, 0)
 	 */
 	fputs("Field regexp:\t^\\$([0-9a-f]+) :.*% \\((.*)\\)$\n", out);
 	/* some information for interpreting the addresses */
@@ -731,7 +732,7 @@ bool Profile_CpuStart(void)
 
 	/* reset cache stats (CPU emulation doesn't do that) */
 	CpuInstruction.I_Cache_miss = 0;
-	CpuInstruction.D_Cache_miss = 0;
+	CpuInstruction.D_Cache_hit = 0;
 
 	cpu_profile.prev_cycles = CyclesGlobalClockCounter;
 	cpu_profile.prev_family = OpcodeFamily;
@@ -918,7 +919,7 @@ static void log_last_loop(void)
 void Profile_CpuUpdate(void)
 {
 	counters_t *counters = &(cpu_profile.all);
-	Uint32 pc, prev_pc, idx, cycles, i_misses, d_misses;
+	Uint32 pc, prev_pc, idx, cycles, i_misses, d_hits;
 	cpu_profile_item_t *prev;
 
 	prev_pc = cpu_profile.prev_pc;
@@ -969,33 +970,33 @@ void Profile_CpuUpdate(void)
 
 #if ENABLE_WINUAE_CPU
 	i_misses = CpuInstruction.I_Cache_miss;
-	d_misses = CpuInstruction.D_Cache_miss;
+	d_hits = CpuInstruction.D_Cache_hit;
 
 	/* reset cache stats after reading them (for the next instruction) */
 	CpuInstruction.I_Cache_miss = 0;
-	CpuInstruction.D_Cache_miss = 0;
+	CpuInstruction.D_Cache_hit = 0;
 
-// it seems that there are neither data cache misses NOR hits???
-//	d_misses = CpuInstruction.D_Cache_hit;
-//	CpuInstruction.D_Cache_hit = 0;
-
-	if (unlikely(i_misses >= MAX_MISS)) {
+	if (unlikely(i_misses >= MAX_I_MISSES)) {
 		Uint32 nextpc;
-		fprintf(stderr, "WARNING: %d CPU instruction cache misses > %d at 0x%x:\n", i_misses, MAX_MISS-1, pc);
+		fprintf(stderr, "WARNING: %d CPU instruction cache misses > %d at 0x%x:\n", i_misses, MAX_I_MISSES-1, pc);
 		Disasm(stderr, prev_pc, &nextpc, 1);
 		Disasm(stderr, pc, &nextpc, 1);
-		i_misses = MAX_MISS-1;
+		i_misses = MAX_I_MISSES-1;
 #if DEBUG
 		skip_assert = true;
 		DebugUI(REASON_CPU_EXCEPTION);
 #endif
 	}
-	if (unlikely(d_misses >= MAX_MISS)) {
+	if (unlikely(d_hits & 0x1)) {
+		fprintf(stderr, "WARNING: odd (%d) number of CPU data cache hits at 0x%x:\n", d_hits, pc);
+	}
+	d_hits >>= 1;
+	if (unlikely(d_hits >= MAX_D_HITS)) {
 		Uint32 nextpc;
-		fprintf(stderr, "WARNING: %d CPU data cache misses > %d at 0x%x:\n", d_misses, MAX_MISS-1, pc);
+		fprintf(stderr, "WARNING: %d CPU data cache hits > %d at 0x%x:\n", 2*d_hits, 2*(MAX_D_HITS-1), pc);
 		Disasm(stderr, prev_pc, &nextpc, 1);
 		Disasm(stderr, pc, &nextpc, 1);
-		d_misses = MAX_MISS-1;
+		d_hits = MAX_D_HITS-1;
 #if DEBUG
 		skip_assert = true;
 		DebugUI(REASON_CPU_EXCEPTION);
@@ -1007,15 +1008,15 @@ void Profile_CpuUpdate(void)
 	} else {
 		prev->i_misses = MAX_CPU_PROFILE_VALUE;
 	}
-	cpu_profile.d_miss_counts[d_misses]++;
-	if (likely(prev->d_misses < MAX_CPU_PROFILE_VALUE - d_misses)) {
-		prev->d_misses += d_misses;
+	cpu_profile.d_hit_counts[d_hits]++;
+	if (likely(prev->d_hits < MAX_CPU_PROFILE_VALUE - d_hits)) {
+		prev->d_hits += d_hits;
 	} else {
-		prev->d_misses = MAX_CPU_PROFILE_VALUE;
+		prev->d_hits = MAX_CPU_PROFILE_VALUE;
 	}
 #else
 	i_misses = 0;
-	d_misses = 0;
+	d_hits = 0;
 #endif
 	if (cpu_callinfo.sites) {
 		collect_calls(prev_pc, counters);
@@ -1024,10 +1025,10 @@ void Profile_CpuUpdate(void)
 	 * otherwise cost for the instruction calling the callee
 	 * doesn't get accounted to caller (but callee).
 	 */
-	counters->i_misses += i_misses;
-	counters->d_misses += d_misses;
-	counters->cycles += cycles;
 	counters->count++;
+	counters->cycles += cycles;
+	counters->i_misses += i_misses;
+	counters->d_hits += d_hits;
 
 #if DEBUG
 	if (unlikely(OpcodeFamily == 0)) {
@@ -1070,9 +1071,9 @@ static void update_area_item(profile_area_t *area, Uint32 addr, cpu_profile_item
 		return;
 	}
 	area->counters.count += count;
-	area->counters.i_misses += item->i_misses;
-	area->counters.d_misses += item->d_misses;
 	area->counters.cycles += cycles;
+	area->counters.i_misses += item->i_misses;
+	area->counters.d_hits += item->d_hits;
 
 	if (cycles == MAX_CPU_PROFILE_VALUE) {
 		area->overflow = true;
@@ -1177,7 +1178,7 @@ void Profile_CpuStop(void)
 		assert(cpu_profile.all.count == cpu_profile.ttram.counters.count + cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count);
 		assert(cpu_profile.all.cycles == cpu_profile.ttram.counters.cycles + cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
 		assert(cpu_profile.all.i_misses == cpu_profile.ttram.counters.i_misses + cpu_profile.ram.counters.i_misses + cpu_profile.tos.counters.i_misses + cpu_profile.rom.counters.i_misses);
-		assert(cpu_profile.all.d_misses == cpu_profile.ttram.counters.d_misses + cpu_profile.ram.counters.d_misses + cpu_profile.tos.counters.d_misses + cpu_profile.rom.counters.d_misses);
+		assert(cpu_profile.all.d_hits == cpu_profile.ttram.counters.d_hits + cpu_profile.ram.counters.d_hits + cpu_profile.tos.counters.d_hits + cpu_profile.rom.counters.d_hits);
 	}
 
 	/* allocate address array for sorting */
