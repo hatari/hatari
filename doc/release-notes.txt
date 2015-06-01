@@ -3,7 +3,7 @@
                                    --------
                                 Release Notes
 
- Version 1.x.x (201x-xx-xx):
+ Version 1.9.0 (2015-xx-xx):
  ---------------------------
 
 Emulation:
@@ -23,7 +23,7 @@ Emulation:
   - update WinUAE CPU core version from 2.3 -> 2.8.1 -> 3.0 -> 3.1
     - MMU emulation fixed
     - data cache emulation
-    - cycle accuracy etc
+    - cycle accuracy, etc.
   - in 68000 mode, remove some un-allowed <ea> for CMPI, BTST and TST
   - check for address error when new PC is set at the end of RTE, RTS and RTR
   - fix "move.b an,<ea>", it's not allowed and should give illegal instruction
