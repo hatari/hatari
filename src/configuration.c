@@ -79,6 +79,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nVdiWidth", Int_Tag, &ConfigureParams.Screen.nVdiWidth },
 	{ "nVdiHeight", Int_Tag, &ConfigureParams.Screen.nVdiHeight },
 	{ "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
+	{ "bMouseWarp", Bool_Tag, &ConfigureParams.Screen.bMouseWarp },
 	{ "bShowStatusbar", Bool_Tag, &ConfigureParams.Screen.bShowStatusbar },
 	{ "bShowDriveLed", Bool_Tag, &ConfigureParams.Screen.bShowDriveLed },
 	{ "bCrop", Bool_Tag, &ConfigureParams.Screen.bCrop },
@@ -594,6 +595,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nVdiWidth = 640;
 	ConfigureParams.Screen.nVdiHeight = 480;
 	ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
+	ConfigureParams.Screen.bMouseWarp = true;
 	ConfigureParams.Screen.bShowStatusbar = true;
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCrop = false;

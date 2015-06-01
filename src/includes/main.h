@@ -62,7 +62,7 @@ extern void Main_RequestQuit(int exitval);
 extern void Main_SetRunVBLs(Uint32 vbls);
 extern bool Main_SetVBLSlowdown(int factor);
 extern void Main_WaitOnVbl(void);
-extern void Main_WarpMouse(int x, int y);
+extern void Main_WarpMouse(int x, int y, bool restore);
 extern void Main_EventHandler(void);
 extern void Main_SetTitle(const char *title);
 

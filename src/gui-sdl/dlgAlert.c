@@ -169,7 +169,7 @@ static int DlgAlert_ShowDlg(const char *text)
 
 	SDL_UpdateRect(sdlscrn, 0,0, 0,0);
 	SDL_ShowCursor(bOldMouseVisibility);
-	Main_WarpMouse(nOldMouseX, nOldMouseY);
+	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 #if WITH_SDL2
 	SDL_SetRelativeMouseMode(bOldMouseMode);

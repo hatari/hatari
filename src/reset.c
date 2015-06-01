@@ -112,7 +112,8 @@ static int Reset_ST(bool bCold)
  */
 int Reset_Cold(void)
 {
-	Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2);  /* Set mouse pointer to the middle of the screen */
+	/* Set mouse pointer to the middle of the screen */
+	Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2, false);
 
 	return Reset_ST(true);
 }

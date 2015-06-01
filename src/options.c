@@ -67,6 +67,7 @@ enum {
 	OPT_GRAB,
 	OPT_FRAMESKIPS,
 	OPT_SLOWDOWN,
+	OPT_MOUSE_WARP,
 	OPT_STATUSBAR,
 	OPT_DRIVE_LED,
 	OPT_MAXWIDTH,
@@ -209,6 +210,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
 	{ OPT_SLOWDOWN, NULL, "--slowdown",
 	  "<x>", "VBL wait time multiplier (1-8, default 1)" },
+	{ OPT_MOUSE_WARP, NULL, "--mousewarp",
+	  "<bool>", "Center host mouse on reset & resolution changes" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",
 	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
@@ -1045,6 +1048,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			{
 				return Opt_ShowError(OPT_SLOWDOWN, argv[i], "Invalid VBL wait slowdown multiplier");
 			}
+			break;
+
+		case OPT_MOUSE_WARP:
+			ok = Opt_Bool(argv[++i], OPT_MOUSE_WARP, &ConfigureParams.Screen.bMouseWarp);
 			break;
 
 		case OPT_STATUSBAR:

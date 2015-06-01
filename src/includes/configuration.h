@@ -260,6 +260,7 @@ typedef struct
   int nVdiColors;
   int nVdiWidth;
   int nVdiHeight;
+  bool bMouseWarp;
   bool bShowStatusbar;
   bool bShowDriveLed;
   bool bCrop;

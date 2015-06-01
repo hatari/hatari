@@ -235,7 +235,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp, bool bForceChange)
 			sdlscrn->format->Rshift, sdlscrn->format->Gshift, sdlscrn->format->Bshift,
 			sdlscrn->format->Rloss, sdlscrn->format->Gloss, sdlscrn->format->Bloss));
 
-	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2);
+	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2, false);
 }
 
 
