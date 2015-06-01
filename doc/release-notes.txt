@@ -21,7 +21,9 @@ Emulation:
   - Program header (TT-RAM) allocate flags support
 - CPU:
   - update WinUAE CPU core version from 2.3 -> 2.8.1 -> 3.0 -> 3.1
-    (MMU emulation fixes, cycle accuracy, etc)
+    - MMU emulation fixed
+    - data cache emulation
+    - cycle accuracy etc
   - in 68000 mode, remove some un-allowed <ea> for CMPI, BTST and TST
   - check for address error when new PC is set at the end of RTE, RTS and RTR
   - fix "move.b an,<ea>", it's not allowed and should give illegal instruction
@@ -60,6 +62,8 @@ Emulator:
   - Fast boot (warm boot / memory check bypass) is disabled by default
   - 68060 CPU level and --ttram support with new WinUAE CPU core
   - New --png-level option to decrease AVI compression CPU load
+  - Mouse warping on reset & resolution change can be controlled
+    with new --mousewarp option
 - Hard drive emulation:
   - BUS ID for ACSI drive can be specified with --acsi
   - GUI and command line options to specify GEMDOS HD emulation drive
@@ -76,6 +80,7 @@ Emulator:
   - Partial support for showing Latin1 chars from UTF-8 file names
   - AltGr+F<1-4> keyboard shortcuts to switch mode/type for emulated
     joysticks and joypads
+  - User can reset emulation from CPU halt dialog
   - Fix: sync joystick changes with statusbar
   - Fix: update default max window size for 2-line statusbar
          NOTE: size would need to be updated in Hatari config files too!
@@ -89,11 +94,14 @@ Emulator:
   - Fix: breakpoint addition/removal within chained breakpoints
   - Fix: Atari program detection on Windows for "symbols" command
   - Profiler support for TT-RAM (uses *ton* of memory)
+  - Profiler support for (030) data cache and new "profile caches"
+    command to show i/d-cache hit/miss histograms
   - Add trace support for IDE, MIDI and keymaps.  ACSI (SCSI) and IDE
     trace output shows primary partition tables for ACSI & IDE images
     (both Atari and DOS MBRs are supported)
   - Add "os_base" trace option to trace Fopen/Fclose/Pexec/Pterm*.
     That and "os_all" will now enable also xconout console redirection
+  - Output from --conout goes now to stdout instead of stderr
   - Add "reset <hard|soft>" command
   - Add "save" subcommand to "history" command
   - Add "basepage" address variable
@@ -102,6 +110,7 @@ Other changes:
 - Add script to convert long host file names to Atari file names,
   use that in atari-hd-image script
 - Add hatari-prg-args script for providing arguments to autostarted programs
+- Fix Atari program detection on Windows in "gst2ascii" tool
 - Hatari & disk image icons in SVG & PNG formats (multiple sizes)
 - Remaining Hatari OSX UI changes for Hatari v1.8.0 (localization)
 - Add video-recording.txt doc on video recording/uploading best practices
