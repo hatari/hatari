@@ -7709,7 +7709,6 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 	} else {
 		uae_u32 tv = get_long(addr);
 		v1 = c1->data[lws1];
-		CpuInstruction.D_Cache_hit++;
 #ifndef WINUAE_FOR_HATARI
 		if (uae_boot_rom_type > 0) {
 			// this check and fix is needed for UAE filesystem handler because it runs in host side and in
@@ -7755,7 +7754,6 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 #endif
 	} else {
 		v2 = c2->data[lws2];
-		CpuInstruction.D_Cache_hit++;
 #ifndef WINUAE_FOR_HATARI
 		if (uae_boot_rom_type > 0) {
 			if (get_long (addr) != v2) {
