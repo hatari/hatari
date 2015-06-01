@@ -393,6 +393,9 @@ void	STMemory_Write ( Uint32 addr , Uint32 val , int size )
 		do_put_mem_word ( p , (Uint16)val );
 	else
 		*p = (Uint8)val;
+
+	/* We modify the memory, so we flush the data cache if needed */
+	M68000_Flush_DCache ( addr , size );
 }
 
 void	STMemory_WriteLong ( Uint32 addr , Uint32 val )
