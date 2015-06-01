@@ -1396,7 +1396,6 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     /* IO memory: */
     map_banks_ce(&IOmem_bank, IOmem_start>>16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-    fill_ce_banks ( IOmem_start >> 16, 0x1 , CE_MEMBANK_CHIP16, 1 );
     IOmem_bank.baseaddr = IOmemory;
     IOmem_bank.mask = IOmem_mask;
     IOmem_bank.start = IOmem_start;
