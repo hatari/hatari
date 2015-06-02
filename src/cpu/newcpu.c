@@ -2810,6 +2810,7 @@ static void Exception_normal (int nr)
 			 * This will call OpCode_VDI() after completion of Trap call!
 			 * This is used to modify specific VDI return vectors contents.
 			*/
+			currpc = m68k_getpc ();
 			VDI_OldPC = currpc;
 			currpc = CART_VDI_OPCODE_ADDR;
 		}
