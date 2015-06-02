@@ -2114,6 +2114,9 @@ static bool GemDOS_Read(Uint32 Params)
 	/* And read data in */
 	pBuffer = (char *)STMemory_STAddrToPointer(Addr);
 	nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
+
+	/* We modify the memory, so we flush the data cache */
+	M68000_Flush_DCache ( DTA_Gemdos , sizeof ( DTA ) );
 	
 	if (ferror(FileHandles[Handle].FileHandle))
 	{
