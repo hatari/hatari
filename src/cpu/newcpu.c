@@ -6469,7 +6469,11 @@ void m68k_dumpstate_2 (uaecptr pc, uaecptr *nextpc)
 	}
 #endif
 	if (currprefs.mmu_model == 68030) {
+#ifndef WINUAE_FOR_HATARI
 		console_out_f (_T("SRP: %llX CRP: %llX\n"), srp_030, crp_030);
+#else
+		console_out_f (_T("SRP: %"PRIX64" CRP: %"PRIX64"\n"), srp_030, crp_030);
+#endif
 		console_out_f (_T("TT0: %08X TT1: %08X TC: %08X\n"), tt0_030, tt1_030, tc_030);
 	}
 	if (currprefs.cpu_compatible && currprefs.cpu_model == 68000) {
