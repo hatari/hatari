@@ -301,6 +301,9 @@ static int PopulateDTA(char *path, struct dirent *file)
 
 	GemDOS_DateTime2Tos(filestat.st_mtime, &DateTime, tempstr);
 
+	/* Atari memory modified directly through pDTA members -> flush the data cache */
+	M68000_Flush_DCache(DTA_Gemdos, sizeof(DTA));
+
 	/* convert to atari-style uppercase */
 	Str_Filename2TOSname(file->d_name, pDTA->dta_name);
 #if DEBUG_PATTERN_MATCH
@@ -311,7 +314,6 @@ static int PopulateDTA(char *path, struct dirent *file)
 	do_put_mem_word(pDTA->dta_time, DateTime.timeword);
 	do_put_mem_word(pDTA->dta_date, DateTime.dateword);
 	pDTA->dta_attrib = nFileAttr;
-	M68000_Flush_DCache ( DTA_Gemdos , sizeof ( DTA ) );		/* We modify the memory, so we flush the data cache */
 
 	return 0;
 }
@@ -2111,12 +2113,13 @@ static bool GemDOS_Read(Uint32 Params)
 		Regs[REG_D0] = GEMDOS_ERANGE;
 		return true;
 	}
+
+	/* Atari memory modified directly with fread() -> flush the data cache */
+	M68000_Flush_DCache(Addr, Size);
+
 	/* And read data in */
 	pBuffer = (char *)STMemory_STAddrToPointer(Addr);
 	nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
-
-	/* We modify the memory, so we flush the data cache */
-	M68000_Flush_DCache ( DTA_Gemdos , sizeof ( DTA ) );
 	
 	if (ferror(FileHandles[Handle].FileHandle))
 	{
@@ -2707,8 +2710,11 @@ static bool GemDOS_SFirst(Uint32 Params)
 		Regs[REG_D0] = GEMDOS_EINTRN;    /* "internal error */
 		return true;
 	}
+
+	/* Atari memory modified directly with do_mem_* + strcpy() -> flush the data cache */
+	M68000_Flush_DCache(DTA_Gemdos, sizeof(DTA));
+
 	pDTA = (DTA *)STMemory_STAddrToPointer(DTA_Gemdos);
-	M68000_Flush_DCache ( DTA_Gemdos , sizeof ( DTA ) );		/* We modify the memory, so we flush the data cache */
 
 	/* Populate DTA, set index for our use */
 	do_put_mem_word(pDTA->index, DTAIndex);
