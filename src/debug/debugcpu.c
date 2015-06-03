@@ -73,6 +73,12 @@ static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
+	/* TODO: more efficient would be to:
+	 * - check file size
+	 * - verify that it fits into valid memory area
+	 * - flush emulated CPU data cache
+	 * - read file contents directly into memory
+	 */
 	c = fgetc(fp);
 	while (!feof(fp))
 	{
