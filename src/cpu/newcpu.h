@@ -674,6 +674,9 @@ extern bool check_prefs_changed_comp (void);
 #define flush_icache_hard(uaecptr, int) do {} while (0)
 #endif
 extern void flush_dcache (uaecptr, int);
+#ifdef WINUAE_FOR_HATARI
+extern void flush_instr_cache (uaecptr, int);
+#endif
 extern void flush_mmu (uaecptr, int);
 
 extern int movec_illg (int regno);

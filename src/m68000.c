@@ -656,15 +656,20 @@ int	M68000_WaitEClock ( void )
 /*-----------------------------------------------------------------------*/
 /**
  * In case we modified the memory by accessing it directly (and bypassing
- * the CPU's cache mechanism), we need to flush the data cache to force an
- * update of the cache on the next accesses.
+ * the CPU's cache mechanism), we need to flush the instruction and data
+ * caches to force an update of the caches on the next accesses.
  *
- * [NP] NOTE : for now, flush_dcache flushes the whole cache, not just 'addr'
+ * [NP] NOTE : for now, flush_instr_caches and flush_dcache flush
+ * the whole caches, not just 'addr'
  */
-void	M68000_Flush_DCache ( uaecptr addr , int size )
+void	M68000_Flush_Caches ( uaecptr addr , int size )
 {
 #ifdef WINUAE_FOR_HATARI
-	flush_dcache ( addr , size );		/* cache for cpu >= 68030 is only emulated with WinUAE */
+	/* Instruction cache for cpu >= 68020 */
+	flush_instr_cache ( addr , size );
+
+	/* Data cache for cpu >= 68030 is only emulated with WinUAE */
+	flush_dcache ( addr , size );
 #endif
 }
 

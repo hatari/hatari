@@ -7293,6 +7293,8 @@ uae_u32 get_word_020_prefetch (int o)
 		v = regs.prefetch020[0] >> 16;
 		regs.db = regs.prefetch020[0];
 	}
+//if ( ( v & 0xffff ) != ( get_word(pc) & 0xffff ) )
+//  fprintf ( stderr , "prefetch mismatch pc=%x prefetch=%x != mem=%x, i-cache error ?\n" , pc , v&0xffff , get_word(pc)&0xffff );
 	return v;
 }
 
@@ -8202,6 +8204,37 @@ void flush_dcache (uaecptr addr, int size)
 		}
 	}
 }
+
+#ifdef WINUAE_FOR_HATARI
+void flush_instr_cache (uaecptr addr, int size)
+{
+	int i;
+	if (!currprefs.cpu_cycle_exact && !currprefs.cpu_compatible)
+		return;
+	if (currprefs.cpu_model == 68020) {
+		for (i = 0; i < CACHELINES020; i++)
+			caches020[i].valid = 0;
+	}
+	else if (currprefs.cpu_model == 68030) {
+		for (i = 0; i < CACHELINES030; i++) {
+			icaches030[i].valid[0] = 0;
+			icaches030[i].valid[1] = 0;
+			icaches030[i].valid[2] = 0;
+			icaches030[i].valid[3] = 0;
+		}
+	}
+	else if (currprefs.cpu_model >= 68040) {
+		icachelinecnt = 0;
+		dcachelinecnt = 0;
+		for (i = 0; i < CACHESETS040; i++) {
+			icaches040[i].valid[0] = 0;
+			icaches040[i].valid[1] = 0;
+			icaches040[i].valid[2] = 0;
+			icaches040[i].valid[3] = 0;
+		}
+	}
+}
+#endif
 
 void fill_prefetch_030 (void)
 {
