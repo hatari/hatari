@@ -18,8 +18,8 @@ Emulation improvements
 	- Colors in 2-plane VDI resolution are not set correctly
 	- "Running" game 1997 shareware version doesn't work
 	- NoCrew: Aggressive Party II 128k combo ("Whirlpool") bombs
-	- Tony Benett: "Virtual City" demo bombs
-	- Shadows: "Firestarter" demo bombs
+	- JAM packer packed version of Tony Benett' "Virtual City" demo bombs
+	- Sentry 2.2 packed version of Shadows' "Firestarter" demo bombs
 	Note: last two demos can be autostarted fine with EmuTOS.
   Document that in manual (page) for the Hatari "autorun" feature.
 
