@@ -662,12 +662,27 @@ int	M68000_WaitEClock ( void )
  * [NP] NOTE : for now, flush_instr_caches and flush_dcache flush
  * the whole caches, not just 'addr'
  */
-void	M68000_Flush_Caches ( uaecptr addr , int size )
+void	M68000_Flush_All_Caches ( uaecptr addr , int size )
+{
+#ifdef WINUAE_FOR_HATARI
+	M68000_Flush_Instr_Cache ( addr , size );
+	M68000_Flush_Data_Cache ( addr , size );
+#endif
+}
+
+
+void	M68000_Flush_Instr_Cache ( uaecptr addr , int size )
 {
 #ifdef WINUAE_FOR_HATARI
 	/* Instruction cache for cpu >= 68020 */
 	flush_instr_cache ( addr , size );
+#endif
+}
 
+
+void	M68000_Flush_Data_Cache ( uaecptr addr , int size )
+{
+#ifdef WINUAE_FOR_HATARI
 	/* Data cache for cpu >= 68030 is only emulated with WinUAE */
 	flush_dcache ( addr , size );
 #endif

@@ -388,7 +388,7 @@ void	STMemory_Write ( Uint32 addr , Uint32 val , int size )
 	p = pBank->baseaddr + addr;
 
 	/* We modify the memory, so we flush the instr/data caches if needed */
-	M68000_Flush_Caches ( addr , size );
+	M68000_Flush_All_Caches ( addr , size );
 	
 	if ( size == 4 )
 		do_put_mem_long ( p , val );
