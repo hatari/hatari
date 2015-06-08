@@ -12,15 +12,16 @@ Emulation improvements
 - Add fastload program header flag support to GEMDOS HD emulation
   (If PF_FASTLOAD flag is set, clear just BSS, not heap)
 
-- Investigate what TOS version/functionality doesn't work for programs
-  started from the DESKTOP/NEWDESK.INF and why, e.g:
+- Investigate what TOS version/functionality doesn't work for (Falcon)
+  programs started from the DESKTOP/NEWDESK.INF and why, e.g:
 	- Printing doesn't work with TOS versions v1.02 - v2.06
 	- Colors in 2-plane VDI resolution are not set correctly
 	- "Running" game 1997 shareware version doesn't work
 	- NoCrew: Aggressive Party II 128k combo ("Whirlpool") bombs
+	- RG: "Sworm" & "Sky Fall" games want to access A: & B: when autostarted
 	- JAM packer packed version of Tony Benett' "Virtual City" demo bombs
 	- Sentry 2.2 packed version of Shadows' "Firestarter" demo bombs
-	Note: last two demos can be autostarted fine with EmuTOS.
+	Note: last 3 programs can be autostarted fine with EmuTOS.
   Document that in manual (page) for the Hatari "autorun" feature.
 
 - Keyboard detection sometimes fails when --fast-forward is enabled
