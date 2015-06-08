@@ -5002,7 +5002,7 @@ printf ( "run_3ce\n" );
 				(*cpufunctbl[r->opcode])(r->opcode);
 
 #ifdef WINUAE_FOR_HATARI
-//fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
+//fprintf ( stderr, "cyc_3ce %d\n" , currcycle );
 				M68000_AddCycles(currcycle * 2 / CYCLE_UNIT);
 
 				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
@@ -5122,6 +5122,7 @@ printf ( "run_3p\n" );
 
 /* "cycle exact" 68020/030  */
 
+STATIC_INLINE struct cache030 *getcache030 (struct cache030 *cp, uaecptr addr, uae_u32 *tagp, int *lwsp);
 static void m68k_run_2ce (void)
 {
 	struct regstruct *r = &regs;
@@ -5178,6 +5179,11 @@ printf ( "run_2ce\n" );
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+struct cache030 *c1;
+        int lws1, lws2;
+        uae_u32 tag1, tag2;
+c1 = getcache030 (dcaches030, (uaecptr)0x1f81ee, &tag1, &lws1);
+//fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x\n" , c1->valid[lws1] , tag1 , lws1 , c1->tag , c1->data[lws1] );
 				}
 
 				currcycle = 0;
@@ -7293,8 +7299,8 @@ uae_u32 get_word_020_prefetch (int o)
 		v = regs.prefetch020[0] >> 16;
 		regs.db = regs.prefetch020[0];
 	}
-//if ( ( v & 0xffff ) != ( get_word(pc) & 0xffff ) )
-//  fprintf ( stderr , "prefetch mismatch pc=%x prefetch=%x != mem=%x, i-cache error ?\n" , pc , v&0xffff , get_word(pc)&0xffff );
+if ( ( v & 0xffff ) != ( get_word(pc) & 0xffff ) )
+  fprintf ( stderr , "prefetch mismatch pc=%x prefetch=%x != mem=%x, i-cache error ?\n" , pc , v&0xffff , get_word(pc)&0xffff );
 	return v;
 }
 
@@ -7605,6 +7611,7 @@ static void fill_icache030 (uae_u32 addr)
 
 STATIC_INLINE bool cancache030 (uaecptr addr)
 {
+//return false;
 	return ce_cachable[addr >> 16] != 0;
 }
 
@@ -7629,10 +7636,13 @@ static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 	// easy one
 	if (size == 2 && aligned == 0) {
 		update_cache030 (c1, val, tag1, lws1);
+//fprintf ( stderr , "write cache %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x\n", addr, val, size, tag1, lws1, tag2, lws2 );
 		return;
 	}
 	// argh!! merge partial write
 	c2 = getcache030 (dcaches030, addr + 4, &tag2, &lws2);
+//fprintf ( stderr , "write cache %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x\n", addr, val, size, tag1, lws1, tag2, lws2 );
+#if 0
 	if (size == 2) {
 		if (c1->valid[lws1] && c1->tag == tag1) {
 			c1->data[lws1] &= ~(0xffffffff >> (aligned * 8));
@@ -7659,6 +7669,56 @@ static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 			c1->data[lws1] |= val >> (aligned * 8);
 		}
 	}
+#else
+	if (size == 2) {
+		if (c1->tag == tag1) {
+			if (c1->valid[lws1]) {
+				c1->data[lws1] &= ~(0xffffffff >> (aligned * 8));
+				c1->data[lws1] |= val >> (aligned * 8);
+			}
+		}
+		else
+			c1->valid[lws1] = false;
+		if (c2->tag == tag2) {
+			if (c2->valid[lws2]) {
+				c2->data[lws2] &= 0xffffffff >> ((4 - aligned) * 8);
+				c2->data[lws2] |= val << ((4 - aligned) * 8);
+			}
+		}
+		else
+			c2->valid[lws2] = false;
+	} else if (size == 1) {
+		val <<= 16;
+		if (c1->tag == tag1) {
+			if (c1->valid[lws1]) {
+				c1->data[lws1] &= ~(0xffff0000 >> (aligned * 8));
+				c1->data[lws1] |= val >> (aligned * 8);
+			}
+		}
+		else
+			c1->valid[lws1] = false;
+		if ( aligned == 3 ) {
+			if (c2->tag == tag2) {
+				if (c2->valid[lws2]) {
+					c2->data[lws2] &= 0x00ffffff;
+					c2->data[lws2] |= val << 8;
+				}
+			}
+			else
+				c2->valid[lws2] = false;
+		}
+	} else if (size == 0) {
+		val <<= 24;
+		if (c1->tag == tag1) {
+			if (c1->valid[lws1]) {
+				c1->data[lws1] &= ~(0xff000000 >> (aligned * 8));
+				c1->data[lws1] |= val >> (aligned * 8);
+			}
+		}
+		else
+			c1->valid[lws1] = false;
+	}
+#endif
 }
 void write_dcache030(uaecptr addr, uae_u32 v, int size)
 {
@@ -7680,7 +7740,21 @@ void write_dcache030(uaecptr addr, uae_u32 v, int size)
 	}
 }
 
+uae_u32 read_dcache030_0 (uaecptr addr, int size);
 uae_u32 read_dcache030 (uaecptr addr, int size)
+{
+  uae_u32 v;
+
+  v = read_dcache030_0 ( addr , size );
+  if (!(regs.cacr & 0x100) || !cancache030 (addr))
+    return v;
+  if ( ( ( size==2 ) && ( v != get_long ( addr ) ) )
+    || ( ( size==1 ) && ( (v&0xffff) != (get_word ( addr ) & 0xffff) ) )
+    || ( ( size==0 ) && ( (v&0xff) != (get_byte ( addr ) & 0xff ) ) ) )
+    fprintf ( stderr , "prefetch mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, v , get_long(addr) );
+  return v;
+}
+uae_u32 read_dcache030_0 (uaecptr addr, int size)
 {
 	struct cache030 *c1, *c2;
 	int lws1, lws2;
@@ -7710,6 +7784,7 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 	if (!c1->valid[lws1] || c1->tag != tag1) {
 		v1 = currprefs.cpu_cycle_exact ? mem_access_delay_long_read_ce020 (addr) : get_long (addr);
 		update_cache030 (c1, v1, tag1, lws1);
+//fprintf ( stderr , "read cache %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x ref %x\n", addr, v1, size, tag1, lws1, tag2, lws2 , get_long (0x1f81ec) );
 #ifdef WINUAE_FOR_HATARI
 		CpuInstruction.D_Cache_miss++;
 #endif
@@ -7756,6 +7831,7 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
 	if (!c2->valid[lws2] || c2->tag != tag2) {
 		v2 = currprefs.cpu_cycle_exact ? mem_access_delay_long_read_ce020 (addr) : get_long (addr);
 		update_cache030 (c2, v2, tag2, lws2);
+//fprintf ( stderr , "read cache %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x\n", addr, v1, size, tag1, lws1, tag2, lws2 );
 #ifdef WINUAE_FOR_HATARI
 		CpuInstruction.D_Cache_miss++;
 #endif
