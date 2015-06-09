@@ -48,7 +48,6 @@ extern void Str_Dump_Hex_Ascii ( char *p , int Len , int Width , const char *Suf
 
 /* Interface of character set conversions */
 extern void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar);
-extern void Str_HostToAtari(const char *source, char *dest, char replacementChar);
 extern void Str_DecomposedToPrecomposedUtf8(const char *source, char *dest);
 
 

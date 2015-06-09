@@ -66,6 +66,8 @@ Emulator:
     with new --mousewarp option
 - Hard drive emulation:
   - BUS ID for ACSI drive can be specified with --acsi
+  - GUI and command line options to enable 8-bit file name
+    Atari <-> host charset conversion for GEMDOS HD
   - GUI and command line options to specify GEMDOS HD emulation drive
     (default = C:), or to skip recognized drives used by partitions
     on ACSI & IDE images

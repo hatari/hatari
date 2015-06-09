@@ -301,6 +301,7 @@ static const struct Config_Tag configs_HardDisk[] =
 	{ "szHardDiskDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
 	{ "nGemdosCase", Int_Tag, &ConfigureParams.HardDisk.nGemdosCase },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.HardDisk.nWriteProtection },
+	{ "bFilenameConversion", Bool_Tag, &ConfigureParams.HardDisk.bFilenameConversion },
 	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
 	{ "szHardDiskImage", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
 	{ "bUseIdeMasterHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage },
@@ -480,6 +481,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for hard disks */
 	ConfigureParams.HardDisk.bBootFromHardDisk = false;
+	ConfigureParams.HardDisk.bFilenameConversion = false;
 	ConfigureParams.HardDisk.nGemdosCase = GEMDOS_NOP;
 	ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_OFF;
 	ConfigureParams.HardDisk.nGemdosDrive = DRIVE_C;

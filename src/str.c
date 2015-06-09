@@ -17,6 +17,9 @@ const char Str_fileid[] = "Hatari str.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "str.h"
 
+/* Used only by Str_Filename2TOSname() */
+static void Str_HostToAtari(const char *source, char *dest, char replacementChar);
+
 
 /**
  * Remove whitespace from beginning and end of a string.
@@ -393,6 +396,13 @@ static void Str_LocalToAtari(const char *source, char *dest, char replacementCha
 
 void Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
 {
+	if (!ConfigureParams.HardDisk.bFilenameConversion)
+	{
+		strncpy(dest, source, destLen);
+		if (destLen > 0)
+			dest[destLen-1]= '\0';
+		return;
+	}
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
 	Str_AtariToLocal(source, dest, destLen, replacementChar);
 #else
@@ -400,8 +410,13 @@ void Str_AtariToHost(const char *source, char *dest, int destLen, char replaceme
 #endif
 }
 
-void Str_HostToAtari(const char *source, char *dest, char replacementChar)
+static void Str_HostToAtari(const char *source, char *dest, char replacementChar)
 {
+	if (!ConfigureParams.HardDisk.bFilenameConversion)
+	{
+		strcpy(dest, source);
+		return;
+	}
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
 	Str_LocalToAtari(source, dest, replacementChar);
 #else
@@ -557,6 +572,3 @@ void	Str_Dump_Hex_Ascii ( char *p , int Len , int Width , const char *Suffix , F
 		
 	}
 }
-
-
-

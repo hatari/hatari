@@ -111,9 +111,10 @@ enum {
 	OPT_SLOWFLOPPY,
 	OPT_FASTFLOPPY,
 	OPT_WRITEPROT_FLOPPY,
-	OPT_WRITEPROT_HD,
 	OPT_HARDDRIVE,
+	OPT_WRITEPROT_HD,
 	OPT_GEMDOS_CASE,
+	OPT_GEMDOS_CONVERT,
 	OPT_GEMDOS_DRIVE,
 	OPT_ACSIHDIMAGE,
 	OPT_IDEMASTERHDIMAGE,
@@ -296,7 +297,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_RS232_OUT, NULL, "--rs232-out",
 	  "<file>", "Enable serial port and use <file> as the output device" },
 	
-	{ OPT_HEADER, NULL, NULL, NULL, "Disk" },
+	{ OPT_HEADER, NULL, NULL, NULL, "Floppy drive" },
 	{ OPT_DRIVEA, NULL, "--drive-a",
 	  "<bool>", "Enable/disable drive A (default is on)" },
 	{ OPT_DRIVEB, NULL, "--drive-b",
@@ -315,12 +316,16 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Speed up floppy disk access emulation (can break some programs)" },
 	{ OPT_WRITEPROT_FLOPPY, NULL, "--protect-floppy",
 	  "<x>", "Write protect floppy image contents (on/off/auto)" },
-	{ OPT_WRITEPROT_HD, NULL, "--protect-hd",
-	  "<x>", "Write protect harddrive <dir> contents (on/off/auto)" },
+
+	{ OPT_HEADER, NULL, NULL, NULL, "Hard drive" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate harddrive partition(s) with <dir> contents" },
+	{ OPT_WRITEPROT_HD, NULL, "--protect-hd",
+	  "<x>", "Write protect harddrive <dir> contents (on/off/auto)" },
 	{ OPT_GEMDOS_CASE, NULL, "--gemdos-case",
 	  "<x>", "Forcibly up/lowercase new GEMDOS dir/filenames (off/upper/lower)" },
+	{ OPT_GEMDOS_CONVERT, NULL, "--gemdos-conv",
+	  "<bool>", "Atari GEMDOS <-> host (UTF-8) file name conversion" },
 	{ OPT_GEMDOS_DRIVE, NULL, "--gemdos-drive",
 	  "<drive>", "Assign GEMDOS HD <dir> to drive letter <drive> (C-Z, skip)" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
@@ -1393,6 +1398,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 				ConfigureParams.HardDisk.nGemdosCase = GEMDOS_LOWER;
 			else
 				return Opt_ShowError(OPT_GEMDOS_CASE, argv[i], "Unknown option value");
+			break;
+
+		case OPT_GEMDOS_CONVERT:
+			ok = Opt_Bool(argv[++i], OPT_GEMDOS_CONVERT, &ConfigureParams.HardDisk.bFilenameConversion);
 			break;
 
 		case OPT_GEMDOS_DRIVE:

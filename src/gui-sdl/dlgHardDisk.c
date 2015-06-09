@@ -26,18 +26,19 @@ const char DlgHardDisk_fileid[] = "Hatari dlgHardDisk.c : " __DATE__ " " __TIME_
 #define DISKDLG_GEMDOSEJECT       15
 #define DISKDLG_GEMDOSBROWSE      16
 #define DISKDLG_GEMDOSNAME        17
-#define DISKDLG_DRIVESKIP         18
-#define DISKDLG_PROTOFF           20
-#define DISKDLG_PROTON            21
-#define DISKDLG_PROTAUTO          22
-#define DISKDLG_BOOTHD            23
-#define DISKDLG_EXIT              24
+#define DISKDLG_GEMDOSCONV        18
+#define DISKDLG_DRIVESKIP         19
+#define DISKDLG_PROTOFF           21
+#define DISKDLG_PROTON            22
+#define DISKDLG_PROTAUTO          23
+#define DISKDLG_BOOTHD            24
+#define DISKDLG_EXIT              25
 
 
 /* The disks dialog: */
 static SGOBJ diskdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 64,19, NULL },
+	{ SGBOX, 0, 0, 0,0, 64,22, NULL },
 	{ SGTEXT, 0, 0, 27,1, 10,1, "Hard disks" },
 
 	{ SGTEXT, 0, 0, 2,3, 14,1, "ACSI HD image:" },
@@ -60,16 +61,17 @@ static SGOBJ diskdlg[] =
 	{ SGBUTTON, 0, 0, 54,9, 8,1, "B_rowse" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 
-	{ SGCHECKBOX, 0, 0, 8,11, 42,1, "After ACSI/IDE _partitions (experimental)" },
+	{ SGCHECKBOX, 0, 0, 8,12, 42,1, "Atari <-> _host 8-bit file name conversion" },
+	{ SGCHECKBOX, 0, 0, 8,13, 42,1, "After ACSI/IDE _partitions (experimental)" },
 
-	{ SGTEXT, 0, 0, 8,12, 31,1, "Write protection:" },
-	{ SGRADIOBUT, 0, 0, 26,12, 5,1, "O_ff" },
-	{ SGRADIOBUT, 0, 0, 32,12, 4,1, "O_n" },
-	{ SGRADIOBUT, 0, 0, 37,12, 6,1, "_Auto" },
+	{ SGTEXT, 0, 0, 8,15, 31,1, "Write protection:" },
+	{ SGRADIOBUT, 0, 0, 26,15, 5,1, "O_ff" },
+	{ SGRADIOBUT, 0, 0, 32,15, 4,1, "O_n" },
+	{ SGRADIOBUT, 0, 0, 37,15, 6,1, "_Auto" },
 
-	{ SGCHECKBOX, 0, 0, 2,14, 14,1, "_Boot from HD" },
+	{ SGCHECKBOX, 0, 0, 2,17, 16,1, "_Boot from HD" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 22,17, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 22,20, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -111,6 +113,12 @@ void DlgHardDisk_Main(void)
 	SDLGui_CenterDlg(diskdlg);
 
 	/* Set up dialog to actual values: */
+
+	/* Convert 8-bit GEMDOS file names? */
+	if (ConfigureParams.HardDisk.bFilenameConversion)
+		diskdlg[DISKDLG_GEMDOSCONV].state |= SG_SELECTED;
+	else
+		diskdlg[DISKDLG_GEMDOSCONV].state &= ~SG_SELECTED;
 
 	/* Skip ACSI/IDE partitions? */
 	if (ConfigureParams.HardDisk.nGemdosDrive == DRIVE_SKIP)
@@ -229,4 +237,9 @@ void DlgHardDisk_Main(void)
 		ConfigureParams.HardDisk.nGemdosDrive = DRIVE_SKIP;
 	else if (ConfigureParams.HardDisk.nGemdosDrive == DRIVE_SKIP)
 		ConfigureParams.HardDisk.nGemdosDrive = DRIVE_C;
+
+	if (diskdlg[DISKDLG_GEMDOSCONV].state & SG_SELECTED)
+		ConfigureParams.HardDisk.bFilenameConversion = true;
+	else
+		ConfigureParams.HardDisk.bFilenameConversion = false;
 }

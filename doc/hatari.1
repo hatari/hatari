@@ -216,7 +216,7 @@ Enable serial port support and use <file> as the input device
 .B \-\-rs232\-out <filename>
 Enable serial port support and use <file> as the output device
 
-.SH "Disk options"
+.SH "Floppy drive options"
 .TP
 .B \-\-drive\-a <bool>
 Enable/disable drive A (default is on)
@@ -235,10 +235,24 @@ Set disk image for floppy drive A
 .TP
 .B \-\-disk\-b <file>
 Set disk image for floppy drive B
+.TP 
+.B \-\-fastfdc <bool>
+speed up FDC emulation (can cause incompatibilities)
 .TP
 .B \-\-protect\-floppy <x>
 Write protect floppy image contents (on/off/auto). With "auto" option
 write protection is according to the disk image file attributes
+
+.SH "Hard drive options"
+.TP
+.B \-d, \-\-harddrive <dir>
+Emulate harddrive partition(s) with <dir> contents.  If directory
+contains only single letter (C-Z) subdirectories, each of these
+subdirectories will be treated as a separate partition, otherwise the
+given directory itself will be assigned to drive "C:". In the multiple
+partition case, the letters used as the subdirectory names will
+determine to which drives/partitions they're assigned. If <dir> is
+an empty string, then harddrive's emulation is disabled
 .TP
 .B \-\-protect\-hd <x>
 Write protect harddrive <dir> contents (on/off/auto). With "auto" option
@@ -249,15 +263,14 @@ emulation
 .B \-\-gemdos\-case <x>
 Specify whether new dir/filenames are forced to be in upper or lower case
 with the GEMDOS HD emulation. Off/upper/lower, off by default
-.TP 
-.B \-d, \-\-harddrive <dir>
-Emulate harddrive partition(s) with <dir> contents.  If directory
-contains only single letter (C-Z) subdirectories, each of these
-subdirectories will be treated as a separate partition, otherwise the
-given directory itself will be assigned to drive "C:". In the multiple
-partition case, the letters used as the subdirectory names will
-determine to which drives/partitions they're assigned. If <dir> is
-an empty string, then harddrive's emulation is disabled
+.TP
+.B \-\-gemdos\-conv <bool>
+Whether GEMDOS file names with 8-bit (non-ASCII) characters are
+converted between Atari and host character sets. On Linux, host file
+name character set is assumed to be UTF-8. This option is disabled by
+default, in case you've transferred files from Atari machine without
+proper file name conversion (e.g. by zipping them on Atari and
+unzipping on PC).
 .TP
 .B \-\-acsi <id>=<file>
 Emulate an ACSI hard disk with given BUS ID (0-7) using image <file>.
@@ -268,9 +281,6 @@ Emulate an IDE master hard disk with an image <file>
 .TP 
 .B \-\-ide\-slave <file>
 Emulate an IDE slave hard disk with an image <file>
-.TP 
-.B \-\-fastfdc <bool>
-speed up FDC emulation (can cause incompatibilities)
 
 .SH "Memory options"
 .TP 
