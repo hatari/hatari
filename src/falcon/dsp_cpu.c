@@ -972,7 +972,7 @@ static void dsp_postexecute_interrupts(void)
 				dsp_core.interrupt_pipeline_count --;
 				return;
 			case 3:
-				/* Prefetch interrupt instruction 2 */
+				/* Prefetch interrupt instruction 2, if first one was single word */
 				if (dsp_core.pc == dsp_core.interrupt_instr_fetch+1) {
 					instr = read_memory_p(dsp_core.pc);
 					if ( ((instr & 0xfff000) == 0x0d0000) || ((instr & 0xffc0ff) == 0x0bc080) ) {
@@ -983,9 +983,11 @@ static void dsp_postexecute_interrupts(void)
 												(1<<DSP_SR_I0)|(1<<DSP_SR_I1));
 						dsp_core.registers[DSP_REG_SR] |= dsp_core.interrupt_IplToRaise<<DSP_SR_I0;
 					}
-				}
-				dsp_core.interrupt_pipeline_count --;
-				return;
+					dsp_core.interrupt_pipeline_count --;
+					return;
+  				}
+  				dsp_core.interrupt_pipeline_count --;
+				/* First instruction was 2 word. Fall through */
 			case 2:
 				/* 1 instruction executed after interrupt */
 				/* before re enable interrupts */
