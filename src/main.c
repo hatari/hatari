@@ -614,11 +614,13 @@ void Main_SetTitle(const char *title)
 /*-----------------------------------------------------------------------*/
 /**
  * Initialise emulation for some hardware components
- * It is required to init those parts before parsing the parameters,
- * (for example, we should init FDC before inserting a disk)
+ * It is required to init those parts before parsing the parameters
+ * (for example, we should init FDC before inserting a disk and we
+ * need to know valid joysticks before selecting default joystick IDs)
  */
 static void Main_Init_HW(void)
 {
+	Joy_Init();
 	FDC_Init();
 	STX_Init();
 }
@@ -637,8 +639,8 @@ static void Main_Init(void)
 	}
 	Log_Printf(LOG_INFO, PROG_NAME ", compiled on:  " __DATE__ ", " __TIME__ "\n");
 
-	/* Init SDL's video subsystem. Note: Audio and joystick subsystems
-	   will be initialized later (failures there are not fatal). */
+	/* Init SDL's video subsystem. Note: Audio subsystem
+	   will be initialized later (failure not fatal). */
 	if (SDL_Init(SDL_INIT_VIDEO | Opt_GetNoParachuteFlag()) < 0)
 	{
 		fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
@@ -696,7 +698,6 @@ static void Main_Init(void)
 
 	IoMem_Init();
 	NvRam_Init();
-	Joy_Init();
 	Sound_Init();
 	
 	/* done as last, needs CPU & DSP running... */

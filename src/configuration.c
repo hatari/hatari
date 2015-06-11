@@ -32,6 +32,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "68kDisass.h"
 #include "fdc.h"
 #include "dsp.h"
+#include "joy.h"
 
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -428,7 +429,7 @@ static const struct Config_Tag configs_Video[] =
  */
 void Configuration_SetDefault(void)
 {
-	int i;
+	int i, maxjoy;
 	const char *psHomeDir;
 	const char *psWorkingDir;
 
@@ -511,21 +512,26 @@ void Configuration_SetDefault(void)
 	}
 
 	/* Set defaults for Joysticks */
+	maxjoy = Joy_GetMaxId();
 	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
 		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
 		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = false;
 		ConfigureParams.Joysticks.Joy[i].bEnableJumpOnFire2 = false;
-		ConfigureParams.Joysticks.Joy[i].nJoyId = i;
+		ConfigureParams.Joysticks.Joy[i].nJoyId = (i > maxjoy ? maxjoy : i);
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeUp = SDLK_UP;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeDown = SDLK_DOWN;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft = SDLK_LEFT;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeRight = SDLK_RIGHT;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeFire = SDLK_RCTRL;
 	}
-	ConfigureParams.Joysticks.Joy[1].nJoyId = 0;    /* ST Joystick #1 is default joystick */
-	ConfigureParams.Joysticks.Joy[0].nJoyId = 1;
-	ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_REALSTICK;
+	if (SDL_NumJoysticks() > 0)
+	{
+		/* ST Joystick #1 is default joystick */
+		ConfigureParams.Joysticks.Joy[1].nJoyId = 0;
+		ConfigureParams.Joysticks.Joy[0].nJoyId = (maxjoy ? 1 : 0);
+		ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_REALSTICK;
+	}
 
 	/* Set defaults for Keyboard */
 	ConfigureParams.Keyboard.bDisableKeyRepeat = false;
