@@ -211,7 +211,11 @@ enum { CP_GENERIC = 1, CP_CDTV, CP_CDTVCR, CP_CD32, CP_A500, CP_A500P, CP_A600, 
 #define MONITOREMU_GRAFFITI 3
 #define MONITOREMU_HAM_E 4
 #define MONITOREMU_HAM_E_PLUS 5
-#define MONITOREMU_DCTV 6
+#define MONITOREMU_VIDEODAC18 6
+#define MONITOREMU_AVIDEO12 7
+#define MONITOREMU_AVIDEO24 8
+#define MONITOREMU_FIRECRACKER24 9
+#define MONITOREMU_DCTV 10
 
 #define MAX_FILTERSHADERS 4
 
@@ -328,6 +332,7 @@ struct uae_prefs {
 	bool serial_hwctsrts;
 	bool serial_direct;
 	int serial_stopbits;
+	int serial_crlf;
 	bool parallel_demand;
 	int parallel_matrix_emulation;
 	bool parallel_postscript_emulation;
@@ -683,6 +688,7 @@ struct uae_prefs {
 	bool input_magic_mouse;
 	int input_magic_mouse_cursor;
 	int input_keyboard_type;
+	int input_autoswitch;
 	struct uae_input_device joystick_settings[MAX_INPUT_SETTINGS][MAX_INPUT_DEVICES];
 	struct uae_input_device mouse_settings[MAX_INPUT_SETTINGS][MAX_INPUT_DEVICES];
 	struct uae_input_device keyboard_settings[MAX_INPUT_SETTINGS][MAX_INPUT_DEVICES];

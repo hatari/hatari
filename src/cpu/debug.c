@@ -1648,7 +1648,7 @@ static void deepcheatsearch (TCHAR **c)
 					doremove = 1;
 				if (deconly && diff > 0)
 					doremove = 1;
-			} else if (nonmodified && b != b2) {
+			} else if (nonmodified && b == b2) {
 				doremove = 1;
 			} else if (!wasmodified && b != b2) {
 				doremove = 1;
@@ -3602,7 +3602,7 @@ static int cycle_breakpoint(TCHAR **c)
 	next_char(c);
 	if (more_params(c)) {
 		int count = readint(c);
-		if (nc == 'S') {
+		if (nc == 's') {
 			if (more_params(c)) {
 				int hp = readint(c);
 				if (count >= vpos) {
