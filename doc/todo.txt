@@ -17,6 +17,8 @@ Emulation improvements
 	- Printing doesn't work with TOS versions v1.02 - v2.06
 	- Colors in 2-plane VDI resolution are not set correctly
 	- "Running" game 1997 shareware version doesn't work
+	- Fun's "Men at War" game or its intro don't start
+	- "Push It" game crashes if auto-started
 	- NoCrew: Aggressive Party II 128k combo ("Whirlpool") bombs
 	- RG: "Sworm" & "Sky Fall" games want to access A: & B: when autostarted
 	- JAM packer packed version of Tony Benett' "Virtual City" demo bombs
