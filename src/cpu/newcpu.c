@@ -4664,14 +4664,7 @@ void cpu_halt (int id)
 	}
 
 #else
-	int res;
-
-	res = DlgAlert_Query ( "Detected double bus/address error => CPU halted !\n\n      Press OK to reset or CANCEL for debugger\n");
-
-	if ( res )
-		Reset_Warm();				/* Reset to exit 'halt' state (reset cpu and regs.spcflags) */
-	else
-		DebugUI(REASON_CPU_EXCEPTION);		/* Call the debugger */
+	Dialog_HaltDlg();
 #endif
 }
 

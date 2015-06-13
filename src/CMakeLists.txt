@@ -113,7 +113,7 @@ else()
 	add_executable(hatari ${SOURCES})
 endif(ENABLE_OSX_BUNDLE)
 
-target_link_libraries(hatari Falcon GuiSdl Floppy UaeCpu Debug ${SDL_LIBRARY})
+target_link_libraries(hatari Falcon UaeCpu GuiSdl Floppy Debug ${SDL_LIBRARY})
 
 if(MATH_FOUND AND NOT APPLE)
 	target_link_libraries(hatari ${MATH_LIBRARY})

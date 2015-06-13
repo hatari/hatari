@@ -13,6 +13,7 @@
 /* prototypes for gui-sdl/dlg*.c functions: */
 extern int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot);
 extern void Dialog_AboutDlg(void);
+extern void Dialog_HaltDlg(void);
 extern int DlgAlert_Notice(const char *text);
 extern int DlgAlert_Query(const char *text);
 extern void Dialog_DeviceDlg(void);

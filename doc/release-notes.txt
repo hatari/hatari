@@ -83,7 +83,7 @@ Emulator:
   - Partial support for showing Latin1 chars from UTF-8 file names
   - AltGr+F<1-4> keyboard shortcuts to switch mode/type for emulated
     joysticks and joypads
-  - User can reset emulation from CPU halt dialog
+  - User can reset or quit emulation from CPU halt dialog
   - Fix: sync joystick changes with statusbar
   - Fix: update default max window size for 2-line statusbar
          NOTE: size would need to be updated in Hatari config files too!
