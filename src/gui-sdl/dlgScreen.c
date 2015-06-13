@@ -22,8 +22,6 @@ const char DlgScreen_fileid[] = "Hatari dlgScreen.c : " __DATE__ " " __TIME__;
 #include "statusbar.h"
 #include "clocks_timings.h"
 
-#define ITEMS_IN_ARRAY(a) (sizeof(a)/sizeof(a[0]))
-
 
 /* The Monitor dialog: */
 #define DLGSCRN_MONO         3
@@ -347,7 +345,7 @@ void Dialog_WindowDlg(void)
 	else
 		windowdlg[DLGSCRN_NONE].state |= SG_SELECTED;
 
-	for (i = 0; i < ITEMS_IN_ARRAY(skip_frames); i++)
+	for (i = 0; i < ARRAYSIZE(skip_frames); i++)
 	{
 		if (ConfigureParams.Screen.nFrameSkips >= skip_frames[i])
 			skip = i;
