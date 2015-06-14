@@ -253,6 +253,11 @@ void dump_counts (void)
 }
 #endif
 
+static void cpu_halt ( void )
+{
+	Dialog_HaltDlg();
+}
+
 
 static unsigned long op_illg_1 (uae_u32 opcode) REGPARAM;
 
@@ -1054,7 +1059,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n", BusErrorAddress, (long)currpc);
-	      Dialog_HaltDlg();
+	      cpu_halt();
 	      return;
 	    }
 	    if ((ExceptionDebugMask & EXCEPT_BUS) && BusErrorAddress!=0xff8a00) {
@@ -1075,7 +1080,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
         if ( nr==2 || nr==3 )			/* address error during bus/address error -> stop emulation */
             {
 	      fprintf(stderr,"Address Error during exception 2/3, new PC=$%x => CPU halted\n",newpc);
-	      Dialog_HaltDlg();
+	      cpu_halt();
             }
         else
             {
