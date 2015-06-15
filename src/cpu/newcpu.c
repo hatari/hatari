@@ -3300,7 +3300,7 @@ uae_u32 REGPARAM2 op_illg (uae_u32 opcode)
 	if ((opcode & 0xF000) == 0xA000 && inrt) {
 		/* Calltrap. */
 		m68k_incpc_normal (2);
-		m68k_handle_trap (opcode & 0xFFF);
+		m68k_handle_trap(opcode & 0xFFF);
 		fill_prefetch ();
 		return 4;
 	}
@@ -4651,7 +4651,7 @@ void cpu_halt (int id)
 	// id < 0: m68k halted, PPC active.
 	// id > 0: emulation halted.
 	if (!regs.halted) {
-		write_log (_T("CPU halted: reason = %d\n"), id);
+		write_log (_T("CPU halted: reason = %d PC=%08x\n"), id, M68K_GETPC);
 		regs.halted = id;
 		gui_data.cpu_halted = id;
 		gui_led(LED_CPU, 0);
@@ -5172,11 +5172,13 @@ printf ( "run_2ce\n" );
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
-struct cache030 *c1;
+struct cache030 *c1 ,*c2;
         int lws1, lws2;
         uae_u32 tag1, tag2;
-c1 = getcache030 (dcaches030, (uaecptr)0x1f81ee, &tag1, &lws1);
-//fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x\n" , c1->valid[lws1] , tag1 , lws1 , c1->tag , c1->data[lws1] );
+c1 = getcache030 (dcaches030, (uaecptr)0x7f8192, &tag1, &lws1);
+c2 = getcache030 (dcaches030, (uaecptr)0x7f8192+4, &tag2, &lws2);
+//fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c1->valid[lws1] , tag1 , lws1 , c1->tag , c1->data[lws1] , get_long(0x7f8192) );
+//fprintf ( stderr , "cache valid %d tag2 %x lws2 %x ctag %x data %x mem=%x\n" , c2->valid[lws2] , tag2 , lws2 , c2->tag , c2->data[lws2] , get_long(0x7f8192+4) );
 				}
 
 				currcycle = 0;
@@ -7609,6 +7611,136 @@ STATIC_INLINE bool cancache030 (uaecptr addr)
 }
 
 // and finally the worst part, 68030 data cache..
+#define CACHE2
+#ifdef CACHE2
+static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
+{
+	struct cache030 *c1, *c2;
+	int lws1, lws2;
+	uae_u32 tag1, tag2;
+	int aligned = addr & 3;
+	int wa = regs.cacr & 0x2000;
+	int hit;
+
+	if (!(regs.cacr & 0x100)) // data cache disabled?
+		return;
+	if (!cancache030 (addr))
+		return;
+
+	c1 = getcache030 (dcaches030, addr, &tag1, &lws1);
+
+	// easy one
+	if (size == 2 && aligned == 0 && wa == 1) {
+		update_cache030 (c1, val, tag1, lws1);
+//fprintf ( stderr , "write cache1 %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x ctag %x data %x\n", addr, val, size, tag1, lws1, tag2, lws2, c1->tag , c1->data[lws1] );
+		return;
+	}
+
+	hit = ( c1->tag == tag1 && c1->valid[lws1] );
+	if ( hit || wa ) {
+		if (size == 2) {
+			if (hit) {
+				c1->data[lws1] &= ~(0xffffffff >> (aligned * 8));
+				c1->data[lws1] |= val >> (aligned * 8);
+			}
+			else
+				c1->valid[lws1] = false;
+		} else if (size == 1) {
+			if (hit) {
+				c1->data[lws1] &= ~(0xffff0000 >> (aligned * 8));
+				c1->data[lws1] |= (val<<16) >> (aligned * 8);
+			}
+			else
+				c1->valid[lws1] = false;
+		} else if (size == 0) {
+			if (hit) {
+				c1->data[lws1] &= ~(0xff000000 >> (aligned * 8));
+				c1->data[lws1] |= (val<<24) >> (aligned * 8);
+			}
+			else
+				c1->valid[lws1] = false;
+		}
+	}
+
+	// do we need to update a 2nd cache entry ?
+	if ( (size == 0) || (size == 1 && aligned <= 2) || (size == 2 && aligned == 0) )
+		return;
+
+	c2 = getcache030 (dcaches030, addr + 4, &tag2, &lws2);
+//fprintf ( stderr , "write cache2 %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x ctag %x data %x\n", addr, val, size, tag1, lws1, tag2, lws2, c2->tag , c2->data[lws2] );
+	hit = ( c2->tag == tag2 && c2->valid[lws2] );
+	if ( hit || wa ) {
+		if (size == 2) {
+			if (hit) {
+				c2->data[lws2] &= 0xffffffff >> ((4 - aligned) * 8);
+				c2->data[lws2] |= val << ((4 - aligned) * 8);
+			}
+			else
+				c2->valid[lws2] = false;
+		} else if (size == 1) {
+			if (hit) {
+				c2->data[lws2] &= 0x00ffffff;
+				c2->data[lws2] |= val << 24;
+			}
+			else
+				c2->valid[lws2] = false;
+		}
+	}
+
+#if 0
+	if (size == 2) {
+		if (c1->tag == tag1) {
+			if (c1->valid[lws1]) {
+				c1->data[lws1] &= ~(0xffffffff >> (aligned * 8));
+				c1->data[lws1] |= val >> (aligned * 8);
+			}
+		}
+		else
+			c1->valid[lws1] = false;
+		if (c2->tag == tag2) {
+			if (c2->valid[lws2]) {
+				c2->data[lws2] &= 0xffffffff >> ((4 - aligned) * 8);
+				c2->data[lws2] |= val << ((4 - aligned) * 8);
+			}
+		}
+		else
+			c2->valid[lws2] = false;
+	} else if (size == 1) {
+		val <<= 16;
+		if (c1->tag == tag1) {
+			if (c1->valid[lws1]) {
+				c1->data[lws1] &= ~(0xffff0000 >> (aligned * 8));
+				c1->data[lws1] |= val >> (aligned * 8);
+			}
+		}
+		else
+			c1->valid[lws1] = false;
+		if ( aligned == 3 ) {
+			if (c2->tag == tag2) {
+				if (c2->valid[lws2]) {
+					c2->data[lws2] &= 0x00ffffff;
+					c2->data[lws2] |= val << 8;
+				}
+			}
+			else
+				c2->valid[lws2] = false;
+		}
+	} else if (size == 0) {
+		val <<= 24;
+		if (c1->tag == tag1) {
+			if (c1->valid[lws1]) {
+				c1->data[lws1] &= ~(0xff000000 >> (aligned * 8));
+				c1->data[lws1] |= val >> (aligned * 8);
+			}
+		}
+		else
+			c1->valid[lws1] = false;
+	}
+#endif
+}
+
+
+#else
 static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 {
 	struct cache030 *c1, *c2;
@@ -7621,20 +7753,34 @@ static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 	if (!cancache030 (addr))
 		return;
 
+#if 1
 	c1 = getcache030 (dcaches030, addr, &tag1, &lws1);
 	if (!(regs.cacr & 0x2000)) { // write allocate
 		if (c1->tag != tag1 || c1->valid[lws1] == false)
 			return;
 	}
+#else
+	c1 = getcache030 (dcaches030, addr, &tag1, &lws1);
+	if (!(regs.cacr & 0x2000)) { // write allocate
+		if (c1->tag != tag1 || c1->valid[lws1] == false) {
+			if ( (size == 0) || (size == 1 && aligned <= 2) || (size == 2 && aligned == 0) )
+				return;
+			else {
+				c2 = getcache030 (dcaches030, addr + 4, &tag2, &lws2);
+				c2->valid[lws2] = false;
+			}
+		}
+	}
+#endif
 	// easy one
 	if (size == 2 && aligned == 0) {
 		update_cache030 (c1, val, tag1, lws1);
-//fprintf ( stderr , "write cache %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x\n", addr, val, size, tag1, lws1, tag2, lws2 );
+fprintf ( stderr , "write cache1 %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x ctag %x data %x\n", addr, val, size, tag1, lws1, tag2, lws2, c1->tag , c1->data[lws1] );
 		return;
 	}
 	// argh!! merge partial write
 	c2 = getcache030 (dcaches030, addr + 4, &tag2, &lws2);
-//fprintf ( stderr , "write cache %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x\n", addr, val, size, tag1, lws1, tag2, lws2 );
+fprintf ( stderr , "write cache2 %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x ctag %x data %x\n", addr, val, size, tag1, lws1, tag2, lws2, c2->tag , c2->data[lws2] );
 #if 0
 	if (size == 2) {
 		if (c1->valid[lws1] && c1->tag == tag1) {
@@ -7713,6 +7859,7 @@ static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 	}
 #endif
 }
+#endif
 void write_dcache030(uaecptr addr, uae_u32 v, int size)
 {
 	write_dcache030x(addr, v, size);
