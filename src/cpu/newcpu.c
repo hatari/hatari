@@ -7672,7 +7672,7 @@ static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 	if ( hit || wa ) {
 		if (size == 2) {
 			if (hit) {
-				c2->data[lws2] &= 0xffffffff >> ((4 - aligned) * 8);
+				c2->data[lws2] &= 0xffffffff >> (aligned * 8);
 				c2->data[lws2] |= val << ((4 - aligned) * 8);
 			}
 			else
