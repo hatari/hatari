@@ -41,6 +41,8 @@ Emulation:
 - MIDI:
   - some RX/TX interrupt conditions were not correctly handled
   - TDRE bit is status register more accurately handled
+- Video:
+  - fix value when reading video counter $FF8205/07/09 in high res
 
 Emulator:
 - Support for compiling with libSDL2 (experimental)
@@ -121,6 +123,7 @@ Other changes:
 Fixed demos:
 - Graphix Sound 2 in Relapse by Cybernetics (blitter+cpu, bus arbitration)
 - RGBeast by Aggression (video, writing to video counter during active display)
+- My Socks Are Weapons by Legacy (video, reading video counter in high res)
 
 Fixed games:
 - Superior 65 - Blood Money (cpu, exception stack and bus error)
