@@ -344,6 +344,9 @@
 /*			for video pointer should not be >= $1000000 (fix "Leavin' Teramis"	*/
 /*			which sets video address to $ffe100 to display "loading please wait".	*/
 /*			In that case, we must display $ffe100-$ffffff then $0-$5e00)		*/
+/* 2015/06/19	[NP]	In Video_CalculateAddress, handle a special/simplified case when reading*/
+/*			video pointer in hi res (fix protection in 'My Socks Are Weapons' demo	*/
+/*			by 'Legacy').								*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -785,6 +788,7 @@ static Uint32 Video_CalculateAddress ( void )
 	int X, NbBytes;
 	Uint32 VideoAddress;      /* Address of video display in ST screen space */
 	int nSyncByte;
+	int Res;
 	int LineBorderMask;
 	int PrevSize;
 	int CurSize;
@@ -796,20 +800,31 @@ static Uint32 Video_CalculateAddress ( void )
 
 	/* Now find which pixel we are on (ignore left/right borders) */
 	Video_ConvertPosition ( FrameCycles , &HblCounterVideo , &LineCycles );
+
+	Res = IoMem_ReadByte ( 0xff8260 ) & 3;
+	if ( Res & 2 )						/* hi res */
+	{
+	        LineStartCycle = LINE_START_CYCLE_71;
+		LineEndCycle = LINE_END_CYCLE_71;
+		HblCounterVideo = FrameCycles / nCyclesPerLine;
+		LineCycles = FrameCycles % nCyclesPerLine;
+	}
+	else
+	{
+		nSyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 */
+		if (nSyncByte)					/* 50 Hz */
+		{
+			LineStartCycle = LINE_START_CYCLE_50;
+			LineEndCycle = LINE_END_CYCLE_50;
+		}
+		else						/* 60 Hz */
+		{
+			LineStartCycle = LINE_START_CYCLE_60;
+			LineEndCycle = LINE_END_CYCLE_60;
+		}
+	}
+
 	X = LineCycles;
-
-	nSyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 */
-	if (nSyncByte)				/* 50 Hz */
-	{
-		LineStartCycle = LINE_START_CYCLE_50;
-		LineEndCycle = LINE_END_CYCLE_50;
-	}
-	else						/* 60 Hz */
-	{
-		LineStartCycle = LINE_START_CYCLE_60;
-		LineEndCycle = LINE_END_CYCLE_60;
-	}
-
 
 	/* Top of screen is usually 63 lines from VBL in 50 Hz */
 	if ( HblCounterVideo < nStartHBL )
@@ -819,6 +834,31 @@ static Uint32 Video_CalculateAddress ( void )
 		/* So, we should not use ff8201/ff8203 which are reloaded in ff8205/ff8207 only once per VBL */
 		/* but use pVideoRaster - STRam instead to get current shifter video address */
 		VideoAddress = pVideoRaster - STRam;
+	}
+
+	/* Special case when reading video counter in hi-res (used in the demo 'My Socks Are Weapons' by Legacy) */
+	/* This assumes a standard 640x400 resolution with no border removed, so code is simpler */
+	/* [NP] TODO : this should be handled in a more generic way with low/med cases */
+	/* even when Hatari is not started in monochrome mode */
+	else if ( Res & 2 )					/* Hi res */
+	{
+		if ( X < LineStartCycle )
+			X = LineStartCycle;			/* display is disabled in the left border */
+		else if ( X > LineEndCycle )
+		{
+			X = LineEndCycle;			/* display is disabled in the right border */
+			/* On  STE, the Shifter skips the given amount of words as soon as display is disabled */
+			/* (LineWidth is 0 on STF */
+			VideoAddress += LineWidth*2;
+		}
+
+		NbBytes = ( (X-LineStartCycle)>>1 ) & (~1);	/* 2 cycles per byte */
+
+		/* One line uses 80 bytes instead of the standard 160 bytes in low/med res */
+		if ( HblCounterVideo < nStartHBL + VIDEO_HEIGHT_HBL_MONO )
+			VideoAddress = VideoBase + ( HblCounterVideo - nStartHBL ) * ( BORDERBYTES_NORMAL / 2 ) + NbBytes;
+		else
+			VideoAddress = VideoBase + VIDEO_HEIGHT_HBL_MONO * ( BORDERBYTES_NORMAL / 2 );
 	}
 
 	else if (FrameCycles > RestartVideoCounterCycle)
