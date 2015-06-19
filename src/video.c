@@ -845,12 +845,7 @@ static Uint32 Video_CalculateAddress ( void )
 		if ( X < LineStartCycle )
 			X = LineStartCycle;			/* display is disabled in the left border */
 		else if ( X > LineEndCycle )
-		{
 			X = LineEndCycle;			/* display is disabled in the right border */
-			/* On  STE, the Shifter skips the given amount of words as soon as display is disabled */
-			/* (LineWidth is 0 on STF */
-			VideoAddress += LineWidth*2;
-		}
 
 		NbBytes = ( (X-LineStartCycle)>>1 ) & (~1);	/* 2 cycles per byte */
 
