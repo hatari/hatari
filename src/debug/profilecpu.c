@@ -1024,9 +1024,6 @@ void Profile_CpuUpdate(void)
 	cycles = CyclesGlobalClockCounter - cpu_profile.prev_cycles;
 	cpu_profile.prev_cycles = CyclesGlobalClockCounter;
 
-	/* cycles are based on 8Mhz clock, change them to correct one */
-	cycles <<= nCpuFreqShift;
-
 	if (likely(prev->cycles < MAX_CPU_PROFILE_VALUE - cycles)) {
 		prev->cycles += cycles;
 	} else {
