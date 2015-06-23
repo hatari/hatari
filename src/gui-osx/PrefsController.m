@@ -558,10 +558,9 @@ NSString  *defaultDirectory ;
 }
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  Displays the Preferences dialog   Ouverture de la fenêtre des préférences
-*/
+/*--------------------------------------------------------------------------*/
+/*Displays the Preferences dialog   Ouverture de la fenêtre des préférences */
+/*--------------------------------------------------------------------------*/
 - (IBAction)loadPrefs:(id)sender
 {
 	[configNm setString:[NSString stringWithCString:sConfigFileName encoding:NSASCIIStringEncoding]] ;
@@ -724,6 +723,17 @@ NSString  *defaultDirectory ;
 	[widthStepper setDoubleValue:[maxZoomedWidth intValue]];
 	[heightStepper setDoubleValue:[maxZoomedHeight intValue]];
 	
+    //deal with TT RAM Size Stepper
+#ifdef ENABLE_WINUAE_CPU
+    IMPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.nTTRamSize);
+    [TTRAMSizeStepper setDoubleValue:[TTRAMSizeValue intValue]];
+    IMPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
+    IMPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
+    IMPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
+    IMPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
+    IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
+
+#endif
 	
 	[(force8bpp) setState:((ConfigureParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
 
@@ -934,7 +944,16 @@ NSString  *defaultDirectory ;
 	
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
-
+    
+#ifdef ENABLE_WINUAE_CPU
+    EXPORT_NTEXTFIELD(TTRAMSizeValue, ConfigureParams.Memory.nTTRamSize);
+    EXPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
+    EXPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
+    EXPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
+    EXPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
+    EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
+#endif
+    
 	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 0;
 
 	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
@@ -1017,6 +1036,13 @@ NSString  *defaultDirectory ;
     [maxZoomedHeight setIntValue: [sender intValue]];
 }
 
+- (IBAction)setTTRAMSize:(id)sender
+{
+    NSLog(@"Change TTRAMSize: %d", [sender intValue]);
+    [TTRAMSizeValue setIntValue: [sender intValue]];
+    
+}
+
 +(PrefsController *)prefs
 {
 	static PrefsController *prefs = nil;
@@ -1045,6 +1071,16 @@ NSString  *defaultDirectory ;
 	configNm = [NSMutableString stringWithCapacity:50] ; [configNm setString:@""] ; [configNm retain] ;
 	opnPanel = [NSOpenPanel openPanel]; [opnPanel retain] ;
 	savPanel = [NSSavePanel savePanel]; [savPanel retain] ;
+#ifdef ENABLE_WINUAE_CPU
+    [cycleExactCPU setEnabled:true];
+    [MMU_Emulation setEnabled:true];
+    [adressSpace24 setEnabled:true];
+    [TTRAMSizeValue setEnabled:true];
+    [CompatibleFPU setEnabled:true];
+    [FPUType setEnabled:true];
+    [bCell68060 setEnabled:true];
+#endif
+    
 }
 
 @end

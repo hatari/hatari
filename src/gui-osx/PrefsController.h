@@ -18,16 +18,16 @@
 	// Disks
 	IBOutlet NSTextField *floppyImageA;					// T
 	IBOutlet NSTextField *floppyImageB;					// T
-	IBOutlet NSButton *autoInsertB;
-	IBOutlet NSButton *fastFDC;
-	IBOutlet NSMatrix *floppyWriteProtection;
+	IBOutlet NSButton    *autoInsertB;
+	IBOutlet NSButton    *fastFDC;
+	IBOutlet NSMatrix    *floppyWriteProtection;
 	IBOutlet NSTextField *defaultImagesLocation;		// T
 	IBOutlet NSTextField *hdImage;						// T
 	IBOutlet NSTextField *ideMasterHdImage;				// T
 	IBOutlet NSTextField *ideSlaveHdImage;				// T
 	IBOutlet NSTextField *gemdosImage;					// T
-	IBOutlet NSButton *bootFromHD ;
-	IBOutlet NSMatrix *HDWriteProtection;
+	IBOutlet NSButton    *bootFromHD ;
+	IBOutlet NSMatrix    *HDWriteProtection;
 
 	// ROM
 	IBOutlet NSTextField *tosImage;						// T
@@ -59,18 +59,35 @@
 	IBOutlet NSMatrix *YMVoicesMixing;
 
 	// System
+    
+   
+ 
 	IBOutlet NSMatrix *cpuType;
 	IBOutlet NSMatrix *cpuClock;
 	IBOutlet NSMatrix *machineType;
 	IBOutlet NSMatrix *ramSize;
-	IBOutlet NSButton *compatibleCpu;
+	IBOutlet NSButton *compatibleCpu; //bCompatibleCpu
 	IBOutlet NSButton *blitter;
 	IBOutlet NSButton *realTime;
 	IBOutlet NSButton *patchTimerD;
 	IBOutlet NSButton *FastBootPatch;
+    // for ENABLE_WINUAE_CPU CORE
+    IBOutlet NSButton *cycleExactCPU; //bCycleExactCpu
+    IBOutlet NSButton *MMU_Emulation;
+    IBOutlet NSButton *adressSpace24; //bAddressSpace24
+    __unsafe_unretained IBOutlet NSStepper *TTRAMSizeStepper;
+    __unsafe_unretained IBOutlet NSTextField *TTRAMSizeValue;
+    IBOutlet NSButton *CompatibleFPU;
+    IBOutlet NSMatrix *FPUType;
+    
+    __unsafe_unretained IBOutlet NSButtonCell *bCell68060;
+
+    
 		// load/save state
 	IBOutlet NSPopUpButton *enableDSP;
-
+    
+    
+    
 	// Joysticks
 	IBOutlet NSPopUpButton *currentJoystick;
 	IBOutlet NSMatrix *joystickMode;
@@ -169,6 +186,9 @@
 - (IBAction)updateEnabledStates:(id)sender;
 - (IBAction)setWidth:(id)sender;
 - (IBAction)setHeight:(id)sender;
+//System RAM Stepper
+- (IBAction)setTTRAMSize:(id)sender;
+
 
 +(PrefsController*)prefs ;
 

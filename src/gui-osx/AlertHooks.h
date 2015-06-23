@@ -11,7 +11,7 @@
 	// Replacement for a regular alert (with just an OK button)
 	// Returns TRUE if OK clicked, FALSE otherwise
 	int HookedAlertNotice(const char* szMessage);
-	
+
 	// Replacement for a query alert (OK and Cancel buttons)
 	// Returns TRUE if OK clicked, FALSE otherwise
 	int HookedAlertQuery(const char* szMessage);
