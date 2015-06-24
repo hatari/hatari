@@ -21,6 +21,9 @@ keydown 29
 keypress Z
 keyup 29
 
+# wait EmuCON to accept input
+sleep 1
+
 # output command to re-build test.prg
 text ahcc_p.ttp gemdos.prj
 # press Return to execute it

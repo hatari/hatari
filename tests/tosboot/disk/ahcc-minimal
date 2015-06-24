@@ -5,6 +5,7 @@ sleep 2
 keydown 29
 keypress Z
 keyup 29
+sleep 1
 text ahcc_p.ttp minimal.prj
 keypress 28
 sleep 5
