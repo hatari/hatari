@@ -101,6 +101,14 @@ class Hatari:
     hataribin = "hatari"
 
     def __init__(self, args):
+        # member defaults
+        self.pid = 0
+        self.interval = 0.2
+        self.shiftdown = False
+        self.verbose = False
+        self.control = None
+        self.paused = False
+        self.winuae = False
         # collect hatari process zombies without waitpid()
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
         self._assert_hatari_compatibility()
@@ -109,21 +117,17 @@ class Hatari:
             os.unlink(self.controlpath)
         self.server.bind(self.controlpath)
         self.server.listen(1)
-        self.control = None
-        self.paused = False
-        self.interval = 0.2
-        self.pid = 0
         if not self.run_hatari(args):
             print("ERROR: failed to run Hatari")
             sys.exit(1)
-        self.shiftdown = False
-        self.verbose = False
 
     def _assert_hatari_compatibility(self):
         "check Hatari compatibility and return error string if it's not"
         error = True
         pipe = os.popen(self.hataribin + " -h")
         for line in pipe.readlines():
+            if line.find("--addr24") >= 0:
+                self.winuae = True
             if line.find("--control-socket") >= 0:
                 error = False
                 break
