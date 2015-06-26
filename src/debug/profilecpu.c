@@ -954,6 +954,7 @@ static void log_last_loop(void)
 	}
 }
 
+# if DEBUG || ENABLE_WINUAE_CPU
 /**
  * Warning for values going out of expected range
  */
@@ -969,6 +970,7 @@ static Uint32 warn_too_large(const char *name, const int value, const int limit,
 #endif
 	return limit - 1;
 }
+#endif
 
 /**
  * Update CPU cycle and count statistics for PC address.
