@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # 
-# Copyright (C) 2012-2013 by Eero Tamminen <oak at helsinkinet fi>
+# Copyright (C) 2012-2015 by Eero Tamminen <oak at helsinkinet fi>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -128,7 +128,8 @@ class TOS:
         elif version < 0x200:
             info = (0, 6, ("ste",))
         elif version < 0x300:
-            info = (1, 6, ("st", "ste", "tt"))
+            # are slower with VDI mode than others
+            info = (2, 8, ("st", "ste", "tt"))
         elif version < 0x400:
             # memcheck comes up fast, but boot takes time
             info = (2, 8, ("tt",))
@@ -399,6 +400,7 @@ class Tester:
         # write specific configuration to:
         # - avoid user's own config
         # - get rid of the dialogs
+        # - don't warp mouse on resolution changes
         # - limit Videl zooming to same sizes as ST screen zooming
         # - get rid of statusbar and borders in TOS screenshots
         #   to make them smaller & more consistent
@@ -408,13 +410,13 @@ class Tester:
         # - disable serial in and set serial output file
         # - disable MIDI in, use MIDI out as fifo file to signify test completion
         dummy = open(self.dummycfg, "w")
-        dummy.write("[Log]\nnAlertDlgLogLevel = 0\nbConfirmQuit = FALSE\n")
-        dummy.write("[Screen]\nnMaxWidth=832\nnMaxHeight=576\nbCrop = TRUE\nbAllowOverscan=FALSE\n")
-        dummy.write("[HardDisk]\nbUseHardDiskDirectory = FALSE\n")
-        dummy.write("[Floppy]\nszDiskAFileName = blank-a.st.gz\n")
-        dummy.write("[Printer]\nbEnablePrinting = TRUE\nszPrintToFileName = %s\n" % self.printout)
-        dummy.write("[RS232]\nbEnableRS232 = TRUE\nszInFileName = \nszOutFileName = %s\n" % self.serialout)
-        dummy.write("[Midi]\nbEnableMidi = TRUE\nsMidiInFileName = \nsMidiOutFileName = %s\n" % self.fifofile)
+        dummy.write("[Log]\nnAlertDlgLogLevel = 0\nbConfirmQuit = FALSE\n\n")
+        dummy.write("[Screen]\nnMaxWidth = 832\nnMaxHeight = 576\nbCrop = TRUE\nbAllowOverscan = FALSE\nbMouseWarp = FALSE\n\n")
+        dummy.write("[HardDisk]\nbUseHardDiskDirectory = FALSE\n\n")
+        dummy.write("[Floppy]\nszDiskAFileName = blank-a.st.gz\n\n")
+        dummy.write("[Printer]\nbEnablePrinting = TRUE\nszPrintToFileName = %s\n\n" % self.printout)
+        dummy.write("[RS232]\nbEnableRS232 = TRUE\nszInFileName = \nszOutFileName = %s\n\n" % self.serialout)
+        dummy.write("[Midi]\nbEnableMidi = TRUE\nsMidiInFileName = \nsMidiOutFileName = %s\n\n" % self.fifofile)
         dummy.close()
 
     def cleanup_all_files(self):
@@ -513,8 +515,7 @@ class Tester:
         except IOError:
             print "ERROR: fifo open IOError!"
             return None
-    
-    
+
     def test(self, identity, testargs, tos, memory):
         "run single boot test with given args and waits"
         # Hatari command line options, don't exit if Hatari exits
