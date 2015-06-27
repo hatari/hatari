@@ -342,7 +342,7 @@ For example:
 
 
 # -----------------------------------------------
-def verify_match(srcfile, dstfile):
+def verify_file_match(srcfile, dstfile):
     "return error string if given files are not identical"
     if not os.path.exists(dstfile):
         return "file '%s' missing" % dstfile
@@ -353,7 +353,7 @@ def verify_match(srcfile, dstfile):
         if line != f2.readline():
             return "file '%s' line %d doesn't match file '%s'" % (dstfile, i, srcfile)
 
-def verify_empty(srcfile):
+def verify_file_empty(srcfile):
     "return error string if given file isn't empty"
     if not os.path.exists(srcfile):
         return "file '%s' missing" % srcfile
@@ -455,19 +455,19 @@ class Tester:
         # GEMDOS operations work properly...
         ok = True
         # check file truncate
-        error = verify_empty(self.textoutput)
+        error = verify_file_empty(self.textoutput)
         if error:
             print "ERROR: file wasn't truncated:\n\t%s" % error
             os.rename(self.textoutput, "%s.%s" % (self.textoutput, identity))
             ok = False
         # check serial output
-        error = verify_match(self.textinput, self.serialout)
+        error = verify_file_match(self.textinput, self.serialout)
         if error:
             print "ERROR: serial output doesn't match input:\n\t%s" % error
             os.rename(self.serialout, "%s.%s" % (self.serialout, identity))
             ok = False
         # check printer output
-        error = verify_match(self.textinput, self.printout)
+        error = verify_file_match(self.textinput, self.printout)
         if error:
             if tos.etos or tos.version > 0x206 or (tos.version == 0x100 and memory > 1):
                 print "ERROR: printer output doesn't match input (EmuTOS, TOS v1.00 or >v2.06)\n\t%s" % error
@@ -475,7 +475,7 @@ class Tester:
                 ok = False
             else:
                 if os.path.exists(self.printout):
-                    error = verify_empty(self.printout)
+                    error = verify_file_empty(self.printout)
                     if error:
                         print "WARNING: unexpected printer output (TOS v1.02 - TOS v2.06):\n\t%s" % error
                         os.rename(self.printout, "%s.%s" % (self.printout, identity))
@@ -562,7 +562,7 @@ class Tester:
 
         if monitor.startswith("vdi"):
             planes = monitor[-1]
-            testargs +=  ["--vdi-planes", planes]
+            testargs += ["--vdi-planes", planes]
             if planes == "1":
                 testargs += ["--vdi-width", "800", "--vdi-height", "600"]
             elif planes == "2":
