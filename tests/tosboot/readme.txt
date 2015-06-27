@@ -69,7 +69,9 @@ supports:
 
 * TV, VGA, RGB and monochrome monitors and 1, 2 & 4 plane VDI modes
 
-* Different amounts of memory from 0 (0.5MB) to 14MB
+* Different amounts of ST-RAM from 0 (0.5MB) to 14MB
+
+* Different amounts of TT-RAM from 0 to 256MB
 
 * With and without GEMDOS harddisk directory emulation
 
@@ -110,8 +112,8 @@ And following monitor configurations:
 Memory configurations:
   ST:   0.5 &  2 MB
   STE:    1 &  4 MB
-  TT:     2 & 10 MB
-  Falcon: 4 & 14 MB
+  TT:     2 & 10 MB ST-RAM, 0 & 32 MB TT-RAM
+  Falcon: 4 & 14 MB ST-RAM, 0 & 32 MB TT-RAM
 
 And both with GEMDOS HD and just floppy.  For EmuTOS, also IDE & ACSI.
 

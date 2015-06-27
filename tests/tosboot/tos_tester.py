@@ -186,6 +186,12 @@ class TOS:
                 return False
         return True
 
+    def supports_32bit_addressing(self):
+        "whether TOS version supports 32-bit addressing"
+        if self.etos or self.version >= 0x300:
+            return True
+        return False
+
 
 # -----------------------------------------------
 def validate(args, full):
@@ -204,19 +210,20 @@ class Config:
     fast = False
     bools = []
     disks = ("floppy", "gemdos")
-    graphics = ("mono", "rgb", "vdi1")
+    graphics = ("mono", "rgb", "vga", "vdi1", "vdi4")
     machines = ("st", "ste", "tt", "falcon")
     memsizes = (0, 4, 14)
+    ttrams = (0, 32)
 
     def __init__(self, argv):
-        longopts = ["bool=", "disks=", "fast", "graphics=", "help", "machines=", "memsizes="]
+        longopts = ["bool=", "disks=", "fast", "graphics=", "help", "machines=", "memsizes=", "ttrams="]
         try:
-            opts, paths = getopt.gnu_getopt(argv[1:], "b:d:fg:hm:s:", longopts)
+            opts, paths = getopt.gnu_getopt(argv[1:], "b:d:fg:hm:s:t:", longopts)
         except getopt.GetoptError as error:
             self.usage(error)
         self.handle_options(opts)
         self.images = self.check_images(paths)
-        print "Test configuration:\n\t", self.disks, self.graphics, self.machines, self.memsizes
+        print "Test configuration:\n\t", self.disks, self.graphics, self.machines, self.memsizes, self.ttrams
 
     
     def check_images(self, paths):
@@ -255,6 +262,15 @@ class Config:
                 except ValueError:
                     self.usage("non-numeric memory sizes: %s" % arg)
                 unknown, self.memsizes = validate(args, self.all_memsizes)
+            elif opt in ("-t", "--ttrams"):
+                try:
+                    args = [int(i) for i in args]
+                except ValueError:
+                    self.usage("non-numeric TT-RAM sizes: %s" % arg)
+                for ram in args:
+                    if ram < 0 or ram > 256:
+                        self.usage("invalid TT-RAM (0-256) size: %d" % ram)
+                self.ttrams = args
             if unknown:
                 self.usage("%s are invalid values for %s" % (list(unknown), opt))
     
@@ -273,6 +289,7 @@ Options:
 \t-g, --graphics\t%s
 \t-m, --machines\t%s
 \t-s, --memsizes\t%s
+\t-t, --ttrams\t%s
 \t-b, --bool\t(extra boolean Hatari options to test)
 
 Multiple values for an option need to be comma separated. If some
@@ -283,9 +300,10 @@ For example:
 \t--disks gemdos \\
 \t--machines st,tt \\
 \t--memsizes 0,4,14 \\
+\t--ttrams 0,32 \\
 \t--graphics mono,rgb \\
 \t-bool --compatible,--rtc
-""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, name))
+""" % (name, self.all_disks, self.all_graphics, self.all_machines, self.all_memsizes, self.ttrams, name))
         if msg:
             print("ERROR: %s\n" % msg)
         sys.exit(1)
@@ -340,6 +358,24 @@ For example:
             return True
         return False
 
+    def valid_ttram(self, machine, tos, ttram, winuae):
+        "return whether given TT-RAM size is valid for given machine"
+        if machine in ("st", "ste"):
+            if ttram == 0:
+                return True
+        elif machine in ("tt", "falcon"):
+            if ttram == 0:
+                return True
+            if not winuae:
+                warning("TT-RAM / 32-bit addressing is supported only by Hatari WinUAE CPU core version")
+                return False
+            if ttram < 0 or ttram > 256:
+                return False
+            return tos.supports_32bit_addressing()
+        else:
+            raise AssertionError("unknown machine %s" % machine)
+        return False
+
 
 # -----------------------------------------------
 def verify_file_match(srcfile, dstfile):
@@ -386,6 +422,9 @@ class Tester:
         self.create_config()
         self.create_files()
         signal.signal(signal.SIGALRM, self.alarm_handler)
+        hatari = hconsole.Hatari(["--confirm-quit", "no"])
+        self.winuae = hatari.winuae
+        hatari.kill_hatari()
     
     def alarm_handler(self, signum, dummy):
         "output error if (timer) signal came before passing current test stage"
@@ -551,10 +590,15 @@ class Tester:
         return (init_ok, prog_ok, tests_ok, output_ok)
 
     
-    def prepare_test(self, config, tos, machine, monitor, disk, memory, extra):
+    def prepare_test(self, config, tos, machine, monitor, disk, memory, ttram, extra):
         "compose test ID and Hatari command line args, then call .test()"
-        identity = "%s-%s-%s-%s-%sM" % (tos.name, machine, monitor, disk, memory)
+        identity = "%s-%s-%s-%s-%dM-%dM" % (tos.name, machine, monitor, disk, memory, ttram)
         testargs = ["--tos", tos.path, "--machine", machine, "--memsize", str(memory)]
+        if self.winuae:
+            if ttram:
+                testargs += ["--addr24", "off", "--ttram", str(ttram)]
+            else:
+                testargs += ["--addr24", "on"]
         
         if extra:
             identity += "-%s%s" % (extra[0].replace("-", ""), extra[1])
@@ -612,17 +656,20 @@ class Tester:
                     for memory in config.memsizes:
                         if not config.valid_memsize(machine, memory):
                             continue
-                        for disk in config.disks:
-                            if not config.valid_disktype(machine, tos, disk):
+                        for ttram in config.ttrams:
+                            if not config.valid_ttram(machine, tos, ttram, self.winuae):
                                 continue
-                            if config.bools:
-                                for opt in config.bools:
-                                    for val in ('on', 'off'):
-                                        self.prepare_test(config, tos, machine, monitor, disk, memory, [opt, val])
-                                        count += 1
-                            else:
-                                self.prepare_test(config, tos, machine, monitor, disk, memory, None)
-                                count += 1
+                            for disk in config.disks:
+                                if not config.valid_disktype(machine, tos, disk):
+                                    continue
+                                if config.bools:
+                                    for opt in config.bools:
+                                        for val in ('on', 'off'):
+                                            self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, [opt, val])
+                                            count += 1
+                                else:
+                                    self.prepare_test(config, tos, machine, monitor, disk, memory, ttram, None)
+                                    count += 1
             if not count:
                 warning("no matching configuration for TOS '%s'" % tos.name)
         self.cleanup_all_files()
