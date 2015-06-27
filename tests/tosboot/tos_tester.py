@@ -107,16 +107,16 @@ class TOS:
     
     def _add_info(self):
         "add TOS version specific info of supported machines etc"
-        name, version = self.name, self.version
+        name, size, version = self.name, self.size, self.version
         
         if self.etos:
             # EmuTOS 512k, 256k and 192k versions have different machine support
-            if self.size == 512:
+            if size == 512:
                 # startup screen on falcon 14MB is really slow
                 info = (5, 10, ("st", "ste", "tt", "falcon"))
-            elif self.size == 256:
+            elif size == 256:
                 info = (2, 8, ("st", "ste", "tt"))
-            elif self.size == 192:
+            elif size == 192:
                 info = (0, 6, ("st",))
             else:
                 raise AssertionError("'%s' image size %dkB isn't valid for EmuTOS" % (name, size))
@@ -140,7 +140,7 @@ class TOS:
             raise AssertionError("'%s' TOS version 0x%x isn't valid" % (name, version))
         
         if self.etos:
-            print "%s is EmuTOS v%x %dkB" % (name, version, self.size)
+            print "%s is EmuTOS v%x %dkB" % (name, version, size)
         else:
             print "%s is normal TOS v%x" % (name, version)
         # 0: whether / how long to wait to dismiss memory test
