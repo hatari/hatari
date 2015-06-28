@@ -65,7 +65,7 @@ typedef struct {
 
 #define MAX_I_HITS   8
 #define MAX_I_MISSES 8
-#define MAX_D_HITS   56
+#define MAX_D_HITS   30
 #define MAX_D_MISSES 20
 
 static struct {
