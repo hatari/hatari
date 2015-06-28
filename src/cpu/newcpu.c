@@ -7611,8 +7611,6 @@ STATIC_INLINE bool cancache030 (uaecptr addr)
 }
 
 // and finally the worst part, 68030 data cache..
-#define CACHE2
-#ifdef CACHE2
 static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 {
 	struct cache030 *c1, *c2;
@@ -7686,180 +7684,8 @@ static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 				c2->valid[lws2] = false;
 		}
 	}
-
-#if 0
-	if (size == 2) {
-		if (c1->tag == tag1) {
-			if (c1->valid[lws1]) {
-				c1->data[lws1] &= ~(0xffffffff >> (aligned * 8));
-				c1->data[lws1] |= val >> (aligned * 8);
-			}
-		}
-		else
-			c1->valid[lws1] = false;
-		if (c2->tag == tag2) {
-			if (c2->valid[lws2]) {
-				c2->data[lws2] &= 0xffffffff >> ((4 - aligned) * 8);
-				c2->data[lws2] |= val << ((4 - aligned) * 8);
-			}
-		}
-		else
-			c2->valid[lws2] = false;
-	} else if (size == 1) {
-		val <<= 16;
-		if (c1->tag == tag1) {
-			if (c1->valid[lws1]) {
-				c1->data[lws1] &= ~(0xffff0000 >> (aligned * 8));
-				c1->data[lws1] |= val >> (aligned * 8);
-			}
-		}
-		else
-			c1->valid[lws1] = false;
-		if ( aligned == 3 ) {
-			if (c2->tag == tag2) {
-				if (c2->valid[lws2]) {
-					c2->data[lws2] &= 0x00ffffff;
-					c2->data[lws2] |= val << 8;
-				}
-			}
-			else
-				c2->valid[lws2] = false;
-		}
-	} else if (size == 0) {
-		val <<= 24;
-		if (c1->tag == tag1) {
-			if (c1->valid[lws1]) {
-				c1->data[lws1] &= ~(0xff000000 >> (aligned * 8));
-				c1->data[lws1] |= val >> (aligned * 8);
-			}
-		}
-		else
-			c1->valid[lws1] = false;
-	}
-#endif
 }
 
-
-#else
-static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
-{
-	struct cache030 *c1, *c2;
-	int lws1, lws2;
-	uae_u32 tag1, tag2;
-	int aligned = addr & 3;
-
-	if (!(regs.cacr & 0x100)) // data cache disabled?
-		return;
-	if (!cancache030 (addr))
-		return;
-
-#if 1
-	c1 = getcache030 (dcaches030, addr, &tag1, &lws1);
-	if (!(regs.cacr & 0x2000)) { // write allocate
-		if (c1->tag != tag1 || c1->valid[lws1] == false)
-			return;
-	}
-#else
-	c1 = getcache030 (dcaches030, addr, &tag1, &lws1);
-	if (!(regs.cacr & 0x2000)) { // write allocate
-		if (c1->tag != tag1 || c1->valid[lws1] == false) {
-			if ( (size == 0) || (size == 1 && aligned <= 2) || (size == 2 && aligned == 0) )
-				return;
-			else {
-				c2 = getcache030 (dcaches030, addr + 4, &tag2, &lws2);
-				c2->valid[lws2] = false;
-			}
-		}
-	}
-#endif
-	// easy one
-	if (size == 2 && aligned == 0) {
-		update_cache030 (c1, val, tag1, lws1);
-fprintf ( stderr , "write cache1 %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x ctag %x data %x\n", addr, val, size, tag1, lws1, tag2, lws2, c1->tag , c1->data[lws1] );
-		return;
-	}
-	// argh!! merge partial write
-	c2 = getcache030 (dcaches030, addr + 4, &tag2, &lws2);
-fprintf ( stderr , "write cache2 %x %x %d tag1 %x lws1 %x tag2 %x lws2 %x ctag %x data %x\n", addr, val, size, tag1, lws1, tag2, lws2, c2->tag , c2->data[lws2] );
-#if 0
-	if (size == 2) {
-		if (c1->valid[lws1] && c1->tag == tag1) {
-			c1->data[lws1] &= ~(0xffffffff >> (aligned * 8));
-			c1->data[lws1] |= val >> (aligned * 8);
-		}
-		if (c2->valid[lws2] && c2->tag == tag2) {
-			c2->data[lws2] &= 0xffffffff >> ((4 - aligned) * 8);
-			c2->data[lws2] |= val << ((4 - aligned) * 8);
-		}
-	} else if (size == 1) {
-		val <<= 16;
-		if (c1->valid[lws1] && c1->tag == tag1) {
-			c1->data[lws1] &= ~(0xffff0000 >> (aligned * 8));
-			c1->data[lws1] |= val >> (aligned * 8);
-		}
-		if (c2->valid[lws2] && c2->tag == tag2 && aligned == 3) {
-			c2->data[lws2] &= 0x00ffffff;
-			c2->data[lws2] |= val << 8;
-		}
-	} else if (size == 0) {
-		val <<= 24;
-		if (c1->valid[lws1] && c1->tag == tag1) {
-			c1->data[lws1] &= ~(0xff000000 >> (aligned * 8));
-			c1->data[lws1] |= val >> (aligned * 8);
-		}
-	}
-#else
-	if (size == 2) {
-		if (c1->tag == tag1) {
-			if (c1->valid[lws1]) {
-				c1->data[lws1] &= ~(0xffffffff >> (aligned * 8));
-				c1->data[lws1] |= val >> (aligned * 8);
-			}
-		}
-		else
-			c1->valid[lws1] = false;
-		if (c2->tag == tag2) {
-			if (c2->valid[lws2]) {
-				c2->data[lws2] &= 0xffffffff >> ((4 - aligned) * 8);
-				c2->data[lws2] |= val << ((4 - aligned) * 8);
-			}
-		}
-		else
-			c2->valid[lws2] = false;
-	} else if (size == 1) {
-		val <<= 16;
-		if (c1->tag == tag1) {
-			if (c1->valid[lws1]) {
-				c1->data[lws1] &= ~(0xffff0000 >> (aligned * 8));
-				c1->data[lws1] |= val >> (aligned * 8);
-			}
-		}
-		else
-			c1->valid[lws1] = false;
-		if ( aligned == 3 ) {
-			if (c2->tag == tag2) {
-				if (c2->valid[lws2]) {
-					c2->data[lws2] &= 0x00ffffff;
-					c2->data[lws2] |= val << 8;
-				}
-			}
-			else
-				c2->valid[lws2] = false;
-		}
-	} else if (size == 0) {
-		val <<= 24;
-		if (c1->tag == tag1) {
-			if (c1->valid[lws1]) {
-				c1->data[lws1] &= ~(0xff000000 >> (aligned * 8));
-				c1->data[lws1] |= val >> (aligned * 8);
-			}
-		}
-		else
-			c1->valid[lws1] = false;
-	}
-#endif
-}
-#endif
 void write_dcache030(uaecptr addr, uae_u32 v, int size)
 {
 	write_dcache030x(addr, v, size);
@@ -7880,6 +7706,9 @@ void write_dcache030(uaecptr addr, uae_u32 v, int size)
 	}
 }
 
+// [HATARI] Define next line to check for 68030 data cache mismatch after every write
+#define WINUAE_FOR_HATARI_DEBUG_CACHE
+#ifdef WINUAE_FOR_HATARI_DEBUG_CACHE
 uae_u32 read_dcache030_0 (uaecptr addr, int size);
 uae_u32 read_dcache030 (uaecptr addr, int size)
 {
@@ -7891,10 +7720,13 @@ uae_u32 read_dcache030 (uaecptr addr, int size)
   if ( ( ( size==2 ) && ( v != get_long ( addr ) ) )
     || ( ( size==1 ) && ( (v&0xffff) != (get_word ( addr ) & 0xffff) ) )
     || ( ( size==0 ) && ( (v&0xff) != (get_byte ( addr ) & 0xff ) ) ) )
-    fprintf ( stderr , "prefetch mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, v , get_long(addr) );
+    fprintf ( stderr , "d-cache mismatch pc=%x addr=%x size=%d cache=%x != mem=%x, d-cache error ?\n" , m68k_getpc(), addr, size, v , get_long(addr) );
   return v;
 }
 uae_u32 read_dcache030_0 (uaecptr addr, int size)
+#else
+uae_u32 read_dcache030 (uaecptr addr, int size)
+#endif
 {
 	struct cache030 *c1, *c2;
 	int lws1, lws2;
