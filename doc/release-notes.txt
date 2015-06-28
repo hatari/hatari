@@ -92,6 +92,8 @@ Emulator:
   - Fix: statusbar assert when FPU/MMU/TT-RAM are enabled in WinUAE CPU core
   - When cpu enters 'halt' state in case of double bus/address errors,
     show a dialog window to reset or call the debugger
+  - Fix bug in the filesector dialog that could create bug in other
+    dialogs used in Hatari
 - Debugger:
   - Fix: crash when GEMDOS tracing is used without GEMDOS HD emulation
   - Fix: update external disassembler's CPU mask when CPU type is changed
