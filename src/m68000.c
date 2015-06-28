@@ -207,6 +207,9 @@ static void M68000_InitPairing(void)
 
 	PairingArray[ i_ADD ][ i_MOVE ] = 1;		/* when using xx(an,dn) addr mode */
 	PairingArray[ i_SUB ][ i_MOVE ] = 1;
+
+	PairingArray[ i_ABCD ][ i_DBcc ] = 1;
+	PairingArray[ i_SBCD ][ i_DBcc ] = 1;
 }
 
 
