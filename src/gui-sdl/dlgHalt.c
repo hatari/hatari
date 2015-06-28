@@ -48,7 +48,7 @@ void Dialog_HaltDlg(void)
 	SDL_ShowCursor(SDL_ENABLE);
 
 	SDLGui_CenterDlg(haltdlg);
-	switch (SDLGui_DoDialog(haltdlg, NULL)) {
+	switch (SDLGui_DoDialog(haltdlg, NULL, false)) {
 
 	case DLGHALT_WARM:
 		/* Reset to exit 'halt' state (resets CPU and regs.spcflags) */

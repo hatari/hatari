@@ -127,7 +127,7 @@ bool Dialog_MemDlg(void)
 
 	do
 	{
-		but = SDLGui_DoDialog(memorydlg, NULL);
+		but = SDLGui_DoDialog(memorydlg, NULL, false);
 
 		switch (but)
 		{

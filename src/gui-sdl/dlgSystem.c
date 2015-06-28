@@ -254,7 +254,7 @@ void Dialog_SystemDlg(void)
 #endif
 
 	/* Show the dialog: */
-	SDLGui_DoDialog(systemdlg, NULL);
+	SDLGui_DoDialog(systemdlg, NULL, false);
 
 	/* Read values from dialog: */
 

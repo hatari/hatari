@@ -135,7 +135,6 @@ static int DlgAlert_ShowDlg(const char *text)
 	bool bOldMouseMode = SDL_GetRelativeMouseMode();
 	SDL_SetRelativeMouseMode(SDL_FALSE);
 #endif
-
 	strcpy(t, text);
 	lines = DlgAlert_FormatTextToBox(t, maxlen, &len);
 	offset = (maxlen-len)/2;
@@ -165,7 +164,7 @@ static int DlgAlert_ShowDlg(const char *text)
 	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
 	SDL_ShowCursor(SDL_ENABLE);
 
-	i = SDLGui_DoDialog(alertdlg, NULL);
+	i = SDLGui_DoDialog(alertdlg, NULL, false);
 
 	SDL_UpdateRect(sdlscrn, 0,0, 0,0);
 	SDL_ShowCursor(bOldMouseVisibility);

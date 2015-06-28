@@ -73,7 +73,7 @@ void Dialog_KeyboardDlg(void)
 	/* Show the dialog: */
 	do
 	{
-		but = SDLGui_DoDialog(keyboarddlg, NULL);
+		but = SDLGui_DoDialog(keyboarddlg, NULL, false);
 
 		if (but == DLGKEY_MAPBROWSE)
 		{

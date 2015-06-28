@@ -576,6 +576,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		char *mtxt;
 		const char *ctxt;
 	} dlgtitle;                         /* A hack to silent recent GCCs warnings */
+	bool KeepCurrentObject;
 
 	dlgtitle.ctxt = title;
 
@@ -642,6 +643,10 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	File_MakeValidPathName(path);
 	File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 	File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
+
+	/* The first time we display the dialog, we reset the current position */
+	/* On next calls, current_object's value will be kept to handle scrolling */
+	KeepCurrentObject = false;
 
 	do
 	{
@@ -719,7 +724,8 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		}
 
 		/* Show dialog: */
-		retbut = SDLGui_DoDialog(fsdlg, &sdlEvent);
+		retbut = SDLGui_DoDialog(fsdlg, &sdlEvent, KeepCurrentObject);
+		KeepCurrentObject = true;				/* Don't reset current_object for next calls */
 
 		/* Has the user clicked on a file or folder? */
 		if (retbut>=SGFSDLG_ENTRYFIRST && retbut<=SGFSDLG_ENTRYLAST && retbut-SGFSDLG_ENTRYFIRST+ypos<entries)

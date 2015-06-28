@@ -57,5 +57,5 @@ void Dialog_AboutDlg(void)
 	aboutdlg[1].x = (aboutdlg[0].w - strlen(aboutstr)) / 2;
 
 	SDLGui_CenterDlg(aboutdlg);
-	SDLGui_DoDialog(aboutdlg, NULL);
+	SDLGui_DoDialog(aboutdlg, NULL,false);
 }

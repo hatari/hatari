@@ -785,7 +785,6 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 
 	len = 0;
 	while (dlg[len].type != -1)   len++;
-
 	xpos = fx / sdlgui_fontwidth;
 	ypos = fy / sdlgui_fontheight;
 	/* Now search for the object: */
@@ -1062,7 +1061,7 @@ static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
  * pressed or SDLGUI_UNKNOWNEVENT if an unsupported event occurred (will be
  * stored in parameter pEventOut).
  */
-int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
+int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 {
 	int obj=0;
 	int oldbutton=0;
@@ -1077,6 +1076,13 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 #if !WITH_SDL2
 	int nOldUnicodeMode;
 #endif
+
+	/* In the case of dialog using a scrollbar, we must keep the previous */
+	/* value of current_object, as the same dialog is displayed in a loop */
+	/* to handle scrolling. For other dialogs, we need to reset current_object */
+	/* (ie no object selected at start when displaying the dialog) */
+	if ( !KeepCurrentObject )
+		current_object = 0;
 
 	if (pSdlGuiScrn->h / sdlgui_fontheight < dlg[0].h)
 	{

@@ -62,7 +62,7 @@ void DlgRom_Main(void)
 
 	do
 	{
-		but = SDLGui_DoDialog(romdlg, NULL);
+		but = SDLGui_DoDialog(romdlg, NULL, false);
 		switch (but)
 		{
 		 case DLGROM_TOSBROWSE:

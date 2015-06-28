@@ -116,7 +116,7 @@ char *DlgNewDisk_Main(void)
 	/* Draw and process the dialog */
 	do
 	{
-		but = SDLGui_DoDialog(newdiskdlg, NULL);
+		but = SDLGui_DoDialog(newdiskdlg, NULL, false);
 		switch(but)
 		{
 		 case DLGNEWDISK_DECTRACK:

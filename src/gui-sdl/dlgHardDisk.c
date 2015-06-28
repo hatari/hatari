@@ -174,7 +174,7 @@ void DlgHardDisk_Main(void)
 	/* Draw and process the dialog */
 	do
 	{
-		but = SDLGui_DoDialog(diskdlg, NULL);
+		but = SDLGui_DoDialog(diskdlg, NULL, false);
 		switch (but)
 		{
 		 case DISKDLG_ACSIEJECT:
