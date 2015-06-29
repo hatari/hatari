@@ -3949,10 +3949,12 @@ static int do_specialties (int cycles)
 	if (regs.spcflags & SPCFLAG_DOTRACE)
 		Exception (9);
 
+#ifndef WINUAE_FOR_HATARI
 	if (regs.spcflags & SPCFLAG_TRAP) {
 		unset_special (SPCFLAG_TRAP);
 		Exception (3);
 	}
+#endif
 	bool first = true;
 	while ((regs.spcflags & SPCFLAG_STOP) && !(regs.spcflags & SPCFLAG_BRK)) {
 isstopped:
