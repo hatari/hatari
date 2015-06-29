@@ -1220,6 +1220,19 @@ static void init_mem_banks (void)
 }
 
 
+
+#ifdef WINUAE_FOR_HATARI
+/*
+ * Check if an address points to a memory region that causes bus error
+ * Returns true if region gives bus error
+ */
+bool memory_region_bus_error ( uaecptr addr )
+{
+	return mem_banks[bankindex(addr)] == &BusErrMem_bank;
+}
+#endif
+
+
 /*
  * Initialize some extra parameters for the memory banks in CE mode
  * By default, we set all banks to CHIP16 and not cachable

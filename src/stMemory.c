@@ -336,6 +336,18 @@ bool	STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type )
 
 
 /**
+ * Check if an address points to a memory region that causes bus error
+ * This is used for blitter and other DMA chips that should not cause
+ * a bus error when accessing such regions (on the contrary of the CPU)
+ * Returns true if region gives bus error
+ */
+bool	STMemory_CheckRegionBusError ( Uint32 addr )
+{
+	return memory_region_bus_error ( addr );
+}
+
+
+/**
  * Convert an address in the ST memory space to a direct pointer
  * in the host memory.
  *

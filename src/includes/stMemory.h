@@ -33,6 +33,7 @@ extern bool STMemory_SafeCopy(Uint32 addr, Uint8 *src, unsigned int len, const c
 extern void STMemory_MemorySnapShot_Capture(bool bSave);
 extern void STMemory_SetDefaultConfig(void);
 extern bool STMemory_CheckAreaType ( Uint32 addr , int size , int mem_type );
+extern bool STMemory_CheckRegionBusError ( Uint32 addr );
 extern void *STMemory_STAddrToPointer ( Uint32 addr );
 
 extern void	STMemory_Write ( Uint32 addr , Uint32 val , int size );

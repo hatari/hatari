@@ -383,6 +383,9 @@ extern addrbank *get_mem_bank_real(uaecptr);
 	(mem_banks[bankindex(addr)] = (b));
 #endif
 
+#ifdef WINUAE_FOR_HATARI
+extern bool memory_region_bus_error ( uaecptr addr );
+#endif
 extern void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMemStart);
 extern void memory_uninit (void);
 extern void map_banks (addrbank *bank, int first, int count, int realsize);
