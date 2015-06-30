@@ -171,6 +171,7 @@ uae_u32 get_word_debug (uaecptr addr);
 uae_u32 get_long_debug (uaecptr addr);
 uae_u32 get_ilong_debug (uaecptr addr);
 uae_u32 get_iword_debug (uaecptr addr);
+extern void mmu_do_hit (void);
 #endif
 
 #endif
