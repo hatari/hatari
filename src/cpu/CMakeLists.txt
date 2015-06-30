@@ -55,11 +55,23 @@ set(CPUEMU_CFLAGS "-Wno-sign-compare -Wno-shadow -Wno-unused-variable")
 if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.6)
 	set (CPUEMU_CFLAGS "${CPUEMU_CFLAGS} -Wno-unused-but-set-variable")
 endif()
+
 if(CMAKE_COMPILER_IS_GNUCC)
 	set_source_files_properties( cpuemu_0.c cpuemu_11.c cpuemu_13.c
 		cpuemu_20.c cpuemu_21.c cpuemu_22.c cpuemu_23.c cpuemu_24.c
 		cpuemu_31.c cpuemu_32.c cpuemu_33.c cpuemu_40.c cpudefs.c cpustbl.c
 		PROPERTIES COMPILE_FLAGS ${CPUEMU_CFLAGS})
+
+	# For other files, some warnings can be hidden for release : set next if to "1" instead of "0"
+	if ( 0 )
+		set(CPUMAIN_CFLAGS "-Wno-sign-compare -Wno-unused-variable -Wno-unused-function -Wno-unused-label -Wno-maybe-uninitialized -Wno-bad-function-cast")
+		if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.6)
+			set (CPUMAIN_CFLAGS "${CPUMAIN_CFLAGS} -Wno-unused-but-set-variable")
+		endif()
+		set_source_files_properties( newcpu.c newcpu_common.c cpummu.c fpp.c memory.c
+			PROPERTIES COMPILE_FLAGS ${CPUMAIN_CFLAGS})
+	endif()
+
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_library(UaeCpu
