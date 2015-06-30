@@ -5174,13 +5174,16 @@ printf ( "run_2ce\n" );
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+#if 0
+// logs to debug data cache issues
 struct cache030 *c1 ,*c2;
         int lws1, lws2;
         uae_u32 tag1, tag2;
-c1 = getcache030 (dcaches030, (uaecptr)0x7f8192, &tag1, &lws1);
+c1 = getcache030 (dcaches030, (uaecptr)0x387a08, &tag1, &lws1);
 c2 = getcache030 (dcaches030, (uaecptr)0x7f8192+4, &tag2, &lws2);
-//fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c1->valid[lws1] , tag1 , lws1 , c1->tag , c1->data[lws1] , get_long(0x7f8192) );
+//fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c1->valid[lws1] , tag1 , lws1 , c1->tag , c1->data[lws1] , get_long(0x387a08) );
 //fprintf ( stderr , "cache valid %d tag2 %x lws2 %x ctag %x data %x mem=%x\n" , c2->valid[lws2] , tag2 , lws2 , c2->tag , c2->data[lws2] , get_long(0x7f8192+4) );
+#endif
 				}
 
 				currcycle = 0;

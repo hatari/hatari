@@ -3481,29 +3481,26 @@ static void gen_opcode (unsigned int opcode)
 		genamode (curi, curi->dmode, "dstreg", curi->size, "dst", 2, 0, 0);
 #ifndef WINUAE_FOR_HATARI
 		if (curi->size == sz_word) {
-			printf ("\tuae_u16 val = (%s (memp) << 8) + %s (memp + 2);\n", srcb, srcb);
+			printf ("\tuae_u16 val = ((%s (memp) & 0xff) << 8) + (%s (memp + 2) & 0xff);\n", srcb, srcb);
 			count_read += 2;
 		} else {
-			printf ("\tuae_u32 val = (%s (memp) << 24) + (%s (memp + 2) << 16)\n", srcb, srcb);
-			printf ("              + (%s (memp + 4) << 8) + %s (memp + 6);\n", srcb, srcb);
+			printf ("\tuae_u32 val = ((%s (memp) & 0xff) << 24) + ((%s (memp + 2) & 0xff) << 16)\n", srcb, srcb);
+			printf ("              + ((%s (memp + 4) & 0xff) << 8) + (%s (memp + 6) & 0xff);\n", srcb, srcb);
 			count_read += 4;
 		}
 #else
 		/* Hatari : Use MovepByteNbr to keep track of each individual byte access inside a movep */
 		if (curi->size == sz_word) {
-			//printf ("\tuae_u16 val = (%s (memp) << 8) + %s (memp + 2);\n", srcb, srcb);
 			printf ("\tuae_u16 val;\n");
-			printf ("\tMovepByteNbr=1; val = (%s (memp) << 8);\n", srcb);
-			printf ("\tMovepByteNbr=2; val += %s (memp + 2);\n", srcb);
+			printf ("\tMovepByteNbr=1; val = ((%s (memp) & 0xff) << 8);\n", srcb);
+			printf ("\tMovepByteNbr=2; val += (%s (memp + 2) & 0xff);\n", srcb);
 			count_read += 2;
 		} else {
-			//printf ("\tuae_u32 val = (%s (memp) << 24) + (%s (memp + 2) << 16)\n", srcb, srcb);
-			//printf ("              + (%s (memp + 4) << 8) + %s (memp + 6);\n", srcb, srcb);
 			printf ("\tuae_u32 val;\n");
-			printf ("\tMovepByteNbr=1; val = (%s (memp) << 24);\n", srcb);
-			printf ("\tMovepByteNbr=2; val += (%s (memp + 2) << 16);\n", srcb);
-			printf ("\tMovepByteNbr=3; val += (%s (memp + 4) << 8);\n", srcb);
-			printf ("\tMovepByteNbr=4; val += %s (memp + 6);\n", srcb);
+			printf ("\tMovepByteNbr=1; val = ((%s (memp) & 0xff) << 24);\n", srcb);
+			printf ("\tMovepByteNbr=2; val += ((%s (memp + 2) & 0xff) << 16);\n", srcb);
+			printf ("\tMovepByteNbr=3; val += ((%s (memp + 4) & 0xff) << 8);\n", srcb);
+			printf ("\tMovepByteNbr=4; val += (%s (memp + 6) & 0xff);\n", srcb);
 			count_read += 4;
 		}
 		printf ("\tMovepByteNbr=0;\n");
@@ -5183,9 +5180,9 @@ bccl_not68020:
 			printf ("\tuae_u16 val;\n");
 			addmmufixup ("srcreg");
 			printf ("\tm68k_areg (regs, srcreg) -= areg_byteinc[srcreg];\n");
-			printf ("\tval = (uae_u16)%s (m68k_areg (regs, srcreg));\n", srcb);
+			printf ("\tval = (uae_u16)(%s (m68k_areg (regs, srcreg)) & 0xff);\n", srcb);
 			printf ("\tm68k_areg (regs, srcreg) -= areg_byteinc[srcreg];\n");
-			printf ("\tval = (val | ((uae_u16)%s (m68k_areg (regs, srcreg)) << 8)) + %s;\n", srcb, gen_nextiword (0));
+			printf ("\tval = (val | ((uae_u16)(%s (m68k_areg (regs, srcreg)) & 0xff) << 8)) + %s;\n", srcb, gen_nextiword (0));
 			addmmufixup ("dstreg");
 			printf ("\tm68k_areg (regs, dstreg) -= areg_byteinc[dstreg];\n");
 			gen_set_fault_pc ();
@@ -5201,7 +5198,7 @@ bccl_not68020:
 			printf ("\tuae_u16 val;\n");
 			addmmufixup ("srcreg");
 			printf ("\tm68k_areg (regs, srcreg) -= areg_byteinc[srcreg];\n");
-			printf ("\tval = (uae_u16)%s (m68k_areg (regs, srcreg));\n", srcb);
+			printf ("\tval = (uae_u16)(%s (m68k_areg (regs, srcreg)) & 0xff);\n", srcb);
 			printf ("\tval = (((val << 4) & 0xf00) | (val & 0xf)) + %s;\n", gen_nextiword (0));
 			addmmufixup ("dstreg");
 			if (cpu_level >= 2) {
