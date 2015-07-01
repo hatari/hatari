@@ -248,7 +248,7 @@ struct dsp_core_s {
 extern dsp_core_t dsp_core;
 
 /* Emulator call these to init/stop/reset DSP emulation */
-extern void dsp_core_init(void (*host_interrupt)(void));
+extern void dsp_core_init(void (*host_interrupt)(int));
 extern void dsp_core_shutdown(void);
 extern void dsp_core_reset(void);
 

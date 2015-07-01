@@ -45,10 +45,10 @@ dsp_core_t dsp_core;
 static void dsp_core_dsp2host(void);
 static void dsp_core_host2dsp(void);
 
-static void (*dsp_host_interrupt)(void);   /* Function to trigger host interrupt */
+static void (*dsp_host_interrupt)(int);   /* Function to set/clear host interrupt */
 
 /* Init DSP emulation */
-void dsp_core_init(void (*host_interrupt)(void))
+void dsp_core_init(void (*host_interrupt)(int))
 {
 	int i;
 
@@ -490,6 +490,7 @@ static void dsp_core_hostport_update_hreq(void)
 {
 	int hreq;
 
+#if 0
 	hreq = (dsp_core.hostport[CPU_HOST_ICR] & dsp_core.hostport[CPU_HOST_ISR]) & 0x3;
 
 	/* Trigger host interrupt? */
@@ -500,6 +501,26 @@ static void dsp_core_hostport_update_hreq(void)
 	/* Set HREQ bit in hostport */
 	dsp_core.hostport[CPU_HOST_ISR] &= 0x7f;
 	dsp_core.hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ;
+#else
+	hreq = (dsp_core.hostport[CPU_HOST_ICR] & dsp_core.hostport[CPU_HOST_ISR]) & 0x3;
+
+    if ( hreq != 0 )
+		hreq = 1 << CPU_HOST_ISR_HREQ;
+
+	/* If hreq doesn't change, we do nothing */
+    if ( hreq == ( dsp_core.hostport[CPU_HOST_ISR] & 0x80 ) )
+		return;
+
+	if ( hreq )								/* 0->1 transition */
+		dsp_host_interrupt ( 1 );			/* set host interrupt */
+	else									/* 1->0 transition */
+		dsp_host_interrupt ( 0 );			/* unset host interrupt */
+
+	/* Set/clear HREQ bit in hostport */
+	dsp_core.hostport[CPU_HOST_ISR] &= 0x7f;
+	dsp_core.hostport[CPU_HOST_ISR] |= hreq;
+//fprintf ( stderr , "dsp_core_hostport_update_hreq %x\n" , hreq );
+#endif
 }
 
 /* Host port transfer ? (dsp->host) */

@@ -72,11 +72,21 @@ bool bDspHostInterruptPending = false;
  * Trigger HREQ interrupt at the host CPU.
  */
 #if ENABLE_DSP_EMU
-static void DSP_TriggerHostInterrupt(void)
+static void DSP_TriggerHostInterrupt(int hreq)
 {
-	bDspHostInterruptPending = true;
-	M68000_SetSpecial(SPCFLAG_DSP);		// TODO remove, use level 6 instead and M68000_Update_intlev()
-	M68000_Update_intlev ();
+//fprintf ( stderr, "DSP_TriggerHostInterrupt %d %x %x\n" , hreq , regs.sr , regs.intmask );
+	if ( hreq )
+	{
+		M68000_SetSpecial(SPCFLAG_DSP);			// TODO for old cpu core, remove, use level 6 instead and M68000_Update_intlev()
+		bDspHostInterruptPending = true;
+		M68000_Update_intlev ();
+	}
+	else
+	{
+		M68000_UnsetSpecial(SPCFLAG_DSP);		// TODO for old cpu core, remove, use level 6 instead and M68000_Update_intlev()
+		bDspHostInterruptPending = false;
+		M68000_Update_intlev ();
+	}
 }
 #endif
 
@@ -122,8 +132,8 @@ bool	DSP_ProcessIRQ(void)
 	if (bDspHostInterruptPending && regs.intmask < 6)
 	{
 		M68000_Exception(IoMem_ReadByte(0xffa203), M68000_EXC_SRC_INT_DSP);
-		bDspHostInterruptPending = false;
-		M68000_UnsetSpecial(SPCFLAG_DSP);
+		bDspHostInterruptPending = false;		// [NP] TODO : remove this line, should be cleared by DSP_TriggerHostInterrupt ?
+		M68000_UnsetSpecial(SPCFLAG_DSP);		// [NP] TODO : remove this line, should be cleared by DSP_TriggerHostInterrupt ?
 		return true;
 	}
 
@@ -164,7 +174,7 @@ void DSP_Reset(void)
 {
 #if ENABLE_DSP_EMU
 	dsp_core_reset();
-	bDspHostInterruptPending = false;
+	DSP_TriggerHostInterrupt ( 0 );				/* Clear HREQ */
 	save_cycles = 0;
 #endif
 }
