@@ -43,6 +43,8 @@ Emulation:
   - TDRE bit is status register more accurately handled
 - Video:
   - fix value when reading video counter $FF8205/07/09 in high res
+- DSP:
+  - better emulation of the HREQ signal
 
 Emulator:
 - Support for compiling with libSDL2 (experimental)
