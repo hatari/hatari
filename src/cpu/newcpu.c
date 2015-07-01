@@ -5284,6 +5284,7 @@ cont:
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
+//fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
 					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
 				}
 #endif
