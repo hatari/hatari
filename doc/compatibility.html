@@ -1967,13 +1967,6 @@ this section lists only TT-specific games and demos.</p>
   </thead>
   <tbody>
     <tr>
-      <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
-      <td class="major">1.8+</td>
-      <td>TT-medium/VGA (640x480x16) only. Bus error at startup with old version.
-      Sound options (and "back to game" when game isn't started) in menu freeze
-      the game</td>
-    </tr>
-    <tr>
       <td><a href="http://atari-forum.com/viewtopic.php?f=26&amp;t=13658&amp;start=50">OpenTTD</a></td>
       <td>1.9</td>
       <td>"hatari-prg-args --machine tt --tos tos306uk.img  -s 4 --ttram 256 --
@@ -2201,12 +2194,21 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>If DSP emulation is disabled, game play pauses randomly</td>
     </tr>
     <tr>
+      <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
+      <td class="major">1.9</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>TT-medium/VGA (640x480x16) only. Some version(s) bus error
+	  on TT due to DSP register check (although they should support
+	  TT with chip music).  Main menu works unreliably (doesn't
+	  always react to indicated keys).</td>
+    </tr>
+    <tr>
       <td><a href="http://pouet.net/prod.php?which=29351">Cavemania (demo)</a></td>
-      <td class="minor">1.6</td>
+      <td class="minor">1.9</td>
       <td>yes</td>
       <td>-</td>
       <td>Some menus are black (space gets through them).
-          After playing a while: "IKBD buffer is full!" (with WinUAE).
           Screen bottom has garbage. Background music with DSP emu</td>
     </tr>
     <tr>
@@ -2330,7 +2332,7 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>1.6</td>
       <td>yes</td>
       <td>-</td>
-      <td>VGA only.  Doesn't work with WinUAE</td>
+      <td>VGA only.  Freezes with WinUAE CPU core</td>
     </tr>
     <tr>
       <td>Gravon (demo)</td>
@@ -2403,7 +2405,7 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>1.9</td>
       <td>yes</td>
       <td>-</td>
-      <td>Nice Quix clone. Freezes with WinUAE CPU core.</td>
+      <td>Nice Quix clone. Freezes with WinUAE CPU core</td>
     </tr>
     <tr>
       <td>Lamemine</td>
@@ -2782,7 +2784,8 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
       <td>yes</td>
       <td>-</td>
       <td>Nice Mahjongg variant. Supports Joypad (configurable).
-          Background music with DSP emu enabled.  Freezes with WinUAE</td>
+          Background music with DSP emu enabled.
+          Freezes with WinUAE CPU core</td>
     </tr>
     <tr>
       <td><a href="http://www.vinc17.org/tetrhex/index_eng.html">Tetrhex</a></td>
@@ -3080,8 +3083,7 @@ stated to require that.</p>
       <td>1.0</td>
       <td>yes</td>
       <td>-</td>
-      <td>Fast. Needs FPU. Background music with DSP emu.
-          Sometimes crashes with WinUAE CPU core</td>
+      <td>Fast. Needs FPU. Background music with DSP emu</td>
     </tr>
     <tr>
       <td>DHS:
@@ -3394,10 +3396,10 @@ stated to require that.</p>
     <tr>
       <td>Mind Design:
       <a href="http://www.pouet.net/prod.php?which=28761">4some</a></td>
-      <td>1.7</td>
+      <td class="minor">1.9</td>
       <td>-</td>
       <td>-</td>
-      <td>Requires FPU. Sometimes hangs with WinUAE CPU core</td>
+      <td>Requires FPU. Hangs/crashes in plasma screen with WinUAE CPU core and also with VGA version</td>
     </tr>
     <tr>
       <td>MJJ Prod:
@@ -3813,8 +3815,8 @@ site.</p>
       <td><a href="http://yescrew.atari.org/eng/index_e.htm">GemPLAY</a></td>
       <td class="minor">1.8+</td>
       <td>emu</td>
-      <td>GT2 module bombs with WinUAE CPU core.  Sound quality depends on which
-          CPU core is used, AM module is complete noise with old UAE CPU core.
+      <td>Somewhat unstable.  Sound quality depends on which CPU core is used,
+          AM module is complete noise with old UAE CPU core.
           Fileselector dir selection doesn't work with v1.92 or newer (GemPlay bug)</td>
     </tr>
     <tr>
