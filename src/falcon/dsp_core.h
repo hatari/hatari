@@ -188,7 +188,7 @@ struct dsp_interrupt_s {
 struct dsp_core_s {
 
 	/* DSP executing instructions ? */
-	volatile int running;
+	int running;
 
 	/* DSP instruction Cycle counter */
 	Uint16	instr_cycle;
@@ -210,14 +210,14 @@ struct dsp_core_s {
 	Uint32	ramint[3][512];
 
 	/* peripheral space, [x|y]:0xffc0-0xffff */
-	volatile Uint32	periph[2][64];
-	volatile Uint32	dsp_host_htx;
-	volatile Uint32	dsp_host_rtx;
+	Uint32	periph[2][64];
+	Uint32	dsp_host_htx;
+	Uint32	dsp_host_rtx;
 	Uint16 dsp_host_isr_HREQ;
 
 
 	/* host port, CPU side */
-	volatile Uint8 hostport[12];
+	Uint8 hostport[12];
 
 	/* SSI */
 	dsp_core_ssi_t ssi;
