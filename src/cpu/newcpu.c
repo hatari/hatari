@@ -4279,7 +4279,7 @@ printf ( "run_1\n" );
 						exit = true;
 				}
 				regs.ipl = regs.ipl_pin;
-				if (!currprefs.cpu_compatible || (currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68000))
+				if (!currprefs.cpu_compatible || (currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010))
 					exit = true;
 			}
 		} CATCH (prb) {
@@ -4438,7 +4438,7 @@ cont:
 						exit = true;
 				}
 
-				if (!currprefs.cpu_cycle_exact || currprefs.cpu_model > 68000)
+				if (!currprefs.cpu_cycle_exact || currprefs.cpu_model > 68010)
 					exit = true;
 			}
 		} CATCH (prb) {
@@ -5179,9 +5179,9 @@ printf ( "run_2ce\n" );
 struct cache030 *c1 ,*c2;
         int lws1, lws2;
         uae_u32 tag1, tag2;
-c1 = getcache030 (dcaches030, (uaecptr)0x387a08, &tag1, &lws1);
+c1 = getcache030 (dcaches030, (uaecptr)0x27ece, &tag1, &lws1);
 c2 = getcache030 (dcaches030, (uaecptr)0x7f8192+4, &tag2, &lws2);
-//fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c1->valid[lws1] , tag1 , lws1 , c1->tag , c1->data[lws1] , get_long(0x387a08) );
+fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c1->valid[lws1] , tag1 , lws1 , c1->tag , c1->data[lws1] , get_long(0x27ece) );
 //fprintf ( stderr , "cache valid %d tag2 %x lws2 %x ctag %x data %x mem=%x\n" , c2->valid[lws2] , tag2 , lws2 , c2->tag , c2->data[lws2] , get_long(0x7f8192+4) );
 #endif
 				}
@@ -7694,6 +7694,7 @@ static void write_dcache030x (uaecptr addr, uae_u32 val, int size)
 
 void write_dcache030(uaecptr addr, uae_u32 v, int size)
 {
+//fprintf ( stderr , "write dcache %x %x %d\n" , addr , v , size );
 	write_dcache030x(addr, v, size);
 	if (currprefs.cpu_cycle_exact) {
 		if (size == 2)
