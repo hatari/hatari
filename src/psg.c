@@ -351,15 +351,17 @@ void PSG_Set_DataRegister(Uint8 val)
 		/* Report a possible drive/side change */
 		FDC_SetDriveSide ( val_old & 7 , PSGRegisters[PSG_REG_IO_PORTA] & 7 );
 
-		/* Bit 3 - Centronics as input */
-		if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<3))
-		{
-			/* FIXME: might be needed if we want to emulate sound sampling hardware */
-		}
-		
 		/* handle Falcon specific bits in PORTA of the PSG */
 		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 		{
+			/* Bit 3 - centronics port SELIN line (pin 17) */
+			/*
+			if (PSGRegisters[PSG_REG_IO_PORTA] & (1 << 3))
+			{
+				// not emulated yet
+			}
+			*/
+
 			/* Bit 4 - DSP reset? */
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<4))
 			{
