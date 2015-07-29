@@ -77,6 +77,8 @@
 /*			'move.b a1,(a0)' should give an illegal exception				*/
 /* 2012/05/05	[NP]	In i_JMP, in case of address error with jmp xxx.w, last_addr_for_exception_3	*/
 /*			should be pc+2 (The Teller, 'jmp $201.w')					*/
+/* 2015/07/29	[NP]	In the case of an address error, correctly set last_writeaccess_for_exception_3	*/
+/*			to 0 (read) or 1 (write) (War Heli)						*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -440,7 +442,10 @@ static void genamode (amodes mode, const char *reg, wordsizes size,
 	printf ("\t\tlast_fault_for_exception_3 = %sa;\n", name);
 	printf ("\t\tlast_op_for_exception_3 = opcode;\n");
 	printf ("\t\tlast_instructionaccess_for_exception_3 = 0;\n");
-	printf ("\t\tlast_writeaccess_for_exception_3 = 0;\n");
+	if ( getv == 2 )
+		printf ("\t\tlast_writeaccess_for_exception_3 = 1;\n");		/* write */
+	else
+		printf ("\t\tlast_writeaccess_for_exception_3 = 0;\n");		/* read */
 	printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + %d;\n", m68k_pc_offset);
 	printf ("\t\tException(3, 0, M68000_EXC_SRC_CPU);\n");
 	printf ("\t\tgoto %s;\n", endlabelstr);
