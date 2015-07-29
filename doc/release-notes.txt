@@ -134,6 +134,7 @@ Fixed games:
   (note that this version is bugged and will crash with TOS 1.04 or 1.62)
 - Obitus (STX version) (fdc, seek+verify on a track with no sector)
 - The Teller (STX/CTR version) (cpu, exception stack and address error)
+- War Heli (cpu, exception stack for address error and prefetch)
 
 Fixed programs:
 - Realtime and M by Eric Ameres (midi + mfp, toggle bit 0 of AER)
