@@ -1017,6 +1017,12 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    put_long (m68k_areg(regs, 7)+2, last_fault_for_exception_3);
 	    put_word (m68k_areg(regs, 7)+6, last_op_for_exception_3);
 	    put_long (m68k_areg(regs, 7)+10, last_addr_for_exception_3);
+
+	    /* [NP] PC stored in the stack frame is not necessarily pointing to the next instruction ! */
+	    /* FIXME : we should have a proper model for this, in the meantime we handle specific cases */
+	    if ( last_op_for_exception_3 == 0x2285 )						/* move.l d5,(a1) (War Heli) */
+	      put_long (m68k_areg(regs, 7)+10, currpc+4);					/* correct PC is 2 bytes more than usual value */
+
 	    fprintf(stderr,"Address Error at address $%x, PC=$%x addr_e3=%x op_e3=%x\n",last_fault_for_exception_3, currpc, last_addr_for_exception_3, last_op_for_exception_3);
 	    if (ExceptionDebugMask & EXCEPT_ADDRESS) {
 	      DebugUI(REASON_CPU_EXCEPTION);
