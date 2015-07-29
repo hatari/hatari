@@ -79,6 +79,7 @@
 /*			should be pc+2 (The Teller, 'jmp $201.w')					*/
 /* 2015/07/29	[NP]	In the case of an address error, correctly set last_writeaccess_for_exception_3	*/
 /*			to 0 (read) or 1 (write) (War Heli)						*/
+/* 2015/07/29	[NP]	Add refill_prefetch for i_Bcc (War Heli, 'bra.s -2' ($60fe))			*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -1684,6 +1685,7 @@ static void gen_opcode (unsigned long int opcode)
 	}
 	printf ("\tm68k_incpc ((uae_s32)src + 2);\n");
 	fill_prefetch_0 ();
+	printf("\trefill_prefetch (m68k_getpc(), 0);\n");			// FIXME [NP] need better prefetch emulation (needed in War Heli for 60fe : bra.s -2)
 	printf ("\treturn 10;\n");
 	printf ("didnt_jump:;\n");
 	need_endlabel = 1;
