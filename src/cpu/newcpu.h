@@ -90,6 +90,9 @@ typedef void REGPARAM3 cpuop_func_ce (uae_u32) REGPARAM;
 struct cputbl {
 	cpuop_func *handler;
 	uae_u16 opcode;
+	uae_s8 length;
+	uae_s8 disp020[2];
+	uae_u8 branch;
 };
 
 #ifdef JIT
@@ -234,6 +237,9 @@ struct regstruct
 	uae_u32 prefetch020addr;
 	uae_u32 cacheholdingdata020;
 	uae_u32 cacheholdingaddr020;
+	int pipeline_pos;
+	int pipeline_r8[2];
+	int pipeline_stop;
 	int ce020memcycles;
 	int ce020extracycles;
 	bool ce020memcycle_data;

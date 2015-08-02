@@ -11,6 +11,8 @@
 #define EXCEPTION3_DEBUGGER 0
 #define CPUTRACE_DEBUG 0
 
+#define MORE_ACCURATE_68020_PIPELINE 1
+
 #include "main.h"
 #include "compat.h"
 
@@ -102,6 +104,14 @@ int movem_index2[256];
 int movem_next[256];
 
 cpuop_func *cpufunctbl[65536];
+
+struct cputbl_data
+{
+	uae_s16 length;
+	uae_s8 disp020[2];
+	uae_u8 branch;
+};
+static struct cputbl_data cpudatatbl[65536];
 
 struct mmufixup mmufixup[2];
 
@@ -892,11 +902,11 @@ static void set_x_funcs (void)
 				x_do_cycles_post = do_cycles_post;
 			} else if (currprefs.cpu_model == 68030 && !currprefs.cachesize) {
 				x_prefetch = get_word_prefetch;
-				x_get_ilong = get_long_020_prefetch;
-				x_get_iword = get_word_020_prefetch;
+				x_get_ilong = get_long_030_prefetch;
+				x_get_iword = get_word_030_prefetch;
 				x_get_ibyte = NULL;
-				x_next_iword = next_iword_020_prefetch;
-				x_next_ilong = next_ilong_020_prefetch;
+				x_next_iword = next_iword_030_prefetch;
+				x_next_ilong = next_ilong_030_prefetch;
 				x_put_long = put_long;
 				x_put_word = put_word;
 				x_put_byte = put_byte;
@@ -1270,14 +1280,23 @@ static void build_cpufunctbl (void)
 	for (i = 0; tbl[i].handler != NULL; i++) {
 		opcode = tbl[i].opcode;
 		cpufunctbl[opcode] = tbl[i].handler;
+		cpudatatbl[opcode].length = tbl[i].length;
+		cpudatatbl[opcode].disp020[0] = tbl[i].disp020[0];
+		cpudatatbl[opcode].disp020[1] = tbl[i].disp020[1];
+		cpudatatbl[opcode].branch = tbl[i].branch;
 	}
 
 	/* hack fpu to 68000/68010 mode */
 	if (currprefs.fpu_model && currprefs.cpu_model < 68020) {
 		tbl = op_smalltbl_3_ff;
 		for (i = 0; tbl[i].handler != NULL; i++) {
-			if ((tbl[i].opcode & 0xfe00) == 0xf200)
+			if ((tbl[i].opcode & 0xfe00) == 0xf200) {
 				cpufunctbl[tbl[i].opcode] = tbl[i].handler;
+				cpudatatbl[tbl[i].opcode].length = tbl[i].length;
+				cpudatatbl[tbl[i].opcode].disp020[0] = tbl[i].disp020[0];
+				cpudatatbl[tbl[i].opcode].disp020[1] = tbl[i].disp020[1];
+				cpudatatbl[tbl[i].opcode].branch = tbl[i].branch;
+			}
 		}
 	}
 
@@ -1317,6 +1336,7 @@ static void build_cpufunctbl (void)
 			if (f == op_illg_1)
 				abort ();
 			cpufunctbl[opcode] = f;
+			memcpy(&cpudatatbl[opcode], &cpudatatbl[idx], sizeof ( struct cputbl_data) );
 			opcnt++;
 		}
 	}
@@ -3621,6 +3641,19 @@ static void do_trace (void)
 	}
 }
 
+static void check_uae_int_request(void)
+{
+#ifndef WINUAE_FOR_HATARI
+	if (uae_int_requested || uaenet_int_requested) {
+		if ((uae_int_requested & 0x00ff) || uaenet_int_requested)
+			INTREQ_f(0x8000 | 0x0008);
+		if (uae_int_requested & 0xff00)
+			INTREQ_f(0x8000 | 0x2000);
+		set_special(SPCFLAG_INT);
+	}
+#endif
+}
+
 void cpu_sleep_millis(int ms)
 {
 #ifndef WINUAE_FOR_HATARI
@@ -3683,6 +3716,7 @@ static bool haltloop(void)
 				if (currprefs.ppc_cpu_idle >= 10 || (i == ev_max && vpos > 0 && vpos < maxvpos - maxlines)) {
 					cpu_sleep_millis(1);
 				}
+				check_uae_int_request();
 				uae_ppc_execute_check();
 
 				lines = (read_processor_time() - rpt_scanline) / vsynctimeline + 1;
@@ -3718,6 +3752,7 @@ static bool haltloop(void)
 
 				// sync chipset with real time
 				for (;;) {
+					check_uae_int_request();
 					ppc_interrupt(intlev());
 					uae_ppc_execute_check();
 					if (event_wait)
@@ -3957,12 +3992,9 @@ static int do_specialties (int cycles)
 #endif
 	bool first = true;
 	while ((regs.spcflags & SPCFLAG_STOP) && !(regs.spcflags & SPCFLAG_BRK)) {
-isstopped:
+	isstopped:
 #ifndef WINUAE_FOR_HATARI
-		if (uae_int_requested || uaenet_int_requested) {
-			INTREQ_f (0x8008);
-			set_special (SPCFLAG_INT);
-		}
+		check_uae_int_request();
 		{
 			extern void bsdsock_fake_int_handler (void);
 			extern int volatile bsd_int_requested;
@@ -4596,10 +4628,7 @@ printf ( "run_jit\n" );
 		((compiled_handler*)(pushall_call_handler))();
 		/* Whenever we return from that, we should check spcflags */
 #ifndef WINUAE_FOR_HATARI
-		if (uae_int_requested || uaenet_int_requested) {
-			INTREQ_f (0x8008);
-			set_special (SPCFLAG_INT);
-		}
+		check_uae_int_request();
 #endif
 		if (regs.spcflags) {
 			if (do_specialties (0)) {
@@ -7229,6 +7258,8 @@ static void fill_icache020 (uae_u32 addr, uae_u32 (*fetch)(uaecptr))
 	struct cache020 *c;
 
 	addr &= ~3;
+	if (regs.cacheholdingaddr020 == addr)
+		return;
 	index = (addr >> 2) & (CACHELINES020 - 1);
 	tag = regs.s | (addr & ~((CACHELINES020 << 2) - 1));
 	c = &caches020[index];
@@ -7266,6 +7297,97 @@ static void fill_icache020 (uae_u32 addr, uae_u32 (*fetch)(uaecptr))
 #endif
 }
 
+#if MORE_ACCURATE_68020_PIPELINE
+#define PIPELINE_DEBUG 0
+#if PIPELINE_DEBUG
+static uae_u16 pipeline_opcode;
+#endif
+static void pipeline_020(uae_u16 w, uaecptr pc)
+{
+	if (regs.pipeline_pos < 0)
+		return;
+	if (regs.pipeline_pos > 0) {
+		// handle annoying 68020+ addressing modes
+		if (regs.pipeline_pos == regs.pipeline_r8[0]) {
+			regs.pipeline_r8[0] = 0;
+			if (w & 0x100) {
+				int extra = 0;
+				if ((w & 0x30) == 0x20)
+					extra += 2;
+				if ((w & 0x30) == 0x30)
+					extra += 4;
+				if ((w & 0x03) == 0x02)
+					extra += 2;
+				if ((w & 0x03) == 0x03)
+					extra += 4;
+				regs.pipeline_pos += extra;
+			}
+			return;
+		}
+		if (regs.pipeline_pos == regs.pipeline_r8[1]) {
+			regs.pipeline_r8[1] = 0;
+			if (w & 0x100) {
+				int extra = 0;
+				if ((w & 0x30) == 0x20)
+					extra += 2;
+				if ((w & 0x30) == 0x30)
+					extra += 4;
+				if ((w & 0x03) == 0x02)
+					extra += 2;
+				if ((w & 0x03) == 0x03)
+					extra += 4;
+				regs.pipeline_pos += extra;
+			}
+			return;
+		}
+	}
+	if (regs.pipeline_pos > 2) {
+		regs.pipeline_pos -= 2;
+		// If stop set, prefetches stop 1 word early.
+		if (regs.pipeline_stop > 0 && regs.pipeline_pos == 2)
+			regs.pipeline_stop = -1;
+		return;
+	}
+	if (regs.pipeline_stop) {
+		regs.pipeline_stop = -1;
+		return;
+	}
+#if PIPELINE_DEBUG
+	pipeline_opcode = w;
+#endif
+	regs.pipeline_r8[0] = cpudatatbl[w].disp020[0];
+	regs.pipeline_r8[1] = cpudatatbl[w].disp020[1];
+	regs.pipeline_pos = cpudatatbl[w].length;
+#if PIPELINE_DEBUG
+	if (!regs.pipeline_pos) {
+		write_log(_T("Opcode %04x has no size PC=%08x!\n"), w, pc);
+	}
+#endif
+	int branch = cpudatatbl[w].branch;
+	if (regs.pipeline_pos > 0 && branch) {
+		// Short branches (Bcc.s) still do one more prefetch.
+		// RTS and other unconditional single opcode instruction stop immediately.
+		if (branch == 2) {
+			// Immediate stop
+			regs.pipeline_stop = -1;
+		} else {
+			// Stop 1 word early than normally
+			regs.pipeline_stop = 1;
+		}
+	}
+}
+
+// Not exactly right, requires logic analyzer checks.
+void continue_ce020_prefetch(void)
+{
+	fill_prefetch_020();
+}
+void continue_020_prefetch(void)
+{
+	fill_prefetch_020();
+}
+#endif
+
 uae_u32 get_word_ce020_prefetch (int o)
 {
 	uae_u32 pc = m68k_getpc () + o;
@@ -7273,12 +7395,21 @@ uae_u32 get_word_ce020_prefetch (int o)
 
 	if (pc & 2) {
 		v = regs.prefetch020[0] & 0xffff;
+#if MORE_ACCURATE_68020_PIPELINE
+		pipeline_020(regs.prefetch020[1], pc );
+#endif
 		regs.prefetch020[0] = regs.prefetch020[1];
-		fill_icache020 (pc + 2 + 4, mem_access_delay_longi_read_ce020);
-		regs.prefetch020[1] = regs.cacheholdingdata020;
+		// branch instruction detected in pipeline: stop fetches until branch executed.
+		if (!MORE_ACCURATE_68020_PIPELINE || regs.pipeline_stop >= 0) {
+			fill_icache020 (pc + 2 + 4, mem_access_delay_longi_read_ce020);
+			regs.prefetch020[1] = regs.cacheholdingdata020;
+		}
 		regs.db = regs.prefetch020[0] >> 16;
 	} else {
 		v = regs.prefetch020[0] >> 16;
+#if MORE_ACCURATE_68020_PIPELINE
+		pipeline_020(regs.prefetch020[1] >> 16, pc);
+#endif
 		regs.db = regs.prefetch020[1] >> 16;
 	}
 	do_cycles_ce020_internal (2);
@@ -7292,12 +7423,20 @@ uae_u32 get_word_020_prefetch (int o)
 
 	if (pc & 2) {
 		v = regs.prefetch020[0] & 0xffff;
+#if MORE_ACCURATE_68020_PIPELINE
+		pipeline_020(regs.prefetch020[1], pc);
+#endif
 		regs.prefetch020[0] = regs.prefetch020[1];
-		fill_icache020 (pc + 2 + 4, get_longi);
-		regs.prefetch020[1] = regs.cacheholdingdata020;
+		if (!MORE_ACCURATE_68020_PIPELINE || regs.pipeline_stop >= 0) {
+			fill_icache020 (pc + 2 + 4, get_longi);
+			regs.prefetch020[1] = regs.cacheholdingdata020;
+		}
 		regs.db = regs.prefetch020[0] >> 16;
 	} else {
 		v = regs.prefetch020[0] >> 16;
+#if MORE_ACCURATE_68020_PIPELINE
+		pipeline_020(regs.prefetch020[1] >> 16, pc);
+#endif
 		regs.db = regs.prefetch020[0];
 	}
 if ( ( v & 0xffff ) != ( get_word(pc) & 0xffff ) )
@@ -7565,13 +7704,17 @@ static void fill_icache030 (uae_u32 addr)
 	uae_u32 tag;
 	uae_u32 data;
 	struct cache030 *c;
+//fprintf ( stderr , "fill ica %x\n" , addr );
 
 	addr &= ~3;
+	if (regs.cacheholdingaddr020 == addr)
+		return;
 	c = getcache030 (icaches030, addr, &tag, &lws);
 	if (c->valid[lws] && c->tag == tag) {
 		// cache hit
 		regs.cacheholdingaddr020 = addr;
 		regs.cacheholdingdata020 = c->data[lws];
+//fprintf ( stderr , "fill ica %x -> hit %x\n" , addr , regs.cacheholdingdata020 );
 #ifdef WINUAE_FOR_HATARI
 		CpuInstruction.I_Cache_hit++;
 #endif
@@ -7592,9 +7735,11 @@ static void fill_icache030 (uae_u32 addr)
 		data = get_longi (addr);
 	}
 	if ((regs.cacr & 3) == 1) { // not frozen and enabled
+//fprintf ( stderr , "fill ica %x -> update %x\n" , addr , data );
 		update_cache030 (c, data, tag, lws);
 	}
 	if ((regs.cacr & 0x11) == 0x11 && lws == 0 && !c->valid[1] && !c->valid[2] && !c->valid[3] && ce_banktype[addr >> 16] == CE_MEMBANK_FAST32) {
+//fprintf ( stderr , "fill ica %x -> burst %x\n" , addr , data );
 		// do burst fetch if cache enabled, not frozen, all slots invalid, no chip ram
 		c->data[1] = get_longi (addr + 4);
 		c->data[2] = get_longi (addr + 8);
@@ -7605,6 +7750,7 @@ static void fill_icache030 (uae_u32 addr)
 	}
 	regs.cacheholdingaddr020 = addr;
 	regs.cacheholdingdata020 = data;
+//fprintf ( stderr , "fill ica %x -> miss %x\n" , addr , regs.cacheholdingdata020 );
 #ifdef WINUAE_FOR_HATARI
 	CpuInstruction.I_Cache_miss++;
 #endif
@@ -7850,13 +7996,47 @@ uae_u32 get_word_ce030_prefetch (int o)
 
 	if (pc & 2) {
 		v = regs.prefetch020[0] & 0xffff;
+#if MORE_ACCURATE_68020_PIPELINE
+		pipeline_020(regs.prefetch020[1], pc);
+#endif
 		regs.prefetch020[0] = regs.prefetch020[1];
-		fill_icache030 (pc + 2 + 4);
-		regs.prefetch020[1] = regs.cacheholdingdata020;
+		// branch instruction detected in pipeline: stop fetches until branch executed.
+		if (!MORE_ACCURATE_68020_PIPELINE || regs.pipeline_stop >= 0) {
+			fill_icache030 (pc + 2 + 4);
+			regs.prefetch020[1] = regs.cacheholdingdata020;
+		}
 	} else {
 		v = regs.prefetch020[0] >> 16;
+#if MORE_ACCURATE_68020_PIPELINE
+		pipeline_020(regs.prefetch020[1] >> 16, pc);
+#endif
 	}
 	do_cycles_ce020_internal (2);
+	return v;
+}
+
+uae_u32 get_word_030_prefetch(int o)
+{
+	uae_u32 pc = m68k_getpc() + o;
+	uae_u32 v;
+
+	if (pc & 2) {
+		v = regs.prefetch020[0] & 0xffff;
+#if MORE_ACCURATE_68020_PIPELINE
+		pipeline_020(regs.prefetch020[1], pc);
+#endif
+		regs.prefetch020[0] = regs.prefetch020[1];
+		// branch instruction detected in pipeline: stop fetches until branch executed.
+		if (!MORE_ACCURATE_68020_PIPELINE || regs.pipeline_stop >= 0) {
+			fill_icache030(pc + 2 + 4);
+			regs.prefetch020[1] = regs.cacheholdingdata020;
+		}
+	} else {
+		v = regs.prefetch020[0] >> 16;
+#if MORE_ACCURATE_68020_PIPELINE
+		pipeline_020(regs.prefetch020[1] >> 16, pc);
+#endif
+	}
 	return v;
 }
 
@@ -8294,31 +8474,67 @@ void flush_instr_cache (uaecptr addr, int size)
 void fill_prefetch_030 (void)
 {
 	uaecptr pc = m68k_getpc ();
+	uaecptr pc2 = pc;
 	pc &= ~3;
+	regs.pipeline_pos = 0;
+	regs.pipeline_stop = 0;
+
 	fill_icache030 (pc);
 	if (currprefs.cpu_cycle_exact)
 		do_cycles_ce020_internal(2);
 	regs.prefetch020[0] = regs.cacheholdingdata020;
+
 	fill_icache030 (pc + 4);
 	if (currprefs.cpu_cycle_exact)
 		do_cycles_ce020_internal(2);
 	regs.prefetch020[1] = regs.cacheholdingdata020;
-	regs.irc = get_word_ce030_prefetch (0);
+
+#if MORE_ACCURATE_68020_PIPELINE
+	if (pc2 & 2) {
+		pipeline_020(regs.prefetch020[0], pc);
+		pipeline_020(regs.prefetch020[1] >> 16, pc);
+	} else {
+		pipeline_020(regs.prefetch020[0] >> 16, pc);
+		pipeline_020(regs.prefetch020[0], pc);
+	}
+#endif
+
+	if (currprefs.cpu_cycle_exact)
+		regs.irc = get_word_ce030_prefetch (0);
+	else
+		regs.irc = get_word_030_prefetch(0);
 }
 
 void fill_prefetch_020 (void)
 {
 	uaecptr pc = m68k_getpc ();
-	uae_u32 (*fetch)(uaecptr) = currprefs.cpu_cycle_exact ? mem_access_delay_longi_read_ce020 : get_longi;
+	uaecptr pc2 = pc;
 	pc &= ~3;
+	uae_u32 (*fetch)(uaecptr) = currprefs.cpu_cycle_exact ? mem_access_delay_longi_read_ce020 : get_longi;
+	regs.pipeline_pos = 0;
+	regs.pipeline_stop = 0;
+	regs.pipeline_r8[0] = regs.pipeline_r8[1] = -1;
+
 	fill_icache020 (pc, fetch);
 	if (currprefs.cpu_cycle_exact)
 		do_cycles_ce020_internal(2);
 	regs.prefetch020[0] = regs.cacheholdingdata020;
+
 	fill_icache020 (pc + 4, fetch);
 	if (currprefs.cpu_cycle_exact)
 		do_cycles_ce020_internal(2);
 	regs.prefetch020[1] = regs.cacheholdingdata020;
+
+#if MORE_ACCURATE_68020_PIPELINE
+	if (pc2 & 2) {
+		pipeline_020(regs.prefetch020[0], pc);
+		pipeline_020(regs.prefetch020[1] >> 16, pc);
+	} else {
+		pipeline_020(regs.prefetch020[0] >> 16, pc);
+		pipeline_020(regs.prefetch020[0], pc);
+	}
+#endif
+
 	if (currprefs.cpu_cycle_exact)
 		regs.irc = get_word_ce020_prefetch (0);
 	else
@@ -8327,7 +8543,10 @@ void fill_prefetch_020 (void)
 
 void fill_prefetch (void)
 {
+	regs.pipeline_pos = 0;
 	if (currprefs.cachesize)
+		return;
+	if (!currprefs.cpu_compatible)
 		return;
 	if (currprefs.cpu_model >= 68040) {
 		if (currprefs.cpu_compatible || currprefs.cpu_cycle_exact) {
