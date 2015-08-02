@@ -22,7 +22,8 @@ Emulation:
 - CPU:
   - update WinUAE CPU core version from 2.3 -> 2.8.1 -> 3.0 -> 3.1
     - MMU emulation fixed
-    - data cache emulation
+    - instruction/data cache emulation
+    - better 68020/30 prefetch pipeline
     - cycle accuracy, etc.
   - in 68000 mode, remove some un-allowed <ea> for CMPI, BTST and TST
   - check for address error when new PC is set at the end of RTE, RTS and RTR
