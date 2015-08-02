@@ -161,8 +161,10 @@ projects which we would like to acknowledge here:
 - The original CPU core has been taken from UAE which has been written
   by Bernd Schmidt and others. (http://uae.coresystems.de/)
 
-- The new alternative CPU core has been taken from WinUAE.
-  (http://www.winuae.net/)
+- The new alternative CPU core has been taken from WinUAE which is
+  maintained by Toni Wilen. Huge thanks to Toni for accepting ideas
+  and patches not specific to Amiga emulation, as well as keeping on
+  improving the accuracy of 68000/20/30 CPU. (http://www.winuae.net/)
 
 - Some parts have been taken from the emulator STonX that has been
   written by Marinos Yannikos and Martin Griffiths.
@@ -191,5 +193,6 @@ projects which we would like to acknowledge here:
   (http://www.qemu.org/)
 
 - The MMU emulation for the 68030 has been taken from the NeXT emulator
-  Previous (thanks to Andreas Grabher!)
+  Previous (thanks to Andreas Grabher!). Since Hatari 1.9, this is now
+  taken from WinUAE which uses the same code base.
 
