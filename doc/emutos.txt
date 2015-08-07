@@ -301,6 +301,7 @@ Demos:
 - Calimer-o-demo (by Oxygene)
 - Charts Compilation (by Next)
 - Coast II Coast (by Sector One, 4kB intro)
+- Crisis (by Joska)
 - Cuddly Demos (by CareBears)
 - Darktrip (by Legend), doesn't work with >2MB of RAM
 - Dark Side of the Spoon (by ULM)
