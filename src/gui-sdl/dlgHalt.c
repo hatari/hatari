@@ -26,10 +26,10 @@ const char DlgHalt_fileid[] = "Hatari dlgHalt.c : " __DATE__ " " __TIME__;
 static SGOBJ haltdlg[] = {
 	{ SGBOX,  0, 0, 0,0, 52,7, NULL },
 	{ SGTEXT, 0, 0, 2,1, 48,1, "Detected double bus/address error => CPU halted!" },
-	{ SGBUTTON, SG_DEFAULT, 0,  6,3, 12,1, "Warm reset" },
-	{ SGBUTTON, 0,          0,  6,5, 12,1, "Cold reset" },
-	{ SGBUTTON, 0,          0, 28,3, 18,1, "Console debugger" },
-	{ SGBUTTON, SG_CANCEL,  0, 28,5, 18,1, "Quit Hatari" },
+	{ SGBUTTON, SG_DEFAULT, 0,  6,3, 12,1, "_Warm reset" },
+	{ SGBUTTON, 0,          0,  6,5, 12,1, "_Cold reset" },
+	{ SGBUTTON, 0,          0, 28,3, 18,1, "Console _debugger" },
+	{ SGBUTTON, SG_CANCEL,  0, 28,5, 18,1, "_Quit Hatari" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
