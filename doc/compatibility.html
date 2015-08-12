@@ -51,7 +51,7 @@
 <h1 class="pageheader">Hatari Atari Software Compatibility List</h1>
 
 <p class="pageheader">
-Version 1.8, July 2014
+Version 1.9, August 2015
 </p>
 <p class="pageheader">
 This list has been written by: <strong>Thomas Huth</strong>, <strong>Eero Tamminen</strong>
@@ -639,8 +639,10 @@ for border removal).</p>
 <!-- double disk pouet.net version doesn't work unlike above single disk one
       <a href="http://pouet.net/prod.php?which=1287">Suretrip 49%</a></td>
 -->
-      <td>1.2</td>
-      <td>&nbsp;</td>
+      <td class="major">1.9</td>
+      <td>Crashes in fullscreen screen.  Worked with Hatari v1.6.2.
+      Depends on very complex VBL/HBL timing when both instructions
+      happens at the same time on line 0</td>
     </tr>
     <tr>
       <td>Delta Force:
@@ -922,7 +924,7 @@ for border removal).</p>
       <td>Ym Rockerz:
       <a href="http://pouet.net/prod.php?which=9454">Popstars</a></td>
       <td>before 1.0</td>
-      <td>Sound works only with Hatari version 0.80 and later</td>
+      <td>&nbsp;</td>
     </tr>
   </tbody>
 </table>
@@ -2329,10 +2331,12 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td>Golden Island (demo)</td>
-      <td>1.6</td>
+      <td>1.9</td>
       <td>yes</td>
       <td>-</td>
-      <td>VGA only.  Freezes with WinUAE CPU core due to CPU-DSP emulation cycle accuracy</td>
+      <td>VGA only.  Freezes with WinUAE CPU core due to CPU-DSP
+      emulation cycle accuracy. Works with OldUAE and worked with
+      v1.8 WinUAE CPU core</td>
     </tr>
     <tr>
       <td>Gravon (demo)</td>
@@ -3931,6 +3935,14 @@ support or work only on them.</p>
       <td>Hard disk driver.  In Hatari works only with IDE emulation. With TOS v4,
       CPU needs to be set to EC030 or better, with TOS v3 works also with 020 CPU
       (used by earlier Hatari versions for TOS &ge; v3)</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.seimet.de/atari/en/index.html">ROMSPEED</a></td>
+      <td class="minor">1.9</td>
+      <td>Utility to copy and run ROM from Fast-RAM to accelerate its working.
+      Requires TT-RAM / WinUAE CPU core to work.  Different memory
+      timings on different memory areas aren't emulated yet, so no
+      speed changes are visible</td>
     </tr>
   </tbody>
 </table>

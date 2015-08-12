@@ -141,6 +141,10 @@ Fixed programs:
 - Realtime and M by Eric Ameres (midi + mfp, toggle bit 0 of AER)
 - Notator (midi, more precise TDRE bit in status register)
 
+Known regressions (see compatibility list):
+- Suretrip demo by Checkpoint
+- Golden Island game demo with WinUAE CPU core
+
 
  Version 1.8.0 (2014-07-30):
  ---------------------------
