@@ -347,6 +347,8 @@
 /* 2015/06/19	[NP]	In Video_CalculateAddress, handle a special/simplified case when reading*/
 /*			video pointer in hi res (fix protection in 'My Socks Are Weapons' demo	*/
 /*			by 'Legacy').								*/
+/* 2015/0818	[NP]	In Video_CalculateAddress, handle the case when reading overlaps end	*/
+/*			of line / start of next line and STE's linewidth at $FF820F != 0.	*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -907,6 +909,10 @@ static Uint32 Video_CalculateAddress ( void )
 
 			if (LineBorderMask & BORDERMASK_EMPTY_LINE)
 				PrevSize = 0;
+
+			/* On STE, the Shifter skips the given amount of words as soon as display is disabled */
+			/* which is the case here when reading overlaps end/start of line (LineWidth is 0 on STF) */
+			PrevSize += LineWidth*2;
 		}
 
 
@@ -949,8 +955,8 @@ static Uint32 Video_CalculateAddress ( void )
 		else if ( X > LineEndCycle )
 		{
 			X = LineEndCycle;			/* display is disabled in the right border */
-			/* On  STE, the Shifter skips the given amount of words as soon as display is disabled */
-			/* (LineWidth is 0 on STF */
+			/* On STE, the Shifter skips the given amount of words as soon as display is disabled */
+			/* (LineWidth is 0 on STF) */
 			VideoAddress += LineWidth*2;
 		}
 
