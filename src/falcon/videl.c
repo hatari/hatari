@@ -952,9 +952,10 @@ bool VIDEL_renderScreen(void)
 	*/
 	nextline = linewidth + lineoffset;
 
-	if ((vw<32) || (vh<32))
+	if ((vw < 32) || (vh < 32)) {
+		LOG_TRACE(TRACE_VIDEL, "Videl : %dx%d screen size, not drawing\n", vw, vh);
 		return false;
-
+	}
 	if (videl.save_scrBpp < 16 && videl.hostColorsSync == 0)
 		VIDEL_updateColors();
 
@@ -1143,8 +1144,8 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	if (vh>scrheight) vh_clip = scrheight;	
 
 	/* If emulated computer is the FALCON, we must take :
-	 * vw = X area display size and not all the X screen with the borders into account
-	 * vh = Y area display size and not all the Y screen with the borders into account
+	 * vw = display width without borders
+	 * vh = display height without borders
 	 */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
 		vw = videl.XSize;
@@ -1587,9 +1588,15 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 	/* We reuse the following values to compute the display area size in zoom mode */
 	/* scrwidth must not change */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		/* get values without borders */
 		vw = videl.XSize;
 		vh = videl.YSize;
 		scrheight = vh * coefy;
+	}
+	if (vw < 16) {
+		/* prevent memory corruption */
+		LOG_TRACE(TRACE_VIDEL, "Videl : <16 screen width (%dx%d without borders), not drawing\n", vw, vh);
+		return;
 	}
 
 	if (vbpp<16) {
