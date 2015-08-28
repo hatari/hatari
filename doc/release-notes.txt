@@ -44,6 +44,8 @@ Emulation:
   - TDRE bit is status register more accurately handled
 - Video:
   - fix value when reading video counter $FF8205/07/09 in high res
+- Blitter:
+  - when transfer ends, hog bit should be cleared in control register
 - DSP:
   - better emulation of the HREQ signal
 

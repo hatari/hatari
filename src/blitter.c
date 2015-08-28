@@ -611,8 +611,8 @@ static void Blitter_Start(void)
 
 	if (BlitterRegs.lines == 0)
 	{
-		/* We're done, clear busy bit */
-		BlitterRegs.ctrl &= ~0x80;
+		/* We're done, clear busy and hog bits */
+		BlitterRegs.ctrl &= ~(0x80|0x40);
 
 		/* Busy=0, set line to low/0 and request interrupt */
 		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
@@ -996,8 +996,8 @@ void Blitter_Control_WriteByte(void)
 	{
 		if (BlitterRegs.lines == 0)
 		{
-			/* We're done, clear busy bit */
-			BlitterRegs.ctrl &= ~0x80;
+			/* We're done, clear busy and hog bits */
+			BlitterRegs.ctrl &= ~(0x80|0x40);
 		}
 		else
 		{
