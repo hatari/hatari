@@ -1594,8 +1594,8 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 		scrheight = vh * coefy;
 	}
 	if (vw < 16) {
+		Log_Printf(LOG_WARN, "ERROR: Videl <16 screen width (%dx%d without borders)\nIf this happens at TOS boot, remove hatari.nvram,\nNVRAM video settings in it are corrupted.\n", vw, vh);
 		/* prevent memory corruption */
-		LOG_TRACE(TRACE_VIDEL, "Videl : <16 screen width (%dx%d without borders), not drawing\n", vw, vh);
 		return;
 	}
 

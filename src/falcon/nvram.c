@@ -70,10 +70,14 @@ static bool NvRam_Load(void)
 		if (fread(fnvram, 1, NVRAM_LEN, f) == NVRAM_LEN)
 		{
 			memcpy(nvram+NVRAM_START, fnvram, NVRAM_LEN);
+			LOG_TRACE(TRACE_NVRAM, "NVRAM: loaded from '%s'\n", nvram_filename);
 			ret = true;
 		}
+		else
+		{
+			Log_Printf(LOG_WARN, "ERROR: NVRAM loading from '%s' failed\n", nvram_filename);
+		}
 		fclose(f);
-		Log_Printf(LOG_DEBUG, "NVRAM loaded from '%s'\n", nvram_filename);
 	}
 	else
 	{
@@ -96,13 +100,18 @@ static bool NvRam_Save(void)
 	{
 		if (fwrite(nvram+NVRAM_START, 1, NVRAM_LEN, f) == NVRAM_LEN)
 		{
+			LOG_TRACE(TRACE_NVRAM, "NVRAM: saved to '%s'\n", nvram_filename);
 			ret = true;
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "ERROR: storing NVRAM to '%s' failed\n", nvram_filename);
 		}
 		fclose(f);
 	}
 	else
 	{
-		Log_Printf(LOG_WARN, "ERROR: cannot store NVRAM to '%s'\n", nvram_filename);
+		Log_Printf(LOG_WARN, "ERROR: storing NVRAM to '%s' failed\n", nvram_filename);
 	}
 
 	return ret;
@@ -299,7 +308,7 @@ void NvRam_Data_ReadByte(void)
 		value = nvram[nvram_index];
 	}
 
-	LOG_TRACE(TRACE_NVRAM, "NVRAM : read data at %d = %d ($%02x)\n", nvram_index, value, value);
+	LOG_TRACE(TRACE_NVRAM, "NVRAM: read data at %d = %d ($%02x)\n", nvram_index, value, value);
 	IoMem_WriteByte(0xff8963, value);
 }
 
@@ -312,6 +321,6 @@ void NvRam_Data_ReadByte(void)
 void NvRam_Data_WriteByte(void)
 {
 	Uint8 value = IoMem_ReadByte(0xff8963);
-	LOG_TRACE(TRACE_NVRAM, "NVRAM : write data at %d = %d ($%02x)\n", nvram_index, value, value);
+	LOG_TRACE(TRACE_NVRAM, "NVRAM: write data at %d = %d ($%02x)\n", nvram_index, value, value);
 	nvram[nvram_index] = value;
 }

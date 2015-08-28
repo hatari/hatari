@@ -10,7 +10,7 @@
 #ifndef HATARI_NVRAM_H
 #define HATARI_NVRAM_H
 
-/* some constants to give NVRAm locations symbolic names */
+/* some constants to give NVRAM locations symbolic names */
 #define NVRAM_SECONDS	0
 #define NVRAM_MINUTES	2
 #define NVRAM_HOURS	4
