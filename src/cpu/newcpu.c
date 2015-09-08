@@ -7443,8 +7443,8 @@ uae_u32 get_word_020_prefetch (int o)
 #endif
 		regs.db = regs.prefetch020[0];
 	}
-if ( ( v & 0xffff ) != ( get_word(pc) & 0xffff ) )
-  fprintf ( stderr , "prefetch mismatch pc=%x prefetch=%x != mem=%x, i-cache error ?\n" , pc , v&0xffff , get_word(pc)&0xffff );
+//if ( ( v & 0xffff ) != ( get_word(pc) & 0xffff ) )
+//  fprintf ( stderr , "prefetch mismatch pc=%x prefetch=%x != mem=%x, i-cache error ?\n" , pc , v&0xffff , get_word(pc)&0xffff );
 	return v;
 }
 
@@ -7864,7 +7864,7 @@ void write_dcache030(uaecptr addr, uae_u32 v, int size)
 }
 
 // [HATARI] Define next line to check for 68030 data cache mismatch after every write
-#define WINUAE_FOR_HATARI_DEBUG_CACHE
+//#define WINUAE_FOR_HATARI_DEBUG_CACHE
 #ifdef WINUAE_FOR_HATARI_DEBUG_CACHE
 uae_u32 read_dcache030_0 (uaecptr addr, int size);
 uae_u32 read_dcache030 (uaecptr addr, int size)
