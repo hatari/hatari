@@ -105,8 +105,8 @@ is missing here, please remind me!):
 - Kenneth Kaufman: MS VC6 & C++ compiler and multiple GEMDOS HD
   partition support patches.
 
-- Uwe Seimet: HD Driver related IDE emulation improvements and
-  GEMDOS HD emulation improvement suggestions.
+- Uwe Seimet: IDE emulation improvements and GEMDOS HD emulation
+  improvement suggestions.
 
 - Anders Eriksson (Evil/DHS): Helped improving STE's emulation by
   running many tests programs and providing the source code for some
