@@ -57,7 +57,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "cart.h"
 
 
-#define VERSION_STRING      "1.8.1"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "1.9.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define SNAPSHOT_MAGIC      0xDeadBeef
 
 #if HAVE_LIBZ

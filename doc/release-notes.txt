@@ -3,7 +3,7 @@
                                    --------
                                 Release Notes
 
- Version 1.9.0 (2015-xx-xx):
+ Version 1.9.0 (2015-09-10):
  ---------------------------
 
 Emulation:
