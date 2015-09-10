@@ -63,7 +63,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 		PROPERTIES COMPILE_FLAGS ${CPUEMU_CFLAGS})
 
 	# For other files, some warnings can be hidden for release : set next if to "1" instead of "0"
-	if ( 0 )
+	if ( 1 )
 		set(CPUMAIN_CFLAGS "-Wno-sign-compare -Wno-unused-variable -Wno-unused-function -Wno-unused-label -Wno-maybe-uninitialized -Wno-bad-function-cast")
 		if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.6)
 			set (CPUMAIN_CFLAGS "${CPUMAIN_CFLAGS} -Wno-unused-but-set-variable")
