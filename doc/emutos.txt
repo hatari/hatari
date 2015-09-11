@@ -485,6 +485,7 @@ Color games:
 - Sinister development games (shareware)
 - Snowball Fight
 - Space Crusade demo
+- Space Harrier (line-A functions, commercial)
 - Spacewar
 - Starball* (shareware)
 - Stormball demo (needs 512k version)
@@ -763,6 +764,7 @@ Demos:
 - French Kiss (by DHS)
 - Gobi Toons (by Dune)
 - Grimey (by Reservoir Gods)
+- Hatari 1.9 (by Mr. Styckx)
 - High Fidelity Dreams (by Aura)
 - HighResMode (by Paradox)
 - Illusion (by Next)
@@ -770,6 +772,7 @@ Demos:
 - Just Musix 2 (by DHS)
 - Kick my ass'embler (cpp_edit by Paradize & Cerebral Vortex)
 - Lavalamp (by Tobe)
+- Little Blitter Benchmark Demo (by Frank B)
 - Lovetro (by Paradize & Sector One)
 - Madness (by Cream)
 - Massacre (by DHS)
