@@ -143,6 +143,8 @@ static flagname_t TraceFlags[] = {
 
 	{ TRACE_OS_BASE		 , "os_base" } ,
 
+	{ TRACE_SCSIDRV		 , "scsidrv" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 #endif /* ENABLE_TRACING */

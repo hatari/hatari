@@ -20,6 +20,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "m68000.h"
 #include "natfeats.h"
+#include "nf_scsidrv.h"
 #include "control.h"
 #include "log.h"
 
@@ -206,6 +207,9 @@ static const struct {
 	{ "NF_EXIT",     false, nf_exit },
 	{ "NF_DEBUGGER", false, nf_debugger },
 	{ "NF_FASTFORWARD", false,  nf_fastforward }
+#if defined(__linux__)        
+        ,{ "NF_SCSIDRV",  true, nf_scsidrv }
+#endif
 };
 
 /* macros from Aranym */

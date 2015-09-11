@@ -3,6 +3,13 @@
                                    --------
                                 Release Notes
 
+ Development version:
+ --------------------
+
+Emulator:
+- NatFeats SCSI driver for Linux
+
+
  Version 1.9.0 (2015-09-10):
  ---------------------------
 
