@@ -2554,6 +2554,18 @@ cannot re-compile it to have them, you have two options:
 <li>Create the ASCII symbols file by hand while you're debugging a program.
 </ul>
 
+<p><b>NOTE:</b> <span class="commandline">nm</span> output for GCC generated
+<span class="commandline">a.out</span> binaries includes labels also for loops,
+not just functions. While loop labels are fine for debugging, <em>they should
+be removed before profiling</em>.  Besides causing misleading profile
+results, loop labels can <em>seriously</em> slow down profiling
+(call graph tracking is automatically enabled for profiling when debug
+symbols are loaded, and operations done on each matched symbol address
+cause huge overhead if that match is for something happening every few
+instructions).
+</p>
+
+
 <p>ASCII symbols file format is following:</p>
 <pre>
 e01034 T random
