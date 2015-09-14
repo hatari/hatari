@@ -233,8 +233,9 @@ on BerliOS hatari-devel mail thread for more info.)
 Bug reports
 -----------
 
-- Hextracker freezes at start with Falcon emulation because Videl
-  screen address counter doesn't advance (its read & write are no-ops).
+- Ishar 1, 2 & 3 and Hextracker freeze at start with Falcon emulation because
+  Videl screen address counter doesn't advance (its read & write IO functions
+  are no-ops, a regression from 2012 commit 22d3c9f30097).
 
 - Atari programs can crash Hatari in Falcon mode because sound DMA code isn't robust
   against bad register values:
