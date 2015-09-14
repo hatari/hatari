@@ -17,6 +17,7 @@ const char CreateBlankImage_fileid[] = "Hatari createBlankImage.c : " __DATE__ "
 #include "msa.h"
 #include "st.h"
 #include "createBlankImage.h"
+#include "gemdos_defines.h"
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -68,15 +69,18 @@ static inline void WriteShortLE(void *addr, Uint16 val)
 /**
  * Create .ST/.MSA disk image according to 'Tracks,Sector,Sides' and save
  * it under given filename.
+ * If VolumeLabel != NULL, use this 8+3 char text as the name of the disk image.
  * Return true if saving succeeded, false otherwise.
  */
-bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSectors, int nSides)
+bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSectors, int nSides, const char *VolumeLabel)
 {
 	Uint8 *pDiskFile;
 	unsigned long nDiskSize;
 	unsigned short int SPC, nDir, MediaByte, SPF;
 	bool bRet = false;
 	int drive;
+	int LabelSize;
+	Uint8 *pDirStart;
 
 	/* HD/ED disks are all double sided */
 	if (nSectors >= 18)
@@ -153,6 +157,21 @@ bool CreateBlankImage_CreateFile(const char *pszFileName, int nTracks, int nSect
 	/* Set correct media bytes in the 2nd FAT: */
 	pDiskFile[512 + SPF * 512] = MediaByte;
 	pDiskFile[513 + SPF * 512] = pDiskFile[514 + SPF * 512] = 0xFF;
+
+	/* Set volume label if needed (in 1st entry of the directory) */
+	if ( VolumeLabel != NULL )
+	{
+		/* Set 1st dir entry as 'volume label' */
+		pDirStart = pDiskFile + ( 1 + SPF * 2 ) * 512;
+		memset ( pDirStart , ' ' , 8+3 );
+		LabelSize = strlen ( VolumeLabel );
+		if ( LabelSize <= 8+3 )
+			memcpy ( pDirStart , VolumeLabel , LabelSize );
+		else
+			memcpy ( pDirStart , VolumeLabel , 8+3 );
+
+		pDirStart[ 8+3 ] = GEMDOS_FILE_ATTRIB_VOLUME_LABEL;
+	}
 
 	/* Ask if OK to overwrite, if exists? */
 	if (File_QueryOverwrite(pszFileName))

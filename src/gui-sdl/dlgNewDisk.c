@@ -24,16 +24,20 @@ const char DlgNewDisk_fileid[] = "Hatari dlgNewDisk.c : " __DATE__ " " __TIME__;
 #define DLGNEWDISK_SECTORS36  11
 #define DLGNEWDISK_SIDES1     13
 #define DLGNEWDISK_SIDES2     14
-#define DLGNEWDISK_SAVE       15
-#define DLGNEWDISK_EXIT       16
+#define DLGNEWDISK_LABEL      16
+#define DLGNEWDISK_SAVE       17
+#define DLGNEWDISK_EXIT       18
 
 static char szTracks[3];
 static int nTracks = 80;
 
+#define DLGNEWDISK_LABEL_SIZE	(8+3)
+static char dlgLabel[ DLGNEWDISK_LABEL_SIZE+1 ];
+
 /* The new disk image dialog: */
 static SGOBJ newdiskdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 29,14, NULL },
+	{ SGBOX, 0, 0, 0,0, 29,16, NULL },
 	{ SGTEXT, 0, 0, 6,1, 16,1, "New floppy image" },
 	{ SGTEXT, 0, 0, 2,3, 7,1, "Tracks:" },
 	{ SGBUTTON, 0, 0, 12,3, 1,1, "\x04", SG_SHORTCUT_LEFT },
@@ -48,8 +52,10 @@ static SGOBJ newdiskdlg[] =
 	{ SGTEXT, 0, 0, 2,9, 6,1, "Sides:" },
 	{ SGRADIOBUT, 0, 0, 12,9, 3,1, "_1" },
 	{ SGRADIOBUT, 0, SG_SELECTED, 17,9, 3,1, "_2" },
-	{ SGBUTTON, SG_DEFAULT, 0, 4,12, 8,1, "_Create" },
-	{ SGBUTTON, SG_CANCEL, 0, 18,12, 6,1, "_Back" },
+	{ SGTEXT, 0, 0, 2,11, 6,1, "Label:" },
+	{ SGEDITFIELD, 0, 0, 12,11, DLGNEWDISK_LABEL_SIZE,1, dlgLabel },
+	{ SGBUTTON, SG_DEFAULT, 0, 4,14, 8,1, "_Create" },
+	{ SGBUTTON, SG_CANCEL, 0, 18,14, 6,1, "_Back" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -90,7 +96,7 @@ static bool DlgNewDisk_CreateDisk(const char *path)
 	else
 		nSides = 2;
 	
-	return CreateBlankImage_CreateFile(path, nTracks, nSectors, nSides);
+	return CreateBlankImage_CreateFile(path, nTracks, nSectors, nSides, dlgLabel);
 }
 
 

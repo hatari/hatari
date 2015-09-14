@@ -125,7 +125,7 @@ static const char* create_image(const char *filename, const char *sizeid)
 	} else {
 		return "ERROR: given disk size isn't one of supported ones!\n";
 	}
-	if (CreateBlankImage_CreateFile(filename, tracks, sectors, sides)) {
+	if (CreateBlankImage_CreateFile(filename, tracks, sectors, sides, NULL)) {
 		return NULL;
 	}
 	return "ERROR: Disk creation failed.\n";
