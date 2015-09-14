@@ -149,6 +149,7 @@ Fixed games:
 Fixed programs:
 - Realtime and M by Eric Ameres (midi + mfp, toggle bit 0 of AER)
 - Notator (midi, more precise TDRE bit in status register)
+- Cubase 2 (midi, reported by user)
 
 Known regressions (see compatibility list):
 - Suretrip demo by Checkpoint
