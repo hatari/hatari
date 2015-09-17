@@ -13,7 +13,7 @@ Emulation:
 Emulator:
 - NatFeats SCSI driver for Linux
 - SDL GUI:
-  - User can provide label when creating a floppy image
+  - User can provide volume label when creating a floppy image
 - Debugger:
   - Fix: close debugger log file only when explicitly requested,
          not when continuing emulation from debugger
