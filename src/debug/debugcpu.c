@@ -143,11 +143,11 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
  * Check whether given address matches any CPU symbol and whether
  * there's profiling information available for it.  If yes, show it.
  */
-static void DebugCpu_ShowAddressInfo(Uint32 addr)
+static void DebugCpu_ShowAddressInfo(Uint32 addr, FILE *fp)
 {
 	const char *symbol = Symbols_GetByCpuAddress(addr);
 	if (symbol)
-		fprintf(debugOutput, "%s:\n", symbol);
+		fprintf(fp, "%s:\n", symbol);
 }
 
 /**
@@ -195,7 +195,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	/* output a range */
 	for (insts = 0; insts < max_insts && disasm_addr < disasm_upper; insts++)
 	{
-		DebugCpu_ShowAddressInfo(disasm_addr);
+		DebugCpu_ShowAddressInfo(disasm_addr, debugOutput);
 		Disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 		disasm_addr = nextpc;
 	}
@@ -617,7 +617,7 @@ void DebugCpu_Check(void)
 	}
 	if (LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS)))
 	{
-		DebugCpu_ShowAddressInfo(M68000_GetPC());
+		DebugCpu_ShowAddressInfo(M68000_GetPC(), TraceFile);
 	}
 	if (nCpuActiveCBs)
 	{
