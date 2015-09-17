@@ -112,17 +112,25 @@ static void DebugUI_SetLogDefault(void)
  */
 static int DebugUI_SetLogFile(int nArgc, char *psArgs[])
 {
-	File_Close(debugOutput);
-	debugOutput = NULL;
+	if (debugOutput != stderr)
+	{
+		fprintf(stderr, "Debug log closed.\n");
+		File_Close(debugOutput);
+	}
+	debugOutput = stderr;
 
 	if (nArgc > 1)
-		debugOutput = File_Open(psArgs[1], "w");
-
-	if (debugOutput)
-		fprintf(stderr, "Debug log '%s' opened.\n", psArgs[1]);
-	else
-		debugOutput = stderr;
-
+	{
+		if ((debugOutput = File_Open(psArgs[1], "w")))
+		{
+			fprintf(stderr, "Debug log '%s' opened.\n", psArgs[1]);
+		}
+		else
+		{
+			fprintf(stderr, "Debug log '%s' opening FAILED.\n", psArgs[1]);
+			debugOutput = stderr;
+		}
+	}
 	return DEBUGGER_CMDDONE;
 }
 
@@ -612,11 +620,6 @@ static int DebugUI_ParseCommand(const char *input_orig)
 			break;
 	}
 
-	if (!debugOutput) {
-		/* make sure also calls from control.c work */
-		DebugUI_SetLogDefault();
-	}
-
 	/* ... and execute the function */
 	retval = debugCommand[i].pFunction(nArgc, psArgs);
 	/* Save commando string if it can be repeated */
@@ -971,6 +974,9 @@ void DebugUI_Init(void)
 	if (debugCommands)
 		return;
 
+	if (!debugOutput)
+		DebugUI_SetLogDefault();
+
 	/* if you want disassembly or memdumping to start/continue from
 	 * specific address, you can set them in these functions.
 	 */
@@ -1087,7 +1093,6 @@ void DebugUI(debug_reason_t reason)
 	DebugUI_FreeCommand(psCmd);
 
 	Log_SetAlertLevel(alertLevel);
-	DebugUI_SetLogDefault();
 
 	DebugCpu_SetDebugging();
 	DebugDsp_SetDebugging();
