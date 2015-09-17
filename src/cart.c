@@ -119,6 +119,7 @@ void Cart_ResetImage(void)
 	 * resolution, GEMDOS HD emulation or to trace GEMDOS, VDI or AES.
 	 * (OS_BASE does subset of GEMDOS tracing)
 	 * But don't use it on TOS 0.00, it does not work there. */
+	PatchIllegal = false;				/* By default, don't patch opcodes */
 	if ((bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories ||
 	    LogTraceFlags & (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES))
 	    && TosVersion >= 0x100)
