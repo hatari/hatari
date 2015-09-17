@@ -6,8 +6,20 @@
  Development version:
  --------------------
 
+Emulation:
+- GEMDOS HD:
+  - Fix: Disable GEMDOS opcodes after GEMDOS drive is disabled
+
 Emulator:
 - NatFeats SCSI driver for Linux
+- SDL GUI:
+  - User can provide label when creating a floppy image
+- Debugger:
+  - Fix: close debugger log file only when explicitly requested,
+         not when continuing emulation from debugger
+  - Fix: direct DSP register, disasm and memdumps to debugger log
+         file, similarly to CPU
+  - Fix: direct CPU and DSP symbol traces to trace file, not stderr
 
 
  Version 1.9.0 (2015-09-10):
