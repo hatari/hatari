@@ -414,7 +414,7 @@ void dsp56k_disasm_reg_save(void)
 #endif
 }
 
-void dsp56k_disasm_reg_compare(void)
+void dsp56k_disasm_reg_compare(FILE *fp)
 {
 	int i;
 	bool bRegA = false;
@@ -430,7 +430,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_X1:
 			case DSP_REG_Y0:
 			case DSP_REG_Y1:
-				fprintf(stderr,"\tReg: %s  $%06x -> $%06x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
+				fprintf(fp, "\tReg: %s  $%06x -> $%06x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
 			case DSP_REG_R0:
 			case DSP_REG_R1:
@@ -459,19 +459,19 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SR:
 			case DSP_REG_LA:
 			case DSP_REG_LC:
-				fprintf(stderr,"\tReg: %s  $%04x -> $%04x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
+				fprintf(fp, "\tReg: %s  $%04x -> $%04x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
 			case DSP_REG_OMR:
 			case DSP_REG_SP:
 			case DSP_REG_SSH:
 			case DSP_REG_SSL:
-				fprintf(stderr,"\tReg: %s  $%02x -> $%02x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
+				fprintf(fp, "\tReg: %s  $%02x -> $%02x\n", registers_name[i], registers_save[i], dsp_core.registers[i]);
 				break;
 			case DSP_REG_A0:
 			case DSP_REG_A1:
 			case DSP_REG_A2:
 				if (bRegA == false) {
-					fprintf(stderr,"\tReg: a   $%02x:%06x:%06x -> $%02x:%06x:%06x\n",
+					fprintf(fp, "\tReg: a   $%02x:%06x:%06x -> $%02x:%06x:%06x\n",
 						registers_save[DSP_REG_A2],	registers_save[DSP_REG_A1],	registers_save[DSP_REG_A0],
 						dsp_core.registers[DSP_REG_A2],	dsp_core.registers[DSP_REG_A1],	dsp_core.registers[DSP_REG_A0]
 					);
@@ -482,7 +482,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_B1:
 			case DSP_REG_B2:
 				if (bRegB == false) {
-					fprintf(stderr,"\tReg: b   $%02x:%06x:%06x -> $%02x:%06x:%06x\n",
+					fprintf(fp, "\tReg: b   $%02x:%06x:%06x -> $%02x:%06x:%06x\n",
 						registers_save[DSP_REG_B2],	registers_save[DSP_REG_B1],	registers_save[DSP_REG_B0],
 						dsp_core.registers[DSP_REG_B2],	dsp_core.registers[DSP_REG_B1],	dsp_core.registers[DSP_REG_B0]
 					);
@@ -494,12 +494,12 @@ void dsp56k_disasm_reg_compare(void)
 
 #if DSP_DISASM_REG_PC
 	if (pc_save != dsp_core.pc) {
-		fprintf(stderr,"\tReg: pc  $%04x -> $%04x\n", pc_save, dsp_core.pc);
+		fprintf(fp, "\tReg: pc  $%04x -> $%04x\n", pc_save, dsp_core.pc);
 	}
 #endif
 }
 
-Uint16 dsp56k_disasm(dsp_trace_disasm_t mode)
+Uint16 dsp56k_disasm(dsp_trace_disasm_t mode, FILE *fp)
 {
 	Uint32 value;
 
@@ -507,7 +507,7 @@ Uint16 dsp56k_disasm(dsp_trace_disasm_t mode)
 		isInDisasmMode = false;
 		if (prev_inst_pc == dsp_core.pc) {
 			if (!isLooping) {
-				fprintf(stderr, "Looping on DSP instruction at PC = $%04x\n", prev_inst_pc);
+				fprintf(fp, "Looping on DSP instruction at PC = $%04x\n", prev_inst_pc);
 				isLooping = true;
 			}
 			return 0;

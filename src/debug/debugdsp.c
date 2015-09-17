@@ -74,7 +74,8 @@ int DebugDsp_Register(int nArgc, char *psArgs[])
 	if (nArgc == 1)
 	{
 		/* No parameter - dump all registers */
-		DSP_DisasmRegisters();
+		DSP_DisasmRegisters(debugOutput);
+		fflush(debugOutput);
 		return DEBUGGER_CMDDONE;
 	}
 	arg = psArgs[1];
@@ -103,11 +104,11 @@ error_msg:
  * Check whether given address matches any DSP symbol and whether
  * there's profiling information available for it.  If yes, show it.
  */
-static void DebugDsp_ShowAddressInfo(Uint16 addr)
+static void DebugDsp_ShowAddressInfo(Uint16 addr, FILE *fp)
 {
 	const char *symbol = Symbols_GetByDspAddress(addr);
 	if (symbol)
-		fprintf(debugOutput, "%s:\n", symbol);
+		fprintf(fp, "%s:\n", symbol);
 }
 
 
@@ -169,11 +170,12 @@ int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 		else
 			dsp_disasm_upper = 0xFFFF;
 	}
-	printf("DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
+	fprintf(debugOutput, "DSP disasm 0x%hx-0x%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	while (dsp_disasm_addr < dsp_disasm_upper) {
-		DebugDsp_ShowAddressInfo(dsp_disasm_addr);
-		dsp_disasm_addr = DSP_DisasmAddress(stderr, dsp_disasm_addr, dsp_disasm_addr);
+		DebugDsp_ShowAddressInfo(dsp_disasm_addr, debugOutput);
+		dsp_disasm_addr = DSP_DisasmAddress(debugOutput, dsp_disasm_addr, dsp_disasm_addr);
 	}
+	fflush(debugOutput);
 
 	return DEBUGGER_CMDCONT;
 }
@@ -265,8 +267,9 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			dsp_memdump_upper = 0xFFFF;
 	}
 
-	printf("DSP memdump from 0x%hx in '%c' address space:\n", dsp_memdump_addr, dsp_mem_space);
-	dsp_memdump_addr = DSP_DisasmMemory(dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
+	fprintf(debugOutput, "DSP memdump from 0x%hx in '%c' address space:\n", dsp_memdump_addr, dsp_mem_space);
+	dsp_memdump_addr = DSP_DisasmMemory(debugOutput, dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
+	fflush(debugOutput);
 
 	return DEBUGGER_CMDCONT;
 }
@@ -479,7 +482,7 @@ void DebugDsp_Check(void)
 	}
 	if (LOG_TRACE_LEVEL((TRACE_DSP_DISASM|TRACE_DSP_SYMBOLS)))
 	{
-		DebugDsp_ShowAddressInfo(DSP_GetPC());
+		DebugDsp_ShowAddressInfo(DSP_GetPC(), TraceFile);
 	}
 	if (nDspActiveCBs)
 	{

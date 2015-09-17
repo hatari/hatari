@@ -33,12 +33,12 @@ typedef enum {
 
 /* Functions */
 extern void dsp56k_disasm_init(void);
-extern Uint16 dsp56k_disasm(dsp_trace_disasm_t value);
+extern Uint16 dsp56k_disasm(dsp_trace_disasm_t value, FILE *fp);
 extern const char* dsp56k_getInstructionText(void);
 
 /* Registers change */
 extern void dsp56k_disasm_reg_save(void);
-extern void dsp56k_disasm_reg_compare(void);
+extern void dsp56k_disasm_reg_compare(FILE *fp);
 
 #ifdef __cplusplus
 }

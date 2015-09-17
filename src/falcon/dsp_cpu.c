@@ -733,7 +733,7 @@ Uint16 dsp56k_execute_one_disasm_instruction(FILE *out, Uint16 pc)
 	dsp_core.pc = pc;
 
 	/* Disasm instruction */
-	instruction_length = dsp56k_disasm(DSP_DISASM_MODE) - 1;
+	instruction_length = dsp56k_disasm(DSP_DISASM_MODE, out) - 1;
 
 	/* Execute instruction at address given in parameter to get the number of cycles it takes */
 	dsp56k_execute_instruction();
@@ -772,7 +772,7 @@ void dsp56k_execute_instruction(void)
 	if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM)) {
 		/* Call dsp56k_disasm only when DSP is called in trace mode */
 		if (isDsp_in_disasm_mode == false) {
-			disasm_return = dsp56k_disasm(DSP_TRACE_MODE);
+			disasm_return = dsp56k_disasm(DSP_TRACE_MODE, TraceFile);
 
 			if (disasm_return != 0 && LOG_TRACE_LEVEL(TRACE_DSP_DISASM_REG)) {
 				/* DSP regs trace enabled only if DSP DISASM is enabled */
@@ -806,20 +806,20 @@ void dsp56k_execute_instruction(void)
 		/* Display only when DSP is called in trace mode */
 		if (isDsp_in_disasm_mode == false) {
 			if (disasm_return != 0) {
-				fprintf(stderr, "%s", dsp56k_getInstructionText());
+				fprintf(TraceFile, "%s", dsp56k_getInstructionText());
 
 				/* DSP regs trace enabled only if DSP DISASM is enabled */
 				if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM_REG))
-					dsp56k_disasm_reg_compare();
+					dsp56k_disasm_reg_compare(TraceFile);
 
 				if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM_MEM)) {
 					/* 1 memory change to display ? */
 					if (disasm_memory_ptr == 1)
-						fprintf(stderr, "\t%s\n", str_disasm_memory[0]);
+						fprintf(TraceFile, "\t%s\n", str_disasm_memory[0]);
 					/* 2 memory changes to display ? */
 					else if (disasm_memory_ptr == 2) {
-						fprintf(stderr, "\t%s\n", str_disasm_memory[0]);
-						fprintf(stderr, "\t%s\n", str_disasm_memory[1]);
+						fprintf(TraceFile, "\t%s\n", str_disasm_memory[0]);
+						fprintf(TraceFile, "\t%s\n", str_disasm_memory[1]);
 					}
 				}
 			}
@@ -1268,7 +1268,7 @@ static Uint32 read_memory(int space, Uint16 address)
 
 static inline void write_memory(int space, Uint16 address, Uint32 value)
 {
-	if (unlikely(LOG_TRACE_LEVEL(TRACE_DSP_DISASM_MEM)))
+	if (LOG_TRACE_LEVEL(TRACE_DSP_DISASM_MEM))
 		write_memory_disasm(space, address, value);
 	else
 		write_memory_raw(space, address, value);
