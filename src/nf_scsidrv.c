@@ -46,7 +46,8 @@ static Uint32 read_stack_long(Uint32 *stack)
 
 static void *read_stack_pointer(Uint32 *stack)
 {
-    return STMemory_STAddrToPointer(read_stack_long(stack));
+    Uint32 ptr = read_stack_long(stack);
+    return ptr ? STMemory_STAddrToPointer(ptr) : 0;
 }
 
 static void write_long(Uint32 addr, Uint32 value)
@@ -138,15 +139,20 @@ static int scsidrv_inout(Uint32 stack)
     unsigned char *buffer = read_stack_pointer(&stack);
     Uint32 transfer_len = read_stack_long(&stack);
     unsigned char *sense_buffer = read_stack_pointer(&stack);
-    memset(sense_buffer, 0, 18);
+    if(sense_buffer)
+    {
+        memset(sense_buffer, 0, 18);
+    }
     Uint32 timeout = read_stack_long(&stack);
 
     if(LOG_TRACE_LEVEL(TRACE_SCSIDRV))
     {
         LOG_TRACE_PRINT(
-            "scsidrv_inout: dir=%d, id=%d, cmd_len=%d, transfer_len=%d, "
-            "timeout=%d,\n               cmd=",
-            dir, id, cmd_len, transfer_len, timeout);
+            "scsidrv_inout: dir=%d, id=%d, cmd_len=%d, buffer=%p,\n"
+            "               transfer_len=%d, sense_buffer=%p, timeout=%d,\n"
+            "               cmd=",
+            dir, id, cmd_len, buffer, transfer_len, sense_buffer,
+            timeout);
 
         Uint32 i;
         for(i = 0; i < cmd_len; i++)
@@ -160,13 +166,16 @@ static int scsidrv_inout(Uint32 stack)
     // No explicit LUN support, the SG driver maps LUNs to device files
     if(cmd[1] & 0xe0)
     {
-        // Sense Key and ASC
-        sense_buffer[2] = 0x05;
-        sense_buffer[12] = 0x25;
+        if(sense_buffer)
+        {
+            // Sense Key and ASC
+            sense_buffer[2] = 0x05;
+            sense_buffer[12] = 0x25;
 
-        LOG_TRACE(TRACE_SCSIDRV,
-                  "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$00",
-                  sense_buffer[2], sense_buffer[12]);
+            LOG_TRACE(TRACE_SCSIDRV,
+                      "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$00",
+                      sense_buffer[2], sense_buffer[12]);
+        }
 
         return 2;
     }
@@ -207,7 +216,7 @@ static int scsidrv_inout(Uint32 stack)
 
     close(fd);
 
-    if(status > 0)
+    if(status > 0 && sense_buffer)
     {
         LOG_TRACE(TRACE_SCSIDRV,
                   "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$%02X",
