@@ -785,9 +785,14 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 	len = 0;
 	while (dlg[len].type != SGSTOP)
 		len++;
+
 	xpos = fx / sdlgui_fontwidth;
 	ypos = fy / sdlgui_fontheight;
-	/* Now search for the object: */
+
+	/* Now search for the object.
+	 * Searching is done from end to start,
+	 * as later objects cover earlier ones
+	 */
 	for (i = len; i >= 0; i--)
 	{
 		/* clicked on a scrollbar ? */
@@ -912,7 +917,8 @@ static void SDLGui_RemoveFocus(SGOBJ *dlg, int old)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Search a next button to focus and focus it
+ * Search next button to focus, and focus it.
+ * If found, return its index, otherwise current index.
  */
 static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 {
@@ -1060,9 +1066,13 @@ static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Show and process a dialog. Returns the button number that has been
- * pressed or SDLGUI_UNKNOWNEVENT if an unsupported event occurred (will be
- * stored in parameter pEventOut).
+ * Show and process a dialog. Returns either:
+ * - index of the GUI item that was invoked
+ * - SDLGUI_UNKNOWNEVENT if an unsupported event occurred
+ *   (will be stored in parameter pEventOut)
+ * - SDLGUI_QUIT if user wants to close Hatari
+ * - SDLGUI_ERROR if unable to show dialog
+ * GUI item indeces are positive, other return values are negative
  */
 int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 {
