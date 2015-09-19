@@ -907,7 +907,7 @@ static void SDLGui_SetShortcuts(SGOBJ *dlg)
  */
 static void SDLGui_RemoveFocus(SGOBJ *dlg, int old)
 {
-	if (!old)
+	if (old == SDLGUI_NOTFOUND)
 		return;
 	dlg[old].state &= ~SG_FOCUSED;
 	dlg[old].state |= SG_WASFOCUSED;
@@ -918,12 +918,12 @@ static void SDLGui_RemoveFocus(SGOBJ *dlg, int old)
 /*-----------------------------------------------------------------------*/
 /**
  * Search next button to focus, and focus it.
- * If found, return its index, otherwise current index.
+ * If found, return its index, otherwise given starting index.
  */
 static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 {
 	int old = i;
-	if (!i)
+	if (i == SDLGUI_NOTFOUND)
 		return i;
 
 	for (;;)
