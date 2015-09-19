@@ -30,7 +30,7 @@ static SGOBJ haltdlg[] = {
 	{ SGBUTTON, 0,          0,  6,5, 12,1, "_Cold reset" },
 	{ SGBUTTON, 0,          0, 28,3, 18,1, "Console _debugger" },
 	{ SGBUTTON, SG_CANCEL,  0, 28,5, 18,1, "_Quit Hatari" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 

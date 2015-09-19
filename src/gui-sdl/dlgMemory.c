@@ -69,7 +69,7 @@ static SGOBJ memorydlg[] =
 	{ SGCHECKBOX, 0, 0,  2,19, 34,1, "_Load/save state at start-up/exit" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 10,22, 20,1, "Back to main menu" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 

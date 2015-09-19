@@ -72,7 +72,7 @@ static SGOBJ diskdlg[] =
 	{ SGCHECKBOX, 0, 0, 2,17, 16,1, "_Boot from HD" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 22,20, 20,1, "Back to main menu" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 

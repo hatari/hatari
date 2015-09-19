@@ -73,7 +73,7 @@ static SGOBJ monitordlg[] =
 	{ SGRADIOBUT, SG_EXIT, 0, 18,13, 11,1, "1_6 colors" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 7,16, 20,1, "Back to main menu" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 
@@ -164,7 +164,7 @@ static SGOBJ windowdlg[] =
 #else
 	{ SGBUTTON, SG_DEFAULT, 0, 17,18, 20,1, "Back to main menu" },
 #endif
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 /* for record button */

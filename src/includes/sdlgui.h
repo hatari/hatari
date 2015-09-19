@@ -12,8 +12,10 @@
 
 #include <SDL.h>
 
+/* object types: */
 enum
 {
+  SGSTOP = -1, /* type used at end of dialog to terminate it */
   SGBOX,
   SGTEXT,
   SGEDITFIELD,

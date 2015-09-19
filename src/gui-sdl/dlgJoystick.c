@@ -54,7 +54,7 @@ static SGOBJ joydlg[] =
 	{ SGCHECKBOX, 0, 0, 2,13, 17,1, "Enable _autofire" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 6,16, 20,1, "Back to main menu" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 
@@ -68,7 +68,7 @@ static SGOBJ joykeysdlg[] =
 	{ SGBOX, 0, 0, 0,0, 28,5, NULL },
 	{ SGTEXT, 0, 0, 2,1, 24,1, sKeyInstruction },
 	{ SGTEXT, 0, 0, 2,3, 24,1, sKeyName },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 

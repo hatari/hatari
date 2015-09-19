@@ -130,7 +130,7 @@ static SGOBJ systemdlg[] =
 	{ SGTEXT, 0, 0, 47,20, 12,1, "" },
 #endif
 	{ SGBUTTON, SG_DEFAULT, 0, 21,23, 20,1, "Back to main menu" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 

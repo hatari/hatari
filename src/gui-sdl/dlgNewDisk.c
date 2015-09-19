@@ -56,7 +56,7 @@ static SGOBJ newdiskdlg[] =
 	{ SGEDITFIELD, 0, 0, 12,11, DLGNEWDISK_LABEL_SIZE,1, dlgLabel },
 	{ SGBUTTON, SG_DEFAULT, 0, 4,14, 8,1, "_Create" },
 	{ SGBUTTON, SG_CANCEL, 0, 18,14, 6,1, "_Back" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 #define DEFAULT_DISK_NAME "new_disk.st"

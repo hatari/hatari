@@ -764,7 +764,7 @@ void SDLGui_DrawDialog(const SGOBJ *dlg)
 {
 	int i;
 
-	for (i = 0; dlg[i].type != -1; i++)
+	for (i = 0; dlg[i].type != SGSTOP; i++)
 	{
 		SDLGui_DrawObj(dlg, i);
 	}
@@ -784,7 +784,8 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 	int xpos, ypos;
 
 	len = 0;
-	while (dlg[len].type != -1)   len++;
+	while (dlg[len].type != SGSTOP)
+		len++;
 	xpos = fx / sdlgui_fontwidth;
 	ypos = fy / sdlgui_fontheight;
 	/* Now search for the object: */
@@ -821,7 +822,7 @@ static int SDLGui_SearchFlags(const SGOBJ *dlg, int flag)
 {
 	int i = 0;
 
-	while (dlg[i].type != -1)
+	while (dlg[i].type != SGSTOP)
 	{
 		if (dlg[i].flags & flag)
 			return i;
@@ -838,7 +839,7 @@ static int SDLGui_SearchState(const SGOBJ *dlg, int state)
 {
 	int i = 0;
 
-	while (dlg[i].type != -1)
+	while (dlg[i].type != SGSTOP)
 	{
 		if (dlg[i].state & state)
 			return i;
@@ -870,7 +871,7 @@ static void SDLGui_SetShortcuts(SGOBJ *dlg)
 	unsigned int i;
 
 	memset(used, 0, sizeof(used));
-	for (i = 0; dlg[i].type != -1; i++)
+	for (i = 0; dlg[i].type != SGSTOP; i++)
 	{
 		if (!SDLGui_CanHaveShortcut(dlg[i].type))
 			continue;
@@ -923,13 +924,13 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 		i += inc;
 
 		/* wrap */
-		if (dlg[i].type == -1)
+		if (dlg[i].type == SGSTOP)
 		{
 			i = 0;
 		}
 		else if (i == 0)
 		{
-			while (dlg[i].type != -1)
+			while (dlg[i].type != SGSTOP)
 				i++;
 			i--;
 		}
@@ -1046,7 +1047,7 @@ static int SDLGui_HandleSelection(SGOBJ *dlg, int obj, int oldbutton)
 static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
 {
 	int i = 0;
-	while (dlg[i].type != -1)
+	while (dlg[i].type != SGSTOP)
 	{
 		if (dlg[i].shortcut == key)
 			return SDLGui_HandleSelection(dlg, i, i);

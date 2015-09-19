@@ -69,7 +69,7 @@ static SGOBJ floppydlg[] =
 	{ SGRADIOBUT, 0, 0, 28,16,  4,1, "O_n" },
 	{ SGRADIOBUT, 0, 0, 34,16,  6,1, "A_uto" },
 	{ SGBUTTON, SG_DEFAULT, 0, 22,18, 20,1, "Back to main menu" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 
@@ -85,7 +85,7 @@ static SGOBJ alertdlg[] =
 	{ SGBUTTON, 0, 0,  3,4, 10,1, "Drive _A:" },
 	{ SGBUTTON, 0, 0, 15,4, 10,1, "Drive _B:" },
 	{ SGBUTTON, SG_CANCEL, 0, 27,4, 10,1, "_Cancel" },
-	{ -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 
