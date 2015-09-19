@@ -24,14 +24,13 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 #if WITH_SDL2
 #define SDL_SRCCOLORKEY SDL_TRUE
 #define SDLKey SDL_Keycode
-
 #endif
 
 static SDL_Surface *pSdlGuiScrn;            /* Pointer to the actual main SDL screen surface */
 static SDL_Surface *pSmallFontGfx = NULL;   /* The small font graphics */
 static SDL_Surface *pBigFontGfx = NULL;     /* The big font graphics */
 static SDL_Surface *pFontGfx = NULL;        /* The actual font graphics */
-static int current_object = 0;				/* Current selected object */
+static int current_object = SDLGUI_NOTFOUND;/* Current selected object */
 
 static struct {
 	Uint32 darkbar, midbar, lightbar;
@@ -775,12 +774,12 @@ void SDLGui_DrawDialog(const SGOBJ *dlg)
 /*-----------------------------------------------------------------------*/
 /**
  * Search an object at a certain position.
- * Return object index or -1 if it wasn't found.
+ * If found, return its index, otherwise SDLGUI_NOTFOUND.
  */
 static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 {
 	int len, i;
-	int ob = -1;
+	int ob = SDLGUI_NOTFOUND;
 	int xpos, ypos;
 
 	len = 0;
@@ -817,6 +816,7 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 /*-----------------------------------------------------------------------*/
 /**
  * Search an object with a special flag (e.g. SG_DEFAULT or SG_CANCEL).
+ * If found, return its index, otherwise SDLGUI_NOTFOUND.
  */
 static int SDLGui_SearchFlags(const SGOBJ *dlg, int flag)
 {
@@ -828,12 +828,13 @@ static int SDLGui_SearchFlags(const SGOBJ *dlg, int flag)
 			return i;
 		i++;
 	}
-	return 0;
+	return SDLGUI_NOTFOUND;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
  * Search an object with a special state (e.g. SG_FOCUSED).
+ * If found, return its index, otherwise SDLGUI_NOTFOUND.
  */
 static int SDLGui_SearchState(const SGOBJ *dlg, int state)
 {
@@ -845,7 +846,7 @@ static int SDLGui_SearchState(const SGOBJ *dlg, int state)
 			return i;
 		i++;
 	}
-	return 0;
+	return SDLGUI_NOTFOUND;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -954,12 +955,13 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle button selection, either with mouse or keyboard
+ * Handle button selection, either with mouse or keyboard.
+ * If handled, return its index, otherwise SDLGUI_NOTFOUND.
  */
 static int SDLGui_HandleSelection(SGOBJ *dlg, int obj, int oldbutton)
 {
 	SDL_Rect rct;
-	int i, retbutton = 0;
+	int i, retbutton = SDLGUI_NOTFOUND;
 
 	switch (dlg[obj].type)
 	{
@@ -1030,7 +1032,7 @@ static int SDLGui_HandleSelection(SGOBJ *dlg, int obj, int oldbutton)
 		break;
 	}
 
-	if (!retbutton && (dlg[obj].flags & SG_EXIT) != 0)
+	if (retbutton == SDLGUI_NOTFOUND && (dlg[obj].flags & SG_EXIT) != 0)
 	{
 		retbutton = obj;
 	}
@@ -1041,8 +1043,8 @@ static int SDLGui_HandleSelection(SGOBJ *dlg, int obj, int oldbutton)
 
 /*-----------------------------------------------------------------------*/
 /**
- * If given shortcut matches item, handle that & return it's code,
- * otherwise return zero.
+ * If object with given shortcut is found, handle that.
+ * If handled, return its index, otherwise SDLGUI_NOTFOUND.
  */
 static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
 {
@@ -1053,7 +1055,7 @@ static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
 			return SDLGui_HandleSelection(dlg, i, i);
 		i++;
 	}
-	return 0;
+	return SDLGUI_NOTFOUND;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1064,10 +1066,9 @@ static int SDLGui_HandleShortcut(SGOBJ *dlg, int key)
  */
 int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 {
-	int obj=0;
-	int oldbutton=0;
-	int retbutton=0;
-	int i, j, b, value;
+	int oldbutton = SDLGUI_NOTFOUND;
+	int retbutton = SDLGUI_NOTFOUND;
+	int i, j, b, value, obj;
 	SDLKey key;
 	int focused;
 	SDL_Event sdlEvent;
@@ -1119,10 +1120,10 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 
 	/* focus default button if nothing else is focused */
 	focused = SDLGui_SearchState(dlg, SG_FOCUSED);
-	if (!focused)
+	if (focused == SDLGUI_NOTFOUND)
 	{
 		int defocus = SDLGui_SearchFlags(dlg, SG_DEFAULT);
-		if (defocus)
+		if (defocus != SDLGUI_NOTFOUND)
 		{
 			dlg[focused].state &= ~SG_FOCUSED;
 			dlg[defocus].state |= SG_FOCUSED;
@@ -1140,7 +1141,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 
 	/* If current object is the scrollbar, and mouse is still down, we can scroll it */
 	/* also if the mouse pointer has left the scrollbar */
-	if (current_object >= 0 && dlg[current_object].type == SGSCROLLBAR) {
+	if (current_object != SDLGUI_NOTFOUND && dlg[current_object].type == SGSCROLLBAR) {
 		if (b & SDL_BUTTON(1)) {
 			obj = current_object;
 			dlg[obj].state |= SG_MOUSEDOWN;
@@ -1158,7 +1159,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	else {
 		obj = SDLGui_FindObj(dlg, i, j);
 		current_object = obj;
-		if (obj > 0 && (dlg[obj].flags&SG_TOUCHEXIT) )
+		if (obj != SDLGUI_NOTFOUND && (dlg[obj].flags&SG_TOUCHEXIT) )
 		{
 			oldbutton = obj;
 			if (b & SDL_BUTTON(1))
@@ -1178,7 +1179,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 #endif
 
 	/* The main loop */
-	while (retbutton == 0 && !bQuitProgram)
+	while (retbutton == SDLGUI_NOTFOUND && !bQuitProgram)
 	{
 		if (SDL_WaitEvent(&sdlEvent) == 1)  /* Wait for events */
 		
@@ -1198,7 +1199,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 				}
 				/* It was the left button: Find the object under the mouse cursor */
 				obj = SDLGui_FindObj(dlg, sdlEvent.button.x, sdlEvent.button.y);
-				if (obj>0)
+				if (obj != SDLGUI_NOTFOUND)
 				{
 					if (dlg[obj].type==SGBUTTON)
 					{
@@ -1231,17 +1232,17 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 				}
 				/* It was the left button: Find the object under the mouse cursor */
 				obj = SDLGui_FindObj(dlg, sdlEvent.button.x, sdlEvent.button.y);
-				if (obj>0)
+				if (obj != SDLGUI_NOTFOUND)
 				{
 					retbutton = SDLGui_HandleSelection(dlg, obj, oldbutton);
 				}
-				if (oldbutton > 0 && dlg[oldbutton].type == SGBUTTON)
+				if (oldbutton != SDLGUI_NOTFOUND && dlg[oldbutton].type == SGBUTTON)
 				{
 					dlg[oldbutton].state &= ~SG_SELECTED;
 					SDLGui_DrawButton(dlg, oldbutton);
 					SDL_UpdateRect(pSdlGuiScrn, (dlg[0].x+dlg[oldbutton].x)*sdlgui_fontwidth-2, (dlg[0].y+dlg[oldbutton].y)*sdlgui_fontheight-2,
 					               dlg[oldbutton].w*sdlgui_fontwidth+4, dlg[oldbutton].h*sdlgui_fontheight+4);
-					oldbutton = 0;
+					oldbutton = SDLGUI_NOTFOUND;
 				}
 				break;
 
