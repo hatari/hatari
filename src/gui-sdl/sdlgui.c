@@ -12,6 +12,7 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "main.h"
 #include "screen.h"
@@ -933,10 +934,12 @@ static int SDLGui_FocusNext(SGOBJ *dlg, int i, int inc)
 		/* wrap */
 		if (dlg[i].type == SGSTOP)
 		{
+			assert(inc > 0);
 			i = 0;
 		}
 		else if (i == 0)
 		{
+			assert(inc < 0);
 			while (dlg[i].type != SGSTOP)
 				i++;
 			i--;
@@ -1135,7 +1138,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 		int defocus = SDLGui_SearchFlags(dlg, SG_DEFAULT);
 		if (defocus != SDLGUI_NOTFOUND)
 		{
-			dlg[focused].state &= ~SG_FOCUSED;
 			dlg[defocus].state |= SG_FOCUSED;
 			focused = defocus;
 		}
