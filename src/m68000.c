@@ -352,6 +352,9 @@ void M68000_CheckCpuSettings(void)
 	currprefs.cpu_clock_multiplier = changed_prefs.cpu_clock_multiplier = 2 << 8;
 
 #else
+	if (ConfigureParams.System.nCpuLevel > 4)
+		ConfigureParams.System.nCpuLevel = 4;
+
 	changed_prefs.cpu_cycle_exact = 0;				/* With old UAE CPU, cycle_exact is always false */
 #endif
 
