@@ -537,7 +537,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 
 	/* Set new video mode */
-	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, h, bitdepth, bInFullScreen?"fullscreen":"windowed"));
+	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height, bitdepth,
+	            bInFullScreen?"fullscreen":"windowed"));
 	sdlscrn = SDL_SetVideoMode(width, height, bitdepth, sdlVideoFlags);
 
 	/* By default ConfigureParams.Screen.nForceBpp and therefore
