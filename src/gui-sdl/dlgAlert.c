@@ -48,7 +48,7 @@ static SGOBJ alertdlg[] =
 	{ SGTEXT, 0, 0, 1,3, 50,1, dlglines[2] },
 	{ SGTEXT, 0, 0, 1,4, 50,1, dlglines[3] },
 	{ SGBUTTON, SG_DEFAULT, 0, 5,5, 8,1, "OK" },
-	{ SGBUTTON, SG_CANCEL, 0, 24,5, 8,1, "Cancel" },
+	{ SGBUTTON, SG_CANCEL, 0, 24,5, 8,1, NULL },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
