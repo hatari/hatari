@@ -22,6 +22,13 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 #include "font5x8.h"
 #include "font10x16.h"
 
+#define DEBUG_INFO 0
+#if DEBUG_INFO
+# define Dprintf(a) printf a
+#else
+# define Dprintf(a)
+#endif
+
 #if WITH_SDL2
 #define SDL_SRCCOLORKEY SDL_TRUE
 #define SDLKey SDL_Keycode
@@ -857,6 +864,20 @@ static int SDLGui_SearchState(const SGOBJ *dlg, int state)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Print dialog object flags & state for debug purposes.
+ */
+static void SDLGui_DebugPrintDialog(const SGOBJ *dlg)
+{
+#if DEBUG_INFO
+	int i;
+	printf("obj: flags | state\n");
+	for (i = 0; dlg[i].type != SGSTOP; i++)
+		printf("%3d:  0x%02x | 0x%02x\n", i, dlg[i].flags, dlg[i].state);
+#endif
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * For given dialog object type, returns whether it could have shortcut key
  */
 static bool SDLGui_CanHaveShortcut(int kind)
@@ -1130,6 +1151,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	{
 		fprintf(stderr, "SDLGUI_DoDialog: CreateRGBSurface failed: %s\n", SDL_GetError());
 	}
+	SDLGui_DebugPrintDialog(dlg);
 
 	/* focus default button if nothing else is focused */
 	focused = SDLGui_SearchState(dlg, SG_FOCUSED);
@@ -1142,6 +1164,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 			focused = defbutton;
 		}
 	}
+	Dprintf(("focused: %d\n", focused));
 	SDLGui_SetShortcuts(dlg);
 
 	/* (Re-)draw the dialog */
@@ -1188,6 +1211,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	/* Enable unicode translation to get shifted etc chars with SDL_PollEvent */
 	nOldUnicodeMode = SDL_EnableUNICODE(true);
 #endif
+	Dprintf(("ENTER - obj: %d, old: %d, ret: %d\n", obj, oldbutton, retbutton));
 
 	/* The main loop */
 	while (retbutton == SDLGUI_NOTFOUND && !bQuitProgram)
@@ -1385,6 +1409,6 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	if (joy)
 		SDL_JoystickClose(joy);
 
+	Dprintf(("EXIT - ret: %d, current: %d\n", retbutton, current_object));
 	return retbutton;
 }
-
