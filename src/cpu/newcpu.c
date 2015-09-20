@@ -4711,6 +4711,16 @@ printf ( "run_mmu060\n" );
 	while (!halt) {
 		TRY (prb) {
 			for (;;) {
+#ifdef WINUAE_FOR_HATARI
+				//m68k_dumpstate_file(stderr, NULL);
+				if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+				{
+					int FrameCycles, HblCounterVideo, LineCycles;
+					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
+					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
+				}
+#endif
 				f.cznv = regflags.cznv;
 				f.x = regflags.x;
 				regs.instruction_pc = m68k_getpc ();
@@ -4726,11 +4736,31 @@ printf ( "run_mmu060\n" );
 				cpu_cycles = (*cpufunctbl[regs.opcode])(regs.opcode);
 
 				cpu_cycles = adjust_cycles (cpu_cycles);
+#ifdef WINUAE_FOR_HATARI
+				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
+				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+					/* Add some extra cycles to simulate a wait state */
+					unset_special(SPCFLAG_EXTRA_CYCLES);
+					M68000_AddCycles(nWaitStateCycles);
+					nWaitStateCycles = 0;
+				}
+
+				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+				if ( MFP_UpdateNeeded == true )
+					MFP_UpdateIRQ ( 0 );
+#endif
 				if (regs.spcflags) {
 					if (do_specialties (cpu_cycles))
 						return;
 				}
+#ifdef WINUAE_FOR_HATARI
+				/* Run DSP 56k code if necessary */
+				if (bDspEnabled) {
+					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+				}
+#endif
 			}
 		} CATCH (prb) {
 
