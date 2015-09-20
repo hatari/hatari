@@ -1135,11 +1135,11 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	focused = SDLGui_SearchState(dlg, SG_FOCUSED);
 	if (focused == SDLGUI_NOTFOUND)
 	{
-		int defocus = SDLGui_SearchFlags(dlg, SG_DEFAULT);
-		if (defocus != SDLGUI_NOTFOUND)
+		int defbutton = SDLGui_SearchFlags(dlg, SG_DEFAULT);
+		if (defbutton != SDLGUI_NOTFOUND)
 		{
-			dlg[defocus].state |= SG_FOCUSED;
-			focused = defocus;
+			dlg[defbutton].state |= SG_FOCUSED;
+			focused = defbutton;
 		}
 	}
 	SDLGui_SetShortcuts(dlg);
@@ -1154,18 +1154,17 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject)
 	/* If current object is the scrollbar, and mouse is still down, we can scroll it */
 	/* also if the mouse pointer has left the scrollbar */
 	if (current_object != SDLGUI_NOTFOUND && dlg[current_object].type == SGSCROLLBAR) {
-		if (b & SDL_BUTTON(1)) {
-			obj = current_object;
+		obj = current_object;
+		retbutton = obj;
+		oldbutton = obj;
+		if (b & SDL_BUTTON(1))
+		{
 			dlg[obj].state |= SG_MOUSEDOWN;
-			oldbutton = obj;
-			retbutton = obj;
 		}
-		else {
-			obj = current_object;
+		else
+		{
 			current_object = 0;
 			dlg[obj].state &= ~SG_MOUSEDOWN;
-			retbutton = obj;
-			oldbutton = obj;
 		}
 	}
 	else {
