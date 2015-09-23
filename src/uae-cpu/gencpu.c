@@ -1303,35 +1303,23 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 
 	printf ("\tuaecptr memp = m68k_areg(regs, dstreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword ());
-	/* [NP] Use MovepByteNbr to keep track of each access inside a movep */
 	if (curi->size == sz_word) {
-	    printf ("\tMovepByteNbr=1; put_byte(memp, src >> 8); MovepByteNbr=2; put_byte(memp + 2, src);\n");
+	    printf ("\tput_byte(memp, src >> 8); put_byte(memp + 2, src);\n");
 	} else {
-	    printf ("\tMovepByteNbr=1; put_byte(memp, src >> 24); MovepByteNbr=2; put_byte(memp + 2, src >> 16);\n");
-	    printf ("\tMovepByteNbr=3; put_byte(memp + 4, src >> 8); MovepByteNbr=4; put_byte(memp + 6, src);\n");
+	    printf ("\tput_byte(memp, src >> 24); put_byte(memp + 2, src >> 16);\n");
+	    printf ("\tput_byte(memp + 4, src >> 8); put_byte(memp + 6, src);\n");
 	}
-	printf ("\tMovepByteNbr=0;\n");
         if(curi->size==sz_long)  insn_n_cycles=24;  else  insn_n_cycles=16;
 	break;
     case i_MVPMR:
 	printf ("\tuaecptr memp = m68k_areg(regs, srcreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword ());
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 2, 0);
-	/* [NP] Use MovepByteNbr to keep track of each access inside a movep */
 	if (curi->size == sz_word) {
-	    //printf ("\tuae_u16 val = (get_byte(memp) << 8) + get_byte(memp + 2);\n");
-	    printf ("\tuae_u16 val;\n");
-	    printf ("\tMovepByteNbr=1; val = (get_byte(memp) << 8);\n");
-	    printf ("\tMovepByteNbr=2; val += get_byte(memp + 2);\n");
+	    printf ("\tuae_u16 val = (get_byte(memp) << 8) + get_byte(memp + 2);\n");
 	} else {
-	    //printf ("\tuae_u32 val = (get_byte(memp) << 24) + (get_byte(memp + 2) << 16)\n");
-	    //printf ("              + (get_byte(memp + 4) << 8) + get_byte(memp + 6);\n");
-	    printf ("\tuae_u32 val;\n");
-	    printf ("\tMovepByteNbr=1; val = (get_byte(memp) << 24);\n");
-	    printf ("\tMovepByteNbr=2; val += (get_byte(memp + 2) << 16);\n");
-	    printf ("\tMovepByteNbr=3; val += (get_byte(memp + 4) << 8);\n");
-	    printf ("\tMovepByteNbr=4; val += get_byte(memp + 6);\n");
+	    printf ("\tuae_u32 val = (get_byte(memp) << 24) + (get_byte(memp + 2) << 16)\n");
+	    printf ("              + (get_byte(memp + 4) << 8) + get_byte(memp + 6);\n");
 	}
-	printf ("\tMovepByteNbr=0;\n");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "dst");
         if(curi->size==sz_long)  insn_n_cycles=24;  else  insn_n_cycles=16;
 	break;

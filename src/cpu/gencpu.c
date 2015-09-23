@@ -3511,7 +3511,6 @@ static void gen_opcode (unsigned int opcode)
 	case i_MVPRM: // MOVEP R->M
 		genamode (curi, curi->smode, "srcreg", curi->size, "src", 1, 0, 0);
 		printf ("\tuaecptr memp = m68k_areg (regs, dstreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword (0));
-#ifndef WINUAE_FOR_HATARI
 		if (curi->size == sz_word) {
 			printf ("\t%s (memp, src >> 8);\n\t%s (memp + 2, src);\n", dstb, dstb);
 			count_write += 2;
@@ -3520,24 +3519,11 @@ static void gen_opcode (unsigned int opcode)
 			printf ("\t%s (memp + 4, src >> 8);\n\t%s (memp + 6, src);\n", dstb, dstb);
 			count_write += 4;
 		}
-#else
-		/* Hatari : Use MovepByteNbr to keep track of each individual byte access inside a movep */
-		if (curi->size == sz_word) {
-			printf ("\tMovepByteNbr=1; \t%s (memp, src >> 8);\n\tMovepByteNbr=2; \t%s (memp + 2, src);\n", dstb, dstb);
-			count_write += 2;
-		} else {
-			printf ("\tMovepByteNbr=1; \t%s (memp, src >> 24);\n\tMovepByteNbr=2; \t%s (memp + 2, src >> 16);\n", dstb, dstb);
-			printf ("\tMovepByteNbr=3; \t%s (memp + 4, src >> 8);\n\tMovepByteNbr=4; \t%s (memp + 6, src);\n", dstb, dstb);
-			count_write += 4;
-		}
-		printf ("\tMovepByteNbr=0;\n");
-#endif
 		fill_prefetch_next ();
 		break;
 	case i_MVPMR: // MOVEP M->R
 		printf ("\tuaecptr memp = m68k_areg (regs, srcreg) + (uae_s32)(uae_s16)%s;\n", gen_nextiword (0));
 		genamode (curi, curi->dmode, "dstreg", curi->size, "dst", 2, 0, 0);
-#ifndef WINUAE_FOR_HATARI
 		if (curi->size == sz_word) {
 			printf ("\tuae_u16 val = ((%s (memp) & 0xff) << 8) + (%s (memp + 2) & 0xff);\n", srcb, srcb);
 			count_read += 2;
@@ -3546,23 +3532,6 @@ static void gen_opcode (unsigned int opcode)
 			printf ("              + ((%s (memp + 4) & 0xff) << 8) + (%s (memp + 6) & 0xff);\n", srcb, srcb);
 			count_read += 4;
 		}
-#else
-		/* Hatari : Use MovepByteNbr to keep track of each individual byte access inside a movep */
-		if (curi->size == sz_word) {
-			printf ("\tuae_u16 val;\n");
-			printf ("\tMovepByteNbr=1; val = ((%s (memp) & 0xff) << 8);\n", srcb);
-			printf ("\tMovepByteNbr=2; val += (%s (memp + 2) & 0xff);\n", srcb);
-			count_read += 2;
-		} else {
-			printf ("\tuae_u32 val;\n");
-			printf ("\tMovepByteNbr=1; val = ((%s (memp) & 0xff) << 24);\n", srcb);
-			printf ("\tMovepByteNbr=2; val += ((%s (memp + 2) & 0xff) << 16);\n", srcb);
-			printf ("\tMovepByteNbr=3; val += ((%s (memp + 4) & 0xff) << 8);\n", srcb);
-			printf ("\tMovepByteNbr=4; val += (%s (memp + 6) & 0xff);\n", srcb);
-			count_read += 4;
-		}
-		printf ("\tMovepByteNbr=0;\n");
-#endif
 		fill_prefetch_next ();
 		genastore ("val", curi->dmode, "dstreg", curi->size, "dst");
 		break;

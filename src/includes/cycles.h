@@ -25,7 +25,6 @@ extern int	nCyclesMainCounter;
 extern Uint64	CyclesGlobalClockCounter;
 
 extern int	CurrentInstrCycles;
-extern int	MovepByteNbr;
 
 
 extern void Cycles_MemorySnapShot_Capture(bool bSave);

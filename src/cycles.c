@@ -43,8 +43,6 @@ static int nCyclesCounter[CYCLES_COUNTER_MAX];	/* Array with all counters */
 Uint64	CyclesGlobalClockCounter = 0;		/* Global clock counter since starting Hatari (it's never reset afterwards) */
 
 int	CurrentInstrCycles;
-int	MovepByteNbr = 0;			/* Number of the byte currently transferred in a movep (1..2 or 1..4) */
-						/* 0 means current instruction is not a movep */
 
 
 static void	Cycles_UpdateCounters(void);
@@ -137,10 +135,9 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 		if ( Opcode == 0x11f8 )				/* move.b xxx.w,xxx.w (eg MOVE.B $ffff8209.w,$26.w in Bird Mad Girl Show) */
 			AddCycles = CurrentInstrCycles + nWaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
 		else if ( OpcodeFamily == i_MVPRM )					/* eg movep.l d0,$ffc3(a1) in E605 (STE) */
-//			AddCycles = 12 + MovepByteNbr * 4;				/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
 			AddCycles = 12 + IoAccessInstrCount * 4;			/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
 											/* something must be wrong in video.c */
-			/* FIXME : this should be : AddCycles = 4 + MovepByteNbr * 4, but this breaks e605 in video.c */
+			/* FIXME : this should be : AddCycles = 4 + IoAccessInstrCount * 4, but this breaks e605 in video.c */
 		else
 			AddCycles = CurrentInstrCycles + nWaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
 	}

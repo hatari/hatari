@@ -528,8 +528,8 @@ void	ACIA_AddWaitCycles ( void )
 	/* Wait for E clock only if this is the first ACIA access for this instruction */
 	/* (NOTE : in UAE, movep behaves like several bytes access with different IoAccessBaseAddress, */
 	/* so only the first movep's access should wait for E Clock) */
-	if ( ( ( MovepByteNbr == 0 ) && ( IoAccessBaseAddress == IoAccessCurrentAddress ) )
-	  || ( MovepByteNbr == 1 ) )					/* First access of a movep */
+	if ( ( ( IoAccessInstrCount == 0 ) && ( IoAccessBaseAddress == IoAccessCurrentAddress ) )
+	  || ( IoAccessInstrCount == 1 ) )				/* First access of a movep */
 		cycles += M68000_WaitEClock ();
 	
 	M68000_WaitState ( cycles );
