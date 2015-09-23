@@ -22,9 +22,11 @@ extern uae_u8 *IOmemory;
 #endif  /* ENABLE_SMALL_MEM */
 
 
+extern int nIoMemAccessSize;
 extern Uint32 IoAccessBaseAddress;
 extern Uint32 IoAccessCurrentAddress;
-extern int nIoMemAccessSize;
+
+extern int	IoAccessInstrCount;
 
 
 /**

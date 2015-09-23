@@ -37,6 +37,7 @@ const char IoMem_fileid[] = "Hatari ioMem.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "m68000.h"
 #include "sysdeps.h"
+#include "newcpu.h"
 
 
 static void (*pInterceptReadTable[0x8000])(void);     /* Table with read access handlers */
@@ -46,6 +47,32 @@ int nIoMemAccessSize;                                 /* Set to 1, 2 or 4 accord
 Uint32 IoAccessBaseAddress;                           /* Stores the base address of the IO mem access */
 Uint32 IoAccessCurrentAddress;                        /* Current byte address while handling WORD and LONG accesses */
 static int nBusErrorAccesses;                         /* Needed to count bus error accesses */
+
+
+/*
+  Heuristics for better cycle accuracy when "cycle exact mode" is not used
+
+  Some instructions can do several IO accesses that will be seen as several independant accesses,
+  instead of one whole word or long word access as in the size of the instruction.
+  For example :
+    - movep.w and move.l will do 2 or 4 BYTE accesses (and not 1 WORD or LONG WORD access)
+    - move.l will do 2 WORD accesses (and not 1 LONG WORD, because ST's bus is 16 bit)
+
+  So, when a BYTE access is made, we need to know if it comes from an instruction where size=byte
+  or if it comes from a word or long word instruction.
+
+  In order to emulate correct read/write cycles when IO regs are accessed this way, we need to
+  keep track of how many accesses were made by the same instruction.
+  This will be used when CPU runs in "prefetch mode" and we try to approximate internal cycles
+  (see cycles.c for heuristics using this).
+
+  When CPU runs in "cycle exact mode", this is not used because the internal cycles will be computed
+  precisely at the CPU emulation level.
+*/
+static Uint64	IoAccessInstrPrevClock;
+int		IoAccessInstrCount;			/* Number of the accesses made in the current instruction (1..4) */
+							/* 0 means no multiple accesses in the current instruction */
+
 
 /* Falcon bus mode (Falcon STe compatible bus or Falcon only bus) */
 static enum {
@@ -262,6 +289,18 @@ uae_u32 IoMem_bget(uaecptr addr)
 {
 	Uint8 val;
 
+	/* Check if access is made by a new instruction or by the same instruction doing multiple byte accesses */
+	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
+		IoAccessInstrCount++;			/* Same instruction, increase access count */
+	else
+	{
+		IoAccessInstrPrevClock = CyclesGlobalClockCounter;
+		if ( table68k[ M68000_CurrentOpcode ].size == 0 )
+			IoAccessInstrCount = 0;		/* Instruction size is byte : no multiple accesses */
+		else
+			IoAccessInstrCount = 1;		/* 1st access */
+	}
+
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
 	if (addr < 0xff8000 || !regs.s)
@@ -301,6 +340,19 @@ uae_u32 IoMem_wget(uaecptr addr)
 {
 	Uint32 idx;
 	Uint16 val;
+
+	/* Check if access is made by a new instruction or by the same instruction doing multiple word accesses */
+	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
+		IoAccessInstrCount++;			/* Same instruction, increase access count */
+	else
+	{
+		IoAccessInstrPrevClock = CyclesGlobalClockCounter;
+		if ( ( table68k[ M68000_CurrentOpcode ].size == 1 )
+		  && ( OpcodeFamily != i_MVMEL ) && ( OpcodeFamily != i_MVMLE ) )
+			IoAccessInstrCount = 0;		/* Instruction size is word and not a movem : no multiple accesses */
+		else
+			IoAccessInstrCount = 1;		/* 1st access of a long or movem.w */
+	}
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
@@ -355,6 +407,18 @@ uae_u32 IoMem_lget(uaecptr addr)
 	Uint32 val;
 	int n;
 
+	/* Check if access is made by a new instruction or by the same instruction doing multiple long accesses */
+	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
+		IoAccessInstrCount++;			/* Same instruction, increase access count */
+	else
+	{
+		IoAccessInstrPrevClock = CyclesGlobalClockCounter;
+		if ( ( OpcodeFamily != i_MVMEL ) && ( OpcodeFamily != i_MVMLE ) )
+			IoAccessInstrCount = 0;		/* Instruction is not a movem : no multiple accesses */
+		else
+			IoAccessInstrCount = 1;		/* 1st access of a movem.l */
+	}
+
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
 	if (addr < 0xff8000 || !regs.s)
@@ -407,9 +471,21 @@ uae_u32 IoMem_lget(uaecptr addr)
  */
 void IoMem_bput(uaecptr addr, uae_u32 val)
 {
+	/* Check if access is made by a new instruction or by the same instruction doing multiple byte accesses */
+	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
+		IoAccessInstrCount++;			/* Same instruction, increase access count */
+	else
+	{
+		IoAccessInstrPrevClock = CyclesGlobalClockCounter;
+		if ( table68k[ M68000_CurrentOpcode ].size == 0 )
+			IoAccessInstrCount = 0;		/* Instruction size is byte : no multiple accesses */
+		else
+			IoAccessInstrCount = 1;		/* 1st access */
+	}
+
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%06x = $%02x pc=%x\n", addr, val&0x0ff, M68000_GetPC());
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%06x = $%02x pc=%x\n", addr, val&0xff, M68000_GetPC());
 
 	if (addr < 0xff8000 || !regs.s)
 	{
@@ -443,9 +519,22 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
 
+	/* Check if access is made by a new instruction or by the same instruction doing multiple word accesses */
+	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
+		IoAccessInstrCount++;			/* Same instruction, increase access count */
+	else
+	{
+		IoAccessInstrPrevClock = CyclesGlobalClockCounter;
+		if ( ( table68k[ M68000_CurrentOpcode ].size == 1 )
+		  && ( OpcodeFamily != i_MVMEL ) && ( OpcodeFamily != i_MVMLE ) )
+			IoAccessInstrCount = 0;		/* Instruction size is word and not a movem : no multiple accesses */
+		else
+			IoAccessInstrCount = 1;		/* 1st access of a long or movem.w */
+	}
+
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	LOG_TRACE(TRACE_IOMEM_WR, "IO write.w $%06x = $%04x pc=%x\n", addr, val&0x0ffff, M68000_GetPC());
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.w $%06x = $%04x pc=%x\n", addr, val&0xffff, M68000_GetPC());
 
 	if (addr < 0x00ff8000 || !regs.s)
 	{
@@ -491,6 +580,18 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
 	int n;
+
+	/* Check if access is made by a new instruction or by the same instruction doing multiple long accesses */
+	if ( IoAccessInstrPrevClock == CyclesGlobalClockCounter )
+		IoAccessInstrCount++;			/* Same instruction, increase access count */
+	else
+	{
+		IoAccessInstrPrevClock = CyclesGlobalClockCounter;
+		if ( ( OpcodeFamily != i_MVMEL ) && ( OpcodeFamily != i_MVMLE ) )
+			IoAccessInstrCount = 0;		/* Instruction is not a movem : no multiple accesses */
+		else
+			IoAccessInstrCount = 1;		/* 1st access of a movem.l */
+	}
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 

@@ -33,6 +33,7 @@ const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "cycles.h"
+#include "ioMem.h"
 
 
 int	nCyclesMainCounter;			/* Main cycles counter since previous Cycles_UpdateCounters() */
@@ -136,7 +137,8 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 		if ( Opcode == 0x11f8 )				/* move.b xxx.w,xxx.w (eg MOVE.B $ffff8209.w,$26.w in Bird Mad Girl Show) */
 			AddCycles = CurrentInstrCycles + nWaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
 		else if ( OpcodeFamily == i_MVPRM )					/* eg movep.l d0,$ffc3(a1) in E605 (STE) */
-			AddCycles = 12 + MovepByteNbr * 4;				/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
+//			AddCycles = 12 + MovepByteNbr * 4;				/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
+			AddCycles = 12 + IoAccessInstrCount * 4;			/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
 											/* something must be wrong in video.c */
 			/* FIXME : this should be : AddCycles = 4 + MovepByteNbr * 4, but this breaks e605 in video.c */
 		else
