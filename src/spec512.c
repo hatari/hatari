@@ -185,14 +185,26 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 			              + (CurrentInstrCycles & ~3);
 			FrameCycles -= 0;			/* write is made at the end, after prefetch */
 		}
-		else						/* default case write, then prefetch (mostly for 'move') */
+		else						/* default case : write first, then prefetch (mostly for 'move') */
 		{
 			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
 			              + (CurrentInstrCycles & ~3);
+#if 0
 			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
 				FrameCycles -= 8;
 			else					/* word/byte access */
 				FrameCycles -= 4;
+#else
+			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
+				FrameCycles -= 8;
+			else					/* word/byte access */
+			{
+				if ( IoAccessInstrCount == 0 )	/* instruction does only 1 access */
+					FrameCycles -= 4;
+				else				/* instruction does multiple accesses (eg: move.l gives 2 word accesses) */
+					FrameCycles += -12 + IoAccessInstrCount * 4;	/* gives -8 or -4 */
+			}
+#endif
 		}
 #endif
 	}
