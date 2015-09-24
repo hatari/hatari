@@ -157,8 +157,8 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	/* Find number of cycles into frame */
 	/* FIXME [NP] We should use Cycles_GetCounterOnWriteAccess, but it wouldn't	*/
 	/* work when using multiple accesses instructions like move.l or movem	*/
-	/* To correct this, assume a delay of 8 cycles (should give a good approximation */
-	/* of a move.w or movem.l for example) */
+	/* To correct this, we use a few rules for the most common cases */
+	/* (should give a good approximation of a move.w or movem.l for example) */
 	//  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
@@ -166,9 +166,6 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	}
 	else							/* BUS_MODE_CPU */
 	{
-#ifdef OLD_CYC_PAL
-		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
-#else
 		if ( OpcodeFamily == i_MVMLE )
 		{
 //			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
@@ -206,7 +203,6 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 			}
 #endif
 		}
-#endif
 	}
 
 
