@@ -57,6 +57,10 @@
 /* 2009/07/28	[NP]	Use different timings for movem.l and movem.w				*/
 /* 2014/01/02	[NP]	In Spec512_StoreCyclePalette, write occurs during the last cycles for	*/
 /*			i_ADD and i_SUB (fix 'add d1,(a0)' in '4-pixel plasma' by TOS Crew).	*/
+/* 2015/09/25	[NP]	In Spec512_StoreCyclePalette, fix 'move.l' and 'movem' when used with	*/
+/*			the new WinUAE CPU core (move.l accesses for IO registers are in fact	*/
+/*			not possible on a 68000 STF, this is a bug in old UAE CPU core.		*/
+/*			A 'move.l' does 2 word accesses because STF bus is 16 bits)		*/
 
 
 const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
@@ -168,13 +172,30 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	{
 		if ( OpcodeFamily == i_MVMLE )
 		{
-//			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+			/* In the case of movem, CurrentInstrCycles is dynamic (depends on the number */
+			/* of registers to transfer). The 4*n for .W or 8*n for .L is not counted in CurrentInstrCycles */
+			/* The last 4 cycles of a movem are for prefetch, so number of cycles is : */
+			/* x + 4*n + 4 (movem.w) or x + 8*n + 4 (movem.l)  with x + 4 = CurrentInstrCycles */
 			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
 			              + (CurrentInstrCycles & ~3);
+#if 0
 			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
 				FrameCycles -= 0;
 			else					/* word access */
 				FrameCycles -= 4;
+#else
+			if (nIoMemAccessSize == SIZE_LONG)	/* long access from a movem.l */
+			{
+				//FrameCycle += -4 + IoAccessInstrCount * 8 - 4;
+				FrameCycles -= 0;		/* NOTE [NP] : this is used by old uae cpu core but does not happen */
+								/* on real HW because IO regs can't be accessesed with a long */
+								/* FIXME : fix old uae cpu to remove long accesses to memory for 68000 */
+			}
+			else					/* word access with movem.w or movem.l doing 2 words accesses per long */
+			{
+				FrameCycles += -4 + IoAccessInstrCount * 4;
+			}
+#endif
 		}
 		else if ( ( OpcodeFamily == i_ADD ) || ( OpcodeFamily == i_SUB ) )
 		{
