@@ -347,8 +347,13 @@
 /* 2015/06/19	[NP]	In Video_CalculateAddress, handle a special/simplified case when reading*/
 /*			video pointer in hi res (fix protection in 'My Socks Are Weapons' demo	*/
 /*			by 'Legacy').								*/
-/* 2015/0818	[NP]	In Video_CalculateAddress, handle the case when reading overlaps end	*/
+/* 2015/08/18	[NP]	In Video_CalculateAddress, handle the case when reading overlaps end	*/
 /*			of line / start of next line and STE's linewidth at $FF820F != 0.	*/
+/* 2015/09/28	[NP]	In Video_ScreenCounter_ReadByte, take VideoCounterDelayedOffset into	*/
+/*			account to handle the case where ff8205/07/09 are modified when display	*/
+/*			is ON and read just after (this is sometimes used to detect if the	*/
+/*			machine is an STF or an STE) (fix STE detection in the Menu screen of	*/
+/*			the 'Place To Be Again' demo).						*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -3170,6 +3175,16 @@ void Video_ScreenCounter_ReadByte(void)
 	Uint32 addr;
 
 	addr = Video_CalculateAddress();		/* get current video address */
+
+	/* On STE, handle modifications of the video counter address $ff8205/07/09 */
+	/* that occurred while the display was already ON */
+	if ( VideoCounterDelayedOffset != 0 )
+	{
+		addr += ( VideoCounterDelayedOffset & ~1 );
+		fprintf ( stderr , "adjust video counter offset=%d new video=%x\n" , VideoCounterDelayedOffset , addr );
+	}
+
+
 	IoMem[0xff8205] = ( addr >> 16 ) & 0xff;
 	IoMem[0xff8207] = ( addr >> 8 ) & 0xff;
 	IoMem[0xff8209] = addr & 0xff;
