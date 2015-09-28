@@ -3181,9 +3181,8 @@ void Video_ScreenCounter_ReadByte(void)
 	if ( VideoCounterDelayedOffset != 0 )
 	{
 		addr += ( VideoCounterDelayedOffset & ~1 );
-		fprintf ( stderr , "adjust video counter offset=%d new video=%x\n" , VideoCounterDelayedOffset , addr );
+//		fprintf ( stderr , "adjust video counter offset=%d new video=%x\n" , VideoCounterDelayedOffset , addr );
 	}
-
 
 	IoMem[0xff8205] = ( addr >> 16 ) & 0xff;
 	IoMem[0xff8207] = ( addr >> 8 ) & 0xff;
