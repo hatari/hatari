@@ -9,6 +9,9 @@
 Emulation:
 - GEMDOS HD:
   - Fix: Disable GEMDOS opcodes after GEMDOS drive is disabled
+- Video:
+  - fix reading video counter $FF8205/07/09 after modifying it while
+    display is ON.
 
 Emulator:
 - NatFeats SCSI driver for Linux
@@ -20,6 +23,10 @@ Emulator:
   - Fix: direct DSP register, disasm and memdumps to debugger log
          file, similarly to CPU
   - Fix: direct CPU and DSP symbol traces to trace file, not stderr
+
+Fixed demos:
+- Menu screen in the Place To Be Again (video, writing/reading video
+  counter during active display)
 
 
  Version 1.9.0 (2015-09-10):
