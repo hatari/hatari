@@ -12,6 +12,7 @@ Emulation:
 - Video:
   - fix reading video counter $FF8205/07/09 after modifying it while
     display is ON.
+  - fix location of the video counter's restart when screen runs at 60 Hz
 
 Emulator:
 - NatFeats SCSI driver for Linux
@@ -25,6 +26,7 @@ Emulator:
   - Fix: direct CPU and DSP symbol traces to trace file, not stderr
 
 Fixed demos:
+- spec512 image in the Intro of the Place To Be Again (video, restart counter)
 - Menu screen in the Place To Be Again (video, writing/reading video
   counter during active display)
 
