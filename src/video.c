@@ -354,6 +354,9 @@
 /*			is ON and read just after (this is sometimes used to detect if the	*/
 /*			machine is an STF or an STE) (fix STE detection in the Menu screen of	*/
 /*			the 'Place To Be Again' demo).						*/
+/* 2015/09/29	[NP]	Add different values for RestartVideoCounterCycle when using 60 Hz	*/
+/*			(fix 60 Hz spectrum 512 double buffer image in the intro of the		*/
+/*			'Place To Be Again' demo)						*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -459,7 +462,7 @@ static int LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess las
 
 static int LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
 static int LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
-static int RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
+static int RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF_50HZ;
 static int VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
@@ -700,14 +703,12 @@ static void	Video_SetSystemTimings(void)
 	{
 		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
 		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
-		RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
 		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 	}
 	else				/* STE, TT */
 	{
 		LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STE;
 		LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STE;
-		RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
 		VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STE;
 	}
 }
@@ -1350,7 +1351,6 @@ void Video_Sync_WriteByte ( void )
 	if ( bUseVDIRes )
 		return;						/* no 50/60 Hz freq in VDI mode */
 
-
 	/* We're only interested in bit 1 (50/60Hz) */
 	Freq = IoMem[0xff820a] & 2;
 
@@ -1559,6 +1559,10 @@ void Video_Sync_WriteByte ( void )
 		ShifterFrame.FreqPos50.FrameCycles = FrameCycles;
 		ShifterFrame.FreqPos50.HBL = HblCounterVideo;
 		ShifterFrame.FreqPos50.LineCycles = LineCycles;
+		if ( ConfigureParams.System.nMachineType == MACHINE_ST )
+			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF_50HZ;
+		else			/* STE, TT */
+			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE_50HZ;
 	}
 	else
 	{
@@ -1566,6 +1570,10 @@ void Video_Sync_WriteByte ( void )
 		ShifterFrame.FreqPos60.FrameCycles = FrameCycles;
 		ShifterFrame.FreqPos60.HBL = HblCounterVideo;
 		ShifterFrame.FreqPos60.LineCycles = LineCycles;
+		if ( ConfigureParams.System.nMachineType == MACHINE_ST )
+			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF_60HZ;
+		else			/* STE, TT */
+			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE_60HZ;
 	}
 }
 

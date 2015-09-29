@@ -104,8 +104,10 @@
 #define TIMERB_VIDEO_CYCLE_OFFSET	24			/* cycles after last displayed pixels : 376+24 in 50 Hz or 372+24 in 60 Hz */
 
 /* This is when ff8205/07/09 are reloaded with the content of ff8201/03 (on line 310 in 50 Hz) */
-#define RESTART_VIDEO_COUNTER_CYCLE_STF	( (SCANLINES_PER_FRAME_50HZ-3) * CYCLES_PER_LINE_50HZ + 48 )
-#define RESTART_VIDEO_COUNTER_CYCLE_STE	( (SCANLINES_PER_FRAME_50HZ-3) * CYCLES_PER_LINE_50HZ + 48 + 4 )	/* 4 cycles later than STF */
+#define RESTART_VIDEO_COUNTER_CYCLE_STF_50HZ	( (SCANLINES_PER_FRAME_50HZ-3) * CYCLES_PER_LINE_50HZ + 48 )
+#define RESTART_VIDEO_COUNTER_CYCLE_STE_50HZ	( (SCANLINES_PER_FRAME_50HZ-3) * CYCLES_PER_LINE_50HZ + 48 + 4 )	/* 4 cycles later than STF */
+#define RESTART_VIDEO_COUNTER_CYCLE_STF_60HZ	( (SCANLINES_PER_FRAME_60HZ-3) * CYCLES_PER_LINE_60HZ + 48 )		/* FIXME : not verified on real STF */
+#define RESTART_VIDEO_COUNTER_CYCLE_STE_60HZ	( (SCANLINES_PER_FRAME_60HZ-3) * CYCLES_PER_LINE_60HZ + 48 + 4 )	/* FIXME : not verified on real STE */
 
 /* anything above 4 uses automatic frameskip */
 #define AUTO_FRAMESKIP_LIMIT	5
