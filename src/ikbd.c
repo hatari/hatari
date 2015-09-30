@@ -66,7 +66,12 @@ const char IKBD_fileid[] = "Hatari ikbd.c : " __DATE__ " " __TIME__;
 /*			required for the loader of 'Just Bugging' by ACF which sends 0x11 and 0x13 just	*/
 /*			after 0x80 0x01 (temporary fix, would need to be measured on a real STF to see	*/
 /*			if it's always ignored or just during a specific delay)				*/
-
+/* 2015/10/10	[NP]	When IKBD_Reset / IKBD_Boot_ROM are called, we should not restart the autosend	*/
+/*			handler INTERRUPT_IKBD_AUTOSEND if it's already set, else we can loose keyboard	*/
+/*			input if IKBD_Reset is called in a loop before any event could be processed	*/
+/*			(this could happen if a program called the 'RESET' instruction in a loop, then	*/
+/*			we lost the F12 key for example)  (fix endless RESET when doing a warm reset	*/
+/*			(alt+r) during the 'Vodka Demo' by 'Equinox', only solution was to kill Hatari)	*/
 
 
 #include "main.h"
@@ -587,8 +592,12 @@ static void	IKBD_Boot_ROM ( bool ClearAllRAM )
 
 
 	/* Add auto-update function to the queue */
+	/* We add it only if it was not active, else this can lead to unresponsive keyboard/input */
+	/* when RESET instruction is called in a loop in less than 150000 cycles */
 	Keyboard.AutoSendCycles = 150000;				/* approx every VBL */
-	CycInt_AddRelativeInterrupt ( Keyboard.AutoSendCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND );
+	if ( CycInt_InterruptActive ( INTERRUPT_IKBD_AUTOSEND ) == false )
+		CycInt_AddRelativeInterrupt ( Keyboard.AutoSendCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND );
+
 	LOG_TRACE ( TRACE_IKBD_ALL , "ikbd reset done, starting reset timer\n" );
 }
 
