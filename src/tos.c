@@ -707,7 +707,10 @@ int TOS_LoadImage(void)
 #if ENABLE_WINUAE_CPU
 	/* 32-bit addressing is supported only by 680x0, TOS v3, TOS v4 and EmuTOS */
 	if (ConfigureParams.System.nCpuLevel == 0 || (TosVersion < 0x0300 && !bIsEmuTOS))
+	{
 		ConfigureParams.System.bAddressSpace24 = true;
+		M68000_CheckCpuSettings();
+	}
 
 	else if (ConfigureParams.Memory.nTTRamSize)
 	{
