@@ -181,12 +181,48 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 		else if ( ( OpcodeFamily == i_BCHG ) || ( OpcodeFamily == i_BCLR ) || ( OpcodeFamily == i_BSET ) )
 			;						/* Do nothing, the write is done during the last 4 cycles */
 
+		else if ( OpcodeFamily == i_MVMLE )
+		{
+			/* In the case of movem, CurrentInstrCycles is dynamic (depends on the number */
+			/* of registers to transfer). The 4*n for .W or 8*n for .L is not counted in CurrentInstrCycles */
+			/* The last 4 cycles of a movem are for prefetch, so number of cycles is : */
+			/* x + 4*n + 4 (movem.w) or x + 8*n + 4 (movem.l)  with x + 4 = CurrentInstrCycles */
+
+			if (nIoMemAccessSize == SIZE_LONG)		/* long access from a movem.l */
+			{
+				//AddCycles += -4 + IoAccessInstrCount * 8 - 4;
+				AddCycles -= 0;				/* NOTE [NP] : this is used by old uae cpu core but does not happen */
+									/* on real HW because IO regs can't be accessesed with a long */
+									/* FIXME : fix old uae cpu to remove long accesses to memory for 68000 ? */
+									/* We keep it this way fo now ... */
+			}
+			else						/* word access with movem.w or movem.l doing 2 words accesses per long */
+			{
+				AddCycles += -4 + IoAccessInstrCount * 4;
+			}
+		}
+
 		else
 		{
+#if 0
 			/* assume the behaviour of a 'move' (since this is the most */
 			/* common instr used when requiring cycle precise writes) */
 			if ( AddCycles >= 8 )
 				AddCycles -= 4;			/* last 4 cycles are for prefetch */
+#else
+			/* Default case : write first, then prefetch (mostly for 'move' since this is the most */
+			/* common instr used when requiring cycle precise writes) */
+			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
+				AddCycles -= 8;
+			else					/* word/byte access */
+			{
+				if ( IoAccessInstrCount == 0 )	/* instruction does only 1 access */
+					AddCycles -= 4;
+				else				/* instruction does multiple accesses (eg: move.l gives 2 word accesses) */
+					AddCycles += -12 + IoAccessInstrCount * 4;	/* gives -8 or -4 */
+			}
+
+#endif
 		}
 	}
 

@@ -61,6 +61,9 @@
 /*			the new WinUAE CPU core (move.l accesses for IO registers are in fact	*/
 /*			not possible on a 68000 STF, this is a bug in old UAE CPU core.		*/
 /*			A 'move.l' does 2 word accesses because STF bus is 16 bits)		*/
+/* 2015/10/02	[NP]	In Spec512_StoreCyclePalette, move the code to handle specific cycles	*/
+/*			for some opcodes into cycles.c and use Cycles_GetCounterOnWriteAccess()	*/
+/*			instead for all cases.							*/
 
 
 const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
@@ -159,11 +162,16 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	CycleColourIndex = (addr-0xff8240)>>1;
 
 	/* Find number of cycles into frame */
-	/* FIXME [NP] We should use Cycles_GetCounterOnWriteAccess, but it wouldn't	*/
+#if 1
+
+	FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+
+#else
+	/* FIXME [NP] We should use Cycles_GetCounterOnWriteAccess, but it wouldn't */
 	/* work when using multiple accesses instructions like move.l or movem	*/
 	/* To correct this, we use a few rules for the most common cases */
 	/* (should give a good approximation of a move.w or movem.l for example) */
-	//  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
 		FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
@@ -226,6 +234,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 		}
 	}
 
+#endif
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
 	Video_ConvertPosition ( FrameCycles , &ScanLine , &nHorPos );	
