@@ -1239,7 +1239,7 @@ bool memory_region_bus_error ( uaecptr addr )
  *
  * Possible values for ce_banktype :
  *  CE_MEMBANK_CHIP16	shared between CPU and DMA, bus width = 16 bits
- *  CE_MEMBANK_CHIP32	shared between CPU and DMA, bus width = 16 bits (AGA chipset)
+ *  CE_MEMBANK_CHIP32	shared between CPU and DMA, bus width = 32 bits (AGA chipset)
  *  CE_MEMBANK_FAST16	accessible only to the CPU,  bus width = 16 bits
  *  CE_MEMBANK_FAST32 	accessible only to the CPU,  bus width = 32 bits
  *  CE_MEMBANK_CIA	Amiga only, for CIA chips
