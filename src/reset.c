@@ -36,6 +36,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "falcon/dsp.h"
 #include "debugcpu.h"
 #include "debugdsp.h"
+#include "nf_scsidrv.h"
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -98,6 +99,10 @@ static int Reset_ST(bool bCold)
 	DebugDsp_SetDebugging();
 
 	Midi_Reset();
+
+#if defined(__linux__)
+        nf_scsidrv_reset();
+#endif
 
 	/* Start HBL, Timer B and VBL interrupts with a 0 cycle delay */
 	Video_StartInterrupts( 0 );

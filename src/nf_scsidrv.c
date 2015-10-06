@@ -23,16 +23,22 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c : " __DATE__ " " __TIME__;
 #include <scsi/sg.h>
 #include "stMemory.h"
 #include "log.h"
+#include "gemdos_defines.h"
 #include "nf_scsidrv.h"
 
-// The driver interface version, 1.00
-#define INTERFACE_VERSION 0x0100
+// The driver interface version, 1.01
+#define INTERFACE_VERSION 0x0101
 // Maximum is 20 characters
 #define BUS_NAME "Linux Generic SCSI"
 // The SG driver supports cAllCmds
 #define BUS_FEATURES 0x02
 // The transfer length may depend on the device, 65536 should always be safe
 #define BUS_TRANSFER_LEN 65536
+// The maximum number of SCSI Driver handles, must be the same as in stub
+#define SCSI_MAX_HANDLES 32
+
+
+static int fds[SCSI_MAX_HANDLES];
 
 
 static Uint32 read_stack_long(Uint32 *stack)
@@ -101,7 +107,7 @@ static int scsidrv_interface_features(Uint32 stack)
 
 static int scsidrv_inquire_bus(Uint32 stack)
 {
-    Uint16 id = read_stack_long(&stack);
+    Uint32 id = read_stack_long(&stack);
 
     LOG_TRACE(TRACE_SCSIDRV, "scsidrv_inquire_bus: id=%d", id);
 
@@ -123,15 +129,51 @@ static int scsidrv_inquire_bus(Uint32 stack)
 
 static int scsidrv_open(Uint32 stack)
 {
+    Uint32 handle = read_stack_long(&stack);
     Uint32 id = read_stack_long(&stack);
 
-    LOG_TRACE(TRACE_SCSIDRV, "scsidrv_open: id=%d", id);
+    LOG_TRACE(TRACE_SCSIDRV, "scsidrv_open: handle=%d, id=%d", handle, id);
     
-    return check_device_file(id);
+    if(handle >= SCSI_MAX_HANDLES || fds[handle] || check_device_file(id))
+    {
+        return GEMDOS_ENHNDL;
+    }
+
+    char device_file[16];
+    sprintf(device_file, "/dev/sg%d", id);
+
+    int fd = open(device_file, O_RDWR | O_NONBLOCK);
+    if(fd < 0)
+    {
+        return fd;
+    }
+
+    fds[handle] = fd;
+
+    return 0;
+}
+
+static int scsidrv_close(Uint32 stack)
+{
+    Uint32 handle = read_stack_long(&stack);
+
+    LOG_TRACE(TRACE_SCSIDRV, "scsidrv_close: handle=%d", handle);
+
+    if(handle >= SCSI_MAX_HANDLES || !fds[handle])
+    {
+        return GEMDOS_ENHNDL;
+    }
+
+    close(fds[handle]);
+
+    fds[handle] = 0;
+
+    return 0;
 }
 
 static int scsidrv_inout(Uint32 stack)
 {
+    Uint32 handle = read_stack_long(&stack);
     Uint32 dir = read_stack_long(&stack);
     Uint32 id = read_stack_long(&stack);
     unsigned char *cmd = read_stack_pointer(&stack);
@@ -148,10 +190,10 @@ static int scsidrv_inout(Uint32 stack)
     if(LOG_TRACE_LEVEL(TRACE_SCSIDRV))
     {
         LOG_TRACE_PRINT(
-            "scsidrv_inout: dir=%d, id=%d, cmd_len=%d, buffer=%p,\n"
+            "scsidrv_inout: handle=%d, dir=%d, id=%d, cmd_len=%d, buffer=%p,\n"
             "               transfer_len=%d, sense_buffer=%p, timeout=%d,\n"
             "               cmd=",
-            dir, id, cmd_len, buffer, transfer_len, sense_buffer,
+            handle, dir, id, cmd_len, buffer, transfer_len, sense_buffer,
             timeout);
 
         Uint32 i;
@@ -161,6 +203,11 @@ static int scsidrv_inout(Uint32 stack)
             sprintf(str, i ? ":$%02X" : "$%02X", cmd[i]);
             LOG_TRACE_PRINT("%s", str);
         }
+    }
+    
+    if(handle >= SCSI_MAX_HANDLES || !fds[handle])
+    {
+        return GEMDOS_ENHNDL;
     }
 
     // No explicit LUN support, the SG driver maps LUNs to device files
@@ -180,17 +227,6 @@ static int scsidrv_inout(Uint32 stack)
         return 2;
     }
 
-    char device_file[16];
-    sprintf(device_file, "/dev/sg%d", id);
-
-    int fd = open(device_file, O_RDWR | O_NONBLOCK | O_EXCL);
-    if(fd < 0) {
-        LOG_TRACE(TRACE_SCSIDRV, "               Cannot open device file %s",
-                  device_file);
-
-        return -1;
-    }
-    
     struct sg_io_hdr io_hdr;
     memset(&io_hdr, 0, sizeof(struct sg_io_hdr));
 
@@ -212,9 +248,7 @@ static int scsidrv_inout(Uint32 stack)
 
     io_hdr.timeout = timeout;
 
-    int status = ioctl(fd, SG_IO, &io_hdr) < 0 ? -1 : io_hdr.status;
-
-    close(fd);
+    int status = ioctl(fds[handle], SG_IO, &io_hdr) < 0 ? -1 : io_hdr.status;
 
     if(status > 0 && sense_buffer)
     {
@@ -242,6 +276,7 @@ static const struct {
     { scsidrv_interface_features },
     { scsidrv_inquire_bus },
     { scsidrv_open },
+    { scsidrv_close },
     { scsidrv_inout },
     { scsidrv_check_dev }
 };
@@ -262,6 +297,20 @@ bool nf_scsidrv(Uint32 stack, Uint32 subid, Uint32 *retval)
     }
 
     return true;
+}
+
+void nf_scsidrv_reset()
+{
+    int i;
+    for(i = 0; i < SCSI_MAX_HANDLES; i++)
+    {
+        if(fds[i])
+        {
+            close(fds[i]);
+
+            fds[i] = 0;
+        }
+    }
 }
 
 #endif
