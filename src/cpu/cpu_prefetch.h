@@ -334,7 +334,8 @@ STATIC_INLINE void ipl_fetch (void)
 STATIC_INLINE uae_u32 mem_access_delay_word_read (uaecptr addr)
 {
 	uae_u32 v;
-#ifndef WINUAE_FOR_HATARI
+//#ifndef WINUAE_FOR_HATARI
+#if 1
 	switch (ce_banktype[addr >> 16])
 	{
 	case CE_MEMBANK_CHIP16:
@@ -351,6 +352,7 @@ STATIC_INLINE uae_u32 mem_access_delay_word_read (uaecptr addr)
 		break;
 	}
 #else
+//fprintf ( stderr , "word read mis %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 	v = get_word (addr);
 	x_do_cycles_post (4 * cpucycleunit, v);
 #endif
@@ -360,7 +362,8 @@ STATIC_INLINE uae_u32 mem_access_delay_word_read (uaecptr addr)
 STATIC_INLINE uae_u32 mem_access_delay_wordi_read (uaecptr addr)
 {
 	uae_u32 v;
-#ifndef WINUAE_FOR_HATARI
+//#ifndef WINUAE_FOR_HATARI
+#if 1
 	switch (ce_banktype[addr >> 16])
 	{
 	case CE_MEMBANK_CHIP16:
@@ -377,6 +380,7 @@ STATIC_INLINE uae_u32 mem_access_delay_wordi_read (uaecptr addr)
 		break;
 	}
 #else
+//fprintf ( stderr , "wordi read mis %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 	v = get_wordi (addr);
 	x_do_cycles_post (4 * cpucycleunit, v);
 #endif
@@ -387,7 +391,8 @@ STATIC_INLINE uae_u32 mem_access_delay_wordi_read (uaecptr addr)
 STATIC_INLINE uae_u32 mem_access_delay_byte_read (uaecptr addr)
 {
 	uae_u32  v;
-#ifndef WINUAE_FOR_HATARI
+//#ifndef WINUAE_FOR_HATARI
+#if 1
 	switch (ce_banktype[addr >> 16])
 	{
 	case CE_MEMBANK_CHIP16:
@@ -404,6 +409,7 @@ STATIC_INLINE uae_u32 mem_access_delay_byte_read (uaecptr addr)
 		break;
 	}
 #else
+//fprintf ( stderr , "byte read mis %lu %lu\n" , currcycle / cpucycleunit , currcycle );
 	v = get_byte (addr);
 	x_do_cycles_post (4 * cpucycleunit, v);
 #endif
