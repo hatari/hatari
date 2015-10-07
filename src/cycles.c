@@ -25,6 +25,9 @@
 /*			'Bird Mad Girl Show' demo's loader/protection)			*/
 /* 2012/08/19	[NP]	Add a global counter CyclesGlobalClockCounter to count cycles	*/
 /*			since the last reset.						*/
+/* 2015/10/04	[NP]	In Cycles_GetInternalCycleOnReadAccess / WriteAccess, use the	*/
+/*			sub-cycles provided by WinUAE cpu core when using cycle exact	*/
+/*			mode (instead of using heuristics for the most common opcodes).	*/
 
 
 const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
@@ -34,6 +37,7 @@ const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "cycles.h"
 #include "ioMem.h"
+#include "hatari-glue.h"
 
 
 int	nCyclesMainCounter;			/* Main cycles counter since previous Cycles_UpdateCounters() */
@@ -124,6 +128,17 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 	{
 		AddCycles = 4 + nWaitStateCycles;
 	}
+//#if 0
+#ifdef WINUAE_FOR_HATARI
+	/* When using WinUAE CPU in CE mode, 'currcycle' will be the number of cycles */
+	/* inside the current opcode just before accessing memory. As memory accesses */
+	/* take 4 cycles, we just need to add 4 cycles to get the number of cycles */
+	/* when the read will be completed. */
+	else if ( currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010 )
+	{
+		AddCycles = currcycle*2/CYCLE_UNIT + 4 + nWaitStateCycles;
+	}
+#endif
 	else							/* BUS_MODE_CPU */
 	{
 		/* TODO: Find proper cycles count depending on the opcode/family of the current instruction */
@@ -161,6 +176,16 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 	{
 		AddCycles = 4 + nWaitStateCycles;
 	}
+#ifdef WINUAE_FOR_HATARI
+	/* When using WinUAE CPU in CE mode, 'currcycle' will be the number of cycles */
+	/* inside the current opcode just before accessing memory. As memory accesses */
+	/* take 4 cycles, we just need to add 4 cycles to get the number of cycles */
+	/* when the write will be completed. */
+	else if ( currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010 )
+	{
+		AddCycles = currcycle*2/CYCLE_UNIT + 4 + nWaitStateCycles;
+	}
+#endif
 	else							/* BUS_MODE_CPU */
 	{
 		/* TODO: Find proper cycles count depending on the type of the current instruction */

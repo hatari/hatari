@@ -804,7 +804,12 @@ static Uint32 Video_CalculateAddress ( void )
 
 	/* Find number of cycles passed during frame */
 	/* We need to subtract '12' for correct video address calculation */
-	FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 12;
+#ifdef WINUAE_FOR_HATARI
+	if ( currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010 )
+		FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 8;
+	else
+#endif
+		FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 12;
 
 	/* Now find which pixel we are on (ignore left/right borders) */
 	Video_ConvertPosition ( FrameCycles , &HblCounterVideo , &LineCycles );
