@@ -4438,7 +4438,11 @@ printf ( "run_1_ce\n" );
 				* here in CE mode (so this should be removed later), but until
 				* we're really there, this helps to get this mode running
 				* at least to a basic extend! */
+#if 0
 				M68000_AddCyclesWithPairing(currcycle * 2 / CYCLE_UNIT);
+#else
+				M68000_AddCycles_CE(currcycle * 2 / CYCLE_UNIT);
+#endif
 
 				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 					/* Add some extra cycles to simulate a wait state */

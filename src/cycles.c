@@ -176,6 +176,7 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 	{
 		AddCycles = 4 + nWaitStateCycles;
 	}
+//#if 0
 #ifdef WINUAE_FOR_HATARI
 	/* When using WinUAE CPU in CE mode, 'currcycle' will be the number of cycles */
 	/* inside the current opcode just before accessing memory. As memory accesses */

@@ -334,6 +334,27 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 }
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Add CPU cycles when using WinUAE CPU 'cycle exact' mode.
+ * In this mode, we should not round cycles to the next nearest 4 cycles
+ * because all memory accesses will already be aligned to 4 cycles when
+ * using CE mode.
+ * The CE mode will also give the correct 'instruction pairing' for all
+ * opcodes/addressing mode, without requiring tables/heuristics (in the
+ * same way that it's done in real hardware)
+ */
+static inline void M68000_AddCycles_CE(int cycles)
+{
+	cycles = cycles >> nCpuFreqShift;
+
+	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cycles, INT_CPU_CYCLE);
+	nCyclesMainCounter += cycles;
+	CyclesGlobalClockCounter += cycles;
+}
+
+
+
 extern void M68000_Init(void);
 extern void M68000_Reset(bool bCold);
 extern void M68000_Start(void);

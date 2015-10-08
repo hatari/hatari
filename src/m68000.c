@@ -67,6 +67,9 @@
 /* 2015/02/05	[NP]	For the new WinUAE's cpu, don't use ExceptionSource anymore when calling	*/
 /*			Exception().									*/
 /* 2015/02/11	[NP]	Replace BusErrorPC by regs.instruction_pc, to get similar code to WinUAE's cpu  */
+/* 2015/10/08	[NP]	Add M68000_AddCycles_CE() to handle cycles when running with WinUAE's cpu in	*/
+/*			'cycle exact' mode. In that case, instruction pairing don't have to be handled	*/
+/*			with some tables/heuristics anymore.						*/
 
 
 const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
