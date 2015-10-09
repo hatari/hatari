@@ -419,7 +419,8 @@ STATIC_INLINE uae_u32 mem_access_delay_byte_read (uaecptr addr)
 STATIC_INLINE void mem_access_delay_byte_write (uaecptr addr, uae_u32 v)
 {
 	regs.db = (v << 8)  | v;
-#ifndef WINUAE_FOR_HATARI
+//#ifndef WINUAE_FOR_HATARI
+#if 1
 	switch (ce_banktype[addr >> 16])
 	{
 	case CE_MEMBANK_CHIP16:
@@ -439,7 +440,8 @@ STATIC_INLINE void mem_access_delay_byte_write (uaecptr addr, uae_u32 v)
 }
 STATIC_INLINE void mem_access_delay_word_write (uaecptr addr, uae_u32 v)
 {
-#ifndef WINUAE_FOR_HATARI
+//#ifndef WINUAE_FOR_HATARI
+#if 1
 	regs.db = v;
 	switch (ce_banktype[addr >> 16])
 	{
