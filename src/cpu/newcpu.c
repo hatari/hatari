@@ -2242,8 +2242,11 @@ static int iack_cycle(int nr)
 
 		if ( vector < 0 )						/* No DSP, check MFP */
 		{
-			M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_MFP );
-	      // TODO : add CE cycles too
+			if ( currprefs.cpu_cycle_exact )
+				x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_MFP ) * cpucycleunit );
+			else
+				M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_MFP );
+
 			CPU_IACK = true;
 			while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 				CALL_VAR(PendingInterruptFunction);
@@ -2253,18 +2256,20 @@ static int iack_cycle(int nr)
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
 	{
-		iack_start -= 2;			/* [NP] work in progress for e clock, TODO we need to check the complete sequence of interrupt micro code */
 		e_cycles = M68000_WaitEClock ();
-		//fprintf ( stderr , "wait e clock %d\n" , e_cycles);
+//		fprintf ( stderr , "wait e clock %d\n" , e_cycles);
 
-		M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles );
-	// TODO : add CE cycles too
+		if ( currprefs.cpu_cycle_exact )
+			x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles ) * cpucycleunit );
+		else
+			M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles );
+
 		CPU_IACK = true;
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
 			CALL_VAR(PendingInterruptFunction);
 		if ( MFP_UpdateNeeded == true )
 			MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
-		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit */
+		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit, MFP has higher priority */
 		CPU_IACK = false;
 	}
 
@@ -2273,6 +2278,10 @@ static int iack_cycle(int nr)
 	if ( vector < 0 )
 	{
 	}
+
+	/* Add 4 idle cycles for CE mode. For non-CE mode, this will be counted in add_approximate_exception_cycles() */
+	if ( currprefs.cpu_cycle_exact )
+		x_do_cycles( 4 * cpucycleunit );
 #endif
 	return vector;
 }
@@ -2284,8 +2293,8 @@ static void Exception_ce000 (int nr)
 	int start, interrupt;
 	int vector_nr = nr;
 
-//fprintf ( stderr , "ex in %d %ld\n" , nr , currcycle );
-currcycle=0;
+//fprintf ( stderr , "ex in %d %ld %ld\n" , nr , currcycle , CyclesGlobalClockCounter );
+	currcycle=0;
 	start = 6;
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
@@ -2390,8 +2399,10 @@ currcycle=0;
 		}
 		exception_in_exception = 1;
 		x_put_word (m68k_areg (regs, 7) + 4, currpc); // write low address
+//fprintf ( stderr , "ex iack1 %d %ld\n" , nr , currcycle );
 		if (interrupt)
 			vector_nr = iack_cycle(nr);
+//fprintf ( stderr , "ex iack2 %d %ld\n" , nr , currcycle );
 		x_put_word (m68k_areg (regs, 7) + 0, regs.sr); // write SR
 		x_put_word (m68k_areg (regs, 7) + 2, currpc >> 16); // write high address
 	}
@@ -2417,26 +2428,9 @@ kludge_me_do:
 
 //fprintf ( stderr , "ex out %d %ld\n" , nr , currcycle );
 #ifdef WINUAE_FOR_HATARI
-	/* FIXME : Above code already counts 36 cycles for interrupt, add the remaining ST cycles */
-	/* This is temporary, code should be in iack_cycle() */
-	M68000_AddCycles(currcycle * 2 / CYCLE_UNIT);
-
-	/* Handle exception cycles (special case for MFP) */
-	if ( nr == 30 ) {
-		//M68000_AddCycles(44+12-CPU_IACK_CYCLES_MFP);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
-		M68000_AddCycles(44-36);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
-	}
-	else if (nr >= 24 && nr <= 31) {
-		if ( nr == 26 )					/* HBL */
-			//M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
-			M68000_AddCycles(44-36);	/* Video Interrupt */
-		else if ( nr == 28 ) 				/* VBL */
-			//M68000_AddCycles(44+12-CPU_IACK_CYCLES_VIDEO);	/* Video Interrupt */
-			M68000_AddCycles(44-36);	/* Video Interrupt */
-		else
-			//M68000_AddCycles(44+4);			/* Other Interrupts */
-			M68000_AddCycles(44-36);			/* Other Interrupts */
-	}
+	/* Add all cycles needed for the exception */
+	M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+	currcycle = 0;
 #endif
 }
 #endif
@@ -2780,9 +2774,9 @@ static void add_approximate_exception_cycles(int nr)
 		else if ( nr == 28 )				/* VBL */
 			cycles = 56-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO;
 		else if ( nr == 26 )				/* HBL */
-			cycles = 56-CPU_IACK_CYCLES_START- CPU_IACK_CYCLES_VIDEO;
+			cycles = 56-CPU_IACK_CYCLES_START-CPU_IACK_CYCLES_VIDEO;
 		else
-			cycles = 44+4;				/* Other interrupts */
+			cycles = 44+4;				/* Other interrupts (not used in Atari machines) */
 #endif
 	} else if (nr >= 32 && nr <= 47) {
 		/* Trap (total is 34, but cpuemux.c already adds 4) */ 

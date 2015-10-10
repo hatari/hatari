@@ -172,7 +172,7 @@ static inline void M68000_SetSR(Uint16 v)
  * to get the correct behaviour in some games/demos relying on this ; since timings
  * are rounded to 4 on ST, it's possible the interrupt takes 54 cycles and not 56.
  *
- * WinUAE cycles (measured on real A500 HW) :
+ * WinUAE cycles (measured on real A500 HW) + ST specific values :
  *
  *   6		idle cycles
  *   2(*)	ST bus access penalty
@@ -191,7 +191,8 @@ static inline void M68000_SetSR(Uint16 v)
  *
  *   (*) ST specific timings
  */
-#define CPU_IACK_CYCLES_START	12			/* number of cycles before starting the IACK */
+#define CPU_IACK_CYCLES_START	12			/* number of cycles before starting the IACK when not using CE mode */
+							/* (this should be a multiple of 4, else it will be rounded by M68000_AddCycles) */
 #define CPU_IACK_CYCLES_MFP	12			/* vector sent by the MFP */
 #define CPU_IACK_CYCLES_VIDEO	12			/* auto vectored for HBL/VBL */
 
