@@ -562,11 +562,20 @@ void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource)
 #else
 	if ( ExceptionNr > 24 && ExceptionNr < 32 )		/* Level 1-7 interrupts */
 	{
+#if 0
 		/* In our case, this part is called for HBL, VBL and MFP/DSP interrupts */
 		/* (see intlev() and do_specialties() in UAE CPU core) */
 		int intnr = ExceptionNr - 24;
 		pendingInterrupts |= (1 << intnr);
 		doint();
+#else
+		/* In our case, this part is called for HBL, VBL and MFP/DSP interrupts */
+		/* For WinUAE CPU, we must call M68000_Update_intlev after changing pendingInterrupts */
+		/* (in order to call doint() and to update regs.ipl with regs.ipl_pin, else */
+		/* the exception might be delayed by one instruction in do_specialties()) */
+		pendingInterrupts |= (1 << ( ExceptionNr - 24 ));
+		M68000_Update_intlev();
+#endif
 	}
 
 	else							/* direct CPU exceptions */

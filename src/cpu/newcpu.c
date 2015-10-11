@@ -3817,9 +3817,11 @@ void doint (void)
 			return;
 	}
 #endif
+//fprintf ( stderr , "doint1 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
 	if (m68k_interrupt_delay) {
 		regs.ipl_pin = intlev ();
 		unset_special (SPCFLAG_INT);
+//fprintf ( stderr , "doint2 %d ipl=%x ipl_pin=%x intmask=%x spcflags=%x\n" , m68k_interrupt_delay,regs.ipl, regs.ipl_pin , regs.intmask, regs.spcflags );
 		return;
 	}
 	if (currprefs.cpu_compatible && currprefs.cpu_model < 68020)
@@ -4086,6 +4088,7 @@ static int do_specialties (int cycles)
 	}
 #endif
 
+//fprintf ( stderr , "dospec1 %d %d spcflags=%x ipl=%x ipl_pin=%x intmask=%x\n" , m68k_interrupt_delay,time_for_interrupt() , regs.spcflags , regs.ipl , regs.ipl_pin, regs.intmask );
 	if (m68k_interrupt_delay) {
 		if (time_for_interrupt ()) {
 			do_interrupt (regs.ipl);
@@ -4099,10 +4102,12 @@ static int do_specialties (int cycles)
 		}
 	}
 
+//fprintf ( stderr , "dospec2 %d %d spcflags=%x ipl=%x ipl_pin=%x intmask=%x\n" , m68k_interrupt_delay,time_for_interrupt() , regs.spcflags , regs.ipl , regs.ipl_pin, regs.intmask );
 	if (regs.spcflags & SPCFLAG_DOINT) {
 		unset_special (SPCFLAG_DOINT);
 		set_special (SPCFLAG_INT);
 	}
+//fprintf ( stderr , "dospec3 %d %d spcflags=%x ipl=%x ipl_pin=%x intmask=%x\n" , m68k_interrupt_delay,time_for_interrupt() , regs.spcflags , regs.ipl , regs.ipl_pin, regs.intmask );
 
 #ifdef WINUAE_FOR_HATARI
         if (regs.spcflags & SPCFLAG_DEBUGGER)
