@@ -2312,7 +2312,7 @@ static void Exception_ce000 (int nr)
 			start = 0;
 		else if (nr >= 32 && nr < 32 + 16) // TRAP #x
 			start = 4;
-		else if (nr == 4 || nr == 8 || nr == 10 || nr == 11) // ILLG, PRIV, LINEA, LINEF
+		else if (nr == 4 || nr == 8 || nr == 9 || nr == 10 || nr == 11) // ILLG, PRIV, TRACE, LINEA, LINEF
 			start = 4;
 	}
 
