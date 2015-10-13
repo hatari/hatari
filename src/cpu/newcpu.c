@@ -2243,7 +2243,12 @@ static int iack_cycle(int nr)
 		if ( vector < 0 )						/* No DSP, check MFP */
 		{
 			if ( currprefs.cpu_cycle_exact )
+			{
 				x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_MFP ) * cpucycleunit );
+				/* Flush all CE cycles so far to update PendingInterruptCount */
+				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+				currcycle=0;
+			}
 			else
 				M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_MFP );
 
@@ -2260,7 +2265,12 @@ static int iack_cycle(int nr)
 //		fprintf ( stderr , "wait e clock %d\n" , e_cycles);
 
 		if ( currprefs.cpu_cycle_exact )
+		{
 			x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles ) * cpucycleunit );
+			/* Flush all CE cycles so far to update PendingInterruptCount */
+			M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+			currcycle=0;
+		}
 		else
 			M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles );
 
@@ -2269,7 +2279,7 @@ static int iack_cycle(int nr)
 			CALL_VAR(PendingInterruptFunction);
 		if ( MFP_UpdateNeeded == true )
 			MFP_UpdateIRQ ( 0 );					/* update MFP's state if some internal timers related to MFP expired */
-		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit, MFP has higher priority */
+		pendingInterrupts &= ~( 1 << ( nr - 24 ) );			/* clear HBL or VBL pending bit (even if an MFP timer occurred during IACK) */
 		CPU_IACK = false;
 	}
 
