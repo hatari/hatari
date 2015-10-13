@@ -2304,7 +2304,6 @@ static void Exception_ce000 (int nr)
 	int vector_nr = nr;
 
 //fprintf ( stderr , "ex in %d %ld %ld\n" , nr , currcycle , CyclesGlobalClockCounter );
-	currcycle=0;
 	start = 6;
 #ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
@@ -4026,8 +4025,12 @@ static int do_specialties (int cycles)
 		if (!first)
 		{
 			if ( currprefs.cpu_cycle_exact )
-				M68000_AddCycles(2);
-			else						/* TODO [NP] : always do only M68000_AddCycles(2) ? */
+			{
+				/* Flush all CE cycles so far to update PendingInterruptCount */
+				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+				currcycle = 0;
+			}
+			else
 				M68000_AddCycles(4);
 		}
 
@@ -4443,18 +4446,13 @@ printf ( "run_1_ce\n" );
 				wait_memory_cycles();			// TODO NP : ici, ou plus bas ?
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr, "cyc_1ce %d\n" , currcycle );
-				/* HACK for Hatari: Adding cycles should of course not be done
-				* here in CE mode (so this should be removed later), but until
-				* we're really there, this helps to get this mode running
-				* at least to a basic extend! */
-#if 0
-				M68000_AddCyclesWithPairing(currcycle * 2 / CYCLE_UNIT);
-#else
-				M68000_AddCycles_CE(currcycle * 2 / CYCLE_UNIT);
-#endif
+				/* Flush all CE cycles so far to update PendingInterruptCount */
+				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+				currcycle = 0;
 
 				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 					/* Add some extra cycles to simulate a wait state */
+					/* TODO : in CE mode, extra cycle should be added during the opcode, not at the end */
 					unset_special(SPCFLAG_EXTRA_CYCLES);
 					M68000_AddCycles(nWaitStateCycles);
 					nWaitStateCycles = 0;
