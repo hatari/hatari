@@ -2305,12 +2305,7 @@ static void Exception_ce000 (int nr)
 
 //fprintf ( stderr , "ex in %d %ld %ld\n" , nr , currcycle , CyclesGlobalClockCounter );
 	start = 6;
-#ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
-#else
-	if ( nr >= 24 && nr < 24 + 8 )
-		interrupt = 1;
-#endif
 	if (!interrupt) {
 		start = 8;
 		if (nr == 7) // TRAPV
@@ -2616,12 +2611,7 @@ static void Exception_mmu030 (int nr, uaecptr oldpc)
     uae_u32 currpc = m68k_getpc (), newpc;
 	int interrupt;
 
-#ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
-#else
-	if ( nr >= 24 && nr < 24 + 8 )
-		interrupt = 1;
-#endif
 
 #ifdef WINUAE_FOR_HATARI
 	if (interrupt)
@@ -2694,12 +2684,7 @@ static void Exception_mmu (int nr, uaecptr oldpc)
 	uae_u32 currpc = m68k_getpc (), newpc;
 	int interrupt;
 
-#ifndef WINUAE_FOR_HATARI
 	interrupt = nr >= 24 && nr < 24 + 8;
-#else
-	if ( nr >= 24 && nr < 24 + 8 )
-		interrupt = 1;
-#endif
 
 #ifdef WINUAE_FOR_HATARI
 	if (interrupt)
