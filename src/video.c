@@ -1421,14 +1421,6 @@ void Video_Sync_WriteByte ( void )
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
 			}
 
-			/* [FIXME] 'Gen 4 Demo' by Ziggy Stardust / OVR. Same problem as 'Panic' above */
-			else if ( ( STMemory_ReadLong ( M68000_GetPC()-4 ) == 0x0002820a )
-			  && ( STMemory_ReadLong ( M68000_GetPC()+6 ) == 0x10388209  )
-			  && ( HblCounterVideo == 34 ) && ( LineCycles == 56 ) )
-			{
-				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
-			}
-
 			/* Normal case where left+2 should be made */
 			else
 			{
