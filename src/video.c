@@ -815,6 +815,13 @@ static Uint32 Video_CalculateAddress ( void )
 	Video_ConvertPosition ( FrameCycles , &HblCounterVideo , &LineCycles );
 
 	Res = IoMem_ReadByte ( 0xff8260 ) & 3;
+
+	/* [FIXME] 'Delirious Demo IV' protection : reads FF8209 between a high/low switch */
+	/* on a low res screen. So far, Hatari doesn't handle mixed resolutions */
+	/* on the same line, so we ignore the hi switch in that case */
+	if ( ( M68000_InstrPC == 0x2110 ) && ( STMemory_ReadLong ( M68000_InstrPC ) == 0x14101280 ) )	/* move.b (a0),d2 + move.b d0,(a1) */
+		Res = 0;					/* force to low res to pass the protection */
+	
 	if ( Res & 2 )						/* hi res */
 	{
 	        LineStartCycle = LINE_START_CYCLE_71;
