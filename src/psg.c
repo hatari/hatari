@@ -62,12 +62,21 @@
 /*			then we must return the value that was written to $ff8802	*/
 /*			without masking the unused bit (fix the game Murders In Venice,	*/
 /*			which expects to read $10 from reg 3).				*/
+/* 2015/10/15	[NP]	Better handling of the wait states when accessing YM2149 regs.	*/
+/*			Replace M68000_WaitState(1) by PSG_WaitState() which adds	*/
+/*			4 cycles every 4th access. Previous method worked because all	*/
+/*			cycles were rounded to 4, but it was not how real HW works and	*/
+/*			would not work in cycle exact mode where cycles are not rounded.*/
 
 
 /* Emulating wait states when accessing $ff8800/01/02/03 with different 'move' variants	*/
 /* is a complex task. So far, adding 1 cycle wait state to each access and rounding the	*/
-/* final number to 4 gives some good results, but this is certainly not the way it's	*/
+/* final number to 4 gave some good results, but this is certainly not the way it's	*/
 /* working for real in the ST.								*/
+/* Also in Hatari it only works when the cpu rounds all	cycles to the next multiple	*/
+/* of 4, but it will not work when running in cycle exact mode. This means we must	*/
+/* add 4 cycles at a time, but not on every register access , see below.		*/
+/*											*/
 /* The following examples show some verified wait states for different accesses :	*/
 /*	lea     $ffff8800,a1								*/
 /*	lea     $ffff8802,a2								*/
@@ -99,12 +108,19 @@
 /*	movep.w	d0,(a3)				(X-Out)					*/
 /*											*/
 /* This gives the following "model" :							*/
-/*	- each access to $ff8800 or $ff8802 add 1 cycle wait state			*/
+/*	- each instruction accessing a valid YM2149 register gets an initial 4 cycle	*/
+/*	  wait state for the 1st access (whether it accesses just 1 reg (eg move.b)	*/
+/*	  or up to 4 regs (movep.l)).							*/
+/*	- susbequent accesses made by the same instruction don't add more wait state	*/
+/*	  (except if the instruction is a MOVEM).					*/
+/*	- MOVEM can access more than 4 regs (up to 15) : in that case we add 4 extra	*/
+/*	  cycles each time we access a 4th register (eg : regs 4,8,12, ...)		*/
 /*	- accesses to $ff8801 or $ff8803 are considered "valid" only if we don't access	*/
-/*	  the corresponding "non shadow" addresses $ff8800/02 at the same time.		*/
+/*	  the corresponding "non shadow" addresses $ff8800/02 at the same time (ie with	*/
+/*	  the same instruction).							*/
 /*	  This means only .B size (move.b for example) or movep opcode will work.	*/
-/*	  If the access is valid, add 1 cycle wait state, else ignore the write and	*/
-/*	  don't add any cycle.								*/
+/*	  If the access is valid, add 4 cycle wait state when necessary, else ignore	*/
+/*	  the write and	don't add any cycle.						*/
 
 
 
@@ -392,11 +408,50 @@ void PSG_Set_DataRegister(Uint8 val)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Handle wait state when accessing YM2149 registers
+ * - each instruction accessing YM2149 gets an initial 4 cycle wait state
+ *   for the 1st access (whether it accesses just 1 reg (eg move.b) or up to 4 regs (movep.l))
+ * - special case for movem which can access more than 4 regs (up to 15) :
+ *   we add 4 extra cycles each time we access a 4th reg (eg : regs 4,8,12, ...)
+ *
+ * See top of this file for several examples measured on real STF
+ */
+static void PSG_WaitState(void)
+{
+#if 0
+	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
+#else
+	static Uint64	PSG_InstrPrevClock;
+	static int	NbrAccesses;
+
+	if ( PSG_InstrPrevClock != CyclesGlobalClockCounter )	/* New instruction accessing YM2149 : add 4 cycles */
+	{
+		M68000_WaitState ( 4 );
+		PSG_InstrPrevClock = CyclesGlobalClockCounter;
+		NbrAccesses = 0;
+	}
+
+	else							/* Same instruction doing several accesses : only movem can add more cycles */
+	{
+		if ( ( OpcodeFamily == i_MVMEL ) || ( OpcodeFamily == i_MVMLE ) )
+		{
+			NbrAccesses += 1;
+			if ( NbrAccesses % 4 == 0 )		/* Add 4 extra cycles every 4th access */
+				M68000_WaitState ( 4 );
+		}
+	}
+
+#endif
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Read byte from 0xff8800. Return current content of data register
  */
 void PSG_ff8800_ReadByte(void)
 {
-	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
+	PSG_WaitState();
 
 	IoMem[IoAccessCurrentAddress] = PSG_Get_DataRegister();
 
@@ -417,7 +472,7 @@ void PSG_ff8800_ReadByte(void)
  */
 void PSG_ff880x_ReadByte(void)
 {
-	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
+	PSG_WaitState();
 
 	IoMem[IoAccessCurrentAddress] = 0xff;
 
@@ -439,8 +494,7 @@ void PSG_ff880x_ReadByte(void)
  */
 void PSG_ff8800_WriteByte(void)
 {
-//	M68000_WaitState(4);
-	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
+	PSG_WaitState();
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
@@ -466,7 +520,7 @@ void PSG_ff8801_WriteByte(void)
 {
 	if ( nIoMemAccessSize == SIZE_BYTE )		/* byte access or movep */
 	{	
-		M68000_WaitState(1);			/* [NP] FIXME not 100% accurate, but gives good results */
+		PSG_WaitState();
 	
 		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 		{
@@ -500,8 +554,7 @@ void PSG_ff8801_WriteByte(void)
  */
 void PSG_ff8802_WriteByte(void)
 {
-//	M68000_WaitState(4);
-	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
+	PSG_WaitState();
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
@@ -527,7 +580,7 @@ void PSG_ff8803_WriteByte(void)
 {
 	if ( nIoMemAccessSize == SIZE_BYTE )		/* byte access or movep */
 	{	
-		M68000_WaitState(1);			/* [NP] FIXME not 100% accurate, but gives good results */
+		PSG_WaitState();
 	
 		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 		{
