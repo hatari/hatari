@@ -107,6 +107,10 @@
 /*											*/
 /*	movep.w	d0,(a3)				(X-Out)					*/
 /*											*/
+/*	clr.b (a1)		; 20 12+8	(4 for read + 4 for write)		*/
+/*	tas (a1)		; 16 		(no waitstate ?)			*/
+/*											*/
+/*											*/
 /* This gives the following "model" :							*/
 /*	- each instruction accessing a valid YM2149 register gets an initial 4 cycle	*/
 /*	  wait state for the 1st access (whether it accesses just 1 reg (eg move.b)	*/
