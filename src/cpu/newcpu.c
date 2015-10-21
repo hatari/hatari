@@ -3994,6 +3994,7 @@ static int do_specialties (int cycles)
 	bool first = true;
 	while ((regs.spcflags & SPCFLAG_STOP) && !(regs.spcflags & SPCFLAG_BRK)) {
 	isstopped:
+//fprintf ( stderr , "stop wait %d %ld %ld\n" , currcycle , CyclesGlobalClockCounter );
 #ifndef WINUAE_FOR_HATARI
 		check_uae_int_request();
 		{
@@ -7270,9 +7271,13 @@ void m68k_setstopped (void)
 	regs.stopped = 1;
 	/* A traced STOP instruction drops through immediately without
 	actually stopping.  */
-	if ((regs.spcflags & SPCFLAG_DOTRACE) == 0)
+	if ((regs.spcflags & SPCFLAG_DOTRACE) == 0) {
 		set_special (SPCFLAG_STOP);
-	else
+		if (currprefs.cpu_cycle_exact && currprefs.cpu_model == 68000) {
+			// STOP needs at least 4 extra cycles before it can wake up
+			x_do_cycles (4 * cpucycleunit);
+		}
+	} else
 		m68k_resumestopped ();
 }
 
