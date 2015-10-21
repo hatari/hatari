@@ -2261,18 +2261,29 @@ static int iack_cycle(int nr)
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
 	{
+		if ( currprefs.cpu_cycle_exact )
+		{
+			/* In CE mode, iack_start = 0, no need to call x_do_cycles() */
+			//x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles ) * cpucycleunit );
+			/* Flush all CE cycles so far before calling M68000_WaitEClock() */
+			M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+			currcycle = 0;
+		}
+		else
+			M68000_AddCycles ( iack_start );
+
 		e_cycles = M68000_WaitEClock ();
 //		fprintf ( stderr , "wait e clock %d\n" , e_cycles);
 
 		if ( currprefs.cpu_cycle_exact )
 		{
-			x_do_cycles ( ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles ) * cpucycleunit );
+			x_do_cycles ( ( e_cycles + CPU_IACK_CYCLES_VIDEO_CE ) * cpucycleunit );
 			/* Flush all CE cycles so far to update PendingInterruptCount */
 			M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
-			currcycle=0;
+			currcycle = 0;
 		}
 		else
-			M68000_AddCycles ( iack_start + CPU_IACK_CYCLES_VIDEO + e_cycles );
+			M68000_AddCycles ( e_cycles + CPU_IACK_CYCLES_VIDEO );
 
 		CPU_IACK = true;
 		while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
@@ -4385,6 +4396,7 @@ printf ( "run_1_ce\n" );
 
 					Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
+//fprintf ( stderr , "clock %ld\n" , CyclesGlobalClockCounter );
 					LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 					m68k_disasm_file(stderr, m68k_getpc (), NULL, 1);
 				}

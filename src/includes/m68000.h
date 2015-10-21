@@ -157,44 +157,60 @@ static inline void M68000_SetSR(Uint16 v)
  * between the start of the exception and the IACK sequence. In that case, we
  * might have to set pending bit twice and change the interrupt vector.
  *
- * From the 68000's doc, IACK starts after 10 cycles (12 cycles on STF) and is
- * supposed to take 4 cycles if the interrupt takes a total of 44 cycles.
+ * From the 68000's doc, IACK starts after 10 cycles (12 cycles on STF due to 2 cycle
+ * bus penalty) and is supposed to take 4 cycles if the interrupt takes a total of 44 cycles.
  *
  * On Atari STF, interrupts take 56 cycles instead of 44, which means it takes
  * 12 extra cycles to fetch the vector number and to handle non-aligned memory accesses.
  * From WinUAE's CE mode, we have 2 non-aligned memory accesses to wait for (ie 2+2 cycles),
  * which leaves a total of 12 cycles to fetch the vector.
- * This means we have at max 12+12=24 cycles after the start of the exception where some
+ *
+ * As seen wth a custom program on STF that measures HBL's jitter, we get the same results with Hatari
+ * in CE mode if we use 10 cycles to fetch the vector (step 3), which will also add 2 cycle penalty (step 4b)
+ * This means we have at max 12+10=22 cycles after the start of the exception where some
  * changes can happen (maybe it's a little less, depending on when the interrupt
  * vector is written on the bus).
  *
- * The values we use were not measured on real ST hardware, they were adjusted
- * to get the correct behaviour in some games/demos relying on this ; since timings
- * are rounded to 4 on ST, it's possible the interrupt takes 54 cycles and not 56.
+ * Additionally, auto vectored interrupts (HBL and VBL) require to be in sync with E-clock,
+ * which can add 0 to 8 cycles (step 3a). In that case we have between 22+0 and 22+8 cycles
+ * to get another interrupt before vector is written on the bus.
  *
- * WinUAE cycles (measured on real A500 HW) + ST specific values :
+ * The values we use were not entirely measured on real ST hardware, they were guessed/adjusted
+ * to get the correct behaviour in some games/demos relying on this.
+ * These values are when running in CE mode (2 cycle precision) ; when CPU runs in prefetch
+ * mode, values need to be rounded to 4).
  *
- *   6		idle cycles
- *   2(*)	ST bus access penalty
- *   4		write PC low word
- *   12(*)	read exception number
- *   4		idle cycles
- *   4		write SR
- *   4		write PC high word
- *   4		read exception address high word
- *   4		read exception address low word
- *   4		prefetch
- *   2		idle cycles
- *   2(*)	ST bus access penalty
- *   4		prefetch
- *   TOTAL = 56
+ * Interrupt steps + WinUAE cycles (measured on real A500 HW) + ST specific values :
+ *
+ * 1	6	idle cycles
+ * 1b	2(*)	ST bus access penalty (if necessary)
+ * 2	4	write PC low word
+ * 3a	0-8(*)	wait for E-clock for auto vectored interrupt
+ * 3	10(*)	read exception number
+ * 4	4	idle cycles
+ * 4b	2(*)	ST bus access penalty
+ * 5	4	write SR
+ * 6	4	write PC high word
+ * 7	4	read exception address high word
+ * 8	4	read exception address low word
+ * 9	4	prefetch
+ * 10	2	idle cycles
+ * 10b	2(*)	ST bus access penalty
+ * 11	4	prefetch
+ *  TOTAL = 56
  *
  *   (*) ST specific timings
  */
-#define CPU_IACK_CYCLES_START	12			/* number of cycles before starting the IACK when not using CE mode */
+
+/* Values for IACK sequence when running in cycle exact mode */
+#define CPU_IACK_CYCLES_MFP_CE		12		/* vector sent by the MFP (TODO value not measured on real STF) */
+#define CPU_IACK_CYCLES_VIDEO_CE	10		/* auto vectored for HBL/VBL (value measured on real STF) */
+
+/* Values for IACK sequence when running in normal/prefetch mode */
+#define CPU_IACK_CYCLES_START		12		/* number of cycles before starting the IACK when not using CE mode */
 							/* (this should be a multiple of 4, else it will be rounded by M68000_AddCycles) */
-#define CPU_IACK_CYCLES_MFP	12			/* vector sent by the MFP */
-#define CPU_IACK_CYCLES_VIDEO	12			/* auto vectored for HBL/VBL */
+#define CPU_IACK_CYCLES_MFP		12		/* vector sent by the MFP */
+#define CPU_IACK_CYCLES_VIDEO		12		/* auto vectored for HBL/VBL */
 
 
 /* Informations about current CPU instruction */
