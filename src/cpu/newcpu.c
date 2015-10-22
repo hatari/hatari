@@ -2175,6 +2175,7 @@ CHK:
 
 Illegal Instruction:
 Privilege violation:
+Trace:
 Line A:
 Line F:
 
@@ -7273,12 +7274,9 @@ void m68k_setstopped (void)
 	actually stopping.  */
 	if ((regs.spcflags & SPCFLAG_DOTRACE) == 0) {
 		set_special (SPCFLAG_STOP);
-		if (currprefs.cpu_cycle_exact && currprefs.cpu_model == 68000) {
-			// STOP needs at least 4 extra cycles before it can wake up
-			x_do_cycles (4 * cpucycleunit);
-		}
-	} else
+	} else {
 		m68k_resumestopped ();
+	}
 }
 
 void m68k_resumestopped (void)
@@ -7286,9 +7284,8 @@ void m68k_resumestopped (void)
 	if (!regs.stopped)
 		return;
 	regs.stopped = 0;
-	if (currprefs.cpu_cycle_exact) {
-		if (currprefs.cpu_model == 68000)
-			x_do_cycles (6 * cpucycleunit);
+	if (currprefs.cpu_cycle_exact && currprefs.cpu_model == 68000) {
+		x_do_cycles (6 * cpucycleunit);
 	}
 	fill_prefetch ();
 	unset_special (SPCFLAG_STOP);
