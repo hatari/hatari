@@ -1629,6 +1629,7 @@ static void dsp_update_rn_modulo(Uint32 numreg, Sint16 modifier)
 {
 	Uint16 bufsize, modulo, lobound, hibound, bufmask;
 	Sint16 r_reg, orig_modifier=modifier;
+	float p;
 
 	modulo = dsp_core.registers[DSP_REG_M0+numreg]+1;
 	bufsize = 1;
@@ -1643,24 +1644,33 @@ static void dsp_update_rn_modulo(Uint32 numreg, Sint16 modifier)
 
 	r_reg = (Sint16) dsp_core.registers[DSP_REG_R0+numreg];
 
-	if (orig_modifier>modulo) {
-		while (modifier>bufsize) {
-			r_reg += bufsize;
-			modifier -= bufsize;
-		}
-		while (modifier<-bufsize) {
-			r_reg -= bufsize;
-			modifier += bufsize;
-		}
-	}
 
-	r_reg += modifier;
+	// [LS]
+	// If Nn>M, the result is data dependent and unpredictable, except for the special case where
+	// Nn=P * 2exp(k) , a multiple of the block size where P is a positive integer.
+	p = (float)(orig_modifier/bufsize);
+	if ((p == (int)p) && (orig_modifier>modulo)) {
+		r_reg += p*bufsize;
+	} else {
+		if (orig_modifier>modulo) {
+			while (modifier>bufsize) {
+				r_reg += bufsize;
+				modifier -= bufsize;
+			}
+			while (modifier<-bufsize) {
+				r_reg -= bufsize;
+				modifier += bufsize;
+			}
+		}
 
-	if (orig_modifier!=modulo) {
-		if (r_reg>hibound) {
-			r_reg -= modulo;
-		} else if (r_reg<lobound) {
-			r_reg += modulo;
+		r_reg += modifier;
+
+		if (orig_modifier!=modulo) {
+			if (r_reg>hibound) {
+				r_reg -= modulo;
+			} else if (r_reg<lobound) {
+				r_reg += modulo;
+			}
 		}
 	}
 
