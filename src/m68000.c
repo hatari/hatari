@@ -635,17 +635,33 @@ void	M68000_Update_intlev ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
- * There seem to be wait states when a program accesses certain hardware
- * registers on the ST. Use this function to simulate these wait states.
+ * There are some wait states when accessing certain hardware registers on the ST.
+ * This function simulates these wait states and add the corresponding cycles.
+ *
  * [NP] with some instructions like CLR, we have a read then a write at the
  * same location, so we may have 2 wait states (read and write) to add
- * (nWaitStateCycles should be reset to 0 after the cycles were added).
+ * (nWaitStateCycles should be reset to 0 after all the cycles were added
+ * in run_xx() in newcpu.c).
+ *
+ * - When CPU runs in cycle exact mode, wait states are added immediately.
+ * - For other less precise modes, all the wait states are cumulated and added
+ *   after the instruction was processed.
  */
-void M68000_WaitState(int nCycles)
+void M68000_WaitState(int WaitCycles)
 {
+#ifndef WINUAE_FOR_HATARI
 	M68000_SetSpecial(SPCFLAG_EXTRA_CYCLES);
+	nWaitStateCycles += WaitCycles;				/* Add all the wait states for this instruction */
 
-	nWaitStateCycles += nCycles;	/* add all the wait states for this instruction */
+#else
+	if ( ConfigureParams.System.bCycleExactCpu )
+		currcycle += ( WaitCycles * CYCLE_UNIT / 2 );	/* Add wait cycles immediately to the CE cycles counter */
+	else
+	{
+		M68000_SetSpecial(SPCFLAG_EXTRA_CYCLES);
+		nWaitStateCycles += WaitCycles;			/* Add all the wait states for this instruction */
+	}
+#endif
 }
 
 

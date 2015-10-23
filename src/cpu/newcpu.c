@@ -4449,14 +4449,6 @@ printf ( "run_1_ce\n" );
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
 				currcycle = 0;
 
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
-					/* Add some extra cycles to simulate a wait state */
-					/* TODO : in CE mode, extra cycle should be added during the opcode, not at the end */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
-				}
-
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 					CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
 				if ( MFP_UpdateNeeded == true )
@@ -5067,14 +5059,7 @@ printf ( "run_3ce\n" );
 
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr, "cyc_3ce %d\n" , currcycle );
-				M68000_AddCycles(currcycle * 2 / CYCLE_UNIT);
-
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
-					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
-				}
+				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -5324,14 +5309,7 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
-				M68000_AddCycles(currcycle * 2 / CYCLE_UNIT);
-
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
-					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
-				}
+				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */

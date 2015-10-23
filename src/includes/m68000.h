@@ -380,7 +380,7 @@ extern void M68000_MemorySnapShot_Capture(bool bSave);
 extern void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType );
 extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
 extern void M68000_Update_intlev ( void );
-extern void M68000_WaitState(int nCycles);
+extern void M68000_WaitState(int WaitCycles);
 extern int M68000_WaitEClock ( void );
 extern void M68000_Flush_Instr_Cache ( uaecptr addr , int size );
 extern void M68000_Flush_Data_Cache ( uaecptr addr , int size );
