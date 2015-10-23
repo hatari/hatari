@@ -8,3 +8,7 @@
 void Screen_GenConvert(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
                        int leftBorderSize, int rightBorderSize,
                        int upperBorderSize, int lowerBorderSize);
+
+bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
+                    int leftBorderSize, int rightBorderSize,
+                    int upperBorderSize, int lowerBorderSize);

@@ -2981,13 +2981,8 @@ bool Video_RenderTTScreen(void)
 		nPrevTTSpecialVideoMode = TTSpecialVideoMode;
 	}
 
-	/* Yes, we are abusing the Videl routines for rendering the TT modes! */
-	if (!HostScreen_renderBegin())
-		return false;
-	Screen_GenConvert(VideoBase, width, height, bpp, width * bpp / 16, 0, 0, 0, 0);
-	HostScreen_update1(HostScreen_renderEnd(), false);
-
-	return true;
+	return Screen_GenDraw(VideoBase, width, height, bpp, width * bpp / 16,
+	                      0, 0, 0, 0);
 }
 
 

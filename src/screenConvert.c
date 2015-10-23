@@ -1089,3 +1089,17 @@ void Screen_GenConvert(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 		                          upperBorderSize, lowerBorderSize);
 	}
 }
+
+bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
+                    int leftBorder, int rightBorder,
+                    int upperBorder, int lowerBorder)
+{
+	if (!HostScreen_renderBegin())
+		return false;
+
+	Screen_GenConvert(vaddr, vw, vh, vbpp, nextline, leftBorder, rightBorder,
+	                  upperBorder, lowerBorder);
+
+	HostScreen_update1(HostScreen_renderEnd(), false);
+	return true;
+}
