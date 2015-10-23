@@ -379,6 +379,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 #include "printer.h"
 #include "screen.h"
+#include "screenConvert.h"
 #include "screenSnapShot.h"
 #include "shortcut.h"
 #include "sound.h"
@@ -2983,12 +2984,9 @@ bool Video_RenderTTScreen(void)
 	/* Yes, we are abusing the Videl routines for rendering the TT modes! */
 	if (!HostScreen_renderBegin())
 		return false;
-	if (nScreenZoomX * nScreenZoomY != 1)
-		VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
-	else
-		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
-
+	Screen_GenConvert(VideoBase, width, height, bpp, width * bpp / 16, 0, 0, 0, 0);
 	HostScreen_update1(HostScreen_renderEnd(), false);
+
 	return true;
 }
 

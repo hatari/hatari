@@ -1,15 +1,15 @@
 
 set(SOURCES
 	acia.c audio.c avi_record.c bios.c blitter.c cart.c cfgopts.c
-	clocks_timings.c configuration.c options.c change.c
-	control.c cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c
-	floppy.c floppy_ipf.c floppy_stx gemdos.c hd6301_cpu.c hdc.c ide.c ikbd.c ioMem.c
-	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
+	clocks_timings.c configuration.c options.c change.c control.c
+	cycInt.c cycles.c dialog.c dmaSnd.c fdc.c file.c floppy.c
+	floppy_ipf.c floppy_stx.c gemdos.c hd6301_cpu.c hdc.c ide.c ikbd.c
+	ioMem.c ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
 	keymap.c m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c
 	paths.c  psg.c printer.c resolution.c rs232.c reset.c rtc.c
-	scandir.c stMemory.c screen.c screenSnapShot.c shortcut.c sound.c
-	spec512.c statusbar.c str.c tos.c unzip.c utils.c vdi.c
-	video.c wavFormat.c xbios.c ymFormat.c)
+	scandir.c stMemory.c screen.c screenConvert.c screenSnapShot.c
+	shortcut.c sound.c spec512.c statusbar.c str.c tos.c unzip.c utils.c
+	vdi.c video.c wavFormat.c xbios.c ymFormat.c)
 
 # Disk image code is shared with the hmsa tool, so we put it into a library:
 add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c)

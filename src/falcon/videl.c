@@ -74,12 +74,12 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "hostscreen.h"
 #include "screen.h"
+#include "screenConvert.h"
 #include "stMemory.h"
 #include "videl.h"
 #include "video.h"				/* for bUseHighRes variable, maybe unuseful (Laurent) */
 #include "vdi.h"				/* for bUseVDIRes variable,  maybe unuseful (Laurent) */
 
-#define Atari2HostAddr(a) (&STRam[a])
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
 
 
@@ -103,17 +103,7 @@ struct videl_s {
 	bool hostColorsSync;			/* Sync palette with host's */
 };
 
-struct videl_zoom_s {
-	Uint16 zoomwidth;
-	Uint16 prev_scrwidth;
-	Uint16 zoomheight;
-	Uint16 prev_scrheight;
-	int *zoomxtable;
-	int *zoomytable;
-};
-
 static struct videl_s videl;
-static struct videl_zoom_s videl_zoom;
 
 Uint16 vfc_counter;			/* counter for VFC register $ff82a0 (to be internalized when VIDEL emulation is complete) */
 
@@ -129,14 +119,6 @@ void VIDEL_reset(void)
 	videl.hostColorsSync = false; 
 
 	vfc_counter = 0;
-	
-	/* Autozoom */
-	videl_zoom.zoomwidth = 0;
-	videl_zoom.prev_scrwidth = 0;
-	videl_zoom.zoomheight = 0;
-	videl_zoom.prev_scrheight = 0;
-	videl_zoom.zoomxtable = NULL;
-	videl_zoom.zoomytable = NULL;
 
 	/* Default resolution to boot with */
 	videl.save_scrWidth = 640;
@@ -954,18 +936,16 @@ bool VIDEL_renderScreen(void)
 	if (videl.save_scrBpp < 16 && videl.hostColorsSync == 0)
 		VIDEL_updateColors();
 
-	if (nScreenZoomX * nScreenZoomY != 1) {
-		VIDEL_ConvertScreenZoom(vw, vh, videl.save_scrBpp, nextline);
-	} else {
-		VIDEL_ConvertScreenNoZoom(vw, vh, videl.save_scrBpp, nextline);
-	}
+	Screen_GenConvert(videl.videoBaseAddr, videl.XSize, videl.YSize,
+	                  videl.save_scrBpp, nextline,
+	                  videl.leftBorderSize, videl.rightBorderSize,
+	                  videl.upperBorderSize, videl.lowerBorderSize);
 
 	HostScreen_update1(HostScreen_renderEnd(), false);
 
 	return true;
 }
 
-#include "../screenConvert.c"
 
 /**
  * Write to videl ST palette registers (0xff8240-0xff825e)
