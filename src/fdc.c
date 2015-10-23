@@ -800,10 +800,20 @@ static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset )
  * This function will always be called when FDC.DriveSelSignal >= 0, as
  * there's no case where we transfer bytes if no drive is enabled. This
  * means we can safely call FDC_GetDensity() here to simulate HD/ED floppies.
+ *
+ * 2015/10/23 [NP] As seen in the 'Bird Mad Girl Show' demo, it's possible to get
+ * FDC.DriveSelSignal < 0 once a transfer was started (for example, read sector
+ * will complete successully). So we use DD by default in that case.
  */
 static int	FDC_TransferByte_FdcCycles ( int NbBytes )
 {
 //fprintf ( stderr , "fdc state %d transfer %d bytes\n" , FDC.Command , NbBytes );
+	if ( FDC.DriveSelSignal < 0 )
+	{
+		/* Drive was unselected during the transfer : assume DD for the rest of the bytes */
+		return ( NbBytes * FDC_DELAY_CYCLE_MFM_BYTE ) / FDC_DENSITY_FACTOR_DD;
+	}
+
 	return ( NbBytes * FDC_DELAY_CYCLE_MFM_BYTE ) / FDC_DRIVES[ FDC.DriveSelSignal ].Density;
 }
 
