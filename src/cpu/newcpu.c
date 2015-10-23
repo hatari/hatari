@@ -4298,11 +4298,10 @@ printf ( "run_1\n" );
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT);
 
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+        			if ( WaitStateCycles ) {
 					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
+					M68000_AddCycles(WaitStateCycles);
+					WaitStateCycles = 0;
 				}
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
@@ -4741,11 +4740,10 @@ printf ( "run_mmu060\n" );
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+        			if ( WaitStateCycles ) {
 					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
+					M68000_AddCycles(WaitStateCycles);
+					WaitStateCycles = 0;
 				}
 
 				while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
@@ -4829,11 +4827,10 @@ printf ( "run_mmu040\n" );
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+        			if ( WaitStateCycles ) {
 					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
+					M68000_AddCycles(WaitStateCycles);
+					WaitStateCycles = 0;
 				}
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
@@ -4970,11 +4967,10 @@ insretry:
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+        			if ( WaitStateCycles ) {
 					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
+					M68000_AddCycles(WaitStateCycles);
+					WaitStateCycles = 0;
 				}
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
@@ -5129,11 +5125,10 @@ printf ( "run_3p\n" );
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCycles(cycles * 2 / CYCLE_UNIT);
 
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+        			if ( WaitStateCycles ) {
 					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
+					M68000_AddCycles(WaitStateCycles);
+					WaitStateCycles = 0;
 				}
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
@@ -5391,11 +5386,10 @@ printf ( "run_2p\n" );
 #ifdef WINUAE_FOR_HATARI
 				M68000_AddCycles(cpu_cycles * 2 / CYCLE_UNIT);
 
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+        			if ( WaitStateCycles ) {
 					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
+					M68000_AddCycles(WaitStateCycles);
+					WaitStateCycles = 0;
 				}
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
@@ -5472,11 +5466,10 @@ printf ( "run_2\n" );
 //fprintf ( stderr , "cyc_2 %d\n" , cpu_cycles );
 				M68000_AddCyclesWithPairing(cpu_cycles * 2 / CYCLE_UNIT);
 
-				if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+        			if ( WaitStateCycles ) {
 					/* Add some extra cycles to simulate a wait state */
-					unset_special(SPCFLAG_EXTRA_CYCLES);
-					M68000_AddCycles(nWaitStateCycles);
-					nWaitStateCycles = 0;
+					M68000_AddCycles(WaitStateCycles);
+					WaitStateCycles = 0;
 				}
 
 				/* We can have several interrupts at the same time before the next CPU instruction */

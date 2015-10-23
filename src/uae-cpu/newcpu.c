@@ -1661,11 +1661,10 @@ static int do_specialties (void)
 	Exception(2,0,M68000_EXC_SRC_CPU);
     }
 
-    if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+    if ( WaitStateCycles ) {
 	/* Add some extra cycles to simulate a wait state */
-	unset_special(SPCFLAG_EXTRA_CYCLES);
-	M68000_AddCycles(nWaitStateCycles);
-	nWaitStateCycles = 0;
+	M68000_AddCycles(WaitStateCycles);
+	WaitStateCycles = 0;
     }
 
     if (regs.spcflags & SPCFLAG_DOTRACE) {
@@ -1816,11 +1815,11 @@ static void m68k_run_1 (void)
 #endif
 
 	M68000_AddCyclesWithPairing(cycles);
-	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+
+        if ( WaitStateCycles ) {
 	  /* Add some extra cycles to simulate a wait state */
-	  unset_special(SPCFLAG_EXTRA_CYCLES);
-	  M68000_AddCycles(nWaitStateCycles);
-	  nWaitStateCycles = 0;
+	  M68000_AddCycles(WaitStateCycles);
+	  WaitStateCycles = 0;
 	}
 
 	/* We can have several interrupts at the same time before the next CPU instruction */
@@ -1887,11 +1886,11 @@ static void m68k_run_2 (void)
 	    Cycles_SetCounter(CYCLES_COUNTER_CPU, 0);	/* to measure the total number of cycles spent in the cpu */
 
 	M68000_AddCycles(cycles);
-	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+
+        if ( WaitStateCycles ) {
 	  /* Add some extra cycles to simulate a wait state */
-	  unset_special(SPCFLAG_EXTRA_CYCLES);
-	  M68000_AddCycles(nWaitStateCycles);
-	  nWaitStateCycles = 0;
+	  M68000_AddCycles(WaitStateCycles);
+	  WaitStateCycles = 0;
 	}
 
         if ( PendingInterruptCount <= 0 )

@@ -229,7 +229,7 @@ extern cpu_instruction_t CpuInstruction;
 extern Uint32 BusErrorAddress;
 extern bool bBusErrorReadWrite;
 extern int nCpuFreqShift;
-extern int nWaitStateCycles;
+extern int WaitStateCycles;
 extern int BusMode;
 extern bool	CPU_IACK;
 

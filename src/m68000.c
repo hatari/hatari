@@ -98,10 +98,10 @@ const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 /* information about current CPU instruction */
 cpu_instruction_t CpuInstruction;
 
-Uint32 BusErrorAddress;         /* Stores the offending address for bus-/address errors */
-bool bBusErrorReadWrite;        /* 0 for write error, 1 for read error */
-int nCpuFreqShift;              /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
-int nWaitStateCycles;           /* Used to emulate the wait state cycles of certain IO registers */
+Uint32 BusErrorAddress;		/* Stores the offending address for bus-/address errors */
+bool bBusErrorReadWrite;	/* 0 for write error, 1 for read error */
+int nCpuFreqShift;		/* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
+int WaitStateCycles = 0;	/* Used to emulate the wait state cycles of certain IO registers */
 int BusMode = BUS_MODE_CPU;	/* Used to tell which part is owning the bus (cpu, blitter, ...) */
 bool CPU_IACK = false;		/* Set to true during an exception when getting the interrupt's vector number */
 
@@ -640,7 +640,7 @@ void	M68000_Update_intlev ( void )
  *
  * [NP] with some instructions like CLR, we have a read then a write at the
  * same location, so we may have 2 wait states (read and write) to add
- * (nWaitStateCycles should be reset to 0 after all the cycles were added
+ * (WaitStateCycles should be reset to 0 after all the cycles were added
  * in run_xx() in newcpu.c).
  *
  * - When CPU runs in cycle exact mode, wait states are added immediately.
@@ -650,16 +650,14 @@ void	M68000_Update_intlev ( void )
 void M68000_WaitState(int WaitCycles)
 {
 #ifndef WINUAE_FOR_HATARI
-	M68000_SetSpecial(SPCFLAG_EXTRA_CYCLES);
-	nWaitStateCycles += WaitCycles;				/* Add all the wait states for this instruction */
+	WaitStateCycles += WaitCycles;				/* Cumulate all the wait states for this instruction */
 
 #else
 	if ( ConfigureParams.System.bCycleExactCpu )
-		currcycle += ( WaitCycles * CYCLE_UNIT / 2 );	/* Add wait cycles immediately to the CE cycles counter */
+		currcycle += ( WaitCycles * CYCLE_UNIT / 2 );	/* Add wait states immediately to the CE cycles counter */
 	else
 	{
-		M68000_SetSpecial(SPCFLAG_EXTRA_CYCLES);
-		nWaitStateCycles += WaitCycles;			/* Add all the wait states for this instruction */
+		WaitStateCycles += WaitCycles;			/* Cumulate all the wait states for this instruction */
 	}
 #endif
 }

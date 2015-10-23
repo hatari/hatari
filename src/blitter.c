@@ -140,13 +140,13 @@ static BLITTER_OP_FUNC Blitter_ComputeLOP;
 
 static void Blitter_AddCycles(int cycles)
 {
-	int all_cycles = cycles + nWaitStateCycles;
+	int all_cycles = cycles + WaitStateCycles;
 
 	BlitterVars.op_cycles += all_cycles;
 
 	nCyclesMainCounter += all_cycles >> nCpuFreqShift;
 	CyclesGlobalClockCounter += all_cycles >> nCpuFreqShift;
-	nWaitStateCycles = 0;
+	WaitStateCycles = 0;
 }
 
 static void Blitter_FlushCycles(void)
@@ -1002,7 +1002,7 @@ void Blitter_Control_WriteByte(void)
 		else
 		{
 			/* Start blitting after some CPU cycles */
-			CycInt_AddRelativeInterrupt((CurrentInstrCycles+nWaitStateCycles)>>nCpuFreqShift,
+			CycInt_AddRelativeInterrupt((CurrentInstrCycles+WaitStateCycles)>>nCpuFreqShift,
 							 INT_CPU_CYCLE, INTERRUPT_BLITTER);
 		}
 	}

@@ -15,7 +15,7 @@
 /* 2007/03/xx	[NP]	Use 'CurrentInstrCycles' to get a good approximation for	*/
 /*			Cycles_GetCounterOnReadAccess and Cycles_GetCounterOnWriteAccess*/
 /*			(this should work correctly with 'move' instruction).		*/
-/* 2008/04/14	[NP]	Take nWaitStateCycles into account when computing the value of	*/
+/* 2008/04/14	[NP]	Take WaitStateCycles into account when computing the value of	*/
 /*			Cycles_GetCounterOnReadAccess and Cycles_GetCounterOnWriteAccess*/
 /* 2008/12/21	[NP]	Use BusMode to adjust Cycles_GetCounterOnReadAccess and		*/
 /*			Cycles_GetCounterOnWriteAccess depending on who is owning the	*/
@@ -126,7 +126,7 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
-		AddCycles = 4 + nWaitStateCycles;
+		AddCycles = 4 + WaitStateCycles;
 	}
 //#if 0
 #ifdef WINUAE_FOR_HATARI
@@ -137,7 +137,7 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 	/* (see wait_cpu_cycle_read() in custom.c) */
 	else if ( currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010 )
 	{
-		AddCycles = currcycle*2/CYCLE_UNIT + 2 + nWaitStateCycles;
+		AddCycles = currcycle*2/CYCLE_UNIT + 2 + WaitStateCycles;
 	}
 #endif
 	else							/* BUS_MODE_CPU */
@@ -149,13 +149,13 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 
 		/* Assume we use 'move src,dst' : access cycle depends on dst mode */
 		if ( Opcode == 0x11f8 )				/* move.b xxx.w,xxx.w (eg MOVE.B $ffff8209.w,$26.w in Bird Mad Girl Show) */
-			AddCycles = CurrentInstrCycles + nWaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
+			AddCycles = CurrentInstrCycles + WaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
 		else if ( OpcodeFamily == i_MVPRM )					/* eg movep.l d0,$ffc3(a1) in E605 (STE) */
 			AddCycles = 12 + IoAccessInstrCount * 4;			/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
 											/* something must be wrong in video.c */
 			/* FIXME : this should be : AddCycles = 4 + IoAccessInstrCount * 4, but this breaks e605 in video.c */
 		else
-			AddCycles = CurrentInstrCycles + nWaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
+			AddCycles = CurrentInstrCycles + WaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
 	}
 
 	return AddCycles;
@@ -175,7 +175,7 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
-		AddCycles = 4 + nWaitStateCycles;
+		AddCycles = 4 + WaitStateCycles;
 	}
 //#if 0
 #ifdef WINUAE_FOR_HATARI
@@ -186,14 +186,14 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 	/* (see wait_cpu_cycle_write() in custom.c) */
 	else if ( currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010 )
 	{
-		AddCycles = currcycle*2/CYCLE_UNIT + 2 + nWaitStateCycles;
+		AddCycles = currcycle*2/CYCLE_UNIT + 2 + WaitStateCycles;
 	}
 #endif
 	else							/* BUS_MODE_CPU */
 	{
 		/* TODO: Find proper cycles count depending on the type of the current instruction */
 		/* (e.g. movem is not correctly handled) */
-		AddCycles = CurrentInstrCycles + nWaitStateCycles;
+		AddCycles = CurrentInstrCycles + WaitStateCycles;
 
 		if ( ( OpcodeFamily == i_CLR ) || ( OpcodeFamily == i_NEG ) || ( OpcodeFamily == i_NEGX ) || ( OpcodeFamily == i_NOT ) )
 			;						/* Do nothing, the write is done during the last 4 cycles */
