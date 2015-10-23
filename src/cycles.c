@@ -135,9 +135,9 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 	/* As memory accesses take 4 cycles, we just need to add 2 cycles to get */
 	/* the number of cycles when the read will be completed. */
 	/* (see wait_cpu_cycle_read() in custom.c) */
-	else if ( currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010 )
+	else if ( currprefs.cpu_cycle_exact )
 	{
-		AddCycles = currcycle*2/CYCLE_UNIT + 2 + WaitStateCycles;
+		AddCycles = currcycle*2/CYCLE_UNIT + 2;
 	}
 #endif
 	else							/* BUS_MODE_CPU */
@@ -184,9 +184,9 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 	/* As memory accesses take 4 cycles, we just need to add 2 cycles to get */
 	/* the number of cycles when the write will be completed. */
 	/* (see wait_cpu_cycle_write() in custom.c) */
-	else if ( currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010 )
+	else if ( currprefs.cpu_cycle_exact )
 	{
-		AddCycles = currcycle*2/CYCLE_UNIT + 2 + WaitStateCycles;
+		AddCycles = currcycle*2/CYCLE_UNIT + 2;
 	}
 #endif
 	else							/* BUS_MODE_CPU */
