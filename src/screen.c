@@ -38,6 +38,7 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "paths.h"
 #include "options.h"
 #include "screen.h"
+#include "screenConvert.h"
 #include "control.h"
 #include "convert/routines.h"
 #include "resolution.h"
@@ -90,7 +91,7 @@ static SDL_Rect STScreenRect;                      /* screen size without status
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
-static void (*ScreenDrawFunctionsNormal[3])(void); /* Screen draw functions */
+static void (*ScreenDrawFunctionsNormal[2])(void); /* Screen draw functions */
 static void (*ScreenDrawFunctionsVDI[3])(void) =
 {
 	ConvertVDIRes_16Colour,
@@ -296,7 +297,6 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
-		ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
 	}
 	else if (nBitCount <= 16)
 	{
@@ -306,7 +306,6 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
-		ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
 	}
 	else /* Assume 32 bit drawing functions */
 	{
@@ -316,7 +315,6 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x32Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x32Bit;
-		ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
 	}
 }
 
@@ -588,7 +586,7 @@ static void Screen_SetResolution(bool bForceChange)
 	bool bDoubleLowRes = false;
 
 	/* Bits per pixel */
-	if (STRes == ST_HIGH_RES || bUseVDIRes)
+	if (bUseVDIRes)
 	{
 		BitCount = 8;
 	}
@@ -852,7 +850,8 @@ static void Screen_ClearScreen(void)
 static bool Screen_UseHostScreen(void)
 {
 	return ((ConfigureParams.System.nMachineType == MACHINE_FALCON
-		 || ConfigureParams.System.nMachineType == MACHINE_TT)
+		 || ConfigureParams.System.nMachineType == MACHINE_TT
+		 || bUseHighRes)
 		&& !bUseVDIRes);
 }
 
@@ -1005,6 +1004,10 @@ void Screen_ModeChanged(bool bForceChange)
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
 		HostScreen_setWindowSize(width, height, 8, bForceChange);
+	}
+	else if (bUseHighRes && !bUseVDIRes)
+	{
+		HostScreen_setWindowSize(640, 400, 0, bForceChange);
 	}
 	else
 	{
@@ -1418,7 +1421,26 @@ static bool Screen_DrawFrame(bool bForceFlip)
  */
 bool Screen_Draw(void)
 {
-	if (!bQuitProgram && VideoBase)
+	if (bQuitProgram || !VideoBase)
+	{
+		return false;
+	}
+
+	if (bUseHighRes && !bUseVDIRes)
+	{
+		if (HBLPalettes[0])
+		{
+			HostScreen_setPaletteColor(0, 255, 255, 255);
+			HostScreen_setPaletteColor(1, 0, 0, 0);
+		}
+		else
+		{
+			HostScreen_setPaletteColor(0, 0, 0, 0);
+			HostScreen_setPaletteColor(1, 255, 255, 255);
+		}
+		return Screen_GenDraw(VideoBase, 640, 400, 1, 640 / 16, 0, 0, 0, 0);
+	}
+	else
 	{
 		/* And draw (if screen contents changed) */
 		return Screen_DrawFrame(false);
@@ -1496,7 +1518,6 @@ static void Convert_StartFrame(void)
 #include "convert/low320x8.c"		/* LowRes To 320xH x 8-bit color */
 #include "convert/low640x8.c"		/* LowRes To 640xH x 8-bit color */
 #include "convert/med640x8.c"		/* MediumRes To 640xH x 8-bit color */
-#include "convert/high640x8.c"		/* HighRes To 640xH x 8-bit color */
 
 #include "convert/low320x16.c"		/* LowRes To 320xH x 16-bit color */
 #include "convert/low640x16.c"		/* LowRes To 640xH x 16-bit color */
