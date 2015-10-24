@@ -559,7 +559,6 @@ static void	Video_StoreFirstLinePalette(void);
 static void	Video_StoreResolution(int y);
 static void	Video_CopyScreenLineMono(void);
 static void	Video_CopyScreenLineColor(void);
-static void	Video_CopyVDIScreen(void);
 static void	Video_SetHBLPaletteMaskPointers(void);
 
 static void	Video_UpdateTTPalette(int bpp);
@@ -2666,17 +2665,6 @@ static void Video_CopyScreenLineColor(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Copy extended GEM resolution screen
- */
-static void Video_CopyVDIScreen(void)
-{
-	/* Copy whole screen, don't care about being exact as for GEM only */
-	memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Clear raster line table to store changes in palette/resolution on a line
  * basic. Called once on VBL interrupt.
  */
@@ -2997,17 +2985,17 @@ static void Video_DrawScreen(void)
 	if (nVBLs % (nFrameSkips+1))
 		return;
 
-	/* Use extended VDI resolution?
-	 * If so, just copy whole screen on VBL rather than per HBL */
-	if (bUseVDIRes)
-		Video_CopyVDIScreen();
-
 	/* Now draw the screen! */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
+	if (bUseVDIRes)
+	{
+		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
+		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
+	}
+	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
 		VIDEL_renderScreen();
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
 	{
 		Video_RenderTTScreen();
 	}
@@ -3016,7 +3004,7 @@ static void Video_DrawScreen(void)
 		/* Before drawing the screen, ensure all unused lines are cleared to color 0 */
 		/* (this can happen in 60 Hz when hatari is displaying the screen's border) */
 		/* pSTScreen was set during Video_CopyScreenLineColor */
-		if (!bUseVDIRes && nHBL < nLastVisibleHbl)
+		if (nHBL < nLastVisibleHbl)
 			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nLastVisibleHbl - nHBL ) );
 
 		Screen_Draw();
@@ -3475,35 +3463,51 @@ void Video_LineWidth_WriteByte(void)
  */
 static void Video_ColorReg_WriteWord(void)
 {
-	if (!bUseHighRes && !bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
-	{
-		int idx;
-		Uint16 col;
-		Uint32 addr;
-		addr = IoAccessCurrentAddress;
+	Uint32 addr;
+	Uint16 col;
+	int idx;
 
+	addr = IoAccessCurrentAddress;
+
+	/* Handle special case when writing only to the upper byte of the color reg */
+	if (nIoMemAccessSize == SIZE_BYTE && (IoAccessCurrentAddress & 1) == 0)
+		col = (IoMem_ReadByte(addr) << 8) + IoMem_ReadByte(addr);	/* copy upper byte into lower byte */
+	/* Same when writing only to the lower byte of the color reg */
+	else if (nIoMemAccessSize == SIZE_BYTE && (IoAccessCurrentAddress & 1) == 1)
+		col = (IoMem_ReadByte(addr) << 8) + IoMem_ReadByte(addr);	/* copy lower byte into upper byte */
+	/* Usual case, writing a word or a long (2 words) */
+	else
+		col = IoMem_ReadWord(addr);
+
+	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+		col &= 0x777;			/* Mask off to ST 512 palette */
+	else
+		col &= 0xfff;			/* Mask off to STe 4096 palette */
+
+	addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
+	IoMem_WriteWord(addr, col);		/* (some games write 0xFFFF and read back to see if STe) */
+
+	idx = (addr - 0xff8240) / 2;		/* words */
+
+	if (bUseVDIRes)
+	{
+		int r, g, b;
+		r = (col >> 8) & 0x0f;
+		r = ((r & 7) << 1) | (r >> 3);
+		r |= r << 4;
+		g = (col >> 4) & 0x0f;
+		g = ((g & 7) << 1) | (g >> 3);
+		g |= g << 4;
+		b = col & 0x0f;
+		b = ((b & 7) << 1) | (b >> 3);
+		b |= b << 4;
+		HostScreen_setPaletteColor(idx, r, g, b);
+	}
+	else if (!bUseHighRes)          /* Don't store if hi-res or VDI resolution */
+	{
 		Video_SetHBLPaletteMaskPointers();     /* Set 'pHBLPalettes' etc.. according cycles into frame */
 
-		/* Handle special case when writing only to the upper byte of the color reg */
-		if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 0 ) )
-			col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy upper byte into lower byte */
-		/* Same when writing only to the lower byte of the color reg */
-		else if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 1 ) )
-			col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy lower byte into upper byte */
-		/* Usual case, writing a word or a long (2 words) */
-		else
-			col = IoMem_ReadWord(addr);
-
-		if (ConfigureParams.System.nMachineType == MACHINE_ST)
-			col &= 0x777;			/* Mask off to ST 512 palette */
-		else
-			col &= 0xfff;			/* Mask off to STe 4096 palette */
-
-		addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
-			
-		IoMem_WriteWord(addr, col);            /* (some games write 0xFFFF and read back to see if STe) */
 		Spec512_StoreCyclePalette(col, addr);  /* Store colour into CyclePalettes[] */
-		idx = (addr-0xff8240)/2;               /* words */
 		pHBLPalettes[idx] = col;               /* Set colour x */
 		*pHBLPaletteMasks |= 1 << idx;         /* And mask */
 

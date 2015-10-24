@@ -92,12 +92,6 @@ static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen line
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
 static void (*ScreenDrawFunctionsNormal[2])(void); /* Screen draw functions */
-static void (*ScreenDrawFunctionsVDI[3])(void) =
-{
-	ConvertVDIRes_16Colour,
-	ConvertVDIRes_4Colour,
-	ConvertVDIRes_2Colour
-};
 
 static bool bScreenContentsChanged;     /* true if buffer changed and requires blitting */
 static bool bScrDoubleY;                /* true if double on Y */
@@ -253,7 +247,6 @@ static void Screen_Handle8BitPalettes(void)
 	int i;
 
 	/* Do need to check for 8-Bit palette change? Ie, update whole screen */
-	/* VDI screens and monochrome modes are ALL 8-Bit at the moment! */
 	if (sdlscrn->format->BitsPerPixel == 8)
 	{
 		/* If using HiRes palette update with full update flag */
@@ -586,14 +579,7 @@ static void Screen_SetResolution(bool bForceChange)
 	bool bDoubleLowRes = false;
 
 	/* Bits per pixel */
-	if (bUseVDIRes)
-	{
-		BitCount = 8;
-	}
-	else
-	{
-		BitCount = ConfigureParams.Screen.nForceBpp;
-	}
+	BitCount = ConfigureParams.Screen.nForceBpp;
 
 	nBorderPixelsTop = nBorderPixelsBottom = 0;
 	nBorderPixelsLeft = nBorderPixelsRight = 0;
@@ -849,10 +835,9 @@ static void Screen_ClearScreen(void)
  */
 static bool Screen_UseHostScreen(void)
 {
-	return ((ConfigureParams.System.nMachineType == MACHINE_FALCON
-		 || ConfigureParams.System.nMachineType == MACHINE_TT
-		 || bUseHighRes)
-		&& !bUseVDIRes);
+	return ConfigureParams.System.nMachineType == MACHINE_FALCON
+		|| ConfigureParams.System.nMachineType == MACHINE_TT
+		|| bUseHighRes || bUseVDIRes;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -995,17 +980,21 @@ void Screen_ModeChanged(bool bForceChange)
 		return;
 	}
 	/* Don't run this function if Videl emulation is running! */
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
+	if (bUseVDIRes)
+	{
+		HostScreen_setWindowSize(VDIWidth, VDIHeight, 0, bForceChange);
+	}
+	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
 		VIDEL_ZoomModeChanged(bForceChange);
 	}
-	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
 		HostScreen_setWindowSize(width, height, 8, bForceChange);
 	}
-	else if (bUseHighRes && !bUseVDIRes)
+	else if (bUseHighRes)
 	{
 		HostScreen_setWindowSize(640, 400, 0, bForceChange);
 	}
@@ -1096,7 +1085,7 @@ static int Screen_ComparePaletteMask(int res)
 	{
 		OverscanMode = OVERSCANMODE_NONE;
 
-		/* Just copy mono colours, 0x777 checked also in convert/vdi2.c */
+		/* Just copy mono colors */
 		if (HBLPalettes[0] & 0x777)
 		{
 			HBLPalettes[0] = 0x777;
@@ -1353,39 +1342,32 @@ static bool Screen_DrawFrame(bool bForceFlip)
 			Screen_ClearScreen();
 		
 		/* Call drawing for full-screen */
-		if (bUseVDIRes)
+		pDrawFunction = ScreenDrawFunctionsNormal[STRes];
+		/* Check if is Spec512 image */
+		if (Spec512_IsImage())
 		{
-			pDrawFunction = ScreenDrawFunctionsVDI[VDIRes];
+			bPrevFrameWasSpec512 = true;
+			/* What mode were we in? Keep to 320xH or 640xH */
+			if (pDrawFunction==ConvertLowRes_320x16Bit)
+				pDrawFunction = ConvertLowRes_320x16Bit_Spec;
+			else if (pDrawFunction==ConvertLowRes_640x16Bit)
+				pDrawFunction = ConvertLowRes_640x16Bit_Spec;
+			else if (pDrawFunction==ConvertLowRes_320x32Bit)
+				pDrawFunction = ConvertLowRes_320x32Bit_Spec;
+			else if (pDrawFunction==ConvertLowRes_640x32Bit)
+				pDrawFunction = ConvertLowRes_640x32Bit_Spec;
+			else if (pDrawFunction==ConvertMediumRes_640x32Bit)
+				pDrawFunction = ConvertMediumRes_640x32Bit_Spec;
+			else if (pDrawFunction==ConvertMediumRes_640x16Bit)
+				pDrawFunction = ConvertMediumRes_640x16Bit_Spec;
 		}
-		else
+		else if (bPrevFrameWasSpec512)
 		{
-			pDrawFunction = ScreenDrawFunctionsNormal[STRes];
-			/* Check if is Spec512 image */
-			if (Spec512_IsImage())
-			{
-				bPrevFrameWasSpec512 = true;
-				/* What mode were we in? Keep to 320xH or 640xH */
-				if (pDrawFunction==ConvertLowRes_320x16Bit)
-					pDrawFunction = ConvertLowRes_320x16Bit_Spec;
-				else if (pDrawFunction==ConvertLowRes_640x16Bit)
-					pDrawFunction = ConvertLowRes_640x16Bit_Spec;
-				else if (pDrawFunction==ConvertLowRes_320x32Bit)
-					pDrawFunction = ConvertLowRes_320x32Bit_Spec;
-				else if (pDrawFunction==ConvertLowRes_640x32Bit)
-					pDrawFunction = ConvertLowRes_640x32Bit_Spec;
-				else if (pDrawFunction==ConvertMediumRes_640x32Bit)
-					pDrawFunction = ConvertMediumRes_640x32Bit_Spec;
-				else if (pDrawFunction==ConvertMediumRes_640x16Bit)
-					pDrawFunction = ConvertMediumRes_640x16Bit_Spec;
-			}
-			else if (bPrevFrameWasSpec512)
-			{
-				/* If we switch back from Spec512 mode to normal
-				 * screen rendering, we have to make sure to do
-				 * a full update of the screen. */
-				Screen_SetFullUpdateMask();
-				bPrevFrameWasSpec512 = false;
-			}
+			/* If we switch back from Spec512 mode to normal
+			 * screen rendering, we have to make sure to do
+			 * a full update of the screen. */
+			Screen_SetFullUpdateMask();
+			bPrevFrameWasSpec512 = false;
 		}
 
 		if (pDrawFunction)
@@ -1532,7 +1514,3 @@ static void Convert_StartFrame(void)
 #include "convert/low320x32_spec.c"	/* LowRes Spectrum 512 To 320xH x 32-bit color */
 #include "convert/low640x32_spec.c"	/* LowRes Spectrum 512 To 640xH x 32-bit color */
 #include "convert/med640x32_spec.c"	/* MediumRes Spectrum 512 To 640xH x 32-bit color */
-
-#include "convert/vdi16.c"		/* VDI x 16 color */
-#include "convert/vdi4.c"		/* VDI x 4 color */
-#include "convert/vdi2.c"		/* VDI x 2 color */
