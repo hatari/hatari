@@ -38,7 +38,7 @@ set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
 set(ENABLE_SMALL_MEM 0
     CACHE BOOL "Enable to use less memory - at the expense of emulation speed")
-set(ENABLE_WINUAE_CPU 1
+set(ENABLE_WINUAE_CPU 0
     CACHE BOOL "Enable WinUAE CPU core (experimental!)")
 
 # Run-time checks with GCC "mudflap" etc features:
