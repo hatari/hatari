@@ -152,9 +152,9 @@ static void dsp_compute_ssh_ssl(void);
 
 static void opcode8h_0(void);
 
-static void dsp_update_rn(Uint32 numreg, Sint16 modifier);
+static void dsp_update_rn(Uint32 numreg, Sint16 modifier, Sint8 sign);
 static void dsp_update_rn_bitreverse(Uint32 numreg);
-static void dsp_update_rn_modulo(Uint32 numreg, Sint16 modifier);
+static void dsp_update_rn_modulo(Uint32 numreg, Sint16 modifier, Sint8 sign);
 static int dsp_calc_ea(Uint32 ea_mode, Uint32 *dst_addr);
 static int dsp_calc_cc(Uint32 cc_code);
 
@@ -1562,7 +1562,7 @@ static void dsp_compute_ssh_ssl(void)
  *	Effective address calculation
  **********************************/
 
-static void dsp_update_rn(Uint32 numreg, Sint16 modifier)
+static void dsp_update_rn(Uint32 numreg, Sint16 modifier, Sint8 sign)
 {
 	Sint16 value;
 	Uint16 m_reg;
@@ -1571,14 +1571,14 @@ static void dsp_update_rn(Uint32 numreg, Sint16 modifier)
 	if (m_reg == 65535) {
 		/* Linear addressing mode */
 		value = (Sint16) dsp_core.registers[DSP_REG_R0+numreg];
-		value += modifier;
+		value += modifier*sign;
 		dsp_core.registers[DSP_REG_R0+numreg] = ((Uint32) value) & BITMASK(16);
 	} else if (m_reg == 0) {
 		/* Bit reversed carry update */
 		dsp_update_rn_bitreverse(numreg);
 	} else if (m_reg<=32767) {
 		/* Modulo update */
-		dsp_update_rn_modulo(numreg, modifier);
+		dsp_update_rn_modulo(numreg, modifier, sign);
 	} else {
 		/* Undefined */
 	}
@@ -1625,7 +1625,7 @@ static void dsp_update_rn_bitreverse(Uint32 numreg)
 	dsp_core.registers[DSP_REG_R0+numreg] = value;
 }
 
-static void dsp_update_rn_modulo(Uint32 numreg, Sint16 modifier)
+static void dsp_update_rn_modulo(Uint32 numreg, Sint16 modifier, Sint8 sign)
 {
 	Uint16 bufsize, modulo, lobound, hibound, bufmask;
 	Sint16 r_reg, orig_modifier=modifier;
@@ -1649,9 +1649,10 @@ static void dsp_update_rn_modulo(Uint32 numreg, Sint16 modifier)
 	// If Nn>M, the result is data dependent and unpredictable, except for the special case where
 	// Nn=P * 2exp(k) , a multiple of the block size where P is a positive integer.
 	p = (float)(orig_modifier/bufsize);
-	if ((p == (int)p) && (orig_modifier>modulo)) {
-		r_reg += p*bufsize;
+	if ((p == (int)p) && (orig_modifier>modulo) && (p>0.)) {
+		r_reg += p*bufsize*sign;
 	} else {
+		modifier *= sign;
 		if (orig_modifier>modulo) {
 			while (modifier>bufsize) {
 				r_reg += bufsize;
@@ -1687,22 +1688,22 @@ static int dsp_calc_ea(Uint32 ea_mode, Uint32 *dst_addr)
 		case 0:
 			/* (Rx)-Nx */
 			*dst_addr = dsp_core.registers[DSP_REG_R0+numreg];
-			dsp_update_rn(numreg, -dsp_core.registers[DSP_REG_N0+numreg]);
+			dsp_update_rn(numreg, dsp_core.registers[DSP_REG_N0+numreg], -1);
 			break;
 		case 1:
 			/* (Rx)+Nx */
 			*dst_addr = dsp_core.registers[DSP_REG_R0+numreg];
-			dsp_update_rn(numreg, dsp_core.registers[DSP_REG_N0+numreg]);
+			dsp_update_rn(numreg, dsp_core.registers[DSP_REG_N0+numreg], +1);
 			break;
 		case 2:
 			/* (Rx)- */
 			*dst_addr = dsp_core.registers[DSP_REG_R0+numreg];
-			dsp_update_rn(numreg, -1);
+			dsp_update_rn(numreg, 1, -1);
 			break;
 		case 3:
 			/* (Rx)+ */
 			*dst_addr = dsp_core.registers[DSP_REG_R0+numreg];
-			dsp_update_rn(numreg, +1);
+			dsp_update_rn(numreg, 1, +1);
 			break;
 		case 4:
 			/* (Rx) */
@@ -1712,7 +1713,7 @@ static int dsp_calc_ea(Uint32 ea_mode, Uint32 *dst_addr)
 			/* (Rx+Nx) */
 			dsp_core.instr_cycle += 2;
 			curreg = dsp_core.registers[DSP_REG_R0+numreg];
-			dsp_update_rn(numreg, dsp_core.registers[DSP_REG_N0+numreg]);
+			dsp_update_rn(numreg, dsp_core.registers[DSP_REG_N0+numreg], +1);
 			*dst_addr = dsp_core.registers[DSP_REG_R0+numreg];
 			dsp_core.registers[DSP_REG_R0+numreg] = curreg;
 			break;
@@ -1728,7 +1729,7 @@ static int dsp_calc_ea(Uint32 ea_mode, Uint32 *dst_addr)
 		case 7:
 			/* -(Rx) */
 			dsp_core.instr_cycle += 2;
-			dsp_update_rn(numreg, -1);
+			dsp_update_rn(numreg, 1, -1);
 			*dst_addr = dsp_core.registers[DSP_REG_R0+numreg];
 			break;
 	}
