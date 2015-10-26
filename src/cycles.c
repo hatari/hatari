@@ -145,17 +145,17 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
 		/* TODO: Find proper cycles count depending on the opcode/family of the current instruction */
 		/* (e.g. movem is not correctly handled) */
 		Opcode = M68000_CurrentOpcode;
-		//fprintf ( stderr , "opcode=%x\n" , Opcode );
 
 		/* Assume we use 'move src,dst' : access cycle depends on dst mode */
-		if ( Opcode == 0x11f8 )				/* move.b xxx.w,xxx.w (eg MOVE.B $ffff8209.w,$26.w in Bird Mad Girl Show) */
-			AddCycles = CurrentInstrCycles + WaitStateCycles - 8;		/* read is effective before the 8 write cycles for dst */
-		else if ( OpcodeFamily == i_MVPRM )					/* eg movep.l d0,$ffc3(a1) in E605 (STE) */
-			AddCycles = 12 + IoAccessInstrCount * 4;			/* [NP] FIXME, it works with E605 but gives 20-32 cycles instead of 16-28 */
+		if ( Opcode == 0x11f8 )							/* move.b xxx.w,xxx.w (eg MOVE.B $ffff8209.w,$26.w in Bird Mad Girl Show) */
+			AddCycles = 8 + WaitStateCycles;				/* read is effective after 8 cycles */
+
+		else if ( OpcodeFamily == i_MVPRM )					/* movep.l d0,$ffc3(a1) in E605 (STE) or movep.l d1,$fffb(a2) in RGBeast (STE) */
+			AddCycles = 4 + IoAccessInstrCount * 4 + WaitStateCycles;	/* [NP] FIXME, it works with RGBeast, but not with E605 */
 											/* something must be wrong in video.c */
-			/* FIXME : this should be : AddCycles = 4 + IoAccessInstrCount * 4, but this breaks e605 in video.c */
-		else
-			AddCycles = CurrentInstrCycles + WaitStateCycles;		/* assume dest is reg : read is effective at the end of the instr */
+
+		else									/* assume the behaviour of a 'move' to Dn */
+			AddCycles = CurrentInstrCycles - 4 + WaitStateCycles;		/* read is effective 4 cycles before the end of the instr */
 	}
 
 	return AddCycles;
@@ -208,6 +208,9 @@ static int Cycles_GetInternalCycleOnWriteAccess(void)
 
 		else if ( ( OpcodeFamily == i_BCHG ) || ( OpcodeFamily == i_BCLR ) || ( OpcodeFamily == i_BSET ) )
 			;						/* Do nothing, the write is done during the last 4 cycles */
+
+		else if ( OpcodeFamily == i_MVPRM )			/* movep.l d0,$ffc3(a1) in E605 (STE) or movep.l d1,$fffb(a2) in RGBeast (STE) */
+			AddCycles = 4 + IoAccessInstrCount * 4 + WaitStateCycles;	/* [NP] FIXME, it works with RGBeast, but not with E605 */
 
 		else if ( OpcodeFamily == i_MVMLE )
 		{

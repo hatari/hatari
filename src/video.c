@@ -803,13 +803,8 @@ static Uint32 Video_CalculateAddress ( void )
 	int LineStartCycle , LineEndCycle;
 
 	/* Find number of cycles passed during frame */
-	/* We need to subtract '12' for correct video address calculation */
-#ifdef WINUAE_FOR_HATARI
-	if ( currprefs.cpu_cycle_exact && currprefs.cpu_model <= 68010 )
-		FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 8;
-	else
-#endif
-		FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 12;
+	/* We need to subtract '8' for correct video address calculation */
+	FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 8;
 
 	/* Now find which pixel we are on (ignore left/right borders) */
 	Video_ConvertPosition ( FrameCycles , &HblCounterVideo , &LineCycles );
@@ -3281,10 +3276,10 @@ void Video_ScreenCounter_WriteByte(void)
 		pVideoRasterDelayed = NULL;
 		Delayed = true;
 
-		/* [FIXME] 'RGBeast' by Aggression : write to FF8209 on STE while display is on, */
-		/* in that case video counter is not correct */
-		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x03cafffb )	/* movep.l d1,$fffb(a2) */
-			VideoCounterDelayedOffset += 2;
+		/* [FIXME] 'E605' Earth part by Light : write to FF8209 on STE while display is on, */
+                /* in that case video counter is not correct */
+		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x01c9ffc3 )	/* movep.l d0,-$3d(a1) */
+			VideoCounterDelayedOffset += 6;				/* or -2 ? */
 	}
 
 	LOG_TRACE(TRACE_VIDEO_STE , "write ste video %x val=0x%x video_old=%x video_new=%x offset=%x delayed=%s"
