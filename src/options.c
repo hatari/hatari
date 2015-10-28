@@ -222,7 +222,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_MAXHEIGHT, NULL, "--max-height",
 	  "<x>", "Maximum window height for borders & zooming" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
-	  "<x>", "Force internal bitdepth (x = 8/15/16/32, 0=disable)" },
+	  "<x>", "Force internal bitdepth (x = 15/16/32, 0=disable)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "ST/STE specific display" },
 	{ OPT_BORDERS, NULL, "--borders",
@@ -1074,7 +1074,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			case 32:
 			case 16:
 			case 15:
-			case 8:
 				break;       /* supported */
 			case 24:
 				planes = 32; /* We do not support 24 bpp (yet) */

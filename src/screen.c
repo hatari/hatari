@@ -108,24 +108,10 @@ static SDL_Texture *sdlTexture;
 
 void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
 {
-	if (sdlscrn->format->BitsPerPixel == 8)
-	{
-		sdlTexture = SDL_CreateTextureFromSurface(sdlRenderer, screen);
-	}
-	else
-	{
-		SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
-	}
-
+	SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
 	SDL_RenderClear(sdlRenderer);
 	SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
 	SDL_RenderPresent(sdlRenderer);
-
-	if (sdlscrn->format->BitsPerPixel == 8)
-	{
-		SDL_DestroyTexture(sdlTexture);
-		sdlTexture = NULL;
-	}
 }
 
 void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
@@ -182,116 +168,11 @@ static void Screen_SetupRGBTable(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Create new palette for display.
- */
-static void Screen_CreatePalette(void)
-{
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
-#endif
-	SDL_Color sdlColors[16];
-	int i, j;
-
-	if (bUseHighRes)
-	{
-		/* Colors for monochrome screen mode emulation */
-		if (HBLPalettes[0])
-		{
-			sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 255;
-			sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 0;
-		}
-		else
-		{
-			sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 0;
-			sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 255;
-		}
-		SDL_SetColors(sdlscrn, sdlColors, 10, 2);
-		/*SDL_SetColors(sdlscrn, sdlColors, 0, 2);*/
-	}
-	else
-	{
-		int r, g, b;
-		/* Colors for STe color screen mode emulation */
-		for (i = 0; i < 16; i++)
-		{
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-			j = endiantable[i];
-#else
-			j = i;
-#endif
-			/* normalize all to 0x1e0 */
-			r = HBLPalettes[i] >> 3;
-			g = HBLPalettes[i] << 1;
-			b = HBLPalettes[i] << 5;
-			/* move top bit of 0x1e0 to lowest in 0xf0 */
-			r = (r & 0xe0) | ((r & 0x100) >> 4);
-			g = (g & 0xe0) | ((g & 0x100) >> 4);
-			b = (b & 0xe0) | ((b & 0x100) >> 4);
-			/* Set color in table */
-			sdlColors[j].r = r | (r >> 4);
-			sdlColors[j].g = g | (g >> 4);
-			sdlColors[j].b = b | (b >> 4);
-		}
-		SDL_SetColors(sdlscrn, sdlColors, 10, 16);
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Create 8-Bit palette for display if needed.
- */
-static void Screen_Handle8BitPalettes(void)
-{
-	bool bPaletteChanged = false;
-	int i;
-
-	/* Do need to check for 8-Bit palette change? Ie, update whole screen */
-	if (sdlscrn->format->BitsPerPixel == 8)
-	{
-		/* If using HiRes palette update with full update flag */
-		if (!bUseHighRes)
-		{
-			/* Check if palette of 16 colours changed from previous frame */
-			for (i = 0; i < 16 && !bPaletteChanged; i++)
-			{
-				/* Check with first line palette (stored in 'Screen_ComparePaletteMask') */
-				if (HBLPalettes[i] != PrevHBLPalette[i])
-					bPaletteChanged = true;
-			}
-		}
-
-		/* Did palette change or do we require a full update? */
-		if (bPaletteChanged || pFrameBuffer->bFullUpdate)
-		{
-			/* Create palette, for Full-Screen of Window */
-			Screen_CreatePalette();
-			/* Make sure update whole screen */
-			pFrameBuffer->bFullUpdate = true;
-		}
-	}
-
-	/* Copy old palette for 8-Bit compare as this routine writes over it */
-	memcpy(PrevHBLPalette,HBLPalettes, sizeof(Uint16)*16);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Set screen draw functions.
  */
 static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 {
-	if (nBitCount == 8)
-	{
-		/* Low color */
-		if (bDoubleLowRes)
-			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x8Bit;
-		else
-			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
-		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
-	}
-	else if (nBitCount <= 16)
+	if (nBitCount <= 16)
 	{
 		/* High color */
 		if (bDoubleLowRes)
@@ -463,25 +344,12 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 		fprintf(stderr,"Failed to create window or renderer!\n");
 		exit(-1);
 	}
-	SDL_RenderSetLogicalSize(sdlRenderer, width, height);
-	if (bitdepth == 8)
-	{
-		SDL_Color cols[] = {	/* Colors for the sdl-gui */
-			{ 0, 0, 0, 255 }, { 64, 64, 64, 255 },
-			{ 128, 128, 128, 255 }, { 160, 160, 160, 255 },
-			{ 196, 196, 196, 255 }, { 255, 255, 255, 255 },
-			{ 0x00, 0x40, 0x00, 255 }, { 0x00, 0xc0, 0x00, 255 },
-			{ 0x00, 0xe0, 0x00, 255 }
-		};
-		sdlscrn = SDL_CreateRGBSurface(0, width, height, bitdepth,
-		                               0, 0, 0, 0);
-		if (sdlscrn)
-			SDL_SetPaletteColors(sdlscrn->format->palette, cols,
-			                     128, ARRAYSIZE(cols));
-	}
 	else
 	{
 		int rm, bm, gm, pfmt;
+
+		SDL_RenderSetLogicalSize(sdlRenderer, width, height);
+
 		if (bitdepth == 16)
 		{
 			rm = 0xF800;
@@ -521,10 +389,6 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	else
 	{
 		sdlVideoFlags  = SDL_SWSURFACE;
-	}
-	if (bitdepth <= 8)
-	{
-		sdlVideoFlags |= SDL_HWPALETTE;
 	}
 
 	/* Set new video mode */
@@ -675,12 +539,7 @@ static void Screen_SetResolution(bool bForceChange)
 
 	if (Screen_SetSDLVideoSize(Width, Height, BitCount, bForceChange))
 	{
-		/* Re-init screen palette: */
-		if (sdlscrn->format->BitsPerPixel == 8)
-			Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
-		else
-			Screen_SetupRGBTable();         /* Create color conversion table */
-
+		Screen_SetupRGBTable();         /* Create color conversion table */
 		Statusbar_Init(sdlscrn);
 
 		/* screen area without the statusbar */
@@ -1154,6 +1013,9 @@ static int Screen_ComparePaletteMask(int res)
 			res = ST_MEDIUM_RES;
 	}
 
+	/* Copy old palette for compare */
+	memcpy(PrevHBLPalette, HBLPalettes, sizeof(Uint16)*16);
+
 	return res;
 }
 
@@ -1316,8 +1178,6 @@ static bool Screen_DrawFrame(bool bForceFlip)
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
-	/* Do require palette? Check if changed and update */
-	Screen_Handle8BitPalettes();
 	/* Did we change resolution this frame - allocate new screen if did so */
 	Screen_DidResolutionChange(new_res);
 	/* Is need full-update, tag as such */
@@ -1496,10 +1356,6 @@ static void Convert_StartFrame(void)
 #include "convert/macros.h"
 
 /* Conversion routines */
-
-#include "convert/low320x8.c"		/* LowRes To 320xH x 8-bit color */
-#include "convert/low640x8.c"		/* LowRes To 640xH x 8-bit color */
-#include "convert/med640x8.c"		/* MediumRes To 640xH x 8-bit color */
 
 #include "convert/low320x16.c"		/* LowRes To 320xH x 16-bit color */
 #include "convert/low640x16.c"		/* LowRes To 640xH x 16-bit color */
