@@ -2496,6 +2496,7 @@ static void Video_CopyScreenLineColor(void)
 		/* that occurred while the display was already ON */
 		if ( VideoCounterDelayedOffset != 0 )
 		{
+//		  fprintf ( stderr , "adjust video counter offset=%d old video=%x\n" , VideoCounterDelayedOffset , pVideoRaster-STRam );
 			pVideoRaster += ( VideoCounterDelayedOffset & ~1 );
 //		  fprintf ( stderr , "adjust video counter offset=%d new video=%x\n" , VideoCounterDelayedOffset , pVideoRaster-STRam );
 			VideoCounterDelayedOffset = 0;
@@ -2603,6 +2604,7 @@ static void Video_CopyScreenLineColor(void)
 	/* We must keep the new video address in a 24 bit space */
 	/* (in case it pointed to IO space and is now >= 0x1000000) */
 	pVideoRaster = ( ( pVideoRaster - STRam ) & 0xffffff ) + STRam;
+//fprintf ( stderr , "video counter new=%x\n" , pVideoRaster-STRam );
 }
 
 
@@ -3289,6 +3291,19 @@ void Video_ScreenCounter_WriteByte(void)
                 /* in that case video counter is not correct */
 		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x01c9ffc3 )	/* movep.l d0,-$3d(a1) */
 			VideoCounterDelayedOffset += 6;				/* or -2 ? */
+
+		/* [FIXME] 'Tekila' part in Delirious Demo IV : write to FF8209 on STE while display is on, */
+                /* in that case video counter is not correct */
+		else if ( ( STMemory_ReadLong ( M68000_InstrPC ) == 0x11c48209 )	/* move.b d4,$ff8209.w */
+			&& ( STMemory_ReadLong ( M68000_InstrPC-4 ) == 0x11c28207 )	/* move.b d2,$ff8207.w */
+			&& ( STMemory_ReadLong ( M68000_InstrPC-8 ) == 0x82054842 ) )
+		{
+			VideoCounterDelayedOffset += 2;	
+			if ( VideoCounterDelayedOffset == 256 )			/* write sometimes happens at the same time */
+				VideoCounterDelayedOffset = 0;			/* ff8207 increases */
+			/* partial fix, some errors remain for other cases where write happens at the same time ff8207 increases ... */
+		}
+
 	}
 
 	LOG_TRACE(TRACE_VIDEO_STE , "write ste video %x val=0x%x video_old=%x video_new=%x offset=%x delayed=%s"
