@@ -842,7 +842,6 @@ static void VIDEL_updateColors(void)
 			b |= b>>6;
 			HostScreen_setPaletteColor(i, r,g,b);
 		}
-		HostScreen_updatePalette(colors);
 	} else {
 		for (i = 0; i < colors; i++) {
 			int offset = i << 1;
@@ -857,7 +856,6 @@ static void VIDEL_updateColors(void)
 			b |= b<<4;
 			HostScreen_setPaletteColor(i, r,g,b);
 		}
-		HostScreen_updatePalette(colors);
 	}
 
 	videl.hostColorsSync = true;

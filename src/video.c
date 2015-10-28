@@ -2934,7 +2934,6 @@ static void Video_UpdateTTPalette(int bpp)
 		}
 	}
 
-	HostScreen_updatePalette(colors);
 	bTTColorsSync = true;
 }
 

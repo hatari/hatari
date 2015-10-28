@@ -210,8 +210,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp, bool bForceChange)
 		return;
 	}
 
-	// In case surface format changed, update SDL palette & remap the native palette
-	HostScreen_updatePalette(256);
+	// In case surface format changed, remap the native palette
 	HostScreen_remapPalette();
 
 	// redraw statusbar
@@ -299,11 +298,6 @@ void HostScreen_setPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue)
 Uint32 HostScreen_getPaletteColor(Uint8 idx)
 {
 	return palette.native[idx];
-}
-
-void HostScreen_updatePalette(int colorCount)
-{
-	SDL_SetColors( sdlscrn, palette.standard, 0, colorCount );
 }
 
 static void HostScreen_remapPalette(void)
