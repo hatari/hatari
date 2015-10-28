@@ -851,7 +851,7 @@ void Screen_ModeChanged(bool bForceChange)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
-		HostScreen_setWindowSize(width, height, 8, bForceChange);
+		HostScreen_setWindowSize(width, height, 0, bForceChange);
 	}
 	else if (bUseHighRes)
 	{
