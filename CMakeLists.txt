@@ -135,6 +135,11 @@ if(CAPSIMAGE_FOUND)
 	set(HAVE_CAPSIMAGE 1)
 endif(CAPSIMAGE_FOUND)
 
+find_package(Udev)
+if(UDEV_FOUND)
+	set(HAVE_UDEV 1)
+endif(UDEV_FOUND)
+
 # ################
 # CPP Definitions:
 # ################
@@ -356,6 +361,10 @@ else()
   message( "  - capsimage :\tv${CAPSIMAGE_VERSION} not found, install it to use .IPF, .RAW and .CTR disk images" )
 endif(CAPSIMAGE_FOUND)
 
+if(UDEV_FOUND)
+  message( "  - udev :\tfound, enables NatFeats SCSI Driver media change detection" )
+else()
+  message( "  - udev :\tnot found, install it for NatFeats SCSI Driver media change detection" )
+endif(UDEV_FOUND)
+
 message( "" )
-
-

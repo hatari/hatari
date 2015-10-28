@@ -16,9 +16,13 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c : " __DATE__ " " __TIME__;
 
 #if defined(__linux__)
 
+#include "config.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#if HAVE_UDEV
+#include <libudev.h>
+#endif
 #include <sys/ioctl.h>
 #include <scsi/sg.h>
 #include "stMemory.h"
@@ -47,6 +51,13 @@ typedef struct
 
 static HANDLE_META_DATA handle_meta_data[SCSI_MAX_HANDLES];
 
+#if HAVE_UDEV
+static struct udev *udev;
+static struct udev_monitor *mon;
+static int fd;
+static fd_set udevFds;
+static struct timeval tv;
+#endif
 
 static Uint32 read_stack_long(Uint32 *stack)
 {
@@ -73,18 +84,53 @@ static void write_word(Uint32 addr, Uint16 value)
     STMemory_WriteWord(addr, value);
 }
 
-static void set_error(Uint32 handle, Uint32 errnum)
+static void set_error(Uint32 handle, int errbit)
 {
     Uint32 i;
     for(i = 0; i < SCSI_MAX_HANDLES; i++)
     {
         if(handle != i && handle_meta_data[i].fd &&
-           handle_meta_data[i].id_lo == handle_meta_data[handle].id_lo)
+            handle_meta_data[i].id_lo == handle_meta_data[handle].id_lo)
         {
-            handle_meta_data[i].error = errnum;
+            handle_meta_data[i].error |= errbit;
         }
     }
 }
+
+#if HAVE_UDEV
+// udev-based check for media change
+static void check_mchg_udev(void)
+{
+    FD_ZERO(&udevFds);
+    FD_SET(fd, &udevFds);
+
+    int ret = select(fd + 1, &udevFds, 0, 0, &tv);
+    if(ret > 0 && FD_ISSET(fd, &udevFds))
+    {
+        struct udev_device *dev = udev_monitor_receive_device(mon);
+        const char *dev_type = udev_device_get_devtype(dev);
+        const char *action = udev_device_get_action(dev);
+        if(!strcmp("disk",  dev_type) && !strcmp("change", action))
+        {
+            LOG_TRACE(TRACE_SCSIDRV, ": %s was changed",
+                      udev_device_get_devnode(dev));
+
+            // TODO Determine sg device name from block device name
+            // and only report media change for the actually affected device
+
+            // cErrMediach for all open handles
+            Uint32 i;
+            for(i = 0; i < SCSI_MAX_HANDLES; i++)
+            {
+                if(handle_meta_data[i].fd)
+                {
+                    handle_meta_data[i].error |= 1;
+                }
+            }
+        }
+    }
+}
+#endif
 
 static int check_device_file(Uint32 id)
 {
@@ -149,6 +195,24 @@ static int scsidrv_inquire_bus(Uint32 stack)
 
 static int scsidrv_open(Uint32 stack)
 {
+#if HAVE_UDEV
+    if(!udev)
+    {
+        udev = udev_new();
+        if(!udev) {
+            return -1;
+        }
+
+        mon = udev_monitor_new_from_netlink(udev, "udev");
+        udev_monitor_filter_add_match_subsystem_devtype(mon, "block", NULL);
+        udev_monitor_enable_receiving(mon);
+        fd = udev_monitor_get_fd(mon);
+
+        tv.tv_sec = 0;
+        tv.tv_usec = 0;
+    }
+#endif
+
     Uint32 handle = read_stack_long(&stack);
     Uint32 id = read_stack_long(&stack);
 
@@ -316,16 +380,22 @@ static int scsidrv_error(Uint32 stack)
         return GEMDOS_ENHNDL;
     }
 
+    int errbit = 1 << errnum;
+
     if(rwflag)
     {
-        set_error(handle, errnum);
+        set_error(handle, errbit);
 
-        return errnum;
+        return 0;
     }
     else
     {
-        int status = handle_meta_data[handle].error;
-        handle_meta_data[handle].error = 0;
+#if HAVE_UDEV
+        check_mchg_udev();
+#endif
+
+        int status = handle_meta_data[handle].error & errbit;
+        handle_meta_data[handle].error &= ~errbit;
 
         return status;
     }
