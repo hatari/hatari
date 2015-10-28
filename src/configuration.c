@@ -712,6 +712,10 @@ void Configuration_Apply(bool bReset)
 	{
 		nFrameSkips = ConfigureParams.Screen.nFrameSkips;
 	}
+	if (ConfigureParams.Screen.nForceBpp < 15)	/* Avoid 8-bit depth */
+	{
+		ConfigureParams.Screen.nForceBpp = 0;
+	}
 
 	/* Init clocks for this machine */
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
