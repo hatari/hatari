@@ -147,6 +147,10 @@ if(CAPSIMAGE_FOUND)
 	target_link_libraries(hatari ${CAPSIMAGE_LIBRARY})
 endif(CAPSIMAGE_FOUND)
 
+if(UDEV_FOUND)
+	target_link_libraries(hatari ${UDEV_LIBRARY})
+endif(UDEV_FOUND)
+
 if(WIN32)
 	# Needed for socket() on Windows
 	target_link_libraries(hatari ws2_32)

@@ -82,6 +82,7 @@ Optional:
 - The Xlib library to support Hatari Python UI window embedding on
   systems with the X window system (Linux and other unixes) 
 - The portaudio library for Falcon microphone handling
+- The udev library for NatFeats SCSI driver media change detection
 - The IPF support library (http://www.softpres.org/download)
 
 Don't forget to also install the header files of these libraries for compiling

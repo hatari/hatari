@@ -24,7 +24,7 @@ It consists of two software components:
    downloaded from http://hddriver.seimet.de/en/downloads.html.
 
 The NatFeats-based interface between the TOS stub and the host driver
-implementation consists of 7 calls (NatFeats sub-ids):
+implementation consists of these calls (NatFeats sub-ids):
 
 1. SCSI_INTERFACE_VERSION
 
@@ -39,7 +39,7 @@ version 1.05.
 Returns the host's bus features, which depend on the host system, and the bus
 name. For Linux the bus name is "Linux Generic SCSI".
 
-3. SCSI_INQUIRE_BUS, SCSI_OPEN, SCSI_CLOSE, SCSI_CHECK_DEV
+3. SCSI_INQUIRE_BUS, SCSI_OPEN, SCSI_CLOSE, SCSI_ERROR SCSI_CHECK_DEV
 
 The host implementations of the corresponding SCSI Driver calls.
 

@@ -192,7 +192,7 @@ Debugging OS calls, Line-A usage and panics
 -------------------------------------------
 
 When debugging EmuTOS panics, the best option is to start Hatari with
-"--natfeats on --conout 2" (to get extra debug output and redirect
+"--natfeats on --trace os_base" (to get extra debug output and redirect
 EmuTOS panic etc messages to console) and then ask Hatari debugger to
 stop when the program is started:
 -----------
@@ -597,7 +597,7 @@ Monochrome games:
 - Puzzlepuzzle
 - Qix
 - Roll X	(line-A bitblit and set/get pixel)
-- Sbreak*       (by Mark Overmars)
+- Super breakout* (by Mark Overmars)
 - Sherlock*     (texts overlap slightly)
 - Skull diggery
 - Slither       (line-A draw/clear sprite, works also in color)
@@ -648,7 +648,7 @@ Non-working color STOS games (as expected):
 
 Commercial color game demos:
 - Brain Blaster / The Teller demo (input doesn't work)
-- Cauldron demo     (freezes at during start)
+- Cauldron demo     (freezes during start)
 - Gods demo         (address error after Fclose() on startup, EmuTOS memory overwrite)
 - Flip & Magnose / Up an' Away demo (bus error panic)
 - Hudson Hawk demo  (in game beginning, bus Error reading $ffc230)
@@ -770,6 +770,7 @@ Demos:
 - Illusion (by Next)
 - Jam-Cols (by ICE)
 - Just Musix 2 (by DHS)
+- Just another Blitter demo (by Anima)
 - Kick my ass'embler (cpp_edit by Paradize & Cerebral Vortex)
 - Lavalamp (by Tobe)
 - Little Blitter Benchmark Demo (by Frank B)
@@ -860,7 +861,7 @@ Color games:
 - Zero-5 (demo)
 - Zool (demo)
 
-Additionally, also all STe enhanced Paradize games work
+Additionally, also all nice STe enhanced Paradize games work
 (attackwave, kolmik, mangapuzzle, nwdump, pairs, penta, pokersq,
 pooz, snax, spacebattle), and they all use line-A bitblits:
 	http://paradize.final-memory.org/games.shtml
@@ -1182,8 +1183,8 @@ Partly working applications:
 - Fractal Playground
   - DSP needs to be disabled, keyboard input doesn't work
 - Whip! (virtual light machine)
-  - Cursor is frozen unless DSP is disabled,
-    non-DSP effects work
+  - Cursor is frozen unless DSP is disabled
+  - Non-DSP effects work
 - Winrec (direct to disk GEM audio recorder/effects)
   - Starts fine and GUI works, but I didn't try recording,
     may actually work fine

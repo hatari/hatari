@@ -16,9 +16,13 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c : " __DATE__ " " __TIME__;
 
 #if defined(__linux__)
 
+#include "config.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#if HAVE_UDEV
+#include <libudev.h>
+#endif
 #include <sys/ioctl.h>
 #include <scsi/sg.h>
 #include "stMemory.h"
@@ -26,8 +30,8 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c : " __DATE__ " " __TIME__;
 #include "gemdos_defines.h"
 #include "nf_scsidrv.h"
 
-// The driver interface version, 1.01
-#define INTERFACE_VERSION 0x0101
+// The driver interface version, 1.02
+#define INTERFACE_VERSION 0x0102
 // Maximum is 20 characters
 #define BUS_NAME "Linux Generic SCSI"
 // The SG driver supports cAllCmds
@@ -38,8 +42,22 @@ const char NfScsiDrv_fileid[] = "Hatari nf_scsidrv.c : " __DATE__ " " __TIME__;
 #define SCSI_MAX_HANDLES 32
 
 
-static int fds[SCSI_MAX_HANDLES];
+typedef struct
+{
+    int fd;
+    int id_lo;
+    int error;
+} HANDLE_META_DATA;
 
+static HANDLE_META_DATA handle_meta_data[SCSI_MAX_HANDLES];
+
+#if HAVE_UDEV
+static struct udev *udev;
+static struct udev_monitor *mon;
+static int fd;
+static fd_set udevFds;
+static struct timeval tv;
+#endif
 
 static Uint32 read_stack_long(Uint32 *stack)
 {
@@ -65,6 +83,54 @@ static void write_word(Uint32 addr, Uint16 value)
 {
     STMemory_WriteWord(addr, value);
 }
+
+static void set_error(Uint32 handle, int errbit)
+{
+    Uint32 i;
+    for(i = 0; i < SCSI_MAX_HANDLES; i++)
+    {
+        if(handle != i && handle_meta_data[i].fd &&
+            handle_meta_data[i].id_lo == handle_meta_data[handle].id_lo)
+        {
+            handle_meta_data[i].error |= errbit;
+        }
+    }
+}
+
+#if HAVE_UDEV
+// udev-based check for media change
+static void check_mchg_udev(void)
+{
+    FD_ZERO(&udevFds);
+    FD_SET(fd, &udevFds);
+
+    int ret = select(fd + 1, &udevFds, 0, 0, &tv);
+    if(ret > 0 && FD_ISSET(fd, &udevFds))
+    {
+        struct udev_device *dev = udev_monitor_receive_device(mon);
+        const char *dev_type = udev_device_get_devtype(dev);
+        const char *action = udev_device_get_action(dev);
+        if(!strcmp("disk",  dev_type) && !strcmp("change", action))
+        {
+            LOG_TRACE(TRACE_SCSIDRV, ": %s was changed",
+                      udev_device_get_devnode(dev));
+
+            // TODO Determine sg device name from block device name
+            // and only report media change for the actually affected device
+
+            // cErrMediach for all open handles
+            Uint32 i;
+            for(i = 0; i < SCSI_MAX_HANDLES; i++)
+            {
+                if(handle_meta_data[i].fd)
+                {
+                    handle_meta_data[i].error |= 1;
+                }
+            }
+        }
+    }
+}
+#endif
 
 static int check_device_file(Uint32 id)
 {
@@ -129,12 +195,31 @@ static int scsidrv_inquire_bus(Uint32 stack)
 
 static int scsidrv_open(Uint32 stack)
 {
+#if HAVE_UDEV
+    if(!udev)
+    {
+        udev = udev_new();
+        if(!udev) {
+            return -1;
+        }
+
+        mon = udev_monitor_new_from_netlink(udev, "udev");
+        udev_monitor_filter_add_match_subsystem_devtype(mon, "block", NULL);
+        udev_monitor_enable_receiving(mon);
+        fd = udev_monitor_get_fd(mon);
+
+        tv.tv_sec = 0;
+        tv.tv_usec = 0;
+    }
+#endif
+
     Uint32 handle = read_stack_long(&stack);
     Uint32 id = read_stack_long(&stack);
 
     LOG_TRACE(TRACE_SCSIDRV, "scsidrv_open: handle=%d, id=%d", handle, id);
     
-    if(handle >= SCSI_MAX_HANDLES || fds[handle] || check_device_file(id))
+    if(handle >= SCSI_MAX_HANDLES || handle_meta_data[handle].fd ||
+       check_device_file(id))
     {
         return GEMDOS_ENHNDL;
     }
@@ -148,7 +233,9 @@ static int scsidrv_open(Uint32 stack)
         return fd;
     }
 
-    fds[handle] = fd;
+    handle_meta_data[handle].fd = fd;
+    handle_meta_data[handle].id_lo = id;
+    handle_meta_data[handle].error = 0;
 
     return 0;
 }
@@ -159,14 +246,14 @@ static int scsidrv_close(Uint32 stack)
 
     LOG_TRACE(TRACE_SCSIDRV, "scsidrv_close: handle=%d", handle);
 
-    if(handle >= SCSI_MAX_HANDLES || !fds[handle])
+    if(handle >= SCSI_MAX_HANDLES || !handle_meta_data[handle].fd)
     {
         return GEMDOS_ENHNDL;
     }
 
-    close(fds[handle]);
+    close(handle_meta_data[handle].fd);
 
-    fds[handle] = 0;
+    handle_meta_data[handle].fd = 0;
 
     return 0;
 }
@@ -175,7 +262,6 @@ static int scsidrv_inout(Uint32 stack)
 {
     Uint32 handle = read_stack_long(&stack);
     Uint32 dir = read_stack_long(&stack);
-    Uint32 id = read_stack_long(&stack);
     unsigned char *cmd = read_stack_pointer(&stack);
     Uint32 cmd_len = read_stack_long(&stack);
     unsigned char *buffer = read_stack_pointer(&stack);
@@ -190,10 +276,10 @@ static int scsidrv_inout(Uint32 stack)
     if(LOG_TRACE_LEVEL(TRACE_SCSIDRV))
     {
         LOG_TRACE_PRINT(
-            "scsidrv_inout: handle=%d, dir=%d, id=%d, cmd_len=%d, buffer=%p,\n"
+            "scsidrv_inout: handle=%d, dir=%d, cmd_len=%d, buffer=%p,\n"
             "               transfer_len=%d, sense_buffer=%p, timeout=%d,\n"
             "               cmd=",
-            handle, dir, id, cmd_len, buffer, transfer_len, sense_buffer,
+            handle, dir, cmd_len, buffer, transfer_len, sense_buffer,
             timeout);
 
         Uint32 i;
@@ -205,7 +291,7 @@ static int scsidrv_inout(Uint32 stack)
         }
     }
     
-    if(handle >= SCSI_MAX_HANDLES || !fds[handle])
+    if(handle >= SCSI_MAX_HANDLES || !handle_meta_data[handle].fd)
     {
         return GEMDOS_ENHNDL;
     }
@@ -215,7 +301,7 @@ static int scsidrv_inout(Uint32 stack)
     {
         if(sense_buffer)
         {
-            // Sense Key and ASC
+            // Sense Key, ASC
             sense_buffer[2] = 0x05;
             sense_buffer[12] = 0x25;
 
@@ -248,16 +334,71 @@ static int scsidrv_inout(Uint32 stack)
 
     io_hdr.timeout = timeout;
 
-    int status = ioctl(fds[handle], SG_IO, &io_hdr) < 0 ? -1 : io_hdr.status;
+    int status = ioctl(handle_meta_data[handle].fd,
+                       SG_IO, &io_hdr) < 0 ? -1 : io_hdr.status;
 
     if(status > 0 && sense_buffer)
     {
         LOG_TRACE(TRACE_SCSIDRV,
                   "\n               Sense Key=$%02X, ASC=$%02X, ASCQ=$%02X",
                   sense_buffer[2], sense_buffer[12], sense_buffer[13]);
+
+        if(status == 2)
+        {
+            // Automatic media change and reset handling for
+            // SCSI Driver version 1.0.1
+            if((sense_buffer[2] & 0x0f) && !sense_buffer[13])
+            {
+                if(sense_buffer[12] == 0x28)
+                {
+                    // cErrMediach
+                    set_error(handle, 1);
+                }
+                else if(sense_buffer[12] == 0x29)
+                {
+                    // cErrReset
+                    set_error(handle, 2);
+                }
+            }
+        }
     }
 
     return status;
+}
+
+static int scsidrv_error(Uint32 stack)
+{
+    Uint32 handle = read_stack_long(&stack);
+    Uint32 rwflag = read_stack_long(&stack);
+    Uint32 errnum = read_stack_long(&stack);
+
+    LOG_TRACE(TRACE_SCSIDRV, "scsidrv_error: handle=%d, rwflag=%d, errno=%d",
+              handle, rwflag, errnum);
+
+    if(handle >= SCSI_MAX_HANDLES || !handle_meta_data[handle].fd)
+    {
+        return GEMDOS_ENHNDL;
+    }
+
+    int errbit = 1 << errnum;
+
+    if(rwflag)
+    {
+        set_error(handle, errbit);
+
+        return 0;
+    }
+    else
+    {
+#if HAVE_UDEV
+        check_mchg_udev();
+#endif
+
+        int status = handle_meta_data[handle].error & errbit;
+        handle_meta_data[handle].error &= ~errbit;
+
+        return status;
+    }
 }
 
 static int scsidrv_check_dev(Uint32 stack)
@@ -278,6 +419,7 @@ static const struct {
     { scsidrv_open },
     { scsidrv_close },
     { scsidrv_inout },
+    { scsidrv_error },
     { scsidrv_check_dev }
 };
 
@@ -304,11 +446,11 @@ void nf_scsidrv_reset()
     int i;
     for(i = 0; i < SCSI_MAX_HANDLES; i++)
     {
-        if(fds[i])
+        if(handle_meta_data[i].fd)
         {
-            close(fds[i]);
+            close(handle_meta_data[i].fd);
 
-            fds[i] = 0;
+            handle_meta_data[i].fd = 0;
         }
     }
 }
