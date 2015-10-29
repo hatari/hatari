@@ -30,14 +30,44 @@ struct screen_zoom_s {
 static struct screen_zoom_s screen_zoom;
 
 
-static void VIDEL_memset_uint32(Uint32 *addr, Uint32 color, int count)
+/* TOS palette (bpp < 16) to SDL color mapping */
+static struct
+{
+	SDL_Color	standard[256];
+	Uint32		native[256];
+} palette;
+
+void Screen_SetPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue)
+{
+	// set the SDL standard RGB palette settings
+	palette.standard[idx].r = red;
+	palette.standard[idx].g = green;
+	palette.standard[idx].b = blue;
+	// convert the color to native
+	palette.native[idx] = SDL_MapRGB(sdlscrn->format, red, green, blue);
+}
+
+void Screen_RemapPalette(void)
+{
+	int i;
+	Uint32 *native = palette.native;
+	SDL_Color *standard = palette.standard;
+	SDL_PixelFormat *fmt = sdlscrn->format;
+
+	for(i = 0; i < 256; i++, native++, standard++) {
+		*native = SDL_MapRGB(fmt, standard->r, standard->g, standard->b);
+	}
+}
+
+
+static void Screen_memset_uint32(Uint32 *addr, Uint32 color, int count)
 {
 	while (count-- > 0) {
 		*addr++ = color;
 	}
 }
 
-static void VIDEL_memset_uint16(Uint16 *addr, Uint16 color, int count)
+static void Screen_memset_uint16(Uint16 *addr, Uint16 color, int count)
 {
 	while (count-- > 0) {
 		*addr++ = color;
@@ -266,7 +296,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder; h++) {
-					VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>1;
 				}
 
@@ -276,20 +306,20 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					Uint16 *hvram_column = hvram_line;
 
 					/* Left border first */
-					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), leftBorder);
+					Screen_memset_uint16(hvram_column, palette.native[0], leftBorder);
 					hvram_column += leftBorder;
 
 					/* First 16 pixels */
 					VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
 					for (j = 0; j < 16 - hscrolloffset; j++) {
-						*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+						*hvram_column++ = palette.native[color[j+hscrolloffset]];
 					}
 					fvram_column += vbpp;
 					/* Now the main part of the line */
 					for (w = 1; w < (vw+15)>>4; w++) {
 						VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
 						for (j=0; j<16; j++) {
-							*hvram_column++ = HostScreen_getPaletteColor( color[j] );
+							*hvram_column++ = palette.native[color[j]];
 						}
 						fvram_column += vbpp;
 					}
@@ -297,11 +327,11 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					if (hscrolloffset) {
 						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
 						for (j = 0; j < hscrolloffset; j++) {
-							*hvram_column++ = HostScreen_getPaletteColor(color[j]);
+							*hvram_column++ = palette.native[color[j]];
 						}
 					}
 					/* Right border */
-					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
+					Screen_memset_uint16(hvram_column, palette.native[0], rightBorderSize);
 
 					fvram_line += nextline;
 					hvram_line += scrpitch>>1;
@@ -309,7 +339,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 				/* Render the lower border */
 				for (h = 0; h < lowBorderSize; h++) {
-					VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>1;
 				}
 			}
@@ -320,7 +350,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder; h++) {
-					VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>2;
 				}
 
@@ -330,20 +360,20 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					Uint32 *hvram_column = hvram_line;
 
 					/* Left border first */
-					VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), leftBorder);
+					Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
 					hvram_column += leftBorder;
 
 					/* First 16 pixels */
 					VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
 					for (j = 0; j < 16 - hscrolloffset; j++) {
-						*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+						*hvram_column++ = palette.native[color[j+hscrolloffset]];
 					}
 					fvram_column += vbpp;
 					/* Now the main part of the line */
 					for (w = 1; w < (vw+15)>>4; w++) {
 						VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
 						for (j=0; j<16; j++) {
-							*hvram_column++ = HostScreen_getPaletteColor( color[j] );
+							*hvram_column++ = palette.native[color[j]];
 						}
 						fvram_column += vbpp;
 					}
@@ -351,11 +381,11 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					if (hscrolloffset) {
 						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
 						for (j = 0; j < hscrolloffset; j++) {
-							*hvram_column++ = HostScreen_getPaletteColor(color[j]);
+							*hvram_column++ = palette.native[color[j]];
 						}
 					}
 					/* Right border */
-					VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
+					Screen_memset_uint32(hvram_column, palette.native[0], rightBorderSize);
 
 					fvram_line += nextline;
 					hvram_line += scrpitch>>2;
@@ -363,7 +393,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 				/* Render the lower border */
 				for (h = 0; h < lowBorderSize; h++) {
-					VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>2;
 				}
 			}
@@ -380,7 +410,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder; h++) {
-					VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>1;
 				}
 
@@ -391,7 +421,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					Uint16 *fvram_column;
 #endif
 					/* Left border first */
-					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), leftBorder);
+					Screen_memset_uint16(hvram_column, palette.native[0], leftBorder);
 					hvram_column += leftBorder;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -408,7 +438,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 #endif /* SDL_BYTEORDER == SDL_BIG_ENDIAN */
 
 					/* Right border */
-					VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
+					Screen_memset_uint16(hvram_column, palette.native[0], rightBorderSize);
 
 					fvram_line += nextline;
 					hvram_line += scrpitch>>1;
@@ -416,7 +446,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 				/* Render the bottom border */
 				for (h = 0; h < lowBorderSize; h++) {
-					VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>1;
 				}
 			}
@@ -427,7 +457,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder; h++) {
-					VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>2;
 				}
 
@@ -437,7 +467,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					Uint32 *hvram_column = hvram_line;
 
 					/* Left border first */
-					VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), leftBorder);
+					Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
 					hvram_column += leftBorder;
 
 					/* Graphical area */
@@ -447,7 +477,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					}
 
 					/* Right border */
-					VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), rightBorderSize);
+					Screen_memset_uint32(hvram_column, palette.native[0], rightBorderSize);
 				}
 
 				fvram_line += nextline;
@@ -455,7 +485,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 				/* Render the bottom border */
 				for (h = 0; h < lowBorderSize; h++) {
-					VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>2;
 				}
 			}
@@ -568,7 +598,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder * coefy; h++) {
-					VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>1;
 				}
 
@@ -587,14 +617,14 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						/* First 16 pixels of a new line */
 						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
 						for (j = 0; j < 16 - hscrolloffset; j++) {
-							*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+							*hvram_column++ = palette.native[color[j+hscrolloffset]];
 						}
 						fvram_column += vbpp;
 						/* Convert the main part of the new line */
 						for (w = 1; w < (vw+15)>>4; w++) {
 							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
 							for (j=0; j<16; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
+								*hvram_column++ = palette.native[color[j]];
 							}
 							fvram_column += vbpp;
 						}
@@ -602,14 +632,14 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						if (hscrolloffset) {
 							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
 							for (j = 0; j < hscrolloffset; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor(color[j]);
+								*hvram_column++ = palette.native[color[j]];
 							}
 						}
 
 						hvram_column = hvram_line;
 
 						/* Display the Left border */
-						VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), leftBorder * coefx);
+						Screen_memset_uint16(hvram_column, palette.native[0], leftBorder * coefx);
 						hvram_column += leftBorder * coefx;
 
 						/* Display the Graphical area */
@@ -618,7 +648,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						hvram_column += vw * coefx;
 
 						/* Display the Right border */
-						VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), rightBorder * coefx);
+						Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
 						hvram_column += rightBorder * coefx;
 					}
 
@@ -628,7 +658,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 				/* Render the lower border */
 				for (h = 0; h < lowerBorder * coefy; h++) {
-					VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>1;
 				}
 
@@ -644,7 +674,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder * coefy; h++) {
-					VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>2;
 				}
 
@@ -662,14 +692,14 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						/* First 16 pixels of a new line */
 						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
 						for (j = 0; j < 16 - hscrolloffset; j++) {
-							*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+							*hvram_column++ = palette.native[color[j+hscrolloffset]];
 						}
 						fvram_column += vbpp;
 						/* Convert the main part of the new line */
 						for (w = 1; w < (vw+15)>>4; w++) {
 							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
 							for (j=0; j<16; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
+								*hvram_column++ = palette.native[color[j]];
 							}
 							fvram_column += vbpp;
 						}
@@ -677,13 +707,13 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						if (hscrolloffset) {
 							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
 							for (j = 0; j < hscrolloffset; j++) {
-								*hvram_column++ = HostScreen_getPaletteColor(color[j]);
+								*hvram_column++ = palette.native[color[j]];
 							}
 						}
 
 						hvram_column = hvram_line;
 						/* Display the Left border */
-						VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), leftBorder * coefx);
+						Screen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
 						hvram_column += leftBorder * coefx;
 
 						/* Display the Graphical area */
@@ -693,7 +723,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						hvram_column += vw * coefx;
 
 						/* Display the Right border */
-						VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), rightBorder * coefx);
+						Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
 						hvram_column += rightBorder * coefx;
 					}
 
@@ -703,7 +733,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 				/* Render the lower border */
 				for (h = 0; h < lowerBorder * coefy; h++) {
-					VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>2;
 				}
 
@@ -722,7 +752,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder * coefy; h++) {
-					VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>1;
 				}
 
@@ -743,7 +773,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						hvram_column = hvram_line;
 
 						/* Display the Left border */
-						VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), leftBorder * coefx);
+						Screen_memset_uint16(hvram_column, palette.native[0], leftBorder * coefx);
 						hvram_column += leftBorder * coefx;
 
 						/* Display the Graphical area */
@@ -752,7 +782,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 
 						/* Display the Right border */
-						VIDEL_memset_uint16 (hvram_column, HostScreen_getPaletteColor(0), rightBorder * coefx);
+						Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
 						hvram_column += rightBorder * coefx;
 					}
 
@@ -762,7 +792,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 				/* Render the lower border */
 				for (h = 0; h < lowerBorder * coefy; h++) {
-					VIDEL_memset_uint16 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>1;
 				}
 			}
@@ -774,7 +804,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder * coefy; h++) {
-					VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 				}
 
 				/* Render the graphical area */
@@ -794,7 +824,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						hvram_column = hvram_line;
 
 						/* Display the Left border */
-						VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), leftBorder * coefx);
+						Screen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
 						hvram_column += leftBorder * coefx;
 
 						/* Display the Graphical area */
@@ -806,7 +836,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						}
 
 						/* Display the Right border */
-						VIDEL_memset_uint32 (hvram_column, HostScreen_getPaletteColor(0), rightBorder * coefx);
+						Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
 						hvram_column += rightBorder * coefx;
 					}
 
@@ -816,7 +846,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 				/* Render the lower border */
 				for (h = 0; h < lowerBorder * coefy; h++) {
-					VIDEL_memset_uint32 (hvram_line, HostScreen_getPaletteColor(0), scrwidth);
+					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
 					hvram_line += scrpitch>>2;
 				}
 			}

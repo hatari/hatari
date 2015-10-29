@@ -20,6 +20,7 @@ const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 #include "hostscreen.h"
 #include "resolution.h"
 #include "screen.h"
+#include "screenConvert.h"
 #include "statusbar.h"
 
 #define VIDEL_DEBUG 0
@@ -31,54 +32,14 @@ const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 #endif
 
 
-#define RGB_BLACK     0x00000000
-#define RGB_BLUE      0x000000ff
-#define RGB_GREEN     0x00ff0000
-#define RGB_CYAN      0x00ff00ff
-#define RGB_RED       0xff000000
-#define RGB_MAGENTA   0xff0000ff
-#define RGB_LTGRAY    0xbbbb00bb
-#define RGB_GRAY      0x88880088
-#define RGB_LTBLUE    0x000000aa
-#define RGB_LTGREEN   0x00aa0000
-#define RGB_LTCYAN    0x00aa00aa
-#define RGB_LTRED     0xaa000000
-#define RGB_LTMAGENTA 0xaa0000aa
-#define RGB_YELLOW    0xffff0000
-#define RGB_LTYELLOW  0xaaaa0000
-#define RGB_WHITE     0xffff00ff
-
-
 /* TODO: put these hostscreen globals to some struct */
 static SDL_Rect hs_rect;
 static int hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
-static void HostScreen_remapPalette(void);
-
-static struct { // TOS palette (bpp < 16) to SDL color mapping
-	SDL_Color	standard[256];
-	Uint32		native[256];
-} palette;
-
-
-static const Uint32 default_palette[] = {
-    RGB_WHITE, RGB_RED, RGB_GREEN, RGB_YELLOW,
-    RGB_BLUE, RGB_MAGENTA, RGB_CYAN, RGB_LTGRAY,
-    RGB_GRAY, RGB_LTRED, RGB_LTGREEN, RGB_LTYELLOW,
-    RGB_LTBLUE, RGB_LTMAGENTA, RGB_LTCYAN, RGB_BLACK
-};
-
 
 void HostScreen_Init(void)
 {
-	int i;
-	for(i = 0; i < 256; i++) {
-		Uint32 color = default_palette[i%16];
-		palette.standard[i].r = color >> 24;
-		palette.standard[i].g = (color >> 16) & 0xff;
-		palette.standard[i].b = color & 0xff;
-	}
 }
 
 void HostScreen_UnInit(void)
@@ -211,7 +172,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp, bool bForceChange)
 	}
 
 	// In case surface format changed, remap the native palette
-	HostScreen_remapPalette();
+	Screen_RemapPalette();
 
 	// redraw statusbar
 	Statusbar_Init(sdlscrn);
@@ -283,33 +244,6 @@ Uint8 *HostScreen_getVideoramAddress(void)
 SDL_PixelFormat *HostScreen_getFormat(void)
 {
 	return sdlscrn->format;
-}
-
-void HostScreen_setPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue)
-{
-	// set the SDL standard RGB palette settings
-	palette.standard[idx].r = red;
-	palette.standard[idx].g = green;
-	palette.standard[idx].b = blue;
-	// convert the color to native
-	palette.native[idx] = SDL_MapRGB( sdlscrn->format, red, green, blue );
-}
-
-Uint32 HostScreen_getPaletteColor(Uint8 idx)
-{
-	return palette.native[idx];
-}
-
-static void HostScreen_remapPalette(void)
-{
-	int i;
-	Uint32 *native = palette.native;
-	SDL_Color *standard = palette.standard;
-	SDL_PixelFormat *fmt = sdlscrn->format;
-
-	for(i = 0; i < 256; i++, native++, standard++) {
-		*native = SDL_MapRGB(fmt, standard->r, standard->g, standard->b);
-	}
 }
 
 bool HostScreen_renderBegin(void)

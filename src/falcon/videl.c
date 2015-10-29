@@ -840,7 +840,7 @@ static void VIDEL_updateColors(void)
 			g |= g>>6;
 			b = F_COLORS(offset + 3) & 0xfc;
 			b |= b>>6;
-			HostScreen_setPaletteColor(i, r,g,b);
+			Screen_SetPaletteColor(i, r,g,b);
 		}
 	} else {
 		for (i = 0; i < colors; i++) {
@@ -854,7 +854,7 @@ static void VIDEL_updateColors(void)
 			b = STE_COLORS(offset + 1) & 0x0f;
 			b = ((b & 7)<<1)|(b>>3);
 			b |= b<<4;
-			HostScreen_setPaletteColor(i, r,g,b);
+			Screen_SetPaletteColor(i, r,g,b);
 		}
 	}
 

@@ -20,8 +20,6 @@ extern Uint32 HostScreen_getWidth(void);
 extern Uint32 HostScreen_getHeight(void);
 extern Uint8 * HostScreen_getVideoramAddress(void);
 extern SDL_PixelFormat *HostScreen_getFormat(void);
-extern void HostScreen_setPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue);
-extern Uint32 HostScreen_getPaletteColor(Uint8 idx);
 extern void HostScreen_updatePalette(int colorCount);
 extern void HostScreen_setWindowSize(int width, int height, int bpp, bool bForceChange);
 

@@ -1272,13 +1272,13 @@ bool Screen_Draw(void)
 	{
 		if (HBLPalettes[0])
 		{
-			HostScreen_setPaletteColor(0, 255, 255, 255);
-			HostScreen_setPaletteColor(1, 0, 0, 0);
+			Screen_SetPaletteColor(0, 255, 255, 255);
+			Screen_SetPaletteColor(1, 0, 0, 0);
 		}
 		else
 		{
-			HostScreen_setPaletteColor(0, 0, 0, 0);
-			HostScreen_setPaletteColor(1, 255, 255, 255);
+			Screen_SetPaletteColor(0, 0, 0, 0);
+			Screen_SetPaletteColor(1, 255, 255, 255);
 		}
 		return Screen_GenDraw(VideoBase, 640, 400, 1, 640 / 16, 0, 0, 0, 0);
 	}

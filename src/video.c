@@ -2880,11 +2880,11 @@ static void Video_UpdateTTPalette(int bpp)
 	}
 
 	colors = 1 << bpp;
-	if ((bpp == 1) && (TTRes == TT_HIGH_RES))
+	if (bpp == 1 && TTRes == TT_HIGH_RES)
 	{
 		/* Monochrome mode... palette is hardwired (?) */
-		HostScreen_setPaletteColor(0, 255, 255, 255);
-		HostScreen_setPaletteColor(1, 0, 0, 0);
+		Screen_SetPaletteColor(0, 255, 255, 255);
+		Screen_SetPaletteColor(1, 0, 0, 0);
 	}
 	else if (bpp == 1)
 	{
@@ -2900,7 +2900,7 @@ static void Video_UpdateTTPalette(int bpp)
 		{
 			r = g = b = highbyte;
 		}
-		HostScreen_setPaletteColor(0, r,g,b);
+		Screen_SetPaletteColor(0, r,g,b);
 
 		ttpalette = 0xff85fe;
 		lowbyte = IoMem_ReadByte(ttpalette++);
@@ -2913,7 +2913,7 @@ static void Video_UpdateTTPalette(int bpp)
 			r = g = b = highbyte;
 		}
 		//printf("%d: (%d,%d,%d)\n", 1,r,g,b);
-		HostScreen_setPaletteColor(1, r,g,b);
+		Screen_SetPaletteColor(1, r,g,b);
 
 	}
 	else
@@ -2930,7 +2930,7 @@ static void Video_UpdateTTPalette(int bpp)
 			{
 				r = g = b = highbyte;
 			}
-			HostScreen_setPaletteColor(i, r,g,b);
+			Screen_SetPaletteColor(i, r,g,b);
 		}
 	}
 
@@ -3500,7 +3500,7 @@ static void Video_ColorReg_WriteWord(void)
 		b = col & 0x0f;
 		b = ((b & 7) << 1) | (b >> 3);
 		b |= b << 4;
-		HostScreen_setPaletteColor(idx, r, g, b);
+		Screen_SetPaletteColor(idx, r, g, b);
 	}
 	else if (!bUseHighRes)          /* Don't store if hi-res or VDI resolution */
 	{
