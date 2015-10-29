@@ -1554,7 +1554,7 @@ static Uint32 errno2gemdos(const int error, const etype_t etype)
 	case EPERM:
 	case EACCES:
 	case EROFS:
-		return GEMDOS_EACCDN;        /* Acess denied */
+		return GEMDOS_EACCDN;        /* Access denied */
 	default:
 		return GEMDOS_ERROR;         /* Misc error */
 	}

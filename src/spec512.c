@@ -45,8 +45,8 @@
 /* 2008/01/24	[NP]	In Spec512_StartScanLine, use different values for LineStartCycle when	*/
 /*			running in 50 Hz or 60 Hz (TEX Spectrum Slideshow in 60 Hz).		*/
 /* 2008/12/14	[NP]	In Spec512_StoreCyclePalette, instead of approximating write position	*/
-/*			by Cycles_GetCounter+8, we use different cases for movem, .l acces and	*/
-/*			.w acces (similar to cycles.c). This gives correct results when using	*/
+/*			by Cycles_GetCounter+8, we use different cases for movem, .l access and	*/
+/*			.w access (similar to cycles.c). This gives correct results when using	*/
 /*			"move.w d0,(a0) or move.w (a0)+,(a1)+" for example, which were shifted	*/
 /*			8 or 4 pixels too late. Calibration was made using a custom program to	*/
 /*			compare the results with a real STF in different cases (fix Froggies	*/

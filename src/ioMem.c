@@ -52,7 +52,7 @@ static int nBusErrorAccesses;                         /* Needed to count bus err
 /*
   Heuristics for better cycle accuracy when "cycle exact mode" is not used
 
-  Some instructions can do several IO accesses that will be seen as several independant accesses,
+  Some instructions can do several IO accesses that will be seen as several independent accesses,
   instead of one whole word or long word access as in the size of the instruction.
   For example :
     - movep.w and move.l will do 2 or 4 BYTE accesses (and not 1 WORD or LONG WORD access)

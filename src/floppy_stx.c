@@ -1496,7 +1496,7 @@ Uint32	FDC_GetCyclesPerRev_FdcCycles_STX ( Uint8 Drive , Uint8 Track , Uint8 Sid
  * ID Field of the track (which simulates a full spin of the floppy).
  * We also store the next sector's number into NextSectorStruct_Nbr,
  * the next sector's number into NextSector_ID_Field_SR, the next track's number
- * into NextSector_ID_Field_TR, the next sector's lenght into
+ * into NextSector_ID_Field_TR, the next sector's length into
  * NextSector_ID_Field_LEN and if the CRC is correct or not into NextSector_ID_Field_CRC_OK.
  * This function assumes the sectors of each track are sorted in ascending order
  * using BitPosition.

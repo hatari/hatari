@@ -803,7 +803,7 @@ static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset )
  *
  * 2015/10/23 [NP] As seen in the 'Bird Mad Girl Show' demo, it's possible to get
  * FDC.DriveSelSignal < 0 once a transfer was started (for example, read sector
- * will complete successully). So we use DD by default in that case.
+ * will complete successfully). So we use DD by default in that case.
  */
 static int	FDC_TransferByte_FdcCycles ( int NbBytes )
 {
@@ -1092,7 +1092,7 @@ Uint8	FDC_DMA_FIFO_Pull ( void )
 			FDC_DMA.BytesInSector = FDC_DMA_SECTOR_SIZE;
 		}
 
-		Byte = FDC_DMA.FIFO [ 0 ];				/* return the 1st byte we just transfered in the FIFO */
+		Byte = FDC_DMA.FIFO [ 0 ];				/* return the 1st byte we just transferred in the FIFO */
 	}
 
 	/* Store the byte that will be written to FDC's Data Register */
@@ -4272,7 +4272,7 @@ void FDC_WriteDMAAddress ( Uint32 Address )
  * If no ID Field is found before the end of the track, we use the 1st
  * ID Field of the track (which simulates a full spin of the floppy).
  * We also store the next sector's number into NextSector_ID_Field_SR,
- * the next track's number into NextSector_ID_Field_TR, the next sector's lenght
+ * the next track's number into NextSector_ID_Field_TR, the next sector's length
  * into NextSector_ID_Field_LEN and if the CRC is correct or not into
  * NextSector_ID_Field_CRC_OK.
  * This function assumes some 512 byte sectors stored in ascending

@@ -73,9 +73,9 @@
 /* is a complex task. So far, adding 1 cycle wait state to each access and rounding the	*/
 /* final number to 4 gave some good results, but this is certainly not the way it's	*/
 /* working for real in the ST.								*/
-/* Also in Hatari it only works when the cpu rounds all	cycles to the next multiple	*/
+/* Also in Hatari it only works when the cpu rounds all cycles to the next multiple	*/
 /* of 4, but it will not work when running in cycle exact mode. This means we must	*/
-/* add 4 cycles at a time, but not on every register access , see below.		*/
+/* add 4 cycles at a time, but not on every register access, see below.		*/
 /*											*/
 /* The following examples show some verified wait states for different accesses :	*/
 /*	lea     $ffff8800,a1								*/

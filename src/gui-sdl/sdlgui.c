@@ -273,7 +273,7 @@ static void SDLGui_TextInt(int x, int y, const char *txt, bool underline)
 		}
 		/* for now, assume (only) Linux file paths are UTF-8 */
 #if !(defined(WIN32) || defined(USE_LOCALE_CHARSET))
-		/* Quick and dirty convertion for latin1 characters only... */
+		/* Quick and dirty conversion for latin1 characters only... */
 		if ((c & 0xc0) == 0xc0)
 		{
 			c = c << 6;

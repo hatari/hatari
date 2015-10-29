@@ -623,7 +623,7 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
  * - Support also Atari ICD (12 entries, at offset 0x156) and
  *   extended partition schemes.  Linux kernel has code for those:
  *   http://lxr.free-electrons.com/source/block/partitions/atari.c
- * - Support partition tables with other endianess
+ * - Support partition tables with other endianness
  */
 int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel)
 {

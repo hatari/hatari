@@ -8,7 +8,7 @@
 
 
 /* functions to save byte,word or long word
- * independent of CPU's endianess */
+ * independent of CPU's endianness */
 
 #ifdef WINUAE_FOR_HATARI
 extern void save_u64(uae_u64 data);

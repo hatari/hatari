@@ -390,7 +390,7 @@ extern uae_u32 caar, cacr;
 /* Family of the latest instruction executed (to check for pairing) */
 extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
 
-/* How many cycles to add to the current instruction in case a "misaligned" bus acces is made */
+/* How many cycles to add to the current instruction in case a "misaligned" bus access is made */
 /* (used when addressing mode is d8(an,ix)) */
 extern int BusCyclePenalty;
 
