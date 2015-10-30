@@ -77,10 +77,10 @@ static void Screen_memset_uint16(Uint16 *addr, Uint16 color, int count)
 
 /**
  * Performs conversion from the TOS's bitplane word order (big endian) data
- * into the native chunky color index.
+ * into the native 16-bit chunky pixels.
  */
-static void VIDEL_bitplaneToChunky(Uint16 *atariBitplaneData, Uint16 bpp,
-                                   Uint8 colorValues[16])
+static void Screen_BitplaneToChunky16(Uint16 *atariBitplaneData, Uint16 bpp,
+                                      Uint16 *hvram)
 {
 	Uint32 a, b, c, d, x;
 
@@ -89,9 +89,6 @@ static void VIDEL_bitplaneToChunky(Uint16 *atariBitplaneData, Uint16 bpp,
 	 * It's doubtful if the usage of those modes warrants it, though.
 	 * The branches below should be ~100% correctly predicted and
 	 * thus be more or less for free.
-	 * Getting the palette values inline does not seem to help
-	 * enough to worry about. The palette lookup is much slower than
-	 * this code, though, so it would be nice to do something about it.
 	 */
 	if (bpp >= 4) {
 		d = *(Uint32 *)&atariBitplaneData[0];
@@ -135,76 +132,199 @@ static void VIDEL_bitplaneToChunky(Uint16 *atariBitplaneData, Uint16 bpp,
 	c = (c & 0x5555aaaa) | ((c & 0x00005555) << 17) | ((c & 0xaaaa0000) >> 17);
 	d = (d & 0x5555aaaa) | ((d & 0x00005555) << 17) | ((d & 0xaaaa0000) >> 17);
 
-	colorValues[ 8] = a;
+	hvram[ 8] = palette.native[a & 0xff];
 	a >>= 8;
-	colorValues[ 0] = a;
+	hvram[ 0] = palette.native[a & 0xff];
 	a >>= 8;
-	colorValues[ 9] = a;
+	hvram[ 9] = palette.native[a & 0xff];
 	a >>= 8;
-	colorValues[ 1] = a;
+	hvram[ 1] = palette.native[a & 0xff];
 
-	colorValues[10] = b;
+	hvram[10] = palette.native[b & 0xff];
 	b >>= 8;
-	colorValues[ 2] = b;
+	hvram[ 2] = palette.native[b & 0xff];
 	b >>= 8;
-	colorValues[11] = b;
+	hvram[11] = palette.native[b & 0xff];
 	b >>= 8;
-	colorValues[ 3] = b;
+	hvram[ 3] = palette.native[b & 0xff];
 
-	colorValues[12] = c;
+	hvram[12] = palette.native[c & 0xff];
 	c >>= 8;
-	colorValues[ 4] = c;
+	hvram[ 4] = palette.native[c & 0xff];
 	c >>= 8;
-	colorValues[13] = c;
+	hvram[13] = palette.native[c & 0xff];
 	c >>= 8;
-	colorValues[ 5] = c;
+	hvram[ 5] = palette.native[c & 0xff];
 
-	colorValues[14] = d;
+	hvram[14] = palette.native[d & 0xff];
 	d >>= 8;
-	colorValues[ 6] = d;
+	hvram[ 6] = palette.native[d & 0xff];
 	d >>= 8;
-	colorValues[15] = d;
+	hvram[15] = palette.native[d & 0xff];
 	d >>= 8;
-	colorValues[ 7] = d;
+	hvram[ 7] = palette.native[d & 0xff];
 #else
 	a = (a & 0xaaaa5555) | ((a & 0x0000aaaa) << 15) | ((a & 0x55550000) >> 15);
 	b = (b & 0xaaaa5555) | ((b & 0x0000aaaa) << 15) | ((b & 0x55550000) >> 15);
 	c = (c & 0xaaaa5555) | ((c & 0x0000aaaa) << 15) | ((c & 0x55550000) >> 15);
 	d = (d & 0xaaaa5555) | ((d & 0x0000aaaa) << 15) | ((d & 0x55550000) >> 15);
 
-	colorValues[ 1] = a;
+	hvram[ 1] = palette.native[a & 0xff];
 	a >>= 8;
-	colorValues[ 9] = a;
+	hvram[ 9] = palette.native[a & 0xff];
 	a >>= 8;
-	colorValues[ 0] = a;
+	hvram[ 0] = palette.native[a & 0xff];
 	a >>= 8;
-	colorValues[ 8] = a;
+	hvram[ 8] = palette.native[a & 0xff];
 
-	colorValues[ 3] = b;
+	hvram[ 3] = palette.native[b & 0xff];
 	b >>= 8;
-	colorValues[11] = b;
+	hvram[11] = palette.native[b & 0xff];
 	b >>= 8;
-	colorValues[ 2] = b;
+	hvram[ 2] = palette.native[b & 0xff];
 	b >>= 8;
-	colorValues[10] = b;
+	hvram[10] = palette.native[b & 0xff];
 
-	colorValues[ 5] = c;
+	hvram[ 5] = palette.native[c & 0xff];
 	c >>= 8;
-	colorValues[13] = c;
+	hvram[13] = palette.native[c & 0xff];
 	c >>= 8;
-	colorValues[ 4] = c;
+	hvram[ 4] = palette.native[c & 0xff];
 	c >>= 8;
-	colorValues[12] = c;
+	hvram[12] = palette.native[c & 0xff];
 
-	colorValues[ 7] = d;
+	hvram[ 7] = palette.native[d & 0xff];
 	d >>= 8;
-	colorValues[15] = d;
+	hvram[15] = palette.native[d & 0xff];
 	d >>= 8;
-	colorValues[ 6] = d;
+	hvram[ 6] = palette.native[d & 0xff];
 	d >>= 8;
-	colorValues[14] = d;
+	hvram[14] = palette.native[d & 0xff];
 #endif
 }
+
+/**
+ * Performs conversion from the TOS's bitplane word order (big endian) data
+ * into the native 32-bit chunky pixels.
+ */
+static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
+                                      Uint32 *hvram)
+{
+	Uint32 a, b, c, d, x;
+
+	if (bpp >= 4) {
+		d = *(Uint32 *)&atariBitplaneData[0];
+		c = *(Uint32 *)&atariBitplaneData[2];
+		if (bpp == 4) {
+			a = b = 0;
+		} else {
+			b = *(Uint32 *)&atariBitplaneData[4];
+			a = *(Uint32 *)&atariBitplaneData[6];
+		}
+	} else {
+		a = b = c = 0;
+		if (bpp == 2) {
+			d = *(Uint32 *)&atariBitplaneData[0];
+		} else {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			d = atariBitplaneData[0]<<16;
+#else
+			d = atariBitplaneData[0];
+#endif
+		}
+	}
+
+	x = a;
+	a =  (a & 0xf0f0f0f0)       | ((c & 0xf0f0f0f0) >> 4);
+	c = ((x & 0x0f0f0f0f) << 4) |  (c & 0x0f0f0f0f);
+	x = b;
+	b =  (b & 0xf0f0f0f0)       | ((d & 0xf0f0f0f0) >> 4);
+	d = ((x & 0x0f0f0f0f) << 4) |  (d & 0x0f0f0f0f);
+
+	x = a;
+	a =  (a & 0xcccccccc)       | ((b & 0xcccccccc) >> 2);
+	b = ((x & 0x33333333) << 2) |  (b & 0x33333333);
+	x = c;
+	c =  (c & 0xcccccccc)       | ((d & 0xcccccccc) >> 2);
+	d = ((x & 0x33333333) << 2) |  (d & 0x33333333);
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	a = (a & 0x5555aaaa) | ((a & 0x00005555) << 17) | ((a & 0xaaaa0000) >> 17);
+	b = (b & 0x5555aaaa) | ((b & 0x00005555) << 17) | ((b & 0xaaaa0000) >> 17);
+	c = (c & 0x5555aaaa) | ((c & 0x00005555) << 17) | ((c & 0xaaaa0000) >> 17);
+	d = (d & 0x5555aaaa) | ((d & 0x00005555) << 17) | ((d & 0xaaaa0000) >> 17);
+
+	hvram[ 8] = palette.native[a & 0xff];
+	a >>= 8;
+	hvram[ 0] = palette.native[a & 0xff];
+	a >>= 8;
+	hvram[ 9] = palette.native[a & 0xff];
+	a >>= 8;
+	hvram[ 1] = palette.native[a & 0xff];
+
+	hvram[10] = palette.native[b & 0xff];
+	b >>= 8;
+	hvram[ 2] = palette.native[b & 0xff];
+	b >>= 8;
+	hvram[11] = palette.native[b & 0xff];
+	b >>= 8;
+	hvram[ 3] = palette.native[b & 0xff];
+
+	hvram[12] = palette.native[c & 0xff];
+	c >>= 8;
+	hvram[ 4] = palette.native[c & 0xff];
+	c >>= 8;
+	hvram[13] = palette.native[c & 0xff];
+	c >>= 8;
+	hvram[ 5] = palette.native[c & 0xff];
+
+	hvram[14] = palette.native[d & 0xff];
+	d >>= 8;
+	hvram[ 6] = palette.native[d & 0xff];
+	d >>= 8;
+	hvram[15] = palette.native[d & 0xff];
+	d >>= 8;
+	hvram[ 7] = palette.native[d & 0xff];
+#else
+	a = (a & 0xaaaa5555) | ((a & 0x0000aaaa) << 15) | ((a & 0x55550000) >> 15);
+	b = (b & 0xaaaa5555) | ((b & 0x0000aaaa) << 15) | ((b & 0x55550000) >> 15);
+	c = (c & 0xaaaa5555) | ((c & 0x0000aaaa) << 15) | ((c & 0x55550000) >> 15);
+	d = (d & 0xaaaa5555) | ((d & 0x0000aaaa) << 15) | ((d & 0x55550000) >> 15);
+
+	hvram[ 1] = palette.native[a & 0xff];
+	a >>= 8;
+	hvram[ 9] = palette.native[a & 0xff];
+	a >>= 8;
+	hvram[ 0] = palette.native[a & 0xff];
+	a >>= 8;
+	hvram[ 8] = palette.native[a & 0xff];
+
+	hvram[ 3] = palette.native[b & 0xff];
+	b >>= 8;
+	hvram[11] = palette.native[b & 0xff];
+	b >>= 8;
+	hvram[ 2] = palette.native[b & 0xff];
+	b >>= 8;
+	hvram[10] = palette.native[b & 0xff];
+
+	hvram[ 5] = palette.native[c & 0xff];
+	c >>= 8;
+	hvram[13] = palette.native[c & 0xff];
+	c >>= 8;
+	hvram[ 4] = palette.native[c & 0xff];
+	c >>= 8;
+	hvram[12] = palette.native[c & 0xff];
+
+	hvram[ 7] = palette.native[d & 0xff];
+	d >>= 8;
+	hvram[15] = palette.native[d & 0xff];
+	d >>= 8;
+	hvram[ 6] = palette.native[d & 0xff];
+	d >>= 8;
+	hvram[14] = palette.native[d & 0xff];
+#endif
+}
+
 
 static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
                                       int leftBorder, int rightBorder,
@@ -284,15 +404,11 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 	/* render the graphic area */
 	if (vbpp < 16) {
 		/* Bitplanes modes */
-
-		/* The SDL colors blitting... */
-		Uint8 color[16];
-
-		/* FIXME: The byte swap could be done here by enrolling the loop into 2 each by 8 pixels */
 		switch ( HostScreen_getBpp() ) {
 			case 2:
 			{
 				Uint16 *hvram_line = (Uint16 *)hvram;
+				Uint16 hvram_buf[16];
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder; h++) {
@@ -310,24 +426,22 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					hvram_column += leftBorder;
 
 					/* First 16 pixels */
-					VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-					for (j = 0; j < 16 - hscrolloffset; j++) {
-						*hvram_column++ = palette.native[color[j+hscrolloffset]];
+					Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
+					for (j = hscrolloffset; j < 16; j++) {
+						*hvram_column++ = hvram_buf[j];
 					}
 					fvram_column += vbpp;
 					/* Now the main part of the line */
 					for (w = 1; w < (vw+15)>>4; w++) {
-						VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-						for (j=0; j<16; j++) {
-							*hvram_column++ = palette.native[color[j]];
-						}
+						Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_column);
+						hvram_column += 16;
 						fvram_column += vbpp;
 					}
 					/* Last pixels of the line for fine scrolling */
 					if (hscrolloffset) {
-						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+						Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
 						for (j = 0; j < hscrolloffset; j++) {
-							*hvram_column++ = palette.native[color[j]];
+							*hvram_column++ = hvram_buf[j];
 						}
 					}
 					/* Right border */
@@ -347,6 +461,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 			case 4:
 			{
 				Uint32 *hvram_line = (Uint32 *)hvram;
+				Uint32 hvram_buf[16];
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder; h++) {
@@ -364,24 +479,22 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					hvram_column += leftBorder;
 
 					/* First 16 pixels */
-					VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-					for (j = 0; j < 16 - hscrolloffset; j++) {
-						*hvram_column++ = palette.native[color[j+hscrolloffset]];
+					Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
+					for (j = hscrolloffset; j < 16; j++) {
+						*hvram_column++ = hvram_buf[j];
 					}
 					fvram_column += vbpp;
 					/* Now the main part of the line */
 					for (w = 1; w < (vw+15)>>4; w++) {
-						VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-						for (j=0; j<16; j++) {
-							*hvram_column++ = palette.native[color[j]];
-						}
+						Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_column);
+						hvram_column += 16;
 						fvram_column += vbpp;
 					}
 					/* Last pixels of the line for fine scrolling */
 					if (hscrolloffset) {
-						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+						Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
 						for (j = 0; j < hscrolloffset; j++) {
-							*hvram_column++ = palette.native[color[j]];
+							*hvram_column++ = hvram_buf[j];
 						}
 					}
 					/* Right border */
@@ -585,8 +698,6 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 	}
 
 	if (vbpp<16) {
-		Uint8 color[16];
-
 		/* Bitplanes modes */
 		switch(scrbpp) {
 			case 2:
@@ -595,6 +706,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 				Uint16 *p2cline = malloc(sizeof(Uint16) * ((vw+15) & ~15));
 				Uint16 *hvram_line = (Uint16 *)hvram;
 				Uint16 *hvram_column = p2cline;
+				Uint16 hvram_buf[16];
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder * coefy; h++) {
@@ -615,24 +727,22 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						hvram_column = p2cline;
 
 						/* First 16 pixels of a new line */
-						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-						for (j = 0; j < 16 - hscrolloffset; j++) {
-							*hvram_column++ = palette.native[color[j+hscrolloffset]];
+						Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
+						for (j = hscrolloffset; j < 16; j++) {
+							*hvram_column++ = hvram_buf[j];
 						}
 						fvram_column += vbpp;
 						/* Convert the main part of the new line */
 						for (w = 1; w < (vw+15)>>4; w++) {
-							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-							for (j=0; j<16; j++) {
-								*hvram_column++ = palette.native[color[j]];
-							}
+							Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_column);
+							hvram_column += 16;
 							fvram_column += vbpp;
 						}
 						/* Last pixels of the new line for fine scrolling */
 						if (hscrolloffset) {
-							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+							Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
 							for (j = 0; j < hscrolloffset; j++) {
-								*hvram_column++ = palette.native[color[j]];
+								*hvram_column++ = hvram_buf[j];
 							}
 						}
 
@@ -671,6 +781,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 				Uint32 *p2cline = malloc(sizeof(Uint32) * ((vw+15) & ~15));
 				Uint32 *hvram_line = (Uint32 *)hvram;
 				Uint32 *hvram_column = p2cline;
+				Uint32 hvram_buf[16];
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder * coefy; h++) {
@@ -690,24 +801,22 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 						hvram_column = p2cline;
 
 						/* First 16 pixels of a new line */
-						VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
-						for (j = 0; j < 16 - hscrolloffset; j++) {
-							*hvram_column++ = palette.native[color[j+hscrolloffset]];
+						Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
+						for (j = hscrolloffset; j < 16; j++) {
+							*hvram_column++ = hvram_buf[j];
 						}
 						fvram_column += vbpp;
 						/* Convert the main part of the new line */
 						for (w = 1; w < (vw+15)>>4; w++) {
-							VIDEL_bitplaneToChunky( fvram_column, vbpp, color );
-							for (j=0; j<16; j++) {
-								*hvram_column++ = palette.native[color[j]];
-							}
+							Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_column);
+							hvram_column += 16;
 							fvram_column += vbpp;
 						}
 						/* Last pixels of the new line for fine scrolling */
 						if (hscrolloffset) {
-							VIDEL_bitplaneToChunky(fvram_column, vbpp, color);
+							Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
 							for (j = 0; j < hscrolloffset; j++) {
-								*hvram_column++ = palette.native[color[j]];
+								*hvram_column++ = hvram_buf[j];
 							}
 						}
 
