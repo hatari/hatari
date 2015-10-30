@@ -357,6 +357,9 @@
 /* 2015/09/29	[NP]	Add different values for RestartVideoCounterCycle when using 60 Hz	*/
 /*			(fix 60 Hz spectrum 512 double buffer image in the intro of the		*/
 /*			'Place To Be Again' demo)						*/
+/* 2015/10/30	[NP]	In Video_CopyScreenLineColor, correctly show the last 8 pixels on	*/
+/*			the right when displaying an STE 224 byte overscan line containing	*/
+/*			416 usable pixels (eg 'Drone' by DHS, 'PhotoChrome Viewer' by DML)	*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -2574,26 +2577,78 @@ static void Video_CopyScreenLineColor(void)
 		{
 			Uint16 *pScreenLineStart;
 			int count;
+			int STE_HWScrollLeft;
+			Uint16 extra_word;
 
 			STF_PixelScroll = -STF_PixelScroll;
 			pScreenLineStart = (Uint16 *)pSTScreen;
+
+			STE_HWScrollLeft = 0;
+			if ( !bSteBorderFlag && HWScrollCount )
+				STE_HWScrollLeft = HWScrollCount;
+
 			if ( LineRes == 0 )			/* low res */
 			{
 				for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineStart++ )
-					do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll ) | ( do_get_mem_word ( pScreenLineStart + 4 ) >> (16-STF_PixelScroll) ) ) );
-				/* Handle the last 16 pixels of the line (add color 0 pixels to the extreme right) */
-				do_put_mem_word ( pScreenLineStart+0 , ( do_get_mem_word ( pScreenLineStart+0 ) << STF_PixelScroll ) );
-				do_put_mem_word ( pScreenLineStart+1 , ( do_get_mem_word ( pScreenLineStart+1 ) << STF_PixelScroll ) );
-				do_put_mem_word ( pScreenLineStart+2 , ( do_get_mem_word ( pScreenLineStart+2 ) << STF_PixelScroll ) );
-				do_put_mem_word ( pScreenLineStart+3 , ( do_get_mem_word ( pScreenLineStart+3 ) << STF_PixelScroll ) );
+					do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll )
+						| ( do_get_mem_word ( pScreenLineStart + 4 ) >> (16-STF_PixelScroll) ) ) );
+
+				/*
+				 * Handle the last 16 pixels of the line after the shift to the left :
+				 * - if this is a 224 byte STE overscan line, then the last 8 pixels to the extreme right should be displayed
+				 * - for other cases (230 byte overscan), "entering" pixels to the extreme right should be set to color 0
+				 */
+				if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
+				{
+					/* This is one can be complicated, because we can have STE scroll to the left + the global */
+					/* 8 pixel left scroll addded when using a 224 bytes overscan line. We use extra_word to fetch */
+					/* those missing pixels */
+					for ( i=0 ; i<4 ; i++ )
+					{
+						if ( STE_HWScrollLeft == 0 )
+							extra_word = do_get_mem_word ( pVideoRasterEndLine + i*2 );
+						else
+							extra_word = ( do_get_mem_word ( pVideoRasterEndLine + i*2 ) << STE_HWScrollLeft )
+								| ( do_get_mem_word ( pVideoRasterEndLine + 8 + i*2 ) >> (16-STE_HWScrollLeft) );
+								
+						do_put_mem_word ( pScreenLineStart+i , ( ( do_get_mem_word ( pScreenLineStart+i ) << STF_PixelScroll )
+							| ( extra_word >> (16-STF_PixelScroll) ) ) );
+					}
+				}
+				else
+				{
+					for ( i=0 ; i<4 ; i++ )
+						do_put_mem_word ( pScreenLineStart+i , ( do_get_mem_word ( pScreenLineStart+i ) << STF_PixelScroll ) );
+
+				}
 			}
 			else					/* med res */
 			{
 				for ( count = 0 ; count < ( SCREENBYTES_LINE - 4 ) / 2 ; count++ , pScreenLineStart++ )
-					do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll ) | ( do_get_mem_word ( pScreenLineStart + 2 ) >> (16-STF_PixelScroll) ) ) );
-				/* Handle the last 16 pixels of the line (add color 0 pixels to the extreme right) */
-				do_put_mem_word ( pScreenLineStart+0 , ( do_get_mem_word ( pScreenLineStart+0 ) << STF_PixelScroll ) );
-				do_put_mem_word ( pScreenLineStart+1 , ( do_get_mem_word ( pScreenLineStart+1 ) << STF_PixelScroll ) );
+					do_put_mem_word ( pScreenLineStart , ( ( do_get_mem_word ( pScreenLineStart ) << STF_PixelScroll )
+						| ( do_get_mem_word ( pScreenLineStart + 2 ) >> (16-STF_PixelScroll) ) ) );
+
+				/* Handle the last 16 pixels of the line */
+				if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
+				{
+					for ( i=0 ; i<2 ; i++ )
+					{
+						if ( STE_HWScrollLeft == 0 )
+							extra_word = do_get_mem_word ( pVideoRasterEndLine + i*2 );
+						else
+							extra_word = ( do_get_mem_word ( pVideoRasterEndLine + i*2 ) << STE_HWScrollLeft )
+								| ( do_get_mem_word ( pVideoRasterEndLine + 8 + i*2 ) >> (16-STE_HWScrollLeft) );
+								
+						do_put_mem_word ( pScreenLineStart+i , ( ( do_get_mem_word ( pScreenLineStart+i ) << STF_PixelScroll )
+							| ( extra_word >> (16-STF_PixelScroll) ) ) );
+					}
+				}
+				else
+				{
+					for ( i=0 ; i<2 ; i++ )
+						do_put_mem_word ( pScreenLineStart+i , ( do_get_mem_word ( pScreenLineStart+i ) << STF_PixelScroll ) );
+				}
+
 			}
 		}
 	}
