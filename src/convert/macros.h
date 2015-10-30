@@ -162,29 +162,6 @@ static const Uint32 Remap_1_Plane[16] = {
 }
 
 
-/* Routines to create 'ecx' pixels - MUST be called in this order */
-#define HIGH_BUILD_PIXELS_0 \
-{ \
- eax = (ebx & 0x0000000f); \
-}
-
-#define HIGH_BUILD_PIXELS_1 \
-{ \
- eax = (ebx >> 4) & 0x0000000f;\
-}
-
-#define HIGH_BUILD_PIXELS_2 \
-{ \
- eax = (ebx >> 8) & 0x0000000f;\
-}
-
-#define HIGH_BUILD_PIXELS_3 \
-{ \
- eax = (ebx >> 12) & 0x0000000f;\
-}
-
-
-
 /*----------------------------------------------------------------------*/
 /* Macros to plot Atari's pixels in the emulator's buffer
  * (the buffer can be 32, 16 or 8 bits per pixel)
@@ -440,13 +417,6 @@ static const Uint32 Remap_1_Plane[16] = {
  esi[offset+2] = (Uint16)STRGBPalette[(ecx >> 16) & 0x000000ff]; \
  esi[offset+3+Screen2BytesPerLine] =\
  esi[offset+3] = (Uint16)STRGBPalette[(ecx >> 24) & 0x000000ff]; \
-}
-
-
-/* Plot High Resolution (640xH) 8-Bit pixels */
-#define PLOT_HIGH_640_8BIT(offset) \
-{ \
- esi[offset] = SDL_SwapLE32(Remap_1_Plane[eax]); \
 }
 
 
