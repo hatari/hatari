@@ -2987,6 +2987,11 @@ static void Video_DrawScreen(void)
 	/* Now draw the screen! */
 	if (bUseVDIRes)
 	{
+		if (ConfigureParams.System.nMachineType == MACHINE_TT
+		    && !(bTTColorsSync && bTTColorsSTSync))
+		{
+			Video_UpdateTTPalette(VDIPlanes);
+		}
 		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
 		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
