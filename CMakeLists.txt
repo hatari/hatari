@@ -362,9 +362,9 @@ else()
 endif(CAPSIMAGE_FOUND)
 
 if(UDEV_FOUND)
-  message( "  - udev :\tfound, enables NatFeats SCSI Driver media change detection" )
+  message( "  - udev :\tfound; allows handling media changing in the NatFeats SCSI Driver on systems using 'udev'" )
 else()
-  message( "  - udev :\tnot found, install it for NatFeats SCSI Driver media change detection" )
+  message( "  - udev :\tnot found; needed to handle media changes in the NatFeats SCSI Driver on systems using 'udev'" )
 endif(UDEV_FOUND)
 
 message( "" )
