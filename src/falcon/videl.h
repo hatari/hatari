@@ -18,8 +18,7 @@ extern bool VIDEL_renderScreen(void);
 extern void VIDEL_reset(void);
 
 extern void VIDEL_ZoomModeChanged(bool bForceChange);
-extern void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline);
-extern void VIDEL_ConvertScreenZoom(int vw, int vh, int bpp, int nextline);
+extern void VIDEL_UpdateColors(void);
 
 /* Called from ioMemTabFalcon.c */
 extern void VIDEL_Monitor_WriteByte(void);

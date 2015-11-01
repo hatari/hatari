@@ -824,9 +824,12 @@ static void VIDEL_getMonitorScale(int *sx, int *sy)
 
 /** map the correct colortable into the correct pixel format
  */
-static void VIDEL_updateColors(void)
+void VIDEL_UpdateColors(void)
 {
 	int i, r, g, b, colors = 1 << videl.save_scrBpp;
+
+	if (videl.save_scrBpp > 8 || videl.hostColorsSync)
+		return;
 
 #define F_COLORS(i) IoMem_ReadByte(VIDEL_COLOR_REGS_BEGIN + (i))
 #define STE_COLORS(i)	IoMem_ReadByte(0xff8240 + (i))
@@ -931,8 +934,8 @@ bool VIDEL_renderScreen(void)
 		LOG_TRACE(TRACE_VIDEL, "Videl : %dx%d screen size, not drawing\n", vw, vh);
 		return false;
 	}
-	if (videl.save_scrBpp < 16 && videl.hostColorsSync == 0)
-		VIDEL_updateColors();
+
+	VIDEL_UpdateColors();
 
 	Screen_GenConvert(videl.videoBaseAddr, videl.XSize, videl.YSize,
 	                  videl.save_scrBpp, nextline,

@@ -2992,6 +2992,10 @@ static void Video_DrawScreen(void)
 		{
 			Video_UpdateTTPalette(VDIPlanes);
 		}
+		else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		{
+			VIDEL_UpdateColors();
+		}
 		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
 		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
