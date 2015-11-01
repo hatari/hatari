@@ -3488,7 +3488,15 @@ static void Video_ColorReg_WriteWord(void)
 
 	idx = (addr - 0xff8240) / 2;		/* words */
 
-	if (bUseVDIRes)
+	if (bUseHighRes || (bUseVDIRes && VDIPlanes == 1))
+	{
+		if (idx == 0)
+		{
+			Screen_SetPaletteColor(col & 1, 0, 0, 0);
+			Screen_SetPaletteColor(!(col & 1), 255, 255, 255);
+		}
+	}
+	else if (bUseVDIRes)
 	{
 		int r, g, b;
 		r = (col >> 8) & 0x0f;
@@ -3502,7 +3510,7 @@ static void Video_ColorReg_WriteWord(void)
 		b |= b << 4;
 		Screen_SetPaletteColor(idx, r, g, b);
 	}
-	else if (!bUseHighRes)          /* Don't store if hi-res or VDI resolution */
+	else    /* Don't store if hi-res or VDI resolution */
 	{
 		Video_SetHBLPaletteMaskPointers();     /* Set 'pHBLPalettes' etc.. according cycles into frame */
 
