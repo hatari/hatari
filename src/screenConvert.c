@@ -99,6 +99,10 @@ static void Screen_BitplaneToChunky16(Uint16 *atariBitplaneData, Uint16 bpp,
 			b = *(Uint32 *)&atariBitplaneData[4];
 			a = *(Uint32 *)&atariBitplaneData[6];
 		}
+
+		x = a;
+		a =  (a & 0xf0f0f0f0)       | ((c & 0xf0f0f0f0) >> 4);
+		c = ((x & 0x0f0f0f0f) << 4) |  (c & 0x0f0f0f0f);
 	} else {
 		a = b = c = 0;
 		if (bpp == 2) {
@@ -112,9 +116,6 @@ static void Screen_BitplaneToChunky16(Uint16 *atariBitplaneData, Uint16 bpp,
 		}
 	}
 
-	x = a;
-	a =  (a & 0xf0f0f0f0)       | ((c & 0xf0f0f0f0) >> 4);
-	c = ((x & 0x0f0f0f0f) << 4) |  (c & 0x0f0f0f0f);
 	x = b;
 	b =  (b & 0xf0f0f0f0)       | ((d & 0xf0f0f0f0) >> 4);
 	d = ((x & 0x0f0f0f0f) << 4) |  (d & 0x0f0f0f0f);
@@ -221,6 +222,10 @@ static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
 			b = *(Uint32 *)&atariBitplaneData[4];
 			a = *(Uint32 *)&atariBitplaneData[6];
 		}
+
+		x = a;
+		a =  (a & 0xf0f0f0f0)       | ((c & 0xf0f0f0f0) >> 4);
+		c = ((x & 0x0f0f0f0f) << 4) |  (c & 0x0f0f0f0f);
 	} else {
 		a = b = c = 0;
 		if (bpp == 2) {
@@ -234,9 +239,6 @@ static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
 		}
 	}
 
-	x = a;
-	a =  (a & 0xf0f0f0f0)       | ((c & 0xf0f0f0f0) >> 4);
-	c = ((x & 0x0f0f0f0f) << 4) |  (c & 0x0f0f0f0f);
 	x = b;
 	b =  (b & 0xf0f0f0f0)       | ((d & 0xf0f0f0f0) >> 4);
 	d = ((x & 0x0f0f0f0f) << 4) |  (d & 0x0f0f0f0f);
