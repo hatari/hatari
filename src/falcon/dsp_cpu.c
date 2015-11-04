@@ -278,7 +278,6 @@ static void dsp_add_x1_b(void);
 static void dsp_add_y1_a(void);
 static void dsp_add_y1_b(void);
 static void dsp_addl_b_a(void);
-static void dsp_addl_b_a(void);
 static void dsp_addl_a_b(void);
 static void dsp_addr_b_a(void);
 static void dsp_addr_a_b(void);

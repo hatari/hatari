@@ -342,8 +342,6 @@ static void	IKBD_Send_Byte_Delay ( Uint8 Data , int Delay_Cycles );
 
 static bool	IKBD_BCD_Check ( Uint8 val );
 static Uint8	IKBD_BCD_Adjust ( Uint8 val );
-void		IKBD_UpdateClockOnVBL ( void );
-
 
 
 /*-----------------------------------------------------------------------*/

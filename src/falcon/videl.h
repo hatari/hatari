@@ -11,8 +11,6 @@
 /* To be removed when Videl emulation is complete */
 extern Uint16 vfc_counter;			/* counter for VFC register $ff82a0 */
 
-extern int nFrameSkips;
-
 extern bool VIDEL_renderScreen(void);
 
 extern void VIDEL_reset(void);
