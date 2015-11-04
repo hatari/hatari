@@ -2847,14 +2847,37 @@ void Video_GetTTRes(int *width, int *height, int *bpp)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Set a TT palette color
+ */
+static void Video_SetTTPaletteColor(int idx, Uint32 addr)
+{
+	Uint8 r,g,b, lowbyte, highbyte;
+
+	lowbyte = IoMem_ReadByte(addr + 1);
+
+	if (bTTHypermono)
+	{
+		r = g = b = lowbyte;
+	}
+	else
+	{
+		highbyte = IoMem_ReadByte(addr);
+		r = (highbyte << 4) | (highbyte  & 0x0f);
+		g = (lowbyte & 0xf0) | (lowbyte >> 4);
+		b = (lowbyte << 4) | (lowbyte & 0x0f);
+	}
+
+	//printf("%d (%x): (%d,%d,%d)\n", idx, addr, r,g,b);
+	Screen_SetPaletteColor(idx, r,g,b);
+}
+
 /**
  * Convert TT palette to SDL palette
  */
 static void Video_UpdateTTPalette(int bpp)
 {
 	Uint32 ttpalette, src, dst;
-	Uint8 r,g,b, lowbyte, highbyte;
 	Uint16 stcolor, ttcolor;
 	int i, offset, colors;
 
@@ -2889,48 +2912,15 @@ static void Video_UpdateTTPalette(int bpp)
 	else if (bpp == 1)
 	{
 		/* Monochrome mode... palette is taken from first and last TT color */
-		ttpalette = 0xff8400;
-		lowbyte = IoMem_ReadByte(ttpalette++);
-		highbyte = IoMem_ReadByte(ttpalette++);
-		r = (lowbyte  & 0x0f) << 4;
-		g = (highbyte & 0xf0);
-		b = (highbyte & 0x0f) << 4;
-		//printf("%d: (%d,%d,%d)\n", 0,r,g,b);
-		if(bTTHypermono)
-		{
-			r = g = b = highbyte;
-		}
-		Screen_SetPaletteColor(0, r,g,b);
-
-		ttpalette = 0xff85fe;
-		lowbyte = IoMem_ReadByte(ttpalette++);
-		highbyte = IoMem_ReadByte(ttpalette++);
-		r = (lowbyte  & 0x0f) << 4;
-		g = (highbyte & 0xf0);
-		b = (highbyte & 0x0f) << 4;
-		if(bTTHypermono)
-		{
-			r = g = b = highbyte;
-		}
-		//printf("%d: (%d,%d,%d)\n", 1,r,g,b);
-		Screen_SetPaletteColor(1, r,g,b);
-
+		Video_SetTTPaletteColor(0, 0xff8400);
+		Video_SetTTPaletteColor(1, 0xff85fe);
 	}
 	else
 	{
 		for (i = 0; i < colors; i++)
 		{
-			lowbyte = IoMem_ReadByte(ttpalette++);
-			highbyte = IoMem_ReadByte(ttpalette++);
-			r = (lowbyte  & 0x0f) << 4;
-			g = (highbyte & 0xf0);
-			b = (highbyte & 0x0f) << 4;
-			//printf("%d: (%d,%d,%d)\n", i,r,g,b);
-			if(bTTHypermono)
-			{
-				r = g = b = highbyte;
-			}
-			Screen_SetPaletteColor(i, r,g,b);
+			Video_SetTTPaletteColor(i, ttpalette);
+			ttpalette += SIZE_WORD;
 		}
 	}
 
