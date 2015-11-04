@@ -2259,6 +2259,15 @@ static int iack_cycle(int nr)
 			vector = MFP_ProcessIACK ( nr );
 			CPU_IACK = false;
 		}
+
+		if ( vector >= 0 )						/* We have a valid vector for level 6 */
+		{
+			/* If a DSP IRQ is pending, we don't clear level 6 pending bit, else the DSP IRQ */
+			/* will never be processed. If there's no DSP IRQ, we clear level 6 pending bit now */
+			/* and if there's a lower MFP pending int, level 6 will be set again at the next instruction */
+			if ( DSP_GetHREQ() == 0 )
+				pendingInterrupts &= ~( 1 << 6 );
+		}
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL / VBL */
 	{
