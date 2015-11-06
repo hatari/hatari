@@ -28,6 +28,7 @@ struct screen_zoom_s {
 };
 
 static struct screen_zoom_s screen_zoom;
+static int nSampleHoldIdx;
 
 
 /* TOS palette (bpp < 16) to SDL color mapping */
@@ -74,6 +75,16 @@ static void Screen_memset_uint16(Uint16 *addr, Uint16 color, int count)
 	}
 }
 
+static inline Uint32 idx2pal(Uint8 idx)
+{
+	if (unlikely(bTTSampleHold))
+	{
+		if (idx == 0)
+			return palette.native[nSampleHoldIdx];
+		nSampleHoldIdx = idx;
+	}
+	return palette.native[idx];
+}
 
 /**
  * Performs conversion from the TOS's bitplane word order (big endian) data
@@ -133,74 +144,44 @@ static void Screen_BitplaneToChunky16(Uint16 *atariBitplaneData, Uint16 bpp,
 	c = (c & 0x5555aaaa) | ((c & 0x00005555) << 17) | ((c & 0xaaaa0000) >> 17);
 	d = (d & 0x5555aaaa) | ((d & 0x00005555) << 17) | ((d & 0xaaaa0000) >> 17);
 
-	hvram[ 8] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 0] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 9] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 1] = palette.native[a & 0xff];
-
-	hvram[10] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[ 2] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[11] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[ 3] = palette.native[b & 0xff];
-
-	hvram[12] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[ 4] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[13] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[ 5] = palette.native[c & 0xff];
-
-	hvram[14] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[ 6] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[15] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[ 7] = palette.native[d & 0xff];
+	*hvram++ = idx2pal(a >> 8);
+	*hvram++ = idx2pal(a >> 24);
+	*hvram++ = idx2pal(b >> 8);
+	*hvram++ = idx2pal(b >> 24);
+	*hvram++ = idx2pal(c >> 8);
+	*hvram++ = idx2pal(c >> 24);
+	*hvram++ = idx2pal(d >> 8);
+	*hvram++ = idx2pal(d >> 24);
+	*hvram++ = idx2pal(a);
+	*hvram++ = idx2pal(a >> 16);
+	*hvram++ = idx2pal(b);
+	*hvram++ = idx2pal(b >> 16);
+	*hvram++ = idx2pal(c);
+	*hvram++ = idx2pal(c >> 16);
+	*hvram++ = idx2pal(d);
+	*hvram++ = idx2pal(d >> 16);
 #else
 	a = (a & 0xaaaa5555) | ((a & 0x0000aaaa) << 15) | ((a & 0x55550000) >> 15);
 	b = (b & 0xaaaa5555) | ((b & 0x0000aaaa) << 15) | ((b & 0x55550000) >> 15);
 	c = (c & 0xaaaa5555) | ((c & 0x0000aaaa) << 15) | ((c & 0x55550000) >> 15);
 	d = (d & 0xaaaa5555) | ((d & 0x0000aaaa) << 15) | ((d & 0x55550000) >> 15);
 
-	hvram[ 1] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 9] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 0] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 8] = palette.native[a & 0xff];
-
-	hvram[ 3] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[11] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[ 2] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[10] = palette.native[b & 0xff];
-
-	hvram[ 5] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[13] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[ 4] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[12] = palette.native[c & 0xff];
-
-	hvram[ 7] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[15] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[ 6] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[14] = palette.native[d & 0xff];
+	*hvram++ = idx2pal(a >> 16);
+	*hvram++ = idx2pal(a);
+	*hvram++ = idx2pal(b >> 16);
+	*hvram++ = idx2pal(b);
+	*hvram++ = idx2pal(c >> 16);
+	*hvram++ = idx2pal(c);
+	*hvram++ = idx2pal(d >> 16);
+	*hvram++ = idx2pal(d);
+	*hvram++ = idx2pal(a >> 24);
+	*hvram++ = idx2pal(a >> 8);
+	*hvram++ = idx2pal(b >> 24);
+	*hvram++ = idx2pal(b >> 8);
+	*hvram++ = idx2pal(c >> 24);
+	*hvram++ = idx2pal(c >> 8);
+	*hvram++ = idx2pal(d >> 24);
+	*hvram++ = idx2pal(d >> 8);
 #endif
 }
 
@@ -256,74 +237,44 @@ static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
 	c = (c & 0x5555aaaa) | ((c & 0x00005555) << 17) | ((c & 0xaaaa0000) >> 17);
 	d = (d & 0x5555aaaa) | ((d & 0x00005555) << 17) | ((d & 0xaaaa0000) >> 17);
 
-	hvram[ 8] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 0] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 9] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 1] = palette.native[a & 0xff];
-
-	hvram[10] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[ 2] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[11] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[ 3] = palette.native[b & 0xff];
-
-	hvram[12] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[ 4] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[13] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[ 5] = palette.native[c & 0xff];
-
-	hvram[14] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[ 6] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[15] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[ 7] = palette.native[d & 0xff];
+	*hvram++ = idx2pal(a >> 8);
+	*hvram++ = idx2pal(a >> 24);
+	*hvram++ = idx2pal(b >> 8);
+	*hvram++ = idx2pal(b >> 24);
+	*hvram++ = idx2pal(c >> 8);
+	*hvram++ = idx2pal(c >> 24);
+	*hvram++ = idx2pal(d >> 8);
+	*hvram++ = idx2pal(d >> 24);
+	*hvram++ = idx2pal(a);
+	*hvram++ = idx2pal(a >> 16);
+	*hvram++ = idx2pal(b);
+	*hvram++ = idx2pal(b >> 16);
+	*hvram++ = idx2pal(c);
+	*hvram++ = idx2pal(c >> 16);
+	*hvram++ = idx2pal(d);
+	*hvram++ = idx2pal(d >> 16);
 #else
 	a = (a & 0xaaaa5555) | ((a & 0x0000aaaa) << 15) | ((a & 0x55550000) >> 15);
 	b = (b & 0xaaaa5555) | ((b & 0x0000aaaa) << 15) | ((b & 0x55550000) >> 15);
 	c = (c & 0xaaaa5555) | ((c & 0x0000aaaa) << 15) | ((c & 0x55550000) >> 15);
 	d = (d & 0xaaaa5555) | ((d & 0x0000aaaa) << 15) | ((d & 0x55550000) >> 15);
 
-	hvram[ 1] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 9] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 0] = palette.native[a & 0xff];
-	a >>= 8;
-	hvram[ 8] = palette.native[a & 0xff];
-
-	hvram[ 3] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[11] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[ 2] = palette.native[b & 0xff];
-	b >>= 8;
-	hvram[10] = palette.native[b & 0xff];
-
-	hvram[ 5] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[13] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[ 4] = palette.native[c & 0xff];
-	c >>= 8;
-	hvram[12] = palette.native[c & 0xff];
-
-	hvram[ 7] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[15] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[ 6] = palette.native[d & 0xff];
-	d >>= 8;
-	hvram[14] = palette.native[d & 0xff];
+	*hvram++ = idx2pal(a >> 16);
+	*hvram++ = idx2pal(a);
+	*hvram++ = idx2pal(b >> 16);
+	*hvram++ = idx2pal(b);
+	*hvram++ = idx2pal(c >> 16);
+	*hvram++ = idx2pal(c);
+	*hvram++ = idx2pal(d >> 16);
+	*hvram++ = idx2pal(d);
+	*hvram++ = idx2pal(a >> 24);
+	*hvram++ = idx2pal(a >> 8);
+	*hvram++ = idx2pal(b >> 24);
+	*hvram++ = idx2pal(b >> 8);
+	*hvram++ = idx2pal(c >> 24);
+	*hvram++ = idx2pal(c >> 8);
+	*hvram++ = idx2pal(d >> 24);
+	*hvram++ = idx2pal(d >> 8);
 #endif
 }
 
@@ -423,6 +374,8 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					Uint16 *fvram_column = fvram_line;
 					Uint16 *hvram_column = hvram_line;
 
+					nSampleHoldIdx = 0;
+
 					/* Left border first */
 					Screen_memset_uint16(hvram_column, palette.native[0], leftBorder);
 					hvram_column += leftBorder;
@@ -475,6 +428,8 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 				for (h = 0; h < vh; h++) {
 					Uint16 *fvram_column = fvram_line;
 					Uint32 *hvram_column = hvram_line;
+
+					nSampleHoldIdx = 0;
 
 					/* Left border first */
 					Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
@@ -720,6 +675,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 				for (h = 0; h < scrheight; h++) {
 					fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
 					scrIdx ++;
+					nSampleHoldIdx = 0;
 
 					/* Recopy the same line ? */
 					if (screen_zoom.zoomytable[h] == cursrcline) {
@@ -795,6 +751,8 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 				for (h = 0; h < scrheight; h++) {
 					fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
 					scrIdx ++;
+					nSampleHoldIdx = 0;
+
 					/* Recopy the same line ? */
 					if (screen_zoom.zoomytable[h] == cursrcline) {
 						memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
