@@ -2941,7 +2941,7 @@ bool Video_RenderTTScreen(void)
 	Video_GetTTRes(&width, &height, &bpp);
 	if (TTRes != nPrevTTRes)
 	{
-		HostScreen_setWindowSize(width, height, 0, false);
+		HostScreen_setWindowSize(width, height, ConfigureParams.Screen.nForceBpp, false);
 		nPrevTTRes = TTRes;
 		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
 			bTTColorsSync = false;

@@ -833,6 +833,8 @@ static void Screen_DidResolutionChange(int new_res)
  */
 void Screen_ModeChanged(bool bForceChange)
 {
+	int hbpp = ConfigureParams.Screen.nForceBpp;
+
 	if (!sdlscrn)
 	{
 		/* screen not yet initialized */
@@ -841,7 +843,7 @@ void Screen_ModeChanged(bool bForceChange)
 	/* Don't run this function if Videl emulation is running! */
 	if (bUseVDIRes)
 	{
-		HostScreen_setWindowSize(VDIWidth, VDIHeight, 0, bForceChange);
+		HostScreen_setWindowSize(VDIWidth, VDIHeight, hbpp, bForceChange);
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
@@ -851,11 +853,11 @@ void Screen_ModeChanged(bool bForceChange)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
-		HostScreen_setWindowSize(width, height, 0, bForceChange);
+		HostScreen_setWindowSize(width, height, hbpp, bForceChange);
 	}
 	else if (bUseHighRes)
 	{
-		HostScreen_setWindowSize(640, 400, 0, bForceChange);
+		HostScreen_setWindowSize(640, 400, hbpp, bForceChange);
 	}
 	else
 	{
