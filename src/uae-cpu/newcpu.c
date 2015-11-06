@@ -163,6 +163,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "debugcpu.h"
 #include "68kDisass.h"
+#include "stMemory.h"
 
 #ifdef HAVE_CAPSIMAGE
 #if CAPSIMAGE_VERSION == 5
@@ -391,9 +392,9 @@ struct regstruct regs;
 static long int m68kpc_offset;
 
 
-#define get_ibyte_1(o) get_byte(regs.pc + (regs.pc_p - regs.pc_oldp) + (o) + 1)
-#define get_iword_1(o) get_word(regs.pc + (regs.pc_p - regs.pc_oldp) + (o))
-#define get_ilong_1(o) get_long(regs.pc + (regs.pc_p - regs.pc_oldp) + (o))
+#define get_ibyte_1(o) STMemory_ReadByte(regs.pc + (regs.pc_p - regs.pc_oldp) + (o) + 1)
+#define get_iword_1(o) STMemory_ReadWord(regs.pc + (regs.pc_p - regs.pc_oldp) + (o))
+#define get_ilong_1(o) STMemory_ReadLong(regs.pc + (regs.pc_p - regs.pc_oldp) + (o))
 
 uae_s32 ShowEA (FILE *f, int reg, amodes mode, wordsizes size, char *buf)
 {
