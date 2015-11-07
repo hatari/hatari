@@ -10,6 +10,7 @@
 #include "configuration.h"
 #include "log.h"
 #include "ioMem.h"
+#include "memorySnapShot.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "stMemory.h"
@@ -60,6 +61,12 @@ void Screen_RemapPalette(void)
 	}
 }
 
+void ScreenConv_MemorySnapShot_Capture(bool bSave)
+{
+	MemorySnapShot_Store(palette.standard, sizeof(palette.standard));
+	if (!bSave)
+		Screen_RemapPalette();
+}
 
 static void Screen_memset_uint32(Uint32 *addr, Uint32 color, int count)
 {

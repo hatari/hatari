@@ -49,6 +49,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "stMemory.h"
 #include "tos.h"
 #include "screen.h"
+#include "screenConvert.h"
 #include "video.h"
 #include "falcon/dsp.h"
 #include "falcon/crossbar.h"
@@ -57,7 +58,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "cart.h"
 
 
-#define VERSION_STRING      "1.9.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "devel"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define SNAPSHOT_MAGIC      0xDeadBeef
 
 #if HAVE_LIBZ
@@ -328,6 +329,8 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		DSP_MemorySnapShot_Capture(true);
 		DebugUI_MemorySnapShot_Capture(pszFileName, true);
 		IoMem_MemorySnapShot_Capture(true);
+		ScreenConv_MemorySnapShot_Capture(true);
+
 		/* end marker */
 		MemorySnapShot_Store(&magic, sizeof(magic));
 		/* And close */
@@ -388,6 +391,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		DSP_MemorySnapShot_Capture(false);
 		DebugUI_MemorySnapShot_Capture(pszFileName, false);
 		IoMem_MemorySnapShot_Capture(false);
+		ScreenConv_MemorySnapShot_Capture(false);
 
 		/* version string check catches release-to-release
 		 * state changes, bCaptureError catches too short

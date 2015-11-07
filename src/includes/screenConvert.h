@@ -7,6 +7,7 @@
 
 void Screen_RemapPalette(void);
 void Screen_SetPaletteColor(Uint8 idx, Uint8 red, Uint8 green, Uint8 blue);
+void ScreenConv_MemorySnapShot_Capture(bool bSave);
 
 void Screen_GenConvert(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
                        int leftBorderSize, int rightBorderSize,
