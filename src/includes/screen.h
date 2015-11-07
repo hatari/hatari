@@ -122,6 +122,4 @@ extern void Screen_ModeChanged(bool bForceChange);
 extern bool Screen_Draw(void);
 extern bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange);
 
-extern bool bTTSampleHold;      /* TT special video mode */
-
 #endif  /* ifndef HATARI_SCREEN_H */

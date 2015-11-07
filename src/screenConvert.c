@@ -14,6 +14,7 @@
 #include "screen.h"
 #include "screenConvert.h"
 #include "stMemory.h"
+#include "video.h"
 #include "falcon/videl.h"
 #include "falcon/hostscreen.h"
 
@@ -29,6 +30,7 @@ struct screen_zoom_s {
 };
 
 static struct screen_zoom_s screen_zoom;
+static bool bTTSampleHold = false;		/* TT special video mode */
 static int nSampleHoldIdx;
 
 
@@ -311,9 +313,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 	}
 
 	/* The sample-hold feature exists only on the TT */
-	if (ConfigureParams.System.nMachineType != MACHINE_TT) {
-		bTTSampleHold = false;
-	}
+	bTTSampleHold = (TTSpecialVideoMode & 0x80) != 0;
 
 	/* Clip to SDL_Surface dimensions */
 	scrwidth = HostScreen_getWidth();
@@ -590,9 +590,7 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 	int vw_b, vh_b;
 
 	/* The sample-hold feature exists only on the TT */
-	if (ConfigureParams.System.nMachineType != MACHINE_TT) {
-		bTTSampleHold = false;
-	}
+	bTTSampleHold = (TTSpecialVideoMode & 0x80) != 0;
 
 	vw_b = vw + leftBorder + rightBorder;
 	vh_b = vh + upperBorder + lowerBorder;

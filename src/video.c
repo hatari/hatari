@@ -455,11 +455,8 @@ static bool bSteBorderFlag;			/* true when screen width has been switched to 336
 static int NewSteBorderFlag = -1;		/* New value for next line */
 static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need conversion to SDL */
 
-bool bTTSampleHold = false;				/* TT special video mode */
-static bool bTTHypermono = false;		/* TT special video mode */
-
-static int TTSpecialVideoMode = 0;		/* TT special video mode */
-static int nPrevTTSpecialVideoMode = 0;	/* TT special video mode */
+int TTSpecialVideoMode;				/* TT special video mode */
+static int nPrevTTSpecialVideoMode;		/* TT special video mode */
 
 static int LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess last time ff8264 was set for the current VBL */
 static int LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
@@ -613,8 +610,6 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));
 	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));
 	MemorySnapShot_Store(&ShifterFrame, sizeof(ShifterFrame));
-	MemorySnapShot_Store(&bTTSampleHold, sizeof(bTTSampleHold));
-	MemorySnapShot_Store(&bTTHypermono, sizeof(bTTHypermono));
 	MemorySnapShot_Store(&TTSpecialVideoMode, sizeof(TTSpecialVideoMode));
 }
 
@@ -663,6 +658,8 @@ void Video_Reset(void)
 	/* Reset jitter indexes */
 	HblJitterIndex = 0;
 	VblJitterIndex = 0;
+
+	TTSpecialVideoMode = nPrevTTSpecialVideoMode = 0;
 
 	/* Clear framecycles counter */
 	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, 0);
@@ -2856,7 +2853,7 @@ static void Video_SetTTPaletteColor(int idx, Uint32 addr)
 
 	lowbyte = IoMem_ReadByte(addr + 1);
 
-	if (bTTHypermono)
+	if (TTSpecialVideoMode & 0x10)		/* TT Hyper-mono mode? */
 	{
 		r = g = b = lowbyte;
 	}
@@ -3752,9 +3749,6 @@ void Video_ShifterMode_WriteByte(void)
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
 		/* Copy to TT shifter mode register: */
 		IoMem_WriteByte(0xff8262, TTRes);
-
-		bTTSampleHold = false;
-		bTTHypermono = false;
 	}
 	else if (!bUseVDIRes)	/* ST and STE mode */
 	{
@@ -3929,24 +3923,6 @@ void Video_TTShiftMode_WriteWord(void)
 		IoMem_WriteByte(0xff8260, TTRes);
 		Video_ShifterMode_WriteByte();
 		IoMem_WriteByte(0xff8262, TTRes | TTSpecialVideoMode);
-	}
-
-	if(TTSpecialVideoMode & 0x80)
-	{
-		bTTSampleHold = true;
-	}
-	else
-	{
-		bTTSampleHold = false;
-	}
-
-	if(TTSpecialVideoMode & 0x10)
-	{
-		bTTHypermono = true;
-	}
-	else
-	{
-		bTTHypermono = false;
 	}
 }
 
