@@ -75,6 +75,7 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #include "hostscreen.h"
 #include "screen.h"
 #include "screenConvert.h"
+#include "statusbar.h"
 #include "stMemory.h"
 #include "videl.h"
 #include "video.h"				/* for bUseHighRes variable, maybe unuseful (Laurent) */
@@ -909,7 +910,12 @@ bool VIDEL_renderScreen(void)
 		HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp, false);
 	}
 
-	if (!HostScreen_renderBegin())
+	if (vw < 32 || vh < 32) {
+		LOG_TRACE(TRACE_VIDEL, "Videl : %dx%d screen size, not drawing\n", vw, vh);
+		return false;
+	}
+
+	if (!Screen_Lock())
 		return false;
 
 	/* 
@@ -930,11 +936,6 @@ bool VIDEL_renderScreen(void)
 	*/
 	nextline = linewidth + lineoffset;
 
-	if ((vw < 32) || (vh < 32)) {
-		LOG_TRACE(TRACE_VIDEL, "Videl : %dx%d screen size, not drawing\n", vw, vh);
-		return false;
-	}
-
 	VIDEL_UpdateColors();
 
 	Screen_GenConvert(videl.videoBaseAddr, videl.XSize, videl.YSize,
@@ -942,7 +943,8 @@ bool VIDEL_renderScreen(void)
 	                  videl.leftBorderSize, videl.rightBorderSize,
 	                  videl.upperBorderSize, videl.lowerBorderSize);
 
-	HostScreen_update1(HostScreen_renderEnd(), false);
+	Screen_UnLock();
+	HostScreen_update1(Statusbar_Update(sdlscrn, false), false);
 
 	return true;
 }

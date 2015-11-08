@@ -13,6 +13,7 @@
 #include "memorySnapShot.h"
 #include "screen.h"
 #include "screenConvert.h"
+#include "statusbar.h"
 #include "stMemory.h"
 #include "video.h"
 #include "falcon/videl.h"
@@ -292,13 +293,12 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
                                       int leftBorder, int rightBorder,
                                       int upperBorder, int lowerBorder)
 {
-	int scrpitch = HostScreen_getPitch();
+	int scrpitch = sdlscrn->pitch;
 	int h, w, j;
 
 	Uint16 *fvram = (Uint16 *) Atari2HostAddr(vaddr);
 	Uint16 *fvram_line;
-	Uint8 *hvram = HostScreen_getVideoramAddress();
-	SDL_PixelFormat *scrfmt = HostScreen_getFormat();
+	Uint8 *hvram = sdlscrn->pixels;
 
 	Uint16 lowBorderSize, rightBorderSize;
 	int scrwidth, scrheight;
@@ -356,7 +356,7 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 
 	/* Center screen */
 	hvram += ((scrheight-vh_clip)>>1)*scrpitch;
-	hvram += ((scrwidth-vw_clip)>>1)*HostScreen_getBpp();
+	hvram += ((scrwidth-vw_clip)>>1) * sdlscrn->format->BytesPerPixel;
 
 	fvram_line = fvram;
 	scrwidth = leftBorder + vw + rightBorder;
@@ -364,7 +364,8 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 	/* render the graphic area */
 	if (vbpp < 16) {
 		/* Bitplanes modes */
-		switch ( HostScreen_getBpp() ) {
+		switch (sdlscrn->format->BytesPerPixel)
+		{
 			case 2:
 			{
 				Uint16 *hvram_line = (Uint16 *)hvram;
@@ -480,7 +481,8 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 	} else {
 
 		/* Falcon TC (High Color) */
-		switch ( HostScreen_getBpp() )  {
+		switch (sdlscrn->format->BytesPerPixel)
+		{
 			case 2:
 			{
 				Uint16 *hvram_line = (Uint16 *)hvram;
@@ -550,7 +552,9 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 					/* Graphical area */
 					for (w = 0; w < vw; w++) {
 						Uint16 srcword = *fvram_column++;
-						*hvram_column ++ = SDL_MapRGB(scrfmt, (srcword & 0xf8), (((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c)), ((srcword >> 5) & 0xf8));
+						*hvram_column ++ = SDL_MapRGB(sdlscrn->format, srcword & 0xf8,
+						                              ((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c),
+						                              (srcword >> 5) & 0xf8);
 					}
 
 					/* Right border */
@@ -586,7 +590,6 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 	int coefy = 1;
 	int scrpitch, scrwidth, scrheight, scrbpp, hscrolloffset;
 	Uint8 *hvram;
-	SDL_PixelFormat *scrfmt;
 	int vw_b, vh_b;
 
 	/* The sample-hold feature exists only on the TT */
@@ -596,12 +599,11 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 	vh_b = vh + upperBorder + lowerBorder;
 
 	/* Host screen infos */
-	scrpitch = HostScreen_getPitch();
+	scrpitch = sdlscrn->pitch;
 	scrwidth = HostScreen_getWidth();
 	scrheight = HostScreen_getHeight();
-	scrbpp = HostScreen_getBpp();
-	scrfmt = HostScreen_getFormat();
-	hvram = (Uint8 *) HostScreen_getVideoramAddress();
+	scrbpp = sdlscrn->format->BytesPerPixel;
+	hvram = sdlscrn->pixels;
 
 	hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
 
@@ -906,7 +908,9 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 							Uint16 srcword;
 
 							srcword = fvram_column[screen_zoom.zoomxtable[w]];
-							*hvram_column++ = SDL_MapRGB(scrfmt, (srcword & 0xf8), (((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c)), ((srcword >> 5) & 0xf8));
+							*hvram_column++ = SDL_MapRGB(sdlscrn->format, srcword & 0xf8,
+							                             ((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c),
+							                             (srcword >> 5) & 0xf8);
 						}
 
 						/* Display the Right border */
@@ -948,12 +952,13 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
                     int leftBorder, int rightBorder,
                     int upperBorder, int lowerBorder)
 {
-	if (!HostScreen_renderBegin())
+	if (!Screen_Lock())
 		return false;
 
 	Screen_GenConvert(vaddr, vw, vh, vbpp, nextline, leftBorder, rightBorder,
 	                  upperBorder, lowerBorder);
 
-	HostScreen_update1(HostScreen_renderEnd(), false);
+	Screen_UnLock();
+	HostScreen_update1(Statusbar_Update(sdlscrn, false), false);
 	return true;
 }

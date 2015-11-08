@@ -115,6 +115,8 @@ extern Uint32 ST2RGB[4096];
 extern void Screen_Init(void);
 extern void Screen_UnInit(void);
 extern void Screen_Reset(void);
+extern bool Screen_Lock(void);
+extern void Screen_UnLock(void);
 extern void Screen_SetFullUpdate(void);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);

@@ -1099,7 +1099,7 @@ static void Screen_SetConvertDetails(void)
 /**
  * Lock full-screen for drawing
  */
-static bool Screen_Lock(void)
+bool Screen_Lock(void)
 {
 	if (SDL_MUSTLOCK(sdlscrn))
 	{
@@ -1117,7 +1117,7 @@ static bool Screen_Lock(void)
 /**
  * UnLock full-screen
  */
-static void Screen_UnLock(void)
+void Screen_UnLock(void)
 {
 	if ( SDL_MUSTLOCK(sdlscrn) )
 		SDL_UnlockSurface(sdlscrn);

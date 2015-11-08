@@ -206,17 +206,6 @@ void HostScreen_update1(SDL_Rect *extra, bool forced)
 	SDL_UpdateRects(sdlscrn, count, rects);
 }
 
-
-Uint32 HostScreen_getBpp(void)
-{
-	return sdlscrn->format->BytesPerPixel;
-}
-
-Uint32 HostScreen_getPitch(void)
-{
-	return sdlscrn->pitch;
-}
-
 Uint32 HostScreen_getWidth(void)
 {
 	return hs_rect.w;
@@ -225,37 +214,4 @@ Uint32 HostScreen_getWidth(void)
 Uint32 HostScreen_getHeight(void)
 {
 	return hs_rect.h;
-}
-
-Uint8 *HostScreen_getVideoramAddress(void)
-{
-	return sdlscrn->pixels;
-}
-
-SDL_PixelFormat *HostScreen_getFormat(void)
-{
-	return sdlscrn->format;
-}
-
-bool HostScreen_renderBegin(void)
-{
-	if (SDL_MUSTLOCK(sdlscrn))
-		if (SDL_LockSurface(sdlscrn) < 0) {
-			printf("Couldn't lock surface to refresh!\n");
-			return false;
-		}
-
-	return true;
-}
-
-/**
- * Direct surface writes done, so unlock screen,
- * check for statusbar updates and if there were such,
- * return which area needs update.
- */
-SDL_Rect* HostScreen_renderEnd(void)
-{
-	if (SDL_MUSTLOCK(sdlscrn))
-		SDL_UnlockSurface(sdlscrn);
-	return Statusbar_Update(sdlscrn, false);
 }
