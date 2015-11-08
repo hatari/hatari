@@ -57,7 +57,6 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 
 #include "hatari-glue.h"
 
-#include "falcon/hostscreen.h"
 #include "falcon/dsp.h"
 
 #if HAVE_GETTIMEOFDAY
@@ -662,7 +661,6 @@ static void Main_Init(void)
 	Control_CheckUpdates();       /* enable window embedding? */
 	Screen_Init();
 	Main_SetTitle(NULL);
-	HostScreen_Init();
 
 	ACIA_Init( ACIA_Array , MachineClocks.ACIA_Freq , MachineClocks.ACIA_Freq );
 	IKBD_Init();			/* After ACIA_Init */
@@ -727,7 +725,6 @@ static void Main_UnInit(void)
 	Audio_UnInit();
 	SDLGui_UnInit();
 	DSP_UnInit();
-	HostScreen_UnInit();
 	Screen_UnInit();
 	Exit680x0();
 

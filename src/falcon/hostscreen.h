@@ -8,8 +8,6 @@
 #ifndef HATARI_HOSTSCREEN_H
 #define HATARI_HOSTSCREEN_H
 
-extern void HostScreen_Init(void);
-extern void HostScreen_UnInit(void);
 extern void HostScreen_toggleFullScreen(void);
 extern bool HostScreen_renderBegin(void);
 extern SDL_Rect* HostScreen_renderEnd(void);

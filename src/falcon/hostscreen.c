@@ -38,15 +38,6 @@ static int hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 
-void HostScreen_Init(void)
-{
-}
-
-void HostScreen_UnInit(void)
-{
-}
-
-
 void HostScreen_toggleFullScreen(void)
 {
 	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp, true);
