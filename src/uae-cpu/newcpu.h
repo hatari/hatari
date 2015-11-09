@@ -172,6 +172,8 @@ STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
 {
     uae_u32 t = (currpc + offs) & ~1;
     uae_u32 r;
+
+//fprintf ( stderr , "refill pc %x o %d old %x\n" , currpc,offs,regs.prefetch_pc );
 #ifdef UNALIGNED_PROFITABLE
     if ( t - regs.prefetch_pc == 2 )				/* keep 1 word and read 1 new word */
     {

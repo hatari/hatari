@@ -80,6 +80,7 @@
 /* 2015/07/29	[NP]	In the case of an address error, correctly set last_writeaccess_for_exception_3	*/
 /*			to 0 (read) or 1 (write) (War Heli)						*/
 /* 2015/07/29	[NP]	Add refill_prefetch for i_Bcc (War Heli, 'bra.s -2' ($60fe))			*/
+/* 2015/11/09	[NP]	Add refill_prefetch for i_ADD #xx,d16(An) (Cubase, 'addi.w #5,2(a0)')		*/
 
 
 const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
@@ -1095,7 +1096,10 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0);
 	start_brace ();
-	printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] For Transbeauce 2 demo, need better prefetch emulation
+	if ( ( curi->smode == imm ) && ( curi->dmode == Ad16 ) )				// FIXME [NP] add.w #xx,xx(an) (Cubase : addi.w #5,2(a0))
+	  printf("\trefill_prefetch (m68k_getpc(), 6);\n");					// FIXME [NP] need better prefetch emulation
+	else
+	  printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] For Transbeauce 2 demo, need better prefetch emulation
 	genflags (flag_add, curi->size, "newv", "src", "dst");
 	genastore ("newv", curi->dmode, "dstreg", curi->size, "dst");
         if(curi->size==sz_long && curi->dmode==Dreg)
