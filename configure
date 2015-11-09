@@ -18,7 +18,8 @@ print_help()
   echo "  --enable-small-mem         Use less memory - at the expense of emulation speed"
   echo "  --disable-dsp              Disable DSP emulation for Falcon mode."
   echo "  --disable-tracing          Disable tracing messages for debugging"
-  echo "  --enable-winuae-cpu        Enable WinUAE CPU core (experimental!)"
+  echo "  --enable-winuae-cpu        Use WinUAE CPU core (default)"
+  echo "  --enable-old-uae-cpu       Use old UAE CPU core (deprecated)"
   echo "  --disable-osx-bundle       Disable application bundling on Mac OS X"
   echo "  --enable-sdl2              Compile with libsdl 2.0 instead of 1.2"
   echo "  --cross-compile-win64_32   Build the 32 bit Windows version under linux using mingw-w64"
@@ -75,6 +76,12 @@ do
     ;;
     --disable-winuae-cpu)
       cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=0"
+    ;;
+    --enable-old-uae-cpu)
+      cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=0"
+    ;;
+    --disable-old-uae-cpu)
+      cmake_args="$cmake_args -DENABLE_WINUAE_CPU:BOOL=1"
     ;;
     --enable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=1"
