@@ -30,6 +30,8 @@ extern int	CurrentInstrCycles;
 extern void Cycles_MemorySnapShot_Capture(bool bSave);
 extern void Cycles_SetCounter(int nId, int nValue);
 extern int Cycles_GetCounter(int nId);
+extern int Cycles_GetInternalCycleOnReadAccess(void);
+extern int Cycles_GetInternalCycleOnWriteAccess(void);
 extern int Cycles_GetCounterOnReadAccess(int nId);
 extern int Cycles_GetCounterOnWriteAccess(int nId);
 extern Uint64 Cycles_GetClockCounterOnReadAccess(void);

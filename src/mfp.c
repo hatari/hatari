@@ -138,6 +138,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 #include "ioMem.h"
 #include "joy.h"
 #include "m68000.h"
+#include "cycles.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "psg.h"
@@ -978,7 +979,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			}
 			else
 			{
-				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( CurrentInstrCycles + WaitStateCycles - 4 , INT_CPU_CYCLE );
+				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
@@ -1080,7 +1081,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			}
 			else
 			{
-				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( CurrentInstrCycles + WaitStateCycles - 4 , INT_CPU_CYCLE );
+				int	AddCurCycles = INT_CONVERT_TO_INTERNAL ( Cycles_GetInternalCycleOnWriteAccess() , INT_CPU_CYCLE );
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)

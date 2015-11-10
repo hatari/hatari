@@ -50,8 +50,6 @@ int	CurrentInstrCycles;
 
 
 static void	Cycles_UpdateCounters(void);
-static int	Cycles_GetInternalCycleOnReadAccess(void);
-static int	Cycles_GetInternalCycleOnWriteAccess(void);
 
 
 
@@ -119,7 +117,7 @@ int Cycles_GetCounter(int nId)
  * instruction type. We use some common cases, this should be handled more
  * accurately in the cpu emulation for each opcode.
  */
-static int Cycles_GetInternalCycleOnReadAccess(void)
+int Cycles_GetInternalCycleOnReadAccess(void)
 {
 	int AddCycles;
 	int Opcode;
@@ -169,7 +167,7 @@ static int Cycles_GetInternalCycleOnReadAccess(void)
  * instruction type. We use some common cases, this should be handled more
  * accurately in the cpu emulation for each opcode.
  */
-static int Cycles_GetInternalCycleOnWriteAccess(void)
+int Cycles_GetInternalCycleOnWriteAccess(void)
 {
 	int AddCycles;
 
