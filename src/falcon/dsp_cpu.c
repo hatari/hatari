@@ -1563,15 +1563,15 @@ static void dsp_compute_ssh_ssl(void)
 
 static void dsp_update_rn(Uint32 numreg, Sint16 modifier)
 {
-	Sint16 value;
+	Uint32 value;
 	Uint16 m_reg;
 
 	m_reg = (Uint16) dsp_core.registers[DSP_REG_M0+numreg];
 	if (m_reg == 65535) {
 		/* Linear addressing mode */
-		value = (Sint16) dsp_core.registers[DSP_REG_R0+numreg];
+		value = dsp_core.registers[DSP_REG_R0+numreg]|0x10000;
 		value += modifier;
-		dsp_core.registers[DSP_REG_R0+numreg] = ((Uint32) value) & BITMASK(16);
+		dsp_core.registers[DSP_REG_R0+numreg] = value & BITMASK(16);
 	} else if (m_reg == 0) {
 		/* Bit reversed carry update */
 		dsp_update_rn_bitreverse(numreg);
