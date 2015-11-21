@@ -734,10 +734,10 @@ static void	Video_SetSystemTimings(void)
 
 void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 {
-	if ( 0 && FrameCycles >= CyclesPerVBL )				/* rare case between end of last hbl and start of next VBL (during 64 cycles) */
-	{
-		*pHBL = ( FrameCycles - CyclesPerVBL ) / nCyclesPerLine;
-		*pLineCycles = ( FrameCycles - CyclesPerVBL ) % nCyclesPerLine;
+	if ( nHBL == nScanlinesPerFrame )				/* rare case between end of last hbl and start of next VBL (during 64 cycles) */
+	{								/* for example, cycle 160336 will give HBL=0 and LineCycles=80 */
+		*pHBL = 0;
+		*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle - nCyclesPerLine;
 	//fprintf ( stderr , "out of vbl FrameCycles %d CyclesPerVBL %d nHBL=%d %d %d\n" , FrameCycles , CyclesPerVBL, nHBL , *pHBL , *pLineCycles );
 	}
 
