@@ -5091,14 +5091,17 @@ bccl_not68020:
 	case i_BKPT:		/* only needed for hardware emulators */
 		sync_m68k_pc ();
 		printf ("\top_illg (opcode);\n");
+		did_prefetch = -1;
 		break;
 	case i_CALLM:		/* not present in 68030 */
 		sync_m68k_pc ();
 		printf ("\top_illg (opcode);\n");
+		did_prefetch = -1;
 		break;
 	case i_RTM:		/* not present in 68030 */
 		sync_m68k_pc ();
 		printf ("\top_illg (opcode);\n");
+		did_prefetch = -1;
 		break;
 	case i_TRAPcc:
 		if (curi->smode != am_unknown && curi->smode != am_illg)
