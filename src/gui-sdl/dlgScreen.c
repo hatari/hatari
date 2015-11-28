@@ -136,10 +136,17 @@ static SGOBJ windowdlg[] =
 	{ SGRADIOBUT, 0, 0, 21,7,  3,1, "_2" },
 	{ SGRADIOBUT, 0, 0, 21,8,  3,1, "_4" },
 	{ SGRADIOBUT, 0, 0, 21,9,  6,1, "_Auto" },
+#if WITH_SDL2
+	{ SGTEXT,     0, 0, 33,2, 14,1, "" },
+	{ SGTEXT,     0, 0, 35,4, 14,1, "resolution" },
+	{ SGTEXT,     0, 0, 35,2,  8,1, "" },
+	{ SGCHECKBOX, 0, 0, 33,3, 11,1, "Keep desktop" },
+#else
 	{ SGTEXT,     0, 0, 33,2, 14,1, "Keep desktop" },
 	{ SGTEXT,     0, 0, 33,3, 14,1, "resolution:" },
 	{ SGCHECKBOX, 0, 0, 35,4,  8,1, "ST/ST_e" },
 	{ SGCHECKBOX, 0, 0, 35,5, 11,1, "_TT/Falcon" },
+#endif
 	{ SGTEXT,     0, 0, 33,7, 15,1, "Max zoomed win:" },
 	{ SGBUTTON,   0, 0, 35,8,  1,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGTEXT,     0, 0, 37,8,  4,1, sMaxWidth },
@@ -330,10 +337,12 @@ void Dialog_WindowDlg(void)
 		windowdlg[DLGSCRN_KEEP_RES].state |= SG_SELECTED;
 	else
 		windowdlg[DLGSCRN_KEEP_RES].state &= ~SG_SELECTED;
+#if !WITH_SDL2
 	if (ConfigureParams.Screen.bKeepResolutionST)
 		windowdlg[DLGSCRN_KEEP_RES_ST].state |= SG_SELECTED;
 	else
 		windowdlg[DLGSCRN_KEEP_RES_ST].state &= ~SG_SELECTED;
+#endif
 
 	windowdlg[DLGSCRN_STATUSBAR].state &= ~SG_SELECTED;
 	windowdlg[DLGSCRN_DRIVELED].state &= ~SG_SELECTED;
@@ -446,7 +455,9 @@ void Dialog_WindowDlg(void)
 
 	ConfigureParams.Screen.bFullScreen = (windowdlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
 	ConfigureParams.Screen.bKeepResolution = (windowdlg[DLGSCRN_KEEP_RES].state & SG_SELECTED);
+#if !WITH_SDL2
 	ConfigureParams.Screen.bKeepResolutionST = (windowdlg[DLGSCRN_KEEP_RES_ST].state & SG_SELECTED);
+#endif
 
 	ConfigureParams.Screen.nMaxWidth = maxw;
 	ConfigureParams.Screen.nMaxHeight = maxh;

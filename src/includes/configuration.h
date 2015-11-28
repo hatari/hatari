@@ -252,7 +252,9 @@ typedef struct
   int nFrameSkips;
   bool bFullScreen;
   bool bKeepResolution;
+#if !WITH_SDL2
   bool bKeepResolutionST;
+#endif
   bool bAllowOverscan;
   bool bAspectCorrect;
   bool bUseExtVdiResolutions;

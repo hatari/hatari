@@ -308,7 +308,11 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	/* SDL Video attributes: */
 	if (bInFullScreen)
 	{
-		sdlVideoFlags  = SDL_WINDOW_FULLSCREEN_DESKTOP;
+		sdlVideoFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_INPUT_GRABBED;
+		if (ConfigureParams.Screen.bKeepResolution)
+			sdlVideoFlags  = SDL_WINDOW_FULLSCREEN_DESKTOP;
+		else
+			sdlVideoFlags  = SDL_WINDOW_FULLSCREEN;
 	}
 	else
 	{
@@ -475,8 +479,11 @@ static void Screen_SetResolution(bool bForceChange)
 		/* Statusbar height for doubled screen size */
 		SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
+#if WITH_SDL2
+		Resolution_GetLimits(&maxW, &maxH, &BitCount, ConfigureParams.Screen.bKeepResolution);
+#else
 		Resolution_GetLimits(&maxW, &maxH, &BitCount, ConfigureParams.Screen.bKeepResolutionST);
-		
+#endif
 		/* Zoom if necessary, factors used for scaling mouse motions */
 		if (STRes == ST_LOW_RES &&
 		    2*Width <= maxW && 2*Height+SBarHeight <= maxH)
@@ -522,6 +529,7 @@ static void Screen_SetResolution(bool bForceChange)
 	PCScreenOffsetX = PCScreenOffsetY = 0;
 
 	/* Video attributes: */
+#if !WITH_SDL2
 	if (bInFullScreen && ConfigureParams.Screen.bKeepResolutionST)
 	{
 		/* use desktop resolution */
@@ -536,6 +544,7 @@ static void Screen_SetResolution(bool bForceChange)
 		Height = maxH;
 		Width = maxW;
 	}
+#endif
 
 	if (Screen_SetSDLVideoSize(Width, Height, BitCount, bForceChange))
 	{
