@@ -766,8 +766,12 @@ void Screen_EnterFullScreen(void)
 			Screen_ClearScreen();       /* Black out screen bitmap as will be invalid when return */
 		}
 
-		SDL_Delay(20);                  /* To give monitor time to change to new resolution */
-		
+		if (!Screen_WantToKeepResolution())
+		{
+			/* Give monitor time to change to new resolution */
+			SDL_Delay(20);
+		}
+
 		if (bWasRunning)
 		{
 			/* And off we go... */
@@ -804,7 +808,12 @@ void Screen_ReturnFromFullScreen(void)
 		{
 			Screen_SetResolution(true);
 		}
-		SDL_Delay(20);                /* To give monitor time to switch resolution */
+
+		if (!Screen_WantToKeepResolution())
+		{
+			/* Give monitor time to switch resolution */
+			SDL_Delay(20);
+		}
 
 		if (bWasRunning)
 		{
