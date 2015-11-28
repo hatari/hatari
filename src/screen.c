@@ -241,6 +241,18 @@ static void Screen_SetSTScreenOffsets(void)
 	}
 }
 
+static bool Screen_WantToKeepResolution(void)
+{
+#if WITH_SDL2
+	return ConfigureParams.Screen.bKeepResolution;
+#else
+	if (Screen_UseHostScreen())
+		return ConfigureParams.Screen.bKeepResolution;
+	else
+		return ConfigureParams.Screen.bKeepResolutionST;
+#endif
+}
+
 #if WITH_SDL2
 static void Screen_FreeSDL2Resources(void)
 {
@@ -479,11 +491,8 @@ static void Screen_SetResolution(bool bForceChange)
 		/* Statusbar height for doubled screen size */
 		SBarHeight = Statusbar_GetHeightForSize(640, 400);
 
-#if WITH_SDL2
-		Resolution_GetLimits(&maxW, &maxH, &BitCount, ConfigureParams.Screen.bKeepResolution);
-#else
-		Resolution_GetLimits(&maxW, &maxH, &BitCount, ConfigureParams.Screen.bKeepResolutionST);
-#endif
+		Resolution_GetLimits(&maxW, &maxH, &BitCount, Screen_WantToKeepResolution());
+
 		/* Zoom if necessary, factors used for scaling mouse motions */
 		if (STRes == ST_LOW_RES &&
 		    2*Width <= maxW && 2*Height+SBarHeight <= maxH)
