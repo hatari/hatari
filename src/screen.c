@@ -98,6 +98,7 @@ static bool bScrDoubleY;                /* true if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 
+static bool Screen_UseHostScreen(void);
 static bool Screen_DrawFrame(bool bForceFlip);
 
 #if WITH_SDL2
