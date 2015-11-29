@@ -272,11 +272,6 @@ static void Screen_FreeSDL2Resources(void)
 		SDL_DestroyRenderer(sdlRenderer);
 		sdlRenderer = NULL;
 	}
-	if (sdlWindow)
-	{
-		SDL_DestroyWindow(sdlWindow);
-		sdlWindow = NULL;
-	}
 }
 #endif
 
@@ -290,6 +285,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 #if WITH_SDL2
 	static int nPrevRenderScaleQuality = 0;
 	static bool bPrevUseVsync = false;
+	static bool bPrevInFullScreen;
 
 	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
@@ -333,6 +329,13 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 
 	Screen_FreeSDL2Resources();
+	if (((bInFullScreen && !ConfigureParams.Screen.bKeepResolution)
+	     || bPrevInFullScreen != bInFullScreen) && sdlWindow)
+	{
+		SDL_DestroyWindow(sdlWindow);
+		sdlWindow = NULL;
+	}
+	bPrevInFullScreen = bInFullScreen;
 
 	/* Set SDL2 video hints */
 	if (nPrevRenderScaleQuality != ConfigureParams.Screen.nRenderScaleQuality)
@@ -352,9 +355,16 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height,
 	        bitdepth, bInFullScreen?"fullscreen":"windowed"));
 
-	sdlWindow = SDL_CreateWindow("Hatari", SDL_WINDOWPOS_UNDEFINED,
-	                             SDL_WINDOWPOS_UNDEFINED, width, height,
-	                             sdlVideoFlags);
+	if (sdlWindow)
+	{
+		SDL_SetWindowSize(sdlWindow, width, height);
+	}
+	else
+	{
+		sdlWindow = SDL_CreateWindow("Hatari", SDL_WINDOWPOS_UNDEFINED,
+		                             SDL_WINDOWPOS_UNDEFINED,
+		                             width, height, sdlVideoFlags);
+	}
 	sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
 	if (!sdlWindow || !sdlRenderer)
 	{
@@ -648,6 +658,11 @@ void Screen_UnInit(void)
 
 #if WITH_SDL2
 	Screen_FreeSDL2Resources();
+	if (sdlWindow)
+	{
+		SDL_DestroyWindow(sdlWindow);
+		sdlWindow = NULL;
+	}
 #endif
 }
 
