@@ -734,12 +734,9 @@ NSString  *defaultDirectory ;
     IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 
 #endif
-	
-	[(force8bpp) setState:((ConfigureParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
 
-	
 	int i;
-	
+
 	for (i = 0; i <= DLGSOUND_50KHZ-DLGSOUND_11KHZ; i++)
 	{
 		if (ConfigureParams.Sound.nPlaybackFreq > nSoundFreqs[i]-500
@@ -953,8 +950,6 @@ NSString  *defaultDirectory ;
     EXPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
     EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 #endif
-    
-	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 0;
 
 	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
 			

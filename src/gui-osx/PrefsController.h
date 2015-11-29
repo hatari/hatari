@@ -38,7 +38,6 @@
 	IBOutlet NSButton *useBorders;
 	IBOutlet NSButton *falconTTRatio;
 	IBOutlet NSButton *zoomSTLowRes;
-	IBOutlet NSButton *force8bpp;
 	IBOutlet NSButton *useVDIResolution;
 	IBOutlet NSMatrix *resolution;
 	IBOutlet NSMatrix *colorDepth;
