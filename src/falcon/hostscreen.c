@@ -119,8 +119,10 @@ void HostScreen_setWindowSize(int width, int height, int bpp, bool bForceChange)
 	screenheight = height + sbarheight;
 	screenwidth = width;
 
+#if !WITH_SDL2
 	/* get resolution corresponding to these */
 	Resolution_Search(&screenwidth, &screenheight, &bpp, keep);
+#endif
 	/* re-calculate statusbar height for this resolution */
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 
