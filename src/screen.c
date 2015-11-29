@@ -323,9 +323,9 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	{
 		sdlVideoFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_INPUT_GRABBED;
 		if (ConfigureParams.Screen.bKeepResolution)
-			sdlVideoFlags  = SDL_WINDOW_FULLSCREEN_DESKTOP;
+			sdlVideoFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 		else
-			sdlVideoFlags  = SDL_WINDOW_FULLSCREEN;
+			sdlVideoFlags |= SDL_WINDOW_FULLSCREEN;
 	}
 	else
 	{
