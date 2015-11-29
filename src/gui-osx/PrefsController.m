@@ -28,6 +28,7 @@
 #include "sdlgui.h"
 #include "paths.h"
 #include "keymap.h"
+#include "joy.h"
 
 // Macros to transfer data between Cocoa controls and Hatari data structures
 
@@ -586,9 +587,9 @@ NSString  *defaultDirectory ;
 			int i;
 			for (i = 0; i < cRealJoysticks; i++)
 			{
-				const char* szJoystickName = SDL_JoystickName(i);
-				[realJoystick addItemWithTitle:[[NSString stringWithCString:szJoystickName encoding:NSASCIIStringEncoding] capitalizedString]];	
-				[[realJoystick lastItem] setTag:i];	
+				const char* szJoystickName = Joy_GetName(i);
+				[realJoystick addItemWithTitle:[[NSString stringWithCString:szJoystickName encoding:NSASCIIStringEncoding] capitalizedString]];
+				[[realJoystick lastItem] setTag:i];
 			}
 		}
 		else	// No real joysticks: Disable the controls
