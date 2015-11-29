@@ -137,10 +137,10 @@ static SGOBJ windowdlg[] =
 	{ SGRADIOBUT, 0, 0, 21,8,  3,1, "_4" },
 	{ SGRADIOBUT, 0, 0, 21,9,  6,1, "_Auto" },
 #if WITH_SDL2
-	{ SGTEXT,     0, 0, 33,2, 14,1, "" },
-	{ SGTEXT,     0, 0, 35,4, 14,1, "resolution" },
-	{ SGTEXT,     0, 0, 35,2,  8,1, "" },
-	{ SGCHECKBOX, 0, 0, 33,3, 11,1, "Keep desktop" },
+	{ SGTEXT,     0, 0, 35,4, 10,1, "resolution" },
+	{ SGTEXT,     0, 0, 35,5, 13,1, "in fullscreen" },
+	{ SGTEXT,     0, 0, 33,2,  1,1, "" },
+	{ SGCHECKBOX, 0, 0, 33,3, 14,1, "_Keep desktop" },
 #else
 	{ SGTEXT,     0, 0, 33,2, 14,1, "Keep desktop" },
 	{ SGTEXT,     0, 0, 33,3, 14,1, "resolution:" },
