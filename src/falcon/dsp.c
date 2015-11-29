@@ -67,6 +67,8 @@ static bool bDspDebugging;
 bool bDspEnabled = false;
 bool bDspHostInterruptPending = false;
 
+Uint64	DSP_CyclesGlobalClockCounter = 0;			/* Value of CyclesGlobalClockCounter when DSP_Run was last called */
+
 
 /**
  * Trigger HREQ interrupt at the host CPU.
@@ -187,6 +189,7 @@ void DSP_Enable(void)
 {
 #if ENABLE_DSP_EMU
 	bDspEnabled = true;
+	DSP_CyclesGlobalClockCounter = CyclesGlobalClockCounter;
 #endif
 }
 
@@ -225,6 +228,11 @@ void DSP_MemorySnapShot_Capture(bool bSave)
 void DSP_Run(int nHostCycles)
 {
 #if ENABLE_DSP_EMU
+	if ( nHostCycles == 0 )
+		return;
+
+	DSP_CyclesGlobalClockCounter = CyclesGlobalClockCounter;
+
         save_cycles += nHostCycles * 2;
 
         if (dsp_core.running == 0)

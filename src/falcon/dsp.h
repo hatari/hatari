@@ -32,6 +32,8 @@
 extern bool bDspEnabled;
 extern bool bDspHostInterruptPending;
 
+extern Uint64   DSP_CyclesGlobalClockCounter;
+
 /* Dsp commands */
 extern bool DSP_ProcessIRQ(void);
 extern void DSP_Init(void);

@@ -4767,7 +4767,8 @@ printf ( "run_mmu060\n" );
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+//					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -4861,7 +4862,8 @@ printf ( "run_mmu040\n" );
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+//					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -5000,7 +5002,8 @@ insretry:
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+//					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -5084,7 +5087,8 @@ printf ( "run_3ce\n" );
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+//					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -5159,7 +5163,8 @@ printf ( "run_3p\n" );
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
+//					DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
+					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -5336,7 +5341,9 @@ cont:
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
-					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+//					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
+//fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift );
+					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 
@@ -5420,7 +5427,8 @@ printf ( "run_2p\n" );
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+//					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 
@@ -5500,7 +5508,8 @@ printf ( "run_2\n" );
 #ifdef WINUAE_FOR_HATARI
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
-					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+//					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
+					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
