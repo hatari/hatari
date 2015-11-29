@@ -5067,7 +5067,9 @@ printf ( "run_3ce\n" );
 
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr, "cyc_3ce %d\n" , currcycle );
+				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -5318,7 +5320,9 @@ fprintf ( stderr , "cache valid %d tag1 %x lws1 %x ctag %x data %x mem=%x\n" , c
 
 #ifdef WINUAE_FOR_HATARI
 //fprintf ( stderr, "cyc_2ce %d\n" , currcycle );
+				/* Flush all CE cycles so far to update PendingInterruptCount */
 				M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+				currcycle = 0;
 
 				/* We can have several interrupts at the same time before the next CPU instruction */
 				/* We must check for pending interrupt and call do_specialties_interrupt() only */
