@@ -582,7 +582,18 @@ void Main_EventHandler(void)
 			Keymap_KeyUp(&event.key.keysym);
 			break;
 
-		default:
+#if WITH_SDL2
+		 case SDL_WINDOWEVENT:
+			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+			{
+				Screen_SetFullUpdate();
+				break;
+			}
+			bContinueProcessing = true;
+			break;
+#endif
+
+		 default:
 			/* don't let unknown events delay event processing */
 			bContinueProcessing = true;
 			break;

@@ -325,7 +325,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 	else
 	{
-		sdlVideoFlags  = 0;
+		sdlVideoFlags  = SDL_WINDOW_RESIZABLE;
 	}
 
 	Screen_FreeSDL2Resources();
@@ -375,7 +375,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	{
 		int rm, bm, gm, pfmt;
 
-		SDL_RenderSetLogicalSize(sdlRenderer, width, height);
+		if (bInFullScreen)
+			SDL_RenderSetLogicalSize(sdlRenderer, width, height);
 
 		if (bitdepth == 16)
 		{
