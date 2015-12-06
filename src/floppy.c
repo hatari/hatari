@@ -397,7 +397,7 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
  * In case the user eject/insert several disks before returning to emulation,
  * State1 will contain the first action, and State2 the latest action (intermediate
  * actions are ignored, as they wouldn't be seen while the emulation is paused).
- * Each action will take FLOPPY_DRIVE_TRANSITION_DELAY_VBL * 2 VBLs to execute,
+ * Each action will take FLOPPY_DRIVE_TRANSITION_DELAY_VBL VBLs to execute,
  * see fdc.c for details.
  */
 static void	Floppy_DriveTransitionSetState ( int Drive , int State )
@@ -425,7 +425,7 @@ static void	Floppy_DriveTransitionSetState ( int Drive , int State )
 		{
 			/* Set State2 just after State1 ends */
 			EmulationDrives[Drive].TransitionState2 = State;
-			EmulationDrives[Drive].TransitionState2_VBL = EmulationDrives[Drive].TransitionState1_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL * 2;
+			EmulationDrives[Drive].TransitionState2_VBL = EmulationDrives[Drive].TransitionState1_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL;
 		}
 	}
 //fprintf ( stderr , "drive transition state1 %d %d state2 %d %d\n" ,
@@ -449,42 +449,28 @@ int	Floppy_DriveTransitionUpdateState ( int Drive )
 
 	if ( EmulationDrives[Drive].TransitionState1 != 0 )
 	{
-		if ( nVBLs >= EmulationDrives[Drive].TransitionState1_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL * 2 )
+		if ( nVBLs >= EmulationDrives[Drive].TransitionState1_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL )
 			EmulationDrives[Drive].TransitionState1 = 0;	/* State1's delay elapsed */
-		else if ( nVBLs >= EmulationDrives[Drive].TransitionState1_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL )
-		{
-			if ( EmulationDrives[Drive].TransitionState1 == FLOPPY_DRIVE_TRANSITION_STATE_INSERT )
-				Force = -1;				/* Insert phase 2 : clear WPRT */
-			else
-				Force = 1;				/* Eject phase 2 : set WPRT */
-		}
 		else
 		{
 			if ( EmulationDrives[Drive].TransitionState1 == FLOPPY_DRIVE_TRANSITION_STATE_INSERT )
-				Force = 1;				/* Insert phase 1 : set WPRT */
+				Force = 0;				/* Insert : keep WPRT */
 			else
-				Force = -1;				/* Eject phase 1 : clear WPRT */
+				Force = 1;				/* Eject : set WPRT */
 		}
 	}
 
 	if ( ( EmulationDrives[Drive].TransitionState2 != 0 )
 	  && ( nVBLs >= EmulationDrives[Drive].TransitionState2_VBL ) )
 	{
-		if ( nVBLs >= EmulationDrives[Drive].TransitionState2_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL * 2 )
+		if ( nVBLs >= EmulationDrives[Drive].TransitionState2_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL )
 			EmulationDrives[Drive].TransitionState2 = 0;	/* State2's delay elapsed */
-		else if ( nVBLs >= EmulationDrives[Drive].TransitionState2_VBL + FLOPPY_DRIVE_TRANSITION_DELAY_VBL )
-		{
-			if ( EmulationDrives[Drive].TransitionState2 == FLOPPY_DRIVE_TRANSITION_STATE_INSERT )
-				Force = -1;				/* Insert phase 2 : clear WPRT */
-			else
-				Force = 1;				/* Eject phase 2 : set WPRT */
-		}
 		else
 		{
 			if ( EmulationDrives[Drive].TransitionState2 == FLOPPY_DRIVE_TRANSITION_STATE_INSERT )
-				Force = 1;				/* Insert phase 1 : set WPRT */
+				Force = 0;				/* Insert : keep WPRT */
 			else
-				Force = -1;				/* Eject phase 1 : clear WPRT */
+				Force = 1;				/* Eject : set WPRT */
 		}
 	}
 

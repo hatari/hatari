@@ -186,24 +186,19 @@ ACSI DMA and Floppy Disk Controller(FDC)
   3'1/2 floppy drives include a 'DSKCHG' signal on pin 34 to detect when a disk was changed.
   Unfortunatelly on ST, this signal is not connected. Nevertheless, it's possible to detect
   a disk was inserted or ejected by looking at the 'WPT' signal which tells if a disk is write
-  protected or not.
-  At the drive level, a light is emitted above the top left corner of the floppy :
-   - if the write protection hole on the floppy is opened, the light goes through and the disk
-     is considered to be write protected.
-   - if the write protection hole on the floppy is closed, the light can't go through and the
-     disk is write enabled.
-  The point is that when any "solid" part of the floppy obstructs the light signal, the WPT
-  signal will change immediately : it will be considered as if a write enabled disk was present.
-  So, when a floppy is ejected or inserted, the body of the floppy will briefly obstruct the light,
-  whatever the state of the protection hole could be.
-  Similarly, when there's no floppy inside the drive, the light signal can pass through, so it will
-  be considered as if a write protected disk was present.
-  So, let's call 'C' the state when protection hole is Closed (ie WPT = 0) and 'O' the state
-  when protection hole is Opened (ie WPT = 1). We have the following cases :
-    - floppy in drive : state can be C or O depending on the protection tab. Let's call it 'X'
-    - no floppy in drive : state is equivalent to O (because the light signal is not obstructed)
-    - ejecting a floppy : states will go from X to C and finally to O
-    - inserting a floppy : states will go from O to C and finally to X
+  protected or not (but this method has some limitations and doesn't work in all cases).
+
+  The following values of the WPT signal were measured with a custom program when ejecting/inserting
+  a floppy (tested on a 520 STF with a single sided drive and with a double sided drive) :
+    - floppy with write protection OFF (write possible), WPT=0 :
+	eject   start=0 -> end=1
+	insert  start=1 -> end=0
+    - floppy with write protection ON (write not possible), WPT=1 :
+	eject   start=1 -> end=1
+	insert  start=1 -> end=1
+
+  As can be seen, when a disk is write protected (WPT=1), it is not possible to detect the
+  transition between inserting and ejecting, WPT will always be 1.
 
   The TOS monitors the changes on the WPT signal to determine if a floppy was ejected or inserted.
   On TOS 1.02fr, the code is located between $fc1bc4 and $fc1ebc. Every 8 VBL, one floppy drive is checked
@@ -211,10 +206,10 @@ ACSI DMA and Floppy Disk Controller(FDC)
   WPT signal during at least 8 VBLs. When 2 drive are connected, each drive is checked every 16 VBLs, so
   the WPT signal should be kept for at least 16 VBLs.
 
-  During these transition phases between "ejected" and "inserted", we force the WPT signal to either 0 or 1,
+  During these transition phases between "ejected" and "inserted", we force the WPT signal to 1,
   depending on which transition we're emulating (see Floppy_DriveTransitionUpdateState()) :
-    - Ejecting : WPT will be X, then 0, then 1
-    - Inserting : WPT will be 1, then 0, then X
+    - Ejecting : WPT will be X, then 1
+    - Inserting : WPT will be 1, then X
 
 */
 
