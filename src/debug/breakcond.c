@@ -1510,6 +1510,9 @@ static void BreakCond_Print(bc_breakpoint_t *bp)
 		if (bp->options.once) {
 			fprintf(stderr, " :once");
 		}
+		if (bp->options.quiet) {
+			fprintf(stderr, " :quiet");
+		}
 		if (bp->options.trace) {
 			if (bp->options.lock) {
 				fprintf(stderr, " :lock");
@@ -1712,7 +1715,10 @@ static void BreakCond_Help(void)
 "  Examples:\n"
 "  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0 = %1100\n"
 "       ($ffff9202).w ! ($ffff9202).w :trace\n"
-"  	(r0).x = 1 && (r0).y = 2\n", stderr);
+"  	(r0).x = 1 && (r0).y = 2\n"
+"\n"
+"  For breakpoint options, see 'help b'.\n",
+	      stderr);
 }
 
 
