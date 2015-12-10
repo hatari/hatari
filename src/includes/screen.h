@@ -123,5 +123,9 @@ extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ModeChanged(bool bForceChange);
 extern bool Screen_Draw(void);
 extern bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange);
+extern void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange);
+extern void Screen_GenConvUpdate(SDL_Rect *extra, bool forced);
+extern Uint32 Screen_GetGenConvWidth(void);
+extern Uint32 Screen_GetGenConvHeight(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */

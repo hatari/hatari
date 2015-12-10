@@ -8,6 +8,4 @@ if(ENABLE_DSP_EMU)
 endif(ENABLE_DSP_EMU)
 
 add_library(Falcon
-	crossbar.c dsp.c ${DSP_SOURCES}
-	hostscreen.c microphone.c nvram.c videl.c
-	)
+	    crossbar.c microphone.c nvram.c videl.c dsp.c ${DSP_SOURCES})

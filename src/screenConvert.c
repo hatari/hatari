@@ -16,8 +16,6 @@
 #include "statusbar.h"
 #include "stMemory.h"
 #include "video.h"
-#include "falcon/videl.h"
-#include "falcon/hostscreen.h"
 
 #define Atari2HostAddr(a) (&STRam[a])
 
@@ -316,8 +314,8 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 	bTTSampleHold = (TTSpecialVideoMode & 0x80) != 0;
 
 	/* Clip to SDL_Surface dimensions */
-	scrwidth = HostScreen_getWidth();
-	scrheight = HostScreen_getHeight();
+	scrwidth = Screen_GetGenConvWidth();
+	scrheight = Screen_GetGenConvHeight();
 	vw_clip = vw + rightBorder + leftBorder;
 	vh_clip = vh + upperBorder + lowerBorder;
 	if (vw_clip > scrwidth)
@@ -600,8 +598,8 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 
 	/* Host screen infos */
 	scrpitch = sdlscrn->pitch;
-	scrwidth = HostScreen_getWidth();
-	scrheight = HostScreen_getHeight();
+	scrwidth = Screen_GetGenConvWidth();
+	scrheight = Screen_GetGenConvHeight();
 	scrbpp = sdlscrn->format->BytesPerPixel;
 	hvram = sdlscrn->pixels;
 
@@ -622,8 +620,8 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 		scrheight = vh_b * coefy;
 
 		/* Center screen */
-		hvram += ((HostScreen_getHeight()-scrheight)>>1)*scrpitch;
-		hvram += ((HostScreen_getWidth()-scrwidth)>>1)*scrbpp;
+		hvram += ((Screen_GetGenConvHeight()-scrheight)>>1)*scrpitch;
+		hvram += ((Screen_GetGenConvWidth()-scrwidth)>>1)*scrbpp;
 	}
 
 	/* New zoom ? */
@@ -959,6 +957,6 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
 	                  upperBorder, lowerBorder);
 
 	Screen_UnLock();
-	HostScreen_update1(Statusbar_Update(sdlscrn, false), false);
+	Screen_GenConvUpdate(Statusbar_Update(sdlscrn, false), false);
 	return true;
 }

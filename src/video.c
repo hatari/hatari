@@ -393,7 +393,6 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "ymFormat.h"
 #include "falcon/videl.h"
-#include "falcon/hostscreen.h"
 #include "avi_record.h"
 #include "ikbd.h"
 #include "floppy_ipf.h"
@@ -2943,7 +2942,7 @@ bool Video_RenderTTScreen(void)
 	Video_GetTTRes(&width, &height, &bpp);
 	if (TTRes != nPrevTTRes)
 	{
-		HostScreen_setWindowSize(width, height, ConfigureParams.Screen.nForceBpp, false);
+		Screen_SetGenConvSize(width, height, ConfigureParams.Screen.nForceBpp, false);
 		nPrevTTRes = TTRes;
 		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
 			bTTColorsSync = false;

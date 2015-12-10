@@ -72,7 +72,6 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "ioMem.h"
 #include "log.h"
-#include "hostscreen.h"
 #include "screen.h"
 #include "screenConvert.h"
 #include "statusbar.h"
@@ -125,7 +124,8 @@ void VIDEL_reset(void)
 	videl.save_scrWidth = 640;
 	videl.save_scrHeight = 480;
 	videl.save_scrBpp = ConfigureParams.Screen.nForceBpp;
-	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp, false);
+	Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight,
+	                      videl.save_scrBpp, false);
 
 	/* Reset IO register (some are not initialized by TOS) */
 	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
@@ -866,12 +866,13 @@ void VIDEL_UpdateColors(void)
 }
 
 
+/* User selected another zoom mode, so set a new screen resolution now */
 void VIDEL_ZoomModeChanged(bool bForceChange)
 {
-	/* User selected another zoom mode, so set a new screen resolution now */
-	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight,
-	                         videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp,
-	                         bForceChange);
+	int bpp = videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp;
+
+	Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight,
+	                      bpp, bForceChange);
 }
 
 
@@ -907,7 +908,7 @@ bool VIDEL_renderScreen(void)
 	}
 	if (change) {
 		LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n", videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
-		HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp, false);
+		Screen_SetGenConvSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp, false);
 	}
 
 	if (vw < 32 || vh < 32) {
@@ -944,7 +945,7 @@ bool VIDEL_renderScreen(void)
 	                  videl.upperBorderSize, videl.lowerBorderSize);
 
 	Screen_UnLock();
-	HostScreen_update1(Statusbar_Update(sdlscrn, false), false);
+	Screen_GenConvUpdate(Statusbar_Update(sdlscrn, false), false);
 
 	return true;
 }

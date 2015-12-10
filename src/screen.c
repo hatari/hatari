@@ -48,7 +48,6 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "video.h"
 #include "falcon/videl.h"
-#include "falcon/hostscreen.h"
 
 #define DEBUG 0
 
@@ -64,7 +63,7 @@ int nScreenZoomX, nScreenZoomY;             /* Zooming factors, used for scaling
 int nBorderPixelsLeft, nBorderPixelsRight;  /* Pixels in left and right border */
 static int nBorderPixelsTop, nBorderPixelsBottom;  /* Lines in top and bottom border */
 
-/* extern for shortcuts and falcon/hostscreen.c */
+/* extern for shortcuts etc. */
 bool bGrabMouse = false;      /* Grab the mouse cursor in the window */
 bool bInFullScreen = false;   /* true if in full screen */
 
@@ -97,8 +96,12 @@ static bool bScreenContentsChanged;     /* true if buffer changed and requires b
 static bool bScrDoubleY;                /* true if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
+/* These are used for the generic screen convertion functions */
+static SDL_Rect genconv_rect;
+static int genconv_width_req, genconv_height_req, genconv_bpp;
+static bool genconv_do_update;          /* HW surface is available -> the SDL need not to update the surface after ->pixel access */
 
-static bool Screen_UseHostScreen(void);
+
 static bool Screen_DrawFrame(bool bForceFlip);
 
 #if WITH_SDL2
@@ -242,12 +245,23 @@ static void Screen_SetSTScreenOffsets(void)
 	}
 }
 
+/**
+ * Return true if Falcon/TT/VDI generic screen convert functions
+ * need to be used instead of the ST/STE functions.
+ */
+static bool Screen_UseGenConvScreen(void)
+{
+	return ConfigureParams.System.nMachineType == MACHINE_FALCON
+		|| ConfigureParams.System.nMachineType == MACHINE_TT
+		|| bUseHighRes || bUseVDIRes;
+}
+
 static bool Screen_WantToKeepResolution(void)
 {
 #if WITH_SDL2
 	return ConfigureParams.Screen.bKeepResolution;
 #else
-	if (Screen_UseHostScreen())
+	if (Screen_UseGenConvScreen())
 		return ConfigureParams.Screen.bKeepResolution;
 	else
 		return ConfigureParams.Screen.bKeepResolutionST;
@@ -724,18 +738,6 @@ static void Screen_ClearScreen(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return true if (falcon/tt) hostscreen functions need to be used
- * instead of the (st/ste) functions here.
- */
-static bool Screen_UseHostScreen(void)
-{
-	return ConfigureParams.System.nMachineType == MACHINE_FALCON
-		|| ConfigureParams.System.nMachineType == MACHINE_TT
-		|| bUseHighRes || bUseVDIRes;
-}
-
-/*-----------------------------------------------------------------------*/
-/**
  * Force screen redraw.  Does the right thing regardless of whether
  * we're in ST/STe, Falcon or TT mode.  Needed when switching modes
  * while emulation is paused.
@@ -773,9 +775,12 @@ void Screen_EnterFullScreen(void)
 		bWasRunning = Main_PauseEmulation(false);
 		bInFullScreen = true;
 
-		if (Screen_UseHostScreen())
+		if (Screen_UseGenConvScreen())
 		{
-			HostScreen_toggleFullScreen();
+			Screen_SetGenConvSize(genconv_width_req, genconv_height_req,
+			                      genconv_bpp, true);
+			/* force screen redraw */
+			Screen_GenConvUpdate(NULL, true);
 		}
 		else
 		{
@@ -817,9 +822,12 @@ void Screen_ReturnFromFullScreen(void)
 		bWasRunning = Main_PauseEmulation(false);
 		bInFullScreen = false;
 
-		if (Screen_UseHostScreen())
+		if (Screen_UseGenConvScreen())
 		{
-			HostScreen_toggleFullScreen();
+			Screen_SetGenConvSize(genconv_width_req, genconv_height_req,
+			                      genconv_bpp, true);
+			/* force screen redraw */
+			Screen_GenConvUpdate(NULL, true);
 		}
 		else
 		{
@@ -887,7 +895,7 @@ void Screen_ModeChanged(bool bForceChange)
 	/* Don't run this function if Videl emulation is running! */
 	if (bUseVDIRes)
 	{
-		HostScreen_setWindowSize(VDIWidth, VDIHeight, hbpp, bForceChange);
+		Screen_SetGenConvSize(VDIWidth, VDIHeight, hbpp, bForceChange);
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
@@ -897,11 +905,11 @@ void Screen_ModeChanged(bool bForceChange)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
-		HostScreen_setWindowSize(width, height, hbpp, bForceChange);
+		Screen_SetGenConvSize(width, height, hbpp, bForceChange);
 	}
 	else if (bUseHighRes)
 	{
-		HostScreen_setWindowSize(640, 400, hbpp, bForceChange);
+		Screen_SetGenConvSize(640, 400, hbpp, bForceChange);
 	}
 	else
 	{
@@ -1325,6 +1333,180 @@ bool Screen_Draw(void)
 	}
 
 	return false;
+}
+
+/**
+ * This is used to set the size of the SDL screen
+ * when we're using the generic convertion functions.
+ */
+void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
+{
+	const bool keep = ConfigureParams.Screen.bKeepResolution;
+	int screenwidth, screenheight, maxw, maxh;
+	int scalex, scaley, sbarheight;
+
+	if (bpp == 24)
+		bpp = 32;
+
+	/* constrain size request to user's desktop size */
+	Resolution_GetDesktopSize(&maxw, &maxh);
+	scalex = scaley = 1;
+	while (width > maxw*scalex) {
+		scalex *= 2;
+	}
+	while (height > maxh*scaley) {
+		scaley *= 2;
+	}
+	if (scalex * scaley > 1) {
+		fprintf(stderr, "WARNING: too large screen size %dx%d -> divided by %dx%d!\n",
+			width, height, scalex, scaley);
+		width /= scalex;
+		height /= scaley;
+	}
+
+	Resolution_GetLimits(&maxw, &maxh, &bpp, keep);
+	nScreenZoomX = nScreenZoomY = 1;
+
+	if (ConfigureParams.Screen.bAspectCorrect) {
+		/* Falcon (and TT) pixel scaling factors seem to 2^x
+		 * (quarter/half pixel, interlace/double line), so
+		 * do aspect correction as 2's exponent.
+		 */
+		while (nScreenZoomX*width < height &&
+		       2*nScreenZoomX*width < maxw) {
+			nScreenZoomX *= 2;
+		}
+		while (2*nScreenZoomY*height < width &&
+		       2*nScreenZoomY*height < maxh) {
+			nScreenZoomY *= 2;
+		}
+		if (nScreenZoomX*nScreenZoomY > 2) {
+			fprintf(stderr, "WARNING: strange screen size %dx%d -> aspect corrected by %dx%d!\n",
+				width, height, nScreenZoomX, nScreenZoomY);
+		}
+	}
+
+	/* then select scale as close to target size as possible
+	 * without having larger size than it
+	 */
+	scalex = maxw/(nScreenZoomX*width);
+	scaley = maxh/(nScreenZoomY*height);
+	if (scalex > 1 && scaley > 1) {
+		/* keep aspect ratio */
+		if (scalex < scaley) {
+			nScreenZoomX *= scalex;
+			nScreenZoomY *= scalex;
+		} else {
+			nScreenZoomX *= scaley;
+			nScreenZoomY *= scaley;
+		}
+	}
+
+	genconv_width_req = width;
+	genconv_height_req = height;
+	width *= nScreenZoomX;
+	height *= nScreenZoomY;
+
+	/* get statusbar size for this screen size */
+	sbarheight = Statusbar_GetHeightForSize(width, height);
+	screenheight = height + sbarheight;
+	screenwidth = width;
+
+#if !WITH_SDL2
+	/* get resolution corresponding to these */
+	Resolution_Search(&screenwidth, &screenheight, &bpp, keep);
+#endif
+	/* re-calculate statusbar height for this resolution */
+	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
+
+	genconv_bpp = bpp;
+	/* videl.c might scale things differently in fullscreen than
+	 * in windowed mode because this uses screensize instead of using
+	 * the aspect scaled sizes directly, but it works better this way.
+	 */
+	genconv_rect.x = 0;
+	genconv_rect.y = 0;
+	genconv_rect.w = screenwidth;
+	genconv_rect.h = screenheight - sbarheight;
+
+	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bpp, bForceChange))
+	{
+		/* same host screen size despite Atari resolution change,
+		 * -> no time consuming host video mode change needed
+		 */
+		if (screenwidth > width || screenheight > height+sbarheight) {
+			/* Atari screen smaller than host -> clear screen */
+			SDL_Rect rect;
+			rect.x = 0;
+			rect.y = 0;
+			rect.w = sdlscrn->w;
+			rect.h = sdlscrn->h - sbarheight;
+			SDL_FillRect(sdlscrn, &rect, SDL_MapRGB(sdlscrn->format, 0, 0, 0));
+			/* re-calculate variables in case height + statusbar height
+			 * don't anymore match SDL surface size (there's an assert
+			 * for that)
+			 */
+			Statusbar_Init(sdlscrn);
+		}
+#if WITH_SDL2
+		genconv_do_update = true;
+#else
+		genconv_do_update = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
+#endif
+		return;
+	}
+
+	// In case surface format changed, remap the native palette
+	Screen_RemapPalette();
+
+	// redraw statusbar
+	Statusbar_Init(sdlscrn);
+
+	DEBUGPRINT(("Surface Pitch = %d, width = %d, height = %d\n", sdlscrn->pitch, sdlscrn->w, sdlscrn->h));
+	DEBUGPRINT(("Must Lock? %s\n", SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
+
+#if WITH_SDL2
+	genconv_do_update = true;
+#else
+	// is the SDL_update needed?
+	genconv_do_update = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
+#endif
+
+	DEBUGPRINT(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
+			", tshifts r=%d g=%d b=%d"
+			", tlosses r=%d g=%d b=%d\n",
+			sdlscrn->format->BitsPerPixel,
+			sdlscrn->format->Rmask, sdlscrn->format->Gmask, sdlscrn->format->Bmask,
+			sdlscrn->format->Rshift, sdlscrn->format->Gshift, sdlscrn->format->Bshift,
+			sdlscrn->format->Rloss, sdlscrn->format->Gloss, sdlscrn->format->Bloss));
+
+	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2, false);
+}
+
+void Screen_GenConvUpdate(SDL_Rect *extra, bool forced)
+{
+	SDL_Rect rects[2];
+	int count = 1;
+
+	if (!forced && !genconv_do_update) // the HW surface is available
+		return;
+
+	rects[0] = genconv_rect;
+	if (extra) {
+		rects[1] = *extra;
+		count = 2;
+	}
+	SDL_UpdateRects(sdlscrn, count, rects);
+}
+
+Uint32 Screen_GetGenConvWidth(void)
+{
+	return genconv_rect.w;
+}
+
+Uint32 Screen_GetGenConvHeight(void)
+{
+	return genconv_rect.h;
 }
 
 
