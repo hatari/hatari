@@ -38,5 +38,7 @@ extern void Keymap_DebounceAllKeys(void);
 extern void Keymap_KeyDown(SDL_keysym *sdlkey);
 extern void Keymap_KeyUp(SDL_keysym *sdlkey);
 extern void Keymap_SimulateCharacter(char asckey, bool press);
+extern int Keymap_GetKeyFromName(const char *name);
+extern const char *Keymap_GetKeyName(int keycode);
 
 #endif

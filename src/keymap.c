@@ -836,3 +836,194 @@ void Keymap_SimulateCharacter(char asckey, bool press)
 		}
 	}
 }
+
+
+#if WITH_SDL2
+
+int Keymap_GetKeyFromName(const char *name)
+{
+	return SDL_GetKeyFromName(name);
+}
+
+const char *Keymap_GetKeyName(int keycode)
+{
+	if (!keycode)
+		return "";
+
+	return SDL_GetKeyName(keycode);
+}
+
+#else	/* WITH_SDL2 */
+
+static struct {
+	int code;
+	const char *name;
+} const sdl_keytab[] = {
+	{ SDLK_BACKSPACE, "Backspace" },
+	{ SDLK_TAB, "Tab" },
+	{ SDLK_CLEAR, "Clear" },
+	{ SDLK_RETURN, "Return" },
+	{ SDLK_PAUSE, "Pause" },
+	{ SDLK_ESCAPE, "Escape" },
+	{ SDLK_SPACE, "Space" },
+	{ SDLK_EXCLAIM, "!" },
+	{ SDLK_QUOTEDBL, "\"" },
+	{ SDLK_HASH, "#" },
+	{ SDLK_DOLLAR, "$" },
+	{ SDLK_AMPERSAND, "&" },
+	{ SDLK_QUOTE, "'" },
+	{ SDLK_LEFTPAREN, "(" },
+	{ SDLK_RIGHTPAREN, ")" },
+	{ SDLK_ASTERISK, "*" },
+	{ SDLK_PLUS, "+" },
+	{ SDLK_COMMA, "," },
+	{ SDLK_MINUS, "-" },
+	{ SDLK_PERIOD, "." },
+	{ SDLK_SLASH, "/" },
+	{ SDLK_0, "0" },
+	{ SDLK_1, "1" },
+	{ SDLK_2, "2" },
+	{ SDLK_3, "3" },
+	{ SDLK_4, "4" },
+	{ SDLK_5, "5" },
+	{ SDLK_6, "6" },
+	{ SDLK_7, "7" },
+	{ SDLK_8, "8" },
+	{ SDLK_9, "9" },
+	{ SDLK_COLON, ":" },
+	{ SDLK_SEMICOLON, ";" },
+	{ SDLK_LESS, "<" },
+	{ SDLK_EQUALS, "=" },
+	{ SDLK_GREATER, ">" },
+	{ SDLK_QUESTION, "?" },
+	{ SDLK_AT, "@" },
+	{ SDLK_LEFTBRACKET, "[" },
+	{ SDLK_BACKSLASH, "\\" },
+	{ SDLK_RIGHTBRACKET, "]" },
+	{ SDLK_CARET, "^" },
+	{ SDLK_UNDERSCORE, "_" },
+	{ SDLK_BACKQUOTE, "`" },
+	{ SDLK_a, "A" },
+	{ SDLK_b, "B" },
+	{ SDLK_c, "C" },
+	{ SDLK_d, "D" },
+	{ SDLK_e, "E" },
+	{ SDLK_f, "F" },
+	{ SDLK_g, "G" },
+	{ SDLK_h, "H" },
+	{ SDLK_i, "I" },
+	{ SDLK_j, "J" },
+	{ SDLK_k, "K" },
+	{ SDLK_l, "L" },
+	{ SDLK_m, "M" },
+	{ SDLK_n, "N" },
+	{ SDLK_o, "O" },
+	{ SDLK_p, "P" },
+	{ SDLK_q, "Q" },
+	{ SDLK_r, "R" },
+	{ SDLK_s, "S" },
+	{ SDLK_t, "T" },
+	{ SDLK_u, "U" },
+	{ SDLK_v, "V" },
+	{ SDLK_w, "W" },
+	{ SDLK_x, "X" },
+	{ SDLK_y, "Y" },
+	{ SDLK_z, "Z" },
+	{ SDLK_DELETE, "Delete" },
+	{ SDLK_KP0, "Keypad 0" },
+	{ SDLK_KP1, "Keypad 1" },
+	{ SDLK_KP2, "Keypad 2" },
+	{ SDLK_KP3, "Keypad 3" },
+	{ SDLK_KP4, "Keypad 4" },
+	{ SDLK_KP5, "Keypad 5" },
+	{ SDLK_KP6, "Keypad 6" },
+	{ SDLK_KP7, "Keypad 7" },
+	{ SDLK_KP8, "Keypad 8" },
+	{ SDLK_KP9, "Keypad 9" },
+	{ SDLK_KP_PERIOD, "Keypad ." },
+	{ SDLK_KP_DIVIDE, "Keypad /" },
+	{ SDLK_KP_MULTIPLY, "Keypad *" },
+	{ SDLK_KP_MINUS, "Keypad -" },
+	{ SDLK_KP_PLUS, "Keypad +" },
+	{ SDLK_KP_ENTER, "Keypad Enter" },
+	{ SDLK_KP_EQUALS, "Keypad =" },
+	{ SDLK_UP, "Up" },
+	{ SDLK_DOWN, "Down" },
+	{ SDLK_RIGHT, "Right" },
+	{ SDLK_LEFT, "Left" },
+	{ SDLK_INSERT, "Insert" },
+	{ SDLK_HOME, "Home" },
+	{ SDLK_END, "End" },
+	{ SDLK_PAGEUP, "PageUp" },
+	{ SDLK_PAGEDOWN, "PageDown" },
+	{ SDLK_F1, "F1" },
+	{ SDLK_F2, "F2" },
+	{ SDLK_F3, "F3" },
+	{ SDLK_F4, "F4" },
+	{ SDLK_F5, "F5" },
+	{ SDLK_F6, "F6" },
+	{ SDLK_F7, "F7" },
+	{ SDLK_F8, "F8" },
+	{ SDLK_F9, "F9" },
+	{ SDLK_F10, "F10" },
+	{ SDLK_F11, "F11" },
+	{ SDLK_F12, "F12" },
+	{ SDLK_F13, "F13" },
+	{ SDLK_F14, "F14" },
+	{ SDLK_F15, "F15" },
+	{ SDLK_NUMLOCK, "Numlock" },
+	{ SDLK_CAPSLOCK, "CapsLock" },
+	{ SDLK_SCROLLOCK, "ScrollLock" },
+	{ SDLK_RSHIFT, "Right Shift" },
+	{ SDLK_LSHIFT, "Left Shift" },
+	{ SDLK_RCTRL, "Right Ctrl" },
+	{ SDLK_LCTRL, "Left Ctrl" },
+	{ SDLK_RALT, "Right Alt" },
+	{ SDLK_LALT, "Left Alt" },
+	{ SDLK_RMETA, "Right GUI" },
+	{ SDLK_LMETA, "Left GUI" },
+	{ SDLK_MODE, "ModeSwitch" },
+	{ SDLK_HELP, "Help" },
+	{ SDLK_PRINT, "PrintScreen" },
+	{ SDLK_SYSREQ, "SysReq" },
+	{ SDLK_BREAK, "Cancel" },
+	{ SDLK_MENU, "Menu" },
+	{ SDLK_POWER, "Power" },
+	{ SDLK_UNDO, "Undo" },
+
+	{ -1, NULL }
+};
+
+int Keymap_GetKeyFromName(const char *name)
+{
+	int i;
+
+	if (!name[0])
+		return 0;
+
+	for (i = 0; sdl_keytab[i].name != NULL; i++)
+	{
+		if (strcasecmp(name, sdl_keytab[i].name) == 0)
+			return sdl_keytab[i].code;
+	}
+
+	return 0;
+}
+
+const char *Keymap_GetKeyName(int keycode)
+{
+	int i;
+
+	if (!keycode)
+		return "";
+
+	for (i = 0; sdl_keytab[i].name != NULL; i++)
+	{
+		if (keycode == sdl_keytab[i].code)
+			return sdl_keytab[i].name;
+	}
+
+	return "";
+}
+
+#endif

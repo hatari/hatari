@@ -63,6 +63,7 @@ const char CfgOpts_fileid[] = "Hatari cfgopts.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "cfgopts.h"
 #include "str.h"
+#include "keymap.h"
 
 
 static int parse_input_config_entry(const struct Config_Tag *ptr)
@@ -74,7 +75,7 @@ static int parse_input_config_entry(const struct Config_Tag *ptr)
 	next = Str_Trim(strtok(NULL, "="));
 	if (next == NULL)
 	{
-		if (type == String_Tag)
+		if (type == String_Tag || type == Key_Tag)
 			next = ""; /* field with empty string */
 		else
 			type = Error_Tag;
@@ -115,6 +116,10 @@ static int parse_input_config_entry(const struct Config_Tag *ptr)
 
 	 case String_Tag:
 		strcpy((char *)ptr->buf, next);
+		break;
+
+	 case Key_Tag:
+		*(int *)ptr->buf =  Keymap_GetKeyFromName(next);
 		break;
 
 	 case Error_Tag:
@@ -233,6 +238,10 @@ static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 
 	 case String_Tag:
 		fprintf(outfile, "%s\n",(char *)ptr->buf);
+		break;
+
+	 case Key_Tag:
+		fprintf(outfile, "%s\n", Keymap_GetKeyName(*(int *)ptr->buf));
 		break;
 
 	 case Error_Tag:
