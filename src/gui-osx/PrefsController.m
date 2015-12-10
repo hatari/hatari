@@ -451,10 +451,10 @@ BOOL flag1, flag2;
 	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
 	 {	[opnPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;
 		[opnPanel setNameFieldStringValue:@"hatari"] ;
-		btOk = [opnPanel runModal] == NSOKButton ;										// Ok ?
+		btOk = [opnPanel runModal] == NSModalResponseOK;										// Ok ?
 	 }
 	else
-		btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton	;
+        btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton 	;
 
 	if (!btOk)  return ;																// Cancel
 
@@ -489,10 +489,10 @@ BOOL		btOk ;
 	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
 	 {	[savPanel setDirectoryURL:[NSURL fileURLWithPath:ru isDirectory:YES]] ;			// Since OS X 10.6
 		[savPanel setNameFieldStringValue:@"hatari"] ;
-		btOk = [savPanel runModal] == NSOKButton ;											// Ok ?
+		btOk = [savPanel runModal] == NSModalResponseOK ;											// Ok ?
 	 }
 	else
-		btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSOKButton ;		// avant 10.6
+        btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton ;		// avant 10.6
 
 	if (!btOk)
 		return ;                                                                        // Cancel
@@ -716,7 +716,11 @@ NSString  *defaultDirectory ;
 	//v1.6.1
 	IMPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	IMPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
-	
+
+	//1.9.0 SDL2
+	IMPORT_SWITCH(SDL2UseLinearScaling, ConfigureParams.Screen.nRenderScaleQuality);
+	IMPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
+
 	//deal with the Max Zoomed Stepper
 	IMPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	IMPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
@@ -731,7 +735,15 @@ NSString  *defaultDirectory ;
     IMPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
     IMPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
     IMPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
-    IMPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
+    //IMPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
+    if (ConfigureParams.System.n_FPUType == FPU_NONE)
+        [FPUType selectCellWithTag:0];
+    else if (ConfigureParams.System.n_FPUType == FPU_68881)
+        [FPUType selectCellWithTag:1];
+    else if (ConfigureParams.System.n_FPUType == FPU_68882)
+        [FPUType selectCellWithTag:2];
+    else if (ConfigureParams.System.n_FPUType == FPU_CPU)
+        [FPUType selectCellWithTag:3];
     IMPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 
 #endif
@@ -939,7 +951,10 @@ NSString  *defaultDirectory ;
 	//v1.6.1
 	EXPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	EXPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
-	
+	//1.9.0 SDL2
+	EXPORT_SWITCH(SDL2UseLinearScaling, ConfigureParams.Screen.nRenderScaleQuality);
+	EXPORT_SWITCH(SDL2UseVSync, ConfigureParams.Screen.bUseVsync);
+
 	EXPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	EXPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
     
@@ -948,12 +963,20 @@ NSString  *defaultDirectory ;
     EXPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
     EXPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
     EXPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
-    EXPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
+    //EXPORT_RADIO(FPUType, ConfigureParams.System.n_FPUType);
+    if([[FPUType selectedCell] tag]==0)
+        ConfigureParams.System.n_FPUType = FPU_NONE;
+    else if([[FPUType selectedCell] tag]==1)
+        ConfigureParams.System.n_FPUType = FPU_68881;
+    else if([[FPUType selectedCell] tag]==2)
+        ConfigureParams.System.n_FPUType = FPU_68882;
+    else if([[FPUType selectedCell] tag]==3)
+        ConfigureParams.System.n_FPUType = FPU_CPU;
     EXPORT_SWITCH(CompatibleFPU, ConfigureParams.System.bCompatibleFPU);
 #endif
 
 	ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[[[playbackQuality selectedCell] tag]];
-			
+
 	switch ([[resolution selectedCell] tag])
 	{
 	 case 0:

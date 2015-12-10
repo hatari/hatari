@@ -50,6 +50,9 @@
 	IBOutlet NSTextField *maxZoomedWidth;				// N
 	IBOutlet NSTextField *maxZoomedHeight;				// N
 	IBOutlet NSButton *keepDesktopResolution;
+	IBOutlet NSButton *SDL2UseLinearScaling;
+	IBOutlet NSButton *SDL2UseVSync;
+
 		// Hidestatus, Capture only, Avi codec, Avi FPS
 
 	// Sound
