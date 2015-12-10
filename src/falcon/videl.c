@@ -768,62 +768,9 @@ static int VIDEL_getScreenHeight(void)
 	return videl.upperBorderSize + videl.YSize + videl.lowerBorderSize;
 }
 
-#if 0
-/* this is easier & more robustly done in hostscreen.c just by
- * comparing requested screen width & height to each other.
- */
-static void VIDEL_getMonitorScale(int *sx, int *sy)
-{
-	/* Videl video mode register bits and resulting desktop resolution:
-	 * 
-	 * quarter, half, interlace, double:   pixels: -> zoom:
-	 * rgb:
-	 *    0       0       0         0      320x200 -> 2 x 2
-	 *    0       0       1         0      320x400 -> 2 x 1
-	 *    0       1       0         0      640x200 -> 1 x 2 !
-	 *    0       1       1         0      640x400 -> 1 x 1
-	 * vga:
-	 *    0       0       0         1      (just double ?)
-	 *    0       0       1         1      (double & interlace ???)
-	 *    0       1       0         0      320x480 -> 2 x 1 !
-	 *    0       1       0         1      320x240 -> 2 x 2
-	 *    0       1       1         1      (double + interlace ???)
-	 *    1       0       0         0      640x480 -> 1 x 1
-	 *    1       0       0         1      640x240 -> 1 x 2
-	 */
-	int vmode = IoMem_ReadWord(0xff82c2);
 
-	/* half pixel seems to have opposite meaning on
-	 * VGA and RGB monitor, so they need to handled separately
-	 */
-	if (videl.monitor_type) == FALCON_MONITOR_VGA) {
-		if (vmode & 0x08) {  /* quarter pixel */
-			*sx = 1;
-		} else {
-			*sx = 2;
-		}
-		if (vmode & 0x01) {  /* double line */
-			*sy = 2;
-		} else {
-			*sy = 1;
-		}
-	} else {
-		if (vmode & 0x04) {  /* half pixel */
-			*sx = 1;
-		} else {
-			*sx = 2;
-		}
-		if (vmode & 0x02) {  /* interlace used only on RGB ? */
-			*sy = 1;
-		} else {
-			*sy = 2;
-		}
-	}
-}
-#endif
-
-
-/** map the correct colortable into the correct pixel format
+/**
+ * Map the correct colortable into the correct pixel format
  */
 void VIDEL_UpdateColors(void)
 {
