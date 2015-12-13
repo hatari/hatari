@@ -2445,6 +2445,21 @@ kludge_me_do:
 	m68k_setpc (newpc);
 	regs.ir = x_get_word (m68k_getpc ()); // prefetch 1
 	x_do_cycles (2 * cpucycleunit);
+#ifdef WINUAE_FOR_HATARI
+	/* [NP] IPL should be updated just before the last x_get_word for irc */
+	/* (4 cycles before end of exception), so we need to add 2 cycles now */
+	/* to be aligned on 4 cycles (else the 2 cycles will be added in x_get_word */
+	/* and IPL will be updated 2 cycles too soon) */
+	x_do_cycles (2 * cpucycleunit);
+	/* Add all cycles needed for the exception so far */
+	M68000_AddCycles_CE ( currcycle * 2 / CYCLE_UNIT );
+	currcycle = 0;
+	/* Update IPL / interrupts state, in case a new interrupt happened during this exception */
+	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+		CALL_VAR(PendingInterruptFunction);
+#endif
+	regs.ipl_pin = intlev();
+	ipl_fetch();
 	regs.irc = x_get_word (m68k_getpc () + 2); // prefetch 2
 #ifdef JIT
 	set_special (SPCFLAG_END_COMPILE);
@@ -3075,6 +3090,11 @@ kludge_me_do:
 		return;
 	}
 	m68k_setpc (newpc);
+#ifdef WINUAE_FOR_HATARI
+	/* Update IPL / interrupts state, in case a new interrupt happened during this exception */
+	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+		CALL_VAR(PendingInterruptFunction);
+#endif
 #ifdef JIT
 	set_special (SPCFLAG_END_COMPILE);
 #endif
@@ -3149,9 +3169,19 @@ static void do_interrupt (int nr)
 	unset_special (SPCFLAG_STOP);
 	assert (nr < 8 && nr >= 0);
 
-	Exception (nr + 24);
+	for (;;) {
+		Exception (nr + 24);
+		regs.intmask = nr;
+		if (!currprefs.cpu_compatible)
+			break;
+		if (m68k_interrupt_delay)
+			nr = regs.ipl;
+		else
+			nr = intlev();
+		if (nr <= 0 || regs.intmask >= nr)
+			break;
+	}
 
-	regs.intmask = nr;
 	doint ();
 }
 
