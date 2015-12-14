@@ -1843,7 +1843,7 @@ static void m68k_run_1 (void)
 
 	/* Run DSP 56k code if necessary */
 	if (bDspEnabled) {
-	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) * 2);
+	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) * DSP_CPU_FREQ_RATIO);
 	}
     }
 }
@@ -1909,7 +1909,7 @@ static void m68k_run_2 (void)
 
 	/* Run DSP 56k code if necessary */
 	if (bDspEnabled) {
-	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) );
+	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) * DSP_CPU_FREQ_RATIO);
 	}
     }
 }

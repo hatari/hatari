@@ -27,7 +27,7 @@
 # include "dsp_core.h"
 #endif
 
-#define DSP_FREQ	(CPU_FREQ*4)
+#define DSP_CPU_FREQ_RATIO		2	/* Dsp Freq = 2 * Cpu Freq (32 MHz vs 16 MHz on Falcon) */
 
 extern bool bDspEnabled;
 extern bool bDspHostInterruptPending;

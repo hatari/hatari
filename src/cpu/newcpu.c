@@ -4798,7 +4798,7 @@ printf ( "run_mmu060\n" );
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -4893,7 +4893,7 @@ printf ( "run_mmu040\n" );
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -5033,7 +5033,7 @@ insretry:
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -5120,7 +5120,7 @@ printf ( "run_3ce\n" );
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
-					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -5196,7 +5196,7 @@ printf ( "run_3p\n" );
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //					DSP_Run(2 * cycles * 2 / CYCLE_UNIT);
-					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
@@ -5377,7 +5377,7 @@ cont:
 //fprintf ( stderr, "dsp cyc_2ce %d\n" , currcycle );
 //					DSP_Run(2 * currcycle * 2 / CYCLE_UNIT);
 //fprintf ( stderr, "dsp cyc_2ce %d - %d\n" , currcycle * 2 / CYCLE_UNIT , (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift );
-					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 
@@ -5462,7 +5462,7 @@ printf ( "run_2p\n" );
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 
@@ -5543,7 +5543,7 @@ printf ( "run_2\n" );
 				/* Run DSP 56k code if necessary */
 				if (bDspEnabled) {
 //					DSP_Run(2 * cpu_cycles * 2 / CYCLE_UNIT);
-					DSP_Run ( 2 * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
+					DSP_Run ( DSP_CPU_FREQ_RATIO * ( (CyclesGlobalClockCounter - DSP_CyclesGlobalClockCounter) << nCpuFreqShift ) );
 				}
 #endif
 			}
