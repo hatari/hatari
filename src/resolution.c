@@ -164,7 +164,11 @@ bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 		if (keep)
 		{
 			Resolution_GetDesktopSize(width, height);
+#if WITH_SDL2
+			return false;
+#else
 			return true;
+#endif
 		}
 	}
 	if (ConfigureParams.Screen.bForceMax)
