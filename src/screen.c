@@ -300,6 +300,7 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	static int nPrevRenderScaleQuality = 0;
 	static bool bPrevUseVsync = false;
 	static bool bPrevInFullScreen;
+	int win_width, win_height;
 
 	if (bitdepth == 0 || bitdepth == 24)
 		bitdepth = 32;
@@ -329,6 +330,8 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 #if WITH_SDL2
 
 	/* SDL Video attributes: */
+	win_width = width;
+	win_height = height;
 	if (bInFullScreen)
 	{
 		sdlVideoFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_INPUT_GRABBED;
@@ -339,7 +342,14 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 	}
 	else
 	{
+		int deskw, deskh;
 		sdlVideoFlags  = SDL_WINDOW_RESIZABLE;
+		/* Make sure that window is not bigger than current desktop */
+		Resolution_GetDesktopSize(&deskw, &deskh);
+		if (win_width > deskw)
+			win_width = deskw;
+		if (win_height > deskh)
+			win_height = deskh;
 	}
 
 	Screen_FreeSDL2Resources();
@@ -371,13 +381,13 @@ bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChan
 
 	if (sdlWindow)
 	{
-		SDL_SetWindowSize(sdlWindow, width, height);
+		SDL_SetWindowSize(sdlWindow, win_width, win_height);
 	}
 	else
 	{
 		sdlWindow = SDL_CreateWindow("Hatari", SDL_WINDOWPOS_UNDEFINED,
 		                             SDL_WINDOWPOS_UNDEFINED,
-		                             width, height, sdlVideoFlags);
+		                             win_width, win_height, sdlVideoFlags);
 	}
 	sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
 	if (!sdlWindow || !sdlRenderer)
@@ -1350,6 +1360,7 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 
 	/* constrain size request to user's desktop size */
 	Resolution_GetDesktopSize(&maxw, &maxh);
+#if !WITH_SDL2
 	scalex = scaley = 1;
 	while (width > maxw*scalex) {
 		scalex *= 2;
@@ -1363,6 +1374,7 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 		width /= scalex;
 		height /= scaley;
 	}
+#endif
 
 	Resolution_GetLimits(&maxw, &maxh, &bpp, keep);
 	nScreenZoomX = nScreenZoomY = 1;
