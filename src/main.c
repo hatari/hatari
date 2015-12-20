@@ -512,11 +512,18 @@ void Main_EventHandler(void)
 		}
 		switch (event.type)
 		{
-
 		 case SDL_QUIT:
 			Main_RequestQuit(0);
 			break;
-			
+
+		 case SDL_KEYDOWN:
+			Keymap_KeyDown(&event.key.keysym);
+			break;
+
+		 case SDL_KEYUP:
+			Keymap_KeyUp(&event.key.keysym);
+			break;
+
 		 case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
 			Main_HandleMouseMotion(&event);
 			bContinueProcessing = true;
@@ -574,15 +581,31 @@ void Main_EventHandler(void)
 #endif
 			break;
 
-		 case SDL_KEYDOWN:
-			Keymap_KeyDown(&event.key.keysym);
-			break;
-
-		 case SDL_KEYUP:
-			Keymap_KeyUp(&event.key.keysym);
-			break;
-
 #if WITH_SDL2
+		 case SDL_MOUSEWHEEL:
+			/* Simulate cursor keys on mouse wheel events */
+			if (event.wheel.x > 0)
+			{
+				IKBD_PressSTKey(0x4d, true);
+				IKBD_PressSTKey(0x4d, false);
+			}
+			else if (event.wheel.x < 0)
+			{
+				IKBD_PressSTKey(0x4b, true);
+				IKBD_PressSTKey(0x4b, false);
+			}
+			if (event.wheel.y < 0)
+			{
+				IKBD_PressSTKey(0x50, true);
+				IKBD_PressSTKey(0x50, false);
+			}
+			else if (event.wheel.y > 0)
+			{
+				IKBD_PressSTKey(0x48, true);
+				IKBD_PressSTKey(0x48, false);
+			}
+			break;
+
 		 case SDL_WINDOWEVENT:
 			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 			{
