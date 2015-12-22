@@ -1,13 +1,17 @@
 # This is an example for a keyboard mapping file that can be used in Hatari
 # by loading it from the keyboard setup dialog.
 #
-# Lines starting with a '#' or with a ';' are comments.
-# All other lines should contain exactly two numbers separated by a comma.
+# Lines starting with a '#' or with a ';' are comments. All other lines
+# should contain exactly one key name and a scancode, separated by a comma.
 #
-# The first number is the libSDL symbolic PC key code.
-# See the "--trace keymap" output from Hatari.
+# The key name is the libSDL symbolic name of the key, see the following
+# URL for a list: https://wiki.libsdl.org/SDL_Keycode
+# You can also use the symbolic keycode value instead of the name,
+# which you can get with the "--trace keymap" output from Hatari, for
+# example, but note that the values are different between SDL1 and SDL2
+# and thus they are not portable.
 #
-# The corresponding key will be mapped to the ST key which is specified by
+# The given host key will be mapped to the ST key which is specified by
 # second number - the ST scan code of the key.  "--trace keymap" output
 # shows the already mapped scan code.
 #
@@ -18,5 +22,5 @@
 # Example: If you want to get the 'y' and 'z' keys right with a german TOS
 # ROM, you can use the following two lines to map the PC keys to the right
 # ST scan codes:
-121,44
-122,21
+Y,44
+Z,21

@@ -621,7 +621,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
 	in = fopen(pszFileName, "r");
 	if (!in)
 	{
-		Log_Printf(LOG_DEBUG, "Keymap_LoadRemapFile: failed to "
+		Log_Printf(LOG_ERROR, "Keymap_LoadRemapFile: failed to "
 			   " open keymap file '%s'\n", pszFileName);
 		return;
 	}
@@ -635,18 +635,41 @@ void Keymap_LoadRemapFile(char *pszFileName)
 		Str_Trim(szString);
 		if (strlen(szString)>0)
 		{
+			char *p;
 			/* Is a comment? */
-			if ( (szString[0]==';') || (szString[0]=='#') )
+			if (szString[0] == ';' || szString[0] == '#')
 				continue;
-			/* Read values */
-			sscanf(szString, "%d,%d", &PCKeyCode, &STScanCode);
+			/* Cut out the values */
+			p = strtok(szString, ",");
+			if (!p)
+				continue;
+			Str_Trim(szString);
+			PCKeyCode = atoi(szString);    /* Direct key code? */
+			if (PCKeyCode < 10)
+			{
+				/* If it's not a valid number >= 10, then
+				 * assume we've got a symbolic key name */
+				PCKeyCode = Keymap_GetKeyFromName(szString);
+			}
+			p = strtok(NULL, "\n");
+			if (!p)
+				continue;
+			STScanCode = atoi(p);
 			/* Store into remap table, check both value within range */
-			if (STScanCode >= 0 && STScanCode <= KBD_MAX_SCANCODE
+			if (STScanCode > 0 && STScanCode <= KBD_MAX_SCANCODE
 			    && PCKeyCode >= 8)
 			{
+				LOG_TRACE(TRACE_KEYMAP,
+				          "keymap from file: sym=%i --> scan=%i\n",
+				          PCKeyCode, STScanCode);
 				LoadedKeymap[idx][0] = PCKeyCode;
 				LoadedKeymap[idx][1] = STScanCode;
 				idx += 1;
+			}
+			else
+			{
+				Log_Printf(LOG_WARN, "Could not parse keymap file:"
+				           " '%s', '%s'\n", szString, p);
 			}
 		}
 	}
