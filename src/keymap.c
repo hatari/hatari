@@ -754,8 +754,8 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 	int symkey = sdlkey->sym;
 	int modkey = sdlkey->mod;
 
-	LOG_TRACE(TRACE_KEYMAP, "key down: sym=%i scan=%i mod=0x%x\n", symkey,
-	          sdlkey->scancode, modkey);
+	LOG_TRACE(TRACE_KEYMAP, "key down: sym=%i scan=%i mod=0x%x name='%s'\n",
+	          symkey, sdlkey->scancode, modkey, Keymap_GetKeyName(symkey));
 
 	if (ShortCut_CheckKeys(modkey, symkey, 1))
 		return;
@@ -797,8 +797,8 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 	int symkey = sdlkey->sym;
 	int modkey = sdlkey->mod;
 
-	LOG_TRACE(TRACE_KEYMAP, "key up: sym=%i scan=%i mod=$%x\n", symkey,
-	          sdlkey->scancode, modkey);
+	LOG_TRACE(TRACE_KEYMAP, "key up: sym=%i scan=%i mod=0x%x name='%s'\n",
+	          symkey, sdlkey->scancode, modkey, Keymap_GetKeyName(symkey));
 
 	/* Ignore short-cut keys here */
 	if (ShortCut_CheckKeys(modkey, symkey, 0))
