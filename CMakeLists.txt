@@ -30,7 +30,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 # Conditional build features
 # ##########################
 
-set(ENABLE_SDL2 0
+set(ENABLE_SDL2 1
     CACHE BOOL "Enable building with libSDL2 instead of v1.2")
 set(ENABLE_DSP_EMU 1
     CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
@@ -86,19 +86,21 @@ endif(APPLE)
 # ####################
 
 if(ENABLE_SDL2)
-	find_package(SDL2 REQUIRED)
-	if(NOT SDL2_FOUND)
-		message(FATAL_ERROR "SDL2 library not found!")
-	endif(NOT SDL2_FOUND)
+	find_package(SDL2)
+	#if(NOT SDL2_FOUND)
+	#	message(FATAL_ERROR "SDL2 library not found!")
+	#endif(NOT SDL2_FOUND)
 	set(SDL_INCLUDE_DIR ${SDL2_INCLUDE_DIR})
 	set(SDL_LIBRARY ${SDL2_LIBRARY})
 	set(SDLMAIN_LIBRARY ${SDL2MAIN_LIBRARY})
-else(ENABLE_SDL2)
-	find_package(SDL REQUIRED)
+endif(ENABLE_SDL2)
+
+if(NOT SDL2_FOUND)
+	find_package(SDL)
 	if(NOT SDL_FOUND)
 		message(FATAL_ERROR "SDL library not found!")
 	endif(NOT SDL_FOUND)
-endif(ENABLE_SDL2)
+endif(NOT SDL2_FOUND)
 
 find_package(Math)
 

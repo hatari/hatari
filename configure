@@ -21,7 +21,7 @@ print_help()
   echo "  --enable-winuae-cpu        Use WinUAE CPU core (default)"
   echo "  --enable-old-uae-cpu       Use old UAE CPU core (deprecated)"
   echo "  --disable-osx-bundle       Disable application bundling on Mac OS X"
-  echo "  --enable-sdl2              Compile with libsdl 2.0 instead of 1.2"
+  echo "  --disable-sdl2             Do not compile with libsdl 2.0, use 1.2 instead"
   echo "  --cross-compile-win64_32   Build the 32 bit Windows version under linux using mingw-w64"
   echo "  --cross-compile-win64_64   Build the 64 bit Windows version under linux using mingw-w64"
   echo
