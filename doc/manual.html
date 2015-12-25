@@ -1412,7 +1412,7 @@ the screenshots and recorded videos.
 <h4 class="gui">The Keyboard Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/keyboard.png" width="459" height="223"
+  <img src="images/keyboard.png" width="460" height="352"
        alt="Hatari's GUI - the keyboard dialog" />
 </div>
 
@@ -1435,10 +1435,26 @@ the screenshots and recorded videos.
  at the supplied example mapfile (keymap-sample.txt) to see how to create
  your own keyboard mapping.</p>
 <p>
- When the emulator runs in fast forward mode, and you want to type text,
- it can be annoying that the emulated system detects multiple key events
- due to the key repetition of the emulated system. To avoid this you can
- disable the key repetition in fast forward mode here.
+ The "Shortcuts" section can be used to configure the keyboard shortcuts
+ that can be activated while the emulation is running. Hatari supports
+ two sets of keyboard shortcuts: The first type is directly activated by
+ pressing a single key, and the second type is activated by pressing a
+ modifier key (AltGr / right Alt by default, Cmd key on Mac OS X)
+ together with the key. You can switch between the two sets by selecting
+ the "With modifier" checkbox.<br/>
+ Use the arrow buttons to select the shortcut that you want to change,
+ then press <span class="button">Define</span> to change the key for
+ the shortcut. You'll be prompted to press the key that should be used.
+ If you reconsider and don't want to change the key, you can press the
+ left mouse button instead. By pressing the right mouse button during
+ the prompt, you can also erase the current shortcut setting.
+</p>
+<p>
+ The last setting in this dialog can be used to disable the key repetition
+ in fast forward mode. When the emulator runs in fast forward mode, and you
+ want to type text, it can be annoying that the emulated system detects
+ multiple key events due to the key repetition of the emulated system.
+ So this can be avoided by enabling this option.
 </p>
 
 
