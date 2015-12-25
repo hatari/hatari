@@ -607,9 +607,10 @@ void Main_EventHandler(void)
 			break;
 
 		 case SDL_WINDOWEVENT:
-			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
+			    || event.window.event == SDL_WINDOWEVENT_RESTORED)
 			{
-				Screen_SetFullUpdate();
+				SDL_UpdateRect(sdlscrn, 0, 0, 0, 0);
 				break;
 			}
 			bContinueProcessing = true;
