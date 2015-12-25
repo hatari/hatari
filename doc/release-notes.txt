@@ -15,9 +15,11 @@ Emulation:
   - fix location of the video counter's restart when screen runs at 60 Hz
 
 Emulator:
+- Better SDL2 support (e.g. resizable windows), SDL2 is now enabled by default
 - NatFeats SCSI driver for Linux
 - SDL GUI:
   - User can provide volume label when creating a floppy image
+  - Shortcuts can be configured in the keyboard dialog
 - Debugger:
   - Fix: close debugger log file only when explicitly requested,
          not when continuing emulation from debugger
