@@ -14,22 +14,32 @@ const char DlgKeyboard_fileid[] = "Hatari dlgKeyboard.c : " __DATE__ " " __TIME_
 #include "sdlgui.h"
 #include "file.h"
 #include "screen.h"
+#include "str.h"
+#include "keymap.h"
 
+#define DLGKEY_SYMBOLIC  4
+#define DLGKEY_SCANCODE  5
+#define DLGKEY_FROMFILE  6
+#define DLGKEY_MAPNAME   8
+#define DLGKEY_MAPBROWSE 9
+#define DLGKEY_SCPREV    13
+#define DLGKEY_SCNAME    14
+#define DLGKEY_SCNEXT    15
+#define DLGKEY_SCDEFINE  16
+#define DLGKEY_SCCURVAL  18
+#define DLGKEY_SCWITHMOD 19
+#define DLGKEY_DISREPEAT 20
+#define DLGKEY_EXIT      21
 
-#define DLGKEY_SYMBOLIC  3
-#define DLGKEY_SCANCODE  4
-#define DLGKEY_FROMFILE  5
-#define DLGKEY_MAPNAME   7
-#define DLGKEY_MAPBROWSE 8
-#define DLGKEY_DISREPEAT 9
-#define DLGKEY_EXIT      10
-
+static char sc_curval[16];
 
 /* The keyboard dialog: */
 static SGOBJ keyboarddlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 46,14, NULL },
+	{ SGBOX, 0, 0, 0,0, 46,22, NULL },
 	{ SGTEXT, 0, 0, 16,1, 14,1, "Keyboard setup" },
+
+	{ SGBOX, 0, 0, 1,3, 44,7, NULL },
 	{ SGTEXT, 0, 0, 2,3, 17,1, "Keyboard mapping:" },
 	{ SGRADIOBUT, 0, 0,  4,5, 10,1, "_Symbolic" },
 	{ SGRADIOBUT, 0, 0, 17,5, 10,1, "S_cancode" },
@@ -37,13 +47,150 @@ static SGOBJ keyboarddlg[] =
 	{ SGTEXT, 0, 0, 2,7, 13,1, "Mapping file:" },
 	{ SGTEXT, 0, 0, 2,8, 42,1, NULL },
 	{ SGBUTTON,   0, 0, 36, 7,  8,1, "_Browse" },
-	{ SGCHECKBOX, 0, 0,  2,10, 41,1, "_Disable key repeat in fast forward mode" },
-	{ SGBUTTON, SG_DEFAULT, 0, 13,12, 20,1, "Back to main menu" },
+
+	{ SGBOX, 0, 0, 1,11, 44,6, NULL },
+	{ SGTEXT, 0, 0, 2,11, 12,1, "Shortcuts:" },
+	{ SGBOX, 0, 0, 2,13, 33,1, NULL },
+	{ SGBUTTON, 0, 0,  2,13, 1,1, "\x04", SG_SHORTCUT_LEFT },
+	{ SGTEXT, 0, 0, 4,13, 12,1, NULL },
+	{ SGBUTTON, 0, 0, 34,13, 1,1, "\x03", SG_SHORTCUT_RIGHT },
+	{ SGBUTTON,   0, 0, 36,13, 8,1, "_Define" },
+	{ SGTEXT, 0, 0, 2,15, 14,1, "Current value:" },
+	{ SGTEXT, 0, 0, 17,15, 12,1, sc_curval },
+	{ SGCHECKBOX, SG_EXIT, 0, 29,15, 15,1, "With modifier" },
+
+	{ SGCHECKBOX, 0, 0,  2,18, 41,1, "Disable key _repeat in fast forward mode" },
+	{ SGBUTTON, SG_DEFAULT, 0, 13,20, 20,1, "Back to main menu" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
 
-/*-----------------------------------------------------------------------*/
+static char *sc_names[SHORTCUT_KEYS] = {
+	"Edit settings",
+	"Toggle fullscreen",
+	"Grab mouse",
+	"Cold reset",
+	"Warm reset",
+	"Take screenshot",
+	"Boss key",
+	"Joystick cursor emulation",
+	"Fast forward",
+	"Record animation",
+	"Record sound",
+	"Toggle sound",
+	"Enter debugger",
+	"Pause emulation",
+	"Quit emulator",
+	"Load memory snapshot",
+	"Save memory snapshot",
+	"Insert disk A:",
+	"Toggle joystick 0",
+	"Toggle joystick 1",
+	"Toggle joypad A",
+	"Toggle joypad B"
+};
+
+static char sScKeyType[28];
+static char sScKeyName[28];
+
+static SGOBJ sckeysdlg[] =
+{
+	{ SGBOX, 0, 0, 0,0, 30,6, NULL },
+	{ SGTEXT, 0, 0, 2,1, 28,1, "Press key for:" },
+	{ SGTEXT, 0, 0, 2,2, 28,1, sScKeyType },
+	{ SGTEXT, 0, 0, 2,4, 28,1, sScKeyName },
+	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
+};
+
+
+/**
+ * Show dialogs for defining shortcut keys and wait for a key press.
+ */
+static void DlgKbd_DefineShortcutKey(int sc)
+{
+	SDL_Event sdlEvent;
+	int *pscs;
+	int i;
+
+	if (bQuitProgram)
+		return;
+
+	SDLGui_CenterDlg(sckeysdlg);
+
+	if (keyboarddlg[DLGKEY_SCWITHMOD].state & SG_SELECTED)
+		pscs = ConfigureParams.Shortcut.withModifier;
+	else
+		pscs = ConfigureParams.Shortcut.withoutModifier;
+
+	snprintf(sScKeyType, sizeof(sScKeyType), "'%s'", sc_names[sc]);
+	snprintf(sScKeyName, sizeof(sScKeyName), "(was: '%s')", Keymap_GetKeyName(pscs[sc]));
+
+	SDLGui_DrawDialog(sckeysdlg);
+
+	/* drain buffered key events */
+	SDL_Delay(200);
+	while (SDL_PollEvent(&sdlEvent))
+	{
+		if (sdlEvent.type == SDL_KEYUP || sdlEvent.type == SDL_KEYDOWN)
+			break;
+	}
+
+	/* get the real key */
+	do
+	{
+		SDL_WaitEvent(&sdlEvent);
+		switch (sdlEvent.type)
+		{
+		 case SDL_KEYDOWN:
+			pscs[sc] = sdlEvent.key.keysym.sym;
+			snprintf(sScKeyName, sizeof(sScKeyName), "(now: '%s')",
+			         Keymap_GetKeyName(sdlEvent.key.keysym.sym));
+			SDLGui_DrawDialog(sckeysdlg);
+			break;
+		 case SDL_MOUSEBUTTONDOWN:
+			if (sdlEvent.button.button == SDL_BUTTON_RIGHT)
+			{
+				pscs[sc] = 0;
+				return;
+			}
+			else if (sdlEvent.button.button == SDL_BUTTON_LEFT)
+			{
+				return;
+			}
+			break;
+		 case SDL_QUIT:
+			bQuitProgram = true;
+			return;
+		}
+	} while (sdlEvent.type != SDL_KEYUP);
+
+	/* Make sure that no other shortcut key has the same value */
+	for (i = 0; i < SHORTCUT_KEYS; i++)
+	{
+		if (i == sc)
+			continue;
+		if (pscs[i] == pscs[sc])
+			pscs[i] = 0;
+	}
+}
+
+
+/**
+ * Refresh the shortcut texts in the dialog
+ */
+static void DlgKbd_RefreshShortcut(int sc)
+{
+	int keysym;
+
+	if (keyboarddlg[DLGKEY_SCWITHMOD].state & SG_SELECTED)
+		keysym = ConfigureParams.Shortcut.withModifier[sc];
+	else
+		keysym = ConfigureParams.Shortcut.withoutModifier[sc];
+
+	strlcpy(sc_curval, Keymap_GetKeyName(keysym), sizeof(sc_curval));
+	keyboarddlg[DLGKEY_SCNAME].txt = sc_names[sc];
+}
+
 /**
  * Show and process the "Keyboard" dialog.
  */
@@ -51,6 +198,7 @@ void Dialog_KeyboardDlg(void)
 {
 	int i, but;
 	char dlgmapfile[44];
+	int cur_sc = 0;
 
 	SDLGui_CenterDlg(keyboarddlg);
 
@@ -65,6 +213,9 @@ void Dialog_KeyboardDlg(void)
 	                keyboarddlg[DLGKEY_MAPNAME].w);
 	keyboarddlg[DLGKEY_MAPNAME].txt = dlgmapfile;
 
+	keyboarddlg[DLGKEY_SCWITHMOD].state = SG_SELECTED;
+	DlgKbd_RefreshShortcut(cur_sc);
+
 	if (ConfigureParams.Keyboard.bDisableKeyRepeat)
 		keyboarddlg[DLGKEY_DISREPEAT].state |= SG_SELECTED;
 	else
@@ -75,11 +226,34 @@ void Dialog_KeyboardDlg(void)
 	{
 		but = SDLGui_DoDialog(keyboarddlg, NULL, false);
 
-		if (but == DLGKEY_MAPBROWSE)
+		switch (but)
 		{
+		 case DLGKEY_MAPBROWSE:
 			SDLGui_FileConfSelect("Keyboard mapping file:", dlgmapfile,
 			                      ConfigureParams.Keyboard.szMappingFileName,
 			                      keyboarddlg[DLGKEY_MAPNAME].w, false);
+			break;
+		 case DLGKEY_SCPREV:
+			if (cur_sc > 0)
+			{
+				--cur_sc;
+				DlgKbd_RefreshShortcut(cur_sc);
+			}
+			break;
+		 case DLGKEY_SCNEXT:
+			if (cur_sc < SHORTCUT_KEYS-1)
+			{
+				++cur_sc;
+				DlgKbd_RefreshShortcut(cur_sc);
+			}
+			break;
+		 case DLGKEY_SCDEFINE:
+			DlgKbd_DefineShortcutKey(cur_sc);
+			DlgKbd_RefreshShortcut(cur_sc);
+			break;
+		 case DLGKEY_SCWITHMOD:
+			DlgKbd_RefreshShortcut(cur_sc);
+			break;
 		}
 	}
 	while (but != DLGKEY_EXIT && but != SDLGUI_QUIT
