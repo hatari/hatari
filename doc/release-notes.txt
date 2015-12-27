@@ -16,6 +16,8 @@ Emulation:
 
 Emulator:
 - Better SDL2 support (e.g. resizable windows), SDL2 is now enabled by default
+- Preferred private configuration directory is now ~/.config/hatari (but the
+  legacy location ~/.hatari is still used if the other one does not exist yet)
 - NatFeats SCSI driver for Linux
 - SDL GUI:
   - User can provide volume label when creating a floppy image

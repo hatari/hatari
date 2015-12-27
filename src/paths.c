@@ -24,7 +24,7 @@ const char Paths_fileid[] = "Hatari paths.c : " __DATE__ " " __TIME__;
 #if defined(__MACOSX__)
 	#define HATARI_HOME_DIR "Library/Application Support/Hatari"
 #else
-	#define HATARI_HOME_DIR ".hatari"
+	#define HATARI_HOME_DIR ".config/hatari"
 #endif
 
 static char sWorkingDir[FILENAME_MAX];    /* Working directory */
@@ -217,24 +217,43 @@ static void Paths_InitHomeDirs(void)
 		/* $HOME not set, so let's use current working dir as home */
 		strcpy(sUserHomeDir, sWorkingDir);
 		strcpy(sHatariHomeDir, sWorkingDir);
+		return;
 	}
-	else
-	{
-		sUserHomeDir[FILENAME_MAX-1] = 0;
 
-		/* Try to use a .hatari directory in the users home directory */
-		snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c%s", sUserHomeDir,
-		         PATHSEP, HATARI_HOME_DIR);
-		if (!File_DirExists(sHatariHomeDir))
-		{
-			/* Hatari home directory does not exists yet...
-			 * ...so let's try to create it: */
-			if (mkdir(sHatariHomeDir, 0755) != 0)
-			{
-				/* Failed to create, so use user's home dir instead */
-				strcpy(sHatariHomeDir, sUserHomeDir);
-			}
-		}
+	sUserHomeDir[FILENAME_MAX-1] = 0;
+
+	/* Try to use a private hatari directory in the users home directory */
+	snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c%s", sUserHomeDir,
+	         PATHSEP, HATARI_HOME_DIR);
+	if (File_DirExists(sHatariHomeDir))
+	{
+		return;
+	}
+	/* Try legacy location ~/.hatari */
+	snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c.hatari", sUserHomeDir,
+	         PATHSEP);
+	if (File_DirExists(sHatariHomeDir))
+	{
+		return;
+	}
+
+	/* Hatari home directory does not exists yet...
+	 * ... so let's try to create it: */
+#if !defined(__MACOSX__)
+	snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c.config", sUserHomeDir,
+	         PATHSEP);
+	if (!File_DirExists(sHatariHomeDir))
+	{
+		/* ~/.config does not exist yet, create it first */
+		mkdir(sHatariHomeDir, 0700);
+	}
+#endif
+	snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c%s", sUserHomeDir,
+	         PATHSEP, HATARI_HOME_DIR);
+	if (mkdir(sHatariHomeDir, 0750) != 0)
+	{
+		/* Failed to create, so use user's home dir instead */
+		strcpy(sHatariHomeDir, sUserHomeDir);
 	}
 }
 
