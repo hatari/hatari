@@ -67,10 +67,6 @@ void mmu030_put_byte_atc(uaecptr addr, uae_u8 val, int l, uae_u32 fc);
 uae_u32 mmu030_get_long_atc(uaecptr addr, int l, uae_u32 fc);
 uae_u16 mmu030_get_word_atc(uaecptr addr, int l, uae_u32 fc);
 uae_u8 mmu030_get_byte_atc(uaecptr addr, int l, uae_u32 fc);
-#ifdef WINUAE_FOR_HATARI
-uae_u32 mmu030_get_ilong_atc(uaecptr addr, int l, uae_u32 fc);
-uae_u16 mmu030_get_iword_atc(uaecptr addr, int l, uae_u32 fc);
-#endif
 
 void mmu030_put_atc_generic(uaecptr addr, uae_u32 val, int l, uae_u32 fc, int size, int flags);
 uae_u32 mmu030_get_atc_generic(uaecptr addr, int l, uae_u32 fc, int size, int flags, bool checkwrite);

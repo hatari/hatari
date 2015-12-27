@@ -1716,7 +1716,8 @@ uae_u32 mmu030_get_long_atc(uaecptr addr, int l, uae_u32 fc) {
 
     return phys_get_long(physical_addr);
 }
-uae_u32 mmu030_get_ilong_atc(uaecptr addr, int l, uae_u32 fc) {
+
+static uae_u32 mmu030_get_ilong_atc(uaecptr addr, int l, uae_u32 fc) {
 	uae_u32 page_index = addr & mmu030.translation.page.mask;
 	uae_u32 addr_mask = mmu030.translation.page.imask;
 
@@ -1754,7 +1755,7 @@ uae_u16 mmu030_get_word_atc(uaecptr addr, int l, uae_u32 fc) {
     return phys_get_word(physical_addr);
 }
 
-uae_u16 mmu030_get_iword_atc(uaecptr addr, int l, uae_u32 fc) {
+static uae_u16 mmu030_get_iword_atc(uaecptr addr, int l, uae_u32 fc) {
 	uae_u32 page_index = addr & mmu030.translation.page.mask;
 	uae_u32 addr_mask = mmu030.translation.page.imask;
 

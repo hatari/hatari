@@ -107,7 +107,6 @@ struct log_addr8 {
 #define MMU_TEST_FORCE_TABLE_SEARCH		4
 #define MMU_TEST_NO_BUSERR				8
 
-extern void mmu_dump_atc(void);
 extern void mmu_dump_tables(void);
 
 #define MMU_TTR_LOGICAL_BASE				0xff000000
@@ -323,8 +322,6 @@ extern void REGPARAM3 mmu060_put_rmw_bitfield (uae_u32 dst, uae_u32 bdata[2], ua
 
 extern uae_u16 REGPARAM3 mmu_get_word_unaligned(uaecptr addr, bool data, bool rmw) REGPARAM;
 extern uae_u32 REGPARAM3 mmu_get_long_unaligned(uaecptr addr, bool data, bool rmw) REGPARAM;
-extern uae_u16 REGPARAM2 mmu_get_lrmw_word_unaligned(uaecptr addr) REGPARAM;
-extern uae_u32 REGPARAM2 mmu_get_lrmw_long_unaligned(uaecptr addr) REGPARAM;
 
 extern uae_u32 REGPARAM3 mmu_get_ilong_unaligned(uaecptr addr) REGPARAM;
 
