@@ -3408,7 +3408,9 @@ static bool mmu_op30fake_pmove (uaecptr pc, uae_u32 opcode, uae_u16 next, uaecpt
 	int rw = (next >> 9) & 1;
 	int fd = (next >> 8) & 1;
 	const TCHAR *reg = NULL;
+#ifndef WINUAE_FOR_HATARI
 	uae_u32 otc = fake_tc_030;
+#endif
 	int siz;
 
 	// Dn, An, (An)+, -(An), immediate and PC-relative not allowed
@@ -3680,9 +3682,9 @@ static void do_trace (void)
 	}
 }
 
+#ifndef WINUAE_FOR_HATARI
 static void check_uae_int_request(void)
 {
-#ifndef WINUAE_FOR_HATARI
 	if (uae_int_requested || uaenet_int_requested) {
 		if ((uae_int_requested & 0x00ff) || uaenet_int_requested)
 			INTREQ_f(0x8000 | 0x0008);
@@ -3690,8 +3692,8 @@ static void check_uae_int_request(void)
 			INTREQ_f(0x8000 | 0x2000);
 		set_special(SPCFLAG_INT);
 	}
-#endif
 }
+#endif
 
 void cpu_sleep_millis(int ms)
 {
@@ -4525,7 +4527,7 @@ cont:
 
 #endif
 
-#ifdef CPUEMU_20
+#if defined(CPUEMU_20) && defined(JIT)
 // emulate simple prefetch
 static uae_u16 get_word_020_prefetchf (uae_u32 pc)
 {
@@ -5558,6 +5560,7 @@ printf ( "run_2\n" );
 }
 
 /* fake MMU 68k  */
+#if 0
 static void m68k_run_mmu (void)
 {
 printf ( "run_mmu\n" );
@@ -5585,11 +5588,13 @@ printf ( "run_mmu\n" );
 		}
 	}
 }
+#endif
 
 #endif /* CPUEMU_0 */
 
 int in_m68k_go = 0;
 
+#if 0
 static void exception2_handle (uaecptr addr, uaecptr fault)
 {
 	last_addr_for_exception_3 = addr;
@@ -5598,6 +5603,7 @@ static void exception2_handle (uaecptr addr, uaecptr fault)
 	last_instructionaccess_for_exception_3 = 0;
 	Exception (2);
 }
+#endif
 
 static bool cpu_hardreset, cpu_keyboardreset;
 
