@@ -44,7 +44,6 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 {
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
-	{ 0xff8002, 14,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
 	{ 0xff8200, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8201, SIZE_BYTE, IoMem_ReadWithoutInterception, Video_ScreenBaseSTE_WriteByte },  /* Video base high byte */
@@ -109,7 +108,6 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff8911, SIZE_BYTE, IoMem_ReadWithoutInterception, DmaSnd_FrameEndMed_WriteByte },   /* DMA sound frame end med */
 	{ 0xff8912, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8913, SIZE_BYTE, IoMem_ReadWithoutInterception, DmaSnd_FrameEndLow_WriteByte },   /* DMA sound frame end low */
-	{ 0xff8914, 12,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 	{ 0xff8920, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound mode control (contains 0) */
 	{ 0xff8921, SIZE_BYTE, DmaSnd_SoundModeCtrl_ReadByte, DmaSnd_SoundModeCtrl_WriteByte }, /* DMA sound mode control */
 	{ 0xff8922, SIZE_WORD, DmaSnd_MicrowireData_ReadWord, DmaSnd_MicrowireData_WriteWord }, /* Microwire data */
