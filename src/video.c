@@ -363,6 +363,9 @@
 /* 2015/11/15	[NP]	Call ShortCut_ActKey() earlier in Video_InterruptHandler_VBL, before	*/
 /*			acknowledging it to get more consistent state in memory snapshots	*/
 /*			created using shortcut keys.						*/
+/* 2015/12/31	[NP]	More accurate reloading of $ff8201/03 into $ff8205/07/09 at line 310 on	*/
+/*			cycle 48 (STF 50 Hz) and line 260 cycle 48 (STF 60 Hz) (used in Intro	*/
+/*			and Menu of 'Dark Side Of The Spoon' by ULM).				*/
 
 
 const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
@@ -465,7 +468,10 @@ static int LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess las
 
 static int LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
 static int LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
-static int RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF_50HZ;
+
+static bool RestartVideoCounter = false;	/* true when reaching the HBL to restart video counter */
+static int RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;		/* position on the line where video counter should be restarted */
+
 static int VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
@@ -565,6 +571,7 @@ static void	Video_DrawScreen(void);
 
 static void	Video_ResetShifterTimings(void);
 static void	Video_InitShifterLines(void);
+static void	Video_RestartVideoCounter(void);
 static void	Video_ClearOnVBL(void);
 
 static void	Video_AddInterrupt ( int Pos , interrupt_id Handler );
@@ -875,6 +882,7 @@ static Uint32 Video_CalculateAddress ( void )
 			VideoAddress = VideoBase + VIDEO_HEIGHT_HBL_MONO * ( BORDERBYTES_NORMAL / 2 );
 	}
 
+#if 0		// Not here anymore, see end of HBL and Video_RestartVideoCounter()
 	else if (FrameCycles > RestartVideoCounterCycle)
 	{
 		/* This is where ff8205/ff8207 are reloaded with the content of ff8201/ff8203 on a real ST */
@@ -888,6 +896,7 @@ static Uint32 Video_CalculateAddress ( void )
 
 		VideoAddress = VideoBase;
 	}
+#endif
 
 	else
 	{
@@ -1572,9 +1581,9 @@ void Video_Sync_WriteByte ( void )
 		ShifterFrame.FreqPos50.HBL = HblCounterVideo;
 		ShifterFrame.FreqPos50.LineCycles = LineCycles;
 		if ( ConfigureParams.System.nMachineType == MACHINE_ST )
-			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF_50HZ;
+			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
 		else			/* STE, TT */
-			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE_50HZ;
+			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
 	}
 	else
 	{
@@ -1583,9 +1592,9 @@ void Video_Sync_WriteByte ( void )
 		ShifterFrame.FreqPos60.HBL = HblCounterVideo;
 		ShifterFrame.FreqPos60.LineCycles = LineCycles;
 		if ( ConfigureParams.System.nMachineType == MACHINE_ST )
-			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF_60HZ;
+			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
 		else			/* STE, TT */
-			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE_60HZ;
+			RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
 	}
 }
 
@@ -1698,15 +1707,35 @@ static int Video_TimerB_GetDefaultPos ( void )
  */
 void Video_InterruptHandler_HBL ( void )
 {
-	int FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+	int FrameCycles , HblCounterVideo , LineCycles;
 	int PendingCyclesOver;
 	int NewHBLPos;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	/* How many cycle was this HBL delayed (>= 0) */
 	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
 	/* Remove this interrupt from list and re-order */
 	CycInt_AcknowledgeInterrupt();
+
+
+	/* Handle the intermediate HBL interrupt used to restart video counter on HBL 310 or 260 */
+	if ( RestartVideoCounter )
+	{
+		if ( ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 2 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_50HZ ) )
+		  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ ) ) )
+		{
+			Video_RestartVideoCounter();
+			LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d cyc=%d restart video counter 0x%x\n", nHBL, LineCycles, VideoBase );
+		}
+
+		/* Restore the normal HBL interrupt */
+		Video_AddInterruptHBL ( Video_HBL_GetPos() );
+		RestartVideoCounter = false;
+		return;
+	}
+
 
 	/* Videl Vertical counter increment (To be removed when Videl emulation is finished) */
 	/* VFC is incremented every half line, here, we increment it every line (should be completed) */
@@ -1786,6 +1815,32 @@ void Video_InterruptHandler_HBL ( void )
 
 		/* Setup next HBL */
 		Video_StartHBL();
+	}
+
+
+	/* Check if video counter should be restarted on this HBL */
+	if ( RestartVideoCounter )
+	{
+//		fprintf ( stderr , "restart video counter hbl=%d cyc=%d\n" , HblCounterVideo , LineCycles);
+		/* If HBL was delayed after RestartVideoCounterCycle, we can restart immediately if we have */
+		/* the correct freq/hbl combination */
+		if ( LineCycles >= RestartVideoCounterCycle )
+		{
+			if ( ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 2 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_50HZ ) )
+			  || ( ( ( IoMem_ReadByte ( 0xff820a ) & 2 ) == 0 ) && ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ ) ) )
+			{
+				Video_RestartVideoCounter();
+				LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d cyc=%d restart video counter 0x%x (immediate)\n", nHBL, LineCycles, VideoBase );
+			}
+			RestartVideoCounter = false;
+		}
+		
+		/* HBL was not delayed after RestartVideoCounterCycle, so we set an intermediate HBL interrupt */
+		/* This intermediate HBL interrupt will then set the real HBL interrupt at the end of the line */
+		else
+		{
+			Video_AddInterrupt ( RestartVideoCounterCycle , INTERRUPT_VIDEO_HBL );
+		}
 	}
 }
 
@@ -1940,6 +1995,8 @@ static void Video_EndHBL(void)
  */
 static void Video_StartHBL(void)
 {
+	RestartVideoCounter = false;
+
 	if ((IoMem_ReadByte(0xff8260) & 3) == 2)  /* hi res */
 	{
 		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
@@ -1962,6 +2019,10 @@ static void Video_StartHBL(void)
 				ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = LINE_START_CYCLE_60;
 			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = LINE_END_CYCLE_60;
 		}
+
+		/* Handle accurate restart of video counter only in low/med res */
+		if ( ( nHBL == RESTART_VIDEO_COUNTER_LINE_50HZ ) || ( nHBL == RESTART_VIDEO_COUNTER_LINE_60HZ ) )
+			RestartVideoCounter = true;
 	}
 //fprintf (stderr , "Video_StartHBL %d %d %d\n", nHBL , ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 }
@@ -2799,6 +2860,28 @@ static void Video_InitShifterLines ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Reload VideoBase with the content of ff8201/03.
+ * On a real ST, this is done 3 HBL before starting a new VBL (HBL 310 at 50 Hz
+ * and HBL 260 at 60 Hz) and on cycle 48 of this HBL.
+ * This is where ff8205/ff8207 are reloaded with the content of ff8201/ff8203 on a real ST
+ * (used in ULM DSOTS demos). VideoBase is also reloaded in Video_ClearOnVBL to be sure
+ * (when video mode is not low/med res)
+ */
+static void Video_RestartVideoCounter(void)
+{
+	/* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
+	VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
+	if (ConfigureParams.System.nMachineType != MACHINE_ST)
+	{
+		/* on STe 2 aligned, on TT 8 aligned. We do STe. */
+		VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
+	}
+	pVideoRaster = &STRam[VideoBase];
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Called on VBL, set registers ready for frame
  */
 static void Video_ClearOnVBL(void)
@@ -2809,14 +2892,8 @@ static void Video_ClearOnVBL(void)
 
 	Video_ResetShifterTimings();
 
-	/* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
-	VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
-	if (ConfigureParams.System.nMachineType != MACHINE_ST)
-	{
-		/* on STe 2 aligned, on TT 8 aligned. We do STe. */
-		VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
-	}
-	pVideoRaster = &STRam[VideoBase];
+	Video_RestartVideoCounter();
+
 	pSTScreen = pFrameBuffer->pSTScreen;
 
 	Video_SetScreenRasters();

@@ -103,12 +103,12 @@
 #define HBL_VIDEO_CYCLE_OFFSET		0			/* cycles after end of current line (ie on every 512 cycles in 50 Hz) */
 #define TIMERB_VIDEO_CYCLE_OFFSET	24			/* cycles after last displayed pixels : 376+24 in 50 Hz or 372+24 in 60 Hz */
 
-/* This is when ff8205/07/09 are reloaded with the content of ff8201/03 : on line 310 in 50 Hz and on line 260 in 60 Hz */
+/* This is when ff8205/07/09 are reloaded with the content of ff8201/03 : on line 310 cycle 48/52 in 50 Hz and on line 260 cycle 48/52 in 60 Hz */
 /* (values were measured on real STF/STE) */
-#define RESTART_VIDEO_COUNTER_CYCLE_STF_50HZ	( (SCANLINES_PER_FRAME_50HZ-3) * CYCLES_PER_LINE_50HZ + 48 )
-#define RESTART_VIDEO_COUNTER_CYCLE_STE_50HZ	( (SCANLINES_PER_FRAME_50HZ-3) * CYCLES_PER_LINE_50HZ + 48 + 4 )	/* 4 cycles later than STF */
-#define RESTART_VIDEO_COUNTER_CYCLE_STF_60HZ	( (SCANLINES_PER_FRAME_60HZ-3) * CYCLES_PER_LINE_60HZ + 48 )
-#define RESTART_VIDEO_COUNTER_CYCLE_STE_60HZ	( (SCANLINES_PER_FRAME_60HZ-3) * CYCLES_PER_LINE_60HZ + 48 + 4 )
+#define RESTART_VIDEO_COUNTER_LINE_50HZ		( SCANLINES_PER_FRAME_50HZ-3 )
+#define RESTART_VIDEO_COUNTER_LINE_60HZ		( SCANLINES_PER_FRAME_60HZ-3 )
+#define RESTART_VIDEO_COUNTER_CYCLE_STF		( 48 )
+#define RESTART_VIDEO_COUNTER_CYCLE_STE		( 48 + 4 )	/* 4 cycles later than STF */
 
 /* anything above 4 uses automatic frameskip */
 #define AUTO_FRAMESKIP_LIMIT	5
