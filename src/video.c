@@ -3406,6 +3406,8 @@ void Video_ShifterMode_ReadByte(void)
 
 	if (ConfigureParams.System.nMachineType == MACHINE_ST)
 		IoMem[0xff8260] |= 0xfc;		/* On STF, set unused bits 2-7 to 1 */
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+		IoMem[0xff8260] &= 0x07;		/* Only use bits 0, 1 and 2 */
 	else
 		IoMem[0xff8260] &= 0x03;		/* Only use bits 0 and 1, unused bits 2-7 are set to 0 */
 }
