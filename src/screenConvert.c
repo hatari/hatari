@@ -17,7 +17,6 @@
 #include "stMemory.h"
 #include "video.h"
 
-#define Atari2HostAddr(a) (&STRam[a])
 
 struct screen_zoom_s {
 	Uint16 zoomwidth;
@@ -287,22 +286,19 @@ static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
 }
 
 
-static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
-                                      int leftBorder, int rightBorder,
+static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, int nextline,
+                                      int hscrolloffset, int leftBorder, int rightBorder,
                                       int upperBorder, int lowerBorder)
 {
 	int scrpitch = sdlscrn->pitch;
 	int h, w, j;
 
-	Uint16 *fvram = (Uint16 *) Atari2HostAddr(vaddr);
 	Uint16 *fvram_line;
 	Uint8 *hvram = sdlscrn->pixels;
 
 	Uint16 lowBorderSize, rightBorderSize;
 	int scrwidth, scrheight;
 	int vw_clip, vh_clip;
-
-	int hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
 
 	/* Horizontal scroll register set? */
 	if (hscrolloffset) {
@@ -574,19 +570,18 @@ static void Screen_ConvertWithoutZoom(uint32_t vaddr, int vw, int vh, int vbpp, 
 }
 
 
-static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
-                                   int leftBorder, int rightBorder,
+static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int nextline,
+                                   int hscrolloffset, int leftBorder, int rightBorder,
                                    int upperBorder, int lowerBorder)
 {
 	int i, j, w, h, cursrcline;
 
-	Uint16 *fvram = (Uint16 *) Atari2HostAddr(vaddr);
 	Uint16 *fvram_line;
 	Uint16 scrIdx = 0;
 
 	int coefx = 1;
 	int coefy = 1;
-	int scrpitch, scrwidth, scrheight, scrbpp, hscrolloffset;
+	int scrpitch, scrwidth, scrheight, scrbpp;
 	Uint8 *hvram;
 	int vw_b, vh_b;
 
@@ -602,8 +597,6 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 	scrheight = Screen_GetGenConvHeight();
 	scrbpp = sdlscrn->format->BytesPerPixel;
 	hvram = sdlscrn->pixels;
-
-	hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
 
 	/* Horizontal scroll register set? */
 	if (hscrolloffset) {
@@ -931,16 +924,16 @@ static void Screen_ConvertWithZoom(uint32_t vaddr, int vw, int vh, int vbpp, int
 	}
 }
 
-void Screen_GenConvert(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
-                       int leftBorderSize, int rightBorderSize,
+void Screen_GenConvert(void *fvram, int vw, int vh, int vbpp, int nextline,
+                       int hscroll, int leftBorderSize, int rightBorderSize,
                        int upperBorderSize, int lowerBorderSize)
 {
 	if (nScreenZoomX * nScreenZoomY != 1) {
-		Screen_ConvertWithZoom(vaddr, vw, vh, vbpp, nextline,
+		Screen_ConvertWithZoom(fvram, vw, vh, vbpp, nextline, hscroll,
 		                       leftBorderSize, rightBorderSize,
 		                       upperBorderSize, lowerBorderSize);
 	} else {
-		Screen_ConvertWithoutZoom(vaddr, vw, vh, vbpp, nextline,
+		Screen_ConvertWithoutZoom(fvram, vw, vh, vbpp, nextline, hscroll,
 		                          leftBorderSize, rightBorderSize,
 		                          upperBorderSize, lowerBorderSize);
 	}
@@ -950,11 +943,18 @@ bool Screen_GenDraw(uint32_t vaddr, int vw, int vh, int vbpp, int nextline,
                     int leftBorder, int rightBorder,
                     int upperBorder, int lowerBorder)
 {
+	int hscrolloffset;
+
 	if (!Screen_Lock())
 		return false;
 
-	Screen_GenConvert(vaddr, vw, vh, vbpp, nextline, leftBorder, rightBorder,
-	                  upperBorder, lowerBorder);
+	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+		hscrolloffset = 0;
+	else
+		hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
+
+	Screen_GenConvert(&STRam[vaddr], vw, vh, vbpp, nextline, hscrolloffset,
+	                  leftBorder, rightBorder, upperBorder, lowerBorder);
 
 	Screen_UnLock();
 	Screen_GenConvUpdate(Statusbar_Update(sdlscrn, false), false);

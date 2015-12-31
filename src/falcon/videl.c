@@ -832,6 +832,7 @@ bool VIDEL_renderScreen(void)
 
 	int lineoffset = IoMem_ReadWord(0xff820e) & 0x01ff; /* 9 bits */
 	int linewidth = IoMem_ReadWord(0xff8210) & 0x03ff;  /* 10 bits */
+	int hscrolloffset = IoMem_ReadByte(0xff8265) & 0x0f;
 	int nextline;
 
 	bool change = false;
@@ -886,8 +887,8 @@ bool VIDEL_renderScreen(void)
 
 	VIDEL_UpdateColors();
 
-	Screen_GenConvert(videl.videoBaseAddr, videl.XSize, videl.YSize,
-	                  videl.save_scrBpp, nextline,
+	Screen_GenConvert(&STRam[videl.videoBaseAddr], videl.XSize, videl.YSize,
+	                  videl.save_scrBpp, nextline, hscrolloffset,
 	                  videl.leftBorderSize, videl.rightBorderSize,
 	                  videl.upperBorderSize, videl.lowerBorderSize);
 

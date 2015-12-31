@@ -90,7 +90,7 @@ static SDL_Rect STScreenRect;                      /* screen size without status
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
-static void (*ScreenDrawFunctionsNormal[2])(void); /* Screen draw functions */
+static void (*ScreenDrawFunctionsNormal[3])(void); /* Screen draw functions */
 
 static bool bScreenContentsChanged;     /* true if buffer changed and requires blitting */
 static bool bScrDoubleY;                /* true if double on Y */
@@ -170,7 +170,17 @@ static void Screen_SetupRGBTable(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Convert 640x400 monochrome screen
+ */
+static void Screen_ConvertHighRes(void)
+{
+	int linewidth = 640 / 16;
+
+	Screen_GenConvert(pSTScreen, 640, 400, 1, linewidth, 0, 0, 0, 0, 0);
+	bScreenContentsChanged = true;
+}
+
 /**
  * Set screen draw functions.
  */
@@ -184,6 +194,7 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
+		ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 	}
 	else /* Assume 32 bit drawing functions */
 	{
@@ -193,6 +204,7 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
 		else
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x32Bit;
 		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x32Bit;
+		ScreenDrawFunctionsNormal[ST_HIGH_RES] = Screen_ConvertHighRes;
 	}
 }
 
@@ -1332,17 +1344,8 @@ bool Screen_Draw(void)
 		return false;
 	}
 
-	if (bUseHighRes && !bUseVDIRes)
-	{
-		return Screen_GenDraw(VideoBase, 640, 400, 1, 640 / 16, 0, 0, 0, 0);
-	}
-	else
-	{
-		/* And draw (if screen contents changed) */
-		return Screen_DrawFrame(false);
-	}
-
-	return false;
+	/* And draw (if screen contents changed) */
+	return Screen_DrawFrame(false);
 }
 
 /**
