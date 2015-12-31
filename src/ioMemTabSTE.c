@@ -149,7 +149,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8a3e, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
 	{ 0xff9000, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_ReadWord, IoMem_WriteWithoutInterception },    /* Joypad fire buttons */
+	{ 0xff9201, SIZE_BYTE, Joy_StePadButtons_ReadWord, IoMem_WriteWithoutInterception },    /* Joypad fire buttons */
 	{ 0xff9202, SIZE_WORD, Joy_StePadMulti_ReadWord, Joy_StePadMulti_WriteWord },           /* Joypad directions/buttons/selection */
 	{ 0xff9211, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 0 X position (?) */
 	{ 0xff9213, SIZE_BYTE, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Joypad 0 Y position (?) */
