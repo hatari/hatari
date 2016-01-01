@@ -285,13 +285,84 @@ static void Screen_BitplaneToChunky32(Uint16 *atariBitplaneData, Uint16 bpp,
 #endif
 }
 
+static inline Uint16 *ScreenConv_BitplaneLineTo16bpp(Uint16 *fvram_column,
+                                                     Uint16 *hvram_column, int vw,
+                                                     int vbpp, int hscrolloffset)
+{
+	Uint16 hvram_buf[16];
+	int i;
+
+	/* First 16 pixels */
+	Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
+	for (i = hscrolloffset; i < 16; i++)
+	{
+		*hvram_column++ = hvram_buf[i];
+	}
+	fvram_column += vbpp;
+
+	/* Now the main part of the line */
+	for (i = 1; i < (vw + 15) >> 4; i++)
+	{
+		Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_column);
+		hvram_column += 16;
+		fvram_column += vbpp;
+	}
+
+	/* Last pixels of the line for fine scrolling */
+	if (hscrolloffset)
+	{
+		Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
+		for (i = 0; i < hscrolloffset; i++)
+		{
+			*hvram_column++ = hvram_buf[i];
+		}
+	}
+
+	return hvram_column;
+}
+
+static inline Uint32 *ScreenConv_BitplaneLineTo32bpp(Uint16 *fvram_column,
+                                                     Uint32 *hvram_column, int vw,
+                                                     int vbpp, int hscrolloffset)
+{
+	Uint32 hvram_buf[16];
+	int i;
+
+	/* First 16 pixels */
+	Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
+	for (i = hscrolloffset; i < 16; i++)
+	{
+		*hvram_column++ = hvram_buf[i];
+	}
+	fvram_column += vbpp;
+
+	/* Now the main part of the line */
+	for (i = 1; i < (vw + 15) >> 4; i++)
+	{
+		Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_column);
+		hvram_column += 16;
+		fvram_column += vbpp;
+	}
+
+	/* Last pixels of the line for fine scrolling */
+	if (hscrolloffset)
+	{
+		Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
+		for (i = 0; i < hscrolloffset; i++)
+		{
+			*hvram_column++ = hvram_buf[i];
+		}
+	}
+
+	return hvram_column;
+}
 
 static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, int nextline,
                                       int hscrolloffset, int leftBorder, int rightBorder,
                                       int upperBorder, int lowerBorder)
 {
 	int scrpitch = sdlscrn->pitch;
-	int h, w, j;
+	int h, w;
 
 	Uint16 *fvram_line;
 	Uint8 *hvram = sdlscrn->pixels;
@@ -363,7 +434,6 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 			case 2:
 			{
 				Uint16 *hvram_line = (Uint16 *)hvram;
-				Uint16 hvram_buf[16];
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder; h++) {
@@ -373,7 +443,6 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 
 				/* Render the graphical area */
 				for (h = 0; h < vh; h++) {
-					Uint16 *fvram_column = fvram_line;
 					Uint16 *hvram_column = hvram_line;
 
 					nSampleHoldIdx = 0;
@@ -382,25 +451,9 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 					Screen_memset_uint16(hvram_column, palette.native[0], leftBorder);
 					hvram_column += leftBorder;
 
-					/* First 16 pixels */
-					Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
-					for (j = hscrolloffset; j < 16; j++) {
-						*hvram_column++ = hvram_buf[j];
-					}
-					fvram_column += vbpp;
-					/* Now the main part of the line */
-					for (w = 1; w < (vw+15)>>4; w++) {
-						Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_column);
-						hvram_column += 16;
-						fvram_column += vbpp;
-					}
-					/* Last pixels of the line for fine scrolling */
-					if (hscrolloffset) {
-						Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
-						for (j = 0; j < hscrolloffset; j++) {
-							*hvram_column++ = hvram_buf[j];
-						}
-					}
+					hvram_column = ScreenConv_BitplaneLineTo16bpp(fvram_line, hvram_column,
+					                                              vw, vbpp, hscrolloffset);
+
 					/* Right border */
 					Screen_memset_uint16(hvram_column, palette.native[0], rightBorderSize);
 
@@ -418,7 +471,6 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 			case 4:
 			{
 				Uint32 *hvram_line = (Uint32 *)hvram;
-				Uint32 hvram_buf[16];
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder; h++) {
@@ -428,7 +480,6 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 
 				/* Render the graphical area */
 				for (h = 0; h < vh; h++) {
-					Uint16 *fvram_column = fvram_line;
 					Uint32 *hvram_column = hvram_line;
 
 					nSampleHoldIdx = 0;
@@ -437,25 +488,9 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 					Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
 					hvram_column += leftBorder;
 
-					/* First 16 pixels */
-					Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
-					for (j = hscrolloffset; j < 16; j++) {
-						*hvram_column++ = hvram_buf[j];
-					}
-					fvram_column += vbpp;
-					/* Now the main part of the line */
-					for (w = 1; w < (vw+15)>>4; w++) {
-						Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_column);
-						hvram_column += 16;
-						fvram_column += vbpp;
-					}
-					/* Last pixels of the line for fine scrolling */
-					if (hscrolloffset) {
-						Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
-						for (j = 0; j < hscrolloffset; j++) {
-							*hvram_column++ = hvram_buf[j];
-						}
-					}
+					hvram_column = ScreenConv_BitplaneLineTo32bpp(fvram_line, hvram_column,
+					                                              vw, vbpp, hscrolloffset);
+
 					/* Right border */
 					Screen_memset_uint32(hvram_column, palette.native[0], rightBorderSize);
 
@@ -574,7 +609,7 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
                                    int hscrolloffset, int leftBorder, int rightBorder,
                                    int upperBorder, int lowerBorder)
 {
-	int i, j, w, h, cursrcline;
+	int i, w, h, cursrcline;
 
 	Uint16 *fvram_line;
 	Uint16 scrIdx = 0;
@@ -661,7 +696,6 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 				Uint16 *p2cline = malloc(sizeof(Uint16) * ((vw+15) & ~15));
 				Uint16 *hvram_line = (Uint16 *)hvram;
 				Uint16 *hvram_column = p2cline;
-				Uint16 hvram_buf[16];
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder * coefy; h++) {
@@ -679,28 +713,8 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 					if (screen_zoom.zoomytable[h] == cursrcline) {
 						memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
 					} else {
-						Uint16 *fvram_column = fvram_line;
-						hvram_column = p2cline;
-
-						/* First 16 pixels of a new line */
-						Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
-						for (j = hscrolloffset; j < 16; j++) {
-							*hvram_column++ = hvram_buf[j];
-						}
-						fvram_column += vbpp;
-						/* Convert the main part of the new line */
-						for (w = 1; w < (vw+15)>>4; w++) {
-							Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_column);
-							hvram_column += 16;
-							fvram_column += vbpp;
-						}
-						/* Last pixels of the new line for fine scrolling */
-						if (hscrolloffset) {
-							Screen_BitplaneToChunky16(fvram_column, vbpp, hvram_buf);
-							for (j = 0; j < hscrolloffset; j++) {
-								*hvram_column++ = hvram_buf[j];
-							}
-						}
+						ScreenConv_BitplaneLineTo16bpp(fvram_line, p2cline,
+						                               vw, vbpp, hscrolloffset);
 
 						hvram_column = hvram_line;
 
@@ -737,7 +751,6 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 				Uint32 *p2cline = malloc(sizeof(Uint32) * ((vw+15) & ~15));
 				Uint32 *hvram_line = (Uint32 *)hvram;
 				Uint32 *hvram_column = p2cline;
-				Uint32 hvram_buf[16];
 
 				/* Render the upper border */
 				for (h = 0; h < upperBorder * coefy; h++) {
@@ -755,28 +768,8 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 					if (screen_zoom.zoomytable[h] == cursrcline) {
 						memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
 					} else {
-						Uint16 *fvram_column = fvram_line;
-						hvram_column = p2cline;
-
-						/* First 16 pixels of a new line */
-						Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
-						for (j = hscrolloffset; j < 16; j++) {
-							*hvram_column++ = hvram_buf[j];
-						}
-						fvram_column += vbpp;
-						/* Convert the main part of the new line */
-						for (w = 1; w < (vw+15)>>4; w++) {
-							Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_column);
-							hvram_column += 16;
-							fvram_column += vbpp;
-						}
-						/* Last pixels of the new line for fine scrolling */
-						if (hscrolloffset) {
-							Screen_BitplaneToChunky32(fvram_column, vbpp, hvram_buf);
-							for (j = 0; j < hscrolloffset; j++) {
-								*hvram_column++ = hvram_buf[j];
-							}
-						}
+						ScreenConv_BitplaneLineTo32bpp(fvram_line, p2cline,
+						                               vw, vbpp, hscrolloffset);
 
 						hvram_column = hvram_line;
 						/* Display the Left border */
