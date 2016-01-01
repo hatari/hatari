@@ -670,20 +670,301 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 }
 
 
+static void ScreenConv_BitplaneTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
+                                             int scrwidth, int scrheight,
+                                             int vw, int vh, int vbpp,
+                                             int nextline, int hscrolloffset,
+                                             int leftBorder, int rightBorder,
+                                             int upperBorder, int lowerBorder,
+                                             int coefx, int coefy)
+{
+	/* One complete 16-pixel aligned planar 2 chunky line */
+	Uint16 *p2cline = malloc(sizeof(Uint16) * ((vw+15) & ~15));
+	Uint16 *hvram_line = (Uint16 *)hvram;
+	Uint16 *hvram_column = p2cline;
+	Uint16 *fvram_line;
+	int pitch = sdlscrn->pitch >> 1;
+	int cursrcline = -1;
+	int scrIdx = 0;
+	int w, h;
+
+	/* Render the upper border */
+	for (h = 0; h < upperBorder * coefy; h++)
+	{
+		Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	/* Render the graphical area */
+	for (h = 0; h < scrheight; h++)
+	{
+		fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
+		scrIdx ++;
+		nSampleHoldIdx = 0;
+
+		/* Recopy the same line ? */
+		if (screen_zoom.zoomytable[h] == cursrcline)
+		{
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * sdlscrn->format->BytesPerPixel);
+		}
+		else
+		{
+			ScreenConv_BitplaneLineTo16bpp(fvram_line, p2cline,
+			                               vw, vbpp, hscrolloffset);
+
+			hvram_column = hvram_line;
+
+			/* Display the Left border */
+			Screen_memset_uint16(hvram_column, palette.native[0], leftBorder * coefx);
+			hvram_column += leftBorder * coefx;
+
+			/* Display the Graphical area */
+			for (w = 0; w < vw * coefx; w++)
+				hvram_column[w] = p2cline[screen_zoom.zoomxtable[w]];
+			hvram_column += vw * coefx;
+
+			/* Display the Right border */
+			Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
+			hvram_column += rightBorder * coefx;
+		}
+
+		hvram_line += pitch;
+		cursrcline = screen_zoom.zoomytable[h];
+	}
+
+	/* Render the lower border */
+	for (h = 0; h < lowerBorder * coefy; h++)
+	{
+		Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	free(p2cline);
+}
+
+static void ScreenConv_BitplaneTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
+                                             int scrwidth, int scrheight,
+                                             int vw, int vh, int vbpp,
+                                             int nextline, int hscrolloffset,
+                                             int leftBorder, int rightBorder,
+                                             int upperBorder, int lowerBorder,
+                                             int coefx, int coefy)
+{
+	/* One complete 16-pixel aligned planar 2 chunky line */
+	Uint32 *p2cline = malloc(sizeof(Uint32) * ((vw+15) & ~15));
+	Uint32 *hvram_line = (Uint32 *)hvram;
+	Uint32 *hvram_column = p2cline;
+	Uint16 *fvram_line;
+	int pitch = sdlscrn->pitch >> 2;
+	int cursrcline = -1;
+	int scrIdx = 0;
+	int w, h;
+
+	/* Render the upper border */
+	for (h = 0; h < upperBorder * coefy; h++)
+	{
+		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	/* Render the graphical area */
+	for (h = 0; h < scrheight; h++)
+	{
+		fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
+		scrIdx ++;
+		nSampleHoldIdx = 0;
+
+		/* Recopy the same line ? */
+		if (screen_zoom.zoomytable[h] == cursrcline)
+		{
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * sdlscrn->format->BytesPerPixel);
+		}
+		else
+		{
+			ScreenConv_BitplaneLineTo32bpp(fvram_line, p2cline,
+			                               vw, vbpp, hscrolloffset);
+
+			hvram_column = hvram_line;
+			/* Display the Left border */
+			Screen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
+			hvram_column += leftBorder * coefx;
+
+			/* Display the Graphical area */
+			for (w = 0; w < vw * coefx; w++)
+			{
+				hvram_column[w] = p2cline[screen_zoom.zoomxtable[w]];
+			}
+			hvram_column += vw * coefx;
+
+			/* Display the Right border */
+			Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
+			hvram_column += rightBorder * coefx;
+		}
+
+		hvram_line += pitch;
+		cursrcline = screen_zoom.zoomytable[h];
+	}
+
+	/* Render the lower border */
+	for (h = 0; h < lowerBorder * coefy; h++)
+	{
+		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	free(p2cline);
+}
+
+static void ScreenConv_HiColorTo16bppZoomed(Uint16 *fvram, Uint8 *hvram,
+                                            int scrwidth, int scrheight,
+                                            int vw, int vh, int vbpp,
+                                            int nextline, int hscrolloffset,
+                                            int leftBorder, int rightBorder,
+                                            int upperBorder, int lowerBorder,
+                                            int coefx, int coefy)
+{
+	Uint16 *hvram_line = (Uint16 *)hvram;
+	Uint16 *hvram_column = hvram_line;
+	Uint16 *fvram_line;
+	int pitch = sdlscrn->pitch >> 1;
+	int cursrcline = -1;
+	int scrIdx = 0;
+	int w, h;
+
+	/* Render the upper border */
+	for (h = 0; h < upperBorder * coefy; h++)
+	{
+		Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	/* Render the graphical area */
+	for (h = 0; h < scrheight; h++)
+	{
+		Uint16 *fvram_column;
+
+		fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
+		scrIdx ++;
+
+		fvram_column = fvram_line;
+
+		/* Recopy the same line ? */
+		if (screen_zoom.zoomytable[h] == cursrcline)
+		{
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * sdlscrn->format->BytesPerPixel);
+		}
+		else
+		{
+			hvram_column = hvram_line;
+
+			/* Display the Left border */
+			Screen_memset_uint16(hvram_column, palette.native[0], leftBorder * coefx);
+			hvram_column += leftBorder * coefx;
+
+			/* Display the Graphical area */
+			for (w = 0; w < vw * coefx; w++)
+				*hvram_column++ = SDL_SwapBE16(fvram_column[screen_zoom.zoomxtable[w]]);
+
+			/* Display the Right border */
+			Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
+			hvram_column += rightBorder * coefx;
+		}
+
+		hvram_line += pitch;
+		cursrcline = screen_zoom.zoomytable[h];
+	}
+
+	/* Render the lower border */
+	for (h = 0; h < lowerBorder * coefy; h++)
+	{
+		Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+}
+
+static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
+                                            int scrwidth, int scrheight,
+                                            int vw, int vh, int vbpp,
+                                            int nextline, int hscrolloffset,
+                                            int leftBorder, int rightBorder,
+                                            int upperBorder, int lowerBorder,
+                                            int coefx, int coefy)
+{
+	Uint32 *hvram_line = (Uint32 *)hvram;
+	Uint32 *hvram_column = hvram_line;
+	Uint16 *fvram_line;
+	int pitch = sdlscrn->pitch >> 2;
+	int cursrcline = -1;
+	int scrIdx = 0;
+	int w, h;
+
+	/* Render the upper border */
+	for (h = 0; h < upperBorder * coefy; h++)
+	{
+		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	/* Render the graphical area */
+	for (h = 0; h < scrheight; h++)
+	{
+		Uint16 *fvram_column;
+
+		fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
+		scrIdx ++;
+		fvram_column = fvram_line;
+
+		/* Recopy the same line ? */
+		if (screen_zoom.zoomytable[h] == cursrcline)
+		{
+			memcpy(hvram_line, hvram_line - pitch, scrwidth * sdlscrn->format->BytesPerPixel);
+		}
+		else
+		{
+			hvram_column = hvram_line;
+
+			/* Display the Left border */
+			Screen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
+			hvram_column += leftBorder * coefx;
+
+			/* Display the Graphical area */
+			for (w = 0; w < vw * coefx; w++)
+			{
+				Uint16 srcword;
+
+				srcword = fvram_column[screen_zoom.zoomxtable[w]];
+				*hvram_column++ = SDL_MapRGB(sdlscrn->format, srcword & 0xf8,
+				                             ((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c),
+				                             (srcword >> 5) & 0xf8);
+			}
+
+			/* Display the Right border */
+			Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
+			hvram_column += rightBorder * coefx;
+		}
+
+		hvram_line += pitch;
+		cursrcline = screen_zoom.zoomytable[h];
+	}
+
+	/* Render the lower border */
+	for (h = 0; h < lowerBorder * coefy; h++)
+	{
+		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+}
+
 static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int nextline,
                                    int hscrolloffset, int leftBorder, int rightBorder,
                                    int upperBorder, int lowerBorder)
 {
-	int i, w, h, cursrcline;
-
-	Uint16 *fvram_line;
-	Uint16 scrIdx = 0;
-
 	int coefx = 1;
 	int coefy = 1;
 	int scrpitch, scrwidth, scrheight, scrbpp;
 	Uint8 *hvram;
 	int vw_b, vh_b;
+	int i;
 
 	/* The sample-hold feature exists only on the TT */
 	bTTSampleHold = (TTSpecialVideoMode & 0x80) != 0;
@@ -741,8 +1022,6 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 		screen_zoom.prev_scrheight = scrheight;
 	}
 
-	cursrcline = -1;
-
 	/* scrwidth must not change */
 	scrheight = vh * coefy;
 
@@ -755,228 +1034,33 @@ static void Screen_ConvertWithZoom(Uint16 *fvram, int vw, int vh, int vbpp, int 
 	if (vbpp<16) {
 		/* Bitplanes modes */
 		switch(scrbpp) {
-			case 2:
-			{
-				/* One complete 16-pixel aligned planar 2 chunky line */
-				Uint16 *p2cline = malloc(sizeof(Uint16) * ((vw+15) & ~15));
-				Uint16 *hvram_line = (Uint16 *)hvram;
-				Uint16 *hvram_column = p2cline;
-
-				/* Render the upper border */
-				for (h = 0; h < upperBorder * coefy; h++) {
-					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>1;
-				}
-
-				/* Render the graphical area */
-				for (h = 0; h < scrheight; h++) {
-					fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
-					scrIdx ++;
-					nSampleHoldIdx = 0;
-
-					/* Recopy the same line ? */
-					if (screen_zoom.zoomytable[h] == cursrcline) {
-						memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
-					} else {
-						ScreenConv_BitplaneLineTo16bpp(fvram_line, p2cline,
-						                               vw, vbpp, hscrolloffset);
-
-						hvram_column = hvram_line;
-
-						/* Display the Left border */
-						Screen_memset_uint16(hvram_column, palette.native[0], leftBorder * coefx);
-						hvram_column += leftBorder * coefx;
-
-						/* Display the Graphical area */
-						for (w=0; w<(vw*coefx); w++)
-							hvram_column[w] = p2cline[screen_zoom.zoomxtable[w]];
-						hvram_column += vw * coefx;
-
-						/* Display the Right border */
-						Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
-						hvram_column += rightBorder * coefx;
-					}
-
-					hvram_line += scrpitch>>1;
-					cursrcline = screen_zoom.zoomytable[h];
-				}
-
-				/* Render the lower border */
-				for (h = 0; h < lowerBorder * coefy; h++) {
-					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>1;
-				}
-
-				free(p2cline);
-			}
+		 case 2:
+			ScreenConv_BitplaneTo16bppZoomed(fvram, hvram, scrwidth, scrheight,
+			                                 vw, vh, vbpp, nextline, hscrolloffset,
+			                                 leftBorder, rightBorder, upperBorder,
+			                                 lowerBorder, coefx, coefy);
 			break;
-			case 4:
-			{
-				/* One complete 16-pixel aligned planar 2 chunky line */
-				Uint32 *p2cline = malloc(sizeof(Uint32) * ((vw+15) & ~15));
-				Uint32 *hvram_line = (Uint32 *)hvram;
-				Uint32 *hvram_column = p2cline;
-
-				/* Render the upper border */
-				for (h = 0; h < upperBorder * coefy; h++) {
-					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>2;
-				}
-
-				/* Render the graphical area */
-				for (h = 0; h < scrheight; h++) {
-					fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
-					scrIdx ++;
-					nSampleHoldIdx = 0;
-
-					/* Recopy the same line ? */
-					if (screen_zoom.zoomytable[h] == cursrcline) {
-						memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-					} else {
-						ScreenConv_BitplaneLineTo32bpp(fvram_line, p2cline,
-						                               vw, vbpp, hscrolloffset);
-
-						hvram_column = hvram_line;
-						/* Display the Left border */
-						Screen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
-						hvram_column += leftBorder * coefx;
-
-						/* Display the Graphical area */
-						for (w=0; w<(vw*coefx); w++) {
-							hvram_column[w] = p2cline[screen_zoom.zoomxtable[w]];
-						}
-						hvram_column += vw * coefx;
-
-						/* Display the Right border */
-						Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
-						hvram_column += rightBorder * coefx;
-					}
-
-					hvram_line += scrpitch>>2;
-					cursrcline = screen_zoom.zoomytable[h];
-				}
-
-				/* Render the lower border */
-				for (h = 0; h < lowerBorder * coefy; h++) {
-					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>2;
-				}
-
-				free(p2cline);
-			}
+		 case 4:
+			ScreenConv_BitplaneTo32bppZoomed(fvram, hvram, scrwidth, scrheight,
+			                                 vw, vh, vbpp, nextline, hscrolloffset,
+			                                 leftBorder, rightBorder, upperBorder,
+			                                 lowerBorder, coefx, coefy);
 			break;
 		}
 	} else {
 		/* Falcon high-color (16-bit) mode */
-
 		switch(scrbpp) {
-			case 2:
-			{
-				Uint16 *hvram_line = (Uint16 *)hvram;
-				Uint16 *hvram_column = hvram_line;
-
-				/* Render the upper border */
-				for (h = 0; h < upperBorder * coefy; h++) {
-					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>1;
-				}
-
-				/* Render the graphical area */
-				for (h = 0; h < scrheight; h++) {
-					Uint16 *fvram_column;
-
-					fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
-					scrIdx ++;
-
-					fvram_column = fvram_line;
-
-					/* Recopy the same line ? */
-					if (screen_zoom.zoomytable[h] == cursrcline) {
-						memcpy(hvram_line, hvram_line-(scrpitch>>1), scrwidth*scrbpp);
-					} else {
-
-						hvram_column = hvram_line;
-
-						/* Display the Left border */
-						Screen_memset_uint16(hvram_column, palette.native[0], leftBorder * coefx);
-						hvram_column += leftBorder * coefx;
-
-						/* Display the Graphical area */
-						for (w=0; w<(vw*coefx); w++)
-							*hvram_column++ = SDL_SwapBE16(fvram_column[screen_zoom.zoomxtable[w]]);
-
-
-						/* Display the Right border */
-						Screen_memset_uint16(hvram_column, palette.native[0], rightBorder * coefx);
-						hvram_column += rightBorder * coefx;
-					}
-
-					hvram_line += scrpitch>>1;
-					cursrcline = screen_zoom.zoomytable[h];
-				}
-
-				/* Render the lower border */
-				for (h = 0; h < lowerBorder * coefy; h++) {
-					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>1;
-				}
-			}
+		 case 2:
+			ScreenConv_HiColorTo16bppZoomed(fvram, hvram, scrwidth, scrheight,
+			                                vw, vh, vbpp, nextline, hscrolloffset,
+			                                leftBorder, rightBorder, upperBorder,
+			                                lowerBorder, coefx, coefy);
 			break;
-			case 4:
-			{
-				Uint32 *hvram_line = (Uint32 *)hvram;
-				Uint32 *hvram_column = hvram_line;
-
-				/* Render the upper border */
-				for (h = 0; h < upperBorder * coefy; h++) {
-					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
-				}
-
-				/* Render the graphical area */
-				for (h = 0; h < scrheight; h++) {
-					Uint16 *fvram_column;
-
-					fvram_line = fvram + (screen_zoom.zoomytable[scrIdx] * nextline);
-					scrIdx ++;
-					fvram_column = fvram_line;
-
-					/* Recopy the same line ? */
-					if (screen_zoom.zoomytable[h] == cursrcline) {
-						memcpy(hvram_line, hvram_line-(scrpitch>>2), scrwidth*scrbpp);
-						hvram_line += scrpitch>>2;
-					} else {
-
-						hvram_column = hvram_line;
-
-						/* Display the Left border */
-						Screen_memset_uint32(hvram_column, palette.native[0], leftBorder * coefx);
-						hvram_column += leftBorder * coefx;
-
-						/* Display the Graphical area */
-						for (w = 0; w<(vw*coefx); w++) {
-							Uint16 srcword;
-
-							srcword = fvram_column[screen_zoom.zoomxtable[w]];
-							*hvram_column++ = SDL_MapRGB(sdlscrn->format, srcword & 0xf8,
-							                             ((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c),
-							                             (srcword >> 5) & 0xf8);
-						}
-
-						/* Display the Right border */
-						Screen_memset_uint32(hvram_column, palette.native[0], rightBorder * coefx);
-						hvram_column += rightBorder * coefx;
-					}
-
-					hvram_line += scrpitch>>2;
-					cursrcline = screen_zoom.zoomytable[h];
-				}
-
-				/* Render the lower border */
-				for (h = 0; h < lowerBorder * coefy; h++) {
-					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>2;
-				}
-			}
+		 case 4:
+			ScreenConv_HiColorTo32bppZoomed(fvram, hvram, scrwidth, scrheight,
+			                                vw, vh, vbpp, nextline, hscrolloffset,
+			                                leftBorder, rightBorder, upperBorder,
+			                                lowerBorder, coefx, coefy);
 			break;
 		}
 	}
