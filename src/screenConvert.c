@@ -357,13 +357,214 @@ static inline Uint32 *ScreenConv_BitplaneLineTo32bpp(Uint16 *fvram_column,
 	return hvram_column;
 }
 
+static void ScreenConv_BitplaneTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
+                                             int scrwidth, int scrheight,
+                                             int vw, int vh, int vbpp,
+                                             int nextline, int hscrolloffset,
+                                             int leftBorder, int rightBorder,
+                                             int upperBorder, int lowBorder)
+{
+	Uint16 *hvram_line = (Uint16 *)hvram;
+	int pitch = sdlscrn->pitch >> 1;
+	int h;
+
+	/* Render the upper border */
+	for (h = 0; h < upperBorder; h++)
+	{
+		Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	/* Render the graphical area */
+	for (h = 0; h < vh; h++)
+	{
+		Uint16 *hvram_column = hvram_line;
+
+		nSampleHoldIdx = 0;
+
+		/* Left border first */
+		Screen_memset_uint16(hvram_column, palette.native[0], leftBorder);
+		hvram_column += leftBorder;
+
+		hvram_column = ScreenConv_BitplaneLineTo16bpp(fvram_line, hvram_column,
+		                                              vw, vbpp, hscrolloffset);
+
+		/* Right border */
+		Screen_memset_uint16(hvram_column, palette.native[0], rightBorder);
+
+		fvram_line += nextline;
+		hvram_line += pitch;
+	}
+
+	/* Render the lower border */
+	for (h = 0; h < lowBorder; h++)
+	{
+		Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+}
+
+static void ScreenConv_BitplaneTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
+                                             int scrwidth, int scrheight,
+                                             int vw, int vh, int vbpp,
+                                             int nextline, int hscrolloffset,
+                                             int leftBorder, int rightBorder,
+                                             int upperBorder, int lowBorder)
+{
+	Uint32 *hvram_line = (Uint32 *)hvram;
+	int pitch = sdlscrn->pitch >> 2;
+	int h;
+
+	/* Render the upper border */
+	for (h = 0; h < upperBorder; h++)
+	{
+		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	/* Render the graphical area */
+	for (h = 0; h < vh; h++)
+	{
+		Uint32 *hvram_column = hvram_line;
+
+		nSampleHoldIdx = 0;
+
+		/* Left border first */
+		Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
+		hvram_column += leftBorder;
+
+		hvram_column = ScreenConv_BitplaneLineTo32bpp(fvram_line, hvram_column,
+		                                              vw, vbpp, hscrolloffset);
+
+		/* Right border */
+		Screen_memset_uint32(hvram_column, palette.native[0], rightBorder);
+
+		fvram_line += nextline;
+		hvram_line += pitch;
+	}
+
+	/* Render the lower border */
+	for (h = 0; h < lowBorder; h++)
+	{
+		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+}
+
+static void ScreenConv_HiColorTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
+                                            int scrwidth, int scrheight,
+                                            int vw, int vh, int vbpp,
+                                            int nextline, int hscrolloffset,
+                                            int leftBorder, int rightBorder,
+                                            int upperBorder, int lowBorder)
+{
+	Uint16 *hvram_line = (Uint16 *)hvram;
+	int pitch = sdlscrn->pitch >> 1;
+	int h;
+
+	/* Render the upper border */
+	for (h = 0; h < upperBorder; h++)
+	{
+		Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	/* Render the graphical area */
+	for (h = 0; h < vh; h++)
+	{
+		Uint16 *hvram_column = hvram_line;
+#if SDL_BYTEORDER != SDL_BIG_ENDIAN
+		Uint16 *fvram_column;
+		int w;
+#endif
+		/* Left border first */
+		Screen_memset_uint16(hvram_column, palette.native[0], leftBorder);
+		hvram_column += leftBorder;
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+		/* FIXME: here might be a runtime little/big video endian switch like:
+		 * if ( " videocard memory in Motorola endian format " false)
+		 */
+		memcpy(hvram_column, fvram_line, vw<<1);
+		hvram_column += vw<<1;
+#else
+		fvram_column = fvram_line;
+		/* Graphical area */
+		for (w = 0; w < vw; w++)
+			*hvram_column ++ = SDL_SwapBE16(*fvram_column++);
+#endif /* SDL_BYTEORDER == SDL_BIG_ENDIAN */
+
+		/* Right border */
+		Screen_memset_uint16(hvram_column, palette.native[0], rightBorder);
+
+		fvram_line += nextline;
+		hvram_line += pitch;
+	}
+
+	/* Render the bottom border */
+	for (h = 0; h < lowBorder; h++)
+	{
+		Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+}
+
+static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
+                                            int scrwidth, int scrheight,
+                                            int vw, int vh, int vbpp,
+                                            int nextline, int hscrolloffset,
+                                            int leftBorder, int rightBorder,
+                                            int upperBorder, int lowBorder)
+{
+	Uint32 *hvram_line = (Uint32 *)hvram;
+	int pitch = sdlscrn->pitch >> 2;
+	int h, w;
+
+	/* Render the upper border */
+	for (h = 0; h < upperBorder; h++)
+	{
+		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+
+	/* Render the graphical area */
+	for (h = 0; h < vh; h++)
+	{
+		Uint16 *fvram_column = fvram_line;
+		Uint32 *hvram_column = hvram_line;
+
+		/* Left border first */
+		Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
+		hvram_column += leftBorder;
+
+		/* Graphical area */
+		for (w = 0; w < vw; w++)
+		{
+			Uint16 srcword = *fvram_column++;
+			*hvram_column ++ = SDL_MapRGB(sdlscrn->format, srcword & 0xf8,
+			                              ((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c),
+			                              (srcword >> 5) & 0xf8);
+		}
+
+		/* Right border */
+		Screen_memset_uint32(hvram_column, palette.native[0], rightBorder);
+
+		fvram_line += nextline;
+		hvram_line += pitch;
+	}
+
+	/* Render the bottom border */
+	for (h = 0; h < lowBorder; h++)
+	{
+		Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
+		hvram_line += pitch;
+	}
+}
+
 static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, int nextline,
                                       int hscrolloffset, int leftBorder, int rightBorder,
                                       int upperBorder, int lowerBorder)
 {
-	int scrpitch = sdlscrn->pitch;
-	int h, w;
-
 	Uint16 *fvram_line;
 	Uint8 *hvram = sdlscrn->pixels;
 
@@ -420,7 +621,7 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 		lowBorderSize = lowerBorder;
 
 	/* Center screen */
-	hvram += ((scrheight-vh_clip)>>1)*scrpitch;
+	hvram += ((scrheight-vh_clip)>>1) * sdlscrn->pitch;
 	hvram += ((scrwidth-vw_clip)>>1) * sdlscrn->format->BytesPerPixel;
 
 	fvram_line = fvram;
@@ -431,174 +632,38 @@ static void Screen_ConvertWithoutZoom(Uint16 *fvram, int vw, int vh, int vbpp, i
 		/* Bitplanes modes */
 		switch (sdlscrn->format->BytesPerPixel)
 		{
-			case 2:
-			{
-				Uint16 *hvram_line = (Uint16 *)hvram;
-
-				/* Render the upper border */
-				for (h = 0; h < upperBorder; h++) {
-					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>1;
-				}
-
-				/* Render the graphical area */
-				for (h = 0; h < vh; h++) {
-					Uint16 *hvram_column = hvram_line;
-
-					nSampleHoldIdx = 0;
-
-					/* Left border first */
-					Screen_memset_uint16(hvram_column, palette.native[0], leftBorder);
-					hvram_column += leftBorder;
-
-					hvram_column = ScreenConv_BitplaneLineTo16bpp(fvram_line, hvram_column,
-					                                              vw, vbpp, hscrolloffset);
-
-					/* Right border */
-					Screen_memset_uint16(hvram_column, palette.native[0], rightBorderSize);
-
-					fvram_line += nextline;
-					hvram_line += scrpitch>>1;
-				}
-
-				/* Render the lower border */
-				for (h = 0; h < lowBorderSize; h++) {
-					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>1;
-				}
-			}
+		 case 2:
+			ScreenConv_BitplaneTo16bppNoZoom(fvram_line, hvram,
+			                                 scrwidth, scrheight, vw, vh,
+			                                 vbpp, nextline, hscrolloffset,
+			                                 leftBorder, rightBorderSize,
+			                                 upperBorder, lowBorderSize);
 			break;
-			case 4:
-			{
-				Uint32 *hvram_line = (Uint32 *)hvram;
-
-				/* Render the upper border */
-				for (h = 0; h < upperBorder; h++) {
-					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>2;
-				}
-
-				/* Render the graphical area */
-				for (h = 0; h < vh; h++) {
-					Uint32 *hvram_column = hvram_line;
-
-					nSampleHoldIdx = 0;
-
-					/* Left border first */
-					Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
-					hvram_column += leftBorder;
-
-					hvram_column = ScreenConv_BitplaneLineTo32bpp(fvram_line, hvram_column,
-					                                              vw, vbpp, hscrolloffset);
-
-					/* Right border */
-					Screen_memset_uint32(hvram_column, palette.native[0], rightBorderSize);
-
-					fvram_line += nextline;
-					hvram_line += scrpitch>>2;
-				}
-
-				/* Render the lower border */
-				for (h = 0; h < lowBorderSize; h++) {
-					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>2;
-				}
-			}
+		 case 4:
+			ScreenConv_BitplaneTo32bppNoZoom(fvram_line, hvram,
+			                                 scrwidth, scrheight, vw, vh,
+			                                 vbpp, nextline, hscrolloffset,
+			                                 leftBorder, rightBorderSize,
+			                                 upperBorder, lowBorderSize);
 			break;
 		}
-
 	} else {
-
 		/* Falcon TC (High Color) */
 		switch (sdlscrn->format->BytesPerPixel)
 		{
-			case 2:
-			{
-				Uint16 *hvram_line = (Uint16 *)hvram;
-
-				/* Render the upper border */
-				for (h = 0; h < upperBorder; h++) {
-					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>1;
-				}
-
-				/* Render the graphical area */
-				for (h = 0; h < vh; h++) {
-					Uint16 *hvram_column = hvram_line;
-#if SDL_BYTEORDER != SDL_BIG_ENDIAN
-					Uint16 *fvram_column;
-#endif
-					/* Left border first */
-					Screen_memset_uint16(hvram_column, palette.native[0], leftBorder);
-					hvram_column += leftBorder;
-
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-					/* FIXME: here might be a runtime little/big video endian switch like:
-						if ( " videocard memory in Motorola endian format " false)
-					*/
-					memcpy(hvram_column, fvram_line, vw<<1);
-					hvram_column += vw<<1;
-#else
-					fvram_column = fvram_line;
-					/* Graphical area */
-					for (w = 0; w < vw; w++)
-						*hvram_column ++ = SDL_SwapBE16(*fvram_column++);
-#endif /* SDL_BYTEORDER == SDL_BIG_ENDIAN */
-
-					/* Right border */
-					Screen_memset_uint16(hvram_column, palette.native[0], rightBorderSize);
-
-					fvram_line += nextline;
-					hvram_line += scrpitch>>1;
-				}
-
-				/* Render the bottom border */
-				for (h = 0; h < lowBorderSize; h++) {
-					Screen_memset_uint16(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>1;
-				}
-			}
+		 case 2:
+			ScreenConv_HiColorTo16bppNoZoom(fvram_line, hvram,
+			                                scrwidth, scrheight, vw, vh,
+			                                vbpp, nextline, hscrolloffset,
+			                                leftBorder, rightBorderSize,
+			                                upperBorder, lowBorderSize);
 			break;
-			case 4:
-			{
-				Uint32 *hvram_line = (Uint32 *)hvram;
-
-				/* Render the upper border */
-				for (h = 0; h < upperBorder; h++) {
-					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>2;
-				}
-
-				/* Render the graphical area */
-				for (h = 0; h < vh; h++) {
-					Uint16 *fvram_column = fvram_line;
-					Uint32 *hvram_column = hvram_line;
-
-					/* Left border first */
-					Screen_memset_uint32(hvram_column, palette.native[0], leftBorder);
-					hvram_column += leftBorder;
-
-					/* Graphical area */
-					for (w = 0; w < vw; w++) {
-						Uint16 srcword = *fvram_column++;
-						*hvram_column ++ = SDL_MapRGB(sdlscrn->format, srcword & 0xf8,
-						                              ((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c),
-						                              (srcword >> 5) & 0xf8);
-					}
-
-					/* Right border */
-					Screen_memset_uint32(hvram_column, palette.native[0], rightBorderSize);
-				}
-
-				fvram_line += nextline;
-				hvram_line += scrpitch>>2;
-
-				/* Render the bottom border */
-				for (h = 0; h < lowBorderSize; h++) {
-					Screen_memset_uint32(hvram_line, palette.native[0], scrwidth);
-					hvram_line += scrpitch>>2;
-				}
-			}
+		 case 4:
+			ScreenConv_HiColorTo32bppNoZoom(fvram_line, hvram,
+			                                scrwidth, scrheight, vw, vh,
+			                                vbpp, nextline, hscrolloffset,
+			                                leftBorder, rightBorderSize,
+			                                upperBorder, lowBorderSize);
 			break;
 		}
 	}
