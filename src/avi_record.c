@@ -398,6 +398,8 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 		if ( NeedLock )
 			SDL_LockSurface ( pAviParams->Surface );
 
+		pBitmapIn -= pAviParams->Surface->pitch;			/* go from bottom to top */
+
 		pBitmapOut = LineBuf;
 		switch ( pAviParams->Surface->format->BytesPerPixel ) {
 			case 1 :	PixelConvert_8to24Bits_BGR(LineBuf, pBitmapIn, pAviParams->Width, pAviParams->Surface->format->palette->colors);
@@ -419,8 +421,6 @@ static bool	Avi_RecordVideoStream_BMP ( RECORD_AVI_PARAMS *pAviParams )
 			Log_AlertDlg ( LOG_ERROR, "AVI recording : failed to write bmp video frame" );
 			return false;
 		}
-
-		pBitmapIn -= pAviParams->Surface->pitch;			/* go from bottom to top */
 	}
 
 	return true;
