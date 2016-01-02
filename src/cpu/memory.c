@@ -1388,12 +1388,12 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* Depending on which ROM version we are using, the other ROM region is illegal! */
     if(nNewRomMemStart == 0xFC0000)
     {
-        map_banks_ce(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);	/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
+        map_banks_ce(&ROMmem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_FAST16, CE_MEMBANK_CACHABLE);	/* [NP] tested on real STF, no bus wait from ROM */
         map_banks_ce(&BusErrMem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     }
     else if(nNewRomMemStart == 0xE00000)
     {
-        map_banks_ce(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);	/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
+        map_banks_ce(&ROMmem_bank, 0xE00000 >> 16, 0x10, 0, CE_MEMBANK_FAST16, CE_MEMBANK_CACHABLE);	/* [NP] tested on real STF, no bus wait from ROM */
         map_banks_ce(&BusErrMem_bank, 0xFC0000 >> 16, 0x3, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
     }
     else
@@ -1402,7 +1402,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     }
 
     /* Cartridge memory: */
-    map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_CACHABLE);		/* [NP] FIXME test needed on real STF, could be FAST16 in fact */
+    map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CE_MEMBANK_CACHABLE);		/* [NP] tested on real STF, no bus wait from cartridge */
     ROMmem_bank.baseaddr = ROMmemory;
     ROMmem_bank.mask = ROMmem_mask;
     ROMmem_bank.start = ROMmem_start;
