@@ -768,7 +768,7 @@ void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 	}
 
 if ( *pLineCycles < 0 )
-	fprintf ( stderr , "bug nHBL=%d %d %d\n" , nHBL , *pHBL , *pLineCycles );
+	fprintf ( stderr , "bug nHBL=%d %d %d %d\n" , nHBL , FrameCycles , *pHBL , *pLineCycles );
 
 //if ( ( *pHBL != FrameCycles / nCyclesPerLine ) || ( *pLineCycles != FrameCycles % nCyclesPerLine ) )
 //  LOG_TRACE ( TRACE_VIDEO_ADDR , "conv pos %d %d - %d %d\n" , *pHBL , FrameCycles / nCyclesPerLine , *pLineCycles , FrameCycles % nCyclesPerLine );
@@ -3192,6 +3192,9 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 void Video_InterruptHandler_VBL ( void )
 {
 	int PendingCyclesOver;
+	int PendingInterruptCount_save;
+
+	PendingInterruptCount_save = PendingInterruptCount;
 
 	/* Act on shortcut keys */
 	/* NOTE [NP] : ShortCut_ActKey should be called as soon as possible in the VBL handler, */
@@ -3203,6 +3206,11 @@ void Video_InterruptHandler_VBL ( void )
 	/* to always get a consistent state (doing it from an interrupt handler is not correct). */
 	/* (eg, fix restoring screen 1 in the B.I.G. Demo, where the raster bar can be wrongly displayed) */
 	ShortCut_ActKey();
+
+	/* In case we press a shortcut for reset, PendingInterruptCount will be changed to >0 and we will get */
+	/* some warnings "bug nHBL=...". To avoid this we restore the value (<= 0) saved at the start of the VBL */
+	if ( PendingInterruptCount > 0 )
+		PendingInterruptCount = PendingInterruptCount_save;
 
 	/* Store cycles we went over for this frame(this is our initial count) */
 	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );    /* +ve */
