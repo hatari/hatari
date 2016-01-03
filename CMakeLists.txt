@@ -156,16 +156,16 @@ if(DETECTED_LFS_CFLAGS)
 endif(DETECTED_LFS_CFLAGS)
 
 # Additional CFLAGS suggested by the SDL library:
-if(ENABLE_SDL2)
+if(SDL2_FOUND)
 	add_definitions(-DWITH_SDL2)
 	execute_process(COMMAND pkg-config --cflags-only-other sdl2
 			OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
 			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-else(ENABLE_SDL2)
+else(SDL2_FOUND)
 	execute_process(COMMAND pkg-config --cflags-only-other sdl
 			OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
 			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif(ENABLE_SDL2)
+endif(SDL2_FOUND)
 if(DETECTED_SDL_CFLAGS)
 	add_definitions(${DETECTED_SDL_CFLAGS})
 	# message(STATUS "Additional CFLAGS of SDL: ${DETECTED_SDL_CFLAGS}")
@@ -174,10 +174,10 @@ endif(DETECTED_SDL_CFLAGS)
 if(ENABLE_OSX_BUNDLE)
 	# Use OSX native alert windows
 	add_definitions(-DALERT_HOOKS=1)
-	if(ENABLE_SDL2)
+	if(SDL2_FOUND)
 		# We still want to use our SDLMain.m with SDL2
 		add_definitions(-DSDL_MAIN_NEEDED=1)
-	endif(ENABLE_SDL2)
+	endif(SDL2_FOUND)
 endif(ENABLE_OSX_BUNDLE)
 
 # ###########################
