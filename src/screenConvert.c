@@ -486,7 +486,7 @@ static void ScreenConv_HiColorTo16bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		 * if ( " videocard memory in Motorola endian format " false)
 		 */
 		memcpy(hvram_column, fvram_line, vw<<1);
-		hvram_column += vw<<1;
+		hvram_column += vw;
 #else
 		fvram_column = fvram_line;
 		/* Graphical area */
@@ -540,10 +540,11 @@ static void ScreenConv_HiColorTo32bppNoZoom(Uint16 *fvram_line, Uint8 *hvram,
 		/* Graphical area */
 		for (w = 0; w < vw; w++)
 		{
-			Uint16 srcword = *fvram_column++;
-			*hvram_column ++ = SDL_MapRGB(sdlscrn->format, srcword & 0xf8,
-			                              ((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c),
-			                              (srcword >> 5) & 0xf8);
+			Uint16 srcword = SDL_SwapBE16(*fvram_column++);
+			Uint8 r = ((srcword >> 8) & 0xf8) | (srcword >> 13);
+			Uint8 g = ((srcword >> 3) & 0xfc) | ((srcword >> 9) & 0x3);
+			Uint8 b = (srcword << 3) | ((srcword >> 2) & 0x07);
+			*hvram_column ++ = SDL_MapRGB(sdlscrn->format, r, g, b);
 		}
 
 		/* Right border */
@@ -931,11 +932,12 @@ static void ScreenConv_HiColorTo32bppZoomed(Uint16 *fvram, Uint8 *hvram,
 			for (w = 0; w < vw * coefx; w++)
 			{
 				Uint16 srcword;
-
-				srcword = fvram_column[screen_zoom.zoomxtable[w]];
-				*hvram_column++ = SDL_MapRGB(sdlscrn->format, srcword & 0xf8,
-				                             ((srcword & 0x07) << 5) | ((srcword >> 11) & 0x3c),
-				                             (srcword >> 5) & 0xf8);
+				Uint8 r, g, b;
+				srcword = SDL_SwapBE16(fvram_column[screen_zoom.zoomxtable[w]]);
+				r = ((srcword >> 8) & 0xf8) | (srcword >> 13);
+				g = ((srcword >> 3) & 0xfc) | ((srcword >> 9) & 0x3);
+				b = (srcword << 3) | ((srcword >> 2) & 0x07);
+				*hvram_column ++ = SDL_MapRGB(sdlscrn->format, r, g, b);
 			}
 
 			/* Display the Right border */
