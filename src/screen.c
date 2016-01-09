@@ -97,7 +97,6 @@ static bool bScrDoubleY;                /* true if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 /* These are used for the generic screen convertion functions */
-static SDL_Rect genconv_rect;
 static int genconv_width_req, genconv_height_req, genconv_bpp;
 static bool genconv_do_update;          /* HW surface is available -> the SDL need not to update the surface after ->pixel access */
 
@@ -1435,14 +1434,10 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 
 	genconv_bpp = bpp;
-	/* videl.c might scale things differently in fullscreen than
-	 * in windowed mode because this uses screensize instead of using
-	 * the aspect scaled sizes directly, but it works better this way.
-	 */
-	genconv_rect.x = 0;
-	genconv_rect.y = 0;
-	genconv_rect.w = screenwidth;
-	genconv_rect.h = screenheight - sbarheight;
+	/* screen area without the statusbar */
+	STScreenRect.x = STScreenRect.y = 0;
+	STScreenRect.w = screenwidth;
+	STScreenRect.h = screenheight - sbarheight;
 
 	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bpp, bForceChange))
 	{
@@ -1451,12 +1446,7 @@ void Screen_SetGenConvSize(int width, int height, int bpp, bool bForceChange)
 		 */
 		if (screenwidth > width || screenheight > height+sbarheight) {
 			/* Atari screen smaller than host -> clear screen */
-			SDL_Rect rect;
-			rect.x = 0;
-			rect.y = 0;
-			rect.w = sdlscrn->w;
-			rect.h = sdlscrn->h - sbarheight;
-			SDL_FillRect(sdlscrn, &rect, SDL_MapRGB(sdlscrn->format, 0, 0, 0));
+			Screen_ClearScreen();
 			/* re-calculate variables in case height + statusbar height
 			 * don't anymore match SDL surface size (there's an assert
 			 * for that)
@@ -1506,7 +1496,7 @@ void Screen_GenConvUpdate(SDL_Rect *extra, bool forced)
 	if (!forced && !genconv_do_update) // the HW surface is available
 		return;
 
-	rects[0] = genconv_rect;
+	rects[0] = STScreenRect;
 	if (extra) {
 		rects[1] = *extra;
 		count = 2;
@@ -1516,12 +1506,12 @@ void Screen_GenConvUpdate(SDL_Rect *extra, bool forced)
 
 Uint32 Screen_GetGenConvWidth(void)
 {
-	return genconv_rect.w;
+	return STScreenRect.w;
 }
 
 Uint32 Screen_GetGenConvHeight(void)
 {
-	return genconv_rect.h;
+	return STScreenRect.h;
 }
 
 
