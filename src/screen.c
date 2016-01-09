@@ -765,20 +765,23 @@ static void Screen_ClearScreen(void)
  */
 static void Screen_Refresh(void)
 {
-	if (!bUseVDIRes)
+	if (bUseVDIRes)
 	{
-		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-		{
-			VIDEL_renderScreen();
-			return;
-		}
-		else if (ConfigureParams.System.nMachineType == MACHINE_TT)
-		{
-			Video_RenderTTScreen();
-			return;
-		}
+		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
+		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
-	Screen_DrawFrame(true);
+	else if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	{
+		VIDEL_renderScreen();
+	}
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	{
+		Video_RenderTTScreen();
+	}
+	else
+	{
+		Screen_DrawFrame(true);
+	}
 }
 
 
