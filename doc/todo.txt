@@ -58,6 +58,8 @@ Emulation improvements
     never changes the register value unless it had first specifically
     been written into):
     http://listengine.tuxfamily.org/lists.tuxfamily.org/hatari-devel/2013/02/msg00155.html
+  - Emulate border color:
+    http://atari-forum.com/viewtopic.php?f=51&t=29098
 
 - Add SCSI hard disk emulation for Falcon/TT mode.
 
