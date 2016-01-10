@@ -1610,10 +1610,16 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Defence Force:
-      <a href="http://www.pouet.net/prod.php?which=54106">Save The Eearth</a></td>
+      <a href="http://www.pouet.net/prod.php?which=54106">Save The Earth</a></td>
       <td>1.5</td>
       <td>Right border switches, blitter, extended palette, HW
           scrolling/screen splitting, DMA music + microwire/lmc control.</td>
+    </tr>
+    <tr>
+      <td>Defence Force:
+      <a href="http://www.pouet.net/prod.php?which=66703">Time Slices</a></td>
+      <td>1.9+</td>
+      <td>Monochrome</td>
     </tr>
     <tr>
       <td>DHS:
@@ -1801,6 +1807,12 @@ does only on STE</td>
       <td>50kHz DMA sound</td>
     </tr>
     <tr>
+      <td>Oxygene:
+      <a href="http://www.pouet.net/prod.php?which=66702">We Were @</a></td>
+      <td>1.9+</td>
+      <td>Blitter + overscan. 4MB</td>
+    </tr>
+    <tr>
       <td>Paradox:
       <a href="http://pouet.net/prod.php?which=54205">20 years Atari STE megademo</a></td>
       <td class="minor">1.4</td>
@@ -1977,13 +1989,18 @@ this section lists only TT-specific games and demos.</p>
     </tr>
   </thead>
   <tbody>
+      <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
+      <td>1.9</td>
+      <td>TT-medium only. Some version(s) bus error due to DSP register check
+          (although they should support TT with chip music).  Main menu works
+	  unreliably (doesn't always react to indicated keys).</td>
     <tr>
       <td><a href="http://atari-forum.com/viewtopic.php?f=26&amp;t=13658&amp;start=50">OpenTTD</a></td>
       <td>1.9</td>
       <td>"hatari-prg-args --machine tt --tos tos306uk.img  -s 4 --ttram 256 --
-./openttd-m68020.gtp -m null -s null -b 8bpp-optimized", select
-"original" as "Land generator" at game start.  Works also on Falcons
-with FPU</td>
+./openttd-m68020.gtp -m null -s null -b 8bpp-optimized", then select
+"original" as "Land generator" at game start. Works also on Falcons
+with FPU and no DSP. Start from TT-low resolution.</td>
     </tr>
     <tr>
       <td>Oxyd 2 TT</td>
@@ -2012,10 +2029,18 @@ with FPU</td>
       <td>(Works also on Falcon)</td>
     </tr>
     <tr>
+      <td>Daroou:
+      <a href="http://atari.daroou.fr/">Daroou's GEM Demos</a></td>
+      <td>1.9+</td>
+      <td>Need TT-low mode. Work also on Falcon (with music).
+          Boing demo bus errors on startup on both</td>
+    </tr>
+    <tr>
       <td>gwEm:
       <a href="http://www.pouet.net/prod.php?which=24961">4getful</a></td>
-      <td>1.0</td>
-      <td>TT-version of gwEm's 4K demo</td>
+      <td class="major">1.9</td>
+      <td>TT-version of gwEm's 4K demo. Crashes on startup with
+          TOS v3, works with earlier Hatari versions</td>
     </tr>
     <tr>
       <td>Moving Pixels:
@@ -2206,13 +2231,11 @@ cycle accuracy issues, some Falcon programs don't work yet.</p>
     </tr>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
-      <td class="major">1.9</td>
+      <td class="minor">1.9</td>
       <td>yes</td>
       <td>emu</td>
-      <td>TT-medium/VGA (640x480x16) only. Some version(s) bus error
-	  on TT due to DSP register check (although they should support
-	  TT with chip music).  Main menu works unreliably (doesn't
-	  always react to indicated keys).</td>
+      <td>TT-medium/VGA (640x480x16) only. Main menu works unreliably
+          (doesn't always react to indicated keys).</td>
     </tr>
     <tr>
       <td><a href="http://pouet.net/prod.php?which=29351">Cavemania (demo)</a></td>
@@ -3595,6 +3618,22 @@ stated to require that.</p>
       <td>yes</td>
       <td>-</td>
       <td>Require 060 + FPU + 4MB / 32MB TT-RAM (DSP + sound can be disabled to speed up emulation)</td>
+    </tr>
+    <tr>
+      <td>The Pixel Twins:
+      <a href="http://www.pouet.net/prod.php?which=66760">Wee Gift</a></td>
+      <td class="minor">1.9+</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Needs FPU. Real time ray-tracing. Freezes late in the demo</td>
+    </tr>
+    <tr>
+      <td>The Pixel Twins:
+      <a href="http://www.pouet.net/prod.php?which=66698">Zero Three Zero</a></td>
+      <td>1.9+</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Needs FPU. Real time ray-tracing</td>
     </tr>
     <tr>
       <td>The Respectables:
