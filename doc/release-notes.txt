@@ -86,7 +86,7 @@ Emulator:
   - SDL2 supports other than 2x scaling factors for ST/e emulation
 - Misc fixes:
   - Fix: WinUAE CPU core (FPU) memory state restore
-  - Fix: chrash with VDI extended resolution emulation when
+  - Fix: crash with VDI extended resolution emulation when
          C: isn't GEMDOS HD emulated drive
   - Fix: invalid defaults for real joysticks
   - Fix: compilation when zlib is missing
