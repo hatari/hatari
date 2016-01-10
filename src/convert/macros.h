@@ -10,12 +10,6 @@
 #ifndef HATARI_CONVERTMACROS_H
 #define HATARI_CONVERTMACROS_H
 
-/* For palette we don't go from colour '0' as the whole background
- * would change, so go from this value
- */
-#define  BASECOLOUR       0x0A
-#define  BASECOLOUR_LONG  0x0A0A0A0A
-
 /* Remap tables to convert from plane format to byte-per-pixel
  * (Upper is for 4-Planes so if shifted by 2)
  */
@@ -88,12 +82,6 @@ static const Uint32 Remap_2_Planes_Upper[256] = {
   0x08080808,  0x0C080808,  0x080C0808,  0x0C0C0808,  0x08080C08,  0x0C080C08,  0x080C0C08,  0x0C0C0C08,
   0x0808080C,  0x0C08080C,  0x080C080C,  0x0C0C080C,  0x08080C0C,  0x0C080C0C,  0x080C0C0C,  0x0C0C0C0C,
 };
-
-static const Uint32 Remap_1_Plane[16] = {
-  0x00000000+BASECOLOUR_LONG,  0x01000000+BASECOLOUR_LONG,  0x00010000+BASECOLOUR_LONG,  0x01010000+BASECOLOUR_LONG,  0x00000100+BASECOLOUR_LONG,  0x01000100+BASECOLOUR_LONG,  0x00010100+BASECOLOUR_LONG,  0x01010100+BASECOLOUR_LONG,
-  0x00000001+BASECOLOUR_LONG,  0x01000001+BASECOLOUR_LONG,  0x00010001+BASECOLOUR_LONG,  0x01010001+BASECOLOUR_LONG,  0x00000101+BASECOLOUR_LONG,  0x01000101+BASECOLOUR_LONG,  0x00010101+BASECOLOUR_LONG,  0x01010101+BASECOLOUR_LONG,
-};
-
 
 
 /*----------------------------------------------------------------------*/
@@ -333,34 +321,6 @@ static const Uint32 Remap_1_Plane[16] = {
  esi[offset+3] = (Uint16)STRGBPalette[(ecx >> 24) & 0x00ff]; \
 }
 
-/* Plot Low Resolution (320xH) 8-Bit pixels */
-#define PLOT_LOW_320_8BIT(offset) \
-{ \
-  esi[offset] = SDL_SwapLE32(ecx + BASECOLOUR_LONG); \
-}
-
-/* Plot Low Resolution (640xH) 8-Bit pixels */
-#define PLOT_LOW_640_8BIT(offset) \
-{ \
-  ebpp = ecx + BASECOLOUR_LONG; \
-  ecx = ((ebpp & 0x0000ff00) << 8) | (ebpp & 0x000000ff); \
-  esi[offset]   = SDL_SwapLE32((ecx << 8) | ecx); \
-  ecx = ((ebpp & 0x00ff0000) >> 8) | (ebpp & 0xff000000); \
-  esi[offset+1] = SDL_SwapLE32((ecx >> 8) | ecx); \
-}
-
-/* Plot Low Resolution (640xH) 8-Bit pixels (double on Y) */
-#define PLOT_LOW_640_8BIT_DOUBLE_Y(offset)	\
-{ \
-  ebpp = ecx + BASECOLOUR_LONG; \
-  ecx = ((ebpp & 0x0000ff00) << 8) | (ebpp & 0x000000ff); \
-  esi[offset+Screen4BytesPerLine] = \
-  esi[offset]   = SDL_SwapLE32((ecx << 8) | ecx); \
-  ecx = ((ebpp & 0x00ff0000) >> 8) | (ebpp & 0xff000000); \
-  esi[offset+1+Screen4BytesPerLine] = \
-  esi[offset+1] = SDL_SwapLE32((ecx >> 8) | ecx); \
-}
-
 /* Plot Low Resolution (640xH) 16-Bit pixels */
 #define PLOT_LOW_640_16BIT(offset) \
 { \
@@ -383,19 +343,6 @@ static const Uint32 Remap_1_Plane[16] = {
  esi[offset+3] = esi[offset+3+Screen4BytesPerLine] = ebx; \
 }
 
-
-/* Plot Medium Resolution (640xH) 8-Bit pixels */
-#define PLOT_MED_640_8BIT(offset) \
-{ \
-  esi[offset] = SDL_SwapLE32(ecx + BASECOLOUR_LONG); \
-}
-
-/* Plot Medium Resolution (640xH) 8-Bit pixels (Double on Y) */
-#define PLOT_MED_640_8BIT_DOUBLE_Y(offset) \
-{ \
-  esi[offset] = esi[offset+Screen4BytesPerLine] =\
-  SDL_SwapLE32(ecx + BASECOLOUR_LONG); \
-}
 
 /* Plot Medium Resolution(640xH) 16-Bit pixels */
 #define PLOT_MED_640_16BIT(offset) \
